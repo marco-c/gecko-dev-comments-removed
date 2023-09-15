@@ -13,12 +13,9 @@
 
 #if (_MSC_VER >= 1400)  
 
-#include "rtc_base/win32.h"
+#include <wmcodecdsp.h>  
 
-#include "modules/audio_device/audio_device_generic.h"
 
-#include <wmcodecdsp.h>   
-                          
 #include <audioclient.h>  
 #include <audiopolicy.h>
 #include <avrt.h>  
@@ -27,8 +24,10 @@
 #include <mmdeviceapi.h>  
 
 #include "api/scoped_refptr.h"
+#include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/win/scoped_com_initializer.h"
+#include "rtc_base/win32.h"
 
 
 #pragma comment(lib, "avrt.lib")

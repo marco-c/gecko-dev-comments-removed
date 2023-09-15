@@ -968,9 +968,7 @@ TEST(GoogCcScenario, FallbackToLossBasedBweWithoutPacketFeedback) {
   EXPECT_GE(client->target_rate().kbps(), 500);
 
   
-  net->UpdateConfig([](NetworkSimulationConfig* c) {
-    c->loss_rate = 0.15;
-  });
+  net->UpdateConfig([](NetworkSimulationConfig* c) { c->loss_rate = 0.15; });
   s.RunFor(TimeDelta::Seconds(20));
 
   

@@ -35,6 +35,6 @@ void WebRtcIlbcfix_Enhancer(
     size_t* period,        
     const size_t* plocs,   
     size_t periodl         
-    );
+);
 
 #endif

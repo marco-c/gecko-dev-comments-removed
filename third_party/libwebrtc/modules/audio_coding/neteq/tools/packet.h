@@ -95,7 +95,7 @@ class Packet {
   
   const size_t virtual_packet_length_bytes_;
   size_t virtual_payload_length_bytes_ = 0;
-  const double time_ms_;     
+  const double time_ms_;  
   const bool valid_header_;
 };
 

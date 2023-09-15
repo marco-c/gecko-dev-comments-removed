@@ -15,8 +15,8 @@
 
 
 #define WEBRTC_DECLARE_HANDLE(name) \
-struct name##__;                  \
-typedef struct name##__* name
+  struct name##__;                  \
+  typedef struct name##__* name
 WEBRTC_DECLARE_HANDLE(HMONITOR);
 #undef WEBRTC_DECLARE_HANDLE
 #endif

@@ -36,10 +36,9 @@ class DisplayStreamManager;
 
 class ScreenCapturerMac final : public DesktopCapturer {
  public:
-  ScreenCapturerMac(
-      rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor,
-      bool detect_updated_region,
-      bool allow_iosurface);
+  ScreenCapturerMac(rtc::scoped_refptr<DesktopConfigurationMonitor> desktop_config_monitor,
+                    bool detect_updated_region,
+                    bool allow_iosurface);
   ~ScreenCapturerMac() override;
 
   ScreenCapturerMac(const ScreenCapturerMac&) = delete;

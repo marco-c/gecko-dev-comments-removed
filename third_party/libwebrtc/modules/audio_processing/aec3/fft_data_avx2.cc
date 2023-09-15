@@ -8,11 +8,10 @@
 
 
 
-#include "modules/audio_processing/aec3/fft_data.h"
-
 #include <immintrin.h>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/aec3/fft_data.h"
 
 namespace webrtc {
 

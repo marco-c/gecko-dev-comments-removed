@@ -37,6 +37,6 @@ void WebRtcIlbcfix_AbsQuant(
 
     int16_t* in,             
     int16_t* weightDenum     
-    );
+);
 
 #endif

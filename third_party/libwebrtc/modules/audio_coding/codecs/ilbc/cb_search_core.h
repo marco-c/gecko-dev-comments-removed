@@ -33,9 +33,9 @@ void WebRtcIlbcfix_CbSearchCore(
     size_t* bestIndex,           
 
 
-    int32_t* bestCrit, 
+    int32_t* bestCrit,           
 
-    int16_t* bestCritSh); 
+    int16_t* bestCritSh);        
 
 
 #endif

@@ -64,7 +64,7 @@ struct AudioDecodingCallStats {
   int calls_to_silence_generator;  
                                    
   int calls_to_neteq;              
-  int decoded_normal;  
+  int decoded_normal;     
   int decoded_neteq_plc;  
   int decoded_codec_plc;  
   int decoded_cng;  

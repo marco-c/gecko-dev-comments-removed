@@ -32,6 +32,6 @@ void WebRtcIlbcfix_LspInterpolate2PolyDec(
     int16_t coef,  
 
     int16_t length 
-    );
+);
 
 #endif

@@ -39,6 +39,6 @@ void WebRtcIlbcfix_Refiner(
     int16_t* surround,     
 
     int16_t gain           
-    );
+);
 
 #endif

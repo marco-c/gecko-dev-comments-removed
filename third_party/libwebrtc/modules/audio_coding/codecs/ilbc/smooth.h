@@ -30,6 +30,6 @@ void WebRtcIlbcfix_Smooth(int16_t* odata,
 
                           int16_t* surround 
 
-                          );
+);
 
 #endif

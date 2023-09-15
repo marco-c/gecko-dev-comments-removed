@@ -134,7 +134,7 @@ TEST(PacketBuffer, InsertPacket) {
   EXPECT_FALSE(buffer.Empty());
   EXPECT_EQ(1u, buffer.NumPacketsInBuffer());
   const Packet* next_packet = buffer.PeekNextPacket();
-  EXPECT_EQ(packet, *next_packet);  
+  EXPECT_EQ(packet, *next_packet);       
   EXPECT_CALL(decoder_database, Die());  
 
   

@@ -30,6 +30,6 @@ void WebRtcIlbcfix_SwapBytes(
     const uint16_t* input, 
     size_t wordLength,     
     uint16_t* output       
-    );
+);
 
 #endif

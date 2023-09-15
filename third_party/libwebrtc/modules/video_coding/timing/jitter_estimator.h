@@ -172,7 +172,7 @@ class JitterEstimator {
 
   
   
-  double avg_frame_size_bytes_;  
+  double avg_frame_size_bytes_;   
   double var_frame_size_bytes2_;  
   
   

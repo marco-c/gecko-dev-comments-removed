@@ -34,6 +34,6 @@ void WebRtcIlbcfix_CompCorr(int32_t* corr,
                             size_t bLen,     
                             size_t sRange,   
                             int16_t scale 
-                            );
+);
 
 #endif

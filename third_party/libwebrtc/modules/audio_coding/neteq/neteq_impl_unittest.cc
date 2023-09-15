@@ -393,7 +393,7 @@ TEST_F(NetEqImplTest, InsertPacketsUntilBufferIsFull) {
 
   const int kPayloadLengthSamples = 80;
   const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;  
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   uint8_t payload[kPayloadLengthBytes] = {0};
   RTPHeader rtp_header;
   rtp_header.payloadType = kPayloadType;
@@ -440,7 +440,7 @@ TEST_F(NetEqImplTest, TestDtmfPacketAVT48kHz) {
 
 
 TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  
@@ -559,7 +559,7 @@ TEST_F(NetEqImplTest, ReorderedPacket) {
   CreateInstance(
       rtc::make_ref_counted<test::AudioDecoderProxyFactory>(&mock_decoder));
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  
@@ -674,7 +674,7 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   UseNoMocks();
   CreateInstance();
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  
@@ -767,7 +767,7 @@ TEST_P(NetEqImplTestSampleRateParameter,
   UseNoMocks();
   CreateInstance();
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kPayloadSampleRateHz = 16000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kPayloadSampleRateHz / 1000);  
@@ -1004,7 +1004,7 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   CreateInstance(
       rtc::make_ref_counted<test::AudioDecoderProxyFactory>(&mock_decoder));
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateKhz = 48;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(20 * kSampleRateKhz);  
@@ -1097,7 +1097,7 @@ TEST_F(NetEqImplTest, UnsupportedDecoder) {
   static const size_t kNetEqMaxFrameSize = 5760;  
   static const size_t kChannels = 2;
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
 
   const size_t kPayloadLengthSamples =
@@ -1189,7 +1189,7 @@ TEST_F(NetEqImplTest, FloodBufferAndGetNetworkStats) {
 
   const size_t kPayloadLengthSamples = 80;
   const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;  
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   uint8_t payload[kPayloadLengthBytes] = {0};
   RTPHeader rtp_header;
   rtp_header.payloadType = kPayloadType;
@@ -1222,7 +1222,7 @@ TEST_F(NetEqImplTest, DecodedPayloadTooShort) {
   CreateInstance(
       rtc::make_ref_counted<test::AudioDecoderProxyFactory>(&mock_decoder));
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
   const size_t kPayloadLengthSamples =
       static_cast<size_t>(10 * kSampleRateHz / 1000);  
@@ -1281,7 +1281,7 @@ TEST_F(NetEqImplTest, DecodingError) {
   CreateInstance(
       rtc::make_ref_counted<test::AudioDecoderProxyFactory>(&mock_decoder));
 
-  const uint8_t kPayloadType = 17;   
+  const uint8_t kPayloadType = 17;  
   const int kSampleRateHz = 8000;
   const int kDecoderErrorCode = -97;  
 

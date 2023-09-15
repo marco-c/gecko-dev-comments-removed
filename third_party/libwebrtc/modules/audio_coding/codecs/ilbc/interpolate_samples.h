@@ -30,6 +30,6 @@ void WebRtcIlbcfix_InterpolateSamples(
     int16_t* interpSamples, 
     int16_t* CBmem,         
     size_t lMem             
-    );
+);
 
 #endif

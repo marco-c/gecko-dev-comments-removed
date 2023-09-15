@@ -34,6 +34,6 @@ void WebRtcIlbcfix_FilteredCbVecs(
 
     size_t lMem,        
     size_t samples      
-    );
+);
 
 #endif

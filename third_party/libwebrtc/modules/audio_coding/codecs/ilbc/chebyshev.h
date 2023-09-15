@@ -33,6 +33,6 @@ int16_t WebRtcIlbcfix_Chebyshev(
     
     int16_t x, 
     int16_t* f 
-    );
+);
 
 #endif

@@ -31,6 +31,6 @@ WebRtcIlbcfix_GainQuant(
                         int16_t maxIn, 
                         int16_t stage, 
                         int16_t* index 
-                        );
+);
 
 #endif

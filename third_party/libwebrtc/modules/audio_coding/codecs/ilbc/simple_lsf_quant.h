@@ -32,6 +32,6 @@ void WebRtcIlbcfix_SimpleLsfQ(
     int16_t* lsf,    
 
     int16_t lpc_n    
-    );
+);
 
 #endif

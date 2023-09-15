@@ -160,7 +160,6 @@ TEST_F(NetEqDecodingTestFaxMode, TestFrameWaitingTimeStatistics) {
   EXPECT_EQ(-1, stats.max_waiting_time_ms);
 }
 
-
 TEST_F(NetEqDecodingTest, LongCngWithNegativeClockDrift) {
   
   const double kDriftFactor = 1000.0 / (1000.0 + 25.0);

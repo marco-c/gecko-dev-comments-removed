@@ -31,6 +31,6 @@ void WebRtcIlbcfix_MyCorr(int32_t* corr,
                           size_t dim1,         
                           const int16_t* seq2, 
                           size_t dim2          
-                          );
+);
 
 #endif

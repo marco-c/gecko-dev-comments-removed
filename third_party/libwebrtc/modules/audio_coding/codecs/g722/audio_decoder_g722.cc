@@ -94,7 +94,7 @@ int AudioDecoderG722StereoImpl::DecodeInternal(const uint8_t* encoded,
   const size_t encoded_len_adjusted = PacketDuration(encoded, encoded_len) *
                                       Channels() /
                                       2;  
-  int16_t temp_type = 1;  
+  int16_t temp_type = 1;                  
   
   uint8_t* encoded_deinterleaved = new uint8_t[encoded_len_adjusted];
   SplitStereoPacket(encoded, encoded_len_adjusted, encoded_deinterleaved);

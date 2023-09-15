@@ -33,6 +33,6 @@ void WebRtcIlbcfix_LsfInterpolate2PloyEnc(
     int16_t coef,  
 
     int16_t length 
-    );
+);
 
 #endif

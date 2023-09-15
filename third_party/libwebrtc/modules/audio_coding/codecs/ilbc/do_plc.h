@@ -39,6 +39,6 @@ void WebRtcIlbcfix_DoThePlc(
     size_t inlag,         
     IlbcDecoder* iLBCdec_inst
     
-    );
+);
 
 #endif

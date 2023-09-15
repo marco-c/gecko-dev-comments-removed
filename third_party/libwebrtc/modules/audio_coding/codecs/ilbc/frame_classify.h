@@ -29,6 +29,6 @@ size_t WebRtcIlbcfix_FrameClassify(
     IlbcEncoder* iLBCenc_inst,
     
     int16_t* residualFIX 
-    );
+);
 
 #endif

@@ -33,6 +33,6 @@ void WebRtcIlbcfix_SplitVq(
     int16_t* CB,    
     int16_t* dim,   
     int16_t* cbsize 
-    );
+);
 
 #endif

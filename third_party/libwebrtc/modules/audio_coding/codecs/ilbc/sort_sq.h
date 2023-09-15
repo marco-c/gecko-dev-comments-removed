@@ -31,6 +31,6 @@ void WebRtcIlbcfix_SortSq(
     int16_t x,         
     const int16_t* cb, 
     int16_t cb_size    
-    );
+);
 
 #endif

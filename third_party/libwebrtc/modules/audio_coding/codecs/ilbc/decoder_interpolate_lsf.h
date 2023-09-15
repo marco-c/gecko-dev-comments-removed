@@ -29,13 +29,13 @@
 
 
 void WebRtcIlbcfix_DecoderInterpolateLsp(
-    int16_t* syntdenum, 
+    int16_t* syntdenum,   
     int16_t* weightdenum, 
 
-    int16_t* lsfdeq, 
-    int16_t length,  
+    int16_t* lsfdeq,      
+    int16_t length,       
     IlbcDecoder* iLBCdec_inst
     
-    );
+);
 
 #endif

@@ -34,6 +34,6 @@ size_t WebRtcIlbcfix_XcorrCoef(
     size_t searchLen,   
     size_t offset,      
     int16_t step        
-    );
+);
 
 #endif

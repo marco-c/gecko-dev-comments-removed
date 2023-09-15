@@ -29,6 +29,6 @@ void WebRtcIlbcfix_SimpleLsfDeQ(
     int16_t* lsfdeq, 
     int16_t* index,  
     int16_t lpc_n    
-    );
+);
 
 #endif

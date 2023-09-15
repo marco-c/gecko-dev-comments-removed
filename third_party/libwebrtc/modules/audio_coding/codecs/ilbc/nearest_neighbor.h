@@ -32,6 +32,6 @@ void WebRtcIlbcfix_NearestNeighbor(
     const size_t* array, 
     size_t value,        
     size_t arlength      
-    );
+);
 
 #endif

@@ -27,6 +27,6 @@
 
 void WebRtcIlbcfix_Poly2Lsf(int16_t* lsf, 
                             int16_t* a    
-                            );
+);
 
 #endif

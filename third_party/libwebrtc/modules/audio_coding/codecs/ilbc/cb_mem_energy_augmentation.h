@@ -29,6 +29,6 @@ void WebRtcIlbcfix_CbMemEnergyAugmentation(
     size_t base_size,   
     int16_t* energyW16, 
     int16_t* energyShifts 
-    );
+);
 
 #endif

@@ -131,7 +131,6 @@ const int16_t WebRtcAecm_kSinTable[] = {
 
 
 
-
 void WebRtcAecm_UpdateFarHistory(AecmCore* self,
                                  uint16_t* far_spectrum,
                                  int far_q) {

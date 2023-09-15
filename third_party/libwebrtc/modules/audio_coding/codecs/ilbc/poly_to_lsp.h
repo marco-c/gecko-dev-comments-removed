@@ -31,6 +31,6 @@ void WebRtcIlbcfix_Poly2Lsp(
     int16_t* lsp,    
     int16_t* old_lsp 
 
-    );
+);
 
 #endif

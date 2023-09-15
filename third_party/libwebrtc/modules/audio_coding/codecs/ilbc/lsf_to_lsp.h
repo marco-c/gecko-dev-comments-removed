@@ -29,6 +29,6 @@ void WebRtcIlbcfix_Lsf2Lsp(
     int16_t* lsf, 
     int16_t* lsp, 
     int16_t m     
-    );
+);
 
 #endif

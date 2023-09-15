@@ -33,6 +33,6 @@ void WebRtcIlbcfix_StateConstruct(
     int16_t* syntDenum, 
     int16_t* Out_fix,   
     size_t len          
-    );
+);
 
 #endif

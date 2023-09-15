@@ -11,8 +11,8 @@
 #include "modules/audio_device/mac/audio_device_mac.h"
 
 #include <ApplicationServices/ApplicationServices.h>
-#include <mach/mach.h>         
-#include <sys/sysctl.h>        
+#include <mach/mach.h>   
+#include <sys/sysctl.h>  
 
 #include <memory>
 
@@ -1355,8 +1355,8 @@ int32_t AudioDeviceMac::StopRecording() {
     
     if (_recording && captureDeviceIsAlive == 1) {
       _recording = false;
-      _doStop = true;     
-      mutex_.Unlock();    
+      _doStop = true;   
+      mutex_.Unlock();  
       if (!_stopEvent.Wait(TimeDelta::Seconds(2))) {
         MutexLock lockScoped(&mutex_);
         RTC_LOG(LS_WARNING) << "Timed out stopping the shared IOProc."
@@ -1465,8 +1465,8 @@ int32_t AudioDeviceMac::StopPlayout() {
     
     
     _playing = false;
-    _doStop = true;     
-    mutex_.Unlock();    
+    _doStop = true;   
+    mutex_.Unlock();  
     if (!_stopEvent.Wait(TimeDelta::Seconds(2))) {
       MutexLock lockScoped(&mutex_);
       RTC_LOG(LS_WARNING) << "Timed out stopping the render IOProc."

@@ -43,6 +43,6 @@ void WebRtcIlbcfix_SimpleInterpolateLsf(
     int16_t length,       
     IlbcEncoder* iLBCenc_inst
     
-    );
+);
 
 #endif

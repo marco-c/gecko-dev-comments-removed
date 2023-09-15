@@ -11,7 +11,6 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_
 #define MODULES_AUDIO_PROCESSING_AGC_LEGACY_ANALOG_AGC_H_
 
-
 #include "modules/audio_processing/agc/legacy/digital_agc.h"
 #include "modules/audio_processing/agc/legacy/gain_control.h"
 
@@ -63,7 +62,7 @@ typedef struct {
   int32_t upperSecondaryLimit;  
   int32_t lowerSecondaryLimit;  
   uint16_t targetIdx;           
-  int16_t analogTarget;  
+  int16_t analogTarget;         
 
   
   int32_t filterState[8];  
@@ -74,8 +73,8 @@ typedef struct {
   int32_t Rxx160_LPw32;    
   int32_t Rxx16_LPw32Max;  
   int32_t Rxx16_vectorw32[kRxxBufferLen];  
-  int32_t Rxx16w32_array[2][5];  
-  int32_t env[2][10];            
+  int32_t Rxx16w32_array[2][5];            
+  int32_t env[2][10];                      
 
   int16_t Rxx16pos;          
   int16_t envSum;            

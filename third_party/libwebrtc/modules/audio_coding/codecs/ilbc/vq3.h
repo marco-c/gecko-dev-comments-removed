@@ -31,6 +31,6 @@ void WebRtcIlbcfix_Vq3(
     int16_t* CB,    
     int16_t* X,     
     int16_t n_cb    
-    );
+);
 
 #endif

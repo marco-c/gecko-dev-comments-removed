@@ -32,6 +32,6 @@ void WebRtcIlbcfix_SimpleLpcAnalysis(
     int16_t* data, 
     IlbcEncoder* iLBCenc_inst
     
-    );
+);
 
 #endif

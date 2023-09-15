@@ -36,6 +36,6 @@ void WebRtcIlbcfix_GetSyncSeq(
     size_t hl,           
     int16_t* surround    
 
-    );
+);
 
 #endif

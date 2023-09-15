@@ -37,6 +37,6 @@ void WebRtcIlbcfix_LpcEncode(
     int16_t* data,        
     IlbcEncoder* iLBCenc_inst
     
-    );
+);
 
 #endif

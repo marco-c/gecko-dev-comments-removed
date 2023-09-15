@@ -8,9 +8,9 @@
 
 
 
-#include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
-
 #include <immintrin.h>
+
+#include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
 
 namespace webrtc {
 

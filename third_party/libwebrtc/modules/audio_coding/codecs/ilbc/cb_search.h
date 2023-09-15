@@ -35,6 +35,6 @@ void WebRtcIlbcfix_CbSearch(
     size_t lTarget,       
     int16_t* weightDenum, 
     size_t block          
-    );
+);
 
 #endif

@@ -34,6 +34,6 @@ WebRtcIlbcfix_UnpackBits(
                          iLBC_bits*
                              enc_bits, 
                          int16_t mode  
-                         );
+);
 
 #endif

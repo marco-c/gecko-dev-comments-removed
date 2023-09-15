@@ -656,55 +656,55 @@ TEST_F(PacingControllerTest, Padding) {
     AdvanceTimeUntil(pacer->NextSendTime());
     pacer->ProcessPackets();
   }
-    const TimeDelta actual_pace_time = clock_.CurrentTime() - start_time;
-    EXPECT_LE((actual_pace_time - expected_pace_time).Abs(),
-              PacingController::kMinSleepTime);
+  const TimeDelta actual_pace_time = clock_.CurrentTime() - start_time;
+  EXPECT_LE((actual_pace_time - expected_pace_time).Abs(),
+            PacingController::kMinSleepTime);
 
-    
-    
-    
-    const TimeDelta time_to_padding_debt_free =
-        (expected_pace_time * kPaceMultiplier) - actual_pace_time;
-    clock_.AdvanceTime(time_to_padding_debt_free -
-                       PacingController::kMinSleepTime);
+  
+  
+  
+  const TimeDelta time_to_padding_debt_free =
+      (expected_pace_time * kPaceMultiplier) - actual_pace_time;
+  clock_.AdvanceTime(time_to_padding_debt_free -
+                     PacingController::kMinSleepTime);
+  pacer->ProcessPackets();
+
+  
+  const size_t kPaddingPacketsToSend = 10;
+  DataSize padding_sent = DataSize::Zero();
+  size_t packets_sent = 0;
+  Timestamp first_send_time = Timestamp::MinusInfinity();
+  Timestamp last_send_time = Timestamp::MinusInfinity();
+
+  EXPECT_CALL(callback_, SendPadding)
+      .Times(kPaddingPacketsToSend)
+      .WillRepeatedly([&](size_t target_size) {
+        ++packets_sent;
+        if (packets_sent < kPaddingPacketsToSend) {
+          
+          
+          
+          padding_sent += DataSize::Bytes(target_size);
+        }
+        if (first_send_time.IsInfinite()) {
+          first_send_time = clock_.CurrentTime();
+        } else {
+          last_send_time = clock_.CurrentTime();
+        }
+        return target_size;
+      });
+  EXPECT_CALL(callback_, SendPacket(_, _, _, false, true))
+      .Times(kPaddingPacketsToSend);
+
+  while (packets_sent < kPaddingPacketsToSend) {
+    AdvanceTimeUntil(pacer->NextSendTime());
     pacer->ProcessPackets();
+  }
 
-    
-    const size_t kPaddingPacketsToSend = 10;
-    DataSize padding_sent = DataSize::Zero();
-    size_t packets_sent = 0;
-    Timestamp first_send_time = Timestamp::MinusInfinity();
-    Timestamp last_send_time = Timestamp::MinusInfinity();
-
-    EXPECT_CALL(callback_, SendPadding)
-        .Times(kPaddingPacketsToSend)
-        .WillRepeatedly([&](size_t target_size) {
-          ++packets_sent;
-          if (packets_sent < kPaddingPacketsToSend) {
-            
-            
-            
-            padding_sent += DataSize::Bytes(target_size);
-          }
-          if (first_send_time.IsInfinite()) {
-            first_send_time = clock_.CurrentTime();
-          } else {
-            last_send_time = clock_.CurrentTime();
-          }
-          return target_size;
-        });
-    EXPECT_CALL(callback_, SendPacket(_, _, _, false, true))
-        .Times(kPaddingPacketsToSend);
-
-    while (packets_sent < kPaddingPacketsToSend) {
-      AdvanceTimeUntil(pacer->NextSendTime());
-      pacer->ProcessPackets();
-    }
-
-    
-    TimeDelta padding_duration = last_send_time - first_send_time;
-    DataRate padding_rate = padding_sent / padding_duration;
-    EXPECT_EQ(padding_rate, kTargetRate);
+  
+  TimeDelta padding_duration = last_send_time - first_send_time;
+  DataRate padding_rate = padding_sent / padding_duration;
+  EXPECT_EQ(padding_rate, kTargetRate);
 }
 
 TEST_F(PacingControllerTest, NoPaddingBeforeNormalPacket) {
@@ -1245,66 +1245,66 @@ TEST_F(PacingControllerTest, SkipsProbesWhenProcessIntervalTooLarge) {
     pacer->ProcessPackets();
   }
 
-    
-    std::vector<ProbeClusterConfig> probe_clusters = {
-        {.at_time = clock_.CurrentTime(),
-         .target_data_rate = DataRate::KilobitsPerSec(10000),  
-         .target_duration = TimeDelta::Millis(15),
-         .target_probe_count = 5,
-         .id = kProbeClusterId}};
-    pacer->CreateProbeClusters(probe_clusters);
+  
+  std::vector<ProbeClusterConfig> probe_clusters = {
+      {.at_time = clock_.CurrentTime(),
+       .target_data_rate = DataRate::KilobitsPerSec(10000),  
+       .target_duration = TimeDelta::Millis(15),
+       .target_probe_count = 5,
+       .id = kProbeClusterId}};
+  pacer->CreateProbeClusters(probe_clusters);
 
-    
-    pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, ssrc,
-                                     sequence_number++,
-                                     clock_.TimeInMilliseconds(), kPacketSize));
-    const int packets_sent_before_probe = packet_sender.packets_sent();
-    AdvanceTimeUntil(pacer->NextSendTime());
-    pacer->ProcessPackets();
-    EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 1);
+  
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, ssrc,
+                                   sequence_number++,
+                                   clock_.TimeInMilliseconds(), kPacketSize));
+  const int packets_sent_before_probe = packet_sender.packets_sent();
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 1);
 
-    
-    Timestamp start_time = clock_.CurrentTime();
-    AdvanceTimeUntil(pacer->NextSendTime());
-    TimeDelta time_between_probes = clock_.CurrentTime() - start_time;
-    
-    clock_.AdvanceTime(time_between_probes);
+  
+  Timestamp start_time = clock_.CurrentTime();
+  AdvanceTimeUntil(pacer->NextSendTime());
+  TimeDelta time_between_probes = clock_.CurrentTime() - start_time;
+  
+  clock_.AdvanceTime(time_between_probes);
 
-    
-    pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, ssrc,
-                                     sequence_number++,
-                                     clock_.TimeInMilliseconds(), kPacketSize));
-    pacer->ProcessPackets();
-    EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 2);
-    PacedPacketInfo last_pacing_info = packet_sender.last_pacing_info();
-    EXPECT_EQ(last_pacing_info.probe_cluster_id, kProbeClusterId);
+  
+  pacer->EnqueuePacket(BuildPacket(RtpPacketMediaType::kVideo, ssrc,
+                                   sequence_number++,
+                                   clock_.TimeInMilliseconds(), kPacketSize));
+  pacer->ProcessPackets();
+  EXPECT_EQ(packet_sender.packets_sent(), packets_sent_before_probe + 2);
+  PacedPacketInfo last_pacing_info = packet_sender.last_pacing_info();
+  EXPECT_EQ(last_pacing_info.probe_cluster_id, kProbeClusterId);
 
-    
-    const Timestamp probe_time = clock_.CurrentTime();
-    EXPECT_EQ(pacer->NextSendTime(), clock_.CurrentTime());
+  
+  const Timestamp probe_time = clock_.CurrentTime();
+  EXPECT_EQ(pacer->NextSendTime(), clock_.CurrentTime());
 
-    BitrateProberConfig probing_config(&trials);
-    EXPECT_GT(probing_config.max_probe_delay.Get(), TimeDelta::Zero());
-    
-    clock_.AdvanceTime(probing_config.max_probe_delay.Get());
-    EXPECT_EQ(pacer->NextSendTime(), probe_time);
+  BitrateProberConfig probing_config(&trials);
+  EXPECT_GT(probing_config.max_probe_delay.Get(), TimeDelta::Zero());
+  
+  clock_.AdvanceTime(probing_config.max_probe_delay.Get());
+  EXPECT_EQ(pacer->NextSendTime(), probe_time);
 
-    
-    clock_.AdvanceTime(TimeDelta::Micros(1));
+  
+  clock_.AdvanceTime(TimeDelta::Micros(1));
 
-    int packets_sent_before_timeout = packet_sender.total_packets_sent();
-    
-    
-    EXPECT_EQ(pacer->NextSendTime(), probe_time);
-    pacer->ProcessPackets();
-    EXPECT_EQ(packet_sender.total_packets_sent(), packets_sent_before_timeout);
+  int packets_sent_before_timeout = packet_sender.total_packets_sent();
+  
+  
+  EXPECT_EQ(pacer->NextSendTime(), probe_time);
+  pacer->ProcessPackets();
+  EXPECT_EQ(packet_sender.total_packets_sent(), packets_sent_before_timeout);
 
-    
-    AdvanceTimeUntil(pacer->NextSendTime());
-    pacer->ProcessPackets();
-    const int expected_probe_id = PacedPacketInfo::kNotAProbe;
-    EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
-              expected_probe_id);
+  
+  AdvanceTimeUntil(pacer->NextSendTime());
+  pacer->ProcessPackets();
+  const int expected_probe_id = PacedPacketInfo::kNotAProbe;
+  EXPECT_EQ(packet_sender.last_pacing_info().probe_cluster_id,
+            expected_probe_id);
 }
 
 TEST_F(PacingControllerTest, ProbingWithPaddingSupport) {

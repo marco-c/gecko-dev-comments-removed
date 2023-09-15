@@ -37,7 +37,7 @@ namespace {
 static const size_t kMaxNumSamples = 48 * 10 * 2;  
 static const size_t kRedLastHeaderLength =
     1;  
-}
+}  
 
 class AudioEncoderCopyRedTest : public ::testing::Test {
  protected:

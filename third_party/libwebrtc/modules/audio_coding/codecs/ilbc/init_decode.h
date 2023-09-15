@@ -33,6 +33,6 @@ int WebRtcIlbcfix_InitDecode(
                              int16_t mode,     
                              int use_enhancer  
 
-                             );
+);
 
 #endif

@@ -36,6 +36,6 @@ void WebRtcIlbcfix_StateSearch(
     int16_t* residual,       
     int16_t* syntDenum,      
     int16_t* weightDenum     
-    );
+);
 
 #endif
