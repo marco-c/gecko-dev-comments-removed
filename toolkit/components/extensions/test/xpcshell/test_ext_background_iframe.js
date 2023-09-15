@@ -137,6 +137,12 @@ add_task(async function test_first_extension_api_call_in_iframe() {
         
         
         browser.test.assertTrue("os" in info, "extension API called in iframe");
+
+        browser.test.assertTrue(
+          iframe.contentWindow.browser.extension.getBackgroundPage() === window,
+          "extension.getBackgroundPage() returns the top context"
+        );
+
         
         
         browser.test.sendMessage("allowStylesheetToLoad");
@@ -276,6 +282,10 @@ add_task(async function test_only_script_execution_in_iframe() {
     
     browser.runtime.getPlatformInfo().then(info => {
       browser.test.assertTrue("os" in info, "extension API called in iframe");
+      browser.test.assertTrue(
+        browser.extension.getBackgroundPage() === top,
+        "extension.getBackgroundPage() returns the top context"
+      );
       browser.test.sendMessage("iframe_done");
     });
   }
