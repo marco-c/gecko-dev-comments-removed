@@ -59,6 +59,11 @@ class RtpTransportInternal : public sigslot::has_slots<> {
 
   
   
+  sigslot::signal<const webrtc::RtpPacketReceived&>
+      SignalUnDemuxableRtpPacketReceived;
+
+  
+  
   sigslot::signal1<absl::optional<rtc::NetworkRoute>> SignalNetworkRouteChanged;
 
   
