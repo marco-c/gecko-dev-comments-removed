@@ -21,8 +21,8 @@ RTC_OBJC_EXPORT
 @protocol RTC_OBJC_TYPE
 (RTCRtpSender)<NSObject>
 
-
-@property(nonatomic, readonly) NSString *senderId;
+    
+    @property(nonatomic, readonly) NSString *senderId;
 
 
 

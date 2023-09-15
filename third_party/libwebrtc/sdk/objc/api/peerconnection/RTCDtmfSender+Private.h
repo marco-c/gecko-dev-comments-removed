@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 
 - (instancetype)initWithNativeDtmfSender:
-        (rtc::scoped_refptr<webrtc::DtmfSenderInterface>)nativeDtmfSender NS_DESIGNATED_INITIALIZER;
+    (rtc::scoped_refptr<webrtc::DtmfSenderInterface>)nativeDtmfSender NS_DESIGNATED_INITIALIZER;
 
 @end
 
