@@ -752,6 +752,8 @@ with modules["DOM"]:
     
     errors["NS_ERROR_DOM_COOP_FAILED"] = FAILURE(1041)
 
+    errors["NS_ERROR_DOM_INVALID_HEADER_VALUE"] = FAILURE(1042)
+
     
     
     
