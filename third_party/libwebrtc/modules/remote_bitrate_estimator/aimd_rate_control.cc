@@ -83,9 +83,7 @@ AimdRateControl::AimdRateControl(const FieldTrialsView& key_value_config,
       initial_backoff_interval_("initial_backoff_interval"),
       link_capacity_fix_("link_capacity_fix") {
   ParseFieldTrial(
-      {&disable_estimate_bounded_increase_, &estimate_bounded_increase_ratio_,
-       &ignore_throughput_limit_if_network_estimate_,
-       &ignore_network_estimate_decrease_, &increase_to_network_estimate_},
+      {&disable_estimate_bounded_increase_},
       key_value_config.Lookup("WebRTC-Bwe-EstimateBoundedIncrease"));
   
   
@@ -270,12 +268,7 @@ void AimdRateControl::ChangeBitrate(const RateControlInput& input,
       
       DataRate increase_limit =
           1.5 * estimated_throughput + DataRate::KilobitsPerSec(10);
-      if (ignore_throughput_limit_if_network_estimate_ && network_estimate_ &&
-          network_estimate_->link_capacity_upper.IsFinite()) {
-        
-        increase_limit = network_estimate_->link_capacity_upper *
-                         estimate_bounded_increase_ratio_.Get();
-      } else if (send_side_ && in_alr_ && no_bitrate_increase_in_alr_) {
+      if (send_side_ && in_alr_ && no_bitrate_increase_in_alr_) {
         
         
         
@@ -286,10 +279,7 @@ void AimdRateControl::ChangeBitrate(const RateControlInput& input,
 
       if (current_bitrate_ < increase_limit) {
         DataRate increased_bitrate = DataRate::MinusInfinity();
-        if (increase_to_network_estimate_ && network_estimate_ &&
-            network_estimate_->link_capacity_upper.IsFinite()) {
-          increased_bitrate = increase_limit;
-        } else if (link_capacity_.has_estimate()) {
+        if (link_capacity_.has_estimate()) {
           
           
           
@@ -360,11 +350,7 @@ void AimdRateControl::ChangeBitrate(const RateControlInput& input,
 DataRate AimdRateControl::ClampBitrate(DataRate new_bitrate) const {
   if (!disable_estimate_bounded_increase_ && network_estimate_ &&
       network_estimate_->link_capacity_upper.IsFinite()) {
-    DataRate upper_bound = network_estimate_->link_capacity_upper *
-                           estimate_bounded_increase_ratio_.Get();
-    if (ignore_network_estimate_decrease_) {
-      upper_bound = std::max(upper_bound, current_bitrate_);
-    }
+    DataRate upper_bound = network_estimate_->link_capacity_upper;
     new_bitrate = std::min(upper_bound, new_bitrate);
   }
   if (network_estimate_ && network_estimate_->link_capacity_lower.IsFinite() &&
