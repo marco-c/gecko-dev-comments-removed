@@ -15,6 +15,15 @@ add_setup(async function () {
 });
 
 add_task(async function doTest() {
+  requestLongerTimeout(3);
+
+  
+  
+  await BrowserTestUtils.withNewTab("https://example.com", async () => {
+    await openProtectionsPanel();
+    await closeProtectionsPanel();
+  });
+
   
   await TrackingDBService.clearAll();
 
