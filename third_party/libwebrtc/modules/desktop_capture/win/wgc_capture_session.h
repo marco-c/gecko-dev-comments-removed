@@ -73,18 +73,16 @@ class WgcCaptureSession final {
       IInspectable* event_args);
 
   
-  HRESULT OnFrameArrived(
-      ABI::Windows::Graphics::Capture::IDirect3D11CaptureFramePool* sender,
-      IInspectable* event_args);
+  
+  void EnsureFrame();
 
   
   HRESULT ProcessFrame();
 
-  void RemoveEventHandlers();
+  void RemoveEventHandler();
 
   bool allow_zero_hertz() const { return allow_zero_hertz_; }
 
-  std::unique_ptr<EventRegistrationToken> frame_arrived_token_;
   std::unique_ptr<EventRegistrationToken> item_closed_token_;
 
   
@@ -133,14 +131,7 @@ class WgcCaptureSession final {
   bool is_capture_started_ = false;
 
   
-  
-  
-  
-  
-  
-  
-  
-  int empty_frame_credit_count_ = 0;
+  bool is_frame_captured_ = false;
 
   
   
