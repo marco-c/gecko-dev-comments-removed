@@ -33,6 +33,7 @@ class TMimeType final {
     ParameterValue() : mRequiresQuoting(false) {}
   };
 
+  bool mIsBase64{false};
   nsTString<char_type> mType;
   nsTString<char_type> mSubtype;
   nsTHashMap<typename HashKeyType<char_type>::HashType, ParameterValue>
@@ -51,6 +52,8 @@ class TMimeType final {
 
   
   void GetFullType(nsTSubstring<char_type>& aStr) const;
+
+  bool IsBase64() const { return mIsBase64; }
 
   
   

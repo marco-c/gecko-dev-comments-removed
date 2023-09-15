@@ -9,7 +9,9 @@
 #include "nsError.h"
 #include "nsIOService.h"
 #include "DataChannelChild.h"
+#include "nsNetUtil.h"
 #include "nsSimpleURI.h"
+#include "nsUnicharUtils.h"
 #include "mozilla/dom/MimeType.h"
 #include "mozilla/StaticPrefs_network.h"
 
@@ -92,37 +94,68 @@ nsDataHandler::AllowPort(int32_t port, const char* scheme, bool* _retval) {
   return NS_OK;
 }
 
+namespace {
 
+constexpr bool TrimSpacesAndBase64(nsACString& aMimeType) {
+  const char* beg = aMimeType.BeginReading();
+  const char* end = aMimeType.EndReading();
 
-
-
-
-
-static bool FindOffsetOf(const nsACString& aPattern, const nsACString& aSrc,
-                         nsACString::size_type& aOffset) {
-  nsACString::const_iterator begin, end;
-  aSrc.BeginReading(begin);
-  aSrc.EndReading(end);
-  if (!RFindInReadable(aPattern, begin, end,
-                       nsCaseInsensitiveCStringComparator)) {
+  
+  while (beg < end && NS_IsHTTPWhitespace(*beg)) {
+    ++beg;
+  }
+  if (beg == end) {
+    aMimeType.Truncate();
+    return false;
+  }
+  while (end > beg && NS_IsHTTPWhitespace(*(end - 1))) {
+    --end;
+  }
+  if (beg == end) {
+    aMimeType.Truncate();
     return false;
   }
 
   
-  aOffset = nsACString::size_type(begin.get() - aSrc.Data());
-  return true;
+  const char* pos = end - 1;
+  bool foundBase64 = false;
+  if (pos > beg && *pos == '4' && --pos > beg && *pos == '6' && --pos > beg &&
+      ToLowerCaseASCII(*pos) == 'e' && --pos > beg &&
+      ToLowerCaseASCII(*pos) == 's' && --pos > beg &&
+      ToLowerCaseASCII(*pos) == 'a' && --pos > beg &&
+      ToLowerCaseASCII(*pos) == 'b') {
+    while (--pos > beg && NS_IsHTTPWhitespace(*pos)) {
+    }
+    if (pos >= beg && *pos == ';') {
+      end = pos;
+      foundBase64 = true;
+    }
+  }
+
+  
+  const char* s = aMimeType.BeginReading();
+  aMimeType.Assign(Substring(aMimeType, beg - s, end - s));
+  return foundBase64;
 }
 
-nsresult nsDataHandler::ParsePathWithoutRef(
-    const nsACString& aPath, nsCString& aContentType,
-    nsCString* aContentCharset, bool& aIsBase64,
-    nsDependentCSubstring* aDataBuffer) {
-  static constexpr auto kBase64 = "base64"_ns;
+}  
+
+nsresult nsDataHandler::ParsePathWithoutRef(const nsACString& aPath,
+                                            nsCString& aContentType,
+                                            nsCString* aContentCharset,
+                                            bool& aIsBase64,
+                                            nsDependentCSubstring* aDataBuffer,
+                                            nsCString* aMimeType) {
   static constexpr auto kCharset = "charset"_ns;
+
+  
+  
+  
+  
+  
 
   aIsBase64 = false;
 
-  
   int32_t commaIdx = aPath.FindChar(',');
 
   
@@ -132,70 +165,45 @@ nsresult nsDataHandler::ParsePathWithoutRef(
   if (aContentCharset && commaIdx == kNotFound) {
     return NS_ERROR_MALFORMED_URI;
   }
-  if (commaIdx == 0 || commaIdx == kNotFound) {
+
+  
+  
+  nsCString mimeType(Substring(aPath, 0, commaIdx));
+
+  
+  
+  
+  aIsBase64 = TrimSpacesAndBase64(mimeType);
+
+  
+  if (mimeType.Length() > 0 && mimeType.CharAt(0) == ';') {
+    mimeType = "text/plain"_ns + mimeType;
+  }
+
+  
+  
+  
+  
+  if (mozilla::UniquePtr<CMimeType> parsed = CMimeType::Parse(mimeType)) {
+    parsed->GetFullType(aContentType);
+    if (aContentCharset) {
+      parsed->GetParameterValue(kCharset, *aContentCharset);
+    }
+    if (aMimeType) {
+      parsed->Serialize(*aMimeType);
+    }
+    if (parsed->IsBase64()) {
+      aIsBase64 = true;
+    }
+  } else {
+    
     
     aContentType.AssignLiteral("text/plain");
     if (aContentCharset) {
       aContentCharset->AssignLiteral("US-ASCII");
     }
-  } else {
-    auto mediaType = Substring(aPath, 0, commaIdx);
-
-    
-    nsACString::size_type base64;
-    if (FindOffsetOf(kBase64, mediaType, base64) && base64 > 0) {
-      nsACString::size_type offset = base64 + kBase64.Length();
-      
-      
-      
-      
-      
-      
-      
-      if (offset == mediaType.Length() || mediaType[offset] == ';' ||
-          mediaType[offset] == ' ') {
-        MOZ_DIAGNOSTIC_ASSERT(base64 > 0, "Did someone remove the check?");
-        
-        
-        base64--;
-        
-        while (base64 > 0 && mediaType[base64] == ' ') {
-          base64--;
-        }
-        if (mediaType[base64] == ';') {
-          aIsBase64 = true;
-          
-          mediaType.Rebind(aPath, 0, base64);
-        }
-      }
-    }
-
-    
-    nsACString::size_type startIndex = 0;
-    while (startIndex < mediaType.Length() && mediaType[startIndex] == ' ') {
-      startIndex++;
-    }
-
-    nsAutoCString mediaTypeBuf;
-    
-    if (startIndex < mediaType.Length() && mediaType[startIndex] == ';') {
-      mediaTypeBuf.AssignLiteral("text/plain");
-      mediaTypeBuf.Append(mediaType);
-      mediaType.Rebind(mediaTypeBuf, 0, mediaTypeBuf.Length());
-    }
-
-    
-    if (mozilla::UniquePtr<CMimeType> parsed = CMimeType::Parse(mediaType)) {
-      parsed->GetFullType(aContentType);
-      if (aContentCharset) {
-        parsed->GetParameterValue(kCharset, *aContentCharset);
-      }
-    } else {
-      
-      aContentType.AssignLiteral("text/plain");
-      if (aContentCharset) {
-        aContentCharset->AssignLiteral("US-ASCII");
-      }
+    if (aMimeType) {
+      aMimeType->AssignLiteral("text/plain;charset=US-ASCII");
     }
   }
 

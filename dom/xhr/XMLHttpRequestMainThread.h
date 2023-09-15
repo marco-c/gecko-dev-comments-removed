@@ -477,6 +477,9 @@ class XMLHttpRequestMainThread final : public XMLHttpRequest,
   
   void EnsureChannelContentType();
 
+  
+  bool GetContentType(nsACString& aValue) const;
+
   already_AddRefed<nsIHttpChannel> GetCurrentHttpChannel();
   already_AddRefed<nsIJARChannel> GetCurrentJARChannel();
 
