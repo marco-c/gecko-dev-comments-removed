@@ -1277,9 +1277,6 @@ pref("browser.places.speculativeConnect.enabled", true);
 pref("browser.zoom.full", true);
 
 
-pref("browser.zoom.siteSpecific", true);
-
-
 pref("browser.zoom.updateBackgroundTabs", true);
 
 
