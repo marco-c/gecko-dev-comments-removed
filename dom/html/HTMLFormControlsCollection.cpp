@@ -222,9 +222,9 @@ nsresult HTMLFormControlsCollection::GetSortedControls(
     
     
     nsGenericHTMLFormElement* elementToAdd;
-    if (nsContentUtils::CompareTreePosition(mElements[elementsIdx],
-                                            mNotInElements[notInElementsIdx],
-                                            mForm) < 0) {
+    if (HTMLFormElement::CompareFormControlPosition(
+            mElements[elementsIdx], mNotInElements[notInElementsIdx], mForm) <
+        0) {
       elementToAdd = mElements[elementsIdx];
       ++elementsIdx;
     } else {
