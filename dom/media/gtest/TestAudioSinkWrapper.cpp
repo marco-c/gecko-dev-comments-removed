@@ -12,6 +12,7 @@
 #include "gtest/gtest-printers.h"
 #include "gtest/gtest.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/gtest/WaitFor.h"
 #include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 
@@ -32,13 +33,13 @@ TEST(TestAudioSinkWrapper, AsyncInitFailureWithSyncInitSuccess)
                                               audioQueue, info.mAudio,
                                                false)};
   };
+  const double initialVolume = 0.0;  
   RefPtr wrapper = new AudioSinkWrapper(
       AbstractThread::GetCurrent(), audioQueue, std::move(audioSinkCreator),
-       0.5,  1.0,  true,
+      initialVolume,  1.0,  true,
        nullptr);
 
   wrapper->Start(media::TimeUnit::Zero(), info);
-  wrapper->SetVolume(0.0);  
   
   
   
@@ -64,8 +65,6 @@ TEST(TestAudioSinkWrapper, AsyncInitFailureWithSyncInitSuccess)
     }
   }
   initListener.Disconnect();
-  
-  
   wrapper->SetPlaying(false);
   
   nsIThread* currentThread = NS_GetCurrentThread();
@@ -89,6 +88,61 @@ TEST(TestAudioSinkWrapper, AsyncInitFailureWithSyncInitSuccess)
                      [&] { return state != CUBEB_STATE_STARTED; });
   stateListener.Disconnect();
   EXPECT_EQ(state, CUBEB_STATE_DRAINED);
+  wrapper->Stop();
+  wrapper->Shutdown();
+}
+
+
+
+TEST(TestAudioSinkWrapper, AsyncInitWithEndOfAudio)
+{
+  MockCubeb* cubeb = new MockCubeb();
+  CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
+
+  MediaQueue<AudioData> audioQueue;
+  MediaInfo info;
+  info.EnableAudio();
+  auto audioSinkCreator = [&]() {
+    return UniquePtr<AudioSink>{new AudioSink(AbstractThread::GetCurrent(),
+                                              audioQueue, info.mAudio,
+                                               false)};
+  };
+  const double initialVolume = 0.0;  
+  RefPtr wrapper = new AudioSinkWrapper(
+      AbstractThread::GetCurrent(), audioQueue, std::move(audioSinkCreator),
+      initialVolume,  1.0,  true,
+       nullptr);
+
+  wrapper->Start(media::TimeUnit::Zero(), info);
+  
+  
+  
+  RefPtr backgroundQueue =
+      nsThreadManager::get().CreateBackgroundTaskQueue(__func__);
+  Monitor monitor(__func__);
+  RefPtr<SmartMockCubebStream> stream;
+  MediaEventListener initListener = cubeb->StreamInitEvent().Connect(
+      backgroundQueue, [&](RefPtr<SmartMockCubebStream> aStream) {
+        EXPECT_NE(aStream, nullptr);
+        MonitorAutoLock lock(monitor);
+        stream = std::move(aStream);
+        lock.Notify();
+      });
+  wrapper->SetVolume(0.5);  
+  {
+    
+    MonitorAutoLock lock(monitor);
+    while (!stream) {
+      lock.Wait();
+    }
+  }
+  initListener.Disconnect();
+  
+  
+  audioQueue.Finish();
+  
+  
+  WaitFor(cubeb->StreamDestroyEvent());
   wrapper->Stop();
   wrapper->Shutdown();
 }
