@@ -50,11 +50,13 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   
   
   
+  
+  
+  
   TaskQueuePacedSender(
       Clock* clock,
       PacingController::PacketSender* packet_sender,
       const FieldTrialsView& field_trials,
-      TaskQueueFactory* task_queue_factory,
       TimeDelta max_hold_back_window,
       int max_hold_back_window_in_packets,
       absl::optional<TimeDelta> burst_interval = absl::nullopt);
@@ -178,13 +180,10 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   rtc::ExpFilter packet_size_ RTC_GUARDED_BY(task_queue_);
   bool include_overhead_ RTC_GUARDED_BY(task_queue_);
 
-  
-  
-  mutable Mutex stats_mutex_;
-  Stats current_stats_ RTC_GUARDED_BY(stats_mutex_);
+  Stats current_stats_ RTC_GUARDED_BY(task_queue_);
 
   ScopedTaskSafety safety_;
-  MaybeWorkerThread task_queue_;
+  TaskQueueBase* task_queue_;
 };
 }  
 #endif  
