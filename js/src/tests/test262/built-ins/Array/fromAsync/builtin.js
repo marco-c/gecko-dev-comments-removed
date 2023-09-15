@@ -21,7 +21,6 @@
 
 
 
-
 assert(Object.isExtensible(Array.fromAsync), "Array.fromAsync is extensible");
 
 assert.sameValue(

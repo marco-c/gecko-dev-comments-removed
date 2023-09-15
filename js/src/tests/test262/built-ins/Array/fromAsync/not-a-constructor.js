@@ -12,7 +12,6 @@
 
 
 
-
 assert(!isConstructor(Array.fromAsync), "Array.fromAsync is not a constructor");
 
 assert.throws(TypeError, () => new Array.fromAsync(), "Array.fromAsync throws when constructed");

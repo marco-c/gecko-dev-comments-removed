@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof Array.fromAsync, "function", "Array.fromAsync is callable");
 
 verifyProperty(Array, 'fromAsync', {

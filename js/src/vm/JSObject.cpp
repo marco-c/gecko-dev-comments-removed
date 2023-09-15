@@ -2213,15 +2213,6 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
   }
 #endif
 
-  
-  
-  
-  if (key == JSProto_Function &&
-      !cx->realm()->creationOptions().getArrayFromAsyncEnabled() &&
-      id == NameToId(cx->names().fromAsync)) {
-    return true;
-  }
-
 #ifdef ENABLE_NEW_SET_METHODS
   if (key == JSProto_Set &&
       !cx->realm()->creationOptions().getNewSetMethodsEnabled() &&

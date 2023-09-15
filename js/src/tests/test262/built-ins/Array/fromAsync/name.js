@@ -18,7 +18,6 @@
 
 
 
-
 verifyProperty(Array.fromAsync, "name", {
   value: "fromAsync",
   writable: false,
