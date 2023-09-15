@@ -16,9 +16,10 @@ promise_test(async t => {
   
   
   const wss = new WebSocketStream(wsUrl, { signal: controller.signal });
-  await promise_rejects_dom(t, 'AbortError', wss.connection,
-                        'connection should reject');
-  await promise_rejects_dom(t, 'AbortError', wss.closed, 'closed should reject');
+  await promise_rejects_dom(
+      t, 'AbortError', wss.opened, 'opened should reject');
+  await promise_rejects_dom(
+      t, 'AbortError', wss.closed, 'closed should reject');
   
   
   const response = await fetch(`/fetch/api/resources/stash-take.py?key=${key}`);
@@ -32,15 +33,16 @@ promise_test(async t => {
   
   await new Promise(resolve => t.step_timeout(resolve, 0));
   controller.abort();
-  await promise_rejects_dom(t, 'AbortError', wss.connection,
-                        'connection should reject');
-  await promise_rejects_dom(t, 'AbortError', wss.closed, 'closed should reject');
+  await promise_rejects_dom(
+      t, 'AbortError', wss.opened, 'opened should reject');
+  await promise_rejects_dom(
+      t, 'AbortError', wss.closed, 'closed should reject');
 }, 'abort during handshake should work');
 
 promise_test(async t => {
   const controller = new AbortController();
   const wss = new WebSocketStream(ECHOURL, { signal: controller.signal });
-  const { readable, writable } = await wss.connection;
+  const { readable, writable } = await wss.opened;
   controller.abort();
   writable.getWriter().write('connected');
   const { value } = await readable.getReader().read();

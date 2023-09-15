@@ -16,7 +16,7 @@ const LARGE_MESSAGE_COUNT = 16;
 
 promise_test(async t => {
   const wss = new WebSocketStream(`${BASEURL}/send-backpressure`);
-  const { readable } = await wss.connection;
+  const { readable } = await wss.opened;
   const reader = readable.getReader();
 
   
