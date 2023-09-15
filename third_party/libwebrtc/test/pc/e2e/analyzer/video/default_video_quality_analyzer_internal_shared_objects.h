@@ -60,8 +60,9 @@ struct FrameStats {
   Timestamp prev_frame_rendered_time = Timestamp::MinusInfinity();
 
   
-  
-  TimeDelta time_between_rendered_frames = TimeDelta::Zero();
+  absl::optional<TimeDelta> time_between_captured_frames = absl::nullopt;
+  absl::optional<TimeDelta> time_between_encoded_frames = absl::nullopt;
+  absl::optional<TimeDelta> time_between_rendered_frames = absl::nullopt;
 
   VideoFrameType encoded_frame_type = VideoFrameType::kEmptyFrame;
   DataSize encoded_image_size = DataSize::Bytes(0);
