@@ -217,12 +217,6 @@ class HyperTextAccessibleBase {
   
 
 
-
-  void CroppedSelectionRanges(nsTArray<TextRange>& aRanges) const;
-
-  
-
-
   virtual int32_t SelectionCount();
 
   
@@ -303,6 +297,12 @@ class HyperTextAccessibleBase {
   void AdjustOriginIfEndBoundary(TextLeafPoint& aOrigin,
                                  AccessibleTextBoundary aBoundaryType,
                                  bool aAtOffset = false) const;
+
+  
+
+
+
+  virtual void CroppedSelectionRanges(nsTArray<TextRange>& aRanges) const;
 };
 
 }  

@@ -10,7 +10,7 @@
 #include "nsISupports.h"
 #include "nsTArray.h"
 
-#include "Accessible2_2.h"
+#include "Accessible2_3.h"
 
 namespace mozilla {
 namespace a11y {
@@ -18,7 +18,7 @@ class Accessible;
 class AccAttributes;
 class AccessibleWrap;
 
-class ia2Accessible : public IAccessible2_2 {
+class ia2Accessible : public IAccessible2_3 {
  public:
   
   STDMETHODIMP QueryInterface(REFIID, void**);
@@ -104,6 +104,11 @@ class ia2Accessible : public IAccessible2_2 {
        long maxTargets,
        IUnknown*** targets,
        long* nTargets);
+
+  
+  virtual  HRESULT STDMETHODCALLTYPE get_selectionRanges(
+       IA2Range** ranges,
+       long* nRanges);
 
   
   static HRESULT ConvertToIA2Attributes(AccAttributes* aAttributes,
