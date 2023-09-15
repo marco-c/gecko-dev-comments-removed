@@ -17,9 +17,12 @@
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ScriptIndex.h"         
 #include "js/CompileOptions.h"  
+#include "js/GCVector.h"    
+#include "js/Id.h"          
 #include "js/RootingAPI.h"  
 #include "js/SourceText.h"  
 #include "js/UniquePtr.h"   
+#include "js/Value.h"       
 #include "vm/ScopeKind.h"   
 
 
@@ -158,6 +161,27 @@ extern JSScript* CompileGlobalScript(JSContext* cx, FrontendContext* fc,
                                      const JS::ReadOnlyCompileOptions& options,
                                      JS::SourceText<mozilla::Utf8Unit>& srcBuf,
                                      ScopeKind scopeKind);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern JSScript* CompileGlobalScriptWithExtraBindings(
+    JSContext* cx, FrontendContext* fc,
+    const JS::ReadOnlyCompileOptions& options, JS::SourceText<char16_t>& srcBuf,
+    JS::Handle<JS::StackGCVector<JS::PropertyKey>> unwrappedBindingKeys,
+    JS::Handle<JS::StackGCVector<JS::Value>> unwrappedBindingValues,
+    JS::MutableHandle<JSObject*> env);
 
 
 
