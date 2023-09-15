@@ -75,7 +75,6 @@ EXPORTS += [
     "nsFrameLoader.h",  
     "nsFrameLoaderOwner.h",
     "nsFrameMessageManager.h",
-    "nsGlobalWindow.h",  
     "nsGlobalWindowInner.h",  
     "nsGlobalWindowOuter.h",  
     "nsIAnimationObserver.h",

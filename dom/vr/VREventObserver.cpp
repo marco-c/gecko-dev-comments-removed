@@ -7,13 +7,14 @@
 #include "VREventObserver.h"
 
 #include "nsContentUtils.h"
-#include "nsGlobalWindow.h"
+#include "nsGlobalWindowInner.h"
 
 #include "mozilla/Telemetry.h"
 
 namespace mozilla::dom {
 
 using namespace gfx;
+
 
 
 

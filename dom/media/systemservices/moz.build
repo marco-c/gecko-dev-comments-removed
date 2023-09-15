@@ -104,10 +104,6 @@ IPDL_SOURCES += [
     "PMediaSystemResourceManager.ipdl",
 ]
 
-LOCAL_INCLUDES += [
-    "/dom/base",
-]
-
 include("/ipc/chromium/chromium-config.mozbuild")
 
 FINAL_LIBRARY = "xul"

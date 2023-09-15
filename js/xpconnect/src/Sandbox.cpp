@@ -22,7 +22,7 @@
 #include "js/SourceText.h"
 #include "js/StructuredClone.h"
 #include "nsContentUtils.h"
-#include "nsGlobalWindow.h"
+#include "nsGlobalWindowInner.h"
 #include "nsIException.h"  
 #include "nsIScriptContext.h"
 #include "nsIScriptObjectPrincipal.h"

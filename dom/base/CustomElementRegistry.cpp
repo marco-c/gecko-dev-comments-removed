@@ -26,11 +26,12 @@
 #include "mozilla/UseCounter.h"
 #include "nsContentUtils.h"
 #include "nsHTMLTags.h"
+#include "nsInterfaceHashtable.h"
+#include "nsPIDOMWindow.h"
 #include "jsapi.h"
 #include "js/ForOfIterator.h"       
 #include "js/PropertyAndElement.h"  
 #include "xpcprivate.h"
-#include "nsGlobalWindow.h"
 #include "nsNameSpaceManager.h"
 
 namespace mozilla::dom {
