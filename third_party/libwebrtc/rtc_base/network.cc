@@ -154,16 +154,19 @@ bool IsIgnoredIPv6(bool allow_mac_based_ipv6, const InterfaceAddress& ip) {
   
   
   if (IPIsLinkLocal(ip)) {
+    RTC_LOG(LS_INFO) << "Ignore link local IP:" << ip.ToSensitiveString();
     return true;
   }
 
   
   if (IPIsMacBased(ip) && !allow_mac_based_ipv6) {
+    RTC_LOG(LS_INFO) << "Ignore Mac based IP:" << ip.ToSensitiveString();
     return true;
   }
 
   
   if (ip.ipv6_flags() & IPV6_ADDRESS_FLAG_DEPRECATED) {
+    RTC_LOG(LS_INFO) << "Ignore deprecated IP:" << ip.ToSensitiveString();
     return true;
   }
 
