@@ -65,6 +65,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void OnTransportClosed(RTCError error) override;
 
   
+  void PrepareForShutdown();
+
+  
   void SetupDataChannelTransport_n();
   
   void TeardownDataChannelTransport_n();

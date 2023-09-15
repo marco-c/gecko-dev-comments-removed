@@ -1924,13 +1924,15 @@ void PeerConnection::Close() {
     event_log_.reset();
   });
   ReportUsagePattern();
-  
-  
-  observer_ = nullptr;
 
   
   
   sdp_handler_->PrepareForShutdown();
+  data_channel_controller_.PrepareForShutdown();
+
+  
+  
+  observer_ = nullptr;
 }
 
 void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
