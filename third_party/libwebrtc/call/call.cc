@@ -1402,16 +1402,10 @@ void Call::DeliverRtpPacket(
     packet.set_arrival_time(Timestamp::Micros(packet_time_us));
   }
 
-  
-  
-  
-  const bool is_keep_alive_packet = packet.payload_size() == 0;
-  RTC_DCHECK(media_type == MediaType::AUDIO || media_type == MediaType::VIDEO ||
-             is_keep_alive_packet);
   NotifyBweOfReceivedPacket(packet, media_type);
 
+  event_log_->Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
   if (media_type != MediaType::AUDIO && media_type != MediaType::VIDEO) {
-    RTC_DCHECK(is_keep_alive_packet);
     return;
   }
 
@@ -1432,7 +1426,6 @@ void Call::DeliverRtpPacket(
       return;
     }
   }
-  event_log_->Log(std::make_unique<RtcEventRtpPacketIncoming>(packet));
 
   
   
