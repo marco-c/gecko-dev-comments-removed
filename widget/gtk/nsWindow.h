@@ -626,8 +626,10 @@ class nsWindow final : public nsBaseWidget {
   
   mozilla::Atomic<bool, mozilla::Relaxed> mDrawInTitlebar{false};
 
+  mozilla::Mutex mDestroyMutex;
+
   
-  bool mIsDestroyed;
+  bool mIsDestroyed : 1;
   
   
   bool mIsShown : 1;
