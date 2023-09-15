@@ -1569,6 +1569,9 @@ public class WebExtension {
       public static final int ERROR_BLOCKLISTED = -10;
 
       
+      public static final int ERROR_INCOMPATIBLE = -11;
+
+      
       public static final int ERROR_USER_CANCELED = -100;
 
       
@@ -1618,6 +1621,7 @@ public class WebExtension {
           ErrorCodes.ERROR_INCORRECT_ID,
           ErrorCodes.ERROR_INVALID_DOMAIN,
           ErrorCodes.ERROR_BLOCKLISTED,
+          ErrorCodes.ERROR_INCOMPATIBLE,
           ErrorCodes.ERROR_USER_CANCELED,
           ErrorCodes.ERROR_POSTPONED,
         })
