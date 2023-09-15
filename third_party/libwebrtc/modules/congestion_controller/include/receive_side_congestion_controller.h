@@ -45,11 +45,6 @@ class ReceiveSideCongestionController : public CallStatsObserver {
   void OnReceivedPacket(const RtpPacketReceived& packet, MediaType media_type);
 
   
-  
-  virtual void OnReceivedPacket(int64_t arrival_time_ms,
-                                size_t payload_size,
-                                const RTPHeader& header);
-  
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
 
   
