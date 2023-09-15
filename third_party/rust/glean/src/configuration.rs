@@ -39,7 +39,7 @@ pub struct Configuration {
     
     pub log_level: Option<LevelFilter>,
     
-    pub rate_limit: Option<crate::PingRateLimit>,
+    pub rate_limit: Option<glean_core::PingRateLimit>,
 }
 
 
@@ -79,7 +79,7 @@ pub struct Builder {
     pub log_level: Option<LevelFilter>,
     
     
-    pub rate_limit: Option<crate::PingRateLimit>,
+    pub rate_limit: Option<glean_core::PingRateLimit>,
 }
 
 impl Builder {
