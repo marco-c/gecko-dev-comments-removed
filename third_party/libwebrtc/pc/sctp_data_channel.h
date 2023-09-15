@@ -185,11 +185,6 @@ class SctpDataChannel : public DataChannelInterface {
   
   
   
-  
-
-  
-  
-  
   void OnTransportReady();
 
   void OnDataReceived(DataMessageType type,

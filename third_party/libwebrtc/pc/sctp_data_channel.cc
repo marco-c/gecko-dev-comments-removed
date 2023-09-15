@@ -725,15 +725,6 @@ void SctpDataChannel::OnDataReceived(DataMessageType type,
 
 void SctpDataChannel::OnTransportReady() {
   RTC_DCHECK_RUN_ON(network_thread_);
-
-  
-  
-  
-  
-  
-  
-  
-  
   RTC_DCHECK(connected_to_transport());
   RTC_DCHECK(id_n_.HasValue());
 
