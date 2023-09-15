@@ -928,8 +928,9 @@ var TranslationsPanel = new (class {
 
     await this.#showDefaultView(true /* force this view to be shown */);
 
-    this.#openPanelPopup(this.elements.appMenuButton, {
+    await this.#openPanelPopup(this.elements.appMenuButton, {
       event,
+      viewName: "defaultView",
       maintainFlow: true,
     });
   }
@@ -1054,14 +1055,28 @@ var TranslationsPanel = new (class {
 
 
 
-  #openPanelPopup(
+
+
+
+
+  async #openPanelPopup(
     target,
-    { event = null, maintainFlow = false, isFirstUserInteraction = null }
+    {
+      event = null,
+      viewName = null,
+      autoShow = false,
+      maintainFlow = false,
+      isFirstUserInteraction = null,
+    }
   ) {
     const { panel, appMenuButton } = this.elements;
     const openedFromAppMenu = target.id === appMenuButton.id;
+    const { docLangTag } = await this.#getCachedDetectedLanguages();
 
     TranslationsParent.telemetry().panel().onOpen({
+      viewName,
+      autoShow,
+      docLangTag,
       maintainFlow,
       openedFromAppMenu,
       isFirstUserInteraction,
@@ -1085,13 +1100,15 @@ var TranslationsPanel = new (class {
 
 
 
-  async open(event) {
+
+
+  async open(event, reportAsAutoShow = false) {
     if (this.#openPromise) {
       
       return;
     }
 
-    this.#openPromise = this.#openImpl(event);
+    this.#openPromise = this.#openImpl(event, reportAsAutoShow);
     this.#openPromise.finally(() => {
       this.#openPromise = null;
     });
@@ -1102,7 +1119,7 @@ var TranslationsPanel = new (class {
 
 
 
-  async #openImpl(event) {
+  async #openImpl(event, reportAsAutoShow) {
     event.stopPropagation();
     if (
       (event.type == "click" && event.button != 0) ||
@@ -1158,7 +1175,13 @@ var TranslationsPanel = new (class {
 
     this.console?.log(`Showing a translation panel`, gBrowser.currentURI.spec);
 
-    this.#openPanelPopup(targetButton, { event, isFirstUserInteraction });
+    await this.#openPanelPopup(targetButton, {
+      event,
+      autoShow: reportAsAutoShow,
+      viewName: requestedTranslationPair ? "revisitView" : "defaultView",
+      maintainFlow: false,
+      isFirstUserInteraction,
+    });
   }
 
   
@@ -1356,7 +1379,7 @@ var TranslationsPanel = new (class {
     switch (event.type) {
       case "TranslationsParent:OfferTranslation": {
         if (Services.wm.getMostRecentBrowserWindow()?.gBrowser === gBrowser) {
-          this.open(event);
+          this.open(event,  true);
         }
         break;
       }
@@ -1483,7 +1506,11 @@ var TranslationsPanel = new (class {
               : button;
 
             
-            this.#openPanelPopup(targetButton, { maintainFlow: true });
+            await this.#openPanelPopup(targetButton, {
+              autoShow: true,
+              viewName: "errorView",
+              maintainFlow: true,
+            });
             break;
           default:
             console.error("Unknown translation error", error);
