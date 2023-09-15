@@ -26,41 +26,6 @@ function IteratorNext(iteratorRecord, value) {
 }
 
 
-
-
-
-
-
-
-
-function GetIteratorSync(obj) {
-  
-  var method = GetMethod(obj, GetBuiltinSymbol("iterator"));
-
-  
-  var iterator = callContentFunction(method, obj);
-
-  
-  if (!IsObject(iterator)) {
-    ThrowTypeError(JSMSG_NOT_ITERABLE, obj === null ? "null" : typeof obj);
-  }
-
-  
-  var nextMethod = iterator.next;
-
-  
-  var iteratorRecord = {
-    __proto__: null,
-    iterator,
-    nextMethod,
-    done: false
-  };
-
-  
-  return iteratorRecord;
-}
-
-
 function GetIterator(obj, isAsync, method) {
   
   
