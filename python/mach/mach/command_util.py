@@ -336,14 +336,20 @@ class DetermineCommandVenvAction(argparse.Action):
         if command == "help":
             return
 
-        site = "common"
+        command_reference = MACH_COMMANDS.get(command)
+
+        if not command_reference:
+            
+            
+            
+            return
 
         if len(values) > 1:
             potential_sub_command_name = values[1]
         else:
             potential_sub_command_name = None
 
-        module_path = Path(self.topsrcdir) / MACH_COMMANDS.get(command).module
+        module_path = Path(self.topsrcdir) / command_reference.module
         module_dict = command_virtualenv_info_for_module(module_path)
         command_dict = module_dict.get(command, {})
 
