@@ -3950,7 +3950,8 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void branchWasmAnyRefIsI31(bool isI31, Register src, Label* label);
   
-  void branchWasmAnyRefIsObjectOrNull(bool isObject, Register src, Label* label);
+  void branchWasmAnyRefIsObjectOrNull(bool isObject, Register src,
+                                      Label* label);
   
   void branchWasmAnyRefIsGCThing(bool isGCThing, Register src, Label* label);
   

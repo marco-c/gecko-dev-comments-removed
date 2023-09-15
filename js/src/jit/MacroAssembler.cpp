@@ -5784,17 +5784,15 @@ void MacroAssembler::branchWasmAnyRefIsGCThing(bool isGCThing, Register src,
   bind(&fallthrough);
 }
 
-void MacroAssembler::branchWasmAnyRefIsNurseryCell(bool isNurseryCell, Register src,
-                                                   Register temp,
+void MacroAssembler::branchWasmAnyRefIsNurseryCell(bool isNurseryCell,
+                                                   Register src, Register temp,
                                                    Label* label) {
   Label done;
-  branchWasmAnyRefIsGCThing(false, src,
-                            isNurseryCell ? &done : label);
+  branchWasmAnyRefIsGCThing(false, src, isNurseryCell ? &done : label);
 
   getWasmAnyRefGCThingChunk(src, temp);
   branchPtr(isNurseryCell ? Assembler::NotEqual : Assembler::Equal,
-            Address(temp, gc::ChunkStoreBufferOffset),
-            ImmWord(0), label);
+            Address(temp, gc::ChunkStoreBufferOffset), ImmWord(0), label);
   bind(&done);
 }
 
@@ -5832,7 +5830,8 @@ void MacroAssembler::convertWasmI31RefTo32Unsigned(Register src,
 }
 
 void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
-    ValueOperand src, Register scratchInt, FloatRegister scratchFloat, Label* label) {
+    ValueOperand src, Register scratchInt, FloatRegister scratchFloat,
+    Label* label) {
   
   Label checkInt32;
   Label checkDouble;
@@ -5972,7 +5971,8 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
   branchTest32(Assembler::NonZero, src, Imm32(int32_t(wasm::AnyRefTag::I31)),
                &isI31);
   
-  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
+  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask),
+               &isObjectOrNull);
 
   
   rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
@@ -6021,7 +6021,8 @@ void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
   branchTest32(Assembler::NonZero, src, Imm32(int32_t(wasm::AnyRefTag::I31)),
                &isI31);
   
-  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
+  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask),
+               &isObjectOrNull);
 
   
   rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);

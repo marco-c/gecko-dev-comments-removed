@@ -265,8 +265,8 @@ void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
   }
 
   
-  masm.branchWasmAnyRefIsNurseryCell(false, setValue,
-                                     otherScratch, skipBarrier);
+  masm.branchWasmAnyRefIsNurseryCell(false, setValue, otherScratch,
+                                     skipBarrier);
 }
 
 #ifdef DEBUG

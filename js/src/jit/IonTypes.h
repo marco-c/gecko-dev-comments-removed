@@ -515,7 +515,7 @@ enum class MIRType : uint8_t {
   Slots,         
   Elements,      
   Pointer,       
-  WasmAnyRef,     
+  WasmAnyRef,    
   StackResults,  
   Shape,         
   Last = Shape
