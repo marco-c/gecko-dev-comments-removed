@@ -55,11 +55,12 @@ class BounceTrackingProtection final : public nsIBounceTrackingProtection {
   nsCOMPtr<nsITimer> mBounceTrackingPurgeTimer;
 
   
-  using PurgeBounceTrackersMozPromise = MozPromise<nsresult, nsresult, true>;
+  using PurgeBounceTrackersMozPromise =
+      MozPromise<nsTArray<nsCString>, nsresult, true>;
   RefPtr<PurgeBounceTrackersMozPromise> PurgeBounceTrackers();
 
   
-  using ClearDataMozPromise = MozPromise<nsresult, uint32_t, true>;
+  using ClearDataMozPromise = MozPromise<nsCString, uint32_t, true>;
   nsTArray<RefPtr<ClearDataMozPromise>> mClearPromises;
 
   
