@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstdint>
 #include <cstdlib>
 #include <limits>
 #include <utility>
@@ -39,7 +40,8 @@ struct Fraction {
   
   
   int scale_pixel_count(int input_pixels) {
-    return (numerator * numerator * input_pixels) / (denominator * denominator);
+    return (numerator * numerator * static_cast<int64_t>(input_pixels))
+                                  / (denominator * denominator);
   }
 };
 
