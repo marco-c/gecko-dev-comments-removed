@@ -192,6 +192,10 @@ async function testLinkMenuWithoutTargetUrlPatterns(linkUrl) {
 
   await extension.startup();
   await extension.awaitMessage("ready");
+  
+  
+  
+  await gBrowser.ownerGlobal.promiseDocumentFlushed(() => {});
   await openExtensionContextMenu("#test_link_element");
   await extension.awaitMessage("done");
   await closeContextMenu();
