@@ -4834,7 +4834,7 @@ TextInputHandlerBase::AttachNativeKeyEvent(WidgetKeyboardEvent& aKeyEvent) {
 
   
   
-  if (aKeyEvent.mNativeKeyEvent || aKeyEvent.mModifiers & MODIFIER_OS) {
+  if (aKeyEvent.mNativeKeyEvent) {
     return NS_OK;
   }
 

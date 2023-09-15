@@ -1022,12 +1022,15 @@ uint32_t KeymapWrapper::ComputeKeyModifiers(guint aModifierState) {
   if (keymapWrapper->AreModifiersActive(ALT, aModifierState)) {
     keyModifiers |= MODIFIER_ALT;
   }
-  if (keymapWrapper->AreModifiersActive(META, aModifierState)) {
-    keyModifiers |= MODIFIER_META;
-  }
   if (keymapWrapper->AreModifiersActive(SUPER, aModifierState) ||
-      keymapWrapper->AreModifiersActive(HYPER, aModifierState)) {
-    keyModifiers |= MODIFIER_OS;
+      keymapWrapper->AreModifiersActive(HYPER, aModifierState) ||
+      
+      
+      
+      
+      
+      keymapWrapper->AreModifiersActive(META, aModifierState)) {
+    keyModifiers |= MODIFIER_META;
   }
   if (keymapWrapper->AreModifiersActive(LEVEL3, aModifierState) ||
       keymapWrapper->AreModifiersActive(LEVEL5, aModifierState)) {
@@ -1094,8 +1097,7 @@ void KeymapWrapper::InitInputEvent(WidgetInputEvent& aInputEvent,
     MOZ_LOG(gKeyLog, LogLevel::Debug,
             ("%p InitInputEvent, aModifierState=0x%08X, "
              "aInputEvent={ mMessage=%s, mModifiers=0x%04X (Shift: %s, "
-             "Control: %s, Alt: %s, "
-             "Meta: %s, OS: %s, AltGr: %s, "
+             "Control: %s, Alt: %s, Meta: %s, AltGr: %s, "
              "CapsLock: %s, NumLock: %s, ScrollLock: %s })",
              keymapWrapper, aModifierState, ToChar(aInputEvent.mMessage),
              aInputEvent.mModifiers,
@@ -1103,7 +1105,6 @@ void KeymapWrapper::InitInputEvent(WidgetInputEvent& aInputEvent,
              GetBoolName(aInputEvent.mModifiers & MODIFIER_CONTROL),
              GetBoolName(aInputEvent.mModifiers & MODIFIER_ALT),
              GetBoolName(aInputEvent.mModifiers & MODIFIER_META),
-             GetBoolName(aInputEvent.mModifiers & MODIFIER_OS),
              GetBoolName(aInputEvent.mModifiers & MODIFIER_ALTGRAPH),
              GetBoolName(aInputEvent.mModifiers & MODIFIER_CAPSLOCK),
              GetBoolName(aInputEvent.mModifiers & MODIFIER_NUMLOCK),
@@ -2460,8 +2461,7 @@ void KeymapWrapper::WillDispatchKeyboardEventInternal(
   
   ch = aKeyEvent.IsShift() ? altLatinCharCodes.mShiftedCharCode
                            : altLatinCharCodes.mUnshiftedCharCode;
-  if (ch && !(aKeyEvent.IsAlt() || aKeyEvent.IsMeta()) &&
-      charCode == unmodifiedCh) {
+  if (ch && !aKeyEvent.IsAlt() && charCode == unmodifiedCh) {
     aKeyEvent.SetCharCode(ch);
   }
 

@@ -377,9 +377,9 @@ bool GlobalKeyListener::WalkHandlersAndExecute(
   
   
   
-  if (!aIgnoreModifierState.mOS && widgetKeyboardEvent->IsOS()) {
+  if (!aIgnoreModifierState.mMeta && widgetKeyboardEvent->IsMeta()) {
     IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
-    ignoreModifierState.mOS = true;
+    ignoreModifierState.mMeta = true;
     return WalkHandlersAndExecute(aKeyEvent, aCharCode, ignoreModifierState,
                                   aExecute);
   }
