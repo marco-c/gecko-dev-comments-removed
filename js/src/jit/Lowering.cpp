@@ -5910,7 +5910,8 @@ void LIRGenerator::visitWasmCall(MWasmCallT ins) {
   
   
   
-  if (ins->callee().which() == wasm::CalleeDesc::WasmTable) {
+  if (ins->callee().which() == wasm::CalleeDesc::WasmTable &&
+      !ins->isWasmReturnCall()) {
     auto* adjunctSafepoint = new (alloc()) LWasmCallIndirectAdjunctSafepoint();
     add(adjunctSafepoint);
     assignWasmSafepoint(adjunctSafepoint);
@@ -5923,6 +5924,10 @@ void LIRGenerator::visitWasmCallCatchable(MWasmCallCatchable* ins) {
 }
 
 void LIRGenerator::visitWasmCallUncatchable(MWasmCallUncatchable* ins) {
+  visitWasmCall(ins);
+}
+
+void LIRGenerator::visitWasmReturnCall(MWasmReturnCall* ins) {
   visitWasmCall(ins);
 }
 

@@ -58,6 +58,9 @@ class CodeGeneratorShared : public LElementVisitor {
   
   NonAssertingLabel returnLabel_;
 
+  
+  uint32_t inboundStackArgBytes_;
+
   js::Vector<CodegenSafepointIndex, 0, SystemAllocPolicy> safepointIndices_;
   js::Vector<OsiIndex, 0, SystemAllocPolicy> osiIndices_;
 
