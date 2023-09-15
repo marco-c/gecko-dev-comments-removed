@@ -56,8 +56,6 @@ class SctpDataChannelControllerInterface {
   
   virtual void RemoveSctpDataStream(StreamId sid) = 0;
   
-  virtual bool ReadyToSendData() const = 0;
-  
   virtual void OnChannelStateChanged(SctpDataChannel* data_channel,
                                      DataChannelInterface::DataState state) = 0;
 

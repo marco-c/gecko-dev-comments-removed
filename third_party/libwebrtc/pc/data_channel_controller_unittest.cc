@@ -70,17 +70,22 @@ TEST_F(DataChannelControllerTest, CreateAndDestroy) {
 
 TEST_F(DataChannelControllerTest, CreateDataChannelEarlyRelease) {
   DataChannelController dcc(pc_.get());
-  auto channel = dcc.InternalCreateDataChannelWithProxy(
+  auto ret = dcc.InternalCreateDataChannelWithProxy(
       "label", InternalDataChannelInit(DataChannelInit()));
-  channel = nullptr;  
+  ASSERT_TRUE(ret.ok());
+  auto channel = ret.MoveValue();
+  
+  channel = nullptr;
 }
 
 TEST_F(DataChannelControllerTest, CreateDataChannelEarlyClose) {
   DataChannelController dcc(pc_.get());
   EXPECT_FALSE(dcc.HasDataChannels());
   EXPECT_FALSE(dcc.HasUsedDataChannels());
-  auto channel = dcc.InternalCreateDataChannelWithProxy(
+  auto ret = dcc.InternalCreateDataChannelWithProxy(
       "label", InternalDataChannelInit(DataChannelInit()));
+  ASSERT_TRUE(ret.ok());
+  auto channel = ret.MoveValue();
   EXPECT_TRUE(dcc.HasDataChannels());
   EXPECT_TRUE(dcc.HasUsedDataChannels());
   channel->Close();
@@ -90,25 +95,30 @@ TEST_F(DataChannelControllerTest, CreateDataChannelEarlyClose) {
 
 TEST_F(DataChannelControllerTest, CreateDataChannelLateRelease) {
   auto dcc = std::make_unique<DataChannelController>(pc_.get());
-  auto channel = dcc->InternalCreateDataChannelWithProxy(
+  auto ret = dcc->InternalCreateDataChannelWithProxy(
       "label", InternalDataChannelInit(DataChannelInit()));
+  ASSERT_TRUE(ret.ok());
+  auto channel = ret.MoveValue();
   dcc.reset();
   channel = nullptr;
 }
 
 TEST_F(DataChannelControllerTest, CloseAfterControllerDestroyed) {
   auto dcc = std::make_unique<DataChannelController>(pc_.get());
-  auto channel = dcc->InternalCreateDataChannelWithProxy(
+  auto ret = dcc->InternalCreateDataChannelWithProxy(
       "label", InternalDataChannelInit(DataChannelInit()));
+  ASSERT_TRUE(ret.ok());
+  auto channel = ret.MoveValue();
   dcc.reset();
   channel->Close();
 }
 
 TEST_F(DataChannelControllerTest, AsyncChannelCloseTeardown) {
   DataChannelController dcc(pc_.get());
-  rtc::scoped_refptr<DataChannelInterface> channel =
-      dcc.InternalCreateDataChannelWithProxy(
-          "label", InternalDataChannelInit(DataChannelInit()));
+  auto ret = dcc.InternalCreateDataChannelWithProxy(
+      "label", InternalDataChannelInit(DataChannelInit()));
+  ASSERT_TRUE(ret.ok());
+  auto channel = ret.MoveValue();
   SctpDataChannel* inner_channel =
       DowncastProxiedDataChannelInterfaceToSctpDataChannelForTesting(
           channel.get());
@@ -159,18 +169,61 @@ TEST_F(DataChannelControllerTest, MaxChannels) {
   
   
   for (channel_id = 0; channel_id <= cricket::kMaxSctpStreams; ++channel_id) {
-    rtc::scoped_refptr<DataChannelInterface> channel =
-        dcc.InternalCreateDataChannelWithProxy(
-            "label", InternalDataChannelInit(DataChannelInit()));
-
+    auto ret = dcc.InternalCreateDataChannelWithProxy(
+        "label", InternalDataChannelInit(DataChannelInit()));
     if (channel_id == cricket::kMaxSctpStreams) {
       
-      EXPECT_FALSE(channel.get());
+      EXPECT_FALSE(ret.ok());
     } else {
       
-      EXPECT_TRUE(channel.get());
+      EXPECT_TRUE(ret.ok());
     }
   }
+}
+
+
+
+
+TEST_F(DataChannelControllerTest, NoStreamIdReuseWhileClosing) {
+  ON_CALL(*pc_, GetSctpSslRole_n).WillByDefault([&]() {
+    return rtc::SSL_CLIENT;
+  });
+
+  DataChannelController dcc(pc_.get());
+  NiceMock<MockDataChannelTransport> transport;
+  pc_->network_thread()->BlockingCall(
+      [&] { dcc.set_data_channel_transport(&transport); });
+
+  
+  auto channel1 = dcc.InternalCreateDataChannelWithProxy(
+                         "label", InternalDataChannelInit(DataChannelInit()))
+                      .MoveValue();
+  ASSERT_EQ(channel1->id(), 0);
+
+  
+  channel1->Close();
+  ASSERT_EQ(channel1->state(), DataChannelInterface::DataState::kClosing);
+
+  
+  
+  auto channel2 = dcc.InternalCreateDataChannelWithProxy(
+                         "label2", InternalDataChannelInit(DataChannelInit()))
+                      .MoveValue();
+  ASSERT_NE(channel2->id(), channel1->id());  
+
+  
+  
+  pc_->network_thread()->BlockingCall([&] { dcc.OnChannelClosed(0); });
+  run_loop_.Flush();
+  ASSERT_EQ(channel1->state(), DataChannelInterface::DataState::kClosed);
+
+  
+  
+  
+  auto channel3 = dcc.InternalCreateDataChannelWithProxy(
+                         "label3", InternalDataChannelInit(DataChannelInit()))
+                      .MoveValue();
+  EXPECT_EQ(channel3->id(), channel1->id());
 }
 
 }  
