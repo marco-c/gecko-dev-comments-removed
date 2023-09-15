@@ -16,12 +16,7 @@
 namespace rtc {
 namespace internal {
 
-WeakReference::Flag::Flag() : is_valid_(true) {
-  
-  
-  
-  checker_.Detach();
-}
+WeakReference::Flag::Flag() : is_valid_(true) {}
 
 void WeakReference::Flag::Invalidate() {
   RTC_DCHECK(checker_.IsCurrent())

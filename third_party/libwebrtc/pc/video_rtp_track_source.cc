@@ -19,9 +19,7 @@
 namespace webrtc {
 
 VideoRtpTrackSource::VideoRtpTrackSource(Callback* callback)
-    : VideoTrackSource(true ), callback_(callback) {
-  worker_sequence_checker_.Detach();
-}
+    : VideoTrackSource(true ), callback_(callback) {}
 
 void VideoRtpTrackSource::ClearCallback() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);

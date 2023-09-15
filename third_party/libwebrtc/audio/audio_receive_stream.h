@@ -154,7 +154,8 @@ class AudioReceiveStreamImpl final : public webrtc::AudioReceiveStreamInterface,
   
   
   
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker packet_sequence_checker_{
+      SequenceChecker::kDetached};
   webrtc::AudioReceiveStreamInterface::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   SourceTracker source_tracker_;

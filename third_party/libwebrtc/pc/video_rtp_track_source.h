@@ -76,7 +76,8 @@ class VideoRtpTrackSource : public VideoTrackSource {
       rtc::VideoSinkInterface<RecordableEncodedFrame>* sink) override;
 
  private:
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker worker_sequence_checker_{
+      SequenceChecker::kDetached};
   
   
   

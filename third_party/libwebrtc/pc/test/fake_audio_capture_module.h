@@ -229,7 +229,8 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule {
   
   
   mutable webrtc::Mutex mutex_;
-  webrtc::SequenceChecker process_thread_checker_;
+  webrtc::SequenceChecker process_thread_checker_{
+      webrtc::SequenceChecker::kDetached};
 };
 
 #endif  
