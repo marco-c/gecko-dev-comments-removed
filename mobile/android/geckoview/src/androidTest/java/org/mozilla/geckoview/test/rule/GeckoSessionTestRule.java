@@ -68,6 +68,7 @@ import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.Autocomplete;
 import org.mozilla.geckoview.Autofill;
 import org.mozilla.geckoview.ContentBlocking;
+import org.mozilla.geckoview.ExperimentDelegate;
 import org.mozilla.geckoview.GeckoDisplay;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
@@ -978,6 +979,11 @@ public class GeckoSessionTestRule implements TestRule {
     RuntimeCreator.setTelemetryDelegate(delegate);
   }
 
+  
+  public void setExperimentDelegate(final ExperimentDelegate delegate) {
+    RuntimeCreator.setExperimentDelegate(delegate);
+  }
+
   public @Nullable GeckoDisplay getDisplay() {
     return mDisplays.get(mMainSession);
   }
@@ -1439,6 +1445,7 @@ public class GeckoSessionTestRule implements TestRule {
     mLastWaitEnd = 0;
     mTimeoutMillis = 0;
     RuntimeCreator.setTelemetryDelegate(null);
+    RuntimeCreator.setExperimentDelegate(null);
   }
 
   

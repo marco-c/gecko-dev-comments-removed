@@ -412,6 +412,19 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    @AnyThread
+    public @NonNull Builder experimentDelegate(final @Nullable ExperimentDelegate delegate) {
+      getSettings().mExperimentDelegate = delegate;
+      return this;
+    }
+
+    
+
+
+
+
+
+
     public @NonNull Builder debugLogging(final boolean enable) {
       getSettings().mDevToolsConsoleToLogcat.set(enable);
       getSettings().mConsoleServiceToLogcat.set(enable);
@@ -515,6 +528,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    Class<? extends Service> mCrashHandler;
    String[] mRequestedLocales;
    RuntimeTelemetry.Proxy mTelemetryProxy;
+   ExperimentDelegate mExperimentDelegate;
 
   
 
@@ -570,6 +584,7 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
     mRequestedLocales = settings.mRequestedLocales;
     mConfigFilePath = settings.mConfigFilePath;
     mTelemetryProxy = settings.mTelemetryProxy;
+    mExperimentDelegate = settings.mExperimentDelegate;
   }
 
    void commit() {
@@ -1120,6 +1135,16 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   @SuppressWarnings("checkstyle:javadocmethod")
   public @Nullable RuntimeTelemetry.Delegate getTelemetryDelegate() {
     return mTelemetryProxy.getDelegate();
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public @Nullable ExperimentDelegate getExperimentDelegate() {
+    return mExperimentDelegate;
   }
 
   
