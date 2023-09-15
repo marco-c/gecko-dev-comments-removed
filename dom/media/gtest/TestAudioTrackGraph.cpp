@@ -25,7 +25,6 @@
 
 using namespace mozilla;
 
-namespace {
 
 #define Invoke(f) InvokeAsync(GetCurrentSerialEventTarget(), __func__, f)
 
@@ -37,6 +36,7 @@ namespace {
 #define DispatchMethod(t, m, args...) \
   NS_DispatchToCurrentThread(NewRunnableMethod(__func__, t, m, ##args))
 
+namespace {
 #ifdef MOZ_WEBRTC
 
 
@@ -2535,3 +2535,7 @@ TEST(TestAudioTrackGraph, CrossGraphPortLargeBuffer)
   Preferences::SetInt(DRIFT_BUFFERING_PREF, oldBuffering);
 }
 #endif  
+
+#undef Invoke
+#undef DispatchFunction
+#undef DispatchMethod
