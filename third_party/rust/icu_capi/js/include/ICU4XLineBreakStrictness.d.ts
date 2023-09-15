@@ -1,0 +1,19 @@
+
+
+
+
+
+export enum ICU4XLineBreakStrictness {
+  
+
+  Loose = 'Loose',
+  
+
+  Normal = 'Normal',
+  
+
+  Strict = 'Strict',
+  
+
+  Anywhere = 'Anywhere',
+}

@@ -1,0 +1,13 @@
+
+
+
+
+
+export enum ICU4XIsoTimeZoneMinuteDisplay {
+  
+
+  Required = 'Required',
+  
+
+  Optional = 'Optional',
+}

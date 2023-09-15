@@ -1,0 +1,22 @@
+
+
+
+
+
+export enum ICU4XDisplayNamesStyle {
+  
+
+  Auto = 'Auto',
+  
+
+  Narrow = 'Narrow',
+  
+
+  Short = 'Short',
+  
+
+  Long = 'Long',
+  
+
+  Menu = 'Menu',
+}

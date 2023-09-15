@@ -16,6 +16,7 @@
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::convert::{From, Into};
+use core::slice;
 
 use super::char_data::BidiClass;
 
@@ -31,6 +32,7 @@ use super::char_data::BidiClass;
 
 #[derive(Copy, Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[repr(transparent)]
 pub struct Level(u8);
 
 pub const LTR_LEVEL: Level = Level(0);
@@ -193,6 +195,19 @@ impl Level {
 
     pub fn vec(v: &[u8]) -> Vec<Level> {
         v.iter().map(|&x| x.into()).collect()
+    }
+
+    
+    
+    
+    
+    pub fn from_slice_unchecked(v: &[u8]) -> &[Level] {
+        debug_assert_eq!(core::mem::size_of::<u8>(), core::mem::size_of::<Level>());
+        unsafe {
+            
+            
+            slice::from_raw_parts(v as *const [u8] as *const u8 as *const Level, v.len())
+        }
     }
 }
 

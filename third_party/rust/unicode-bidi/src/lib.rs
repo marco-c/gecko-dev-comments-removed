@@ -65,7 +65,6 @@
 
 
 
-#![forbid(unsafe_code)]
 #![no_std]
 
 #[cfg(feature = "std")]
@@ -94,7 +93,7 @@ pub use crate::char_data::{bidi_class, HardcodedBidiData};
 use alloc::borrow::Cow;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::cmp::{max, min};
+use core::cmp;
 use core::iter::repeat;
 use core::ops::Range;
 
@@ -354,8 +353,15 @@ impl<'text> BidiInfo<'text> {
 
             let sequences = prepare::isolating_run_sequences(para.level, original_classes, levels);
             for sequence in &sequences {
-                implicit::resolve_weak(sequence, processing_classes);
-                implicit::resolve_neutral(sequence, levels, processing_classes);
+                implicit::resolve_weak(text, sequence, processing_classes);
+                implicit::resolve_neutral(
+                    text,
+                    data_source,
+                    sequence,
+                    levels,
+                    original_classes,
+                    processing_classes,
+                );
             }
             implicit::resolve_levels(processing_classes, levels);
 
@@ -416,6 +422,121 @@ impl<'text> BidiInfo<'text> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn reorder_visual(levels: &[Level]) -> Vec<usize> {
+        
+        
+        fn next_range(levels: &[level::Level], mut start_index: usize, max: Level) -> Range<usize> {
+            if levels.is_empty() || start_index >= levels.len() {
+                return start_index..start_index;
+            }
+            while let Some(l) = levels.get(start_index) {
+                if *l >= max {
+                    break;
+                }
+                start_index += 1;
+            }
+
+            if levels.get(start_index).is_none() {
+                
+                
+                return start_index..start_index;
+            }
+
+            let mut end_index = start_index + 1;
+            while let Some(l) = levels.get(end_index) {
+                if *l < max {
+                    return start_index..end_index;
+                }
+                end_index += 1;
+            }
+
+            start_index..end_index
+        }
+
+        
+        
+
+        if levels.is_empty() {
+            return vec![];
+        }
+
+        
+        let (mut min, mut max) = levels
+            .iter()
+            .fold((levels[0], levels[0]), |(min, max), &l| {
+                (cmp::min(min, l), cmp::max(max, l))
+            });
+
+        
+        let mut result: Vec<usize> = (0..levels.len()).collect();
+
+        if min == max && min.is_ltr() {
+            
+            return result;
+        }
+
+        
+        
+        min = min.new_lowest_ge_rtl().expect("Level error");
+
+        
+        
+        
+        
+        
+        
+        while min <= max {
+            let mut range = 0..0;
+            loop {
+                range = next_range(levels, range.end, max);
+                result[range.clone()].reverse();
+
+                if range.end >= levels.len() {
+                    break;
+                }
+            }
+
+            max.lower(1).expect("Level error");
+        }
+
+        result
+    }
+
+    
+    
+    
+    
+    
     #[cfg_attr(feature = "flame_it", flamer::flame)]
     pub fn visual_runs(
         &self,
@@ -434,10 +555,9 @@ impl<'text> BidiInfo<'text> {
         let line_str: &str = &self.text[line.clone()];
         let mut reset_from: Option<usize> = Some(0);
         let mut reset_to: Option<usize> = None;
+        let mut prev_level = para.level;
         for (i, c) in line_str.char_indices() {
             match line_classes[i] {
-                
-                RLE | LRE | RLO | LRO | PDF | BN => {}
                 
                 B | S => {
                     assert_eq!(reset_to, None);
@@ -452,6 +572,15 @@ impl<'text> BidiInfo<'text> {
                         reset_from = Some(i);
                     }
                 }
+                
+                
+                RLE | LRE | RLO | LRO | PDF | BN => {
+                    if reset_from == None {
+                        reset_from = Some(i);
+                    }
+                    
+                    line_levels[i] = prev_level;
+                }
                 _ => {
                     reset_from = None;
                 }
@@ -463,6 +592,7 @@ impl<'text> BidiInfo<'text> {
                 reset_from = None;
                 reset_to = None;
             }
+            prev_level = line_levels[i];
         }
         if let Some(from) = reset_from {
             for level in &mut line_levels[from..] {
@@ -483,8 +613,8 @@ impl<'text> BidiInfo<'text> {
                 runs.push(start..i);
                 start = i;
                 run_level = new_level;
-                min_level = min(run_level, min_level);
-                max_level = max(run_level, max_level);
+                min_level = cmp::min(run_level, min_level);
+                max_level = cmp::max(run_level, max_level);
             }
         }
         runs.push(start..line.end);
@@ -497,6 +627,12 @@ impl<'text> BidiInfo<'text> {
         
         min_level = min_level.new_lowest_ge_rtl().expect("Level error");
 
+        
+        
+        
+        
+        
+        
         while max_level >= min_level {
             
             let mut seq_start = 0;
@@ -874,7 +1010,7 @@ mod tests {
         assert_eq!(reorder_paras("א(ב)ג."), vec![".ג)ב(א"]);
 
         
-        assert_eq!(reorder_paras("אב(גד[&ef].)gh"), vec!["ef].)gh&[דג(בא"]);
+        assert_eq!(reorder_paras("אב(גד[&ef].)gh"), vec!["gh).]ef&[דג(בא"]);
     }
 
     fn reordered_levels_for_paras(text: &str) -> Vec<Vec<Level>> {
@@ -1023,7 +1159,7 @@ mod tests {
     }
 }
 
-#[cfg(all(feature = "serde", test))]
+#[cfg(all(feature = "serde", feature = "hardcoded-data", test))]
 mod serde_tests {
     use super::*;
     use serde_test::{assert_tokens, Token};

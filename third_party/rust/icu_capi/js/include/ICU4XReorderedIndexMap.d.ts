@@ -1,0 +1,30 @@
+import { usize } from "./diplomat-runtime"
+
+
+
+
+
+
+
+
+
+export class ICU4XReorderedIndexMap {
+
+  
+
+
+
+  as_slice(): Uint32Array;
+
+  
+
+
+
+  len(): usize;
+
+  
+
+
+
+  get(index: usize): usize;
+}
