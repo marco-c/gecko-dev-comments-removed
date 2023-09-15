@@ -475,10 +475,10 @@ let WasmExternrefValues = [null, ...WasmNonNullExternrefValues];
 
 
 
-function iota(len) {
+function iota(len, k=0) {
     let xs = [];
     for ( let i=0 ; i < len ; i++ )
-        xs.push(i);
+        xs.push(i+k);
     return xs;
 }
 
@@ -544,3 +544,9 @@ function assertSame(got, expected) {
         assertEq(g, e);
     }
 }
+
+
+
+var TailCallIterations = getBuildConfiguration().simulator ? 1000 : 100000;
+
+var TailCallBallast = 30;
