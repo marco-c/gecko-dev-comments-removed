@@ -283,9 +283,6 @@ var allowlist = [
   { file: "chrome://browser/content/screenshots/download-white.svg" },
 
   
-  { file: "chrome://global/content/elements/moz-message-bar.mjs" },
-
-  
   { file: "resource://gre/modules/workers/PromiseWorker.mjs" },
 ];
 
