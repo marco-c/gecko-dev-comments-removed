@@ -35,7 +35,6 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/EventQueue.h"
 #include "mozilla/EventStateManager.h"
 #include "mozilla/FlushType.h"
 #include "mozilla/GlobalKeyListener.h"
@@ -47,11 +46,9 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ScopeExit.h"
-#include "mozilla/ShutdownPhase.h"
 #include "mozilla/StaticAnalysisFunctions.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/StaticPtr.h"
-#include "mozilla/TaskController.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/URLExtraData.h"
 #include "mozilla/dom/BindContext.h"
@@ -1784,6 +1781,71 @@ nsresult nsXULPrototypeScript::DeserializeOutOfLine(
   return rv;
 }
 
+class NotifyOffThreadScriptCompletedRunnable : public Runnable {
+  
+  
+  
+  
+  
+  
+  
+  
+  static StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
+      sReceivers;
+  static bool sSetupClearOnShutdown;
+
+  
+  
+  
+  nsIOffThreadScriptReceiver* mReceiver;
+
+  RefPtr<JS::Stencil> mStencil;
+
+ public:
+  NotifyOffThreadScriptCompletedRunnable(nsIOffThreadScriptReceiver* aReceiver,
+                                         RefPtr<JS::Stencil>&& aStencil)
+      : mozilla::Runnable("NotifyOffThreadScriptCompletedRunnable"),
+        mReceiver(aReceiver),
+        mStencil(std::move(aStencil)) {}
+
+  static void NoteReceiver(nsIOffThreadScriptReceiver* aReceiver) {
+    if (!sSetupClearOnShutdown) {
+      ClearOnShutdown(&sReceivers);
+      sSetupClearOnShutdown = true;
+      sReceivers = new nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>();
+    }
+
+    
+    
+    sReceivers->AppendElement(aReceiver);
+  }
+
+  NS_DECL_NSIRUNNABLE
+};
+
+StaticAutoPtr<nsTArray<nsCOMPtr<nsIOffThreadScriptReceiver>>>
+    NotifyOffThreadScriptCompletedRunnable::sReceivers;
+bool NotifyOffThreadScriptCompletedRunnable::sSetupClearOnShutdown = false;
+
+NS_IMETHODIMP
+NotifyOffThreadScriptCompletedRunnable::Run() {
+  MOZ_ASSERT(NS_IsMainThread());
+
+  if (!sReceivers) {
+    
+    return NS_OK;
+  }
+
+  auto index = sReceivers->IndexOf(mReceiver);
+  MOZ_RELEASE_ASSERT(index != sReceivers->NoIndex);
+  nsCOMPtr<nsIOffThreadScriptReceiver> receiver =
+      std::move((*sReceivers)[index]);
+  sReceivers->RemoveElementAt(index);
+
+  return receiver->OnScriptCompileComplete(mStencil,
+                                           mStencil ? NS_OK : NS_ERROR_FAILURE);
+}
+
 #ifdef DEBUG
 static void CheckErrorsAndWarnings(JS::FrontendContext* aFc) {
   if (JS::HadFrontendErrors(aFc)) {
@@ -1842,16 +1904,18 @@ static void CheckErrorsAndWarnings(JS::FrontendContext* aFc) {
 }
 #endif
 
-class ScriptCompileTask final : public Task {
+class ScriptCompileRunnable final : public Runnable {
  public:
-  explicit ScriptCompileTask(UniquePtr<Utf8Unit[], JS::FreePolicy>&& aText,
-                             size_t aTextLength)
-      : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
+  explicit ScriptCompileRunnable(UniquePtr<Utf8Unit[], JS::FreePolicy>&& aText,
+                                 size_t aTextLength,
+                                 nsIOffThreadScriptReceiver* aReceiver)
+      : Runnable("ScriptCompileRunnable"),
         mOptions(JS::OwningCompileOptions::ForFrontendContext()),
         mText(std::move(aText)),
-        mTextLength(aTextLength) {}
+        mTextLength(aTextLength),
+        mReceiver(aReceiver) {}
 
-  ~ScriptCompileTask() {
+  ~ScriptCompileRunnable() {
     if (mFrontendContext) {
       JS::DestroyFrontendContext(mFrontendContext);
     }
@@ -1870,8 +1934,7 @@ class ScriptCompileTask final : public Task {
     return NS_OK;
   }
 
- private:
-  void Compile() {
+  RefPtr<JS::Stencil> Compile() {
     
     const size_t kDefaultStackQuota = 128 * sizeof(size_t) * 1024;
     JS::SetNativeStackQuota(mFrontendContext, kDefaultStackQuota);
@@ -1879,33 +1942,25 @@ class ScriptCompileTask final : public Task {
     JS::SourceText<Utf8Unit> srcBuf;
     if (NS_WARN_IF(!srcBuf.init(mFrontendContext, mText.get(), mTextLength,
                                 JS::SourceOwnership::Borrowed))) {
-      return;
+      return nullptr;
     }
 
     JS::CompilationStorage compileStorage;
-    mStencil = JS::CompileGlobalScriptToStencil(mFrontendContext, mOptions,
-                                                srcBuf, compileStorage);
+    RefPtr<JS::Stencil> stencil = JS::CompileGlobalScriptToStencil(
+        mFrontendContext, mOptions, srcBuf, compileStorage);
 #ifdef DEBUG
     
     CheckErrorsAndWarnings(mFrontendContext);
-    MOZ_ASSERT(mStencil);
+    MOZ_ASSERT(stencil);
 #endif
+    if (NS_WARN_IF(!stencil)) {
+      return nullptr;
+    }
+
+    return stencil;
   }
 
- public:
-  bool Run() override {
-    Compile();
-    return true;
-  }
-
-  already_AddRefed<JS::Stencil> StealStencil() { return mStencil.forget(); }
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("ScriptCompileTask");
-    return true;
-  }
-#endif
+  NS_DECL_NSIRUNNABLE
 
  private:
   
@@ -1916,79 +1971,45 @@ class ScriptCompileTask final : public Task {
 
   JS::OwningCompileOptions mOptions;
 
-  RefPtr<JS::Stencil> mStencil;
-
   
   UniquePtr<Utf8Unit[], JS::FreePolicy> mText;
   size_t mTextLength;
+
+  
+  
+  
+  
+  
+  
+  nsIOffThreadScriptReceiver* mReceiver;
 };
 
-class NotifyOffThreadScriptCompletedTask : public Task {
- public:
-  NotifyOffThreadScriptCompletedTask(nsIOffThreadScriptReceiver* aReceiver,
-                                     ScriptCompileTask* aCompileTask)
-      : Task(Kind::MainThreadOnly, EventQueuePriority::Normal),
-        mReceiver(aReceiver),
-        mCompileTask(aCompileTask) {}
+NS_IMETHODIMP
+ScriptCompileRunnable::Run() {
+  RefPtr<JS::Stencil> stencil = Compile();
+  
+  
 
-  bool Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
+  
+  
+  RefPtr<NotifyOffThreadScriptCompletedRunnable> notify =
+      new NotifyOffThreadScriptCompletedRunnable(mReceiver, std::move(stencil));
+  NS_DispatchToMainThread(notify);
 
-    if (PastShutdownPhase(ShutdownPhase::XPCOMShutdownFinal)) {
-      return true;
-    }
-
-    RefPtr<JS::Stencil> stencil = mCompileTask->StealStencil();
-    mCompileTask = nullptr;
-
-    nsresult rv = mReceiver->OnScriptCompileComplete(
-        stencil, stencil ? NS_OK : NS_ERROR_FAILURE);
-
-    return NS_SUCCEEDED(rv);
-  }
-
-#ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
-  bool GetName(nsACString& aName) override {
-    aName.AssignLiteral("NotifyOffThreadScriptCompletedTask");
-    return true;
-  }
-#endif
-
- private:
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsIOffThreadScriptReceiver> mReceiver;
-
-  RefPtr<ScriptCompileTask> mCompileTask;
-};
+  return NS_OK;
+}
 
 nsresult StartOffThreadCompile(JS::CompileOptions& aOptions,
                                UniquePtr<Utf8Unit[], JS::FreePolicy>&& aText,
                                size_t aTextLength,
                                nsIOffThreadScriptReceiver* aOffThreadReceiver) {
-  RefPtr<ScriptCompileTask> compileTask =
-      new ScriptCompileTask(std::move(aText), aTextLength);
+  RefPtr<ScriptCompileRunnable> compile = new ScriptCompileRunnable(
+      std::move(aText), aTextLength, aOffThreadReceiver);
 
-  RefPtr<NotifyOffThreadScriptCompletedTask> notifyTask =
-      new NotifyOffThreadScriptCompletedTask(aOffThreadReceiver, compileTask);
-
-  nsresult rv = compileTask->Init(aOptions);
+  nsresult rv = compile->Init(aOptions);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  notifyTask->AddDependency(compileTask.get());
-
-  TaskController::Get()->AddTask(compileTask.forget());
-  TaskController::Get()->AddTask(notifyTask.forget());
-
-  return NS_OK;
+  return NS_DispatchBackgroundTask(compile.forget());
 }
 
 nsresult nsXULPrototypeScript::Compile(const char16_t* aText,
@@ -2058,6 +2079,8 @@ nsresult nsXULPrototypeScript::CompileMaybeOffThread(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    NotifyOffThreadScriptCompletedRunnable::NoteReceiver(aOffThreadReceiver);
   } else {
     JS::SourceText<Utf8Unit> srcBuf;
     if (NS_WARN_IF(!srcBuf.init(cx, aText.get(), aTextLength,
