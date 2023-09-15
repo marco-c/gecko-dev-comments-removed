@@ -808,6 +808,27 @@ void nsContentSecurityUtils::NotifyEvalUsage(bool aIsSystemPrincipal,
 }
 
 
+
+
+
+
+class JSHackPrefObserver final {
+ public:
+  JSHackPrefObserver() = default;
+  static void PrefChanged(const char* aPref, void* aData);
+
+ protected:
+  ~JSHackPrefObserver() = default;
+};
+
+
+void JSHackPrefObserver::PrefChanged(const char* aPref, void* aData) {
+  sJSHacksChecked = false;
+}
+
+static bool sJSHackObserverAdded = false;
+
+
 void nsContentSecurityUtils::DetectJsHacks() {
   
   
@@ -827,6 +848,16 @@ void nsContentSecurityUtils::DetectJsHacks() {
   if (MOZ_LIKELY(sJSHacksChecked || sJSHacksPresent)) {
     return;
   }
+
+  static const char* kObservedPrefs[] = {
+      "xpinstall.signatures.required", "general.config.filename",
+      "autoadmin.global_config_url", "autoadmin.failover_to_cached", nullptr};
+  if (MOZ_UNLIKELY(!sJSHackObserverAdded)) {
+    Preferences::RegisterCallbacks(JSHackPrefObserver::PrefChanged,
+                                   kObservedPrefs);
+    sJSHackObserverAdded = true;
+  }
+
   nsresult rv;
   sJSHacksChecked = true;
 
