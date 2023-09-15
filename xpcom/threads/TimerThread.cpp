@@ -9,12 +9,14 @@
 
 #include "GeckoProfiler.h"
 #include "nsThreadUtils.h"
+#include "pratom.h"
 
 #include "nsIObserverService.h"
 #include "mozilla/Services.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/BinarySearch.h"
 #include "mozilla/OperatorNewExtensions.h"
 #include "mozilla/StaticPrefs_timer.h"
 
@@ -706,10 +708,22 @@ TimerThread::Run() {
 
   
   
-  mAllowedEarlyFiringMicroseconds = 250;
-  const TimeDuration allowedEarlyFiring =
-      TimeDuration::FromMicroseconds(mAllowedEarlyFiringMicroseconds);
+  
+  
+  uint32_t usForPosInterval = 1;
+  while (PR_MicrosecondsToInterval(usForPosInterval) == 0) {
+    usForPosInterval <<= 1;
+  }
 
+  size_t usIntervalResolution;
+  BinarySearchIf(MicrosecondsToInterval(), 0, usForPosInterval,
+                 IntervalComparator(), &usIntervalResolution);
+  MOZ_ASSERT(PR_MicrosecondsToInterval(usIntervalResolution - 1) == 0);
+  MOZ_ASSERT(PR_MicrosecondsToInterval(usIntervalResolution) == 1);
+
+  
+  
+  mAllowedEarlyFiringMicroseconds = usIntervalResolution / 2;
   bool forceRunNextTimer = false;
 
   
@@ -754,8 +768,7 @@ TimerThread::Run() {
       RemoveLeadingCanceledTimersInternal();
 
       if (!mTimers.IsEmpty()) {
-        if (now + allowedEarlyFiring >= mTimers[0].Value()->mTimeout ||
-            forceRunThisTimer) {
+        if (now >= mTimers[0].Value()->mTimeout || forceRunThisTimer) {
         next:
           
           
