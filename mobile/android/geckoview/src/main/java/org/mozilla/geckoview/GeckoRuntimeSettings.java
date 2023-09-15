@@ -467,6 +467,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().setAllowInsecureConnections(level);
       return this;
     }
+
+    
+
+
+
+
+
+    public @NonNull Builder extensionsWebAPIEnabled(final boolean flag) {
+      getSettings().mExtensionsWebAPIEnabled.set(flag);
+      return this;
+    }
   }
 
   private GeckoRuntime mRuntime;
@@ -515,6 +526,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
    final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
+   final Pref<Boolean> mExtensionsWebAPIEnabled =
+      new Pref<>("extensions.webapi.enabled", false);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -784,6 +797,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
   public void setLocales(final @Nullable String[] requestedLocales) {
     mRequestedLocales = requestedLocales;
     commitLocales();
+  }
+
+  
+
+
+
+
+  public boolean getExtensionsWebAPIEnabled() {
+    return mExtensionsWebAPIEnabled.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setExtensionsWebAPIEnabled(final boolean flag) {
+    mExtensionsWebAPIEnabled.commit(flag);
+    return this;
   }
 
   private void commitLocales() {
