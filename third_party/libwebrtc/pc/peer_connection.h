@@ -569,7 +569,8 @@ class PeerConnection : public PeerConnectionInternal,
 
   
   
-  void ReportTransportStats() RTC_RUN_ON(network_thread());
+  void ReportTransportStats(std::vector<RtpTransceiverProxyRefPtr> transceivers)
+      RTC_RUN_ON(network_thread());
 
   
   static void ReportBestConnectionState(const cricket::TransportStats& stats);
