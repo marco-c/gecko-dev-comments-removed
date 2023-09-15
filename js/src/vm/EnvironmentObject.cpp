@@ -1655,6 +1655,15 @@ class DebugEnvironmentProxyHandler : public BaseProxyHandler {
     if (env->is<LexicalEnvironmentObject>() ||
         env->is<VarEnvironmentObject>()) {
       
+      
+      if (env->is<LexicalEnvironmentObject>() &&
+          !env->is<GlobalLexicalEnvironmentObject>() &&
+          env->as<LexicalEnvironmentObject>().isExtensible()) {
+        MOZ_ASSERT(!IsSyntacticEnvironment(env));
+        return true;
+      }
+
+      
       if (env->is<VarEnvironmentObject>() &&
           env->as<VarEnvironmentObject>().isForNonStrictEval()) {
         return true;
