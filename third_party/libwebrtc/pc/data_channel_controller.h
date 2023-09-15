@@ -68,7 +68,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   void PrepareForShutdown();
 
   
-  void SetupDataChannelTransport_n();
+  void SetupDataChannelTransport_n(DataChannelTransportInterface* transport);
   
   void TeardownDataChannelTransport_n(RTCError error);
 
@@ -92,9 +92,6 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
   
   bool HasUsedDataChannels() const;
-
-  
-  void set_data_channel_transport(DataChannelTransportInterface* transport);
 
   void OnSctpDataChannelClosed(SctpDataChannel* channel);
 
@@ -134,6 +131,8 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   
   void NotifyDataChannelsOfTransportCreated();
+
+  void set_data_channel_transport(DataChannelTransportInterface* transport);
 
   
   
