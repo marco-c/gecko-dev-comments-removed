@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_VIDEO_CODING_JITTER_BUFFER_H_
-#define MODULES_VIDEO_CODING_JITTER_BUFFER_H_
+#ifndef MODULES_VIDEO_CODING_DEPRECATED_JITTER_BUFFER_H_
+#define MODULES_VIDEO_CODING_DEPRECATED_JITTER_BUFFER_H_
 
 #include <list>
 #include <map>
@@ -23,7 +23,6 @@
 #include "modules/video_coding/deprecated/decoding_state.h"
 #include "modules/video_coding/deprecated/event_wrapper.h"
 #include "modules/video_coding/deprecated/jitter_buffer_common.h"
-#include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/timing/inter_frame_delay_variation_calculator.h"
 #include "modules/video_coding/timing/jitter_estimator.h"
