@@ -11,7 +11,7 @@
 
 namespace mozilla {
 
-enum class CSSPropFlags : uint8_t {
+enum class CSSPropFlags : uint16_t {
   
   
   Inaccessible = 1 << 0,
@@ -54,6 +54,11 @@ enum class CSSPropFlags : uint8_t {
   
   
   ShorthandUnconditionallyExposedOnGetCS = 1 << 7,
+
+  
+  AffectsLayout = 1 << 8,
+  AffectsOverflow = 1 << 9,
+  AffectsPaint = 1 << 10,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSPropFlags)

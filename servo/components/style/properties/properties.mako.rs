@@ -1188,10 +1188,17 @@ bitflags! {
         
 
 
+
         
         const CAN_ANIMATE_ON_COMPOSITOR = 0;
         
         const SHORTHAND_IN_GETCS = 0;
+        
+        const AFFECTS_LAYOUT = 0;
+        #[allow(missing_docs)]
+        const AFFECTS_OVERFLOW = 0;
+        #[allow(missing_docs)]
+        const AFFECTS_PAINT = 0;
     }
 }
 

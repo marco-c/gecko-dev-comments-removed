@@ -312,6 +312,7 @@ class Longhand(Property):
         simple_vector_bindings=False,
         vector=False,
         servo_restyle_damage="repaint",
+        affects=None,
     ):
         Property.__init__(
             self,
@@ -326,6 +327,9 @@ class Longhand(Property):
             extra_prefixes=extra_prefixes,
             flags=flags,
         )
+
+        self.affects = affects
+        self.flags += self.affects_flags()
 
         self.keyword = keyword
         self.predefined_type = predefined_type
@@ -376,6 +380,29 @@ class Longhand(Property):
 
         
         self.servo_restyle_damage = servo_restyle_damage
+
+    def affects_flags(self):
+        
+        
+        
+        if self.affects == "layout":
+            return ["AFFECTS_LAYOUT"]
+        
+        
+        if self.affects == "overflow":
+            return ["AFFECTS_OVERFLOW"]
+        
+        
+        if self.affects == "paint":
+            return ["AFFECTS_PAINT"]
+        
+        
+        assert self.affects == "", (
+            "Property "
+            + self.name
+            + ': affects must be specified and be one of ["layout", "overflow", "paint", ""], see Longhand.affects_flags for documentation'
+        )
+        return []
 
     @staticmethod
     def type():
