@@ -1555,9 +1555,7 @@ class RTC_EXPORT PeerConnectionFactoryInterface
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       rtc::scoped_refptr<VideoTrackSourceInterface> source,
       absl::string_view label) = 0;
-  
-  
-  
+  ABSL_DEPRECATED("Use version with scoped_refptr")
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       const std::string& label,
       VideoTrackSourceInterface* source) {
