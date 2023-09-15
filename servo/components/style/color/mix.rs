@@ -169,8 +169,19 @@ pub fn mix(
         alpha_multiplier,
     );
 
-    if flags.contains(ColorMixFlags::RESULT_IN_MODERN_SYNTAX) && result.is_legacy_syntax() {
-        result.to_color_space(ColorSpace::Srgb).into_modern_syntax()
+    if flags.contains(ColorMixFlags::RESULT_IN_MODERN_SYNTAX) {
+        
+        
+        
+        if result.is_legacy_syntax() {
+            result.to_color_space(ColorSpace::Srgb)
+        } else {
+            result
+        }
+    } else if left_color.is_legacy_syntax() && right_color.is_legacy_syntax() {
+        
+        
+        result.into_srgb_legacy()
     } else {
         result
     }
