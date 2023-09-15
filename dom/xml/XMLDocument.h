@@ -43,7 +43,8 @@ class XMLDocument : public Document {
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void EndLoad() override;
 
-  virtual nsresult Init() override;
+  virtual nsresult Init(nsIPrincipal* aPrincipal,
+                        nsIPrincipal* aPartitionedPrincipal) override;
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 
@@ -61,7 +62,8 @@ class XMLDocument : public Document {
   virtual JSObject* WrapNode(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) override;
 
-  friend nsresult(::NS_NewXMLDocument)(Document**, bool, bool);
+  friend nsresult(::NS_NewXMLDocument)(Document**, nsIPrincipal*, nsIPrincipal*,
+                                       bool, bool);
 
   
   

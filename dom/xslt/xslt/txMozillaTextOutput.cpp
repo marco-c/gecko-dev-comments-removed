@@ -123,7 +123,8 @@ nsresult txMozillaTextOutput::createResultDocument(bool aLoadedAsData) {
 
 
   
-  nsresult rv = NS_NewXMLDocument(getter_AddRefs(mDocument), aLoadedAsData);
+  nsresult rv = NS_NewXMLDocument(getter_AddRefs(mDocument), nullptr, nullptr,
+                                  aLoadedAsData);
   NS_ENSURE_SUCCESS(rv, rv);
   mCreatedDocument = true;
   

@@ -2348,7 +2348,12 @@ class Document : public nsINode,
                                    bool aIncludeSubdocuments,
                                    bool aAllowUnloadListeners = true);
 
-  virtual nsresult Init();
+  
+
+
+
+  virtual nsresult Init(nsIPrincipal* aPrincipal,
+                        nsIPrincipal* aPartitionedPrincipal);
 
   
 
@@ -5492,17 +5497,27 @@ bool IsInActiveTab(Document* aDoc);
 
 
 nsresult NS_NewHTMLDocument(mozilla::dom::Document** aInstancePtrResult,
+                            nsIPrincipal* aPrincipal,
+                            nsIPrincipal* aPartitionedPrincipal,
                             bool aLoadedAsData = false);
 
 nsresult NS_NewXMLDocument(mozilla::dom::Document** aInstancePtrResult,
+                           nsIPrincipal* aPrincipal,
+                           nsIPrincipal* aPartitionedPrincipal,
                            bool aLoadedAsData = false,
                            bool aIsPlainDocument = false);
 
-nsresult NS_NewSVGDocument(mozilla::dom::Document** aInstancePtrResult);
+nsresult NS_NewSVGDocument(mozilla::dom::Document** aInstancePtrResult,
+                           nsIPrincipal* aPrincipal,
+                           nsIPrincipal* aPartitionedPrincipal);
 
-nsresult NS_NewImageDocument(mozilla::dom::Document** aInstancePtrResult);
+nsresult NS_NewImageDocument(mozilla::dom::Document** aInstancePtrResult,
+                             nsIPrincipal* aPrincipal,
+                             nsIPrincipal* aPartitionedPrincipal);
 
-nsresult NS_NewVideoDocument(mozilla::dom::Document** aInstancePtrResult);
+nsresult NS_NewVideoDocument(mozilla::dom::Document** aInstancePtrResult,
+                             nsIPrincipal* aPrincipal,
+                             nsIPrincipal* aPartitionedPrincipal);
 
 
 enum DocumentFlavor {
