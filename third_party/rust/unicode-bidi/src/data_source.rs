@@ -11,36 +11,6 @@ use crate::BidiClass;
 
 
 
-
-
-#[derive(Debug, Copy, Clone)]
-pub struct BidiMatchedOpeningBracket {
-    
-    
-    
-    
-    pub opening: char,
-    
-    pub is_open: bool,
-}
-
-
-
 pub trait BidiDataSource {
     fn bidi_class(&self, c: char) -> BidiClass;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn bidi_matched_opening_bracket(&self, c: char) -> Option<BidiMatchedOpeningBracket> {
-        crate::char_data::bidi_matched_opening_bracket(c)
-    }
 }

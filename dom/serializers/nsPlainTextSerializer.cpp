@@ -131,19 +131,7 @@ int32_t nsPlainTextSerializer::CurrentLine::FindWrapIndexForContent(
     
     uint32_t width = 0;
     intl::LineBreakIteratorUtf16 lineBreakIter(mContent);
-    while (Maybe<uint32_t> nextGoodSpace = lineBreakIter.Next()) {
-      
-      
-      const Maybe<uint32_t> originalNextGoodSpace = nextGoodSpace;
-      while (*nextGoodSpace > 0 &&
-             mContent.CharAt(*nextGoodSpace - 1) == 0x20) {
-        nextGoodSpace = Some(*nextGoodSpace - 1);
-      }
-      if (*nextGoodSpace == 0) {
-        
-        nextGoodSpace = originalNextGoodSpace;
-      }
-
+    while (const Maybe<uint32_t> nextGoodSpace = lineBreakIter.Next()) {
       width += GetUnicharStringWidth(Span<const char16_t>(
           mContent.get() + goodSpace, *nextGoodSpace - goodSpace));
       if (prefixwidth + width > aWrapColumn) {

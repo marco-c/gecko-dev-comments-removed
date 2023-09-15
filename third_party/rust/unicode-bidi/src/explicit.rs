@@ -48,16 +48,12 @@ pub fn compute(
                 let last_level = stack.last().level;
 
                 
-                levels[i] = last_level;
-
-                
                 let is_isolate = match original_classes[i] {
                     RLI | LRI | FSI => true,
                     _ => false,
                 };
                 if is_isolate {
-                    
-                    
+                    levels[i] = last_level;
                     match stack.last().status {
                         OverrideStatus::RTL => processing_classes[i] = R,
                         OverrideStatus::LTR => processing_classes[i] = L,
@@ -94,13 +90,6 @@ pub fn compute(
                 } else if overflow_isolate_count == 0 {
                     overflow_embedding_count += 1;
                 }
-
-                if !is_isolate {
-                    
-                    
-                    
-                    processing_classes[i] = BN;
-                }
             }
 
             
@@ -134,34 +123,31 @@ pub fn compute(
             
             PDF => {
                 if overflow_isolate_count > 0 {
-                    
-                } else if overflow_embedding_count > 0 {
+                    continue;
+                }
+                if overflow_embedding_count > 0 {
                     overflow_embedding_count -= 1;
-                } else if stack.last().status != OverrideStatus::Isolate && stack.vec.len() >= 2 {
+                    continue;
+                }
+                if stack.last().status != OverrideStatus::Isolate && stack.vec.len() >= 2 {
                     stack.vec.pop();
                 }
                 
-                levels[i] = stack.last().level;
                 
-                processing_classes[i] = BN;
+                levels[i] = stack.last().level;
             }
 
             
-            
-            B => {}
+            B | BN => {}
 
             
             _ => {
                 let last = stack.last();
                 levels[i] = last.level;
-                
-                
-                if original_classes[i] != BN {
-                    match last.status {
-                        OverrideStatus::RTL => processing_classes[i] = R,
-                        OverrideStatus::LTR => processing_classes[i] = L,
-                        _ => {}
-                    }
+                match last.status {
+                    OverrideStatus::RTL => processing_classes[i] = R,
+                    OverrideStatus::LTR => processing_classes[i] = L,
+                    _ => {}
                 }
             }
         }
