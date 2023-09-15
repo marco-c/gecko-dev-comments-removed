@@ -117,10 +117,6 @@ bool InternalDataChannelInit::IsValid() const {
   return true;
 }
 
-SctpSidAllocator::SctpSidAllocator() {
-  sequence_checker_.Detach();
-}
-
 StreamId SctpSidAllocator::AllocateSid(rtc::SSLRole role) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   int potential_sid = (role == rtc::SSL_CLIENT) ? 0 : 1;
@@ -389,9 +385,7 @@ void SctpDataChannel::OnTransportChannelCreated() {
 
   connected_to_transport_ = true;
 
-  
-  
-  if (id_.HasValue() && connected_to_transport_) {
+  if (id_.HasValue()) {
     network_thread_->BlockingCall(
         [c = controller_.get(), sid = id_] { c->AddSctpDataStream(sid); });
   }
@@ -485,10 +479,7 @@ void SctpDataChannel::OnTransportReady() {
   
   
   
-  
-  
   RTC_DCHECK(connected_to_transport_);
-  writable_ = true;
 
   SendQueuedControlMessages();
   SendQueuedDataMessages();
@@ -544,8 +535,8 @@ void SctpDataChannel::UpdateState() {
           WriteDataChannelOpenAckMessage(&payload);
           SendControlMessage(payload);
         }
-        if (writable_ && (handshake_state_ == kHandshakeReady ||
-                          handshake_state_ == kHandshakeWaitingForAck)) {
+        if (handshake_state_ == kHandshakeReady ||
+            handshake_state_ == kHandshakeWaitingForAck) {
           SetState(kOpen);
           
           
@@ -717,7 +708,6 @@ void SctpDataChannel::QueueControlMessage(
 
 bool SctpDataChannel::SendControlMessage(const rtc::CopyOnWriteBuffer& buffer) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  RTC_DCHECK(writable_);
   RTC_DCHECK(connected_to_transport_);
   RTC_DCHECK(id_.HasValue());
 

@@ -86,7 +86,7 @@ struct InternalDataChannelInit : public DataChannelInit {
 
 class SctpSidAllocator {
  public:
-  SctpSidAllocator();
+  SctpSidAllocator() = default;
   
   
   
@@ -101,7 +101,8 @@ class SctpSidAllocator {
 
  private:
   flat_set<StreamId> used_sids_ RTC_GUARDED_BY(&sequence_checker_);
-  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_;
+  RTC_NO_UNIQUE_ADDRESS SequenceChecker sequence_checker_{
+      SequenceChecker::kDetached};
 };
 
 
@@ -278,7 +279,6 @@ class SctpDataChannel : public DataChannelInterface {
   HandshakeState handshake_state_ RTC_GUARDED_BY(signaling_thread_) =
       kHandshakeInit;
   bool connected_to_transport_ RTC_GUARDED_BY(signaling_thread_) = false;
-  bool writable_ RTC_GUARDED_BY(signaling_thread_) = false;
   
   bool started_closing_procedure_ RTC_GUARDED_BY(signaling_thread_) = false;
   
