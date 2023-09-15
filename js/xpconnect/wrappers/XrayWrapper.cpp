@@ -23,6 +23,7 @@
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
 #include "js/PropertySpec.h"
+#include "nsGlobalWindowInner.h"
 #include "nsJSUtils.h"
 #include "nsPrintfCString.h"
 

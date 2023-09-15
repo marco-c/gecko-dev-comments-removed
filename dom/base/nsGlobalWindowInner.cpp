@@ -5773,7 +5773,8 @@ CallState nsGlobalWindowInner::CallOnInProcessDescendantsInternal(
   for (const RefPtr<BrowsingContext>& bc : aBrowsingContext->Children()) {
     if (nsCOMPtr<nsPIDOMWindowOuter> pWin = bc->GetDOMWindow()) {
       auto* win = nsGlobalWindowOuter::Cast(pWin);
-      if (nsGlobalWindowInner* inner = win->GetCurrentInnerWindowInternal()) {
+      if (nsGlobalWindowInner* inner =
+              nsGlobalWindowInner::Cast(win->GetCurrentInnerWindow())) {
         
         
         
@@ -6100,13 +6101,14 @@ bool WindowScriptTimeoutHandler::Call(const char* aExecutionReason) {
 nsGlobalWindowInner* nsGlobalWindowInner::InnerForSetTimeoutOrInterval(
     ErrorResult& aError) {
   nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-  nsGlobalWindowInner* currentInner =
-      outer ? outer->GetCurrentInnerWindowInternal() : this;
+  nsPIDOMWindowInner* currentInner =
+      outer ? outer->GetCurrentInnerWindow() : this;
 
   
   
   
-  return HasActiveDocument() ? currentInner : nullptr;
+  return HasActiveDocument() ? nsGlobalWindowInner::Cast(currentInner)
+                             : nullptr;
 }
 
 int32_t nsGlobalWindowInner::SetTimeout(JSContext* aCx, Function& aFunction,
