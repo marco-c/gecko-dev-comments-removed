@@ -749,8 +749,12 @@ void WebRenderLayerManager::ScheduleComposite(wr::RenderReasons aReasons) {
 
 already_AddRefed<PersistentBufferProvider>
 WebRenderLayerManager::CreatePersistentBufferProvider(
-    const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat) {
-  if (!gfxPlatform::UseRemoteCanvas()) {
+    const gfx::IntSize& aSize, gfx::SurfaceFormat aFormat,
+    bool aWillReadFrequently) {
+  
+  
+  
+  if (!aWillReadFrequently && !gfxPlatform::UseRemoteCanvas()) {
 #ifdef XP_WIN
     
     
@@ -765,8 +769,8 @@ WebRenderLayerManager::CreatePersistentBufferProvider(
   }
 
   RefPtr<PersistentBufferProvider> provider =
-      PersistentBufferProviderShared::Create(aSize, aFormat,
-                                             AsKnowsCompositor());
+      PersistentBufferProviderShared::Create(
+          aSize, aFormat, AsKnowsCompositor(), aWillReadFrequently);
   if (provider) {
     return provider.forget();
   }

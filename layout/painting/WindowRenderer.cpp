@@ -117,13 +117,18 @@ void FrameRecorder::StopFrameTimeRecording(uint32_t aStartIndex,
 
 already_AddRefed<PersistentBufferProvider>
 WindowRenderer::CreatePersistentBufferProvider(
-    const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat) {
+    const mozilla::gfx::IntSize& aSize, mozilla::gfx::SurfaceFormat aFormat,
+    bool aWillReadFrequently) {
   RefPtr<PersistentBufferProviderBasic> bufferProvider;
   
   
-  if (!gfxPlatform::UseRemoteCanvas() ||
-      !gfxPlatform::IsBackendAccelerated(
-          gfxPlatform::GetPlatform()->GetPreferredCanvasBackend())) {
+  
+  
+  
+  if (!aWillReadFrequently &&
+      (!gfxPlatform::UseRemoteCanvas() ||
+       !gfxPlatform::IsBackendAccelerated(
+           gfxPlatform::GetPlatform()->GetPreferredCanvasBackend()))) {
     bufferProvider = PersistentBufferProviderBasic::Create(
         aSize, aFormat,
         gfxPlatform::GetPlatform()->GetPreferredCanvasBackend());
