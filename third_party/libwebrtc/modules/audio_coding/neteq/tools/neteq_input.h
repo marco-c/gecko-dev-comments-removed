@@ -26,53 +26,74 @@ namespace test {
 
 class NetEqInput {
  public:
-  class Event {
-   public:
-    enum class Type { kPacketData, kGetAudio, kSetMinimumDelay };
-    virtual Type type() = 0;
-    virtual int64_t timestamp_ms() const = 0;
-    virtual ~Event() = default;
-  };
-
-  class PacketData : public Event {
-   public:
+  struct PacketData {
     PacketData();
     ~PacketData();
-    Type type() override { return Type::kPacketData; }
-    int64_t timestamp_ms() const override { return timestamp_ms_; }
     std::string ToString() const;
+
     RTPHeader header;
     rtc::Buffer payload;
-    int64_t timestamp_ms_;
+    int64_t time_ms;
   };
 
-  class SetMinimumDelay : public Event {
-   public:
-    SetMinimumDelay(int64_t timestamp_ms_in, int delay_ms_in)
-        : timestamp_ms_(timestamp_ms_in), delay_ms_(delay_ms_in) {}
-    Type type() override { return Type::kSetMinimumDelay; }
-    int64_t timestamp_ms() const override { return timestamp_ms_; }
-    int delay_ms() { return delay_ms_; }
-
-   private:
-    int64_t timestamp_ms_;
-    int delay_ms_;
-  };
-
-  class GetAudio : public Event {
-   public:
-    explicit GetAudio(int64_t timestamp_ms_in)
-        : timestamp_ms_(timestamp_ms_in) {}
-    Type type() override { return Type::kGetAudio; }
-    int64_t timestamp_ms() const override { return timestamp_ms_; }
-
-   private:
-    int64_t timestamp_ms_;
+  struct SetMinimumDelayInfo {
+    SetMinimumDelayInfo(int64_t timestamp_ms_in, int delay_ms_in)
+        : timestamp_ms(timestamp_ms_in), delay_ms(delay_ms_in) {}
+    int64_t timestamp_ms;
+    int delay_ms;
   };
 
   virtual ~NetEqInput() = default;
 
-  virtual std::unique_ptr<Event> PopEvent() = 0;
+  
+  
+  virtual absl::optional<int64_t> NextPacketTime() const = 0;
+
+  
+  
+  virtual absl::optional<int64_t> NextOutputEventTime() const = 0;
+
+  
+  
+  virtual absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo()
+      const = 0;
+
+  
+  
+  absl::optional<int64_t> NextEventTime() const {
+    absl::optional<int64_t> next_event_time = NextPacketTime();
+    const auto next_output_time = NextOutputEventTime();
+    
+    if (next_output_time) {
+      next_event_time = next_event_time ? std::min(next_event_time.value(),
+                                                   next_output_time.value())
+                                        : next_output_time;
+    }
+    const auto next_neteq_minimum_delay = NextSetMinimumDelayInfo();
+    if (next_neteq_minimum_delay) {
+      next_event_time =
+          next_event_time
+              ? std::min(next_event_time.value(),
+                         next_neteq_minimum_delay.value().timestamp_ms)
+              : next_neteq_minimum_delay.value().timestamp_ms;
+    }
+    return next_event_time;
+  }
+
+  
+  
+  
+  
+  virtual std::unique_ptr<PacketData> PopPacket() = 0;
+
+  
+  
+  
+  virtual void AdvanceOutputEvent() = 0;
+
+  
+  
+  virtual void AdvanceSetMinimumDelay() = 0;
 
   
   
@@ -82,10 +103,6 @@ class NetEqInput {
   
   
   virtual absl::optional<RTPHeader> NextHeader() const = 0;
-
-  
-  
-  virtual absl::optional<int64_t> NextEventTime() const = 0;
 };
 
 
@@ -95,8 +112,12 @@ class TimeLimitedNetEqInput : public NetEqInput {
  public:
   TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input, int64_t duration_ms);
   ~TimeLimitedNetEqInput() override;
-  absl::optional<int64_t> NextEventTime() const override;
-  std::unique_ptr<Event> PopEvent() override;
+  absl::optional<int64_t> NextPacketTime() const override;
+  absl::optional<int64_t> NextOutputEventTime() const override;
+  absl::optional<SetMinimumDelayInfo> NextSetMinimumDelayInfo() const override;
+  std::unique_ptr<PacketData> PopPacket() override;
+  void AdvanceOutputEvent() override;
+  void AdvanceSetMinimumDelay() override;
   bool ended() const override;
   absl::optional<RTPHeader> NextHeader() const override;
 
