@@ -2604,9 +2604,6 @@ static bool ISOFieldKeysToIgnore(JSContext* cx, const PropertyVector& keys,
   
 
   if (!ignoredKeys.reserve(keys.length())) {
-    
-    
-    ReportOutOfMemory(cx);
     return false;
   }
 
@@ -2682,9 +2679,6 @@ static PlainObject* BuiltinCalendarMergeFields(
   
   Rooted<PropertyHashSet> ignoredKeys(cx, PropertyHashSet(cx));
   if (!ignoredKeys.reserve(keys.length())) {
-    
-    
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
