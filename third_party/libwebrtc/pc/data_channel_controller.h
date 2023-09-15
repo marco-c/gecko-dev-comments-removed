@@ -108,19 +108,14 @@ class DataChannelController : public SctpDataChannelControllerInterface,
 
  private:
   
-  RTCErrorOr<rtc::scoped_refptr<SctpDataChannel>> CreateDataChannel(
-      const std::string& label,
-      InternalDataChannelInit& config) RTC_RUN_ON(network_thread());
-
-  
   
   bool HandleOpenMessage_n(int channel_id,
                            DataMessageType type,
                            const rtc::CopyOnWriteBuffer& buffer)
       RTC_RUN_ON(network_thread());
   
-  void OnDataChannelOpenMessage(rtc::scoped_refptr<SctpDataChannel> channel,
-                                bool ready_to_send)
+  void OnDataChannelOpenMessage(const std::string& label,
+                                const InternalDataChannelInit& config)
       RTC_RUN_ON(signaling_thread());
 
   
@@ -144,6 +139,9 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   void NotifyDataChannelsOfTransportCreated();
 
+  std::vector<rtc::scoped_refptr<SctpDataChannel>>::iterator FindChannel(
+      StreamId stream_id);
+
   
   
   
@@ -151,6 +149,12 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   
   DataChannelTransportInterface* data_channel_transport_ = nullptr;
   SctpSidAllocator sid_allocator_ RTC_GUARDED_BY(network_thread());
+  std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_
+      RTC_GUARDED_BY(signaling_thread());
+  
+  
+  
+  
   std::vector<rtc::scoped_refptr<SctpDataChannel>> sctp_data_channels_n_
       RTC_GUARDED_BY(network_thread());
   bool has_used_data_channels_ RTC_GUARDED_BY(signaling_thread()) = false;
@@ -159,8 +163,7 @@ class DataChannelController : public SctpDataChannelControllerInterface,
   PeerConnectionInternal* const pc_;
   
   
-  rtc::WeakPtrFactory<DataChannelController> weak_factory_
-      RTC_GUARDED_BY(network_thread()){this};
+  rtc::WeakPtrFactory<DataChannelController> weak_factory_{this};
   ScopedTaskSafety signaling_safety_;
 };
 

@@ -450,24 +450,6 @@ class ConstMethodCall {
     return c_->method();                     \
   }
 
-
-
-
-
-
-
-#define BYPASS_PROXY_METHOD0(r, method) \
-  r method() override {                 \
-    TRACE_BOILERPLATE(method);          \
-    return c_->method();                \
-  }
-
-
-#define BYPASS_PROXY_METHOD1(r, method, t1) \
-  r method(t1 a1) override {                \
-    TRACE_BOILERPLATE(method);              \
-    return c_->method(std::move(a1));       \
-  }
 }  
 
 #endif  

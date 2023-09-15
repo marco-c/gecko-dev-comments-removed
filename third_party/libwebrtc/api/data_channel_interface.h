@@ -100,17 +100,6 @@ class DataChannelObserver {
   
   virtual void OnBufferedAmountChange(uint64_t sent_data_size) {}
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool IsOkToCallOnTheNetworkThread() { return false; }
-
  protected:
   virtual ~DataChannelObserver() = default;
 };
