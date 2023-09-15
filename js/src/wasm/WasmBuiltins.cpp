@@ -1,20 +1,20 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: set ts=8 sts=2 et sw=2 tw=80:
+ *
+ * Copyright 2017 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #include "wasm/WasmBuiltins.h"
 
@@ -30,9 +30,9 @@
 #include "jit/MacroAssembler.h"
 #include "jit/ProcessExecutableMemory.h"
 #include "jit/Simulator.h"
-#include "js/experimental/JitInfo.h"  
-#include "js/friend/ErrorMessages.h"  
-#include "js/friend/StackLimits.h"    
+#include "js/experimental/JitInfo.h"  // JSJitInfo
+#include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "js/friend/StackLimits.h"    // js::AutoCheckRecursionLimit
 #include "threading/Mutex.h"
 #include "util/Memory.h"
 #include "util/Poison.h"
@@ -59,17 +59,17 @@ using mozilla::MakeEnumeratedRange;
 
 static const unsigned BUILTIN_THUNK_LIFO_SIZE = 64 * 1024;
 
+// ============================================================================
+// WebAssembly builtin C++ functions called from wasm code to implement internal
+// wasm operations: type descriptions.
 
-
-
-
-
+// Some abbreviations, for the sake of conciseness.
 #define _F64 MIRType::Double
 #define _F32 MIRType::Float32
 #define _I32 MIRType::Int32
 #define _I64 MIRType::Int64
 #define _PTR MIRType::Pointer
-#define _RoN MIRType::RefOrNull
+#define _RoN MIRType::WasmAnyRef
 #define _VOID MIRType::None
 #define _END MIRType::None
 #define _Infallible FailureMode::Infallible
@@ -389,8 +389,8 @@ const SymbolicAddressSignature SASigArrayCopy = {
 FOR_EACH_INTRINSIC(DECL_SAS_FOR_INTRINSIC)
 #undef DECL_SAS_FOR_INTRINSIC
 
-}  
-}  
+}  // namespace wasm
+}  // namespace js
 
 #undef _F64
 #undef _F32
@@ -425,7 +425,7 @@ ABIArgType ToABIType(MIRType type) {
     case MIRType::Int64:
       return ArgType_Int64;
     case MIRType::Pointer:
-    case MIRType::RefOrNull:
+    case MIRType::WasmAnyRef:
       return ArgType_General;
     case MIRType::Float32:
       return ArgType_Float32;
@@ -447,9 +447,9 @@ ABIFunctionType ToABIType(const SymbolicAddressSignature& sig) {
 }
 #endif
 
-
-
-
+// ============================================================================
+// WebAssembly builtin C++ functions called from wasm code to implement internal
+// wasm operations: implementations.
 
 #if defined(JS_CODEGEN_ARM)
 extern "C" {
@@ -460,8 +460,8 @@ extern MOZ_EXPORT int64_t __aeabi_uidivmod(int, int);
 }
 #endif
 
-
-
+// This utility function can only be called for builtins that are called
+// directly from wasm code.
 static JitActivation* CallingActivation(JSContext* cx) {
   Activation* act = cx->activation();
   MOZ_ASSERT(act->asJit()->hasWasmExitFP());
@@ -469,19 +469,19 @@ static JitActivation* CallingActivation(JSContext* cx) {
 }
 
 static bool WasmHandleDebugTrap() {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
   JitActivation* activation = CallingActivation(cx);
   Frame* fp = activation->wasmExitFP();
   Instance* instance = GetNearestEffectiveInstance(fp);
   const Code& code = instance->code();
   MOZ_ASSERT(code.metadata().debugEnabled);
 
-  
-  
+  // The debug trap stub is the innermost frame. It's return address is the
+  // actual trap site.
   const CallSite* site = code.lookupCallSite(fp->returnAddress());
   MOZ_ASSERT(site);
 
-  
+  // Advance to the actual trapping frame.
   fp = fp->wasmCaller();
   DebugFrame* debugFrame = DebugFrame::from(fp);
 
@@ -494,9 +494,9 @@ static bool WasmHandleDebugTrap() {
     if (!DebugAPI::onEnterFrame(cx, debugFrame)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();
-        
-        
-        
+        // Ignoring forced return because changing code execution order is
+        // not yet implemented in the wasm baseline.
+        // TODO properly handle forced return and resume wasm execution.
         JS_ReportErrorASCII(cx,
                             "Unexpected resumption value from onEnterFrame");
       }
@@ -519,7 +519,7 @@ static bool WasmHandleDebugTrap() {
     if (!DebugAPI::onSingleStep(cx)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();
-        
+        // TODO properly handle forced return.
         JS_ReportErrorASCII(cx,
                             "Unexpected resumption value from onSingleStep");
       }
@@ -530,7 +530,7 @@ static bool WasmHandleDebugTrap() {
     if (!DebugAPI::onTrap(cx)) {
       if (cx->isPropagatingForcedReturn()) {
         cx->clearPropagatingForcedReturn();
-        
+        // TODO properly handle forced return.
         JS_ReportErrorASCII(
             cx, "Unexpected resumption value from breakpoint handler");
       }
@@ -540,16 +540,16 @@ static bool WasmHandleDebugTrap() {
   return true;
 }
 
-
+// Check if the pending exception, if any, is catchable by wasm.
 static bool HasCatchableException(JitActivation* activation, JSContext* cx,
                                   MutableHandleValue exn) {
   if (!cx->isExceptionPending()) {
     return false;
   }
 
-  
-  
-  
+  // Traps are generally not catchable as wasm exceptions. The only case in
+  // which they are catchable is for Trap::ThrowReported, which the wasm
+  // compiler uses to throw exceptions and is the source of exceptions from C++.
   if (activation->isWasmTrapping() &&
       activation->wasmTrapData().trap != Trap::ThrowReported) {
     return false;
@@ -559,10 +559,10 @@ static bool HasCatchableException(JitActivation* activation, JSContext* cx,
     return false;
   }
 
-  
-  
+  // Write the exception out here to exn to avoid having to get the pending
+  // exception and checking for OOM multiple times.
   if (cx->getPendingException(exn)) {
-    
+    // Check if a JS exception originated from a wasm trap.
     if (exn.isObject() && exn.toObject().is<ErrorObject>()) {
       ErrorObject& err = exn.toObject().as<ErrorObject>();
       if (err.fromWasmTrap()) {
@@ -576,39 +576,39 @@ static bool HasCatchableException(JitActivation* activation, JSContext* cx,
   return false;
 }
 
-
-
-
-
-
-
-
-
-
-
+// Unwind the entire activation in response to a thrown exception. This function
+// is responsible for notifying the debugger of each unwound frame. The return
+// value is the new stack address which the calling stub will set to the sp
+// register before executing a return instruction.
+//
+// This function will also look for try-catch handlers and, if not trapping or
+// throwing an uncatchable exception, will write the handler info in the return
+// argument and return true.
+//
+// Returns false if a handler isn't found or shouldn't be used (e.g., traps).
 
 bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
                        jit::ResumeFromException* rfe) {
-  
-  
-  
-  
-  
-  
-  
+  // WasmFrameIter iterates down wasm frames in the activation starting at
+  // JitActivation::wasmExitFP(). Calling WasmFrameIter::startUnwinding pops
+  // JitActivation::wasmExitFP() once each time WasmFrameIter is incremented,
+  // ultimately leaving exit FP null when the WasmFrameIter is done().  This
+  // is necessary to prevent a DebugFrame from being observed again after we
+  // just called onLeaveFrame (which would lead to the frame being re-added
+  // to the map of live frames, right as it becomes trash).
 
   MOZ_ASSERT(CallingActivation(cx) == iter.activation());
   MOZ_ASSERT(!iter.done());
   iter.setUnwind(WasmFrameIter::Unwind::True);
 
-  
-  
-  
-  
-  
-  
-  
-  
+  // Live wasm code on the stack is kept alive (in TraceJitActivation) by
+  // marking the instance of every wasm::Frame found by WasmFrameIter.
+  // However, as explained above, we're popping frames while iterating which
+  // means that a GC during this loop could collect the code of frames whose
+  // code is still on the stack. This is actually mostly fine: as soon as we
+  // return to the throw stub, the entire stack will be popped as a whole,
+  // returning to the C++ caller. However, we must keep the throw stub alive
+  // itself which is owned by the innermost instance.
   Rooted<WasmInstanceObject*> keepAlive(cx, iter.instance()->object());
 
   JitActivation* activation = CallingActivation(cx);
@@ -616,11 +616,11 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   bool hasCatchableException = HasCatchableException(activation, cx, &exn);
 
   for (; !iter.done(); ++iter) {
-    
-    
+    // Wasm code can enter same-compartment realms, so reset cx->realm to
+    // this frame's realm.
     cx->setRealmForJitExceptionHandler(iter.instance()->realm());
 
-    
+    // Only look for an exception handler if there's a catchable exception.
     if (hasCatchableException) {
       const wasm::Code& code = iter.instance()->code();
       const uint8_t* pc = iter.resumePCinCurrentFrame();
@@ -629,8 +629,8 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 
       if (tryNote) {
 #ifdef ENABLE_WASM_TAIL_CALLS
-        
-        
+        // Skip tryNote if pc is at return stub generated by
+        // wasmCollapseFrameSlow.
         const CallSite* site = code.lookupCallSite((void*)pc);
         if (site && site->kind() == CallSite::ReturnStub) {
           continue;
@@ -657,7 +657,7 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
         rfe->target =
             iter.instance()->codeBase(tier) + tryNote->landingPadEntryPoint();
 
-        
+        // Make sure to clear trapping state if we got here due to a trap.
         if (activation->isWasmTrapping()) {
           activation->finishWasmTrap();
         }
@@ -673,15 +673,15 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
     DebugFrame* frame = iter.debugFrame();
     frame->clearReturnJSValue();
 
-    
-    
+    // Assume ResumeMode::Terminate if no exception is pending --
+    // no onExceptionUnwind handlers must be fired.
     if (cx->isExceptionPending()) {
       if (!DebugAPI::onExceptionUnwind(cx, frame)) {
         if (cx->isPropagatingForcedReturn()) {
           cx->clearPropagatingForcedReturn();
-          
-          
-          
+          // Unexpected trap return -- raising error since throw recovery
+          // is not yet implemented in the wasm baseline.
+          // TODO properly handle forced return and resume wasm execution.
           JS_ReportErrorASCII(
               cx, "Unexpected resumption value from onExceptionUnwind");
         }
@@ -690,9 +690,9 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 
     bool ok = DebugAPI::onLeaveFrame(cx, frame, nullptr, false);
     if (ok) {
-      
-      
-      
+      // Unexpected success from the handler onLeaveFrame -- raising error
+      // since throw recovery is not yet implemented in the wasm baseline.
+      // TODO properly handle success and resume wasm execution.
       JS_ReportErrorASCII(cx, "Unexpected success from onLeaveFrame");
     }
     frame->leave(cx);
@@ -701,8 +701,8 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
   MOZ_ASSERT(!cx->activation()->asJit()->isWasmTrapping(),
              "unwinding clears the trapping state");
 
-  
-  
+  // In case of no handler, exit wasm via ret().
+  // FailInstanceReg signals to wasm stub to do a failure return.
   rfe->kind = ExceptionResumeKind::Wasm;
   rfe->framePointer = (uint8_t*)iter.unwoundCallerFP();
   rfe->stackPointer = (uint8_t*)iter.unwoundAddressOfReturnAddress();
@@ -712,16 +712,16 @@ bool wasm::HandleThrow(JSContext* cx, WasmFrameIter& iter,
 }
 
 static void* WasmHandleThrow(jit::ResumeFromException* rfe) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
   JitActivation* activation = CallingActivation(cx);
   WasmFrameIter iter(activation);
-  
-  
+  // We can ignore the return result here because the throw stub code
+  // can just check the resume kind to see if a handler was found or not.
   HandleThrow(cx, iter, rfe);
   return rfe;
 }
 
-
+// Has the same return-value convention as HandleTrap().
 static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
   ResetInterruptState(cx);
 
@@ -734,14 +734,14 @@ static void* CheckInterrupt(JSContext* cx, JitActivation* activation) {
   return resumePC;
 }
 
-
-
-
-
-
-
+// The calling convention between this function and its caller in the stub
+// generated by GenerateTrapExit() is:
+//   - return nullptr if the stub should jump to the throw stub to unwind
+//     the activation;
+//   - return the (non-null) resumePC that should be jumped if execution should
+//     resume after the trap.
 static void* WasmHandleTrap() {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
   JitActivation* activation = CallingActivation(cx);
 
   switch (activation->wasmTrapData().trap) {
@@ -788,11 +788,11 @@ static void* WasmHandleTrap() {
     case Trap::CheckInterrupt:
       return CheckInterrupt(cx, activation);
     case Trap::StackOverflow: {
-      
-      
-      
-      
-      
+      // Instance::setInterrupt() causes a fake stack overflow. Since
+      // Instance::setInterrupt() is called racily, it's possible for a real
+      // stack overflow to trap, followed by a racy call to setInterrupt().
+      // Thus, we must check for a real stack overflow first before we
+      // CheckInterrupt() and possibly resume execution.
       AutoCheckRecursionLimit recursion(cx);
       if (!recursion.check(cx)) {
         return nullptr;
@@ -804,7 +804,7 @@ static void* WasmHandleTrap() {
       return nullptr;
     }
     case Trap::ThrowReported:
-      
+      // Error was already reported under another name.
       return nullptr;
     case Trap::Limit:
       break;
@@ -814,13 +814,13 @@ static void* WasmHandleTrap() {
 }
 
 static void WasmReportV128JSCall() {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
   JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                            JSMSG_WASM_BAD_VAL_TYPE);
 }
 
 static int32_t CoerceInPlace_ToInt32(Value* rawVal) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
 
   int32_t i32;
   RootedValue val(cx, *rawVal);
@@ -834,7 +834,7 @@ static int32_t CoerceInPlace_ToInt32(Value* rawVal) {
 }
 
 static int32_t CoerceInPlace_ToBigInt(Value* rawVal) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
 
   RootedValue val(cx, *rawVal);
   BigInt* bi = ToBigInt(cx, val);
@@ -848,7 +848,7 @@ static int32_t CoerceInPlace_ToBigInt(Value* rawVal) {
 }
 
 static int32_t CoerceInPlace_ToNumber(Value* rawVal) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
 
   double dbl;
   RootedValue val(cx, *rawVal);
@@ -862,7 +862,7 @@ static int32_t CoerceInPlace_ToNumber(Value* rawVal) {
 }
 
 static void* BoxValue_Anyref(Value* rawVal) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
   RootedValue val(cx, *rawVal);
   RootedAnyRef result(cx, AnyRef::null());
   if (!AnyRef::fromJSValue(cx, val, &result)) {
@@ -873,7 +873,7 @@ static void* BoxValue_Anyref(Value* rawVal) {
 
 static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* instance,
                                       Value* argv) {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code
 
   const Code& code = instance->code();
   const FuncExport& fe =
@@ -892,9 +892,9 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* instance,
         break;
       }
       case ValType::I64: {
-        
-        
-        
+        // In this case we store a BigInt value as there is no value type
+        // corresponding directly to an I64. The conversion to I64 happens
+        // in the JIT entry stub.
         BigInt* bigint = ToBigInt(cx, arg);
         if (!bigint) {
           return false;
@@ -908,16 +908,16 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* instance,
         if (!ToNumber(cx, arg, &dbl)) {
           return false;
         }
-        
-        
+        // No need to convert double-to-float for f32, it's done inline
+        // in the wasm stub later.
         argv[i] = DoubleValue(dbl);
         break;
       }
       case ValType::Ref: {
-        
+        // Guarded against by temporarilyUnsupportedReftypeForEntry()
         MOZ_RELEASE_ASSERT(funcType.args()[i].refType().isExtern());
-        
-        
+        // Perform any fallible boxing that may need to happen so that the JIT
+        // code does not need to.
         if (AnyRef::valueNeedsBoxing(arg)) {
           JSObject* boxedValue = AnyRef::boxValue(cx, arg);
           if (!boxedValue) {
@@ -928,7 +928,7 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* instance,
         break;
       }
       case ValType::V128: {
-        
+        // Guarded against by hasV128ArgOrRet()
         MOZ_CRASH("unexpected input argument in CoerceInPlace_JitEntry");
       }
       default: {
@@ -940,9 +940,9 @@ static int32_t CoerceInPlace_JitEntry(int funcExportIndex, Instance* instance,
   return true;
 }
 
-
+// Allocate a BigInt without GC, corresponds to the similar VMFunction.
 static BigInt* AllocateBigIntTenuredNoGC() {
-  JSContext* cx = TlsContext.get();  
+  JSContext* cx = TlsContext.get();  // Cold code (the caller is elaborate)
 
   return cx->newCell<BigInt, NoGC>(gc::Heap::Tenured);
 }
@@ -982,8 +982,8 @@ static int64_t UModI64(uint32_t x_hi, uint32_t x_lo, uint32_t y_hi,
 }
 
 static int64_t TruncateDoubleToInt64(double input) {
-  
-  
+  // Note: INT64_MAX is not representable in double. It is actually
+  // INT64_MAX + 1.  Therefore also sending the failure value.
   if (input >= double(INT64_MAX) || input < double(INT64_MIN) ||
       std::isnan(input)) {
     return int64_t(0x8000000000000000);
@@ -992,8 +992,8 @@ static int64_t TruncateDoubleToInt64(double input) {
 }
 
 static uint64_t TruncateDoubleToUint64(double input) {
-  
-  
+  // Note: UINT64_MAX is not representable in double. It is actually
+  // UINT64_MAX + 1.  Therefore also sending the failure value.
   if (input >= double(UINT64_MAX) || input <= -1.0 || std::isnan(input)) {
     return int64_t(0x8000000000000000);
   }
@@ -1001,32 +1001,32 @@ static uint64_t TruncateDoubleToUint64(double input) {
 }
 
 static int64_t SaturatingTruncateDoubleToInt64(double input) {
-  
+  // Handle in-range values (except INT64_MIN).
   if (fabs(input) < -double(INT64_MIN)) {
     return int64_t(input);
   }
-  
+  // Handle NaN.
   if (std::isnan(input)) {
     return 0;
   }
-  
+  // Handle positive overflow.
   if (input > 0) {
     return INT64_MAX;
   }
-  
+  // Handle negative overflow.
   return INT64_MIN;
 }
 
 static uint64_t SaturatingTruncateDoubleToUint64(double input) {
-  
+  // Handle positive overflow.
   if (input >= -double(INT64_MIN) * 2.0) {
     return UINT64_MAX;
   }
-  
+  // Handle in-range values.
   if (input > -1.0) {
     return uint64_t(input);
   }
-  
+  // Handle NaN and negative overflow.
   return 0;
 }
 
@@ -1072,7 +1072,7 @@ void wasm::PrintText(const char* out) { fprintf(stderr, "%s", out); }
 #endif
 
 void* wasm::AddressOf(SymbolicAddress imm, ABIFunctionType* abiType) {
-  
+  // See NeedsBuiltinThunk for a classification of the different names here.
   switch (imm) {
     case SymbolicAddress::HandleDebugTrap:
       *abiType = Args_General0;
@@ -1473,30 +1473,30 @@ bool wasm::IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode) {
 }
 
 bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
-  
+  // Also see "The Wasm Builtin ABIs" in WasmFrame.h.
   switch (sym) {
-    
-    case SymbolicAddress::HandleThrow:  
-    case SymbolicAddress::HandleTrap:   
+    // No thunk, because they do their work within the activation
+    case SymbolicAddress::HandleThrow:  // GenerateThrowStub
+    case SymbolicAddress::HandleTrap:   // GenerateTrapExit
       return false;
 
-    
-    
-    
-    case SymbolicAddress::HandleDebugTrap:  
+    // No thunk, because some work has to be done within the activation before
+    // the activation exit: when called, arbitrary wasm registers are live and
+    // must be saved, and the stack pointer may not be aligned for any ABI.
+    case SymbolicAddress::HandleDebugTrap:  // GenerateDebugTrapStub
 
-    
-    case SymbolicAddress::CallImport_General:      
-    case SymbolicAddress::CoerceInPlace_ToInt32:   
-    case SymbolicAddress::CoerceInPlace_ToNumber:  
-    case SymbolicAddress::CoerceInPlace_ToBigInt:  
-    case SymbolicAddress::BoxValue_Anyref:         
+    // No thunk, because their caller manages the activation exit explicitly
+    case SymbolicAddress::CallImport_General:      // GenerateImportInterpExit
+    case SymbolicAddress::CoerceInPlace_ToInt32:   // GenerateImportJitExit
+    case SymbolicAddress::CoerceInPlace_ToNumber:  // GenerateImportJitExit
+    case SymbolicAddress::CoerceInPlace_ToBigInt:  // GenerateImportJitExit
+    case SymbolicAddress::BoxValue_Anyref:         // GenerateImportJitExit
       return false;
 
 #ifdef WASM_CODEGEN_DEBUG
-    
-    
-    case SymbolicAddress::PrintI32:  
+    // No thunk, because they call directly into C++ code that does not interact
+    // with the rest of the VM at all.
+    case SymbolicAddress::PrintI32:  // Debug stub printers
     case SymbolicAddress::PrintPtr:
     case SymbolicAddress::PrintF32:
     case SymbolicAddress::PrintF64:
@@ -1504,7 +1504,7 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
       return false;
 #endif
 
-    
+    // Everyone else gets a thunk to handle the exit from the activation
     case SymbolicAddress::ToInt32:
     case SymbolicAddress::DivI64:
     case SymbolicAddress::UDivI64:
@@ -1609,20 +1609,20 @@ bool wasm::NeedsBuiltinThunk(SymbolicAddress sym) {
   MOZ_CRASH("unexpected symbolic address");
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ============================================================================
+// [SMDOC] JS Fast Wasm Imports
+//
+// JS builtins that can be imported by wasm modules and called efficiently
+// through thunks. These thunks conform to the internal wasm ABI and thus can be
+// patched in for import calls. Calling a JS builtin through a thunk is much
+// faster than calling out through the generic import call trampoline which will
+// end up in the slowest C++ Instance::callImport path.
+//
+// Each JS builtin can have several overloads. These must all be enumerated in
+// PopulateTypedNatives() so they can be included in the process-wide thunk set.
+// Additionally to the traditional overloading based on types, every builtin
+// can also have a version implemented by fdlibm or the native math library.
+// This is useful for fingerprinting resistance.
 
 #define FOR_EACH_SIN_COS_TAN_NATIVE(_) \
   _(math_sin, MathSin)                 \
@@ -1736,29 +1736,29 @@ static bool PopulateTypedNatives(TypedNativeToFuncPtrMap* typedNatives) {
 #undef FOR_EACH_UNARY_NATIVE
 #undef FOR_EACH_BINARY_NATIVE
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// ============================================================================
+// [SMDOC] Process-wide builtin thunk set
+//
+// Thunks are inserted between wasm calls and the C++ callee and achieve two
+// things:
+//  - bridging the few differences between the internal wasm ABI and the
+//    external native ABI (viz. float returns on x86 and soft-fp ARM)
+//  - executing an exit prologue/epilogue which in turn allows any profiling
+//    iterator to see the full stack up to the wasm operation that called out
+//
+// Thunks are created for two kinds of C++ callees, enumerated above:
+//  - SymbolicAddress: for statically compiled calls in the wasm module
+//  - Imported JS builtins: optimized calls to imports
+//
+// All thunks are created up front, lazily, when the first wasm module is
+// compiled in the process. Thunks are kept alive until the JS engine shuts down
+// in the process. No thunks are created at runtime after initialization. This
+// simple scheme allows several simplifications:
+//  - no reference counting to keep thunks alive
+//  - no problems toggling W^X permissions which, because of multiple executing
+//    threads, would require each thunk allocation to be on its own page
+// The cost for creating all thunks at once is relatively low since all thunks
+// fit within the smallest executable-code allocation quantum (64k).
 
 using TypedNativeToCodeRangeMap =
     HashMap<TypedNative, uint32_t, TypedNative, SystemAllocPolicy>;
@@ -1853,15 +1853,15 @@ bool wasm::EnsureBuiltinThunksInitialized() {
     }
   }
 
-  
-  
-  
-  
-  
+  // Provisional lazy JitEntry stub: This is a shared stub that can be installed
+  // in the jit-entry jump table.  It uses the JIT ABI and when invoked will
+  // retrieve (via TlsContext()) and invoke the context-appropriate
+  // invoke-from-interpreter jit stub, thus serving as the initial, unoptimized
+  // jit-entry stub for any exported wasm function that has a jit-entry.
 
 #ifdef DEBUG
-  
-  
+  // We need to allow this machine code to bake in a C++ code pointer, so we
+  // disable the wasm restrictions while generating this stub.
   JitContext jitContext;
   bool oldFlag = jitContext.setIsCompilingWasm(false);
 #endif
@@ -2000,9 +2000,9 @@ void* wasm::MaybeGetBuiltinThunk(JSFunction* f, const FuncType& funcType) {
 
   const BuiltinThunks& thunks = *builtinThunks;
 
-  
-  
-  
+  // If this function must use the fdlibm implementation first try to lookup
+  // the fdlibm version. If that version doesn't exist we still fallback to
+  // the normal native.
   if (math_use_fdlibm_for_sin_cos_tan() ||
       f->realm()->creationOptions().alwaysUseFdlibm()) {
     TypedNative typedNative(f->jitInfo()->inlinableNative, *abiType,
