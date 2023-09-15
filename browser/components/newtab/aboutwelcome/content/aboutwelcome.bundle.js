@@ -539,12 +539,33 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
     let {
       action
     } = targetContent;
+    action = JSON.parse(JSON.stringify(action));
 
     if (action.collectSelect) {
+      var _action$data;
+
       
-      action.data = {
-        actions: []
-      };
+      
+      if (action.type !== "MULTI_ACTION") {
+        console.error("collectSelect is only supported for MULTI_ACTION type actions");
+        action.type = "MULTI_ACTION";
+      }
+
+      if (!Array.isArray((_action$data = action.data) === null || _action$data === void 0 ? void 0 : _action$data.actions)) {
+        console.error("collectSelect is only supported for MULTI_ACTION type actions with an array of actions");
+        action.data = {
+          actions: []
+        };
+      } 
+      
+      
+      
+      
+      
+      
+
+
+      let multiSelectActions = [];
 
       for (const checkbox of ((_props$content = props.content) === null || _props$content === void 0 ? void 0 : (_props$content$tiles2 = _props$content.tiles) === null || _props$content$tiles2 === void 0 ? void 0 : _props$content$tiles2.data) ?? []) {
         var _props$content, _props$content$tiles2, _this$props$activeMul;
@@ -558,10 +579,11 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
         }
 
         if (checkboxAction) {
-          action.data.actions.push(checkboxAction);
+          multiSelectActions.push(checkboxAction);
         }
-      } 
+      }
 
+      action.data.actions.unshift(...multiSelectActions); 
 
       _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(props.messageId, props.activeMultiSelect, "SELECT_CHECKBOX");
     }
