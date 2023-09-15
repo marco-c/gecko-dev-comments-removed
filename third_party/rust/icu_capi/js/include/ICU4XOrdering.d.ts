@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XOrdering {
+  
+
+  Less = 'Less',
+  
+
+  Equal = 'Equal',
+  
+
+  Greater = 'Greater',
+}

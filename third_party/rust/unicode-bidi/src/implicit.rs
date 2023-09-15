@@ -14,104 +14,213 @@ use core::cmp::max;
 
 use super::char_data::BidiClass::{self, *};
 use super::level::Level;
-use super::prepare::{not_removed_by_x9, removed_by_x9, IsolatingRunSequence, LevelRun};
+use super::prepare::{not_removed_by_x9, removed_by_x9, IsolatingRunSequence};
+use super::BidiDataSource;
 
 
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn resolve_weak(sequence: &IsolatingRunSequence, processing_classes: &mut [BidiClass]) {
+pub fn resolve_weak(
+    text: &str,
+    sequence: &IsolatingRunSequence,
+    processing_classes: &mut [BidiClass],
+) {
+    
     
     
     
     
 
     
+    let mut prev_class_before_w4 = sequence.sos;
     
-
-    let mut prev_class = sequence.sos;
+    let mut prev_class_before_w5 = sequence.sos;
+    
+    let mut prev_class_before_w1 = sequence.sos;
     let mut last_strong_is_al = false;
     let mut et_run_indices = Vec::new(); 
+    let mut bn_run_indices = Vec::new(); 
 
-    
-    fn id(x: LevelRun) -> LevelRun {
-        x
-    }
-    let mut indices = sequence
-        .runs
-        .iter()
-        .cloned()
-        .flat_map(id as fn(LevelRun) -> LevelRun);
-
-    while let Some(i) = indices.next() {
-        match processing_classes[i] {
-            
-            NSM => {
-                processing_classes[i] = match prev_class {
-                    RLI | LRI | FSI | PDI => ON,
-                    _ => prev_class,
-                };
+    for (run_index, level_run) in sequence.runs.iter().enumerate() {
+        for i in &mut level_run.clone() {
+            if processing_classes[i] == BN {
+                
+                
+                bn_run_indices.push(i);
+                
+                continue;
             }
-            EN => {
-                if last_strong_is_al {
-                    
-                    processing_classes[i] = AN;
-                } else {
+
+            
+            
+            
+            let mut w2_processing_class = processing_classes[i];
+
+            
+            
+
+            if processing_classes[i] == NSM {
+                processing_classes[i] = match prev_class_before_w1 {
+                    RLI | LRI | FSI | PDI => ON,
+                    _ => prev_class_before_w1,
+                };
+                
+                w2_processing_class = processing_classes[i];
+            }
+
+            prev_class_before_w1 = processing_classes[i];
+
+            
+            
+            
+            match processing_classes[i] {
+                EN => {
+                    if last_strong_is_al {
+                        
+                        processing_classes[i] = AN;
+                    }
+                }
+                
+                AL => processing_classes[i] = R,
+                _ => {}
+            }
+
+            
+            match w2_processing_class {
+                L | R => {
+                    last_strong_is_al = false;
+                }
+                AL => {
+                    last_strong_is_al = true;
+                }
+                _ => {}
+            }
+
+            let class_before_w456 = processing_classes[i];
+
+            
+            
+            
+            
+            
+            match processing_classes[i] {
+                
+                EN => {
                     
                     for j in &et_run_indices {
                         processing_classes[*j] = EN;
                     }
                     et_run_indices.clear();
                 }
+
+                
+                
+                ES | CS => {
+                    
+                    
+                    
+                    if let Some(ch) = text.get(i..).and_then(|s| s.chars().next()) {
+                        let mut next_class = sequence
+                            .iter_forwards_from(i + ch.len_utf8(), run_index)
+                            .map(|j| processing_classes[j])
+                            
+                            .find(not_removed_by_x9)
+                            .unwrap_or(sequence.eos);
+                        if next_class == EN && last_strong_is_al {
+                            
+                            
+                            
+                            next_class = AN;
+                        }
+                        processing_classes[i] =
+                            match (prev_class_before_w4, processing_classes[i], next_class) {
+                                
+                                (EN, ES, EN) | (EN, CS, EN) => EN,
+                                
+                                (AN, CS, AN) => AN,
+                                
+                                (_, _, _) => ON,
+                            };
+
+                        
+                        
+                        
+                        
+                        
+                        if processing_classes[i] == ON {
+                            for idx in sequence.iter_backwards_from(i, run_index) {
+                                let class = &mut processing_classes[idx];
+                                if *class != BN {
+                                    break;
+                                }
+                                *class = ON;
+                            }
+                            for idx in sequence.iter_forwards_from(i + ch.len_utf8(), run_index) {
+                                let class = &mut processing_classes[idx];
+                                if *class != BN {
+                                    break;
+                                }
+                                *class = ON;
+                            }
+                        }
+                    } else {
+                        
+                        
+                        processing_classes[i] = processing_classes[i - 1];
+                    }
+                }
+                
+                ET => {
+                    match prev_class_before_w5 {
+                        EN => processing_classes[i] = EN,
+                        _ => {
+                            
+                            
+                            et_run_indices.extend(&bn_run_indices);
+
+                            
+                            et_run_indices.push(i);
+                        }
+                    }
+                }
+                _ => {}
             }
-            
-            AL => processing_classes[i] = R,
 
             
-            ES | CS => {
-                let next_class = indices
-                    .clone()
-                    .map(|j| processing_classes[j])
-                    .find(not_removed_by_x9)
-                    .unwrap_or(sequence.eos);
-                processing_classes[i] = match (prev_class, processing_classes[i], next_class) {
-                    (EN, ES, EN) | (EN, CS, EN) => EN,
-                    (AN, CS, AN) => AN,
-                    (_, _, _) => ON,
-                }
-            }
             
-            ET => {
-                match prev_class {
-                    EN => processing_classes[i] = EN,
-                    _ => et_run_indices.push(i), 
-                }
-            }
-            class => {
-                if removed_by_x9(class) {
-                    continue;
-                }
-            }
-        }
 
-        prev_class = processing_classes[i];
-        match prev_class {
-            L | R => {
-                last_strong_is_al = false;
-            }
-            AL => {
-                last_strong_is_al = true;
-            }
-            _ => {}
-        }
-        if prev_class != ET {
             
-            for j in &et_run_indices {
-                processing_classes[*j] = ON;
+            
+            bn_run_indices.clear();
+
+            
+            
+            prev_class_before_w5 = processing_classes[i];
+
+            
+            
+            
+            if prev_class_before_w5 != ET {
+                
+                for j in &et_run_indices {
+                    processing_classes[*j] = ON;
+                }
+                et_run_indices.clear();
             }
-            et_run_indices.clear();
+
+            
+            
+            prev_class_before_w4 = class_before_w456;
         }
     }
+    
+    
+    
+    for j in &et_run_indices {
+        processing_classes[*j] = ON;
+    }
+    et_run_indices.clear();
 
     
     let mut last_strong_is_l = sequence.sos == L;
@@ -127,6 +236,8 @@ pub fn resolve_weak(sequence: &IsolatingRunSequence, processing_classes: &mut [B
                 R | AL => {
                     last_strong_is_l = false;
                 }
+                
+                
                 _ => {}
             }
         }
@@ -137,22 +248,172 @@ pub fn resolve_weak(sequence: &IsolatingRunSequence, processing_classes: &mut [B
 
 
 #[cfg_attr(feature = "flame_it", flamer::flame)]
-pub fn resolve_neutral(
+pub fn resolve_neutral<D: BidiDataSource>(
+    text: &str,
+    data_source: &D,
     sequence: &IsolatingRunSequence,
     levels: &[Level],
+    original_classes: &[BidiClass],
     processing_classes: &mut [BidiClass],
 ) {
+    
     let e: BidiClass = levels[sequence.runs[0].start].bidi_class();
+    let not_e = if e == BidiClass::L {
+        BidiClass::R
+    } else {
+        BidiClass::L
+    };
+    
+
+    
+    
+    let bracket_pairs = identify_bracket_pairs(text, data_source, sequence, processing_classes);
+
+    
+    
+    
+    
+    for pair in bracket_pairs {
+        #[cfg(feature = "std")]
+        debug_assert!(
+            pair.start < processing_classes.len(),
+            "identify_bracket_pairs returned a range that is out of bounds!"
+        );
+        #[cfg(feature = "std")]
+        debug_assert!(
+            pair.end < processing_classes.len(),
+            "identify_bracket_pairs returned a range that is out of bounds!"
+        );
+        let mut found_e = false;
+        let mut found_not_e = false;
+        let mut class_to_set = None;
+
+        let start_len_utf8 = text[pair.start..].chars().next().unwrap().len_utf8();
+        
+        
+        
+        
+        for enclosed_i in sequence.iter_forwards_from(pair.start + start_len_utf8, pair.start_run) {
+            if enclosed_i >= pair.end {
+                #[cfg(feature = "std")]
+                debug_assert!(
+                    enclosed_i == pair.end,
+                    "If we skipped past this, the iterator is broken"
+                );
+                break;
+            }
+            let class = processing_classes[enclosed_i];
+            if class == e {
+                found_e = true;
+            } else if class == not_e {
+                found_not_e = true;
+            } else if class == BidiClass::EN || class == BidiClass::AN {
+                
+                if e == BidiClass::L {
+                    found_not_e = true;
+                } else {
+                    found_e = true;
+                }
+            }
+
+            
+            
+            if found_e {
+                break;
+            }
+        }
+        
+        if found_e {
+            
+            class_to_set = Some(e);
+        
+        } else if found_not_e {
+            
+            
+            
+            
+            let mut previous_strong = sequence
+                .iter_backwards_from(pair.start, pair.start_run)
+                .map(|i| processing_classes[i])
+                .find(|class| {
+                    *class == BidiClass::L
+                        || *class == BidiClass::R
+                        || *class == BidiClass::EN
+                        || *class == BidiClass::AN
+                })
+                .unwrap_or(sequence.sos);
+
+            
+            if previous_strong == BidiClass::EN || previous_strong == BidiClass::AN {
+                previous_strong = BidiClass::R;
+            }
+
+            
+            
+            
+            
+            
+            
+            
+            
+            class_to_set = Some(previous_strong);
+        }
+
+        if let Some(class_to_set) = class_to_set {
+            
+            
+            let end_len_utf8 = text[pair.end..].chars().next().unwrap().len_utf8();
+            for class in &mut processing_classes[pair.start..pair.start + start_len_utf8] {
+                *class = class_to_set;
+            }
+            for class in &mut processing_classes[pair.end..pair.end + end_len_utf8] {
+                *class = class_to_set;
+            }
+            
+            for idx in sequence.iter_backwards_from(pair.start, pair.start_run) {
+                let class = &mut processing_classes[idx];
+                if *class != BN {
+                    break;
+                }
+                *class = class_to_set;
+            }
+            
+            
+
+            
+            
+            let nsm_start = pair.start + start_len_utf8;
+            for idx in sequence.iter_forwards_from(nsm_start, pair.start_run) {
+                let class = original_classes[idx];
+                if class == BidiClass::NSM || processing_classes[idx] == BN {
+                    processing_classes[idx] = class_to_set;
+                } else {
+                    break;
+                }
+            }
+            let nsm_end = pair.end + end_len_utf8;
+            for idx in sequence.iter_forwards_from(nsm_end, pair.end_run) {
+                let class = original_classes[idx];
+                if class == BidiClass::NSM || processing_classes[idx] == BN {
+                    processing_classes[idx] = class_to_set;
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        
+    }
+
+    
+    
     let mut indices = sequence.runs.iter().flat_map(Clone::clone);
     let mut prev_class = sequence.sos;
-
     while let Some(mut i) = indices.next() {
         
-        
-
-        
         let mut ni_run = Vec::new();
-        if is_NI(processing_classes[i]) {
+        
+        if is_NI(processing_classes[i]) || processing_classes[i] == BN {
             
             ni_run.push(i);
             let mut next_class;
@@ -160,11 +421,9 @@ pub fn resolve_neutral(
                 match indices.next() {
                     Some(j) => {
                         i = j;
-                        if removed_by_x9(processing_classes[i]) {
-                            continue;
-                        }
                         next_class = processing_classes[j];
-                        if is_NI(next_class) {
+                        
+                        if is_NI(next_class) || next_class == BN {
                             ni_run.push(i);
                         } else {
                             break;
@@ -176,7 +435,6 @@ pub fn resolve_neutral(
                     }
                 };
             }
-
             
             
             
@@ -203,6 +461,105 @@ pub fn resolve_neutral(
     }
 }
 
+struct BracketPair {
+    
+    start: usize,
+    
+    end: usize,
+    
+    start_run: usize,
+    
+    end_run: usize,
+}
+
+
+
+
+
+
+fn identify_bracket_pairs<D: BidiDataSource>(
+    text: &str,
+    data_source: &D,
+    run_sequence: &IsolatingRunSequence,
+    original_classes: &[BidiClass],
+) -> Vec<BracketPair> {
+    let mut ret = vec![];
+    let mut stack = vec![];
+
+    for (run_index, level_run) in run_sequence.runs.iter().enumerate() {
+        let slice = if let Some(slice) = text.get(level_run.clone()) {
+            slice
+        } else {
+            #[cfg(feature = "std")]
+            std::debug_assert!(
+                false,
+                "Found broken indices in level run: found indices {}..{} for string of length {}",
+                level_run.start,
+                level_run.end,
+                text.len()
+            );
+            return ret;
+        };
+
+        for (i, ch) in slice.char_indices() {
+            let actual_index = level_run.start + i;
+            
+            
+            
+            
+            if original_classes[level_run.start + i] != BidiClass::ON {
+                continue;
+            }
+
+            if let Some(matched) = data_source.bidi_matched_opening_bracket(ch) {
+                if matched.is_open {
+                    
+
+                    
+                    
+                    if stack.len() >= 63 {
+                        break;
+                    }
+                    
+                    stack.push((matched.opening, actual_index, run_index))
+                } else {
+                    
+
+                    
+                    
+                    
+                    
+                    for (stack_index, element) in stack.iter().enumerate().rev() {
+                        
+                        
+                        if element.0 == matched.opening {
+                            
+
+                            
+                            
+                            let pair = BracketPair {
+                                start: element.1,
+                                end: actual_index,
+                                start_run: element.2,
+                                end_run: run_index,
+                            };
+                            ret.push(pair);
+
+                            
+                            stack.truncate(stack_index);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    
+    ret.sort_by_key(|r| r.start);
+    ret
+}
+
 
 
 
@@ -211,7 +568,6 @@ pub fn resolve_neutral(
 #[cfg_attr(feature = "flame_it", flamer::flame)]
 pub fn resolve_levels(original_classes: &[BidiClass], levels: &mut [Level]) -> Level {
     let mut max_level = Level::ltr();
-
     assert_eq!(original_classes.len(), levels.len());
     for i in 0..levels.len() {
         match (levels[i].is_rtl(), original_classes[i]) {
@@ -219,6 +575,7 @@ pub fn resolve_levels(original_classes: &[BidiClass], levels: &mut [Level]) -> L
             (false, R) | (true, L) | (true, EN) | (true, AN) => {
                 levels[i].raise(1).expect("Level number error")
             }
+            
             (_, _) => {}
         }
         max_level = max(max_level, levels[i]);

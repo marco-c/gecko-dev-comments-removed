@@ -1,0 +1,22 @@
+
+
+
+
+
+export enum ICU4XCollatorMaxVariable {
+  
+
+  Auto = 'Auto',
+  
+
+  Space = 'Space',
+  
+
+  Punctuation = 'Punctuation',
+  
+
+  Symbol = 'Symbol',
+  
+
+  Currency = 'Currency',
+}

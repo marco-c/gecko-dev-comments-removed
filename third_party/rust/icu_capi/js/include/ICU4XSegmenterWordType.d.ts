@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XSegmenterWordType {
+  
+
+  None = 'None',
+  
+
+  Number = 'Number',
+  
+
+  Letter = 'Letter',
+}
