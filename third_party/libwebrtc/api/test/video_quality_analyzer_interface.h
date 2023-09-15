@@ -152,9 +152,11 @@ class VideoQualityAnalyzerInterface
 
   
   
+  
   virtual void OnPauseAllStreamsFrom(absl::string_view sender_peer_name,
                                      absl::string_view receiver_peer_name) {}
 
+  
   
   
   virtual void OnResumeAllStreamsFrom(absl::string_view sender_peer_name,
