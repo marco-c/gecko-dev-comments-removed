@@ -165,11 +165,13 @@ class LegacyStatsCollector : public LegacyStatsCollectorInterface {
                                        const StatsReport::Id& channel_report_id,
                                        const cricket::ConnectionInfo& info);
 
-  void ExtractDataInfo();
+  void ExtractDataInfo_n(StatsCollection* reports);
 
   
   
-  std::map<std::string, std::string> ExtractSessionInfo();
+  
+  
+  std::map<std::string, std::string> ExtractSessionAndDataInfo();
 
   void ExtractBweInfo();
   void ExtractMediaInfo(

@@ -186,7 +186,7 @@ class RTCStatsCollector : public rtc::RefCountInterface {
       const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
       RTCStatsReport* report) const;
   
-  void ProduceDataChannelStats_s(Timestamp timestamp,
+  void ProduceDataChannelStats_n(Timestamp timestamp,
                                  RTCStatsReport* report) const;
   
   void ProduceIceCandidateAndPairStats_n(
