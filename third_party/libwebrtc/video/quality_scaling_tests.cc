@@ -155,6 +155,15 @@ class ScalingObserver : public test::SendTest {
                        test_params_.size());
   }
 
+  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    
+    
+    
+    
+    
+    return DROP_PACKET;
+  }
+
   void PerformTest() override { EXPECT_EQ(expect_scaling_, Wait()); }
 
   test::FunctionVideoEncoderFactory encoder_factory_;
