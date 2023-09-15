@@ -22,7 +22,11 @@ namespace
 
 
 
-constexpr size_t kMaxTypeSizeInBytes = static_cast<size_t>(2) * 1024 * 1024 * 1024;
+
+
+
+constexpr size_t kMaxVariableSizeInBytes        = static_cast<size_t>(2) * 1024 * 1024 * 1024;
+constexpr size_t kMaxPrivateVariableSizeInBytes = static_cast<size_t>(1) * 1024 * 1024;
 
 
 
@@ -78,10 +82,21 @@ class ValidateTypeSizeLimitationsTraverser : public TIntermTraverser
             
             bool isRowMajorLayout = false;
             TraverseShaderVariable(shaderVar, isRowMajorLayout, &visitor);
-            if (layoutEncoder.getCurrentOffset() > kMaxTypeSizeInBytes)
+            if (layoutEncoder.getCurrentOffset() > kMaxVariableSizeInBytes)
             {
                 error(asSymbol->getLine(),
                       "Size of declared variable exceeds implementation-defined limit",
+                      asSymbol->getName());
+                return false;
+            }
+
+            const bool isPrivate = variableType.getQualifier() == EvqTemporary ||
+                                   variableType.getQualifier() == EvqGlobal ||
+                                   variableType.getQualifier() == EvqConst;
+            if (layoutEncoder.getCurrentOffset() > kMaxPrivateVariableSizeInBytes && isPrivate)
+            {
+                error(asSymbol->getLine(),
+                      "Size of declared private variable exceeds implementation-defined limit",
                       asSymbol->getName());
                 return false;
             }
