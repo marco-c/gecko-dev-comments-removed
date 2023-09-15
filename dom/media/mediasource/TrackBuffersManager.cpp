@@ -1987,7 +1987,8 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
       if (appendMode == SourceBufferAppendMode::Sequence) {
         
         
-        timestampOffset = mSourceBufferAttributes->GetTimestampOffset();
+        timestampOffset =
+            mSourceBufferAttributes->GetTimestampOffset().ToBase(sample->mTime);
         sampleInterval =
             mSourceBufferAttributes->mGenerateTimestamps
                 ? TimeInterval(timestampOffset,
