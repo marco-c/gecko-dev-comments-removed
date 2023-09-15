@@ -73,6 +73,12 @@ class EncoderBitrateAdjuster {
 
   
   uint32_t min_bitrates_bps_[kMaxSpatialLayers];
+
+  
+  VideoCodecType codec_;
+
+  
+  VideoCodecMode codec_mode_;
 };
 
 }  
