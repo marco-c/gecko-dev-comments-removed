@@ -83,9 +83,6 @@ static int cubeb_mock_stream_start(cubeb_stream* stream);
 
 static int cubeb_mock_stream_stop(cubeb_stream* stream);
 
-static int cubeb_mock_stream_get_position(cubeb_stream* stream,
-                                          uint64_t* position);
-
 static void cubeb_mock_stream_destroy(cubeb_stream* stream);
 
 static char const* cubeb_mock_get_backend_id(cubeb* context);
@@ -122,7 +119,7 @@ cubeb_ops const mock_ops = {
     cubeb_mock_stream_destroy,
     cubeb_mock_stream_start,
     cubeb_mock_stream_stop,
-    cubeb_mock_stream_get_position,
+    NULL,
     NULL,
     NULL,
     cubeb_mock_stream_set_volume,
@@ -159,7 +156,6 @@ class MockCubebStream {
 
   int Start();
   int Stop();
-  uint64_t Position();
   void Destroy();
   int RegisterDeviceChangedCallback(
       cubeb_device_changed_callback aDeviceChangedCallback);
@@ -247,7 +243,6 @@ class MockCubebStream {
   std::atomic_bool mFastMode{false};
   std::atomic_bool mForceErrorState{false};
   std::atomic_bool mForceDeviceChanged{false};
-  std::atomic<uint64_t> mPosition{0};
   AudioGenerator<AudioDataValue> mAudioGenerator;
   AudioVerifier<AudioDataValue> mAudioVerifier;
 
@@ -327,9 +322,6 @@ class MockCubeb {
   void SetSupportDeviceChangeCallback(bool aSupports);
 
   
-  void ForceStreamInitError();
-
-  
   
   
   void SetStreamStartFreezeEnabled(bool aEnabled);
@@ -406,7 +398,6 @@ class MockCubeb {
   
   
   bool mSupportsDeviceCollectionChangedCallback = true;
-  Atomic<bool> mStreamInitErrorState;
   
   Atomic<bool> mStreamStartFreezeEnabled{false};
   
@@ -467,11 +458,6 @@ int cubeb_mock_stream_start(cubeb_stream* stream) {
 
 int cubeb_mock_stream_stop(cubeb_stream* stream) {
   return MockCubebStream::AsMock(stream)->Stop();
-}
-
-int cubeb_mock_stream_get_position(cubeb_stream* stream, uint64_t* position) {
-  *position = MockCubebStream::AsMock(stream)->Position();
-  return CUBEB_OK;
 }
 
 void cubeb_mock_stream_destroy(cubeb_stream* stream) {
