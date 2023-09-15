@@ -77,7 +77,8 @@ interface WebTransportSessionEventListener : nsISupports {
   
   
   void onSessionReadyInternal(in Http3WebTransportSessionPtr aSession);
-  void onSessionClosed(in uint32_t aErrorCode,
+  void onSessionClosed(in bool aCleanly,
+                       in uint32_t aErrorCode,
                        in ACString aReason);
 
   

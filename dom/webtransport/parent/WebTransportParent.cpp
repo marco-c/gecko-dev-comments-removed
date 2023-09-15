@@ -443,7 +443,8 @@ WebTransportParent::OnSessionReady(uint64_t aSessionId) {
 
 
 NS_IMETHODIMP
-WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
+WebTransportParent::OnSessionClosed(const bool aCleanly,
+                                    const uint32_t aErrorCode,
                                     const nsACString& aReason) {
   nsresult rv = NS_OK;
 
@@ -455,6 +456,7 @@ WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
   
   
   if (!mSessionReady) {
+    
     LOG(("webtransport %p session creation failed code= %u, reason= %s", this,
          aErrorCode, PromiseFlatCString(aReason).get()));
     
@@ -476,9 +478,10 @@ WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
       if (mResolver) {
         LOG(("[%p] NotifyRemoteClosed to be called later", this));
         
-        mExecuteAfterResolverCallback = [self = RefPtr{this}, aErrorCode,
+        mExecuteAfterResolverCallback = [self = RefPtr{this}, aCleanly,
+                                         aErrorCode,
                                          reason = nsCString{aReason}]() {
-          self->NotifyRemoteClosed(aErrorCode, reason);
+          self->NotifyRemoteClosed(aCleanly, aErrorCode, reason);
         };
         return NS_OK;
       }
@@ -488,7 +491,7 @@ WebTransportParent::OnSessionClosed(const uint32_t aErrorCode,
     
     
     
-    NotifyRemoteClosed(aErrorCode, aReason);
+    NotifyRemoteClosed(aCleanly, aErrorCode, aReason);
   }
 
   return NS_OK;
@@ -525,15 +528,15 @@ NS_IMETHODIMP WebTransportParent::OnResetReceived(uint64_t aStreamId,
   return NS_OK;
 }
 
-void WebTransportParent::NotifyRemoteClosed(uint32_t aErrorCode,
+void WebTransportParent::NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
                                             const nsACString& aReason) {
-  LOG(("webtransport %p session remote closed code= %u, reason= %s", this,
-       aErrorCode, PromiseFlatCString(aReason).get()));
+  LOG(("webtransport %p session remote closed cleanly=%d code= %u, reason= %s",
+       this, aCleanly, aErrorCode, PromiseFlatCString(aReason).get()));
   mSocketThread->Dispatch(NS_NewRunnableFunction(
-      __func__,
-      [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason}]() {
+      __func__, [self = RefPtr{this}, aErrorCode, reason = nsCString{aReason},
+                 aCleanly]() {
         
-        Unused << self->SendRemoteClosed( true, aErrorCode, reason);
+        Unused << self->SendRemoteClosed(aCleanly, aErrorCode, reason);
         
       }));
 }
@@ -650,6 +653,21 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
   return NS_OK;
 }
 
+::mozilla::ipc::IPCResult WebTransportParent::RecvGetMaxDatagramSize(
+    GetMaxDatagramSizeResolver&& aResolver) {
+  LOG(("WebTransportParent RecvGetMaxDatagramSize"));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mWebTransport);
+  MOZ_ASSERT(!mMaxDatagramSizeResolver);
+
+  mMaxDatagramSizeResolver = std::move(aResolver);
+  
+  
+  
+  mWebTransport->GetMaxDatagramSize();
+  return IPC_OK();
+}
+
 
 
 
@@ -658,7 +676,6 @@ WebTransportParent::OnIncomingBidirectionalStreamAvailable(
     OutgoingDatagramResolver&& aResolver) {
   LOG(("WebTransportParent sending datagram"));
   MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
-  MOZ_ASSERT(!mOutgoingDatagramResolver);
   MOZ_ASSERT(mWebTransport);
 
   Unused << aExpirationTime;
@@ -726,8 +743,11 @@ WebTransportParent::OnOutgoingDatagramOutCome(
 }
 
 NS_IMETHODIMP WebTransportParent::OnMaxDatagramSize(uint64_t aSize) {
-  
-  
+  LOG(("Max datagram size is %" PRIu64, aSize));
+  MOZ_ASSERT(mSocketThread->IsOnCurrentThread());
+  MOZ_ASSERT(mMaxDatagramSizeResolver);
+  mMaxDatagramSizeResolver(aSize);
+  mMaxDatagramSizeResolver = nullptr;
   return NS_OK;
 }
 }  

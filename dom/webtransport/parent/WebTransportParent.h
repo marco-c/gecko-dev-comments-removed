@@ -53,6 +53,9 @@ class WebTransportParent : public PWebTransportParent,
       nsTArray<uint8_t>&& aData, const TimeStamp& aExpirationTime,
       OutgoingDatagramResolver&& aResolver);
 
+  ::mozilla::ipc::IPCResult RecvGetMaxDatagramSize(
+      GetMaxDatagramSizeResolver&& aResolver);
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
   class OnResetOrStopSendingCallback final {
@@ -72,7 +75,8 @@ class WebTransportParent : public PWebTransportParent,
   virtual ~WebTransportParent();
 
  private:
-  void NotifyRemoteClosed(uint32_t aErrorCode, const nsACString& aReason);
+  void NotifyRemoteClosed(bool aCleanly, uint32_t aErrorCode,
+                          const nsACString& aReason);
 
   using ResolveType = std::tuple<const nsresult&, const uint8_t&>;
   nsCOMPtr<nsISerialEventTarget> mSocketThread;
@@ -84,6 +88,7 @@ class WebTransportParent : public PWebTransportParent,
   
   std::function<void()> mExecuteAfterResolverCallback MOZ_GUARDED_BY(mMutex);
   OutgoingDatagramResolver mOutgoingDatagramResolver;
+  GetMaxDatagramSizeResolver mMaxDatagramSizeResolver;
   FlippedOnce<false> mClosed MOZ_GUARDED_BY(mMutex);
 
   nsCOMPtr<nsIWebTransport> mWebTransport;
