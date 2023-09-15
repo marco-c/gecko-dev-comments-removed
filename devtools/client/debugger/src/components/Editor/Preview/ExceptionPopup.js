@@ -1,8 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
+
+
+
 
 import React, { Component } from "react";
+import { div, span } from "react-dom-factories";
 import PropTypes from "prop-types";
 import { connect } from "../../../utils/connect";
 
@@ -17,11 +18,11 @@ import AccessibleImage from "../../shared/AccessibleImage";
 const classnames = require("devtools/client/shared/classnames.js");
 const ANONYMOUS_FN_NAME = "<anonymous>";
 
-// The exception popup works in two modes:
-// a. when the stacktrace is closed the exception popup
-// gets closed when the mouse leaves the popup.
-// b. when the stacktrace is opened the exception popup
-// gets closed only by clicking outside the popup.
+
+
+
+
+
 class ExceptionPopup extends Component {
   constructor(props) {
     super(props);
@@ -46,20 +47,38 @@ class ExceptionPopup extends Component {
   buildStackFrame(frame) {
     const { filename, lineNumber } = frame;
     const functionName = frame.functionName || ANONYMOUS_FN_NAME;
-
-    return (
-      <div
-        className="frame"
-        onClick={() =>
-          this.props.selectSourceURL(filename, { line: lineNumber })
-        }
-      >
-        <span className="title">{functionName}</span>
-        <span className="location">
-          <span className="filename">{filename}</span>:
-          <span className="line">{lineNumber}</span>
-        </span>
-      </div>
+    return div(
+      {
+        className: "frame",
+        onClick: () =>
+          this.props.selectSourceURL(filename, {
+            line: lineNumber,
+          }),
+      },
+      span(
+        {
+          className: "title",
+        },
+        functionName
+      ),
+      span(
+        {
+          className: "location",
+        },
+        span(
+          {
+            className: "filename",
+          },
+          filename
+        ),
+        ":",
+        span(
+          {
+            className: "line",
+          },
+          lineNumber
+        )
+      )
     );
   }
 
@@ -67,10 +86,11 @@ class ExceptionPopup extends Component {
     const isStacktraceExpanded = this.state.isStacktraceExpanded;
 
     if (stacktrace.length && isStacktraceExpanded) {
-      return (
-        <div className="exception-stacktrace">
-          {stacktrace.map(frame => this.buildStackFrame(frame))}
-        </div>
+      return div(
+        {
+          className: "exception-stacktrace",
+        },
+        stacktrace.map(frame => this.buildStackFrame(frame))
       );
     }
     return null;
@@ -78,13 +98,11 @@ class ExceptionPopup extends Component {
 
   renderArrowIcon(stacktrace) {
     if (stacktrace.length) {
-      return (
-        <AccessibleImage
-          className={classnames("arrow", {
-            expanded: this.state.isStacktraceExpanded,
-          })}
-        />
-      );
+      return React.createElement(AccessibleImage, {
+        className: classnames("arrow", {
+          expanded: this.state.isStacktraceExpanded,
+        }),
+      });
     }
     return null;
   }
@@ -94,26 +112,25 @@ class ExceptionPopup extends Component {
       exception: { stacktrace, errorMessage },
       mouseout,
     } = this.props;
-
-    return (
-      <div
-        className="preview-popup exception-popup"
-        dir="ltr"
-        onMouseLeave={() => mouseout(true, this.state.isStacktraceExpanded)}
-      >
-        <div
-          className="exception-message"
-          onClick={() => this.onExceptionMessageClick()}
-        >
-          {this.renderArrowIcon(stacktrace)}
-          {StringRep.rep({
-            object: errorMessage,
-            useQuotes: false,
-            className: "exception-text",
-          })}
-        </div>
-        {this.renderStacktrace(stacktrace)}
-      </div>
+    return div(
+      {
+        className: "preview-popup exception-popup",
+        dir: "ltr",
+        onMouseLeave: () => mouseout(true, this.state.isStacktraceExpanded),
+      },
+      div(
+        {
+          className: "exception-message",
+          onClick: () => this.onExceptionMessageClick(),
+        },
+        this.renderArrowIcon(stacktrace),
+        StringRep.rep({
+          object: errorMessage,
+          useQuotes: false,
+          className: "exception-text",
+        })
+      ),
+      this.renderStacktrace(stacktrace)
     );
   }
 }
