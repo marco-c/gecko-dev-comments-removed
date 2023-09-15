@@ -31,392 +31,271 @@
 
 
 
+#![cfg_attr(
+    all(
+        feature = "add",
+        feature = "display",
+        feature = "from",
+        feature = "into"
+    ),
+    doc = include_str!("../README.md")
+)]
+#![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(all(not(feature = "std"), feature = "error"), feature(error_in_core))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![cfg_attr(any(not(docsrs), ci), deny(rustdoc::all))]
+#![forbid(non_ascii_idents, unsafe_code)]
+#![warn(clippy::nonstandard_macro_braces)]
+
+
+#[doc(hidden)]
+pub mod __private {
+    #[cfg(feature = "debug")]
+    pub use crate::fmt::{debug_tuple, DebugTuple};
+
+    #[cfg(feature = "error")]
+    pub use crate::vendor::thiserror::aserror::AsDynError;
+}
+
+
+#[cfg(any(feature = "add", feature = "not"))]
+pub mod ops;
+
+#[cfg(feature = "debug")]
+mod fmt;
+
+#[cfg(feature = "error")]
+mod vendor;
+
+#[cfg(feature = "from_str")]
+mod r#str;
+#[cfg(feature = "from_str")]
+#[doc(inline)]
+pub use crate::r#str::FromStrError;
+
+#[cfg(feature = "try_into")]
+mod convert;
+#[cfg(feature = "try_into")]
+#[doc(inline)]
+pub use crate::convert::TryIntoError;
+
+#[cfg(feature = "try_unwrap")]
+mod try_unwrap;
+#[cfg(feature = "try_unwrap")]
+#[doc(inline)]
+pub use self::try_unwrap::TryUnwrapError;
+
+
+
+
+
+
+
+
+
+
+
+macro_rules! re_export_traits((
+    $feature:literal, $new_module_name:ident, $module:path $(, $traits:ident)* $(,)?) => {
+        #[cfg(feature = $feature)]
+        mod $new_module_name {
+            pub use $module::{$($traits),*};
+        }
+
+        #[cfg(feature = $feature)]
+        #[doc(hidden)]
+        pub use crate::$new_module_name::*;
+
+    }
+);
+
+re_export_traits!(
+    "add",
+    add_traits,
+    core::ops,
+    Add,
+    BitAnd,
+    BitOr,
+    BitXor,
+    Sub,
+);
+re_export_traits!(
+    "add_assign",
+    add_assign_traits,
+    core::ops,
+    AddAssign,
+    BitAndAssign,
+    BitOrAssign,
+    BitXorAssign,
+    SubAssign,
+);
+re_export_traits!("as_mut", as_mut_traits, core::convert, AsMut);
+re_export_traits!("as_ref", as_ref_traits, core::convert, AsRef);
+re_export_traits!("debug", debug_traits, core::fmt, Debug);
+re_export_traits!("deref", deref_traits, core::ops, Deref);
+re_export_traits!("deref_mut", deref_mut_traits, core::ops, DerefMut);
+re_export_traits!(
+    "display",
+    display_traits,
+    core::fmt,
+    Binary,
+    Display,
+    LowerExp,
+    LowerHex,
+    Octal,
+    Pointer,
+    UpperExp,
+    UpperHex,
+);
 
+#[cfg(not(feature = "std"))]
+re_export_traits!("error", error_traits, core::error, Error);
+#[cfg(feature = "std")]
+re_export_traits!("error", error_traits, std::error, Error);
 
+re_export_traits!("from", from_traits, core::convert, From);
 
+re_export_traits!("from_str", from_str_traits, core::str, FromStr);
 
+re_export_traits!("index", index_traits, core::ops, Index);
 
+re_export_traits!("index_mut", index_mut_traits, core::ops, IndexMut);
 
+re_export_traits!("into", into_traits, core::convert, Into);
 
+re_export_traits!(
+    "into_iterator",
+    into_iterator_traits,
+    core::iter,
+    IntoIterator,
+);
 
+re_export_traits!("mul", mul_traits, core::ops, Div, Mul, Rem, Shl, Shr);
 
+#[cfg(feature = "mul_assign")]
+re_export_traits!(
+    "mul_assign",
+    mul_assign_traits,
+    core::ops,
+    DivAssign,
+    MulAssign,
+    RemAssign,
+    ShlAssign,
+    ShrAssign,
+);
 
+re_export_traits!("not", not_traits, core::ops, Neg, Not);
 
+re_export_traits!("sum", sum_traits, core::iter, Product, Sum);
 
+re_export_traits!("try_into", try_into_traits, core::convert, TryInto);
 
 
 
+#[cfg(feature = "add")]
+pub use derive_more_impl::{Add, BitAnd, BitOr, BitXor, Sub};
 
+#[cfg(feature = "add_assign")]
+pub use derive_more_impl::{
+    AddAssign, BitAndAssign, BitOrAssign, BitXorAssign, SubAssign,
+};
 
+#[cfg(feature = "as_mut")]
+pub use derive_more_impl::AsMut;
 
+#[cfg(feature = "as_ref")]
+pub use derive_more_impl::AsRef;
 
+#[cfg(feature = "constructor")]
+pub use derive_more_impl::Constructor;
 
+#[cfg(feature = "debug")]
+pub use derive_more_impl::Debug;
 
+#[cfg(feature = "deref")]
+pub use derive_more_impl::Deref;
 
+#[cfg(feature = "deref_mut")]
+pub use derive_more_impl::DerefMut;
 
+#[cfg(feature = "display")]
+pub use derive_more_impl::{
+    Binary, Display, LowerExp, LowerHex, Octal, Pointer, UpperExp, UpperHex,
+};
 
+#[cfg(feature = "error")]
+pub use derive_more_impl::Error;
 
+#[cfg(feature = "from")]
+pub use derive_more_impl::From;
 
+#[cfg(feature = "from_str")]
+pub use derive_more_impl::FromStr;
 
+#[cfg(feature = "index")]
+pub use derive_more_impl::Index;
 
+#[cfg(feature = "index_mut")]
+pub use derive_more_impl::IndexMut;
 
+#[cfg(feature = "into")]
+pub use derive_more_impl::Into;
 
+#[cfg(feature = "into_iterator")]
+pub use derive_more_impl::IntoIterator;
 
+#[cfg(feature = "is_variant")]
+pub use derive_more_impl::IsVariant;
 
+#[cfg(feature = "mul")]
+pub use derive_more_impl::{Div, Mul, Rem, Shl, Shr};
 
+#[cfg(feature = "mul_assign")]
+pub use derive_more_impl::{DivAssign, MulAssign, RemAssign, ShlAssign, ShrAssign};
 
+#[cfg(feature = "not")]
+pub use derive_more_impl::{Neg, Not};
 
+#[cfg(feature = "sum")]
+pub use derive_more_impl::{Product, Sum};
 
+#[cfg(feature = "try_into")]
+pub use derive_more_impl::TryInto;
 
+#[cfg(feature = "try_unwrap")]
+pub use derive_more_impl::TryUnwrap;
 
+#[cfg(feature = "unwrap")]
+pub use derive_more_impl::Unwrap;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#![recursion_limit = "128"]
-
-extern crate proc_macro;
-
-use proc_macro::TokenStream;
-use syn::parse::Error as ParseError;
-
-mod utils;
-
-#[cfg(any(feature = "add_assign", feature = "mul_assign"))]
-mod add_assign_like;
-#[cfg(any(
+#[cfg(not(any(
+    feature = "full",
     feature = "add",
     feature = "add_assign",
+    feature = "as_mut",
+    feature = "as_ref",
+    feature = "constructor",
+    feature = "debug",
+    feature = "deref",
+    feature = "deref_mut",
+    feature = "display",
+    feature = "error",
+    feature = "from",
+    feature = "from_str",
+    feature = "index",
+    feature = "index_mut",
+    feature = "into",
+    feature = "into_iterator",
+    feature = "is_variant",
     feature = "mul",
     feature = "mul_assign",
-))]
-mod add_helpers;
-#[cfg(any(feature = "add", feature = "mul"))]
-mod add_like;
-#[cfg(feature = "as_mut")]
-mod as_mut;
-#[cfg(feature = "as_ref")]
-mod as_ref;
-#[cfg(feature = "constructor")]
-mod constructor;
-#[cfg(feature = "deref")]
-mod deref;
-#[cfg(feature = "deref_mut")]
-mod deref_mut;
-#[cfg(feature = "display")]
-mod display;
-#[cfg(feature = "error")]
-mod error;
-#[cfg(feature = "from")]
-mod from;
-#[cfg(feature = "from_str")]
-mod from_str;
-#[cfg(feature = "index")]
-mod index;
-#[cfg(feature = "index_mut")]
-mod index_mut;
-#[cfg(feature = "into")]
-mod into;
-#[cfg(feature = "into_iterator")]
-mod into_iterator;
-#[cfg(feature = "is_variant")]
-mod is_variant;
-#[cfg(feature = "mul_assign")]
-mod mul_assign_like;
-#[cfg(any(feature = "mul", feature = "mul_assign"))]
-mod mul_helpers;
-#[cfg(feature = "mul")]
-mod mul_like;
-#[cfg(feature = "not")]
-mod not_like;
-#[cfg(feature = "display")]
-#[allow(ellipsis_inclusive_range_patterns)]
-#[allow(clippy::all)]
-mod parsing;
-#[cfg(feature = "sum")]
-mod sum_like;
-#[cfg(feature = "try_into")]
-mod try_into;
-#[cfg(feature = "unwrap")]
-mod unwrap;
-
-
-
-
-
-trait Output {
-    fn process(self) -> TokenStream;
-}
-
-impl Output for proc_macro2::TokenStream {
-    fn process(self) -> TokenStream {
-        self.into()
-    }
-}
-
-impl Output for Result<proc_macro2::TokenStream, ParseError> {
-    fn process(self) -> TokenStream {
-        match self {
-            Ok(ts) => ts.into(),
-            Err(e) => e.to_compile_error().into(),
-        }
-    }
-}
-
-macro_rules! create_derive(
-    ($feature:literal, $mod_:ident, $trait_:ident, $fn_name: ident $(,$attribute:ident)* $(,)?) => {
-        #[cfg(feature = $feature)]
-        #[proc_macro_derive($trait_, attributes($($attribute),*))]
-        #[doc(hidden)]
-        pub fn $fn_name(input: TokenStream) -> TokenStream {
-            let ast = syn::parse(input).unwrap();
-            Output::process($mod_::expand(&ast, stringify!($trait_)))
-        }
-    }
+    feature = "not",
+    feature = "sum",
+    feature = "try_into",
+    feature = "try_unwrap",
+    feature = "unwrap",
+)))]
+compile_error!(
+    "at least one derive feature must be enabled (or the \"full\" one enabling all the derives)"
 );
-
-create_derive!("from", from, From, from_derive, from);
-
-create_derive!("into", into, Into, into_derive, into);
-
-create_derive!("constructor", constructor, Constructor, constructor_derive);
-
-create_derive!("not", not_like, Not, not_derive);
-create_derive!("not", not_like, Neg, neg_derive);
-
-create_derive!("add", add_like, Add, add_derive);
-create_derive!("add", add_like, Sub, sub_derive);
-create_derive!("add", add_like, BitAnd, bit_and_derive);
-create_derive!("add", add_like, BitOr, bit_or_derive);
-create_derive!("add", add_like, BitXor, bit_xor_derive);
-
-create_derive!("mul", mul_like, Mul, mul_derive, mul);
-create_derive!("mul", mul_like, Div, div_derive, div);
-create_derive!("mul", mul_like, Rem, rem_derive, rem);
-create_derive!("mul", mul_like, Shr, shr_derive, shr);
-create_derive!("mul", mul_like, Shl, shl_derive, shl);
-
-create_derive!("add_assign", add_assign_like, AddAssign, add_assign_derive,);
-create_derive!("add_assign", add_assign_like, SubAssign, sub_assign_derive,);
-create_derive!(
-    "add_assign",
-    add_assign_like,
-    BitAndAssign,
-    bit_and_assign_derive,
-);
-create_derive!(
-    "add_assign",
-    add_assign_like,
-    BitOrAssign,
-    bit_or_assign_derive,
-);
-create_derive!(
-    "add_assign",
-    add_assign_like,
-    BitXorAssign,
-    bit_xor_assign_derive,
-);
-
-create_derive!(
-    "mul_assign",
-    mul_assign_like,
-    MulAssign,
-    mul_assign_derive,
-    mul_assign,
-);
-create_derive!(
-    "mul_assign",
-    mul_assign_like,
-    DivAssign,
-    div_assign_derive,
-    div_assign,
-);
-create_derive!(
-    "mul_assign",
-    mul_assign_like,
-    RemAssign,
-    rem_assign_derive,
-    rem_assign,
-);
-create_derive!(
-    "mul_assign",
-    mul_assign_like,
-    ShrAssign,
-    shr_assign_derive,
-    shr_assign,
-);
-create_derive!(
-    "mul_assign",
-    mul_assign_like,
-    ShlAssign,
-    shl_assign_derive,
-    shl_assign,
-);
-
-create_derive!("sum", sum_like, Sum, sum_derive);
-create_derive!("sum", sum_like, Product, product_derive);
-
-create_derive!("error", error, Error, error_derive, error);
-
-create_derive!("from_str", from_str, FromStr, from_str_derive);
-
-create_derive!("display", display, Display, display_derive, display);
-create_derive!("display", display, Binary, binary_derive, binary);
-create_derive!("display", display, Octal, octal_derive, octal);
-create_derive!("display", display, LowerHex, lower_hex_derive, lower_hex);
-create_derive!("display", display, UpperHex, upper_hex_derive, upper_hex);
-create_derive!("display", display, LowerExp, lower_exp_derive, lower_exp);
-create_derive!("display", display, UpperExp, upper_exp_derive, upper_exp);
-create_derive!("display", display, Pointer, pointer_derive, pointer);
-create_derive!("display", display, DebugCustom, debug_custom_derive, debug);
-
-create_derive!("index", index, Index, index_derive, index);
-create_derive!(
-    "index_mut",
-    index_mut,
-    IndexMut,
-    index_mut_derive,
-    index_mut,
-);
-
-create_derive!(
-    "into_iterator",
-    into_iterator,
-    IntoIterator,
-    into_iterator_derive,
-    into_iterator,
-);
-
-create_derive!("try_into", try_into, TryInto, try_into_derive, try_into);
-
-create_derive!("deref", deref, Deref, deref_derive, deref);
-create_derive!(
-    "deref_mut",
-    deref_mut,
-    DerefMut,
-    deref_mut_derive,
-    deref_mut,
-);
-
-create_derive!("as_ref", as_ref, AsRef, as_ref_derive, as_ref);
-create_derive!("as_mut", as_mut, AsMut, as_mut_derive, as_mut);
-
-create_derive!(
-    "is_variant",
-    is_variant,
-    IsVariant,
-    is_variant_derive,
-    is_variant
-);
-
-create_derive!("unwrap", unwrap, Unwrap, unwrap_derive, unwrap);
