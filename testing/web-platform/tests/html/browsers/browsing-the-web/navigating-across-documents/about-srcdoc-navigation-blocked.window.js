@@ -24,6 +24,19 @@ promise_test(async t => {
 
 promise_test(async t => {
   const iframe = await addSrcdocIframe();
+
+  iframe.contentWindow.location = "about:srcdoc?query";
+
+  
+  await Promise.race([
+    t.step_wait(() => iframe.contentDocument === null),
+    failOnMessage(iframe.contentWindow)
+  ]);
+}, "Navigations to about:srcdoc?query via window.location within an " +
+   "about:srcdoc document must be blocked");
+
+promise_test(async t => {
+  const iframe = await addSrcdocIframe();
   iframe.contentWindow.name = "test_frame";
 
   iframe.contentWindow.location = "/common/blank.html";
@@ -31,12 +44,6 @@ promise_test(async t => {
 
   window.open("about:srcdoc", "test_frame");
 
-  
-  
-  
-  
-  
-  
   
   await Promise.race([
     t.step_wait(() => iframe.contentDocument === null),
