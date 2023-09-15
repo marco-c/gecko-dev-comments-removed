@@ -5520,7 +5520,7 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
 
   
   if (sourceType.isNullable()) {
-    branchTestPtr(Assembler::Zero, ref, ref, nullLabel);
+    branchWasmAnyRefIsNull(true, ref, nullLabel);
   }
 
   
@@ -5542,7 +5542,8 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
   
   MOZ_ASSERT(scratch1 != Register::Invalid());
   if (!wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::eq())) {
-    branchTestObjectIsWasmGcObject(false, ref, scratch1, failLabel);
+    branchWasmAnyRefIsObjectOrNull(false, ref, failLabel);
+    branchObjectIsWasmGcObject(false, ref, scratch1, failLabel);
   }
 
   if (destType.isEq()) {
@@ -5746,6 +5747,195 @@ void MacroAssembler::branchWasmSuperTypeVectorIsSubtype(
   
 }
 
+void MacroAssembler::branchWasmAnyRefIsNull(bool isNull, Register src,
+                                            Label* label) {
+  branchTestPtr(isNull ? Assembler::Zero : Assembler::NonZero, src, src, label);
+}
+
+void MacroAssembler::branchWasmAnyRefIsObjectOrNull(bool isObject, Register src,
+                                                    Label* label) {
+  branchTestPtr(isObject ? Assembler::Zero : Assembler::NonZero, src,
+                Imm32(int32_t(wasm::AnyRef::TagMask)), label);
+}
+
+void MacroAssembler::branchWasmAnyRefIsGCThing(bool isGCThing, Register src,
+                                               Label* label) {
+  
+  branchWasmAnyRefIsNull(!isGCThing, src, label);
+}
+
+void MacroAssembler::branchWasmAnyRefIsNurseryCell(Condition cond, Register src,
+                                                   Register temp,
+                                                   Label* label) {
+  MOZ_ASSERT(cond == Assembler::Equal || cond == Assembler::NotEqual);
+
+  Label done;
+  branchWasmAnyRefIsGCThing(false, src,
+                            cond == Assembler::Equal ? &done : label);
+
+  getWasmAnyRefGCThingChunk(src, temp);
+  branchPtr(InvertCondition(cond), Address(temp, gc::ChunkStoreBufferOffset),
+            ImmWord(0), label);
+  bind(&done);
+}
+
+void MacroAssembler::branchValueConvertsToWasmAnyRefInline(
+    ValueOperand src, Label* label) {
+  ScratchTagScope tag(*this, src);
+  splitTagForTest(src, tag);
+  branchTestObject(Assembler::Equal, tag, label);
+  branchTestString(Assembler::Equal, tag, label);
+  branchTestNull(Assembler::Equal, tag, label);
+}
+
+void MacroAssembler::convertValueToWasmAnyRef(ValueOperand src, Register dest,
+                                              Label* oolConvert) {
+  Label nullValue, stringValue, objectValue, done;
+  {
+    ScratchTagScope tag(*this, src);
+    splitTagForTest(src, tag);
+    branchTestObject(Assembler::Equal, tag, &objectValue);
+    branchTestString(Assembler::Equal, tag, &stringValue);
+    branchTestNull(Assembler::Equal, tag, &nullValue);
+    jump(oolConvert);
+  }
+
+  bind(&nullValue);
+  static_assert(wasm::AnyRef::NullRefValue == 0);
+  xorPtr(dest, dest);
+  jump(&done);
+
+  bind(&stringValue);
+  unboxString(src, dest);
+  orPtr(Imm32((int32_t)wasm::AnyRefTag::String), dest);
+  jump(&done);
+
+  bind(&objectValue);
+  unboxObject(src, dest);
+
+  bind(&done);
+}
+
+void MacroAssembler::convertObjectToWasmAnyRef(Register src, Register dest) {
+  
+  movePtr(src, dest);
+}
+
+void MacroAssembler::convertStringToWasmAnyRef(Register src, Register dest) {
+  
+  movePtr(src, dest);
+  orPtr(Imm32(int32_t(wasm::AnyRefTag::String)), dest);
+}
+
+void MacroAssembler::branchObjectIsWasmGcObject(bool isGcObject, Register src,
+                                                Register scratch,
+                                                Label* label) {
+  constexpr uint32_t ShiftedMask = (Shape::kindMask() << Shape::kindShift());
+  constexpr uint32_t ShiftedKind =
+      (uint32_t(Shape::Kind::WasmGC) << Shape::kindShift());
+  MOZ_ASSERT(src != scratch);
+
+  loadPtr(Address(src, JSObject::offsetOfShape()), scratch);
+  load32(Address(scratch, Shape::offsetOfImmutableFlags()), scratch);
+  and32(Imm32(ShiftedMask), scratch);
+  branch32(isGcObject ? Assembler::Equal : Assembler::NotEqual, scratch,
+           Imm32(ShiftedKind), label);
+}
+
+
+
+
+
+
+
+
+
+void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
+                                              ValueOperand dst,
+                                              Register scratch) {
+  MOZ_ASSERT(src != scratch);
+#if JS_BITS_PER_WORD == 32
+  MOZ_ASSERT(dst.typeReg() != scratch);
+  MOZ_ASSERT(dst.payloadReg() != scratch);
+#else
+  MOZ_ASSERT(dst.valueReg() != scratch);
+#endif
+
+  Label isObjectOrNull, isObject, isWasmValueBox, done;
+
+  
+  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
+
+  
+  rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  moveValue(TypedOrValueRegister(MIRType::String, AnyRegister(src)), dst);
+  jump(&done);
+
+  
+  bind(&isObjectOrNull);
+  branchTestPtr(Assembler::NonZero, src, src, &isObject);
+  moveValue(NullValue(), dst);
+  jump(&done);
+
+  
+  
+  bind(&isObject);
+  
+  moveValue(TypedOrValueRegister(MIRType::Object, AnyRegister(src)), dst);
+  
+  branchTestObjClass(Assembler::Equal, src,
+                     Address(instance, wasm::Instance::offsetOfValueBoxClass()),
+                     scratch, src, &isWasmValueBox);
+  jump(&done);
+
+  
+  bind(&isWasmValueBox);
+  loadValue(Address(src, wasm::AnyRef::valueBoxOffsetOfValue()), dst);
+
+  bind(&done);
+}
+
+void MacroAssembler::convertWasmAnyRefToValue(Register instance, Register src,
+                                              const Address& dst,
+                                              Register scratch) {
+  MOZ_ASSERT(src != scratch);
+
+  Label isObjectOrNull, isObject, isWasmValueBox, done;
+
+  
+  branchTest32(Assembler::Zero, src, Imm32(wasm::AnyRef::TagMask), &isObjectOrNull);
+
+  
+  rshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  lshiftPtr(Imm32(wasm::AnyRef::TagShift), src);
+  storeValue(JSVAL_TYPE_STRING, src, dst);
+  jump(&done);
+
+  
+  bind(&isObjectOrNull);
+  branchTestPtr(Assembler::NonZero, src, src, &isObject);
+  storeValue(NullValue(), dst);
+  jump(&done);
+
+  
+  
+  bind(&isObject);
+  
+  storeValue(JSVAL_TYPE_OBJECT, src, dst);
+  
+  branchTestObjClass(Assembler::Equal, src,
+                     Address(instance, wasm::Instance::offsetOfValueBoxClass()),
+                     scratch, src, &isWasmValueBox);
+  jump(&done);
+
+  
+  bind(&isWasmValueBox);
+  copy64(Address(src, wasm::AnyRef::valueBoxOffsetOfValue()), dst, scratch);
+
+  bind(&done);
+}
+
 void MacroAssembler::nopPatchableToCall(const wasm::CallSiteDesc& desc) {
   CodeOffset offset = nopPatchableToCall();
   append(desc, offset);
@@ -5761,9 +5951,11 @@ void MacroAssembler::emitPreBarrierFastPath(JSRuntime* rt, MIRType type,
   
   if (type == MIRType::Value) {
     unboxGCThingForGCBarrier(Address(PreBarrierReg, 0), temp1);
+  } else if (type == MIRType::WasmAnyRef) {
+    unboxWasmAnyRefGCThingForGCBarrier(Address(PreBarrierReg, 0), temp1);
   } else {
     MOZ_ASSERT(type == MIRType::Object || type == MIRType::String ||
-               type == MIRType::Shape || type == MIRType::WasmAnyRef);
+               type == MIRType::Shape);
     loadPtr(Address(PreBarrierReg, 0), temp1);
   }
 

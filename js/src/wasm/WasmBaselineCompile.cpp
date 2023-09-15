@@ -3841,15 +3841,15 @@ bool BaseCompiler::emitBrOnNull() {
   if (b.hasBlockResults()) {
     needResultRegisters(b.resultType);
   }
-  RegRef rp = popRef();
+  RegRef ref = popRef();
   if (b.hasBlockResults()) {
     freeResultRegisters(b.resultType);
   }
-  if (!jumpConditionalWithResults(&b, Assembler::Equal, rp,
-                                  ImmWord(NULLREF_VALUE))) {
+  if (!jumpConditionalWithResults(&b, Assembler::Equal, ref,
+                                  ImmWord(AnyRef::NullRefValue))) {
     return false;
   }
-  pushRef(rp);
+  pushRef(ref);
 
   return true;
 }
@@ -3880,22 +3880,22 @@ bool BaseCompiler::emitBrOnNonNull() {
   needIntegerResultRegisters(b.resultType);
 
   
-  RegRef condition = popRef();
+  RegRef refCondition = popRef();
 
   
   
-  RegRef rp = needRef();
-  moveRef(condition, rp);
-  pushRef(rp);
+  RegRef ref = needRef();
+  moveRef(refCondition, ref);
+  pushRef(ref);
 
   freeIntegerResultRegisters(b.resultType);
 
-  if (!jumpConditionalWithResults(&b, Assembler::NotEqual, condition,
-                                  ImmWord(NULLREF_VALUE))) {
+  if (!jumpConditionalWithResults(&b, Assembler::NotEqual, refCondition,
+                                  ImmWord(AnyRef::NullRefValue))) {
     return false;
   }
 
-  freeRef(condition);
+  freeRef(refCondition);
 
   
   dropValue();
@@ -5895,7 +5895,7 @@ bool BaseCompiler::emitRefNull() {
     return true;
   }
 
-  pushRef(NULLREF_VALUE);
+  pushRef(AnyRef::NullRefValue);
   return true;
 }
 
@@ -5912,7 +5912,7 @@ bool BaseCompiler::emitRefIsNull() {
   RegRef r = popRef();
   RegI32 rd = narrowRef(r);
 
-  masm.cmpPtrSet(Assembler::Equal, r, ImmWord(NULLREF_VALUE), rd);
+  masm.cmpPtrSet(Assembler::Equal, r, ImmWord(AnyRef::NullRefValue), rd);
   pushI32(rd);
   return true;
 }
@@ -6559,7 +6559,7 @@ void BaseCompiler::emitBarrieredClear(RegPtr valueAddr) {
   emitPreBarrier(valueAddr);
 
   
-  masm.storePtr(ImmWord(NULLREF_VALUE), Address(valueAddr, 0));
+  masm.storePtr(ImmWord(AnyRef::NullRefValue), Address(valueAddr, 0));
 
   
 }
@@ -7474,10 +7474,10 @@ bool BaseCompiler::emitArrayCopy() {
 void BaseCompiler::emitRefTestCommon(RefType sourceType, RefType destType) {
   Label success;
   Label join;
-  RegRef object = popRef();
+  RegRef ref = popRef();
   RegI32 result = needI32();
 
-  branchIfRefSubtype(object, sourceType, destType, &success,
+  branchIfRefSubtype(ref, sourceType, destType, &success,
                      true);
   masm.xor32(result, result);
   masm.jump(&join);
@@ -7486,7 +7486,7 @@ void BaseCompiler::emitRefTestCommon(RefType sourceType, RefType destType) {
   masm.bind(&join);
 
   pushI32(result);
-  freeRef(object);
+  freeRef(ref);
 }
 
 void BaseCompiler::emitRefCastCommon(RefType sourceType, RefType destType) {
@@ -7652,21 +7652,23 @@ bool BaseCompiler::emitBrOnCastCommon(bool onSuccess,
   }
 
   
+  RegRef refCondition = popRef();
+
   
-  RegRef object = popRef();
-  RegRef objectCondition = needRef();
-  moveRef(object, objectCondition);
-  pushRef(object);
+  
+  RegRef ref = needRef();
+  moveRef(refCondition, ref);
+  pushRef(ref);
 
   if (b.hasBlockResults()) {
     freeIntegerResultRegisters(b.resultType);
   }
 
-  if (!jumpConditionalWithResults(&b, objectCondition, sourceType, destType,
+  if (!jumpConditionalWithResults(&b, refCondition, sourceType, destType,
                                   onSuccess)) {
     return false;
   }
-  freeRef(objectCondition);
+  freeRef(refCondition);
 
   return true;
 }

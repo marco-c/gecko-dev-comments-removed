@@ -64,48 +64,19 @@ namespace wasm {
 
 
 
-
-
-
-
-
-
-
-
-
 enum class AnyRefKind : uint8_t {
   Null,
   Object,
+  String,
 };
 
 
 enum class AnyRefTag : uint8_t {
   
   ObjectOrNull = 0x0,
+  
+  String = 0x2,
 };
-static constexpr uintptr_t TAG_MASK = 0x3;
-static constexpr uintptr_t TAG_SHIFT = 2;
-static_assert(TAG_SHIFT <= gc::CellAlignShift, "not enough free bits");
-
-static constexpr uintptr_t AddAnyRefTag(uintptr_t value, AnyRefTag tag) {
-  MOZ_ASSERT(!(value & TAG_MASK));
-  return value | uintptr_t(tag);
-}
-static constexpr AnyRefTag GetAnyRefTag(uintptr_t value) {
-  return (AnyRefTag)(value & TAG_MASK);
-}
-static constexpr uintptr_t RemoveAnyRefTag(uintptr_t value) {
-  return value & ~TAG_MASK;
-}
-
-
-
-
-static constexpr uintptr_t NULLREF_VALUE = 0;
-static_assert(GetAnyRefTag(NULLREF_VALUE) == AnyRefTag::ObjectOrNull);
-
-static constexpr uintptr_t INVALIDREF_VALUE = UINTPTR_MAX & ~TAG_MASK;
-static_assert(GetAnyRefTag(INVALIDREF_VALUE) == AnyRefTag::ObjectOrNull);
 
 
 
@@ -116,32 +87,64 @@ class AnyRef {
   uintptr_t value_;
 
   
-  AnyRefTag pointerTag() const { return GetAnyRefTag(value_); }
+  AnyRefTag pointerTag() const { return GetUintptrTag(value_); }
 
   explicit AnyRef(uintptr_t value) : value_(value) {}
 
+  static constexpr uintptr_t TagUintptr(uintptr_t value, AnyRefTag tag) {
+    MOZ_ASSERT(!(value & TagMask));
+    return value | uintptr_t(tag);
+  }
+  static constexpr uintptr_t UntagUintptr(uintptr_t value) {
+    return value & ~TagMask;
+  }
+  static constexpr AnyRefTag GetUintptrTag(uintptr_t value) {
+    return (AnyRefTag)(value & TagMask);
+  }
+
  public:
-  explicit AnyRef() : value_(NULLREF_VALUE) {}
-  MOZ_IMPLICIT AnyRef(std::nullptr_t) : value_(NULLREF_VALUE) {}
+  static constexpr uintptr_t TagMask = 0x3;
+  static constexpr uintptr_t TagShift = 2;
+  static_assert(TagShift <= gc::CellAlignShift, "not enough free bits");
+  
+  static constexpr uintptr_t GCThingMask = ~TagMask;
+  
+  
+  static constexpr uintptr_t GCThingChunkMask =
+      GCThingMask & ~js::gc::ChunkMask;
 
   
-  static AnyRef null() { return AnyRef(NULLREF_VALUE); }
+  
+  
+  static constexpr uintptr_t NullRefValue = 0;
+  static constexpr uintptr_t InvalidRefValue = UINTPTR_MAX << TagShift;
+
+  explicit AnyRef() : value_(NullRefValue) {}
+  MOZ_IMPLICIT AnyRef(std::nullptr_t) : value_(NullRefValue) {}
+
+  
+  static AnyRef null() { return AnyRef(NullRefValue); }
 
   
   
-  static AnyRef invalid() { return AnyRef(INVALIDREF_VALUE); }
+  static AnyRef invalid() { return AnyRef(InvalidRefValue); }
 
   
   static AnyRef fromJSObjectOrNull(JSObject* objectOrNull) {
-    MOZ_ASSERT(GetAnyRefTag((uintptr_t)objectOrNull) ==
+    MOZ_ASSERT(GetUintptrTag((uintptr_t)objectOrNull) ==
                AnyRefTag::ObjectOrNull);
     return AnyRef((uintptr_t)objectOrNull);
   }
 
   
   static AnyRef fromJSObject(JSObject& object) {
-    MOZ_ASSERT(GetAnyRefTag((uintptr_t)&object) == AnyRefTag::ObjectOrNull);
+    MOZ_ASSERT(GetUintptrTag((uintptr_t)&object) == AnyRefTag::ObjectOrNull);
     return AnyRef((uintptr_t)&object);
+  }
+
+  
+  static AnyRef fromJSString(JSString* string) {
+    return AnyRef(TagUintptr((uintptr_t)string, AnyRefTag::String));
   }
 
   
@@ -156,7 +159,7 @@ class AnyRef {
 
   
   static bool valueNeedsBoxing(JS::HandleValue value) {
-    return !value.isObjectOrNull();
+    return !(value.isObjectOrNull() || value.isString());
   }
 
   
@@ -173,7 +176,7 @@ class AnyRef {
   }
 
   AnyRefKind kind() const {
-    if (value_ == NULLREF_VALUE) {
+    if (value_ == NullRefValue) {
       return AnyRefKind::Null;
     }
     switch (pointerTag()) {
@@ -183,19 +186,23 @@ class AnyRef {
         
         return AnyRefKind::Object;
       }
+      case AnyRefTag::String: {
+        return AnyRefKind::String;
+      }
       default: {
         MOZ_CRASH("unknown AnyRef tag");
       }
     }
   }
 
-  bool isNull() const { return value_ == NULLREF_VALUE; }
-  bool isGCThing() const { return kind() == AnyRefKind::Object; }
+  bool isNull() const { return value_ == NullRefValue; }
+  bool isGCThing() const { return !isNull(); }
   bool isJSObject() const { return kind() == AnyRefKind::Object; }
+  bool isJSString() const { return kind() == AnyRefKind::String; }
 
   gc::Cell* toGCThing() const {
     MOZ_ASSERT(isGCThing());
-    return (gc::Cell*)RemoveAnyRefTag(value_);
+    return (gc::Cell*)UntagUintptr(value_);
   }
   JSObject& toJSObject() const {
     MOZ_ASSERT(isJSObject());
@@ -203,7 +210,12 @@ class AnyRef {
   }
   JSObject* toJSObjectOrNull() const {
     MOZ_ASSERT(!isInvalid());
+    MOZ_ASSERT(pointerTag() == AnyRefTag::ObjectOrNull);
     return (JSObject*)value_;
+  }
+  JSString* toJSString() const {
+    MOZ_ASSERT(isJSString());
+    return (JSString*)UntagUintptr(value_);
   }
 
   
@@ -252,6 +264,8 @@ auto MapGCThingTyped(const wasm::AnyRef& val, F&& f) {
   switch (val.kind()) {
     case wasm::AnyRefKind::Object:
       return mozilla::Some(f(&val.toJSObject()));
+    case wasm::AnyRefKind::String:
+      return mozilla::Some(f(val.toJSString()));
     case wasm::AnyRefKind::Null: {
       using ReturnType = decltype(f(static_cast<JSObject*>(nullptr)));
       return mozilla::Maybe<ReturnType>();

@@ -1,20 +1,20 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2019 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #include "wasm/WasmGC.h"
 #include "wasm/WasmInstance.h"
@@ -47,53 +47,53 @@ wasm::StackMap* wasm::ConvertStackMapBoolVectorToStackMap(
   return stackMap;
 }
 
-// Generate a stackmap for a function's stack-overflow-at-entry trap, with
-// the structure:
-//
-//    <reg dump area>
-//    |       ++ <space reserved before trap, if any>
-//    |               ++ <space for Frame>
-//    |                       ++ <inbound arg area>
-//    |                                           |
-//    Lowest Addr                                 Highest Addr
-//
-// The caller owns the resulting stackmap.  This assumes a grow-down stack.
-//
-// For non-debug builds, if the stackmap would contain no pointers, no
-// stackmap is created, and nullptr is returned.  For a debug build, a
-// stackmap is always created and returned.
-//
-// The "space reserved before trap" is the space reserved by
-// MacroAssembler::wasmReserveStackChecked, in the case where the frame is
-// "small", as determined by that function.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 bool wasm::CreateStackMapForFunctionEntryTrap(
     const wasm::ArgTypeVector& argTypes, const RegisterOffsets& trapExitLayout,
     size_t trapExitLayoutWords, size_t nBytesReservedBeforeTrap,
     size_t nInboundStackArgBytes, wasm::StackMap** result) {
-  // Ensure this is defined on all return paths.
+  
   *result = nullptr;
 
-  // The size of the wasm::Frame itself.
+  
   const size_t nFrameBytes = sizeof(wasm::Frame);
 
-  // The size of the register dump (trap) area.
+  
   const size_t trapExitLayoutBytes = trapExitLayoutWords * sizeof(void*);
 
-  // This is the total number of bytes covered by the map.
+  
   const DebugOnly<size_t> nTotalBytes = trapExitLayoutBytes +
                                         nBytesReservedBeforeTrap + nFrameBytes +
                                         nInboundStackArgBytes;
 
-  // Create the stackmap initially in this vector.  Since most frames will
-  // contain 128 or fewer words, heap allocation is avoided in the majority of
-  // cases.  vec[0] is for the lowest address in the map, vec[N-1] is for the
-  // highest address in the map.
+  
+  
+  
+  
   StackMapBoolVector vec;
 
-  // Keep track of whether we've actually seen any refs.
+  
   bool hasRefs = false;
 
-  // REG DUMP AREA
+  
   wasm::ExitStubMapVector trapExitExtras;
   if (!GenerateStackmapEntriesForTrapExit(
           argTypes, trapExitLayout, trapExitLayoutWords, &trapExitExtras)) {
@@ -109,18 +109,18 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
     hasRefs |= vec[i];
   }
 
-  // SPACE RESERVED BEFORE TRAP
+  
   MOZ_ASSERT(nBytesReservedBeforeTrap % sizeof(void*) == 0);
   if (!vec.appendN(false, nBytesReservedBeforeTrap / sizeof(void*))) {
     return false;
   }
 
-  // SPACE FOR FRAME
+  
   if (!vec.appendN(false, nFrameBytes / sizeof(void*))) {
     return false;
   }
 
-  // INBOUND ARG AREA
+  
   MOZ_ASSERT(nInboundStackArgBytes % sizeof(void*) == 0);
   const size_t numStackArgWords = nInboundStackArgBytes / sizeof(void*);
 
@@ -142,14 +142,14 @@ bool wasm::CreateStackMapForFunctionEntryTrap(
   }
 
 #ifndef DEBUG
-  // We saw no references, and this is a non-debug build, so don't bother
-  // building the stackmap.
+  
+  
   if (!hasRefs) {
     return true;
   }
 #endif
 
-  // Convert vec into a wasm::StackMap.
+  
   MOZ_ASSERT(vec.length() * sizeof(void*) == nTotalBytes);
   wasm::StackMap* stackMap = ConvertStackMapBoolVectorToStackMap(vec, hasRefs);
   if (!stackMap) {
@@ -186,14 +186,14 @@ bool wasm::GenerateStackmapEntriesForTrapExit(
 
     size_t offsetFromTop = trapExitLayout.getOffset(i->gpr());
 
-    // If this doesn't hold, the associated register wasn't saved by
-    // the trap exit stub.  Better to crash now than much later, in
-    // some obscure place, and possibly with security consequences.
+    
+    
+    
     MOZ_RELEASE_ASSERT(offsetFromTop < trapExitLayoutNumWords);
 
-    // offsetFromTop is an offset in words down from the highest
-    // address in the exit stub save area.  Switch it around to be an
-    // offset up from the bottom of the (integer register) save area.
+    
+    
+    
     size_t offsetFromBottom = trapExitLayoutNumWords - 1 - offsetFromTop;
 
     (*extras)[offsetFromBottom] = true;
@@ -206,22 +206,22 @@ void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register instance,
                                    Register scratch, Register valueAddr,
                                    size_t valueOffset, Label* skipBarrier,
                                    BytecodeOffset* trapOffset) {
-  // If no incremental GC has started, we don't need the barrier.
+  
   masm.loadPtr(
       Address(instance, Instance::offsetOfAddressOfNeedsIncrementalBarrier()),
       scratch);
   masm.branchTest32(Assembler::Zero, Address(scratch, 0), Imm32(0x1),
                     skipBarrier);
 
-  // Emit metadata for a potential null access when reading the previous value.
+  
   if (trapOffset) {
     masm.append(wasm::Trap::NullPointerDereference,
                 wasm::TrapSite(masm.currentOffset(), *trapOffset));
   }
 
-  // If the previous value is null, we don't need the barrier.
+  
   masm.loadPtr(Address(valueAddr, valueOffset), scratch);
-  masm.branchTestPtr(Assembler::Zero, scratch, scratch, skipBarrier);
+  masm.branchWasmAnyRefIsGCThing(false, scratch, skipBarrier);
 }
 
 void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,
@@ -229,13 +229,13 @@ void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,
                                   size_t valueOffset) {
   MOZ_ASSERT(valueAddr == PreBarrierReg);
 
-  // Add the offset to the PreBarrierReg, if any.
+  
   if (valueOffset != 0) {
     masm.addPtr(Imm32(valueOffset), valueAddr);
   }
 
 #if defined(DEBUG) && defined(JS_CODEGEN_ARM64)
-  // The prebarrier assumes that x28 == sp.
+  
   Label ok;
   masm.Cmp(sp, vixl::Operand(x28));
   masm.B(&ok, Assembler::Equal);
@@ -243,12 +243,12 @@ void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,
   masm.bind(&ok);
 #endif
 
-  // Load and call the pre-write barrier code. It will preserve all volatile
-  // registers.
+  
+  
   masm.loadPtr(Address(instance, Instance::offsetOfPreBarrierCode()), scratch);
   masm.call(scratch);
 
-  // Remove the offset we folded into PreBarrierReg, if any.
+  
   if (valueOffset != 0) {
     masm.subPtr(Imm32(valueOffset), valueAddr);
   }
@@ -258,58 +258,55 @@ void wasm::EmitWasmPostBarrierGuard(MacroAssembler& masm,
                                     const Maybe<Register>& object,
                                     Register otherScratch, Register setValue,
                                     Label* skipBarrier) {
-  // If the pointer being stored is null, no barrier.
-  masm.branchTestPtr(Assembler::Zero, setValue, setValue, skipBarrier);
-
-  // If there is a containing object and it is in the nursery, no barrier.
+  
   if (object) {
     masm.branchPtrInNurseryChunk(Assembler::Equal, *object, otherScratch,
                                  skipBarrier);
   }
 
-  // If the pointer being stored is to a tenured object, no barrier.
-  masm.branchPtrInNurseryChunk(Assembler::NotEqual, setValue, otherScratch,
-                               skipBarrier);
+  
+  masm.branchWasmAnyRefIsNurseryCell(Assembler::NotEqual, setValue,
+                                     otherScratch, skipBarrier);
 }
 
 #ifdef DEBUG
 bool wasm::IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC) {
 #  if defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86)
   const uint8_t* insn = nextPC;
-  return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           // ud2
-         (insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  // call *%r_
-         insn[-5] == 0xE8;                                   // call simm32
+  return (insn[-2] == 0x0F && insn[-1] == 0x0B) ||           
+         (insn[-2] == 0xFF && (insn[-1] & 0xF8) == 0xD0) ||  
+         insn[-5] == 0xE8;                                   
 
 #  elif defined(JS_CODEGEN_ARM)
   const uint32_t* insn = (const uint32_t*)nextPC;
-  return ((uintptr_t(insn) & 3) == 0) &&            // must be ARM, not Thumb
-         (insn[-1] == 0xe7f000f0 ||                 // udf
-          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  // blx reg (ARM, enc A1)
-          (insn[-1] & 0x0f000000) == 0x0b000000);   // bl.cc simm24 (ARM, enc A1)
+  return ((uintptr_t(insn) & 3) == 0) &&            
+         (insn[-1] == 0xe7f000f0 ||                 
+          (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  
+          (insn[-1] & 0x0f000000) == 0x0b000000);   
 
 #  elif defined(JS_CODEGEN_ARM64)
   const uint32_t hltInsn = 0xd4a00000;
   const uint32_t* insn = (const uint32_t*)nextPC;
   return ((uintptr_t(insn) & 3) == 0) &&
-         (insn[-1] == hltInsn ||                    // hlt
-          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||  // blr reg
-          (insn[-1] & 0xfc000000) == 0x94000000);   // bl simm26
+         (insn[-1] == hltInsn ||                    
+          (insn[-1] & 0xfffffc1f) == 0xd63f0000 ||  
+          (insn[-1] & 0xfc000000) == 0x94000000);   
 
 #  elif defined(JS_CODEGEN_MIPS64)
-  // TODO (bug 1699696): Implement this.  As for the platforms above, we need to
-  // enumerate all code sequences that can precede the stackmap location.
+  
+  
   return true;
 #  elif defined(JS_CODEGEN_LOONG64)
-  // TODO(loong64): Implement IsValidStackMapKey.
+  
   return true;
 #  elif defined(JS_CODEGEN_RISCV64)
   const uint32_t* insn = (const uint32_t*)nextPC;
   return (((uintptr_t(insn) & 3) == 0) &&
-          ((insn[-1] == 0x00006037 && insn[-2] == 0x00100073) ||  // break;
+          ((insn[-1] == 0x00006037 && insn[-2] == 0x00100073) ||  
            ((insn[-1] & kBaseOpcodeMask) == JALR) ||
            ((insn[-1] & kBaseOpcodeMask) == JAL) ||
            (insn[-1] == 0x00100073 &&
-            (insn[-2] & kITypeMask) == RO_CSRRWI)));  // wasm trap
+            (insn[-2] & kITypeMask) == RO_CSRRWI)));  
 #  else
   MOZ_CRASH("IsValidStackMapKey: requires implementation on this platform");
 #  endif

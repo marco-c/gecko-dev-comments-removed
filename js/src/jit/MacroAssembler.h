@@ -1008,6 +1008,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   inline void loadAbiReturnAddress(Register dest) PER_SHARED_ARCH;
 
+  
+  
+
+  inline void copy64(const Address& src, const Address& dest, Register scratch);
+
  public:
   
   
@@ -1815,9 +1820,6 @@ class MacroAssembler : public MacroAssemblerSpecific {
   inline void branchTestProxyHandlerFamily(Condition cond, Register proxy,
                                            Register scratch,
                                            const void* handlerp, Label* label);
-
-  inline void branchTestObjectIsWasmGcObject(bool isGcObject, Register obj,
-                                             Register scratch, Label* label);
 
   inline void branchTestNeedsIncrementalBarrier(Condition cond, Label* label);
   inline void branchTestNeedsIncrementalBarrierAnyZone(Condition cond,
@@ -3942,6 +3944,40 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                           Register scratch,
                                           uint32_t superTypeDepth, Label* label,
                                           bool onSuccess);
+
+  
+  void branchWasmAnyRefIsNull(bool isNull, Register src, Label* label);
+  
+  void branchWasmAnyRefIsObjectOrNull(bool isObject, Register src, Label* label);
+  
+  void branchWasmAnyRefIsGCThing(bool isGCThing, Register src, Label* label);
+  
+  void branchWasmAnyRefIsNurseryCell(Condition cond, Register src,
+                                     Register scratch, Label* label);
+
+  
+  
+  void branchValueConvertsToWasmAnyRefInline(ValueOperand src, Label* label);
+  
+  
+  void convertValueToWasmAnyRef(ValueOperand src, Register dest,
+                                Label* oolConvert);
+  
+  void convertObjectToWasmAnyRef(Register src, Register dest);
+  
+  void convertStringToWasmAnyRef(Register src, Register dest);
+
+  
+  
+  
+  void convertWasmAnyRefToValue(Register instance, Register src,
+                                ValueOperand dst, Register scratch);
+  void convertWasmAnyRefToValue(Register instance, Register src,
+                                const Address& dst, Register scratch);
+
+  
+  void branchObjectIsWasmGcObject(bool isGcObject, Register src,
+                                  Register scratch, Label* label);
 
   
   
