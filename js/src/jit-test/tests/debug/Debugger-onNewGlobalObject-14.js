@@ -9,7 +9,7 @@ dbg.onNewGlobalObject = function (global) {
   
   assertEq(gw.executeInGlobalWithBindings('Math.atan2(y,x)', { y: 0 }).return, Math.PI);
   
-  assertEq(gw.executeInGlobalWithBindings('x.toString()', { x: gw }).return, "[object global]");
+  assertEq(gw.executeInGlobalWithBindings('y.toString()', { y: gw }).return, "[object global]");
 };
 
 newGlobal({newCompartment: true});
