@@ -1447,7 +1447,6 @@ public class GeckoSession {
                     addMarker.run();
                   },
                   ex -> {
-                    
                     res.complete(false);
                     addMarker.run();
                   });
