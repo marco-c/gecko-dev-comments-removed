@@ -391,8 +391,7 @@ static void GtkWindowSetTransientFor(GtkWindow* aWindow, GtkWindow* aParent) {
   }
 
 nsWindow::nsWindow()
-    : mDestroyMutex("nsWindow::mDestroyMutex"),
-      mIsDestroyed(false),
+    : mIsDestroyed(false),
       mIsShown(false),
       mNeedsShow(false),
       mIsMapped(false),
@@ -591,7 +590,6 @@ void nsWindow::DestroyChildWindows() {
 void nsWindow::Destroy() {
   MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread());
 
-  MutexAutoLock lock(mDestroyMutex);
   if (mIsDestroyed || !mCreated) {
     return;
   }
@@ -3420,13 +3418,6 @@ void* nsWindow::GetNativeData(uint32_t aDataType) {
       return nullptr;
     case NS_NATIVE_EGL_WINDOW: {
       void* eglWindow = nullptr;
-
-      
-      
-      MutexAutoLock lock(mDestroyMutex);
-      if (mIsDestroyed || !mCreated) {
-        return nullptr;
-      }
 #ifdef MOZ_X11
       if (GdkIsX11Display()) {
         eglWindow = mGdkWindow ? (void*)GDK_WINDOW_XID(mGdkWindow) : nullptr;
@@ -8762,7 +8753,6 @@ void nsWindow::SetCompositorWidgetDelegate(CompositorWidgetDelegate* delegate) {
       "mCompositorWidgetDelegate %p\n",
       delegate, mIsMapped, mCompositorWidgetDelegate);
 
-  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   if (delegate) {
     mCompositorWidgetDelegate = delegate->AsPlatformSpecificDelegate();
     MOZ_ASSERT(mCompositorWidgetDelegate,
@@ -8905,13 +8895,7 @@ GtkWindow* nsWindow::GetCurrentTopmostWindow() const {
   return topmostParentWindow;
 }
 
-
-
-gint nsWindow::GetCachedCeiledScaleFactor() const { return mWindowScaleFactor; }
-
 gint nsWindow::GdkCeiledScaleFactor() {
-  MOZ_ASSERT(NS_IsMainThread());
-
   
   
   if (mWindowType == WindowType::TopLevel && !mWindowScaleFactorChanged) {
@@ -9729,22 +9713,21 @@ nsWindow* nsWindow::GetFocusedWindow() { return gFocusWindow; }
 #ifdef MOZ_WAYLAND
 void nsWindow::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
-  
-  
-  MutexAutoLock lock(mDestroyMutex);
-  if (mIsDestroyed || !GdkIsWaylandDisplay() || !mContainer) {
+  if (!mContainer || !GdkIsWaylandDisplay()) {
     return;
   }
 
-  
-  
-  gint scale =
-      NS_IsMainThread() ? GdkCeiledScaleFactor() : GetCachedCeiledScaleFactor();
-  LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled %d x %d)",
-      aEGLWindowSize.width, aEGLWindowSize.height, scale,
-      aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
-  moz_container_wayland_egl_window_set_size(
-      mContainer, aEGLWindowSize.ToUnknownSize(), scale);
+  gint scale = GdkCeiledScaleFactor();
+  if (moz_container_wayland_egl_window_needs_size_update(
+          mContainer, aEGLWindowSize.ToUnknownSize(), scale)) {
+    LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled %d x "
+        "%d)",
+        aEGLWindowSize.width, aEGLWindowSize.height, scale,
+        aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
+    moz_container_wayland_egl_window_set_size(mContainer,
+                                              aEGLWindowSize.ToUnknownSize());
+    moz_container_wayland_set_scale_factor(mContainer);
+  }
 }
 #endif
 

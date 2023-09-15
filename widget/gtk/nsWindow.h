@@ -374,7 +374,6 @@ class nsWindow final : public nsBaseWidget {
 
   
   gint GdkCeiledScaleFactor();
-  gint GetCachedCeiledScaleFactor() const;
   bool UseFractionalScale() const;
   double FractionalScaleFactor();
 
@@ -476,7 +475,7 @@ class nsWindow final : public nsBaseWidget {
 
   nsCOMPtr<nsIWidget> mParent;
   PopupType mPopupHint{};
-  mozilla::Atomic<int, mozilla::Relaxed> mWindowScaleFactor{1};
+  int mWindowScaleFactor = 1;
 
   void UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface,
                    nsIntRect aBoundsRect);
@@ -626,10 +625,8 @@ class nsWindow final : public nsBaseWidget {
   
   mozilla::Atomic<bool, mozilla::Relaxed> mDrawInTitlebar{false};
 
-  mozilla::Mutex mDestroyMutex;
-
   
-  bool mIsDestroyed MOZ_GUARDED_BY(mDestroyMutex);
+  bool mIsDestroyed;
   
   
   bool mIsShown : 1;
