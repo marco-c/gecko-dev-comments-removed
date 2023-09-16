@@ -3119,6 +3119,10 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
                       {(const uint8_t*)xformData, sizeof(xformData)});
 
   
+  RefPtr<WebGLTextureJS> prevClipMask = mLastClipMask;
+  SetNoClipMask();
+
+  
   mWebgl->DrawArrays(LOCAL_GL_TRIANGLES, GLint(aVertexRange.mOffset),
                      GLsizei(aVertexRange.mLength));
 
@@ -3128,6 +3132,9 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
   mDirtyViewport = true;
   mDirtyAA = true;
   mDirtyClip = true;
+  if (prevClipMask) {
+    SetClipMask(prevClipMask);
+  }
 
   return handle.forget();
 }
