@@ -4539,10 +4539,10 @@ static bool BuildFlatMatchArray(JSContext* cx, HandleString str,
   arr->initDenseElement(0, StringValue(pattern));
 
   
-  arr->setSlot(0, Int32Value(match));
+  arr->initSlot(RegExpRealm::MatchResultObjectIndexSlot, Int32Value(match));
 
   
-  arr->setSlot(1, StringValue(str));
+  arr->initSlot(RegExpRealm::MatchResultObjectInputSlot, StringValue(str));
 
 #ifdef DEBUG
   RootedValue test(cx);

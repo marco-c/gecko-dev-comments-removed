@@ -2552,26 +2552,6 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
     masm.bind(&allocated);
   }
 
-  static_assert(RegExpRealm::MatchResultObjectIndexSlot == 0,
-                "First slot holds the 'index' property");
-  static_assert(RegExpRealm::MatchResultObjectInputSlot == 1,
-                "Second slot holds the 'input' property");
-  static_assert(RegExpRealm::MatchResultObjectGroupsSlot == 2,
-                "Third slot holds the 'groups' property");
-
-  
-  
-  masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), temp2);
-  masm.storeValue(
-      nativeTemplateObj.getSlot(RegExpRealm::MatchResultObjectIndexSlot),
-      Address(temp2, RegExpRealm::offsetOfMatchResultObjectIndexSlot()));
-  masm.storeValue(
-      nativeTemplateObj.getSlot(RegExpRealm::MatchResultObjectInputSlot),
-      Address(temp2, RegExpRealm::offsetOfMatchResultObjectInputSlot()));
-  masm.storeValue(
-      nativeTemplateObj.getSlot(RegExpRealm::MatchResultObjectGroupsSlot),
-      Address(temp2, RegExpRealm::offsetOfMatchResultObjectGroupsSlot()));
-
   
    
 
@@ -2730,6 +2710,11 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
       FramePointer, pairsVectorStartOffset + MatchPair::offsetOfStart());
   Address firstMatchPairLimitAddress(
       FramePointer, pairsVectorStartOffset + MatchPair::offsetOfLimit());
+
+  static_assert(RegExpRealm::MatchResultObjectIndexSlot == 0,
+                "First slot holds the 'index' property");
+  static_assert(RegExpRealm::MatchResultObjectInputSlot == 1,
+                "Second slot holds the 'input' property");
 
   masm.loadPtr(Address(object, NativeObject::offsetOfSlots()), temp2);
 
