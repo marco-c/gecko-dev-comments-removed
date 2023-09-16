@@ -20,12 +20,23 @@ function runTests(testFile, order) {
   async function setupPrefs() {
     
     
+    SpecialPowers.wrap(document).notifyUserGestureActivation();
+    await SpecialPowers.addPermission(
+      "storageAccessAPI",
+      true,
+      window.location.href
+    );
+    await SpecialPowers.wrap(document).requestStorageAccess();
     return SpecialPowers.pushPrefEnv({
       set: [
         ["dom.caches.testing.enabled", true],
         ["dom.serviceWorkers.enabled", true],
         ["dom.serviceWorkers.testing.enabled", true],
         ["dom.serviceWorkers.exemptFromPerDomainMax", true],
+        [
+          "privacy.partition.always_partition_third_party_non_cookie_storage",
+          false,
+        ],
       ],
     });
   }

@@ -22,7 +22,7 @@ var settings = [
     topPage: TEST_TOP_PAGE_HTTPS,
     thirdPartyPage: TEST_4TH_PARTY_PAGE_HTTPS,
     setup: () => {
-      let type = "3rdPartyFrameStorage^https://not-tracking.example.com";
+      let type = "3rdPartyStorage^https://not-tracking.example.com";
       let permission = Services.perms.ALLOW_ACTION;
       let expireType = Services.perms.EXPIRE_SESSION;
       PermissionTestUtils.add(
@@ -109,9 +109,19 @@ var testCases = [
     cases: [
       [true] ,
       [false, foreignBlocked] ,
+      [
+        SpecialPowers.Services.prefs.getBoolPref(
+          "network.cookie.rejectForeignWithExceptions.enabled"
+        ),
+        foreignBlocked,
+      ] ,
       [false, foreignBlocked] ,
-      [false, foreignBlocked] ,
-      [false, foreignBlocked] ,
+      [
+        SpecialPowers.Services.prefs.getBoolPref(
+          "network.cookie.rejectForeignWithExceptions.enabled"
+        ),
+        foreignBlocked,
+      ] ,
       [true] ,
       [true] ,
       [false, foreignBlocked] ,
@@ -150,7 +160,7 @@ var testCases = [
       [true] ,
       [true] ,
       [false, trackerBlocked] ,
-      [false, trackerBlocked] ,
+      [true] ,
       [true] ,
       [true] ,
       [false, trackerBlocked] ,
@@ -161,9 +171,9 @@ var testCases = [
     cases: [
       [true] ,
       [false] ,
-      [false] ,
+      [true] ,
       [false, trackerBlocked] ,
-      [false, trackerBlocked] ,
+      [true] ,
       [true] ,
       [true] ,
       [false, trackerBlocked] ,

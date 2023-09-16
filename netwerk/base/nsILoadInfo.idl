@@ -432,16 +432,6 @@ interface nsILoadInfo : nsISupports
 
   [infallible] attribute unsigned long triggeringSandboxFlags;
 
-
-  
-
-
-
-
-
-  [infallible] attribute unsigned long long triggeringWindowId;
-  [infallible] attribute boolean triggeringStorageAccess;
-
   
 
 

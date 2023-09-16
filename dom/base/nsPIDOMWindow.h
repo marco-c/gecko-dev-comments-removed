@@ -624,7 +624,7 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   void SaveStorageAccessPermissionGranted();
 
-  bool UsingStorageAccess();
+  bool HasStorageAccessPermissionGranted();
 
   uint32_t UpdateLockCount(bool aIncrement) {
     MOZ_ASSERT_IF(!aIncrement, mLockCount > 0);
@@ -745,7 +745,9 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  bool mUsingStorageAccess;
+  
+  
+  bool mStorageAccessPermissionGranted;
 
   
   

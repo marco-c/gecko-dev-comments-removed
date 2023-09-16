@@ -22,7 +22,7 @@ var settings = [
     topPage: TEST_TOP_PAGE_HTTPS,
     thirdPartyPage: TEST_4TH_PARTY_PAGE_HTTPS,
     setup: () => {
-      let type = "3rdPartyFrameStorage^https://not-tracking.example.com";
+      let type = "3rdPartyStorage^https://not-tracking.example.com";
       let permission = Services.perms.ALLOW_ACTION;
       let expireType = Services.perms.EXPIRE_SESSION;
       PermissionTestUtils.add(
@@ -105,9 +105,13 @@ var testCases = [
     hasStorageAccess: [
       true ,
       false ,
+      SpecialPowers.Services.prefs.getBoolPref(
+        "network.cookie.rejectForeignWithExceptions.enabled"
+      ) ,
       false ,
-      false ,
-      false ,
+      SpecialPowers.Services.prefs.getBoolPref(
+        "network.cookie.rejectForeignWithExceptions.enabled"
+      ) ,
       true ,
       true ,
       false ,
@@ -146,7 +150,7 @@ var testCases = [
       true ,
       true ,
       false ,
-      false ,
+      true ,
       true ,
       true ,
       false ,
@@ -157,9 +161,9 @@ var testCases = [
     hasStorageAccess: [
       true ,
       false ,
+      true ,
       false ,
-      false ,
-      false ,
+      true ,
       true ,
       true ,
       false ,

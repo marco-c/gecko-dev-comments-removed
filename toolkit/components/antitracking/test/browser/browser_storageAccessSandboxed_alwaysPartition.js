@@ -138,9 +138,6 @@ AntiTracking.runTest(
     " saved permission",
   
   async _ => {
-    await noStorageAccessInitially();
-    SpecialPowers.wrap(document).notifyUserGestureActivation();
-    await document.requestStorageAccess();
     await hasStorageAccessInitially();
 
     localStorage.foo = 42;
@@ -155,7 +152,7 @@ AntiTracking.runTest(
   ], 
   false, 
   false, 
-  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER, 
+  0, 
   false, 
   "allow-scripts allow-same-origin allow-popups allow-storage-access-by-user-activation"
 );
@@ -192,9 +189,6 @@ AntiTracking.runTest(
   "Verify that non-sandboxed contexts get the saved permission",
   
   async _ => {
-    await noStorageAccessInitially();
-    SpecialPowers.wrap(document).notifyUserGestureActivation();
-    await document.requestStorageAccess();
     await hasStorageAccessInitially();
 
     localStorage.foo = 42;
@@ -216,7 +210,7 @@ AntiTracking.runTest(
   ], 
   false, 
   false, 
-  Ci.nsIWebProgressListener.STATE_COOKIES_BLOCKED_TRACKER 
+  0 
 );
 
 AntiTracking.runTest(

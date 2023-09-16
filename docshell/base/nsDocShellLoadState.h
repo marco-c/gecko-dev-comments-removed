@@ -113,14 +113,6 @@ class nsDocShellLoadState final {
 
   void SetTriggeringSandboxFlags(uint32_t aTriggeringSandboxFlags);
 
-  uint64_t TriggeringWindowId() const;
-
-  void SetTriggeringWindowId(uint64_t aTriggeringWindowId);
-
-  bool TriggeringStorageAccess() const;
-
-  void SetTriggeringStorageAccess(bool aTriggeringStorageAccess);
-
   nsIContentSecurityPolicy* Csp() const;
 
   void SetCsp(nsIContentSecurityPolicy* aCsp);
@@ -420,12 +412,6 @@ class nsDocShellLoadState final {
   
   
   uint32_t mTriggeringSandboxFlags;
-
-  
-  
-  
-  uint64_t mTriggeringWindowId;
-  bool mTriggeringStorageAccess;
 
   
   
