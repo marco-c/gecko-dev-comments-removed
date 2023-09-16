@@ -5,6 +5,7 @@
 use crate::authenticatorservice::{RegisterArgs, SignArgs};
 use crate::consts::PARAMETER_SIZE;
 
+use crate::ctap2;
 use crate::ctap2::client_data::ClientDataHash;
 use crate::ctap2::commands::client_pin::Pin;
 use crate::ctap2::commands::get_assertion::GetAssertionResult;
@@ -22,7 +23,6 @@ use crate::transport::device_selector::{
 use crate::transport::platform::transaction::Transaction;
 use crate::transport::{hid::HIDDevice, FidoDevice, FidoProtocol};
 use crate::u2fprotocol::{u2f_init_device, u2f_is_keyhandle_valid, u2f_register, u2f_sign};
-use crate::ctap2;
 use crate::{
     AuthenticatorTransports, InteractiveRequest, KeyHandle, ManageResult, RegisterFlags, SignFlags,
 };
@@ -69,19 +69,16 @@ impl StateMachine {
         Default::default()
     }
 
-    fn init_and_select(
+    fn init_device(
         info: DeviceBuildParameters,
         selector: &Sender<DeviceSelectorEvent>,
-        status: &Sender<crate::StatusUpdate>,
-        ctap2_only: bool,
-        keep_alive: &dyn Fn() -> bool,
     ) -> Option<Device> {
         
         let mut dev = match Device::new(info) {
             Ok(dev) => dev,
             Err((e, id)) => {
                 info!("error happened with device: {}", e);
-                selector.send(DeviceSelectorEvent::NotAToken(id)).ok()?;
+                let _ = selector.send(DeviceSelectorEvent::NotAToken(id));
                 return None;
             }
         };
@@ -89,20 +86,28 @@ impl StateMachine {
         
         if let Err(e) = dev.init() {
             warn!("error while initializing device: {}", e);
-            selector.send(DeviceSelectorEvent::NotAToken(dev.id())).ok();
+            let _ = selector.send(DeviceSelectorEvent::NotAToken(dev.id()));
             return None;
         }
 
-        if ctap2_only && dev.get_protocol() != FidoProtocol::CTAP2 {
-            info!("Device does not support CTAP2");
-            selector.send(DeviceSelectorEvent::NotAToken(dev.id())).ok();
-            return None;
-        }
+        Some(dev)
+    }
 
+    fn wait_for_device_selector(
+        dev: &mut Device,
+        selector: &Sender<DeviceSelectorEvent>,
+        status: &Sender<crate::StatusUpdate>,
+        keep_alive: &dyn Fn() -> bool,
+    ) -> bool {
         let (tx, rx) = channel();
-        selector
+        if selector
             .send(DeviceSelectorEvent::ImAToken((dev.id(), tx)))
-            .ok()?;
+            .is_err()
+        {
+            
+            
+            return false;
+        }
 
         
         
@@ -120,33 +125,32 @@ impl StateMachine {
                     BlinkResult::DeviceSelected => {
                         
                         
+                        
+                        
                         selector
                             .send(DeviceSelectorEvent::SelectedToken(dev.id()))
-                            .ok()?;
+                            .is_ok()
                     }
                     BlinkResult::Cancelled => {
                         info!("Device {:?} was not selected", dev.id());
-                        return None;
+                        false
                     }
                 }
             }
             Ok(DeviceCommand::Cancel) => {
                 info!("Device {:?} was not selected", dev.id());
-                return None;
+                false
             }
             Ok(DeviceCommand::Removed) => {
                 info!("Device {:?} was removed", dev.id());
-                return None;
+                false
             }
-            Ok(DeviceCommand::Continue) => {
-                
-            }
+            Ok(DeviceCommand::Continue) => true,
             Err(_) => {
                 warn!("Error when trying to receive messages from DeviceSelector! Exiting.");
-                return None;
+                false
             }
         }
-        Some(dev)
     }
 
     pub fn register(
@@ -198,11 +202,12 @@ impl StateMachine {
             cbc.clone(),
             status,
             move |info, selector, status, alive| {
-                let mut dev = match Self::init_and_select(info, &selector, &status, false, alive) {
-                    None => {
-                        return;
-                    }
+                let mut dev = match Self::init_device(info, &selector) {
                     Some(dev) => dev,
+                    None => return,
+                };
+                if !Self::wait_for_device_selector(&mut dev, &selector, &status, alive) {
+                    return;
                 };
 
                 info!("Device {:?} continues with the register process", dev.id());
@@ -275,11 +280,12 @@ impl StateMachine {
             callback.clone(),
             status,
             move |info, selector, status, alive| {
-                let mut dev = match Self::init_and_select(info, &selector, &status, false, alive) {
-                    None => {
-                        return;
-                    }
+                let mut dev = match Self::init_device(info, &selector) {
                     Some(dev) => dev,
+                    None => return,
+                };
+                if !Self::wait_for_device_selector(&mut dev, &selector, &status, alive) {
+                    return;
                 };
 
                 info!("Device {:?} continues with the signing process", dev.id());
@@ -319,11 +325,19 @@ impl StateMachine {
             callback.clone(),
             status,
             move |info, selector, status, alive| {
-                let mut dev = match Self::init_and_select(info, &selector, &status, true, alive) {
-                    None => {
-                        return;
-                    }
+                let mut dev = match Self::init_device(info, &selector) {
                     Some(dev) => dev,
+                    None => return,
+                };
+
+                if dev.get_protocol() != FidoProtocol::CTAP2 {
+                    info!("Device does not support CTAP2");
+                    let _ = selector.send(DeviceSelectorEvent::NotAToken(dev.id()));
+                    return;
+                }
+
+                if !Self::wait_for_device_selector(&mut dev, &selector, &status, alive) {
+                    return;
                 };
                 ctap2::reset_helper(&mut dev, selector, status, callback.clone(), alive);
             },
@@ -349,11 +363,19 @@ impl StateMachine {
             callback.clone(),
             status,
             move |info, selector, status, alive| {
-                let mut dev = match Self::init_and_select(info, &selector, &status, true, alive) {
-                    None => {
-                        return;
-                    }
+                let mut dev = match Self::init_device(info, &selector) {
                     Some(dev) => dev,
+                    None => return,
+                };
+
+                if dev.get_protocol() != FidoProtocol::CTAP2 {
+                    info!("Device does not support CTAP2");
+                    let _ = selector.send(DeviceSelectorEvent::NotAToken(dev.id()));
+                    return;
+                }
+
+                if !Self::wait_for_device_selector(&mut dev, &selector, &status, alive) {
+                    return;
                 };
 
                 ctap2::set_or_change_pin_helper(
@@ -607,11 +629,19 @@ impl StateMachine {
             callback.clone(),
             status,
             move |info, selector, status, alive| {
-                let mut dev = match Self::init_and_select(info, &selector, &status, true, alive) {
-                    None => {
-                        return;
-                    }
+                let mut dev = match Self::init_device(info, &selector) {
                     Some(dev) => dev,
+                    None => return,
+                };
+
+                if dev.get_protocol() != FidoProtocol::CTAP2 {
+                    info!("Device does not support CTAP2");
+                    let _ = selector.send(DeviceSelectorEvent::NotAToken(dev.id()));
+                    return;
+                }
+
+                if !Self::wait_for_device_selector(&mut dev, &selector, &status, alive) {
+                    return;
                 };
 
                 info!("Device {:?} selected for interactive management.", dev.id());
