@@ -109,14 +109,6 @@ public final class GeckoRuntime implements Parcelable {
 
 
 
-
-
-  public static final String EXTRA_CRASH_REMOTE_TYPE = "remoteType";
-
-  
-
-
-
   public static final String CRASHED_PROCESS_TYPE_MAIN = "MAIN";
 
   
@@ -342,7 +334,6 @@ public final class GeckoRuntime implements Parcelable {
             i.putExtra(EXTRA_MINIDUMP_PATH, message.getString(EXTRA_MINIDUMP_PATH));
             i.putExtra(EXTRA_EXTRAS_PATH, message.getString(EXTRA_EXTRAS_PATH));
             i.putExtra(EXTRA_CRASH_PROCESS_TYPE, message.getString(EXTRA_CRASH_PROCESS_TYPE));
-            i.putExtra(EXTRA_CRASH_REMOTE_TYPE, message.getString(EXTRA_CRASH_REMOTE_TYPE));
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
               context.startForegroundService(i);
