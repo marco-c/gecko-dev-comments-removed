@@ -1,6 +1,6 @@
 add_task(async function setup() {
   
-  await setupPlacesDatabase("places_v43.sqlite");
+  await setupPlacesDatabase("places_v52.sqlite");
   await setupPlacesDatabase("favicons_v41.sqlite", "favicons.sqlite");
 });
 
