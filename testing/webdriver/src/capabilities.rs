@@ -53,25 +53,6 @@ pub trait BrowserCapabilities {
     
     fn web_socket_url(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
 
-    
-    fn webauthn_virtual_authenticators(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
-
-    
-    
-    fn webauthn_extension_uvm(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
-
-    
-    
-    fn webauthn_extension_prf(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
-
-    
-    
-    fn webauthn_extension_large_blob(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
-
-    
-    
-    fn webauthn_extension_cred_blob(&mut self, _: &Capabilities) -> WebDriverResult<bool>;
-
     fn accept_proxy(
         &mut self,
         proxy_settings: &Map<String, Value>,
@@ -155,12 +136,7 @@ impl SpecNewSessionParameters {
                 x @ "acceptInsecureCerts"
                 | x @ "setWindowRect"
                 | x @ "strictFileInteractability"
-                | x @ "webSocketUrl"
-                | x @ "webauthn:virtualAuthenticators"
-                | x @ "webauthn:extension:uvm"
-                | x @ "webauthn:extension:prf"
-                | x @ "webauthn:extension:largeBlob"
-                | x @ "webauthn:extension:credBlob" => {
+                | x @ "webSocketUrl" => {
                     if !value.is_boolean() {
                         return Err(WebDriverError::new(
                             ErrorStatus::InvalidArgument,
@@ -553,51 +529,6 @@ impl CapabilitiesMatching for SpecNewSessionParameters {
                         "webSocketUrl" => {
                             if value.as_bool().unwrap_or(false)
                                 && !browser_capabilities.web_socket_url(merged).unwrap_or(false)
-                            {
-                                return false;
-                            }
-                        }
-                        "webauthn:virtualAuthenticators" => {
-                            if value.as_bool().unwrap_or(false)
-                                && !browser_capabilities
-                                    .webauthn_virtual_authenticators(merged)
-                                    .unwrap_or(false)
-                            {
-                                return false;
-                            }
-                        }
-                        "webauthn:extension:uvm" => {
-                            if value.as_bool().unwrap_or(false)
-                                && !browser_capabilities
-                                    .webauthn_extension_uvm(merged)
-                                    .unwrap_or(false)
-                            {
-                                return false;
-                            }
-                        }
-                        "webauthn:extension:prf" => {
-                            if value.as_bool().unwrap_or(false)
-                                && !browser_capabilities
-                                    .webauthn_extension_prf(merged)
-                                    .unwrap_or(false)
-                            {
-                                return false;
-                            }
-                        }
-                        "webauthn:extension:largeBlob" => {
-                            if value.as_bool().unwrap_or(false)
-                                && !browser_capabilities
-                                    .webauthn_extension_large_blob(merged)
-                                    .unwrap_or(false)
-                            {
-                                return false;
-                            }
-                        }
-                        "webauthn:extension:credBlob" => {
-                            if value.as_bool().unwrap_or(false)
-                                && !browser_capabilities
-                                    .webauthn_extension_cred_blob(merged)
-                                    .unwrap_or(false)
                             {
                                 return false;
                             }

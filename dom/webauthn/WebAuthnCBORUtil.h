@@ -15,6 +15,14 @@
 
 namespace mozilla::dom {
 
+nsresult CBOREncodePublicKeyObj(const CryptoBuffer& aPubKeyBuf,
+                                 CryptoBuffer& aPubKeyObj);
+
+nsresult CBOREncodeFidoU2FAttestationObj(
+    const CryptoBuffer& aAuthDataBuf, const CryptoBuffer& aAttestationCertBuf,
+    const CryptoBuffer& aSignatureBuf,
+     CryptoBuffer& aAttestationObj);
+
 nsresult CBOREncodeNoneAttestationObj(const CryptoBuffer& aAuthDataBuf,
                                        CryptoBuffer& aAttestationObj);
 
