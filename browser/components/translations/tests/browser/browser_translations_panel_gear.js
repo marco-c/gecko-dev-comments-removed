@@ -14,21 +14,9 @@ add_task(async function test_translations_panel_manage_languages() {
 
   await openTranslationsPanel({ onOpenPanel: assertPanelDefaultView });
 
-  const gearIcon = getByL10nId("translations-panel-settings-button");
-  click(gearIcon, "Open the preferences menu");
+  await openTranslationsSettingsMenu();
 
-  ok(
-    getByL10nId("translations-panel-settings-about2"),
-    "The learn more link is in the gear menu."
-  );
-  
-  
-
-  const manageLanguages = getByL10nId(
-    "translations-panel-settings-manage-languages"
-  );
-  info("Choose to manage the languages.");
-  manageLanguages.doCommand();
+  await clickManageLanguages();
 
   await waitForCondition(
     () => gBrowser.currentURI.spec === "about:preferences#general",
