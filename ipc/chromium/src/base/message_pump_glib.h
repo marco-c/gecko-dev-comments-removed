@@ -13,7 +13,6 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Atomics.h"
 
-typedef union _GdkEvent GdkEvent;
 typedef struct _GMainContext GMainContext;
 typedef struct _GPollFD GPollFD;
 typedef struct _GSource GSource;
@@ -24,47 +23,13 @@ namespace base {
 
 class MessagePumpForUI : public MessagePump {
  public:
-  
-  
-  class Observer {
-   public:
-    virtual ~Observer() {}
-
-    
-    virtual void WillProcessEvent(GdkEvent* event) = 0;
-
-    
-    virtual void DidProcessEvent(GdkEvent* event) = 0;
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  class Dispatcher {
-   public:
-    virtual ~Dispatcher() {}
-    
-    
-    virtual bool Dispatch(GdkEvent* event) = 0;
-  };
-
   MessagePumpForUI();
   virtual ~MessagePumpForUI();
 
-  
-  virtual void RunWithDispatcher(Delegate* delegate, Dispatcher* dispatcher);
-
-  virtual void Run(Delegate* delegate) override {
-    RunWithDispatcher(delegate, NULL);
-  }
-  virtual void Quit() override;
-  virtual void ScheduleWork() override;
-  virtual void ScheduleDelayedWork(const TimeTicks& delayed_work_time) override;
+  void Run(Delegate* delegate) override;
+  void Quit() override;
+  void ScheduleWork() override;
+  void ScheduleDelayedWork(const TimeTicks& delayed_work_time) override;
 
   
   
@@ -76,19 +41,11 @@ class MessagePumpForUI : public MessagePump {
   bool HandleCheck();
   void HandleDispatch();
 
-  
-  void AddObserver(Observer* observer);
-
-  
-  
-  void RemoveObserver(Observer* observer);
-
  private:
   
   
   struct RunState {
     Delegate* delegate;
-    Dispatcher* dispatcher;
 
     
     bool should_quit;
@@ -101,17 +58,6 @@ class MessagePumpForUI : public MessagePump {
     
     bool has_work;
   };
-
-  
-  
-  void WillProcessEvent(GdkEvent* event);
-
-  
-  
-  void DidProcessEvent(GdkEvent* event);
-
-  
-  static void EventDispatcher(GdkEvent* event, void* data);
 
   RunState* state_;
 
@@ -137,9 +83,6 @@ class MessagePumpForUI : public MessagePump {
   mozilla::UniquePtr<GPollFD> wakeup_gpollfd_;
 
   mozilla::Atomic<bool> pipe_full_;
-
-  
-  ObserverList<Observer> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(MessagePumpForUI);
 };
