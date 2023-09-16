@@ -40,7 +40,11 @@ AutoInitializeImageLib::AutoInitializeImageLib() {
   sImageLibInitialized = true;
 
   
-  nsresult rv = Preferences::SetBool("image.avif.enabled", true);
+  nsresult rv = Preferences::SetBool("image.webp.enabled", true);
+  EXPECT_TRUE(rv == NS_OK);
+
+  
+  rv = Preferences::SetBool("image.avif.enabled", true);
   EXPECT_TRUE(rv == NS_OK);
   rv = Preferences::SetBool("image.avif.sequence.enabled", true);
   EXPECT_TRUE(rv == NS_OK);
