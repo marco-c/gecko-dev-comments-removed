@@ -275,7 +275,13 @@ CanvasFrameAnonymousContentHelper.prototype = {
       }
     }
 
-    const link = this.anonymousContentDocument.createElement("link");
+    
+    
+    
+    const link = this.anonymousContentDocument.createElementNS(
+      XHTML_NS,
+      "link"
+    );
     link.href = STYLESHEET_URI;
     link.rel = "stylesheet";
     this._content.root.appendChild(link);
