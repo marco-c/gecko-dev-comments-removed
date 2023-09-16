@@ -849,25 +849,12 @@ bool js::temporal::ToTemporalTimeZone(JSContext* cx,
   }
 
   
-  Rooted<JSString*> identifier(cx, JS::ToString(cx, timeZoneLike));
-  if (!identifier) {
+  if (!timeZoneLike.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK,
+                     timeZoneLike, nullptr, "not a string");
     return false;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!timeZoneLike.isString() && !timeZoneLike.isNumeric()) {
-    ReportValueError(cx, JSMSG_TEMPORAL_TIMEZONE_PARSE_BAD_TYPE,
-                     JSDVG_IGNORE_STACK, timeZoneLike, nullptr);
-    return false;
-  }
+  Rooted<JSString*> identifier(cx, timeZoneLike.toString());
 
   
   return ToTemporalTimeZone(cx, identifier, result);
@@ -1755,22 +1742,27 @@ static bool TimeZoneConstructor(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  Rooted<JSString*> identifier(cx, JS::ToString(cx, args.get(0)));
-  if (!identifier) {
+  if (!args.requireAtLeast(cx, "Temporal.TimeZone", 1)) {
     return false;
   }
 
-  Rooted<JSLinearString*> linearIdentifier(cx, identifier->ensureLinear(cx));
-  if (!linearIdentifier) {
+  if (!args[0].isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK, args[0],
+                     nullptr, "not a string");
+    return false;
+  }
+
+  Rooted<JSLinearString*> identifier(cx, args[0].toString()->ensureLinear(cx));
+  if (!identifier) {
     return false;
   }
 
   Rooted<JSString*> canonical(cx);
   Rooted<Value> offsetNanoseconds(cx);
-  if (IsTimeZoneOffsetStringPrefix(linearIdentifier)) {
+  if (IsTimeZoneOffsetStringPrefix(identifier)) {
     
     int64_t nanoseconds;
-    if (!ParseTimeZoneOffsetString(cx, linearIdentifier, &nanoseconds)) {
+    if (!ParseTimeZoneOffsetString(cx, identifier, &nanoseconds)) {
       return false;
     }
     MOZ_ASSERT(std::abs(nanoseconds) < ToNanoseconds(TemporalUnit::Day));
@@ -1783,7 +1775,7 @@ static bool TimeZoneConstructor(JSContext* cx, unsigned argc, Value* vp) {
     offsetNanoseconds.setNumber(nanoseconds);
   } else {
     
-    canonical = ValidateAndCanonicalizeTimeZoneName(cx, linearIdentifier);
+    canonical = ValidateAndCanonicalizeTimeZoneName(cx, identifier);
     if (!canonical) {
       return false;
     }

@@ -684,6 +684,7 @@ static InstantObject* CreateTemporalInstant(JSContext* cx, const CallArgs& args,
 Wrapped<InstantObject*> js::temporal::ToTemporalInstant(JSContext* cx,
                                                         Handle<Value> item) {
   
+  Rooted<Value> primitiveValue(cx, item);
   if (item.isObject()) {
     JSObject* itemObj = &item.toObject();
 
@@ -697,22 +698,20 @@ Wrapped<InstantObject*> js::temporal::ToTemporalInstant(JSContext* cx,
       auto epochInstant = ToInstant(zonedDateTime);
       return CreateTemporalInstant(cx, epochInstant);
     }
+
+    
+    if (!ToPrimitive(cx, JSTYPE_STRING, &primitiveValue)) {
+      return nullptr;
+    }
   }
 
   
-  Rooted<JSString*> string(cx, JS::ToString(cx, item));
-  if (!string) {
+  if (!primitiveValue.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK,
+                     primitiveValue, nullptr, "not a string");
     return nullptr;
   }
-
-  
-  
-  
-  if (!item.isString() && !item.isObject()) {
-    ReportValueError(cx, JSMSG_TEMPORAL_INSTANT_PARSE_BAD_TYPE,
-                     JSDVG_IGNORE_STACK, item, nullptr);
-    return nullptr;
-  }
+  Rooted<JSString*> string(cx, primitiveValue.toString());
 
   
   Instant epochNanoseconds;
@@ -731,6 +730,7 @@ bool js::temporal::ToTemporalInstantEpochInstant(JSContext* cx,
                                                  Handle<Value> item,
                                                  Instant* result) {
   
+  Rooted<Value> primitiveValue(cx, item);
   if (item.isObject()) {
     JSObject* itemObj = &item.toObject();
 
@@ -745,23 +745,22 @@ bool js::temporal::ToTemporalInstantEpochInstant(JSContext* cx,
       *result = ToInstant(zonedDateTime);
       return true;
     }
+
+    
+    if (!ToPrimitive(cx, JSTYPE_STRING, &primitiveValue)) {
+      return false;
+    }
   }
 
   
-  Rooted<JSString*> string(cx, JS::ToString(cx, item));
-  if (!string) {
+  if (!primitiveValue.isString()) {
+    
+    
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_SEARCH_STACK,
+                     primitiveValue, nullptr, "not a string");
     return false;
   }
-
-  
-  
-  
-  
-  if (!item.isString() && !item.isObject()) {
-    ReportValueError(cx, JSMSG_TEMPORAL_INSTANT_PARSE_BAD_TYPE,
-                     JSDVG_SEARCH_STACK, item, nullptr);
-    return false;
-  }
+  Rooted<JSString*> string(cx, primitiveValue.toString());
 
   
   Instant epochNanoseconds;

@@ -282,10 +282,12 @@ static Wrapped<PlainMonthDayObject*> ToTemporalMonthDay(
   }
 
   
-  Rooted<JSString*> string(cx, JS::ToString(cx, item));
-  if (!string) {
+  if (!item.isString()) {
+    ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, item,
+                     nullptr, "not a string");
     return nullptr;
   }
+  Rooted<JSString*> string(cx, item.toString());
 
   
   PlainDate result;

@@ -541,10 +541,12 @@ bool js::temporal::ToTemporalDurationRecord(JSContext* cx,
   
   if (!temporalDurationLike.isObject()) {
     
-    Rooted<JSString*> string(cx, JS::ToString(cx, temporalDurationLike));
-    if (!string) {
+    if (!temporalDurationLike.isString()) {
+      ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK,
+                       temporalDurationLike, nullptr, "not a string");
       return false;
     }
+    Rooted<JSString*> string(cx, temporalDurationLike.toString());
 
     
     return ParseTemporalDurationString(cx, string, result);
@@ -4056,10 +4058,12 @@ static bool ToRelativeTemporalObject(JSContext* cx, Handle<JSObject*> options,
     }
   } else {
     
-    Rooted<JSString*> string(cx, JS::ToString(cx, value));
-    if (!string) {
+    if (!value.isString()) {
+      ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, value,
+                       nullptr, "not a string");
       return false;
     }
+    Rooted<JSString*> string(cx, value.toString());
 
     
     bool isUTC;
