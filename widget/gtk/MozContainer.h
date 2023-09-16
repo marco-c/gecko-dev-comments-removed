@@ -60,17 +60,22 @@
   (G_TYPE_CHECK_CLASS_TYPE((klass), MOZ_CONTAINER_TYPE))
 #define MOZ_CONTAINER_GET_CLASS(obj) \
   (G_TYPE_INSTANCE_GET_CLASS((obj), MOZ_CONTAINER_TYPE, MozContainerClass))
+#ifdef MOZ_WAYLAND
+#define MOZ_WL_CONTAINER(obj) (&MOZ_CONTAINER(obj)->data.wl_container)
+#endif
 
 typedef struct _MozContainer MozContainer;
 typedef struct _MozContainerClass MozContainerClass;
 
 struct _MozContainer {
   GtkContainer container;
-  GList* children;
-  gboolean force_default_visual;
+  struct Data {
+    GList* children = nullptr;
+    gboolean force_default_visual = false;
 #ifdef MOZ_WAYLAND
-  MozContainerWayland wl_container;
+    MozContainerWayland wl_container;
 #endif
+  } data;
 };
 
 struct _MozContainerClass {
