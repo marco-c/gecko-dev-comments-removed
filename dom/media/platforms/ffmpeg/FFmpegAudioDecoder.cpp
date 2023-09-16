@@ -22,16 +22,17 @@ namespace mozilla {
 
 using TimeUnit = media::TimeUnit;
 
-FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
-                                                  const AudioInfo& aInfo)
-    : FFmpegDataDecoder(aLib, GetCodecId(aInfo.mMimeType, aInfo)),
-      mAudioInfo(aInfo) {
+FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
+    FFmpegLibWrapper* aLib, const CreateDecoderParams& aDecoderParams)
+    : FFmpegDataDecoder(aLib, GetCodecId(aDecoderParams.AudioConfig().mMimeType,
+                                         aDecoderParams.AudioConfig())),
+      mAudioInfo(aDecoderParams.AudioConfig()) {
   MOZ_COUNT_CTOR(FFmpegAudioDecoder);
 
   if (mCodecID == AV_CODEC_ID_AAC &&
-      aInfo.mCodecSpecificConfig.is<AacCodecSpecificData>()) {
+      mAudioInfo.mCodecSpecificConfig.is<AacCodecSpecificData>()) {
     const AacCodecSpecificData& aacCodecSpecificData =
-        aInfo.mCodecSpecificConfig.as<AacCodecSpecificData>();
+        mAudioInfo.mCodecSpecificConfig.as<AacCodecSpecificData>();
     mExtraData = new MediaByteBuffer;
     
     mExtraData->AppendElements(
@@ -47,13 +48,13 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
 
   if (mCodecID == AV_CODEC_ID_FLAC) {
     MOZ_DIAGNOSTIC_ASSERT(
-        aInfo.mCodecSpecificConfig.is<FlacCodecSpecificData>());
+        mAudioInfo.mCodecSpecificConfig.is<FlacCodecSpecificData>());
     
     
     
-    if (aInfo.mCodecSpecificConfig.is<FlacCodecSpecificData>()) {
+    if (mAudioInfo.mCodecSpecificConfig.is<FlacCodecSpecificData>()) {
       const FlacCodecSpecificData& flacCodecSpecificData =
-          aInfo.mCodecSpecificConfig.as<FlacCodecSpecificData>();
+          mAudioInfo.mCodecSpecificConfig.as<FlacCodecSpecificData>();
       if (flacCodecSpecificData.mStreamInfoBinaryBlob->IsEmpty()) {
         
         
@@ -70,7 +71,7 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
 
   
   RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
-      GetAudioCodecSpecificBlob(aInfo.mCodecSpecificConfig);
+      GetAudioCodecSpecificBlob(mAudioInfo.mCodecSpecificConfig);
   if (audioCodecSpecificBinaryBlob && audioCodecSpecificBinaryBlob->Length()) {
     
     
