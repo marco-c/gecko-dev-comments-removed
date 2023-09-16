@@ -31,17 +31,14 @@ promise_test(async t => {
   
   await newRemoteContextHelper.historyBack();
 
-  const navigation_entry = await rc1.executeScript(() => {
-    return performance.getEntriesByType('navigation')[0];
-  });
   
   await assertNotRestoredReasonsEquals(
       rc1,
-       true,
+       "yes",
        rc1_url,
        null,
        null,
        null,
       ['websocket'],
-      []);
+       []);
 });
