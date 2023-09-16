@@ -27,6 +27,13 @@ const getIntlDisplayName = (() => {
   };
 })();
 
+
+
+
+
+
+
+
 async function assertPageIsUntranslated(runInPage, message = null) {
   if (message) {
     info(message);
@@ -41,6 +48,15 @@ async function assertPageIsUntranslated(runInPage, message = null) {
     );
   });
 }
+
+
+
+
+
+
+
+
+
 
 async function assertPageIsTranslated(
   fromLanguage,
@@ -107,6 +123,17 @@ async function assertTranslationsButton(visibleAssertions, message) {
   return elements;
 }
 
+
+
+
+
+
+
+
+
+
+
+
 async function openTranslationsPanel({
   onOpenPanel = null,
   openFromAppMenu = false,
@@ -122,6 +149,15 @@ async function openTranslationsPanel({
     });
   }
 }
+
+
+
+
+
+
+
+
+
 
 async function openTranslationsPanelViaTranslationsButton({
   onOpenPanel = null,
@@ -145,6 +181,10 @@ async function openTranslationsPanelViaTranslationsButton({
   );
 }
 
+
+
+
+
 async function openTranslationsSettingsMenu() {
   info("Opening the translations panel settings menu");
   const gearIcons = getAllByL10nId("translations-panel-settings-button");
@@ -164,6 +204,9 @@ async function openTranslationsSettingsMenu() {
     return;
   }
 }
+
+
+
 
 
 
@@ -205,12 +248,22 @@ async function openTranslationsPanelViaAppMenu({
   );
 }
 
+
+
+
+
+
 function switchSelectedFromLanguage(langTag) {
   info(`Switching the from-language to ${langTag}`);
   const { fromMenuList } = TranslationsPanel.elements;
   fromMenuList.value = langTag;
   fromMenuList.dispatchEvent(new Event("command"));
 }
+
+
+
+
+
 
 function assertSelectedFromLanguage(langTag) {
   info(`Checking that the selected from-language matches ${langTag}`);
@@ -222,12 +275,22 @@ function assertSelectedFromLanguage(langTag) {
   );
 }
 
+
+
+
+
+
 function switchSelectedToLanguage(langTag) {
   info(`Switching the to-language to ${langTag}`);
   const { toMenuList } = TranslationsPanel.elements;
   toMenuList.value = langTag;
   toMenuList.dispatchEvent(new Event("command"));
 }
+
+
+
+
+
 
 function assertSelectedToLanguage(langTag) {
   info(`Checking that the selected to-language matches ${langTag}`);
@@ -444,6 +507,12 @@ async function assertCheckboxState(
   }
 }
 
+
+
+
+
+
+
 async function assertLangTagIsShownOnTranslationsButton(
   fromLanguage,
   toLanguage
@@ -472,6 +541,9 @@ async function assertLangTagIsShownOnTranslationsButton(
   );
 }
 
+
+
+
 async function clickCancelButton() {
   info("Clicking the cancel button");
   const { cancelButton } = TranslationsPanel.elements;
@@ -481,6 +553,9 @@ async function clickCancelButton() {
   });
 }
 
+
+
+
 async function clickRestoreButton() {
   info("Clicking the restore button");
   const { restoreButton } = TranslationsPanel.elements;
@@ -489,6 +564,9 @@ async function clickRestoreButton() {
     click(restoreButton, "Click the restore-page button");
   });
 }
+
+
+
 
 async function clickDismissErrorButton() {
   info("Clicking the dismiss-error button");
@@ -501,6 +579,17 @@ async function clickDismissErrorButton() {
     click(dismissErrorButton, "Click the dismiss-error button");
   });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 async function clickTranslateButton({
   downloadHandler = null,
@@ -520,6 +609,14 @@ async function clickTranslateButton({
     await downloadHandler(pivotTranslation ? 2 : 1);
   }
 }
+
+
+
+
+
+
+
+
 
 async function clickChangeSourceLanguageButton({ firstShow = false } = {}) {
   info("Clicking the change-source-language button");
@@ -640,6 +737,9 @@ function assertPanelDefaultView() {
   });
   assertDefaultHeaderL10nId("translations-panel-header");
 }
+
+
+
 
 function assertPanelLoadingView() {
   info("Checking that the panel shows the loading view");
@@ -813,10 +913,21 @@ async function addTab(url) {
   };
 }
 
+
+
+
+
+
 async function switchTab(tab) {
   info("Switching tabs");
   await BrowserTestUtils.switchTab(gBrowser, tab);
 }
+
+
+
+
+
+
 
 function click(element, message) {
   info(message);
@@ -839,6 +950,8 @@ function click(element, message) {
     });
   });
 }
+
+
 
 
 
@@ -889,6 +1002,8 @@ function getAllByL10nId(l10nId, doc = document) {
   }
   return elements;
 }
+
+
 
 
 
