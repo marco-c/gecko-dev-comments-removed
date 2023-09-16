@@ -38,7 +38,7 @@ class WptscreenshotFormatter(BaseFormatter):
             return
         output = ""
         for item in data["extra"]["reftest_screenshots"]:
-            if type(item) != dict:
+            if not isinstance(item, dict):
                 
                 continue
             checksum = "sha1:" + item["hash"]
