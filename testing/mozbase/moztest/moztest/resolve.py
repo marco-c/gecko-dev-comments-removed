@@ -754,11 +754,12 @@ class TestResolver(MozbuildObject):
             
             if any(path.endswith(e) for e in (".toml", ".ini", ".list")):
                 key = "manifest" if os.path.isabs(path) else "manifest_relpath"
-                candidate_paths |= {
-                    t["file_relpath"]
-                    for t in self.tests
-                    if mozpath.normpath(t[key]) == path
-                }
+                for t in self.tests:
+                    candidate_paths |= {
+                        t["file_relpath"]
+                        for t in self.tests
+                        if mozpath.normpath(t[key]) == path
+                    }
                 continue
 
             
