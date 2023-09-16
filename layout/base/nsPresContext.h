@@ -257,7 +257,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   nsRootPresContext* GetRootPresContext() const;
 
-  virtual bool IsRoot() const { return false; }
+  virtual bool IsRoot() { return false; }
 
   mozilla::dom::Document* Document() const {
 #ifdef DEBUG
@@ -511,16 +511,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   nsDeviceContext* DeviceContext() const { return mDeviceContext; }
   mozilla::EventStateManager* EventStateManager() { return mEventManager; }
-
-  bool UserInputEventsAllowed();
-
-  void MaybeIncreaseMeasuredTicksSinceLoading();
-
-  void ResetUserInputEventsAllowed() {
-    MOZ_ASSERT(IsRoot());
-    mMeasuredTicksSinceLoading = 0;
-    mUserInputEventsAllowed = false;
-  }
 
   
   float TextZoom() const { return mTextZoom; }
@@ -1264,8 +1254,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   uint32_t mNextFrameRateMultiplier;
 
-  uint32_t mMeasuredTicksSinceLoading;
-
   nsTArray<RefPtr<mozilla::ManagedPostRefreshObserver>>
       mManagedPostRefreshObservers;
 
@@ -1359,7 +1347,6 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   
   unsigned mHadContentfulPaintComposite : 1;
 
-  unsigned mUserInputEventsAllowed : 1;
 #ifdef DEBUG
   unsigned mInitialized : 1;
 #endif
@@ -1392,7 +1379,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 class nsRootPresContext final : public nsPresContext {
  public:
   nsRootPresContext(mozilla::dom::Document* aDocument, nsPresContextType aType);
-  virtual bool IsRoot() const override { return true; }
+  virtual bool IsRoot() override { return true; }
 
   
 

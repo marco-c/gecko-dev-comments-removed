@@ -249,7 +249,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mAnimationTriggeredRestyles(0),
       mInterruptChecksToSkip(0),
       mNextFrameRateMultiplier(0),
-      mMeasuredTicksSinceLoading(0),
       mViewportScrollStyles(StyleOverflow::Auto, StyleOverflow::Auto),
       
       mImageAnimationModePref(imgIContainer::kNormalAnimMode),
@@ -286,7 +285,6 @@ nsPresContext::nsPresContext(dom::Document* aDocument, nsPresContextType aType)
       mHadFirstContentfulPaint(false),
       mHadNonTickContentfulPaint(false),
       mHadContentfulPaintComposite(false),
-      mUserInputEventsAllowed(false),
 #ifdef DEBUG
       mInitialized(false),
 #endif
@@ -1238,69 +1236,6 @@ nsRootPresContext* nsPresContext::GetRootPresContext() const {
   return pc->IsRoot() ? static_cast<nsRootPresContext*>(pc) : nullptr;
 }
 
-bool nsPresContext::UserInputEventsAllowed() {
-  MOZ_ASSERT(IsRoot());
-  if (mUserInputEventsAllowed) {
-    return true;
-  }
-
-  
-  if (Document()->IsInitialDocument()) {
-    return true;
-  }
-
-  if (mMeasuredTicksSinceLoading <
-      StaticPrefs::dom_input_events_security_minNumTicks()) {
-    return false;
-  }
-
-  if (!StaticPrefs::dom_input_events_security_minTimeElapsedInMS()) {
-    return true;
-  }
-
-  dom::Document* doc = Document();
-
-  MOZ_ASSERT_IF(StaticPrefs::dom_input_events_security_minNumTicks(),
-                doc->GetReadyStateEnum() >= Document::READYSTATE_LOADING);
-
-  TimeStamp loadingOrRestoredFromBFCacheTime =
-      doc->GetLoadingOrRestoredFromBFCacheTimeStamp();
-  MOZ_ASSERT(!loadingOrRestoredFromBFCacheTime.IsNull());
-
-  TimeDuration elapsed = TimeStamp::Now() - loadingOrRestoredFromBFCacheTime;
-  if (elapsed.ToMilliseconds() >=
-      StaticPrefs::dom_input_events_security_minTimeElapsedInMS()) {
-    mUserInputEventsAllowed = true;
-    return true;
-  }
-
-  return false;
-}
-
-void nsPresContext::MaybeIncreaseMeasuredTicksSinceLoading() {
-  MOZ_ASSERT(IsRoot());
-  if (mMeasuredTicksSinceLoading >=
-      StaticPrefs::dom_input_events_security_minNumTicks()) {
-    return;
-  }
-
-  
-  
-  if (Document()->GetReadyStateEnum() >= Document::READYSTATE_LOADING ||
-      Document()->IsInitialDocument()) {
-    ++mMeasuredTicksSinceLoading;
-  }
-
-  if (mMeasuredTicksSinceLoading <
-      StaticPrefs::dom_input_events_security_minNumTicks()) {
-    
-    
-    
-    if (!RefreshDriver()->HasPendingTick()) {
-      RefreshDriver()->InitializeTimer();
-    }
-  }
-}
 
 static void SetImgAnimModeOnImgReq(imgIRequest* aImgReq, uint16_t aMode) {
   if (aImgReq) {

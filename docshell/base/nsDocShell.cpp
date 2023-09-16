@@ -1314,7 +1314,6 @@ void nsDocShell::FirePageHideShowNonRecursive(bool aShow) {
           mScriptGlobal ? mScriptGlobal->GetCurrentInnerWindow() : nullptr;
       if (mBrowsingContext->IsTop()) {
         doc->NotifyPossibleTitleChange(false);
-        doc->SetLoadingOrRestoredFromBFCacheTimeStampToNow();
         if (inner) {
           
           

@@ -1045,13 +1045,6 @@ class Document : public nsINode,
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
 
-  TimeStamp GetLoadingOrRestoredFromBFCacheTimeStamp() const {
-    return mLoadingOrRestoredFromBFCacheTimeStamp;
-  }
-  void SetLoadingOrRestoredFromBFCacheTimeStampToNow() {
-    mLoadingOrRestoredFromBFCacheTimeStamp = TimeStamp::Now();
-  }
-
   
 
 
@@ -5132,8 +5125,7 @@ class Document : public nsINode,
   RefPtr<nsDOMNavigationTiming> mTiming;
 
   
-  
-  TimeStamp mLoadingOrRestoredFromBFCacheTimeStamp;
+  TimeStamp mLoadingTimeStamp;
 
   
   
