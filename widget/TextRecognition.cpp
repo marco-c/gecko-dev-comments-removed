@@ -10,10 +10,6 @@
 #include "nsTextNode.h"
 #include "imgIContainer.h"
 
-#ifdef XP_MACOSX
-#  include "nsCocoaFeatures.h"
-#endif
-
 using namespace mozilla::dom;
 
 namespace mozilla::widget {
@@ -121,10 +117,7 @@ auto TextRecognition::DoFindText(gfx::DataSourceSurface&,
 
 bool TextRecognition::IsSupported() {
 #ifdef XP_MACOSX
-  
-  
-  
-  return nsCocoaFeatures::OnCatalinaOrLater();
+  return true;
 #else
   return false;
 #endif

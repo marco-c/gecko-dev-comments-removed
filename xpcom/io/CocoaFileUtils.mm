@@ -5,7 +5,6 @@
 
 
 #include "CocoaFileUtils.h"
-#include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include <Cocoa/Cocoa.h>
 #include "nsObjCExceptions.h"

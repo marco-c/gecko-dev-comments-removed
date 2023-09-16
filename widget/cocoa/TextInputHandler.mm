@@ -19,7 +19,6 @@
 #include "mozilla/ToString.h"
 
 #include "nsChildView.h"
-#include "nsCocoaFeatures.h"
 #include "nsObjCExceptions.h"
 #include "nsBidiUtils.h"
 #include "nsToolkit.h"
@@ -4681,7 +4680,7 @@ bool IMEInputHandler::OnHandleEvent(NSEvent* aEvent) {
   }
 
   bool allowConsumeEvent = true;
-  if (nsCocoaFeatures::OnCatalinaOrLater() && !IsIMEComposing()) {
+  if (!IsIMEComposing()) {
     
     
     

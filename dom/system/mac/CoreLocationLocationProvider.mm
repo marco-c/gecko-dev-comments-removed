@@ -1,15 +1,14 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "nsCOMPtr.h"
 #include "GeolocationPosition.h"
 #include "nsIConsoleService.h"
 #include "nsServiceManagerUtils.h"
 #include "CoreLocationLocationProvider.h"
-#include "nsCocoaFeatures.h"
 #include "prtime.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/Telemetry.h"
@@ -66,9 +65,9 @@ static const CLLocationAccuracy kDEFAULT_ACCURACY = kCLLocationAccuracyNearestTe
     return;
   }
 
-  
-  
-  
+  // The CL provider does not fallback to GeoIP, so use NetworkGeolocationProvider for this.
+  // The concept here is: on error, hand off geolocation to MLS, which will then report
+  // back a location or error.
   mProvider->CreateMLSFallbackProvider();
 }
 
@@ -84,7 +83,7 @@ static const CLLocationAccuracy kDEFAULT_ACCURACY = kCLLocationAccuracyNearestTe
   double altitude;
   double altitudeAccuracy;
 
-  
+  // A negative verticalAccuracy indicates that the altitude value is invalid.
   if (location.verticalAccuracy >= 0) {
     altitude = location.altitude;
     altitudeAccuracy = location.verticalAccuracy;
@@ -97,8 +96,8 @@ static const CLLocationAccuracy kDEFAULT_ACCURACY = kCLLocationAccuracyNearestTe
 
   double heading = location.course >= 0 ? location.course : UnspecifiedNaN<double>();
 
-  
-  
+  // nsGeoPositionCoords will convert NaNs to null for optional properties of
+  // the JavaScript Coordinates object.
   nsCOMPtr<nsIDOMGeoPosition> geoPosition = new nsGeoPosition(
       location.coordinate.latitude, location.coordinate.longitude, altitude,
       location.horizontalAccuracy, altitudeAccuracy, heading, speed, PR_Now() / PR_USEC_PER_MSEC);
@@ -176,7 +175,7 @@ CoreLocationLocationProvider::Startup() {
     mCLObjects = clObjs.release();
   }
 
-  
+  // Must be stopped before starting or response (success or failure) is not guaranteed
   [mCLObjects->mLocationManager stopUpdatingLocation];
   [mCLObjects->mLocationManager startUpdatingLocation];
   return NS_OK;
