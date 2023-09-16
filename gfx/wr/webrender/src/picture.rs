@@ -105,7 +105,7 @@ use crate::clip::{ClipStore, ClipChainInstance, ClipLeafId, ClipNodeId, ClipTree
 use crate::spatial_tree::{SpatialTree, CoordinateSpaceMapping, SpatialNodeIndex, VisibleFace};
 use crate::composite::{CompositorKind, CompositeState, NativeSurfaceId, NativeTileId, CompositeTileSurface, tile_kind};
 use crate::composite::{ExternalSurfaceDescriptor, ExternalSurfaceDependency, CompositeTileDescriptor, CompositeTile};
-use crate::composite::{CompositorTransformIndex, CompositorSurfaceKind};
+use crate::composite::{CompositorTransformIndex};
 use crate::debug_colors;
 use euclid::{vec3, Point2D, Scale, Vector2D, Box2D};
 use euclid::approxeq::ApproxEq;
@@ -518,7 +518,7 @@ struct TileUpdateDirtyState<'a> {
 }
 
 
-struct TilePostUpdateContext<'a> {
+struct TilePostUpdateContext {
     
     local_clip_rect: PictureRect,
 
@@ -530,9 +530,6 @@ struct TilePostUpdateContext<'a> {
 
     
     z_id: ZBufferId,
-
-    
-    underlays: &'a [ExternalSurfaceDescriptor],
 }
 
 
@@ -1217,16 +1214,7 @@ impl Tile {
 
         let has_opaque_bg_color = self.background_color.map_or(false, |c| c.a >= 1.0);
         let has_opaque_backdrop = ctx.backdrop.map_or(false, |b| b.opaque_rect.contains_box(&clipped_rect));
-        let mut is_opaque = has_opaque_bg_color || has_opaque_backdrop;
-
-        
-        
-        for underlay in ctx.underlays {
-            if clipped_rect.intersects(&underlay.local_rect) {
-                is_opaque = false;
-                break;
-            }
-        }
+        let is_opaque = has_opaque_bg_color || has_opaque_backdrop;
 
         
         self.z_id = ctx.z_id;
@@ -1843,8 +1831,6 @@ pub struct TileCacheInstance {
     
     found_prims_after_backdrop: bool,
     pub backdrop_surface: Option<BackdropSurface>,
-    
-    pub underlays: Vec<ExternalSurfaceDescriptor>,
 }
 
 enum SurfacePromotionResult {
@@ -1907,7 +1893,6 @@ impl TileCacheInstance {
             deferred_dirty_tests: Vec::new(),
             found_prims_after_backdrop: false,
             backdrop_surface: None,
-            underlays: Vec::new(),
         }
     }
 
@@ -2050,7 +2035,6 @@ impl TileCacheInstance {
         self.local_rect = pic_rect;
         self.local_clip_rect = PictureRect::max_rect();
         self.deferred_dirty_tests.clear();
-        self.underlays.clear();
 
         for sub_slice in &mut self.sub_slices {
             sub_slice.reset();
@@ -2454,7 +2438,6 @@ impl TileCacheInstance {
         prim_spatial_node_index: SpatialNodeIndex,
         is_root_tile_cache: bool,
         sub_slice_index: usize,
-        is_opaque: bool,
         frame_context: &FrameVisibilityContext,
     ) -> SurfacePromotionResult {
         
@@ -2470,7 +2453,8 @@ impl TileCacheInstance {
         
         
         
-        if prim_clip_chain.needs_mask && !is_opaque {
+        
+        if prim_clip_chain.needs_mask {
             return SurfacePromotionResult::Failed;
         }
 
@@ -2566,7 +2550,6 @@ impl TileCacheInstance {
         composite_state: &mut CompositeState,
         gpu_cache: &mut GpuCache,
         image_rendering: ImageRendering,
-        is_opaque: bool,
     ) -> bool {
         let mut api_keys = [ImageKey::DUMMY; 3];
         api_keys[0] = api_key;
@@ -2584,6 +2567,9 @@ impl TileCacheInstance {
             },
             gpu_cache,
         );
+
+        let is_opaque = resource_cache.get_image_properties(api_key)
+            .map_or(false, |properties| properties.descriptor.is_opaque());
 
         self.setup_compositor_surfaces_impl(
             sub_slice_index,
@@ -2808,31 +2794,23 @@ impl TileCacheInstance {
         assert!(sub_slice_index < self.sub_slices.len() - 1);
         let sub_slice = &mut self.sub_slices[sub_slice_index];
 
-        let descriptor = ExternalSurfaceDescriptor {
-            local_surface_size: local_prim_rect.size(),
-            local_rect: prim_rect,
-            local_clip_rect: prim_info.prim_clip_box,
-            dependency,
-            image_rendering,
-            clip_rect,
-            transform_index: compositor_transform_index,
-            z_id: ZBufferId::invalid(),
-            native_surface_id,
-            update_params,
-        };
-
         
-        
-        if is_opaque {
-            self.underlays.push(descriptor);
-        } else {
-            
-            sub_slice.compositor_surfaces.push(CompositorSurface {
-                prohibited_rect: pic_coverage_rect,
-                is_opaque,
-                descriptor,
-            });
-        }
+        sub_slice.compositor_surfaces.push(CompositorSurface {
+            prohibited_rect: pic_coverage_rect,
+            is_opaque,
+            descriptor: ExternalSurfaceDescriptor {
+                local_surface_size: local_prim_rect.size(),
+                local_rect: prim_rect,
+                local_clip_rect: prim_info.prim_clip_box,
+                dependency,
+                image_rendering,
+                clip_rect,
+                transform_index: compositor_transform_index,
+                z_id: ZBufferId::invalid(),
+                native_surface_id,
+                update_params,
+            },
+        });
 
         true
     }
@@ -3075,10 +3053,29 @@ impl TileCacheInstance {
                     prim_info.color_binding = Some(color_bindings[color_binding_index].into());
                 }
             }
-            PrimitiveInstanceKind::Image { data_handle, ref mut compositor_surface_kind, .. } => {
+            PrimitiveInstanceKind::Image { data_handle, ref mut is_compositor_surface, .. } => {
                 let image_key = &data_stores.image[data_handle];
                 let image_data = &image_key.kind;
-                let mut is_opaque = false;
+
+                let mut promote_to_surface = false;
+                match self.can_promote_to_surface(image_key.common.flags,
+                                                  prim_clip_chain,
+                                                  prim_spatial_node_index,
+                                                  is_root_tile_cache,
+                                                  sub_slice_index,
+                                                  frame_context) {
+                    SurfacePromotionResult::Failed => {
+                    }
+                    SurfacePromotionResult::Success => {
+                        promote_to_surface = true;
+                    }
+                }
+
+                
+                
+                if image_data.alpha_type == AlphaType::Alpha {
+                    promote_to_surface = false;
+                }
 
                 if let Some(image_properties) = resource_cache.get_image_properties(image_data.key) {
                     
@@ -3097,29 +3094,6 @@ impl TileCacheInstance {
                             backdrop_rect: PictureRect::zero(),
                         });
                     }
-
-                    is_opaque = image_properties.descriptor.is_opaque();
-                }
-
-                let mut promote_to_surface = false;
-                match self.can_promote_to_surface(image_key.common.flags,
-                                                  prim_clip_chain,
-                                                  prim_spatial_node_index,
-                                                  is_root_tile_cache,
-                                                  sub_slice_index,
-                                                  is_opaque,
-                                                  frame_context) {
-                    SurfacePromotionResult::Failed => {
-                    }
-                    SurfacePromotionResult::Success => {
-                        promote_to_surface = true;
-                    }
-                }
-
-                
-                
-                if image_data.alpha_type == AlphaType::Alpha {
-                    promote_to_surface = false;
                 }
 
                 if promote_to_surface {
@@ -3140,28 +3114,22 @@ impl TileCacheInstance {
                         composite_state,
                         gpu_cache,
                         image_data.image_rendering,
-                        is_opaque,
                     );
                 }
 
-                if promote_to_surface {
-                    if is_opaque {
-                        *compositor_surface_kind = CompositorSurfaceKind::Underlay;
-                    } else {
-                        *compositor_surface_kind = CompositorSurfaceKind::Overlay;
-                        prim_instance.vis.state = VisibilityState::Culled;
-                        return;
-                    }
-                } else {
-                    *compositor_surface_kind = CompositorSurfaceKind::Blit;
+                *is_compositor_surface = promote_to_surface;
 
+                if promote_to_surface {
+                    prim_instance.vis.state = VisibilityState::Culled;
+                    return;
+                } else {
                     prim_info.images.push(ImageDependency {
                         key: image_data.key,
                         generation: resource_cache.get_image_generation(image_data.key),
                     });
                 }
             }
-            PrimitiveInstanceKind::YuvImage { data_handle, ref mut compositor_surface_kind, .. } => {
+            PrimitiveInstanceKind::YuvImage { data_handle, ref mut is_compositor_surface, .. } => {
                 let prim_data = &data_stores.yuv_image[data_handle];
                 let mut promote_to_surface = match self.can_promote_to_surface(
                                             prim_data.common.flags,
@@ -3169,7 +3137,6 @@ impl TileCacheInstance {
                                             prim_spatial_node_index,
                                             is_root_tile_cache,
                                             sub_slice_index,
-                                            true,
                                             frame_context) {
                     SurfacePromotionResult::Failed => false,
                     SurfacePromotionResult::Success => true,
@@ -3217,12 +3184,12 @@ impl TileCacheInstance {
                 
                 
                 
+                *is_compositor_surface = promote_to_surface;
 
                 if promote_to_surface {
-                    *compositor_surface_kind = CompositorSurfaceKind::Underlay;
+                    prim_instance.vis.state = VisibilityState::Culled;
+                    return;
                 } else {
-                    *compositor_surface_kind = CompositorSurfaceKind::Blit;
-
                     prim_info.images.extend(
                         prim_data.kind.yuv_key.iter().map(|key| {
                             ImageDependency {
@@ -3650,7 +3617,6 @@ impl TileCacheInstance {
             backdrop: None,
             current_tile_size: self.current_tile_size,
             z_id: ZBufferId::invalid(),
-            underlays: &self.underlays,
         };
 
         let mut state = TilePostUpdateState {
@@ -3676,35 +3642,26 @@ impl TileCacheInstance {
         }
 
         
-        for underlay in &mut self.underlays {
-            underlay.z_id = state.composite_state.z_generator.next();
-        }
-
         
         
         
-        
-
-        
-        for underlay in &self.underlays {
-            if let Some(world_surface_rect) = underlay.get_occluder_rect(
-                &self.local_clip_rect,
-                &map_pic_to_world,
-            ) {
-                frame_state.composite_state.register_occluder(
-                    underlay.z_id,
-                    world_surface_rect,
-                );
-            }
-        }
 
         for sub_slice in &self.sub_slices {
             for compositor_surface in &sub_slice.compositor_surfaces {
                 if compositor_surface.is_opaque {
-                    if let Some(world_surface_rect) = compositor_surface.descriptor.get_occluder_rect(
-                        &self.local_clip_rect,
-                        &map_pic_to_world,
-                    ) {
+                    let local_surface_rect = compositor_surface
+                        .descriptor
+                        .local_rect
+                        .intersection(&compositor_surface.descriptor.local_clip_rect)
+                        .and_then(|r| {
+                            r.intersection(&self.local_clip_rect)
+                        });
+
+                    if let Some(local_surface_rect) = local_surface_rect {
+                        let world_surface_rect = map_pic_to_world
+                            .map(&local_surface_rect)
+                            .expect("bug: unable to map external surface to world space");
+
                         frame_state.composite_state.register_occluder(
                             compositor_surface.descriptor.z_id,
                             world_surface_rect,
