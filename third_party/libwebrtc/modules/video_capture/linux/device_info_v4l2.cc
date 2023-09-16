@@ -34,6 +34,24 @@
 #include "modules/video_capture/video_capture_impl.h"
 #include "rtc_base/logging.h"
 
+
+
+
+#ifndef V4L2_PIX_FMT_ABGR32
+#define ABGR32_OVERRIDE 1
+#define V4L2_PIX_FMT_ABGR32 v4l2_fourcc('A', 'R', '2', '4')
+#endif
+
+#ifndef V4L2_PIX_FMT_ARGB32
+#define ARGB32_OVERRIDE 1
+#define V4L2_PIX_FMT_ARGB32 v4l2_fourcc('B', 'A', '2', '4')
+#endif
+
+#ifndef V4L2_PIX_FMT_RGBA32
+#define RGBA32_OVERRIDE 1
+#define V4L2_PIX_FMT_RGBA32 v4l2_fourcc('A', 'B', '2', '4')
+#endif
+
 #ifdef WEBRTC_LINUX
 #define EVENT_SIZE  ( sizeof (struct inotify_event) )
 #define BUF_LEN     ( 1024 * ( EVENT_SIZE + 16 ) )
