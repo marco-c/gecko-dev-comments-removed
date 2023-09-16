@@ -10,6 +10,7 @@
 #include "Benchmark.h"
 #include "DecoderDoctorDiagnostics.h"
 #include "DecoderTraits.h"
+#include "MP4Decoder.h"
 #include "MediaContainerType.h"
 #include "MediaResult.h"
 #include "MediaSourceDemuxer.h"
@@ -75,7 +76,7 @@ namespace mozilla {
 
 
 static bool IsVP9Forced(DecoderDoctorDiagnostics* aDiagnostics) {
-  bool mp4supported = DecoderTraits::IsMP4SupportedType(
+  bool mp4supported = MP4Decoder::IsSupportedType(
       MediaContainerType(MEDIAMIMETYPE(VIDEO_MP4)), aDiagnostics);
   bool hwsupported = gfx::gfxVars::CanUseHardwareVideoDecoding();
 #ifdef MOZ_WIDGET_ANDROID

@@ -11,23 +11,24 @@
 #include "DecoderDoctorDiagnostics.h"
 #include "DecoderTraits.h"
 #include "KeySystemConfig.h"
+#include "MP4Decoder.h"
 #include "MediaContainerType.h"
+#include "WebMDecoder.h"
 #include "mozilla/ClearOnShutdown.h"
-#include "mozilla/dom/KeySystemNames.h"
-#include "mozilla/dom/MediaKeySystemAccessBinding.h"
-#include "mozilla/dom/MediaKeySession.h"
-#include "mozilla/dom/MediaSource.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_media.h"
+#include "mozilla/dom/KeySystemNames.h"
+#include "mozilla/dom/MediaKeySession.h"
+#include "mozilla/dom/MediaKeySystemAccessBinding.h"
+#include "mozilla/dom/MediaSource.h"
 #include "nsDOMString.h"
 #include "nsIObserverService.h"
 #include "nsMimeTypes.h"
 #include "nsReadableUtils.h"
 #include "nsServiceManagerUtils.h"
 #include "nsUnicharUtils.h"
-#include "WebMDecoder.h"
 
 #ifdef XP_WIN
 #  include "WMFDecoderModule.h"
@@ -461,9 +462,9 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     
     
     
-    const bool isMP4 =
-        DecoderTraits::IsMP4SupportedType(containerType, aDiagnostics);
-    if (isMP4 && !aKeySystem.mMP4.IsSupported()) {
+    const bool supportedInMP4 =
+        MP4Decoder::IsSupportedType(containerType, aDiagnostics);
+    if (supportedInMP4 && !aKeySystem.mMP4.IsSupported()) {
       EME_LOG(
           "MediaKeySystemConfiguration (label='%s') "
           "MediaKeySystemMediaCapability('%s','%s','%s') unsupported; "
@@ -486,7 +487,7 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
           NS_ConvertUTF16toUTF8(encryptionScheme).get());
       continue;
     }
-    if (!isMP4 && !isWebM) {
+    if (!supportedInMP4 && !isWebM) {
       EME_LOG(
           "MediaKeySystemConfiguration (label='%s') "
           "MediaKeySystemMediaCapability('%s','%s','%s') unsupported; "
@@ -518,7 +519,7 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
       
       
       
-      if (isMP4) {
+      if (supportedInMP4) {
         if (aCodecType == Audio) {
           codecs.AppendElement(KeySystemConfig::EME_CODEC_AAC);
         } else if (aCodecType == Video) {
@@ -613,7 +614,8 @@ static Sequence<MediaKeySystemMediaCapability> GetSupportedCapabilities(
     
     
     
-    const auto& containerSupport = isMP4 ? aKeySystem.mMP4 : aKeySystem.mWebM;
+    const auto& containerSupport =
+        supportedInMP4 ? aKeySystem.mMP4 : aKeySystem.mWebM;
     if (!CanDecryptAndDecode(aKeySystem.mKeySystem, contentTypeString,
                              majorType, containerSupport, codecs,
                              aDiagnostics)) {

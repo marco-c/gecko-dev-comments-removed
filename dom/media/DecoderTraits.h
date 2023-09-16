@@ -53,11 +53,6 @@ class DecoderTraits {
   static bool IsSupportedInVideoDocument(const nsACString& aType);
 
   
-  
-  static bool IsMP4SupportedType(const MediaContainerType& aType,
-                                 DecoderDoctorDiagnostics* aDiagnostics);
-
-  
   static bool IsHttpLiveStreamingType(const MediaContainerType& aType);
 
   
