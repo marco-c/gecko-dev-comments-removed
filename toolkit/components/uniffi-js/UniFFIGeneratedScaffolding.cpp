@@ -44,6 +44,12 @@ extern "C" {
   void uniffi_tabs_fn_method_tabsbridgedengine_sync_finished(void *, RustCallStatus*);
   void uniffi_tabs_fn_method_tabsbridgedengine_reset(void *, RustCallStatus*);
   void uniffi_tabs_fn_method_tabsbridgedengine_wipe(void *, RustCallStatus*);
+  void uniffi_suggest_fn_free_suggeststore(void *, RustCallStatus*);
+  void * uniffi_suggest_fn_constructor_suggeststore_new(RustBuffer, RustBuffer, RustCallStatus*);
+  RustBuffer uniffi_suggest_fn_method_suggeststore_query(void *, RustBuffer, RustCallStatus*);
+  void uniffi_suggest_fn_method_suggeststore_interrupt(void *, RustCallStatus*);
+  void uniffi_suggest_fn_method_suggeststore_ingest(void *, RustBuffer, RustCallStatus*);
+  void uniffi_suggest_fn_method_suggeststore_clear(void *, RustCallStatus*);
 }
 
 
@@ -54,6 +60,10 @@ const static mozilla::uniffi::UniFFIPointerType kTabsTabsStorePointerType {
 const static mozilla::uniffi::UniFFIPointerType kTabsTabsBridgedEnginePointerType {
   "tabs::TabsBridgedEngine"_ns,
   uniffi_tabs_fn_free_tabsbridgedengine
+};
+const static mozilla::uniffi::UniFFIPointerType kSuggestSuggestStorePointerType {
+  "suggest::SuggestStore"_ns,
+  uniffi_suggest_fn_free_suggeststore
 };
 
 
@@ -140,6 +150,26 @@ Maybe<already_AddRefed<Promise>> UniFFICallAsync(const GlobalObject& aGlobal, ui
     case 17: { 
       using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kTabsTabsBridgedEnginePointerType>>;
       return Some(CallHandler::CallAsync(uniffi_tabs_fn_method_tabsbridgedengine_wipe, aGlobal, aArgs, "uniffi_tabs_fn_method_tabsbridgedengine_wipe: "_ns, aError));
+    }
+    case 18: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>, ScaffoldingConverter<RustBuffer>>;
+      return Some(CallHandler::CallAsync(uniffi_suggest_fn_constructor_suggeststore_new, aGlobal, aArgs, "uniffi_suggest_fn_constructor_suggeststore_new: "_ns, aError));
+    }
+    case 19: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<RustBuffer>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>>;
+      return Some(CallHandler::CallAsync(uniffi_suggest_fn_method_suggeststore_query, aGlobal, aArgs, "uniffi_suggest_fn_method_suggeststore_query: "_ns, aError));
+    }
+    case 20: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>>;
+      return Some(CallHandler::CallAsync(uniffi_suggest_fn_method_suggeststore_interrupt, aGlobal, aArgs, "uniffi_suggest_fn_method_suggeststore_interrupt: "_ns, aError));
+    }
+    case 21: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>>;
+      return Some(CallHandler::CallAsync(uniffi_suggest_fn_method_suggeststore_ingest, aGlobal, aArgs, "uniffi_suggest_fn_method_suggeststore_ingest: "_ns, aError));
+    }
+    case 22: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>>;
+      return Some(CallHandler::CallAsync(uniffi_suggest_fn_method_suggeststore_clear, aGlobal, aArgs, "uniffi_suggest_fn_method_suggeststore_clear: "_ns, aError));
     }
   }
   return Nothing();
@@ -237,6 +267,31 @@ bool UniFFICallSync(const GlobalObject& aGlobal, uint64_t aId, const Sequence<Sc
       CallHandler::CallSync(uniffi_tabs_fn_method_tabsbridgedengine_wipe, aGlobal, aArgs, aReturnValue, "uniffi_tabs_fn_method_tabsbridgedengine_wipe: "_ns, aError);
       return true;
     }
+    case 18: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>, ScaffoldingConverter<RustBuffer>>;
+      CallHandler::CallSync(uniffi_suggest_fn_constructor_suggeststore_new, aGlobal, aArgs, aReturnValue, "uniffi_suggest_fn_constructor_suggeststore_new: "_ns, aError);
+      return true;
+    }
+    case 19: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<RustBuffer>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>>;
+      CallHandler::CallSync(uniffi_suggest_fn_method_suggeststore_query, aGlobal, aArgs, aReturnValue, "uniffi_suggest_fn_method_suggeststore_query: "_ns, aError);
+      return true;
+    }
+    case 20: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>>;
+      CallHandler::CallSync(uniffi_suggest_fn_method_suggeststore_interrupt, aGlobal, aArgs, aReturnValue, "uniffi_suggest_fn_method_suggeststore_interrupt: "_ns, aError);
+      return true;
+    }
+    case 21: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>, ScaffoldingConverter<RustBuffer>>;
+      CallHandler::CallSync(uniffi_suggest_fn_method_suggeststore_ingest, aGlobal, aArgs, aReturnValue, "uniffi_suggest_fn_method_suggeststore_ingest: "_ns, aError);
+      return true;
+    }
+    case 22: { 
+      using CallHandler = ScaffoldingCallHandler<ScaffoldingConverter<void>, ScaffoldingObjectConverter<&kSuggestSuggestStorePointerType>>;
+      CallHandler::CallSync(uniffi_suggest_fn_method_suggeststore_clear, aGlobal, aArgs, aReturnValue, "uniffi_suggest_fn_method_suggeststore_clear: "_ns, aError);
+      return true;
+    }
   }
   return false;
 }
@@ -250,6 +305,10 @@ Maybe<already_AddRefed<UniFFIPointer>> UniFFIReadPointer(const GlobalObject& aGl
     }
     case 1: { 
       type = &kTabsTabsBridgedEnginePointerType;
+      break;
+    }
+    case 2: { 
+      type = &kSuggestSuggestStorePointerType;
       break;
     }
     default:
@@ -267,6 +326,10 @@ bool UniFFIWritePointer(const GlobalObject& aGlobal, uint64_t aId, const UniFFIP
     }
     case 1: { 
       type = &kTabsTabsBridgedEnginePointerType;
+      break;
+    }
+    case 2: { 
+      type = &kSuggestSuggestStorePointerType;
       break;
     }
     default:
