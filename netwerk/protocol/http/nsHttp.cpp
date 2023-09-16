@@ -43,6 +43,13 @@ constexpr uint64_t kWebTransportErrorCodeStart = 0x52e4a40fa8db;
 constexpr uint64_t kWebTransportErrorCodeEnd = 0x52e4a40fa9e2;
 
 
+namespace nsHttp {
+#define HTTP_ATOM(_name, _value) nsHttpAtom _name(nsLiteralCString{_value});
+#include "nsHttpAtomList.h"
+#undef HTTP_ATOM
+}  
+
+
 #define HTTP_ATOM(_name, _value) Unused_##_name,
 enum {
 #include "nsHttpAtomList.h"
@@ -66,7 +73,7 @@ nsresult CreateAtomTable(
     return NS_ERROR_ILLEGAL_DURING_SHUTDOWN;
   }
   
-  const nsHttpAtomLiteral* atoms[] = {
+  const nsHttpAtom* atoms[] = {
 #define HTTP_ATOM(_name, _value) &(_name),
 #include "nsHttpAtomList.h"
 #undef HTTP_ATOM
@@ -98,8 +105,9 @@ void DestroyAtomTable() {
 
 
 nsHttpAtom ResolveAtom(const nsACString& str) {
+  nsHttpAtom atom;
   if (str.IsEmpty()) {
-    return {};
+    return atom;
   }
 
   auto atomTable = sAtomTable.Lock();
@@ -107,28 +115,29 @@ nsHttpAtom ResolveAtom(const nsACString& str) {
   if (atomTable.ref().IsEmpty()) {
     if (sTableDestroyed) {
       NS_WARNING("ResolveAtom called during shutdown");
-      return {};
+      return atom;
     }
 
     NS_WARNING("ResolveAtom called before CreateAtomTable");
     if (NS_FAILED(CreateAtomTable(atomTable.ref()))) {
-      return {};
+      return atom;
     }
   }
 
   
   auto* entry = atomTable.ref().GetEntry(str);
   if (entry) {
-    return nsHttpAtom(entry->GetKey());
+    atom._val = entry->GetKey();
+    return atom;
   }
 
   LOG(("Putting %s header into atom table", nsPromiseFlatCString(str).get()));
   
   entry = atomTable.ref().PutEntry(str, fallible);
   if (entry) {
-    return nsHttpAtom(entry->GetKey());
+    atom._val = entry->GetKey();
   }
-  return {};
+  return atom;
 }
 
 
