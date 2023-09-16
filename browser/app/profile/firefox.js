@@ -2265,10 +2265,6 @@ pref("signon.suggestImportCount", 3);
 
 
 
-pref("print.use_simplify_page", true);
-
-
-
 pref("webchannel.allowObject.urlWhitelist", "https://content.cdn.mozilla.net https://install.mozilla.org");
 
 
