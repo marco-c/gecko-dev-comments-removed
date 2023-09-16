@@ -155,50 +155,22 @@ static void moz_container_wayland_move_locked(const MutexAutoLock& aProofOfLock,
                              wl_container->subsurface_dy);
 }
 
-static bool moz_container_wayland_egl_window_needs_size_update_locked(
-    const MutexAutoLock& aProofOfLock, MozContainerWayland* wl_container,
-    nsIntSize aSize, int aScale) {
-  if (!wl_container->eglwindow) {
-    return false;
-  }
-  if (wl_container->buffer_scale != aScale) {
-    return true;
-  }
-  nsIntSize recentSize;
-  wl_egl_window_get_attached_size(wl_container->eglwindow, &recentSize.width,
-                                  &recentSize.height);
-  if (aSize != recentSize) {
-    return true;
-  }
-
-  return recentSize.width % aScale != 0 || recentSize.height % aScale != 0;
-}
-
-static int adjust_size_for_scale(int aSize, int aScale) {
-  return aSize - (aSize % aScale);
-}
 
 
 
 
 
-void moz_container_wayland_egl_window_set_size(MozContainer* container,
+bool moz_container_wayland_egl_window_set_size(MozContainer* container,
                                                nsIntSize aSize, int aScale) {
   MozContainerWayland* wl_container = &container->data.wl_container;
   MutexAutoLock lock(wl_container->container_lock);
   if (!wl_container->eglwindow) {
-    return;
+    return false;
   }
 
-  if (!moz_container_wayland_egl_window_needs_size_update_locked(
-          lock, wl_container, aSize, aScale)) {
-    return;
+  if (wl_container->buffer_scale != aScale) {
+    moz_container_wayland_set_scale_factor_locked(lock, container, aScale);
   }
-
-  
-  
-  aSize.width = adjust_size_for_scale(aSize.width, aScale);
-  aSize.height = adjust_size_for_scale(aSize.height, aScale);
 
   LOGCONTAINER(
       "moz_container_wayland_egl_window_set_size [%p] %d x %d scale %d "
@@ -207,7 +179,9 @@ void moz_container_wayland_egl_window_set_size(MozContainer* container,
       aScale, aSize.width / aScale, aSize.height / aScale);
   wl_egl_window_resize(wl_container->eglwindow, aSize.width, aSize.height, 0,
                        0);
-  moz_container_wayland_set_scale_factor_locked(lock, container, aScale);
+
+  return moz_container_wayland_size_matches_scale_factor_locked(
+      lock, container, aSize.width, aSize.height);
 }
 
 void moz_container_wayland_class_init(MozContainerClass* klass) {
