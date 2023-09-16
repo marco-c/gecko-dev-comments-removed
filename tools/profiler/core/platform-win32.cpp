@@ -481,7 +481,7 @@ static void PlatformInit(PSLockRef aLock) {}
     PopulateRegsFromContext(regs, &context);
 #endif
 
-#if defined(GP_PLAT_amd64_windows)
+#if defined(GP_PLAT_amd64_windows) || defined(GP_PLAT_arm64_windows)
 
 
 

@@ -31,7 +31,7 @@ void LoaderObserver::OnBeginDllLoad(void** aContext,
     *aContext = utf8RequestedDllName.release();
   }
 
-#ifdef _M_AMD64
+#if defined(_M_AMD64) || defined(_M_ARM64)
   
   
   SuppressStackWalking();
@@ -46,7 +46,7 @@ bool LoaderObserver::SubstituteForLSP(PCUNICODE_STRING aLSPLeafName,
 
 void LoaderObserver::OnEndDllLoad(void* aContext, NTSTATUS aNtStatus,
                                   ModuleLoadInfo&& aModuleLoadInfo) {
-#ifdef _M_AMD64
+#if defined(_M_AMD64) || defined(_M_ARM64)
   DesuppressStackWalking();
 #endif
 
