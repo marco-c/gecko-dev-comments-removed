@@ -959,6 +959,14 @@ void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
   
   
   
+  if (count > 1 && aFamilies[0].mKey.IsEmpty()) {
+    aFamilies.RemoveElementAt(0);
+    --count;
+  }
+
+  
+  
+  
   if (count > 1) {
     for (size_t i = 1; i < count; ++i) {
       if (aFamilies[i].mKey.Equals(aFamilies[i - 1].mKey)) {
@@ -1008,6 +1016,13 @@ void FontList::SetAliases(
   aliasArray.Sort();
 
   size_t count = aliasArray.Length();
+
+  
+  if (count && aliasArray[0].mKey.IsEmpty()) {
+    aliasArray.RemoveElementAt(0);
+    --count;
+  }
+
   if (count < header.mAliasCount) {
     
     NS_WARNING("cannot reduce number of aliases");
