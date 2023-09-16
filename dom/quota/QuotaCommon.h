@@ -959,7 +959,7 @@ struct IpcFailCustomRetVal {
 
 
 
-#define QM_OR_ELSE_LOG_VERBOSE(...) QM_OR_ELSE_REPORT(Log, __VA_ARGS__)
+#define QM_OR_ELSE_LOG_VERBOSE(...) QM_OR_ELSE_REPORT(Verbose, __VA_ARGS__)
 
 namespace mozilla::dom::quota {
 
