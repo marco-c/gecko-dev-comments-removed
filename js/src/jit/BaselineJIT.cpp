@@ -315,7 +315,7 @@ static MethodStatus CanEnterBaselineJIT(JSContext* cx, HandleScript script,
     return Method_Skipped;
   }
 
-  if (!cx->realm()->ensureJitRealmExists(cx)) {
+  if (!cx->zone()->ensureJitZoneExists(cx)) {
     return Method_Error;
   }
 
@@ -400,7 +400,7 @@ static MethodStatus CanEnterBaselineInterpreter(JSContext* cx,
     return Method_Skipped;
   }
 
-  if (!cx->realm()->ensureJitRealmExists(cx)) {
+  if (!cx->zone()->ensureJitZoneExists(cx)) {
     return Method_Error;
   }
 

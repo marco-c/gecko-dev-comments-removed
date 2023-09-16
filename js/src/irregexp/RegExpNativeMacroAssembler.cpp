@@ -968,7 +968,7 @@ static Handle<HeapObject> DummyCode() {
 
 
 Handle<HeapObject> SMRegExpMacroAssembler::GetCode(Handle<String> source) {
-  if (!cx_->realm()->ensureJitRealmExists(cx_)) {
+  if (!cx_->zone()->ensureJitZoneExists(cx_)) {
     return DummyCode();
   }
 
