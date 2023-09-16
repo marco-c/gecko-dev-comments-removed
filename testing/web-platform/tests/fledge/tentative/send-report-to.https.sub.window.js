@@ -9,12 +9,13 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');`,
+        reportWinSuccessCondition:
+          'sellerSignals === null',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');`,
-      
-      'sellerSignals === null',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
       [createSellerReportUrl(uuid), createBidderReportUrl(uuid)]
   );
 }, 'Both send reports, seller passes nothing to bidder.');
@@ -23,12 +24,10 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');`,
-      
-      null,
-      '',
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');`,
+        reportWin:
+          '' },
       
       [createSellerReportUrl(uuid)]
   );
@@ -38,12 +37,10 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');`,
-      
-      null,
-      'throw new Error("Very serious exception")',
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');`,
+        reportWin:
+          'throw new Error("Very serious exception")' },
       
       [createSellerReportUrl(uuid)]
   );
@@ -53,12 +50,8 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');`,
-      
-      null,
-      null,
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');` },
       
       [createSellerReportUrl(uuid)]
   );
@@ -68,12 +61,12 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      '',
-      
-      'sellerSignals === null',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportResult:
+          '',
+        reportWinSuccessCondition:
+          'sellerSignals === null',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createBidderReportUrl(uuid)]
   );
@@ -83,12 +76,12 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      'return "foo";',
-      
-      'sellerSignals === "foo"',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportResult:
+          'return "foo";',
+        reportWinSuccessCondition:
+          'sellerSignals === "foo"',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createBidderReportUrl(uuid)]
   );
@@ -98,12 +91,12 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      'throw new Error("Very serious exception")',
-      
-      'sellerSignals === null',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportResult:
+          'throw new Error("Very serious exception")',
+        reportWinSuccessCondition:
+          'sellerSignals === null',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createBidderReportUrl(uuid)]
   );
@@ -113,12 +106,10 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      null,
-      
-      'sellerSignals === null',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportWinSuccessCondition:
+          'sellerSignals === null',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createBidderReportUrl(uuid)]
   );
@@ -128,14 +119,14 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');
-       sendReportTo('${createSellerReportUrl(uuid)}');
-       return 5;`,
-      
-      'sellerSignals === null',
-      `sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');
+           sendReportTo('${createSellerReportUrl(uuid)}');
+           return 5;`,
+        reportWinSuccessCondition:
+          'sellerSignals === null',
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createBidderReportUrl(uuid)]
   );
@@ -145,13 +136,11 @@ promise_test(async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
-      
-      null,
-      `sendReportTo('${createSellerReportUrl(uuid)}');`,
-      
-      null,
-      `sendReportTo('${createBidderReportUrl(uuid)}');
-       sendReportTo('${createBidderReportUrl(uuid)}');`,
+      { reportResult:
+          `sendReportTo('${createSellerReportUrl(uuid)}');`,
+        reportWin:
+          `sendReportTo('${createBidderReportUrl(uuid)}');
+           sendReportTo('${createBidderReportUrl(uuid)}');` },
       
       [createSellerReportUrl(uuid)]
   );
