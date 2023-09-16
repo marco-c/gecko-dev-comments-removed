@@ -734,6 +734,7 @@ pref("browser.shopping.experience2023.optedIn", 0);
 
 
 
+
 pref("browser.shopping.experience2023.active", true);
 
 

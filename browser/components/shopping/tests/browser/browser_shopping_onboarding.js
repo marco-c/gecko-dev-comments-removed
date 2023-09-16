@@ -3,15 +3,79 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ShoppingUtils: "resource:///modules/ShoppingUtils.sys.mjs",
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function setOnboardingPrefs(states = {}) {
+  if (Object.hasOwn(states, "handledAutoActivate")) {
+    ShoppingUtils.handledAutoActivate = !!states.handledAutoActivate;
+  }
+
+  if (Object.hasOwn(states, "lastAutoActivate")) {
+    Services.prefs.setIntPref(
+      "browser.shopping.experience2023.lastAutoActivate",
+      states.lastAutoActivate
+    );
+  }
+
+  if (Object.hasOwn(states, "autoActivateCount")) {
+    Services.prefs.setIntPref(
+      "browser.shopping.experience2023.autoActivateCount",
+      states.autoActivateCount
+    );
+  }
+
+  if (Object.hasOwn(states, "optedIn")) {
+    Services.prefs.setIntPref(
+      "browser.shopping.experience2023.optedIn",
+      states.optedIn
+    );
+  }
+
+  if (Object.hasOwn(states, "active")) {
+    Services.prefs.setBoolPref(
+      "browser.shopping.experience2023.active",
+      states.active
+    );
+  }
+}
+
+add_setup(async function setup() {
+  
+  registerCleanupFunction(() =>
+    setOnboardingPrefs({
+      active: true,
+      optedIn: 1,
+      lastAutoActivate: 0,
+      autoActivateCount: 0,
+      handledAutoActivate: false,
+    })
+  );
+});
+
 
 
 
 
 add_task(async function test_showOnboarding_notOptedIn() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.shopping.experience2023.optedIn", 0]],
-  });
+  setOnboardingPrefs({ active: false, optedIn: 0 });
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -53,9 +117,7 @@ add_task(async function test_showOnboarding_notOptedIn() {
 
 add_task(async function test_hideOnboarding_optedIn() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.shopping.experience2023.optedIn", 1]],
-  });
+  setOnboardingPrefs({ active: false, optedIn: 1 });
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -90,9 +152,7 @@ add_task(async function test_hideOnboarding_optedIn() {
 
 add_task(async function test_hideOnboarding_onClose() {
   
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.shopping.experience2023.optedIn", 0]],
-  });
+  setOnboardingPrefs({ active: false, optedIn: 0 });
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -125,5 +185,144 @@ add_task(async function test_hideOnboarding_onClose() {
         );
       });
     }
+  );
+});
+
+add_task(async function test_onboarding_auto_activate_opt_in() {
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: 0,
+    autoActivateCount: 0,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  
+  
+  ok(
+    Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Global toggle should be activated to open the sidebar on PDPs"
+  );
+
+  
+  
+  
+
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 1,
+    lastAutoActivate: 0,
+    autoActivateCount: 1,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    !Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Global toggle should not activate again since user is opted in"
+  );
+});
+
+add_task(async function test_onboarding_auto_activate_not_now() {
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: 0,
+    autoActivateCount: 0,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Global toggle should be activated to open the sidebar on PDPs"
+  );
+
+  
+  
+  
+  
+  
+  setOnboardingPrefs({ active: false });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    !Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Global toggle should not activate again this session"
+  );
+
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: 0,
+    autoActivateCount: 0,
+    handledAutoActivate: true,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    !Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Shopping sidebar should not auto-activate if auto-activated previously this session"
+  );
+
+  
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: Date.now() / 1000,
+    autoActivateCount: 1,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    !Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Shopping sidebar should not auto-activate if last auto-activation was less than 24 hours ago"
+  );
+
+  
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: 0,
+    autoActivateCount: 2,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    !Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Shopping sidebar should not auto-activate if it has already been auto-activated twice"
+  );
+
+  
+  setOnboardingPrefs({
+    active: false,
+    optedIn: 0,
+    lastAutoActivate: Date.now() / 1000 - 2 * 24 * 60 * 60, 
+    autoActivateCount: 1,
+    handledAutoActivate: false,
+  });
+  ShoppingUtils.handleAutoActivateOnProduct();
+
+  ok(
+    Services.prefs.getBoolPref("browser.shopping.experience2023.active"),
+    "Shopping sidebar should auto-activate a second time if all conditions are met"
   );
 });
