@@ -703,19 +703,22 @@ uint16_t FormatChunk::ExtraFormatInfoSize() const {
 AudioConfig::ChannelLayout::ChannelMap FormatChunk::ChannelMap() const {
   
   
+  
   if (WaveFormat() != 0xFFFE || mRaw.Length() < 18) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
   
-  if (ExtraFormatInfoSize() < 22) {
+  
+  if (ExtraFormatInfoSize() < 22 || mRaw.Length() < 22) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
-  return static_cast<AudioConfig::ChannelLayout::ChannelMap>(
+  auto channelMap = static_cast<AudioConfig::ChannelLayout::ChannelMap>(
       mRaw[21] | mRaw[20] | mRaw[19] | mRaw[18]);
+  return channelMap;
 }
 
 
