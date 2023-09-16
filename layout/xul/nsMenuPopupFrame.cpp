@@ -2159,8 +2159,7 @@ void nsMenuPopupFrame::MoveToAttributePosition() {
       this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
 }
 
-void nsMenuPopupFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                                   PostDestroyData& aPostDestroyData) {
+void nsMenuPopupFrame::Destroy(DestroyContext& aContext) {
   
   
   HidePopup( false, ePopupClosed,
@@ -2170,7 +2169,7 @@ void nsMenuPopupFrame::DestroyFrom(nsIFrame* aDestructRoot,
     pm->PopupDestroyed(this);
   }
 
-  nsBlockFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsBlockFrame::Destroy(aContext);
 }
 
 nsMargin nsMenuPopupFrame::GetMargin() const {

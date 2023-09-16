@@ -195,8 +195,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
                             int32_t aModType) override;
 
   
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DestroyFrom(
-      nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Destroy(DestroyContext&) override;
 
   bool HasRemoteContent() const;
 

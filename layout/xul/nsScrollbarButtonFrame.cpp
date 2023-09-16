@@ -264,10 +264,9 @@ nsresult nsScrollbarButtonFrame::GetParentWithTag(nsAtom* toFind,
   return NS_OK;
 }
 
-void nsScrollbarButtonFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                                         PostDestroyData& aPostDestroyData) {
+void nsScrollbarButtonFrame::Destroy(DestroyContext& aContext) {
   
   
   StopRepeat();
-  SimpleXULLeafFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  SimpleXULLeafFrame::Destroy(aContext);
 }
