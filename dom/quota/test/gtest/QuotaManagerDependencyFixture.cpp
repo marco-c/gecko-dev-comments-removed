@@ -232,6 +232,21 @@ ClientMetadata QuotaManagerDependencyFixture::GetTestClientMetadata() {
   return {GetTestOriginMetadata(), Client::SDB};
 }
 
+
+OriginMetadata QuotaManagerDependencyFixture::GetOtherTestOriginMetadata() {
+  return {""_ns,
+          "other-example.com"_ns,
+          "http://other-example.com"_ns,
+          "http://other-example.com"_ns,
+           false,
+          PERSISTENCE_TYPE_DEFAULT};
+}
+
+
+ClientMetadata QuotaManagerDependencyFixture::GetOtherTestClientMetadata() {
+  return {GetOtherTestOriginMetadata(), Client::SDB};
+}
+
 nsCOMPtr<nsISerialEventTarget> QuotaManagerDependencyFixture::sBackgroundTarget;
 
 }  
