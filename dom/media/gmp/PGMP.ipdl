@@ -3,6 +3,7 @@
 
 
 
+include PrefsTypes;
 include protocol PGMPContent;
 include protocol PGMPTimer;
 include protocol PGMPStorage;
@@ -43,6 +44,7 @@ child:
   async CloseActive();
   async InitGMPContentChild(Endpoint<PGMPContentChild> endpoint);
   async InitProfiler(Endpoint<PProfilerChild> endpoint);
+  async PreferenceUpdate(Pref pref);
 
   
   
