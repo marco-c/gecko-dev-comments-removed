@@ -74,7 +74,12 @@ add_task(async () => {
   );
 
   
-  const markers = await observeStylingInTargetWindow(panel.ownerGlobal, 5);
+  const [markers, counter] = await observeStylingInTargetWindow(
+    panel.ownerGlobal,
+    5
+  );
+
+  Assert.equal(markers.length, counter);
 
   
   
