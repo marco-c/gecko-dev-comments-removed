@@ -1118,7 +1118,8 @@ inline bool js::Nursery::isUnderused() const {
   
   
   
-  TimeDuration timeSinceLastCollection = TimeStamp::Now() - previousGC.endTime;
+  TimeDuration timeSinceLastCollection =
+      TimeStamp::NowLoRes() - previousGC.endTime;
   return timeSinceLastCollection > tunables().nurseryTimeoutForIdleCollection();
 }
 
