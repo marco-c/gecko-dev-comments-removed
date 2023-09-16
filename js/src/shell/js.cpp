@@ -87,7 +87,6 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/Parser.h"
 #include "frontend/ScopeBindingCache.h"  
-#include "frontend/SourceNotes.h"  
 #include "gc/GC.h"
 #include "gc/PublicIterators.h"
 #ifdef DEBUG

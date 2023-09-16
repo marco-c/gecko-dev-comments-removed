@@ -562,13 +562,14 @@ class alignas(uint32_t) ImmutableScriptData final : public TrailingArray {
   
   static uint32_t ComputeNotePadding(uint32_t codeLength, uint32_t noteLength) {
     uint32_t flagLength = sizeof(Flags);
-    uint32_t nullLength =
+    uint32_t paddingLength =
         CodeNoteAlign - (flagLength + codeLength + noteLength) % CodeNoteAlign;
 
-    
-    MOZ_ASSERT(nullLength >= 1);
+    if (paddingLength == CodeNoteAlign) {
+      return 0;
+    }
 
-    return nullLength;
+    return paddingLength;
   }
 
   
