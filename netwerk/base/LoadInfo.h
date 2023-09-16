@@ -43,10 +43,10 @@ class LoadInfo;
 
 namespace ipc {
 
-nsresult LoadInfoArgsToLoadInfo(
-    const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
-    const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
-    net::LoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
+                                const nsACString& aOriginRemoteType,
+                                nsINode* aCspToInheritLoadingContext,
+                                net::LoadInfo** outLoadInfo);
 }  
 
 namespace net {
@@ -252,7 +252,7 @@ class LoadInfo final : public nsILoadInfo {
                           const RedirectHistoryArray& aArra);
 
   friend nsresult mozilla::ipc::LoadInfoArgsToLoadInfo(
-      const Maybe<mozilla::net::LoadInfoArgs>& aLoadInfoArgs,
+      const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
       const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
       net::LoadInfo** outLoadInfo);
 
