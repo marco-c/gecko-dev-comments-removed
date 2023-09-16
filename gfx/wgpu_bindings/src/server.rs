@@ -23,10 +23,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 
 
 
-
-
-
-pub const MAX_BUFFER_SIZE: wgt::BufferAddress = 1u64 << 30u64;
+const MAX_BUFFER_SIZE: wgt::BufferAddress = 1 << 30;
 
 const MAX_TEXTURE_EXTENT: u32 = std::i16::MAX as u32;
 
@@ -282,7 +279,6 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     size: wgt::BufferAddress,
     usage: u32,
     mapped_at_creation: bool,
-    shm_allocation_failed: bool,
     mut error_buf: ErrorBuffer,
 ) {
     let utf8_label = label.map(|utf16| utf16.to_string());
@@ -290,7 +286,7 @@ pub extern "C" fn wgpu_server_device_create_buffer(
     let usage = wgt::BufferUsages::from_bits_retain(usage);
 
     
-    if shm_allocation_failed || size > MAX_BUFFER_SIZE {
+    if size > MAX_BUFFER_SIZE {
         error_buf.init(ErrMsg {
             message: "Out of memory",
             r#type: ErrorBufferType::OutOfMemory,
