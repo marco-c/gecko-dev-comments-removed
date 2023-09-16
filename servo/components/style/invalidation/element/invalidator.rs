@@ -7,7 +7,9 @@
 
 use crate::context::StackLimitChecker;
 use crate::dom::{TElement, TNode, TShadowRoot};
-use crate::invalidation::element::invalidation_map::{Dependency, DependencyInvalidationKind};
+use crate::invalidation::element::invalidation_map::{
+    Dependency, NormalDependencyInvalidationKind, DependencyInvalidationKind, RelativeDependencyInvalidationKind
+};
 use selectors::matching::matches_compound_selector_from;
 use selectors::matching::{CompoundSelectorMatchingResult, MatchingContext};
 use selectors::parser::{Combinator, Component};
@@ -16,8 +18,78 @@ use smallvec::SmallVec;
 use std::fmt;
 use std::fmt::Write;
 
+struct SiblingInfo<E>
+where
+    E: TElement,
+{
+    affected: E,
+    prev_sibling: Option<E>,
+    next_sibling: Option<E>,
+}
 
-pub trait InvalidationProcessor<'a, E>
+
+
+
+
+
+
+
+
+
+pub struct SiblingTraversalMap<E>
+where
+    E: TElement,
+{
+    info: Option<SiblingInfo<E>>,
+}
+
+impl<E> Default for SiblingTraversalMap<E>
+where
+    E: TElement,
+{
+    fn default() -> Self {
+        Self { info: None }
+    }
+}
+
+impl<E> SiblingTraversalMap<E>
+where
+    E: TElement,
+{
+    
+    pub fn new(affected: E, prev_sibling: Option<E>, next_sibling: Option<E>) -> Self {
+        Self {
+            info: Some(SiblingInfo {
+                affected,
+                prev_sibling,
+                next_sibling,
+            }),
+        }
+    }
+
+    
+    pub fn next_sibling_for(&self, element: &E) -> Option<E> {
+        if let Some(ref info) = self.info {
+            if *element == info.affected {
+                return info.next_sibling;
+            }
+        }
+        element.next_sibling_element()
+    }
+
+    
+    pub fn prev_sibling_for(&self, element: &E) -> Option<E> {
+        if let Some(ref info) = self.info {
+            if *element == info.affected {
+                return info.prev_sibling;
+            }
+        }
+        element.prev_sibling_element()
+    }
+}
+
+
+pub trait InvalidationProcessor<'a, 'b, E>
 where
     E: TElement,
 {
@@ -57,7 +129,10 @@ where
     fn check_outer_dependency(&mut self, dependency: &Dependency, element: E) -> bool;
 
     
-    fn matching_context(&mut self) -> &mut MatchingContext<'a, E::Impl>;
+    fn matching_context(&mut self) -> &mut MatchingContext<'b, E::Impl>;
+
+    
+    fn sibling_traversal_map(&self) -> &SiblingTraversalMap<E>;
 
     
     
@@ -87,6 +162,18 @@ where
 
     
     fn invalidated_descendants(&mut self, element: E, child: E);
+
+    
+    
+    
+    fn found_relative_selector_invalidation(
+        &mut self,
+        _element: E,
+        _kind: RelativeDependencyInvalidationKind,
+        _relative_dependency: &'a Dependency,
+    ) {
+        debug_assert!(false, "Reached relative selector dependency");
+    }
 }
 
 
@@ -113,16 +200,16 @@ impl<'a> DescendantInvalidationLists<'a> {
 
 
 
-pub struct TreeStyleInvalidator<'a, 'b, E, P: 'a>
+pub struct TreeStyleInvalidator<'a, 'b, 'c, E, P: 'a>
 where
     'b: 'a,
     E: TElement,
-    P: InvalidationProcessor<'b, E>,
+    P: InvalidationProcessor<'b, 'c, E>,
 {
     element: E,
     stack_limit_checker: Option<&'a StackLimitChecker>,
     processor: &'a mut P,
-    _marker: ::std::marker::PhantomData<&'b ()>,
+    _marker: std::marker::PhantomData<(&'b (), &'c ())>,
 }
 
 
@@ -185,7 +272,7 @@ impl<'a> Invalidation<'a> {
     pub fn new(dependency: &'a Dependency, scope: Option<OpaqueElement>) -> Self {
         debug_assert!(
             dependency.selector_offset == dependency.selector.len() + 1 ||
-                dependency.invalidation_kind() != DependencyInvalidationKind::Element,
+                dependency.normal_invalidation_kind() != NormalDependencyInvalidationKind::Element,
             "No point to this, if the dependency matched the element we should just invalidate it"
         );
         Self {
@@ -307,11 +394,11 @@ impl InvalidationResult {
     }
 }
 
-impl<'a, 'b, E, P: 'a> TreeStyleInvalidator<'a, 'b, E, P>
+impl<'a, 'b, 'c, E, P: 'a> TreeStyleInvalidator<'a, 'b, 'c, E, P>
 where
     'b: 'a,
     E: TElement,
-    P: InvalidationProcessor<'b, E>,
+    P: InvalidationProcessor<'b, 'c, E>,
 {
     
     pub fn new(
@@ -323,7 +410,7 @@ where
             element,
             stack_limit_checker,
             processor,
-            _marker: ::std::marker::PhantomData,
+            _marker: std::marker::PhantomData,
         }
     }
 
@@ -388,7 +475,10 @@ where
             return false;
         }
 
-        let mut current = self.element.next_sibling_element();
+        let mut current = self
+            .processor
+            .sibling_traversal_map()
+            .next_sibling_for(&self.element);
         let mut any_invalidated = false;
 
         while let Some(sibling) = current {
@@ -416,7 +506,10 @@ where
                 break;
             }
 
-            current = sibling.next_sibling_element();
+            current = self
+                .processor
+                .sibling_traversal_map()
+                .next_sibling_for(&sibling);
         }
 
         any_invalidated
@@ -838,7 +931,20 @@ where
                                 matched: true,
                             }
                         },
-                        Some(ref p) => &**p,
+                        Some(ref p) => {
+                            let invalidation_kind = p.invalidation_kind();
+                            match invalidation_kind {
+                                DependencyInvalidationKind::Normal(_) => &**p,
+                                DependencyInvalidationKind::Relative(kind) => {
+                                    self.processor
+                                        .found_relative_selector_invalidation(self.element, kind, &**p);
+                                    return SingleInvalidationResult {
+                                        invalidated_self: false,
+                                        matched: true,
+                                    };
+                                },
+                            }
+                        },
                     };
 
                     debug!(" > Checking outer dependency {:?}", cur_dependency);
@@ -856,7 +962,7 @@ where
                         };
                     }
 
-                    if cur_dependency.invalidation_kind() == DependencyInvalidationKind::Element {
+                    if cur_dependency.normal_invalidation_kind() == NormalDependencyInvalidationKind::Element {
                         continue;
                     }
 
