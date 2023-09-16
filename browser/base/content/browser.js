@@ -524,6 +524,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   this,
+  "gBookmarksToolbarShowInPrivate",
+  "browser.toolbars.bookmarks.showInPrivateBrowsing",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
   "gFxaToolbarEnabled",
   "identity.fxaccounts.toolbar.enabled",
   false,
@@ -595,6 +602,13 @@ XPCOMUtils.defineLazyPreferenceGetter(
   this,
   "gTranslationsEnabled",
   "browser.translations.enable",
+  false
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "gUseFeltPrivacyUI",
+  "browser.privatebrowsing.felt-privacy-v1",
   false
 );
 
@@ -714,6 +728,25 @@ function isInitialPage(url) {
 
 function browserWindows() {
   return Services.wm.getEnumerator("navigator:browser");
+}
+
+function updateBookmarkToolbarVisibility() {
+  
+  if (
+    gUseFeltPrivacyUI &&
+    !gBookmarksToolbarShowInPrivate &&
+    PrivateBrowsingUtils.isWindowPrivate(window)
+  ) {
+    setToolbarVisibility(BookmarkingUI.toolbar, false, false, false);
+  } else {
+    BookmarkingUI.updateEmptyToolbarMessage();
+    setToolbarVisibility(
+      BookmarkingUI.toolbar,
+      gBookmarksToolbarVisibility,
+      false,
+      false
+    );
+  }
 }
 
 
@@ -1508,13 +1541,7 @@ var gBrowserInit = {
   onBeforeInitialXULLayout() {
     this._setupFirstContentWindowPaintPromise();
 
-    BookmarkingUI.updateEmptyToolbarMessage();
-    setToolbarVisibility(
-      BookmarkingUI.toolbar,
-      gBookmarksToolbarVisibility,
-      false,
-      false
-    );
+    updateBookmarkToolbarVisibility();
 
     
     if (ChromeUtils.shouldResistFingerprinting("RoundWindowSize")) {
@@ -5175,12 +5202,7 @@ var XULBrowserWindow = {
     BookmarkingUI.onLocationChange();
     
     if (!isSameDocument) {
-      setToolbarVisibility(
-        BookmarkingUI.toolbar,
-        gBookmarksToolbarVisibility,
-        false,
-        false
-      );
+      updateBookmarkToolbarVisibility();
     }
 
     let closeOpenPanels = selector => {
@@ -8320,6 +8342,11 @@ var gPrivateBrowsingUI = {
     );
 
     gBrowser.updateTitlebar();
+
+    
+    if (gUseFeltPrivacyUI) {
+      document.getElementById("save-to-pocket-button").remove();
+    }
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
       
