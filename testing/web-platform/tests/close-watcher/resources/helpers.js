@@ -27,4 +27,4 @@ window.sendEscKey = () => {
 
 
 
-window.sendCloseSignal = window.sendEscKey;
+window.sendCloseRequest = window.sendEscKey;
