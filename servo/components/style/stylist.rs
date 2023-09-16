@@ -1103,7 +1103,7 @@ impl Stylist {
         
         
         properties::cascade::<E>(
-            &self.device,
+            &self,
             pseudo,
             inputs.rules.as_ref().unwrap_or(self.rule_tree.root()),
             guards,
@@ -1113,7 +1113,6 @@ impl Stylist {
             first_line_reparenting,
             visited_rules,
             inputs.flags,
-            self.quirks_mode,
             rule_cache,
             rule_cache_conditions,
             element,
@@ -1489,7 +1488,7 @@ impl Stylist {
         
         
         properties::apply_declarations::<E, _>(
-            &self.device,
+            &self,
              None,
             self.rule_tree.root(),
             guards,
@@ -1510,7 +1509,6 @@ impl Stylist {
                 visited_rules: None,
             },
             Default::default(),
-            self.quirks_mode,
              None,
             &mut Default::default(),
              None,
@@ -2541,7 +2539,7 @@ impl CascadeData {
             };
             let matches = condition
                 .matches(
-                    stylist.device(),
+                    stylist,
                     element,
                     context.extra_data.originating_element_style,
                     &mut context.extra_data.cascade_input_flags,

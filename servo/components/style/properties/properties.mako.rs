@@ -31,6 +31,7 @@ use fxhash::FxHashMap;
 use crate::media_queries::Device;
 use crate::parser::ParserContext;
 use crate::selector_parser::PseudoElement;
+use crate::stylist::Stylist;
 #[cfg(feature = "servo")] use servo_config::prefs;
 use style_traits::{CssWriter, KeywordsCollectFn, ParseError, ParsingMode};
 use style_traits::{SpecifiedValueInfo, StyleParseErrorKind, ToCss};
@@ -2975,6 +2976,7 @@ pub struct ComputedValuesInner {
         ${style_struct.ident}: Arc<style_structs::${style_struct.name}>,
     % endfor
     custom_properties: Option<Arc<crate::custom_properties::CustomPropertiesMap>>,
+
     
     pub writing_mode: WritingMode,
 
@@ -3596,6 +3598,10 @@ pub struct StyleBuilder<'a> {
 
     
     
+    pub stylist: Option<<&'a Stylist>,
+
+    
+    
     
     
     inherited_style: &'a ComputedValues,
@@ -3641,6 +3647,7 @@ impl<'a> StyleBuilder<'a> {
     
     pub(super) fn new(
         device: &'a Device,
+        stylist: Option<<&'a Stylist>,
         parent_style: Option<<&'a ComputedValues>,
         pseudo: Option<<&'a PseudoElement>,
         rules: Option<StrongRuleNode>,
@@ -3654,6 +3661,7 @@ impl<'a> StyleBuilder<'a> {
 
         StyleBuilder {
             device,
+            stylist,
             inherited_style,
             reset_style,
             pseudo,
@@ -3682,6 +3690,7 @@ impl<'a> StyleBuilder<'a> {
     
     pub fn for_animation(
         device: &'a Device,
+        stylist: Option<<&'a Stylist>,
         style_to_derive_from: &'a ComputedValues,
         parent_style: Option<<&'a ComputedValues>,
     ) -> Self {
@@ -3689,6 +3698,7 @@ impl<'a> StyleBuilder<'a> {
         let inherited_style = parent_style.unwrap_or(reset_style);
         StyleBuilder {
             device,
+            stylist,
             inherited_style,
             reset_style,
             pseudo: None,
@@ -3796,6 +3806,7 @@ impl<'a> StyleBuilder<'a> {
     
     pub fn for_inheritance(
         device: &'a Device,
+        stylist: Option<<&'a Stylist>,
         parent: Option<<&'a ComputedValues>,
         pseudo: Option<<&'a PseudoElement>,
     ) -> Self {
@@ -3808,6 +3819,7 @@ impl<'a> StyleBuilder<'a> {
             parent.visited_style().map(|style| {
                 Self::for_inheritance(
                     device,
+                    stylist,
                     Some(style),
                     pseudo,
                 ).build()
@@ -3815,6 +3827,7 @@ impl<'a> StyleBuilder<'a> {
         });
         let mut ret = Self::new(
             device,
+            stylist,
             parent,
             pseudo,
              None,
