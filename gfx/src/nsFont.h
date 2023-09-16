@@ -93,8 +93,6 @@ struct nsFont final {
       mozilla::StyleFontSynthesis::Auto;
   mozilla::StyleFontSynthesis synthesisSmallCaps =
       mozilla::StyleFontSynthesis::Auto;
-  mozilla::StyleFontSynthesis synthesisPosition =
-      mozilla::StyleFontSynthesis::Auto;
 
   
   nsFont(const mozilla::StyleFontFamily&, mozilla::Length aSize);
