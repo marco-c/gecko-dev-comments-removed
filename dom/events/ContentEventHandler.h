@@ -7,6 +7,7 @@
 #ifndef mozilla_ContentEventHandler_h_
 #define mozilla_ContentEventHandler_h_
 
+#include "js/GCAPI.h"
 #include "mozilla/EventForwards.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCOMPtr.h"
@@ -181,25 +182,34 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
-  struct MOZ_STACK_CLASS NodePosition : public RangeBoundary {
+  struct MOZ_STACK_CLASS RawNodePosition : public RawRangeBoundary {
     
     
     bool mAfterOpenTag = true;
 
-    NodePosition() = default;
+    RawNodePosition() = default;
+    explicit RawNodePosition(const RawNodePosition& aOther)
+        : RawRangeBoundary(aOther),
+          mAfterOpenTag(aOther.mAfterOpenTag)
+    
+    {}
 
-    NodePosition(nsINode* aContainer, uint32_t aOffset)
-        : RangeBoundary(aContainer, aOffset) {}
+    RawNodePosition(nsINode* aContainer, uint32_t aOffset)
+        : RawRangeBoundary(aContainer, aOffset) {}
 
-    NodePosition(nsINode* aContainer, nsIContent* aRef)
-        : RangeBoundary(aContainer, aRef) {}
+    RawNodePosition(nsINode* aContainer, nsIContent* aRef)
+        : RawRangeBoundary(aContainer, aRef) {}
 
-    explicit NodePosition(const nsIFrame::ContentOffsets& aContentOffsets)
-        : RangeBoundary(aContentOffsets.content, aContentOffsets.offset) {}
+    explicit RawNodePosition(const nsIFrame::ContentOffsets& aContentOffsets)
+        : RawRangeBoundary(aContentOffsets.content, aContentOffsets.offset) {}
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+    ~RawNodePosition() { MOZ_DIAGNOSTIC_ASSERT(!mMutationGuard.Mutated(0)); }
+#endif  
 
    public:
-    bool operator==(const NodePosition& aOther) const {
-      return RangeBoundary::operator==(aOther) &&
+    bool operator==(const RawNodePosition& aOther) const {
+      return RawRangeBoundary::operator==(aOther) &&
              mAfterOpenTag == aOther.mAfterOpenTag;
     }
 
@@ -209,19 +219,25 @@ class MOZ_STACK_CLASS ContentEventHandler {
     bool IsImmediatelyAfterOpenTag() const {
       return IsSet() && Container()->IsElement() && !Ref() && mAfterOpenTag;
     }
+
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+   private:
+    nsMutationGuard mMutationGuard;
+    JS::AutoAssertNoGC mAssertNoGC;
+#endif  
   };
 
   
   
   
-  struct NodePositionBefore final : public NodePosition {
-    NodePositionBefore(nsINode* aContainer, uint32_t aOffset)
-        : NodePosition(aContainer, aOffset) {
+  struct MOZ_STACK_CLASS RawNodePositionBefore final : public RawNodePosition {
+    RawNodePositionBefore(nsINode* aContainer, uint32_t aOffset)
+        : RawNodePosition(aContainer, aOffset) {
       mAfterOpenTag = false;
     }
 
-    NodePositionBefore(nsINode* aContainer, nsIContent* aRef)
-        : NodePosition(aContainer, aRef) {
+    RawNodePositionBefore(nsINode* aContainer, nsIContent* aRef)
+        : RawNodePosition(aContainer, aRef) {
       mAfterOpenTag = false;
     }
   };
@@ -244,12 +260,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
-  static nsresult GetFlatTextLengthInRange(const NodePosition& aStartPosition,
-                                           const NodePosition& aEndPosition,
-                                           const Element* aRootElement,
-                                           uint32_t* aLength,
-                                           LineBreakType aLineBreakType,
-                                           bool aIsRemovingNode = false);
+  static nsresult GetFlatTextLengthInRange(
+      const RawNodePosition& aStartPosition,
+      const RawNodePosition& aEndPosition, const Element* aRootElement,
+      uint32_t* aLength, LineBreakType aLineBreakType,
+      bool aIsRemovingNode = false);
   
   
   static uint32_t GetNativeTextLength(const dom::Text& aTextNode,
