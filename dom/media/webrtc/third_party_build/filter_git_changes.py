@@ -32,7 +32,8 @@ def filter_git_changes(github_path, commit_sha, diff_filter):
     changed_files = [line for line in changed_files if line != ""]
 
     
-    exclude_list = vendor_libwebrtc.get_excluded_paths()
+    exclude_file_list = vendor_libwebrtc.get_excluded_files()
+    exclude_dir_list = vendor_libwebrtc.get_excluded_dirs()
     include_list = vendor_libwebrtc.get_included_path_overrides()
 
     
@@ -44,11 +45,19 @@ def filter_git_changes(github_path, commit_sha, diff_filter):
     ]
 
     
-    regex_excludes = "|".join(["^.\t{}$".format(i) for i in exclude_list])
-
     
+    
+    regex_excludes = "|".join(["^.\t{}".format(i) for i in exclude_dir_list])
     files_not_excluded = [
         path for path in changed_files if not re.findall(regex_excludes, path)
+    ]
+
+    
+    
+    
+    regex_excludes = "|".join(["^.\t{}$".format(i) for i in exclude_file_list])
+    files_not_excluded = [
+        path for path in files_not_excluded if not re.findall(regex_excludes, path)
     ]
 
     return included_files + files_not_excluded

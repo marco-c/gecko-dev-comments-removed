@@ -22,7 +22,8 @@ THIRDPARTY_USED_IN_FIREFOX = [
 LIBWEBRTC_DIR = os.path.normpath("third_party/libwebrtc")
 
 
-def get_excluded_paths():
+
+def get_excluded_files():
     return [
         ".clang-format",
         ".git-blame-ignore-revs",
@@ -39,6 +40,14 @@ def get_excluded_paths():
         "presubmit_test.py",
         "presubmit_test_mocks.py",
         "pylintrc",
+    ]
+
+
+
+
+
+def get_excluded_dirs():
+    return [
         
         
         "sdk/android",
@@ -302,7 +311,7 @@ def unpack(target):
             except NotADirectoryError:
                 pass
 
-        unused_libwebrtc_in_firefox = get_excluded_paths()
+        unused_libwebrtc_in_firefox = get_excluded_files() + get_excluded_dirs()
         forced_used_in_firefox = get_included_path_overrides()
 
         
