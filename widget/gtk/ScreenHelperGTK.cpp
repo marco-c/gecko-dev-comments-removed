@@ -204,8 +204,6 @@ static already_AddRefed<Screen> MakeScreenGtk(GdkScreen* aScreen,
   
   gint geometryScaleFactor = gdkScaleFactor;
 
-  LayoutDeviceIntRect rect;
-
   gint refreshRate = [&] {
     
     static auto s_gdk_monitor_get_refresh_rate = (int (*)(GdkMonitor*))dlsym(
@@ -229,6 +227,8 @@ static already_AddRefed<Screen> MakeScreenGtk(GdkScreen* aScreen,
                                 workarea.y * geometryScaleFactor,
                                 workarea.width * geometryScaleFactor,
                                 workarea.height * geometryScaleFactor);
+  LayoutDeviceIntRect rect;
+  DesktopToLayoutDeviceScale contentsScale(1.0);
   if (GdkIsX11Display()) {
     GdkRectangle monitor;
     gdk_screen_get_monitor_geometry(aScreen, aMonitorNum, &monitor);
@@ -238,18 +238,14 @@ static already_AddRefed<Screen> MakeScreenGtk(GdkScreen* aScreen,
                                monitor.height * geometryScaleFactor);
   } else {
     
+    availRect.MoveTo(0, 0);
+    
     rect = availRect;
+    
+    contentsScale.scale = gdkScaleFactor;
   }
 
   uint32_t pixelDepth = GetGTKPixelDepth();
-
-  
-  DesktopToLayoutDeviceScale contentsScale(1.0);
-#ifdef MOZ_WAYLAND
-  if (GdkIsWaylandDisplay()) {
-    contentsScale.scale = gdkScaleFactor;
-  }
-#endif
 
   CSSToLayoutDeviceScale defaultCssScale(gdkScaleFactor);
 
