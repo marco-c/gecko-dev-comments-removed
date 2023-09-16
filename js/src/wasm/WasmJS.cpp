@@ -4208,7 +4208,7 @@ static bool Reject(JSContext* cx, const CompileArgs& args,
     return false;
   }
 
-  unsigned line = args.scriptedCaller.line;
+  uint32_t line = args.scriptedCaller.line;
 
   
   

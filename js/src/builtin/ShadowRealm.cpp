@@ -232,7 +232,7 @@ static bool PerformShadowRealmEval(JSContext* cx, Handle<JSString*> sourceText,
     
     RootedScript callerScript(cx);
     const char* filename;
-    unsigned lineno;
+    uint32_t lineno;
     uint32_t pcOffset;
     bool mutedErrors;
     DescribeScriptedCallerForCompilation(cx, &callerScript, &filename, &lineno,
@@ -419,7 +419,7 @@ static JSObject* ShadowRealmImportValue(JSContext* cx,
     
     RootedScript script(cx);
     const char* filename;
-    unsigned lineno;
+    uint32_t lineno;
     uint32_t pcOffset;
     bool mutedErrors;
     DescribeScriptedCallerForCompilation(cx, &script, &filename, &lineno,
