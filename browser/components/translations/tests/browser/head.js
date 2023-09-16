@@ -452,6 +452,25 @@ async function navigate(url, message) {
 
 
 
+async function toggleReaderMode() {
+  const readerButton = document.getElementById("reader-mode-button");
+  is(readerButton.hidden, false, "Reader mode button should be visible");
+
+  const readyPromise = readerButton.getAttribute("readeractive")
+    ? waitForCondition(() => !readerButton.getAttribute("readeractive"))
+    : BrowserTestUtils.waitForContentEvent(
+        gBrowser.selectedBrowser,
+        "AboutReaderContentReady"
+      );
+
+  click(readerButton, "Clicking the reader-mode button");
+  await readyPromise;
+}
+
+
+
+
+
 
 async function addTab(url) {
   info(`Adding tab for ` + url);

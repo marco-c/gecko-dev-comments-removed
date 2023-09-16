@@ -1401,6 +1401,19 @@ var TranslationsPanel = new (class {
 
 
 
+
+  onLocationChange(browser) {
+    if (browser.currentURI.spec.startsWith("about:reader")) {
+      
+      TranslationsPanel.#hideTranslationsButton();
+    }
+  }
+
+  
+
+
+
+
   handleEvent = async event => {
     switch (event.type) {
       case "TranslationsParent:OfferTranslation": {
