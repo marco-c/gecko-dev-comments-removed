@@ -5,6 +5,7 @@
 #ifndef mozilla_intl_WordBreaker_h__
 #define mozilla_intl_WordBreaker_h__
 
+#include "nsStringFwd.h"
 #include <cstdint>
 
 #define NS_WORDBREAKER_NEED_MORE_TEXT -1
@@ -32,8 +33,7 @@ class WordBreaker final {
   
   
   
-  static WordRange FindWord(const char16_t* aText, uint32_t aLen,
-                            uint32_t aPos);
+  static WordRange FindWord(const nsAString& aText, uint32_t aPos);
 
   
   
