@@ -266,11 +266,12 @@ LoadInfo::LoadInfo(
     }
 
     if (nsMixedContentBlocker::IsUpgradableContentType(
-            mInternalContentPolicyType)) {
+            mInternalContentPolicyType,  false)) {
       
       if (mLoadingPrincipal->GetIsOriginPotentiallyTrustworthy() &&
           !mLoadingPrincipal->GetIsLoopbackHost()) {
-        if (StaticPrefs::security_mixed_content_upgrade_display_content()) {
+        if (nsMixedContentBlocker::IsUpgradableContentType(
+                mInternalContentPolicyType,  true)) {
           mBrowserUpgradeInsecureRequests = true;
         } else {
           mBrowserWouldUpgradeInsecureRequests = true;

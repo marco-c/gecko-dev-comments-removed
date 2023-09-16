@@ -915,8 +915,15 @@ nsCSPDirective* nsCSPParser::directiveName() {
   
   if (directive == nsIContentSecurityPolicy::BLOCK_ALL_MIXED_CONTENT) {
     
+    
     if (mozilla::StaticPrefs::
-            security_mixed_content_upgrade_display_content()) {
+            security_mixed_content_upgrade_display_content() &&
+        mozilla::StaticPrefs::
+            security_mixed_content_upgrade_display_content_image() &&
+        mozilla::StaticPrefs::
+            security_mixed_content_upgrade_display_content_audio() &&
+        mozilla::StaticPrefs::
+            security_mixed_content_upgrade_display_content_video()) {
       
       
       AutoTArray<nsString, 1> params = {mCurToken};
