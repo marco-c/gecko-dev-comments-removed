@@ -24,6 +24,7 @@
 #include "libavutil/avassert.h"
 #include "libavutil/cpu.h"
 #include "libavutil/film_grain_params.h"
+#include "libavutil/hdr_dynamic_metadata.h"
 #include "libavutil/mastering_display_metadata.h"
 #include "libavutil/imgutils.h"
 #include "libavutil/opt.h"
@@ -511,26 +512,54 @@ FF_ENABLE_DEPRECATION_WARNINGS
     }
     if (p->itut_t35) {
         GetByteContext gb;
-        unsigned int user_identifier;
+        int provider_code;
 
         bytestream2_init(&gb, p->itut_t35->payload, p->itut_t35->payload_size);
-        bytestream2_skip(&gb, 1); 
-        bytestream2_skip(&gb, 1); 
-        user_identifier = bytestream2_get_be32(&gb);
-        switch (user_identifier) {
-        case MKBETAG('G', 'A', '9', '4'): { 
-            AVBufferRef *buf = NULL;
 
-            res = ff_parse_a53_cc(&buf, gb.buffer, bytestream2_get_bytes_left(&gb));
-            if (res < 0)
-                goto fail;
-            if (!res)
+        provider_code = bytestream2_get_be16(&gb);
+        switch (provider_code) {
+        case 0x31: { 
+            uint32_t user_identifier = bytestream2_get_be32(&gb);
+            switch (user_identifier) {
+            case MKBETAG('G', 'A', '9', '4'): { 
+                AVBufferRef *buf = NULL;
+
+                res = ff_parse_a53_cc(&buf, gb.buffer, bytestream2_get_bytes_left(&gb));
+                if (res < 0)
+                    goto fail;
+                if (!res)
+                    break;
+
+                if (!av_frame_new_side_data_from_buf(frame, AV_FRAME_DATA_A53_CC, buf))
+                    av_buffer_unref(&buf);
+
+                c->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
+                break;
+            }
+            default: 
+                break;
+            }
+            break;
+        }
+        case 0x3C: { 
+            AVDynamicHDRPlus *hdrplus;
+            int provider_oriented_code = bytestream2_get_be16(&gb);
+            int application_identifier = bytestream2_get_byte(&gb);
+
+            if (p->itut_t35->country_code != 0xB5 ||
+                provider_oriented_code != 1 || application_identifier != 4)
                 break;
 
-            if (!av_frame_new_side_data_from_buf(frame, AV_FRAME_DATA_A53_CC, buf))
-                av_buffer_unref(&buf);
+            hdrplus = av_dynamic_hdr_plus_create_side_data(frame);
+            if (!hdrplus) {
+                res = AVERROR(ENOMEM);
+                goto fail;
+            }
 
-            c->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
+            res = av_dynamic_hdr_plus_from_t35(hdrplus, gb.buffer,
+                                               bytestream2_get_bytes_left(&gb));
+            if (res < 0)
+                goto fail;
             break;
         }
         default: 
