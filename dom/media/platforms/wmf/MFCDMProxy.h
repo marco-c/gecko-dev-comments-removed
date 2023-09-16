@@ -23,7 +23,7 @@ namespace mozilla {
 class MFCDMProxy {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFCDMProxy);
 
-  explicit MFCDMProxy(IMFContentDecryptionModule* aCDM);
+  MFCDMProxy(IMFContentDecryptionModule* aCDM, uint64_t aCDMParentId);
 
  public:
   
@@ -47,6 +47,8 @@ class MFCDMProxy {
   
   void OnHardwareContextReset();
 
+  void Shutdown();
+
   
   
 
@@ -61,6 +63,8 @@ class MFCDMProxy {
       mInputTrustAuthorities;
 
   Microsoft::WRL::ComPtr<IMFTrustedInput> mTrustedInput;
+
+  const uint64_t mCDMParentId;
 
   
   
