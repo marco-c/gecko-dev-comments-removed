@@ -235,6 +235,19 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: [
+          "column-fill",
+          "column-rule",
+          "column-rule-color",
+          "column-rule-style",
+          "column-rule-width",
+        ],
+        when: () => !this.multiColContainer,
+        fixId: "inactive-css-not-multicol-container-fix",
+        msgId: "inactive-css-not-multicol-container",
+      },
+      
+      {
         invalidProperties: ["vertical-align"],
         when: () => {
           const { selectorText } = this.cssRule;
