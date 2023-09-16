@@ -585,18 +585,6 @@ nsChangeHint nsStyleOutline::CalcDifference(
   return nsChangeHint(0);
 }
 
-nsSize nsStyleOutline::EffectiveOffsetFor(const nsRect& aRect) const {
-  const nscoord offset = mOutlineOffset.ToAppUnits();
-
-  if (offset >= 0) {
-    
-    return nsSize(offset, offset);
-  }
-
-  return nsSize(std::max(offset, -(aRect.Width() / 2)),
-                std::max(offset, -(aRect.Height() / 2)));
-}
-
 
 
 
