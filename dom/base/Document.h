@@ -1069,25 +1069,6 @@ class Document : public nsINode,
   
 
 
-  void SetHasCSP(bool aHasCSP) { mHasCSP = aHasCSP; }
-
-  
-
-
-  void SetHasUnsafeInlineCSP(bool aHasUnsafeInlineCSP) {
-    mHasUnsafeInlineCSP = aHasUnsafeInlineCSP;
-  }
-
-  
-
-
-  void SetHasUnsafeEvalCSP(bool aHasUnsafeEvalCSP) {
-    mHasUnsafeEvalCSP = aHasUnsafeEvalCSP;
-  }
-
-  
-
-
 
   bool GetHasCSPDeliveredThroughHeader() {
     return mHasCSPDeliveredThroughHeader;
@@ -4678,15 +4659,6 @@ class Document : public nsINode,
   
   
   bool mMayHaveAnimationObservers : 1;
-
-  
-  bool mHasCSP : 1;
-
-  
-  bool mHasUnsafeEvalCSP : 1;
-
-  
-  bool mHasUnsafeInlineCSP : 1;
 
   
   bool mHasCSPDeliveredThroughHeader : 1;
