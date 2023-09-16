@@ -574,6 +574,18 @@ var TranslationsPanel = new (class {
 
 
 
+  #isShowingDefaultView() {
+    const { multiview } = this.elements;
+    return (
+      multiview.getAttribute("mainViewId") === "translations-panel-view-default"
+    );
+  }
+
+  
+
+
+
+
   async #showDefaultView(force = false) {
     const {
       fromMenuList,
@@ -823,6 +835,9 @@ var TranslationsPanel = new (class {
 
   async #showRevisitView({ fromLanguage, toLanguage }) {
     const { fromMenuList, toMenuList, intro } = this.elements;
+    if (!this.#isShowingDefaultView()) {
+      await this.#showDefaultView();
+    }
     intro.hidden = true;
     fromMenuList.value = fromLanguage;
     toMenuList.value = toLanguage;
