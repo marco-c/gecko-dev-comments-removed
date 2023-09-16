@@ -283,6 +283,10 @@ class TrackInfo {
   
   bool mIsRenderedExternally;
 
+  
+  
+  bool mIsLive = false;
+
   virtual AudioInfo* GetAsAudioInfo() { return nullptr; }
   virtual VideoInfo* GetAsVideoInfo() { return nullptr; }
   virtual TextInfo* GetAsTextInfo() { return nullptr; }
