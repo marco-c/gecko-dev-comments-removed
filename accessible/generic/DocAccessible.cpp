@@ -40,6 +40,7 @@
 #include "mozilla/EditorBase.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/PresShell.h"
 #include "nsAccessibilityService.h"
 #include "mozilla/a11y/DocAccessibleChild.h"
@@ -1456,6 +1457,9 @@ void DocAccessible::ProcessInvalidationList() {
 void DocAccessible::ProcessQueuedCacheUpdates() {
   AUTO_PROFILER_MARKER_TEXT("DocAccessible::ProcessQueuedCacheUpdates", A11Y,
                             {}, ""_ns);
+  PerfStats::AutoMetricRecording<
+      PerfStats::Metric::A11Y_ProcessQueuedCacheUpdate>
+      autoRecording;
   
 
   nsTArray<CacheData> data;
@@ -1563,6 +1567,8 @@ void DocAccessible::NotifyOfLoading(bool aIsReloading) {
 
 void DocAccessible::DoInitialUpdate() {
   AUTO_PROFILER_MARKER_TEXT("DocAccessible::DoInitialUpdate", A11Y, {}, ""_ns);
+  PerfStats::AutoMetricRecording<PerfStats::Metric::A11Y_DoInitialUpdate>
+      autoRecording;
   
 
   if (nsCoreUtils::IsTopLevelContentDocInProcess(mDocumentNode)) {
