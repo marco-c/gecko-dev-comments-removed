@@ -1362,7 +1362,8 @@ var TranslationsPanel = new (class {
 
 
   async onAlwaysOfferTranslations() {
-    TranslationsParent.toggleAutomaticallyPopupPref();
+    const toggledOn = TranslationsParent.toggleAutomaticallyPopupPref();
+    TranslationsParent.telemetry().panel().onAlwaysOfferTranslations(toggledOn);
   }
 
   
