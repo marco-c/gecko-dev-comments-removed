@@ -141,12 +141,6 @@ export var BrowserUIUtils = {
     return aURL.replace(/^((?:http|https|ftp):\/\/[^/]+)\/$/, "$1");
   },
 
-  get trimURLProtocol() {
-    return Services.prefs.getBoolPref("browser.urlbar.trimHttps")
-      ? "https://"
-      : "http://";
-  },
-
   
 
 
@@ -159,8 +153,12 @@ export var BrowserUIUtils = {
 
 
 
+  get trimURLProtocol() {
+    return "http://";
+  },
   trimURL(aURL) {
     let url = this.removeSingleTrailingSlashFromURL(aURL);
+    
     return url.startsWith(this.trimURLProtocol)
       ? url.substring(this.trimURLProtocol.length)
       : url;
