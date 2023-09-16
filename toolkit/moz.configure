@@ -1578,7 +1578,7 @@ with only_when("--enable-compile-environment"):
                 
                 
                 if 0x23 in tags:
-                    needed = [l for l in dyn if l.split()[1] == "(NEEDED)"]
+                    needed = [l for l in dyn if l.split()[1:2] == ["(NEEDED)"]]
                     is_glibc = any(l.endswith("[libc.so.6]") for l in needed)
                     
                     
