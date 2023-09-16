@@ -1225,15 +1225,6 @@ class AsyncPanZoomController {
 
 
 
-  AsyncTransformComponentMatrix GetCurrentAsyncTransformWithOverscroll(
-      AsyncTransformConsumer aMode,
-      AsyncTransformComponents aComponents = LayoutAndVisual,
-      std::size_t aSampleIndex = 0) const;
-
-  
-
-
-
 
 
 

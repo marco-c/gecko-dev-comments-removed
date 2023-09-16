@@ -4840,20 +4840,6 @@ AsyncTransform AsyncPanZoomController::GetCurrentAsyncTransform(
 }
 
 AsyncTransformComponentMatrix
-AsyncPanZoomController::GetCurrentAsyncTransformWithOverscroll(
-    AsyncTransformConsumer aMode, AsyncTransformComponents aComponents,
-    std::size_t aSampleIndex) const {
-  AsyncTransformComponentMatrix asyncTransform =
-      GetCurrentAsyncTransform(aMode, aComponents, aSampleIndex);
-  
-  
-  if (aComponents.contains(AsyncTransformComponent::eLayout)) {
-    return asyncTransform * GetOverscrollTransform(aMode);
-  }
-  return asyncTransform;
-}
-
-AsyncTransformComponentMatrix
 AsyncPanZoomController::GetAsyncTransformForInputTransformation(
     AsyncTransformComponents aComponents, LayersId aForLayersId) const {
   AsyncTransformComponentMatrix result;
@@ -4865,8 +4851,14 @@ AsyncPanZoomController::GetAsyncTransformForInputTransformation(
   }
   
   
-  return result *
-         GetCurrentAsyncTransformWithOverscroll(eForEventHandling, aComponents);
+  result = result * AsyncTransformComponentMatrix(GetCurrentAsyncTransform(
+                        eForEventHandling, aComponents));
+  
+  
+  if (aComponents.contains(AsyncTransformComponent::eLayout)) {
+    result = result * GetOverscrollTransform(eForEventHandling);
+  }
+  return result;
 }
 
 Matrix4x4 AsyncPanZoomController::GetPaintedResolutionTransform() const {
