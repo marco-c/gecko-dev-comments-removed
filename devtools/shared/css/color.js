@@ -644,35 +644,6 @@ function roundTo(number, digits) {
 
 
 
-
-
-
-function setAlpha(colorValue, alpha) {
-  const color = new CssColor(colorValue);
-
-  
-  if (!color.valid) {
-    throw new Error("Invalid color.");
-  }
-
-  
-  if (!(alpha >= 0 && alpha <= 1)) {
-    alpha = 1;
-  }
-
-  const { r, g, b } = color.getRGBATuple();
-  return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
-}
-
-
-
-
-
-
-
-
-
-
 function classifyColor(value) {
   value = value.toLowerCase();
   if (value.startsWith("rgb(") || value.startsWith("rgba(")) {
@@ -814,7 +785,6 @@ module.exports.colorUtils = {
   rgbToHsl,
   rgbToHwb,
   rgbToLab,
-  setAlpha,
   classifyColor,
   calculateContrastRatio,
   calculateDeltaE,
