@@ -164,8 +164,8 @@ static nsTArray<nsCString> GuessMIMETypes(MIMECreateParam aParam) {
   return types;
 }
 
-static bool IsOnLinux() {
-#if defined(XP_LINUX) && !defined(ANDROID)
+static bool IsOnLinuxOrMac() {
+#if (defined(XP_LINUX) && !defined(ANDROID)) || defined(XP_MACOSX)
   return true;
 #else
   return false;
@@ -193,8 +193,7 @@ static bool IsSupportedCodec(const nsAString& aCodec) {
 
 static bool CanDecode(MIMECreateParam aParam) {
   
-  
-  if (!IsOnLinux()) {
+  if (!IsOnLinuxOrMac()) {
     return false;
   }
   if (!IsSupportedCodec(aParam.mParsedCodec)) {
