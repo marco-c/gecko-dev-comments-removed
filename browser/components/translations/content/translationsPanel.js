@@ -219,6 +219,13 @@ var TranslationsPanel = new (class {
 
 
 
+  #isPopupOpen = false;
+
+  
+
+
+
+
 
   #firstShowUriSpec = null;
 
@@ -1021,6 +1028,7 @@ var TranslationsPanel = new (class {
     switch (event.target.id) {
       case panel.id: {
         TranslationsParent.telemetry().panel().onClose();
+        this.#isPopupOpen = false;
         break;
       }
       case fromMenuList.firstChild.id: {
@@ -1086,6 +1094,8 @@ var TranslationsPanel = new (class {
       openedFromAppMenu,
       isFirstUserInteraction,
     });
+
+    this.#isPopupOpen = true;
 
     PanelMultiView.openPopup(panel, target, {
       position: "bottomright topright",
@@ -1411,10 +1421,12 @@ var TranslationsPanel = new (class {
           TranslationsPanel.detectedLanguages = detectedLanguages;
         }
 
-        
-        
-        
-        this.#updateViewFromTranslationStatus(event.detail);
+        if (this.#isPopupOpen) {
+          
+          
+          
+          this.#updateViewFromTranslationStatus(event.detail);
+        }
 
         if (
           
