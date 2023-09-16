@@ -89,9 +89,6 @@
 #include "mozilla/AvailableMemoryTracker.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/CountingAllocatorBase.h"
-#ifdef MOZ_PHC
-#  include "mozilla/PHCManager.h"
-#endif
 #include "mozilla/UniquePtr.h"
 #include "mozilla/ServoStyleConsts.h"
 
@@ -450,12 +447,6 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   if (aResult) {
     NS_ADDREF(*aResult = nsComponentManagerImpl::gComponentManager);
   }
-
-#ifdef MOZ_PHC
-  
-  
-  mozilla::InitPHCState();
-#endif
 
   
   
