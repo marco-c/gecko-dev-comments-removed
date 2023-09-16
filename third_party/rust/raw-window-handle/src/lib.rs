@@ -19,11 +19,23 @@
 
 
 
+
+
+
+
+
+
 #[cfg(feature = "alloc")]
 extern crate alloc;
 
+#[cfg(feature = "std")]
+extern crate std;
+
 mod android;
 mod appkit;
+#[cfg(any(feature = "std", not(target_os = "android")))]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "std", not(target_os = "android")))))]
+mod borrowed;
 mod haiku;
 mod redox;
 mod uikit;
@@ -33,6 +45,11 @@ mod windows;
 
 pub use android::{AndroidDisplayHandle, AndroidNdkWindowHandle};
 pub use appkit::{AppKitDisplayHandle, AppKitWindowHandle};
+#[cfg(any(feature = "std", not(target_os = "android")))]
+pub use borrowed::{
+    Active, ActiveHandle, DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle,
+    WindowHandle,
+};
 pub use haiku::{HaikuDisplayHandle, HaikuWindowHandle};
 pub use redox::{OrbitalDisplayHandle, OrbitalWindowHandle};
 pub use uikit::{UiKitDisplayHandle, UiKitWindowHandle};
@@ -80,6 +97,13 @@ unsafe impl<T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for alloc::sync::
         (**self).raw_window_handle()
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -229,6 +253,19 @@ unsafe impl<T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for alloc::sync
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum RawDisplayHandle {
@@ -305,3 +342,40 @@ pub enum RawDisplayHandle {
     
     Haiku(HaikuDisplayHandle),
 }
+
+macro_rules! from_impl {
+    ($($to:ident, $enum:ident, $from:ty)*) => ($(
+        impl From<$from> for $to {
+            fn from(value: $from) -> Self {
+                $to::$enum(value)
+            }
+        }
+    )*)
+}
+
+from_impl!(RawDisplayHandle, UiKit, UiKitDisplayHandle);
+from_impl!(RawDisplayHandle, AppKit, AppKitDisplayHandle);
+from_impl!(RawDisplayHandle, Orbital, OrbitalDisplayHandle);
+from_impl!(RawDisplayHandle, Xlib, XlibDisplayHandle);
+from_impl!(RawDisplayHandle, Xcb, XcbDisplayHandle);
+from_impl!(RawDisplayHandle, Wayland, WaylandDisplayHandle);
+from_impl!(RawDisplayHandle, Drm, DrmDisplayHandle);
+from_impl!(RawDisplayHandle, Gbm, GbmDisplayHandle);
+from_impl!(RawDisplayHandle, Windows, WindowsDisplayHandle);
+from_impl!(RawDisplayHandle, Web, WebDisplayHandle);
+from_impl!(RawDisplayHandle, Android, AndroidDisplayHandle);
+from_impl!(RawDisplayHandle, Haiku, HaikuDisplayHandle);
+
+from_impl!(RawWindowHandle, UiKit, UiKitWindowHandle);
+from_impl!(RawWindowHandle, AppKit, AppKitWindowHandle);
+from_impl!(RawWindowHandle, Orbital, OrbitalWindowHandle);
+from_impl!(RawWindowHandle, Xlib, XlibWindowHandle);
+from_impl!(RawWindowHandle, Xcb, XcbWindowHandle);
+from_impl!(RawWindowHandle, Wayland, WaylandWindowHandle);
+from_impl!(RawWindowHandle, Drm, DrmWindowHandle);
+from_impl!(RawWindowHandle, Gbm, GbmWindowHandle);
+from_impl!(RawWindowHandle, Win32, Win32WindowHandle);
+from_impl!(RawWindowHandle, WinRt, WinRtWindowHandle);
+from_impl!(RawWindowHandle, Web, WebWindowHandle);
+from_impl!(RawWindowHandle, AndroidNdk, AndroidNdkWindowHandle);
+from_impl!(RawWindowHandle, Haiku, HaikuWindowHandle);
