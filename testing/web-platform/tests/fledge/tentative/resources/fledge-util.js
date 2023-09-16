@@ -274,30 +274,9 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
-                             renderUrlOverride) {
-  let scoreAd = codeToInsert.scoreAd;
-  let reportResultSuccessCondition = codeToInsert.reportResultSuccessCondition;
-  let reportResult = codeToInsert.reportResult;
-  let generateBid = codeToInsert.generateBid;
-  let reportWinSuccessCondition = codeToInsert.reportWinSuccessCondition;
-  let reportWin = codeToInsert.reportWin;
-
+async function runReportTest(test, uuid, reportResultSuccessCondition,
+                             reportResult, reportWinSuccessCondition, reportWin,
+                             expectedReportUrls, renderUrlOverride) {
   if (reportResultSuccessCondition) {
     reportResult = `if (!(${reportResultSuccessCondition})) {
                       sendReportTo('${createSellerReportUrl(uuid, 'error')}');
@@ -306,11 +285,6 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
                     ${reportResult}`;
   }
   let decisionScriptUrlParams = {};
-
-  if (typeof scoreAd !== undefined) {
-    decisionScriptUrlParams.scoreAd = scoreAd;
-  }
-
   if (reportResult !== null)
     decisionScriptUrlParams.reportResult = reportResult;
   else
@@ -324,11 +298,6 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
                  ${reportWin}`;
   }
   let biddingScriptUrlParams = {};
-
-  if (typeof generateBid !== undefined) {
-    biddingScriptUrlParams.generateBid = generateBid;
-  }
-
   if (reportWin !== null)
     biddingScriptUrlParams.reportWin = reportWin;
   else
