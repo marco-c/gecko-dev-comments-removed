@@ -185,6 +185,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
 
   void RestoreSystemTheme();
   void InitializeGlobalSettings();
+  
+  bool ConfigureAltTheme();
   void ConfigureAndInitializeAltTheme();
   void ConfigureFinalEffectiveTheme();
 };

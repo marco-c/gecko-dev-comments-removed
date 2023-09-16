@@ -1219,22 +1219,13 @@ static bool AnyColorChannelIsDifferent(nscolor aColor) {
          NS_GET_R(aColor) != NS_GET_B(aColor);
 }
 
-void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
+bool nsLookAndFeel::ConfigureAltTheme() {
   GtkSettings* settings = gtk_settings_get_default();
-
-  bool fellBackToDefaultTheme = false;
-
-  
-  LOGLNF("    toggling gtk-application-prefer-dark-theme\n");
-  g_object_set(settings, "gtk-application-prefer-dark-theme",
-               !mSystemTheme.mIsDark, nullptr);
-  moz_gtk_refresh();
-
   
   
   
   
-  if (mSystemTheme.mIsDark && mSystemTheme.mIsDark == GetThemeIsDark()) {
+  if (mSystemTheme.mIsDark) {
     nsCString potentialLightThemeName = mSystemTheme.mName;
     
     constexpr nsLiteralCString kSubstringsToRemove[] = {
@@ -1245,7 +1236,7 @@ void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
     };
     
     bool found = false;
-    for (auto& s : kSubstringsToRemove) {
+    for (const auto& s : kSubstringsToRemove) {
       potentialLightThemeName = mSystemTheme.mName;
       potentialLightThemeName.ReplaceSubstring(s, ""_ns);
       if (potentialLightThemeName.Length() != mSystemTheme.mName.Length()) {
@@ -1254,29 +1245,49 @@ void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
       }
     }
     if (found) {
+      LOGLNF("    found potential light variant of %s: %s",
+             mSystemTheme.mName.get(), potentialLightThemeName.get());
       g_object_set(settings, "gtk-theme-name", potentialLightThemeName.get(),
+                   "gtk-application-prefer-dark-theme", !mSystemTheme.mIsDark,
                    nullptr);
       moz_gtk_refresh();
+
+      if (!GetThemeIsDark()) {
+        return true;  
+      }
     }
   }
 
-  if (mSystemTheme.mIsDark == GetThemeIsDark()) {
-    
-    
-    g_object_set(settings, "gtk-theme-name", "Adwaita",
-                 "gtk-application-prefer-dark-theme", !mSystemTheme.mIsDark,
-                 nullptr);
+  LOGLNF("    toggling gtk-application-prefer-dark-theme");
+  g_object_set(settings, "gtk-application-prefer-dark-theme",
+               !mSystemTheme.mIsDark, nullptr);
+  moz_gtk_refresh();
+  if (mSystemTheme.mIsDark != GetThemeIsDark()) {
+    return true;  
+  }
+
+  LOGLNF("    didn't work, falling back to default theme");
+  
+  
+  g_object_set(settings, "gtk-theme-name", "Adwaita",
+               "gtk-application-prefer-dark-theme", !mSystemTheme.mIsDark,
+               nullptr);
+  moz_gtk_refresh();
+
+  
+  
+  
+  if (!mSystemTheme.mIsDark && !GetThemeIsDark()) {
+    LOGLNF("    last resort Adwaita-dark fallback");
+    g_object_set(settings, "gtk-theme-name", "Adwaita-dark", nullptr);
     moz_gtk_refresh();
-
-    
-    
-    if (!mSystemTheme.mIsDark && !GetThemeIsDark()) {
-      g_object_set(settings, "gtk-theme-name", "Adwaita-dark", nullptr);
-      moz_gtk_refresh();
-    }
-
-    fellBackToDefaultTheme = true;
   }
+
+  return false;
+}
+
+void nsLookAndFeel::ConfigureAndInitializeAltTheme() {
+  const bool fellBackToDefaultTheme = !ConfigureAltTheme();
 
   mAltTheme.Init();
 
