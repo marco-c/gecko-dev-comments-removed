@@ -145,18 +145,34 @@ static Result<Ok, nsCString> Validate(const VideoDecoderConfig& aConfig) {
   return Ok();
 }
 
-static nsTArray<nsCString> GuessMIMETypes(const nsAString& aCodec,
-                                          const uint32_t* aCodedWidth,
-                                          const uint32_t* aCodedHeight) {
-  const auto codec = NS_ConvertUTF16toUTF8(aCodec);
+
+
+
+struct MIMECreateParam {
+  MOZ_IMPLICIT MIMECreateParam(const VideoDecoderConfigInternal& aConfig)
+      : mCodec(aConfig.mCodec),
+        mWidth(aConfig.mCodedWidth),
+        mHeight(aConfig.mCodedHeight) {}
+  MOZ_IMPLICIT MIMECreateParam(const VideoDecoderConfig& aConfig)
+      : mCodec(aConfig.mCodec),
+        mWidth(OptionalToMaybe(aConfig.mCodedWidth)),
+        mHeight(OptionalToMaybe(aConfig.mCodedHeight)) {}
+
+  const nsAString& mCodec;
+  const Maybe<uint32_t> mWidth;
+  const Maybe<uint32_t> mHeight;
+};
+
+static nsTArray<nsCString> GuessMIMETypes(MIMECreateParam aParam) {
+  const auto codec = NS_ConvertUTF16toUTF8(aParam.mCodec);
   nsTArray<nsCString> types;
-  for (const nsCString& container : GuessContainers(aCodec)) {
+  for (const nsCString& container : GuessContainers(aParam.mCodec)) {
     nsPrintfCString mime("video/%s; codecs=%s", container.get(), codec.get());
-    if (aCodedWidth) {
-      mime.Append(nsPrintfCString("; width=%d", *aCodedWidth));
+    if (aParam.mWidth) {
+      mime.Append(nsPrintfCString("; width=%d", *aParam.mWidth));
     }
-    if (aCodedHeight) {
-      mime.Append(nsPrintfCString("; height=%d", *aCodedHeight));
+    if (aParam.mHeight) {
+      mime.Append(nsPrintfCString("; height=%d", *aParam.mHeight));
     }
     types.AppendElement(mime);
   }
@@ -172,8 +188,7 @@ static bool IsOnLinux() {
 }
 
 
-static bool CanDecode(const nsAString& aCodec, const uint32_t* aCodecWidth,
-                      const uint32_t* aCodecHeight) {
+static bool CanDecode(MIMECreateParam aParam) {
   
   
   if (!IsOnLinux()) {
@@ -182,8 +197,7 @@ static bool CanDecode(const nsAString& aCodec, const uint32_t* aCodecWidth,
   
   
   
-  for (const nsCString& mime :
-       GuessMIMETypes(aCodec, aCodecWidth, aCodecHeight)) {
+  for (const nsCString& mime : GuessMIMETypes(aParam)) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (DecoderTraits::CanHandleContainerType(
@@ -196,25 +210,10 @@ static bool CanDecode(const nsAString& aCodec, const uint32_t* aCodecWidth,
   return false;
 }
 
-static bool CanDecode(const VideoDecoderConfigInternal& aConfig) {
-  return CanDecode(aConfig.mCodec, aConfig.mCodedWidth.ptrOr(nullptr),
-                   aConfig.mCodedHeight.ptrOr(nullptr));
-}
-
-static bool CanDecode(const VideoDecoderConfig& aConfig) {
+static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(MIMECreateParam aParam) {
   
   
-  return CanDecode(aConfig.mCodec, OptionalToPointer(aConfig.mCodedWidth),
-                   OptionalToPointer(aConfig.mCodedHeight));
-}
-
-static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
-    const VideoDecoderConfigInternal& aConfig) {
-  
-  
-  for (const nsCString& mime :
-       GuessMIMETypes(aConfig.mCodec, aConfig.mCodedWidth.ptrOr(nullptr),
-                      aConfig.mCodedHeight.ptrOr(nullptr))) {
+  for (const nsCString& mime : GuessMIMETypes(aParam)) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (nsTArray<UniquePtr<TrackInfo>> tracks =
