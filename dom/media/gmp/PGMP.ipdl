@@ -55,6 +55,9 @@ child:
   
   
   async TestTriggerMetrics() returns (bool unused);
+
+  
+  async Shutdown() returns (nsCString profile);
 };
 
 } 
