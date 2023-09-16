@@ -399,7 +399,6 @@ nsWindow::nsWindow()
       mCreated(false),
       mHandleTouchEvent(false),
       mIsDragPopup(false),
-      mWindowScaleFactorChanged(true),
       mCompositedScreen(gdk_screen_is_composited(gdk_screen_get_default())),
       mIsAccelerated(false),
       mWindowShouldStartDragging(false),
@@ -4034,7 +4033,7 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
   
   
   if (mGdkWindow && IsTopLevelWindowType()) {
-    if (mWindowScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
+    if (mCeiledScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
       LOG("  scale factor changed to %d,return early",
           gdk_window_get_scale_factor(mGdkWindow));
       return FALSE;
@@ -5285,18 +5284,30 @@ void nsWindow::OnCompositedChanged() {
   mCompositedScreen = gdk_screen_is_composited(gdk_screen_get_default());
 }
 
-void nsWindow::OnScaleChanged(bool aForce) {
-  
-  if (!mGdkWindow) {
-    mWindowScaleFactorChanged = true;
+void nsWindow::OnScaleChanged(bool aNotify) {
+  if (!IsTopLevelWindowType()) {
     return;
   }
-  LOG("OnScaleChanged -> %d, frac=%f\n",
-      gdk_window_get_scale_factor(mGdkWindow), FractionalScaleFactor());
+  if (!mGdkWindow) {
+    return;  
+  }
+  gint newCeiled = gdk_window_get_scale_factor(mGdkWindow);
+  double newFractional =
+      GdkIsWaylandDisplay()
+          ? moz_container_wayland_get_fractional_scale(mContainer)
+          : 0.0;
+  LOG("OnScaleChanged %d, %f -> %d, %f\n", int(mCeiledScaleFactor),
+      FractionalScaleFactor(), newCeiled, newFractional);
 
-  
-  if (!aForce &&
-      gdk_window_get_scale_factor(mGdkWindow) == mWindowScaleFactor) {
+  if (mCeiledScaleFactor == newCeiled &&
+      mFractionalScaleFactor == newFractional) {
+    return;
+  }
+
+  mCeiledScaleFactor = newCeiled;
+  mFractionalScaleFactor = newFractional;
+
+  if (!aNotify) {
     return;
   }
 
@@ -5305,9 +5316,6 @@ void nsWindow::OnScaleChanged(bool aForce) {
   
   
   PauseCompositorFlickering();
-
-  
-  mWindowScaleFactorChanged = true;
 
   GtkAllocation allocation;
   gtk_widget_get_allocation(GTK_WIDGET(mContainer), &allocation);
@@ -5730,6 +5738,7 @@ void nsWindow::ConfigureGdkWindow() {
   LOG("nsWindow::ConfigureGdkWindow()");
 
   EnsureGdkWindow();
+  OnScaleChanged( false);
 
 #ifdef MOZ_X11
   if (GdkIsX11Display()) {
@@ -8367,7 +8376,7 @@ static void scale_changed_cb(GtkWidget* widget, GParamSpec* aPSpec,
     return;
   }
 
-  window->OnScaleChanged( false);
+  window->OnScaleChanged( true);
 }
 
 static gboolean touch_event_cb(GtkWidget* aWidget, GdkEventTouch* aEvent) {
@@ -8922,56 +8931,29 @@ GtkWindow* nsWindow::GetCurrentTopmostWindow() const {
   return topmostParentWindow;
 }
 
-
-
-gint nsWindow::GetCachedCeiledScaleFactor() const { return mWindowScaleFactor; }
-
 gint nsWindow::GdkCeiledScaleFactor() {
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  if (mWindowType == WindowType::TopLevel && !mWindowScaleFactorChanged) {
-    return mWindowScaleFactor;
+  if (IsTopLevelWindowType()) {
+    return mCeiledScaleFactor;
   }
-
-  GdkWindow* scaledGdkWindow = nullptr;
-  if (GdkIsWaylandDisplay()) {
-    
-    
-    
-    if (mWindowType == WindowType::Popup || mWindowType == WindowType::Dialog) {
-      
-      GtkWindow* topmostParentWindow = GetCurrentTopmostWindow();
-      if (topmostParentWindow) {
-        scaledGdkWindow =
-            gtk_widget_get_window(GTK_WIDGET(topmostParentWindow));
-      } else {
-        NS_WARNING("Popup/Dialog has no parent.");
-      }
-    }
+  if (nsWindow* topmost = GetTopmostWindow()) {
+    return topmost->mCeiledScaleFactor;
   }
-  
-  if (!scaledGdkWindow) {
-    scaledGdkWindow = mGdkWindow;
-  }
-  if (scaledGdkWindow) {
-    mWindowScaleFactor = gdk_window_get_scale_factor(scaledGdkWindow);
-    mWindowScaleFactorChanged = false;
-  } else {
-    mWindowScaleFactor = ScreenHelperGTK::GetGTKMonitorScaleFactor();
-  }
-  return mWindowScaleFactor;
+  return ScreenHelperGTK::GetGTKMonitorScaleFactor();
 }
 
 double nsWindow::FractionalScaleFactor() {
 #ifdef MOZ_WAYLAND
-  if (mContainer) {
-    double fractional_scale =
-        moz_container_wayland_get_fractional_scale(mContainer);
-    if (fractional_scale != 0.0) {
-      return fractional_scale;
+  double fractional_scale = [&] {
+    if (IsTopLevelWindowType()) {
+      return mFractionalScaleFactor;
     }
+    if (nsWindow* topmost = GetTopmostWindow()) {
+      return topmost->mFractionalScaleFactor;
+    }
+    return 0.0;
+  }();
+  if (fractional_scale != 0.0) {
+    return fractional_scale;
   }
 #endif
   return GdkCeiledScaleFactor();
@@ -9743,8 +9725,7 @@ void nsWindow::SetEGLNativeWindowSize(
 
   
   
-  gint scale =
-      NS_IsMainThread() ? GdkCeiledScaleFactor() : GetCachedCeiledScaleFactor();
+  gint scale = GdkCeiledScaleFactor();
   LOG("nsWindow::SetEGLNativeWindowSize() %d x %d scale %d (unscaled %d x %d)",
       aEGLWindowSize.width, aEGLWindowSize.height, scale,
       aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
