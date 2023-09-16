@@ -273,6 +273,8 @@ static bool DetectContainerLayerPropertiesBoundsChange(
   if (aItem->GetType() == DisplayItemType::TYPE_FILTER) {
     
     
+    
+    
     aGeometry.mBounds = aGeometry.mBounds.Intersect(aItem->GetBuildingRect());
   }
 
@@ -554,6 +556,13 @@ struct DIGroup {
           }
         }
       }
+    }
+
+    if (aData->mGeometry && aItem->GetType() == DisplayItemType::TYPE_FILTER) {
+      
+      
+      aData->mGeometry->mBounds =
+          aData->mGeometry->mBounds.Intersect(aItem->GetBuildingRect());
     }
 
     mHitTestBounds.OrWith(aData->mRect);
