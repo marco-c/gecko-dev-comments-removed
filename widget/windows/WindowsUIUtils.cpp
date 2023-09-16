@@ -4,7 +4,6 @@
 
 
 #include <windows.h>
-#include <winsdkver.h>
 #include <wrl.h>
 
 #include "nsServiceManagerUtils.h"
@@ -52,48 +51,9 @@ using namespace Microsoft::WRL::Wrappers;
 using namespace ABI::Windows::Foundation;
 using namespace ABI::Windows::ApplicationModel::DataTransfer;
 
-
-
-#  if WINVER_MAXVER < 0x0A00
-namespace ABI {
-namespace Windows {
-namespace UI {
-namespace ViewManagement {
-enum UserInteractionMode {
-  UserInteractionMode_Mouse = 0,
-  UserInteractionMode_Touch = 1
-};
-}
-}  
-}  
-}  
-
-#  endif
-
 #  ifndef RuntimeClass_Windows_UI_ViewManagement_UIViewSettings
 #    define RuntimeClass_Windows_UI_ViewManagement_UIViewSettings \
       L"Windows.UI.ViewManagement.UIViewSettings"
-#  endif
-
-#  if WINVER_MAXVER < 0x0A00
-namespace ABI {
-namespace Windows {
-namespace UI {
-namespace ViewManagement {
-interface IUIViewSettings;
-MIDL_INTERFACE("C63657F6-8850-470D-88F8-455E16EA2C26")
-IUIViewSettings : public IInspectable {
- public:
-  virtual HRESULT STDMETHODCALLTYPE get_UserInteractionMode(
-      UserInteractionMode * value) = 0;
-};
-
-extern const __declspec(selectany) IID& IID_IUIViewSettings =
-    __uuidof(IUIViewSettings);
-}  
-}  
-}  
-}  
 #  endif
 
 #  ifndef IUIViewSettingsInterop
