@@ -25,7 +25,6 @@
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIDirectoryEnumerator.h"
 #include "nsCharTraits.h"
-#include "nsCocoaFeatures.h"
 #include "nsCocoaUtils.h"
 #include "nsComponentManagerUtils.h"
 #include "nsServiceManagerUtils.h"
@@ -434,48 +433,23 @@ static NSString* GetRealFamilyName(NSFont* aFont) {
   return [familyName autorelease];
 }
 
-
-
-
-
-
-
 void gfxMacPlatformFontList::InitSystemFontNames() {
-  
-  
-  mUseSizeSensitiveSystemFont = !nsCocoaFeatures::OnCatalinaOrLater();
-
   
   NSFont* sys = [NSFont systemFontOfSize:0.0];
   NSString* textFamilyName = GetRealFamilyName(sys);
   nsAutoString familyName;
   nsCocoaUtils::GetStringForNSString(textFamilyName, familyName);
-  CopyUTF16toUTF8(familyName, mSystemTextFontFamilyName);
+  CopyUTF16toUTF8(familyName, mSystemFontFamilyName);
 
   
   
   
-  if (nsCocoaFeatures::OnCatalinaOrLater()) {
-    
-    RefPtr<gfxFontFamily> fam =
-        new gfxMacFontFamily(mSystemTextFontFamilyName, sys);
-    if (fam) {
-      nsAutoCString key;
-      GenerateFontListKey(mSystemTextFontFamilyName, key);
-      mFontFamilies.InsertOrUpdate(key, std::move(fam));
-    }
-  }
-
   
-  if (mUseSizeSensitiveSystemFont) {
-    NSFont* displaySys = [NSFont systemFontOfSize:128.0];
-    NSString* displayFamilyName = GetRealFamilyName(displaySys);
-    if ([displayFamilyName isEqualToString:textFamilyName]) {
-      mUseSizeSensitiveSystemFont = false;
-    } else {
-      nsCocoaUtils::GetStringForNSString(displayFamilyName, familyName);
-      CopyUTF16toUTF8(familyName, mSystemDisplayFontFamilyName);
-    }
+  RefPtr<gfxFontFamily> fam = new gfxMacFontFamily(mSystemFontFamilyName, sys);
+  if (fam) {
+    nsAutoCString key;
+    GenerateFontListKey(mSystemFontFamilyName, key);
+    mFontFamilies.InsertOrUpdate(key, std::move(fam));
   }
 
 #ifdef DEBUG

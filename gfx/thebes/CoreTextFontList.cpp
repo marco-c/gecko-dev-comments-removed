@@ -898,9 +898,7 @@ void CTFontFamily::FindStyleVariationsLocked(FontInfoData* aFontInfoData) {
 #pragma mark -
 
 CoreTextFontList::CoreTextFontList()
-    : gfxPlatformFontList(false),
-      mDefaultFont(nullptr),
-      mUseSizeSensitiveSystemFont(false) {
+    : gfxPlatformFontList(false), mDefaultFont(nullptr) {
 #ifdef MOZ_BUNDLED_FONTS
   
   
@@ -934,17 +932,11 @@ CoreTextFontList::~CoreTextFontList() {
 
 void CoreTextFontList::AddFamily(const nsACString& aFamilyName,
                                  FontVisibility aVisibility) {
-  double sizeHint = 0.0;
-  if (aVisibility == FontVisibility::Hidden && mUseSizeSensitiveSystemFont &&
-      mSystemDisplayFontFamilyName.Equals(aFamilyName)) {
-    sizeHint = 128.0;
-  }
-
   nsAutoCString key;
   ToLowerCase(aFamilyName, key);
 
   RefPtr<gfxFontFamily> familyEntry =
-      new CTFontFamily(aFamilyName, aVisibility, sizeHint);
+      new CTFontFamily(aFamilyName, aVisibility, 0.0);
   mFontFamilies.InsertOrUpdate(key, RefPtr{familyEntry});
 
   
@@ -1031,15 +1023,9 @@ void CoreTextFontList::ReadSystemFontList(dom::SystemFontList* aList)
   
   
   
-  
-  aList->entries().AppendElement(
-      FontFamilyListEntry(mSystemTextFontFamilyName, FontVisibility::Unknown,
-                          kTextSizeSystemFontFamily));
-  if (mUseSizeSensitiveSystemFont) {
-    aList->entries().AppendElement(FontFamilyListEntry(
-        mSystemDisplayFontFamilyName, FontVisibility::Unknown,
-        kDisplaySizeSystemFontFamily));
-  }
+  aList->entries().AppendElement(FontFamilyListEntry(
+      mSystemFontFamilyName, FontVisibility::Unknown, kSystemFontFamily));
+
   
   for (auto f = mFontFamilies.Iter(); !f.Done(); f.Next()) {
     auto macFamily = f.Data().get();
@@ -1105,18 +1091,13 @@ nsresult CoreTextFontList::InitFontListForPlatform() {
     for (FontFamilyListEntry& ffe : fontList.entries()) {
       switch (ffe.entryType()) {
         case kStandardFontFamily:
-          if (ffe.familyName() == mSystemTextFontFamilyName ||
-              ffe.familyName() == mSystemDisplayFontFamilyName) {
+          if (ffe.familyName() == mSystemFontFamilyName) {
             continue;
           }
           AddFamily(ffe.familyName(), ffe.visibility());
           break;
-        case kTextSizeSystemFontFamily:
-          mSystemTextFontFamilyName = ffe.familyName();
-          break;
-        case kDisplaySizeSystemFontFamily:
-          mSystemDisplayFontFamilyName = ffe.familyName();
-          mUseSizeSensitiveSystemFont = true;
+        case kSystemFontFamily:
+          mSystemFontFamilyName = ffe.familyName();
           break;
       }
     }
@@ -1427,14 +1408,6 @@ gfxFontEntry* CoreTextFontList::MakePlatformFont(const nsACString& aFontName,
 
 static const char kSystemFont_system[] = "-apple-system";
 
-
-
-
-
-
-
-const CGFloat kTextDisplayCrossover = 20.0;  
-
 bool CoreTextFontList::FindAndAddFamiliesLocked(
     nsPresContext* aPresContext, StyleGenericFontFamily aGeneric,
     const nsACString& aFamily, nsTArray<FamilyAndGeneric>* aOutput,
@@ -1444,13 +1417,7 @@ bool CoreTextFontList::FindAndAddFamiliesLocked(
     
     
     
-    
-    const nsCString& systemFontFamilyName =
-        mUseSizeSensitiveSystemFont && aStyle &&
-                (aStyle->size * aDevToCssSize) >= kTextDisplayCrossover
-            ? mSystemDisplayFontFamilyName
-            : mSystemTextFontFamilyName;
-    if (auto* fam = FindSystemFontFamily(systemFontFamilyName)) {
+    if (auto* fam = FindSystemFontFamily(mSystemFontFamilyName)) {
       aOutput->AppendElement(fam);
       return true;
     }

@@ -168,9 +168,8 @@ class CoreTextFontList : public gfxPlatformFontList {
   
   
   enum FontFamilyEntryType {
-    kStandardFontFamily = 0,          
-    kTextSizeSystemFontFamily = 1,    
-    kDisplaySizeSystemFontFamily = 2  
+    kStandardFontFamily = 0,  
+    kSystemFontFamily = 1,    
   };
   void ReadSystemFontList(mozilla::dom::SystemFontList*);
 
@@ -253,18 +252,11 @@ class CoreTextFontList : public gfxPlatformFontList {
   void ActivateBundledFonts();
 #endif
 
-  enum { kATSGenerationInitial = -1 };
-
   
   CTFontRef mDefaultFont;
 
   
-  
-  
-  
-  bool mUseSizeSensitiveSystemFont;
-  nsCString mSystemTextFontFamilyName;
-  nsCString mSystemDisplayFontFamilyName;  
+  nsCString mSystemFontFamilyName;
 
   nsTArray<nsCString> mPreloadFonts;
 
