@@ -51,8 +51,6 @@ excluded_files = [
     "python/mozbuild/mozbuild/test/backend/data/build/foo.jsm",
     "python/mozbuild/mozbuild/test/backend/data/build/qux.jsm",
     
-    "testing/mochitest/tests/Harness_sanity/ImportTesting.jsm",
-    
     "tools/lint/eslint/eslint-plugin-mozilla/tests/mark-exported-symbols-as-used.js",
 ]
 
