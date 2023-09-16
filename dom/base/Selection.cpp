@@ -3256,36 +3256,13 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   }
 
   
-  
-  
-  
-  
-  
-  
-  const WritingMode wm = frame->GetWritingMode();
-  
-  auto GetInlinePosition = [&]() {
-    if (isText) {
-      return wm.IsVertical() ? pt.y : pt.x;
-    }
+  if (isText) {
+    aRect->x = pt.x;
+  } else if (mFrameSelection->GetHint() == CARET_ASSOCIATE_BEFORE) {
     
-    
-    
-    
-    
-    
-    return frame->ISize(wm);
-  };
-
-  
-  
-  if (wm.IsVertical()) {
-    aRect->y = GetInlinePosition();
-    aRect->SetWidth(frame->ISize(wm));
-  } else {
-    aRect->x = GetInlinePosition();
-    aRect->SetHeight(frame->ISize(wm));
+    aRect->x = frame->GetRect().Width();
   }
+  aRect->SetHeight(frame->GetRect().Height());
 
   return frame;
 }
