@@ -610,13 +610,13 @@ bool ShouldAllowAccessFor(nsPIDOMWindowInner* aWindow, nsIURI* aURI,
   
   
   
-  bool allowed = document->HasStorageAccessPermissionGranted();
+  bool allowed = document->UsingStorageAccess();
 
   if (!allowed) {
     *aRejectedReason = blockedReason;
   } else {
     if (MOZ_LOG_TEST(gAntiTrackingLog, mozilla::LogLevel::Debug) &&
-        aWindow->HasStorageAccessPermissionGranted()) {
+        aWindow->UsingStorageAccess()) {
       LOG(("Permission stored in the window. All good."));
     }
   }
@@ -815,7 +815,7 @@ bool ShouldAllowAccessFor(nsIChannel* aChannel, nsIURI* aURI,
   if (isDocument) {
     nsCOMPtr<nsPIDOMWindowInner> inner =
         AntiTrackingUtils::GetInnerWindow(targetBC);
-    if (inner && inner->HasStorageAccessPermissionGranted()) {
+    if (inner && inner->UsingStorageAccess()) {
       LOG(("Permission stored in the window. All good."));
       return true;
     }

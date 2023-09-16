@@ -1425,7 +1425,7 @@ class Document : public nsINode,
   nsICookieJarSettings* CookieJarSettings();
 
   
-  bool HasStorageAccessPermissionGranted();
+  bool UsingStorageAccess();
 
   
   
