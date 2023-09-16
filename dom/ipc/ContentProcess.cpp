@@ -152,7 +152,10 @@ bool ContentProcess::Init(int aArgc, char* aArgv[]) {
   }
 
   
-  Omnijar::ChildProcessInit(aArgc, aArgv);
+  
+  if (!Omnijar::IsInitialized()) {
+    Omnijar::ChildProcessInit(aArgc, aArgv);
+  }
 
   rv = NS_InitXPCOM(nullptr, xpcomAppDir, &mDirProvider);
   if (NS_FAILED(rv)) {

@@ -3,19 +3,22 @@
 
 
 
+
 #include "mozilla/ipc/ForkServer.h"
-#include "mozilla/Logging.h"
+
 #include "chrome/common/chrome_switches.h"
+#include "ipc/IPCMessageUtilsSpecializations.h"
 #include "mozilla/BlockingResourceBase.h"
-#include "mozilla/ipc/ProtocolMessageUtils.h"
+#include "mozilla/Logging.h"
+#include "mozilla/Omnijar.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/IPDLParamTraits.h"
-#include "ipc/IPCMessageUtilsSpecializations.h"
+#include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "nsTraceRefcnt.h"
 
+#include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #if defined(XP_LINUX) && defined(MOZ_SANDBOX)
 #  include "mozilla/SandboxLaunch.h"
@@ -38,6 +41,16 @@ void ForkServer::InitProcess(int* aArgc, char*** aArgv) {
 
   mTcver = MakeUnique<MiniTransceiver>(kClientPipeFd,
                                        DataBufferClear::AfterReceiving);
+}
+
+
+
+
+
+
+
+static void ForkServerPreload(int& aArgc, char** aArgv) {
+  Omnijar::ChildProcessInit(aArgc, aArgv);
 }
 
 
@@ -251,6 +264,7 @@ bool ForkServer::RunForkServer(int* aArgc, char*** aArgv) {
   XRE_SetProcessType("forkserver");
   NS_LogInit();
   mozilla::LogModule::Init(0, nullptr);
+  ForkServerPreload(*aArgc, *aArgv);
   MOZ_LOG(gForkServiceLog, LogLevel::Verbose, ("Start a fork server"));
   {
     DebugOnly<base::ProcessHandle> forkserver_pid = base::GetCurrentProcId();
