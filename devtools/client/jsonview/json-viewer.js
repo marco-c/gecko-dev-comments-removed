@@ -14,6 +14,11 @@ define(function (require, exports, module) {
 
   const AUTO_EXPAND_MAX_SIZE = 100 * 1024;
   const AUTO_EXPAND_MAX_LEVEL = 7;
+  const TABS = {
+    JSON: 0,
+    RAW_DATA: 1,
+    HEADERS: 2,
+  };
 
   let prettyURL;
   let theApp;
@@ -147,7 +152,7 @@ define(function (require, exports, module) {
     if (document.readyState == "loading") {
       
       input.json = {};
-      input.activeTab = 1;
+      input.activeTab = TABS.RAW_DATA;
       return new Promise(resolve => {
         document.addEventListener("DOMContentLoaded", resolve, { once: true });
       })
@@ -156,7 +161,7 @@ define(function (require, exports, module) {
           
           await appIsReady;
           theApp.setState({
-            activeTab: 0,
+            activeTab: TABS.JSON,
             json: input.json,
             expandedNodes: input.expandedNodes,
           });
@@ -169,6 +174,8 @@ define(function (require, exports, module) {
       input.json = JSON.parse(jsonString);
     } catch (err) {
       input.json = err;
+      
+      input.activeTab = TABS.RAW_DATA;
     }
 
     
