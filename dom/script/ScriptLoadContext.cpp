@@ -37,7 +37,6 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadContext)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScriptLoadContext,
                                                 JS::loader::LoadContextBase)
   MOZ_ASSERT(!tmp->mCompileOrDecodeTask);
-  MOZ_ASSERT(!tmp->mRunnable);
   tmp->MaybeUnblockOnload();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
@@ -61,7 +60,6 @@ ScriptLoadContext::ScriptLoadContext()
       mInCompilingList(false),
       mIsTracking(false),
       mWasCompiledOMT(false),
-      mRunnable(nullptr),
       mLineNo(1),
       mColumnNo(0),
       mIsPreload(false),
@@ -71,7 +69,7 @@ ScriptLoadContext::~ScriptLoadContext() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  MOZ_DIAGNOSTIC_ASSERT(!mCompileOrDecodeTask && !mRunnable);
+  MOZ_DIAGNOSTIC_ASSERT(!mCompileOrDecodeTask);
 
   mRequest = nullptr;
 
@@ -101,11 +99,6 @@ void ScriptLoadContext::MaybeCancelOffThreadScript() {
   
   mCompileOrDecodeTask->Cancel();
   mCompileOrDecodeTask = nullptr;
-
-  
-  
-  
-  mRunnable = nullptr;
 
   MaybeUnblockOnload();
 }

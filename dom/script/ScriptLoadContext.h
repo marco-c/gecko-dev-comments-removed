@@ -79,13 +79,9 @@ class Element;
 
 
 
-class OffThreadCompilationCompleteRunnable;
-
-
 class CompileOrDecodeTask : public mozilla::Task {
  protected:
-  explicit CompileOrDecodeTask(
-      OffThreadCompilationCompleteRunnable* aCompleteRunnable);
+  CompileOrDecodeTask();
   virtual ~CompileOrDecodeTask();
 
   nsresult InitFrontendContext();
@@ -94,7 +90,7 @@ class CompileOrDecodeTask : public mozilla::Task {
                   RefPtr<JS::Stencil>&& aStencil);
 
   bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
-    return !mCompleteRunnable;
+    return mIsCancelled;
   }
 
  public:
@@ -129,13 +125,7 @@ class CompileOrDecodeTask : public mozilla::Task {
   
   JS::FrontendContext* mFrontendContext = nullptr;
 
-  
-  
-  
-  
-  
-  
-  OffThreadCompilationCompleteRunnable* mCompleteRunnable;
+  bool mIsCancelled = false;
 
  private:
   
@@ -246,10 +236,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   
   
   RefPtr<CompileOrDecodeTask> mCompileOrDecodeTask;
-
-  
-  
-  RefPtr<Runnable> mRunnable;
 
   uint32_t mLineNo;
   uint32_t mColumnNo;
