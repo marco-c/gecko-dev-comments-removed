@@ -48,8 +48,7 @@
 #include "vm/Shape.h"
 #include "vm/Stack.h"
 #include "vm/StringType.h"
-#include "vm/ToSource.h"       
-#include "vm/WellKnownAtom.h"  
+#include "vm/ToSource.h"  
 
 #include "vm/JSContext-inl.h"
 #include "vm/JSObject-inl.h"
@@ -86,8 +85,8 @@ const JSClass ErrorObject::protoClasses[JSEXN_ERROR_LIMIT] = {
 static bool exn_toSource(JSContext* cx, unsigned argc, Value* vp);
 
 static const JSFunctionSpec error_methods[] = {
-    JS_FN(js_toSource_str, exn_toSource, 0, 0),
-    JS_SELF_HOSTED_FN(js_toString_str, "ErrorToString", 0, 0), JS_FS_END};
+    JS_FN("toSource", exn_toSource, 0, 0),
+    JS_SELF_HOSTED_FN("toString", "ErrorToString", 0, 0), JS_FS_END};
 
 
 
@@ -638,8 +637,8 @@ static bool FindErrorInstanceOrPrototype(JSContext* cx, HandleObject obj,
   
   
   JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                            JSMSG_INCOMPATIBLE_PROTO, js_Error_str,
-                            "(get stack)", obj->getClass()->name);
+                            JSMSG_INCOMPATIBLE_PROTO, "Error", "(get stack)",
+                            obj->getClass()->name);
   return false;
 }
 

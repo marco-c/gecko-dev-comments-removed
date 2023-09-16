@@ -68,7 +68,6 @@
 #include "vm/Shape.h"                    
 #include "vm/Stack.h"                    
 #include "vm/StringType.h"               
-#include "vm/WellKnownAtom.h"            
 #include "vm/WrapperObject.h"            
 
 #include "gc/StableCellHasher-inl.h"
@@ -988,7 +987,7 @@ bool DebuggerObject::CallData::applyMethod() {
   if (args.length() >= 2 && !args[1].isNullOrUndefined()) {
     if (!args[1].isObject()) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                JSMSG_BAD_APPLY_ARGS, js_apply_str);
+                                JSMSG_BAD_APPLY_ARGS, "apply");
       return false;
     }
 

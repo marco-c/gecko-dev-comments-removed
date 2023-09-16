@@ -12,7 +12,6 @@
 #include "frontend/TDZCheckCache.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/EnvironmentObject.h"     
-#include "vm/WellKnownAtom.h"         
 
 using namespace js;
 using namespace js::frontend;
@@ -64,7 +63,7 @@ bool EmitterScope::checkEnvironmentChainLength(BytecodeEmitter* bce) {
   }
 
   if (hops >= ENVCOORD_HOPS_LIMIT - 1) {
-    bce->reportError(nullptr, JSMSG_TOO_DEEP, js_function_str);
+    bce->reportError(nullptr, JSMSG_TOO_DEEP, "function");
     return false;
   }
 

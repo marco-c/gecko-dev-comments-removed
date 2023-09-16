@@ -16,7 +16,6 @@
 #include "frontend/SharedContext.h"
 #include "js/friend/ErrorMessages.h"  
 #include "vm/GeneratorAndAsyncKind.h"  
-#include "vm/WellKnownAtom.h"          
 
 namespace js {
 
@@ -142,7 +141,7 @@ class ParseContext : public Nestable<ParseContext> {
 
     [[nodiscard]] bool init(ParseContext* pc) {
       if (id_ == UINT32_MAX) {
-        pc->errorReporter_.errorNoOffset(JSMSG_NEED_DIET, js_script_str);
+        pc->errorReporter_.errorNoOffset(JSMSG_NEED_DIET, "script");
         return false;
       }
 
