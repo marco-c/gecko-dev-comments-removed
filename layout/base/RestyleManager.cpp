@@ -35,6 +35,7 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBodyElement.h"
+#include "mozilla/dom/HTMLInputElement.h"
 
 #include "ScrollSnap.h"
 #include "nsAnimationManager.h"
@@ -505,31 +506,36 @@ static bool StateChangeMayAffectFrame(const Element& aElement,
                                       const nsIFrame& aFrame,
                                       ElementState aStates) {
   const bool brokenChanged = aStates.HasState(ElementState::BROKEN);
-  if (aFrame.IsGeneratedContentFrame()) {
-    if (aElement.IsHTMLElement(nsGkAtoms::mozgeneratedcontentimage)) {
-      return brokenChanged;
-    }
-    
-    return false;
-  }
-
   if (!brokenChanged) {
     return false;
   }
 
-  if (aElement.IsHTMLElement(nsGkAtoms::img)) {
-    const bool needsImageFrame =
-        nsImageFrame::ImageFrameTypeFor(aElement, *aFrame.Style()) !=
-        nsImageFrame::ImageFrameType::None;
-    return needsImageFrame != aFrame.IsImageFrameOrSubclass();
+  if (aFrame.IsGeneratedContentFrame()) {
+    
+    return aElement.IsHTMLElement(nsGkAtoms::mozgeneratedcontentimage);
   }
 
-  if (aElement.IsSVGElement(nsGkAtoms::image)) {
+  if (aElement.IsAnyOfHTMLElements(nsGkAtoms::object, nsGkAtoms::embed)) {
     
+    return true;
+  }
+
+  const bool mightChange = [&] {
+    if (aElement.IsHTMLElement(nsGkAtoms::img)) {
+      return true;
+    }
+    const auto* input = HTMLInputElement::FromNode(aElement);
+    return input && input->ControlType() == FormControlType::InputImage;
+  }();
+
+  if (!mightChange) {
     return false;
   }
 
-  return brokenChanged;
+  const bool needsImageFrame =
+      nsImageFrame::ImageFrameTypeFor(aElement, *aFrame.Style()) !=
+      nsImageFrame::ImageFrameType::None;
+  return needsImageFrame != aFrame.IsImageFrameOrSubclass();
 }
 
 

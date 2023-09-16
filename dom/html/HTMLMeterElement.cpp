@@ -61,11 +61,6 @@ void HTMLMeterElement::UpdateOptimumState(bool aNotify) {
   AddStatesSilently(GetOptimumState());
 }
 
-
-
-
-
-
 double HTMLMeterElement::Min() const {
   
 
