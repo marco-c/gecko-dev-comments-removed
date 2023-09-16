@@ -162,7 +162,7 @@ APZSampler::GetCurrentScrollOffsetAndRange(
       
       
       apzc->GetCurrentAsyncVisualViewport(
-              AsyncPanZoomController::AsyncTransformConsumer::eForCompositing)
+              AsyncTransformConsumer::eForCompositing)
           .TopLeft(),
       apzc->GetCurrentScrollRangeInCssPixels()});
 }

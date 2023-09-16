@@ -154,6 +154,27 @@ constexpr AsyncTransformComponents LayoutAndVisual(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+enum class AsyncTransformConsumer {
+  eForEventHandling,
+  eForCompositing,
+};
+
+
+
+
+
+
 struct GeckoViewMetrics {
   CSSPoint mVisualScrollOffset;
   CSSToParentLayerScale mZoom;

@@ -1173,26 +1173,10 @@ class AsyncPanZoomController {
 
 
  public:
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  enum AsyncTransformConsumer {
-    eForEventHandling,
-    eForCompositing,
-  };
+  static const AsyncTransformConsumer eForEventHandling =
+      AsyncTransformConsumer::eForEventHandling;
+  static const AsyncTransformConsumer eForCompositing =
+      AsyncTransformConsumer::eForCompositing;
 
   
 
