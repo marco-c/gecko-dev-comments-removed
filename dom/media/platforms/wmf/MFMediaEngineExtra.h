@@ -7,6 +7,7 @@
 
 #include <evr.h>
 #include <mfmediaengine.h>
+#include <mfapi.h>
 
 
 
