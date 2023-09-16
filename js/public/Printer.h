@@ -119,9 +119,6 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   JS::UniqueChars release();
 
   
-  char& operator[](size_t off);
-
-  
   
   
   
