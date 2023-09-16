@@ -834,7 +834,11 @@ class StyleSheetsManager extends EventEmitter {
     }
     
     
-    if (href === "resource://content-accessible/accessiblecaret.css") {
+    if (
+      href === "resource://content-accessible/accessiblecaret.css" ||
+      (href === "resource://devtools-highlighter-styles/highlighters.css" &&
+        this._targetActor.sessionContext.type !== "all")
+    ) {
       return false;
     }
     return true;

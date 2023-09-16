@@ -54,7 +54,6 @@ add_task(async function () {
     selectorEl.ownerDocument.defaultView
   );
   await onHighlighted;
-
   ok(
     await topLevelHighlighterTestFront.isNodeRectHighlighted(
       await getElementNodeRectWithinTarget(["h1"])
@@ -74,6 +73,31 @@ add_task(async function () {
   await waitFor(async () => !topLevelStylesheetEditor.highlighter.isShown());
   let isVisible = await topLevelHighlighterTestFront.isHighlighting();
   is(isVisible, false, "The highlighter is now hidden");
+
+  
+  info("Show and hide the highlighter again");
+  onHighlighted = topLevelStylesheetEditor.once("node-highlighted");
+  EventUtils.synthesizeMouseAtCenter(
+    selectorEl,
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
+  await onHighlighted;
+  EventUtils.synthesizeMouseAtCenter(
+    querySelectorCodeMirrorCssPropertyNameToken(topLevelStylesheetEditor),
+    { type: "mousemove" },
+    selectorEl.ownerDocument.defaultView
+  );
+
+  await waitFor(async () => !topLevelStylesheetEditor.highlighter.isShown());
+  
+  
+  await wait(1000);
+  ok(
+    !ui.editors.find(e => e._resource.href?.includes("highlighters.css")),
+    "highlighters.css isn't displayed in StyleEditor"
+  );
+  is(ui.editors.length, 2, "No other stylesheet was displayed");
 
   info("Check that highlighting works on the iframe document");
   await ui.selectStyleSheet(iframeStylesheetEditor.styleSheet);
