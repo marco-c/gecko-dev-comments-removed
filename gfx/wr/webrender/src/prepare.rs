@@ -1913,13 +1913,7 @@ fn write_brush_segment_description(
                 continue;
             }
             ClipItemKind::Image { .. } => {
-                
-                
-                
-                
-                
-                
-                return false;
+                panic!("bug: masks not supported on old segment path");
             }
         };
 
