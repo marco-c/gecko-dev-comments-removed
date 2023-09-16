@@ -898,7 +898,7 @@ bool nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
   
   
   if (doDefault || count) {
-    piWindow->UpdateCommands(u"clipboard"_ns, nullptr, 0);
+    piWindow->UpdateCommands(u"clipboard"_ns);
   }
 
   if (aActionTaken) {

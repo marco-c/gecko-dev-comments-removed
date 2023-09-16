@@ -1072,7 +1072,7 @@ void nsFocusManager::WindowHidden(mozIDOMWindowProxy* aWindow,
 
   if (oldFocusedElement && oldFocusedElement->IsInComposedDoc()) {
     NotifyFocusStateChange(oldFocusedElement, nullptr, 0, false, false);
-    window->UpdateCommands(u"focus"_ns, nullptr, 0);
+    window->UpdateCommands(u"focus"_ns);
 
     if (presShell) {
       RefPtr<Document> composedDoc = oldFocusedElement->GetComposedDoc();
@@ -1819,7 +1819,7 @@ Maybe<uint64_t> nsFocusManager::SetFocusInner(Element* aNewContent,
     
     
     if (allowFrameSwitch) {
-      newWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
+      newWindow->UpdateCommands(u"focus"_ns);
     }
 
     if (aFlags & FLAG_RAISE) {
@@ -2380,7 +2380,7 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
     
     
     if (GetActiveBrowsingContext()) {
-      window->UpdateCommands(u"focus"_ns, nullptr, 0);
+      window->UpdateCommands(u"focus"_ns);
     }
 
     SendFocusOrBlurEvent(eBlur, presShell, element->GetComposedDoc(), element,
@@ -2655,7 +2655,7 @@ void nsFocusManager::Focus(
       
       
       if (!aWindowRaised) {
-        aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
+        aWindow->UpdateCommands(u"focus"_ns);
       }
 
       
@@ -2679,7 +2679,7 @@ void nsFocusManager::Focus(
       IMEStateManager::OnChangeFocus(presContext, elementToFocus,
                                      GetFocusMoveActionCause(aFlags));
       if (!aWindowRaised) {
-        aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
+        aWindow->UpdateCommands(u"focus"_ns);
       }
       if (aFocusChanged) {
         
@@ -2696,7 +2696,7 @@ void nsFocusManager::Focus(
     }
 
     if (!aWindowRaised) {
-      aWindow->UpdateCommands(u"focus"_ns, nullptr, 0);
+      aWindow->UpdateCommands(u"focus"_ns);
     }
   }
 

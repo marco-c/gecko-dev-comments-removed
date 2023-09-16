@@ -6306,8 +6306,7 @@ class CommandDispatcher : public Runnable {
 };
 }  
 
-void nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
-                                         Selection* aSel, int16_t aReason) {
+void nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction) {
   
   if (nsIDocShell* docShell = GetDocShell()) {
     if (nsCOMPtr<nsIBrowserChild> child = docShell->GetBrowserChild()) {
@@ -6330,16 +6329,13 @@ void nsGlobalWindowOuter::UpdateCommands(const nsAString& anAction,
   if (!doc) {
     return;
   }
+
   
-  
-  if (!anAction.EqualsLiteral("selectionchange")) {
-    
-    nsIDOMXULCommandDispatcher* xulCommandDispatcher =
-        doc->GetCommandDispatcher();
-    if (xulCommandDispatcher) {
-      nsContentUtils::AddScriptRunner(
-          new CommandDispatcher(xulCommandDispatcher, anAction));
-    }
+  nsIDOMXULCommandDispatcher* xulCommandDispatcher =
+      doc->GetCommandDispatcher();
+  if (xulCommandDispatcher) {
+    nsContentUtils::AddScriptRunner(
+        new CommandDispatcher(xulCommandDispatcher, anAction));
   }
 }
 
