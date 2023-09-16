@@ -307,19 +307,35 @@ nsLocalFile::Clone(nsIFile** aFile) {
 
 NS_IMETHODIMP
 nsLocalFile::InitWithNativePath(const nsACString& aFilePath) {
-  if (aFilePath.EqualsLiteral("~") ||
-      Substring(aFilePath, 0, 2).EqualsLiteral("~/")) {
-    nsCOMPtr<nsIFile> homeDir;
-    nsAutoCString homePath;
-    if (NS_FAILED(
-            NS_GetSpecialDirectory(NS_OS_HOME_DIR, getter_AddRefs(homeDir))) ||
-        NS_FAILED(homeDir->GetNativePath(homePath))) {
-      return NS_ERROR_FAILURE;
-    }
+  if (!aFilePath.IsEmpty() && aFilePath.First() == '~') {
+    if (aFilePath.Length() == 1 || aFilePath.CharAt(1) == '/') {
+      
 
-    mPath = homePath;
-    if (aFilePath.Length() > 2) {
-      mPath.Append(Substring(aFilePath, 1, aFilePath.Length() - 1));
+      nsCOMPtr<nsIFile> homeDir;
+      nsAutoCString homePath;
+      if (NS_FAILED(NS_GetSpecialDirectory(NS_OS_HOME_DIR,
+                                           getter_AddRefs(homeDir))) ||
+          NS_FAILED(homeDir->GetNativePath(homePath))) {
+        return NS_ERROR_FAILURE;
+      }
+
+      mPath = homePath;
+      if (aFilePath.Length() > 2) {
+        mPath.Append(Substring(aFilePath, 1));
+      }
+    } else {
+      
+      
+      
+      
+
+      mPath =
+#ifdef XP_MACOSX
+          "/Users/"_ns
+#else
+          "/home/"_ns
+#endif
+          + Substring(aFilePath, 1);
     }
   } else {
     if (aFilePath.IsEmpty() || aFilePath.First() != '/') {
