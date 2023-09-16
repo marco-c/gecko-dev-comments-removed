@@ -269,27 +269,27 @@ const SIMPLE_JOIN_LEAVE_TEST_CASES = [
   { expectJoinSucces: true,
     expectLeaveSucces: true,
     interestGroup: { ...BASE_INTEREST_GROUP,
-                     trustedBiddingSignalsUrl: null }
+                     trustedBiddingSignalsURL: null }
   },
   { expectJoinSucces: false,
     expectLeaveSucces: true,
     interestGroup: { ...BASE_INTEREST_GROUP,
-                     trustedBiddingSignalsUrl: 'https://{{hosts[][www]}}/foo.js' }
+                     trustedBiddingSignalsURL: 'https://{{hosts[][www]}}/foo.js' }
   },
   { expectJoinSucces: false,
     expectLeaveSucces: true,
     interestGroup: { ...BASE_INTEREST_GROUP,
-                     trustedBiddingSignalsUrl: 'data:application/json,{}' }
+                     trustedBiddingSignalsURL: 'data:application/json,{}' }
   },
   { expectJoinSucces: true,
     expectLeaveSucces: true,
     interestGroup: { ...BASE_INTEREST_GROUP,
-                     trustedBiddingSignalsUrl: `${window.location.origin}/foo.js`}
+                     trustedBiddingSignalsURL: `${window.location.origin}/foo.js`}
   },
   { expectJoinSucces: true,
     expectLeaveSucces: true,
     interestGroup: { ...BASE_INTEREST_GROUP,
-                     trustedBiddingSignalsUrl: 'relative/path' }
+                     trustedBiddingSignalsURL: 'relative/path' }
   },
 
   
