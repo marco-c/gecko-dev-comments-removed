@@ -173,6 +173,32 @@ TEST_P(PeerConnectionMediaChannelSplitTest, VideoPacketLossCausesNack) {
   EXPECT_TRUE_WAIT(NacksReceivedCount(*caller()) > 0, kDefaultTimeout);
 }
 
+
+TEST_P(PeerConnectionMediaChannelSplitTest,
+       GetCaptureStartNtpTimeWithOldStatsApi) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+
+  callee()->AddAudioTrack();
+
+  
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  
+  
+  auto receivers = callee()->pc()->GetReceivers();
+  ASSERT_EQ(1u, receivers.size());
+  auto remote_audio_track = receivers[0]->track();
+
+  
+  
+  EXPECT_TRUE_WAIT(callee()->OldGetStatsForTrack(remote_audio_track.get())
+                           ->CaptureStartNtpTime() > 0,
+                   2 * kMaxWaitForFramesMs);
+}
+
 INSTANTIATE_TEST_SUITE_P(PeerConnectionMediaChannelSplitTest,
                          PeerConnectionMediaChannelSplitTest,
                          Values("WebRTC-SplitMediaChannel/Disabled/",
