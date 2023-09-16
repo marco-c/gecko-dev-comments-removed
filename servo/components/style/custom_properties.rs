@@ -719,8 +719,6 @@ impl<'a> CustomPropertiesBuilder<'a> {
                         );
                         return;
                     }
-                    
-                    
                     if let Some(registration) = self.stylist.get_custom_property_registration(&name)
                     {
                         let mut input = ParserInput::new(&unparsed_value.css);
