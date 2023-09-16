@@ -277,11 +277,45 @@ pub struct InvalidationMap {
     pub other_attribute_affecting_selectors: LocalNameDependencyMap,
 }
 
+bitflags! {
+    /// Tree-structural pseudoclasses that we care about for (Relative selector) invalidation.
+    /// Specifically, we need to store information on ones that don't generate the inner selector.
+    #[derive(MallocSizeOf)]
+    pub struct TSStateForInvalidation : u8 {
+        /// :empty
+        const EMPTY = 1 << 0;
+        /// :nth, :first-child, etc, without of.
+        const NTH = 1 << 1;
+    }
+}
+
+
+#[derive(Clone, Debug, MallocSizeOf)]
+pub struct TSStateDependency {
+    
+    pub dep: Dependency,
+    
+    pub state: TSStateForInvalidation,
+}
+
+impl SelectorMapEntry for TSStateDependency {
+    fn selector(&self) -> SelectorIter<SelectorImpl> {
+        self.dep.selector()
+    }
+}
+
+
+pub type TSStateDependencyMap = SelectorMap<TSStateDependency>;
+
+
+
 
 #[derive(Clone, Debug, MallocSizeOf)]
 pub struct RelativeSelectorInvalidationMap {
     
     pub map: InvalidationMap,
+    
+    pub ts_state_to_selector: TSStateDependencyMap,
     
     pub type_to_selector: LocalNameDependencyMap,
     
@@ -297,6 +331,7 @@ impl RelativeSelectorInvalidationMap {
     pub fn new() -> Self {
         Self {
             map: InvalidationMap::new(),
+            ts_state_to_selector: TSStateDependencyMap::default(),
             type_to_selector: LocalNameDependencyMap::default(),
             any_to_selector: SmallVec::default(),
             used: false,
@@ -312,6 +347,7 @@ impl RelativeSelectorInvalidationMap {
     
     pub fn clear(&mut self) {
         self.map.clear();
+        self.ts_state_to_selector.clear();
         self.type_to_selector.clear();
         self.any_to_selector.clear();
     }
@@ -319,6 +355,7 @@ impl RelativeSelectorInvalidationMap {
     
     pub fn shrink_if_needed(&mut self) {
         self.map.shrink_if_needed();
+        self.ts_state_to_selector.shrink_if_needed();
         self.type_to_selector.shrink_if_needed();
     }
 }
@@ -789,6 +826,7 @@ impl<'a> SelectorVisitor for SelectorDependencyCollector<'a> {
 
 struct RelativeSelectorPerCompoundState {
     state: PerCompoundState,
+    ts_state: TSStateForInvalidation,
     added_entry: bool,
 }
 
@@ -796,6 +834,7 @@ impl RelativeSelectorPerCompoundState {
     fn new(offset: usize) -> Self {
         Self {
             state: PerCompoundState::new(offset),
+            ts_state: TSStateForInvalidation::empty(),
             added_entry: false,
         }
     }
@@ -869,6 +908,20 @@ impl<'a> RelativeSelectorDependencyCollector<'a> {
         Ok(())
     }
 
+    fn add_ts_pseudo_class_dependency(&mut self) -> Result<(), AllocErr> {
+        if self.compound_state.ts_state.is_empty() {
+            return Ok(());
+        }
+        let dependency = self.dependency();
+        self.map.ts_state_to_selector.insert(
+            TSStateDependency {
+                dep: dependency,
+                state: self.compound_state.ts_state,
+            },
+            self.quirks_mode,
+        )
+    }
+
     fn visit_whole_selector(&mut self) -> bool {
         let mut iter = self.selector.selector.iter_skip_relative_selector_anchor();
         let mut index = 0;
@@ -896,6 +949,10 @@ impl<'a> RelativeSelectorDependencyCollector<'a> {
                 self.quirks_mode,
                 self,
             ) {
+                *self.alloc_error = Some(err);
+                return false;
+            }
+            if let Err(err) = self.add_ts_pseudo_class_dependency() {
                 *self.alloc_error = Some(err);
                 return false;
             }
@@ -1016,6 +1073,18 @@ impl<'a> SelectorVisitor for RelativeSelectorDependencyCollector<'a> {
                     *self.alloc_error = Some(err.into());
                     return false;
                 }
+                true
+            },
+            Component::Empty => {
+                self.compound_state
+                    .ts_state
+                    .insert(TSStateForInvalidation::EMPTY);
+                true
+            },
+            Component::Nth(..) => {
+                self.compound_state
+                    .ts_state
+                    .insert(TSStateForInvalidation::NTH);
                 true
             },
             Component::RelativeSelectorAnchor => unreachable!("Should not visit this far"),

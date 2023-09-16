@@ -494,6 +494,27 @@ class ServoStyleSet {
 
 
 
+  void MaybeInvalidateRelativeSelectorForEmptyDependency(const dom::Element&);
+
+  
+
+
+
+
+  void MaybeInvalidateRelativeSelectorForNthEdgeDependency(const dom::Element&);
+
+  
+
+
+
+
+  void MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
+      const dom::Element*);
+
+  
+
+
+
   void MaybeInvalidateForElementInsertion(const dom::Element&);
 
   
