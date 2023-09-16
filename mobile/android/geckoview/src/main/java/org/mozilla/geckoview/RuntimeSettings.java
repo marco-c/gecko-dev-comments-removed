@@ -109,10 +109,6 @@ public abstract class RuntimeSettings implements Parcelable {
       return mIsSet;
     }
 
-    public boolean hasDefault() {
-      return true;
-    }
-
     public void reset() {
       mValue = defaultValue;
       mIsSet = false;
@@ -129,48 +125,6 @@ public abstract class RuntimeSettings implements Parcelable {
       } else {
         throw new UnsupportedOperationException("Unhandled pref type for " + name);
       }
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-   class PrefWithoutDefault<T> extends Pref<T> {
-    public PrefWithoutDefault(@NonNull final String name) {
-      super(name, null);
-    }
-
-    public boolean hasDefault() {
-      return false;
-    }
-
-    public @Nullable T get() {
-      if (!isSet()) {
-        return null;
-      }
-      return super.get();
-    }
-
-    public void commit() {
-      if (!isSet()) {
-        
-        
-        return;
-      }
-      super.commit();
-    }
-
-    private void addToBundle(final GeckoBundle bundle) {
-      if (!isSet()) {
-        return;
-      }
-      super.addToBundle(bundle);
     }
   }
 
@@ -277,15 +231,7 @@ public abstract class RuntimeSettings implements Parcelable {
 
    void commitResetPrefs() {
     final ArrayList<String> names = new ArrayList<String>();
-    forAllPrefs(
-        pref -> {
-          
-          
-          if (!pref.hasDefault() && !pref.isSet()) {
-            return;
-          }
-          names.add(pref.name);
-        });
+    forAllPrefs(pref -> names.add(pref.name));
 
     final GeckoBundle data = new GeckoBundle(1);
     data.putStringArray("names", names);
