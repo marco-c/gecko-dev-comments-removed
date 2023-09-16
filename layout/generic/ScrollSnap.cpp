@@ -45,23 +45,16 @@ class CalcSnapPoints final {
   void AddVerticalEdge(const SnapPosition& aEdge);
 
   struct CandidateTracker {
-    explicit CandidateTracker(nscoord aDestination)
-        : mBestEdge(SnapPosition{aDestination, StyleScrollSnapStop::Normal,
-                                 ScrollSnapTargetId::None}) {
-      
-      
-      
-      
-      mSecondBestEdge = nscoord_MAX;
-      mEdgeFound = false;
-    }
-
     
     SnapPosition mBestEdge;
     
     
-    nscoord mSecondBestEdge;
-    bool mEdgeFound;  
+    
+    
+    
+    
+    nscoord mSecondBestEdge = nscoord_MAX;
+    bool mEdgeFound = false;  
 
     
     AutoTArray<ScrollSnapTargetId, 1> mTargetIds;
@@ -71,14 +64,18 @@ class CalcSnapPoints final {
                CandidateTracker* aCandidateTracker);
   SnapDestination GetBestEdge() const;
   nscoord XDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(NSCoordSaturatingSubtract(mTrackerOnX.mSecondBestEdge,
-                                              mTrackerOnX.mBestEdge.mPosition,
-                                              nscoord_MAX));
+    return std::abs(NSCoordSaturatingSubtract(
+        mTrackerOnX.mSecondBestEdge,
+        mTrackerOnX.mEdgeFound ? mTrackerOnX.mBestEdge.mPosition
+                               : mDestination.x,
+        nscoord_MAX));
   }
   nscoord YDistanceBetweenBestAndSecondEdge() const {
-    return std::abs(NSCoordSaturatingSubtract(mTrackerOnY.mSecondBestEdge,
-                                              mTrackerOnY.mBestEdge.mPosition,
-                                              nscoord_MAX));
+    return std::abs(NSCoordSaturatingSubtract(
+        mTrackerOnY.mSecondBestEdge,
+        mTrackerOnY.mEdgeFound ? mTrackerOnY.mBestEdge.mPosition
+                               : mDestination.y,
+        nscoord_MAX));
   }
   const nsPoint& Destination() const { return mDestination; }
 
@@ -99,9 +96,7 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
     : mUnit(aUnit),
       mSnapFlags(aSnapFlags),
       mDestination(aDestination),
-      mStartPos(aStartPos),
-      mTrackerOnX(aDestination.x),
-      mTrackerOnY(aDestination.y) {
+      mStartPos(aStartPos) {
   MOZ_ASSERT(aSnapFlags != ScrollSnapFlags::Disabled);
 
   nsPoint direction = aDestination - aStartPos;
