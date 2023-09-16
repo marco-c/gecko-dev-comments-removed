@@ -1163,7 +1163,7 @@ void nsContainerFrame::ReflowOverflowContainerChildren(
             StyleSize::LengthPercentage(LengthPercentage::FromAppUnits(
                 frame->StylePosition()->mBoxSizing == StyleBoxSizing::Border
                     ? prevRect.ISize(wm)
-                    : prevInFlow->ContentSize(wm).ISize(wm))));
+                    : prevInFlow->ContentISize(wm))));
 
         
         sizeOverride.mStyleBSize.emplace(
