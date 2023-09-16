@@ -281,7 +281,6 @@ pref("media.videocontrols.keyboard-tab-to-all-controls", true);
 
   pref("media.peerconnection.sdp.disable_stereo_fmtp", false);
   pref("media.webrtc.debug.log_file", "");
-  pref("media.webrtc.debug.aec_dump_max_size", 4194304); 
 
   pref("media.navigator.video.default_width",0);  
   pref("media.navigator.video.default_height",0); 
