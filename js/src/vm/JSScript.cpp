@@ -1872,7 +1872,7 @@ template bool ScriptSource::initializeUnretrievableUncompressedSource(
 
 
 
-UniqueChars js::FormatIntroducedFilename(const char* filename, unsigned lineno,
+UniqueChars js::FormatIntroducedFilename(const char* filename, uint32_t lineno,
                                          const char* introducer) {
   
   
@@ -2844,7 +2844,7 @@ void js::maybeSpewScriptFinalWarmUpCount(JSScript* script) {
 
 void js::DescribeScriptedCallerForDirectEval(JSContext* cx, HandleScript script,
                                              jsbytecode* pc, const char** file,
-                                             unsigned* linenop,
+                                             uint32_t* linenop,
                                              uint32_t* pcOffset,
                                              bool* mutedErrors) {
   MOZ_ASSERT(script->containsPC(pc));
@@ -2872,7 +2872,7 @@ void js::DescribeScriptedCallerForDirectEval(JSContext* cx, HandleScript script,
 
 void js::DescribeScriptedCallerForCompilation(
     JSContext* cx, MutableHandleScript maybeScript, const char** file,
-    unsigned* linenop, uint32_t* pcOffset, bool* mutedErrors) {
+    uint32_t* linenop, uint32_t* pcOffset, bool* mutedErrors) {
   NonBuiltinFrameIter iter(cx, cx->realm()->principals());
 
   if (iter.done()) {
