@@ -14761,7 +14761,7 @@ bool Document::PopFullscreenElement(UpdateViewport aUpdateViewport) {
 
 void Document::SetFullscreenElement(Element& aElement) {
   ElementState statesToAdd = ElementState::FULLSCREEN;
-  if (StaticPrefs::dom_fullscreen_modal() && !IsInChromeDocShell()) {
+  if (!IsInChromeDocShell()) {
     
     
     statesToAdd |= ElementState::MODAL;
