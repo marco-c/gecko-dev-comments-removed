@@ -35,9 +35,6 @@ HTMLObjectElement::HTMLObjectElement(
 
   
   SetBarredFromConstraintValidation(true);
-
-  
-  AddStatesSilently(ElementState::LOADING);
 }
 
 HTMLObjectElement::~HTMLObjectElement() {
