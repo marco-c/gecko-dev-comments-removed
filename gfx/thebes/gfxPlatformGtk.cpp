@@ -1015,3 +1015,9 @@ void gfxPlatformGtk::BuildContentDeviceData(ContentDeviceData* aOut) {
 
   aOut->cmsOutputProfileData() = GetPlatformCMSOutputProfileData();
 }
+
+
+
+namespace mozilla::gfx {
+bool IsDMABufEnabled() { return gfxVars::UseDMABuf(); }
+}  

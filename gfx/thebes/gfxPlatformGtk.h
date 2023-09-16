@@ -78,4 +78,10 @@ class gfxPlatformGtk final : public gfxPlatform {
   bool mIsX11Display;
 };
 
+
+
+namespace mozilla::gfx {
+bool IsDMABufEnabled();
+}
+
 #endif 
