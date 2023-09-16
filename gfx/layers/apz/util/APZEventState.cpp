@@ -106,7 +106,6 @@ APZEventState::APZEventState(nsIWidget* aWidget,
       mTouchEndCancelled(false),
       mReceivedNonTouchStart(false),
       mTouchStartPrevented(false),
-      mSingleTapsPendingTargetInfo(),
       mLastTouchIdentifier(0) {
   nsresult rv;
   mWidget = do_GetWeakReference(aWidget, &rv);
@@ -116,65 +115,6 @@ APZEventState::APZEventState(nsIWidget* aWidget,
 }
 
 APZEventState::~APZEventState() = default;
-
-RefPtr<DelayedFireSingleTapEvent> DelayedFireSingleTapEvent::Create(
-    Maybe<SingleTapTargetInfo>&& aTargetInfo) {
-  nsCOMPtr<nsITimer> timer = NS_NewTimer();
-  RefPtr<DelayedFireSingleTapEvent> event =
-      new DelayedFireSingleTapEvent(std::move(aTargetInfo), timer);
-  nsresult rv = timer->InitWithCallback(
-      event, StaticPrefs::ui_touch_activation_duration_ms(),
-      nsITimer::TYPE_ONE_SHOT);
-  if (NS_FAILED(rv)) {
-    event->ClearTimer();
-    event = nullptr;
-  }
-  return event;
-}
-
-NS_IMETHODIMP DelayedFireSingleTapEvent::Notify(nsITimer*) {
-  APZES_LOG("DelayedFireSingeTapEvent notification ready=%d",
-            mTargetInfo.isSome());
-  
-  
-  
-  
-  if (mTargetInfo.isSome()) {
-    FireSingleTapEvent();
-  }
-  mTimer = nullptr;
-  return NS_OK;
-}
-
-NS_IMETHODIMP DelayedFireSingleTapEvent::GetName(nsACString& aName) {
-  aName.AssignLiteral("DelayedFireSingleTapEvent");
-  return NS_OK;
-}
-
-void DelayedFireSingleTapEvent::PopulateTargetInfo(
-    SingleTapTargetInfo&& aTargetInfo) {
-  MOZ_ASSERT(!mTargetInfo.isSome());
-  mTargetInfo = Some(std::move(aTargetInfo));
-  
-  
-  
-  if (!mTimer) {
-    FireSingleTapEvent();
-  }
-}
-
-void DelayedFireSingleTapEvent::FireSingleTapEvent() {
-  MOZ_ASSERT(mTargetInfo.isSome());
-  nsCOMPtr<nsIWidget> widget = do_QueryReferent(mTargetInfo->mWidget);
-  if (widget) {
-    widget::nsAutoRollup rollup(mTargetInfo->mTouchRollup.get());
-    APZCCallbackHelper::FireSingleTapEvent(mTargetInfo->mPoint,
-                                           mTargetInfo->mModifiers,
-                                           mTargetInfo->mClickCount, widget);
-  }
-}
-
-NS_IMPL_ISUPPORTS(DelayedFireSingleTapEvent, nsITimerCallback, nsINamed)
 
 void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
                                      const CSSToLayoutDeviceScale& aScale,
@@ -195,24 +135,14 @@ void APZEventState::ProcessSingleTap(const CSSPoint& aPoint,
     return;
   }
 
-  SingleTapTargetInfo targetInfo(mWidget, aPoint * aScale, aModifiers,
-                                 aClickCount, touchRollup);
-
-  auto delayedEvent = mSingleTapsPendingTargetInfo.find(aInputBlockId);
-  if (delayedEvent != mSingleTapsPendingTargetInfo.end()) {
-    APZES_LOG("Found tap for block=%" PRIu64, aInputBlockId);
-
-    
-    
-    delayedEvent->second->PopulateTargetInfo(std::move(targetInfo));
-    mSingleTapsPendingTargetInfo.erase(delayedEvent);
-  } else {
-    APZES_LOG("Scheduling timer for click event\n");
-
-    
-    
-    DelayedFireSingleTapEvent::Create(Some(std::move(targetInfo)));
+  nsCOMPtr<nsIWidget> localWidget = do_QueryReferent(mWidget);
+  if (localWidget) {
+    widget::nsAutoRollup rollup(touchRollup);
+    APZCCallbackHelper::FireSingleTapEvent(aPoint * aScale, aModifiers,
+                                           aClickCount, localWidget);
   }
+
+  mActiveElementManager->ProcessSingleTap();
 }
 
 PreventDefaultResult APZEventState::FireContextmenuEvents(
@@ -583,12 +513,6 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
       APZES_LOG("%s: can-be-pan=%d", __FUNCTION__, aArg);
       if (!canBePan) {
         MOZ_ASSERT(aInputBlockId.isSome());
-        RefPtr<DelayedFireSingleTapEvent> delayedEvent =
-            DelayedFireSingleTapEvent::Create(Nothing());
-        DebugOnly<bool> insertResult =
-            mSingleTapsPendingTargetInfo.emplace(*aInputBlockId, delayedEvent)
-                .second;
-        MOZ_ASSERT(insertResult, "Failed to insert delayed tap event.");
       }
       break;
     }
@@ -604,6 +528,8 @@ void APZEventState::ProcessAPZStateChange(ViewID aViewId,
     }
   }
 }
+
+void APZEventState::Destroy() { mActiveElementManager->Destroy(); }
 
 void APZEventState::SendPendingTouchPreventedResponse(bool aPreventDefault) {
   if (mPendingTouchPreventedResponse) {

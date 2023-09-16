@@ -3642,8 +3642,13 @@ nsresult EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
       
       PresShell::ReleaseCapturingContent();
 
-      ClearGlobalActiveContent(this);
       WidgetMouseEvent* mouseUpEvent = aEvent->AsMouseEvent();
+      
+      
+      if (!mouseUpEvent || mouseUpEvent->mInputSource !=
+                               dom::MouseEvent_Binding::MOZ_SOURCE_TOUCH) {
+        ClearGlobalActiveContent(this);
+      }
       if (mouseUpEvent && EventCausesClickEvents(*mouseUpEvent)) {
         
         
