@@ -666,6 +666,51 @@ void ScriptLoader::PrepareCacheInfoChannel(nsIChannel* aChannel,
   }
 }
 
+
+void ScriptLoader::PrepareRequestPriorityAndRequestDependencies(
+    nsIChannel* aChannel, ScriptLoadRequest* aRequest) {
+  if (aRequest->GetScriptLoadContext()->IsLinkPreloadScript()) {
+    
+    
+    
+    
+    
+    
+    ScriptLoadContext::PrioritizeAsPreload(aChannel);
+    ScriptLoadContext::AddLoadBackgroundFlag(aChannel);
+  } else if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(aChannel)) {
+    if (aRequest->GetScriptLoadContext()->mScriptFromHead &&
+        aRequest->GetScriptLoadContext()->IsBlockingScript()) {
+      
+      
+      cos->AddClassFlags(nsIClassOfService::Leader);
+    } else if (aRequest->GetScriptLoadContext()->IsDeferredScript() &&
+               !StaticPrefs::network_http_tailing_enabled()) {
+      
+      
+      
+      
+
+      
+      
+      cos->AddClassFlags(nsIClassOfService::TailForbidden);
+    } else {
+      
+      
+      cos->AddClassFlags(nsIClassOfService::Unblocked);
+
+      if (aRequest->GetScriptLoadContext()->IsAsyncScript()) {
+        
+        
+        
+        
+        
+        cos->AddClassFlags(nsIClassOfService::TailAllowed);
+      }
+    }
+  }
+}
+
 nsresult ScriptLoader::StartLoadInternal(
     ScriptLoadRequest* aRequest, nsSecurityFlags securityFlags,
     const Maybe<nsAutoString>& aCharsetForPreload) {
@@ -698,46 +743,7 @@ nsresult ScriptLoader::StartLoadInternal(
        unsigned(aRequest->GetScriptLoadContext()->mScriptMode),
        aRequest->GetScriptLoadContext()->IsTracking()));
 
-  if (aRequest->GetScriptLoadContext()->IsLinkPreloadScript()) {
-    
-    
-    
-    
-    
-    
-    ScriptLoadContext::PrioritizeAsPreload(channel);
-    ScriptLoadContext::AddLoadBackgroundFlag(channel);
-  } else if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(channel)) {
-    if (aRequest->GetScriptLoadContext()->mScriptFromHead &&
-        aRequest->GetScriptLoadContext()->IsBlockingScript()) {
-      
-      
-      cos->AddClassFlags(nsIClassOfService::Leader);
-    } else if (aRequest->GetScriptLoadContext()->IsDeferredScript() &&
-               !StaticPrefs::network_http_tailing_enabled()) {
-      
-      
-      
-      
-
-      
-      
-      cos->AddClassFlags(nsIClassOfService::TailForbidden);
-    } else {
-      
-      
-      cos->AddClassFlags(nsIClassOfService::Unblocked);
-
-      if (aRequest->GetScriptLoadContext()->IsAsyncScript()) {
-        
-        
-        
-        
-        
-        cos->AddClassFlags(nsIClassOfService::TailAllowed);
-      }
-    }
-  }
+  PrepareRequestPriorityAndRequestDependencies(channel, aRequest);
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(channel));
   if (httpChannel) {
