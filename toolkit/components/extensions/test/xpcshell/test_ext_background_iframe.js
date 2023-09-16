@@ -114,8 +114,8 @@ add_task(async function test_first_extension_api_call_in_iframe() {
       return "slow.css not loaded";
     };
 
-    const iframe = document.getElementById("iframe");
-    iframe.onload = () => {
+    const handle_iframe_onload = event => {
+      const iframe = event.target;
       
       
       
@@ -148,6 +148,19 @@ add_task(async function test_first_extension_api_call_in_iframe() {
         browser.test.sendMessage("allowStylesheetToLoad");
       });
     };
+
+    
+    
+    document.addEventListener(
+      "load",
+      function listener(event) {
+        if (event.target.id === "iframe") {
+          document.removeEventListener("load", listener, true);
+          handle_iframe_onload(event);
+        }
+      },
+      true
+    );
 
     window.onload = () => {
       
@@ -227,9 +240,10 @@ add_task(async function test_first_extension_api_call_in_iframe() {
     files: {
       "background.html": `<!DOCTYPE html>
          <meta charset="utf-8">
-         <!-- This is first, to enable the child frame to load -->
-         <iframe src="background-subframe.html" id="iframe"></iframe>
+         <!-- background.js first, to never miss the iframe.onload event -->
          <script src="background.js"></script>
+         <!-- iframe should start loading before slow.css blocks the DOM -->
+         <iframe src="background-subframe.html" id="iframe"></iframe>
          <!--
          Load a slow stylesheet AND add <script defer> to intentionally postpone
          the DOMContentLoaded notification until well after background-top.js
