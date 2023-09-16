@@ -39,6 +39,31 @@ namespace js {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define FOR_EACH_SRC_NOTE_TYPE(M)                                  \
   M(ColSpan, "colspan", int8_t(SrcNote::ColSpan::Operands::Count)) \
   /* Bytecode follows a source newline. */                         \
