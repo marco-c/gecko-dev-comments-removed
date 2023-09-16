@@ -9,14 +9,13 @@
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
 
-#include <algorithm>
-
-#include "CoreTextFontList.h"
 #include "gfxCoreTextShaper.h"
+#include <algorithm>
 #include "gfxPlatformMac.h"
 #include "gfxContext.h"
 #include "gfxFontUtils.h"
 #include "gfxHarfBuzzShaper.h"
+#include "gfxMacPlatformFontList.h"
 #include "gfxFontConstants.h"
 #include "gfxTextRun.h"
 #include "gfxUtils.h"
@@ -34,7 +33,8 @@ struct TagEquals {
 };
 
 gfxMacFont::gfxMacFont(const RefPtr<UnscaledFontMac>& aUnscaledFont,
-                       CTFontEntry* aFontEntry, const gfxFontStyle* aFontStyle)
+                       MacOSFontEntry* aFontEntry,
+                       const gfxFontStyle* aFontStyle)
     : gfxFont(aUnscaledFont, aFontEntry, aFontStyle),
       mCGFont(nullptr),
       mCTFont(nullptr),
@@ -155,8 +155,8 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
 
   
   
-  auto ctFontEntry = static_cast<CTFontEntry*>(GetFontEntry());
-  if (ctFontEntry->RequiresAATLayout() && !aVertical &&
+  auto macFontEntry = static_cast<MacOSFontEntry*>(GetFontEntry());
+  if (macFontEntry->RequiresAATLayout() && !aVertical &&
       StaticPrefs::gfx_font_rendering_coretext_enabled()) {
     if (!mCoreTextShaper) {
       mCoreTextShaper = MakeUnique<gfxCoreTextShaper>(this);
@@ -166,14 +166,14 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
                                    aShapedText)) {
       PostShapingFixup(aDrawTarget, aText, aOffset, aLength, aVertical,
                        aShapedText);
-      if (ctFontEntry->HasTrackingTable()) {
+      if (GetFontEntry()->HasTrackingTable()) {
         
         
         float trackSize = GetAdjustedSize() *
                           aShapedText->GetAppUnitsPerDevUnit() /
                           AppUnitsPerCSSPixel();
         float tracking =
-            ctFontEntry->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
+            GetFontEntry()->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
         
         
         
@@ -255,7 +255,7 @@ void gfxMacFont::InitMetrics() {
   
   
   gfxFloat cgConvFactor;
-  if (static_cast<CTFontEntry*>(mFontEntry.get())->IsCFF()) {
+  if (static_cast<MacOSFontEntry*>(mFontEntry.get())->IsCFF()) {
     cgConvFactor = mAdjustedSize / ::CGFontGetUnitsPerEm(mCGFont);
   } else {
     cgConvFactor = mFUnitsConvFactor;
@@ -322,7 +322,7 @@ void gfxMacFont::InitMetrics() {
       delete mHarfBuzzShaper.exchange(nullptr);
       mAdjustedSize = mStyle.GetAdjustedSize(aspect);
       mFUnitsConvFactor = mAdjustedSize / upem;
-      if (static_cast<CTFontEntry*>(mFontEntry.get())->IsCFF()) {
+      if (static_cast<MacOSFontEntry*>(mFontEntry.get())->IsCFF()) {
         cgConvFactor = mAdjustedSize / ::CGFontGetUnitsPerEm(mCGFont);
       } else {
         cgConvFactor = mFUnitsConvFactor;
