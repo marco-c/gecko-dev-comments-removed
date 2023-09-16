@@ -43,25 +43,6 @@ template <class T>
   return replace->typePolicy()->adjustInputs(alloc, replace);
 }
 
-static void SetTypePolicyBailoutKind(MInstruction* newIns,
-                                     MInstruction* forIns) {
-  
-  if (newIns->isToFloat32() && !newIns->isGuard()) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(forIns->bailoutKind() != BailoutKind::TranspiledCacheIR);
-
-  newIns->setBailoutKind(BailoutKind::TypePolicy);
-}
-
 [[nodiscard]] static bool UnboxOperand(TempAllocator& alloc, MInstruction* def,
                                        unsigned op, MIRType expected) {
   MDefinition* in = def->getOperand(op);
@@ -70,7 +51,7 @@ static void SetTypePolicyBailoutKind(MInstruction* newIns,
   }
 
   auto* replace = MUnbox::New(alloc, in, expected, MUnbox::Fallible);
-  SetTypePolicyBailoutKind(replace, def);
+  replace->setBailoutKind(BailoutKind::TypePolicy);
   def->block()->insertBefore(def, replace);
   def->replaceOperand(op, replace);
 
@@ -132,7 +113,7 @@ bool ArithPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
       replace = MToNumberInt32::New(alloc, in);
     }
 
-    SetTypePolicyBailoutKind(replace, ins);
+    replace->setBailoutKind(BailoutKind::TypePolicy);
     ins->block()->insertBefore(ins, replace);
     ins->replaceOperand(i, replace);
 
@@ -838,7 +819,7 @@ bool CallPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins) const {
   if (func->type() != MIRType::Object) {
     MInstruction* unbox =
         MUnbox::New(alloc, func, MIRType::Object, MUnbox::Fallible);
-    SetTypePolicyBailoutKind(unbox, call);
+    unbox->setBailoutKind(BailoutKind::TypePolicy);
     call->block()->insertBefore(call, unbox);
     call->replaceCallee(unbox);
 
