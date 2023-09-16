@@ -43,6 +43,7 @@ UNIFIED_SOURCES += [
     "WasmProcess.cpp",
     "WasmRealm.cpp",
     "WasmSerialize.cpp",
+    "WasmSignalHandlers.cpp",
     "WasmStubs.cpp",
     "WasmTable.cpp",
     "WasmTypeDef.cpp",
@@ -57,10 +58,6 @@ GeneratedFile(
     script="GenerateIntrinsics.py",
     inputs=["WasmIntrinsic.yaml"],
 )
-
-
-if CONFIG["OS_ARCH"] != "WASI":
-    UNIFIED_SOURCES += ["WasmSignalHandlers.cpp"]
 
 
 

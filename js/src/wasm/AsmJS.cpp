@@ -70,6 +70,7 @@
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmJS.h"
 #include "wasm/WasmSerialize.h"
+#include "wasm/WasmSignalHandlers.h"
 #include "wasm/WasmValidate.h"
 
 #include "frontend/SharedContext-inl.h"
@@ -6946,10 +6947,10 @@ static bool TryInstantiate(JSContext* cx, CallArgs args, const Module& module,
   HandleValue importVal = args.get(1);
   HandleValue bufferVal = args.get(2);
 
-  
-  
-  if (!HasPlatformSupport(cx)) {
-    return LinkFail(cx, "no platform support");
+  MOZ_RELEASE_ASSERT(HasPlatformSupport());
+
+  if (!wasm::EnsureFullSignalHandlers(cx)) {
+    return LinkFail(cx, "failed to install signal handlers");
   }
 
   Rooted<ImportValues> imports(cx);
@@ -7110,7 +7111,7 @@ static bool TypeFailureWarning(frontend::ParserBase& parser, const char* str) {
 
 
 static bool IsAsmJSCompilerAvailable(JSContext* cx) {
-  return HasPlatformSupport(cx) && WasmCompilerForAsmJSAvailable(cx);
+  return HasPlatformSupport() && WasmCompilerForAsmJSAvailable(cx);
 }
 
 static bool EstablishPreconditions(frontend::ParserBase& parser) {

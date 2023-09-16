@@ -23,7 +23,7 @@ namespace wasm {
 
 
 
-bool HasPlatformSupport(JSContext* cx);
+bool HasPlatformSupport();
 
 
 
