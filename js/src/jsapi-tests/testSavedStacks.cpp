@@ -7,6 +7,7 @@
 #include "mozilla/Utf8.h"  
 
 #include "builtin/TestingFunctions.h"
+#include "js/ColumnNumber.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Exception.h"
 #include "js/SavedFrameAPI.h"
@@ -46,10 +47,10 @@ BEGIN_TEST(testSavedStacks_ApiDefaultValues) {
   CHECK(line == 0);
 
   
-  uint32_t column = 123;
+  JS::TaggedColumnNumberOneOrigin column(JS::LimitedColumnNumberOneOrigin(123));
   result = JS::GetSavedFrameColumn(cx, principals, savedFrame, &column);
   CHECK(result == JS::SavedFrameResult::AccessDenied);
-  CHECK(column == 0);
+  CHECK(column == JS::TaggedColumnNumberOneOrigin());
 
   
   result =
@@ -256,11 +257,11 @@ BEGIN_TEST(testSavedStacks_selfHostedFrames) {
   CHECK_EQUAL(line, 3U);
 
   
-  uint32_t column = 123;
+  JS::TaggedColumnNumberOneOrigin column(JS::LimitedColumnNumberOneOrigin(123));
   result = JS::GetSavedFrameColumn(cx, principals, selfHostedFrame, &column,
                                    JS::SavedFrameSelfHosted::Exclude);
   CHECK(result == JS::SavedFrameResult::Ok);
-  CHECK_EQUAL(column, 9U);
+  CHECK_EQUAL(column.oneOriginValue(), 9U);
 
   
   result = JS::GetSavedFrameFunctionDisplayName(
@@ -360,11 +361,12 @@ BEGIN_TEST(test_GetPendingExceptionStack) {
     CHECK_EQUAL(line, expected[i].line);
 
     
-    uint32_t column = 123;
+    JS::TaggedColumnNumberOneOrigin column(
+        JS::LimitedColumnNumberOneOrigin(123));
     result = JS::GetSavedFrameColumn(cx, principals, frame, &column,
                                      JS::SavedFrameSelfHosted::Exclude);
     CHECK(result == JS::SavedFrameResult::Ok);
-    CHECK_EQUAL(column, expected[i].column);
+    CHECK_EQUAL(column.oneOriginValue(), expected[i].column);
 
     
     JS::RootedString str(cx);
