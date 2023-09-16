@@ -32,6 +32,8 @@
 
 #define POLICY_REGKEY_NAME L"SOFTWARE\\Policies\\Mozilla\\" MOZ_APP_BASENAME
 
+namespace mozilla::default_agent {
+
 
 enum class PolicyState {
   Enabled,   
@@ -156,3 +158,5 @@ bool IsAgentDisabled() {
 bool IsTelemetryDisabled() {
   return IsThingDisabled(TELEMETRY_POLICY_NAME, L"" TELEMETRY_POLICY_NAME);
 }
+
+}  

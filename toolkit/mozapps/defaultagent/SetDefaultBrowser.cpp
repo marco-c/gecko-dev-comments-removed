@@ -16,6 +16,8 @@
 #include "EventLog.h"
 #include "SetDefaultBrowser.h"
 
+namespace mozilla::default_agent {
+
 
 
 
@@ -363,3 +365,5 @@ HRESULT SetDefaultExtensionHandlersUserChoiceImpl(
 
   return S_OK;
 }
+
+}  

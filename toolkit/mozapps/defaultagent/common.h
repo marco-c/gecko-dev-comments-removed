@@ -12,6 +12,8 @@
 #define AGENT_REGKEY_NAME \
   L"SOFTWARE\\" MOZ_APP_VENDOR "\\" MOZ_APP_BASENAME "\\Default Browser Agent"
 
+namespace mozilla::default_agent {
+
 ULONGLONG GetCurrentTimestamp();
 
 
@@ -21,5 +23,7 @@ using FilePathResult = mozilla::WindowsErrorResult<std::wstring>;
 FilePathResult GenerateUUIDStr();
 
 FilePathResult GetRelativeBinaryPath(const wchar_t* suffix);
+
+}  
 
 #endif  

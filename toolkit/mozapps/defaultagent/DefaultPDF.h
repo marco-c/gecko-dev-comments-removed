@@ -11,6 +11,8 @@
 
 #include "mozilla/WinHeaderOnlyUtils.h"
 
+namespace mozilla::default_agent {
+
 struct DefaultPdfInfo {
   std::string currentDefaultPdf;
 };
@@ -18,5 +20,7 @@ struct DefaultPdfInfo {
 using DefaultPdfResult = mozilla::WindowsErrorResult<DefaultPdfInfo>;
 
 DefaultPdfResult GetDefaultPdfInfo();
+
+}  
 
 #endif  

@@ -14,6 +14,8 @@
 #include "mozilla/Result.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
 
+namespace mozilla::default_agent {
+
 
 
 
@@ -92,5 +94,7 @@ VoidResult RegistrySetValueDword(IsPrefixed isPrefixed,
 VoidResult RegistryDeleteValue(IsPrefixed isPrefixed,
                                const wchar_t* registryValueName,
                                const wchar_t* subKey = nullptr);
+
+}  
 
 #endif  

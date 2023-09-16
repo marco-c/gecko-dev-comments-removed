@@ -10,6 +10,8 @@
 #include <windows.h>
 #include <wtypes.h>
 
+namespace mozilla::default_agent {
+
 
 
 
@@ -21,5 +23,7 @@ enum class WhichTasks {
   AllTasksForInstallation,
 };
 HRESULT RemoveTasks(const wchar_t* uniqueToken, WhichTasks tasksToRemove);
+
+}  
 
 #endif  

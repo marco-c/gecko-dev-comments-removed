@@ -11,6 +11,8 @@
 
 #include "SetDefaultBrowser.h"
 
+using namespace mozilla::default_agent;
+
 TEST(SetDefaultBrowserUserChoice, Hash)
 {
   

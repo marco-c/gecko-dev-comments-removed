@@ -13,8 +13,12 @@
 #include "DefaultPDF.h"
 #include "Notification.h"
 
+namespace mozilla::default_agent {
+
 HRESULT SendDefaultBrowserPing(
     const DefaultBrowserInfo& browserInfo, const DefaultPdfInfo& pdfInfo,
     const NotificationActivities& activitiesPerformed);
+
+}  
 
 #endif  

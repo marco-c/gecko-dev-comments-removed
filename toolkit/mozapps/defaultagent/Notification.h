@@ -9,6 +9,8 @@
 
 #include "DefaultBrowser.h"
 
+namespace mozilla::default_agent {
+
 enum class NotificationType {
   Initial,
   Followup,
@@ -49,5 +51,7 @@ std::string GetStringForNotificationAction(NotificationAction action);
 
 
 void EnsureValidNotificationAction(std::string& actionString);
+
+}  
 
 #endif  
