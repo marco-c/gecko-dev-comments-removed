@@ -1611,9 +1611,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Treeview,
-    
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
-    Window,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     Dialog,
 
@@ -1636,6 +1633,8 @@ pub enum Appearance {
     MozWindowTitlebar,
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozWindowTitlebarMaximized,
+    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    MozWindowDecorations,
 
     #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
     MozMacActiveSourceListSelection,
