@@ -83,8 +83,8 @@ extern ArrayObject* NewDenseCopiedArrayWithProto(JSContext* cx, uint32_t length,
                                                  HandleObject proto);
 
 
-extern ArrayObject* NewDenseFullyAllocatedArrayWithTemplate(
-    JSContext* cx, uint32_t length, ArrayObject* templateObject);
+extern ArrayObject* NewDenseFullyAllocatedArrayWithShape(
+    JSContext* cx, uint32_t length, Handle<SharedShape*> shape);
 
 extern ArrayObject* NewArrayWithShape(JSContext* cx, uint32_t length,
                                       Handle<Shape*> shape);

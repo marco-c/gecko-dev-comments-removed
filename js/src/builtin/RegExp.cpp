@@ -87,13 +87,12 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   bool hasIndices = re->hasIndices();
 
   
-  
-  RegExpRealm::ResultTemplateKind kind =
-      hasIndices ? RegExpRealm::ResultTemplateKind::WithIndices
-                 : RegExpRealm::ResultTemplateKind::Normal;
-  ArrayObject* templateObject =
-      cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx, kind);
-  if (!templateObject) {
+  RegExpRealm::ResultShapeKind kind =
+      hasIndices ? RegExpRealm::ResultShapeKind::WithIndices
+                 : RegExpRealm::ResultShapeKind::Normal;
+  Rooted<SharedShape*> shape(
+      cx, cx->realm()->regExps.getOrCreateMatchResultShape(cx, kind));
+  if (!shape) {
     return false;
   }
 
@@ -102,8 +101,8 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   MOZ_ASSERT(numPairs > 0);
 
   
-  Rooted<ArrayObject*> arr(cx, NewDenseFullyAllocatedArrayWithTemplate(
-                                   cx, numPairs, templateObject));
+  Rooted<ArrayObject*> arr(
+      cx, NewDenseFullyAllocatedArrayWithShape(cx, numPairs, shape));
   if (!arr) {
     return false;
   }
@@ -135,14 +134,13 @@ bool js::CreateRegExpMatchResult(JSContext* cx, HandleRegExpShared re,
   Rooted<PlainObject*> indicesGroups(cx);
   if (hasIndices) {
     
-    ArrayObject* indicesTemplate =
-        cx->realm()->regExps.getOrCreateMatchResultTemplateObject(
-            cx, RegExpRealm::ResultTemplateKind::Indices);
-    if (!indicesTemplate) {
+    Rooted<SharedShape*> indicesShape(
+        cx, cx->realm()->regExps.getOrCreateMatchResultShape(
+                cx, RegExpRealm::ResultShapeKind::Indices));
+    if (!indicesShape) {
       return false;
     }
-    indices =
-        NewDenseFullyAllocatedArrayWithTemplate(cx, numPairs, indicesTemplate);
+    indices = NewDenseFullyAllocatedArrayWithShape(cx, numPairs, indicesShape);
     if (!indices) {
       return false;
     }

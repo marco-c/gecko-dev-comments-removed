@@ -4521,15 +4521,14 @@ static bool BuildFlatMatchArray(JSContext* cx, HandleString str,
   }
 
   
-  
-  ArrayObject* templateObject =
-      cx->realm()->regExps.getOrCreateMatchResultTemplateObject(cx);
-  if (!templateObject) {
+  Rooted<SharedShape*> shape(
+      cx, cx->realm()->regExps.getOrCreateMatchResultShape(cx));
+  if (!shape) {
     return false;
   }
 
-  Rooted<ArrayObject*> arr(
-      cx, NewDenseFullyAllocatedArrayWithTemplate(cx, 1, templateObject));
+  Rooted<ArrayObject*> arr(cx,
+                           NewDenseFullyAllocatedArrayWithShape(cx, 1, shape));
   if (!arr) {
     return false;
   }
