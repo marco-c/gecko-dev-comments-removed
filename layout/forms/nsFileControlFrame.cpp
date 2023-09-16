@@ -226,6 +226,8 @@ nsFileControlFrame::DnDListener::HandleEvent(Event* aEvent) {
   if (eventType.EqualsLiteral("dragover")) {
     
     aEvent->PreventDefault();
+    WidgetDragEvent* asWidgetEvent = dragEvent->WidgetEventPtr()->AsDragEvent();
+    asWidgetEvent->UpdateDefaultPreventedOnContent(asWidgetEvent->mTarget);
     return NS_OK;
   }
 
