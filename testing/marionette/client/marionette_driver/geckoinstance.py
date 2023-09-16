@@ -145,6 +145,8 @@ class GeckoInstance(object):
         
         "security.notification_enable_delay": 0,
         
+        "security.remote_settings.intermediates.enabled": False,
+        
         "services.settings.server": "data:,#remote-settings-dummy/v1",
         
         
