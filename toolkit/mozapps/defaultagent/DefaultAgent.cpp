@@ -14,7 +14,6 @@
 #include "nsAutoRef.h"
 #include "nsDebug.h"
 #include "nsWindowsHelpers.h"
-#include "mozilla/WinHeaderOnlyUtils.h"
 #include "nsICommandLine.h"
 #include "nsString.h"
 
@@ -138,78 +137,68 @@ static void WriteInstallationRegistryEntry() {
   }
 }
 
+namespace mozilla {
 
-
-
-class RegistryMutex {
- private:
-  nsAutoHandle mMutex;
-  bool mLocked;
-
- public:
-  RegistryMutex() : mMutex(nullptr), mLocked(false) {}
-  ~RegistryMutex() {
-    Release();
-    
-  }
-
+RegistryMutex::~RegistryMutex() {
+  Release();
   
-  bool Acquire() {
-    if (mLocked) {
-      return true;
-    }
+}
 
+bool RegistryMutex::Acquire() {
+  if (mLocked) {
+    return true;
+  }
+
+  if (mMutex.get() == nullptr) {
+    
+    
+    
+    
+    mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
     if (mMutex.get() == nullptr) {
-      
-      
-      
-      
-      mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
-      if (mMutex.get() == nullptr) {
-        LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
-        return false;
-      }
-    }
-
-    DWORD mutexStatus =
-        WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
-    if (mutexStatus == WAIT_OBJECT_0) {
-      mLocked = true;
-    } else if (mutexStatus == WAIT_TIMEOUT) {
-      LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
-    } else if (mutexStatus == WAIT_ABANDONED) {
-      
-      
-      
-      
-      
-      LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
-      mLocked = true;
-    } else {
-      
-      
-      LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X",
-                        GetLastError());
-    }
-    return mLocked;
-  }
-
-  bool IsLocked() { return mLocked; }
-
-  void Release() {
-    if (mLocked) {
-      if (mMutex.get() == nullptr) {
-        LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
-        return;
-      }
-      BOOL success = ReleaseMutex(mMutex.get());
-      if (!success) {
-        LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
-      }
-      mLocked = false;
+      LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
+      return false;
     }
   }
-};
+
+  DWORD mutexStatus =
+      WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
+  if (mutexStatus == WAIT_OBJECT_0) {
+    mLocked = true;
+  } else if (mutexStatus == WAIT_TIMEOUT) {
+    LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
+  } else if (mutexStatus == WAIT_ABANDONED) {
+    
+    
+    
+    
+    
+    LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
+    mLocked = true;
+  } else {
+    
+    
+    LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X", GetLastError());
+  }
+  return mLocked;
+}
+
+bool RegistryMutex::IsLocked() { return mLocked; }
+
+void RegistryMutex::Release() {
+  if (mLocked) {
+    if (mMutex.get() == nullptr) {
+      LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
+      return;
+    }
+    BOOL success = ReleaseMutex(mMutex.get());
+    if (!success) {
+      LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
+    }
+    mLocked = false;
+  }
+}
+}  
 
 
 static bool CheckIfAppRanRecently(bool* aResult) {
@@ -233,205 +222,137 @@ static bool CheckIfAppRanRecently(bool* aResult) {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-int wmain(int argc, const wchar_t** argv) {
-  if (argc < 2 || !argv[1]) {
-    return E_INVALIDARG;
-  }
-
-  RegistryMutex regMutex;
-
-  
-  
-  
-  if (!wcscmp(argv[1], L"uninstall")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    regMutex.Acquire();
-
-    RemoveAllRegistryEntries();
-    return RemoveTasks(argv[2], WhichTasks::AllTasksForInstallation);
-  } else if (!wcscmp(argv[1], L"unregister-task")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    return RemoveTasks(argv[2], WhichTasks::WdbaTaskOnly);
-  }
-
-  
-  
-  
-  
-  if (IsAgentDisabled()) {
-    return HRESULT_FROM_WIN32(ERROR_ACCESS_DISABLED_BY_POLICY);
-  }
-
-  if (!wcscmp(argv[1], L"register-task")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-    
-    
-    
-    
-    
-    
-    
-    
-    regMutex.Acquire();
-
-    WriteInstallationRegistryEntry();
-
-    return RegisterTask(argv[2]);
-  } else if (!wcscmp(argv[1], L"update-task")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-    
-    
-    regMutex.Acquire();
-
-    WriteInstallationRegistryEntry();
-
-    return UpdateTask(argv[2]);
-  } else if (!wcscmp(argv[1], L"do-task")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    bool force = (argc > 3) && ((0 == wcscmp(argv[3], L"--force")) ||
-                                (0 == wcscmp(argv[3], L"-force")));
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (!regMutex.Acquire()) {
-      return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
-    }
-
-    
-    
-    
-    bool ranRecently = false;
-    if (!force && (!CheckIfAppRanRecently(&ranRecently) || !ranRecently)) {
-      return SCHED_E_TASK_ATTEMPTED;
-    }
-
-    DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
-    if (defaultBrowserResult.isErr()) {
-      return defaultBrowserResult.unwrapErr().AsHResult();
-    }
-    DefaultBrowserInfo browserInfo = defaultBrowserResult.unwrap();
-
-    DefaultPdfResult defaultPdfResult = GetDefaultPdfInfo();
-    if (defaultPdfResult.isErr()) {
-      return defaultPdfResult.unwrapErr().AsHResult();
-    }
-    DefaultPdfInfo pdfInfo = defaultPdfResult.unwrap();
-
-    NotificationActivities activitiesPerformed =
-        MaybeShowNotification(browserInfo, argv[2], force);
-
-    return SendDefaultBrowserPing(browserInfo, pdfInfo, activitiesPerformed);
-  } else if (!wcscmp(argv[1], L"set-default-browser-user-choice")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    
-    
-    return SetDefaultBrowserUserChoice(argv[2], &argv[3]);
-  } else if (!wcscmp(argv[1], L"set-default-extension-handlers-user-choice")) {
-    if (argc < 3 || !argv[2]) {
-      return E_INVALIDARG;
-    }
-
-    
-    
-    return SetDefaultExtensionHandlersUserChoice(argv[2], &argv[3]);
-  } else {
-    return E_INVALIDARG;
-  }
-}
-
 namespace mozilla {
 
 NS_IMPL_ISUPPORTS(DefaultAgent, nsIDefaultAgent)
 
 NS_IMETHODIMP
-DefaultAgent::HandleCommandLine(nsICommandLine* aCommandLine, int32_t* aRet) {
-  std::vector<const wchar_t*> args{L"unused"};
-  std::vector<nsString> argHolder;
-  int32_t argLen;
-  nsresult ret = aCommandLine->GetLength(&argLen);
-  NS_ENSURE_SUCCESS(ret, ret);
-  for (int i = 0; i < argLen; i++) {
-    nsAutoString arg;
-    ret = aCommandLine->GetArgument(i, arg);
-    NS_ENSURE_SUCCESS(ret, ret);
-    argHolder.push_back(arg);
-    args.push_back(argHolder.back().get());
+DefaultAgent::RegisterTask(const nsAString& aUniqueToken) {
+  
+  
+  
+  
+  
+  
+  
+  
+  mRegMutex.Acquire();
+
+  WriteInstallationRegistryEntry();
+
+  HRESULT hr = ::RegisterTask(PromiseFlatString(aUniqueToken).get());
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::UpdateTask(const nsAString& aUniqueToken) {
+  
+  
+  mRegMutex.Acquire();
+
+  WriteInstallationRegistryEntry();
+
+  HRESULT hr = ::UpdateTask(PromiseFlatString(aUniqueToken).get());
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::UnregisterTask(const nsAString& aUniqueToken) {
+  HRESULT hr = RemoveTasks(PromiseFlatString(aUniqueToken).get(),
+                           WhichTasks::WdbaTaskOnly);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::Uninstall(const nsAString& aUniqueToken) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  mRegMutex.Acquire();
+
+  RemoveAllRegistryEntries();
+  HRESULT hr = RemoveTasks(PromiseFlatString(aUniqueToken).get(),
+                           WhichTasks::AllTasksForInstallation);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!mRegMutex.Acquire()) {
+    return NS_ERROR_FAILURE;
   }
 
-  *aRet = wmain((int)args.size(), args.data());
+  
+  
+  
+  bool ranRecently = false;
+  if (!aForce && (!CheckIfAppRanRecently(&ranRecently) || !ranRecently)) {
+    return NS_ERROR_FAILURE;
+  }
+
+  DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
+  if (defaultBrowserResult.isErr()) {
+    return NS_ERROR_FAILURE;
+  }
+  DefaultBrowserInfo browserInfo = defaultBrowserResult.unwrap();
+
+  DefaultPdfResult defaultPdfResult = GetDefaultPdfInfo();
+  if (defaultPdfResult.isErr()) {
+    return NS_ERROR_FAILURE;
+  }
+  DefaultPdfInfo pdfInfo = defaultPdfResult.unwrap();
+
+  NotificationActivities activitiesPerformed = MaybeShowNotification(
+      browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
+
+  HRESULT hr =
+      SendDefaultBrowserPing(browserInfo, pdfInfo, activitiesPerformed);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::SetDefaultBrowserUserChoice(
+    const nsAString& aAumid, const nsTArray<nsString>& aExtraFileExtensions) {
+  HRESULT hr = ::SetDefaultBrowserUserChoice(PromiseFlatString(aAumid).get(),
+                                             aExtraFileExtensions);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::SetDefaultExtensionHandlersUserChoice(
+    const nsAString& aAumid, const nsTArray<nsString>& aFileExtensions) {
+  HRESULT hr = ::SetDefaultExtensionHandlersUserChoice(
+      PromiseFlatString(aAumid).get(), aFileExtensions);
+  return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
+}
+
+NS_IMETHODIMP
+DefaultAgent::AgentDisabled(bool* aDisabled) {
+  *aDisabled = IsAgentDisabled();
   return NS_OK;
 }
 }  

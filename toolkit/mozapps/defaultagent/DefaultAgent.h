@@ -7,9 +7,30 @@
 #ifndef __DEFAULT_BROWSER_AGENT_DEFAULT_AGENT_H__
 #define __DEFAULT_BROWSER_AGENT_DEFAULT_AGENT_H__
 
+#include "mozilla/WinHeaderOnlyUtils.h"
+
 #include "nsIDefaultAgent.h"
 
 namespace mozilla {
+
+
+
+
+class RegistryMutex {
+ private:
+  nsAutoHandle mMutex;
+  bool mLocked = false;
+
+ public:
+  RegistryMutex() = default;
+  ~RegistryMutex();
+
+  
+  bool Acquire();
+  bool IsLocked();
+  void Release();
+};
+
 class DefaultAgent final : public nsIDefaultAgent {
  public:
   NS_DECL_ISUPPORTS
@@ -20,7 +41,10 @@ class DefaultAgent final : public nsIDefaultAgent {
  private:
   
   ~DefaultAgent() = default;
+
+  RegistryMutex mRegMutex;
 };
+
 }  
 
 #endif  
