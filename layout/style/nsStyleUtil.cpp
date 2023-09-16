@@ -82,32 +82,78 @@ bool nsStyleUtil::LangTagCompare(const nsACString& aAttributeValue,
     return false;
   }
 
+  int32_t attrPriv = -1;
   AutoLangId attrLangId(aAttributeValue);
   if (!attrLangId.IsValid()) {
-    return false;
+    
+    
+    attrPriv = aAttributeValue.LowerCaseFindASCII("-x-");
+    if (attrPriv >= 0) {
+      nsAutoCString temp(aAttributeValue);
+      temp.Truncate(attrPriv);
+      attrLangId.Reset(temp);
+      if (!attrLangId.IsValid()) {
+        return false;
+      }
+    }
   }
 
+  int32_t selPriv = -1;
   AutoLangId selectorId(aSelectorValue);
   if (!selectorId.IsValid()) {
     
     
     
+    bool wildcard = false;
     if (aSelectorValue[0] == '*') {
+      wildcard = true;
       nsAutoCString temp(aSelectorValue);
       temp.Replace(0, 1, "und");
       selectorId.Reset(temp);
-      if (!selectorId.IsValid()) {
-        return false;
+      if (selectorId.IsValid()) {
+        intl::ffi::unic_langid_clear_language(selectorId);
       }
-      intl::ffi::unic_langid_clear_language(selectorId);
-    } else {
-      return false;
+    }
+    
+    if (!selectorId.IsValid()) {
+      selPriv = aSelectorValue.LowerCaseFindASCII("-x-");
+      if (selPriv >= 0) {
+        nsAutoCString temp(aSelectorValue);
+        temp.Truncate(selPriv);
+        
+        if (wildcard) {
+          temp.Replace(0, 1, "und");
+        }
+        selectorId.Reset(temp);
+        if (!selectorId.IsValid()) {
+          return false;
+        }
+        if (wildcard) {
+          intl::ffi::unic_langid_clear_language(selectorId);
+        }
+      }
     }
   }
 
-  return intl::ffi::unic_langid_matches(attrLangId, selectorId,
-                                         false,
-                                         true);
+  if (!intl::ffi::unic_langid_matches(attrLangId, selectorId,
+                                       false,
+                                       true)) {
+    return false;
+  }
+
+  
+  
+  
+  
+  if (selPriv >= 0) {
+    if (attrPriv < 0) {
+      return false;
+    }
+    return Substring(aAttributeValue, attrPriv)
+        .EqualsIgnoreCase(Substring(aSelectorValue, selPriv));
+  }
+
+  return true;
 }
 
 bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
