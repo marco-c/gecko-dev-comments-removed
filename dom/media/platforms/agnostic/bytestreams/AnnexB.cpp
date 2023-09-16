@@ -9,6 +9,7 @@
 #include "AnnexB.h"
 #include "BufferReader.h"
 #include "ByteWriter.h"
+#include "H264.h"
 #include "MediaData.h"
 
 namespace mozilla {
@@ -260,6 +261,45 @@ static Result<mozilla::Ok, nsresult> ParseNALUnits(ByteWriter<BigEndian>& aBw,
   return Ok();
 }
 
+static Result<already_AddRefed<MediaByteBuffer>, nsresult> RetrieveExtraData(
+    const nsTArray<uint8_t>& aAvccBytes) {
+  MOZ_ASSERT(!aAvccBytes.IsEmpty());
+
+  
+  
+  BufferReader reader(aAvccBytes);
+
+  
+  uint32_t spsSize;
+  MOZ_TRY_VAR(spsSize, reader.ReadU32());
+  nsTArray<uint8_t> spsData;
+  if (!reader.ReadArray(spsData, static_cast<size_t>(spsSize))) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  
+  uint32_t ppsSize;
+  MOZ_TRY_VAR(ppsSize, reader.ReadU32());
+  nsTArray<uint8_t> ppsData;
+  if (!reader.ReadArray(ppsData, static_cast<size_t>(ppsSize))) {
+    return Err(NS_ERROR_UNEXPECTED);
+  }
+
+  
+  
+  if (spsData.Length() < 4) {
+    return Err(NS_ERROR_NOT_AVAILABLE);
+  }
+
+  
+  auto extraData = MakeRefPtr<MediaByteBuffer>();
+  H264::WriteExtraData(extraData, spsData[1], spsData[2], spsData[3],
+                       Span<const uint8_t>(spsData),
+                       Span<const uint8_t>(ppsData));
+  MOZ_ASSERT(extraData);
+  return extraData.forget();
+}
+
 bool AnnexB::ConvertSampleToAVCC(mozilla::MediaRawData* aSample,
                                  const RefPtr<MediaByteBuffer>& aAVCCHeader) {
   if (IsAVCC(aSample)) {
@@ -277,6 +317,14 @@ bool AnnexB::ConvertSampleToAVCC(mozilla::MediaRawData* aSample,
   if (ParseNALUnits(writer, reader).isErr()) {
     return false;
   }
+
+  RefPtr<MediaByteBuffer> parsedExtraData;
+  if (!nalu.IsEmpty()) {
+    if (auto r = RetrieveExtraData(nalu); r.isOk()) {
+      parsedExtraData = r.unwrap();
+    }
+  }
+
   UniquePtr<MediaRawDataWriter> samplewriter(aSample->CreateWriter());
   if (!samplewriter->Replace(nalu.Elements(), nalu.Length())) {
     return false;
@@ -284,6 +332,11 @@ bool AnnexB::ConvertSampleToAVCC(mozilla::MediaRawData* aSample,
 
   if (aAVCCHeader) {
     aSample->mExtraData = aAVCCHeader;
+    return true;
+  }
+
+  if (parsedExtraData) {
+    aSample->mExtraData = parsedExtraData;
     return true;
   }
 
