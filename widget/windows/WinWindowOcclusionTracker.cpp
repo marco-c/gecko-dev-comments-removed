@@ -27,6 +27,12 @@
 #include "transport/runnable_utils.h"
 #include "WinUtils.h"
 
+
+#ifndef EVENT_OBJECT_CLOAKED
+#  define EVENT_OBJECT_CLOAKED 0x8017
+#  define EVENT_OBJECT_UNCLOAKED 0x8018
+#endif
+
 namespace mozilla::widget {
 
 

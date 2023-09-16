@@ -34,6 +34,9 @@
 #include "DeviceAttachmentsD3D11.h"
 #include "BlendShaderConstants.h"
 
+#include <versionhelpers.h>  
+#include <winsdkver.h>
+
 namespace mozilla {
 
 using namespace gfx;
@@ -161,8 +164,10 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
     hr = dxgiFactory->QueryInterface(
         (IDXGIFactory2**)getter_AddRefs(dxgiFactory2));
 
+#if (_WIN32_WINDOWS_MAXVER >= 0x0A00)
     if (gfxVars::UseDoubleBufferingWithCompositor() && SUCCEEDED(hr) &&
         dxgiFactory2) {
+      
       
       
       
@@ -206,7 +211,9 @@ bool CompositorD3D11::Initialize(nsCString* const out_failureReason) {
 
     
     
-    if (!mSwapChain) {
+    if (!mSwapChain)
+#endif
+    {
       if (mWidget->AsWindows()->GetCompositorHwnd()) {
         
         mWidget->AsWindows()->DestroyCompositorWindow();

@@ -122,6 +122,12 @@ static nsReturnRef<HANDLE> CreateJobAndAssignProcess(HANDLE aProcess) {
     (0x00000002ULL << 40)
 #endif  
 
+#if (_WIN32_WINNT < 0x0602)
+BOOL WINAPI
+SetProcessMitigationPolicy(PROCESS_MITIGATION_POLICY aMitigationPolicy,
+                           PVOID aBuffer, SIZE_T aBufferLen);
+#endif  
+
 
 
 

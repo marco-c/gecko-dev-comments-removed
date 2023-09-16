@@ -18,7 +18,7 @@
 #  include "nsPrintfCString.h"
 #endif  
 
-#if defined(__MINGW32__)
+#if NTDDI_VERSION < NTDDI_WINBLUE || defined(__MINGW32__)
 
 
 

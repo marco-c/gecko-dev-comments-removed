@@ -2,6 +2,12 @@
 
 
 
+
+#if defined(_WIN32_WINNT)
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT _WIN32_WINNT_WIN8
+#endif  
+
 #include "Hal.h"
 #include "HalLog.h"
 #include "nsWindowsHelpers.h"  

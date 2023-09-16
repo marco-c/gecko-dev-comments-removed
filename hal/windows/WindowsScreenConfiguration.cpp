@@ -2,6 +2,11 @@
 
 
 
+#if defined(WINVER)
+#  undef WINVER
+#  define WINVER 0x0602
+#endif
+
 #include "Hal.h"
 #include "mozilla/widget/ScreenManager.h"
 #include "nsIWindowsUIUtils.h"

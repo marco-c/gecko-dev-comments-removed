@@ -25,7 +25,6 @@ UNIFIED_SOURCES += [
     "DocAccessibleWrap.cpp",
     "EnumVariant.cpp",
     "IUnknownImpl.cpp",
-    "LazyInstantiator.cpp",
     "MsaaAccessible.cpp",
     "MsaaDocAccessible.cpp",
     "MsaaIdGenerator.cpp",
@@ -37,6 +36,8 @@ UNIFIED_SOURCES += [
 ]
 
 SOURCES += [
+    
+    "LazyInstantiator.cpp",
     
     "ServiceProvider.cpp",
 ]

@@ -8,6 +8,8 @@
 
 #include <windows.h>
 
+#undef NTDDI_VERSION
+#define NTDDI_VERSION NTDDI_WIN7
 
 #include <shobjidl.h>
 #undef LogSeverity  // SetupAPI.h #defines this as DWORD

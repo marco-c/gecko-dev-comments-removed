@@ -67,7 +67,6 @@ EXPORTS.mozilla.widget += [
 UNIFIED_SOURCES += [
     "AudioSession.cpp",
     "CompositorWidgetChild.cpp",
-    "DirectManipulationOwner.cpp",
     "GfxInfo.cpp",
     "IEnumFE.cpp",
     "IMMHandler.cpp",
@@ -131,6 +130,11 @@ SOURCES += [
     "WindowsSMTCProvider.cpp",
     "WindowsUIUtils.cpp",
     "WinMouseScrollHandler.cpp",
+]
+
+
+SOURCES += [
+    "DirectManipulationOwner.cpp",
 ]
 
 

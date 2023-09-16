@@ -12,6 +12,18 @@
 #include "gfxDWriteCommon.h"
 #include "dwrite_3.h"
 
+
+
+
+
+
+
+
+
+#if !defined(__MINGW32__) && WINVER < 0x0A00
+#  include "mozilla/gfx/dw-extra.h"
+#endif
+
 #include "gfxFont.h"
 #include "gfxUserFontSet.h"
 #include "cairo-win32.h"
