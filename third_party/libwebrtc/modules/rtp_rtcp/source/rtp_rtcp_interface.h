@@ -383,11 +383,14 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
   
   
-  virtual int32_t RTT(uint32_t remote_ssrc,
-                      int64_t* rtt,
-                      int64_t* avg_rtt,
-                      int64_t* min_rtt,
-                      int64_t* max_rtt) const = 0;
+  [[deprecated]] virtual int32_t RTT(uint32_t remote_ssrc,
+                                     int64_t* rtt,
+                                     int64_t* avg_rtt,
+                                     int64_t* min_rtt,
+                                     int64_t* max_rtt) const = 0;
+
+  
+  virtual absl::optional<TimeDelta> LastRtt() const = 0;
 
   
   virtual int64_t ExpectedRetransmissionTimeMs() const = 0;
