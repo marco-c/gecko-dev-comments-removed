@@ -22,7 +22,7 @@ namespace js {
 
 
 enum class WellKnownAtomId : uint32_t {
-#define ENUM_ENTRY_(_, NAME, _2) NAME,
+#define ENUM_ENTRY_(NAME, _) NAME,
   FOR_EACH_COMMON_PROPERTYNAME(ENUM_ENTRY_)
 #undef ENUM_ENTRY_
 
