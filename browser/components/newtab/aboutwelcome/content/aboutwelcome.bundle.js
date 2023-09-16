@@ -189,7 +189,7 @@ __webpack_require__.r(__webpack_exports__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6);
  var _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(11);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(18);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(19);
 
 
 
@@ -800,6 +800,8 @@ __webpack_require__.r(__webpack_exports__);
  var _AdditionalCTA__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(15);
  var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(16);
  var _AddonsPicker__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(17);
+ var _LegalParagraph__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(18);
+
 
 
 
@@ -1189,6 +1191,9 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       handleAction: this.props.handleAction
     }) : null), content.video_container ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_OnboardingVideo__WEBPACK_IMPORTED_MODULE_11__.OnboardingVideo, {
       content: content.video_container,
+      handleAction: this.props.handleAction
+    }) : null, content.legal_paragraph ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LegalParagraph__WEBPACK_IMPORTED_MODULE_15__.LegalParagraph, {
+      content: content,
       handleAction: this.props.handleAction
     }) : null, this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
       content: content,
@@ -2175,6 +2180,61 @@ const AddonsPicker = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
+   "LegalParagraph": () => ( LegalParagraph)
+ });
+ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
+ var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
+ var _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5);
+
+
+
+
+
+const LegalParagraph = props => {
+  var _legal_paragraph$link;
+
+  const {
+    content,
+    handleAction
+  } = props;
+  const handleParagraphAction = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(event => {
+    if (event.target.closest("a")) {
+      handleAction({ ...event,
+        currentTarget: event.target
+      });
+    }
+  }, [handleAction]);
+  const onKeyPress = (0,react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(event => {
+    if (event.key === "Enter" && !event.repeat) {
+      handleParagraphAction(event);
+    }
+  }, [handleParagraphAction]);
+  const {
+    legal_paragraph
+  } = content;
+  return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    text: legal_paragraph.text
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
+    className: "legal-paragraph",
+    onClick: handleParagraphAction,
+    value: "legal_paragraph",
+    onKeyPress: onKeyPress
+  }, (_legal_paragraph$link = legal_paragraph.link_keys) === null || _legal_paragraph$link === void 0 ? void 0 : _legal_paragraph$link.map(link => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
+    key: link,
+    value: link,
+    "data-l10n-name": link,
+    role: "button",
+    tabIndex: "0" 
+
+  }, " "))));
+};
+
+ }),
+
+ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+ __webpack_require__.d(__webpack_exports__, {
    "BASE_PARAMS": () => ( BASE_PARAMS),
    "addUtmParams": () => ( addUtmParams)
  });
@@ -2226,7 +2286,7 @@ __webpack_require__.r(__webpack_exports__);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(3);
  var _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6);
- var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(18);
+ var _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(19);
 
 
 
@@ -2421,7 +2481,7 @@ __webpack_require__.r(__webpack_exports__);
  var react_dom__WEBPACK_IMPORTED_MODULE_1___default = __webpack_require__.n(react_dom__WEBPACK_IMPORTED_MODULE_1__);
  var _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(3);
  var _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(4);
- var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(19);
+ var _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(20);
 function _extends() { _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; return _extends.apply(this, arguments); }
 
 
