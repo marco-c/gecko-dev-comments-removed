@@ -8,7 +8,6 @@
 #include "HttpLog.h"
 
 #include "mozilla/StaticPrefs_network.h"
-#include "mozilla/TextUtils.h"
 #include "mozilla/Unused.h"
 #include "nsHttpResponseHead.h"
 #include "nsIHttpHeaderVisitor.h"
@@ -352,18 +351,19 @@ void nsHttpResponseHead::AssignDefaultStatusText() {
   net_GetDefaultStatusTextForCode(mStatus, mStatusText);
 }
 
-nsresult nsHttpResponseHead::ParseStatusLine(const nsACString& line) {
+void nsHttpResponseHead::ParseStatusLine(const nsACString& line) {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
-  return ParseStatusLine_locked(line);
+  ParseStatusLine_locked(line);
 }
 
-nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
+void nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
   
   
   
 
   const char* start = line.BeginReading();
   const char* end = line.EndReading();
+  const char* p = start;
 
   
   ParseVersion(start);
@@ -373,38 +373,9 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
   if ((mVersion == HttpVersion::v0_9) || (index == -1)) {
     mStatus = 200;
     AssignDefaultStatusText();
-  } else if (StaticPrefs::network_http_strict_response_status_line_parsing()) {
-    
-    const char* p = start + index + 1;
-    while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
-    if (p == end || !mozilla::IsAsciiDigit(*p)) {
-      return NS_ERROR_FAILURE;
-    }
-    const char* codeStart = p;
-    while (p < end && mozilla::IsAsciiDigit(*p)) ++p;
-
-    
-    
-    if (p - codeStart > 3 || (p < end && !NS_IsHTTPWhitespace(*p))) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    nsDependentCSubstring strCode(codeStart, p - codeStart);
-    nsresult rv;
-    mStatus = strCode.ToInteger(&rv);
-    if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
-    }
-
-    
-    while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
-    if (p != end) {
-      mStatusText = nsDependentCSubstring(p, end - p);
-    }
   } else {
     
-    const char* p = start + index + 1;
+    p += index + 1;
     mStatus = (uint16_t)atoi(p);
     if (mStatus == 0) {
       LOG(("mal-formed response status; assuming status = 200\n"));
@@ -423,7 +394,6 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
 
   LOG1(("Have status line [version=%u status=%u statusText=%s]\n",
         unsigned(mVersion), unsigned(mStatus), mStatusText.get()));
-  return NS_OK;
 }
 
 nsresult nsHttpResponseHead::ParseHeaderLine(const nsACString& line) {

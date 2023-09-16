@@ -101,7 +101,7 @@ class nsHttpResponseHead {
   [[nodiscard]] nsresult ParseCachedOriginalHeaders(char* block);
 
   
-  nsresult ParseStatusLine(const nsACString& line);
+  void ParseStatusLine(const nsACString& line);
 
   
   [[nodiscard]] nsresult ParseHeaderLine(const nsACString& line);
@@ -160,7 +160,7 @@ class nsHttpResponseHead {
   nsresult ParseResponseContentLength(const nsACString& aHeaderStr)
       MOZ_REQUIRES(mRecursiveMutex);
 
-  nsresult ParseStatusLine_locked(const nsACString& line)
+  void ParseStatusLine_locked(const nsACString& line)
       MOZ_REQUIRES(mRecursiveMutex);
   [[nodiscard]] nsresult ParseHeaderLine_locked(const nsACString& line,
                                                 bool originalFromNetHeaders)
