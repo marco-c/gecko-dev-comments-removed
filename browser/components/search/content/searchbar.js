@@ -54,10 +54,7 @@
       let searchbar = this;
       this.observer = {
         observe(aEngine, aTopic, aVerb) {
-          if (
-            aTopic == "browser-search-engine-modified" ||
-            (aTopic == "browser-search-service" && aVerb == "init-complete")
-          ) {
+          if (aTopic == "browser-search-engine-modified") {
             
             searchbar._engines = null;
 
@@ -111,7 +108,6 @@
       window.addEventListener("unload", this.destroy);
 
       Services.obs.addObserver(this.observer, "browser-search-engine-modified");
-      Services.obs.addObserver(this.observer, "browser-search-service");
 
       this._initialized = true;
 
@@ -125,6 +121,10 @@
                 return;
               }
 
+              
+              
+              
+              this._textbox.popup.updateHeader();
               
               this.updateDisplay();
               BrowserSearch.updateOpenSearchBadge();
@@ -217,7 +217,6 @@
           this.observer,
           "browser-search-engine-modified"
         );
-        Services.obs.removeObserver(this.observer, "browser-search-service");
       }
 
       
