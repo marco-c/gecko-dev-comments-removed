@@ -165,7 +165,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
   void SetContinuousBCBorderWidth(mozilla::LogicalSide aForSide,
-                                  BCPixelSize aPixelValue);
+                                  nscoord aPixelValue);
   
 
 
@@ -364,9 +364,9 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
  private:
   
-  BCPixelSize mIEndContBorderWidth = 0;
-  BCPixelSize mBEndContBorderWidth = 0;
-  BCPixelSize mIStartContBorderWidth = 0;
+  nscoord mIEndContBorderWidth = 0;
+  nscoord mBEndContBorderWidth = 0;
+  nscoord mIStartContBorderWidth = 0;
 
  public:
   bool IsRepeatable() const;
@@ -403,9 +403,8 @@ inline void nsTableRowGroupFrame::SetHasStyleBSize(bool aValue) {
 
 inline void nsTableRowGroupFrame::GetContinuousBCBorderWidth(
     mozilla::WritingMode aWM, mozilla::LogicalMargin& aBorder) {
-  int32_t d2a = PresContext()->AppUnitsPerDevPixel();
-  aBorder.IEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mIEndContBorderWidth);
-  aBorder.BEnd(aWM) = BC_BORDER_START_HALF_COORD(d2a, mBEndContBorderWidth);
-  aBorder.IStart(aWM) = BC_BORDER_END_HALF_COORD(d2a, mIStartContBorderWidth);
+  aBorder.IEnd(aWM) = BC_BORDER_START_HALF(mIEndContBorderWidth);
+  aBorder.BEnd(aWM) = BC_BORDER_START_HALF(mBEndContBorderWidth);
+  aBorder.IStart(aWM) = BC_BORDER_END_HALF(mIStartContBorderWidth);
 }
 #endif

@@ -316,10 +316,10 @@ class nsBCTableCellFrame final : public nsTableCellFrame {
   LogicalMargin GetBorderWidth(WritingMode aWM) const override;
 
   
-  BCPixelSize GetBorderWidth(LogicalSide aSide) const;
+  nscoord GetBorderWidth(LogicalSide aSide) const;
 
   
-  void SetBorderWidth(LogicalSide aSide, BCPixelSize aPixelValue);
+  void SetBorderWidth(LogicalSide aSide, nscoord aValue);
 
   nsMargin GetBorderOverflow() override;
 
@@ -334,10 +334,10 @@ class nsBCTableCellFrame final : public nsTableCellFrame {
  private:
   
   
-  BCPixelSize mBStartBorder;
-  BCPixelSize mIEndBorder;
-  BCPixelSize mBEndBorder;
-  BCPixelSize mIStartBorder;
+  nscoord mBStartBorder;
+  nscoord mIEndBorder;
+  nscoord mBEndBorder;
+  nscoord mIStartBorder;
 };
 
 
