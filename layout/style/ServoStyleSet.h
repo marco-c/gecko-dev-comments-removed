@@ -494,6 +494,26 @@ class ServoStyleSet {
 
 
 
+  void MaybeInvalidateForElementInsertion(const dom::Element&);
+
+  
+
+
+
+  void MaybeInvalidateForElementAppend(const dom::Element&);
+
+  
+
+
+
+  void MaybeInvalidateForElementRemove(const dom::Element& aElement,
+                                       const dom::Element* aPrevSibling,
+                                       const dom::Element* aNextSibling);
+
+  
+
+
+
 
 
 
