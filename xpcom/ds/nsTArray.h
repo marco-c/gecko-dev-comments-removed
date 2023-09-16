@@ -1848,14 +1848,17 @@ class nsTArray_Impl
   
   void RemoveElementsAt(index_type aStart, size_type aCount);
 
- private:
   
   
   
   
   void RemoveElementsAtUnsafe(index_type aStart, size_type aCount);
 
- public:
+  
+  void RemoveElementAtUnsafe(index_type aIndex) {
+    RemoveElementsAtUnsafe(aIndex, 1);
+  }
+
   
   void RemoveElementAt(index_type aIndex) { RemoveElementsAt(aIndex, 1); }
 
@@ -2726,8 +2729,9 @@ inline void ImplCycleCollectionTraverse(
     nsTArray_Impl<E, Alloc>& aField, const char* aName, uint32_t aFlags = 0) {
   ::detail::SetCycleCollectionArrayFlag(aFlags);
   size_t length = aField.Length();
+  E* elements = aField.Elements();
   for (size_t i = 0; i < length; ++i) {
-    ImplCycleCollectionTraverse(aCallback, aField[i], aName, aFlags);
+    ImplCycleCollectionTraverse(aCallback, elements[i], aName, aFlags);
   }
 }
 

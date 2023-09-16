@@ -62,9 +62,9 @@ void* nsPresArena<ArenaSize, ObjectId, ObjectIdCount>::Allocate(ObjectId aCode,
     
     
     
-    result = list->mEntries.ElementAt(len - 1);
+    result = list->mEntries.Elements()[len - 1];
     if (list->mEntries.Capacity() > 500) {
-      list->mEntries.RemoveElementAt(len - 1);
+      list->mEntries.RemoveElementAtUnsafe(len - 1);
     } else {
       list->mEntries.SetLengthAndRetainStorage(len - 1);
     }
