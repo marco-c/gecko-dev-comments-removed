@@ -355,6 +355,7 @@ def setup_clangd_rust_in_vscode(command_context):
             "--pch-storage",
             "disk",
             "--clang-tidy",
+            "--header-insertion=never",
         ],
         "rust-analyzer.server.extraEnv": {
             
