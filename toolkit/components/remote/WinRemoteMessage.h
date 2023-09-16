@@ -18,13 +18,24 @@
 
 
 
+
+
+
+
+
+
+
+
+
 enum class WinRemoteMessageVersion : uint32_t {
   
-  CommandLineOnly = 0,
   
-  CommandLineAndWorkingDir,
+
   
-  CommandLineAndWorkingDirInUtf16,
+  
+
+  
+  CommandLineAndWorkingDirInUtf16 = 2,
 };
 
 class WinRemoteMessageSender final {
@@ -42,17 +53,11 @@ class WinRemoteMessageSender final {
   WinRemoteMessageSender& operator=(WinRemoteMessageSender&&) = delete;
 
   COPYDATASTRUCT* CopyData();
-
-  
-  explicit WinRemoteMessageSender(const char* aCommandLine);
-  WinRemoteMessageSender(const char* aCommandLine, const char* aWorkingDir);
 };
 
 class WinRemoteMessageReceiver final {
   nsCOMPtr<nsICommandLineRunner> mCommandLine;
 
-  nsresult ParseV0(const nsACString& aBuffer);
-  nsresult ParseV1(const nsACString& aBuffer);
   nsresult ParseV2(const nsAString& aBuffer);
 
  public:
