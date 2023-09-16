@@ -70,6 +70,9 @@ const REPLACED_ELEMENTS_NAMES = new Set([
   "video",
 ]);
 
+const CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL =
+  "https://developer.mozilla.org/docs/Web/CSS/::cue";
+
 const HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL =
   "https://www.w3.org/TR/css-pseudo-4/#highlight-styling";
 const HIGHLIGHT_PSEUDO_ELEMENTS = [
@@ -554,6 +557,73 @@ class InactivePropertyHelper {
       msgId: "inactive-css-highlight-pseudo-elements-not-supported",
       fixId: "learn-more",
       learnMoreURL: HIGHLIGHT_PSEUDO_ELEMENTS_STYLING_SPEC_URL,
+    },
+    
+    
+    
+    
+    
+    
+    
+    
+    {
+      acceptedProperties: new Set([
+        "background",
+        "background-attachment",
+        
+        
+        
+        
+        
+        "background-blend-mode",
+        "background-clip",
+        "background-color",
+        "background-image",
+        "background-origin",
+        "background-position",
+        "background-position-x",
+        "background-position-y",
+        "background-repeat",
+        "background-size",
+        "color",
+        "font",
+        "font-family",
+        "font-size",
+        "font-stretch",
+        "font-style",
+        "font-variant",
+        "font-variant-alternates",
+        "font-variant-caps",
+        "font-variant-east-asian",
+        "font-variant-ligatures",
+        "font-variant-numeric",
+        "font-variant-position",
+        "font-weight",
+        "line-height",
+        "opacity",
+        "outline",
+        "outline-color",
+        "outline-offset",
+        "outline-style",
+        "outline-width",
+        "ruby-position",
+        "text-combine-upright",
+        "text-decoration",
+        "text-decoration-color",
+        "text-decoration-line",
+        "text-decoration-style",
+        "text-decoration-thickness",
+        "text-shadow",
+        "visibility",
+        "white-space",
+      ]),
+      when: () => {
+        const { selectorText } = this.cssRule;
+        return selectorText && selectorText.includes("::cue");
+      },
+      msgId: "inactive-css-cue-pseudo-element-not-supported",
+      fixId: "learn-more",
+      learnMoreURL: CUE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
     },
   ];
 
