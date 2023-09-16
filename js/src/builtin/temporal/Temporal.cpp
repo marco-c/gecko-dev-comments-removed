@@ -1118,7 +1118,7 @@ SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
     TemporalUnit smallestUnit, Precision fractionalDigitCount) {
   MOZ_ASSERT(smallestUnit == TemporalUnit::Auto ||
              smallestUnit >= TemporalUnit::Minute);
-  MOZ_ASSERT(fractionalDigitCount.isAuto() ||
+  MOZ_ASSERT(fractionalDigitCount == Precision::Auto() ||
              fractionalDigitCount.value() <= 9);
 
   
@@ -1157,7 +1157,7 @@ SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
   
 
   
-  if (fractionalDigitCount.isAuto()) {
+  if (fractionalDigitCount == Precision::Auto()) {
     return {Precision::Auto(), TemporalUnit::Nanosecond, Increment{1}};
   }
 
@@ -1192,70 +1192,6 @@ SecondsStringPrecision js::temporal::ToSecondsStringPrecision(
   
   return {fractionalDigitCount, TemporalUnit::Nanosecond,
           increments[9 - digitCount]};
-}
-
-
-
-
-
-void js::temporal::FormatSecondsStringPart(JSStringBuilder& result,
-                                           const PlainTime& time,
-                                           Precision precision) {
-  
-
-  
-
-  
-  if (precision.isMinute()) {
-    return;
-  }
-
-  
-  int32_t second = time.second;
-  result.infallibleAppend(':');
-  result.infallibleAppend(char('0' + (second / 10)));
-  result.infallibleAppend(char('0' + (second % 10)));
-
-  
-  int32_t fraction =
-      time.millisecond * 1'000'000 + time.microsecond * 1'000 + time.nanosecond;
-  MOZ_ASSERT(0 <= fraction && fraction < 1'000'000'000);
-
-  
-  if (precision.isAuto()) {
-    
-    if (fraction == 0) {
-      return;
-    }
-
-    
-    result.infallibleAppend('.');
-
-    
-    uint32_t k = 100'000'000;
-    do {
-      result.infallibleAppend(char('0' + (fraction / k)));
-      fraction %= k;
-      k /= 10;
-    } while (fraction);
-  } else {
-    
-    uint8_t p = precision.value();
-    if (p == 0) {
-      return;
-    }
-
-    
-    result.infallibleAppend('.');
-
-    
-    uint32_t k = 100'000'000;
-    for (uint8_t i = 0; i < p; i++) {
-      result.infallibleAppend(char('0' + (fraction / k)));
-      fraction %= k;
-      k /= 10;
-    }
-  }
 }
 
 

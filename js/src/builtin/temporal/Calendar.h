@@ -21,7 +21,6 @@ class JS_PUBLIC_API JSTracer;
 
 namespace js {
 struct ClassSpec;
-class JSStringBuilder;
 class PlainObject;
 }  
 
@@ -475,20 +474,6 @@ bool CalendarEqualsOrThrow(JSContext* cx, JS::Handle<CalendarValue> one,
 bool ConsolidateCalendars(JSContext* cx, JS::Handle<CalendarValue> one,
                           JS::Handle<CalendarValue> two,
                           JS::MutableHandle<CalendarValue> result);
-
-
-
-
-bool MaybeFormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
-                                   JS::Handle<CalendarValue> calendar,
-                                   CalendarOption showCalendar);
-
-
-
-
-bool FormatCalendarAnnotation(JSContext* cx, JSStringBuilder& result,
-                              JS::Handle<JSString*> id,
-                              CalendarOption showCalendar);
 
 
 

@@ -280,6 +280,12 @@ JSObject* ToTemporalTimeZoneObject(JSContext* cx,
 
 
 
+JSString* ToTemporalTimeZoneIdentifier(JSContext* cx,
+                                       JS::Handle<TimeZoneValue> timeZone);
+
+
+
+
 PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
                                          JS::Handle<TimeZoneValue> timeZone,
                                          const Instant& instant,
@@ -348,12 +354,6 @@ Wrapped<InstantObject*> DisambiguatePossibleInstants(
 
 
 JSString* FormatTimeZoneOffsetString(JSContext* cx, int64_t offsetNanoseconds);
-
-
-
-
-JSString* FormatISOTimeZoneOffsetString(JSContext* cx,
-                                        int64_t offsetNanoseconds);
 
 
 bool WrapTimeZoneValueObject(JSContext* cx,

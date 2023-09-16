@@ -32,6 +32,7 @@
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "builtin/temporal/TimeZone.h"
+#include "builtin/temporal/ToString.h"
 #include "builtin/temporal/Wrapped.h"
 #include "builtin/temporal/ZonedDateTime.h"
 #include "ds/IdValuePair.h"
@@ -679,40 +680,6 @@ bool js::temporal::ToTemporalTime(JSContext* cx, Handle<Value> item,
 
   *result = ToPlainTime(&obj.unwrap());
   return true;
-}
-
-
-
-
-
-static JSString* TemporalTimeToString(JSContext* cx, const PlainTime& time,
-                                      Precision precision) {
-  JSStringBuilder result(cx);
-
-  
-  
-  constexpr size_t timePart = 2 + 1 + 2 + 1 + 2 + 1 + 9;  
-
-  if (!result.reserve(timePart)) {
-    return nullptr;
-  }
-
-  
-  int32_t hour = time.hour;
-  result.infallibleAppend(char('0' + (hour / 10)));
-  result.infallibleAppend(char('0' + (hour % 10)));
-
-  
-  int32_t minute = time.minute;
-  result.infallibleAppend(':');
-  result.infallibleAppend(char('0' + (minute / 10)));
-  result.infallibleAppend(char('0' + (minute % 10)));
-
-  
-  FormatSecondsStringPart(result, time, precision);
-
-  
-  return result.finishString();
 }
 
 

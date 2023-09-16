@@ -34,6 +34,7 @@
 #include "builtin/temporal/TemporalTypes.h"
 #include "builtin/temporal/TemporalUnit.h"
 #include "builtin/temporal/TimeZone.h"
+#include "builtin/temporal/ToString.h"
 #include "builtin/temporal/Wrapped.h"
 #include "builtin/temporal/ZonedDateTime.h"
 #include "gc/Allocator.h"
@@ -956,64 +957,6 @@ bool js::temporal::RoundTemporalInstant(JSContext* cx, const Instant& ns,
   
   return RoundNumberToIncrementAsIfPositive(
       cx, ns, increment.value() * toNanoseconds, roundingMode, result);
-}
-
-
-
-
-static JSString* TemporalInstantToString(JSContext* cx,
-                                         Handle<InstantObject*> instant,
-                                         Handle<TimeZoneValue> timeZone,
-                                         Precision precision) {
-  
-
-  
-  Rooted<TimeZoneValue> outputTimeZone(cx, timeZone);
-  if (!timeZone) {
-    auto* utcTimeZone = CreateTemporalTimeZoneUTC(cx);
-    if (!utcTimeZone) {
-      return nullptr;
-    }
-    outputTimeZone.set(TimeZoneValue(utcTimeZone));
-  }
-
-  
-  PlainDateTime dateTime;
-  if (!GetPlainDateTimeFor(cx, outputTimeZone, instant, &dateTime)) {
-    return nullptr;
-  }
-
-  
-  Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
-  Rooted<JSString*> dateTimeString(
-      cx, TemporalDateTimeToString(cx, dateTime, isoCalendar, precision,
-                                   CalendarOption::Never));
-  if (!dateTimeString) {
-    return nullptr;
-  }
-
-  
-  Rooted<JSString*> timeZoneString(cx);
-  if (!timeZone) {
-    
-    timeZoneString = cx->staticStrings().lookup("Z", 1);
-    MOZ_ASSERT(timeZoneString);
-  } else {
-    
-    int64_t offsetNs;
-    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNs)) {
-      return nullptr;
-    }
-
-    
-    timeZoneString = FormatISOTimeZoneOffsetString(cx, offsetNs);
-    if (!timeZoneString) {
-      return nullptr;
-    }
-  }
-
-  
-  return ConcatStrings<CanGC>(cx, dateTimeString, timeZoneString);
 }
 
 

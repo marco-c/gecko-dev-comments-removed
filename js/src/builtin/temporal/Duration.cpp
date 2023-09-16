@@ -3585,12 +3585,68 @@ static Duration AbsoluteDuration(const Duration& duration) {
 
 
 
+[[nodiscard]] static bool FormatFractionalSeconds(JSStringBuilder& result,
+                                                  int32_t subSecondNanoseconds,
+                                                  Precision precision) {
+  MOZ_ASSERT(0 <= subSecondNanoseconds && subSecondNanoseconds < 1'000'000'000);
+  MOZ_ASSERT(precision != Precision::Minute());
+
+  
+  if (precision == Precision::Auto()) {
+    
+    if (subSecondNanoseconds == 0) {
+      return true;
+    }
+
+    
+    if (!result.append('.')) {
+      return false;
+    }
+
+    
+    uint32_t k = 100'000'000;
+    do {
+      if (!result.append(char('0' + (subSecondNanoseconds / k)))) {
+        return false;
+      }
+      subSecondNanoseconds %= k;
+      k /= 10;
+    } while (subSecondNanoseconds);
+  } else {
+    
+    uint8_t p = precision.value();
+    if (p == 0) {
+      return true;
+    }
+
+    
+    if (!result.append('.')) {
+      return false;
+    }
+
+    
+    uint32_t k = 100'000'000;
+    for (uint8_t i = 0; i < precision.value(); i++) {
+      if (!result.append(char('0' + (subSecondNanoseconds / k)))) {
+        return false;
+      }
+      subSecondNanoseconds %= k;
+      k /= 10;
+    }
+  }
+
+  return true;
+}
+
+
+
+
 
 static JSString* TemporalDurationToString(JSContext* cx,
                                           const Duration& duration,
                                           Precision precision) {
   MOZ_ASSERT(IsValidDuration(duration));
-  MOZ_ASSERT(!precision.isMinute());
+  MOZ_ASSERT(precision != Precision::Minute());
 
   
   
@@ -3601,7 +3657,8 @@ static JSString* TemporalDurationToString(JSContext* cx,
   
   if (years == 0 && months == 0 && weeks == 0 && days == 0 && hours == 0 &&
       minutes == 0 && seconds == 0 && milliseconds == 0 && microseconds == 0 &&
-      nanoseconds == 0 && (precision.isAuto() || precision.value() == 0)) {
+      nanoseconds == 0 &&
+      (precision == Precision::Auto() || precision.value() == 0)) {
     return NewStringCopyZ<CanGC>(cx, "PT0S");
   }
 
@@ -3812,12 +3869,20 @@ static JSString* TemporalDurationToString(JSContext* cx,
   }
 
   
-  bool hasSecondsPart = totalSeconds != 0 ||
-                        (totalSecondsBigInt && !totalSecondsBigInt->isZero()) ||
-                        fraction != 0 ||
-                        (years == 0 && months == 0 && weeks == 0 && days == 0 &&
-                         hours == 0 && minutes == 0) ||
-                        !precision.isAuto();
+  bool nonzeroSecondsAndLower = seconds != 0 || milliseconds != 0 ||
+                                microseconds != 0 || nanoseconds != 0;
+  MOZ_ASSERT(nonzeroSecondsAndLower ==
+             (totalSeconds != 0 ||
+              (totalSecondsBigInt && !totalSecondsBigInt->isZero()) ||
+              fraction != 0));
+
+  
+  bool zeroMinutesAndHigher = years == 0 && months == 0 && weeks == 0 &&
+                              days == 0 && hours == 0 && minutes == 0;
+
+  
+  bool hasSecondsPart = nonzeroSecondsAndLower || zeroMinutesAndHigher ||
+                        precision != Precision::Auto();
 
   if (hours != 0 || minutes != 0 || hasSecondsPart) {
     
@@ -3848,8 +3913,6 @@ static JSString* TemporalDurationToString(JSContext* cx,
     
     if (hasSecondsPart) {
       
-
-      
       if (totalSecondsBigInt) {
         if (!BigIntToStringBuilder(cx, totalSecondsBigInt, result)) {
           return nullptr;
@@ -3861,36 +3924,10 @@ static JSString* TemporalDurationToString(JSContext* cx,
       }
 
       
-      if (precision.isAuto()) {
-        if (fraction != 0) {
-          
-          if (!result.append('.')) {
-            return nullptr;
-          }
 
-          uint32_t k = 100'000'000;
-          do {
-            if (!result.append(char('0' + (fraction / k)))) {
-              return nullptr;
-            }
-            fraction %= k;
-            k /= 10;
-          } while (fraction);
-        }
-      } else if (precision.value() != 0) {
-        
-        if (!result.append('.')) {
-          return nullptr;
-        }
-
-        uint32_t k = 100'000'000;
-        for (uint8_t i = 0; i < precision.value(); i++) {
-          if (!result.append(char('0' + (fraction / k)))) {
-            return nullptr;
-          }
-          fraction %= k;
-          k /= 10;
-        }
+      
+      if (!FormatFractionalSeconds(result, fraction, precision)) {
+        return nullptr;
       }
 
       
