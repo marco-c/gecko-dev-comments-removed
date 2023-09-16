@@ -566,12 +566,17 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                                                self->mDirectoryLock->Id()),
                 CreateAndRejectBoolPromiseFromQMResult);
 
+            QM_TRY_UNWRAP(UniquePtr<FileSystemFileManager> fmPtr,
+                          FileSystemFileManager::CreateFileSystemFileManager(
+                              self->mOriginMetadata),
+                          CreateAndRejectBoolPromiseFromQMResult);
+
             QM_TRY_UNWRAP(
                 self->mVersion,
                 QM_OR_ELSE_WARN_IF(
                     
                     SchemaVersion002::InitializeConnection(
-                        connection, self->mOriginMetadata.mOrigin),
+                        connection, *fmPtr, self->mOriginMetadata.mOrigin),
                     
                     ([](const auto&) { return true; }),
                     
@@ -580,11 +585,6 @@ RefPtr<BoolPromise> FileSystemDataManager::BeginOpen() {
                           connection, self->mOriginMetadata.mOrigin));
                     })),
                 CreateAndRejectBoolPromiseFromQMResult);
-
-            QM_TRY_UNWRAP(UniquePtr<FileSystemFileManager> fmPtr,
-                          FileSystemFileManager::CreateFileSystemFileManager(
-                              self->mOriginMetadata),
-                          CreateAndRejectBoolPromiseFromQMResult);
 
             QM_TRY_UNWRAP(
                 EntryId rootId,

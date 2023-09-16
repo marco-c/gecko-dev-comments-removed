@@ -6,6 +6,7 @@
 
 #include "SchemaVersion002.h"
 
+#include "FileSystemFileManager.h"
 #include "ResultStatement.h"
 #include "StartedTransaction.h"
 #include "fs/FileSystemConstants.h"
@@ -54,12 +55,177 @@ nsresult PopulateMainFiles(ResultConnection& aConn) {
       ";"_ns);
 }
 
-nsresult ClearFileIds(ResultConnection& aConn) {
-  return aConn->ExecuteSimpleSQL("DELETE FROM FileIds;"_ns);
+Result<Ok, QMResult> ClearInvalidFileIds(
+    ResultConnection& aConn, data::FileSystemFileManager& aFileManager) {
+  
+  
+  
+
+  
+  QM_TRY_INSPECT(
+      const auto& allFileIds,
+      ([&aConn]() -> Result<nsTArray<FileId>, QMResult> {
+        const nsLiteralCString allFileIdsQuery =
+            "SELECT fileId FROM FileIds;"_ns;
+
+        QM_TRY_UNWRAP(ResultStatement stmt,
+                      ResultStatement::Create(aConn, allFileIdsQuery));
+
+        nsTArray<FileId> fileIds;
+
+        while (true) {
+          QM_TRY_UNWRAP(bool moreResults, stmt.ExecuteStep());
+          if (!moreResults) {
+            break;
+          }
+
+          QM_TRY_UNWRAP(FileId fileId, stmt.GetFileIdByColumn( 0u));
+
+          fileIds.AppendElement(fileId);
+        }
+
+        return std::move(fileIds);
+      }()));
+
+  
+  QM_TRY_INSPECT(const auto& invalidFileIds,
+                 ([&aFileManager](const nsTArray<FileId>& aFileIds)
+                      -> Result<nsTArray<FileId>, QMResult> {
+                   nsTArray<FileId> fileIds;
+
+                   for (const auto& fileId : aFileIds) {
+                     QM_TRY_UNWRAP(auto file, aFileManager.GetFile(fileId));
+
+                     QM_TRY_INSPECT(const bool& exists,
+                                    QM_TO_RESULT_INVOKE_MEMBER(file, Exists));
+
+                     if (exists) {
+                       QM_TRY_INSPECT(
+                           const int64_t& fileSize,
+                           QM_TO_RESULT_INVOKE_MEMBER(file, GetFileSize));
+
+                       if (fileSize != 0) {
+                         continue;
+                       }
+
+                       QM_TRY(QM_TO_RESULT(file->Remove(false)));
+                     }
+
+                     fileIds.AppendElement(fileId);
+                   }
+
+                   return std::move(fileIds);
+                 }(allFileIds)));
+
+  
+  QM_TRY(([&aConn](const nsTArray<FileId>& aFileIds) -> Result<Ok, QMResult> {
+    for (const auto& fileId : aFileIds) {
+      const nsLiteralCString clearFileIdsQuery =
+          "DELETE FROM FileIds "
+          "WHERE fileId = :fileId "
+          ";"_ns;
+
+      QM_TRY_UNWRAP(ResultStatement stmt,
+                    ResultStatement::Create(aConn, clearFileIdsQuery));
+
+      QM_TRY(QM_TO_RESULT(stmt.BindFileIdByName("fileId"_ns, fileId)));
+
+      QM_TRY(QM_TO_RESULT(stmt.Execute()));
+    }
+
+    return Ok{};
+  }(invalidFileIds)));
+
+  return Ok{};
 }
 
-nsresult ClearMainFiles(ResultConnection& aConn) {
-  return aConn->ExecuteSimpleSQL("DELETE FROM MainFiles;"_ns);
+Result<Ok, QMResult> ClearInvalidMainFiles(
+    ResultConnection& aConn, data::FileSystemFileManager& aFileManager) {
+  
+  
+  
+
+  
+  QM_TRY_INSPECT(
+      const auto& allMainFiles,
+      ([&aConn]() -> Result<nsTArray<std::pair<EntryId, FileId>>, QMResult> {
+        const nsLiteralCString allMainFilesQuery =
+            "SELECT handle, fileId FROM MainFiles;"_ns;
+
+        QM_TRY_UNWRAP(ResultStatement stmt,
+                      ResultStatement::Create(aConn, allMainFilesQuery));
+
+        nsTArray<std::pair<EntryId, FileId>> mainFiles;
+
+        while (true) {
+          QM_TRY_UNWRAP(bool moreResults, stmt.ExecuteStep());
+          if (!moreResults) {
+            break;
+          }
+
+          QM_TRY_UNWRAP(EntryId entryId,
+                        stmt.GetEntryIdByColumn( 0u));
+          QM_TRY_UNWRAP(FileId fileId, stmt.GetFileIdByColumn( 1u));
+
+          mainFiles.AppendElement(std::pair<EntryId, FileId>(entryId, fileId));
+        }
+
+        return std::move(mainFiles);
+      }()));
+
+  
+  QM_TRY_INSPECT(
+      const auto& invalidMainFiles,
+      ([&aFileManager](const nsTArray<std::pair<EntryId, FileId>>& aMainFiles)
+           -> Result<nsTArray<std::pair<EntryId, FileId>>, QMResult> {
+        nsTArray<std::pair<EntryId, FileId>> mainFiles;
+
+        for (const auto& mainFile : aMainFiles) {
+          QM_TRY_UNWRAP(auto file, aFileManager.GetFile(mainFile.second));
+
+          QM_TRY_INSPECT(const bool& exists,
+                         QM_TO_RESULT_INVOKE_MEMBER(file, Exists));
+
+          if (exists) {
+            QM_TRY_INSPECT(const int64_t& fileSize,
+                           QM_TO_RESULT_INVOKE_MEMBER(file, GetFileSize));
+
+            if (fileSize != 0) {
+              continue;
+            }
+
+            QM_TRY(QM_TO_RESULT(file->Remove(false)));
+          }
+
+          mainFiles.AppendElement(mainFile);
+        }
+
+        return std::move(mainFiles);
+      }(allMainFiles)));
+
+  
+  QM_TRY(([&aConn](const nsTArray<std::pair<EntryId, FileId>>& aMainFiles)
+              -> Result<Ok, QMResult> {
+    for (const auto& mainFile : aMainFiles) {
+      const nsLiteralCString clearMainFilesQuery =
+          "DELETE FROM MainFiles "
+          "WHERE handle = :entryId AND fileId = :fileId "
+          ";"_ns;
+
+      QM_TRY_UNWRAP(ResultStatement stmt,
+                    ResultStatement::Create(aConn, clearMainFilesQuery));
+
+      QM_TRY(
+          QM_TO_RESULT(stmt.BindEntryIdByName("entryId"_ns, mainFile.first)));
+      QM_TRY(QM_TO_RESULT(stmt.BindFileIdByName("fileId"_ns, mainFile.second)));
+
+      QM_TRY(QM_TO_RESULT(stmt.Execute()));
+    }
+
+    return Ok{};
+  }(invalidMainFiles)));
+
+  return Ok{};
 }
 
 nsresult ConnectUsagesToFileIds(ResultConnection& aConn) {
@@ -117,7 +283,8 @@ nsresult CreateEntryNamesView(ResultConnection& aConn) {
 }  
 
 Result<DatabaseVersion, QMResult> SchemaVersion002::InitializeConnection(
-    ResultConnection& aConn, const Origin& aOrigin) {
+    ResultConnection& aConn, data::FileSystemFileManager& aFileManager,
+    const Origin& aOrigin) {
   QM_TRY_UNWRAP(const bool wasEmpty, CheckIfEmpty(aConn));
 
   DatabaseVersion currentVersion = 0;
@@ -161,6 +328,10 @@ Result<DatabaseVersion, QMResult> SchemaVersion002::InitializeConnection(
     }
   }
 
+  
+  
+  
+  
   auto UsagesTableRefsFilesTable = [&aConn]() -> Result<bool, QMResult> {
     const nsLiteralCString query =
         "SELECT pragma_foreign_key_list.'table'=='Files' "
@@ -176,10 +347,14 @@ Result<DatabaseVersion, QMResult> SchemaVersion002::InitializeConnection(
   if (usagesTableRefsFilesTable) {
     QM_TRY_UNWRAP(auto transaction, StartedTransaction::Create(aConn));
 
-    QM_TRY(QM_TO_RESULT(ClearFileIds(aConn)));
+    
+    
+    
+    
+    QM_TRY(ClearInvalidFileIds(aConn, aFileManager));
     QM_TRY(QM_TO_RESULT(PopulateFileIds(aConn)));
     QM_TRY(QM_TO_RESULT(ConnectUsagesToFileIds(aConn)));
-    QM_TRY(QM_TO_RESULT(ClearMainFiles(aConn)));
+    QM_TRY(ClearInvalidMainFiles(aConn, aFileManager));
     QM_TRY(QM_TO_RESULT(PopulateMainFiles(aConn)));
 
     QM_TRY(QM_TO_RESULT(transaction.Commit()));
