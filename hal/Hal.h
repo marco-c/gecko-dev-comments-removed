@@ -7,7 +7,6 @@
 #ifndef mozilla_Hal_h
 #define mozilla_Hal_h
 
-#include "base/platform_thread.h"
 #include "nsTArray.h"
 #include "mozilla/hal_sandbox/PHal.h"
 #include "mozilla/HalScreenConfiguration.h"
@@ -236,20 +235,6 @@ void UnlockScreenOrientation();
 
 
 void SetProcessPriority(int aPid, hal::ProcessPriority aPriority);
-
-
-
-
-
-
-
-
-
-
-
-UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
-    const nsTArray<PlatformThreadHandle>& aThreads,
-    mozilla::TimeDuration aTargetWorkDuration);
 
 }  
 }  
