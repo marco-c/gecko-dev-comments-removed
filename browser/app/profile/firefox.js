@@ -516,6 +516,8 @@ pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
 
 pref("browser.urlbar.trimURLs", true);
 
+pref("browser.urlbar.trimHttps", false);
+
 
 
 pref("browser.urlbar.decodeURLsOnCopy", false);
