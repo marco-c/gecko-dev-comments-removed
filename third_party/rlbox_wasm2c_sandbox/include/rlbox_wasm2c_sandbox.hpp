@@ -286,7 +286,7 @@ namespace wasm2c_detail {
 } 
 
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
 __declspec(selectany)
 #else
 __attribute__((weak))
