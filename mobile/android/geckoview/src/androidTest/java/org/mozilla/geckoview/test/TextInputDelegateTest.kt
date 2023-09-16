@@ -1173,9 +1173,6 @@ class TextInputDelegateTest : BaseSessionTest() {
     fun editorInfo_enterKeyHint() {
         
         assumeThat("Not in designmode", id, not(equalTo("#designmode")))
-
-        sessionRule.setPrefsUntilTestEnd(mapOf("dom.forms.enterkeyhint" to true))
-
         mainSession.textInput.view = View(InstrumentationRegistry.getInstrumentation().targetContext)
 
         mainSession.loadTestPath(INPUTS_PATH)
