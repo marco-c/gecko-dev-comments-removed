@@ -684,7 +684,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 61] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -992,9 +992,11 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 60] = [
     ),
     lnf_int_feature!(atom!("-moz-system-dark-theme"), SystemUsesDarkTheme),
     lnf_int_feature!(atom!("-moz-panel-animations"), PanelAnimations),
-    
     bool_pref_feature!(atom!("-moz-popover-enabled"), "dom.element.popover.enabled"),
-    
+    bool_pref_feature!(
+        atom!("-moz-gtk-csd-rounded-bottom-corners"),
+        "widget.gtk.rounded-bottom-corners.enabled"
+    ),
     bool_pref_feature!(
         atom!("-moz-mathml-core-mi"),
         "mathml.legacy_mathvariant_attribute.disabled"
