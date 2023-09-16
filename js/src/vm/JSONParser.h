@@ -194,6 +194,12 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
 
   ParseType parseType = ParseType::JSONParse;
 
+  
+  size_t nurseryCollectionCount = 0;
+
+  
+  gc::Heap gcHeap = gc::Heap::Default;
+
  private:
   
   
@@ -202,17 +208,11 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
   Vector<PropertyVector*, 5> freeProperties;
 
  public:
-  explicit JSONFullParseHandlerAnyChar(JSContext* cx)
-      : cx(cx), freeElements(cx), freeProperties(cx) {}
+  explicit JSONFullParseHandlerAnyChar(JSContext* cx);
   ~JSONFullParseHandlerAnyChar();
 
   
-  JSONFullParseHandlerAnyChar(JSONFullParseHandlerAnyChar&& other) noexcept
-      : cx(other.cx),
-        v(other.v),
-        parseType(other.parseType),
-        freeElements(std::move(other.freeElements)),
-        freeProperties(std::move(other.freeProperties)) {}
+  JSONFullParseHandlerAnyChar(JSONFullParseHandlerAnyChar&& other) noexcept;
 
   JSONFullParseHandlerAnyChar(const JSONFullParseHandlerAnyChar& other) =
       delete;
@@ -271,6 +271,10 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
   inline void freeStackEntry(StackEntry& entry);
 
   void trace(JSTracer* trc);
+
+  static void NurseryCollectionCallback(JSContext* cx,
+                                        JS::GCNurseryProgress progress,
+                                        JS::GCReason reason, void* data);
 };
 
 template <typename CharT>

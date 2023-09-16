@@ -97,14 +97,15 @@ extern PlainObject* NewPlainObjectWithProtoAndAllocKind(
 
 
 
-extern PlainObject* NewPlainObjectWithUniqueNames(JSContext* cx,
-                                                  IdValuePair* properties,
-                                                  size_t nproperties);
+extern PlainObject* NewPlainObjectWithUniqueNames(
+    JSContext* cx, IdValuePair* properties, size_t nproperties,
+    NewObjectKind newKind = GenericObject);
 
 
 
 extern PlainObject* NewPlainObjectWithMaybeDuplicateKeys(
-    JSContext* cx, IdValuePair* properties, size_t nproperties);
+    JSContext* cx, IdValuePair* properties, size_t nproperties,
+    NewObjectKind newKind = GenericObject);
 
 }  
 
