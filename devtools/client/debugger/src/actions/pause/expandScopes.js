@@ -2,7 +2,7 @@
 
 
 
-import { getScopeItemPath } from "../../utils/pause/scopes/utils";
+import { getScopeItemPath } from "../../utils/pause/scopes";
 
 export function setExpandedScope(selectedFrame, item, expanded) {
   return function ({ dispatch, getState }) {
