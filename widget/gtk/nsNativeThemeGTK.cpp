@@ -219,16 +219,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
 
       
       
-      
-      
-
-      if (aAppearance == StyleAppearance::Menuarrow) {
-        aState->inHover = CheckBooleanAttr(aFrame, nsGkAtoms::menuactive);
-        aState->active = FALSE;
-      }
-
-      
-      
       if (aAppearance == StyleAppearance::Button ||
           aAppearance == StyleAppearance::Toolbarbutton ||
           aAppearance == StyleAppearance::Dualbutton ||
@@ -445,9 +435,6 @@ bool nsNativeThemeGTK::GetGtkWidgetAndState(StyleAppearance aAppearance,
         aGtkWidgetType = MOZ_GTK_SPLITTER_VERTICAL;
       else
         aGtkWidgetType = MOZ_GTK_SPLITTER_HORIZONTAL;
-      break;
-    case StyleAppearance::Menuarrow:
-      aGtkWidgetType = MOZ_GTK_MENUARROW;
       break;
     case StyleAppearance::MozWindowTitlebar:
       aGtkWidgetType = MOZ_GTK_HEADER_BAR;
@@ -1359,7 +1346,6 @@ nsNativeThemeGTK::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Textarea:
     case StyleAppearance::Range:
     case StyleAppearance::RangeThumb:
-    case StyleAppearance::Menuarrow:
     case StyleAppearance::Splitter:
     case StyleAppearance::MozWindowButtonBox:
     case StyleAppearance::MozWindowButtonClose:

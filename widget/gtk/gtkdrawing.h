@@ -230,8 +230,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_MENUPOPUP,
   
-  MOZ_GTK_MENUARROW,
-  
   MOZ_GTK_MENUBAR,
   
   MOZ_GTK_TOOLBARBUTTON_ARROW,
