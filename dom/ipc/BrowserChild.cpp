@@ -2434,7 +2434,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvUpdateNativeWindowHandle(
 }
 
 mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
-  MOZ_ASSERT(!mDestroyed);
+  MOZ_ASSERT(mDestroyed == false);
   mDestroyed = true;
 
   nsTArray<PContentPermissionRequestChild*> childArray =
@@ -2444,7 +2444,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
   
   
   for (auto& permissionRequestChild : childArray) {
-    auto* child = static_cast<RemotePermissionRequest*>(permissionRequestChild);
+    auto child = static_cast<RemotePermissionRequest*>(permissionRequestChild);
     child->Destroy();
   }
 
@@ -2715,7 +2715,7 @@ void BrowserChild::InitAPZState() {
   if (!mCompositorOptions->UseAPZ()) {
     return;
   }
-  auto* cbc = CompositorBridgeChild::Get();
+  auto cbc = CompositorBridgeChild::Get();
 
   
   
@@ -2756,12 +2756,14 @@ IPCResult BrowserChild::RecvUpdateEffects(const EffectsInfo& aEffects) {
   UpdateVisibility();
 
   if (needInvalidate) {
-    if (nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation())) {
+    nsCOMPtr<nsIDocShell> docShell = do_GetInterface(WebNavigation());
+    if (docShell) {
       
       
       
       
-      if (RefPtr<PresShell> presShell = docShell->GetPresShell()) {
+      RefPtr<PresShell> presShell = docShell->GetPresShell();
+      if (presShell) {
         if (nsIFrame* root = presShell->GetRootFrame()) {
           root->InvalidateFrame();
         }
@@ -2777,38 +2779,15 @@ bool BrowserChild::IsVisible() {
 }
 
 void BrowserChild::UpdateVisibility() {
-  const bool shouldBeVisible = [&] {
-    
-    
-    
-    if (mBrowsingContext && mBrowsingContext->IsUnderHiddenEmbedderElement()) {
-      return false;
-    }
-    
-    
-    
-    
-    
-    
-    
-    if (!mIsTopLevel && !mEffectsInfo.IsVisible()) {
-      return false;
-    }
-    
-    if (!mRenderLayers) {
-      return false;
-    }
-    return true;
-  }();
+  bool shouldBeVisible = mIsTopLevel ? mRenderLayers : mEffectsInfo.IsVisible();
+  bool isVisible = IsVisible();
 
-  const bool isVisible = IsVisible();
-  if (shouldBeVisible == isVisible) {
-    return;
-  }
-  if (shouldBeVisible) {
-    MakeVisible();
-  } else {
-    MakeHidden();
+  if (shouldBeVisible != isVisible) {
+    if (shouldBeVisible) {
+      MakeVisible();
+    } else {
+      MakeHidden();
+    }
   }
 }
 

@@ -7098,12 +7098,6 @@ bool Document::ShouldThrottleFrameRequests() const {
     return true;
   }
 
-  if (mPresShell->IsUnderHiddenEmbedderElement()) {
-    
-    
-    return true;
-  }
-
   Element* el = GetEmbedderElement();
   if (!el) {
     
