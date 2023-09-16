@@ -324,11 +324,11 @@ def lto(
     
     
     if target.os == "WINNT":
-        ldflags.append("-mllvm:-import-instr-limit=10")
+        ldflags.append("-mllvm:-import-instr-limit=30")
     elif target.os == "OSX":
-        ldflags.append("-Wl,-mllvm,-import-instr-limit=10")
+        ldflags.append("-Wl,-mllvm,-import-instr-limit=30")
     elif c_compiler.type == "clang":
-        ldflags.append("-Wl,-plugin-opt=-import-instr-limit=10")
+        ldflags.append("-Wl,-plugin-opt=-import-instr-limit=30")
 
     
     
