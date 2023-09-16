@@ -405,6 +405,19 @@ static already_AddRefed<gfx::Path> BuildSimpleInsetPath(
 }
 
 
+
+static already_AddRefed<gfx::Path> BuildDefaultPathForURL(
+    gfx::PathBuilder* aBuilder) {
+  if (!aBuilder) {
+    return nullptr;
+  }
+
+  Array<const StylePathCommand, 1> array(StylePathCommand::MoveTo(
+      StyleCoordPair(gfx::Point{0.0, 0.0}), StyleIsAbsolute::No));
+  return SVGPathData::BuildPath(array, aBuilder, StyleStrokeLinecap::Butt, 0.0);
+}
+
+
 static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   const StyleOffsetPath& offsetPath = aFrame->StyleDisplay()->mOffsetPath;
   if (offsetPath.IsNone()) {
@@ -439,6 +452,19 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
     return OffsetPathData::Shape(gfxPath.forget(), {}, IsClosedPath(pathData));
   }
 
+  RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
+
+  if (offsetPath.IsUrl()) {
+    
+
+    
+    RefPtr<gfx::Path> path = BuildDefaultPathForURL(builder);
+    
+    
+    return path ? OffsetPathData::Shape(path.forget(), {}, false)
+                : OffsetPathData::None();
+  }
+
   
   MOZ_ASSERT(offsetPath.IsBasicShapeOrCoordBox());
 
@@ -448,10 +474,8 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
   if (!containingFrame || coordBox.IsEmpty()) {
     return OffsetPathData::None();
   }
-
-  const nsStyleDisplay* disp = aFrame->StyleDisplay();
   nsPoint currentPosition = aFrame->GetOffsetTo(containingFrame);
-  RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
+  const nsStyleDisplay* disp = aFrame->StyleDisplay();
   RefPtr<gfx::Path> path =
       disp->mOffsetPath.IsCoordBox()
           ? BuildSimpleInsetPath(containingFrame->StyleBorder()->mBorderRadius,

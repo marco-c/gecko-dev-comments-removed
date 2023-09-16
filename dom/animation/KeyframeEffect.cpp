@@ -1670,6 +1670,13 @@ bool KeyframeEffect::CanAnimateTransformOnCompositor(
 bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
     const nsIFrame* aFrame, const nsCSSPropertyIDSet& aPropertySet,
     AnimationPerformanceWarning::Type& aPerformanceWarning ) const {
+  
+  
+  
+  if (aFrame->StyleDisplay()->mOffsetPath.IsUrl()) {
+    return true;
+  }
+
   EffectSet* effectSet = EffectSet::Get(mTarget.mElement, mTarget.mPseudoType);
   
   
@@ -1725,6 +1732,17 @@ bool KeyframeEffect::ShouldBlockAsyncTransformAnimations(
             .HasProperty(property.mProperty)) {
       if (!CanAnimateTransformOnCompositor(aFrame, aPerformanceWarning)) {
         return true;
+      }
+    }
+
+    
+    
+    if (property.mProperty == eCSSProperty_offset_path) {
+      for (const auto& seg : property.mSegments) {
+        if (seg.mFromValue.IsOffsetPathUrl() ||
+            seg.mToValue.IsOffsetPathUrl()) {
+          return true;
+        }
       }
     }
   }

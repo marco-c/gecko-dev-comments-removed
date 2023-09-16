@@ -7,6 +7,7 @@
 use crate::values::animated::ToAnimatedZero;
 use crate::values::generics::position::{GenericPosition, GenericPositionOrAuto};
 use crate::values::specified::motion::CoordBox;
+use serde::Deserializer;
 use std::fmt::{self, Write};
 use style_traits::{CssWriter, ToCss};
 
@@ -110,6 +111,22 @@ where
 
 
 
+
+
+
+fn deserialize_url<'de, D, T>(_deserializer: D) -> Result<T, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use crate::serde::de::Error;
+    
+    Err(<D as Deserializer>::Error::custom("we don't support the deserializing for url"))
+}
+
+
+
+
+
 #[derive(
     Animate,
     Clone,
@@ -126,15 +143,21 @@ where
     ToResolvedValue,
     ToShmem,
 )]
+#[animation(no_bound(U))]
 #[repr(C, u8)]
-pub enum GenericOffsetPathFunction<Shapes, RayFunction> {
+pub enum GenericOffsetPathFunction<Shapes, RayFunction, U> {
     
     
     #[css(function)]
     Ray(RayFunction),
     
-    Shape(Shapes),
     
+    #[animation(error)]
+    #[serde(deserialize_with = "deserialize_url")]
+    #[serde(skip_serializing)]
+    Url(U),
+    
+    Shape(Shapes),
 }
 
 pub use self::GenericOffsetPathFunction as OffsetPathFunction;
