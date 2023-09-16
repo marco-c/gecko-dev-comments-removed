@@ -53,6 +53,11 @@ class H3DatagramSetting(IntEnum):
     RFC = 0x33
 
 
+class WebTransportHttp3Setting(IntEnum):
+    
+    WEBTRANSPORT_MAX_SESSIONS_DRAFT07 = 0xc671706a
+
+
 class H3ConnectionWithDatagram(H3Connection):
     """
     A H3Connection subclass, to make it work with the latest
@@ -77,12 +82,13 @@ class H3ConnectionWithDatagram(H3Connection):
         if self._datagram_setting is None:
             raise SettingsError("HTTP Datagrams support required")
 
-
     def _get_local_settings(self) -> Dict[int, int]:
         settings = super()._get_local_settings()
         settings[H3DatagramSetting.RFC] = 1
         settings[H3DatagramSetting.DRAFT04] = 1
         settings[H3ConnectionWithDatagram.ENABLE_CONNECT_PROTOCOL] = 1
+        
+        settings[WebTransportHttp3Setting.WEBTRANSPORT_MAX_SESSIONS_DRAFT07] = 1
         return settings
 
     @property
