@@ -20,6 +20,8 @@
 
 
 
+
+
 let { release_or_beta } = getBuildConfiguration();
 let nightly = !release_or_beta;
 
