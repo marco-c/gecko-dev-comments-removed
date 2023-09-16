@@ -45,11 +45,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 const HTML_NS = "http://www.w3.org/1999/xhtml";
 
-
-const inlineCompatibilityWarningEnabled = Services.prefs.getBoolPref(
-  "devtools.inspector.ruleview.inline-compatibility-warning.enabled"
-);
-
 const SHARED_SWATCH_CLASS = "ruleview-swatch";
 const COLOR_SWATCH_CLASS = "ruleview-colorswatch";
 const BEZIER_SWATCH_CLASS = "ruleview-bezierswatch";
@@ -268,12 +263,10 @@ TextPropertyEditor.prototype = {
       hidden: "",
     });
 
-    if (inlineCompatibilityWarningEnabled) {
-      this.compatibilityState = createChild(this.container, "div", {
-        class: "ruleview-compatibility-warning",
-        hidden: "",
-      });
-    }
+    this.compatibilityState = createChild(this.container, "div", {
+      class: "ruleview-compatibility-warning",
+      hidden: "",
+    });
 
     
     
@@ -872,10 +865,7 @@ TextPropertyEditor.prototype = {
     }
 
     this.updatePropertyUsedIndicator();
-
-    if (inlineCompatibilityWarningEnabled) {
-      this.updatePropertyCompatibilityIndicator();
-    }
+    this.updatePropertyCompatibilityIndicator();
   },
 
   updatePropertyUsedIndicator() {

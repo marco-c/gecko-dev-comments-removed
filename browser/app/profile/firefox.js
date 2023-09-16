@@ -2479,8 +2479,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.ruleview.inline-compatibility-warning.enabled", true);
-
 pref("devtools.inspector.compatibility.enabled", true);
 
 pref("devtools.overflow.debugging.enabled", true);
