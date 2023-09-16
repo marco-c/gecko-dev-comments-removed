@@ -7,12 +7,14 @@
 #include "mozilla/MotionPathUtils.h"
 
 #include "gfxPlatform.h"
+#include "mozilla/dom/SVGGeometryElement.h"
 #include "mozilla/dom/SVGPathData.h"
 #include "mozilla/dom/SVGViewportElement.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/layers/LayersMessages.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/SVGObserverUtils.h"
 #include "mozilla/ShapeUtils.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
@@ -294,7 +296,6 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
       
       usedDistance = pathLength > 0.0 ? fmod(usedDistance, pathLength) : 0.0;
       
-      
       if (usedDistance < 0.0) {
         usedDistance += pathLength;
       }
@@ -406,6 +407,7 @@ static already_AddRefed<gfx::Path> BuildSimpleInsetPath(
 
 
 
+
 static already_AddRefed<gfx::Path> BuildDefaultPathForURL(
     gfx::PathBuilder* aBuilder) {
   if (!aBuilder) {
@@ -452,22 +454,6 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
     return OffsetPathData::Shape(gfxPath.forget(), {}, IsClosedLoop(pathData));
   }
 
-  RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
-
-  if (offsetPath.IsUrl()) {
-    
-
-    
-    RefPtr<gfx::Path> path = BuildDefaultPathForURL(builder);
-    
-    
-    return path ? OffsetPathData::Shape(path.forget(), {}, false)
-                : OffsetPathData::None();
-  }
-
-  
-  MOZ_ASSERT(offsetPath.IsBasicShapeOrCoordBox());
-
   nsRect coordBox;
   const nsIFrame* containingFrame =
       MotionPathUtils::GetOffsetPathReferenceBox(aFrame, coordBox);
@@ -475,6 +461,44 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
     return OffsetPathData::None();
   }
   nsPoint currentPosition = aFrame->GetOffsetTo(containingFrame);
+  RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
+
+  if (offsetPath.IsUrl()) {
+    dom::SVGGeometryElement* element =
+        SVGObserverUtils::GetAndObserveGeometry(const_cast<nsIFrame*>(aFrame));
+    if (!element) {
+      
+      RefPtr<gfx::Path> path = BuildDefaultPathForURL(builder);
+      
+      
+      return path ? OffsetPathData::Shape(path.forget(), {}, false)
+                  : OffsetPathData::None();
+    }
+
+    
+    
+    
+    RefPtr<gfx::Path> path = element->GetOrBuildPathForMeasuring();
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsPoint positionInCoordBox = currentPosition - coordBox.TopLeft();
+    return path ? OffsetPathData::Shape(path.forget(),
+                                        std::move(positionInCoordBox),
+                                        element->IsClosedLoop())
+                : OffsetPathData::None();
+  }
+
+  
+  MOZ_ASSERT(offsetPath.IsBasicShapeOrCoordBox());
+
   const nsStyleDisplay* disp = aFrame->StyleDisplay();
   RefPtr<gfx::Path> path =
       disp->mOffsetPath.IsCoordBox()

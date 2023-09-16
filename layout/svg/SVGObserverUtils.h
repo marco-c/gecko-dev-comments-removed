@@ -352,6 +352,16 @@ class SVGObserverUtils {
 
 
 
+  static SVGGeometryElement* GetAndObserveGeometry(nsIFrame* aFrame);
+
+  
+
+
+
+
+
+
+
 
 
 
