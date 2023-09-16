@@ -175,7 +175,27 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+  void AddSourceSurface(gfx::ReferencePtr aRefPtr,
+                        gfx::SourceSurface* aSurface) final {
+    if (mMappedSurface == aRefPtr) {
+      mPreparedMap = nullptr;
+      mMappedSurface = nullptr;
+    }
+    RemoveDataSurface(aRefPtr);
+    InlineTranslator::AddSourceSurface(aRefPtr, aSurface);
+  }
+
+  
+
+
+
+
+
   void RemoveSourceSurface(gfx::ReferencePtr aRefPtr) final {
+    if (mMappedSurface == aRefPtr) {
+      mPreparedMap = nullptr;
+      mMappedSurface = nullptr;
+    }
     RemoveDataSurface(aRefPtr);
     InlineTranslator::RemoveSourceSurface(aRefPtr);
   }
