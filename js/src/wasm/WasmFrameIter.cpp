@@ -693,13 +693,48 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
 
     switch (callIndirectId.kind()) {
       case CallIndirectIdKind::Global: {
-        Register scratch = WasmTableCallScratchReg0;
+        Label fail;
+        Register scratch1 = WasmTableCallScratchReg0;
+        Register scratch2 = WasmTableCallScratchReg1;
+
+        
         masm.loadPtr(
-            Address(InstanceReg, Instance::offsetInData(
-                                     callIndirectId.instanceDataOffset())),
-            scratch);
+            Address(InstanceReg,
+                    Instance::offsetInData(
+                        callIndirectId.instanceDataOffset() +
+                        offsetof(wasm::TypeDefInstanceData, superTypeVector))),
+            scratch1);
         masm.branchPtr(Assembler::Condition::Equal, WasmTableCallSigReg,
-                       scratch, &functionBody);
+                       scratch1, &functionBody);
+
+        
+        
+        
+        
+        
+        if (callIndirectId.hasSuperType()) {
+          
+          
+          
+          
+          masm.branchTestPtr(Assembler::Condition::NonZero, WasmTableCallSigReg,
+                             Imm32(FuncType::ImmediateBit), &fail);
+
+          
+          
+          Register subTypingDepth = WasmTableCallIndexReg;
+          masm.load8ZeroExtend(
+              Address(WasmTableCallSigReg,
+                      int32_t(SuperTypeVector::offsetOfSubTypingDepth())),
+              subTypingDepth);
+
+          
+          masm.branchWasmSTVIsSubtypeDynamicDepth(
+              scratch1, WasmTableCallSigReg, subTypingDepth, scratch2,
+              &functionBody, true);
+        }
+
+        masm.bind(&fail);
         masm.wasmTrap(Trap::IndirectCallBadSig, BytecodeOffset(0));
         break;
       }

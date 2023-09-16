@@ -3957,6 +3957,15 @@ class MacroAssembler : public MacroAssemblerSpecific {
                               Label* label, bool onSuccess);
 
   
+  
+  
+  
+  
+  void branchWasmSTVIsSubtypeDynamicDepth(Register subSTV, Register superSTV,
+                                          Register superDepth, Register scratch,
+                                          Label* label, bool onSuccess);
+
+  
   void branchWasmAnyRefIsNull(bool isNull, Register src, Label* label);
   
   void branchWasmAnyRefIsI31(bool isI31, Register src, Label* label);

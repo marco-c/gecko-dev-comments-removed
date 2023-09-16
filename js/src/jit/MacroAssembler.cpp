@@ -5272,7 +5272,9 @@ void MacroAssembler::wasmCallIndirect(const wasm::CallSiteDesc& desc,
   switch (callIndirectId.kind()) {
     case wasm::CallIndirectIdKind::Global:
       loadPtr(Address(InstanceReg, wasm::Instance::offsetInData(
-                                       callIndirectId.instanceDataOffset())),
+                                       callIndirectId.instanceDataOffset() +
+                                       offsetof(wasm::TypeDefInstanceData,
+                                                superTypeVector))),
               WasmTableCallSigReg);
       break;
     case wasm::CallIndirectIdKind::Immediate:
@@ -5414,7 +5416,9 @@ void MacroAssembler::wasmReturnCallIndirect(
   switch (callIndirectId.kind()) {
     case wasm::CallIndirectIdKind::Global:
       loadPtr(Address(InstanceReg, wasm::Instance::offsetInData(
-                                       callIndirectId.instanceDataOffset())),
+                                       callIndirectId.instanceDataOffset() +
+                                       offsetof(wasm::TypeDefInstanceData,
+                                                superTypeVector))),
               WasmTableCallSigReg);
       break;
     case wasm::CallIndirectIdKind::Immediate:
@@ -5839,43 +5843,19 @@ void MacroAssembler::branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
                                             bool onSuccess) {
   MOZ_ASSERT_IF(superDepth >= wasm::MinSuperTypeVectorLength,
                 scratch != Register::Invalid());
+  Label fallthrough;
+  Label* failed = onSuccess ? &fallthrough : label;
 
   
   
-  if (onSuccess) {
-    Label failed;
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    if (superDepth >= wasm::MinSuperTypeVectorLength) {
-      
-      load32(Address(subSTV, wasm::SuperTypeVector::offsetOfLength()), scratch);
-      branch32(Assembler::LessThanOrEqual, scratch, Imm32(superDepth), &failed);
-    }
-
-    
-    
-    loadPtr(
-        Address(subSTV, wasm::SuperTypeVector::offsetOfSTVInVector(superDepth)),
-        subSTV);
-    branchPtr(Assembler::Equal, subSTV, superSTV, label);
-
-    
-    bind(&failed);
-    return;
-  }
+  
+  
+  
 
   
   if (superDepth >= wasm::MinSuperTypeVectorLength) {
     load32(Address(subSTV, wasm::SuperTypeVector::offsetOfLength()), scratch);
-    branch32(Assembler::LessThanOrEqual, scratch, Imm32(superDepth), label);
+    branch32(Assembler::BelowOrEqual, scratch, Imm32(superDepth), failed);
   }
 
   
@@ -5883,8 +5863,35 @@ void MacroAssembler::branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
   loadPtr(
       Address(subSTV, wasm::SuperTypeVector::offsetOfSTVInVector(superDepth)),
       subSTV);
-  branchPtr(Assembler::NotEqual, subSTV, superSTV, label);
+
   
+  branchPtr(onSuccess ? Assembler::Equal : Assembler::NotEqual, subSTV,
+            superSTV, label);
+
+  bind(&fallthrough);
+}
+
+void MacroAssembler::branchWasmSTVIsSubtypeDynamicDepth(
+    Register subSTV, Register superSTV, Register superDepth, Register scratch,
+    Label* label, bool onSuccess) {
+  Label fallthrough;
+  Label* failed = onSuccess ? &fallthrough : label;
+
+  
+  load32(Address(subSTV, wasm::SuperTypeVector::offsetOfLength()), scratch);
+  branch32(Assembler::BelowOrEqual, scratch, superDepth, failed);
+
+  
+  
+  loadPtr(BaseIndex(subSTV, superDepth, ScalePointer,
+                    offsetof(wasm::SuperTypeVector, types_)),
+          subSTV);
+
+  
+  branchPtr(onSuccess ? Assembler::Equal : Assembler::NotEqual, subSTV,
+            superSTV, label);
+
+  bind(&fallthrough);
 }
 
 void MacroAssembler::branchWasmAnyRefIsNull(bool isNull, Register src,

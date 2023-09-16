@@ -218,7 +218,29 @@ static ImmediateType EncodeImmediateFuncType(const FuncType& funcType) {
 
 
 
-void FuncType::initImmediateTypeId() {
+void FuncType::initImmediateTypeId(bool gcEnabled, bool isFinal,
+                                   const TypeDef* superTypeDef,
+                                   uint32_t recGroupLength) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (gcEnabled && (!isFinal || superTypeDef || recGroupLength != 1)) {
+    immediateTypeId_ = NO_IMMEDIATE_TYPE_ID;
+    return;
+  }
+
+  
   if (!IsImmediateFuncType(*this)) {
     immediateTypeId_ = NO_IMMEDIATE_TYPE_ID;
     return;
@@ -425,10 +447,11 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
 
     
     typeDef.setSuperTypeVector(currentVector);
-    currentVector->setTypeDef(&typeDef);
+    currentVector->typeDef_ = &typeDef;
+    currentVector->subTypingDepth_ = typeDef.subTypingDepth();
 
     
-    currentVector->setLength(SuperTypeVector::lengthForTypeDef(typeDef));
+    currentVector->length_ = SuperTypeVector::lengthForTypeDef(typeDef);
 
     
     const TypeDef* currentTypeDef = &typeDef;
@@ -438,7 +461,7 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
       
       
       if (reverseIndex > typeDef.subTypingDepth()) {
-        currentVector->setType(reverseIndex, nullptr);
+        currentVector->types_[reverseIndex] = nullptr;
         continue;
       }
 
@@ -446,7 +469,7 @@ const SuperTypeVector* SuperTypeVector::createMultipleForRecGroup(
       
       MOZ_ASSERT(reverseIndex == currentTypeDef->subTypingDepth());
 
-      currentVector->setType(reverseIndex, currentTypeDef->superTypeVector());
+      currentVector->types_[reverseIndex] = currentTypeDef->superTypeVector();
       currentTypeDef = currentTypeDef->superTypeDef();
     }
 

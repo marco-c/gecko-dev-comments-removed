@@ -626,20 +626,39 @@ struct TryNote {
 WASM_DECLARE_CACHEABLE_POD(TryNote);
 WASM_DECLARE_POD_VECTOR(TryNote, TryNoteVector)
 
+enum class CallIndirectIdKind {
+  
+  
+  AsmJS,
+  
+  
+  
+  Immediate,
+  
+  
+  Global,
+  
+  
+  None
+};
 
 
 
-enum class CallIndirectIdKind { AsmJS, Immediate, Global, None };
 
 class CallIndirectId {
   CallIndirectIdKind kind_;
-  size_t bits_;
+  union {
+    size_t immediate_;
+    struct {
+      size_t instanceDataOffset_;
+      bool hasSuperType_;
+    } global_;
+  };
 
-  CallIndirectId(CallIndirectIdKind kind, size_t bits)
-      : kind_(kind), bits_(bits) {}
+  explicit CallIndirectId(CallIndirectIdKind kind) : kind_(kind) {}
 
  public:
-  CallIndirectId() : kind_(CallIndirectIdKind::None), bits_(0) {}
+  CallIndirectId() : kind_(CallIndirectIdKind::None) {}
 
   
   
@@ -656,13 +675,23 @@ class CallIndirectId {
   CallIndirectIdKind kind() const { return kind_; }
   bool isGlobal() const { return kind_ == CallIndirectIdKind::Global; }
 
+  
+  
   uint32_t immediate() const {
     MOZ_ASSERT(kind_ == CallIndirectIdKind::Immediate);
-    return bits_;
+    return immediate_;
   }
+
+  
   uint32_t instanceDataOffset() const {
     MOZ_ASSERT(kind_ == CallIndirectIdKind::Global);
-    return bits_;
+    return global_.instanceDataOffset_;
+  }
+
+  
+  bool hasSuperType() const {
+    MOZ_ASSERT(kind_ == CallIndirectIdKind::Global);
+    return global_.hasSuperType_;
   }
 };
 
