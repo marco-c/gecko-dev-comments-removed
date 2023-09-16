@@ -2110,7 +2110,6 @@ pref("privacy.fingerprintingProtection.pbmode", true);
 
 
 pref("browser.tabs.remote.autostart", true);
-pref("browser.tabs.remote.desktopbehavior", true);
 
 
 pref("media.peerconnection.mtransport_process", true);
