@@ -25,7 +25,6 @@ requestLongerTimeout(2);
 add_task(async () => {
   
   
-  
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.gesture.swipe.left", "Browser:BackOrBackDuplicate"],
@@ -35,7 +34,7 @@ add_task(async () => {
       
       
       ["widget.swipe.success-velocity-contribution", 0.0],
-      ["widget.swipe.whole-page-pixel-size", 550.0],
+      ["widget.swipe.pixel-size", 550.0],
     ],
   });
 
@@ -163,7 +162,7 @@ add_task(async () => {
       
       
       ["widget.swipe.success-velocity-contribution", 0.0],
-      ["widget.swipe.whole-page-pixel-size", 1100.0],
+      ["widget.swipe.pixel-size", 1100.0],
     ],
   });
 
@@ -261,7 +260,7 @@ add_task(async () => {
       
       
       ["widget.swipe.success-velocity-contribution", 2.0],
-      ["widget.swipe.whole-page-pixel-size", 550.0],
+      ["widget.swipe.pixel-size", 550.0],
     ],
   });
 
@@ -361,7 +360,7 @@ add_task(async () => {
       
       
       ["widget.swipe.success-velocity-contribution", 0.0],
-      ["widget.swipe.whole-page-pixel-size", 550.0],
+      ["widget.swipe.pixel-size", 550.0],
     ],
   });
 
@@ -422,7 +421,7 @@ add_task(async () => {
       
       
       ["widget.swipe.success-velocity-contribution", 0.0],
-      ["widget.swipe.whole-page-pixel-size", 550.0],
+      ["widget.swipe.pixel-size", 550.0],
     ],
   });
 
@@ -545,7 +544,7 @@ add_task(async () => {
       ["widget.disable-swipe-tracker", false],
       ["widget.swipe.velocity-twitch-tolerance", 0.0000001],
       ["widget.swipe.success-velocity-contribution", 999999.0],
-      ["widget.swipe.whole-page-pixel-size", 1.0],
+      ["widget.swipe.pixel-size", 1.0],
     ],
   });
 
