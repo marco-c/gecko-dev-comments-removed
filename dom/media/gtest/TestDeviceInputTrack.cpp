@@ -526,7 +526,8 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
                   sourceId, AudioInputSource::EventListener::State::Error));
   EXPECT_CALL(*listener,
               AudioStateCallback(
-                  sourceId, AudioInputSource::EventListener::State::Stopped));
+                  sourceId, AudioInputSource::EventListener::State::Stopped))
+      .Times(2);
 
   
   DispatchFunction([&] {
@@ -547,11 +548,6 @@ TEST_F(TestDeviceInputTrack, NonNativeErrorCallback) {
   
   DispatchFunction([&] { stream->ForceError(); });
   WaitFor(stream->ErrorForcedEvent());
-
-  
-  
-  
-  WaitFor(stream->ErrorStoppedEvent());
 
   
   DispatchFunction([&] { track->StopAudio(); });
