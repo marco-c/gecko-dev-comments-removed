@@ -6,6 +6,8 @@ const HTTPS_PATH = getRootDirectory(gTestPath).replace(
 );
 const HTTP_PATH = getRootDirectory(gTestPath).replace(
   "chrome://mochitests/content",
+  
+  
   "http://example.com"
 );
 
@@ -30,6 +32,14 @@ function checkCookies(expectedCookies = {}) {
 
 add_task(async function bug1748693() {
   waitForExplicitFinish();
+
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["dom.security.https_first", false]],
+  });
 
   let loaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
   BrowserTestUtils.loadURIString(
