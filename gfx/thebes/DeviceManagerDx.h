@@ -82,10 +82,6 @@ class DeviceManagerDx final {
   bool CanInitializeKeyedMutexTextures();
 
   
-  
-  bool HasCrashyInitData();
-
-  
   nsTArray<DXGI_OUTPUT_DESC1> EnumerateOutputs();
 
   
