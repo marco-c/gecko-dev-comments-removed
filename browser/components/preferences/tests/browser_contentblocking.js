@@ -1542,3 +1542,65 @@ add_task(async function testReloadTabsMessage() {
   gBrowser.removeTab(examplePinnedTab);
   gBrowser.removeCurrentTab();
 });
+
+
+add_task(async function testRFPWarningBanner() {
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.resistFingerprinting", false],
+      ["privacy.resistFingerprinting.pbmode", false],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  let doc = gBrowser.contentDocument;
+  let rfpWarningBanner = doc.getElementById("rfpIncompatibilityWarning");
+
+  
+  ok(
+    !BrowserTestUtils.is_visible(rfpWarningBanner),
+    "The RFP warning banner is hidden at the beginning."
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["privacy.resistFingerprinting", true]],
+  });
+
+  
+  ok(
+    BrowserTestUtils.is_visible(rfpWarningBanner),
+    "The RFP warning banner is shown."
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.resistFingerprinting", false],
+      ["privacy.resistFingerprinting.pbmode", true],
+    ],
+  });
+
+  
+  ok(
+    BrowserTestUtils.is_visible(rfpWarningBanner),
+    "The RFP warning banner is shown."
+  );
+
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.resistFingerprinting", true],
+      ["privacy.resistFingerprinting.pbmode", true],
+    ],
+  });
+
+  
+  ok(
+    BrowserTestUtils.is_visible(rfpWarningBanner),
+    "The RFP warning banner is shown."
+  );
+
+  gBrowser.removeCurrentTab();
+});

@@ -99,6 +99,10 @@ Preferences.addAll([
   { id: "privacy.fingerprintingProtection.pbmode", type: "bool" },
 
   
+  { id: "privacy.resistFingerprinting", type: "bool" },
+  { id: "privacy.resistFingerprinting.pbmode", type: "bool" },
+
+  
   { id: "privacy.trackingprotection.socialtracking.enabled", type: "bool" },
   { id: "privacy.socialtracking.block_cookies.enabled", type: "bool" },
 
@@ -311,6 +315,10 @@ function dataCollectionCheckboxHandler({
 function setUpContentBlockingWarnings() {
   document.getElementById("fpiIncompatibilityWarning").hidden =
     !gIsFirstPartyIsolated;
+
+  document.getElementById("rfpIncompatibilityWarning").hidden =
+    !Preferences.get("privacy.resistFingerprinting").value &&
+    !Preferences.get("privacy.resistFingerprinting.pbmode").value;
 }
 
 function initTCPStandardSection() {
@@ -1314,6 +1322,15 @@ var gPrivacyPane = {
         "sitedata-option-block-cross-site-tracking-cookies"
       );
     }
+
+    Preferences.get("privacy.resistFingerprinting").on(
+      "change",
+      setUpContentBlockingWarnings
+    );
+    Preferences.get("privacy.resistFingerprinting.pbmode").on(
+      "change",
+      setUpContentBlockingWarnings
+    );
 
     setUpContentBlockingWarnings();
 
