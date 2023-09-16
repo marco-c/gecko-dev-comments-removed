@@ -1,7 +1,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   await SearchTestUtils.useTestEngines("method-extensions");
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();

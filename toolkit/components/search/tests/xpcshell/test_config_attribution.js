@@ -1,7 +1,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   Region._setHomeRegion("an", false);
   await SearchTestUtils.useTestEngines("test-extensions");
   await AddonTestUtils.promiseStartupManager();

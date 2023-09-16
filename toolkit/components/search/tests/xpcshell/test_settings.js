@@ -15,7 +15,7 @@ var settingsTemplate;
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   await SearchTestUtils.useTestEngines("data1");
   await AddonTestUtils.promiseStartupManager();
   await Services.search.init();

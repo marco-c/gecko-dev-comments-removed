@@ -33,7 +33,7 @@ async function setupPolicyEngineWithJson(policy) {
   await settingsWritten;
 }
 
-add_task(async function setup() {
+add_setup(async function () {
   
   let policies = Cc["@mozilla.org/enterprisepolicies;1"].getService(
     Ci.nsIObserver

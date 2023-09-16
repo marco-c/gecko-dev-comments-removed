@@ -16,7 +16,7 @@ var settingsTemplate;
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   await AddonTestUtils.promiseStartupManager();
 
   await setupRemoteSettings();
