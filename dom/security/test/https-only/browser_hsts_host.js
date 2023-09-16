@@ -16,7 +16,14 @@ add_task(async function see_hsts_header() {
       "https://example.com"
     ) + "hsts_headers.sjs";
   Services.obs.addObserver(observer, "http-on-examine-response");
-  await BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, setHstsUrl);
+
+  let promiseLoaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    setHstsUrl
+  );
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, setHstsUrl);
+  await promiseLoaded;
 
   await BrowserTestUtils.waitForCondition(() => readMessage);
   
@@ -42,7 +49,13 @@ add_task(async function () {
     ) + "hsts_headers.sjs";
 
   
-  await BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, RESOURCE_LINK);
+  let promiseLoaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    RESOURCE_LINK
+  );
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, RESOURCE_LINK);
+  await promiseLoaded;
 
   await BrowserTestUtils.waitForCondition(() => testFinished);
 
@@ -119,7 +132,13 @@ add_task(async function () {
 
   Services.obs.addObserver(observer, "http-on-examine-response");
   
+  let promiseLoaded = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    clearHstsUrl
+  );
   await BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, clearHstsUrl);
+  await promiseLoaded;
   await BrowserTestUtils.waitForCondition(() => readMessage);
   
   Services.obs.removeObserver(observer, "http-on-examine-response");
