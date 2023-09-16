@@ -32,16 +32,16 @@ template <typename T>
 static void GetDataFrom(const T& aObject, uint8_t*& aBuffer,
                         uint32_t& aLength) {
   MOZ_ASSERT(!aBuffer);
-  aObject.ComputeState();
   
   
   
-  aBuffer = (uint8_t*)malloc(aObject.Length());
-  if (!aBuffer) {
+  Maybe<Vector<uint8_t>> buffer =
+      aObject.template CreateFromData<Vector<uint8_t>>();
+  if (buffer.isNothing()) {
     return;
   }
-  memcpy((void*)aBuffer, aObject.Data(), aObject.Length());
-  aLength = aObject.Length();
+  aLength = buffer->length();
+  aBuffer = buffer->extractOrCopyRawBuffer();
 }
 
 
