@@ -7,7 +7,7 @@
 #include "nsICancelable.idl"
 
 interface nsIURI;
-interface nsIRequest;
+interface nsIChannel;
 interface nsIStreamListener;
 interface nsIFile;
 interface nsIMIMEInfo;
@@ -39,7 +39,7 @@ interface nsIExternalHelperAppService : nsISupports
 
 
   nsIStreamListener doContent (in ACString aMimeContentType,
-                               in nsIRequest aRequest,
+                               in nsIChannel aChannel,
                                in nsIInterfaceRequestor aContentContext,
                                in boolean aForceSave,
                                [optional] in nsIInterfaceRequestor aWindowContext);
@@ -63,7 +63,7 @@ interface nsIExternalHelperAppService : nsISupports
 
 
   nsIStreamListener createListener (in ACString aMimeContentType,
-                                                   in nsIRequest aRequest,
+                                                   in nsIChannel aChannel,
                                                    in BrowsingContext aContentContext,
                                                    in boolean aForceSave,
                                                    [optional] in nsIInterfaceRequestor aWindowContext);
