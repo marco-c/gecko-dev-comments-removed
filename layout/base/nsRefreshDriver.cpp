@@ -38,6 +38,7 @@
 #include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/DebugOnly.h"
 #include "mozilla/DisplayPortUtils.h"
+#include "mozilla/Hal.h"
 #include "mozilla/InputTaskManager.h"
 #include "mozilla/IntegerRange.h"
 #include "mozilla/PresShell.h"
@@ -629,6 +630,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     mVsyncObserver->Shutdown();
     mVsyncObserver = nullptr;
+
+    if (mClosePerfSessionTimer) {
+      mClosePerfSessionTimer->Cancel();
+    }
   }
 
   bool ShouldGiveNonVsyncTasksMoreTime() {
@@ -779,6 +784,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     mProcessedVsync = true;
   }
 
+  TimeDuration GetPerformanceHintTarget() {
+    
+    
+    return GetTimerRate() / int64_t(2);
+  }
+
   void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
     MOZ_ASSERT(NS_IsMainThread());
 
@@ -786,7 +797,14 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
     TimeStamp tickStart = TimeStamp::Now();
 
-    TimeDuration rate = GetTimerRate();
+    const TimeDuration previousRate = mVsyncRate;
+    const TimeDuration rate = GetTimerRate();
+
+    if (mPerformanceHintSession && rate != previousRate) {
+      mPerformanceHintSession->UpdateTargetWorkDuration(
+          GetPerformanceHintTarget());
+    }
+
     if (TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval() / 2) >
         rate) {
       sMostRecentHighRateVsync = tickStart;
@@ -809,6 +827,10 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     RunRefreshDrivers(aId, aVsyncTimestamp);
 
     TimeStamp tickEnd = TimeStamp::Now();
+
+    if (mPerformanceHintSession) {
+      mPerformanceHintSession->ReportActualWorkDuration(tickEnd - tickStart);
+    }
 
     
     
@@ -869,6 +891,35 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       OnTimerStart();
     }
     mIsTicking = true;
+
+    static bool canUsePerformanceHintSession = true;
+    if (canUsePerformanceHintSession) {
+      if (mClosePerfSessionTimer) {
+        mClosePerfSessionTimer->Cancel();
+      }
+
+      
+      
+      
+      
+      
+      if (XRE_IsContentProcess() && !mPerformanceHintSession && mVsyncChild) {
+        nsTArray<PlatformThreadHandle> threads;
+        Servo_ThreadPool_GetThreadHandles(&threads);
+#ifdef XP_WIN
+        threads.AppendElement(GetCurrentThread());
+#else
+        threads.AppendElement(pthread_self());
+#endif
+
+        mPerformanceHintSession = hal::CreatePerformanceHintSession(
+            threads, GetPerformanceHintTarget());
+
+        
+        
+        canUsePerformanceHintSession = mPerformanceHintSession != nullptr;
+      }
+    }
   }
 
   void StopTimer() override {
@@ -880,6 +931,25 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mVsyncChild->RemoveChildRefreshTimer(mVsyncObserver);
     }
     mIsTicking = false;
+
+    if (mPerformanceHintSession) {
+      if (!mClosePerfSessionTimer) {
+        mClosePerfSessionTimer = NS_NewTimer();
+      }
+      
+      
+      
+      
+      
+      mClosePerfSessionTimer->InitWithNamedFuncCallback(
+          [](nsITimer* aTimer, void* aClosure) {
+            VsyncRefreshDriverTimer* self =
+                static_cast<VsyncRefreshDriverTimer*>(aClosure);
+            self->mPerformanceHintSession.reset();
+          },
+          this, 5000, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+          "VsyncRefreshDriverTimer::mClosePerfSessionTimer");
+    }
   }
 
  public:
@@ -937,6 +1007,12 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
   
   TimeStamp mSuspendVsyncPriorityTicksUntil;
   bool mProcessedVsync;
+
+  UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
+  
+  
+  
+  RefPtr<nsITimer> mClosePerfSessionTimer;
 };  
 
 
