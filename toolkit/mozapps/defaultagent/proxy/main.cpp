@@ -10,10 +10,33 @@
 #include <string.h>
 #include <filesystem>
 
+#include "../ScheduledTask.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
+
+using namespace mozilla::default_agent;
 
 
 int wmain(int argc, wchar_t** argv) {
+  
+  
+  
+  if (!wcscmp(argv[1], L"uninstall")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    RemoveTasks(argv[2], WhichTasks::AllTasksForInstallation);
+
+    CoUninitialize();
+
+    
+  }
+
   std::vector<wchar_t> path(MAX_PATH, 0);
   DWORD charsWritten = GetModuleFileNameW(nullptr, path.data(), path.size());
 
