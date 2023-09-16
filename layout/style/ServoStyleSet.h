@@ -466,75 +466,6 @@ class ServoStyleSet {
 
 
 
-  void MaybeInvalidateRelativeSelectorIDDependency(const dom::Element&,
-                                                   nsAtom* aOldID,
-                                                   nsAtom* aNewID);
-
-  
-
-
-
-  void MaybeInvalidateRelativeSelectorClassDependency(const dom::Element&);
-
-  
-
-
-
-  void MaybeInvalidateRelativeSelectorAttributeDependency(const dom::Element&,
-                                                          nsAtom* aAttribute);
-
-  
-
-
-
-  void MaybeInvalidateRelativeSelectorStateDependency(const dom::Element&,
-                                                      dom::ElementState);
-
-  
-
-
-
-  void MaybeInvalidateRelativeSelectorForEmptyDependency(const dom::Element&);
-
-  
-
-
-
-
-  void MaybeInvalidateRelativeSelectorForNthEdgeDependency(const dom::Element&);
-
-  
-
-
-
-
-  void MaybeInvalidateRelativeSelectorForNthDependencyFromSibling(
-      const dom::Element*);
-
-  
-
-
-
-  void MaybeInvalidateForElementInsertion(const dom::Element&);
-
-  
-
-
-
-  void MaybeInvalidateForElementAppend(const dom::Element&);
-
-  
-
-
-
-  void MaybeInvalidateForElementRemove(const dom::Element& aElement,
-                                       const dom::Element* aPrevSibling,
-                                       const dom::Element* aNextSibling);
-
-  
-
-
-
 
 
 
@@ -546,12 +477,6 @@ class ServoStyleSet {
 
 
   bool HasNthOfStateDependency(const dom::Element&, dom::ElementState) const;
-
-  
-
-
-
-  void RestyleSiblingsForNthOf(const dom::Element&, uint32_t) const;
 
   
 
