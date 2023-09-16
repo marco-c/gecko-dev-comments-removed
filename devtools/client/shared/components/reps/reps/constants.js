@@ -11,6 +11,8 @@ define(function (require, exports, module) {
       TINY: Symbol("TINY"),
       SHORT: Symbol("SHORT"),
       LONG: Symbol("LONG"),
+      
+      HEADER: Symbol("HEADER"),
     },
   };
 });
