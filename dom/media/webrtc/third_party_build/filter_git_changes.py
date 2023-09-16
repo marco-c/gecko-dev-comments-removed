@@ -38,13 +38,13 @@ def filter_git_changes(github_path, commit_sha, diff_filter):
     
     
     
-    regex_includes = "|".join(["^.\t{}".format(i) for i in include_list])
+    regex_includes = "|".join(["^.\t{}$".format(i) for i in include_list])
     included_files = [
         path for path in changed_files if re.findall(regex_includes, path)
     ]
 
     
-    regex_excludes = "|".join(["^.\t{}".format(i) for i in exclude_list])
+    regex_excludes = "|".join(["^.\t{}$".format(i) for i in exclude_list])
 
     
     files_not_excluded = [
