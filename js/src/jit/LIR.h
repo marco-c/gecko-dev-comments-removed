@@ -1237,6 +1237,9 @@ class LRecoverInfo : public TempObject {
   
   RecoverOffset recoverOffset_;
 
+  
+  bool hasSideEffects_ = false;
+
   explicit LRecoverInfo(TempAllocator& alloc);
   [[nodiscard]] bool init(MResumePoint* mir);
 
@@ -1261,6 +1264,7 @@ class LRecoverInfo : public TempObject {
   MNode** begin() { return instructions_.begin(); }
   MNode** end() { return instructions_.end(); }
   size_t numInstructions() const { return instructions_.length(); }
+  bool hasSideEffects() { return hasSideEffects_; }
 
   class OperandIter {
    private:

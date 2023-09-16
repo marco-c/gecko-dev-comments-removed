@@ -198,7 +198,7 @@ class CodeGeneratorShared : public LElementVisitor {
   void encode(LRecoverInfo* recover);
   void encode(LSnapshot* snapshot);
   void encodeAllocation(LSnapshot* snapshot, MDefinition* def,
-                        uint32_t* startIndex);
+                        uint32_t* startIndex, bool hasSideEffects);
 
   
   
