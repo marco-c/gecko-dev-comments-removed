@@ -551,6 +551,12 @@ class ServoStyleSet {
 
 
 
+  void RestyleSiblingsForNthOf(const dom::Element&, uint32_t) const;
+
+  
+
+
+
   bool HasDocumentStateDependency(dom::DocumentState) const;
 
   
