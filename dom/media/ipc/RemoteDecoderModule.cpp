@@ -63,7 +63,7 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
     
     return media::DecodeSupport::SoftwareDecode;
   }
-  return media::DecodeSupport::Unsupported;
+  return media::DecodeSupportSet{};
 }
 
 RefPtr<RemoteDecoderModule::CreateDecoderPromise>

@@ -81,7 +81,7 @@ media::MediaCodecsSupported AndroidDecoderModule::GetSupportedCodecs() {
 DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     const nsACString& aMimeType) {
   if (jni::GetAPIVersion() < 16) {
-    return DecodeSupport::Unsupported;
+    return media::DecodeSupportSet{};
   }
 
   if (!sSupportedSwMimeTypes) {
@@ -95,46 +95,46 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
   switch (codec) {
     case MediaCodec::VP8:
       if (!gfx::gfxVars::UseVP8HwDecode()) {
-        return DecodeSupport::Unsupported;
+        return media::DecodeSupportSet{};
       }
       break;
 
     case MediaCodec::VP9:
       if (!gfx::gfxVars::UseVP9HwDecode()) {
-        return DecodeSupport::Unsupported;
+        return media::DecodeSupportSet{};
       }
       break;
 
     
     case MediaCodec::MP3:
       if (StaticPrefs::media_ffvpx_mp3_enabled()) {
-        return DecodeSupport::Unsupported;
+        return media::DecodeSupportSet{};
       }
       if (sSupportedCodecs &&
           sSupportedCodecs->contains(MediaCodecsSupport::MP3SoftwareDecode)) {
         return DecodeSupport::SoftwareDecode;
       }
-      return DecodeSupport::Unsupported;
+      return media::DecodeSupportSet{};
 
     
     
     
     case MediaCodec::Theora:
       SLOG("Rejecting video of type %s", aMimeType.Data());
-      return DecodeSupport::Unsupported;
+      return media::DecodeSupportSet{};
     case MediaCodec::Opus:
       [[fallthrough]];
     case MediaCodec::Vorbis:
       [[fallthrough]];
     case MediaCodec::FLAC:
       SLOG("Rejecting audio of type %s", aMimeType.Data());
-      return DecodeSupport::Unsupported;
+      return media::DecodeSupportSet{};
 
     
     
     
     case MediaCodec::Wave:
-      return DecodeSupport::Unsupported;
+      return media::DecodeSupportSet{};
 
     
     case MediaCodec::H264:
@@ -161,7 +161,7 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
       sSupportedSwMimeTypes->Contains(TranslateMimeType(aMimeType))) {
     return DecodeSupport::SoftwareDecode;
   }
-  return DecodeSupport::Unsupported;
+  return media::DecodeSupportSet{};
 }
 
 nsTArray<nsCString> AndroidDecoderModule::GetSupportedMimeTypes() {
@@ -214,7 +214,7 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
     ClearOnShutdown(&sSupportedCodecs);
   }
 
-  DecodeSupport support;
+  DecodeSupportSet support;
   
   for (const auto& s : aSupportedTypes) {
     
@@ -232,10 +232,10 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
     const auto caps = Substring(s, 0, 2);
     if (caps == "SW"_ns) {
       sSupportedSwMimeTypes->AppendElement(mimeType);
-      support = DecodeSupport::SoftwareDecode;
+      support += DecodeSupport::SoftwareDecode;
     } else if (caps == "HW"_ns) {
       sSupportedHwMimeTypes->AppendElement(mimeType);
-      support = DecodeSupport::HardwareDecode;
+      support += DecodeSupport::HardwareDecode;
     } else {
       SLOG("Error parsing acceleration info from JNI codec string %s",
            s.Data());
@@ -272,7 +272,7 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
       PlatformDecoderModule::Supports(aParams, aDiagnostics);
 
   
-  if (support == media::DecodeSupport::Unsupported) {
+  if (support.isEmpty()) {
     return support;
   }
 
@@ -281,7 +281,7 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
   if (AOMDecoder::IsAV1(aParams.MimeType()) &&
       (!StaticPrefs::media_av1_enabled() ||
        !support.contains(media::DecodeSupport::HardwareDecode))) {
-    return media::DecodeSupport::Unsupported;
+    return media::DecodeSupportSet{};
   }
 #endif
 
@@ -295,7 +295,7 @@ media::DecodeSupportSet AndroidDecoderModule::Supports(
   return java::HardwareCodecCapabilityUtils::Decodes10Bit(
              TranslateMimeType(aParams.MimeType()))
              ? support
-             : media::DecodeSupport::Unsupported;
+             : media::DecodeSupportSet{};
 }
 
 already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateVideoDecoder(
