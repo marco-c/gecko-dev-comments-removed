@@ -17257,94 +17257,123 @@ Document::CreatePermissionGrantPromise(
 
   return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain,
           aFrameOnly]() {
-    
     RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::Private>
         p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
             Private(__func__);
-    RefPtr<StorageAccessPermissionRequest> sapr =
-        StorageAccessPermissionRequest::Create(
-            inner, principal, aTopLevelBaseDomain, aFrameOnly,
-            
-            [p] {
-              Telemetry::AccumulateCategorical(
-                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
-              p->Resolve(StorageAccessAPIHelper::eAllow, __func__);
-            },
-            
-            [p] {
-              Telemetry::AccumulateCategorical(
-                  Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
-              p->Reject(false, __func__);
-            });
 
-    using PromptResult = ContentPermissionRequestBase::PromptResult;
-    PromptResult pr = sapr->CheckPromptPrefs();
-
-    if (pr == PromptResult::Pending) {
-      
-      Telemetry::AccumulateCategorical(
-          Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
-    }
-
+    RefPtr<PWindowGlobalChild::HasStorageAccessPermissionPromise> promise;
     
-    self->AutomaticStorageAccessPermissionCanBeGranted(aHasUserInteraction)
-        ->Then(
-            GetCurrentSerialEventTarget(), __func__,
+    MOZ_ASSERT(XRE_IsContentProcess());
+
+    WindowGlobalChild* wgc = inner->GetWindowGlobalChild();
+    MOZ_ASSERT(wgc);
+
+    promise = wgc->SendHasStorageAccessPermission();
+    MOZ_ASSERT(promise);
+    promise->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [self, p, inner, principal, aHasUserInteraction, aTopLevelBaseDomain,
+         aFrameOnly](bool aGranted) {
+          if (aGranted) {
+            p->Resolve(true, __func__);
+            return;
+          }
+
+          
+          RefPtr<StorageAccessPermissionRequest> sapr =
+              StorageAccessPermissionRequest::Create(
+                  inner, principal, aTopLevelBaseDomain, aFrameOnly,
+                  
+                  [p] {
+                    Telemetry::AccumulateCategorical(
+                        Telemetry::LABELS_STORAGE_ACCESS_API_UI::Allow);
+                    p->Resolve(StorageAccessAPIHelper::eAllow, __func__);
+                  },
+                  
+                  [p] {
+                    Telemetry::AccumulateCategorical(
+                        Telemetry::LABELS_STORAGE_ACCESS_API_UI::Deny);
+                    p->Reject(false, __func__);
+                  });
+
+          using PromptResult = ContentPermissionRequestBase::PromptResult;
+          PromptResult pr = sapr->CheckPromptPrefs();
+
+          if (pr == PromptResult::Pending) {
             
-            [p, pr, sapr, inner](
-                const Document::AutomaticStorageAccessPermissionGrantPromise::
-                    ResolveOrRejectValue& aValue) -> void {
-              
-              
-              PromptResult pr2 = pr;
+            Telemetry::AccumulateCategorical(
+                Telemetry::LABELS_STORAGE_ACCESS_API_UI::Request);
+          }
 
-              
-              
-              bool storageAccessCanBeGrantedAutomatically =
-                  aValue.IsResolve() && aValue.ResolveValue();
-              bool autoGrant = false;
-              if (pr2 == PromptResult::Pending &&
-                  storageAccessCanBeGrantedAutomatically) {
-                pr2 = PromptResult::Granted;
-                autoGrant = true;
-
-                Telemetry::AccumulateCategorical(
-                    Telemetry::LABELS_STORAGE_ACCESS_API_UI::
-                        AllowAutomatically);
-              }
-
-              
-              if (pr2 != PromptResult::Pending) {
-                MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
-                              pr2 == PromptResult::Denied);
-                if (pr2 == PromptResult::Granted) {
-                  StorageAccessAPIHelper::StorageAccessPromptChoices choice =
-                      StorageAccessAPIHelper::eAllow;
-                  if (autoGrant) {
-                    choice = StorageAccessAPIHelper::eAllowAutoGrant;
-                  }
-                  if (!autoGrant) {
-                    p->Resolve(choice, __func__);
-                  } else {
+          
+          
+          self->AutomaticStorageAccessPermissionCanBeGranted(
+                  aHasUserInteraction)
+              ->Then(
+                  GetCurrentSerialEventTarget(), __func__,
+                  
+                  [p, pr, sapr,
+                   inner](const Document::
+                              AutomaticStorageAccessPermissionGrantPromise::
+                                  ResolveOrRejectValue& aValue) -> void {
                     
                     
-                    sapr->MaybeDelayAutomaticGrants()->Then(
-                        GetCurrentSerialEventTarget(), __func__,
-                        [p, sapr, choice] { p->Resolve(choice, __func__); },
-                        [p, sapr] { p->Reject(false, __func__); });
-                  }
-                  return;
-                }
-                p->Reject(false, __func__);
-                return;
-              }
+                    PromptResult pr2 = pr;
 
-              
-              
-              sapr->RequestDelayedTask(
-                  inner->EventTargetFor(TaskCategory::Other),
-                  ContentPermissionRequestBase::DelayedTaskType::Request);
-            });
+                    
+                    
+                    bool storageAccessCanBeGrantedAutomatically =
+                        aValue.IsResolve() && aValue.ResolveValue();
+                    bool autoGrant = false;
+                    if (pr2 == PromptResult::Pending &&
+                        storageAccessCanBeGrantedAutomatically) {
+                      pr2 = PromptResult::Granted;
+                      autoGrant = true;
+
+                      Telemetry::AccumulateCategorical(
+                          Telemetry::LABELS_STORAGE_ACCESS_API_UI::
+                              AllowAutomatically);
+                    }
+
+                    
+                    if (pr2 != PromptResult::Pending) {
+                      MOZ_ASSERT_IF(pr2 != PromptResult::Granted,
+                                    pr2 == PromptResult::Denied);
+                      if (pr2 == PromptResult::Granted) {
+                        StorageAccessAPIHelper::StorageAccessPromptChoices
+                            choice = StorageAccessAPIHelper::eAllow;
+                        if (autoGrant) {
+                          choice = StorageAccessAPIHelper::eAllowAutoGrant;
+                        }
+                        if (!autoGrant) {
+                          p->Resolve(choice, __func__);
+                        } else {
+                          
+                          
+                          sapr->MaybeDelayAutomaticGrants()->Then(
+                              GetCurrentSerialEventTarget(), __func__,
+                              [p, sapr, choice] {
+                                p->Resolve(choice, __func__);
+                              },
+                              [p, sapr] { p->Reject(false, __func__); });
+                        }
+                        return;
+                      }
+                      p->Reject(false, __func__);
+                      return;
+                    }
+
+                    
+                    
+                    sapr->RequestDelayedTask(
+                        inner->EventTargetFor(TaskCategory::Other),
+                        ContentPermissionRequestBase::DelayedTaskType::Request);
+                  });
+        },
+        [p](mozilla::ipc::ResponseRejectReason aError) {
+          p->Reject(false, __func__);
+          return p;
+        });
 
     return p;
   };
