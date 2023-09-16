@@ -21,8 +21,6 @@ class EventTarget;
 
 namespace layers {
 
-class DelayedClearElementActivation;
-
 
 
 
@@ -63,10 +61,6 @@ class ActiveElementManager final {
 
 
   void HandleTouchEnd();
-  
-
-
-  void ProcessSingleTap();
 
  private:
   
@@ -87,10 +81,6 @@ class ActiveElementManager final {
 
 
   RefPtr<CancelableRunnable> mSetActiveTask;
-
-  
-  
-  RefPtr<DelayedClearElementActivation> mDelayedClearElementActivation;
 
   
   void TriggerElementActivation();
