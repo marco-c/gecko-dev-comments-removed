@@ -607,7 +607,11 @@ class StencilModuleEntry {
   
   
   
+
+  
   uint32_t lineno = 0;
+
+  
   uint32_t column = 0;
 
  private:

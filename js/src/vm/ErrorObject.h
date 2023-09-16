@@ -73,6 +73,7 @@ class ErrorObject : public NativeObject {
   
   
   
+  
   static ErrorObject* create(JSContext* cx, JSExnType type, HandleObject stack,
                              HandleString fileName, uint32_t sourceId,
                              uint32_t lineNumber, uint32_t columnNumber,

@@ -36,7 +36,10 @@ class JitOpcodeDictionary {
 struct JitCodeSourceInfo {
   UniqueChars filename;
   uint32_t offset = 0;
+
+  
   uint32_t lineno = 0;
+  
   uint32_t colno = 0;
 };
 

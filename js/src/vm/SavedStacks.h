@@ -265,7 +265,11 @@ class SavedStacks {
 
     WeakHeapPtr<JSAtom*> source;
     uint32_t sourceId;
+
+    
     size_t line;
+
+    
     uint32_t column;
   };
 

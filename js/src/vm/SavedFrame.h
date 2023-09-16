@@ -48,7 +48,9 @@ class SavedFrame : public NativeObject {
   
   JSAtom* getSource();
   uint32_t getSourceId();
+  
   uint32_t getLine();
+  
   uint32_t getColumn();
   JSAtom* getFunctionDisplayName();
   JSAtom* getAsyncCause();

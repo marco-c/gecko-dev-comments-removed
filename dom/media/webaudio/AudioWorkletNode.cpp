@@ -48,7 +48,9 @@ struct NamedAudioParamTimeline {
 
 struct ProcessorErrorDetails {
   ProcessorErrorDetails() : mLineno(0), mColno(0) {}
+  
   unsigned mLineno;
+  
   unsigned mColno;
   nsString mFilename;
   nsString mMessage;

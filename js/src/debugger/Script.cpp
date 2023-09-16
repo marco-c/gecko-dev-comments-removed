@@ -1133,7 +1133,10 @@ class FlowGraphSummary {
    private:
     Entry(size_t lineno, size_t column) : lineno_(lineno), column_(column) {}
 
+    
     size_t lineno_;
+
+    
     size_t column_;
   };
 

@@ -1540,7 +1540,9 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   [[nodiscard]] bool appendSourceDataForToString(JSContext* cx,
                                                  js::StringBuffer& buf);
 
+  
   uint32_t lineno() const { return extent_.lineno; }
+  
   uint32_t column() const { return extent_.column; }
 
   JS::DelazificationOption delazificationMode() const {

@@ -75,10 +75,12 @@ extern JS_PUBLIC_API SavedFrameResult GetSavedFrameSourceId(
 
 
 
+
 extern JS_PUBLIC_API SavedFrameResult GetSavedFrameLine(
     JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
     uint32_t* linep,
     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
+
 
 
 

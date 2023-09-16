@@ -355,7 +355,7 @@ class BytecodeSection {
   uint32_t lastSeparatorCodeOffset_ = 0;
   uint32_t lastSeparatorSourceOffset_ = 0;
   uint32_t lastSeparatorLine_ = 0;
-  uint32_t lastSeparatorColumn_ = 0;
+  uint32_t lastSeparatorColumn_ = 0;  
 
   
 

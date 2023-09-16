@@ -37,7 +37,11 @@ struct ErrorMetadata {
   
   
   
+
+  
   uint32_t lineNumber;
+
+  
   uint32_t columnNumber;
 
   

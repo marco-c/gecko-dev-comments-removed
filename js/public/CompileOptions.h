@@ -452,7 +452,10 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
  public:
   
+
+  
   unsigned lineno = 1;
+  
   unsigned column = 0;
 
   
