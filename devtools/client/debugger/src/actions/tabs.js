@@ -6,15 +6,10 @@
 
 
 
-
 import { removeDocument } from "../utils/editor";
 import { selectSource } from "./sources";
 
-import {
-  getSourceByURL,
-  getSourceTabs,
-  getNewSelectedSource,
-} from "../selectors";
+import { getSelectedLocation, getSourcesForTabs } from "../selectors";
 
 export function addTab(source, sourceActor) {
   return {
@@ -40,19 +35,27 @@ export function moveTabBySourceId(sourceId, tabIndex) {
   };
 }
 
+export function closeTab(source) {
+  return closeTabs([source]);
+}
 
+export function closeTabs(sources) {
+  return ({ dispatch, getState }) => {
+    if (!sources.length) {
+      return;
+    }
 
+    for (const source of sources) {
+      removeDocument(source.id);
+    }
 
+    
+    
+    const newSourceToSelect = getNewSourceToSelect(getState(), sources);
 
-export function closeTab(source, reason = "click") {
-  return ({ dispatch, getState, client }) => {
-    removeDocument(source.id);
+    dispatch({ type: "CLOSE_TABS", sources });
 
-    const tabs = getSourceTabs(getState());
-    dispatch({ type: "CLOSE_TAB", source });
-
-    const newSource = getNewSelectedSource(getState(), tabs);
-    dispatch(selectSource(newSource));
+    dispatch(selectSource(newSourceToSelect));
   };
 }
 
@@ -60,17 +63,42 @@ export function closeTab(source, reason = "click") {
 
 
 
-export function closeTabs(urls) {
-  return ({ dispatch, getState, client }) => {
-    const sources = urls
-      .map(url => getSourceByURL(getState(), url))
-      .filter(Boolean);
 
-    const tabs = getSourceTabs(getState());
-    sources.map(source => removeDocument(source.id));
-    dispatch({ type: "CLOSE_TABS", sources });
 
-    const source = getNewSelectedSource(getState(), tabs);
-    dispatch(selectSource(source));
-  };
+
+
+
+function getNewSourceToSelect(state, closedTabsSources) {
+  const selectedLocation = getSelectedLocation(state);
+  
+  if (!selectedLocation) {
+    return null;
+  }
+  
+  if (!closedTabsSources.includes(selectedLocation.source)) {
+    return selectedLocation.source;
+  }
+  const tabsSources = getSourcesForTabs(state);
+  
+  
+  const lastRemovedTabSource = closedTabsSources.at(-1);
+  const lastRemovedTabIndex = tabsSources.indexOf(lastRemovedTabSource);
+  if (lastRemovedTabIndex == -1) {
+    
+    return null;
+  }
+  
+  if (lastRemovedTabIndex + 1 < tabsSources.length) {
+    return tabsSources[lastRemovedTabIndex + 1];
+  }
+
+  
+  const firstRemovedTabIndex =
+    lastRemovedTabIndex - (closedTabsSources.length - 1);
+  if (firstRemovedTabIndex > 0) {
+    return tabsSources[firstRemovedTabIndex - 1];
+  }
+
+  
+  return null;
 }
