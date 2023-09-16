@@ -590,6 +590,19 @@ void nsXULElement::AddListenerForAttributeIfNeeded(const nsAttrName& aName) {
   }
 }
 
+
+
+
+
+void nsXULElement::UpdateEditableState(bool aNotify) {
+  
+  
+  nsIContent* parent = GetParent();
+
+  SetEditableFlag(parent && parent->HasFlag(NODE_IS_EDITABLE));
+  UpdateState(aNotify);
+}
+
 class XULInContentErrorReporter : public Runnable {
  public:
   explicit XULInContentErrorReporter(Document& aDocument)

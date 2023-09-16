@@ -4528,26 +4528,17 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
       
       
       CancelImageRequests(aNotify);
-      RemoveStates(ElementState::BROKEN, aNotify);
-    } else {
+    } else if (aNotify) {
       
       
-      bool hasSrc = false;
-      if (aNotify) {
-        nsAutoString src;
-        if ((hasSrc = GetAttr(nsGkAtoms::src, src))) {
-          
-          
-          mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
+      nsAutoString src;
+      if (GetAttr(nsGkAtoms::src, src)) {
+        
+        
+        mUseUrgentStartForChannel = UserActivation::IsHandlingUserInput();
 
-          LoadImage(src, false, aNotify, eImageLoadType_Normal,
-                    mSrcTriggeringPrincipal);
-        }
-      } else {
-        hasSrc = HasAttr(nsGkAtoms::src);
-      }
-      if (!hasSrc) {
-        AddStates(ElementState::BROKEN, aNotify);
+        LoadImage(src, false, aNotify, eImageLoadType_Normal,
+                  mSrcTriggeringPrincipal);
       }
     }
     
@@ -6066,6 +6057,17 @@ void HTMLInputElement::DoneCreatingElement() {
 void HTMLInputElement::DestroyContent() {
   nsImageLoadingContent::Destroy();
   TextControlElement::DestroyContent();
+}
+
+ElementState HTMLInputElement::IntrinsicState() const {
+  
+  
+  ElementState state =
+      nsGenericHTMLFormControlElementWithState::IntrinsicState();
+  if (mType == FormControlType::InputImage) {
+    state |= nsImageLoadingContent::ImageState();
+  }
+  return state;
 }
 
 void HTMLInputElement::UpdateValidityElementStates(bool aNotify) {

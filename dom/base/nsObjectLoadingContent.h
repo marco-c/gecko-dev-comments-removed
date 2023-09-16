@@ -78,6 +78,12 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
   NS_DECL_NSIOBJECTLOADINGCONTENT
   NS_DECL_NSICHANNELEVENTSINK
 
+  
+
+
+
+  mozilla::dom::ElementState ObjectState() const;
+
   ObjectType Type() const { return mType; }
 
   void SetIsNetworkCreated(bool aNetworkCreated) {
@@ -423,7 +429,9 @@ class nsObjectLoadingContent : public nsImageLoadingContent,
 
 
 
-  void NotifyStateChanged(ObjectType aOldType, bool aNotify);
+  void NotifyStateChanged(ObjectType aOldType,
+                          mozilla::dom::ElementState aOldState, bool aNotify,
+                          bool aForceRestyle);
 
   
 

@@ -83,8 +83,14 @@ void HTMLAreaElement::AfterSetAttr(int32_t aNamespaceID, nsAtom* aName,
                                    const nsAttrValue* aOldValue,
                                    nsIPrincipal* aSubjectPrincipal,
                                    bool aNotify) {
-  if (aNamespaceID == kNameSpaceID_None && aName == nsGkAtoms::href) {
-    Link::ResetLinkState(aNotify, !!aValue);
+  if (aNamespaceID == kNameSpaceID_None) {
+    
+    
+    
+    
+    if (aName == nsGkAtoms::href) {
+      Link::ResetLinkState(aNotify, !!aValue);
+    }
   }
 
   return nsGenericHTMLElement::AfterSetAttr(

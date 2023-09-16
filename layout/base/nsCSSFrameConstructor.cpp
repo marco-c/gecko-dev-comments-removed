@@ -3642,19 +3642,20 @@ static nsIFrame* NS_NewSubDocumentOrImageFrame(mozilla::PresShell* aPresShell,
 const nsCSSFrameConstructor::FrameConstructionData*
 nsCSSFrameConstructor::FindObjectData(const Element& aElement,
                                       ComputedStyle& aStyle) {
+  
+  
+  
   uint32_t type;
-  nsCOMPtr<nsIObjectLoadingContent> objContent =
-      do_QueryInterface(const_cast<Element*>(&aElement));
-  NS_ASSERTION(objContent,
-               "embed and object must implement "
-               "nsIObjectLoadingContent!");
-  objContent->GetDisplayedType(&type);
-  if (type == nsIObjectLoadingContent::TYPE_IMAGE &&
-      aElement.State().HasState(ElementState::BROKEN)) {
-    
-    
-    
+  if (aElement.State().HasState(ElementState::BROKEN)) {
     type = nsIObjectLoadingContent::TYPE_NULL;
+  } else {
+    nsCOMPtr<nsIObjectLoadingContent> objContent =
+        do_QueryInterface(const_cast<Element*>(&aElement));
+    NS_ASSERTION(objContent,
+                 "embed and object must implement "
+                 "nsIObjectLoadingContent!");
+
+    objContent->GetDisplayedType(&type);
   }
 
   if (type == nsIObjectLoadingContent::TYPE_FALLBACK &&

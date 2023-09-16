@@ -74,7 +74,6 @@ class nsFocusManager;
 class nsGenericHTMLFormControlElementWithState;
 class nsGlobalWindowInner;
 class nsGlobalWindowOuter;
-class nsImageLoadingContent;
 class nsIAutoCompletePopup;
 class nsIBrowser;
 class nsIDOMXULButtonElement;
@@ -94,7 +93,6 @@ class nsIPrincipal;
 class nsIScreen;
 class nsIScrollableFrame;
 class nsIURI;
-class nsObjectLoadingContent;
 class nsPresContext;
 class nsWindowSizes;
 struct JSContext;
@@ -254,7 +252,23 @@ class Element : public FragmentOrElement {
 
 
 
-  ElementState State() const { return mState; }
+  ElementState State() const {
+    
+    
+    return mState;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  void UpdateState(bool aNotify);
 
   
 
@@ -481,7 +495,7 @@ class Element : public FragmentOrElement {
   }
 
   inline void SetDirectionality(Directionality aDir, bool aNotify) {
-    AutoStateChangeNotifier notifier(*this, aNotify);
+    auto oldState = mState;
     RemoveStatesSilently(ElementState::DIR_STATES);
     switch (aDir) {
       case eDir_RTL:
@@ -492,6 +506,15 @@ class Element : public FragmentOrElement {
         break;
       default:
         break;
+    }
+
+    
+
+
+
+
+    if (aNotify) {
+      NotifyStateChange(oldState ^ mState);
     }
   }
 
@@ -677,22 +700,32 @@ class Element : public FragmentOrElement {
   REFLECT_DOMSTRING_ATTR(AriaValueText, aria_valuetext)
 
  protected:
+  
+
+
+
+
+  virtual ElementState IntrinsicState() const;
+
+  
+
+
+
+
+
+  void AddStatesSilently(ElementState aStates) { mState |= aStates; }
+
+  
+
+
+
+
+
+  void RemoveStatesSilently(ElementState aStates) { mState &= ~aStates; }
+
   already_AddRefed<ShadowRoot> AttachShadowInternal(ShadowRootMode,
                                                     ErrorResult& aError);
 
- public:
-  MOZ_CAN_RUN_SCRIPT
-  nsIScrollableFrame* GetScrollFrame(nsIFrame** aStyledFrame = nullptr,
-                                     FlushType aFlushType = FlushType::Layout);
-
- private:
-  
-  ElementState StyleStateFromLocks() const;
-
-  void NotifyStateChange(ElementState aStates);
-  void NotifyStyleStateChange(ElementState aStates);
-
- public:
   struct AutoStateChangeNotifier {
     AutoStateChangeNotifier(Element& aElement, bool aNotify)
         : mElement(aElement), mOldState(aElement.State()), mNotify(aNotify) {}
@@ -712,30 +745,54 @@ class Element : public FragmentOrElement {
     const bool mNotify;
   };
 
+ public:
+  MOZ_CAN_RUN_SCRIPT
+  nsIScrollableFrame* GetScrollFrame(nsIFrame** aStyledFrame = nullptr,
+                                     FlushType aFlushType = FlushType::Layout);
+
+ private:
   
   
+  friend class mozilla::EventStateManager;
+  friend class mozilla::dom::Document;
+  friend class ::nsGlobalWindowInner;
+  friend class ::nsGlobalWindowOuter;
+  friend class ::nsFocusManager;
+  friend class mozilla::dom::HTMLFormElement;
+
   
+  friend class CustomElementRegistry;
+
   
-  void AddStatesSilently(ElementState aStates) { mState |= aStates; }
+  friend class Link;
+
   
+  ElementState StyleStateFromLocks() const;
+
+ protected:
+  void NotifyStateChange(ElementState aStates);
+  void NotifyStyleStateChange(ElementState aStates);
+
   
-  
-  void RemoveStatesSilently(ElementState aStates) { mState &= ~aStates; }
   
   
   
   
   void AddStates(ElementState aStates, bool aNotify = true) {
+    MOZ_ASSERT(!aStates.HasAtLeastOneOfStates(ElementState::INTRINSIC_STATES),
+               "Should only be adding externally-managed states here");
     ElementState old = mState;
     AddStatesSilently(aStates);
-    if (aNotify && old != mState) {
+    if (aNotify) {
       NotifyStateChange(old ^ mState);
     }
   }
   void RemoveStates(ElementState aStates, bool aNotify = true) {
+    MOZ_ASSERT(!aStates.HasAtLeastOneOfStates(ElementState::INTRINSIC_STATES),
+               "Should only be removing externally-managed states here");
     ElementState old = mState;
     RemoveStatesSilently(aStates);
-    if (aNotify && old != mState) {
+    if (aNotify) {
       NotifyStateChange(old ^ mState);
     }
   }
@@ -747,10 +804,25 @@ class Element : public FragmentOrElement {
     }
   }
   void ToggleStates(ElementState aStates, bool aNotify) {
+    MOZ_ASSERT(!aStates.HasAtLeastOneOfStates(ElementState::INTRINSIC_STATES),
+               "Should only be removing externally-managed states here");
     mState ^= aStates;
     if (aNotify) {
       NotifyStateChange(aStates);
     }
+  }
+
+ public:
+  
+  void AddManuallyManagedStates(ElementState aStates) {
+    MOZ_ASSERT(ElementState::MANUALLY_MANAGED_STATES.HasAllStates(aStates),
+               "Should only be adding manually-managed states here");
+    AddStates(aStates);
+  }
+  void RemoveManuallyManagedStates(ElementState aStates) {
+    MOZ_ASSERT(ElementState::MANUALLY_MANAGED_STATES.HasAllStates(aStates),
+               "Should only be removing manually-managed states here");
+    RemoveStates(aStates);
   }
 
   void UpdateEditableState(bool aNotify) override;
