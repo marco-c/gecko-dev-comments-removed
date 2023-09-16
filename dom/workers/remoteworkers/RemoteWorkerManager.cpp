@@ -11,20 +11,14 @@
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/dom/ContentChild.h"  
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/RemoteWorkerController.h"
 #include "mozilla/dom/RemoteWorkerParent.h"
 #include "mozilla/ipc/BackgroundParent.h"
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/PBackgroundParent.h"
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-#  include "mozilla/dom/DOMException.h"
-#  include "mozilla/CycleCollectedJSContext.h"
-#  include "mozilla/Sprintf.h"  
-#  include "nsIXPConnect.h"     
-#endif
 #include "mozilla/StaticPrefs_extensions.h"
 #include "nsCOMPtr.h"
-#include "nsIE10SUtils.h"
 #include "nsImportModule.h"
 #include "nsIXULRuntime.h"
 #include "nsTArray.h"
@@ -109,11 +103,11 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
   MOZ_ASSERT_IF(aWorkerKind == WorkerKind::WorkerKindService,
                 aPrincipal->GetIsContentPrincipal());
 
-  nsCOMPtr<nsIE10SUtils> e10sUtils = do_ImportESModule(
-      "resource://gre/modules/E10SUtils.sys.mjs", "E10SUtils", fallible);
-  if (NS_WARN_IF(!e10sUtils)) {
-    LOG(("GetRemoteType Abort: could not import E10SUtils"));
-    return Err(NS_ERROR_DOM_ABORT_ERR);
+  
+  
+  if (!BrowserTabsRemoteAutostart()) {
+    LOG(("GetRemoteType: Loading in parent process as e10s is disabled"));
+    return NOT_REMOTE_TYPE;
   }
 
   nsCString preferredRemoteType = DEFAULT_REMOTE_TYPE;
@@ -127,115 +121,13 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
     }
   }
 
-  nsIE10SUtils::RemoteWorkerType workerType;
-
-  switch (aWorkerKind) {
-    case WorkerKind::WorkerKindService:
-      workerType = nsIE10SUtils::REMOTE_WORKER_TYPE_SERVICE;
-      break;
-    case WorkerKind::WorkerKindShared:
-      workerType = nsIE10SUtils::REMOTE_WORKER_TYPE_SHARED;
-      break;
-    default:
-      
-      
-      LOG(("GetRemoteType Error on unexpected worker type"));
-      MOZ_DIAGNOSTIC_ASSERT(false, "Unexpected worker type");
-      return Err(NS_ERROR_DOM_ABORT_ERR);
-  }
-
-  
-  
-  
-  
-  bool isMultiprocess = BrowserTabsRemoteAutostart();
-  bool isFission = FissionAutostart();
-
-  nsCString remoteType = NOT_REMOTE_TYPE;
-
-  nsresult rv = e10sUtils->GetRemoteTypeForWorkerPrincipal(
-      aPrincipal, workerType, isMultiprocess, isFission, preferredRemoteType,
-      remoteType);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    LOG(
-        ("GetRemoteType Abort: E10SUtils.getRemoteTypeForWorkerPrincipal "
-         "exception"));
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    nsCString principalTypeOrScheme;
-    if (aPrincipal->IsSystemPrincipal()) {
-      principalTypeOrScheme = "system"_ns;
-    } else if (aPrincipal->GetIsExpandedPrincipal()) {
-      principalTypeOrScheme = "expanded"_ns;
-    } else if (aPrincipal->GetIsNullPrincipal()) {
-      principalTypeOrScheme = "null"_ns;
-    } else {
-      nsCOMPtr<nsIURI> uri = aPrincipal->GetURI();
-      nsresult rv2 = uri->GetScheme(principalTypeOrScheme);
-      if (NS_FAILED(rv2)) {
-        principalTypeOrScheme = "content"_ns;
-      }
-    }
-
-    nsCString processRemoteType = "parent"_ns;
-    if (auto* contentChild = ContentChild::GetSingleton()) {
-      
-      
-      processRemoteType = RemoteTypePrefix(contentChild->GetRemoteType());
-    }
-
-    
-    nsAutoCString errorName;
-    GetErrorName(rv, errorName);
-
-    
-    nsAutoCString errorFilename("(unknown)"_ns);
-    uint32_t jsmErrorLineNumber = 0;
-
-    if (auto* context = CycleCollectedJSContext::Get()) {
-      if (RefPtr<Exception> exn = context->GetPendingException()) {
-        nsAutoString filename(u"(unknown)"_ns);
-
-        if (rv == NS_ERROR_XPC_JAVASCRIPT_ERROR_WITH_DETAILS) {
-          
-          
-          
-          
-          nsCOMPtr<nsIScriptError> scriptError =
-              do_QueryInterface(exn->GetData());
-          if (scriptError) {
-            scriptError->GetLineNumber(&jsmErrorLineNumber);
-            scriptError->GetSourceName(filename);
-          }
-        } else {
-          nsCOMPtr<nsIXPConnectWrappedJS> wrapped =
-              do_QueryInterface(e10sUtils);
-          dom::AutoJSAPI jsapi;
-          if (jsapi.Init(wrapped->GetJSObjectGlobal())) {
-            auto* cx = jsapi.cx();
-            jsmErrorLineNumber = exn->LineNumber(cx);
-            exn->GetFilename(cx, filename);
-          }
-        }
-
-        errorFilename = NS_ConvertUTF16toUTF8(filename);
-      }
-    }
-
-    char buf[1024];
-    SprintfLiteral(
-        buf,
-        "workerType=%s, principal=%s, preferredRemoteType=%s, "
-        "processRemoteType=%s, errorName=%s, errorLocation=%s:%d",
-        aWorkerKind == WorkerKind::WorkerKindService ? "service" : "shared",
-        principalTypeOrScheme.get(),
-        PromiseFlatCString(RemoteTypePrefix(preferredRemoteType)).get(),
-        processRemoteType.get(), errorName.get(), errorFilename.get(),
-        jsmErrorLineNumber);
-    MOZ_CRASH_UNSAFE_PRINTF(
-        "E10SUtils.getRemoteTypeForWorkerPrincipal did throw: %s", buf);
-#endif
+  auto result = IsolationOptionsForWorker(
+      aPrincipal, aWorkerKind, preferredRemoteType, FissionAutostart());
+  if (NS_WARN_IF(result.isErr())) {
+    LOG(("GetRemoteType Abort: IsolationOptionsForWorker failed"));
     return Err(NS_ERROR_DOM_ABORT_ERR);
   }
+  auto options = result.unwrap();
 
   if (MOZ_LOG_TEST(gRemoteWorkerManagerLog, LogLevel::Verbose)) {
     nsCString principalOrigin;
@@ -245,10 +137,11 @@ Result<nsCString, nsresult> RemoteWorkerManager::GetRemoteType(
         ("GetRemoteType workerType=%s, principal=%s, "
          "preferredRemoteType=%s, selectedRemoteType=%s",
          aWorkerKind == WorkerKind::WorkerKindService ? "service" : "shared",
-         principalOrigin.get(), preferredRemoteType.get(), remoteType.get()));
+         principalOrigin.get(), preferredRemoteType.get(),
+         options.mRemoteType.get()));
   }
 
-  return remoteType;
+  return options.mRemoteType;
 }
 
 

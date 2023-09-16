@@ -12,6 +12,7 @@
 #include "mozilla/Logging.h"
 #include "mozilla/dom/RemoteType.h"
 #include "mozilla/dom/SessionHistoryEntry.h"
+#include "mozilla/dom/WorkerPrivate.h"
 #include "nsString.h"
 #include "nsIPrincipal.h"
 #include "nsIURI.h"
@@ -58,6 +59,22 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     bool aForNewTab, uint32_t aLoadStateLoadType,
     const Maybe<uint64_t>& aChannelId,
     const Maybe<nsCString>& aRemoteTypeOverride);
+
+
+
+struct WorkerIsolationOptions {
+  nsCString mRemoteType;
+};
+
+
+
+
+
+
+
+Result<WorkerIsolationOptions, nsresult> IsolationOptionsForWorker(
+    nsIPrincipal* aPrincipal, WorkerKind aWorkerKind,
+    const nsACString& aCurrentRemoteType, bool aUseRemoteSubframes);
 
 
 
