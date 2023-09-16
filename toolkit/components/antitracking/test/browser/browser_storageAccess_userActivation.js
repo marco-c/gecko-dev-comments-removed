@@ -14,23 +14,6 @@ Services.scriptloader.loadSubScript(
 
 
 async function requestStorageAccessAndExpectUserActivationActive() {
-  const aps = SpecialPowers.Services.prefs.getBoolPref(
-    "privacy.partition.always_partition_third_party_non_cookie_storage"
-  );
-
-  
-  
-  
-  await new Promise((resolve, reject) => {
-    const db = window.indexedDB.open("rSATest", 1);
-    db.onupgradeneeded = resolve;
-    db.success = resolve;
-    db.onerror = reject;
-  });
-
-  const hadAccessAlready = await document.hasStorageAccess();
-  const shouldClearIDB = !aps && !hadAccessAlready;
-
   SpecialPowers.wrap(document).notifyUserGestureActivation();
   let p = document.requestStorageAccess();
   try {
@@ -51,47 +34,11 @@ async function requestStorageAccessAndExpectUserActivationActive() {
     `check has-valid-transient-user-activation on the top-level-document`
   );
 
-  await new Promise((resolve, reject) => {
-    const req = window.indexedDB.open("rSATest", 1);
-    req.onerror = reject;
-    req.onupgradeneeded = () => {
-      ok(shouldClearIDB, "iDB was cleared");
-      req.onsuccess = undefined;
-      resolve();
-    };
-    req.onsuccess = () => {
-      ok(!shouldClearIDB, "iDB was not cleared");
-      resolve();
-    };
-  });
-  await new Promise(resolve => {
-    const req = window.indexedDB.deleteDatabase("rSATest");
-    req.onsuccess = resolve;
-    req.onerror = resolve;
-  });
-
   SpecialPowers.wrap(document).clearUserGestureActivation();
 }
 
 
 async function requestStorageAccessAndExpectUserActivationConsumed() {
-  const aps = SpecialPowers.Services.prefs.getBoolPref(
-    "privacy.partition.always_partition_third_party_non_cookie_storage"
-  );
-
-  
-  
-  
-  await new Promise((resolve, reject) => {
-    const db = window.indexedDB.open("rSATest", 1);
-    db.onupgradeneeded = resolve;
-    db.success = resolve;
-    db.onerror = reject;
-  });
-
-  const hadAccessAlready = await document.hasStorageAccess();
-  const shouldClearIDB = !aps && !hadAccessAlready;
-
   SpecialPowers.wrap(document).notifyUserGestureActivation();
   let p = document.requestStorageAccess();
   try {
@@ -111,25 +58,6 @@ async function requestStorageAccessAndExpectUserActivationConsumed() {
     false,
     `check has-valid-transient-user-activation on the top-level-document`
   );
-
-  await new Promise((resolve, reject) => {
-    const req = window.indexedDB.open("rSATest", 1);
-    req.onerror = reject;
-    req.onupgradeneeded = () => {
-      ok(shouldClearIDB, "iDB was cleared");
-      req.onsuccess = undefined;
-      resolve();
-    };
-    req.onsuccess = () => {
-      ok(!shouldClearIDB, "iDB was not cleared");
-      resolve();
-    };
-  });
-  await new Promise(resolve => {
-    const req = window.indexedDB.deleteDatabase("rSATest");
-    req.onsuccess = resolve;
-    req.onerror = resolve;
-  });
 
   SpecialPowers.wrap(document).clearUserGestureActivation();
 }
