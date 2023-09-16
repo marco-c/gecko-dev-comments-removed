@@ -17,6 +17,7 @@
 
 
 
+
 assert.throws(Test262Error, function() {
   const array = [1];
   Map.groupBy(array, function() {

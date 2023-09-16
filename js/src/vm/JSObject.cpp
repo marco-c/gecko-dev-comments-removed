@@ -2189,6 +2189,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
     return true;
   }
 
+#ifdef NIGHTLY_BUILD
   
   
   
@@ -2197,6 +2198,7 @@ JS_PUBLIC_API bool js::ShouldIgnorePropertyDefinition(JSContext* cx,
       (id == NameToId(cx->names().groupBy))) {
     return true;
   }
+#endif
 
 #ifdef NIGHTLY_BUILD
   if (key == JSProto_Set &&

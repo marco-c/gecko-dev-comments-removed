@@ -37,6 +37,7 @@ FEATURE_CHECK_NEEDED = {
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
+    "array-grouping": "!Object.groupBy",  
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration()['decorators'])",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "arraybuffer-transfer": "!ArrayBuffer.prototype.transfer",  
@@ -45,6 +46,7 @@ RELEASE_OR_BETA = set([])
 SHELL_OPTIONS = {
     "import-assertions": "--enable-import-assertions",
     "ShadowRealm": "--enable-shadow-realms",
+    "array-grouping": "--enable-array-grouping",
     "iterator-helpers": "--enable-iterator-helpers",
     "arraybuffer-transfer": "--enable-arraybuffer-transfer",
 }

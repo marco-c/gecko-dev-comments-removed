@@ -221,13 +221,13 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+#ifdef NIGHTLY_BUILD
   bool getArrayGroupingEnabled() const { return arrayGrouping_; }
   RealmCreationOptions& setArrayGroupingEnabled(bool flag) {
     arrayGrouping_ = flag;
     return *this;
   }
 
-#ifdef NIGHTLY_BUILD
   bool getNewSetMethodsEnabled() const { return newSetMethods_; }
   RealmCreationOptions& setNewSetMethodsEnabled(bool flag) {
     newSetMethods_ = flag;
@@ -307,8 +307,8 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool shadowRealms_ = false;
   
   bool wellFormedUnicodeStrings_ = true;
-  bool arrayGrouping_ = true;
 #ifdef NIGHTLY_BUILD
+  bool arrayGrouping_ = false;
   
   bool newSetMethods_ = false;
   
