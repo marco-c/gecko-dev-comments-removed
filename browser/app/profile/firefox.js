@@ -2815,9 +2815,7 @@ pref("svg.context-properties.content.allowed-domains", "profile.accounts.firefox
 #endif
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.places.interactions.enabled", true);
-#endif
+pref("browser.places.interactions.enabled", true);
 
 
 
