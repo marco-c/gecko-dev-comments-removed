@@ -50,14 +50,7 @@ void mozilla::PrefetchMemory(uint8_t* aStart, size_t aNumBytes) {
 #elif defined(XP_WIN)
   MaybeInitPrefetchVirtualMemory();
   if (*sPrefetchVirtualMemory) {
-    
-    
-    
-    
-    struct {
-      PVOID VirtualAddress;
-      SIZE_T NumberOfBytes;
-    } entry;
+    WIN32_MEMORY_RANGE_ENTRY entry;
     entry.VirtualAddress = aStart;
     entry.NumberOfBytes = aNumBytes;
     (*sPrefetchVirtualMemory)(GetCurrentProcess(), 1, &entry, 0);

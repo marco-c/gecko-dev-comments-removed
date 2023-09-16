@@ -34,8 +34,7 @@ namespace {
 
 #if defined(XP_WIN)
 
-#  if defined(__MINGW32__) || (NTDDI_VERSION < NTDDI_WINBLUE) || \
-      (NTDDI_VERSION == NTDDI_WINBLUE && !defined(WINBLUE_KBSPRING14))
+#  if defined(__MINGW32__)
 
 
 static const HEAP_INFORMATION_CLASS HeapOptimizeResources =
