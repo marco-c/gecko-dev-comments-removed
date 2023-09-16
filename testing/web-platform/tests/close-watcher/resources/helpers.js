@@ -1,5 +1,3 @@
-
-
 window.createRecordingCloseWatcher = (t, events, name) => {
   const prefix = name === undefined ? "" : name + " ";;
 
@@ -17,9 +15,10 @@ window.createBlessedRecordingCloseWatcher = (t, events, name) => {
 
 window.sendEscKey = () => {
   
-  const ESC = '\uE00C';
-
-  return test_driver.send_keys(document.getElementById("d"), ESC);
+  
+  
+  
+  return test_driver.send_keys(document.body, '\uE00C');
 };
 
 
