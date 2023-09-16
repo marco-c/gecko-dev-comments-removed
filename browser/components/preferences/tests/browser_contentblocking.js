@@ -31,6 +31,8 @@ const PRIVACY_PAGE = "about:preferences#privacy";
 const ISOLATE_UI_PREF =
   "browser.contentblocking.reject-and-isolate-cookies.preferences.ui.enabled";
 const FPI_PREF = "privacy.firstparty.isolate";
+const FPP_PREF = "privacy.fingerprintingProtection";
+const FPP_PBM_PREF = "privacy.fingerprintingProtection.pbmode";
 
 const { EnterprisePolicyTesting, PoliciesPrefTracker } =
   ChromeUtils.importESModule(
@@ -105,6 +107,7 @@ add_task(async function testContentBlockingMainCategory() {
   let checkboxes = [
     "#contentBlockingTrackingProtectionCheckbox",
     "#contentBlockingBlockCookiesCheckbox",
+    "#contentBlockingFingerprintingProtectionCheckbox",
   ];
 
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
@@ -1056,6 +1059,107 @@ add_task(async function testTPMenuForEmailTP() {
     true,
     `${EMAIL_TP_PBM_PREF} has been set to true`
   );
+
+  gBrowser.removeCurrentTab();
+});
+
+
+add_task(async function testFPPCustomCheckBox() {
+  
+  SpecialPowers.pushPrefEnv({
+    set: [
+      [FPP_PREF, false],
+      [FPP_PBM_PREF, true],
+      [CAT_PREF, "custom"],
+    ],
+  });
+
+  await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
+  let doc = gBrowser.contentDocument;
+
+  let fppCheckbox = doc.querySelector(
+    "#contentBlockingFingerprintingProtectionCheckbox"
+  );
+
+  
+  ok(fppCheckbox, "FPP checkbox exists");
+  is(fppCheckbox.getAttribute("checked"), "true", "FPP checkbox is checked");
+
+  let menu = doc.querySelector("#fingerprintingProtectionMenu");
+  let alwaysMenuItem = doc.querySelector(
+    "#fingerprintingProtectionMenu > menupopup > menuitem[value=always]"
+  );
+  let privateMenuItem = doc.querySelector(
+    "#fingerprintingProtectionMenu > menupopup > menuitem[value=private]"
+  );
+
+  
+  menu.selectedItem = alwaysMenuItem;
+  alwaysMenuItem.click();
+
+  
+  is(
+    Services.prefs.getBoolPref(FPP_PREF),
+    true,
+    `${FPP_PREF} has been set to true`
+  );
+
+  is(
+    Services.prefs.getBoolPref(FPP_PBM_PREF),
+    true,
+    `${FPP_PBM_PREF} has been set to true`
+  );
+
+  
+  menu.selectedItem = privateMenuItem;
+  privateMenuItem.click();
+
+  
+  is(
+    Services.prefs.getBoolPref(FPP_PREF),
+    false,
+    `${FPP_PREF} has been set to true`
+  );
+
+  is(
+    Services.prefs.getBoolPref(FPP_PBM_PREF),
+    true,
+    `${FPP_PBM_PREF} has been set to true`
+  );
+
+  
+  fppCheckbox.click();
+
+  
+  is(
+    Services.prefs.getBoolPref(FPP_PREF),
+    false,
+    `${FPP_PREF} has been set to true`
+  );
+
+  is(
+    Services.prefs.getBoolPref(FPP_PBM_PREF),
+    false,
+    `${FPP_PBM_PREF} has been set to true`
+  );
+  is(menu.disabled, true, "The menu is disabled as the checkbox is unchecked");
+
+  
+  fppCheckbox.click();
+
+  
+  is(
+    Services.prefs.getBoolPref(FPP_PREF),
+    false,
+    `${FPP_PREF} has been set to true`
+  );
+
+  is(
+    Services.prefs.getBoolPref(FPP_PBM_PREF),
+    true,
+    `${FPP_PBM_PREF} has been set to true`
+  );
+  is(menu.disabled, false, "The menu is enabled as the checkbox is checked");
 
   gBrowser.removeCurrentTab();
 });
