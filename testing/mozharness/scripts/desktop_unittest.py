@@ -959,6 +959,8 @@ class DesktopUnittest(TestingMixin, MercurialScript, MozbaseMixin, CodeCoverageM
             return
 
         self._stage_files(self.config["xpcshell_name"])
+        if "plugin_container_name" in self.config:
+            self._stage_files(self.config["plugin_container_name"])
         
         
         
