@@ -698,12 +698,15 @@ uint16_t FormatChunk::ExtraFormatInfoSize() const {
 
 AudioConfig::ChannelLayout::ChannelMap FormatChunk::ChannelMap() const {
   
-  if (WaveFormat() == 1 || WaveFormat() == 2) {
+  
+  if (WaveFormat() != 0xFFFE || mRaw.Length() < 18) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
+  
+  
+  
   if (ExtraFormatInfoSize() < 22) {
-    MOZ_ASSERT(Channels() <= 2);
-    return AudioConfig::ChannelLayout::UNKNOWN_MAP;
+    return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
