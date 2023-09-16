@@ -621,6 +621,7 @@ class ScriptSource {
   
   uint32_t startLine_ = 0;
   
+  
   uint32_t startColumn_ = 0;
 
   

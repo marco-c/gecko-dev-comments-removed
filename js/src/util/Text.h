@@ -356,17 +356,19 @@ bool ContainsFlag(const char* str, const char* flag);
 namespace unicode {
 
 
-extern size_t CountCodePoints(const mozilla::Utf8Unit* begin,
-                              const mozilla::Utf8Unit* end);
+
+
+
+extern size_t CountUTF16CodeUnits(const mozilla::Utf8Unit* begin,
+                                  const mozilla::Utf8Unit* end);
 
 
 
 
-
-
-
-
-extern size_t CountCodePoints(const char16_t* begin, const char16_t* end);
+inline size_t CountUTF16CodeUnits(const char16_t* begin, const char16_t* end) {
+  MOZ_ASSERT(begin <= end);
+  return end - begin;
+}
 
 }  
 

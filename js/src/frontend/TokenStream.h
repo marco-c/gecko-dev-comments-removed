@@ -580,6 +580,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
   JS::ConstUTF8CharsZ filename_;
 
   
+  
 
   
 
@@ -961,6 +962,11 @@ class TokenStreamAnyChars : public TokenStreamShared {
   uint32_t computePartialColumn(const LineToken lineToken,
                                 const uint32_t offset,
                                 const SourceUnits<Unit>& sourceUnits) const;
+
+  template <typename Unit>
+  uint32_t computePartialColumnForUTF8(
+      const LineToken lineToken, const uint32_t offset, const uint32_t start,
+      const uint32_t offsetInLine, const SourceUnits<Unit>& sourceUnits) const;
 
   
 

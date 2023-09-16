@@ -219,8 +219,10 @@ struct SourceExtent {
   uint32_t toStringEnd = 0;
 
   
-  uint32_t lineno = 1;  
-  uint32_t column = 0;  
+  
+  uint32_t lineno = 1;
+  
+  uint32_t column = 0;
 
   FunctionKey toFunctionKey() const {
     

@@ -602,8 +602,10 @@ class ErrorBase {
   nsString mErrorMsg;
   nsString mFileName;
   uint32_t mSourceId;
-  uint32_t mLineNumber;  
-  uint32_t mColumn;      
+  
+  uint32_t mLineNumber;
+  
+  uint32_t mColumn;
 
   ErrorBase() : mSourceId(0), mLineNumber(0), mColumn(0) {}
 
