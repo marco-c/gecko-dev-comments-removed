@@ -76,6 +76,7 @@ struct NetEqLifetimeStatistics {
   uint64_t packets_discarded = 0;
   
   uint64_t delayed_packet_outage_samples = 0;
+  uint64_t delayed_packet_outage_events = 0;
   
   
   
