@@ -94,6 +94,12 @@ typedef struct AVCodecDescriptor {
 
 
 
+#define AV_CODEC_PROP_FIELDS        (1 << 4)
+
+
+
+
+
 #define AV_CODEC_PROP_BITMAP_SUB    (1 << 16)
 
 

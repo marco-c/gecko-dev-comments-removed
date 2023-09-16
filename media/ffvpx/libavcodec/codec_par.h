@@ -211,6 +211,18 @@ typedef struct AVCodecParameters {
 
 
     AVChannelLayout ch_layout;
+
+    
+
+
+
+
+
+
+
+
+
+    AVRational framerate;
 } AVCodecParameters;
 
 

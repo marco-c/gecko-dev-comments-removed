@@ -420,6 +420,12 @@ enum AVPixelFormat {
     AV_PIX_FMT_RGBAF32BE,   
     AV_PIX_FMT_RGBAF32LE,   
 
+    AV_PIX_FMT_P212BE,      
+    AV_PIX_FMT_P212LE,      
+
+    AV_PIX_FMT_P412BE,      
+    AV_PIX_FMT_P412LE,      
+
     AV_PIX_FMT_NB         
 };
 
@@ -518,6 +524,8 @@ enum AVPixelFormat {
 
 #define AV_PIX_FMT_P210       AV_PIX_FMT_NE(P210BE, P210LE)
 #define AV_PIX_FMT_P410       AV_PIX_FMT_NE(P410BE, P410LE)
+#define AV_PIX_FMT_P212       AV_PIX_FMT_NE(P212BE, P212LE)
+#define AV_PIX_FMT_P412       AV_PIX_FMT_NE(P412BE, P412LE)
 #define AV_PIX_FMT_P216       AV_PIX_FMT_NE(P216BE, P216LE)
 #define AV_PIX_FMT_P416       AV_PIX_FMT_NE(P416BE, P416LE)
 

@@ -226,11 +226,24 @@ typedef struct RcOverride{
 
 
 #define AV_CODEC_FLAG_QPEL            (1 <<  4)
+#if FF_API_DROPCHANGED
+
+
 
 
 
 
 #define AV_CODEC_FLAG_DROPCHANGED     (1 <<  5)
+#endif
+
+
+
+
+
+
+
+
+
 
 
 
@@ -408,8 +421,6 @@ typedef struct RcOverride{
 
 #define AV_GET_ENCODE_BUFFER_FLAG_REF (1 << 0)
 
-struct AVCodecInternal;
-
 
 
 
@@ -547,6 +558,7 @@ typedef struct AVCodecContext {
 
     AVRational time_base;
 
+#if FF_API_TICKS_PER_FRAME
     
 
 
@@ -554,7 +566,14 @@ typedef struct AVCodecContext {
 
 
 
+
+
+
+
+
+    attribute_deprecated
     int ticks_per_frame;
+#endif
 
     
 
@@ -1006,6 +1025,9 @@ typedef struct AVCodecContext {
     enum AVColorSpace colorspace;
 
     
+
+
+
 
 
 
@@ -1695,6 +1717,9 @@ typedef struct AVCodecContext {
 #define FF_PROFILE_KLVA_SYNC 0
 #define FF_PROFILE_KLVA_ASYNC 1
 
+#define FF_PROFILE_EVC_BASELINE             0
+#define FF_PROFILE_EVC_MAIN                 1
+
     
 
 
@@ -2119,120 +2144,6 @@ typedef struct AVHWAccel {
 
 
     int capabilities;
-
-    
-
-
-
-
-
-
-
-    
-
-
-    int (*alloc_frame)(AVCodecContext *avctx, AVFrame *frame);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    int (*start_frame)(AVCodecContext *avctx, const uint8_t *buf, uint32_t buf_size);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    int (*decode_params)(AVCodecContext *avctx, int type, const uint8_t *buf, uint32_t buf_size);
-
-    
-
-
-
-
-
-
-
-
-
-
-    int (*decode_slice)(AVCodecContext *avctx, const uint8_t *buf, uint32_t buf_size);
-
-    
-
-
-
-
-
-
-
-
-    int (*end_frame)(AVCodecContext *avctx);
-
-    
-
-
-
-
-
-
-    int frame_priv_data_size;
-
-    
-
-
-
-
-
-
-    int (*init)(AVCodecContext *avctx);
-
-    
-
-
-
-
-
-    int (*uninit)(AVCodecContext *avctx);
-
-    
-
-
-
-    int priv_data_size;
-
-    
-
-
-    int caps_internal;
-
-    
-
-
-
-
-
-
-
-    int (*frame_params)(AVCodecContext *avctx, AVBufferRef *hw_frames_ctx);
 } AVHWAccel;
 
 
@@ -2653,9 +2564,6 @@ int avcodec_decode_subtitle2(AVCodecContext *avctx, AVSubtitle *sub,
 
 
 int avcodec_send_packet(AVCodecContext *avctx, const AVPacket *avpkt);
-
-
-
 
 
 

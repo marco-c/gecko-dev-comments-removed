@@ -22,10 +22,6 @@
 #include "avcodec.h"
 #include "hwaccels.h"
 
-
-#define HWACCEL_CAP_ASYNC_SAFE      (1 << 0)
-
-
 typedef struct AVCodecHWConfigInternal {
     
 
@@ -36,9 +32,10 @@ typedef struct AVCodecHWConfigInternal {
 
 
 
-    const AVHWAccel *hwaccel;
+    const struct FFHWAccel *hwaccel;
 } AVCodecHWConfigInternal;
 
+void ff_hwaccel_uninit(AVCodecContext *avctx);
 
 
 
@@ -76,6 +73,8 @@ typedef struct AVCodecHWConfigInternal {
     HW_CONFIG_HWACCEL(1, 1, 1, VDPAU,        VDPAU,        ff_ ## codec ## _vdpau_hwaccel)
 #define HWACCEL_VIDEOTOOLBOX(codec) \
     HW_CONFIG_HWACCEL(1, 1, 1, VIDEOTOOLBOX, VIDEOTOOLBOX, ff_ ## codec ## _videotoolbox_hwaccel)
+#define HWACCEL_VULKAN(codec) \
+    HW_CONFIG_HWACCEL(1, 1, 1, VULKAN,       VULKAN,       ff_ ## codec ## _vulkan_hwaccel)
 #define HWACCEL_D3D11VA(codec) \
     HW_CONFIG_HWACCEL(0, 0, 1, D3D11VA_VLD,  NONE,         ff_ ## codec ## _d3d11va_hwaccel)
 

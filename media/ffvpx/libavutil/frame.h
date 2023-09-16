@@ -214,6 +214,16 @@ enum AVFrameSideDataType {
 
 
     AV_FRAME_DATA_AMBIENT_VIEWING_ENVIRONMENT,
+
+    
+
+
+
+
+
+
+
+    AV_FRAME_DATA_VIDEO_HINT,
 };
 
 enum AVActiveFormatDescription {
@@ -416,10 +426,15 @@ typedef struct AVFrame {
 
     int format;
 
+#if FF_API_FRAME_KEY
     
 
 
+
+
+    attribute_deprecated
     int key_frame;
+#endif
 
     
 
@@ -489,22 +504,47 @@ typedef struct AVFrame {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     int repeat_pict;
 
+#if FF_API_INTERLACED_FRAME
     
 
 
+
+
+    attribute_deprecated
     int interlaced_frame;
 
     
 
 
-    int top_field_first;
 
+
+    attribute_deprecated
+    int top_field_first;
+#endif
+
+#if FF_API_PALETTE_HAS_CHANGED
     
 
 
+    attribute_deprecated
     int palette_has_changed;
+#endif
 
 #if FF_API_REORDERED_OPAQUE
     
@@ -585,7 +625,20 @@ typedef struct AVFrame {
 
 
 
+#define AV_FRAME_FLAG_KEY (1 << 1)
+
+
+
 #define AV_FRAME_FLAG_DISCARD   (1 << 2)
+
+
+
+#define AV_FRAME_FLAG_INTERLACED (1 << 3)
+
+
+
+
+#define AV_FRAME_FLAG_TOP_FIELD_FIRST (1 << 4)
 
 
 
@@ -800,6 +853,19 @@ int av_frame_ref(AVFrame *dst, const AVFrame *src);
 
 
 
+
+
+
+
+int av_frame_replace(AVFrame *dst, const AVFrame *src);
+
+
+
+
+
+
+
+
 AVFrame *av_frame_clone(const AVFrame *src);
 
 
@@ -901,7 +967,7 @@ int av_frame_copy_props(AVFrame *dst, const AVFrame *src);
 
 
 
-AVBufferRef *av_frame_get_plane_buffer(AVFrame *frame, int plane);
+AVBufferRef *av_frame_get_plane_buffer(const AVFrame *frame, int plane);
 
 
 

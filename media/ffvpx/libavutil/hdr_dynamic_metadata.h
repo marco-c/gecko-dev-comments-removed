@@ -353,6 +353,14 @@ AVDynamicHDRPlus *av_dynamic_hdr_plus_create_side_data(AVFrame *frame);
 int av_dynamic_hdr_plus_from_t35(AVDynamicHDRPlus *s, const uint8_t *data,
                                  size_t size);
 
+#define AV_HDR_PLUS_MAX_PAYLOAD_SIZE 907
+
+
+
+
+
+
+
 
 
 
