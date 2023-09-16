@@ -389,6 +389,13 @@ class RestyleManager {
   void MaybeRestyleForNthOfAttribute(dom::Element* aChild, nsAtom* aAttribute,
                                      const nsAttrValue* aOldValue);
 
+  void MaybeRestyleForRelativeSelectorAttribute(dom::Element* aElement,
+                                                nsAtom* aAttribute,
+                                                const nsAttrValue* aOldValue);
+  void MaybeRestyleForRelativeSelectorState(ServoStyleSet& aStyleSet,
+                                            dom::Element* aElement,
+                                            dom::ElementState aChangedBits);
+
   
   
   void ReparentComputedStyleForFirstLine(nsIFrame*);
