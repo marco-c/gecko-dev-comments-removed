@@ -1498,7 +1498,12 @@ SimpleTest.finish = function () {
       if (parentRunner.conditionedProfile) {
         
         
-        FULL_PROFILE_WORKERS_TO_IGNORE = ["https://www.youtube.com/sw.js"];
+        
+        
+        FULL_PROFILE_WORKERS_TO_IGNORE = [
+          "https://www.youtube.com/sw.js",
+          "https://s.0cf.io/sw.js",
+        ];
       } else {
         SimpleTest.ok(
           false,
@@ -1507,7 +1512,11 @@ SimpleTest.finish = function () {
       }
 
       for (let worker of workers) {
-        if (FULL_PROFILE_WORKERS_TO_IGNORE.includes(worker.scriptSpec)) {
+        if (
+          FULL_PROFILE_WORKERS_TO_IGNORE.some(ignoreBase =>
+            worker.scriptSpec.startsWith(ignoreBase)
+          )
+        ) {
           continue;
         }
         SimpleTest.ok(
