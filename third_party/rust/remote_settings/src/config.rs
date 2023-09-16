@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct RemoteSettingsConfig {
+    pub server_url: Option<String>,
+    pub bucket_name: Option<String>,
+    pub collection_name: String,
+}
