@@ -9,21 +9,27 @@
 #include <objbase.h>
 #include <string.h>
 #include <iostream>
+#include <vector>
 
 #include "nsAutoRef.h"
+#include "nsDebug.h"
 #include "nsWindowsHelpers.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include "nsICommandLine.h"
+#include "nsString.h"
 
 #include "common.h"
-#include "Policy.h"
 #include "DefaultBrowser.h"
 #include "DefaultPDF.h"
 #include "EventLog.h"
 #include "Notification.h"
+#include "Policy.h"
 #include "Registry.h"
 #include "ScheduledTask.h"
 #include "SetDefaultBrowser.h"
 #include "Telemetry.h"
+
+#include "DefaultAgent.h"
 
 
 
@@ -92,7 +98,7 @@ static void RemoveAllRegistryEntries() {
 
     if (!wcsnicmp(valueName.get(), installPath.get(),
                   wcslen(installPath.get()))) {
-      RegDeleteValue(regKey.get(), valueName.get());
+      RegDeleteValueW(regKey.get(), valueName.get());
       
       
       
@@ -259,19 +265,10 @@ static bool CheckIfAppRanRecently(bool* aResult) {
 
 
 
-int wmain(int argc, wchar_t** argv) {
+int wmain(int argc, const wchar_t** argv) {
   if (argc < 2 || !argv[1]) {
     return E_INVALIDARG;
   }
-
-  HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-  if (FAILED(hr)) {
-    return hr;
-  }
-
-  const struct ComUninitializer {
-    ~ComUninitializer() { CoUninitialize(); }
-  } kCUi;
 
   RegistryMutex regMutex;
 
@@ -414,3 +411,27 @@ int wmain(int argc, wchar_t** argv) {
     return E_INVALIDARG;
   }
 }
+
+namespace mozilla {
+
+NS_IMPL_ISUPPORTS(DefaultAgent, nsIDefaultAgent)
+
+NS_IMETHODIMP
+DefaultAgent::HandleCommandLine(nsICommandLine* aCommandLine, int32_t* aRet) {
+  std::vector<const wchar_t*> args{L"unused"};
+  std::vector<nsString> argHolder;
+  int32_t argLen;
+  nsresult ret = aCommandLine->GetLength(&argLen);
+  NS_ENSURE_SUCCESS(ret, ret);
+  for (int i = 0; i < argLen; i++) {
+    nsAutoString arg;
+    ret = aCommandLine->GetArgument(i, arg);
+    NS_ENSURE_SUCCESS(ret, ret);
+    argHolder.push_back(arg);
+    args.push_back(argHolder.back().get());
+  }
+
+  *aRet = wmain((int)args.size(), args.data());
+  return NS_OK;
+}
+}  
