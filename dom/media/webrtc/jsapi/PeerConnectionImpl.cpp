@@ -1387,6 +1387,9 @@ void PeerConnectionImpl::SyncFromJsep() {
         }
 
         if (!transceiver) {
+          if (jsepTransceiver.IsRemoved()) {
+            return;
+          }
           CSFLogDebug(LOGTAG, "%s: No match, making new", __FUNCTION__);
           dom::RTCRtpTransceiverInit init;
           init.mDirection = RTCRtpTransceiverDirection::Recvonly;
@@ -2016,7 +2019,26 @@ void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
   if (it != mTransportIdToRTCDtlsTransport.end()) {
     it->second->UpdateState(aState);
   }
-  UpdateConnectionState();
+  
+  
+  
+  
+  
+  
+  GetMainThreadSerialEventTarget()->Dispatch(NS_NewRunnableFunction(
+      __func__, [this, self = RefPtr<PeerConnectionImpl>(this)] {
+        
+        
+        
+        
+        
+        
+        if (UpdateConnectionState()) {
+          
+          JSErrorResult jrv;
+          mPCObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
+        }
+      }));
 }
 
 RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
@@ -2036,7 +2058,6 @@ RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
   
   
   
-  
   if (mIceConnectionState == RTCIceConnectionState::Failed ||
       statesFound.count(RTCDtlsTransportState::Failed)) {
     return RTCPeerConnectionState::Failed;
@@ -2044,14 +2065,10 @@ RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
 
   
   
-  
-  
   if (mIceConnectionState == RTCIceConnectionState::Disconnected) {
     return RTCPeerConnectionState::Disconnected;
   }
 
-  
-  
   
   
   
@@ -2070,21 +2087,6 @@ RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
   
   
   
-  
-  
-  
-  if (mIceConnectionState == RTCIceConnectionState::Checking ||
-      statesFound.count(RTCDtlsTransportState::New) ||
-      statesFound.count(RTCDtlsTransportState::Connecting)) {
-    return RTCPeerConnectionState::Connecting;
-  }
-
-  
-  
-  
-  
-  
-  
   if (mIceConnectionState == RTCIceConnectionState::Connected &&
       !statesFound.count(RTCDtlsTransportState::New) &&
       !statesFound.count(RTCDtlsTransportState::Failed) &&
@@ -2093,40 +2095,10 @@ RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
   }
 
   
-  
-  
-
-  
-  
-  MOZ_ASSERT(mIceConnectionState != RTCIceConnectionState::Failed &&
-             mIceConnectionState != RTCIceConnectionState::Disconnected &&
-             mIceConnectionState != RTCIceConnectionState::Checking);
-  MOZ_ASSERT(!statesFound.count(RTCDtlsTransportState::New) &&
-             !statesFound.count(RTCDtlsTransportState::Connecting) &&
-             !statesFound.count(RTCDtlsTransportState::Failed));
-
-  
-  MOZ_ASSERT(statesFound.count(RTCDtlsTransportState::Connected) ||
-             statesFound.count(RTCDtlsTransportState::Closed));
-
-  
-  
-  
-  
-  
-
-  
-  
-
-  
-  
-  
-  
-  
-  return mConnectionState;
+  return RTCPeerConnectionState::Connecting;
 }
 
-void PeerConnectionImpl::UpdateConnectionState() {
+bool PeerConnectionImpl::UpdateConnectionState() {
   auto newState = GetNewConnectionState();
   if (newState != mConnectionState) {
     CSFLogDebug(LOGTAG, "%s: %d -> %d (%p)", __FUNCTION__,
@@ -2134,10 +2106,11 @@ void PeerConnectionImpl::UpdateConnectionState() {
                 this);
     mConnectionState = newState;
     if (mConnectionState != RTCPeerConnectionState::Closed) {
-      JSErrorResult jrv;
-      mPCObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
+      return true;
     }
   }
+
+  return false;
 }
 
 void PeerConnectionImpl::OnMediaError(const std::string& aError) {
@@ -3108,87 +3081,103 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           UpdateNegotiationNeeded();
         }
 
-        
-        
-        UpdateConnectionState();
-
-        JSErrorResult jrv;
+        bool signalingStateChanged = false;
         if (newSignalingState != mSignalingState) {
           mSignalingState = newSignalingState;
-          mPCObserver->OnStateChange(PCObserverStateType::SignalingState, jrv);
+          signalingStateChanged = true;
         }
 
+        
+        
+        
+        bool connectionStateChanged = UpdateConnectionState();
+
+        
+        dom::RTCRtpReceiver::StreamAssociationChanges changes;
         if (aRemote) {
-          dom::RTCRtpReceiver::StreamAssociationChanges changes;
           for (const auto& transceiver : mTransceivers) {
             transceiver->Receiver()->UpdateStreams(&changes);
           }
+        }
 
-          for (const auto& receiver : changes.mReceiversToMute) {
-            
-            receiver->SetTrackMuteFromRemoteSdp();
+        
+        
+        for (size_t i = 0; i < mTransceivers.Length();) {
+          auto& transceiver = mTransceivers[i];
+          if (transceiver->ShouldRemove()) {
+            mTransceivers[i]->Close();
+            mTransceivers[i]->SetRemovedFromPc();
+            mTransceivers.RemoveElementAt(i);
+          } else {
+            ++i;
           }
+        }
 
-          for (const auto& association : changes.mStreamAssociationsRemoved) {
-            RefPtr<DOMMediaStream> stream =
-                GetReceiveStream(association.mStreamId);
-            if (stream && stream->HasTrack(*association.mTrack)) {
-              stream->RemoveTrackInternal(association.mTrack);
-            }
-          }
+        
+        
+        
 
+        JSErrorResult jrv;
+        RefPtr<PeerConnectionObserver> pcObserver(mPCObserver);
+        if (signalingStateChanged) {
+          pcObserver->OnStateChange(PCObserverStateType::SignalingState, jrv);
+        }
+
+        if (connectionStateChanged) {
+          pcObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
+        }
+
+        for (const auto& receiver : changes.mReceiversToMute) {
           
-          std::vector<RefPtr<DOMMediaStream>> newStreams;
+          receiver->SetTrackMuteFromRemoteSdp();
+        }
 
-          for (const auto& association : changes.mStreamAssociationsAdded) {
-            RefPtr<DOMMediaStream> stream =
-                GetReceiveStream(association.mStreamId);
+        for (const auto& association : changes.mStreamAssociationsRemoved) {
+          RefPtr<DOMMediaStream> stream =
+              GetReceiveStream(association.mStreamId);
+          if (stream && stream->HasTrack(*association.mTrack)) {
+            stream->RemoveTrackInternal(association.mTrack);
+          }
+        }
+
+        
+        std::vector<RefPtr<DOMMediaStream>> newStreams;
+
+        for (const auto& association : changes.mStreamAssociationsAdded) {
+          RefPtr<DOMMediaStream> stream =
+              GetReceiveStream(association.mStreamId);
+          if (!stream) {
+            stream = CreateReceiveStream(association.mStreamId);
+            newStreams.push_back(stream);
+          }
+
+          if (!stream->HasTrack(*association.mTrack)) {
+            stream->AddTrackInternal(association.mTrack);
+          }
+        }
+
+        for (const auto& trackEvent : changes.mTrackEvents) {
+          dom::Sequence<OwningNonNull<DOMMediaStream>> streams;
+          for (const auto& id : trackEvent.mStreamIds) {
+            RefPtr<DOMMediaStream> stream = GetReceiveStream(id);
             if (!stream) {
-              stream = CreateReceiveStream(association.mStreamId);
-              newStreams.push_back(stream);
+              MOZ_ASSERT(false);
+              continue;
             }
-
-            if (!stream->HasTrack(*association.mTrack)) {
-              stream->AddTrackInternal(association.mTrack);
-            }
-          }
-
-          
-          
-          for (size_t i = 0; i < mTransceivers.Length();) {
-            auto& transceiver = mTransceivers[i];
-            if (transceiver->ShouldRemove()) {
-              mTransceivers[i]->Close();
-              mTransceivers[i]->SetRemovedFromPc();
-              mTransceivers.RemoveElementAt(i);
-            } else {
-              ++i;
+            if (!streams.AppendElement(*stream, fallible)) {
+              
+              
+              
+              
+              mozalloc_handle_oom(0);
             }
           }
+          pcObserver->FireTrackEvent(*trackEvent.mReceiver, streams, jrv);
+        }
 
-          for (const auto& trackEvent : changes.mTrackEvents) {
-            dom::Sequence<OwningNonNull<DOMMediaStream>> streams;
-            for (const auto& id : trackEvent.mStreamIds) {
-              RefPtr<DOMMediaStream> stream = GetReceiveStream(id);
-              if (!stream) {
-                MOZ_ASSERT(false);
-                continue;
-              }
-              if (!streams.AppendElement(*stream, fallible)) {
-                
-                
-                
-                
-                mozalloc_handle_oom(0);
-              }
-            }
-            mPCObserver->FireTrackEvent(*trackEvent.mReceiver, streams, jrv);
-          }
-
-          
-          for (const auto& stream : newStreams) {
-            mPCObserver->FireStreamEvent(*stream, jrv);
-          }
+        
+        for (const auto& stream : newStreams) {
+          pcObserver->FireStreamEvent(*stream, jrv);
         }
         aP->MaybeResolveWithUndefined();
       }));
@@ -3366,9 +3355,13 @@ void PeerConnectionImpl::IceConnectionStateChange(
       MOZ_ASSERT_UNREACHABLE("Unexpected mIceConnectionState!");
   }
 
+  bool connectionStateChanged = UpdateConnectionState();
   WrappableJSErrorResult rv;
-  mPCObserver->OnStateChange(PCObserverStateType::IceConnectionState, rv);
-  UpdateConnectionState();
+  RefPtr<PeerConnectionObserver> pcObserver(mPCObserver);
+  pcObserver->OnStateChange(PCObserverStateType::IceConnectionState, rv);
+  if (connectionStateChanged) {
+    pcObserver->OnStateChange(PCObserverStateType::ConnectionState, rv);
+  }
 }
 
 void PeerConnectionImpl::OnCandidateFound(const std::string& aTransportId,

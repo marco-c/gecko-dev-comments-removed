@@ -240,6 +240,7 @@ SdpDirectionAttribute::Direction ToSdpDirection(
     case dom::RTCRtpTransceiverDirection::Recvonly:
       return SdpDirectionAttribute::Direction::kRecvonly;
     case dom::RTCRtpTransceiverDirection::Inactive:
+    case dom::RTCRtpTransceiverDirection::Stopped:
       return SdpDirectionAttribute::Direction::kInactive;
     case dom::RTCRtpTransceiverDirection::EndGuard_:;
   }
@@ -506,7 +507,10 @@ void RTCRtpTransceiver::SyncFromJsep(const JsepSession& aSession) {
   mJsepTransceiver = *aSession.GetTransceiver(mTransceiverId);
 
   
-  if (mJsepTransceiver.IsStopped()) {
+  if (!mStopped && mJsepTransceiver.IsStopped()) {
+    MOZ_MTLOG(ML_DEBUG, mPc->GetHandle()
+                            << "[" << mMid.Ref() << "]: " << __FUNCTION__
+                            << " JSEP transceiver is stopped");
     StopImpl();
   }
 
@@ -541,7 +545,7 @@ void RTCRtpTransceiver::SyncFromJsep(const JsepSession& aSession) {
   }
 
   mShouldRemove = mJsepTransceiver.IsRemoved();
-  mHasTransport = mJsepTransceiver.HasLevel() && !mJsepTransceiver.IsStopped();
+  mHasTransport = !mStopped && mJsepTransceiver.mTransport.mComponents;
 }
 
 void RTCRtpTransceiver::SyncToJsep(JsepSession& aSession) const {
@@ -555,7 +559,7 @@ void RTCRtpTransceiver::SyncToJsep(JsepSession& aSession) const {
         mReceiver->SyncToJsep(aTransceiver);
         mSender->SyncToJsep(aTransceiver);
         aTransceiver.mJsDirection = ToSdpDirection(mDirection);
-        if (mStopped) {
+        if (mStopping || mStopped) {
           aTransceiver.Stop();
         }
       });
@@ -586,17 +590,27 @@ std::string RTCRtpTransceiver::GetMidAscii() const {
 
 void RTCRtpTransceiver::SetDirection(RTCRtpTransceiverDirection aDirection,
                                      ErrorResult& aRv) {
-  if (mStopped) {
-    aRv.ThrowInvalidStateError("Transceiver is stopped!");
+  
+  if (mStopping) {
+    aRv.ThrowInvalidStateError("Transceiver is stopping/stopped!");
     return;
   }
 
+  
   if (aDirection == mDirection) {
     return;
   }
 
+  
+  if (aDirection == RTCRtpTransceiverDirection::Stopped) {
+    aRv.ThrowTypeError("Cannot use \"stopped\" in setDirection!");
+    return;
+  }
+
+  
   SetDirectionInternal(aDirection);
 
+  
   mPc->UpdateNegotiationNeeded();
 }
 
@@ -618,7 +632,7 @@ bool RTCRtpTransceiver::CanSendDTMF() const {
   
   
   
-  if (!IsSending() || !mSender->GetTrack()) {
+  if (!IsSending() || !mSender->GetTrack() || Stopping()) {
     return false;
   }
 
@@ -862,13 +876,30 @@ void RTCRtpTransceiver::Stop(ErrorResult& aRv) {
     return;
   }
 
-  StopImpl();
+  if (mStopping) {
+    return;
+  }
+
+  StopTransceiving();
   mPc->UpdateNegotiationNeeded();
 }
 
-void RTCRtpTransceiver::StopImpl() {
-  if (mStopped) {
+void RTCRtpTransceiver::StopTransceiving() {
+  if (mStopping) {
+    MOZ_ASSERT(false);
     return;
+  }
+  mStopping = true;
+  
+  mSender->Stop();
+  mReceiver->Stop();
+  mDirection = RTCRtpTransceiverDirection::Inactive;
+}
+
+void RTCRtpTransceiver::StopImpl() {
+  
+  if (!mStopping) {
+    StopTransceiving();
   }
 
   if (mCallWrapper) {
@@ -889,6 +920,8 @@ void RTCRtpTransceiver::StopImpl() {
 
   mSender->Stop();
   mReceiver->Stop();
+
+  mHasTransport = false;
 
   auto self = nsMainThreadPtrHandle<RTCRtpTransceiver>(
       new nsMainThreadPtrHolder<RTCRtpTransceiver>(

@@ -495,8 +495,9 @@ class PeerConnectionImpl final
 
   void OnDtlsStateChange(const std::string& aTransportId,
                          TransportLayer::State aState);
-  void UpdateConnectionState();
   dom::RTCPeerConnectionState GetNewConnectionState() const;
+  
+  bool UpdateConnectionState();
 
   
   void StartCallTelem();

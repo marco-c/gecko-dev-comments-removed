@@ -2028,11 +2028,10 @@ TEST_P(JsepSessionTest, RenegotiationAnswererStopsTransceiver) {
   std::vector<JsepTransceiver> origAnswererTransceivers =
       GetTransceivers(*mSessionAns);
 
-  
   GetTransceivers(*mSessionAns).back().Stop();
-  JsepTrack removedTrack(GetTransceivers(*mSessionAns).back().mSendTrack);
 
   OfferAnswer(CHECK_SUCCESS);
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
 
   
   auto offer = GetParsedLocalDescription(*mSessionOff);
@@ -2046,7 +2045,8 @@ TEST_P(JsepSessionTest, RenegotiationAnswererStopsTransceiver) {
   auto answer = GetParsedLocalDescription(*mSessionAns);
   msection = &answer->GetMediaSection(answer->GetMediaSectionCount() - 1);
   ASSERT_TRUE(msection);
-  ValidateDisabledMSection(msection);
+  ASSERT_TRUE(msection->IsReceiving());
+  ASSERT_TRUE(msection->IsSending());
 
   auto newOffererTransceivers = GetTransceivers(*mSessionOff);
   auto newAnswererTransceivers = GetTransceivers(*mSessionAns);
@@ -2054,11 +2054,10 @@ TEST_P(JsepSessionTest, RenegotiationAnswererStopsTransceiver) {
   ASSERT_EQ(origOffererTransceivers.size(), newOffererTransceivers.size());
 
   ASSERT_FALSE(origOffererTransceivers.back().IsStopped());
-  ASSERT_TRUE(newOffererTransceivers.back().IsStopped());
+  ASSERT_FALSE(newOffererTransceivers.back().IsStopped());
   ASSERT_FALSE(origAnswererTransceivers.back().IsStopped());
-  ASSERT_TRUE(newAnswererTransceivers.back().IsStopped());
-  RemoveLastN(origOffererTransceivers, 1);   
-  RemoveLastN(newOffererTransceivers, 1);    
+  ASSERT_TRUE(newAnswererTransceivers.back().IsStopping());
+  ASSERT_FALSE(newAnswererTransceivers.back().IsStopped());
   RemoveLastN(origAnswererTransceivers, 1);  
   RemoveLastN(newAnswererTransceivers, 1);   
 
@@ -2085,8 +2084,12 @@ TEST_P(JsepSessionTest, RenegotiationBothStopSameTransceiver) {
   JsepTrack removedTrackOffer(GetTransceivers(*mSessionOff).back().mSendTrack);
   GetTransceivers(*mSessionAns).back().Stop();
   JsepTrack removedTrackAnswer(GetTransceivers(*mSessionAns).back().mSendTrack);
+  ASSERT_TRUE(mSessionOff->CheckNegotiationNeeded());
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
 
   OfferAnswer(CHECK_SUCCESS);
+  ASSERT_FALSE(mSessionOff->CheckNegotiationNeeded());
+  ASSERT_FALSE(mSessionAns->CheckNegotiationNeeded());
 
   
   auto offer = GetParsedLocalDescription(*mSessionOff);
@@ -2559,7 +2562,7 @@ TEST_P(JsepSessionTest, RenegotiationOffererDisablesBundleTransport) {
   }
 }
 
-TEST_P(JsepSessionTest, RenegotiationAnswererDisablesBundleTransport) {
+TEST_P(JsepSessionTest, RenegotiationAnswererDoesNotRejectStoppedTransceiver) {
   AddTracks(*mSessionOff);
   AddTracks(*mSessionAns);
 
@@ -2577,11 +2580,15 @@ TEST_P(JsepSessionTest, RenegotiationAnswererDisablesBundleTransport) {
   auto stopped = GetTransceiverByLevel(*mSessionAns, 0);
   stopped->Stop();
   mSessionAns->SetTransceiver(*stopped);
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
 
   OfferAnswer(CHECK_SUCCESS);
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
 
   auto newOffererTransceivers = GetTransceivers(*mSessionOff);
   auto newAnswererTransceivers = GetTransceivers(*mSessionAns);
+
+  DumpTransceivers(*mSessionAns);
 
   ASSERT_EQ(newOffererTransceivers.size(), newAnswererTransceivers.size());
   ASSERT_EQ(origOffererTransceivers.size(), newOffererTransceivers.size());
@@ -2590,51 +2597,28 @@ TEST_P(JsepSessionTest, RenegotiationAnswererDisablesBundleTransport) {
   Maybe<JsepTransceiver> ot0 = GetTransceiverByLevel(newOffererTransceivers, 0);
   Maybe<JsepTransceiver> at0 =
       GetTransceiverByLevel(newAnswererTransceivers, 0);
-  ASSERT_FALSE(ot0->HasBundleLevel());
-  ASSERT_FALSE(at0->HasBundleLevel());
+  ASSERT_TRUE(ot0->HasBundleLevel());
+  ASSERT_TRUE(at0->HasBundleLevel());
 
-  ASSERT_FALSE(
+  ASSERT_TRUE(
       Equals(ot0->mTransport,
              GetTransceiverByLevel(origOffererTransceivers, 0)->mTransport));
-  ASSERT_FALSE(
+  ASSERT_TRUE(
       Equals(at0->mTransport,
              GetTransceiverByLevel(origAnswererTransceivers, 0)->mTransport));
 
-  ASSERT_EQ(0U, ot0->mTransport.mComponents);
-  ASSERT_EQ(0U, at0->mTransport.mComponents);
-
-  
-  
-  
-  
-  
-  
-  Maybe<size_t> fallbackTransport;
-  for (size_t level = 1; level != types.size(); ++level) {
-    if (types[level] != types[0]) {
-      fallbackTransport = Some(level);
-      break;
-    }
-  }
+  ASSERT_EQ(1U, ot0->mTransport.mComponents);
+  ASSERT_EQ(1U, at0->mTransport.mComponents);
 
   for (size_t i = 1; i < newOffererTransceivers.size(); ++i) {
     auto ot = GetTransceiverByLevel(newOffererTransceivers, i);
     auto at = GetTransceiverByLevel(newAnswererTransceivers, i);
-    
-    
-    size_t expectedBundleLevel = fallbackTransport.valueOr(0);
-    auto otWithTransport =
-        GetTransceiverByLevel(newOffererTransceivers, expectedBundleLevel);
-    auto atWithTransport =
-        GetTransceiverByLevel(newAnswererTransceivers, expectedBundleLevel);
+    auto otWithTransport = GetTransceiverByLevel(newOffererTransceivers, 0);
+    auto atWithTransport = GetTransceiverByLevel(newAnswererTransceivers, 0);
     ASSERT_TRUE(ot->HasBundleLevel());
     ASSERT_TRUE(at->HasBundleLevel());
-    ASSERT_EQ(expectedBundleLevel, ot->BundleLevel());
-    ASSERT_EQ(expectedBundleLevel, at->BundleLevel());
-    
-    
-    
-    
+    ASSERT_EQ(0U, ot->BundleLevel());
+    ASSERT_EQ(0U, at->BundleLevel());
     ASSERT_TRUE(Equals(otWithTransport->mTransport, ot->mTransport));
     ASSERT_TRUE(Equals(atWithTransport->mTransport, at->mTransport));
   }
@@ -6531,9 +6515,11 @@ TEST_F(JsepSessionTest, OffererRecycle) {
   GetTransceivers(*mSessionOff)[0].Stop();
   AddTracks(*mSessionOff, "audio");
   ASSERT_EQ(3U, GetTransceivers(*mSessionOff).size());
+  ASSERT_TRUE(mSessionOff->CheckNegotiationNeeded());
 
   OfferAnswer(CHECK_SUCCESS);
 
+  ASSERT_FALSE(mSessionOff->CheckNegotiationNeeded());
   
   
   ASSERT_EQ(3U, GetTransceivers(*mSessionOff).size());
@@ -6597,9 +6583,40 @@ TEST_F(JsepSessionTest, RecycleAnswererStopsTransceiver) {
   ASSERT_EQ(2U, GetTransceivers(*mSessionOff).size());
   ASSERT_EQ(2U, GetTransceivers(*mSessionAns).size());
   GetTransceivers(*mSessionAns)[0].Stop();
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
 
   OfferAnswer(CHECK_SUCCESS);
 
+  
+  ASSERT_TRUE(mSessionAns->CheckNegotiationNeeded());
+  ASSERT_EQ(2U, GetTransceivers(*mSessionOff).size());
+  ASSERT_EQ(0U, GetTransceivers(*mSessionOff)[0].GetLevel());
+  
+  
+  
+  ASSERT_FALSE(GetTransceivers(*mSessionOff)[0].IsStopped());
+  ASSERT_EQ(1U, GetTransceivers(*mSessionOff)[1].GetLevel());
+  ASSERT_FALSE(GetTransceivers(*mSessionOff)[1].IsStopped());
+
+  ASSERT_EQ(2U, GetTransceivers(*mSessionAns).size());
+  ASSERT_EQ(0U, GetTransceivers(*mSessionAns)[0].GetLevel());
+  ASSERT_TRUE(GetTransceivers(*mSessionAns)[0].IsStopping());
+  ASSERT_FALSE(GetTransceivers(*mSessionAns)[0].IsStopped());
+  ASSERT_EQ(1U, GetTransceivers(*mSessionAns)[1].GetLevel());
+  ASSERT_FALSE(GetTransceivers(*mSessionAns)[1].IsStopping());
+  ASSERT_FALSE(GetTransceivers(*mSessionAns)[1].IsStopped());
+
+  auto offer = GetParsedLocalDescription(*mSessionOff);
+  ASSERT_EQ(2U, offer->GetMediaSectionCount());
+
+  auto answer = GetParsedLocalDescription(*mSessionAns);
+  ASSERT_EQ(2U, answer->GetMediaSectionCount());
+
+  
+  SwapOfferAnswerRoles();
+  OfferAnswer();
+
+  ASSERT_FALSE(mSessionAns->CheckNegotiationNeeded());
   ASSERT_EQ(2U, GetTransceivers(*mSessionOff).size());
   ASSERT_EQ(0U, GetTransceivers(*mSessionOff)[0].GetLevel());
   ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].IsStopped());
@@ -6612,11 +6629,14 @@ TEST_F(JsepSessionTest, RecycleAnswererStopsTransceiver) {
   ASSERT_EQ(1U, GetTransceivers(*mSessionAns)[1].GetLevel());
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[1].IsStopped());
 
-  UniquePtr<Sdp> offer = GetParsedLocalDescription(*mSessionOff);
+  offer = GetParsedLocalDescription(*mSessionOff);
   ASSERT_EQ(2U, offer->GetMediaSectionCount());
 
-  UniquePtr<Sdp> answer = GetParsedLocalDescription(*mSessionAns);
+  answer = GetParsedLocalDescription(*mSessionAns);
   ASSERT_EQ(2U, answer->GetMediaSectionCount());
+
+  ValidateDisabledMSection(&offer->GetMediaSection(0));
+  ValidateDisabledMSection(&offer->GetMediaSection(0));
   ValidateDisabledMSection(&answer->GetMediaSection(0));
 
   
@@ -6694,6 +6714,7 @@ TEST_F(JsepSessionTest, OffererRecycleNoMagicAnswererStopsTransceiver) {
   ASSERT_EQ(2U, GetTransceivers(*mSessionAns).size());
   GetTransceivers(*mSessionAns)[0].Stop();
 
+  SwapOfferAnswerRoles();
   OfferAnswer(CHECK_SUCCESS);
 
   
@@ -7049,10 +7070,11 @@ TEST_F(JsepSessionTest, ComplicatedRemoteRollback) {
 
   
   
+  
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].HasLevel());
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].IsStopped());
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].IsAssociated());
-  ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].HasAddTrackMagic());
+  ASSERT_TRUE(GetTransceivers(*mSessionAns)[2].HasAddTrackMagic());
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].OnlyExistsBecauseOfSetRemote());
   ASSERT_TRUE(IsNull(GetTransceivers(*mSessionAns)[2].mSendTrack));
   ASSERT_FALSE(GetTransceivers(*mSessionAns)[2].IsRemoved());
@@ -7115,10 +7137,12 @@ TEST_F(JsepSessionTest, JsStopsTransceiverBeforeAnswer) {
   GetTransceivers(*mSessionOff)[0].Stop();
   SetRemoteAnswer(answer, CHECK_SUCCESS);
 
-  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].IsStopped());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].IsStopping());
+  ASSERT_FALSE(GetTransceivers(*mSessionOff)[0].IsStopped());
   ASSERT_EQ(1U, GetTransceivers(*mSessionOff)[0].mTransport.mComponents);
-  ASSERT_FALSE(GetTransceivers(*mSessionOff)[0].mSendTrack.GetActive());
-  ASSERT_FALSE(GetTransceivers(*mSessionOff)[0].mRecvTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].mSendTrack.GetActive());
+  ASSERT_TRUE(GetTransceivers(*mSessionOff)[0].mRecvTrack.GetActive());
+  ASSERT_TRUE(mSessionOff->CheckNegotiationNeeded());
 }
 
 TEST_F(JsepSessionTest, TestOfferPTAsymmetryRtxApt) {

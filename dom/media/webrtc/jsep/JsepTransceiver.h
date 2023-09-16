@@ -32,15 +32,7 @@ class JsepTransceiver {
                                SdpDirectionAttribute::kSendrecv)
       : mJsDirection(jsDirection),
         mSendTrack(type, sdp::kSend),
-        mRecvTrack(type, sdp::kRecv),
-        mLevel(SIZE_MAX),
-        mBundleLevel(SIZE_MAX),
-        mAddTrackMagic(false),
-        mOnlyExistsBecauseOfSetRemote(false),
-        mStopped(false),
-        mRemoved(false),
-        mNegotiated(false),
-        mCanRecycle(false) {
+        mRecvTrack(type, sdp::kRecv) {
     if (!aUuidGen.Generate(&mUuid)) {
       MOZ_CRASH();
     }
@@ -106,14 +98,21 @@ class JsepTransceiver {
     return mLevel;
   }
 
-  void Stop() { mStopped = true; }
+  void Stop() { mStopping = true; }
+
+  bool IsStopping() const { return mStopping; }
 
   bool IsStopped() const { return mStopped; }
 
+  void SetStopped() { mStopped = true; }
+
+  bool IsFreeToUse() const { return !mStopping && !mStopped && !HasLevel(); }
+
   void RestartDatachannelTransceiver() {
     MOZ_RELEASE_ASSERT(GetMediaType() == SdpMediaSection::kApplication);
+    mStopping = false;
     mStopped = false;
-    mCanRecycle = false;
+    mCanRecycleMyMsection = false;
   }
 
   void SetRemoved() { mRemoved = true; }
@@ -162,9 +161,9 @@ class JsepTransceiver {
 
   bool IsNegotiated() const { return mNegotiated; }
 
-  void SetCanRecycle() { mCanRecycle = true; }
+  void SetCanRecycleMyMsection() { mCanRecycleMyMsection = true; }
 
-  bool CanRecycle() const { return mCanRecycle; }
+  bool CanRecycleMyMsection() const { return mCanRecycleMyMsection; }
 
   const std::string& GetUuid() const { return mUuid; }
 
@@ -201,18 +200,19 @@ class JsepTransceiver {
   std::string mUuid;
   
   std::string mMid;
-  size_t mLevel;  
+  size_t mLevel = SIZE_MAX;  
   
-  size_t mBundleLevel;  
+  size_t mBundleLevel = SIZE_MAX;  
   
   
   
-  bool mAddTrackMagic;
-  bool mOnlyExistsBecauseOfSetRemote;
-  bool mStopped;
-  bool mRemoved;
-  bool mNegotiated;
-  bool mCanRecycle;
+  bool mAddTrackMagic = false;
+  bool mOnlyExistsBecauseOfSetRemote = false;
+  bool mStopping = false;
+  bool mStopped = false;
+  bool mRemoved = false;
+  bool mNegotiated = false;
+  bool mCanRecycleMyMsection = false;
 };
 
 }  
