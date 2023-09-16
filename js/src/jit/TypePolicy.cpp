@@ -46,7 +46,7 @@ template <class T>
 static void SetTypePolicyBailoutKind(MInstruction* newIns,
                                      MInstruction* forIns) {
   
-  if (newIns->isToFloat32() && !newIns->isGuard()) {
+  if ((newIns->isToFloat32() || newIns->isToDouble()) && !newIns->isGuard()) {
     return;
   }
 
