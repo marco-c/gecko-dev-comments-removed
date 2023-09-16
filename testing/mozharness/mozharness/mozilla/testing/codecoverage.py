@@ -1,7 +1,7 @@
-
-
-
-
+#!/usr/bin/env python
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import errno
 import json
@@ -126,21 +126,21 @@ class CodeCoverageMixin(SingleTestMixin):
         strip_count = len(list(filter(None, self.prefix.split("/"))))
         os.environ["GCOV_PREFIX_STRIP"] = str(strip_count)
 
-        
+        # Download the gcno archive from the build machine.
         url_to_gcno = self.query_build_dir_url("target.code-coverage-gcno.zip")
         self.download_file(url_to_gcno, parent_dir=self.grcov_dir)
 
-        
+        # Download the chrome-map.json file from the build machine.
         url_to_chrome_map = self.query_build_dir_url("chrome-map.json")
         self.download_file(url_to_chrome_map, parent_dir=self.grcov_dir)
 
     def _setup_java_coverage_tools(self):
-        
+        # Download and extract jacoco-cli from the build task.
         url_to_jacoco = self.query_build_dir_url("target.jacoco-cli.jar")
         self.jacoco_jar = os.path.join(tempfile.mkdtemp(), "target.jacoco-cli.jar")
         self.download_file(url_to_jacoco, self.jacoco_jar)
 
-        
+        # Download and extract class files from the build task.
         self.classfiles_dir = tempfile.mkdtemp()
         for archive in ["target.geckoview_classfiles.zip", "target.app_classfiles.zip"]:
             url_to_classfiles = self.query_build_dir_url(archive)
@@ -150,7 +150,7 @@ class CodeCoverageMixin(SingleTestMixin):
                 z.extractall(self.classfiles_dir)
             os.remove(classfiles_zip_path)
 
-        
+        # Create the directory where the emulator coverage file will be placed.
         self.java_coverage_output_dir = tempfile.mkdtemp()
 
     @PostScriptAction("download-and-extract")
@@ -187,16 +187,16 @@ class CodeCoverageMixin(SingleTestMixin):
 
         self.find_modified_tests()
 
-        
+        # TODO: Add tests that haven't been run for a while (a week? N pushes?)
 
-        
+        # Add baseline code coverage collection tests
         baseline_tests_by_ext = {
             ".html": {
                 "test": "testing/mochitest/baselinecoverage/plain/test_baselinecoverage.html",
                 "suite": "mochitest-plain",
             },
             ".js": {
-                "test": "testing/mochitest/baselinecoverage/browser_chrome/browser_baselinecoverage.js",  
+                "test": "testing/mochitest/baselinecoverage/browser_chrome/browser_baselinecoverage.js",  # NOQA: E501
                 "suite": "mochitest-browser-chrome",
             },
             ".xhtml": {
@@ -210,7 +210,7 @@ class CodeCoverageMixin(SingleTestMixin):
             "browser_baselinecoverage_browser-chrome.js"
         }
 
-        wpt_baseline_test = "tests/web-platform/mozilla/tests/baselinecoverage/wpt_baselinecoverage.html"  
+        wpt_baseline_test = "tests/web-platform/mozilla/tests/baselinecoverage/wpt_baselinecoverage.html"  # NOQA: E501
         if self.config.get("per_test_category") == "web-platform":
             if "testharness" not in self.suites:
                 self.suites["testharness"] = []
@@ -218,8 +218,8 @@ class CodeCoverageMixin(SingleTestMixin):
                 self.suites["testharness"].append(wpt_baseline_test)
             return
 
-        
-        
+        # Go through all the tests and find all
+        # the baseline tests that are needed.
         tests_to_add = {}
         for suite in self.suites:
             if len(self.suites[suite]) == 0:
@@ -230,13 +230,13 @@ class CodeCoverageMixin(SingleTestMixin):
                 tests_to_add[suite].append(baseline_tests_by_suite[suite])
                 continue
 
-            
+            # Default to file types if the suite has no baseline
             for test in self.suites[suite]:
                 _, test_ext = os.path.splitext(test)
 
                 if test_ext not in baseline_tests_by_ext:
-                    
-                    
+                    # Add the '.js' test as a default baseline
+                    # if none other exists.
                     test_ext = ".js"
                 baseline_test_suite = baseline_tests_by_ext[test_ext]["suite"]
                 baseline_test_name = baseline_tests_by_ext[test_ext]["test"]
@@ -246,7 +246,7 @@ class CodeCoverageMixin(SingleTestMixin):
                 if baseline_test_name not in tests_to_add[baseline_test_suite]:
                     tests_to_add[baseline_test_suite].append(baseline_test_name)
 
-        
+        # Add all baseline tests needed
         for suite in tests_to_add:
             for test in tests_to_add[suite]:
                 if suite not in self.suites:
@@ -259,16 +259,16 @@ class CodeCoverageMixin(SingleTestMixin):
         return []
 
     def set_coverage_env(self, env, is_baseline_test=False):
-        
+        # Set the GCOV directory.
         self.gcov_dir = tempfile.mkdtemp()
         env["GCOV_PREFIX"] = self.gcov_dir
 
-        
+        # Set the GCOV/JSVM directories where counters will be dumped in per-test mode.
         if self.per_test_coverage and not is_baseline_test:
             env["GCOV_RESULTS_DIR"] = tempfile.mkdtemp()
             env["JSVM_RESULTS_DIR"] = tempfile.mkdtemp()
 
-        
+        # Set JSVM directory.
         self.jsvm_dir = tempfile.mkdtemp()
         env["JS_CODE_COVERAGE_OUTPUT_DIR"] = self.jsvm_dir
 
@@ -301,10 +301,13 @@ class CodeCoverageMixin(SingleTestMixin):
         from codecoverage.lcov_rewriter import LcovFileRewriter
 
         jsvm_files = [os.path.join(jsvm_dir, e) for e in os.listdir(jsvm_dir)]
-        rewriter = LcovFileRewriter(os.path.join(self.grcov_dir, "chrome-map.json"))
+        appdir = self.config.get("appdir", "dist/bin/browser/")
+        rewriter = LcovFileRewriter(
+            os.path.join(self.grcov_dir, "chrome-map.json"), appdir
+        )
         rewriter.rewrite_files(jsvm_files, jsvm_output_file, "")
 
-        
+        # Run grcov on the zipped .gcno and .gcda files.
         grcov_command = [
             os.path.join(self.grcov_dir, self.grcov_bin),
             "-t",
@@ -336,8 +339,8 @@ class CodeCoverageMixin(SingleTestMixin):
                 if "cannot be normalized because" not in line
             )
 
-        
-        
+        # 'grcov_output' will be a tuple, the first variable is the path to the lcov output,
+        # the other is the path to the standard error output.
         tmp_output_file, _ = self.get_output_from_command(
             grcov_command,
             silent=True,
@@ -376,11 +379,11 @@ class CodeCoverageMixin(SingleTestMixin):
         report_file = str(uuid.uuid4()) + ".json"
         shutil.move(grcov_file, report_file)
 
-        
-        
+        # Get the test path relative to topsrcdir.
+        # This mapping is constructed by self.find_modified_tests().
         test = self.test_src_path.get(test.replace(os.sep, posixpath.sep), test)
 
-        
+        # Log a warning if the test path is still an absolute path.
         if os.path.isabs(test):
             self.warn("Found absolute path for test: {}".format(test))
 
@@ -391,8 +394,8 @@ class CodeCoverageMixin(SingleTestMixin):
 
         if "GCOV_RESULTS_DIR" in env:
             assert "JSVM_RESULTS_DIR" in env
-            
-            
+            # In this case, parse_coverage_artifacts has removed GCOV_RESULTS_DIR and
+            # JSVM_RESULTS_DIR so we need to remove GCOV_PREFIX and JS_CODE_COVERAGE_OUTPUT_DIR.
             try:
                 shutil.rmtree(self.gcov_dir)
             except FileNotFoundError:
@@ -404,15 +407,15 @@ class CodeCoverageMixin(SingleTestMixin):
                 pass
 
     def is_covered(self, sf):
-        
-        
+        # For C/C++ source files, we can consider a file as being uncovered
+        # when all its source lines are uncovered.
         all_lines_uncovered = all(c is None or c == 0 for c in sf["coverage"])
         if all_lines_uncovered:
             return False
 
-        
-        
-        
+        # For JavaScript files, we can't do the same, as the top-level is always
+        # executed, even if it just contains declarations. So, we need to check if
+        # all its functions, except the top-level, are uncovered.
         functions = sf["functions"] if "functions" in sf else []
         all_functions_uncovered = all(
             not f["exec"] or f["name"] == "top-level" for f in functions
@@ -434,7 +437,7 @@ class CodeCoverageMixin(SingleTestMixin):
                 self.info("No tests were found...not saving coverage data.")
                 return
 
-            
+            # Get the baseline tests that were run.
             baseline_tests_ext_cov = {}
             baseline_tests_suite_cov = {}
             for suite, data in self.per_test_reports.items():
@@ -442,9 +445,9 @@ class CodeCoverageMixin(SingleTestMixin):
                     if "baselinecoverage" not in test:
                         continue
 
-                    
-                    
-                    
+                    # TODO: Optimize this part which loads JSONs
+                    # with a size of about 40Mb into memory for diffing later.
+                    # Bug 1460064 is filed for this.
                     with open(grcov_file, "r") as f:
                         data = json.load(f)
 
@@ -461,22 +464,22 @@ class CodeCoverageMixin(SingleTestMixin):
                 for suite, data in self.per_test_reports.items():
                     for test, grcov_file in data.items():
                         if "baselinecoverage" in test:
-                            
+                            # Don't keep the baseline coverage
                             continue
                         else:
-                            
+                            # Get test coverage
                             with open(grcov_file, "r") as f:
                                 report = json.load(f)
 
-                            
-                            
+                            # Remove uncovered files, as they are unneeded for per-test
+                            # coverage purposes.
                             report["source_files"] = [
                                 sf
                                 for sf in report["source_files"]
                                 if self.is_covered(sf)
                             ]
 
-                            
+                            # Get baseline coverage
                             baseline_coverage = {}
                             if suite in baseline_tests_suite_cov:
                                 baseline_coverage = baseline_tests_suite_cov[suite]
@@ -492,7 +495,7 @@ class CodeCoverageMixin(SingleTestMixin):
                                     break
 
                             if not baseline_coverage:
-                                
+                                # Default to the '.js' baseline as it is the largest
                                 self.info("Did not find a baseline test for: " + test)
                                 baseline_coverage = baseline_tests_ext_cov[".js"]
 
@@ -526,14 +529,14 @@ class CodeCoverageMixin(SingleTestMixin):
                 if e.errno != errno.EEXIST:
                     raise
 
-            
+            # Zip the grcov output and upload it.
             grcov_zip_path = os.path.join(
                 dirs["abs_blob_upload_dir"], "code-coverage-grcov.zip"
             )
             with zipfile.ZipFile(grcov_zip_path, "w", zipfile.ZIP_DEFLATED) as z:
                 z.write(grcov_output_file)
 
-            
+            # Zip the JSVM coverage data and upload it.
             jsvm_zip_path = os.path.join(
                 dirs["abs_blob_upload_dir"], "code-coverage-jsvm.zip"
             )
@@ -552,9 +555,9 @@ class CodeCoverageMixin(SingleTestMixin):
         if not self.java_code_coverage_enabled:
             return
 
-        
-        
-        
+        # If the emulator became unresponsive, the task has failed and we don't
+        # have any coverage report file, so stop running this function and
+        # allow the task to be retried automatically.
         if not success and not os.listdir(self.java_coverage_output_dir):
             return
 
@@ -609,13 +612,13 @@ def rm_baseline_cov(baseline_coverage, test_coverage):
     is the unique coverage for the test in question.
     """
 
-    
+    # Get all files into a quicker search format
     unique_test_coverage = test_coverage
     baseline_files = {el["name"]: el for el in baseline_coverage["source_files"]}
     test_files = {el["name"]: el for el in test_coverage["source_files"]}
 
-    
-    
+    # Perform the difference and find everything
+    # unique to the test.
     unique_file_coverage = {}
     for test_file in test_files:
         if test_file not in baseline_files:
@@ -625,15 +628,15 @@ def rm_baseline_cov(baseline_coverage, test_coverage):
         if len(test_files[test_file]["coverage"]) != len(
             baseline_files[test_file]["coverage"]
         ):
-            
-            
+            # File has line number differences due to gcov bug:
+            #  https://bugzilla.mozilla.org/show_bug.cgi?id=1410217
             continue
 
-        
-        
-        
+        # TODO: Attempt to rewrite this section to remove one of the two
+        # iterations over a test's source file's coverage for optimization.
+        # Bug 1460064 was filed for this.
 
-        
+        # Get line numbers and the differences
         file_coverage = {
             i
             for i, cov in enumerate(test_files[test_file]["coverage"])
@@ -651,29 +654,29 @@ def rm_baseline_cov(baseline_coverage, test_coverage):
         if len(unique_coverage) > 0:
             unique_file_coverage[test_file] = test_files[test_file]
 
-            
-            
+            # Return the data to original format to return
+            # coverage within the test_coverge data object.
             fmt_unique_coverage = []
             for i, cov in enumerate(unique_file_coverage[test_file]["coverage"]):
                 if cov is None:
                     fmt_unique_coverage.append(None)
                     continue
 
-                
-                
+                # TODO: Bug 1460061, determine if hit counts
+                # need to be considered.
                 if cov > 0:
-                    
+                    # If there is a count
                     if i in unique_coverage:
-                        
+                        # Only add the count if it's unique
                         fmt_unique_coverage.append(
                             unique_file_coverage[test_file]["coverage"][i]
                         )
                         continue
-                
+                # Zero out everything that is not unique
                 fmt_unique_coverage.append(0)
             unique_file_coverage[test_file]["coverage"] = fmt_unique_coverage
 
-    
+    # Reformat to original test_coverage list structure
     unique_test_coverage["source_files"] = list(unique_file_coverage.values())
 
     return unique_test_coverage
