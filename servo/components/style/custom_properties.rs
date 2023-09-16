@@ -778,7 +778,7 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 &mut map,
                 self.inherited.map(|m| &**m),
                 &self.seen,
-                self.stylist.device(),
+                self.stylist,
             );
         }
 
@@ -803,7 +803,7 @@ fn substitute_all(
     custom_properties_map: &mut CustomPropertiesMap,
     inherited: Option<&CustomPropertiesMap>,
     seen: &PrecomputedHashSet<&Name>,
-    device: &Device,
+    stylist: &Stylist,
 ) {
     
     
@@ -827,7 +827,6 @@ fn substitute_all(
     }
     
     
-    #[derive(Debug)]
     struct Context<'a> {
         
         
@@ -843,7 +842,8 @@ fn substitute_all(
         
         inherited: Option<&'a CustomPropertiesMap>,
         
-        device: &'a Device,
+        
+        stylist: &'a Stylist,
     }
 
     
@@ -982,7 +982,7 @@ fn substitute_all(
             &value,
             &mut context.map,
             context.inherited,
-            &context.device,
+            context.stylist.device(),
         );
 
         
@@ -1000,7 +1000,7 @@ fn substitute_all(
             var_info: SmallVec::new(),
             map: custom_properties_map,
             inherited,
-            device,
+            stylist,
         };
         traverse(name, &mut context);
     }
