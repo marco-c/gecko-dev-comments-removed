@@ -30,7 +30,7 @@ assertOffsetColumns(
 assertOffsetColumns(
   
   "function f(n){var a=[1,2,n]}",
-  "                    ^^ ^ ^ ^"
+  "                    ^    ^ ^"
 );
 
 
