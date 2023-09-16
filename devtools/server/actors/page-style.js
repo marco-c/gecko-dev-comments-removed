@@ -634,17 +634,33 @@ class PageStyleActor extends Actor {
 
     
     if (showElementStyles && !options.skipPseudo) {
+      const relevantPseudoElements = [];
       for (const readPseudo of PSEUDO_ELEMENTS) {
-        if (this._pseudoIsRelevant(bindingElement, readPseudo)) {
-          this._getElementRules(
-            bindingElement,
-            readPseudo,
-            inherited,
-            options
-          ).forEach(oneRule => {
-            rules.push(oneRule);
-          });
+        if (!this._pseudoIsRelevant(bindingElement, readPseudo)) {
+          continue;
         }
+
+        if (readPseudo === "::highlight") {
+          InspectorUtils.getRegisteredCssHighlights(
+            this.inspector.targetActor.window.document,
+            
+            true
+          ).forEach(name => {
+            relevantPseudoElements.push(`::highlight(${name})`);
+          });
+        } else {
+          relevantPseudoElements.push(readPseudo);
+        }
+      }
+
+      for (const readPseudo of relevantPseudoElements) {
+        const pseudoRules = this._getElementRules(
+          bindingElement,
+          readPseudo,
+          inherited,
+          options
+        );
+        rules.push(...pseudoRules);
       }
     }
 
@@ -685,10 +701,8 @@ class PageStyleActor extends Actor {
       case "::first-letter":
       case "::first-line":
       case "::selection":
-        return true;
-      
       case "::highlight":
-        return false;
+        return true;
       case "::marker":
         return this._nodeIsListItem(node);
       case "::backdrop":
