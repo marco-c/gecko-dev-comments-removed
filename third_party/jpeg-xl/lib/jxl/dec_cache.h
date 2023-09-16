@@ -210,7 +210,7 @@ struct GroupDecCache {
       max_block_area_ = max_block_area;
       
       
-      float_memory_ = hwy::AllocateAligned<float>(max_block_area_ * 4);
+      float_memory_ = hwy::AllocateAligned<float>(max_block_area_ * 7);
       
       int32_memory_ = hwy::AllocateAligned<int32_t>(max_block_area_ * 3);
       int16_memory_ = hwy::AllocateAligned<int16_t>(max_block_area_ * 3);

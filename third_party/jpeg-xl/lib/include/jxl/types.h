@@ -143,33 +143,6 @@ typedef struct {
 
 typedef char JxlBoxType[4];
 
-
-
-
-
-
-
-
-
-typedef enum {
-  
-  kFrames = 0,
-  
-  kDC = 1,
-  
-  
-  kLastPasses = 2,
-  
-  
-  kPasses = 3,
-  
-  kDCProgressive = 4,
-  
-  kDCGroups = 5,
-  
-  kGroups = 6,
-} JxlProgressiveDetail;
-
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif

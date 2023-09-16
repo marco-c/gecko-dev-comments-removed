@@ -1964,9 +1964,9 @@ static JxlDecoderStatus HandleBoxes(JxlDecoder* dec) {
         dec->box_stage = BoxStage::kHeader;
         
         
-        if (dec->events_wanted & recon_result) {
-          dec->events_wanted &= ~recon_result;
-          return recon_result;
+        if (dec->events_wanted & JXL_DEC_JPEG_RECONSTRUCTION) {
+          dec->events_wanted &= ~JXL_DEC_JPEG_RECONSTRUCTION;
+          return JXL_DEC_JPEG_RECONSTRUCTION;
         }
       } else {
         

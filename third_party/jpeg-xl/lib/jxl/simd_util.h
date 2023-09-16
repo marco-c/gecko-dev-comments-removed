@@ -1,0 +1,17 @@
+
+
+
+
+
+#ifndef LIB_JXL_SIMD_UTIL_H_
+#define LIB_JXL_SIMD_UTIL_H_
+#include <stddef.h>
+
+namespace jxl {
+
+
+size_t MaxVectorSize();
+
+}  
+
+#endif  

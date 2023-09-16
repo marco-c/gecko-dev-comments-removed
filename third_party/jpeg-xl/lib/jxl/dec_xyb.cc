@@ -304,13 +304,10 @@ Status OutputEncodingInfo::SetColorEncoding(const ColorEncoding& c_desired) {
   
   
   
-  
   if (xyb_encoded) {
-    float intensity_target =
-        (c_desired.tf.IsPQ() ? 10000 : orig_intensity_target);
     InitSIMDInverseMatrix(inverse_matrix, opsin_params.inverse_opsin_matrix,
-                          intensity_target);
-    all_default_opsin = (std::abs(intensity_target - 255.0) <= 0.1f &&
+                          orig_intensity_target);
+    all_default_opsin = (std::abs(orig_intensity_target - 255.0) <= 0.1f &&
                          inverse_matrix_is_default);
   }
 

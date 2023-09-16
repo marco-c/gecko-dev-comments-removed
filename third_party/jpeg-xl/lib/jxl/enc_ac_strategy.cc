@@ -31,6 +31,7 @@
 #include "lib/jxl/enc_transforms-inl.h"
 #include "lib/jxl/entropy_coder.h"
 #include "lib/jxl/fast_math-inl.h"
+#include "lib/jxl/simd_util.h"
 
 
 
@@ -852,8 +853,11 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
   const CompressParams& cparams = enc_state->cparams;
   const float butteraugli_target = cparams.butteraugli_distance;
   AcStrategyImage* ac_strategy = &enc_state->shared.ac_strategy;
+  const size_t dct_scratch_size =
+      3 * (MaxVectorSize() / sizeof(float)) * AcStrategy::kMaxBlockDim;
   
-  auto mem = hwy::AllocateAligned<float>(5 * AcStrategy::kMaxCoeffArea);
+  auto mem = hwy::AllocateAligned<float>(5 * AcStrategy::kMaxCoeffArea +
+                                         dct_scratch_size);
   auto qmem = hwy::AllocateAligned<uint32_t>(AcStrategy::kMaxCoeffArea);
   uint32_t* JXL_RESTRICT quantized = qmem.get();
   float* JXL_RESTRICT block = mem.get();

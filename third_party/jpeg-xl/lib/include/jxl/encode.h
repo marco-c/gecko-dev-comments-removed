@@ -672,24 +672,6 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderAddImageFrame(
 
 
 
-typedef void (*JxlEncoderOutputCallback)(void* run_opaque, size_t pos,
-                                         size_t num_bytes);
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus
-JxlEncoderSetOutputCallback(JxlEncoderOutputCallback callback);
-
-
-
-
-
-
-
-JXL_EXPORT JxlEncoderStatus
-JxlEncoderChunkedImageFrameStart(const JxlEncoderFrameSettings* frame_settings);
 
 
 
@@ -706,10 +688,108 @@ JxlEncoderChunkedImageFrameStart(const JxlEncoderFrameSettings* frame_settings);
 
 
 
-JXL_EXPORT JxlEncoderStatus JxlEncoderChunkedImageFrameAddPart(
-    const JxlEncoderFrameSettings* frame_settings, size_t x, size_t y,
-    const JxlPixelFormat* pixel_format, const void* input_data,
-    size_t input_size);
+
+
+
+
+
+
+
+
+
+struct JxlEncoderOutputProcessor {
+  
+
+
+
+
+  void* opaque;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  void* (*get_buffer)(void* opaque, size_t* size);
+
+  
+
+
+
+
+
+
+
+
+  void (*release_buffer)(void* opaque, size_t written_bytes);
+
+  
+
+
+
+
+
+
+
+
+
+  void (*seek)(void* opaque, uint64_t position);
+
+  
+
+
+
+
+
+
+
+
+
+
+  void (*set_finalized_position)(void* opaque, uint64_t finalized_position);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderSetOutputProcessor(
+    JxlEncoder* enc, struct JxlEncoderOutputProcessor output_processor);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderFlushInput(JxlEncoder* enc);
 
 
 

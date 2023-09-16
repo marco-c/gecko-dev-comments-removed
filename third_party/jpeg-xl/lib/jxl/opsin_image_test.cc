@@ -3,9 +3,7 @@
 
 
 
-#include <stdio.h>
-
-#include <hwy/tests/test_util-inl.h>
+#include <hwy/tests/hwy_gtest.h>
 
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/color_management.h"
@@ -15,6 +13,7 @@
 #include "lib/jxl/image.h"
 #include "lib/jxl/matrix_ops.h"
 #include "lib/jxl/opsin_params.h"
+#include "lib/jxl/testing.h"
 
 namespace jxl {
 namespace {
