@@ -446,23 +446,6 @@ int32_t ModuleRtpRtcpImpl2::SetCNAME(absl::string_view c_name) {
   return rtcp_sender_.SetCNAME(c_name);
 }
 
-
-
-
-
-int32_t ModuleRtpRtcpImpl2::RTT(const uint32_t remote_ssrc,
-                                int64_t* rtt,
-                                int64_t* avg_rtt,
-                                int64_t* min_rtt,
-                                int64_t* max_rtt) const {
-  int32_t ret = rtcp_receiver_.RTT(remote_ssrc, rtt, avg_rtt, min_rtt, max_rtt);
-  if (rtt && *rtt == 0) {
-    
-    *rtt = rtt_ms();
-  }
-  return ret;
-}
-
 absl::optional<TimeDelta> ModuleRtpRtcpImpl2::LastRtt() const {
   absl::optional<TimeDelta> rtt = rtcp_receiver_.LastRtt();
   if (!rtt.has_value()) {
