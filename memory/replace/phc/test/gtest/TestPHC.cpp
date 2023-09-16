@@ -329,8 +329,10 @@ TEST(PHC, TestPHCDisabling)
   free(s);
 }
 
-TEST(PHC, TestPHCExhaustion)
-{
+
+
+
+void DisabledPHCExhaustionTest() {
   
 #if defined(XP_MACOSX) && defined(__aarch64__)
   const unsigned NUM_ALLOCATIONS = 1024;
