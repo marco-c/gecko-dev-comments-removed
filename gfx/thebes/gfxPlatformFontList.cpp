@@ -1900,62 +1900,27 @@ fontlist::Pointer gfxPlatformFontList::GetShmemCharMapLocked(
 }
 
 
-
-
 already_AddRefed<gfxCharacterMap> gfxPlatformFontList::FindCharMap(
     gfxCharacterMap* aCmap) {
-  
   AutoLock lock(mLock);
-
-  
   aCmap->CalcHash();
-  aCmap->mShared = true;  
-                          
-  RefPtr cmap = mSharedCmaps.PutEntry(aCmap)->GetKey();
-
-  
-  
-  if (cmap.get() != aCmap) {
-    aCmap->mShared = false;
-  }
-
-  return cmap.forget();
+  gfxCharacterMap* cmap = mSharedCmaps.PutEntry(aCmap)->GetKey();
+  cmap->mShared = true;
+  return do_AddRef(cmap);
 }
 
 
-
-
-
-
-
-void gfxPlatformFontList::MaybeRemoveCmap(const gfxCharacterMap* aCharMap) {
-  
-  
+void gfxPlatformFontList::RemoveCmap(const gfxCharacterMap* aCharMap) {
   AutoLock lock(mLock);
-
   
-  if (!mSharedCmaps.Count()) {
+  if (mSharedCmaps.Count() == 0) {
     return;
   }
 
   
-  
-  
-  
-  
   CharMapHashKey* found =
       mSharedCmaps.GetEntry(const_cast<gfxCharacterMap*>(aCharMap));
-  if (found && found->GetKey() == aCharMap && aCharMap->RefCount() == 1) {
-    
-    
-    Unused << found->mCharMap.forget();
-
-    
-    delete aCharMap;
-
-    
-    NS_LOG_RELEASE(aCharMap, 0, "gfxCharacterMap");
-
+  if (found && found->GetKey() == aCharMap) {
     mSharedCmaps.RemoveEntry(found);
   }
 }

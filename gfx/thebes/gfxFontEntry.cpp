@@ -51,10 +51,24 @@ using namespace mozilla;
 using namespace mozilla::gfx;
 using namespace mozilla::unicode;
 
-void gfxCharacterMap::NotifyMaybeReleased(gfxCharacterMap* aCmap) {
+nsrefcnt gfxCharacterMap::NotifyMaybeReleased() {
+  auto* pfl = gfxPlatformFontList::PlatformFontList();
+  pfl->Lock();
+
   
   
-  gfxPlatformFontList::PlatformFontList()->MaybeRemoveCmap(aCmap);
+  if (mRefCnt > 0) {
+    pfl->Unlock();
+    return mRefCnt;
+  }
+
+  if (mShared) {
+    pfl->RemoveCmap(this);
+  }
+
+  pfl->Unlock();
+  delete this;
+  return 0;
 }
 
 gfxFontEntry::gfxFontEntry(const nsACString& aName, bool aIsStandardFace)
