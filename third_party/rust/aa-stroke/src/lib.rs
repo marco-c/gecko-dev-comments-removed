@@ -659,7 +659,9 @@ impl<'z> Stroker<'z> {
     pub fn line_to_capped(&mut self, pt: Point) {
         if let Some(cur_pt) = self.cur_pt {
             let normal = compute_normal(cur_pt, pt).unwrap_or(self.last_normal);
-            self.line_to(if self.stroked_path.aa && self.style.cap == LineCap::Butt { pt - flip(normal) * 0.5} else { pt });
+            
+            
+            self.line_to(if self.stroked_path.aa && self.style.cap == LineCap::Butt { pt + perp(normal) * 0.5} else { pt });
             if let (Some(cur_pt), Some((_point, _normal))) = (self.cur_pt, self.start_point) {
                 
                 cap_line(&mut self.stroked_path, &self.style, cur_pt, self.last_normal);
@@ -686,10 +688,13 @@ impl<'z> Stroker<'z> {
                 if self.start_point.is_none() {
                     if !self.closed_subpath {
                         
-                        cap_line(stroked_path, &self.style, cur_pt, flip(normal));
+                        let mut cur_pt = cur_pt;
                         if stroked_path.aa && self.style.cap == LineCap::Butt {
                             
+                            
+                            cur_pt += perp(flip(normal)) * 0.5;
                         }
+                        cap_line(stroked_path, &self.style, cur_pt, flip(normal));
                     }
                     self.start_point = Some((cur_pt, normal));
                 } else {
@@ -886,6 +891,21 @@ fn curve() {
         stroker.close();
     let stroked = stroker.finish();
     assert_eq!(stroked.len(), 1089);
+}
+
+#[test]
+fn butt_cap() {
+    let mut stroker = Stroker::new(&StrokeStyle{
+        cap: LineCap::Butt,
+        join: LineJoin::Bevel,
+        width: 1.,
+        ..Default::default()});
+    stroker.move_to(Point::new(20., 20.5), false);
+    stroker.line_to_capped(Point::new(40., 20.5));
+    let result = stroker.finish();
+    for v in result {
+        assert!(v.y == 20.5 || v.y == 19.5 || v.y == 21.5);
+    }
 }
 
 #[test]
