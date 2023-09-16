@@ -13,6 +13,7 @@
 #include "nsPresContext.h"
 #include "mozilla/MotionPathUtils.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/StyleAnimationValue.h"
 #include "mozilla/SVGUtils.h"
 #include "gfxMatrix.h"
@@ -38,6 +39,53 @@ namespace nsStyleTransformMatrix {
 
 
 
+static nsRect GetSVGBox(const nsIFrame* aFrame) {
+  auto computeViewBox = [&]() {
+    
+    
+    
+    CSSSize size = CSSSize::FromUnknownSize(SVGUtils::GetContextSize(aFrame));
+    return nsRect(-aFrame->GetPosition(), CSSPixel::ToAppUnits(size));
+  };
+
+  
+  
+  
+  switch (aFrame->StyleDisplay()->mTransformBox) {
+    case StyleTransformBox::ContentBox:
+      
+      return {};
+    case StyleTransformBox::FillBox: {
+      
+      
+      nsRect bboxInAppUnits = nsLayoutUtils::ComputeGeometryBox(
+          const_cast<nsIFrame*>(aFrame), StyleGeometryBox::FillBox);
+      
+      
+      
+      
+      return {bboxInAppUnits.x - aFrame->GetPosition().x,
+              bboxInAppUnits.y - aFrame->GetPosition().y, bboxInAppUnits.width,
+              bboxInAppUnits.height};
+    }
+    case StyleTransformBox::BorderBox:
+      if (!StaticPrefs::layout_css_transform_box_content_stroke_enabled()) {
+        
+        
+        return computeViewBox();
+      }
+      [[fallthrough]];
+    case StyleTransformBox::StrokeBox:
+      
+      return {};
+    case StyleTransformBox::ViewBox:
+      return computeViewBox();
+  }
+
+  MOZ_ASSERT_UNREACHABLE("All transform box should be handled.");
+  return {};
+}
+
 void TransformReferenceBox::EnsureDimensionsAreCached() {
   if (mIsCached) {
     return;
@@ -45,82 +93,53 @@ void TransformReferenceBox::EnsureDimensionsAreCached() {
 
   MOZ_ASSERT(mFrame);
 
-  const auto box = mFrame->StyleDisplay()->mTransformBox;
-  if (box == StyleTransformBox::ContentBox ||
-      box == StyleTransformBox::StrokeBox) {
-    
-    return;
-  }
-
   mIsCached = true;
 
   if (mFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    if (box == StyleTransformBox::FillBox) {
-      
-      
-      nsRect bboxInAppUnits = nsLayoutUtils::ComputeGeometryBox(
-          const_cast<nsIFrame*>(mFrame), StyleGeometryBox::FillBox);
-      
-      
-      
-      
-      mX = bboxInAppUnits.x - mFrame->GetPosition().x;
-      mY = bboxInAppUnits.y - mFrame->GetPosition().y;
-      mWidth = bboxInAppUnits.width;
-      mHeight = bboxInAppUnits.height;
-    } else {
-      
-      MOZ_ASSERT(box == StyleTransformBox::ViewBox ||
-                     box == StyleTransformBox::BorderBox,
-                 "Unexpected value for 'transform-box'");
-      
-      
-      
-      mX = -mFrame->GetPosition().x;
-      mY = -mFrame->GetPosition().y;
-      Size contextSize = SVGUtils::GetContextSize(mFrame);
-      mWidth = nsPresContext::CSSPixelsToAppUnits(contextSize.width);
-      mHeight = nsPresContext::CSSPixelsToAppUnits(contextSize.height);
-    }
+    mBox = GetSVGBox(mFrame);
     return;
   }
 
   
   
   
-  
-  
-  
+  switch (mFrame->StyleDisplay()->mTransformBox) {
+    case StyleTransformBox::FillBox:
+    case StyleTransformBox::ContentBox: {
+      
+      return;
+    }
+    case StyleTransformBox::StrokeBox:
+      
+      return;
+    case StyleTransformBox::ViewBox:
+    case StyleTransformBox::BorderBox: {
+      
+      
+      
+      
+      
+      
 
-  nsRect rect;
+      nsRect rect;
 
 #ifndef UNIFIED_CONTINUATIONS
-  rect = mFrame->GetRect();
+      rect = mFrame->GetRect();
 #else
-  
-  for (const nsIFrame* currFrame = mFrame->FirstContinuation();
-       currFrame != nullptr; currFrame = currFrame->GetNextContinuation()) {
-    
-    
-    rect.UnionRect(
-        result, nsRect(currFrame->GetOffsetTo(mFrame), currFrame->GetSize()));
-  }
+      
+      for (const nsIFrame* currFrame = mFrame->FirstContinuation();
+           currFrame != nullptr; currFrame = currFrame->GetNextContinuation()) {
+        
+        
+        rect.UnionRect(result, nsRect(currFrame->GetOffsetTo(mFrame),
+                                      currFrame->GetSize()));
+      }
 #endif
 
-  mX = 0;
-  mY = 0;
-  mWidth = rect.Width();
-  mHeight = rect.Height();
-}
-
-void TransformReferenceBox::Init(const nsRect& aDimensions) {
-  MOZ_ASSERT(!mFrame && !mIsCached);
-
-  mX = aDimensions.x;
-  mY = aDimensions.y;
-  mWidth = aDimensions.width;
-  mHeight = aDimensions.height;
-  mIsCached = true;
+      mBox = {0, 0, rect.Width(), rect.Height()};
+      return;
+    }
+  }
 }
 
 float ProcessTranslatePart(
