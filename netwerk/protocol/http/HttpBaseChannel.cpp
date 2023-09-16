@@ -5867,12 +5867,6 @@ nsresult HttpBaseChannel::CheckRedirectLimit(uint32_t aRedirectFlags) const {
     
     
     
-    if (aRedirectFlags & nsIChannelEventSink::REDIRECT_AUTH_RETRY) {
-      return NS_OK;
-    }
-    
-    
-    
     
     static const int8_t kMinInternalRedirects = 5;
 
