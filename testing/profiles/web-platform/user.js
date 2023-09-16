@@ -85,3 +85,5 @@ user_pref("security.OCSP.enabled", 0);
 user_pref("security.remote_settings.intermediates.enabled", false);
 
 user_pref("general.smoothScroll", true);
+
+user_pref("gecko.handlerService.defaultHandlersVersion", 100);
