@@ -47,6 +47,16 @@ add_task(async function testPolicyOverride() {
   await ensureNoTRRModeChange(undefined);
   ensureNoHeuristicsTelemetry();
 
+  checkScalars(
+    [
+      [
+        "networking.doh_heuristics_result",
+        { value: Heuristics.Telemetry.enterprisePresent },
+      ],
+      
+    ].concat(falseExpectations([]))
+  );
+
   
   simulateNetworkChange();
   await ensureNoTRRModeChange(undefined);
