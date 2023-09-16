@@ -6184,6 +6184,15 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   }
 #endif
 
+  if (mWindowType == WindowType::TopLevel && gKioskMode) {
+    if (gKioskMonitor != -1) {
+      mKioskMonitor = Some(gKioskMonitor);
+      LOG("  set kiosk mode monitor %d", mKioskMonitor.value());
+    } else {
+      LOG("  set kiosk mode");
+    }
+  }
+
   if (mWindowType == WindowType::Popup) {
     MOZ_ASSERT(aInitData);
     
@@ -7389,6 +7398,26 @@ bool nsWindow::SynchronouslyRepaintOnResize() {
   return true;
 }
 
+void nsWindow::KioskLockOnMonitor() {
+  
+  static auto sGdkWindowFullscreenOnMonitor =
+      (void (*)(GdkWindow* window, gint monitor))dlsym(
+          RTLD_DEFAULT, "gdk_window_fullscreen_on_monitor");
+
+  if (!sGdkWindowFullscreenOnMonitor) {
+    return;
+  }
+
+  int monitor = mKioskMonitor.value();
+  if (monitor < 0 || monitor >= ScreenHelperGTK::GetMonitorCount()) {
+    LOG("nsWindow::KioskLockOnMonitor() wrong monitor number! (%d)\n", monitor);
+    return;
+  }
+
+  LOG("nsWindow::KioskLockOnMonitor() locked on %d\n", monitor);
+  sGdkWindowFullscreenOnMonitor(gtk_widget_get_window(mShell), monitor);
+}
+
 static bool IsFullscreenSupported(GtkWidget* aShell) {
 #ifdef MOZ_X11
   GdkScreen* screen = gtk_widget_get_screen(aShell);
@@ -7420,8 +7449,17 @@ nsresult nsWindow::MakeFullScreen(bool aFullScreen) {
       }
     }
 
-    gtk_window_fullscreen(GTK_WINDOW(mShell));
+    if (mKioskMonitor.isSome()) {
+      KioskLockOnMonitor();
+    } else {
+      gtk_window_fullscreen(GTK_WINDOW(mShell));
+    }
   } else {
+    
+    if (gKioskMode) {
+      return NS_ERROR_NOT_AVAILABLE;
+    }
+
     gtk_window_unfullscreen(GTK_WINDOW(mShell));
 
     if (mIsPIPWindow) {
