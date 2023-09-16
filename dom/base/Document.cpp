@@ -18326,12 +18326,12 @@ nsICookieJarSettings* Document::CookieJarSettings() {
   return mCookieJarSettings;
 }
 
-bool Document::HasStorageAccessPermissionGranted() {
+bool Document::UsingStorageAccess() {
   
   
   
   nsPIDOMWindowInner* inner = GetInnerWindow();
-  if (inner && inner->HasStorageAccessPermissionGranted()) {
+  if (inner && inner->UsingStorageAccess()) {
     return true;
   }
 
