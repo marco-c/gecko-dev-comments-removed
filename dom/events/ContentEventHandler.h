@@ -319,9 +319,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult GenerateFlatTextContent(const Element* aElement, nsString& aString,
                                    LineBreakType aLineBreakType);
   
-  nsresult GenerateFlatTextContent(const UnsafeSimpleRange& aSimpleRange,
-                                   nsString& aString,
-                                   LineBreakType aLineBreakType);
+  template <typename NodeType, typename RangeBoundaryType>
+  nsresult GenerateFlatTextContent(
+      const SimpleRangeBase<NodeType, RangeBoundaryType>& aSimpleRange,
+      nsString& aString, LineBreakType aLineBreakType);
   
   
   
@@ -344,7 +345,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult QueryContentRect(nsIContent* aContent,
                             WidgetQueryContentEvent* aEvent);
 
-  struct MOZ_STACK_CLASS DOMRangeAndAdjustedOffsetInFlattenedText {
+  template <typename RangeType, typename TextNodeType>
+  struct MOZ_STACK_CLASS DOMRangeAndAdjustedOffsetInFlattenedTextBase {
     bool RangeStartsFromLastTextNode() const {
       return mLastTextNode && mRange.GetStartContainer() == mLastTextNode;
     }
@@ -358,7 +360,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
     }
 
     
-    UnsafeSimpleRange mRange;
+    RangeType mRange;
     
     
     
@@ -367,16 +369,43 @@ class MOZ_STACK_CLASS ContentEventHandler {
     
     
     
-    dom::Text* mLastTextNode = nullptr;
+    TextNodeType mLastTextNode = nullptr;
   };
+  using DOMRangeAndAdjustedOffsetInFlattenedText =
+      DOMRangeAndAdjustedOffsetInFlattenedTextBase<SimpleRange,
+                                                   RefPtr<dom::Text>>;
+  using UnsafeDOMRangeAndAdjustedOffsetInFlattenedText =
+      DOMRangeAndAdjustedOffsetInFlattenedTextBase<UnsafeSimpleRange,
+                                                   dom::Text*>;
+
   
 
 
 
-  Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
+
+
+
+  template <typename RangeType, typename TextNodeType>
+  Result<DOMRangeAndAdjustedOffsetInFlattenedTextBase<RangeType, TextNodeType>,
+         nsresult>
+  ConvertFlatTextOffsetToDOMRangeBase(uint32_t aOffset, uint32_t aLength,
+                                      LineBreakType aLineBreakType,
+                                      bool aExpandToClusterBoundaries);
+  MOZ_ALWAYS_INLINE Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
   ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
                                   LineBreakType aLineBreakType,
-                                  bool aExpandToClusterBoundaries);
+                                  bool aExpandToClusterBoundaries) {
+    return ConvertFlatTextOffsetToDOMRangeBase<SimpleRange, RefPtr<dom::Text>>(
+        aOffset, aLength, aLineBreakType, aExpandToClusterBoundaries);
+  }
+  MOZ_ALWAYS_INLINE
+  Result<UnsafeDOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
+  ConvertFlatTextOffsetToUnsafeDOMRange(uint32_t aOffset, uint32_t aLength,
+                                        LineBreakType aLineBreakType,
+                                        bool aExpandToClusterBoundaries) {
+    return ConvertFlatTextOffsetToDOMRangeBase<UnsafeSimpleRange, dom::Text*>(
+        aOffset, aLength, aLineBreakType, aExpandToClusterBoundaries);
+  }
 
   
   
@@ -430,15 +459,17 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   
+  template <typename NodeType, typename RangeBoundaryType>
   FrameAndNodeOffset GetFirstFrameInRangeForTextRect(
-      const UnsafeSimpleRange& aSimpleRange);
+      const SimpleRangeBase<NodeType, RangeBoundaryType>& aSimpleRange);
 
   
   
   
   
+  template <typename NodeType, typename RangeBoundaryType>
   FrameAndNodeOffset GetLastFrameInRangeForTextRect(
-      const UnsafeSimpleRange& aSimpleRange);
+      const SimpleRangeBase<NodeType, RangeBoundaryType>& aSimpleRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final {
     
