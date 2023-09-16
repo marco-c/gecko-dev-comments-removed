@@ -2089,9 +2089,6 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
   StoreWasOpened(true);
   mListener = listener;
 
-  
-  if (mLoadGroup) mLoadGroup->AddRequest(this, nullptr);
-
   if (mCanceled) {
     
     
@@ -2192,6 +2189,20 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   }
   SetTopLevelContentWindowId(contentWindowId);
 
+  if (browserChild && !browserChild->IPCOpen()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  ContentChild* cc = static_cast<ContentChild*>(gNeckoChild->Manager());
+  if (cc->IsShuttingDown()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  if (mLoadGroup) {
+    mLoadGroup->AddRequest(this, nullptr);
+  }
+
   HttpChannelOpenArgs openArgs;
   
   
@@ -2267,15 +2278,6 @@ nsresult HttpChannelChild::ContinueAsyncOpen() {
   LOG(("HttpChannelChild::ContinueAsyncOpen this=%p gid=%" PRIu64
        " browser id=%" PRIx64,
        this, mChannelId, mBrowserId));
-
-  if (browserChild && !browserChild->IPCOpen()) {
-    return NS_ERROR_FAILURE;
-  }
-
-  ContentChild* cc = static_cast<ContentChild*>(gNeckoChild->Manager());
-  if (cc->IsShuttingDown()) {
-    return NS_ERROR_FAILURE;
-  }
 
   openArgs.launchServiceWorkerStart() = mLaunchServiceWorkerStart;
   openArgs.launchServiceWorkerEnd() = mLaunchServiceWorkerEnd;
