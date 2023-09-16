@@ -1679,7 +1679,7 @@ static void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
                                  uint8_t* dst_y,
                                  int width,
                                  const struct RgbConstants* rgbconstants) {
-    asm volatile(
+  asm volatile(
       "vldrepl.b      $vr0,  %3,    0             \n\t"  
       "vldrepl.b      $vr1,  %3,    1             \n\t"  
       "vldrepl.b      $vr2,  %3,    2             \n\t"  
@@ -1689,9 +1689,11 @@ static void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
       "vld            $vr5,  %0,    16            \n\t"
       "vld            $vr6,  %0,    32            \n\t"
       "vld            $vr7,  %0,    48            \n\t"  
+                                                         
       "vor.v          $vr12, $vr3,  $vr3          \n\t"
       "vor.v          $vr13, $vr3,  $vr3          \n\t"
       "addi.d         %2,    %2,    -16           \n\t"  
+                                                         
       "vpickev.b      $vr8,  $vr5,  $vr4          \n\t"  
       "vpickev.b      $vr10, $vr7,  $vr6          \n\t"
       "vpickod.b      $vr9,  $vr5,  $vr4          \n\t"  
@@ -1707,12 +1709,11 @@ static void ARGBToYMatrixRow_LSX(const uint8_t* src_argb,
       "vst            $vr10, %1,    0             \n\t"
       "addi.d         %1,    %1,    16            \n\t"
       "bnez           %2,    1b                   \n\t"
-      : "+&r"(src_argb),    // %0
-        "+&r"(dst_y),       // %1
-        "+&r"(width)        // %2
+      : "+&r"(src_argb),  // %0
+        "+&r"(dst_y),     // %1
+        "+&r"(width)      // %2
       : "r"(rgbconstants)
-      : "memory"
-    );
+      : "memory");
 }
 
 void ARGBToYRow_LSX(const uint8_t* src_argb, uint8_t* dst_y, int width) {
@@ -1737,7 +1738,7 @@ static void RGBAToYMatrixRow_LSX(const uint8_t* src_rgba,
                                  uint8_t* dst_y,
                                  int width,
                                  const struct RgbConstants* rgbconstants) {
-    asm volatile(
+  asm volatile(
       "vldrepl.b      $vr0,  %3,    0             \n\t"  
       "vldrepl.b      $vr1,  %3,    1             \n\t"  
       "vldrepl.b      $vr2,  %3,    2             \n\t"  
@@ -1747,9 +1748,11 @@ static void RGBAToYMatrixRow_LSX(const uint8_t* src_rgba,
       "vld            $vr5,  %0,    16            \n\t"
       "vld            $vr6,  %0,    32            \n\t"
       "vld            $vr7,  %0,    48            \n\t"  
+                                                         
       "vor.v          $vr12, $vr3,  $vr3          \n\t"
       "vor.v          $vr13, $vr3,  $vr3          \n\t"
       "addi.d         %2,    %2,    -16           \n\t"  
+                                                         
       "vpickev.b      $vr8,  $vr5,  $vr4          \n\t"  
       "vpickev.b      $vr10, $vr7,  $vr6          \n\t"
       "vpickod.b      $vr9,  $vr5,  $vr4          \n\t"  
@@ -1765,12 +1768,11 @@ static void RGBAToYMatrixRow_LSX(const uint8_t* src_rgba,
       "vst            $vr10, %1,    0             \n\t"
       "addi.d         %1,    %1,    16            \n\t"
       "bnez           %2,    1b                   \n\t"
-      : "+&r"(src_rgba),    // %0
-        "+&r"(dst_y),       // %1
-        "+&r"(width)        // %2
+      : "+&r"(src_rgba),  // %0
+        "+&r"(dst_y),     // %1
+        "+&r"(width)      // %2
       : "r"(rgbconstants)
-      : "memory"
-    );
+      : "memory");
 }
 
 void RGBAToYRow_LSX(const uint8_t* src_rgba, uint8_t* dst_y, int width) {
@@ -1789,11 +1791,12 @@ static void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
                                 uint8_t* dst_y,
                                 int width,
                                 const struct RgbConstants* rgbconstants) {
-    int8_t shuff[64] = {0, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15, 17, 18, 20, 21, 23,
-                        24, 26, 27, 29, 30, 0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15,
-                        1, 0, 4, 0, 7, 0, 10, 0, 13, 0, 16, 0, 19, 0, 22, 0,
-                        25, 0, 28, 0, 31, 0, 2, 0, 5, 0, 8, 0, 11, 0, 14, 0};
-    asm volatile(
+  int8_t shuff[64] = {0,  2,  3,  5,  6,  8,  9,  11, 12, 14, 15, 17, 18,
+                      20, 21, 23, 24, 26, 27, 29, 30, 0,  1,  3,  4,  6,
+                      7,  9,  10, 12, 13, 15, 1,  0,  4,  0,  7,  0,  10,
+                      0,  13, 0,  16, 0,  19, 0,  22, 0,  25, 0,  28, 0,
+                      31, 0,  2,  0,  5,  0,  8,  0,  11, 0,  14, 0};
+  asm volatile(
       "vldrepl.b      $vr0,  %3,    0             \n\t"  
       "vldrepl.b      $vr1,  %3,    1             \n\t"  
       "vldrepl.b      $vr2,  %3,    2             \n\t"  
@@ -1806,9 +1809,11 @@ static void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
       "vld            $vr8,  %0,    0             \n\t"
       "vld            $vr9,  %0,    16            \n\t"
       "vld            $vr10, %0,    32            \n\t"  
+                                                         
       "vor.v          $vr12, $vr3,  $vr3          \n\t"
       "vor.v          $vr13, $vr3,  $vr3          \n\t"
       "addi.d         %2,    %2,    -16           \n\t"  
+                                                         
       "vshuf.b        $vr14, $vr9,  $vr8,  $vr4   \n\t"
       "vshuf.b        $vr15, $vr9,  $vr10, $vr5   \n\t"
       "vshuf.b        $vr16, $vr9,  $vr8,  $vr6   \n\t"
@@ -1829,8 +1834,7 @@ static void RGBToYMatrixRow_LSX(const uint8_t* src_rgba,
         "+&r"(width)        // %2
       : "r"(rgbconstants),  // %3
         "r"(shuff)          // %4
-      : "memory"
-    );
+      : "memory");
 }
 
 void RGB24ToYJRow_LSX(const uint8_t* src_rgb24, uint8_t* dst_yj, int width) {
@@ -1854,4 +1858,4 @@ void RAWToYRow_LSX(const uint8_t* src_raw, uint8_t* dst_y, int width) {
 }  
 #endif
 
-#endif  
+#endif
