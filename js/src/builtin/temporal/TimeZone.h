@@ -34,7 +34,7 @@ namespace js::temporal {
 class TimeZoneObjectMaybeBuiltin : public NativeObject {
  public:
   static constexpr uint32_t IDENTIFIER_SLOT = 0;
-  static constexpr uint32_t OFFSET_NANOSECONDS_SLOT = 1;
+  static constexpr uint32_t OFFSET_MINUTES_SLOT = 1;
   static constexpr uint32_t INTL_TIMEZONE_SLOT = 2;
   static constexpr uint32_t SLOT_COUNT = 3;
 
@@ -45,8 +45,8 @@ class TimeZoneObjectMaybeBuiltin : public NativeObject {
     return getFixedSlot(IDENTIFIER_SLOT).toString();
   }
 
-  const auto& offsetNanoseconds() const {
-    return getFixedSlot(OFFSET_NANOSECONDS_SLOT);
+  const auto& offsetMinutes() const {
+    return getFixedSlot(OFFSET_MINUTES_SLOT);
   }
 
   mozilla::intl::TimeZone* getTimeZone() const {
@@ -82,7 +82,6 @@ class BuiltinTimeZoneObject : public TimeZoneObjectMaybeBuiltin {
  private:
   static const JSClassOps classOps_;
 };
-
 
 
 
@@ -220,6 +219,7 @@ class TimeZoneValue final {
 };
 
 struct Instant;
+struct ParsedTimeZone;
 struct PlainDateTime;
 class CalendarValue;
 class InstantObject;
@@ -268,7 +268,7 @@ bool ToTemporalTimeZone(JSContext* cx,
 
 
 
-bool ToTemporalTimeZone(JSContext* cx, JS::Handle<JSString*> string,
+bool ToTemporalTimeZone(JSContext* cx, JS::Handle<ParsedTimeZone> string,
                         JS::MutableHandle<TimeZoneValue> result);
 
 
@@ -349,11 +349,6 @@ Wrapped<InstantObject*> DisambiguatePossibleInstants(
     JS::Handle<TimeZoneValue> timeZone,
     JS::Handle<Wrapped<PlainDateTimeObject*>> dateTimeObj,
     TemporalDisambiguation disambiguation);
-
-
-
-
-JSString* FormatTimeZoneOffsetString(JSContext* cx, int64_t offsetNanoseconds);
 
 
 bool WrapTimeZoneValueObject(JSContext* cx,

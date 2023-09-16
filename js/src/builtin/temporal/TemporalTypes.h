@@ -328,6 +328,13 @@ struct InstantSpan final {
   
 
 
+  static constexpr InstantSpan fromMinutes(int64_t minutes) {
+    return {minutes * 60, 0};
+  }
+
+  
+
+
   static constexpr InstantSpan fromMilliseconds(int64_t milliseconds) {
     int64_t seconds = milliseconds / 1'000;
     int32_t millis = milliseconds % 1'000;
