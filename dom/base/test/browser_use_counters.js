@@ -82,6 +82,7 @@ add_task(async function () {
       type: "iframe",
       filename: "file_use_counter_svg_getElementById.svg",
       counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
+      check_documents: false,
     },
     {
       type: "iframe",
@@ -90,6 +91,7 @@ add_task(async function () {
         { name: "SVGSVGELEMENT_CURRENTSCALE_getter" },
         { name: "SVGSVGELEMENT_CURRENTSCALE_setter" },
       ],
+      check_documents: false,
     },
 
     
@@ -136,9 +138,6 @@ add_task(async function () {
       filename: "file_use_counter_bfcache.html",
       waitForExplicitFinish: true,
       counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
-      
-      
-      extra_top_documents: 5,
     },
 
     
@@ -154,6 +153,10 @@ add_task(async function () {
   for (let test of TESTS) {
     let file = test.filename;
     info(`checking ${file} (${test.type})`);
+
+    let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
+    gBrowser.selectedTab = newTab;
+    newTab.linkedBrowser.stop();
 
     
     
@@ -185,7 +188,8 @@ add_task(async function () {
         throw `unexpected type ${test.type}`;
     }
 
-    let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+    BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
+    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     if (test.waitForExplicitFinish) {
       if (test.type != "direct") {
@@ -219,7 +223,9 @@ add_task(async function () {
     }
 
     
-    await BrowserTestUtils.removeTab(newTab);
+    let tabClosed = BrowserTestUtils.waitForTabClosing(newTab);
+    gBrowser.removeTab(newTab);
+    await tabClosed;
 
     
     let after = await grabHistogramsFromContent(
@@ -245,19 +251,18 @@ add_task(async function () {
       }
     }
 
-    is(
-      after.toplevel_docs,
-      before.toplevel_docs + 1 + (test.extra_top_documents || 0),
-      "top level destroyed document counts are correct"
-    );
-
-    
-    
-    
-    ok(
-      after.docs >= before.docs + (test.type == "img" ? 2 : 1),
-      "destroyed document counts are correct"
-    );
+    if (test.check_documents ?? true) {
+      ok(
+        after.toplevel_docs >= before.toplevel_docs + 1,
+        "top level destroyed document counts are correct"
+      );
+      
+      
+      ok(
+        after.docs >= before.docs + (test.type == "img" ? 2 : 1),
+        "destroyed document counts are correct"
+      );
+    }
   }
 });
 

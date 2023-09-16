@@ -1618,8 +1618,12 @@ ColorScheme nsPresContext::DefaultBackgroundColorScheme() const {
   dom::Document* doc = Document();
   
   
-  if (doc->IsContentInaccessibleAboutBlank()) {
-    return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
+  {
+    BrowsingContext* bc = doc->GetBrowsingContext();
+    if (bc && bc->IsTop() && !bc->HasOpener() && doc->GetDocumentURI() &&
+        NS_IsAboutBlank(doc->GetDocumentURI())) {
+      return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
+    }
   }
   
   

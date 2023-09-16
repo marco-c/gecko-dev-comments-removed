@@ -18603,48 +18603,19 @@ bool Document::HasThirdPartyChannel() {
   return false;
 }
 
-bool Document::IsContentInaccessibleAboutBlank() const {
-  if (!mDocumentURI || !NS_IsAboutBlank(mDocumentURI)) {
-    return false;
-  }
-  nsIPrincipal* prin = NodePrincipal();
-  if (!prin->GetIsNullPrincipal()) {
-    return false;
-  }
-  nsCOMPtr<nsIPrincipal> prec = prin->GetPrecursorPrincipal();
-  if (prec) {
-    return false;
-  }
-  
-  
-  
-  
-  BrowsingContext* bc = GetBrowsingContext();
-  return bc && bc->IsTop() && bc->Group()->Toplevels().Length() == 1;
-}
-
 bool Document::ShouldIncludeInTelemetry(bool aAllowExtensionURIs) {
-  if (!IsContentDocument() && !IsResourceDoc()) {
+  if (!(IsContentDocument() || IsResourceDoc())) {
     return false;
   }
 
-  if (IsContentInaccessibleAboutBlank()) {
+  if (!aAllowExtensionURIs &&
+      NodePrincipal()->GetIsAddonOrExpandedAddonPrincipal()) {
     return false;
   }
 
-  nsIPrincipal* prin = NodePrincipal();
-  if (!aAllowExtensionURIs && prin->GetIsAddonOrExpandedAddonPrincipal()) {
-    return false;
-  }
-
-  
-  
-  if (prin->IsSystemPrincipal() || prin->SchemeIs("about") ||
-      prin->SchemeIs("chrome") || prin->SchemeIs("resource")) {
-    return false;
-  }
-
-  return true;
+  return !NodePrincipal()->SchemeIs("about") &&
+         !NodePrincipal()->SchemeIs("chrome") &&
+         !NodePrincipal()->SchemeIs("resource");
 }
 
 void Document::GetConnectedShadowRoots(
