@@ -85,13 +85,6 @@ class nsCheckboxRadioFrame final : public nsAtomicContainerFrame,
   virtual ~nsCheckboxRadioFrame();
 
   nscoord DefaultSize();
-
-  
-
-
-
-
-  void GetCurrentCheckState(bool* aState);
 };
 
 #endif
