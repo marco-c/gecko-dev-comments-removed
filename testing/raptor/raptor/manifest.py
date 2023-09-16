@@ -9,6 +9,7 @@ import re
 from constants.raptor_tests_constants import YOUTUBE_PLAYBACK_MEASURE
 from logger.logger import RaptorLogger
 from manifestparser import TestManifest
+from perftest import TRACE_APPS
 from six.moves.urllib.parse import parse_qs, unquote, urlencode, urlsplit, urlunsplit
 from utils import (
     bool_from_str,
@@ -94,7 +95,6 @@ def validate_test_ini(test_details):
     
     
     if test_details.get("alert_on") is not None:
-
         
         
         
@@ -444,7 +444,9 @@ def get_raptor_test_list(args, oskey):
             next_test.pop("gecko_profile_threads", None)
             next_test.pop("gecko_profile_features", None)
 
-        if args.extra_profiler_run is True and args.app == "firefox":
+        if args.extra_profiler_run is True and (
+            args.app == "firefox" or args.app in TRACE_APPS
+        ):
             next_test["extra_profiler_run"] = True
             LOG.info("extra-profiler-run enabled")
             next_test["extra_profiler_run_browser_cycles"] = 1

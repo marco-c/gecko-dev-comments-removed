@@ -32,7 +32,8 @@ for path in paths:
         raise IOError("%s does not exist. " % path)
     sys.path.insert(0, path)
 
-from cmdline import FIREFOX_ANDROID_APPS
+from chrome_trace import ChromeTrace
+from cmdline import FIREFOX_ANDROID_APPS, TRACE_APPS
 from condprof.client import ProfileNotFoundError, get_profile
 from condprof.util import get_current_platform
 from gecko_profile import GeckoProfile
@@ -178,6 +179,7 @@ class Perftest(object):
         self.playback = None
         self.benchmark = None
         self.gecko_profiler = None
+        self.chrome_trace = None
         self.device = None
         self.runtime_error = None
         self.profile_class = profile_class or app
@@ -503,10 +505,16 @@ class Perftest(object):
         
         
         if self.config["gecko_profile"] or self.config.get("extra_profiler_run"):
-            self.gecko_profiler.symbolicate()
-            
-            LOG.info("cleaning up after gecko profiling")
-            self.gecko_profiler.clean()
+            if self.config["app"] == "firefox":
+
+                self.gecko_profiler.symbolicate()
+                
+                LOG.info("cleaning up after gecko profiling")
+                self.gecko_profiler.clean()
+            elif self.config["app"] in TRACE_APPS:
+                self.chrome_trace.output_trace()
+                LOG.info("cleaning up after gathering chrome trace")
+                self.chrome_trace.clean()
 
         return res
 
@@ -588,6 +596,14 @@ class Perftest(object):
             LOG.critical("Profiling ignored because MOZ_UPLOAD_DIR was not set")
         else:
             self.gecko_profiler = GeckoProfile(upload_dir, self.config, test)
+
+    def _init_chrome_trace(self, test):
+        LOG.info("initializing Chrome Trace handler")
+        upload_dir = os.getenv("MOZ_UPLOAD_DIR")
+        if not upload_dir:
+            LOG.critical("Chrome Trace ignored because MOZ_UPLOAD_DIR was not set")
+        else:
+            self.chrome_trace = ChromeTrace(upload_dir, self.config, test)
 
     def disable_non_local_connections(self):
         
@@ -682,7 +698,6 @@ class PerftestAndroid(Perftest):
 
     def set_reverse_ports(self):
         if self.is_localhost:
-
             if self.playback:
                 LOG.info("making the raptor playback server port available to device")
                 self.set_reverse_port(self.playback.port)
