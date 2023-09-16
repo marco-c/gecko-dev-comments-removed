@@ -725,6 +725,9 @@ pref("browser.search.serpEventTelemetry.enabled", false);
 #endif
 
 
+pref("browser.search.serpEventTelemetryCategorization.enabled", false);
+
+
 
 
 pref("browser.shopping.experience2023.enabled", false);
