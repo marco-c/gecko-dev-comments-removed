@@ -6,6 +6,10 @@
 
 
 
+const Services =
+  globalThis.Services ||
+  ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
+
 XPCOMUtils.defineLazyServiceGetter(
   this,
   "resProto",

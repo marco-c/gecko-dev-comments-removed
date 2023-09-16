@@ -1,15 +1,22 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+"use strict";
+
+var EXPORTED_SYMBOLS = ["AboutCompat"];
+
+const Services =
+  globalThis.Services ||
+  ChromeUtils.import("resource://gre/modules/Services.jsm").Services;
 
 const addonID = "webcompat@mozilla.org";
 const addonPageRelativeURL = "/about-compat/aboutCompat.html";
 
-export function AboutCompat() {
+function AboutCompat() {
   this.chromeURL =
     WebExtensionPolicy.getByID(addonID).getURL(addonPageRelativeURL);
 }
-
 AboutCompat.prototype = {
   QueryInterface: ChromeUtils.generateQI(["nsIAboutModule"]),
   getURIFlags() {
@@ -26,8 +33,8 @@ AboutCompat.prototype = {
 
     channel.owner = (
       Services.scriptSecurityManager.createContentPrincipal ||
-      // Handles fallback to earlier versions.
-      // eslint-disable-next-line mozilla/valid-services-property
+      
+      
       Services.scriptSecurityManager.createCodebasePrincipal
     )(uri, aLoadInfo.originAttributes);
     return channel;
