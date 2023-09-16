@@ -265,7 +265,7 @@ class InflatableShortBuffer {
     
     
     float* output = reinterpret_cast<float*>(mBuffer.mData);
-    for (size_t i = Length() - 1; i--;) {
+    for (size_t i = Length(); i--;) {
       output[i] = AudioSampleToFloat(mBuffer.mData[i]);
     }
     AlignedFloatBuffer rv;
