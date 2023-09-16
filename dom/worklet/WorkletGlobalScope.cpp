@@ -10,10 +10,8 @@
 #include "mozilla/dom/WorkletThread.h"
 #include "mozilla/dom/worklet/WorkletModuleLoader.h"
 #include "mozilla/dom/Console.h"
-#include "js/RealmOptions.h"
 #include "nsContentUtils.h"
 #include "nsJSUtils.h"
-#include "nsRFPService.h"
 
 using JS::loader::ModuleLoaderBase;
 using mozilla::dom::loader::WorkletModuleLoader;
@@ -113,28 +111,6 @@ void WorkletGlobalScope::Dump(const Optional<nsAString>& aString) const {
 #endif
   fputs(str.get(), stdout);
   fflush(stdout);
-}
-
-JS::RealmOptions WorkletGlobalScope::CreateRealmOptions() const {
-  JS::RealmOptions options;
-
-  options.creationOptions().setForceUTC(
-      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
-  options.creationOptions().setAlwaysUseFdlibm(
-      ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
-  if (ShouldResistFingerprinting(RFPTarget::JSLocale)) {
-    nsCString locale = nsRFPService::GetSpoofedJSLocale();
-    options.creationOptions().setLocaleCopyZ(locale.get());
-  }
-
-  
-  
-  
-  
-  options.creationOptions().setDefineSharedArrayBufferConstructor(
-      IsSharedMemoryAllowed());
-
-  return options;
 }
 
 }  

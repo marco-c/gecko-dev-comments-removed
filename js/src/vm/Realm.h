@@ -674,9 +674,6 @@ class JS::Realm : public JS::shadow::Realm {
   bool shouldCaptureStackForThrow();
 
   
-  const char* getLocale() const;
-
-  
   mozilla::non_crypto::XorShift128PlusRNG& getOrCreateRandomNumberGenerator();
 
   const mozilla::non_crypto::XorShift128PlusRNG*

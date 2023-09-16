@@ -5440,6 +5440,8 @@ nsresult XREMain::XRE_mainRun() {
     mozilla::FilePreferences::InitDirectoriesAllowlist();
     mozilla::FilePreferences::InitPrefs();
 
+    OverrideDefaultLocaleIfNeeded();
+
     nsCString userAgentLocale;
     LocaleService::GetInstance()->GetAppLocaleAsBCP47(userAgentLocale);
     CrashReporter::AnnotateCrashReport(
@@ -6110,6 +6112,20 @@ void SetupErrorHandling(const char* progname) {
 
   
   setbuf(stdout, 0);
+}
+
+
+void OverrideDefaultLocaleIfNeeded() {
+  
+  if (mozilla::Preferences::GetBool("javascript.use_us_english_locale",
+                                    false)) {
+    
+    
+    
+    
+    
+    setlocale(LC_ALL, "C.UTF-8") || setlocale(LC_ALL, "C");
+  }
 }
 
 static bool gRunSelfAsContentProc = false;

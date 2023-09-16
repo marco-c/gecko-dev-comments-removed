@@ -104,6 +104,8 @@ nsresult NS_LockProfilePath(nsIFile* aPath, nsIFile* aTempPath,
 
 void WriteConsoleLog();
 
+void OverrideDefaultLocaleIfNeeded();
+
 
 
 
