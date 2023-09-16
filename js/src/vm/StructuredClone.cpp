@@ -1983,7 +1983,7 @@ bool JSStructuredCloneWriter::traverseError(HandleObject obj) {
     return false;
   }
 
-  val = Int32Value(unwrapped->columnNumber());
+  val = Int32Value(*unwrapped->columnNumber().addressOfValueForTranscode());
   return writePrimitive(val);
 }
 
@@ -3604,8 +3604,10 @@ JSObject* JSStructuredCloneReader::readErrorHeader(uint32_t type) {
   }
   RootedString fileName(cx, val.toString());
 
-  uint32_t lineNumber, columnNumber;
-  if (!readUint32(&lineNumber) || !readUint32(&columnNumber)) {
+  uint32_t lineNumber;
+  JS::ColumnNumberOneOrigin columnNumber;
+  if (!readUint32(&lineNumber) ||
+      !readUint32(columnNumber.addressOfValueForTranscode())) {
     return nullptr;
   }
 
