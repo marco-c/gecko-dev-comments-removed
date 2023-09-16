@@ -87,8 +87,6 @@ class GMPParent final
   GMPState State() const;
   nsCOMPtr<nsISerialEventTarget> GMPEventTarget();
 
-  void OnPreferenceChange(const mozilla::dom::Pref& aPref);
-
   
   
   

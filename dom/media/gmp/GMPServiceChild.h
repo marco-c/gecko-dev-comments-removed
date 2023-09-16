@@ -18,7 +18,6 @@
 namespace mozilla::gmp {
 
 class GMPContentParent;
-class GMPContentParentCloseBlocker;
 class GMPServiceChild;
 
 class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
@@ -133,10 +132,6 @@ class GeckoMediaPluginServiceChild : public GeckoMediaPluginService,
   
 };
 
-
-
-
-
 class GMPServiceChild : public PGMPServiceChild {
  public:
   
@@ -150,11 +145,7 @@ class GMPServiceChild : public PGMPServiceChild {
 
   void RemoveGMPContentParent(GMPContentParent* aGMPContentParent);
 
-  bool HasAlreadyBridgedTo(base::ProcessId aPid) const;
-
-  void GetAndBlockAlreadyBridgedTo(
-      nsTArray<ProcessId>& aAlreadyBridgedTo,
-      nsTArray<RefPtr<GMPContentParentCloseBlocker>>& aBlockers);
+  void GetAlreadyBridgedTo(nsTArray<ProcessId>& aAlreadyBridgedTo);
 
   static bool Create(Endpoint<PGMPServiceChild>&& aGMPService);
 

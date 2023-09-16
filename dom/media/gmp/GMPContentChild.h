@@ -17,10 +17,6 @@ namespace mozilla::gmp {
 
 class GMPChild;
 
-
-
-
-
 class GMPContentChild : public PGMPContentChild, public GMPSharedMem {
  public:
   
