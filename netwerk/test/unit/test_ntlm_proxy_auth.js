@@ -222,9 +222,12 @@ function connectionReset(metadata, response) {
       authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       ntlmTypeTwoCount++;
-      response.seizePower();
-      response.bodyOutPutStream.close();
-      response.finish();
+      try {
+        response.seizePower();
+        response.finish();
+      } catch (e) {
+        Assert.ok(false, "unexpected exception" + e);
+      }
       break;
     default:
       
@@ -238,28 +241,29 @@ function connectionReset(metadata, response) {
 
 
 function connectionReset02(metadata, response) {
+  var connectionNumber = httpserver.connectionNumber;
   switch (requestsMade) {
     case 0:
       
       response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
       response.setHeader("Proxy-Authenticate", "NTLM", false);
+      Assert.equal(connectionNumber, httpserver.connectionNumber);
       break;
     case 1:
+    
+    default:
       
+      Assert.equal(connectionNumber, httpserver.connectionNumber);
       var authorization = metadata.getHeader("Proxy-Authorization");
       var authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE1_PREFIX, authPrefix, "Expecting a Type 1 message");
       ntlmTypeOneCount++;
-      response.setStatusLine(metadata.httpVersion, 407, "Unauthorized");
-      response.setHeader("Proxy-Authenticate", PROXY_CHALLENGE, false);
-      response.finish();
-      response.seizePower();
-      response.bodyOutPutStream.close();
-      break;
-    default:
-      
-      dump("ERROR: NTLM Proxy Authentication, connection should not be reused");
-      Assert.ok(false);
+      try {
+        response.seizePower();
+        response.finish();
+      } catch (e) {
+        Assert.ok(false, "unexpected exception" + e);
+      }
   }
   requestsMade++;
 }
@@ -324,40 +328,82 @@ function setupTest(path, handler, requests, response, clearCache) {
   });
 }
 
+let ntlmTypeOneCount = 0; 
+let exptTypeOneCount = 0; 
+let ntlmTypeTwoCount = 0; 
+let exptTypeTwoCount = 0; 
 
 
-add_task(async function test_happy_path() {
+
+async function test_happy_path() {
   dump("RUNNING TEST: test_happy_path");
   await setupTest("/auth", successfulAuth, 3, 200, 1);
-});
+}
 
 
-add_task(async function test_failed_auth() {
+async function test_failed_auth() {
   dump("RUNNING TEST:failed auth ");
   await setupTest("/auth", failedAuth, 4, 407, 1);
-});
+}
 
-var ntlmTypeOneCount = 0; 
-var exptTypeOneCount = 0; 
 
-var ntlmTypeTwoCount = 0; 
-var exptTypeTwoCount = 0; 
-
-add_task(async function test_connection_reset() {
+async function test_connection_reset() {
   dump("RUNNING TEST:connection reset ");
   ntlmTypeOneCount = 0;
   ntlmTypeTwoCount = 0;
   exptTypeOneCount = 1;
   exptTypeTwoCount = 1;
-  await setupTest("/auth", connectionReset, 2, 500, 1);
-});
+  await setupTest("/auth", connectionReset, 3, 500, 1);
+}
 
 
-add_task(async function test_connection_reset02() {
+
+async function test_connection_reset02() {
   dump("RUNNING TEST:connection reset ");
   ntlmTypeOneCount = 0;
   ntlmTypeTwoCount = 0;
-  exptTypeOneCount = 1;
+  let maxRetryAttempt = 5;
+  exptTypeOneCount = maxRetryAttempt;
   exptTypeTwoCount = 0;
-  await setupTest("/auth", connectionReset02, 1, 500, 1);
-});
+
+  Services.prefs.setIntPref(
+    "network.http.request.max-attempts",
+    maxRetryAttempt
+  );
+
+  await setupTest("/auth", connectionReset02, maxRetryAttempt + 1, 500, 1);
+}
+
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", false]] },
+  test_happy_path
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", false]] },
+  test_failed_auth
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", false]] },
+  test_connection_reset
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", false]] },
+  test_connection_reset02
+);
+
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", true]] },
+  test_happy_path
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", true]] },
+  test_failed_auth
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", true]] },
+  test_connection_reset
+);
+add_task(
+  { pref_set: [["network.auth.use_redirect_for_retries", true]] },
+  test_connection_reset02
+);
