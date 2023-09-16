@@ -149,7 +149,7 @@ class OscillatorNodeEngine final : public AudioNodeEngine {
   
   
   bool UpdateParametersIfNeeded(TrackTime ticks, size_t count) {
-    double frequency, detune;
+    float frequency, detune;
 
     
     
@@ -171,7 +171,14 @@ class OscillatorNodeEngine final : public AudioNodeEngine {
       detune = mDetune.GetValueAtTime(ticks, count);
     }
 
-    float finalFrequency = frequency * fdlibm_exp2(detune / 1200.);
+    if (detune != mLastDetune) {
+      mLastDetune = detune;
+      
+      
+      
+      mDetuneRatio = fdlibm_exp2(detune / 1200.);
+    }
+    float finalFrequency = frequency * mDetuneRatio;
     float signalPeriod = mSource->mSampleRate / finalFrequency;
     mRecomputeParameters = false;
 
@@ -362,6 +369,8 @@ class OscillatorNodeEngine final : public AudioNodeEngine {
   float mPhase;
   float mFinalFrequency;
   float mPhaseIncrement;
+  float mLastDetune = 0.f;
+  float mDetuneRatio = 1.f;  
   bool mRecomputeParameters;
   RefPtr<BasicWaveFormCache> mBasicWaveFormCache;
   bool mCustomDisableNormalization;
