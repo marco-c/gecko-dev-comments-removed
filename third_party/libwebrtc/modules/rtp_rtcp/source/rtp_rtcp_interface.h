@@ -317,7 +317,7 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   
   
-  virtual bool TrySendPacket(RtpPacketToSend* packet,
+  virtual bool TrySendPacket(std::unique_ptr<RtpPacketToSend> packet,
                              const PacedPacketInfo& pacing_info) = 0;
 
   
