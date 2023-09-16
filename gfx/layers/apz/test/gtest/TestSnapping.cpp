@@ -55,9 +55,8 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   
   
   
-  TimeStamp now = mcc->Time();
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID);
-  SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), now);
+  SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), mcc->Time());
   
   
   
@@ -70,12 +69,11 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   }
   
   
-  TimeStamp newTransactionTime =
-      now + TimeDuration::FromMilliseconds(
-                StaticPrefs::mousewheel_transaction_timeout() + 100);
+  mcc->AdvanceBy(TimeDuration::FromMilliseconds(
+      StaticPrefs::mousewheel_transaction_timeout() + 100));
   QueueMockHitResult(ScrollableLayerGuid::START_SCROLL_ID + 1);
-  SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6),
-              newTransactionTime);
+  SmoothWheel(manager, ScreenIntPoint(50, 80), ScreenPoint(0, 6), mcc->Time());
+  mcc->AdvanceByMillis(5);
   inner->AdvanceAnimationsUntilEnd();
   EXPECT_LT(
       0.0f,
