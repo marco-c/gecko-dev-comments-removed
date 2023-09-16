@@ -93,6 +93,24 @@ void QuotaManagerDependencyFixture::ShutdownFixture() {
 }
 
 
+void QuotaManagerDependencyFixture::InitializeStorage() {
+  PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    bool done = false;
+
+    quotaManager->InitializeStorage()->Then(
+        GetCurrentSerialEventTarget(), __func__,
+        [&done](const BoolPromise::ResolveOrRejectValue& aValue) {
+          done = true;
+        });
+
+    SpinEventLoopUntil("Promise is fulfilled"_ns, [&done]() { return done; });
+  });
+}
+
+
 void QuotaManagerDependencyFixture::StorageInitialized(bool* aResult) {
   AutoJSAPI jsapi;
 
@@ -122,6 +140,32 @@ void QuotaManagerDependencyFixture::StorageInitialized(bool* aResult) {
     rv = result->GetAsBool(aResult);
     ASSERT_NS_SUCCEEDED(rv);
   }
+}
+
+
+void QuotaManagerDependencyFixture::IsStorageInitialized(bool* aResult) {
+  ASSERT_TRUE(aResult);
+
+  PerformOnBackgroundThread([aResult]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    *aResult = quotaManager->IsStorageInitialized();
+  });
+}
+
+
+void QuotaManagerDependencyFixture::AssertStorageIsInitialized() {
+  bool result;
+  ASSERT_NO_FATAL_FAILURE(IsStorageInitialized(&result));
+  ASSERT_TRUE(result);
+}
+
+
+void QuotaManagerDependencyFixture::AssertStorageIsNotInitialized() {
+  bool result;
+  ASSERT_NO_FATAL_FAILURE(IsStorageInitialized(&result));
+  ASSERT_FALSE(result);
 }
 
 
@@ -171,6 +215,21 @@ void QuotaManagerDependencyFixture::ClearStoragesForOrigin(
 
   SpinEventLoopUntil("Promise is fulfilled"_ns,
                      [&resolver]() { return resolver->Done(); });
+}
+
+
+OriginMetadata QuotaManagerDependencyFixture::GetTestOriginMetadata() {
+  return {""_ns,
+          "example.com"_ns,
+          "http://example.com"_ns,
+          "http://example.com"_ns,
+           false,
+          PERSISTENCE_TYPE_DEFAULT};
+}
+
+
+ClientMetadata QuotaManagerDependencyFixture::GetTestClientMetadata() {
+  return {GetTestOriginMetadata(), Client::SDB};
 }
 
 nsCOMPtr<nsISerialEventTarget> QuotaManagerDependencyFixture::sBackgroundTarget;

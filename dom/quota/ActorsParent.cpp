@@ -1656,6 +1656,8 @@ QuotaManager::QuotaManager(const nsAString& aBasePath,
       mStorageName(aStorageName),
       mTemporaryStorageUsage(0),
       mNextDirectoryLockId(0),
+      mShutdownStorageOpCount(0),
+      mStorageInitialized(false),
       mTemporaryStorageInitialized(false),
       mCacheUsable(false) {
   AssertIsOnOwningThread();
@@ -4847,6 +4849,36 @@ Result<Ok, nsresult> QuotaManager::CreateEmptyLocalStorageArchive(
   return Ok{};
 }
 
+RefPtr<BoolPromise> QuotaManager::InitializeStorage() {
+  AssertIsOnOwningThread();
+
+  
+  
+  
+  
+  if (mStorageInitialized && !mShutdownStorageOpCount) {
+    return BoolPromise::CreateAndResolve(true, __func__);
+  }
+
+  auto initializeStorageOp = CreateInitOp();
+
+  RegisterNormalOriginOp(*initializeStorageOp);
+
+  initializeStorageOp->RunImmediately();
+
+  return initializeStorageOp->OnResults()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue& aValue) {
+        if (aValue.IsReject()) {
+          return BoolPromise::CreateAndReject(aValue.RejectValue(), __func__);
+        }
+
+        self->mStorageInitialized = true;
+
+        return BoolPromise::CreateAndResolve(true, __func__);
+      });
+}
+
 nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
   DiagnosticAssertIsOnIOThread();
 
@@ -5122,7 +5154,23 @@ RefPtr<BoolPromise> QuotaManager::ClearStorage() {
 
   clearStorageOp->RunImmediately();
 
-  return clearStorageOp->OnResults();
+  
+  
+  mShutdownStorageOpCount++;
+
+  return clearStorageOp->OnResults()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue& aValue) {
+        self->mShutdownStorageOpCount--;
+
+        if (aValue.IsReject()) {
+          return BoolPromise::CreateAndReject(aValue.RejectValue(), __func__);
+        }
+
+        self->mStorageInitialized = false;
+
+        return BoolPromise::CreateAndResolve(true, __func__);
+      });
 }
 
 RefPtr<BoolPromise> QuotaManager::ShutdownStorage() {
@@ -5134,7 +5182,21 @@ RefPtr<BoolPromise> QuotaManager::ShutdownStorage() {
 
   shutdownStorageOp->RunImmediately();
 
-  return shutdownStorageOp->OnResults();
+  mShutdownStorageOpCount++;
+
+  return shutdownStorageOp->OnResults()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr(this)](const BoolPromise::ResolveOrRejectValue& aValue) {
+        self->mShutdownStorageOpCount--;
+
+        if (aValue.IsReject()) {
+          return BoolPromise::CreateAndReject(aValue.RejectValue(), __func__);
+        }
+
+        self->mStorageInitialized = false;
+
+        return BoolPromise::CreateAndResolve(true, __func__);
+      });
 }
 
 void QuotaManager::ShutdownStorageInternal() {
