@@ -1,12 +1,12 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "Crypto.h"
 #include "js/ScalarType.h"
-#include "js/experimental/TypedData.h"  // JS_GetArrayBufferViewType
+#include "js/experimental/TypedData.h"  
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
 #include "nsReadableUtils.h"
@@ -31,7 +31,7 @@ Crypto::Crypto(nsIGlobalObject* aParent) : mParent(aParent) {}
 
 Crypto::~Crypto() = default;
 
-/* virtual */
+
 JSObject* Crypto::WrapObject(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) {
   return Crypto_Binding::Wrap(aCx, this, aGivenProto);
@@ -40,11 +40,9 @@ JSObject* Crypto::WrapObject(JSContext* aCx,
 void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
                              JS::MutableHandle<JSObject*> aRetval,
                              ErrorResult& aRv) {
-  JS::Rooted<JSObject*> view(aCx, aArray.Obj());
-
-  // Throw if the wrong type of ArrayBufferView is passed in
-  // (Part of the Web Crypto API spec)
-  switch (JS_GetArrayBufferViewType(view)) {
+  
+  
+  switch (aArray.Type()) {
     case js::Scalar::Int8:
     case js::Scalar::Uint8:
     case js::Scalar::Uint8Clamped:
@@ -60,17 +58,6 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
       return;
   }
 
-  aArray.ComputeState();
-  uint32_t dataLen = aArray.Length();
-  if (dataLen == 0) {
-    NS_WARNING("ArrayBufferView length is 0, cannot continue");
-    aRetval.set(view);
-    return;
-  } else if (dataLen > 65536) {
-    aRv.Throw(NS_ERROR_DOM_QUOTA_EXCEEDED_ERR);
-    return;
-  }
-
   nsCOMPtr<nsIRandomGenerator> randomGenerator =
       do_GetService("@mozilla.org/security/random-generator;1");
   if (!randomGenerator) {
@@ -78,24 +65,37 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
     return;
   }
 
-  nsresult rv =
-      randomGenerator->GenerateRandomBytesInto(aArray.Data(), dataLen);
-  if (NS_FAILED(rv)) {
-    aRv.Throw(NS_ERROR_DOM_OPERATION_ERR);
-    return;
-  }
+  aArray.ProcessFixedData([&](const Span<uint8_t>& aData) {
+    if (aData.Length() == 0) {
+      NS_WARNING("ArrayBufferView length is 0, cannot continue");
+      aRetval.set(aArray.Obj());
+      return;
+    }
 
-  aRetval.set(view);
+    if (aData.Length() > 65536) {
+      aRv.Throw(NS_ERROR_DOM_QUOTA_EXCEEDED_ERR);
+      return;
+    }
+
+    nsresult rv = randomGenerator->GenerateRandomBytesInto(aData.Elements(),
+                                                           aData.Length());
+    if (NS_FAILED(rv)) {
+      aRv.Throw(NS_ERROR_DOM_OPERATION_ERR);
+      return;
+    }
+
+    aRetval.set(aArray.Obj());
+  });
 }
 
 void Crypto::RandomUUID(nsACString& aRetVal) {
-  // NSID_LENGTH == 39 == 36 UUID chars + 2 curly braces + 1 NUL byte
+  
   static_assert(NSID_LENGTH == 39);
 
   nsIDToCString uuidString(nsID::GenerateUUID());
   MOZ_ASSERT(strlen(uuidString.get()) == NSID_LENGTH - 1);
 
-  // Omit the curly braces and NUL.
+  
   aRetVal = Substring(uuidString.get() + 1, NSID_LENGTH - 3);
   MOZ_ASSERT(aRetVal.Length() == NSID_LENGTH - 3);
 }
@@ -107,4 +107,4 @@ SubtleCrypto* Crypto::Subtle() {
   return mSubtle;
 }
 
-}  // namespace mozilla::dom
+}  

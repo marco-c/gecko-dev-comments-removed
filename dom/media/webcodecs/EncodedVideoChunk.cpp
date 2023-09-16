@@ -144,32 +144,30 @@ already_AddRefed<EncodedVideoChunk> EncodedVideoChunk::Constructor(
     return nullptr;
   }
 
-  auto r = GetSharedArrayBufferData(aInit.mData);
-  if (r.isErr()) {
-    aRv.Throw(r.unwrapErr());
-    return nullptr;
-  }
-  Span<uint8_t> buf = r.unwrap();
+  auto buffer = ProcessTypedArrays(
+      aInit.mData,
+      [&](const Span<uint8_t>& aData,
+          JS::AutoCheckCannotGC&&) -> RefPtr<MediaAlignedByteBuffer> {
+        
+        CheckedUint32 byteLength(aData.Length());
+        if (!byteLength.isValid()) {
+          aRv.Throw(NS_ERROR_INVALID_ARG);
+          return nullptr;
+        }
+        if (aData.Length() == 0) {
+          LOGW("Buffer for constructing EncodedVideoChunk is empty!");
+        }
+        RefPtr<MediaAlignedByteBuffer> buf = MakeRefPtr<MediaAlignedByteBuffer>(
+            aData.Elements(), aData.Length());
 
-  
-  CheckedUint32 byteLength(buf.size_bytes());
-  if (!byteLength.isValid()) {
-    aRv.Throw(NS_ERROR_INVALID_ARG);
-    return nullptr;
-  }
-
-  if (buf.size_bytes() == 0) {
-    LOGW("Buffer for constructing EncodedVideoChunk is empty!");
-  }
-
-  auto buffer =
-      MakeRefPtr<MediaAlignedByteBuffer>(buf.data(), buf.size_bytes());
-  
-  
-  if (!buffer || buffer->Size() != buf.size_bytes()) {
-    aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
-    return nullptr;
-  }
+        
+        
+        if (!buf || buf->Size() != aData.Length()) {
+          aRv.Throw(NS_ERROR_OUT_OF_MEMORY);
+          return nullptr;
+        }
+        return buf;
+      });
 
   RefPtr<EncodedVideoChunk> chunk(new EncodedVideoChunk(
       global, buffer.forget(), aInit.mType, aInit.mTimestamp,
@@ -207,20 +205,15 @@ void EncodedVideoChunk::CopyTo(
     ErrorResult& aRv) {
   AssertIsOnOwningThread();
 
-  auto r = GetSharedArrayBufferData(aDestination);
-  if (r.isErr()) {
-    aRv.Throw(r.unwrapErr());
-    return;
-  }
-  Span<uint8_t> buf = r.unwrap();
+  ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
+    if (mBuffer->Size() > aData.size_bytes()) {
+      aRv.ThrowTypeError(
+          "Destination ArrayBuffer smaller than source EncodedVideoChunk");
+      return;
+    }
 
-  if (mBuffer->Size() > buf.size_bytes()) {
-    aRv.ThrowTypeError(
-        "Destination ArrayBuffer smaller than source EncodedVideoChunk");
-    return;
-  }
-
-  PodCopy(buf.data(), mBuffer->Data(), mBuffer->Size());
+    PodCopy(aData.data(), mBuffer->Data(), mBuffer->Size());
+  });
 }
 
 
