@@ -3,6 +3,7 @@
 
 
 
+#include "mozilla/Attributes.h"
 #include "mozilla/ipc/MessageChannel.h"
 #include "mozilla/ipc/WindowsMessageLoop.h"
 #include "nsAppShell.h"
@@ -30,6 +31,8 @@
 #include "mozilla/widget/ScreenManager.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/WindowsProcessMitigations.h"
+
+#include <winternl.h>
 
 #ifdef MOZ_BACKGROUNDTASKS
 #  include "mozilla/BackgroundTasks.h"
@@ -275,10 +278,10 @@ SingleNativeEventPump::AfterProcessNextEvent(nsIThreadInternal* aThread,
 
 
 const wchar_t* kAppShellGeckoEventId = L"nsAppShell:EventID";
-UINT sAppShellGeckoMsgId;
+UINT sAppShellGeckoMsgId = 0x10001;  
 
 const wchar_t* kTaskbarButtonEventId = L"TaskbarButtonCreated";
-UINT sTaskbarButtonCreatedMsg;
+UINT sTaskbarButtonCreatedMsg = 0x10002;  
 
 
 UINT nsAppShell::GetTaskbarButtonCreatedMessage() {
@@ -361,8 +364,59 @@ nsAppShell::Observe(nsISupports* aSubject, const char* aTopic,
   return nsBaseAppShell::Observe(aSubject, aTopic, aData);
 }
 
-nsresult nsAppShell::InitHiddenWindow() {
+namespace {
+
+struct MOZ_STACK_CLASS WinErrorState {
+  NTSTATUS const LastNtStatus;
+  DWORD const LastError;
+
+  static NTSTATUS GetLastNtStatus() {
+    using RtlGetLastNtStatusType = NTSTATUS NTAPI (*)();
+    static const RtlGetLastNtStatusType RtlGetLastNtStatus = []() {
+      HMODULE h = ::GetModuleHandleW(L"ntdll.dll");
+      FARPROC const addr = ::GetProcAddress(h, "RtlGetLastNtStatus");
+      return reinterpret_cast<RtlGetLastNtStatusType>(addr);
+    }();
+
+    if (RtlGetLastNtStatus) {
+      return RtlGetLastNtStatus();
+    }
+
+    
+    
+    union {
+      std::make_unsigned_t<NTSTATUS> value;
+      NTSTATUS status;
+    } const v = {.value = 0xE'8675309};
+    return v.status;
+  }
+
+  MOZ_NEVER_INLINE WinErrorState()
+      : LastNtStatus(GetLastNtStatus()), LastError(GetLastError()) {}
+  WinErrorState(WinErrorState const&) = default;
+  ~WinErrorState() = default;
+};
+
+}  
+
+
+
+
+
+
+
+
+
+
+[[clang::optnone]] MOZ_NEVER_INLINE nsresult nsAppShell::InitHiddenWindow() {
+  
+  
+  { auto _unused [[maybe_unused]] = WinErrorState(); }
+
   sAppShellGeckoMsgId = ::RegisterWindowMessageW(kAppShellGeckoEventId);
+  
+  auto const _sAppShellGeckoMsgId [[maybe_unused]] = sAppShellGeckoMsgId;
+  auto const _rwmErr [[maybe_unused]] = WinErrorState();
   NS_ASSERTION(sAppShellGeckoMsgId,
                "Could not register hidden window event message!");
 
@@ -384,11 +438,15 @@ nsresult nsAppShell::InitHiddenWindow() {
     wc.lpszMenuName = (LPCWSTR) nullptr;
     wc.lpszClassName = kWindowClass;
     [[maybe_unused]] ATOM wcA = RegisterClassW(&wc);
+    
+    auto const _rcErr [[maybe_unused]] = WinErrorState();
     MOZ_DIAGNOSTIC_ASSERT(wcA, "RegisterClassW for EventWindowClass failed");
   }
 
   mEventWnd = CreateWindowW(kWindowClass, L"nsAppShell:EventWindow", 0, 0, 0,
                             10, 10, HWND_MESSAGE, nullptr, module, nullptr);
+  
+  auto const _cwErr [[maybe_unused]] = WinErrorState();
   MOZ_DIAGNOSTIC_ASSERT(mEventWnd, "CreateWindowW for EventWindow failed");
   NS_ENSURE_STATE(mEventWnd);
 
