@@ -54,6 +54,19 @@ JS_PUBLIC_API bool HadFrontendErrors(JS::FrontendContext* fc);
 
 
 
+JS_PUBLIC_API bool ConvertFrontendErrorsToRuntimeErrors(
+    JSContext* cx, JS::FrontendContext* fc,
+    const JS::ReadOnlyCompileOptions& options);
+
+
+
+
+
+
+
+
+
+
 
 
 JS_PUBLIC_API const JSErrorReport* GetFrontendErrorReport(
