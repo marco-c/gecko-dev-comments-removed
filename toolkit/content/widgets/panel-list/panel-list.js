@@ -41,16 +41,6 @@
     constructor() {
       super();
       this.attachShadow({ mode: "open" });
-      
-      
-      
-      let style = document.createElement("style");
-      style.textContent = `
-        :host(:not([open])) {
-          display: none;
-        }
-      `;
-      this.shadowRoot.appendChild(style);
       this.shadowRoot.appendChild(this.constructor.fragment);
     }
 
