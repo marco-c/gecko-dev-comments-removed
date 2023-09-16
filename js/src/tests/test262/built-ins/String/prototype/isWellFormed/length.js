@@ -13,7 +13,6 @@
 
 
 
-
 verifyProperty(String.prototype.isWellFormed, 'length', {
   configurable: true,
   enumerable: false,

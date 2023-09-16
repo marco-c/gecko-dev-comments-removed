@@ -21,7 +21,6 @@
 
 
 
-
 assert.sameValue(
   isConstructor(String.prototype.isWellFormed),
   false,
