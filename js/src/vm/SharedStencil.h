@@ -23,7 +23,6 @@
 #include "frontend/TypedIndex.h"   
 
 #include "js/AllocPolicy.h"            
-#include "js/ColumnNumber.h"           
 #include "js/TypeDecls.h"              
 #include "js/UniquePtr.h"              
 #include "js/Vector.h"                 
@@ -192,8 +191,7 @@ struct SourceExtent {
   SourceExtent() = default;
 
   SourceExtent(uint32_t sourceStart, uint32_t sourceEnd, uint32_t toStringStart,
-               uint32_t toStringEnd, uint32_t lineno,
-               JS::LimitedColumnNumberZeroOrigin column)
+               uint32_t toStringEnd, uint32_t lineno, uint32_t column)
       : sourceStart(sourceStart),
         sourceEnd(sourceEnd),
         toStringStart(toStringStart),
@@ -202,12 +200,11 @@ struct SourceExtent {
         column(column) {}
 
   static SourceExtent makeGlobalExtent(uint32_t len) {
-    return SourceExtent(0, len, 0, len, 1,
-                        JS::LimitedColumnNumberZeroOrigin::zero());
+    return SourceExtent(0, len, 0, len, 1, 0);
   }
 
-  static SourceExtent makeGlobalExtent(
-      uint32_t len, uint32_t lineno, JS::LimitedColumnNumberZeroOrigin column) {
+  static SourceExtent makeGlobalExtent(uint32_t len, uint32_t lineno,
+                                       uint32_t column) {
     return SourceExtent(0, len, 0, len, lineno, column);
   }
 
@@ -225,7 +222,7 @@ struct SourceExtent {
   
   uint32_t lineno = 1;
   
-  JS::LimitedColumnNumberZeroOrigin column;
+  uint32_t column = 0;
 
   FunctionKey toFunctionKey() const {
     

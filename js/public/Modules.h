@@ -14,7 +14,6 @@
 #include "jstypes.h"  
 
 #include "js/AllocPolicy.h"     
-#include "js/ColumnNumber.h"    
 #include "js/CompileOptions.h"  
 #include "js/RootingAPI.h"      
 #include "js/Value.h"           
@@ -267,9 +266,10 @@ extern JS_PUBLIC_API JSString* GetRequestedModuleSpecifier(
 
 
 
+
 extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
     JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
-    uint32_t* lineNumber, JS::ColumnNumberZeroOrigin* columnNumber);
+    uint32_t* lineNumber, uint32_t* columnNumber);
 
 
 

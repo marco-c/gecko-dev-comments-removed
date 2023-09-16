@@ -19,17 +19,16 @@
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/FrontendContext.h"   
-#include "js/ColumnNumber.h"  
-#include "js/Context.h"            
-#include "js/ErrorReport.h"        
-#include "js/RootingAPI.h"         
-#include "js/Value.h"              
-#include "vm/EnvironmentObject.h"  
-#include "vm/JSAtomUtils.h"        
-#include "vm/JSContext.h"          
-#include "vm/JSObject.h"           
-#include "vm/List.h"               
-#include "vm/Runtime.h"            
+#include "js/Context.h"                 
+#include "js/ErrorReport.h"             
+#include "js/RootingAPI.h"              
+#include "js/Value.h"                   
+#include "vm/EnvironmentObject.h"       
+#include "vm/JSAtomUtils.h"             
+#include "vm/JSContext.h"               
+#include "vm/JSObject.h"                
+#include "vm/List.h"                    
+#include "vm/Runtime.h"                 
 
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"    
@@ -197,7 +196,7 @@ JS_PUBLIC_API JSString* JS::GetRequestedModuleSpecifier(
 
 JS_PUBLIC_API void JS::GetRequestedModuleSourcePos(
     JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
-    uint32_t* lineNumber, JS::ColumnNumberZeroOrigin* columnNumber) {
+    uint32_t* lineNumber, uint32_t* columnNumber) {
   AssertHeapIsIdle();
   CHECK_THREAD(cx);
   cx->check(moduleRecord);
@@ -856,10 +855,11 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
   return ns;
 }
 
+
 static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
                                  Handle<Value> resolution, bool isDirectImport,
                                  Handle<JSAtom*> name, uint32_t line,
-                                 JS::ColumnNumberZeroOrigin column) {
+                                 uint32_t column) {
   MOZ_ASSERT(line != 0);
 
   bool isAmbiguous = resolution == StringValue(cx->names().ambiguous);
@@ -907,8 +907,8 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
 
   RootedValue error(cx);
   if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename, line,
-                       JS::ColumnNumberOneOrigin(column), nullptr, message,
-                       JS::NothingHandleValue, &error)) {
+                       JSErrorBase::fromZeroOriginToOneOrigin(column), nullptr,
+                       message, JS::NothingHandleValue, &error)) {
     return;
   }
 

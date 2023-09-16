@@ -25,8 +25,7 @@
 #include "debugger/NoExecute.h"  
 #include "debugger/Script.h"     
 #include "debugger/Source.h"     
-#include "gc/Tracer.h"        
-#include "js/ColumnNumber.h"  
+#include "gc/Tracer.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/Conversions.h"               
 #include "js/experimental/JitInfo.h"      
@@ -1261,7 +1260,7 @@ bool DebuggerObject::CallData::createSource() {
 
   JS::CompileOptions compileOptions(cx);
   compileOptions.lineno = startLine;
-  compileOptions.column = JS::ColumnNumberZeroOrigin(startColumn);
+  compileOptions.column = startColumn;
 
   if (!JS::StringHasLatin1Chars(url)) {
     JS_ReportErrorASCII(cx, "URL must be a narrow string");
@@ -1926,7 +1925,7 @@ bool DebuggerObject::getErrorColumnNumber(JSContext* cx,
     return true;
   }
 
-  result.setNumber(report->column.oneOriginValue());
+  result.setNumber(report->column);
   return true;
 }
 

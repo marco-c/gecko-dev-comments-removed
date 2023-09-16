@@ -45,7 +45,6 @@
 #include "builtin/MapObject.h"
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
-#include "js/ColumnNumber.h"  
 #include "js/Date.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
@@ -1799,7 +1798,7 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
     return false;
   }
 
-  val = NumberValue(*savedFrame->getColumn().addressOfValueForTranscode());
+  val = NumberValue(savedFrame->getColumn());
   if (!writePrimitive(val)) {
     return false;
   }
@@ -1983,7 +1982,7 @@ bool JSStructuredCloneWriter::traverseError(HandleObject obj) {
     return false;
   }
 
-  val = Int32Value(*unwrapped->columnNumber().addressOfValueForTranscode());
+  val = Int32Value(unwrapped->columnNumber());
   return writePrimitive(val);
 }
 
@@ -3464,14 +3463,16 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
 
   savedFrame->initSource(&source.toString()->asAtom());
 
+  RootedValue lineVal(context());
   uint32_t line;
   if (!readUint32(&line)) {
     return nullptr;
   }
   savedFrame->initLine(line);
 
-  JS::TaggedColumnNumberOneOrigin column;
-  if (!readUint32(column.addressOfValueForTranscode())) {
+  RootedValue columnVal(context());
+  uint32_t column;
+  if (!readUint32(&column)) {
     return nullptr;
   }
   savedFrame->initColumn(column);
@@ -3604,10 +3605,8 @@ JSObject* JSStructuredCloneReader::readErrorHeader(uint32_t type) {
   }
   RootedString fileName(cx, val.toString());
 
-  uint32_t lineNumber;
-  JS::ColumnNumberOneOrigin columnNumber;
-  if (!readUint32(&lineNumber) ||
-      !readUint32(columnNumber.addressOfValueForTranscode())) {
+  uint32_t lineNumber, columnNumber;
+  if (!readUint32(&lineNumber) || !readUint32(&columnNumber)) {
     return nullptr;
   }
 

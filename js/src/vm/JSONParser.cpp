@@ -26,7 +26,6 @@
 #include "gc/Tracer.h"                
 #include "js/AllocPolicy.h"           
 #include "js/CharacterEncoding.h"     
-#include "js/ColumnNumber.h"          
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCVector.h"              
@@ -1056,7 +1055,7 @@ void JSONSyntaxParseHandler<CharT>::reportError(const char* msg,
   metadata.isMuted = false;
   metadata.filename = JS::ConstUTF8CharsZ("");
   metadata.lineNumber = 0;
-  metadata.columnNumber = JS::ColumnNumberZeroOrigin::zero();
+  metadata.columnNumber = 0;
 
   ReportJSONSyntaxError(fc, std::move(metadata), JSMSG_JSON_BAD_PARSE, msg,
                         lineString, columnString);

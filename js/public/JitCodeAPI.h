@@ -9,7 +9,6 @@
 #define js_JitCodeAPI_h
 
 #include "js/AllocPolicy.h"
-#include "js/ColumnNumber.h"  
 #include "js/Initialization.h"
 #include "js/Printf.h"
 #include "js/Vector.h"
@@ -41,7 +40,7 @@ struct JitCodeSourceInfo {
   
   uint32_t lineno = 0;
   
-  JS::LimitedColumnNumberZeroOrigin colno;
+  uint32_t colno = 0;
 };
 
 struct JitCodeIRInfo {

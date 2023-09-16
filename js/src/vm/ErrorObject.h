@@ -17,7 +17,6 @@
 #include "NamespaceImports.h"
 
 #include "js/Class.h"
-#include "js/ColumnNumber.h"  
 #include "js/ErrorReport.h"
 #include "js/RootingAPI.h"
 #include "js/TypeDecls.h"
@@ -36,7 +35,7 @@ class ErrorObject : public NativeObject {
   static bool init(JSContext* cx, Handle<ErrorObject*> obj, JSExnType type,
                    UniquePtr<JSErrorReport> errorReport, HandleString fileName,
                    HandleObject stack, uint32_t sourceId, uint32_t lineNumber,
-                   JS::ColumnNumberOneOrigin columnNumber, HandleString message,
+                   uint32_t columnNumber, HandleString message,
                    Handle<mozilla::Maybe<JS::Value>> cause);
 
   static const ClassSpec classSpecs[JSEXN_ERROR_LIMIT];
@@ -74,10 +73,10 @@ class ErrorObject : public NativeObject {
   
   
   
+  
   static ErrorObject* create(JSContext* cx, JSExnType type, HandleObject stack,
                              HandleString fileName, uint32_t sourceId,
-                             uint32_t lineNumber,
-                             JS::ColumnNumberOneOrigin columnNumber,
+                             uint32_t lineNumber, uint32_t columnNumber,
                              UniquePtr<JSErrorReport> report,
                              HandleString message,
                              Handle<mozilla::Maybe<JS::Value>> cause,
@@ -113,7 +112,7 @@ class ErrorObject : public NativeObject {
   inline uint32_t lineNumber() const;
 
   
-  inline JS::ColumnNumberOneOrigin columnNumber() const;
+  inline uint32_t columnNumber() const;
 
   inline JSObject* stack() const;
 

@@ -24,7 +24,6 @@
 #include "frontend/ParserAtom.h"  
 #include "frontend/SourceNotes.h"  
 #include "frontend/Stencil.h"      
-#include "js/ColumnNumber.h"       
 #include "js/TypeDecls.h"          
 #include "js/Vector.h"             
 #include "vm/SharedStencil.h"      
@@ -179,8 +178,7 @@ typedef Vector<js::SrcNote, 64> SrcNotesVector;
 
 class BytecodeSection {
  public:
-  BytecodeSection(FrontendContext* fc, uint32_t lineNum,
-                  JS::LimitedColumnNumberZeroOrigin column);
+  BytecodeSection(FrontendContext* fc, uint32_t lineNum, uint32_t column);
 
   
 
@@ -241,15 +239,14 @@ class BytecodeSection {
   
 
   uint32_t currentLine() const { return currentLine_; }
-  JS::LimitedColumnNumberZeroOrigin lastColumn() const { return lastColumn_; }
+  uint32_t lastColumn() const { return lastColumn_; }
   void setCurrentLine(uint32_t line, uint32_t sourceOffset) {
     currentLine_ = line;
-    lastColumn_ = JS::LimitedColumnNumberZeroOrigin::zero();
+    lastColumn_ = 0;
     lastSourceOffset_ = sourceOffset;
   }
 
-  void setLastColumn(JS::LimitedColumnNumberZeroOrigin column,
-                     uint32_t offset) {
+  void setLastColumn(uint32_t column, uint32_t offset) {
     lastColumn_ = column;
     lastSourceOffset_ = offset;
   }
@@ -348,7 +345,7 @@ class BytecodeSection {
   
   
   
-  JS::LimitedColumnNumberZeroOrigin lastColumn_;
+  uint32_t lastColumn_ = 0;
 
   
   uint32_t lastSourceOffset_ = 0;
@@ -358,7 +355,7 @@ class BytecodeSection {
   uint32_t lastSeparatorCodeOffset_ = 0;
   uint32_t lastSeparatorSourceOffset_ = 0;
   uint32_t lastSeparatorLine_ = 0;
-  JS::LimitedColumnNumberZeroOrigin lastSeparatorColumn_;
+  uint32_t lastSeparatorColumn_ = 0;  
 
   
 

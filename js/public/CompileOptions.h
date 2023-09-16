@@ -61,7 +61,6 @@
 #include "jstypes.h"  
 
 #include "js/CharacterEncoding.h"  
-#include "js/ColumnNumber.h"       
 #include "js/TypeDecls.h"          
 
 namespace js {
@@ -455,9 +454,9 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
   
 
   
-  uint32_t lineno = 1;
+  unsigned lineno = 1;
   
-  JS::ColumnNumberZeroOrigin column;
+  unsigned column = 0;
 
   
   
@@ -491,7 +490,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
     this->TransitiveCompileOptions::dumpWith(print);
 #  define PrintFields_(Name) print(#Name, Name)
     PrintFields_(lineno);
-    print("column", column.zeroOriginValue());
+    PrintFields_(column);
     PrintFields_(scriptSourceOffset);
     PrintFields_(isRunOnce);
     PrintFields_(noScriptRval);
@@ -602,12 +601,12 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
-  CompileOptions& setLine(uint32_t l) {
+  CompileOptions& setLine(unsigned l) {
     lineno = l;
     return *this;
   }
 
-  CompileOptions& setFileAndLine(const char* f, uint32_t l) {
+  CompileOptions& setFileAndLine(const char* f, unsigned l) {
     filename_ = JS::ConstUTF8CharsZ(f);
     lineno = l;
     return *this;
@@ -623,7 +622,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
-  CompileOptions& setColumn(JS::ColumnNumberZeroOrigin c) {
+  CompileOptions& setColumn(unsigned c) {
     column = c;
     return *this;
   }
@@ -679,7 +678,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
   }
 
   CompileOptions& setIntroductionInfo(const char* introducerFn,
-                                      const char* intro, uint32_t line,
+                                      const char* intro, unsigned line,
                                       uint32_t offset) {
     introducerFilename_ = JS::ConstUTF8CharsZ(introducerFn);
     introductionType = intro;
@@ -788,7 +787,7 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions {
   
   const char* introductionType = nullptr;
 
-  uint32_t introductionLineno = 0;
+  unsigned introductionLineno = 0;
   uint32_t introductionOffset = 0;
 
  protected:

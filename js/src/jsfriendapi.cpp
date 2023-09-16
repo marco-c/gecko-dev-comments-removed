@@ -18,7 +18,6 @@
 #include "frontend/FrontendContext.h"  
 #include "gc/PublicIterators.h"
 #include "gc/WeakMap.h"
-#include "js/ColumnNumber.h"  
 #include "js/experimental/CodeCoverage.h"
 #include "js/experimental/CTypes.h"  
 #include "js/experimental/Intl.h"  
@@ -479,9 +478,8 @@ void js::SetPreserveWrapperCallbacks(
   cx->runtime()->hasReleasedWrapperCallback = hasReleasedWrapper;
 }
 
-JS_PUBLIC_API unsigned JS_PCToLineNumber(
-    JSScript* script, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp) {
+JS_PUBLIC_API unsigned JS_PCToLineNumber(JSScript* script, jsbytecode* pc,
+                                         unsigned* columnp) {
   return PCToLineNumber(script, pc, columnp);
 }
 

@@ -16,7 +16,6 @@
 #include "js/CallArgs.h"              
 #include "js/CallNonGenericMethod.h"  
 #include "js/Class.h"                 
-#include "js/ColumnNumber.h"          
 #include "js/ErrorReport.h"           
 #include "js/PropertyAndElement.h"    
 #include "js/PropertySpec.h"  
@@ -206,12 +205,6 @@ static Value Uint32OrUndefinedValue(mozilla::Maybe<uint32_t> x) {
   return Uint32Value(x.value());
 }
 
-static Value ColumnNumberZeroOriginValue(JS::ColumnNumberZeroOrigin x) {
-  uint32_t column = x.zeroOriginValue();
-  MOZ_ASSERT(column <= INT32_MAX);
-  return Int32Value(column);
-}
-
 static Value StatusValue(ModuleStatus status) {
   return Int32Value(int32_t(status));
 }
@@ -328,8 +321,7 @@ DEFINE_GETTER_FUNCTIONS(ImportEntry, moduleRequest, ObjectOrNullValue,
 DEFINE_GETTER_FUNCTIONS(ImportEntry, importName, StringOrNullValue, IdentFilter)
 DEFINE_GETTER_FUNCTIONS(ImportEntry, localName, StringValue, IdentFilter)
 DEFINE_GETTER_FUNCTIONS(ImportEntry, lineNumber, Uint32Value, IdentFilter)
-DEFINE_GETTER_FUNCTIONS(ImportEntry, columnNumber, ColumnNumberZeroOriginValue,
-                        IdentFilter)
+DEFINE_GETTER_FUNCTIONS(ImportEntry, columnNumber, Uint32Value, IdentFilter)
 
 static const JSPropertySpec ShellImportEntryWrapper_accessors[] = {
     JS_PSG("moduleRequest", ShellImportEntryWrapper_moduleRequestGetter, 0),
@@ -345,8 +337,7 @@ DEFINE_GETTER_FUNCTIONS(ExportEntry, moduleRequest, ObjectOrNullValue,
 DEFINE_GETTER_FUNCTIONS(ExportEntry, importName, StringOrNullValue, IdentFilter)
 DEFINE_GETTER_FUNCTIONS(ExportEntry, localName, StringOrNullValue, IdentFilter)
 DEFINE_GETTER_FUNCTIONS(ExportEntry, lineNumber, Uint32Value, IdentFilter)
-DEFINE_GETTER_FUNCTIONS(ExportEntry, columnNumber, ColumnNumberZeroOriginValue,
-                        IdentFilter)
+DEFINE_GETTER_FUNCTIONS(ExportEntry, columnNumber, Uint32Value, IdentFilter)
 
 static const JSPropertySpec ShellExportEntryWrapper_accessors[] = {
     JS_PSG("exportName", ShellExportEntryWrapper_exportNameGetter, 0),
@@ -360,8 +351,7 @@ static const JSPropertySpec ShellExportEntryWrapper_accessors[] = {
 DEFINE_GETTER_FUNCTIONS(RequestedModule, moduleRequest, ObjectOrNullValue,
                         SingleFilter<ShellModuleRequestObjectWrapper>)
 DEFINE_GETTER_FUNCTIONS(RequestedModule, lineNumber, Uint32Value, IdentFilter)
-DEFINE_GETTER_FUNCTIONS(RequestedModule, columnNumber,
-                        ColumnNumberZeroOriginValue, IdentFilter)
+DEFINE_GETTER_FUNCTIONS(RequestedModule, columnNumber, Uint32Value, IdentFilter)
 
 static const JSPropertySpec ShellRequestedModuleWrapper_accessors[] = {
     JS_PSG("moduleRequest", ShellRequestedModuleWrapper_moduleRequestGetter, 0),

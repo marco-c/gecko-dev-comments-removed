@@ -7,7 +7,6 @@
 #include "ProfileBuffer.h"
 
 #include "BaseProfiler.h"
-#include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"
 #include "jsfriendapi.h"
 #include "mozilla/MathAlgorithms.h"
@@ -225,9 +224,9 @@ void ProfileBufferCollector::CollectProfilingStackFrame(
       
       if (aFrame.script()) {
         if (aFrame.pc()) {
-          JS::LimitedColumnNumberZeroOrigin col;
+          unsigned col = 0;
           line = Some(JS_PCToLineNumber(aFrame.script(), aFrame.pc(), &col));
-          column = Some(col.zeroOriginValue());
+          column = Some(col);
         }
       }
 

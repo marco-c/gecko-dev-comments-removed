@@ -22,7 +22,6 @@
 #include "gc/Tracer.h"            
 #include "gc/WeakMap.h"           
 #include "js/CallAndConstruct.h"  
-#include "js/ColumnNumber.h"      
 #include "js/GCAPI.h"             
 #include "js/GCVector.h"          
 #include "js/HeapAPI.h"           
@@ -263,7 +262,7 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
   JSAutoRealm ar(cx, envChain);
 
   const char* filename = script->filename();
-  JS::LimitedColumnNumberZeroOrigin column;
+  unsigned column = 0;
   unsigned lineno = PCToLineNumber(script, pc, &column);
   Rooted<JSFunction*> fun(cx, iter.maybeCallee(cx));
   Rooted<JSString*> funname(cx);
@@ -364,8 +363,7 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
 
   
   if (!sp.printf("%s [\"%s\":%u:%u]\n", fun ? ")" : "",
-                 filename ? filename : "<unknown>", lineno,
-                 column.zeroOriginValue())) {
+                 filename ? filename : "<unknown>", lineno, column)) {
     return false;
   }
 

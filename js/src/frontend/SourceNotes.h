@@ -13,8 +13,7 @@
 #include <stddef.h>   
 #include <stdint.h>   
 
-#include "jstypes.h"          
-#include "js/ColumnNumber.h"  
+#include "jstypes.h"  
 
 namespace js {
 
@@ -211,30 +210,29 @@ class SrcNote {
 
     static constexpr ptrdiff_t ColSpanSignBit = 1 << (OperandBits - 1);
 
-    static inline JS::ColumnNumberOffset fromOperand(ptrdiff_t operand) {
+    static inline ptrdiff_t fromOperand(ptrdiff_t operand) {
       
       
       MOZ_ASSERT(!(operand & ~((1U << OperandBits) - 1)));
 
       
-      return JS::ColumnNumberOffset((operand ^ ColSpanSignBit) -
-                                    ColSpanSignBit);
+      return (operand ^ ColSpanSignBit) - ColSpanSignBit;
     }
 
    public:
     static constexpr ptrdiff_t MinColSpan = -ColSpanSignBit;
     static constexpr ptrdiff_t MaxColSpan = ColSpanSignBit - 1;
 
-    static inline ptrdiff_t toOperand(JS::ColumnNumberOffset colspan) {
+    static inline ptrdiff_t toOperand(ptrdiff_t colspan) {
       
-      ptrdiff_t operand = colspan.value() & ((1U << OperandBits) - 1);
+      ptrdiff_t operand = colspan & ((1U << OperandBits) - 1);
 
       
       MOZ_ASSERT(fromOperand(operand) == colspan);
       return operand;
     }
 
-    static inline JS::ColumnNumberOffset getSpan(const SrcNote* sn);
+    static inline ptrdiff_t getSpan(const SrcNote* sn);
   };
 
   class SetLine {
@@ -367,7 +365,7 @@ class SrcNoteReader {
 };
 
 
-inline JS::ColumnNumberOffset SrcNote::ColSpan::getSpan(const SrcNote* sn) {
+inline ptrdiff_t SrcNote::ColSpan::getSpan(const SrcNote* sn) {
   return fromOperand(SrcNoteReader::getOperand(sn, unsigned(Operands::Span)));
 }
 

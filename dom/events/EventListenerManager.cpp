@@ -7,7 +7,6 @@
 
 #undef CreateEvent
 
-#include "js/ColumnNumber.h"  
 #include "js/loader/LoadedScript.h"
 #include "mozilla/BasicEvents.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
@@ -979,8 +978,8 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
 
     
     nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
-    uint32_t lineNum = 0;
-    JS::ColumnNumberZeroOrigin columnNum;
+    unsigned lineNum = 0;
+    unsigned columnNum = 0;
 
     JSContext* cx = nsContentUtils::GetCurrentJSContext();
     if (cx && !JS::DescribeScriptedCaller(cx, nullptr, &lineNum, &columnNum)) {
@@ -996,7 +995,7 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
           true,    
           aElement,
           nullptr,  
-          aBody, lineNum, columnNum.zeroOriginValue(), &allowsInlineScript);
+          aBody, lineNum, columnNum, &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 
       

@@ -37,7 +37,6 @@
 #include "jit/JitContext.h"
 #include "jit/JitOptions.h"
 #include "jit/Simulator.h"
-#include "js/ColumnNumber.h"  
 #include "js/ForOfIterator.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"
@@ -4208,7 +4207,7 @@ static bool Reject(JSContext* cx, const CompileArgs& args,
     return false;
   }
 
-  uint32_t line = args.scriptedCaller.line;
+  unsigned line = args.scriptedCaller.line;
 
   
   
@@ -4229,8 +4228,7 @@ static bool Reject(JSContext* cx, const CompileArgs& args,
 
   RootedObject errorObj(
       cx, ErrorObject::create(cx, JSEXN_WASMCOMPILEERROR, stack, fileName, 0,
-                              line, JS::ColumnNumberOneOrigin::zero(), nullptr,
-                              message, cause));
+                              line, 0, nullptr, message, cause));
   if (!errorObj) {
     return false;
   }

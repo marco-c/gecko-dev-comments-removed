@@ -11,7 +11,6 @@
 
 #include "js/CallArgs.h"
 #include "js/Class.h"
-#include "js/ColumnNumber.h"  
 #include "js/GCAPI.h"
 #include "js/HeapAPI.h"
 #include "js/Object.h"           
@@ -56,9 +55,9 @@ extern JS_PUBLIC_API bool JS_NondeterministicGetWeakSetKeys(
     JSContext* cx, JS::HandleObject obj, JS::MutableHandleObject ret);
 
 
-extern JS_PUBLIC_API unsigned JS_PCToLineNumber(
-    JSScript* script, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp = nullptr);
+extern JS_PUBLIC_API unsigned JS_PCToLineNumber(JSScript* script,
+                                                jsbytecode* pc,
+                                                unsigned* columnp = nullptr);
 
 
 

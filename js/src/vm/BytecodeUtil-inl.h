@@ -10,7 +10,6 @@
 #include "vm/BytecodeUtil.h"
 
 #include "frontend/SourceNotes.h"  
-#include "js/ColumnNumber.h"  
 #include "vm/JSScript.h"
 
 namespace js {
@@ -163,8 +162,8 @@ class BytecodeRangeWithPosition : private BytecodeRange {
     }
   }
 
-  uint32_t frontLineNumber() const { return lineno; }
-  JS::LimitedColumnNumberZeroOrigin frontColumnNumber() const { return column; }
+  size_t frontLineNumber() const { return lineno; }
+  size_t frontColumnNumber() const { return column; }
 
   
   
@@ -202,15 +201,17 @@ class BytecodeRangeWithPosition : private BytecodeRange {
 
       SrcNoteType type = sn->type();
       if (type == SrcNoteType::ColSpan) {
-        column += SrcNote::ColSpan::getSpan(sn);
+        ptrdiff_t colspan = SrcNote::ColSpan::getSpan(sn);
+        MOZ_ASSERT(ptrdiff_t(column) + colspan >= 0);
+        column += colspan;
         lastLinePC = snpc;
       } else if (type == SrcNoteType::SetLine) {
         lineno = SrcNote::SetLine::getLine(sn, initialLine);
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = 0;
         lastLinePC = snpc;
       } else if (type == SrcNoteType::NewLine) {
         lineno++;
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = 0;
         lastLinePC = snpc;
       } else if (type == SrcNoteType::Breakpoint) {
         isBreakpoint = true;
@@ -225,13 +226,13 @@ class BytecodeRangeWithPosition : private BytecodeRange {
     isEntryPoint = lastLinePC == frontPC();
   }
 
-  uint32_t initialLine;
+  size_t initialLine;
 
   
-  uint32_t lineno;
+  size_t lineno;
 
   
-  JS::LimitedColumnNumberZeroOrigin column;
+  size_t column;
 
   const SrcNote* sn;
   jsbytecode* snpc;
