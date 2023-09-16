@@ -2359,6 +2359,8 @@ void RestyleManager::PostRestyleEventForAnimations(Element* aElement,
     return;
   }
 
+  mPresContext->TriggeredAnimationRestyle();
+
   AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(),
                                    true );
   Servo_NoteExplicitHints(elementToRestyle, aRestyleHint, nsChangeHint(0));
@@ -3152,6 +3154,7 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     nsTArray<RefPtr<Element>> anchorsToSuppress;
 
     {
+      
       AutoRestyleTimelineMarker marker(presContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
       while (Element* root = iter.GetNextStyleRoot()) {
