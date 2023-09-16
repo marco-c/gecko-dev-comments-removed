@@ -289,6 +289,10 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
+  js::MainThreadOrIonCompileData<size_t> numRealmsWithAllocMetadataBuilder_{0};
+
+  
+  
   js::MainThreadData<mozilla::TimeStamp> lastDiscardedCodeTime_;
 
   js::MainThreadData<bool> gcScheduled_;
@@ -440,6 +444,17 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
   js::jit::JitZone* jitZone() { return jitZone_; }
 
   bool ensureJitZoneExists(JSContext* cx) { return !!getJitZone(cx); }
+
+  void incNumRealmsWithAllocMetadataBuilder() {
+    numRealmsWithAllocMetadataBuilder_++;
+  }
+  void decNumRealmsWithAllocMetadataBuilder() {
+    MOZ_ASSERT(numRealmsWithAllocMetadataBuilder_ > 0);
+    numRealmsWithAllocMetadataBuilder_--;
+  }
+  bool hasRealmWithAllocMetadataBuilder() const {
+    return numRealmsWithAllocMetadataBuilder_ > 0;
+  }
 
   void prepareForCompacting();
 

@@ -66,6 +66,10 @@ Realm::~Realm() {
     runtime_->lcovOutput().writeLCovResult(*lcovRealm_);
   }
 
+  if (allocationMetadataBuilder_) {
+    forgetAllocationMetadataBuilder();
+  }
+
   MOZ_ASSERT(runtime_->numRealms > 0);
   runtime_->numRealms--;
 }
@@ -338,18 +342,31 @@ void Realm::setAllocationMetadataBuilder(
     const js::AllocationMetadataBuilder* builder) {
   
   
-  ReleaseAllJITCode(runtime_->gcContext());
+  if (bool(allocationMetadataBuilder_) != bool(builder)) {
+    ReleaseAllJITCode(runtime_->gcContext());
+    if (builder) {
+      zone()->incNumRealmsWithAllocMetadataBuilder();
+    } else {
+      zone()->decNumRealmsWithAllocMetadataBuilder();
+    }
+  }
 
   allocationMetadataBuilder_ = builder;
 }
 
 void Realm::forgetAllocationMetadataBuilder() {
+  if (!allocationMetadataBuilder_) {
+    return;
+  }
+
   
   
   
   
   
-  CancelOffThreadIonCompile(this);
+  CancelOffThreadIonCompile(zone());
+
+  zone()->decNumRealmsWithAllocMetadataBuilder();
 
   allocationMetadataBuilder_ = nullptr;
 }
