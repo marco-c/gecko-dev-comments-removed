@@ -46,6 +46,79 @@ namespace mozilla::default_agent {
 
 
 
+class RegistryMutex {
+ private:
+  nsAutoHandle mMutex;
+  bool mLocked;
+
+ public:
+  RegistryMutex() : mMutex(nullptr), mLocked(false) {}
+  ~RegistryMutex() {
+    Release();
+    
+  }
+
+  
+  bool Acquire() {
+    if (mLocked) {
+      return true;
+    }
+
+    if (mMutex.get() == nullptr) {
+      
+      
+      
+      
+      mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
+        return false;
+      }
+    }
+
+    DWORD mutexStatus =
+        WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
+    if (mutexStatus == WAIT_OBJECT_0) {
+      mLocked = true;
+    } else if (mutexStatus == WAIT_TIMEOUT) {
+      LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
+    } else if (mutexStatus == WAIT_ABANDONED) {
+      
+      
+      
+      
+      
+      LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
+      mLocked = true;
+    } else {
+      
+      
+      LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X",
+                        GetLastError());
+    }
+    return mLocked;
+  }
+
+  bool IsLocked() { return mLocked; }
+
+  void Release() {
+    if (mLocked) {
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
+        return;
+      }
+      BOOL success = ReleaseMutex(mMutex.get());
+      if (!success) {
+        LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
+      }
+      mLocked = false;
+    }
+  }
+};
+
+
+
+
 
 
 
@@ -140,66 +213,6 @@ static void WriteInstallationRegistryEntry() {
   }
 }
 
-RegistryMutex::~RegistryMutex() {
-  Release();
-  
-}
-
-bool RegistryMutex::Acquire() {
-  if (mLocked) {
-    return true;
-  }
-
-  if (mMutex.get() == nullptr) {
-    
-    
-    
-    
-    mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
-    if (mMutex.get() == nullptr) {
-      LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
-      return false;
-    }
-  }
-
-  DWORD mutexStatus =
-      WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
-  if (mutexStatus == WAIT_OBJECT_0) {
-    mLocked = true;
-  } else if (mutexStatus == WAIT_TIMEOUT) {
-    LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
-  } else if (mutexStatus == WAIT_ABANDONED) {
-    
-    
-    
-    
-    
-    LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
-    mLocked = true;
-  } else {
-    
-    
-    LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X", GetLastError());
-  }
-  return mLocked;
-}
-
-bool RegistryMutex::IsLocked() { return mLocked; }
-
-void RegistryMutex::Release() {
-  if (mLocked) {
-    if (mMutex.get() == nullptr) {
-      LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
-      return;
-    }
-    BOOL success = ReleaseMutex(mMutex.get());
-    if (!success) {
-      LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
-    }
-    mLocked = false;
-  }
-}
-
 
 static bool CheckIfAppRanRecently(bool* aResult) {
   const ULONGLONG kTaskExpirationDays = 90;
@@ -235,7 +248,8 @@ DefaultAgent::RegisterTask(const nsAString& aUniqueToken) {
   
   
   
-  mRegMutex.Acquire();
+  RegistryMutex regMutex;
+  regMutex.Acquire();
 
   WriteInstallationRegistryEntry();
 
@@ -248,7 +262,8 @@ NS_IMETHODIMP
 DefaultAgent::UpdateTask(const nsAString& aUniqueToken) {
   
   
-  mRegMutex.Acquire();
+  RegistryMutex regMutex;
+  regMutex.Acquire();
 
   WriteInstallationRegistryEntry();
 
@@ -279,7 +294,8 @@ DefaultAgent::Uninstall(const nsAString& aUniqueToken) {
   
   
   
-  mRegMutex.Acquire();
+  RegistryMutex regMutex;
+  regMutex.Acquire();
 
   RemoveAllRegistryEntries();
   return NS_OK;
@@ -300,7 +316,8 @@ DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
   
   
   
-  if (!mRegMutex.Acquire()) {
+  RegistryMutex regMutex;
+  if (!regMutex.Acquire()) {
     return NS_ERROR_FAILURE;
   }
 
