@@ -556,6 +556,24 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     SECTION_INHERIT aInheritDisposition, ULONG aAllocationType,
     ULONG aProtectionFlags) {
   
+  
+  auto const rollback =
+      [
+          
+          
+          
+          =,
+          
+          
+          baseAddress = aBaseAddress ? *aBaseAddress : nullptr,
+          sectionOffset = aSectionOffset ? *aSectionOffset : LARGE_INTEGER{},
+          viewSize = aViewSize ? *aViewSize : 0]() {
+        if (aBaseAddress) *aBaseAddress = baseAddress;
+        if (aSectionOffset) *aSectionOffset = sectionOffset;
+        if (aViewSize) *aViewSize = viewSize;
+      };
+
+  
   NTSTATUS stubStatus = stub_NtMapViewOfSection(
       aSection, aProcess, aBaseAddress, aZeroBits, aCommitSize, aSectionOffset,
       aViewSize, aInheritDisposition, aAllocationType, aProtectionFlags);
@@ -573,6 +591,7 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
                                       sizeof(obi), nullptr);
   if (!NT_SUCCESS(ntStatus)) {
     ::NtUnmapViewOfSection(aProcess, *aBaseAddress);
+    rollback();
     return STATUS_ACCESS_DENIED;
   }
 
@@ -588,7 +607,12 @@ NTSTATUS NTAPI patched_NtMapViewOfSection(
     return stubStatus;
   }
 
-  return AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  NTSTATUS rv =
+      AfterMapViewOfExecutableSection(aProcess, aBaseAddress, stubStatus);
+  if (FAILED(rv)) {
+    rollback();
+  }
+  return rv;
 }
 
 }  
