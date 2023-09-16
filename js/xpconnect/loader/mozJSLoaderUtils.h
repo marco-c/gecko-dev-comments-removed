@@ -20,7 +20,7 @@ class StartupCache;
 
 nsresult ReadCachedStencil(mozilla::scache::StartupCache* cache,
                            nsACString& cachePath, JSContext* cx,
-                           const JS::DecodeOptions& options,
+                           const JS::ReadOnlyDecodeOptions& options,
                            JS::Stencil** stencilOut);
 
 nsresult WriteCachedStencil(mozilla::scache::StartupCache* cache,

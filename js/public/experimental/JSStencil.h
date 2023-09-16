@@ -201,14 +201,12 @@ extern JS_PUBLIC_API TranscodeResult EncodeStencil(JSContext* cx,
                                                    TranscodeBuffer& buffer);
 
 
-extern JS_PUBLIC_API TranscodeResult DecodeStencil(JSContext* cx,
-                                                   const DecodeOptions& options,
-                                                   const TranscodeRange& range,
-                                                   Stencil** stencilOut);
-extern JS_PUBLIC_API TranscodeResult DecodeStencil(JS::FrontendContext* fc,
-                                                   const DecodeOptions& options,
-                                                   const TranscodeRange& range,
-                                                   Stencil** stencilOut);
+extern JS_PUBLIC_API TranscodeResult
+DecodeStencil(JSContext* cx, const ReadOnlyDecodeOptions& options,
+              const TranscodeRange& range, Stencil** stencilOut);
+extern JS_PUBLIC_API TranscodeResult
+DecodeStencil(JS::FrontendContext* fc, const ReadOnlyDecodeOptions& options,
+              const TranscodeRange& range, Stencil** stencilOut);
 
 
 
@@ -255,8 +253,9 @@ extern JS_PUBLIC_API OffThreadToken* CompileModuleToStencilOffThread(
 
 
 extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
-    JSContext* cx, const DecodeOptions& options, const TranscodeBuffer& buffer,
-    size_t cursor, OffThreadCompileCallback callback, void* callbackData);
+    JSContext* cx, const ReadOnlyDecodeOptions& options,
+    const TranscodeBuffer& buffer, size_t cursor,
+    OffThreadCompileCallback callback, void* callbackData);
 
 
 
@@ -264,8 +263,9 @@ extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
 
 
 extern JS_PUBLIC_API OffThreadToken* DecodeStencilOffThread(
-    JSContext* cx, const DecodeOptions& options, const TranscodeRange& range,
-    OffThreadCompileCallback callback, void* callbackData);
+    JSContext* cx, const ReadOnlyDecodeOptions& options,
+    const TranscodeRange& range, OffThreadCompileCallback callback,
+    void* callbackData);
 
 
 

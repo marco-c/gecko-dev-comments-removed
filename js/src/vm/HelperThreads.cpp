@@ -1104,7 +1104,7 @@ JS::OffThreadToken* js::StartOffThreadCompileModuleToStencil(
 }
 
 JS::OffThreadToken* js::StartOffThreadDecodeStencil(
-    JSContext* cx, const JS::DecodeOptions& options,
+    JSContext* cx, const JS::ReadOnlyDecodeOptions& options,
     const JS::TranscodeRange& range, JS::OffThreadCompileCallback callback,
     void* callbackData) {
   auto task =

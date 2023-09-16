@@ -1566,7 +1566,7 @@ static nsresult WriteStencil(nsIObjectOutputStream* aStream, JSContext* aCx,
 }
 
 static nsresult ReadStencil(nsIObjectInputStream* aStream, JSContext* aCx,
-                            const JS::DecodeOptions& aOptions,
+                            const JS::ReadOnlyDecodeOptions& aOptions,
                             JS::Stencil** aStencilOut) {
   
   

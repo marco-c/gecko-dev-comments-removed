@@ -29,7 +29,7 @@
 #include "nsIThread.h"
 #include "nsITimer.h"
 
-#include "js/CompileOptions.h"          
+#include "js/CompileOptions.h"  
 #include "js/experimental/JSStencil.h"  
 #include "js/GCAnnotations.h"           
 #include "js/RootingAPI.h"              
@@ -108,7 +108,8 @@ class ScriptPreloader : public nsIObserver,
   
   
   already_AddRefed<JS::Stencil> GetCachedStencil(
-      JSContext* cx, const JS::DecodeOptions& options, const nsCString& path);
+      JSContext* cx, const JS::ReadOnlyDecodeOptions& options,
+      const nsCString& path);
 
   
   
@@ -137,7 +138,8 @@ class ScriptPreloader : public nsIObserver,
  private:
   Result<Ok, nsresult> InitCacheInternal(JS::Handle<JSObject*> scope = nullptr);
   already_AddRefed<JS::Stencil> GetCachedStencilInternal(
-      JSContext* cx, const JS::DecodeOptions& options, const nsCString& path);
+      JSContext* cx, const JS::ReadOnlyDecodeOptions& options,
+      const nsCString& path);
 
  public:
   static ProcessType CurrentProcessType() {
@@ -310,8 +312,8 @@ class ScriptPreloader : public nsIObserver,
 
     bool HasArray() { return mXDRData.constructed<nsTArray<uint8_t>>(); }
 
-    already_AddRefed<JS::Stencil> GetStencil(JSContext* cx,
-                                             const JS::DecodeOptions& options);
+    already_AddRefed<JS::Stencil> GetStencil(
+        JSContext* cx, const JS::ReadOnlyDecodeOptions& options);
 
     size_t HeapSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) {
       auto size = mallocSizeOf(this);
@@ -436,30 +438,28 @@ class ScriptPreloader : public nsIObserver,
   
   
   already_AddRefed<JS::Stencil> WaitForCachedStencil(
-      JSContext* cx, const JS::DecodeOptions& options, CachedStencil* script);
+      JSContext* cx, const JS::ReadOnlyDecodeOptions& options,
+      CachedStencil* script);
 
   void StartDecodeTask(JS::Handle<JSObject*> scope);
 
  private:
-  bool StartDecodeTask(JS::DecodeOptions decodeOptions,
+  bool StartDecodeTask(const JS::ReadOnlyDecodeOptions& decodeOptions,
                        Vector<JS::TranscodeSource>&& decodingSources);
 
   class DecodeTask : public Runnable {
     ScriptPreloader* mPreloader;
-    JS::DecodeOptions mDecodeOptions;
+    JS::OwningDecodeOptions mDecodeOptions;
     Vector<JS::TranscodeSource> mDecodingSources;
 
    public:
-    DecodeTask(ScriptPreloader* preloader, JS::DecodeOptions decodeOptions,
+    DecodeTask(ScriptPreloader* preloader,
+               const JS::ReadOnlyDecodeOptions& decodeOptions,
                Vector<JS::TranscodeSource>&& decodingSources)
         : Runnable("ScriptPreloaderDecodeTask"),
           mPreloader(preloader),
-          mDecodeOptions(decodeOptions),
           mDecodingSources(std::move(decodingSources)) {
-      
-      
-      
-      MOZ_ASSERT(!decodeOptions.hasExternalData());
+      mDecodeOptions.infallibleCopy(decodeOptions);
     }
 
     NS_IMETHOD Run() override;
