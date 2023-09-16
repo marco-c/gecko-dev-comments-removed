@@ -8,11 +8,15 @@
 #define mozilla_dom_ScriptLoadContext_h
 
 #include "js/AllocPolicy.h"
+#include "js/CompileOptions.h"  
+#include "js/experimental/JSStencil.h"  
 #include "js/RootingAPI.h"
 #include "js/SourceText.h"
+#include "js/Transcoding.h"  
 #include "js/TypeDecls.h"
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ScriptKind.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/CORSMode.h"
@@ -20,9 +24,12 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MaybeOneOf.h"
+#include "mozilla/Mutex.h"
 #include "mozilla/PreloaderBase.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/Utf8.h"  
+#include "mozilla/TaskController.h"  
+#include "mozilla/Utf8.h"            
 #include "mozilla/Variant.h"
 #include "mozilla/Vector.h"
 #include "nsCOMPtr.h"
@@ -30,10 +37,7 @@
 #include "nsIScriptElement.h"
 
 class nsICacheInfoChannel;
-
-namespace JS {
-class OffThreadToken;
-}  
+struct JSContext;
 
 namespace mozilla::dom {
 
@@ -75,6 +79,71 @@ class Element;
 
 
 
+class OffThreadCompilationCompleteRunnable;
+
+
+class CompileOrDecodeTask : public mozilla::Task {
+ protected:
+  explicit CompileOrDecodeTask(
+      OffThreadCompilationCompleteRunnable* aCompleteRunnable);
+  virtual ~CompileOrDecodeTask();
+
+  nsresult InitFrontendContext();
+
+  void DidRunTask(const MutexAutoLock& aProofOfLock,
+                  RefPtr<JS::Stencil>&& aStencil);
+
+  bool IsCancelled(const MutexAutoLock& aProofOfLock) const {
+    return !mCompleteRunnable;
+  }
+
+ public:
+  
+  
+  
+  
+  
+  already_AddRefed<JS::Stencil> StealResult(
+      JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
+
+  
+  
+  void Cancel();
+
+ protected:
+  static constexpr size_t kDefaultStackQuota = 128 * sizeof(size_t) * 1024;
+
+  
+  mozilla::Mutex mMutex;
+
+  
+  JS::TranscodeResult mResult = JS::TranscodeResult::Ok;
+
+  
+  
+  JS::OwningCompileOptions mOptions;
+
+  
+  
+  
+  
+  JS::FrontendContext* mFrontendContext = nullptr;
+
+  
+  
+  
+  
+  
+  
+  OffThreadCompilationCompleteRunnable* mCompleteRunnable;
+
+ private:
+  
+  RefPtr<JS::Stencil> mStencil;
+
+  JS::InstantiationStorage mInstantiationStorage;
+};
+
 class ScriptLoadContext : public JS::loader::LoadContextBase,
                           public PreloaderBase {
  protected:
@@ -94,10 +163,6 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   bool IsPreload() const;
 
   bool CompileStarted() const;
-
-  JS::OffThreadToken** OffThreadTokenPtr() {
-    return mOffThreadToken ? &mOffThreadToken : nullptr;
-  }
 
   bool IsTracking() const { return mIsTracking; }
   void SetIsTracking() {
@@ -154,6 +219,11 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   void MaybeCancelOffThreadScript();
 
+  
+  
+  already_AddRefed<JS::Stencil> StealOffThreadResult(
+      JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage);
+
   ScriptMode mScriptMode;  
   bool mScriptFromHead;    
                            
@@ -172,7 +242,10 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
 
   
   
-  JS::OffThreadToken* mOffThreadToken;
+  
+  
+  
+  RefPtr<CompileOrDecodeTask> mCompileOrDecodeTask;
 
   
   

@@ -12,7 +12,6 @@
 #include "mozilla/Unused.h"
 #include "mozilla/Utf8.h"  
 
-#include "js/OffThreadScriptCompilation.h"
 #include "js/SourceText.h"
 #include "js/loader/LoadContextBase.h"
 #include "js/loader/ModuleLoadRequest.h"
@@ -37,7 +36,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScriptLoadContext,
                                                 JS::loader::LoadContextBase)
-  MOZ_ASSERT(!tmp->mOffThreadToken);
+  MOZ_ASSERT(!tmp->mCompileOrDecodeTask);
   MOZ_ASSERT(!tmp->mRunnable);
   tmp->MaybeUnblockOnload();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -62,7 +61,6 @@ ScriptLoadContext::ScriptLoadContext()
       mInCompilingList(false),
       mIsTracking(false),
       mWasCompiledOMT(false),
-      mOffThreadToken(nullptr),
       mRunnable(nullptr),
       mLineNo(1),
       mColumnNo(0),
@@ -73,7 +71,7 @@ ScriptLoadContext::~ScriptLoadContext() {
   MOZ_ASSERT(NS_IsMainThread());
 
   
-  MOZ_DIAGNOSTIC_ASSERT(!mOffThreadToken && !mRunnable);
+  MOZ_DIAGNOSTIC_ASSERT(!mCompileOrDecodeTask && !mRunnable);
 
   mRequest = nullptr;
 
@@ -96,15 +94,13 @@ void ScriptLoadContext::MaybeUnblockOnload() {
 void ScriptLoadContext::MaybeCancelOffThreadScript() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  if (!mOffThreadToken) {
+  if (!mCompileOrDecodeTask) {
     return;
   }
 
   
-  
-  JSContext* cx = danger::GetJSContext();
-  JS::CancelOffThreadToken(cx, mOffThreadToken);
-  mOffThreadToken = nullptr;
+  mCompileOrDecodeTask->Cancel();
+  mCompileOrDecodeTask = nullptr;
 
   
   
@@ -212,6 +208,14 @@ void ScriptLoadContext::GetProfilerLabel(nsACString& aOutString) {
     aOutString.Append(url);
     aOutString.Append("\">");
   }
+}
+
+already_AddRefed<JS::Stencil> ScriptLoadContext::StealOffThreadResult(
+    JSContext* aCx, JS::InstantiationStorage* aInstantiationStorage) {
+  RefPtr<CompileOrDecodeTask> compileOrDecodeTask =
+      mCompileOrDecodeTask.forget();
+
+  return compileOrDecodeTask->StealResult(aCx, aInstantiationStorage);
 }
 
 }  

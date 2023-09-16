@@ -8,7 +8,6 @@
 #define DOM_BASE_JSEXECUTIONCONTEXT_H_
 
 #include "js/GCVector.h"
-#include "js/OffThreadScriptCompilation.h"
 #include "js/TypeDecls.h"
 #include "js/Value.h"
 #include "js/experimental/JSStencil.h"
@@ -29,6 +28,8 @@ namespace mozilla {
 union Utf8Unit;
 
 namespace dom {
+
+class ScriptLoadContext;
 
 class MOZ_STACK_CLASS JSExecutionContext final {
   
@@ -130,7 +131,7 @@ class MOZ_STACK_CLASS JSExecutionContext final {
   
   
   
-  [[nodiscard]] nsresult JoinOffThread(JS::OffThreadToken** aOffThreadToken);
+  [[nodiscard]] nsresult JoinOffThread(ScriptLoadContext* aContext);
 
   
   nsresult Compile(JS::SourceText<char16_t>& aSrcBuf);
