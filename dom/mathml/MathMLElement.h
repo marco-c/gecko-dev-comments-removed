@@ -69,7 +69,9 @@ class MathMLElement final : public MathMLElementBase, public Link {
   
   
   void SetIncrementScriptLevel(bool aIncrementScriptLevel, bool aNotify);
-  bool GetIncrementScriptLevel() const { return mIncrementScriptLevel; }
+  bool GetIncrementScriptLevel() const {
+    return Element::State().HasState(ElementState::INCREMENT_SCRIPT_LEVEL);
+  }
 
   int32_t TabIndexDefault() final;
 
@@ -102,9 +104,6 @@ class MathMLElement final : public MathMLElementBase, public Link {
   void AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
                     const nsAttrValue* aValue, const nsAttrValue* aOldValue,
                     nsIPrincipal* aSubjectPrincipal, bool aNotify) override;
-
- private:
-  bool mIncrementScriptLevel;
 };
 
 }  
