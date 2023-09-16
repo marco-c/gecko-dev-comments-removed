@@ -407,6 +407,7 @@ onload = function() {
   
   function test_history(prop) {
     subsetTestByKey('history', async_test, function() {
+      var url = input_url_html.replace('resources/', '');
       var iframe = document.createElement('iframe');
       iframe.src = blank;
       document.body.appendChild(iframe);
@@ -414,10 +415,13 @@ onload = function() {
         document.body.removeChild(iframe);
       });
       iframe.onload = this.step_func_done(function() {
-        iframe.contentWindow.history[prop](null, null, input_url_html); 
+        
+        
+        
+        iframe.contentWindow.history[prop](null, null, url);
         var got = iframe.contentWindow.location.href;
         assert_true(got.indexOf(expected_current) > -1, msg(expected_current, got));
-        assert_equals(got.indexOf('/resources/resources/'), -1, 'url was resolved against the iframe\'s URL instead of the settings object\'s API base URL');
+        assert_not_equals(got.indexOf('/resources/'), -1, 'url was resolved against the test\'s URL');
       });
     }, 'history.'+prop);
   }
