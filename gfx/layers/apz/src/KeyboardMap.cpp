@@ -131,9 +131,10 @@ Maybe<KeyboardShortcut> KeyboardMap::FindMatch(
   }
 
   
-  for (auto& key : aEvent.mShortcutCandidates) {
+  for (const auto& key : aEvent.mShortcutCandidates) {
     IgnoreModifierState ignoreModifierState;
-    ignoreModifierState.mShift = key.mIgnoreShift;
+    ignoreModifierState.mShift =
+        key.mShiftState == ShortcutKeyCandidate::ShiftState::Ignorable;
 
     auto match = FindMatchInternal(aEvent, ignoreModifierState, key.mCharCode);
     if (match) {

@@ -56,18 +56,31 @@ class GlobalKeyListener : public nsIDOMEventListener {
   MOZ_CAN_RUN_SCRIPT
   void WalkHandlers(dom::KeyboardEvent* aKeyEvent);
 
-  
-  MOZ_CAN_RUN_SCRIPT
-  bool WalkHandlersInternal(dom::KeyboardEvent* aKeyEvent, bool aExecute,
-                            bool* aOutReservedForChrome = nullptr);
+  enum class Purpose {
+    ExecuteCommand,
+    LookForCommand,
+  };
+  struct MOZ_STACK_CLASS WalkHandlersResult {
+    
+    
+    bool mMeaningfulHandlerFound = false;
+    
+    
+    bool mReservedHandlerForChromeFound = false;
+    
+    bool mDisabledHandlerFound = false;
+  };
 
   
+  MOZ_CAN_RUN_SCRIPT
+  WalkHandlersResult WalkHandlersInternal(Purpose aPurpose,
+                                          dom::KeyboardEvent* aKeyEvent);
+
   
   MOZ_CAN_RUN_SCRIPT
-  bool WalkHandlersAndExecute(dom::KeyboardEvent* aKeyEvent, uint32_t aCharCode,
-                              const IgnoreModifierState& aIgnoreModifierState,
-                              bool aExecute,
-                              bool* aOutReservedForChrome = nullptr);
+  WalkHandlersResult WalkHandlersAndExecute(
+      Purpose aPurpose, dom::KeyboardEvent* aKeyEvent, uint32_t aCharCode,
+      const IgnoreModifierState& aIgnoreModifierState);
 
   
   MOZ_CAN_RUN_SCRIPT
@@ -80,8 +93,7 @@ class GlobalKeyListener : public nsIDOMEventListener {
   
   
   MOZ_CAN_RUN_SCRIPT
-  bool HasHandlerForEvent(dom::KeyboardEvent* aEvent,
-                          bool* aOutReservedForChrome = nullptr);
+  WalkHandlersResult HasHandlerForEvent(dom::KeyboardEvent* aEvent);
 
   
   

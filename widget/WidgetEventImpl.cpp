@@ -952,6 +952,13 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
     ShortcutKeyCandidateArray& aCandidates) const {
   MOZ_ASSERT(aCandidates.IsEmpty(), "aCandidates must be empty");
 
+  using ShiftState = ShortcutKeyCandidate::ShiftState;
+  using SkipIfEarlierHandlerDisabled =
+      ShortcutKeyCandidate::SkipIfEarlierHandlerDisabled;
+
+  
+  
+  
   
   
   
@@ -965,7 +972,8 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   uint32_t pseudoCharCode = PseudoCharCode();
   if (pseudoCharCode) {
-    ShortcutKeyCandidate key(pseudoCharCode, false);
+    ShortcutKeyCandidate key(pseudoCharCode, ShiftState::MatchExactly,
+                             SkipIfEarlierHandlerDisabled::No);
     aCandidates.AppendElement(key);
   }
 
@@ -976,7 +984,8 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
       if (!ch || ch == pseudoCharCode) {
         continue;
       }
-      ShortcutKeyCandidate key(ch, false);
+      ShortcutKeyCandidate key(ch, ShiftState::MatchExactly,
+                               SkipIfEarlierHandlerDisabled::No);
       aCandidates.AppendElement(key);
     }
     
@@ -987,7 +996,11 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
       for (uint32_t i = 0; i < len; ++i) {
         uint32_t ch = mAlternativeCharCodes[i].mShiftedCharCode;
         if (ch >= '0' && ch <= '9') {
-          ShortcutKeyCandidate key(ch, false);
+          ShortcutKeyCandidate key(
+              ch, ShiftState::MatchExactly,
+              
+              
+              SkipIfEarlierHandlerDisabled::Yes);
           aCandidates.AppendElement(key);
           break;
         }
@@ -1001,7 +1014,8 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
       }
 
       if (ch != pseudoCharCode) {
-        ShortcutKeyCandidate key(ch, false);
+        ShortcutKeyCandidate key(ch, ShiftState::MatchExactly,
+                                 SkipIfEarlierHandlerDisabled::No);
         aCandidates.AppendElement(key);
       }
 
@@ -1024,7 +1038,8 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
 
       
       
-      ShortcutKeyCandidate key(ch, true);
+      ShortcutKeyCandidate key(ch, ShiftState::Ignorable,
+                               SkipIfEarlierHandlerDisabled::No);
       aCandidates.AppendElement(key);
     }
   }
@@ -1036,7 +1051,8 @@ void WidgetKeyboardEvent::GetShortcutKeyCandidates(
   
   if (mKeyNameIndex == KEY_NAME_INDEX_USE_STRING &&
       mCodeNameIndex == CODE_NAME_INDEX_Space && pseudoCharCode != ' ') {
-    ShortcutKeyCandidate spaceKey(' ', false);
+    ShortcutKeyCandidate spaceKey(' ', ShiftState::MatchExactly,
+                                  SkipIfEarlierHandlerDisabled::No);
     aCandidates.AppendElement(spaceKey);
   }
 }

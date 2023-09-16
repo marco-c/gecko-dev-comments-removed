@@ -5,6 +5,7 @@
 
 
 #include "GlobalKeyListener.h"
+#include "ErrorList.h"
 #include "EventTarget.h"
 
 #include <utility>
@@ -104,7 +105,7 @@ void GlobalKeyListener::WalkHandlers(dom::KeyboardEvent* aKeyEvent) {
     return;
   }
 
-  WalkHandlersInternal(aKeyEvent, true);
+  WalkHandlersInternal(Purpose::ExecuteCommand, aKeyEvent);
 }
 
 void GlobalKeyListener::InstallKeyboardEventListenersTo(
@@ -202,8 +203,7 @@ void GlobalKeyListener::HandleEventOnCaptureInDefaultEventGroup(
     return;
   }
 
-  bool isReserved = false;
-  if (HasHandlerForEvent(aEvent, &isReserved) && isReserved) {
+  if (HasHandlerForEvent(aEvent).mReservedHandlerForChromeFound) {
     widgetKeyboardEvent->MarkAsReservedByChrome();
   }
 }
@@ -223,7 +223,7 @@ void GlobalKeyListener::HandleEventOnCaptureInSystemEventGroup(
     return;
   }
 
-  if (!HasHandlerForEvent(aEvent)) {
+  if (!HasHandlerForEvent(aEvent).mMeaningfulHandlerFound) {
     return;
   }
 
@@ -246,9 +246,8 @@ void GlobalKeyListener::HandleEventOnCaptureInSystemEventGroup(
 
 
 
-bool GlobalKeyListener::WalkHandlersInternal(dom::KeyboardEvent* aKeyEvent,
-                                             bool aExecute,
-                                             bool* aOutReservedForChrome) {
+GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersInternal(
+    Purpose aPurpose, dom::KeyboardEvent* aKeyEvent) {
   WidgetKeyboardEvent* nativeKeyboardEvent =
       aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
   MOZ_ASSERT(nativeKeyboardEvent);
@@ -257,49 +256,62 @@ bool GlobalKeyListener::WalkHandlersInternal(dom::KeyboardEvent* aKeyEvent,
   nativeKeyboardEvent->GetShortcutKeyCandidates(shortcutKeys);
 
   if (shortcutKeys.IsEmpty()) {
-    return WalkHandlersAndExecute(aKeyEvent, 0, IgnoreModifierState(), aExecute,
-                                  aOutReservedForChrome);
+    return WalkHandlersAndExecute(aPurpose, aKeyEvent, 0,
+                                  IgnoreModifierState());
   }
 
-  for (unsigned long i = 0; i < shortcutKeys.Length(); ++i) {
-    ShortcutKeyCandidate& key = shortcutKeys[i];
+  bool foundDisabledHandler = false;
+  for (const ShortcutKeyCandidate& key : shortcutKeys) {
+    const bool skipIfEarlierHandlerDisabled =
+        key.mSkipIfEarlierHandlerDisabled ==
+        ShortcutKeyCandidate::SkipIfEarlierHandlerDisabled::Yes;
+    if (foundDisabledHandler && skipIfEarlierHandlerDisabled) {
+      continue;
+    }
     IgnoreModifierState ignoreModifierState;
-    ignoreModifierState.mShift = key.mIgnoreShift;
-    if (WalkHandlersAndExecute(aKeyEvent, key.mCharCode, ignoreModifierState,
-                               aExecute, aOutReservedForChrome)) {
-      return true;
+    ignoreModifierState.mShift =
+        key.mShiftState == ShortcutKeyCandidate::ShiftState::Ignorable;
+    WalkHandlersResult result = WalkHandlersAndExecute(
+        aPurpose, aKeyEvent, key.mCharCode, ignoreModifierState);
+    if (result.mMeaningfulHandlerFound) {
+      return result;
+    }
+    
+    
+    
+    
+    
+    
+    if (!skipIfEarlierHandlerDisabled && !foundDisabledHandler) {
+      foundDisabledHandler = result.mDisabledHandlerFound;
     }
   }
-  return false;
+  return {};
 }
 
-bool GlobalKeyListener::WalkHandlersAndExecute(
-    dom::KeyboardEvent* aKeyEvent, uint32_t aCharCode,
-    const IgnoreModifierState& aIgnoreModifierState, bool aExecute,
-    bool* aOutReservedForChrome) {
-  if (aOutReservedForChrome) {
-    *aOutReservedForChrome = false;
-  }
-
+GlobalKeyListener::WalkHandlersResult GlobalKeyListener::WalkHandlersAndExecute(
+    Purpose aPurpose, dom::KeyboardEvent* aKeyEvent, uint32_t aCharCode,
+    const IgnoreModifierState& aIgnoreModifierState) {
   WidgetKeyboardEvent* widgetKeyboardEvent =
       aKeyEvent->WidgetEventPtr()->AsKeyboardEvent();
   if (NS_WARN_IF(!widgetKeyboardEvent)) {
-    return false;
+    return {};
   }
 
   nsAtom* eventType =
       ShortcutKeys::ConvertEventToDOMEventType(widgetKeyboardEvent);
 
   
+  bool foundDisabledHandler = false;
   for (KeyEventHandler* handler = mHandler; handler;
        handler = handler->GetNextHandler()) {
     bool stopped = aKeyEvent->IsDispatchStopped();
     if (stopped) {
       
-      return false;
+      return {};
     }
 
-    if (aExecute) {
+    if (aPurpose == Purpose::ExecuteCommand) {
       if (!handler->EventTypeEquals(eventType)) {
         continue;
       }
@@ -329,17 +341,18 @@ bool GlobalKeyListener::WalkHandlersAndExecute(
     
     
     
-    if (!CanHandle(handler, aExecute)) {
+    if (!CanHandle(handler, aPurpose == Purpose::ExecuteCommand)) {
+      foundDisabledHandler = true;
       continue;
     }
 
-    if (!aExecute) {
+    if (aPurpose == Purpose::LookForCommand) {
       if (handler->EventTypeEquals(eventType)) {
-        if (aOutReservedForChrome) {
-          *aOutReservedForChrome = IsReservedKey(widgetKeyboardEvent, handler);
-        }
-
-        return true;
+        WalkHandlersResult result;
+        result.mMeaningfulHandlerFound = true;
+        result.mReservedHandlerForChromeFound =
+            IsReservedKey(widgetKeyboardEvent, handler);
+        return result;
       }
 
       
@@ -348,19 +361,15 @@ bool GlobalKeyListener::WalkHandlersAndExecute(
       if (eventType == nsGkAtoms::keydown &&
           handler->EventTypeEquals(nsGkAtoms::keypress)) {
         if (IsReservedKey(widgetKeyboardEvent, handler)) {
-          if (aOutReservedForChrome) {
-            *aOutReservedForChrome = true;
-          }
-
-          return true;
+          WalkHandlersResult result;
+          result.mMeaningfulHandlerFound = true;
+          result.mReservedHandlerForChromeFound = true;
+          return result;
         }
       }
       
       continue;
     }
-
-    
-    MOZ_ASSERT(!aOutReservedForChrome);
 
     nsCOMPtr<dom::EventTarget> target = GetHandlerTarget(handler);
 
@@ -368,7 +377,12 @@ bool GlobalKeyListener::WalkHandlersAndExecute(
     
     nsresult rv = handler->ExecuteHandler(target, aKeyEvent);
     if (NS_SUCCEEDED(rv)) {
-      return true;
+      WalkHandlersResult result;
+      result.mMeaningfulHandlerFound = true;
+      result.mReservedHandlerForChromeFound =
+          IsReservedKey(widgetKeyboardEvent, handler);
+      result.mDisabledHandlerFound = (rv == NS_SUCCESS_DOM_NO_OPERATION);
+      return result;
     }
   }
 
@@ -380,12 +394,14 @@ bool GlobalKeyListener::WalkHandlersAndExecute(
   if (!aIgnoreModifierState.mMeta && widgetKeyboardEvent->IsMeta()) {
     IgnoreModifierState ignoreModifierState(aIgnoreModifierState);
     ignoreModifierState.mMeta = true;
-    return WalkHandlersAndExecute(aKeyEvent, aCharCode, ignoreModifierState,
-                                  aExecute);
+    return WalkHandlersAndExecute(aPurpose, aKeyEvent, aCharCode,
+                                  ignoreModifierState);
   }
 #endif
 
-  return false;
+  WalkHandlersResult result;
+  result.mDisabledHandlerFound = foundDisabledHandler;
+  return result;
 }
 
 bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
@@ -420,21 +436,21 @@ bool GlobalKeyListener::IsReservedKey(WidgetKeyboardEvent* aKeyEvent,
              .IsEmpty();
 }
 
-bool GlobalKeyListener::HasHandlerForEvent(dom::KeyboardEvent* aEvent,
-                                           bool* aOutReservedForChrome) {
+GlobalKeyListener::WalkHandlersResult GlobalKeyListener::HasHandlerForEvent(
+    dom::KeyboardEvent* aEvent) {
   WidgetKeyboardEvent* widgetKeyboardEvent =
       aEvent->WidgetEventPtr()->AsKeyboardEvent();
   if (NS_WARN_IF(!widgetKeyboardEvent) || !widgetKeyboardEvent->IsTrusted()) {
-    return false;
+    return {};
   }
 
   EnsureHandlers();
 
   if (IsDisabled()) {
-    return false;
+    return {};
   }
 
-  return WalkHandlersInternal(aEvent, false, aOutReservedForChrome);
+  return WalkHandlersInternal(Purpose::LookForCommand, aEvent);
 }
 
 
