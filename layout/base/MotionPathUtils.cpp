@@ -288,7 +288,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
     gfx::Float pathLength = path->ComputeLength();
     gfx::Float usedDistance =
         aDistance.ResolveToCSSPixels(CSSCoord(pathLength));
-    if (data.mIsClosedIntervals) {
+    if (data.mIsClosedLoop) {
       
       
       
@@ -379,7 +379,7 @@ Maybe<ResolvedMotionPathData> MotionPathUtils::ResolveMotionPath(
                                      angle, shift});
 }
 
-static inline bool IsClosedPath(const StyleSVGPathData& aPathData) {
+static inline bool IsClosedLoop(const StyleSVGPathData& aPathData) {
   return !aPathData._0.AsSpan().empty() &&
          aPathData._0.AsSpan().rbegin()->IsClosePath();
 }
@@ -449,7 +449,7 @@ static OffsetPathData GenerateOffsetPathData(const nsIFrame* aFrame) {
                "Should have a valid cached gfx::Path or an empty path string");
     
     
-    return OffsetPathData::Shape(gfxPath.forget(), {}, IsClosedPath(pathData));
+    return OffsetPathData::Shape(gfxPath.forget(), {}, IsClosedLoop(pathData));
   }
 
   RefPtr<gfx::PathBuilder> builder = MotionPathUtils::GetPathBuilder();
@@ -541,7 +541,7 @@ static OffsetPathData GenerateOffsetPathData(
     }
     
     
-    return OffsetPathData::Shape(path.forget(), {}, IsClosedPath(pathData));
+    return OffsetPathData::Shape(path.forget(), {}, IsClosedLoop(pathData));
   }
 
   

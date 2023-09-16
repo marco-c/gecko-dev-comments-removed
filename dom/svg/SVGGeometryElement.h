@@ -206,6 +206,20 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
 
 
+
+
+
+
+
+
+
+
+  virtual bool IsClosedLoop() const { return false; }
+
+  
+
+
+
   bool IsGeometryChangedViaCSS(ComputedStyle const& aNewStyle,
                                ComputedStyle const& aOldStyle) const;
 

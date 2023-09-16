@@ -48,7 +48,9 @@ struct OffsetPathData {
     
     
     nsPoint mCurrentPosition;
-    bool mIsClosedIntervals;
+    
+    
+    bool mIsClosedLoop;
   };
 
   struct RayData {

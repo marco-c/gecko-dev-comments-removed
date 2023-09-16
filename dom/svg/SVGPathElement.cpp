@@ -373,6 +373,37 @@ bool SVGPathElement::GetDistancesFromOriginToEndsOfVisibleSegments(
 }
 
 
+
+
+
+bool SVGPathElement::IsClosedLoop() const {
+  bool isClosed = false;
+  auto callback = [&](const ComputedStyle* s) {
+    const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
+    if (styleSVGReset->mD.IsPath()) {
+      isClosed = !styleSVGReset->mD.AsPath()._0.IsEmpty() &&
+                 styleSVGReset->mD.AsPath()._0.AsSpan().rbegin()->IsClosePath();
+    }
+  };
+
+  const bool success = SVGGeometryProperty::DoForComputedStyle(this, callback);
+  if (success) {
+    return isClosed;
+  }
+
+  const SVGPathData& data = mD.GetAnimValue();
+  
+  
+  uint32_t i = 0;
+  uint32_t segType = SVGPathSeg_Binding::PATHSEG_UNKNOWN;
+  while (i < data.Length()) {
+    segType = SVGPathSegUtils::DecodeType(data[i++]);
+    i += SVGPathSegUtils::ArgCountForType(segType);
+  }
+  return segType == SVGPathSeg_Binding::PATHSEG_CLOSEPATH;
+}
+
+
 bool SVGPathElement::IsDPropertyChangedViaCSS(const ComputedStyle& aNewStyle,
                                               const ComputedStyle& aOldStyle) {
   return aNewStyle.StyleSVGReset()->mD != aOldStyle.StyleSVGReset()->mD;
