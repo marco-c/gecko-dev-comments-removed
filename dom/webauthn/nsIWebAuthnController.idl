@@ -119,12 +119,7 @@ interface nsICtapRegisterResult : nsISupports {
     
     readonly attribute Array<octet> credentialId;
 
-    
-    
-
-    
-    
-    
+    readonly attribute Array<AString> transports;
 
     
     
