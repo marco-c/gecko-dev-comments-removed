@@ -13108,7 +13108,6 @@ void Document::SetScrollToRef(nsIURI* aDocumentURI) {
   }
 }
 
-
 void Document::ScrollToRef() {
   if (mScrolledToRefAlready) {
     RefPtr<PresShell> presShell = GetPresShell();
@@ -13118,52 +13117,53 @@ void Document::ScrollToRef() {
     return;
   }
 
-  
-  
   if (mScrollToRef.IsEmpty()) {
     return;
   }
 
   RefPtr<PresShell> presShell = GetPresShell();
-  if (!presShell) {
-    return;
-  }
-
-  
-  
-  NS_ConvertUTF8toUTF16 ref(mScrollToRef);
-  auto rv = presShell->GoToAnchor(ref, mChangeScrollPosWhenScrollingToRef);
-
-  
-  
-  if (NS_SUCCEEDED(rv)) {
-    mScrolledToRefAlready = true;
-    return;
-  }
-
-  
-  nsAutoCString fragmentBytes;
-  const bool unescaped =
-      NS_UnescapeURL(mScrollToRef.Data(), mScrollToRef.Length(),
-                      0, fragmentBytes);
-
-  if (!unescaped || fragmentBytes.IsEmpty()) {
+  if (presShell) {
+    nsresult rv = NS_ERROR_FAILURE;
     
-    return;
-  }
+    
+    NS_ConvertUTF8toUTF16 ref(mScrollToRef);
+    
+    if (!ref.IsEmpty()) {
+      
+      rv = presShell->GoToAnchor(ref, mChangeScrollPosWhenScrollingToRef);
+    } else {
+      rv = NS_ERROR_FAILURE;
+    }
 
-  
-  
-  nsAutoString decodedFragment;
-  rv = UTF_8_ENCODING->DecodeWithoutBOMHandling(fragmentBytes, decodedFragment);
-  NS_ENSURE_SUCCESS_VOID(rv);
+    if (NS_FAILED(rv)) {
+      nsAutoCString buff;
+      const bool unescaped =
+          NS_UnescapeURL(mScrollToRef.BeginReading(), mScrollToRef.Length(),
+                         0, buff);
 
-  
-  
-  rv = presShell->GoToAnchor(decodedFragment,
-                             mChangeScrollPosWhenScrollingToRef);
-  if (NS_SUCCEEDED(rv)) {
-    mScrolledToRefAlready = true;
+      
+      if (unescaped) {
+        NS_ConvertUTF8toUTF16 utf16Str(buff);
+        if (!utf16Str.IsEmpty()) {
+          rv = presShell->GoToAnchor(utf16Str,
+                                     mChangeScrollPosWhenScrollingToRef);
+        }
+      }
+
+      
+      
+      if (NS_FAILED(rv)) {
+        const Encoding* encoding = GetDocumentCharacterSet();
+        rv = encoding->DecodeWithoutBOMHandling(unescaped ? buff : mScrollToRef,
+                                                ref);
+        if (NS_SUCCEEDED(rv) && !ref.IsEmpty()) {
+          rv = presShell->GoToAnchor(ref, mChangeScrollPosWhenScrollingToRef);
+        }
+      }
+    }
+    if (NS_SUCCEEDED(rv)) {
+      mScrolledToRefAlready = true;
+    }
   }
 }
 

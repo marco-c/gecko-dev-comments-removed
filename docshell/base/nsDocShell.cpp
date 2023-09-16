@@ -10850,7 +10850,6 @@ nsresult nsDocShell::OpenRedirectedChannel(nsDocShellLoadState* aLoadState) {
   return NS_OK;
 }
 
-
 nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
                                     nsACString& aNewHash, uint32_t aLoadType) {
   if (!mCurrentURI) {
@@ -10880,70 +10879,87 @@ nsresult nsDocShell::ScrollToAnchor(bool aCurHasRef, bool aNewHasRef,
   
   
 
-  
-  
-  
-  bool scroll = aLoadType != LOAD_HISTORY && aLoadType != LOAD_RELOAD_NORMAL;
+  if (!aNewHash.IsEmpty()) {
+    
+    
+    bool scroll = aLoadType != LOAD_HISTORY && aLoadType != LOAD_RELOAD_NORMAL;
 
-  if (aNewHash.IsEmpty()) {
     
     
     
-    
-    presShell->GoToAnchor(u""_ns, false);
 
-    if (scroll) {
-      
-      
-      
-      SetCurScrollPosEx(0, 0);
+    
+    
+    
+    
+    
+    nsresult rv = NS_ERROR_FAILURE;
+    NS_ConvertUTF8toUTF16 uStr(aNewHash);
+    if (!uStr.IsEmpty()) {
+      rv = presShell->GoToAnchor(uStr, scroll, ScrollFlags::ScrollSmoothAuto);
     }
 
-    return NS_OK;
-  }
+    if (NS_FAILED(rv)) {
+      char* str = ToNewCString(aNewHash, mozilla::fallible);
+      if (!str) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      nsUnescape(str);
+      NS_ConvertUTF8toUTF16 utf16Str(str);
+      if (!utf16Str.IsEmpty()) {
+        rv = presShell->GoToAnchor(utf16Str, scroll,
+                                   ScrollFlags::ScrollSmoothAuto);
+      }
+      free(str);
+    }
 
-  
-  
-  NS_ConvertUTF8toUTF16 uStr(aNewHash);
-  auto rv = presShell->GoToAnchor(uStr, scroll, ScrollFlags::ScrollSmoothAuto);
-
-  
-  
-  if (NS_SUCCEEDED(rv)) {
-    return NS_OK;
-  }
-
-  
-  nsAutoCString fragmentBytes;
-  const bool unescaped = NS_UnescapeURL(aNewHash.Data(), aNewHash.Length(),
-                                         0, fragmentBytes);
-
-  if (!unescaped) {
     
-    return NS_OK;
-  }
-
-  if (fragmentBytes.IsEmpty()) {
     
+    if (NS_FAILED(rv)) {
+      
+      NS_ENSURE_TRUE(mContentViewer, NS_ERROR_FAILURE);
+      Document* doc = mContentViewer->GetDocument();
+      NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
+      nsAutoCString charset;
+      doc->GetDocumentCharacterSet()->Name(charset);
+
+      nsCOMPtr<nsITextToSubURI> textToSubURI =
+          do_GetService(NS_ITEXTTOSUBURI_CONTRACTID, &rv);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      nsAutoString uStr;
+
+      rv = textToSubURI->UnEscapeAndConvert(charset, aNewHash, uStr);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      
+      
+      
+      
+      
+      
+      
+      presShell->GoToAnchor(uStr, scroll && !uStr.IsEmpty(),
+                            ScrollFlags::ScrollSmoothAuto);
+    }
+  } else {
     
     presShell->GoToAnchor(u""_ns, false);
-    return NS_OK;
+
+    
+    
+    
+    
+    if (aLoadType == LOAD_HISTORY || aLoadType == LOAD_RELOAD_NORMAL) {
+      return NS_OK;
+    }
+    
+    
+    
+    SetCurScrollPosEx(0, 0);
   }
-
-  
-  
-  nsAutoString decodedFragment;
-  rv = UTF_8_ENCODING->DecodeWithoutBOMHandling(fragmentBytes, decodedFragment);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  
-  
-  presShell->GoToAnchor(decodedFragment, scroll, ScrollFlags::ScrollSmoothAuto);
 
   return NS_OK;
 }
