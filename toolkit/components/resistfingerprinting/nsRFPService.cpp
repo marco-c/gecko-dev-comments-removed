@@ -100,7 +100,8 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 
 
 const uint64_t kDefaultFingerintingProtections =
-    uint64_t(RFPTarget::CanvasRandomization);
+    uint64_t(RFPTarget::CanvasRandomization) |
+    uint64_t(RFPTarget::FontVisibilityLangPack);
 
 
 
@@ -168,6 +169,16 @@ nsresult nsRFPService::Init() {
   UpdateFPPOverrideList();
 
   return rv;
+}
+
+
+bool nsRFPService::IsRFPPrefEnabled(bool aIsPrivateMode) {
+  if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
+      (aIsPrivateMode &&
+       StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
+    return true;
+  }
+  return false;
 }
 
 
