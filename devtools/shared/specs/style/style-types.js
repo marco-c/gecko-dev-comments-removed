@@ -6,28 +6,7 @@
 const { RetVal, types } = require("resource://devtools/shared/protocol.js");
 
 
-const domstyleruleType = types.addActorType("domstylerule");
-
-
-
-const domstyleruleactoridType = types.getType("domstylerule#actorid");
-types.addType("appliedstyledomstyleruleOrActorid", {
-  write: (value, context, detail) => {
-    
-    
-    return domstyleruleType.write(value, context, detail);
-  },
-  read: (value, context, detail) => {
-    
-    
-    
-    if (typeof value === "string") {
-      return domstyleruleactoridType.read(value, context, detail);
-    }
-    
-    return domstyleruleType.read(value, context, detail);
-  },
-});
+types.addActorType("domstylerule");
 
 
 
@@ -35,13 +14,9 @@ types.addType("appliedstyledomstyleruleOrActorid", {
 
 
 types.addDictType("appliedstyle", {
-  
-  
-  rule: "appliedstyledomstyleruleOrActorid",
+  rule: "domstylerule",
   inherited: "nullable:domnode#actorid",
-  
-  
-  keyframes: "nullable:appliedstyledomstyleruleOrActorid",
+  keyframes: "nullable:domstylerule",
 });
 
 types.addDictType("matchedselector", {
@@ -53,13 +28,6 @@ types.addDictType("matchedselector", {
 
 types.addDictType("appliedStylesReturn", {
   entries: "array:appliedstyle",
-  
-  
-  
-  
-  
-  
-  rules: "nullable:array:domstylerule",
 });
 
 types.addDictType("modifiedStylesReturn", {
