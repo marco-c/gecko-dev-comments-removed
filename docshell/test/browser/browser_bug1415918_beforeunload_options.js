@@ -132,7 +132,7 @@ add_task(async function test() {
 
 
   url += "?1";
-  BrowserTestUtils.startLoadingURIString(browser, url);
+  BrowserTestUtils.loadURIString(browser, url);
   await BrowserTestUtils.browserLoaded(browser, false, url);
   await promptShownPromise;
 

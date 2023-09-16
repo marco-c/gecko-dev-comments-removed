@@ -70,7 +70,7 @@ async function test() {
     false,
     url
   );
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
   await loadPromise;
 
   

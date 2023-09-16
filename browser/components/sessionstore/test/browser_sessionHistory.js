@@ -18,7 +18,7 @@ add_task(async function test_load_start() {
 
   
   let historyReplacePromise = promiseOnHistoryReplaceEntry(browser);
-  BrowserTestUtils.startLoadingURIString(browser, PAGE);
+  BrowserTestUtils.loadURIString(browser, PAGE);
 
   
   await historyReplacePromise;
@@ -90,7 +90,7 @@ add_task(async function test_pageshow() {
   await promiseBrowserLoaded(browser);
 
   
-  BrowserTestUtils.startLoadingURIString(browser, URL2);
+  BrowserTestUtils.loadURIString(browser, URL2);
   await promiseBrowserLoaded(browser);
 
   
@@ -200,7 +200,7 @@ add_task(async function test_about_page_navigate() {
   
   is(entries[0].title, "about:blank", "title is correct");
 
-  BrowserTestUtils.startLoadingURIString(browser, "about:robots");
+  BrowserTestUtils.loadURIString(browser, "about:robots");
   await promiseBrowserLoaded(browser);
 
   

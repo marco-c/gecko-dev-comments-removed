@@ -36,7 +36,7 @@ async function openTestPage() {
     },
     true 
   );
-  BrowserTestUtils.startLoadingURIString(browser, testPage);
+  BrowserTestUtils.loadURIString(browser, testPage);
   await pageAndIframesLoaded;
 
   

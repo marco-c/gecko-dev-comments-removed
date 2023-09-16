@@ -17,7 +17,7 @@ add_task(async function thumbnails_capture() {
 
       
       let loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         "data:text/html,<body bgcolor=00ff00></body>"
       );
@@ -26,7 +26,7 @@ add_task(async function thumbnails_capture() {
 
       
       loaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         "data:text/html,<body bgcolor=0000ff></body>"
       );

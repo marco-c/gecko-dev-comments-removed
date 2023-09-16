@@ -26,7 +26,7 @@ add_task(async function test() {
     
 
     let browser = aWindow.gBrowser.selectedBrowser;
-    BrowserTestUtils.startLoadingURIString(browser, "about:blank");
+    BrowserTestUtils.loadURIString(browser, "about:blank");
     await Promise.all([
       BrowserTestUtils.browserLoaded(browser),
       promiseLocationChange(),

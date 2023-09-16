@@ -12,7 +12,7 @@ add_task(async function testMalware() {
   await BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
   const url = "http://www.itisatrap.org/firefox/its-an-attack.html";
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
   await BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
@@ -29,7 +29,7 @@ add_task(async function testUnwanted() {
 
   
   const url = "http://www.itisatrap.org/firefox/unwanted.html";
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
   await BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,
@@ -50,7 +50,7 @@ add_task(async function testPhishing() {
 
   
   const url = "http://www.itisatrap.org/firefox/its-a-trap.html";
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
   await BrowserTestUtils.browserLoaded(
     gBrowser.selectedBrowser,
     false,

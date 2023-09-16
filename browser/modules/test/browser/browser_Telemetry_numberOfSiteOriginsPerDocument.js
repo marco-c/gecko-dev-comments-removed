@@ -73,11 +73,11 @@ add_task(async function test_numberOfSiteOriginsMultipleNavigations() {
   ];
 
   
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:blank");
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:blank");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, testPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, testPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   wgpDestroyedPromises.push(

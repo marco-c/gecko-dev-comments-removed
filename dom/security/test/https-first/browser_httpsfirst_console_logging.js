@@ -37,12 +37,11 @@ add_task(async function () {
   });
   Services.console.registerListener(on_new_message);
   
-  let promiseLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  BrowserTestUtils.startLoadingURIString(
+  await BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
     "http://httpsfirst.com"
   );
-  await promiseLoaded;
+
   await BrowserTestUtils.waitForCondition(() => tests.length === 0);
 
   

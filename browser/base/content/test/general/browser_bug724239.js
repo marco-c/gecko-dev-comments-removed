@@ -10,7 +10,7 @@ add_task(async function test_blank() {
     { gBrowser, url: "about:blank" },
     async function (browser) {
       
-      BrowserTestUtils.startLoadingURIString(browser, "http://example.com");
+      BrowserTestUtils.loadURIString(browser, "http://example.com");
       await BrowserTestUtils.browserLoaded(browser);
       ok(!gBrowser.canGoBack, "about:blank wasn't added to session history");
     }
@@ -23,13 +23,13 @@ add_task(async function test_newtab() {
     async function (browser) {
       
       let stopped = BrowserTestUtils.browserStopped(browser, "about:newtab");
-      BrowserTestUtils.startLoadingURIString(browser, "about:newtab");
+      BrowserTestUtils.loadURIString(browser, "about:newtab");
       await stopped;
 
       
       stopped = BrowserTestUtils.browserStopped(browser, "http://example.com/");
       
-      BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
+      BrowserTestUtils.loadURIString(browser, "http://example.com/");
       await stopped;
 
       

@@ -41,7 +41,7 @@ function test() {
     }
   });
 
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     tab.linkedBrowser,
     
     "http://example.com/browser/browser/base/content/test/general/dummy_page.html"

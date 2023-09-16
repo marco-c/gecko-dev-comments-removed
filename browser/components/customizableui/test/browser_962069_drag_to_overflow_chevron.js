@@ -9,7 +9,7 @@ var originalWindowWidth;
 
 add_task(async function () {
   
-  BrowserTestUtils.startLoadingURIString(gBrowser, "http://mochi.test:8888/");
+  BrowserTestUtils.loadURIString(gBrowser, "http://mochi.test:8888/");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   originalWindowWidth = window.outerWidth;

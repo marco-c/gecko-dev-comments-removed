@@ -102,9 +102,9 @@ async function openLookUpTelemetryTestPage(browser, testInTop, page, domain) {
   let clickFinishPromise = promiseBannerClickingFinish(domain);
 
   if (testInTop) {
-    BrowserTestUtils.startLoadingURIString(browser, page);
+    BrowserTestUtils.loadURIString(browser, page);
   } else {
-    BrowserTestUtils.startLoadingURIString(browser, TEST_ORIGIN_C);
+    BrowserTestUtils.loadURIString(browser, TEST_ORIGIN_C);
     await BrowserTestUtils.browserLoaded(browser);
 
     await SpecialPowers.spawn(browser, [page], async testURL => {
@@ -569,7 +569,7 @@ add_task(async function test_reload_telemetry() {
   );
 
   
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, TEST_ORIGIN_B);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, TEST_ORIGIN_B);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
@@ -656,7 +656,7 @@ add_task(async function test_reload_telemetry_mode_reject() {
   });
 
   
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, TEST_ORIGIN_B);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, TEST_ORIGIN_B);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   

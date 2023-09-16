@@ -460,7 +460,7 @@ add_task(async function test_inner_window_scenarios() {
 
       
       
-      BrowserTestUtils.startLoadingURIString(browser, PAGE_URL);
+      BrowserTestUtils.loadURIString(browser, PAGE_URL);
       await BrowserTestUtils.browserLoaded(browser);
 
       
@@ -675,7 +675,7 @@ add_task(async function test_outer_window_scenarios() {
 
       
       
-      BrowserTestUtils.startLoadingURIString(browser, PAGE_URL);
+      BrowserTestUtils.loadURIString(browser, PAGE_URL);
       await BrowserTestUtils.browserLoaded(browser);
 
       

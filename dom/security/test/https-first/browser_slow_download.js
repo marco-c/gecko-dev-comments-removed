@@ -116,7 +116,7 @@ add_task(async function test_slow_download() {
 
   let downloadsPanelPromise = promisePanelOpened();
   let downloadsPromise = Downloads.getList(Downloads.PUBLIC);
-  BrowserTestUtils.startLoadingURIString(gBrowser, TEST_URI);
+  BrowserTestUtils.loadURIString(gBrowser, TEST_URI);
   
   await downloadsPanelPromise;
   let downloadList = await downloadsPromise;

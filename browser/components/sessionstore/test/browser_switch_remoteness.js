@@ -32,7 +32,7 @@ add_task(async function () {
 
   
   for (let i = 0; i < MAX_BACK + 2; i++) {
-    BrowserTestUtils.startLoadingURIString(browser, URL + i);
+    BrowserTestUtils.loadURIString(browser, URL + i);
     await promiseBrowserLoaded(browser);
     ok(browser.isRemoteBrowser, "browser is still remote");
   }
@@ -41,7 +41,7 @@ add_task(async function () {
   await countHistoryEntries(browser, MAX_BACK + 2);
 
   
-  BrowserTestUtils.startLoadingURIString(browser, "about:robots");
+  BrowserTestUtils.loadURIString(browser, "about:robots");
   await promiseBrowserLoaded(browser);
   ok(!browser.isRemoteBrowser, "browser is not remote anymore");
 

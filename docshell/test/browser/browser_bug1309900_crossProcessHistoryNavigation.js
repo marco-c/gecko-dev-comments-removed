@@ -20,14 +20,14 @@ add_task(async function runTests() {
   let browser = tab.linkedBrowser;
 
   let loaded = BrowserTestUtils.browserLoaded(browser);
-  BrowserTestUtils.startLoadingURIString(browser, "about:config");
+  BrowserTestUtils.loadURIString(browser, "about:config");
   let href = await loaded;
   is(href, "about:config", "Check about:config loaded");
 
   
   
   loaded = BrowserTestUtils.browserLoaded(browser);
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     browser,
     "data:text/html,<body%20onunload=''><iframe></iframe></body>"
   );

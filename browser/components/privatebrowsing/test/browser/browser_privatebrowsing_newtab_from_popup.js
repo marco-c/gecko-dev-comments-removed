@@ -37,7 +37,7 @@ add_task(async function test_private_popup_window_opens_private_tabs() {
   
   
   let privBrowser = privWin.gBrowser.selectedBrowser;
-  BrowserTestUtils.startLoadingURIString(privBrowser, WINDOW_BODY);
+  BrowserTestUtils.loadURIString(privBrowser, WINDOW_BODY);
   await BrowserTestUtils.browserLoaded(privBrowser);
 
   

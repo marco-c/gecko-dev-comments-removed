@@ -24,10 +24,7 @@ async function testUpdateNoPrompt(
   updateVersion = "2.0"
 ) {
   
-  BrowserTestUtils.startLoadingURIString(
-    gBrowser.selectedBrowser,
-    "about:mozilla"
-  );
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, "about:mozilla");
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   

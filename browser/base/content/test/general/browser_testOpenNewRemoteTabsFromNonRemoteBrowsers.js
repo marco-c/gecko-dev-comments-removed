@@ -25,7 +25,7 @@ function insertAndClickAnchor(browser) {
 
 
 function prepareNonRemoteBrowser(aWindow, browser) {
-  BrowserTestUtils.startLoadingURIString(browser, NON_REMOTE_PAGE);
+  BrowserTestUtils.loadURIString(browser, NON_REMOTE_PAGE);
   return BrowserTestUtils.browserLoaded(browser);
 }
 

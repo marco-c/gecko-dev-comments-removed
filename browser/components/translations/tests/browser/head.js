@@ -842,11 +842,11 @@ async function navigate(
 
   
   
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, BLANK_PAGE);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, BLANK_PAGE);
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
   const loadTargetPage = async () => {
-    BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+    BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
     await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
     if (downloadHandler) {

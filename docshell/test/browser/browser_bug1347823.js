@@ -23,7 +23,7 @@ add_task(async function testValidCache() {
       });
 
       
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         "data:text/html;charset=utf-8,pageA2"
       );
@@ -63,7 +63,7 @@ add_task(async function testExpiredCache() {
       });
 
       
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         "data:text/html;charset=utf-8,pageB2"
       );

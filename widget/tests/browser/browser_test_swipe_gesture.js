@@ -46,7 +46,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -174,7 +174,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -273,7 +273,7 @@ add_task(async () => {
       true 
     );
 
-    BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+    BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
     await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
     
@@ -372,7 +372,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -457,7 +457,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -556,7 +556,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -707,7 +707,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   
@@ -776,7 +776,7 @@ add_task(async () => {
     "chrome://mochitests/content/",
     "http://mochi.test:8888/"
   );
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     tab.linkedBrowser,
     URL_ROOT + "helper_swipe_gesture.html"
   );
@@ -860,7 +860,7 @@ add_task(async () => {
     "chrome://mochitests/content/",
     "http://mochi.test:8888/"
   );
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     tab.linkedBrowser,
     URL_ROOT + "helper_swipe_gesture.html"
   );
@@ -925,7 +925,7 @@ add_task(async () => {
     "chrome://mochitests/content/",
     "http://mochi.test:8888/"
   );
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     tab.linkedBrowser,
     URL_ROOT + "helper_swipe_gesture.html"
   );
@@ -987,14 +987,14 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:mozilla");
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:mozilla");
   await BrowserTestUtils.browserLoaded(
     tab.linkedBrowser,
     false ,
     "about:mozilla"
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:home");
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:home");
   await BrowserTestUtils.browserLoaded(
     tab.linkedBrowser,
     false ,
@@ -1078,7 +1078,7 @@ add_task(async () => {
   );
 
   
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     tab.linkedBrowser,
     URL_ROOT + "helper_swipe_gesture.html"
   );
@@ -1180,7 +1180,7 @@ add_task(async () => {
     true 
   );
 
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, secondPage);
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, secondPage);
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, secondPage);
 
   

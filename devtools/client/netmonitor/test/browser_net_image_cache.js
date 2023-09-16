@@ -33,10 +33,7 @@ add_task(async function () {
   
   
   
-  BrowserTestUtils.startLoadingURIString(
-    gBrowser.selectedBrowser,
-    IMAGE_CACHE_URL
-  );
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, IMAGE_CACHE_URL);
   await waitForEvents;
 
   const requests = document.querySelectorAll(".request-list-item");

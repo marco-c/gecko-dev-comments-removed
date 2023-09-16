@@ -14,7 +14,7 @@ add_task(async function () {
 
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.startLoadingURIString(browser, testURL);
+  BrowserTestUtils.loadURIString(browser, testURL);
   await BrowserTestUtils.browserLoaded(browser, false, testURL);
 
   

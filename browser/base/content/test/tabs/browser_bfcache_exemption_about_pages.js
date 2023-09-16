@@ -9,7 +9,7 @@ async function navigateTo(browser, urls, expectedPersist) {
   
   for (let url of urls) {
     let loaded = BrowserTestUtils.browserLoaded(browser, false, url);
-    BrowserTestUtils.startLoadingURIString(browser, url);
+    BrowserTestUtils.loadURIString(browser, url);
     await loaded;
   }
   

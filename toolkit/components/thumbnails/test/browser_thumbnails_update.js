@@ -91,7 +91,7 @@ add_task(async function thumbnails_captureAndStoreIfStale_error_response() {
       
       
       ensureThumbnailStale(URL);
-      BrowserTestUtils.startLoadingURIString(browser, URL);
+      BrowserTestUtils.loadURIString(browser, URL);
       await BrowserTestUtils.browserLoaded(browser);
 
       
@@ -127,7 +127,7 @@ add_task(async function thumbnails_captureAndStoreIfStale_non_error_response() {
       
       
       ensureThumbnailStale(URL);
-      BrowserTestUtils.startLoadingURIString(browser, URL);
+      BrowserTestUtils.loadURIString(browser, URL);
       await BrowserTestUtils.browserLoaded(browser);
 
       

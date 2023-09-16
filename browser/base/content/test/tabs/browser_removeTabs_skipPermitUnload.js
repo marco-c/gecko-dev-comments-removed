@@ -46,10 +46,7 @@ add_setup(async function () {
   
   win = await BrowserTestUtils.openNewBrowserWindow();
 
-  BrowserTestUtils.startLoadingURIString(
-    win.gBrowser.selectedBrowser,
-    TEST_URL
-  );
+  BrowserTestUtils.loadURIString(win.gBrowser.selectedBrowser, TEST_URL);
   await BrowserTestUtils.browserLoaded(
     win.gBrowser.selectedBrowser,
     false,

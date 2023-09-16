@@ -72,7 +72,7 @@ function getAuthPrompt() {
 
 async function loadAccessRestrictedURL(browser, url, username, password) {
   let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-  BrowserTestUtils.startLoadingURIString(browser, url);
+  BrowserTestUtils.loadURIString(browser, url);
 
   
   await PromptTestUtils.handleNextPrompt(
@@ -639,7 +639,7 @@ add_task(async function test_normal_autofilled_7() {
       
       let formFilled = listenForTestNotification("FormProcessed");
       await SimpleTest.promiseFocus(browser.ownerGlobal);
-      BrowserTestUtils.startLoadingURIString(browser, form1Url);
+      BrowserTestUtils.loadURIString(browser, form1Url);
       await formFilled;
 
       

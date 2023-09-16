@@ -15,7 +15,7 @@ function triggerSave(aWindow, aCallback) {
   
   let testURI =
     "http://mochi.test:8888/browser/browser/base/content/test/general/bug792517-2.html";
-  BrowserTestUtils.startLoadingURIString(testBrowser, testURI);
+  BrowserTestUtils.loadURIString(testBrowser, testURI);
   BrowserTestUtils.browserLoaded(testBrowser, false, testURI).then(() => {
     waitForFocus(function () {
       info("register to handle popupshown");

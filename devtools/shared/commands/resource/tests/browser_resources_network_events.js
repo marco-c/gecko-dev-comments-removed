@@ -263,7 +263,7 @@ async function assertNetworkResourcesOnPage(
 
   
   const onLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, url);
+  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
   await onLoaded;
 
   

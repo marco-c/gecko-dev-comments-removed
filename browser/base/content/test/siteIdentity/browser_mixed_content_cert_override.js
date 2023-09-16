@@ -52,7 +52,7 @@ add_task(async function () {
   checkIdentityPopup("security-broken.svg");
 
   
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
     "https://self-signed.example.com"
   );

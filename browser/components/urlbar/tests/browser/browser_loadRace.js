@@ -46,7 +46,7 @@ async function checkShortcutLoading(modifierKeys) {
   );
 
   
-  BrowserTestUtils.startLoadingURIString(tab.linkedBrowser, "about:license");
+  BrowserTestUtils.loadURIString(tab.linkedBrowser, "about:license");
   await BrowserTestUtils.browserLoaded(tab.linkedBrowser);
   Assert.equal(gBrowser.visibleTabs.length, 2, "Should have 2 tabs");
 

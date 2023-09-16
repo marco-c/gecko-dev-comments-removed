@@ -49,7 +49,7 @@ add_task(async function check_history_not_persisted() {
   }
 
   
-  BrowserTestUtils.startLoadingURIString(browser, "about:robots");
+  BrowserTestUtils.loadURIString(browser, "about:robots");
   await promiseBrowserLoaded(browser, false, "about:robots");
   if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await SpecialPowers.spawn(browser, [], function () {
@@ -123,7 +123,7 @@ add_task(async function check_history_default_persisted() {
   }
 
   
-  BrowserTestUtils.startLoadingURIString(browser, "about:robots");
+  BrowserTestUtils.loadURIString(browser, "about:robots");
   await promiseBrowserLoaded(browser, false, "about:robots");
   if (!SpecialPowers.Services.appinfo.sessionHistoryInParent) {
     await SpecialPowers.spawn(browser, [], function () {

@@ -63,7 +63,7 @@ var tests = [
     loadTabInWindow(window, function (tab) {
       
       
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         tab.linkedBrowser,
         "http://test1.example.com"
       );

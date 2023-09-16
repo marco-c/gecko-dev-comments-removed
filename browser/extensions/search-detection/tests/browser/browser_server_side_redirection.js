@@ -78,7 +78,7 @@ const testServerSideRedirect = async ({
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     
     let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, url);
+    BrowserTestUtils.loadURIString(browser, url);
     await loaded;
   });
 
@@ -225,7 +225,7 @@ add_task(async function test_two_extensions_reported() {
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     
     let loaded = BrowserTestUtils.browserLoaded(browser);
-    BrowserTestUtils.startLoadingURIString(browser, url);
+    BrowserTestUtils.loadURIString(browser, url);
     await loaded;
   });
 

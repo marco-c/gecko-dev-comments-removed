@@ -112,7 +112,7 @@ async function openPage() {
     { gBrowser, url: "about:blank" },
     async function (browser) {
       
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html`
       );
@@ -129,7 +129,7 @@ async function openPage() {
 
       is(true, hasInteractedWith, "Simulated successfully user interaction");
       
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         
         "http://self-signed.example.com/"
@@ -146,7 +146,7 @@ async function loadPageAndReload(testCase) {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (browser) {
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html`
       );
@@ -175,13 +175,13 @@ async function loadPagesAndUseBackButton() {
   await BrowserTestUtils.withNewTab(
     { gBrowser, url: "about:blank" },
     async function (browser) {
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html`
       );
       await BrowserTestUtils.browserLoaded(browser);
 
-      BrowserTestUtils.startLoadingURIString(
+      BrowserTestUtils.loadURIString(
         browser,
         `${TEST_PATH_HTTP}file_beforeunload_permit_http.html?getASessionHistoryEntry`
       );

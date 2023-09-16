@@ -53,7 +53,7 @@ testUrlsWithForm.forEach(testUrl => {
     );
 
     let formProcessedPromise = listenForTestNotification("FormProcessed");
-    BrowserTestUtils.startLoadingURIString(tab1.linkedBrowser, testUrl);
+    BrowserTestUtils.loadURIString(tab1.linkedBrowser, testUrl);
     await formProcessedPromise;
     gBrowser.removeTab(tab1);
   });
@@ -86,7 +86,7 @@ testUrls.forEach(testUrl => {
     listenForTestNotification("FormProcessed").then(() => {
       formFilled = true;
     });
-    BrowserTestUtils.startLoadingURIString(tab1.linkedBrowser, testUrl);
+    BrowserTestUtils.loadURIString(tab1.linkedBrowser, testUrl);
 
     await TestUtils.waitForCondition(() => {
       let windowGlobal = tab1.linkedBrowser.browsingContext.currentWindowGlobal;
@@ -187,7 +187,7 @@ testUrlsWithForm.forEach(testUrl => {
     
     
     let formProcessedPromise = listenForTestNotification("FormProcessed");
-    BrowserTestUtils.startLoadingURIString(tab1.linkedBrowser, testUrl);
+    BrowserTestUtils.loadURIString(tab1.linkedBrowser, testUrl);
     await Promise.all([formProcessedPromise, dialogObserved]);
 
     Assert.ok(

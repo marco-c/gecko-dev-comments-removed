@@ -17,7 +17,7 @@ add_task(async function () {
      false,
     URL
   );
-  BrowserTestUtils.startLoadingURIString(backgroundTab.linkedBrowser, URL);
+  BrowserTestUtils.loadURIString(backgroundTab.linkedBrowser, URL);
   await loadedPromise;
 
   

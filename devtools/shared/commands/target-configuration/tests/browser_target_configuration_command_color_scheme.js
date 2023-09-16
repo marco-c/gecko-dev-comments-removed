@@ -87,7 +87,7 @@ add_task(async function () {
     gBrowser.selectedBrowser,
      true
   );
-  BrowserTestUtils.startLoadingURIString(
+  BrowserTestUtils.loadURIString(
     gBrowser.selectedBrowser,
     URL_ROOT_ORG_SSL + TEST_DOCUMENT + "?crossOriginIsolated=true"
   );
