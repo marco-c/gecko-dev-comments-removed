@@ -61,6 +61,7 @@
 #include "jstypes.h"  
 
 #include "js/CharacterEncoding.h"  
+#include "js/ColumnNumber.h"       
 #include "js/TypeDecls.h"          
 
 namespace js {
@@ -456,7 +457,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
   
   uint32_t lineno = 1;
   
-  uint32_t column = 0;
+  JS::ColumnNumberZeroOrigin column;
 
   
   
@@ -490,7 +491,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
     this->TransitiveCompileOptions::dumpWith(print);
 #  define PrintFields_(Name) print(#Name, Name)
     PrintFields_(lineno);
-    PrintFields_(column);
+    print("column", column.zeroOriginValue());
     PrintFields_(scriptSourceOffset);
     PrintFields_(isRunOnce);
     PrintFields_(noScriptRval);
@@ -622,7 +623,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
-  CompileOptions& setColumn(uint32_t c) {
+  CompileOptions& setColumn(JS::ColumnNumberZeroOrigin c) {
     column = c;
     return *this;
   }
