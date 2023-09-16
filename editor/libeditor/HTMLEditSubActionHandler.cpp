@@ -1565,23 +1565,43 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     CreateElementResult unwrappedInsertBRElementResult =
         insertBRElementResult.unwrap();
     MOZ_ASSERT(unwrappedInsertBRElementResult.GetNewNode());
-    
-    
-    auto pointToPutCaret = [&]() -> EditorDOMPoint {
-      WSScanResult forwardScanResult =
-          WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-              editingHost, EditorRawDOMPoint::After(
-                               *unwrappedInsertBRElementResult.GetNewNode()));
-      if (forwardScanResult.InVisibleOrCollapsibleCharacters()) {
-        unwrappedInsertBRElementResult.IgnoreCaretPointSuggestion();
-        return forwardScanResult.Point<EditorDOMPoint>();
+    unwrappedInsertBRElementResult.IgnoreCaretPointSuggestion();
+
+    auto pointToPutCaret =
+        EditorDOMPoint::After(*unwrappedInsertBRElementResult.GetNewNode());
+    WSScanResult forwardScanFromAfterBRElementResult =
+        WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(editingHost,
+                                                         pointToPutCaret);
+    if (MOZ_UNLIKELY(forwardScanFromAfterBRElementResult.Failed())) {
+      NS_WARNING("WSRunScanner::ScanNextVisibleNodeOrBlockBoundary() failed");
+      return Err(NS_ERROR_FAILURE);
+    }
+
+    if (forwardScanFromAfterBRElementResult.ReachedBlockBoundary()) {
+      
+      
+      
+      Result<CreateElementResult, nsresult> invisibleAdditionalBRElementResult =
+          WhiteSpaceVisibilityKeeper::InsertBRElement(*this, pointToPutCaret,
+                                                      *editingHost);
+      if (MOZ_UNLIKELY(invisibleAdditionalBRElementResult.isErr())) {
+        NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
+        return invisibleAdditionalBRElementResult.unwrapErr();
       }
-      if (forwardScanResult.ReachedSpecialContent()) {
-        unwrappedInsertBRElementResult.IgnoreCaretPointSuggestion();
-        return forwardScanResult.PointAtContent<EditorDOMPoint>();
-      }
-      return unwrappedInsertBRElementResult.UnwrapCaretPoint();
-    }();
+      CreateElementResult unwrappedInvisibleAdditionalBRElement =
+          invisibleAdditionalBRElementResult.unwrap();
+      pointToPutCaret.Set(unwrappedInvisibleAdditionalBRElement.GetNewNode());
+      unwrappedInvisibleAdditionalBRElement.IgnoreCaretPointSuggestion();
+    } else if (forwardScanFromAfterBRElementResult
+                   .InVisibleOrCollapsibleCharacters()) {
+      pointToPutCaret =
+          forwardScanFromAfterBRElementResult.Point<EditorDOMPoint>();
+    } else if (forwardScanFromAfterBRElementResult.ReachedSpecialContent()) {
+      
+      
+      pointToPutCaret =
+          forwardScanFromAfterBRElementResult.PointAtContent<EditorDOMPoint>();
+    }
 
     nsresult rv = CollapseSelectionTo(pointToPutCaret);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
