@@ -694,18 +694,6 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
     AddStateBits(NS_FRAME_MAY_BE_TRANSFORMED);
   }
 
-  if (disp->IsContainLayout() && GetContainSizeAxes().IsBoth()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    AddStateBits(NS_FRAME_REFLOW_ROOT);
-  }
-
   if (nsLayoutUtils::FontSizeInflationEnabled(PresContext()) ||
       !GetParent()
 #ifdef DEBUG
@@ -2434,10 +2422,6 @@ static inline bool IsIntrinsicKeyword(const SizeOrMaxSize& aSize) {
 }
 
 bool nsIFrame::CanBeDynamicReflowRoot() const {
-  if (!StaticPrefs::layout_dynamic_reflow_roots_enabled()) {
-    return false;
-  }
-
   const auto& display = *StyleDisplay();
   if (IsFrameOfType(nsIFrame::eLineParticipant) || display.mDisplay.IsRuby() ||
       display.IsInnerTableStyle() ||
@@ -2446,6 +2430,29 @@ bool nsIFrame::CanBeDynamicReflowRoot() const {
     
     MOZ_ASSERT(!HasAnyStateBits(NS_FRAME_DYNAMIC_REFLOW_ROOT),
                "should not have dynamic reflow root bit");
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (display.IsContainLayout() && GetContainSizeAxes().IsBoth()) {
+    return true;
+  }
+
+  if (!StaticPrefs::layout_dynamic_reflow_roots_enabled()) {
     return false;
   }
 
