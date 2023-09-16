@@ -29,7 +29,12 @@ const { TabState } = ChromeUtils.importESModule(
 const { TabStateFlusher } = ChromeUtils.importESModule(
   "resource:///modules/sessionstore/TabStateFlusher.sys.mjs"
 );
+const { SessionStoreTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/SessionStoreTestUtils.sys.mjs"
+);
+
 const ss = SessionStore;
+SessionStoreTestUtils.init(this, window);
 
 
 
@@ -81,129 +86,11 @@ function provideWindow(aCallback, aURL, aFeatures) {
 
 
 function waitForBrowserState(aState, aSetStateCallback) {
-  if (typeof aState == "string") {
-    aState = JSON.parse(aState);
-  }
-  if (typeof aState != "object") {
-    throw new TypeError(
-      "Argument must be an object or a JSON representation of an object"
-    );
-  }
-  let windows = [window];
-  let tabsRestored = 0;
-  let expectedTabsRestored = 0;
-  let expectedWindows = aState.windows.length;
-  let windowsOpen = 1;
-  let listening = false;
-  let windowObserving = false;
-  let restoreHiddenTabs = Services.prefs.getBoolPref(
-    "browser.sessionstore.restore_hidden_tabs"
-  );
-  
-  
-  let restoreTabsLazily =
-    Services.prefs.getBoolPref("browser.sessionstore.restore_on_demand") &&
-    Services.prefs.getBoolPref("browser.sessionstore.restore_tabs_lazily");
-
-  aState.windows.forEach(function (winState) {
-    winState.tabs.forEach(function (tabState) {
-      if (!restoreTabsLazily && (restoreHiddenTabs || !tabState.hidden)) {
-        expectedTabsRestored++;
-      }
-    });
-  });
-
-  
-  
-  
-  if (!expectedTabsRestored) {
-    expectedTabsRestored = 1;
-  } else if (restoreTabsLazily) {
-    expectedTabsRestored = aState.windows.length;
-  }
-
-  function onSSTabRestored(aEvent) {
-    if (++tabsRestored == expectedTabsRestored) {
-      
-      windows.forEach(function (win) {
-        win.gBrowser.tabContainer.removeEventListener(
-          "SSTabRestored",
-          onSSTabRestored,
-          true
-        );
-      });
-      listening = false;
-      info("running " + aSetStateCallback.name);
-      executeSoon(aSetStateCallback);
-    }
-  }
-
-  
-  
-  function windowObserver(aSubject, aTopic, aData) {
-    if (aTopic == "domwindowopened") {
-      let newWindow = aSubject;
-      newWindow.addEventListener(
-        "load",
-        function () {
-          if (++windowsOpen == expectedWindows) {
-            Services.ww.unregisterNotification(windowObserver);
-            windowObserving = false;
-          }
-
-          
-          windows.push(newWindow);
-          
-          newWindow.gBrowser.tabContainer.addEventListener(
-            "SSTabRestored",
-            onSSTabRestored,
-            true
-          );
-        },
-        { once: true }
-      );
-    }
-  }
-
-  
-  if (expectedWindows > 1) {
-    registerCleanupFunction(function () {
-      if (windowObserving) {
-        Services.ww.unregisterNotification(windowObserver);
-      }
-    });
-    windowObserving = true;
-    Services.ww.registerNotification(windowObserver);
-  }
-
-  registerCleanupFunction(function () {
-    if (listening) {
-      windows.forEach(function (win) {
-        win.gBrowser.tabContainer.removeEventListener(
-          "SSTabRestored",
-          onSSTabRestored,
-          true
-        );
-      });
-    }
-  });
-  
-  listening = true;
-  gBrowser.tabContainer.addEventListener(
-    "SSTabRestored",
-    onSSTabRestored,
-    true
-  );
-
-  
-  gBrowser.selectedTab = gBrowser.tabs[0];
-
-  
-  ss.setBrowserState(JSON.stringify(aState));
+  return SessionStoreTestUtils.waitForBrowserState(aState, aSetStateCallback);
 }
 
 function promiseBrowserState(aState) {
-  return new Promise(resolve => waitForBrowserState(aState, resolve));
+  return SessionStoreTestUtils.promiseBrowserState(aState);
 }
 
 function promiseTabState(tab, state) {
@@ -751,11 +638,8 @@ function addNonCoopTask(aFile, aTest, aUrlRoot) {
   add_task(taskToBeAdded);
 }
 
-async function openAndCloseTab(window, url) {
-  let tab = BrowserTestUtils.addTab(window.gBrowser, url);
-  await promiseBrowserLoaded(tab.linkedBrowser, true, url);
-  await TabStateFlusher.flush(tab.linkedBrowser);
-  await promiseRemoveTabAndSessionState(tab);
+function openAndCloseTab(window, url) {
+  return SessionStoreTestUtils.openAndCloseTab(window, url);
 }
 
 
