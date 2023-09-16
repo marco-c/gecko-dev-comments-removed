@@ -1393,8 +1393,7 @@ ColorScheme LookAndFeel::ColorSchemeForStyle(
   }
   
   
-  if (aMode == ColorSchemeMode::Preferred ||
-      nsContentUtils::IsChromeDoc(&aDoc)) {
+  if (aMode == ColorSchemeMode::Preferred || aDoc.ChromeRulesEnabled()) {
     return aDoc.PreferredColorScheme();
   }
   
