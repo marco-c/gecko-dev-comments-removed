@@ -12,6 +12,9 @@
 
 TEST_F(APZCTreeManagerTester, WheelInterruptedByMouseDrag) {
   
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+
+  
   CreateSimpleScrollingLayer();
   ScopedLayerTreeRegistration registration(LayersId{0}, mcc);
   UpdateHitTestingTree();

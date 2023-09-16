@@ -353,6 +353,8 @@ TEST_F(APZCTransformNotificationTester,
 TEST_F(APZCTransformNotificationTester,
        PanFollowedByWheelTransformNotifications) {
   
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  
   SCOPED_GFX_PREF_INT("apz.scrollend-event.content.delay_ms", 100);
 
   SetupBasicTest();

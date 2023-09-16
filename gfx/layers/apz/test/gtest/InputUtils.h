@@ -83,6 +83,8 @@ APZEventResult Wheel(const RefPtr<InputReceiver>& aTarget,
   return aTarget->ReceiveInputEvent(input);
 }
 
+
+
 template <class InputReceiver>
 APZEventResult SmoothWheel(const RefPtr<InputReceiver>& aTarget,
                            const ScreenIntPoint& aPoint,
