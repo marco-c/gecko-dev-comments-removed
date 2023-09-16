@@ -9590,7 +9590,11 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
 
   
   
+  
   switch (aGeometryBox) {
+    case StyleGeometryBox::NoBox:
+    case StyleGeometryBox::BorderBox:
+    case StyleGeometryBox::MarginBox:
     case StyleGeometryBox::StrokeBox: {
       
       
@@ -9611,11 +9615,8 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
       r = nsLayoutUtils::ComputeSVGViewBox(viewportElement);
       break;
     }
-    case StyleGeometryBox::NoBox:
-    case StyleGeometryBox::BorderBox:
     case StyleGeometryBox::ContentBox:
     case StyleGeometryBox::PaddingBox:
-    case StyleGeometryBox::MarginBox:
     case StyleGeometryBox::FillBox: {
       gfxRect bbox =
           SVGUtils::GetBBox(aFrame, SVGUtils::eBBoxIncludeFillGeometry);
