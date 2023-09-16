@@ -42,6 +42,8 @@ class GeckoInstance(object):
         
         "apz.content_response_timeout": 60000,
         
+        "browser.newtabpage.activity-stream.showSponsoredTopSites": False,
+        
         "browser.region.network.url": "",
         
         "browser.topsites.contile.enabled": False,
