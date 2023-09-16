@@ -617,6 +617,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline {
     return false;
   }
 
+  nsSize EffectiveOffsetFor(const nsRect& aRect) const;
+
  protected:
   
   

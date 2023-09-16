@@ -962,9 +962,10 @@ nsCSSRendering::CreateBorderRendererForNonThemedOutline(
     return Nothing();
   }
 
-  const nscoord offset = ourOutline->mOutlineOffset.ToAppUnits();
   nsRect innerRect = aInnerRect;
-  innerRect.Inflate(offset);
+
+  const nsSize effectiveOffset = ourOutline->EffectiveOffsetFor(innerRect);
+  innerRect.Inflate(effectiveOffset);
 
   
   
@@ -975,7 +976,7 @@ nsCSSRendering::CreateBorderRendererForNonThemedOutline(
     return Nothing();
   }
 
-  nscoord width = ourOutline->GetOutlineWidth();
+  const nscoord width = ourOutline->GetOutlineWidth();
 
   StyleBorderStyle outlineStyle;
   
@@ -1009,10 +1010,13 @@ nsCSSRendering::CreateBorderRendererForNonThemedOutline(
     RectCornerRadii innerRadii;
     ComputePixelRadii(twipsRadii, oneDevPixel, &innerRadii);
 
-    Float devPixelOffset = aPresContext->AppUnitsToFloatDevPixels(offset);
-    const Float widths[4] = {
-        outlineWidths[0] + devPixelOffset, outlineWidths[1] + devPixelOffset,
-        outlineWidths[2] + devPixelOffset, outlineWidths[3] + devPixelOffset};
+    const auto devPxOffset = LayoutDeviceSize::FromAppUnits(
+        effectiveOffset, aPresContext->AppUnitsPerDevPixel());
+
+    const Float widths[4] = {outlineWidths[0] + devPxOffset.Height(),
+                             outlineWidths[1] + devPxOffset.Width(),
+                             outlineWidths[2] + devPxOffset.Height(),
+                             outlineWidths[3] + devPxOffset.Width()};
     nsCSSBorderRenderer::ComputeOuterRadii(innerRadii, widths, &outlineRadii);
   }
 
