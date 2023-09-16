@@ -301,7 +301,7 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     
     void ClearTarget() { mCurrentTarget = nullptr; }
     
-    void ClearLastTexture();
+    void ClearLastTexture(bool aFullClear = false);
 
     bool SupportsPattern(const Pattern& aPattern);
 
