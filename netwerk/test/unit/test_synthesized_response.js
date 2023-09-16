@@ -118,8 +118,8 @@ function handle_remote_response(request, buffer) {
 
 
 add_test(function () {
-  var chan = make_channel(URL + "/body", null, function (chan) {
-    chan.resetInterception(false);
+  var chan = make_channel(URL + "/body", null, function (channel) {
+    channel.resetInterception(false);
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
@@ -135,8 +135,8 @@ add_test(function () {
 
 
 add_test(function () {
-  var chan = make_channel(URL + "/body", null, function (chan) {
-    chan.resetInterception(false);
+  var chan = make_channel(URL + "/body", null, function (channel) {
+    channel.resetInterception(false);
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
 });
@@ -171,9 +171,9 @@ add_test(function () {
 
 
 add_test(function () {
-  var chan = make_channel(URL + "/body", null, function (chan) {
+  var chan = make_channel(URL + "/body", null, function (channel) {
     do_timeout(100, function () {
-      chan.resetInterception(false);
+      channel.resetInterception(false);
     });
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
@@ -212,12 +212,12 @@ add_test(function () {
 
 
 add_test(function () {
-  var chan = make_channel(URL + "/body", null, function (chan) {
-    chan.resetInterception(false);
+  var chan = make_channel(URL + "/body", null, function (channel) {
+    channel.resetInterception(false);
     do_timeout(0, function () {
       var gotexception = false;
       try {
-        chan.cancelInterception();
+        channel.cancelInterception();
       } catch (x) {
         gotexception = true;
       }
@@ -277,7 +277,7 @@ add_test(function () {
 
 
 add_test(function () {
-  var chan = make_channel(URL + "/body", null, function (chan) {
+  var chan = make_channel(URL + "/body", null, function (channel) {
     throw new Error("boom");
   });
   chan.asyncOpen(new ChannelListener(handle_remote_response, null));
