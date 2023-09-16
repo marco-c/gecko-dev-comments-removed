@@ -30,7 +30,8 @@ let gFluentStrings = new Localization([
 
 
 
-function assertExtensionsProgressState(wizard, state, description) {
+
+async function assertExtensionsProgressState(wizard, state, description) {
   let shadow = wizard.openOrClosedShadowRoot;
 
   
@@ -47,31 +48,52 @@ function assertExtensionsProgressState(wizard, state, description) {
   let progressIcon = progressGroup.querySelector(".progress-icon");
   let messageText = progressGroup.querySelector("span.message-text");
   let supportLink = progressGroup.querySelector(".support-text");
-  let extensionsSuccessLink = progressGroup.querySelector("a.message-text");
+  let extensionsSuccessLink = progressGroup.querySelector(
+    "#extensions-success-link"
+  );
 
   if (state == MigrationWizardConstants.PROGRESS_VALUE.SUCCESS) {
     Assert.stringMatches(progressIcon.getAttribute("state"), "success");
     Assert.stringMatches(messageText.textContent, "");
-
-    Assert.stringMatches(extensionsSuccessLink.href, "about:addons");
-    Assert.stringMatches(
-      extensionsSuccessLink.textContent,
-      description.message
-    );
     Assert.stringMatches(supportLink.textContent, "");
+    await assertSuccessLink(extensionsSuccessLink, description.message);
   } else if (state == MigrationWizardConstants.PROGRESS_VALUE.WARNING) {
     Assert.stringMatches(progressIcon.getAttribute("state"), "warning");
     Assert.stringMatches(messageText.textContent, description.message);
     Assert.stringMatches(supportLink.textContent, description.linkText);
     Assert.stringMatches(supportLink.href, description.linkURL);
+    await assertSuccessLink(extensionsSuccessLink, "");
   } else if (state == MigrationWizardConstants.PROGRESS_VALUE.INFO) {
     Assert.stringMatches(progressIcon.getAttribute("state"), "info");
-    Assert.stringMatches(extensionsSuccessLink.href, description.linkURL);
-    Assert.stringMatches(
-      extensionsSuccessLink.textContent,
-      description.message
-    );
     Assert.stringMatches(supportLink.textContent, "");
+    await assertSuccessLink(extensionsSuccessLink, description.message);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function assertSuccessLink(link, message) {
+  Assert.stringMatches(link.textContent, message);
+  if (message) {
+    let aboutAddonsOpened = BrowserTestUtils.waitForNewTab(
+      gBrowser,
+      "about:addons"
+    );
+    EventUtils.synthesizeMouseAtCenter(link, {}, link.ownerGlobal);
+    let tab = await aboutAddonsOpened;
+    BrowserTestUtils.removeTab(tab);
   }
 }
 
@@ -101,7 +123,7 @@ add_task(async function test_extension_migration_no_matched_extensions() {
     ]);
     await migration;
     await wizardDone;
-    assertExtensionsProgressState(
+    await assertExtensionsProgressState(
       wizard,
       MigrationWizardConstants.PROGRESS_VALUE.WARNING,
       {
@@ -149,7 +171,7 @@ add_task(
       ]);
       await migration;
       await wizardDone;
-      assertExtensionsProgressState(
+      await assertExtensionsProgressState(
         wizard,
         MigrationWizardConstants.PROGRESS_VALUE.INFO,
         {
@@ -160,7 +182,6 @@ add_task(
               quantity: TOTAL_EXTENSIONS,
             }
           ),
-          linkURL: "about:addons",
           linkText: await gFluentStrings.formatValue(
             "migration-wizard-progress-extensions-support-link"
           ),
@@ -199,7 +220,7 @@ add_task(async function test_extension_migration_fully_matched_extensions() {
     ]);
     await migration;
     await wizardDone;
-    assertExtensionsProgressState(
+    await assertExtensionsProgressState(
       wizard,
       MigrationWizardConstants.PROGRESS_VALUE.SUCCESS,
       {
