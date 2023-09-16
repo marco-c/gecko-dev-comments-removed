@@ -215,24 +215,10 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
                                   aAccData.Type(), aAccData.GenericTypes(),
                                   aAccData.RoleMapEntryIndex());
   mAccessibles.PutEntry(aAccData.ID())->mProxy = newProxy;
-  ProxyCreated(newProxy);
 
   if (RefPtr<AccAttributes> fields = aAccData.CacheFields()) {
     newProxy->ApplyCache(CacheUpdateType::Initial, fields);
   }
-
-  mPendingOOPChildDocs.RemoveIf([&](dom::BrowserBridgeParent* bridge) {
-    MOZ_ASSERT(bridge->GetBrowserParent(),
-               "Pending BrowserBridgeParent should be alive");
-    if (bridge->GetEmbedderAccessibleId() != aAccData.ID()) {
-      return false;
-    }
-    MOZ_ASSERT(bridge->GetEmbedderAccessibleDoc() == this);
-    if (DocAccessibleParent* childDoc = bridge->GetDocAccessibleParent()) {
-      AddChildDoc(childDoc, aAccData.ID(), false);
-    }
-    return true;
-  });
 
   return newProxy;
 }
@@ -242,8 +228,28 @@ void DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
                                       RemoteAccessible* aChild) {
   aParent->AddChildAt(aIndex, aChild);
   aChild->SetParent(aParent);
+  
+  if (!aChild->GetWrapper()) {
+    ProxyCreated(aChild);
+  }
   if (aChild->IsTableCell()) {
     CachedTableAccessible::Invalidate(aChild);
+  }
+  if (aChild->IsOuterDoc()) {
+    
+    
+    mPendingOOPChildDocs.RemoveIf([&](dom::BrowserBridgeParent* bridge) {
+      MOZ_ASSERT(bridge->GetBrowserParent(),
+                 "Pending BrowserBridgeParent should be alive");
+      if (bridge->GetEmbedderAccessibleId() != aChild->ID()) {
+        return false;
+      }
+      MOZ_ASSERT(bridge->GetEmbedderAccessibleDoc() == this);
+      if (DocAccessibleParent* childDoc = bridge->GetDocAccessibleParent()) {
+        AddChildDoc(childDoc, aChild->ID(), false);
+      }
+      return true;
+    });
   }
 }
 
