@@ -8376,12 +8376,6 @@ var gPrivateBrowsingUI = {
       "privatebrowsingmode",
       PrivateBrowsingUtils.permanentPrivateBrowsing ? "permanent" : "temporary"
     );
-    
-    
-    docElement.toggleAttribute(
-      "privatebrowsingnewindicator",
-      NimbusFeatures.majorRelease2022.getVariable("feltPrivacyPBMNewIndicator")
-    );
 
     gBrowser.updateTitlebar();
 

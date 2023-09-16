@@ -756,12 +756,6 @@ pref("browser.shopping.experience2023.ads.userEnabled", true);
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
 
-pref("browser.privatebrowsing.enable-new-indicator", true);
-
-
-pref("browser.privatebrowsing.enable-new-logo", true);
-
-
 pref("browser.dataFeatureRecommendations.enabled", false);
 
 
