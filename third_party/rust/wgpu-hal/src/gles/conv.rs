@@ -279,18 +279,8 @@ pub fn map_primitive_topology(topology: wgt::PrimitiveTopology) -> u32 {
 }
 
 pub(super) fn map_primitive_state(state: &wgt::PrimitiveState) -> super::PrimitiveState {
-    match state.polygon_mode {
-        wgt::PolygonMode::Fill => {}
-        wgt::PolygonMode::Line => panic!(
-            "{:?} is not enabled for this backend",
-            wgt::Features::POLYGON_MODE_LINE
-        ),
-        wgt::PolygonMode::Point => panic!(
-            "{:?} is not enabled for this backend",
-            wgt::Features::POLYGON_MODE_POINT
-        ),
-    }
-
+    
+    
     super::PrimitiveState {
         
         

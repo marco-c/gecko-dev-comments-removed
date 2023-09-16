@@ -219,9 +219,6 @@ struct ActiveSubmission<A: hal::Api> {
     mapped: Vec<id::Valid<id::BufferId>>,
 
     encoders: Vec<EncoderInFlight<A>>,
-
-    
-    
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
 
@@ -307,12 +304,6 @@ pub(super) struct LifetimeTracker<A: hal::Api> {
     
     
     ready_to_map: Vec<id::Valid<id::BufferId>>,
-
-    
-    
-    
-    
-    work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
 
 impl<A: hal::Api> LifetimeTracker<A> {
@@ -325,7 +316,6 @@ impl<A: hal::Api> LifetimeTracker<A> {
             active: Vec::new(),
             free_resources: NonReferencedResources::new(),
             ready_to_map: Vec::new(),
-            work_done_closures: SmallVec::new(),
         }
     }
 
@@ -415,7 +405,7 @@ impl<A: hal::Api> LifetimeTracker<A> {
             .position(|a| a.index > last_done)
             .unwrap_or(self.active.len());
 
-        let mut work_done_closures: SmallVec<_> = self.work_done_closures.drain(..).collect();
+        let mut work_done_closures = SmallVec::new();
         for a in self.active.drain(..done_count) {
             log::trace!("Active submission {} is done", a.index);
             self.free_resources.extend(a.last_resources);
@@ -455,16 +445,18 @@ impl<A: hal::Api> LifetimeTracker<A> {
         }
     }
 
-    pub fn add_work_done_closure(&mut self, closure: SubmittedWorkDoneClosure) {
+    pub fn add_work_done_closure(
+        &mut self,
+        closure: SubmittedWorkDoneClosure,
+    ) -> Option<SubmittedWorkDoneClosure> {
         match self.active.last_mut() {
             Some(active) => {
                 active.work_done_closures.push(closure);
+                None
             }
             
             
-            None => {
-                self.work_done_closures.push(closure);
-            }
+            None => Some(closure),
         }
     }
 }
