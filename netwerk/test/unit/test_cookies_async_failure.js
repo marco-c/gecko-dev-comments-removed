@@ -47,7 +47,7 @@ add_task(async () => {
 
   
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   let now = Date.now() * 1000;
@@ -74,13 +74,13 @@ add_task(async () => {
   Services.prefs.clearUserPref("network.cookie.sameSite.laxByDefault");
 });
 
-function do_get_backup_file() {
+function do_get_backup_file(profile) {
   let file = profile.clone();
   file.append("cookies.sqlite.bak");
   return file;
 }
 
-function do_get_rebuild_backup_file() {
+function do_get_rebuild_backup_file(profile) {
   let file = profile.clone();
   file.append("cookies.sqlite.bak-rebuild");
   return file;
@@ -191,8 +191,8 @@ async function run_test_1() {
 
   
   
-  Assert.ok(do_get_backup_file().exists());
-  let backupdb = Services.storage.openDatabase(do_get_backup_file());
+  Assert.ok(do_get_backup_file(profile).exists());
+  let backupdb = Services.storage.openDatabase(do_get_backup_file(profile));
   Assert.equal(do_count_cookies_in_db(backupdb, "foo.com"), 1);
   backupdb.close();
 
@@ -210,9 +210,9 @@ async function run_test_1() {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file().remove(false);
+  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 }
 
 async function run_test_2() {
@@ -228,7 +228,7 @@ async function run_test_2() {
     });
 
     for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
+      let uri = NetUtil.newURI("http://" + i + ".com/");
       Services.cookies.setCookieStringFromHttp(
         uri,
         "oh=hai; max-age=1000",
@@ -248,7 +248,7 @@ async function run_test_2() {
 
   
   
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
@@ -258,8 +258,8 @@ async function run_test_2() {
   await promise_close_profile();
 
   
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
   let db = Services.storage.openDatabase(do_get_cookie_file(profile));
   db.close();
 
@@ -272,9 +272,9 @@ async function run_test_2() {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file().remove(false);
+  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 }
 
 async function run_test_3() {
@@ -324,7 +324,7 @@ async function run_test_3() {
 
   
   
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   Assert.equal(Services.cookies.countCookiesFromHost("hither.com"), 0);
@@ -339,16 +339,16 @@ async function run_test_3() {
   db.close();
 
   
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
 
   
-  do_get_backup_file().moveTo(null, "cookies.sqlite");
+  do_get_backup_file(profile).moveTo(null, "cookies.sqlite");
   do_load_profile();
 
   
   
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   Assert.equal(do_count_cookies(), 0);
@@ -361,14 +361,14 @@ async function run_test_3() {
   db.close();
 
   
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file().remove(false);
+  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 }
 
 async function run_test_4() {
@@ -382,7 +382,7 @@ async function run_test_4() {
       contentPolicyType: Ci.nsIContentPolicy.TYPE_DOCUMENT,
     });
     for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
+      let uri = NetUtil.newURI("http://" + i + ".com/");
       Services.cookies.setCookieStringFromHttp(
         uri,
         "oh=hai; max-age=1000",
@@ -402,7 +402,7 @@ async function run_test_4() {
 
   
   
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
@@ -422,8 +422,8 @@ async function run_test_4() {
   await promise_close_profile();
 
   
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
 
   
   do_load_profile();
@@ -435,9 +435,9 @@ async function run_test_4() {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file().remove(false);
+  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 }
 
 async function run_test_5() {
@@ -456,7 +456,7 @@ async function run_test_5() {
       channel
     );
     for (let i = 0; i < 3000; ++i) {
-      uri = NetUtil.newURI("http://" + i + ".com/");
+      let uri = NetUtil.newURI("http://" + i + ".com/");
       Services.cookies.setCookieStringFromHttp(
         uri,
         "oh=hai; max-age=1000",
@@ -476,15 +476,15 @@ async function run_test_5() {
 
   
   
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 
   
   Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 0);
   Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
   Assert.equal(do_count_cookies(), 0);
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
-  Assert.ok(!do_get_rebuild_backup_file().exists());
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
+  Assert.ok(!do_get_rebuild_backup_file(profile).exists());
 
   
   
@@ -495,8 +495,8 @@ async function run_test_5() {
   db.close();
 
   
-  Assert.ok(do_get_backup_file().exists());
-  Assert.equal(do_get_backup_file().fileSize, size);
+  Assert.ok(do_get_backup_file(profile).exists());
+  Assert.equal(do_get_backup_file(profile).fileSize, size);
 
   Assert.equal(Services.cookies.countCookiesFromHost("bar.com"), 0);
   Assert.equal(Services.cookies.countCookiesFromHost("0.com"), 0);
@@ -508,7 +508,7 @@ async function run_test_5() {
 
   
   do_get_cookie_file(profile).remove(false);
-  do_get_backup_file().remove(false);
+  do_get_backup_file(profile).remove(false);
   Assert.ok(!do_get_cookie_file(profile).exists());
-  Assert.ok(!do_get_backup_file().exists());
+  Assert.ok(!do_get_backup_file(profile).exists());
 }

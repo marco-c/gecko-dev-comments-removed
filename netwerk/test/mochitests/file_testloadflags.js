@@ -16,10 +16,10 @@ var gHeaders = 0;
 var gLoads = 0;
 
 
-function setupTest(iframeUri, domain, cookies, loads, headers) {
+function setupTest(uri, domain, cookies, loads, headers) {
   info(
     "setupTest uri: " +
-      iframeUri +
+      uri +
       " domain: " +
       domain +
       " cookies: " +
@@ -71,7 +71,7 @@ function setupTest(iframeUri, domain, cookies, loads, headers) {
   Promise.all([prefSet, scriptReady]).then(() => {
     
     
-    gPopup = window.open(iframeUri, "hai", "width=100,height=100");
+    gPopup = window.open(uri, "hai", "width=100,height=100");
   });
 }
 
