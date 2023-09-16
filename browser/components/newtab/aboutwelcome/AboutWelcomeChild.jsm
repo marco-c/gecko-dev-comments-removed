@@ -436,13 +436,22 @@ const OPTIN_DEFAULT = {
 let optInDynamicContent;
 
 class AboutWelcomeShoppingChild extends AboutWelcomeChild {
-  exportFunctions() {
-    let window = this.contentWindow;
+  handleEvent(event) {
+    
+    const { productUrl, showOnboarding } = event.detail;
+    const ready = showOnboarding && productUrl;
+    this.document.getElementById("multi-stage-message-root").hidden = !ready;
+    if (!ready) {
+      return;
+    }
 
-    Cu.exportFunction(this.AWSetProductURL.bind(this), window, {
-      defineAs: "AWSetProductURL",
-    });
-    super.exportFunctions();
+    
+    this.AWSetProductURL(new URL(productUrl).hostname);
+    this.document.dispatchEvent(
+      new this.contentWindow.CustomEvent("RenderWelcome", {
+        bubbles: true,
+      })
+    );
   }
 
   
