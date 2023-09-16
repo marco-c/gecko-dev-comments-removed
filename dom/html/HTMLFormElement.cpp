@@ -1227,7 +1227,7 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
           (*firstSubmitSlot == mDefaultSubmitElement ||
            nsContentUtils::CompareTreePosition(aChild, mDefaultSubmitElement,
                                                this) < 0)) {
-        mDefaultSubmitElement = aChild;
+        SetDefaultSubmitElement(aChild);
       }
       *firstSubmitSlot = aChild;
     }
@@ -1269,6 +1269,19 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
 nsresult HTMLFormElement::AddElementToTable(nsGenericHTMLFormElement* aChild,
                                             const nsAString& aName) {
   return mControls->AddElementToTable(aChild, aName);
+}
+
+void HTMLFormElement::SetDefaultSubmitElement(
+    nsGenericHTMLFormElement* aElement) {
+  if (mDefaultSubmitElement) {
+    
+    
+    mDefaultSubmitElement->RemoveStates(ElementState::DEFAULT);
+  }
+  mDefaultSubmitElement = aElement;
+  if (mDefaultSubmitElement) {
+    mDefaultSubmitElement->AddStates(ElementState::DEFAULT);
+  }
 }
 
 nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
@@ -1320,7 +1333,7 @@ nsresult HTMLFormElement::RemoveElement(nsGenericHTMLFormElement* aChild,
   if (aChild == mDefaultSubmitElement) {
     
     
-    mDefaultSubmitElement = nullptr;
+    SetDefaultSubmitElement(nullptr);
     nsContentUtils::AddScriptRunner(new RemoveElementRunnable(this));
 
     
@@ -1348,29 +1361,26 @@ void HTMLFormElement::HandleDefaultSubmitRemoval() {
     return;
   }
 
+  nsGenericHTMLFormElement* newDefaultSubmit;
   if (!mFirstSubmitNotInElements) {
-    mDefaultSubmitElement = mFirstSubmitInElements;
+    newDefaultSubmit = mFirstSubmitInElements;
   } else if (!mFirstSubmitInElements) {
-    mDefaultSubmitElement = mFirstSubmitNotInElements;
+    newDefaultSubmit = mFirstSubmitNotInElements;
   } else {
     NS_ASSERTION(mFirstSubmitInElements != mFirstSubmitNotInElements,
                  "How did that happen?");
     
-    mDefaultSubmitElement =
+    newDefaultSubmit =
         nsContentUtils::CompareTreePosition(mFirstSubmitInElements,
                                             mFirstSubmitNotInElements, this) < 0
             ? mFirstSubmitInElements
             : mFirstSubmitNotInElements;
   }
+  SetDefaultSubmitElement(newDefaultSubmit);
 
   MOZ_ASSERT(mDefaultSubmitElement == mFirstSubmitInElements ||
                  mDefaultSubmitElement == mFirstSubmitNotInElements,
              "What happened here?");
-
-  
-  if (mDefaultSubmitElement) {
-    mDefaultSubmitElement->UpdateState(true);
-  }
 }
 
 nsresult HTMLFormElement::RemoveElementFromTableInternal(
@@ -1677,40 +1687,6 @@ nsGenericHTMLFormElement* HTMLFormElement::GetDefaultSubmitElement() const {
              "What happened here?");
 
   return mDefaultSubmitElement;
-}
-
-bool HTMLFormElement::IsDefaultSubmitElement(
-    const nsGenericHTMLFormElement* aElement) const {
-  MOZ_ASSERT(aElement, "Unexpected call");
-
-  if (aElement == mDefaultSubmitElement) {
-    
-    return true;
-  }
-
-  if (mDefaultSubmitElement || (aElement != mFirstSubmitInElements &&
-                                aElement != mFirstSubmitNotInElements)) {
-    
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  if (!mFirstSubmitInElements || !mFirstSubmitNotInElements) {
-    
-    return true;
-  }
-
-  
-  nsGenericHTMLFormElement* defaultSubmit =
-      nsContentUtils::CompareTreePosition(mFirstSubmitInElements,
-                                          mFirstSubmitNotInElements, this) < 0
-          ? mFirstSubmitInElements
-          : mFirstSubmitNotInElements;
-  return aElement == defaultSubmit;
 }
 
 bool HTMLFormElement::ImplicitSubmissionIsDisabled() const {

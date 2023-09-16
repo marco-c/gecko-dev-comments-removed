@@ -33,10 +33,7 @@ namespace mozilla::dom {
 
 HTMLOptionElement::HTMLOptionElement(
     already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
-    : nsGenericHTMLElement(std::move(aNodeInfo)),
-      mSelectedChanged(false),
-      mIsSelected(false),
-      mIsInSetDefaultSelected(false) {
+    : nsGenericHTMLElement(std::move(aNodeInfo)) {
   
   AddStatesSilently(ElementState::ENABLED);
 }
@@ -52,13 +49,7 @@ mozilla::dom::HTMLFormElement* HTMLOptionElement::GetForm() {
 
 void HTMLOptionElement::SetSelectedInternal(bool aValue, bool aNotify) {
   mSelectedChanged = true;
-  mIsSelected = aValue;
-
-  
-  
-  if (!mIsInSetDefaultSelected) {
-    UpdateState(aNotify);
-  }
+  SetStates(ElementState::CHECKED, aValue, aNotify);
 }
 
 void HTMLOptionElement::OptGroupDisabledChanged(bool aNotify) {
@@ -158,7 +149,7 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   if (!selectInt) {
     
     
-    mIsSelected = aValue;
+    SetStates(ElementState::CHECKED, !!aValue, aNotify);
     return;
   }
 
@@ -189,6 +180,7 @@ void HTMLOptionElement::BeforeSetAttr(int32_t aNamespaceID, nsAtom* aName,
   mIsInSetDefaultSelected = inSetDefaultSelected;
   
   
+  
   mSelectedChanged = false;
 }
 
@@ -205,11 +197,13 @@ void HTMLOptionElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     if (aName == nsGkAtoms::value && Selected()) {
       
       
-      
-      HTMLSelectElement* select = GetSelect();
-      if (select) {
+      if (HTMLSelectElement* select = GetSelect()) {
         select->UpdateValueMissingValidityState();
       }
+    }
+
+    if (aName == nsGkAtoms::selected) {
+      SetStates(ElementState::DEFAULT, !!aValue, aNotify);
     }
   }
 
@@ -258,18 +252,6 @@ void HTMLOptionElement::UnbindFromTree(bool aNullParent) {
 
   
   UpdateDisabledState(false);
-}
-
-ElementState HTMLOptionElement::IntrinsicState() const {
-  ElementState state = nsGenericHTMLElement::IntrinsicState();
-  if (Selected()) {
-    state |= ElementState::CHECKED;
-  }
-  if (DefaultSelected()) {
-    state |= ElementState::DEFAULT;
-  }
-
-  return state;
 }
 
 

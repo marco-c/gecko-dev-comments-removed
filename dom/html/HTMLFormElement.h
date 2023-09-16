@@ -57,6 +57,9 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   int32_t IndexOfContent(nsIContent* aContent);
   nsGenericHTMLFormElement* GetDefaultSubmitElement() const;
+  bool IsDefaultSubmitElement(nsGenericHTMLFormElement* aElement) const {
+    return aElement == mDefaultSubmitElement;
+  }
 
   
   void SetCurrentRadioButton(const nsAString& aName,
@@ -205,15 +208,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
 
   bool IsLastActiveElement(const nsGenericHTMLFormElement* aElement) const;
-
-  
-
-
-
-
-
-
-  bool IsDefaultSubmitElement(const nsGenericHTMLFormElement* aElement) const;
 
   
 
@@ -617,6 +611,8 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
  private:
   bool IsSubmitting() const;
+
+  void SetDefaultSubmitElement(nsGenericHTMLFormElement*);
 
   NotNull<const Encoding*> GetSubmitEncoding();
 
