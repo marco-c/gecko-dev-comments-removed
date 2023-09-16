@@ -38,8 +38,6 @@
 namespace webrtc {
 
 namespace {
-
-constexpr size_t kMaxPaddingLength = 224;
 constexpr size_t kMinAudioPaddingLength = 50;
 constexpr size_t kRtpHeaderLength = 12;
 
