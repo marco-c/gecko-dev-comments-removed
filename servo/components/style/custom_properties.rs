@@ -9,6 +9,7 @@
 use crate::applicable_declarations::CascadePriority;
 use crate::media_queries::Device;
 use crate::properties::{CSSWideKeyword, CustomDeclaration, CustomDeclarationValue};
+use crate::properties_and_values::value::ComputedValue as ComputedRegisteredValue;
 use crate::stylist::Stylist;
 use crate::selector_map::{PrecomputedHashMap, PrecomputedHashSet, PrecomputedHasher};
 use crate::Atom;
@@ -681,15 +682,28 @@ impl<'a> CustomPropertiesBuilder<'a> {
                 
                 
                 
-                if !has_custom_property_references && unparsed_value.references.environment {
-                    substitute_references_in_value_and_apply(
-                        name,
-                        unparsed_value,
-                        map,
-                        self.inherited.map(|m| &**m),
-                        self.stylist,
-                    );
-                    return;
+                if !has_custom_property_references {
+                    if unparsed_value.references.environment {
+                        substitute_references_in_value_and_apply(
+                            name,
+                            unparsed_value,
+                            map,
+                            self.inherited.map(|m| &**m),
+                            self.stylist,
+                        );
+                        return;
+                    }
+                    
+                    
+                    if let Some(registration) = self.stylist.get_custom_property_registration(&name)
+                    {
+                        let mut input = ParserInput::new(&unparsed_value.css);
+                        let mut input = Parser::new(&mut input);
+                        if ComputedRegisteredValue::compute(&mut input, registration).is_err() {
+                            map.remove(name);
+                            return;
+                        }
+                    }
                 }
                 map.insert(name.clone(), Arc::clone(unparsed_value));
             },
@@ -1049,36 +1063,45 @@ fn substitute_references_in_value_and_apply(
         }
     }
 
-    
-    let wide_keyword = {
+    let should_insert = {
         let mut input = ParserInput::new(&computed_value.css);
         let mut input = Parser::new(&mut input);
-        input.try_parse(CSSWideKeyword::parse)
-    };
 
-    if let Ok(kw) = wide_keyword {
-        match kw {
-            CSSWideKeyword::Initial => {
-                custom_properties.remove(name);
-            },
-            CSSWideKeyword::Revert |
-            CSSWideKeyword::RevertLayer |
-            CSSWideKeyword::Inherit |
-            CSSWideKeyword::Unset => {
-                
-                
-                
-                match inherited.and_then(|map| map.get(name)) {
-                    Some(value) => {
-                        custom_properties.insert(name.clone(), Arc::clone(value));
-                    },
-                    None => {
-                        custom_properties.remove(name);
-                    },
-                };
-            },
+        
+        if let Ok(kw) = input.try_parse(CSSWideKeyword::parse) {
+            match kw {
+                CSSWideKeyword::Initial => {
+                    custom_properties.remove(name);
+                },
+                CSSWideKeyword::Revert |
+                CSSWideKeyword::RevertLayer |
+                CSSWideKeyword::Inherit |
+                CSSWideKeyword::Unset => {
+                    
+                    
+                    
+                    match inherited.and_then(|map| map.get(name)) {
+                        Some(value) => {
+                            custom_properties.insert(name.clone(), Arc::clone(value));
+                        },
+                        None => {
+                            custom_properties.remove(name);
+                        },
+                    };
+                },
+            }
+            false
+        } else {
+            if let Some(registration) = stylist.get_custom_property_registration(&name) {
+                if ComputedRegisteredValue::compute(&mut input, registration).is_err() {
+                    custom_properties.remove(name);
+                    return;
+                }
+            }
+            true
         }
-    } else {
+    };
+    if should_insert {
         computed_value.css.shrink_to_fit();
         custom_properties.insert(name.clone(), Arc::new(computed_value));
     }

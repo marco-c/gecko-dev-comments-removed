@@ -4,8 +4,11 @@
 
 
 
-use super::syntax::{
-    data_type::DataType, Component as SyntaxComponent, ComponentName, Descriptor, Multiplier,
+use super::{
+    registry::PropertyRegistration,
+    syntax::{
+        data_type::DataType, Component as SyntaxComponent, ComponentName, Descriptor, Multiplier,
+    },
 };
 use crate::custom_properties::ComputedValue as ComputedPropertyValue;
 use crate::parser::{Parse, ParserContext};
@@ -68,6 +71,21 @@ pub enum ComputedValue {
 }
 
 impl ComputedValue {
+    
+    pub fn compute<'i, 't>(
+        input: &mut CSSParser<'i, 't>,
+        registration: &PropertyRegistration,
+    ) -> Result<(), StyleParseError<'i>> {
+        Self::parse(
+            input,
+            &registration.syntax,
+            &registration.url_data,
+            AllowComputationallyDependent::Yes,
+        )?;
+        
+        Ok(())
+    }
+
     
     
     pub fn parse<'i, 't>(
