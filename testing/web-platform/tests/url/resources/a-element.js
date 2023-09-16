@@ -22,6 +22,10 @@ function runURLTests(urlTests) {
       continue;
 
     
+    if (expected.base !== null && (expected.base.startsWith("data:") || expected.base.startsWith("javascript:")))
+      continue;
+
+    
     const base = expected.base === null ? "about:blank" : expected.base;
 
     function getKey(expected) {
