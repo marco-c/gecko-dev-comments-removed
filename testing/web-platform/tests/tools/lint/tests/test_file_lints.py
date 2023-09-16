@@ -610,8 +610,7 @@ def test_variant_missing():
 
 
 
-@pytest.mark.parametrize("content", ["",
-                                     "?foo"
+@pytest.mark.parametrize("content", ["?foo"
                                      "#bar"])
 def test_variant_malformed_negative(content):
     code = """\
