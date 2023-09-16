@@ -4,13 +4,6 @@
 
 "use strict";
 
-loader.lazyRequireGetter(
-  this,
-  ["isCommand"],
-  "resource://devtools/server/actors/webconsole/commands/parser.js",
-  true
-);
-
 
 
 
@@ -107,10 +100,12 @@ const WebConsoleCommandsManager = {
 
 
   _isCommandNameAlreadyInScope(name, frame, dbgGlobal) {
-    
     if (frame && frame.environment) {
       return !!frame.environment.find(name);
     }
+
+    
+    
 
     try {
       
@@ -123,12 +118,38 @@ const WebConsoleCommandsManager = {
     return !!dbgGlobal.getOwnPropertyDescriptor(name);
   },
 
+  _createOwnerObject(
+    consoleActor,
+    debuggerGlobal,
+    evalInput,
+    selectedNodeActorID
+  ) {
+    const owner = {
+      window: consoleActor.evalGlobal,
+      makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
+      createValueGrip: consoleActor.createValueGrip.bind(consoleActor),
+      preprocessDebuggerObject:
+        consoleActor.preprocessDebuggerObject.bind(consoleActor),
+      helperResult: null,
+      consoleActor,
+      evalInput,
+    };
+    if (selectedNodeActorID) {
+      const actor = consoleActor.conn.getActor(selectedNodeActorID);
+      if (actor) {
+        owner.selectedNode = actor.rawNode;
+      }
+    }
+    return owner;
+  },
+
+  _getCommandsForCurrentEnvironment() {
+    
+    
+    return isWorker ? new Map() : this.getAllCommands();
+  },
+
   
-
-
-
-
-
 
 
 
@@ -167,22 +188,12 @@ const WebConsoleCommandsManager = {
   ) {
     const bindings = Object.create(null);
 
-    const owner = {
-      window: consoleActor.evalGlobal,
-      makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
-      createValueGrip: consoleActor.createValueGrip.bind(consoleActor),
-      preprocessDebuggerObject:
-        consoleActor.preprocessDebuggerObject.bind(consoleActor),
-      helperResult: null,
+    const owner = this._createOwnerObject(
       consoleActor,
+      debuggerGlobal,
       evalInput,
-    };
-    if (selectedNodeActorID) {
-      const actor = consoleActor.conn.getActor(selectedNodeActorID);
-      if (actor) {
-        owner.selectedNode = actor.rawNode;
-      }
-    }
+      selectedNodeActorID
+    );
 
     const evalGlobal = consoleActor.evalGlobal;
     function maybeExport(obj, name) {
@@ -201,12 +212,7 @@ const WebConsoleCommandsManager = {
       });
     }
 
-    
-    
-    const commands = isWorker ? [] : this.getAllCommands();
-
-    
-    const isCmd = isCommand(evalInput);
+    const commands = this._getCommandsForCurrentEnvironment();
 
     const colonOnlyCommandNames = this.getColonOnlyCommandNames();
     for (const [name, command] of commands) {
@@ -216,12 +222,16 @@ const WebConsoleCommandsManager = {
       
       
       
+      
       if (
         !ignoreExistingBindings &&
-        !isCmd &&
-        (this._isCommandNameAlreadyInScope(name, frame, debuggerGlobal) ||
-          colonOnlyCommandNames.includes(name))
+        (frame || name === "help") &&
+        this._isCommandNameAlreadyInScope(name, frame, debuggerGlobal)
       ) {
+        continue;
+      }
+      
+      if (colonOnlyCommandNames.includes(name)) {
         continue;
       }
 
@@ -252,8 +262,56 @@ const WebConsoleCommandsManager = {
         return owner.helperResult;
       },
       bindings,
-      rawCommands: commands,
-      rawOwner: owner,
+    };
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getColonCommandFunction(
+    consoleActor,
+    debuggerGlobal,
+    evalInput,
+    selectedNodeActorID,
+    commandName
+  ) {
+    const owner = this._createOwnerObject(
+      consoleActor,
+      debuggerGlobal,
+      evalInput,
+      selectedNodeActorID
+    );
+    const commands = this._getCommandsForCurrentEnvironment();
+    if (!commands.has(commandName)) {
+      return null;
+    }
+
+    const commandFunc = commands.get(commandName).bind(undefined, owner);
+
+    return {
+      commandFunc,
+      
+      getHelperResult() {
+        return owner.helperResult;
+      },
     };
   },
 };
