@@ -73,9 +73,26 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
         return computeViewBox();
       }
       [[fallthrough]];
-    case StyleTransformBox::StrokeBox:
+    case StyleTransformBox::StrokeBox: {
       
-      return {};
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      nsRect strokeBox = nsLayoutUtils::ComputeGeometryBox(
+          const_cast<nsIFrame*>(aFrame), StyleGeometryBox::StrokeBox);
+      
+      
+      return nsRect{strokeBox.x - aFrame->GetPosition().x,
+                    strokeBox.y - aFrame->GetPosition().y, strokeBox.width,
+                    strokeBox.height};
+    }
     case StyleTransformBox::ViewBox:
       return computeViewBox();
   }
