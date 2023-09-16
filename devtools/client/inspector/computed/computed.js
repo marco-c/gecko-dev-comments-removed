@@ -287,9 +287,6 @@ CssComputedView.prototype = {
   _panelRefreshTimeout: null,
 
   
-  _darkStripe: true,
-
-  
   numVisibleProperties: 0,
 
   get contextMenu() {
@@ -597,9 +594,6 @@ CssComputedView.prototype = {
 
         
         this.numVisibleProperties = 0;
-
-        
-        this._darkStripe = true;
 
         return new Promise((resolve, reject) => {
           this._refreshProcess = new UpdateProcess(
@@ -1031,13 +1025,7 @@ class PropertyView {
 
 
   get propertyHeaderClassName() {
-    if (this.visible) {
-      const isDark = (this.tree._darkStripe = !this.tree._darkStripe);
-      return isDark
-        ? "computed-property-view row-striped"
-        : "computed-property-view";
-    }
-    return "computed-property-hidden";
+    return this.visible ? "computed-property-view" : "computed-property-hidden";
   }
 
   
@@ -1047,13 +1035,9 @@ class PropertyView {
 
 
   get propertyContentClassName() {
-    if (this.visible) {
-      const isDark = this.tree._darkStripe;
-      return isDark
-        ? "computed-property-content row-striped"
-        : "computed-property-content";
-    }
-    return "computed-property-hidden";
+    return this.visible
+      ? "computed-property-content"
+      : "computed-property-hidden";
   }
 
   
