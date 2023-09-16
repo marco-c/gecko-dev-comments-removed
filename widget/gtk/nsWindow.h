@@ -882,6 +882,11 @@ class nsWindow final : public nsBaseWidget {
   void LogPopupGravity(GdkGravity aGravity);
 #endif
 
+  bool IsTopLevelWindowType() const {
+    return mWindowType == WindowType::TopLevel ||
+           mWindowType == WindowType::Dialog;
+  }
+
   
   
   
