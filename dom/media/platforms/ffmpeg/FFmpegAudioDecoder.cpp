@@ -81,8 +81,6 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
   }
 
   
-  
-  
   RefPtr<MediaByteBuffer> audioCodecSpecificBinaryBlob =
       GetAudioCodecSpecificBlob(aConfig.mCodecSpecificConfig);
   if (audioCodecSpecificBinaryBlob && audioCodecSpecificBinaryBlob->Length()) {
@@ -401,6 +399,9 @@ AVCodecID FFmpegAudioDecoder<LIBAV_VER>::GetCodecId(
   }
   if (aMimeType.EqualsLiteral("audio/mp4a-latm")) {
     return AV_CODEC_ID_AAC;
+  }
+  if (aMimeType.EqualsLiteral("audio/vorbis")) {
+    return AV_CODEC_ID_VORBIS;
   }
 
   return AV_CODEC_ID_NONE;
