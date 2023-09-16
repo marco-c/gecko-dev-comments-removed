@@ -614,7 +614,7 @@ function mainThreadFetch(
             
             resolve({
               content: "",
-              contentType: "text/plan",
+              contentType: "text/plain",
             });
             return;
           }
