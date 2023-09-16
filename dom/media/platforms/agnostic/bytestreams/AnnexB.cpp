@@ -382,6 +382,7 @@ AnnexB::ConvertNALUTo4BytesNALU(mozilla::MediaRawData* aSample,
 
   
   
+  bool needConversion = aNALUSize != 4;
 
   MOZ_ASSERT(aSample);
   nsTArray<uint8_t> dest;
@@ -411,9 +412,17 @@ AnnexB::ConvertNALUTo4BytesNALU(mozilla::MediaRawData* aSample,
       
       return Err(NS_ERROR_UNEXPECTED);
     }
+    if (!needConversion) {
+      
+      continue;
+    }
     if (!writer.WriteU32(nalLen) || !writer.Write(p, nalLen)) {
       return Err(NS_ERROR_OUT_OF_MEMORY);
     }
+  }
+  if (!needConversion) {
+    
+    return Ok();
   }
   UniquePtr<MediaRawDataWriter> samplewriter(aSample->CreateWriter());
   if (!samplewriter->Replace(dest.Elements(), dest.Length())) {
