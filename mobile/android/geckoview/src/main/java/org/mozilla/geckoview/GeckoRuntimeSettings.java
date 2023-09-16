@@ -490,42 +490,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       getSettings().mExtensionsWebAPIEnabled.set(flag);
       return this;
     }
-
-    
-
-
-
-
-
-
-    public @NonNull Builder trustedRecursiveResolverMode(
-        final @TrustedRecursiveResolverMode int mode) {
-      getSettings().setTrustedRecursiveResolverMode(mode);
-      return this;
-    }
-
-    
-
-
-
-
-
-    public @NonNull Builder trustedRecursiveResolverUri(final @NonNull String uri) {
-      getSettings().setTrustedRecursiveResolverUri(uri);
-      return this;
-    }
-
-    
-
-
-
-
-
-
-    public @NonNull Builder largeKeepaliveFactor(final int factor) {
-      getSettings().setLargeKeepaliveFactor(factor);
-      return this;
-    }
   }
 
   private GeckoRuntime mRuntime;
@@ -573,11 +537,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<Boolean>("dom.security.https_only_mode", false);
    final Pref<Boolean> mHttpsOnlyPrivateMode =
       new Pref<Boolean>("dom.security.https_only_mode_pbm", false);
-   final Pref<Integer> mTrustedRecursiveResolverMode =
-      new Pref<>("network.trr.mode", 0);
-   final Pref<String> mTrustedRecursiveResolverUri = new Pref<>("network.trr.uri", "");
-   final Pref<Integer> mLargeKeepalivefactor =
-      new Pref<>("network.http.largeKeepaliveFactor", 1);
    final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
    final Pref<Boolean> mExtensionsWebAPIEnabled =
       new Pref<>("extensions.webapi.enabled", false);
@@ -1371,129 +1330,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       default:
         throw new IllegalArgumentException("Invalid setting for setAllowInsecureConnections");
     }
-    return this;
-  }
-
-  
-  @Retention(RetentionPolicy.SOURCE)
-  @IntDef({TRR_MODE_OFF, TRR_MODE_FIRST, TRR_MODE_ONLY, TRR_MODE_DISABLED})
-  public @interface TrustedRecursiveResolverMode {}
-
-  
-  public static final int TRR_MODE_OFF = 0;
-
-  
-
-
-  public static final int TRR_MODE_FIRST = 2;
-
-  
-  public static final int TRR_MODE_ONLY = 3;
-
-  
-
-
-  public static final int TRR_MODE_DISABLED = 5;
-
-  
-
-
-
-
-
-  public @TrustedRecursiveResolverMode int getTrustedRecusiveResolverMode() {
-    final int mode = mTrustedRecursiveResolverMode.get();
-    switch (mode) {
-      case 2:
-        return TRR_MODE_FIRST;
-      case 3:
-        return TRR_MODE_ONLY;
-      case 5:
-        return TRR_MODE_DISABLED;
-      default:
-      case 0:
-        return TRR_MODE_OFF;
-    }
-  }
-
-  
-
-
-
-
-
-  public @NonNull int getLargeKeepaliveFactor() {
-    return mLargeKeepalivefactor.get();
-  }
-
-  
-
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverMode(
-      final @TrustedRecursiveResolverMode int mode) {
-    switch (mode) {
-      case TRR_MODE_OFF:
-      case TRR_MODE_FIRST:
-      case TRR_MODE_ONLY:
-      case TRR_MODE_DISABLED:
-        mTrustedRecursiveResolverMode.commit(mode);
-        break;
-      default:
-        throw new IllegalArgumentException("Invalid setting for setTrustedRecursiveResolverMode");
-    }
-    return this;
-  }
-
-  private static final int DEFAULT_LARGE_KEEPALIVE_FACTOR = 1;
-
-  private int sanitizeLargeKeepaliveFactor(final int factor) {
-    if (factor < 1 || factor > 10) {
-      if (BuildConfig.DEBUG_BUILD) {
-        throw new IllegalArgumentException(
-            "largeKeepaliveFactor must be between 1 to 10 inclusive");
-      } else {
-        Log.e(LOGTAG, "largeKeepaliveFactor must be between 1 to 10 inclusive");
-        return DEFAULT_LARGE_KEEPALIVE_FACTOR;
-      }
-    }
-
-    return factor;
-  }
-
-  
-
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setLargeKeepaliveFactor(final int factor) {
-    final int newFactor = sanitizeLargeKeepaliveFactor(factor);
-    mLargeKeepalivefactor.commit(newFactor);
-    return this;
-  }
-
-  
-
-
-
-
-  public @NonNull String getTrustedRecursiveResolverUri() {
-    return mTrustedRecursiveResolverUri.get();
-  }
-
-  
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setTrustedRecursiveResolverUri(final @NonNull String uri) {
-    mTrustedRecursiveResolverUri.commit(uri);
     return this;
   }
 
