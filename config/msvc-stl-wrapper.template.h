@@ -56,6 +56,13 @@
 #ifdef MOZ_INCLUDE_MOZALLOC_H_FROM_${HEADER}
 
 #  if !defined(NS_NO_XPCOM) && !defined(MOZ_NO_MOZALLOC)
+
+
+
+
+
+
+#    include <type_traits>
 #    include "mozilla/mozalloc.h"
 #  else
 #    error "STL code can only be used with infallible ::operator new()"
