@@ -87,3 +87,10 @@ user_pref("security.remote_settings.intermediates.enabled", false);
 user_pref("general.smoothScroll", true);
 
 user_pref("gecko.handlerService.defaultHandlersVersion", 100);
+
+user_pref("security.webauth.webauthn_enable_softtoken", true);
+
+user_pref("security.webauth.webauthn_enable_usbtoken", false);
+user_pref("security.webauth.webauthn_enable_android_fido2", false);
+
+user_pref("security.webauth.webauthn_testing_allow_direct_attestation", true);
