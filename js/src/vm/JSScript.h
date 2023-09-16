@@ -27,6 +27,7 @@
 
 #include "frontend/ScriptIndex.h"  
 #include "gc/Barrier.h"
+#include "js/ColumnNumber.h"  
 #include "js/CompileOptions.h"
 #include "js/Transcoding.h"
 #include "js/UbiNode.h"
@@ -1544,7 +1545,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   uint32_t lineno() const { return extent_.lineno; }
   
-  uint32_t column() const { return extent_.column.zeroOriginValue(); }
+  JS::LimitedColumnNumberZeroOrigin column() const { return extent_.column; }
 
   JS::DelazificationOption delazificationMode() const {
     return scriptSource()->delazificationMode();

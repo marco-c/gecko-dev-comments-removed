@@ -109,11 +109,9 @@ void MarkScript(const js::jit::JitCode* code, JSScript* script,
   method.method_size = code->instructionsSize();
   method.module_name = const_cast<char*>(module);
 
-  
-  
   char namebuf[512];
   SprintfLiteral(namebuf, "%s:%u:%u", script->filename(), script->lineno(),
-                 script->column() + 1);
+                 script->column().oneOriginValue());
 
   method.method_name = &namebuf[0];
 
