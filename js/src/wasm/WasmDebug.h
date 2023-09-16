@@ -106,8 +106,8 @@ class DebugState {
 
   [[nodiscard]] bool getLineOffsets(size_t lineno, Vector<uint32_t>* offsets);
   [[nodiscard]] bool getAllColumnOffsets(Vector<ExprLoc>* offsets);
-  [[nodiscard]] bool getOffsetLocation(uint32_t offset, size_t* lineno,
-                                       size_t* column);
+  [[nodiscard]] bool getOffsetLocation(uint32_t offset, uint32_t* lineno,
+                                       uint32_t* column);
 
   
   
