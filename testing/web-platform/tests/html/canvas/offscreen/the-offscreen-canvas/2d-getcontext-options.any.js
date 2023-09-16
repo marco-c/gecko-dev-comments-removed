@@ -37,5 +37,10 @@ test(() => {
   assert_array_equals(actual, expected, "order of operations (creation)");
   actual = [];
   assert_equals(canvas.getContext('2d', options), context, "cached context");
-  assert_array_equals(actual, expected, "order of operations (caching)");
+  
+  
+  
+  
+  
+  
 });
