@@ -2143,7 +2143,8 @@ const AddonsPicker = props => {
     name,
     type,
     description,
-    icon
+    icon,
+    rating
   }, index) => name ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     key: id,
     className: "addon-container"
@@ -2160,7 +2161,11 @@ const AddonsPicker = props => {
     text: name
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "addon-title"
-  })), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_2__.Localized, {
+  })), rating ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+    className: "rating"
+  }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("moz-five-star", {
+    rating: rating
+  })) : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_2__.Localized, {
     text: description
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
     className: "addon-description"
