@@ -19,6 +19,111 @@
 #include "js/Utility.h"
 #include "util/Text.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace js {
 
 class LifoAlloc;
@@ -42,10 +147,19 @@ class JS_PUBLIC_API GenericPrinter {
   
   virtual void put(const char* s, size_t len) = 0;
   inline void put(const char* s) { put(s, strlen(s)); }
-  virtual void put(mozilla::Span<const JS::Latin1Char> str);
+
   
+  
+  
+  
+  
+  virtual void put(mozilla::Span<const JS::Latin1Char> str);
   virtual void put(mozilla::Span<const char16_t> str);
 
+  
+  
+  
+  
   virtual inline void putChar(const char c) { put(&c, 1); }
   virtual inline void putChar(const JS::Latin1Char c) { putChar(char(c)); }
   virtual inline void putChar(const char16_t c) {
@@ -58,10 +172,29 @@ class JS_PUBLIC_API GenericPrinter {
   void printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
   void vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
 
+  
+  
+  
+  
+  
+  
+  
+  
   virtual bool canPutFromIndex() const { return false; }
+
+  
+  
   virtual void putFromIndex(size_t index, size_t length) {
     MOZ_CRASH("Calls to putFromIndex should be guarded by canPutFromIndex.");
   }
+
+  
+  
+  
+  
+  
+  
+  
   virtual size_t index() const { return 0; }
 
   
