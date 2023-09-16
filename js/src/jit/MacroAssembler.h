@@ -3882,6 +3882,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                    const wasm::CalleeDesc& callee, CodeOffset* fastCallOffset,
                    CodeOffset* slowCallOffset);
 
+#ifdef ENABLE_WASM_TAIL_CALLS
+  void wasmReturnCallRef(const wasm::CallSiteDesc& desc,
+                         const wasm::CalleeDesc& callee,
+                         const ReturnCallAdjustmentInfo& retCallInfo);
+#endif  
+
   
   
   CodeOffset asmCallIndirect(const wasm::CallSiteDesc& desc,

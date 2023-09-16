@@ -8954,6 +8954,16 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       switchRealm = false;
       break;
     case wasm::CalleeDesc::FuncRef:
+#ifdef ENABLE_WASM_TAIL_CALLS
+      if (isReturnCall) {
+        ReturnCallAdjustmentInfo retCallInfo(
+            callBase->stackArgAreaSizeUnaligned(), inboundStackArgBytes_);
+        masm.wasmReturnCallRef(desc, callee, retCallInfo);
+        
+        return;
+      }
+#endif
+      MOZ_ASSERT(!isReturnCall);
       
       
       
