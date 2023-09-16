@@ -9,6 +9,7 @@ promise_test(t => {
   
   return promise.then(t.unreached_func("Should have rejected: " + description), (e) => {
     assert_equals(e.name, 'InvalidStateError', description);
+    t.done();
   });
 }, "[non-fully-active] document.requestStorageAccess() should not resolve when run in a detached frame");
 
