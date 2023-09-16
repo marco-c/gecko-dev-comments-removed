@@ -162,8 +162,8 @@ class BytecodeRangeWithPosition : private BytecodeRange {
     }
   }
 
-  size_t frontLineNumber() const { return lineno; }
-  size_t frontColumnNumber() const { return column; }
+  uint32_t frontLineNumber() const { return lineno; }
+  uint32_t frontColumnNumber() const { return column; }
 
   
   
@@ -226,13 +226,13 @@ class BytecodeRangeWithPosition : private BytecodeRange {
     isEntryPoint = lastLinePC == frontPC();
   }
 
-  size_t initialLine;
+  uint32_t initialLine;
 
   
-  size_t lineno;
+  uint32_t lineno;
 
   
-  size_t column;
+  uint32_t column;
 
   const SrcNote* sn;
   jsbytecode* snpc;
