@@ -125,24 +125,15 @@ interface nsICtapRegisterResult : nsISupports {
 
     
     
+
+    
+    
     
 
     
     
 };
 
-[uuid(91e41be0-ed73-4a10-b55e-3312319bfddf)]
-interface nsIWebAuthnAttObj : nsISupports {
-    
-    
-    readonly attribute Array<octet> attestationObject;
-
-    readonly attribute Array<octet> authenticatorData;
-
-    readonly attribute Array<octet> publicKey;
-
-    readonly attribute COSEAlgorithmIdentifier publicKeyAlgorithm;
-};
 
 
 
