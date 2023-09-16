@@ -1071,7 +1071,7 @@ void js::SetAlreadyResolvedPromiseWithDefaultResolvingFunction(
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   resolveFn.set(NewNativeFunction(cx, ResolvePromiseFunction, 1, funName,
                                   gc::AllocKind::FUNCTION_EXTENDED,
                                   GenericObject));
@@ -1497,7 +1497,7 @@ static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseReactionJob, 0, funName,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
@@ -1803,7 +1803,7 @@ CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx) {
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   RootedFunction executor(
       cx, NewNativeFunction(cx, GetCapabilitiesExecutor, 2, funName,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
@@ -2470,7 +2470,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseResolveThenableJob, 0, funName,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));
@@ -2531,7 +2531,7 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx, unsigned argc,
   
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   RootedFunction job(
       cx, NewNativeFunction(cx, PromiseResolveBuiltinThenableJob, 0, funName,
                             gc::AllocKind::FUNCTION_EXTENDED, GenericObject));

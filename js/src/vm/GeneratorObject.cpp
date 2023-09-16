@@ -96,7 +96,7 @@ JSObject* AbstractGeneratorObject::createModuleGenerator(
 
   
   
-  Handle<PropertyName*> funName = cx->names().empty;
+  Handle<PropertyName*> funName = cx->names().empty_;
   RootedFunction handlerFun(
       cx, NewFunctionWithProto(cx, nullptr, 0,
                                FunctionFlags::INTERPRETED_GENERATOR_OR_ASYNC,

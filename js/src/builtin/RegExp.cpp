@@ -409,7 +409,7 @@ static bool RegExpInitializeIgnoringLastIndex(JSContext* cx,
   Rooted<JSAtom*> pattern(cx);
   if (patternValue.isUndefined()) {
     
-    pattern = cx->names().empty;
+    pattern = cx->names().empty_;
   } else {
     
     pattern = ToAtom<CanGC>(cx, patternValue);

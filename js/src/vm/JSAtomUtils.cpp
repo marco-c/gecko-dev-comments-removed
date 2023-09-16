@@ -271,7 +271,7 @@ bool JSRuntime::initializeAtoms(JSContext* cx) {
   }
   MOZ_ASSERT(uintptr_t(names) == uintptr_t(commonNames + 1));
 
-  emptyString = commonNames->empty;
+  emptyString = commonNames->empty_;
 
   
   

@@ -688,7 +688,7 @@ static JSObject* CreateFunctionPrototype(JSContext* cx, JSProtoKey key) {
 
   return NewFunctionWithProto(
       cx, FunctionPrototype, 0, FunctionFlags::NATIVE_FUN, nullptr,
-      Handle<PropertyName*>(cx->names().empty), objectProto,
+      Handle<PropertyName*>(cx->names().empty_), objectProto,
       gc::AllocKind::FUNCTION, TenuredObject);
 }
 
@@ -1753,7 +1753,7 @@ static JSAtom* SymbolToFunctionName(JSContext* cx, JS::Symbol* symbol,
 
   
   if (!desc && prefixKind == FunctionPrefixKind::None) {
-    return cx->names().empty;
+    return cx->names().empty_;
   }
 
   

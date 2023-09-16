@@ -990,7 +990,7 @@ bool BaselineCacheIRCompiler::emitArrayJoinResult(ObjOperandId objId,
   {
     Label arrayNotEmpty;
     masm.branch32(Assembler::NotEqual, lengthAddr, Imm32(0), &arrayNotEmpty);
-    masm.movePtr(ImmGCPtr(cx_->names().empty), scratch);
+    masm.movePtr(ImmGCPtr(cx_->names().empty_), scratch);
     masm.tagValue(JSVAL_TYPE_STRING, scratch, output.valueReg());
     masm.jump(&finished);
     masm.bind(&arrayNotEmpty);
@@ -1238,7 +1238,7 @@ bool BaselineCacheIRCompiler::emitLoadStringCharResult(StringOperandId strId,
     allocator.discardStack(masm);
 
     
-    masm.movePtr(ImmGCPtr(cx_->names().empty), scratch2);
+    masm.movePtr(ImmGCPtr(cx_->names().empty_), scratch2);
 
     
     

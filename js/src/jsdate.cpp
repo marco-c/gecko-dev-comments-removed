@@ -2970,7 +2970,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
   
   size_t len = js_strlen(timeZoneStart);
   if (len == 0) {
-    return cx->names().empty;
+    return cx->names().empty_;
   }
 
   
@@ -3048,7 +3048,7 @@ JSString* DateTimeHelper::timeZoneComment(JSContext* cx,
     }
   }
 
-  return cx->names().empty;
+  return cx->names().empty_;
 }
 #endif 
 
