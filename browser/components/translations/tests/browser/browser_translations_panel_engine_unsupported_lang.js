@@ -12,8 +12,8 @@ add_task(async function test_unsupported_lang() {
     page: SPANISH_PAGE_URL,
     languagePairs: [
       
-      { fromLang: "fr", toLang: "en", isBeta: false },
-      { fromLang: "en", toLang: "fr", isBeta: false },
+      { fromLang: "fr", toLang: "en" },
+      { fromLang: "en", toLang: "fr" },
     ],
   });
 
