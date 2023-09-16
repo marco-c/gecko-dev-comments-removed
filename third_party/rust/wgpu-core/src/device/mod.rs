@@ -181,6 +181,9 @@ impl UserClosures {
     fn fire(self) {
         
         
+
+        
+        
         for (operation, status) in self.mappings {
             operation.callback.call(status);
         }
