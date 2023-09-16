@@ -263,6 +263,10 @@ GetRequestedModulesCount(JSContext* cx, Handle<JSObject*> moduleRecord);
 extern JS_PUBLIC_API JSString* GetRequestedModuleSpecifier(
     JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index);
 
+
+
+
+
 extern JS_PUBLIC_API void GetRequestedModuleSourcePos(
     JSContext* cx, Handle<JSObject*> moduleRecord, uint32_t index,
     uint32_t* lineNumber, uint32_t* columnNumber);

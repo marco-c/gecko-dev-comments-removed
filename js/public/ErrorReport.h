@@ -172,6 +172,13 @@ class JSErrorBase {
 
   JSString* newMessageString(JSContext* cx);
 
+  
+  
+  
+  static uint32_t fromZeroOriginToOneOrigin(uint32_t column) {
+    return column + 1;
+  }
+
  private:
   void freeMessage();
 };
@@ -197,6 +204,7 @@ class JSErrorNotes {
   JSErrorNotes();
   ~JSErrorNotes();
 
+  
   
   bool addNoteASCII(JSContext* cx, const char* filename, unsigned sourceId,
                     unsigned lineno, unsigned column,
@@ -529,6 +537,7 @@ extern JS_PUBLIC_API bool JS_ExpandErrorArgumentsASCII(
 extern JS_PUBLIC_API void JS_ReportAllocationOverflow(JSContext* cx);
 
 namespace JS {
+
 
 extern JS_PUBLIC_API bool CreateError(
     JSContext* cx, JSExnType type, HandleObject stack, HandleString fileName,

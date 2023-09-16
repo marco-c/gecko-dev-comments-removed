@@ -30,88 +30,89 @@ function test(f, quotes, [line, col])
 test(function() {
       
   eval("'hi");
-}, "''", [1, 3]);
-
-test(function() {
-      
-  eval("'hi\\");
 }, "''", [1, 4]);
 
 test(function() {
       
-  eval("   'hi");
-}, "''", [1, 6]);
+  eval("'hi\\");
+}, "''", [1, 5]);
 
 test(function() {
       
-  eval("   'hi\\");
+  eval("   'hi");
 }, "''", [1, 7]);
 
 test(function() {
       
+  eval("   'hi\\");
+}, "''", [1, 8]);
+
+test(function() {
+      
   eval('var x =\n    "hi');
-}, '""', [2, 7]);
+}, '""', [2, 8]);
 
 test(function() {
       
   eval('var x =\n    "hi\\');
-}, '""', [2, 8]);
+}, '""', [2, 9]);
 
 test(function() {
       
       
   eval('var x =\n    "hi\\\n     bye\\\n    no really');
-}, '""', [4, 13]);
+}, '""', [4, 14]);
 
 test(function() {
       
       
   eval('var x =\n    "hi\\\n     bye\\\n    no really\\');
-}, '""', [4, 14]);
+}, '""', [4, 15]);
 
 test(function() {
       
   eval('var x =\n    "hi\\\n     bye\n');
-}, '""', [3, 8]);
-
-test(function() {
-      
-  eval('var x =\n    "hi\\\n     bye\\');
 }, '""', [3, 9]);
 
 test(function() {
       
+      
+  eval('var x =\n    "hi\\\n     bye\\');
+}, '""', [3, 10]);
+
+test(function() {
+      
   eval('var x =\n      `');
-}, '``', [2, 7]);
+}, '``', [2, 8]);
 
 test(function() {
       
   eval('var x =\n      `\\');
-}, '``', [2, 8]);
+}, '``', [2, 9]);
 
 test(function() {
       
       
   eval('var x =\n    htmlEscape`');
-}, '``', [2, 15]);
-
-test(function() {
-      
-      
-  eval('var x =\n    htmlEscape`\\');
 }, '``', [2, 16]);
 
 test(function() {
       
       
+  eval('var x =\n    htmlEscape`\\');
+}, '``', [2, 17]);
+
+test(function() {
+      
+      
   eval('var x =\n    htmlEscape\n   `');
-}, '``', [3, 4]);
+}, '``', [3, 5]);
 
 test(function() {
       
       
   eval('var x =\n    htmlEscape\n   `\\');
-}, '``', [3, 5]);
+}, '``', [3, 6]);
 
 if (typeof reportCompare === "function")
   reportCompare(0, 0, "ok");

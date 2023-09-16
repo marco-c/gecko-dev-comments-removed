@@ -19,6 +19,7 @@
 #include "gc/GCContext.h"
 #include "gc/HashUtil.h"
 #include "js/CharacterEncoding.h"
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertyAndElement.h"    
 #include "js/PropertySpec.h"
@@ -1985,7 +1986,7 @@ UniqueChars BuildUTF8StackString(JSContext* cx, JSPrincipals* principals,
   return JS_EncodeStringToUTF8(cx, stackStr);
 }
 
-uint32_t FixupColumnForDisplay(uint32_t column) {
+uint32_t FixupMaybeWASMColumnForDisplay(uint32_t column) {
   
   
   
@@ -1995,10 +1996,7 @@ uint32_t FixupColumnForDisplay(uint32_t column) {
     return 1;
   }
 
-  
-  
-  
-  return column + 1;
+  return JSErrorBase::fromZeroOriginToOneOrigin(column);
 }
 
 } 

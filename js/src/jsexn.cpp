@@ -688,7 +688,7 @@ bool JS::ErrorReportBuilder::populateUncaughtExceptionReportUTF8VA(
       ownedReport.sourceId =
           iter.hasScript() ? iter.script()->scriptSource()->id() : 0;
       ownedReport.lineno = iter.computeLine(&column);
-      ownedReport.column = FixupColumnForDisplay(column);
+      ownedReport.column = FixupMaybeWASMColumnForDisplay(column);
       ownedReport.isMuted = iter.mutedErrors();
     }
   }

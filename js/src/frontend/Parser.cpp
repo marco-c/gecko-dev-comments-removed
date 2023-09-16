@@ -43,6 +43,7 @@
 #include "frontend/ScriptIndex.h"  
 #include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
 #include "js/RegExpFlags.h"     
@@ -468,6 +469,8 @@ void GeneralParser<ParseHandler, Unit>::reportMissingClosing(
   uint32_t line, column;
   tokenStream.computeLineAndColumn(openedPos, &line, &column);
 
+  column = JSErrorBase::fromZeroOriginToOneOrigin(column);
+
   const size_t MaxWidth = sizeof("4294967295");
   char columnNumber[MaxWidth];
   SprintfLiteral(columnNumber, "%" PRIu32, column);
@@ -508,6 +511,8 @@ void GeneralParser<ParseHandler, Unit>::reportRedeclarationHelper(
 
   uint32_t line, column;
   tokenStream.computeLineAndColumn(prevPos, &line, &column);
+
+  column = JSErrorBase::fromZeroOriginToOneOrigin(column);
 
   const size_t MaxWidth = sizeof("4294967295");
   char columnNumber[MaxWidth];

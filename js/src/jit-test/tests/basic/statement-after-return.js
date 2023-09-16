@@ -47,14 +47,14 @@ function f() {
   return
     ++i;
 }
-`, 5, 4);
+`, 5, 5);
 testWarn(`
 function f() {
   var i = 0;
   return
     --i;
 }
-`, 5, 4);
+`, 5, 5);
 
 
 testWarn(`
@@ -62,7 +62,7 @@ function f() {
   return
     [1, 2, 3];
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -70,7 +70,7 @@ function f() {
   return
     {x: 10};
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
@@ -81,7 +81,7 @@ function f() {
     }
   };
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -89,7 +89,7 @@ function f() {
   return
     (1 + 2);
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -97,7 +97,7 @@ function f() {
   return
     f;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -105,13 +105,13 @@ function f() {
   return
     1 + 2;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     .1 + .2;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -119,19 +119,19 @@ function f() {
   return
     "foo";
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     "use struct";
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     'foo';
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -139,13 +139,13 @@ function f() {
   return
     \`foo\${1 + 2}\`;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     \`foo\`;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -153,7 +153,7 @@ function f() {
   return
     /foo/;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -161,13 +161,13 @@ function f() {
   return
     true;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     false;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -175,7 +175,7 @@ function f() {
   return
     null;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -183,7 +183,7 @@ function f() {
   return
     this;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -191,7 +191,7 @@ function f() {
   return
     new Array();
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -200,7 +200,7 @@ function f() {
   return
     delete a.x;
 }
-`, 5, 4);
+`, 5, 5);
 
 
 testWarn(`
@@ -208,7 +208,7 @@ function* f() {
   return
     yield 1;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -216,7 +216,7 @@ function f() {
   return
     class A { constructor() {} };
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testWarn(`
@@ -224,25 +224,25 @@ function f() {
   return
     +1;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     -1;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     !1;
 }
-`, 4, 4);
+`, 4, 5);
 testWarn(`
 function f() {
   return
     ~1;
 }
-`, 4, 4);
+`, 4, 5);
 
 
 testPass(`
@@ -282,7 +282,7 @@ function f() {
   if (true)
     1 + 2;
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testPass(`
@@ -303,7 +303,7 @@ function f() {
       break;
   }
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -315,7 +315,7 @@ function f() {
       break;
   }
 }
-`, 6, 6);
+`, 6, 7);
 
 
 testPass(`
@@ -359,7 +359,7 @@ function f() {
   while (false)
     1 + 2;
 }
-`, 4, 2);
+`, 4, 3);
 testPass(`
 function f() {
   do
@@ -376,7 +376,7 @@ function f() {
     1 + 2;
   } while (false);
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -386,7 +386,7 @@ function f() {
     break;
   }
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testPass(`
@@ -396,7 +396,7 @@ function f() {
     break;
   }
 }
-`, 5, 4);
+`, 5, 5);
 
 
 testWarn(`
@@ -406,7 +406,7 @@ function f() {
     continue;
   }
 }
-`, 5, 4);
+`, 5, 5);
 
 
 testPass(`
@@ -422,7 +422,7 @@ function f() {
   return
   const a = 1;
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -432,7 +432,7 @@ function f() {
     1;
   }
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -440,7 +440,7 @@ function f() {
   return
   return;
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -450,7 +450,7 @@ function f() {
   } catch (e) {
   }
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testPass(`
@@ -466,7 +466,7 @@ function f() {
   return
   debugger;
 }
-`, 4, 2);
+`, 4, 3);
 
 
 testWarn(`
@@ -474,7 +474,7 @@ function f() {
   return
   let a = 1;
 }
-`, 4, 2);
+`, 4, 3);
 
 
 
@@ -484,7 +484,7 @@ function f() {
   var a = 0;
   (1 + 2);
 }
-`, 5, 2);
+`, 5, 3);
 
 testWarn(`
 function f() {
@@ -493,4 +493,4 @@ function f() {
   var a = 0;
   (1 + 2);
 }
-`, 6, 2);
+`, 6, 3);

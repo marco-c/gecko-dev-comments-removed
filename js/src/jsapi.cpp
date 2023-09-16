@@ -46,6 +46,7 @@
 #include "js/ContextOptions.h"  
 #include "js/Conversions.h"
 #include "js/ErrorInterceptor.h"
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/GlobalObject.h"
@@ -3930,6 +3931,7 @@ void JSErrorBase::freeMessage() {
 JSErrorNotes::JSErrorNotes() : notes_() {}
 
 JSErrorNotes::~JSErrorNotes() = default;
+
 
 static UniquePtr<JSErrorNotes::Note> CreateErrorNoteVA(
     FrontendContext* fc, const char* filename, unsigned sourceId,

@@ -14,6 +14,7 @@
 #include "js/Array.h"  
 #include "js/CompilationAndEvaluation.h"
 #include "js/ContextOptions.h"        
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/Modules.h"  
 #include "js/OffThreadScriptCompilation.h"
@@ -723,8 +724,8 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
   }
 
   if (!JS::CreateError(aCx, JSEXN_TYPEERR, nullptr, filename, aLineNumber,
-                       aColumnNumber, nullptr, string, JS::NothingHandleValue,
-                       aErrorOut)) {
+                       JSErrorBase::fromZeroOriginToOneOrigin(aColumnNumber),
+                       nullptr, string, JS::NothingHandleValue, aErrorOut)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 

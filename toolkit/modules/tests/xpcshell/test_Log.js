@@ -384,7 +384,7 @@ add_task(async function format_errors() {
     Assert.ok(str.includes("SyntaxError: unexpected token"));
     
     
-    Assert.ok(str.includes(":1:11)"));
+    Assert.ok(str.includes(":1:12)"));
     
     
     Assert.ok(!str.includes("Task.jsm"));
