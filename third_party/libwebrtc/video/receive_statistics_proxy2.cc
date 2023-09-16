@@ -277,7 +277,7 @@ void ReceiveStatisticsProxy::UpdateHistograms(
                                *current_delay_ms);
     log_stream << "WebRTC.Video.CurrentDelayInMs " << *current_delay_ms << '\n';
   }
-  absl::optional<int> delay_ms = delay_counter_.Avg(kMinRequiredSamples);
+  absl::optional<int> delay_ms = oneway_delay_counter_.Avg(kMinRequiredSamples);
   if (delay_ms)
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.OnewayDelayInMs", *delay_ms);
 
@@ -682,7 +682,7 @@ void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
   current_delay_counter_.Add(current_delay_ms);
   
   
-  delay_counter_.Add(target_delay_ms + avg_rtt_ms_ / 2);
+  oneway_delay_counter_.Add(target_delay_ms + avg_rtt_ms_ / 2);
 }
 
 void ReceiveStatisticsProxy::OnUniqueFramesCounted(int num_unique_frames) {
