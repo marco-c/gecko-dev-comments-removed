@@ -1186,10 +1186,19 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
          groupTypeIndex++) {
       uint32_t typeIndex = length() - recGroup->numTypes() + groupTypeIndex;
       const TypeDef* oldTypeDef = types_[typeIndex];
-      const TypeDef* newTypeDef = &canonicalRecGroup->type(groupTypeIndex);
-      types_[typeIndex] = newTypeDef;
+      const TypeDef* canonTypeDef = &canonicalRecGroup->type(groupTypeIndex);
+
+      types_[typeIndex] = canonTypeDef;
       moduleIndices_.remove(oldTypeDef);
-      if (!moduleIndices_.put(newTypeDef, typeIndex)) {
+
+      
+      
+      
+      
+      
+      auto canonTypeIndexEntry = moduleIndices_.lookupForAdd(canonTypeDef);
+      if (!canonTypeIndexEntry &&
+          !moduleIndices_.add(canonTypeIndexEntry, canonTypeDef, typeIndex)) {
         return false;
       }
     }
