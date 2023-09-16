@@ -10,8 +10,11 @@ const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
 
 
+
 const TRUSTED_BIDDING_SIGNALS_URL =
     `${BASE_URL}resources/trusted-bidding-signals.py`;
+const TRUSTED_SCORING_SIGNALS_URL =
+    `${BASE_URL}resources/trusted-scoring-signals.py`;
 
 
 
@@ -160,10 +163,13 @@ function createDecisionScriptUrl(uuid, params = {}) {
 
 
 
-function createRenderUrl(uuid, script) {
+
+function createRenderUrl(uuid, script, signalsParams) {
   let url = new URL(`${BASE_URL}resources/fenced-frame.sub.py`);
   if (script)
     url.searchParams.append('script', script);
+  if (signalsParams)
+    url.searchParams.append('signalsParams', signalsParams);
   url.searchParams.append('uuid', uuid);
   return url.toString();
 }
@@ -248,7 +254,7 @@ async function runBasicFledgeAuctionAndNavigate(test, uuid,
 
 
 async function runBasicFledgeTestExpectingWinner(test, testConfig = {}) {
-  const uuid = generateUuid(test);
+  const uuid = testConfig.uuid ? testConfig.uuid : generateUuid(test);
   await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
   let config = await runBasicFledgeAuction(
       test, uuid, testConfig.auctionConfigOverrides);
@@ -260,7 +266,7 @@ async function runBasicFledgeTestExpectingWinner(test, testConfig = {}) {
 
 
 async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
-  const uuid = generateUuid(test);
+  const uuid = testConfig.uuid ? testConfig.uuid : generateUuid(test);
   await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
   let result = await runBasicFledgeAuction(
       test, uuid, testConfig.auctionConfigOverrides);
