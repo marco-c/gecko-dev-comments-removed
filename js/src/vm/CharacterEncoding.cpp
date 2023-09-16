@@ -18,6 +18,10 @@
 
 #ifndef XP_LINUX
 
+
+
+
+
 #  include <codecvt>
 #endif
 #include <cwchar>
@@ -658,6 +662,7 @@ JS_PUBLIC_API JS::UniqueChars JS::EncodeWideToUtf8(JSContext* cx,
 
   
   if (len == 0) {
+    utf8[0] = '\0';  
     return utf8;
   }
 
@@ -687,6 +692,10 @@ JS_PUBLIC_API JS::UniqueChars JS::EncodeWideToUtf8(JSContext* cx,
 
   return utf8;
 #else
+  
+  
+  
+
   static_assert(sizeof(wchar_t) == 4,
                 "Assume wchar_t is UTF-32 on Linux systems");
 
@@ -772,6 +781,7 @@ JS_PUBLIC_API JS::UniqueWideChars JS::EncodeUtf8ToWide(JSContext* cx,
 
   
   if (len == 0) {
+    wideChars[0] = '\0';  
     return wideChars;
   }
 
@@ -791,6 +801,10 @@ JS_PUBLIC_API JS::UniqueWideChars JS::EncodeUtf8ToWide(JSContext* cx,
 
   return wideChars;
 #else
+  
+  
+  
+
   static_assert(sizeof(wchar_t) == 4,
                 "Assume wchar_t is UTF-32 on Linux systems");
 

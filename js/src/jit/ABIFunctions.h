@@ -9,6 +9,12 @@
 
 #include "jstypes.h"  
 
+struct JS_PUBLIC_API JSContext;
+
+namespace JS {
+class JS_PUBLIC_API Value;
+}
+
 namespace js {
 namespace jit {
 
@@ -68,7 +74,7 @@ struct DynFn {
 };
 
 #ifdef JS_SIMULATOR
-bool CallAnyNative(JSContext* cx, unsigned argc, Value* vp);
+bool CallAnyNative(JSContext* cx, unsigned argc, JS::Value* vp);
 const void* RedirectedCallAnyNative();
 #endif
 
