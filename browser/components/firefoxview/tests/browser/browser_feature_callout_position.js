@@ -365,7 +365,9 @@ add_task(async function feature_callout_is_larger_than_its_parent() {
         screens: [
           {
             id: "FEATURE_CALLOUT_1",
-            anchors: [{ selector: ".brand-icon", arrow_position: "end" }],
+            anchors: [
+              { selector: ".brand-feature-name", arrow_position: "end" },
+            ],
             content: {
               position: "callout",
               title: "callout-firefox-view-tab-pickup-title",
@@ -407,7 +409,7 @@ add_task(async function feature_callout_is_larger_than_its_parent() {
       launchFeatureTourIn(browser.contentWindow);
 
       await waitForCalloutScreen(document, "FEATURE_CALLOUT_1");
-      let parent = document.querySelector(".brand-icon");
+      let parent = document.querySelector(".brand-feature-name");
       let container = document.querySelector(calloutSelector);
       let parentHeight = parent.offsetHeight;
       let containerHeight = container.offsetHeight;
