@@ -876,6 +876,26 @@ function manageLoginsInParent() {
         assert.ok(false, "addLogins threw: " + e);
       }
     });
+
+    
+    addMessageListener("removeLogins", async searchParams => {
+      try {
+        for (const searchParam of searchParams) {
+          const [login] = await Services.logins.searchLoginsAsync(searchParam);
+          if (!login) {
+            info(
+              `removeLogins: could not find login ${JSON.stringify(
+                searchParam
+              )}`
+            );
+            continue;
+          }
+          Services.logins.removeLogin(login);
+        }
+      } catch (e) {
+        assert.ok(false, "removeLogins threw: " + e);
+      }
+    });
   });
 }
 
@@ -899,6 +919,26 @@ async function setStoredLoginsAsync(...aLogins) {
   script.sendQuery("removeAllUserFacingLogins");
   await script.sendQuery("addLogins", aLogins);
   return script;
+}
+
+
+
+
+
+
+async function storeLoginsDuringTask(...logins) {
+  const script = manageLoginsInParent();
+  const searchParams = logins.map(([origin, formActionOrigin, httpRealm]) => ({
+    origin,
+    formActionOrigin,
+    httpRealm,
+  }));
+  info(`Storing ${searchParams.length} logins for task`);
+  await script.sendQuery("addLogins", logins);
+  SimpleTest.registerTaskCleanupFunction(async () => {
+    info(`Removing ${searchParams.length} logins after task`);
+    await script.sendQuery("removeLogins", searchParams);
+  });
 }
 
 
@@ -1033,3 +1073,24 @@ this.LoginManager = new Proxy(
     },
   }
 );
+
+
+
+
+
+
+
+
+
+
+function setContentForTask(html) {
+  const content = document.querySelector("#content");
+  const innerHTMLBefore = content.innerHTML || "";
+  SimpleTest.registerCurrentTaskCleanupFunction(
+    
+    () => (content.innerHTML = innerHTMLBefore)
+  );
+  
+  content.innerHTML = html;
+  return content.firstChild;
+}
