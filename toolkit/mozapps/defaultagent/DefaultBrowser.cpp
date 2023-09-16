@@ -21,6 +21,7 @@
 using BrowserResult = mozilla::WindowsErrorResult<Browser>;
 
 constexpr std::pair<std::string_view, Browser> kStringBrowserMap[]{
+    {"error", Browser::Error},
     {"", Browser::Unknown},
     {"firefox", Browser::Firefox},
     {"chrome", Browser::Chrome},
@@ -112,6 +113,15 @@ static BrowserResult GetDefaultBrowser() {
       
       {L"\u641c\u72d7\u9ad8\u901f\u6d4f\u89c8\u5668", Browser::Sogou},
   };
+
+  
+  
+  
+  
+  
+  
+  static_assert(mozilla::ArrayLength(kFriendlyNamePrefixes) ==
+                kBrowserCount - 3);
 
   for (const auto& [prefix, browser] : kFriendlyNamePrefixes) {
     
