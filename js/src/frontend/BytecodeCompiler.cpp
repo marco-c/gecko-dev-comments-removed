@@ -28,7 +28,7 @@
 #include "js/AllocPolicy.h"        
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"        
+#include "js/ErrorReport.h"  
 #include "js/experimental/JSStencil.h"
 #include "js/GCVector.h"    
 #include "js/Id.h"          
