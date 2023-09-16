@@ -598,3 +598,15 @@ function navigateToCategory(document, category) {
   )[0];
   navButton.buttonEl.click();
 }
+
+
+
+
+
+
+
+
+
+async function switchToFxViewTab(win = window) {
+  return BrowserTestUtils.switchTab(win.gBrowser, win.FirefoxViewHandler.tab);
+}
