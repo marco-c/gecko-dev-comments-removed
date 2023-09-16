@@ -354,6 +354,11 @@ NS_InitXPCOM(nsIServiceManager** aResult, nsIFile* aBinDirectory,
   nsDirectoryService::gService->Set(NS_XPCOM_LIBRARY_FILE, xpcomLib);
 
   if (!mozilla::Omnijar::IsInitialized()) {
+    
+    
+    
+    
+    MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsContentProcess());
     mozilla::Omnijar::Init();
   }
 

@@ -1255,18 +1255,21 @@ Result<Ok, LaunchError> PosixProcessLauncher::DoSetup() {
 
   mChildArgv.insert(mChildArgv.end(), mExtraOpts.begin(), mExtraOpts.end());
 
-  if (mProcessType != GeckoProcessType_GMPlugin) {
-#  if defined(MOZ_WIDGET_ANDROID)
-    if (Omnijar::IsInitialized()) {
-      
-      
-      nsAutoCString path;
-      nsCOMPtr<nsIFile> file = Omnijar::GetPath(Omnijar::GRE);
-      if (file && NS_SUCCEEDED(file->GetNativePath(path))) {
-        geckoargs::sGREOmni.Put(path.get(), mChildArgv);
-      }
+  if (mProcessType == GeckoProcessType_Content && Omnijar::IsInitialized()) {
+    
+    
+    nsAutoCString path;
+    nsCOMPtr<nsIFile> greFile = Omnijar::GetPath(Omnijar::GRE);
+    if (greFile && NS_SUCCEEDED(greFile->GetNativePath(path))) {
+      geckoargs::sGREOmni.Put(path.get(), mChildArgv);
     }
-#  endif
+    nsCOMPtr<nsIFile> appFile = Omnijar::GetPath(Omnijar::APP);
+    if (appFile && NS_SUCCEEDED(appFile->GetNativePath(path))) {
+      geckoargs::sAppOmni.Put(path.get(), mChildArgv);
+    }
+  }
+
+  if (mProcessType != GeckoProcessType_GMPlugin) {
     
 #  ifdef XP_MACOSX
     AddAppDirToCommandLine(mChildArgv, mAppDir, mProfileDir);

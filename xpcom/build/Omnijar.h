@@ -90,6 +90,15 @@ class Omnijar {
   
 
 
+
+
+
+
+  static void ChildProcessInit(int& aArgc, char** aArgv);
+
+  
+
+
   static void CleanUp();
 
   

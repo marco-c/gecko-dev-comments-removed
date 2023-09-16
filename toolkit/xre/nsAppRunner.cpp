@@ -5971,12 +5971,16 @@ nsresult XRE_InitCommandLine(int aArgc, char* aArgv[]) {
 #endif
 
 #if defined(MOZ_WIDGET_ANDROID)
-  nsCOMPtr<nsIFile> greOmni =
-      gAppData ? gAppData->xreDirectory : GreOmniPath(aArgc, aArgv);
-  if (!greOmni) {
-    return NS_ERROR_FAILURE;
+  
+  
+  
+  if (gAppData) {
+    nsCOMPtr<nsIFile> greOmni = gAppData->xreDirectory;
+    if (!greOmni) {
+      return NS_ERROR_FAILURE;
+    }
+    mozilla::Omnijar::Init(greOmni, greOmni);
   }
-  mozilla::Omnijar::Init(greOmni, greOmni);
 #endif
 
   return rv;
