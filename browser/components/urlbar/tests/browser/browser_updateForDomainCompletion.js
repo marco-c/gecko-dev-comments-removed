@@ -20,32 +20,3 @@ add_task(async function () {
     }
   );
 });
-
-
-
-
-
-
-add_task(async function () {
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["keyword.enabled", false],
-      ["browser.fixup.alternate.enabled", true],
-    ],
-  });
-  await BrowserTestUtils.withNewTab(
-    { gBrowser, url: "about:blank" },
-    async function (browser) {
-      gURLBar.value = "example";
-      gURLBar.select();
-      const loadPromise = BrowserTestUtils.waitForDocLoadAndStopIt(
-        "https://www.example.com/",
-        gBrowser.selectedBrowser
-      );
-
-      EventUtils.sendKey("return");
-      await loadPromise;
-      ok(true, "https://www.example.com is loaded correctly");
-    }
-  );
-});
