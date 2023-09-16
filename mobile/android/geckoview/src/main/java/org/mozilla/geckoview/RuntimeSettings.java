@@ -109,6 +109,10 @@ public abstract class RuntimeSettings implements Parcelable {
       return mIsSet;
     }
 
+    public boolean hasDefault() {
+      return true;
+    }
+
     public void reset() {
       mValue = defaultValue;
       mIsSet = false;
@@ -125,6 +129,48 @@ public abstract class RuntimeSettings implements Parcelable {
       } else {
         throw new UnsupportedOperationException("Unhandled pref type for " + name);
       }
+    }
+  }
+
+  
+
+
+
+
+
+
+
+
+   class PrefWithoutDefault<T> extends Pref<T> {
+    public PrefWithoutDefault(@NonNull final String name) {
+      super(name, null);
+    }
+
+    public boolean hasDefault() {
+      return false;
+    }
+
+    public @Nullable T get() {
+      if (!isSet()) {
+        return null;
+      }
+      return super.get();
+    }
+
+    public void commit() {
+      if (!isSet()) {
+        
+        
+        return;
+      }
+      super.commit();
+    }
+
+    private void addToBundle(final GeckoBundle bundle) {
+      if (!isSet()) {
+        return;
+      }
+      super.addToBundle(bundle);
     }
   }
 
@@ -231,7 +277,15 @@ public abstract class RuntimeSettings implements Parcelable {
 
    void commitResetPrefs() {
     final ArrayList<String> names = new ArrayList<String>();
-    forAllPrefs(pref -> names.add(pref.name));
+    forAllPrefs(
+        pref -> {
+          
+          
+          if (!pref.hasDefault() && !pref.isSet()) {
+            return;
+          }
+          names.add(pref.name);
+        });
 
     final GeckoBundle data = new GeckoBundle(1);
     data.putStringArray("names", names);
@@ -257,10 +311,21 @@ public abstract class RuntimeSettings implements Parcelable {
   @SuppressWarnings("checkstyle:javadocmethod")
   public void readFromParcel(final @NonNull Parcel source) {
     for (final Pref<?> pref : mPrefs) {
-      
-      @SuppressWarnings("unchecked")
-      final Pref<Object> uncheckedPref = (Pref<Object>) pref;
-      uncheckedPref.commit(source.readValue(getClass().getClassLoader()));
+      if (pref.hasDefault()) {
+        
+        @SuppressWarnings("unchecked")
+        final Pref<Object> uncheckedPref = (Pref<Object>) pref;
+        uncheckedPref.commit(source.readValue(getClass().getClassLoader()));
+      } else {
+        
+        
+        @SuppressWarnings("unchecked")
+        final PrefWithoutDefault<Object> uncheckedPref = (PrefWithoutDefault<Object>) pref;
+        final Object sourceValue = source.readValue(getClass().getClassLoader());
+        if (sourceValue != null) {
+          uncheckedPref.commit(sourceValue);
+        }
+      }
     }
   }
 }

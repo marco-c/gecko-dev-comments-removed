@@ -91,6 +91,18 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+    public @NonNull Builder extensionsProcessEnabled(final boolean flag) {
+      getSettings().mExtensionsProcess.set(flag);
+      return this;
+    }
+
+    
+
+
+
+
+
     public @NonNull Builder javaScriptEnabled(final boolean flag) {
       getSettings().mJavaScript.set(flag);
       return this;
@@ -528,6 +540,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
    final Pref<Integer> mProcessCount = new Pref<>("dom.ipc.processCount", 2);
    final Pref<Boolean> mExtensionsWebAPIEnabled =
       new Pref<>("extensions.webapi.enabled", false);
+   final PrefWithoutDefault<Boolean> mExtensionsProcess =
+      new PrefWithoutDefault<Boolean>("extensions.webextensions.remote");
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -654,6 +668,26 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setJavaScriptEnabled(final boolean flag) {
     mJavaScript.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public @Nullable Boolean getExtensionsProcessEnabled() {
+    return mExtensionsProcess.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setExtensionsProcessEnabled(final boolean flag) {
+    mExtensionsProcess.commit(flag);
     return this;
   }
 
