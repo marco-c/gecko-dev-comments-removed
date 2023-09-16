@@ -645,8 +645,10 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   
   
   
-  SideBits SidesStuckToRootContent(const HitTestingTreeNode* aNode) const;
+  SideBits SidesStuckToRootContent(const HitTestingTreeNode* aNode,
+                                   AsyncTransformConsumer aMode) const;
   SideBits SidesStuckToRootContent(const StickyPositionInfo& aStickyInfo,
+                                   AsyncTransformConsumer aMode,
                                    const MutexAutoLock& aProofOfMapLock) const;
 
   
