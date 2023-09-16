@@ -72,8 +72,16 @@ uint detectCPUextensions(void)
 {
 
 
+#if defined(SOUNDTOUCH_WASM_SIMD)
+    uint res = 0;
+    res = res | SUPPORT_SSE;
+    res = res | SUPPORT_SSE2;
+    return res & ~_dwDisabledISA;
 
-#if ((defined(__GNUC__) && defined(__x86_64__)) \
+
+
+
+#elif ((defined(__GNUC__) && defined(__x86_64__)) \
     || defined(_M_X64))  \
     && defined(SOUNDTOUCH_ALLOW_X86_OPTIMIZATIONS)
     return 0x19 & ~_dwDisabledISA;
