@@ -89,10 +89,9 @@ export function toggleMapScopes() {
 
     dispatch({ type: "TOGGLE_MAP_SCOPES", mapScopes: true });
 
-    const currentThread = getCurrentThread(getState());
-
     
-    const selectedFrame = getSelectedFrame(getState(), currentThread);
+    const state = getState();
+    const selectedFrame = getSelectedFrame(state, getCurrentThread(state));
     if (!selectedFrame) {
       return;
     }
@@ -102,7 +101,7 @@ export function toggleMapScopes() {
     }
 
     
-    const scopes = getGeneratedFrameScope(getState(), currentThread);
+    const scopes = getGeneratedFrameScope(getState(), selectedFrame);
     if (!scopes) {
       return;
     }
