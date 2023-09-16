@@ -799,9 +799,15 @@ DevTools.prototype = {
 
 
 
-  async getToolboxForTab(tab) {
-    const commands = await LocalTabCommandsFactory.getCommandsForTab(tab);
-    return this.getToolboxForCommands(commands);
+
+
+
+
+
+  getToolboxForTab(tab) {
+    return this.getToolboxes().find(
+      t => t.commands.descriptorFront.localTab === tab
+    );
   },
 
   
@@ -925,49 +931,6 @@ DevTools.prototype = {
     const onSelected = a11yPanel.once("new-accessible-front-selected");
     a11yPanel.selectAccessibleForNode(nodeFront, "browser-context-menu");
     await onSelected;
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-  async openSourceInDebugger(window, { url, line, column }) {
-    const toolbox = await gDevTools.getToolboxForTab(
-      window.gBrowser.selectedTab
-    );
-    if (toolbox) {
-      
-      await toolbox.viewSourceInDebugger(
-        url,
-        line,
-        column,
-        null,
-        "CommandLine"
-      );
-      
-      
-      
-      if (toolbox.win) {
-        toolbox.win.focus();
-      }
-      return;
-    }
-
-    
-    window.gViewSourceUtils.viewSource({
-      URL: url,
-      lineNumber: parseInt(line, 10),
-      columnNumber: parseInt(column, 10),
-    });
-    
-    window.focus();
   },
 
   

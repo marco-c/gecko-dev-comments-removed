@@ -100,7 +100,7 @@ function assertDevToolsExtensionEnabled(uuid, enabled) {
 
 
 async function navigateToWithDevToolsOpen(tab, uri, isErrorPage = false) {
-  const toolbox = await gDevTools.getToolboxForTab(tab);
+  const toolbox = gDevTools.getToolboxForTab(tab);
   const target = toolbox.target;
 
   
