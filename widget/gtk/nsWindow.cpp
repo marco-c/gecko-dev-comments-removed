@@ -6136,13 +6136,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     LOG("    Is undecorated Window\n");
     gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
     gtk_window_set_decorated(GTK_WINDOW(mShell), false);
-  } else if (mWindowType == WindowType::TopLevel && !mParent) {
-    
-    
-    
-    
-    
-    SetDrawsInTitlebar(LookAndFeel::DrawInTitlebar());
   }
 
   
@@ -8890,18 +8883,6 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
   }
 
   mDrawInTitlebar = aState;
-
-  
-  
-  
-  if (mGtkWindowDecoration == GTK_DECORATION_CLIENT &&
-      !gtk_widget_get_realized(mShell)) {
-    LOG("    Using CSD shortcut\n");
-    MOZ_ASSERT(!mCreated);
-    gtk_window_set_titlebar(GTK_WINDOW(mShell),
-                            aState ? gtk_fixed_new() : nullptr);
-    return;
-  }
 
   if (mGtkWindowDecoration == GTK_DECORATION_SYSTEM) {
     SetWindowDecoration(aState ? BorderStyle::Border : mBorderStyle);
