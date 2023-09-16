@@ -8,6 +8,8 @@
 
 #include "ipc/EnumSerializer.h"
 #include "mozilla/Observer.h"
+#include "mozilla/TimeStamp.h"
+#include "mozilla/UniquePtr.h"
 
 namespace mozilla {
 namespace hal {
@@ -56,6 +58,26 @@ enum WakeLockControl {
   WAKE_LOCK_NO_CHANGE = 0,
   WAKE_LOCK_ADD_ONE = 1,
   NUM_WAKE_LOCK
+};
+
+
+
+
+
+
+
+
+
+
+class PerformanceHintSession {
+ public:
+  virtual ~PerformanceHintSession() = default;
+
+  
+  virtual void UpdateTargetWorkDuration(TimeDuration aDuration) = 0;
+
+  
+  virtual void ReportActualWorkDuration(TimeDuration aDuration) = 0;
 };
 
 }  
