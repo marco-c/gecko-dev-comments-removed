@@ -663,7 +663,6 @@ void FilterNodeD2D1::InitUnmappedProperties() {
 void FilterNodeD2D1::SetInput(uint32_t aIndex, SourceSurface* aSurface) {
   UINT32 input = GetD2D1InputForInput(mType, aIndex);
   ID2D1Effect* effect = InputEffect();
-  MOZ_ASSERT(input < effect->GetInputCount());
 
   if (mType == FilterType::COMPOSITE) {
     UINT32 inputCount = effect->GetInputCount();
@@ -675,10 +674,11 @@ void FilterNodeD2D1::SetInput(uint32_t aIndex, SourceSurface* aSurface) {
     }
   }
 
-  MOZ_ASSERT(input < effect->GetInputCount());
+  auto inputCount = effect->GetInputCount();
+  MOZ_RELEASE_ASSERT(input < inputCount);
 
-  mInputSurfaces.resize(effect->GetInputCount());
-  mInputFilters.resize(effect->GetInputCount());
+  mInputSurfaces.resize(inputCount);
+  mInputFilters.resize(inputCount);
 
   
   
@@ -708,7 +708,8 @@ void FilterNodeD2D1::SetInput(uint32_t aIndex, FilterNode* aFilter) {
     }
   }
 
-  MOZ_ASSERT(input < effect->GetInputCount());
+  auto inputCount = effect->GetInputCount();
+  MOZ_RELEASE_ASSERT(input < inputCount);
 
   if (aFilter && aFilter->GetBackendType() != FILTER_BACKEND_DIRECT2D1_1) {
     gfxWarning() << "Unknown input FilterNode set on effect.";
@@ -718,8 +719,8 @@ void FilterNodeD2D1::SetInput(uint32_t aIndex, FilterNode* aFilter) {
 
   FilterNodeD2D1* filter = static_cast<FilterNodeD2D1*>(aFilter);
 
-  mInputSurfaces.resize(effect->GetInputCount());
-  mInputFilters.resize(effect->GetInputCount());
+  mInputSurfaces.resize(inputCount);
+  mInputFilters.resize(inputCount);
 
   
   mInputSurfaces[input] = nullptr;
