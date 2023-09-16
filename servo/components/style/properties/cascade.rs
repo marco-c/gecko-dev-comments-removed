@@ -13,11 +13,11 @@ use crate::font_metrics::FontMetricsOrientation;
 use crate::logical_geometry::WritingMode;
 use crate::properties::declaration_block::{DeclarationImportanceIterator, Importance};
 use crate::properties::generated::{
-    CSSWideKeyword, ComputedValues, LonghandId, LonghandIdSet, PropertyDeclaration,
-    PropertyDeclarationId, PropertyFlags, ShorthandsWithPropertyReferencesCache, StyleBuilder,
-    CASCADE_PROPERTY,
+    CSSWideKeyword, ComputedValues, LonghandId, LonghandIdSet, PrioritaryPropertyId,
+    PropertyDeclaration, PropertyDeclarationId, PropertyFlags,
+    ShorthandsWithPropertyReferencesCache, StyleBuilder, CASCADE_PROPERTY,
+    PRIORITARY_PROPERTY_COUNT,
 };
-use crate::stylist::Stylist;
 use crate::rule_cache::{RuleCache, RuleCacheConditions};
 use crate::rule_tree::{CascadeLevel, StrongRuleNode};
 use crate::selector_parser::PseudoElement;
@@ -25,6 +25,7 @@ use crate::shared_lock::StylesheetGuards;
 use crate::style_adjuster::StyleAdjuster;
 use crate::stylesheets::container_rule::ContainerSizeQuery;
 use crate::stylesheets::{layer_rule::LayerOrder, Origin};
+use crate::stylist::Stylist;
 use crate::values::specified::length::FontBaseSize;
 use crate::values::{computed, specified};
 use fxhash::FxHashMap;
@@ -32,12 +33,6 @@ use servo_arc::Arc;
 use smallvec::SmallVec;
 use std::borrow::Cow;
 use std::mem;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CanHaveLogicalProperties {
-    No,
-    Yes,
-}
 
 
 #[derive(Copy, Clone)]
@@ -265,25 +260,8 @@ where
     debug_assert!(layout_parent_style.is_none() || parent_style.is_some());
     let device = stylist.device();
     let inherited_style = parent_style.unwrap_or(device.default_computed_values());
-
-    let mut declarations = SmallVec::<[(&_, CascadePriority); 32]>::new();
-    let mut referenced_properties = LonghandIdSet::default();
-    let custom_properties = {
-        let mut builder = CustomPropertiesBuilder::new(inherited_style.custom_properties(), stylist);
-
-        for (declaration, priority) in iter {
-            declarations.push((declaration, priority));
-            if let PropertyDeclaration::Custom(ref declaration) = *declaration {
-                builder.cascade(declaration, priority);
-            } else {
-                referenced_properties.insert(declaration.id().as_longhand().unwrap());
-            }
-        }
-
-        builder.build()
-    };
-
     let is_root_element = pseudo.is_none() && element.map_or(false, |e| e.is_root());
+
     let container_size_query =
         ContainerSizeQuery::for_option_element(element, originating_element_style);
 
@@ -297,7 +275,6 @@ where
             parent_style,
             pseudo,
             Some(rules.clone()),
-            custom_properties,
             is_root_element,
         ),
         stylist.quirks_mode(),
@@ -308,8 +285,22 @@ where
     context.style().add_flags(cascade_input_flags);
 
     let using_cached_reset_properties;
-    let mut cascade = Cascade::new(&mut context, cascade_mode, first_line_reparenting, &referenced_properties);
-    let mut shorthand_cache = ShorthandsWithPropertyReferencesCache::default();
+    let mut cascade = Cascade::new(&mut context, cascade_mode, first_line_reparenting);
+    let mut data = CascadeData::default();
+
+    {
+        let mut builder =
+            CustomPropertiesBuilder::new(inherited_style.custom_properties(), stylist);
+        for (declaration, priority) in iter {
+            if let PropertyDeclaration::Custom(ref declaration) = *declaration {
+                builder.cascade(declaration, priority);
+            } else {
+                let id = declaration.id().as_longhand().unwrap();
+                data.note_declaration(declaration, priority, id);
+            }
+        }
+        cascade.context.builder.custom_properties = builder.build();
+    };
 
     let properties_to_apply = match cascade.cascade_mode {
         CascadeMode::Visited { writing_mode } => {
@@ -321,23 +312,8 @@ where
             LonghandIdSet::visited_dependent()
         },
         CascadeMode::Unvisited { visited_rules } => {
-            if cascade.apply_properties(
-                CanHaveLogicalProperties::No,
-                LonghandIdSet::writing_mode_group(),
-                declarations.iter().cloned(),
-                &mut shorthand_cache,
-            ) {
-                cascade.compute_writing_mode();
-            }
-
-            if cascade.apply_properties(
-                CanHaveLogicalProperties::No,
-                LonghandIdSet::fonts_and_color_group(),
-                declarations.iter().cloned(),
-                &mut shorthand_cache,
-            ) {
-                cascade.fixup_font_stuff();
-            }
+            cascade.apply_prioritary_properties(&mut data);
+            cascade.fixup_font_stuff();
 
             if let Some(visited_rules) = visited_rules {
                 cascade.compute_visited_style_if_needed(
@@ -361,14 +337,11 @@ where
         },
     };
 
-    cascade.apply_properties(
-        CanHaveLogicalProperties::Yes,
-        properties_to_apply,
-        declarations.iter().cloned(),
-        &mut shorthand_cache,
-    );
+    cascade.apply_non_prioritary_properties(&mut data, &properties_to_apply);
 
     cascade.finished_applying_properties();
+
+    std::mem::drop(cascade);
 
     context.builder.clear_modified_reset();
 
@@ -378,7 +351,6 @@ where
     }
 
     if context.builder.modified_reset() || using_cached_reset_properties {
-        
         
         
         
@@ -402,7 +374,7 @@ fn tweak_when_ignoring_colors(
     longhand_id: LonghandId,
     origin: Origin,
     declaration: &mut Cow<PropertyDeclaration>,
-    declarations_to_apply_unless_overriden: &mut DeclarationsToApplyUnlessOverriden,
+    declarations_to_apply_unless_overridden: &mut DeclarationsToApplyUnlessOverriden,
 ) {
     use crate::values::computed::ToComputedValue;
     use crate::values::specified::Color;
@@ -469,7 +441,7 @@ fn tweak_when_ignoring_colors(
             }
             let mut color = context.builder.device.default_background_color();
             color.alpha = alpha;
-            declarations_to_apply_unless_overriden
+            declarations_to_apply_unless_overridden
                 .push(PropertyDeclaration::BackgroundColor(color.into()))
         },
         PropertyDeclaration::Color(ref color) => {
@@ -491,7 +463,7 @@ fn tweak_when_ignoring_colors(
                 0.0
             {
                 let color = context.builder.device.default_color();
-                declarations_to_apply_unless_overriden.push(PropertyDeclaration::Color(
+                declarations_to_apply_unless_overridden.push(PropertyDeclaration::Color(
                     specified::ColorPropertyValue(color.into()),
                 ))
             }
@@ -535,16 +507,94 @@ fn tweak_when_ignoring_colors(
         PropertyDeclaration::css_wide_keyword(longhand_id, CSSWideKeyword::Revert);
 }
 
+
+type DeclarationIndex = u16;
+
+
+
+
+
+#[derive(Copy, Clone)]
+struct PrioritaryDeclarationPosition {
+    
+    most_important: DeclarationIndex,
+    least_important: DeclarationIndex,
+}
+
+impl Default for PrioritaryDeclarationPosition {
+    fn default() -> Self {
+        Self {
+            most_important: DeclarationIndex::MAX,
+            least_important: DeclarationIndex::MAX,
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+struct Declaration<'a> {
+    decl: &'a PropertyDeclaration,
+    priority: CascadePriority,
+    next_index: DeclarationIndex,
+}
+
+
+
+#[derive(Default)]
+struct CascadeData<'a> {
+    
+    has_prioritary_properties: bool,
+    
+    
+    shorthand_cache: ShorthandsWithPropertyReferencesCache,
+    
+    longhand_declarations: SmallVec<[Declaration<'a>; 32]>,
+    
+    prioritary_positions: [PrioritaryDeclarationPosition; PRIORITARY_PROPERTY_COUNT],
+}
+
+impl<'a> CascadeData<'a> {
+    fn note_prioritary_property(&mut self, id: PrioritaryPropertyId) {
+        self.has_prioritary_properties = true;
+        let new_index = self.longhand_declarations.len() as DeclarationIndex;
+        let position = &mut self.prioritary_positions[id as usize];
+        if position.most_important == DeclarationIndex::MAX {
+            
+            
+            position.most_important = new_index;
+        } else {
+            
+            self.longhand_declarations[position.least_important as usize].next_index = new_index;
+        }
+        position.least_important = new_index;
+    }
+
+    fn note_declaration(
+        &mut self,
+        decl: &'a PropertyDeclaration,
+        priority: CascadePriority,
+        id: LonghandId,
+    ) {
+        if let Some(id) = PrioritaryPropertyId::from_longhand(id) {
+            self.note_prioritary_property(id);
+        }
+        self.longhand_declarations.push(Declaration {
+            decl,
+            priority,
+            next_index: 0,
+        });
+    }
+}
+
 struct Cascade<'a, 'b: 'a> {
     context: &'a mut computed::Context<'b>,
     cascade_mode: CascadeMode<'a>,
     first_line_reparenting: FirstLineReparenting<'b>,
-    
-    referenced: &'a LonghandIdSet,
+    ignore_colors: bool,
     seen: LonghandIdSet,
     author_specified: LonghandIdSet,
     reverted_set: LonghandIdSet,
     reverted: FxHashMap<LonghandId, (CascadePriority, bool)>,
+    declarations_to_apply_unless_overridden: DeclarationsToApplyUnlessOverriden,
 }
 
 impl<'a, 'b: 'a> Cascade<'a, 'b> {
@@ -552,24 +602,25 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         context: &'a mut computed::Context<'b>,
         cascade_mode: CascadeMode<'a>,
         first_line_reparenting: FirstLineReparenting<'b>,
-        referenced: &'a LonghandIdSet,
     ) -> Self {
+        let ignore_colors = !context.builder.device.use_document_colors();
         Self {
             context,
             cascade_mode,
             first_line_reparenting,
-            referenced,
+            ignore_colors,
             seen: LonghandIdSet::default(),
             author_specified: LonghandIdSet::default(),
             reverted_set: Default::default(),
             reverted: Default::default(),
+            declarations_to_apply_unless_overridden: Default::default(),
         }
     }
 
-    fn substitute_variables_if_needed<'decl, 'cache>(
+    fn substitute_variables_if_needed<'cache, 'decl>(
         &mut self,
+        shorthand_cache: &'cache mut ShorthandsWithPropertyReferencesCache,
         declaration: &'decl PropertyDeclaration,
-        cache: &'cache mut ShorthandsWithPropertyReferencesCache,
     ) -> Cow<'decl, PropertyDeclaration>
     where
         'cache: 'decl,
@@ -615,144 +666,196 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             self.context.builder.custom_properties(),
             self.context.quirks_mode,
             self.context.builder.stylist.unwrap(),
-            cache,
+            shorthand_cache,
         )
     }
 
-    #[inline(always)]
-    fn apply_declaration(&mut self, longhand_id: LonghandId, declaration: &PropertyDeclaration) {
-        
-        
-        
-        
-        
-        let discriminant = longhand_id as usize;
-        (CASCADE_PROPERTY[discriminant])(declaration, &mut self.context);
-    }
-
-    fn apply_properties<'decls, I>(
+    fn apply_one_prioritary_property(
         &mut self,
-        can_have_logical_properties: CanHaveLogicalProperties,
-        properties_to_apply: &'a LonghandIdSet,
-        declarations: I,
-        mut shorthand_cache: &mut ShorthandsWithPropertyReferencesCache,
-    ) -> bool
-    where
-        I: Iterator<Item = (&'decls PropertyDeclaration, CascadePriority)>,
-    {
-        if !self.referenced.contains_any(properties_to_apply) {
+        data: &mut CascadeData,
+        id: PrioritaryPropertyId,
+    ) -> bool {
+        let mut index = data.prioritary_positions[id as usize].most_important;
+        if index == DeclarationIndex::MAX {
             return false;
         }
 
-        let can_have_logical_properties =
-            can_have_logical_properties == CanHaveLogicalProperties::Yes;
+        let longhand_id = id.to_longhand();
+        debug_assert!(
+            !longhand_id.is_logical(),
+            "That could require more book-keeping"
+        );
+        loop {
+            let decl = data.longhand_declarations[index as usize];
+            self.apply_one_longhand(
+                longhand_id,
+                longhand_id,
+                decl.decl,
+                decl.priority,
+                &mut data.shorthand_cache,
+            );
+            if self.seen.contains(longhand_id) {
+                return true; 
+            }
+            debug_assert!(
+                self.reverted_set.contains(longhand_id),
+                "How else can we fail to apply a prioritary property?"
+            );
+            debug_assert!(
+                decl.next_index == 0 || decl.next_index > index,
+                "should make progress! {} -> {}",
+                index,
+                decl.next_index,
+            );
+            index = decl.next_index;
+            if index == 0 {
+                break;
+            }
+        }
+        false
+    }
 
-        let ignore_colors = !self.context.builder.device.use_document_colors();
-        let mut declarations_to_apply_unless_overriden = DeclarationsToApplyUnlessOverriden::new();
+    fn apply_prioritary_properties(&mut self, data: &mut CascadeData) {
+        if !data.has_prioritary_properties {
+            return;
+        }
 
-        for (declaration, priority) in declarations {
-            let origin = priority.cascade_level().origin();
+        let has_writing_mode = self
+            .apply_one_prioritary_property(data, PrioritaryPropertyId::WritingMode) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::Direction) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::TextOrientation);
+        if has_writing_mode {
+            self.compute_writing_mode();
+        }
+        let has_font_stuff = self
+            .apply_one_prioritary_property(data, PrioritaryPropertyId::XTextScale) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::XLang) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::MozMinFontSizeRatio) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::MathDepth) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontSize) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontSizeAdjust) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontWeight) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontStretch) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontStyle) |
+            self.apply_one_prioritary_property(data, PrioritaryPropertyId::FontFamily);
+        if has_font_stuff {
+            self.fixup_font_stuff();
+        }
 
-            let declaration_id = declaration.id();
-            let longhand_id = match declaration_id {
-                PropertyDeclarationId::Longhand(id) => id,
-                PropertyDeclarationId::Custom(..) => continue,
-            };
+        self.apply_one_prioritary_property(data, PrioritaryPropertyId::ColorScheme);
+        self.apply_one_prioritary_property(data, PrioritaryPropertyId::ForcedColorAdjust);
+    }
 
+    fn apply_non_prioritary_properties(
+        &mut self,
+        data: &mut CascadeData,
+        properties_to_apply: &LonghandIdSet,
+    ) {
+        debug_assert!(!properties_to_apply.contains_any(LonghandIdSet::prioritary_properties()));
+        debug_assert!(self.declarations_to_apply_unless_overridden.is_empty());
+        for declaration in &data.longhand_declarations {
+            let longhand_id = declaration.decl.id().as_longhand().unwrap();
             if !properties_to_apply.contains(longhand_id) {
                 continue;
             }
-
-            debug_assert!(can_have_logical_properties || !longhand_id.is_logical());
-            let physical_longhand_id = if can_have_logical_properties {
-                longhand_id.to_physical(self.context.builder.writing_mode)
-            } else {
-                longhand_id
-            };
-
-            if self.seen.contains(physical_longhand_id) {
-                continue;
-            }
-
-            if self.reverted_set.contains(physical_longhand_id) {
-                if let Some(&(reverted_priority, is_origin_revert)) =
-                    self.reverted.get(&physical_longhand_id)
-                {
-                    if !reverted_priority.allows_when_reverted(&priority, is_origin_revert) {
-                        continue;
-                    }
-                }
-            }
-
-            let mut declaration =
-                self.substitute_variables_if_needed(declaration, &mut shorthand_cache);
-
-            
-            
-            if ignore_colors {
-                tweak_when_ignoring_colors(
-                    &self.context,
-                    longhand_id,
-                    origin,
-                    &mut declaration,
-                    &mut declarations_to_apply_unless_overriden,
-                );
-                debug_assert_eq!(
-                    declaration.id(),
-                    PropertyDeclarationId::Longhand(longhand_id),
-                    "Shouldn't change the declaration id!",
-                );
-            }
-
-            let is_unset = match declaration.get_css_wide_keyword() {
-                Some(keyword) => match keyword {
-                    CSSWideKeyword::RevertLayer | CSSWideKeyword::Revert => {
-                        let origin_revert = keyword == CSSWideKeyword::Revert;
-                        
-                        
-                        
-                        self.reverted_set.insert(physical_longhand_id);
-                        self.reverted
-                            .insert(physical_longhand_id, (priority, origin_revert));
-                        continue;
-                    },
-                    CSSWideKeyword::Unset => true,
-                    CSSWideKeyword::Inherit => longhand_id.inherited(),
-                    CSSWideKeyword::Initial => !longhand_id.inherited(),
-                },
-                None => false,
-            };
-
-            self.seen.insert(physical_longhand_id);
-            if origin == Origin::Author {
-                self.author_specified.insert(physical_longhand_id);
-            }
-
-            if is_unset {
-                continue;
-            }
-
-            
-            
-            
-            self.apply_declaration(longhand_id, &*declaration);
+            debug_assert!(PrioritaryPropertyId::from_longhand(longhand_id).is_none());
+            let physical_longhand_id = longhand_id.to_physical(self.context.builder.writing_mode);
+            self.apply_one_longhand(
+                longhand_id,
+                physical_longhand_id,
+                declaration.decl,
+                declaration.priority,
+                &mut data.shorthand_cache,
+            );
         }
-
-        if ignore_colors {
-            for declaration in declarations_to_apply_unless_overriden.iter() {
-                let longhand_id = match declaration.id() {
-                    PropertyDeclarationId::Longhand(id) => id,
-                    PropertyDeclarationId::Custom(..) => unreachable!(),
-                };
+        if !self.declarations_to_apply_unless_overridden.is_empty() {
+            debug_assert!(self.ignore_colors);
+            for declaration in std::mem::take(&mut self.declarations_to_apply_unless_overridden) {
+                let longhand_id = declaration.id().as_longhand().unwrap();
                 debug_assert!(!longhand_id.is_logical());
-                if self.seen.contains(longhand_id) {
-                    continue;
+                if !self.seen.contains(longhand_id) {
+                    self.do_apply_declaration(longhand_id, &declaration);
                 }
-                self.apply_declaration(longhand_id, declaration);
+            }
+        }
+    }
+
+    fn apply_one_longhand(
+        &mut self,
+        longhand_id: LonghandId,
+        physical_longhand_id: LonghandId,
+        declaration: &PropertyDeclaration,
+        priority: CascadePriority,
+        shorthand_cache: &mut ShorthandsWithPropertyReferencesCache,
+    ) {
+        debug_assert!(!physical_longhand_id.is_logical());
+        let origin = priority.cascade_level().origin();
+        if self.seen.contains(physical_longhand_id) {
+            return;
+        }
+
+        if self.reverted_set.contains(physical_longhand_id) {
+            if let Some(&(reverted_priority, is_origin_revert)) =
+                self.reverted.get(&physical_longhand_id)
+            {
+                if !reverted_priority.allows_when_reverted(&priority, is_origin_revert) {
+                    return;
+                }
             }
         }
 
-        true
+        let mut declaration = self.substitute_variables_if_needed(shorthand_cache, declaration);
+
+        
+        
+        if self.ignore_colors {
+            tweak_when_ignoring_colors(
+                &self.context,
+                physical_longhand_id,
+                origin,
+                &mut declaration,
+                &mut self.declarations_to_apply_unless_overridden,
+            );
+        }
+
+        let is_unset = match declaration.get_css_wide_keyword() {
+            Some(keyword) => match keyword {
+                CSSWideKeyword::RevertLayer | CSSWideKeyword::Revert => {
+                    let origin_revert = keyword == CSSWideKeyword::Revert;
+                    
+                    
+                    self.reverted_set.insert(physical_longhand_id);
+                    self.reverted
+                        .insert(physical_longhand_id, (priority, origin_revert));
+                    return;
+                },
+                CSSWideKeyword::Unset => true,
+                CSSWideKeyword::Inherit => physical_longhand_id.inherited(),
+                CSSWideKeyword::Initial => !physical_longhand_id.inherited(),
+            },
+            None => false,
+        };
+
+        self.seen.insert(physical_longhand_id);
+        if origin == Origin::Author {
+            self.author_specified.insert(physical_longhand_id);
+        }
+
+        if is_unset {
+            return;
+        }
+
+        self.do_apply_declaration(longhand_id, &declaration)
+    }
+
+    #[inline]
+    fn do_apply_declaration(&mut self, longhand_id: LonghandId, declaration: &PropertyDeclaration) {
+        
+        
+        
+        
+        
+        (CASCADE_PROPERTY[longhand_id as usize])(&declaration, &mut self.context);
     }
 
     fn compute_writing_mode(&mut self) {
@@ -881,7 +984,9 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             FirstLineReparenting::Yes { style_to_reparent } => style_to_reparent,
             FirstLineReparenting::No => {
                 let Some(cache) = cache else { return false };
-                let Some(style) = cache.find(guards, &self.context.builder) else { return false };
+                let Some(style) = cache.find(guards, &self.context.builder) else {
+                    return false;
+                };
                 style
             },
         };
@@ -1098,9 +1203,15 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
 
         
         if !self.seen.contains(LonghandId::MathDepth) ||
-           !self.seen.contains(LonghandId::FontSize) ||
-           self.context.builder.get_font().clone_font_size().keyword_info.kw !=
-           specified::FontSizeKeyword::Math {
+            !self.seen.contains(LonghandId::FontSize) ||
+            self.context
+                .builder
+                .get_font()
+                .clone_font_size()
+                .keyword_info
+                .kw !=
+                specified::FontSizeKeyword::Math
+        {
             return;
         }
 
@@ -1235,8 +1346,16 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
             } else {
                 FontMetricsOrientation::Horizontal
             };
-            let metrics = self.context.query_font_metrics(FontBaseSize::CurrentStyle, orient, false);
-            let font_size = self.context.style().get_font().clone_font_size().used_size.0;
+            let metrics =
+                self.context
+                    .query_font_metrics(FontBaseSize::CurrentStyle, orient, false);
+            let font_size = self
+                .context
+                .style()
+                .get_font()
+                .clone_font_size()
+                .used_size
+                .0;
             (metrics, font_size)
         };
 
@@ -1244,30 +1363,32 @@ impl<'a, 'b: 'a> Cascade<'a, 'b> {
         
         
         macro_rules! resolve {
-            ($basis:ident, $value:expr, $vertical:expr, $field:ident, $fallback:expr) => {
-                {
-                    if $value != Factor::FromFont {
-                        return;
-                    }
-                    let (metrics, font_size) = font_metrics($vertical);
-                    let ratio = if let Some(metric) = metrics.$field {
-                        metric / font_size
-                    } else if $fallback >= 0.0 {
-                        $fallback
-                    } else {
-                        metrics.ascent / font_size
-                    };
-                    FontSizeAdjust::$basis(Factor::new(ratio))
+            ($basis:ident, $value:expr, $vertical:expr, $field:ident, $fallback:expr) => {{
+                if $value != Factor::FromFont {
+                    return;
                 }
-            };
+                let (metrics, font_size) = font_metrics($vertical);
+                let ratio = if let Some(metric) = metrics.$field {
+                    metric / font_size
+                } else if $fallback >= 0.0 {
+                    $fallback
+                } else {
+                    metrics.ascent / font_size
+                };
+                FontSizeAdjust::$basis(Factor::new(ratio))
+            }};
         }
 
         
         let resolved = match self.context.builder.get_font().mFont.sizeAdjust {
             FontSizeAdjust::None => return,
             FontSizeAdjust::ExHeight(val) => resolve!(ExHeight, val, false, x_height, 0.5),
-            FontSizeAdjust::CapHeight(val) => resolve!(CapHeight, val, false, cap_height, -1.0 /* fall back to ascent */),
-            FontSizeAdjust::ChWidth(val) => resolve!(ChWidth, val, false, zero_advance_measure, 0.5),
+            FontSizeAdjust::CapHeight(val) => {
+                resolve!(CapHeight, val, false, cap_height, -1.0 /* fall back to ascent */)
+            },
+            FontSizeAdjust::ChWidth(val) => {
+                resolve!(ChWidth, val, false, zero_advance_measure, 0.5)
+            },
             FontSizeAdjust::IcWidth(val) => resolve!(IcWidth, val, false, ic_width, 1.0),
             FontSizeAdjust::IcHeight(val) => resolve!(IcHeight, val, true, ic_width, 1.0),
         };
