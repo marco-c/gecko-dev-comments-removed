@@ -3262,22 +3262,30 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   
   
   
-  
-
+  const WritingMode wm = frame->GetWritingMode();
   
   auto GetInlinePosition = [&]() {
     if (isText) {
-      return pt.x;
+      return wm.IsVertical() ? pt.y : pt.x;
     }
     
     
-    return frame->GetRect().Width();
+    
+    
+    
+    
+    return frame->ISize(wm);
   };
 
   
   
-  aRect->x = GetInlinePosition();
-  aRect->SetHeight(frame->GetRect().Height());
+  if (wm.IsVertical()) {
+    aRect->y = GetInlinePosition();
+    aRect->SetWidth(frame->BSize(wm));
+  } else {
+    aRect->x = GetInlinePosition();
+    aRect->SetHeight(frame->BSize(wm));
+  }
 
   return frame;
 }
