@@ -155,7 +155,7 @@ async function testWrapper(alpnAdvertisement) {
 
   Services.prefs.setCharPref(
     "network.trr.uri",
-    `https://foo.example.com:${trrServer.port}/dns-query`
+    `https://foo.example.com:${trrServer.port()}/dns-query`
   );
 
   
