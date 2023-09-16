@@ -1556,9 +1556,10 @@ with only_when("--enable-compile-environment"):
                     
                     
                     
+                    
                     "int main() { return 0; }\nint (*ptr)() = main;",
                     pack_rel_relocs
-                    + ["-o", path]
+                    + ["-pie", "-o", path]
                     + (extra_toolchain_flags or [])
                     + linker_ldflags,
                     wrapper=c_compiler.wrapper,
