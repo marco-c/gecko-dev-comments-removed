@@ -202,17 +202,6 @@ nsRetrievalContext::~nsRetrievalContext() {
 
 nsClipboard::nsClipboard() = default;
 
-nsClipboard::~nsClipboard() {
-  
-  
-  if (mGlobalTransferable) {
-    gtk_clipboard_clear(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD));
-  }
-  if (mSelectionTransferable) {
-    gtk_clipboard_clear(gtk_clipboard_get(GDK_SELECTION_PRIMARY));
-  }
-}
-
 NS_IMPL_ISUPPORTS_INHERITED(nsClipboard, ClipboardSetDataHelper, nsIObserver)
 
 nsresult nsClipboard::Init(void) {
