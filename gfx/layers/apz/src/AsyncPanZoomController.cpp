@@ -3255,7 +3255,7 @@ bool AsyncPanZoomController::IsInOverscrollGutter(
     
     return false;
   }
-  auto overscrollTransform = GetOverscrollTransform(eForHitTesting);
+  auto overscrollTransform = GetOverscrollTransform(eForEventHandling);
   ParentLayerPoint overscrollUntransformed =
       overscrollTransform.Inverse().TransformPoint(aHitTestPoint);
 
@@ -4866,7 +4866,7 @@ AsyncPanZoomController::GetAsyncTransformForInputTransformation(
   
   
   return result *
-         GetCurrentAsyncTransformWithOverscroll(eForHitTesting, aComponents);
+         GetCurrentAsyncTransformWithOverscroll(eForEventHandling, aComponents);
 }
 
 Matrix4x4 AsyncPanZoomController::GetPaintedResolutionTransform() const {

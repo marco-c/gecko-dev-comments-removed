@@ -1190,7 +1190,7 @@ class AsyncPanZoomController {
 
 
   enum AsyncTransformConsumer {
-    eForHitTesting,
+    eForEventHandling,
     eForCompositing,
   };
 

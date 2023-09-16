@@ -63,10 +63,11 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
   
   
   
-  while (outer
-             ->GetCurrentAsyncScrollOffset(
-                 AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting)
-             .y < 70) {
+  while (
+      outer
+          ->GetCurrentAsyncScrollOffset(
+              AsyncPanZoomController::AsyncTransformConsumer::eForEventHandling)
+          .y < 70) {
     mcc->AdvanceByMillis(5);
     outer->AdvanceAnimations(mcc->GetSampleTime());
   }
@@ -82,7 +83,7 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
       0.0f,
       inner
           ->GetCurrentAsyncScrollOffset(
-              AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting)
+              AsyncPanZoomController::AsyncTransformConsumer::eForEventHandling)
           .y);
 
   
@@ -93,7 +94,7 @@ TEST_F(APZCSnappingTesterMock, Bug1265510) {
       100.0f,
       outer
           ->GetCurrentAsyncScrollOffset(
-              AsyncPanZoomController::AsyncTransformConsumer::eForHitTesting)
+              AsyncPanZoomController::AsyncTransformConsumer::eForEventHandling)
           .y);
 }
 
@@ -217,10 +218,10 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithZeroVelocity) {
   apzc->AdvanceAnimationsUntilEnd();
   
   
-  EXPECT_EQ(
-      apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting)
-          .y,
-      30);
+  EXPECT_EQ(apzc->GetCurrentAsyncScrollOffset(
+                    AsyncPanZoomController::eForEventHandling)
+                .y,
+            30);
 }
 
 
@@ -298,9 +299,9 @@ TEST_F(APZCSnappingTesterMock, SnapOnPanEndWithPositiveVelocity) {
   apzc->AssertStateIsSmoothMsdScroll();
 
   apzc->AdvanceAnimationsUntilEnd();
-  EXPECT_EQ(
-      apzc->GetCurrentAsyncScrollOffset(AsyncPanZoomController::eForHitTesting)
-          .y,
-      100);
+  EXPECT_EQ(apzc->GetCurrentAsyncScrollOffset(
+                    AsyncPanZoomController::eForEventHandling)
+                .y,
+            100);
 }
 #endif
