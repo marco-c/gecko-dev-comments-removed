@@ -371,8 +371,7 @@ Context::QuotaInitRunnable::Run() {
 
       
       RefPtr<DirectoryLock> directoryLock = quotaManager->CreateDirectoryLock(
-          PERSISTENCE_TYPE_DEFAULT, *mDirectoryMetadata,
-          quota::Client::DOMCACHE,
+          {*mDirectoryMetadata, quota::Client::DOMCACHE},
            false);
 
       

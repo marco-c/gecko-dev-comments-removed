@@ -6853,8 +6853,7 @@ nsresult PrepareDatastoreOp::BeginDatastorePreparationInternal() {
 
   
   mPendingDirectoryLock = quotaManager->CreateDirectoryLock(
-      mOriginMetadata.mPersistenceType, mOriginMetadata,
-      mozilla::dom::quota::Client::LS,
+      {mOriginMetadata, mozilla::dom::quota::Client::LS},
        false);
 
   mNestedState = NestedState::DirectoryOpenPending;

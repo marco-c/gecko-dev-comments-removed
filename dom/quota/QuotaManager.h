@@ -274,8 +274,7 @@ class QuotaManager final : public BackgroundThreadObject {
   
   
   RefPtr<ClientDirectoryLock> CreateDirectoryLock(
-      PersistenceType aPersistenceType, const OriginMetadata& aOriginMetadata,
-      Client::Type aClientType, bool aExclusive);
+      const ClientMetadata& aClientMetadata, bool aExclusive);
 
   
   RefPtr<UniversalDirectoryLock> CreateDirectoryLockInternal(
