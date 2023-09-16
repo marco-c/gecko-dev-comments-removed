@@ -47,6 +47,7 @@ enum spa_meta_type {
 	SPA_META_Control,	
 
 	SPA_META_Busy,		
+	SPA_META_VideoTransform,	
 
 	_SPA_META_LAST,		
 };
@@ -150,6 +151,25 @@ struct spa_meta_control {
 struct spa_meta_busy {
 	uint32_t flags;
 	uint32_t count;			
+};
+
+enum spa_meta_videotransform_value {
+	SPA_META_TRANSFORMATION_None = 0,	
+	SPA_META_TRANSFORMATION_90,		
+	SPA_META_TRANSFORMATION_180,		
+	SPA_META_TRANSFORMATION_270,		
+	SPA_META_TRANSFORMATION_Flipped,	
+
+
+	SPA_META_TRANSFORMATION_Flipped90,	
+	SPA_META_TRANSFORMATION_Flipped180,	
+	SPA_META_TRANSFORMATION_Flipped270,	
+};
+
+
+struct spa_meta_videotransform {
+	uint32_t transform;			
+
 };
 
 
