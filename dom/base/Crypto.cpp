@@ -1,12 +1,12 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "Crypto.h"
 #include "js/ScalarType.h"
-#include "js/experimental/TypedData.h"  
+#include "js/experimental/TypedData.h"  // JS_GetArrayBufferViewType
 #include "nsCOMPtr.h"
 #include "nsIRandomGenerator.h"
 #include "nsReadableUtils.h"
@@ -31,7 +31,7 @@ Crypto::Crypto(nsIGlobalObject* aParent) : mParent(aParent) {}
 
 Crypto::~Crypto() = default;
 
-
+/* virtual */
 JSObject* Crypto::WrapObject(JSContext* aCx,
                              JS::Handle<JSObject*> aGivenProto) {
   return Crypto_Binding::Wrap(aCx, this, aGivenProto);
@@ -42,8 +42,8 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
                              ErrorResult& aRv) {
   JS::Rooted<JSObject*> view(aCx, aArray.Obj());
 
-  
-  
+  // Throw if the wrong type of ArrayBufferView is passed in
+  // (Part of the Web Crypto API spec)
   switch (JS_GetArrayBufferViewType(view)) {
     case js::Scalar::Int8:
     case js::Scalar::Uint8:
@@ -78,28 +78,24 @@ void Crypto::GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
     return;
   }
 
-  uint8_t* buf;
-  nsresult rv = randomGenerator->GenerateRandomBytes(dataLen, &buf);
-  if (NS_FAILED(rv) || !buf) {
+  nsresult rv =
+      randomGenerator->GenerateRandomBytesInto(aArray.Data(), dataLen);
+  if (NS_FAILED(rv)) {
     aRv.Throw(NS_ERROR_DOM_OPERATION_ERR);
     return;
   }
-
-  
-  memcpy(aArray.Data(), buf, dataLen);
-  free(buf);
 
   aRetval.set(view);
 }
 
 void Crypto::RandomUUID(nsACString& aRetVal) {
-  
+  // NSID_LENGTH == 39 == 36 UUID chars + 2 curly braces + 1 NUL byte
   static_assert(NSID_LENGTH == 39);
 
   nsIDToCString uuidString(nsID::GenerateUUID());
   MOZ_ASSERT(strlen(uuidString.get()) == NSID_LENGTH - 1);
 
-  
+  // Omit the curly braces and NUL.
   aRetVal = Substring(uuidString.get() + 1, NSID_LENGTH - 3);
   MOZ_ASSERT(aRetVal.Length() == NSID_LENGTH - 3);
 }
@@ -111,4 +107,4 @@ SubtleCrypto* Crypto::Subtle() {
   return mSubtle;
 }
 
-}  
+}  // namespace mozilla::dom
