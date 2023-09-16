@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <type_traits>
 
+#include "mozilla/dom/RequestBinding.h"
 #include "nsIChannel.h"
 #include "nsIContentPolicy.h"
 #include "nsIContentSecurityPolicy.h"
@@ -653,7 +654,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
       CORSMode::CORS_NONE, referrerPolicy,  u""_ns,
-      ParserMetadata::NotParserInserted, nullptr);
+      RequestPriority::Auto, ParserMetadata::NotParserInserted, nullptr);
 
   RefPtr<ScriptLoadRequest> request = nullptr;
   

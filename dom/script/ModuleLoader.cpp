@@ -21,6 +21,7 @@
 #include "js/loader/ScriptLoadRequest.h"
 #include "js/loader/ModuleLoaderBase.h"
 #include "js/loader/ModuleLoadRequest.h"
+#include "mozilla/dom/RequestBinding.h"
 #include "xpcpublic.h"
 #include "GeckoProfiler.h"
 #include "nsContentSecurityManager.h"
@@ -298,8 +299,8 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
     
     options = new ScriptFetchOptions(
         mozilla::CORS_NONE, document->GetReferrerPolicy(),
-         u""_ns, ParserMetadata::NotParserInserted, principal,
-        nullptr);
+         u""_ns, RequestPriority::Auto,
+        ParserMetadata::NotParserInserted, principal, nullptr);
     baseURL = document->GetDocBaseURI();
   }
 

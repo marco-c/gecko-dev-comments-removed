@@ -37,6 +37,7 @@ namespace mozilla::dom {
 class ScriptLoadContext;
 class WorkerLoadContext;
 class WorkletLoadContext;
+enum class RequestPriority : uint8_t;
 
 }  
 
@@ -88,6 +89,7 @@ class ScriptFetchOptions {
   ScriptFetchOptions(mozilla::CORSMode aCORSMode,
                      enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
                      const nsAString& aNonce,
+                     mozilla::dom::RequestPriority aFetchPriority,
                      const ParserMetadata aParserMetadata,
                      nsIPrincipal* aTriggeringPrincipal,
                      mozilla::dom::Element* aElement = nullptr);
@@ -110,6 +112,11 @@ class ScriptFetchOptions {
 
 
   const nsString mNonce;
+
+  
+
+
+  const mozilla::dom::RequestPriority mFetchPriority;
 
   
 
@@ -292,6 +299,10 @@ class ScriptLoadRequest
     MOZ_ASSERT(IsTextSource());
     return IsUTF16Text() ? ScriptText<char16_t>().clearAndFree()
                          : ScriptText<Utf8Unit>().clearAndFree();
+  }
+
+  mozilla::dom::RequestPriority FetchPriority() const {
+    return mFetchOptions->mFetchPriority;
   }
 
   enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
