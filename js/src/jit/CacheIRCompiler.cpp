@@ -9590,6 +9590,8 @@ void CacheIRCompiler::callVMInternal(MacroAssembler& masm, VMFunctionId id) {
         sizeof(ExitFrameLayout) - ExitFrameLayout::bytesPoppedAfterCall();
     masm.implicitPop(frameSize + framePop);
 
+    masm.freeStack(asIon()->localTracingSlots() * sizeof(Value));
+
     
     masm.Pop(FramePointer);
     masm.freeStack(IonICCallFrameLayout::Size() - sizeof(void*));
