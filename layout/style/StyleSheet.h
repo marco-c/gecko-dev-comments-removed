@@ -343,11 +343,10 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   dom::MediaList* Media();
   bool Disabled() const { return bool(mState & State::Disabled); }
   void SetDisabled(bool aDisabled);
-  void GetSourceMapURL(nsAString& aTitle);
-  void SetSourceMapURL(const nsAString& aSourceMapURL);
-  void SetSourceMapURLFromComment(const nsAString& aSourceMapURLFromComment);
-  void GetSourceURL(nsAString& aSourceURL);
-  void SetSourceURL(const nsAString& aSourceURL);
+
+  void GetSourceMapURL(nsACString&);
+  void SetSourceMapURL(nsCString&&);
+  void GetSourceURL(nsACString& aSourceURL);
 
   
   
@@ -511,9 +510,6 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult&);
   nsresult InsertRuleIntoGroupInternal(const nsACString& aRule,
                                        css::GroupRule* aGroup, uint32_t aIndex);
-
-  
-  void FinishParse();
 
   
   

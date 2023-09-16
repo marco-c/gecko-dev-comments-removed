@@ -67,15 +67,7 @@ struct StyleSheetInfo final {
   
   
   
-  nsString mSourceMapURL;
-  
-  
-  
-  
-  nsString mSourceMapURLFromComment;
-  
-  
-  nsString mSourceURL;
+  nsCString mSourceMapURL;
 
   RefPtr<const StyleStylesheetContents> mContents;
 
