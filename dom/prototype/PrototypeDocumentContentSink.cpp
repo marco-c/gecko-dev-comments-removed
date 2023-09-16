@@ -381,7 +381,7 @@ nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
     XMLStylesheetProcessingInstruction* aPINode) {
   
   
-  aPINode->SetEnableUpdates(false);
+  aPINode->DisableUpdates();
   aPINode->OverrideBaseURI(mCurrentPrototype->GetURI());
 
   ErrorResult rv;
@@ -391,11 +391,9 @@ nsresult PrototypeDocumentContentSink::InsertXMLStylesheetPI(
     return rv.StealNSResult();
   }
 
-  aPINode->SetEnableUpdates(true);
-
   
   
-  auto result = aPINode->UpdateStyleSheet(this);
+  auto result = aPINode->EnableUpdatesAndUpdateStyleSheet(this);
   if (result.isErr()) {
     
     

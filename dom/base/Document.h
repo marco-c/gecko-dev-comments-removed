@@ -4763,10 +4763,6 @@ class Document : public nsINode,
 
   
   
-  bool mSSApplicableStateNotificationPending : 1;
-
-  
-  
   bool mMayHaveTitleElement : 1;
 
   bool mDOMLoadingSet : 1;

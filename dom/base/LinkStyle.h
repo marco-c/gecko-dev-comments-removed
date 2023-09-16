@@ -175,9 +175,12 @@ class LinkStyle {
 
 
 
-
-  void SetEnableUpdates(bool aEnableUpdates) {
-    mUpdatesEnabled = aEnableUpdates;
+  void DisableUpdates() { mUpdatesEnabled = false; }
+  Result<Update, nsresult> EnableUpdatesAndUpdateStyleSheet(
+      nsICSSLoaderObserver* aObserver) {
+    MOZ_ASSERT(!mUpdatesEnabled);
+    mUpdatesEnabled = true;
+    return UpdateStyleSheet(aObserver);
   }
 
   
@@ -275,11 +278,13 @@ class LinkStyle {
                                               nsICSSLoaderObserver*,
                                               ForceUpdate);
 
+  void BindToTree();
+
   RefPtr<mozilla::StyleSheet> mStyleSheet;
   nsCOMPtr<nsIPrincipal> mTriggeringPrincipal;
-  bool mUpdatesEnabled;
-  uint32_t mLineNumber;
-  uint32_t mColumnNumber;
+  bool mUpdatesEnabled = true;
+  uint32_t mLineNumber = 1;
+  uint32_t mColumnNumber = 1;
 };
 
 }  

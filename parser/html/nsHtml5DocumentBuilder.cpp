@@ -32,7 +32,7 @@ nsresult nsHtml5DocumentBuilder::Init(mozilla::dom::Document* aDoc,
   return nsContentSink::Init(aDoc, aURI, aContainer, aChannel);
 }
 
-nsHtml5DocumentBuilder::~nsHtml5DocumentBuilder() {}
+nsHtml5DocumentBuilder::~nsHtml5DocumentBuilder() = default;
 
 nsresult nsHtml5DocumentBuilder::MarkAsBroken(nsresult aReason) {
   mBroken = aReason;
@@ -47,28 +47,14 @@ void nsHtml5DocumentBuilder::UpdateStyleSheet(nsIContent* aElement) {
     return;
   }
 
-  
-  
-  EndDocUpdate();
-
-  if (MOZ_UNLIKELY(!mParser)) {
-    
-    return;
-  }
-
-  linkStyle->SetEnableUpdates(true);
-
-  auto updateOrError =
-      linkStyle->UpdateStyleSheet(mRunsToCompletion ? nullptr : this);
+  auto updateOrError = linkStyle->EnableUpdatesAndUpdateStyleSheet(
+      mRunsToCompletion ? nullptr : this);
 
   if (updateOrError.isOk() && updateOrError.unwrap().ShouldBlock() &&
       !mRunsToCompletion) {
     ++mPendingSheetCount;
     mScriptLoader->AddParserBlockingScriptExecutionBlocker();
   }
-
-  
-  BeginDocUpdate();
 }
 
 void nsHtml5DocumentBuilder::SetDocumentMode(nsHtml5DocumentMode m) {
