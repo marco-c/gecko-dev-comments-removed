@@ -229,14 +229,14 @@ static void ReportSyntaxError(TokenStreamAnyChars& ts,
       
       err.lineNumber = *line;
       auto offset = JS::ColumnNumberOffset(columnNumber.zeroOriginValue());
-      err.columnNumber = (*column + offset).zeroOriginValue();
+      err.columnNumber = *column + offset;
     } else {
       
       
       
       
       err.lineNumber = 1;
-      err.columnNumber = columnNumber.zeroOriginValue();
+      err.columnNumber = columnNumber;
     }
   }
 
