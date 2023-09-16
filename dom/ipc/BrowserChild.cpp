@@ -2485,24 +2485,13 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   }
 
   mRenderLayers = aEnabled;
+  const bool wasVisible = IsVisible();
 
-  if (aEnabled && IsVisible()) {
-    
-    
-    
-    
-    
-    if (IPCOpen()) {
-      Unused << SendPaintWhileInterruptingJSNoOp();
-    }
-    return IPC_OK();
-  }
-
-  
-  
   UpdateVisibility();
 
-  if (!aEnabled) {
+  
+  const bool becameVisible = !wasVisible && IsVisible();
+  if (!becameVisible) {
     return IPC_OK();
   }
 

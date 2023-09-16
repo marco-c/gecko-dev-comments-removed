@@ -594,11 +594,6 @@ parent:
 
     async RemoteIsReadyToHandleInputEvents();
 
-    
-
-
-    async PaintWhileInterruptingJSNoOp();
-
 child:
     
 

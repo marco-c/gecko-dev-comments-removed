@@ -3750,14 +3750,6 @@ void BrowserParent::LayerTreeUpdate(bool aActive) {
   frameElement->DispatchEvent(*event);
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvPaintWhileInterruptingJSNoOp() {
-  
-  
-  
-  LayerTreeUpdate(true);
-  return IPC_OK();
-}
-
 mozilla::ipc::IPCResult BrowserParent::RecvRemoteIsReadyToHandleInputEvents() {
   
   
