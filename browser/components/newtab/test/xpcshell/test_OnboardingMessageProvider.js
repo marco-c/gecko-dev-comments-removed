@@ -89,7 +89,7 @@ add_task(async function test_OnboardingMessageProvider_getNoImport_default() {
   
   Assert.notEqual(
     message.content.screens[1]?.id,
-    "UPGRADE_IMPORT_SETTINGS",
+    "UPGRADE_IMPORT_SETTINGS_EMBEDDED",
     "Screen has no import screen id"
   );
   sandbox.restore();
@@ -109,7 +109,7 @@ add_task(async function test_OnboardingMessageProvider_getImport_nodefault() {
   
   Assert.equal(
     message.content.screens[1]?.id,
-    "UPGRADE_IMPORT_SETTINGS",
+    "UPGRADE_IMPORT_SETTINGS_EMBEDDED",
     "Screen has import screen id"
   );
   sandbox.restore();
