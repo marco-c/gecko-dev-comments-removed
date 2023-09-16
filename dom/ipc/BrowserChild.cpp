@@ -2777,15 +2777,38 @@ bool BrowserChild::IsVisible() {
 }
 
 void BrowserChild::UpdateVisibility() {
-  bool shouldBeVisible = mIsTopLevel ? mRenderLayers : mEffectsInfo.IsVisible();
-  bool isVisible = IsVisible();
-
-  if (shouldBeVisible != isVisible) {
-    if (shouldBeVisible) {
-      MakeVisible();
-    } else {
-      MakeHidden();
+  const bool shouldBeVisible = [&] {
+    
+    
+    
+    if (mBrowsingContext && mBrowsingContext->IsUnderHiddenEmbedderElement()) {
+      return false;
     }
+    
+    
+    
+    
+    
+    
+    
+    if (!mIsTopLevel && !mEffectsInfo.IsVisible()) {
+      return false;
+    }
+    
+    if (!mRenderLayers) {
+      return false;
+    }
+    return true;
+  }();
+
+  const bool isVisible = IsVisible();
+  if (shouldBeVisible == isVisible) {
+    return;
+  }
+  if (shouldBeVisible) {
+    MakeVisible();
+  } else {
+    MakeHidden();
   }
 }
 
