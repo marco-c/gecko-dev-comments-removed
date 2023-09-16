@@ -186,10 +186,15 @@ class OffThreadJob;
 
 
 struct ShellContext {
-  explicit ShellContext(JSContext* cx);
+  enum IsWorkerEnum { Worker = true, MainThread = false };
+
+  explicit ShellContext(JSContext* cx, IsWorkerEnum isWorker_);
+  bool registerWithCx(JSContext* cx);
   ~ShellContext();
 
-  bool isWorker;
+  JSContext* cx_;
+
+  const IsWorkerEnum isWorker;
   bool lastWarningEnabled;
 
   
