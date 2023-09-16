@@ -317,6 +317,7 @@ already_AddRefed<Texture> Device::InitSwapChain(
   desc.mUsage = aDesc.mUsage | dom::GPUTextureUsage_Binding::COPY_SRC;
   desc.mViewFormats = aDesc.mViewFormats;
   
+  
   return CreateTexture(desc);
 }
 
