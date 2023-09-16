@@ -3582,6 +3582,9 @@ class Document : public nsINode,
   void MaybeWarnAboutZoom();
 
   
+  void EvaluateMediaQueriesAndReportChanges(bool aRecurse);
+
+  
   nsIHTMLCollection* Children();
   uint32_t ChildElementCount();
 

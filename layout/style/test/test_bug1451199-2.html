@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1451199
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1451199</title>
@@ -25,7 +25,7 @@
       is(l.matches, false,
          "Should not match portrait by the time we get notified");
       SimpleTest.finish();
-    });
+    }, { once: true });
     iframe.width = "200";
   });
   </script>

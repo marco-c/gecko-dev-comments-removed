@@ -40,9 +40,11 @@ class MediaQueryList final : public DOMEventTargetHelper,
 
   nsISupports* GetParentObject() const;
 
+  void MediaFeatureValuesChanged();
+
   
   
-  [[nodiscard]] bool MediaFeatureValuesChanged();
+  [[nodiscard]] bool EvaluateOnRenderingUpdate();
   void FireChangeEvent();
 
   JSObject* WrapObject(JSContext* aCx,
@@ -53,9 +55,6 @@ class MediaQueryList final : public DOMEventTargetHelper,
   bool Matches();
   void AddListener(EventListener* aListener, ErrorResult& aRv);
   void RemoveListener(EventListener* aListener, ErrorResult& aRv);
-
-  using DOMEventTargetHelper::EventListenerAdded;
-  void EventListenerAdded(nsAtom* aType) override;
 
   IMPL_EVENT_HANDLER(change)
 
@@ -91,11 +90,16 @@ class MediaQueryList final : public DOMEventTargetHelper,
   
   RefPtr<Document> mDocument;
   const RefPtr<const MediaList> mMediaList;
-  bool mMatches = false;
-  bool mMatchesValid = false;
   
   
-  const bool mViewportDependent;
+  const bool mViewportDependent : 1;
+  
+  
+  bool mMatches : 1;
+  
+  
+  
+  bool mMatchesOnRenderingUpdate : 1;
 };
 
 }  

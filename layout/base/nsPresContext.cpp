@@ -1943,6 +1943,10 @@ void nsPresContext::MediaFeatureValuesChanged(
     mPresShell->EnsureStyleFlush();
   }
 
+  if (!mDocument->MediaQueryLists().isEmpty()) {
+    RefreshDriver()->ScheduleMediaQueryListenerUpdate();
+  }
+
   if (!mPendingMediaFeatureValuesChange) {
     mPendingMediaFeatureValuesChange = MakeUnique<MediaFeatureChange>(aChange);
   } else {
@@ -1991,46 +1995,8 @@ bool nsPresContext::FlushPendingMediaFeatureValuesChanged() {
     RebuildAllStyleData(change.mChangeHint, change.mRestyleHint);
   }
 
-  if (mDocument->IsBeingUsedAsImage()) {
-    MOZ_ASSERT(mDocument->MediaQueryLists().isEmpty());
-    return changedStyle;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (mDocument->MediaQueryLists().isEmpty()) {
-    return changedStyle;
-  }
-
-  
-  
-  nsTArray<RefPtr<mozilla::dom::MediaQueryList>> listsToNotify;
-  for (MediaQueryList* mql = mDocument->MediaQueryLists().getFirst(); mql;
-       mql = static_cast<LinkedListElement<MediaQueryList>*>(mql)->getNext()) {
-    if (mql->MediaFeatureValuesChanged()) {
-      listsToNotify.AppendElement(mql);
-    }
-  }
-
-  if (!listsToNotify.IsEmpty()) {
-    nsContentUtils::AddScriptRunner(NS_NewRunnableFunction(
-        "nsPresContext::FlushPendingMediaFeatureValuesChanged",
-        [list = std::move(listsToNotify)] {
-          for (const auto& mql : list) {
-            nsAutoMicroTask mt;
-            mql->FireChangeEvent();
-          }
-        }));
+  for (MediaQueryList* mql : mDocument->MediaQueryLists()) {
+    mql->MediaFeatureValuesChanged();
   }
 
   return changedStyle;

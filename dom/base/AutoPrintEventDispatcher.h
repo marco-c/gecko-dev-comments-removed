@@ -35,7 +35,9 @@ class AutoPrintEventDispatcher {
       if (RefPtr<nsPresContext> presContext = doc->GetPresContext()) {
         presContext->EmulateMedium(aBefore ? nsGkAtoms::print : nullptr);
         
-        doc->FlushPendingNotifications(FlushType::Style);
+        
+        
+        doc->EvaluateMediaQueriesAndReportChanges( false);
       }
     }
   }
