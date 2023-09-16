@@ -54,44 +54,30 @@ const SPECIALVALUES = new Set([
 
 
 
-
-function CssColor(colorValue) {
-  this.newColor(colorValue);
-}
-
-module.exports.colorUtils = {
-  CssColor,
-  rgbToHsl,
-  rgbToHwb,
-  rgbToLab,
-  setAlpha,
-  classifyColor,
-  calculateContrastRatio,
-  calculateDeltaE,
-  calculateLuminance,
-  blendColors,
-};
-
-
-
-
-CssColor.COLORUNIT = {
-  authored: "authored",
-  hex: "hex",
-  name: "name",
-  rgb: "rgb",
-  hsl: "hsl",
-  hwb: "hwb",
-};
-
-CssColor.prototype = {
-  _colorUnit: null,
-  _colorUnitUppercase: false,
+class CssColor {
+  constructor(colorValue) {
+    this.newColor(colorValue);
+  }
 
   
-  authored: null,
+
+
+  static COLORUNIT = {
+    authored: "authored",
+    hex: "hex",
+    name: "name",
+    rgb: "rgb",
+    hsl: "hsl",
+    hwb: "hwb",
+  };
+
+  _colorUnit = null;
+  _colorUnitUppercase = false;
+
   
-  lowerCased: null,
+  authored = null;
+  
+  lowerCased = null;
 
   _setColorUnitUppercase(color) {
     
@@ -99,7 +85,7 @@ CssColor.prototype = {
     
     this._colorUnitUppercase =
       color === color.toUpperCase() && color !== color.toLowerCase();
-  },
+  }
 
   get colorUnit() {
     if (this._colorUnit === null) {
@@ -108,11 +94,11 @@ CssColor.prototype = {
       this._setColorUnitUppercase(this.authored);
     }
     return this._colorUnit;
-  },
+  }
 
   set colorUnit(unit) {
     this._colorUnit = unit;
-  },
+  }
 
   
 
@@ -129,14 +115,14 @@ CssColor.prototype = {
       this._colorUnit = classifyColor(color);
       this._setColorUnitUppercase(color);
     }
-  },
+  }
 
   get hasAlpha() {
     if (!this.valid) {
       return false;
     }
     return this.getRGBATuple().a !== 1;
-  },
+  }
 
   
 
@@ -146,7 +132,7 @@ CssColor.prototype = {
     
     
     return InspectorUtils.colorToRGBA(this.authored) !== null;
-  },
+  }
 
   
 
@@ -165,7 +151,7 @@ CssColor.prototype = {
     const tuple = InspectorUtils.colorToRGBA(this.authored);
     tuple.a *= 255;
     return tuple;
-  },
+  }
 
   
 
@@ -177,11 +163,11 @@ CssColor.prototype = {
     } catch (e) {
       return false;
     }
-  },
+  }
 
   get specialValue() {
     return SPECIALVALUES.has(this.lowerCased) ? this.authored : null;
-  },
+  }
 
   get name() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -196,7 +182,7 @@ CssColor.prototype = {
     }
     const { r, g, b } = tuple;
     return InspectorUtils.rgbToColorName(r, g, b) || this.hex;
-  },
+  }
 
   get hex() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -216,7 +202,7 @@ CssColor.prototype = {
       hex = "#" + hex.charAt(1) + hex.charAt(3) + hex.charAt(5);
     }
     return hex;
-  },
+  }
 
   get alphaHex() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -239,7 +225,7 @@ CssColor.prototype = {
         alphaHex.charAt(7);
     }
     return alphaHex;
-  },
+  }
 
   get longHex() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -257,7 +243,7 @@ CssColor.prototype = {
         .toString(16)
         .substr(-6)
     );
-  },
+  }
 
   get longAlphaHex() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -274,7 +260,7 @@ CssColor.prototype = {
         .substr(-6) +
       Math.round(tuple.a).toString(16).padStart(2, "0")
     );
-  },
+  }
 
   get rgb() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -290,7 +276,7 @@ CssColor.prototype = {
       return "rgb(" + tuple.r + ", " + tuple.g + ", " + tuple.b + ")";
     }
     return this.rgba;
-  },
+  }
 
   get rgba() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -313,7 +299,7 @@ CssColor.prototype = {
       components.a +
       ")"
     );
-  },
+  }
 
   get hsl() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -328,7 +314,7 @@ CssColor.prototype = {
       return this.hsla;
     }
     return this._hsl();
-  },
+  }
 
   get hsla() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -344,7 +330,7 @@ CssColor.prototype = {
       return this._hsl(a);
     }
     return this._hsl(1);
-  },
+  }
 
   get hwb() {
     const invalidOrSpecialValue = this._getInvalidOrSpecialValue();
@@ -360,7 +346,7 @@ CssColor.prototype = {
       return this._hwb(a);
     }
     return this._hwb();
-  },
+  }
 
   
 
@@ -384,7 +370,7 @@ CssColor.prototype = {
       return "";
     }
     return false;
-  },
+  }
 
   
 
@@ -400,7 +386,7 @@ CssColor.prototype = {
     this.authored = color;
     this._setColorUnitUppercase(color);
     return this;
-  },
+  }
 
   nextColorUnit() {
     
@@ -422,7 +408,7 @@ CssColor.prototype = {
     }
 
     return this.toString();
-  },
+  }
 
   
 
@@ -461,7 +447,7 @@ CssColor.prototype = {
     }
 
     return color;
-  },
+  }
 
   
 
@@ -473,7 +459,7 @@ CssColor.prototype = {
     tuple.a = parseFloat(tuple.a.toFixed(2));
 
     return tuple;
-  },
+  }
 
   
 
@@ -490,7 +476,7 @@ CssColor.prototype = {
       l,
       a: parseFloat(a.toFixed(2)),
     };
-  },
+  }
 
   _hsl(maybeAlpha) {
     if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
@@ -504,7 +490,7 @@ CssColor.prototype = {
       return "hsla(" + h + ", " + s + "%, " + l + "%, " + maybeAlpha + ")";
     }
     return "hsl(" + h + ", " + s + "%, " + l + "%)";
-  },
+  }
 
   _hwb(maybeAlpha) {
     if (this.lowerCased.startsWith("hwb(") && maybeAlpha === undefined) {
@@ -517,14 +503,14 @@ CssColor.prototype = {
     return `hwb(${hue} ${white}% ${black}%${
       maybeAlpha !== undefined ? " / " + maybeAlpha : ""
     })`;
-  },
+  }
 
   
 
 
   valueOf() {
     return this.rgba;
-  },
+  }
 
   
 
@@ -533,8 +519,8 @@ CssColor.prototype = {
 
   isTransparent() {
     return this.getRGBATuple().a === 0;
-  },
-};
+  }
+}
 
 
 
@@ -839,3 +825,16 @@ function calculateContrastRatio(backgroundColor, textColor) {
 
   return ratio > 1.0 ? ratio : 1 / ratio;
 }
+
+module.exports.colorUtils = {
+  CssColor,
+  rgbToHsl,
+  rgbToHwb,
+  rgbToLab,
+  setAlpha,
+  classifyColor,
+  calculateContrastRatio,
+  calculateDeltaE,
+  calculateLuminance,
+  blendColors,
+};
