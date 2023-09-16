@@ -15,10 +15,8 @@
 
 #include "mozilla/Char16.h"
 #include "nsUTF8Utils.h"
-#include "nsWindowsHelpers.h"
 
 #include <windows.h>
-#include <versionhelpers.h>
 
 #ifdef __MINGW32__
 
@@ -114,20 +112,6 @@ static void FreeAllocStrings(int argc, char** argv) {
 }
 
 int wmain(int argc, WCHAR** argv) {
-  
-  
-  
-  
-  
-  
-  if (!IsWindows8OrGreater()) {
-    SYSTEM_INFO sysInfo;
-    ::GetNativeSystemInfo(&sysInfo);
-    if (sysInfo.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_INTEL) {
-      LoadLibrarySystem32(L"user32.dll");
-    }
-  }
-
   SanitizeEnvironmentVariables();
   SetDllDirectoryW(L"");
 
