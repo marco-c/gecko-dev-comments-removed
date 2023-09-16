@@ -25,27 +25,6 @@
 
 namespace js {
 
-class SrcNote;
-
-
-
-
-
-
-
-struct GSNCache {
-  typedef HashMap<jsbytecode*, const SrcNote*, PointerHasher<jsbytecode*>,
-                  SystemAllocPolicy>
-      Map;
-
-  jsbytecode* code;
-  Map map;
-
-  GSNCache() : code(nullptr) {}
-
-  void purge();
-};
-
 struct EvalCacheEntry {
   JSLinearString* str;
   JSScript* script;
@@ -516,7 +495,6 @@ class RuntimeCaches {
  public:
   MegamorphicCache megamorphicCache;
   UniquePtr<MegamorphicSetPropCache> megamorphicSetPropCache;
-  GSNCache gsnCache;
   UncompressedSourceCache uncompressedSourceCache;
   EvalCache evalCache;
   StringToAtomCache stringToAtomCache;
@@ -551,7 +529,6 @@ class RuntimeCaches {
 
   void purge() {
     purgeForCompaction();
-    gsnCache.purge();
     uncompressedSourceCache.purge();
     purgeStencils();
   }

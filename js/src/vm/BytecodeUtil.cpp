@@ -23,7 +23,6 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
-#include "frontend/SourceNotes.h"  
 #include "gc/PublicIterators.h"
 #include "jit/IonScript.h"  
 #include "js/CharacterEncoding.h"
@@ -1003,7 +1002,6 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
 
 
 
-
 [[nodiscard]] static bool DisassembleAtPC(
     JSContext* cx, JSScript* scriptArg, bool lines, const jsbytecode* pc,
     bool showAll, Sprinter* sp,
@@ -1085,29 +1083,6 @@ static unsigned Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
       }
     }
     if (showAll) {
-      const SrcNote* sn = GetSrcNote(cx, script, next);
-      if (sn) {
-        MOZ_ASSERT(!sn->isTerminator());
-        SrcNoteIterator iter(sn);
-        while (true) {
-          ++iter;
-          auto next = *iter;
-          if (!(!next->isTerminator() && next->delta() == 0)) {
-            break;
-          }
-          if (!sp->jsprintf("%s\n    ", sn->name())) {
-            return false;
-          }
-          sn = *iter;
-        }
-        if (!sp->jsprintf("%s ", sn->name())) {
-          return false;
-        }
-      } else {
-        if (!sp->put("   ")) {
-          return false;
-        }
-      }
       if (parser && parser->isReachable(next)) {
         if (!sp->jsprintf("%05u ", parser->stackDepthAtPC(next))) {
           return false;

@@ -35,25 +35,20 @@ namespace js {
 
 
 
-
-
-
 #define FOR_EACH_SRC_NOTE_TYPE(M)
-                                            \
-  M(Null, "null", 0)                                                         \
-  /* += or another assign-op follows. */                                     \
-  M(AssignOp, "assignop", 0)                                                 \
-  /* All notes above here are "gettable".  See SrcNote::isGettable below. */ \
-  M(ColSpan, "colspan", int8_t(SrcNote::ColSpan::Operands::Count))           \
-  /* Bytecode follows a source newline. */                                   \
-  M(NewLine, "newline", 0)                                                   \
-  M(SetLine, "setline", int8_t(SrcNote::SetLine::Operands::Count))           \
-  /* Bytecode is a recommended breakpoint. */                                \
-  M(Breakpoint, "breakpoint", 0)                                             \
-  /* Bytecode is the first in a new steppable area. */                       \
-  M(StepSep, "step-sep", 0)                                                  \
-  M(Unused7, "unused", 0)                                                    \
-  /* 8-15 (0b1xxx) are for extended delta notes. */                          \
+                                  \
+  M(Null, "null", 0)                                               \
+  M(ColSpan, "colspan", int8_t(SrcNote::ColSpan::Operands::Count)) \
+  /* Bytecode follows a source newline. */                         \
+  M(NewLine, "newline", 0)                                         \
+  M(SetLine, "setline", int8_t(SrcNote::SetLine::Operands::Count)) \
+  /* Bytecode is a recommended breakpoint. */                      \
+  M(Breakpoint, "breakpoint", 0)                                   \
+  /* Bytecode is the first in a new steppable area. */             \
+  M(StepSep, "step-sep", 0)                                        \
+  M(Unused6, "unused", 0)                                          \
+  M(Unused7, "unused", 0)                                          \
+  /* 8-15 (0b1xxx) are for extended delta notes. */                \
   M(XDelta, "xdelta", 0)
 
 
@@ -66,7 +61,6 @@ enum class SrcNoteType : uint8_t {
 #undef DEFINE_SRC_NOTE_TYPE
 
       Last,
-  LastGettable = AssignOp
 };
 
 static_assert(uint8_t(SrcNoteType::XDelta) == 8, "XDelta should be 8");
@@ -152,10 +146,6 @@ class SrcNote {
   const char* name() const {
     MOZ_ASSERT(uint8_t(type()) < uint8_t(SrcNoteType::Last));
     return specs_[uint8_t(type())].name_;
-  }
-
-  inline bool isGettable() const {
-    return uint8_t(type()) <= uint8_t(SrcNoteType::LastGettable);
   }
 
   inline bool isTerminator() const {
