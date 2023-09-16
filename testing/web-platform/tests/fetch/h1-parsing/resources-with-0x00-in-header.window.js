@@ -15,7 +15,7 @@ async_test(t => {
   
   
   t.step_timeout(() => {
-    assert_equals(frame.contentDocument, null);
+    assert_equals(window.frameLoaded, undefined);
     t.done();
   }, 1000);
   document.body.append(frame);
