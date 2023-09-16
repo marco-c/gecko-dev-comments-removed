@@ -8901,11 +8901,8 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
       !gtk_widget_get_realized(mShell)) {
     LOG("    Using CSD shortcut\n");
     MOZ_ASSERT(!mCreated);
-    if (aState) {
-      gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
-    } else {
-      gtk_window_set_titlebar(GTK_WINDOW(mShell), nullptr);
-    }
+    gtk_window_set_titlebar(GTK_WINDOW(mShell),
+                            aState ? gtk_fixed_new() : nullptr);
     return;
   }
 
@@ -8938,15 +8935,12 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
     gtk_widget_reparent(GTK_WIDGET(mContainer), tmpWindow);
     gtk_widget_unrealize(GTK_WIDGET(mShell));
 
-    if (aState) {
-      
-      
-      
-      
-      gtk_window_set_titlebar(GTK_WINDOW(mShell), gtk_fixed_new());
-    } else {
-      gtk_window_set_titlebar(GTK_WINDOW(mShell), nullptr);
-    }
+    
+    
+    
+    
+    gtk_window_set_titlebar(GTK_WINDOW(mShell),
+                            aState ? gtk_fixed_new() : nullptr);
 
     
 
