@@ -28,8 +28,6 @@ class CalcSnapPoints final {
   CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
                  const nsPoint& aDestination, const nsPoint& aStartPos);
   struct SnapPosition {
-    SnapPosition() = default;
-
     SnapPosition(nscoord aPosition, StyleScrollSnapStop aScrollSnapStop,
                  ScrollSnapTargetId aTargetId)
         : mPosition(aPosition),
@@ -46,18 +44,21 @@ class CalcSnapPoints final {
 
   struct CandidateTracker {
     
-    SnapPosition mBestEdge;
-    
     
     
     
     
     
     nscoord mSecondBestEdge = nscoord_MAX;
-    bool mEdgeFound = false;  
 
     
     AutoTArray<ScrollSnapTargetId, 1> mTargetIds;
+    
+    
+    
+    
+    AutoTArray<SnapPosition, 1> mBestEdges;
+    bool EdgeFound() const { return !mBestEdges.IsEmpty(); }
   };
   void AddEdge(const SnapPosition& aEdge, nscoord aDestination,
                nscoord aStartPos, nscoord aScrollingDirection,
@@ -66,15 +67,15 @@ class CalcSnapPoints final {
   nscoord XDistanceBetweenBestAndSecondEdge() const {
     return std::abs(NSCoordSaturatingSubtract(
         mTrackerOnX.mSecondBestEdge,
-        mTrackerOnX.mEdgeFound ? mTrackerOnX.mBestEdge.mPosition
-                               : mDestination.x,
+        mTrackerOnX.EdgeFound() ? mTrackerOnX.mBestEdges[0].mPosition
+                                : mDestination.x,
         nscoord_MAX));
   }
   nscoord YDistanceBetweenBestAndSecondEdge() const {
     return std::abs(NSCoordSaturatingSubtract(
         mTrackerOnY.mSecondBestEdge,
-        mTrackerOnY.mEdgeFound ? mTrackerOnY.mBestEdge.mPosition
-                               : mDestination.y,
+        mTrackerOnY.EdgeFound() ? mTrackerOnY.mBestEdges[0].mPosition
+                                : mDestination.y,
         nscoord_MAX));
   }
   const nsPoint& Destination() const { return mDestination; }
@@ -118,13 +119,13 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
 SnapDestination CalcSnapPoints::GetBestEdge() const {
   return SnapDestination{
       nsPoint(
-          mTrackerOnX.mEdgeFound ? mTrackerOnX.mBestEdge.mPosition
+          mTrackerOnX.EdgeFound() ? mTrackerOnX.mBestEdges[0].mPosition
           
           
           
           : !(mSnapFlags & ScrollSnapFlags::IntendedDirection) ? mDestination.x
                                                                : mStartPos.x,
-          mTrackerOnY.mEdgeFound ? mTrackerOnY.mBestEdge.mPosition
+          mTrackerOnY.EdgeFound() ? mTrackerOnY.mBestEdges[0].mPosition
           
           
           : !(mSnapFlags & ScrollSnapFlags::IntendedDirection) ? mDestination.y
@@ -156,11 +157,10 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
     }
   }
 
-  if (!aCandidateTracker->mEdgeFound) {
-    aCandidateTracker->mBestEdge = aEdge;
+  if (!aCandidateTracker->EdgeFound()) {
+    aCandidateTracker->mBestEdges = AutoTArray<SnapPosition, 1>{aEdge};
     aCandidateTracker->mTargetIds =
         AutoTArray<ScrollSnapTargetId, 1>{aEdge.mTargetId};
-    aCandidateTracker->mEdgeFound = true;
     return;
   }
 
@@ -177,7 +177,7 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
 
   const bool isOnOppositeSide =
       ((aEdge.mPosition - aDestination) > 0) !=
-      ((aCandidateTracker->mBestEdge.mPosition - aDestination) > 0);
+      ((aCandidateTracker->mBestEdges[0].mPosition - aDestination) > 0);
   const nscoord distanceFromStart = aEdge.mPosition - aStartPos;
   
   
@@ -212,14 +212,15 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
         
         
         aCandidateTracker->mSecondBestEdge =
-            aCandidateTracker->mBestEdge.mPosition;
+            aCandidateTracker->mBestEdges[0].mPosition;
       }
-      aCandidateTracker->mBestEdge = aEdge;
+      aCandidateTracker->mBestEdges = AutoTArray<SnapPosition, 1>{aEdge};
       aCandidateTracker->mTargetIds =
           AutoTArray<ScrollSnapTargetId, 1>{aEdge.mTargetId};
     } else {
-      if (aEdge.mPosition == aCandidateTracker->mBestEdge.mPosition) {
+      if (aEdge.mPosition == aCandidateTracker->mBestEdges[0].mPosition) {
         aCandidateTracker->mTargetIds.AppendElement(aEdge.mTargetId);
+        aCandidateTracker->mBestEdges.AppendElement(aEdge);
       }
       if (aIsCloserThanSecond && isOnOppositeSide) {
         aCandidateTracker->mSecondBestEdge = aEdge.mPosition;
@@ -235,7 +236,7 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
     case ScrollUnit::WHOLE: {
       isCandidateOfBest =
           std::abs(distanceFromDestination) <
-          std::abs(aCandidateTracker->mBestEdge.mPosition - aDestination);
+          std::abs(aCandidateTracker->mBestEdges[0].mPosition - aDestination);
       isCandidateOfSecondBest =
           std::abs(distanceFromDestination) <
           std::abs(NSCoordSaturatingSubtract(aCandidateTracker->mSecondBestEdge,
@@ -249,7 +250,7 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
       
       
       nscoord curOvershoot =
-          (aCandidateTracker->mBestEdge.mPosition - aDestination) *
+          (aCandidateTracker->mBestEdges[0].mPosition - aDestination) *
           aScrollingDirection;
 
       nscoord secondOvershoot =
@@ -280,8 +281,8 @@ void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
       
       isCandidateOfBest =
           std::abs(distanceFromStart) <
-          std::abs(aCandidateTracker->mBestEdge.mPosition - aStartPos);
-    } else if (isPreferredStopAlways(aCandidateTracker->mBestEdge)) {
+          std::abs(aCandidateTracker->mBestEdges[0].mPosition - aStartPos);
+    } else if (isPreferredStopAlways(aCandidateTracker->mBestEdges[0])) {
       
       
       
