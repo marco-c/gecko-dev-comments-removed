@@ -19,17 +19,17 @@
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/FrontendContext.h"   
-#include "js/ColumnNumber.h"            
-#include "js/Context.h"                 
-#include "js/ErrorReport.h"             
-#include "js/RootingAPI.h"              
-#include "js/Value.h"                   
-#include "vm/EnvironmentObject.h"       
-#include "vm/JSAtomUtils.h"             
-#include "vm/JSContext.h"               
-#include "vm/JSObject.h"                
-#include "vm/List.h"                    
-#include "vm/Runtime.h"                 
+#include "js/ColumnNumber.h"  
+#include "js/Context.h"            
+#include "js/ErrorReport.h"        
+#include "js/RootingAPI.h"         
+#include "js/Value.h"              
+#include "vm/EnvironmentObject.h"  
+#include "vm/JSAtomUtils.h"        
+#include "vm/JSContext.h"          
+#include "vm/JSObject.h"           
+#include "vm/List.h"               
+#include "vm/Runtime.h"            
 
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"    
@@ -907,7 +907,7 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
 
   RootedValue error(cx);
   if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename, line,
-                       column.oneOriginValue(), nullptr, message,
+                       JS::ColumnNumberOneOrigin(column), nullptr, message,
                        JS::NothingHandleValue, &error)) {
     return;
   }

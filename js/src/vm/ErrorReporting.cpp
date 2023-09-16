@@ -15,7 +15,7 @@
 #include "frontend/FrontendContext.h"  
 #include "js/CharacterEncoding.h"      
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"           
+#include "js/ErrorReport.h"   
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"                
 #include "js/Warnings.h"              
@@ -68,7 +68,7 @@ bool js::ReportCompileWarning(FrontendContext* fc, ErrorMetadata&& metadata,
 
   err.filename = JS::ConstUTF8CharsZ(metadata.filename);
   err.lineno = metadata.lineNumber;
-  err.column = metadata.columnNumber.oneOriginValue();
+  err.column = JS::ColumnNumberOneOrigin(metadata.columnNumber);
   err.isMuted = metadata.isMuted;
 
   if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
@@ -97,7 +97,7 @@ static void ReportCompileErrorImpl(FrontendContext* fc,
 
   err.filename = JS::ConstUTF8CharsZ(metadata.filename);
   err.lineno = metadata.lineNumber;
-  err.column = metadata.columnNumber.oneOriginValue();
+  err.column = JS::ColumnNumberOneOrigin(metadata.columnNumber);
   err.isMuted = metadata.isMuted;
 
   if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
@@ -198,7 +198,7 @@ static void PopulateReportBlame(JSContext* cx, JSErrorReport* report) {
   }
   JS::TaggedColumnNumberZeroOrigin column;
   report->lineno = iter.computeLine(&column);
-  report->column = column.oneOriginValue();
+  report->column = JS::ColumnNumberOneOrigin(column.oneOriginValue());
   report->isMuted = iter.mutedErrors();
 }
 

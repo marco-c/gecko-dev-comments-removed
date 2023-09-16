@@ -8,7 +8,7 @@
 
 #include "JSOracleParent.h"
 #include "js/CallAndConstruct.h"  
-#include "js/ColumnNumber.h"      
+#include "js/ColumnNumber.h"  
 #include "js/CharacterEncoding.h"
 #include "js/Object.h"              
 #include "js/PropertyAndElement.h"  
@@ -1628,8 +1628,8 @@ void ChromeUtils::CreateError(const GlobalObject& aGlobal,
 
     JS::Rooted<JS::Value> err(cx);
     if (!JS::CreateError(cx, JSEXN_ERR, stack, fileName, line,
-                         column.oneOriginValue(), nullptr, message,
-                         JS::NothingHandleValue, &err)) {
+                         JS::ColumnNumberOneOrigin(column.oneOriginValue()),
+                         nullptr, message, JS::NothingHandleValue, &err)) {
       return;
     }
 
