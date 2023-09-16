@@ -15,9 +15,16 @@ window.createBlessedRecordingCloseWatcher = (t, events, name) => {
   return test_driver.bless("create " + name, () => createRecordingCloseWatcher(t, events, name));
 };
 
-window.sendCloseSignal = () => {
+window.sendEscKey = () => {
   
   const ESC = '\uE00C';
 
   return test_driver.send_keys(document.getElementById("d"), ESC);
 };
+
+
+
+
+
+
+window.sendCloseSignal = window.sendEscKey;
