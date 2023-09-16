@@ -83,7 +83,7 @@ static uint64_t ClockTimeNs(const clockid_t aClockId = CLOCK_MONOTONIC) {
       aClockId == CLOCK_MONOTONIC ||
       (sSupportsMonotonicCoarseClock && aClockId == CLOCK_MONOTONIC_COARSE));
 #else
-  MOZ_RELEASE_ASSERT(aClockId == CLOCK_MONOTONIC)
+  MOZ_RELEASE_ASSERT(aClockId == CLOCK_MONOTONIC);
 #endif
   
   
