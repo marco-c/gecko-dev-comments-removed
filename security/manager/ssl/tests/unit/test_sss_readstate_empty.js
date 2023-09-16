@@ -6,6 +6,30 @@
 
 
 
+var gSSService = null;
+
+function checkStateRead(aSubject, aTopic, aData) {
+  
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://nonexistent.example.com")
+    )
+  );
+  ok(
+    gSSService.isSecureURI(
+      Services.io.newURI("https://includesubdomains.preloaded.test")
+    )
+  );
+  
+  
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://notexpired.example.com")
+    )
+  );
+  do_test_finished();
+}
+
 function run_test() {
   let profileDir = do_get_profile();
   let stateFile = profileDir.clone();
@@ -17,27 +41,10 @@ function run_test() {
   ok(stateFile.exists());
   
   
-  let siteSecurityService = Cc["@mozilla.org/ssservice;1"].getService(
+  Services.obs.addObserver(checkStateRead, "data-storage-ready");
+  do_test_pending();
+  gSSService = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
   );
-  notEqual(siteSecurityService, null);
-  
-  
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://nonexistent.example.com")
-    )
-  );
-  ok(
-    siteSecurityService.isSecureURI(
-      Services.io.newURI("https://includesubdomains.preloaded.test")
-    )
-  );
-  
-  
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://notexpired.example.com")
-    )
-  );
+  notEqual(gSSService, null);
 }
