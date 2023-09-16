@@ -862,6 +862,30 @@ function manageLoginsInParent() {
     });
 
     
+    addMessageListener("getLogins", async () => {
+      const logins = await Services.logins.getAllLogins();
+      return logins.map(
+        ({
+          origin,
+          formActionOrigin,
+          httpRealm,
+          username,
+          password,
+          usernameField,
+          passwordField,
+        }) => [
+          origin,
+          formActionOrigin,
+          httpRealm,
+          username,
+          password,
+          usernameField,
+          passwordField,
+        ]
+      );
+    });
+
+    
     addMessageListener("addLogins", async logins => {
       let nsLoginInfo = Components.Constructor(
         "@mozilla.org/login-manager/loginInfo;1",
@@ -874,26 +898,6 @@ function manageLoginsInParent() {
         await Services.logins.addLogins(loginInfos);
       } catch (e) {
         assert.ok(false, "addLogins threw: " + e);
-      }
-    });
-
-    
-    addMessageListener("removeLogins", async searchParams => {
-      try {
-        for (const searchParam of searchParams) {
-          const [login] = await Services.logins.searchLoginsAsync(searchParam);
-          if (!login) {
-            info(
-              `removeLogins: could not find login ${JSON.stringify(
-                searchParam
-              )}`
-            );
-            continue;
-          }
-          Services.logins.removeLogin(login);
-        }
-      } catch (e) {
-        assert.ok(false, "removeLogins threw: " + e);
       }
     });
   });
@@ -926,19 +930,41 @@ async function setStoredLoginsAsync(...aLogins) {
 
 
 
-async function storeLoginsDuringTask(...logins) {
+
+
+async function setStoredLoginsDuringTest(...logins) {
   const script = manageLoginsInParent();
-  const searchParams = logins.map(([origin, formActionOrigin, httpRealm]) => ({
-    origin,
-    formActionOrigin,
-    httpRealm,
-  }));
-  info(`Storing ${searchParams.length} logins for task`);
+  const loginsBefore = await script.sendQuery("getLogins");
+  await script.sendQuery("removeAllUserFacingLogins");
+  await script.sendQuery("addLogins", logins);
+  SimpleTest.registerCleanupFunction(async () => {
+    await script.sendQuery("removeAllUserFacingLogins");
+    await script.sendQuery("addLogins", loginsBefore);
+  });
+}
+
+
+
+
+
+
+
+async function setStoredLoginsDuringTask(...logins) {
+  const script = manageLoginsInParent();
+  const loginsBefore = await script.sendQuery("getLogins");
+  await script.sendQuery("removeAllUserFacingLogins");
   await script.sendQuery("addLogins", logins);
   SimpleTest.registerTaskCleanupFunction(async () => {
-    info(`Removing ${searchParams.length} logins after task`);
-    await script.sendQuery("removeLogins", searchParams);
+    await script.sendQuery("removeAllUserFacingLogins");
+    await script.sendQuery("addLogins", loginsBefore);
   });
+}
+
+
+
+function getLogins() {
+  const script = manageLoginsInParent();
+  return script.sendQuery("getLogins");
 }
 
 
@@ -1093,4 +1119,62 @@ function setContentForTask(html) {
   
   content.innerHTML = html;
   return content.firstChild;
+}
+
+
+
+
+
+
+
+async function setPreferencesForTask(...preferences) {
+  await SpecialPowers.pushPrefEnv({
+    set: preferences,
+  });
+  SimpleTest.registerCurrentTaskCleanupFunction(() => SpecialPowers.popPrefEnv);
+}
+
+
+let gPwmgrCommonCapturedAutofillResults = {};
+PWMGR_COMMON_PARENT.addMessageListener(
+  "formProcessed",
+  ({ formId, autofillResult }) => {
+    if (formId === "observerforcer") {
+      return;
+    }
+
+    gPwmgrCommonCapturedAutofillResults[formId] = autofillResult;
+  }
+);
+SimpleTest.registerTaskCleanupFunction(() => {
+  gPwmgrCommonCapturedAutofillResults = {};
+});
+
+
+
+
+
+
+
+
+
+async function formAutofillResult(formId) {
+  if (formId in gPwmgrCommonCapturedAutofillResults) {
+    const autofillResult = gPwmgrCommonCapturedAutofillResults[formId];
+    delete gPwmgrCommonCapturedAutofillResults[formId];
+    return autofillResult;
+  }
+  return new Promise((resolve, reject) => {
+    PWMGR_COMMON_PARENT.addMessageListener(
+      "formProcessed",
+      ({ formId: id, autofillResult }) => {
+        if (id !== formId) {
+          return;
+        }
+        delete gPwmgrCommonCapturedAutofillResults[formId];
+        resolve(autofillResult);
+      },
+      { once: true }
+    );
+  });
 }
