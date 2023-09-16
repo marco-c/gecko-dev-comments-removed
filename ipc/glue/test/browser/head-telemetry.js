@@ -262,7 +262,7 @@ function getExtraKey({ utilityPref, rddPref, allowNonUtility }) {
   }
   
   
-  if (allowNonUtility || !isNightlyOrEalyBeta()) {
+  if (allowNonUtility || !isNightly()) {
     extraKey += ",allow-non-utility";
   }
   return extraKey;
