@@ -89,13 +89,11 @@ class FilterInstance {
 
 
 
-  static void PaintFilteredFrame(nsIFrame* aFilteredFrame,
-                                 Span<const StyleFilter> aFilterChain,
-                                 gfxContext* aCtx,
-                                 const SVGFilterPaintCallback& aPaintCallback,
-                                 const nsRegion* aDirtyArea,
-                                 imgDrawingParams& aImgParams,
-                                 float aOpacity = 1.0f);
+  static void PaintFilteredFrame(
+      nsIFrame* aFilteredFrame, Span<const StyleFilter> aFilterChain,
+      gfxContext* aCtx, const SVGFilterPaintCallback& aPaintCallback,
+      const nsRegion* aDirtyArea, imgDrawingParams& aImgParams,
+      float aOpacity = 1.0f, const gfxRect* aOverrideBBox = nullptr);
 
   
 
