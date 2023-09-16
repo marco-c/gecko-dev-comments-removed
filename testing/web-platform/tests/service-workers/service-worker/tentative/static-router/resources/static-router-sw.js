@@ -5,7 +5,10 @@ var requests = [];
 self.addEventListener('install', e => {
   e.registerRouter([
     {
-      condition: {urlPattern: '/**/*.txt'},
+      condition: {urlPattern: '/**/*.txt??*'},
+      
+      
+      
       source: 'network'
     }, {
       condition: {
