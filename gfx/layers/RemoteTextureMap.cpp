@@ -173,6 +173,8 @@ void RemoteTextureMap::PushTexture(
     const std::shared_ptr<gl::SharedSurface>& aSharedSurface) {
   MOZ_RELEASE_ASSERT(aTextureHost);
 
+  std::vector<RefPtr<TextureHost>>
+      releasingTextures;  
   std::vector<std::function<void(const RemoteTextureInfo&)>>
       renderingReadyCallbacks;  
   {
@@ -229,12 +231,29 @@ void RemoteTextureMap::PushTexture(
     
     
     if (!owner->mReleasingRenderedTextureHosts.empty()) {
+      std::transform(
+          owner->mReleasingRenderedTextureHosts.begin(),
+          owner->mReleasingRenderedTextureHosts.end(),
+          std::back_inserter(releasingTextures),
+          [](CompositableTextureHostRef& aRef) { return aRef.get(); });
       owner->mReleasingRenderedTextureHosts.clear();
     }
 
     
     while (!owner->mUsingTextureDataHolders.empty()) {
       auto& front = owner->mUsingTextureDataHolders.front();
+      
+      
+      
+      
+      
+      
+      if (front->mTextureHost &&
+          front->mTextureHost->NumCompositableRefs() == 1 &&
+          front->mTextureHost == owner->mLatestRenderedTextureHost) {
+        owner->mUsingTextureDataHolders.pop_front();
+        continue;
+      }
       
       
       if (front->mTextureHost &&
@@ -381,7 +400,8 @@ void RemoteTextureMap::KeepTextureDataAliveForTextureHostIfNecessary(
 void RemoteTextureMap::UnregisterTextureOwner(
     const RemoteTextureOwnerId aOwnerId, const base::ProcessId aForPid) {
   UniquePtr<TextureOwner> releasingOwner;  
-  RefPtr<TextureHost> releasingTexture;    
+  std::vector<RefPtr<TextureHost>>
+      releasingTextures;  
   std::vector<std::function<void(const RemoteTextureInfo&)>>
       renderingReadyCallbacks;  
   {
@@ -396,7 +416,7 @@ void RemoteTextureMap::UnregisterTextureOwner(
 
     if (it->second->mLatestTextureHost) {
       
-      releasingTexture = it->second->mLatestTextureHost;
+      releasingTextures.emplace_back(it->second->mLatestTextureHost);
       it->second->mLatestTextureHost = nullptr;
     }
 
@@ -406,6 +426,11 @@ void RemoteTextureMap::UnregisterTextureOwner(
     
     
     if (!it->second->mReleasingRenderedTextureHosts.empty()) {
+      std::transform(
+          it->second->mReleasingRenderedTextureHosts.begin(),
+          it->second->mReleasingRenderedTextureHosts.end(),
+          std::back_inserter(releasingTextures),
+          [](CompositableTextureHostRef& aRef) { return aRef.get(); });
       it->second->mReleasingRenderedTextureHosts.clear();
     }
     if (it->second->mLatestRenderedTextureHost) {
@@ -467,6 +492,11 @@ void RemoteTextureMap::UnregisterTextureOwners(
       
       
       if (!it->second->mReleasingRenderedTextureHosts.empty()) {
+        std::transform(
+            it->second->mReleasingRenderedTextureHosts.begin(),
+            it->second->mReleasingRenderedTextureHosts.end(),
+            std::back_inserter(releasingTextures),
+            [](CompositableTextureHostRef& aRef) { return aRef.get(); });
         it->second->mReleasingRenderedTextureHosts.clear();
       }
       if (it->second->mLatestRenderedTextureHost) {
