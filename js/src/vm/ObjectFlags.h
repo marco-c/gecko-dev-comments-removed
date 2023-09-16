@@ -68,6 +68,19 @@ enum class ObjectFlag : uint16_t {
   
   
   GenerationCountedGlobal = 1 << 12,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  NeedsProxyGetSetResultValidation = 1 << 13
 };
 
 using ObjectFlags = EnumFlags<ObjectFlag>;
