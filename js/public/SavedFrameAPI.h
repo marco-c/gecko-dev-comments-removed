@@ -13,6 +13,7 @@
 
 #include "jstypes.h"  
 
+#include "js/ColumnNumber.h"  
 #include "js/TypeDecls.h"
 
 struct JSPrincipals;
@@ -84,10 +85,9 @@ extern JS_PUBLIC_API SavedFrameResult GetSavedFrameLine(
 
 
 
-
 extern JS_PUBLIC_API SavedFrameResult GetSavedFrameColumn(
     JSContext* cx, JSPrincipals* principals, Handle<JSObject*> savedFrame,
-    uint32_t* columnp,
+    JS::TaggedColumnNumberOneOrigin* columnp,
     SavedFrameSelfHosted selfHosted = SavedFrameSelfHosted::Include);
 
 
