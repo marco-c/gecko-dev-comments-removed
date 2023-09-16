@@ -123,42 +123,15 @@ enum RtxMode {
 const size_t kRtxHeaderSize = 2;
 
 struct RTCPReportBlock {
-  RTCPReportBlock()
-      : sender_ssrc(0),
-        source_ssrc(0),
-        fraction_lost(0),
-        packets_lost(0),
-        extended_highest_sequence_number(0),
-        jitter(0),
-        last_sender_report_timestamp(0),
-        delay_since_last_sender_report(0) {}
-
-  RTCPReportBlock(uint32_t sender_ssrc,
-                  uint32_t source_ssrc,
-                  uint8_t fraction_lost,
-                  int32_t packets_lost,
-                  uint32_t extended_highest_sequence_number,
-                  uint32_t jitter,
-                  uint32_t last_sender_report_timestamp,
-                  uint32_t delay_since_last_sender_report)
-      : sender_ssrc(sender_ssrc),
-        source_ssrc(source_ssrc),
-        fraction_lost(fraction_lost),
-        packets_lost(packets_lost),
-        extended_highest_sequence_number(extended_highest_sequence_number),
-        jitter(jitter),
-        last_sender_report_timestamp(last_sender_report_timestamp),
-        delay_since_last_sender_report(delay_since_last_sender_report) {}
-
   
-  uint32_t sender_ssrc;  
-  uint32_t source_ssrc;  
-  uint8_t fraction_lost;
-  int32_t packets_lost;  
-  uint32_t extended_highest_sequence_number;
-  uint32_t jitter;
-  uint32_t last_sender_report_timestamp;
-  uint32_t delay_since_last_sender_report;
+  uint32_t sender_ssrc = 0;  
+  uint32_t source_ssrc = 0;  
+  uint8_t fraction_lost = 0;
+  int32_t packets_lost = 0;  
+  uint32_t extended_highest_sequence_number = 0;
+  uint32_t jitter = 0;
+  uint32_t last_sender_report_timestamp = 0;
+  uint32_t delay_since_last_sender_report = 0;
 };
 
 typedef std::list<RTCPReportBlock> ReportBlockList;

@@ -13,7 +13,6 @@
 
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 
 namespace webrtc {
@@ -30,11 +29,11 @@ class ReportBlockData {
 
   
   
-  uint32_t sender_ssrc() const { return report_block_.sender_ssrc; }
+  uint32_t sender_ssrc() const { return sender_ssrc_; }
 
   
   
-  uint32_t source_ssrc() const { return report_block_.source_ssrc; }
+  uint32_t source_ssrc() const { return source_ssrc_; }
 
   
   
@@ -43,7 +42,7 @@ class ReportBlockData {
 
   
   
-  uint8_t fraction_lost_raw() const { return report_block_.fraction_lost; }
+  uint8_t fraction_lost_raw() const { return fraction_lost_raw_; }
 
   
   
@@ -51,13 +50,13 @@ class ReportBlockData {
   
   
   
-  int cumulative_lost() const { return report_block_.packets_lost; }
+  int cumulative_lost() const { return cumulative_lost_; }
 
   
   
   
   uint32_t extended_highest_sequence_number() const {
-    return report_block_.extended_highest_sequence_number;
+    return extended_highest_sequence_number_;
   }
 
   
@@ -65,14 +64,10 @@ class ReportBlockData {
   
   
   
-  uint32_t jitter() const { return report_block_.jitter; }
+  uint32_t jitter() const { return jitter_; }
 
   
   TimeDelta jitter(int rtp_clock_rate_hz) const;
-
-  
-  
-  const RTCPReportBlock& report_block() const { return report_block_; }
 
   [[deprecated]] int64_t report_block_timestamp_utc_us() const {
     return report_block_timestamp_utc_.us();
@@ -96,12 +91,10 @@ class ReportBlockData {
   size_t num_rtts() const { return num_rtts_; }
   bool has_rtt() const { return num_rtts_ != 0; }
 
-  void set_source_ssrc(uint32_t ssrc) { report_block_.source_ssrc = ssrc; }
-  void set_fraction_lost_raw(uint8_t lost) {
-    report_block_.fraction_lost = lost;
-  }
-  void set_cumulative_lost(int lost) { report_block_.packets_lost = lost; }
-  void set_jitter(uint32_t jitter) { report_block_.jitter = jitter; }
+  void set_source_ssrc(uint32_t ssrc) { source_ssrc_ = ssrc; }
+  void set_fraction_lost_raw(uint8_t lost) { fraction_lost_raw_ = lost; }
+  void set_cumulative_lost(int lost) { cumulative_lost_ = lost; }
+  void set_jitter(uint32_t jitter) { jitter_ = jitter; }
 
   void SetReportBlock(uint32_t sender_ssrc,
                       const rtcp::ReportBlock& report_block,
@@ -109,7 +102,12 @@ class ReportBlockData {
   void AddRoundTripTimeSample(TimeDelta rtt);
 
  private:
-  RTCPReportBlock report_block_;
+  uint32_t sender_ssrc_ = 0;
+  uint32_t source_ssrc_ = 0;
+  uint8_t fraction_lost_raw_ = 0;
+  int32_t cumulative_lost_ = 0;
+  uint32_t extended_highest_sequence_number_ = 0;
+  uint32_t jitter_ = 0;
   Timestamp report_block_timestamp_utc_ = Timestamp::Zero();
   TimeDelta last_rtt_ = TimeDelta::Zero();
   TimeDelta min_rtt_ = TimeDelta::Zero();
