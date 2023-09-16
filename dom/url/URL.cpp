@@ -315,8 +315,13 @@ void URL::SetPort(const nsAString& aPort) {
   int32_t port = -1;
 
   
+  portStr.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
   if (!portStr.IsEmpty()) {
-    portStr.StripTaggedASCII(ASCIIMask::MaskCRLFTab());
+    
+    
+    if (!IsAsciiDigit(portStr[0])) {
+      return;
+    }
     port = portStr.ToInteger(&rv);
     if (NS_FAILED(rv)) {
       return;
