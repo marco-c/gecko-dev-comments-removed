@@ -3912,7 +3912,8 @@ void nsCSSFrameConstructor::ConstructFrameFromItemInternal(
 
         if (childList.NotEmpty()) {
           
-          childList.DestroyFrames();
+          DestroyContext context(mPresShell);
+          childList.DestroyFrames(context);
         }
 
         childList = std::move(newList);
@@ -7053,7 +7054,9 @@ void nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aStartChild,
     nsIContent* const nextSibling = aStartChild->GetNextSibling();
     MOZ_ASSERT(nextSibling && nextSibling->IsText(),
                "expected a text node after the list-style-image image");
-    RemoveFrame(FrameChildListID::Principal, nextSibling->GetPrimaryFrame());
+    DestroyContext context(mPresShell);
+    RemoveFrame(context, FrameChildListID::Principal,
+                nextSibling->GetPrimaryFrame());
     auto* const container = aStartChild->GetParent()->AsElement();
     nsIContent* firstNewChild = nullptr;
     auto InsertChild = [this, container, nextSibling,
@@ -7531,7 +7534,9 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       parentFrame = childFrame->GetParent();
     }
 
-    RemoveFrame(nsLayoutUtils::GetChildListNameFor(childFrame), childFrame);
+    DestroyContext context(mPresShell);
+    RemoveFrame(context, nsLayoutUtils::GetChildListNameFor(childFrame),
+                childFrame);
 
     
     
@@ -10182,20 +10187,22 @@ void nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
   WrapFramesInFirstLetterFrame(
       aBlockFrame, aBlockFrame, aBlockFrame, aBlockFrames.FirstChild(),
       &parentFrame, &textFrame, &prevFrame, letterFrames, &stopLooking);
-  if (parentFrame) {
-    if (parentFrame == aBlockFrame) {
-      
-      
-      aBlockFrames.DestroyFrame(textFrame);
-      aBlockFrames.InsertFrames(nullptr, prevFrame, std::move(letterFrames));
-    } else {
-      
-      RemoveFrame(FrameChildListID::Principal, textFrame);
+  if (!parentFrame) {
+    return;
+  }
+  DestroyContext context(mPresShell);
+  if (parentFrame == aBlockFrame) {
+    
+    
+    aBlockFrames.DestroyFrame(context, textFrame);
+    aBlockFrames.InsertFrames(nullptr, prevFrame, std::move(letterFrames));
+  } else {
+    
+    RemoveFrame(context, FrameChildListID::Principal, textFrame);
 
-      
-      parentFrame->InsertFrames(FrameChildListID::Principal, prevFrame, nullptr,
-                                std::move(letterFrames));
-    }
+    
+    parentFrame->InsertFrames(FrameChildListID::Principal, prevFrame, nullptr,
+                              std::move(letterFrames));
   }
 }
 
@@ -10335,9 +10342,10 @@ void nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
   
   
   nsIFrame* frameToDelete = textFrame->LastContinuation();
+  DestroyContext context(mPresShell);
   while (frameToDelete != textFrame) {
     nsIFrame* nextFrameToDelete = frameToDelete->GetPrevContinuation();
-    RemoveFrame(FrameChildListID::Principal, frameToDelete);
+    RemoveFrame(context, FrameChildListID::Principal, frameToDelete);
     frameToDelete = nextFrameToDelete;
   }
 
@@ -10352,7 +10360,7 @@ void nsCSSFrameConstructor::RemoveFloatingFirstLetterFrames(
 #endif
 
   
-  RemoveFrame(FrameChildListID::Principal, placeholderFrame);
+  RemoveFrame(context, FrameChildListID::Principal, placeholderFrame);
 
   
   
@@ -10401,8 +10409,10 @@ void nsCSSFrameConstructor::RemoveFirstLetterFrames(
       textFrame = NS_NewTextFrame(aPresShell, newSC);
       textFrame->Init(textContent, aFrame, nullptr);
 
+      DestroyContext context(mPresShell);
+
       
-      RemoveFrame(FrameChildListID::Principal, kid);
+      RemoveFrame(context, FrameChildListID::Principal, kid);
 
       
       
@@ -10427,7 +10437,8 @@ void nsCSSFrameConstructor::RemoveFirstLetterFrames(
                    "should have the first continuation here");
       aBlockFrame->RemoveStateBits(NS_BLOCK_HAS_FIRST_LETTER_CHILD);
       break;
-    } else if (IsInlineFrame(kid)) {
+    }
+    if (IsInlineFrame(kid)) {
       nsContainerFrame* kidAsContainerFrame = do_QueryFrame(kid);
       if (kidAsContainerFrame) {
         
@@ -10488,14 +10499,16 @@ void nsCSSFrameConstructor::RecoverLetterFrames(nsContainerFrame* aBlockFrame) {
         static_cast<nsContainerFrame*>(continuation->GetNextContinuation());
   } while (continuation);
 
-  if (parentFrame) {
-    
-    RemoveFrame(FrameChildListID::Principal, textFrame);
-
-    
-    parentFrame->InsertFrames(FrameChildListID::Principal, prevFrame, nullptr,
-                              std::move(letterFrames));
+  if (!parentFrame) {
+    return;
   }
+  
+  DestroyContext context(mPresShell);
+  RemoveFrame(context, FrameChildListID::Principal, textFrame);
+
+  
+  parentFrame->InsertFrames(FrameChildListID::Principal, prevFrame, nullptr,
+                            std::move(letterFrames));
 }
 
 
@@ -10916,7 +10929,8 @@ bool nsCSSFrameConstructor::MaybeRecreateForColumnSpan(
     
     
     aState.ProcessFrameInsertionsForAllLists();
-    aFrameList.DestroyFrames();
+    DestroyContext context(mPresShell);
+    aFrameList.DestroyFrames(context);
     RecreateFramesForContent(
         GetMultiColumnContainingBlockFor(aParentFrame)->GetContent(),
         InsertionKind::Async);

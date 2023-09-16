@@ -254,14 +254,15 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
       PushChildrenToOverflow(lastChild->GetNextSibling(), lastChild);
       aReflowInput.mLineLayout->SetDirtyNextLine();
     }
-  } else {
+  } else if (rtcCount) {
+    DestroyContext context(PresShell());
     
     
     
     
     for (uint32_t i = 0; i < rtcCount; i++) {
       if (nsIFrame* nextRTC = textContainers[i]->GetNextInFlow()) {
-        nextRTC->GetParent()->DeleteNextInFlowChild(nextRTC, true);
+        nextRTC->GetParent()->DeleteNextInFlowChild(context, nextRTC, true);
       }
     }
   }

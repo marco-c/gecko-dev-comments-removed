@@ -125,10 +125,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-
-
-
-  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame);
+  virtual void RemoveFrame(DestroyContext&, ChildListID, nsIFrame*);
 
   
 
@@ -149,7 +146,7 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  virtual void DeleteNextInFlowChild(nsIFrame* aNextInFlow,
+  virtual void DeleteNextInFlowChild(DestroyContext&, nsIFrame* aNextInFlow,
                                      bool aDeletingEmptyFrames);
 
   

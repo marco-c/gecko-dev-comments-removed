@@ -8888,17 +8888,17 @@ static void RemoveEmptyInFlows(nsTextFrame* aFrame,
   aFrame->SetPrevInFlow(nullptr);
 
   nsContainerFrame* parent = aFrame->GetParent();
+  nsIFrame::DestroyContext context(aFrame->PresShell());
   nsBlockFrame* parentBlock = do_QueryFrame(parent);
   if (parentBlock) {
     
     
     
-    nsIFrame::DestroyContext context(aFrame);
-    parentBlock->DoRemoveFrame(aFrame, nsBlockFrame::FRAMES_ARE_EMPTY, context);
+    parentBlock->DoRemoveFrame(context, aFrame, nsBlockFrame::FRAMES_ARE_EMPTY);
   } else {
     
     
-    parent->RemoveFrame(FrameChildListID::NoReflowPrincipal, aFrame);
+    parent->RemoveFrame(context, FrameChildListID::NoReflowPrincipal, aFrame);
   }
 }
 

@@ -45,8 +45,7 @@ class nsDisplayTableItem : public nsPaintedDisplayItem {
   
   
   
-  virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder,
-                           bool* aSnap) const override;
+  nsRect GetBounds(nsDisplayListBuilder* aBuilder, bool* aSnap) const override;
 };
 
 class nsDisplayTableBackgroundSet {
@@ -158,8 +157,8 @@ class nsTableFrame : public nsContainerFrame {
   
 
 
-  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
-                    nsIFrame* aPrevInFlow) override;
+  void Init(nsIContent* aContent, nsContainerFrame* aParent,
+            nsIFrame* aPrevInFlow) override;
 
   
   
@@ -199,7 +198,7 @@ class nsTableFrame : public nsContainerFrame {
   void Destroy(DestroyContext&) override;
 
   
-  virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
+  void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;
 
   void SetInitialChildList(ChildListID aListID,
                            nsFrameList&& aChildList) override;
@@ -207,11 +206,11 @@ class nsTableFrame : public nsContainerFrame {
   void InsertFrames(ChildListID aListID, nsIFrame* aPrevFrame,
                     const nsLineList::iterator* aPrevFrameLine,
                     nsFrameList&& aFrameList) override;
-  virtual void RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) override;
+  void RemoveFrame(DestroyContext&, ChildListID, nsIFrame*) override;
 
-  virtual nsMargin GetUsedBorder() const override;
-  virtual nsMargin GetUsedPadding() const override;
-  virtual nsMargin GetUsedMargin() const override;
+  nsMargin GetUsedBorder() const override;
+  nsMargin GetUsedPadding() const override;
+  nsMargin GetUsedMargin() const override;
 
   
   LogicalMargin GetChildAreaOffset(const WritingMode aWM,
@@ -232,11 +231,11 @@ class nsTableFrame : public nsContainerFrame {
 
   bool IsRowGroup(mozilla::StyleDisplay aDisplayType) const;
 
-  virtual const nsFrameList& GetChildList(ChildListID aListID) const override;
-  virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
+  const nsFrameList& GetChildList(ChildListID aListID) const override;
+  void GetChildLists(nsTArray<ChildList>* aLists) const override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                                const nsDisplayListSet& aLists) override;
+  void BuildDisplayList(nsDisplayListBuilder* aBuilder,
+                        const nsDisplayListSet& aLists) override;
 
   
 
@@ -287,11 +286,11 @@ class nsTableFrame : public nsContainerFrame {
       const mozilla::layers::StackingContextHelper& aSc,
       const nsRect& aVisibleRect, const nsPoint& aOffsetToReferenceFrame);
 
-  virtual void MarkIntrinsicISizesDirty() override;
+  void MarkIntrinsicISizesDirty() override;
   
   
-  virtual nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  virtual nscoord GetPrefISize(gfxContext* aRenderingContext) override;
+  nscoord GetMinISize(gfxContext* aRenderingContext) override;
+  nscoord GetPrefISize(gfxContext* aRenderingContext) override;
   IntrinsicSizeOffsetData IntrinsicISizeOffsets(
       nscoord aPercentageBasis = NS_UNCONSTRAINEDSIZE) override;
 
@@ -336,9 +335,9 @@ class nsTableFrame : public nsContainerFrame {
 
 
   
-  virtual void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-                      const ReflowInput& aReflowInput,
-                      nsReflowStatus& aStatus) override;
+  void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+              const ReflowInput& aReflowInput,
+              nsReflowStatus& aStatus) override;
 
   void ReflowTable(ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
                    nscoord aAvailBSize, nsIFrame*& aLastChildReflowed,
@@ -346,10 +345,10 @@ class nsTableFrame : public nsContainerFrame {
 
   nsFrameList& GetColGroups();
 
-  virtual ComputedStyle* GetParentComputedStyle(
+  ComputedStyle* GetParentComputedStyle(
       nsIFrame** aProviderFrame) const override;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override {
+  bool IsFrameOfType(uint32_t aFlags) const override {
     if (aFlags & eSupportsCSSTransforms) {
       return false;
     }
@@ -358,7 +357,7 @@ class nsTableFrame : public nsContainerFrame {
 
 #ifdef DEBUG_FRAME_DUMP
   
-  virtual nsresult GetFrameName(nsAString& aResult) const override;
+  nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
   
@@ -831,7 +830,7 @@ class nsTableFrame : public nsContainerFrame {
   
 
 
-  void DoRemoveFrame(ChildListID aListID, nsIFrame* aOldFrame);
+  void DoRemoveFrame(DestroyContext&, ChildListID, nsIFrame*);
 #ifdef DEBUG
   void DumpRowGroup(nsIFrame* aChildFrame);
 #endif

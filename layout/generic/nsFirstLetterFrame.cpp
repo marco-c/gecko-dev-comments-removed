@@ -302,10 +302,11 @@ void nsFirstLetterFrame::Reflow(nsPresContext* aPresContext,
       if (aReflowInput.mLineLayout) {
         aReflowInput.mLineLayout->SetFirstLetterStyleOK(false);
       }
-      nsIFrame* kidNextInFlow = kid->GetNextInFlow();
-      if (kidNextInFlow) {
+      if (nsIFrame* kidNextInFlow = kid->GetNextInFlow()) {
+        DestroyContext context(PresShell());
         
-        kidNextInFlow->GetParent()->DeleteNextInFlowChild(kidNextInFlow, true);
+        kidNextInFlow->GetParent()->DeleteNextInFlowChild(context,
+                                                          kidNextInFlow, true);
       }
     } else {
       

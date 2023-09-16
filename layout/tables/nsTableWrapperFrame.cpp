@@ -161,14 +161,15 @@ void nsTableWrapperFrame::InsertFrames(
   MarkNeedsDisplayItemRebuild();
 }
 
-void nsTableWrapperFrame::RemoveFrame(ChildListID aListID,
+void nsTableWrapperFrame::RemoveFrame(DestroyContext& aContext,
+                                      ChildListID aListID,
                                       nsIFrame* aOldFrame) {
   
   
   MOZ_ASSERT(FrameChildListID::Caption == aListID, "can't remove inner frame");
 
   
-  mCaptionFrames.DestroyFrame(aOldFrame);
+  mCaptionFrames.DestroyFrame(aContext, aOldFrame);
 
   PresShell()->FrameNeedsReflow(this, IntrinsicDirty::FrameAndAncestors,
                                 NS_FRAME_HAS_DIRTY_CHILDREN);

@@ -129,12 +129,6 @@ class nsFrameList {
 
 
 
-  void DestroyFrames();
-
-  
-
-
-
   void DestroyFrames(mozilla::FrameDestroyContext&);
 
   void Clear() { mFirstChild = mLastChild = nullptr; }
@@ -221,7 +215,7 @@ class nsFrameList {
 
 
 
-  void DestroyFrame(nsIFrame* aFrame);
+  void DestroyFrame(mozilla::FrameDestroyContext&, nsIFrame*);
 
   
 
