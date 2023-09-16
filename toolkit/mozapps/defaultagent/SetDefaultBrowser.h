@@ -35,7 +35,10 @@ namespace mozilla::default_agent {
 
 
 
-HRESULT SetDefaultBrowserUserChoice(
+
+
+
+nsresult SetDefaultBrowserUserChoice(
     const wchar_t* aAumi,
     const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>());
 
@@ -53,18 +56,9 @@ HRESULT SetDefaultBrowserUserChoice(
 
 
 
-HRESULT SetDefaultExtensionHandlersUserChoice(
+
+nsresult SetDefaultExtensionHandlersUserChoice(
     const wchar_t* aAumi, const nsTArray<nsString>& aFileExtensions);
-
-
-
-
-
-
-const HRESULT MOZ_E_NO_PROGID = 0xa0000001L;
-const HRESULT MOZ_E_HASH_CHECK = 0xa0000002L;
-const HRESULT MOZ_E_REJECTED = 0xa0000003L;
-const HRESULT MOZ_E_BUILD = 0xa0000004L;
 
 }  
 

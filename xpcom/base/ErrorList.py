@@ -88,6 +88,7 @@ modules["ERRORRESULT"] = Mod(43)
 
 
 modules["WIN32"] = Mod(44)
+modules["WDBA"] = Mod(45)
 
 
 
@@ -1219,6 +1220,16 @@ with modules["ERRORRESULT"]:
     errors["NS_ERROR_INTERNAL_ERRORRESULT_TYPEERROR"] = FAILURE(4)
     
     errors["NS_ERROR_INTERNAL_ERRORRESULT_RANGEERROR"] = FAILURE(5)
+
+
+
+
+
+with modules["WDBA"]:
+    errors["NS_ERROR_WDBA_NO_PROGID"] = FAILURE(1)
+    errors["NS_ERROR_WDBA_HASH_CHECK"] = FAILURE(2)
+    errors["NS_ERROR_WDBA_REJECTED"] = FAILURE(3)
+    errors["NS_ERROR_WDBA_BUILD"] = FAILURE(4)
 
 
 

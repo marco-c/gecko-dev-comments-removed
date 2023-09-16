@@ -261,28 +261,19 @@ static mozilla::WindowsError LaunchFirefoxToHandleDefaultBrowserAgent() {
 
 
 
-
-
-
-
-
-
-static HRESULT SetDefaultBrowserFromNotification(const wchar_t* aumi) {
-  
-
-  HRESULT hr = E_FAIL;
+static void SetDefaultBrowserFromNotification(const wchar_t* aumi) {
+  nsresult rv = NS_ERROR_FAILURE;
   if (GetPrefSetDefaultBrowserUserChoice()) {
-    hr = SetDefaultBrowserUserChoice(aumi);
+    rv = SetDefaultBrowserUserChoice(aumi);
   }
 
-  if (!FAILED(hr)) {
+  if (NS_SUCCEEDED(rv)) {
     mozilla::Unused << LaunchFirefoxToHandleDefaultBrowserAgent();
   } else {
     LOG_ERROR_MESSAGE(L"Failed to SetDefaultBrowserUserChoice: %#X",
                       GetLastError());
     LaunchModernSettingsDialogDefaultApps();
   }
-  return hr;
 }
 
 
