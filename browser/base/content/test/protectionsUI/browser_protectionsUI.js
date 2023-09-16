@@ -41,6 +41,12 @@ add_setup(async function () {
   });
 });
 
+async function clickToggle(toggle) {
+  let changed = BrowserTestUtils.waitForEvent(toggle, "toggle");
+  await EventUtils.synthesizeMouseAtCenter(toggle.buttonEl, {});
+  await changed;
+}
+
 add_task(async function testToggleSwitch() {
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
@@ -117,15 +123,15 @@ add_task(async function testToggleSwitch() {
   await viewShown;
 
   ok(
-    gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("enabled"),
-    "TP Switch should be enabled"
+    gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("pressed"),
+    "TP Switch should be on"
   );
   let popuphiddenPromise = BrowserTestUtils.waitForEvent(
     gProtectionsHandler._protectionsPopup,
     "popuphidden"
   );
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gProtectionsHandler._protectionsPopupTPSwitch.click();
+  await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   
   ok(
@@ -165,8 +171,8 @@ add_task(async function testToggleSwitch() {
 
   await openProtectionsPanel();
   ok(
-    !gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("enabled"),
-    "TP Switch should be disabled"
+    !gProtectionsHandler._protectionsPopupTPSwitch.hasAttribute("pressed"),
+    "TP Switch should be off"
   );
 
   
@@ -199,7 +205,7 @@ add_task(async function testToggleSwitch() {
   
   
   browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gProtectionsHandler._protectionsPopupTPSwitch.click();
+  await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   ok(
     BrowserTestUtils.is_hidden(
@@ -398,7 +404,7 @@ add_task(async function testToggleSwitchFlow() {
   let browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
 
   
-  gProtectionsHandler._protectionsPopupTPSwitch.click();
+  await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   
   ok(
@@ -444,7 +450,7 @@ add_task(async function testToggleSwitchFlow() {
     "popupshown"
   );
   browserLoadedPromise = BrowserTestUtils.browserLoaded(tab.linkedBrowser);
-  gProtectionsHandler._protectionsPopupTPSwitch.click();
+  await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
 
   
   ok(
@@ -686,7 +692,7 @@ add_task(async function testQuickSwitchTabAfterTogglingTPSwitch() {
   );
 
   
-  gProtectionsHandler._protectionsPopupTPSwitch.click();
+  await clickToggle(gProtectionsHandler._protectionsPopupTPSwitch);
   gBrowser.selectedTab = tabOne;
 
   
