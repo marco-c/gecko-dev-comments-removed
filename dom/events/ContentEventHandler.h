@@ -12,6 +12,7 @@
 #include "mozilla/EventForwards.h"
 #include "mozilla/RangeBoundary.h"
 #include "mozilla/dom/Selection.h"
+#include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"
 #include "nsIFrame.h"
 #include "nsINode.h"
@@ -25,7 +26,6 @@ namespace mozilla {
 
 namespace dom {
 class Element;
-class Text;
 }  
 
 enum LineBreakType { LINE_BREAK_TYPE_NATIVE, LINE_BREAK_TYPE_XP };
@@ -49,6 +49,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   class MOZ_STACK_CLASS RawRangeBase final {
    public:
     RawRangeBase();
+    RawRangeBase(RawRangeBase<NodeType, RangeBoundaryType>&&) noexcept;
     template <typename OtherNodeType, typename OtherRangeBoundaryType>
     explicit RawRangeBase(
         const RawRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther);
@@ -339,15 +340,41 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   nsresult QueryContentRect(nsIContent* aContent,
                             WidgetQueryContentEvent* aEvent);
+
+  struct MOZ_STACK_CLASS DOMRangeAndAdjustedOffsetInFlattenedText {
+    bool RangeStartsFromLastTextNode() const {
+      return mLastTextNode && mRange.GetStartContainer() == mLastTextNode;
+    }
+    bool RangeStartsFromEndOfContainer() const {
+      return mRange.GetStartContainer() &&
+             mRange.GetStartContainer()->Length() == mRange.StartOffset();
+    }
+    bool RangeStartsFromContent() const {
+      return mRange.GetStartContainer() &&
+             mRange.GetStartContainer()->IsContent();
+    }
+
+    
+    UnsafeRawRange mRange;
+    
+    
+    
+    
+    uint32_t mAdjustedOffset = 0;
+    
+    
+    
+    dom::Text* mLastTextNode = nullptr;
+  };
   
-  
-  
-  nsresult SetRawRangeFromFlatTextOffset(UnsafeRawRange* aRawRange,
-                                         uint32_t aOffset, uint32_t aLength,
-                                         LineBreakType aLineBreakType,
-                                         bool aExpandToClusterBoundaries,
-                                         uint32_t* aNewOffset = nullptr,
-                                         dom::Text** aLastTextNode = nullptr);
+
+
+
+  Result<DOMRangeAndAdjustedOffsetInFlattenedText, nsresult>
+  ConvertFlatTextOffsetToDOMRange(uint32_t aOffset, uint32_t aLength,
+                                  LineBreakType aLineBreakType,
+                                  bool aExpandToClusterBoundaries);
+
   
   
   nsresult AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aCollapsedRawRange);
