@@ -1680,7 +1680,7 @@ pref("browser.newtabpage.activity-stream.discoverystream.region-stories-block", 
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-stories-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
 
-pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "US,DE,CA,GB,IE,CH,AT,BE,IN,FR,IT,ES");
+pref("browser.newtabpage.activity-stream.discoverystream.region-bff-config", "FR,IT,ES");
 
 pref("browser.newtabpage.activity-stream.discoverystream.region-spocs-config", "US,CA,DE,GB,FR,IT,ES");
 
