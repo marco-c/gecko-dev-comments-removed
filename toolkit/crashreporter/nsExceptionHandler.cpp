@@ -3888,7 +3888,7 @@ void SetNotificationPipeForChild(int childCrashFd) {
 
 }  
 
-#if ANDROID_NDK_MAJOR_VERSION && (ANDROID_NDK_MAJOR_VERSION < 24)
+#if defined(__ANDROID_API__) && (__ANDROID_API__ < 24)
 
 
 
