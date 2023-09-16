@@ -406,7 +406,10 @@ bool CanvasEventRingBuffer::SwitchBuffer(
 
   
   
-  WaitForCheckpoint(mOurCount);
+  if (!WaitForCheckpoint(mOurCount)) {
+    return false;
+  }
+
   mBuf = nullptr;
   mBufPos = nullptr;
   mRead = nullptr;

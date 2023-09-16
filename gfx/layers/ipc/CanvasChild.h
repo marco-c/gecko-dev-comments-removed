@@ -82,7 +82,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
-  void EnsureBeginTransaction();
+
+  bool EnsureBeginTransaction();
 
   
 
