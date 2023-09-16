@@ -394,6 +394,17 @@ async function clickRestoreButton() {
   });
 }
 
+async function clickDismissErrorButton() {
+  const { dismissErrorButton } = TranslationsPanel.elements;
+  ok(
+    isVisible(dismissErrorButton),
+    "Expect the dismiss-error button to be visible"
+  );
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(dismissErrorButton, "Click the dismiss-error button");
+  });
+}
+
 
 
 
