@@ -1794,7 +1794,7 @@ static void SanitizeStyleSheet(const nsAString& aOriginal,
            nullptr,
            nullptr, &style,
           css::SheetParsingMode::eAuthorSheetFeatures, extraData.get(),
-           0, aDocument->GetCompatibilityMode(),
+          aDocument->GetCompatibilityMode(),
            nullptr,
            nullptr, StyleAllowImportRules::Yes,
           aSanitizationKind, &aSanitized)

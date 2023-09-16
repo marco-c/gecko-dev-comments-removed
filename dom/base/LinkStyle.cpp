@@ -323,8 +323,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     }
 
     
-    return doc->CSSLoader()->LoadInlineStyle(*info, text, mLineNumber,
-                                             aObserver);
+    return doc->CSSLoader()->LoadInlineStyle(*info, text, aObserver);
   }
   if (thisContent.IsElement()) {
     nsAutoString integrity;

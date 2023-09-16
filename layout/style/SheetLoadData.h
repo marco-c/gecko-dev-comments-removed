@@ -114,9 +114,6 @@ class SheetLoadData final
   nsCOMPtr<nsIURI> mURI;
 
   
-  uint32_t mLineNumber;
-
-  
   const RefPtr<StyleSheet> mSheet;
 
   

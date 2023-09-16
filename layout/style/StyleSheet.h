@@ -129,7 +129,7 @@ class StyleSheet final : public nsICSSLoaderObserver, public nsWrapperCache {
   
   void ParseSheetSync(
       css::Loader* aLoader, const nsACString& aBytes,
-      css::SheetLoadData* aLoadData, uint32_t aLineNumber,
+      css::SheetLoadData* aLoadData,
       css::LoaderReusableStyleSheets* aReusableSheets = nullptr);
 
   void ReparseSheet(const nsACString& aInput, ErrorResult& aRv);

@@ -778,7 +778,6 @@ void StyleSheet::ReplaceSync(const nsACString& aText, ErrorResult& aRv) {
       Servo_StyleSheet_FromUTF8Bytes(
           loader, this,
            nullptr, &aText, mParsingMode, URLData(),
-           0,
           mConstructorDocument->GetCompatibilityMode(),
            nullptr,
           mConstructorDocument->GetStyleUseCounters(),
@@ -1230,7 +1229,7 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
     RefPtr<StyleStylesheetContents> contents =
         Servo_StyleSheet_FromUTF8Bytes(
             &aLoader, this, &aLoadData, &aBytes, mParsingMode, urlData,
-            aLoadData.mLineNumber, aLoadData.mCompatMode,
+            aLoadData.mCompatMode,
              nullptr, counters.get(), allowImportRules,
             StyleSanitizationKind::None,
              nullptr)
@@ -1238,9 +1237,9 @@ RefPtr<StyleSheetParsePromise> StyleSheet::ParseSheet(
     FinishAsyncParse(contents.forget(), std::move(counters));
   } else {
     auto holder = MakeRefPtr<css::SheetLoadDataHolder>(__func__, &aLoadData);
-    Servo_StyleSheet_FromUTF8BytesAsync(
-        holder, urlData, &aBytes, mParsingMode, aLoadData.mLineNumber,
-        aLoadData.mCompatMode, shouldRecordCounters, allowImportRules);
+    Servo_StyleSheet_FromUTF8BytesAsync(holder, urlData, &aBytes, mParsingMode,
+                                        aLoadData.mCompatMode,
+                                        shouldRecordCounters, allowImportRules);
   }
 
   return p;
@@ -1259,7 +1258,7 @@ void StyleSheet::FinishAsyncParse(
 
 void StyleSheet::ParseSheetSync(
     css::Loader* aLoader, const nsACString& aBytes,
-    css::SheetLoadData* aLoadData, uint32_t aLineNumber,
+    css::SheetLoadData* aLoadData,
     css::LoaderReusableStyleSheets* aReusableSheets) {
   const nsCompatibility compatMode = [&] {
     if (aLoadData) {
@@ -1283,13 +1282,12 @@ void StyleSheet::ParseSheetSync(
                               ? StyleAllowImportRules::No
                               : StyleAllowImportRules::Yes;
 
-  Inner().mContents =
-      Servo_StyleSheet_FromUTF8Bytes(
-          aLoader, this, aLoadData, &aBytes, mParsingMode, urlData, aLineNumber,
-          compatMode, aReusableSheets, useCounters, allowImportRules,
-          StyleSanitizationKind::None,
-           nullptr)
-          .Consume();
+  Inner().mContents = Servo_StyleSheet_FromUTF8Bytes(
+                          aLoader, this, aLoadData, &aBytes, mParsingMode,
+                          urlData, compatMode, aReusableSheets, useCounters,
+                          allowImportRules, StyleSanitizationKind::None,
+                           nullptr)
+                          .Consume();
 
   FinishParse();
 }
@@ -1342,11 +1340,6 @@ void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
   }
   Inner().mChildren.Clear();
 
-  uint32_t lineNumber = 1;
-  if (auto* linkStyle = LinkStyle::FromNodeOrNull(mOwningNode)) {
-    lineNumber = linkStyle->GetLineNumber();
-  }
-
   
   {
     ServoCSSRuleList* ruleList = GetCssRulesInternal();
@@ -1365,8 +1358,7 @@ void StyleSheet::ReparseSheet(const nsACString& aInput, ErrorResult& aRv) {
     ruleList->SetRawContents(nullptr,  false);
   }
 
-  ParseSheetSync(loader, aInput,  nullptr, lineNumber,
-                 &reusableSheets);
+  ParseSheetSync(loader, aInput,  nullptr, &reusableSheets);
 
   FixUpRuleListAfterContentsChangeIfNeeded();
 

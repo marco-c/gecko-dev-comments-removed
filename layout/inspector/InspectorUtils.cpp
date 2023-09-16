@@ -309,7 +309,13 @@ void InspectorUtils::GetCSSStyleRules(GlobalObject& aGlobalObject,
 
 
 uint32_t InspectorUtils::GetRuleLine(GlobalObject& aGlobal, css::Rule& aRule) {
-  return aRule.GetLineNumber();
+  uint32_t line = aRule.GetLineNumber();
+  if (StyleSheet* sheet = aRule.GetStyleSheet()) {
+    if (auto* link = LinkStyle::FromNodeOrNull(sheet->GetOwnerNode())) {
+      line += link->GetLineNumber();
+    }
+  }
+  return line;
 }
 
 
@@ -321,44 +327,8 @@ uint32_t InspectorUtils::GetRuleColumn(GlobalObject& aGlobal,
 
 uint32_t InspectorUtils::GetRelativeRuleLine(GlobalObject& aGlobal,
                                              css::Rule& aRule) {
-  uint32_t lineNumber = aRule.GetLineNumber();
-
   
-  
-  
-  
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-
-  
-  
-  
-  
-  
-  StyleSheet* sheet = aRule.GetStyleSheet();
-  if (sheet && lineNumber != 0) {
-    if (auto* link = LinkStyle::FromNodeOrNull(sheet->GetOwnerNode())) {
-      
-      
-      uint32_t linkLineIndex0 = link->GetLineNumber() - 1;
-      if (linkLineIndex0 > lineNumber) {
-        lineNumber = 0;
-      } else {
-        lineNumber -= linkLineIndex0;
-      }
-    }
-  }
-
-  return lineNumber;
+  return aRule.GetLineNumber() + 1;
 }
 
 

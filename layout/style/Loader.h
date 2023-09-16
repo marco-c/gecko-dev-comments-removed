@@ -273,9 +273,8 @@ class Loader final {
 
 
 
-
   Result<LoadSheetResult, nsresult> LoadInlineStyle(
-      const SheetInfo&, const nsAString& aBuffer, uint32_t aLineNumber,
+      const SheetInfo&, const nsAString& aBuffer,
       nsICSSLoaderObserver* aObserver);
 
   
