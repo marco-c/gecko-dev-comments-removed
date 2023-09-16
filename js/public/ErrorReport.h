@@ -172,13 +172,6 @@ class JSErrorBase {
 
   JSString* newMessageString(JSContext* cx);
 
-  
-  
-  
-  static uint32_t fromZeroOriginToOneOrigin(uint32_t column) {
-    return column + 1;
-  }
-
  private:
   void freeMessage();
 };
