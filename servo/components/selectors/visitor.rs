@@ -7,7 +7,7 @@
 #![deny(missing_docs)]
 
 use crate::attr::NamespaceConstraint;
-use crate::parser::{Combinator, Component, Selector, SelectorImpl};
+use crate::parser::{Combinator, Component, RelativeSelector, Selector, SelectorImpl};
 
 
 
@@ -31,6 +31,14 @@ pub trait SelectorVisitor: Sized {
 
     
     fn visit_simple_selector(&mut self, _: &Component<Self::Impl>) -> bool {
+        true
+    }
+
+    
+    
+    
+    
+    fn visit_relative_selector_list(&mut self, _list: &[RelativeSelector<Self::Impl>]) -> bool {
         true
     }
 
@@ -73,6 +81,8 @@ bitflags! {
         /// The visitor is inside :nth-child(.. of <selector list>) or
         /// :nth-last-child(.. of <selector list>)
         const NTH_OF = 1 << 3;
+        /// The visitor is inside :has(..)
+        const HAS = 1 << 4;
     }
 }
 
@@ -107,5 +117,20 @@ impl SelectorListKind {
     
     pub fn in_nth_of(&self) -> bool {
         self.intersects(SelectorListKind::NTH_OF)
+    }
+
+    
+    pub fn in_has(&self) -> bool {
+        self.intersects(SelectorListKind::HAS)
+    }
+
+    
+    pub fn relevant_to_nth_of_dependencies(&self) -> bool {
+        
+        
+        
+        
+        
+        self.in_nth_of() && !self.in_has()
     }
 }
