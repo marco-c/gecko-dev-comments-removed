@@ -74,8 +74,8 @@ static bool MaybeCreateAndDispatchMozClipboardReadPasteEvent(
   
   
   return !NS_WARN_IF(NS_FAILED(nsContentUtils::DispatchChromeEvent(
-      document, ToSupports(document), u"MozClipboardReadPaste"_ns,
-      CanBubble::eNo, Cancelable::eNo)));
+      document, document, u"MozClipboardReadPaste"_ns, CanBubble::eNo,
+      Cancelable::eNo)));
 }
 
 void Clipboard::ReadRequest::Answer() {

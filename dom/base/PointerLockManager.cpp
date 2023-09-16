@@ -233,8 +233,8 @@ bool PointerLockManager::StartSetPointerLock(Element* aElement,
 
   ChangePointerLockedElement(aElement, aDocument, nullptr);
   nsContentUtils::DispatchEventOnlyToChrome(
-      aDocument, ToSupports(aElement), u"MozDOMPointerLock:Entered"_ns,
-      CanBubble::eYes, Cancelable::eNo,  nullptr);
+      aDocument, aElement, u"MozDOMPointerLock:Entered"_ns, CanBubble::eYes,
+      Cancelable::eNo,  nullptr);
 
   return true;
 }

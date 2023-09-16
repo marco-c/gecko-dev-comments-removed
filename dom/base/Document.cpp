@@ -5927,8 +5927,8 @@ void Document::MaybeEditingStateChanged() {
 void Document::NotifyFetchOrXHRSuccess() {
   if (mShouldNotifyFetchSuccess) {
     nsContentUtils::DispatchEventOnlyToChrome(
-        this, ToSupports(this), u"DOMDocFetchSuccess"_ns, CanBubble::eNo,
-        Cancelable::eNo,  nullptr);
+        this, this, u"DOMDocFetchSuccess"_ns, CanBubble::eNo, Cancelable::eNo,
+         nullptr);
   }
 }
 
@@ -8067,9 +8067,8 @@ void Document::DispatchContentLoadedEvents() {
   
   
   
-  nsContentUtils::DispatchTrustedEvent(this, ToSupports(this),
-                                       u"DOMContentLoaded"_ns, CanBubble::eYes,
-                                       Cancelable::eNo);
+  nsContentUtils::DispatchTrustedEvent(this, this, u"DOMContentLoaded"_ns,
+                                       CanBubble::eYes, Cancelable::eNo);
 
   if (auto* const window = GetInnerWindow()) {
     const RefPtr<ServiceWorkerContainer> serviceWorker =
@@ -9320,9 +9319,8 @@ void Document::DoNotifyPossibleTitleChange() {
   }
 
   
-  nsContentUtils::DispatchChromeEvent(this, ToSupports(this),
-                                      u"DOMTitleChanged"_ns, CanBubble::eYes,
-                                      Cancelable::eYes);
+  nsContentUtils::DispatchChromeEvent(this, this, u"DOMTitleChanged"_ns,
+                                      CanBubble::eYes, Cancelable::eYes);
 
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
@@ -14463,7 +14461,7 @@ already_AddRefed<Promise> Document::ExitFullscreen(ErrorResult& aRv) {
 static void AskWindowToExitFullscreen(Document* aDoc) {
   if (XRE_GetProcessType() == GeckoProcessType_Content) {
     nsContentUtils::DispatchEventOnlyToChrome(
-        aDoc, ToSupports(aDoc), u"MozDOMFullscreen:Exit"_ns, CanBubble::eYes,
+        aDoc, aDoc, u"MozDOMFullscreen:Exit"_ns, CanBubble::eYes,
         Cancelable::eNo,  nullptr);
   } else {
     if (nsPIDOMWindowOuter* win = aDoc->GetWindow()) {
@@ -14576,8 +14574,8 @@ class ExitFullscreenScriptRunnable : public Runnable {
     
     
     nsContentUtils::DispatchEventOnlyToChrome(
-        mLeaf, ToSupports(mLeaf), u"MozDOMFullscreen:Exited"_ns,
-        CanBubble::eYes, Cancelable::eNo,  nullptr);
+        mLeaf, mLeaf, u"MozDOMFullscreen:Exited"_ns, CanBubble::eYes,
+        Cancelable::eNo,  nullptr);
     
     
     if (nsPIDOMWindowOuter* win = mRoot->GetWindow()) {
@@ -15506,8 +15504,8 @@ void Document::RequestFullscreenInContentProcess(
               return;
             }
             nsContentUtils::DispatchEventOnlyToChrome(
-                self, ToSupports(self), u"MozDOMFullscreen:Request"_ns,
-                CanBubble::eYes, Cancelable::eNo,  nullptr);
+                self, self, u"MozDOMFullscreen:Request"_ns, CanBubble::eYes,
+                Cancelable::eNo,  nullptr);
           }));
 }
 
@@ -15676,7 +15674,7 @@ bool Document::ApplyFullscreen(UniquePtr<FullscreenRequest> aRequest) {
   
   if (!previousFullscreenDoc) {
     nsContentUtils::DispatchEventOnlyToChrome(
-        this, ToSupports(elem), u"MozDOMFullscreen:Entered"_ns, CanBubble::eYes,
+        this, elem, u"MozDOMFullscreen:Entered"_ns, CanBubble::eYes,
         Cancelable::eNo,  nullptr);
   }
 
@@ -15720,8 +15718,7 @@ void Document::UpdateVisibilityState(DispatchVisibilityChange aDispatchEvent) {
   mVisibilityState = ComputeVisibilityState();
   if (oldState != mVisibilityState) {
     if (aDispatchEvent == DispatchVisibilityChange::Yes) {
-      nsContentUtils::DispatchTrustedEvent(this, ToSupports(this),
-                                           u"visibilitychange"_ns,
+      nsContentUtils::DispatchTrustedEvent(this, this, u"visibilitychange"_ns,
                                            CanBubble::eYes, Cancelable::eNo);
     }
     NotifyActivityChanged();

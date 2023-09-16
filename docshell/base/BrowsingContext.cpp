@@ -3022,7 +3022,8 @@ void BrowsingContext::DidSet(FieldIndex<IDX_IsActiveBrowserWindowInternal>,
           
           
           nsContentUtils::DispatchEventOnlyToChrome(
-              doc, win, isActivateEvent ? u"activate"_ns : u"deactivate"_ns,
+              doc, nsGlobalWindowInner::Cast(win),
+              isActivateEvent ? u"activate"_ns : u"deactivate"_ns,
               CanBubble::eYes, Cancelable::eYes, nullptr);
         }
       }
