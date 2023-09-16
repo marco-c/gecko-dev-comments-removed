@@ -656,12 +656,7 @@ function corpAndCoep(metadata, response) {
 
 
 function bytesFromString(str) {
-  var converter = Cc[
-    "@mozilla.org/intl/scriptableunicodeconverter"
-  ].createInstance(Ci.nsIScriptableUnicodeConverter);
-  converter.charset = "UTF-8";
-  var data = converter.convertToByteArray(str);
-  return data;
+  return new TextEncoder().encode(str);
 }
 
 
