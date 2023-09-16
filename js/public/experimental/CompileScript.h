@@ -69,8 +69,10 @@ JS_PUBLIC_API bool ConvertFrontendErrorsToRuntimeErrors(
 
 
 
+
+
 JS_PUBLIC_API const JSErrorReport* GetFrontendErrorReport(
-    JS::FrontendContext* fc);
+    JS::FrontendContext* fc, const JS::ReadOnlyCompileOptions& options);
 
 
 JS_PUBLIC_API bool HadFrontendOverRecursed(JS::FrontendContext* fc);
@@ -91,8 +93,11 @@ JS_PUBLIC_API size_t GetFrontendWarningCount(JS::FrontendContext* fc);
 
 
 
-JS_PUBLIC_API const JSErrorReport* GetFrontendWarningAt(JS::FrontendContext* fc,
-                                                        size_t index);
+
+
+JS_PUBLIC_API const JSErrorReport* GetFrontendWarningAt(
+    JS::FrontendContext* fc, size_t index,
+    const JS::ReadOnlyCompileOptions& options);
 
 
 
