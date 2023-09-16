@@ -128,7 +128,12 @@ static Atomic<size_t> sStackWalkSuppressions;
 
 void SuppressStackWalking() { ++sStackWalkSuppressions; }
 
-void DesuppressStackWalking() { --sStackWalkSuppressions; }
+void DesuppressStackWalking() {
+  auto previousValue = sStackWalkSuppressions--;
+  
+  
+  MOZ_RELEASE_ASSERT(previousValue);
+}
 
 MFBT_API
 AutoSuppressStackWalking::AutoSuppressStackWalking() { SuppressStackWalking(); }
