@@ -1317,6 +1317,44 @@ const AVAILABLE_UA_OVERRIDES = [
       },
     },
   },
+  {
+    
+
+
+
+
+
+
+    id: "bug1849018",
+    platform: "all",
+    domain: "carefirst.com",
+    bug: "1849018",
+    config: {
+      matches: ["*://*.carefirst.com/myaccount*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1849029",
+    platform: "android",
+    domain: "publi24.ro",
+    bug: "1849029",
+    config: {
+      matches: ["*://*.publi24.ro/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
 ];
 
 module.exports = AVAILABLE_UA_OVERRIDES;
