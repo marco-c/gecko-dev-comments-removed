@@ -93,34 +93,46 @@ async function pauseDebuggerAndLog(dbg, tab, testFunction) {
 }
 
 async function stepDebuggerAndLog(dbg, tab, testFunction) {
-  const stepCount = 2;
-
   
 
 
 
 
-
   const stepTests = [
+    
+    
+    
     {
+      stepCount: 1,
+      location: { line: 22, file: "App.js" },
+      key: "stepInNewSource",
+      stepType: "stepIn",
+    },
+    {
+      stepCount: 2,
       location: { line: 10194, file: "step-in-test.js" },
       key: "stepIn",
+      stepType: "stepIn",
     },
     {
+      stepCount: 2,
       location: { line: 16, file: "step-over-test.js" },
       key: "stepOver",
+      stepType: "stepOver",
     },
     {
+      stepCount: 2,
       location: { line: 998, file: "step-out-test.js" },
       key: "stepOut",
+      stepType: "stepOut",
     },
   ];
 
   for (const stepTest of stepTests) {
     await pauseDebugger(dbg, tab, testFunction, stepTest.location);
     const test = runTest(`custom.jsdebugger.${stepTest.key}.DAMP`);
-    for (let i = 0; i < stepCount; i++) {
-      await step(dbg, stepTest.key);
+    for (let i = 0; i < stepTest.stepCount; i++) {
+      await step(dbg, stepTest.stepType);
     }
     test.done();
     await removeBreakpoints(dbg);
