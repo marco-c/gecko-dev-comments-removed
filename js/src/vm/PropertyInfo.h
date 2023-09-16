@@ -33,8 +33,10 @@ enum class PropertyFlag : uint8_t {
   Writable = 1 << 2,
 
   
+  HasGetter = 1 << 3,
+
   
-  AccessorProperty = 1 << 3,
+  HasSetter = 1 << 4,
 
   
   
@@ -44,7 +46,7 @@ enum class PropertyFlag : uint8_t {
   
   
   
-  CustomDataProperty = 1 << 4,
+  CustomDataProperty = 1 << 5,
 };
 
 class PropertyFlags : public EnumFlags<PropertyFlag> {
@@ -68,9 +70,9 @@ class PropertyFlags : public EnumFlags<PropertyFlag> {
   bool isDataProperty() const {
     return !isAccessorProperty() && !isCustomDataProperty();
   }
-  bool isAccessorProperty() const {
-    return hasFlag(PropertyFlag::AccessorProperty);
-  }
+  bool isAccessorProperty() const { return hasGetter() || hasSetter(); }
+  bool hasGetter() const { return hasFlag(PropertyFlag::HasGetter); }
+  bool hasSetter() const { return hasFlag(PropertyFlag::HasSetter); }
   bool isCustomDataProperty() const {
     return hasFlag(PropertyFlag::CustomDataProperty);
   }
