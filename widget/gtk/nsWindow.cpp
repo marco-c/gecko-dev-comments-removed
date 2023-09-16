@@ -9781,14 +9781,16 @@ void nsWindow::LockAspectRatio(bool aShouldLock) {
 nsWindow* nsWindow::GetFocusedWindow() { return gFocusWindow; }
 
 #ifdef MOZ_WAYLAND
-void nsWindow::SetEGLNativeWindowSize(
+bool nsWindow::SetEGLNativeWindowSize(
     const LayoutDeviceIntSize& aEGLWindowSize) {
   if (!GdkIsWaylandDisplay()) {
-    return;
+    return true;
   }
 
   
   
+  bool paint = false;
+
   
   if (mDestroyMutex.TryLock()) {
     if (!mIsDestroyed && mContainer) {
@@ -9797,11 +9799,12 @@ void nsWindow::SetEGLNativeWindowSize(
           "%d)",
           aEGLWindowSize.width, aEGLWindowSize.height, scale,
           aEGLWindowSize.width / scale, aEGLWindowSize.height / scale);
-      moz_container_wayland_egl_window_set_size(
+      paint = moz_container_wayland_egl_window_set_size(
           mContainer, aEGLWindowSize.ToUnknownSize(), scale);
     }
     mDestroyMutex.Unlock();
   }
+  return paint;
 }
 #endif
 
