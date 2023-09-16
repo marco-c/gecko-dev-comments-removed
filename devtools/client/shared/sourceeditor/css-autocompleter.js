@@ -8,6 +8,9 @@ const {
   cssTokenizer,
   cssTokenizerWithLineColumn,
 } = require("resource://devtools/shared/css/parsing-utils.js");
+const {
+  getClientCssProperties,
+} = require("resource://devtools/client/fronts/css-properties.js");
 
 
 
@@ -86,7 +89,8 @@ const SELECTOR_STATES = {
 function CSSCompleter(options = {}) {
   this.walker = options.walker;
   this.maxEntries = options.maxEntries || 15;
-  this.cssProperties = options.cssProperties;
+  
+  this.cssProperties = options.cssProperties || getClientCssProperties();
 
   this.propertyNames = this.cssProperties.getNames().sort();
 

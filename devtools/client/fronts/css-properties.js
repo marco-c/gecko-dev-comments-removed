@@ -20,6 +20,12 @@ loader.lazyRequireGetter(
 );
 loader.lazyRequireGetter(
   this,
+  "CSS_PROPERTIES_DB",
+  "resource://devtools/shared/css/properties-db.js",
+  true
+);
+loader.lazyRequireGetter(
+  this,
   "CSS_TYPES",
   "resource://devtools/shared/css/constants.js",
   true
@@ -181,12 +187,62 @@ function isCssVariable(input) {
 
 
 
+function getClientCssProperties() {
+  return new CssProperties(normalizeCssData(CSS_PROPERTIES_DB));
+}
+
+
+
+
+
+
+
 
 function normalizeCssData(db) {
   
   
+  
   if (typeof db.from == "string") {
-    
+    const missingSupports = !db.properties.color.supports;
+    const missingValues = !db.properties.color.values;
+    const missingSubproperties = !db.properties.background.subproperties;
+    const missingIsInherited = !db.properties.font.isInherited;
+
+    const missingSomething =
+      missingSupports ||
+      missingValues ||
+      missingSubproperties ||
+      missingIsInherited;
+
+    if (missingSomething) {
+      for (const name in db.properties) {
+        
+        if (typeof CSS_PROPERTIES_DB.properties[name] !== "object") {
+          continue;
+        }
+
+        
+        if (missingSupports) {
+          db.properties[name].supports =
+            CSS_PROPERTIES_DB.properties[name].supports;
+        }
+        
+        if (missingValues) {
+          db.properties[name].values =
+            CSS_PROPERTIES_DB.properties[name].values;
+        }
+        
+        if (missingSubproperties) {
+          db.properties[name].subproperties =
+            CSS_PROPERTIES_DB.properties[name].subproperties;
+        }
+        
+        if (missingIsInherited) {
+          db.properties[name].isInherited =
+            CSS_PROPERTIES_DB.properties[name].isInherited;
+        }
+      }
+    }
   }
 
   reattachCssColorValues(db);
@@ -215,8 +271,7 @@ function reattachCssColorValues(db) {
 
 module.exports = {
   CssPropertiesFront,
+  getClientCssProperties,
   isCssVariable,
-  CssProperties,
-  normalizeCssData,
 };
 registerFront(CssPropertiesFront);
