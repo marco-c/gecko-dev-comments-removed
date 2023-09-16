@@ -38,6 +38,9 @@ def build_servo_command(test, test_url_func, browser, binary, pause_after_test, 
                         extra_args=None, debug_opts="replace-surrogates"):
     args = [
         "--hard-fail", "-u", "Servo/wptrunner",
+        
+        
+        "--ignore-certificate-errors",
         "-z", test_url_func(test),
     ]
     if debug_opts:
