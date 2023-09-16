@@ -29,12 +29,11 @@ function setLoginMgrLoggedInState(loggedIn) {
 
 initTestLogging("Trace");
 
-function getLoginMgrData() {
-  let logins = Services.logins.findLogins(
-    FXA_PWDMGR_HOST,
-    null,
-    FXA_PWDMGR_REALM
-  );
+async function getLoginMgrData() {
+  let logins = await Services.logins.searchLoginsAsync({
+    origin: FXA_PWDMGR_HOST,
+    httpRealm: FXA_PWDMGR_REALM,
+  });
   if (!logins.length) {
     return null;
   }
@@ -114,7 +113,7 @@ add_task(async function test_simple() {
     "scopedKeys not stored in clear text"
   );
 
-  let login = getLoginMgrData();
+  let login = await getLoginMgrData();
   Assert.strictEqual(login.username, creds.uid, "uid used for username");
   let loginData = JSON.parse(login.password);
   Assert.strictEqual(
@@ -139,7 +138,7 @@ add_task(async function test_simple() {
 
   await fxa.signOut( true);
   Assert.strictEqual(
-    getLoginMgrData(),
+    await getLoginMgrData(),
     null,
     "login mgr data deleted on logout"
   );
@@ -158,7 +157,11 @@ add_task(async function test_MPLocked() {
     verified: true,
   };
 
-  Assert.strictEqual(getLoginMgrData(), null, "no login mgr at the start");
+  Assert.strictEqual(
+    await getLoginMgrData(),
+    null,
+    "no login mgr at the start"
+  );
   
   setLoginMgrLoggedInState(false);
   await fxa._internal.setSignedInUser(creds);
@@ -189,7 +192,11 @@ add_task(async function test_MPLocked() {
     "scopedKeys not stored in clear text"
   );
 
-  Assert.strictEqual(getLoginMgrData(), null, "login mgr data doesn't exist");
+  Assert.strictEqual(
+    await getLoginMgrData(),
+    null,
+    "login mgr data doesn't exist"
+  );
   await fxa.signOut( true);
 });
 
@@ -235,7 +242,7 @@ add_task(async function test_consistentWithMPEdgeCases() {
   await fxa._internal.setSignedInUser(creds2);
 
   
-  let login = getLoginMgrData();
+  let login = await getLoginMgrData();
   Assert.strictEqual(login.username, creds1.uid);
   
   Assert.deepEqual(
@@ -264,7 +271,11 @@ add_task(async function test_consistentWithMPEdgeCases() {
 
 add_task(async function test_uidMigration() {
   setLoginMgrLoggedInState(true);
-  Assert.strictEqual(getLoginMgrData(), null, "expect no logins at the start");
+  Assert.strictEqual(
+    await getLoginMgrData(),
+    null,
+    "expect no logins at the start"
+  );
 
   
   let contents = {
