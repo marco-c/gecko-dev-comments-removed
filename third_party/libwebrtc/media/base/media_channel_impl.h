@@ -796,6 +796,7 @@ class VideoMediaReceiveChannel : public VideoMediaReceiveChannelInterface {
                                           rtx_time);
   }
   MediaChannel* ImplForTesting() override { return impl_; }
+  void SetReceive(bool receive) override { impl()->SetReceive(receive); }
 
  private:
   VideoMediaReceiveChannelInterface* impl() { return impl_; }

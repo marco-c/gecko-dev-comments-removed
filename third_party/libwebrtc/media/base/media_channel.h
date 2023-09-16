@@ -972,6 +972,8 @@ class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
   
+  virtual void SetReceive(bool receive) = 0;
+  
   
   virtual webrtc::RtpParameters GetDefaultRtpReceiveParameters() const = 0;
   
