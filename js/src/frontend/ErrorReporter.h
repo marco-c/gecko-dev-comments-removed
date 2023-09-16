@@ -14,6 +14,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 
+#include "js/ColumnNumber.h"  
 #include "js/UniquePtr.h"
 #include "vm/ErrorReporting.h"  
 
@@ -334,7 +335,7 @@ class ErrorReporter : public ErrorReportMixin {
   virtual uint32_t lineAt(size_t offset) const = 0;
 
   
-  virtual uint32_t columnAt(size_t offset) const = 0;
+  virtual JS::LimitedColumnNumberZeroOrigin columnAt(size_t offset) const = 0;
 };
 
 }  
