@@ -552,11 +552,6 @@ fn update_local_items_in_places<'t>(
     }
 
     
-    debug!(driver, "Updating origins for new URLs");
-    controller.err_if_aborted()?;
-    db.exec("DELETE FROM moz_updateoriginsinsert_temp")?;
-
-    
     debug!(driver, "Staging apply remote item ops");
     for chunk in ops.apply_remote_items.chunks(db.variable_limit()? / 3) {
         
@@ -746,11 +741,6 @@ fn update_local_items_in_places<'t>(
 
     debug!(driver, "Applying remote items");
     apply_remote_items(db, driver, controller)?;
-
-    
-    debug!(driver, "Updating origins for changed URLs");
-    controller.err_if_aborted()?;
-    db.exec("DELETE FROM moz_updateoriginsupdate_temp")?;
 
     
     debug!(driver, "Applying new local structure");

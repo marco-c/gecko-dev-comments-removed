@@ -872,7 +872,7 @@ async function check_results({
   
   
   
-  await PlacesTestUtils.promiseAsyncUpdates();
+  await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
 
   const controller = UrlbarTestUtils.newMockController({
     input: {

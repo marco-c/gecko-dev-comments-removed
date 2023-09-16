@@ -57,86 +57,35 @@
 
 
 
-
-
-
-
-
-#  define UPDATE_ORIGIN_FRECENCY_STATS(op)                            \
-    "INSERT OR REPLACE INTO moz_meta(key, value) "                    \
-    "SELECT '" MOZ_META_KEY_ORIGIN_FRECENCY_COUNT                     \
-    "', "                                                             \
-    "IFNULL((SELECT value FROM moz_meta WHERE key = "                 \
-    "'" MOZ_META_KEY_ORIGIN_FRECENCY_COUNT "'), 0) " op               \
-    " CAST(frecency > 0 AS INT) "                                     \
-    "FROM moz_origins WHERE prefix = OLD.prefix AND host = OLD.host " \
-    "UNION "                                                          \
-    "SELECT '" MOZ_META_KEY_ORIGIN_FRECENCY_SUM                       \
-    "', "                                                             \
-    "IFNULL((SELECT value FROM moz_meta WHERE key = "                 \
-    "'" MOZ_META_KEY_ORIGIN_FRECENCY_SUM "'), 0) " op                 \
-    " MAX(frecency, 0) "                                              \
-    "FROM moz_origins WHERE prefix = OLD.prefix AND host = OLD.host " \
-    "UNION "                                                          \
-    "SELECT '" MOZ_META_KEY_ORIGIN_FRECENCY_SUM_OF_SQUARES            \
-    "', "                                                             \
-    "IFNULL((SELECT value FROM moz_meta WHERE key = "                 \
-    "'" MOZ_META_KEY_ORIGIN_FRECENCY_SUM_OF_SQUARES "'), 0) " op      \
-    " (MAX(frecency, 0) * MAX(frecency, 0)) "                         \
-    "FROM moz_origins WHERE prefix = OLD.prefix AND host = OLD.host "
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #  define CREATE_PLACES_AFTERINSERT_TRIGGER                                 \
     nsLiteralCString(                                                       \
         "CREATE TEMP TRIGGER moz_places_afterinsert_trigger "               \
         "AFTER INSERT ON moz_places FOR EACH ROW "                          \
         "BEGIN "                                                            \
         "SELECT store_last_inserted_id('moz_places', NEW.id); "             \
-        "INSERT OR IGNORE INTO moz_updateoriginsinsert_temp (place_id, "    \
-        "prefix, "                                                          \
-        "host, frecency) "                                                  \
-        "VALUES (NEW.id, get_prefix(NEW.url), get_host_and_port(NEW.url), " \
-        "NEW.frecency); "                                                   \
+        "INSERT INTO moz_origins "                                          \
+        "  (prefix, host, frecency, recalc_frecency, recalc_alt_frecency) " \
+        "VALUES (get_prefix(NEW.url), get_host_and_port(NEW.url), "         \
+        "        NEW.frecency, 1, 1)  "                                     \
+        "ON CONFLICT(prefix, host) DO UPDATE "                              \
+        "  SET recalc_frecency = 1, recalc_alt_frecency = 1 "               \
+        "  WHERE EXCLUDED.recalc_frecency = 0 OR "                          \
+        "        EXCLUDED.recalc_alt_frecency = 0; "                        \
+        "UPDATE moz_places SET origin_id = ( "                              \
+        "  SELECT id "                                                      \
+        "  FROM moz_origins "                                               \
+        "  WHERE prefix = get_prefix(NEW.url) "                             \
+        "    AND host = get_host_and_port(NEW.url) "                        \
+        ") "                                                                \
+        "WHERE id = NEW.id; "                                               \
         "END")
 
 
-#  define CREATE_UPDATEORIGINSINSERT_AFTERDELETE_TRIGGER \
-    nsLiteralCString( \
-  "CREATE TEMP TRIGGER moz_updateoriginsinsert_afterdelete_trigger " \
-  "AFTER DELETE ON moz_updateoriginsinsert_temp FOR EACH ROW " \
-  "BEGIN " \
-    /* Deduct the origin's current contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("-") "; " \
-    "INSERT INTO moz_origins (prefix, host, frecency, recalc_alt_frecency) " \
-    "VALUES (OLD.prefix, OLD.host, MAX(OLD.frecency, 0), 1) " \
-    "ON CONFLICT(prefix, host) DO UPDATE " \
-    "SET frecency = frecency + OLD.frecency " \
-    "WHERE OLD.frecency > 0; " \
-    /* Add the origin's new contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("+") "; " \
-    "UPDATE moz_places SET origin_id = ( " \
-      "SELECT id " \
-      "FROM moz_origins " \
-      "WHERE prefix = OLD.prefix AND host = OLD.host " \
-    ") " \
-    "WHERE id = OLD.place_id; " \
-  "END" \
-)
+
+
+
+
+
 
 
 #  define CREATE_PLACES_AFTERDELETE_TRIGGER                                    \
@@ -144,13 +93,8 @@
         "CREATE TEMP TRIGGER moz_places_afterdelete_trigger "                  \
         "AFTER DELETE ON moz_places FOR EACH ROW "                             \
         "BEGIN "                                                               \
-        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "             \
-        "frecency_delta) "                                                     \
-        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), "            \
-        "-MAX(OLD.frecency, 0)) "                                              \
-        "ON CONFLICT(prefix, host) DO UPDATE "                                 \
-        "SET frecency_delta = frecency_delta - OLD.frecency "                  \
-        "WHERE OLD.frecency > 0; "                                             \
+        "INSERT OR IGNORE INTO moz_updateoriginsdelete_temp (prefix, host) "   \
+        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url)); "           \
         "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \
         "WHERE id = OLD.origin_id; "                                           \
         "END ")
@@ -163,13 +107,8 @@
         "CREATE TEMP TRIGGER moz_places_afterdelete_wpreviews_trigger "        \
         "AFTER DELETE ON moz_places FOR EACH ROW "                             \
         "BEGIN "                                                               \
-        "INSERT INTO moz_updateoriginsdelete_temp (prefix, host, "             \
-        "frecency_delta) "                                                     \
-        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url), "            \
-        "-MAX(OLD.frecency, 0)) "                                              \
-        "ON CONFLICT(prefix, host) DO UPDATE "                                 \
-        "SET frecency_delta = frecency_delta - OLD.frecency "                  \
-        "WHERE OLD.frecency > 0; "                                             \
+        "INSERT OR IGNORE INTO moz_updateoriginsdelete_temp (prefix, host) "   \
+        "VALUES (get_prefix(OLD.url), get_host_and_port(OLD.url)); "           \
         "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \
         "WHERE id = OLD.origin_id; "                                           \
         "INSERT OR IGNORE INTO moz_previews_tombstones VALUES "                \
@@ -177,37 +116,18 @@
         "END ")
 
 
-
-
-#  define CREATE_UPDATEORIGINSDELETE_AFTERDELETE_TRIGGER \
-    nsLiteralCString( \
-  "CREATE TEMP TRIGGER moz_updateoriginsdelete_afterdelete_trigger " \
-  "AFTER DELETE ON moz_updateoriginsdelete_temp FOR EACH ROW " \
-  "BEGIN " \
-    /* Deduct the origin's current contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("-") "; " \
-    "UPDATE moz_origins SET frecency = frecency + OLD.frecency_delta, " \
-                           "recalc_frecency = 0 " \
-    "WHERE prefix = OLD.prefix AND host = OLD.host; " \
-    "DELETE FROM moz_origins " \
-    "WHERE prefix = OLD.prefix AND host = OLD.host AND NOT EXISTS ( " \
-      "SELECT id FROM moz_places " \
-      "WHERE origin_id = moz_origins.id " \
-      "LIMIT 1 " \
-    "); " \
-    /* Add the origin's new contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("+") "; " \
-    "DELETE FROM moz_icons WHERE id IN ( " \
-      "SELECT id FROM moz_icons " \
-      "WHERE fixed_icon_url_hash = hash(fixup_url(OLD.host || '/favicon.ico')) " \
-        "AND fixup_url(icon_url) = fixup_url(OLD.host || '/favicon.ico') " \
-        "AND NOT EXISTS (SELECT 1 FROM moz_origins WHERE host = OLD.host " \
-                                                     "OR host = fixup_url(OLD.host)) " \
-      "EXCEPT " \
-      "SELECT icon_id FROM moz_icons_to_pages " \
-    "); " \
-  "END" \
-)
+#  define CREATE_UPDATEORIGINSDELETE_AFTERDELETE_TRIGGER                   \
+    nsLiteralCString(                                                      \
+        "CREATE TEMP TRIGGER moz_updateoriginsdelete_afterdelete_trigger " \
+        "AFTER DELETE ON moz_updateoriginsdelete_temp FOR EACH ROW "       \
+        "BEGIN "                                                           \
+        "DELETE FROM moz_origins "                                         \
+        "WHERE prefix = OLD.prefix AND host = OLD.host "                   \
+        "AND NOT EXISTS ( "                                                \
+        "    SELECT id FROM moz_places "                                   \
+        "    WHERE origin_id = moz_origins.id "                            \
+        "); "                                                              \
+        "END")
 
 
 
@@ -222,34 +142,10 @@
         "AFTER UPDATE OF frecency ON moz_places FOR EACH ROW "                 \
         "WHEN NOT is_frecency_decaying() "                                     \
         "BEGIN "                                                               \
-        "INSERT INTO moz_updateoriginsupdate_temp (prefix, host, "             \
-        "frecency_delta) "                                                     \
-        "VALUES (get_prefix(NEW.url), get_host_and_port(NEW.url), "            \
-        "MAX(NEW.frecency, 0) - MAX(OLD.frecency, 0)) "                        \
-        "ON CONFLICT(prefix, host) DO UPDATE "                                 \
-        "SET frecency_delta = frecency_delta + EXCLUDED.frecency_delta; "      \
         "UPDATE moz_places SET recalc_frecency = 0 WHERE id = NEW.id; "        \
         "UPDATE moz_origins SET recalc_frecency = 1, recalc_alt_frecency = 1 " \
         "WHERE id = NEW.origin_id; "                                           \
         "END ")
-
-
-
-#  define CREATE_UPDATEORIGINSUPDATE_AFTERDELETE_TRIGGER \
-    nsLiteralCString( \
-  "CREATE TEMP TRIGGER moz_updateoriginsupdate_afterdelete_trigger " \
-  "AFTER DELETE ON moz_updateoriginsupdate_temp FOR EACH ROW " \
-  "BEGIN " \
-    /* Deduct the origin's current contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("-") "; " \
-    "UPDATE moz_origins " \
-    "SET frecency = frecency + OLD.frecency_delta, " \
-        "recalc_frecency = 0 " \
-    "WHERE prefix = OLD.prefix AND host = OLD.host; " \
-    /* Add the origin's new contribution to frecency stats */ \
-    UPDATE_ORIGIN_FRECENCY_STATS("+") "; " \
-  "END" \
-)
 
 
 #  define CREATE_PLACES_AFTERUPDATE_RECALC_FRECENCY_TRIGGER                   \
@@ -259,6 +155,31 @@
         "WHEN NEW.recalc_frecency = 1 "                                       \
         "BEGIN "                                                              \
         "  SELECT set_should_start_frecency_recalculation();"                 \
+        "END")
+#  define CREATE_ORIGINS_AFTERUPDATE_RECALC_FRECENCY_TRIGGER                   \
+    nsLiteralCString(                                                          \
+        "CREATE TEMP TRIGGER moz_origins_afterupdate_recalc_frecency_trigger " \
+        "AFTER UPDATE OF recalc_frecency ON moz_origins FOR EACH ROW "         \
+        "WHEN NEW.recalc_frecency = 1 "                                        \
+        "BEGIN "                                                               \
+        "  SELECT set_should_start_frecency_recalculation();"                  \
+        "END")
+
+
+
+
+
+
+#  define CREATE_ORIGINS_AFTERUPDATE_FRECENCY_TRIGGER                   \
+    nsLiteralCString(                                                   \
+        "CREATE TEMP TRIGGER moz_origins_afterupdate_frecency_trigger " \
+        "AFTER UPDATE OF recalc_frecency ON moz_origins FOR EACH ROW "  \
+        "WHEN NEW.frecency = 0 AND OLD.frecency > 0 "                   \
+        "BEGIN "                                                        \
+        "DELETE FROM moz_origins "                                      \
+        "WHERE id = NEW.id AND NOT EXISTS ( "                           \
+        "  SELECT id FROM moz_places WHERE origin_id = NEW.id "         \
+        "); "                                                           \
         "END")
 
 

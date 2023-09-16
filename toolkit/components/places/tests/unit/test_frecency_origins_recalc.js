@@ -3,10 +3,6 @@
 
 
 
-
-
-
-
 add_task(async function test() {
   
   
@@ -27,8 +23,8 @@ add_task(async function test() {
     await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
       host,
     }),
-    0,
-    "Should have been calculated already"
+    1,
+    "Frecency should be calculated"
   );
   Assert.equal(
     await PlacesTestUtils.getDatabaseValue(
@@ -39,7 +35,7 @@ add_task(async function test() {
       }
     ),
     1,
-    "Should have been calculated already"
+    "Alt frecency should be calculated"
   );
   await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   let alt_frecency = await PlacesTestUtils.getDatabaseValue(
@@ -94,14 +90,12 @@ add_task(async function test() {
   await PlacesTestUtils.addVisits(url2);
   
   await PlacesUtils.history.remove(url);
-  
-  
   Assert.equal(
     await PlacesTestUtils.getDatabaseValue("moz_origins", "recalc_frecency", {
       host,
     }),
-    0,
-    "Should have been recalculated"
+    1,
+    "Frecency should be calculated"
   );
   Assert.equal(
     await PlacesTestUtils.getDatabaseValue(
@@ -110,6 +104,6 @@ add_task(async function test() {
       { host }
     ),
     1,
-    "Should request recalculation"
+    "Alt frecency should be calculated"
   );
 });

@@ -204,43 +204,15 @@
 
 
 
-#define CREATE_UPDATEORIGINSINSERT_TEMP                   \
-  nsLiteralCString(                                       \
-      "CREATE TEMP TABLE moz_updateoriginsinsert_temp ( " \
-      "place_id INTEGER PRIMARY KEY, "                    \
-      "prefix TEXT NOT NULL, "                            \
-      "host TEXT NOT NULL, "                              \
-      "frecency INTEGER NOT NULL "                        \
-      ") ")
-
-
-
-
 
 
 #define CREATE_UPDATEORIGINSDELETE_TEMP                   \
   nsLiteralCString(                                       \
       "CREATE TEMP TABLE moz_updateoriginsdelete_temp ( " \
-      "prefix TEXT NOT NULL, "                            \
-      "host TEXT NOT NULL, "                              \
-      "frecency_delta INTEGER NOT NULL, "                 \
-      "PRIMARY KEY (prefix, host) "                       \
-      ") WITHOUT ROWID ")
-
-
-
-
-
-
-
-#define CREATE_UPDATEORIGINSUPDATE_TEMP                   \
-  nsLiteralCString(                                       \
-      "CREATE TEMP TABLE moz_updateoriginsupdate_temp ( " \
-      "prefix TEXT NOT NULL, "                            \
-      "host TEXT NOT NULL, "                              \
-      "frecency_delta INTEGER NOT NULL, "                 \
-      "PRIMARY KEY (prefix, host) "                       \
-      ") WITHOUT ROWID ")
+      "  prefix TEXT NOT NULL, "                          \
+      "  host TEXT NOT NULL, "                            \
+      "  PRIMARY KEY (prefix, host) "                     \
+      ") WITHOUT ROWID")
 
 
 
@@ -297,12 +269,6 @@
       "key TEXT PRIMARY KEY, "  \
       "value NOT NULL"          \
       ") WITHOUT ROWID ")
-
-
-#define MOZ_META_KEY_ORIGIN_FRECENCY_COUNT "origin_frecency_count"
-#define MOZ_META_KEY_ORIGIN_FRECENCY_SUM "origin_frecency_sum"
-#define MOZ_META_KEY_ORIGIN_FRECENCY_SUM_OF_SQUARES \
-  "origin_frecency_sum_of_squares"
 
 
 

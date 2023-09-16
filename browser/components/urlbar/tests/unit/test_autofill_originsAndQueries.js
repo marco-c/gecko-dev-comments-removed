@@ -946,7 +946,7 @@ add_autofill_task(async function zeroThreshold() {
     await db.execute("UPDATE moz_places SET frecency = -1 WHERE url = :url", {
       url: pageUrl,
     });
-    await db.executeCached("DELETE FROM moz_updateoriginsupdate_temp");
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
   });
 
   
@@ -1120,14 +1120,14 @@ add_autofill_task(async function suggestHistoryFalse_bookmark_0() {
   
   
   
-  let meetsThreshold = true;
-  while (meetsThreshold) {
+  await TestUtils.waitForCondition(async () => {
     
     await PlacesTestUtils.addVisits("http://foo-" + url);
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
     let originFrecency = await getOriginFrecency("http://", host);
     let threshold = await getOriginAutofillThreshold();
-    meetsThreshold = threshold <= originFrecency;
-  }
+    return threshold > originFrecency;
+  }, "Make the bookmark fall below the frecency threshold");
 
   
   
@@ -1227,14 +1227,14 @@ add_autofill_task(async function suggestHistoryFalse_bookmark_prefix_0() {
   
   
   
-  let meetsThreshold = true;
-  while (meetsThreshold) {
+  await TestUtils.waitForCondition(async () => {
     
     await PlacesTestUtils.addVisits("http://foo-" + url);
+    await PlacesFrecencyRecalculator.recalculateAnyOutdatedFrecencies();
     let originFrecency = await getOriginFrecency("http://", host);
     let threshold = await getOriginAutofillThreshold();
-    meetsThreshold = threshold <= originFrecency;
-  }
+    return threshold > originFrecency;
+  }, "Make the bookmark fall below the frecency threshold");
 
   
   
