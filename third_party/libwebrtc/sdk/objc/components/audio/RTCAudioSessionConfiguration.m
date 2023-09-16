@@ -32,10 +32,6 @@ const double kRTCAudioSessionHighPerformanceSampleRate = 48000.0;
 
 
 
-const double kRTCAudioSessionLowComplexitySampleRate = 16000.0;
-
-
-
 
 
 
@@ -43,13 +39,6 @@ const double kRTCAudioSessionLowComplexitySampleRate = 16000.0;
 
 
 const double kRTCAudioSessionHighPerformanceIOBufferDuration = 0.02;
-
-
-
-
-
-
-const double kRTCAudioSessionLowComplexityIOBufferDuration = 0.06;
 
 static RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *gWebRTCConfiguration = nil;
 
@@ -77,18 +66,8 @@ static RTC_OBJC_TYPE(RTCAudioSessionConfiguration) *gWebRTCConfiguration = nil;
 
     
     
-    
-    
-    NSUInteger processorCount = [NSProcessInfo processInfo].processorCount;
-    
-    
-    if (processorCount > 1 && [UIDevice deviceType] != RTCDeviceTypeIPhone4S) {
-      _sampleRate = kRTCAudioSessionHighPerformanceSampleRate;
-      _ioBufferDuration = kRTCAudioSessionHighPerformanceIOBufferDuration;
-    } else {
-      _sampleRate = kRTCAudioSessionLowComplexitySampleRate;
-      _ioBufferDuration = kRTCAudioSessionLowComplexityIOBufferDuration;
-    }
+    _sampleRate = kRTCAudioSessionHighPerformanceSampleRate;
+    _ioBufferDuration = kRTCAudioSessionHighPerformanceIOBufferDuration;
 
     
     
