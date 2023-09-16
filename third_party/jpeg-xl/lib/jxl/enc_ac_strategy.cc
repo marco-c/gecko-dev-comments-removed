@@ -378,6 +378,41 @@ static const float kChromaErrorWeight[AcStrategy::kNumValidStrategies] = {
     2.0f,   
 };
 
+
+
+
+
+
+static const float kMixLossTable[AcStrategy::kNumValidStrategies] = {
+    1.0f,   
+    0.45f,  
+    0.45f,  
+    0.7f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    0.96f,  
+    0.96f,  
+    0.94f,  
+    0.94f,  
+    0.94f,  
+    0.94f,  
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+    1.0f,   
+};
+
 float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
                       const ACSConfig& config,
                       const float* JXL_RESTRICT cmap_factors, float* block,
@@ -390,7 +425,6 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
     TransformFromPixels(acs.Strategy(), &config.Pixel(c, x, y),
                         config.src_stride, block_c, scratch_space);
   }
-
   HWY_FULL(float) df;
 
   const size_t num_blocks = acs.covered_blocks_x() * acs.covered_blocks_y();
@@ -401,7 +435,12 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
   if (num_blocks == 1) {
     
     quant_norm8 = config.Quant(x / 8, y / 8);
-    masking = 2.0f * config.Masking(x / 8, y / 8);
+    masking = config.Masking(x / 8, y / 8);
+    
+    float kExposedMasking = 0.118f;
+    if (acs.RawStrategy() == 2 && masking >= kExposedMasking) {
+      masking = kExposedMasking + 0.56 * (masking - kExposedMasking);
+    }
   } else if (num_blocks == 2) {
     
     
@@ -409,13 +448,13 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
     if (acs.covered_blocks_y() == 2) {
       quant_norm8 =
           std::max(config.Quant(x / 8, y / 8), config.Quant(x / 8, y / 8 + 1));
-      masking = 2.0f * std::max(config.Masking(x / 8, y / 8),
-                                config.Masking(x / 8, y / 8 + 1));
+      masking = std::max(config.Masking(x / 8, y / 8),
+                         config.Masking(x / 8, y / 8 + 1));
     } else {
       quant_norm8 =
           std::max(config.Quant(x / 8, y / 8), config.Quant(x / 8 + 1, y / 8));
-      masking = 2.0f * std::max(config.Masking(x / 8, y / 8),
-                                config.Masking(x / 8 + 1, y / 8));
+      masking = std::max(config.Masking(x / 8, y / 8),
+                         config.Masking(x / 8 + 1, y / 8));
     }
   } else {
     float masking_norm2 = 0;
@@ -438,12 +477,12 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
     quant_norm8 = FastPowf(quant_norm8, 1.0f / 8.0f);
     masking_norm2 = sqrt(masking_norm2 / num_blocks);
     
-    masking = (masking_norm2 + masking_max);
+    masking = 0.5 * (masking_norm2 + masking_max);
   }
   const auto q = Set(df, quant_norm8);
 
   
-  float entropy = config.base_entropy;
+  float entropy = 0.0f;
   auto info_loss = Zero(df);
   auto info_loss2 = Zero(df);
 
@@ -453,9 +492,6 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
 
     auto entropy_v = Zero(df);
     auto nzeros_v = Zero(df);
-    auto cost1 = Set(df, config.cost1);
-    auto cost2 = Set(df, config.cost2);
-    auto cost_delta = Set(df, config.cost_delta);
     for (size_t i = 0; i < num_blocks * kDCTBlockSize; i += Lanes(df)) {
       const auto in = Load(df, block + c * size + i);
       const auto in_y = Mul(Load(df, block + size + i), cmap_factor);
@@ -467,18 +503,13 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
       info_loss2 = MulAdd(diff, diff, info_loss2);
       const auto q = Abs(rval);
       const auto q_is_zero = Eq(q, Zero(df));
-      entropy_v = Add(entropy_v, IfThenElseZero(Ge(q, Set(df, 1.5f)), cost2));
       
       
       
-      
-      
-      entropy_v = MulAdd(Sqrt(q), cost_delta, entropy_v);
+      entropy_v = Add(Sqrt(q), entropy_v);
       nzeros_v = Add(nzeros_v, IfThenZeroElse(q_is_zero, Set(df, 1.0f)));
     }
-    entropy_v = MulAdd(nzeros_v, cost1, entropy_v);
-
-    entropy += cmul[c] * GetLane(SumOfLanes(df, entropy_v));
+    entropy += config.cost_delta * cmul[c] * GetLane(SumOfLanes(df, entropy_v));
     size_t num_nzeros = GetLane(SumOfLanes(df, nzeros_v));
     
     
@@ -487,13 +518,16 @@ float EstimateEntropy(const AcStrategy& acs, size_t x, size_t y,
     
     entropy += config.zeros_mul * (CeilLog2Nonzero(nbits + 17) + nbits);
   }
-  float ret =
-      entropy +
-      masking *
-          ((config.info_loss_multiplier * GetLane(SumOfLanes(df, info_loss))) +
-           (config.info_loss_multiplier2 *
-            sqrt(num_blocks * GetLane(SumOfLanes(df, info_loss2)))));
-  return ret;
+  const float kMixLoss = kMixLossTable[acs.RawStrategy()];
+  const float loss1 = GetLane(SumOfLanes(df, info_loss));
+  const float loss2 =
+      sqrt(GetLane(SumOfLanes(df, info_loss2)) * (num_blocks * 64));
+  const float loss = kMixLoss * (config.info_loss_multiplier * loss1) +
+                     (1.0 - kMixLoss) * (config.info_loss_multiplier2 * loss2);
+  const float kRegulateSurface = 11.5f;
+  float large_surface_error_mul =
+      (kRegulateSurface + sqrt(num_blocks)) * (1.0f / (kRegulateSurface + 1));
+  return entropy + large_surface_error_mul * masking * loss;
 }
 
 uint8_t FindBest8x8Transform(size_t x, size_t y, int encoding_speed_tier,
@@ -513,7 +547,7 @@ uint8_t FindBest8x8Transform(size_t x, size_t y, int encoding_speed_tier,
           AcStrategy::Type::DCT,
           9,
           3.0f,
-          0.745f,
+          0.785f,
       },
       {
           AcStrategy::Type::DCT4X4,
@@ -525,19 +559,19 @@ uint8_t FindBest8x8Transform(size_t x, size_t y, int encoding_speed_tier,
           AcStrategy::Type::DCT2X2,
           5,
           0.0f,
-          0.66f,
+          0.685f,
       },
       {
           AcStrategy::Type::DCT4X8,
           4,
-          0.0f,
-          0.700754622182473063f,
+          3.0f,
+          0.745f,
       },
       {
           AcStrategy::Type::DCT8X4,
           4,
-          0.0f,
-          0.700754622182473063f,
+          3.0f,
+          0.745f,
       },
       {
           AcStrategy::Type::IDENTITY,
@@ -871,14 +905,14 @@ void ProcessRectACS(PassesEncoderState* JXL_RESTRICT enc_state,
     float entropy_mul;
   };
   static const float k8X16mul1 = -0.55;
-  static const float k8X16mul2 = 0.865;
+  static const float k8X16mul2 = 0.885;
   static const float k8X16base = 1.6;
   const float entropy_mul16X8 =
       k8X16mul2 + k8X16mul1 / (butteraugli_target + k8X16base);
   
 
   static const float k16X16mul1 = -0.35;
-  static const float k16X16mul2 = 0.798;
+  static const float k16X16mul2 = 0.808;
   static const float k16X16base = 2.0;
   const float entropy_mul16X16 =
       k16X16mul2 + k16X16mul1 / (butteraugli_target + k16X16base);
@@ -1067,7 +1101,6 @@ void AcStrategyHeuristics::Init(const Image3F& src,
   this->enc_state = enc_state;
   config.dequant = &enc_state->shared.matrices;
   const CompressParams& cparams = enc_state->cparams;
-  const float butteraugli_target = cparams.butteraugli_distance;
 
   if (cparams.speed_tier >= SpeedTier::kCheetah) {
     JXL_CHECK(enc_state->shared.matrices.EnsureComputed(1));  
@@ -1098,20 +1131,10 @@ void AcStrategyHeuristics::Init(const Image3F& src,
   
   
   
-  config.info_loss_multiplier = 138.0f;
-  config.info_loss_multiplier2 = 50.46839691767866;
-  
-  
-  
-  config.base_entropy = 0.0;
-  config.zeros_mul = 7.565053364251793f;
-  
-  
-  
-  float slope = std::min<float>(1.0f, butteraugli_target * (1.0f / 3));
-  config.cost1 = 1 + slope * 8.8703248061477744f;
-  config.cost2 = 4.4628149885273363f;
-  config.cost_delta = 5.3359184934516337f;
+  config.info_loss_multiplier = 58.67516723857484f;
+  config.info_loss_multiplier2 = 43.0f;
+  config.zeros_mul = 2.55f;
+  config.cost_delta = 4.9425062806007478f;
   JXL_ASSERT(enc_state->shared.ac_strategy.xsize() ==
              enc_state->shared.frame_dim.xsize_blocks);
   JXL_ASSERT(enc_state->shared.ac_strategy.ysize() ==

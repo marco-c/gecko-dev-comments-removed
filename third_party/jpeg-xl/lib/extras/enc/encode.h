@@ -43,6 +43,8 @@ class Encoder {
 
   virtual ~Encoder() = default;
 
+  
+  
   virtual std::vector<JxlPixelFormat> AcceptedFormats() const = 0;
 
   

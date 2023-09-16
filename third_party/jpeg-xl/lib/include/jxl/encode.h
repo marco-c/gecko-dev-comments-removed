@@ -352,6 +352,30 @@ typedef enum {
   
 
 
+
+
+
+
+  JXL_ENC_FRAME_SETTING_JPEG_KEEP_EXIF = 35,
+
+  
+
+
+
+
+
+  JXL_ENC_FRAME_SETTING_JPEG_KEEP_XMP = 36,
+
+  
+
+
+
+
+  JXL_ENC_FRAME_SETTING_JPEG_KEEP_JUMBF = 37,
+
+  
+
+
   JXL_ENC_FRAME_SETTING_FILL_ENUM = 65535,
 
 } JxlEncoderFrameSettingId;
@@ -931,6 +955,26 @@ JXL_EXPORT void JxlEncoderInitBlendInfo(JxlBlendInfo* blend_info);
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderSetBasicInfo(JxlEncoder* enc,
                                                    const JxlBasicInfo* info);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderSetUpsamplingMode(JxlEncoder* enc,
+                                                        const int64_t factor,
+                                                        const int64_t mode);
 
 
 

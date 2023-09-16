@@ -123,6 +123,11 @@ struct CompressParams {
   bool jpeg_compress_boxes = true;
 
   
+  bool jpeg_keep_exif = true;
+  bool jpeg_keep_xmp = true;
+  bool jpeg_keep_jumbf = true;
+
+  
   
   float photon_noise_iso = 0;
 

@@ -25,10 +25,6 @@ using JPEGOutput = std::function<size_t(const uint8_t* buf, size_t len)>;
 
 Status WriteJpeg(const JPEGData& jpg, const JPEGOutput& out);
 
-
-
-Status ProcessJpeg(const JPEGData& jpg, SerializationState* ss);
-
 }  
 }  
 
