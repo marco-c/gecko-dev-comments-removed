@@ -1,5 +1,5 @@
 
-import * as module from 'http://{{hosts[alt][0]}}:{{ports[http][0]}}/workers/modules/resources/export-credentials.py';
+import * as module from 'http://{{hosts[alt][]}}:{{ports[http][0]}}/workers/modules/resources/export-credentials.py';
 if ('DedicatedWorkerGlobalScope' in self &&
     self instanceof DedicatedWorkerGlobalScope) {
   postMessage(module.cookie);
