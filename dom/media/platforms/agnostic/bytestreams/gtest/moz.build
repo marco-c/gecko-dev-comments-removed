@@ -5,7 +5,7 @@
 
 
 UNIFIED_SOURCES += [
-    "TestAnnexB.cpp",
+    "TestByteStreams.cpp",
 ]
 
 FINAL_LIBRARY = "xul-gtest"
