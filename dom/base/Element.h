@@ -751,14 +751,13 @@ class Element : public FragmentOrElement {
   
   friend class Link;
 
-  void NotifyStateChange(ElementState aStates);
-
-  void NotifyStyleStateChange(ElementState aStates);
-
   
   ElementState StyleStateFromLocks() const;
 
  protected:
+  void NotifyStateChange(ElementState aStates);
+  void NotifyStyleStateChange(ElementState aStates);
+
   
   
   
