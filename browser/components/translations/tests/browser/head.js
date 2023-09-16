@@ -13,6 +13,25 @@ Services.scriptloader.loadSubScript(
 
 
 
+const getIntlDisplayName = (() => {
+  let displayNames = null;
+
+  return langTag => {
+    if (!displayNames) {
+      displayNames = new Services.intl.DisplayNames(undefined, {
+        type: "language",
+        fallback: "none",
+      });
+    }
+    return displayNames.of(langTag);
+  };
+})();
+
+
+
+
+
+
 
 
 async function assertTranslationsButton(visibleAssertions, message) {
@@ -186,10 +205,15 @@ async function toggleNeverTranslateSite() {
 
 
 
-async function assertIsAlwaysTranslateLanguage(langTag, expectChecked) {
+
+
+async function assertIsAlwaysTranslateLanguage(
+  langTag,
+  { checked = true, disabled = false }
+) {
   await assertCheckboxState(
     "translations-panel-settings-always-translate-language",
-    expectChecked
+    { langTag, checked, disabled }
   );
 }
 
@@ -199,10 +223,15 @@ async function assertIsAlwaysTranslateLanguage(langTag, expectChecked) {
 
 
 
-async function assertIsNeverTranslateLanguage(langTag, expectChecked) {
+
+
+async function assertIsNeverTranslateLanguage(
+  langTag,
+  { checked = true, disabled = false }
+) {
   await assertCheckboxState(
     "translations-panel-settings-never-translate-language",
-    expectChecked
+    { langTag, checked, disabled }
   );
 }
 
@@ -212,10 +241,15 @@ async function assertIsNeverTranslateLanguage(langTag, expectChecked) {
 
 
 
-async function assertIsNeverTranslateSite(url, expectChecked) {
+
+
+async function assertIsNeverTranslateSite(
+  url,
+  { checked = true, disabled = false }
+) {
   await assertCheckboxState(
     "translations-panel-settings-never-translate-site",
-    expectChecked
+    { checked, disabled }
   );
 }
 
@@ -226,17 +260,37 @@ async function assertIsNeverTranslateSite(url, expectChecked) {
 
 
 
-async function assertCheckboxState(dataL10nId, expectChecked) {
+
+
+
+async function assertCheckboxState(
+  dataL10nId,
+  { langTag = null, checked = true, disabled = false }
+) {
   const menuItems = getAllByL10nId(dataL10nId);
   for (const menuItem of menuItems) {
+    if (langTag) {
+      const {
+        args: { language },
+      } = document.l10n.getAttributes(menuItem);
+      is(
+        language,
+        getIntlDisplayName(langTag),
+        `Should match expected language display name for ${dataL10nId}`
+      );
+    }
+    is(
+      menuItem.disabled,
+      disabled,
+      `Should match expected disabled state for ${dataL10nId}`
+    );
     await waitForCondition(
-      () =>
-        menuItem.getAttribute("checked") === (expectChecked ? "true" : "false"),
+      () => menuItem.getAttribute("checked") === (checked ? "true" : "false"),
       "Waiting for checkbox state"
     );
     is(
       menuItem.getAttribute("checked"),
-      expectChecked ? "true" : "false",
+      checked ? "true" : "false",
       `Should match expected checkbox state for ${dataL10nId}`
     );
   }
