@@ -883,7 +883,13 @@ class TopSitesFeed {
     const searchShortcutsExperiment = prefValues[SEARCH_SHORTCUTS_EXPERIMENT];
     
     
-    await Services.search.init();
+    try {
+      await Services.search.init();
+    } catch {
+      
+      
+      
+    }
 
     
     let frecent = [];
