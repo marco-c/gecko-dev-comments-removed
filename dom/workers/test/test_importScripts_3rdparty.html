@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -112,7 +112,7 @@ var tests = [
     var worker = new Worker(url);
     worker.onerror = function(event) {
       event.preventDefault();
-      ok(event instanceof ErrorEvent, "ErrorEvent received.");
+      ok(event instanceof Event, "Event received.");
       next();
     };
   }
