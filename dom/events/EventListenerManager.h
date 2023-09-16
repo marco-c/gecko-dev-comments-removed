@@ -309,6 +309,7 @@ class EventListenerManager final : public EventListenerManagerBase {
     
     
     
+    
     RefPtr<ListenerArray> mListeners;
   };
 
