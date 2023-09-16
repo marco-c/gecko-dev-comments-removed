@@ -5,7 +5,6 @@
 
 
 
-include protocol PBackground;
 include PSMIPCTypes;
 
 namespace mozilla {
@@ -13,8 +12,6 @@ namespace psm {
 
 protocol PSelectTLSClientAuthCert
 {
-  manager PBackground;
-
 child:
   async TLSClientAuthCertSelected(ByteArray aSelectedCertBytes,
                                   ByteArray[] aSelectedCertChainBytes);
