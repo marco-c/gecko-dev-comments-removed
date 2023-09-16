@@ -326,6 +326,7 @@ class HTMLInputElement final : public TextControlElement,
   void UpdateBadInputValidityState();
   void UpdatePlaceholderShownState();
   void UpdateCheckedState(bool aNotify);
+  void UpdateIndeterminateState(bool aNotify);
   
   
   

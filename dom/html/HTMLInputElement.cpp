@@ -1483,6 +1483,11 @@ uint32_t HTMLInputElement::Height() {
 void HTMLInputElement::SetIndeterminateInternal(bool aValue,
                                                 bool aShouldInvalidate) {
   mIndeterminate = aValue;
+  if (mType != FormControlType::InputCheckbox) {
+    return;
+  }
+
+  SetStates(ElementState::INDETERMINATE, aValue);
 
   if (aShouldInvalidate) {
     
@@ -1490,8 +1495,6 @@ void HTMLInputElement::SetIndeterminateInternal(bool aValue,
       frame->InvalidateFrameSubtree();
     }
   }
-
-  UpdateState(true);
 }
 
 void HTMLInputElement::SetIndeterminate(bool aValue) {
@@ -2954,6 +2957,19 @@ void HTMLInputElement::UpdateCheckedState(bool aNotify) {
   SetStates(ElementState::CHECKED, IsRadioOrCheckbox() && mChecked, aNotify);
 }
 
+void HTMLInputElement::UpdateIndeterminateState(bool aNotify) {
+  bool indeterminate = [&] {
+    if (mType == FormControlType::InputCheckbox) {
+      return mIndeterminate;
+    }
+    if (mType == FormControlType::InputRadio) {
+      return !mChecked && !GetSelectedRadioButton();
+    }
+    return false;
+  }();
+  SetStates(ElementState::INDETERMINATE, indeterminate, aNotify);
+}
+
 void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
   
   mChecked = aChecked;
@@ -2969,6 +2985,7 @@ void HTMLInputElement::SetCheckedInternal(bool aChecked, bool aNotify) {
   
   
   UpdateAllValidityStatesButNotElementState();
+  UpdateIndeterminateState(aNotify);
   
   UpdateState(aNotify);
 
@@ -4394,6 +4411,7 @@ void HTMLInputElement::HandleTypeChange(FormControlType aNewType,
   
   UpdateReadOnlyState(aNotify);
   UpdateCheckedState(aNotify);
+  UpdateIndeterminateState(aNotify);
   const bool isDefault = IsRadioOrCheckbox()
                              ? DefaultChecked()
                              : (mForm && mForm->IsDefaultSubmitElement(this));
@@ -6041,16 +6059,7 @@ ElementState HTMLInputElement::IntrinsicState() const {
   
   ElementState state =
       nsGenericHTMLFormControlElementWithState::IntrinsicState();
-  
-  if (mType == FormControlType::InputCheckbox && mIndeterminate) {
-    state |= ElementState::INDETERMINATE;
-  } else if (mType == FormControlType::InputRadio) {
-    HTMLInputElement* selected = GetSelectedRadioButton();
-    const bool indeterminate = !selected && !mChecked;
-    if (indeterminate) {
-      state |= ElementState::INDETERMINATE;
-    }
-  } else if (mType == FormControlType::InputImage) {
+  if (mType == FormControlType::InputImage) {
     state |= nsImageLoadingContent::ImageState();
   }
 
