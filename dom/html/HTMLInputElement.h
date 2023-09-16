@@ -1311,10 +1311,9 @@ class HTMLInputElement final : public TextControlElement,
 
   void SetValue(Decimal aValue, CallerType aCallerType);
 
+  void UpdateHasRange(bool aNotify);
   
-
-
-  void UpdateHasRange();
+  void UpdateInRange(bool aNotify);
 
   
 
