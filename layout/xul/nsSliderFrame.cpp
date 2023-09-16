@@ -1534,6 +1534,21 @@ void nsSliderFrame::PageScroll(bool aClickAndHold) {
 
     nsPoint pos = sf->GetScrollPosition();
 
+    if (mCurrentClickHoldDestination) {
+      
+      
+      nsPoint pendingScroll =
+          *mCurrentClickHoldDestination - sf->GetScrollPosition();
+
+      
+      
+      pos += pendingScroll;
+
+      
+      
+      maxDistanceToScroll -= (isHorizontal ? pendingScroll.x : pendingScroll.y);
+    }
+
     nscoord distanceToScroll =
         std::min(abs(maxDistanceToScroll),
                  CSSPixel::ToAppUnits(CSSCoord(pageLength))) *
@@ -1545,6 +1560,7 @@ void nsSliderFrame::PageScroll(bool aClickAndHold) {
       pos.y += distanceToScroll;
     }
 
+    mCurrentClickHoldDestination = Some(pos);
     sf->ScrollTo(pos,
                  StaticPrefs::general_smoothScroll() &&
                          StaticPrefs::general_smoothScroll_pages()
