@@ -1961,8 +1961,10 @@ nsresult nsHttpTransaction::ParseLine(nsACString& line) {
   nsresult rv = NS_OK;
 
   if (!mHaveStatusLine) {
-    mResponseHead->ParseStatusLine(line);
-    mHaveStatusLine = true;
+    rv = mResponseHead->ParseStatusLine(line);
+    if (NS_SUCCEEDED(rv)) {
+      mHaveStatusLine = true;
+    }
     
     if (mResponseHead->Version() == HttpVersion::v0_9) mHaveAllHeaders = true;
   } else {
@@ -2086,7 +2088,9 @@ nsresult nsHttpTransaction::ParseHead(char* buf, uint32_t count,
         
         if (mRequestHead->IsPut()) return NS_ERROR_ABORT;
 
-        mResponseHead->ParseStatusLine(""_ns);
+        if (NS_FAILED(mResponseHead->ParseStatusLine(""_ns))) {
+          return NS_ERROR_FAILURE;
+        }
         mHaveStatusLine = true;
         mHaveAllHeaders = true;
         return NS_OK;
