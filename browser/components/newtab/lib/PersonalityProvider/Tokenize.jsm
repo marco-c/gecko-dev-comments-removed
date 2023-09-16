@@ -1,16 +1,22 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Unicode specifies certain mnemonics for code pages and character classes.
-// They call them "character properties" https://en.wikipedia.org/wiki/Unicode_character_property .
-// These mnemonics are have been adopted by many regular expression libraries,
-// however the standard Javascript regexp system doesn't support unicode
-// character properties, so we have to define these ourself.
-//
-// Each of these sections contains the characters values / ranges for specific
-// character property: Whitespace, Symbol (S), Punctuation (P), Number (N),
-// Mark (M), and Letter (L).
+
+
+"use strict";
+
+
+
+
+var EXPORTED_SYMBOLS = ["tokenize", "toksToTfIdfVector"];
+
+
+
+
+
+
+
+
+
+
 const UNICODE_SPACE =
   "\x20\xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000";
 const UNICODE_SYMBOL =
@@ -28,34 +34,34 @@ const UNICODE_LETTER =
 const REGEXP_SPLITS = new RegExp(
   `[${UNICODE_SPACE}${UNICODE_SYMBOL}${UNICODE_PUNCT}]+`
 );
-// Match all token characters, so okay for regex to split multiple code points
-// eslint-disable-next-line no-misleading-character-class
+
+
 const REGEXP_ALPHANUMS = new RegExp(
   `^[${UNICODE_NUMBER}${UNICODE_MARK}${UNICODE_LETTER}]+$`
 );
 
-/**
- * Downcases the text, and splits it into consecutive alphanumeric characters.
- * This is locale aware, and so will not strip accents. This uses "word
- * breaks", and os is not appropriate for languages without them
- * (e.g. Chinese).
- */
-export function tokenize(text) {
+
+
+
+
+
+
+function tokenize(text) {
   return text
     .toLocaleLowerCase()
     .split(REGEXP_SPLITS)
     .filter(tok => tok.match(REGEXP_ALPHANUMS));
 }
 
-/**
- * Converts a sequence of tokens into an L2 normed TF-IDF. Any terms that are
- * not preindexed (i.e. does have a computed inverse document frequency) will
- * be dropped.
- */
-export function toksToTfIdfVector(tokens, vocab_idfs) {
+
+
+
+
+
+function toksToTfIdfVector(tokens, vocab_idfs) {
   let tfidfs = {};
 
-  // calcualte the term frequencies
+  
   for (let tok of tokens) {
     if (!(tok in vocab_idfs)) {
       continue;
@@ -67,8 +73,8 @@ export function toksToTfIdfVector(tokens, vocab_idfs) {
     }
   }
 
-  // now multiply by the log inverse document frequencies, then take
-  // the L2 norm of this.
+  
+  
   let l2Norm = 0.0;
   Object.keys(tfidfs).forEach(tok => {
     tfidfs[tok][1] *= vocab_idfs[tok][1];
