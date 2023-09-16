@@ -90,6 +90,7 @@ class StyleSheetsManager extends EventEmitter {
 
     this._targetActor = targetActor;
     this._onApplicableStateChanged = this._onApplicableStateChanged.bind(this);
+    this._onStylesheetRemoved = this._onStylesheetRemoved.bind(this);
     this._onTargetActorWindowReady = this._onTargetActorWindowReady.bind(this);
   }
 
@@ -110,6 +111,11 @@ class StyleSheetsManager extends EventEmitter {
     this._targetActor.chromeEventHandler.addEventListener(
       "StyleSheetApplicableStateChanged",
       this._onApplicableStateChanged,
+      true
+    );
+    this._targetActor.chromeEventHandler.addEventListener(
+      "StyleSheetRemoved",
+      this._onStylesheetRemoved,
       true
     );
     this._watchStyleSheetChangeEvents();
@@ -764,6 +770,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
+
   _onApplicableStateChanged({ applicable, stylesheet: styleSheet }) {
     if (
       
@@ -777,6 +784,16 @@ class StyleSheetsManager extends EventEmitter {
     ) {
       this._registerStyleSheet(styleSheet);
     }
+  }
+
+  
+
+
+
+
+
+  _onStylesheetRemoved(event) {
+    this._unregisterStyleSheet(event.stylesheet);
   }
 
   
@@ -826,6 +843,25 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
+  _unregisterStyleSheet(styleSheet) {
+    const existingResourceId = this._findStyleSheetResourceId(styleSheet);
+    if (!existingResourceId) {
+      return;
+    }
+
+    this._styleSheetMap.delete(existingResourceId);
+    this._styleSheetCreationData?.delete(styleSheet);
+    this.emit("applicable-stylesheet-removed", {
+      resourceId: existingResourceId,
+    });
+  }
+
+  
+
+
+
+
+
   _shouldListSheet(styleSheet) {
     
     
@@ -858,6 +894,11 @@ class StyleSheetsManager extends EventEmitter {
       this._targetActor.chromeEventHandler.removeEventListener(
         "StyleSheetApplicableStateChanged",
         this._onApplicableStateChanged,
+        true
+      );
+      this._targetActor.chromeEventHandler.removeEventListener(
+        "StyleSheetRemoved",
+        this._onStylesheetRemoved,
         true
       );
       this._unwatchStyleSheetChangeEvents();
