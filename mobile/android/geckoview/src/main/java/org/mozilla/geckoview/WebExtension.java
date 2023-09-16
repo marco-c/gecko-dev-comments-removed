@@ -1631,8 +1631,12 @@ public class WebExtension {
     public final @Codes int code;
 
     
+    public final @Nullable String extensionName;
+
+    
     protected InstallException() {
       this.code = ErrorCodes.ERROR_NETWORK_FAILURE;
+      this.extensionName = null;
     }
 
     @Override
@@ -1640,8 +1644,14 @@ public class WebExtension {
       return "InstallException: " + code;
     }
 
+     InstallException(final @Codes int code, final @Nullable String extensionName) {
+      this.code = code;
+      this.extensionName = extensionName;
+    }
+
      InstallException(final @Codes int code) {
       this.code = code;
+      this.extensionName = null;
     }
   }
 
