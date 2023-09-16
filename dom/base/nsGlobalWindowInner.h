@@ -217,8 +217,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
       mozilla::dom::WindowGlobalChild* aActor);
 
   
-  NS_DECL_ISUPPORTS_INHERITED
-  NS_IMETHOD_(void) DeleteCycleCollectable() override;
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
 
   
   virtual JSObject* WrapObject(JSContext* cx,
