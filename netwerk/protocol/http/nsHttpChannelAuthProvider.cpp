@@ -501,9 +501,7 @@ class MOZ_STACK_CLASS ChallengeParser final : Tokenizer {
         if (!result.IsEmpty()) {
           return Some(result);
         }
-      } else if (t.Equals(Token::Char(',')) && !inQuote &&
-                 StaticPrefs::
-                     network_auth_allow_multiple_challenges_same_line()) {
+      } else if (t.Equals(Token::Char(',')) && !inQuote) {
         
         
         
@@ -1240,56 +1238,6 @@ void nsHttpChannelAuthProvider::GetIdentityFromURI(uint32_t authFlags,
   }
 }
 
-static void OldParseRealm(const nsACString& aChallenge, nsACString& realm) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  const nsCString& flat = PromiseFlatCString(aChallenge);
-  const char* challenge = flat.get();
-
-  const char* p = nsCRT::strcasestr(challenge, "realm=");
-  if (p) {
-    bool has_quote = false;
-    p += 6;
-    if (*p == '"') {
-      has_quote = true;
-      p++;
-    }
-
-    const char* end;
-    if (has_quote) {
-      end = p;
-      while (*end) {
-        if (*end == '\\') {
-          
-          if (!*++end) break;
-        } else if (*end == '\"') {
-          
-          break;
-        }
-
-        realm.Append(*end);
-        ++end;
-      }
-    } else {
-      
-      end = strchr(p, ' ');
-      if (end) {
-        realm.Assign(p, end - p);
-      } else {
-        realm.Assign(p);
-      }
-    }
-  }
-}
-
 void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
                                            nsACString& realm) {
   
@@ -1301,11 +1249,6 @@ void nsHttpChannelAuthProvider::ParseRealm(const nsACString& aChallenge,
   
   
   
-
-  if (!StaticPrefs::network_auth_use_new_parse_realm()) {
-    OldParseRealm(aChallenge, realm);
-    return;
-  }
 
   Tokenizer t(aChallenge);
 
