@@ -18,7 +18,6 @@
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/Modules.h"  
-#include "js/OffThreadScriptCompilation.h"
 #include "js/PropertyAndElement.h"  
 #include "js/SourceText.h"
 #include "mozilla/BasePrincipal.h"

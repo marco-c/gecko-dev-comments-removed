@@ -59,7 +59,6 @@ enum ThreadType {
   THREAD_TYPE_WASM_COMPILE_TIER1,    
   THREAD_TYPE_WASM_COMPILE_TIER2,    
   THREAD_TYPE_ION,                   
-  THREAD_TYPE_PARSE,                 
   THREAD_TYPE_COMPRESS,              
   THREAD_TYPE_GCPARALLEL,            
   THREAD_TYPE_PROMISE_TASK,          

@@ -24,9 +24,8 @@
 #include "js/Conversions.h"     
 #include "js/experimental/JSStencil.h"  
 #include "js/MemoryFunctions.h"         
-#include "js/OffThreadScriptCompilation.h"  
-#include "js/RootingAPI.h"                  
-#include "js/SourceText.h"  
+#include "js/RootingAPI.h"              
+#include "js/SourceText.h"              
 #include "js/String.h"  
 #include "js/UniquePtr.h"  
 #include "js/Utility.h"    
@@ -497,55 +496,3 @@ BEGIN_TEST(testScriptSourceCompression_automatic) {
   return true;
 }
 END_TEST(testScriptSourceCompression_automatic)
-
-BEGIN_TEST(testScriptSourceCompression_offThread) {
-  constexpr size_t len = MinimumCompressibleLength + 55;
-  auto chars = MakeSourceAllWhitespace<char16_t>(cx, len);
-  CHECK(chars);
-
-  JS::SourceText<char16_t> source;
-  CHECK(source.init(cx, std::move(chars), len));
-
-  js::Monitor monitor MOZ_UNANNOTATED(js::mutexid::ShellOffThreadState);
-  JS::CompileOptions options(cx);
-  JS::OffThreadToken* token;
-
-  
-  options.forceAsync = true;
-
-  CHECK(token = JS::CompileToStencilOffThread(cx, options, source, callback,
-                                              &monitor));
-
-  {
-    
-    js::gc::FinishGC(cx);
-
-    js::AutoLockMonitor lock(monitor);
-    lock.wait();
-  }
-
-  RefPtr<JS::Stencil> stencil = JS::FinishOffThreadStencil(cx, token);
-  CHECK(stencil);
-  JS::InstantiateOptions instantiateOptions(options);
-  JS::Rooted<JSScript*> script(
-      cx, JS::InstantiateGlobalStencil(cx, instantiateOptions, stencil));
-  CHECK(script);
-
-  
-  
-  
-  js::RunPendingSourceCompressions(cx->runtime());
-  bool expected = js::IsOffThreadSourceCompressionEnabled();
-  CHECK(script->scriptSource()->hasCompressedSource() == expected);
-
-  return true;
-}
-
-static void callback(JS::OffThreadToken* token, void* context) {
-  js::Monitor& monitor = *static_cast<js::Monitor*>(context);
-
-  js::AutoLockMonitor lock(monitor);
-  lock.notify();
-}
-
-END_TEST(testScriptSourceCompression_offThread)

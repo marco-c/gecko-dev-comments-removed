@@ -24,7 +24,6 @@
 #include "js/CompileOptions.h"  
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
-#include "js/OffThreadScriptCompilation.h"
 #include "js/SourceText.h"
 #include "js/Transcoding.h"
 #include "js/Utility.h"

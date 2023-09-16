@@ -272,7 +272,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
 
  public:
   bool selfHostingMode = false;
-  bool forceAsync = false;
   bool discardSource = false;
   bool sourceIsLazy = false;
   bool allowHTMLComments = true;
@@ -305,11 +304,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
   
   
   bool usePinnedBytecode = false;
-
-  
-  
-  
-  bool allocateInstantiationStorage = false;
 
   
   
@@ -421,7 +415,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(deferDebugMetadata_);
     PrintFields_(eagerDelazificationStrategy_);
     PrintFields_(selfHostingMode);
-    PrintFields_(forceAsync);
     PrintFields_(discardSource);
     PrintFields_(sourceIsLazy);
     PrintFields_(allowHTMLComments);
@@ -429,7 +422,6 @@ class JS_PUBLIC_API TransitiveCompileOptions {
     PrintFields_(topLevelAwait);
     PrintFields_(borrowBuffer);
     PrintFields_(usePinnedBytecode);
-    PrintFields_(allocateInstantiationStorage);
     PrintFields_(deoptimizeModuleGlobalVars);
     PrintFields_(introductionType);
     PrintFields_(introductionLineno);
@@ -778,8 +770,6 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions {
  public:
   bool borrowBuffer = false;
   bool usePinnedBytecode = false;
-  bool allocateInstantiationStorage = false;
-  bool forceAsync = false;
 
  protected:
   JS::ConstUTF8CharsZ introducerFilename_;
@@ -801,8 +791,6 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions {
   void copyPODOptionsFrom(const T& options) {
     borrowBuffer = options.borrowBuffer;
     usePinnedBytecode = options.usePinnedBytecode;
-    allocateInstantiationStorage = options.allocateInstantiationStorage;
-    forceAsync = options.forceAsync;
     introductionType = options.introductionType;
     introductionLineno = options.introductionLineno;
     introductionOffset = options.introductionOffset;
@@ -812,8 +800,6 @@ class JS_PUBLIC_API ReadOnlyDecodeOptions {
   void copyPODOptionsTo(T& options) const {
     options.borrowBuffer = borrowBuffer;
     options.usePinnedBytecode = usePinnedBytecode;
-    options.allocateInstantiationStorage = allocateInstantiationStorage;
-    options.forceAsync = forceAsync;
     options.introductionType = introductionType;
     options.introductionLineno = introductionLineno;
     options.introductionOffset = introductionOffset;

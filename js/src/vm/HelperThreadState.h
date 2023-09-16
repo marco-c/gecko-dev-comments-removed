@@ -26,12 +26,11 @@
 #include <stdint.h>  
 #include <utility>   
 
-#include "ds/Fifo.h"  
-#include "frontend/CompilationStencil.h"  
-#include "frontend/FrontendContext.h"  
-#include "gc/GCRuntime.h"              
-#include "js/AllocPolicy.h"            
-#include "js/CompileOptions.h"  
+#include "ds/Fifo.h"                        
+#include "frontend/CompilationStencil.h"    
+#include "gc/GCRuntime.h"                   
+#include "js/AllocPolicy.h"                 
+#include "js/CompileOptions.h"              
 #include "js/experimental/CompileScript.h"  
 #include "js/experimental/JSStencil.h"      
 #include "js/HelperThreadAPI.h"  
@@ -55,7 +54,6 @@ class JSTracer;
 
 namespace js {
 
-struct ParseTask;
 struct DelazifyTask;
 struct FreeDelazifyTask;
 struct PromiseHelperTask;
@@ -65,17 +63,6 @@ namespace jit {
 class IonCompileTask;
 class IonFreeTask;
 }  
-
-enum class ParseTaskKind {
-  
-  ScriptStencil,
-
-  
-  ModuleStencil,
-
-  
-  StencilDecode,
-};
 
 namespace wasm {
 
@@ -119,8 +106,6 @@ class GlobalHelperThreadState {
       IonCompileTaskVector;
   using IonFreeTaskVector =
       Vector<js::UniquePtr<jit::IonFreeTask>, 0, SystemAllocPolicy>;
-  typedef Vector<UniquePtr<ParseTask>, 0, SystemAllocPolicy> ParseTaskVector;
-  using ParseTaskList = mozilla::LinkedList<ParseTask>;
   using DelazifyTaskList = mozilla::LinkedList<DelazifyTask>;
   using FreeDelazifyTaskVector =
       Vector<js::UniquePtr<FreeDelazifyTask>, 1, SystemAllocPolicy>;
@@ -155,10 +140,6 @@ class GlobalHelperThreadState {
   
   
   PromiseHelperTaskVector promiseHelperTasks_;
-
-  
-  ParseTaskVector parseWorklist_;
-  ParseTaskList parseFinishedList_;
 
   
   DelazifyTaskList delazifyWorklist_;
@@ -205,8 +186,6 @@ class GlobalHelperThreadState {
 
   bool useInternalThreadPool_ = true;
 
-  ParseTask* removeFinishedParseTask(JSContext* cx, JS::OffThreadToken* token);
-
  public:
   void addSizeOfIncludingThis(JS::GlobalStats* stats,
                               const AutoLockHelperThreadState& lock) const;
@@ -215,7 +194,7 @@ class GlobalHelperThreadState {
   size_t maxWasmCompilationThreads() const;
   size_t maxWasmTier2GeneratorThreads() const;
   size_t maxPromiseHelperThreads() const;
-  size_t maxParseThreads() const;
+  size_t maxDelazifyThreads() const;
   size_t maxCompressionThreads() const;
   size_t maxGCParallelThreads(const AutoLockHelperThreadState& lock) const;
 
@@ -312,13 +291,6 @@ class GlobalHelperThreadState {
     return promiseHelperTasks_;
   }
 
-  ParseTaskVector& parseWorklist(const AutoLockHelperThreadState&) {
-    return parseWorklist_;
-  }
-  ParseTaskList& parseFinishedList(const AutoLockHelperThreadState&) {
-    return parseFinishedList_;
-  }
-
   DelazifyTaskList& delazifyWorklist(const AutoLockHelperThreadState&) {
     return delazifyWorklist_;
   }
@@ -368,7 +340,6 @@ class GlobalHelperThreadState {
   bool canStartPromiseHelperTask(const AutoLockHelperThreadState& lock);
   bool canStartIonCompileTask(const AutoLockHelperThreadState& lock);
   bool canStartIonFreeTask(const AutoLockHelperThreadState& lock);
-  bool canStartParseTask(const AutoLockHelperThreadState& lock);
   bool canStartFreeDelazifyTask(const AutoLockHelperThreadState& lock);
   bool canStartDelazifyTask(const AutoLockHelperThreadState& lock);
   bool canStartCompressionTask(const AutoLockHelperThreadState& lock);
@@ -390,7 +361,6 @@ class GlobalHelperThreadState {
   HelperThreadTask* maybeGetLowPrioIonCompileTask(
       const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetIonFreeTask(const AutoLockHelperThreadState& lock);
-  HelperThreadTask* maybeGetParseTask(const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetFreeDelazifyTask(
       const AutoLockHelperThreadState& lock);
   HelperThreadTask* maybeGetDelazifyTask(const AutoLockHelperThreadState& lock);
@@ -409,19 +379,8 @@ class GlobalHelperThreadState {
   jit::IonCompileTask* highestPriorityPendingIonCompile(
       const AutoLockHelperThreadState& lock, bool checkExecutionStatus);
 
- private:
-  UniquePtr<ParseTask> finishParseTaskCommon(JSContext* cx,
-                                             JS::OffThreadToken* token);
-
  public:
-  void cancelParseTask(JSRuntime* rt, JS::OffThreadToken* token);
-  void destroyParseTask(JSRuntime* rt, ParseTask* parseTask);
-
   void trace(JSTracer* trc);
-
-  already_AddRefed<frontend::CompilationStencil> finishStencilTask(
-      JSContext* cx, JS::OffThreadToken* token,
-      JS::InstantiationStorage* storage);
 
   bool hasActiveThreads(const AutoLockHelperThreadState&);
   bool canStartTasks(const AutoLockHelperThreadState& locked);
@@ -458,8 +417,6 @@ class GlobalHelperThreadState {
                   const AutoLockHelperThreadState& locked);
   bool submitTask(UniquePtr<SourceCompressionTask> task,
                   const AutoLockHelperThreadState& locked);
-  bool submitTask(JSRuntime* rt, UniquePtr<ParseTask> task,
-                  const AutoLockHelperThreadState& locked);
   void submitTask(DelazifyTask* task, const AutoLockHelperThreadState& locked);
   bool submitTask(UniquePtr<FreeDelazifyTask> task,
                   const AutoLockHelperThreadState& locked);
@@ -488,57 +445,6 @@ static inline GlobalHelperThreadState& HelperThreadState() {
   MOZ_ASSERT(gHelperThreadState);
   return *gHelperThreadState;
 }
-
-struct ParseTask : public mozilla::LinkedListElement<ParseTask>,
-                   public JS::OffThreadToken,
-                   public HelperThreadTask {
-  ParseTaskKind kind;
-  JS::OwningCompileOptions options;
-
-  
-  
-  JSRuntime* runtime = nullptr;
-
-  
-  JS::OffThreadCompileCallback callback;
-  void* callbackData;
-
-  
-  JS::CompilationStorage compileStorage_;
-
-  
-  RefPtr<frontend::CompilationStencil> stencil_;
-
-  JS::InstantiationStorage instantiationStorage_;
-
-  
-  FrontendContext fc_;
-
-  ParseTask(ParseTaskKind kind, JSContext* cx,
-            JS::OffThreadCompileCallback callback, void* callbackData);
-  virtual ~ParseTask();
-
-  bool init(JSContext* cx, const JS::ReadOnlyCompileOptions& options);
-
-  void moveInstantiationStorageInto(JS::InstantiationStorage& storage);
-
-  void activate(JSRuntime* rt);
-  void deactivate(JSRuntime* rt);
-
-  virtual void parse(FrontendContext* fc) = 0;
-
-  bool runtimeMatches(JSRuntime* rt) { return runtime == rt; }
-
-  size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
-  size_t sizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
-    return mallocSizeOf(this) + sizeOfExcludingThis(mallocSizeOf);
-  }
-
-  void runHelperThreadTask(AutoLockHelperThreadState& locked) override;
-  void runTask(AutoLockHelperThreadState& lock);
-  void scheduleDelazifyTask(AutoLockHelperThreadState& lock);
-  ThreadType threadType() override { return ThreadType::THREAD_TYPE_PARSE; }
-};
 
 
 
