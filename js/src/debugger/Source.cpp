@@ -17,7 +17,8 @@
 #include "debugger/Debugger.h"         
 #include "debugger/Script.h"           
 #include "frontend/FrontendContext.h"  
-#include "gc/Tracer.h"  
+#include "gc/Tracer.h"        
+#include "js/ColumnNumber.h"  
 #include "js/CompilationAndEvaluation.h"  
 #include "js/ErrorReport.h"  
 #include "js/experimental/TypedData.h"  
@@ -353,7 +354,9 @@ class DebuggerSourceGetStartColumnMatcher {
     ScriptSource* ss = sourceObject->source();
     return ss->startColumn();
   }
-  ReturnType match(Handle<WasmInstanceObject*> instanceObj) { return 0; }
+  ReturnType match(Handle<WasmInstanceObject*> instanceObj) {
+    return JS::WasmFunctionIndex::DefaultBinarySourceColumnNumberZeroOrigin;
+  }
 };
 
 bool DebuggerSource::CallData::getStartColumn() {

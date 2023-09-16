@@ -58,9 +58,10 @@
 #include "frontend/TDZCheckCache.h"                
 #include "frontend/TryEmitter.h"                   
 #include "frontend/WhileEmitter.h"                 
-#include "js/friend/ErrorMessages.h"               
-#include "js/friend/StackLimits.h"                 
-#include "util/StringBuffer.h"                     
+#include "js/ColumnNumber.h"          
+#include "js/friend/ErrorMessages.h"  
+#include "js/friend/StackLimits.h"    
+#include "util/StringBuffer.h"        
 #include "vm/BytecodeUtil.h"  
 #include "vm/CompletionKind.h"      
 #include "vm/FunctionPrefixKind.h"  
@@ -609,11 +610,13 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
   }
 
   uint32_t columnIndex = errorReporter().columnAt(offset);
-  MOZ_ASSERT(columnIndex <= ColumnLimit);
+  MOZ_ASSERT(columnIndex <= JS::LimitedColumnNumberZeroOrigin::Limit);
 
   
-  static_assert((0 - ptrdiff_t(ColumnLimit)) >= SrcNote::ColSpan::MinColSpan);
-  static_assert((ptrdiff_t(ColumnLimit) - 0) <= SrcNote::ColSpan::MaxColSpan);
+  static_assert((0 - ptrdiff_t(JS::LimitedColumnNumberZeroOrigin::Limit)) >=
+                SrcNote::ColSpan::MinColSpan);
+  static_assert((ptrdiff_t(JS::LimitedColumnNumberZeroOrigin::Limit) - 0) <=
+                SrcNote::ColSpan::MaxColSpan);
 
   ptrdiff_t colspan =
       ptrdiff_t(columnIndex) - ptrdiff_t(bytecodeSection().lastColumn());

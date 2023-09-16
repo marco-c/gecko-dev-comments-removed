@@ -35,7 +35,7 @@ if (helperThreadCount() > 0) {
 
 
 
-const maxColumn = Math.pow(2, 30) - 1;
+const maxColumn = Math.pow(2, 30) - 2;
 assertEq(evaluate("saveStack().column", { columnNumber: maxColumn }),
          maxColumn + 1);
 
