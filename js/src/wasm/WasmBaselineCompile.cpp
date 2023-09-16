@@ -3195,7 +3195,7 @@ bool BaseCompiler::jumpConditionalWithResults(BranchState* b, RegRef object,
       needIntegerResultRegisters(b->resultType);
       branchIfRefSubtype(
           object, sourceType, destType, &notTaken,
-          b->invertBranch ? !onSuccess : onSuccess);
+          b->invertBranch ? onSuccess : !onSuccess);
       freeIntegerResultRegisters(b->resultType);
 
       
