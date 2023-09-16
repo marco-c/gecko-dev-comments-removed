@@ -146,9 +146,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.42.0"
-#define SQLITE_VERSION_NUMBER 3042000
-#define SQLITE_SOURCE_ID      "2023-05-16 12:36:15 831d0fb2836b71c9bc51067c49fee4b8f18047814f2ff22d817d25195cf350b0"
+#define SQLITE_VERSION        "3.43.0"
+#define SQLITE_VERSION_NUMBER 3043000
+#define SQLITE_SOURCE_ID      "2023-08-24 12:36:59 0f80b798b3f4b81a7bb4233c58294edd0f1156f36b6ecf5ab8e83631d468778c"
 
 
 
@@ -528,6 +528,7 @@ SQLITE_API int sqlite3_exec(
 #define SQLITE_IOERR_ROLLBACK_ATOMIC   (SQLITE_IOERR | (31<<8))
 #define SQLITE_IOERR_DATA              (SQLITE_IOERR | (32<<8))
 #define SQLITE_IOERR_CORRUPTFS         (SQLITE_IOERR | (33<<8))
+#define SQLITE_IOERR_IN_PAGE           (SQLITE_IOERR | (34<<8))
 #define SQLITE_LOCKED_SHAREDCACHE      (SQLITE_LOCKED |  (1<<8))
 #define SQLITE_LOCKED_VTAB             (SQLITE_LOCKED |  (2<<8))
 #define SQLITE_BUSY_RECOVERY           (SQLITE_BUSY   |  (1<<8))
@@ -2736,6 +2737,7 @@ SQLITE_API sqlite3_int64 sqlite3_total_changes64(sqlite3*);
 
 
 
+
 SQLITE_API void sqlite3_interrupt(sqlite3*);
 SQLITE_API int sqlite3_is_interrupted(sqlite3*);
 
@@ -3376,6 +3378,8 @@ SQLITE_API SQLITE_DEPRECATED void *sqlite3_profile(sqlite3*,
 #define SQLITE_TRACE_PROFILE    0x02
 #define SQLITE_TRACE_ROW        0x04
 #define SQLITE_TRACE_CLOSE      0x08
+
+
 
 
 
@@ -4437,6 +4441,41 @@ SQLITE_API int sqlite3_stmt_isexplain(sqlite3_stmt *pStmt);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int sqlite3_stmt_explain(sqlite3_stmt *pStmt, int eMode);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 SQLITE_API int sqlite3_stmt_busy(sqlite3_stmt*);
 
 
@@ -5246,6 +5285,18 @@ SQLITE_API int sqlite3_column_type(sqlite3_stmt*, int iCol);
 
 
 SQLITE_API int sqlite3_finalize(sqlite3_stmt *pStmt);
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -8161,7 +8212,8 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_TRACEFLAGS              31
 #define SQLITE_TESTCTRL_TUNE                    32
 #define SQLITE_TESTCTRL_LOGEST                  33
-#define SQLITE_TESTCTRL_LAST                    33  /* Largest TESTCTRL */
+#define SQLITE_TESTCTRL_USELONGDOUBLE           34
+#define SQLITE_TESTCTRL_LAST                    34  /* Largest TESTCTRL */
 
 
 
@@ -13032,7 +13084,7 @@ struct fts5_api {
   int (*xCreateTokenizer)(
     fts5_api *pApi,
     const char *zName,
-    void *pContext,
+    void *pUserData,
     fts5_tokenizer *pTokenizer,
     void (*xDestroy)(void*)
   );
@@ -13041,7 +13093,7 @@ struct fts5_api {
   int (*xFindTokenizer)(
     fts5_api *pApi,
     const char *zName,
-    void **ppContext,
+    void **ppUserData,
     fts5_tokenizer *pTokenizer
   );
 
@@ -13049,7 +13101,7 @@ struct fts5_api {
   int (*xCreateFunction)(
     fts5_api *pApi,
     const char *zName,
-    void *pContext,
+    void *pUserData,
     fts5_extension_function xFunction,
     void (*xDestroy)(void*)
   );
