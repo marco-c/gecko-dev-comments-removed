@@ -4,7 +4,9 @@
 #include <Python.h>
 #include <stdint.h> 
 
-#if __SSE2__
+#if __ARM_NEON
+#include <arm_neon.h>
+#elif __SSE2__
 #include <emmintrin.h>
 #endif
 
@@ -13,39 +15,35 @@ static const Py_ssize_t MASK_LEN = 4;
 
 
 static int
-_PyBytesLike_AsStringAndSize(PyObject *obj, char **buffer, Py_ssize_t *length)
+_PyBytesLike_AsStringAndSize(PyObject *obj, PyObject **tmp, char **buffer, Py_ssize_t *length)
 {
-    
     
     
     
     
     if (PyBytes_Check(obj))
     {
+        *tmp = NULL;
         *buffer = PyBytes_AS_STRING(obj);
         *length = PyBytes_GET_SIZE(obj);
     }
     else if (PyByteArray_Check(obj))
     {
+        *tmp = NULL;
         *buffer = PyByteArray_AS_STRING(obj);
         *length = PyByteArray_GET_SIZE(obj);
     }
     else if (PyMemoryView_Check(obj))
     {
-        Py_buffer *mv_buf;
-        mv_buf = PyMemoryView_GET_BUFFER(obj);
-        if (PyBuffer_IsContiguous(mv_buf, 'C'))
+        *tmp = PyMemoryView_GetContiguous(obj, PyBUF_READ, 'C');
+        if (*tmp == NULL)
         {
-            *buffer = mv_buf->buf;
-            *length = mv_buf->len;
-        }
-        else
-        {
-            PyErr_Format(
-                PyExc_TypeError,
-                "expected a contiguous memoryview");
             return -1;
         }
+        Py_buffer *mv_buf;
+        mv_buf = PyMemoryView_GET_BUFFER(*tmp);
+        *buffer = mv_buf->buf;
+        *length = mv_buf->len;
     }
     else
     {
@@ -74,15 +72,17 @@ apply_mask(PyObject *self, PyObject *args, PyObject *kwds)
     
     
 
+    PyObject *input_tmp = NULL;
     char *input;
     Py_ssize_t input_len;
+    PyObject *mask_tmp = NULL;
     char *mask;
     Py_ssize_t mask_len;
 
     
     
 
-    PyObject *result;
+    PyObject *result = NULL;
     char *output;
 
     
@@ -94,23 +94,23 @@ apply_mask(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "OO", kwlist, &input_obj, &mask_obj))
     {
-        return NULL;
+        goto exit;
     }
 
-    if (_PyBytesLike_AsStringAndSize(input_obj, &input, &input_len) == -1)
+    if (_PyBytesLike_AsStringAndSize(input_obj, &input_tmp, &input, &input_len) == -1)
     {
-        return NULL;
+        goto exit;
     }
 
-    if (_PyBytesLike_AsStringAndSize(mask_obj, &mask, &mask_len) == -1)
+    if (_PyBytesLike_AsStringAndSize(mask_obj, &mask_tmp, &mask, &mask_len) == -1)
     {
-        return NULL;
+        goto exit;
     }
 
     if (mask_len != MASK_LEN)
     {
         PyErr_SetString(PyExc_ValueError, "mask must contain 4 bytes");
-        return NULL;
+        goto exit;
     }
 
     
@@ -118,7 +118,7 @@ apply_mask(PyObject *self, PyObject *args, PyObject *kwds)
     result = PyBytes_FromStringAndSize(NULL, input_len);
     if (result == NULL)
     {
-        return NULL;
+        goto exit;
     }
 
     
@@ -130,7 +130,21 @@ apply_mask(PyObject *self, PyObject *args, PyObject *kwds)
 
     
     {
-#if __SSE2__
+#if __ARM_NEON
+
+        
+
+        Py_ssize_t input_len_128 = input_len & ~15;
+        uint8x16_t mask_128 = vreinterpretq_u8_u32(vdupq_n_u32(*(uint32_t *)mask));
+
+        for (; i < input_len_128; i += 16)
+        {
+            uint8x16_t in_128 = vld1q_u8((uint8_t *)(input + i));
+            uint8x16_t out_128 = veorq_u8(in_128, mask_128);
+            vst1q_u8((uint8_t *)(output + i), out_128);
+        }
+
+#elif __SSE2__
 
         
 
@@ -172,6 +186,9 @@ apply_mask(PyObject *self, PyObject *args, PyObject *kwds)
         output[i] = input[i] ^ mask[i & (MASK_LEN - 1)];
     }
 
+exit:
+    Py_XDECREF(input_tmp);
+    Py_XDECREF(mask_tmp);
     return result;
 
 }
@@ -181,7 +198,7 @@ static PyMethodDef speedups_methods[] = {
         "apply_mask",
         (PyCFunction)apply_mask,
         METH_VARARGS | METH_KEYWORDS,
-        "Apply masking to websocket message.",
+        "Apply masking to the data of a WebSocket message.",
     },
     {NULL, NULL, 0, NULL},      
 };

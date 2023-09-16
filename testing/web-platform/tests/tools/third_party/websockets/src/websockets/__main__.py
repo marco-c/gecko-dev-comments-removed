@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import asyncio
 import os
@@ -6,8 +8,10 @@ import sys
 import threading
 from typing import Any, Set
 
-from .client import connect
-from .exceptions import ConnectionClosed, format_close
+from .exceptions import ConnectionClosed
+from .frames import Close
+from .legacy.client import connect
+from .version import version as websockets_version
 
 
 if sys.platform == "win32":
@@ -43,16 +47,17 @@ if sys.platform == "win32":
 
 
 def exit_from_event_loop_thread(
-    loop: asyncio.AbstractEventLoop, stop: "asyncio.Future[None]"
+    loop: asyncio.AbstractEventLoop,
+    stop: asyncio.Future[None],
 ) -> None:
     loop.stop()
     if not stop.done():
         
         
-        try:
-            ctrl_c = signal.CTRL_C_EVENT  
-        except AttributeError:
-            ctrl_c = signal.SIGINT  
+        if sys.platform == "win32":
+            ctrl_c = signal.CTRL_C_EVENT
+        else:
+            ctrl_c = signal.SIGINT
         os.kill(os.getpid(), ctrl_c)
 
 
@@ -91,8 +96,8 @@ def print_over_input(string: str) -> None:
 async def run_client(
     uri: str,
     loop: asyncio.AbstractEventLoop,
-    inputs: "asyncio.Queue[str]",
-    stop: "asyncio.Future[None]",
+    inputs: asyncio.Queue[str],
+    stop: asyncio.Future[None],
 ) -> None:
     try:
         websocket = await connect(uri)
@@ -105,8 +110,8 @@ async def run_client(
 
     try:
         while True:
-            incoming: asyncio.Future[Any] = asyncio.ensure_future(websocket.recv())
-            outgoing: asyncio.Future[Any] = asyncio.ensure_future(inputs.get())
+            incoming: asyncio.Future[Any] = asyncio.create_task(websocket.recv())
+            outgoing: asyncio.Future[Any] = asyncio.create_task(inputs.get())
             done: Set[asyncio.Future[Any]]
             pending: Set[asyncio.Future[Any]]
             done, pending = await asyncio.wait(
@@ -139,7 +144,8 @@ async def run_client(
 
     finally:
         await websocket.close()
-        close_status = format_close(websocket.close_code, websocket.close_reason)
+        assert websocket.close_code is not None and websocket.close_reason is not None
+        close_status = Close(websocket.close_code, websocket.close_reason)
 
         print_over_input(f"Connection closed: {close_status}.")
 
@@ -147,6 +153,24 @@ async def run_client(
 
 
 def main() -> None:
+    
+    parser = argparse.ArgumentParser(
+        prog="python -m websockets",
+        description="Interactive WebSocket client.",
+        add_help=False,
+    )
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--version", action="store_true")
+    group.add_argument("uri", metavar="<uri>", nargs="?")
+    args = parser.parse_args()
+
+    if args.version:
+        print(f"websockets {websockets_version}")
+        return
+
+    if args.uri is None:
+        parser.error("the following arguments are required: <uri>")
+
     
     if sys.platform == "win32":
         try:
@@ -165,25 +189,21 @@ def main() -> None:
         pass
 
     
-    parser = argparse.ArgumentParser(
-        prog="python -m websockets",
-        description="Interactive WebSocket client.",
-        add_help=False,
-    )
-    parser.add_argument("uri", metavar="<uri>")
-    args = parser.parse_args()
-
-    
     loop = asyncio.new_event_loop()
 
     
-    inputs: asyncio.Queue[str] = asyncio.Queue(loop=loop)
+    
+    async def queue_factory() -> asyncio.Queue[str]:
+        return asyncio.Queue()
+
+    
+    inputs: asyncio.Queue[str] = loop.run_until_complete(queue_factory())
 
     
     stop: asyncio.Future[None] = loop.create_future()
 
     
-    asyncio.ensure_future(run_client(args.uri, loop, inputs, stop), loop=loop)
+    loop.create_task(run_client(args.uri, loop, inputs, stop))
 
     
     thread = threading.Thread(target=loop.run_forever)
@@ -200,6 +220,10 @@ def main() -> None:
 
     
     thread.join()
+
+    
+    
+    loop.close()
 
 
 if __name__ == "__main__":
