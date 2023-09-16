@@ -83,17 +83,17 @@ function getComputedViewPropertyView(view, name) {
 
 
 
-
 var getComputedViewMatchedRules = async function (view, name) {
   let expander;
-  let propertyContent;
+  let matchedRulesEl;
   for (const property of view.styleDocument.querySelectorAll(
     "#computed-container .computed-property-view"
   )) {
     const nameSpan = property.querySelector(".computed-property-name");
     if (nameSpan.firstChild.textContent === name) {
       expander = property.querySelector(".computed-expandable");
-      propertyContent = property.nextSibling;
+      matchedRulesEl = property.querySelector(".matchedselectors");
+
       break;
     }
   }
@@ -107,7 +107,7 @@ var getComputedViewMatchedRules = async function (view, name) {
     await waitFor(() => expander.hasAttribute("open"));
   }
 
-  return propertyContent;
+  return matchedRulesEl;
 };
 
 
