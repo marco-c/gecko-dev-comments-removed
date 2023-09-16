@@ -47,7 +47,7 @@ TREEHERDER_TRY_BASE_URL = "https://treeherder.mozilla.org/jobs?repo=try&revision
 
 
 
-MAX_PERF_TASKS = 300
+MAX_PERF_TASKS = 600
 
 
 BASE_CATEGORY_NAME = "base"
