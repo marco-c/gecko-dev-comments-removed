@@ -195,12 +195,12 @@ class NeckoParent : public PNeckoParent {
 
   
   mozilla::ipc::IPCResult RecvGetPageThumbStream(
-      nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+      nsIURI* aURI, const Maybe<LoadInfoArgs>& aLoadInfoArgs,
       GetPageThumbStreamResolver&& aResolve);
 
   
   mozilla::ipc::IPCResult RecvGetPageIconStream(
-      nsIURI* aURI, const LoadInfoArgs& aLoadInfoArgs,
+      nsIURI* aURI, const Maybe<LoadInfoArgs>& aLoadInfoArgs,
       GetPageIconStreamResolver&& aResolve);
 
   mozilla::ipc::IPCResult RecvInitSocketProcessBridge(
