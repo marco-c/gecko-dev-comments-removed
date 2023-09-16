@@ -1860,7 +1860,12 @@ void TrackBuffersManager::ProcessFrames(TrackBuffer& aSamples,
     MOZ_DIAGNOSTIC_ASSERT(aSample->HasValidTime());
     MOZ_DIAGNOSTIC_ASSERT(TimeInterval(aSample->mTime, aSample->GetEndTime()) ==
                           aInterval);
+    auto oldRangeEnd = samplesRange.GetEnd();
     samplesRange += aInterval;
+    
+    
+    MOZ_DIAGNOSTIC_ASSERT_IF(samplesRange.GetEnd() > oldRangeEnd,
+                             samplesRange.GetEnd() == aSample->GetEndTime());
     sizeNewSamples += aSample->ComputedSizeOfIncludingThis();
     samples.AppendElement(aSample);
   };
@@ -2284,6 +2289,13 @@ void TrackBuffersManager::InsertFrames(TrackBuffer& aSamples,
 
   
   trackBuffer.mBufferedRanges += aIntervals;
+
+  MSE_DEBUG("Inserted %s frame:%s, buffered-range:%s, mHighestEndTimestamp=%s",
+            aTrackData.mInfo->mMimeType.get(), DumpTimeRanges(aIntervals).get(),
+            DumpTimeRanges(trackBuffer.mBufferedRanges).get(),
+            trackBuffer.mHighestEndTimestamp
+                ? trackBuffer.mHighestEndTimestamp->ToString().get()
+                : "none");
   
   
   
