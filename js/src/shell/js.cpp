@@ -6043,10 +6043,6 @@ static bool OffThreadCompileToStencil(JSContext* cx, unsigned argc, Value* vp) {
   
   options.setIsRunOnce(true);
 
-  
-  
-  options.forceAsync = true;
-
   JSString* scriptContents = args[0].toString();
   AutoStableStringChars stableChars(cx);
   if (!stableChars.initTwoByte(cx, scriptContents)) {
@@ -6070,8 +6066,8 @@ static bool OffThreadCompileToStencil(JSContext* cx, unsigned argc, Value* vp) {
     mozilla::PodCopy(ownedChars.get(), chars, length);
   }
 
-  if (!JS::CanCompileOffThread(cx, options, length)) {
-    JS_ReportErrorASCII(cx, "cannot compile code on worker thread");
+  if (!cx->runtime()->canUseParallelParsing() || !js::CanUseExtraThreads()) {
+    JS_ReportErrorASCII(cx, "cannot compile code on helper thread");
     return false;
   }
 
@@ -6156,7 +6152,6 @@ static bool OffThreadCompileModuleToStencil(JSContext* cx, unsigned argc,
   }
 
   options.setIsRunOnce(true).setSourceIsLazy(false);
-  options.forceAsync = true;
 
   JSString* scriptContents = args[0].toString();
   AutoStableStringChars stableChars(cx);
@@ -6181,7 +6176,7 @@ static bool OffThreadCompileModuleToStencil(JSContext* cx, unsigned argc,
     mozilla::PodCopy(ownedChars.get(), chars, length);
   }
 
-  if (!JS::CanCompileOffThread(cx, options, length)) {
+  if (!cx->runtime()->canUseParallelParsing() || !js::CanUseExtraThreads()) {
     JS_ReportErrorASCII(cx, "cannot compile code on worker thread");
     return false;
   }
@@ -6248,10 +6243,6 @@ static bool OffThreadDecodeStencil(JSContext* cx, unsigned argc, Value* vp) {
   
   options.setIsRunOnce(false);
 
-  
-  
-  options.forceAsync = true;
-
   JS::TranscodeBuffer loadBuffer;
   size_t loadLength = 0;
   uint8_t* loadData = nullptr;
@@ -6264,8 +6255,7 @@ static bool OffThreadDecodeStencil(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  JS::DecodeOptions decodeOptions(options);
-  if (!JS::CanDecodeOffThread(cx, decodeOptions, loadLength)) {
+  if (!cx->runtime()->canUseParallelParsing() || !js::CanUseExtraThreads()) {
     JS_ReportErrorASCII(cx, "cannot compile code on worker thread");
     return false;
   }
