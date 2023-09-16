@@ -1,5 +1,6 @@
 import os
 import os.path
+import subprocess
 import sys
 import time
 import unittest
@@ -9,7 +10,6 @@ from tempfile import mkdtemp
 import mozunit
 import nsinstall as nsinstall_module
 import six
-from mozprocess import processhandler
 from nsinstall import nsinstall
 
 NSINSTALL_PATH = nsinstall_module.__file__
@@ -165,13 +165,7 @@ class TestNsinstall(unittest.TestCase):
         filename = "\u2325\u3452\u2415\u5081"
         testfile = self.touch(filename)
         testdir = self.mkdirs("\u4241\u1D04\u1414")
-        
-        
-        
-        p = processhandler.ProcessHandlerMixin(
-            [sys.executable, NSINSTALL_PATH, testfile, testdir]
-        )
-        p.run()
+        p = subprocess.Popen([sys.executable, NSINSTALL_PATH, testfile, testdir])
         rv = p.wait()
 
         self.assertEqual(rv, 0)
