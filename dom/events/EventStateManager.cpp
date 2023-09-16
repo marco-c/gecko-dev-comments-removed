@@ -4294,22 +4294,6 @@ void EventStateManager::UpdateCursor(nsPresContext* aPresContext,
     hotspot = Some(customCursor.mHotspot);
   }
 
-  if (StaticPrefs::ui_use_activity_cursor()) {
-    
-    nsCOMPtr<nsIDocShell> docShell(aPresContext->GetDocShell());
-    if (!docShell) return;
-    auto busyFlags = docShell->GetBusyFlags();
-
-    
-    
-    if (busyFlags & nsIDocShell::BUSY_FLAGS_BUSY &&
-        (cursor == StyleCursorKind::Auto ||
-         cursor == StyleCursorKind::Default)) {
-      cursor = StyleCursorKind::Progress;
-      container = nullptr;
-    }
-  }
-
   if (aTargetFrame) {
     if (cursor == StyleCursorKind::Pointer && IsSelectingLink(aTargetFrame)) {
       cursor = aTargetFrame->GetWritingMode().IsVertical()
