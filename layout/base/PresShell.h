@@ -2762,7 +2762,7 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-    void FinalizeHandlingEvent(WidgetEvent* aEvent);
+    MOZ_CAN_RUN_SCRIPT void FinalizeHandlingEvent(WidgetEvent* aEvent);
 
     
 

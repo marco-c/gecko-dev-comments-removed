@@ -1879,7 +1879,10 @@ class Document : public nsINode,
   bool HasPendingFullscreenRequests();
 
   
-  void TryCancelDialog();
+
+
+
+  MOZ_CAN_RUN_SCRIPT void HandleEscKey();
 
   void AddModalDialog(HTMLDialogElement&);
   void RemoveModalDialog(HTMLDialogElement&);
