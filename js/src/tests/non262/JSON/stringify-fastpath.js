@@ -138,6 +138,32 @@ function testFastPath() {
     failures += checkFast(Number.NaN, "PRIMITIVE");
     failures += checkFast(undefined, "PRIMITIVE");
 
+    
+    const nonElements = [];
+    Object.defineProperty(nonElements, 0, { value: "hi", enumerated: true });
+    nonElements.named = 7;
+    failures += checkFast(nonElements, "INELIGIBLE_OBJECT");
+
+    
+    const proto = {};
+    Object.defineProperty(proto, "0", { value: 1, enumerable: false });
+    const holy = [, , 3];
+    Object.setPrototypeOf(holy, proto);
+    failures += checkFast(holy, "INELIGIBLE_OBJECT");
+    Object.setPrototypeOf(holy, { 1: true });
+    failures += checkFast(holy, "INELIGIBLE_OBJECT");
+
+    
+    
+    const accessorProto = Object.create(Array.prototype);
+    Object.defineProperty(accessorProto, "0", {
+        get() { return 2; }, set() { }
+    });
+    const child = [];
+    Object.setPrototypeOf(child, accessorProto);
+    child.push(1);
+    failures += checkFast(child, "INELIGIBLE_OBJECT");
+
     failures += checkFast({ get x() { return 1; } }, "NON_DATA_PROPERTY");
 
     const self = {};
@@ -159,10 +185,10 @@ function testFastPath() {
     middle[2] = ouroboros;
     failures += checkFast(ouroboros, "DEEP_RECURSION"); 
 
-    failures += checkFast({ 0: true, 1: true, 10000: true }, "SPARSE_INDEX");
+    failures += checkFast({ 0: true, 1: true, 10000: true }, "INELIGIBLE_OBJECT");
     const arr = [1, 2, 3];
     arr[10000] = 4;
-    failures += checkFast(arr, "SPARSE_INDEX");
+    failures += checkFast(arr, "INELIGIBLE_OBJECT");
 
     failures += checkFast({ x: 12n }, "BIGINT");
 

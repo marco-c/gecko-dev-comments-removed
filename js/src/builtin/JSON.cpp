@@ -800,24 +800,17 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
 }
 
 static bool CanFastStringifyObject(NativeObject* obj) {
-  if (ClassCanHaveExtraEnumeratedProperties(obj->getClass())) {
-    return false;
-  }
-
   if (obj->is<ArrayObject>()) {
-    if (ProtoMayHaveEnumerableProperties(obj)) {
-      
-      
+    
+    
+    if (!IsPackedArray(obj) && ObjectMayHaveExtraIndexedProperties(obj)) {
       return false;
     }
-    if (obj->isIndexed() && !obj->hasEnumerableProperty()) {
-      
-      
-      
-      
-      
-      
-      
+  } else {
+    
+    
+    
+    if (ObjectMayHaveExtraIndexedOwnProperties(obj)) {
       return false;
     }
   }
@@ -841,7 +834,6 @@ static bool CanFastStringifyObject(NativeObject* obj) {
   MACRO(DEEP_RECURSION)                       \
   MACRO(NON_DATA_PROPERTY)                    \
   MACRO(TOO_MANY_PROPERTIES)                  \
-  MACRO(SPARSE_INDEX)                         \
   MACRO(BIGINT)                               \
   MACRO(API)                                  \
   MACRO(HAVE_REPLACER)                        \
@@ -1038,7 +1030,7 @@ class OwnNonIndexKeysIterForJSON {
     }
     if (!nobj->hasEnumerableProperty()) {
       
-      
+      MOZ_ASSERT(!nobj->is<ArrayObject>());
       done_ = true;
       return;
     }
@@ -1364,7 +1356,11 @@ static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
       }
 
       MOZ_ASSERT(iter.done());
-      top.advanceToProperties();
+      if (top.isArray) {
+        MOZ_ASSERT(!top.nobj->isIndexed());
+      } else {
+        top.advanceToProperties();
+      }
     }
 
     if (top.iter.is<OwnNonIndexKeysIterForJSON>()) {
@@ -1380,18 +1376,12 @@ static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
 
         PropertyInfoWithKey prop = iter.next();
 
-        uint32_t index = -1;
-        if (top.nobj->isIndexed() && IdIsIndex(prop.key(), &index)) {
-          
-          
-          *whySlow = BailReason::SPARSE_INDEX;
-          return true;
-        }
-
-        if (top.isArray) {
-          
-          continue;
-        }
+        
+        
+        
+        
+        mozilla::DebugOnly<uint32_t> index = -1;
+        MOZ_ASSERT(!IdIsIndex(prop.key(), &index));
 
         Value val = top.nobj->getSlot(prop.slot());
         if (!PreprocessFastValue(cx, &val, scx, whySlow)) {
@@ -1412,15 +1402,9 @@ static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
         }
         wroteMember = true;
 
-        if (prop.key().isString()) {
-          if (!Quote(cx, scx->sb, prop.key().toString())) {
-            return false;
-          }
-        } else {
-          MOZ_ASSERT(int32_t(index) >= 0, "not a string, not an index");
-          if (!EmitQuotedIndexColon(scx->sb, index)) {
-            return false;
-          }
+        MOZ_ASSERT(prop.key().isString());
+        if (!Quote(cx, scx->sb, prop.key().toString())) {
+          return false;
         }
 
         if (!scx->sb.append(':')) {
