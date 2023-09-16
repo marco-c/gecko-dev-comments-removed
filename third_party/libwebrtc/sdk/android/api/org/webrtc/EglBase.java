@@ -35,6 +35,38 @@ public interface EglBase {
   }
 
   
+
+
+
+
+
+  public interface EglConnection extends RefCounted {
+    
+    public static EglConnection create(@Nullable Context sharedContext, int[] configAttributes) {
+      if (sharedContext == null) {
+        return EglConnection.createEgl14(configAttributes);
+      } else if (sharedContext instanceof EglBase14.Context) {
+        return new EglBase14Impl.EglConnection(
+            ((EglBase14.Context) sharedContext).getRawContext(), configAttributes);
+      } else if (sharedContext instanceof EglBase10.Context) {
+        return new EglBase10Impl.EglConnection(
+            ((EglBase10.Context) sharedContext).getRawContext(), configAttributes);
+      }
+      throw new IllegalArgumentException("Unrecognized Context");
+    }
+
+    
+    public static EglConnection createEgl10(int[] configAttributes) {
+      return new EglBase10Impl.EglConnection( null, configAttributes);
+    }
+
+    
+    public static EglConnection createEgl14(int[] configAttributes) {
+      return new EglBase14Impl.EglConnection( null, configAttributes);
+    }
+  }
+
+  
   
   
   
@@ -143,6 +175,24 @@ public interface EglBase {
     }
     
     return 1;
+  }
+
+  
+
+
+
+
+
+
+  public static EglBase create(EglConnection eglConnection) {
+    if (eglConnection == null) {
+      return create();
+    } else if (eglConnection instanceof EglBase14Impl.EglConnection) {
+      return new EglBase14Impl((EglBase14Impl.EglConnection) eglConnection);
+    } else if (eglConnection instanceof EglBase10Impl.EglConnection) {
+      return new EglBase10Impl((EglBase10Impl.EglConnection) eglConnection);
+    }
+    throw new IllegalArgumentException("Unrecognized EglConnection");
   }
 
   
