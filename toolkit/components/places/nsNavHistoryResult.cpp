@@ -379,6 +379,14 @@ nsNavHistoryResultNode::GetTags(nsAString& aTags) {
   }
 
   
+  if (mParent && mParent->IsQuery() &&
+      mParent->mOptions->QueryType() !=
+          nsINavHistoryQueryOptions::QUERY_TYPE_BOOKMARKS) {
+    aTags.Truncate();
+    return NS_OK;
+  }
+
+  
   
   
   
@@ -434,17 +442,6 @@ nsNavHistoryResultNode::GetTags(nsAString& aTags) {
     NS_ENSURE_SUCCESS(rv, rv);
     aTags.Assign(mTags);
     mAreTagsSorted = true;
-  }
-
-  
-  
-  if (mParent && mParent->IsQuery() &&
-      mParent->mOptions->QueryType() ==
-          nsINavHistoryQueryOptions::QUERY_TYPE_HISTORY) {
-    nsNavHistoryQueryResultNode* query = mParent->GetAsQuery();
-    nsNavHistoryResult* result = query->GetResult();
-    NS_ENSURE_STATE(result);
-    result->AddAllBookmarksObserver(query);
   }
 
   return NS_OK;
