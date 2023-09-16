@@ -3,7 +3,18 @@
 
 
 
-function test_valid_value(property, value, serializedValue) {
+
+
+
+
+
+
+
+
+
+
+
+function test_valid_value(property, value, serializedValue, options = {}) {
     if (arguments.length < 3)
         serializedValue = value;
 
@@ -15,7 +26,9 @@ function test_valid_value(property, value, serializedValue) {
         div.style[property] = value;
         var readValue = div.style.getPropertyValue(property);
         assert_not_equals(readValue, "", "property should be set");
-        if (Array.isArray(serializedValue))
+        if (options.comparisonFunction)
+            options.comparisonFunction(readValue, serializedValue);
+        else if (Array.isArray(serializedValue))
             assert_in_array(readValue, serializedValue, "serialization should be sound");
         else
             assert_equals(readValue, serializedValue, "serialization should be canonical");

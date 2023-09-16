@@ -10,7 +10,12 @@
 
 
 
-function test_computed_value(property, specified, computed, titleExtra) {
+
+
+
+
+
+function test_computed_value(property, specified, computed, titleExtra, options = {}) {
   if (!computed)
     computed = specified;
 
@@ -22,13 +27,12 @@ function test_computed_value(property, specified, computed, titleExtra) {
     target.style[property] = specified;
 
     let readValue = getComputedStyle(target)[property];
-    if (Array.isArray(computed)) {
+    if (options.comparisonFunction) {
+      options.comparisonFunction(readValue, computed);
+    } else if (Array.isArray(computed)) {
       assert_in_array(readValue, computed);
     } else {
-      if (property == "color")
-        colorValuesAlmostEqual(readValue, computed, 0.0001, 1);
-      else
-        assert_equals(readValue, computed);
+      assert_equals(readValue, computed);
     }
     if (readValue !== specified) {
       target.style[property] = '';
@@ -37,32 +41,6 @@ function test_computed_value(property, specified, computed, titleExtra) {
                     'computed value should round-trip');
     }
   }, `Property ${property} value '${specified}'${titleExtra ? ' ' + titleExtra : ''}`);
-}
-
-function colorValuesAlmostEqual(color1, color2, float_epsilon, integer_epsilon) {
-  
-  const epsilon = getNonNumbers(color1).startsWith("rgb") ? integer_epsilon : float_epsilon;
-  
-  const colorElementDividers = /( |\(|,)/;
-  
-  function getNonNumbers(color) {
-    return color.replace(/[0-9]/g, '');
-  }
-  
-  function getNumbers(color) {
-    const result = [];
-    color.split(colorElementDividers).forEach(element => {
-      const numberElement = parseFloat(element);
-      if (!isNaN(numberElement)) {
-        result.push(numberElement);
-      }
-    });
-    return result;
-  }
-
-  assert_array_approx_equals(getNumbers(color1), getNumbers(color2), epsilon, "Numeric parameters are approximately equal.");
-  
-  assert_equals(getNonNumbers(color1), getNonNumbers(color2), "Color format is correct.");
 }
 
 function testComputedValueGreaterOrLowerThan(property, specified, expected, titleExtra) {
