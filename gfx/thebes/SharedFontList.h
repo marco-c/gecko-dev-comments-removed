@@ -74,19 +74,7 @@ struct Pointer {
 
 
 
-
-
-  void* ToPtr(FontList* aFontList, size_t aSize) const;
-
-  template <typename T>
-  T* ToPtr(FontList* aFontList) const {
-    return static_cast<T*>(ToPtr(aFontList, sizeof(T)));
-  }
-
-  template <typename T>
-  T* ToArray(FontList* aFontList, size_t aCount) const {
-    return static_cast<T*>(ToPtr(aFontList, sizeof(T) * aCount));
-  }
+  void* ToPtr(FontList* aFontList) const;
 
   Pointer& operator=(const Pointer& aOther) {
     mBlockAndOffset.store(aOther.mBlockAndOffset);
@@ -123,14 +111,14 @@ struct String {
     
     
     
-    return nsCString(mPointer.ToArray<const char>(aList, mLength), mLength);
+    return nsCString(static_cast<const char*>(mPointer.ToPtr(aList)), mLength);
   }
 
   void Assign(const nsACString& aString, FontList* aList);
 
   const char* BeginReading(FontList* aList) const {
     MOZ_ASSERT(!mPointer.IsNull());
-    auto* str = mPointer.ToArray<const char>(aList, mLength);
+    auto str = static_cast<const char*>(mPointer.ToPtr(aList));
     return str ? str : "";
   }
 
@@ -296,7 +284,7 @@ struct Family {
 
   Pointer* Faces(FontList* aList) const {
     MOZ_ASSERT(IsInitialized());
-    return mFaces.ToArray<Pointer>(aList, mFaceCount);
+    return static_cast<Pointer*>(mFaces.ToPtr(aList));
   }
 
   FontVisibility Visibility() const { return mVisibility; }

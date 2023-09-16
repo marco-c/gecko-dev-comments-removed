@@ -39,8 +39,7 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
          weightDist * kWeightFactor;
 }
 
-void* Pointer::ToPtr(FontList* aFontList,
-                     size_t aSize) const MOZ_NO_THREAD_SAFETY_ANALYSIS {
+void* Pointer::ToPtr(FontList* aFontList) const MOZ_NO_THREAD_SAFETY_ANALYSIS {
   if (IsNull()) {
     return nullptr;
   }
@@ -56,13 +55,13 @@ void* Pointer::ToPtr(FontList* aFontList,
   
   
   void* result = nullptr;
-  uint32_t blockIndex = Block();
+  uint32_t block = Block();
 
   
   
   
   auto& blocks = aFontList->mBlocks;
-  if (blockIndex >= blocks.Length()) {
+  if (block >= blocks.Length()) {
     if (XRE_IsParentProcess()) {
       
       goto cleanup;
@@ -78,25 +77,18 @@ void* Pointer::ToPtr(FontList* aFontList,
     if (!isMainThread || !aFontList->UpdateShmBlocks()) {
       goto cleanup;
     }
-    MOZ_ASSERT(blockIndex < blocks.Length(), "failure in UpdateShmBlocks?");
+    MOZ_ASSERT(block < blocks.Length(), "failure in UpdateShmBlocks?");
     
     
     
     
     
     
-    if (blockIndex >= blocks.Length()) {
+    if (block >= blocks.Length()) {
       goto cleanup;
     }
   }
-
-  {
-    
-    const auto& block = blocks[blockIndex];
-    if (Offset() + aSize <= block->Allocated()) {
-      result = static_cast<char*>(block->Memory()) + Offset();
-    }
-  }
+  result = static_cast<char*>(blocks[block]->Memory()) + Offset();
 
 cleanup:
   if (!isMainThread) {
@@ -112,7 +104,7 @@ void String::Assign(const nsACString& aString, FontList* aList) {
   MOZ_ASSERT(mPointer.IsNull());
   mLength = aString.Length();
   mPointer = aList->Alloc(mLength + 1);
-  auto* p = mPointer.ToArray<char>(aList, mLength);
+  char* p = static_cast<char*>(mPointer.ToPtr(aList));
   std::memcpy(p, aString.BeginReading(), mLength);
   p[mLength] = '\0';
 }
@@ -224,14 +216,14 @@ void Family::AddFaces(FontList* aList, const nsTArray<Face::InitData>& aFaces) {
   
   
   Pointer p = aList->Alloc(count * sizeof(Pointer));
-  auto* facePtrs = p.ToArray<Pointer>(aList, count);
+  auto facePtrs = static_cast<Pointer*>(p.ToPtr(aList));
   for (size_t i = 0; i < count; i++) {
     if (isSimple && !slots[i]) {
       facePtrs[i] = Pointer::Null();
     } else {
       const auto* initData = isSimple ? slots[i] : &aFaces[i];
       Pointer fp = aList->Alloc(sizeof(Face));
-      auto* face = fp.ToPtr<Face>(aList);
+      auto* face = static_cast<Face*>(fp.ToPtr(aList));
       (void)new (face) Face(aList, *initData);
       facePtrs[i] = fp;
       if (initData->mCharMap) {
@@ -281,7 +273,7 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
   
   if (NumFaces() == 1) {
     MOZ_ASSERT(!facePtrs[0].IsNull());
-    auto* face = facePtrs[0].ToPtr<Face>(aList);
+    Face* face = static_cast<Face*>(facePtrs[0].ToPtr(aList));
     if (face && face->HasValidDescriptor()) {
       aFaceList.AppendElement(face);
 #ifdef MOZ_WIDGET_GTK
@@ -312,7 +304,7 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
         (wantItalic ? kItalicMask : 0) | (wantBold ? kBoldMask : 0);
 
     
-    auto* face = facePtrs[faceIndex].ToPtr<Face>(aList);
+    Face* face = static_cast<Face*>(facePtrs[faceIndex].ToPtr(aList));
     if (face && face->HasValidDescriptor()) {
       aFaceList.AppendElement(face);
 #ifdef MOZ_WIDGET_GTK
@@ -337,7 +329,7 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
     for (uint8_t trial = 0; trial < 3; ++trial) {
       
       
-      face = facePtrs[order[trial]].ToPtr<Face>(aList);
+      face = static_cast<Face*>(facePtrs[order[trial]].ToPtr(aList));
       if (face && face->HasValidDescriptor()) {
         aFaceList.AppendElement(face);
 #ifdef MOZ_WIDGET_GTK
@@ -372,7 +364,7 @@ bool Family::FindAllFacesForStyleInternal(FontList* aList,
   
   bool anyNonScalable = false;
   for (uint32_t i = 0; i < NumFaces(); i++) {
-    auto* face = facePtrs[i].ToPtr<Face>(aList);
+    Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
     if (face) {
       
       double distance = WSSDistance(face, aStyle);
@@ -473,7 +465,8 @@ Face* Family::FindFaceForStyle(FontList* aList, const gfxFontStyle& aStyle,
 
 void Family::SearchAllFontsForChar(FontList* aList,
                                    GlobalFontMatch* aMatchData) {
-  auto* charmap = mCharacterMap.ToPtr<const SharedBitSet>(aList);
+  const SharedBitSet* charmap =
+      static_cast<const SharedBitSet*>(mCharacterMap.ToPtr(aList));
   if (!charmap) {
     
     
@@ -485,7 +478,7 @@ void Family::SearchAllFontsForChar(FontList* aList,
                                                                    true)) {
       return;
     }
-    charmap = mCharacterMap.ToPtr<const SharedBitSet>(aList);
+    charmap = static_cast<const SharedBitSet*>(mCharacterMap.ToPtr(aList));
   }
   if (charmap && !charmap->test(aMatchData->mCh)) {
     return;
@@ -498,13 +491,14 @@ void Family::SearchAllFontsForChar(FontList* aList,
     return;
   }
   for (uint32_t i = 0; i < numFaces; i++) {
-    auto* face = facePtrs[i].ToPtr<Face>(aList);
+    Face* face = static_cast<Face*>(facePtrs[i].ToPtr(aList));
     if (!face) {
       continue;
     }
     MOZ_ASSERT(face->HasValidDescriptor());
     
-    charmap = face->mCharacterMap.ToPtr<const SharedBitSet>(aList);
+    charmap =
+        static_cast<const SharedBitSet*>(face->mCharacterMap.ToPtr(aList));
     if (charmap) {
       ++charMapsLoaded;
     }
@@ -562,7 +556,7 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
     Pointer slots[4] = {Pointer::Null(), Pointer::Null(), Pointer::Null(),
                         Pointer::Null()};
     for (const Pointer& fp : aFaces) {
-      auto* f = fp.ToPtr<const Face>(aList);
+      const Face* f = static_cast<const Face*>(fp.ToPtr(aList));
       if (!f->mWeight.IsSingle() || !f->mStyle.IsSingle() ||
           !f->mStretch.IsSingle()) {
         isSimple = false;
@@ -588,7 +582,7 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
     if (isSimple) {
       size_t size = 4 * sizeof(Pointer);
       mFaces = aList->Alloc(size);
-      memcpy(mFaces.ToPtr(aList, size), slots, size);
+      memcpy(mFaces.ToPtr(aList), slots, size);
       mFaceCount.store(4);
       mIsSimple = true;
       return;
@@ -596,7 +590,7 @@ void Family::SetFacePtrs(FontList* aList, nsTArray<Pointer>& aFaces) {
   }
   size_t size = aFaces.Length() * sizeof(Pointer);
   mFaces = aList->Alloc(size);
-  memcpy(mFaces.ToPtr(aList, size), aFaces.Elements(), size);
+  memcpy(mFaces.ToPtr(aList), aFaces.Elements(), size);
   mFaceCount.store(aFaces.Length());
 }
 
@@ -623,18 +617,18 @@ void Family::SetupFamilyCharMap(FontList* aList) {
   }
   gfxSparseBitSet familyMap;
   Pointer firstMapShmPointer;
-  const SharedBitSet* firstMap = nullptr;
+  SharedBitSet* firstMap = nullptr;
   bool merged = false;
   Pointer* faces = Faces(aList);
   if (!faces) {
     return;
   }
   for (size_t i = 0; i < NumFaces(); i++) {
-    auto* f = faces[i].ToPtr<const Face>(aList);
+    auto f = static_cast<Face*>(faces[i].ToPtr(aList));
     if (!f) {
       continue;  
     }
-    auto* faceMap = f->mCharacterMap.ToPtr<const SharedBitSet>(aList);
+    auto faceMap = static_cast<SharedBitSet*>(f->mCharacterMap.ToPtr(aList));
     if (!faceMap) {
       continue;  
                  
@@ -959,9 +953,7 @@ void FontList::SetFamilyNames(nsTArray<Family::InitData>& aFamilies) {
     return;
   }
 
-  
-  
-  auto* families = header.mFamilies.ToArray<Family>(this, count);
+  Family* families = static_cast<Family*>(header.mFamilies.ToPtr(this));
   for (size_t i = 0; i < count; i++) {
     (void)new (&families[i]) Family(this, aFamilies[i]);
     LOG_FONTLIST(("(shared-fontlist) family %u (%s)", (unsigned)i,
@@ -996,7 +988,7 @@ void FontList::SetAliases(
     return;
   }
   fontlist::Pointer ptr = Alloc(count * sizeof(Family));
-  auto* aliases = ptr.ToArray<Family>(this, count);
+  Family* aliases = static_cast<Family*>(ptr.ToPtr(this));
   for (size_t i = 0; i < count; i++) {
     (void)new (&aliases[i]) Family(this, aliasArray[i]);
     LOG_FONTLIST(("(shared-fontlist) alias family %u (%s: %s)", (unsigned)i,
@@ -1005,7 +997,7 @@ void FontList::SetAliases(
     if (LOG_FONTLIST_ENABLED()) {
       const auto& faces = aAliasTable.Get(aliasArray[i].mKey)->mFaces;
       for (unsigned j = 0; j < faces.Length(); j++) {
-        auto* face = faces[j].ToPtr<const Face>(this);
+        auto face = static_cast<const fontlist::Face*>(faces[j].ToPtr(this));
         const nsCString& desc = face->mDescriptor.AsString(this);
         nsAutoCString weight, style, stretch;
         face->mWeight.ToString(weight);
@@ -1038,7 +1030,7 @@ void FontList::SetLocalNames(
   size_t count = faceArray.Length();
   Family* families = Families();
   fontlist::Pointer ptr = Alloc(count * sizeof(LocalFaceRec));
-  auto* faces = ptr.ToArray<LocalFaceRec>(this, count);
+  LocalFaceRec* faces = static_cast<LocalFaceRec*>(ptr.ToPtr(this));
   for (size_t i = 0; i < count; i++) {
     (void)new (&faces[i]) LocalFaceRec();
     const auto& rec = aLocalNameTable.Get(faceArray[i]);
@@ -1059,7 +1051,7 @@ void FontList::SetLocalNames(
           static_cast<const Pointer*>(family->Faces(this));
       for (uint32_t j = 0; j < family->NumFaces(); j++) {
         if (!faceList[j].IsNull()) {
-          auto* f = faceList[j].ToPtr<const Face>(this);
+          const Face* f = static_cast<const Face*>(faceList[j].ToPtr(this));
           if (f && rec.mFaceDescriptor == f->mDescriptor.AsString(this)) {
             faces[i].mFaceIndex = j;
             break;
@@ -1116,7 +1108,7 @@ Family* FontList::FindFamily(const nsCString& aName, bool aPrimaryNameOnly) {
     const nsCString& mTarget;
   };
 
-  const Header& header = GetHeader();
+  Header& header = GetHeader();
 
   Family* families = Families();
   if (!families) {
@@ -1268,7 +1260,7 @@ void FontList::SearchForLocalFace(const nsACString& aName, Family** aFamily,
       continue;
     }
     for (uint32_t j = 0; j < family->NumFaces(); j++) {
-      auto* face = faces[j].ToPtr<Face>(this);
+      Face* face = static_cast<Face*>(faces[j].ToPtr(this));
       if (!face) {
         continue;
       }
