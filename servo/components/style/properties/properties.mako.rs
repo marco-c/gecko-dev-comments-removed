@@ -2412,22 +2412,6 @@ impl PropertyDeclaration {
 
     
     
-    
-    
-    
-    
-    pub fn value_is_unparsed(&self) -> bool {
-        match *self {
-            PropertyDeclaration::WithVariables(..) => true,
-            PropertyDeclaration::Custom(ref declaration) => {
-                matches!(declaration.value, CustomDeclarationValue::Value(..))
-            }
-            _ => false,
-        }
-    }
-
-    
-    
     pub fn is_animatable(&self) -> bool {
         match self.id() {
             PropertyDeclarationId::Longhand(id) => id.is_animatable(),
