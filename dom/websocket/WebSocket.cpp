@@ -261,8 +261,8 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
 
  private:
   ~WebSocketImpl() {
-    MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread() == mIsMainThread ||
-                          mDisconnectingOrDisconnected);
+    MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread ||
+                       mDisconnectingOrDisconnected);
 
     
     if (!mDisconnectingOrDisconnected) {
@@ -605,7 +605,7 @@ class DisconnectInternalRunnable final : public WorkerMainThreadRunnable {
 }  
 
 void WebSocketImpl::Disconnect() {
-  MOZ_DIAGNOSTIC_ASSERT(NS_IsMainThread() == mIsMainThread);
+  MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread);
 
   if (mDisconnectingOrDisconnected) {
     return;
@@ -2221,12 +2221,12 @@ void WebSocket::DontKeepAliveAnyMore() {
 }
 
 void WebSocketImpl::AddRefObject() {
-  AssertIsOnTargetThread();
+  MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread);
   AddRef();
 }
 
 void WebSocketImpl::ReleaseObject() {
-  AssertIsOnTargetThread();
+  MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread);
   Release();
 }
 
@@ -2472,7 +2472,7 @@ void WebSocket::Send(nsIInputStream* aMsgStream, const nsACString& aMsgString,
 
 void WebSocket::Close(const Optional<uint16_t>& aCode,
                       const Optional<nsAString>& aReason, ErrorResult& aRv) {
-  AssertIsOnTargetThread();
+  MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread);
 
   
   uint16_t closeCode = 0;
