@@ -5,7 +5,6 @@
 
 
 #include "mozilla/dom/WebAuthnUtil.h"
-#include "mozilla/dom/WebAuthnCBORUtil.h"
 #include "nsComponentManagerUtils.h"
 #include "nsICryptoHash.h"
 #include "nsIEffectiveTLDService.h"
@@ -106,29 +105,6 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
   }
 
   return false;
-}
-
-nsresult ReadToCryptoBuffer(pkix::Reader& aSrc,  CryptoBuffer& aDest,
-                            uint32_t aLen) {
-  if (aSrc.EnsureLength(aLen) != pkix::Success) {
-    return NS_ERROR_DOM_UNKNOWN_ERR;
-  }
-
-  if (!aDest.SetCapacity(aLen, mozilla::fallible)) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  for (uint32_t offset = 0; offset < aLen; ++offset) {
-    uint8_t b;
-    if (aSrc.Read(b) != pkix::Success) {
-      return NS_ERROR_DOM_UNKNOWN_ERR;
-    }
-    if (!aDest.AppendElement(b, mozilla::fallible)) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-  }
-
-  return NS_OK;
 }
 
 static nsresult HashCString(nsICryptoHash* aHashService, const nsACString& aIn,
