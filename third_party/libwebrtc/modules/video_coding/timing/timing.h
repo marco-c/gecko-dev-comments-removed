@@ -29,8 +29,30 @@ namespace webrtc {
 
 class VCMTiming {
  public:
-  static constexpr auto kDefaultRenderDelay = TimeDelta::Millis(10);
-  static constexpr auto kDelayMaxChangeMsPerS = 100;
+  struct VideoDelayTimings {
+    size_t num_decoded_frames;
+    
+    
+    TimeDelta jitter_delay;
+    
+    
+    TimeDelta estimated_max_decode_time;
+    
+    TimeDelta render_delay;
+    
+    
+    TimeDelta min_playout_delay;
+    
+    
+    TimeDelta max_playout_delay;
+    
+    TimeDelta target_delay;
+    
+    TimeDelta current_delay;
+  };
+
+  static constexpr TimeDelta kDefaultRenderDelay = TimeDelta::Millis(10);
+  static constexpr int kDelayMaxChangeMsPerS = 100;
 
   VCMTiming(Clock* clock, const FieldTrialsView& field_trials);
   virtual ~VCMTiming() = default;
@@ -93,17 +115,6 @@ class VCMTiming {
   TimeDelta TargetVideoDelay() const;
 
   
-  
-  struct VideoDelayTimings {
-    TimeDelta max_decode_duration;
-    TimeDelta current_delay;
-    TimeDelta target_delay;
-    TimeDelta jitter_buffer_delay;
-    TimeDelta min_playout_delay;
-    TimeDelta max_playout_delay;
-    TimeDelta render_delay;
-    size_t num_decoded_frames;
-  };
   VideoDelayTimings GetTimings() const;
 
   void SetTimingFrameInfo(const TimingFrameInfo& info);
@@ -117,14 +128,13 @@ class VCMTiming {
   
   void SetLastDecodeScheduledTimestamp(Timestamp last_decode_scheduled);
 
- protected:
-  TimeDelta RequiredDecodeTime() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+ private:
+  TimeDelta EstimatedMaxDecodeTime() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   Timestamp RenderTimeInternal(uint32_t frame_timestamp, Timestamp now) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   TimeDelta TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   bool UseLowLatencyRendering() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
- private:
   mutable Mutex mutex_;
   Clock* const clock_;
   const std::unique_ptr<TimestampExtrapolator> ts_extrapolator_
