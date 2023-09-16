@@ -140,9 +140,12 @@ function testFastPath() {
 
     
     const nonElements = [];
-    Object.defineProperty(nonElements, 0, { value: "hi", enumerated: true });
+    Object.defineProperty(nonElements, 0, { value: "hi", enumerated: true, configurable: true });
     nonElements.named = 7;
     failures += checkFast(nonElements, "INELIGIBLE_OBJECT");
+
+    nonElements.splice(0);
+    failures += checkFast(nonElements);
 
     
     const proto = {};
