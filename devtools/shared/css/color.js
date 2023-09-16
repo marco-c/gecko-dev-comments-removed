@@ -59,8 +59,8 @@ class CssColor {
     
     
     
-    this.lowerCased = colorValue.toLowerCase();
-    this.authored = colorValue;
+    this.#lowerCased = colorValue.toLowerCase();
+    this.#authored = colorValue;
   }
 
   
@@ -76,11 +76,10 @@ class CssColor {
   };
 
   
-  authored = null;
-  
-  lowerCased = null;
-
+  #authored = null;
   #currentFormat;
+  
+  #lowerCased = null;
 
   get hasAlpha() {
     if (!this.valid) {
@@ -96,7 +95,7 @@ class CssColor {
     
     
     
-    return InspectorUtils.colorToRGBA(this.authored) !== null;
+    return InspectorUtils.colorToRGBA(this.#authored) !== null;
   }
 
   
@@ -105,15 +104,15 @@ class CssColor {
 
 
   get highResTuple() {
-    const type = classifyColor(this.authored);
+    const type = classifyColor(this.#authored);
 
     if (type === CssColor.COLORUNIT.hex) {
-      return hexToRGBA(this.authored.substring(1), true);
+      return hexToRGBA(this.#authored.substring(1), true);
     }
 
     
     
-    const tuple = InspectorUtils.colorToRGBA(this.authored);
+    const tuple = InspectorUtils.colorToRGBA(this.#authored);
     tuple.a *= 255;
     return tuple;
   }
@@ -131,7 +130,7 @@ class CssColor {
   }
 
   get specialValue() {
-    return SPECIALVALUES.has(this.lowerCased) ? this.authored : null;
+    return SPECIALVALUES.has(this.#lowerCased) ? this.#authored : null;
   }
 
   get name() {
@@ -233,9 +232,9 @@ class CssColor {
       return invalidOrSpecialValue;
     }
     if (!this.hasAlpha) {
-      if (this.lowerCased.startsWith("rgb(")) {
+      if (this.#lowerCased.startsWith("rgb(")) {
         
-        return this.authored;
+        return this.#authored;
       }
       const tuple = this.getRGBATuple();
       return "rgb(" + tuple.r + ", " + tuple.g + ", " + tuple.b + ")";
@@ -248,9 +247,9 @@ class CssColor {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.lowerCased.startsWith("rgba(")) {
+    if (this.#lowerCased.startsWith("rgba(")) {
       
-      return this.authored;
+      return this.#authored;
     }
     const components = this.getRGBATuple();
     return (
@@ -271,9 +270,9 @@ class CssColor {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.lowerCased.startsWith("hsl(")) {
+    if (this.#lowerCased.startsWith("hsl(")) {
       
-      return this.authored;
+      return this.#authored;
     }
     if (this.hasAlpha) {
       return this.hsla;
@@ -286,9 +285,9 @@ class CssColor {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.lowerCased.startsWith("hsla(")) {
+    if (this.#lowerCased.startsWith("hsla(")) {
       
-      return this.authored;
+      return this.#authored;
     }
     if (this.hasAlpha) {
       const a = this.getRGBATuple().a;
@@ -302,9 +301,9 @@ class CssColor {
     if (invalidOrSpecialValue !== false) {
       return invalidOrSpecialValue;
     }
-    if (this.lowerCased.startsWith("hwb(")) {
+    if (this.#lowerCased.startsWith("hwb(")) {
       
-      return this.authored;
+      return this.#authored;
     }
     if (this.hasAlpha) {
       const a = this.getRGBATuple().a;
@@ -352,7 +351,7 @@ class CssColor {
       const defaultFormat = Services.prefs.getCharPref(COLOR_UNIT_PREF);
       currentFormat =
         defaultFormat === CssColor.COLORUNIT.authored
-          ? classifyColor(this.authored)
+          ? classifyColor(this.#authored)
           : defaultFormat;
     }
     const putOnEnd = formats.splice(0, formats.indexOf(currentFormat));
@@ -380,7 +379,7 @@ class CssColor {
 
     switch (colorUnit) {
       case CssColor.COLORUNIT.authored:
-        color = this.authored;
+        color = this.#authored;
         break;
       case CssColor.COLORUNIT.hex:
         color = this.hex;
@@ -404,7 +403,7 @@ class CssColor {
     if (
       forceUppercase ||
       (colorUnit != CssColor.COLORUNIT.authored &&
-        colorIsUppercase(this.authored))
+        colorIsUppercase(this.#authored))
     ) {
       color = color.toUpperCase();
     }
@@ -417,7 +416,7 @@ class CssColor {
 
 
   getRGBATuple() {
-    const tuple = InspectorUtils.colorToRGBA(this.authored);
+    const tuple = InspectorUtils.colorToRGBA(this.#authored);
 
     tuple.a = parseFloat(tuple.a.toFixed(2));
 
@@ -425,9 +424,9 @@ class CssColor {
   }
 
   #hsl(maybeAlpha) {
-    if (this.lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
+    if (this.#lowerCased.startsWith("hsl(") && maybeAlpha === undefined) {
       
-      return this.authored;
+      return this.#authored;
     }
 
     const { r, g, b } = this.getRGBATuple();
@@ -439,9 +438,9 @@ class CssColor {
   }
 
   #hwb(maybeAlpha) {
-    if (this.lowerCased.startsWith("hwb(") && maybeAlpha === undefined) {
+    if (this.#lowerCased.startsWith("hwb(") && maybeAlpha === undefined) {
       
-      return this.authored;
+      return this.#authored;
     }
 
     const { r, g, b } = this.getRGBATuple();
