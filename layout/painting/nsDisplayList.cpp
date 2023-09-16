@@ -7587,10 +7587,6 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
                                     const nsRect& aVisibleRect, float aOpacity,
                                     bool aIsRecording) {
   nsTextFrame* f = static_cast<nsTextFrame*>(mFrame);
-  gfxTextRun* textRun = f->GetTextRun(nsTextFrame::eInflated);
-  if (!textRun) {
-    return;
-  }
 
   
   
@@ -7630,7 +7626,7 @@ void nsDisplayText::RenderToContext(gfxContext* aCtx,
       
       
       gfxPoint pt = nsLayoutUtils::PointToGfxPoint(framePt, A2D);
-      if (textRun->IsRightToLeft()) {
+      if (f->GetTextRun(nsTextFrame::eInflated)->IsRightToLeft()) {
         pt.x += gfxFloat(f->GetSize().width) / A2D;
       }
       gfxMatrix mat = aCtx->CurrentMatrixDouble()
