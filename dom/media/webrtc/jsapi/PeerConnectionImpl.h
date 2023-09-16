@@ -491,8 +491,6 @@ class PeerConnectionImpl final
 
   bool IsClosed() const;
 
-  void OnRtcpPacketReceived(MediaPacket aPacket);
-
   
   nsresult OnAlpnNegotiated(bool aPrivacyRequested);
 
