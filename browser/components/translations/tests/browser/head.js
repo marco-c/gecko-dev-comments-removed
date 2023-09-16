@@ -386,6 +386,14 @@ async function clickCancelButton() {
   });
 }
 
+async function clickRestoreButton() {
+  const { restoreButton } = TranslationsPanel.elements;
+  ok(isVisible(restoreButton), "Expect the restore-page button to be visible");
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(restoreButton, "Click the restore-page button");
+  });
+}
+
 
 
 
