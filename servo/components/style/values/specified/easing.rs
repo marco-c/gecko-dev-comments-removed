@@ -4,7 +4,7 @@
 
 
 use crate::parser::{Parse, ParserContext};
-use crate::piecewise_linear::{PiecewiseLinearFunction, PiecewiseLinearFunctionBuildParameters};
+use crate::piecewise_linear::{PiecewiseLinearFunction, PiecewiseLinearFunctionBuilder};
 use crate::values::computed::easing::TimingFunction as ComputedTimingFunction;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::easing::TimingFunction as GenericTimingFunction;
@@ -12,35 +12,10 @@ use crate::values::generics::easing::{StepPosition, TimingKeyword};
 use crate::values::specified::{Integer, Number, Percentage};
 use cssparser::{Delimiter, Parser, Token};
 use selectors::parser::SelectorParseErrorKind;
-use std::iter::FromIterator;
 use style_traits::{ParseError, StyleParseErrorKind};
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-pub struct LinearStop {
-    
-    pub output: Number,
-    
-    #[css(skip_if = "Option::is_none")]
-    pub input: Option<Percentage>,
-}
-
-
-#[derive(Clone, Default, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-#[css(comma)]
-pub struct LinearStops {
-    #[css(iterable)]
-    entries: crate::OwnedSlice<LinearStop>,
-}
-
-impl LinearStops {
-    fn new(list: crate::OwnedSlice<LinearStop>) -> Self {
-        LinearStops { entries: list }
-    }
-}
-
-
-pub type TimingFunction = GenericTimingFunction<Integer, Number, LinearStops>;
+pub type TimingFunction = GenericTimingFunction<Integer, Number, PiecewiseLinearFunction>;
 
 #[cfg(feature = "gecko")]
 fn linear_timing_function_enabled() -> bool {
@@ -136,10 +111,12 @@ impl TimingFunction {
         if !linear_timing_function_enabled() {
             return Err(input.new_custom_error(StyleParseErrorKind::ExperimentalProperty));
         }
-        let mut result = vec![];
+        let mut builder = PiecewiseLinearFunctionBuilder::default();
+        let mut num_specified_stops = 0;
         
         loop {
             input.parse_until_before(Delimiter::Comma, |i| {
+                let builder = &mut builder;
                 let mut input_start = i.try_parse(|i| Percentage::parse(context, i)).ok();
                 let mut input_end = i.try_parse(|i| Percentage::parse(context, i)).ok();
 
@@ -149,19 +126,14 @@ impl TimingFunction {
                     input_start = i.try_parse(|i| Percentage::parse(context, i)).ok();
                     input_end = i.try_parse(|i| Percentage::parse(context, i)).ok();
                 }
-                result.push(LinearStop {
-                    output,
-                    input: input_start.into(),
-                });
+                builder.push(output.into(), input_start.map(|v| v.get()).into());
+                num_specified_stops += 1;
                 if input_end.is_some() {
                     debug_assert!(
                         input_start.is_some(),
                         "Input end valid but not input start?"
                     );
-                    result.push(LinearStop {
-                        output,
-                        input: input_end.into(),
-                    });
+                    builder.push(output.into(), input_end.map(|v| v.get()).into());
                 }
 
                 Ok(())
@@ -173,22 +145,13 @@ impl TimingFunction {
                 Ok(_) => unreachable!(),
             }
         }
-        if result.len() < 2 {
+        
+        
+        if num_specified_stops < 2 {
             return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
         }
 
-        Ok(GenericTimingFunction::LinearFunction(LinearStops::new(
-            crate::OwnedSlice::from(result),
-        )))
-    }
-}
-
-impl LinearStop {
-    
-    pub fn to_piecewise_linear_build_parameters(
-        x: &LinearStop,
-    ) -> PiecewiseLinearFunctionBuildParameters {
-        (x.output.get(), x.input.map(|x| x.get()))
+        Ok(GenericTimingFunction::LinearFunction(builder.build()))
     }
 }
 
@@ -211,13 +174,8 @@ impl TimingFunction {
                 }
             },
             GenericTimingFunction::Keyword(keyword) => GenericTimingFunction::Keyword(*keyword),
-            GenericTimingFunction::LinearFunction(steps) => {
-                GenericTimingFunction::LinearFunction(PiecewiseLinearFunction::from_iter(
-                    steps
-                        .entries
-                        .iter()
-                        .map(|e| LinearStop::to_piecewise_linear_build_parameters(e)),
-                ))
+            GenericTimingFunction::LinearFunction(function) => {
+                GenericTimingFunction::LinearFunction(function.clone())
             },
         }
     }
@@ -240,12 +198,7 @@ impl ToComputedValue for TimingFunction {
             },
             ComputedTimingFunction::Keyword(keyword) => GenericTimingFunction::Keyword(*keyword),
             ComputedTimingFunction::LinearFunction(function) => {
-                GenericTimingFunction::LinearFunction(LinearStops {
-                    entries: crate::OwnedSlice::from_iter(function.iter().map(|e| LinearStop {
-                        output: Number::new(e.y),
-                        input: Some(Percentage::new(e.x)).into(),
-                    })),
-                })
+                GenericTimingFunction::LinearFunction(function.clone())
             },
         }
     }
