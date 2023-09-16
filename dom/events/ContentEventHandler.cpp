@@ -62,11 +62,12 @@ using namespace widget;
 
 
 template <>
-ContentEventHandler::RawRangeBase<RefPtr<nsINode>,
-                                  RangeBoundary>::RawRangeBase() = default;
+ContentEventHandler::SimpleRangeBase<
+    RefPtr<nsINode>, RangeBoundary>::SimpleRangeBase() = default;
 
 template <>
-ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase()
+ContentEventHandler::SimpleRangeBase<nsINode*,
+                                     RawRangeBoundary>::SimpleRangeBase()
     : mRoot(nullptr) {
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   mAssertNoGC.emplace();
@@ -75,8 +76,9 @@ ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase()
 
 template <>
 template <typename OtherNodeType, typename OtherRangeBoundaryType>
-ContentEventHandler::RawRangeBase<RefPtr<nsINode>, RangeBoundary>::RawRangeBase(
-    const RawRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther)
+ContentEventHandler::SimpleRangeBase<RefPtr<nsINode>, RangeBoundary>::
+    SimpleRangeBase(
+        const SimpleRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther)
     : mRoot(aOther.GetRoot()),
       mStart{aOther.Start().AsRaw()},
       mEnd{aOther.End().AsRaw()}
@@ -85,8 +87,9 @@ ContentEventHandler::RawRangeBase<RefPtr<nsINode>, RangeBoundary>::RawRangeBase(
 
 template <>
 template <typename OtherNodeType, typename OtherRangeBoundaryType>
-ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase(
-    const RawRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther)
+ContentEventHandler::SimpleRangeBase<nsINode*, RawRangeBoundary>::
+    SimpleRangeBase(
+        const SimpleRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther)
     : mRoot(aOther.GetRoot()),
       mStart{aOther.Start().AsRaw()},
       mEnd{aOther.End().AsRaw()} {
@@ -96,15 +99,17 @@ ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase(
 }
 
 template <>
-ContentEventHandler::RawRangeBase<RefPtr<nsINode>, RangeBoundary>::RawRangeBase(
-    RawRangeBase<RefPtr<nsINode>, RangeBoundary>&& aOther) noexcept
+ContentEventHandler::SimpleRangeBase<RefPtr<nsINode>, RangeBoundary>::
+    SimpleRangeBase(
+        SimpleRangeBase<RefPtr<nsINode>, RangeBoundary>&& aOther) noexcept
     : mRoot(std::move(aOther.GetRoot())),
       mStart(std::move(aOther.mStart)),
       mEnd(std::move(aOther.mEnd)) {}
 
 template <>
-ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase(
-    RawRangeBase<nsINode*, RawRangeBoundary>&& aOther) noexcept
+ContentEventHandler::SimpleRangeBase<nsINode*, RawRangeBoundary>::
+    SimpleRangeBase(
+        SimpleRangeBase<nsINode*, RawRangeBoundary>&& aOther) noexcept
     : mRoot(std::move(aOther.GetRoot())),
       mStart(std::move(aOther.mStart)),
       mEnd(std::move(aOther.mEnd)) {
@@ -115,17 +120,18 @@ ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::RawRangeBase(
 
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
 template <>
-ContentEventHandler::RawRangeBase<RefPtr<nsINode>,
-                                  RangeBoundary>::~RawRangeBase() = default;
+ContentEventHandler::SimpleRangeBase<
+    RefPtr<nsINode>, RangeBoundary>::~SimpleRangeBase() = default;
 
 template <>
-ContentEventHandler::RawRangeBase<nsINode*, RawRangeBoundary>::~RawRangeBase() {
+ContentEventHandler::SimpleRangeBase<nsINode*,
+                                     RawRangeBoundary>::~SimpleRangeBase() {
   MOZ_DIAGNOSTIC_ASSERT(!mMutationGuard.Mutated(0));
 }
 #endif  
 
 template <typename NodeType, typename RangeBoundaryType>
-void ContentEventHandler::RawRangeBase<
+void ContentEventHandler::SimpleRangeBase<
     NodeType, RangeBoundaryType>::AssertStartIsBeforeOrEqualToEnd() {
   MOZ_ASSERT(
       *nsContentUtils::ComparePoints(
@@ -139,7 +145,7 @@ void ContentEventHandler::RawRangeBase<
 
 template <typename NodeType, typename RangeBoundaryType>
 nsresult
-ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetStart(
+ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetStart(
     const RawRangeBoundary& aStart) {
   nsINode* newRoot = RangeUtils::ComputeRootNode(aStart.Container());
   if (!newRoot) {
@@ -164,7 +170,8 @@ ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetStart(
 }
 
 template <typename NodeType, typename RangeBoundaryType>
-nsresult ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetEnd(
+nsresult
+ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEnd(
     const RawRangeBoundary& aEnd) {
   nsINode* newRoot = RangeUtils::ComputeRootNode(aEnd.Container());
   if (!newRoot) {
@@ -190,13 +197,13 @@ nsresult ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetEnd(
 
 template <typename NodeType, typename RangeBoundaryType>
 nsresult
-ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetEndAfter(
+ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::SetEndAfter(
     nsINode* aEndContainer) {
   return SetEnd(RangeUtils::GetRawRangeBoundaryAfter(aEndContainer));
 }
 
 template <typename NodeType, typename RangeBoundaryType>
-void ContentEventHandler::RawRangeBase<
+void ContentEventHandler::SimpleRangeBase<
     NodeType, RangeBoundaryType>::SetStartAndEnd(const nsRange* aRange) {
   DebugOnly<nsresult> rv =
       SetStartAndEnd(aRange->StartRef().AsRaw(), aRange->EndRef().AsRaw());
@@ -204,9 +211,9 @@ void ContentEventHandler::RawRangeBase<
 }
 
 template <typename NodeType, typename RangeBoundaryType>
-nsresult
-ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetStartAndEnd(
-    const RawRangeBoundary& aStart, const RawRangeBoundary& aEnd) {
+nsresult ContentEventHandler::SimpleRangeBase<
+    NodeType, RangeBoundaryType>::SetStartAndEnd(const RawRangeBoundary& aStart,
+                                                 const RawRangeBoundary& aEnd) {
   nsINode* newStartRoot = RangeUtils::ComputeRootNode(aStart.Container());
   if (!newStartRoot) {
     return NS_ERROR_DOM_INVALID_NODE_TYPE_ERR;
@@ -252,7 +259,7 @@ ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::SetStartAndEnd(
 }
 
 template <typename NodeType, typename RangeBoundaryType>
-nsresult ContentEventHandler::RawRangeBase<NodeType, RangeBoundaryType>::
+nsresult ContentEventHandler::SimpleRangeBase<NodeType, RangeBoundaryType>::
     SelectNodeContents(const nsINode* aNodeToSelectContents) {
   nsINode* const newRoot =
       RangeUtils::ComputeRootNode(const_cast<nsINode*>(aNodeToSelectContents));
@@ -409,7 +416,7 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
 
   mSelection = nullptr;
   mRootElement = nullptr;
-  mFirstSelectedRawRange.Clear();
+  mFirstSelectedSimpleRange.Clear();
 
   nsresult rv = InitBasic(aRequireFlush);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -443,7 +450,7 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
   }
 
   if (mSelection->RangeCount()) {
-    mFirstSelectedRawRange.SetStartAndEnd(mSelection->GetRangeAt(0));
+    mFirstSelectedSimpleRange.SetStartAndEnd(mSelection->GetRangeAt(0));
     return NS_OK;
   }
 
@@ -451,13 +458,13 @@ nsresult ContentEventHandler::InitCommon(EventMessage aEventMessage,
   
   if (aSelectionType != SelectionType::eNormal ||
       aEventMessage == eQuerySelectedText) {
-    MOZ_ASSERT(!mFirstSelectedRawRange.IsPositioned());
+    MOZ_ASSERT(!mFirstSelectedSimpleRange.IsPositioned());
     return NS_OK;
   }
 
   
   
-  rv = mFirstSelectedRawRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
+  rv = mFirstSelectedSimpleRange.CollapseTo(RawRangeBoundary(mRootElement, 0u));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -503,7 +510,7 @@ nsresult ContentEventHandler::Init(WidgetQueryContentEvent* aEvent) {
     } else {
       LineBreakType lineBreakType = GetLineBreakType(aEvent);
       uint32_t selectionStart = 0;
-      rv = GetStartOffset(mFirstSelectedRawRange, &selectionStart,
+      rv = GetStartOffset(mFirstSelectedSimpleRange, &selectionStart,
                           lineBreakType);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return NS_ERROR_FAILURE;
@@ -841,7 +848,7 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
     const Element* aElement, nsString& aString, LineBreakType aLineBreakType) {
   MOZ_ASSERT(aString.IsEmpty());
 
-  UnsafeRawRange rawRange;
+  UnsafeSimpleRange rawRange;
   nsresult rv = rawRange.SelectNodeContents(aElement);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -850,30 +857,30 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
 }
 
 nsresult ContentEventHandler::GenerateFlatTextContent(
-    const UnsafeRawRange& aRawRange, nsString& aString,
+    const UnsafeSimpleRange& aSimpleRange, nsString& aString,
     LineBreakType aLineBreakType) {
   MOZ_ASSERT(aString.IsEmpty());
 
-  if (aRawRange.Collapsed()) {
+  if (aSimpleRange.Collapsed()) {
     return NS_OK;
   }
 
-  nsINode* startNode = aRawRange.GetStartContainer();
-  nsINode* endNode = aRawRange.GetEndContainer();
+  nsINode* startNode = aSimpleRange.GetStartContainer();
+  nsINode* endNode = aSimpleRange.GetEndContainer();
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
     return NS_ERROR_FAILURE;
   }
 
   if (startNode == endNode && startNode->IsText()) {
-    AppendSubString(aString, *startNode->AsText(), aRawRange.StartOffset(),
-                    aRawRange.EndOffset() - aRawRange.StartOffset());
+    AppendSubString(aString, *startNode->AsText(), aSimpleRange.StartOffset(),
+                    aSimpleRange.EndOffset() - aSimpleRange.StartOffset());
     ConvertToNativeNewlines(aString);
     return NS_OK;
   }
 
   UnsafePreContentIterator preOrderIter;
-  nsresult rv =
-      preOrderIter.Init(aRawRange.Start().AsRaw(), aRawRange.End().AsRaw());
+  nsresult rv = preOrderIter.Init(aSimpleRange.Start().AsRaw(),
+                                  aSimpleRange.End().AsRaw());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -888,10 +895,10 @@ nsresult ContentEventHandler::GenerateFlatTextContent(
 
     if (const Text* textNode = Text::FromNode(node)) {
       if (textNode == startNode) {
-        AppendSubString(aString, *textNode, aRawRange.StartOffset(),
-                        textNode->TextLength() - aRawRange.StartOffset());
+        AppendSubString(aString, *textNode, aSimpleRange.StartOffset(),
+                        textNode->TextLength() - aSimpleRange.StartOffset());
       } else if (textNode == endNode) {
-        AppendSubString(aString, *textNode, 0, aRawRange.EndOffset());
+        AppendSubString(aString, *textNode, 0, aSimpleRange.EndOffset());
       } else {
         AppendString(aString, *textNode);
       }
@@ -1022,16 +1029,16 @@ void ContentEventHandler::AppendFontRanges(FontRangeArray& aFontRanges,
 }
 
 nsresult ContentEventHandler::GenerateFlatFontRanges(
-    const UnsafeRawRange& aRawRange, FontRangeArray& aFontRanges,
+    const UnsafeSimpleRange& aSimpleRange, FontRangeArray& aFontRanges,
     uint32_t& aLength, LineBreakType aLineBreakType) {
   MOZ_ASSERT(aFontRanges.IsEmpty(), "aRanges must be empty array");
 
-  if (aRawRange.Collapsed()) {
+  if (aSimpleRange.Collapsed()) {
     return NS_OK;
   }
 
-  nsINode* startNode = aRawRange.GetStartContainer();
-  nsINode* endNode = aRawRange.GetEndContainer();
+  nsINode* startNode = aSimpleRange.GetStartContainer();
+  nsINode* endNode = aSimpleRange.GetEndContainer();
   if (NS_WARN_IF(!startNode) || NS_WARN_IF(!endNode)) {
     return NS_ERROR_FAILURE;
   }
@@ -1039,8 +1046,8 @@ nsresult ContentEventHandler::GenerateFlatFontRanges(
   
   uint32_t baseOffset = 0;
   UnsafePreContentIterator preOrderIter;
-  nsresult rv =
-      preOrderIter.Init(aRawRange.Start().AsRaw(), aRawRange.End().AsRaw());
+  nsresult rv = preOrderIter.Init(aSimpleRange.Start().AsRaw(),
+                                  aSimpleRange.End().AsRaw());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -1056,9 +1063,9 @@ nsresult ContentEventHandler::GenerateFlatFontRanges(
 
     if (const Text* textNode = Text::FromNode(content)) {
       const uint32_t startOffset =
-          textNode != startNode ? 0 : aRawRange.StartOffset();
-      const uint32_t endOffset =
-          textNode != endNode ? textNode->TextLength() : aRawRange.EndOffset();
+          textNode != startNode ? 0 : aSimpleRange.StartOffset();
+      const uint32_t endOffset = textNode != endNode ? textNode->TextLength()
+                                                     : aSimpleRange.EndOffset();
       AppendFontRanges(aFontRanges, *textNode, baseOffset, startOffset,
                        endOffset, aLineBreakType);
       baseOffset += GetTextLengthInRange(*textNode, startOffset, endOffset,
@@ -1484,7 +1491,7 @@ nsresult ContentEventHandler::OnQuerySelectedText(
 
   MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
 
-  if (!mFirstSelectedRawRange.IsPositioned()) {
+  if (!mFirstSelectedSimpleRange.IsPositioned()) {
     MOZ_ASSERT(aEvent->mReply->mOffsetAndData.isNothing());
     MOZ_ASSERT_IF(mSelection, !mSelection->RangeCount());
     
@@ -1493,9 +1500,9 @@ nsresult ContentEventHandler::OnQuerySelectedText(
     return NS_OK;
   }
 
-  UnsafeRawRange firstSelectedRawRange(mFirstSelectedRawRange);
-  nsINode* const startNode = firstSelectedRawRange.GetStartContainer();
-  nsINode* const endNode = firstSelectedRawRange.GetEndContainer();
+  const UnsafeSimpleRange firstSelectedSimpleRange(mFirstSelectedSimpleRange);
+  nsINode* const startNode = firstSelectedSimpleRange.GetStartContainer();
+  nsINode* const endNode = firstSelectedSimpleRange.GetEndContainer();
 
   
   if (!startNode->IsInclusiveDescendantOf(mRootElement) ||
@@ -1505,17 +1512,17 @@ nsresult ContentEventHandler::OnQuerySelectedText(
 
   LineBreakType lineBreakType = GetLineBreakType(aEvent);
   uint32_t startOffset = 0;
-  if (NS_WARN_IF(NS_FAILED(GetStartOffset(firstSelectedRawRange, &startOffset,
-                                          lineBreakType)))) {
+  if (NS_WARN_IF(NS_FAILED(GetStartOffset(firstSelectedSimpleRange,
+                                          &startOffset, lineBreakType)))) {
     return NS_ERROR_FAILURE;
   }
 
   const RawRangeBoundary anchorRef = mSelection->RangeCount() > 0
                                          ? mSelection->AnchorRef().AsRaw()
-                                         : firstSelectedRawRange.Start();
+                                         : firstSelectedSimpleRange.Start();
   const RawRangeBoundary focusRef = mSelection->RangeCount() > 0
                                         ? mSelection->FocusRef().AsRaw()
-                                        : firstSelectedRawRange.End();
+                                        : firstSelectedSimpleRange.End();
   if (NS_WARN_IF(!anchorRef.IsSet()) || NS_WARN_IF(!focusRef.IsSet())) {
     return NS_ERROR_FAILURE;
   }
@@ -1542,9 +1549,9 @@ nsresult ContentEventHandler::OnQuerySelectedText(
     }
 
     nsString selectedString;
-    if (!firstSelectedRawRange.Collapsed() &&
+    if (!firstSelectedSimpleRange.Collapsed() &&
         NS_WARN_IF(NS_FAILED(GenerateFlatTextContent(
-            firstSelectedRawRange, selectedString, lineBreakType)))) {
+            firstSelectedSimpleRange, selectedString, lineBreakType)))) {
       return NS_ERROR_FAILURE;
     }
     aEvent->mReply->mOffsetAndData.emplace(startOffset, selectedString,
@@ -1636,11 +1643,11 @@ void ContentEventHandler::EnsureNonEmptyRect(LayoutDeviceIntRect& aRect) const {
 
 ContentEventHandler::FrameAndNodeOffset
 ContentEventHandler::GetFirstFrameInRangeForTextRect(
-    const UnsafeRawRange& aRawRange) {
+    const UnsafeSimpleRange& aSimpleRange) {
   RawNodePosition nodePosition;
   UnsafePreContentIterator preOrderIter;
-  nsresult rv =
-      preOrderIter.Init(aRawRange.Start().AsRaw(), aRawRange.End().AsRaw());
+  nsresult rv = preOrderIter.Init(aSimpleRange.Start().AsRaw(),
+                                  aSimpleRange.End().AsRaw());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return FrameAndNodeOffset();
   }
@@ -1665,8 +1672,8 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
     if (auto* textNode = Text::FromNode(content)) {
       
       
-      const uint32_t offsetInNode = textNode == aRawRange.GetStartContainer()
-                                        ? aRawRange.StartOffset()
+      const uint32_t offsetInNode = textNode == aSimpleRange.GetStartContainer()
+                                        ? aSimpleRange.StartOffset()
                                         : 0u;
       if (offsetInNode < textNode->TextDataLength()) {
         nodePosition = {textNode, offsetInNode};
@@ -1700,16 +1707,16 @@ ContentEventHandler::GetFirstFrameInRangeForTextRect(
 
 ContentEventHandler::FrameAndNodeOffset
 ContentEventHandler::GetLastFrameInRangeForTextRect(
-    const UnsafeRawRange& aRawRange) {
+    const UnsafeSimpleRange& aSimpleRange) {
   RawNodePosition nodePosition;
   UnsafePreContentIterator preOrderIter;
-  nsresult rv =
-      preOrderIter.Init(aRawRange.Start().AsRaw(), aRawRange.End().AsRaw());
+  nsresult rv = preOrderIter.Init(aSimpleRange.Start().AsRaw(),
+                                  aSimpleRange.End().AsRaw());
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return FrameAndNodeOffset();
   }
 
-  const RawRangeBoundary& endPoint = aRawRange.End();
+  const RawRangeBoundary& endPoint = aSimpleRange.End();
   MOZ_ASSERT(endPoint.IsSetAndValid());
   
   
@@ -1734,7 +1741,7 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(
     
     
     if (endPoint.IsStartOfContainer() &&
-        aRawRange.GetStartContainer() != endPoint.Container()) {
+        aSimpleRange.GetStartContainer() != endPoint.Container()) {
       nextNodeOfRangeEnd = endPoint.Container();
     }
   } else if (endPoint.IsSetAndValid()) {
@@ -1764,8 +1771,8 @@ ContentEventHandler::GetLastFrameInRangeForTextRect(
     }
 
     if (auto* textNode = Text::FromNode(node)) {
-      nodePosition = {textNode, textNode == aRawRange.GetEndContainer()
-                                    ? aRawRange.EndOffset()
+      nodePosition = {textNode, textNode == aSimpleRange.GetEndContainer()
+                                    ? aSimpleRange.EndOffset()
                                     : textNode->TextDataLength()};
 
       
@@ -2820,7 +2827,7 @@ nsresult ContentEventHandler::OnQueryCaretRect(
     nsIFrame* caretFrame = nsCaret::GetGeometry(mSelection, &caretRect);
     if (caretFrame) {
       uint32_t offset;
-      rv = GetStartOffset(mFirstSelectedRawRange, &offset,
+      rv = GetStartOffset(mFirstSelectedSimpleRange, &offset,
                           GetLineBreakType(aEvent));
       NS_ENSURE_SUCCESS(rv, rv);
       if (offset == aEvent->mInput.mOffset) {
@@ -3097,8 +3104,8 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
       return rv;
     }
   } else {
-    RawRange prevRawRange;
-    nsresult rv = prevRawRange.SetStart(aStartPosition.AsRaw());
+    SimpleRange prevSimpleRange;
+    nsresult rv = prevSimpleRange.SetStart(aStartPosition.AsRaw());
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
@@ -3133,23 +3140,23 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
 
     if (endPosition.IsSetAndValid()) {
       
-      rv = prevRawRange.SetEnd(endPosition.AsRaw());
+      rv = prevSimpleRange.SetEnd(endPosition.AsRaw());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      rv = preOrderIter.Init(prevRawRange.Start().AsRaw(),
-                             prevRawRange.End().AsRaw());
+      rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
+                             prevSimpleRange.End().AsRaw());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
     } else if (endPosition.Container() != aRootElement) {
       
-      rv = prevRawRange.SetEndAfter(endPosition.Container());
+      rv = prevSimpleRange.SetEndAfter(endPosition.Container());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
-      rv = preOrderIter.Init(prevRawRange.Start().AsRaw(),
-                             prevRawRange.End().AsRaw());
+      rv = preOrderIter.Init(prevSimpleRange.Start().AsRaw(),
+                             prevSimpleRange.End().AsRaw());
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
@@ -3203,10 +3210,10 @@ nsresult ContentEventHandler::GetFlatTextLengthInRange(
   return NS_OK;
 }
 
-template <typename RawRangeType>
-nsresult ContentEventHandler::GetStartOffset(const RawRangeType& aRawRange,
-                                             uint32_t* aOffset,
-                                             LineBreakType aLineBreakType) {
+template <typename SimpleRangeType>
+nsresult ContentEventHandler::GetStartOffset(
+    const SimpleRangeType& aSimpleRange, uint32_t* aOffset,
+    LineBreakType aLineBreakType) {
   
   
   
@@ -3220,28 +3227,28 @@ nsresult ContentEventHandler::GetStartOffset(const RawRangeType& aRawRange,
   
   
 
-  nsINode* startNode = aRawRange.GetStartContainer();
+  nsINode* startNode = aSimpleRange.GetStartContainer();
   bool startIsContainer = true;
   if (startNode->IsHTMLElement()) {
     nsAtom* name = startNode->NodeInfo()->NameAtom();
     startIsContainer =
         nsHTMLElement::IsContainer(nsHTMLTags::AtomTagToId(name));
   }
-  RawNodePosition startPos(startNode, aRawRange.StartOffset());
+  RawNodePosition startPos(startNode, aSimpleRange.StartOffset());
   startPos.mAfterOpenTag = startIsContainer;
   return GetFlatTextLengthInRange(RawNodePosition(mRootElement, 0u), startPos,
                                   mRootElement, aOffset, aLineBreakType);
 }
 
 nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
-    RawRange& aRawRange) {
-  MOZ_ASSERT(aRawRange.Collapsed());
+    SimpleRange& aSimpleRange) {
+  MOZ_ASSERT(aSimpleRange.Collapsed());
 
-  if (!aRawRange.Collapsed()) {
+  if (!aSimpleRange.Collapsed()) {
     return NS_ERROR_INVALID_ARG;
   }
 
-  const RangeBoundary& startPoint = aRawRange.Start();
+  const RangeBoundary& startPoint = aSimpleRange.Start();
   if (NS_WARN_IF(!startPoint.IsSet())) {
     return NS_ERROR_INVALID_ARG;
   }
@@ -3261,7 +3268,7 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
     if (!startPoint.Container()->GetFirstChild()->IsText()) {
       return NS_OK;
     }
-    nsresult rv = aRawRange.CollapseTo(
+    nsresult rv = aSimpleRange.CollapseTo(
         RawRangeBoundary(startPoint.Container()->GetFirstChild(), 0u));
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
@@ -3278,7 +3285,7 @@ nsresult ContentEventHandler::AdjustCollapsedRangeMaybeIntoTextNode(
   if (!startPoint.Ref()->IsText()) {
     return NS_OK;
   }
-  nsresult rv = aRawRange.CollapseTo(
+  nsresult rv = aSimpleRange.CollapseTo(
       RawRangeBoundary(startPoint.Ref(), startPoint.Ref()->Length()));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

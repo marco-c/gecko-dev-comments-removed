@@ -45,16 +45,19 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
 
 
+
+
+
   template <typename NodeType, typename RangeBoundaryType>
-  class MOZ_STACK_CLASS RawRangeBase final {
+  class MOZ_STACK_CLASS SimpleRangeBase final {
    public:
-    RawRangeBase();
-    RawRangeBase(RawRangeBase<NodeType, RangeBoundaryType>&&) noexcept;
+    SimpleRangeBase();
+    SimpleRangeBase(SimpleRangeBase<NodeType, RangeBoundaryType>&&) noexcept;
     template <typename OtherNodeType, typename OtherRangeBoundaryType>
-    explicit RawRangeBase(
-        const RawRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther);
+    explicit SimpleRangeBase(
+        const SimpleRangeBase<OtherNodeType, OtherRangeBoundaryType>& aOther);
 #ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
-    ~RawRangeBase();
+    ~SimpleRangeBase();
 #endif
 
     void Clear() {
@@ -120,8 +123,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
 #endif
   };
 
-  using RawRange = RawRangeBase<RefPtr<nsINode>, RangeBoundary>;
-  using UnsafeRawRange = RawRangeBase<nsINode*, RawRangeBoundary>;
+  using SimpleRange = SimpleRangeBase<RefPtr<nsINode>, RangeBoundary>;
+  using UnsafeSimpleRange = SimpleRangeBase<nsINode*, RawRangeBoundary>;
 
  public:
   using Element = dom::Element;
@@ -173,7 +176,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
   RefPtr<Selection> mSelection;
   
   
-  RawRange mFirstSelectedRawRange;
+  SimpleRange mFirstSelectedSimpleRange;
   RefPtr<Element> mRootElement;
 
   MOZ_CAN_RUN_SCRIPT nsresult Init(WidgetQueryContentEvent* aEvent);
@@ -316,15 +319,15 @@ class MOZ_STACK_CLASS ContentEventHandler {
   nsresult GenerateFlatTextContent(const Element* aElement, nsString& aString,
                                    LineBreakType aLineBreakType);
   
-  nsresult GenerateFlatTextContent(const UnsafeRawRange& aRawRange,
+  nsresult GenerateFlatTextContent(const UnsafeSimpleRange& aSimpleRange,
                                    nsString& aString,
                                    LineBreakType aLineBreakType);
   
   
   
-  template <typename RawRangeType>
-  nsresult GetStartOffset(const RawRangeType& aRawRange, uint32_t* aOffset,
-                          LineBreakType aLineBreakType);
+  template <typename SimpleRangeType>
+  nsresult GetStartOffset(const SimpleRangeType& aSimpleRange,
+                          uint32_t* aOffset, LineBreakType aLineBreakType);
   
   
   
@@ -355,7 +358,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
     }
 
     
-    UnsafeRawRange mRange;
+    UnsafeSimpleRange mRange;
     
     
     
@@ -377,7 +380,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   
   
-  nsresult AdjustCollapsedRangeMaybeIntoTextNode(RawRange& aCollapsedRawRange);
+  
+  nsresult AdjustCollapsedRangeMaybeIntoTextNode(SimpleRange& aSimpleRange);
   
   
   nsresult ConvertToRootRelativeOffset(nsIFrame* aFrame, nsRect& aRect);
@@ -393,11 +397,11 @@ class MOZ_STACK_CLASS ContentEventHandler {
                                const dom::Text& aTextNode, uint32_t aBaseOffset,
                                uint32_t aXPStartOffset, uint32_t aXPEndOffset,
                                LineBreakType aLineBreakType);
-  nsresult GenerateFlatFontRanges(const UnsafeRawRange& aRawRange,
+  nsresult GenerateFlatFontRanges(const UnsafeSimpleRange& aSimpleRange,
                                   FontRangeArray& aFontRanges,
                                   uint32_t& aLength,
                                   LineBreakType aLineBreakType);
-  nsresult QueryTextRectByRange(const RawRange& aRawRange,
+  nsresult QueryTextRectByRange(const SimpleRange& aSimpleRange,
                                 LayoutDeviceIntRect& aRect,
                                 WritingMode& aWritingMode);
 
@@ -427,14 +431,14 @@ class MOZ_STACK_CLASS ContentEventHandler {
   
   
   FrameAndNodeOffset GetFirstFrameInRangeForTextRect(
-      const UnsafeRawRange& aRawRange);
+      const UnsafeSimpleRange& aSimpleRange);
 
   
   
   
   
   FrameAndNodeOffset GetLastFrameInRangeForTextRect(
-      const UnsafeRawRange& aRawRange);
+      const UnsafeSimpleRange& aSimpleRange);
 
   struct MOZ_STACK_CLASS FrameRelativeRect final {
     
