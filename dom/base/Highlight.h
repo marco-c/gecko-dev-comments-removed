@@ -135,6 +135,11 @@ class Highlight final : public nsISupports, public nsWrapperCache {
   
 
 
+  uint32_t Size() const { return mRanges.Length(); }
+
+  
+
+
 
 
 

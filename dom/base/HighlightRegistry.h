@@ -132,6 +132,14 @@ class HighlightRegistry final : public nsISupports, public nsWrapperCache {
 
   RefPtr<nsFrameSelection> GetFrameSelection();
 
+  
+
+
+  nsTArray<CompactPair<RefPtr<nsAtom>, RefPtr<Highlight>>> const &
+  HighlightsOrdered() {
+    return mHighlightsOrdered;
+  }
+
  private:
   
 
