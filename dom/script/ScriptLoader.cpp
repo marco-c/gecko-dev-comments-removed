@@ -621,6 +621,51 @@ static nsresult CreateChannelForScriptLoading(nsIChannel** aOutChannel,
       loadGroup, prompter);
 }
 
+static void PrepareLoadInfoForScriptLoading(nsIChannel* aChannel,
+                                            const ScriptLoadRequest* aRequest) {
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  loadInfo->SetParserCreatedScript(aRequest->ParserMetadata() ==
+                                   ParserMetadata::ParserInserted);
+  loadInfo->SetCspNonce(aRequest->Nonce());
+  if (aRequest->mIntegrity.IsValid()) {
+    MOZ_ASSERT(!aRequest->mIntegrity.IsEmpty());
+    loadInfo->SetIntegrityMetadata(aRequest->mIntegrity.GetIntegrityString());
+  }
+}
+
+
+void ScriptLoader::PrepareCacheInfoChannel(nsIChannel* aChannel,
+                                           ScriptLoadRequest* aRequest) {
+  
+  
+  aRequest->mCacheInfo = nullptr;
+  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(aChannel));
+  if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
+    MOZ_ASSERT(!IsWebExtensionRequest(aRequest),
+               "Can not bytecode cache WebExt code");
+    if (!aRequest->mFetchSourceOnly) {
+      
+      
+      
+      LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
+      cic->PreferAlternativeDataType(
+          ScriptLoader::BytecodeMimeTypeFor(aRequest), ""_ns,
+          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
+    } else {
+      
+      
+      
+      
+      
+      
+      LOG(("ScriptLoadRequest (%p): Request saving bytecode later", aRequest));
+      cic->PreferAlternativeDataType(
+          kNullMimeType, ""_ns,
+          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
+    }
+  }
+}
+
 nsresult ScriptLoader::StartLoadInternal(
     ScriptLoadRequest* aRequest, nsSecurityFlags securityFlags,
     const Maybe<nsAutoString>& aCharsetForPreload) {
@@ -640,48 +685,14 @@ nsresult ScriptLoader::StartLoadInternal(
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-  loadInfo->SetParserCreatedScript(aRequest->ParserMetadata() ==
-                                   ParserMetadata::ParserInserted);
-  loadInfo->SetCspNonce(aRequest->Nonce());
-  if (aRequest->mIntegrity.IsValid()) {
-    MOZ_ASSERT(!aRequest->mIntegrity.IsEmpty());
-    loadInfo->SetIntegrityMetadata(aRequest->mIntegrity.GetIntegrityString());
-  }
+  PrepareLoadInfoForScriptLoading(channel, aRequest);
 
   nsCOMPtr<nsIScriptGlobalObject> scriptGlobal = GetScriptGlobalObject();
   if (!scriptGlobal) {
     return NS_ERROR_FAILURE;
   }
 
-  
-  
-  aRequest->mCacheInfo = nullptr;
-  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
-  if (cic && StaticPrefs::dom_script_loader_bytecode_cache_enabled()) {
-    MOZ_ASSERT(!IsWebExtensionRequest(aRequest),
-               "Can not bytecode cache WebExt code");
-    if (!aRequest->mFetchSourceOnly) {
-      
-      
-      
-      LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
-      cic->PreferAlternativeDataType(
-          BytecodeMimeTypeFor(aRequest), ""_ns,
-          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
-    } else {
-      
-      
-      
-      
-      
-      
-      LOG(("ScriptLoadRequest (%p): Request saving bytecode later", aRequest));
-      cic->PreferAlternativeDataType(
-          kNullMimeType, ""_ns,
-          nsICacheInfoChannel::PreferredAlternativeDataDeliveryType::ASYNC);
-    }
-  }
+  ScriptLoader::PrepareCacheInfoChannel(channel, aRequest);
 
   LOG(("ScriptLoadRequest (%p): mode=%u tracking=%d", aRequest,
        unsigned(aRequest->GetScriptLoadContext()->mScriptMode),
