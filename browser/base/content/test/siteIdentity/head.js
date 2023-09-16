@@ -164,25 +164,12 @@ async function assertMixedContentBlockingState(tabbrowser, states = {}) {
   );
 
   if (stateInsecure) {
-    const insecureConnectionIcon = Services.prefs.getBoolPref(
-      "security.insecure_connection_icon.enabled"
+    
+    ok(classList.contains("notSecure"), "notSecure on HTTP page");
+    ok(
+      !BrowserTestUtils.is_hidden(identityIcon),
+      "information icon should be visible"
     );
-    if (!insecureConnectionIcon) {
-      
-      
-      ok(classList.contains("unknownIdentity"), "unknownIdentity on HTTP page");
-      ok(
-        BrowserTestUtils.is_visible(identityIcon),
-        "information icon should be still visible"
-      );
-    } else {
-      
-      ok(classList.contains("notSecure"), "notSecure on HTTP page");
-      ok(
-        !BrowserTestUtils.is_hidden(identityIcon),
-        "information icon should be visible"
-      );
-    }
 
     ok(!classList.contains("mixedActiveContent"), "No MCB icon on HTTP page");
     ok(!classList.contains("mixedActiveBlocked"), "No MCB icon on HTTP page");
