@@ -140,9 +140,6 @@ NS_IMETHODIMP
 TaskbarPreview::Invalidate() {
   if (!mVisible) return NS_OK;
 
-  
-  if (!gfxWindowsPlatform::GetPlatform()->DwmCompositionEnabled()) return NS_OK;
-
   HWND previewWindow = PreviewWindow();
   return FAILED(DwmInvalidateIconicBitmaps(previewWindow)) ? NS_ERROR_FAILURE
                                                            : NS_OK;

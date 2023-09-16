@@ -389,11 +389,6 @@ class WinUtils {
   
 
 
-  static int32_t GetMonitorCount();
-
-  
-
-
 
   static bool IsOurProcessWindow(HWND aWnd);
 
