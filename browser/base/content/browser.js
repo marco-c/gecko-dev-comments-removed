@@ -2052,9 +2052,7 @@ var gBrowserInit = {
 
     CaptivePortalWatcher.delayedStartup();
 
-    if (AppConstants.NIGHTLY_BUILD) {
-      ShoppingSidebarManager.init();
-    }
+    ShoppingSidebarManager.init();
 
     SessionStore.promiseAllWindowsRestored.then(() => {
       this._schedulePerWindowIdleTasks();
@@ -2475,9 +2473,7 @@ var gBrowserInit = {
 
     FirefoxViewHandler.uninit();
 
-    if (AppConstants.NIGHTLY_BUILD) {
-      ShoppingSidebarManager.uninit();
-    }
+    ShoppingSidebarManager.uninit();
 
     
     
@@ -5885,9 +5881,7 @@ var TabsProgressListener = {
 
     
     
-    if (AppConstants.NIGHTLY_BUILD) {
-      ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI, aFlags);
-    }
+    ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI, aFlags);
 
     
     
