@@ -1,0 +1,19 @@
+
+
+
+"use strict";
+
+
+
+
+add_setup(async function () {
+  await initSearchEngineDefaultIdTest();
+});
+
+add_task(async function basic() {
+  await doSearchEngineDefaultIdTest({
+    trigger: () => doBlur(),
+    assert: engineId =>
+      assertAbandonmentTelemetry([{ search_engine_default_id: engineId }]),
+  });
+});
