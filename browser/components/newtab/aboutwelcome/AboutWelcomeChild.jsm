@@ -592,33 +592,20 @@ XPCOMUtils.defineLazyPreferenceGetter(
   0
 );
 
-XPCOMUtils.defineLazyPreferenceGetter(
-  lazy,
-  "optedIn",
-  "browser.shopping.experience2023.optedIn",
-  0
-);
-
 let optInDynamicContent;
+
 const MIN_VISITS_TO_SHOW_SURVEY = 5;
 
 class AboutWelcomeShoppingChild extends AboutWelcomeChild {
   
   static optedInSession = false;
 
-  actorCreated() {
-    super.actorCreated();
-    this.init();
-  }
+  
+  static eligiblePDPvisits = [];
 
-  init() {
+  computeEligiblePDPCount(data) {
     
-    if (!lazy.optedIn) {
-      return;
-    }
-
-    
-    if (lazy.pdpVisits < 5) {
+    if (lazy.pdpVisits < MIN_VISITS_TO_SHOW_SURVEY) {
       this.AWSendToParent("SPECIAL_ACTION", {
         type: "SET_PREF",
         data: {
@@ -632,51 +619,75 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
 
     
     
-    
+    AboutWelcomeShoppingChild.eligiblePDPvisits.push(data?.product_id);
+  }
 
+  evaluateAndShowSurvey() {
     
     
-
     this.showMicroSurvey =
       !lazy.isSurveySeen &&
       !AboutWelcomeShoppingChild.optedInSession &&
       lazy.pdpVisits >= MIN_VISITS_TO_SHOW_SURVEY;
+
+    if (this.showMicroSurvey) {
+      this.renderMessage();
+    }
   }
 
   handleEvent(event) {
     
-    const { productUrl, showOnboarding } = event.detail;
+    const { productUrl, showOnboarding, data } = event.detail;
 
     
     const optInReady = showOnboarding && productUrl;
-
-    
-    
-    this.document.getElementById("multi-stage-message-root").hidden =
-      !optInReady && !this.showMicroSurvey;
-
-    
-    if (!showOnboarding && productUrl && this.showMicroSurvey) {
+    if (optInReady) {
+      
+      AboutWelcomeShoppingChild.optedInSession = true;
+      this.AWSetProductURL(new URL(productUrl).hostname);
       this.renderMessage();
       return;
     }
 
-    if (!optInReady) {
-      return;
+    
+    if (!lazy.isSurveySeen) {
+      this.document.getElementById("multi-stage-message-root").hidden = true;
     }
 
     
-    AboutWelcomeShoppingChild.optedInSession = true;
-    this.AWSetProductURL(new URL(productUrl).hostname);
-    this.renderMessage();
+    
+    if (
+      lazy.isSurveySeen ||
+      !data ||
+      !productUrl ||
+      (data?.needs_analysis &&
+        (!data?.product_id || !data?.grade || !data?.adjusted_rating)) ||
+      AboutWelcomeShoppingChild.eligiblePDPvisits.includes(data?.product_id)
+    ) {
+      return;
+    }
+
+    this.computeEligiblePDPCount(data, productUrl);
+    this.evaluateAndShowSurvey();
   }
 
   renderMessage() {
+    this.document.getElementById("multi-stage-message-root").hidden = false;
     this.document.dispatchEvent(
       new this.contentWindow.CustomEvent("RenderWelcome", {
         bubbles: true,
       })
     );
+  }
+
+  
+  AWGetFeatureConfig() {
+    let messageContent = optInDynamicContent;
+    if (this.showMicroSurvey) {
+      messageContent = SHOPPING_MICROSURVEY;
+      this.setShoppingSurveySeen();
+    }
+    return Cu.cloneInto(messageContent, this.contentWindow);
   }
 
   setShoppingSurveySeen() {
@@ -748,16 +759,6 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     }
 
     optInDynamicContent = content;
-  }
-
-  
-  AWGetFeatureConfig() {
-    let messageContent = optInDynamicContent;
-    if (this.showMicroSurvey) {
-      messageContent = SHOPPING_MICROSURVEY;
-      this.setShoppingSurveySeen();
-    }
-    return Cu.cloneInto(messageContent, this.contentWindow);
   }
 
   AWEnsureLangPackInstalled() {}
