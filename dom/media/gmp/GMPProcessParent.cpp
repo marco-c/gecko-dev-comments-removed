@@ -11,6 +11,10 @@
 #  include "WinUtils.h"
 #endif
 #include "GMPLog.h"
+#include "mozilla/GeckoArgs.h"
+#include "mozilla/ipc/ProcessChild.h"
+#include "mozilla/ipc/ProcessUtils.h"
+#include "mozilla/StaticPrefs_media.h"
 
 #include "base/string_util.h"
 #include "base/process_util.h"
@@ -64,7 +68,8 @@ void GMPProcessParent::InitStaticMainThread() {
 
 GMPProcessParent::GMPProcessParent(const std::string& aGMPPath)
     : GeckoChildProcessHost(GeckoProcessType_GMPlugin),
-      mGMPPath(aGMPPath)
+      mGMPPath(aGMPPath),
+      mUseXpcom(StaticPrefs::media_gmp_use_minimal_xpcom())
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
       ,
       mRequiresWindowServer(false)
@@ -80,7 +85,82 @@ GMPProcessParent::GMPProcessParent(const std::string& aGMPPath)
 GMPProcessParent::~GMPProcessParent() { MOZ_COUNT_DTOR(GMPProcessParent); }
 
 bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
+  class PrefSerializerRunnable final : public Runnable {
+   public:
+    PrefSerializerRunnable()
+        : Runnable("GMPProcessParent::PrefSerializerRunnable"),
+          mMonitor("GMPProcessParent::PrefSerializerRunnable::mMonitor") {}
+
+    NS_IMETHOD Run() override {
+      auto prefSerializer = MakeUnique<ipc::SharedPreferenceSerializer>();
+      bool success =
+          prefSerializer->SerializeToSharedMemory(GeckoProcessType_GMPlugin,
+                                                   ""_ns);
+
+      MonitorAutoLock lock(mMonitor);
+      MOZ_ASSERT(!mComplete);
+      if (success) {
+        mPrefSerializer = std::move(prefSerializer);
+      }
+      mComplete = true;
+      lock.Notify();
+      return NS_OK;
+    }
+
+    void Wait(int32_t aTimeoutMs,
+              UniquePtr<ipc::SharedPreferenceSerializer>& aOut) {
+      MonitorAutoLock lock(mMonitor);
+
+      TimeDuration timeout = TimeDuration::FromMilliseconds(aTimeoutMs);
+      while (!mComplete) {
+        if (lock.Wait(timeout) == CVStatus::Timeout) {
+          return;
+        }
+      }
+
+      aOut = std::move(mPrefSerializer);
+    }
+
+   private:
+    Monitor mMonitor;
+    UniquePtr<ipc::SharedPreferenceSerializer> mPrefSerializer
+        MOZ_GUARDED_BY(mMonitor);
+    bool mComplete MOZ_GUARDED_BY(mMonitor) = false;
+  };
+
+  nsresult rv;
   vector<string> args;
+  UniquePtr<ipc::SharedPreferenceSerializer> prefSerializer;
+
+  ipc::ProcessChild::AddPlatformBuildID(args);
+
+  if (mUseXpcom) {
+    
+    
+    
+    auto prefTask = MakeRefPtr<PrefSerializerRunnable>();
+    rv = NS_DispatchToMainThread(prefTask);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    
+    prefTask->Wait(aTimeoutMs, prefSerializer);
+    if (NS_WARN_IF(!prefSerializer)) {
+      return false;
+    }
+
+    prefSerializer->AddSharedPrefCmdLineArgs(*this, args);
+  }
+
+  if (StaticPrefs::media_gmp_use_native_event_processing()) {
+    geckoargs::sPluginNativeEvent.Put(args);
+  }
 
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   GMP_LOG_DEBUG("GMPProcessParent::Launch() mLaunchArch: %d", mLaunchArch);
@@ -100,7 +180,7 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
 #else
   nsAutoCString normalizedPath;
 #endif
-  nsresult rv = NormalizePath(mGMPPath.c_str(), normalizedPath);
+  rv = NormalizePath(mGMPPath.c_str(), normalizedPath);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     GMP_LOG_DEBUG(
         "GMPProcessParent::Launch: "
@@ -144,12 +224,13 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   }
 #  endif
 
-  args.push_back(WideToUTF8(wGMPPath));
+  std::string gmpPath = WideToUTF8(wGMPPath);
+  geckoargs::sPluginPath.Put(gmpPath.c_str(), args);
 #else
   if (NS_SUCCEEDED(rv)) {
-    args.push_back(normalizedPath.get());
+    geckoargs::sPluginPath.Put(normalizedPath.get(), args);
   } else {
-    args.push_back(mGMPPath);
+    geckoargs::sPluginPath.Put(mGMPPath.c_str(), args);
   }
 #endif
 
@@ -159,6 +240,10 @@ bool GMPProcessParent::Launch(int32_t aTimeoutMs) {
   AddFdToRemap(kInvalidFd, kInvalidFd);
   AddFdToRemap(kInvalidFd, kInvalidFd);
 #endif
+
+  
+  
+  
   return SyncLaunch(args, aTimeoutMs);
 }
 

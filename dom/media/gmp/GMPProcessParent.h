@@ -30,6 +30,7 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
 
   bool CanShutdown() override { return true; }
   const std::string& GetPluginFilePath() { return mGMPPath; }
+  bool UseXPCOM() const { return mUseXpcom; }
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
@@ -62,6 +63,9 @@ class GMPProcessParent final : public mozilla::ipc::GeckoChildProcessHost {
 
   std::string mGMPPath;
   nsCOMPtr<nsIRunnable> mDeletedCallback;
+
+  
+  bool mUseXpcom;
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX)
   
