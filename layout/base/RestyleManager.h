@@ -379,7 +379,8 @@ class RestyleManager {
   
 
 
-  void RestyleSiblings(dom::Element* aChild, NodeSelectorFlags aParentFlags);
+  void RestyleSiblingsForNthOf(dom::Element* aChild,
+                               NodeSelectorFlags aParentFlags);
 
   
 
