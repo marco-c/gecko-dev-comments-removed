@@ -37,7 +37,8 @@ class NormalOriginOperationBase
   
   
   
-  NormalOriginOperationBase(const char* aName,
+  NormalOriginOperationBase(MovingNotNull<RefPtr<QuotaManager>> aQuotaManager,
+                            const char* aName,
                             const Nullable<PersistenceType>& aPersistenceType,
                             const OriginScope& aOriginScope,
                             const Nullable<Client::Type>& aClientType,
