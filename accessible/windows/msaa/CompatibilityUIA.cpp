@@ -17,107 +17,23 @@
 
 using namespace mozilla;
 
-struct ByteArrayDeleter {
-  void operator()(void* aBuf) { delete[] reinterpret_cast<std::byte*>(aBuf); }
-};
+namespace mozilla {
+namespace a11y {
 
-typedef UniquePtr<OBJECT_DIRECTORY_INFORMATION, ByteArrayDeleter> ObjDirInfoPtr;
-
-
-
-template <typename ComparatorFnT>
-static bool FindNamedObject(const ComparatorFnT& aComparator) {
-  
-  
-  
-  DWORD sessionId;
-  if (!::ProcessIdToSessionId(::GetCurrentProcessId(), &sessionId)) {
-    return false;
-  }
-
-  nsAutoString path;
-  path.AppendPrintf("\\Sessions\\%lu\\BaseNamedObjects", sessionId);
-
-  UNICODE_STRING baseNamedObjectsName;
-  ::RtlInitUnicodeString(&baseNamedObjectsName, path.get());
-
-  OBJECT_ATTRIBUTES attributes;
-  InitializeObjectAttributes(&attributes, &baseNamedObjectsName, 0, nullptr,
-                             nullptr);
-
-  HANDLE rawBaseNamedObjects;
-  NTSTATUS ntStatus = ::NtOpenDirectoryObject(
-      &rawBaseNamedObjects, DIRECTORY_QUERY | DIRECTORY_TRAVERSE, &attributes);
-  if (!NT_SUCCESS(ntStatus)) {
-    return false;
-  }
-
-  nsAutoHandle baseNamedObjects(rawBaseNamedObjects);
-
-  ULONG context = 0, returnedLen;
-
-  ULONG objDirInfoBufLen = 1024 * sizeof(OBJECT_DIRECTORY_INFORMATION);
-  ObjDirInfoPtr objDirInfo(reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(
-      new std::byte[objDirInfoBufLen]));
-
-  
-
-  BOOL firstCall = TRUE;
-
-  do {
-    ntStatus = ::NtQueryDirectoryObject(baseNamedObjects, objDirInfo.get(),
-                                        objDirInfoBufLen, FALSE, firstCall,
-                                        &context, &returnedLen);
-#if defined(HAVE_64BIT_BUILD)
-    if (!NT_SUCCESS(ntStatus)) {
-      return false;
-    }
-#else
-    if (ntStatus == STATUS_BUFFER_TOO_SMALL) {
-      
-      
-      objDirInfo.reset(reinterpret_cast<OBJECT_DIRECTORY_INFORMATION*>(
-          new std::byte[returnedLen]));
-      objDirInfoBufLen = returnedLen;
-      continue;
-    } else if (!NT_SUCCESS(ntStatus)) {
-      return false;
-    }
-#endif
-
+void Compatibility::GetUiaClientPids(nsTArray<DWORD>& aPids) {
+  if (!::GetModuleHandleW(L"uiautomationcore.dll")) {
     
-    
-    OBJECT_DIRECTORY_INFORMATION* curDir = objDirInfo.get();
-    while (curDir->mName.Length && curDir->mTypeName.Length) {
-      
-      
-      nsDependentSubstring objName(curDir->mName.Buffer,
-                                   curDir->mName.Length / sizeof(wchar_t));
-      nsDependentSubstring typeName(curDir->mTypeName.Buffer,
-                                    curDir->mTypeName.Length / sizeof(wchar_t));
+    return;
+  }
+  Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
 
-      if (!aComparator(objName, typeName)) {
-        return true;
-      }
-
-      ++curDir;
-    }
-
-    firstCall = FALSE;
-  } while (ntStatus == STATUS_MORE_ENTRIES);
-
-  return false;
-}
-
-
-
-template <typename ComparatorFnT>
-static bool FindHandle(const ComparatorFnT& aComparator) {
   NTSTATUS ntStatus;
+
   
   UniquePtr<std::byte[]> handleInfoBuf;
   ULONG handleInfoBufLen = sizeof(SYSTEM_HANDLE_INFORMATION_EX) +
                            1024 * sizeof(SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX);
+
   
   
   
@@ -126,58 +42,53 @@ static bool FindHandle(const ComparatorFnT& aComparator) {
     
     handleInfoBuf = MakeUniqueFallible<std::byte[]>(handleInfoBufLen);
     if (!handleInfoBuf) {
-      return false;
+      return;
     }
+
     ntStatus = ::NtQuerySystemInformation(
         (SYSTEM_INFORMATION_CLASS)SystemExtendedHandleInformation,
         handleInfoBuf.get(), handleInfoBufLen, &handleInfoBufLen);
     if (ntStatus == STATUS_INFO_LENGTH_MISMATCH) {
       continue;
     }
+
     if (!NT_SUCCESS(ntStatus)) {
-      return false;
+      return;
     }
+
     break;
   }
 
+  const DWORD ourPid = ::GetCurrentProcessId();
   auto handleInfo =
       reinterpret_cast<SYSTEM_HANDLE_INFORMATION_EX*>(handleInfoBuf.get());
   for (ULONG index = 0; index < handleInfo->mHandleCount; ++index) {
-    SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX& info = handleInfo->mHandles[index];
-    HANDLE handle = reinterpret_cast<HANDLE>(info.mHandle);
-    if (!aComparator(info, handle)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
-  const DWORD ourPid = ::GetCurrentProcessId();
-  FindHandle([&](auto aInfo, auto aHandle) {
-    if (aInfo.mPid != ourPid) {
+    SYSTEM_HANDLE_TABLE_ENTRY_INFO_EX& curHandle = handleInfo->mHandles[index];
+    if (curHandle.mPid != ourPid) {
       
-      return true;
+      continue;
     }
+    HANDLE handle = reinterpret_cast<HANDLE>(curHandle.mHandle);
+
     
     ULONG objNameBufLen;
-    NTSTATUS ntStatus = ::NtQueryObject(
-        aHandle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation, nullptr, 0,
-        &objNameBufLen);
+    ntStatus =
+        ::NtQueryObject(handle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
+                        nullptr, 0, &objNameBufLen);
     if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
-      return true;
+      continue;
     }
     auto objNameBuf = MakeUnique<std::byte[]>(objNameBufLen);
-    ntStatus = ::NtQueryObject(aHandle,
-                               (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
-                               objNameBuf.get(), objNameBufLen, &objNameBufLen);
+    ntStatus =
+        ::NtQueryObject(handle, (OBJECT_INFORMATION_CLASS)ObjectNameInformation,
+                        objNameBuf.get(), objNameBufLen, &objNameBufLen);
     if (!NT_SUCCESS(ntStatus)) {
-      return true;
+      continue;
     }
     auto objNameInfo =
         reinterpret_cast<OBJECT_NAME_INFORMATION*>(objNameBuf.get());
     if (!objNameInfo->Name.Length) {
-      return true;
+      continue;
     }
     nsDependentString objName(objNameInfo->Name.Buffer,
                               objNameInfo->Name.Length / sizeof(wchar_t));
@@ -188,149 +99,7 @@ static void GetUiaClientPidsWin11(nsTArray<DWORD>& aPids) {
       
       
       ULONG pid = 0;
-      ::GetNamedPipeServerProcessId(aHandle, &pid);
-      aPids.AppendElement(pid);
-    }
-    return true;
-  });
-}
-
-static DWORD GetUiaClientPidWin10() {
-  
-  constexpr auto kStrHookShmem = u"HOOK_SHMEM_"_ns;
-  
-  nsAutoString sectionThread;
-  sectionThread.AppendPrintf("_%08lx_", ::GetCurrentThreadId());
-  
-  
-  constexpr size_t sectionThreadRPos = 27;
-  
-  constexpr size_t sectionThreadLen = 10;
-  
-  
-  
-  
-  nsAutoHandle section;
-  auto objectComparator = [&](const nsDependentSubstring& aName,
-                              const nsDependentSubstring& aType) -> bool {
-    if (aType.Equals(u"Section"_ns) && FindInReadable(kStrHookShmem, aName) &&
-        Substring(aName, aName.Length() - sectionThreadRPos,
-                  sectionThreadLen) == sectionThread) {
-      
-      
-      section.own(::OpenFileMapping(GENERIC_READ, FALSE,
-                                    PromiseFlatString(aName).get()));
-      return false;
-    }
-    return true;
-  };
-  if (!FindNamedObject(objectComparator) || !section) {
-    return 0;
-  }
-
-  
-  
-  
-  NTSTATUS ntStatus;
-  const DWORD ourPid = ::GetCurrentProcessId();
-  Maybe<PVOID> kernelObject;
-  static Maybe<USHORT> sectionObjTypeIndex;
-  nsTHashSet<uint32_t> nonSectionObjTypes;
-  nsTHashMap<nsVoidPtrHashKey, DWORD> objMap;
-  DWORD remotePid = 0;
-  FindHandle([&](auto aInfo, auto aHandle) {
-    
-    
-    
-    
-    if (sectionObjTypeIndex) {
-      
-      if (sectionObjTypeIndex.value() != aInfo.mObjectTypeIndex) {
-        
-        return true;
-      }
-    } else if (nonSectionObjTypes.Contains(
-                   static_cast<uint32_t>(aInfo.mObjectTypeIndex))) {
-      
-      
-      return true;
-    } else if (ourPid == aInfo.mPid) {
-      
-      
-      ULONG objTypeBufLen;
-      ntStatus = ::NtQueryObject(aHandle, ObjectTypeInformation, nullptr, 0,
-                                 &objTypeBufLen);
-      if (ntStatus != STATUS_INFO_LENGTH_MISMATCH) {
-        return true;
-      }
-      auto objTypeBuf = MakeUnique<std::byte[]>(objTypeBufLen);
-      ntStatus =
-          ::NtQueryObject(aHandle, ObjectTypeInformation, objTypeBuf.get(),
-                          objTypeBufLen, &objTypeBufLen);
-      if (!NT_SUCCESS(ntStatus)) {
-        return true;
-      }
-      auto objType =
-          reinterpret_cast<PUBLIC_OBJECT_TYPE_INFORMATION*>(objTypeBuf.get());
-      
-      nsDependentSubstring objTypeName(
-          objType->TypeName.Buffer, objType->TypeName.Length / sizeof(wchar_t));
-      if (!objTypeName.Equals(u"Section"_ns)) {
-        nonSectionObjTypes.Insert(
-            static_cast<uint32_t>(aInfo.mObjectTypeIndex));
-        return true;
-      }
-      sectionObjTypeIndex = Some(aInfo.mObjectTypeIndex);
-    }
-
-    
-    
-    if (ourPid != aInfo.mPid) {
-      if (kernelObject && kernelObject.value() == aInfo.mObject) {
-        
-        remotePid = aInfo.mPid;
-        return false;
-      }
-      
-      
-      objMap.InsertOrUpdate(aInfo.mObject, aInfo.mPid);
-    } else if (aHandle == section.get()) {
-      
-      
-      kernelObject = Some(aInfo.mObject);
-    }
-    return true;
-  });
-
-  if (remotePid) {
-    return remotePid;
-  }
-  if (!kernelObject) {
-    return 0;
-  }
-
-  
-  
-  if (objMap.Get(kernelObject.value(), &remotePid)) {
-    return remotePid;
-  }
-
-  return 0;
-}
-
-namespace mozilla {
-namespace a11y {
-
-void Compatibility::GetUiaClientPids(nsTArray<DWORD>& aPids) {
-  if (!::GetModuleHandleW(L"uiautomationcore.dll")) {
-    
-    return;
-  }
-  Telemetry::AutoTimer<Telemetry::A11Y_UIA_DETECTION_TIMING_MS> timer;
-  if (IsWin11OrLater()) {
-    GetUiaClientPidsWin11(aPids);
-  } else {
-    if (DWORD pid = GetUiaClientPidWin10()) {
+      ::GetNamedPipeServerProcessId(handle, &pid);
       aPids.AppendElement(pid);
     }
   }
