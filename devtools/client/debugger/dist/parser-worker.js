@@ -43515,7 +43515,16 @@
       if (lib$3.isAwaitExpression(lastStatement.expression)) {
         lastStatement.expression = lastStatement.expression.argument;
       }
-      statements.push(lib$3.returnStatement(lastStatement.expression));
+
+      
+      
+      
+      
+      statements.push(
+        lib$3.isExpressionStatement(lastStatement)
+          ? lib$3.returnStatement(lastStatement.expression)
+          : lastStatement
+      );
       return statements;
     }
 

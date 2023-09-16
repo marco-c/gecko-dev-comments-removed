@@ -47,7 +47,16 @@ function addReturnNode(ast) {
   if (t.isAwaitExpression(lastStatement.expression)) {
     lastStatement.expression = lastStatement.expression.argument;
   }
-  statements.push(t.returnStatement(lastStatement.expression));
+
+  
+  
+  
+  
+  statements.push(
+    t.isExpressionStatement(lastStatement)
+      ? t.returnStatement(lastStatement.expression)
+      : lastStatement
+  );
   return statements;
 }
 
