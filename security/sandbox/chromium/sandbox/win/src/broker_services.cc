@@ -666,7 +666,7 @@ ResultCode BrokerServicesBase::SpawnTarget(const wchar_t* exe_path,
     if (result != SBOX_ALL_OK) {
       
       
-      SpawnCleanup(target);
+      target->Terminate();
       return result;
     }
   }
