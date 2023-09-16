@@ -493,6 +493,10 @@ void Fprinter::finish() {
 }
 
 bool Fprinter::put(const char* s, size_t len) {
+  if (hadOutOfMemory()) {
+    return true;
+  }
+
   MOZ_ASSERT(file_);
   int i = fwrite(s, 1, len, file_);
   if (size_t(i) != len) {
@@ -539,6 +543,10 @@ void LSprinter::clear() {
 }
 
 bool LSprinter::put(const char* s, size_t len) {
+  if (hadOutOfMemory()) {
+    return true;
+  }
+
   
   size_t existingSpaceWrite = 0;
   size_t overflow = len;
