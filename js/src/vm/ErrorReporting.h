@@ -12,6 +12,7 @@
 #include "jsfriendapi.h"  
 
 #include "js/CharacterEncoding.h"  
+#include "js/ColumnNumber.h"       
 #include "js/ErrorReport.h"        
 #include "js/UniquePtr.h"          
 #include "js/Utility.h"            
@@ -42,7 +43,7 @@ struct ErrorMetadata {
   uint32_t lineNumber;
 
   
-  uint32_t columnNumber;
+  JS::ColumnNumberZeroOrigin columnNumber;
 
   
   

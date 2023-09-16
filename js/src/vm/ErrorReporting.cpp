@@ -14,6 +14,7 @@
 
 #include "frontend/FrontendContext.h"  
 #include "js/CharacterEncoding.h"      
+#include "js/ColumnNumber.h"           
 #include "js/ErrorReport.h"            
 #include "js/friend/ErrorMessages.h"   
 #include "js/Printf.h"                 
@@ -68,7 +69,7 @@ bool js::ReportCompileWarning(FrontendContext* fc, ErrorMetadata&& metadata,
 
   err.filename = JS::ConstUTF8CharsZ(metadata.filename);
   err.lineno = metadata.lineNumber;
-  err.column = JSErrorBase::fromZeroOriginToOneOrigin(metadata.columnNumber);
+  err.column = metadata.columnNumber.oneOriginValue();
   err.isMuted = metadata.isMuted;
 
   if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
@@ -97,7 +98,7 @@ static void ReportCompileErrorImpl(FrontendContext* fc,
 
   err.filename = JS::ConstUTF8CharsZ(metadata.filename);
   err.lineno = metadata.lineNumber;
-  err.column = JSErrorBase::fromZeroOriginToOneOrigin(metadata.columnNumber);
+  err.column = metadata.columnNumber.oneOriginValue();
   err.isMuted = metadata.isMuted;
 
   if (UniqueTwoByteChars lineOfContext = std::move(metadata.lineOfContext)) {
