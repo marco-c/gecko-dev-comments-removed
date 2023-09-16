@@ -274,6 +274,11 @@ interface nsIURI : nsISupports
     
 
 
+    readonly attribute boolean hasQuery;
+
+    
+
+
 
 
 

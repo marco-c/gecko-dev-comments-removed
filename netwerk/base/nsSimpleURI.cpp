@@ -12,7 +12,6 @@
 #include "nscore.h"
 #include "nsCRT.h"
 #include "nsString.h"
-#include "plstr.h"
 #include "nsURLHelper.h"
 #include "nsNetCID.h"
 #include "nsIObjectInputStream.h"
@@ -703,6 +702,12 @@ nsSimpleURI::GetQuery(nsACString& aQuery) {
   } else {
     aQuery = mQuery;
   }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsSimpleURI::GetHasQuery(bool* result) {
+  *result = mIsQueryValid;
   return NS_OK;
 }
 
