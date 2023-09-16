@@ -21,6 +21,7 @@
 #include "frontend/ScriptIndex.h"       
 #include "frontend/TypedIndex.h"        
 #include "js/AllocPolicy.h"             
+#include "js/ColumnNumber.h"            
 #include "js/RefCounted.h"              
 #include "js/RegExpFlags.h"             
 #include "js/RootingAPI.h"              
@@ -612,10 +613,10 @@ class StencilModuleEntry {
   uint32_t lineno = 0;
 
   
-  uint32_t column = 0;
+  JS::ColumnNumberZeroOrigin column;
 
  private:
-  StencilModuleEntry(uint32_t lineno, uint32_t column)
+  StencilModuleEntry(uint32_t lineno, JS::ColumnNumberZeroOrigin column)
       : lineno(lineno), column(column) {}
 
  public:
@@ -659,7 +660,8 @@ class StencilModuleEntry {
   }
 
   static StencilModuleEntry requestedModule(
-      MaybeModuleRequestIndex moduleRequest, uint32_t lineno, uint32_t column) {
+      MaybeModuleRequestIndex moduleRequest, uint32_t lineno,
+      JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = moduleRequest;
@@ -669,7 +671,8 @@ class StencilModuleEntry {
   static StencilModuleEntry importEntry(MaybeModuleRequestIndex moduleRequest,
                                         TaggedParserAtomIndex localName,
                                         TaggedParserAtomIndex importName,
-                                        uint32_t lineno, uint32_t column) {
+                                        uint32_t lineno,
+                                        JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     MOZ_ASSERT(localName && importName);
     StencilModuleEntry entry(lineno, column);
@@ -681,7 +684,7 @@ class StencilModuleEntry {
 
   static StencilModuleEntry importNamespaceEntry(
       MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex localName,
-      uint32_t lineno, uint32_t column) {
+      uint32_t lineno, JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     MOZ_ASSERT(localName);
     StencilModuleEntry entry(lineno, column);
@@ -692,7 +695,8 @@ class StencilModuleEntry {
 
   static StencilModuleEntry exportAsEntry(TaggedParserAtomIndex localName,
                                           TaggedParserAtomIndex exportName,
-                                          uint32_t lineno, uint32_t column) {
+                                          uint32_t lineno,
+                                          JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(localName && exportName);
     StencilModuleEntry entry(lineno, column);
     entry.localName = localName;
@@ -702,7 +706,8 @@ class StencilModuleEntry {
 
   static StencilModuleEntry exportFromEntry(
       MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex importName,
-      TaggedParserAtomIndex exportName, uint32_t lineno, uint32_t column) {
+      TaggedParserAtomIndex exportName, uint32_t lineno,
+      JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     MOZ_ASSERT(importName && exportName);
     StencilModuleEntry entry(lineno, column);
@@ -714,7 +719,7 @@ class StencilModuleEntry {
 
   static StencilModuleEntry exportNamespaceFromEntry(
       MaybeModuleRequestIndex moduleRequest, TaggedParserAtomIndex exportName,
-      uint32_t lineno, uint32_t column) {
+      uint32_t lineno, JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     MOZ_ASSERT(exportName);
     StencilModuleEntry entry(lineno, column);
@@ -724,7 +729,8 @@ class StencilModuleEntry {
   }
 
   static StencilModuleEntry exportBatchFromEntry(
-      MaybeModuleRequestIndex moduleRequest, uint32_t lineno, uint32_t column) {
+      MaybeModuleRequestIndex moduleRequest, uint32_t lineno,
+      JS::ColumnNumberZeroOrigin column) {
     MOZ_ASSERT(moduleRequest.isSome());
     StencilModuleEntry entry(lineno, column);
     entry.moduleRequest = MaybeModuleRequestIndex(moduleRequest);

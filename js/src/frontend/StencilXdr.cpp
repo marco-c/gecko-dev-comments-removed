@@ -18,6 +18,7 @@
 #include "ds/LifoAlloc.h"                 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ScriptIndex.h"  
+#include "js/ColumnNumber.h"       
 #include "vm/Scope.h"              
 #include "vm/StencilEnums.h"       
 
@@ -601,7 +602,7 @@ template <XDRMode mode>
   MOZ_TRY(xdr->codeUint32(stencil.importName.rawDataRef()));
   MOZ_TRY(xdr->codeUint32(stencil.exportName.rawDataRef()));
   MOZ_TRY(xdr->codeUint32(&stencil.lineno));
-  MOZ_TRY(xdr->codeUint32(&stencil.column));
+  MOZ_TRY(xdr->codeUint32(stencil.column.addressOfValueForTranscode()));
 
   return Ok();
 }
