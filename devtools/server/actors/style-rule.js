@@ -122,18 +122,26 @@ class StyleRuleActor extends Actor {
   
   
   get canSetRuleText() {
-    return (
-      this.type === ELEMENT_STYLE ||
-      (this._parentSheet &&
-        
-        
-        
-        !InspectorUtils.hasRulesModifiedByCSSOM(this._parentSheet) &&
-        
-        
-        
-        this._parentSheet.href !== "about:PreferenceStyleSheet")
-    );
+    if (this.type === ELEMENT_STYLE) {
+      
+      return true;
+    }
+    if (!this._parentSheet) {
+      return false;
+    }
+    if (InspectorUtils.hasRulesModifiedByCSSOM(this._parentSheet)) {
+      
+      
+      
+      return false;
+    }
+    if (this._parentSheet.href === "about:PreferenceStyleSheet") {
+      
+      
+      
+      return false;
+    }
+    return true;
   }
 
   
