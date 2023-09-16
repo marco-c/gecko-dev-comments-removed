@@ -344,6 +344,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     mOverrideConstraintRect = mozilla::CSSIntRect::ToAppUnits(aRect);
   }
 
+  bool IsConstrainedByLayout() const { return mConstrainedByLayout; }
+
   struct Rects {
     
     
@@ -359,6 +361,7 @@ class nsMenuPopupFrame final : public nsBlockFrame {
     nscoord mAlignmentOffset = 0;
     bool mHFlip = false;
     bool mVFlip = false;
+    bool mConstrainedByLayout = false;
     
     mozilla::LayoutDeviceIntPoint mClientOffset;
     nsPoint mViewPoint;
@@ -535,7 +538,6 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   int GetPopupAlignment() const { return mPopupAlignment; }
   int GetPopupAnchor() const { return mPopupAnchor; }
   FlipType GetFlipType() const { return mFlip; }
-  bool IsFlippedByLayout() const { return mHFlip || mVFlip; }
 
   void WidgetPositionOrSizeDidChange();
 
@@ -610,6 +612,8 @@ class nsMenuPopupFrame final : public nsBlockFrame {
   
   bool mHFlip = false;
   bool mVFlip = false;
+  
+  bool mConstrainedByLayout = false;
 
   
   
