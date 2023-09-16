@@ -15,7 +15,6 @@ add_task(async function test_setup() {
 
 
 
-
 add_task(async function test_offline_warning() {
   await BrowserTestUtils.withNewTab(
     {
@@ -26,16 +25,7 @@ add_task(async function test_offline_warning() {
       let shoppingContainer = await getAnalysisDetails(browser, null);
 
       ok(shoppingContainer.isOffline, "Offline status detected");
-      ok(
-        shoppingContainer.shoppingMessageBarEl,
-        "Got shopping-message-bar element"
-      );
-      is(
-        shoppingContainer.shoppingMessageBarType,
-        "offline",
-        "shopping-message-bar type should be correct"
-      );
-
+      ok(shoppingContainer.loadingEl, "Render loading state");
       verifyAnalysisDetailsHidden(shoppingContainer);
       verifyFooterHidden(shoppingContainer);
     }
