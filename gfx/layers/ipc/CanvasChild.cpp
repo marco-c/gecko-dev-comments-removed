@@ -20,6 +20,8 @@
 namespace mozilla {
 namespace layers {
 
+ bool CanvasChild::mInForeground = true;
+
 class RingBufferWriterServices final
     : public CanvasEventRingBuffer::WriterServices {
  public:
@@ -209,6 +211,9 @@ void CanvasChild::OnTextureForwarded() {
     return;
   }
 
+  
+  mInForeground = true;
+
   if (mHasOutstandingWriteLock) {
     mRecorder->RecordEvent(RecordedCanvasFlush());
     if (!mRecorder->WaitForCheckpoint(mLastWriteLockCheckpoint)) {
@@ -233,6 +238,17 @@ void CanvasChild::EnsureBeginTransaction() {
   }
 
   if (!mIsInTransaction) {
+    
+    
+    if (mInForeground != mRecorder->UsingLargeStream()) {
+      SharedMemoryBasic::Handle handle;
+      if (!mRecorder->SwitchBuffer(OtherPid(), &handle) ||
+          !SendNewBuffer(std::move(handle))) {
+        mRecorder = nullptr;
+        return;
+      }
+    }
+
     mRecorder->RecordEvent(RecordedCanvasBeginTransaction());
     mIsInTransaction = true;
   }
@@ -247,10 +263,15 @@ void CanvasChild::EndTransaction() {
   if (mIsInTransaction) {
     mRecorder->RecordEvent(RecordedCanvasEndTransaction());
     mIsInTransaction = false;
-    mLastNonEmptyTransaction = TimeStamp::NowLoRes();
   }
 
   ++mTransactionsSinceGetDataSurface;
+}
+
+
+void CanvasChild::ClearCachedResources() {
+  
+  mInForeground = false;
 }
 
 bool CanvasChild::ShouldBeCleanedUp() const {
@@ -260,14 +281,7 @@ bool CanvasChild::ShouldBeCleanedUp() const {
   }
 
   
-  if (mRecorder && !mRecorder->hasOneRef()) {
-    return false;
-  }
-
-  static const TimeDuration kCleanUpCanvasThreshold =
-      TimeDuration::FromSeconds(10);
-  return TimeStamp::NowLoRes() - mLastNonEmptyTransaction >
-         kCleanUpCanvasThreshold;
+  return !mRecorder || mRecorder->hasOneRef();
 }
 
 already_AddRefed<gfx::DrawTarget> CanvasChild::CreateDrawTarget(

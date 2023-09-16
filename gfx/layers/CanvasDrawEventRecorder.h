@@ -14,6 +14,9 @@
 namespace mozilla {
 namespace layers {
 
+static const uint8_t kCheckpointEventType = -1;
+static const uint8_t kDropBufferEventType = -2;
+
 class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
  public:
   
@@ -60,6 +63,14 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
+  bool InitBuffer(base::ProcessId aOtherPid,
+                  ipc::SharedMemoryBasic::Handle* aReadHandle);
+
+  
+
+
+
+
 
 
 
@@ -87,9 +98,19 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
                   CrossProcessSemaphoreHandle aWriterSem,
                   UniquePtr<ReaderServices> aReaderServices);
 
+  
+
+
+
+
+
+  bool SetNewBuffer(ipc::SharedMemoryBasic::Handle aReadHandle);
+
+  bool IsValid() const { return mSharedMemory; }
+
   bool good() const final { return mGood; }
 
-  bool WriterFailed() const { return mWrite->state == State::Failed; }
+  bool WriterFailed() const { return mWrite && mWrite->state == State::Failed; }
 
   void SetIsBad() final {
     mGood = false;
@@ -145,6 +166,12 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
   
 
 
+  bool SwitchBuffer(base::ProcessId aOtherPid,
+                    ipc::SharedMemoryBasic::Handle* aHandle);
+
+  
+
+
 
 
 
@@ -161,6 +188,8 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
   void ReturnRead(char* aOut, size_t aSize);
+
+  bool UsingLargeStream() { return mLargeStream; }
 
  protected:
   bool WaitForAndRecalculateAvailableSpace() final;
@@ -220,6 +249,8 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
   uint32_t WaitForBytesToRead();
 
+  uint32_t StreamSize();
+
   RefPtr<ipc::SharedMemoryBasic> mSharedMemory;
   UniquePtr<CrossProcessSemaphore> mReaderSemaphore;
   UniquePtr<CrossProcessSemaphore> mWriterSemaphore;
@@ -230,6 +261,7 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
   WriteFooter* mWrite = nullptr;
   ReadFooter* mRead = nullptr;
   bool mGood = false;
+  bool mLargeStream = true;
 };
 
 class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate {
@@ -273,6 +305,13 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate {
 
   bool WaitForCheckpoint(uint32_t aCheckpoint) {
     return mOutputStream.WaitForCheckpoint(aCheckpoint);
+  }
+
+  bool UsingLargeStream() { return mOutputStream.UsingLargeStream(); }
+
+  bool SwitchBuffer(base::ProcessId aOtherPid,
+                    ipc::SharedMemoryBasic::Handle* aHandle) {
+    return mOutputStream.SwitchBuffer(aOtherPid, aHandle);
   }
 
  private:

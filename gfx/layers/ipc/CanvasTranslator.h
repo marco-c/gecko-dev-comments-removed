@@ -65,6 +65,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   
 
 
+  ipc::IPCResult RecvNewBuffer(ipc::SharedMemoryBasic::Handle&& aReadHandle);
+
+  
+
+
 
   ipc::IPCResult RecvResumeTranslation();
 

@@ -33,6 +33,11 @@ parent:
   
 
 
+  async NewBuffer(Handle aReadHandle);
+
+  
+
+
 
   async ResumeTranslation();
 

@@ -105,6 +105,11 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
   void EndCanvasTransaction();
 
   
+
+
+  void ClearCachedResources();
+
+  
   
   
   
