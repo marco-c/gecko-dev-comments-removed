@@ -173,17 +173,17 @@ class FontList {
 
   uint32_t NumFamilies() { return GetHeader().mFamilyCount; }
   Family* Families() {
-    return static_cast<Family*>(GetHeader().mFamilies.ToPtr(this));
+    return GetHeader().mFamilies.ToArray<Family>(this, NumFamilies());
   }
 
   uint32_t NumAliases() { return GetHeader().mAliasCount; }
   Family* AliasFamilies() {
-    return static_cast<Family*>(GetHeader().mAliases.ToPtr(this));
+    return GetHeader().mAliases.ToArray<Family>(this, NumAliases());
   }
 
   uint32_t NumLocalFaces() { return GetHeader().mLocalFaceCount; }
   LocalFaceRec* LocalFaces() {
-    return static_cast<LocalFaceRec*>(GetHeader().mLocalFaces.ToPtr(this));
+    return GetHeader().mLocalFaces.ToArray<LocalFaceRec>(this, NumLocalFaces());
   }
 
   
@@ -214,9 +214,10 @@ class FontList {
 
 
 
+
   struct BlockHeader {
-    uint32_t mAllocated;  
-    uint32_t mBlockSize;  
+    std::atomic<uint32_t> mAllocated;  
+    uint32_t mBlockSize;               
   };
 
   
@@ -312,13 +313,13 @@ class FontList {
 
     
     
-    
-    
-    
-    
-    uint32_t& Allocated() const {
-      MOZ_ASSERT(XRE_IsParentProcess());
+    uint32_t Allocated() const {
       return static_cast<BlockHeader*>(Memory())->mAllocated;
+    }
+
+    void StoreAllocated(uint32_t aSize) {
+      MOZ_ASSERT(XRE_IsParentProcess());
+      static_cast<BlockHeader*>(Memory())->mAllocated.store(aSize);
     }
 
     
@@ -336,7 +337,7 @@ class FontList {
   Header& GetHeader() {
     
     MOZ_ASSERT(mBlocks.Length() > 0);
-    return *static_cast<Header*>(Pointer(0, 0).ToPtr(this));
+    return *static_cast<Header*>(mBlocks[0]->Memory());
   }
 
   
