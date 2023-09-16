@@ -231,8 +231,7 @@ bool testPrepareForInstantiate() {
   CHECK(compileStorage.getInput().atomCache.empty());
 
   JS::InstantiationStorage storage;
-  CHECK(JS::PrepareForInstantiate(fc, compileStorage, *stencil, storage));
-  CHECK(compileStorage.getInput().atomCache.size() == 1);  
+  CHECK(JS::PrepareForInstantiate(fc, *stencil, storage));
   CHECK(storage.isValid());
   
   
