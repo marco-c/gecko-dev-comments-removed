@@ -482,6 +482,19 @@ var FullZoom = {
     return result;
   },
 
+  
+
+
+
+
+  resetFromURLBar(event) {
+    if (event.button > 0) {
+      return;
+    }
+    this.reset();
+    this.resetScalingZoom();
+  },
+
   resetScalingZoom: function FullZoom_resetScaling(
     browser = gBrowser.selectedBrowser
   ) {
