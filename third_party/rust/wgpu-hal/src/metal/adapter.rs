@@ -27,6 +27,33 @@ impl crate::Adapter<super::Api> for super::Adapter {
             .device
             .lock()
             .new_command_queue_with_max_command_buffer_count(MAX_COMMAND_BUFFERS);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let timestamp_period = if self.shared.device.lock().name().starts_with("Intel") {
+            83.333
+        } else {
+            
+            1.0
+        };
+
         Ok(crate::OpenDevice {
             device: super::Device {
                 shared: Arc::clone(&self.shared),
@@ -34,6 +61,7 @@ impl crate::Adapter<super::Api> for super::Adapter {
             },
             queue: super::Queue {
                 raw: Arc::new(Mutex::new(queue)),
+                timestamp_period,
             },
         })
     }
@@ -745,6 +773,13 @@ impl super::PrivateCapabilities {
             } else {
                 None
             },
+            support_timestamp_query: version.at_least((11, 0), (14, 0), os_is_mac)
+                && device
+                    .supports_counter_sampling(metal::MTLCounterSamplingPoint::AtStageBoundary),
+            support_timestamp_query_in_passes: version.at_least((11, 0), (14, 0), os_is_mac)
+                && device.supports_counter_sampling(metal::MTLCounterSamplingPoint::AtDrawBoundary)
+                && device
+                    .supports_counter_sampling(metal::MTLCounterSamplingPoint::AtDispatchBoundary),
         }
     }
 
@@ -772,6 +807,12 @@ impl super::PrivateCapabilities {
             | F::DEPTH32FLOAT_STENCIL8
             | F::MULTI_DRAW_INDIRECT;
 
+        features.set(F::TIMESTAMP_QUERY, self.support_timestamp_query);
+        
+        
+        
+        
+        
         features.set(F::TEXTURE_COMPRESSION_ASTC, self.format_astc);
         features.set(F::TEXTURE_COMPRESSION_ASTC_HDR, self.format_astc_hdr);
         features.set(F::TEXTURE_COMPRESSION_BC, self.format_bc);

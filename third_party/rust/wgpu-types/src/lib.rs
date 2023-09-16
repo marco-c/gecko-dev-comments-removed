@@ -253,9 +253,14 @@ bitflags::bitflags! {
         /// This is a web and native feature.
         const DEPTH_CLIP_CONTROL = 1 << 0;
         /// Enables use of Timestamp Queries. These queries tell the current gpu timestamp when
-        /// all work before the query is finished. Call [`CommandEncoder::write_timestamp`],
-        /// [`RenderPassEncoder::write_timestamp`], or [`ComputePassEncoder::write_timestamp`] to
-        /// write out a timestamp.
+        /// all work before the query is finished.
+        ///
+        /// This feature allows the use of
+        /// - [`CommandEncoder::write_timestamp`]
+        /// - [`RenderPassDescriptor::timestamp_writes`]
+        /// - [`ComputePassDescriptor::timestamp_writes`]
+        /// to write out timestamps.
+        /// For timestamps within passes refer to [`Features::TIMESTAMP_QUERY_INSIDE_PASSES`]
         ///
         /// They must be resolved using [`CommandEncoder::resolve_query_sets`] into a buffer,
         /// then the result must be multiplied by the timestamp period [`Queue::get_timestamp_period`]
@@ -265,8 +270,7 @@ bitflags::bitflags! {
         /// Supported Platforms:
         /// - Vulkan
         /// - DX12
-        ///
-        /// This is currently unimplemented on Metal.
+        /// - Metal - TODO: Not yet supported on command encoder.
         ///
         /// This is a web and native feature.
         const TIMESTAMP_QUERY = 1 << 1;
@@ -447,12 +451,17 @@ bitflags::bitflags! {
         ///
         /// Implies [`Features::TIMESTAMP_QUERY`] is supported.
         ///
+        /// Additionally allows for timestamp queries to be used inside render & compute passes using:
+        /// - [`RenderPassEncoder::write_timestamp`]
+        /// - [`ComputePassEncoder::write_timestamp`]
+        ///
         /// Supported platforms:
         /// - Vulkan
         /// - DX12
         ///
         /// This is currently unimplemented on Metal.
         /// When implemented, it will be supported on Metal on AMD and Intel GPUs, but not Apple GPUs.
+        /// (This is a common limitation of tile-based rasterization GPUs)
         ///
         /// This is a native only feature with a [proposal](https://github.com/gpuweb/gpuweb/blob/0008bd30da2366af88180b511a5d0d0c1dffbc36/proposals/timestamp-query-inside-passes.md) for the web.
         const TIMESTAMP_QUERY_INSIDE_PASSES = 1 << 33;
@@ -874,6 +883,7 @@ pub struct Limits {
     
     
     
+    
     pub max_buffer_size: u64,
     
     
@@ -890,6 +900,7 @@ pub struct Limits {
     
     
     pub min_storage_buffer_offset_alignment: u32,
+    
     
     
     pub max_inter_stage_shader_components: u32,
@@ -942,7 +953,7 @@ impl Default for Limits {
             max_uniform_buffer_binding_size: 64 << 10,
             max_storage_buffer_binding_size: 128 << 20,
             max_vertex_buffers: 8,
-            max_buffer_size: 1 << 28,
+            max_buffer_size: 256 << 20,
             max_vertex_attributes: 16,
             max_vertex_buffer_array_stride: 2048,
             min_uniform_buffer_offset_alignment: 256,
@@ -960,6 +971,42 @@ impl Default for Limits {
 }
 
 impl Limits {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn downlevel_defaults() -> Self {
         Self {
@@ -991,10 +1038,47 @@ impl Limits {
             max_compute_workgroup_size_y: 256,
             max_compute_workgroup_size_z: 64,
             max_compute_workgroups_per_dimension: 65535,
-            max_buffer_size: 1 << 28,
+            max_buffer_size: 256 << 20,
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     pub fn downlevel_webgl2_defaults() -> Self {
         Self {

@@ -96,6 +96,10 @@ pub struct DebugUtilsMessengerUserData {
 
     
     validation_layer_spec_version: u32,
+
+    
+    
+    has_obs_layer: bool,
 }
 
 pub struct InstanceShared {
@@ -400,6 +404,10 @@ pub struct CommandEncoder {
     
     
     rpass_debug_marker_active: bool,
+
+    
+    
+    end_of_pass_timer_query: Option<(vk::QueryPool, u32)>,
 }
 
 impl fmt::Debug for CommandEncoder {

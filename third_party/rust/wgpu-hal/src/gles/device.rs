@@ -527,6 +527,10 @@ impl crate::Device<super::Api> for super::Device {
                     map_flags |= glow::MAP_COHERENT_BIT;
                 }
             }
+            
+            if desc.usage.intersects(crate::BufferUses::QUERY_RESOLVE) {
+                map_flags |= glow::DYNAMIC_STORAGE_BIT;
+            }
             unsafe { gl.buffer_storage(target, raw_size, None, map_flags) };
         } else {
             assert!(!is_coherent);
@@ -1238,7 +1242,7 @@ impl crate::Device<super::Api> for super::Device {
         Ok(super::QuerySet {
             queries: queries.into_boxed_slice(),
             target: match desc.ty {
-                wgt::QueryType::Occlusion => glow::ANY_SAMPLES_PASSED,
+                wgt::QueryType::Occlusion => glow::ANY_SAMPLES_PASSED_CONSERVATIVE,
                 _ => unimplemented!(),
             },
         })
