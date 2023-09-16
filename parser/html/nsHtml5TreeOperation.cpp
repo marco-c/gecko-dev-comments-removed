@@ -416,18 +416,9 @@ void nsHtml5TreeOperation::SetHTMLElementAttributes(
       nsAtom* localName = aAttributes->getLocalNameNoBoundsCheck(i);
       nsAtom* prefix = aAttributes->getPrefixNoBoundsCheck(i);
       int32_t nsuri = aAttributes->getURINoBoundsCheck(i);
-
       nsString value;  
       val.ToString(value);
-      if (nsGkAtoms::a == aName && nsGkAtoms::name == localName) {
-        
-        
-        NS_ConvertUTF16toUTF8 cname(value);
-        NS_ConvertUTF8toUTF16 uv(nsUnescape(cname.BeginWriting()));
-        aElement->SetAttr(nsuri, localName, prefix, uv, false);
-      } else {
-        aElement->SetAttr(nsuri, localName, prefix, value, false);
-      }
+      aElement->SetAttr(nsuri, localName, prefix, value, false);
     }
   }
 }
