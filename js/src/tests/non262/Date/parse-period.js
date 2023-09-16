@@ -3,30 +3,19 @@
 
 
 
-
 const tests = [
   "Aug. 15, 2015",
   "Aug.. 15, 2015",
-  "Aug.15.2015",
-  "15.Aug.2015",
   "Aug 15 2015 12:00 am.",
   "Sat. Aug 15 2015",
-  "2015.08.15",
-  
-  "2015./08/15 00:00:00",
-  "2015/08./15 00:00:00",
-];
+]
 
 for (const test of tests) {
-  assertEq(new Date(test).getTime(),
-           new Date(2015, Month.August, 15).getTime(),
-           `"${test}" should be accepted.`);
+  assertEq(Date.parse("Aug 15, 2015"), Date.parse(test));
 }
 
-inTimeZone("Etc/GMT-1", () => {
-  let dt = new Date("Aug 15 2015 GMT.");
-  assertEq(dt.getTime(), new Date(2015, Month.August, 15, 1).getTime());
-});
+assertEq(Date.parse("Aug 15 2015 GMT."),
+         Date.parse("Aug 15 2015 GMT"));
 
 if (typeof reportCompare === "function")
   reportCompare(true, true);
