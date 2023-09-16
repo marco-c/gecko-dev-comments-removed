@@ -32,6 +32,24 @@ GetObjectFlagsForNewProperty(const JSClass* clasp, ObjectFlags flags, jsid id,
     flags.setFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto);
   }
 
+  
+  
+  if (!propFlags.configurable()) {
+    MOZ_ASSERT(clasp->isNativeObject());
+    
+    
+    
+    
+    if (propFlags.isDataProperty() && !propFlags.writable()) {
+      flags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
+    } else if (propFlags.hasGetter() != propFlags.hasSetter()) {
+      
+      
+      
+      flags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
+    }
+  }
+
   if (propFlags.enumerable()) {
     flags.setFlag(ObjectFlag::HasEnumerable);
   }
