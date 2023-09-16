@@ -32,6 +32,7 @@ const known_scripts = {
 
     
     "resource:///actors/AboutReaderChild.sys.mjs",
+    "resource:///actors/InteractionsChild.sys.mjs",
     "resource:///actors/LinkHandlerChild.sys.mjs",
     "resource:///actors/SearchSERPTelemetryChild.sys.mjs",
     "resource://gre/actors/ContentMetaChild.sys.mjs",
@@ -59,11 +60,6 @@ if (!Services.appinfo.sessionHistoryInParent) {
   known_scripts.modules.add(
     "resource:///modules/sessionstore/ContentSessionStore.sys.mjs"
   );
-}
-
-if (AppConstants.NIGHTLY_BUILD) {
-  
-  known_scripts.modules.add("resource:///actors/InteractionsChild.sys.mjs");
 }
 
 
