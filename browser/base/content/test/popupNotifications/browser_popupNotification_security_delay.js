@@ -231,8 +231,8 @@ add_task(async function test_notificationReshowTabSwitch() {
     info(
       "Keep the tab open until the security delay for the original notification show has expired."
     );
-    
     await new Promise(resolve =>
+      
       setTimeout(resolve, TEST_SECURITY_DELAY + 500)
     );
 
