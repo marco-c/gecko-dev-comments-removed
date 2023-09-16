@@ -13,6 +13,7 @@
 #define BROTLI_DEC_DECODE_H_
 
 #include <brotli/port.h>
+#include <brotli/shared_dictionary.h>
 #include <brotli/types.h>
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -85,8 +86,9 @@ typedef enum {
   BROTLI_ERROR_CODE(_ERROR_FORMAT_, PADDING_2, -15) SEPARATOR              \
   BROTLI_ERROR_CODE(_ERROR_FORMAT_, DISTANCE, -16) SEPARATOR               \
                                                                            \
-  /* -17..-18 codes are reserved */                                        \
+  /* -17 code is reserved */                                               \
                                                                            \
+  BROTLI_ERROR_CODE(_ERROR_, COMPOUND_DICTIONARY, -18) SEPARATOR           \
   BROTLI_ERROR_CODE(_ERROR_, DICTIONARY_NOT_SET, -19) SEPARATOR            \
   BROTLI_ERROR_CODE(_ERROR_, INVALID_ARGUMENTS, -20) SEPARATOR             \
                                                                            \
@@ -153,6 +155,28 @@ typedef enum BrotliDecoderParameter {
 
 BROTLI_DEC_API BROTLI_BOOL BrotliDecoderSetParameter(
     BrotliDecoderState* state, BrotliDecoderParameter param, uint32_t value);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BROTLI_DEC_API BROTLI_BOOL BrotliDecoderAttachDictionary(
+    BrotliDecoderState* state, BrotliSharedDictionaryType type,
+    size_t data_size, const uint8_t data[BROTLI_ARRAY_PARAM(data_size)]);
 
 
 
@@ -336,6 +360,47 @@ BROTLI_DEC_API const char* BrotliDecoderErrorString(BrotliDecoderErrorCode c);
 
 
 BROTLI_DEC_API uint32_t BrotliDecoderVersion(void);
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*brotli_decoder_metadata_start_func)(void* opaque, size_t size);
+
+
+
+
+
+
+
+
+
+
+
+
+
+typedef void (*brotli_decoder_metadata_chunk_func)(void* opaque,
+                                                   const uint8_t* data,
+                                                   size_t size);
+
+
+
+
+
+
+
+
+
+BROTLI_DEC_API void BrotliDecoderSetMetadataCallbacks(
+    BrotliDecoderState* state,
+    brotli_decoder_metadata_start_func start_func,
+    brotli_decoder_metadata_chunk_func chunk_func, void* opaque);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 } 

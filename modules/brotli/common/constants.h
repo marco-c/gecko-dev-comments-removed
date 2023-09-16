@@ -12,9 +12,10 @@
 #ifndef BROTLI_COMMON_CONSTANTS_H_
 #define BROTLI_COMMON_CONSTANTS_H_
 
-#include "./platform.h"
 #include <brotli/port.h>
 #include <brotli/types.h>
+
+#include "platform.h"
 
 
 #define BROTLI_CONTEXT_MAP_MAX_RLE 16

@@ -4,7 +4,7 @@
 
 
 
-#include "./constants.h"
+#include "constants.h"
 
 const BrotliPrefixCodeRange
     _kBrotliPrefixCodeRanges[BROTLI_NUM_BLOCK_LEN_SYMBOLS] = {

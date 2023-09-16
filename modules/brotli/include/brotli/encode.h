@@ -13,6 +13,7 @@
 #define BROTLI_ENC_ENCODE_H_
 
 #include <brotli/port.h>
+#include <brotli/shared_dictionary.h>
 #include <brotli/types.h>
 
 #if defined(__cplusplus) || defined(c_plusplus)
@@ -271,6 +272,51 @@ BROTLI_ENC_API void BrotliEncoderDestroyInstance(BrotliEncoderState* state);
 
 
 
+typedef struct BrotliEncoderPreparedDictionaryStruct
+    BrotliEncoderPreparedDictionary;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BROTLI_ENC_API BrotliEncoderPreparedDictionary*
+BrotliEncoderPrepareDictionary(BrotliSharedDictionaryType type,
+    size_t data_size, const uint8_t data[BROTLI_ARRAY_PARAM(data_size)],
+    int quality,
+    brotli_alloc_func alloc_func, brotli_free_func free_func, void* opaque);
+
+BROTLI_ENC_API void BrotliEncoderDestroyPreparedDictionary(
+    BrotliEncoderPreparedDictionary* dictionary);
+
+
+
+
+
+
+
+
+
+
+
+BROTLI_ENC_API BROTLI_BOOL BrotliEncoderAttachPreparedDictionary(
+    BrotliEncoderState* state,
+    const BrotliEncoderPreparedDictionary* dictionary);
+
+
+
 
 
 
@@ -433,6 +479,13 @@ BROTLI_ENC_API BROTLI_BOOL BrotliEncoderHasMoreOutput(
 BROTLI_ENC_API const uint8_t* BrotliEncoderTakeOutput(
     BrotliEncoderState* state, size_t* size);
 
+
+
+BROTLI_ENC_EXTRA_API size_t BrotliEncoderEstimatePeakMemoryUsage(
+    int quality, int lgwin, size_t input_size);
+
+BROTLI_ENC_EXTRA_API size_t BrotliEncoderGetPreparedDictionarySize(
+    const BrotliEncoderPreparedDictionary* dictionary);
 
 
 
