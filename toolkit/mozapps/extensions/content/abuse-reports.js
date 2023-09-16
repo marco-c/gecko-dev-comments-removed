@@ -41,7 +41,7 @@ const ABUSE_REPORT_MESSAGE_BARS = {
   
   ERROR_ABORTED_SUBMIT: {
     id: "aborted",
-    type: "generic",
+    type: "info",
     dismissable: true,
   },
   
@@ -145,14 +145,8 @@ function createReportMessageBar(
     throw new Error(`message-bar definition not found: ${definitionId}`);
   }
   const { id, dismissable, actions, type } = barInfo;
-  const messageEl = document.createElement("span");
 
-  
-  
-  
-  const addonNameEl = document.createElement("span");
-  addonNameEl.setAttribute("data-l10n-name", "addon-name");
-  messageEl.append(addonNameEl);
+  const messagebar = document.createElement("moz-message-bar");
 
   
   
@@ -160,31 +154,29 @@ function createReportMessageBar(
     addonType === "sitepermission-deprecated" ? "sitepermission" : addonType;
 
   document.l10n.setAttributes(
-    messageEl,
-    getMessageL10n(barInfo.addonTypeSuffix ? `${id}-${mappingAddonType}` : id),
+    messagebar,
+    getMessageL10n(
+      barInfo.addonTypeSuffix ? `${id}-${mappingAddonType}2` : `${id}2`
+    ),
     { "addon-name": addonName || addonId }
   );
+  messagebar.setAttribute("data-l10n-attrs", "message");
 
-  const barActions = actions
-    ? actions.map(action => {
-        
-        
-        const actionId = barInfo.actionAddonTypeSuffix
-          ? `${action}-${mappingAddonType}`
-          : action;
-        const buttonEl = document.createElement("button");
-        buttonEl.addEventListener("click", () => onaction && onaction(action));
-        document.l10n.setAttributes(buttonEl, getActionL10n(actionId));
-        return buttonEl;
-      })
-    : [];
+  actions?.forEach(action => {
+    
+    
+    const actionId = barInfo.actionAddonTypeSuffix
+      ? `${action}-${mappingAddonType}`
+      : action;
+    const buttonEl = document.createElement("button");
+    buttonEl.addEventListener("click", () => onaction && onaction(action));
+    document.l10n.setAttributes(buttonEl, getActionL10n(actionId));
+    buttonEl.setAttribute("slot", "actions");
+    messagebar.appendChild(buttonEl);
+  });
 
-  const messagebar = document.createElement("message-bar");
-  messagebar.setAttribute("type", type || "generic");
-  if (dismissable) {
-    messagebar.setAttribute("dismissable", "");
-  }
-  messagebar.append(messageEl, ...barActions);
+  messagebar.setAttribute("type", type || "info");
+  messagebar.dismissable = dismissable;
   messagebar.addEventListener("message-bar:close", onclose, { once: true });
 
   document.getElementById("abuse-reports-messages").append(messagebar);
