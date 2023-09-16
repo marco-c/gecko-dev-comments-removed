@@ -17,10 +17,6 @@
 #include "nsCategoryCache.h"
 
 
-
-#define DATABASE_SCHEMA_VERSION 75
-
-
 #define TOPIC_PLACES_INIT_COMPLETE "places-init-complete"
 
 
@@ -296,15 +292,8 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   
 
 
-  nsresult MigrateV44Up();
-  nsresult MigrateV45Up();
-  nsresult MigrateV46Up();
-  nsresult MigrateV47Up();
-  nsresult MigrateV48Up();
-  nsresult MigrateV49Up();
-  nsresult MigrateV50Up();
-  nsresult MigrateV51Up();
-  nsresult MigrateV52Up();
+
+
   nsresult MigrateV53Up();
   nsresult MigrateV54Up();
   nsresult MigrateV55Up();
@@ -321,14 +310,11 @@ class Database final : public nsIObserver, public nsSupportsWeakReference {
   nsresult MigrateV74Up();
   nsresult MigrateV75Up();
 
-  void MigrateV52OriginFrecencies();
-
   nsresult UpdateBookmarkRootTitles();
 
   friend class ConnectionShutdownBlocker;
 
   int64_t CreateMobileRoot();
-  nsresult ConvertOldStyleQuery(nsCString& aURL);
 
  private:
   ~Database();
