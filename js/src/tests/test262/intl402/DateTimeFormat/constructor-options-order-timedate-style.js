@@ -12,15 +12,6 @@
 
 const expected = [
   
-  "weekday", "year", "month", "day",
-  
-  "hour", "minute", "second",
-  
-  "dateStyle",
-  
-  "timeStyle",
-
-  
   "localeMatcher",
   
   "hour12",

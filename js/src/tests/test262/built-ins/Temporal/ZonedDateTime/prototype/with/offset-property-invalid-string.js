@@ -18,11 +18,14 @@ const badOffsets = [
   "+0",       
   "-000:00",  
   0,          
+  null,       
+  true,       
+  1000n,      
 ];
 offsetOptions.forEach((offsetOption) => {
   badOffsets.forEach((offset) => {
     assert.throws(
-      RangeError,
+      typeof(offset) === 'string' ? RangeError : TypeError,
       () => instance.with({ offset }, { offset: offsetOption }),
       `"${offset} is not a valid offset string (with ${offsetOption} offset option)`,
     );

@@ -16,11 +16,22 @@ const badOffsets = [
   "+0",       
   "-000:00",  
   0,          
+  null,       
+  true,       
+  1000n,      
 ];
 badOffsets.forEach((offset) => {
   const arg = { year: 2021, month: 10, day: 28, offset, timeZone };
-  assert.throws(RangeError, () => Temporal.ZonedDateTime.compare(arg, datetime), `"${offset} is not a valid offset string (second argument)`);
-  assert.throws(RangeError, () => Temporal.ZonedDateTime.compare(datetime, arg), `"${offset} is not a valid offset string (second argument)`);
+  assert.throws(
+    typeof(offset) === 'string' ? RangeError : TypeError,
+    () => Temporal.ZonedDateTime.compare(arg, datetime),
+    `"${offset} is not a valid offset string (second argument)`
+  );
+  assert.throws(
+    typeof(offset) === 'string' ? RangeError : TypeError,
+    () => Temporal.ZonedDateTime.compare(datetime, arg),
+    `"${offset} is not a valid offset string (second argument)`
+  );
 });
 
 reportCompare(0, 0);

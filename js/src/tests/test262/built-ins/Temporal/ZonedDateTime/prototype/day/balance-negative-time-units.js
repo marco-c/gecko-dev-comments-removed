@@ -31,7 +31,8 @@
 
 
 
-const tz = new Temporal.TimeZone("-00:00:00.000000002");
+
+const tz = TemporalHelpers.specificOffsetTimeZone(-2);
 const datetime = new Temporal.ZonedDateTime(86400_000_000_001n, tz);
 
 assert.sameValue(datetime.day, 1);

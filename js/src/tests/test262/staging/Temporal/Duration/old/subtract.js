@@ -83,20 +83,6 @@ assert.sameValue(`${ oneDay.subtract(hours24, {
 assert.throws(RangeError, () => oneDay.subtract(hours24, { relativeTo: "1971-01-01T00:00+02:00[-00:44:30]" }));
 
 
-assert.sameValue(`${ oneDay.subtract(hours24, { relativeTo: "1971-01-01T00:00-00:45[-00:44:30]" }) }`, "PT0S");
-
-
-assert.throws(RangeError, () => oneDay.subtract(hours24, {
-  relativeTo: {
-    year: 1971,
-    month: 1,
-    day: 1,
-    offset: "-00:45",
-    timeZone: "-00:44:30"
-  }
-}));
-
-
 assert.throws(TypeError, () => oneDay.subtract(hours24, {
   relativeTo: {
     month: 11,

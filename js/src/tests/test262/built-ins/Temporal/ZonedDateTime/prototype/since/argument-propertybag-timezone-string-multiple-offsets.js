@@ -8,9 +8,9 @@
 
 
 
-const expectedTimeZone = "+01:45:30.987654321";
+const expectedTimeZone = "+01:46";
 const instance = new Temporal.ZonedDateTime(0n, expectedTimeZone);
-const timeZone = "2021-08-19T17:30:45.123456789+01:46[+01:45:30.987654321]";
+const timeZone = "2021-08-19T17:30:45.123456789-12:12[+01:46]";
 
 
 

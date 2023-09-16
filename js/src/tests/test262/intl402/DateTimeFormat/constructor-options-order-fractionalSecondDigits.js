@@ -24,10 +24,9 @@
 
 
 
+
+
 const expected = [
-  
-  
-  "second", "fractionalSecondDigits",
   
   "localeMatcher",
   

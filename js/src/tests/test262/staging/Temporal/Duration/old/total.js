@@ -39,8 +39,8 @@ assert.sameValue(s, 0.002031);
 
 [
   "2020-01-01",
+  "20200101",
   "2020-01-01T00:00:00.000000000",
-  20200101n,
   {
     year: 2020,
     month: 1,
@@ -60,28 +60,21 @@ assert.sameValue(s, 0.002031);
 });
 
 
+[
+  20200101,
+  20200101n,
+  null,
+  true,
+].forEach(relativeTo => {
+  assert.throws(
+    TypeError, () => d.total({ unit: "months", relativeTo})
+  );
+});
+
+
 assert.throws(RangeError, () => d.total({
   unit: "months",
   relativeTo: "1971-01-01T00:00+02:00[-00:44:30]"
-}));
-
-
-var oneMonth = Temporal.Duration.from({ months: 1 });
-assert.sameValue(oneMonth.total({
-  unit: "months",
-  relativeTo: "1971-01-01T00:00-00:45[-00:44:30]"
-}), 1);
-
-
-assert.throws(RangeError, () => d.total({
-  unit: "months",
-  relativeTo: {
-    year: 1971,
-    month: 1,
-    day: 1,
-    offset: "-00:45",
-    timeZone: "-00:44:30"
-  }
 }));
 
 

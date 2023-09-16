@@ -16,11 +16,13 @@
 
 
 
+
+
+
+
+
+
 const expected = [
-  
-  "day", "dayPeriod",
-  
-  "hour",
   
   "day",
   "dayPeriod",

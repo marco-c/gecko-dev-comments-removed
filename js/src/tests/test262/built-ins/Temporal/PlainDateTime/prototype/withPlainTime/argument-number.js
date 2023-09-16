@@ -8,13 +8,7 @@
 
 
 
-
 const instance = new Temporal.PlainDateTime(2000, 5, 2);
-
-const arg = 123456.987654321;
-
-const result = instance.withPlainTime(arg);
-TemporalHelpers.assertPlainDateTime(result, 2000, 5, "M05", 2, 12, 34, 56, 987, 654, 321, "123456.987654321 is a valid ISO string for PlainTime");
 
 const numbers = [
   1,
@@ -25,9 +19,9 @@ const numbers = [
 
 for (const arg of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.withPlainTime(arg),
-    `Number ${arg} does not convert to a valid ISO string for PlainTime`
+    "A number is not a valid ISO string for PlainTime"
   );
 }
 

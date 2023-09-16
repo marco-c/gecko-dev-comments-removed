@@ -16,10 +16,17 @@ const badOffsets = [
   "+0",       
   "-000:00",  
   0,          
+  null,       
+  true,       
+  1000n,      
 ];
 badOffsets.forEach((offset) => {
   const relativeTo = { year: 2021, month: 10, day: 28, offset, timeZone };
-  assert.throws(RangeError, () => instance.round({ largestUnit: "years", relativeTo }), `"${offset} is not a valid offset string`);
+  assert.throws(
+    typeof(offset) === 'string' ? RangeError : TypeError,
+    () => instance.round({ largestUnit: "years", relativeTo }),
+    `"${offset} is not a valid offset string`
+  );
 });
 
 reportCompare(0, 0);

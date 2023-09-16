@@ -32,7 +32,7 @@
 
 
 
-const tz = new Temporal.TimeZone("-00:00:00.000000002");
+const tz = TemporalHelpers.specificOffsetTimeZone(-2);
 const datetime = new Temporal.ZonedDateTime(1001n, tz);
 
 const pdt = datetime.toPlainDateTime();

@@ -17,12 +17,15 @@ const badOffsets = [
   "+0",       
   "-000:00",  
   0,          
+  null,       
+  true,       
+  1000n,      
 ];
 offsetOptions.forEach((offsetOption) => {
   badOffsets.forEach((offset) => {
     const arg = { year: 2021, month: 10, day: 28, offset, timeZone };
     assert.throws(
-      RangeError,
+      typeof(offset) === 'string' ? RangeError : TypeError,
       () => Temporal.ZonedDateTime.from(arg, { offset: offsetOption }),
       `"${offset} is not a valid offset string (with offset option ${offsetOption})`
     );

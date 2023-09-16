@@ -10,11 +10,6 @@
 
 const instance = new Temporal.PlainDate(2000, 5, 2);
 
-const arg = 123456.987654321;
-
-const result = instance.toZonedDateTime({ plainTime: arg, timeZone: "UTC" });
-assert.sameValue(result.epochNanoseconds, 957270896_987_654_321n, "123456.987654321 is a valid ISO string for PlainTime");
-
 const numbers = [
   1,
   -123456.987654321,
@@ -24,9 +19,9 @@ const numbers = [
 
 for (const arg of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.toZonedDateTime({ plainTime: arg, timeZone: "UTC" }),
-    `Number ${arg} does not convert to a valid ISO string for PlainTime`
+    "A number is not a valid ISO string for PlainTime"
   );
 }
 

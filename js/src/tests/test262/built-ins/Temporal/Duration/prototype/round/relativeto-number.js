@@ -8,23 +8,20 @@
 
 
 
-
 const instance = new Temporal.Duration(1, 0, 0, 0, 24);
 
 const relativeTo = 20191101;
 
-const result = instance.round({ largestUnit: "years", relativeTo });
-TemporalHelpers.assertDuration(result, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, "20191101 is a valid ISO string for relativeTo");
-
 const numbers = [
   1,
+  20191101,
   -20191101,
   1234567890,
 ];
 
 for (const relativeTo of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.round({ largestUnit: "years", relativeTo }),
     `Number ${relativeTo} does not convert to a valid ISO string for relativeTo`
   );

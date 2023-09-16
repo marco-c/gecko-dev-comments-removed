@@ -16,11 +16,18 @@ const badOffsets = [
   "00:00",    
   "+0",       
   "-000:00",  
-  0,          
+  1000,       
+  null,       
+  true,       
+  1000n,      
 ];
 badOffsets.forEach((offset) => {
   const relativeTo = { year: 2021, month: 10, day: 28, offset, timeZone };
-  assert.throws(RangeError, () => Temporal.Duration.compare(d1, d2, { relativeTo }), `"${offset} is not a valid offset string`);
+  assert.throws(
+    typeof(offset) === 'string' ? RangeError : TypeError,
+    () => Temporal.Duration.compare(d1, d2, { relativeTo }),
+    `"${offset} is not a valid offset string`
+  );
 });
 
 reportCompare(0, 0);

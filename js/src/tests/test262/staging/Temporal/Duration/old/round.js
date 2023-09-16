@@ -198,8 +198,8 @@ assert.sameValue(`${ hours25.round({
 
 [
   "2020-01-01",
+  "20200101",
   "2020-01-01T00:00:00.000000000",
-  20200101n,
   {
     year: 2020,
     month: 1,
@@ -213,27 +213,21 @@ assert.sameValue(`${ hours25.round({
 });
 
 
+[
+  20200101,
+  20200101n,
+  null,
+  true,
+].forEach(relativeTo => {
+  assert.throws(
+    TypeError, () => d.round({ smallestUnit: "seconds", relativeTo})
+  );
+});
+
+
 assert.throws(RangeError, () => d.round({
   smallestUnit: "seconds",
   relativeTo: "1971-01-01T00:00+02:00[-00:44:30]"
-}));
-
-
-assert.sameValue(`${ d.round({
-  smallestUnit: "seconds",
-  relativeTo: "1971-01-01T00:00-00:45[-00:44:30]"
-}) }`, "P5Y5M5W5DT5H5M5S");
-
-
-assert.throws(RangeError, () => d.round({
-  smallestUnit: "seconds",
-  relativeTo: {
-    year: 1971,
-    month: 1,
-    day: 1,
-    offset: "-00:45",
-    timeZone: "-00:44:30"
-  }
 }));
 
 

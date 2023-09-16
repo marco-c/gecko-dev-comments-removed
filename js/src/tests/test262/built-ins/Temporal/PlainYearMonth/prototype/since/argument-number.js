@@ -8,25 +8,20 @@
 
 
 
-
 const instance = new Temporal.PlainYearMonth(2019, 6);
-
-const arg = 201906;
-
-const result = instance.since(arg);
-TemporalHelpers.assertDuration(result, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "201906 is a valid ISO string for PlainYearMonth");
 
 const numbers = [
   1,
+  201906,
   -201906,
   1234567,
 ];
 
 for (const arg of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.since(arg),
-    `Number ${arg} does not convert to a valid ISO string for PlainYearMonth`
+    "A number is not a valid ISO string for PlainYearMonth"
   );
 }
 

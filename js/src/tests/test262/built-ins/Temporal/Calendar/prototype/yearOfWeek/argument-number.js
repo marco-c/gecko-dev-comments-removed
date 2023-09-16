@@ -10,22 +10,18 @@
 
 const instance = new Temporal.Calendar("iso8601");
 
-const arg = 19761118;
-
-const result = instance.yearOfWeek(arg);
-assert.sameValue(result, 1976, "19761118 is a valid ISO string for PlainDate");
-
 const numbers = [
   1,
+  19761118,
   -19761118,
   1234567890,
 ];
 
 for (const arg of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.yearOfWeek(arg),
-    `Number ${arg} does not convert to a valid ISO string for PlainDate`
+    'Numbers cannot be used in place of an ISO string for PlainDate'
   );
 }
 

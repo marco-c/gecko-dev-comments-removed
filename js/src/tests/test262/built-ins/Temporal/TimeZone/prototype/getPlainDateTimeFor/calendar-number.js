@@ -10,22 +10,18 @@
 
 const instance = new Temporal.TimeZone("UTC");
 
-const arg = 19761118;
-
-const result = instance.getPlainDateTimeFor(new Temporal.Instant(0n), arg);
-assert.sameValue(result.calendarId, "iso8601", "19761118 is a valid ISO string for Calendar");
-
 const numbers = [
   1,
   -19761118,
+  19761118,
   1234567890,
 ];
 
 for (const arg of numbers) {
   assert.throws(
-    RangeError,
+    TypeError,
     () => instance.getPlainDateTimeFor(new Temporal.Instant(0n), arg),
-    `Number ${arg} does not convert to a valid ISO string for Calendar`
+    "A number is not a valid ISO string for Calendar"
   );
 }
 

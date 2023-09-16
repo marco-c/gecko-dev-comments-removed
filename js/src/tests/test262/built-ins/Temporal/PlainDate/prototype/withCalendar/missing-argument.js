@@ -9,7 +9,7 @@
 
 
 const plainDate = Temporal.PlainDate.from("1976-11-18");
-assert.throws(RangeError, () => plainDate.withCalendar(), "missing argument");
-assert.throws(RangeError, () => plainDate.withCalendar(undefined), "undefined argument");
+assert.throws(TypeError, () => plainDate.withCalendar(), "missing argument");
+assert.throws(TypeError, () => plainDate.withCalendar(undefined), "undefined argument");
 
 reportCompare(0, 0);

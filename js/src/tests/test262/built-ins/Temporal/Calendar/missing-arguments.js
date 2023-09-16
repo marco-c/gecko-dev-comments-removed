@@ -8,7 +8,7 @@
 
 
 
-assert.throws(RangeError, () => new Temporal.Calendar());
-assert.throws(RangeError, () => new Temporal.Calendar(undefined));
+assert.throws(TypeError, () => new Temporal.Calendar());
+assert.throws(TypeError, () => new Temporal.Calendar(undefined));
 
 reportCompare(0, 0);

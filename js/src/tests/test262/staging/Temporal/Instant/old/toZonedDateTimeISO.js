@@ -11,7 +11,7 @@
 var inst = Temporal.Instant.from("1976-11-18T14:23:30.123456789Z");
 
 
-assert.throws(RangeError, () => inst.toZonedDateTimeISO());
+assert.throws(TypeError, () => inst.toZonedDateTimeISO());
 
 
 var tz = Temporal.TimeZone.from("UTC");

@@ -9,11 +9,6 @@
 
 const expected = [
   
-  "weekday", "year", "month", "day",
-  
-  "hour", "minute", "second",
-
-  
   "localeMatcher",
   
   "hour12",
