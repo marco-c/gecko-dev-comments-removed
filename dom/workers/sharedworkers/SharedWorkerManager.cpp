@@ -159,6 +159,12 @@ void SharedWorkerManager::Terminate() {
   MOZ_ASSERT(mActors.IsEmpty());
   MOZ_ASSERT(mHolders.IsEmpty());
 
+  
+  
+  if (!mRemoteWorkerController) {
+    return;
+  }
+
   mRemoteWorkerController->Terminate();
   mRemoteWorkerController = nullptr;
 }
