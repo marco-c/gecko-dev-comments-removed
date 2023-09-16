@@ -5,6 +5,18 @@ const kCurrentDirectory = '.';
 const kParentDirectory = '..';
 
 
+const WFS_MODES = ['siloed', 'exclusive'];
+
+
+const SAH_MODES = ['readwrite', 'read-only', 'readwrite-unsafe'];
+
+
+const LOCK_ACCESS = {
+  SHARED: 'shared',
+  EXCLUSIVE: 'exclusive',
+};
+
+
 let kPathSeparators;
 if (navigator.userAgent.includes('Windows NT')) {
   
@@ -132,8 +144,13 @@ function cleanupLockPromise(t, lockPromise) {
   return cleanup(t, lockPromise, () => releaseLock(lockPromise));
 }
 
-function createWritableWithCleanup(t, fileHandle) {
-  return cleanupLockPromise(t, fileHandle.createWritable());
+function createWFSWithCleanup(t, fileHandle, wfsOptions) {
+  return cleanupLockPromise(t, fileHandle.createWritable(wfsOptions));
+}
+
+
+function createWFSWithCleanupFactory(wfsOptions) {
+  return (t, fileHandle) => createWFSWithCleanup(t, fileHandle, wfsOptions);
 }
 
 function createSAHWithCleanup(t, fileHandle, sahOptions) {
@@ -185,7 +202,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
     
     
     sameFile: async (t, rootDir) => {
-      const [fileHandle] = await createFileHandles(rootDir, 'OPFS.test');
+      const [fileHandle] = await createFileHandles(rootDir, 'BFS.test');
 
       createLock1(t, fileHandle);
       await promise_rejects_dom(
@@ -206,7 +223,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
     
     
     acquireAfterRelease: async (t, rootDir) => {
-      let [fileHandle] = await createFileHandles(rootDir, 'OPFS.test');
+      let [fileHandle] = await createFileHandles(rootDir, 'BFS.test');
 
       const lockPromise = createLock1(t, fileHandle);
       await promise_rejects_dom(
@@ -214,7 +231,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
 
       await releaseLock(lockPromise);
       
-      [fileHandle] = await createFileHandles(rootDir, 'OPFS.test');
+      [fileHandle] = await createFileHandles(rootDir, 'BFS.test');
       await createLock2(t, fileHandle);
     },
 
@@ -222,7 +239,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
     
     
     multiAcquireAfterRelease: async (t, rootDir) => {
-      const [fileHandle] = await createFileHandles(rootDir, 'OPFS.test');
+      const [fileHandle] = await createFileHandles(rootDir, 'BFS.test');
 
       const lock1 = await createLock1(t, fileHandle);
       const lock2 = await createLock1(t, fileHandle);
@@ -241,7 +258,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
     
     takeDirThenFile: async (t, rootDir) => {
       const dirHandle = await rootDir.getDirectoryHandle('foo', {create: true});
-      const [fileHandle] = await createFileHandles(dirHandle, 'OPFS.test');
+      const [fileHandle] = await createFileHandles(dirHandle, 'BFS.test');
 
       createLock1(t, dirHandle);
       await promise_rejects_dom(
@@ -255,7 +272,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
           await rootDir.getDirectoryHandle('foo', {create: true});
       const parentHandle =
           await grandparentHandle.getDirectoryHandle('bar', {create: true});
-      let [fileHandle] = await createFileHandles(parentHandle, 'OPFS.test');
+      let [fileHandle] = await createFileHandles(parentHandle, 'BFS.test');
 
       
       const lock1 = createLock1(t, fileHandle);
@@ -265,7 +282,7 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
       
       await releaseLock(lock1);
       
-      [fileHandle] = await createFileHandles(parentHandle, 'OPFS.test');
+      [fileHandle] = await createFileHandles(parentHandle, 'BFS.test');
 
       
       createLock1(t, fileHandle);
@@ -273,4 +290,24 @@ function generateCrossLockTests(createLock1, createLock2, testDescs) {
           t, 'NoModificationAllowedError', createLock2(t, grandparentHandle));
     },
   });
+}
+
+
+
+
+async function testLockAccess(t, fileHandle, createLock) {
+  createLock(t, fileHandle);
+
+  let access;
+  try {
+    await createLock(t, fileHandle);
+    access = LOCK_ACCESS.SHARED;
+  } catch (e) {
+    access = LOCK_ACCESS.EXCLUSIVE;
+    assert_throws_dom('NoModificationAllowedError', () => {
+      throw e;
+    });
+  }
+
+  return access;
 }
