@@ -88,7 +88,7 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     chrome_options["args"].append("--short-reporting-delay")
     
-    chrome_options["args"].append("--host-resolver-rules=MAP nonexistent.*.test ~NOTFOUND, MAP *.test 127.0.0.1")
+    chrome_options["args"].append("--host-resolver-rules=MAP nonexistent.*.test ^NOTFOUND, MAP *.test 127.0.0.1")
     
     
     
