@@ -54,8 +54,8 @@ class OggDemuxer : public MediaDataDemuxer,
     tainted_opaque_ogg<ogg_sync_state*> mState;
   };
   media::TimeIntervals GetBuffered(TrackInfo::TrackType aType);
-  void FindStartTime(int64_t& aOutStartTime);
-  void FindStartTime(TrackInfo::TrackType, int64_t& aOutStartTime);
+  void FindStartTime(media::TimeUnit& aOutStartTime);
+  void FindStartTime(TrackInfo::TrackType, media::TimeUnit& aOutStartTime);
 
   nsresult SeekInternal(TrackInfo::TrackType aType,
                         const media::TimeUnit& aTarget);
@@ -68,7 +68,7 @@ class OggDemuxer : public MediaDataDemuxer,
     SEEK_FATAL_ERROR  
   };
   IndexedSeekResult SeekToKeyframeUsingIndex(TrackInfo::TrackType aType,
-                                             int64_t aTarget);
+                                             const media::TimeUnit& aTarget);
 
   
   IndexedSeekResult RollbackIndexedSeek(TrackInfo::TrackType aType,
@@ -80,29 +80,36 @@ class OggDemuxer : public MediaDataDemuxer,
   
   class SeekRange {
    public:
-    SeekRange() : mOffsetStart(0), mOffsetEnd(0), mTimeStart(0), mTimeEnd(0) {}
+    SeekRange()
+        : mOffsetStart(0),
+          mOffsetEnd(0),
+          mTimeStart(media::TimeUnit::Zero()),
+          mTimeEnd(media::TimeUnit::Zero()) {}
 
-    SeekRange(int64_t aOffsetStart, int64_t aOffsetEnd, int64_t aTimeStart,
-              int64_t aTimeEnd)
+    SeekRange(int64_t aOffsetStart, int64_t aOffsetEnd,
+              const media::TimeUnit& aTimeStart,
+              const media::TimeUnit& aTimeEnd)
         : mOffsetStart(aOffsetStart),
           mOffsetEnd(aOffsetEnd),
           mTimeStart(aTimeStart),
           mTimeEnd(aTimeEnd) {}
 
     bool IsNull() const {
-      return mOffsetStart == 0 && mOffsetEnd == 0 && mTimeStart == 0 &&
-             mTimeEnd == 0;
+      return mOffsetStart == 0 && mOffsetEnd == 0 && mTimeStart.IsZero() &&
+             mTimeEnd.IsZero();
     }
 
     int64_t mOffsetStart, mOffsetEnd;  
-    int64_t mTimeStart, mTimeEnd;      
+    media::TimeUnit mTimeStart, mTimeEnd;
   };
 
   nsresult GetSeekRanges(TrackInfo::TrackType aType,
                          nsTArray<SeekRange>& aRanges);
   SeekRange SelectSeekRange(TrackInfo::TrackType aType,
-                            const nsTArray<SeekRange>& ranges, int64_t aTarget,
-                            int64_t aStartTime, int64_t aEndTime, bool aExact);
+                            const nsTArray<SeekRange>& ranges,
+                            const media::TimeUnit& aTarget,
+                            const media::TimeUnit& aStartTime,
+                            const media::TimeUnit& aEndTime, bool aExact);
 
   
   
@@ -110,9 +117,11 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   
-  nsresult SeekInBufferedRange(TrackInfo::TrackType aType, int64_t aTarget,
-                               int64_t aAdjustedTarget, int64_t aStartTime,
-                               int64_t aEndTime,
+  nsresult SeekInBufferedRange(TrackInfo::TrackType aType,
+                               const media::TimeUnit& aTarget,
+                               media::TimeUnit& aAdjustedTarget,
+                               const media::TimeUnit& aStartTime,
+                               const media::TimeUnit& aEndTime,
                                const nsTArray<SeekRange>& aRanges,
                                const SeekRange& aRange);
 
@@ -122,8 +131,10 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   
-  nsresult SeekInUnbuffered(TrackInfo::TrackType aType, int64_t aTarget,
-                            int64_t aStartTime, int64_t aEndTime,
+  nsresult SeekInUnbuffered(TrackInfo::TrackType aType,
+                            const media::TimeUnit& aTarget,
+                            const media::TimeUnit& aStartTime,
+                            const media::TimeUnit& aEndTime,
                             const nsTArray<SeekRange>& aRanges);
 
   
@@ -132,8 +143,9 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   
-  nsresult SeekBisection(TrackInfo::TrackType aType, int64_t aTarget,
-                         const SeekRange& aRange, uint32_t aFuzz);
+  nsresult SeekBisection(TrackInfo::TrackType aType,
+                         const media::TimeUnit& aTarget,
+                         const SeekRange& aRange, const media::TimeUnit& aFuzz);
 
   
   
@@ -211,7 +223,7 @@ class OggDemuxer : public MediaDataDemuxer,
 
   
   
-  int64_t RangeEndTime(TrackInfo::TrackType aType, int64_t aEndOffset);
+  media::TimeUnit RangeEndTime(TrackInfo::TrackType aType, int64_t aEndOffset);
 
   
   
@@ -220,13 +232,13 @@ class OggDemuxer : public MediaDataDemuxer,
   
   
   
-  int64_t RangeEndTime(TrackInfo::TrackType aType, int64_t aStartOffset,
-                       int64_t aEndOffset, bool aCachedDataOnly);
+  media::TimeUnit RangeEndTime(TrackInfo::TrackType aType, int64_t aStartOffset,
+                               int64_t aEndOffset, bool aCachedDataOnly);
 
   
   
   
-  int64_t RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
+  media::TimeUnit RangeStartTime(TrackInfo::TrackType aType, int64_t aOffset);
 
   
   
@@ -289,7 +301,7 @@ class OggDemuxer : public MediaDataDemuxer,
   OggStateContext mAudioOggState;
   OggStateContext mVideoOggState;
 
-  Maybe<int64_t> mStartTime;
+  Maybe<media::TimeUnit> mStartTime;
 
   
   bool HasVideo() const;
@@ -299,8 +311,8 @@ class OggDemuxer : public MediaDataDemuxer,
   }
   bool HaveStartTime() const;
   bool HaveStartTime(TrackInfo::TrackType aType);
-  int64_t StartTime() const;
-  int64_t StartTime(TrackInfo::TrackType aType);
+  media::TimeUnit StartTime() const;
+  media::TimeUnit StartTime(TrackInfo::TrackType aType);
 
   
   
