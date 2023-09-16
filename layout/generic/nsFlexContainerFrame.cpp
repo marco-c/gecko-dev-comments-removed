@@ -2229,21 +2229,9 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput, float aFlexGrow,
       
       
       
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (usingItemFirstBaseline) {
-        mAlignSelf = {StyleAlignFlags::FLEX_START};
-      } else {
-        mAlignSelf = {StyleAlignFlags::FLEX_END};
-      }
+      mBaselineSharingGroup = usingItemFirstBaseline
+                                  ? BaselineSharingGroup::First
+                                  : BaselineSharingGroup::Last;
     }
   }
 }
@@ -2294,6 +2282,31 @@ nscoord FlexItem::BaselineOffsetFromOuterCrossEdge(
   
   
   
+  if (IsBlockAxisMainAxis()) {
+    
+    
+    
+    
+    const bool isMainAxisHorizontal =
+        mCBWM.PhysicalAxis(MainAxis()) == mozilla::eAxisHorizontal;
+
+    
+    
+    
+    nscoord marginTopOrLeftToBaseline =
+        isMainAxisHorizontal ? PhysicalMargin().top : PhysicalMargin().left;
+    if (mCBWM.IsAlphabeticalBaseline()) {
+      marginTopOrLeftToBaseline += (isMainAxisHorizontal ? CrossSize() : 0);
+    } else {
+      MOZ_ASSERT(mCBWM.IsCentralBaseline());
+      marginTopOrLeftToBaseline += CrossSize() / 2;
+    }
+
+    return aStartSide == mozilla::eSideTop || aStartSide == mozilla::eSideLeft
+               ? marginTopOrLeftToBaseline
+               : OuterCrossSize() - marginTopOrLeftToBaseline;
+  }
+
   
   
   
