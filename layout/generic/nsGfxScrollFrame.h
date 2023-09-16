@@ -639,11 +639,11 @@ class nsHTMLScrollFrame : public nsContainerFrame,
 
 
 
-  Maybe<mozilla::SnapTarget> GetSnapPointForDestination(
+  Maybe<mozilla::SnapDestination> GetSnapPointForDestination(
       mozilla::ScrollUnit aUnit, ScrollSnapFlags aFlags,
       const nsPoint& aStartPos, const nsPoint& aDestination);
 
-  Maybe<mozilla::SnapTarget> GetSnapPointForResnap();
+  Maybe<mozilla::SnapDestination> GetSnapPointForResnap();
   bool NeedsResnap();
 
   void SetLastSnapTargetIds(mozilla::UniquePtr<ScrollSnapTargetIds> aId);

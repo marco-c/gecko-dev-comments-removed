@@ -1600,13 +1600,13 @@ class AsyncPanZoomController {
 
   
   
-  void SmoothScrollTo(CSSSnapTarget&& aDestination,
+  void SmoothScrollTo(CSSSnapDestination&& aDestination,
                       ScrollTriggeredByScript aTriggeredByScript,
                       const ScrollOrigin& aOrigin);
 
   
   
-  void SmoothMsdScrollTo(CSSSnapTarget&& aDestination,
+  void SmoothMsdScrollTo(CSSSnapDestination&& aDestination,
                          ScrollTriggeredByScript aTriggeredByScript);
 
   
@@ -1909,17 +1909,17 @@ class AsyncPanZoomController {
   
   
   
-  Maybe<CSSSnapTarget> MaybeAdjustDeltaForScrollSnapping(
+  Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnapping(
       ScrollUnit aUnit, ScrollSnapFlags aSnapFlags, ParentLayerPoint& aDelta,
       CSSPoint& aStartPosition);
 
   
   
-  Maybe<CSSSnapTarget> MaybeAdjustDeltaForScrollSnappingOnWheelInput(
+  Maybe<CSSSnapDestination> MaybeAdjustDeltaForScrollSnappingOnWheelInput(
       const ScrollWheelInput& aEvent, ParentLayerPoint& aDelta,
       CSSPoint& aStartPosition);
 
-  Maybe<CSSSnapTarget> MaybeAdjustDestinationForScrollSnapping(
+  Maybe<CSSSnapDestination> MaybeAdjustDestinationForScrollSnapping(
       const KeyboardInput& aEvent, CSSPoint& aDestination,
       ScrollSnapFlags aSnapFlags);
 
@@ -1938,9 +1938,9 @@ class AsyncPanZoomController {
   
   
   
-  Maybe<CSSSnapTarget> FindSnapPointNear(const CSSPoint& aDestination,
-                                         ScrollUnit aUnit,
-                                         ScrollSnapFlags aSnapFlags);
+  Maybe<CSSSnapDestination> FindSnapPointNear(const CSSPoint& aDestination,
+                                              ScrollUnit aUnit,
+                                              ScrollSnapFlags aSnapFlags);
 
   
   

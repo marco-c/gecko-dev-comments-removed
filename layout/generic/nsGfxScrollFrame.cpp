@@ -2456,13 +2456,13 @@ void nsHTMLScrollFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
     mRestorePos.x = mRestorePos.y = -1;
   }
 
-  Maybe<SnapTarget> snapTarget;
+  Maybe<SnapDestination> snapDestination;
   if (!aParams.IsScrollSnapDisabled()) {
-    snapTarget = GetSnapPointForDestination(ScrollUnit::DEVICE_PIXELS,
-                                            aParams.mSnapFlags, mDestination,
-                                            aScrollPosition);
-    if (snapTarget) {
-      aScrollPosition = snapTarget->mPosition;
+    snapDestination = GetSnapPointForDestination(ScrollUnit::DEVICE_PIXELS,
+                                                 aParams.mSnapFlags,
+                                                 mDestination, aScrollPosition);
+    if (snapDestination) {
+      aScrollPosition = snapDestination->mPosition;
     }
   }
 
@@ -2476,14 +2476,14 @@ void nsHTMLScrollFrame::ScrollToWithOrigin(nsPoint aScrollPosition,
     aParams.mOrigin = ScrollOrigin::Other;
   }
 
-  nsRect range = aRange && snapTarget.isNothing()
+  nsRect range = aRange && snapDestination.isNothing()
                      ? *aRange
                      : nsRect(aScrollPosition, nsSize(0, 0));
 
   UniquePtr<ScrollSnapTargetIds> snapTargetIds;
-  if (snapTarget) {
+  if (snapDestination) {
     snapTargetIds =
-        MakeUnique<ScrollSnapTargetIds>(std::move(snapTarget->mTargetIds));
+        MakeUnique<ScrollSnapTargetIds>(std::move(snapDestination->mTargetIds));
   } else {
     snapTargetIds =
         MakeUnique<ScrollSnapTargetIds>(std::move(aParams.mTargetIds));
@@ -4911,7 +4911,7 @@ void nsHTMLScrollFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
                                       NSCoordSaturatingNonnegativeMultiply(
                                           aDelta.y, deltaMultiplier.height)));
 
-  Maybe<SnapTarget> snapTarget;
+  Maybe<SnapDestination> snapDestination;
   if (aSnapFlags != ScrollSnapFlags::Disabled) {
     if (NeedsScrollSnap()) {
       nscoord appUnitsPerDevPixel = PresContext()->AppUnitsPerDevPixel();
@@ -4925,10 +4925,10 @@ void nsHTMLScrollFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
         
         snapUnit = ScrollUnit::LINES;
       }
-      snapTarget = GetSnapPointForDestination(snapUnit, aSnapFlags,
-                                              mDestination, newPos);
-      if (snapTarget) {
-        newPos = snapTarget->mPosition;
+      snapDestination = GetSnapPointForDestination(snapUnit, aSnapFlags,
+                                                   mDestination, newPos);
+      if (snapDestination) {
+        newPos = snapDestination->mPosition;
       }
     }
   }
@@ -4944,9 +4944,10 @@ void nsHTMLScrollFrame::ScrollBy(nsIntPoint aDelta, ScrollUnit aUnit,
   AutoWeakFrame weakFrame(this);
   ScrollToWithOrigin(
       newPos, &range,
-      snapTarget ? ScrollOperationParams{aMode, aOrigin,
-                                         std::move(snapTarget->mTargetIds)}
-                 : ScrollOperationParams{aMode, aOrigin});
+      snapDestination
+          ? ScrollOperationParams{aMode, aOrigin,
+                                  std::move(snapDestination->mTargetIds)}
+          : ScrollOperationParams{aMode, aOrigin});
   if (!weakFrame.IsAlive()) {
     return;
   }
@@ -5027,7 +5028,7 @@ void nsHTMLScrollFrame::ScrollSnap(const nsPoint& aDestination,
                                    ScrollMode aMode) {
   nsRect scrollRange = GetLayoutScrollRange();
   nsPoint pos = GetScrollPosition();
-  nsPoint snapDestination = scrollRange.ClampPoint(aDestination);
+  nsPoint destination = scrollRange.ClampPoint(aDestination);
   ScrollSnapFlags snapFlags = ScrollSnapFlags::IntendedEndPosition;
   if (mVelocityQueue.GetVelocity() != nsPoint()) {
     snapFlags |= ScrollSnapFlags::IntendedDirection;
@@ -5036,13 +5037,13 @@ void nsHTMLScrollFrame::ScrollSnap(const nsPoint& aDestination,
   
   
   
-  if (auto snapTarget = GetSnapPointForDestination(
-          ScrollUnit::DEVICE_PIXELS, snapFlags, pos, snapDestination)) {
-    snapDestination = snapTarget->mPosition;
+  if (auto snapDestination = GetSnapPointForDestination(
+          ScrollUnit::DEVICE_PIXELS, snapFlags, pos, destination)) {
+    destination = snapDestination->mPosition;
     ScrollToWithOrigin(
-        snapDestination, nullptr ,
+        destination, nullptr ,
         ScrollOperationParams{aMode, ScrollOrigin::Other,
-                              std::move(snapTarget->mTargetIds)});
+                              std::move(snapDestination->mTargetIds)});
   }
 }
 
@@ -7534,7 +7535,7 @@ ScrollSnapInfo nsHTMLScrollFrame::GetScrollSnapInfo() {
   return ComputeScrollSnapInfo();
 }
 
-Maybe<SnapTarget> nsHTMLScrollFrame::GetSnapPointForDestination(
+Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForDestination(
     ScrollUnit aUnit, ScrollSnapFlags aFlags, const nsPoint& aStartPos,
     const nsPoint& aDestination) {
   
@@ -7548,7 +7549,7 @@ Maybe<SnapTarget> nsHTMLScrollFrame::GetSnapPointForDestination(
       aDestination);
 }
 
-Maybe<SnapTarget> nsHTMLScrollFrame::GetSnapPointForResnap() {
+Maybe<SnapDestination> nsHTMLScrollFrame::GetSnapPointForResnap() {
   
   
   mSnapTargets.Clear();
@@ -7616,17 +7617,17 @@ void nsHTMLScrollFrame::TryResnap() {
     return;
   }
 
-  if (auto snapTarget = GetSnapPointForResnap()) {
+  if (auto snapDestination = GetSnapPointForResnap()) {
     
     mAnchor.UserScrolled();
 
     
     ScrollToWithOrigin(
-        snapTarget->mPosition, nullptr ,
+        snapDestination->mPosition, nullptr ,
         ScrollOperationParams{
             IsSmoothScroll(ScrollBehavior::Auto) ? ScrollMode::SmoothMsd
                                                  : ScrollMode::Instant,
-            ScrollOrigin::Other, std::move(snapTarget->mTargetIds)});
+            ScrollOrigin::Other, std::move(snapDestination->mTargetIds)});
   }
 }
 
