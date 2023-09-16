@@ -151,6 +151,9 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
     
     
     std::string rid;
+
+    
+    bool enable_send_packet_batching = false;
   };
 
   
@@ -319,6 +322,10 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
   
   virtual bool TrySendPacket(std::unique_ptr<RtpPacketToSend> packet,
                              const PacedPacketInfo& pacing_info) = 0;
+
+  
+  
+  virtual void OnBatchComplete() = 0;
 
   
   

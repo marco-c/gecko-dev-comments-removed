@@ -36,6 +36,10 @@ struct PacketOptions {
   bool is_retransmit = false;
   bool included_in_feedback = false;
   bool included_in_allocation = false;
+  
+  bool batchable = false;
+  
+  bool last_packet_in_batch = false;
 };
 
 class Transport {

@@ -159,6 +159,9 @@ struct RtpConfig {
   
   std::string c_name;
 
+  
+  bool enable_send_packet_batching = false;
+
   bool IsMediaSsrc(uint32_t ssrc) const;
   bool IsRtxSsrc(uint32_t ssrc) const;
   bool IsFlexfecSsrc(uint32_t ssrc) const;
