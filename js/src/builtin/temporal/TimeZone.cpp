@@ -1428,10 +1428,6 @@ bool js::temporal::GetPossibleInstantsFor(
   }
 
   
-  
-  
-
-  
   Rooted<Value> thisv(cx, ObjectValue(*timeZoneObj));
   Rooted<Value> arg(cx, ObjectValue(*dateTime));
   Rooted<Value> rval(cx);

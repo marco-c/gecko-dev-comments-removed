@@ -2576,10 +2576,6 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  
-  
-
-  
   if (!AppendSorted(cx, fieldNames.get(), {TemporalField::Offset})) {
     return false;
   }

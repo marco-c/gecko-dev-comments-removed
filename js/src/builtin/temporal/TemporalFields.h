@@ -143,6 +143,7 @@ namespace js::temporal {
 
 
 
+
 bool PrepareTemporalFields(JSContext* cx, JS::Handle<JSObject*> fields,
                            std::initializer_list<TemporalField> fieldNames,
                            std::initializer_list<TemporalField> requiredFields,
@@ -151,9 +152,11 @@ bool PrepareTemporalFields(JSContext* cx, JS::Handle<JSObject*> fields,
 
 
 
+
 PlainObject* PrepareTemporalFields(
     JSContext* cx, JS::Handle<JSObject*> fields,
     JS::Handle<JS::StackGCVector<JS::PropertyKey>> fieldNames);
+
 
 
 
@@ -166,17 +169,15 @@ PlainObject* PrepareTemporalFields(
 
 
 
+
 PlainObject* PreparePartialTemporalFields(
     JSContext* cx, JS::Handle<JSObject*> fields,
     JS::Handle<JS::StackGCVector<JS::PropertyKey>> fieldNames);
 
-
-
-
-[[nodiscard]] bool MergeTemporalFieldNames(
+[[nodiscard]] bool ConcatTemporalFieldNames(
     const JS::StackGCVector<JS::PropertyKey>& receiverFieldNames,
     const JS::StackGCVector<JS::PropertyKey>& inputFieldNames,
-    JS::StackGCVector<JS::PropertyKey>& mergedFieldNames);
+    JS::StackGCVector<JS::PropertyKey>& concatenatedFieldNames);
 
 [[nodiscard]] bool AppendSorted(
     JSContext* cx, JS::StackGCVector<JS::PropertyKey>& fieldNames,

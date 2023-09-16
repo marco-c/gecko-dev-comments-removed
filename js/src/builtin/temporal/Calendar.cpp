@@ -1092,12 +1092,6 @@ bool js::temporal::CalendarFields(
     }
   }
 
-  
-  
-  
-  
-  
-
   auto* array = NewDenseFullyAllocatedArray(cx, fieldNames.size());
   if (!array) {
     return false;
@@ -1113,11 +1107,6 @@ bool js::temporal::CalendarFields(
   if (!Call(cx, fields, calendarObj, fieldsArray, &fieldsArray)) {
     return false;
   }
-
-  
-  
-  
-  
 
   
   if (!IterableToListOfStrings(cx, fieldsArray, result)) {

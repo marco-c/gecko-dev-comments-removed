@@ -138,6 +138,22 @@ static JS::UniqueChars QuoteString(JSContext* cx, const char* str) {
   return sprinter.release();
 }
 
+static JS::UniqueChars QuoteString(JSContext* cx, PropertyKey key) {
+  if (key.isString()) {
+    return QuoteString(cx, key.toString());
+  }
+
+  if (key.isInt()) {
+    Int32ToCStringBuf buf;
+    size_t length;
+    const char* str = Int32ToCString(&buf, key.toInt(), &length);
+    return DuplicateString(cx, str, length);
+  }
+
+  MOZ_ASSERT(key.isSymbol());
+  return QuoteString(cx, key.toSymbol()->description());
+}
+
 static mozilla::Maybe<TemporalField> ToTemporalField(JSContext* cx,
                                                      PropertyKey property) {
   static constexpr TemporalField fieldNames[] = {
@@ -311,10 +327,6 @@ static bool IsSorted(const JS::StackGCVector<PropertyKey>& fieldNames) {
 
 
 
-
-
-
-
 bool js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
     std::initializer_list<TemporalField> fieldNames,
@@ -326,9 +338,11 @@ bool js::temporal::PrepareTemporalFields(
   MOZ_ASSERT(IsSorted(fieldNames));
 
   
-  MOZ_ASSERT(IsSorted(requiredFields));
   MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
              fieldNames.end());
+
+  
+  MOZ_ASSERT(IsSorted(requiredFields));
   MOZ_ASSERT(std::adjacent_find(requiredFields.begin(), requiredFields.end()) ==
              requiredFields.end());
 
@@ -337,6 +351,8 @@ bool js::temporal::PrepareTemporalFields(
   for (auto fieldName : fieldNames) {
     auto* property = ToPropertyName(cx, fieldName);
     auto* cstr = ToCString(fieldName);
+
+    
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -493,6 +509,8 @@ bool js::temporal::PrepareTemporalFields(
           break;
       }
     }
+
+    
   }
 
   
@@ -504,9 +522,12 @@ bool js::temporal::PrepareTemporalFields(
 
 
 
+
 PlainObject* js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
     Handle<JS::StackGCVector<PropertyKey>> fieldNames) {
+  
+
   
   Rooted<PlainObject*> result(cx, NewPlainObjectWithProto(cx, nullptr));
   if (!result) {
@@ -519,9 +540,17 @@ PlainObject* js::temporal::PrepareTemporalFields(
   MOZ_ASSERT(IsSorted(fieldNames));
 
   
+  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
+             fieldNames.end());
+
+  
   Rooted<Value> value(cx);
   for (size_t i = 0; i < fieldNames.length(); i++) {
     Handle<PropertyKey> property = fieldNames[i];
+
+    
+    MOZ_ASSERT(property != NameToId(cx->names().constructor));
+    MOZ_ASSERT(property != NameToId(cx->names().proto_));
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -543,14 +572,14 @@ PlainObject* js::temporal::PrepareTemporalFields(
         
         value = TemporalFieldDefaultValue(*fieldName);
       }
-    } else {
-      
     }
 
     
     if (!DefineDataProperty(cx, result, property, value)) {
       return nullptr;
     }
+
+    
   }
 
   
@@ -562,10 +591,13 @@ PlainObject* js::temporal::PrepareTemporalFields(
 
 
 
+
 PlainObject* js::temporal::PrepareTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
     Handle<JS::StackGCVector<PropertyKey>> fieldNames,
     std::initializer_list<TemporalField> requiredFields) {
+  
+
   
   Rooted<PlainObject*> result(cx, NewPlainObjectWithProto(cx, nullptr));
   if (!result) {
@@ -578,6 +610,10 @@ PlainObject* js::temporal::PrepareTemporalFields(
   MOZ_ASSERT(IsSorted(fieldNames));
 
   
+  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
+             fieldNames.end());
+
+  
   MOZ_ASSERT(IsSorted(requiredFields));
   MOZ_ASSERT(std::adjacent_find(requiredFields.begin(), requiredFields.end()) ==
              requiredFields.end());
@@ -586,6 +622,10 @@ PlainObject* js::temporal::PrepareTemporalFields(
   Rooted<Value> value(cx);
   for (size_t i = 0; i < fieldNames.length(); i++) {
     Handle<PropertyKey> property = fieldNames[i];
+
+    
+    MOZ_ASSERT(property != NameToId(cx->names().constructor));
+    MOZ_ASSERT(property != NameToId(cx->names().proto_));
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -616,14 +656,14 @@ PlainObject* js::temporal::PrepareTemporalFields(
         
         value = TemporalFieldDefaultValue(*fieldName);
       }
-    } else {
-      
     }
 
     
     if (!DefineDataProperty(cx, result, property, value)) {
       return nullptr;
     }
+
+    
   }
 
   
@@ -635,9 +675,12 @@ PlainObject* js::temporal::PrepareTemporalFields(
 
 
 
+
 PlainObject* js::temporal::PreparePartialTemporalFields(
     JSContext* cx, Handle<JSObject*> fields,
     Handle<JS::StackGCVector<PropertyKey>> fieldNames) {
+  
+
   
   Rooted<PlainObject*> result(cx, NewPlainObjectWithProto(cx, nullptr));
   if (!result) {
@@ -651,9 +694,17 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
   MOZ_ASSERT(IsSorted(fieldNames));
 
   
+  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
+             fieldNames.end());
+
+  
   Rooted<Value> value(cx);
   for (size_t i = 0; i < fieldNames.length(); i++) {
     Handle<PropertyKey> property = fieldNames[i];
+
+    
+    MOZ_ASSERT(property != NameToId(cx->names().constructor));
+    MOZ_ASSERT(property != NameToId(cx->names().proto_));
 
     
     if (!GetProperty(cx, fields, fields, property, &value)) {
@@ -679,6 +730,8 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
     } else {
       
     }
+
+    
   }
 
   
@@ -695,21 +748,18 @@ PlainObject* js::temporal::PreparePartialTemporalFields(
 
 
 
-bool js::temporal::MergeTemporalFieldNames(
+bool js::temporal::ConcatTemporalFieldNames(
     const JS::StackGCVector<PropertyKey>& receiverFieldNames,
     const JS::StackGCVector<PropertyKey>& inputFieldNames,
-    JS::StackGCVector<PropertyKey>& mergedFieldNames) {
+    JS::StackGCVector<PropertyKey>& concatenatedFieldNames) {
   MOZ_ASSERT(IsSorted(receiverFieldNames));
   MOZ_ASSERT(IsSorted(inputFieldNames));
-  MOZ_ASSERT(mergedFieldNames.empty());
-
-  
-  
-  
+  MOZ_ASSERT(concatenatedFieldNames.empty());
 
   auto appendUnique = [&](auto key) {
-    if (mergedFieldNames.empty() || mergedFieldNames.back() != key) {
-      return mergedFieldNames.append(key);
+    if (concatenatedFieldNames.empty() ||
+        concatenatedFieldNames.back() != key) {
+      return concatenatedFieldNames.append(key);
     }
     return true;
   };
@@ -752,18 +802,29 @@ bool js::temporal::MergeTemporalFieldNames(
   return true;
 }
 
-static inline bool ComparePropertyKeyLessThan(PropertyKey x, PropertyKey y) {
-  return ComparePropertyKey(x, y) < 0;
-}
-
-[[nodiscard]] static bool AppendSorted(
-    JS::StackGCVector<PropertyKey>& fieldNames, PropertyKey additionalName) {
+static auto* LowerBound(PropertyKey* begin, PropertyKey* end, PropertyKey key) {
   
   JS::AutoSuppressGCAnalysis nogc;
 
+  return std::lower_bound(begin, end, key, [](auto x, auto y) {
+    return ComparePropertyKey(x, y) < 0;
+  });
+}
+
+[[nodiscard]] static bool AppendSorted(
+    JSContext* cx, JS::StackGCVector<PropertyKey>& fieldNames,
+    PropertyKey additionalName) {
   
-  auto* p = std::upper_bound(fieldNames.begin(), fieldNames.end(),
-                             additionalName, ComparePropertyKeyLessThan);
+  auto* p = LowerBound(fieldNames.begin(), fieldNames.end(), additionalName);
+
+  
+  if (p != fieldNames.end() && *p == additionalName) {
+    if (auto chars = QuoteString(cx, additionalName)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DUPLICATE_PROPERTY, chars.get());
+    }
+    return false;
+  }
 
   
   size_t index = std::distance(fieldNames.begin(), p);
@@ -783,20 +844,33 @@ static inline bool ComparePropertyKeyLessThan(PropertyKey x, PropertyKey y) {
 }
 
 [[nodiscard]] static bool AppendSorted(
-    JS::StackGCVector<PropertyKey>& fieldNames, PropertyKey additionalNameOne,
-    PropertyKey additionalNameTwo) {
-  MOZ_ASSERT(ComparePropertyKeyLessThan(additionalNameOne, additionalNameTwo));
+    JSContext* cx, JS::StackGCVector<PropertyKey>& fieldNames,
+    PropertyKey additionalNameOne, PropertyKey additionalNameTwo) {
+  MOZ_ASSERT(ComparePropertyKey(additionalNameOne, additionalNameTwo) < 0);
 
   
-  JS::AutoSuppressGCAnalysis nogc;
+  auto* p = LowerBound(fieldNames.begin(), fieldNames.end(), additionalNameOne);
 
   
-  auto* p = std::upper_bound(fieldNames.begin(), fieldNames.end(),
-                             additionalNameOne, ComparePropertyKeyLessThan);
+  auto* q = LowerBound(p, fieldNames.end(), additionalNameTwo);
 
   
-  auto* q = std::upper_bound(p, fieldNames.end(), additionalNameTwo,
-                             ComparePropertyKeyLessThan);
+  if (p != fieldNames.end() && *p == additionalNameOne) {
+    if (auto chars = QuoteString(cx, additionalNameOne)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DUPLICATE_PROPERTY, chars.get());
+    }
+    return false;
+  }
+
+  
+  if (q != fieldNames.end() && *q == additionalNameTwo) {
+    if (auto chars = QuoteString(cx, additionalNameTwo)) {
+      JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                JSMSG_TEMPORAL_DUPLICATE_PROPERTY, chars.get());
+    }
+    return false;
+  }
 
   
   size_t indexOne = std::distance(fieldNames.begin(), p);
@@ -827,6 +901,8 @@ bool js::temporal::AppendSorted(
     std::initializer_list<TemporalField> additionalNames) {
   
   MOZ_ASSERT(IsSorted(fieldNames));
+  MOZ_ASSERT(std::adjacent_find(fieldNames.begin(), fieldNames.end()) ==
+             fieldNames.end());
 
   
   MOZ_ASSERT(additionalNames.size() > 0);
@@ -838,14 +914,14 @@ bool js::temporal::AppendSorted(
   if (additionalNames.size() == 1) {
     auto* it = additionalNames.begin();
     auto name = NameToId(ToPropertyName(cx, *it));
-    return ::AppendSorted(fieldNames, name);
+    return ::AppendSorted(cx, fieldNames, name);
   }
 
   if (additionalNames.size() == 2) {
     auto* it = additionalNames.begin();
     auto one = NameToId(ToPropertyName(cx, *it));
     auto two = NameToId(ToPropertyName(cx, *std::next(it)));
-    return ::AppendSorted(fieldNames, one, two);
+    return ::AppendSorted(cx, fieldNames, one, two);
   }
 
   
@@ -866,9 +942,21 @@ bool js::temporal::AppendSorted(
     auto x = *std::prev(left);
     auto y = NameToId(ToPropertyName(cx, *std::prev(right)));
 
+    int32_t r = ComparePropertyKey(x, y);
+
+    
+    if (r == 0) {
+      if (auto chars = QuoteString(cx, x)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_DUPLICATE_PROPERTY,
+                                  chars.get());
+      }
+      return false;
+    }
+
     
     PropertyKey z;
-    if (ComparePropertyKey(x, y) > 0) {
+    if (r > 0) {
       z = x;
       left--;
     } else {
@@ -911,9 +999,36 @@ bool js::temporal::SortTemporalFieldNames(
   }
 
   
-  return MergeSort(fieldNames.begin(), fieldNames.length(), scratch.begin(),
-                   [](const auto& x, const auto& y, bool* lessOrEqual) {
-                     *lessOrEqual = ComparePropertyKey(x, y) <= 0;
-                     return true;
-                   });
+  auto comparator = [](const auto& x, const auto& y, bool* lessOrEqual) {
+    *lessOrEqual = ComparePropertyKey(x, y) <= 0;
+    return true;
+  };
+  MOZ_ALWAYS_TRUE(MergeSort(fieldNames.begin(), fieldNames.length(),
+                            scratch.begin(), comparator));
+
+  for (size_t i = 0; i < fieldNames.length(); i++) {
+    auto property = fieldNames[i];
+
+    
+    if (property == NameToId(cx->names().constructor) ||
+        property == NameToId(cx->names().proto_)) {
+      if (auto chars = QuoteString(cx, property)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_INVALID_PROPERTY, chars.get());
+      }
+      return false;
+    }
+
+    
+    if (i > 0 && property == fieldNames[i - 1]) {
+      if (auto chars = QuoteString(cx, property)) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                  JSMSG_TEMPORAL_DUPLICATE_PROPERTY,
+                                  chars.get());
+      }
+      return false;
+    }
+  }
+
+  return true;
 }
