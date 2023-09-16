@@ -32,7 +32,7 @@ for path in paths:
     sys.path.insert(0, path)
 
 from chrome_trace import ChromeTrace
-from cmdline import FIREFOX_ANDROID_APPS, TRACE_APPS
+from cmdline import FIREFOX_ANDROID_APPS, GECKO_PROFILER_APPS, TRACE_APPS
 from condprof.client import ProfileNotFoundError, get_profile
 from condprof.util import get_current_platform
 from gecko_profile import GeckoProfile
@@ -504,7 +504,7 @@ class Perftest(object):
         
         
         if self.config["gecko_profile"] or self.config.get("extra_profiler_run"):
-            if self.config["app"] == "firefox":
+            if self.config["app"] in GECKO_PROFILER_APPS:
                 self.gecko_profiler.symbolicate()
                 
                 LOG.info("cleaning up after gecko profiling")
