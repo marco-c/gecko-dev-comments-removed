@@ -521,8 +521,7 @@ CssComputedView.prototype = {
           onItem: propertyName => {
             
             const propView = new PropertyView(this, propertyName);
-            fragment.appendChild(propView.buildMain());
-            fragment.appendChild(propView.buildSelectorContainer());
+            fragment.append(...propView.createElements());
 
             if (propView.visible) {
               this.numVisibleProperties++;
@@ -928,48 +927,52 @@ PropertyInfo.prototype = {
 
 
 
-
-
-
-
-
-
-function PropertyView(tree, name) {
-  this.tree = tree;
-  this.name = name;
-
-  this.link = "https://developer.mozilla.org/docs/Web/CSS/" + name;
-
-  this._propertyInfo = new PropertyInfo(tree, name);
-}
-
-PropertyView.prototype = {
+class PropertyView {
   
-  element: null,
+
+
+
+
+
+
+  constructor(tree, name) {
+    this.tree = tree;
+    this.name = name;
+
+    this.link = "https://developer.mozilla.org/docs/Web/CSS/" + name;
+
+    this.#propertyInfo = new PropertyInfo(tree, name);
+  }
 
   
-  propertyHeader: null,
+  element = null;
 
   
-  nameNode: null,
+  propertyHeader = null;
 
   
-  valueNode: null,
+  nameNode = null;
 
   
-  matchedExpanded: false,
+  valueNode = null;
 
   
-  matchedSelectorsContainer: null,
+  matchedExpanded = false;
 
   
-  matchedExpander: null,
+  matchedSelectorsContainer = null;
 
   
-  _matchedSelectorViews: null,
+  matchedExpander = null;
 
   
-  _prevViewedElement: null,
+  #matchedSelectorViews = null;
+
+  
+  #prevViewedElement = null;
+
+  
+  #propertyInfo = null;
 
   
 
@@ -979,21 +982,21 @@ PropertyView.prototype = {
 
   get value() {
     return this.propertyInfo.value;
-  },
+  }
 
   
 
 
   get propertyInfo() {
-    return this._propertyInfo;
-  },
+    return this.#propertyInfo;
+  }
 
   
 
 
   get hasMatchedSelectors() {
     return this.tree.matchedProperties.has(this.name);
-  },
+  }
 
   
 
@@ -1018,7 +1021,7 @@ PropertyView.prototype = {
     }
 
     return this.propertyInfo.isSupported;
-  },
+  }
 
   
 
@@ -1033,7 +1036,7 @@ PropertyView.prototype = {
         : "computed-property-view";
     }
     return "computed-property-hidden";
-  },
+  }
 
   
 
@@ -1049,14 +1052,23 @@ PropertyView.prototype = {
         : "computed-property-content";
     }
     return "computed-property-hidden";
-  },
+  }
 
   
 
 
 
 
-  buildMain() {
+  createElements() {
+    return [this.#buildMain(), this.#buildSelectorContainer()];
+  }
+
+  
+
+
+
+
+  #buildMain() {
     const doc = this.tree.styleDocument;
 
     
@@ -1144,9 +1156,9 @@ PropertyView.prototype = {
     valueContainer.appendChild(valueSeparator);
 
     return this.element;
-  },
+  }
 
-  buildSelectorContainer() {
+  #buildSelectorContainer() {
     const doc = this.tree.styleDocument;
     const element = doc.createElementNS(HTML_NS, "div");
     element.setAttribute("class", this.propertyContentClassName);
@@ -1155,7 +1167,7 @@ PropertyView.prototype = {
     element.appendChild(this.matchedSelectorsContainer);
 
     return element;
-  },
+  }
 
   
 
@@ -1164,9 +1176,9 @@ PropertyView.prototype = {
     this.element.className = this.propertyHeaderClassName;
     this.element.nextElementSibling.className = this.propertyContentClassName;
 
-    if (this._prevViewedElement !== this.tree._viewedElement) {
-      this._matchedSelectorViews = null;
-      this._prevViewedElement = this.tree._viewedElement;
+    if (this.#prevViewedElement !== this.tree._viewedElement) {
+      this.#matchedSelectorViews = null;
+      this.#prevViewedElement = this.tree._viewedElement;
     }
 
     if (!this.tree._viewedElement || !this.visible) {
@@ -1199,7 +1211,7 @@ PropertyView.prototype = {
     this.valueNode.appendChild(frag);
 
     this.refreshMatchedSelectors();
-  },
+  }
 
   
 
@@ -1224,7 +1236,7 @@ PropertyView.prototype = {
 
           this._matchedSelectorResponse = matched;
 
-          this._buildMatchedSelectors();
+          this.#buildMatchedSelectors();
           this.matchedExpander.setAttribute("open", "");
           this.matchedExpander.setAttribute(
             "aria-label",
@@ -1243,13 +1255,13 @@ PropertyView.prototype = {
     );
     this.tree.inspector.emit("computed-view-property-collapsed");
     return Promise.resolve(undefined);
-  },
+  }
 
   get matchedSelectors() {
     return this._matchedSelectorResponse;
-  },
+  }
 
-  _buildMatchedSelectors() {
+  #buildMatchedSelectors() {
     const frag = this.element.ownerDocument.createDocumentFragment();
 
     for (const selector of this.matchedSelectorViews) {
@@ -1301,22 +1313,22 @@ PropertyView.prototype = {
 
     this.matchedSelectorsContainer.innerHTML = "";
     this.matchedSelectorsContainer.appendChild(frag);
-  },
+  }
 
   
 
 
 
   get matchedSelectorViews() {
-    if (!this._matchedSelectorViews) {
-      this._matchedSelectorViews = [];
+    if (!this.#matchedSelectorViews) {
+      this.#matchedSelectorViews = [];
       this._matchedSelectorResponse.forEach(selectorInfo => {
         const selectorView = new SelectorView(this.tree, selectorInfo);
-        this._matchedSelectorViews.push(selectorView);
+        this.#matchedSelectorViews.push(selectorView);
       }, this);
     }
-    return this._matchedSelectorViews;
-  },
+    return this.#matchedSelectorViews;
+  }
 
   
 
@@ -1332,21 +1344,21 @@ PropertyView.prototype = {
     this.matchedExpanded = !this.matchedExpanded;
     this.refreshMatchedSelectors();
     event.preventDefault();
-  },
+  }
 
   
 
 
   mdnLinkClick(event) {
     openContentLink(this.link);
-  },
+  }
 
   
 
 
   destroy() {
-    if (this._matchedSelectorViews) {
-      for (const view of this._matchedSelectorViews) {
+    if (this.#matchedSelectorViews) {
+      for (const view of this.#matchedSelectorViews) {
         view.destroy();
       }
     }
@@ -1363,8 +1375,8 @@ PropertyView.prototype = {
 
     this.valueNode.removeEventListener("click", this.onFocus);
     this.valueNode = null;
-  },
-};
+  }
+}
 
 
 
