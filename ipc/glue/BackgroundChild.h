@@ -55,10 +55,6 @@ class PBackgroundStarterChild;
 
 
 
-
-
-
-
 class BackgroundChild final {
   friend class mozilla::dom::ContentParent;
   friend class mozilla::dom::ContentProcess;
@@ -72,9 +68,6 @@ class BackgroundChild final {
   static PBackgroundChild* GetOrCreateForCurrentThread();
 
   
-  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread();
-
-  
   static PBackgroundChild* GetOrCreateForSocketParentBridgeForCurrentThread();
 
   
@@ -85,10 +78,6 @@ class BackgroundChild final {
 
   
   static void InitSocketStarter(mozilla::net::SocketProcessChild* aSocket);
-
-  
-  static void InitSocketBridgeStarter(
-      mozilla::net::SocketProcessBridgeChild* aSocketBridge);
 
  private:
   
