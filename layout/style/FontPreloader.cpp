@@ -28,6 +28,11 @@ nsresult FontPreloader::CreateChannel(
     const dom::ReferrerPolicy& aReferrerPolicy, dom::Document* aDocument,
     nsILoadGroup* aLoadGroup, nsIInterfaceRequestor* aCallbacks,
     uint64_t aEarlyHintPreloaderId) {
+  
+  if (!gfxPlatform::GetPlatform()->DownloadableFontsEnabled()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
   return BuildChannel(aChannel, aURI, aCORSMode, aReferrerPolicy, nullptr,
                       nullptr, aDocument, aLoadGroup, aCallbacks, true);
 }
