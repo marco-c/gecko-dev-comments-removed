@@ -64,10 +64,11 @@ bool AsyncEmitter::prepareForModule() {
   
   
   MOZ_ASSERT(state_ == State::Start);
-  MOZ_ASSERT(bce_->lookupName(TaggedParserAtomIndex::WellKnown::dotGenerator())
-                 .hasKnownSlot());
+  MOZ_ASSERT(
+      bce_->lookupName(TaggedParserAtomIndex::WellKnown::dot_generator_())
+          .hasKnownSlot());
 
-  NameOpEmitter noe(bce_, TaggedParserAtomIndex::WellKnown::dotGenerator(),
+  NameOpEmitter noe(bce_, TaggedParserAtomIndex::WellKnown::dot_generator_(),
                     NameOpEmitter::Kind::Initialize);
   if (!noe.prepareForRhs()) {
     

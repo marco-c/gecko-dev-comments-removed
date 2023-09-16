@@ -144,7 +144,7 @@ inline bool FetchName(JSContext* cx, HandleObject receiver, HandleObject holder,
   }
 
   
-  if (name == cx->names().dotThis) {
+  if (name == cx->names().dot_this_) {
     return true;
   }
 

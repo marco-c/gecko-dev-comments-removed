@@ -524,9 +524,9 @@ bool FunctionScriptEmitter::emitExtraBodyVarScope() {
 
     
     
-    MOZ_ASSERT(name != TaggedParserAtomIndex::WellKnown::dotThis() &&
-               name != TaggedParserAtomIndex::WellKnown::dotNewTarget() &&
-               name != TaggedParserAtomIndex::WellKnown::dotGenerator());
+    MOZ_ASSERT(name != TaggedParserAtomIndex::WellKnown::dot_this_() &&
+               name != TaggedParserAtomIndex::WellKnown::dot_newTarget_() &&
+               name != TaggedParserAtomIndex::WellKnown::dot_generator_());
 
     NameOpEmitter noe(bce_, name, NameOpEmitter::Kind::Initialize);
     if (!noe.prepareForRhs()) {

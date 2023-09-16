@@ -703,7 +703,7 @@ bool BytecodeEmitter::emitAtomOp(JSOp op, TaggedParserAtomIndex atom) {
   
   
   MOZ_ASSERT_IF(op == JSOp::GetName || op == JSOp::GetGName,
-                atom != TaggedParserAtomIndex::WellKnown::dotGenerator());
+                atom != TaggedParserAtomIndex::WellKnown::dot_generator_());
 
   GCThingIndex index;
   if (!makeAtomIndex(atom, ParserAtom::Atomize::Yes, &index)) {
@@ -6024,13 +6024,13 @@ bool BytecodeEmitter::emitContinue(TaggedParserAtomIndex label) {
 
 bool BytecodeEmitter::emitGetFunctionThis(NameNode* thisName) {
   MOZ_ASSERT(sc->hasFunctionThisBinding());
-  MOZ_ASSERT(thisName->isName(TaggedParserAtomIndex::WellKnown::dotThis()));
+  MOZ_ASSERT(thisName->isName(TaggedParserAtomIndex::WellKnown::dot_this_()));
 
   if (!updateLineNumberNotes(thisName->pn_pos.begin)) {
     return false;
   }
 
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
     
     return false;
   }
@@ -6078,8 +6078,8 @@ bool BytecodeEmitter::emitThisLiteral(ThisLiteral* pn) {
 
 bool BytecodeEmitter::emitCheckDerivedClassConstructorReturn() {
   MOZ_ASSERT(
-      lookupName(TaggedParserAtomIndex::WellKnown::dotThis()).hasKnownSlot());
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+      lookupName(TaggedParserAtomIndex::WellKnown::dot_this_()).hasKnownSlot());
+  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
     return false;
   }
   if (!emit1(JSOp::CheckReturn)) {
@@ -6094,7 +6094,7 @@ bool BytecodeEmitter::emitCheckDerivedClassConstructorReturn() {
 bool BytecodeEmitter::emitNewTarget() {
   MOZ_ASSERT(sc->allowNewTarget());
 
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotNewTarget())) {
+  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_newTarget_())) {
     
     return false;
   }
@@ -6103,7 +6103,7 @@ bool BytecodeEmitter::emitNewTarget() {
 
 bool BytecodeEmitter::emitNewTarget(NewTargetNode* pn) {
   MOZ_ASSERT(pn->newTargetName()->isName(
-      TaggedParserAtomIndex::WellKnown::dotNewTarget()));
+      TaggedParserAtomIndex::WellKnown::dot_newTarget_()));
 
   return emitNewTarget();
 }
@@ -6224,14 +6224,14 @@ bool BytecodeEmitter::emitGetDotGeneratorInScope(EmitterScope& currentScope) {
   if (!sc->isFunction() && sc->isModuleContext() &&
       sc->asModuleContext()->isAsync()) {
     NameLocation loc = *locationOfNameBoundInScopeType<ModuleScope>(
-        TaggedParserAtomIndex::WellKnown::dotGenerator(), &currentScope);
+        TaggedParserAtomIndex::WellKnown::dot_generator_(), &currentScope);
     return emitGetNameAtLocation(
-        TaggedParserAtomIndex::WellKnown::dotGenerator(), loc);
+        TaggedParserAtomIndex::WellKnown::dot_generator_(), loc);
   }
   NameLocation loc = *locationOfNameBoundInScopeType<FunctionScope>(
-      TaggedParserAtomIndex::WellKnown::dotGenerator(), &currentScope);
-  return emitGetNameAtLocation(TaggedParserAtomIndex::WellKnown::dotGenerator(),
-                               loc);
+      TaggedParserAtomIndex::WellKnown::dot_generator_(), &currentScope);
+  return emitGetNameAtLocation(
+      TaggedParserAtomIndex::WellKnown::dot_generator_(), loc);
 }
 
 bool BytecodeEmitter::emitInitialYield(UnaryNode* yieldNode) {
@@ -8938,8 +8938,8 @@ bool BytecodeEmitter::emitPropertyList(ListNode* obj, PropertyEmitter& pe,
       if (field->name().getKind() == ParseNodeKind::ComputedName) {
         auto fieldKeys =
             field->isStatic()
-                ? TaggedParserAtomIndex::WellKnown::dotStaticFieldKeys()
-                : TaggedParserAtomIndex::WellKnown::dotFieldKeys();
+                ? TaggedParserAtomIndex::WellKnown::dot_staticFieldKeys_()
+                : TaggedParserAtomIndex::WellKnown::dot_fieldKeys_();
         if (!emitGetName(fieldKeys)) {
           
           return false;
@@ -9641,9 +9641,9 @@ bool BytecodeEmitter::emitCreateFieldKeys(ListNode* obj,
     return true;
   }
 
-  auto fieldKeys = isStatic
-                       ? TaggedParserAtomIndex::WellKnown::dotStaticFieldKeys()
-                       : TaggedParserAtomIndex::WellKnown::dotFieldKeys();
+  auto fieldKeys =
+      isStatic ? TaggedParserAtomIndex::WellKnown::dot_staticFieldKeys_()
+               : TaggedParserAtomIndex::WellKnown::dot_fieldKeys_();
   NameOpEmitter noe(this, fieldKeys, NameOpEmitter::Kind::Initialize);
   if (!noe.prepareForRhs()) {
     return false;
@@ -10284,11 +10284,11 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
 
   if (memberInitializers.hasPrivateBrand) {
     
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
       
       return false;
     }
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotPrivateBrand())) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_privateBrand_())) {
       
       return false;
     }
@@ -10319,7 +10319,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
 
   size_t numInitializers = memberInitializers.numMemberInitializers;
   if (numInitializers > 0) {
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotInitializers())) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_initializers_())) {
       
       return false;
     }
@@ -10346,7 +10346,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
       }
 
       
-      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+      if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
         
         return false;
       }
@@ -10374,7 +10374,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
     
     
     
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotInitializers())) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_initializers_())) {
       
       return false;
     }
@@ -10441,7 +10441,7 @@ bool BytecodeEmitter::emitInitializeInstanceMembers(
     }
 
     
-    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotThis())) {
+    if (!emitGetName(TaggedParserAtomIndex::WellKnown::dot_this_())) {
       
       return false;
     }
@@ -10489,7 +10489,8 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
     return true;
   }
 
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotStaticInitializers())) {
+  if (!emitGetName(
+          TaggedParserAtomIndex::WellKnown::dot_staticInitializers_())) {
     
     return false;
   }
@@ -10545,7 +10546,8 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
   
   
   
-  if (!emitGetName(TaggedParserAtomIndex::WellKnown::dotStaticInitializers())) {
+  if (!emitGetName(
+          TaggedParserAtomIndex::WellKnown::dot_staticInitializers_())) {
     
     return false;
   }
@@ -10671,7 +10673,7 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
   };
 
   if (!clearStaticFieldSlot(
-          TaggedParserAtomIndex::WellKnown::dotStaticInitializers())) {
+          TaggedParserAtomIndex::WellKnown::dot_staticInitializers_())) {
     return false;
   }
 
@@ -10685,7 +10687,7 @@ bool BytecodeEmitter::emitInitializeStaticFields(ListNode* classMembers) {
                   classMembers->contents().end(),
                   isStaticFieldWithComputedName)) {
     if (!clearStaticFieldSlot(
-            TaggedParserAtomIndex::WellKnown::dotStaticFieldKeys())) {
+            TaggedParserAtomIndex::WellKnown::dot_staticFieldKeys_())) {
       return false;
     }
   }
@@ -11319,7 +11321,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
   
   if (funbox->functionHasThisBinding()) {
     if (!emitInitializeFunctionSpecialName(
-            this, TaggedParserAtomIndex::WellKnown::dotThis(),
+            this, TaggedParserAtomIndex::WellKnown::dot_this_(),
             JSOp::FunctionThis)) {
       return false;
     }
@@ -11330,7 +11332,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
   
   if (funbox->functionHasNewTargetBinding()) {
     if (!emitInitializeFunctionSpecialName(
-            this, TaggedParserAtomIndex::WellKnown::dotNewTarget(),
+            this, TaggedParserAtomIndex::WellKnown::dot_newTarget_(),
             JSOp::NewTarget)) {
       return false;
     }
@@ -11339,7 +11341,7 @@ bool BytecodeEmitter::emitInitializeFunctionSpecialNames() {
   
   if (funbox->needsPromiseResult()) {
     if (!emitInitializeFunctionSpecialName(
-            this, TaggedParserAtomIndex::WellKnown::dotGenerator(),
+            this, TaggedParserAtomIndex::WellKnown::dot_generator_(),
             JSOp::Generator)) {
       
       return false;
@@ -11455,8 +11457,9 @@ bool BytecodeEmitter::emitNewPrivateNames(
   if (hasPrivateBrand) {
     
     
-    if (!emitNewPrivateName(TaggedParserAtomIndex::WellKnown::dotPrivateBrand(),
-                            privateBrandName)) {
+    if (!emitNewPrivateName(
+            TaggedParserAtomIndex::WellKnown::dot_privateBrand_(),
+            privateBrandName)) {
       return false;
     }
   }
@@ -11571,7 +11574,7 @@ bool BytecodeEmitter::emitClass(
     MOZ_ASSERT(constructorScope->scopeBindings()->length == 1);
     MOZ_ASSERT(GetScopeDataTrailingNames(constructorScope->scopeBindings())[0]
                    .name() ==
-               TaggedParserAtomIndex::WellKnown::dotInitializers());
+               TaggedParserAtomIndex::WellKnown::dot_initializers_());
 
     auto needsInitializer = [](ParseNode* propdef) {
       return NeedsFieldInitializer(propdef, false) ||

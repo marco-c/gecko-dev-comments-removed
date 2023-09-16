@@ -139,7 +139,7 @@ mozilla::Maybe<ScopeIndex> EmitterScope::enclosingScopeIndex(
 bool EmitterScope::nameCanBeFree(BytecodeEmitter* bce,
                                  TaggedParserAtomIndex name) {
   
-  return name != TaggedParserAtomIndex::WellKnown::dotGenerator();
+  return name != TaggedParserAtomIndex::WellKnown::dot_generator_();
 }
 
 NameLocation EmitterScope::searchAndCache(BytecodeEmitter* bce,

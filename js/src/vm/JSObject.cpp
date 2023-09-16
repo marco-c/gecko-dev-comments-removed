@@ -1650,7 +1650,7 @@ bool js::LookupNameUnqualified(JSContext* cx, Handle<PropertyName*> name,
   
   if (pobj == env) {
     bool isTDZ = false;
-    if (prop.isFound() && name != cx->names().dotThis) {
+    if (prop.isFound() && name != cx->names().dot_this_) {
       
       
       
@@ -1680,7 +1680,7 @@ bool js::LookupNameUnqualified(JSContext* cx, Handle<PropertyName*> name,
       if (!(env->is<BlockLexicalEnvironmentObject>() &&
             env->as<BlockLexicalEnvironmentObject>().scope().kind() ==
                 ScopeKind::NamedLambda)) {
-        MOZ_ASSERT(name != cx->names().dotThis);
+        MOZ_ASSERT(name != cx->names().dot_this_);
         env =
             RuntimeLexicalErrorObject::create(cx, env, JSMSG_BAD_CONST_ASSIGN);
         if (!env) {
