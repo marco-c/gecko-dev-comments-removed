@@ -10,6 +10,7 @@
 #include "vm/BytecodeUtil.h"
 
 #include "frontend/SourceNotes.h"  
+#include "js/ColumnNumber.h"  
 #include "vm/JSScript.h"
 
 namespace js {
@@ -118,7 +119,7 @@ class BytecodeRangeWithPosition : private BytecodeRange {
       : BytecodeRange(cx, script),
         initialLine(script->lineno()),
         lineno(script->lineno()),
-        column(script->column().zeroOriginValue()),
+        column(script->column()),
         sn(script->notes()),
         snpc(script->code()),
         isEntryPoint(false),
@@ -163,7 +164,7 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   }
 
   uint32_t frontLineNumber() const { return lineno; }
-  uint32_t frontColumnNumber() const { return column; }
+  JS::LimitedColumnNumberZeroOrigin frontColumnNumber() const { return column; }
 
   
   
@@ -202,16 +203,16 @@ class BytecodeRangeWithPosition : private BytecodeRange {
       SrcNoteType type = sn->type();
       if (type == SrcNoteType::ColSpan) {
         ptrdiff_t colspan = SrcNote::ColSpan::getSpan(sn);
-        MOZ_ASSERT(ptrdiff_t(column) + colspan >= 0);
-        column += colspan;
+        MOZ_ASSERT(ptrdiff_t(column.zeroOriginValue()) + colspan >= 0);
+        column += JS::ColumnNumberOffset(colspan);
         lastLinePC = snpc;
       } else if (type == SrcNoteType::SetLine) {
         lineno = SrcNote::SetLine::getLine(sn, initialLine);
-        column = 0;
+        column = JS::LimitedColumnNumberZeroOrigin::zero();
         lastLinePC = snpc;
       } else if (type == SrcNoteType::NewLine) {
         lineno++;
-        column = 0;
+        column = JS::LimitedColumnNumberZeroOrigin::zero();
         lastLinePC = snpc;
       } else if (type == SrcNoteType::Breakpoint) {
         isBreakpoint = true;
@@ -232,7 +233,7 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   uint32_t lineno;
 
   
-  uint32_t column;
+  JS::LimitedColumnNumberZeroOrigin column;
 
   const SrcNote* sn;
   jsbytecode* snpc;
