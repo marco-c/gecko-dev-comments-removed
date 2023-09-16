@@ -62,7 +62,7 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
                 }
             },
             "excludeSwitches": ["enable-automation"],
-            "w3c": True
+            "w3c": True,
         }
     }
 
@@ -93,6 +93,8 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     
     
     chrome_options["args"].append("--enable-features=SecurePaymentConfirmationBrowser")
+    
+    chrome_options["args"].append("--webtransport-developer-mode")
 
     
     
@@ -123,20 +125,15 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
         chrome_options["args"].extend(["--enable-experimental-web-platform-features"])
 
     
-    if kwargs["binary_args"] is not None:
-        chrome_options["args"].extend(kwargs["binary_args"])
-
-    
     
     if ((kwargs["headless"] or test_type == "print-reftest") and
         "--headless" not in chrome_options["args"]):
         chrome_options["args"].append("--headless")
 
     
-    webtranport_h3_port = test_environment.config.ports.get('webtransport-h3')
-    if webtranport_h3_port is not None:
-        chrome_options["args"].append(
-            f"--origin-to-force-quic-on=web-platform.test:{webtranport_h3_port[0]}")
+    for arg in kwargs.get("binary_args", []):
+        if arg not in chrome_options["args"]:
+            chrome_options["args"].append(arg)
 
     if test_type == "wdspec":
         executor_kwargs["binary_args"] = chrome_options["args"]
