@@ -18,40 +18,8 @@
 
 namespace mozilla::dom {
 
-enum class U2FOperation { Register, Sign };
-
 bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
                     nsString& aAppId);
-
-nsresult AssembleAuthenticatorData(const CryptoBuffer& rpIdHashBuf,
-                                   const uint8_t flags,
-                                   const CryptoBuffer& counterBuf,
-                                   const CryptoBuffer& attestationDataBuf,
-                                    CryptoBuffer& authDataBuf);
-
-nsresult AssembleAttestationObject(const CryptoBuffer& aRpIdHash,
-                                   const CryptoBuffer& aPubKeyBuf,
-                                   const CryptoBuffer& aKeyHandleBuf,
-                                   const CryptoBuffer& aAttestationCertBuf,
-                                   const CryptoBuffer& aSignatureBuf,
-                                   bool aForceNoneAttestation,
-                                    CryptoBuffer& aAttestationObjBuf);
-
-nsresult U2FDecomposeSignResponse(const CryptoBuffer& aResponse,
-                                   uint8_t& aFlags,
-                                   CryptoBuffer& aCounterBuf,
-                                   CryptoBuffer& aSignatureBuf);
-
-nsresult U2FDecomposeRegistrationResponse(
-    const CryptoBuffer& aResponse,
-     CryptoBuffer& aPubKeyBuf,
-     CryptoBuffer& aKeyHandleBuf,
-     CryptoBuffer& aAttestationCertBuf,
-     CryptoBuffer& aSignatureBuf);
-
-nsresult U2FDecomposeECKey(const CryptoBuffer& aPubKeyBuf,
-                            CryptoBuffer& aXcoord,
-                            CryptoBuffer& aYcoord);
 
 nsresult HashCString(const nsACString& aIn,  CryptoBuffer& aOut);
 
