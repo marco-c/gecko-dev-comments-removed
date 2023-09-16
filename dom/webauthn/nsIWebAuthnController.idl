@@ -139,9 +139,9 @@ interface nsIWebAuthnAttObj : nsISupports {
 
     readonly attribute Array<octet> authenticatorData;
 
-    
-    
-    
+    readonly attribute Array<octet> publicKey;
+
+    readonly attribute COSEAlgorithmIdentifier publicKeyAlgorithm;
 };
 
 
