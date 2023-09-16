@@ -2330,7 +2330,7 @@ nsresult imgLoader::LoadImage(
   }
 
   
-  if (StaticPrefs::network_preload() && !aLinkPreload && aLoadingDocument) {
+  if (!aLinkPreload && aLoadingDocument) {
     
     
     MOZ_ASSERT(!aEarlyHintPreloaderId);
