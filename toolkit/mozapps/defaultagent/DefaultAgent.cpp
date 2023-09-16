@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 
+#include "mozilla/mscom/EnsureMTA.h"
 #include "nsAutoRef.h"
 #include "nsDebug.h"
 #include "nsWindowsHelpers.h"
@@ -324,8 +325,14 @@ DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
   }
   DefaultPdfInfo pdfInfo = defaultPdfResult.unwrap();
 
-  NotificationActivities activitiesPerformed = MaybeShowNotification(
-      browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
+  NotificationActivities activitiesPerformed;
+  
+  
+  
+  mozilla::mscom::EnsureMTA([&] {
+    activitiesPerformed = MaybeShowNotification(
+        browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
+  });
 
   HRESULT hr =
       SendDefaultBrowserPing(browserInfo, pdfInfo, activitiesPerformed);
