@@ -512,9 +512,15 @@ class StyleSheetsManager extends EventEmitter {
 
     this._mqlList = [];
 
-    const document = styleSheet.associatedDocument;
-    const win = document?.ownerGlobal;
-    const CSSGroupingRule = win?.CSSGroupingRule;
+    
+    
+    let win;
+    const getStyleSheetAssociatedWindow = () => {
+      if (!win) {
+        win = styleSheet.associatedDocument?.ownerGlobal;
+      }
+      return win;
+    };
 
     const styleSheetRules =
       InspectorUtils.getAllStyleSheetCSSStyleRules(styleSheet);
@@ -522,58 +528,54 @@ class StyleSheetsManager extends EventEmitter {
     
     const atRules = [];
     for (const rule of styleSheetRules) {
-      
-      if (CSSGroupingRule && CSSGroupingRule.isInstance(rule)) {
-        const line = InspectorUtils.getRelativeRuleLine(rule);
-        const column = InspectorUtils.getRuleColumn(rule);
+      const className = ChromeUtils.getClassName(rule);
+      if (className === "CSSMediaRule") {
+        let matches = false;
 
-        const className = ChromeUtils.getClassName(rule);
-        if (className === "CSSMediaRule") {
-          let matches = false;
-
-          try {
-            const mql = win.matchMedia(rule.media.mediaText);
-            matches = mql.matches;
-            mql.onchange = this._onMatchesChange.bind(
-              this,
-              resourceId,
-              atRules.length
-            );
-            this._mqlList.push(mql);
-          } catch (e) {
-            
-          }
-
-          atRules.push({
-            type: "media",
-            mediaText: rule.media.mediaText,
-            conditionText: rule.conditionText,
-            matches,
-            line,
-            column,
-          });
-        } else if (className === "CSSContainerRule") {
-          atRules.push({
-            type: "container",
-            conditionText: rule.conditionText,
-            line,
-            column,
-          });
-        } else if (className === "CSSSupportsRule") {
-          atRules.push({
-            type: "support",
-            conditionText: rule.conditionText,
-            line,
-            column,
-          });
-        } else if (className === "CSSLayerBlockRule") {
-          atRules.push({
-            type: "layer",
-            layerName: rule.name,
-            line,
-            column,
-          });
+        try {
+          const mql = getStyleSheetAssociatedWindow().matchMedia(
+            rule.media.mediaText
+          );
+          matches = mql.matches;
+          mql.onchange = this._onMatchesChange.bind(
+            this,
+            resourceId,
+            atRules.length
+          );
+          this._mqlList.push(mql);
+        } catch (e) {
+          
         }
+
+        atRules.push({
+          type: "media",
+          mediaText: rule.media.mediaText,
+          conditionText: rule.conditionText,
+          matches,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
+      } else if (className === "CSSContainerRule") {
+        atRules.push({
+          type: "container",
+          conditionText: rule.conditionText,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
+      } else if (className === "CSSSupportsRule") {
+        atRules.push({
+          type: "support",
+          conditionText: rule.conditionText,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
+      } else if (className === "CSSLayerBlockRule") {
+        atRules.push({
+          type: "layer",
+          layerName: rule.name,
+          line: InspectorUtils.getRelativeRuleLine(rule),
+          column: InspectorUtils.getRuleColumn(rule),
+        });
       }
     }
     return { ruleCount, atRules };
