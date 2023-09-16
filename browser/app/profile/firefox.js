@@ -751,11 +751,6 @@ pref("browser.shopping.experience2023.ads.enabled", true);
 
 pref("browser.shopping.experience2023.ads.userEnabled", true);
 
-pref("browser.shopping.experience2023.survey.hasSeen", false);
-
-
-pref("browser.shopping.experience2023.survey.pdpVisits", 0);
-
 
 pref("browser.privatebrowsing.vpnpromourl", "https://vpn.mozilla.org/?utm_source=firefox-browser&utm_medium=firefox-%CHANNEL%-browser&utm_campaign=private-browsing-vpn-link");
 
