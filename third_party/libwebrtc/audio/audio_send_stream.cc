@@ -455,15 +455,14 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
     stats.codec_payload_type = spec.payload_type;
 
     
-    for (const auto& block : channel_send_->GetRemoteRTCPReportBlocks()) {
+    for (const ReportBlockData& block :
+         channel_send_->GetRemoteRTCPReportBlocks()) {
       
-      if (block.source_SSRC == stats.local_ssrc) {
-        stats.packets_lost = block.cumulative_num_packets_lost;
-        stats.fraction_lost = Q8ToFloat(block.fraction_lost);
-        
-        if (spec.format.clockrate_hz / 1000 > 0) {
-          stats.jitter_ms =
-              block.interarrival_jitter / (spec.format.clockrate_hz / 1000);
+      if (block.source_ssrc() == stats.local_ssrc) {
+        stats.packets_lost = block.cumulative_lost();
+        stats.fraction_lost = block.fraction_lost();
+        if (spec.format.clockrate_hz > 0) {
+          stats.jitter_ms = block.jitter(spec.format.clockrate_hz).ms();
         }
         break;
       }
