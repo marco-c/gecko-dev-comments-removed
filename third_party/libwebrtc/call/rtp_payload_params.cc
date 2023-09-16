@@ -604,23 +604,42 @@ void RtpPayloadParams::Vp9ToGeneric(const CodecSpecificInfoVP9& vp9_info,
     
     last_vp9_frame_id_.resize(kPictureDiffLimit);
   }
-  if (vp9_header.inter_layer_predicted && spatial_index > 0) {
-    result.dependencies.push_back(
-        last_vp9_frame_id_[vp9_header.picture_id % kPictureDiffLimit]
-                          [spatial_index - 1]);
-  }
-  if (vp9_header.inter_pic_predicted) {
-    for (size_t i = 0; i < vp9_header.num_ref_pics; ++i) {
-      
-      
-      
-      uint16_t depend_on = vp9_header.picture_id - vp9_header.pid_diff[i];
+
+  if (vp9_header.flexible_mode) {
+    if (vp9_header.inter_layer_predicted && spatial_index > 0) {
       result.dependencies.push_back(
-          last_vp9_frame_id_[depend_on % kPictureDiffLimit][spatial_index]);
+          last_vp9_frame_id_[vp9_header.picture_id % kPictureDiffLimit]
+                            [spatial_index - 1]);
     }
+    if (vp9_header.inter_pic_predicted) {
+      for (size_t i = 0; i < vp9_header.num_ref_pics; ++i) {
+        
+        
+        
+        uint16_t depend_on = vp9_header.picture_id - vp9_header.pid_diff[i];
+        result.dependencies.push_back(
+            last_vp9_frame_id_[depend_on % kPictureDiffLimit][spatial_index]);
+      }
+    }
+    last_vp9_frame_id_[vp9_header.picture_id % kPictureDiffLimit]
+                      [spatial_index] = shared_frame_id;
+  } else {
+    
+    
+    
+    if (spatial_index > 0 || temporal_index > 0) {
+      
+      rtp_video_header.generic.reset();
+      return;
+    }
+
+    if (vp9_header.inter_pic_predicted) {
+      
+      
+      result.dependencies.push_back(last_vp9_frame_id_[0][0]);
+    }
+    last_vp9_frame_id_[0][0] = shared_frame_id;
   }
-  last_vp9_frame_id_[vp9_header.picture_id % kPictureDiffLimit][spatial_index] =
-      shared_frame_id;
 
   result.active_decode_targets =
       ((uint32_t{1} << num_temporal_layers * num_active_spatial_layers) - 1);
