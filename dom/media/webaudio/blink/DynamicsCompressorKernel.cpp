@@ -113,7 +113,8 @@ float DynamicsCompressorKernel::kneeCurve(float x, float k) {
   
   if (x < m_linearThreshold) return x;
 
-  return m_linearThreshold + (1 - expf(-k * (x - m_linearThreshold))) / k;
+  return m_linearThreshold +
+         (1 - fdlibm_expf(-k * (x - m_linearThreshold))) / k;
 }
 
 
@@ -232,7 +233,7 @@ void DynamicsCompressorKernel::process(
   float fullRangeMakeupGain = 1 / fullRangeGain;
 
   
-  fullRangeMakeupGain = powf(fullRangeMakeupGain, 0.6f);
+  fullRangeMakeupGain = fdlibm_powf(fullRangeMakeupGain, 0.6f);
 
   float masterLinearGain =
       WebAudioUtils::ConvertDecibelsToLinear(dbPostGain) * fullRangeMakeupGain;
@@ -297,7 +298,7 @@ void DynamicsCompressorKernel::process(
     float desiredGain = m_detectorAverage;
 
     
-    float scaledDesiredGain = asinf(desiredGain) / (0.5f * M_PI);
+    float scaledDesiredGain = fdlibm_asinf(desiredGain) / (0.5f * M_PI);
 
     
     
@@ -365,7 +366,7 @@ void DynamicsCompressorKernel::process(
       float effAttenDiffDb = std::max(0.5f, m_maxAttackCompressionDiffDb);
 
       float x = 0.25f / effAttenDiffDb;
-      envelopeRate = 1 - powf(x, 1 / attackFrames);
+      envelopeRate = 1 - fdlibm_powf(x, 1 / attackFrames);
     }
 
     
@@ -440,14 +441,15 @@ void DynamicsCompressorKernel::process(
 
         
         
-        float postWarpCompressorGain = sinf(0.5f * M_PI * compressorGain);
+        float postWarpCompressorGain =
+            fdlibm_sinf(0.5f * M_PI * compressorGain);
 
         
         float totalGain =
             dryMix + wetMix * masterLinearGain * postWarpCompressorGain;
 
         
-        float dbRealGain = 20 * log10(postWarpCompressorGain);
+        float dbRealGain = 20 * fdlibm_log10f(postWarpCompressorGain);
         if (dbRealGain < m_meteringGain)
           m_meteringGain = dbRealGain;
         else
