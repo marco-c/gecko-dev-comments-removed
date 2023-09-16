@@ -90,7 +90,6 @@ interface nsICtapSignArgs : nsISupports {
     
     [must_use] readonly attribute bool hmacCreateSecret;
     [must_use] readonly attribute AString appId;
-    [must_use] readonly attribute Array<octet> appIdHash;
 
     
     [must_use] readonly attribute AString userVerification;

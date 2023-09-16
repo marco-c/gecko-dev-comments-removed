@@ -7,7 +7,6 @@
 #ifndef mozilla_dom_AndroidWebAuthnTokenManager_h
 #define mozilla_dom_AndroidWebAuthnTokenManager_h
 
-#include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/dom/U2FTokenTransport.h"
 #include "mozilla/java/WebAuthnTokenManagerNatives.h"
 
@@ -84,16 +83,16 @@ class AndroidWebAuthnResult {
   AndroidWebAuthnResult(AndroidWebAuthnResult&&) = default;
 
   
-  CryptoBuffer mAttObj;
+  nsTArray<uint8_t> mAttObj;
 
   
-  CryptoBuffer mKeyHandle;
+  nsTArray<uint8_t> mKeyHandle;
   nsCString mClientDataJSON;
 
   
-  CryptoBuffer mAuthData;
-  CryptoBuffer mSignature;
-  CryptoBuffer mUserHandle;
+  nsTArray<uint8_t> mAuthData;
+  nsTArray<uint8_t> mSignature;
+  nsTArray<uint8_t> mUserHandle;
 
  private:
   const nsString mErrorCode;

@@ -12,7 +12,6 @@
 
 
 #include "ipc/EnumSerializer.h"
-#include "mozilla/dom/CryptoBuffer.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "ipc/IPCMessageUtils.h"
 
@@ -21,12 +20,12 @@ namespace mozilla::dom {
 bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
                     nsString& aAppId);
 
-nsresult HashCString(const nsACString& aIn,  CryptoBuffer& aOut);
+nsresult HashCString(const nsACString& aIn,  nsTArray<uint8_t>& aOut);
 
 nsresult BuildTransactionHashes(const nsCString& aRpId,
                                 const nsCString& aClientDataJSON,
-                                 CryptoBuffer& aRpIdHash,
-                                 CryptoBuffer& aClientDataHash);
+                                 nsTArray<uint8_t>& aRpIdHash,
+                                 nsTArray<uint8_t>& aClientDataHash);
 
 }  
 

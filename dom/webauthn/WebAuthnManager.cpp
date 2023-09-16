@@ -11,6 +11,7 @@
 #include "WebAuthnCoseIdentifiers.h"
 #include "WebAuthnEnumStrings.h"
 #include "WebAuthnTransportIdentifiers.h"
+#include "mozilla/Base64.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/dom/AuthenticatorAssertionResponse.h"
 #include "mozilla/dom/AuthenticatorAttestationResponse.h"
@@ -531,12 +532,6 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
     }
   }
 
-  CryptoBuffer rpIdHash;
-  if (!rpIdHash.SetLength(SHA256_LENGTH, fallible)) {
-    promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
-    return promise.forget();
-  }
-
   
   if (aOptions.mAllowCredentials.Length() > MAX_ALLOWED_CREDENTIALS) {
     promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
@@ -625,21 +620,8 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
       return promise.forget();
     }
 
-    CryptoBuffer appIdHash;
-    if (!appIdHash.SetLength(SHA256_LENGTH, fallible)) {
-      promise->MaybeReject(NS_ERROR_OUT_OF_MEMORY);
-      return promise.forget();
-    }
-
     
-    rv = HashCString(NS_ConvertUTF16toUTF8(appId), appIdHash);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
-      return promise.forget();
-    }
-
-    
-    extensions.AppendElement(WebAuthnExtensionAppId(appIdHash, appId));
+    extensions.AppendElement(WebAuthnExtensionAppId(appId));
   }
 
   BrowsingContext* context = mParent->GetBrowsingContext();
@@ -713,26 +695,10 @@ void WebAuthnManager::FinishMakeCredential(
     return;
   }
 
-  CryptoBuffer clientDataBuf;
-  if (NS_WARN_IF(!clientDataBuf.Assign(aResult.ClientDataJSON()))) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer attObjBuf;
-  if (NS_WARN_IF(!attObjBuf.Assign(aResult.AttestationObject()))) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer keyHandleBuf;
-  if (NS_WARN_IF(!keyHandleBuf.Assign(aResult.KeyHandle()))) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  nsAutoString keyHandleBase64Url;
-  nsresult rv = keyHandleBuf.ToJwkBase64(keyHandleBase64Url);
+  nsAutoCString keyHandleBase64Url;
+  nsresult rv = Base64URLEncode(
+      aResult.KeyHandle().Length(), aResult.KeyHandle().Elements(),
+      Base64URLEncodePaddingPolicy::Omit, keyHandleBase64Url);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     RejectTransaction(rv);
     return;
@@ -743,13 +709,13 @@ void WebAuthnManager::FinishMakeCredential(
   
   RefPtr<AuthenticatorAttestationResponse> attestation =
       new AuthenticatorAttestationResponse(mParent);
-  attestation->SetClientDataJSON(clientDataBuf);
-  attestation->SetAttestationObject(attObjBuf);
+  attestation->SetClientDataJSON(aResult.ClientDataJSON());
+  attestation->SetAttestationObject(aResult.AttestationObject());
 
   RefPtr<PublicKeyCredential> credential = new PublicKeyCredential(mParent);
-  credential->SetId(keyHandleBase64Url);
+  credential->SetId(NS_ConvertASCIItoUTF16(keyHandleBase64Url));
   credential->SetType(u"public-key"_ns);
-  credential->SetRawId(keyHandleBuf);
+  credential->SetRawId(aResult.KeyHandle());
   credential->SetResponse(attestation);
 
   
@@ -775,60 +741,29 @@ void WebAuthnManager::FinishGetAssertion(
     return;
   }
 
-  CryptoBuffer clientDataBuf;
-  if (!clientDataBuf.Assign(aResult.ClientDataJSON())) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer credentialBuf;
-  if (!credentialBuf.Assign(aResult.KeyHandle())) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer signatureBuf;
-  if (!signatureBuf.Assign(aResult.Signature())) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  CryptoBuffer authenticatorDataBuf;
-  if (!authenticatorDataBuf.Assign(aResult.AuthenticatorData())) {
-    RejectTransaction(NS_ERROR_OUT_OF_MEMORY);
-    return;
-  }
-
-  nsAutoString credentialBase64Url;
-  nsresult rv = credentialBuf.ToJwkBase64(credentialBase64Url);
+  nsAutoCString keyHandleBase64Url;
+  nsresult rv = Base64URLEncode(
+      aResult.KeyHandle().Length(), aResult.KeyHandle().Elements(),
+      Base64URLEncodePaddingPolicy::Omit, keyHandleBase64Url);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     RejectTransaction(rv);
     return;
   }
-
-  CryptoBuffer userHandleBuf;
-  
-  
-  userHandleBuf.Assign(aResult.UserHandle());
-
-  
 
   
   
   
   RefPtr<AuthenticatorAssertionResponse> assertion =
       new AuthenticatorAssertionResponse(mParent);
-  assertion->SetClientDataJSON(clientDataBuf);
-  assertion->SetAuthenticatorData(authenticatorDataBuf);
-  assertion->SetSignature(signatureBuf);
-  if (!userHandleBuf.IsEmpty()) {
-    assertion->SetUserHandle(userHandleBuf);
-  }
+  assertion->SetClientDataJSON(aResult.ClientDataJSON());
+  assertion->SetAuthenticatorData(aResult.AuthenticatorData());
+  assertion->SetSignature(aResult.Signature());
+  assertion->SetUserHandle(aResult.UserHandle());  
 
   RefPtr<PublicKeyCredential> credential = new PublicKeyCredential(mParent);
-  credential->SetId(credentialBase64Url);
+  credential->SetId(NS_ConvertASCIItoUTF16(keyHandleBase64Url));
   credential->SetType(u"public-key"_ns);
-  credential->SetRawId(credentialBuf);
+  credential->SetRawId(aResult.KeyHandle());
   credential->SetResponse(assertion);
 
   
