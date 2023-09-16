@@ -706,6 +706,11 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
   
   
+  
+  webrtc::VideoReceiveStreamInterface::Config::Rtp rtp_config_;
+
+  
+  
   absl::AnyInvocable<void()> send_codec_changed_callback_;
 };
 

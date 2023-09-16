@@ -86,7 +86,7 @@ class MediaChannel : public MediaSendChannelInterface,
                         bool enable_dscp = false);
   virtual ~MediaChannel();
 
-  Role role() { return role_; }
+  Role role() const { return role_; }
 
   
   virtual VideoMediaChannel* AsVideoChannel() {

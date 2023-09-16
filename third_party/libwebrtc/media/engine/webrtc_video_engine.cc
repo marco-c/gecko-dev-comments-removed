@@ -985,9 +985,6 @@ bool WebRtcVideoChannel::ApplyChangedParams(
     if (changed_params.send_codec || changed_params.rtcp_mode) {
       
       if (send_codec_) {
-        RTC_LOG(LS_INFO) << "SetFeedbackParameters on all the receive streams "
-                            "because the send "
-                            "codec or RTCP mode has changed.";
         SetReceiverFeedbackParameters(
             HasLntf(send_codec_->codec), HasNack(send_codec_->codec),
             send_params_.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
@@ -1018,6 +1015,15 @@ void WebRtcVideoChannel::SetReceiverFeedbackParameters(
     kv.second->SetFeedbackParameters(lntf_enabled, nack_enabled, rtcp_mode,
                                      rtx_time);
   }
+  
+  rtp_config_.lntf.enabled = lntf_enabled;
+  if (nack_enabled) {
+    rtp_config_.nack.rtp_history_ms = kNackHistoryMs;
+  } else {
+    rtp_config_.nack.rtp_history_ms = 0;
+  }
+  rtp_config_.rtcp_mode = rtcp_mode;
+  
 }
 
 webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
@@ -1525,14 +1531,19 @@ void WebRtcVideoChannel::ConfigureReceiverRtp(
     }
   }
 
-  
-  
-  
-  
-  
-  config->rtp.rtcp_mode = send_params_.rtcp.reduced_size
-                              ? webrtc::RtcpMode::kReducedSize
-                              : webrtc::RtcpMode::kCompound;
+  if (role() == MediaChannel::Role::kBoth) {
+    
+    
+    
+    
+    
+    config->rtp.rtcp_mode = send_params_.rtcp.reduced_size
+                                ? webrtc::RtcpMode::kReducedSize
+                                : webrtc::RtcpMode::kCompound;
+  } else {
+    
+    config->rtp.rtcp_mode = rtp_config_.rtcp_mode;
+  }
 
   
   
