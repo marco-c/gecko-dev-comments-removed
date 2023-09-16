@@ -366,8 +366,9 @@ nsresult nsXULTooltipListener::ShowTooltip() {
   
   nsCOMPtr<nsIContent> tooltipNode;
   GetTooltipFor(sourceNode, getter_AddRefs(tooltipNode));
-  if (!tooltipNode || sourceNode == tooltipNode)
+  if (!tooltipNode || sourceNode == tooltipNode) {
     return NS_ERROR_FAILURE;  
+  }
 
   
   
@@ -376,41 +377,43 @@ nsresult nsXULTooltipListener::ShowTooltip() {
       !doc->HasFocus(IgnoreErrors())) {
     return NS_OK;
   }
+
   
   
-  if (sourceNode->IsInComposedDoc()) {
-    if (!mIsSourceTree) {
-      mLastTreeRow = -1;
-      mLastTreeCol = nullptr;
-    }
-
-    mCurrentTooltip = do_GetWeakReference(tooltipNode);
-    LaunchTooltip();
-    mTargetNode = nullptr;
-
-    nsCOMPtr<nsIContent> currentTooltip = do_QueryReferent(mCurrentTooltip);
-    if (!currentTooltip) return NS_OK;
-
-    
-    
-    currentTooltip->AddSystemEventListener(u"popuphiding"_ns, this, false,
-                                           false);
-
-    
-    
-    if (Document* doc = sourceNode->GetComposedDoc()) {
-      
-      
-      
-      
-      
-      doc->AddSystemEventListener(u"wheel"_ns, this, true);
-      doc->AddSystemEventListener(u"mousedown"_ns, this, true);
-      doc->AddSystemEventListener(u"mouseup"_ns, this, true);
-      doc->AddSystemEventListener(u"keydown"_ns, this, true);
-    }
-    mSourceNode = nullptr;
+  if (!sourceNode->IsInComposedDoc()) {
+    return NS_OK;
   }
+
+  if (!mIsSourceTree) {
+    mLastTreeRow = -1;
+    mLastTreeCol = nullptr;
+  }
+
+  mCurrentTooltip = do_GetWeakReference(tooltipNode);
+  LaunchTooltip();
+  mTargetNode = nullptr;
+
+  nsCOMPtr<nsIContent> currentTooltip = do_QueryReferent(mCurrentTooltip);
+  if (!currentTooltip) {
+    return NS_OK;
+  }
+
+  
+  
+  currentTooltip->AddSystemEventListener(u"popuphiding"_ns, this, false, false);
+
+  
+  if (Document* doc = sourceNode->GetComposedDoc()) {
+    
+    
+    
+    
+    doc->AddSystemEventListener(u"wheel"_ns, this, true);
+    doc->AddSystemEventListener(u"mousedown"_ns, this, true);
+    doc->AddSystemEventListener(u"mouseup"_ns, this, true);
+    doc->AddSystemEventListener(u"keydown"_ns, this, true);
+  }
+  mSourceNode = nullptr;
 
   return NS_OK;
 }
