@@ -179,7 +179,6 @@ function failedAuth(metadata, response) {
     case 2:
       
       
-      
       authorization = metadata.getHeader("Proxy-Authorization");
       authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
@@ -222,9 +221,9 @@ function connectionReset(metadata, response) {
       authPrefix = authorization.substring(0, NTLM_PREFIX_LEN);
       Assert.equal(NTLM_TYPE3_PREFIX, authPrefix, "Expecting a Type 3 message");
       ntlmTypeTwoCount++;
+      response.finish();
       response.seizePower();
       response.bodyOutPutStream.close();
-      response.finish();
       break;
     default:
       

@@ -1696,6 +1696,10 @@ HttpChannelParent::GetRemoteType(nsACString& aRemoteType) {
   return NS_OK;
 }
 
+bool HttpChannelParent::IsRedirectDueToAuthRetry(uint32_t redirectFlags) {
+  return (redirectFlags & nsIChannelEventSink::REDIRECT_AUTH_RETRY);
+}
+
 
 
 
@@ -1728,6 +1732,7 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   
   
   
+  
   if (redirectFlags & nsIChannelEventSink::REDIRECT_INTERNAL) {
     nsCOMPtr<nsIInterceptedChannel> oldIntercepted =
         do_QueryInterface(static_cast<nsIChannel*>(mChannel.get()));
@@ -1740,8 +1745,13 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
     
     
     
+    
+    
+    
+
     if ((!oldIntercepted && newIntercepted) ||
-        (oldIntercepted && !newIntercepted && oldIntercepted->IsReset())) {
+        (oldIntercepted && !newIntercepted && oldIntercepted->IsReset()) ||
+        (IsRedirectDueToAuthRetry(redirectFlags))) {
       
       
       

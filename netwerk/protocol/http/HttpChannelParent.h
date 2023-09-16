@@ -244,6 +244,9 @@ class HttpChannelParent final : public nsIInterfaceRequestor,
   
   
   bool NeedFlowControl();
+
+  bool IsRedirectDueToAuthRetry(uint32_t redirectFlags);
+
   int32_t mSendWindowSize;
 
   friend class HttpBackgroundChannelParent;
