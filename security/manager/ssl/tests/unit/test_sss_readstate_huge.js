@@ -7,10 +7,53 @@
 
 
 
+var gSSService = null;
+
+function checkStateRead(aSubject, aTopic, aData) {
+  if (aData == CLIENT_AUTH_FILE_NAME) {
+    return;
+  }
+
+  equal(aData, SSS_STATE_FILE_NAME);
+
+  ok(
+    gSSService.isSecureURI(Services.io.newURI("https://example0.example.com"))
+  );
+  ok(
+    gSSService.isSecureURI(Services.io.newURI("https://example423.example.com"))
+  );
+  ok(
+    gSSService.isSecureURI(
+      Services.io.newURI("https://example1023.example.com")
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://example1024.example.com")
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://example1025.example.com")
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://example9000.example.com")
+    )
+  );
+  ok(
+    !gSSService.isSecureURI(
+      Services.io.newURI("https://example99999.example.com")
+    )
+  );
+  do_test_finished();
+}
+
 function run_test() {
   let profileDir = do_get_profile();
   let stateFile = profileDir.clone();
-  stateFile.append(SSS_STATE_OLD_FILE_NAME);
+  stateFile.append(SSS_STATE_FILE_NAME);
   
   
   ok(!stateFile.exists());
@@ -24,49 +67,14 @@ function run_test() {
       `example${i}.example.com\t` +
         "0000000000000000000000000000000000000000000000000\t" +
         "00000000000000000000000000000000000000\t" +
-        `${expiryTime},1,0`
+        `${expiryTime},1,0000000000000000000000000000000000000000000000000000000000000000000000000`
     );
   }
   writeLinesAndClose(lines, outputStream);
-
-  let siteSecurityService = Cc["@mozilla.org/ssservice;1"].getService(
+  Services.obs.addObserver(checkStateRead, "data-storage-ready");
+  do_test_pending();
+  gSSService = Cc["@mozilla.org/ssservice;1"].getService(
     Ci.nsISiteSecurityService
   );
-  notEqual(siteSecurityService, null);
-
-  ok(
-    siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example0.example.com")
-    )
-  );
-  ok(
-    siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example423.example.com")
-    )
-  );
-  ok(
-    siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example1023.example.com")
-    )
-  );
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example1024.example.com")
-    )
-  );
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example1025.example.com")
-    )
-  );
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example9000.example.com")
-    )
-  );
-  ok(
-    !siteSecurityService.isSecureURI(
-      Services.io.newURI("https://example99999.example.com")
-    )
-  );
+  notEqual(gSSService, null);
 }
