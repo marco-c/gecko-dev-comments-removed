@@ -466,9 +466,9 @@ class GlobalObject : public NativeObject {
 
 
 
-  static NativeObject* createBlankPrototype(
-      JSContext* cx, Handle<GlobalObject*> global, const JSClass* clasp,
-      ObjectFlags objFlags = ObjectFlags());
+  static NativeObject* createBlankPrototype(JSContext* cx,
+                                            Handle<GlobalObject*> global,
+                                            const JSClass* clasp);
 
   
 
@@ -485,9 +485,8 @@ class GlobalObject : public NativeObject {
   }
 
   template <typename T>
-  static T* createBlankPrototype(JSContext* cx, Handle<GlobalObject*> global,
-                                 ObjectFlags objFlags = ObjectFlags()) {
-    NativeObject* res = createBlankPrototype(cx, global, &T::class_, objFlags);
+  static T* createBlankPrototype(JSContext* cx, Handle<GlobalObject*> global) {
+    NativeObject* res = createBlankPrototype(cx, global, &T::class_);
     return res ? &res->template as<T>() : nullptr;
   }
 

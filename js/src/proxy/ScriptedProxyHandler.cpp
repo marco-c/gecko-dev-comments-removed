@@ -1155,41 +1155,9 @@ bool ScriptedProxyHandler::get(JSContext* cx, HandleObject proxy,
   }
 
   
-  GetTrapValidationResult validation =
-      checkGetTrapResult(cx, target, id, trapResult);
-  if (validation != GetTrapValidationResult::OK) {
-    reportGetTrapValidationError(cx, id, validation);
-    return false;
-  }
-
-  
-  vp.set(trapResult);
-  return true;
-}
-
-void ScriptedProxyHandler::reportGetTrapValidationError(
-    JSContext* cx, HandleId id, GetTrapValidationResult validation) {
-  switch (validation) {
-    case GetTrapValidationResult::MustReportSameValue:
-      js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
-      return;
-    case GetTrapValidationResult::MustReportUndefined:
-      js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
-      return;
-    case GetTrapValidationResult::Exception:
-      return;
-    case GetTrapValidationResult::OK:
-      MOZ_CRASH("unreachable");
-  }
-}
-
-ScriptedProxyHandler::GetTrapValidationResult
-ScriptedProxyHandler::checkGetTrapResult(JSContext* cx, HandleObject target,
-                                         HandleId id, HandleValue trapResult) {
-  
   Rooted<Maybe<PropertyDescriptor>> desc(cx);
   if (!GetOwnPropertyDescriptor(cx, target, id, &desc)) {
-    return GetTrapValidationResult::Exception;
+    return false;
   }
 
   
@@ -1200,22 +1168,23 @@ ScriptedProxyHandler::checkGetTrapResult(JSContext* cx, HandleObject target,
       RootedValue value(cx, desc->value());
       bool same;
       if (!SameValue(cx, trapResult, value, &same)) {
-        return GetTrapValidationResult::Exception;
+        return false;
       }
-
       if (!same) {
-        return GetTrapValidationResult::MustReportSameValue;
+        return js::Throw(cx, id, JSMSG_MUST_REPORT_SAME_VALUE);
       }
     }
 
     
     if (desc->isAccessorDescriptor() && !desc->configurable() &&
         (desc->getter() == nullptr) && !trapResult.isUndefined()) {
-      return GetTrapValidationResult::MustReportUndefined;
+      return js::Throw(cx, id, JSMSG_MUST_REPORT_UNDEFINED);
     }
   }
 
-  return GetTrapValidationResult::OK;
+  
+  vp.set(trapResult);
+  return true;
 }
 
 

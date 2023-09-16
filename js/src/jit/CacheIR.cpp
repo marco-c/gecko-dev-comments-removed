@@ -34,7 +34,6 @@
 #include "js/ScalarType.h"          
 #include "js/Wrapper.h"
 #include "proxy/DOMProxy.h"  
-#include "proxy/ScriptedProxyHandler.h"
 #include "util/DifferentialTesting.h"
 #include "util/Unicode.h"
 #include "vm/ArrayBufferObject.h"
@@ -1058,16 +1057,6 @@ static void EmitCallDOMGetterResult(JSContext* cx, CacheIRWriter& writer,
   EmitCallDOMGetterResultNoGuards(writer, holder, prop, objId);
 }
 
-static ValOperandId EmitLoadSlot(CacheIRWriter& writer, NativeObject* holder,
-                                 ObjOperandId holderId, uint32_t slot) {
-  if (holder->isFixedSlot(slot)) {
-    return writer.loadFixedSlot(holderId,
-                                NativeObject::getFixedSlotOffset(slot));
-  }
-  size_t dynamicSlotIndex = holder->dynamicSlotIndex(slot);
-  return writer.loadDynamicSlot(holderId, dynamicSlotIndex);
-}
-
 void GetPropIRGenerator::attachMegamorphicNativeSlot(ObjOperandId objId,
                                                      jsid id) {
   MOZ_ASSERT(mode_ == ICState::Mode::Megamorphic);
@@ -1490,115 +1479,6 @@ AttachDecision GetPropIRGenerator::tryAttachXrayCrossCompartmentWrapper(
   return AttachDecision::Attach;
 }
 
-#ifdef JS_PUNBOX64
-AttachDecision GetPropIRGenerator::tryAttachScriptedProxy(
-    Handle<ProxyObject*> obj, ObjOperandId objId, HandleId id) {
-  if (cacheKind_ != CacheKind::GetProp && cacheKind_ != CacheKind::GetElem) {
-    return AttachDecision::NoAction;
-  }
-  if (cacheKind_ == CacheKind::GetElem) {
-    if (!idVal_.isString() && !idVal_.isInt32() && !idVal_.isSymbol()) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  JSObject* handlerObj = ScriptedProxyHandler::handlerObject(obj);
-  if (!handlerObj) {
-    return AttachDecision::NoAction;
-  }
-
-  NativeObject* trapHolder = nullptr;
-  Maybe<PropertyInfo> trapProp;
-  
-  
-  
-  NativeGetPropKind trapKind = CanAttachNativeGetProp(
-      cx_, handlerObj, NameToId(cx_->names().get), &trapHolder, &trapProp, pc_);
-
-  if (trapKind != NativeGetPropKind::Missing &&
-      trapKind != NativeGetPropKind::Slot) {
-    return AttachDecision::NoAction;
-  }
-
-  if (trapKind != NativeGetPropKind::Missing) {
-    uint32_t trapSlot = trapProp->slot();
-    const Value& trapVal = trapHolder->getSlot(trapSlot);
-    if (!trapVal.isObject()) {
-      return AttachDecision::NoAction;
-    }
-
-    JSObject* trapObj = &trapVal.toObject();
-    if (!trapObj->is<JSFunction>()) {
-      return AttachDecision::NoAction;
-    }
-
-    JSFunction* trapFn = &trapObj->as<JSFunction>();
-    if (trapFn->isClassConstructor()) {
-      return AttachDecision::NoAction;
-    }
-
-    if (!trapFn->hasJitEntry()) {
-      return AttachDecision::NoAction;
-    }
-
-    if (cx_->realm() != trapFn->realm()) {
-      return AttachDecision::NoAction;
-    }
-  }
-
-  NativeObject* nHandlerObj = &handlerObj->as<NativeObject>();
-  JSObject* targetObj = obj->target();
-  MOZ_ASSERT(targetObj, "Guaranteed by the scripted Proxy constructor");
-
-  
-  
-  
-  
-  if (!targetObj->is<NativeObject>()) {
-    return AttachDecision::NoAction;
-  }
-
-  writer.guardIsProxy(objId);
-  writer.guardHasProxyHandler(objId, &ScriptedProxyHandler::singleton);
-  ObjOperandId handlerObjId = writer.loadScriptedProxyHandler(objId);
-  ObjOperandId targetObjId = writer.loadWrapperTarget(objId);
-
-  if (trapKind == NativeGetPropKind::Missing) {
-    EmitMissingPropGuard(writer, nHandlerObj, handlerObjId);
-    if (cacheKind_ == CacheKind::GetProp) {
-      writer.megamorphicLoadSlotResult(targetObjId, id);
-    } else {
-      writer.megamorphicLoadSlotByValueResult(objId, getElemKeyValueId());
-    }
-  } else {
-    uint32_t trapSlot = trapProp->slot();
-    const Value& trapVal = trapHolder->getSlot(trapSlot);
-    JSObject* trapObj = &trapVal.toObject();
-    JSFunction* trapFn = &trapObj->as<JSFunction>();
-    EmitReadSlotGuard(writer, nHandlerObj, trapHolder, handlerObjId);
-
-    ValOperandId fnValId =
-        EmitLoadSlot(writer, trapHolder, handlerObjId, trapSlot);
-    ObjOperandId fnObjId = writer.guardToObject(fnValId);
-    writer.guardSpecificFunction(fnObjId, trapFn);
-    ValOperandId targetValId = writer.boxObject(targetObjId);
-    if (cacheKind_ == CacheKind::GetProp) {
-      writer.callScriptedProxyGetResult(targetValId, objId, handlerObjId,
-                                        trapFn, id);
-    } else {
-      ValOperandId idId = getElemKeyValueId();
-      ValOperandId stringIdId = writer.idToStringOrSymbol(idId);
-      writer.callScriptedProxyGetByValueResult(targetValId, objId, handlerObjId,
-                                               stringIdId, trapFn);
-    }
-  }
-  writer.returnFromIC();
-
-  trackAttached("GetScriptedProxy");
-  return AttachDecision::Attach;
-}
-#endif
-
 AttachDecision GetPropIRGenerator::tryAttachGenericProxy(
     Handle<ProxyObject*> obj, ObjOperandId objId, HandleId id,
     bool handleDOMProxies) {
@@ -1854,30 +1734,14 @@ AttachDecision GetPropIRGenerator::tryAttachProxy(HandleObject obj,
                                                   ObjOperandId objId,
                                                   HandleId id,
                                                   ValOperandId receiverId) {
-  
-  if (isSuper()) {
-    return AttachDecision::NoAction;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  if (!obj->is<ProxyObject>()) {
+  ProxyStubType type = GetProxyStubType(cx_, obj, id);
+  if (type == ProxyStubType::None) {
     return AttachDecision::NoAction;
   }
   auto proxy = obj.as<ProxyObject>();
-#ifdef JS_PUNBOX64
-  if (proxy->handler()->isScripted()) {
-    TRY_ATTACH(tryAttachScriptedProxy(proxy, objId, id));
-  }
-#endif
 
-  ProxyStubType type = GetProxyStubType(cx_, obj, id);
-  if (type == ProxyStubType::None) {
+  
+  if (isSuper()) {
     return AttachDecision::NoAction;
   }
 
@@ -3053,13 +2917,6 @@ AttachDecision GetPropIRGenerator::tryAttachProxyElement(HandleObject obj,
     return AttachDecision::NoAction;
   }
 
-#ifdef JS_PUNBOX64
-  auto proxy = obj.as<ProxyObject>();
-  if (proxy->handler()->isScripted()) {
-    TRY_ATTACH(tryAttachScriptedProxy(proxy, objId, JS::VoidHandlePropertyKey));
-  }
-#endif
-
   writer.guardIsProxy(objId);
 
   
@@ -3352,6 +3209,18 @@ static bool NeedEnvironmentShapeGuard(JSContext* cx, JSObject* envObj) {
   return false;
 }
 
+static ValOperandId EmitLoadEnvironmentSlot(CacheIRWriter& writer,
+                                            NativeObject* holder,
+                                            ObjOperandId holderId,
+                                            uint32_t slot) {
+  if (holder->isFixedSlot(slot)) {
+    return writer.loadFixedSlot(holderId,
+                                NativeObject::getFixedSlotOffset(slot));
+  }
+  size_t dynamicSlotIndex = holder->dynamicSlotIndex(slot);
+  return writer.loadDynamicSlot(holderId, dynamicSlotIndex);
+}
+
 AttachDecision GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
                                                             HandleId id) {
   if (IsGlobalOp(JSOp(*pc_)) || script_->hasNonSyntacticScope()) {
@@ -3410,7 +3279,8 @@ AttachDecision GetNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
     env = env->enclosingEnvironment();
   }
 
-  ValOperandId resId = EmitLoadSlot(writer, holder, lastObjId, prop->slot());
+  ValOperandId resId =
+      EmitLoadEnvironmentSlot(writer, holder, lastObjId, prop->slot());
   if (holder->is<EnvironmentObject>()) {
     writer.guardIsNotUninitializedLexical(resId);
   }
@@ -3555,7 +3425,8 @@ AttachDecision BindNameIRGenerator::tryAttachEnvironmentName(ObjOperandId objId,
   }
 
   if (prop.isSome() && holder->is<EnvironmentObject>()) {
-    ValOperandId valId = EmitLoadSlot(writer, holder, lastObjId, prop->slot());
+    ValOperandId valId =
+        EmitLoadEnvironmentSlot(writer, holder, lastObjId, prop->slot());
     writer.guardIsNotUninitializedLexical(valId);
   }
 
@@ -13374,7 +13245,14 @@ AttachDecision CloseIterIRGenerator::tryAttachScriptedReturn() {
   ObjOperandId holderId =
       EmitReadSlotGuard(writer, &iter_->as<NativeObject>(), holder, objId);
 
-  ValOperandId calleeValId = EmitLoadSlot(writer, holder, holderId, slot);
+  ValOperandId calleeValId;
+  if (holder->isFixedSlot(slot)) {
+    size_t offset = NativeObject::getFixedSlotOffset(slot);
+    calleeValId = writer.loadFixedSlot(holderId, offset);
+  } else {
+    size_t index = holder->dynamicSlotIndex(slot);
+    calleeValId = writer.loadDynamicSlot(holderId, index);
+  }
   ObjOperandId calleeId = writer.guardToObject(calleeValId);
   emitCalleeGuard(calleeId, callee);
 

@@ -190,11 +190,6 @@ enum class BailoutKind : uint8_t {
   ThrowCheckIsObject,
 
   
-  
-  ThrowProxyTrapMustReportSameValue,
-  ThrowProxyTrapMustReportUndefined,
-
-  
   Unreachable,
 
   Limit
@@ -242,10 +237,6 @@ inline const char* BailoutKindString(BailoutKind kind) {
       return "OnStackInvalidation";
     case BailoutKind::ThrowCheckIsObject:
       return "ThrowCheckIsObject";
-    case BailoutKind::ThrowProxyTrapMustReportSameValue:
-      return "ThrowProxyTrapMustReportSameValue";
-    case BailoutKind::ThrowProxyTrapMustReportUndefined:
-      return "ThrowProxyTrapMustReportUndefined";
     case BailoutKind::Unreachable:
       return "Unreachable";
 
@@ -1072,10 +1063,6 @@ enum class ResumeMode : uint8_t {
   ResumeAfterCheckIsObject,
 
   
-  
-  ResumeAfterCheckProxyGetResult,
-
-  
   ResumeAt,
 
   
@@ -1104,8 +1091,6 @@ inline const char* ResumeModeToString(ResumeMode mode) {
       return "InlinedAccessor";
     case ResumeMode::ResumeAfterCheckIsObject:
       return "ResumeAfterCheckIsObject";
-    case ResumeMode::ResumeAfterCheckProxyGetResult:
-      return "ResumeAfterCheckProxyGetResult";
   }
   MOZ_CRASH("Invalid mode");
 }
@@ -1114,7 +1099,6 @@ inline bool IsResumeAfter(ResumeMode mode) {
   switch (mode) {
     case ResumeMode::ResumeAfter:
     case ResumeMode::ResumeAfterCheckIsObject:
-    case ResumeMode::ResumeAfterCheckProxyGetResult:
       return true;
     default:
       return false;
@@ -1125,8 +1109,6 @@ inline bool IsResumeAfter(ResumeMode mode) {
 
 inline uint32_t NumIntermediateValues(ResumeMode mode) {
   switch (mode) {
-    case ResumeMode::ResumeAfterCheckProxyGetResult:
-      return 2;
     case ResumeMode::ResumeAfterCheckIsObject:
       return 1;
     default:

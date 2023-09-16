@@ -266,8 +266,6 @@ class JSObject
 
   MOZ_ALWAYS_INLINE bool maybeHasInterestingSymbolProperty() const;
 
-  inline bool needsProxyGetSetResultValidation() const;
-
   
 
   void traceChildren(JSTracer* trc);
