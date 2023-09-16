@@ -10025,11 +10025,11 @@ var ShoppingSidebarManager = {
     this._updateVisibility();
 
     gBrowser.tabContainer.addEventListener("TabSelect", this);
+    window.addEventListener("visibilitychange", this);
   },
 
   uninit() {
     NimbusFeatures.shopping2023.offUpdate(this._updateVisibility);
-    gBrowser.tabContainer.removeEventListener("TabSelect", this);
   },
 
   _updateVisibility() {
@@ -10073,8 +10073,8 @@ var ShoppingSidebarManager = {
     let sidebar = browserPanel.querySelector("shopping-sidebar");
     let actor;
     if (sidebar) {
-      let global =
-        sidebar.querySelector("browser").browsingContext.currentWindowGlobal;
+      let { browsingContext } = sidebar.querySelector("browser");
+      let global = browsingContext.currentWindowGlobal;
       actor = global.getExistingActor("ShoppingSidebar");
     }
     let isProduct = isProductURL(aLocationURI);
@@ -10093,7 +10093,8 @@ var ShoppingSidebarManager = {
       sidebar.hidden = true;
     }
 
-    this.setShoppingButtonState(aBrowser);
+    this._updateBCActiveness(aBrowser);
+    this._setShoppingButtonState(aBrowser);
 
     if (isProduct) {
       
@@ -10102,7 +10103,28 @@ var ShoppingSidebarManager = {
     }
   },
 
-  setShoppingButtonState(aBrowser) {
+  _updateBCActiveness(aBrowser) {
+    let browserPanel = gBrowser.getPanel(aBrowser);
+    let sidebar = browserPanel.querySelector("shopping-sidebar");
+    if (!sidebar) {
+      return;
+    }
+    let { browsingContext } = sidebar.querySelector("browser");
+    try {
+      
+      
+      browsingContext.isActive =
+        !document.hidden &&
+        aBrowser == gBrowser.selectedBrowser &&
+        !sidebar.hidden;
+    } catch (ex) {
+      
+      
+      console.error(ex);
+    }
+  },
+
+  _setShoppingButtonState(aBrowser) {
     if (aBrowser !== gBrowser.selectedBrowser) {
       return;
     }
@@ -10134,7 +10156,16 @@ var ShoppingSidebarManager = {
           return;
         }
         this._updateVisibility();
+        if (event.detail?.previousTab.linkedBrowser) {
+          this._updateBCActiveness(event.detail.previousTab.linkedBrowser);
+        }
         break;
+      }
+      case "visibilitychange": {
+        if (!this._enabled) {
+          return;
+        }
+        this._updateBCActiveness(gBrowser.selectedBrowser);
       }
     }
   },
