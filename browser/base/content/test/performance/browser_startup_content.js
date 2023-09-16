@@ -83,10 +83,6 @@ const intermittently_loaded_scripts = {
     "resource://gre/modules/sessionstore/SessionHistory.sys.mjs",
 
     
-    
-    "resource://webcompat/AboutCompat.jsm",
-
-    
     "resource://gre/actors/CookieBannerChild.sys.mjs",
     "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
 
@@ -100,11 +96,7 @@ const intermittently_loaded_scripts = {
     "resource://testing-common/WrapPrivileged.sys.mjs",
   ]),
   frameScripts: new Set([]),
-  processScripts: new Set([
-    
-    
-    "resource://webcompat/aboutPageProcessScript.js",
-  ]),
+  processScripts: new Set([]),
 };
 
 const forbiddenScripts = {
