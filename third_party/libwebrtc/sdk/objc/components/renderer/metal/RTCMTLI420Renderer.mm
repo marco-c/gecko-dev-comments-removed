@@ -116,6 +116,13 @@ static NSString *const shaderSource = MTL_STRINGIFY(
     return NO;
   }
 
+  
+  
+  
+  if (frame.width < 2 || frame.height < 2) {
+    return NO;
+  }
+
   id<RTC_OBJC_TYPE(RTCI420Buffer)> buffer = [frame.buffer toI420];
 
   
