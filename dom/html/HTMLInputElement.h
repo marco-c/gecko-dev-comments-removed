@@ -324,6 +324,7 @@ class HTMLInputElement final : public TextControlElement,
   void UpdateRangeUnderflowValidityState();
   void UpdateStepMismatchValidityState();
   void UpdateBadInputValidityState();
+  void UpdatePlaceholderShownState();
   
   
   
