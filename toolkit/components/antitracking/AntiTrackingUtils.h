@@ -83,6 +83,12 @@ class AntiTrackingUtils final {
 
   
   
+  static nsresult TestStoragePermissionInParent(nsIPrincipal* aTopPrincipal,
+                                                nsIPrincipal* aPrincipal,
+                                                bool* aResult);
+
+  
+  
   
   
   
