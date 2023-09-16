@@ -146,26 +146,6 @@ this.windows = class extends ExtensionAPIPersistent {
 
     const { windowManager } = extension;
 
-    function getTriggeringPrincipalForUrl(url) {
-      if (context.checkLoadURL(url, { dontReportErrors: true })) {
-        return context.principal;
-      }
-      let window = context.currentWindow || windowTracker.topWindow;
-      
-      
-      
-      return Services.scriptSecurityManager.createContentPrincipal(
-        Services.io.newURI(url),
-        {
-          privateBrowsingId: PrivateBrowsingUtils.isBrowserPrivate(
-            window.gBrowser
-          )
-            ? 1
-            : 0,
-        }
-      );
-    }
-
     return {
       windows: {
         onCreated: new EventManager({
@@ -262,10 +242,22 @@ this.windows = class extends ExtensionAPIPersistent {
           );
 
           
+          let isOnlyMozExtensionUrl = false;
+
           
           
           
-          let { allowScriptsToClose, principal } = createData;
+          
+          let principal = context.principal;
+          function setContentTriggeringPrincipal(url) {
+            principal = Services.scriptSecurityManager.createContentPrincipal(
+              Services.io.newURI(url),
+              {
+                
+                privateBrowsingId: createData.incognito ? 1 : 0,
+              }
+            );
+          }
 
           if (createData.tabId !== null) {
             if (createData.url !== null) {
@@ -326,12 +318,22 @@ this.windows = class extends ExtensionAPIPersistent {
                 array.appendElement(mkstr(url));
               }
               args.appendElement(array);
+              
+              
+              principal = Services.scriptSecurityManager.getSystemPrincipal();
             } else {
               let url = context.uri.resolve(createData.url);
               args.appendElement(mkstr(url));
-              principal = getTriggeringPrincipalForUrl(url);
-              if (allowScriptsToClose === null) {
-                allowScriptsToClose = url.startsWith("moz-extension://");
+              isOnlyMozExtensionUrl = url.startsWith("moz-extension://");
+              if (!context.checkLoadURL(url, { dontReportErrors: true })) {
+                if (isOnlyMozExtensionUrl) {
+                  
+                  
+                  
+                  setContentTriggeringPrincipal(url);
+                } else {
+                  throw new ExtensionError(`Illegal URL: ${url}`);
+                }
               }
             }
           } else {
@@ -341,7 +343,15 @@ this.windows = class extends ExtensionAPIPersistent {
                 ? "about:privatebrowsing"
                 : HomePage.get().split("|", 1)[0];
             args.appendElement(mkstr(url));
-            principal = getTriggeringPrincipalForUrl(url);
+            isOnlyMozExtensionUrl = url.startsWith("moz-extension://");
+
+            if (!context.checkLoadURL(url, { dontReportErrors: true })) {
+              
+              
+              
+              
+              setContentTriggeringPrincipal(url);
+            }
           }
 
           args.appendElement(null); 
@@ -428,6 +438,10 @@ this.windows = class extends ExtensionAPIPersistent {
             window.addEventListener(
               "DOMContentLoaded",
               function () {
+                let { allowScriptsToClose } = createData;
+                if (allowScriptsToClose === null && isOnlyMozExtensionUrl) {
+                  allowScriptsToClose = true;
+                }
                 if (allowScriptsToClose) {
                   window.gBrowserAllowScriptsToCloseInitialTabs = true;
                 }
