@@ -538,14 +538,7 @@ class PageStyleActor extends Actor {
       entryRules.add(entry.rule);
     });
 
-    for (const rule of entryRules) {
-      try {
-        
-        
-        
-        await rule.getAuthoredCssText();
-      } catch (ex) {}
-    }
+    await Promise.all(entries.map(entry => entry.rule.getAuthoredCssText()));
 
     
     
