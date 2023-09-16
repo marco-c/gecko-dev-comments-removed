@@ -3121,16 +3121,6 @@ AsyncPanZoomController* APZCTreeManager::FindRootContentApzcForLayersId(
 
 
 
-
-
-
-
-
-
-
-
-
-
 ScreenToParentLayerMatrix4x4 APZCTreeManager::GetScreenToApzcTransform(
     const AsyncPanZoomController* aApzc) const {
   Matrix4x4 result;
