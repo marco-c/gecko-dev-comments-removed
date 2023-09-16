@@ -275,6 +275,20 @@ namespace JS {
 
 JS_PUBLIC_API bool IsLargeArrayBufferView(JSObject* obj);
 
+
+
+
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API bool PinArrayBufferOrViewLength(JSObject* obj, bool pin);
+
 namespace detail {
 
 
