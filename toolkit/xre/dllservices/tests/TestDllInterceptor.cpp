@@ -1194,7 +1194,8 @@ bool TestDetouredCallUnwindInfo() {
 }
 #endif  
 
-#if defined(_M_X64) || defined(_M_IX86)
+#ifndef MOZ_CODE_COVERAGE
+#  if defined(_M_X64) || defined(_M_IX86)
 bool TestSpareBytesAfterDetour() {
   WindowsDllInterceptor interceptor;
   interceptor.Init("TestDllInterceptor.exe");
@@ -1220,7 +1221,7 @@ bool TestSpareBytesAfterDetour() {
     return false;
   }
   uint8_t* funcBytes = reinterpret_cast<uint8_t*>(funcAddr);
-#  if defined(_M_X64)
+#    if defined(_M_X64)
   
   
   if (*(funcBytes + 13) != 0x90 || *(funcBytes + 14) != 0x90 ||
@@ -1234,7 +1235,7 @@ bool TestSpareBytesAfterDetour() {
   printf(
       "TEST-PASS | WindowsDllInterceptor | "
       "SpareBytesAfterDetour has correct nop bytes after the patch.\n");
-#  elif defined(_M_IX86)
+#    elif defined(_M_IX86)
   
   
   if (*(funcBytes + 5) != 0x90) {
@@ -1247,13 +1248,13 @@ bool TestSpareBytesAfterDetour() {
   printf(
       "TEST-PASS | WindowsDllInterceptor | "
       "SpareBytesAfterDetour has correct nop bytes after the patch.\n");
-#  endif
+#    endif
 
   return true;
 }
-#endif  
+#  endif  
 
-#if defined(_M_X64)
+#  if defined(_M_X64)
 bool TestSpareBytesAfterDetourFor10BytePatch() {
   ShortInterceptor interceptor;
   interceptor.TestOnlyDetourInit(
@@ -1298,7 +1299,8 @@ bool TestSpareBytesAfterDetourFor10BytePatch() {
       "patch.\n");
   return true;
 }
-#endif
+#  endif
+#endif  
 
 bool TestDynamicCodePolicy() {
   PROCESS_MITIGATION_DYNAMIC_CODE_POLICY policy = {};
@@ -1538,12 +1540,16 @@ extern "C" int wmain(int argc, wchar_t* argv[]) {
 #if defined(_M_X64) && !defined(MOZ_CODE_COVERAGE)
       TestDetouredCallUnwindInfo() &&
 #endif  
-#if defined(_M_X64) || defined(_M_IX86)
+
+
+#ifndef MOZ_CODE_COVERAGE
+#  if defined(_M_X64) || defined(_M_IX86)
       TestSpareBytesAfterDetour() &&
-#  if defined(_M_X64)
+#    if defined(_M_X64)
       TestSpareBytesAfterDetourFor10BytePatch() &&
-#  endif  
-#endif    
+#    endif  
+#  endif    
+#endif      
       
       
       TestDynamicCodePolicy()) {
