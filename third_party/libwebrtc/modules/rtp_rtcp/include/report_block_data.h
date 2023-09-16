@@ -18,6 +18,9 @@
 
 namespace webrtc {
 
+
+
+
 class ReportBlockData {
  public:
   ReportBlockData() = default;
@@ -25,6 +28,50 @@ class ReportBlockData {
   ReportBlockData(const ReportBlockData&) = default;
   ReportBlockData& operator=(const ReportBlockData&) = default;
 
+  
+  
+  uint32_t sender_ssrc() const { return report_block_.sender_ssrc; }
+
+  
+  
+  uint32_t source_ssrc() const { return report_block_.source_ssrc; }
+
+  
+  
+  
+  float fraction_lost() const { return fraction_lost_raw() / 256.0; }
+
+  
+  
+  uint8_t fraction_lost_raw() const { return report_block_.fraction_lost; }
+
+  
+  
+  
+  
+  
+  
+  int cumulative_lost() const { return report_block_.packets_lost; }
+
+  
+  
+  
+  uint32_t extended_highest_sequence_number() const {
+    return report_block_.extended_highest_sequence_number;
+  }
+
+  
+  
+  
+  
+  
+  uint32_t jitter() const { return report_block_.jitter; }
+
+  
+  TimeDelta jitter(int rtp_clock_rate_hz) const;
+
+  
+  
   const RTCPReportBlock& report_block() const { return report_block_; }
 
   [[deprecated]] int64_t report_block_timestamp_utc_us() const {
@@ -34,11 +81,14 @@ class ReportBlockData {
   [[deprecated]] int64_t min_rtt_ms() const { return min_rtt_.ms(); }
   [[deprecated]] int64_t max_rtt_ms() const { return max_rtt_.ms(); }
   [[deprecated]] int64_t sum_rtt_ms() const { return sum_rtt_.ms(); }
-  [[deprecated]] double AvgRttMs() const { return AvgRtt().ms<double>(); }
 
+  
   Timestamp report_block_timestamp_utc() const {
     return report_block_timestamp_utc_;
   }
+
+  
+  
   TimeDelta last_rtt() const { return last_rtt_; }
   TimeDelta min_rtt() const { return min_rtt_; }
   TimeDelta max_rtt() const { return max_rtt_; }
@@ -46,11 +96,9 @@ class ReportBlockData {
   size_t num_rtts() const { return num_rtts_; }
   bool has_rtt() const { return num_rtts_ != 0; }
 
-  TimeDelta AvgRtt() const;
-
   void SetReportBlock(uint32_t sender_ssrc,
                       const rtcp::ReportBlock& report_block,
-                      Timestamp report_block_timestamp_utc_us);
+                      Timestamp report_block_timestamp_utc);
   void AddRoundTripTimeSample(TimeDelta rtt);
 
  private:
