@@ -3762,6 +3762,18 @@ void nsBlockFrame::ReflowBlockFrame(BlockReflowState& aState,
   }
 
   
+  
+  
+  
+  if (aState.ContentBSize() != NS_UNCONSTRAINEDSIZE) {
+    const nsIFrame* const prev = frame->GetPrevSibling();
+    if (prev && prev->IsPageBreakFrame()) {
+      PushTruncatedLine(aState, aLine, aKeepReflowGoing);
+      return;
+    }
+  }
+
+  
   nsBlockReflowContext brc(aState.mPresContext, aState.mReflowInput);
 
   StyleClear clearType = frame->StyleDisplay()->mClear;
