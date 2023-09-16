@@ -55,6 +55,12 @@ add_task(async () => {
 
       
       stickyRect.width -= w.value;
+
+      
+      
+      stickyRect.height -= 2;
+      stickyRect.x += 1;
+
       return {
         rect: stickyRect,
         scrollbarWidth: w.value,
