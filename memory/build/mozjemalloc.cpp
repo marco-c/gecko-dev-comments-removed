@@ -1249,6 +1249,8 @@ struct arena_t {
 
   void HardPurge();
 
+  bool IsMainThreadOnly() const { return !mLock.LockIsEnabled(); }
+
   void* operator new(size_t aCount) = delete;
 
   void* operator new(size_t aCount, const fallible_t&) noexcept;
@@ -1278,6 +1280,7 @@ class ArenaCollection {
   bool Init() {
     mArenas.Init();
     mPrivateArenas.Init();
+    mMainThreadArenas.Init();
     arena_params_t params;
     
     params.mMaxDirty = opt_dirty_max;
@@ -1292,9 +1295,11 @@ class ArenaCollection {
 
   void DisposeArena(arena_t* aArena) {
     MutexAutoLock lock(mLock);
-    MOZ_RELEASE_ASSERT(mPrivateArenas.Search(aArena),
-                       "Can only dispose of private arenas");
-    mPrivateArenas.Remove(aArena);
+    Tree& tree =
+        aArena->IsMainThreadOnly() ? mMainThreadArenas : mPrivateArenas;
+
+    MOZ_RELEASE_ASSERT(tree.Search(aArena), "Arena not in tree");
+    tree.Remove(aArena);
     delete aArena;
   }
 
@@ -1306,8 +1311,11 @@ class ArenaCollection {
   using Tree = RedBlackTree<arena_t, ArenaTreeTrait>;
 
   struct Iterator : Tree::Iterator {
-    explicit Iterator(Tree* aTree, Tree* aSecondTree)
-        : Tree::Iterator(aTree), mNextTree(aSecondTree) {}
+    explicit Iterator(Tree* aTree, Tree* aSecondTree,
+                      Tree* aThirdTree = nullptr)
+        : Tree::Iterator(aTree),
+          mSecondTree(aSecondTree),
+          mThirdTree(aThirdTree) {}
 
     Item<Iterator> begin() {
       return Item<Iterator>(this, *Tree::Iterator::begin());
@@ -1317,18 +1325,24 @@ class ArenaCollection {
 
     arena_t* Next() {
       arena_t* result = Tree::Iterator::Next();
-      if (!result && mNextTree) {
-        new (this) Iterator(mNextTree, nullptr);
+      if (!result && mSecondTree) {
+        new (this) Iterator(mSecondTree, mThirdTree);
         result = *Tree::Iterator::begin();
       }
       return result;
     }
 
    private:
-    Tree* mNextTree;
+    Tree* mSecondTree;
+    Tree* mThirdTree;
   };
 
-  Iterator iter() { return Iterator(&mArenas, &mPrivateArenas); }
+  Iterator iter() {
+    if (IsOnMainThreadWeak()) {
+      return Iterator(&mArenas, &mPrivateArenas, &mMainThreadArenas);
+    }
+    return Iterator(&mArenas, &mPrivateArenas);
+  }
 
   inline arena_t* GetDefault() { return mDefaultArena; }
 
@@ -1359,12 +1373,24 @@ class ArenaCollection {
   }
 
  private:
-  inline arena_t* GetByIdInternal(arena_id_t aArenaId, bool aIsPrivate);
+  const static arena_id_t MAIN_THREAD_ARENA_BIT = 0x1;
+
+  inline arena_t* GetByIdInternal(Tree& aTree, arena_id_t aArenaId);
+
+  arena_id_t MakeRandArenaId(bool aIsMainThreadOnly) const;
+  static bool ArenaIdIsMainThreadOnly(arena_id_t aArenaId) {
+    return aArenaId & MAIN_THREAD_ARENA_BIT;
+  }
 
   arena_t* mDefaultArena;
   arena_id_t mLastPublicArenaId;
+
+  
+  
+  
   Tree mArenas;
   Tree mPrivateArenas;
+  Tree mMainThreadArenas;
   Atomic<int32_t> mDefaultMaxDirtyPageModifier;
   Maybe<ThreadId> mMainThreadId;
 };
@@ -3961,6 +3987,7 @@ arena_t::arena_t(arena_params_t* aParams, bool aIsPrivate) {
       
       
       MOZ_ASSERT(gArenas.IsOnMainThread());
+      MOZ_ASSERT(aIsPrivate);
       doLock = MaybeMutex::AVOID_LOCK_UNSAFE;
     }
 
@@ -4058,27 +4085,39 @@ arena_t* ArenaCollection::CreateArena(bool aIsPrivate,
   
   
   
+  Tree& tree = (ret->IsMainThreadOnly()) ? mMainThreadArenas : mPrivateArenas;
+  arena_id_t arena_id;
+  do {
+    arena_id = MakeRandArenaId(ret->IsMainThreadOnly());
+    
+    
+  } while (GetByIdInternal(tree, arena_id));
 
-  while (true) {
+  ret->mId = arena_id;
+  tree.Insert(ret);
+  return ret;
+}
+
+arena_id_t ArenaCollection::MakeRandArenaId(bool aIsMainThreadOnly) const {
+  uint64_t rand;
+  do {
     mozilla::Maybe<uint64_t> maybeRandomId = mozilla::RandomUint64();
     MOZ_RELEASE_ASSERT(maybeRandomId.isSome());
 
-    
-    if (!maybeRandomId.value()) {
-      continue;
-    }
+    rand = maybeRandomId.value();
 
     
     
-    arena_t* existingArena =
-        GetByIdInternal(maybeRandomId.value(), true );
-
-    if (!existingArena) {
-      ret->mId = static_cast<arena_id_t>(maybeRandomId.value());
-      mPrivateArenas.Insert(ret);
-      return ret;
+    if (aIsMainThreadOnly) {
+      rand = rand | MAIN_THREAD_ARENA_BIT;
+    } else {
+      rand = rand & ~MAIN_THREAD_ARENA_BIT;
     }
-  }
+
+    
+  } while (rand == 0);
+
+  return arena_id_t(rand);
 }
 
 
@@ -4906,13 +4945,13 @@ inline void MozJemalloc::jemalloc_free_dirty_pages(void) {
   }
 }
 
-inline arena_t* ArenaCollection::GetByIdInternal(arena_id_t aArenaId,
-                                                 bool aIsPrivate) {
+inline arena_t* ArenaCollection::GetByIdInternal(Tree& aTree,
+                                                 arena_id_t aArenaId) {
   
   
   mozilla::AlignedStorage2<arena_t> key;
   key.addr()->mId = aArenaId;
-  return (aIsPrivate ? mPrivateArenas : mArenas).Search(key.addr());
+  return aTree.Search(key.addr());
 }
 
 inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
@@ -4920,8 +4959,21 @@ inline arena_t* ArenaCollection::GetById(arena_id_t aArenaId, bool aIsPrivate) {
     return nullptr;
   }
 
+  Tree* tree = nullptr;
+  if (aIsPrivate) {
+    if (ArenaIdIsMainThreadOnly(aArenaId)) {
+      
+      arena_t* result = GetByIdInternal(mMainThreadArenas, aArenaId);
+      MOZ_RELEASE_ASSERT(result);
+      return result;
+    }
+    tree = &mPrivateArenas;
+  } else {
+    tree = &mArenas;
+  }
+
   MutexAutoLock lock(mLock);
-  arena_t* result = GetByIdInternal(aArenaId, aIsPrivate);
+  arena_t* result = GetByIdInternal(*tree, aArenaId);
   MOZ_RELEASE_ASSERT(result);
   return result;
 }
