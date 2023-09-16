@@ -386,6 +386,7 @@ class nsHttpChannel final : public HttpBaseChannel,
   
   [[nodiscard]] nsresult ProxyFailover();
   [[nodiscard]] nsresult AsyncDoReplaceWithProxy(nsIProxyInfo*);
+  [[nodiscard]] nsresult ContinueDoReplaceWithProxy(nsresult);
   [[nodiscard]] nsresult ResolveProxy();
 
   
@@ -528,9 +529,6 @@ class nsHttpChannel final : public HttpBaseChannel,
   [[nodiscard]] nsresult RedirectToInterceptedChannel();
 
   
-  [[nodiscard]] nsresult RedirectToNewChannelForAuthRetry();
-
-  
   
   void SetCachedContentType();
 
@@ -572,7 +570,6 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   nsCOMPtr<nsIRequest> mTransactionPump;
   RefPtr<HttpTransactionShell> mTransaction;
-  RefPtr<HttpTransactionShell> mTransactionSticky;
 
   uint64_t mLogicalOffset{0};
 
@@ -703,8 +700,7 @@ class nsHttpChannel final : public HttpBaseChannel,
     
     
     (uint32_t, HTTPSSVCTelemetryReported, 1),
-    (uint32_t, EchConfigUsed, 1),
-    (uint32_t, AuthRedirectedChannel, 1)
+    (uint32_t, EchConfigUsed, 1)
   ))
   
 
