@@ -97,7 +97,9 @@ pub enum CorsMode {
 
 
 #[cfg(feature = "gecko")]
-#[derive(PartialEq)]
+
+
+#[derive(MallocSizeOf, PartialEq)]
 #[repr(C)]
 pub struct UrlExtraData(usize);
 

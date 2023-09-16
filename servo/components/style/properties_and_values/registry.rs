@@ -6,6 +6,7 @@
 
 use crate::Atom;
 use crate::selector_map::PrecomputedHashMap;
+use crate::stylesheets::UrlExtraData;
 use super::syntax::Descriptor;
 use super::rule::InitialValue;
 
@@ -20,6 +21,8 @@ pub struct PropertyRegistration {
     
     #[ignore_malloc_size_of = "Arc"]
     pub initial_value: Option<InitialValue>,
+    
+    pub url_data: UrlExtraData,
 }
 
 
