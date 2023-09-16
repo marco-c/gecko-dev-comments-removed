@@ -40,6 +40,28 @@ impl ParserState {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum ParseUntilErrorBehavior {
+    
+    Consume,
+    
+    Stop,
+}
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum BasicParseErrorKind<'i> {
     
@@ -213,15 +235,6 @@ impl<'i> ParserInput<'i> {
         }
     }
 
-    
-    
-    pub fn new_with_line_number_offset(input: &'i str, first_line_number: u32) -> ParserInput<'i> {
-        ParserInput {
-            tokenizer: Tokenizer::with_first_line_number(input, first_line_number),
-            cached_token: None,
-        }
-    }
-
     #[inline]
     fn cached_token_ref(&self) -> &Token<'i> {
         &self.cached_token.as_ref().unwrap().token
@@ -322,16 +335,22 @@ impl Delimiters {
     }
 
     #[inline]
-    fn from_byte(byte: Option<u8>) -> Delimiters {
+    pub(crate) fn from_byte(byte: Option<u8>) -> Delimiters {
+        const TABLE: [Delimiters; 256] = {
+            let mut table = [Delimiter::None; 256];
+            table[b';' as usize] = Delimiter::Semicolon;
+            table[b'!' as usize] = Delimiter::Bang;
+            table[b',' as usize] = Delimiter::Comma;
+            table[b'{' as usize] = Delimiter::CurlyBracketBlock;
+            table[b'}' as usize] = ClosingDelimiter::CloseCurlyBracket;
+            table[b']' as usize] = ClosingDelimiter::CloseSquareBracket;
+            table[b')' as usize] = ClosingDelimiter::CloseParenthesis;
+            table
+        };
+
         match byte {
-            Some(b';') => Delimiter::Semicolon,
-            Some(b'!') => Delimiter::Bang,
-            Some(b',') => Delimiter::Comma,
-            Some(b'{') => Delimiter::CurlyBracketBlock,
-            Some(b'}') => ClosingDelimiter::CloseCurlyBracket,
-            Some(b']') => ClosingDelimiter::CloseSquareBracket,
-            Some(b')') => ClosingDelimiter::CloseParenthesis,
-            _ => Delimiter::None,
+            None => Delimiter::None,
+            Some(b) => TABLE[b as usize],
         }
     }
 }
@@ -356,7 +375,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     #[inline]
     pub fn new(input: &'t mut ParserInput<'i>) -> Parser<'i, 't> {
         Parser {
-            input: input,
+            input,
             at_start_of: None,
             stop_before: Delimiter::None,
         }
@@ -775,7 +794,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     where
         F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
     {
-        parse_until_before(self, delimiters, parse)
+        parse_until_before(self, delimiters, ParseUntilErrorBehavior::Consume, parse)
     }
 
     
@@ -792,7 +811,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
     where
         F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
     {
-        parse_until_after(self, delimiters, parse)
+        parse_until_after(self, delimiters, ParseUntilErrorBehavior::Consume, parse)
     }
 
     
@@ -1022,6 +1041,7 @@ impl<'i: 't, 't> Parser<'i, 't> {
 pub fn parse_until_before<'i: 't, 't, F, T, E>(
     parser: &mut Parser<'i, 't>,
     delimiters: Delimiters,
+    error_behavior: ParseUntilErrorBehavior,
     parse: F,
 ) -> Result<T, ParseError<'i, E>>
 where
@@ -1037,6 +1057,9 @@ where
             stop_before: delimiters,
         };
         result = delimited_parser.parse_entirely(parse);
+        if error_behavior == ParseUntilErrorBehavior::Stop && result.is_err() {
+            return result;
+        }
         if let Some(block_type) = delimited_parser.at_start_of {
             consume_until_end_of_block(block_type, &mut delimited_parser.input.tokenizer);
         }
@@ -1060,12 +1083,16 @@ where
 pub fn parse_until_after<'i: 't, 't, F, T, E>(
     parser: &mut Parser<'i, 't>,
     delimiters: Delimiters,
+    error_behavior: ParseUntilErrorBehavior,
     parse: F,
 ) -> Result<T, ParseError<'i, E>>
 where
     F: for<'tt> FnOnce(&mut Parser<'i, 'tt>) -> Result<T, ParseError<'i, E>>,
 {
-    let result = parser.parse_until_before(delimiters, parse);
+    let result = parse_until_before(parser, delimiters, error_behavior, parse);
+    if error_behavior == ParseUntilErrorBehavior::Stop && result.is_err() {
+        return result;
+    }
     let next_byte = parser.input.tokenizer.next_byte();
     if next_byte.is_some()
         && !parser
