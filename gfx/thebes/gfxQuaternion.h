@@ -34,28 +34,6 @@ struct gfxQuaternion
     if (aMatrix[1][0] > aMatrix[0][1]) z = -z;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  gfxQuaternion(const mozilla::gfx::Point3D& aDirection, gfxFloat aAngle) {
-    MOZ_ASSERT(mozilla::gfx::FuzzyEqual(aDirection.Length(), 1.0f),
-               "aDirection should be an unit vector");
-    x = aDirection.x * sin(aAngle / 2.0);
-    y = aDirection.y * sin(aAngle / 2.0);
-    z = aDirection.z * sin(aAngle / 2.0);
-    w = cos(aAngle / 2.0);
-  }
-
   gfxQuaternion Slerp(const gfxQuaternion& aOther, gfxFloat aCoeff) const {
     gfxFloat dot = mozilla::clamped(DotProduct(aOther), -1.0, 1.0);
     if (dot == 1.0) {
