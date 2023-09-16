@@ -5,9 +5,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  await setE10sPrefs();
-
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -173,9 +170,6 @@ add_task(async function () {
           "Accessibility service consumers in content are correct."
         )
       );
-
-      
-      await unsetE10sPrefs();
     }
   );
 });

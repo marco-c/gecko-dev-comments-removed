@@ -5,9 +5,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  await setE10sPrefs();
-
   let docLoaded = waitForEvent(
     Ci.nsIAccessibleEvent.EVENT_DOCUMENT_LOAD_COMPLETE,
     "body"
@@ -84,7 +81,4 @@ add_task(async function () {
       await a11yShutdown;
     }
   );
-
-  
-  await unsetE10sPrefs();
 });

@@ -7,7 +7,6 @@
 
 
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/accessible/tests/browser/shared-head.js",
   this
@@ -16,31 +15,6 @@ Services.scriptloader.loadSubScript(
 const { CommonUtils } = ChromeUtils.importESModule(
   "chrome://mochitests/content/browser/accessible/tests/browser/Common.sys.mjs"
 );
-
-
-
-
-
-function setE10sPrefs() {
-  return new Promise(resolve =>
-    SpecialPowers.pushPrefEnv(
-      {
-        set: [["browser.tabs.remote.autostart", true]],
-      },
-      resolve
-    )
-  );
-}
-
-
-
-
-
-function unsetE10sPrefs() {
-  return new Promise(resolve => {
-    SpecialPowers.popPrefEnv(resolve);
-  });
-}
 
 
 

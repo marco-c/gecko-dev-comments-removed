@@ -5,9 +5,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  await setE10sPrefs();
-
   await BrowserTestUtils.withNewTab(
     {
       gBrowser,
@@ -94,9 +91,6 @@ add_task(async function () {
       
       forceGC();
       await Promise.all([parentA11yShutdown, contentA11yShutdown]);
-
-      
-      await unsetE10sPrefs();
     }
   );
 });

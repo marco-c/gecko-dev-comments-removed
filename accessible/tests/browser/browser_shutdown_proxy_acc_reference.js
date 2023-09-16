@@ -5,9 +5,6 @@
 "use strict";
 
 add_task(async function () {
-  
-  await setE10sPrefs();
-
   const [a11yInitObserver, a11yInit] = initAccService();
   await a11yInitObserver;
 
@@ -70,7 +67,4 @@ add_task(async function () {
       await a11yShutdown;
     }
   );
-
-  
-  await unsetE10sPrefs();
 });
