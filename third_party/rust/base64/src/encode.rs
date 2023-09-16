@@ -77,7 +77,7 @@ pub(crate) fn encode_with_padding<E: Engine + ?Sized>(
     let b64_bytes_written = engine.internal_encode(input, output);
 
     let padding_bytes = if engine.config().encode_padding() {
-        add_padding(input.len(), &mut output[b64_bytes_written..])
+        add_padding(b64_bytes_written, &mut output[b64_bytes_written..])
     } else {
         0
     };
@@ -121,16 +121,16 @@ pub fn encoded_len(bytes_len: usize, padding: bool) -> Option<usize> {
 
 
 
-pub(crate) fn add_padding(input_len: usize, output: &mut [u8]) -> usize {
+pub(crate) fn add_padding(unpadded_output_len: usize, output: &mut [u8]) -> usize {
+    let pad_bytes = (4 - (unpadded_output_len % 4)) % 4;
     
-    let rem = input_len % 3;
-    let mut bytes_written = 0;
-    for _ in 0..((3 - rem) % 3) {
-        output[bytes_written] = PAD_BYTE;
-        bytes_written += 1;
+    
+    #[allow(clippy::needless_range_loop)]
+    for i in 0..pad_bytes {
+        output[i] = PAD_BYTE;
     }
 
-    bytes_written
+    pad_bytes
 }
 
 
@@ -149,11 +149,7 @@ impl fmt::Display for EncodeSliceError {
 }
 
 #[cfg(any(feature = "std", test))]
-impl error::Error for EncodeSliceError {
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
-    }
-}
+impl error::Error for EncodeSliceError {}
 
 #[cfg(test)]
 mod tests {
@@ -435,17 +431,17 @@ mod tests {
         let mut rng = rand::rngs::SmallRng::from_entropy();
 
         
-        for input_len in 0..10 {
+        for unpadded_output_len in 0..20 {
             output.clear();
 
             
-            for _ in 0..10 {
+            for _ in 0..100 {
                 output.push(rng.gen());
             }
 
             let orig_output_buf = output.clone();
 
-            let bytes_written = add_padding(input_len, &mut output);
+            let bytes_written = add_padding(unpadded_output_len, &mut output);
 
             
             assert_eq!(orig_output_buf[bytes_written..], output[bytes_written..]);

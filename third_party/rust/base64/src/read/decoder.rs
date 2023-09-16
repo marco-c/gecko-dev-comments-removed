@@ -1,4 +1,4 @@
-use crate::{engine::Engine, DecodeError};
+use crate::{engine::Engine, DecodeError, PAD_BYTE};
 use std::{cmp, fmt, io};
 
 
@@ -46,13 +46,15 @@ pub struct DecoderReader<'e, E: Engine, R: io::Read> {
     
     
     
-    decoded_buffer: [u8; 3],
+    decoded_buffer: [u8; DECODED_CHUNK_SIZE],
     
     decoded_offset: usize,
     
     decoded_len: usize,
     
     total_b64_decoded: usize,
+    
+    padding_offset: Option<usize>,
 }
 
 impl<'e, E: Engine, R: io::Read> fmt::Debug for DecoderReader<'e, E, R> {
@@ -64,6 +66,7 @@ impl<'e, E: Engine, R: io::Read> fmt::Debug for DecoderReader<'e, E, R> {
             .field("decoded_offset", &self.decoded_offset)
             .field("decoded_len", &self.decoded_len)
             .field("total_b64_decoded", &self.total_b64_decoded)
+            .field("padding_offset", &self.padding_offset)
             .finish()
     }
 }
@@ -81,6 +84,7 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
             decoded_offset: 0,
             decoded_len: 0,
             total_b64_decoded: 0,
+            padding_offset: None,
         }
     }
 
@@ -127,20 +131,28 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
     
     
     
-    fn decode_to_buf(&mut self, num_bytes: usize, buf: &mut [u8]) -> io::Result<usize> {
-        debug_assert!(self.b64_len >= num_bytes);
+    fn decode_to_buf(&mut self, b64_len_to_decode: usize, buf: &mut [u8]) -> io::Result<usize> {
+        debug_assert!(self.b64_len >= b64_len_to_decode);
         debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);
         debug_assert!(!buf.is_empty());
 
-        let decoded = self
+        let b64_to_decode = &self.b64_buffer[self.b64_offset..self.b64_offset + b64_len_to_decode];
+        let decode_metadata = self
             .engine
             .internal_decode(
-                &self.b64_buffer[self.b64_offset..self.b64_offset + num_bytes],
+                b64_to_decode,
                 buf,
-                self.engine.internal_decoded_len_estimate(num_bytes),
+                self.engine.internal_decoded_len_estimate(b64_len_to_decode),
             )
             .map_err(|e| match e {
                 DecodeError::InvalidByte(offset, byte) => {
+                    
+                    
+                    
+                    
+                    
+                    
+                    
                     DecodeError::InvalidByte(self.total_b64_decoded + offset, byte)
                 }
                 DecodeError::InvalidLength => DecodeError::InvalidLength,
@@ -151,13 +163,27 @@ impl<'e, E: Engine, R: io::Read> DecoderReader<'e, E, R> {
             })
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
 
-        self.total_b64_decoded += num_bytes;
-        self.b64_offset += num_bytes;
-        self.b64_len -= num_bytes;
+        if let Some(offset) = self.padding_offset {
+            
+            if decode_metadata.decoded_len > 0 {
+                
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    DecodeError::InvalidByte(offset, PAD_BYTE),
+                ));
+            }
+        }
+
+        self.padding_offset = self.padding_offset.or(decode_metadata
+            .padding_offset
+            .map(|offset| self.total_b64_decoded + offset));
+        self.total_b64_decoded += b64_len_to_decode;
+        self.b64_offset += b64_len_to_decode;
+        self.b64_len -= b64_len_to_decode;
 
         debug_assert!(self.b64_offset + self.b64_len <= BUF_SIZE);
 
-        Ok(decoded)
+        Ok(decode_metadata.decoded_len)
     }
 
     
@@ -218,13 +244,8 @@ impl<'e, E: Engine, R: io::Read> io::Read for DecoderReader<'e, E, R> {
             let mut at_eof = false;
             while self.b64_len < BASE64_CHUNK_SIZE {
                 
-                
-                
-                let mut memmove_buf = [0_u8; BASE64_CHUNK_SIZE];
-                memmove_buf[..self.b64_len].copy_from_slice(
-                    &self.b64_buffer[self.b64_offset..self.b64_offset + self.b64_len],
-                );
-                self.b64_buffer[0..self.b64_len].copy_from_slice(&memmove_buf[..self.b64_len]);
+                self.b64_buffer
+                    .copy_within(self.b64_offset..self.b64_offset + self.b64_len, 0);
                 self.b64_offset = 0;
 
                 

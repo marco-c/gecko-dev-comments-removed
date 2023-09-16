@@ -8,13 +8,16 @@ use rand::{
 };
 use rstest::rstest;
 use rstest_reuse::{apply, template};
-use std::{collections, fmt};
+use std::{collections, fmt, io::Read as _};
 
 use crate::{
     alphabet::{Alphabet, STANDARD},
     encode::add_padding,
     encoded_len,
-    engine::{general_purpose, naive, Config, DecodeEstimate, DecodePaddingMode, Engine},
+    engine::{
+        general_purpose, naive, Config, DecodeEstimate, DecodeMetadata, DecodePaddingMode, Engine,
+    },
+    read::DecoderReader,
     tests::{assert_encode_sanity, random_alphabet, random_config},
     DecodeError, PAD_BYTE,
 };
@@ -24,8 +27,19 @@ use crate::{
 #[rstest(engine_wrapper,
 case::general_purpose(GeneralPurposeWrapper {}),
 case::naive(NaiveWrapper {}),
+case::decoder_reader(DecoderReaderEngineWrapper {}),
 )]
 fn all_engines<E: EngineWrapper>(engine_wrapper: E) {}
+
+
+
+
+#[template]
+#[rstest(engine_wrapper,
+case::general_purpose(GeneralPurposeWrapper {}),
+case::naive(NaiveWrapper {}),
+)]
+fn all_engines_except_decoder_reader<E: EngineWrapper>(engine_wrapper: E) {}
 
 #[apply(all_engines)]
 fn rfc_test_vectors_std_alphabet<E: EngineWrapper>(engine_wrapper: E) {
@@ -86,7 +100,7 @@ fn rfc_test_vectors_std_alphabet<E: EngineWrapper>(engine_wrapper: E) {
                 &encoded_without_padding,
                 &std::str::from_utf8(&encode_buf[0..encode_len]).unwrap()
             );
-            let pad_len = add_padding(orig.len(), &mut encode_buf[encode_len..]);
+            let pad_len = add_padding(encode_len, &mut encode_buf[encode_len..]);
             assert_eq!(encoded.as_bytes(), &encode_buf[..encode_len + pad_len]);
 
             let decode_len = engine
@@ -195,7 +209,10 @@ fn encode_doesnt_write_extra_bytes<E: EngineWrapper>(engine_wrapper: E) {
 
         
         let pad_len = if padded {
-            add_padding(orig_len, &mut encode_buf[prefix_len + encoded_len_no_pad..])
+            add_padding(
+                encoded_len_no_pad,
+                &mut encode_buf[prefix_len + encoded_len_no_pad..],
+            )
         } else {
             0
         };
@@ -382,7 +399,7 @@ fn decode_detect_invalid_last_symbol_every_possible_two_symbols<E: EngineWrapper
     for b in 0_u8..=255 {
         let mut b64 = vec![0_u8; 4];
         assert_eq!(2, engine.internal_encode(&[b], &mut b64[..]));
-        let _ = add_padding(1, &mut b64[2..]);
+        let _ = add_padding(2, &mut b64[2..]);
 
         assert!(base64_to_bytes.insert(b64, vec![b]).is_none());
     }
@@ -442,7 +459,7 @@ fn decode_detect_invalid_last_symbol_every_possible_three_symbols<E: EngineWrapp
             bytes[1] = b2;
             let mut b64 = vec![0_u8; 4];
             assert_eq!(3, engine.internal_encode(&bytes, &mut b64[..]));
-            let _ = add_padding(2, &mut b64[3..]);
+            let _ = add_padding(3, &mut b64[3..]);
 
             let mut v = Vec::with_capacity(2);
             v.extend_from_slice(&bytes[..]);
@@ -549,7 +566,7 @@ fn decode_invalid_byte_error<E: EngineWrapper>(engine_wrapper: E) {
 
     let len_range = distributions::Uniform::new(1, 1_000);
 
-    for _ in 0..10_000 {
+    for _ in 0..100_000 {
         let alphabet = random_alphabet(&mut rng);
         let engine = E::random_alphabet(&mut rng, alphabet);
 
@@ -573,7 +590,7 @@ fn decode_invalid_byte_error<E: EngineWrapper>(engine_wrapper: E) {
         let invalid_byte: u8 = loop {
             let byte: u8 = rng.gen();
 
-            if alphabet.symbols.contains(&byte) {
+            if alphabet.symbols.contains(&byte) || byte == PAD_BYTE {
                 continue;
             } else {
                 break byte;
@@ -597,14 +614,16 @@ fn decode_invalid_byte_error<E: EngineWrapper>(engine_wrapper: E) {
 
 
 
-#[apply(all_engines)]
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_padding_before_final_non_padding_char_error_invalid_byte<E: EngineWrapper>(
     engine_wrapper: E,
 ) {
     let mut rng = seeded_rng();
 
     
-    let suffixes = vec![("/w==", 2), ("iYu=", 1), ("zzzz", 0)];
+    let suffixes = [("/w==", 2), ("iYu=", 1), ("zzzz", 0)];
 
     let prefix_quads_range = distributions::Uniform::from(0..=256);
 
@@ -644,7 +663,10 @@ fn decode_padding_before_final_non_padding_char_error_invalid_byte<E: EngineWrap
 
 
 
-#[apply(all_engines)]
+
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_padding_starts_before_final_chunk_error_invalid_byte<E: EngineWrapper>(
     engine_wrapper: E,
 ) {
@@ -653,7 +675,7 @@ fn decode_padding_starts_before_final_chunk_error_invalid_byte<E: EngineWrapper>
     
     let prefix_quads_range = distributions::Uniform::from(1..256);
     
-    let suffix_pad_len_range = distributions::Uniform::from(1..=4);
+    let suffix_pad_len_range = distributions::Uniform::from(2..=4);
     for mode in all_pad_modes() {
         
         let engine = E::standard_with_pad_mode(true, mode);
@@ -671,14 +693,48 @@ fn decode_padding_starts_before_final_chunk_error_invalid_byte<E: EngineWrapper>
             let padding_start = encoded.len() - padding_len;
             encoded[padding_start..].fill(PAD_BYTE);
 
-            if suffix_len == 1 {
-                assert_eq!(Err(DecodeError::InvalidLength), engine.decode(&encoded),);
-            } else {
-                assert_eq!(
-                    Err(DecodeError::InvalidByte(padding_start, PAD_BYTE)),
-                    engine.decode(&encoded),
-                );
-            }
+            assert_eq!(
+                Err(DecodeError::InvalidByte(padding_start, PAD_BYTE)),
+                engine.decode(&encoded),
+                "suffix_len: {}, padding_len: {}, b64: {}",
+                suffix_len,
+                padding_len,
+                std::str::from_utf8(&encoded).unwrap()
+            );
+        }
+    }
+}
+
+
+
+
+
+
+#[apply(all_engines_except_decoder_reader)]
+fn decode_padding_starts_before_final_chunk_error_invalid_length<E: EngineWrapper>(
+    engine_wrapper: E,
+) {
+    let mut rng = seeded_rng();
+
+    
+    let prefix_quads_range = distributions::Uniform::from(1..256);
+    for mode in all_pad_modes() {
+        
+        let engine = E::standard_with_pad_mode(true, mode);
+        for _ in 0..100_000 {
+            let mut encoded = "ABCD"
+                .repeat(prefix_quads_range.sample(&mut rng))
+                .into_bytes();
+            encoded.resize(encoded.len() + 1, PAD_BYTE);
+
+            
+            
+            let padding_len = rng.gen_range(1 + 1..encoded.len());
+            
+            let padding_start = encoded.len() - padding_len;
+            encoded[padding_start..].fill(PAD_BYTE);
+
+            assert_eq!(Err(DecodeError::InvalidLength), engine.decode(&encoded),);
         }
     }
 }
@@ -787,7 +843,9 @@ fn decode_malleability_test_case_2_byte_suffix_no_padding<E: EngineWrapper>(engi
 }
 
 
-#[apply(all_engines)]
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_malleability_test_case_2_byte_suffix_too_much_padding<E: EngineWrapper>(
     engine_wrapper: E,
 ) {
@@ -811,7 +869,7 @@ fn decode_pad_mode_requires_canonical_accepts_canonical<E: EngineWrapper>(engine
 fn decode_pad_mode_requires_canonical_rejects_non_canonical<E: EngineWrapper>(engine_wrapper: E) {
     let engine = E::standard_with_pad_mode(true, DecodePaddingMode::RequireCanonical);
 
-    let suffixes = vec!["/w", "/w=", "iYU"];
+    let suffixes = ["/w", "/w=", "iYU"];
     for num_prefix_quads in 0..256 {
         for &suffix in suffixes.iter() {
             let mut encoded = "AAAA".repeat(num_prefix_quads);
@@ -838,7 +896,7 @@ fn decode_pad_mode_requires_no_padding_accepts_no_padding<E: EngineWrapper>(engi
 fn decode_pad_mode_requires_no_padding_rejects_any_padding<E: EngineWrapper>(engine_wrapper: E) {
     let engine = E::standard_with_pad_mode(true, DecodePaddingMode::RequireNone);
 
-    let suffixes = vec!["/w=", "/w==", "iYU="];
+    let suffixes = ["/w=", "/w==", "iYU="];
     for num_prefix_quads in 0..256 {
         for &suffix in suffixes.iter() {
             let mut encoded = "AAAA".repeat(num_prefix_quads);
@@ -861,7 +919,11 @@ fn decode_pad_mode_indifferent_padding_accepts_anything<E: EngineWrapper>(engine
 }
 
 
-#[apply(all_engines)]
+
+
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_pad_byte_in_penultimate_quad_error<E: EngineWrapper>(engine_wrapper: E) {
     for mode in all_pad_modes() {
         
@@ -895,7 +957,7 @@ fn decode_pad_byte_in_penultimate_quad_error<E: EngineWrapper>(engine_wrapper: E
                             num_prefix_quads * 4 + num_valid_bytes_penultimate_quad,
                             b'=',
                         ),
-                        engine.decode(&s).unwrap_err()
+                        engine.decode(&s).unwrap_err(),
                     );
                 }
             }
@@ -955,7 +1017,9 @@ fn decode_absurd_pad_error<E: EngineWrapper>(engine_wrapper: E) {
     }
 }
 
-#[apply(all_engines)]
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_too_much_padding_returns_error<E: EngineWrapper>(engine_wrapper: E) {
     for mode in all_pad_modes() {
         
@@ -981,7 +1045,9 @@ fn decode_too_much_padding_returns_error<E: EngineWrapper>(engine_wrapper: E) {
     }
 }
 
-#[apply(all_engines)]
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_padding_followed_by_non_padding_returns_error<E: EngineWrapper>(engine_wrapper: E) {
     for mode in all_pad_modes() {
         
@@ -1079,27 +1145,43 @@ fn decode_too_few_symbols_in_final_quad_error<E: EngineWrapper>(engine_wrapper: 
     }
 }
 
-#[apply(all_engines)]
+
+
+
+#[apply(all_engines_except_decoder_reader)]
 fn decode_invalid_trailing_bytes<E: EngineWrapper>(engine_wrapper: E) {
     for mode in all_pad_modes() {
-        
-        let engine = E::standard_with_pad_mode(true, mode);
+        do_invalid_trailing_byte(E::standard_with_pad_mode(true, mode), mode);
+    }
+}
 
-        for num_prefix_quads in 0..256 {
-            let mut s: String = "ABCD".repeat(num_prefix_quads);
-            s.push_str("Cg==\n");
+#[apply(all_engines)]
+fn decode_invalid_trailing_bytes_all_modes<E: EngineWrapper>(engine_wrapper: E) {
+    
+    
+    for mode in pad_modes_allowing_padding() {
+        do_invalid_trailing_byte(E::standard_with_pad_mode(true, mode), mode);
+    }
+}
 
-            
-            
-            assert_eq!(
-                Err(DecodeError::InvalidByte(num_prefix_quads * 4 + 4, b'\n')),
-                engine.decode(&s)
-            );
+#[apply(all_engines)]
+fn decode_invalid_trailing_padding_as_invalid_length<E: EngineWrapper>(engine_wrapper: E) {
+    
+    
+    for mode in pad_modes_allowing_padding() {
+        do_invalid_trailing_padding_as_invalid_length(E::standard_with_pad_mode(true, mode), mode);
+    }
+}
 
-            
-            let s = s.replace('\n', "=");
-            assert_eq!(Err(DecodeError::InvalidLength), engine.decode(s));
-        }
+
+
+
+#[apply(all_engines_except_decoder_reader)]
+fn decode_invalid_trailing_padding_as_invalid_length_all_modes<E: EngineWrapper>(
+    engine_wrapper: E,
+) {
+    for mode in all_pad_modes() {
+        do_invalid_trailing_padding_as_invalid_length(E::standard_with_pad_mode(true, mode), mode);
     }
 }
 
@@ -1178,6 +1260,53 @@ fn decode_into_slice_fits_in_precisely_sized_slice<E: EngineWrapper>(engine_wrap
 }
 
 #[apply(all_engines)]
+fn inner_decode_reports_padding_position<E: EngineWrapper>(engine_wrapper: E) {
+    let mut b64 = String::new();
+    let mut decoded = Vec::new();
+    let engine = E::standard();
+
+    for pad_position in 1..10_000 {
+        b64.clear();
+        decoded.clear();
+        
+        decoded.resize(pad_position, 0);
+
+        for _ in 0..pad_position {
+            b64.push('A');
+        }
+        
+        for _ in 0..(4 - (pad_position % 4)) {
+            b64.push('=');
+        }
+
+        let decode_res = engine.internal_decode(
+            b64.as_bytes(),
+            &mut decoded[..],
+            engine.internal_decoded_len_estimate(b64.len()),
+        );
+        if pad_position % 4 < 2 {
+            
+            assert_eq!(
+                Err(DecodeError::InvalidByte(pad_position, PAD_BYTE)),
+                decode_res
+            );
+        } else {
+            let decoded_bytes = pad_position / 4 * 3
+                + match pad_position % 4 {
+                    0 => 0,
+                    2 => 1,
+                    3 => 2,
+                    _ => unreachable!(),
+                };
+            assert_eq!(
+                Ok(DecodeMetadata::new(decoded_bytes, Some(pad_position))),
+                decode_res
+            );
+        }
+    }
+}
+
+#[apply(all_engines)]
 fn decode_length_estimate_delta<E: EngineWrapper>(engine_wrapper: E) {
     for engine in [E::standard(), E::standard_unpadded()] {
         for &padding in &[true, false] {
@@ -1200,6 +1329,64 @@ fn decode_length_estimate_delta<E: EngineWrapper>(engine_wrapper: E) {
     }
 }
 
+#[apply(all_engines)]
+fn estimate_via_u128_inflation<E: EngineWrapper>(engine_wrapper: E) {
+    
+    (0..1000)
+        .chain(usize::MAX - 1000..=usize::MAX)
+        .for_each(|encoded_len| {
+            
+            let len_128 = encoded_len as u128;
+
+            let estimate = E::standard()
+                .internal_decoded_len_estimate(encoded_len)
+                .decoded_len_estimate();
+
+            
+            
+            
+            
+            assert_eq!(
+                ((len_128 + 3) / 4 * 3) as usize,
+                estimate,
+                "enc len {}",
+                encoded_len
+            );
+        })
+}
+
+fn do_invalid_trailing_byte(engine: impl Engine, mode: DecodePaddingMode) {
+    for num_prefix_quads in 0..256 {
+        let mut s: String = "ABCD".repeat(num_prefix_quads);
+        s.push_str("Cg==\n");
+
+        
+        
+        assert_eq!(
+            Err(DecodeError::InvalidByte(num_prefix_quads * 4 + 4, b'\n')),
+            engine.decode(&s),
+            "mode: {:?}, input: {}",
+            mode,
+            s
+        );
+    }
+}
+
+fn do_invalid_trailing_padding_as_invalid_length(engine: impl Engine, mode: DecodePaddingMode) {
+    for num_prefix_quads in 0..256 {
+        let mut s: String = "ABCD".repeat(num_prefix_quads);
+        s.push_str("Cg===");
+
+        assert_eq!(
+            Err(DecodeError::InvalidLength),
+            engine.decode(&s),
+            "mode: {:?}, input: {}",
+            mode,
+            s
+        );
+    }
+}
+
 
 
 
@@ -1219,7 +1406,7 @@ fn generate_random_encoded_data<E: Engine, R: rand::Rng, D: distributions::Distr
     let base_encoded_len = engine.internal_encode(&orig_data[..], &mut encode_buf[..]);
 
     let enc_len_with_padding = if padding {
-        base_encoded_len + add_padding(orig_len, &mut encode_buf[base_encoded_len..])
+        base_encoded_len + add_padding(base_encoded_len, &mut encode_buf[base_encoded_len..])
     } else {
         base_encoded_len
     };
@@ -1249,11 +1436,7 @@ fn fill_rand_len<R: rand::Rng>(vec: &mut Vec<u8>, rng: &mut R, len: usize) {
     }
 }
 
-fn prefixed_data<'i, 'd>(
-    input_with_prefix: &'i mut String,
-    prefix_len: usize,
-    data: &'d str,
-) -> &'i str {
+fn prefixed_data<'i>(input_with_prefix: &'i mut String, prefix_len: usize, data: &str) -> &'i str {
     input_with_prefix.truncate(prefix_len);
     input_with_prefix.push_str(data);
     input_with_prefix.as_str()
@@ -1405,6 +1588,103 @@ impl EngineWrapper for NaiveWrapper {
     }
 }
 
+
+struct DecoderReaderEngine<E: Engine> {
+    engine: E,
+}
+
+impl<E: Engine> From<E> for DecoderReaderEngine<E> {
+    fn from(value: E) -> Self {
+        Self { engine: value }
+    }
+}
+
+impl<E: Engine> Engine for DecoderReaderEngine<E> {
+    type Config = E::Config;
+    type DecodeEstimate = E::DecodeEstimate;
+
+    fn internal_encode(&self, input: &[u8], output: &mut [u8]) -> usize {
+        self.engine.internal_encode(input, output)
+    }
+
+    fn internal_decoded_len_estimate(&self, input_len: usize) -> Self::DecodeEstimate {
+        self.engine.internal_decoded_len_estimate(input_len)
+    }
+
+    fn internal_decode(
+        &self,
+        input: &[u8],
+        output: &mut [u8],
+        decode_estimate: Self::DecodeEstimate,
+    ) -> Result<DecodeMetadata, DecodeError> {
+        let mut reader = DecoderReader::new(input, &self.engine);
+        let mut buf = vec![0; input.len()];
+        
+        
+        
+        let _ = reader
+            .read(&mut buf)
+            .and_then(|len| {
+                buf.truncate(len);
+                
+                reader.read_to_end(&mut buf)
+            })
+            .map_err(|io_error| {
+                *io_error
+                    .into_inner()
+                    .and_then(|inner| inner.downcast::<DecodeError>().ok())
+                    .unwrap()
+            })?;
+        output[..buf.len()].copy_from_slice(&buf);
+        Ok(DecodeMetadata::new(
+            buf.len(),
+            input
+                .iter()
+                .enumerate()
+                .filter(|(_offset, byte)| **byte == PAD_BYTE)
+                .map(|(offset, _byte)| offset)
+                .next(),
+        ))
+    }
+
+    fn config(&self) -> &Self::Config {
+        self.engine.config()
+    }
+}
+
+struct DecoderReaderEngineWrapper {}
+
+impl EngineWrapper for DecoderReaderEngineWrapper {
+    type Engine = DecoderReaderEngine<general_purpose::GeneralPurpose>;
+
+    fn standard() -> Self::Engine {
+        GeneralPurposeWrapper::standard().into()
+    }
+
+    fn standard_unpadded() -> Self::Engine {
+        GeneralPurposeWrapper::standard_unpadded().into()
+    }
+
+    fn standard_with_pad_mode(
+        encode_pad: bool,
+        decode_pad_mode: DecodePaddingMode,
+    ) -> Self::Engine {
+        GeneralPurposeWrapper::standard_with_pad_mode(encode_pad, decode_pad_mode).into()
+    }
+
+    fn standard_allow_trailing_bits() -> Self::Engine {
+        GeneralPurposeWrapper::standard_allow_trailing_bits().into()
+    }
+
+    fn random<R: rand::Rng>(rng: &mut R) -> Self::Engine {
+        GeneralPurposeWrapper::random(rng).into()
+    }
+
+    fn random_alphabet<R: rand::Rng>(rng: &mut R, alphabet: &Alphabet) -> Self::Engine {
+        GeneralPurposeWrapper::random_alphabet(rng, alphabet).into()
+    }
+}
+
 fn seeded_rng() -> impl rand::Rng {
     rngs::SmallRng::from_entropy()
 }
@@ -1414,6 +1694,13 @@ fn all_pad_modes() -> Vec<DecodePaddingMode> {
         DecodePaddingMode::Indifferent,
         DecodePaddingMode::RequireCanonical,
         DecodePaddingMode::RequireNone,
+    ]
+}
+
+fn pad_modes_allowing_padding() -> Vec<DecodePaddingMode> {
+    vec![
+        DecodePaddingMode::Indifferent,
+        DecodePaddingMode::RequireCanonical,
     ]
 }
 

@@ -1,5 +1,5 @@
 use crate::{
-    engine::{general_purpose::INVALID_VALUE, DecodePaddingMode},
+    engine::{general_purpose::INVALID_VALUE, DecodeMetadata, DecodePaddingMode},
     DecodeError, PAD_BYTE,
 };
 
@@ -16,7 +16,7 @@ pub(crate) fn decode_suffix(
     decode_table: &[u8; 256],
     decode_allow_trailing_bits: bool,
     padding_mode: DecodePaddingMode,
-) -> Result<usize, DecodeError> {
+) -> Result<DecodeMetadata, DecodeError> {
     
     
     let mut leftover_bits: u64 = 0;
@@ -157,5 +157,12 @@ pub(crate) fn decode_suffix(
         leftover_bits_appended_to_buf += 8;
     }
 
-    Ok(output_index)
+    Ok(DecodeMetadata::new(
+        output_index,
+        if padding_bytes > 0 {
+            Some(input_index + first_padding_index)
+        } else {
+            None
+        },
+    ))
 }
