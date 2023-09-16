@@ -3256,12 +3256,27 @@ nsIFrame* Selection::GetSelectionEndPointGeometry(SelectionRegion aRegion,
   }
 
   
-  if (isText) {
-    aRect->x = pt.x;
-  } else if (mFrameSelection->GetHint() == CARET_ASSOCIATE_BEFORE) {
+  
+  
+  
+  
+  
+  
+  
+
+  
+  auto GetInlinePosition = [&]() {
+    if (isText) {
+      return pt.x;
+    }
     
-    aRect->x = frame->GetRect().Width();
-  }
+    
+    return frame->GetRect().Width();
+  };
+
+  
+  
+  aRect->x = GetInlinePosition();
   aRect->SetHeight(frame->GetRect().Height());
 
   return frame;
