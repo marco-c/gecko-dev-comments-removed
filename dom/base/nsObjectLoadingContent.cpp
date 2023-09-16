@@ -772,6 +772,10 @@ void nsObjectLoadingContent::MaybeRewriteYoutubeEmbed(nsIURI* aURI,
   }
 
   
+  
+  thisContent->OwnerDoc()->SetUseCounter(eUseCounter_custom_YouTubeFlashEmbed);
+
+  
   if (!Preferences::GetBool(kPrefYoutubeRewrite)) {
     return;
   }
