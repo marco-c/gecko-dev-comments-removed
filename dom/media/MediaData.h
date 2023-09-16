@@ -657,10 +657,6 @@ class MediaRawData final : public MediaData {
   
   bool mEOS = false;
 
-  
-  
-  uint32_t mDiscardPadding = 0;
-
   RefPtr<TrackInfoSharedPtr> mTrackInfo;
 
   

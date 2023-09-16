@@ -128,8 +128,7 @@ struct Mp3CodecSpecificData {
 
 struct OpusCodecSpecificData {
   bool operator==(const OpusCodecSpecificData& rhs) const {
-    return mContainerCodecDelayMicroSeconds ==
-               rhs.mContainerCodecDelayMicroSeconds &&
+    return mContainerCodecDelayFrames == rhs.mContainerCodecDelayFrames &&
            *mHeadersBinaryBlob == *rhs.mHeadersBinaryBlob;
   }
   
@@ -140,7 +139,7 @@ struct OpusCodecSpecificData {
   
   
   
-  int64_t mContainerCodecDelayMicroSeconds{-1};
+  int64_t mContainerCodecDelayFrames{-1};
 
   
   
