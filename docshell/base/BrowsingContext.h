@@ -1421,6 +1421,7 @@ class BrowsingContext : public nsILoadContext, public nsWrapperCache {
 
 
 
+
 extern bool GetRemoteOuterWindowProxy(JSContext* aCx, BrowsingContext* aContext,
                                       JS::Handle<JSObject*> aTransplantTo,
                                       JS::MutableHandle<JSObject*> aRetVal);

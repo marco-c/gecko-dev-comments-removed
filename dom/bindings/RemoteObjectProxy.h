@@ -112,6 +112,9 @@ class RemoteObjectProxyBase : public js::BaseProxyHandler,
 
 
 
+
+
+
   void GetOrCreateProxyObject(JSContext* aCx, void* aNative,
                               const JSClass* aClasp,
                               JS::Handle<JSObject*> aTransplantTo,
