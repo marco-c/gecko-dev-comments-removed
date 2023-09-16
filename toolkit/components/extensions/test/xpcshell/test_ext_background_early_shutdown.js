@@ -449,13 +449,31 @@ async function do_test_crash_while_starting_background({
   );
 }
 
-add_task(async function test_crash_while_starting_background_without_context() {
-  await do_test_crash_while_starting_background({ withContext: false });
-});
+add_task(
+  {
+    
+    
+    pref_set: [
+      ["extensions.background.disableRestartPersistentAfterCrash", true],
+    ],
+  },
+  async function test_crash_while_starting_background_without_context() {
+    await do_test_crash_while_starting_background({ withContext: false });
+  }
+);
 
-add_task(async function test_crash_while_starting_background_with_context() {
-  await do_test_crash_while_starting_background({ withContext: true });
-});
+add_task(
+  {
+    
+    
+    pref_set: [
+      ["extensions.background.disableRestartPersistentAfterCrash", true],
+    ],
+  },
+  async function test_crash_while_starting_background_with_context() {
+    await do_test_crash_while_starting_background({ withContext: true });
+  }
+);
 
 add_task(async function test_crash_while_starting_event_page_without_context() {
   await do_test_crash_while_starting_background({
@@ -507,9 +525,20 @@ async function do_test_crash_while_running_background({ isEventPage = false }) {
   await extension.unload();
 }
 
-add_task(async function test_crash_after_background_startup() {
-  await do_test_crash_while_running_background({ isEventPage: false });
-});
+add_task(
+  {
+    
+    
+    
+    
+    pref_set: [
+      ["extensions.background.disableRestartPersistentAfterCrash", true],
+    ],
+  },
+  async function test_crash_after_background_startup() {
+    await do_test_crash_while_running_background({ isEventPage: false });
+  }
+);
 
 add_task(async function test_crash_after_event_page_startup() {
   await do_test_crash_while_running_background({ isEventPage: true });
@@ -708,6 +737,187 @@ add_task(
     triggerEventInEventPage();
     await extension.awaitMessage("event_fired");
     assertBackgroundState("running", "Persistent event can wake up event page");
+
+    await extension.unload();
+  }
+);
+
+add_task(
+  {
+    skip_if: () => !CAN_CRASH_EXTENSIONS,
+    pref_set: [
+      ["extensions.webextensions.crash.threshold", 2],
+      
+      
+      ["extensions.webextensions.crash.timeframe", 60 * 1000],
+    ],
+  },
+  async function test_background_restarted_after_crash() {
+    
+    
+    ExtensionProcessCrashObserver.enableProcessSpawning();
+    Assert.equal(
+      ExtensionProcessCrashObserver.processSpawningDisabled,
+      false,
+      "Expect process spawning to be enabled"
+    );
+
+    
+    await ExtensionTestCommon.resetStartupPromises();
+    await AddonTestUtils.notifyEarlyStartup();
+
+    let extension = ExtensionTestUtils.loadExtension({
+      manifest: {
+        background: { persistent: true },
+      },
+      background() {
+        window.addEventListener(
+          "load",
+          () => {
+            browser.test.sendMessage("persistentbg_started");
+          },
+          { once: true }
+        );
+      },
+    });
+
+    await extension.startup();
+    await extension.awaitMessage("persistentbg_started");
+
+    function assertBackgroundState(expected, message) {
+      Assert.equal(extension.extension.backgroundState, expected, message);
+    }
+
+    async function assertStillStoppedAfterTimeout(timeout = 100) {
+      
+      
+      
+      await new Promise(resolve => setTimeout(resolve, timeout));
+      assertBackgroundState("stopped", "Background should still be stopped");
+    }
+
+    async function mockCrashOnAndroidAppInBackground() {
+      info("Mock application-background observer service topic");
+      ExtensionProcessCrashObserver.observe(null, "application-background");
+
+      Assert.equal(
+        ExtensionProcessCrashObserver.appInForeground,
+        false,
+        "Got expected value set on ExtensionProcessCrashObserver.appInForeground"
+      );
+      await crashExtensionBackground(extension);
+      assertBackgroundState(
+        "stopped",
+        "Persistent Background state after crash while in the background"
+      );
+
+      await assertStillStoppedAfterTimeout();
+
+      info("Mock application-foreground observer service topic");
+      ExtensionProcessCrashObserver.observe(null, "application-foreground");
+
+      Assert.equal(
+        ExtensionProcessCrashObserver.appInForeground,
+        true,
+        "Ensure the application is detected as being in foreground"
+      );
+    }
+
+    assertBackgroundState("running", "Background after extension.startup()");
+
+    
+    info(
+      "Testing that a crashed persistent background is restarted after a crash"
+    );
+
+    Assert.equal(
+      ExtensionProcessCrashObserver.appInForeground,
+      true,
+      "Ensure the application is detected as being in foreground"
+    );
+    await crashExtensionBackground(extension);
+
+    await extension.awaitMessage("persistentbg_started");
+    assertBackgroundState("running", "Persistent Background state after crash");
+
+    
+    
+    
+    if (ExtensionProcessCrashObserver._isAndroid) {
+      await mockCrashOnAndroidAppInBackground();
+    } else {
+      await crashExtensionBackground(extension);
+    }
+
+    info("Wait for the persistent background context to be started");
+    await extension.awaitMessage("persistentbg_started");
+    assertBackgroundState("running", "Persistent Background state after crash");
+
+    info("Mock another crash to be exceeding enforced crash threshold");
+
+    
+    
+    
+    if (ExtensionProcessCrashObserver._isAndroid) {
+      await mockCrashOnAndroidAppInBackground();
+    } else {
+      await crashExtensionBackground(extension);
+    }
+
+    Assert.ok(
+      ExtensionProcessCrashObserver.processSpawningDisabled,
+      "Expect process spawning to be disabled"
+    );
+
+    assertBackgroundState(
+      "stopped",
+      "Persistent Background state after crash exceeding threshold"
+    );
+
+    await assertStillStoppedAfterTimeout();
+
+    info("Enable process spawning");
+    ExtensionProcessCrashObserver.enableProcessSpawning();
+    Assert.equal(
+      ExtensionProcessCrashObserver.processSpawningDisabled,
+      false,
+      "Expect process spawning to be enabled"
+    );
+
+    info("Wait for Persistent Background Context to be started");
+    await extension.awaitMessage("persistentbg_started");
+    assertBackgroundState("running", "Persistent Background to be running");
+
+    
+    await crashExtensionBackground(extension);
+    info("Wait for Persistent Background Context to be started");
+    await extension.awaitMessage("persistentbg_started");
+    assertBackgroundState("running", "Persistent Background to be running");
+
+    
+    
+    if (ExtensionProcessCrashObserver._isAndroid) {
+      Assert.equal(
+        ExtensionProcessCrashObserver.appInForeground,
+        true,
+        "Ensure the application is detected as being in foreground"
+      );
+
+      await crashExtensionBackground(extension);
+
+      info("Wait for Persistent Background Context to be started");
+      await extension.awaitMessage("persistentbg_started");
+      assertBackgroundState("running", "Persistent Background to be running");
+
+      
+      await crashExtensionBackground(extension);
+
+      Assert.ok(
+        ExtensionProcessCrashObserver.processSpawningDisabled,
+        "Expect process spawning to be disabled"
+      );
+      await assertStillStoppedAfterTimeout();
+    }
 
     await extension.unload();
   }

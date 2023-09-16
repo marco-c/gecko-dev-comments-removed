@@ -13,6 +13,13 @@ const { ExtensionProcessCrashObserver, Management } =
 AddonTestUtils.initMochitest(this);
 
 add_task(async function test_ExtensionProcessCrashObserver() {
+  await SpecialPowers.pushPrefEnv({
+    
+    
+    
+    
+    set: [["extensions.background.disableRestartPersistentAfterCrash", true]],
+  });
   let mv2Extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
     manifest: {
@@ -157,4 +164,6 @@ add_task(async function test_ExtensionProcessCrashObserver() {
 
   
   ExtensionProcessCrashObserver.lastCrashTimestamps = [];
+
+  await SpecialPowers.popPrefEnv();
 });

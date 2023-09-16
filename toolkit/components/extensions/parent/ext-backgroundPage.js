@@ -35,6 +35,15 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "disableRestartPersistentAfterCrash",
+  "extensions.background.disableRestartPersistentAfterCrash",
+  false
+);
+
+
 Cu.importGlobalProperties(["DOMException"]);
 
 function notifyBackgroundScriptStatus(addonId, isRunning) {
@@ -349,6 +358,7 @@ class BackgroundContextOwner {
 
 
 
+
   canBePrimed = true;
 
   
@@ -361,6 +371,17 @@ class BackgroundContextOwner {
 
   shouldPrimeBackground = true;
 
+  get #hasEnteredShutdown() {
+    
+    
+    
+    
+    
+    
+    
+    return this.extension.hasShutdown || Services.startup.shuttingDown;
+  }
+
   
 
 
@@ -369,6 +390,7 @@ class BackgroundContextOwner {
     this.backgroundBuilder = backgroundBuilder;
     this.extension = extension;
     this.onExtensionProcessCrashed = this.onExtensionProcessCrashed.bind(this);
+    this.onApplicationInForeground = this.onApplicationInForeground.bind(this);
     this.onExtensionEnableProcessSpawning =
       this.onExtensionEnableProcessSpawning.bind(this);
 
@@ -379,6 +401,11 @@ class BackgroundContextOwner {
       "extension-enable-process-spawning",
       this.onExtensionEnableProcessSpawning
     );
+    
+    
+    if (extension.persistentBackground) {
+      extensions.on("application-foreground", this.onApplicationInForeground);
+    }
   }
 
   
@@ -489,10 +516,6 @@ class BackgroundContextOwner {
 
     if (this.extension.hasShutdown) {
       this.extension = null;
-    } else if (this.extension.persistentBackground) {
-      
-      
-      
     } else if (this.shouldPrimeBackground) {
       
       
@@ -529,7 +552,30 @@ class BackgroundContextOwner {
     }
   }
 
+  restartPersistentBackgroundAfterCrash() {
+    const { extension } = this;
+    if (
+      this.#hasEnteredShutdown ||
+      
+      
+      extension.backgroundState !== BACKGROUND_STATE.STOPPED ||
+      
+      disableRestartPersistentAfterCrash
+    ) {
+      return;
+    }
+
+    
+    
+    
+    extension.emit("start-background-script");
+  }
+
   onExtensionEnableProcessSpawning() {
+    if (this.#hasEnteredShutdown) {
+      return;
+    }
+
     if (!this.canBePrimed) {
       return;
     }
@@ -537,9 +583,29 @@ class BackgroundContextOwner {
     
     this.shouldPrimeBackground = true;
     this.backgroundBuilder.primeBackground(false);
+
+    if (this.extension.persistentBackground) {
+      this.restartPersistentBackgroundAfterCrash();
+    }
+  }
+
+  onApplicationInForeground(eventName, data) {
+    if (
+      this.#hasEnteredShutdown ||
+      
+      data.processSpawningDisabled
+    ) {
+      return;
+    }
+
+    this.restartPersistentBackgroundAfterCrash();
   }
 
   onExtensionProcessCrashed(eventName, data) {
+    if (this.#hasEnteredShutdown) {
+      return;
+    }
+
     
     
 
@@ -550,6 +616,15 @@ class BackgroundContextOwner {
     
     if (this.bgInstance) {
       this.setBgStateStopped();
+    }
+
+    if (this.extension.persistentBackground) {
+      
+      if (!data.appInForeground || data.processSpawningDisabled) {
+        return;
+      }
+
+      this.restartPersistentBackgroundAfterCrash();
     }
   }
 
@@ -566,6 +641,7 @@ class BackgroundContextOwner {
       "extension-enable-process-spawning",
       this.onExtensionEnableProcessSpawning
     );
+    extensions.off("application-foreground", this.onApplicationInForeground);
   }
 }
 
@@ -888,14 +964,6 @@ class BackgroundBuilder {
       }
 
       this.backgroundContextOwner.setBgStateStopped(false);
-      if (extension.persistentBackground && this.extension) {
-        
-        
-        
-        
-        
-        this.primeBackground(false);
-      }
     };
 
     EventManager.primeListeners(extension, isInStartup);
