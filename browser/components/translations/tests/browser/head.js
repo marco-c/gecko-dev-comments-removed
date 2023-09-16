@@ -162,13 +162,21 @@ async function openTranslationsPanelViaAppMenu() {
 
 
 
-async function toggleAlwaysTranslateLanguage() {
-  const alwaysTranslateLanguage = getByL10nId(
+async function clickSettingsMenuItemByL10nId(l10nId) {
+  info(`Toggling the "${l10nId}" settings menu item.`);
+  click(getByL10nId(l10nId), `Clicking the "${l10nId}" settings menu item.`);
+  await closeSettingsMenuIfOpen();
+}
+
+
+
+
+
+
+async function clickAlwaysTranslateLanguage() {
+  await clickSettingsMenuItemByL10nId(
     "translations-panel-settings-always-translate-language"
   );
-  info("Toggle the always-translate-language menuitem");
-  await alwaysTranslateLanguage.doCommand();
-  await closeSettingsMenuIfOpen();
 }
 
 
@@ -176,13 +184,10 @@ async function toggleAlwaysTranslateLanguage() {
 
 
 
-async function toggleNeverTranslateLanguage() {
-  const neverTranslateLanguage = getByL10nId(
+async function clickNeverTranslateLanguage() {
+  await clickSettingsMenuItemByL10nId(
     "translations-panel-settings-never-translate-language"
   );
-  info("Toggle the never-translate-language menuitem");
-  await neverTranslateLanguage.doCommand();
-  await closeSettingsMenuIfOpen();
 }
 
 
@@ -190,13 +195,10 @@ async function toggleNeverTranslateLanguage() {
 
 
 
-async function toggleNeverTranslateSite() {
-  const neverTranslateSite = getByL10nId(
+async function clickNeverTranslateSite() {
+  await clickSettingsMenuItemByL10nId(
     "translations-panel-settings-never-translate-site"
   );
-  info("Toggle the never-translate-site menuitem");
-  await neverTranslateSite.doCommand();
-  await closeSettingsMenuIfOpen();
 }
 
 
@@ -492,9 +494,26 @@ async function switchTab(tab) {
   await BrowserTestUtils.switchTab(gBrowser, tab);
 }
 
-function click(button, message) {
+function click(element, message) {
   info(message);
-  EventUtils.synthesizeMouseAtCenter(button, {});
+  return new Promise(resolve => {
+    element.addEventListener(
+      "click",
+      function () {
+        resolve();
+      },
+      { once: true }
+    );
+
+    EventUtils.synthesizeMouseAtCenter(element, {
+      type: "mousedown",
+      isSynthesized: false,
+    });
+    EventUtils.synthesizeMouseAtCenter(element, {
+      type: "mouseup",
+      isSynthesized: false,
+    });
+  });
 }
 
 
