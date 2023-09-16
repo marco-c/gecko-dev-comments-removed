@@ -148,6 +148,15 @@ class RTC_EXPORT VideoCodec {
   bool active;
 
   unsigned int qpMax;
+  
+  
+  
+  
+  
+  
+  
+  
+  
   unsigned char numberOfSimulcastStreams;
   SimulcastStream simulcastStream[kMaxSimulcastStreams];
   SpatialLayer spatialLayers[kMaxSpatialLayers];

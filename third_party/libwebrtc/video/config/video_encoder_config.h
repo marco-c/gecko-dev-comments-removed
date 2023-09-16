@@ -181,8 +181,14 @@ class VideoEncoderConfig {
   
   
   
+  
+  
   std::vector<VideoStream> simulcast_layers;
 
+  
+  
+  
+  
   
   size_t number_of_streams;
 
