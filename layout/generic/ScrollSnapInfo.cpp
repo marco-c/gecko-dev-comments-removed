@@ -6,6 +6,8 @@
 
 #include "ScrollSnapInfo.h"
 
+#include "nsPoint.h"
+#include "nsRect.h"
 #include "nsStyleStruct.h"
 #include "mozilla/WritingModes.h"
 
@@ -70,6 +72,33 @@ void ScrollSnapInfo::InitializeScrollSnapStrictness(
       mScrollSnapStrictnessX = aDisplay->mScrollSnapType.strictness;
       mScrollSnapStrictnessY = aDisplay->mScrollSnapType.strictness;
       break;
+  }
+}
+
+void ScrollSnapInfo::ForEachValidTargetFor(
+    const nsPoint& aDestination,
+    const std::function<bool(const SnapTarget&)>& aFunc) const {
+  for (const auto& target : mSnapTargets) {
+    nsPoint snapPoint(
+        mScrollSnapStrictnessX != StyleScrollSnapStrictness::None &&
+                target.mSnapPositionX
+            ? *target.mSnapPositionX
+            : aDestination.x,
+        mScrollSnapStrictnessY != StyleScrollSnapStrictness::None &&
+                target.mSnapPositionY
+            ? *target.mSnapPositionY
+            : aDestination.y);
+    nsRect snappedPort = nsRect(snapPoint, mSnapportSize);
+    
+    
+    
+    if (!snappedPort.Intersects(target.mSnapArea)) {
+      continue;
+    }
+
+    if (!aFunc(target)) {
+      break;
+    }
   }
 }
 
