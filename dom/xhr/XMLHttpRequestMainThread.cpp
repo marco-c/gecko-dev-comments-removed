@@ -46,7 +46,6 @@
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/ProgressEvent.h"
-#include "nsIDocumentLoader.h"
 #include "nsDataChannel.h"
 #include "nsIJARChannel.h"
 #include "nsIJARURI.h"
@@ -3020,98 +3019,6 @@ bool XMLHttpRequestMainThread::CanSend(ErrorResult& aRv) {
   return true;
 }
 
-namespace {
-
-
-nsCString GetChannelURL(nsCOMPtr<nsIChannel>& aChannel) {
-  nsCOMPtr<nsIURI> url;
-  Unused << aChannel->GetURI(getter_AddRefs(url));
-  nsCString spec;
-  Unused << url->GetSpec(spec);
-  return spec;
-}
-
-
-
-void GatherChannelsInLoadGroup(
-    nsCOMPtr<nsILoadGroup>& aLoadGroup, nsCOMPtr<nsIChannel>& aExceptChannel,
-    nsTObserverArray<nsCOMPtr<nsIChannel>>& aOutChannels) {
-  MOZ_ASSERT(aLoadGroup);
-  nsCOMPtr<nsISimpleEnumerator> iter;
-  Unused << aLoadGroup->GetRequests(getter_AddRefs(iter));
-  if (!iter) {
-    return;
-  }
-  nsCOMPtr<nsISupports> tmp;
-  bool hasMore = true;
-  while (NS_SUCCEEDED(iter->HasMoreElements(&hasMore)) && hasMore) {
-    iter->GetNext(getter_AddRefs(tmp));
-    nsCOMPtr<nsIChannel> loadingChannel(do_QueryInterface(tmp));
-    if (loadingChannel) {
-      
-      nsLoadFlags flags;
-      loadingChannel->GetLoadFlags(&flags);
-      if (!(flags & nsIChannel::LOAD_DOCUMENT_URI) &&
-          loadingChannel != aExceptChannel) {
-        aOutChannels.AppendElement(std::move(loadingChannel));
-      }
-    }
-  }
-}
-
-
-
-
-void GatherChannelsInDocGroup(
-    const RefPtr<DocGroup>& aDocGroup, nsCOMPtr<nsIChannel>& aExceptChannel,
-    nsTObserverArray<nsCOMPtr<nsIChannel>>& aOutChannels) {
-  MOZ_ASSERT(aDocGroup);
-  for (RefPtr<Document> doc : *aDocGroup) {
-    nsCOMPtr<nsILoadGroup> loadGroup = doc->GetDocumentLoadGroup();
-    GatherChannelsInLoadGroup(loadGroup, aExceptChannel, aOutChannels);
-  }
-}
-
-}  
-
-
-
-
-
-
-
-void XMLHttpRequestMainThread::SuspendOtherChannels(
-    nsTObserverArray<nsCOMPtr<nsIChannel>>& aOutSuspendedChannels) {
-  nsCOMPtr<nsILoadGroup> loadGroup;
-
-  
-  nsCOMPtr<Document> responsibleDoc = GetDocumentIfCurrent();
-  if (responsibleDoc && GetOwner() && responsibleDoc->GetDocGroup()) {
-    GatherChannelsInDocGroup(responsibleDoc->GetDocGroup(), mChannel,
-                             aOutSuspendedChannels);
-  } else {
-    
-    GatherChannelsInLoadGroup(mLoadGroup, mChannel, aOutSuspendedChannels);
-  }
-
-  for (nsCOMPtr<nsIChannel> channel : aOutSuspendedChannels.EndLimitedRange()) {
-    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
-            ("Suspending channel with URL %s\n", GetChannelURL(channel).get()));
-    channel->Suspend();
-  }
-}
-
-
-void XMLHttpRequestMainThread::ResumeOtherChannels(
-    nsTObserverArray<nsCOMPtr<nsIChannel>>& aSuspendedChannels) {
-  for (nsCOMPtr<nsIChannel> channel : aSuspendedChannels.ForwardRange()) {
-    MOZ_LOG(gXMLHttpRequestLog, LogLevel::Debug,
-            ("Resuming channel with URL %s\n", GetChannelURL(channel).get()));
-    channel->Resume();
-  }
-  aSuspendedChannels.Clear();
-}
-
 void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
                                             bool aBodyIsDocumentOrString,
                                             ErrorResult& aRv) {
@@ -3242,13 +3149,11 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
 
   
   RefPtr<Document> suspendedDoc;
-  nsTObserverArray<nsCOMPtr<nsIChannel>> suspendedChannels;
   if (mFlagSynchronous) {
     auto scopeExit = MakeScopeExit([&] {
       CancelSyncTimeoutTimer();
       ResumeTimeout();
       ResumeEventDispatching();
-      ResumeOtherChannels(suspendedChannels);
     });
     Maybe<AutoSuppressEventHandling> autoSuppress;
 
@@ -3267,9 +3172,6 @@ void XMLHttpRequestMainThread::SendInternal(const BodyExtractorBase* aBody,
       }
     }
 
-    if (StaticPrefs::network_sync_xmlhttprequest_suspends_other_requests()) {
-      SuspendOtherChannels(suspendedChannels);
-    }
     SuspendEventDispatching();
     StopProgressEventTimer();
 
