@@ -60,6 +60,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/HTMLMarqueeElement.h"
 #include "mozilla/dom/ScrollTimeline.h"
+#include "mozilla/dom/BrowserChild.h"
 #include <stdint.h>
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Telemetry.h"
@@ -2930,7 +2931,11 @@ bool nsHTMLScrollFrame::GetDisplayPortAtLastApproximateFrameVisibilityUpdate(
   return mHadDisplayPortAtLastFrameUpdate;
 }
 
-MatrixScales GetPaintedLayerScaleForFrame(nsIFrame* aFrame) {
+
+
+
+MatrixScales GetPaintedLayerScaleForFrame(nsIFrame* aFrame,
+                                          bool aIncludeCSSTransform) {
   MOZ_ASSERT(aFrame, "need a frame");
 
   nsPresContext* presCtx = aFrame->PresContext()->GetRootPresContext();
@@ -2940,11 +2945,22 @@ MatrixScales GetPaintedLayerScaleForFrame(nsIFrame* aFrame) {
     MOZ_ASSERT(presCtx);
   }
 
-  ParentLayerToScreenScale2D transformToAncestorScale =
+  ParentLayerToScreenScale2D transformToAncestorScale;
+  if (aIncludeCSSTransform) {
+    transformToAncestorScale =
+        nsLayoutUtils::GetTransformToAncestorScaleCrossProcessForFrameMetrics(
+            aFrame);
+  } else {
+    if (BrowserChild* browserChild =
+            BrowserChild::GetFrom(aFrame->PresShell())) {
+      transformToAncestorScale =
+          browserChild->GetEffectsInfo().mTransformToAncestorScale;
+    }
+  }
+  transformToAncestorScale =
       ParentLayerToParentLayerScale(
           presCtx->PresShell()->GetCumulativeResolution()) *
-      nsLayoutUtils::GetTransformToAncestorScaleCrossProcessForFrameMetrics(
-          aFrame);
+      transformToAncestorScale;
 
   return transformToAncestorScale.ToUnknownScale();
 }
@@ -2999,7 +3015,8 @@ void nsHTMLScrollFrame::ScrollToImpl(
   nscoord appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
   
   
-  MatrixScales scale = GetPaintedLayerScaleForFrame(mScrolledFrame);
+  MatrixScales scale = GetPaintedLayerScaleForFrame(
+      mScrolledFrame,  true);
   nsPoint curPos = GetScrollPosition();
 
   
@@ -6845,7 +6862,8 @@ nsRect nsHTMLScrollFrame::GetScrolledRect() const {
   
   nscoord appUnitsPerDevPixel =
       mScrolledFrame->PresContext()->AppUnitsPerDevPixel();
-  MatrixScales scale = GetPaintedLayerScaleForFrame(mScrolledFrame);
+  MatrixScales scale = GetPaintedLayerScaleForFrame(
+      mScrolledFrame,  false);
   if (scale.xScale == 0 || scale.yScale == 0) {
     scale = MatrixScales();
   }
