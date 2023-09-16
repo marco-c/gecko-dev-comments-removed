@@ -115,10 +115,6 @@ struct KeyBindingsCommand {
 
 @end  
 
-#if !defined(MAC_OS_X_VERSION_10_14) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_14
-typedef NSString* AVMediaType;
-#endif
-
 class nsCocoaUtils {
   typedef mozilla::gfx::SourceSurface SourceSurface;
   typedef mozilla::LayoutDeviceIntPoint LayoutDeviceIntPoint;
@@ -130,7 +126,8 @@ class nsCocoaUtils {
   
   
   static CGFloat GetBackingScaleFactor(id aObject) {
-    if (HiDPIEnabled() && [aObject respondsToSelector:@selector(backingScaleFactor)]) {
+    if (HiDPIEnabled() &&
+        [aObject respondsToSelector:@selector(backingScaleFactor)]) {
       return [aObject backingScaleFactor];
     }
     return 1.0;
@@ -142,36 +139,41 @@ class nsCocoaUtils {
     return NSToIntRound(aPts * aBackingScale);
   }
 
-  static LayoutDeviceIntPoint CocoaPointsToDevPixels(const NSPoint& aPt, CGFloat aBackingScale) {
+  static LayoutDeviceIntPoint CocoaPointsToDevPixels(const NSPoint& aPt,
+                                                     CGFloat aBackingScale) {
     return LayoutDeviceIntPoint(NSToIntRound(aPt.x * aBackingScale),
                                 NSToIntRound(aPt.y * aBackingScale));
   }
 
-  static LayoutDeviceIntPoint CocoaPointsToDevPixelsRoundDown(const NSPoint& aPt,
-                                                              CGFloat aBackingScale) {
+  static LayoutDeviceIntPoint CocoaPointsToDevPixelsRoundDown(
+      const NSPoint& aPt, CGFloat aBackingScale) {
     return LayoutDeviceIntPoint(NSToIntFloor(aPt.x * aBackingScale),
                                 NSToIntFloor(aPt.y * aBackingScale));
   }
 
-  static LayoutDeviceIntRect CocoaPointsToDevPixels(const NSRect& aRect, CGFloat aBackingScale) {
+  static LayoutDeviceIntRect CocoaPointsToDevPixels(const NSRect& aRect,
+                                                    CGFloat aBackingScale) {
     return LayoutDeviceIntRect(NSToIntRound(aRect.origin.x * aBackingScale),
                                NSToIntRound(aRect.origin.y * aBackingScale),
                                NSToIntRound(aRect.size.width * aBackingScale),
                                NSToIntRound(aRect.size.height * aBackingScale));
   }
 
-  static CGFloat DevPixelsToCocoaPoints(int32_t aPixels, CGFloat aBackingScale) {
+  static CGFloat DevPixelsToCocoaPoints(int32_t aPixels,
+                                        CGFloat aBackingScale) {
     return (CGFloat)aPixels / aBackingScale;
   }
 
-  static NSPoint DevPixelsToCocoaPoints(const mozilla::LayoutDeviceIntPoint& aPt,
-                                        CGFloat aBackingScale) {
-    return NSMakePoint((CGFloat)aPt.x / aBackingScale, (CGFloat)aPt.y / aBackingScale);
+  static NSPoint DevPixelsToCocoaPoints(
+      const mozilla::LayoutDeviceIntPoint& aPt, CGFloat aBackingScale) {
+    return NSMakePoint((CGFloat)aPt.x / aBackingScale,
+                       (CGFloat)aPt.y / aBackingScale);
   }
 
   
   static NSPoint ConvertPointFromScreen(NSWindow* aWindow, const NSPoint& aPt) {
-    return [aWindow convertRectFromScreen:NSMakeRect(aPt.x, aPt.y, 0, 0)].origin;
+    return
+        [aWindow convertRectFromScreen:NSMakeRect(aPt.x, aPt.y, 0, 0)].origin;
   }
 
   
@@ -179,8 +181,10 @@ class nsCocoaUtils {
     return [aWindow convertRectToScreen:NSMakeRect(aPt.x, aPt.y, 0, 0)].origin;
   }
 
-  static NSRect DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect, CGFloat aBackingScale) {
-    return NSMakeRect((CGFloat)aRect.X() / aBackingScale, (CGFloat)aRect.Y() / aBackingScale,
+  static NSRect DevPixelsToCocoaPoints(const LayoutDeviceIntRect& aRect,
+                                       CGFloat aBackingScale) {
+    return NSMakeRect((CGFloat)aRect.X() / aBackingScale,
+                      (CGFloat)aRect.Y() / aBackingScale,
                       (CGFloat)aRect.Width() / aBackingScale,
                       (CGFloat)aRect.Height() / aBackingScale);
   }
@@ -207,14 +211,14 @@ class nsCocoaUtils {
   static NSPoint GeckoPointToCocoaPoint(const mozilla::DesktopPoint& aPoint);
 
   
-  static NSRect GeckoRectToCocoaRectDevPix(const mozilla::LayoutDeviceIntRect& aGeckoRect,
-                                           CGFloat aBackingScale);
+  static NSRect GeckoRectToCocoaRectDevPix(
+      const mozilla::LayoutDeviceIntRect& aGeckoRect, CGFloat aBackingScale);
 
   
   static mozilla::DesktopIntRect CocoaRectToGeckoRect(const NSRect& cocoaRect);
 
-  static mozilla::LayoutDeviceIntRect CocoaRectToGeckoRectDevPix(const NSRect& aCocoaRect,
-                                                                 CGFloat aBackingScale);
+  static mozilla::LayoutDeviceIntRect CocoaRectToGeckoRectDevPix(
+      const NSRect& aCocoaRect, CGFloat aBackingScale);
 
   
   
@@ -261,7 +265,9 @@ class nsCocoaUtils {
 
 
 
-  static nsresult CreateCGImageFromSurface(SourceSurface* aSurface, CGImageRef* aResult,
+
+  static nsresult CreateCGImageFromSurface(SourceSurface* aSurface,
+                                           CGImageRef* aResult,
                                            bool* aIsEntirelyBlack = nullptr);
 
   
@@ -271,7 +277,8 @@ class nsCocoaUtils {
 
 
 
-  static nsresult CreateNSImageFromCGImage(CGImageRef aInputImage, NSImage** aResult);
+  static nsresult CreateNSImageFromCGImage(CGImageRef aInputImage,
+                                           NSImage** aResult);
 
   
 
@@ -286,11 +293,13 @@ class nsCocoaUtils {
 
 
 
-  static nsresult CreateNSImageFromImageContainer(imgIContainer* aImage, uint32_t aWhichFrame,
-                                                  const nsPresContext* aPresContext,
-                                                  const mozilla::ComputedStyle* aComputedStyle,
-                                                  NSImage** aResult, CGFloat scaleFactor,
-                                                  bool* aIsEntirelyBlack = nullptr);
+
+
+  static nsresult CreateNSImageFromImageContainer(
+      imgIContainer* aImage, uint32_t aWhichFrame,
+      const nsPresContext* aPresContext,
+      const mozilla::ComputedStyle* aComputedStyle, NSImage** aResult,
+      CGFloat scaleFactor, bool* aIsEntirelyBlack = nullptr);
 
   
 
@@ -306,7 +315,8 @@ class nsCocoaUtils {
 
 
   static nsresult CreateDualRepresentationNSImageFromImageContainer(
-      imgIContainer* aImage, uint32_t aWhichFrame, const nsPresContext* aPresContext,
+      imgIContainer* aImage, uint32_t aWhichFrame,
+      const nsPresContext* aPresContext,
       const mozilla::ComputedStyle* aComputedStyle, NSImage** aResult,
       bool* aIsEntirelyBlack = nullptr);
 
@@ -335,31 +345,35 @@ class nsCocoaUtils {
 
 
 
-  static void GeckoRectToNSRect(const nsIntRect& aGeckoRect, NSRect& aOutCocoaRect);
+  static void GeckoRectToNSRect(const nsIntRect& aGeckoRect,
+                                NSRect& aOutCocoaRect);
 
   
 
 
 
 
-  static void NSRectToGeckoRect(const NSRect& aCocoaRect, nsIntRect& aOutGeckoRect);
+  static void NSRectToGeckoRect(const NSRect& aCocoaRect,
+                                nsIntRect& aOutGeckoRect);
 
   
 
 
-  static NSEvent* MakeNewCocoaEventWithType(NSEventType aEventType, NSEvent* aEvent);
+  static NSEvent* MakeNewCocoaEventWithType(NSEventType aEventType,
+                                            NSEvent* aEvent);
 
   
 
 
-  static NSEvent* MakeNewCococaEventFromWidgetEvent(const mozilla::WidgetKeyboardEvent& aKeyEvent,
-                                                    NSInteger aWindowNumber,
-                                                    NSGraphicsContext* aContext);
+  static NSEvent* MakeNewCococaEventFromWidgetEvent(
+      const mozilla::WidgetKeyboardEvent& aKeyEvent, NSInteger aWindowNumber,
+      NSGraphicsContext* aContext);
 
   
 
 
-  static void InitInputEvent(mozilla::WidgetInputEvent& aInputEvent, NSEvent* aNativeEvent);
+  static void InitInputEvent(mozilla::WidgetInputEvent& aInputEvent,
+                             NSEvent* aNativeEvent);
 
   
 
@@ -385,7 +399,8 @@ class nsCocoaUtils {
 
 
 
-  static void GetCommandsFromKeyEvent(NSEvent* aEvent, nsTArray<KeyBindingsCommand>& aCommands);
+  static void GetCommandsFromKeyEvent(NSEvent* aEvent,
+                                      nsTArray<KeyBindingsCommand>& aCommands);
 
   
 
@@ -478,20 +493,23 @@ class nsCocoaUtils {
 
   static mozilla::PanGestureInput CreatePanGestureEvent(
       NSEvent* aNativeEvent, mozilla::TimeStamp aTimeStamp,
-      const mozilla::ScreenPoint& aPanStartPoint, const mozilla::ScreenPoint& aPreciseDelta,
-      const mozilla::gfx::IntPoint& aLineOrPageDelta, mozilla::Modifiers aModifiers);
+      const mozilla::ScreenPoint& aPanStartPoint,
+      const mozilla::ScreenPoint& aPreciseDelta,
+      const mozilla::gfx::IntPoint& aLineOrPageDelta,
+      mozilla::Modifiers aModifiers);
 
   
 
 
-  static bool IsValidPasteboardType(NSString* aAvailableType, bool aAllowFileURL);
+  static bool IsValidPasteboardType(NSString* aAvailableType,
+                                    bool aAllowFileURL);
 
   
 
 
-  static void SetTransferDataForTypeFromPasteboardItem(nsITransferable* aTransferable,
-                                                       const nsCString& aFlavor,
-                                                       NSPasteboardItem* aItem);
+  static void SetTransferDataForTypeFromPasteboardItem(
+      nsITransferable* aTransferable, const nsCString& aFlavor,
+      NSPasteboardItem* aItem);
 
  private:
   
@@ -519,21 +537,23 @@ class nsCocoaUtils {
 
 
 
-  static nsresult RequestCapturePermission(NSString* aType, RefPtr<Promise>& aPromise,
+  static nsresult RequestCapturePermission(NSString* aType,
+                                           RefPtr<Promise>& aPromise,
                                            PromiseArray& aPromiseList,
                                            void (^aHandler)(BOOL granted));
   
 
 
 
-  static void ResolveMediaCapturePromises(bool aGranted, PromiseArray& aPromiseList);
+  static void ResolveMediaCapturePromises(bool aGranted,
+                                          PromiseArray& aPromiseList);
 
   
 
 
-  static NSString* GetStringForTypeFromPasteboardItem(NSPasteboardItem* aItem,
-                                                      const NSString* aType,
-                                                      bool aAllowFileURL = false);
+  static NSString* GetStringForTypeFromPasteboardItem(
+      NSPasteboardItem* aItem, const NSString* aType,
+      bool aAllowFileURL = false);
 
   
 

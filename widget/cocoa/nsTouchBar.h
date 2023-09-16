@@ -9,9 +9,9 @@
 
 #include "nsITouchBarHelper.h"
 #include "nsTouchBarInput.h"
-#include "nsTouchBarNativeAPIDefines.h"
 
-const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.touchbar";
+const NSTouchBarItemIdentifier kTouchBarBaseIdentifier =
+    @"com.mozilla.firefox.touchbar";
 
 
 
@@ -34,7 +34,8 @@ const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.t
 
 
 
-@property(strong) NSMutableDictionary<NSTouchBarItemIdentifier, TouchBarInput*>* mappedLayoutItems;
+@property(strong) NSMutableDictionary<NSTouchBarItemIdentifier, TouchBarInput*>*
+    mappedLayoutItems;
 
 
 
@@ -42,7 +43,8 @@ const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.t
 
 
 @property(strong)
-    NSMutableDictionary<NSTouchBarItemIdentifier, NSCustomTouchBarItem*>* scrollViewButtons;
+    NSMutableDictionary<NSTouchBarItemIdentifier, NSCustomTouchBarItem*>*
+        scrollViewButtons;
 
 
 
@@ -104,8 +106,10 @@ const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.t
        withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
 - (void)updateScrollView:(NSCustomTouchBarItem*)aScrollViewItem
           withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
-- (void)updateLabel:(NSTextField*)aLabel withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
-- (NSTouchBarItem*)makeShareScrubberForIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (void)updateLabel:(NSTextField*)aLabel
+     withIdentifier:(NSTouchBarItemIdentifier)aIdentifier;
+- (NSTouchBarItem*)makeShareScrubberForIdentifier:
+    (NSTouchBarItemIdentifier)aIdentifier;
 
 
 
@@ -125,9 +129,10 @@ const NSTouchBarItemIdentifier kTouchBarBaseIdentifier = @"com.mozilla.firefox.t
 - (NSArray*)itemsForSharingServicePickerTouchBarItem:
     (NSSharingServicePickerTouchBarItem*)aPickerTouchBarItem;
 
-- (NSArray<NSSharingService*>*)sharingServicePicker:(NSSharingServicePicker*)aSharingServicePicker
-                            sharingServicesForItems:(NSArray*)aItems
-                            proposedSharingServices:(NSArray<NSSharingService*>*)aProposedServices;
+- (NSArray<NSSharingService*>*)
+       sharingServicePicker:(NSSharingServicePicker*)aSharingServicePicker
+    sharingServicesForItems:(NSArray*)aItems
+    proposedSharingServices:(NSArray<NSSharingService*>*)aProposedServices;
 
 - (void)releaseJSObjects;
 

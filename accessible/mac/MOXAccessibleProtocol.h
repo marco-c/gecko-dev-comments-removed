@@ -5,8 +5,6 @@
 
 
 
-#include "SDKDeclarations.h"
-
 @protocol MOXTextMarkerSupport;
 @protocol mozAccessible;
 

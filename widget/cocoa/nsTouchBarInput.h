@@ -8,7 +8,6 @@
 #import <Cocoa/Cocoa.h>
 
 #include "nsITouchBarInput.h"
-#include "nsTouchBarNativeAPIDefines.h"
 #include "nsCOMPtr.h"
 
 using namespace mozilla::dom;
@@ -73,8 +72,10 @@ class nsTouchBarInputIcon;
 
 
 
-+ (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType withKey:(NSString*)aKey;
-+ (NSTouchBarItemIdentifier)nativeIdentifierWithXPCOM:(nsCOMPtr<nsITouchBarInput>)aInput;
++ (NSTouchBarItemIdentifier)nativeIdentifierWithType:(NSString*)aType
+                                             withKey:(NSString*)aKey;
++ (NSTouchBarItemIdentifier)nativeIdentifierWithXPCOM:
+    (nsCOMPtr<nsITouchBarInput>)aInput;
 
 
 

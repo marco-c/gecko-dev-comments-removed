@@ -32,7 +32,6 @@
 #ifdef MOZ_UPDATER
 #  include "nsUpdateDriver.h"
 #endif
-#include "SDKDeclarations.h"
 
 
 
