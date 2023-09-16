@@ -135,7 +135,7 @@ void nsWindow::ForcePresent() {
   }
 }
 
-bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
+bool nsWindow::OnPaint(uint32_t aNestingLevel) {
   DeviceResetReason resetReason = DeviceResetReason::OK;
   if (gfxWindowsPlatform::GetPlatform()->DidRenderingDeviceReset(
           &resetReason)) {
@@ -214,12 +214,16 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   }
   mLastPaintBounds = mBounds;
 
-  if (!aDC && renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
-      TransparencyMode::Transparent == mTransparencyMode) {
-    
-    
-    
-    
+  
+  
+  
+  
+  const bool usingMemoryDC =
+      renderer->GetBackendType() == LayersBackend::LAYERS_NONE &&
+      mTransparencyMode == TransparencyMode::Transparent;
+
+  HDC hDC = nullptr;
+  if (usingMemoryDC) {
     
     
     
@@ -228,13 +232,13 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
 
     
     
-    aDC = mBasicLayersSurface->GetTransparentDC();
+    hDC = mBasicLayersSurface->GetTransparentDC();
+  } else {
+    hDC = ::BeginPaint(mWnd, &ps);
   }
 
-  HDC hDC = aDC ? aDC : ::BeginPaint(mWnd, &ps);
-
-  bool forceRepaint = aDC || TransparencyMode::Transparent == mTransparencyMode;
-  LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
+  const bool forceRepaint = mTransparencyMode == TransparencyMode::Transparent;
+  const LayoutDeviceIntRegion region = GetRegionToPaint(forceRepaint, ps, hDC);
 
   if (knowsCompositor && layerManager) {
     
@@ -351,7 +355,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
     }
   }
 
-  if (!aDC) {
+  if (!usingMemoryDC) {
     ::EndPaint(mWnd, &ps);
   }
 
@@ -362,7 +366,7 @@ bool nsWindow::OnPaint(HDC aDC, uint32_t aNestingLevel) {
   if (listener) listener->DidPaintWindow();
 
   if (aNestingLevel == 0 && ::GetUpdateRect(mWnd, nullptr, false)) {
-    OnPaint(aDC, 1);
+    OnPaint(1);
   }
 
   return result;
