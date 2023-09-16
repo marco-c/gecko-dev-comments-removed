@@ -524,7 +524,7 @@ pub enum TextAlign {
     
     
     #[cfg(feature = "gecko")]
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozCenterOrInherit,
 }
 

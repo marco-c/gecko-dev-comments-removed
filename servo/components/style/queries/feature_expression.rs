@@ -313,27 +313,27 @@ fn disabled_by_pref(feature: &Atom, context: &ParserContext) -> bool {
             
             
             
-            return !context.in_ua_or_chrome_sheet() &&
+            return !context.chrome_rules_enabled() &&
                 !static_prefs::pref!("layout.css.forced-colors.enabled");
         }
         
         
         if *feature == atom!("prefers-contrast") {
-            return !context.in_ua_or_chrome_sheet() &&
+            return !context.chrome_rules_enabled() &&
                 !static_prefs::pref!("layout.css.prefers-contrast.enabled");
         }
 
         
         
         if *feature == atom!("prefers-reduced-transparency") {
-            return !context.in_ua_or_chrome_sheet() &&
+            return !context.chrome_rules_enabled() &&
                 !static_prefs::pref!("layout.css.prefers-reduced-transparency.enabled");
         }
 
         
         
         if *feature == atom!("inverted-colors") {
-            return !context.in_ua_or_chrome_sheet() &&
+            return !context.chrome_rules_enabled() &&
                 !static_prefs::pref!("layout.css.inverted-colors.enabled");
         }
     }
@@ -410,7 +410,7 @@ impl QueryFeatureExpression {
         let location = input.current_source_location();
         let ident = input.expect_ident()?;
 
-        if context.in_ua_or_chrome_sheet() {
+        if context.chrome_rules_enabled() {
             flags.insert(FeatureFlags::CHROME_AND_UA_ONLY);
         }
 

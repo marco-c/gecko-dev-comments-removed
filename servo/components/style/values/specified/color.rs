@@ -209,7 +209,7 @@ pub enum SystemColor {
     #[parse(aliases = "-moz-field")]
     Field,
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozDisabledfield,
     #[parse(aliases = "-moz-fieldtext")]
     Fieldtext,
@@ -265,7 +265,7 @@ pub enum SystemColor {
     
     MozMenuhover,
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozMenuhoverdisabled,
     
     MozMenuhovertext,
@@ -278,25 +278,25 @@ pub enum SystemColor {
     MozOddtreerow,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozButtonactivetext,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozButtonactiveface,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozButtondisabledface,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozHeaderbar,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozHeaderbartext,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozHeaderbarinactive,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozHeaderbarinactivetext,
 
     
@@ -327,7 +327,7 @@ pub enum SystemColor {
     Accentcolortext,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozAutofillBackground,
 
     
@@ -350,12 +350,12 @@ pub enum SystemColor {
     Visitedtext,
 
     
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozColheadertext,
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozColheaderhovertext,
 
-    #[parse(condition = "ParserContext::in_ua_or_chrome_sheet")]
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     TextSelectDisabledBackground,
     #[css(skip)]
     TextSelectAttentionBackground,
