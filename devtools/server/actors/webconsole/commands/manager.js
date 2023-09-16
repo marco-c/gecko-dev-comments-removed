@@ -153,12 +153,17 @@ const WebConsoleCommandsManager = {
 
 
 
+
+
+
+
   getWebConsoleCommands(
     consoleActor,
     debuggerGlobal,
     frame,
     evalInput,
-    selectedNodeActorID
+    selectedNodeActorID,
+    ignoreExistingBindings
   ) {
     const bindings = Object.create(null);
 
@@ -209,7 +214,10 @@ const WebConsoleCommandsManager = {
       
       
       
+      
+      
       if (
+        !ignoreExistingBindings &&
         !isCmd &&
         (this._isCommandNameAlreadyInScope(name, frame, debuggerGlobal) ||
           colonOnlyCommandNames.includes(name))
