@@ -17,6 +17,9 @@
 
 
 
+
+#include <limits.h> 
+
 #include "seccomon.h"
 #include "secitem.h"
 #include "secport.h"
@@ -1956,8 +1959,17 @@ NSC_Digest(CK_SESSION_HANDLE hSession,
         goto finish;
     }
 
+#if (ULONG_MAX > UINT_MAX)
     
+
+    while (ulDataLen > UINT_MAX) {
+        (*context->hashUpdate)(context->cipherInfo, pData, UINT_MAX);
+        pData += UINT_MAX;
+        ulDataLen -= UINT_MAX;
+    }
+#endif
     (*context->hashUpdate)(context->cipherInfo, pData, ulDataLen);
+
     
     (*context->end)(context->cipherInfo, pDigest, &digestLen, maxout);
     *pulDigestLen = digestLen;
@@ -1982,8 +1994,18 @@ NSC_DigestUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
     crv = sftk_GetContext(hSession, &context, SFTK_HASH, PR_TRUE, NULL);
     if (crv != CKR_OK)
         return crv;
+
+#if (ULONG_MAX > UINT_MAX)
     
+
+    while (ulPartLen > UINT_MAX) {
+        (*context->hashUpdate)(context->cipherInfo, pPart, UINT_MAX);
+        pPart += UINT_MAX;
+        ulPartLen -= UINT_MAX;
+    }
+#endif
     (*context->hashUpdate)(context->cipherInfo, pPart, ulPartLen);
+
     return CKR_OK;
 }
 
@@ -3168,6 +3190,13 @@ sftk_MACUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
         return crv;
 
     if (context->hashInfo) {
+#if (ULONG_MAX > UINT_MAX)
+        while (ulPartLen > UINT_MAX) {
+            (*context->hashUpdate)(context->cipherInfo, pPart, UINT_MAX);
+            pPart += UINT_MAX;
+            ulPartLen -= UINT_MAX;
+        }
+#endif
         (*context->hashUpdate)(context->hashInfo, pPart, ulPartLen);
     } else {
         
