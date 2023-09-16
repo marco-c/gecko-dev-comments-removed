@@ -269,6 +269,41 @@ class StyleRuleActor extends Actor {
     return sheet.associatedDocument;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  getDesugaredSelectors() {
+    
+    if (!this._desugaredSelectors) {
+      this._desugaredSelectors = CssLogic.getSelectors(this.rawRule, true);
+    }
+
+    return this._desugaredSelectors;
+  }
+
   toString() {
     return "[StyleRuleActor for " + this.rawRule + "]";
   }
@@ -309,15 +344,7 @@ class StyleRuleActor extends Actor {
       case CSSRule.STYLE_RULE:
         form.selectors = CssLogic.getSelectors(this.rawRule);
         if (computeDesugaredSelector) {
-          
-          
-          
-          
-          
-          
-          
-          
-          form.desugaredSelectors = CssLogic.getSelectors(this.rawRule, true);
+          form.desugaredSelectors = this.getDesugaredSelectors();
         }
         form.cssText = this.rawStyle.cssText || "";
         break;
@@ -1094,6 +1121,9 @@ class StyleRuleActor extends Actor {
     if (this.type === ELEMENT_STYLE || this.rawRule.selectorText === value) {
       return { ruleProps: null, isMatching: true };
     }
+
+    
+    this._desugaredSelectors = null;
 
     
     const oldValue = this.rawRule.selectorText;
