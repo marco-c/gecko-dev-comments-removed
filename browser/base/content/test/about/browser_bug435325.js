@@ -22,7 +22,7 @@ add_task(async function checkSwitchPageToOnlineMode() {
     let netErrorLoaded = BrowserTestUtils.waitForErrorPage(browser);
 
     
-    BrowserTestUtils.loadURIString(browser, "http://example.com/");
+    BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
     await netErrorLoaded;
 
     

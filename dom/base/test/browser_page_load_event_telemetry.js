@@ -38,7 +38,7 @@ add_task(async function () {
 
   
   for (let i = 0; i < 30; i++) {
-    BrowserTestUtils.loadURIString(browser, "https://example.com");
+    BrowserTestUtils.startLoadingURIString(browser, "https://example.com");
     await BrowserTestUtils.browserLoaded(browser);
   }
 

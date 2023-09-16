@@ -25,7 +25,7 @@ add_task(async function test() {
 
       let authShown = promiseAuthWindowShown();
       let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.loadURIString(
+      BrowserTestUtils.startLoadingURIString(
         browser,
         "https://example.com/browser/toolkit/components/passwordmgr/test/browser/authenticate.sjs"
       );
@@ -71,7 +71,7 @@ add_task(async function test() {
 
       
       browserLoaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.loadURIString(browser, "https://example.com");
+      BrowserTestUtils.startLoadingURIString(browser, "https://example.com");
       await browserLoaded;
 
       

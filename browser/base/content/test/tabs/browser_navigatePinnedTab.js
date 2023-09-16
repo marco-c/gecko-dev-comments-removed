@@ -40,8 +40,11 @@ add_task(async function () {
     
     "http://example.com/"
   );
-  
-  BrowserTestUtils.loadURIString(appTab.linkedBrowser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(
+    appTab.linkedBrowser,
+    
+    "http://example.com/"
+  );
   info("Started loading example.com");
   await pageLoadPromise;
   info("Loaded example.com");

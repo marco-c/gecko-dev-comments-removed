@@ -54,7 +54,7 @@ add_task(async function () {
     async function (browser) {
       let menu_cut_disabled, menu_copy_disabled;
 
-      BrowserTestUtils.loadURIString(
+      BrowserTestUtils.startLoadingURIString(
         browser,
         "data:text/html,<div>hello!</div>"
       );
@@ -76,7 +76,7 @@ add_task(async function () {
 
       
       
-      BrowserTestUtils.loadURIString(
+      BrowserTestUtils.startLoadingURIString(
         browser,
         "data:text/html,<div contentEditable='true'>hello!</div>"
       );
@@ -98,7 +98,7 @@ add_task(async function () {
 
       
       
-      BrowserTestUtils.loadURIString(
+      BrowserTestUtils.startLoadingURIString(
         browser,
         "data:text/html,<div contentEditable='true'>hello!</div><script>r=new Range;r.selectNodeContents(document.body.firstChild);document.getSelection().addRange(r);</script>"
       );
@@ -118,7 +118,7 @@ add_task(async function () {
       is(menu_copy_disabled, false, "menu_copy should be enabled");
       await new Promise(closeMenu);
 
-      BrowserTestUtils.loadURIString(browser, "about:preferences");
+      BrowserTestUtils.startLoadingURIString(browser, "about:preferences");
       await BrowserTestUtils.browserLoaded(browser);
       browser.focus();
       await new Promise(resolve => waitForFocus(resolve, window));

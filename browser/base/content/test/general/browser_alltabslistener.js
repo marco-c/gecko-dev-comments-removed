@@ -198,8 +198,8 @@ async function test() {
     BrowserTestUtils.browserStopped(gBackgroundBrowser, kBasePage),
     BrowserTestUtils.browserStopped(gForegroundBrowser, kBasePage),
   ];
-  BrowserTestUtils.loadURIString(gBackgroundBrowser, kBasePage);
-  BrowserTestUtils.loadURIString(gForegroundBrowser, kBasePage);
+  BrowserTestUtils.startLoadingURIString(gBackgroundBrowser, kBasePage);
+  BrowserTestUtils.startLoadingURIString(gForegroundBrowser, kBasePage);
   await Promise.all(promises);
   
   
@@ -214,7 +214,7 @@ function runTest(browser, url, next) {
   gAllNotificationsPos = 0;
   gNextTest = next;
   gTestBrowser = browser;
-  BrowserTestUtils.loadURIString(browser, url);
+  BrowserTestUtils.startLoadingURIString(browser, url);
 }
 
 function startTest1() {

@@ -21,7 +21,7 @@ add_task(async function () {
   await BrowserTestUtils.withNewTab("about:blank", async function (browser) {
     const loaded = BrowserTestUtils.browserLoaded(browser, false, null, true);
     
-    BrowserTestUtils.loadURIString(browser, kTestURI);
+    BrowserTestUtils.startLoadingURIString(browser, kTestURI);
     await loaded;
     await ContentTask.spawn(browser, {}, async args => {
       ok(

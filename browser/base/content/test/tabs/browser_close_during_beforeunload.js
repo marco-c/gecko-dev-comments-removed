@@ -22,7 +22,7 @@ add_task(async function () {
 
   let browser = win.gBrowser.selectedBrowser;
   
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 

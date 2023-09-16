@@ -34,7 +34,7 @@ add_task(async function () {
     })
     .catch(function () {});
 
-  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, URL);
+  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, URL);
 
   
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, true, URL);
@@ -69,7 +69,7 @@ add_task(async function () {
     })
     .catch(function () {});
 
-  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, URL);
+  BrowserTestUtils.startLoadingURIString(gBrowser.selectedBrowser, URL);
 
   await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser, true, URL);
 

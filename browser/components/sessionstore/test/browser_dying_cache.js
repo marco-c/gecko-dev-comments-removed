@@ -12,9 +12,13 @@ add_task(async function test() {
 
   
   let flags = Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY;
-  BrowserTestUtils.loadURIString(win.gBrowser.selectedBrowser, "about:robots", {
-    flags,
-  });
+  BrowserTestUtils.startLoadingURIString(
+    win.gBrowser.selectedBrowser,
+    "about:robots",
+    {
+      flags,
+    }
+  );
   await promiseBrowserLoaded(win.gBrowser.selectedBrowser);
 
   

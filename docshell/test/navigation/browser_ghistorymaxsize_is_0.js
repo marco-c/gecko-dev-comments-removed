@@ -54,7 +54,7 @@ add_task(async function () {
       });
       
       
-      BrowserTestUtils.loadURIString(browser, URL2);
+      BrowserTestUtils.startLoadingURIString(browser, URL2);
       await loadPromise;
 
       

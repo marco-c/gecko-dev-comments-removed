@@ -49,7 +49,7 @@ async function run_testcase(testcase) {
   
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
     
-    BrowserTestUtils.loadURIString(browser, testcase.uri);
+    BrowserTestUtils.startLoadingURIString(browser, testcase.uri);
     if (!testcase.expectErrorPage) {
       await BrowserTestUtils.browserLoaded(browser, false, testcase.uri);
     } else {
@@ -62,7 +62,7 @@ async function run_testcase(testcase) {
     );
 
     
-    BrowserTestUtils.loadURIString(browser, kSecureURI);
+    BrowserTestUtils.startLoadingURIString(browser, kSecureURI);
     await BrowserTestUtils.browserLoaded(browser, false, kSecureURI);
     let secureIdentityMode =
       window.document.getElementById("identity-box").className;
@@ -91,7 +91,7 @@ async function run_testcase(testcase) {
     is(secureIdentityMode, "verifiedDomain", "identity should start as secure");
 
     
-    BrowserTestUtils.loadURIString(browser, testcase.uri);
+    BrowserTestUtils.startLoadingURIString(browser, testcase.uri);
     if (!testcase.expectErrorPage) {
       await BrowserTestUtils.browserLoaded(browser, false, testcase.uri);
     } else {

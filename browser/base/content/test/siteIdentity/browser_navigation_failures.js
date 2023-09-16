@@ -21,7 +21,7 @@ add_task(async function () {
 
     const TLS_HANDSHAKE_FAILURE_URI = "https://ssl3.example.com/";
     
-    BrowserTestUtils.loadURIString(browser, TLS_HANDSHAKE_FAILURE_URI);
+    BrowserTestUtils.startLoadingURIString(browser, TLS_HANDSHAKE_FAILURE_URI);
     await BrowserTestUtils.browserLoaded(
       browser,
       false,
@@ -46,7 +46,7 @@ add_task(async function () {
 
     const BAD_ABOUT_PAGE_URI = "about:somethingthatdoesnotexist";
     
-    BrowserTestUtils.loadURIString(browser, BAD_ABOUT_PAGE_URI);
+    BrowserTestUtils.startLoadingURIString(browser, BAD_ABOUT_PAGE_URI);
     await BrowserTestUtils.browserLoaded(
       browser,
       false,
@@ -148,7 +148,7 @@ add_task(async function () {
     const TLS_HANDSHAKE_FAILURE_URI = `https://localhost:${server.port}/`;
     
     
-    BrowserTestUtils.loadURIString(browser, TLS_HANDSHAKE_FAILURE_URI);
+    BrowserTestUtils.startLoadingURIString(browser, TLS_HANDSHAKE_FAILURE_URI);
     await BrowserTestUtils.browserLoaded(
       browser,
       false,
