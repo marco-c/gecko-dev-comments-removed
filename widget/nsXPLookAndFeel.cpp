@@ -489,8 +489,9 @@ static constexpr struct {
     
     {"widget.windows.uwp-system-colors.enabled"_ns,
      widget::ThemeChangeKind::Style},
-    
     {"widget.windows.uwp-system-colors.highlight-accent"_ns,
+     widget::ThemeChangeKind::Style},
+    {"widget.windows.titlebar-accent.enabled"_ns,
      widget::ThemeChangeKind::Style},
     
     {"layout.css.prefers-color-scheme.content-override"_ns,
