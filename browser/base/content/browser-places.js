@@ -593,15 +593,6 @@ class HistoryMenu extends PlacesMenu {
     }
   }
 
-  _getClosedTabCount() {
-    try {
-      return SessionStore.getClosedTabCount();
-    } catch (ex) {
-      
-      return 0;
-    }
-  }
-
   toggleHiddenTabs() {
     const isShown =
       window.gBrowser && gBrowser.visibleTabs.length < gBrowser.tabs.length;
@@ -611,7 +602,7 @@ class HistoryMenu extends PlacesMenu {
   toggleRecentlyClosedTabs() {
     
     
-    if (this._getClosedTabCount() == 0) {
+    if (SessionStore.getClosedTabCount() == 0) {
       this.undoTabMenu.setAttribute("disabled", true);
     } else {
       this.undoTabMenu.removeAttribute("disabled");
@@ -630,7 +621,7 @@ class HistoryMenu extends PlacesMenu {
     }
 
     
-    if (this._getClosedTabCount() == 0) {
+    if (SessionStore.getClosedTabCount() == 0) {
       this.undoTabMenu.setAttribute("disabled", true);
       return;
     }
