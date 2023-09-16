@@ -78,10 +78,6 @@ var createHttpServer = (...args) => {
   return AddonTestUtils.createHttpServer(...args);
 };
 
-if (AppConstants.platform === "android") {
-  Services.io.offline = true;
-}
-
 
 
 
