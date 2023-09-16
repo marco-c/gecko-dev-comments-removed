@@ -174,20 +174,12 @@ class LinkStyle {
 
 
 
-
-  Result<Update, nsresult> UpdateStyleSheet(nsICSSLoaderObserver*);
-
-  
-
-
-
-
   void DisableUpdates() { mUpdatesEnabled = false; }
   Result<Update, nsresult> EnableUpdatesAndUpdateStyleSheet(
       nsICSSLoaderObserver* aObserver) {
     MOZ_ASSERT(!mUpdatesEnabled);
     mUpdatesEnabled = true;
-    return UpdateStyleSheet(aObserver);
+    return DoUpdateStyleSheet(nullptr, nullptr, aObserver, ForceUpdate::No);
   }
 
   
