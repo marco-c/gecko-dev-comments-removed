@@ -4275,8 +4275,7 @@ void SdpOfferAnswerHandler::GetOptionsForUnifiedPlanOffer(
   }
   
   
-  if (!pc_->GetDataMid() && data_channel_controller()->HasUsedDataChannels() &&
-      data_channel_controller()->HasDataChannels()) {
+  if (!pc_->GetDataMid() && data_channel_controller()->HasDataChannels()) {
     
     
     
