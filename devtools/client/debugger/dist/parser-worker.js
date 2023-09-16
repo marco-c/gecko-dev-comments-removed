@@ -41986,10 +41986,9 @@
         functions: symbols.functions,
 
         
-        memberExpressions: symbols.memberExpressions,
-        literals: symbols.literals,
         
-        identifiers: symbols.identifiers,
+        
+        
 
         
         
@@ -43228,6 +43227,37 @@
       return removeOverlaps(outerLocations);
     }
 
+    function findBestMatchExpression(sourceId, tokenPos) {
+      const symbols = getInternalSymbols(sourceId);
+      if (!symbols) {
+        return null;
+      }
+
+      const { line, column } = tokenPos;
+      const { memberExpressions, identifiers, literals } = symbols;
+
+      function matchExpression(expression) {
+        const { location } = expression;
+        const { start, end } = location;
+        return start.line == line && start.column <= column && end.column >= column;
+      }
+      function matchMemberExpression(expression) {
+        
+        
+        return !expression.computed && matchExpression(expression);
+      }
+      
+      
+      
+      
+      
+      return (
+        memberExpressions.find(matchMemberExpression) ||
+        literals.find(matchExpression) ||
+        identifiers.find(matchExpression)
+      );
+    }
+
     function hasSyntaxError(input) {
       try {
         parseScript(input);
@@ -43848,6 +43878,7 @@
 
     self.onmessage = workerUtilsExports.workerHandler({
       findOutOfScopeLocations,
+      findBestMatchExpression,
       getSymbols,
       getScopes,
       clearSources: clearAllHelpersForSources,

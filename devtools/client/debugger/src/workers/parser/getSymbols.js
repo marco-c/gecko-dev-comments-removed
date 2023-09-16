@@ -325,10 +325,9 @@ export function getSymbols(sourceId) {
     functions: symbols.functions,
 
     
-    memberExpressions: symbols.memberExpressions,
-    literals: symbols.literals,
     
-    identifiers: symbols.identifiers,
+    
+    
 
     
     
