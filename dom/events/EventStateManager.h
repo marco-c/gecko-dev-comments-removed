@@ -274,6 +274,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
                      const Maybe<gfx::IntPoint>& aHotspot, nsIWidget* aWidget,
                      bool aLockCursor);
 
+  void StartHidingCursorWhileTyping(nsIWidget*);
+
   
 
 
@@ -389,8 +391,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   void ClearCachedWidgetCursor(nsIFrame* aTargetFrame);
 
-  void UpdateCursor(nsPresContext* aPresContext, WidgetEvent* aEvent,
-                    nsIFrame* aTargetFrame, nsEventStatus* aStatus);
+  void UpdateCursor(nsPresContext*, WidgetMouseEvent*, nsIFrame* aTargetFrame,
+                    nsEventStatus* aStatus);
   
 
 
@@ -1159,7 +1161,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   LastMouseDownInfo& GetLastMouseDownInfo(int16_t aButton);
 
   StyleCursorKind mLockCursor;
-  bool mLastFrameConsumedSetCursor;
+  bool mLastFrameConsumedSetCursor = false;
+  bool mHidingCursorWhileTyping = false;
 
   
   

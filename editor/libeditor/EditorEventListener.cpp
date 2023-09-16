@@ -17,6 +17,7 @@
 #include "mozilla/EventListenerManager.h"   
 #include "mozilla/EventStateManager.h"      
 #include "mozilla/IMEStateManager.h"        
+#include "mozilla/LookAndFeel.h"            
 #include "mozilla/NativeKeyBindingsType.h"  
 #include "mozilla/Preferences.h"            
 #include "mozilla/PresShell.h"              
@@ -641,6 +642,27 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
     NS_WARNING("EditorBase::HandleKeyPressEvent() failed");
     return rv;
   }
+
+  auto GetWidget = [&]() -> nsIWidget* {
+    if (aKeyboardEvent->mWidget) {
+      return aKeyboardEvent->mWidget;
+    }
+    
+    nsPresContext* presContext = GetPresContext();
+    if (NS_WARN_IF(!presContext)) {
+      return nullptr;
+    }
+    return presContext->GetTextInputHandlingWidget();
+  };
+
+  if (LookAndFeel::GetInt(LookAndFeel::IntID::HideCursorWhileTyping)) {
+    if (nsPresContext* pc = GetPresContext()) {
+      if (nsIWidget* widget = GetWidget()) {
+        pc->EventStateManager()->StartHidingCursorWhileTyping(widget);
+      }
+    }
+  }
+
   if (DetachedFromEditorOrDefaultPrevented(aKeyboardEvent)) {
     return NS_OK;
   }
@@ -650,17 +672,10 @@ nsresult EditorEventListener::KeyPress(WidgetKeyboardEvent* aKeyboardEvent) {
   }
 
   
-  nsIWidget* widget = aKeyboardEvent->mWidget;
-  
-  if (!widget) {
-    nsPresContext* presContext = GetPresContext();
-    if (NS_WARN_IF(!presContext)) {
-      return NS_OK;
-    }
-    widget = presContext->GetNearestWidget();
-    if (NS_WARN_IF(!widget)) {
-      return NS_OK;
-    }
+
+  nsIWidget* widget = GetWidget();
+  if (NS_WARN_IF(!widget)) {
+    return NS_OK;
   }
 
   RefPtr<Document> doc = editorBase->GetDocument();

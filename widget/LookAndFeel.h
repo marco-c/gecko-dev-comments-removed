@@ -306,6 +306,9 @@ class LookAndFeel {
     PanelAnimations,
 
     
+    HideCursorWhileTyping,
+
+    
 
 
     End,
