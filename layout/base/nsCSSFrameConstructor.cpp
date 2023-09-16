@@ -606,7 +606,7 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
  public:
   nsPresContext* mPresContext;
   PresShell* mPresShell;
-  nsFrameManager* mFrameManager;
+  nsCSSFrameConstructor* mFrameConstructor;
 
   
   AbsoluteFrameList mFixedList;
@@ -795,14 +795,13 @@ nsFrameConstructorState::nsFrameConstructorState(
     already_AddRefed<nsILayoutHistoryState> aHistoryState)
     : mPresContext(aPresShell->GetPresContext()),
       mPresShell(aPresShell),
-      mFrameManager(aPresShell->FrameConstructor()),
+      mFrameConstructor(aPresShell->FrameConstructor()),
       mFixedList(aFixedContainingBlock),
       mAbsoluteList(aAbsoluteContainingBlock),
       mFloatedList(aFloatContainingBlock),
       mTopLayerFixedList(
-          static_cast<nsContainerFrame*>(mFrameManager->GetRootFrame())),
-      mTopLayerAbsoluteList(
-          aPresShell->FrameConstructor()->GetDocElementContainingBlock()),
+          static_cast<nsContainerFrame*>(mFrameConstructor->GetRootFrame())),
+      mTopLayerAbsoluteList(mFrameConstructor->GetCanvasFrame()),
       
       mAutoPageNameValue(nullptr),
       
@@ -1201,8 +1200,8 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
              aChildListID == FrameChildListID::Absolute) {
     
     
-    mFrameManager->AppendFrames(containingBlock, aChildListID,
-                                std::move(aFrameList));
+    mFrameConstructor->AppendFrames(containingBlock, aChildListID,
+                                    std::move(aFrameList));
   } else {
     
     
@@ -1231,8 +1230,8 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
                           notCommonAncestor ? containingBlock : nullptr) < 0) {
       
       
-      mFrameManager->AppendFrames(containingBlock, aChildListID,
-                                  std::move(aFrameList));
+      mFrameConstructor->AppendFrames(containingBlock, aChildListID,
+                                      std::move(aFrameList));
     } else {
       
       
@@ -1277,8 +1276,8 @@ MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
           break;
         }
       }
-      mFrameManager->InsertFrames(containingBlock, aChildListID, insertionPoint,
-                                  std::move(aFrameList));
+      mFrameConstructor->InsertFrames(containingBlock, aChildListID,
+                                      insertionPoint, std::move(aFrameList));
     }
   }
 
@@ -1421,10 +1420,6 @@ nsCSSFrameConstructor::nsCSSFrameConstructor(Document* aDocument,
                                              PresShell* aPresShell)
     : nsFrameManager(aPresShell),
       mDocument(aDocument),
-      mRootElementFrame(nullptr),
-      mRootElementStyleFrame(nullptr),
-      mDocElementContainingBlock(nullptr),
-      mPageSequenceFrame(nullptr),
       mFirstFreeFCItem(nullptr),
       mFCItemsInUse(0),
       mCurrentDepth(0),
@@ -2089,9 +2084,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructTable(nsFrameConstructorState& aState,
   aState.AddChild(newFrame, aFrameList, content, aParentFrame);
 
   if (!mRootElementFrame) {
-    
-    SetRootElementFrameAndConstructCanvasAnonContent(newFrame, aState,
-                                                     aFrameList);
+    mRootElementFrame = newFrame;
   }
 
   nsFrameList childList;
@@ -2334,25 +2327,6 @@ static inline bool NeedFrameFor(const nsFrameConstructorState& aState,
 
 
 
-void nsCSSFrameConstructor::SetRootElementFrameAndConstructCanvasAnonContent(
-    nsContainerFrame* aRootElementFrame, nsFrameConstructorState& aState,
-    nsFrameList& aFrameList) {
-  MOZ_DIAGNOSTIC_ASSERT(!mRootElementFrame);
-  mRootElementFrame = aRootElementFrame;
-  if (mDocElementContainingBlock->IsCanvasFrame()) {
-    
-    
-    
-    
-    
-    
-    
-    ConstructAnonymousContentForCanvas(aState, mDocElementContainingBlock,
-                                       aRootElementFrame->GetContent(),
-                                       aFrameList);
-  }
-}
-
 nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     Element* aDocElement) {
   MOZ_ASSERT(GetRootFrame(),
@@ -2416,55 +2390,61 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
     return nullptr;
   }
 
-  if (mDocElementContainingBlock->IsCanvasFrame()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    MOZ_ASSERT(!mRootElementFrame,
-               "We need to copy <body>'s principal writing-mode before "
-               "constructing mRootElementFrame.");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  MOZ_ASSERT(!mRootElementFrame,
+             "We need to copy <body>'s principal writing-mode before "
+             "constructing mRootElementFrame.");
 
-    const WritingMode propagatedWM = [&] {
-      const WritingMode rootWM(computedStyle);
-      if (computedStyle->StyleDisplay()->IsContainAny()) {
-        return rootWM;
-      }
-      Element* body = mDocument->GetBodyElement();
-      if (!body) {
-        return rootWM;
-      }
-      RefPtr<ComputedStyle> bodyStyle = ResolveComputedStyle(body);
-      if (bodyStyle->StyleDisplay()->IsContainAny()) {
-        return rootWM;
-      }
-      const WritingMode bodyWM(bodyStyle);
-      if (bodyWM != rootWM) {
-        nsContentUtils::ReportToConsole(
-            nsIScriptError::warningFlag, "Layout"_ns, mDocument,
-            nsContentUtils::eLAYOUT_PROPERTIES,
-            "PrincipalWritingModePropagationWarning");
-      }
-      return bodyWM;
-    }();
+  const WritingMode propagatedWM = [&] {
+    const WritingMode rootWM(computedStyle);
+    if (computedStyle->StyleDisplay()->IsContainAny()) {
+      return rootWM;
+    }
+    Element* body = mDocument->GetBodyElement();
+    if (!body) {
+      return rootWM;
+    }
+    RefPtr<ComputedStyle> bodyStyle = ResolveComputedStyle(body);
+    if (bodyStyle->StyleDisplay()->IsContainAny()) {
+      return rootWM;
+    }
+    const WritingMode bodyWM(bodyStyle);
+    if (bodyWM != rootWM) {
+      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag, "Layout"_ns,
+                                      mDocument,
+                                      nsContentUtils::eLAYOUT_PROPERTIES,
+                                      "PrincipalWritingModePropagationWarning");
+    }
+    return bodyWM;
+  }();
 
-    mDocElementContainingBlock->PropagateWritingModeToSelfAndAncestors(
-        propagatedWM);
+  mDocElementContainingBlock->PropagateWritingModeToSelfAndAncestors(
+      propagatedWM);
+
+  
+  
+  nsFrameConstructorSaveState canvasCbSaveState;
+  mCanvasFrame->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+
+  state.PushAbsoluteContainingBlock(mCanvasFrame, mCanvasFrame,
+                                    canvasCbSaveState);
+
+  nsFrameConstructorSaveState docElementCbSaveState;
+  if (mCanvasFrame != mDocElementContainingBlock) {
+    mDocElementContainingBlock->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
+    state.PushAbsoluteContainingBlock(mDocElementContainingBlock,
+                                      mDocElementContainingBlock,
+                                      docElementCbSaveState);
   }
-
-  nsFrameConstructorSaveState docElementContainingBlockAbsoluteSaveState;
-  
-  
-  mDocElementContainingBlock->AddStateBits(NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN);
-  state.PushAbsoluteContainingBlock(mDocElementContainingBlock,
-                                    mDocElementContainingBlock,
-                                    docElementContainingBlockAbsoluteSaveState);
 
   
   
@@ -2570,8 +2550,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
       processChildren ? !mRootElementFrame : mRootElementFrame == contentFrame,
       "unexpected mRootElementFrame");
   if (processChildren) {
-    SetRootElementFrameAndConstructCanvasAnonContent(contentFrame, state,
-                                                     frameList);
+    mRootElementFrame = contentFrame;
   }
 
   
@@ -2608,6 +2587,17 @@ nsIFrame* nsCSSFrameConstructor::ConstructDocElementFrame(
   aDocElement->SetPrimaryFrame(contentFrame);
   mDocElementContainingBlock->AppendFrames(FrameChildListID::Principal,
                                            std::move(frameList));
+
+  
+  
+  
+  
+  
+  
+  
+  ConstructAnonymousContentForCanvas(
+      state, mCanvasFrame, mRootElementFrame->GetContent(), frameList);
+  mCanvasFrame->AppendFrames(FrameChildListID::Principal, std::move(frameList));
 
   return newFrame;
 }
@@ -2743,10 +2733,11 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
       static_cast<nsContainerFrame*>(GetRootFrame());
   ComputedStyle* viewportPseudoStyle = viewportFrame->Style();
 
-  nsContainerFrame* rootFrame =
+  nsCanvasFrame* rootCanvasFrame =
       NS_NewCanvasFrame(mPresShell, viewportPseudoStyle);
   PseudoStyleType rootPseudo = PseudoStyleType::canvas;
-  mDocElementContainingBlock = rootFrame;
+  mCanvasFrame = rootCanvasFrame;
+  mDocElementContainingBlock = rootCanvasFrame;
 
   
 
@@ -2761,7 +2752,7 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
   NS_ASSERTION(!isScrollable || !isXUL,
                "XUL documents should never be scrollable - see above");
 
-  nsContainerFrame* newFrame = rootFrame;
+  nsContainerFrame* newFrame = rootCanvasFrame;
   RefPtr<ComputedStyle> rootPseudoStyle;
   
   
@@ -2802,11 +2793,11 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
     parentFrame = newFrame;
   }
 
-  rootFrame->SetComputedStyleWithoutNotification(rootPseudoStyle);
-  rootFrame->Init(aDocElement, parentFrame, nullptr);
+  rootCanvasFrame->SetComputedStyleWithoutNotification(rootPseudoStyle);
+  rootCanvasFrame->Init(aDocElement, parentFrame, nullptr);
 
   if (isScrollable) {
-    FinishBuildingScrollFrame(parentFrame, rootFrame);
+    FinishBuildingScrollFrame(parentFrame, rootCanvasFrame);
   }
 
   if (isPaginated) {
@@ -2817,8 +2808,8 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
               PseudoStyleType::pageSequence, viewportPseudoStyle);
       mPageSequenceFrame =
           NS_NewPageSequenceFrame(mPresShell, pageSequenceStyle);
-      mPageSequenceFrame->Init(aDocElement, rootFrame, nullptr);
-      SetInitialSingleChild(rootFrame, mPageSequenceFrame);
+      mPageSequenceFrame->Init(aDocElement, rootCanvasFrame, nullptr);
+      SetInitialSingleChild(rootCanvasFrame, mPageSequenceFrame);
     }
 
     
@@ -2832,7 +2823,7 @@ void nsCSSFrameConstructor::SetUpDocElementContainingBlock(
 
     
     
-    nsContainerFrame* canvasFrame;
+    nsCanvasFrame* canvasFrame;
     nsContainerFrame* pageFrame =
         ConstructPageFrame(mPresShell, printedSheetFrame, nullptr, canvasFrame);
     pageFrame->AddStateBits(NS_FRAME_OWNS_ANON_BOXES);
@@ -2889,7 +2880,7 @@ PrintedSheetFrame* nsCSSFrameConstructor::ConstructPrintedSheetFrame(
 
 nsContainerFrame* nsCSSFrameConstructor::ConstructPageFrame(
     PresShell* aPresShell, nsContainerFrame* aParentFrame,
-    nsIFrame* aPrevPageFrame, nsContainerFrame*& aCanvasFrame) {
+    nsIFrame* aPrevPageFrame, nsCanvasFrame*& aCanvasFrame) {
   ServoStyleSet* styleSet = aPresShell->StyleSet();
 
   RefPtr<ComputedStyle> pagePseudoStyle =
@@ -3301,9 +3292,7 @@ nsIFrame* nsCSSFrameConstructor::ConstructBlockRubyFrame(
   aState.AddChild(newFrame, aFrameList, content, aParentFrame);
 
   if (!mRootElementFrame) {
-    
-    SetRootElementFrameAndConstructCanvasAnonContent(newFrame, aState,
-                                                     aFrameList);
+    mRootElementFrame = newFrame;
   }
 
   nsFrameConstructorSaveState absoluteSaveState;
@@ -4800,9 +4789,7 @@ nsContainerFrame* nsCSSFrameConstructor::ConstructFrameWithAnonymousChild(
                   aCandidateRootFrame, aCandidateRootFrame);
 
   if (!mRootElementFrame && aCandidateRootFrame) {
-    
-    SetRootElementFrameAndConstructCanvasAnonContent(newFrame, aState,
-                                                     aFrameList);
+    mRootElementFrame = newFrame;
   }
 
   nsFrameConstructorSaveState floatSaveState;
@@ -7555,6 +7542,7 @@ bool nsCSSFrameConstructor::ContentRemoved(nsIContent* aChild,
       mRootElementFrame = nullptr;
       mRootElementStyleFrame = nullptr;
       mDocElementContainingBlock = nullptr;
+      mCanvasFrame = nullptr;
       mPageSequenceFrame = nullptr;
     }
 
@@ -7927,7 +7915,7 @@ nsIFrame* nsCSSFrameConstructor::CreateContinuingFrame(
   } else if (LayoutFrameType::PrintedSheet == frameType) {
     newFrame = ConstructPrintedSheetFrame(mPresShell, aParentFrame, aFrame);
   } else if (LayoutFrameType::Page == frameType) {
-    nsContainerFrame* canvasFrame;  
+    nsCanvasFrame* canvasFrame;  
     newFrame =
         ConstructPageFrame(mPresShell, aParentFrame, aFrame, canvasFrame);
   } else if (LayoutFrameType::TableWrapper == frameType) {
@@ -10606,9 +10594,7 @@ void nsCSSFrameConstructor::ConstructBlock(
   aState.AddChild(*aNewFrame, aFrameList, aContent,
                   aContentParentFrame ? aContentParentFrame : aParentFrame);
   if (!mRootElementFrame) {
-    
-    SetRootElementFrameAndConstructCanvasAnonContent(*aNewFrame, aState,
-                                                     aFrameList);
+    mRootElementFrame = *aNewFrame;
   }
 
   

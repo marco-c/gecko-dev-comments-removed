@@ -159,7 +159,6 @@ nsresult nsCanvasFrame::CreateAnonymousContent(
   }
 
   
-  
   if (XRE_IsParentProcess() && doc->NodePrincipal()->IsSystemPrincipal()) {
     nsNodeInfoManager* nodeInfoManager = doc->NodeInfoManager();
     RefPtr<NodeInfo> nodeInfo = nodeInfoManager->GetNodeInfo(

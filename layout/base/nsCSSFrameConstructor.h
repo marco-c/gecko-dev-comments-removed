@@ -325,9 +325,12 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
   nsIFrame* GetRootElementStyleFrame() { return mRootElementStyleFrame; }
   nsPageSequenceFrame* GetPageSequenceFrame() { return mPageSequenceFrame; }
-
   
-  nsContainerFrame* GetDocElementContainingBlock() {
+  
+  
+  nsCanvasFrame* GetCanvasFrame() { return mCanvasFrame; }
+  
+  nsCanvasFrame* GetDocElementContainingBlock() {
     return mDocElementContainingBlock;
   }
 
@@ -345,16 +348,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   struct FrameConstructionItem;
   class FrameConstructionItemList;
 
-  
-  
-  
-  
-  
-  
-  void SetRootElementFrameAndConstructCanvasAnonContent(
-      nsContainerFrame* aRootElementFrame, nsFrameConstructorState&,
-      nsFrameList&);
-
   mozilla::PrintedSheetFrame* ConstructPrintedSheetFrame(
       PresShell* aPresShell, nsContainerFrame* aParentFrame,
       nsIFrame* aPrevSheetFrame);
@@ -362,7 +355,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   nsContainerFrame* ConstructPageFrame(PresShell* aPresShell,
                                        nsContainerFrame* aParentFrame,
                                        nsIFrame* aPrevPageFrame,
-                                       nsContainerFrame*& aCanvasFrame);
+                                       nsCanvasFrame*& aCanvasFrame);
 
   void InitAndRestoreFrame(const nsFrameConstructorState& aState,
                            nsIContent* aContent, nsContainerFrame* aParentFrame,
@@ -2124,13 +2117,16 @@ class nsCSSFrameConstructor final : public nsFrameManager {
   
 
   
-  nsContainerFrame* mRootElementFrame;
+  nsContainerFrame* mRootElementFrame = nullptr;
   
-  nsIFrame* mRootElementStyleFrame;
+  nsIFrame* mRootElementStyleFrame = nullptr;
   
   
-  nsContainerFrame* mDocElementContainingBlock;
-  nsPageSequenceFrame* mPageSequenceFrame;
+  nsCanvasFrame* mDocElementContainingBlock = nullptr;
+  
+  
+  nsCanvasFrame* mCanvasFrame = nullptr;
+  nsPageSequenceFrame* mPageSequenceFrame = nullptr;
 
   
   mozilla::ArenaAllocator<4096, 8> mFCItemPool;

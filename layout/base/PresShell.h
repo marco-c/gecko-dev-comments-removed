@@ -891,17 +891,25 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-  void SetCanvasBackground(nscolor aColor) { mCanvasBackgroundColor = aColor; }
-  nscolor GetCanvasBackground() const { return mCanvasBackgroundColor; }
-
-  
-
-
+  void SetCanvasBackground(nscolor aColor) {
+    mCanvasBackground.mViewportColor = aColor;
+  }
+  nscolor GetCanvasBackground() const {
+    return mCanvasBackground.mViewportColor;
+  }
 
   struct CanvasBackground {
-    nscolor mColor = 0;
+    
+    nscolor mViewportColor = 0;
+    
+    
+    
+    nscolor mPageColor = 0;
     bool mCSSSpecified = false;
   };
+
+  
+  
   CanvasBackground ComputeCanvasBackground() const;
   void UpdateCanvasBackground();
 
@@ -1566,22 +1574,9 @@ class PresShell final : public nsStubDocumentObserver,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
   void AddCanvasBackgroundColorItem(
       nsDisplayListBuilder* aBuilder, nsDisplayList* aList, nsIFrame* aFrame,
-      const nsRect& aBounds, nscolor aBackstopColor = NS_RGBA(0, 0, 0, 0),
-      AddCanvasBackgroundColorFlags aFlags =
-          AddCanvasBackgroundColorFlags::None);
+      const nsRect& aBounds, nscolor aBackstopColor = NS_RGBA(0, 0, 0, 0));
 
   size_t SizeOfTextRuns(MallocSizeOf aMallocSizeOf) const;
 
@@ -3048,7 +3043,7 @@ class PresShell final : public nsStubDocumentObserver,
   nscoord mLastAnchorScrollPositionY = 0;
 
   
-  nscolor mCanvasBackgroundColor;
+  CanvasBackground mCanvasBackground;
 
   int32_t mActiveSuppressDisplayport;
 
@@ -3167,8 +3162,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool mNoDelayedKeyEvents : 1;
 
   bool mApproximateFrameVisibilityVisited : 1;
-
-  bool mHasCSSBackgroundColor : 1;
 
   
   bool mIsLastChromeOnlyEscapeKeyConsumed : 1;

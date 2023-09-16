@@ -431,11 +431,9 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsIScrollableFrame* sf = presShell->GetRootScrollFrameAsScrollable();
   bool constructZoomItem = subdocRootFrame && parentAPD != subdocAPD;
-  bool needsOwnLayer = false;
-  if (constructZoomItem || presContext->IsRootContentDocumentCrossProcess() ||
-      (sf && sf->IsScrollingActive())) {
-    needsOwnLayer = true;
-  }
+  bool needsOwnLayer = constructZoomItem ||
+                       presContext->IsRootContentDocumentCrossProcess() ||
+                       (sf && sf->IsScrollingActive());
 
   nsDisplayList childItems(aBuilder);
 
@@ -465,26 +463,22 @@ void nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
           hasDocumentLevelListenersForApzAwareEvents);
       subdocRootFrame->BuildDisplayListForStackingContext(aBuilder,
                                                           &childItems);
-    }
-
-    if (!aBuilder->IsForEventDelivery()) {
-      
-      
-      
-      
-      nsRect bounds =
-          GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
-      if (subdocRootFrame) {
+      if (!aBuilder->IsForEventDelivery()) {
+        
+        
+        
+        
+        nsRect bounds =
+            GetContentRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
         bounds = bounds.ScaleToOtherAppUnitsRoundOut(parentAPD, subdocAPD);
-      }
 
-      
-      
-      
-      
-      presShell->AddCanvasBackgroundColorItem(
-          aBuilder, &childItems, frame, bounds, NS_RGBA(0, 0, 0, 0),
-          AddCanvasBackgroundColorFlags::ForceDraw);
+        
+        
+        
+        
+        presShell->AddCanvasBackgroundColorItem(aBuilder, &childItems, frame,
+                                                bounds, NS_RGBA(0, 0, 0, 0));
+      }
     }
   }
 
