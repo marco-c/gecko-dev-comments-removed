@@ -5671,17 +5671,26 @@ void MacroAssembler::branchWasmRefIsSubtypeAny(
     return;
   }
 
-  if (destType.isI31()) {
-    branchWasmAnyRefIsI31(true, ref, successLabel);
-    jump(failLabel);
-    bind(&fallthrough);
-    return;
-  }
+  
+  
 
   
   
+  if (destType.isI31() || destType.isEq()) {
+    branchWasmAnyRefIsI31(true, ref, successLabel);
+
+    if (destType.isI31()) {
+      
+      jump(failLabel);
+      bind(&fallthrough);
+      return;
+    }
+  }
+
+  
   MOZ_ASSERT(scratch1 != Register::Invalid());
-  if (!wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::eq())) {
+  if (!wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::struct_()) &&
+      !wasm::RefType::isSubTypeOf(sourceType, wasm::RefType::array())) {
     branchWasmAnyRefIsObjectOrNull(false, ref, failLabel);
     branchObjectIsWasmGcObject(false, ref, scratch1, failLabel);
   }
