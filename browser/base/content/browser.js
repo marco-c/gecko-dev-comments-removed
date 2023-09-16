@@ -5886,7 +5886,7 @@ var TabsProgressListener = {
     
     
     if (AppConstants.NIGHTLY_BUILD) {
-      ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI);
+      ShoppingSidebarManager.onLocationChange(aBrowser, aLocationURI, aFlags);
     }
 
     
@@ -10052,7 +10052,7 @@ var ShoppingSidebarManager = {
     }
 
     let { selectedBrowser, currentURI } = gBrowser;
-    this.onLocationChange(selectedBrowser, currentURI);
+    this.onLocationChange(selectedBrowser, currentURI, 0);
   },
 
   
@@ -10061,7 +10061,7 @@ var ShoppingSidebarManager = {
 
 
 
-  onLocationChange(aBrowser, aLocationURI) {
+  onLocationChange(aBrowser, aLocationURI, aFlags) {
     if (!this._enabled) {
       return;
     }
@@ -10083,7 +10083,7 @@ var ShoppingSidebarManager = {
         sidebar.hidden = false;
         browserPanel.appendChild(sidebar);
       } else {
-        actor?.updateProductURL(aLocationURI);
+        actor?.updateProductURL(aLocationURI, aFlags);
         sidebar.hidden = false;
       }
     } else if (sidebar && !sidebar.hidden) {
