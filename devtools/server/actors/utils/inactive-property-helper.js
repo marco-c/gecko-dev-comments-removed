@@ -84,6 +84,9 @@ const REGEXP_HIGHLIGHT_PSEUDO_ELEMENTS = new RegExp(
   `${HIGHLIGHT_PSEUDO_ELEMENTS.join("|")}`
 );
 
+const FIRST_LINE_PSEUDO_ELEMENT_STYLING_SPEC_URL =
+  "https://www.w3.org/TR/css-pseudo-4/#first-line-styling";
+
 class InactivePropertyHelper {
   
 
@@ -249,18 +252,18 @@ class InactivePropertyHelper {
       
       {
         invalidProperties: ["vertical-align"],
-        when: () => {
-          const { selectorText } = this.cssRule;
-
-          const isFirstLetter =
-            selectorText && selectorText.includes("::first-letter");
-          const isFirstLine =
-            selectorText && selectorText.includes("::first-line");
-
-          return !this.isInlineLevel() && !isFirstLetter && !isFirstLine;
-        },
+        when: () =>
+          !this.isInlineLevel() && !this.isFirstLetter && !this.isFirstLine,
         fixId: "inactive-css-not-inline-or-tablecell-fix",
         msgId: "inactive-css-not-inline-or-tablecell",
+      },
+      
+      {
+        invalidProperties: ["direction", "text-orientation", "writing-mode"],
+        when: () => this.isFirstLine,
+        fixId: "learn-more",
+        msgId: "inactive-css-first-line-pseudo-element-not-supported",
+        learnMoreURL: FIRST_LINE_PSEUDO_ELEMENT_STYLING_SPEC_URL,
       },
       
       {
@@ -909,6 +912,22 @@ class InactivePropertyHelper {
       this.style &&
       this.style.display === "inline"
     );
+  }
+
+  
+
+
+  get isFirstLetter() {
+    const { selectorText } = this.cssRule;
+    return selectorText && selectorText.includes("::first-letter");
+  }
+
+  
+
+
+  get isFirstLine() {
+    const { selectorText } = this.cssRule;
+    return selectorText && selectorText.includes("::first-line");
   }
 
   
