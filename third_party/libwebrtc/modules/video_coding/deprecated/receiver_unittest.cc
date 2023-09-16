@@ -7,7 +7,7 @@
 
 
 
-#include "modules/video_coding/receiver.h"
+#include "modules/video_coding/deprecated/receiver.h"
 
 #include <string.h>
 
