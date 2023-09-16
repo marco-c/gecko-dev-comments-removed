@@ -109,7 +109,10 @@ public class TestCrashHandler extends Service {
 
 
 
-    public void setEvalNextCrashDump(final String expectedProcessType) {
+
+
+    public void setEvalNextCrashDump(
+        final String expectedProcessType, final String expectedRemoteType) {
       setEvalResult(null);
       mReceiver.post(
           new Runnable() {
@@ -117,6 +120,7 @@ public class TestCrashHandler extends Service {
             public void run() {
               final Bundle bundle = new Bundle();
               bundle.putString(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, expectedProcessType);
+              bundle.putString(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, expectedRemoteType);
               final Message msg = Message.obtain(null, MSG_EVAL_NEXT_CRASH_DUMP, bundle);
               msg.replyTo = mMessenger;
 
@@ -176,6 +180,7 @@ public class TestCrashHandler extends Service {
   private static final class MessageHandler extends Handler {
     private Messenger mReplyToMessenger;
     private String mExpectedProcessType;
+    private String mExpectedRemoteType;
 
     MessageHandler() {}
 
@@ -185,6 +190,7 @@ public class TestCrashHandler extends Service {
         mReplyToMessenger = msg.replyTo;
         Bundle bundle = (Bundle) msg.obj;
         mExpectedProcessType = bundle.getString(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE);
+        mExpectedRemoteType = bundle.getString(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE);
         return;
       }
 
@@ -210,6 +216,10 @@ public class TestCrashHandler extends Service {
 
     public String getExpectedProcessType() {
       return mExpectedProcessType;
+    }
+
+    public String getExpectedRemoteType() {
+      return mExpectedRemoteType;
     }
   }
 
@@ -272,6 +282,14 @@ public class TestCrashHandler extends Service {
     if (!processType.equals(expectedProcessType)) {
       return new EvalResult(
           false, "Expected process type " + expectedProcessType + ", found " + processType);
+    }
+
+    final String expectedRemoteType = mMsgHandler.getExpectedRemoteType();
+    final String remoteType = intent.getStringExtra(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE);
+    if ((remoteType == null && expectedRemoteType != null)
+        || !remoteType.equals(expectedRemoteType)) {
+      return new EvalResult(
+          false, "Expected remote type " + expectedRemoteType + ", found " + remoteType);
     }
 
     return new EvalResult(true, "Crash Dump OK");
