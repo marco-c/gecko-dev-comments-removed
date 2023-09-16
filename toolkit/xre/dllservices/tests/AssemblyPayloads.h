@@ -229,6 +229,32 @@ __declspec(dllexport) __attribute__((naked)) void UnsupportedOp() {
       "nop;nop;nop;nop;nop;nop;nop;nop;"
       "nop;nop;nop;nop;nop;nop;nop;nop;");
 }
+
+
+
+__declspec(dllexport) __attribute__((naked)) void SpareBytesAfterDetour() {
+  asm volatile(
+      "incl %eax;"                
+      "mov $0x01234567, %eax;"    
+      "mov $0xfedcba98, %eax;"    
+      "mov $0x01234567, %eax;"    
+      "mov $0xfedcba98, %eax;");  
+}
+
+
+
+
+
+
+__declspec(dllexport)
+    __attribute__((naked)) void SpareBytesAfterDetourFor10BytePatch() {
+  asm volatile(
+      "incl %eax;"                
+      "mov $0x01234567, %ecx;"    
+      "mov $0xfedcba98, %ebx;"    
+      "mov $0x01234567, %eax;"    
+      "mov $0xfedcba98, %edx;");  
+}
 #  endif  
 
 #endif  

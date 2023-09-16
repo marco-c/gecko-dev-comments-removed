@@ -58,6 +58,11 @@ class WindowsDllDetourPatcherPrimitive {
 #if defined(_M_IX86)
     target.WriteByte(0xe9);     
     target.WriteDisp32(aDest);  
+    while (target.GetOffset() < target.GetNumBytes()) {
+      
+      
+      target.WriteByte(0x90);
+    }
 #elif defined(_M_X64)
     
     target.WriteByte(0x49);
@@ -68,6 +73,11 @@ class WindowsDllDetourPatcherPrimitive {
     target.WriteByte(0x41);
     target.WriteByte(0xff);
     target.WriteByte(0xe3);
+    while (target.GetOffset() < target.GetNumBytes()) {
+      
+      
+      target.WriteByte(0x90);
+    }
 #elif defined(_M_ARM64)
     
     
@@ -895,6 +905,11 @@ class WindowsDllDetourPatcher final
     target.WriteByte(BuildModRmByte(kModReg, kRegAx, kRegAx));
     target.WriteByte(0xFF);                                
     target.WriteByte(BuildModRmByte(kModReg, 4, kRegAx));  
+    while (target.GetOffset() < target.GetNumBytes()) {
+      
+      
+      target.WriteByte(0x90);
+    }
 
     return true;
   }
