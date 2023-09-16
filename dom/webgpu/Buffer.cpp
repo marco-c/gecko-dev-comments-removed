@@ -16,6 +16,7 @@
 #include "nsContentUtils.h"
 #include "nsWrapperCache.h"
 #include "Device.h"
+#include "mozilla/webgpu/ffi/wgpu.h"
 
 namespace mozilla::webgpu {
 
@@ -70,35 +71,54 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
 
   bool hasMapFlags = aDesc.mUsage & (dom::GPUBufferUsage_Binding::MAP_WRITE |
                                      dom::GPUBufferUsage_Binding::MAP_READ);
+
+  bool allocSucceeded = false;
   if (hasMapFlags || aDesc.mMappedAtCreation) {
-    const auto checked = CheckedInt<size_t>(aDesc.mSize);
-    if (!checked.isValid()) {
-      aRv.ThrowRangeError("Mappable size is too large");
-      return nullptr;
-    }
-    size_t size = checked.value();
-
-    auto maybeShmem = ipc::UnsafeSharedMemoryHandle::CreateAndMap(size);
-
-    if (maybeShmem.isNothing()) {
-      aRv.ThrowRangeError(
-          nsPrintfCString("Unable to allocate shmem of size %" PRIuPTR, size));
-      return nullptr;
-    }
-
-    handle = std::move(maybeShmem.ref().first);
-    mapping = std::move(maybeShmem.ref().second);
-
-    MOZ_RELEASE_ASSERT(mapping.Size() >= size);
-
     
-    memset(mapping.Bytes().data(), 0, size);
+    
+    const auto checked = CheckedInt<size_t>(aDesc.mSize);
+    const size_t maxSize = WGPUMAX_BUFFER_SIZE;
+    if (checked.isValid()) {
+      size_t size = checked.value();
+
+      if (size > 0 && size < maxSize) {
+        auto maybeShmem = ipc::UnsafeSharedMemoryHandle::CreateAndMap(size);
+
+        if (maybeShmem.isSome()) {
+          allocSucceeded = true;
+          handle = std::move(maybeShmem.ref().first);
+          mapping = std::move(maybeShmem.ref().second);
+
+          MOZ_RELEASE_ASSERT(mapping.Size() >= size);
+
+          
+          memset(mapping.Bytes().data(), 0, size);
+        }
+      }
+
+      if (size == 0) {
+        
+        
+        
+        
+        
+        allocSucceeded = true;
+      }
+    }
+  }
+
+  
+  
+  if (aDesc.mMappedAtCreation && !allocSucceeded) {
+    aRv.ThrowRangeError("Allocation failed");
+    return nullptr;
   }
 
   RawId id = actor->DeviceCreateBuffer(aDeviceId, aDesc, std::move(handle));
 
   RefPtr<Buffer> buffer =
       new Buffer(aDevice, id, aDesc.mSize, aDesc.mUsage, std::move(mapping));
+
   if (aDesc.mMappedAtCreation) {
     
     
