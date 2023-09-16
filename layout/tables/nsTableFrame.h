@@ -187,8 +187,7 @@ class nsTableFrame : public nsContainerFrame {
       nsIFrame*, mozilla::ComputedStyle* aOldStyle);
 
   
-  static void MaybeUnregisterPositionedTablePart(nsIFrame* aFrame,
-                                                 nsIFrame* aDestructRoot);
+  static void MaybeUnregisterPositionedTablePart(nsIFrame* aFrame);
 
   
 
@@ -220,13 +219,6 @@ class nsTableFrame : public nsContainerFrame {
 
   
   static nsTableFrame* GetTableFrame(nsIFrame* aSourceFrame);
-
-  
-
-
-  static nsTableFrame* GetTableFramePassingThrough(nsIFrame* aMustPassThrough,
-                                                   nsIFrame* aSourceFrame,
-                                                   bool* aDidPassThrough);
 
   
   
@@ -828,6 +820,8 @@ class nsTableFrame : public nsContainerFrame {
     return mDeletedRowIndexRanges.empty();
   }
 
+  bool IsDestroying() const { return mBits.mIsDestroying; }
+
  public:
 #ifdef DEBUG
   void Dump(bool aDumpRows, bool aDumpCols, bool aDumpCellMap);
@@ -861,6 +855,8 @@ class nsTableFrame : public nsContainerFrame {
     uint32_t mResizedColumns : 1;  
     uint32_t mNeedToCalcHasBCBorders : 1;
     uint32_t mHasBCBorders : 1;
+    uint32_t mIsDestroying : 1;  
+                                 
   } mBits;
 
   std::map<int32_t, int32_t> mDeletedRowIndexRanges;  
