@@ -368,7 +368,6 @@ function ObjectHasOwn(O, P) {
   return hasOwn(P, obj);
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -435,4 +434,3 @@ function ObjectGroupBy(items, callbackfn) {
   
   return obj;
 }
-#endif
