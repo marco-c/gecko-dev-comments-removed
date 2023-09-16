@@ -320,7 +320,14 @@ class NotificationWorkerRunnable : public MainThreadWorkerRunnable {
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->AssertIsOnWorkerThread();
     aWorkerPrivate->ModifyBusyCountFromWorker(true);
-    WorkerRunInternal(aWorkerPrivate);
+    
+    
+    
+    
+    if (aWorkerPrivate->GlobalScope() &&
+        !aWorkerPrivate->GlobalScope()->IsDying()) {
+      WorkerRunInternal(aWorkerPrivate);
+    }
     return true;
   }
 
@@ -347,10 +354,7 @@ class NotificationEventWorkerRunnable final
         mEventName(aEventName) {}
 
   void WorkerRunInternal(WorkerPrivate* aWorkerPrivate) override {
-    if (aWorkerPrivate->GlobalScope() &&
-        !aWorkerPrivate->GlobalScope()->IsDying()) {
-      mNotification->DispatchTrustedEvent(mEventName);
-    }
+    mNotification->DispatchTrustedEvent(mEventName);
   }
 };
 
@@ -361,6 +365,18 @@ class ReleaseNotificationRunnable final : public NotificationWorkerRunnable {
   explicit ReleaseNotificationRunnable(Notification* aNotification)
       : NotificationWorkerRunnable(aNotification->mWorkerPrivate),
         mNotification(aNotification) {}
+
+  bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
+    aWorkerPrivate->AssertIsOnWorkerThread();
+    aWorkerPrivate->ModifyBusyCountFromWorker(true);
+    
+    
+    
+    
+    
+    WorkerRunInternal(aWorkerPrivate);
+    return true;
+  }
 
   void WorkerRunInternal(WorkerPrivate* aWorkerPrivate) override {
     mNotification->ReleaseObject();
