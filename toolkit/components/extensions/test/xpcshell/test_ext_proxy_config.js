@@ -25,7 +25,7 @@ AddonTestUtils.createAppInfo(
 
 AddonTestUtils.createHttpServer({ hosts: ["pac.example.com"] });
 
-add_task(async function setup() {
+add_setup(async function () {
   
   
   await ExtensionPermissions._uninit();
@@ -42,6 +42,12 @@ add_task(async function setup() {
 });
 
 add_task(async function test_browser_settings() {
+  
+  if (AppConstants.platform === "android") {
+    info("proxy.settings not supported on Android; skipping");
+    return;
+  }
+
   const proxySvc = Ci.nsIProtocolProxyService;
 
   
@@ -117,11 +123,6 @@ add_task(async function test_browser_settings() {
   }
 
   async function testProxy(config, expectedPrefs, expectedConfig = config) {
-    
-    if (AppConstants.platform === "android") {
-      return Promise.resolve();
-    }
-
     let proxyConfig = {
       proxyType: "none",
       autoConfigUrl: "",
@@ -517,6 +518,11 @@ add_task(async function test_bad_value_proxy_config() {
 
 
 add_task(async function test_proxy_settings_permissions() {
+  
+  if (AppConstants.platform === "android") {
+    info("proxy.settings not supported on Android; skipping");
+    return;
+  }
   async function background() {
     const permObj = { permissions: ["proxy"] };
     browser.test.onMessage.addListener(async (msg, value) => {
