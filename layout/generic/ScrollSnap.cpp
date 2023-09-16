@@ -30,10 +30,17 @@ class CalcSnapPoints final {
   CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
                  const nsPoint& aDestination, const nsPoint& aStartPos);
   struct SnapPosition : public SnapTarget {
-    SnapPosition(const SnapTarget& aSnapTarget, nscoord aPosition)
-        : SnapTarget(aSnapTarget), mPosition(aPosition) {}
+    SnapPosition(const SnapTarget& aSnapTarget, nscoord aPosition,
+                 nscoord aDistanceOnOtherAxis)
+        : SnapTarget(aSnapTarget),
+          mPosition(aPosition),
+          mDistanceOnOtherAxis(aDistanceOnOtherAxis) {}
 
     nscoord mPosition;
+    
+    
+    
+    nscoord mDistanceOnOtherAxis;
   };
 
   void AddHorizontalEdge(const SnapTarget& aTarget);
@@ -60,7 +67,7 @@ class CalcSnapPoints final {
   void AddEdge(const SnapPosition& aEdge, nscoord aDestination,
                nscoord aStartPos, nscoord aScrollingDirection,
                CandidateTracker* aCandidateTracker);
-  SnapDestination GetBestEdge() const;
+  SnapDestination GetBestEdge(const nsSize& aSnapportSize) const;
   nscoord XDistanceBetweenBestAndSecondEdge() const {
     return std::abs(NSCoordSaturatingSubtract(
         mTrackerOnX.mSecondBestEdge,
@@ -113,7 +120,158 @@ CalcSnapPoints::CalcSnapPoints(ScrollUnit aUnit, ScrollSnapFlags aSnapFlags,
   }
 }
 
-SnapDestination CalcSnapPoints::GetBestEdge() const {
+SnapDestination CalcSnapPoints::GetBestEdge(const nsSize& aSnapportSize) const {
+  if (mTrackerOnX.EdgeFound() && mTrackerOnY.EdgeFound()) {
+    nsPoint bestCandidate(mTrackerOnX.mBestEdges[0].mPosition,
+                          mTrackerOnY.mBestEdges[0].mPosition);
+    nsRect snappedPort = nsRect(bestCandidate, aSnapportSize);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    AutoTArray<ScrollSnapTargetId, 1> visibleTargetIdsOnX;
+    nscoord minimumDistanceOnY = nscoord_MAX;
+    size_t minimumXIndex = 0;
+    AutoTArray<ScrollSnapTargetId, 1> minimumDistanceTargetIdsOnX;
+    for (size_t i = 0; i < mTrackerOnX.mBestEdges.Length(); i++) {
+      const auto& targetX = mTrackerOnX.mBestEdges[i];
+      if (targetX.mSnapArea.Intersects(snappedPort)) {
+        visibleTargetIdsOnX.AppendElement(targetX.mTargetId);
+      }
+
+      if (targetX.mDistanceOnOtherAxis < minimumDistanceOnY) {
+        minimumDistanceOnY = targetX.mDistanceOnOtherAxis;
+        minimumXIndex = i;
+        minimumDistanceTargetIdsOnX =
+            AutoTArray<ScrollSnapTargetId, 1>{targetX.mTargetId};
+      } else if (minimumDistanceOnY != nscoord_MAX &&
+                 targetX.mDistanceOnOtherAxis == minimumDistanceOnY) {
+        minimumDistanceTargetIdsOnX.AppendElement(targetX.mTargetId);
+      }
+    }
+
+    AutoTArray<ScrollSnapTargetId, 1> visibleTargetIdsOnY;
+    nscoord minimumDistanceOnX = nscoord_MAX;
+    size_t minimumYIndex = 0;
+    AutoTArray<ScrollSnapTargetId, 1> minimumDistanceTargetIdsOnY;
+    for (size_t i = 0; i < mTrackerOnY.mBestEdges.Length(); i++) {
+      const auto& targetY = mTrackerOnY.mBestEdges[i];
+      if (targetY.mSnapArea.Intersects(snappedPort)) {
+        visibleTargetIdsOnY.AppendElement(targetY.mTargetId);
+      }
+
+      if (targetY.mDistanceOnOtherAxis < minimumDistanceOnX) {
+        minimumDistanceOnX = targetY.mDistanceOnOtherAxis;
+        minimumYIndex = i;
+        minimumDistanceTargetIdsOnY =
+            AutoTArray<ScrollSnapTargetId, 1>{targetY.mTargetId};
+      } else if (minimumDistanceOnX != nscoord_MAX &&
+                 targetY.mDistanceOnOtherAxis == minimumDistanceOnX) {
+        minimumDistanceTargetIdsOnY.AppendElement(targetY.mTargetId);
+      }
+    }
+
+    
+    
+    
+    
+    if (!visibleTargetIdsOnX.IsEmpty() && !visibleTargetIdsOnY.IsEmpty()) {
+      return SnapDestination{
+          bestCandidate,
+          ScrollSnapTargetIds{visibleTargetIdsOnX, visibleTargetIdsOnY}};
+    }
+
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ((minimumDistanceOnX == nscoord_MAX) &&
+        minimumDistanceOnY != nscoord_MAX) {
+      bestCandidate.y = *mTrackerOnX.mBestEdges[minimumXIndex].mSnapPoint.mY;
+      return SnapDestination{bestCandidate,
+                             ScrollSnapTargetIds{minimumDistanceTargetIdsOnX,
+                                                 minimumDistanceTargetIdsOnX}};
+    }
+
+    if (minimumDistanceOnX != nscoord_MAX &&
+        minimumDistanceOnY == nscoord_MAX) {
+      bestCandidate.x = *mTrackerOnY.mBestEdges[minimumYIndex].mSnapPoint.mX;
+      return SnapDestination{bestCandidate,
+                             ScrollSnapTargetIds{minimumDistanceTargetIdsOnY,
+                                                 minimumDistanceTargetIdsOnY}};
+    }
+
+    if (minimumDistanceOnX != nscoord_MAX &&
+        minimumDistanceOnY != nscoord_MAX) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (hypotf(NSCoordToFloat(mDestination.x -
+                                mTrackerOnX.mBestEdges[0].mPosition),
+                 NSCoordToFloat(minimumDistanceOnY)) <
+          hypotf(NSCoordToFloat(minimumDistanceOnX),
+                 NSCoordToFloat(mDestination.y -
+                                mTrackerOnY.mBestEdges[0].mPosition))) {
+        bestCandidate.y = *mTrackerOnX.mBestEdges[minimumXIndex].mSnapPoint.mY;
+      } else {
+        bestCandidate.x = *mTrackerOnY.mBestEdges[minimumYIndex].mSnapPoint.mX;
+      }
+      return SnapDestination{bestCandidate,
+                             ScrollSnapTargetIds{minimumDistanceTargetIdsOnX,
+                                                 minimumDistanceTargetIdsOnY}};
+    }
+    MOZ_ASSERT_UNREACHABLE("There's at least one candidate on either axis");
+    
+    
+  }
+
   return SnapDestination{
       nsPoint(
           mTrackerOnX.EdgeFound() ? mTrackerOnX.mBestEdges[0].mPosition
@@ -132,14 +290,20 @@ SnapDestination CalcSnapPoints::GetBestEdge() const {
 
 void CalcSnapPoints::AddHorizontalEdge(const SnapTarget& aTarget) {
   MOZ_ASSERT(aTarget.mSnapPoint.mY);
-  AddEdge(SnapPosition{aTarget, *aTarget.mSnapPoint.mY}, mDestination.y,
-          mStartPos.y, mScrollingDirection.y, &mTrackerOnY);
+  AddEdge(SnapPosition{aTarget, *aTarget.mSnapPoint.mY,
+                       aTarget.mSnapPoint.mX
+                           ? std::abs(mDestination.x - *aTarget.mSnapPoint.mX)
+                           : nscoord_MAX},
+          mDestination.y, mStartPos.y, mScrollingDirection.y, &mTrackerOnY);
 }
 
 void CalcSnapPoints::AddVerticalEdge(const SnapTarget& aTarget) {
   MOZ_ASSERT(aTarget.mSnapPoint.mX);
-  AddEdge(SnapPosition{aTarget, *aTarget.mSnapPoint.mX}, mDestination.x,
-          mStartPos.x, mScrollingDirection.x, &mTrackerOnX);
+  AddEdge(SnapPosition{aTarget, *aTarget.mSnapPoint.mX,
+                       aTarget.mSnapPoint.mY
+                           ? std::abs(mDestination.y - *aTarget.mSnapPoint.mY)
+                           : nscoord_MAX},
+          mDestination.x, mStartPos.x, mScrollingDirection.x, &mTrackerOnX);
 }
 
 void CalcSnapPoints::AddEdge(const SnapPosition& aEdge, nscoord aDestination,
@@ -355,7 +519,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
   }
 
   bool snapped = false;
-  auto finalPos = calcSnapPoints.GetBestEdge();
+  auto finalPos = calcSnapPoints.GetBestEdge(aSnapInfo.mSnapportSize);
   constexpr float proximityRatio = 0.3;
   if (aSnapInfo.mScrollSnapStrictnessY ==
           StyleScrollSnapStrictness::Proximity &&
@@ -529,7 +693,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForResnap(
           return true;
         });
 
-    auto finalPos = calcSnapPoints.GetBestEdge();
+    auto finalPos = calcSnapPoints.GetBestEdge(aSnapInfo.mSnapportSize);
     if (!x) {
       x = Some(finalPos.mPosition.x);
     }
