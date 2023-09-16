@@ -299,6 +299,9 @@ static_assert(kSQLiteGrowthIncrement >= 0 &&
               "Must be 0 (disabled) or a positive multiple of the page size!");
 
 
+const uint32_t kMaxDBMaintenanceConcurrency = 4;
+
+
 
 const uint32_t kConnectionIdleMaintenanceMS = 2 * 1000;  
 
@@ -1122,6 +1125,8 @@ class DatabaseConnection final : public CachingDatabaseConnection {
   RefPtr<QuotaObject> mJournalQuotaObject;
   bool mInReadTransaction;
   bool mInWriteTransaction;
+  bool mInMaintenance;
+  bool mMaintenanceAllowed;
 
 #ifdef DEBUG
   uint32_t mDEBUGSavepointCount;
@@ -1163,6 +1168,8 @@ class DatabaseConnection final : public CachingDatabaseConnection {
   nsresult DisableQuotaChecks();
 
   void EnableQuotaChecks();
+
+  void InterruptMaintenance();
 
  private:
   DatabaseConnection(
@@ -1406,6 +1413,12 @@ class ConnectionPool final {
   void Shutdown();
 
   void FlagShutdownComplete() { mShutdownComplete.Flip(); }
+
+  bool HasIdleCapacity() const {
+    
+    return mDatabases.Count() <
+           (mIdleDatabases.Length() + kMaxDBMaintenanceConcurrency);
+  }
 
   NS_INLINE_DECL_REFCOUNTING(ConnectionPool)
 
@@ -6484,7 +6497,9 @@ DatabaseConnection::DatabaseConnection(
     : CachingDatabaseConnection(std::move(aStorageConnection)),
       mFileManager(std::move(aFileManager)),
       mInReadTransaction(false),
-      mInWriteTransaction(false)
+      mInWriteTransaction(false),
+      mInMaintenance(false),
+      mMaintenanceAllowed(true)
 #ifdef DEBUG
       ,
       mDEBUGSavepointCount(0)
@@ -6748,6 +6763,7 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
   AssertIsOnConnectionThread();
   MOZ_ASSERT(mInReadTransaction);
   MOZ_ASSERT(!mInWriteTransaction);
+  MOZ_ASSERT(mMaintenanceAllowed);
 
   AUTO_PROFILER_LABEL("DatabaseConnection::DoIdleProcessing", DOM);
 
@@ -6772,6 +6788,8 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
   const bool freedSomePages = freelistCount && [this, &freelistStmt,
                                                 &rollbackStmt, freelistCount,
                                                 aNeedsCheckpoint] {
+    mInMaintenance = true;
+
     
     
     QM_TRY_INSPECT(const bool& res,
@@ -6782,6 +6800,7 @@ void DatabaseConnection::DoIdleProcessing(bool aNeedsCheckpoint) {
     
     MOZ_ASSERT(!mInReadTransaction);
     MOZ_ASSERT(!mInWriteTransaction);
+    MOZ_ASSERT(!mInMaintenance);
 
     return res;
   }();
@@ -6811,14 +6830,13 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
   MOZ_ASSERT(aFreelistCount);
   MOZ_ASSERT(!mInReadTransaction);
   MOZ_ASSERT(!mInWriteTransaction);
+  MOZ_ASSERT(mInMaintenance);
 
   AUTO_PROFILER_LABEL("DatabaseConnection::ReclaimFreePagesWhileIdle", DOM);
 
-  
-  nsIThread* currentThread = NS_GetCurrentThread();
-  MOZ_ASSERT(currentThread);
+  if (!gConnectionPool->HasIdleCapacity()) {
+    mInMaintenance = false;
 
-  if (NS_HasPendingEvents(currentThread)) {
     return false;
   }
 
@@ -6850,7 +6868,8 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
 
   mInWriteTransaction = true;
 
-  bool freedSomePages = false, interrupted = false;
+  bool freedSomePages = false;
+  bool interrupted = false;
 
   const auto rollback = [&aRollbackStatement, this](const auto&) {
     MOZ_ASSERT(mInWriteTransaction);
@@ -6861,14 +6880,16 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
     
 
     mInWriteTransaction = false;
+    mInMaintenance = false;
+    mMaintenanceAllowed = true;
   };
 
   uint64_t previousFreelistCount = (uint64_t)aFreelistCount + 1;
 
   QM_TRY(CollectWhile(
              [&aFreelistCount, &previousFreelistCount, &interrupted,
-              currentThread]() -> Result<bool, nsresult> {
-               if (NS_HasPendingEvents(currentThread)) {
+              this]() -> Result<bool, nsresult> {
+               if (!mMaintenanceAllowed) {
                  
                  
                  
@@ -6911,6 +6932,8 @@ Result<bool, nsresult> DatabaseConnection::ReclaimFreePagesWhileIdle(
                         [](const auto&) { NS_WARNING("Failed to commit!"); });
 
                  mInWriteTransaction = false;
+                 mInMaintenance = false;
+                 mMaintenanceAllowed = true;
                }
 
                return Ok{};
@@ -7013,6 +7036,13 @@ void DatabaseConnection::EnableQuotaChecks() {
 
   result = quotaObject->MaybeUpdateSize(fileSize,  true);
   MOZ_ASSERT(result);
+}
+
+void DatabaseConnection::InterruptMaintenance() {
+  if (mInMaintenance) {
+    
+    mMaintenanceAllowed = false;
+  }
 }
 
 Result<int64_t, nsresult> DatabaseConnection::GetFileSize(
@@ -7902,6 +7932,18 @@ bool ConnectionPool::ScheduleTransaction(TransactionInfo& aTransactionInfo) {
   nsTArray<nsCOMPtr<nsIRunnable>>& queuedRunnables =
       aTransactionInfo.mQueuedRunnables;
 
+  if (!HasIdleCapacity()) {
+    
+    QM_WARNONLY_TRY(OkIf(mDatabasesPerformingIdleMaintenance.IsEmpty()),
+                    ([this](const auto&) {
+                      const auto& busyDbs = mDatabasesPerformingIdleMaintenance;
+                      for (auto dbInfo = busyDbs.rbegin();
+                           dbInfo != busyDbs.rend(); ++dbInfo) {
+                        (*dbInfo)->mConnection->InterruptMaintenance();
+                      }
+                    }));
+  }
+
   if (!queuedRunnables.IsEmpty()) {
     for (auto& queuedRunnable : queuedRunnables) {
       MOZ_ALWAYS_SUCCEEDS(
@@ -8188,13 +8230,18 @@ NS_IMETHODIMP
 ConnectionPool::CloseConnectionRunnable::Run() {
   AUTO_PROFILER_LABEL("ConnectionPool::CloseConnectionRunnable::Run", DOM);
 
+  
+  
+  if (mDatabaseInfo.mConnection) {
+    
+    mDatabaseInfo.mConnection->InterruptMaintenance();
+  }
+
   if (mOwningEventTarget) {
     MOZ_ASSERT(mDatabaseInfo.mClosing);
 
     const nsCOMPtr<nsIEventTarget> owningThread = std::move(mOwningEventTarget);
 
-    
-    
     if (mDatabaseInfo.mConnection) {
       mDatabaseInfo.AssertIsOnConnectionThread();
 
