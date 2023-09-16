@@ -86,11 +86,8 @@
 
 
 
-#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.59")]
-#![cfg_attr(
-    any(proc_macro_span, super_unstable),
-    feature(proc_macro_span, proc_macro_span_shrink)
-)]
+#![doc(html_root_url = "https://docs.rs/proc-macro2/1.0.66")]
+#![cfg_attr(any(proc_macro_span, super_unstable), feature(proc_macro_span))]
 #![cfg_attr(super_unstable, feature(proc_macro_def_site))]
 #![cfg_attr(doc_cfg, feature(doc_cfg))]
 #![allow(
@@ -100,6 +97,7 @@
     clippy::items_after_statements,
     clippy::let_underscore_untyped,
     clippy::manual_assert,
+    clippy::manual_range_contains,
     clippy::must_use_candidate,
     clippy::needless_doctest_main,
     clippy::new_without_default,
@@ -119,6 +117,8 @@ compile_error! {"\
     is turned on for the compilation of the proc-macro2 \
     build script as well.
 "}
+
+extern crate alloc;
 
 #[cfg(feature = "proc-macro")]
 extern crate proc_macro;
@@ -144,8 +144,6 @@ use crate::fallback as imp;
 mod imp;
 
 #[cfg(span_locations)]
-mod convert;
-#[cfg(span_locations)]
 mod location;
 
 use crate::extra::DelimSpan;
@@ -153,7 +151,6 @@ use crate::marker::Marker;
 use core::cmp::Ordering;
 use core::fmt::{self, Debug, Display};
 use core::hash::{Hash, Hasher};
-use core::iter::FromIterator;
 use core::ops::RangeBounds;
 use core::str::FromStr;
 use std::error::Error;
@@ -405,9 +402,6 @@ impl Span {
     
     
     
-    
-    
-    #[cfg(not(no_hygiene))]
     pub fn mixed_site() -> Self {
         Span::_new(imp::Span::mixed_site())
     }
@@ -492,24 +486,6 @@ impl Span {
     #[cfg_attr(doc_cfg, doc(cfg(feature = "span-locations")))]
     pub fn end(&self) -> LineColumn {
         self.inner.end()
-    }
-
-    
-    
-    
-    #[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
-    pub fn before(&self) -> Span {
-        Span::_new(self.inner.before())
-    }
-
-    
-    
-    
-    #[cfg(all(procmacro2_semver_exempt, any(not(wrap_proc_macro), super_unstable)))]
-    #[cfg_attr(doc_cfg, doc(cfg(procmacro2_semver_exempt)))]
-    pub fn after(&self) -> Span {
-        Span::_new(self.inner.after())
     }
 
     

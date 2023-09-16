@@ -1,6 +1,6 @@
+use alloc::rc::Rc;
 use core::marker::PhantomData;
-use std::panic::{RefUnwindSafe, UnwindSafe};
-use std::rc::Rc;
+use core::panic::{RefUnwindSafe, UnwindSafe};
 
 
 
