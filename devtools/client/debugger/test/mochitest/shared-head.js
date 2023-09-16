@@ -227,7 +227,8 @@ function waitForSelectedSource(dbg, sourceOrUrl) {
         
         
         if (typeof sourceOrUrl == "string") {
-          if (!location.source.url.includes(encodeURI(sourceOrUrl))) {
+          const url = location.source.url;
+          if (typeof url != "string" || !url.includes(encodeURI(sourceOrUrl))) {
             return false;
           }
         } else if (location.source.id != sourceOrUrl.id) {
