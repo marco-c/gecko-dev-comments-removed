@@ -114,8 +114,7 @@ uint32_t getUpdateRequirements(const RefPtr<nsNavHistoryQuery>& aQuery,
   bool nonTimeBasedItems = false;
   bool domainBasedItems = false;
 
-  if (aQuery->Parents().Length() > 0 || aQuery->OnlyBookmarked() ||
-      aQuery->Tags().Length() > 0 ||
+  if (aQuery->Parents().Length() > 0 || aQuery->Tags().Length() > 0 ||
       (aOptions->QueryType() ==
            nsINavHistoryQueryOptions::QUERY_TYPE_BOOKMARKS &&
        hasSearchTerms)) {
@@ -1976,8 +1975,7 @@ nsresult nsNavHistoryQueryResultNode::FillChildren() {
   
   
 
-  if (mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_HISTORY ||
-      mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_UNIFIED) {
+  if (mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_HISTORY) {
     
     
     
@@ -1990,7 +1988,6 @@ nsresult nsNavHistoryQueryResultNode::FillChildren() {
 
   if (mOptions->QueryType() ==
           nsINavHistoryQueryOptions::QUERY_TYPE_BOOKMARKS ||
-      mOptions->QueryType() == nsINavHistoryQueryOptions::QUERY_TYPE_UNIFIED ||
       mLiveUpdate == QUERYUPDATE_COMPLEX_WITH_BOOKMARKS || mHasSearchTerms) {
     
     result->AddAllBookmarksObserver(this);

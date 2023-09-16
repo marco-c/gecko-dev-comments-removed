@@ -118,26 +118,6 @@ add_task(async function test_execute() {
   result.root.containerOpen = false;
 
   
-  await PlacesUtils.history.update({
-    url: "http://mozilla.com/",
-    annotations: new Map([["testAnno", 123]]),
-  });
-  query.annotation = "testAnno";
-  result = histsvc.executeQuery(query, options);
-  result.root.containerOpen = true;
-  Assert.equal(result.root.childCount, 1);
-  Assert.equal(result.root.getChild(0).uri, "http://mozilla.com/");
-  result.root.containerOpen = false;
-
-  
-  query.annotationIsNot = true;
-  result = histsvc.executeQuery(query, options);
-  result.root.containerOpen = true;
-  Assert.equal(result.root.childCount, 1);
-  Assert.equal(result.root.getChild(0).uri, "http://google.com/");
-  result.root.containerOpen = false;
-
-  
   Assert.ok(!histsvc.historyDisabled);
 
   

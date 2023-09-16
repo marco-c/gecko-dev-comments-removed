@@ -162,23 +162,6 @@ const querySwitches = [
   },
   
   {
-    flag: "hasAnnotation",
-    subswitches: ["annotation", "annotationIsNot"],
-    desc: "nsINavHistoryQuery.hasAnnotation",
-    matches: flagSwitchMatches,
-    runs: [
-      function (aQuery, aQueryOptions) {
-        aQuery.annotation = "bookmarks/toolbarFolder";
-        aQuery.annotationIsNot = false;
-      },
-      function (aQuery, aQueryOptions) {
-        aQuery.annotation = "bookmarks/toolbarFolder";
-        aQuery.annotationIsNot = true;
-      },
-    ],
-  },
-  
-  {
     
     property: "minVisits",
     desc: "nsINavHistoryQuery.minVisits",
@@ -197,17 +180,6 @@ const querySwitches = [
     runs: [
       function (aQuery, aQueryOptions) {
         aQuery.maxVisits = 0x7fffffff; 
-      },
-    ],
-  },
-  
-  {
-    property: "onlyBookmarked",
-    desc: "nsINavHistoryQuery.onlyBookmarked",
-    matches: simplePropertyMatches,
-    runs: [
-      function (aQuery, aQueryOptions) {
-        aQuery.onlyBookmarked = true;
       },
     ],
   },
@@ -439,7 +411,7 @@ const queryOptionSwitches = [
         aQueryOptions.queryType = aQueryOptions.QUERY_TYPE_HISTORY;
       },
       function (aQuery, aQueryOptions) {
-        aQueryOptions.queryType = aQueryOptions.QUERY_TYPE_UNIFIED;
+        aQueryOptions.queryType = aQueryOptions.QUERY_TYPE_BOOKMARKS;
       },
     ],
   },
