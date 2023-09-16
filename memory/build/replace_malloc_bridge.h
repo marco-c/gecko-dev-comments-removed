@@ -116,6 +116,19 @@ struct DMDFuncs;
 }  
 
 namespace phc {
+
+
+
+
+
+
+
+
+enum PHCState {
+  OnlyFree,
+  Enabled,
+};
+
 class AddrInfo;
 
 struct MemoryUsage {
@@ -139,7 +152,7 @@ struct DebugFdRegistry {
 }  
 
 struct ReplaceMallocBridge {
-  ReplaceMallocBridge() : mVersion(5) {}
+  ReplaceMallocBridge() : mVersion(6) {}
 
   
   virtual mozilla::dmd::DMDFuncs* GetDMDFuncs() { return nullptr; }
@@ -194,6 +207,11 @@ struct ReplaceMallocBridge {
   
   
   virtual void PHCMemoryUsage(mozilla::phc::MemoryUsage& aMemoryUsage) {}
+
+  
+  
+  
+  virtual void SetPHCState(mozilla::phc::PHCState aState) {}
 
 #  ifndef REPLACE_MALLOC_IMPL
   
@@ -267,6 +285,13 @@ struct ReplaceMalloc {
     auto singleton = ReplaceMallocBridge::Get( 5);
     if (singleton) {
       singleton->PHCMemoryUsage(aMemoryUsage);
+    }
+  }
+
+  static void SetPHCState(mozilla::phc::PHCState aPHCState) {
+    auto singleton = ReplaceMallocBridge::Get( 6);
+    if (singleton) {
+      singleton->SetPHCState(aPHCState);
     }
   }
 };
