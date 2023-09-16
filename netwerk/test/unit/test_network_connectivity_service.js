@@ -14,7 +14,7 @@ const { HttpServer } = ChromeUtils.importESModule(
 
 
 
-function promiseObserverNotification(topic, matchFunc) {
+function promiseObserverNotification(topicName, matchFunc) {
   return new Promise((resolve, reject) => {
     Services.obs.addObserver(function observe(subject, topic, data) {
       let matches = typeof matchFunc != "function" || matchFunc(subject, data);
@@ -23,7 +23,7 @@ function promiseObserverNotification(topic, matchFunc) {
       }
       Services.obs.removeObserver(observe, topic);
       resolve({ subject, data });
-    }, topic);
+    }, topicName);
   });
 }
 

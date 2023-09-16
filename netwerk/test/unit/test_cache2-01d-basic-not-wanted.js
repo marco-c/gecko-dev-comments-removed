@@ -9,28 +9,28 @@ function run_test() {
     "disk",
     Ci.nsICacheStorage.OPEN_NORMALLY,
     null,
-    new OpenCallback(NEW, "a1m", "a1d", function (entry) {
+    new OpenCallback(NEW, "a1m", "a1d", function () {
       
       asyncOpenCacheEntry(
         "http://a/",
         "disk",
         Ci.nsICacheStorage.OPEN_NORMALLY,
         null,
-        new OpenCallback(NORMAL, "a1m", "a1d", function (entry) {
+        new OpenCallback(NORMAL, "a1m", "a1d", function () {
           
           asyncOpenCacheEntry(
             "http://a/",
             "disk",
             Ci.nsICacheStorage.OPEN_NORMALLY,
             null,
-            new OpenCallback(NOTWANTED, "a1m", "a1d", function (entry) {
+            new OpenCallback(NOTWANTED, "a1m", "a1d", function () {
               
               asyncOpenCacheEntry(
                 "http://a/",
                 "disk",
                 Ci.nsICacheStorage.OPEN_NORMALLY,
                 null,
-                new OpenCallback(NORMAL, "a1m", "a1d", function (entry) {
+                new OpenCallback(NORMAL, "a1m", "a1d", function () {
                   finish_cache2_test();
                 })
               );

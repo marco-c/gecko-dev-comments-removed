@@ -212,12 +212,6 @@ module.exports = {
       ],
     },
     {
-      files: ["netwerk/test/mochitests/**", "netwerk/test/unit*/**"],
-      rules: {
-        "no-shadow": "warn",
-      },
-    },
-    {
       
       
       files: [

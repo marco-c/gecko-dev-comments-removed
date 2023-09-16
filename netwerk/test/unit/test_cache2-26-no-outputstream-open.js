@@ -13,7 +13,7 @@ function run_test() {
       NEW | METAONLY | DONTSETVALID | WAITFORWRITE,
       "meta",
       "",
-      function (entry) {
+      function () {
         
         executeSoon(() => {
           Cu.forceGC(); 
@@ -23,7 +23,7 @@ function run_test() {
             "disk",
             Ci.nsICacheStorage.OPEN_NORMALLY,
             null,
-            new OpenCallback(NORMAL, "meta", "", function (entry) {
+            new OpenCallback(NORMAL, "meta", "", function () {
               finish_cache2_test();
             })
           );
