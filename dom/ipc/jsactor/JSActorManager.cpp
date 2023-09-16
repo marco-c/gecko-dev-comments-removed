@@ -54,8 +54,9 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
     return nullptr;
   }
 
-  bool isParent = nativeActor->GetSide() == mozilla::ipc::ParentSide;
-  auto& side = isParent ? protocol->Parent() : protocol->Child();
+  auto& side = nativeActor->GetSide() == mozilla::ipc::ParentSide
+                   ? protocol->Parent()
+                   : protocol->Child();
 
   
   
@@ -86,7 +87,7 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
     
     JS::Rooted<JS::Value> ctor(aCx);
     nsAutoCString ctorName(aName);
-    ctorName.Append(isParent ? "Parent"_ns : "Child"_ns);
+    ctorName.Append(StringFromIPCSide(nativeActor->GetSide()));
     if (!JS_GetProperty(aCx, exports, ctorName.get(), &ctor)) {
       aRv.NoteJSContextException(aCx);
       return nullptr;
