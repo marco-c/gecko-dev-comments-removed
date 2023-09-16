@@ -196,7 +196,6 @@ class WebrtcVideoConduit
 
   void OnRtpReceived(webrtc::RtpPacketReceived&& aPacket,
                      webrtc::RTPHeader&& aHeader);
-  void OnRtcpReceived(MediaPacket&& aPacket);
 
   void OnRtcpBye() override;
   void OnRtcpTimeout() override;
@@ -217,16 +216,6 @@ class WebrtcVideoConduit
       override {
     mReceiverRtpEventListener =
         aEvent.Connect(mCallThread, this, &WebrtcVideoConduit::OnRtpReceived);
-  }
-  void ConnectReceiverRtcpEvent(
-      MediaEventSourceExc<MediaPacket>& aEvent) override {
-    mReceiverRtcpEventListener =
-        aEvent.Connect(mCallThread, this, &WebrtcVideoConduit::OnRtcpReceived);
-  }
-  void ConnectSenderRtcpEvent(
-      MediaEventSourceExc<MediaPacket>& aEvent) override {
-    mSenderRtcpEventListener =
-        aEvent.Connect(mCallThread, this, &WebrtcVideoConduit::OnRtcpReceived);
   }
 
   std::vector<webrtc::RtpSource> GetUpstreamRtpSources() const override;
@@ -501,9 +490,7 @@ class WebrtcVideoConduit
   MediaEventProducerExc<MediaPacket> mReceiverRtcpSendEvent;
 
   
-  MediaEventListener mSenderRtcpEventListener;    
-  MediaEventListener mReceiverRtcpEventListener;  
-  MediaEventListener mReceiverRtpEventListener;   
+  MediaEventListener mReceiverRtpEventListener;  
 };
 }  
 
