@@ -78,11 +78,30 @@ FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(
     mExtraData = new MediaByteBuffer;
     mExtraData->AppendElements(*audioCodecSpecificBinaryBlob);
   }
+
+  if (mCodecID == AV_CODEC_ID_OPUS) {
+    mDefaultPlaybackDeviceMono = aDecoderParams.mOptions.contains(
+        CreateDecoderParams::Option::DefaultPlaybackDeviceMono);
+  }
 }
 
 RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
   AVDictionary* options = nullptr;
+  if (mCodecID == AV_CODEC_ID_OPUS) {
+    
+    
+    
+    
+    
+    if (mDefaultPlaybackDeviceMono ||
+        DecideAudioPlaybackChannels(mAudioInfo) == 1) {
+      mLib->av_dict_set(&options, "apply_phase_inv", "false", 0);
+    }
+  }
+
   MediaResult rv = InitDecoder(&options);
+
+  mLib->av_dict_free(&options);
 
   return NS_SUCCEEDED(rv)
              ? InitPromise::CreateAndResolve(TrackInfo::kAudioTrack, __func__)
