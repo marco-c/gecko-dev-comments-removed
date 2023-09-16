@@ -21,7 +21,6 @@ function setupTest(uri, cookies, loads) {
           ["network.cookie.cookieBehavior", 1],
           
           
-          ["network.cookie.rejectForeignWithExceptions.enabled", false],
           
           ["network.cookie.sameSite.laxByDefault", false],
         ],

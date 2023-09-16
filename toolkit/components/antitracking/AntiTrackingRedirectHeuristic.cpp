@@ -115,22 +115,6 @@ bool ShouldRedirectHeuristicApplyETP(nsIChannel* aNewChannel, nsIURI* aNewURI) {
   return true;
 }
 
-
-
-bool ShouldCheckRedirectHeuristicRejectForeign(nsIChannel* aOldChannel,
-                                               nsIURI* aOldURI,
-                                               nsIPrincipal* aOldPrincipal) {
-  if (!ContentBlockingUserInteraction::Exists(aOldPrincipal)) {
-    LOG_SPEC(("Ignoring redirect from %s because no user-interaction on "
-              "old origin",
-              _spec),
-             aOldURI);
-    return false;
-  }
-
-  return true;
-}
-
 bool ShouldRedirectHeuristicApply(nsIChannel* aNewChannel, nsIURI* aNewURI) {
   nsCOMPtr<nsILoadInfo> newLoadInfo = aNewChannel->LoadInfo();
   MOZ_ASSERT(newLoadInfo);
@@ -149,13 +133,6 @@ bool ShouldRedirectHeuristicApply(nsIChannel* aNewChannel, nsIURI* aNewURI) {
       cookieBehavior ==
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
     return ShouldRedirectHeuristicApplyETP(aNewChannel, aNewURI);
-  }
-
-  
-  
-  if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN &&
-      StaticPrefs::network_cookie_rejectForeignWithExceptions_enabled()) {
-    return true;
   }
 
   LOG((
@@ -182,12 +159,6 @@ bool ShouldCheckRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
       cookieBehavior ==
           nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
     return ShouldCheckRedirectHeuristicETP(aOldChannel, aOldURI, aOldPrincipal);
-  }
-
-  if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN &&
-      StaticPrefs::network_cookie_rejectForeignWithExceptions_enabled()) {
-    return ShouldCheckRedirectHeuristicRejectForeign(aOldChannel, aOldURI,
-                                                     aOldPrincipal);
   }
 
   LOG(
@@ -262,8 +233,7 @@ void PrepareForAntiTrackingRedirectHeuristic(nsIChannel* aOldChannel,
   MOZ_ASSERT(
       behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
       behavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN ||
-      net::CookieJarSettings::IsRejectThirdPartyWithExceptions(behavior));
+          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
 
   ExtContentPolicyType contentType =
       oldLoadInfo->GetExternalContentPolicyType();

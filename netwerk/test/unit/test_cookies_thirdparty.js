@@ -13,10 +13,6 @@ add_task(async () => {
     true
   );
 
-  Services.prefs.setBoolPref(
-    "network.cookie.rejectForeignWithExceptions.enabled",
-    false
-  );
   Services.prefs.setBoolPref("dom.security.https_first", false);
 
   

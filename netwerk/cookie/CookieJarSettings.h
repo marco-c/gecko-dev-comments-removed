@@ -179,11 +179,6 @@ class CookieJarSettings final : public nsICookieJarSettings {
   
   static bool IsRejectThirdPartyContexts(uint32_t aCookieBehavior);
 
-  
-  
-  
-  static bool IsRejectThirdPartyWithExceptions(uint32_t aCookieBehavior);
-
  private:
   enum State {
     

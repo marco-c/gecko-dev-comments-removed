@@ -111,8 +111,7 @@ class StorageAccessAPIHelper final {
   
   static Maybe<bool> CheckBrowserSettingsDecidesStorageAccessAPI(
       nsICookieJarSettings* aCookieJarSettings, bool aThirdParty,
-      bool aOnRejectForeignAllowlist, bool aIsOnThirdPartySkipList,
-      bool aIsThirdPartyTracker);
+      bool aIsOnThirdPartySkipList, bool aIsThirdPartyTracker);
 
   
   
