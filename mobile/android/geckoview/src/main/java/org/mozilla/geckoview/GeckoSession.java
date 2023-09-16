@@ -4793,16 +4793,25 @@ public class GeckoSession {
           public final int id;
 
           
+          public final @NonNull String domain;
+
+          
 
 
 
 
 
 
-          public Provider(final int id, final @NonNull String name, final @Nullable String icon) {
+
+          public Provider(
+              final int id,
+              final @NonNull String name,
+              final @Nullable String icon,
+              final @NonNull String domain) {
             this.id = id;
             this.icon = icon;
             this.name = name;
+            this.domain = domain;
           }
 
           
@@ -4810,7 +4819,8 @@ public class GeckoSession {
             final int id = bundle.getInt("providerIndex");
             final String icon = bundle.getString("icon");
             final String name = bundle.getString("name");
-            return new Provider(id, name, icon);
+            final String domain = bundle.getString("domain");
+            return new Provider(id, name, icon, domain);
           }
         }
       }
@@ -4824,6 +4834,10 @@ public class GeckoSession {
         public final @NonNull Account[] accounts;
 
         
+        public final @NonNull Provider provider;
+
+        
+
 
 
 
@@ -4831,9 +4845,13 @@ public class GeckoSession {
 
 
         public AccountSelectorPrompt(
-            @NonNull final String id, @NonNull final Account[] accounts, final Observer observer) {
+            @NonNull final String id,
+            @NonNull final Account[] accounts,
+            @NonNull final Provider provider,
+            final Observer observer) {
           super(id, null, observer);
           this.accounts = accounts;
+          this.provider = provider;
         }
 
         
@@ -4853,7 +4871,7 @@ public class GeckoSession {
         
         public static class ProviderAccounts {
           
-          public final @Nullable String provider;
+          public final @Nullable Provider provider;
 
           
           public final @NonNull Account[] accounts;
@@ -4869,7 +4887,7 @@ public class GeckoSession {
 
 
           public ProviderAccounts(
-              final int id, @Nullable final String provider, @NonNull final Account[] accounts) {
+              final int id, @Nullable final Provider provider, @NonNull final Account[] accounts) {
             this.id = id;
             this.provider = provider;
             this.accounts = accounts;
@@ -4878,7 +4896,8 @@ public class GeckoSession {
           
           static @NonNull ProviderAccounts fromBundle(final @NonNull GeckoBundle bundle) {
             final int id = bundle.getInt("accountIndex");
-            final String provider = bundle.getString("provider");
+            final Provider provider = Provider.fromBundle(bundle.getBundle("provider"));
+
             final GeckoBundle[] accountsBundle = bundle.getBundleArray("accounts");
             if (accountsBundle == null) {
               return new ProviderAccounts(id, provider, new Account[0]);
@@ -4932,6 +4951,42 @@ public class GeckoSession {
             final String name = bundle.getString("name");
             final String email = bundle.getString("email");
             return new Account(id, email, name, icon);
+          }
+        }
+
+        
+        public static class Provider {
+          
+          public final @NonNull String name;
+
+          
+          public final @NonNull String domain;
+
+          
+          public final @Nullable String icon;
+
+          
+
+
+
+
+
+
+          public Provider(
+              @NonNull final String name,
+              @NonNull final String domain,
+              @Nullable final String favicon) {
+            this.name = name;
+            this.domain = domain;
+            this.icon = favicon;
+          }
+
+          
+          static @NonNull Provider fromBundle(final @NonNull GeckoBundle bundle) {
+            final String name = bundle.getString("name");
+            final String domain = bundle.getString("domain");
+            final String icon = bundle.getString("icon");
+            return new Provider(name, domain, icon);
           }
         }
       }
