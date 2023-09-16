@@ -3189,125 +3189,88 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
                                               nsIContent** aStartContent,
                                               nsIContent** aEndContent) {
   *aStartContent = *aEndContent = nullptr;
+
   nsPresContext* presContext = aPresShell->GetPresContext();
   NS_ASSERTION(presContext, "mPresContent is null!!");
 
-  RefPtr<nsFrameSelection> frameSelection = aPresShell->FrameSelection();
-
-  RefPtr<Selection> domSelection;
-  if (frameSelection) {
-    domSelection = frameSelection->GetSelection(SelectionType::eNormal);
+  RefPtr<Selection> domSelection =
+      aPresShell->ConstFrameSelection()->GetSelection(SelectionType::eNormal);
+  if (!domSelection) {
+    return NS_OK;
   }
 
-  bool isCollapsed = false;
-  nsCOMPtr<nsIContent> startContent, endContent;
-  uint32_t startOffset = 0;
-  if (domSelection) {
-    isCollapsed = domSelection->IsCollapsed();
-    RefPtr<const nsRange> domRange = domSelection->GetRangeAt(0);
-    if (domRange) {
-      nsCOMPtr<nsINode> startNode = domRange->GetStartContainer();
-      nsCOMPtr<nsINode> endNode = domRange->GetEndContainer();
-      startOffset = domRange->StartOffset();
-
-      nsIContent* childContent = nullptr;
-
-      startContent = do_QueryInterface(startNode);
-      if (startContent && startContent->IsElement()) {
-        childContent = startContent->GetChildAt_Deprecated(startOffset);
-        if (childContent) {
-          startContent = childContent;
-        }
-      }
-
-      endContent = do_QueryInterface(endNode);
-      if (endContent && endContent->IsElement()) {
-        uint32_t endOffset = domRange->EndOffset();
-        childContent = endContent->GetChildAt_Deprecated(endOffset);
-        if (childContent) {
-          endContent = childContent;
-        }
-      }
-    }
-  } else {
-    return NS_ERROR_INVALID_ARG;
+  const nsRange* domRange = domSelection->GetRangeAt(0);
+  if (!domRange || !domRange->IsPositioned()) {
+    return NS_OK;
+  }
+  nsIContent* start = nsIContent::FromNode(domRange->GetStartContainer());
+  nsIContent* end = nsIContent::FromNode(domRange->GetEndContainer());
+  if (nsIContent* child = domRange->StartRef().GetChildAtOffset()) {
+    start = child;
+  }
+  if (nsIContent* child = domRange->EndRef().GetChildAtOffset()) {
+    end = child;
   }
 
-  nsIFrame* startFrame = nullptr;
-  if (startContent) {
-    startFrame = startContent->GetPrimaryFrame();
-    if (isCollapsed) {
-      
-      
-      
-      
+  
+  
+  
+  if (auto* text = Text::FromNodeOrNull(start);
+      text && text->TextDataLength() == domRange->StartOffset() &&
+      domSelection->IsCollapsed()) {
+    nsIFrame* startFrame = start->GetPrimaryFrame();
+    
+    nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
+                                 startFrame, eLeaf,
+                                 false,  
+                                 false,  
+                                 true,   
+                                 false   
+                                 ));
 
-      if (startContent->NodeType() == nsINode::TEXT_NODE) {
-        nsAutoString nodeValue;
-        startContent->GetAsText()->AppendTextTo(nodeValue);
+    nsIFrame* newCaretFrame = nullptr;
+    nsIContent* newCaretContent = start;
+    const bool endOfSelectionInStartNode = start == end;
+    do {
+      
+      
+      
+      frameTraversal->Next();
+      newCaretFrame = static_cast<nsIFrame*>(frameTraversal->CurrentItem());
+      if (!newCaretFrame) {
+        break;
+      }
+      newCaretContent = newCaretFrame->GetContent();
+    } while (!newCaretContent || newCaretContent == start);
 
-        if (nodeValue.Length() == startOffset &&
-            !startContent->IsHTMLFormControlElement() &&
-            startContent != aDocument->GetRootElement()) {
+    if (newCaretFrame && newCaretContent) {
+      
+      
+      
+      nsRect caretRect;
+      if (nsIFrame* frame = nsCaret::GetGeometry(domSelection, &caretRect)) {
+        nsPoint caretWidgetOffset;
+        nsIWidget* widget = frame->GetNearestWidget(caretWidgetOffset);
+        caretRect.MoveBy(caretWidgetOffset);
+        nsPoint newCaretOffset;
+        nsIWidget* newCaretWidget =
+            newCaretFrame->GetNearestWidget(newCaretOffset);
+        if (widget == newCaretWidget && caretRect.TopLeft() == newCaretOffset) {
           
-          nsCOMPtr<nsIFrameEnumerator> frameTraversal;
-          nsresult rv = NS_NewFrameTraversal(getter_AddRefs(frameTraversal),
-                                             presContext, startFrame, eLeaf,
-                                             false,  
-                                             false,  
-                                             true,   
-                                             false   
-          );
-          NS_ENSURE_SUCCESS(rv, rv);
-
-          nsIFrame* newCaretFrame = nullptr;
-          nsCOMPtr<nsIContent> newCaretContent = startContent;
-          bool endOfSelectionInStartNode(startContent == endContent);
-          do {
-            
-            
-            
-            frameTraversal->Next();
-            newCaretFrame =
-                static_cast<nsIFrame*>(frameTraversal->CurrentItem());
-            if (nullptr == newCaretFrame) break;
-            newCaretContent = newCaretFrame->GetContent();
-          } while (!newCaretContent || newCaretContent == startContent);
-
-          if (newCaretFrame && newCaretContent) {
-            
-            
-            
-            nsRect caretRect;
-            nsIFrame* frame = nsCaret::GetGeometry(domSelection, &caretRect);
-            if (frame) {
-              nsPoint caretWidgetOffset;
-              nsIWidget* widget = frame->GetNearestWidget(caretWidgetOffset);
-              caretRect.MoveBy(caretWidgetOffset);
-              nsPoint newCaretOffset;
-              nsIWidget* newCaretWidget =
-                  newCaretFrame->GetNearestWidget(newCaretOffset);
-              if (widget == newCaretWidget && caretRect.y == newCaretOffset.y &&
-                  caretRect.x == newCaretOffset.x) {
-                
-                startFrame = newCaretFrame;
-                startContent = newCaretContent;
-                if (endOfSelectionInStartNode) {
-                  endContent = newCaretContent;  
-                                                 
-                }
-              }
-            }
+          startFrame = newCaretFrame;
+          start = newCaretContent;
+          if (endOfSelectionInStartNode) {
+            end = newCaretContent;  
+                                    
           }
         }
       }
     }
   }
 
-  *aStartContent = startContent;
-  *aEndContent = endContent;
-  NS_IF_ADDREF(*aStartContent);
-  NS_IF_ADDREF(*aEndContent);
+  NS_IF_ADDREF(*aStartContent = start);
+  NS_IF_ADDREF(*aEndContent = end);
 
   return NS_OK;
 }
