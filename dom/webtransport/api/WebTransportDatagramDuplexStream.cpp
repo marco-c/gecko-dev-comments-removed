@@ -279,8 +279,19 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
   
   
 
-  nsTArray<uint8_t> data;
-  Unused << AppendTypedArrayDataTo(arrayBuffer, data);
+  
+  
+  auto data = [&arrayBuffer]() {
+    if (arrayBuffer.IsArrayBuffer()) {
+      const ArrayBuffer& buffer = arrayBuffer.GetAsArrayBuffer();
+      buffer.ComputeState();
+      return Span{buffer.Data(), buffer.Length()};
+    }
+    MOZ_ASSERT(arrayBuffer.IsArrayBufferView());
+    const ArrayBufferView& buffer = arrayBuffer.GetAsArrayBufferView();
+    buffer.ComputeState();
+    return Span{buffer.Data(), buffer.Length()};
+  }();
 
   
   
@@ -298,9 +309,10 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
     
     
     
-    LOG(("Sending Datagram, size = %zu", data.Length()));
+    nsTArray<uint8_t> array(data);
+    LOG(("Sending Datagram, size = %zu", array.Length()));
     mChild->SendOutgoingDatagram(
-        std::move(data), now,
+        array, now,
         [promise](nsresult&&) {
           
           LOG(("Datagram was sent"));
@@ -319,7 +331,7 @@ already_AddRefed<Promise> OutgoingDatagramStreamAlgorithms::WriteCallback(
     
     
     MOZ_ASSERT(mWaitConnect == nullptr);
-    mWaitConnect.reset(new DatagramEntry(std::move(data), now));
+    mWaitConnect.reset(new DatagramEntry(data, now));
     mWaitConnectPromise = promise;
   }
 

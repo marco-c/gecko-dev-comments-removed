@@ -841,18 +841,23 @@ RefPtr<Int64Promise> FileSystemWritableFileStream::Write(
 
   
   
-  auto vectorFromTypedArray = CreateFromTypedArrayData<Vector<uint8_t>>(aData);
-  if (vectorFromTypedArray.isSome()) {
-    Maybe<Vector<uint8_t>>& maybeVector = vectorFromTypedArray.ref();
-    QM_TRY(MOZ_TO_RESULT(maybeVector.isSome()), CreateAndRejectInt64Promise);
+  if (aData.IsArrayBuffer() || aData.IsArrayBufferView()) {
+    const auto dataSpan = [&aData]() -> mozilla::Span<uint8_t> {
+      if (aData.IsArrayBuffer()) {
+        const ArrayBuffer& buffer = aData.GetAsArrayBuffer();
+        buffer.ComputeState();
+        return Span{buffer.Data(), buffer.Length()};
+      }
+
+      const ArrayBufferView& buffer = aData.GetAsArrayBufferView();
+      buffer.ComputeState();
+      return Span{buffer.Data(), buffer.Length()};
+    }();
 
     
-
-    size_t length = maybeVector->length();
-    QM_TRY(MOZ_TO_RESULT(NS_NewByteInputStream(
-               getter_AddRefs(inputStream),
-               AsChars(Span(maybeVector->extractOrCopyRawBuffer(), length)),
-               NS_ASSIGNMENT_ADOPT)),
+    QM_TRY(MOZ_TO_RESULT(NS_NewByteInputStream(getter_AddRefs(inputStream),
+                                               AsChars(dataSpan),
+                                               NS_ASSIGNMENT_COPY)),
            CreateAndRejectInt64Promise);
 
     return WriteImpl(mTaskQueue, std::move(inputStream), mStreamOwner,

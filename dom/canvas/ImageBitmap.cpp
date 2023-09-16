@@ -1290,6 +1290,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
         "failed?)");
     return nullptr;
   }
+  array.ComputeState();
   const SurfaceFormat FORMAT = SurfaceFormat::R8G8B8A8;
   
   auto alphaType = (aOptions.mPremultiplyAlpha == PremultiplyAlpha::Premultiply)
@@ -1300,6 +1301,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
   const uint32_t imageWidth = aImageData.Width();
   const uint32_t imageHeight = aImageData.Height();
   const uint32_t imageStride = imageWidth * BYTES_PER_PIXEL;
+  const uint32_t dataLength = array.Length();
   const gfx::IntSize imageSize(imageWidth, imageHeight);
 
   
@@ -1308,46 +1310,52 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     return nullptr;
   }
 
-  return array.ProcessFixedData(
-      [&](const Span<const uint8_t>& aData) -> already_AddRefed<ImageBitmap> {
-        const uint32_t dataLength = aData.Length();
-        if ((imageWidth * imageHeight * BYTES_PER_PIXEL) != dataLength) {
-          aRv.ThrowInvalidStateError("Data size / image format mismatch");
-          return nullptr;
-        }
+  if ((imageWidth * imageHeight * BYTES_PER_PIXEL) != dataLength) {
+    aRv.ThrowInvalidStateError("Data size / image format mismatch");
+    return nullptr;
+  }
 
-        
-        RefPtr<layers::Image> data;
+  
+  RefPtr<layers::Image> data;
 
-        uint8_t* fixedData = const_cast<uint8_t*>(aData.Elements());
+  
+  
+  
+  size_t maxInline = JS_MaxMovableTypedArraySize();
+  uint8_t inlineDataBuffer[maxInline];
+  uint8_t* fixedData = array.FixedData(inlineDataBuffer, maxInline);
 
-        if (NS_IsMainThread()) {
-          data =
-              CreateImageFromRawData(imageSize, imageStride, FORMAT, fixedData,
-                                     dataLength, aCropRect, aOptions);
-        } else {
-          RefPtr<CreateImageFromRawDataInMainThreadSyncTask> task =
-              new CreateImageFromRawDataInMainThreadSyncTask(
-                  fixedData, dataLength, imageStride, FORMAT, imageSize,
-                  aCropRect, getter_AddRefs(data), aOptions);
-          task->Dispatch(Canceling, aRv);
-        }
+  
+  
+  
+  array.Reset();
 
-        if (NS_WARN_IF(!data)) {
-          aRv.ThrowInvalidStateError("Failed to create internal image");
-          return nullptr;
-        }
+  if (NS_IsMainThread()) {
+    data = CreateImageFromRawData(imageSize, imageStride, FORMAT, fixedData,
+                                  dataLength, aCropRect, aOptions);
+  } else {
+    RefPtr<CreateImageFromRawDataInMainThreadSyncTask> task =
+        new CreateImageFromRawDataInMainThreadSyncTask(
+            fixedData, dataLength, imageStride, FORMAT, imageSize, aCropRect,
+            getter_AddRefs(data), aOptions);
+    task->Dispatch(Canceling, aRv);
+  }
 
-        
-        RefPtr<ImageBitmap> ret =
-            new ImageBitmap(aGlobal, data, false , alphaType);
-        ret->mAllocatedImageData = true;
+  if (NS_WARN_IF(!data)) {
+    aRv.ThrowInvalidStateError("Failed to create internal image");
+    return nullptr;
+  }
 
-        
-        
+  
+  RefPtr<ImageBitmap> ret =
+      new ImageBitmap(aGlobal, data, false , alphaType);
 
-        return ret.forget();
-      });
+  ret->mAllocatedImageData = true;
+
+  
+  
+
+  return ret.forget();
 }
 
 

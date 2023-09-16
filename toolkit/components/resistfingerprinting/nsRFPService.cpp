@@ -464,7 +464,7 @@ nsresult nsRFPService::RandomMidpoint(long long aClampedTimeUSec,
     }
     if (MOZ_UNLIKELY(!sSecretMidpointSeed.compareExchange(nullptr, temp))) {
       
-      free(temp);
+      delete[] temp;
     }
   }
 

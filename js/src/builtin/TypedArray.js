@@ -9,14 +9,13 @@ function ViewedArrayBufferIfReified(tarray) {
 
   var buf = UnsafeGetReservedSlot(tarray, JS_TYPEDARRAYLAYOUT_BUFFER_SLOT);
   assert(
-    buf === false ||
-      buf === true ||
+    buf === null ||
       (IsObject(buf) &&
         (GuardToArrayBuffer(buf) !== null ||
           GuardToSharedArrayBuffer(buf) !== null)),
     "unexpected value in buffer slot"
   );
-  return IsObject(buf) ? buf : null;
+  return buf;
 }
 
 function IsDetachedBuffer(buffer) {
