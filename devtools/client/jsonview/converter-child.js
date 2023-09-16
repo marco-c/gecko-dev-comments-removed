@@ -4,6 +4,13 @@
 
 "use strict";
 
+const lazy = {};
+ChromeUtils.defineModuleGetter(
+  lazy,
+  "NetUtil",
+  "resource://gre/modules/NetUtil.jsm"
+);
+
 const {
   getTheme,
   addThemeObserver,
@@ -84,6 +91,17 @@ Converter.prototype = {
     request.QueryInterface(Ci.nsIChannel);
     request.contentType = "text/html";
 
+    
+    
+    
+    const uri = lazy.NetUtil.newURI("resource://devtools/client/jsonview/");
+    const resourcePrincipal =
+      Services.scriptSecurityManager.createContentPrincipal(
+        uri,
+        request.loadInfo.originAttributes
+      );
+    request.owner = resourcePrincipal;
+
     const headers = getHttpHeaders(request);
 
     
@@ -107,11 +125,6 @@ Converter.prototype = {
     fixSave(request);
 
     
-    
-    
-    request.loadInfo.resetPrincipalToInheritToNullPrincipal();
-
-    
     this.listener.onStartRequest(request);
 
     
@@ -123,7 +136,7 @@ Converter.prototype = {
     
     
     
-    if (win.document.nodePrincipal != request.loadInfo.principalToInherit) {
+    if (win.document.nodePrincipal != resourcePrincipal) {
       
       request.cancel(Cr.NS_BINDING_ABORTED);
       return;
@@ -319,7 +332,7 @@ function initialHTML(doc) {
     os = "linux";
   }
 
-  const baseURI = "resource://devtools-client-jsonview/";
+  const baseURI = "resource://devtools/client/jsonview/";
 
   return (
     "<!DOCTYPE html>\n" +
