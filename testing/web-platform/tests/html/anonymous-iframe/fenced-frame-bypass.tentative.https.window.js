@@ -5,6 +5,7 @@
 
 
 
+
 setup(() => {
   assert_implements(window.HTMLFencedFrameElement,
     "HTMLFencedFrameElement is not supported.");
@@ -27,7 +28,7 @@ promise_test(async test => {
 
   
   const iframe_credentialless_1 = newIframeCredentialless(cross_origin);
-  const fenced_frame = newFencedFrame(cross_origin);
+  const fenced_frame = await newFencedFrame(cross_origin);
   send(fenced_frame, `
     const importScript = ${importScript};
     await importScript("/common/utils.js");
