@@ -177,6 +177,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
 
   virtual void OnCompleteLookup() {}
 
+  virtual void ResolveComplete() = 0;
+
   
   mozilla::TimeStamp mValidStart;
 
@@ -187,6 +189,8 @@ class nsHostRecord : public mozilla::LinkedListElement<RefPtr<nsHostRecord>>,
   
   
   mozilla::TimeStamp mGraceStart;
+
+  mozilla::TimeDuration mTrrDuration;
 
   mozilla::Atomic<uint32_t, mozilla::Relaxed> mTtl{0};
 
@@ -297,7 +301,6 @@ class AddrHostRecord final : public nsHostRecord {
   
   
   void NotifyRetryingTrr();
-  void ResolveComplete();
 
   static DnsPriority GetPriority(nsIDNSService::DNSFlags aFlags);
 
@@ -316,9 +319,10 @@ class AddrHostRecord final : public nsHostRecord {
     StoreNative(false);
   }
 
+  void ResolveComplete() override;
+
   
   mozilla::TimeStamp mNativeStart;
-  mozilla::TimeDuration mTrrDuration;
   mozilla::TimeDuration mNativeDuration;
 
   
@@ -385,13 +389,12 @@ class TypeHostRecord final : public nsHostRecord,
       nsIDNSService::DNSFlags queryFlags) const override;
   bool RefreshForNegativeResponse() const override;
 
+  void ResolveComplete() override;
+
   mozilla::net::TypeRecordResultType mResults = AsVariant(mozilla::Nothing());
   mozilla::Mutex mResultsLock MOZ_UNANNOTATED{"TypeHostRecord.mResultsLock"};
 
   mozilla::Maybe<nsCString> mOriginHost;
-
-  
-  mozilla::TimeStamp mStart;
   bool mAllRecordsExcluded = false;
 };
 
