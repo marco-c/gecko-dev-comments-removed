@@ -550,20 +550,46 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   nsSharedPageData* pd = pageFrame->GetSharedPageData();
   const auto* ppsInfo = pd->PagesPerSheetInfo();
 
+  const nsContainerFrame* const parentFrame = pageFrame->GetParent();
+  MOZ_ASSERT(parentFrame->IsPrintedSheetFrame(),
+             "Parent of nsPageFrame should be PrintedSheetFrame");
+  const auto* sheetFrame = static_cast<const PrintedSheetFrame*>(parentFrame);
+
+  const double rotation =
+      pageFrame->GetPageOrientationRotation(pageFrame->GetSharedPageData());
+
   gfx::Matrix4x4 transform;
 
   if (ppsInfo->mNumPages == 1) {
+    if (rotation != 0.0) {
+      const nsSize sheetSize = sheetFrame->GetSizeForChildren();
+      const bool sheetIsPortrait = sheetSize.width < sheetSize.height;
+      const bool rotatingClockwise = rotation > 0.0;
+
+      
+      int32_t x, y;
+      if (rotatingClockwise != sheetIsPortrait) {
+        
+        x = y = std::min(sheetSize.width, sheetSize.height) / 2;
+      } else {
+        
+        x = y = std::max(sheetSize.width, sheetSize.height) / 2;
+      }
+
+      transform = gfx::Matrix4x4::Translation(
+          NSAppUnitsToFloatPixels(x, aAppUnitsPerPixel),
+          NSAppUnitsToFloatPixels(y, aAppUnitsPerPixel), 0);
+      transform.RotateZ(rotation);
+      transform.PreTranslate(NSAppUnitsToFloatPixels(-x, aAppUnitsPerPixel),
+                             NSAppUnitsToFloatPixels(-y, aAppUnitsPerPixel), 0);
+    }
+
     float scale = pageFrame->ComputeSinglePPSPageSizeScale(contentPageSize);
-    transform = gfx::Matrix4x4::Scaling(scale, scale, 1);
+    transform.PreScale(scale, scale, 1);
     return transform;
   }
 
   
-
-  const nsContainerFrame* const parentFrame = pageFrame->GetParent();
-  MOZ_ASSERT(parentFrame->IsPrintedSheetFrame(),
-             "Parent of nsPageFrame should be PrintedSheetFrame");
-  auto* sheetFrame = static_cast<const PrintedSheetFrame*>(parentFrame);
 
   
   
@@ -605,46 +631,45 @@ static gfx::Matrix4x4 ComputePagesPerSheetAndPageSizeTransform(
   transform.PreScale(scale, scale, 1.0f);
 
   
-  if (StaticPrefs::layout_css_page_orientation_enabled()) {
-    const StylePageOrientation& orientation =
-        pageFrame->PageContentFrame()->StylePage()->mPageOrientation;
+  if (rotation != 0.0) {
+    
+    
+    
 
-    double angle = 0.0;
-    if (orientation == StylePageOrientation::RotateLeft) {
-      angle = -M_PI / 2.0;
-    } else if (orientation == StylePageOrientation::RotateRight) {
-      angle = M_PI / 2.0;
-    }
-
-    if (angle != 0.0) {
-      float cellRatio = float(sheetFrame->GetGridCellWidth()) /
-                        float(sheetFrame->GetGridCellHeight());
+    float fitScale = 1.0f;
+    if (MOZ_LIKELY(cellWidth != cellHeight &&
+                   contentPageSize.width != contentPageSize.height)) {
+      
+      float cellRatio = float(cellWidth) / float(cellHeight);
       float pageRatio =
           float(contentPageSize.width) / float(contentPageSize.height);
-      
-      
-      
-      
-      bool isSmallerOfRotatedScales = floor(cellRatio) != floor(pageRatio);
-      float fitScale = cellRatio;
-      if (isSmallerOfRotatedScales != bool(floor(fitScale))) {
-        fitScale = 1.0f / cellRatio;
+      const bool orientationWillMatchAfterRotation =
+          floor(cellRatio) != floor(pageRatio);
+      if (cellRatio > 1.0f) {
+        cellRatio = 1.0f / cellRatio;  
       }
-
-      transform.PreTranslate(
-          NSAppUnitsToFloatPixels(contentPageSize.width / 2, aAppUnitsPerPixel),
-          NSAppUnitsToFloatPixels(contentPageSize.height / 2,
-                                  aAppUnitsPerPixel),
-          0);
-      transform.PreScale(fitScale, fitScale, 1.0f);
-      transform.RotateZ(angle);
-      transform.PreTranslate(
-          NSAppUnitsToFloatPixels(-contentPageSize.width / 2,
-                                  aAppUnitsPerPixel),
-          NSAppUnitsToFloatPixels(-contentPageSize.height / 2,
-                                  aAppUnitsPerPixel),
-          0);
+      if (pageRatio > 1.0f) {
+        pageRatio = 1.0f / pageRatio;  
+      }
+      fitScale = std::max(cellRatio, pageRatio);
+      if (orientationWillMatchAfterRotation) {
+        
+        fitScale = 1.0f / fitScale;
+      }
     }
+
+    transform.PreTranslate(
+        NSAppUnitsToFloatPixels(contentPageSize.width / 2, aAppUnitsPerPixel),
+        NSAppUnitsToFloatPixels(contentPageSize.height / 2, aAppUnitsPerPixel),
+        0);
+    if (MOZ_LIKELY(fitScale != 1.0f)) {
+      transform.PreScale(fitScale, fitScale, 1.0f);
+    }
+    transform.RotateZ(rotation);
+    transform.PreTranslate(
+        NSAppUnitsToFloatPixels(-contentPageSize.width / 2, aAppUnitsPerPixel),
+        NSAppUnitsToFloatPixels(-contentPageSize.height / 2, aAppUnitsPerPixel),
+        0);
   }
 
   return transform;
@@ -734,7 +759,7 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
   
   float scale = 1.0f;
 
-  const nsSize sheetSize = sheet->GetPrecomputedSheetSize();
+  const nsSize sheetSize = sheet->GetSizeForChildren();
   nscoord contentPageHeight = aContentPageSize.height;
   
   if (aContentPageSize.width > sheetSize.width) {
@@ -749,6 +774,32 @@ float nsPageFrame::ComputeSinglePPSPageSizeScale(
       scale <= 1.0f,
       "Page-size mismatches should only have caused us to scale down, not up.");
   return scale;
+}
+
+double nsPageFrame::GetPageOrientationRotation(nsSharedPageData* aPD) const {
+  if (!StaticPrefs::layout_css_page_orientation_enabled()) {
+    return 0.0;
+  }
+
+  if (aPD->PagesPerSheetInfo()->mNumPages == 1 && !PresContext()->IsScreen() &&
+      aPD->mPrintSettings->GetOutputFormat() !=
+          nsIPrintSettings::kOutputFormatPDF) {
+    
+    
+    
+    return 0.0;
+  }
+
+  const StylePageOrientation& orientation =
+      PageContentFrame()->StylePage()->mPageOrientation;
+
+  if (orientation == StylePageOrientation::RotateLeft) {
+    return -M_PI / 2.0;
+  }
+  if (orientation == StylePageOrientation::RotateRight) {
+    return M_PI / 2.0;
+  }
+  return 0.0;
 }
 
 nsIFrame* nsPageFrame::FirstContinuation() const {
