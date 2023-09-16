@@ -1,9 +1,15 @@
+#include <cassert>
+#include <cstdint>
+#include <dlfcn.h>
+#include <stdlib.h>
 #ifndef _CUBEB_MEDIA_LIBRARY_H_
 #define _CUBEB_MEDIA_LIBRARY_H_
 
+typedef int32_t (*get_output_latency_ptr)(uint32_t * latency, int stream_type);
+
 struct media_lib {
   void * libmedia;
-  int32_t (*get_output_latency)(uint32_t * latency, int stream_type);
+  get_output_latency_ptr get_output_latency;
 };
 
 typedef struct media_lib media_lib;
@@ -11,30 +17,30 @@ typedef struct media_lib media_lib;
 media_lib *
 cubeb_load_media_library()
 {
-  media_lib ml = {0};
+  media_lib ml = {};
   ml.libmedia = dlopen("libmedia.so", RTLD_LAZY);
   if (!ml.libmedia) {
-    return NULL;
+    return nullptr;
   }
 
   
   
   
-  ml.get_output_latency = dlsym(
+  ml.get_output_latency = (get_output_latency_ptr)dlsym(
       ml.libmedia,
       "_ZN7android11AudioSystem16getOutputLatencyEPj19audio_stream_type_t");
   if (!ml.get_output_latency) {
     
     
-    ml.get_output_latency =
-        dlsym(ml.libmedia, "_ZN7android11AudioSystem16getOutputLatencyEPji");
+    ml.get_output_latency = (get_output_latency_ptr)dlsym(
+        ml.libmedia, "_ZN7android11AudioSystem16getOutputLatencyEPji");
     if (!ml.get_output_latency) {
-      return NULL;
+      return nullptr;
     }
   }
 
-  media_lib * rv = NULL;
-  rv = calloc(1, sizeof(media_lib));
+  media_lib * rv = nullptr;
+  rv = (media_lib *)calloc(1, sizeof(media_lib));
   assert(rv);
   *rv = ml;
   return rv;
