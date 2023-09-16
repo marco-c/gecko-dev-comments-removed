@@ -360,6 +360,8 @@ if (typeof computedStyle == "undefined") {
 SimpleTest._tests = [];
 SimpleTest._stopOnLoad = true;
 SimpleTest._cleanupFunctions = [];
+SimpleTest._taskCleanupFunctions = [];
+SimpleTest._currentTask = null;
 SimpleTest._timeoutFunctions = [];
 SimpleTest._inChaosMode = false;
 
@@ -1325,6 +1327,36 @@ SimpleTest.registerCleanupFunction = function (aFunc) {
   SimpleTest._cleanupFunctions.push(aFunc);
 };
 
+
+
+
+
+
+
+
+
+
+SimpleTest.registerCurrentTaskCleanupFunction = function (aFunc) {
+  if (!SimpleTest._currentTask) {
+    return;
+  }
+  SimpleTest._currentTask._cleanupFunctions ||= [];
+  SimpleTest._currentTask._cleanupFunctions.push(aFunc);
+};
+
+
+
+
+
+
+
+
+
+
+SimpleTest.registerTaskCleanupFunction = function (aFunc) {
+  SimpleTest._taskCleanupFunctions.push(aFunc);
+};
+
 SimpleTest.registerTimeoutFunction = function (aFunc) {
   SimpleTest._timeoutFunctions.push(aFunc);
 };
@@ -2129,6 +2161,7 @@ var add_task = (function () {
           
           try {
             for (var task of task_list) {
+              SimpleTest._currentTask = task;
               var name = task.name || "";
               if (
                 task.__skipMe ||
@@ -2148,7 +2181,16 @@ var add_task = (function () {
               if (isGenerator(result)) {
                 ok(false, "Task returned a generator");
               }
+              if (task._cleanupFunctions) {
+                for (const fn of task._cleanupFunctions) {
+                  await fn();
+                }
+              }
+              for (const fn of SimpleTest._taskCleanupFunctions) {
+                await fn();
+              }
               taskInfo("Leaving");
+              delete SimpleTest._currentTask;
             }
           } catch (ex) {
             try {
