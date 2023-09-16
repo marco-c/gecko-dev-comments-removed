@@ -117,6 +117,10 @@ media::DecodeSupportSet AppleDecoderModule::Supports(
         CanCreateHWDecoder(media::MediaCodec::VP9)) {
       return media::DecodeSupport::HardwareDecode;
     }
+    if (trackInfo.mMimeType == "video/avc" &&
+        CanCreateHWDecoder(media::MediaCodec::H264)) {
+      return media::DecodeSupport::HardwareDecode;
+    }
     return media::DecodeSupport::SoftwareDecode;
   }
   return media::DecodeSupport::Unsupported;
@@ -165,7 +169,7 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
   }
 
   VideoInfo info(1920, 1080);
-  bool checkSupport = false;
+  bool vtReportsSupport = false;
 
   if (!VTIsHardwareDecodeSupported) {
     return false;
@@ -174,28 +178,41 @@ bool AppleDecoderModule::CanCreateHWDecoder(media::MediaCodec aCodec) {
     case media::MediaCodec::VP9:
       info.mMimeType = "video/vp9";
       VPXDecoder::GetVPCCBox(info.mExtraData, VPXDecoder::VPXStreamInfo());
-      checkSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
+      vtReportsSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_VP9);
+      break;
+    case media::MediaCodec::H264:
+      
+      if (__builtin_available(macos 10.15, *)) {
+        info.mMimeType = "video/avc";
+        vtReportsSupport = VTIsHardwareDecodeSupported(kCMVideoCodecType_H264);
+      }
       break;
     default:
-      
-      checkSupport = false;
+      vtReportsSupport = false;
       break;
   }
   
-  if (checkSupport) {
+  if (vtReportsSupport) {
     RefPtr<AppleVTDecoder> decoder =
         new AppleVTDecoder(info, nullptr, {}, nullptr, Nothing());
     MediaResult rv = decoder->InitializeSession();
     if (!NS_SUCCEEDED(rv)) {
+      MOZ_LOG(
+          sPDMLog, LogLevel::Debug,
+          ("Apple HW decode failure while initializing VT decoder session"));
       return false;
     }
     nsAutoCString failureReason;
-    bool hwSupport = decoder->IsHardwareAccelerated(failureReason);
-    decoder->Shutdown();
+    
+    
+    
+    bool hwSupport = decoder->IsHardwareAccelerated(failureReason) ||
+                     aCodec == media::MediaCodec::H264;
     if (!hwSupport) {
       MOZ_LOG(sPDMLog, LogLevel::Debug,
               ("Apple HW decode failure: '%s'", failureReason.BeginReading()));
     }
+    decoder->Shutdown();
     return hwSupport;
   }
   return false;
