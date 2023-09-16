@@ -1,5 +1,6 @@
 
 
+import gc
 import logging
 import sys
 from unittest import mock
@@ -15,6 +16,12 @@ sauce = pytest.importorskip("wptrunner.browsers.sauce")
 from wptserve.config import ConfigBuilder
 
 logger = logging.getLogger()
+
+
+def setup_module(module):
+    
+    
+    gc.collect()
 
 
 def test_sauceconnect_success():
