@@ -19,7 +19,6 @@
 
 
 
-
 assert.throws(Test262Error, function () {
   const array = [1];
   Object.groupBy(array, function () {

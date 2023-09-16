@@ -16,7 +16,6 @@
 
 
 
-
 const throws = function () {
   throw new Test262Error('callback function should not be called')
 };

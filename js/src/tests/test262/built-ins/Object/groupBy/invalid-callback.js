@@ -16,7 +16,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Object.groupBy([], null)
 }, "null callback throws TypeError");

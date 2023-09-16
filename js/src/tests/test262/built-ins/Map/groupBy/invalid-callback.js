@@ -16,7 +16,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Map.groupBy([], null)
 }, "null callback throws TypeError");

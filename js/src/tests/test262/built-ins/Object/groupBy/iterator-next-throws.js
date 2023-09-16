@@ -18,7 +18,6 @@
 
 
 
-
 const throwingIterator = {
   [Symbol.iterator]: function () {
     return this;

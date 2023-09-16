@@ -17,7 +17,6 @@
 
 
 
-
 verifyProperty(Object.groupBy, "name", {
   value: "groupBy",
   enumerable: false,
