@@ -825,4 +825,48 @@ TEST_F(TestQuotaManager, ShutdownStorage_OngoingWithScheduledInitialization) {
   ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 }
 
+
+
+
+
+
+
+TEST_F(TestQuotaManager,
+       DISABLED_ShutdownStorage_OngoingWithClientDirectoryLock) {
+  PerformOnBackgroundThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
+
+    RefPtr<ClientDirectoryLock> directoryLock =
+        quotaManager->CreateDirectoryLock(GetTestClientMetadata(),
+                                           false);
+
+    nsTArray<RefPtr<BoolPromise>> promises;
+
+    
+    promises.AppendElement(quotaManager->ShutdownStorage());
+
+    
+    
+    promises.AppendElement(directoryLock->Acquire());
+
+    
+    
+    
+    
+    promises.AppendElement(quotaManager->ShutdownStorage());
+
+    bool done = false;
+
+    BoolPromise::AllSettled(GetCurrentSerialEventTarget(), promises)
+        ->Then(
+            GetCurrentSerialEventTarget(), __func__,
+            [&done](
+                const BoolPromise::AllSettledPromiseType::ResolveOrRejectValue&
+                    aValues) { done = true; });
+
+    SpinEventLoopUntil("Promise is fulfilled"_ns, [&done]() { return done; });
+  });
+}
+
 }  
