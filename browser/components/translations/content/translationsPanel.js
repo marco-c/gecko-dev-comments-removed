@@ -226,14 +226,6 @@ var TranslationsPanel = new (class {
 
 
 
-
-  #firstShowUriSpec = null;
-
-  
-
-
-
-
   #lazyElements;
 
   
@@ -670,17 +662,18 @@ var TranslationsPanel = new (class {
       this.updateUIForReTranslation(false );
       cancelButton.hidden = false;
       multiview.setAttribute("mainViewId", "translations-panel-view-default");
+      let actor = this.#getTranslationsActor();
 
       if (!this._hasShownPanel) {
-        this.#firstShowUriSpec = gBrowser.currentURI.spec;
+        actor.firstShowUriSpec = gBrowser.currentURI.spec;
       }
 
       if (
         this._hasShownPanel &&
-        gBrowser.currentURI.spec !== this.#firstShowUriSpec
+        gBrowser.currentURI.spec !== actor.firstShowUriSpec
       ) {
         document.l10n.setAttributes(header, "translations-panel-header");
-        this.#firstShowUriSpec = null;
+        actor.firstShowUriSpec = null;
         intro.hidden = true;
       } else {
         Services.prefs.setBoolPref("browser.translations.panelShown", true);
@@ -1507,7 +1500,8 @@ var TranslationsPanel = new (class {
             
             if (
               this._hasShownPanel &&
-              gBrowser.currentURI.spec !== this.#firstShowUriSpec
+              gBrowser.currentURI.spec !==
+                this.#getTranslationsActor().firstShowUriSpec
             ) {
               document.l10n.setAttributes(
                 button,
