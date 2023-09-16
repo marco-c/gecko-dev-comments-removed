@@ -843,6 +843,20 @@ class RTCStatsReportVerifier {
           inbound_stream.total_samples_duration);
       verifier.TestMemberIsUndefined(inbound_stream.frames_received);
     }
+
+    
+    if (inbound_stream.kind.is_defined() && *inbound_stream.kind == "video") {
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          inbound_stream.retransmitted_packets_received);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          inbound_stream.retransmitted_bytes_received);
+    } else {
+      verifier.TestMemberIsUndefined(
+          inbound_stream.retransmitted_packets_received);
+      verifier.TestMemberIsUndefined(
+          inbound_stream.retransmitted_bytes_received);
+    }
+
     
     
     verifier.MarkMemberTested(inbound_stream.estimated_playout_timestamp, true);
