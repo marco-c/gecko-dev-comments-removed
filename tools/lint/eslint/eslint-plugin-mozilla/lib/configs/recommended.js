@@ -21,7 +21,11 @@ module.exports = {
 
   
   
-  extends: ["eslint:recommended", "prettier"],
+  extends: [
+    "eslint:recommended",
+    "prettier",
+    "plugin:json/recommended-with-comments",
+  ],
 
   overrides: [
     {
@@ -120,7 +124,7 @@ module.exports = {
   },
 
   
-  plugins: ["html", "fetch-options", "no-unsanitized"],
+  plugins: ["fetch-options", "html", "json", "no-unsanitized"],
 
   
   

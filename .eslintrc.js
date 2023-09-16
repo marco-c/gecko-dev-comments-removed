@@ -72,7 +72,7 @@ module.exports = {
   
   
   extends: ["plugin:mozilla/recommended"],
-  plugins: ["mozilla", "import"],
+  plugins: ["mozilla", "import", "json"],
   overrides: [
     {
       
