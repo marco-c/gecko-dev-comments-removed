@@ -241,6 +241,7 @@ async function test_minimize_make() {
 
   
   let windowBackPromise = waitForWindowActive(window, true);
+  await BrowserTestUtils.removeTab(tab);
   await BrowserTestUtils.closeWindow(win);
   await windowBackPromise;
 }
@@ -271,6 +272,7 @@ async function test_minimize_get() {
 
   
   let windowBackPromise = waitForWindowActive(window, true);
+  await BrowserTestUtils.removeTab(tab);
   await BrowserTestUtils.closeWindow(win);
   await windowBackPromise;
 }

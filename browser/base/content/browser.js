@@ -7501,6 +7501,28 @@ var WebAuthnPromptHelper = {
   },
 
   observe(aSubject, aTopic, aData) {
+    switch (aTopic) {
+      case "fullscreen-nav-toolbox":
+        
+        
+        if (aData == "hidden" && this._tid != 0) {
+          FullScreen.showNavToolbox();
+        }
+        return;
+      case "fullscreen-painted":
+        
+        
+        if (this._tid != 0) {
+          FullScreen.exitDomFullScreen();
+        }
+        return;
+      case this._topic:
+        break;
+      default:
+        return;
+    }
+    
+
     let data = JSON.parse(aData);
 
     
@@ -7760,6 +7782,24 @@ var WebAuthnPromptHelper = {
     options = {}
   ) {
     this.reset();
+    this._tid = tid;
+
+    
+    
+    
+    Services.obs.addObserver(this, "fullscreen-painted");
+
+    
+    
+    Services.obs.addObserver(this, "fullscreen-nav-toolbox");
+
+    
+    FullScreen.exitDomFullScreen();
+
+    
+    if (window.fullScreen) {
+      FullScreen.showNavToolbox();
+    }
 
     let brandShortName = document
       .getElementById("bundle_brand")
@@ -7774,12 +7814,13 @@ var WebAuthnPromptHelper = {
     options.persistent = true;
     options.eventCallback = event => {
       if (event == "removed") {
+        Services.obs.removeObserver(this, "fullscreen-painted");
+        Services.obs.removeObserver(this, "fullscreen-nav-toolbox");
         this._current = null;
         this._tid = 0;
       }
     };
 
-    this._tid = tid;
     this._current = PopupNotifications.show(
       gBrowser.selectedBrowser,
       `webauthn-prompt-${id}`,
