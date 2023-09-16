@@ -192,11 +192,11 @@ add_task(async function test_hideOnboarding_onClose() {
           "shopping-container"
         );
         
-        let secondaryButton = await ContentTaskUtils.waitForCondition(() =>
-          shoppingContainer.querySelector(".secondary")
+        let notNowButton = await ContentTaskUtils.waitForCondition(() =>
+          shoppingContainer.querySelector(".additional-cta")
         );
 
-        secondaryButton.click();
+        notNowButton.click();
 
         
         ok(

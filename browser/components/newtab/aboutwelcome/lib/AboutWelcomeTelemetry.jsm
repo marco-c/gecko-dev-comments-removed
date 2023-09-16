@@ -268,7 +268,7 @@ class AboutWelcomeTelemetry {
               
               Glean.shopping.surfaceOptInClicked.record();
               break;
-            case "secondary_button":
+            case "additional_button":
               
               Glean.shopping.surfaceNotNowClicked.record();
               break;
