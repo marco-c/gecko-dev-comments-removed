@@ -300,7 +300,7 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
 
 
 
-  void SetActivity(bool aIsActive, bool aIsInActiveTab);
+  void SetActivity(bool aIsActive);
 
   
 
@@ -512,8 +512,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   void EnsureTimerStarted(EnsureTimerStartedFlags aFlags = eNone);
   void StopTimer();
 
-  bool ComputeShouldBeThrottled() const;
-  bool ShouldStopActivityGracePeriod() const;
   void UpdateThrottledState();
 
   bool HasObservers() const;
@@ -595,13 +593,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::UniquePtr<mozilla::ProfileChunkedBuffer> mViewManagerFlushCause;
 
   bool mThrottled : 1;
-  bool mIsActive : 1;
-  bool mIsInActiveTab : 1;
-  
-  
-  
-  bool mIsGrantingActivityGracePeriod : 1;
-  bool mHasGrantedActivityGracePeriod : 1;
   bool mNeedToRecomputeVisibility : 1;
   bool mTestControllingRefreshes : 1;
 
@@ -663,7 +654,6 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
   mozilla::TimeStamp mNextThrottledFrameRequestTick;
   mozilla::TimeStamp mNextRecomputeVisibilityTick;
   mozilla::TimeStamp mBeforeFirstContentfulPaintTimerRunningLimit;
-  mozilla::TimeStamp mActivityGracePeriodStart;
 
   
   ObserverArray mObservers[4];

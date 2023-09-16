@@ -762,7 +762,6 @@ PresShell::PresShell(Document* aDocument)
       mShouldUnsuppressPainting(false),
       mIgnoreFrameDestruction(false),
       mIsActive(true),
-      mIsInActiveTab(true),
       mFrozen(false),
       mIsFirstPaint(true),
       mObservesMutationsForPrint(false),
@@ -10890,8 +10889,7 @@ void PresShell::ActivenessMaybeChanged() {
   if (!mDocument) {
     return;
   }
-  auto activeness = ComputeActiveness();
-  SetIsActive(activeness.mShouldBeActive, activeness.mIsInActiveTab);
+  SetIsActive(ComputeActiveness());
 }
 
 
@@ -10901,19 +10899,13 @@ void PresShell::ActivenessMaybeChanged() {
 
 
 
-
-
-
-
-
-
-auto PresShell::ComputeActiveness() const -> Activeness {
+bool PresShell::ComputeActiveness() const {
   MOZ_LOG(gLog, LogLevel::Debug,
-          ("PresShell::ShouldBeActive(%s, %d, %d)\n",
+          ("PresShell::ComputeActiveness(%s, %d)\n",
            mDocument->GetDocumentURI()
                ? mDocument->GetDocumentURI()->GetSpecOrDefault().get()
                : "(no uri)",
-           mIsActive, mIsInActiveTab));
+           mIsActive));
 
   Document* doc = mDocument;
 
@@ -10924,7 +10916,7 @@ auto PresShell::ComputeActiveness() const -> Activeness {
     
     
     
-    return {true, false};
+    return true;
   }
 
   if (Document* displayDoc = doc->GetDisplayDocument()) {
@@ -10961,7 +10953,7 @@ auto PresShell::ComputeActiveness() const -> Activeness {
     if (!browserChild->IsVisible()) {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is not visible", browserChild));
-      return {false, inActiveTab};
+      return false;
     }
 
     
@@ -10971,40 +10963,38 @@ auto PresShell::ComputeActiveness() const -> Activeness {
       MOZ_LOG(gLog, LogLevel::Debug,
               (" > BrowserChild %p is visible and not preserving layers",
                browserChild));
-      return {true, inActiveTab};
+      return true;
     }
     MOZ_LOG(
         gLog, LogLevel::Debug,
         (" > BrowserChild %p is visible and preserving layers", browserChild));
   }
-  return {inActiveTab, inActiveTab};
+  return inActiveTab;
 }
 
-void PresShell::SetIsActive(bool aIsActive, bool aIsInActiveTab) {
+void PresShell::SetIsActive(bool aIsActive) {
   MOZ_ASSERT(mDocument, "should only be called with a document");
 
   const bool activityChanged = mIsActive != aIsActive;
-  const bool inActiveTabChanged = mIsInActiveTab != aIsInActiveTab;
 
   mIsActive = aIsActive;
-  mIsInActiveTab = aIsInActiveTab;
 
   nsPresContext* presContext = GetPresContext();
   if (presContext &&
       presContext->RefreshDriver()->GetPresContext() == presContext) {
-    presContext->RefreshDriver()->SetActivity(aIsActive, aIsInActiveTab);
+    presContext->RefreshDriver()->SetActivity(aIsActive);
   }
 
-  if (activityChanged || inActiveTabChanged) {
+  if (activityChanged) {
     
     
     
     
     
     
-    auto recurse = [aIsActive, aIsInActiveTab](Document& aSubDoc) {
+    auto recurse = [aIsActive](Document& aSubDoc) {
       if (PresShell* presShell = aSubDoc.GetPresShell()) {
-        presShell->SetIsActive(aIsActive, aIsInActiveTab);
+        presShell->SetIsActive(aIsActive);
       }
       return CallState::Continue;
     };

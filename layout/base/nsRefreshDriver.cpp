@@ -1322,24 +1322,6 @@ TimeDuration nsRefreshDriver::GetMinRecomputeVisibilityInterval() {
       StaticPrefs::layout_visibility_min_recompute_interval_ms());
 }
 
-bool nsRefreshDriver::ComputeShouldBeThrottled() const {
-  if (mIsActive) {
-    
-    return false;
-  }
-  if (!mIsInActiveTab) {
-    
-    return true;
-  }
-  if (mIsGrantingActivityGracePeriod) {
-    
-    
-    return false;
-  }
-  
-  return true;
-}
-
 RefreshDriverTimer* nsRefreshDriver::ChooseTimer() {
   if (mThrottled) {
     if (!sThrottledRateTimer) {
@@ -1384,10 +1366,6 @@ nsRefreshDriver::nsRefreshDriver(nsPresContext* aPresContext)
           TimeDuration::FromMilliseconds(GetThrottledTimerInterval())),
       mMinRecomputeVisibilityInterval(GetMinRecomputeVisibilityInterval()),
       mThrottled(false),
-      mIsActive(true),
-      mIsInActiveTab(true),
-      mIsGrantingActivityGracePeriod(false),
-      mHasGrantedActivityGracePeriod(false),
       mNeedToRecomputeVisibility(false),
       mTestControllingRefreshes(false),
       mViewManagerFlushIsPending(false),
@@ -2472,13 +2450,6 @@ static CallState ReduceAnimations(Document& aDocument) {
   return CallState::Continue;
 }
 
-bool nsRefreshDriver::ShouldStopActivityGracePeriod() const {
-  MOZ_ASSERT(mIsGrantingActivityGracePeriod);
-  return TimeStamp::Now() - mActivityGracePeriodStart >=
-         TimeDuration::FromMilliseconds(
-             StaticPrefs::layout_oopif_activity_grace_period_ms());
-}
-
 void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                            IsExtraTick aIsExtraTick ) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
@@ -2579,13 +2550,6 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
     if (win && win->IsSuspended() && doc->IsInSyncOperation()) {
       return;
     }
-  }
-
-  
-  if (MOZ_UNLIKELY(mIsGrantingActivityGracePeriod) &&
-      ShouldStopActivityGracePeriod()) {
-    mIsGrantingActivityGracePeriod = false;
-    UpdateThrottledState();
   }
 
   AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("RefreshDriver tick", LAYOUT);
@@ -3161,30 +3125,8 @@ bool nsRefreshDriver::IsWaitingForPaint(mozilla::TimeStamp aTime) {
   return false;
 }
 
-void nsRefreshDriver::SetActivity(bool aIsActive, bool aIsInActiveTab) {
-  if (mIsActive == aIsActive && mIsInActiveTab == aIsInActiveTab) {
-    return;
-  }
-  mIsActive = aIsActive;
-  mIsInActiveTab = aIsInActiveTab;
-
-  
-  
-  if (!mHasGrantedActivityGracePeriod && !mIsActive && mIsInActiveTab &&
-      mPresContext && !mPresContext->IsRootContentDocumentCrossProcess()) {
-    mHasGrantedActivityGracePeriod = true;
-    mIsGrantingActivityGracePeriod =
-        StaticPrefs::layout_oopif_activity_grace_period_ms() > 0;
-    if (mIsGrantingActivityGracePeriod) {
-      mActivityGracePeriodStart = TimeStamp::Now();
-    }
-  }
-
-  UpdateThrottledState();
-}
-
-void nsRefreshDriver::UpdateThrottledState() {
-  const bool shouldThrottle = ComputeShouldBeThrottled();
+void nsRefreshDriver::SetActivity(bool aIsActive) {
+  const bool shouldThrottle = !aIsActive;
   if (mThrottled == shouldThrottle) {
     return;
   }
