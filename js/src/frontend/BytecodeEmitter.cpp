@@ -3667,7 +3667,7 @@ bool BytecodeEmitter::emitDestructuringOpsObject(ListNode* pattern,
     
     if (member->isKind(ParseNodeKind::MutateProto)) {
       if (!emitAtomOp(JSOp::GetProp,
-                      TaggedParserAtomIndex::WellKnown::proto())) {
+                      TaggedParserAtomIndex::WellKnown::proto_())) {
         
         return false;
       }
@@ -3811,7 +3811,7 @@ bool BytecodeEmitter::emitDestructuringObjRestExclusionSet(ListNode* pattern) {
 
     TaggedParserAtomIndex pnatom;
     if (member->isKind(ParseNodeKind::MutateProto)) {
-      pnatom = TaggedParserAtomIndex::WellKnown::proto();
+      pnatom = TaggedParserAtomIndex::WellKnown::proto_();
     } else {
       ParseNode* key = member->as<BinaryNode>().left();
       if (key->isKind(ParseNodeKind::ObjectPropertyName) ||
@@ -9459,7 +9459,7 @@ bool BytecodeEmitter::emitDestructuringRestExclusionSetObjLiteral(
 
     TaggedParserAtomIndex atom;
     if (member->isKind(ParseNodeKind::MutateProto)) {
-      atom = TaggedParserAtomIndex::WellKnown::proto();
+      atom = TaggedParserAtomIndex::WellKnown::proto_();
     } else {
       ParseNode* key = member->as<BinaryNode>().left();
       atom = key->as<NameNode>().atom();

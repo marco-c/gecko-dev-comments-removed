@@ -681,7 +681,7 @@ inline bool JSONFullParseHandlerAnyChar::objectPropertyName(
     
     
     
-    if (id == NameToId(cx->names().proto)) {
+    if (id == NameToId(cx->names().proto_)) {
       *isProtoInEval = true;
       return true;
     }

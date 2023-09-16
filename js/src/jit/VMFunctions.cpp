@@ -1988,7 +1988,7 @@ static bool TryAddOrSetPlainObjectProperty(JSContext* cx,
 
   
   
-  if (MOZ_UNLIKELY(!obj->isExtensible() || key.isAtom(cx->names().proto))) {
+  if (MOZ_UNLIKELY(!obj->isExtensible() || key.isAtom(cx->names().proto_))) {
     return true;
   }
 
