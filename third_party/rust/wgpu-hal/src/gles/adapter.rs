@@ -606,7 +606,7 @@ impl super::Adapter {
         
         
         
-        #[allow(clippy::drop_ref)]
+        #[cfg_attr(target_arch = "wasm32", allow(clippy::drop_ref))]
         drop(gl);
 
         Some(crate::ExposedAdapter {

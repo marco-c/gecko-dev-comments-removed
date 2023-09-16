@@ -13,6 +13,7 @@ fn depth_stencil_required_flags() -> vk::FormatFeatureFlags {
 fn indexing_features() -> wgt::Features {
     wgt::Features::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING
         | wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING
+        | wgt::Features::PARTIALLY_BOUND_BINDING_ARRAY
 }
 
 
@@ -237,8 +238,8 @@ impl PhysicalDeviceFeatures {
                 
                 Some(
                     vk::PhysicalDeviceRobustness2FeaturesEXT::builder()
-                        .robust_buffer_access2(private_caps.robust_buffer_access)
-                        .robust_image_access2(private_caps.robust_image_access)
+                        .robust_buffer_access2(private_caps.robust_buffer_access2)
+                        .robust_image_access2(private_caps.robust_image_access2)
                         .build(),
                 )
             } else {
@@ -720,7 +721,7 @@ impl PhysicalDeviceCapabilities {
             max_bind_groups: limits
                 .max_bound_descriptor_sets
                 .min(crate::MAX_BIND_GROUPS as u32),
-            max_bindings_per_bind_group: 640,
+            max_bindings_per_bind_group: wgt::Limits::default().max_bindings_per_bind_group,
             max_dynamic_uniform_buffers_per_pipeline_layout: limits
                 .max_descriptor_set_uniform_buffers_dynamic,
             max_dynamic_storage_buffers_per_pipeline_layout: limits
@@ -1063,6 +1064,16 @@ impl super::Instance {
                     .image_robustness
                     .map_or(false, |ext| ext.robust_image_access != 0),
             },
+            robust_buffer_access2: phd_features
+                .robustness2
+                .as_ref()
+                .map(|r| r.robust_buffer_access2 == 1)
+                .unwrap_or_default(),
+            robust_image_access2: phd_features
+                .robustness2
+                .as_ref()
+                .map(|r| r.robust_image_access2 == 1)
+                .unwrap_or_default(),
             zero_initialize_workgroup_memory: phd_features
                 .zero_initialize_workgroup_memory
                 .map_or(false, |ext| {
@@ -1201,12 +1212,6 @@ impl super::Adapter {
             None
         };
 
-        let image_checks = if self.private_caps.robust_image_access {
-            naga::proc::BoundsCheckPolicy::Unchecked
-        } else {
-            naga::proc::BoundsCheckPolicy::Restrict
-        };
-
         let naga_options = {
             use naga::back::spv;
 
@@ -1268,8 +1273,12 @@ impl super::Adapter {
                     } else {
                         naga::proc::BoundsCheckPolicy::Restrict
                     },
-                    image_load: image_checks,
-                    image_store: image_checks,
+                    image_load: if self.private_caps.robust_image_access {
+                        naga::proc::BoundsCheckPolicy::Unchecked
+                    } else {
+                        naga::proc::BoundsCheckPolicy::Restrict
+                    },
+                    image_store: naga::proc::BoundsCheckPolicy::Unchecked,
                     
                     binding_array: naga::proc::BoundsCheckPolicy::Unchecked,
                 },

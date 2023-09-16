@@ -100,7 +100,7 @@ impl super::Device {
                 index: bounds_check_policy,
                 buffer: bounds_check_policy,
                 image_load: bounds_check_policy,
-                image_store: bounds_check_policy,
+                image_store: naga::proc::BoundsCheckPolicy::Unchecked,
                 
                 binding_array: naga::proc::BoundsCheckPolicy::Unchecked,
             },

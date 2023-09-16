@@ -60,7 +60,7 @@ pub mod dx12;
 
 pub mod empty;
 
-#[cfg(all(feature = "gles"))]
+#[cfg(feature = "gles")]
 pub mod gles;
 
 #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]

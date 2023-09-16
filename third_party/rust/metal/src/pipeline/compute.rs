@@ -125,13 +125,7 @@ impl ComputePipelineDescriptorRef {
     }
 
     pub fn thread_group_size_is_multiple_of_thread_execution_width(&self) -> bool {
-        unsafe {
-            match msg_send![self, threadGroupSizeIsMultipleOfThreadExecutionWidth] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
+        unsafe { msg_send_bool![self, threadGroupSizeIsMultipleOfThreadExecutionWidth] }
     }
 
     pub fn set_thread_group_size_is_multiple_of_thread_execution_width(
@@ -158,13 +152,7 @@ impl ComputePipelineDescriptorRef {
 
     
     pub fn support_indirect_command_buffers(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportIndirectCommandBuffers] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
+        unsafe { msg_send_bool![self, supportIndirectCommandBuffers] }
     }
 
     
@@ -174,13 +162,7 @@ impl ComputePipelineDescriptorRef {
 
     
     pub fn support_adding_binary_functions(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportAddingBinaryFunctions] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
+        unsafe { msg_send_bool![self, supportAddingBinaryFunctions] }
     }
 
     
@@ -305,13 +287,7 @@ impl ComputePipelineStateRef {
 
     
     pub fn support_indirect_command_buffers(&self) -> bool {
-        unsafe {
-            match msg_send![self, supportIndirectCommandBuffers] {
-                YES => true,
-                NO => false,
-                _ => unreachable!(),
-            }
-        }
+        unsafe { msg_send_bool![self, supportIndirectCommandBuffers] }
     }
 
     

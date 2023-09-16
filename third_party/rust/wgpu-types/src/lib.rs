@@ -130,16 +130,18 @@ impl Backend {
 
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "trace", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "kebab-case"))]
 pub enum PowerPreference {
-    
     #[default]
-    LowPower = 0,
     
-    HighPerformance = 1,
+    None = 0,
+    
+    LowPower = 1,
+    
+    HighPerformance = 2,
 }
 
 bitflags::bitflags! {
@@ -576,7 +578,7 @@ bitflags::bitflags! {
         ///
         /// This is a native only feature.
         const UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING = 1 << 39;
-        /// Allows the user to create bind groups continaing arrays with less bindings than the BindGroupLayout.
+        /// Allows the user to create bind groups containing arrays with less bindings than the BindGroupLayout.
         ///
         /// This is a native only feature.
         const PARTIALLY_BOUND_BINDING_ARRAY = 1 << 40;
@@ -929,7 +931,7 @@ impl Default for Limits {
             max_texture_dimension_3d: 2048,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
-            max_bindings_per_bind_group: 640,
+            max_bindings_per_bind_group: 1000,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
             max_sampled_textures_per_shader_stage: 16,
@@ -966,7 +968,7 @@ impl Limits {
             max_texture_dimension_3d: 256,
             max_texture_array_layers: 256,
             max_bind_groups: 4,
-            max_bindings_per_bind_group: 640,
+            max_bindings_per_bind_group: 1000,
             max_dynamic_uniform_buffers_per_pipeline_layout: 8,
             max_dynamic_storage_buffers_per_pipeline_layout: 4,
             max_sampled_textures_per_shader_stage: 16,
@@ -4584,6 +4586,10 @@ pub struct SurfaceCapabilities {
     
     
     pub alpha_modes: Vec<CompositeAlphaMode>,
+    
+    
+    
+    pub usages: TextureUsages,
 }
 
 impl Default for SurfaceCapabilities {
@@ -4592,6 +4598,7 @@ impl Default for SurfaceCapabilities {
             formats: Vec::new(),
             present_modes: Vec::new(),
             alpha_modes: vec![CompositeAlphaMode::Opaque],
+            usages: TextureUsages::RENDER_ATTACHMENT,
         }
     }
 }
