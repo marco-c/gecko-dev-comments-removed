@@ -50,7 +50,7 @@ bool GetMachineIdImpl(const std::vector<uint8_t>& sid_bytes,
 
   
   static const int kSizeWithoutChecksum = mozilla::SHA1Sum::kHashSize + sizeof(int);
-  std::basic_string<unsigned char> id_binary(kSizeWithoutChecksum + 1, 0);
+  std::vector<unsigned char> id_binary(kSizeWithoutChecksum + 1, 0);
 
   if (!sid_bytes.empty()) {
     
@@ -80,12 +80,12 @@ bool GetMachineIdImpl(const std::vector<uint8_t>& sid_bytes,
 
   
   if (!sid_bytes.empty() || (0 != volume_id))
-    rlz_lib::Crc8::Generate(id_binary.c_str(),
+    rlz_lib::Crc8::Generate(id_binary.data(),
                             kSizeWithoutChecksum,
                             &id_binary[kSizeWithoutChecksum]);
 
   return rlz_lib::BytesToString(
-      id_binary.c_str(), kSizeWithoutChecksum + 1, machine_id);
+      id_binary.data(), kSizeWithoutChecksum + 1, machine_id);
 }
 
 }  
