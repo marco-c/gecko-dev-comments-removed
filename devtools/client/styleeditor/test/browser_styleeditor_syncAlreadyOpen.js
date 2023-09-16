@@ -22,7 +22,6 @@ add_task(async function () {
   await addTab(TESTCASE_URI);
 
   const { inspector, view, toolbox } = await openRuleView();
-  await selectNode("#testid", inspector);
 
   
   
@@ -33,7 +32,8 @@ add_task(async function () {
     editor.sourceEditor.on("change", resolve);
   });
 
-  await toolbox.selectTool("inspector");
+  await toolbox.getPanel("inspector");
+  await selectNode("#testid", inspector);
   const ruleEditor = getRuleViewRuleEditor(view, 1);
 
   
