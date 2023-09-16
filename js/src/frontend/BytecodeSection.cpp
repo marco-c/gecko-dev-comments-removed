@@ -12,6 +12,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"     
 #include "frontend/SharedContext.h"       
+#include "js/ColumnNumber.h"              
 #include "vm/BytecodeUtil.h"              
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"     
@@ -160,7 +161,7 @@ void CGScopeNoteList::recordEndImpl(uint32_t index, uint32_t offset) {
 }
 
 BytecodeSection::BytecodeSection(FrontendContext* fc, uint32_t lineNum,
-                                 uint32_t column)
+                                 JS::LimitedColumnNumberZeroOrigin column)
     : code_(fc),
       notes_(fc),
       lastNoteOffset_(0),
