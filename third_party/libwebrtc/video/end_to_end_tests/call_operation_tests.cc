@@ -98,38 +98,37 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
 
   test::FrameForwarder frame_forwarder;
 
-  SendTask(
-      task_queue(), [this, &renderer, &frame_forwarder]() {
-        CreateCalls();
-        CreateSendTransport(BuiltInNetworkBehaviorConfig(),
-                            nullptr);
+  SendTask(task_queue(), [this, &renderer, &frame_forwarder]() {
+    CreateCalls();
+    CreateSendTransport(BuiltInNetworkBehaviorConfig(),
+                        nullptr);
 
-        CreateReceiveTransport(BuiltInNetworkBehaviorConfig(),
-                               nullptr);
-        CreateSendConfig(1, 0, 0);
-        CreateMatchingReceiveConfigs();
+    CreateReceiveTransport(BuiltInNetworkBehaviorConfig(),
+                           nullptr);
+    CreateSendConfig(1, 0, 0);
+    CreateMatchingReceiveConfigs();
 
-        video_receive_configs_[0].renderer = &renderer;
+    video_receive_configs_[0].renderer = &renderer;
 
-        CreateVideoStreams();
-        Start();
+    CreateVideoStreams();
+    Start();
 
-        
-        
-        std::unique_ptr<test::FrameGeneratorInterface> frame_generator(
-            test::CreateSquareFrameGenerator(kWidth, kHeight, absl::nullopt,
-                                             absl::nullopt));
-        GetVideoSendStream()->SetSource(
-            &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
+    
+    
+    std::unique_ptr<test::FrameGeneratorInterface> frame_generator(
+        test::CreateSquareFrameGenerator(kWidth, kHeight, absl::nullopt,
+                                         absl::nullopt));
+    GetVideoSendStream()->SetSource(&frame_forwarder,
+                                    DegradationPreference::MAINTAIN_FRAMERATE);
 
-        test::FrameGeneratorInterface::VideoFrameData frame_data =
-            frame_generator->NextFrame();
-        VideoFrame frame = VideoFrame::Builder()
-                               .set_video_frame_buffer(frame_data.buffer)
-                               .set_update_rect(frame_data.update_rect)
-                               .build();
-        frame_forwarder.IncomingCapturedFrame(frame);
-      });
+    test::FrameGeneratorInterface::VideoFrameData frame_data =
+        frame_generator->NextFrame();
+    VideoFrame frame = VideoFrame::Builder()
+                           .set_video_frame_buffer(frame_data.buffer)
+                           .set_update_rect(frame_data.update_rect)
+                           .build();
+    frame_forwarder.IncomingCapturedFrame(frame);
+  });
 
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";
@@ -159,35 +158,34 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
   std::unique_ptr<test::DirectTransport> sender_transport;
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
-  SendTask(
-      task_queue(), [this, &renderer, &frame_generator, &frame_forwarder]() {
-        CreateCalls();
-        CreateSendTransport(BuiltInNetworkBehaviorConfig(),
-                            nullptr);
-        CreateReceiveTransport(BuiltInNetworkBehaviorConfig(),
-                               nullptr);
+  SendTask(task_queue(), [this, &renderer, &frame_generator,
+                          &frame_forwarder]() {
+    CreateCalls();
+    CreateSendTransport(BuiltInNetworkBehaviorConfig(),
+                        nullptr);
+    CreateReceiveTransport(BuiltInNetworkBehaviorConfig(),
+                           nullptr);
 
-        CreateSendConfig(1, 0, 0);
-        CreateMatchingReceiveConfigs();
-        video_receive_configs_[0].renderer = &renderer;
+    CreateSendConfig(1, 0, 0);
+    CreateMatchingReceiveConfigs();
+    video_receive_configs_[0].renderer = &renderer;
 
-        CreateVideoStreams();
-        Start();
+    CreateVideoStreams();
+    Start();
 
-        frame_generator = test::CreateSquareFrameGenerator(
-            test::VideoTestConstants::kDefaultWidth,
-            test::VideoTestConstants::kDefaultHeight, absl::nullopt,
-            absl::nullopt);
-        GetVideoSendStream()->SetSource(
-            &frame_forwarder, DegradationPreference::MAINTAIN_FRAMERATE);
-        test::FrameGeneratorInterface::VideoFrameData frame_data =
-            frame_generator->NextFrame();
-        VideoFrame frame = VideoFrame::Builder()
-                               .set_video_frame_buffer(frame_data.buffer)
-                               .set_update_rect(frame_data.update_rect)
-                               .build();
-        frame_forwarder.IncomingCapturedFrame(frame);
-      });
+    frame_generator = test::CreateSquareFrameGenerator(
+        test::VideoTestConstants::kDefaultWidth,
+        test::VideoTestConstants::kDefaultHeight, absl::nullopt, absl::nullopt);
+    GetVideoSendStream()->SetSource(&frame_forwarder,
+                                    DegradationPreference::MAINTAIN_FRAMERATE);
+    test::FrameGeneratorInterface::VideoFrameData frame_data =
+        frame_generator->NextFrame();
+    VideoFrame frame = VideoFrame::Builder()
+                           .set_video_frame_buffer(frame_data.buffer)
+                           .set_update_rect(frame_data.update_rect)
+                           .build();
+    frame_forwarder.IncomingCapturedFrame(frame);
+  });
 
   EXPECT_TRUE(renderer.Wait())
       << "Timed out while waiting for the frame to render.";

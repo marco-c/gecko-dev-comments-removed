@@ -785,31 +785,30 @@ void VideoStreamEncoder::Stop() {
 
   rtc::Event shutdown_event;
   absl::Cleanup shutdown = [&shutdown_event] { shutdown_event.Set(); };
-  encoder_queue_.PostTask(
-      [this, shutdown = std::move(shutdown)] {
-        RTC_DCHECK_RUN_ON(&encoder_queue_);
-        if (resource_adaptation_processor_) {
-          stream_resource_manager_.StopManagedResources();
-          for (auto* constraint : adaptation_constraints_) {
-            video_stream_adapter_->RemoveAdaptationConstraint(constraint);
-          }
-          for (auto& resource : additional_resources_) {
-            stream_resource_manager_.RemoveResource(resource);
-          }
-          additional_resources_.clear();
-          video_stream_adapter_->RemoveRestrictionsListener(this);
-          video_stream_adapter_->RemoveRestrictionsListener(
-              &stream_resource_manager_);
-          resource_adaptation_processor_->RemoveResourceLimitationsListener(
-              &stream_resource_manager_);
-          stream_resource_manager_.SetAdaptationProcessor(nullptr, nullptr);
-          resource_adaptation_processor_.reset();
-        }
-        rate_allocator_ = nullptr;
-        ReleaseEncoder();
-        encoder_ = nullptr;
-        frame_cadence_adapter_ = nullptr;
-      });
+  encoder_queue_.PostTask([this, shutdown = std::move(shutdown)] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    if (resource_adaptation_processor_) {
+      stream_resource_manager_.StopManagedResources();
+      for (auto* constraint : adaptation_constraints_) {
+        video_stream_adapter_->RemoveAdaptationConstraint(constraint);
+      }
+      for (auto& resource : additional_resources_) {
+        stream_resource_manager_.RemoveResource(resource);
+      }
+      additional_resources_.clear();
+      video_stream_adapter_->RemoveRestrictionsListener(this);
+      video_stream_adapter_->RemoveRestrictionsListener(
+          &stream_resource_manager_);
+      resource_adaptation_processor_->RemoveResourceLimitationsListener(
+          &stream_resource_manager_);
+      stream_resource_manager_.SetAdaptationProcessor(nullptr, nullptr);
+      resource_adaptation_processor_.reset();
+    }
+    rate_allocator_ = nullptr;
+    ReleaseEncoder();
+    encoder_ = nullptr;
+    frame_cadence_adapter_ = nullptr;
+  });
   shutdown_event.Wait(rtc::Event::kForever);
 }
 
@@ -915,48 +914,48 @@ void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
                                           size_t max_data_payload_length,
                                           SetParametersCallback callback) {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  encoder_queue_.PostTask(
-      [this, config = std::move(config), max_data_payload_length,
-       callback = std::move(callback)]() mutable {
-        RTC_DCHECK_RUN_ON(&encoder_queue_);
-        RTC_DCHECK(sink_);
-        RTC_LOG(LS_INFO) << "ConfigureEncoder requested.";
+  encoder_queue_.PostTask([this, config = std::move(config),
+                           max_data_payload_length,
+                           callback = std::move(callback)]() mutable {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    RTC_DCHECK(sink_);
+    RTC_LOG(LS_INFO) << "ConfigureEncoder requested.";
 
-        
-        
-        
-        
-        
-        
-        
-        if (config.content_type == VideoEncoderConfig::ContentType::kScreen) {
-          frame_cadence_adapter_->SetZeroHertzModeEnabled(
-              FrameCadenceAdapterInterface::ZeroHertzModeParams{});
-        } else {
-          frame_cadence_adapter_->SetZeroHertzModeEnabled(absl::nullopt);
-        }
+    
+    
+    
+    
+    
+    
+    
+    if (config.content_type == VideoEncoderConfig::ContentType::kScreen) {
+      frame_cadence_adapter_->SetZeroHertzModeEnabled(
+          FrameCadenceAdapterInterface::ZeroHertzModeParams{});
+    } else {
+      frame_cadence_adapter_->SetZeroHertzModeEnabled(absl::nullopt);
+    }
 
-        pending_encoder_creation_ =
-            (!encoder_ || encoder_config_.video_format != config.video_format ||
-             max_data_payload_length_ != max_data_payload_length);
-        encoder_config_ = std::move(config);
-        max_data_payload_length_ = max_data_payload_length;
-        pending_encoder_reconfiguration_ = true;
+    pending_encoder_creation_ =
+        (!encoder_ || encoder_config_.video_format != config.video_format ||
+         max_data_payload_length_ != max_data_payload_length);
+    encoder_config_ = std::move(config);
+    max_data_payload_length_ = max_data_payload_length;
+    pending_encoder_reconfiguration_ = true;
 
-        
-        
-        
-        
-        if (last_frame_info_) {
-          if (callback) {
-            encoder_configuration_callbacks_.push_back(std::move(callback));
-          }
+    
+    
+    
+    
+    if (last_frame_info_) {
+      if (callback) {
+        encoder_configuration_callbacks_.push_back(std::move(callback));
+      }
 
-          ReconfigureEncoder();
-        } else {
-          webrtc::InvokeSetParametersCallback(callback, webrtc::RTCError::OK());
-        }
-      });
+      ReconfigureEncoder();
+    } else {
+      webrtc::InvokeSetParametersCallback(callback, webrtc::RTCError::OK());
+    }
+  });
 }
 
 

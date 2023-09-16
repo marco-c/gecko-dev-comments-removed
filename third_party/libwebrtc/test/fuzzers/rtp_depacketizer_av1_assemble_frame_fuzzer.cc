@@ -7,14 +7,13 @@
 
 
 
-#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <vector>
 
 #include "api/array_view.h"
+#include "modules/rtp_rtcp/source/video_rtp_depacketizer_av1.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
 namespace webrtc {
