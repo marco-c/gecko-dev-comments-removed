@@ -190,7 +190,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   bool IsDestroyed() const { return mDestroyed; }
 
-  const TabId GetTabId() const {
+  TabId GetTabId() const {
     MOZ_ASSERT(mUniqueId != 0);
     return mUniqueId;
   }
