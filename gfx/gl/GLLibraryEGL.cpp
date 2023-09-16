@@ -447,17 +447,7 @@ bool GLLibraryEGL::Init(nsACString* const out_failureId) {
 
     do {
       
-      
-      
-      
-
       if (LoadLibrarySystem32(L"d3dcompiler_47.dll")) break;
-
-#  ifdef MOZ_D3DCOMPILER_VISTA_DLL
-      if (LoadLibraryForEGLOnWindows(NS_LITERAL_STRING_FROM_CSTRING(
-              MOZ_STRINGIFY(MOZ_D3DCOMPILER_VISTA_DLL))))
-        break;
-#  endif
 
       MOZ_ASSERT(false, "d3dcompiler DLL loading failed.");
     } while (false);
