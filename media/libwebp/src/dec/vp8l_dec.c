@@ -1241,9 +1241,20 @@ static int DecodeImageData(VP8LDecoder* const dec, uint32_t* const data,
   }
 
   br->eos_ = VP8LIsEndOfStream(br);
-  if (dec->incremental_ && br->eos_ && src < src_end) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  assert(!dec->incremental_ || (br->eos_ && src < src_last) || src >= src_last);
+  if (dec->incremental_ && br->eos_ && src < src_last) {
     RestoreState(dec);
-  } else if (!br->eos_) {
+  } else if ((dec->incremental_ && src >= src_last) || !br->eos_) {
     
     if (process_func != NULL) {
       process_func(dec, row > last_row ? last_row : row);
