@@ -324,7 +324,7 @@ static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
 
 
-#define DEFAULT_STATE mozilla::phc::Enabled
+#define DEFAULT_STATE mozilla::phc::OnlyFree
 
 
 
