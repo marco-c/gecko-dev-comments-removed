@@ -21,14 +21,6 @@ module.exports = {
     
     "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx|md)",
   ],
-  
-  
-  staticDirs: [
-    `${projectRoot}/toolkit/content/widgets/`,
-    `${projectRoot}/browser/themes/shared/`,
-    `${projectRoot}/browser/components/firefoxview/`,
-    `${projectRoot}/browser/components/aboutlogins/content/components/`,
-  ],
   addons: [
     "@storybook/addon-links",
     {
@@ -83,6 +75,28 @@ module.exports = {
       test: /\.ftl$/,
       type: "asset/source",
     });
+
+    config.module.rules.push({
+      test: /\.m?js$/,
+      exclude: /.storybook/,
+      use: [{ loader: path.resolve(__dirname, "./chrome-styles-loader.js") }],
+    });
+
+    
+    
+    
+    let cssFileTest = /\.css$/.toString();
+    let cssRuleIndex = config.module.rules.findIndex(
+      rule => rule.test.toString() === cssFileTest
+    );
+    config.module.rules[cssRuleIndex] = {
+      test: /\.css$/,
+      exclude: [/.storybook/, /node_modules/],
+      type: "asset/resource",
+      generator: {
+        filename: "[name].[contenthash].css",
+      },
+    };
 
     
     
