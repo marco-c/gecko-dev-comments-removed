@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -263,6 +264,9 @@ class MediaSendChannelInterface
       webrtc::VideoEncoderFactory::EncoderSelectorInterface* encoder_selector) {
   }
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+  
+  virtual void SetSsrcListChangedCallback(
+      absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
 };
 
 class MediaReceiveChannelInterface
@@ -288,8 +292,7 @@ class MediaReceiveChannelInterface
   
   virtual absl::optional<uint32_t> GetUnsignaledSsrc() const = 0;
   
-  virtual bool SetLocalSsrc(const StreamParams& sp) = 0;
-
+  virtual void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) = 0;
   
   
   
