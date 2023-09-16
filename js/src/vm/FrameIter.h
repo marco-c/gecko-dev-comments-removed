@@ -17,6 +17,7 @@
 #include "jstypes.h"  
 
 #include "jit/JSJitFrameIter.h"  
+#include "js/ColumnNumber.h"     
 #include "js/RootingAPI.h"       
 #include "js/TypeDecls.h"  
 #include "js/Value.h"       
@@ -283,7 +284,8 @@ class FrameIter {
   ScriptSource* scriptSource() const;
   const char* filename() const;
   const char16_t* displayURL() const;
-  unsigned computeLine(uint32_t* column = nullptr) const;
+  unsigned computeLine(
+      JS::TaggedColumnNumberZeroOrigin* column = nullptr) const;
   JSAtom* maybeFunctionDisplayAtom() const;
   bool mutedErrors() const;
 

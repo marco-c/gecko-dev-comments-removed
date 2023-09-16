@@ -16,10 +16,11 @@
 #include "jit/BaselineFrame.h"   
 #include "jit/JitFrames.h"       
 #include "jit/JSJitFrameIter.h"  
-#include "js/GCAPI.h"            
-#include "js/Principals.h"       
-#include "js/RootingAPI.h"       
-#include "vm/Activation.h"       
+#include "js/ColumnNumber.h"  
+#include "js/GCAPI.h"              
+#include "js/Principals.h"         
+#include "js/RootingAPI.h"         
+#include "vm/Activation.h"         
 #include "vm/EnvironmentObject.h"  
 #include "vm/JitActivation.h"      
 #include "vm/JSContext.h"          
@@ -618,7 +619,8 @@ const char16_t* FrameIter::displayURL() const {
   MOZ_CRASH("Unexpected state");
 }
 
-unsigned FrameIter::computeLine(uint32_t* column) const {
+unsigned FrameIter::computeLine(
+    JS::TaggedColumnNumberZeroOrigin* column) const {
   switch (data_.state_) {
     case DONE:
       break;
@@ -627,7 +629,13 @@ unsigned FrameIter::computeLine(uint32_t* column) const {
       if (isWasm()) {
         return wasmFrame().computeLine(column);
       }
-      return PCToLineNumber(script(), pc(), column);
+      unsigned columnNumber;
+      unsigned lineNumber = PCToLineNumber(script(), pc(), &columnNumber);
+      if (column) {
+        *column = JS::TaggedColumnNumberZeroOrigin(
+            JS::LimitedColumnNumberZeroOrigin(columnNumber));
+      }
+      return lineNumber;
   }
 
   MOZ_CRASH("Unexpected state");

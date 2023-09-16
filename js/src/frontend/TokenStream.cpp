@@ -36,7 +36,7 @@
 #include "frontend/ReservedWords.h"
 #include "js/CharacterEncoding.h"  
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"           
+#include "js/ErrorReport.h"   
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"                
 #include "js/RegExpFlags.h"           
@@ -1477,9 +1477,11 @@ bool TokenStreamAnyChars::fillExceptingContext(ErrorMetadata* err,
                                maybeCx->realm()->principals());
       if (!iter.done() && iter.filename()) {
         err->filename = JS::ConstUTF8CharsZ(iter.filename());
-        uint32_t columnNumber;
+        JS::TaggedColumnNumberZeroOrigin columnNumber;
         err->lineNumber = iter.computeLine(&columnNumber);
-        err->columnNumber = JS::ColumnNumberZeroOrigin(columnNumber);
+        
+        err->columnNumber =
+            JS::ColumnNumberZeroOrigin(columnNumber.toLimitedColumnNumber());
         return false;
       }
     }

@@ -28,6 +28,7 @@
 #include "frontend/FrontendContext.h"  
 #include "js/CharacterEncoding.h"      
 #include "js/Class.h"
+#include "js/ColumnNumber.h"  
 #include "js/Conversions.h"
 #include "js/ErrorReport.h"             
 #include "js/Exception.h"               
@@ -674,8 +675,7 @@ bool JS::ErrorReportBuilder::populateUncaughtExceptionReportUTF8VA(
     ownedReport.filename = JS::ConstUTF8CharsZ(filename.get());
     ownedReport.sourceId = frame->getSourceId();
     ownedReport.lineno = frame->getLine();
-    
-    ownedReport.column = frame->isWasm() ? 1 : frame->getColumn();
+    ownedReport.column = frame->getColumn().oneOriginValue();
     ownedReport.isMuted = frame->getMutedErrors();
   } else {
     
@@ -683,11 +683,11 @@ bool JS::ErrorReportBuilder::populateUncaughtExceptionReportUTF8VA(
     NonBuiltinFrameIter iter(cx, cx->realm()->principals());
     if (!iter.done()) {
       ownedReport.filename = JS::ConstUTF8CharsZ(iter.filename());
-      uint32_t column;
+      JS::TaggedColumnNumberZeroOrigin column;
       ownedReport.sourceId =
           iter.hasScript() ? iter.script()->scriptSource()->id() : 0;
       ownedReport.lineno = iter.computeLine(&column);
-      ownedReport.column = FixupMaybeWASMColumnForDisplay(column);
+      ownedReport.column = column.oneOriginValue();
       ownedReport.isMuted = iter.mutedErrors();
     }
   }
