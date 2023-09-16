@@ -342,7 +342,8 @@ void WarpCacheIR::traceData(JSTracer* trc) {
           TraceWarpStubPtr<Shape>(trc, word, "warp-cacheir-shape");
           break;
         }
-        case StubField::Type::GetterSetter: {
+        case StubField::Type::WeakGetterSetter: {
+          
           uintptr_t word = stubInfo_->getStubRawWord(stubData_, offset);
           TraceWarpStubPtr<GetterSetter>(trc, word,
                                          "warp-cacheir-getter-setter");
