@@ -401,7 +401,8 @@ const MultiStageAboutWelcome = props => {
       negotiatedLanguage: negotiatedLanguage,
       langPackInstallPhase: langPackInstallPhase,
       forceHideStepsIndicator: screen.force_hide_steps_indicator,
-      ariaRole: props.ariaRole
+      ariaRole: props.ariaRole,
+      aboveButtonStepsIndicator: screen.above_button_steps_indicator
     }) : null;
   })));
 };
@@ -661,7 +662,8 @@ class WelcomeScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCo
       startsWithCorner: this.props.startsWithCorner,
       autoAdvance: this.props.autoAdvance,
       forceHideStepsIndicator: this.props.forceHideStepsIndicator,
-      ariaRole: this.props.ariaRole
+      ariaRole: this.props.ariaRole,
+      aboveButtonStepsIndicator: this.props.aboveButtonStepsIndicator
     });
   }
 
@@ -865,7 +867,8 @@ const MultiStageProtonScreen = props => {
     negotiatedLanguage: props.negotiatedLanguage,
     langPackInstallPhase: props.langPackInstallPhase,
     forceHideStepsIndicator: props.forceHideStepsIndicator,
-    ariaRole: props.ariaRole
+    ariaRole: props.ariaRole,
+    aboveButtonStepsIndicator: props.aboveButtonStepsIndicator
   });
 };
 const ProtonScreenActionButtons = props => {
@@ -1172,7 +1175,8 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       isLastScreen,
       isSingleScreen,
       forceHideStepsIndicator,
-      ariaRole
+      ariaRole,
+      aboveButtonStepsIndicator
     } = this.props;
     const includeNoodles = content.has_noodles; 
 
@@ -1233,12 +1237,12 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     }) : null), content.video_container ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_OnboardingVideo__WEBPACK_IMPORTED_MODULE_11__.OnboardingVideo, {
       content: content.video_container,
       handleAction: this.props.handleAction
-    }) : null, content.above_button_content ? this.renderOrderedContent(content.above_button_content) : null, this.renderContentTiles(), this.renderLanguageSwitcher(), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
+    }) : null, content.above_button_content ? this.renderOrderedContent(content.above_button_content) : null, this.renderContentTiles(), this.renderLanguageSwitcher(), !hideStepsIndicator && aboveButtonStepsIndicator ? this.renderStepsIndicator() : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement(ProtonScreenActionButtons, {
       content: content,
       addonName: this.props.addonName,
       handleAction: this.props.handleAction,
       activeMultiSelect: this.props.activeMultiSelect
-    })), !hideStepsIndicator ? this.renderStepsIndicator() : null), content.dismiss_button ? this.renderDismissButton() : null), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    })), !hideStepsIndicator && !aboveButtonStepsIndicator ? this.renderStepsIndicator() : null), content.dismiss_button ? this.renderDismissButton() : null), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: content.info_text
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
       className: "info-text"
