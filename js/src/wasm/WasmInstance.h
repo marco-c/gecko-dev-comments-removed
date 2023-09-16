@@ -22,13 +22,16 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 
+#include <functional>
+
 #include "gc/Barrier.h"
 #include "gc/Zone.h"
 #include "js/Stack.h"  
 #include "js/TypeDecls.h"
 #include "vm/SharedMem.h"
-#include "wasm/WasmExprType.h"   
-#include "wasm/WasmLog.h"        
+#include "wasm/WasmExprType.h"  
+#include "wasm/WasmLog.h"       
+#include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmShareable.h"  
 #include "wasm/WasmTypeDecls.h"
 #include "wasm/WasmValue.h"
@@ -172,7 +175,7 @@ class alignas(16) Instance {
   DataSegmentVector passiveDataSegments_;
 
   
-  ElemSegmentVector passiveElemSegments_;
+  InstanceElemSegmentVector passiveElemSegments_;
 
   
   const UniqueDebugState maybeDebug_;
@@ -229,7 +232,7 @@ class alignas(16) Instance {
             const WasmGlobalObjectVector& globalObjs,
             const WasmTagObjectVector& tagObjs,
             const DataSegmentVector& dataSegments,
-            const ElemSegmentVector& elemSegments);
+            const ModuleElemSegmentVector& elemSegments);
 
   
   
@@ -370,14 +373,42 @@ class alignas(16) Instance {
   void onMovingGrowTable(const Table* table);
 
   bool initSegments(JSContext* cx, const DataSegmentVector& dataSegments,
-                    const ElemSegmentVector& elemSegments);
+                    const ModuleElemSegmentVector& elemSegments);
 
   
   
+  [[nodiscard]] bool initElems(uint32_t tableIndex,
+                               const ModuleElemSegment& seg,
+                               uint32_t dstOffset);
 
-  [[nodiscard]] bool initElems(uint32_t tableIndex, const ElemSegment& seg,
-                               uint32_t dstOffset, uint32_t srcOffset,
-                               uint32_t len);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  [[nodiscard]] bool iterElemsFunctions(const ModuleElemSegment& seg,
+                                        const F& onFunc);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename F>
+  [[nodiscard]] bool iterElemsAnyrefs(const ModuleElemSegment& seg,
+                                      const F& onAnyRef);
 
   
 
@@ -499,7 +530,7 @@ class alignas(16) Instance {
                             uint32_t numElements,
                             TypeDefInstanceData* typeDefData,
                             uint32_t segIndex);
-  static void* arrayNewElem(Instance* instance, uint32_t segElemIndex,
+  static void* arrayNewElem(Instance* instance, uint32_t srcOffset,
                             uint32_t numElements,
                             TypeDefInstanceData* typeDefData,
                             uint32_t segIndex);

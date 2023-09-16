@@ -381,12 +381,7 @@ struct TagDesc {
 using TagDescVector = Vector<TagDesc, 0, SystemAllocPolicy>;
 using ElemExprOffsetVector = Vector<size_t, 0, SystemAllocPolicy>;
 
-
-
-
-
-
-struct ElemSegment : AtomicRefCounted<ElemSegment> {
+struct ModuleElemSegment {
   enum class Kind {
     Active,
     Passive,
@@ -403,14 +398,7 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
 
   struct Expressions {
     size_t count = 0;
-
-    
-    
-    
-    
-    
     Bytes exprBytes;
-    ElemExprOffsetVector exprOffsets;
 
     size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   };
@@ -444,9 +432,11 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
 
-using MutableElemSegment = RefPtr<ElemSegment>;
-using SharedElemSegment = RefPtr<const ElemSegment>;
-using ElemSegmentVector = Vector<SharedElemSegment, 0, SystemAllocPolicy>;
+using ModuleElemSegmentVector = Vector<ModuleElemSegment, 0, SystemAllocPolicy>;
+
+using InstanceElemSegment = GCVector<HeapPtr<AnyRef>, 0, SystemAllocPolicy>;
+using InstanceElemSegmentVector =
+    GCVector<InstanceElemSegment, 0, SystemAllocPolicy>;
 
 
 

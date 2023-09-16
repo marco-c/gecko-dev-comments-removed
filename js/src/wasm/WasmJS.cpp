@@ -1610,7 +1610,7 @@ void WasmInstanceObject::trace(JSTracer* trc, JSObject* obj) {
 WasmInstanceObject* WasmInstanceObject::create(
     JSContext* cx, const SharedCode& code,
     const DataSegmentVector& dataSegments,
-    const ElemSegmentVector& elemSegments, uint32_t instanceDataLength,
+    const ModuleElemSegmentVector& elemSegments, uint32_t instanceDataLength,
     Handle<WasmMemoryObjectVector> memories, SharedTableVector&& tables,
     const JSObjectVector& funcImports, const GlobalDescVector& globals,
     const ValVector& globalImportValues,
@@ -1803,6 +1803,7 @@ static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
   uint32_t funcIndex = ExportedFunctionToFuncIndex(callee);
   return instance.callExport(cx, funcIndex, args);
 }
+
 
 
 

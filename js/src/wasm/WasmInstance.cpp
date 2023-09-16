@@ -26,6 +26,7 @@
 
 #include "jsmath.h"
 
+#include "gc/Barrier.h"
 #include "gc/Marking.h"
 #include "jit/AtomicOperations.h"
 #include "jit/Disassemble.h"
@@ -44,6 +45,7 @@
 #include "vm/Interpreter.h"
 #include "vm/Iteration.h"
 #include "vm/JitActivation.h"
+#include "vm/JSFunction.h"
 #include "vm/PlainObject.h"  
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCode.h"
@@ -859,7 +861,7 @@ static bool AllSegmentsArePassive(const DataSegmentVector& vec) {
 
 bool Instance::initSegments(JSContext* cx,
                             const DataSegmentVector& dataSegments,
-                            const ElemSegmentVector& elemSegments) {
+                            const ModuleElemSegmentVector& elemSegments) {
   MOZ_ASSERT_IF(metadata().memories.length() == 0,
                 AllSegmentsArePassive(dataSegments));
 
@@ -867,23 +869,22 @@ bool Instance::initSegments(JSContext* cx,
 
   
 
-  for (const ElemSegment* seg : elemSegments) {
-    if (seg->active()) {
+  for (const ModuleElemSegment& seg : elemSegments) {
+    if (seg.active()) {
       RootedVal offsetVal(cx);
-      if (!seg->offset().evaluate(cx, instanceObj, &offsetVal)) {
+      if (!seg.offset().evaluate(cx, instanceObj, &offsetVal)) {
         return false;  
       }
       uint32_t offset = offsetVal.get().i32();
-      uint32_t count = seg->numElements();
 
-      uint32_t tableLength = tables()[seg->tableIndex]->length();
-      if (offset > tableLength || tableLength - offset < count) {
+      uint32_t tableLength = tables()[seg.tableIndex]->length();
+      if (offset > tableLength || tableLength - offset < seg.numElements()) {
         JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                  JSMSG_WASM_OUT_OF_BOUNDS);
         return false;
       }
 
-      if (!initElems(seg->tableIndex, *seg, offset, 0, count)) {
+      if (!initElems(seg.tableIndex, seg, offset)) {
         return false;  
       }
     }
@@ -919,76 +920,138 @@ bool Instance::initSegments(JSContext* cx,
   return true;
 }
 
-bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
-                         uint32_t dstOffset, uint32_t srcOffset, uint32_t len) {
+bool Instance::initElems(uint32_t tableIndex, const ModuleElemSegment& seg,
+                         uint32_t dstOffset) {
   Table& table = *tables_[tableIndex];
   MOZ_ASSERT(dstOffset <= table.length());
-  MOZ_ASSERT(len <= table.length() - dstOffset);
+  MOZ_ASSERT(seg.numElements() <= table.length() - dstOffset);
+
+  if (seg.numElements() == 0) {
+    return true;
+  }
 
   Rooted<WasmInstanceObject*> instanceObj(cx(), object());
-  MOZ_ASSERT(srcOffset <= seg.numElements());
-  MOZ_ASSERT(len <= seg.numElements() - srcOffset);
 
-  if (len == 0) {
+  if (table.isFunction() &&
+      seg.encoding == ModuleElemSegment::Encoding::Indices) {
+    
+    
+    bool ok = iterElemsFunctions(
+        seg, [&](uint32_t i, void* code, Instance* instance) -> bool {
+          table.setFuncRef(dstOffset + i, code, instance);
+          return true;
+        });
+    if (!ok) {
+      return false;
+    }
+  } else {
+    bool ok = iterElemsAnyrefs(seg, [&](uint32_t i, AnyRef ref) -> bool {
+      table.setRef(dstOffset + i, ref);
+      return true;
+    });
+    if (!ok) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+template <typename F>
+bool Instance::iterElemsFunctions(const ModuleElemSegment& seg,
+                                  const F& onFunc) {
+  
+  
+  
+  
+  MOZ_ASSERT(seg.encoding == ModuleElemSegment::Encoding::Indices);
+
+  if (seg.numElements() == 0) {
+    return true;
+  }
+
+  Tier tier = code().bestTier();
+  const MetadataTier& metadataTier = metadata(tier);
+  const FuncImportVector& funcImports = metadataTier.funcImports;
+  const CodeRangeVector& codeRanges = metadataTier.codeRanges;
+  const Uint32Vector& funcToCodeRange = metadataTier.funcToCodeRange;
+  const Uint32Vector& elemIndices = seg.elemIndices;
+
+  uint8_t* codeBaseTier = codeBase(tier);
+  for (uint32_t i = 0; i < seg.numElements(); i++) {
+    uint32_t elemIndex = elemIndices[i];
+    if (elemIndex < metadataTier.funcImports.length()) {
+      FuncImportInstanceData& import =
+          funcImportInstanceData(funcImports[elemIndex]);
+      MOZ_ASSERT(import.callable->isCallable());
+      if (import.callable->is<JSFunction>()) {
+        JSFunction* fun = &import.callable->as<JSFunction>();
+        if (IsWasmExportedFunction(fun)) {
+          
+          
+          
+          
+          
+          
+          WasmInstanceObject* calleeInstanceObj =
+              ExportedFunctionToInstanceObject(fun);
+          Instance& calleeInstance = calleeInstanceObj->instance();
+          Tier calleeTier = calleeInstance.code().bestTier();
+          const CodeRange& calleeCodeRange =
+              calleeInstanceObj->getExportedFunctionCodeRange(fun, calleeTier);
+          void* code = calleeInstance.codeBase(calleeTier) +
+                       calleeCodeRange.funcCheckedCallEntry();
+          if (!onFunc(i, code, &calleeInstance)) {
+            return false;
+          }
+          continue;
+        }
+      }
+    }
+
+    void* code = codeBaseTier +
+                 codeRanges[funcToCodeRange[elemIndex]].funcCheckedCallEntry();
+    if (!onFunc(i, code, this)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+template <typename F>
+bool Instance::iterElemsAnyrefs(const ModuleElemSegment& seg,
+                                const F& onAnyRef) {
+  if (seg.numElements() == 0) {
     return true;
   }
 
   switch (seg.encoding) {
-    case ElemSegment::Encoding::Indices: {
+    case ModuleElemSegment::Encoding::Indices: {
       
       
 
-      Tier tier = code().bestTier();
-      const MetadataTier& metadataTier = metadata(tier);
-      const FuncImportVector& funcImports = metadataTier.funcImports;
-      const CodeRangeVector& codeRanges = metadataTier.codeRanges;
-      const Uint32Vector& funcToCodeRange = metadataTier.funcToCodeRange;
-      const Uint32Vector& elemIndices = seg.elemIndices;
-
-      uint8_t* codeBaseTier = codeBase(tier);
-      for (uint32_t i = 0; i < len; i++) {
-        uint32_t elemIndex = elemIndices[srcOffset + i];
-        if (!table.isFunction()) {
-          
-          
-          void* fnref = Instance::refFunc(this, elemIndex);
-          if (fnref == AnyRef::invalid().forCompiledCode()) {
-            return false;  
-          }
-          table.fillAnyRef(dstOffset + i, 1, AnyRef::fromCompiledCode(fnref));
-        } else {
-          if (elemIndex < metadataTier.funcImports.length()) {
-            FuncImportInstanceData& import =
-                funcImportInstanceData(funcImports[elemIndex]);
-            MOZ_ASSERT(import.callable->isCallable());
-            if (import.callable->is<JSFunction>()) {
-              JSFunction* fun = &import.callable->as<JSFunction>();
-              if (IsWasmExportedFunction(fun)) {
-                table.setFuncRef(dstOffset + i, fun);
-                continue;
-              }
-            }
-          }
-          void* code =
-              codeBaseTier +
-              codeRanges[funcToCodeRange[elemIndex]].funcCheckedCallEntry();
-          table.setFuncRef(dstOffset + i, code, this);
+      for (uint32_t i = 0; i < seg.numElements(); i++) {
+        uint32_t funcIndex = seg.elemIndices[i];
+        
+        void* fnref = Instance::refFunc(this, funcIndex);
+        if (fnref == AnyRef::invalid().forCompiledCode()) {
+          return false;  
+        }
+        if (!onAnyRef(i, AnyRef::fromCompiledCode(fnref))) {
+          return false;
         }
       }
     } break;
-    case ElemSegment::Encoding::Expressions: {
-      const ElemSegment::Expressions& expressions = seg.elemExpressions;
-
-      MOZ_ASSERT(srcOffset < expressions.exprOffsets.length());
-      const uint8_t* begin =
-          expressions.exprBytes.begin() + expressions.exprOffsets[srcOffset];
-      const uint8_t* end = expressions.exprBytes.end();
+    case ModuleElemSegment::Encoding::Expressions: {
+      Rooted<WasmInstanceObject*> instanceObj(cx(), object());
+      const ModuleElemSegment::Expressions& exprs = seg.elemExpressions;
 
       UniqueChars error;
       
       
-      Decoder d(begin, end, 0, &error);
-      for (uint32_t i = 0; i < len; i++) {
+      Decoder d(exprs.exprBytes.begin(), exprs.exprBytes.end(), 0, &error);
+      for (uint32_t i = 0; i < seg.numElements(); i++) {
         RootedVal result(cx());
         if (!InitExpr::decodeAndEvaluate(cx(), instanceObj, d, &result)) {
           MOZ_ASSERT(!error);  
@@ -997,21 +1060,14 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
         
         
         AnyRef ref = result.get().ref();
-
-        if (ref.isNull()) {
-          table.setNull(dstOffset + i);
-        } else if (table.isFunction()) {
-          JSFunction* func = &ref.toJSObject().as<JSFunction>();
-          table.setFuncRef(dstOffset + i, func);
-        } else {
-          table.fillAnyRef(dstOffset + i, 1, ref);
+        if (!onAnyRef(i, ref)) {
+          return false;
         }
       }
     } break;
     default:
       MOZ_CRASH("unknown encoding type for element segment");
   }
-
   return true;
 }
 
@@ -1025,20 +1081,11 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
                      "ensured by validation");
 
   JSContext* cx = instance->cx();
-  if (!instance->passiveElemSegments_[segIndex]) {
-    if (len == 0 && srcOffset == 0) {
-      return 0;
-    }
 
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return -1;
-  }
+  const InstanceElemSegment& seg = instance->passiveElemSegments_[segIndex];
+  const uint32_t segLen = seg.length();
 
-  const ElemSegment& seg = *instance->passiveElemSegments_[segIndex];
-  MOZ_RELEASE_ASSERT(!seg.active());
-  const uint32_t segLen = seg.numElements();
-
-  const Table& table = *instance->tables()[tableIndex];
+  Table& table = *instance->tables()[tableIndex];
   const uint32_t tableLen = table.length();
 
   
@@ -1056,8 +1103,8 @@ bool Instance::initElems(uint32_t tableIndex, const ElemSegment& seg,
     return -1;
   }
 
-  if (!instance->initElems(tableIndex, seg, dstOffset, srcOffset, len)) {
-    return -1;  
+  for (size_t i = 0; i < len; i++) {
+    table.setRef(dstOffset + i, seg[srcOffset + i]);
   }
 
   return 0;
@@ -1229,7 +1276,7 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
 
   switch (table.repr()) {
     case TableRepr::Ref:
-      table.fillAnyRef(index, 1, AnyRef::fromCompiledCode(value));
+      table.setAnyRef(index, AnyRef::fromCompiledCode(value));
       break;
     case TableRepr::Func:
       MOZ_RELEASE_ASSERT(!table.isAsmJS());
@@ -1296,15 +1343,7 @@ static int32_t MemDiscardShared(Instance* instance, I byteOffset, I byteLen,
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
                      "ensured by validation");
 
-  if (!instance->passiveElemSegments_[segIndex]) {
-    return 0;
-  }
-
-  SharedElemSegment& segRefPtr = instance->passiveElemSegments_[segIndex];
-  MOZ_RELEASE_ASSERT(!segRefPtr->active());
-
-  
-  segRefPtr = nullptr;
+  instance->passiveElemSegments_[segIndex].clearAndFree();
   return 0;
 }
 
@@ -1502,7 +1541,7 @@ template void* Instance::arrayNew<false>(Instance* instance,
 
 
  void* Instance::arrayNewElem(Instance* instance,
-                                          uint32_t segElemIndex,
+                                          uint32_t srcOffset,
                                           uint32_t numElements,
                                           TypeDefInstanceData* typeDefData,
                                           uint32_t segIndex) {
@@ -1512,29 +1551,27 @@ template void* Instance::arrayNew<false>(Instance* instance,
   
   MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
                      "ensured by validation");
-  const ElemSegment* seg = instance->passiveElemSegments_[segIndex];
-
-  if (seg && seg->encoding != ElemSegment::Encoding::Indices) {
-    ReportTrapError(cx, JSMSG_WASM_ARRAY_NEW_ELEM_NOT_IMPLEMENTED);
-    return nullptr;
-  }
+  const InstanceElemSegment& seg = instance->passiveElemSegments_[segIndex];
 
   
   
-  if (!seg && (numElements != 0 || segElemIndex != 0)) {
+  CheckedUint32 lastIndexPlus1 =
+      CheckedUint32(srcOffset) + CheckedUint32(numElements);
+  CheckedUint32 numElemsAvailable(seg.length());
+  if (!lastIndexPlus1.isValid() || !numElemsAvailable.isValid() ||
+      lastIndexPlus1.value() > numElemsAvailable.value()) {
+    
     ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
     return nullptr;
   }
-  
-  
 
   const TypeDef* typeDef = typeDefData->typeDef;
 
   
   
   
-  
-  MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType_.size() == sizeof(void*));
+  MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType_.size() ==
+                     sizeof(AnyRef));
 
   Rooted<WasmArrayObject*> arrayObj(
       cx,
@@ -1546,42 +1583,14 @@ template void* Instance::arrayNew<false>(Instance* instance,
   }
   MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
 
-  if (!seg) {
+  if (seg.length() == 0) {
     
     return arrayObj;
   }
 
-  
-  
-  CheckedUint32 lastIndexPlus1 =
-      CheckedUint32(segElemIndex) + CheckedUint32(numElements);
-
-  CheckedUint32 numElemsAvailable(seg->elemIndices.length());
-  if (!lastIndexPlus1.isValid() || !numElemsAvailable.isValid() ||
-      lastIndexPlus1.value() > numElemsAvailable.value()) {
-    
-    
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return nullptr;
-  }
-
-  
-  
-  void** dst = (void**)arrayObj->data_;
-  const uint32_t* src = &seg->elemIndices[segElemIndex];
+  GCPtr<AnyRef>* dst = reinterpret_cast<GCPtr<AnyRef>*>(arrayObj->data_);
   for (uint32_t i = 0; i < numElements; i++) {
-    uint32_t funcIndex = src[i];
-    FieldType elemType = typeDef->arrayType().elementType_;
-    MOZ_RELEASE_ASSERT(elemType.isRefType());
-    RootedVal value(cx, elemType.refType());
-
-    void* funcRef = Instance::refFunc(instance, funcIndex);
-    if (funcRef == AnyRef::invalid().forCompiledCode()) {
-      return nullptr;  
-    }
-    value = Val(elemType.refType(), FuncRef::fromCompiledCode(funcRef));
-
-    value.get().writeToHeapLocation(&dst[i]);
+    dst[i] = seg[srcOffset + i];
   }
 
   return arrayObj;
@@ -1812,7 +1821,7 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
                     const WasmGlobalObjectVector& globalObjs,
                     const WasmTagObjectVector& tagObjs,
                     const DataSegmentVector& dataSegments,
-                    const ElemSegmentVector& elemSegments) {
+                    const ModuleElemSegmentVector& elemSegments) {
   MOZ_ASSERT(!!maybeDebug_ == metadata().debugEnabled);
 
 #ifdef DEBUG
@@ -2100,12 +2109,26 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
   }
 
   
+  
   if (!passiveElemSegments_.resize(elemSegments.length())) {
     return false;
   }
   for (size_t i = 0; i < elemSegments.length(); i++) {
-    if (elemSegments[i]->kind == ElemSegment::Kind::Passive) {
-      passiveElemSegments_[i] = elemSegments[i];
+    const ModuleElemSegment& seg = elemSegments[i];
+    if (seg.kind == ModuleElemSegment::Kind::Passive) {
+      passiveElemSegments_[i] = InstanceElemSegment();
+      InstanceElemSegment& instanceSeg = passiveElemSegments_[i];
+      if (!instanceSeg.reserve(seg.numElements())) {
+        return false;
+      }
+
+      bool ok = iterElemsAnyrefs(seg, [&](uint32_t _, AnyRef ref) -> bool {
+        instanceSeg.infallibleAppend(ref);
+        return true;
+      });
+      if (!ok) {
+        return false;
+      }
     }
   }
 
@@ -2216,6 +2239,8 @@ void Instance::tracePrivate(JSTracer* trc) {
 
   TraceNullableEdge(trc, &pendingException_, "wasm pending exception value");
   TraceNullableEdge(trc, &pendingExceptionTag_, "wasm pending exception tag");
+
+  passiveElemSegments_.trace(trc);
 
   if (maybeDebug_) {
     maybeDebug_->trace(trc);
