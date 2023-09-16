@@ -65,6 +65,10 @@ class GeckoInstance(object):
         
         "dom.file.createInChild": True,
         
+        "dom.input_events.security.minNumTicks": 0,
+        
+        "dom.input_events.security.minTimeElapsedInMS": 0,
+        
         "dom.ipc.reportProcessHangs": False,
         
         "dom.max_chrome_script_run_time": 0,
