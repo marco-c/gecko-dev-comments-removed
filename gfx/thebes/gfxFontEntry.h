@@ -68,56 +68,108 @@ typedef struct FT_MM_Var_ FT_MM_Var;
 
 class gfxCharacterMap : public gfxSparseBitSet {
  public:
-  nsrefcnt AddRef() {
+  
+  
+  
+  
+  
+  
+
+  
+  
+  void AddRef() {
+    MOZ_ASSERT_TYPE_OK_FOR_REFCOUNTING(gfxCharacterMap);
     MOZ_ASSERT(int32_t(mRefCnt) >= 0, "illegal refcnt");
-    ++mRefCnt;
-    NS_LOG_ADDREF(this, mRefCnt, "gfxCharacterMap", sizeof(*this));
-    return mRefCnt;
+    [[maybe_unused]] nsrefcnt count = ++mRefCnt;
+    NS_LOG_ADDREF(this, count, "gfxCharacterMap", sizeof(*this));
   }
 
-  nsrefcnt Release() {
-    MOZ_ASSERT(0 != mRefCnt, "dup release");
-    --mRefCnt;
-    NS_LOG_RELEASE(this, mRefCnt, "gfxCharacterMap");
-    if (mRefCnt == 0) {
-      
-      
-      return NotifyMaybeReleased();
+  
+  
+  
+  
+  
+  void Release() {
+    MOZ_ASSERT(int32_t(mRefCnt) > 0, "dup release");
+    
+    
+    
+    
+    
+    
+    
+    bool isShared = mShared;
+
+    
+    
+    nsrefcnt count = --mRefCnt;
+    NS_LOG_RELEASE(this, count, "gfxCharacterMap");
+
+    
+    
+    
+    if (isShared) {
+      MOZ_ASSERT(count > 0);
+      if (count == 1) {
+        NotifyMaybeReleased(this);
+      }
+      return;
     }
-    return mRefCnt;
+
+    
+    
+    
+    
+    if (count == 0) {
+      delete this;
+    }
   }
 
-  gfxCharacterMap() : mHash(0), mBuildOnTheFly(false), mShared(false) {}
+  gfxCharacterMap() = default;
 
   explicit gfxCharacterMap(const gfxSparseBitSet& aOther)
-      : gfxSparseBitSet(aOther),
-        mHash(0),
-        mBuildOnTheFly(false),
-        mShared(false) {}
-
-  void CalcHash() { mHash = GetChecksum(); }
+      : gfxSparseBitSet(aOther) {}
 
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const {
     return gfxSparseBitSet::SizeOfExcludingThis(aMallocSizeOf);
   }
 
   
-  uint32_t mHash;
+  uint32_t mHash = 0;
 
   
-  bool mBuildOnTheFly;
+  bool mBuildOnTheFly = false;
 
   
-  bool mShared;
+  
+  
+  bool mShared = false;
 
  protected:
-  nsrefcnt NotifyMaybeReleased();
+  friend class gfxPlatformFontList;
+
+  
+  
+  
+  ~gfxCharacterMap() = default;
+
+  nsrefcnt RefCount() const { return mRefCnt; }
+
+  void CalcHash() { mHash = GetChecksum(); }
+
+  static void NotifyMaybeReleased(gfxCharacterMap* aCmap);
+
+  
+  void ClearSharedFlag() {
+    MOZ_ASSERT(NS_IsMainThread());
+    mShared = false;
+  }
 
   mozilla::ThreadSafeAutoRefCnt mRefCnt;
 
  private:
-  gfxCharacterMap(const gfxCharacterMap&);
-  gfxCharacterMap& operator=(const gfxCharacterMap&);
+  gfxCharacterMap(const gfxCharacterMap&) = delete;
+  gfxCharacterMap& operator=(const gfxCharacterMap&) = delete;
 };
 
 
