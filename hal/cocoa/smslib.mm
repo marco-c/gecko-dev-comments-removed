@@ -94,7 +94,6 @@ typedef struct sensorSpec {
 
 
 
-
 static const sensorSpec sensors[] = {
     
     
