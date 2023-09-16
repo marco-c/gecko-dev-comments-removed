@@ -325,15 +325,6 @@ void Realm::traceWeakEdgesInJitRealm(JSTracer* trc) {
   }
 }
 
-void Realm::traceWeakRegExps(JSTracer* trc) {
-  
-
-
-
-
-  regExps.traceWeak(trc);
-}
-
 void Realm::traceWeakDebugEnvironmentEdges(JSTracer* trc) {
   if (debugEnvs_) {
     debugEnvs_->traceWeak(trc);

@@ -335,7 +335,7 @@ class RegExpRealm {
 
 
 
-  WeakHeapPtr<SharedShape*> matchResultShapes_[ResultShapeKind::NumKinds];
+  HeapPtr<SharedShape*> matchResultShapes_[ResultShapeKind::NumKinds];
 
   
 
@@ -350,21 +350,21 @@ class RegExpRealm {
 
 
 
-  WeakHeapPtr<Shape*> optimizableRegExpPrototypeShape_;
+  HeapPtr<Shape*> optimizableRegExpPrototypeShape_;
 
   
 
 
 
 
-  WeakHeapPtr<Shape*> optimizableRegExpInstanceShape_;
+  HeapPtr<Shape*> optimizableRegExpInstanceShape_;
 
   SharedShape* createMatchResultShape(JSContext* cx, ResultShapeKind kind);
 
  public:
   explicit RegExpRealm();
 
-  void traceWeak(JSTracer* trc);
+  void trace(JSTracer* trc);
 
   static const size_t MatchResultObjectIndexSlot = 0;
   static const size_t MatchResultObjectInputSlot = 1;

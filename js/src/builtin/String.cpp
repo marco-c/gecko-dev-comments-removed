@@ -4522,7 +4522,7 @@ static bool BuildFlatMatchArray(JSContext* cx, HandleString str,
 
   
   Rooted<SharedShape*> shape(
-      cx, cx->realm()->regExps.getOrCreateMatchResultShape(cx));
+      cx, cx->global()->regExpRealm().getOrCreateMatchResultShape(cx));
   if (!shape) {
     return false;
   }
