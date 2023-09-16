@@ -389,6 +389,13 @@ class Browsertime(Perftest):
             )
 
         
+        MULTI_OPTS = [
+            "--firefox.android.intentArgument",
+            "--firefox.args",
+            "--firefox.preference",
+        ]
+
+        
         
         
         if test.get("browsertime_args", None):
@@ -400,7 +407,7 @@ class Browsertime(Perftest):
                         "One of the browsertime_args from the test was not split properly. "
                         f"Expecting a --flag, or a --option=value pairing. Found: {split_arg}"
                     )
-                if pairing[0] in browsertime_options:
+                if pairing[0] in browsertime_options and pairing[0] not in MULTI_OPTS:
                     
                     if len(pairing) > 1:
                         ind = browsertime_options.index(pairing[0])
@@ -547,11 +554,6 @@ class Browsertime(Perftest):
 
         
         
-        MULTI_OPTS = [
-            "--firefox.android.intentArgument",
-            "--firefox.args",
-            "--firefox.preference",
-        ]
         for index, argument in list(enumerate(priority1_options)):
             if argument in MULTI_OPTS:
                 browsertime_options.extend([argument, priority1_options[index + 1]])
