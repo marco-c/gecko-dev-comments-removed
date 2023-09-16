@@ -201,7 +201,8 @@ class MockCubebStream {
   MediaEventSource<void>& ErrorForcedEvent();
   MediaEventSource<void>& DeviceChangeForcedEvent();
 
-  void Process10Ms();
+  enum class KeepProcessing { No, Yes };
+  KeepProcessing Process10Ms();
 
  public:
   const bool mHasInput;
@@ -216,6 +217,7 @@ class MockCubebStream {
   
   
   bool mFrozenStart;
+  
   
   std::atomic_bool mStreamStop{true};
   
