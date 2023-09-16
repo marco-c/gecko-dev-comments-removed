@@ -196,7 +196,8 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
 
   if (aVisitor.mEventStatus != nsEventStatus_eConsumeNoDefault) {
     WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-    if (mouseEvent && mouseEvent->IsLeftClickEvent()) {
+    if (mouseEvent && mouseEvent->IsLeftClickEvent() &&
+        OwnerDoc()->MayHaveDOMActivateListeners()) {
       
       
       InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);

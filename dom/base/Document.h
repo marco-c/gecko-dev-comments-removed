@@ -4121,6 +4121,8 @@ class Document : public nsINode,
   
   bool RecomputeResistFingerprinting();
 
+  bool MayHaveDOMActivateListeners() const;
+
  protected:
   
   

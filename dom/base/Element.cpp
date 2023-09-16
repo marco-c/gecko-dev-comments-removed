@@ -3300,16 +3300,32 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
       if (mouseEvent->IsLeftClickEvent()) {
         if (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
             !mouseEvent->IsAlt() && !mouseEvent->IsShift()) {
-          
-          nsEventStatus status = nsEventStatus_eIgnore;
-          
-          
-          InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
-          actEvent.mDetail = 1;
-
-          rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext, &actEvent,
-                                         nullptr, &status);
-          if (NS_SUCCEEDED(rv)) {
+          if (OwnerDoc()->MayHaveDOMActivateListeners()) {
+            
+            
+            nsEventStatus status = nsEventStatus_eIgnore;
+            
+            
+            InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
+            actEvent.mDetail = 1;
+            rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext,
+                                           &actEvent, nullptr, &status);
+            if (NS_SUCCEEDED(rv)) {
+              aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+            }
+          } else {
+            if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
+              
+              
+              nsAutoString target;
+              GetLinkTarget(target);
+              nsContentUtils::TriggerLink(this, absURI, target,
+                                           true,
+                                          mouseEvent->IsTrusted());
+            }
+            
+            
+            
             aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
           }
         }
@@ -3323,6 +3339,8 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
       break;
     }
     case eLegacyDOMActivate: {
+      
+      
       if (aVisitor.mEvent->mOriginalTarget == this) {
         if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
           nsAutoString target;

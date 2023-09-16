@@ -18755,6 +18755,15 @@ void Document::ClearOOPChildrenLoading() {
   }
 }
 
+bool Document::MayHaveDOMActivateListeners() const {
+  if (nsPIDOMWindowInner* inner = GetInnerWindow()) {
+    return inner->HasDOMActivateEventListeners();
+  }
+
+  
+  return true;
+}
+
 HighlightRegistry& Document::HighlightRegistry() {
   if (!mHighlightRegistry) {
     mHighlightRegistry = MakeRefPtr<class HighlightRegistry>(this);
