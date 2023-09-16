@@ -6148,13 +6148,13 @@ mozilla::BinPathType XRE_GetChildProcBinPathType(
   
   
   switch (aProcessType) {
-#define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name, proc_typename, \
-                           process_bin_type, procinfo_typename,               \
-                           webidl_typename, allcaps_name)                     \
-  case GeckoProcessType_##enum_name:                                          \
-    return BinPathType::process_bin_type;
-#include "mozilla/GeckoProcessTypes.h"
-#undef GECKO_PROCESS_TYPE
+#  define GECKO_PROCESS_TYPE(enum_value, enum_name, string_name,               \
+                             proc_typename, process_bin_type,                  \
+                             procinfo_typename, webidl_typename, allcaps_name) \
+    case GeckoProcessType_##enum_name:                                         \
+      return BinPathType::process_bin_type;
+#  include "mozilla/GeckoProcessTypes.h"
+#  undef GECKO_PROCESS_TYPE
     default:
       return BinPathType::PluginContainer;
   }
