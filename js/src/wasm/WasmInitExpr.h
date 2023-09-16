@@ -31,6 +31,14 @@ namespace wasm {
 class Decoder;
 struct ModuleEnvironment;
 
+
+
+[[nodiscard]] bool DecodeConstantExpression(
+    Decoder& d, ModuleEnvironment* env, ValType expected,
+    uint32_t
+        maxInitializedGlobalsIndexPlus1,  
+    Maybe<LitVal>* literal);
+
 enum class InitExprKind {
   None,
   Literal,
@@ -65,6 +73,14 @@ class InitExpr {
                                 ValType expected,
                                 uint32_t maxInitializedGlobalsIndexPlus1,
                                 InitExpr* expr);
+
+  
+  
+  
+  
+  [[nodiscard]] static bool decodeAndEvaluate(
+      JSContext* cx, Handle<WasmInstanceObject*> instanceObj, Decoder& d,
+      MutableHandleVal result);
 
   
   

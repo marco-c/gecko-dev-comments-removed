@@ -194,13 +194,20 @@ struct ModuleEnvironment {
 
 class ElemSegmentFlags {
   enum class Flags : uint32_t {
-    Passive = 0x1,
-    WithIndexOrDeclared = 0x2,
-    ElemExpression = 0x4,
     
-    KindMask = Passive | WithIndexOrDeclared,
-    PayloadMask = ElemExpression,
-    AllFlags = Passive | WithIndexOrDeclared | ElemExpression,
+    
+    Passive = 0x1,
+    
+    
+    TableIndexOrDeclared = 0x2,
+    
+    
+    ElemExpressions = 0x4,
+
+    
+    KindMask = Passive | TableIndexOrDeclared,
+    PayloadMask = ElemExpressions,
+    AllFlags = Passive | TableIndexOrDeclared | ElemExpressions,
   };
   uint32_t encoded_;
 

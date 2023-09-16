@@ -379,6 +379,7 @@ struct TagDesc {
 };
 
 using TagDescVector = Vector<TagDesc, 0, SystemAllocPolicy>;
+using ElemExprOffsetVector = Vector<size_t, 0, SystemAllocPolicy>;
 
 
 
@@ -392,25 +393,56 @@ struct ElemSegment : AtomicRefCounted<ElemSegment> {
     Declared,
   };
 
+  
+  
+  
+  enum class Encoding {
+    Indices = 1,
+    Expressions,
+  };
+
+  struct Expressions {
+    size_t count = 0;
+
+    
+    
+    
+    
+    
+    Bytes exprBytes;
+    ElemExprOffsetVector exprOffsets;
+
+    size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
+  };
+
   Kind kind;
   uint32_t tableIndex;
   RefType elemType;
   Maybe<InitExpr> offsetIfActive;
-  Uint32Vector elemFuncIndices;  
+
+  
+  
+  Encoding encoding;
+  Uint32Vector elemIndices;
+  Expressions elemExpressions;
 
   bool active() const { return kind == Kind::Active; }
 
   const InitExpr& offset() const { return *offsetIfActive; }
 
-  size_t length() const { return elemFuncIndices.length(); }
+  size_t numElements() const {
+    switch (encoding) {
+      case Encoding::Indices:
+        return elemIndices.length();
+      case Encoding::Expressions:
+        return elemExpressions.count;
+      default:
+        MOZ_CRASH("unknown element segment encoding");
+    }
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };
-
-
-
-constexpr uint32_t NullFuncIndex = UINT32_MAX;
-static_assert(NullFuncIndex > MaxFuncs, "Invariant");
 
 using MutableElemSegment = RefPtr<ElemSegment>;
 using SharedElemSegment = RefPtr<const ElemSegment>;
