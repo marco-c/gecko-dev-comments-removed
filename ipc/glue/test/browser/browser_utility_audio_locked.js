@@ -19,6 +19,7 @@ add_setup(async function setup() {
 add_task(async function testAudioDecodingInUtility() {
   
   
-  const verifyForUtility = !!isNightly();
-  await runTest({ expectUtility: verifyForUtility });
+  
+  
+  await runTest({ expectUtility: isNightlyOnly(), expectError: isBetaOnly() });
 });
