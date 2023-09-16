@@ -152,10 +152,10 @@ class DOMIntersectionObserver final : public nsISupports,
       const Document& aDocument, const nsINode* aRoot,
       const StyleRect<LengthPercentage>* aRootMargin);
 
-  enum class IgnoreContentVisibility : bool { No, Yes };
+  enum class IsContentVisibilityObserver : bool { No, Yes };
   static IntersectionOutput Intersect(
       const IntersectionInput&, Element&,
-      IgnoreContentVisibility = IgnoreContentVisibility::No);
+      IsContentVisibilityObserver = IsContentVisibilityObserver::No);
   
   static IntersectionOutput Intersect(const IntersectionInput&, const nsRect&);
 

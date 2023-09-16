@@ -339,14 +339,29 @@ static const Document* GetTopLevelContentDocumentInThisProcess(
 
 static Maybe<nsRect> ComputeTheIntersection(
     nsIFrame* aTarget, nsIFrame* aRoot, const nsRect& aRootBounds,
-    const Maybe<nsRect>& aRemoteDocumentVisibleRect) {
+    const Maybe<nsRect>& aRemoteDocumentVisibleRect,
+    DOMIntersectionObserver::IsContentVisibilityObserver
+        aIsContentVisibilityObserver) {
   nsIFrame* target = aTarget;
   
   
   
   
-  Maybe<nsRect> intersectionRect = Some(nsLayoutUtils::GetAllInFlowRectsUnion(
-      target, target, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS));
+  auto inflowRect = nsLayoutUtils::GetAllInFlowRectsUnion(
+      target, target, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
+  
+  
+  if (aIsContentVisibilityObserver ==
+      DOMIntersectionObserver::IsContentVisibilityObserver::Yes) {
+    const auto& disp = *target->StyleDisplay();
+    auto clipAxes = target->ShouldApplyOverflowClipping(&disp);
+    if (clipAxes != PhysicalAxes::None) {
+      inflowRect = OverflowAreas::GetOverflowClipRect(
+          inflowRect, inflowRect, clipAxes,
+          target->OverflowClipMargin(clipAxes));
+    }
+  }
+  Maybe<nsRect> intersectionRect = Some(inflowRect);
 
   
   
@@ -625,7 +640,7 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
 IntersectionOutput DOMIntersectionObserver::Intersect(
     const IntersectionInput& aInput, Element& aTarget,
-    IgnoreContentVisibility aIgnoreContentVisibility) {
+    IsContentVisibilityObserver aIsContentVisibilityObserver) {
   const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
                                BrowsingContextOrigin::Similar;
   nsIFrame* targetFrame = aTarget.GetPrimaryFrame();
@@ -642,7 +657,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   
-  if (aIgnoreContentVisibility == IgnoreContentVisibility::No &&
+  if (aIsContentVisibilityObserver == IsContentVisibilityObserver::No &&
       targetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return {isSimilarOrigin};
   }
@@ -674,12 +689,23 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   nsRect targetRect = targetFrame->GetBoundingClientRect();
+  
+  
+  if (aIsContentVisibilityObserver == IsContentVisibilityObserver::Yes) {
+    const auto& disp = *targetFrame->StyleDisplay();
+    auto clipAxes = targetFrame->ShouldApplyOverflowClipping(&disp);
+    if (clipAxes != PhysicalAxes::None) {
+      targetRect = OverflowAreas::GetOverflowClipRect(
+          targetRect, targetRect, clipAxes,
+          targetFrame->OverflowClipMargin(clipAxes));
+    }
+  }
 
   
   
-  Maybe<nsRect> intersectionRect =
-      ComputeTheIntersection(targetFrame, aInput.mRootFrame, rootBounds,
-                             aInput.mRemoteDocumentVisibleRect);
+  Maybe<nsRect> intersectionRect = ComputeTheIntersection(
+      targetFrame, aInput.mRootFrame, rootBounds,
+      aInput.mRemoteDocumentVisibleRect, aIsContentVisibilityObserver);
 
   return {isSimilarOrigin, rootBounds, targetRect, intersectionRect};
 }
@@ -706,17 +732,17 @@ void DOMIntersectionObserver::Update(Document& aDocument,
   
   
   
-  IgnoreContentVisibility ignoreContentVisibility =
+  IsContentVisibilityObserver isContentVisibilityObserver =
       aDocument.GetContentVisibilityObserver() == this
-          ? IgnoreContentVisibility::Yes
-          : IgnoreContentVisibility::No;
+          ? IsContentVisibilityObserver::Yes
+          : IsContentVisibilityObserver::No;
 
   
   
   for (Element* target : mObservationTargets) {
     
     IntersectionOutput output =
-        Intersect(input, *target, ignoreContentVisibility);
+        Intersect(input, *target, isContentVisibilityObserver);
 
     
     int64_t targetArea = (int64_t)output.mTargetRect.Width() *
