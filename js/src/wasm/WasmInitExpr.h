@@ -86,7 +86,7 @@ class InitExpr {
   
   [[nodiscard]] static bool decodeAndEvaluate(
       JSContext* cx, Handle<WasmInstanceObject*> instanceObj, Decoder& d,
-      MutableHandleVal result);
+      ValType expectedType, MutableHandleVal result);
 
   
   

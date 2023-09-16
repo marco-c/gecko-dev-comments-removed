@@ -220,15 +220,14 @@ struct FuncDesc {
 
 using FuncDescVector = Vector<FuncDesc, 0, SystemAllocPolicy>;
 
-
-
-
-
-
-
-
-
 enum class GlobalKind { Import, Constant, Variable };
+
+
+
+
+
+
+
 
 class GlobalDesc {
   GlobalKind kind_;
@@ -253,8 +252,8 @@ class GlobalDesc {
 
   explicit GlobalDesc(InitExpr&& initial, bool isMutable,
                       ModuleKind kind = ModuleKind::Wasm)
-      : kind_((isMutable || !initial.isLiteral()) ? GlobalKind::Variable
-                                                  : GlobalKind::Constant) {
+      : kind_((!isMutable && initial.isLiteral()) ? GlobalKind::Constant
+                                                  : GlobalKind::Variable) {
     initial_ = std::move(initial);
     if (isVariable()) {
       isMutable_ = isMutable;

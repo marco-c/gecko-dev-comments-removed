@@ -308,6 +308,11 @@ class MOZ_NON_PARAM Val : public LitVal {
   }
 
   
+  
+  
+  void unsafeSetType(ValType type) { type_ = type; }
+
+  
   void initFromRootedLocation(ValType type, const void* loc);
   void initFromHeapLocation(ValType type, const void* loc);
 
