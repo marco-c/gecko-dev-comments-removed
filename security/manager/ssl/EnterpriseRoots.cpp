@@ -18,10 +18,8 @@
 
 #ifdef XP_MACOSX
 #  include <Security/Security.h>
-#  include "KeychainSecret.h"  
-
-#  include "nsCocoaFeatures.h"
-#endif  
+#  include "KeychainSecret.h"
+#endif
 
 #ifdef XP_WIN
 #  include <windows.h>
