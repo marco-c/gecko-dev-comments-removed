@@ -16,22 +16,15 @@
 #include "inffast.h"
 
 
-local void fixedtables OF((struct inflate_state FAR *state));
 
 
 
 
 
 
-
-
-int ZEXPORT inflateBackInit_(strm, windowBits, window, version, stream_size)
-z_streamp strm;
-int windowBits;
-unsigned char FAR *window;
-const char *version;
-int stream_size;
-{
+int ZEXPORT inflateBackInit_(z_streamp strm, int windowBits,
+                             unsigned char FAR *window, const char *version,
+                             int stream_size) {
     struct inflate_state FAR *state;
 
     if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
@@ -80,9 +73,7 @@ int stream_size;
 
 
 
-local void fixedtables(state)
-struct inflate_state FAR *state;
-{
+local void fixedtables(struct inflate_state FAR *state) {
 #ifdef BUILDFIXED
     static int virgin = 1;
     static code *lenfix, *distfix;
@@ -248,13 +239,8 @@ struct inflate_state FAR *state;
 
 
 
-int ZEXPORT inflateBack(strm, in, in_desc, out, out_desc)
-z_streamp strm;
-in_func in;
-void FAR *in_desc;
-out_func out;
-void FAR *out_desc;
-{
+int ZEXPORT inflateBack(z_streamp strm, in_func in, void FAR *in_desc,
+                        out_func out, void FAR *out_desc) {
     struct inflate_state FAR *state;
     z_const unsigned char FAR *next;    
     unsigned char FAR *put;     
@@ -632,9 +618,7 @@ void FAR *out_desc;
     return ret;
 }
 
-int ZEXPORT inflateBackEnd(strm)
-z_streamp strm;
-{
+int ZEXPORT inflateBackEnd(z_streamp strm) {
     if (strm == Z_NULL || strm->state == Z_NULL || strm->zfree == (free_func)0)
         return Z_STREAM_ERROR;
     ZFREE(strm, strm->state);

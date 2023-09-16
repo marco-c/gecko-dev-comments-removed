@@ -6,24 +6,11 @@
 #include "gzguts.h"
 
 
-local int gz_load OF((gz_statep, unsigned char *, unsigned, unsigned *));
-local int gz_avail OF((gz_statep));
-local int gz_look OF((gz_statep));
-local int gz_decomp OF((gz_statep));
-local int gz_fetch OF((gz_statep));
-local int gz_skip OF((gz_statep, z_off64_t));
-local z_size_t gz_read OF((gz_statep, voidp, z_size_t));
 
 
 
-
-
-local int gz_load(state, buf, len, have)
-    gz_statep state;
-    unsigned char *buf;
-    unsigned len;
-    unsigned *have;
-{
+local int gz_load(gz_statep state, unsigned char *buf, unsigned len,
+                  unsigned *have) {
     int ret;
     unsigned get, max = ((unsigned)-1 >> 2) + 1;
 
@@ -53,9 +40,7 @@ local int gz_load(state, buf, len, have)
 
 
 
-local int gz_avail(state)
-    gz_statep state;
-{
+local int gz_avail(gz_statep state) {
     unsigned got;
     z_streamp strm = &(state->strm);
 
@@ -88,9 +73,7 @@ local int gz_avail(state)
 
 
 
-local int gz_look(state)
-    gz_statep state;
-{
+local int gz_look(gz_statep state) {
     z_streamp strm = &(state->strm);
 
     
@@ -170,9 +153,7 @@ local int gz_look(state)
 
 
 
-local int gz_decomp(state)
-    gz_statep state;
-{
+local int gz_decomp(gz_statep state) {
     int ret = Z_OK;
     unsigned had;
     z_streamp strm = &(state->strm);
@@ -224,9 +205,7 @@ local int gz_decomp(state)
 
 
 
-local int gz_fetch(state)
-    gz_statep state;
-{
+local int gz_fetch(gz_statep state) {
     z_streamp strm = &(state->strm);
 
     do {
@@ -254,10 +233,7 @@ local int gz_fetch(state)
 }
 
 
-local int gz_skip(state, len)
-    gz_statep state;
-    z_off64_t len;
-{
+local int gz_skip(gz_statep state, z_off64_t len) {
     unsigned n;
 
     
@@ -289,11 +265,7 @@ local int gz_skip(state, len)
 
 
 
-local z_size_t gz_read(state, buf, len)
-    gz_statep state;
-    voidp buf;
-    z_size_t len;
-{
+local z_size_t gz_read(gz_statep state, voidp buf, z_size_t len) {
     z_size_t got;
     unsigned n;
 
@@ -370,11 +342,7 @@ local z_size_t gz_read(state, buf, len)
 }
 
 
-int ZEXPORT gzread(file, buf, len)
-    gzFile file;
-    voidp buf;
-    unsigned len;
-{
+int ZEXPORT gzread(gzFile file, voidp buf, unsigned len) {
     gz_statep state;
 
     
@@ -406,12 +374,7 @@ int ZEXPORT gzread(file, buf, len)
 }
 
 
-z_size_t ZEXPORT gzfread(buf, size, nitems, file)
-    voidp buf;
-    z_size_t size;
-    z_size_t nitems;
-    gzFile file;
-{
+z_size_t ZEXPORT gzfread(voidp buf, z_size_t size, z_size_t nitems, gzFile file) {
     z_size_t len;
     gz_statep state;
 
@@ -442,9 +405,7 @@ z_size_t ZEXPORT gzfread(buf, size, nitems, file)
 #else
 #  undef gzgetc
 #endif
-int ZEXPORT gzgetc(file)
-    gzFile file;
-{
+int ZEXPORT gzgetc(gzFile file) {
     unsigned char buf[1];
     gz_statep state;
 
@@ -469,23 +430,22 @@ int ZEXPORT gzgetc(file)
     return gz_read(state, buf, 1) < 1 ? -1 : buf[0];
 }
 
-int ZEXPORT gzgetc_(file)
-gzFile file;
-{
+int ZEXPORT gzgetc_(gzFile file) {
     return gzgetc(file);
 }
 
 
-int ZEXPORT gzungetc(c, file)
-    int c;
-    gzFile file;
-{
+int ZEXPORT gzungetc(int c, gzFile file) {
     gz_statep state;
 
     
     if (file == NULL)
         return -1;
     state = (gz_statep)file;
+
+    
+    if (state->mode == GZ_READ && state->how == LOOK && state->x.have == 0)
+        (void)gz_look(state);
 
     
     if (state->mode != GZ_READ ||
@@ -536,11 +496,7 @@ int ZEXPORT gzungetc(c, file)
 }
 
 
-char * ZEXPORT gzgets(file, buf, len)
-    gzFile file;
-    char *buf;
-    int len;
-{
+char * ZEXPORT gzgets(gzFile file, char *buf, int len) {
     unsigned left, n;
     char *str;
     unsigned char *eol;
@@ -600,9 +556,7 @@ char * ZEXPORT gzgets(file, buf, len)
 }
 
 
-int ZEXPORT gzdirect(file)
-    gzFile file;
-{
+int ZEXPORT gzdirect(gzFile file) {
     gz_statep state;
 
     
@@ -620,9 +574,7 @@ int ZEXPORT gzdirect(file)
 }
 
 
-int ZEXPORT gzclose_r(file)
-    gzFile file;
-{
+int ZEXPORT gzclose_r(gzFile file) {
     int ret, err;
     gz_statep state;
 

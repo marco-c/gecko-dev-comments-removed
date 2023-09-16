@@ -8,9 +8,7 @@
 
 
 
-int ZEXPORT gzclose(file)
-    gzFile file;
-{
+int ZEXPORT gzclose(gzFile file) {
 #ifndef NO_GZCOMPRESS
     gz_statep state;
 
