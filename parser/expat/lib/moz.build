@@ -11,7 +11,12 @@ EXPORTS += [
     'expat_external.h',
 ]
 
-SOURCES += expat_sources
+if CONFIG["MOZ_WASM_SANDBOXING_EXPAT"]:
+    
+    
+    SOURCES += ['xmltok.c']
+else:
+    SOURCES += expat_sources
 
 FINAL_LIBRARY = 'gkmedias'
 
