@@ -739,6 +739,7 @@ pref("browser.shopping.experience2023.active", true);
 
 
 
+
 pref("browser.shopping.experience2023.ads.enabled", true);
 
 
