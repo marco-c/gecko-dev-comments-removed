@@ -664,28 +664,13 @@ CssRuleView.prototype = {
   
 
 
-  _onAddRule() {
+  async _onAddRule() {
     const elementStyle = this._elementStyle;
     const element = elementStyle.element;
     const pseudoClasses = element.pseudoClassLocks;
 
-    
-    
-    
-    
-    const eventPromise = this.once("ruleview-refreshed");
-    const newRulePromise = this.pageStyle.addNewRule(element, pseudoClasses);
-    Promise.all([eventPromise, newRulePromise]).then(values => {
-      const options = values[1];
-      
-      for (const rule of this._elementStyle.rules) {
-        if (options.rule === rule.domRule) {
-          rule.editor.selectorText.click();
-          elementStyle._changed();
-          break;
-        }
-      }
-    });
+    this._focusNextUserAddedRule = true;
+    this.pageStyle.addNewRule(element, pseudoClasses);
   },
 
   
@@ -1408,6 +1393,13 @@ CssRuleView.prototype = {
         container.appendChild(rule.editor.element);
       } else {
         this.element.appendChild(rule.editor.element);
+      }
+
+      
+      if (this._focusNextUserAddedRule && rule.domRule.userAdded) {
+        this._focusNextUserAddedRule = null;
+        rule.editor.selectorText.click();
+        this.emitForTests("new-rule-added");
       }
     }
 

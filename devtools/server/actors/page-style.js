@@ -161,7 +161,7 @@ class PageStyleActor extends Actor {
   
 
 
-  _styleApplied(kind, styleSheet) {
+  _styleApplied(kind) {
     
     
     this.cssLogic.reset();
@@ -174,11 +174,12 @@ class PageStyleActor extends Actor {
 
 
 
-  _styleRef(item) {
+
+  _styleRef(item, userAdded = false) {
     if (this.refMap.has(item)) {
       return this.refMap.get(item);
     }
-    const actor = new StyleRuleActor(this, item);
+    const actor = new StyleRuleActor(this, item, userAdded);
     this.manage(actor);
     this.refMap.set(item, actor);
 
@@ -1075,7 +1076,7 @@ class PageStyleActor extends Actor {
     await this.styleSheetsManager.setStyleSheetText(resourceId, authoredText);
 
     const cssRule = sheet.cssRules.item(index);
-    const ruleActor = this._styleRef(cssRule);
+    const ruleActor = this._styleRef(cssRule, true);
 
     TrackChangeEmitter.trackChange({
       ...ruleActor.metadata,

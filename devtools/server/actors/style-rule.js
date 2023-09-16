@@ -67,10 +67,11 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 class StyleRuleActor extends Actor {
-  constructor(pageStyle, item) {
+  constructor(pageStyle, item, userAdded = false) {
     super(pageStyle.conn, styleRuleSpec);
     this.pageStyle = pageStyle;
     this.rawStyle = item.style;
+    this._userAdded = userAdded;
     this._parentSheet = null;
     
     
@@ -330,6 +331,11 @@ class StyleRuleActor extends Actor {
         canSetRuleText: this.canSetRuleText,
       },
     };
+
+    
+    if (this._userAdded) {
+      form.userAdded = true;
+    }
 
     const { computeDesugaredSelector, ancestorData } =
       this._getAncestorDataForForm();
