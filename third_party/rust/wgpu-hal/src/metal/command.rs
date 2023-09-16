@@ -1,4 +1,5 @@
 use super::{conv, AsNative};
+use crate::CommandEncoder as _;
 use std::{borrow::Cow, mem, ops::Range};
 
 
@@ -1052,5 +1053,22 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
     unsafe fn dispatch_indirect(&mut self, buffer: &super::Buffer, offset: wgt::BufferAddress) {
         let encoder = self.state.compute.as_ref().unwrap();
         encoder.dispatch_thread_groups_indirect(&buffer.raw, offset, self.state.raw_wg_size);
+    }
+}
+
+impl Drop for super::CommandEncoder {
+    fn drop(&mut self) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe {
+            self.discard_encoding();
+        }
     }
 }

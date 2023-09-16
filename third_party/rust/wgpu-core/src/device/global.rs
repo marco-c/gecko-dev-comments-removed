@@ -1078,19 +1078,28 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 }
             }
 
-            
-            
-            
-            if mem::size_of::<Input<G, id::BindGroupLayoutId>>() == 0 {
+            let mut compatible_layout = None;
+            {
                 let (bgl_guard, _) = hub.bind_group_layouts.read(&mut token);
                 if let Some(id) =
                     Device::deduplicate_bind_group_layout(device_id, &entry_map, &*bgl_guard)
                 {
-                    return (id, None);
+                    
+                    
+                    
+                    
+                    
+                    
+                    
+                    if G::ids_are_generated_in_wgpu() {
+                        return (id, None);
+                    }
+
+                    compatible_layout = Some(id::Valid(id));
                 }
             }
 
-            let layout = match device.create_bind_group_layout(
+            let mut layout = match device.create_bind_group_layout(
                 device_id,
                 desc.label.borrow_option(),
                 entry_map,
@@ -1099,7 +1108,10 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 Err(e) => break e,
             };
 
+            layout.compatible_layout = compatible_layout;
+
             let id = fid.assign(layout, &mut token);
+
             return (id.0, None);
         };
 
@@ -1244,16 +1256,28 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                     .add(trace::Action::CreateBindGroup(fid.id(), desc.clone()));
             }
 
-            let bind_group_layout = match bind_group_layout_guard.get(desc.layout) {
+            let mut bind_group_layout = match bind_group_layout_guard.get(desc.layout) {
                 Ok(layout) => layout,
-                Err(_) => break binding_model::CreateBindGroupError::InvalidLayout,
+                Err(..) => break binding_model::CreateBindGroupError::InvalidLayout,
             };
-            let bind_group =
-                match device.create_bind_group(device_id, bind_group_layout, desc, hub, &mut token)
-                {
-                    Ok(bind_group) => bind_group,
-                    Err(e) => break e,
-                };
+
+            let mut layout_id = id::Valid(desc.layout);
+            if let Some(id) = bind_group_layout.compatible_layout {
+                layout_id = id;
+                bind_group_layout = &bind_group_layout_guard[id];
+            }
+
+            let bind_group = match device.create_bind_group(
+                device_id,
+                bind_group_layout,
+                layout_id,
+                desc,
+                hub,
+                &mut token,
+            ) {
+                Ok(bind_group) => bind_group,
+                Err(e) => break e,
+            };
             let ref_count = bind_group.life_guard.add_ref();
 
             let id = fid.assign(bind_group, &mut token);

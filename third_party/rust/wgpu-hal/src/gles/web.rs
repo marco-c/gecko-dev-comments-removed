@@ -25,6 +25,7 @@ impl AdapterContext {
 
 #[derive(Debug)]
 pub struct Instance {
+    
     webgl2_context: Mutex<Option<web_sys::WebGl2RenderingContext>>,
 }
 
@@ -65,14 +66,16 @@ impl Instance {
                 
                 
                 
-                return Err(crate::InstanceError);
+                return Err(crate::InstanceError::new(String::from(
+                    "canvas.getContext() returned null; webgl2 not available or canvas already in use"
+                )));
             }
             Err(js_error) => {
                 
                 
-                
-                
-                panic!("canvas.getContext() threw {js_error:?}")
+                return Err(crate::InstanceError::new(format!(
+                    "canvas.getContext() threw exception {js_error:?}",
+                )));
             }
         };
 
@@ -82,6 +85,8 @@ impl Instance {
             .dyn_into()
             .expect("canvas context is not a WebGl2RenderingContext");
 
+        
+        
         *self.webgl2_context.lock() = Some(webgl2_context.clone());
 
         Ok(Surface {
@@ -153,7 +158,9 @@ impl crate::Instance<super::Api> for Instance {
 
             self.create_surface_from_canvas(canvas)
         } else {
-            Err(crate::InstanceError)
+            Err(crate::InstanceError::new(format!(
+                "window handle {window_handle:?} is not a web handle"
+            )))
         }
     }
 

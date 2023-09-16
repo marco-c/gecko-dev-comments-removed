@@ -90,7 +90,7 @@ use std::{
     num::NonZeroU32,
     ops::{Range, RangeInclusive},
     ptr::NonNull,
-    sync::atomic::AtomicBool,
+    sync::{atomic::AtomicBool, Arc},
 };
 
 use bitflags::bitflags;
@@ -152,9 +152,42 @@ pub enum SurfaceError {
     Other(&'static str),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq, Error)]
-#[error("Not supported")]
-pub struct InstanceError;
+
+
+#[derive(Clone, Debug, Error)]
+#[error("{message}")]
+pub struct InstanceError {
+    
+    
+    
+    
+    
+    message: String,
+
+    
+    #[source]
+    source: Option<Arc<dyn std::error::Error + Send + Sync + 'static>>,
+}
+
+impl InstanceError {
+    #[allow(dead_code)] 
+    pub(crate) fn new(message: String) -> Self {
+        Self {
+            message,
+            source: None,
+        }
+    }
+    #[allow(dead_code)] 
+    pub(crate) fn with_source(
+        message: String,
+        source: impl std::error::Error + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            message,
+            source: Some(Arc::new(source)),
+        }
+    }
+}
 
 pub trait Api: Clone + Sized {
     type Instance: Instance<Self>;
@@ -787,6 +820,7 @@ pub struct InstanceDescriptor<'a> {
     pub name: &'a str,
     pub flags: InstanceFlags,
     pub dx12_shader_compiler: wgt::Dx12Compiler,
+    pub gles_minor_version: wgt::Gles3MinorVersion,
 }
 
 #[derive(Clone, Debug)]

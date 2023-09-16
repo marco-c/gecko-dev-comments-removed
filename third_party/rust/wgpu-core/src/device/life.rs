@@ -219,6 +219,9 @@ struct ActiveSubmission<A: hal::Api> {
     mapped: Vec<id::Valid<id::BufferId>>,
 
     encoders: Vec<EncoderInFlight<A>>,
+
+    
+    
     work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
 
@@ -304,6 +307,12 @@ pub(super) struct LifetimeTracker<A: hal::Api> {
     
     
     ready_to_map: Vec<id::Valid<id::BufferId>>,
+
+    
+    
+    
+    
+    work_done_closures: SmallVec<[SubmittedWorkDoneClosure; 1]>,
 }
 
 impl<A: hal::Api> LifetimeTracker<A> {
@@ -316,6 +325,7 @@ impl<A: hal::Api> LifetimeTracker<A> {
             active: Vec::new(),
             free_resources: NonReferencedResources::new(),
             ready_to_map: Vec::new(),
+            work_done_closures: SmallVec::new(),
         }
     }
 
@@ -405,7 +415,7 @@ impl<A: hal::Api> LifetimeTracker<A> {
             .position(|a| a.index > last_done)
             .unwrap_or(self.active.len());
 
-        let mut work_done_closures = SmallVec::new();
+        let mut work_done_closures: SmallVec<_> = self.work_done_closures.drain(..).collect();
         for a in self.active.drain(..done_count) {
             log::trace!("Active submission {} is done", a.index);
             self.free_resources.extend(a.last_resources);
@@ -445,18 +455,16 @@ impl<A: hal::Api> LifetimeTracker<A> {
         }
     }
 
-    pub fn add_work_done_closure(
-        &mut self,
-        closure: SubmittedWorkDoneClosure,
-    ) -> Option<SubmittedWorkDoneClosure> {
+    pub fn add_work_done_closure(&mut self, closure: SubmittedWorkDoneClosure) {
         match self.active.last_mut() {
             Some(active) => {
                 active.work_done_closures.push(closure);
-                None
             }
             
             
-            None => Some(closure),
+            None => {
+                self.work_done_closures.push(closure);
+            }
         }
     }
 }
@@ -762,14 +770,24 @@ impl<A: HalApi> LifetimeTracker<A> {
                 
                 
                 
-                if guard[id].multi_ref_count.dec_and_check_empty() {
-                    log::debug!("Bind group layout {:?} will be destroyed", id);
-                    #[cfg(feature = "trace")]
-                    if let Some(t) = trace {
-                        t.lock().add(trace::Action::DestroyBindGroupLayout(id.0));
-                    }
-                    if let Some(lay) = hub.bind_group_layouts.unregister_locked(id.0, &mut *guard) {
-                        self.free_resources.bind_group_layouts.push(lay.raw);
+                let mut bgl_to_check = Some(id);
+                while let Some(id) = bgl_to_check.take() {
+                    let bgl = &guard[id];
+                    if bgl.multi_ref_count.dec_and_check_empty() {
+                        
+                        
+                        bgl_to_check = bgl.compatible_layout;
+
+                        log::debug!("Bind group layout {:?} will be destroyed", id);
+                        #[cfg(feature = "trace")]
+                        if let Some(t) = trace {
+                            t.lock().add(trace::Action::DestroyBindGroupLayout(id.0));
+                        }
+                        if let Some(lay) =
+                            hub.bind_group_layouts.unregister_locked(id.0, &mut *guard)
+                        {
+                            self.free_resources.bind_group_layouts.push(lay.raw);
+                        }
                     }
                 }
             }

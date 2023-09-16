@@ -96,7 +96,9 @@ pub fn create_factory(
     required_factory_type: DxgiFactoryType,
     instance_flags: crate::InstanceFlags,
 ) -> Result<(d3d12::DxgiLib, d3d12::DxgiFactory), crate::InstanceError> {
-    let lib_dxgi = d3d12::DxgiLib::new().map_err(|_| crate::InstanceError)?;
+    let lib_dxgi = d3d12::DxgiLib::new().map_err(|e| {
+        crate::InstanceError::with_source(String::from("failed to load dxgi.dll"), e)
+    })?;
 
     let mut factory_flags = d3d12::FactoryCreationFlags::empty();
 
@@ -128,18 +130,22 @@ pub fn create_factory(
             Ok(factory) => Some(factory),
             
             Err(err) => {
-                log::error!("Failed to create IDXGIFactory4: {}", err);
-                return Err(crate::InstanceError);
+                
+                return Err(crate::InstanceError::new(format!(
+                    "failed to create IDXGIFactory4: {err:?}"
+                )));
             }
         },
         
         Err(err) if required_factory_type == DxgiFactoryType::Factory4 => {
-            log::error!("IDXGIFactory1 creation function not found: {:?}", err);
-            return Err(crate::InstanceError);
+            return Err(crate::InstanceError::with_source(
+                String::from("IDXGIFactory1 creation function not found"),
+                err,
+            ));
         }
         
         Err(err) => {
-            log::info!("IDXGIFactory1 creation function not found: {:?}", err);
+            log::info!("IDXGIFactory1 creation function not found: {err:?}");
             None
         }
     };
@@ -153,8 +159,10 @@ pub fn create_factory(
             }
             
             Err(err) if required_factory_type == DxgiFactoryType::Factory6 => {
-                log::warn!("Failed to cast IDXGIFactory4 to IDXGIFactory6: {:?}", err);
-                return Err(crate::InstanceError);
+                
+                return Err(crate::InstanceError::new(format!(
+                    "failed to cast IDXGIFactory4 to IDXGIFactory6: {err:?}"
+                )));
             }
             
             Err(err) => {
@@ -169,14 +177,18 @@ pub fn create_factory(
         Ok(pair) => match pair.into_result() {
             Ok(factory) => factory,
             Err(err) => {
-                log::error!("Failed to create IDXGIFactory1: {}", err);
-                return Err(crate::InstanceError);
+                
+                return Err(crate::InstanceError::new(format!(
+                    "failed to create IDXGIFactory1: {err:?}"
+                )));
             }
         },
         
         Err(err) => {
-            log::error!("IDXGIFactory1 creation function not found: {:?}", err);
-            return Err(crate::InstanceError);
+            return Err(crate::InstanceError::with_source(
+                String::from("IDXGIFactory1 creation function not found"),
+                err,
+            ));
         }
     };
 
@@ -188,8 +200,10 @@ pub fn create_factory(
         }
         
         Err(err) if required_factory_type == DxgiFactoryType::Factory2 => {
-            log::warn!("Failed to cast IDXGIFactory1 to IDXGIFactory2: {:?}", err);
-            return Err(crate::InstanceError);
+            
+            return Err(crate::InstanceError::new(format!(
+                "failed to cast IDXGIFactory1 to IDXGIFactory2: {err:?}"
+            )));
         }
         
         Err(err) => {

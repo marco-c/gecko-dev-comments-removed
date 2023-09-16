@@ -436,6 +436,8 @@ pub struct BindGroupLayoutDescriptor<'a> {
 
 pub(crate) type BindEntryMap = FastHashMap<u32, wgt::BindGroupLayoutEntry>;
 
+pub type BindGroupLayouts<A> = crate::storage::Storage<BindGroupLayout<A>, BindGroupLayoutId>;
+
 
 
 
@@ -450,6 +452,12 @@ pub struct BindGroupLayout<A: hal::Api> {
     pub(crate) device_id: Stored<DeviceId>,
     pub(crate) multi_ref_count: MultiRefCount,
     pub(crate) entries: BindEntryMap,
+    
+    
+    
+    
+    
+    pub(crate) compatible_layout: Option<Valid<BindGroupLayoutId>>,
     #[allow(unused)]
     pub(crate) dynamic_count: usize,
     pub(crate) count_validator: BindingTypeMaxCountValidator,
@@ -470,6 +478,30 @@ impl<A: hal::Api> Resource for BindGroupLayout<A> {
         #[cfg(not(debug_assertions))]
         return "";
     }
+}
+
+
+pub(crate) fn try_get_bind_group_layout<A: HalApi>(
+    layouts: &BindGroupLayouts<A>,
+    id: BindGroupLayoutId,
+) -> Option<&BindGroupLayout<A>> {
+    let layout = layouts.get(id).ok()?;
+    if let Some(compat) = layout.compatible_layout {
+        return Some(&layouts[compat]);
+    }
+
+    Some(layout)
+}
+
+pub(crate) fn get_bind_group_layout<A: HalApi>(
+    layouts: &BindGroupLayouts<A>,
+    id: Valid<BindGroupLayoutId>,
+) -> (Valid<BindGroupLayoutId>, &BindGroupLayout<A>) {
+    let layout = &layouts[id];
+    layout
+        .compatible_layout
+        .map(|compat| (compat, &layouts[compat]))
+        .unwrap_or((id, layout))
 }
 
 #[derive(Clone, Debug, Error)]

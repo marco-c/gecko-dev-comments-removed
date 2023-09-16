@@ -679,7 +679,6 @@ bitflags::bitflags! {
         /// This allows only drawing the vertices of polygons/triangles instead of filled
         ///
         /// Supported platforms:
-        /// - DX12
         /// - Vulkan
         ///
         /// This is a native only feature.
@@ -932,6 +931,12 @@ pub struct Limits {
     
     
     pub max_push_constant_size: u32,
+
+    
+    
+    
+    
+    pub max_non_sampler_bindings: u32,
 }
 
 impl Default for Limits {
@@ -966,11 +971,13 @@ impl Default for Limits {
             max_compute_workgroup_size_z: 64,
             max_compute_workgroups_per_dimension: 65535,
             max_push_constant_size: 0,
+            max_non_sampler_bindings: 1_000_000,
         }
     }
 }
 
 impl Limits {
+    
     
     
     
@@ -1039,9 +1046,11 @@ impl Limits {
             max_compute_workgroup_size_z: 64,
             max_compute_workgroups_per_dimension: 65535,
             max_buffer_size: 256 << 20,
+            max_non_sampler_bindings: 1_000_000,
         }
     }
 
+    
     
     
     
@@ -1194,6 +1203,7 @@ impl Limits {
         compare!(max_compute_workgroup_size_z, Less);
         compare!(max_compute_workgroups_per_dimension, Less);
         compare!(max_buffer_size, Less);
+        compare!(max_non_sampler_bindings, Less);
     }
 }
 
@@ -1270,8 +1280,8 @@ bitflags::bitflags! {
         const INDIRECT_EXECUTION = 1 << 2;
         /// Supports non-zero `base_vertex` parameter to indexed draw calls.
         const BASE_VERTEX = 1 << 3;
-        /// Supports reading from a depth/stencil buffer while using as a read-only depth/stencil
-        /// attachment.
+        /// Supports reading from a depth/stencil texture while using it as a read-only
+        /// depth/stencil attachment.
         ///
         /// The WebGL2 and GLES backends do not support RODS.
         const READ_ONLY_DEPTH_STENCIL = 1 << 4;
@@ -6401,11 +6411,32 @@ pub enum Dx12Compiler {
 }
 
 
+
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Hash)]
+pub enum Gles3MinorVersion {
+    
+    #[default]
+    Automatic,
+
+    
+    Version0,
+
+    
+    Version1,
+
+    
+    Version2,
+}
+
+
 pub struct InstanceDescriptor {
     
     pub backends: Backends,
     
     pub dx12_shader_compiler: Dx12Compiler,
+    
+    pub gles_minor_version: Gles3MinorVersion,
 }
 
 impl Default for InstanceDescriptor {
@@ -6413,6 +6444,7 @@ impl Default for InstanceDescriptor {
         Self {
             backends: Backends::all(),
             dx12_shader_compiler: Dx12Compiler::default(),
+            gles_minor_version: Gles3MinorVersion::default(),
         }
     }
 }
