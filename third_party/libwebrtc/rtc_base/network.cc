@@ -620,10 +620,6 @@ void BasicNetworkManager::ConvertIfAddrs(
       continue;
     }
     
-    if (!(cursor->ifa_flags & IFF_RUNNING)) {
-      continue;
-    }
-    
     if (cursor->ifa_addr->sa_family != AF_INET &&
         cursor->ifa_addr->sa_family != AF_INET6) {
       continue;
@@ -631,6 +627,12 @@ void BasicNetworkManager::ConvertIfAddrs(
     
     
     if (!ifaddrs_converter->ConvertIfAddrsToIPAddress(cursor, &ip, &mask)) {
+      continue;
+    }
+    
+    if (!(cursor->ifa_flags & IFF_RUNNING)) {
+      RTC_LOG(LS_INFO) << "Skip interface because of not IFF_RUNNING: "
+                       << ip.ToSensitiveString();
       continue;
     }
 
