@@ -25,6 +25,7 @@
 #endif
 #include "mozilla/Unused.h"
 #include "nsPrintfCString.h"
+#include "nsReadableUtils.h"
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
 #  include "mozilla/sandboxTarget.h"
@@ -107,7 +108,17 @@ void AnnotateCrashReportWithErrno(CrashReporter::Annotation tag, int error) {
 
 
 
-bool LoggingEnabledFor(const char* aTopLevelProtocol, const char* aFilter) {
+
+
+
+
+
+
+
+
+
+bool LoggingEnabledFor(const char* aTopLevelProtocol, Side aSide,
+                       const char* aFilter) {
   if (!aFilter) {
     return false;
   }
@@ -119,9 +130,27 @@ bool LoggingEnabledFor(const char* aTopLevelProtocol, const char* aFilter) {
   Tokenizer tokens(aFilter, kDelimiters);
   Tokenizer::Token t;
   while (tokens.Next(t)) {
-    if (t.Type() == Tokenizer::TOKEN_WORD &&
-        t.AsString() == aTopLevelProtocol) {
-      return true;
+    if (t.Type() == Tokenizer::TOKEN_WORD) {
+      auto filter = t.AsString();
+
+      
+      
+      
+      if (filter == aTopLevelProtocol) {
+        return true;
+      }
+
+      if (aSide == ParentSide &&
+          StringEndsWith(filter, nsDependentCString("Parent")) &&
+          Substring(filter, 0, filter.Length() - 6) == aTopLevelProtocol) {
+        return true;
+      }
+
+      if (aSide == ChildSide &&
+          StringEndsWith(filter, nsDependentCString("Child")) &&
+          Substring(filter, 0, filter.Length() - 5) == aTopLevelProtocol) {
+        return true;
+      }
     }
   }
 
