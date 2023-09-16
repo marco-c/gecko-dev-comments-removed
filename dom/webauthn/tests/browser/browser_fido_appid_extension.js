@@ -7,10 +7,70 @@
 const TEST_URL = "https://example.com/";
 
 let expectNotSupportedError = expectError("NotSupported");
-let expectInvalidStateError = expectError("InvalidState");
+let expectNotAllowedError = expectError("NotAllowed");
 let expectSecurityError = expectError("Security");
 
-add_virtual_authenticator();
+let gAppId = "https://example.com/appId";
+let gCrossOriginAppId = "https://example.org/appId";
+let gAuthenticatorId = add_virtual_authenticator();
+
+add_task(async function test_appid() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  await promiseWebAuthnMakeCredential(tab, "none", { appid: gAppId })
+    .then(arrivingHereIsBad)
+    .catch(expectNotSupportedError);
+
+  
+  let credIdB64 = await addCredential(gAuthenticatorId, gAppId);
+  let credId = base64ToBytesUrlSafe(credIdB64);
+
+  
+  let crossOriginCredIdB64 = await addCredential(
+    gAuthenticatorId,
+    gCrossOriginAppId
+  );
+  let crossOriginCredId = base64ToBytesUrlSafe(crossOriginCredIdB64);
+
+  
+  await promiseWebAuthnGetAssertion(tab, credId)
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError);
+
+  
+  await promiseWebAuthnGetAssertion(tab, crossOriginCredId, {
+    appid: gCrossOriginAppId,
+  })
+    .then(arrivingHereIsBad)
+    .catch(expectSecurityError);
+
+  
+  await promiseWebAuthnGetAssertion(tab, credId, { appid: gAppId + "2" })
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError);
+
+  
+  let rpIdHash = await promiseWebAuthnGetAssertion(tab, credId, {
+    appid: gAppId,
+  })
+    .then(({ authenticatorData, extensions }) => {
+      is(extensions.appid, true, "appid extension was acted upon");
+      return authenticatorData.slice(0, 32);
+    })
+    .then(rpIdHash => {
+      
+      checkRpIdHash(rpIdHash, gAppId);
+    })
+    .catch(arrivingHereIsBad);
+
+  removeCredential(gAuthenticatorId, credIdB64);
+  removeCredential(gAuthenticatorId, crossOriginCredIdB64);
+
+  
+  BrowserTestUtils.removeTab(tab);
+});
 
 add_task(async function test_appid_unused() {
   
