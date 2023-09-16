@@ -3908,8 +3908,6 @@ static JSString* TemporalDurationToString(JSContext* cx,
 static bool ToRelativeTemporalObject(JSContext* cx, Handle<JSObject*> options,
                                      MutableHandle<JSObject*> result) {
   
-
-  
   Rooted<Value> value(cx);
   if (!GetProperty(cx, options, options, cx->names().relativeTo, &value)) {
     return false;
