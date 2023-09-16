@@ -82,7 +82,6 @@ add_task(async function () {
       type: "iframe",
       filename: "file_use_counter_svg_getElementById.svg",
       counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
-      check_documents: false,
     },
     {
       type: "iframe",
@@ -91,7 +90,6 @@ add_task(async function () {
         { name: "SVGSVGELEMENT_CURRENTSCALE_getter" },
         { name: "SVGSVGELEMENT_CURRENTSCALE_setter" },
       ],
-      check_documents: false,
     },
 
     
@@ -138,6 +136,9 @@ add_task(async function () {
       filename: "file_use_counter_bfcache.html",
       waitForExplicitFinish: true,
       counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
+      
+      
+      extra_top_documents: 5,
     },
 
     
@@ -153,10 +154,6 @@ add_task(async function () {
   for (let test of TESTS) {
     let file = test.filename;
     info(`checking ${file} (${test.type})`);
-
-    let newTab = BrowserTestUtils.addTab(gBrowser, "about:blank");
-    gBrowser.selectedTab = newTab;
-    newTab.linkedBrowser.stop();
 
     
     
@@ -188,18 +185,23 @@ add_task(async function () {
         throw `unexpected type ${test.type}`;
     }
 
-    BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, url);
-    await BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-
+    let waitForFinish = null;
     if (test.waitForExplicitFinish) {
-      if (test.type != "direct") {
-        throw new Error(
-          `cannot use waitForExplicitFinish with test type ${test.type}`
-        );
-      }
-
+      is(
+        test.type,
+        "direct",
+        `cannot use waitForExplicitFinish with test type ${test.type}`
+      );
       
-      await BrowserTestUtils.waitForLocationChange(gBrowser, url + "#finished");
+      waitForFinish = BrowserTestUtils.waitForLocationChange(
+        gBrowser,
+        url + "#finished"
+      );
+    }
+
+    let newTab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url);
+    if (waitForFinish) {
+      await waitForFinish;
     }
 
     if (targetElement) {
@@ -223,9 +225,7 @@ add_task(async function () {
     }
 
     
-    let tabClosed = BrowserTestUtils.waitForTabClosing(newTab);
-    gBrowser.removeTab(newTab);
-    await tabClosed;
+    await BrowserTestUtils.removeTab(newTab);
 
     
     let after = await grabHistogramsFromContent(
@@ -251,18 +251,19 @@ add_task(async function () {
       }
     }
 
-    if (test.check_documents ?? true) {
-      ok(
-        after.toplevel_docs >= before.toplevel_docs + 1,
-        "top level destroyed document counts are correct"
-      );
-      
-      
-      ok(
-        after.docs >= before.docs + (test.type == "img" ? 2 : 1),
-        "destroyed document counts are correct"
-      );
-    }
+    is(
+      after.toplevel_docs,
+      before.toplevel_docs + 1 + (test.extra_top_documents || 0),
+      "top level destroyed document counts are correct"
+    );
+
+    
+    
+    
+    ok(
+      after.docs >= before.docs + (test.type == "img" ? 2 : 1),
+      "destroyed document counts are correct"
+    );
   }
 });
 
