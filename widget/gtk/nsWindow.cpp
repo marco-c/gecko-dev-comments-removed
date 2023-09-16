@@ -5967,6 +5967,11 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
   if (IsTopLevelWindowType()) {
     mGtkWindowDecoration = GetSystemGtkWindowDecoration();
+    
+    
+    mCeiledScaleFactor = parentnsWindow
+                             ? int32_t(parentnsWindow->mCeiledScaleFactor)
+                             : ScreenHelperGTK::GetGTKMonitorScaleFactor();
   }
 
   
