@@ -707,7 +707,7 @@ class ResetInterceptionHeaderVisitor final : public nsIHttpHeaderVisitor {
   VisitHeader(const nsACString& aHeader, const nsACString& aValue) override {
     
     
-    if (aHeader.Equals(nsHttp::Cookie)) {
+    if (aHeader.Equals(nsHttp::Cookie.val())) {
       return NS_OK;
     }
     if (aValue.IsEmpty()) {
