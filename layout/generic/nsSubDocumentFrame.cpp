@@ -1355,9 +1355,12 @@ bool nsDisplayRemote::CreateWebRenderCommands(
 
     
     
-    nsRect visibleRect = GetBuildingRect() - ToReferenceFrame();
-    visibleRect.IntersectRect(visibleRect, destRect);
-    visibleRect -= destRect.TopLeft();
+    const nsRect buildingRect = GetBuildingRect() - ToReferenceFrame();
+    Maybe<nsRect> visibleRect =
+        buildingRect.EdgeInclusiveIntersection(destRect);
+    if (visibleRect) {
+      *visibleRect -= destRect.TopLeft();
+    }
 
     
     MatrixScales scale = aSc.GetInheritedScale();

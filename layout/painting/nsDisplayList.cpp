@@ -773,14 +773,21 @@ void nsDisplayListBuilder::AddEffectUpdate(dom::RemoteBrowser* aBrowser,
   
   nsPresContext* pc =
       mReferenceFrame ? mReferenceFrame->PresContext() : nullptr;
-  if (pc && (pc->Type() != nsPresContext::eContext_Galley)) {
+  if (pc && pc->Type() != nsPresContext::eContext_Galley) {
     Maybe<dom::EffectsInfo> existing = mEffectsUpdates.MaybeGet(aBrowser);
-    if (existing.isSome()) {
+    if (existing) {
       
       MOZ_ASSERT(existing->mRasterScale == aUpdate.mRasterScale &&
                  existing->mTransformToAncestorScale ==
                      aUpdate.mTransformToAncestorScale);
-      update.mVisibleRect = update.mVisibleRect.Union(existing->mVisibleRect);
+      if (existing->mVisibleRect) {
+        if (update.mVisibleRect) {
+          update.mVisibleRect =
+              Some(update.mVisibleRect->Union(*existing->mVisibleRect));
+        } else {
+          update.mVisibleRect = existing->mVisibleRect;
+        }
+      }
     }
   }
   mEffectsUpdates.InsertOrUpdate(aBrowser, update);

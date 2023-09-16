@@ -8,6 +8,7 @@
 #define mozilla_dom_EffectsInfo_h
 
 #include "nsRect.h"
+#include "Units.h"
 
 namespace mozilla::dom {
 
@@ -18,16 +19,14 @@ namespace mozilla::dom {
 
 class EffectsInfo {
  public:
-  EffectsInfo() { *this = EffectsInfo::FullyHidden(); }
+  EffectsInfo() = default;
 
   static EffectsInfo VisibleWithinRect(
-      const nsRect& aVisibleRect, const Scale2D& aRasterScale,
+      const Maybe<nsRect>& aVisibleRect, const Scale2D& aRasterScale,
       const ParentLayerToScreenScale2D& aTransformToAncestorScale) {
     return EffectsInfo{aVisibleRect, aRasterScale, aTransformToAncestorScale};
   }
-  static EffectsInfo FullyHidden() {
-    return EffectsInfo{nsRect(), Scale2D(), ParentLayerToScreenScale2D()};
-  }
+  static EffectsInfo FullyHidden() { return {}; }
 
   bool operator==(const EffectsInfo& aOther) const {
     return mVisibleRect == aOther.mVisibleRect &&
@@ -38,11 +37,12 @@ class EffectsInfo {
     return !(*this == aOther);
   }
 
-  bool IsVisible() const { return !mVisibleRect.IsEmpty(); }
+  bool IsVisible() const { return mVisibleRect.isSome(); }
 
   
   
-  nsRect mVisibleRect;
+  
+  Maybe<nsRect> mVisibleRect;
   
   
   
@@ -50,18 +50,12 @@ class EffectsInfo {
   
   
   ParentLayerToScreenScale2D mTransformToAncestorScale;
-  
-  
-  
-  
-  
-  
 
   
   
 
  private:
-  EffectsInfo(const nsRect& aVisibleRect, const Scale2D& aRasterScale,
+  EffectsInfo(const Maybe<nsRect>& aVisibleRect, const Scale2D& aRasterScale,
               const ParentLayerToScreenScale2D& aTransformToAncestorScale)
       : mVisibleRect(aVisibleRect),
         mRasterScale(aRasterScale),
