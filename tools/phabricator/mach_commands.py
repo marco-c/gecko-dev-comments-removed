@@ -93,13 +93,18 @@ def install_moz_phab(command_context, force=False):
         )
         platform_prefers_user_install = True
 
+    command_env = os.environ.copy()
+
     if platform_prefers_user_install and not is_external_python_virtualenv:
         
         
         command.append("--user")
+        
+        
+        command_env["PIP_BREAK_SYSTEM_PACKAGES"] = "1"
 
     command_context.log(logging.INFO, "run", {}, "Installing moz-phab")
-    subprocess.run(command)
+    subprocess.run(command, env=command_env)
 
     
     
