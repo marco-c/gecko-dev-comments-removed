@@ -47,20 +47,7 @@ bool AudioWorkletGlobalScope::WrapGlobalObject(
   
   Impl()->DestinationTrack()->Graph()->NotifyJSContext(aCx);
 
-  JS::RealmOptions options;
-
-  options.creationOptions().setForceUTC(
-      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
-  options.creationOptions().setAlwaysUseFdlibm(
-      ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
-
-  
-  
-  
-  
-  options.creationOptions().setDefineSharedArrayBufferConstructor(
-      IsSharedMemoryAllowed());
-
+  JS::RealmOptions options = CreateRealmOptions();
   return AudioWorkletGlobalScope_Binding::Wrap(
       aCx, this, this, options, BasePrincipal::Cast(mImpl->Principal()), true,
       aReflector);
