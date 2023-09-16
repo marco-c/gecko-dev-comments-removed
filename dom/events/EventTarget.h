@@ -265,6 +265,26 @@ class EventTarget : public nsISupports, public nsWrapperCache {
 
 
 
+  virtual void LegacyPreActivationBehavior(EventChainVisitor& aVisitor) {}
+
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT
+  virtual void ActivationBehavior(EventChainPostVisitor& aVisitor) {}
+
+  
+
+
+
+  virtual void LegacyCanceledActivationBehavior(
+      EventChainPostVisitor& aVisitor) {}
+
+  
+
+
+
 
   virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor) { return NS_OK; }
 

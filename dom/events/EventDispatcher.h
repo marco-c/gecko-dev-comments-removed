@@ -132,6 +132,7 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
         mParentIsChromeHandler(false),
         mRelatedTargetRetargetedInCurrentScope(false),
         mIgnoreBecauseOfShadowDOM(false),
+        mWantsActivationBehavior(false),
         mParentTarget(nullptr),
         mEventTargetAtParent(nullptr),
         mRetargetedRelatedTarget(nullptr),
@@ -154,6 +155,7 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
     
     
     mIgnoreBecauseOfShadowDOM = false;
+    mWantsActivationBehavior = false;
     mParentTarget = nullptr;
     mEventTargetAtParent = nullptr;
     mRetargetedRelatedTarget = nullptr;
@@ -257,6 +259,12 @@ class MOZ_STACK_CLASS EventChainPreVisitor final : public EventChainVisitor {
 
 
   bool mIgnoreBecauseOfShadowDOM;
+
+  
+
+
+
+  bool mWantsActivationBehavior;
 
  private:
   

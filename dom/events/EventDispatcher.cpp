@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Assertions.h"
 #include "nsPresContext.h"
 #include "nsContentUtils.h"
 #include "nsDocShell.h"
@@ -308,6 +309,26 @@ class EventTargetChainItem {
   
 
 
+
+
+  void LegacyPreActivationBehavior(EventChainVisitor& aVisitor);
+
+  
+
+
+  MOZ_CAN_RUN_SCRIPT
+  void ActivationBehavior(EventChainPostVisitor& aVisitor);
+
+  
+
+
+
+  void LegacyCanceledActivationBehavior(EventChainPostVisitor& aVisitor);
+
+  
+
+
+
   void PreHandleEvent(EventChainVisitor& aVisitor);
 
   
@@ -421,6 +442,15 @@ void EventTargetChainItem::GetEventTargetParent(
   mItemData = aVisitor.mItemData;
 }
 
+void EventTargetChainItem::LegacyPreActivationBehavior(
+    EventChainVisitor& aVisitor) {
+  aVisitor.mItemFlags = mItemFlags;
+  aVisitor.mItemData = mItemData;
+  mTarget->LegacyPreActivationBehavior(aVisitor);
+  mItemFlags = aVisitor.mItemFlags;
+  mItemData = aVisitor.mItemData;
+}
+
 void EventTargetChainItem::PreHandleEvent(EventChainVisitor& aVisitor) {
   if (!WantsPreHandleEvent()) {
     return;
@@ -428,12 +458,33 @@ void EventTargetChainItem::PreHandleEvent(EventChainVisitor& aVisitor) {
   aVisitor.mItemFlags = mItemFlags;
   aVisitor.mItemData = mItemData;
   Unused << mTarget->PreHandleEvent(aVisitor);
+  MOZ_ASSERT(mItemFlags == aVisitor.mItemFlags);
+  MOZ_ASSERT(mItemData == aVisitor.mItemData);
+}
+
+void EventTargetChainItem::ActivationBehavior(EventChainPostVisitor& aVisitor) {
+  aVisitor.mItemFlags = mItemFlags;
+  aVisitor.mItemData = mItemData;
+  mTarget->ActivationBehavior(aVisitor);
+  MOZ_ASSERT(mItemFlags == aVisitor.mItemFlags);
+  MOZ_ASSERT(mItemData == aVisitor.mItemData);
+}
+
+void EventTargetChainItem::LegacyCanceledActivationBehavior(
+    EventChainPostVisitor& aVisitor) {
+  aVisitor.mItemFlags = mItemFlags;
+  aVisitor.mItemData = mItemData;
+  mTarget->LegacyCanceledActivationBehavior(aVisitor);
+  MOZ_ASSERT(mItemFlags == aVisitor.mItemFlags);
+  MOZ_ASSERT(mItemData == aVisitor.mItemData);
 }
 
 void EventTargetChainItem::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   aVisitor.mItemFlags = mItemFlags;
   aVisitor.mItemData = mItemData;
   mTarget->PostHandleEvent(aVisitor);
+  MOZ_ASSERT(mItemFlags == aVisitor.mItemFlags);
+  MOZ_ASSERT(mItemData == aVisitor.mItemData);
 }
 
 void EventTargetChainItem::HandleEventTargetChain(
@@ -928,6 +979,8 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
 
   aEvent->mFlags.mIsBeingDispatched = true;
 
+  EventTargetChainItem* activationTarget = nullptr;
+
   
   
   nsEventStatus status = aDOMEvent && aDOMEvent->DefaultPrevented()
@@ -938,6 +991,10 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   EventChainPreVisitor preVisitor(aPresContext, aEvent, aDOMEvent, status,
                                   isInAnon, targetForPreVisitor);
   targetEtci->GetEventTargetParent(preVisitor);
+
+  if (preVisitor.mWantsActivationBehavior) {
+    activationTarget = targetEtci;
+  }
 
   if (!preVisitor.mCanHandle) {
     targetEtci = MayRetargetToChromeIfCanNotHandleEvent(
@@ -1001,6 +1058,12 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
       }
 
       parentEtci->GetEventTargetParent(preVisitor);
+
+      if (preVisitor.mWantsActivationBehavior && !activationTarget &&
+          aEvent->mFlags.mBubbles) {
+        activationTarget = parentEtci;
+      }
+
       if (preVisitor.mCanHandle) {
         preVisitor.mTargetInKnownToBeHandledScope = preVisitor.mEvent->mTarget;
         topEtci = parentEtci;
@@ -1026,6 +1089,11 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
         break;
       }
     }
+
+    if (activationTarget) {
+      activationTarget->LegacyPreActivationBehavior(preVisitor);
+    }
+
     if (NS_SUCCEEDED(rv)) {
       if (aTargets) {
         aTargets->Clear();
@@ -1213,6 +1281,20 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
     aEvent->mRelatedTarget = nullptr;
     aEvent->mOriginalRelatedTarget = nullptr;
     
+  }
+
+  if (activationTarget) {
+    EventChainPostVisitor postVisitor(preVisitor);
+    if (preVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault) {
+      activationTarget->LegacyCanceledActivationBehavior(postVisitor);
+    } else {
+      activationTarget->ActivationBehavior(postVisitor);
+    }
+    preVisitor.mEventStatus = postVisitor.mEventStatus;
+    
+    if (!preVisitor.mDOMEvent && postVisitor.mDOMEvent) {
+      preVisitor.mDOMEvent = postVisitor.mDOMEvent;
+    }
   }
 
   if (!externalDOMEvent && preVisitor.mDOMEvent) {
