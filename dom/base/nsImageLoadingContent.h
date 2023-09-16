@@ -554,6 +554,7 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
 
   bool mLoadingEnabled : 1;
 
+ protected:
   
 
 
@@ -561,7 +562,6 @@ class nsImageLoadingContent : public nsIImageLoadingContent {
   bool mLoading : 1;
   bool mBroken : 1;
 
- protected:
   
 
 
