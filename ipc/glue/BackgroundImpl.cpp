@@ -510,9 +510,6 @@ class ChildImpl final : public BackgroundChildImpl {
   static ThreadInfoWrapper sParentAndContentProcessThreadInfo;
 
   
-  static ThreadInfoWrapper sSocketAndContentProcessThreadInfo;
-
-  
   static ThreadInfoWrapper sSocketAndParentProcessThreadInfo;
 
   
@@ -704,11 +701,6 @@ PBackgroundChild* BackgroundChild::GetOrCreateForCurrentThread() {
 }
 
 
-PBackgroundChild* BackgroundChild::GetOrCreateSocketActorForCurrentThread() {
-  return ChildImpl::GetOrCreateSocketActorForCurrentThread();
-}
-
-
 PBackgroundChild*
 BackgroundChild::GetOrCreateForSocketParentBridgeForCurrentThread() {
   return ChildImpl::GetOrCreateForSocketParentBridgeForCurrentThread();
@@ -727,12 +719,6 @@ void BackgroundChild::InitContentStarter(ContentChild* aContent) {
 
 void BackgroundChild::InitSocketStarter(net::SocketProcessChild* aSocket) {
   ChildImpl::InitSocketStarter(aSocket);
-}
-
-
-void BackgroundChild::InitSocketBridgeStarter(
-    net::SocketProcessBridgeChild* aSocketBridge) {
-  ChildImpl::InitSocketBridgeStarter(aSocketBridge);
 }
 
 
@@ -768,8 +754,6 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 ChildImpl::ThreadInfoWrapper ChildImpl::sParentAndContentProcessThreadInfo;
-
-ChildImpl::ThreadInfoWrapper ChildImpl::sSocketAndContentProcessThreadInfo;
 
 ChildImpl::ThreadInfoWrapper ChildImpl::sSocketAndParentProcessThreadInfo;
 
@@ -1143,7 +1127,6 @@ void ChildImpl::Startup() {
   
 
   sParentAndContentProcessThreadInfo.Startup();
-  sSocketAndContentProcessThreadInfo.Startup();
   sSocketAndParentProcessThreadInfo.Startup();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
@@ -1174,7 +1157,6 @@ void ChildImpl::Shutdown() {
   AssertIsOnMainThread();
 
   sParentAndContentProcessThreadInfo.Shutdown();
-  sSocketAndContentProcessThreadInfo.Shutdown();
   sSocketAndParentProcessThreadInfo.Shutdown();
 
   sShutdownHasStarted = true;
@@ -1204,11 +1186,6 @@ PBackgroundChild* ChildImpl::GetOrCreateForCurrentThread() {
 }
 
 
-PBackgroundChild* ChildImpl::GetOrCreateSocketActorForCurrentThread() {
-  return sSocketAndContentProcessThreadInfo.GetOrCreateForCurrentThread();
-}
-
-
 PBackgroundChild*
 ChildImpl::GetOrCreateForSocketParentBridgeForCurrentThread() {
   return sSocketAndParentProcessThreadInfo.GetOrCreateForCurrentThread();
@@ -1221,7 +1198,6 @@ void ChildImpl::CloseForCurrentThread() {
              "ChildImpl::Shutdown().");
 
   sParentAndContentProcessThreadInfo.CloseForCurrentThread();
-  sSocketAndContentProcessThreadInfo.CloseForCurrentThread();
   sSocketAndParentProcessThreadInfo.CloseForCurrentThread();
 }
 
@@ -1257,12 +1233,6 @@ void ChildImpl::InitContentStarter(mozilla::dom::ContentChild* aContent) {
 
 void ChildImpl::InitSocketStarter(mozilla::net::SocketProcessChild* aSocket) {
   sSocketAndParentProcessThreadInfo.InitStarter(aSocket);
-}
-
-
-void ChildImpl::InitSocketBridgeStarter(
-    mozilla::net::SocketProcessBridgeChild* aSocketBridge) {
-  sSocketAndContentProcessThreadInfo.InitStarter(aSocketBridge);
 }
 
 

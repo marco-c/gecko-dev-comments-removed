@@ -8,6 +8,7 @@
 #include "mozilla/net/SocketProcessBridgeChild.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ipc/BackgroundChild.h"
+#include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundChild.h"
 #include "common/browser_logging/CSFLog.h"
 
@@ -24,40 +25,64 @@ MediaTransportHandlerIPC::MediaTransportHandlerIPC(
     : MediaTransportHandler(aCallbackThread) {}
 
 void MediaTransportHandlerIPC::Initialize() {
-  mInitPromise = net::SocketProcessBridgeChild::GetSocketProcessBridge()->Then(
-      mCallbackThread, __func__,
-      [this, self = RefPtr<MediaTransportHandlerIPC>(this)](
-          const RefPtr<net::SocketProcessBridgeChild>& aBridge) {
-        ipc::PBackgroundChild* actor =
-            ipc::BackgroundChild::GetOrCreateSocketActorForCurrentThread();
-        
-        
-        
-        if (!actor || !actor->CanSend()) {
-          NS_WARNING(
-              "MediaTransportHandlerIPC async init failed! Webrtc networking "
-              "will not work!");
-          return InitPromise::CreateAndReject(
-              nsCString("GetOrCreateSocketActorForCurrentThread failed!"),
-              __func__);
-        }
-        MediaTransportChild* child = new MediaTransportChild(this);
-        
-        
-        mChild = actor->SendPMediaTransportConstructor(child);
-        CSFLogDebug(LOGTAG, "%s Init done", __func__);
-        return InitPromise::CreateAndResolve(true, __func__);
-      },
-      [=](const nsCString& aError) {
-        CSFLogError(LOGTAG,
+  using EndpointPromise =
+      MozPromise<mozilla::ipc::Endpoint<mozilla::dom::PMediaTransportChild>,
+                 nsCString, true>;
+  mInitPromise =
+      net::SocketProcessBridgeChild::GetSocketProcessBridge()
+          ->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [](const RefPtr<net::SocketProcessBridgeChild>& aBridge) {
+                mozilla::ipc::Endpoint<mozilla::dom::PMediaTransportParent>
+                    parentEndpoint;
+                mozilla::ipc::Endpoint<mozilla::dom::PMediaTransportChild>
+                    childEndpoint;
+                mozilla::dom::PMediaTransport::CreateEndpoints(&parentEndpoint,
+                                                               &childEndpoint);
+
+                if (!aBridge || !aBridge->SendInitMediaTransport(
+                                    std::move(parentEndpoint))) {
+                  NS_WARNING(
+                      "MediaTransportHandlerIPC async init failed! Webrtc "
+                      "networking "
+                      "will not work!");
+                  return EndpointPromise::CreateAndReject(
+                      nsCString("SendInitMediaTransport failed!"), __func__);
+                }
+
+                return EndpointPromise::CreateAndResolve(
+                    std::move(childEndpoint), __func__);
+              },
+              [](const nsCString& aError) {
+                return EndpointPromise::CreateAndReject(aError, __func__);
+              })
+          ->Then(
+              mCallbackThread, __func__,
+              [this, self = RefPtr<MediaTransportHandlerIPC>(this)](
+                  mozilla::ipc::Endpoint<mozilla::dom::PMediaTransportChild>&&
+                      aEndpoint) {
+                RefPtr<MediaTransportChild> child =
+                    new MediaTransportChild(this);
+                aEndpoint.Bind(child);
+                
+                
+                mChild = child;
+
+                CSFLogDebug(LOGTAG, "%s Init done", __func__);
+                return InitPromise::CreateAndResolve(true, __func__);
+              },
+              [=](const nsCString& aError) {
+                CSFLogError(
+                    LOGTAG,
                     "MediaTransportHandlerIPC async init failed! Webrtc "
                     "networking will not work! Error was %s",
                     aError.get());
-        NS_WARNING(
-            "MediaTransportHandlerIPC async init failed! Webrtc networking "
-            "will not work!");
-        return InitPromise::CreateAndReject(aError, __func__);
-      });
+                NS_WARNING(
+                    "MediaTransportHandlerIPC async init failed! Webrtc "
+                    "networking "
+                    "will not work!");
+                return InitPromise::CreateAndReject(aError, __func__);
+              });
 }
 
 RefPtr<MediaTransportHandler::IceLogPromise>
@@ -171,7 +196,7 @@ nsresult MediaTransportHandlerIPC::SetIceConfig(
 
 void MediaTransportHandlerIPC::Destroy() {
   if (mChild) {
-    MediaTransportChild::Send__delete__(mChild);
+    mChild->Close();
     mChild = nullptr;
   }
   delete this;
