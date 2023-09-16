@@ -452,8 +452,25 @@ function sendChar(aChar, aWindow) {
 
 
 function sendString(aStr, aWindow) {
-  for (var i = 0; i < aStr.length; ++i) {
-    sendChar(aStr.charAt(i), aWindow);
+  for (let i = 0; i < aStr.length; ++i) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      (aStr.charCodeAt(i) & 0xfc00) == 0xd800 &&
+      i + 1 < aStr.length &&
+      (aStr.charCodeAt(i + 1) & 0xfc00) == 0xdc00
+    ) {
+      sendChar(aStr.substring(i, i + 2));
+      i++;
+    } else {
+      sendChar(aStr.charAt(i), aWindow);
+    }
   }
 }
 

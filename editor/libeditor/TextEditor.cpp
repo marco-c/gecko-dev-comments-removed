@@ -24,6 +24,7 @@
 #include "mozilla/mozalloc.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/PresShell.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/TextComposition.h"
 #include "mozilla/TextEvents.h"
@@ -317,18 +318,35 @@ nsresult TextEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
     
     return NS_OK;
   }
-  
-  
-  
-  
-  
-  
-  char16_t charCode =
-      static_cast<char16_t>(aKeyboardEvent->mCharCode) == nsCRT::CR
-          ? nsCRT::LF
-          : static_cast<char16_t>(aKeyboardEvent->mCharCode);
   aKeyboardEvent->PreventDefault();
-  nsAutoString str(charCode);
+  
+  
+  
+  
+  if (!StaticPrefs::dom_event_keypress_dispatch_once_per_surrogate_pair() &&
+      !StaticPrefs::dom_event_keypress_key_allow_lone_surrogate() &&
+      aKeyboardEvent->mKeyValue.IsEmpty() &&
+      IS_SURROGATE(aKeyboardEvent->mCharCode)) {
+    return NS_OK;
+  }
+  
+  
+  
+  
+  
+  
+  nsAutoString str(aKeyboardEvent->mKeyValue);
+  if (str.IsEmpty()) {
+    MOZ_ASSERT(aKeyboardEvent->mCharCode <= 0xFFFF,
+               "Non-BMP character needs special handling");
+    str.Assign(aKeyboardEvent->mCharCode == nsCRT::CR
+                   ? static_cast<char16_t>(nsCRT::LF)
+                   : static_cast<char16_t>(aKeyboardEvent->mCharCode));
+  } else {
+    MOZ_ASSERT(str.Find(u"\r\n"_ns) == kNotFound,
+               "This assumes that typed text does not include CRLF");
+    str.ReplaceChar('\r', '\n');
+  }
   nsresult rv = OnInputText(str);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "EditorBase::OnInputText() failed");
   return rv;

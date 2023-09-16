@@ -33,6 +33,7 @@
 #include "npapi.h"
 
 #include <windows.h>
+#include <winnls.h>
 #include <winuser.h>
 #include <algorithm>
 
@@ -1244,6 +1245,7 @@ NativeKey* NativeKey::sLatestInstance = nullptr;
 const MSG NativeKey::sEmptyMSG = {};
 MSG NativeKey::sLastKeyOrCharMSG = {};
 MSG NativeKey::sLastKeyMSG = {};
+char16_t NativeKey::sPendingHighSurrogate = 0;
 
 NativeKey::NativeKey(nsWindow* aWidget, const MSG& aMessage,
                      const ModifierKeyState& aModKeyState,
@@ -1413,11 +1415,14 @@ void NativeKey::InitIsSkippableForKeyOrChar(const MSG& aLastKeyMSG) {
 
 void NativeKey::InitWithKeyOrChar() {
   MSG lastKeyMSG = sLastKeyMSG;
+  char16_t pendingHighSurrogate = sPendingHighSurrogate;
   mScanCode = WinUtils::GetScanCode(mMsg.lParam);
   mIsExtended = WinUtils::IsExtendedScanCode(mMsg.lParam);
   switch (mMsg.message) {
     case WM_KEYDOWN:
     case WM_SYSKEYDOWN:
+      sPendingHighSurrogate = 0;
+      [[fallthrough]];
     case WM_KEYUP:
     case WM_SYSKEYUP: {
       
@@ -1527,6 +1532,7 @@ void NativeKey::InitWithKeyOrChar() {
     case WM_CHAR:
     case WM_UNICHAR:
     case WM_SYSCHAR:
+      sPendingHighSurrogate = 0;
       
       
       if (IsAnotherInstanceRemovingCharMessage()) {
@@ -1601,6 +1607,55 @@ void NativeKey::InitWithKeyOrChar() {
                this, ToString(charMsg).get()));
       Unused << NS_WARN_IF(charMsg.hwnd != mMsg.hwnd);
       mFollowingCharMsgs.AppendElement(charMsg);
+    }
+    if (mFollowingCharMsgs.Length() == 1) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (IS_HIGH_SURROGATE(mFollowingCharMsgs[0].wParam)) {
+        if (pendingHighSurrogate) {
+          MOZ_LOG(gKeyLog, LogLevel::Warning,
+                  ("%p   NativeKey::InitWithKeyOrChar(), there is pending "
+                   "high surrogate input, but received another high surrogate "
+                   "input.  The previous one is discarded",
+                   this));
+        }
+        sPendingHighSurrogate = mFollowingCharMsgs[0].wParam;
+        mFollowingCharMsgs.Clear();
+      } else if (IS_LOW_SURROGATE(mFollowingCharMsgs[0].wParam)) {
+        
+        
+        
+        if (pendingHighSurrogate) {
+          MSG charMsg = mFollowingCharMsgs[0];
+          mFollowingCharMsgs[0].wParam = pendingHighSurrogate;
+          mFollowingCharMsgs.AppendElement(std::move(charMsg));
+        } else {
+          MOZ_LOG(
+              gKeyLog, LogLevel::Warning,
+              ("%p   NativeKey::InitWithKeyOrChar(), there is no pending high "
+               "surrogate input, but received lone low surrogate input",
+               this));
+        }
+      } else {
+        MOZ_LOG(gKeyLog, LogLevel::Warning,
+                ("%p   NativeKey::InitWithKeyOrChar(), there is pending "
+                 "high surrogate input, but received non-surrogate input.  "
+                 "The high surrogate input is discarded",
+                 this));
+      }
+    } else {
+      MOZ_LOG(gKeyLog, LogLevel::Warning,
+              ("%p   NativeKey::InitWithKeyOrChar(), there is pending "
+               "high surrogate input, but received 2 or more character input.  "
+               "The high surrogate input is discarded",
+               this));
     }
   }
 
@@ -2418,6 +2473,18 @@ bool NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const {
     return false;
   }
 
+  if (sPendingHighSurrogate) {
+    MOZ_LOG(gKeyLog, LogLevel::Info,
+            ("%p   NativeKey::HandleKeyDownMessage(), doesn't dispatch keydown "
+             "event because the key introduced only a high surrotate, so we "
+             "should wait the following low surrogate input",
+             this));
+    if (RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
+      RedirectedKeyDownMessageManager::Forget();
+    }
+    return false;
+  }
+
   
   if (mWidget->Destroyed()) {
     MOZ_LOG(
@@ -2774,6 +2841,15 @@ bool NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const {
     MOZ_LOG(gKeyLog, LogLevel::Info,
             ("%p   NativeKey::HandleKeyUpMessage(), doesn't dispatch keyup "
              "event because the key combination is reserved by the system",
+             this));
+    return false;
+  }
+
+  if (sPendingHighSurrogate) {
+    MOZ_LOG(gKeyLog, LogLevel::Info,
+            ("%p   NativeKey::HandleKeyUpMessage(), doesn't dispatch keyup "
+             "event because the key introduced only a high surrotate, so we "
+             "should wait the following low surrogate input",
              this));
     return false;
   }

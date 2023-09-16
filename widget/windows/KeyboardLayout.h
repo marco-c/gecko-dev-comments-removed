@@ -787,6 +787,11 @@ class MOZ_STACK_CLASS NativeKey final {
 
   static MSG sLastKeyMSG;
 
+  
+  
+  
+  static char16_t sPendingHighSurrogate;
+
   static bool IsEmptyMSG(const MSG& aMSG) {
     return !memcmp(&aMSG, &sEmptyMSG, sizeof(MSG));
   }
