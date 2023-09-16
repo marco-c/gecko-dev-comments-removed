@@ -1345,8 +1345,8 @@ already_AddRefed<ReadableStream> ReadableStream::CreateByteNative(
 
 
 void ReadableStream::CloseNative(JSContext* aCx, ErrorResult& aRv) {
-  MOZ_ASSERT(mController->GetAlgorithms()->IsNative());
-
+  MOZ_ASSERT_IF(mController->GetAlgorithms(),
+                mController->GetAlgorithms()->IsNative());
   
   if (mController->IsByte()) {
     RefPtr<ReadableByteStreamController> controller = mController->AsByte();
