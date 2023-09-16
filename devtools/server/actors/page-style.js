@@ -524,17 +524,23 @@ class PageStyleActor extends Actor {
     this.selectedElement = node.rawNode;
 
     if (!node) {
-      return { entries: [], rules: [], sheets: [] };
+      return { entries: [] };
     }
 
     this.cssLogic.highlight(node.rawNode);
-    let entries = [];
-    entries = entries.concat(
-      this._getAllElementRules(node, undefined, options)
+
+    const entries = this.getAppliedProps(
+      node,
+      this._getAllElementRules(node, undefined, options),
+      options
     );
 
-    const result = this.getAppliedProps(node, entries, options);
-    for (const rule of result.rules) {
+    const entryRules = new Set();
+    entries.forEach(entry => {
+      entryRules.add(entry.rule);
+    });
+
+    for (const rule of entryRules) {
       try {
         
         
@@ -546,9 +552,9 @@ class PageStyleActor extends Actor {
     
     
     
-    this._observedRules = result.rules;
+    this._observedRules = entryRules;
 
-    return result;
+    return { entries };
   }
 
   _hasInheritedProps(style) {
@@ -824,8 +830,6 @@ class PageStyleActor extends Actor {
 
 
 
-
-
   getAppliedProps(node, entries, options) {
     if (options.inherited) {
       let parent = this.walker.parentNode(node);
@@ -891,14 +895,7 @@ class PageStyleActor extends Actor {
       }
     }
 
-    const rules = new Set();
-    entries.forEach(entry => rules.add(entry.rule));
-    this._expandRules(rules);
-
-    return {
-      entries,
-      rules: [...rules],
-    };
+    return entries;
   }
 
   
@@ -1098,7 +1095,7 @@ class PageStyleActor extends Actor {
       selector,
     });
 
-    return this.getNewAppliedProps(node, cssRule);
+    return { entries: this.getNewAppliedProps(node, cssRule) };
   }
 
   
