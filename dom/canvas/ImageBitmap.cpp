@@ -681,6 +681,7 @@ void ImageBitmap::OnShutdown() { Close(); }
 
 void ImageBitmap::SetPictureRect(const IntRect& aRect, ErrorResult& aRv) {
   mPictureRect = FixUpNegativeDimension(aRect, aRv);
+  mSurface = nullptr;
 }
 
 SurfaceFromElementResult ImageBitmap::SurfaceFrom(uint32_t aSurfaceFlags) {
@@ -771,15 +772,35 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
     return nullptr;
   }
 
-  if (!mSurface) {
-    mSurface = mData->GetAsSourceSurface();
-
-    if (!mSurface) {
-      return nullptr;
+  
+  
+  
+  
+  
+  
+  if (mSurface && mSurface->GetType() == gfx::SurfaceType::RECORDING &&
+      !aTarget->IsRecording()) {
+    RefPtr<gfx::DataSourceSurface> dataSurface = mSurface->GetDataSurface();
+    if (!dataSurface) {
+      mSurface = nullptr;
     }
   }
 
-  IntRect surfRect(0, 0, mSurface->GetSize().width, mSurface->GetSize().height);
+  
+  if (mSurface) {
+    return do_AddRef(mSurface);
+  }
+
+  RefPtr<gfx::SourceSurface> surface = mData->GetAsSourceSurface();
+  if (NS_WARN_IF(!surface)) {
+    return nullptr;
+  }
+
+  IntRect surfRect(0, 0, surface->GetSize().width, surface->GetSize().height);
+  SurfaceFormat format = surface->GetFormat();
+  bool isOpaque = IsOpaque(format);
+  bool mustPremultiply = mAlphaType == gfxAlphaType::NonPremult && !isOpaque;
+  bool hasCopied = false;
 
   
   if (!mPictureRect.IsEqualEdges(surfRect)) {
@@ -787,7 +808,6 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
 
     
     if (surfPortion.IsEmpty()) {
-      mSurface = nullptr;
       return nullptr;
     }
 
@@ -802,72 +822,99 @@ already_AddRefed<SourceSurface> ImageBitmap::PrepareForDrawTarget(
     
     
     
-    SurfaceFormat format = mSurface->GetFormat();
-    if (!surfPortion.IsEqualEdges(mPictureRect) && IsOpaque(format)) {
+    if (!surfPortion.IsEqualEdges(mPictureRect) && isOpaque) {
       format = SurfaceFormat::B8G8R8A8;
-    }
-    RefPtr<DrawTarget> cropped =
-        aTarget->CreateSimilarDrawTarget(mPictureRect.Size(), format);
-    if (!cropped) {
-      mSurface = nullptr;
-      return nullptr;
-    }
-
-    cropped->CopySurface(mSurface, surfPortion, dest);
-    mSurface = cropped->Snapshot();
-    if (!mSurface) {
-      return nullptr;
     }
 
     
-    mPictureRect.MoveTo(0, 0);
+    
+    
+    RefPtr<DrawTarget> cropped;
+    if (mustPremultiply && aTarget->IsRecording()) {
+      cropped = Factory::CreateDrawTarget(BackendType::SKIA,
+                                          mPictureRect.Size(), format);
+    } else {
+      cropped = aTarget->CreateSimilarDrawTarget(mPictureRect.Size(), format);
+    }
+
+    if (NS_WARN_IF(!cropped)) {
+      return nullptr;
+    }
+
+    cropped->CopySurface(surface, surfPortion, dest);
+    surface = cropped->GetBackingSurface();
+    hasCopied = true;
+    if (NS_WARN_IF(!surface)) {
+      return nullptr;
+    }
   }
 
   
   
   
-  if (mAlphaType == gfxAlphaType::NonPremult &&
-      !IsOpaque(mSurface->GetFormat())) {
-    MOZ_ASSERT(mSurface->GetFormat() == SurfaceFormat::R8G8B8A8 ||
-               mSurface->GetFormat() == SurfaceFormat::B8G8R8A8 ||
-               mSurface->GetFormat() == SurfaceFormat::A8R8G8B8);
+  
+  
+  
+  if (mustPremultiply) {
+    MOZ_ASSERT(surface->GetFormat() == SurfaceFormat::R8G8B8A8 ||
+               surface->GetFormat() == SurfaceFormat::B8G8R8A8 ||
+               surface->GetFormat() == SurfaceFormat::A8R8G8B8);
 
-    RefPtr<DataSourceSurface> srcSurface = mSurface->GetDataSurface();
+    RefPtr<DataSourceSurface> srcSurface = surface->GetDataSurface();
     if (NS_WARN_IF(!srcSurface)) {
       return nullptr;
     }
-    RefPtr<DataSourceSurface> dstSurface = Factory::CreateDataSourceSurface(
-        srcSurface->GetSize(), srcSurface->GetFormat());
-    if (NS_WARN_IF(!dstSurface)) {
-      return nullptr;
+
+    if (hasCopied) {
+      
+      
+      DataSourceSurface::ScopedMap map(srcSurface,
+                                       DataSourceSurface::READ_WRITE);
+      if (!map.IsMapped()) {
+        gfxCriticalError() << "Failed to map surface for premultiplying alpha.";
+        return nullptr;
+      }
+
+      PremultiplyData(map.GetData(), map.GetStride(), srcSurface->GetFormat(),
+                      map.GetData(), map.GetStride(), srcSurface->GetFormat(),
+                      surface->GetSize());
+    } else {
+      RefPtr<DataSourceSurface> dstSurface = Factory::CreateDataSourceSurface(
+          srcSurface->GetSize(), srcSurface->GetFormat());
+      if (NS_WARN_IF(!dstSurface)) {
+        return nullptr;
+      }
+
+      DataSourceSurface::ScopedMap srcMap(srcSurface, DataSourceSurface::READ);
+      if (!srcMap.IsMapped()) {
+        gfxCriticalError()
+            << "Failed to map source surface for premultiplying alpha.";
+        return nullptr;
+      }
+
+      DataSourceSurface::ScopedMap dstMap(dstSurface, DataSourceSurface::WRITE);
+      if (!dstMap.IsMapped()) {
+        gfxCriticalError()
+            << "Failed to map destination surface for premultiplying alpha.";
+        return nullptr;
+      }
+
+      PremultiplyData(srcMap.GetData(), srcMap.GetStride(),
+                      srcSurface->GetFormat(), dstMap.GetData(),
+                      dstMap.GetStride(), dstSurface->GetFormat(),
+                      dstSurface->GetSize());
+
+      surface = std::move(dstSurface);
     }
-
-    DataSourceSurface::ScopedMap srcMap(srcSurface, DataSourceSurface::READ);
-    if (!srcMap.IsMapped()) {
-      gfxCriticalError()
-          << "Failed to map source surface for premultiplying alpha.";
-      return nullptr;
-    }
-
-    DataSourceSurface::ScopedMap dstMap(dstSurface, DataSourceSurface::WRITE);
-    if (!dstMap.IsMapped()) {
-      gfxCriticalError()
-          << "Failed to map destination surface for premultiplying alpha.";
-      return nullptr;
-    }
-
-    PremultiplyData(srcMap.GetData(), srcMap.GetStride(), mSurface->GetFormat(),
-                    dstMap.GetData(), dstMap.GetStride(), mSurface->GetFormat(),
-                    dstSurface->GetSize());
-
-    mAlphaType = gfxAlphaType::Premult;
-    mSurface = dstSurface;
   }
 
   
   
   
-  mSurface = aTarget->OptimizeSourceSurface(mSurface);
+  mSurface = aTarget->OptimizeSourceSurface(surface);
+  if (!mSurface) {
+    mSurface = std::move(surface);
+  }
   return do_AddRef(mSurface);
 }
 
@@ -1407,15 +1454,21 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
     return nullptr;
   }
 
-  IntRect cropRect = aImageBitmap.mPictureRect;
+  IntRect cropRect;
   RefPtr<SourceSurface> surface;
+  RefPtr<DataSourceSurface> dataSurface;
+  gfxAlphaType alphaType;
 
   bool needToReportMemoryAllocation = false;
 
-  if (aImageBitmap.mSurface) {
+  if (aImageBitmap.mSurface &&
+      (dataSurface = aImageBitmap.mSurface->GetDataSurface())) {
+    
     
     surface = aImageBitmap.mSurface;
-    cropRect = aCropRect.valueOr(cropRect);
+    cropRect = aCropRect.valueOr(IntRect(IntPoint(0, 0), surface->GetSize()));
+    alphaType = IsOpaque(surface->GetFormat()) ? gfxAlphaType::Opaque
+                                               : gfxAlphaType::Premult;
   } else {
     RefPtr<layers::Image> data = aImageBitmap.mData;
     surface = data->GetAsSourceSurface();
@@ -1424,6 +1477,8 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
       return nullptr;
     }
 
+    cropRect = aImageBitmap.mPictureRect;
+    alphaType = aImageBitmap.mAlphaType;
     if (aCropRect.isSome()) {
       
       IntRect newCropRect = aCropRect.ref();
@@ -1453,7 +1508,7 @@ already_AddRefed<ImageBitmap> ImageBitmap::CreateInternal(
 
   return CreateImageBitmapInternal(
       aGlobal, surface, Some(cropRect), aOptions, aImageBitmap.mWriteOnly,
-      needToReportMemoryAllocation, false, aImageBitmap.mAlphaType, aRv);
+      needToReportMemoryAllocation, false, alphaType, aRv);
 }
 
 
