@@ -550,7 +550,7 @@ async function loadTestPage({
 
 
 
-    runInPage(callback) {
+    runInPage(callback, data = {}) {
       
       
       
@@ -562,7 +562,9 @@ async function loadTestPage({
         // Pass in the values that get injected by the task runner.
         TranslationsTest.setup({Assert, ContentTaskUtils, content});
 
-        return (${callback.toString()})(TranslationsTest);
+        const data = ${JSON.stringify(data)};
+
+        return (${callback.toString()})(TranslationsTest, data);
       `);
 
       return ContentTask.spawn(
