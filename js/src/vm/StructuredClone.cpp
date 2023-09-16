@@ -45,6 +45,7 @@
 #include "builtin/MapObject.h"
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
+#include "js/ColumnNumber.h"  
 #include "js/Date.h"
 #include "js/experimental/TypedData.h"  
 #include "js/friend/ErrorMessages.h"    
@@ -1798,7 +1799,7 @@ bool JSStructuredCloneWriter::traverseSavedFrame(HandleObject obj) {
     return false;
   }
 
-  val = NumberValue(savedFrame->getColumn());
+  val = NumberValue(*savedFrame->getColumn().addressOfValueForTranscode());
   if (!writePrimitive(val)) {
     return false;
   }
@@ -3463,16 +3464,14 @@ JSObject* JSStructuredCloneReader::readSavedFrameHeader(
 
   savedFrame->initSource(&source.toString()->asAtom());
 
-  RootedValue lineVal(context());
   uint32_t line;
   if (!readUint32(&line)) {
     return nullptr;
   }
   savedFrame->initLine(line);
 
-  RootedValue columnVal(context());
-  uint32_t column;
-  if (!readUint32(&column)) {
+  JS::TaggedColumnNumberOneOrigin column;
+  if (!readUint32(column.addressOfValueForTranscode())) {
     return nullptr;
   }
   savedFrame->initColumn(column);

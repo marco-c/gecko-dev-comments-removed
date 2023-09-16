@@ -14,15 +14,14 @@
 
 #include "frontend/FrontendContext.h"  
 #include "js/CharacterEncoding.h"      
-#include "js/ColumnNumber.h"           
-#include "js/ErrorReport.h"            
-#include "js/friend/ErrorMessages.h"   
-#include "js/Printf.h"                 
-#include "js/Warnings.h"               
+#include "js/ColumnNumber.h"  
+#include "js/ErrorReport.h"           
+#include "js/friend/ErrorMessages.h"  
+#include "js/Printf.h"                
+#include "js/Warnings.h"              
 #include "vm/FrameIter.h"
 #include "vm/GlobalObject.h"
 #include "vm/JSContext.h"
-#include "vm/SavedStacks.h"  
 
 using namespace js;
 
@@ -197,9 +196,9 @@ static void PopulateReportBlame(JSContext* cx, JSErrorReport* report) {
   if (iter.hasScript()) {
     report->sourceId = iter.script()->scriptSource()->id();
   }
-  uint32_t column;
+  JS::TaggedColumnNumberZeroOrigin column;
   report->lineno = iter.computeLine(&column);
-  report->column = FixupMaybeWASMColumnForDisplay(column);
+  report->column = column.oneOriginValue();
   report->isMuted = iter.mutedErrors();
 }
 
