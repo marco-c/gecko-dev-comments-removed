@@ -124,10 +124,8 @@ class OpenSSLAdapter final : public SSLAdapter {
   int DoSslWrite(const void* pv, size_t cb, int* error);
   bool SSLPostConnectionCheck(SSL* ssl, absl::string_view host);
 
-#if !defined(NDEBUG)
   
   static void SSLInfoCallback(const SSL* ssl, int where, int ret);
-#endif
 
 #if defined(OPENSSL_IS_BORINGSSL) && \
     defined(WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS)
