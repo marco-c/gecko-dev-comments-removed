@@ -331,11 +331,10 @@ class CookiesStorageActor extends BaseStorageActor {
     
     
     const domain = principal.asciiHost ? principal.host : principal.baseDomain;
-    const path = principal.filePath.startsWith("/") ? principal.filePath : "/";
 
     Services.cookies.add(
       domain,
-      path,
+      "/",
       guid, 
       DEFAULT_VALUE, 
       false, 

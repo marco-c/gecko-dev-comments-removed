@@ -1020,6 +1020,7 @@ function sidebarParseTreeVisible(state) {
 
 
 
+
 async function performAdd(store) {
   const storeName = store.join(" > ");
   const toolbar = gPanelWindow.document.getElementById("storage-toolbar");
@@ -1035,7 +1036,7 @@ async function performAdd(store) {
       false,
       `performAdd called for ${storeName} but it is not supported`
     );
-    return;
+    return "";
   }
 
   const eventEdit = gUI.table.once("row-edit");
@@ -1050,6 +1051,8 @@ async function performAdd(store) {
   const value = getCellValue(rowId, key);
 
   is(rowId, value, `Row '${rowId}' was successfully added.`);
+
+  return rowId;
 }
 
 
