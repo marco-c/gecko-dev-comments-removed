@@ -8,8 +8,6 @@ pub enum RemoteSettingsError {
     JSONError(#[from] serde_json::Error),
     #[error("Error writing downloaded attachment: {0}")]
     FileError(#[from] std::io::Error),
-    #[error("ParseIntError: {0}")]
-    ParseIntError(#[from] std::num::ParseIntError),
     
     #[error("Error sending request: {0}")]
     RequestError(#[from] viaduct::Error),

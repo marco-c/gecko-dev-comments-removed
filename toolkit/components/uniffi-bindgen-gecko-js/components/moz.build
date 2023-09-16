@@ -5,6 +5,7 @@
 
 
 EXTRA_JS_MODULES += [
+    "generated/RustRemoteSettings.sys.mjs",
     "generated/RustSuggest.sys.mjs",
     "generated/RustSync15.sys.mjs",
     "generated/RustTabs.sys.mjs",

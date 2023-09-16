@@ -27,6 +27,8 @@
 
 
 
+
+
 use crate::ConnExt;
 use rusqlite::{
     Connection, Error as RusqliteError, ErrorCode, OpenFlags, Transaction, TransactionBehavior,
@@ -38,11 +40,25 @@ use thiserror::Error;
 pub enum Error {
     #[error("Incompatible database version: {0}")]
     IncompatibleVersion(u32),
+    #[error("Database is corrupt")]
+    Corrupt,
     #[error("Error executing SQL: {0}")]
-    SqlError(#[from] rusqlite::Error),
-    
-    #[error("Failed to recover a corrupt database ('{0}') due to an error deleting the file: {1}")]
-    RecoveryError(String, std::io::Error),
+    SqlError(rusqlite::Error),
+    #[error("Failed to recover a corrupt database due to an error deleting the file: {0}")]
+    RecoveryError(std::io::Error),
+}
+
+impl From<rusqlite::Error> for Error {
+    fn from(value: rusqlite::Error) -> Self {
+        match value {
+            RusqliteError::SqliteFailure(e, _)
+                if matches!(e.code, ErrorCode::DatabaseCorrupt | ErrorCode::NotADatabase) =>
+            {
+                Self::Corrupt
+            }
+            _ => Self::SqlError(value),
+        }
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -189,12 +205,7 @@ fn try_handle_db_failure<CI: ConnectionInitializer, P: AsRef<Path>>(
         return Err(err);
     }
 
-    let delete = match err {
-        Error::SqlError(RusqliteError::SqliteFailure(e, _)) => {
-            matches!(e.code, ErrorCode::DatabaseCorrupt | ErrorCode::NotADatabase)
-        }
-        _ => false,
-    };
+    let delete = matches!(err, Error::Corrupt);
     if delete {
         log::info!(
             "{}: the database is fatally damaged; deleting and starting fresh",
@@ -204,7 +215,7 @@ fn try_handle_db_failure<CI: ConnectionInitializer, P: AsRef<Path>>(
         
         
         if let Err(io_err) = std::fs::remove_file(path) {
-            return Err(Error::RecoveryError(err.to_string(), io_err));
+            return Err(Error::RecoveryError(io_err));
         }
         Ok(())
     } else {
@@ -364,6 +375,12 @@ mod test {
 
         fn upgrade_from(&self, conn: &Transaction<'_>, version: u32) -> Result<()> {
             match version {
+                
+                
+                1 => {
+                    self.push_call("upgrade_from_v1");
+                    Err(Error::Corrupt)
+                }
                 2 => {
                     self.push_call("upgrade_from_v2");
                     conn.execute_batch(
@@ -403,6 +420,13 @@ mod test {
             Ok(())
         }
     }
+
+    
+    
+    static INIT_V1: &str = "
+        CREATE TABLE prep_table(col);
+        PRAGMA user_version=1;
+    ";
 
     
     static INIT_V2: &str = "
@@ -532,5 +556,19 @@ mod test {
         let metadata = std::fs::metadata(path).unwrap();
         
         assert_ne!(metadata.len(), 7);
+    }
+
+    #[test]
+    fn test_force_replace() {
+        let db_file = MigratedDatabaseFile::new(TestConnectionInitializer::new(), INIT_V1);
+        let conn = open_database(db_file.path.clone(), &db_file.connection_initializer).unwrap();
+        check_final_data(&conn);
+        db_file.connection_initializer.check_calls(vec![
+            "prep",
+            "upgrade_from_v1",
+            "prep",
+            "init",
+            "finish",
+        ]);
     }
 }

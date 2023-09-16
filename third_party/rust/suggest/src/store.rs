@@ -11,8 +11,8 @@ use remote_settings::{self, GetItemsOptions, RemoteSettingsConfig, SortOrder};
 use crate::{
     db::{ConnectionType, SuggestDb, LAST_INGEST_META_KEY},
     rs::{
-        SuggestRecord, SuggestRemoteSettingsClient, TypedSuggestRecord, REMOTE_SETTINGS_COLLECTION,
-        SUGGESTIONS_PER_ATTACHMENT,
+        SuggestAttachment, SuggestRecord, SuggestRecordId, SuggestRemoteSettingsClient,
+        REMOTE_SETTINGS_COLLECTION, SUGGESTIONS_PER_ATTACHMENT,
     },
     Result, SuggestApiResult, Suggestion, SuggestionQuery,
 };
@@ -141,8 +141,8 @@ impl<S> SuggestStoreInner<S> {
         Ok(suggestions
             .into_iter()
             .filter(|suggestion| {
-                (suggestion.is_sponsored && query.include_sponsored)
-                    || (!suggestion.is_sponsored && query.include_non_sponsored)
+                (suggestion.is_sponsored() && query.include_sponsored)
+                    || (!suggestion.is_sponsored() && query.include_non_sponsored)
             })
             .collect())
     }
@@ -186,71 +186,76 @@ where
         let records = self
             .settings_client
             .get_records_with_options(&options)?
-            .data;
+            .records;
         for record in &records {
-            match record {
-                SuggestRecord::Typed(TypedSuggestRecord::Data {
-                    id: record_id,
-                    last_modified,
-                    attachment,
-                }) => {
-                    let suggestions = self
-                        .settings_client
-                        .get_data_attachment(&attachment.location)?
-                        .0;
-
-                    writer.write(|dao| {
-                        
-                        
-                        
-                        
-                        
-                        dao.drop_suggestions(record_id)?;
-
-                        
-                        dao.insert_suggestions(record_id, &suggestions)?;
-
-                        
-                        
-                        dao.put_meta(LAST_INGEST_META_KEY, last_modified)?;
-
-                        Ok(())
-                    })?;
-                }
-                SuggestRecord::Untyped {
-                    id: record_id,
-                    last_modified,
-                    deleted,
-                } if *deleted => {
-                    
-                    
-                    writer.write(|dao| {
-                        match record_id.as_icon_id() {
-                            Some(icon_id) => dao.drop_icon(icon_id)?,
-                            None => dao.drop_suggestions(record_id)?,
-                        };
-                        dao.put_meta(LAST_INGEST_META_KEY, last_modified)?;
-                        Ok(())
-                    })?;
-                }
-                SuggestRecord::Typed(TypedSuggestRecord::Icon {
-                    id: record_id,
-                    last_modified,
-                    attachment,
-                }) => {
-                    let Some(icon_id) = record_id.as_icon_id() else {
-                        continue
+            let record_id = SuggestRecordId::from(&record.id);
+            if record.deleted {
+                
+                
+                writer.write(|dao| {
+                    match record_id.as_icon_id() {
+                        Some(icon_id) => dao.drop_icon(icon_id)?,
+                        None => dao.drop_suggestions(&record_id)?,
                     };
-                    let data = self
-                        .settings_client
-                        .get_icon_attachment(&attachment.location)?;
+                    dao.put_meta(LAST_INGEST_META_KEY, record.last_modified)?;
+                    Ok(())
+                })?;
+                continue;
+            }
+            let Ok(fields) = serde_json::from_value(serde_json::Value::Object(record.fields.clone())) else {
+                
+                
+                writer.write(|dao| dao.put_meta(LAST_INGEST_META_KEY, record.last_modified))?;
+                continue;
+            };
+            match fields {
+                SuggestRecord::AmpWikipedia => {
+                    let Some(attachment) = record.attachment.as_ref() else {
+                        
+                        
+                        
+                        writer.write(|dao| dao.put_meta(LAST_INGEST_META_KEY, record.last_modified))?;
+                        continue;
+                    };
+
+                    let attachment: SuggestAttachment<_> = serde_json::from_slice(
+                        &self.settings_client.get_attachment(&attachment.location)?,
+                    )?;
+
                     writer.write(|dao| {
-                        dao.insert_icon(icon_id, &data)?;
-                        dao.put_meta(LAST_INGEST_META_KEY, last_modified)?;
+                        
+                        
+                        
+                        
+                        
+                        dao.drop_suggestions(&record_id)?;
+
+                        
+                        
+                        dao.insert_amp_wikipedia_suggestions(&record_id, attachment.suggestions())?;
+
+                        
+                        
+                        dao.put_meta(LAST_INGEST_META_KEY, record.last_modified)?;
+
                         Ok(())
                     })?;
                 }
-                _ => continue,
+                SuggestRecord::Icon => {
+                    let (Some(icon_id), Some(attachment)) = (record_id.as_icon_id(), record.attachment.as_ref()) else {
+                        
+                        
+                        
+                        writer.write(|dao| dao.put_meta(LAST_INGEST_META_KEY, record.last_modified))?;
+                        continue;
+                    };
+                    let data = self.settings_client.get_attachment(&attachment.location)?;
+                    writer.write(|dao| {
+                        dao.put_icon(icon_id, &data)?;
+                        dao.put_meta(LAST_INGEST_META_KEY, record.last_modified)?;
+                        Ok(())
+                    })?;
+                }
             }
         }
 
@@ -285,18 +290,36 @@ mod tests {
     use anyhow::{anyhow, Context};
     use expect_test::expect;
     use parking_lot::Once;
+    use rc_crypto::rand;
+    use remote_settings::{RemoteSettingsRecord, RemoteSettingsResponse};
     use serde_json::json;
     use sql_support::ConnExt;
 
-    use crate::rs::{DownloadedSuggestDataAttachment, SuggestRemoteSettingsRecords};
+    
+    fn unique_test_store<S>(settings_client: S) -> SuggestStoreInner<S>
+    where
+        S: SuggestRemoteSettingsClient,
+    {
+        let mut unique_suffix = [0u8; 8];
+        rand::fill(&mut unique_suffix).expect("Failed to generate unique suffix for test store");
+        
+        
+        
+        SuggestStoreInner::new(
+            format!(
+                "file:test_store_{}?mode=memory&cache=shared",
+                hex::encode(unique_suffix),
+            ),
+            settings_client,
+        )
+    }
 
     
     
     
     struct Snapshot {
-        records: SuggestRemoteSettingsRecords,
-        data: HashMap<&'static str, DownloadedSuggestDataAttachment>,
-        icons: HashMap<&'static str, Vec<u8>>,
+        records: Vec<RemoteSettingsRecord>,
+        attachments: HashMap<&'static str, Vec<u8>>,
     }
 
     impl Snapshot {
@@ -311,8 +334,7 @@ mod tests {
             Ok(Self {
                 records: serde_json::from_value(value)
                     .context("Couldn't create snapshot with Remote Settings records")?,
-                data: HashMap::new(),
-                icons: HashMap::new(),
+                attachments: HashMap::new(),
             })
         }
 
@@ -322,17 +344,16 @@ mod tests {
             location: &'static str,
             value: serde_json::Value,
         ) -> anyhow::Result<Self> {
-            self.data.insert(
+            self.attachments.insert(
                 location,
-                serde_json::from_value(value)
-                    .context("Couldn't add data attachment to snapshot")?,
+                serde_json::to_vec(&value).context("Couldn't add data attachment to snapshot")?,
             );
             Ok(self)
         }
 
         
         fn with_icon(mut self, location: &'static str, bytes: Vec<u8>) -> Self {
-            self.icons.insert(location, bytes);
+            self.attachments.insert(location, bytes);
             self
         }
     }
@@ -377,32 +398,27 @@ mod tests {
         fn get_records_with_options(
             &self,
             options: &GetItemsOptions,
-        ) -> Result<SuggestRemoteSettingsRecords> {
+        ) -> Result<RemoteSettingsResponse> {
             *self.last_get_records_options.borrow_mut() = Some(options.clone());
-            Ok(self.snapshot.borrow().records.clone())
+            let records = self.snapshot.borrow().records.clone();
+            let last_modified = records
+                .iter()
+                .map(|record| record.last_modified)
+                .max()
+                .unwrap_or(0);
+            Ok(RemoteSettingsResponse {
+                records,
+                last_modified,
+            })
         }
 
-        fn get_data_attachment(&self, location: &str) -> Result<DownloadedSuggestDataAttachment> {
+        fn get_attachment(&self, location: &str) -> Result<Vec<u8>> {
             Ok(self
                 .snapshot
                 .borrow()
-                .data
+                .attachments
                 .get(location)
-                .unwrap_or_else(|| {
-                    unreachable!("Unexpected request for data attachment `{}`", location)
-                })
-                .clone())
-        }
-
-        fn get_icon_attachment(&self, location: &str) -> Result<Vec<u8>> {
-            Ok(self
-                .snapshot
-                .borrow()
-                .icons
-                .get(location)
-                .unwrap_or_else(|| {
-                    unreachable!("Unexpected request for icon attachment `{}`", location)
-                })
+                .unwrap_or_else(|| unreachable!("Unexpected request for attachment `{}`", location))
                 .clone())
         }
     }
@@ -429,20 +445,18 @@ mod tests {
     fn ingest_suggestions() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "1234",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "1234",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -453,19 +467,12 @@ mod tests {
                 "title": "Los Pollos Hermanos - Albuquerque",
                 "url": "https://www.lph-nm.biz",
                 "icon": "5678",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url",
             }]),
         )?;
 
-        
-        
-        
-        
-        
-        
-        let store = SuggestStoreInner::new(
-            "file:ingest_suggestions?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -473,17 +480,16 @@ mod tests {
             assert_eq!(dao.get_meta::<u64>(LAST_INGEST_META_KEY)?, Some(15));
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Los Pollos Hermanos",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "los",
+                    Amp {
                         title: "Los Pollos Hermanos - Albuquerque",
                         url: "https://www.lph-nm.biz",
                         icon: None,
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "los",
+                        block_id: 0,
+                        advertiser: "Los Pollos Hermanos",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
@@ -500,31 +506,29 @@ mod tests {
     fn ingest_icons() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }, {
-                "id": "icon-2",
-                "type": "icon",
-                "last_modified": 20,
-                "attachment": {
-                    "filename": "icon-2.png",
-                    "mimetype": "image/png",
-                    "location": "icon-2.png",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-2",
+            "type": "icon",
+            "last_modified": 20,
+            "attachment": {
+                "filename": "icon-2.png",
+                "mimetype": "image/png",
+                "location": "icon-2.png",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -535,6 +539,8 @@ mod tests {
                 "title": "Lasagna Come Out Tomorrow",
                 "url": "https://www.lasagna.restaurant",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }, {
                 "id": 0,
                 "advertiser": "Good Place Eats",
@@ -543,26 +549,20 @@ mod tests {
                 "title": "Penne for Your Thoughts",
                 "url": "https://penne.biz",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }]),
         )?
         .with_icon("icon-2.png", "i-am-an-icon".as_bytes().into());
 
-        let store = SuggestStoreInner::new(
-            "file:ingest_icons?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
         store.dbs()?.reader.read(|dao| {
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Good Place Eats",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "lasagna",
+                    Amp {
                         title: "Lasagna Come Out Tomorrow",
                         url: "https://www.lasagna.restaurant",
                         icon: Some(
@@ -581,20 +581,19 @@ mod tests {
                                 110,
                             ],
                         ),
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "lasagna",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
             .assert_debug_eq(&dao.fetch_by_keyword("la")?);
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Good Place Eats",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "penne",
+                    Amp {
                         title: "Penne for Your Thoughts",
                         url: "https://penne.biz",
                         icon: Some(
@@ -613,8 +612,12 @@ mod tests {
                                 110,
                             ],
                         ),
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "penne",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
@@ -632,20 +635,18 @@ mod tests {
     fn ingest_one_suggestion_in_data_attachment() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!({
@@ -656,30 +657,28 @@ mod tests {
                  "title": "Lasagna Come Out Tomorrow",
                  "url": "https://www.lasagna.restaurant",
                  "icon": "2",
+                 "impression_url": "https://example.com/impression_url",
+                 "click_url": "https://example.com/click_url"
             }),
         )?;
 
-        let store = SuggestStoreInner::new(
-            "file:ingest_one_suggestion_in_data_attachment?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
         store.dbs()?.reader.read(|dao| {
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Good Place Eats",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "lasagna",
+                    Amp {
                         title: "Lasagna Come Out Tomorrow",
                         url: "https://www.lasagna.restaurant",
                         icon: None,
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "lasagna",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
@@ -693,24 +692,22 @@ mod tests {
 
     
     #[test]
-    fn reingest() -> anyhow::Result<()> {
+    fn reingest_suggestions() -> anyhow::Result<()> {
         before_each();
 
         
-        let initial_snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let initial_snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -721,6 +718,8 @@ mod tests {
                 "title": "Lasagna Come Out Tomorrow",
                 "url": "https://www.lasagna.restaurant",
                 "icon": "1",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }, {
                 "id": 0,
                 "advertiser": "Los Pollos Hermanos",
@@ -729,13 +728,12 @@ mod tests {
                 "title": "Los Pollos Hermanos - Albuquerque",
                 "url": "https://www.lph-nm.biz",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }]),
         )?;
 
-        let store = SuggestStoreInner::new(
-            "file:reingest?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(initial_snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(initial_snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -743,17 +741,16 @@ mod tests {
             assert_eq!(dao.get_meta(LAST_INGEST_META_KEY)?, Some(15u64));
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Good Place Eats",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "lasagna",
+                    Amp {
                         title: "Lasagna Come Out Tomorrow",
                         url: "https://www.lasagna.restaurant",
                         icon: None,
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "lasagna",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
@@ -763,20 +760,18 @@ mod tests {
 
         
         
-        *store.settings_client.snapshot.borrow_mut() = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 30,
-                "attachment": {
-                    "filename": "data-1-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        *store.settings_client.snapshot.borrow_mut() = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 30,
+            "attachment": {
+                "filename": "data-1-1.json",
+                "mimetype": "application/json",
+                "location": "data-1-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1-1.json",
             json!([{
@@ -787,6 +782,8 @@ mod tests {
                 "title": "Los Pollos Hermanos - Now Serving at 14 Locations!",
                 "url": "https://www.lph-nm.biz",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }, {
                 "id": 0,
                 "advertiser": "Good Place Eats",
@@ -795,6 +792,8 @@ mod tests {
                 "title": "Penne for Your Thoughts",
                 "url": "https://penne.biz",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }]),
         )?;
 
@@ -805,38 +804,224 @@ mod tests {
             assert!(dao.fetch_by_keyword("la")?.is_empty());
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Los Pollos Hermanos",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "los pollos",
+                    Amp {
                         title: "Los Pollos Hermanos - Now Serving at 14 Locations!",
                         url: "https://www.lph-nm.biz",
                         icon: None,
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "los pollos",
+                        block_id: 0,
+                        advertiser: "Los Pollos Hermanos",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
             .assert_debug_eq(&dao.fetch_by_keyword("los ")?);
             expect![[r#"
                 [
-                    Suggestion {
-                        block_id: 0,
-                        advertiser: "Good Place Eats",
-                        iab_category: "8 - Food & Drink",
-                        is_sponsored: true,
-                        full_keyword: "penne",
+                    Amp {
                         title: "Penne for Your Thoughts",
                         url: "https://penne.biz",
                         icon: None,
-                        impression_url: None,
-                        click_url: None,
+                        full_keyword: "penne",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
                     },
                 ]
             "#]]
             .assert_debug_eq(&dao.fetch_by_keyword("pe")?);
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    
+    #[test]
+    fn reingest_icons() -> anyhow::Result<()> {
+        before_each();
+
+        
+        let initial_snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-2",
+            "type": "icon",
+            "last_modified": 20,
+            "attachment": {
+                "filename": "icon-2.png",
+                "mimetype": "image/png",
+                "location": "icon-2.png",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-3",
+            "type": "icon",
+            "last_modified": 25,
+            "attachment": {
+                "filename": "icon-3.png",
+                "mimetype": "image/png",
+                "location": "icon-3.png",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
+        .with_data(
+            "data-1.json",
+            json!([{
+                "id": 0,
+                "advertiser": "Good Place Eats",
+                "iab_category": "8 - Food & Drink",
+                "keywords": ["la", "las", "lasa", "lasagna", "lasagna come out tomorrow"],
+                "title": "Lasagna Come Out Tomorrow",
+                "url": "https://www.lasagna.restaurant",
+                "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
+            }, {
+                "id": 0,
+                "advertiser": "Los Pollos Hermanos",
+                "iab_category": "8 - Food & Drink",
+                "keywords": ["lo", "los", "los pollos", "los pollos hermanos"],
+                "title": "Los Pollos Hermanos - Albuquerque",
+                "url": "https://www.lph-nm.biz",
+                "icon": "3",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
+            }]),
+        )?
+        .with_icon("icon-2.png", "lasagna-icon".as_bytes().into())
+        .with_icon("icon-3.png", "pollos-icon".as_bytes().into());
+
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(initial_snapshot));
+
+        store.ingest(SuggestIngestionConstraints::default())?;
+
+        store.dbs()?.reader.read(|dao| {
+            assert_eq!(dao.get_meta(LAST_INGEST_META_KEY)?, Some(25u64));
+            assert_eq!(
+                dao.conn
+                    .query_one::<i64>("SELECT count(*) FROM suggestions")?,
+                2
+            );
+            assert_eq!(dao.conn.query_one::<i64>("SELECT count(*) FROM icons")?, 2);
+            Ok(())
+        })?;
+
+        
+        *store.settings_client.snapshot.borrow_mut() = Snapshot::with_records(json!([{
+            "id": "icon-2",
+            "type": "icon",
+            "last_modified": 30,
+            "attachment": {
+                "filename": "icon-2.png",
+                "mimetype": "image/png",
+                "location": "icon-2.png",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-3",
+            "type": "icon",
+            "last_modified": 35,
+            "attachment": {
+                "filename": "icon-3.png",
+                "mimetype": "image/png",
+                "location": "icon-3.png",
+                "hash": "",
+                "size": 0,
+            }
+        }]))?
+        .with_icon("icon-2.png", "new-lasagna-icon".as_bytes().into())
+        .with_icon("icon-3.png", "new-pollos-icon".as_bytes().into());
+
+        store.ingest(SuggestIngestionConstraints::default())?;
+
+        store.dbs()?.reader.read(|dao| {
+            assert_eq!(dao.get_meta(LAST_INGEST_META_KEY)?, Some(35u64));
+            expect![[r#"
+                [
+                    Amp {
+                        title: "Lasagna Come Out Tomorrow",
+                        url: "https://www.lasagna.restaurant",
+                        icon: Some(
+                            [
+                                110,
+                                101,
+                                119,
+                                45,
+                                108,
+                                97,
+                                115,
+                                97,
+                                103,
+                                110,
+                                97,
+                                45,
+                                105,
+                                99,
+                                111,
+                                110,
+                            ],
+                        ),
+                        full_keyword: "lasagna",
+                        block_id: 0,
+                        advertiser: "Good Place Eats",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
+                    },
+                ]
+            "#]]
+            .assert_debug_eq(&dao.fetch_by_keyword("la")?);
+            expect![[r#"
+                [
+                    Amp {
+                        title: "Los Pollos Hermanos - Albuquerque",
+                        url: "https://www.lph-nm.biz",
+                        icon: Some(
+                            [
+                                110,
+                                101,
+                                119,
+                                45,
+                                112,
+                                111,
+                                108,
+                                108,
+                                111,
+                                115,
+                                45,
+                                105,
+                                99,
+                                111,
+                                110,
+                            ],
+                        ),
+                        full_keyword: "los",
+                        block_id: 0,
+                        advertiser: "Los Pollos Hermanos",
+                        iab_category: "8 - Food & Drink",
+                        impression_url: "https://example.com/impression_url",
+                        click_url: "https://example.com/click_url",
+                    },
+                ]
+            "#]]
+            .assert_debug_eq(&dao.fetch_by_keyword("lo")?);
             Ok(())
         })?;
 
@@ -850,31 +1035,29 @@ mod tests {
         before_each();
 
         
-        let initial_snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }, {
-                "id": "icon-2",
-                "type": "icon",
-                "last_modified": 20,
-                "attachment": {
-                    "filename": "icon-2.png",
-                    "mimetype": "image/png",
-                    "location": "icon-2.png",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let initial_snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-2",
+            "type": "icon",
+            "last_modified": 20,
+            "attachment": {
+                "filename": "icon-2.png",
+                "mimetype": "image/png",
+                "location": "icon-2.png",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -885,14 +1068,13 @@ mod tests {
                 "title": "Lasagna Come Out Tomorrow",
                 "url": "https://www.lasagna.restaurant",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url"
             }]),
         )?
         .with_icon("icon-2.png", "i-am-an-icon".as_bytes().into());
 
-        let store = SuggestStoreInner::new(
-            "file:ingest_tombstones?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(initial_snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(initial_snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -910,17 +1092,15 @@ mod tests {
 
         
         
-        *store.settings_client.snapshot.borrow_mut() = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "last_modified": 25,
-                "deleted": true,
-            }, {
-                "id": "icon-2",
-                "last_modified": 30,
-                "deleted": true,
-            }],
-        }))?;
+        *store.settings_client.snapshot.borrow_mut() = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "last_modified": 25,
+            "deleted": true,
+        }, {
+            "id": "icon-2",
+            "last_modified": 30,
+            "deleted": true,
+        }]))?;
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -944,14 +1124,9 @@ mod tests {
     fn ingest_with_constraints() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [],
-        }))?;
+        let snapshot = Snapshot::with_records(json!([]))?;
 
-        let store = SuggestStoreInner::new(
-            "file:ingest_with_constraints?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
         assert_eq!(
@@ -995,20 +1170,18 @@ mod tests {
     fn clear() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -1019,13 +1192,12 @@ mod tests {
                 "title": "Los Pollos Hermanos - Albuquerque",
                 "url": "https://www.lph-nm.biz",
                 "icon": "2",
+                "impression_url": "https://example.com",
+                "click_url": "https://example.com",
             }]),
         )?;
 
-        let store = SuggestStoreInner::new(
-            "file:clear?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -1069,42 +1241,40 @@ mod tests {
     fn query() -> anyhow::Result<()> {
         before_each();
 
-        let snapshot = Snapshot::with_records(json!({
-            "data": [{
-                "id": "data-1",
-                "type": "data",
-                "last_modified": 15,
-                "attachment": {
-                    "filename": "data-1.json",
-                    "mimetype": "application/json",
-                    "location": "data-1.json",
-                    "hash": "",
-                    "size": 0,
-                },
-            }, {
-                "id": "icon-2",
-                "type": "icon",
-                "last_modified": 20,
-                "attachment": {
-                    "filename": "icon-2.png",
-                    "mimetype": "image/png",
-                    "location": "icon-2.png",
-                    "hash": "",
-                    "size": 0,
-                },
-            }, {
-                "id": "icon-3",
-                "type": "icon",
-                "last_modified": 25,
-                "attachment": {
-                    "filename": "icon-3.png",
-                    "mimetype": "image/png",
-                    "location": "icon-3.png",
-                    "hash": "",
-                    "size": 0,
-                },
-            }],
-        }))?
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "data-1",
+            "type": "data",
+            "last_modified": 15,
+            "attachment": {
+                "filename": "data-1.json",
+                "mimetype": "application/json",
+                "location": "data-1.json",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-2",
+            "type": "icon",
+            "last_modified": 20,
+            "attachment": {
+                "filename": "icon-2.png",
+                "mimetype": "image/png",
+                "location": "icon-2.png",
+                "hash": "",
+                "size": 0,
+            },
+        }, {
+            "id": "icon-3",
+            "type": "icon",
+            "last_modified": 25,
+            "attachment": {
+                "filename": "icon-3.png",
+                "mimetype": "image/png",
+                "location": "icon-3.png",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
         .with_data(
             "data-1.json",
             json!([{
@@ -1115,6 +1285,8 @@ mod tests {
                 "title": "Lasagna Come Out Tomorrow",
                 "url": "https://www.lasagna.restaurant",
                 "icon": "2",
+                "impression_url": "https://example.com/impression_url",
+                "click_url": "https://example.com/click_url",
             }, {
                 "id": 0,
                 "advertiser": "Wikipedia",
@@ -1122,16 +1294,13 @@ mod tests {
                 "keywords": ["cal", "cali", "california"],
                 "title": "California",
                 "url": "https://wikipedia.org/California",
-                "icon": "3",
+                "icon": "3"
             }]),
         )?
         .with_icon("icon-2.png", "i-am-an-icon".as_bytes().into())
         .with_icon("icon-3.png", "also-an-icon".as_bytes().into());
 
-        let store = SuggestStoreInner::new(
-            "file:query?mode=memory&cache=shared",
-            SnapshotSettingsClient::with_snapshot(snapshot),
-        );
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
 
         store.ingest(SuggestIngestionConstraints::default())?;
 
@@ -1156,12 +1325,7 @@ mod tests {
                 },
                 expect![[r#"
                     [
-                        Suggestion {
-                            block_id: 0,
-                            advertiser: "Good Place Eats",
-                            iab_category: "8 - Food & Drink",
-                            is_sponsored: true,
-                            full_keyword: "lasagna",
+                        Amp {
                             title: "Lasagna Come Out Tomorrow",
                             url: "https://www.lasagna.restaurant",
                             icon: Some(
@@ -1180,8 +1344,12 @@ mod tests {
                                     110,
                                 ],
                             ),
-                            impression_url: None,
-                            click_url: None,
+                            full_keyword: "lasagna",
+                            block_id: 0,
+                            advertiser: "Good Place Eats",
+                            iab_category: "8 - Food & Drink",
+                            impression_url: "https://example.com/impression_url",
+                            click_url: "https://example.com/click_url",
                         },
                     ]
                 "#]],
@@ -1195,12 +1363,7 @@ mod tests {
                 },
                 expect![[r#"
                     [
-                        Suggestion {
-                            block_id: 0,
-                            advertiser: "Good Place Eats",
-                            iab_category: "8 - Food & Drink",
-                            is_sponsored: true,
-                            full_keyword: "lasagna",
+                        Amp {
                             title: "Lasagna Come Out Tomorrow",
                             url: "https://www.lasagna.restaurant",
                             icon: Some(
@@ -1219,8 +1382,12 @@ mod tests {
                                     110,
                                 ],
                             ),
-                            impression_url: None,
-                            click_url: None,
+                            full_keyword: "lasagna",
+                            block_id: 0,
+                            advertiser: "Good Place Eats",
+                            iab_category: "8 - Food & Drink",
+                            impression_url: "https://example.com/impression_url",
+                            click_url: "https://example.com/click_url",
                         },
                     ]
                 "#]],
@@ -1278,12 +1445,7 @@ mod tests {
                 },
                 expect![[r#"
                     [
-                        Suggestion {
-                            block_id: 0,
-                            advertiser: "Wikipedia",
-                            iab_category: "5 - Education",
-                            is_sponsored: false,
-                            full_keyword: "california",
+                        Wikipedia {
                             title: "California",
                             url: "https://wikipedia.org/California",
                             icon: Some(
@@ -1302,8 +1464,7 @@ mod tests {
                                     110,
                                 ],
                             ),
-                            impression_url: None,
-                            click_url: None,
+                            full_keyword: "california",
                         },
                     ]
                 "#]],
@@ -1327,6 +1488,88 @@ mod tests {
                     .with_context(|| format!("Couldn't query store for {}", what))?,
             );
         }
+
+        Ok(())
+    }
+
+    
+    
+    #[test]
+    fn ingest_malformed() -> anyhow::Result<()> {
+        before_each();
+
+        let snapshot = Snapshot::with_records(json!([{
+            // Data record without an attachment.
+            "id": "missing-data-attachment",
+            "type": "data",
+            "last_modified": 15,
+        }, {
+            // Icon record without an attachment.
+            "id": "missing-icon-attachment",
+            "type": "icon",
+            "last_modified": 30,
+        }, {
+            // Icon record with an ID that's not `icon-{id}`, so suggestions in
+            // the data attachment won't be able to reference it.
+            "id": "bad-icon-id",
+            "type": "icon",
+            "last_modified": 45,
+            "attachment": {
+                "filename": "icon-1.png",
+                "mimetype": "image/png",
+                "location": "icon-1.png",
+                "hash": "",
+                "size": 0,
+            },
+        }]))?
+        .with_icon("icon-1.png", "i-am-an-icon".as_bytes().into());
+
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
+
+        store.ingest(SuggestIngestionConstraints::default())?;
+
+        store.dbs()?.reader.read(|dao| {
+            assert_eq!(dao.get_meta::<u64>(LAST_INGEST_META_KEY)?, Some(45));
+            assert_eq!(
+                dao.conn
+                    .query_one::<i64>("SELECT count(*) FROM suggestions")?,
+                0
+            );
+            assert_eq!(dao.conn.query_one::<i64>("SELECT count(*) FROM icons")?, 0);
+
+            Ok(())
+        })?;
+
+        Ok(())
+    }
+
+    
+    
+    #[test]
+    fn ingest_unknown() -> anyhow::Result<()> {
+        before_each();
+
+        let snapshot = Snapshot::with_records(json!([{
+            "id": "fancy-new-suggestions-1",
+            "type": "fancy-new-suggestions",
+            "last_modified": 15,
+        }, {
+            "id": "clippy-2",
+            "type": "clippy",
+            "last_modified": 30,
+        }]))?;
+
+        let store = unique_test_store(SnapshotSettingsClient::with_snapshot(snapshot));
+
+        store.ingest(SuggestIngestionConstraints::default())?;
+
+        store.dbs()?.reader.read(|dao| {
+            
+            
+            assert_eq!(dao.get_meta::<u64>(LAST_INGEST_META_KEY)?, Some(30));
+
+            Ok(())
+        })?;
 
         Ok(())
     }

@@ -1,9 +1,40 @@
-use std::ops::Deref;
 
-use remote_settings::{Attachment, GetItemsOptions};
-use serde::Deserialize;
 
-use crate::Result;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+use std::borrow::Cow;
+
+use remote_settings::{GetItemsOptions, RemoteSettingsResponse};
+use serde::{Deserialize, Deserializer};
+
+use crate::{provider::SuggestionProvider, Result};
 
 
 pub(crate) const REMOTE_SETTINGS_COLLECTION: &str = "quicksuggest";
@@ -19,102 +50,60 @@ pub(crate) const SUGGESTIONS_PER_ATTACHMENT: u64 = 200;
 
 pub(crate) trait SuggestRemoteSettingsClient {
     
-    fn get_records_with_options(
-        &self,
-        options: &GetItemsOptions,
-    ) -> Result<SuggestRemoteSettingsRecords>;
+    fn get_records_with_options(&self, options: &GetItemsOptions)
+        -> Result<RemoteSettingsResponse>;
 
     
     
-    fn get_data_attachment(&self, location: &str) -> Result<DownloadedSuggestDataAttachment>;
-
-    
-    fn get_icon_attachment(&self, location: &str) -> Result<Vec<u8>>;
+    fn get_attachment(&self, location: &str) -> Result<Vec<u8>>;
 }
 
 impl SuggestRemoteSettingsClient for remote_settings::Client {
     fn get_records_with_options(
         &self,
         options: &GetItemsOptions,
-    ) -> Result<SuggestRemoteSettingsRecords> {
-        Ok(self.get_records_raw_with_options(options)?.json()?)
+    ) -> Result<RemoteSettingsResponse> {
+        Ok(remote_settings::Client::get_records_with_options(
+            self, options,
+        )?)
     }
 
-    fn get_data_attachment(&self, location: &str) -> Result<DownloadedSuggestDataAttachment> {
-        Ok(self.get_attachment(location)?.json()?)
-    }
-
-    fn get_icon_attachment(&self, location: &str) -> Result<Vec<u8>> {
-        Ok(self.get_attachment(location)?.body)
+    fn get_attachment(&self, location: &str) -> Result<Vec<u8>> {
+        Ok(remote_settings::Client::get_attachment(self, location)?)
     }
 }
 
 
-#[derive(Clone, Debug, Deserialize)]
-pub(crate) struct SuggestRemoteSettingsRecords {
-    pub data: Vec<SuggestRecord>,
-}
 
-
-
-
-
-
-
-
-
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-#[serde(untagged)]
-pub(crate) enum SuggestRecord {
-    
-    Typed(TypedSuggestRecord),
-
-    
-    
-    
-    
-    
-    
-    Untyped {
-        id: SuggestRecordId,
-        last_modified: u64,
-        #[serde(default)]
-        deleted: bool,
-    },
-}
 
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(tag = "type")]
-pub(crate) enum TypedSuggestRecord {
+pub(crate) enum SuggestRecord {
     #[serde(rename = "icon")]
-    Icon {
-        id: SuggestRecordId,
-        last_modified: u64,
-        attachment: Attachment,
-    },
+    Icon,
     #[serde(rename = "data")]
-    Data {
-        id: SuggestRecordId,
-        last_modified: u64,
-        attachment: Attachment,
-    },
+    AmpWikipedia,
 }
 
 
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(untagged)]
-pub(crate) enum OneOrMany<T> {
+enum OneOrMany<T> {
     One(T),
     Many(Vec<T>),
 }
 
-impl<T> Deref for OneOrMany<T> {
-    type Target = [T];
 
-    fn deref(&self) -> &Self::Target {
-        match self {
+#[derive(Clone, Debug, Deserialize)]
+#[serde(transparent)]
+pub(crate) struct SuggestAttachment<T>(OneOrMany<T>);
+
+impl<T> SuggestAttachment<T> {
+    
+    pub fn suggestions(&self) -> &[T] {
+        match &self.0 {
             OneOrMany::One(value) => std::slice::from_ref(value),
             OneOrMany::Many(values) => values,
         }
@@ -122,16 +111,11 @@ impl<T> Deref for OneOrMany<T> {
 }
 
 
-#[derive(Clone, Debug, Deserialize)]
-#[serde(transparent)]
-pub(crate) struct DownloadedSuggestDataAttachment(pub OneOrMany<DownloadedSuggestion>);
-
-
 #[derive(Clone, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd)]
 #[serde(transparent)]
-pub(crate) struct SuggestRecordId(String);
+pub(crate) struct SuggestRecordId<'a>(Cow<'a, str>);
 
-impl SuggestRecordId {
+impl<'a> SuggestRecordId<'a> {
     pub fn as_str(&self) -> &str {
         &self.0
     }
@@ -146,18 +130,107 @@ impl SuggestRecordId {
     }
 }
 
+impl<'a, T> From<T> for SuggestRecordId<'a>
+where
+    T: Into<Cow<'a, str>>,
+{
+    fn from(value: T) -> Self {
+        Self(value.into())
+    }
+}
 
-#[derive(Clone, Debug, Deserialize)]
-pub(crate) struct DownloadedSuggestion {
-    #[serde(rename = "id")]
-    pub block_id: i64,
-    pub advertiser: String,
-    pub iab_category: String,
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub(crate) struct DownloadedSuggestionCommonDetails {
     pub keywords: Vec<String>,
     pub title: String,
     pub url: String,
+}
+
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub(crate) struct DownloadedAmpSuggestion {
+    #[serde(flatten)]
+    pub common_details: DownloadedSuggestionCommonDetails,
+    pub advertiser: String,
+    #[serde(rename = "id")]
+    pub block_id: i32,
+    pub iab_category: String,
+    pub click_url: String,
+    pub impression_url: String,
     #[serde(rename = "icon")]
     pub icon_id: String,
-    pub impression_url: Option<String>,
-    pub click_url: Option<String>,
+}
+
+
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+pub(crate) struct DownloadedWikipediaSuggestion {
+    #[serde(flatten)]
+    pub common_details: DownloadedSuggestionCommonDetails,
+    #[serde(rename = "icon")]
+    pub icon_id: String,
+}
+
+
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) enum DownloadedAmpWikipediaSuggestion {
+    Amp(DownloadedAmpSuggestion),
+    Wikipedia(DownloadedWikipediaSuggestion),
+}
+
+impl DownloadedAmpWikipediaSuggestion {
+    
+    pub fn common_details(&self) -> &DownloadedSuggestionCommonDetails {
+        match self {
+            Self::Amp(DownloadedAmpSuggestion { common_details, .. }) => common_details,
+            Self::Wikipedia(DownloadedWikipediaSuggestion { common_details, .. }) => common_details,
+        }
+    }
+
+    
+    pub fn provider(&self) -> SuggestionProvider {
+        match self {
+            DownloadedAmpWikipediaSuggestion::Amp(_) => SuggestionProvider::Amp,
+            DownloadedAmpWikipediaSuggestion::Wikipedia(_) => SuggestionProvider::Wikipedia,
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for DownloadedAmpWikipediaSuggestion {
+    fn deserialize<D>(
+        deserializer: D,
+    ) -> std::result::Result<DownloadedAmpWikipediaSuggestion, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum MaybeTagged {
+            Tagged(Tagged),
+            Untagged(DownloadedAmpSuggestion),
+        }
+
+        #[derive(Deserialize)]
+        #[serde(tag = "advertiser")]
+        enum Tagged {
+            #[serde(rename = "Wikipedia")]
+            Wikipedia(DownloadedWikipediaSuggestion),
+        }
+
+        Ok(match MaybeTagged::deserialize(deserializer)? {
+            MaybeTagged::Tagged(Tagged::Wikipedia(wikipedia)) => Self::Wikipedia(wikipedia),
+            MaybeTagged::Untagged(amp) => Self::Amp(amp),
+        })
+    }
 }
