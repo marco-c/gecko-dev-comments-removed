@@ -440,6 +440,8 @@ function maybeGetByL10nId(l10nId, doc = document) {
 
 
 async function waitForTranslationsPopupEvent(eventName, callback) {
+  
+  TranslationsPanel.elements;
   const panel = document.getElementById("translations-panel");
   if (!panel) {
     throw new Error("Unable to find the translations panel element.");
