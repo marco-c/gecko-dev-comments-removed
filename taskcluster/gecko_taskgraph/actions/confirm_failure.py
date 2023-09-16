@@ -73,7 +73,11 @@ def get_failures(task_id, task_definition):
                         test_path = test_path.split(":")[-1]
 
                     
-                    if test_path.endswith(".ini") or test_path.endswith(".list"):
+                    if (
+                        test_path.endswith(".toml")
+                        or test_path.endswith(".ini")
+                        or test_path.endswith(".list")
+                    ):
                         continue
 
                     
@@ -102,7 +106,11 @@ def get_failures(task_id, task_definition):
                         test_path = test_path.split(" ")[0]
 
                     
-                    if test_path.endswith(".ini") or test_path.endswith(".list"):
+                    if (
+                        test_path.endswith(".toml")
+                        or test_path.endswith(".ini")
+                        or test_path.endswith(".list")
+                    ):
                         continue
 
                     

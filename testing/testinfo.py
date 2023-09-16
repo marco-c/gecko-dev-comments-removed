@@ -293,7 +293,7 @@ class TestInfoReport(TestInfo):
 
     def path_mod_xpcshell(self, path):
         
-        path = path.split(".ini:")[-1]
+        path = path.split(":")[-1]
         return path
 
     def description(
