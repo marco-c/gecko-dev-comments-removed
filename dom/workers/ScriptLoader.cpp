@@ -1153,7 +1153,26 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
 
     
     
+    
+    
+    
+    
+    if (request->mModuleScript->HasParseError()) {
+      
+      
+      mRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return false;
+    }
+
+    
+    
     if (!request->InstantiateModuleGraph()) {
+      return false;
+    }
+
+    if (request->mModuleScript->HasErrorToRethrow()) {
+      
+      mRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
       return false;
     }
 
