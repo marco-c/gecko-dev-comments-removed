@@ -27,10 +27,6 @@ mach_schema = Schema(
         Required("comm-checkout"): bool,
         
         Optional("workdir"): str,
-        
-        
-        
-        Optional("command-context"): dict,
     }
 )
 
