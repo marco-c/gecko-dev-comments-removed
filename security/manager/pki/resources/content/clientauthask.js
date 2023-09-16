@@ -39,8 +39,23 @@ const { parse, pemToDER } = ChromeUtils.importESModule(
 
 
 
-var certArray;
 
+
+
+
+
+
+
+
+
+
+var bundle;
+
+
+
+
+
+var certArray;
 
 
 
@@ -49,25 +64,40 @@ var certArray;
 var rememberBox;
 
 async function onLoad() {
+  bundle = document.getElementById("pippki_bundle");
   let rememberSetting = Services.prefs.getBoolPref(
     "security.remember_cert_checkbox_default_setting"
   );
+
   rememberBox = document.getElementById("rememberBox");
+  rememberBox.label = bundle.getString("clientAuthRemember");
   rememberBox.checked = rememberSetting;
 
-  certArray = window.arguments[0].certArray;
-
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthSiteIdentification"),
-    "client-auth-site-identification",
-    { hostname: window.arguments[0].hostname }
+  let hostname = window.arguments[0];
+  let org = window.arguments[1];
+  let issuerOrg = window.arguments[2];
+  let port = window.arguments[3];
+  let formattedOrg = bundle.getFormattedString("clientAuthMessage1", [org]);
+  let formattedIssuerOrg = bundle.getFormattedString("clientAuthMessage2", [
+    issuerOrg,
+  ]);
+  let formattedHostnameAndPort = bundle.getFormattedString(
+    "clientAuthHostnameAndPort",
+    [hostname, port.toString()]
   );
+  setText("hostname", formattedHostnameAndPort);
+  setText("organization", formattedOrg);
+  setText("issuer", formattedIssuerOrg);
 
   let selectElement = document.getElementById("nicknames");
+  certArray = window.arguments[4].QueryInterface(Ci.nsIArray);
   for (let i = 0; i < certArray.length; i++) {
     let menuItemNode = document.createXULElement("menuitem");
-    let cert = certArray[i];
-    let nickAndSerial = `${cert.displayName} [${cert.serialNumber}]`;
+    let cert = certArray.queryElementAt(i, Ci.nsIX509Cert);
+    let nickAndSerial = bundle.getFormattedString("clientAuthNickAndSerial", [
+      cert.displayName,
+      cert.serialNumber,
+    ]);
     menuItemNode.setAttribute("value", i);
     menuItemNode.setAttribute("label", nickAndSerial); 
     selectElement.menupopup.appendChild(menuItemNode);
@@ -91,56 +121,42 @@ async function onLoad() {
 
 async function setDetails() {
   let index = parseInt(document.getElementById("nicknames").value);
-  let cert = certArray[index];
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthCertDetailsIssuedTo"),
-    "client-auth-cert-details-issued-to",
-    { issuedTo: cert.subjectName }
-  );
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthCertDetailsSerialNumber"),
-    "client-auth-cert-details-serial-number",
-    { serialNumber: cert.serialNumber }
-  );
+  let cert = certArray.queryElementAt(index, Ci.nsIX509Cert);
+
   const formatter = new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
     timeStyle: "long",
   });
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthCertDetailsValidityPeriod"),
-    "client-auth-cert-details-validity-period",
-    {
-      notBefore: formatter.format(new Date(cert.validity.notBefore / 1000)),
-      notAfter: formatter.format(new Date(cert.validity.notAfter / 1000)),
-    }
-  );
+  let detailLines = [
+    bundle.getFormattedString("clientAuthIssuedTo", [cert.subjectName]),
+    bundle.getFormattedString("clientAuthSerial", [cert.serialNumber]),
+    bundle.getFormattedString("clientAuthValidityPeriod", [
+      formatter.format(new Date(cert.validity.notBefore / 1000)),
+      formatter.format(new Date(cert.validity.notAfter / 1000)),
+    ]),
+  ];
   let parsedCert = await parse(pemToDER(cert.getBase64DERString()));
   let keyUsages = parsedCert.ext.keyUsages;
   if (keyUsages && keyUsages.purposes.length) {
-    document.l10n.setAttributes(
-      document.getElementById("clientAuthCertDetailsKeyUsages"),
-      "client-auth-cert-details-key-usages",
-      { keyUsages: keyUsages.purposes.join(", ") }
+    detailLines.push(
+      bundle.getFormattedString("clientAuthKeyUsages", [keyUsages.purposes])
     );
   }
   let emailAddresses = cert.getEmailAddresses();
   if (emailAddresses.length) {
-    document.l10n.setAttributes(
-      document.getElementById("clientAuthCertDetailsEmailAddresses"),
-      "client-auth-cert-details-email-addresses",
-      { emailAddresses: emailAddresses.join(", ") }
+    let joinedAddresses = emailAddresses.join(", ");
+    detailLines.push(
+      bundle.getFormattedString("clientAuthEmailAddresses", [joinedAddresses])
     );
   }
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthCertDetailsIssuedBy"),
-    "client-auth-cert-details-issued-by",
-    { issuedBy: cert.issuerName }
+  detailLines.push(
+    bundle.getFormattedString("clientAuthIssuedBy", [cert.issuerName])
   );
-  document.l10n.setAttributes(
-    document.getElementById("clientAuthCertDetailsStoredOn"),
-    "client-auth-cert-details-stored-on",
-    { storedOn: cert.tokenName }
+  detailLines.push(
+    bundle.getFormattedString("clientAuthStoredOn", [cert.tokenName])
   );
+
+  document.getElementById("details").value = detailLines.join("\n");
 }
 
 async function onCertSelected() {
@@ -148,15 +164,15 @@ async function onCertSelected() {
 }
 
 function doOK() {
-  let { retVals } = window.arguments[0];
+  let retVals = window.arguments[5].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("certChosen", true);
   let index = parseInt(document.getElementById("nicknames").value);
-  let cert = certArray[index];
-  retVals.cert = cert;
-  retVals.rememberDecision = rememberBox.checked;
+  retVals.setPropertyAsUint32("selectedIndex", index);
+  retVals.setPropertyAsBool("rememberSelection", rememberBox.checked);
 }
 
 function doCancel() {
-  let { retVals } = window.arguments[0];
-  retVals.cert = null;
-  retVals.rememberDecision = rememberBox.checked;
+  let retVals = window.arguments[5].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("certChosen", false);
+  retVals.setPropertyAsBool("rememberSelection", rememberBox.checked);
 }

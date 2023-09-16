@@ -184,12 +184,4 @@ interface nsITLSSocketControl : nsISupports {
 
 
     void claim();
-
-    
-
-
-
-
-
-    attribute uint64_t browserId;
 };

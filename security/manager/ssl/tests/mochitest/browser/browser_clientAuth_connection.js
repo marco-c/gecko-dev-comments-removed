@@ -28,7 +28,7 @@ let cars = Cc["@mozilla.org/security/clientAuthRememberService;1"].getService(
 var gExpectedClientCertificateChoices;
 
 
-const gClientAuthDialogService = {
+const gClientAuthDialogs = {
   _state: DialogState.ASSERT_NOT_CALLED,
   _rememberClientAuthCertificate: false,
   _chooseCertificateCalled: false,
@@ -59,30 +59,52 @@ const gClientAuthDialogService = {
     this._chooseCertificateCalled = value;
   },
 
-  chooseCertificate(hostname, certArray, loadContext, callback) {
+  chooseCertificate(
+    hostname,
+    port,
+    organization,
+    issuerOrg,
+    certList,
+    selectedIndex,
+    rememberClientAuthCertificate
+  ) {
     this.chooseCertificateCalled = true;
     Assert.notEqual(
       this.state,
       DialogState.ASSERT_NOT_CALLED,
       "chooseCertificate() should be called only when expected"
     );
+
+    rememberClientAuthCertificate.value = this.rememberClientAuthCertificate;
+
     Assert.equal(
       hostname,
       "requireclientcert.example.com",
       "Hostname should be 'requireclientcert.example.com'"
     );
+    Assert.equal(port, 443, "Port should be 443");
+    Assert.equal(
+      organization,
+      "",
+      "Server cert Organization should be empty/not present"
+    );
+    Assert.equal(
+      issuerOrg,
+      "Mozilla Testing",
+      "Server cert issuer Organization should be 'Mozilla Testing'"
+    );
 
     
     
     
-    Assert.notEqual(certArray, null, "Cert list should not be null");
+    Assert.notEqual(certList, null, "Cert list should not be null");
     Assert.equal(
-      certArray.length,
+      certList.length,
       gExpectedClientCertificateChoices,
       `${gExpectedClientCertificateChoices} certificates should be available`
     );
 
-    for (let cert of certArray) {
+    for (let cert of certList.enumerate(Ci.nsIX509Cert)) {
       Assert.notEqual(cert, null, "Cert list should contain nsIX509Certs");
       Assert.equal(
         cert.issuerCommonName,
@@ -92,25 +114,22 @@ const gClientAuthDialogService = {
     }
 
     if (this.state == DialogState.RETURN_CERT_SELECTED) {
-      callback.certificateChosen(
-        certArray[0],
-        this.rememberClientAuthCertificate
-      );
-    } else {
-      callback.certificateChosen(null, this.rememberClientAuthCertificate);
+      selectedIndex.value = 0;
+      return true;
     }
+    return false;
   },
 
-  QueryInterface: ChromeUtils.generateQI(["nsIClientAuthDialogService"]),
+  QueryInterface: ChromeUtils.generateQI(["nsIClientAuthDialogs"]),
 };
 
 add_setup(async function () {
-  let clientAuthDialogServiceCID = MockRegistrar.register(
-    "@mozilla.org/security/ClientAuthDialogService;1",
-    gClientAuthDialogService
+  let clientAuthDialogsCID = MockRegistrar.register(
+    "@mozilla.org/nsClientAuthDialogs;1",
+    gClientAuthDialogs
   );
   registerCleanupFunction(() => {
-    MockRegistrar.unregister(clientAuthDialogServiceCID);
+    MockRegistrar.unregister(clientAuthDialogsCID);
   });
 
   
@@ -162,7 +181,7 @@ async function testHelper(
   options = undefined,
   expectStringInPage = undefined
 ) {
-  gClientAuthDialogService.chooseCertificateCalled = false;
+  gClientAuthDialogs.chooseCertificateCalled = false;
   await SpecialPowers.pushPrefEnv({
     set: [["security.default_personal_cert", prefValue]],
   });
@@ -197,7 +216,7 @@ async function testHelper(
   }
 
   Assert.equal(
-    gClientAuthDialogService.chooseCertificateCalled,
+    gClientAuthDialogs.chooseCertificateCalled,
     expectCallingChooseCertificate,
     "chooseCertificate should have been called if we were expecting it to be called"
   );
@@ -227,7 +246,7 @@ async function testHelper(
 
 
 add_task(async function testCertChosenAutomatically() {
-  gClientAuthDialogService.state = DialogState.ASSERT_NOT_CALLED;
+  gClientAuthDialogs.state = DialogState.ASSERT_NOT_CALLED;
   await testHelper(
     "Select Automatically",
     "https://requireclientcert.example.com/",
@@ -242,7 +261,7 @@ add_task(async function testCertChosenAutomatically() {
 
 
 add_task(async function testCertNotChosenByUser() {
-  gClientAuthDialogService.state = DialogState.RETURN_CERT_NOT_SELECTED;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_NOT_SELECTED;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert.example.com/",
@@ -259,7 +278,7 @@ add_task(async function testCertNotChosenByUser() {
 
 
 add_task(async function testCertChosenByUser() {
-  gClientAuthDialogService.state = DialogState.RETURN_CERT_SELECTED;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert.example.com/",
@@ -271,8 +290,8 @@ add_task(async function testCertChosenByUser() {
 
 
 add_task(async function testEmptyCertChosenByUser() {
-  gClientAuthDialogService.state = DialogState.RETURN_CERT_NOT_SELECTED;
-  gClientAuthDialogService.rememberClientAuthCertificate = true;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_NOT_SELECTED;
+  gClientAuthDialogs.rememberClientAuthCertificate = true;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert.example.com/",
@@ -297,8 +316,8 @@ add_task(async function testEmptyCertChosenByUser() {
 
 
 add_task(async function testClearPrivateBrowsingState() {
-  gClientAuthDialogService.rememberClientAuthCertificate = true;
-  gClientAuthDialogService.state = DialogState.RETURN_CERT_SELECTED;
+  gClientAuthDialogs.rememberClientAuthCertificate = true;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert.example.com/",
@@ -352,7 +371,7 @@ add_task(async function testCertFilteringWithIntermediate() {
   let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
   nssComponent.addEnterpriseIntermediate(intermediateBytes);
   gExpectedClientCertificateChoices = 4;
-  gClientAuthDialogService.state = DialogState.RETURN_CERT_SELECTED;
+  gClientAuthDialogs.state = DialogState.RETURN_CERT_SELECTED;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert.example.com/",
@@ -369,7 +388,7 @@ add_task(async function testCertFilteringWithIntermediate() {
 
 
 add_task(async function testNoDialogForUntrustedServerCertificate() {
-  gClientAuthDialogService.state = DialogState.ASSERT_NOT_CALLED;
+  gClientAuthDialogs.state = DialogState.ASSERT_NOT_CALLED;
   await testHelper(
     "Ask Every Time",
     "https://requireclientcert-untrusted.example.com/",
