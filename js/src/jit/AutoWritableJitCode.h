@@ -53,10 +53,16 @@ class MOZ_RAII AutoWritableJitCodeFallible {
   }
 
   ~AutoWritableJitCodeFallible() {
-    mozilla::TimeStamp startTime = mozilla::TimeStamp::Now();
+    
+    
+    const bool measuringTime = JitOptions.writeProtectCode;
+    const mozilla::TimeStamp startTime =
+        measuringTime ? mozilla::TimeStamp::Now() : mozilla::TimeStamp();
     auto timer = mozilla::MakeScopeExit([&] {
-      if (Realm* realm = rt_->mainContextFromOwnThread()->realm()) {
-        realm->timers.protectTime += mozilla::TimeStamp::Now() - startTime;
+      if (measuringTime) {
+        if (Realm* realm = rt_->mainContextFromOwnThread()->realm()) {
+          realm->timers.protectTime += mozilla::TimeStamp::Now() - startTime;
+        }
       }
     });
 
