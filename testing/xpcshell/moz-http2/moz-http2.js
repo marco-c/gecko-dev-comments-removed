@@ -347,6 +347,7 @@ function handleRequest(req, res) {
       return null;
     }
 
+    let answers = [];
     if (packet.questions.length && packet.questions[0].name.endsWith(".pd")) {
       
       
@@ -357,6 +358,16 @@ function handleRequest(req, res) {
         packet.additionals[0].type == "OPT" &&
         packet.additionals[0].options.some(o => o.type === "PADDING")
       ) {
+        
+        answers.push({
+          name: ".",
+          type: "PADDING",
+          data: Buffer.from(
+            
+            "50414444494e475f50414444494e475f50414444494e47",
+            "hex"
+          ),
+        });
         responseIP =
           "1.1." +
           ((requestPayload.length >> 8) & 0xff) +
@@ -397,7 +408,6 @@ function handleRequest(req, res) {
       return responseIP;
     }
 
-    let answers = [];
     if (
       responseIP != "none" &&
       responseType(packet, responseIP) == packet.questions[0].type
