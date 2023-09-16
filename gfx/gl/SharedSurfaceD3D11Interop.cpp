@@ -444,7 +444,7 @@ SharedSurface_D3D11Interop::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       WindowsHandle(mData.dxgiHandle),  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL));
+      gfx::ColorRange::FULL,  true));
 }
 
 

@@ -83,7 +83,8 @@ bool DXGID3D9TextureData::Serialize(SurfaceDescriptor& aOutDescriptor) {
   SurfaceDescriptorD3D10 desc((WindowsHandle)(mHandle),
                                Nothing(),
                                0, mFormat, GetSize(),
-                              gfx::ColorSpace2::SRGB, gfx::ColorRange::FULL);
+                              gfx::ColorSpace2::SRGB, gfx::ColorRange::FULL,
+                               false);
   
   bool isYUV = mFormat == gfx::SurfaceFormat::NV12 ||
                mFormat == gfx::SurfaceFormat::P010 ||

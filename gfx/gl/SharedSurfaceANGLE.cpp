@@ -144,7 +144,7 @@ SharedSurface_ANGLEShareHandle::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       (WindowsHandle)mShareHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL));
+      gfx::ColorRange::FULL,  !!mKeyedMutex));
 }
 
 class ScopedLockTexture final {
