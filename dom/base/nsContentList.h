@@ -21,7 +21,7 @@
 #include "nsIHTMLCollection.h"
 #include "nsINodeList.h"
 #include "nsStubMutationObserver.h"
-#include "nsAtom.h"
+#include "nsAtomHashKeys.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsNameSpaceManager.h"
 #include "nsWrapperCache.h"
@@ -357,7 +357,7 @@ class nsContentList : public nsBaseContentList,
   
   
   
-  using NamedItemsCache = nsTHashMap<RefPtr<nsAtom>, Element*>;
+  using NamedItemsCache = nsTHashMap<nsAtomHashKey, Element*>;
 
   void InvalidateNamedItemsCache() {
     mNamedItemsCache = nullptr;

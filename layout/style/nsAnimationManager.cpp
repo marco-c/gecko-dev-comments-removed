@@ -211,7 +211,7 @@ static void UpdateOldAnimationPropertiesWithNew(
 
 static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     dom::Document* aDocument, const NonOwningAnimationTarget& aTarget,
-    const nsAtom* aName) {
+    nsAtom* aName) {
   
   
   
@@ -259,7 +259,7 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
   switch (aStyleTimeline.tag) {
     case StyleAnimationTimeline::Tag::Timeline: {
       
-      const nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
+      nsAtom* name = aStyleTimeline.AsTimeline().AsAtom();
       return name != nsGkAtoms::_empty
                  ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
                                             name)

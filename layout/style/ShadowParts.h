@@ -7,7 +7,7 @@
 #ifndef mozilla_ShadowParts_h
 #define mozilla_ShadowParts_h
 
-#include "nsAtom.h"
+#include "nsAtomHashKeys.h"
 #include "nsTHashtable.h"
 #include "nsClassHashtable.h"
 #include "nsRefPtrHashtable.h"
@@ -38,8 +38,8 @@ class ShadowParts final {
 
   
   
-  nsClassHashtable<nsRefPtrHashKey<nsAtom>, PartList> mMappings;
-  nsRefPtrHashtable<nsRefPtrHashKey<nsAtom>, nsAtom> mReverseMappings;
+  nsClassHashtable<nsAtomHashKey, PartList> mMappings;
+  nsRefPtrHashtable<nsAtomHashKey, nsAtom> mReverseMappings;
 };
 
 }  
