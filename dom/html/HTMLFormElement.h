@@ -329,7 +329,7 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
   
   
-  nsIHTMLCollection* Elements();
+  HTMLFormControlsCollection* Elements();
 
   int32_t Length();
 
