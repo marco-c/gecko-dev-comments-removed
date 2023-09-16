@@ -2368,7 +2368,6 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
 
 
 
-
 LayoutDeviceIntRect nsWindow::GetBounds() {
   if (!mWnd) {
     return mBounds;
@@ -2510,17 +2509,6 @@ LayoutDeviceIntPoint nsWindow::GetClientOffset() {
   LayoutDeviceIntPoint pt = WidgetToScreenOffset();
   return LayoutDeviceIntPoint(pt.x - LayoutDeviceIntCoord(r1.left),
                               pt.y - LayoutDeviceIntCoord(r1.top));
-}
-
-void nsWindow::SetDrawsInTitlebar(bool aState) {
-  nsWindow* window = GetTopLevelWindow(true);
-  if (window && window != this) {
-    return window->SetDrawsInTitlebar(aState);
-  }
-
-  
-  SetNonClientMargins(aState ? LayoutDeviceIntMargin(0, -1, -1, -1)
-                             : LayoutDeviceIntMargin(-1, -1, -1, -1));
 }
 
 void nsWindow::ResetLayout() {
