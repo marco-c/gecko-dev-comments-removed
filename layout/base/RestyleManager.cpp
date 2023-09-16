@@ -3064,7 +3064,6 @@ ServoElementSnapshot& RestyleManager::SnapshotFor(Element& aElement) {
   
   
   
-  MOZ_ASSERT(aElement.HasServoData());
   MOZ_ASSERT(!aElement.HasFlag(ELEMENT_HANDLED_SNAPSHOT));
 
   ServoElementSnapshot* snapshot =
@@ -3456,7 +3455,11 @@ void RestyleManager::TakeSnapshotForAttributeChange(Element& aElement,
   
   IncrementUndisplayedRestyleGeneration();
 
-  if (!aElement.HasServoData()) {
+  
+  
+  if (!aElement.HasServoData() &&
+      !(aElement.GetSelectorFlags() &
+        NodeSelectorFlags::RelativeSelectorSearchDirectionAncestorSibling)) {
     return;
   }
 
