@@ -2411,6 +2411,26 @@ void APZCTreeManager::ZoomToRect(const ScrollableLayerGuid& aGuid,
   APZThreadUtils::AssertOnControllerThread();
 
   RefPtr<AsyncPanZoomController> apzc = GetTargetAPZC(aGuid);
+  if (aFlags & ZOOM_TO_FOCUSED_INPUT) {
+    
+    
+    
+    if (apzc) {
+      CSSRect transformedRect =
+          ConvertRectInApzcToRoot(apzc, aZoomTarget.targetRect);
+
+      transformedRect.Inflate(15.0f, 0.0f);
+      
+      
+      ZoomTarget zoomTarget{transformedRect};
+
+      apzc = FindZoomableApzc(apzc);
+      if (apzc) {
+        apzc->ZoomToRect(zoomTarget, aFlags);
+      }
+    }
+    return;
+  }
   if (apzc) {
     apzc->ZoomToRect(aZoomTarget, aFlags);
   }
@@ -3174,8 +3194,9 @@ ScreenToParentLayerMatrix4x4 APZCTreeManager::GetScreenToApzcTransform(
 
 
 
-ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
-    const AsyncPanZoomController* aApzc,
+ParentLayerToParentLayerMatrix4x4 APZCTreeManager::GetApzcToApzcTransform(
+    const AsyncPanZoomController* aStartApzc,
+    const AsyncPanZoomController* aStopApzc,
     const AsyncTransformComponents& aComponents) const {
   Matrix4x4 result;
   RecursiveMutexAutoLock lock(mTreeLock);
@@ -3186,31 +3207,30 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
   
   
   
+  
 
   
-  Matrix4x4 asyncUntransform = aApzc
+  Matrix4x4 asyncUntransform = aStartApzc
                                    ->GetAsyncTransformForInputTransformation(
-                                       aComponents, aApzc->GetLayersId())
+                                       aComponents, aStartApzc->GetLayersId())
                                    .Inverse()
                                    .ToUnknownMatrix();
 
   
-  
   result = asyncUntransform *
-           aApzc->GetTransformToLastDispatchedPaint(aComponents,
-                                                    aApzc->GetLayersId()) *
-           aApzc->GetAncestorTransform();
+           aStartApzc->GetTransformToLastDispatchedPaint(
+               aComponents, aStartApzc->GetLayersId()) *
+           aStartApzc->GetAncestorTransform();
 
-  for (AsyncPanZoomController* parent = aApzc->GetParent(); parent;
-       parent = parent->GetParent()) {
-    
+  for (AsyncPanZoomController* parent = aStartApzc->GetParent();
+       parent && parent != aStopApzc; parent = parent->GetParent()) {
     
     
     
     
     result = result *
-             parent->GetTransformToLastDispatchedPaint(LayoutAndVisual,
-                                                       aApzc->GetLayersId()) *
+             parent->GetTransformToLastDispatchedPaint(
+                 LayoutAndVisual, aStartApzc->GetLayersId()) *
              parent->GetAncestorTransform();
 
     
@@ -3218,7 +3238,15 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
     
   }
 
-  return ViewAs<ParentLayerToScreenMatrix4x4>(result);
+  return ViewAs<ParentLayerToParentLayerMatrix4x4>(result);
+}
+
+ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
+    const AsyncPanZoomController* aApzc,
+    const AsyncTransformComponents& aComponents) const {
+  return ViewAs<ParentLayerToScreenMatrix4x4>(
+      GetApzcToApzcTransform(aApzc, nullptr, aComponents),
+      PixelCastJustification::ScreenIsParentLayerForRoot);
 }
 
 ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransformForHit(
@@ -3230,6 +3258,49 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransformForHit(
           ? LayoutAndVisual
           : AsyncTransformComponents{AsyncTransformComponent::eVisual};
   return GetApzcToGeckoTransform(aHitResult.mTargetApzc, components);
+}
+
+ParentLayerToParentLayerMatrix4x4
+APZCTreeManager::GetOopifApzcToRootContentApzcTransform(
+    AsyncPanZoomController* aApzc) const {
+  ParentLayerToParentLayerMatrix4x4 result;
+  MOZ_ASSERT(aApzc->IsRootForLayersId());
+
+  RefPtr<AsyncPanZoomController> rootContentApzc = FindZoomableApzc(aApzc);
+  MOZ_ASSERT(aApzc->GetLayersId() != rootContentApzc->GetLayersId(),
+             "aApzc must be out-of-process of the rootContentApzc");
+  if (!rootContentApzc || rootContentApzc == aApzc ||
+      rootContentApzc->GetLayersId() == aApzc->GetLayersId()) {
+    return result;
+  }
+
+  return GetApzcToApzcTransform(aApzc, rootContentApzc,
+                                AsyncTransformComponent::eLayout) *
+         
+         
+         
+         
+         ViewAs<AsyncTransformComponentMatrix>(
+             rootContentApzc->GetPaintedResolutionTransform());
+}
+
+CSSRect APZCTreeManager::ConvertRectInApzcToRoot(AsyncPanZoomController* aApzc,
+                                                 const CSSRect& aRect) const {
+  MOZ_ASSERT(aApzc->IsRootForLayersId());
+  RefPtr<AsyncPanZoomController> rootContentApzc = FindZoomableApzc(aApzc);
+  if (!rootContentApzc || rootContentApzc == aApzc) {
+    return aRect;
+  }
+
+  ParentLayerRect rectInParent = aRect * aApzc->GetZoom();
+  ParentLayerRect rectInRoot =
+      GetOopifApzcToRootContentApzcTransform(aApzc).TransformBounds(
+          rectInParent);
+
+  if (rootContentApzc->GetZoom() != CSSToParentLayerScale(0)) {
+    return rectInRoot / rootContentApzc->GetZoom();
+  }
+  return rectInRoot / CSSToParentLayerScale(1);
 }
 
 ScreenPoint APZCTreeManager::GetCurrentMousePosition() const {
