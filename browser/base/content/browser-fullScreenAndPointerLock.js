@@ -64,8 +64,12 @@ var PointerlockFsWarning = {
       this._element.addEventListener("transitionend", this);
       this._element.addEventListener("transitioncancel", this);
       window.addEventListener("mousemove", this, true);
-      window.addEventListener("activate", this);
-      window.addEventListener("deactivate", this);
+      
+      
+      if (timeout > 0) {
+        window.addEventListener("activate", this);
+        window.addEventListener("deactivate", this);
+      }
       
       this._timeoutHide = new this.Timeout(() => {
         window.removeEventListener("activate", this);
