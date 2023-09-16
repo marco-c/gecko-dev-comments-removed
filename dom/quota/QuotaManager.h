@@ -301,12 +301,12 @@ class QuotaManager final : public BackgroundThreadObject {
   template <typename P>
   void CollectPendingOriginsForListing(P aPredicate);
 
-  bool IsStorageInitialized() const {
+  bool IsStorageInitializedInternal() const {
     AssertIsOnIOThread();
     return static_cast<bool>(mStorageConnection);
   }
 
-  void AssertStorageIsInitialized() const
+  void AssertStorageIsInitializedInternal() const
 #ifdef DEBUG
       ;
 #else
@@ -314,7 +314,7 @@ class QuotaManager final : public BackgroundThreadObject {
   }
 #endif
 
-  nsresult EnsureStorageIsInitialized();
+  nsresult EnsureStorageIsInitializedInternal();
 
   
   

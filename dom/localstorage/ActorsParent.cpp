@@ -2847,7 +2847,7 @@ nsresult LoadArchivedOrigins() {
   MOZ_ASSERT(quotaManager);
 
   
-  QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitialized()));
+  QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitializedInternal()));
 
   QM_TRY_INSPECT(const auto& connection, CreateArchiveStorageConnection(
                                              quotaManager->GetStoragePath()));
@@ -6921,7 +6921,7 @@ nsresult PrepareDatastoreOp::DatabaseWork() {
     MOZ_ASSERT(quotaManager);
 
     
-    QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitialized()));
+    QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitializedInternal()));
 
     
     

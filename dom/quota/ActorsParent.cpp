@@ -4552,9 +4552,9 @@ QuotaManager::UpgradeLocalStorageArchiveFromLessThan4To4(
 
 #ifdef DEBUG
 
-void QuotaManager::AssertStorageIsInitialized() const {
+void QuotaManager::AssertStorageIsInitializedInternal() const {
   AssertIsOnIOThread();
-  MOZ_ASSERT(IsStorageInitialized());
+  MOZ_ASSERT(IsStorageInitializedInternal());
 }
 
 #endif  
@@ -4847,7 +4847,7 @@ Result<Ok, nsresult> QuotaManager::CreateEmptyLocalStorageArchive(
   return Ok{};
 }
 
-nsresult QuotaManager::EnsureStorageIsInitialized() {
+nsresult QuotaManager::EnsureStorageIsInitializedInternal() {
   DiagnosticAssertIsOnIOThread();
 
   const auto innerFunc =
