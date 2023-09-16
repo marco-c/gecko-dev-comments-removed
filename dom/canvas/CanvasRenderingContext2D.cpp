@@ -1425,7 +1425,7 @@ bool CanvasRenderingContext2D::BorrowTarget(const IntRect& aPersistedRect,
   
   
   if (!mBufferProvider || mBufferProvider->RequiresRefresh() ||
-      (mBufferProvider->IsAccelerated() && mWillReadFrequently)) {
+      (mBufferProvider->IsAccelerated() && GetEffectiveWillReadFrequently())) {
     return false;
   }
   mTarget = mBufferProvider->BorrowDrawTarget(aPersistedRect);
@@ -1647,7 +1647,7 @@ bool CanvasRenderingContext2D::TryAcceleratedTarget(
   }
   
   
-  if (!mAllowAcceleration || mWillReadFrequently) {
+  if (!mAllowAcceleration || GetEffectiveWillReadFrequently()) {
     return false;
   }
   aOutDT = DrawTargetWebgl::Create(GetSize(), GetSurfaceFormat());
@@ -1685,7 +1685,7 @@ bool CanvasRenderingContext2D::TrySharedTarget(
 
   aOutProvider = renderer->CreatePersistentBufferProvider(
       GetSize(), GetSurfaceFormat(),
-      !mAllowAcceleration || mWillReadFrequently);
+      !mAllowAcceleration || GetEffectiveWillReadFrequently());
 
   if (!aOutProvider) {
     return false;
@@ -6338,6 +6338,11 @@ void CanvasRenderingContext2D::SetWriteOnly() {
   } else if (mOffscreenCanvas) {
     mOffscreenCanvas->SetWriteOnly();
   }
+}
+
+bool CanvasRenderingContext2D::GetEffectiveWillReadFrequently() const {
+  return StaticPrefs::gfx_canvas_willreadfrequently_enabled_AtStartup() &&
+         mWillReadFrequently;
 }
 
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(CanvasPath, mParent)
