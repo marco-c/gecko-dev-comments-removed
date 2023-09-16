@@ -10101,6 +10101,32 @@ var ShoppingSidebarManager = {
     this._setShoppingButtonState(aBrowser);
 
     if (isProduct) {
+      let isVisible = sidebar && !sidebar.hidden;
+
+      
+      
+      let isWalmart = aLocationURI.host.includes("walmart");
+      let isNewDocument = !aFlags;
+
+      let isSameDocument =
+        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
+      let isReload = aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD;
+      let isSessionRestore =
+        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE;
+
+      if (
+        isVisible &&
+        
+        
+        
+        ((!isWalmart && (isNewDocument || isReload || isSessionRestore)) ||
+          (isWalmart && isSameDocument))
+      ) {
+        Glean.shopping.surfaceDisplayed.record();
+      }
+    }
+
+    if (isProduct) {
       
       
       ShoppingUtils.handleAutoActivateOnProduct();
