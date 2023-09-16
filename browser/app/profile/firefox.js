@@ -2820,7 +2820,7 @@ pref("browser.firefox-view.feature-tour", "{\"screen\":\"FIREFOX_VIEW_SPOTLIGHT\
 
 pref("browser.firefox-view.view-count", 0);
 
-pref("browser.firefox-view.max-history-rows", 500);
+pref("browser.firefox-view.max-history-rows", 300);
 
 
 
