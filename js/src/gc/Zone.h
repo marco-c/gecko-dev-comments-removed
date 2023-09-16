@@ -623,7 +623,7 @@ class Zone : public js::ZoneAllocator, public js::gc::GraphNodeBase<JS::Zone> {
 
   
   
-  bool keepDuringJob(HandleObject target);
+  bool addToKeptObjects(HandleObject target);
 
   void traceKeptObjects(JSTracer* trc);
 

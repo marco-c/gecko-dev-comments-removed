@@ -78,7 +78,7 @@ bool WeakRefObject::construct(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   
-  if (!target->zone()->keepDuringJob(target)) {
+  if (!target->zone()->addToKeptObjects(target)) {
     ReportOutOfMemory(cx);
     return false;
   };
@@ -207,7 +207,7 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   RootedObject target(cx, weakRef->target());
-  if (!target->zone()->keepDuringJob(target)) {
+  if (!target->zone()->addToKeptObjects(target)) {
     return false;
   }
 
