@@ -134,6 +134,11 @@ nsClipboard::SetNativeClipboardData(nsITransferable* aTransferable, nsIClipboard
       } else if ([currentKey
                      isEqualToString:[UTIHelper stringFromPboardType:(NSString*)kUTTypeFileURL]]) {
         [cocoaPasteboard setString:currentValue forType:currentKey];
+      } else if ([currentKey
+                     isEqualToString:[UTIHelper stringFromPboardType:kPasteboardConcealedType]]) {
+        
+        
+        [cocoaPasteboard setData:NULL forType:currentKey];
       } else {
         [cocoaPasteboard setData:currentValue forType:currentKey];
       }
@@ -532,6 +537,13 @@ NSDictionary* nsClipboard::PasteboardDictFromTransferable(nsITransferable* aTran
       nativeString = [nativeString precomposedStringWithCanonicalMapping];
       if (nativeString) {
         [pasteboardOutputDict setObject:nativeString forKey:pboardType];
+      }
+
+      if (aTransferable->GetIsPrivateData()) {
+        
+        
+        [pasteboardOutputDict setObject:nativeString
+                                 forKey:[UTIHelper stringFromPboardType:kPasteboardConcealedType]];
       }
     } else if (flavorStr.EqualsLiteral(kCustomTypesMime)) {
       nsCOMPtr<nsISupports> genericDataWrapper;

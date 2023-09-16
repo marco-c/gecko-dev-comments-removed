@@ -31,6 +31,7 @@
 
 extern NSString* const kPublicUrlPboardType;
 extern NSString* const kPublicUrlNamePboardType;
+extern NSString* const kPasteboardConcealedType;
 extern NSString* const kUrlsWithTitlesPboardType;
 extern NSString* const kMozWildcardPboardType;
 extern NSString* const kMozCustomTypesPboardType;
