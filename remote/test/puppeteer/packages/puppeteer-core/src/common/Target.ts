@@ -19,9 +19,10 @@ import {Protocol} from 'devtools-protocol';
 import type {Browser} from '../api/Browser.js';
 import type {BrowserContext} from '../api/BrowserContext.js';
 import {Page, PageEmittedEvents} from '../api/Page.js';
+import {Target, TargetType} from '../api/Target.js';
 import {Deferred} from '../util/Deferred.js';
 
-import {CDPSession} from './Connection.js';
+import {CDPSession, CDPSessionImpl} from './Connection.js';
 import {CDPPage} from './Page.js';
 import {Viewport} from './PuppeteerViewport.js';
 import {TargetManager} from './TargetManager.js';
@@ -40,145 +41,124 @@ export enum InitializationStatus {
 
 
 
-
-
-
-
-
-export class Target {
-  #browserContext: BrowserContext;
+export class CDPTarget extends Target {
+  #browserContext?: BrowserContext;
   #session?: CDPSession;
   #targetInfo: Protocol.Target.TargetInfo;
-  #targetManager: TargetManager;
-  #sessionFactory: (isAutoAttachEmulated: boolean) => Promise<CDPSession>;
-
-  
-
+  #targetManager?: TargetManager;
+  #sessionFactory:
+    | ((isAutoAttachEmulated: boolean) => Promise<CDPSession>)
+    | undefined;
 
   _initializedDeferred = Deferred.create<InitializationStatus>();
-  
-
-
   _isClosedDeferred = Deferred.create<void>();
-  
-
-
   _targetId: string;
 
   
 
 
+
+
   constructor(
     targetInfo: Protocol.Target.TargetInfo,
     session: CDPSession | undefined,
-    browserContext: BrowserContext,
-    targetManager: TargetManager,
-    sessionFactory: (isAutoAttachEmulated: boolean) => Promise<CDPSession>
+    browserContext: BrowserContext | undefined,
+    targetManager: TargetManager | undefined,
+    sessionFactory:
+      | ((isAutoAttachEmulated: boolean) => Promise<CDPSession>)
+      | undefined
   ) {
+    super();
     this.#session = session;
     this.#targetManager = targetManager;
     this.#targetInfo = targetInfo;
     this.#browserContext = browserContext;
     this._targetId = targetInfo.targetId;
     this.#sessionFactory = sessionFactory;
-    this._initialize();
+    if (this.#session && this.#session instanceof CDPSessionImpl) {
+      this.#session._setTarget(this);
+    }
   }
 
-  
-
+  _subtype(): string | undefined {
+    return this.#targetInfo.subtype;
+  }
 
   _session(): CDPSession | undefined {
     return this.#session;
   }
 
-  
-
-
   protected _sessionFactory(): (
     isAutoAttachEmulated: boolean
   ) => Promise<CDPSession> {
+    if (!this.#sessionFactory) {
+      throw new Error('sessionFactory is not initialized');
+    }
     return this.#sessionFactory;
   }
 
-  
-
-
-  createCDPSession(): Promise<CDPSession> {
-    return this.#sessionFactory(false);
+  override createCDPSession(): Promise<CDPSession> {
+    if (!this.#sessionFactory) {
+      throw new Error('sessionFactory is not initialized');
+    }
+    return this.#sessionFactory(false).then(session => {
+      (session as CDPSessionImpl)._setTarget(this);
+      return session;
+    });
   }
 
-  
+  override url(): string {
+    return this.#targetInfo.url;
+  }
 
+  override type(): TargetType {
+    const type = this.#targetInfo.type;
+    switch (type) {
+      case 'page':
+        return TargetType.PAGE;
+      case 'background_page':
+        return TargetType.BACKGROUND_PAGE;
+      case 'service_worker':
+        return TargetType.SERVICE_WORKER;
+      case 'shared_worker':
+        return TargetType.SHARED_WORKER;
+      case 'browser':
+        return TargetType.BROWSER;
+      case 'webview':
+        return TargetType.WEBVIEW;
+      case 'tab':
+        return TargetType.TAB;
+      default:
+        return TargetType.OTHER;
+    }
+  }
 
   _targetManager(): TargetManager {
+    if (!this.#targetManager) {
+      throw new Error('targetManager is not initialized');
+    }
     return this.#targetManager;
   }
-
-  
-
 
   _getTargetInfo(): Protocol.Target.TargetInfo {
     return this.#targetInfo;
   }
 
-  
-
-
-  async worker(): Promise<WebWorker | null> {
-    return null;
-  }
-
-  url(): string {
-    return this.#targetInfo.url;
-  }
-
-  
-
-
-
-
-
-
-  type():
-    | 'page'
-    | 'background_page'
-    | 'service_worker'
-    | 'shared_worker'
-    | 'other'
-    | 'browser'
-    | 'webview' {
-    const type = this.#targetInfo.type;
-    if (
-      type === 'page' ||
-      type === 'background_page' ||
-      type === 'service_worker' ||
-      type === 'shared_worker' ||
-      type === 'browser' ||
-      type === 'webview'
-    ) {
-      return type;
+  override browser(): Browser {
+    if (!this.#browserContext) {
+      throw new Error('browserContext is not initialised');
     }
-    return 'other';
-  }
-
-  
-
-
-  browser(): Browser {
     return this.#browserContext.browser();
   }
 
-  
-
-
-  browserContext(): BrowserContext {
+  override browserContext(): BrowserContext {
+    if (!this.#browserContext) {
+      throw new Error('browserContext is not initialised');
+    }
     return this.#browserContext;
   }
 
-  
-
-
-  opener(): Target | undefined {
+  override opener(): Target | undefined {
     const {openerId} = this.#targetInfo;
     if (!openerId) {
       return;
@@ -186,50 +166,30 @@ export class Target {
     return this.browser()._targets.get(openerId);
   }
 
-  
-
-
   _targetInfoChanged(targetInfo: Protocol.Target.TargetInfo): void {
     this.#targetInfo = targetInfo;
     this._checkIfInitialized();
   }
 
-  
-
-
-  protected _initialize(): void {
+  _initialize(): void {
     this._initializedDeferred.resolve(InitializationStatus.SUCCESS);
   }
-
-  
-
 
   protected _checkIfInitialized(): void {
     if (!this._initializedDeferred.resolved()) {
       this._initializedDeferred.resolve(InitializationStatus.SUCCESS);
     }
   }
-
-  
-
-
-
-  async page(): Promise<Page | null> {
-    return null;
-  }
 }
 
 
 
 
-export class PageTarget extends Target {
+export class PageTarget extends CDPTarget {
   #defaultViewport?: Viewport;
   protected pagePromise?: Promise<Page>;
   #screenshotTaskQueue: TaskQueue;
   #ignoreHTTPSErrors: boolean;
-
-  
-
 
   constructor(
     targetInfo: Protocol.Target.TargetInfo,
@@ -247,7 +207,7 @@ export class PageTarget extends Target {
     this.#screenshotTaskQueue = screenshotTaskQueue;
   }
 
-  protected override _initialize(): void {
+  override _initialize(): void {
     this._initializedDeferred
       .valueOrThrow()
       .then(async result => {
@@ -306,7 +266,12 @@ export class PageTarget extends Target {
 
 
 
-export class WorkerTarget extends Target {
+export class DevToolsTarget extends PageTarget {}
+
+
+
+
+export class WorkerTarget extends CDPTarget {
   #workerPromise?: Promise<WebWorker>;
 
   override async worker(): Promise<WebWorker | null> {
@@ -326,11 +291,11 @@ export class WorkerTarget extends Target {
         );
       });
     }
-    return this.#workerPromise;
+    return await this.#workerPromise;
   }
 }
 
 
 
 
-export class OtherTarget extends Target {}
+export class OtherTarget extends CDPTarget {}

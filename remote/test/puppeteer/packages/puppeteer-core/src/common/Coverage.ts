@@ -147,6 +147,14 @@ export class Coverage {
   
 
 
+  updateClient(client: CDPSession): void {
+    this.#jsCoverage.updateClient(client);
+    this.#cssCoverage.updateClient(client);
+  }
+
+  
+
+
 
 
 
@@ -209,6 +217,13 @@ export class JSCoverage {
   #includeRawScriptCoverage = false;
 
   constructor(client: CDPSession) {
+    this.#client = client;
+  }
+
+  
+
+
+  updateClient(client: CDPSession): void {
     this.#client = client;
   }
 
@@ -339,6 +354,13 @@ export class CSSCoverage {
   #resetOnNavigation = false;
 
   constructor(client: CDPSession) {
+    this.#client = client;
+  }
+
+  
+
+
+  updateClient(client: CDPSession): void {
     this.#client = client;
   }
 

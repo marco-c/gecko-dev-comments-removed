@@ -27,6 +27,8 @@ export function headHttpRequest(url: URL): Promise<boolean> {
       url,
       'HEAD',
       response => {
+        
+        response.resume();
         resolve(response.statusCode === 200);
       },
       false

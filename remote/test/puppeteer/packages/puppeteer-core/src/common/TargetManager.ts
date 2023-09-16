@@ -18,23 +18,16 @@ import {Protocol} from 'devtools-protocol';
 
 import {CDPSession} from './Connection.js';
 import {EventEmitter} from './EventEmitter.js';
-import {Target} from './Target.js';
+import {CDPTarget} from './Target.js';
 
 
 
 
 export type TargetFactory = (
   targetInfo: Protocol.Target.TargetInfo,
-  session?: CDPSession
-) => Target;
-
-
-
-
-export type TargetInterceptor = (
-  createdTarget: Target,
-  parentTarget: Target | null
-) => void;
+  session?: CDPSession,
+  parentSession?: CDPSession
+) => CDPTarget;
 
 
 
@@ -48,17 +41,9 @@ export type TargetInterceptor = (
 
 
 export interface TargetManager extends EventEmitter {
-  getAvailableTargets(): Map<string, Target>;
+  getAvailableTargets(): Map<string, CDPTarget>;
   initialize(): Promise<void>;
   dispose(): void;
-  addTargetInterceptor(
-    session: CDPSession,
-    interceptor: TargetInterceptor
-  ): void;
-  removeTargetInterceptor(
-    session: CDPSession,
-    interceptor: TargetInterceptor
-  ): void;
 }
 
 

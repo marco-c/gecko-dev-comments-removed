@@ -167,21 +167,23 @@ export function getExpectationUpdates(
   }
 
   for (const failure of results.failures) {
-    if (passesByKey.has(getTestId(failure.file, failure.fullTitle))) {
-      continue;
-    }
     
     
     if (!failure.file) {
+      console.error('Hook failed:', failure.err);
       addEntry({
         expectation: {
-          testIdPattern: 'Hook failed!',
+          testIdPattern: failure.fullTitle,
           platforms: context.platforms,
           parameters: context.parameters,
           expectations: [],
         },
         action: 'add',
       });
+      continue;
+    }
+
+    if (passesByKey.has(getTestId(failure.file, failure.fullTitle))) {
       continue;
     }
 

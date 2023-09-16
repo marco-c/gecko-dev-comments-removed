@@ -22,6 +22,23 @@ import type {LazyArg} from './LazyArg.js';
 
 
 
+export interface Moveable {
+  
+
+
+  move(): this;
+}
+
+
+
+
+export interface Disposed {
+  get disposed(): boolean;
+}
+
+
+
+
 export interface BindingPayload {
   type: string;
   name: string;

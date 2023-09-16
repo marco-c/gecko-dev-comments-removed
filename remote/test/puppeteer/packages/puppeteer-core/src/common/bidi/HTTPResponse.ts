@@ -39,10 +39,9 @@ export class HTTPResponse extends BaseHTTPResponse {
 
   constructor(
     request: HTTPRequest,
-    responseEvent: Bidi.Network.ResponseCompletedParams
+    {response}: Bidi.Network.ResponseCompletedParameters
   ) {
     super();
-    const {response} = responseEvent;
     this.#request = request;
 
     this.#remoteAddress = {
@@ -55,11 +54,15 @@ export class HTTPResponse extends BaseHTTPResponse {
     this.#status = response.status;
     this.#statusText = response.statusText;
     
-    this.#timings = (response as any).timings ?? null;
+    this.#timings = null;
 
     
     for (const header of response.headers || []) {
-      this.#headers[header.name] = header.value ?? '';
+      
+      
+      if (header.value.type === 'string') {
+        this.#headers[header.name.toLowerCase()] = header.value.value;
+      }
     }
   }
 
@@ -97,5 +100,9 @@ export class HTTPResponse extends BaseHTTPResponse {
 
   override frame(): Frame | null {
     return this.#request.frame();
+  }
+
+  override fromServiceWorker(): boolean {
+    return false;
   }
 }

@@ -1,3 +1,6 @@
+const rulesDirPlugin = require('eslint-plugin-rulesdir');
+rulesDirPlugin.RULES_DIR = 'tools/eslint/lib';
+
 module.exports = {
   root: true,
   env: {
@@ -136,10 +139,12 @@ module.exports = {
         'plugin:@typescript-eslint/recommended',
         'plugin:@typescript-eslint/stylistic',
       ],
-      plugins: ['eslint-plugin-tsdoc', 'local'],
+      plugins: ['eslint-plugin-tsdoc', 'rulesdir'],
       rules: {
         
-        'local/prettier-comments': 'error',
+        'rulesdir/prettier-comments': 'error',
+        
+        'rulesdir/use-using': 'error',
         
         curly: ['error', 'all'],
         
@@ -213,7 +218,22 @@ module.exports = {
           {ignoreVoid: true, ignoreIIFE: true},
         ],
         '@typescript-eslint/prefer-ts-expect-error': 'error',
+        
+        '@typescript-eslint/return-await': ['error', 'always'],
       },
+      overrides: [
+        {
+          files: [
+            'packages/puppeteer-core/src/**/*.test.ts',
+            'tools/mochaRunner/src/test.ts',
+          ],
+          rules: {
+            
+            
+            '@typescript-eslint/no-floating-promises': 'off',
+          },
+        },
+      ],
     },
   ],
 };

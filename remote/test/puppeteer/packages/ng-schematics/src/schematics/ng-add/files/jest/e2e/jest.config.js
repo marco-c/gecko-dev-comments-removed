@@ -5,7 +5,6 @@
 
 
 module.exports = {
-  testMatch: ['<rootDir>/tests/**/?(*.)+(e2e).[tj]s?(x)'],
-  preset: 'ts-jest',
+  testMatch: ['<rootDir>/build/**/?(*.)+(e2e).js?(x)'],
   testEnvironment: 'node',
 };

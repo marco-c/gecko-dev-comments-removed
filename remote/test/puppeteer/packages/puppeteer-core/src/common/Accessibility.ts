@@ -144,6 +144,13 @@ export class Accessibility {
   
 
 
+  updateClient(client: CDPSession): void {
+    this.#client = client;
+  }
+
+  
+
+
 
 
 

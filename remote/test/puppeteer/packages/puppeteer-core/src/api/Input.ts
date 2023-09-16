@@ -553,6 +553,13 @@ export class Touchscreen {
 
 
 
+
+
+
+
+
+
+
   async touchMove(x: number, y: number): Promise<void>;
   async touchMove(): Promise<void> {
     throw new Error('Not implemented');

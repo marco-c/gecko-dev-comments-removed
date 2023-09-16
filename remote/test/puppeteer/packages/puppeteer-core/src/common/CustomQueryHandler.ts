@@ -53,9 +53,6 @@ export class CustomQueryHandlerRegistry {
     [registerScript: string, Handler: typeof QueryHandler]
   >();
 
-  
-
-
   get(name: string): typeof QueryHandler | undefined {
     const handler = this.#handlers.get(name);
     return handler ? handler[1] : undefined;
@@ -80,12 +77,7 @@ export class CustomQueryHandlerRegistry {
 
 
 
-
-
   register(name: string, handler: CustomQueryHandler): void {
-    if (this.#handlers.has(name)) {
-      throw new Error(`Cannot register over existing handler: ${name}`);
-    }
     assert(
       !this.#handlers.has(name),
       `Cannot register over existing handler: ${name}`
@@ -145,8 +137,6 @@ export class CustomQueryHandlerRegistry {
 
 
 
-
-
   unregister(name: string): void {
     const handler = this.#handlers.get(name);
     if (!handler) {
@@ -159,15 +149,11 @@ export class CustomQueryHandlerRegistry {
   
 
 
-
-
   names(): string[] {
     return [...this.#handlers.keys()];
   }
 
   
-
-
 
 
   clear(): void {

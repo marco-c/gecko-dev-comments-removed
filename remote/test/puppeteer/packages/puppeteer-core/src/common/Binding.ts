@@ -32,11 +32,11 @@ export class Binding {
     args: unknown[],
     isTrivial: boolean
   ): Promise<void> {
-    const garbage = [];
+    const stack = new DisposableStack();
     try {
       if (!isTrivial) {
         
-        const handles = await context.evaluateHandle(
+        using handles = await context.evaluateHandle(
           (name, seq) => {
             
             return globalThis[name].args.get(seq);
@@ -44,25 +44,21 @@ export class Binding {
           this.#name,
           id
         );
-        try {
-          const properties = await handles.getProperties();
-          for (const [index, handle] of properties) {
-            
-            
-            if (index in args) {
-              switch (handle.remoteObject().subtype) {
-                case 'node':
-                  args[+index] = handle;
-                  break;
-                default:
-                  garbage.push(handle.dispose());
-              }
-            } else {
-              garbage.push(handle.dispose());
+        const properties = await handles.getProperties();
+        for (const [index, handle] of properties) {
+          
+          
+          if (index in args) {
+            switch (handle.remoteObject().subtype) {
+              case 'node':
+                args[+index] = handle;
+                break;
+              default:
+                stack.use(handle);
             }
+          } else {
+            stack.use(handle);
           }
-        } finally {
-          await handles.dispose();
         }
       }
 
@@ -80,7 +76,7 @@ export class Binding {
 
       for (const arg of args) {
         if (arg instanceof JSHandle) {
-          garbage.push(arg.dispose());
+          stack.use(arg);
         }
       }
     } catch (error) {
@@ -116,8 +112,6 @@ export class Binding {
           )
           .catch(debugError);
       }
-    } finally {
-      await Promise.all(garbage);
     }
   }
 }

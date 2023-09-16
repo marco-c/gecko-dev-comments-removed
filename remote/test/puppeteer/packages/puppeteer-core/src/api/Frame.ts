@@ -19,8 +19,9 @@ import {HTTPResponse} from '../api/HTTPResponse.js';
 import {Page, WaitTimeoutOptions} from '../api/Page.js';
 import {CDPSession} from '../common/Connection.js';
 import {DeviceRequestPrompt} from '../common/DeviceRequestPrompt.js';
-import {ExecutionContext} from '../common/ExecutionContext.js';
+import {EventEmitter} from '../common/EventEmitter.js';
 import {getQueryHandlerAndSelector} from '../common/GetQueryHandler.js';
+import {transposeIterableHandle} from '../common/HandleIterator.js';
 import {
   IsolatedWorldChart,
   WaitForSelectorOptions,
@@ -28,66 +29,23 @@ import {
 import {LazyArg} from '../common/LazyArg.js';
 import {PuppeteerLifeCycleEvent} from '../common/LifecycleWatcher.js';
 import {
+  Awaitable,
   EvaluateFunc,
   EvaluateFuncWith,
   HandleFor,
-  InnerLazyParams,
   NodeFor,
 } from '../common/types.js';
-import {importFSPromises} from '../common/util.js';
-import {TaskManager} from '../common/WaitTask.js';
+import {
+  getPageContent,
+  importFSPromises,
+  withSourcePuppeteerURLIfNone,
+} from '../common/util.js';
+import {assert} from '../util/assert.js';
+import {throwIfDisposed} from '../util/decorators.js';
 
 import {KeyboardTypeOptions} from './Input.js';
-import {JSHandle} from './JSHandle.js';
-import {Locator} from './Locator.js';
-
-
-
-
-export interface Realm {
-  taskManager: TaskManager;
-  waitForFunction<
-    Params extends unknown[],
-    Func extends EvaluateFunc<InnerLazyParams<Params>> = EvaluateFunc<
-      InnerLazyParams<Params>
-    >,
-  >(
-    pageFunction: Func | string,
-    options: {
-      polling?: 'raf' | 'mutation' | number;
-      timeout?: number;
-      root?: ElementHandle<Node>;
-      signal?: AbortSignal;
-    },
-    ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
-  adoptHandle<T extends JSHandle<Node>>(handle: T): Promise<T>;
-  transferHandle<T extends JSHandle<Node>>(handle: T): Promise<T>;
-  evaluateHandle<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(
-    pageFunction: Func | string,
-    ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
-  evaluate<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(
-    pageFunction: Func | string,
-    ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  click(selector: string, options: Readonly<ClickOptions>): Promise<void>;
-  focus(selector: string): Promise<void>;
-  hover(selector: string): Promise<void>;
-  select(selector: string, ...values: string[]): Promise<string[]>;
-  tap(selector: string): Promise<void>;
-  type(
-    selector: string,
-    text: string,
-    options?: Readonly<KeyboardTypeOptions>
-  ): Promise<void>;
-}
+import {FunctionLocator, Locator, NodeLocator} from './locators/locators.js';
+import {Realm} from './Realm.js';
 
 
 
@@ -172,6 +130,9 @@ export interface FrameAddStyleTagOptions {
 
 
 
+export const throwIfDetached = throwIfDisposed<Frame>(frame => {
+  return `Attempted to use detached Frame '${frame._id}'.`;
+});
 
 
 
@@ -222,7 +183,11 @@ export interface FrameAddStyleTagOptions {
 
 
 
-export class Frame {
+
+
+
+
+export abstract class Frame extends EventEmitter {
   
 
 
@@ -250,14 +215,14 @@ export class Frame {
   
 
 
-  constructor() {}
+  constructor() {
+    super();
+  }
 
   
 
 
-  page(): Page {
-    throw new Error('Not implemented');
-  }
+  abstract page(): Page;
 
   
 
@@ -304,7 +269,7 @@ export class Frame {
 
 
 
-  async goto(
+  abstract goto(
     url: string,
     options?: {
       referer?: string;
@@ -313,9 +278,6 @@ export class Frame {
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     }
   ): Promise<HTTPResponse | null>;
-  async goto(): Promise<HTTPResponse | null> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -340,60 +302,93 @@ export class Frame {
 
 
 
-  async waitForNavigation(options?: {
+  abstract waitForNavigation(options?: {
     timeout?: number;
     waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
   }): Promise<HTTPResponse | null>;
-  async waitForNavigation(): Promise<HTTPResponse | null> {
-    throw new Error('Not implemented');
+
+  
+
+
+  abstract get client(): CDPSession;
+
+  
+
+
+  abstract mainRealm(): Realm;
+
+  
+
+
+  abstract isolatedRealm(): Realm;
+
+  #_document: Promise<ElementHandle<Document>> | undefined;
+
+  
+
+
+  #document(): Promise<ElementHandle<Document>> {
+    if (!this.#_document) {
+      this.#_document = this.isolatedRealm()
+        .evaluateHandle(() => {
+          return document;
+        })
+        .then(handle => {
+          return this.mainRealm().transferHandle(handle);
+        });
+    }
+    return this.#_document;
   }
 
   
 
 
-  _client(): CDPSession {
-    throw new Error('Not implemented');
+
+
+  clearDocumentHandle(): void {
+    this.#_document = undefined;
   }
 
   
 
 
-  executionContext(): Promise<ExecutionContext> {
-    throw new Error('Not implemented');
+  @throwIfDetached
+  async frameElement(): Promise<HandleFor<HTMLIFrameElement> | null> {
+    const parentFrame = this.parentFrame();
+    if (!parentFrame) {
+      return null;
+    }
+    using list = await parentFrame.isolatedRealm().evaluateHandle(() => {
+      return document.querySelectorAll('iframe');
+    });
+    for await (using iframe of transposeIterableHandle(list)) {
+      const frame = await iframe.contentFrame();
+      if (frame._id === this._id) {
+        return iframe.move();
+      }
+    }
+    return null;
   }
 
   
 
 
-  mainRealm(): Realm {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  isolatedRealm(): Realm {
-    throw new Error('Not implemented');
-  }
-
-  
 
 
 
-
-
+  @throwIfDetached
   async evaluateHandle<
     Params extends unknown[],
     Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<HandleFor<Awaited<ReturnType<Func>>>>;
-  async evaluateHandle<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    throw new Error('Not implemented');
+  ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(
+      this.evaluateHandle.name,
+      pageFunction
+    );
+    return await this.mainRealm().evaluateHandle(pageFunction, ...args);
   }
 
   
@@ -402,18 +397,19 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async evaluate<
     Params extends unknown[],
     Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
     pageFunction: Func | string,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  async evaluate<
-    Params extends unknown[],
-    Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
-  >(): Promise<Awaited<ReturnType<Func>>> {
-    throw new Error('Not implemented');
+  ): Promise<Awaited<ReturnType<Func>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(
+      this.evaluate.name,
+      pageFunction
+    );
+    return await this.mainRealm().evaluate(pageFunction, ...args);
   }
 
   
@@ -426,9 +422,7 @@ export class Frame {
 
   locator<Selector extends string>(
     selector: Selector
-  ): Locator<NodeFor<Selector>> {
-    return Locator.create(this, selector);
-  }
+  ): Locator<NodeFor<Selector>>;
 
   
 
@@ -437,13 +431,36 @@ export class Frame {
 
 
 
+
+  locator<Ret>(func: () => Awaitable<Ret>): Locator<Ret>;
+
+  
+
+
+  @throwIfDetached
+  locator<Selector extends string, Ret>(
+    selectorOrFunc: Selector | (() => Awaitable<Ret>)
+  ): Locator<NodeFor<Selector>> | Locator<Ret> {
+    if (typeof selectorOrFunc === 'string') {
+      return NodeLocator.create(this, selectorOrFunc);
+    } else {
+      return FunctionLocator.create(this, selectorOrFunc);
+    }
+  }
+  
+
+
+
+
+
+
+  @throwIfDetached
   async $<Selector extends string>(
     selector: Selector
-  ): Promise<ElementHandle<NodeFor<Selector>> | null>;
-  async $<Selector extends string>(): Promise<ElementHandle<
-    NodeFor<Selector>
-  > | null> {
-    throw new Error('Not implemented');
+  ): Promise<ElementHandle<NodeFor<Selector>> | null> {
+    
+    const document = await this.#document();
+    return await document.$(selector);
   }
 
   
@@ -453,13 +470,13 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async $$<Selector extends string>(
     selector: Selector
-  ): Promise<Array<ElementHandle<NodeFor<Selector>>>>;
-  async $$<Selector extends string>(): Promise<
-    Array<ElementHandle<NodeFor<Selector>>>
-  > {
-    throw new Error('Not implemented');
+  ): Promise<Array<ElementHandle<NodeFor<Selector>>>> {
+    
+    const document = await this.#document();
+    return await document.$$(selector);
   }
 
   
@@ -482,6 +499,7 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async $eval<
     Selector extends string,
     Params extends unknown[],
@@ -491,18 +509,13 @@ export class Frame {
     >,
   >(
     selector: Selector,
-    pageFunction: Func | string,
+    pageFunction: string | Func,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  async $eval<
-    Selector extends string,
-    Params extends unknown[],
-    Func extends EvaluateFuncWith<NodeFor<Selector>, Params> = EvaluateFuncWith<
-      NodeFor<Selector>,
-      Params
-    >,
-  >(): Promise<Awaited<ReturnType<Func>>> {
-    throw new Error('Not implemented');
+  ): Promise<Awaited<ReturnType<Func>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(this.$eval.name, pageFunction);
+    
+    const document = await this.#document();
+    return await document.$eval(selector, pageFunction, ...args);
   }
 
   
@@ -525,6 +538,7 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async $$eval<
     Selector extends string,
     Params extends unknown[],
@@ -534,18 +548,13 @@ export class Frame {
     > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
   >(
     selector: Selector,
-    pageFunction: Func | string,
+    pageFunction: string | Func,
     ...args: Params
-  ): Promise<Awaited<ReturnType<Func>>>;
-  async $$eval<
-    Selector extends string,
-    Params extends unknown[],
-    Func extends EvaluateFuncWith<
-      Array<NodeFor<Selector>>,
-      Params
-    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>,
-  >(): Promise<Awaited<ReturnType<Func>>> {
-    throw new Error('Not implemented');
+  ): Promise<Awaited<ReturnType<Func>>> {
+    pageFunction = withSourcePuppeteerURLIfNone(this.$$eval.name, pageFunction);
+    
+    const document = await this.#document();
+    return await document.$$eval(selector, pageFunction, ...args);
   }
 
   
@@ -558,9 +567,11 @@ export class Frame {
 
 
 
-  async $x(expression: string): Promise<Array<ElementHandle<Node>>>;
-  async $x(): Promise<Array<ElementHandle<Node>>> {
-    throw new Error('Not implemented');
+  @throwIfDetached
+  async $x(expression: string): Promise<Array<ElementHandle<Node>>> {
+    
+    const document = await this.#document();
+    return await document.$x(expression);
   }
 
   
@@ -598,6 +609,7 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async waitForSelector<Selector extends string>(
     selector: Selector,
     options: WaitForSelectorOptions = {}
@@ -633,6 +645,7 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async waitForXPath(
     xpath: string,
     options: WaitForSelectorOptions = {}
@@ -640,7 +653,7 @@ export class Frame {
     if (xpath.startsWith('//')) {
       xpath = `.${xpath}`;
     }
-    return this.waitForSelector(`xpath/${xpath}`, options);
+    return await this.waitForSelector(`xpath/${xpath}`, options);
   }
 
   
@@ -676,7 +689,8 @@ export class Frame {
 
 
 
-  waitForFunction<
+  @throwIfDetached
+  async waitForFunction<
     Params extends unknown[],
     Func extends EvaluateFunc<Params> = EvaluateFunc<Params>,
   >(
@@ -684,17 +698,18 @@ export class Frame {
     options: FrameWaitForFunctionOptions = {},
     ...args: Params
   ): Promise<HandleFor<Awaited<ReturnType<Func>>>> {
-    return this.mainRealm().waitForFunction(
+    return await (this.mainRealm().waitForFunction(
       pageFunction,
       options,
       ...args
-    ) as Promise<HandleFor<Awaited<ReturnType<Func>>>>;
+    ) as Promise<HandleFor<Awaited<ReturnType<Func>>>>);
   }
   
 
 
+  @throwIfDetached
   async content(): Promise<string> {
-    throw new Error('Not implemented');
+    return await this.evaluate(getPageContent);
   }
 
   
@@ -704,16 +719,13 @@ export class Frame {
 
 
 
-  async setContent(
+  abstract setContent(
     html: string,
     options?: {
       timeout?: number;
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     }
   ): Promise<void>;
-  async setContent(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -732,29 +744,37 @@ export class Frame {
   
 
 
-  url(): string {
-    throw new Error('Not implemented');
-  }
+  abstract url(): string;
 
   
 
 
-  parentFrame(): Frame | null {
-    throw new Error('Not implemented');
-  }
+  abstract parentFrame(): Frame | null;
 
   
 
 
-  childFrames(): Frame[] {
-    throw new Error('Not implemented');
-  }
+  abstract childFrames(): Frame[];
 
   
+
+
+  abstract get detached(): boolean;
+
+  
+
+
 
 
   isDetached(): boolean {
-    throw new Error('Not implemented');
+    return this.detached;
+  }
+
+  
+
+
+  get disposed(): boolean {
+    return this.detached;
   }
 
   
@@ -764,6 +784,7 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async addScriptTag(
     options: FrameAddScriptTagOptions
   ): Promise<ElementHandle<HTMLScriptElement>> {
@@ -783,7 +804,7 @@ export class Frame {
 
     type = type ?? 'text/javascript';
 
-    return this.mainRealm().transferHandle(
+    return await this.mainRealm().transferHandle(
       await this.isolatedRealm().evaluateHandle(
         async ({Deferred}, {url, id, type, content}) => {
           const deferred = Deferred.create<void>();
@@ -832,13 +853,24 @@ export class Frame {
 
 
 
-
   async addStyleTag(
     options: Omit<FrameAddStyleTagOptions, 'url'>
   ): Promise<ElementHandle<HTMLStyleElement>>;
+
+  
+
+
+
+
+
   async addStyleTag(
     options: FrameAddStyleTagOptions
   ): Promise<ElementHandle<HTMLLinkElement>>;
+
+  
+
+
+  @throwIfDetached
   async addStyleTag(
     options: FrameAddStyleTagOptions
   ): Promise<ElementHandle<HTMLStyleElement | HTMLLinkElement>> {
@@ -858,7 +890,7 @@ export class Frame {
       options.content = content;
     }
 
-    return this.mainRealm().transferHandle(
+    return await this.mainRealm().transferHandle(
       await this.isolatedRealm().evaluateHandle(
         async ({Deferred}, {url, content}) => {
           const deferred = Deferred.create<void>();
@@ -920,8 +952,15 @@ export class Frame {
 
 
 
-  click(selector: string, options: Readonly<ClickOptions> = {}): Promise<void> {
-    return this.isolatedRealm().click(selector, options);
+  @throwIfDetached
+  async click(
+    selector: string,
+    options: Readonly<ClickOptions> = {}
+  ): Promise<void> {
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    await handle.click(options);
+    await handle.dispose();
   }
 
   
@@ -930,8 +969,11 @@ export class Frame {
 
 
 
+  @throwIfDetached
   async focus(selector: string): Promise<void> {
-    return this.isolatedRealm().focus(selector);
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    await handle.focus();
   }
 
   
@@ -941,40 +983,11 @@ export class Frame {
 
 
 
-  hover(selector: string): Promise<void> {
-    return this.isolatedRealm().hover(selector);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  select(selector: string, ...values: string[]): Promise<string[]> {
-    return this.isolatedRealm().select(selector, ...values);
-  }
-
-  
-
-
-
-
-
-  tap(selector: string): Promise<void> {
-    return this.isolatedRealm().tap(selector);
+  @throwIfDetached
+  async hover(selector: string): Promise<void> {
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    await handle.hover();
   }
 
   
@@ -995,15 +1008,56 @@ export class Frame {
 
 
 
+  @throwIfDetached
+  async select(selector: string, ...values: string[]): Promise<string[]> {
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    return await handle.select(...values);
+  }
+
+  
 
 
 
-  type(
+
+
+  @throwIfDetached
+  async tap(selector: string): Promise<void> {
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    await handle.tap();
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @throwIfDetached
+  async type(
     selector: string,
     text: string,
     options?: Readonly<KeyboardTypeOptions>
   ): Promise<void> {
-    return this.isolatedRealm().type(selector, text, options);
+    using handle = await this.$(selector);
+    assert(handle, `No element found for selector: ${selector}`);
+    await handle.type(text, options);
   }
 
   
@@ -1026,8 +1080,8 @@ export class Frame {
 
 
 
-  waitForTimeout(milliseconds: number): Promise<void> {
-    return new Promise(resolve => {
+  async waitForTimeout(milliseconds: number): Promise<void> {
+    return await new Promise(resolve => {
       setTimeout(resolve, milliseconds);
     });
   }
@@ -1035,8 +1089,11 @@ export class Frame {
   
 
 
+  @throwIfDetached
   async title(): Promise<string> {
-    throw new Error('Not implemented');
+    return await this.isolatedRealm().evaluate(() => {
+      return document.title;
+    });
   }
 
   
@@ -1065,7 +1122,22 @@ export class Frame {
   waitForDevicePrompt(
     options?: WaitTimeoutOptions
   ): Promise<DeviceRequestPrompt>;
+
+  
+
+
   waitForDevicePrompt(): Promise<DeviceRequestPrompt> {
+    throw new Error('Not implemented');
+  }
+
+  
+
+
+  exposeFunction<Args extends unknown[], Ret>(
+    name: string,
+    fn: (...args: Args) => Awaitable<Ret>
+  ): Promise<void>;
+  exposeFunction(): Promise<void> {
     throw new Error('Not implemented');
   }
 }

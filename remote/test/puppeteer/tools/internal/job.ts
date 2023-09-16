@@ -62,28 +62,28 @@ class JobBuilder {
     console.log(`Running job ${this.#name}...`);
     
     if (this.#force) {
-      return this.#run();
+      return await this.#run();
     }
     
     if (!this.getOutputStats()) {
-      return this.#run();
+      return await this.#run();
     }
     
     if (this.#value) {
       if (!(await this.isValueDifferent())) {
         return;
       }
-      return this.#run();
+      return await this.#run();
     }
     
     if (!this.#outputs.length) {
-      return this.#run();
+      return await this.#run();
     }
     
     if (!(await this.areInputsNewer())) {
       return;
     }
-    return this.#run();
+    return await this.#run();
   }
 
   async isValueDifferent(): Promise<boolean> {
