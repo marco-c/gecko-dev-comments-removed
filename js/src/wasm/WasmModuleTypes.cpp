@@ -119,10 +119,26 @@ size_t GlobalDesc::sizeOfExcludingThis(MallocSizeOf mallocSizeOf) const {
   return initial_.sizeOfExcludingThis(mallocSizeOf);
 }
 
+TagType::~TagType() {
+  
+  
+  for (const ValType& argType : argTypes_) {
+    argType.Release();
+  }
+}
+
 bool TagType::initialize(ValTypeVector&& argTypes) {
   MOZ_ASSERT(argTypes_.empty() && argOffsets_.empty() && size_ == 0);
 
   argTypes_ = std::move(argTypes);
+
+  
+  
+  for (const ValType& argType : argTypes_) {
+    argType.AddRef();
+  }
+
+  
   if (!argOffsets_.resize(argTypes_.length())) {
     return false;
   }
@@ -136,6 +152,7 @@ bool TagType::initialize(ValTypeVector&& argTypes) {
     argOffsets_[i] = offset.value();
   }
 
+  
   CheckedInt32 size = layout.close();
   if (!size.isValid()) {
     return false;

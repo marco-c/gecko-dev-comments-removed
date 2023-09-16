@@ -3279,8 +3279,8 @@ class FunctionCompiler {
   [[nodiscard]] bool loadExceptionValues(MDefinition* exception,
                                          uint32_t tagIndex, DefVector* values) {
     SharedTagType tagType = moduleEnv().tags[tagIndex].type;
-    const ValTypeVector& params = tagType->argTypes_;
-    const TagOffsetVector& offsets = tagType->argOffsets_;
+    const ValTypeVector& params = tagType->argTypes();
+    const TagOffsetVector& offsets = tagType->argOffsets();
 
     
     auto* data = MWasmLoadField::New(
@@ -3413,12 +3413,12 @@ class FunctionCompiler {
 
     
     SharedTagType tagType = moduleEnv_.tags[tagIndex].type;
-    for (size_t i = 0; i < tagType->argOffsets_.length(); i++) {
+    for (size_t i = 0; i < tagType->argOffsets().length(); i++) {
       if (!mirGen_.ensureBallast()) {
         return false;
       }
-      ValType type = tagType->argTypes_[i];
-      uint32_t offset = tagType->argOffsets_[i];
+      ValType type = tagType->argTypes()[i];
+      uint32_t offset = tagType->argOffsets()[i];
 
       if (!type.isRefRepr()) {
         auto* store = MWasmStoreFieldKA::New(alloc(), exception, data, offset,

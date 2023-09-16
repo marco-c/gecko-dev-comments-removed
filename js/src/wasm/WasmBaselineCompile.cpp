@@ -4102,8 +4102,8 @@ bool BaseCompiler::emitCatch() {
 
   
   const SharedTagType& tagType = moduleEnv_.tags[tagIndex].type;
-  const ValTypeVector& params = tagType->argTypes_;
-  const TagOffsetVector& offsets = tagType->argOffsets_;
+  const ValTypeVector& params = tagType->argTypes();
+  const TagOffsetVector& offsets = tagType->argOffsets();
 
   
   
@@ -4442,7 +4442,7 @@ bool BaseCompiler::emitThrow() {
 
   const TagDesc& tagDesc = moduleEnv_.tags[tagIndex];
   const ResultType& params = tagDesc.type->resultType();
-  const TagOffsetVector& offsets = tagDesc.type->argOffsets_;
+  const TagOffsetVector& offsets = tagDesc.type->argOffsets();
 
   
 #ifdef RABALDR_PIN_INSTANCE
