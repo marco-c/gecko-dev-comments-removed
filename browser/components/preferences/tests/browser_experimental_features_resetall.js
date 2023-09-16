@@ -6,7 +6,7 @@
 
 
 const KNOWN_PREF_1 = "browser.display.use_system_colors";
-const KNOWN_PREF_2 = "browser.underline_anchors";
+const KNOWN_PREF_2 = "browser.autofocus";
 
 
 

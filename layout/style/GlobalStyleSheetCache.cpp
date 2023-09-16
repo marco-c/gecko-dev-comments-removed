@@ -591,12 +591,6 @@ void GlobalStyleSheetCache::BuildPreferenceSheet(
       "@namespace svg url(http://www.w3.org/2000/svg);\n");
 
   
-  const bool underlineLinks = StaticPrefs::browser_underline_anchors();
-  sheetText.AppendPrintf("*|*:any-link%s { text-decoration: %s; }\n",
-                         underlineLinks ? ":not(svg|a)" : "",
-                         underlineLinks ? "underline" : "none");
-
-  
 
   const bool focusRingOnAnything =
       StaticPrefs::browser_display_focus_ring_on_anything();
@@ -658,7 +652,6 @@ bool GlobalStyleSheetCache::AffectedByPref(const nsACString& aPref) {
       StaticPrefs::GetPrefName_browser_display_focus_ring_width(),
       StaticPrefs::GetPrefName_browser_display_focus_ring_on_anything(),
       StaticPrefs::GetPrefName_browser_display_use_focus_colors(),
-      StaticPrefs::GetPrefName_browser_underline_anchors(),
   };
 
   for (const char* pref : prefs) {
