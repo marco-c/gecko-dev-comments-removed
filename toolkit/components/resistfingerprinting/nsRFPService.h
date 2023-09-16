@@ -161,6 +161,10 @@ class nsRFPService final : public nsIObserver {
 
   static nsRFPService* GetOrCreate();
 
+  
+  
+  
+  static bool IsRFPPrefEnabled(bool aIsPrivateMode);
   static bool IsRFPEnabledFor(RFPTarget aTarget);
 
   

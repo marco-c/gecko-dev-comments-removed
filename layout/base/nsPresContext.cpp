@@ -749,6 +749,19 @@ bool nsPresContext::UpdateFontVisibility() {
   FontVisibility oldValue = mFontVisibility;
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+  
   
   if (Document()->ChromeRulesEnabled()) {
     mFontVisibility = FontVisibility::User;
@@ -761,33 +774,36 @@ bool nsPresContext::UpdateFontVisibility() {
     isPrivate = loadContext->UsePrivateBrowsing();
   }
 
-  
-  
   int32_t level;
+  
   if (mDocument->ShouldResistFingerprinting(
           RFPTarget::FontVisibilityBaseSystem)) {
+    
+    
+    
+    
+    if (nsRFPService::IsRFPPrefEnabled(isPrivate)) {
+      mFontVisibility = FontVisibility::Base;
+      return mFontVisibility != oldValue;
+    }
+
     level = int32_t(FontVisibility::Base);
-  } else if (mDocument->ShouldResistFingerprinting(
-                 RFPTarget::FontVisibilityLangPack)) {
+  }
+  
+  else if (mDocument->ShouldResistFingerprinting(
+               RFPTarget::FontVisibilityLangPack)) {
     level = int32_t(FontVisibility::LangPack);
-  } else if (StaticPrefs::privacy_trackingprotection_enabled() ||
-             (isPrivate &&
-              StaticPrefs::privacy_trackingprotection_pbmode_enabled())) {
-    level = StaticPrefs::layout_css_font_visibility_trackingprotection();
-  } else {
-    level = StaticPrefs::layout_css_font_visibility_standard();
   }
-
   
-  if (isPrivate) {
-    int32_t priv = StaticPrefs::layout_css_font_visibility_private();
-    level = std::max(std::min(level, priv), int32_t(FontVisibility::Base));
+  else {
+    level = StaticPrefs::layout_css_font_visibility();
   }
 
   
   
-  if (ContentBlockingAllowList::Check(mDocument->CookieJarSettings())) {
-    level = StaticPrefs::layout_css_font_visibility_standard();
+  if (level != StaticPrefs::layout_css_font_visibility &&
+      ContentBlockingAllowList::Check(mDocument->CookieJarSettings())) {
+    level = StaticPrefs::layout_css_font_visibility();
   }
 
   
