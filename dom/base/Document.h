@@ -4046,6 +4046,10 @@ class Document : public nsINode,
   nsIPermissionDelegateHandler* PermDelegateHandler();
 
   
+  
+  bool IsContentInaccessibleAboutBlank() const;
+
+  
   enum class IgnoreRFP { No, Yes };
   ColorScheme PreferredColorScheme(IgnoreRFP = IgnoreRFP::No) const;
   
