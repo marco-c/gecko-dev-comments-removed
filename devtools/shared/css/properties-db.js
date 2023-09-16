@@ -24,16 +24,8 @@ try {
   );
   db = {
     CSS_PROPERTIES: {},
-    PSEUDO_ELEMENTS: [],
   };
 }
-
-
-
-
-
-
-exports.PSEUDO_ELEMENTS = db.PSEUDO_ELEMENTS;
 
 
 
@@ -49,5 +41,4 @@ exports.CSS_PROPERTIES = db.CSS_PROPERTIES;
 
 exports.CSS_PROPERTIES_DB = {
   properties: db.CSS_PROPERTIES,
-  pseudoElements: db.PSEUDO_ELEMENTS,
 };

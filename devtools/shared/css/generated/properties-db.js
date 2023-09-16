@@ -12302,27 +12302,3 @@ exports.CSS_PROPERTIES = {
     ]
   }
 };
-
-
-
-
-exports.PSEUDO_ELEMENTS = [
-  "::after",
-  "::before",
-  "::marker",
-  "::backdrop",
-  "::cue",
-  "::first-letter",
-  "::first-line",
-  "::highlight",
-  "::selection",
-  "::-moz-focus-inner",
-  "::-moz-progress-bar",
-  "::-moz-range-track",
-  "::-moz-range-progress",
-  "::-moz-range-thumb",
-  "::-moz-meter-bar",
-  "::placeholder",
-  "::-moz-color-swatch",
-  "::file-selector-button"
-];
