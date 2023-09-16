@@ -281,8 +281,8 @@ function compareArrayToResult(aArray, aRoot) {
 
 
 
-function isInResult(aQueryData, aRoot) {
-  var rv = false;
+function nodeInResult(aQueryData, aRoot) {
+  var rv = null;
   var uri;
   var wasOpen = aRoot.containerOpen;
   if (!wasOpen) {
@@ -298,8 +298,9 @@ function isInResult(aQueryData, aRoot) {
   }
 
   for (var i = 0; i < aRoot.childCount; i++) {
-    if (uri == aRoot.getChild(i).uri) {
-      rv = true;
+    let node = aRoot.getChild(i);
+    if (uri == node.uri) {
+      rv = node;
       break;
     }
   }

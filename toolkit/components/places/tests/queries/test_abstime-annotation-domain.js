@@ -261,7 +261,7 @@ add_task(async function test_abstime_annotation_domain() {
   ];
   await task_populateDB(addItem);
   info("Adding item foo.com/i-am-added.html");
-  Assert.equal(isInResult(addItem, root), true);
+  Assert.ok(nodeInResult(addItem, root));
 
   
   var change1 = [
@@ -274,7 +274,7 @@ add_task(async function test_abstime_annotation_domain() {
   ];
   await task_populateDB(change1);
   info("LiveUpdate by changing title");
-  Assert.equal(isInResult(change1, root), true);
+  Assert.ok(nodeInResult(change1, root));
 
   
   
@@ -299,7 +299,7 @@ add_task(async function test_abstime_annotation_domain() {
   ];
   await task_populateDB(change3);
   info("LiveUpdate by adding visit within timerange");
-  Assert.equal(isInResult(change3, root), true);
+  Assert.ok(nodeInResult(change3, root));
 
   
   
@@ -315,7 +315,7 @@ add_task(async function test_abstime_annotation_domain() {
   ];
   await task_populateDB(change5);
   info("LiveUpdate by deleting item by changing title");
-  Assert.equal(isInResult(change5, root), false);
+  Assert.ok(!nodeInResult(change5, root));
 
   root.containerOpen = false;
 });

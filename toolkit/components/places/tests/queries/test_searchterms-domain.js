@@ -160,7 +160,7 @@ add_task(async function test_searchterms_domain() {
     },
   ];
   await task_populateDB(change1);
-  Assert.ok(isInResult(change1, root));
+  Assert.ok(nodeInResult(change1, root));
 
   
   info("Updating Item");
@@ -168,7 +168,7 @@ add_task(async function test_searchterms_domain() {
     { isDetails: true, uri: "http://foo.com/changeme1.htm", title: "moz" },
   ];
   await task_populateDB(change2);
-  Assert.ok(isInResult(change2, root));
+  Assert.ok(nodeInResult(change2, root));
 
   
   
@@ -183,15 +183,15 @@ add_task(async function test_searchterms_domain() {
     { isDetails: true, uri: "ftp://foo.com/ftp", title: "gone" },
   ];
   await task_populateDB(change3);
-  Assert.ok(isInResult({ uri: "http://foo.com/changeme2.htm" }, root));
-  Assert.ok(isInResult({ uri: "http://mail.foo.com/yiihah" }, root));
-  Assert.ok(!isInResult({ uri: "ftp://foo.com/ftp" }, root));
+  Assert.ok(nodeInResult({ uri: "http://foo.com/changeme2.htm" }, root));
+  Assert.ok(nodeInResult({ uri: "http://mail.foo.com/yiihah" }, root));
+  Assert.ok(!nodeInResult({ uri: "ftp://foo.com/ftp" }, root));
 
   
   info("Deleting items");
   var change4 = [{ isDetails: true, uri: "https://foo.com/", title: "mo,z" }];
   await task_populateDB(change4);
-  Assert.ok(!isInResult(change4, root));
+  Assert.ok(!nodeInResult(change4, root));
 
   root.containerOpen = false;
 });

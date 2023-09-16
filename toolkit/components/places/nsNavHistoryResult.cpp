@@ -179,96 +179,74 @@ nsresult asciiHostNameFromHostString(const nsACString& aHostName,
   return NS_OK;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-bool evaluateQueryForNode(const RefPtr<nsNavHistoryQuery>& aQuery,
-                          const RefPtr<nsNavHistoryQueryOptions>& aOptions,
-                          const RefPtr<nsNavHistoryResultNode>& aNode) {
-  
-  if (aNode->mHidden && !aOptions->IncludeHidden()) return false;
-
-  bool hasIt;
-  
-  aQuery->GetHasBeginTime(&hasIt);
-  if (hasIt) {
-    PRTime beginTime = nsNavHistory::NormalizeTime(aQuery->BeginTimeReference(),
-                                                   aQuery->BeginTime());
-    if (aNode->mTime < beginTime) return false;
-  }
-
-  
-  aQuery->GetHasEndTime(&hasIt);
-  if (hasIt) {
-    PRTime endTime = nsNavHistory::NormalizeTime(aQuery->EndTimeReference(),
-                                                 aQuery->EndTime());
-    if (aNode->mTime > endTime) return false;
-  }
-
-  
-  if (!aQuery->SearchTerms().IsEmpty()) {
-    
-    
-    nsCOMArray<nsNavHistoryResultNode> inputSet;
-    inputSet.AppendObject(aNode);
-    nsCOMArray<nsNavHistoryResultNode> filteredSet;
-    nsresult rv = nsNavHistory::FilterResultSet(nullptr, inputSet, &filteredSet,
-                                                aQuery, aOptions);
-    if (NS_FAILED(rv)) return false;
-    if (!filteredSet.Count()) return false;
-  }
-
-  
-  if (!aQuery->Domain().IsVoid()) {
-    nsCOMPtr<nsIURI> nodeUri;
-    if (NS_FAILED(NS_NewURI(getter_AddRefs(nodeUri), aNode->mURI)))
-      return false;
-    nsAutoCString asciiRequest;
-    if (NS_FAILED(asciiHostNameFromHostString(aQuery->Domain(), asciiRequest)))
-      return false;
-    if (aQuery->DomainIsHost()) {
-      nsAutoCString host;
-      if (NS_FAILED(nodeUri->GetAsciiHost(host))) return false;
-
-      if (!asciiRequest.Equals(host)) return false;
-    }
-    
-    nsNavHistory* history = nsNavHistory::GetHistoryService();
-    if (!history) return false;
-    nsAutoCString domain;
-    history->DomainNameFromURI(nodeUri, domain);
-    if (!asciiRequest.Equals(domain)) return false;
-  }
-
-  
-  if (aQuery->Uri()) {
-    nsCOMPtr<nsIURI> nodeUri;
-    if (NS_FAILED(NS_NewURI(getter_AddRefs(nodeUri), aNode->mURI)))
-      return false;
-    bool equals;
-    nsresult rv = aQuery->Uri()->Equals(nodeUri, &equals);
-    NS_ENSURE_SUCCESS(rv, false);
-    if (!equals) return false;
-  }
-
-  
-  const nsTArray<uint32_t>& transitions = aQuery->Transitions();
-  if (aNode->mTransitionType > 0 && transitions.Length() &&
-      !transitions.Contains(aNode->mTransitionType)) {
+bool isQueryMatchingVisitDetails(
+    const RefPtr<nsNavHistoryQuery>& query,
+    const RefPtr<nsNavHistoryQueryOptions>& options, bool hidden,
+    PRTime visitTime, uint32_t transition, nsIURI* uri) {
+  if (hidden && !options->IncludeHidden()) {
     return false;
   }
 
-  
-  
+  bool hasIt;
+  if (NS_SUCCEEDED(query->GetHasBeginTime(&hasIt)) && hasIt) {
+    PRTime beginTime = nsNavHistory::NormalizeTime(query->BeginTimeReference(),
+                                                   query->BeginTime());
+    if (visitTime < beginTime) {
+      return false;
+    }
+  }
+  if (NS_SUCCEEDED(query->GetHasEndTime(&hasIt)) && hasIt) {
+    PRTime endTime = nsNavHistory::NormalizeTime(query->EndTimeReference(),
+                                                 query->EndTime());
+    if (visitTime > endTime) {
+      return false;
+    }
+  }
+
+  const nsTArray<uint32_t>& transitions = query->Transitions();
+  if (transition > 0 && transitions.Length() &&
+      !transitions.Contains(transition)) {
+    return false;
+  }
+
+  if (!query->Domain().IsVoid()) {
+    nsAutoCString asciiRequest;
+    if (NS_FAILED(asciiHostNameFromHostString(query->Domain(), asciiRequest))) {
+      return false;
+    }
+    if (query->DomainIsHost()) {
+      
+      nsAutoCString host;
+      if (NS_FAILED(uri->GetAsciiHost(host)) || !asciiRequest.Equals(host)) {
+        return false;
+      }
+    } else {
+      
+      nsNavHistory* history = nsNavHistory::GetHistoryService();
+      if (history) {
+        nsAutoCString domain;
+        history->DomainNameFromURI(uri, domain);
+        if (!asciiRequest.Equals(domain)) {
+          return false;
+        }
+      }
+    }
+  }
+
+  if (query->Uri()) {
+    bool equals;
+    if (NS_FAILED(query->Uri()->Equals(uri, &equals)) || !equals) {
+      return false;
+    }
+  }
+
   return true;
+}
+
+inline bool isTimeFilteredQuery(const RefPtr<nsNavHistoryQuery>& query) {
+  bool hasIt;
+  return (NS_SUCCEEDED(query->GetHasBeginTime(&hasIt)) && hasIt) ||
+         (NS_SUCCEEDED(query->GetHasEndTime(&hasIt)) && hasIt);
 }
 
 inline bool caseInsensitiveFind(const nsACString& aSearchTerms,
@@ -2096,7 +2074,9 @@ static nsresult setHistoryDetailsCallback(nsNavHistoryResultNode* aNode,
       static_cast<const nsNavHistoryResultNode*>(aClosure);
 
   aNode->mAccessCount = updatedNode->mAccessCount;
-  aNode->mTime = updatedNode->mTime;
+  if (aNode->mTime < updatedNode->mTime) {
+    aNode->mTime = updatedNode->mTime;
+  }
   aNode->mFrecency = updatedNode->mFrecency;
   aNode->mHidden = updatedNode->mHidden;
 
@@ -2113,12 +2093,11 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(
     nsIURI* aURI, int64_t aVisitId, PRTime aTime, uint32_t aTransitionType,
     const nsACString& aGUID, bool aHidden, uint32_t aVisitCount,
     const nsAString& aLastKnownTitle, int64_t aFrecency, uint32_t* aAdded) {
-  if (aHidden && !mOptions->IncludeHidden()) return NS_OK;
   
-  
-  if (mTransitions.Length() > 0 && !mTransitions.Contains(aTransitionType))
+  if (!isQueryMatchingVisitDetails(mQuery, mOptions, aHidden, aTime,
+                                   aTransitionType, aURI)) {
     return NS_OK;
-
+  }
   nsNavHistoryResult* result = GetResult();
   NS_ENSURE_STATE(result);
   if (result->IsBatching() &&
@@ -2195,9 +2174,6 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(
         addition->mVisitId = aVisitId;
       }
 
-      if (!evaluateQueryForNode(mQuery, mOptions, addition))
-        return NS_OK;  
-
       
       
       
@@ -2221,6 +2197,10 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(
           nsNavHistoryQueryOptions::RESULTS_AS_VISIT) {
         
         
+        
+        if (mHasSearchTerms && !isQuerySearchTermsMatching(mQuery, addition)) {
+          return NS_OK;
+        }
         rv = InsertSortedChild(addition);
         NS_ENSURE_SUCCESS(rv, rv);
       } else {
@@ -2234,12 +2214,17 @@ nsresult nsNavHistoryQueryResultNode::OnVisit(
             sortType == nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING ||
             sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_ASCENDING ||
             sortType == nsINavHistoryQueryOptions::SORT_BY_FRECENCY_DESCENDING;
-
         if (!UpdateURIs(
                 false, true, updateSorting, addition->mURI,
                 setHistoryDetailsCallback,
                 const_cast<void*>(static_cast<void*>(addition.get())))) {
           
+          
+          
+          if (mHasSearchTerms &&
+              !isQuerySearchTermsMatching(mQuery, addition)) {
+            return NS_OK;
+          }
           rv = InsertSortedChild(addition);
           NS_ENSURE_SUCCESS(rv, rv);
         }
@@ -2427,6 +2412,14 @@ nsresult nsNavHistoryQueryResultNode::OnPageRemovedVisits(
     
     nsresult rv = OnPageRemovedFromStore(aURI, aGUID, aReason);
     NS_ENSURE_SUCCESS(rv, rv);
+  } else if (aReason == PlacesVisitRemoved_Binding::REASON_DELETED &&
+             isTimeFilteredQuery(mQuery)) {
+    
+    
+    
+    
+    
+    return Refresh();
   }
   if (aTransitionType > 0) {
     
@@ -3419,7 +3412,9 @@ nsresult nsNavHistoryFolderResultNode::OnItemVisited(nsIURI* aURI,
     nsNavHistoryResultNode* node = nodes[i];
     uint32_t nodeOldAccessCount = node->mAccessCount;
     PRTime nodeOldTime = node->mTime;
-    node->mTime = aTime;
+    if (node->mTime < aTime) {
+      node->mTime = aTime;
+    }
     ++node->mAccessCount;
     node->mFrecency = aFrecency;
 
