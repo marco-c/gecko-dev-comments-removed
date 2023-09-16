@@ -708,10 +708,8 @@ static bool HasCameraPermission(const uint64_t& aWindowId) {
 
   
   
-  if (StaticPrefs::permissions_delegation_enabled()) {
-    RefPtr<dom::BrowsingContext> topBC = window->BrowsingContext()->Top();
-    window = topBC->Canonical()->GetCurrentWindowGlobal();
-  }
+  RefPtr<dom::BrowsingContext> topBC = window->BrowsingContext()->Top();
+  window = topBC->Canonical()->GetCurrentWindowGlobal();
 
   
   

@@ -1,10 +1,10 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
-
-
+<!--
+Tests that the Notification.requestPermission and navigator.permissions.query
+return values are consistent with the stored permission.
+https://bugzilla.mozilla.org/show_bug.cgi?id=1589754
+-->
 <head>
   <title>Notification permissions and permissions API</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -21,8 +21,6 @@ add_task(async function test_notifications_permission() {
   await SpecialPowers.clearUserPref("notification.prompt.testing");
   await SpecialPowers.pushPrefEnv({
     set: [
-      // Set pref to exercise relevant code path for regression test.
-      ["permissions.delegation.enabled", true],
       // Automatically dismiss the permission request when it appears.
       ["dom.webnotifications.requireuserinteraction", true],
     ],

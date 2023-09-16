@@ -23,9 +23,4 @@ interface nsIPermissionDelegateHandler : nsISupports
 
 
   boolean maybeUnsafePermissionDelegate(in Array<ACString> aTypes);
-
-  
-
-
-  readonly attribute boolean permissionDelegateFPEnabled;
 };

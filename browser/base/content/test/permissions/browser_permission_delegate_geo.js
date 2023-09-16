@@ -119,7 +119,6 @@ add_setup(async function () {
         set: [
           ["dom.security.featurePolicy.header.enabled", true],
           ["dom.security.featurePolicy.webidl.enabled", true],
-          ["permissions.delegation.enabled", true],
           
           
           
