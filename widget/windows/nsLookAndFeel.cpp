@@ -796,10 +796,15 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
 
   if (!nsUXThemeData::IsHighContrastOn()) {
     
-    result.mActiveLight =
-        result.mInactiveLight = {GetColorForSysColorIndex(COLOR_3DFACE),
-                                 GetColorForSysColorIndex(COLOR_WINDOWTEXT),
-                                 GetColorForSysColorIndex(COLOR_ACTIVEBORDER)};
+    result.mActiveLight = {
+        GetStandinForNativeColor(ColorID::Activecaption, ColorScheme::Light),
+        GetStandinForNativeColor(ColorID::Captiontext, ColorScheme::Light),
+        GetStandinForNativeColor(ColorID::Activeborder, ColorScheme::Light)};
+    result.mInactiveLight = {
+        GetStandinForNativeColor(ColorID::Inactivecaption, ColorScheme::Light),
+        GetStandinForNativeColor(ColorID::Inactivecaptiontext,
+                                 ColorScheme::Light),
+        GetStandinForNativeColor(ColorID::Inactiveborder, ColorScheme::Light)};
   }
 
   
@@ -852,32 +857,43 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
   result.mUseAccent =
       NS_SUCCEEDED(dwmKey->ReadIntValue(u"ColorPrevalence"_ns, &prevalence)) &&
       prevalence == 1;
-  if (result.mUseAccent) {
+  if (!result.mUseAccent) {
+    return result;
+  }
+
+  
+  
+  
+  
+  
+  
+  result.mActiveDark.mBorder = result.mActiveLight.mBorder = *result.mAccent;
+  result.mInactiveDark.mBorder = result.mInactiveLight.mBorder =
+      result.mAccentInactive.valueOr(NS_RGB(57, 57, 57));
+  if (!StaticPrefs::widget_windows_titlebar_accent_enabled()) {
+    return result;
+  }
+
+  result.mActiveLight.mBg = result.mActiveDark.mBg = *result.mAccent;
+  result.mActiveLight.mFg = result.mActiveDark.mFg = *result.mAccentText;
+  if (result.mAccentInactive) {
+    result.mInactiveLight.mBg = result.mInactiveDark.mBg =
+        *result.mAccentInactive;
+    result.mInactiveLight.mFg = result.mInactiveDark.mFg =
+        *result.mAccentInactiveText;
+  } else {
     
     
     
-    
-    
-    
-    result.mActiveLight = result.mActiveDark = {
-        *result.mAccent, *result.mAccentText, *result.mAccent};
-    if (result.mAccentInactive) {
-      result.mInactiveLight = result.mInactiveDark = {
-          *result.mAccentInactive, *result.mAccentInactiveText,
-          *result.mAccentInactive};
-    } else {
-      
-      
-      
-      result.mInactiveLight = {
-          NS_ComposeColors(*result.mAccent, NS_RGBA(255, 255, 255, 153)),
-          NS_ComposeColors(*result.mAccentText, NS_RGBA(255, 255, 255, 153)),
-          NS_RGB(57, 57, 57)};
-      result.mInactiveDark = {
-          NS_ComposeColors(*result.mAccent, NS_RGBA(0, 0, 0, 153)),
-          NS_ComposeColors(*result.mAccentText, NS_RGBA(0, 0, 0, 153)),
-          NS_RGB(57, 57, 57)};
-    }
+    result.mInactiveLight.mBg =
+        NS_ComposeColors(*result.mAccent, NS_RGBA(255, 255, 255, 153));
+    result.mInactiveLight.mFg =
+        NS_ComposeColors(*result.mAccentText, NS_RGBA(255, 255, 255, 153));
+
+    result.mInactiveDark.mBg =
+        NS_ComposeColors(*result.mAccent, NS_RGBA(0, 0, 0, 153));
+    result.mInactiveDark.mFg =
+        NS_ComposeColors(*result.mAccentText, NS_RGBA(0, 0, 0, 153));
   }
   return result;
 }
