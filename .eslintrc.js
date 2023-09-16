@@ -604,6 +604,11 @@ module.exports = {
         "browser/components/pocket/**",
         "devtools/**",
       ],
+      rules: {
+        
+        
+        "react-hooks/exhaustive-deps": "error",
+      },
     },
     {
       
