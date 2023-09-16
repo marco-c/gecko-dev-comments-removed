@@ -19,7 +19,8 @@
 #include "gc/GCContext.h"
 #include "gc/HashUtil.h"
 #include "js/CharacterEncoding.h"
-#include "js/ErrorReport.h"           
+#include "js/ColumnNumber.h"  
+#include "js/ErrorReport.h"   
 #include "js/friend/ErrorMessages.h"  
 #include "js/PropertyAndElement.h"    
 #include "js/PropertySpec.h"
@@ -591,18 +592,15 @@ bool SavedFrame::isSelfHosted(JSContext* cx) {
 }
 
 bool SavedFrame::isWasm() {
-  
-  return bool(getColumn() & wasm::WasmFrameIter::ColumnBit);
+  return bool(getColumn() & JS::TaggedColumnNumberOneOrigin::WasmFunctionTag);
 }
 
 uint32_t SavedFrame::wasmFuncIndex() {
-  
   MOZ_ASSERT(isWasm());
-  return getColumn() & ~wasm::WasmFrameIter::ColumnBit;
+  return getColumn() & ~JS::TaggedColumnNumberOneOrigin::WasmFunctionTag;
 }
 
 uint32_t SavedFrame::wasmBytecodeOffset() {
-  
   MOZ_ASSERT(isWasm());
   return getLine();
 }
@@ -1992,13 +1990,8 @@ UniqueChars BuildUTF8StackString(JSContext* cx, JSPrincipals* principals,
 }
 
 uint32_t FixupMaybeWASMColumnForDisplay(uint32_t column) {
-  
-  
-  
-  
-  
-  if (column & wasm::WasmFrameIter::ColumnBit) {
-    return 1;
+  if (column & JS::TaggedColumnNumberZeroOrigin::WasmFunctionTag) {
+    return JS::WasmFunctionIndex::DefaultBinarySourceColumnNumberOneOrigin;
   }
 
   return JSErrorBase::fromZeroOriginToOneOrigin(column);

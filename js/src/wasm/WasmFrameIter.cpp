@@ -19,6 +19,7 @@
 #include "wasm/WasmFrameIter.h"
 
 #include "jit/JitFrames.h"
+#include "js/ColumnNumber.h"  
 #include "vm/JitActivation.h"  
 #include "vm/JSContext.h"
 #include "wasm/WasmDebugFrame.h"
@@ -286,26 +287,16 @@ uint32_t WasmFrameIter::funcIndex() const {
 unsigned WasmFrameIter::computeLine(uint32_t* column) const {
   if (instance()->isAsmJS()) {
     if (column) {
-      *column = 1;
+      *column = JS::WasmFunctionIndex::DefaultBinarySourceColumnNumberOneOrigin;
     }
     return lineOrBytecode_;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT(!(codeRange_->funcIndex() & ColumnBit));
+  MOZ_ASSERT(!(codeRange_->funcIndex() &
+               JS::TaggedColumnNumberOneOrigin::WasmFunctionTag));
   if (column) {
-    *column = codeRange_->funcIndex() | ColumnBit;
+    *column = codeRange_->funcIndex() |
+              JS::TaggedColumnNumberOneOrigin::WasmFunctionTag;
   }
   return lineOrBytecode_;
 }

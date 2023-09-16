@@ -223,16 +223,6 @@ class FrontendContext;
 namespace frontend {
 
 
-
-
-
-
-
-
-
-static constexpr uint32_t ColumnLimit = std::numeric_limits<int32_t>::max() / 2;
-
-
 bool IsKeyword(TaggedParserAtomIndex atom);
 
 

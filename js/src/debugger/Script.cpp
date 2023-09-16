@@ -25,6 +25,7 @@
 #include "gc/Zone.h"           
 #include "gc/ZoneAllocator.h"  
 #include "js/CallArgs.h"       
+#include "js/ColumnNumber.h"   
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCVariant.h"             
 #include "js/HeapAPI.h"               
@@ -372,9 +373,11 @@ bool DebuggerScript::CallData::getStartLine() {
 }
 
 bool DebuggerScript::CallData::getStartColumn() {
-  args.rval().setNumber(
-      referent.get().match([](BaseScript*& s) { return s->column(); },
-                           [](WasmInstanceObject*&) { return (uint32_t)0; }));
+  args.rval().setNumber(referent.get().match(
+      [](BaseScript*& s) { return s->column(); },
+      [](WasmInstanceObject*&) {
+        return JS::WasmFunctionIndex::DefaultBinarySourceColumnNumberZeroOrigin;
+      }));
   return true;
 }
 
