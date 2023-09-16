@@ -42,7 +42,10 @@ GetObjectFlagsForNewProperty(const JSClass* clasp, ObjectFlags flags, jsid id,
     
     if (propFlags.isDataProperty() && !propFlags.writable()) {
       flags.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
-    } else if (propFlags.hasGetter() != propFlags.hasSetter()) {
+    } else if (propFlags.isAccessorProperty()) {
+      
+      
+      
       
       
       
@@ -70,6 +73,9 @@ inline ObjectFlags CopyPropMapObjectFlags(ObjectFlags dest,
   }
   if (source.hasFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto)) {
     dest.setFlag(ObjectFlag::HasNonWritableOrAccessorPropExclProto);
+  }
+  if (source.hasFlag(ObjectFlag::NeedsProxyGetSetResultValidation)) {
+    dest.setFlag(ObjectFlag::NeedsProxyGetSetResultValidation);
   }
   return dest;
 }
