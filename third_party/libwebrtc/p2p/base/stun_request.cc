@@ -35,7 +35,7 @@ const int STUN_INITIAL_RTO = 250;
 
 
 
-const int STUN_MAX_RETRANSMISSIONS = 8;           
+const int STUN_MAX_RETRANSMISSIONS = 8;  
 
 
 

@@ -281,8 +281,7 @@ std::vector<const ContentGroup*> SessionDescription::GetGroupsByName(
   return content_groups;
 }
 
-ContentInfo::~ContentInfo() {
-}
+ContentInfo::~ContentInfo() {}
 
 
 ContentInfo::ContentInfo(const ContentInfo& o)

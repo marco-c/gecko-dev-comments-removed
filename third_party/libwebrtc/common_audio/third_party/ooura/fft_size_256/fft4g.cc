@@ -286,10 +286,10 @@
 
 
 
+#include "common_audio/third_party/ooura/fft_size_256/fft4g.h"
+
 #include <math.h>
 #include <stddef.h>
-
-#include "common_audio/third_party/ooura/fft_size_256/fft4g.h"
 
 namespace webrtc {
 

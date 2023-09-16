@@ -2381,4 +2381,3 @@ TEST_F(VideoChannelDoubleThreadTest, SocketOptionsMergedOnSetTransport) {
 }
 
 
-

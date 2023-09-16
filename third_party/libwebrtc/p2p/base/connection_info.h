@@ -36,16 +36,16 @@ struct ConnectionInfo {
   ConnectionInfo(const ConnectionInfo&);
   ~ConnectionInfo();
 
-  bool best_connection;      
-  bool writable;             
-  bool receiving;            
-  bool timeout;              
-  size_t rtt;                
+  bool best_connection;         
+  bool writable;                
+  bool receiving;               
+  bool timeout;                 
+  size_t rtt;                   
   size_t sent_discarded_bytes;  
                                 
   size_t sent_total_bytes;      
                                 
-  size_t sent_bytes_second;  
+  size_t sent_bytes_second;     
   size_t sent_discarded_packets;  
                                   
   size_t sent_total_packets;  

@@ -157,10 +157,10 @@ class SincResampler {
   
   std::unique_ptr<float[], AlignedFreeDeleter> input_buffer_;
 
-
-
-
-
+  
+  
+  
+  
   typedef float (*ConvolveProc)(const float*,
                                 const float*,
                                 const float*,

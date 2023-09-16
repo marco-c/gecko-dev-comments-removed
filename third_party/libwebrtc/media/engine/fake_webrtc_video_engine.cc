@@ -202,8 +202,7 @@ int FakeWebRtcVideoEncoder::GetNumEncodedFrames() {
 
 
 FakeWebRtcVideoEncoderFactory::FakeWebRtcVideoEncoderFactory()
-    : num_created_encoders_(0),
-      vp8_factory_mode_(false) {}
+    : num_created_encoders_(0), vp8_factory_mode_(false) {}
 
 std::vector<webrtc::SdpVideoFormat>
 FakeWebRtcVideoEncoderFactory::GetSupportedFormats() const {
