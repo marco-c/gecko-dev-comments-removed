@@ -555,7 +555,8 @@ TextPropertyEditor.prototype = {
       shapeSwatchClass: SHAPE_SWATCH_CLASS,
       
       
-      defaultColorType: !propDirty,
+      useDefaultColorUnit: !propDirty,
+      defaultColorUnit: this.ruleView.inspector.defaultColorUnit,
       urlClass: "theme-link",
       fontFamilyClass: FONT_FAMILY_CLASS,
       baseURI: this.sheetHref,

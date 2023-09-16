@@ -5,7 +5,6 @@
 "use strict";
 
 const COLOR_UNIT_PREF = "devtools.defaultColorUnit";
-
 const SPECIALVALUES = new Set([
   "currentcolor",
   "initial",
@@ -62,7 +61,6 @@ class CssColor {
     
     this.lowerCased = colorValue.toLowerCase();
     this.authored = colorValue;
-    this.#setColorUnitUppercase(colorValue);
   }
 
   
@@ -77,51 +75,12 @@ class CssColor {
     hwb: "hwb",
   };
 
-  #colorUnit = null;
-  #colorUnitUppercase = false;
-
   
   authored = null;
   
   lowerCased = null;
 
-  #setColorUnitUppercase(color) {
-    
-    
-    
-    this.#colorUnitUppercase =
-      color === color.toUpperCase() && color !== color.toLowerCase();
-  }
-
-  get colorUnit() {
-    if (this.#colorUnit === null) {
-      const defaultUnit = Services.prefs.getCharPref(COLOR_UNIT_PREF);
-      this.#colorUnit = CssColor.COLORUNIT[defaultUnit];
-      this.#setColorUnitUppercase(this.authored);
-    }
-    return this.#colorUnit;
-  }
-
-  set colorUnit(unit) {
-    this.#colorUnit = unit;
-  }
-
-  
-
-
-
-
-
-
-  setAuthoredUnitFromColor(color) {
-    if (
-      Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
-      CssColor.COLORUNIT.authored
-    ) {
-      this.#colorUnit = classifyColor(color);
-      this.#setColorUnitUppercase(color);
-    }
-  }
+  #currentFormat;
 
   get hasAlpha() {
     if (!this.valid) {
@@ -384,29 +343,42 @@ class CssColor {
     
     
     let formats = ["hex", "hsl", "rgb", "hwb", "name"];
-    const currentFormat = classifyColor(this.toString());
+
+    let currentFormat = this.#currentFormat;
+    
+    if (!currentFormat) {
+      
+      
+      const defaultFormat = Services.prefs.getCharPref(COLOR_UNIT_PREF);
+      currentFormat =
+        defaultFormat === CssColor.COLORUNIT.authored
+          ? classifyColor(this.authored)
+          : defaultFormat;
+    }
     const putOnEnd = formats.splice(0, formats.indexOf(currentFormat));
     formats = [...formats, ...putOnEnd];
 
     const currentDisplayedColor = this[formats[0]];
 
+    let colorUnit;
     for (const format of formats) {
       if (this[format].toLowerCase() !== currentDisplayedColor.toLowerCase()) {
-        this.colorUnit = CssColor.COLORUNIT[format];
+        colorUnit = CssColor.COLORUNIT[format];
         break;
       }
     }
 
-    return this.toString();
+    this.#currentFormat = colorUnit;
+    return this.toString(colorUnit);
   }
 
   
 
 
-  toString() {
+  toString(colorUnit, forceUppercase) {
     let color;
 
-    switch (this.colorUnit) {
+    switch (colorUnit) {
       case CssColor.COLORUNIT.authored:
         color = this.authored;
         break;
@@ -430,8 +402,9 @@ class CssColor {
     }
 
     if (
-      this.#colorUnitUppercase &&
-      this.colorUnit != CssColor.COLORUNIT.authored
+      forceUppercase ||
+      (colorUnit != CssColor.COLORUNIT.authored &&
+        colorIsUppercase(this.authored))
     ) {
       color = color.toUpperCase();
     }
@@ -770,6 +743,13 @@ function calculateContrastRatio(backgroundColor, textColor) {
   return ratio > 1.0 ? ratio : 1 / ratio;
 }
 
+function colorIsUppercase(color) {
+  
+  
+  
+  return color === color.toUpperCase() && color !== color.toLowerCase();
+}
+
 module.exports.colorUtils = {
   CssColor,
   rgbToHsl,
@@ -780,4 +760,5 @@ module.exports.colorUtils = {
   calculateDeltaE,
   calculateLuminance,
   blendColors,
+  colorIsUppercase,
 };
