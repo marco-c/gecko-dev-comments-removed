@@ -3448,9 +3448,12 @@ void nsGenericHTMLElement::FocusPreviousElementAfterHidingPopover() {
   }
 
   
-  FocusOptions options;
-  options.mPreventScroll = true;
-  control->Focus(options, CallerType::NonSystem, IgnoreErrors());
+  
+  if (IsShadowIncludingInclusiveDescendantOf(control)) {
+    FocusOptions options;
+    options.mPreventScroll = true;
+    control->Focus(options, CallerType::NonSystem, IgnoreErrors());
+  }
 }
 
 
