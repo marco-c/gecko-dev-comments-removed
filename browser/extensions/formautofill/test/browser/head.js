@@ -933,6 +933,23 @@ function verifySectionFieldDetails(sections, expectedSectionsInfo) {
 
 
 
+async function clearGleanTelemetry(onlyInParent = false) {
+  if (!onlyInParent) {
+    await Services.fog.testFlushAllChildren();
+  }
+  Services.fog.testResetFOG();
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
 
