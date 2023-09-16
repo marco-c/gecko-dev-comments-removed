@@ -903,6 +903,36 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
     return NS_OK;
   }
 
+  
+  
+  
+
+  const RefPtr<Element> bodyOrDocumentElement = GetRoot();
+  if (!bodyOrDocumentElement) {
+    return NS_OK;
+  }
+
+  
+  
+  if (!HTMLEditUtils::IsSimplyEditableNode(*bodyOrDocumentElement)) {
+    return NS_OK;
+  }
+
+  
+  
+  
+  EditorType editorType = GetEditorType();
+  bool isRootEditable =
+      EditorUtils::IsEditableContent(*bodyOrDocumentElement, editorType);
+  for (nsIContent* child = bodyOrDocumentElement->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    if (EditorUtils::IsPaddingBRElementForEmptyEditor(*child) ||
+        !isRootEditable || EditorUtils::IsEditableContent(*child, editorType) ||
+        HTMLEditUtils::IsBlockElement(*child)) {
+      return NS_OK;
+    }
+  }
+
   IgnoredErrorResult ignoredError;
   AutoEditSubActionNotifier startToHandleEditSubAction(
       *this, EditSubAction::eCreatePaddingBRElementForEmptyEditor,
@@ -913,34 +943,6 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
   NS_WARNING_ASSERTION(
       !ignoredError.Failed(),
       "HTMLEditor::OnStartToHandleTopLevelEditSubAction() failed, but ignored");
-  ignoredError.SuppressException();
-
-  RefPtr<Element> rootElement = GetRoot();
-  if (!rootElement) {
-    return NS_OK;
-  }
-
-  
-  
-  
-  EditorType editorType = GetEditorType();
-  bool isRootEditable =
-      EditorUtils::IsEditableContent(*rootElement, editorType);
-  for (nsIContent* rootChild = rootElement->GetFirstChild(); rootChild;
-       rootChild = rootChild->GetNextSibling()) {
-    if (EditorUtils::IsPaddingBRElementForEmptyEditor(*rootChild) ||
-        !isRootEditable ||
-        EditorUtils::IsEditableContent(*rootChild, editorType) ||
-        HTMLEditUtils::IsBlockElement(*rootChild)) {
-      return NS_OK;
-    }
-  }
-
-  
-  
-  if (IsHTMLEditor() && !HTMLEditUtils::IsSimplyEditableNode(*rootElement)) {
-    return NS_OK;
-  }
 
   
   RefPtr<Element> newBRElement = CreateHTMLContent(nsGkAtoms::br);
@@ -959,8 +961,8 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
 
   
   Result<CreateElementResult, nsresult> insertBRElementResult =
-      InsertNodeWithTransaction<Element>(*newBRElement,
-                                         EditorDOMPoint(rootElement, 0u));
+      InsertNodeWithTransaction<Element>(
+          *newBRElement, EditorDOMPoint(bodyOrDocumentElement, 0u));
   if (MOZ_UNLIKELY(insertBRElementResult.isErr())) {
     NS_WARNING("EditorBase::InsertNodeWithTransaction() failed");
     return insertBRElementResult.unwrapErr();
@@ -968,7 +970,7 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
 
   
   insertBRElementResult.inspect().IgnoreCaretPointSuggestion();
-  nsresult rv = CollapseSelectionToStartOf(*rootElement);
+  nsresult rv = CollapseSelectionToStartOf(*bodyOrDocumentElement);
   if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
     NS_WARNING(
         "EditorBase::CollapseSelectionToStartOf() caused destroying the "
