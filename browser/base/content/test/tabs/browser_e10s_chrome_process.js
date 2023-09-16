@@ -21,7 +21,7 @@ function makeTest(
 
     
     info("Loading initial URL");
-    BrowserTestUtils.loadURIString(browser, startURL);
+    BrowserTestUtils.startLoadingURIString(browser, startURL);
     await BrowserTestUtils.browserLoaded(browser, false, startURL);
 
     is(browser.currentURI.spec, startURL, "Shouldn't have been redirected");
@@ -114,7 +114,7 @@ var TRANSITIONS = [
   
   async function loadURI(browser, uri) {
     info("Calling browser.loadURI");
-    BrowserTestUtils.loadURIString(browser, uri);
+    BrowserTestUtils.startLoadingURIString(browser, uri);
   },
 
   

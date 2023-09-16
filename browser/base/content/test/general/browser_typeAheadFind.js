@@ -8,7 +8,7 @@ add_task(async function () {
   
   testWindow.gBrowser.selectedTab.focus();
 
-  BrowserTestUtils.loadURIString(
+  BrowserTestUtils.startLoadingURIString(
     testWindow.gBrowser,
     "data:text/html,<h1>A Page</h1>"
   );

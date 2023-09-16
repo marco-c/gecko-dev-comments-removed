@@ -114,7 +114,7 @@ function delayed(aIsSelectedTab) {
 
   if (!aIsSelectedTab) {
     
-    BrowserTestUtils.loadURIString(
+    BrowserTestUtils.startLoadingURIString(
       gBrowser.selectedBrowser,
       REDIRECT_FROM + "#FG"
     );

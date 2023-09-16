@@ -47,7 +47,7 @@ async function doTestInSameWindow({
     
     
     
-    BrowserTestUtils.loadURIString(browser, HOME_URL);
+    BrowserTestUtils.startLoadingURIString(browser, HOME_URL);
     await BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser,
       false,
@@ -143,7 +143,7 @@ async function doSessionRestoreTest({
   expectedSessionRestored,
 }) {
   await BrowserTestUtils.withNewTab("about:blank", async browser => {
-    BrowserTestUtils.loadURIString(browser, HOME_URL);
+    BrowserTestUtils.startLoadingURIString(browser, HOME_URL);
     await BrowserTestUtils.browserLoaded(
       gBrowser.selectedBrowser,
       false,

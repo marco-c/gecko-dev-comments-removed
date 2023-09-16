@@ -42,7 +42,7 @@ add_task(async function () {
 
   
   
-  BrowserTestUtils.loadURIString(openedBrowser, "http://example.org/");
+  BrowserTestUtils.startLoadingURIString(openedBrowser, "http://example.org/");
   let href = await BrowserTestUtils.browserLoaded(
     openedBrowser,
     false,

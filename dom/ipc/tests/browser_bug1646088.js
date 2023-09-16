@@ -26,7 +26,7 @@ add_task(async function () {
       
       info("Beginning process switch into file URI process");
       let browserLoaded = BrowserTestUtils.browserLoaded(browser);
-      BrowserTestUtils.loadURIString(browser, uriString);
+      BrowserTestUtils.startLoadingURIString(browser, uriString);
       await prepareToChangeCalled.promise;
 
       

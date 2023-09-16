@@ -90,7 +90,10 @@ add_task(async function () {
   });
   Services.console.registerListener(on_new_message);
   
-  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, kTestURISuccess);
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    kTestURISuccess
+  );
   
   let xhr = new XMLHttpRequest();
   xhr.open("GET", kTestURIExempt, true);

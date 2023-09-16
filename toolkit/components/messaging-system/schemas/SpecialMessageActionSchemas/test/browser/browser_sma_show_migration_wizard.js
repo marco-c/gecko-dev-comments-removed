@@ -16,7 +16,7 @@ add_setup(async () => {
   
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "https://example.com");
+  BrowserTestUtils.startLoadingURIString(browser, "https://example.com");
   await BrowserTestUtils.browserLoaded(browser);
 });
 

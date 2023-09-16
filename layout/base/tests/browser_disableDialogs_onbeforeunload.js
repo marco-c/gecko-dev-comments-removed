@@ -49,7 +49,7 @@ async function openPage(enableDialogs) {
     { gBrowser, url: "about:blank" },
     async function (browser) {
       
-      BrowserTestUtils.loadURIString(browser, PAGE_URL);
+      BrowserTestUtils.startLoadingURIString(browser, PAGE_URL);
       await BrowserTestUtils.browserLoaded(browser);
       
       let methodName = enableDialogs ? "enableDialogs" : "disableDialogs";
@@ -57,7 +57,7 @@ async function openPage(enableDialogs) {
         content.windowUtils[name]();
       });
       
-      BrowserTestUtils.loadURIString(browser, "http://example.com/");
+      BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
       await BrowserTestUtils.browserLoaded(browser);
     }
   );

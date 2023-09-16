@@ -49,7 +49,7 @@ add_task(async function () {
   
   
   expectedChildCount += 1;
-  BrowserTestUtils.loadURIString(tabs[0].linkedBrowser, TEST_URL);
+  BrowserTestUtils.startLoadingURIString(tabs[0].linkedBrowser, TEST_URL);
   await BrowserTestUtils.browserLoaded(tabs[0].linkedBrowser, false, TEST_URL);
   is(
     ppmm.childCount,

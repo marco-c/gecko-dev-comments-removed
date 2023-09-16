@@ -199,7 +199,7 @@ add_task(async function test_cfr_notification_show() {
   );
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   const response = await trigger_cfr_panel(browser, "example.com");
@@ -258,7 +258,7 @@ add_task(async function test_cfr_notification_show() {
 add_task(async function test_cfr_notification_show() {
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   let response = await trigger_cfr_panel(browser, "example.com", {
@@ -324,7 +324,7 @@ add_task(async function test_cfr_notification_show() {
 add_task(async function test_cfr_notification_minimize() {
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   let response = await trigger_cfr_panel(browser, "example.com");
@@ -371,7 +371,7 @@ add_task(async function test_cfr_notification_minimize() {
 add_task(async function test_cfr_notification_minimize_2() {
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   let response = await trigger_cfr_panel(browser, "example.com");
@@ -433,7 +433,7 @@ add_task(async function test_cfr_notification_minimize_2() {
 add_task(async function test_cfr_addon_install() {
   
   const browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   const response = await trigger_cfr_panel(browser, "example.com", {
@@ -503,7 +503,7 @@ add_task(
 
     
     let browser = gBrowser.selectedBrowser;
-    BrowserTestUtils.loadURIString(browser, "http://example.com/");
+    BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
     await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
     const showPanel = BrowserTestUtils.waitForEvent(
@@ -544,7 +544,7 @@ add_task(
 add_task(async function test_cfr_addon_and_features_show() {
   
   let browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   
@@ -642,17 +642,17 @@ add_task(async function test_onLocationChange_cb() {
     "example.com",
   ]);
 
-  BrowserTestUtils.loadURIString(browser, "about:blank");
+  BrowserTestUtils.startLoadingURIString(browser, "about:blank");
   await BrowserTestUtils.browserLoaded(browser, false, "about:blank");
 
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   Assert.equal(count, 1, "Count navigation to example.com");
 
   
   
-  BrowserTestUtils.loadURIString(browser, "http://example.com/#foo");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/#foo");
   await BrowserTestUtils.waitForLocationChange(
     gBrowser,
     "http://example.com/#foo"
@@ -660,7 +660,7 @@ add_task(async function test_onLocationChange_cb() {
 
   Assert.equal(count, 1, "It should ignore same page navigation");
 
-  BrowserTestUtils.loadURIString(browser, TEST_URL);
+  BrowserTestUtils.startLoadingURIString(browser, TEST_URL);
   await BrowserTestUtils.browserLoaded(browser, false, TEST_URL);
 
   Assert.equal(count, 2, "We moved to a new document");
@@ -677,7 +677,7 @@ add_task(async function test_matchPattern() {
   await frequentVisitsTrigger.init(triggerHandler, [], ["*://*.example.com/"]);
 
   const browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   await BrowserTestUtils.waitForCondition(
@@ -685,7 +685,7 @@ add_task(async function test_matchPattern() {
     "Registered pattern matched the current location"
   );
 
-  BrowserTestUtils.loadURIString(browser, "about:config");
+  BrowserTestUtils.startLoadingURIString(browser, "about:config");
   await BrowserTestUtils.browserLoaded(browser, false, "about:config");
 
   await BrowserTestUtils.waitForCondition(
@@ -693,7 +693,7 @@ add_task(async function test_matchPattern() {
     "Navigated to a new page but not a match"
   );
 
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   await BrowserTestUtils.waitForCondition(
@@ -701,7 +701,7 @@ add_task(async function test_matchPattern() {
     "Navigated to a location that matches the pattern but within 15 mins"
   );
 
-  BrowserTestUtils.loadURIString(browser, "http://www.example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://www.example.com/");
   await BrowserTestUtils.browserLoaded(
     browser,
     false,
@@ -742,7 +742,7 @@ add_task(async function test_providerNames() {
 add_task(async function test_cfr_notification_keyboard() {
   
   const browser = gBrowser.selectedBrowser;
-  BrowserTestUtils.loadURIString(browser, "http://example.com/");
+  BrowserTestUtils.startLoadingURIString(browser, "http://example.com/");
   await BrowserTestUtils.browserLoaded(browser, false, "http://example.com/");
 
   const response = await trigger_cfr_panel(browser, "example.com");

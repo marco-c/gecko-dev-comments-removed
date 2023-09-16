@@ -94,7 +94,10 @@ async function testTopLevelNavigations(bfcacheInParent) {
     false,
     secondPageUrl
   );
-  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, secondPageUrl);
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    secondPageUrl
+  );
   await onLoaded;
 
   
@@ -317,7 +320,10 @@ async function testTopLevelNavigationsOnDocumentWithIframe(bfcacheInParent) {
     false,
     secondPageUrl
   );
-  BrowserTestUtils.loadURIString(gBrowser.selectedBrowser, secondPageUrl);
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    secondPageUrl
+  );
   await onLoaded;
 
   
