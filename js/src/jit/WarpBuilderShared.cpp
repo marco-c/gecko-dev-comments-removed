@@ -57,7 +57,15 @@ MDefinition* WarpBuilderShared::unboxObjectInfallible(MDefinition* def,
     return def;
   }
 
-  MOZ_ASSERT(def->type() == MIRType::Value);
+  if (def->type() != MIRType::Value) {
+    
+    
+    
+    MOZ_ASSERT(movable == IsMovable::No);
+    auto* box = MBox::New(alloc(), def);
+    current->add(box);
+    def = box;
+  }
 
   auto* unbox = MUnbox::New(alloc(), def, MIRType::Object, MUnbox::Infallible);
   if (movable == IsMovable::No) {
