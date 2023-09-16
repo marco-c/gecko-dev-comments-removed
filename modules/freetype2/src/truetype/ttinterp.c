@@ -29,7 +29,6 @@
 
 #include "ttinterp.h"
 #include "tterrors.h"
-#include "ttsubpix.h"
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 #include "ttgxvar.h"
 #endif
@@ -51,12 +50,6 @@
 #define NO_SUBPIXEL_HINTING                                                  \
           ( ((TT_Driver)FT_FACE_DRIVER( exc->face ))->interpreter_version == \
             TT_INTERPRETER_VERSION_35 )
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-#define SUBPIXEL_HINTING_INFINALITY                                          \
-          ( ((TT_Driver)FT_FACE_DRIVER( exc->face ))->interpreter_version == \
-            TT_INTERPRETER_VERSION_38 )
-#endif
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
 #define SUBPIXEL_HINTING_MINIMAL                                             \
@@ -1685,17 +1678,6 @@
 
     if ( v != 0 )
     {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY                            &&
-           ( !exc->ignore_x_mode                                ||
-             ( exc->sph_tweak_flags & SPH_TWEAK_ALLOW_X_DMOVE ) ) )
-        zone->cur[point].x = ADD_LONG( zone->cur[point].x,
-                                       FT_MulDiv( distance,
-                                                  v,
-                                                  exc->F_dot_P ) );
-      else
-#endif 
-
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
       
       
@@ -1801,12 +1783,6 @@
                  FT_UShort       point,
                  FT_F26Dot6      distance )
   {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY && !exc->ignore_x_mode )
-      zone->cur[point].x = ADD_LONG( zone->cur[point].x, distance );
-    else
-#endif 
-
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     if ( SUBPIXEL_HINTING_MINIMAL && !exc->backward_compatibility )
       zone->cur[point].x = ADD_LONG( zone->cur[point].x, distance );
@@ -3010,28 +2986,7 @@
         args[0] = 0;
     }
     else
-    {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      
-      
-      if ( SUBPIXEL_HINTING_INFINALITY                 &&
-           exc->ignore_x_mode                          &&
-           ( ( I == 24                             &&
-               ( exc->face->sph_found_func_flags &
-                 ( SPH_FDEF_SPACING_1 |
-                   SPH_FDEF_SPACING_2 )          ) ) ||
-             ( I == 22                      &&
-               ( exc->sph_in_func_flags   &
-                 SPH_FDEF_TYPEMAN_STROKES ) )        ||
-             ( I == 8                              &&
-               ( exc->face->sph_found_func_flags &
-                 SPH_FDEF_VACUFORM_ROUND_1       ) &&
-               exc->iup_called                     ) ) )
-        args[0] = 0;
-      else
-#endif 
-        args[0] = exc->storage[I];
-    }
+      args[0] = exc->storage[I];
   }
 
 
@@ -3545,107 +3500,6 @@
     TT_DefRecord*  rec;
     TT_DefRecord*  limit;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    
-    FT_Byte    opcode_pattern[9][12] =
-               {
-                 
-                 {
-                   0x4B, 
-                   0x53, 
-                   0x23, 
-                   0x4B, 
-                   0x51, 
-                   0x5A, 
-                   0x58, 
-                   0x38, 
-                   0x1B, 
-                   0x21, 
-                   0x21, 
-                   0x59  
-                 },
-                 
-                 {
-                   0x4B, 
-                   0x54, 
-                   0x58, 
-                   0x38, 
-                   0x1B, 
-                   0x21, 
-                   0x21, 
-                   0x59  
-                 },
-                 
-                 {
-                   0x20, 
-                   0x20, 
-                   0xB0, 
-                         
-                   0x60, 
-                   0x46, 
-                   0xB0, 
-                         
-                   0x23, 
-                   0x42  
-                 },
-                 
-                 {
-                   0x45, 
-                   0x23, 
-                   0x46, 
-                   0x60, 
-                   0x20, 
-                   0xB0  
-                         
-                 },
-                 
-                 {
-                   0x20, 
-                   0x64, 
-                   0xB0, 
-                         
-                   0x60, 
-                   0x66, 
-                   0x23, 
-                   0xB0  
-                 },
-                 
-                 {
-                   0x01, 
-                   0xB0, 
-                         
-                   0x43, 
-                   0x58  
-                 },
-                 
-                 {
-                   0x01, 
-                   0x18, 
-                   0xB0, 
-                         
-                   0x43, 
-                   0x58  
-                 },
-                 
-                 {
-                   0x01, 
-                   0x20, 
-                   0xB0, 
-                         
-                   0x25, 
-                 },
-                 
-                 {
-                   0x06, 
-                   0x7D, 
-                 },
-               };
-    FT_UShort  opcode_patterns   = 9;
-    FT_UShort  opcode_pointer[9] = {  0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    FT_UShort  opcode_size[9]    = { 12, 8, 8, 6, 7, 4, 5, 4, 2 };
-    FT_UShort  i;
-#endif 
-
 
     
     if ( exc->iniRange == tt_coderange_glyph )
@@ -3690,136 +3544,15 @@
     rec->opc            = (FT_UInt16)n;
     rec->start          = exc->IP + 1;
     rec->active         = TRUE;
-    rec->inline_delta   = FALSE;
-    rec->sph_fdef_flags = 0x0000;
 
     if ( n > exc->maxFunc )
       exc->maxFunc = (FT_UInt16)n;
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    
-    
-    if ( n >= 64 && n <= 66 )
-      rec->sph_fdef_flags |= SPH_FDEF_TYPEMAN_STROKES;
-#endif
 
     
     
 
     while ( SkipCode( exc ) == SUCCESS )
     {
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-
-      if ( SUBPIXEL_HINTING_INFINALITY )
-      {
-        for ( i = 0; i < opcode_patterns; i++ )
-        {
-          if ( opcode_pointer[i] < opcode_size[i]                  &&
-               exc->opcode == opcode_pattern[i][opcode_pointer[i]] )
-          {
-            opcode_pointer[i] += 1;
-
-            if ( opcode_pointer[i] == opcode_size[i] )
-            {
-              FT_TRACE6(( "sph: Function %d, opcode ptrn: %ld, %s %s\n",
-                          i, n,
-                          exc->face->root.family_name,
-                          exc->face->root.style_name ));
-
-              switch ( i )
-              {
-              case 0:
-                rec->sph_fdef_flags             |= SPH_FDEF_INLINE_DELTA_1;
-                exc->face->sph_found_func_flags |= SPH_FDEF_INLINE_DELTA_1;
-                break;
-
-              case 1:
-                rec->sph_fdef_flags             |= SPH_FDEF_INLINE_DELTA_2;
-                exc->face->sph_found_func_flags |= SPH_FDEF_INLINE_DELTA_2;
-                break;
-
-              case 2:
-                switch ( n )
-                {
-                  
-                case 58:
-                  rec->sph_fdef_flags             |= SPH_FDEF_DIAGONAL_STROKE;
-                  exc->face->sph_found_func_flags |= SPH_FDEF_DIAGONAL_STROKE;
-                }
-                break;
-
-              case 3:
-                switch ( n )
-                {
-                case 0:
-                  rec->sph_fdef_flags             |= SPH_FDEF_VACUFORM_ROUND_1;
-                  exc->face->sph_found_func_flags |= SPH_FDEF_VACUFORM_ROUND_1;
-                }
-                break;
-
-              case 4:
-                
-                rec->sph_fdef_flags             |= SPH_FDEF_TTFAUTOHINT_1;
-                exc->face->sph_found_func_flags |= SPH_FDEF_TTFAUTOHINT_1;
-                break;
-
-              case 5:
-                switch ( n )
-                {
-                case 0:
-                case 1:
-                case 2:
-                case 4:
-                case 7:
-                case 8:
-                  rec->sph_fdef_flags             |= SPH_FDEF_SPACING_1;
-                  exc->face->sph_found_func_flags |= SPH_FDEF_SPACING_1;
-                }
-                break;
-
-              case 6:
-                switch ( n )
-                {
-                case 0:
-                case 1:
-                case 2:
-                case 4:
-                case 7:
-                case 8:
-                  rec->sph_fdef_flags             |= SPH_FDEF_SPACING_2;
-                  exc->face->sph_found_func_flags |= SPH_FDEF_SPACING_2;
-                }
-                break;
-
-               case 7:
-                 rec->sph_fdef_flags             |= SPH_FDEF_TYPEMAN_DIAGENDCTRL;
-                 exc->face->sph_found_func_flags |= SPH_FDEF_TYPEMAN_DIAGENDCTRL;
-                 break;
-
-               case 8:
-#if 0
-                 rec->sph_fdef_flags             |= SPH_FDEF_TYPEMAN_DIAGENDCTRL;
-                 exc->face->sph_found_func_flags |= SPH_FDEF_TYPEMAN_DIAGENDCTRL;
-#endif
-                 break;
-              }
-              opcode_pointer[i] = 0;
-            }
-          }
-
-          else
-            opcode_pointer[i] = 0;
-        }
-
-        
-        exc->face->sph_compatibility_mode =
-          ( ( exc->face->sph_found_func_flags & SPH_FDEF_INLINE_DELTA_1 ) |
-            ( exc->face->sph_found_func_flags & SPH_FDEF_INLINE_DELTA_2 ) );
-      }
-
-#endif 
-
       switch ( exc->opcode )
       {
       case 0x89:    
@@ -3846,10 +3579,6 @@
   {
     TT_CallRec*  pRec;
 
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    exc->sph_in_func_flags = 0x0000;
-#endif 
 
     if ( exc->callTop <= 0 )     
     {
@@ -3938,17 +3667,6 @@
     if ( !def->active )
       goto Fail;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY                                    &&
-         exc->ignore_x_mode                                             &&
-         ( ( exc->iup_called                                        &&
-             ( exc->sph_tweak_flags & SPH_TWEAK_NO_CALL_AFTER_IUP ) ) ||
-           ( def->sph_fdef_flags & SPH_FDEF_VACUFORM_ROUND_1 )        ) )
-      goto Fail;
-    else
-      exc->sph_in_func_flags = def->sph_fdef_flags;
-#endif 
-
     
     if ( exc->callTop >= exc->callSize )
     {
@@ -4025,15 +3743,6 @@
     
     if ( !def->active )
       goto Fail;
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY                         &&
-         exc->ignore_x_mode                                  &&
-         ( def->sph_fdef_flags & SPH_FDEF_VACUFORM_ROUND_1 ) )
-      goto Fail;
-    else
-      exc->sph_in_func_flags = def->sph_fdef_flags;
-#endif 
 
     
     if ( exc->callTop >= exc->callSize )
@@ -4940,14 +4649,6 @@
       }
     }
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    
-    if ( SUBPIXEL_HINTING_INFINALITY         &&
-         exc->ignore_x_mode                  &&
-         ( D < 0 ? NEG_LONG( D ) : D ) == 64 )
-      D += 1;
-#endif 
-
     args[0] = D;
   }
 
@@ -5209,13 +4910,6 @@
     
     else if ( exc->iniRange == tt_coderange_glyph && K == 3 )
     {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      
-      
-      if ( SUBPIXEL_HINTING_INFINALITY )
-        exc->ignore_x_mode = !FT_BOOL( L == 4 );
-#endif
-
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
       
       
@@ -5547,12 +5241,6 @@
         }
       }
       else
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      
-      if ( SUBPIXEL_HINTING_INFINALITY && exc->ignore_x_mode )
-        Move_Zp2_Point( exc, point, 0, dy, TRUE );
-      else
-#endif 
         Move_Zp2_Point( exc, point, dx, dy, TRUE );
 
       exc->GS.loop--;
@@ -5713,76 +5401,6 @@
         }
       }
       else
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY &&
-           exc->ignore_x_mode          )
-      {
-        FT_Int  B1, B2;
-
-
-        
-        
-        
-        
-        
-        
-        
-
-        
-        B1 = exc->zp2.cur[point].y;
-
-        if ( exc->face->sph_compatibility_mode )
-        {
-          if ( exc->sph_tweak_flags & SPH_TWEAK_ROUND_NONPIXEL_Y_MOVES )
-            dy = FT_PIX_ROUND( B1 + dy ) - B1;
-
-          
-          if ( exc->iup_called                                          &&
-               ( ( exc->sph_in_func_flags & SPH_FDEF_INLINE_DELTA_1 ) ||
-                 ( exc->sph_in_func_flags & SPH_FDEF_INLINE_DELTA_2 ) ) )
-            goto Skip;
-
-          if ( !( exc->sph_tweak_flags & SPH_TWEAK_ALWAYS_SKIP_DELTAP ) &&
-                ( ( exc->is_composite && exc->GS.freeVector.y != 0 ) ||
-                  ( exc->zp2.tags[point] & FT_CURVE_TAG_TOUCH_Y )    ||
-                  ( exc->sph_tweak_flags & SPH_TWEAK_DO_SHPIX )      )  )
-            Move_Zp2_Point( exc, point, 0, dy, TRUE );
-
-          
-          if ( exc->GS.freeVector.y != 0 )
-          {
-            B2 = exc->zp2.cur[point].y;
-
-            
-            if ( ( B1 & 63 ) == 0 &&
-                 ( B2 & 63 ) != 0 &&
-                 B1 != B2         )
-              Move_Zp2_Point( exc, point, 0, NEG_LONG( dy ), TRUE );
-          }
-        }
-        else if ( exc->GS.freeVector.y != 0 )
-        {
-          Move_Zp2_Point( exc, point, dx, dy, TRUE );
-
-          
-          B2 = exc->zp2.cur[point].y;
-
-          
-          if ( ( exc->sph_tweak_flags & SPH_TWEAK_SKIP_NONPIXEL_Y_MOVES ) &&
-               ( B1 & 63 ) != 0                                           &&
-               ( B2 & 63 ) != 0                                           &&
-               B1 != B2                                                   )
-            Move_Zp2_Point( exc,
-                            point,
-                            NEG_LONG( dx ),
-                            NEG_LONG( dy ),
-                            TRUE );
-        }
-        else if ( exc->sph_in_func_flags & SPH_FDEF_TYPEMAN_DIAGENDCTRL )
-          Move_Zp2_Point( exc, point, dx, dy, TRUE );
-      }
-      else
-#endif
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
       if ( SUBPIXEL_HINTING_MINIMAL    &&
            exc->backward_compatibility )
@@ -5802,9 +5420,6 @@
 #endif
         Move_Zp2_Point( exc, point, dx, dy, TRUE );
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    Skip:
-#endif
       exc->GS.loop--;
     }
 
@@ -5849,28 +5464,6 @@
 
     distance = PROJECT( exc->zp1.cur + point, exc->zp0.cur + exc->GS.rp0 );
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         exc->ignore_x_mode          &&
-         exc->GS.freeVector.x != 0   )
-    {
-      FT_F26Dot6  control_value_cutin = exc->GS.control_value_cutin;
-      FT_F26Dot6  delta;
-
-
-      if ( !( exc->sph_tweak_flags & SPH_TWEAK_NORMAL_ROUND ) )
-        control_value_cutin = 0;
-
-      delta = SUB_LONG( distance, args[1] );
-      if ( delta < 0 )
-        delta = NEG_LONG( delta );
-
-      if ( delta >= control_value_cutin )
-        distance = args[1];
-    }
-#endif 
-
     exc->func_move( exc,
                     &exc->zp1,
                     point,
@@ -5911,14 +5504,7 @@
     if ( ( exc->opcode & 1 ) != 0 )
     {
       cur_dist = FAST_PROJECT( &exc->zp0.cur[point] );
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY &&
-           exc->ignore_x_mode          &&
-           exc->GS.freeVector.x != 0   )
-        distance = SUB_LONG( Round_None( exc, cur_dist, 3 ), cur_dist );
-      else
-#endif
-        distance = SUB_LONG( exc->func_round( exc, cur_dist, 3 ), cur_dist );
+      distance = SUB_LONG( exc->func_round( exc, cur_dist, 3 ), cur_dist );
     }
     else
       distance = 0;
@@ -5981,27 +5567,12 @@
 
     if ( exc->GS.gep0 == 0 )   
     {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      
-      
-      if ( !( SUBPIXEL_HINTING_INFINALITY           &&
-              ( exc->ignore_x_mode                &&
-                exc->face->sph_compatibility_mode ) ) )
-#endif 
-        exc->zp0.org[point].x = TT_MulFix14( distance,
+      exc->zp0.org[point].x = TT_MulFix14( distance,
                                              exc->GS.freeVector.x );
       exc->zp0.org[point].y = TT_MulFix14( distance,
                                            exc->GS.freeVector.y );
       exc->zp0.cur[point]   = exc->zp0.org[point];
     }
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY                    &&
-         exc->ignore_x_mode                             &&
-         ( exc->sph_tweak_flags & SPH_TWEAK_MIAP_HACK ) &&
-         distance > 0                                   &&
-         exc->GS.freeVector.y != 0                      )
-      distance = 0;
-#endif 
 
     org_dist = FAST_PROJECT( &exc->zp0.cur[point] );
 
@@ -6011,15 +5582,6 @@
       FT_F26Dot6  delta;
 
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY                        &&
-           exc->ignore_x_mode                                 &&
-           exc->GS.freeVector.x != 0                          &&
-           exc->GS.freeVector.y == 0                          &&
-           !( exc->sph_tweak_flags & SPH_TWEAK_NORMAL_ROUND ) )
-        control_value_cutin = 0;
-#endif 
-
       delta = SUB_LONG( distance, org_dist );
       if ( delta < 0 )
         delta = NEG_LONG( delta );
@@ -6027,14 +5589,7 @@
       if ( delta > control_value_cutin )
         distance = org_dist;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY &&
-           exc->ignore_x_mode          &&
-           exc->GS.freeVector.x != 0   )
-        distance = Round_None( exc, distance, 3 );
-      else
-#endif
-        distance = exc->func_round( exc, distance, 3 );
+      distance = exc->func_round( exc, distance, 3 );
     }
 
     exc->func_move( exc, &exc->zp0, point, SUB_LONG( distance, org_dist ) );
@@ -6127,14 +5682,7 @@
 
     if ( ( exc->opcode & 4 ) != 0 )
     {
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY &&
-           exc->ignore_x_mode          &&
-           exc->GS.freeVector.x != 0   )
-        distance = Round_None( exc, org_dist, exc->opcode & 3 );
-      else
-#endif
-        distance = exc->func_round( exc, org_dist, exc->opcode & 3 );
+      distance = exc->func_round( exc, org_dist, exc->opcode & 3 );
     }
     else
       distance = Round_None( exc, org_dist, exc->opcode & 3 );
@@ -6145,14 +5693,6 @@
     {
       FT_F26Dot6  minimum_distance = exc->GS.minimum_distance;
 
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY                        &&
-           exc->ignore_x_mode                                 &&
-           exc->GS.freeVector.x != 0                          &&
-           !( exc->sph_tweak_flags & SPH_TWEAK_NORMAL_ROUND ) )
-        minimum_distance = 0;
-#endif 
 
       if ( org_dist >= 0 )
       {
@@ -6296,41 +5836,7 @@
       distance = exc->func_round( exc, cvt_dist, exc->opcode & 3 );
     }
     else
-    {
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      
-      if ( SUBPIXEL_HINTING_INFINALITY  &&
-           exc->ignore_x_mode           &&
-           exc->GS.gep0 == exc->GS.gep1 )
-      {
-        FT_F26Dot6  control_value_cutin = exc->GS.control_value_cutin;
-
-
-        if ( exc->GS.freeVector.x != 0                          &&
-             !( exc->sph_tweak_flags & SPH_TWEAK_NORMAL_ROUND ) )
-          control_value_cutin = 0;
-
-        if ( exc->GS.freeVector.y != 0                                 &&
-             ( exc->sph_tweak_flags & SPH_TWEAK_TIMES_NEW_ROMAN_HACK ) )
-        {
-          if ( cur_dist < -64 )
-            cvt_dist -= 16;
-          else if ( cur_dist > 64 && cur_dist < 84 )
-            cvt_dist += 32;
-        }
-
-        delta = SUB_LONG( cvt_dist, org_dist );
-        if ( delta < 0 )
-          delta = NEG_LONG( delta );
-
-        if ( delta > control_value_cutin )
-          cvt_dist = org_dist;
-      }
-#endif 
-
       distance = Round_None( exc, cvt_dist, exc->opcode & 3 );
-    }
 
     
 
@@ -6338,14 +5844,6 @@
     {
       FT_F26Dot6  minimum_distance    = exc->GS.minimum_distance;
 
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-      if ( SUBPIXEL_HINTING_INFINALITY                        &&
-           exc->ignore_x_mode                                 &&
-           exc->GS.freeVector.x != 0                          &&
-           !( exc->sph_tweak_flags & SPH_TWEAK_NORMAL_ROUND ) )
-        minimum_distance = 0;
-#endif 
 
       if ( org_dist >= 0 )
       {
@@ -6359,51 +5857,10 @@
       }
     }
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         exc->ignore_x_mode          &&
-         exc->GS.freeVector.y != 0   )
-    {
-      FT_Int   B1, B2;
-
-
-      B1 = exc->zp1.cur[point].y;
-
-      
-      if ( exc->sph_tweak_flags & SPH_TWEAK_ROUND_NONPIXEL_Y_MOVES )
-        distance = FT_PIX_ROUND( B1 + distance - cur_dist ) - B1 + cur_dist;
-
-      if ( ( exc->opcode & 16 ) == 0                               &&
-           ( exc->opcode & 8 ) == 0                                &&
-           ( exc->sph_tweak_flags & SPH_TWEAK_COURIER_NEW_2_HACK ) )
-        distance += 64;
-
-      exc->func_move( exc,
-                      &exc->zp1,
-                      point,
-                      SUB_LONG( distance, cur_dist ) );
-
-      B2 = exc->zp1.cur[point].y;
-
-      
-      if ( ( exc->face->sph_compatibility_mode &&
-             ( B1 & 63 ) == 0                  &&
-             ( B2 & 63 ) != 0                  )                          ||
-           ( ( exc->sph_tweak_flags & SPH_TWEAK_SKIP_NONPIXEL_Y_MOVES ) &&
-             ( B1 & 63 ) != 0                                           &&
-             ( B2 & 63 ) != 0                                           ) )
-        exc->func_move( exc,
-                        &exc->zp1,
-                        point,
-                        SUB_LONG( cur_dist, distance ) );
-    }
-    else
-#endif 
-
-      exc->func_move( exc,
-                      &exc->zp1,
-                      point,
-                      SUB_LONG( distance, cur_dist ) );
+    exc->func_move( exc,
+                    &exc->zp1,
+                    point,
+                    SUB_LONG( distance, cur_dist ) );
 
   Fail:
     exc->GS.rp1 = exc->GS.rp0;
@@ -6427,17 +5884,6 @@
     FT_UShort   point;
     FT_F26Dot6  distance;
 
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY                               &&
-         exc->ignore_x_mode                                        &&
-         exc->iup_called                                           &&
-         ( exc->sph_tweak_flags & SPH_TWEAK_NO_ALIGNRP_AFTER_IUP ) )
-    {
-      exc->error = FT_THROW( Invalid_Reference );
-      goto Fail;
-    }
-#endif 
 
     if ( exc->top < exc->GS.loop                  ||
          BOUNDS( exc->GS.rp0, exc->zp0.n_points ) )
@@ -6997,16 +6443,6 @@
     contour = 0;
     point   = 0;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         exc->ignore_x_mode          )
-    {
-      exc->iup_called = TRUE;
-      if ( exc->sph_tweak_flags & SPH_TWEAK_SKIP_IUP )
-        return;
-    }
-#endif 
-
     do
     {
       end_point   = exc->pts.contours[contour] - exc->pts.first_point;
@@ -7079,14 +6515,6 @@
     FT_Long    B;
 
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    if ( SUBPIXEL_HINTING_INFINALITY                              &&
-         exc->ignore_x_mode                                       &&
-         exc->iup_called                                          &&
-         ( exc->sph_tweak_flags & SPH_TWEAK_NO_DELTAP_AFTER_IUP ) )
-      goto Fail;
-#endif 
-
     P    = (FT_ULong)exc->func_cur_ppem( exc );
     nump = (FT_ULong)args[0];   
 
@@ -7139,87 +6567,21 @@
             B++;
           B *= 1L << ( 6 - exc->GS.delta_shift );
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-
-          if ( SUBPIXEL_HINTING_INFINALITY )
-          {
-            
-
-
-
-
-
-
-
-            if ( !exc->ignore_x_mode                                   ||
-                 ( exc->sph_tweak_flags & SPH_TWEAK_ALWAYS_DO_DELTAP ) ||
-                 ( exc->is_composite && exc->GS.freeVector.y != 0 )    )
-              exc->func_move( exc, &exc->zp0, A, B );
-
-            
-            
-            else if ( exc->ignore_x_mode && exc->GS.freeVector.y != 0 )
-            {
-              FT_UShort  B1, B2;
-
-
-              
-              B1 = (FT_UShort)exc->zp0.cur[A].y;
-
-              
-              
-              if ( !exc->face->sph_compatibility_mode          &&
-                   ( exc->zp0.tags[A] & FT_CURVE_TAG_TOUCH_Y ) )
-                exc->func_move( exc, &exc->zp0, A, B );
-
-              
-              else if ( exc->face->sph_compatibility_mode                        &&
-                        !( exc->sph_tweak_flags & SPH_TWEAK_ALWAYS_SKIP_DELTAP ) )
-              {
-                if ( exc->sph_tweak_flags & SPH_TWEAK_ROUND_NONPIXEL_Y_MOVES )
-                  B = FT_PIX_ROUND( B1 + B ) - B1;
-
-                
-                
-                if ( !exc->iup_called                            &&
-                     ( exc->zp0.tags[A] & FT_CURVE_TAG_TOUCH_Y ) )
-                  exc->func_move( exc, &exc->zp0, A, B );
-              }
-
-              B2 = (FT_UShort)exc->zp0.cur[A].y;
-
-              
-              if ( exc->GS.freeVector.y != 0                          &&
-                   ( ( exc->face->sph_compatibility_mode          &&
-                       ( B1 & 63 ) == 0                           &&
-                       ( B2 & 63 ) != 0                           ) ||
-                     ( ( exc->sph_tweak_flags                   &
-                         SPH_TWEAK_SKIP_NONPIXEL_Y_MOVES_DELTAP ) &&
-                       ( B1 & 63 ) != 0                           &&
-                       ( B2 & 63 ) != 0                           ) ) )
-                exc->func_move( exc, &exc->zp0, A, NEG_LONG( B ) );
-            }
-          }
-          else
-#endif 
-
-          {
 
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
-            
-            
-            if ( SUBPIXEL_HINTING_MINIMAL    &&
-                 exc->backward_compatibility )
-            {
-              if ( !( exc->iupx_called && exc->iupy_called )              &&
-                   ( ( exc->is_composite && exc->GS.freeVector.y != 0 ) ||
-                     ( exc->zp0.tags[A] & FT_CURVE_TAG_TOUCH_Y )        ) )
-                exc->func_move( exc, &exc->zp0, A, B );
-            }
-            else
-#endif
+          
+          
+          if ( SUBPIXEL_HINTING_MINIMAL    &&
+               exc->backward_compatibility )
+          {
+            if ( !( exc->iupx_called && exc->iupy_called )              &&
+                 ( ( exc->is_composite && exc->GS.freeVector.y != 0 ) ||
+                   ( exc->zp0.tags[A] & FT_CURVE_TAG_TOUCH_Y )        ) )
               exc->func_move( exc, &exc->zp0, A, B );
           }
+          else
+#endif
+            exc->func_move( exc, &exc->zp0, A, B );
         }
       }
       else
@@ -7333,31 +6695,8 @@
 
     K = 0;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    
-
-
-
-
-    if ( SUBPIXEL_HINTING_INFINALITY &&
-         ( args[0] & 1 ) != 0        &&
-         exc->subpixel_hinting       )
-    {
-      if ( exc->ignore_x_mode )
-      {
-        
-        
-        K = exc->rasterizer_version;
-        FT_TRACE6(( "Setting rasterizer version %d\n",
-                    exc->rasterizer_version ));
-      }
-      else
-        K = TT_INTERPRETER_VERSION_38;
-    }
-    else
-#endif 
-      if ( ( args[0] & 1 ) != 0 )
-        K = driver->interpreter_version;
+    if ( ( args[0] & 1 ) != 0 )
+      K = driver->interpreter_version;
 
     
 
@@ -7453,89 +6792,6 @@
         K |= 1 << 19;
     }
 #endif
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-
-    if ( SUBPIXEL_HINTING_INFINALITY                          &&
-         exc->rasterizer_version >= TT_INTERPRETER_VERSION_35 )
-    {
-
-      if ( exc->rasterizer_version >= 37 )
-      {
-        
-
-
-
-
-        if ( ( args[0] & 64 ) != 0 && exc->subpixel_hinting )
-          K |= 1 << 13;
-
-        
-
-
-
-
-
-
-        if ( ( args[0] & 128 ) != 0 && exc->compatible_widths )
-          K |= 1 << 14;
-
-        
-
-
-
-
-
-
-        if ( ( args[0] & 256 ) != 0 && exc->vertical_lcd )
-          K |= 1 << 15;
-
-        
-
-
-
-
-
-
-        if ( ( args[0] & 512 ) != 0 && exc->bgr )
-          K |= 1 << 16;
-
-        if ( exc->rasterizer_version >= 38 )
-        {
-          
-
-
-
-
-
-
-          if ( ( args[0] & 1024 ) != 0 && exc->subpixel_positioned )
-            K |= 1 << 17;
-
-          
-
-
-
-
-
-
-          if ( ( args[0] & 2048 ) != 0 && exc->symmetrical_smoothing )
-            K |= 1 << 18;
-
-          
-
-
-
-
-
-
-          if ( ( args[0] & 4096 ) != 0 && exc->gray_cleartype )
-            K |= 1 << 19;
-        }
-      }
-    }
-
-#endif 
 
     args[0] = K;
   }
@@ -7679,20 +6935,6 @@
     FT_ULong   num_twilight_points;
     FT_UShort  i;
 
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    FT_Byte    opcode_pattern[1][2] =
-               {
-                 
-                 {
-                   0x06, 
-                   0x7D, 
-                 },
-               };
-    FT_UShort  opcode_patterns   = 1;
-    FT_UShort  opcode_pointer[1] = { 0 };
-    FT_UShort  opcode_size[1]    = { 1 };
-#endif 
-
 
     
     
@@ -7770,9 +7012,6 @@
     Compute_Round( exc, (FT_Byte)exc->GS.round_state );
 
     
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-    exc->iup_called  = FALSE;
-#endif
 #ifdef TT_SUPPORT_SUBPIXEL_HINTING_MINIMAL
     exc->iupx_called = FALSE;
     exc->iupy_called = FALSE;
@@ -7861,39 +7100,6 @@
 
       exc->step_ins = TRUE;
       exc->error    = FT_Err_Ok;
-
-#ifdef TT_SUPPORT_SUBPIXEL_HINTING_INFINALITY
-
-      if ( SUBPIXEL_HINTING_INFINALITY )
-      {
-        for ( i = 0; i < opcode_patterns; i++ )
-        {
-          if ( opcode_pointer[i] < opcode_size[i]                  &&
-               exc->opcode == opcode_pattern[i][opcode_pointer[i]] )
-          {
-            opcode_pointer[i] += 1;
-
-            if ( opcode_pointer[i] == opcode_size[i] )
-            {
-              FT_TRACE6(( "sph: opcode ptrn: %d, %s %s\n",
-                          i,
-                          exc->face->root.family_name,
-                          exc->face->root.style_name ));
-
-              switch ( i )
-              {
-              case 0:
-                break;
-              }
-              opcode_pointer[i] = 0;
-            }
-          }
-          else
-            opcode_pointer[i] = 0;
-        }
-      }
-
-#endif 
 
       {
         FT_Long*  args   = exc->stack + exc->args;

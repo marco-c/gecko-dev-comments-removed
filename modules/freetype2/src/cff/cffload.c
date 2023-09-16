@@ -1361,14 +1361,15 @@
     for ( i = 0; i < numBlends; i++ )
     {
       const FT_Int32*  weight = &blend->BV[1];
-      FT_UInt32        sum;
+      FT_Fixed         sum;
 
 
       
-      sum = cff_parse_num( parser, &parser->stack[i + base] ) * 0x10000;
+      sum = cff_parse_fixed( parser, &parser->stack[i + base] );
 
       for ( j = 1; j < blend->lenBV; j++ )
-        sum += cff_parse_num( parser, &parser->stack[delta++] ) * *weight++;
+        sum += FT_MulFix( cff_parse_fixed( parser, &parser->stack[delta++] ),
+                          *weight++ );
 
       
       parser->stack[i + base] = subFont->blend_top;

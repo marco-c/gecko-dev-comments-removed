@@ -24,7 +24,6 @@
 #include "ttinterp.c"
 #include "ttobjs.c"     
 #include "ttpload.c"    
-#include "ttsubpix.c"
 
 
 
