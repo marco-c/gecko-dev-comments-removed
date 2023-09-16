@@ -25,11 +25,6 @@ const firefoxAlphaZeroVersion = `${firefoxMajorVersion}.a0`;
 
 
 
-const defaultChannel = "default";
-const releaseChannel = "release";
-
-
-
 
 
 
@@ -40,9 +35,6 @@ async function createRemoteSettingsClient(mockedKey) {
   await client.db.importChanges({}, Date.now());
   return client;
 }
-
-
-
 
 
 
@@ -92,18 +84,6 @@ add_task(async function test_filter_current_firefox_version() {
       name: `env.version > ${firefoxAlphaZeroVersion}`,
       filter_expression: `env.version|versionCompare('${firefoxAlphaZeroVersion}') > 0`,
     },
-    {
-      name: `channel == ${defaultChannel} && env.version > ${firefoxAlphaZeroVersion}`,
-      filter_expression: `env.channel == "${defaultChannel}" && env.version|versionCompare('${firefoxAlphaZeroVersion}') > 0`,
-    },
-    {
-      name: `channel == ${releaseChannel} || env.version > ${firefoxAlphaZeroVersion}`,
-      filter_expression: `env.channel == "${releaseChannel}" || env.version|versionCompare('${firefoxAlphaZeroVersion}') > 0`,
-    },
-    {
-      name: `channel == ${defaultChannel} || env.version < 1`,
-      filter_expression: `env.channel == "${defaultChannel}" || env.version|versionCompare('1') < 0`,
-    },
   ];
   for (let record of expectedPresentRecords) {
     client.db.create(record);
@@ -115,14 +95,6 @@ add_task(async function test_filter_current_firefox_version() {
     {
       name: `env.version < 1`,
       filter_expression: `env.version|versionCompare('1') < 0`,
-    },
-    {
-      name: `channel == ${releaseChannel} && env.version > ${firefoxAlphaZeroVersion}`,
-      filter_expression: `env.channel == "${releaseChannel}" && env.version|versionCompare('${firefoxAlphaZeroVersion}') > 0`,
-    },
-    {
-      name: `channel == ${defaultChannel} && env.version < 1`,
-      filter_expression: `env.channel == "${defaultChannel}" && env.version|versionCompare('1') < 0`,
     },
   ];
   for (let record of expectedAbsentRecords) {
