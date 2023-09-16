@@ -2452,11 +2452,6 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
   const TemplateNativeObject& nativeTemplateObj =
       templateObj.asTemplateNativeObject();
 
-  
-  
-  MOZ_ASSERT(ObjectElements::VALUES_PER_HEADER + RegExpObject::MaxPairCount ==
-             gc::GetGCKindSlots(templateObj.getAllocKind()));
-
   TempAllocator temp(&cx->tempLifoAlloc());
   JitContext jcx(cx);
   StackMacroAssembler masm(cx, temp);
@@ -2499,15 +2494,64 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
                     Address(shared, RegExpShared::offsetOfFlags()),
                     Imm32(int32_t(JS::RegExpFlag::HasIndices)), &oolEntry);
 
+  Address pairCountAddress =
+      RegExpPairCountAddress(masm, inputOutputDataStartOffset);
+
   
   Register object = temp1;
-  Label matchResultJoin;
-  masm.createGCObject(object, temp2, templateObj, gc::Heap::Default, &oolEntry);
-  masm.bind(&matchResultJoin);
+  {
+    
+    
+    
 
-  MOZ_ASSERT(nativeTemplateObj.numFixedSlots() == 0);
-  
-  MOZ_ASSERT(nativeTemplateObj.numDynamicSlots() == 6);
+    
+    Label allocated;
+    masm.load32(pairCountAddress, temp2);
+    masm.movePtr(ImmGCPtr(nativeTemplateObj.shape()), temp3);
+
+    auto emitAllocObject = [&](size_t elementCapacity) {
+      gc::AllocKind kind = GuessArrayGCKind(elementCapacity);
+      MOZ_ASSERT(CanChangeToBackgroundAllocKind(kind, &ArrayObject::class_));
+      kind = ForegroundToBackgroundAllocKind(kind);
+
+#ifdef DEBUG
+      
+      
+      size_t usedSlots = ObjectElements::VALUES_PER_HEADER + elementCapacity;
+      MOZ_ASSERT(usedSlots == GetGCKindSlots(kind));
+#endif
+
+      constexpr size_t numUsedDynamicSlots = 3;
+      constexpr size_t numDynamicSlots = 6;
+      MOZ_ASSERT(nativeTemplateObj.numFixedSlots() == 0);
+      MOZ_ASSERT(nativeTemplateObj.numDynamicSlots() == numDynamicSlots);
+      MOZ_ASSERT(nativeTemplateObj.slotSpan() == numUsedDynamicSlots);
+
+      constexpr size_t arrayLength = 1;
+      masm.createArrayWithFixedElements(object, temp3, temp2, temp3,
+                                        arrayLength, elementCapacity,
+                                        numUsedDynamicSlots, numDynamicSlots,
+                                        kind, gc::Heap::Default, &oolEntry);
+    };
+
+    Label moreThan2;
+    masm.branch32(Assembler::Above, temp2, Imm32(2), &moreThan2);
+    emitAllocObject(2);
+    masm.jump(&allocated);
+
+    Label moreThan6;
+    masm.bind(&moreThan2);
+    masm.branch32(Assembler::Above, temp2, Imm32(6), &moreThan6);
+    emitAllocObject(6);
+    masm.jump(&allocated);
+
+    masm.bind(&moreThan6);
+    static_assert(RegExpObject::MaxPairCount == 14);
+    emitAllocObject(RegExpObject::MaxPairCount);
+
+    masm.bind(&allocated);
+  }
+
   static_assert(RegExpRealm::MatchResultObjectIndexSlot == 0,
                 "First slot holds the 'index' property");
   static_assert(RegExpRealm::MatchResultObjectInputSlot == 1,
@@ -2565,9 +2609,6 @@ static JitCode* GenerateRegExpMatchStubShared(JSContext* cx,
   static_assert(sizeof(MatchPair) == 2 * sizeof(int32_t),
                 "MatchPair consists of two int32 values representing the start"
                 "and the end offset of the match");
-
-  Address pairCountAddress =
-      RegExpPairCountAddress(masm, inputOutputDataStartOffset);
 
   int32_t pairsVectorStartOffset =
       RegExpPairsVectorStartOffset(inputOutputDataStartOffset);
