@@ -1662,6 +1662,12 @@ class Element : public FragmentOrElement {
 
 
 
+  void TryReserveAttributeCount(uint32_t aAttributeCount);
+
+  
+
+
+
 
   void SetOrRemoveNullableStringAttr(nsAtom* aName, const nsAString& aValue,
                                      ErrorResult& aError);
