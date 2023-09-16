@@ -62,6 +62,19 @@ StreamLoader::OnStartRequest(nsIRequest* aRequest) {
         TaskQueue::Create(sts.forget(), "css::StreamLoader Delivery Queue");
     rr->RetargetDeliveryTo(queue);
   }
+
+  mSheetLoadData->mExpirationTime = [&] {
+    auto info = nsContentUtils::GetSubresourceCacheValidationInfo(
+        aRequest, mSheetLoadData->mURI);
+
+    
+    
+    if (info.mMustRevalidate || !info.mExpirationTime) {
+      return nsContentUtils::SecondsFromPRTime(PR_Now()) - 1;
+    }
+    return *info.mExpirationTime;
+  }();
+
   return NS_OK;
 }
 
@@ -81,8 +94,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   {
     
     
-    nsCString bytes(mBytes);
-    mBytes.Truncate();
+    nsCString bytes = std::move(mBytes);
 
     nsCOMPtr<nsIChannel> channel = do_QueryInterface(aRequest);
 
@@ -122,23 +134,12 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
       
       
       
-      utf8String.Assign(bytes);
+      utf8String = std::move(bytes);
     } else {
       rv = encoding->DecodeWithoutBOMHandling(bytes, utf8String, validated);
       NS_ENSURE_SUCCESS(rv, rv);
     }
   }  
-
-  auto info = nsContentUtils::GetSubresourceCacheValidationInfo(
-      aRequest, mSheetLoadData->mURI);
-
-  
-  
-  if (!info.mExpirationTime || info.mMustRevalidate) {
-    info.mExpirationTime =
-        Some(nsContentUtils::SecondsFromPRTime(PR_Now()) - 1);
-  }
-  mSheetLoadData->mExpirationTime = *info.mExpirationTime;
 
   
   
