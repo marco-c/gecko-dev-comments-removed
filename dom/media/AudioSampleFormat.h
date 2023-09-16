@@ -25,12 +25,8 @@ enum AudioSampleFormat {
   AUDIO_FORMAT_S16,
   
   AUDIO_FORMAT_FLOAT32,
-
-#ifdef MOZ_SAMPLE_TYPE_S16
-  AUDIO_OUTPUT_FORMAT = AUDIO_FORMAT_S16
-#else
+  
   AUDIO_OUTPUT_FORMAT = AUDIO_FORMAT_FLOAT32
-#endif
 };
 
 enum { MAX_AUDIO_SAMPLE_SIZE = sizeof(float) };
