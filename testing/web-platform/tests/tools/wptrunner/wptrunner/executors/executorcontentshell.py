@@ -279,6 +279,12 @@ class ContentShellPrintRefTestExecutor(ContentShellRefTestExecutor):
 
 
 class ContentShellTestharnessExecutor(TestharnessExecutor, _SanitizerMixin):  
+    
+    
+    
+    
+    supports_testdriver = True
+
     def __init__(self, logger, browser, server_config, timeout_multiplier=1, debug_info=None,
             **kwargs):
         super().__init__(logger, browser, server_config, timeout_multiplier, debug_info, **kwargs)
