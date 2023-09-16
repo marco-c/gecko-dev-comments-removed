@@ -348,7 +348,10 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
         mLength(aOther.mLength),
         mShared(aOther.mShared),
         mComputed(aOther.mComputed) {
-    aOther.Reset();
+    aOther.mData = nullptr;
+    aOther.mLength = 0;
+    aOther.mShared = false;
+    aOther.mComputed = false;
   }
 
  private:
@@ -390,49 +393,8 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 
-  inline bool IsShared() const {
-    MOZ_ASSERT(mComputed);
-    return mShared;
-  }
-
-  inline element_type* Data() const {
-    MOZ_ASSERT(mComputed);
-    return mData;
-  }
-
-  inline uint32_t Length() const {
-    MOZ_ASSERT(mComputed);
-    return mLength;
-  }
-
-  inline void ComputeState() const {
-    MOZ_ASSERT(inited());
-    MOZ_ASSERT(!mComputed);
-    size_t length;
-    JS::AutoCheckCannotGC nogc;
-    mData =
-        ArrayT::fromObject(mImplObj).getLengthAndData(&length, &mShared, nogc);
-    MOZ_RELEASE_ASSERT(length <= INT32_MAX,
-                       "Bindings must have checked ArrayBuffer{View} length");
-    mLength = length;
-    mComputed = true;
-  }
-
+ public:
   
 
 
@@ -702,21 +664,20 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
     return CallProcessor(GetCurrentData(), std::forward<Processor>(aProcessor));
   }
 
- public:
-  inline void Reset() {
-    
-    
-    
-    mData = nullptr;
-    mLength = 0;
-    mShared = false;
-    mComputed = false;
-  }
-
  private:
   Span<element_type> GetCurrentData() const {
-    ComputeState();
-    return Span(Data(), Length());
+    MOZ_ASSERT(inited());
+    if (!mComputed) {
+      size_t length;
+      JS::AutoCheckCannotGC nogc;
+      mData = ArrayT::fromObject(mImplObj).getLengthAndData(&length, &mShared,
+                                                            nogc);
+      MOZ_RELEASE_ASSERT(length <= INT32_MAX,
+                         "Bindings must have checked ArrayBuffer{View} length");
+      mLength = length;
+      mComputed = true;
+    }
+    return Span(mData, mLength);
   }
 
   template <typename T, typename F, typename... Calculator>
