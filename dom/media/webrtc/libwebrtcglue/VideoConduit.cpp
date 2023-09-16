@@ -547,6 +547,15 @@ void WebrtcVideoConduit::OnControlConfigChange() {
         continue;
       }
 
+      
+      
+      
+      
+      if (codec_config.RtxPayloadTypeIsSet()) {
+        newRtp.rtx_associated_payload_types[codec_config.mRTXPayloadType] =
+            codec_config.mType;
+      }
+
       if (codec_config.mName == kRedCodecName) {
         newRtp.red_payload_type = codec_config.mType;
         continue;
@@ -580,11 +589,6 @@ void WebrtcVideoConduit::OnControlConfigChange() {
       newRtp.tmmbr |= codec_config.RtcpFbCcmIsSet(kRtcpFbCcmParamTmmbr);
       newRtp.remb |= codec_config.RtcpFbRembIsSet();
       use_fec |= codec_config.RtcpFbFECIsSet();
-
-      if (codec_config.RtxPayloadTypeIsSet()) {
-        newRtp.rtx_associated_payload_types[codec_config.mRTXPayloadType] =
-            codec_config.mType;
-      }
 
       auto& decoder = recv_codecs.emplace_back();
       decoder.video_format = webrtc::SdpVideoFormat(codec_config.mName);

@@ -450,11 +450,13 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   }
 
   static UniquePtr<JsepVideoCodecDescription> CreateDefaultRed() {
-    return MakeUnique<JsepVideoCodecDescription>(
+    auto codec = MakeUnique<JsepVideoCodecDescription>(
         "122",  
         "red",  
         90000   
     );
+    codec->EnableRtx("119");
+    return codec;
   }
 
   void ApplyConfigToFmtp(
@@ -538,7 +540,8 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   }
 
   virtual void EnableFec(std::string redPayloadType,
-                         std::string ulpfecPayloadType) {
+                         std::string ulpfecPayloadType,
+                         std::string redRtxPayloadType) {
     
     
     
@@ -547,15 +550,17 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
 
     
     
-    uint16_t redPt, ulpfecPt;
+    uint16_t redPt, ulpfecPt, redRtxPt;
     if (!SdpHelper::GetPtAsInt(redPayloadType, &redPt) ||
-        !SdpHelper::GetPtAsInt(ulpfecPayloadType, &ulpfecPt)) {
+        !SdpHelper::GetPtAsInt(ulpfecPayloadType, &ulpfecPt) ||
+        !SdpHelper::GetPtAsInt(redRtxPayloadType, &redRtxPt)) {
       return;
     }
 
     mFECEnabled = true;
     mREDPayloadType = redPayloadType;
     mULPFECPayloadType = ulpfecPayloadType;
+    mREDRTXPayloadType = redRtxPayloadType;
   }
 
   virtual void EnableTransportCC() {
@@ -1071,6 +1076,7 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
   bool mTransportCCEnabled;
   bool mRtxEnabled;
   std::string mREDPayloadType;
+  std::string mREDRTXPayloadType;
   std::string mULPFECPayloadType;
   std::string mRtxPayloadType;
   std::vector<uint8_t> mRedundantEncodings;
