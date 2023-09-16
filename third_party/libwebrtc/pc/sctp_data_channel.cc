@@ -382,16 +382,21 @@ void SctpDataChannel::RegisterObserver(DataChannelObserver* observer) {
   }
 
   
-  auto register_observer = [&] {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    observer_ = observer;
-    DeliverQueuedReceivedData();
+  
+  
+  
+  
+  rtc::scoped_refptr<SctpDataChannel> me(this);
+  auto register_observer = [me = std::move(me), observer = observer] {
+    RTC_DCHECK_RUN_ON(me->network_thread_);
+    me->observer_ = observer;
+    me->DeliverQueuedReceivedData();
   };
 
   if (network_thread_ == current_thread) {
     register_observer();
   } else {
-    network_thread_->BlockingCall(std::move(register_observer));
+    network_thread_->PostTask(std::move(register_observer));
   }
 }
 
