@@ -240,14 +240,9 @@ class NetworkStateEstimateObserver {
 
 class TransportFeedbackObserver {
  public:
-  TransportFeedbackObserver() {}
-  virtual ~TransportFeedbackObserver() {}
+  virtual ~TransportFeedbackObserver() = default;
 
   virtual void OnAddPacket(const RtpPacketSendInfo& packet_info) = 0;
-
-  
-  
-  virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) {}
 };
 
 
