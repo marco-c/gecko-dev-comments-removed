@@ -20,18 +20,17 @@ use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind}
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
 use crate::gpu_cache::{GpuCacheHandle, GpuDataRequest};
 use crate::gpu_types::{BrushFlags, TransformPaletteId, QuadSegment};
-use crate::internal_types::{FastHashMap, PlaneSplitAnchor};
-use crate::picture::{PicturePrimitive, SliceId, ClusterFlags};
+use crate::internal_types::{FastHashMap, PlaneSplitAnchor, Filter};
+use crate::picture::{PicturePrimitive, SliceId, ClusterFlags, PictureCompositeMode};
 use crate::picture::{PrimitiveList, PrimitiveCluster, SurfaceIndex, TileCacheInstance, SubpixelMode, Picture3DContext};
 use crate::prim_store::line_dec::MAX_LINE_DECORATION_RESOLUTION;
 use crate::prim_store::*;
 use crate::prim_store::gradient::GradientGpuBlockBuilder;
 use crate::render_backend::DataStores;
-use crate::render_target::RenderTargetKind;
 use crate::render_task_graph::{RenderTaskId};
 use crate::render_task_cache::RenderTaskCacheKeyKind;
 use crate::render_task_cache::{RenderTaskCacheKey, to_cache_size, RenderTaskParent};
-use crate::render_task::{RenderTaskKind, RenderTask, SubPass, MaskSubPass};
+use crate::render_task::{RenderTaskKind, RenderTask, SubPass, MaskSubPass, EmptyTask};
 use crate::renderer::{GpuBufferBuilder, GpuBufferAddress};
 use crate::segment::{EdgeAaSegmentMask, SegmentBuilder};
 use crate::space::SpaceMapper;
@@ -317,6 +316,9 @@ fn prepare_prim_for_render(
                 );
 
                 *use_legacy_path
+            }
+            PrimitiveInstanceKind::Picture { .. } => {
+                false
             }
             _ => true,
         };
@@ -1245,9 +1247,122 @@ fn prepare_interned_prim_for_render(
             
             
         }
-        PrimitiveInstanceKind::Picture { pic_index, segment_instance_index, .. } => {
+        PrimitiveInstanceKind::Picture { pic_index, .. } => {
             profile_scope!("Picture");
             let pic = &mut store.pictures[pic_index.0];
+
+            if prim_instance.vis.clip_chain.needs_mask {
+                
+                
+
+                
+                let mut in_place_mask = match pic.composite_mode {
+                    
+                    
+                    
+                    Some(PictureCompositeMode::Filter(Filter::Blur { .. })) |
+                    Some(PictureCompositeMode::Filter(Filter::DropShadows { .. })) => {
+                        false
+                    }
+                    _ => {
+                        true
+                    }
+                };
+                for i in 0 .. prim_instance.vis.clip_chain.clips_range.count {
+                    let clip_instance = frame_state.clip_store.get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, i);
+
+                    if !clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
+                        in_place_mask = false;
+                        break;
+                    }
+                }
+
+                let (surface_index, coverage_rect) = if in_place_mask {
+                    (pic.raster_config.as_ref().unwrap().surface_index, PictureRect::max_rect())
+                } else {
+                    (pic_context.surface_index, prim_instance.vis.clip_chain.pic_coverage_rect)
+                };
+
+                let surface = &frame_state.surfaces[surface_index.0];
+
+                let device_pixel_scale = surface.device_pixel_scale;
+                let raster_spatial_node_index = surface.raster_spatial_node_index;
+
+                let clipped_surface_rect = surface.get_surface_rect(
+                    &coverage_rect,
+                    frame_context.spatial_tree,
+                ).expect("bug: what can cause this?");
+
+                let p0 = clipped_surface_rect.min.floor();
+                let x0 = p0.x;
+                let y0 = p0.y;
+
+                let content_origin = DevicePoint::new(x0, y0);
+
+                let masks = MaskSubPass {
+                    clip_node_range: prim_instance.vis.clip_chain.clips_range,
+                };
+
+                let parent_task_id = if in_place_mask {
+                    
+                    let pic_task_id = pic.primary_render_task_id.expect("uh oh");
+                    let pic_task = frame_state.rg_builder.get_task_mut(pic_task_id);
+                    pic_task.add_sub_pass(SubPass::Masks {
+                        masks,
+                    });
+
+                    pic_task_id
+                } else {
+                    
+                    
+                    let empty_task = EmptyTask {
+                        content_origin,
+                        device_pixel_scale,
+                        raster_spatial_node_index,
+                    };
+
+                    let p1 = clipped_surface_rect.max.ceil();
+                    let x1 = p1.x;
+                    let y1 = p1.y;
+
+                    let task_size = DeviceSize::new(x1 - x0, y1 - y0).round().to_i32();
+
+                    let clip_task_id = frame_state.rg_builder.add().init(RenderTask::new_dynamic(
+                        task_size,
+                        RenderTaskKind::Empty(empty_task),
+                    ));
+
+                    let clip_task = frame_state.rg_builder.get_task_mut(clip_task_id);
+                    clip_task.add_sub_pass(SubPass::Masks {
+                        masks,
+                    });
+
+                    let clip_task_index = ClipTaskIndex(scratch.clip_mask_instances.len() as _);
+                    scratch.clip_mask_instances.push(ClipMaskKind::Mask(clip_task_id));
+                    prim_instance.vis.clip_task_index = clip_task_index;
+                    frame_state.surface_builder.add_child_render_task(
+                        clip_task_id,
+                        frame_state.rg_builder,
+                    );
+
+                    clip_task_id
+                };
+
+                
+                
+                for i in 0 .. prim_instance.vis.clip_chain.clips_range.count {
+                    let clip_instance = frame_state
+                        .clip_store
+                        .get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, i);
+
+                    for tile in frame_state.clip_store.visible_mask_tiles(&clip_instance) {
+                        frame_state.rg_builder.add_dependency(
+                            parent_task_id,
+                            tile.task_id,
+                        );
+                    }
+                }
+            }
 
             if pic.prepare_for_render(
                 frame_state,
@@ -1268,29 +1383,6 @@ fn prepare_interned_prim_for_render(
                         &prim_instance.vis.clip_chain.local_clip_rect,
                         dirty_rect,
                         plane_split_anchor,
-                    );
-                }
-
-                
-                
-                
-                
-                if pic.can_use_segments() {
-                    write_segment(
-                        *segment_instance_index,
-                        frame_state,
-                        &mut scratch.segments,
-                        &mut scratch.segment_instances,
-                        |request| {
-                            request.push(PremultipliedColorF::WHITE);
-                            request.push(PremultipliedColorF::WHITE);
-                            request.push([
-                                -1.0,       
-                                0.0,
-                                0.0,
-                                0.0,
-                            ]);
-                        }
                     );
                 }
             } else {
@@ -1436,6 +1528,7 @@ fn update_clip_task_for_brush(
     device_pixel_scale: DevicePixelScale,
 ) -> Option<ClipTaskIndex> {
     let segments = match instance.kind {
+        PrimitiveInstanceKind::Picture { .. } |
         PrimitiveInstanceKind::TextRun { .. } |
         PrimitiveInstanceKind::Clear { .. } |
         PrimitiveInstanceKind::LineDecoration { .. } |
@@ -1454,18 +1547,6 @@ fn update_clip_task_for_brush(
 
             let segment_instance = &segment_instances_store[segment_instance_index];
 
-            &segments_store[segment_instance.segments_range]
-        }
-        PrimitiveInstanceKind::Picture { segment_instance_index, .. } => {
-            
-            
-            
-            if segment_instance_index == SegmentInstanceIndex::UNUSED ||
-               segment_instance_index == SegmentInstanceIndex::INVALID {
-                return None;
-            }
-
-            let segment_instance = &segment_instances_store[segment_instance_index];
             &segments_store[segment_instance.segments_range]
         }
         PrimitiveInstanceKind::YuvImage { segment_instance_index, .. } => {
@@ -1890,24 +1971,7 @@ fn build_segments_if_needed(
             }
             &mut image_instance.segment_instance_index
         }
-        PrimitiveInstanceKind::Picture { ref mut segment_instance_index, pic_index, .. } => {
-            let pic = &mut prim_store.pictures[pic_index.0];
-
-            
-            if pic.can_use_segments() {
-                
-                
-                
-                if !pic.segments_are_valid {
-                    *segment_instance_index = SegmentInstanceIndex::INVALID;
-                    pic.segments_are_valid = true;
-                }
-
-                segment_instance_index
-            } else {
-                return;
-            }
-        }
+        PrimitiveInstanceKind::Picture { .. } |
         PrimitiveInstanceKind::TextRun { .. } |
         PrimitiveInstanceKind::NormalBorder { .. } |
         PrimitiveInstanceKind::ImageBorder { .. } |
@@ -2058,7 +2122,6 @@ fn add_segment(
                 quad_flags,
                 prim_instance.vis.clip_chain.clips_range,
                 needs_scissor_rect,
-                RenderTargetKind::Color,
             ),
         ));
 

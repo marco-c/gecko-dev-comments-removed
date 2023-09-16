@@ -4453,27 +4453,6 @@ impl PicturePrimitive {
         pt.end_level();
     }
 
-    
-    pub fn can_use_segments(&self) -> bool {
-        match self.raster_config {
-            
-            
-            
-            Some(RasterConfig { composite_mode: PictureCompositeMode::MixBlend(..), .. }) |
-            Some(RasterConfig { composite_mode: PictureCompositeMode::Filter(..), .. }) |
-            Some(RasterConfig { composite_mode: PictureCompositeMode::ComponentTransferFilter(..), .. }) |
-            Some(RasterConfig { composite_mode: PictureCompositeMode::TileCache { .. }, .. }) |
-            Some(RasterConfig { composite_mode: PictureCompositeMode::SvgFilter(..), .. }) |
-            Some(RasterConfig { composite_mode: PictureCompositeMode::IntermediateSurface, .. }) |
-            None => {
-                false
-            }
-            Some(RasterConfig { composite_mode: PictureCompositeMode::Blit(reason), ..}) => {
-                reason == BlitReason::CLIP
-            }
-        }
-    }
-
     fn resolve_scene_properties(&mut self, properties: &SceneProperties) {
         match self.composite_mode {
             Some(PictureCompositeMode::Filter(ref mut filter)) => {
@@ -6128,6 +6107,7 @@ impl PicturePrimitive {
                 );
 
                 let surface_index = SurfaceIndex(surfaces.len());
+
                 surfaces.push(surface);
 
                 self.raster_config = Some(RasterConfig {

@@ -44,6 +44,8 @@ impl GpuBufferAddress {
         
         self.v as i32 * MAX_VERTEX_TEXTURE_WIDTH as i32 + self.u as i32
     }
+
+    pub const INVALID: GpuBufferAddress = GpuBufferAddress { u: !0, v: !0 };
 }
 
 impl GpuBufferBlock {
