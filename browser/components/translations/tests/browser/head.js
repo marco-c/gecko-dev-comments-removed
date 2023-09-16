@@ -378,6 +378,14 @@ async function assertLangTagIsShownOnTranslationsButton(
   );
 }
 
+async function clickCancelButton() {
+  const { cancelButton } = TranslationsPanel.elements;
+  ok(isVisible(cancelButton), "Expected the cancel button to be visible");
+  await waitForTranslationsPopupEvent("popuphidden", () => {
+    click(cancelButton, "Clicking the cancel button");
+  });
+}
+
 
 
 
