@@ -347,6 +347,12 @@ void WinWindowOcclusionTracker::Ensure() {
     if (sTracker->mThread->StartWithOptions(options)) {
       
       sTracker->mHasAttemptedShutdown = false;
+
+      
+      
+      
+      sTracker->EnsureDisplayStatusObserver();
+      sTracker->EnsureSessionChangeObserver();
       return;
     }
     
@@ -456,14 +462,20 @@ void WinWindowOcclusionTracker::EnsureDisplayStatusObserver() {
   if (mDisplayStatusObserver) {
     return;
   }
-  mDisplayStatusObserver = DisplayStatusObserver::Create(this);
+  if (StaticPrefs::
+          widget_windows_window_occlusion_tracking_display_state_enabled()) {
+    mDisplayStatusObserver = DisplayStatusObserver::Create(this);
+  }
 }
 
 void WinWindowOcclusionTracker::EnsureSessionChangeObserver() {
   if (mSessionChangeObserver) {
     return;
   }
-  mSessionChangeObserver = SessionChangeObserver::Create(this);
+  if (StaticPrefs::
+          widget_windows_window_occlusion_tracking_session_lock_enabled()) {
+    mSessionChangeObserver = SessionChangeObserver::Create(this);
+  }
 }
 
 void WinWindowOcclusionTracker::Enable(nsBaseWidget* aWindow, HWND aHwnd) {
@@ -527,14 +539,9 @@ WinWindowOcclusionTracker::WinWindowOcclusionTracker(
   MOZ_ASSERT(NS_IsMainThread());
   LOG(LogLevel::Info, "WinWindowOcclusionTracker::WinWindowOcclusionTracker()");
 
-  if (StaticPrefs::
-          widget_windows_window_occlusion_tracking_display_state_enabled()) {
-    mDisplayStatusObserver = DisplayStatusObserver::Create(this);
-  }
-  if (StaticPrefs::
-          widget_windows_window_occlusion_tracking_session_lock_enabled()) {
-    mSessionChangeObserver = SessionChangeObserver::Create(this);
-  }
+  EnsureDisplayStatusObserver();
+  EnsureSessionChangeObserver();
+
   mSerializedTaskDispatcher = new SerializedTaskDispatcher();
 }
 

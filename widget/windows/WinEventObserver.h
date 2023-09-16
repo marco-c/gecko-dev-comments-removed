@@ -36,7 +36,11 @@ class WinEventHub final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WinEventHub)
 
  public:
-  static void Ensure();
+  
+  
+  
+  
+  static bool Ensure();
   static RefPtr<WinEventHub> Get() { return sInstance; }
 
   void AddObserver(WinEventObserver* aObserver);
