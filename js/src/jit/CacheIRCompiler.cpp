@@ -7239,6 +7239,11 @@ void CacheIRCompiler::emitPostBarrierShared(Register obj,
   masm.branchPtrInNurseryChunk(Assembler::Equal, obj, scratch, &skipBarrier);
 
   
+  auto* lastCellAddr = cx_->runtime()->gc.addressOfLastBufferedWholeCell();
+  masm.branchPtr(Assembler::Equal, AbsoluteAddress(lastCellAddr), obj,
+                 &skipBarrier);
+
+  
   
   
   
