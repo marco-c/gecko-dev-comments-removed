@@ -456,8 +456,8 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
 
 
-  void UpdateVisibility();
-  void MakeVisible();
+  MOZ_CAN_RUN_SCRIPT void UpdateVisibility();
+  MOZ_CAN_RUN_SCRIPT void MakeVisible();
   void MakeHidden();
   void PresShellActivenessMaybeChanged();
 
