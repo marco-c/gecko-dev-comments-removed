@@ -49,22 +49,26 @@ static uint32_t gMiscContainerCount = 0;
 
 
 struct AtomArrayCache {
-  using MapType = nsTHashMap<nsStringHashKey, MiscContainer*>;
+  
+  
+  
+  
+  using MapType = nsTHashMap<nsPtrHashKey<nsAtom>, MiscContainer*>;
 
-  static MiscContainer* Lookup(const nsAString& aValue) {
+  static MiscContainer* Lookup(nsAtom* aValue) {
     if (auto* instance = GetInstance()) {
       return instance->LookupImpl(aValue);
     }
     return nullptr;
   }
 
-  static void Insert(const nsAString& aValue, MiscContainer* aCont) {
+  static void Insert(nsAtom* aValue, MiscContainer* aCont) {
     if (auto* instance = GetInstance()) {
       instance->InsertImpl(aValue, aCont);
     }
   }
 
-  static void Remove(const nsAString& aValue) {
+  static void Remove(nsAtom* aValue) {
     if (auto* instance = GetInstance()) {
       instance->RemoveImpl(aValue);
     }
@@ -80,17 +84,17 @@ struct AtomArrayCache {
   }
 
  private:
-  MiscContainer* LookupImpl(const nsAString& aValue) {
+  MiscContainer* LookupImpl(nsAtom* aValue) {
     auto lookupResult = mMap.Lookup(aValue);
     return lookupResult ? *lookupResult : nullptr;
   }
 
-  void InsertImpl(const nsAString& aValue, MiscContainer* aCont) {
+  void InsertImpl(nsAtom* aValue, MiscContainer* aCont) {
     MOZ_ASSERT(aCont);
     mMap.InsertOrUpdate(aValue, aCont);
   }
 
-  void RemoveImpl(const nsAString& aValue) { mMap.Remove(aValue); }
+  void RemoveImpl(nsAtom* aValue) { mMap.Remove(aValue); }
 
   MapType mMap;
 };
@@ -177,13 +181,12 @@ void MiscContainer::Cache() {
       MOZ_ASSERT(mValue.mRefCount > 0);
       MOZ_ASSERT(!mValue.mCached);
 
-      nsString str;
-      bool gotString = GetString(str);
-      if (!gotString) {
+      nsAtom* atom = GetStoredAtom();
+      if (!atom) {
         return;
       }
 
-      AtomArrayCache::Insert(str, this);
+      AtomArrayCache::Insert(atom, this);
       mValue.mCached = 1;
       break;
     }
@@ -223,11 +226,10 @@ void MiscContainer::Evict() {
         return;
       }
 
-      nsString str;
-      DebugOnly<bool> gotString = GetString(str);
-      MOZ_ASSERT(gotString);
+      nsAtom* atom = GetStoredAtom();
+      MOZ_ASSERT(atom);
 
-      AtomArrayCache::Remove(str);
+      AtomArrayCache::Remove(atom);
 
       mValue.mCached = 0;
       break;
@@ -1339,7 +1341,7 @@ void nsAttrValue::ParseAtom(const nsAString& aValue) {
   }
 }
 
-void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
+void nsAttrValue::ParseAtomArray(nsAtom* aValue) {
   if (MiscContainer* cont = AtomArrayCache::Lookup(aValue)) {
     
     NS_ADDREF(cont);
@@ -1347,9 +1349,8 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
     return;
   }
 
-  nsAString::const_iterator iter, end;
-  aValue.BeginReading(iter);
-  aValue.EndReading(end);
+  const char16_t* iter = aValue->GetUTF16String();
+  const char16_t* end = iter + aValue->GetLength();
   bool hasSpace = false;
 
   
@@ -1359,20 +1360,26 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
   }
 
   if (iter == end) {
-    SetTo(aValue);
+    
+    
+    
+    
+    SetTo(nsDependentAtomString(aValue));
     return;
   }
 
-  nsAString::const_iterator start(iter);
+  const char16_t* start = iter;
 
   
   do {
     ++iter;
   } while (iter != end && !nsContentUtils::IsHTMLWhitespace(*iter));
 
-  RefPtr<nsAtom> classAtom = NS_AtomizeMainThread(Substring(start, iter));
+  RefPtr<nsAtom> classAtom = iter == end && !hasSpace
+                                 ? RefPtr<nsAtom>(aValue).forget()
+                                 : NS_AtomizeMainThread(Substring(start, iter));
   if (!classAtom) {
-    Reset();
+    ResetIfSet();
     return;
   }
 
@@ -1392,6 +1399,7 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
     return;
   }
 
+  
   AttrAtomArray* array = new AttrAtomArray;
 
   
@@ -1419,6 +1427,7 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
     }
   }
 
+  
   MiscContainer* cont = EnsureEmptyMiscContainer();
   MOZ_ASSERT(cont->mValue.mRefCount == 0);
   cont->mValue.mAtomArray = array;
@@ -1426,9 +1435,24 @@ void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
   NS_ADDREF(cont);
   MOZ_ASSERT(cont->mValue.mRefCount == 1);
 
-  SetMiscAtomOrString(&aValue);
+  
+  
+  MOZ_ASSERT(!IsInServoTraversal());
+  aValue->AddRef();
+  uintptr_t bits = reinterpret_cast<uintptr_t>(aValue) | eAtomBase;
+  cont->SetStringBitsMainThread(bits);
 
+  
   cont->Cache();
+}
+
+void nsAttrValue::ParseAtomArray(const nsAString& aValue) {
+  if (aValue.IsVoid()) {
+    ResetIfSet();
+  } else {
+    RefPtr<nsAtom> atom = NS_AtomizeMainThread(aValue);
+    ParseAtomArray(atom);
+  }
 }
 
 void nsAttrValue::ParseStringOrAtom(const nsAString& aValue) {

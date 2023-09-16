@@ -882,7 +882,7 @@ class Element : public FragmentOrElement {
 
 
 
-  nsresult SetSingleClassFromParser(nsAtom* aSingleClassName);
+  nsresult SetClassAttrFromParser(nsAtom* aValue);
 
   
   
