@@ -519,10 +519,6 @@ fn dot(a: Vector, b: Vector) -> f32 {
     a.x * b.x + a.y * b.y
 }
 
-fn cross(a: Vector, b: Vector) -> f32 {
-    return a.x * b.y - a.y * b.x;
-}
-
 
 
 
@@ -582,62 +578,30 @@ fn join_line(
                     if dest.aa {
                         let ramp_start = pt + s1_normal * (offset + 1.);
                         let ramp_end = pt + s2_normal * (offset + 1.);
-
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-
                         let mid = bisect(s1_normal, s2_normal);
+                        let ramp_intersection = intersection + mid;
+
+                        let ramp_s1 = line_intersection(ramp_start, s1_normal, ramp_intersection, flip(mid));
+                        let ramp_s2 = line_intersection(ramp_end, s2_normal, ramp_intersection, flip(mid));
+
+                        if let Some(ramp_s1) = ramp_s1 {
+                            dest.ramp(intersection.x, intersection.y,
+                                ramp_s1.x, ramp_s1.y,
+                                ramp_start.x, ramp_start.y,
+                                pt.x + s1_normal.x * offset, pt.y + s1_normal.y * offset,
+                            );
+                        }
+                        if let Some(ramp_s2) = ramp_s2 {
+                            dest.ramp(pt.x + s2_normal.x * offset, pt.y + s2_normal.y * offset,
+                                ramp_end.x, ramp_end.y,
+                                ramp_s2.x, ramp_s2.y,
+                                intersection.x, intersection.y);
+                            if let Some(ramp_s1) = ramp_s1 {
+                                dest.tri_ramp(ramp_s1.x, ramp_s1.y, ramp_s2.x, ramp_s2.y, intersection.x, intersection.y);
+                            }
+                        }
 
                         
-                        let s = cross(mid, s1_normal)/(1. + dot(s1_normal, mid));
-
-                        let ramp_s1 = intersection + s1_normal * (offset + 1.) + unperp(s1_normal) * s;
-                        let ramp_s2 = intersection + s2_normal * (offset + 1.) + unperp(s2_normal) * s;
-
-                        dest.ramp(intersection.x, intersection.y,
-                            ramp_s1.x, ramp_s1.y,
-                            ramp_start.x, ramp_start.y,
-                            pt.x + s1_normal.x * offset, pt.y + s1_normal.y * offset,
-                        );
-                        dest.ramp(pt.x + s2_normal.x * offset, pt.y + s2_normal.y * offset,
-                            ramp_end.x, ramp_end.y,
-                            ramp_s2.x, ramp_s2.y,
-                            intersection.x, intersection.y);
-
-                        
-                        dest.tri_ramp(ramp_s1.x, ramp_s1.y, ramp_s2.x, ramp_s2.y, intersection.x, intersection.y);
-
                         dest.quad(pt.x + s1_normal.x * offset, pt.y + s1_normal.y * offset,
                             intersection.x, intersection.y,
                             pt.x + s2_normal.x * offset, pt.y + s2_normal.y * offset,
@@ -986,28 +950,5 @@ fn parallel_line_join() {
         stroker.close();
         stroker.finish();
     }
-}
-
-#[test]
-fn degenerate_miter_join() {
-    
-    let mut stroker = Stroker::new(&StrokeStyle{
-        cap: LineCap::Square,
-        join: LineJoin::Miter,
-        width: 1.0,
-        ..Default::default()});
-
-    stroker.move_to(Point::new(-204.48355, 528.4429), false);
-    stroker.line_to(Point::new(-203.89037, 529.0532));
-    stroker.line_to(Point::new(-202.58539, 530.396,));
-    stroker.line_to(Point::new(-201.2804, 531.73883,));
-    stroker.line_to(Point::new(-200.68721, 532.3492,));
-
-    let result = stroker.finish();
-    
-    for v in result {
-        assert!(v.y >= 527.);
-    }
-
 }
 
