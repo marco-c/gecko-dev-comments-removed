@@ -30,14 +30,27 @@ function fireCopyEvent(element) {
 
 
 
+function getComputedViewProperties(view) {
+  return Array.from(
+    view.styleDocument.querySelectorAll(
+      "#computed-container .computed-property-view"
+    )
+  );
+}
+
+
+
+
+
+
+
+
 
 
 
 function getComputedViewProperty(view, name) {
   let prop;
-  for (const property of view.styleDocument.querySelectorAll(
-    "#computed-container .computed-property-view"
-  )) {
+  for (const property of getComputedViewProperties(view)) {
     const nameSpan = property.querySelector(".computed-property-name");
     const valueSpan = property.querySelector(".computed-property-value");
 
@@ -120,9 +133,8 @@ var getComputedViewMatchedRules = async function (view, name) {
 
 
 
-function getComputedViewPropertyValue(view, name, propertyName) {
-  return getComputedViewProperty(view, name, propertyName).valueSpan
-    .textContent;
+function getComputedViewPropertyValue(view, name) {
+  return getComputedViewProperty(view, name).valueSpan.textContent;
 }
 
 
