@@ -6,7 +6,6 @@
 
 
 
-
 add_task(async function test_unavailable_product() {
   await BrowserTestUtils.withNewTab(
     {
@@ -64,7 +63,6 @@ add_task(async function test_unavailable_product() {
     }
   );
 });
-
 
 
 

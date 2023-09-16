@@ -37,8 +37,7 @@ add_task(async function test_offline_warning() {
       );
 
       verifyAnalysisDetailsHidden(shoppingContainer);
-
-      ok(shoppingContainer.settingsEl, "Got the shopping-settings element");
+      verifyFooterHidden(shoppingContainer);
     }
   );
 });

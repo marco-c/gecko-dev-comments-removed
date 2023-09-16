@@ -31,8 +31,7 @@ add_task(async function test_not_enough_reviews() {
       );
 
       verifyAnalysisDetailsHidden(shoppingContainer);
-
-      ok(shoppingContainer.settingsEl, "Got the shopping-settings element");
+      verifyFooterVisible(shoppingContainer);
     }
   );
 });
