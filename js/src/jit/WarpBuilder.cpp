@@ -688,6 +688,8 @@ bool WarpBuilder::build_Nop(BytecodeLocation) { return true; }
 
 bool WarpBuilder::build_NopDestructuring(BytecodeLocation) { return true; }
 
+bool WarpBuilder::build_NopIsAssignOp(BytecodeLocation) { return true; }
+
 bool WarpBuilder::build_TryDestructuring(BytecodeLocation) {
   
   

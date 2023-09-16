@@ -695,6 +695,16 @@
 
 
 
+ \
+    MACRO(NopIsAssignOp, nop_is_assign_op, NULL, 1, 0, 0, JOF_BYTE) \
+    
+
+
+
+
+
+
+
 
 
 
@@ -3563,14 +3573,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(230))     \
   IF_RECORD_TUPLE(, MACRO(231))     \
   IF_RECORD_TUPLE(, MACRO(232))     \
   IF_RECORD_TUPLE(, MACRO(233))     \
   IF_RECORD_TUPLE(, MACRO(234))     \
   IF_RECORD_TUPLE(, MACRO(235))     \
   IF_RECORD_TUPLE(, MACRO(236))     \
-  MACRO(237)                                   \
+  IF_RECORD_TUPLE(, MACRO(237))     \
   MACRO(238)                                   \
   MACRO(239)                                   \
   MACRO(240)                                   \
