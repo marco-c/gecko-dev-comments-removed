@@ -396,6 +396,18 @@ void WebTransport::ResolveWaitingConnection(
   
   mReliability = aReliability;
 
+  mChild->SendGetMaxDatagramSize()->Then(
+      GetCurrentSerialEventTarget(), __func__,
+      [self = RefPtr{this}](uint64_t&& aMaxDatagramSize) {
+        MOZ_ASSERT(self->mDatagrams);
+        self->mDatagrams->SetMaxDatagramSize(aMaxDatagramSize);
+        LOG(("max datagram size for the session is %" PRIu64,
+             aMaxDatagramSize));
+      },
+      [](const mozilla::ipc::ResponseRejectReason& aReason) {
+        LOG(("WebTransport fetching maxDatagramSize failed"));
+      });
+
   
   mReady->MaybeResolveWithUndefined();
 
@@ -914,7 +926,7 @@ class BFCacheNotifyWTRunnable final : public WorkerProxyToMainThreadRunnable {
 
 void WebTransport::NotifyToWindow(bool aCreated) const {
   if (NS_IsMainThread()) {
-    NotifyBFCacheOnMainThread(GetParentObject()->AsInnerWindow(), aCreated);
+    NotifyBFCacheOnMainThread(GetParentObject()->GetAsInnerWindow(), aCreated);
     return;
   }
 

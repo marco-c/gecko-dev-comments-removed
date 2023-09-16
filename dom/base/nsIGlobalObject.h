@@ -219,7 +219,7 @@ class nsIGlobalObject : public nsISupports,
 
   
   
-  nsPIDOMWindowInner* AsInnerWindow();
+  nsPIDOMWindowInner* GetAsInnerWindow();
 
   void QueueMicrotask(mozilla::dom::VoidFunction& aCallback);
 
