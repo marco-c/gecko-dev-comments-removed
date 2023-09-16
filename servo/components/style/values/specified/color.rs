@@ -1080,7 +1080,7 @@ impl ColorScheme {
 
     
     pub fn raw_bits(&self) -> u8 {
-        self.bits.bits
+        self.bits.bits()
     }
 }
 

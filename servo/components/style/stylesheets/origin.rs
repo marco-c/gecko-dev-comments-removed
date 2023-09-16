@@ -74,7 +74,7 @@ impl OriginSet {
     
     
     
-    pub fn iter(&self) -> OriginSetIterator {
+    pub fn iter_origins(&self) -> OriginSetIterator {
         OriginSetIterator {
             set: *self,
             cur: 0,
