@@ -17,8 +17,6 @@ import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
 import android.media.projection.MediaProjectionManager;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import android.view.Surface;
 import androidx.annotation.Nullable;
 
@@ -115,7 +113,7 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     
     mediaProjection.registerCallback(mediaProjectionCallback, surfaceTextureHelper.getHandler());
 
-    updateVirtualDisplay();
+    createVirtualDisplay();
     capturerObserver.onCapturerStarted(true);
     surfaceTextureHelper.startListening(ScreenCapturerAndroid.this);
   }
@@ -180,26 +178,17 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
     
     
     
-    ThreadUtils.invokeAtFrontUninterruptibly(
-        surfaceTextureHelper.getHandler(), this::updateVirtualDisplay);
+    ThreadUtils.invokeAtFrontUninterruptibly(surfaceTextureHelper.getHandler(), new Runnable() {
+      @Override
+      public void run() {
+        virtualDisplay.release();
+        createVirtualDisplay();
+      }
+    });
   }
 
-  private void updateVirtualDisplay() {
-    surfaceTextureHelper.setTextureSize(width, height);
-    
-    
-    
-    if (virtualDisplay == null || VERSION.SDK_INT < VERSION_CODES.S) {
-      createVirtualDisplay();
-    } else {
-      virtualDisplay.resize(width, height, VIRTUAL_DISPLAY_DPI);
-      virtualDisplay.setSurface(new Surface(surfaceTextureHelper.getSurfaceTexture()));
-    }
-  }
   private void createVirtualDisplay() {
-    if (virtualDisplay != null) {
-      virtualDisplay.release();
-    }
+    surfaceTextureHelper.setTextureSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
         VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
         null , null );
