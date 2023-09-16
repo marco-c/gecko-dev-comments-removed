@@ -30,7 +30,7 @@
 #include "frontend/TokenStream.h"       
 #include "irregexp/RegExpAPI.h"         
 #include "js/CharacterEncoding.h"  
-#include "js/ColumnNumber.h"          
+#include "js/ColumnNumber.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/GCAPI.h"                 
 #include "js/HeapAPI.h"               
@@ -493,7 +493,8 @@ bool ConvertScriptStencil(JSContext* cx, FrontendContext* fc,
   scriptExtra.extent.toStringStart = smooshScript.extent.to_string_start;
   scriptExtra.extent.toStringEnd = smooshScript.extent.to_string_end;
   scriptExtra.extent.lineno = smooshScript.extent.lineno;
-  scriptExtra.extent.column = smooshScript.extent.column;
+  scriptExtra.extent.column =
+      JS::LimitedColumnNumberZeroOrigin(smooshScript.extent.column);
 
   if (isFunction) {
     if (smooshScript.fun_name.IsSome()) {
