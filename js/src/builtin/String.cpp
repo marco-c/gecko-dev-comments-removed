@@ -3992,19 +3992,8 @@ SharedShape* StringObject::assignInitialShape(JSContext* cx,
 
 JSObject* StringObject::createPrototype(JSContext* cx, JSProtoKey key) {
   Rooted<JSString*> empty(cx, cx->runtime()->emptyString);
-
-  
-  
-  
-  
-  
-  
-  
-  
   Rooted<StringObject*> proto(
-      cx, GlobalObject::createBlankPrototype<StringObject>(
-              cx, cx->global(),
-              ObjectFlags({ObjectFlag::NeedsProxyGetSetResultValidation})));
+      cx, GlobalObject::createBlankPrototype<StringObject>(cx, cx->global()));
   if (!proto) {
     return nullptr;
   }

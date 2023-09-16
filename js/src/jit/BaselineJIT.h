@@ -424,11 +424,6 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
   jsbytecode* faultPC = nullptr;
 
   
-  
-  
-  jsid tempId = PropertyKey::Void();
-
-  
   uint32_t numFrames = 0;
 
   
@@ -438,8 +433,6 @@ struct alignas(uintptr_t) BaselineBailoutInfo {
   BaselineBailoutInfo(const BaselineBailoutInfo&) = default;
 
   void operator=(const BaselineBailoutInfo&) = delete;
-
-  void trace(JSTracer* aTrc);
 };
 
 enum class BailoutReason {
