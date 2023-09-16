@@ -152,6 +152,15 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
   static Layout* sWriteCopyView;
   static RTL_RUN_ONCE sEnsureOnce;
 
+  
+  
+  
+  
+  
+  
+  
+  static nt::SRWLock sLock;
+
   static ULONG NTAPI EnsureWriteCopyViewOnce(PRTL_RUN_ONCE, PVOID, PVOID*);
   static Layout* EnsureWriteCopyView(bool requireKernel32Exports = false);
 
@@ -163,6 +172,10 @@ class MOZ_TRIVIAL_CTOR_DTOR SharedSection final : public nt::SharedSection {
  public:
   
   static void Reset(HANDLE aNewSectionObject = sSectionHandle);
+
+  static inline nt::AutoSharedLock AutoNoReset() {
+    return nt::AutoSharedLock{sLock};
+  }
 
   
   static void ConvertToReadOnly();
