@@ -646,7 +646,6 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
         
         mozilla::FilePreferences::InitDirectoriesAllowlist();
         mozilla::FilePreferences::InitPrefs();
-        OverrideDefaultLocaleIfNeeded();
       }
 
 #if defined(MOZ_SANDBOX)
