@@ -238,6 +238,11 @@ class WebMDemuxer : public MediaDataDemuxer,
   
   int64_t mLastWebMBlockOffset;
   const bool mIsMediaSource;
+  
+  
+  
+  
+  bool mProcessedDiscardPadding = false;
 
   EncryptionInfo mCrypto;
 };
