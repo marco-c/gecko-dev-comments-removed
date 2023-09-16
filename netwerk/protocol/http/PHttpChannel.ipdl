@@ -64,15 +64,6 @@ parent:
 
   
   
-  
-  async SetCookies(nsCString baseDomain,
-                                    OriginAttributes attrs,
-                                    nullable nsIURI host,
-                                    bool fromHttp,
-                                    CookieStruct[] cookies);
-
-  
-  
   async DeletingChannel();
 
   

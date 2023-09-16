@@ -6,9 +6,6 @@
 #include "Cookie.h"
 #include "CookieCommons.h"
 #include "CookieLogging.h"
-#include "CookieNotification.h"
-#include "nsCOMPtr.h"
-#include "nsICookieNotification.h"
 #include "CookieStorage.h"
 #include "mozilla/dom/nsMixedContentBlocker.h"
 #include "nsIMutableArray.h"
@@ -284,7 +281,7 @@ void CookieStorage::RemoveCookie(const nsACString& aBaseDomain,
 
   if (cookie) {
     
-    NotifyChanged(cookie, nsICookieNotification::COOKIE_DELETED, aBaseDomain);
+    NotifyChanged(cookie, u"deleted");
   }
 }
 
@@ -314,8 +311,7 @@ void CookieStorage::RemoveCookiesWithOriginAttributes(
       RemoveCookieFromList(iter);
 
       if (cookie) {
-        NotifyChanged(cookie, nsICookieNotification::COOKIE_DELETED,
-                      aBaseDomain);
+        NotifyChanged(cookie, u"deleted");
       }
     }
   }
@@ -349,8 +345,7 @@ void CookieStorage::RemoveCookiesFromExactHost(
       RemoveCookieFromList(iter);
 
       if (cookie) {
-        NotifyChanged(cookie, nsICookieNotification::COOKIE_DELETED,
-                      aBaseDomain);
+        NotifyChanged(cookie, u"deleted");
       }
     }
   }
@@ -365,42 +360,27 @@ void CookieStorage::RemoveAll() {
 
   RemoveAllInternal();
 
-  NotifyChanged(nullptr, nsICookieNotification::ALL_COOKIES_CLEARED, ""_ns);
+  NotifyChanged(nullptr, u"cleared");
 }
 
 
-void CookieStorage::NotifyChanged(nsISupports* aSubject,
-                                  nsICookieNotification::Action aAction,
-                                  const nsACString& aBaseDomain,
-                                  dom::BrowsingContext* aBrowsingContext,
-                                  bool aIsThirdPartyCookie,
+
+
+
+
+
+
+
+void CookieStorage::NotifyChanged(nsISupports* aSubject, const char16_t* aData,
                                   bool aOldCookieIsSession) {
   nsCOMPtr<nsIObserverService> os = services::GetObserverService();
   if (!os) {
     return;
   }
-
-  nsCOMPtr<nsICookie> cookie;
-  nsCOMPtr<nsIArray> batchDeletedCookies;
-
-  if (aAction == nsICookieNotification::COOKIES_BATCH_DELETED) {
-    batchDeletedCookies = do_QueryInterface(aSubject);
-  } else {
-    cookie = do_QueryInterface(aSubject);
-  }
-
-  uint64_t browsingContextId = 0;
-  if (aBrowsingContext) {
-    browsingContextId = aBrowsingContext->Id();
-  }
-
-  nsCOMPtr<nsICookieNotification> notification =
-      new CookieNotification(aAction, cookie, aBaseDomain, batchDeletedCookies,
-                             browsingContextId, aIsThirdPartyCookie);
   
-  os->NotifyObservers(notification, NotificationTopic(), u"");
+  os->NotifyObservers(aSubject, NotificationTopic(), aData);
 
-  NotifyChangedInternal(notification, aOldCookieIsSession);
+  NotifyChangedInternal(aSubject, aData, aOldCookieIsSession);
 }
 
 
@@ -413,9 +393,7 @@ void CookieStorage::AddCookie(nsIConsoleReportCollector* aCRC,
                               const OriginAttributes& aOriginAttributes,
                               Cookie* aCookie, int64_t aCurrentTimeInUsec,
                               nsIURI* aHostURI, const nsACString& aCookieHeader,
-                              bool aFromHttp,
-                              dom::BrowsingContext* aBrowsingContext,
-                              bool aIsThirdPartyCookie) {
+                              bool aFromHttp) {
   int64_t currentTime = aCurrentTimeInUsec / PR_USEC_PER_SEC;
 
   CookieListIter exactIter{};
@@ -535,9 +513,7 @@ void CookieStorage::AddCookie(nsIConsoleReportCollector* aCRC,
       if (aCookie->Expiry() <= currentTime) {
         COOKIE_LOGFAILURE(SET_COOKIE, aHostURI, aCookieHeader,
                           "previously stored cookie was deleted");
-        NotifyChanged(oldCookie, nsICookieNotification::COOKIE_DELETED,
-                      aBaseDomain, aBrowsingContext, aIsThirdPartyCookie,
-                      oldCookieIsSession);
+        NotifyChanged(oldCookie, u"deleted", oldCookieIsSession);
         return;
       }
 
@@ -614,15 +590,10 @@ void CookieStorage::AddCookie(nsIConsoleReportCollector* aCRC,
   
   
   if (purgedList) {
-    NotifyChanged(purgedList, nsICookieNotification::COOKIES_BATCH_DELETED,
-                  ""_ns);
+    NotifyChanged(purgedList, u"batch-deleted");
   }
 
-  
-  NotifyChanged(aCookie,
-                foundCookie ? nsICookieNotification::COOKIE_CHANGED
-                            : nsICookieNotification::COOKIE_ADDED,
-                aBaseDomain, aBrowsingContext, aIsThirdPartyCookie,
+  NotifyChanged(aCookie, foundCookie ? u"changed" : u"added",
                 oldCookieIsSession);
 }
 

@@ -45,10 +45,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   static already_AddRefed<BounceTrackingState> GetOrCreate(
       dom::BrowsingContextWebProgress* aWebProgress);
 
-  
-  
-  static void ResetAll();
-
   BounceTrackingRecord* GetBounceTrackingRecord();
 
   void ResetBounceTrackingRecord();
@@ -64,10 +60,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   nsresult OnStartNavigation(nsIPrincipal* aTriggeringPrincipal,
                              const bool aHasValidUserGestureActivation);
-
-  
-  
-  nsresult OnCookieWrite(const nsACString& aSiteHost);
 
   
   
@@ -132,6 +124,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   nsresult OnServiceWorkerActivation();
+
+  
+  
+  nsresult OnNetworkCookieWrite();
 };
 
 }  
