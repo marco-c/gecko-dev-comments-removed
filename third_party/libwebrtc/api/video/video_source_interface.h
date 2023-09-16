@@ -35,6 +35,7 @@ struct RTC_EXPORT VideoSinkWants {
   VideoSinkWants();
   VideoSinkWants(const VideoSinkWants&);
   ~VideoSinkWants();
+
   
   
   bool rotation_applied = false;
@@ -85,7 +86,11 @@ struct RTC_EXPORT VideoSinkWants {
   absl::optional<FrameSize> requested_resolution;
 
   
-  bool is_active = true;
+  
+  
+  
+  
+  bool is_active = false;
 
   
   
