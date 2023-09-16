@@ -88,7 +88,6 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   SwizzleDynamicIndexingMethods();
 
   mMenuDelegate = [[MenuDelegate alloc] initWithGeckoMenu:this];
-  mMenuDelegate.menuIsInMenubar = mMenuGroupOwner->GetMenuBar() != nullptr;
 
   if (!nsMenuBarX::sNativeEventTarget) {
     nsMenuBarX::sNativeEventTarget = [[NativeMenuItemTarget alloc] init];
@@ -1151,20 +1150,6 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   
   if (nsMenuX::sIndexingMenuLevel > 0) {
     return;
-  }
-
-  if (self.menuIsInMenubar) {
-    
-    
-    nsIRollupListener* rollupListener = nsBaseWidget::GetActiveRollupListener();
-    if (rollupListener) {
-      nsCOMPtr<nsIWidget> rollupWidget = rollupListener->GetRollupWidget();
-      if (rollupWidget) {
-        rollupListener->Rollup({0, nsIRollupListener::FlushViews::Yes});
-        [menu cancelTracking];
-        return;
-      }
-    }
   }
 
   
