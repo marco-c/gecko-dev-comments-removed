@@ -81,6 +81,7 @@ TEST(CubebDeviceEnumerator, EnumerateSimple)
   
   
   
+  
   MockCubeb* mock = new MockCubeb();
   mozilla::CubebUtils::ForceSetCubebContext(mock->AsCubebContext());
 

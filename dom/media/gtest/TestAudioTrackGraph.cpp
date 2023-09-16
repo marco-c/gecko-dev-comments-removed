@@ -2460,6 +2460,14 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   Unused << WaitFor(primaryStarted);
   Unused << WaitFor(partnerStarted);
 
+  nsIThread* currentThread = NS_GetCurrentThread();
+  cubeb_state inputState = CUBEB_STATE_STARTED;
+  MediaEventListener inputStateListener = inputStream->StateEvent().Connect(
+      currentThread, [&](cubeb_state aState) { inputState = aState; });
+  cubeb_state partnerState = CUBEB_STATE_STARTED;
+  MediaEventListener partnerStateListener = partnerStream->StateEvent().Connect(
+      currentThread, [&](cubeb_state aState) { partnerState = aState; });
+
   
   DispatchFunction([&] {
     processingTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
@@ -2500,6 +2508,13 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   
   
   EXPECT_LE(nrDiscontinuities, 1U);
+
+  SpinEventLoopUntil("streams have stopped"_ns, [&] {
+    return inputState == CUBEB_STATE_STOPPED &&
+           partnerState == CUBEB_STATE_STOPPED;
+  });
+  inputStateListener.Disconnect();
+  partnerStateListener.Disconnect();
 }
 
 TEST(TestAudioTrackGraph, CrossGraphPort)

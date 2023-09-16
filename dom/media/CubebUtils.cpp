@@ -301,6 +301,9 @@ cubeb* GetCubebContext() {
 
 void ForceSetCubebContext(cubeb* aCubebContext) {
   StaticMutexAutoLock lock(sMutex);
+  if (sCubebContext) {
+    cubeb_destroy(sCubebContext);
+  }
   sCubebContext = aCubebContext;
   sCubebState = CubebState::Initialized;
 }
