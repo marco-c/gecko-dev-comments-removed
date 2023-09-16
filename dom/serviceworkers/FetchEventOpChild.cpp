@@ -197,9 +197,10 @@ NS_IMPL_ISUPPORTS(SynthesizeResponseWatcher, nsIInterceptedBodyCallback)
       std::move(aKeepAliveToken));
 
   actor->mWasSent = true;
+  RefPtr<GenericPromise> promise = actor->mPromiseHolder.Ensure(__func__);
   Unused << aManager->SendPFetchEventOpConstructor(actor, actor->mArgs);
-
-  return actor->mPromiseHolder.Ensure(__func__);
+  
+  return promise;
 }
 
 FetchEventOpChild::~FetchEventOpChild() {
