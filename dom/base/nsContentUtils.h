@@ -1695,6 +1695,11 @@ class nsContentUtils {
   
 
 
+  static nsAtom* GetEventTypeFromMessage(EventMessage aEventMessage);
+
+  
+
+
 
   static EventMessage GetEventMessageAndAtomForListener(const nsAString& aName,
                                                         nsAtom** aOnName);

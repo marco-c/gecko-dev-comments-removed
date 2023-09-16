@@ -9,6 +9,7 @@
 
 #include "js/loader/LoadedScript.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/BinarySearch.h"
 #include "mozilla/CycleCollectedJSRuntime.h"
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/EventDispatcher.h"
@@ -63,11 +64,6 @@ namespace mozilla {
 using namespace dom;
 using namespace hal;
 
-#define EVENT_TYPE_EQUALS(ls, message, userType, allEvents)                    \
-  ((ls->mEventMessage == message &&                                            \
-    (ls->mEventMessage != eUnidentifiedEvent || ls->mTypeAtom == userType)) || \
-   (allEvents && ls->mAllEvents))
-
 static const uint32_t kAllMutationBits =
     NS_EVENT_BITS_MUTATION_SUBTREEMODIFIED |
     NS_EVENT_BITS_MUTATION_NODEINSERTED | NS_EVENT_BITS_MUTATION_NODEREMOVED |
@@ -97,6 +93,29 @@ static uint32_t MutationBitForEventType(EventMessage aEventType) {
   }
   return 0;
 }
+
+class ListenerMapEntryComparator {
+ public:
+  explicit ListenerMapEntryComparator(nsAtom* aTarget)
+      : mAddressOfEventType(reinterpret_cast<uintptr_t>(aTarget)) {}
+
+  int operator()(
+      const EventListenerManager::EventListenerMapEntry& aEntry) const {
+    uintptr_t value = reinterpret_cast<uintptr_t>(aEntry.mTypeAtom.get());
+    if (mAddressOfEventType == value) {
+      return 0;
+    }
+
+    if (mAddressOfEventType < value) {
+      return -1;
+    }
+
+    return 1;
+  }
+
+ private:
+  const uintptr_t mAddressOfEventType;  
+};
 
 uint32_t EventListenerManager::sMainThreadCreatedCount = 0;
 
@@ -147,8 +166,17 @@ void EventListenerManager::RemoveAllListenersSilently() {
     return;
   }
   mClearingListeners = true;
-  mListeners.Clear();
+  mListenerMap.Clear();
   mClearingListeners = false;
+}
+
+inline void ImplCycleCollectionTraverse(
+    nsCycleCollectionTraversalCallback& aCallback,
+    EventListenerManager::EventListenerMap& aField, const char* aName,
+    uint32_t aFlags = 0) {
+  for (const auto& entry : aField.mEntries) {
+    ImplCycleCollectionTraverse(aCallback, *entry.mListeners, aName);
+  }
 }
 
 inline void ImplCycleCollectionTraverse(
@@ -179,7 +207,7 @@ inline void ImplCycleCollectionTraverse(
 NS_IMPL_CYCLE_COLLECTION_CLASS(EventListenerManager)
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(EventListenerManager)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListeners)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListenerMap);
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(EventListenerManager)
@@ -210,6 +238,9 @@ void EventListenerManager::AddEventListenerInternal(
     bool aAllEvents, AbortSignal* aSignal) {
   MOZ_ASSERT((aEventMessage && aTypeAtom) || aAllEvents,  
              "Missing type");
+  MOZ_ASSERT_IF(
+      aEventMessage != eUnidentifiedEvent && !aAllEvents,
+      aTypeAtom == nsContentUtils::GetEventTypeFromMessage(aEventMessage));
 
   if (!aListenerHolder || mClearingListeners) {
     return;
@@ -223,15 +254,15 @@ void EventListenerManager::AddEventListenerInternal(
   
   
 
-  Listener* listener;
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; i++) {
-    listener = &mListeners.ElementAt(i);
+  RefPtr<ListenerArray> listeners =
+      aAllEvents ? mListenerMap.GetOrCreateListenersForAllEvents()
+                 : mListenerMap.GetOrCreateListenersForType(aTypeAtom);
+
+  for (const Listener& listener : listeners->NonObservingRange()) {
     
-    if (listener->mListenerIsHandler == aHandler &&
-        listener->mFlags.EqualsForAddition(aFlags) &&
-        EVENT_TYPE_EQUALS(listener, aEventMessage, aTypeAtom, aAllEvents) &&
-        listener->mListener == aListenerHolder) {
+    if (listener.mListenerIsHandler == aHandler &&
+        listener.mFlags.EqualsForAddition(aFlags) &&
+        listener.mListener == aListenerHolder) {
       return;
     }
   }
@@ -239,8 +270,7 @@ void EventListenerManager::AddEventListenerInternal(
   ClearNoListenersForEvents();
   mNoListenerForEventAtom = nullptr;
 
-  listener =
-      aAllEvents ? mListeners.InsertElementAt(0) : mListeners.AppendElement();
+  Listener* listener = listeners->AppendElement();
   listener->mEventMessage = aEventMessage;
   listener->mTypeAtom = aTypeAtom;
   listener->mFlags = aFlags;
@@ -771,48 +801,41 @@ void EventListenerManager::RemoveEventListenerInternal(
     return;
   }
 
-  Listener* listener;
+  Maybe<size_t> entryIndex = aAllEvents
+                                 ? mListenerMap.EntryIndexForAllEvents()
+                                 : mListenerMap.EntryIndexForType(aUserType);
+  if (!entryIndex) {
+    return;
+  }
 
-  uint32_t count = mListeners.Length();
-  bool deviceType = IsDeviceType(aEventMessage);
+  ListenerArray& listenerArray = *mListenerMap.mEntries[*entryIndex].mListeners;
 
-  RefPtr<EventListenerManager> kungFuDeathGrip(this);
-
-  for (uint32_t i = 0; i < count; ++i) {
-    listener = &mListeners.ElementAt(i);
-    if (EVENT_TYPE_EQUALS(listener, aEventMessage, aUserType, aAllEvents)) {
+  Maybe<uint32_t> listenerIndex = [&]() -> Maybe<uint32_t> {
+    uint32_t count = listenerArray.Length();
+    for (uint32_t i = 0; i < count; ++i) {
+      Listener* listener = &listenerArray.ElementAt(i);
       if (listener->mListener == aListenerHolder &&
           listener->mFlags.EqualsForRemoval(aFlags)) {
-        mListeners.RemoveElementAt(i);
-        NotifyEventListenerRemoved(aUserType);
-        if (!aAllEvents && deviceType) {
-          DisableDevice(aEventMessage);
-        }
-        return;
+        return Some(i);
       }
     }
-  }
-}
+    return Nothing();
+  }();
 
-bool EventListenerManager::Listener::MatchesEventMessage(
-    const WidgetEvent* aEvent, EventMessage aEventMessage) const {
-  MOZ_ASSERT(aEventMessage == aEvent->mMessage ||
-                 aEventMessage == EventListenerManager::GetLegacyEventMessage(
-                                      aEvent->mMessage),
-             "aEvent and aEventMessage should agree, modulo legacyness");
-
-  if (MOZ_UNLIKELY(mAllEvents)) {
-    return true;
+  if (!listenerIndex) {
+    return;
   }
 
-  
-  
-  
-  
-  if (aEvent->mMessage == eUnidentifiedEvent) {
-    return mTypeAtom == aEvent->mSpecifiedEventType;
+  listenerArray.RemoveElementAt(*listenerIndex);
+  if (listenerArray.IsEmpty()) {
+    mListenerMap.mEntries.RemoveElementAt(*entryIndex);
   }
-  return mEventMessage == aEventMessage;
+
+  RefPtr<EventListenerManager> kungFuDeathGrip(this);
+  NotifyEventListenerRemoved(aUserType);
+  if (!aAllEvents && IsDeviceType(aEventMessage)) {
+    DisableDevice(aEventMessage);
+  }
 }
 
 static bool IsDefaultPassiveWhenOnRoot(EventMessage aMessage) {
@@ -885,15 +908,18 @@ void EventListenerManager::RemoveEventListenerByType(
 }
 
 EventListenerManager::Listener* EventListenerManager::FindEventHandler(
-    EventMessage aEventMessage, nsAtom* aTypeAtom) {
+    nsAtom* aTypeAtom) {
   
   
-  Listener* listener;
-  uint32_t count = mListeners.Length();
+  RefPtr<ListenerArray> listeners = mListenerMap.GetListenersForType(aTypeAtom);
+  if (!listeners) {
+    return nullptr;
+  }
+
+  uint32_t count = listeners->Length();
   for (uint32_t i = 0; i < count; ++i) {
-    listener = &mListeners.ElementAt(i);
-    if (listener->mListenerIsHandler &&
-        EVENT_TYPE_EQUALS(listener, aEventMessage, aTypeAtom, false)) {
+    Listener* listener = &listeners->ElementAt(i);
+    if (listener->mListenerIsHandler) {
       return listener;
     }
   }
@@ -906,7 +932,7 @@ EventListenerManager::Listener* EventListenerManager::SetEventHandlerInternal(
   MOZ_ASSERT(aName);
 
   EventMessage eventMessage = GetEventMessage(aName);
-  Listener* listener = FindEventHandler(eventMessage, aName);
+  Listener* listener = FindEventHandler(aName);
 
   if (!listener) {
     
@@ -921,7 +947,7 @@ EventListenerManager::Listener* EventListenerManager::SetEventHandlerInternal(
     AddEventListenerInternal(EventListenerHolder(jsEventHandler), eventMessage,
                              aName, flags, true);
 
-    listener = FindEventHandler(eventMessage, aName);
+    listener = FindEventHandler(aName);
   } else {
     JSEventHandler* jsEventHandler = listener->GetJSEventHandler();
     MOZ_ASSERT(jsEventHandler,
@@ -1033,15 +1059,38 @@ void EventListenerManager::RemoveEventHandler(nsAtom* aName) {
     return;
   }
 
-  EventMessage eventMessage = GetEventMessage(aName);
-  Listener* listener = FindEventHandler(eventMessage, aName);
+  Maybe<size_t> entryIndex = mListenerMap.EntryIndexForType(aName);
+  if (!entryIndex) {
+    return;
+  }
 
-  if (listener) {
-    mListeners.RemoveElementAt(uint32_t(listener - &mListeners.ElementAt(0)));
-    NotifyEventListenerRemoved(aName);
-    if (IsDeviceType(eventMessage)) {
-      DisableDevice(eventMessage);
+  ListenerArray& listenerArray = *mListenerMap.mEntries[*entryIndex].mListeners;
+
+  Maybe<uint32_t> listenerIndex = [&]() -> Maybe<uint32_t> {
+    uint32_t count = listenerArray.Length();
+    for (uint32_t i = 0; i < count; ++i) {
+      Listener* listener = &listenerArray.ElementAt(i);
+      if (listener->mListenerIsHandler) {
+        return Some(i);
+      }
     }
+    return Nothing();
+  }();
+
+  if (!listenerIndex) {
+    return;
+  }
+
+  listenerArray.RemoveElementAt(*listenerIndex);
+  if (listenerArray.IsEmpty()) {
+    mListenerMap.mEntries.RemoveElementAt(*entryIndex);
+  }
+
+  RefPtr<EventListenerManager> kungFuDeathGrip(this);
+  NotifyEventListenerRemoved(aName);
+  EventMessage eventMessage = GetEventMessage(aName);
+  if (IsDeviceType(eventMessage)) {
+    DisableDevice(eventMessage);
   }
 }
 
@@ -1366,6 +1415,66 @@ already_AddRefed<nsPIDOMWindowInner> EventListenerManager::WindowFromListener(
   return innerWindow.forget();
 }
 
+Maybe<size_t> EventListenerManager::EventListenerMap::EntryIndexForType(
+    nsAtom* aTypeAtom) const {
+  MOZ_ASSERT(aTypeAtom);
+
+  size_t matchIndexOrInsertionPoint = 0;
+  bool foundMatch = BinarySearchIf(mEntries, 0, mEntries.Length(),
+                                   ListenerMapEntryComparator(aTypeAtom),
+                                   &matchIndexOrInsertionPoint);
+  return foundMatch ? Some(matchIndexOrInsertionPoint) : Nothing();
+}
+
+Maybe<size_t> EventListenerManager::EventListenerMap::EntryIndexForAllEvents()
+    const {
+  
+  
+  return !mEntries.IsEmpty() && mEntries[0].mTypeAtom == nullptr ? Some(0)
+                                                                 : Nothing();
+}
+
+RefPtr<EventListenerManager::ListenerArray>
+EventListenerManager::EventListenerMap::GetListenersForType(
+    nsAtom* aTypeAtom) const {
+  Maybe<size_t> index = EntryIndexForType(aTypeAtom);
+  return index ? mEntries[*index].mListeners : nullptr;
+}
+
+RefPtr<EventListenerManager::ListenerArray>
+EventListenerManager::EventListenerMap::GetListenersForAllEvents() const {
+  Maybe<size_t> index = EntryIndexForAllEvents();
+  return index ? mEntries[*index].mListeners : nullptr;
+}
+
+RefPtr<EventListenerManager::ListenerArray>
+EventListenerManager::EventListenerMap::GetOrCreateListenersForType(
+    nsAtom* aTypeAtom) {
+  MOZ_ASSERT(aTypeAtom);
+  size_t matchIndexOrInsertionPoint = 0;
+  bool foundMatch = BinarySearchIf(mEntries, 0, mEntries.Length(),
+                                   ListenerMapEntryComparator(aTypeAtom),
+                                   &matchIndexOrInsertionPoint);
+  if (foundMatch) {
+    return mEntries[matchIndexOrInsertionPoint].mListeners;
+  }
+  RefPtr<ListenerArray> listeners = MakeRefPtr<ListenerArray>();
+  mEntries.InsertElementAt(matchIndexOrInsertionPoint,
+                           EventListenerMapEntry{aTypeAtom, listeners});
+
+  return listeners;
+}
+
+RefPtr<EventListenerManager::ListenerArray>
+EventListenerManager::EventListenerMap::GetOrCreateListenersForAllEvents() {
+  RefPtr<ListenerArray> listeners = GetListenersForAllEvents();
+  if (!listeners) {
+    listeners = MakeRefPtr<ListenerArray>();
+    mEntries.InsertElementAt(0, EventListenerMapEntry{nullptr, listeners});
+  }
+  return listeners;
+}
+
 void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
                                                WidgetEvent* aEvent,
                                                Event** aDOMEvent,
@@ -1383,6 +1492,93 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     aEvent->PreventDefault();
   }
 
+  if (aEvent->mFlags.mImmediatePropagationStopped) {
+    return;
+  }
+
+  Maybe<AutoHandlingUserInputStatePusher> userInputStatePusher;
+  Maybe<AutoPopupStatePusher> popupStatePusher;
+  if (mIsMainThreadELM) {
+    userInputStatePusher.emplace(UserActivation::IsUserInteractionEvent(aEvent),
+                                 aEvent);
+    popupStatePusher.emplace(
+        PopupBlocker::GetEventPopupControlState(aEvent, *aDOMEvent));
+  }
+
+  EventMessage eventMessage = aEvent->mMessage;
+  RefPtr<nsAtom> typeAtom =
+      eventMessage == eUnidentifiedEvent
+          ? aEvent->mSpecifiedEventType.get()
+          : nsContentUtils::GetEventTypeFromMessage(eventMessage);
+  if (!typeAtom) {
+    
+    
+    
+    return;
+  }
+
+  bool hasAnyListenerForEventType = false;
+
+  
+  if (RefPtr<ListenerArray> listenersForAllEvents =
+          mListenerMap.GetListenersForAllEvents()) {
+    HandleEventWithListenerArray(listenersForAllEvents, typeAtom, eventMessage,
+                                 aPresContext, aEvent, aDOMEvent,
+                                 aCurrentTarget, aItemInShadowTree);
+    hasAnyListenerForEventType = true;
+  }
+
+  
+  bool hasAnyListenerMatchingGroup = false;
+  if (RefPtr<ListenerArray> listeners =
+          mListenerMap.GetListenersForType(typeAtom)) {
+    hasAnyListenerMatchingGroup = HandleEventWithListenerArray(
+        listeners, typeAtom, eventMessage, aPresContext, aEvent, aDOMEvent,
+        aCurrentTarget, aItemInShadowTree);
+    hasAnyListenerForEventType = true;
+  }
+
+  if (!hasAnyListenerMatchingGroup && aEvent->IsTrusted()) {
+    
+    
+    EventMessage legacyEventMessage = GetLegacyEventMessage(eventMessage);
+    if (legacyEventMessage != eventMessage) {
+      MOZ_ASSERT(
+          GetLegacyEventMessage(legacyEventMessage) == legacyEventMessage,
+          "Legacy event messages should not themselves have legacy versions");
+      RefPtr<nsAtom> legacyTypeAtom =
+          nsContentUtils::GetEventTypeFromMessage(legacyEventMessage);
+      if (RefPtr<ListenerArray> legacyListeners =
+              mListenerMap.GetListenersForType(legacyTypeAtom)) {
+        HandleEventWithListenerArray(
+            legacyListeners, legacyTypeAtom, legacyEventMessage, aPresContext,
+            aEvent, aDOMEvent, aCurrentTarget, aItemInShadowTree);
+        hasAnyListenerForEventType = true;
+      }
+    }
+  }
+
+  aEvent->mCurrentTarget = nullptr;
+
+  if (mIsMainThreadELM && !hasAnyListenerForEventType) {
+    if (aEvent->mMessage != eUnidentifiedEvent) {
+      mNoListenerForEvents[2] = mNoListenerForEvents[1];
+      mNoListenerForEvents[1] = mNoListenerForEvents[0];
+      mNoListenerForEvents[0] = aEvent->mMessage;
+    } else {
+      mNoListenerForEventAtom = aEvent->mSpecifiedEventType;
+    }
+  }
+
+  if (aEvent->DefaultPrevented()) {
+    *aEventStatus = nsEventStatus_eConsumeNoDefault;
+  }
+}
+
+bool EventListenerManager::HandleEventWithListenerArray(
+    ListenerArray* aListeners, nsAtom* aTypeAtom, EventMessage aEventMessage,
+    nsPresContext* aPresContext, WidgetEvent* aEvent, Event** aDOMEvent,
+    EventTarget* aCurrentTarget, bool aItemInShadowTree) {
   auto ensureDOMEvent = [&]() {
     if (!*aDOMEvent) {
       
@@ -1396,136 +1592,88 @@ void EventListenerManager::HandleEventInternal(nsPresContext* aPresContext,
     return *aDOMEvent != nullptr;
   };
 
-  Maybe<AutoHandlingUserInputStatePusher> userInputStatePusher;
-  Maybe<AutoPopupStatePusher> popupStatePusher;
-  if (mIsMainThreadELM) {
-    userInputStatePusher.emplace(UserActivation::IsUserInteractionEvent(aEvent),
-                                 aEvent);
-    popupStatePusher.emplace(
-        PopupBlocker::GetEventPopupControlState(aEvent, *aDOMEvent));
+  Maybe<EventMessageAutoOverride> eventMessageAutoOverride;
+  bool isOverridingEventMessage = aEvent->mMessage != aEventMessage;
+  bool hasAnyListenerMatchingGroup = false;
+  bool didReplaceOnceListener = false;
+
+  for (Listener& listenerRef : aListeners->EndLimitedRange()) {
+    Listener* listener = &listenerRef;
+    if (listener->mListenerType == Listener::eNoListener) {
+      
+      continue;
+    }
+    if (!listener->mEnabled) {
+      
+      continue;
+    }
+    if (!listener->MatchesEventGroup(aEvent)) {
+      continue;
+    }
+    hasAnyListenerMatchingGroup = true;
+
+    
+    
+    if (!listener->MatchesEventPhase(aEvent) ||
+        !listener->AllowsEventTrustedness(aEvent)) {
+      continue;
+    }
+
+    Maybe<Listener> listenerHolder;
+    if (listener->mFlags.mOnce) {
+      
+      
+      
+      listenerHolder.emplace(std::move(*listener));
+      listener = listenerHolder.ptr();
+      didReplaceOnceListener = true;
+    }
+    if (ensureDOMEvent()) {
+      if (isOverridingEventMessage && !eventMessageAutoOverride) {
+        
+        
+        
+        eventMessageAutoOverride.emplace(*aDOMEvent, aEventMessage);
+      }
+      if (!HandleEventSingleListener(listener, aEvent, *aDOMEvent,
+                                     aCurrentTarget, aItemInShadowTree)) {
+        break;
+      }
+    }
   }
 
-  bool hasListener = false;
-  bool usingLegacyMessage = false;
-  bool hasRemovedListener = false;
-  EventMessage eventMessage = aEvent->mMessage;
-
-  while (!aEvent->mFlags.mImmediatePropagationStopped) {
-    Maybe<EventMessageAutoOverride> legacyAutoOverride;
-    bool hasListenerForCurrentGroup = false;
-    for (Listener& listenerRef : mListeners.EndLimitedRange()) {
-      Listener* listener = &listenerRef;
-      if (!listener->MatchesEventMessage(aEvent, eventMessage)) {
-        continue;
-      }
-      if (listener->mListenerType == Listener::eNoListener) {
-        
-        continue;
-      }
-      if (!listener->mEnabled) {
-        
-        continue;
-      }
-      hasListener = true;
-      if (!listener->MatchesEventGroup(aEvent)) {
-        continue;
-      }
-      hasListenerForCurrentGroup = true;
-
-      
-      
-      if (!listener->MatchesEventPhase(aEvent) ||
-          !listener->AllowsEventTrustedness(aEvent)) {
-        continue;
-      }
-
-      Maybe<Listener> listenerHolder;
-      if (listener->mFlags.mOnce) {
-        
-        
-        
-        listenerHolder.emplace(std::move(*listener));
-        listener = listenerHolder.ptr();
-        hasRemovedListener = true;
-      }
-      if (ensureDOMEvent()) {
-        if (usingLegacyMessage && !legacyAutoOverride) {
-          
-          
-          
-          legacyAutoOverride.emplace(*aDOMEvent, eventMessage);
-        }
-        if (!HandleEventSingleListener(listener, aEvent, *aDOMEvent,
-                                       aCurrentTarget, aItemInShadowTree)) {
-          break;
-        }
-      }
-    }
-
-    
-    
-    
-    if (hasListenerForCurrentGroup || usingLegacyMessage ||
-        !aEvent->IsTrusted()) {
-      
-      
-      break;
-    }
-    EventMessage legacyEventMessage = GetLegacyEventMessage(eventMessage);
-    if (legacyEventMessage == eventMessage) {
-      break;  
-    }
-    MOZ_ASSERT(
-        GetLegacyEventMessage(legacyEventMessage) == legacyEventMessage,
-        "Legacy event messages should not themselves have legacy versions");
-
-    
-    eventMessage = legacyEventMessage;
-    usingLegacyMessage = true;
-  }
-
-  aEvent->mCurrentTarget = nullptr;
-
-  if (hasRemovedListener) {
+  if (didReplaceOnceListener) {
     
     
     
     
-    mListeners.NonObservingRemoveElementsBy([](const Listener& aListener) {
+    size_t oldLength = aListeners->Length();
+    aListeners->NonObservingRemoveElementsBy([](const Listener& aListener) {
       return aListener.mListenerType == Listener::eNoListener;
     });
-    NotifyEventListenerRemoved(aEvent->mSpecifiedEventType);
-    if (IsDeviceType(aEvent->mMessage)) {
+    size_t newLength = aListeners->Length();
+    if (newLength == 0) {
       
+      mListenerMap.mEntries.RemoveElementsBy([](EventListenerMapEntry& entry) {
+        return entry.mListeners->IsEmpty();
+      });
+    }
+    if (newLength < oldLength) {
       
-      const auto [begin, end] = mListeners.NonObservingRange();
-      const bool hasAnyListener =
-          std::any_of(begin, end, [aEvent](const Listener& listenerRef) {
-            const Listener* listener = &listenerRef;
-            return EVENT_TYPE_EQUALS(listener, aEvent->mMessage,
-                                     aEvent->mSpecifiedEventType,
-                                      false);
-          });
-
-      if (!hasAnyListener) {
-        DisableDevice(aEvent->mMessage);
+      size_t removedCount = oldLength - newLength;
+      for (size_t i = 0; i < removedCount; i++) {
+        NotifyEventListenerRemoved(aTypeAtom);
+      }
+      if (IsDeviceType(aEventMessage)) {
+        
+        for (size_t i = 0; i < removedCount; i++) {
+          DisableDevice(aEventMessage);
+        }
       }
     }
   }
 
-  if (mIsMainThreadELM && !hasListener) {
-    if (aEvent->mMessage != eUnidentifiedEvent) {
-      mNoListenerForEvents[2] = mNoListenerForEvents[1];
-      mNoListenerForEvents[1] = mNoListenerForEvents[0];
-      mNoListenerForEvents[0] = aEvent->mMessage;
-    } else {
-      mNoListenerForEventAtom = aEvent->mSpecifiedEventType;
-    }
-  }
-
-  if (aEvent->DefaultPrevented()) {
-    *aEventStatus = nsEventStatus_eConsumeNoDefault;
-  }
+  return hasAnyListenerMatchingGroup;
 }
 
 void EventListenerManager::Disconnect() {
@@ -1616,11 +1764,10 @@ void EventListenerManager::RemoveListenerForAllEvents(
 
 bool EventListenerManager::HasMutationListeners() {
   if (mMayHaveMutationListeners) {
-    uint32_t count = mListeners.Length();
-    for (uint32_t i = 0; i < count; ++i) {
-      Listener* listener = &mListeners.ElementAt(i);
-      if (listener->mEventMessage >= eLegacyMutationEventFirst &&
-          listener->mEventMessage <= eLegacyMutationEventLast) {
+    for (const auto& entry : mListenerMap.mEntries) {
+      EventMessage message = GetEventMessage(entry.mTypeAtom);
+      if (message >= eLegacyMutationEventFirst &&
+          message <= eLegacyMutationEventLast) {
         return true;
       }
     }
@@ -1632,15 +1779,14 @@ bool EventListenerManager::HasMutationListeners() {
 uint32_t EventListenerManager::MutationListenerBits() {
   uint32_t bits = 0;
   if (mMayHaveMutationListeners) {
-    uint32_t count = mListeners.Length();
-    for (uint32_t i = 0; i < count; ++i) {
-      Listener* listener = &mListeners.ElementAt(i);
-      if (listener->mEventMessage >= eLegacyMutationEventFirst &&
-          listener->mEventMessage <= eLegacyMutationEventLast) {
-        if (listener->mEventMessage == eLegacySubtreeModified) {
+    for (const auto& entry : mListenerMap.mEntries) {
+      EventMessage message = GetEventMessage(entry.mTypeAtom);
+      if (message >= eLegacyMutationEventFirst &&
+          message <= eLegacyMutationEventLast) {
+        if (message == eLegacySubtreeModified) {
           return kAllMutationBits;
         }
-        bits |= MutationBitForEventType(listener->mEventMessage);
+        bits |= MutationBitForEventType(message);
       }
     }
   }
@@ -1669,21 +1815,30 @@ bool EventListenerManager::HasListenersForInternal(
 #endif
   NS_ASSERTION(StringBeginsWith(name, u"on"_ns),
                "Event name does not start with 'on'");
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    const Listener* listener = &mListeners.ElementAt(i);
-    if (listener->mTypeAtom == aEventNameWithOn) {
-      if (aIgnoreSystemGroup && listener->mFlags.mInSystemGroup) {
-        continue;
-      }
+  RefPtr<ListenerArray> listeners =
+      mListenerMap.GetListenersForType(aEventNameWithOn);
+  if (!listeners) {
+    return false;
+  }
+
+  MOZ_ASSERT(!listeners->IsEmpty());
+
+  if (!aIgnoreSystemGroup) {
+    return true;
+  }
+
+  
+  for (const auto& listener : listeners->NonObservingRange()) {
+    if (!listener.mFlags.mInSystemGroup) {
       return true;
     }
   }
+
   return false;
 }
 
 bool EventListenerManager::HasListeners() const {
-  return !mListeners.IsEmpty();
+  return !mListenerMap.IsEmpty();
 }
 
 nsresult EventListenerManager::GetListenerInfo(
@@ -1691,52 +1846,55 @@ nsresult EventListenerManager::GetListenerInfo(
   nsCOMPtr<EventTarget> target = mTarget;
   NS_ENSURE_STATE(target);
   aList.Clear();
-  for (const Listener& listener : mListeners.ForwardRange()) {
-    
-    
-    if (listener.mListenerType == Listener::eJSEventListener &&
-        listener.mHandlerIsString) {
-      CompileEventHandlerInternal(const_cast<Listener*>(&listener), nullptr,
-                                  nullptr);
-    }
-    nsAutoString eventType;
-    if (listener.mAllEvents) {
-      eventType.SetIsVoid(true);
-    } else if (listener.mListenerType == Listener::eNoListener) {
-      continue;
-    } else {
-      eventType.Assign(Substring(nsDependentAtomString(listener.mTypeAtom), 2));
-    }
+  for (const auto& entry : mListenerMap.mEntries) {
+    for (const Listener& listener : entry.mListeners->ForwardRange()) {
+      
+      
+      if (listener.mListenerType == Listener::eJSEventListener &&
+          listener.mHandlerIsString) {
+        CompileEventHandlerInternal(const_cast<Listener*>(&listener), nullptr,
+                                    nullptr);
+      }
+      nsAutoString eventType;
+      if (listener.mAllEvents) {
+        eventType.SetIsVoid(true);
+      } else if (listener.mListenerType == Listener::eNoListener) {
+        continue;
+      } else {
+        eventType.Assign(Substring(nsDependentAtomString(entry.mTypeAtom), 2));
+      }
 
-    JS::Rooted<JSObject*> callback(RootingCx());
-    JS::Rooted<JSObject*> callbackGlobal(RootingCx());
-    if (JSEventHandler* handler = listener.GetJSEventHandler()) {
-      if (handler->GetTypedEventHandler().HasEventHandler()) {
-        CallbackFunction* callbackFun = handler->GetTypedEventHandler().Ptr();
-        callback = callbackFun->CallableOrNull();
-        callbackGlobal = callbackFun->CallbackGlobalOrNull();
+      JS::Rooted<JSObject*> callback(RootingCx());
+      JS::Rooted<JSObject*> callbackGlobal(RootingCx());
+      if (JSEventHandler* handler = listener.GetJSEventHandler()) {
+        if (handler->GetTypedEventHandler().HasEventHandler()) {
+          CallbackFunction* callbackFun = handler->GetTypedEventHandler().Ptr();
+          callback = callbackFun->CallableOrNull();
+          callbackGlobal = callbackFun->CallbackGlobalOrNull();
+          if (!callback) {
+            
+            
+            continue;
+          }
+        }
+      } else if (listener.mListenerType == Listener::eWebIDLListener) {
+        EventListener* listenerCallback =
+            listener.mListener.GetWebIDLCallback();
+        callback = listenerCallback->CallbackOrNull();
+        callbackGlobal = listenerCallback->CallbackGlobalOrNull();
         if (!callback) {
           
           
           continue;
         }
       }
-    } else if (listener.mListenerType == Listener::eWebIDLListener) {
-      EventListener* listenerCallback = listener.mListener.GetWebIDLCallback();
-      callback = listenerCallback->CallbackOrNull();
-      callbackGlobal = listenerCallback->CallbackGlobalOrNull();
-      if (!callback) {
-        
-        
-        continue;
-      }
-    }
 
-    RefPtr<EventListenerInfo> info = new EventListenerInfo(
-        this, eventType, callback, callbackGlobal, listener.mFlags.mCapture,
-        listener.mFlags.mAllowUntrustedEvents, listener.mFlags.mInSystemGroup,
-        listener.mListenerIsHandler);
-    aList.AppendElement(info.forget());
+      RefPtr<EventListenerInfo> info = new EventListenerInfo(
+          this, eventType, callback, callbackGlobal, listener.mFlags.mCapture,
+          listener.mFlags.mAllowUntrustedEvents, listener.mFlags.mInSystemGroup,
+          listener.mListenerIsHandler);
+      aList.AppendElement(info.forget());
+    }
   }
   return NS_OK;
 }
@@ -1746,11 +1904,25 @@ EventListenerManager::Listener* EventListenerManager::GetListenerFor(
     bool aAllowsUntrusted, bool aInSystemEventGroup, bool aIsHandler) {
   NS_ENSURE_TRUE(aListener, nullptr);
 
-  for (Listener& listener : mListeners.ForwardRange()) {
-    if ((aType.IsVoid() && !listener.mAllEvents) ||
-        !Substring(nsDependentAtomString(listener.mTypeAtom), 2)
-             .Equals(aType) ||
-        listener.mListenerType == Listener::eNoListener) {
+  RefPtr<ListenerArray> listeners;
+  if (aType.IsVoid()) {
+    listeners = mListenerMap.GetListenersForAllEvents();
+  } else {
+    for (auto& mapEntry : mListenerMap.mEntries) {
+      if (RefPtr<nsAtom> typeAtom = mapEntry.mTypeAtom) {
+        if (Substring(nsDependentAtomString(typeAtom), 2).Equals(aType)) {
+          listeners = mapEntry.mListeners;
+          break;
+        }
+      }
+    }
+  }
+  if (!listeners) {
+    return nullptr;
+  }
+
+  for (Listener& listener : listeners->ForwardRange()) {
+    if (listener.mListenerType == Listener::eNoListener) {
       continue;
     }
 
@@ -1809,25 +1981,11 @@ nsresult EventListenerManager::SetListenerEnabled(
 }
 
 bool EventListenerManager::HasUnloadListeners() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (listener->mEventMessage == eUnload) {
-      return true;
-    }
-  }
-  return false;
+  return mListenerMap.GetListenersForType(nsGkAtoms::onunload) != nullptr;
 }
 
 bool EventListenerManager::HasBeforeUnloadListeners() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (listener->mEventMessage == eBeforeUnload) {
-      return true;
-    }
-  }
-  return false;
+  return mListenerMap.GetListenersForType(nsGkAtoms::onbeforeunload) != nullptr;
 }
 
 void EventListenerManager::SetEventHandler(nsAtom* aEventName,
@@ -1875,8 +2033,7 @@ void EventListenerManager::SetEventHandler(
 
 const TypedEventHandler* EventListenerManager::GetTypedEventHandler(
     nsAtom* aEventName) {
-  EventMessage eventMessage = GetEventMessage(aEventName);
-  Listener* listener = FindEventHandler(eventMessage, aEventName);
+  Listener* listener = FindEventHandler(aEventName);
 
   if (!listener) {
     return nullptr;
@@ -1895,12 +2052,29 @@ const TypedEventHandler* EventListenerManager::GetTypedEventHandler(
 
 size_t EventListenerManager::SizeOfIncludingThis(
     MallocSizeOf aMallocSizeOf) const {
+  return aMallocSizeOf(this) + mListenerMap.SizeOfExcludingThis(aMallocSizeOf);
+}
+
+size_t EventListenerManager::EventListenerMap::SizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) const {
+  size_t n = mEntries.ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (const auto& entry : mEntries) {
+    n += entry.SizeOfExcludingThis(aMallocSizeOf);
+  }
+  return n;
+}
+
+size_t EventListenerManager::EventListenerMapEntry::SizeOfExcludingThis(
+    MallocSizeOf aMallocSizeOf) const {
+  return mListeners->SizeOfIncludingThis(aMallocSizeOf);
+}
+
+size_t EventListenerManager::ListenerArray::SizeOfIncludingThis(
+    MallocSizeOf aMallocSizeOf) const {
   size_t n = aMallocSizeOf(this);
-  n += mListeners.ShallowSizeOfExcludingThis(aMallocSizeOf);
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    JSEventHandler* jsEventHandler =
-        mListeners.ElementAt(i).GetJSEventHandler();
+  n += ShallowSizeOfExcludingThis(aMallocSizeOf);
+  for (const auto& listener : NonObservingRange()) {
+    JSEventHandler* jsEventHandler = listener.GetJSEventHandler();
     if (jsEventHandler) {
       n += jsEventHandler->SizeOfIncludingThis(aMallocSizeOf);
     }
@@ -1908,19 +2082,27 @@ size_t EventListenerManager::SizeOfIncludingThis(
   return n;
 }
 
+uint32_t EventListenerManager::ListenerCount() const {
+  uint32_t count = 0;
+  for (const auto& entry : mListenerMap.mEntries) {
+    count += entry.mListeners->Length();
+  }
+  return count;
+}
+
 void EventListenerManager::MarkForCC() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    const Listener& listener = mListeners.ElementAt(i);
-    JSEventHandler* jsEventHandler = listener.GetJSEventHandler();
-    if (jsEventHandler) {
-      const TypedEventHandler& typedHandler =
-          jsEventHandler->GetTypedEventHandler();
-      if (typedHandler.HasEventHandler()) {
-        typedHandler.Ptr()->MarkForCC();
+  for (const auto& entry : mListenerMap.mEntries) {
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      JSEventHandler* jsEventHandler = listener.GetJSEventHandler();
+      if (jsEventHandler) {
+        const TypedEventHandler& typedHandler =
+            jsEventHandler->GetTypedEventHandler();
+        if (typedHandler.HasEventHandler()) {
+          typedHandler.Ptr()->MarkForCC();
+        }
+      } else if (listener.mListenerType == Listener::eWebIDLListener) {
+        listener.mListener.GetWebIDLCallback()->MarkForCC();
       }
-    } else if (listener.mListenerType == Listener::eWebIDLListener) {
-      listener.mListener.GetWebIDLCallback()->MarkForCC();
     }
   }
   if (mRefCnt.IsPurple()) {
@@ -1929,34 +2111,37 @@ void EventListenerManager::MarkForCC() {
 }
 
 void EventListenerManager::TraceListeners(JSTracer* aTrc) {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    const Listener& listener = mListeners.ElementAt(i);
-    JSEventHandler* jsEventHandler = listener.GetJSEventHandler();
-    if (jsEventHandler) {
-      const TypedEventHandler& typedHandler =
-          jsEventHandler->GetTypedEventHandler();
-      if (typedHandler.HasEventHandler()) {
-        mozilla::TraceScriptHolder(typedHandler.Ptr(), aTrc);
+  for (const auto& entry : mListenerMap.mEntries) {
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      JSEventHandler* jsEventHandler = listener.GetJSEventHandler();
+      if (jsEventHandler) {
+        const TypedEventHandler& typedHandler =
+            jsEventHandler->GetTypedEventHandler();
+        if (typedHandler.HasEventHandler()) {
+          mozilla::TraceScriptHolder(typedHandler.Ptr(), aTrc);
+        }
+      } else if (listener.mListenerType == Listener::eWebIDLListener) {
+        mozilla::TraceScriptHolder(listener.mListener.GetWebIDLCallback(),
+                                   aTrc);
       }
-    } else if (listener.mListenerType == Listener::eWebIDLListener) {
-      mozilla::TraceScriptHolder(listener.mListener.GetWebIDLCallback(), aTrc);
+      
+      
     }
-    
-    
   }
 }
 
 bool EventListenerManager::HasNonSystemGroupListenersForUntrustedKeyEvents() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (!listener->mFlags.mInSystemGroup &&
-        listener->mFlags.mAllowUntrustedEvents &&
-        (listener->mTypeAtom == nsGkAtoms::onkeydown ||
-         listener->mTypeAtom == nsGkAtoms::onkeypress ||
-         listener->mTypeAtom == nsGkAtoms::onkeyup)) {
-      return true;
+  for (const auto& entry : mListenerMap.mEntries) {
+    if (entry.mTypeAtom != nsGkAtoms::onkeydown &&
+        entry.mTypeAtom != nsGkAtoms::onkeypress &&
+        entry.mTypeAtom != nsGkAtoms::onkeyup) {
+      continue;
+    }
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      if (!listener.mFlags.mInSystemGroup &&
+          listener.mFlags.mAllowUntrustedEvents) {
+        return true;
+      }
     }
   }
   return false;
@@ -1964,26 +2149,35 @@ bool EventListenerManager::HasNonSystemGroupListenersForUntrustedKeyEvents() {
 
 bool EventListenerManager::
     HasNonPassiveNonSystemGroupListenersForUntrustedKeyEvents() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (!listener->mFlags.mPassive && !listener->mFlags.mInSystemGroup &&
-        listener->mFlags.mAllowUntrustedEvents &&
-        (listener->mTypeAtom == nsGkAtoms::onkeydown ||
-         listener->mTypeAtom == nsGkAtoms::onkeypress ||
-         listener->mTypeAtom == nsGkAtoms::onkeyup)) {
-      return true;
+  for (const auto& entry : mListenerMap.mEntries) {
+    if (entry.mTypeAtom != nsGkAtoms::onkeydown &&
+        entry.mTypeAtom != nsGkAtoms::onkeypress &&
+        entry.mTypeAtom != nsGkAtoms::onkeyup) {
+      continue;
+    }
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      if (!listener.mFlags.mPassive && !listener.mFlags.mInSystemGroup &&
+          listener.mFlags.mAllowUntrustedEvents) {
+        return true;
+      }
     }
   }
   return false;
 }
 
 bool EventListenerManager::HasApzAwareListeners() {
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (IsApzAwareListener(listener)) {
-      return true;
+  if (!mIsMainThreadELM) {
+    return false;
+  }
+
+  for (const auto& entry : mListenerMap.mEntries) {
+    if (!IsApzAwareEvent(entry.mTypeAtom)) {
+      continue;
+    }
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      if (!listener.mFlags.mPassive) {
+        return true;
+      }
     }
   }
   return false;
@@ -2022,27 +2216,34 @@ bool EventListenerManager::IsApzAwareEvent(nsAtom* aEvent) {
 
 bool EventListenerManager::HasNonPassiveWheelListener() {
   MOZ_ASSERT(NS_IsMainThread());
-  uint32_t count = mListeners.Length();
-  for (uint32_t i = 0; i < count; ++i) {
-    Listener* listener = &mListeners.ElementAt(i);
-    if (!listener->mFlags.mPassive && IsWheelEventType(listener->mTypeAtom)) {
-      return true;
+  for (const auto& entry : mListenerMap.mEntries) {
+    if (!IsWheelEventType(entry.mTypeAtom)) {
+      continue;
+    }
+    for (const auto& listener : entry.mListeners->NonObservingRange()) {
+      if (!listener.mFlags.mPassive) {
+        return true;
+      }
     }
   }
   return false;
 }
 
 void EventListenerManager::RemoveAllListeners() {
-  while (!mListeners.IsEmpty()) {
-    size_t idx = mListeners.Length() - 1;
-    RefPtr<nsAtom> type = mListeners.ElementAt(idx).mTypeAtom;
-    EventMessage message = mListeners.ElementAt(idx).mEventMessage;
-    mListeners.RemoveElementAt(idx);
-    NotifyEventListenerRemoved(type);
-    if (IsDeviceType(message)) {
-      DisableDevice(message);
+  for (auto& entry : mListenerMap.mEntries) {
+    RefPtr<nsAtom> type = entry.mTypeAtom;
+    ListenerArray& listeners = *entry.mListeners;
+    while (!listeners.IsEmpty()) {
+      size_t idx = listeners.Length() - 1;
+      EventMessage message = listeners.ElementAt(idx).mEventMessage;
+      listeners.RemoveElementAt(idx);
+      NotifyEventListenerRemoved(type);
+      if (IsDeviceType(message)) {
+        DisableDevice(message);
+      }
     }
   }
+  mListenerMap.Clear();
 }
 
 already_AddRefed<nsIScriptGlobalObject>
