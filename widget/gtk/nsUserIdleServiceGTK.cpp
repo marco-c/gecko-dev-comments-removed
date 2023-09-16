@@ -76,13 +76,13 @@ class UserIdleServiceX11 : public UserIdleServiceImpl {
     return false;
   }
 
-  explicit UserIdleServiceX11(
-      RefPtr<nsUserIdleServiceGTK> aUserIdleServiceGTK) {
+  bool ProbeImplementation(
+      RefPtr<nsUserIdleServiceGTK> aUserIdleServiceGTK) override {
     MOZ_LOG(sIdleLog, LogLevel::Info,
             ("UserIdleServiceX11::UserIdleServiceX11()\n"));
 
     if (!mozilla::widget::GdkIsX11Display()) {
-      return;
+      return false;
     }
 
     
@@ -90,7 +90,7 @@ class UserIdleServiceX11 : public UserIdleServiceImpl {
     if (!xsslib)  
     {
       MOZ_LOG(sIdleLog, LogLevel::Warning, ("Failed to find libXss.so!\n"));
-      return;
+      return false;
     }
 
     mXSSQueryExtension = (_XScreenSaverQueryExtension_fn)PR_FindFunctionSymbol(
@@ -110,12 +110,14 @@ class UserIdleServiceX11 : public UserIdleServiceImpl {
     if (!mXSSQueryInfo) {
       MOZ_LOG(sIdleLog, LogLevel::Warning, ("Failed to get XSSQueryInfo!\n"));
     }
-
-    mSupported = mXSSQueryExtension && mXSSAllocInfo && mXSSQueryInfo;
-    if (mSupported) {
+    if (!mXSSQueryExtension || !mXSSAllocInfo || !mXSSQueryInfo) {
       
-      aUserIdleServiceGTK->AcceptServiceCallback();
+      return false;
     }
+
+    
+    aUserIdleServiceGTK->AcceptServiceCallback();
+    return true;
   }
 
  protected:
@@ -190,12 +192,11 @@ class UserIdleServiceMutter : public UserIdleServiceImpl {
     return true;
   }
 
-  explicit UserIdleServiceMutter(
-      RefPtr<nsUserIdleServiceGTK> aUserIdleServiceGTK) {
+  bool ProbeImplementation(
+      RefPtr<nsUserIdleServiceGTK> aUserIdleServiceGTK) override {
     MOZ_LOG(sIdleLog, LogLevel::Info,
             ("UserIdleServiceMutter::UserIdleServiceMutter()\n"));
 
-    mSupported = true;
     mCancellable = dont_AddRef(g_cancellable_new());
     CreateDBusProxyForBus(
         G_BUS_TYPE_SESSION,
@@ -213,9 +214,9 @@ class UserIdleServiceMutter : public UserIdleServiceImpl {
             },
             [self = RefPtr{this}, service = RefPtr{aUserIdleServiceGTK}](
                 GUniquePtr<GError>&& aError) {
-              self->mSupported = false;
               service->RejectAndTryNextServiceCallback();
             });
+    return true;
   }
 
  protected:
@@ -237,31 +238,24 @@ void nsUserIdleServiceGTK::ProbeService() {
   MOZ_LOG(sIdleLog, LogLevel::Info,
           ("nsUserIdleServiceGTK::ProbeService() mIdleServiceType %d\n",
            mIdleServiceType));
+  MOZ_ASSERT(!mIdleServiceType);
 
-  RefPtr<UserIdleServiceImpl> idleService;
   switch (mIdleServiceType) {
 #ifdef MOZ_ENABLE_DBUS
     case IDLE_SERVICE_MUTTER:
-      idleService = new UserIdleServiceMutter(this);
+      mIdleService = new UserIdleServiceMutter();
       break;
 #endif
 #ifdef MOZ_X11
     case IDLE_SERVICE_XSCREENSAVER:
-      idleService = new UserIdleServiceX11(this);
+      mIdleService = new UserIdleServiceX11();
       break;
 #endif
     default:
       return;
   }
 
-  if (idleService && idleService->IsSupported()) {
-    
-    
-    
-    mIdleService = idleService;
-  } else {
-    
-    
+  if (!mIdleService->ProbeImplementation(this)) {
     RejectAndTryNextServiceCallback();
   }
 }
@@ -278,6 +272,10 @@ void nsUserIdleServiceGTK::RejectAndTryNextServiceCallback() {
           ("nsUserIdleServiceGTK::RejectAndTryNextServiceCallback() type %d\n",
            mIdleServiceType));
 
+  
+  MOZ_ASSERT(mIdleService, "Nothing to reject?");
+  mIdleService = nullptr;
+
   mIdleServiceType++;
   if (mIdleServiceType < IDLE_SERVICE_NONE) {
     MOZ_LOG(sIdleLog, LogLevel::Info,
@@ -288,8 +286,6 @@ void nsUserIdleServiceGTK::RejectAndTryNextServiceCallback() {
     mIdleServiceInitialized = false;
   }
 }
-
-nsUserIdleServiceGTK::nsUserIdleServiceGTK() { ProbeService(); }
 
 bool nsUserIdleServiceGTK::PollIdleTime(uint32_t* aIdleTime) {
   if (!mIdleServiceInitialized) {
