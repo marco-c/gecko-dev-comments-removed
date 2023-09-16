@@ -3913,7 +3913,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void branchWasmRefIsSubtypeAny(Register ref, wasm::RefType sourceType,
                                  wasm::RefType destType, Label* label,
-                                 bool onSuccess, Register superSuperTypeVector,
+                                 bool onSuccess, Register superSTV,
                                  Register scratch1, Register scratch2);
   static bool needScratch1ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
   static bool needScratch2ForBranchWasmRefIsSubtypeAny(wasm::RefType type);
@@ -3931,7 +3931,7 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   void branchWasmRefIsSubtypeFunc(Register ref, wasm::RefType sourceType,
                                   wasm::RefType destType, Label* label,
-                                  bool onSuccess, Register superSuperTypeVector,
+                                  bool onSuccess, Register superSTV,
                                   Register scratch1, Register scratch2);
   static bool needSuperSTVAndScratch1ForBranchWasmRefIsSubtypeFunc(
       wasm::RefType type);
@@ -3952,12 +3952,9 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
-  
-  void branchWasmSuperTypeVectorIsSubtype(Register subSuperTypeVector,
-                                          Register superSuperTypeVector,
-                                          Register scratch,
-                                          uint32_t superTypeDepth, Label* label,
-                                          bool onSuccess);
+  void branchWasmSTVIsSubtype(Register subSTV, Register superSTV,
+                              Register scratch, uint32_t superDepth,
+                              Label* label, bool onSuccess);
 
   
   void branchWasmAnyRefIsNull(bool isNull, Register src, Label* label);

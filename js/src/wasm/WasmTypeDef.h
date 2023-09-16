@@ -534,6 +534,8 @@ using ArrayTypeVector = Vector<ArrayType, 0, SystemAllocPolicy>;
 
 
 
+
+
 class SuperTypeVector {
   SuperTypeVector() : typeDef_(nullptr), length_(0) {}
 
@@ -579,7 +581,7 @@ class SuperTypeVector {
   static size_t offsetOfSelfTypeDef() {
     return offsetof(SuperTypeVector, typeDef_);
   };
-  static size_t offsetOfTypeDefInVector(uint32_t typeDefDepth);
+  static size_t offsetOfSTVInVector(uint32_t subTypingDepth);
 };
 
 
@@ -832,12 +834,12 @@ class TypeDef {
     if (MOZ_LIKELY(subTypeDef == superTypeDef)) {
       return true;
     }
-    const SuperTypeVector* subSuperTypeVector = subTypeDef->superTypeVector();
+    const SuperTypeVector* subSTV = subTypeDef->superTypeVector();
 
     
     
     
-    if (!subSuperTypeVector) {
+    if (!subSTV) {
       while (subTypeDef) {
         if (subTypeDef == superTypeDef) {
           return true;
@@ -848,23 +850,22 @@ class TypeDef {
     }
 
     
-    MOZ_ASSERT(subSuperTypeVector->typeDef() == subTypeDef);
+    MOZ_ASSERT(subSTV->typeDef() == subTypeDef);
 
     
     
     
     
     uint32_t subTypingDepth = superTypeDef->subTypingDepth();
-    if (subTypingDepth >= subSuperTypeVector->length()) {
+    if (subTypingDepth >= subSTV->length()) {
       return false;
     }
 
-    const SuperTypeVector* superSuperTypeVector =
-        superTypeDef->superTypeVector();
-    MOZ_ASSERT(superSuperTypeVector);
-    MOZ_ASSERT(superSuperTypeVector->typeDef() == superTypeDef);
+    const SuperTypeVector* superSTV = superTypeDef->superTypeVector();
+    MOZ_ASSERT(superSTV);
+    MOZ_ASSERT(superSTV->typeDef() == superTypeDef);
 
-    return subSuperTypeVector->type(subTypingDepth) == superSuperTypeVector;
+    return subSTV->type(subTypingDepth) == superSTV;
   }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;

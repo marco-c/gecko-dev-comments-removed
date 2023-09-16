@@ -1099,8 +1099,7 @@ void LIRGenerator::visitTest(MTest* test) {
     MWasmRefIsSubtypeOfConcrete* isSubTypeOf =
         opd->toWasmRefIsSubtypeOfConcrete();
     LAllocation ref = useRegister(isSubTypeOf->ref());
-    LAllocation superSuperTypeVector =
-        useRegister(isSubTypeOf->superSuperTypeVector());
+    LAllocation superSTV = useRegister(isSubTypeOf->superSTV());
     LDefinition scratch1 = LDefinition();
     LDefinition scratch2 = LDefinition();
     if (isSubTypeOf->destType().isAnyHierarchy()) {
@@ -1126,7 +1125,7 @@ void LIRGenerator::visitTest(MTest* test) {
 
     add(new (alloc()) LWasmRefIsSubtypeOfConcreteAndBranch(
             ifTrue, ifFalse, isSubTypeOf->sourceType(), isSubTypeOf->destType(),
-            ref, superSuperTypeVector, scratch1, scratch2),
+            ref, superSTV, scratch1, scratch2),
         test);
     return;
   }
@@ -7239,7 +7238,7 @@ void LIRGenerator::visitWasmRefIsSubtypeOfConcrete(
   
 
   LAllocation ref = useRegister(ins->ref());
-  LAllocation superSuperTypeVector = useRegister(ins->superSuperTypeVector());
+  LAllocation superSTV = useRegister(ins->superSTV());
   LDefinition scratch1 = LDefinition();
   LDefinition scratch2 = LDefinition();
   if (ins->destType().isAnyHierarchy()) {
@@ -7271,8 +7270,8 @@ void LIRGenerator::visitWasmRefIsSubtypeOfConcrete(
     MOZ_CRASH("unknown type hierarchy for concrete cast");
   }
 
-  define(new (alloc()) LWasmRefIsSubtypeOfConcrete(ref, superSuperTypeVector,
-                                                   scratch1, scratch2),
+  define(new (alloc())
+             LWasmRefIsSubtypeOfConcrete(ref, superSTV, scratch1, scratch2),
          ins);
 }
 
