@@ -458,6 +458,14 @@ AVCodecID FFmpegAudioDecoder<LIBAV_VER>::GetCodecId(const nsACString& aMimeType,
     return AV_CODEC_ID_VORBIS;
   }
 #ifdef FFVPX_VERSION
+  if (aMimeType.EqualsLiteral("audio/opus")) {
+    if (!StaticPrefs::media_ffvpx_opus_enabled()) {
+      return AV_CODEC_ID_NONE;
+    }
+    return AV_CODEC_ID_OPUS;
+  }
+#endif
+#ifdef FFVPX_VERSION
   if (aMimeType.Find("wav") != kNotFound) {
     if (!StaticPrefs::media_ffvpx_wav_enabled()) {
       return AV_CODEC_ID_NONE;
