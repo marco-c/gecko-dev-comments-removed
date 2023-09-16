@@ -32,6 +32,7 @@ def FindSrcDirPath():
 
 DONT_AUTOROLL_THESE = [
     'src/examples/androidtests/third_party/gradle',
+    'src/third_party/mockito/src',
 ]
 
 
