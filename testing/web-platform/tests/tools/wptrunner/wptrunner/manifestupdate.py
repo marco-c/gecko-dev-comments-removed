@@ -667,7 +667,14 @@ class PropertyUpdate:
                 else:
                     errors.append(error)
 
-            for child in node.children:
+            try:
+                
+                
+                
+                children = sorted(node.children, key=lambda child: child.value)
+            except TypeError:
+                children = node.children
+            for child in children:
                 queue.append((child, parents_and_self))
 
         conditions = conditions[::-1]
