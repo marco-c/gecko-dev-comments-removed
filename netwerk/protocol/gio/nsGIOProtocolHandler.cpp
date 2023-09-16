@@ -31,7 +31,6 @@
 #include "nsIInputStream.h"
 #include "nsIProtocolHandler.h"
 #include "mozilla/Monitor.h"
-#include "plstr.h"
 #include "prtime.h"
 #include <gio/gio.h>
 #include <algorithm>
@@ -891,12 +890,7 @@ void nsGIOProtocolHandler::InitSupportedProtocolsPref(nsIPrefBranch* prefs) {
     prefValue.StripWhitespace();
     ToLowerCase(prefValue);
   } else {
-    prefValue.AssignLiteral(
-#ifdef MOZ_PROXY_BYPASS_PROTECTION
-        ""  
-#else
-        "sftp:"  
-#endif
+    prefValue.AssignLiteral(""  
     );
   }
   LOG(("gio: supported protocols \"%s\"\n", prefValue.get()));
