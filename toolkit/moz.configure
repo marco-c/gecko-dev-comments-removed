@@ -1600,16 +1600,24 @@ with only_when("--enable-compile-environment"):
                 
                 env = os.environ.copy()
                 env["LANG"] = "C"
-                dyn = check_cmd_output(readelf, "-d", path, env=env)
+                dyn = check_cmd_output(readelf, "-d", path, env=env).splitlines()
                 tags = [
-                    int(l.split()[0], 16)
-                    for l in dyn.splitlines()
-                    if l.strip().startswith("0x")
+                    int(l.split()[0], 16) for l in dyn if l.strip().startswith("0x")
                 ]
                 
                 
                 if 0x23 in tags:
-                    return pack_rel_relocs
+                    needed = [l for l in dyn if l.split()[1] == "(NEEDED)"]
+                    is_glibc = any(l.endswith("[libc.so.6]") for l in needed)
+                    
+                    
+                    
+                    if is_glibc:
+                        versions = check_cmd_output(readelf, "-V", path, env=env)
+                        if "GLIBC_ABI_DT_RELR" in versions.split():
+                            return pack_rel_relocs
+                    else:
+                        return pack_rel_relocs
         finally:
             try:
                 os.remove(path)
