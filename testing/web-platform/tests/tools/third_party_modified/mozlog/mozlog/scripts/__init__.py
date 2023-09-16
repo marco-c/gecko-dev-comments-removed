@@ -3,7 +3,6 @@
 
 
 
-
 import argparse
 
 import format as formatlog
