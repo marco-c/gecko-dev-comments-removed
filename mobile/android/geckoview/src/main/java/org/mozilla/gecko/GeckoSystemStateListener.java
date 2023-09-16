@@ -63,6 +63,11 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
         Settings.Secure.getUriFor(Settings.Secure.ACCESSIBILITY_DISPLAY_INVERSION_ENABLED);
     contentResolver.registerContentObserver(invertSetting, false, mContentObserver);
 
+    final Uri textContrastSetting =
+        Settings.Secure.getUriFor(
+             "high_text_contrast_enabled");
+    contentResolver.registerContentObserver(textContrastSetting, false, mContentObserver);
+
     mIsNightMode =
         (sApplicationContext.getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK)
@@ -127,6 +132,28 @@ public class GeckoSystemStateListener implements InputManager.InputDeviceListene
 
     return Settings.Secure.getInt(
             contentResolver, Settings.Secure.ACCESSIBILITY_DISPLAY_INVERSION_ENABLED, 0)
+        == 1;
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+  @WrapForJNI(calledFrom = "gecko")
+  
+
+
+
+
+
+  private static boolean prefersContrast() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      return false;
+    }
+
+    final ContentResolver contentResolver = sApplicationContext.getContentResolver();
+
+    return Settings.Secure.getInt(
+            contentResolver, 
+            "high_text_contrast_enabled",
+            0)
         == 1;
   }
 

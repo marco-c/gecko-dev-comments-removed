@@ -338,8 +338,11 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       aResult = java::GeckoSystemStateListener::PrefersReducedMotion();
       break;
 
+    case IntID::UseAccessibilityTheme:
+    
+    
     case IntID::PrefersReducedTransparency:
-      aResult = 0;
+      aResult = java::GeckoSystemStateListener::PrefersContrast();
       break;
 
     case IntID::InvertedColors:
