@@ -94,7 +94,6 @@ class nsHtml5SpeculativeLoad {
     aSizes.ToString(
         mTypeOrCharsetSourceOrDocumentModeOrMetaCSPOrSizesOrIntegrity);
     mIsLinkPreload = aLinkPreload;
-    mInitTimestamp = mozilla::TimeStamp::Now();
   }
 
   inline void InitFont(nsHtml5String aUrl, nsHtml5String aCrossOrigin,
@@ -428,8 +427,6 @@ class nsHtml5SpeculativeLoad {
 
 
   mozilla::dom::ReferrerPolicy mScriptReferrerPolicy;
-
-  mozilla::TimeStamp mInitTimestamp;
 };
 
 #endif  
