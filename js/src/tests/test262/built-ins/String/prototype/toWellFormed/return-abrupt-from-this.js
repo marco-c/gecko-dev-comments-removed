@@ -11,7 +11,6 @@
 
 
 
-
 assert.sameValue(typeof String.prototype.toWellFormed, 'function');
 
 assert.throws(TypeError, function () {

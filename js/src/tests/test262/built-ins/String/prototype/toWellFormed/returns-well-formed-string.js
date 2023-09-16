@@ -23,7 +23,6 @@
 
 
 
-
 assert.sameValue(typeof String.prototype.toWellFormed, 'function');
 
 var replacementChar = '\uFFFD';
