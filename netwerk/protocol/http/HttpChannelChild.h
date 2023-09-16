@@ -443,6 +443,8 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   void CollectOMTTelemetry();
 
+  void RecordChannelCompletionDurationForEarlyHint();
+
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
