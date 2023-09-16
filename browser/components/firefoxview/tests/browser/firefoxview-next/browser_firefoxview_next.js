@@ -1,6 +1,8 @@
 
 
 
+
+
 add_task(async function about_firefoxview_next_pref() {
   
   Services.prefs.setBoolPref("browser.tabs.firefox-view-next", true);
