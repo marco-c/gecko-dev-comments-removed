@@ -525,23 +525,6 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
     }
   }
   
-  if (red) {
-    
-    
-    
-    std::vector<uint8_t> unnegotiatedEncodings;
-    std::swap(unnegotiatedEncodings, red->mRedundantEncodings);
-    for (auto redundantPt : unnegotiatedEncodings) {
-      std::string pt = std::to_string(redundantPt);
-      for (const auto& codec : negotiatedCodecs) {
-        if (pt == codec->mDefaultPt) {
-          red->mRedundantEncodings.push_back(redundantPt);
-          break;
-        }
-      }
-    }
-  }
-  
   
   
   

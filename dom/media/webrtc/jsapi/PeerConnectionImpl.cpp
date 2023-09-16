@@ -764,35 +764,6 @@ class ConfigureCodec {
   bool mRedUlpfecEnabled;
 };
 
-class ConfigureRedCodec {
- public:
-  explicit ConfigureRedCodec(nsCOMPtr<nsIPrefBranch>& branch,
-                             std::vector<uint8_t>* redundantEncodings)
-      : mRedundantEncodings(redundantEncodings) {
-    
-    
-    
-  }
-
-  void operator()(UniquePtr<JsepCodecDescription>& codec) const {
-    if (codec->Type() == SdpMediaSection::kVideo && !codec->mEnabled) {
-      uint8_t pt = (uint8_t)strtoul(codec->mDefaultPt.c_str(), nullptr, 10);
-      
-      
-      if (pt != 0) {
-        std::vector<uint8_t>::iterator it = std::find(
-            mRedundantEncodings->begin(), mRedundantEncodings->end(), pt);
-        if (it != mRedundantEncodings->end()) {
-          mRedundantEncodings->erase(it);
-        }
-      }
-    }
-  }
-
- private:
-  std::vector<uint8_t>* mRedundantEncodings;
-};
-
 nsresult PeerConnectionImpl::ConfigureJsepSessionCodecs() {
   nsresult res;
   nsCOMPtr<nsIPrefService> prefs =
@@ -812,17 +783,6 @@ nsresult PeerConnectionImpl::ConfigureJsepSessionCodecs() {
 
   ConfigureCodec configurer(branch);
   mJsepSession->ForEachCodec(configurer);
-
-  
-  for (auto& codec : mJsepSession->Codecs()) {
-    if (codec->mName == "red" && codec->mEnabled) {
-      JsepVideoCodecDescription* redCodec =
-          static_cast<JsepVideoCodecDescription*>(codec.get());
-      ConfigureRedCodec configureRed(branch, &(redCodec->mRedundantEncodings));
-      mJsepSession->ForEachCodec(configureRed);
-      break;
-    }
-  }
 
   
   CompareCodecPriority comparator;
@@ -2385,15 +2345,6 @@ void PeerConnectionImpl::SetupPreferredCodecs(
 
   GetDefaultVideoCodecs(aPreferredCodecs, useRtx);
   GetDefaultAudioCodecs(aPreferredCodecs);
-
-  
-  for (auto& videoCodec : aPreferredCodecs) {
-    if (videoCodec->mName == "red") {
-      JsepVideoCodecDescription& red =
-          static_cast<JsepVideoCodecDescription&>(*videoCodec);
-      red.UpdateRedundantEncodings(aPreferredCodecs);
-    }
-  }
 }
 
 void PeerConnectionImpl::SetupPreferredRtpExtensions(
