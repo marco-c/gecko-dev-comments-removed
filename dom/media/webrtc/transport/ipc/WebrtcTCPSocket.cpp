@@ -399,7 +399,6 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   }
 
   nsCOMPtr<nsILoadInfo> loadInfo;
-  Maybe<net::LoadInfoArgs> loadInfoArgs = Some(mProxyConfig->loadInfoArgs());
 
   
   
@@ -407,8 +406,8 @@ nsresult WebrtcTCPSocket::OpenWithHttpProxy() {
   
   
   
-  rv = ipc::LoadInfoArgsToLoadInfo(loadInfoArgs, NOT_REMOTE_TYPE,
-                                   getter_AddRefs(loadInfo));
+  rv = ipc::LoadInfoArgsToLoadInfo(mProxyConfig->loadInfoArgs(),
+                                   NOT_REMOTE_TYPE, getter_AddRefs(loadInfo));
   if (NS_FAILED(rv)) {
     LOG(("WebrtcTCPSocket %p: could not init load info\n", this));
     return rv;
