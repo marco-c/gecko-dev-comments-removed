@@ -285,7 +285,6 @@ BrowserParent::BrowserParent(ContentParent* aManager, const TabId& aTabId,
       mBrowserHost(nullptr),
       mContentCache(*this),
       mRemoteLayerTreeOwner{},
-      mLayerTreeEpoch{1},
       mChildToParentConversionMatrix{},
       mRect(0, 0, 0, 0),
       mDimensions(0, 0),
@@ -3536,20 +3535,6 @@ bool BrowserParent::GetRenderLayers() { return mRenderLayers; }
 
 void BrowserParent::SetRenderLayers(bool aEnabled) {
   if (aEnabled == mRenderLayers) {
-    if (aEnabled && mHasLayers && mIsPreservingLayers) {
-      
-      
-      
-      
-      RefPtr<BrowserParent> self = this;
-      LayersObserverEpoch epoch = mLayerTreeEpoch;
-      NS_DispatchToMainThread(NS_NewRunnableFunction(
-          "dom::BrowserParent::RenderLayers", [self, epoch]() {
-            MOZ_ASSERT(NS_IsMainThread());
-            self->LayerTreeUpdate(epoch, true);
-          }));
-    }
-
     return;
   }
 
@@ -3565,18 +3550,14 @@ void BrowserParent::SetRenderLayers(bool aEnabled) {
 }
 
 void BrowserParent::SetRenderLayersInternal(bool aEnabled) {
-  
-  
-  mLayerTreeEpoch = mLayerTreeEpoch.Next();
-
-  Unused << SendRenderLayers(aEnabled, mLayerTreeEpoch);
+  Unused << SendRenderLayers(aEnabled);
 
   
   
   if (aEnabled) {
-    Manager()->PaintTabWhileInterruptingJS(this, mLayerTreeEpoch);
+    Manager()->PaintTabWhileInterruptingJS(this);
   } else {
-    Manager()->UnloadLayersWhileInterruptingJS(this, mLayerTreeEpoch);
+    Manager()->UnloadLayersWhileInterruptingJS(this);
   }
 }
 
@@ -3735,36 +3716,31 @@ void BrowserParent::NavigateByKey(bool aForward, bool aForDocumentNavigation) {
   Unused << SendNavigateByKey(aForward, aForDocumentNavigation);
 }
 
-void BrowserParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch,
-                                    bool aActive) {
-  
-  
-  
-  
-  
-  
+void BrowserParent::LayerTreeUpdate(bool aActive) {
+  if (NS_WARN_IF(mHasLayers == aActive)) {
+    return;
+  }
+  mHasPresented |= aActive;
+  mHasLayers = aActive;
   if (GetBrowserBridgeParent()) {
+    
+    
+    
+    
     return;
   }
 
-  
-  
-  
-  if (aEpoch != mLayerTreeEpoch || mIsDestroyed) {
+  if (mIsDestroyed) {
     return;
   }
 
   RefPtr<Element> frameElement = mFrameElement;
-  if (!frameElement) {
-    NS_WARNING("Could not locate target for layer tree message.");
+  if (NS_WARN_IF(!frameElement)) {
     return;
   }
 
-  mHasLayers = aActive;
-
   RefPtr<Event> event = NS_NewDOMEvent(frameElement, nullptr, nullptr);
   if (aActive) {
-    mHasPresented = true;
     event->InitEvent(u"MozLayerTreeReady"_ns, true, false);
   } else {
     event->InitEvent(u"MozLayerTreeCleared"_ns, true, false);
@@ -3774,12 +3750,11 @@ void BrowserParent::LayerTreeUpdate(const LayersObserverEpoch& aEpoch,
   frameElement->DispatchEvent(*event);
 }
 
-mozilla::ipc::IPCResult BrowserParent::RecvPaintWhileInterruptingJSNoOp(
-    const LayersObserverEpoch& aEpoch) {
+mozilla::ipc::IPCResult BrowserParent::RecvPaintWhileInterruptingJSNoOp() {
   
   
   
-  LayerTreeUpdate(aEpoch, true);
+  LayerTreeUpdate(true);
   return IPC_OK();
 }
 

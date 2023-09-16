@@ -555,11 +555,9 @@ class ContentParent final : public PContentParent,
   bool DeallocPURLClassifierParent(PURLClassifierParent* aActor);
 
   
-  void PaintTabWhileInterruptingJS(BrowserParent* aBrowserParent,
-                                   const layers::LayersObserverEpoch& aEpoch);
+  void PaintTabWhileInterruptingJS(BrowserParent*);
 
-  void UnloadLayersWhileInterruptingJS(
-      BrowserParent* aBrowserParent, const layers::LayersObserverEpoch& aEpoch);
+  void UnloadLayersWhileInterruptingJS(BrowserParent*);
 
   void CancelContentJSExecutionIfRunning(
       BrowserParent* aBrowserParent,

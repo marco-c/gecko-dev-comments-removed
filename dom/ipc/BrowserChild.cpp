@@ -317,7 +317,6 @@ BrowserChild::BrowserChild(ContentChild* aManager, const TabId& aTabId,
       mShouldSendWebProgressEventsToParent(false),
       mRenderLayers(true),
       mIsPreservingLayers(false),
-      mLayersObserverEpoch{1},
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
       mNativeWindowHandle(0),
 #endif
@@ -2470,17 +2469,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvDestroy() {
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
-    const bool& aEnabled, const layers::LayersObserverEpoch& aEpoch) {
-  
-  
-  
-  
-  if (mLayersObserverEpoch >= aEpoch) {
-    return IPC_OK();
-  }
-  mLayersObserverEpoch = aEpoch;
-
+mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(const bool& aEnabled) {
   auto clearPaintWhileInterruptingJS = MakeScopeExit([&] {
     
     
@@ -2488,24 +2477,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
     
     
     if (aEnabled) {
-      ProcessHangMonitor::ClearPaintWhileInterruptingJS(mLayersObserverEpoch);
+      ProcessHangMonitor::ClearPaintWhileInterruptingJS();
     }
   });
 
   if (aEnabled) {
     ProcessHangMonitor::MaybeStartPaintWhileInterruptingJS();
-  }
-
-  if (mCompositorOptions) {
-    MOZ_ASSERT(mPuppetWidget);
-    RefPtr<WebRenderLayerManager> lm =
-        mPuppetWidget->GetWindowRenderer()->AsWebRender();
-    if (lm) {
-      
-      
-      
-      lm->SetLayersObserverEpoch(mLayersObserverEpoch);
-    }
   }
 
   mRenderLayers = aEnabled;
@@ -2515,8 +2492,9 @@ mozilla::ipc::IPCResult BrowserChild::RecvRenderLayers(
     
     
     
+    
     if (IPCOpen()) {
-      Unused << SendPaintWhileInterruptingJSNoOp(mLayersObserverEpoch);
+      Unused << SendPaintWhileInterruptingJSNoOp();
     }
     return IPC_OK();
   }
@@ -2679,11 +2657,6 @@ void BrowserChild::InitRenderingState(
     ImageBridgeChild::IdentifyCompositorTextureHost(mTextureFactoryIdentifier);
     gfx::VRManagerChild::IdentifyTextureHost(mTextureFactoryIdentifier);
     InitAPZState();
-    RefPtr<WebRenderLayerManager> lm =
-        mPuppetWidget->GetWindowRenderer()->AsWebRender();
-    if (lm) {
-      lm->SetLayersObserverEpoch(mLayersObserverEpoch);
-    }
   } else {
     NS_WARNING("Fallback to FallbackRenderer");
     mLayersConnected = Some(false);
@@ -3046,12 +3019,6 @@ void BrowserChild::ReinitRendering() {
   gfx::VRManagerChild::IdentifyTextureHost(mTextureFactoryIdentifier);
 
   InitAPZState();
-  RefPtr<WebRenderLayerManager> lm =
-      mPuppetWidget->GetWindowRenderer()->AsWebRender();
-  if (lm) {
-    lm->SetLayersObserverEpoch(mLayersObserverEpoch);
-  }
-
   if (nsCOMPtr<Document> doc = GetTopLevelDocument()) {
     doc->NotifyLayerManagerRecreated();
   }
@@ -3246,8 +3213,7 @@ ScreenIntRect BrowserChild::GetOuterRect() {
       outerRect, PixelCastJustification::LayoutDeviceIsScreenForTabDims);
 }
 
-void BrowserChild::PaintWhileInterruptingJS(
-    const layers::LayersObserverEpoch& aEpoch) {
+void BrowserChild::PaintWhileInterruptingJS() {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
     
     
@@ -3256,11 +3222,10 @@ void BrowserChild::PaintWhileInterruptingJS(
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers(true , aEpoch);
+  RecvRenderLayers( true);
 }
 
-void BrowserChild::UnloadLayersWhileInterruptingJS(
-    const layers::LayersObserverEpoch& aEpoch) {
+void BrowserChild::UnloadLayersWhileInterruptingJS() {
   if (!IPCOpen() || !mPuppetWidget || !mPuppetWidget->HasWindowRenderer()) {
     
     
@@ -3269,7 +3234,7 @@ void BrowserChild::UnloadLayersWhileInterruptingJS(
 
   MOZ_DIAGNOSTIC_ASSERT(nsContentUtils::IsSafeToRunScript());
   nsAutoScriptBlocker scriptBlocker;
-  RecvRenderLayers(false , aEpoch);
+  RecvRenderLayers( false);
 }
 
 nsresult BrowserChild::CanCancelContentJS(

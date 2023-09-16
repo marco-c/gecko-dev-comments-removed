@@ -123,30 +123,6 @@ struct BaseTransactionId {
 class TransactionIdType {};
 typedef BaseTransactionId<TransactionIdType> TransactionId;
 
-struct LayersObserverEpoch {
-  uint64_t mId;
-
-  [[nodiscard]] LayersObserverEpoch Next() const {
-    return LayersObserverEpoch{mId + 1};
-  }
-
-  bool operator<=(const LayersObserverEpoch& aOther) const {
-    return mId <= aOther.mId;
-  }
-
-  bool operator>=(const LayersObserverEpoch& aOther) const {
-    return mId >= aOther.mId;
-  }
-
-  bool operator==(const LayersObserverEpoch& aOther) const {
-    return mId == aOther.mId;
-  }
-
-  bool operator!=(const LayersObserverEpoch& aOther) const {
-    return mId != aOther.mId;
-  }
-};
-
 
 
 
