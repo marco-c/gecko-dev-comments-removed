@@ -13,6 +13,7 @@
 #  include "jit/BaselineIC.h"
 #  include "jit/CacheIRCompiler.h"
 #  include "jit/JitScript.h"
+#  include "js/ColumnNumber.h"  
 #  include "vm/JSScript.h"
 
 #  include "vm/JSObject-inl.h"
@@ -271,9 +272,9 @@ bool CacheIRHealth::spewICEntryHealth(AutoStructuredSpewer& spew, JSContext* cx,
 
   
   
-  unsigned column;
+  JS::LimitedColumnNumberZeroOrigin column;
   spew->property("lineno", PCToLineNumber(script, pc, &column));
-  spew->property("column", column);
+  spew->property("column", column.zeroOriginValue());
 
   ICStub* firstStub = entry->firstStub();
   if (!firstStub->isFallback()) {
