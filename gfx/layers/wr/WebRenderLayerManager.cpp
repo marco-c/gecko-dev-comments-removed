@@ -11,7 +11,6 @@
 #include "mozilla/StaticPrefs_layers.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/gfx/DrawEventRecorder.h"
-#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/TextureClient.h"
@@ -730,17 +729,11 @@ void WebRenderLayerManager::WaitOnTransactionProcessed() {
 void WebRenderLayerManager::SendInvalidRegion(const nsIntRegion& aRegion) {
   
 
-#ifdef XP_WIN
-  
-  
-  
-  const bool needsInvalidate = !gfx::gfxVars::DwmCompositionEnabled();
-#else
-  const bool needsInvalidate = true;
-#endif
-  if (needsInvalidate && WrBridge()) {
+#ifndef XP_WIN
+  if (WrBridge()) {
     WrBridge()->SendInvalidateRenderedFrame();
   }
+#endif
 }
 
 void WebRenderLayerManager::ScheduleComposite(wr::RenderReasons aReasons) {
