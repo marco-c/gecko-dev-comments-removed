@@ -344,14 +344,41 @@ class BackgroundContextOwner {
 
 
 
+
+
+
+
+
+  canBePrimed = true;
+
+  
+
+
+
+
+
+
+
+  shouldPrimeBackground = true;
+
+  
+
+
+
   constructor(backgroundBuilder, extension) {
     this.backgroundBuilder = backgroundBuilder;
     this.extension = extension;
     this.onExtensionProcessCrashed = this.onExtensionProcessCrashed.bind(this);
+    this.onExtensionEnableProcessSpawning =
+      this.onExtensionEnableProcessSpawning.bind(this);
 
     extension.backgroundState = BACKGROUND_STATE.STOPPED;
 
     extensions.on("extension-process-crash", this.onExtensionProcessCrashed);
+    extensions.on(
+      "extension-enable-process-spawning",
+      this.onExtensionEnableProcessSpawning
+    );
   }
 
   
@@ -368,6 +395,9 @@ class BackgroundContextOwner {
     }
     this.extension.backgroundState = BACKGROUND_STATE.STARTING;
     this.bgInstance = bgInstance;
+    
+    
+    this.canBePrimed = false;
   }
 
   
@@ -463,10 +493,12 @@ class BackgroundContextOwner {
       
       
       
-    } else {
+    } else if (this.shouldPrimeBackground) {
       
       
       this.backgroundBuilder.primeBackground(false);
+    } else {
+      this.canBePrimed = true;
     }
   }
 
@@ -497,9 +529,21 @@ class BackgroundContextOwner {
     }
   }
 
+  onExtensionEnableProcessSpawning() {
+    if (!this.canBePrimed) {
+      return;
+    }
+
+    
+    this.shouldPrimeBackground = true;
+    this.backgroundBuilder.primeBackground(false);
+  }
+
   onExtensionProcessCrashed(eventName, data) {
     
     
+
+    this.shouldPrimeBackground = !data.processSpawningDisabled;
 
     
     
@@ -518,6 +562,10 @@ class BackgroundContextOwner {
       this.setBgStateStopped(isAppShutdown);
     }
     extensions.off("extension-process-crash", this.onExtensionProcessCrashed);
+    extensions.off(
+      "extension-enable-process-spawning",
+      this.onExtensionEnableProcessSpawning
+    );
   }
 }
 
@@ -851,6 +899,10 @@ class BackgroundBuilder {
     };
 
     EventManager.primeListeners(extension, isInStartup);
+    
+    if (!isInStartup) {
+      this.backgroundContextOwner.canBePrimed = false;
+    }
 
     
     
@@ -944,10 +996,15 @@ this.backgroundPage = class extends ExtensionAPI {
       
       if (
         !this.backgroundBuilder ||
-        this.backgroundBuilder.backgroundContextOwner.bgInstance
+        this.backgroundBuilder.backgroundContextOwner.bgInstance ||
+        !this.backgroundBuilder.backgroundContextOwner.canBePrimed
       ) {
         return;
       }
+
+      
+      
+      this.backgroundBuilder.backgroundContextOwner.canBePrimed = false;
 
       
       
