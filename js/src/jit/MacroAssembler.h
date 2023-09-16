@@ -5229,10 +5229,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
                            const AllocSiteInput& allocSite,
                            bool initContents = true);
 
+  
+  
   void createArrayWithFixedElements(
-      Register result, Register shape, Register temp, uint32_t arrayLength,
-      uint32_t arrayCapacity, gc::AllocKind allocKind, gc::Heap initialHeap,
-      Label* fail, const AllocSiteInput& allocSite = AllocSiteInput());
+      Register result, Register shape, Register temp, Register dynamicSlotsTemp,
+      uint32_t arrayLength, uint32_t arrayCapacity,
+      uint32_t numUsedDynamicSlots, uint32_t numDynamicSlots,
+      gc::AllocKind allocKind, gc::Heap initialHeap, Label* fail,
+      const AllocSiteInput& allocSite = AllocSiteInput());
 
   void initGCThing(Register obj, Register temp,
                    const TemplateObject& templateObj, bool initContents = true);

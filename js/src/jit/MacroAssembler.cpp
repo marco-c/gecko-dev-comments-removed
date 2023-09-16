@@ -496,8 +496,9 @@ void MacroAssembler::createPlainGCObject(
 }
 
 void MacroAssembler::createArrayWithFixedElements(
-    Register result, Register shape, Register temp, uint32_t arrayLength,
-    uint32_t arrayCapacity, gc::AllocKind allocKind, gc::Heap initialHeap,
+    Register result, Register shape, Register temp, Register dynamicSlotsTemp,
+    uint32_t arrayLength, uint32_t arrayCapacity, uint32_t numUsedDynamicSlots,
+    uint32_t numDynamicSlots, gc::AllocKind allocKind, gc::Heap initialHeap,
     Label* fail, const AllocSiteInput& allocSite) {
   MOZ_ASSERT(gc::IsObjectAllocKind(allocKind));
   MOZ_ASSERT(shape != temp, "shape can overlap with temp2, but not temp");
@@ -509,15 +510,21 @@ void MacroAssembler::createArrayWithFixedElements(
   MOZ_ASSERT(gc::GetGCKindSlots(allocKind) >=
              arrayCapacity + ObjectElements::VALUES_PER_HEADER);
 
+  MOZ_ASSERT(numUsedDynamicSlots <= numDynamicSlots);
+
   
-  allocateObject(result, temp, allocKind, 0, initialHeap, fail, allocSite);
+  allocateObject(result, temp, allocKind, numDynamicSlots, initialHeap, fail,
+                 allocSite);
 
   
   storePtr(shape, Address(result, JSObject::offsetOfShape()));
 
   
-  storePtr(ImmPtr(emptyObjectSlots),
-           Address(result, NativeObject::offsetOfSlots()));
+  
+  if (numDynamicSlots == 0) {
+    storePtr(ImmPtr(emptyObjectSlots),
+             Address(result, NativeObject::offsetOfSlots()));
+  }
 
   
   computeEffectiveAddress(
@@ -531,6 +538,15 @@ void MacroAssembler::createArrayWithFixedElements(
   store32(Imm32(arrayCapacity),
           Address(temp, ObjectElements::offsetOfCapacity()));
   store32(Imm32(arrayLength), Address(temp, ObjectElements::offsetOfLength()));
+
+  
+  if (numUsedDynamicSlots > 0) {
+    MOZ_ASSERT(dynamicSlotsTemp != temp);
+    MOZ_ASSERT(dynamicSlotsTemp != InvalidReg);
+    loadPtr(Address(result, NativeObject::offsetOfSlots()), dynamicSlotsTemp);
+    fillSlotsWithUndefined(Address(dynamicSlotsTemp, 0), temp, 0,
+                           numUsedDynamicSlots);
+  }
 }
 
 
