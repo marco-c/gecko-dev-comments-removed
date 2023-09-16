@@ -11,12 +11,12 @@
 #include "RecordedEvent.h"
 #include "RecordingTypes.h"
 
-#include <unordered_map>
 #include <functional>
 #include <vector>
 
 #include "mozilla/DataMutex.h"
 #include "mozilla/ThreadSafeWeakPtr.h"
+#include "nsTHashMap.h"
 #include "nsTHashSet.h"
 
 namespace mozilla {
@@ -43,14 +43,14 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
     
     
-    std::unordered_map<void*, ThreadSafeWeakPtr<SourceSurface>> surfaces =
+    nsTHashMap<void*, ThreadSafeWeakPtr<SourceSurface>> surfaces =
         std::move(mStoredSurfaces);
-    std::for_each(surfaces.begin(), surfaces.end(), [this](auto surfacePair) {
-      RefPtr<SourceSurface> strongRef(surfacePair.second);
+    for (const auto& entry : surfaces) {
+      RefPtr<SourceSurface> strongRef(entry.GetData());
       if (strongRef) {
         strongRef->RemoveUserData(reinterpret_cast<UserDataKey*>(this));
       }
-    });
+    }
 
     
     
@@ -102,7 +102,7 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
 
   int32_t IncrementUnscaledFontRefCount(const ReferencePtr aUnscaledFont) {
-    int32_t& count = mUnscaledFontRefs[aUnscaledFont];
+    int32_t& count = mUnscaledFontRefs.LookupOrInsert(aUnscaledFont, 0);
     return count++;
   }
 
@@ -122,11 +122,11 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   void RemoveScaledFont(ScaledFont* aFont) { mStoredFonts.Remove(aFont); }
 
   void AddSourceSurface(SourceSurface* aSurface) {
-    mStoredSurfaces.emplace(aSurface, aSurface);
+    mStoredSurfaces.InsertOrUpdate(aSurface, aSurface);
   }
 
   void RemoveSourceSurface(SourceSurface* aSurface) {
-    mStoredSurfaces.erase(aSurface);
+    mStoredSurfaces.Remove(aSurface);
   }
 
 #if defined(DEBUG)
@@ -196,7 +196,7 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
   
   
   
-  std::unordered_map<const void*, int32_t> mUnscaledFontRefs;
+  nsTHashMap<const void*, int32_t> mUnscaledFontRefs;
 
   nsTHashSet<uint64_t> mStoredFontData;
   nsTHashSet<ScaledFont*> mStoredFonts;
@@ -204,7 +204,7 @@ class DrawEventRecorderPrivate : public DrawEventRecorder {
 
   
   
-  std::unordered_map<void*, ThreadSafeWeakPtr<SourceSurface>> mStoredSurfaces;
+  nsTHashMap<void*, ThreadSafeWeakPtr<SourceSurface>> mStoredSurfaces;
   std::vector<RefPtr<SourceSurface>> mExternalSurfaces;
   bool mExternalFonts;
 };
