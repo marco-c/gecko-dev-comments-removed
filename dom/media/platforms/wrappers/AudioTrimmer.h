@@ -42,9 +42,8 @@ class AudioTrimmer final : public MediaDataDecoder {
   ~AudioTrimmer() = default;
 
   
-  
   RefPtr<DecodePromise> HandleDecodedResult(
-      DecodePromise::ResolveOrRejectValue&& aValue, MediaRawData* aRaw);
+      DecodePromise::ResolveOrRejectValue&& aValue);
   void PrepareTrimmers(MediaRawData* aRaw);
   const RefPtr<MediaDataDecoder> mDecoder;
   nsCOMPtr<nsISerialEventTarget> mThread;
