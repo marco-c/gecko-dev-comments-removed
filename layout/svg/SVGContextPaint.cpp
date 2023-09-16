@@ -60,10 +60,15 @@ bool SVGContextPaint::IsAllowedForImageFromURI(nsIURI* aURI) {
   
   
   
+  
+  
+  
+  
+  
   nsAutoCString scheme;
   if (NS_SUCCEEDED(aURI->GetScheme(scheme)) &&
       (scheme.EqualsLiteral("chrome") || scheme.EqualsLiteral("resource") ||
-       scheme.EqualsLiteral("page-icon"))) {
+       scheme.EqualsLiteral("page-icon") || scheme.EqualsLiteral("moz-anno"))) {
     return true;
   }
   RefPtr<BasePrincipal> principal =
