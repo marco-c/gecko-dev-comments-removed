@@ -575,6 +575,12 @@ const gCSSProperties1 = {
       { type: 'discrete', options: [ [ 'full-width', 'proportional-width' ] ] }
     ]
   },
+  'font-variant-emoji': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'text', 'emoji' ] ] }
+    ]
+  },
   'font-variant-ligatures': {
     
     types: [
