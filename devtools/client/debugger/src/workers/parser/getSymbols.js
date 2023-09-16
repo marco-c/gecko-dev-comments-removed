@@ -66,10 +66,6 @@ function extractSymbol(path, symbols, state) {
     symbols.imports.push(getImportDeclarationSymbol(path.node));
   }
 
-  if (t.isObjectProperty(path)) {
-    symbols.objectProperties.push(getObjectPropertySymbol(path));
-  }
-
   if (t.isMemberExpression(path) || t.isOptionalMemberExpression(path)) {
     symbols.memberExpressions.push(getMemberExpressionSymbol(path));
   }
@@ -99,7 +95,6 @@ function extractSymbols(sourceId) {
     functions: [],
     callExpressions: [],
     memberExpressions: [],
-    objectProperties: [],
     comments: [],
     identifiers: [],
     classes: [],
@@ -304,7 +299,7 @@ export function clearSymbols(sourceIds) {
   }
 }
 
-export function getSymbols(sourceId) {
+export function getInternalSymbols(sourceId) {
   if (symbolDeclarations.has(sourceId)) {
     const symbols = symbolDeclarations.get(sourceId);
     if (symbols) {
@@ -316,6 +311,41 @@ export function getSymbols(sourceId) {
 
   symbolDeclarations.set(sourceId, symbols);
   return symbols;
+}
+
+
+export function getSymbols(sourceId) {
+  const symbols = getInternalSymbols(sourceId);
+  return {
+    
+    
+    
+    
+    
+    functions: symbols.functions,
+
+    
+    memberExpressions: symbols.memberExpressions,
+    literals: symbols.literals,
+    
+    identifiers: symbols.identifiers,
+
+    
+    
+    classes: symbols.classes,
+
+    
+    hasJsx: symbols.hasJsx,
+    hasTypes: symbols.hasTypes,
+
+    
+    framework: symbols.framework,
+
+    
+    
+    
+    
+  };
 }
 
 function getUniqueIdentifiers(identifiers) {
@@ -349,15 +379,6 @@ function getImportDeclarationSymbol(node) {
     source: node.source.value,
     location: node.loc,
     specifiers: getSpecifiers(node.specifiers),
-  };
-}
-
-function getObjectPropertySymbol(path) {
-  const { start, end, identifierName } = path.node.key.loc;
-  return {
-    name: identifierName,
-    location: { start, end },
-    expression: getSnippet(path),
   };
 }
 

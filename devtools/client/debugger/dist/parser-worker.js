@@ -41727,10 +41727,6 @@
         symbols.imports.push(getImportDeclarationSymbol(path.node));
       }
 
-      if (lib$3.isObjectProperty(path)) {
-        symbols.objectProperties.push(getObjectPropertySymbol(path));
-      }
-
       if (lib$3.isMemberExpression(path) || lib$3.isOptionalMemberExpression(path)) {
         symbols.memberExpressions.push(getMemberExpressionSymbol(path));
       }
@@ -41760,7 +41756,6 @@
         functions: [],
         callExpressions: [],
         memberExpressions: [],
-        objectProperties: [],
         comments: [],
         identifiers: [],
         classes: [],
@@ -41965,7 +41960,7 @@
       }
     }
 
-    function getSymbols(sourceId) {
+    function getInternalSymbols(sourceId) {
       if (symbolDeclarations.has(sourceId)) {
         const symbols = symbolDeclarations.get(sourceId);
         if (symbols) {
@@ -41977,6 +41972,41 @@
 
       symbolDeclarations.set(sourceId, symbols);
       return symbols;
+    }
+
+    
+    function getSymbols(sourceId) {
+      const symbols = getInternalSymbols(sourceId);
+      return {
+        
+        
+        
+        
+        
+        functions: symbols.functions,
+
+        
+        memberExpressions: symbols.memberExpressions,
+        literals: symbols.literals,
+        
+        identifiers: symbols.identifiers,
+
+        
+        
+        classes: symbols.classes,
+
+        
+        hasJsx: symbols.hasJsx,
+        hasTypes: symbols.hasTypes,
+
+        
+        framework: symbols.framework,
+
+        
+        
+        
+        
+      };
     }
 
     function getUniqueIdentifiers(identifiers) {
@@ -42010,15 +42040,6 @@
         source: node.source.value,
         location: node.loc,
         specifiers: getSpecifiers(node.specifiers),
-      };
-    }
-
-    function getObjectPropertySymbol(path) {
-      const { start, end, identifierName } = path.node.key.loc;
-      return {
-        name: identifierName,
-        location: { start, end },
-        expression: getSnippet(path),
       };
     }
 
@@ -43085,7 +43106,7 @@
     }
 
     function findSymbols(source) {
-      const { functions, comments } = getSymbols(source);
+      const { functions, comments } = getInternalSymbols(source);
       return { functions, comments };
     }
 
