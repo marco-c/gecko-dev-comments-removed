@@ -263,13 +263,6 @@ class HyperTextAccessibleBase {
                                                      uint32_t aScrollType);
 
   
-
-
-  virtual void ScrollSubstringToPoint(int32_t aStartOffset, int32_t aEndOffset,
-                                      uint32_t aCoordinateType, int32_t aX,
-                                      int32_t aY) = 0;
-
-  
   
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual void ReplaceText(
