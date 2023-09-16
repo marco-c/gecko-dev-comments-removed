@@ -612,7 +612,7 @@ class JQueryLiveEventCollector extends MainEventCollector {
       
       
       
-      const calleeDS = funcDO.environment.calleeScript;
+      const calleeDS = funcDO.environment?.calleeScript;
       if (!calleeDS) {
         return false;
       }
@@ -623,9 +623,11 @@ class JQueryLiveEventCollector extends MainEventCollector {
     function getFirstFunctionVariable(funcDO) {
       
       
-      const names = funcDO.environment.names();
+      const names = funcDO.environment ? funcDO.environment.names() : [];
       for (const varName of names) {
-        const varDO = handlerDO.environment.getVariable(varName);
+        const varDO = handlerDO.environment
+          ? handlerDO.environment.getVariable(varName)
+          : null;
         if (!varDO) {
           continue;
         }
