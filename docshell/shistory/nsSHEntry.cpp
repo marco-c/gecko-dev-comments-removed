@@ -36,7 +36,6 @@ nsSHEntry::nsSHEntry()
       mID(++gEntryID),  
       mScrollPositionX(0),
       mScrollPositionY(0),
-      mParent(nullptr),
       mLoadReplace(false),
       mURIWasModified(false),
       mIsSrcdocEntry(false),
@@ -81,7 +80,7 @@ nsSHEntry::~nsSHEntry() {
   }
 }
 
-NS_IMPL_ISUPPORTS(nsSHEntry, nsISHEntry)
+NS_IMPL_ISUPPORTS(nsSHEntry, nsISHEntry, nsISupportsWeakReference)
 
 NS_IMETHODIMP
 nsSHEntry::SetScrollPosition(int32_t aX, int32_t aY) {
@@ -443,19 +442,14 @@ nsSHEntry::Create(
 
 NS_IMETHODIMP
 nsSHEntry::GetParent(nsISHEntry** aResult) {
-  *aResult = mParent;
-  NS_IF_ADDREF(*aResult);
+  nsCOMPtr<nsISHEntry> parent = do_QueryReferent(mParent);
+  parent.forget(aResult);
   return NS_OK;
 }
 
 NS_IMETHODIMP
 nsSHEntry::SetParent(nsISHEntry* aParent) {
-  
-
-
-
-
-  mParent = aParent;
+  mParent = do_GetWeakReference(aParent);
   return NS_OK;
 }
 
@@ -961,7 +955,7 @@ nsSHEntry::CreateLoadInfo(nsDocShellLoadState** aLoadState) {
   
   
   
-  loadState->SetIsExemptFromHTTPSOnlyMode(true);
+  loadState->SetIsExemptFromHTTPSFirstMode(true);
 
   loadState.forget(aLoadState);
   return NS_OK;

@@ -518,7 +518,8 @@ interface nsILoadInfo : nsISupports
 
 
 
-  const unsigned long HTTPS_ONLY_EXEMPT_NEXT_LOAD = (1 << 9);
+
+  const unsigned long HTTPS_FIRST_EXEMPT_NEXT_LOAD = (1 << 9);
 
   
 

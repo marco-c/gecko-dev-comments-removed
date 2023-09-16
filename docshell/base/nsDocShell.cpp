@@ -9481,7 +9481,7 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     
     
     
-    if (!isHistoryOrReload && aLoadState->IsExemptFromHTTPSOnlyMode() &&
+    if (!isHistoryOrReload && aLoadState->IsExemptFromHTTPSFirstMode() &&
         nsHTTPSOnlyUtils::IsHttpsFirstModeEnabled(isPrivateWin)) {
       rv = mContentViewer->PermitUnload(
           nsIContentViewer::PermitUnloadAction::eDontPromptAndUnload,

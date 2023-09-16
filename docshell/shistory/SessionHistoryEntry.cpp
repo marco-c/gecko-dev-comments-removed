@@ -288,7 +288,7 @@ void SessionHistoryInfo::FillLoadInfo(nsDocShellLoadState& aLoadState) const {
   
   
   if ((mLoadType & nsIDocShell::LOAD_CMD_RELOAD) == 0) {
-    aLoadState.SetIsExemptFromHTTPSOnlyMode(true);
+    aLoadState.SetIsExemptFromHTTPSFirstMode(true);
   }
 }
 

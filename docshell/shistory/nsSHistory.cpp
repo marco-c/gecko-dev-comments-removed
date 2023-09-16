@@ -2274,7 +2274,7 @@ void nsSHistory::InitiateLoad(nsISHEntry* aFrameEntry,
   
   
   
-  loadState->SetIsExemptFromHTTPSOnlyMode(true);
+  loadState->SetIsExemptFromHTTPSFirstMode(true);
 
   
 

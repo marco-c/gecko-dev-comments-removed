@@ -153,9 +153,9 @@ static auto CreateDocumentLoadInfo(CanonicalBrowsingContext* aBrowsingContext,
         sandboxFlags);
   }
 
-  if (aLoadState->IsExemptFromHTTPSOnlyMode()) {
+  if (aLoadState->IsExemptFromHTTPSFirstMode()) {
     uint32_t httpsOnlyStatus = loadInfo->GetHttpsOnlyStatus();
-    httpsOnlyStatus |= nsILoadInfo::HTTPS_ONLY_EXEMPT_NEXT_LOAD;
+    httpsOnlyStatus |= nsILoadInfo::HTTPS_FIRST_EXEMPT_NEXT_LOAD;
     loadInfo->SetHttpsOnlyStatus(httpsOnlyStatus);
   }
 
@@ -2383,7 +2383,7 @@ bool DocumentLoadListener::MaybeHandleLoadErrorWithURIFixup(nsresult aStatus) {
   if (isHTTPSFirstFixup) {
     
     
-    loadState->SetIsExemptFromHTTPSOnlyMode(true);
+    loadState->SetIsExemptFromHTTPSFirstMode(true);
   }
 
   
