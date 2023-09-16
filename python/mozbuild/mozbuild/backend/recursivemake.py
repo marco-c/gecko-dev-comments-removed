@@ -1408,14 +1408,22 @@ class RecursiveMakeBackend(MakeBackend):
             obj_target = self._pretty_path(obj.output_path, backend_file)
 
         objs_ref = " \\\n    ".join(os.path.relpath(o, obj.objdir) for o in objs)
-        
-        
-        
-        
-        
-        if (
-            objs == obj.objs
-            and not isinstance(obj, (HostLibrary, StaticLibrary, SandboxedWasmLibrary))
+        if isinstance(obj, (SimpleProgram, Program, SharedLibrary)):
+            
+            
+            if objs == obj.objs:
+                backend_file.write_once("%s_OBJS := %s\n" % (obj.name, objs_ref))
+            else:
+                list_file_path = "%s.list" % obj.name.replace(".", "_")
+                list_file_ref = self._make_list_file(
+                    obj.KIND, obj.objdir, objs, list_file_path
+                )
+                backend_file.write_once("%s_OBJS := %s\n" % (obj.name, list_file_ref))
+                backend_file.write_once("%s: %s\n" % (obj_target, list_file_path))
+                backend_file.write("%s: %s\n" % (obj_target, objs_ref))
+
+        elif (
+            not isinstance(obj, (HostLibrary, StaticLibrary, SandboxedWasmLibrary))
             or isinstance(obj, (StaticLibrary, SandboxedWasmLibrary))
             and obj.no_expand_lib
         ):
@@ -1431,15 +1439,6 @@ class RecursiveMakeBackend(MakeBackend):
             else:
                 backend_file.write_once("%s_OBJS := %s\n" % (obj.name, objs_ref))
             backend_file.write("%s: %s\n" % (obj_target, objs_ref))
-        elif not isinstance(obj, (HostLibrary, StaticLibrary, SandboxedWasmLibrary)):
-            list_file_path = "%s.list" % obj.name.replace(".", "_")
-            list_file_ref = self._make_list_file(
-                obj.KIND, obj.objdir, objs, list_file_path
-            )
-            backend_file.write_once("%s_OBJS := %s\n" % (obj.name, list_file_ref))
-            backend_file.write_once("%s: %s\n" % (obj_target, list_file_path))
-            backend_file.write("%s: %s\n" % (obj_target, objs_ref))
-
         if getattr(obj, "symbols_file", None):
             backend_file.write_once("%s: %s\n" % (obj_target, obj.symbols_file))
 
