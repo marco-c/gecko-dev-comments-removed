@@ -319,6 +319,10 @@ class RegExpRealm {
  public:
   enum ResultShapeKind { Normal, WithIndices, Indices, NumKinds };
 
+  
+  
+  UniquePtr<RegExpStatics> regExpStatics;
+
  private:
   
 
