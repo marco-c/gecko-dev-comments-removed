@@ -5,15 +5,16 @@
 
 
 
+include protocol PBackground;
 include PSMIPCTypes;
-
-using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
 
 namespace mozilla {
 namespace psm {
 
 protocol PVerifySSLServerCert
 {
+  manager PBackground;
+
 child:
   async OnVerifiedSSLServerCertSuccess(ByteArray[] aBuiltCertChain,
                                        uint16_t aCertTransparencyStatus,

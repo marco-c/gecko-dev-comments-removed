@@ -12,14 +12,14 @@
 
 namespace mozilla {
 
-namespace net {
-class SocketProcessBackgroundParent;
+namespace ipc {
+class BackgroundParentImpl;
 }  
 
 namespace psm {
 
 class IPCClientCertsParent final : public PIPCClientCertsParent {
-  friend class mozilla::net::SocketProcessBackgroundParent;
+  friend class mozilla::ipc::BackgroundParentImpl;
 
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(IPCClientCertsParent)

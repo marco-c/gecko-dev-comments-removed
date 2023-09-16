@@ -4,8 +4,7 @@
 
 
 
-include protocol PBackgroundDataBridge;
-include protocol PMediaTransport;
+include protocol PBackgroundStarter;
 
 namespace mozilla {
 namespace net {
@@ -18,23 +17,14 @@ namespace net {
 
 
 
-
 [NeedsOtherPid]
 sync protocol PSocketProcessBridge
 {
+
 parent:
-  
-
-
-
-
-  async InitBackgroundDataBridge(Endpoint<PBackgroundDataBridgeParent> aEndpoint,
-                                 uint64_t aChannelID);
-
-  
-
-
-  async InitMediaTransport(Endpoint<PMediaTransportParent> aEndpoint);
+  async InitBackground(Endpoint<PBackgroundStarterParent> aEndpoint);
+both:
+  async Test();
 };
 
 }

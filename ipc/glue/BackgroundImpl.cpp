@@ -34,6 +34,8 @@
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/ipc/PBackgroundStarter.h"
 #include "mozilla/ipc/ProtocolTypes.h"
+#include "mozilla/net/SocketProcessChild.h"
+#include "mozilla/net/SocketProcessBridgeChild.h"
 #include "nsCOMPtr.h"
 #include "nsIEventTarget.h"
 #include "nsIObserver.h"
@@ -79,6 +81,10 @@ class ChildImpl;
 
 
 
+void AssertIsInMainOrSocketProcess() {
+  MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess());
+}
+
 void AssertIsOnMainThread() { THREADSAFETY_ASSERT(NS_IsMainThread()); }
 
 
@@ -100,7 +106,7 @@ class ParentImpl final : public BackgroundParentImpl {
     TimerCallbackClosure(nsIThread* aThread,
                          nsTArray<IToplevelProtocol*>* aLiveActors)
         : mThread(aThread), mLiveActors(aLiveActors) {
-      AssertIsInMainProcess();
+      AssertIsInMainOrSocketProcess();
       AssertIsOnMainThread();
       MOZ_ASSERT(aThread);
       MOZ_ASSERT(aLiveActors);
@@ -199,25 +205,27 @@ class ParentImpl final : public BackgroundParentImpl {
   
   
   
+  
+  
   explicit ParentImpl(ThreadsafeContentParentHandle* aContent,
                       bool aIsOtherProcessActor)
       : mContent(aContent),
         mLiveActorArray(nullptr),
         mIsOtherProcessActor(aIsOtherProcessActor),
         mActorDestroyed(false) {
-    AssertIsInMainProcess();
+    MOZ_ASSERT(XRE_IsParentProcess() || XRE_IsSocketProcess());
     MOZ_ASSERT_IF(!aIsOtherProcessActor, XRE_IsParentProcess());
   }
 
   ~ParentImpl() {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnMainThread();
   }
 
   void MainThreadActorDestroy();
 
   void SetLiveActorArray(nsTArray<IToplevelProtocol*>* aLiveActorArray) {
-    AssertIsInMainProcess();
+    AssertIsInMainOrSocketProcess();
     AssertIsOnBackgroundThread();
     MOZ_ASSERT(aLiveActorArray);
     MOZ_ASSERT(!aLiveActorArray->Contains(this));
@@ -502,6 +510,12 @@ class ChildImpl final : public BackgroundChildImpl {
   static ThreadInfoWrapper sParentAndContentProcessThreadInfo;
 
   
+  static ThreadInfoWrapper sSocketAndContentProcessThreadInfo;
+
+  
+  static ThreadInfoWrapper sSocketAndParentProcessThreadInfo;
+
+  
   
   static bool sShutdownHasStarted;
 
@@ -569,6 +583,12 @@ class ChildImpl final : public BackgroundChildImpl {
   
   static PBackgroundChild* GetOrCreateForCurrentThread();
 
+  
+  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread();
+
+  
+  static PBackgroundChild* GetOrCreateForSocketParentBridgeForCurrentThread();
+
   static void CloseForCurrentThread();
 
   
@@ -576,6 +596,13 @@ class ChildImpl final : public BackgroundChildImpl {
 
   
   static void InitContentStarter(mozilla::dom::ContentChild* aContent);
+
+  
+  static void InitSocketStarter(mozilla::net::SocketProcessChild* aSocket);
+
+  
+  static void InitSocketBridgeStarter(
+      mozilla::net::SocketProcessBridgeChild* aSocketBridge);
 
   static void ThreadLocalDestructor(void* aThreadLocal);
 
@@ -677,6 +704,17 @@ PBackgroundChild* BackgroundChild::GetOrCreateForCurrentThread() {
 }
 
 
+PBackgroundChild* BackgroundChild::GetOrCreateSocketActorForCurrentThread() {
+  return ChildImpl::GetOrCreateSocketActorForCurrentThread();
+}
+
+
+PBackgroundChild*
+BackgroundChild::GetOrCreateForSocketParentBridgeForCurrentThread() {
+  return ChildImpl::GetOrCreateForSocketParentBridgeForCurrentThread();
+}
+
+
 void BackgroundChild::CloseForCurrentThread() {
   ChildImpl::CloseForCurrentThread();
 }
@@ -684,6 +722,17 @@ void BackgroundChild::CloseForCurrentThread() {
 
 void BackgroundChild::InitContentStarter(ContentChild* aContent) {
   ChildImpl::InitContentStarter(aContent);
+}
+
+
+void BackgroundChild::InitSocketStarter(net::SocketProcessChild* aSocket) {
+  ChildImpl::InitSocketStarter(aSocket);
+}
+
+
+void BackgroundChild::InitSocketBridgeStarter(
+    net::SocketProcessBridgeChild* aSocketBridge) {
+  ChildImpl::InitSocketBridgeStarter(aSocketBridge);
 }
 
 
@@ -719,6 +768,10 @@ bool ParentImpl::sShutdownHasStarted = false;
 
 
 ChildImpl::ThreadInfoWrapper ChildImpl::sParentAndContentProcessThreadInfo;
+
+ChildImpl::ThreadInfoWrapper ChildImpl::sSocketAndContentProcessThreadInfo;
+
+ChildImpl::ThreadInfoWrapper ChildImpl::sSocketAndParentProcessThreadInfo;
 
 bool ChildImpl::sShutdownHasStarted = false;
 
@@ -760,7 +813,7 @@ uint64_t ParentImpl::GetChildID(PBackgroundParent* aBackgroundActor) {
 bool ParentImpl::AllocStarter(ContentParent* aContent,
                               Endpoint<PBackgroundStarterParent>&& aEndpoint,
                               bool aCrossProcess) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
 
   MOZ_ASSERT(aEndpoint.IsValid());
@@ -794,7 +847,7 @@ bool ParentImpl::AllocStarter(ContentParent* aContent,
 
 
 bool ParentImpl::CreateBackgroundThread() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(!sBackgroundThread);
   MOZ_ASSERT(!sLiveActorsForBackgroundThread);
@@ -861,7 +914,7 @@ bool ParentImpl::CreateBackgroundThread() {
 
 
 void ParentImpl::ShutdownBackgroundThread() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(sShutdownHasStarted);
   MOZ_ASSERT_IF(!sBackgroundThread, !sLiveActorCount);
@@ -913,7 +966,7 @@ void ParentImpl::ShutdownBackgroundThread() {
 
 
 void ParentImpl::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(sShutdownHasStarted);
   MOZ_ASSERT(sLiveActorCount);
@@ -949,7 +1002,7 @@ void ParentImpl::ShutdownTimerCallback(nsITimer* aTimer, void* aClosure) {
 void ParentImpl::Destroy() {
   
 
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
 
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
       NewNonOwningRunnableMethod("ParentImpl::MainThreadActorDestroy", this,
@@ -957,7 +1010,7 @@ void ParentImpl::Destroy() {
 }
 
 void ParentImpl::MainThreadActorDestroy() {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT_IF(!mIsOtherProcessActor, !mContent);
 
@@ -969,7 +1022,7 @@ void ParentImpl::MainThreadActorDestroy() {
 }
 
 void ParentImpl::ActorDestroy(ActorDestroyReason aWhy) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(!mActorDestroyed);
   MOZ_ASSERT_IF(mIsOtherProcessActor, mLiveActorArray);
@@ -1000,7 +1053,7 @@ NS_IMPL_ISUPPORTS(ParentImpl::ShutdownObserver, nsIObserver)
 NS_IMETHODIMP
 ParentImpl::ShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
                                       const char16_t* aData) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnMainThread();
   MOZ_ASSERT(!sShutdownHasStarted);
   MOZ_ASSERT(!strcmp(aTopic, NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID));
@@ -1020,14 +1073,14 @@ BackgroundStarterParent::BackgroundStarterParent(
     ThreadsafeContentParentHandle* aContent, bool aCrossProcess)
     : mCrossProcess(aCrossProcess), mContent(aContent) {
   AssertIsOnMainThread();
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   MOZ_ASSERT_IF(!mCrossProcess, !mContent);
   MOZ_ASSERT_IF(!mCrossProcess, XRE_IsParentProcess());
 }
 
 void BackgroundStarterParent::SetLiveActorArray(
     nsTArray<IToplevelProtocol*>* aLiveActorArray) {
-  AssertIsInMainProcess();
+  AssertIsInMainOrSocketProcess();
   AssertIsOnBackgroundThread();
   MOZ_ASSERT(aLiveActorArray);
   MOZ_ASSERT(!aLiveActorArray->Contains(this));
@@ -1090,6 +1143,8 @@ void ChildImpl::Startup() {
   
 
   sParentAndContentProcessThreadInfo.Startup();
+  sSocketAndContentProcessThreadInfo.Startup();
+  sSocketAndParentProcessThreadInfo.Startup();
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   MOZ_RELEASE_ASSERT(observerService);
@@ -1119,6 +1174,8 @@ void ChildImpl::Shutdown() {
   AssertIsOnMainThread();
 
   sParentAndContentProcessThreadInfo.Shutdown();
+  sSocketAndContentProcessThreadInfo.Shutdown();
+  sSocketAndParentProcessThreadInfo.Shutdown();
 
   sShutdownHasStarted = true;
 }
@@ -1147,12 +1204,25 @@ PBackgroundChild* ChildImpl::GetOrCreateForCurrentThread() {
 }
 
 
+PBackgroundChild* ChildImpl::GetOrCreateSocketActorForCurrentThread() {
+  return sSocketAndContentProcessThreadInfo.GetOrCreateForCurrentThread();
+}
+
+
+PBackgroundChild*
+ChildImpl::GetOrCreateForSocketParentBridgeForCurrentThread() {
+  return sSocketAndParentProcessThreadInfo.GetOrCreateForCurrentThread();
+}
+
+
 void ChildImpl::CloseForCurrentThread() {
   MOZ_ASSERT(!NS_IsMainThread(),
              "PBackground for the main thread should be shut down via "
              "ChildImpl::Shutdown().");
 
   sParentAndContentProcessThreadInfo.CloseForCurrentThread();
+  sSocketAndContentProcessThreadInfo.CloseForCurrentThread();
+  sSocketAndParentProcessThreadInfo.CloseForCurrentThread();
 }
 
 
@@ -1182,6 +1252,17 @@ BackgroundChildImpl::ThreadLocal* ChildImpl::GetThreadLocalForCurrentThread() {
 
 void ChildImpl::InitContentStarter(mozilla::dom::ContentChild* aContent) {
   sParentAndContentProcessThreadInfo.InitStarter(aContent);
+}
+
+
+void ChildImpl::InitSocketStarter(mozilla::net::SocketProcessChild* aSocket) {
+  sSocketAndParentProcessThreadInfo.InitStarter(aSocket);
+}
+
+
+void ChildImpl::InitSocketBridgeStarter(
+    mozilla::net::SocketProcessBridgeChild* aSocketBridge) {
+  sSocketAndContentProcessThreadInfo.InitStarter(aSocketBridge);
 }
 
 

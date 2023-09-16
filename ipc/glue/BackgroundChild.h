@@ -21,6 +21,13 @@ class ContentProcess;
 
 }  
 
+namespace net {
+
+class SocketProcessChild;
+class SocketProcessBridgeChild;
+
+}  
+
 namespace ipc {
 
 class PBackgroundChild;
@@ -48,9 +55,14 @@ class PBackgroundStarterChild;
 
 
 
+
+
+
+
 class BackgroundChild final {
   friend class mozilla::dom::ContentParent;
   friend class mozilla::dom::ContentProcess;
+  friend class mozilla::net::SocketProcessChild;
 
  public:
   
@@ -60,10 +72,23 @@ class BackgroundChild final {
   static PBackgroundChild* GetOrCreateForCurrentThread();
 
   
+  static PBackgroundChild* GetOrCreateSocketActorForCurrentThread();
+
+  
+  static PBackgroundChild* GetOrCreateForSocketParentBridgeForCurrentThread();
+
+  
   static void CloseForCurrentThread();
 
   
   static void InitContentStarter(mozilla::dom::ContentChild* aContent);
+
+  
+  static void InitSocketStarter(mozilla::net::SocketProcessChild* aSocket);
+
+  
+  static void InitSocketBridgeStarter(
+      mozilla::net::SocketProcessBridgeChild* aSocketBridge);
 
  private:
   

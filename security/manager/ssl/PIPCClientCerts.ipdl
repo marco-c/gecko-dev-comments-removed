@@ -3,6 +3,8 @@
 
 
 
+include protocol PBackground;
+
 include PSMIPCTypes;
 
 using mozilla::OriginAttributes from "mozilla/ipc/BackgroundUtils.h";
@@ -12,6 +14,8 @@ namespace psm {
 
 sync protocol PIPCClientCerts
 {
+  manager PBackground;
+
 parent:
   
   
