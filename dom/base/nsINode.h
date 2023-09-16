@@ -207,6 +207,25 @@ enum class NodeSelectorFlags : uint32_t {
   
   AllSimpleRestyleFlags =
       AllSimpleRestyleFlagsForAppend | HasSlowSelectorLaterSiblings,
+
+  
+  RelativeSelectorAnchor = 1 << 5,
+
+  
+  
+  RelativeSelectorAnchorNonSubject = 1 << 6,
+
+  
+  RelativeSelectorSearchDirectionSibling = 1 << 7,
+
+  
+  RelativeSelectorSearchDirectionAncestor = 1 << 8,
+
+  
+  
+  RelativeSelectorSearchDirectionAncestorSibling =
+      RelativeSelectorSearchDirectionSibling |
+      RelativeSelectorSearchDirectionAncestor,
 };
 
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(NodeSelectorFlags);
