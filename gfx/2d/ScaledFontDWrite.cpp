@@ -17,18 +17,6 @@
 
 #include "dwrite_3.h"
 
-
-
-
-
-
-
-
-
-#if !defined(__MINGW32__) && WINVER < 0x0A00
-#  include "dw-extra.h"
-#endif
-
 #include "PathSkia.h"
 #include "skia/include/core/SkPaint.h"
 #include "skia/include/core/SkPath.h"
