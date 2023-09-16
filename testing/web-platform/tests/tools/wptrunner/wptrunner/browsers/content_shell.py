@@ -20,6 +20,10 @@ from ..executors.executorcontentshell import (
     ContentShellTestharnessExecutor,
 )
 
+ENABLE_THREADED_COMPOSITING_FLAG = '--enable-threaded-compositing'
+DISABLE_THREADED_COMPOSITING_FLAG = '--disable-threaded-compositing'
+DISABLE_THREADED_ANIMATION_FLAG = '--disable-threaded-animation'
+
 
 __wptrunner__ = {"product": "content_shell",
                  "check_args": "check_args",
@@ -58,6 +62,13 @@ def browser_kwargs(logger, test_type, run_info_data, config, subsuite, **kwargs)
     for arg in kwargs.get("binary_args", []):
         if arg not in args:
             args.append(arg)
+
+    
+    
+    if ENABLE_THREADED_COMPOSITING_FLAG not in subsuite.config.get("binary_args", []):
+        args.extend([DISABLE_THREADED_COMPOSITING_FLAG,
+                     DISABLE_THREADED_ANIMATION_FLAG])
+
     for arg in subsuite.config.get("binary_args", []):
         if arg not in args:
             args.append(arg)
