@@ -55,14 +55,12 @@ enum nsCSSUnit : uint32_t {
                            
 
   
-  eCSSUnit_EM = 800,           
-  eCSSUnit_XHeight = 801,      
-                               
-  eCSSUnit_Char = 802,         
-                               
-  eCSSUnit_RootEM = 803,       
-  eCSSUnit_Ideographic = 804,  
-  eCSSUnit_CapHeight = 805,    
+  eCSSUnit_EM = 800,       
+  eCSSUnit_XHeight = 801,  
+                           
+  eCSSUnit_Char = 802,     
+                           
+  eCSSUnit_RootEM = 803,   
 
   
   eCSSUnit_Point = 900,       
@@ -72,12 +70,6 @@ enum nsCSSUnit : uint32_t {
   eCSSUnit_Pica = 904,        
   eCSSUnit_Quarter = 905,     
   eCSSUnit_Pixel = 906,       
-
-  
-  eCSSUnit_VW = 950,
-  eCSSUnit_VH = 951,
-  eCSSUnit_VMin = 952,
-  eCSSUnit_VMax = 953,
 };
 
 struct nsCSSValuePair;
