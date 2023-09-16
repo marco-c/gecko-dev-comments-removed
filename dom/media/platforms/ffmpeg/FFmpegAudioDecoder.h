@@ -49,7 +49,8 @@ class FFmpegAudioDecoder<LIBAV_VER>
                                 MediaRawData* aSample, DecodedData& aResults,
                                 bool* aGotFrame);
   MediaResult PostProcessOutput(bool aDecoded, MediaRawData* aSample,
-                                DecodedData& aResults, bool* aGotFrame);
+                                DecodedData& aResults, bool* aGotFrame,
+                                int32_t aSubmitted);
   const AudioInfo mAudioInfo;
   
   bool mDefaultPlaybackDeviceMono;
