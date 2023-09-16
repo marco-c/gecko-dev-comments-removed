@@ -6726,6 +6726,15 @@ static bool HasOptimizableLastIndexSlot(RegExpObject* regexp, JSContext* cx) {
 
 
 static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
+  
+  
+  if (!GlobalObject::getRegExpStatics(cx, cx->global()) ||
+      !cx->global()->regExpRealm().getOrCreateMatchResultShape(cx)) {
+    MOZ_ASSERT(cx->isThrowingOutOfMemory() || cx->isThrowingOverRecursed());
+    cx->clearPendingException();
+    return nullptr;
+  }
+
   JitCode* code;
   switch (native) {
     case InlinableNative::IntrinsicRegExpBuiltinExecForTest:
