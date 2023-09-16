@@ -1700,7 +1700,7 @@ bool WarpBuilder::build_EndIter(BytecodeLocation loc) {
 
 bool WarpBuilder::build_CloseIter(BytecodeLocation loc) {
   MDefinition* iter = current->pop();
-  iter = unboxObjectInfallible(iter);
+  iter = unboxObjectInfallible(iter, IsMovable::Yes);
   return buildIC(loc, CacheKind::CloseIter, {iter});
 }
 
@@ -2908,8 +2908,10 @@ bool WarpBuilder::build_SpreadCall(BytecodeLocation loc) {
   callInfo.initForSpreadCall(current);
 
   
+  
+  
   MOZ_ASSERT(callInfo.argc() == 1);
-  callInfo.setArg(0, unboxObjectInfallible(callInfo.getArg(0)));
+  callInfo.setArg(0, unboxObjectInfallible(callInfo.getArg(0), IsMovable::No));
 
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
     return transpileCall(loc, cacheIRSnapshot, &callInfo);
@@ -2933,7 +2935,7 @@ bool WarpBuilder::build_SpreadNew(BytecodeLocation loc) {
 
   
   MOZ_ASSERT(callInfo.argc() == 1);
-  callInfo.setArg(0, unboxObjectInfallible(callInfo.getArg(0)));
+  callInfo.setArg(0, unboxObjectInfallible(callInfo.getArg(0), IsMovable::No));
 
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
     return transpileCall(loc, cacheIRSnapshot, &callInfo);
