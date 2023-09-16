@@ -2452,6 +2452,12 @@ WorkerPrivate::WorkerPrivate(
       contentCreationOptions.setAlwaysUseFdlibm(
           ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
 
+      if (ShouldResistFingerprinting(RFPTarget::JSLocale)) {
+        nsCString locale = nsRFPService::GetSpoofedJSLocale();
+        chromeCreationOptions.setLocaleCopyZ(locale.get());
+        contentCreationOptions.setLocaleCopyZ(locale.get());
+      }
+
       
       
       if (mLoadInfo.mPrincipal) {

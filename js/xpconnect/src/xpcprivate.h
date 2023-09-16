@@ -2418,7 +2418,7 @@ JSObject* CreateGlobalObject(JSContext* cx, const JSClass* clasp,
 
 void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
                              bool aIsSystemPrincipal, bool aForceUTC,
-                             bool aAlwaysUseFdlibm);
+                             bool aAlwaysUseFdlibm, bool aLocaleEnUS);
 
 
 

@@ -21,20 +21,7 @@ PaintWorkletImpl* PaintWorkletGlobalScope::Impl() const {
 
 bool PaintWorkletGlobalScope::WrapGlobalObject(
     JSContext* aCx, JS::MutableHandle<JSObject*> aReflector) {
-  JS::RealmOptions options;
-
-  options.creationOptions().setForceUTC(
-      ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC));
-  options.creationOptions().setAlwaysUseFdlibm(
-      ShouldResistFingerprinting(RFPTarget::JSMathFdlibm));
-
-  
-  
-  
-  
-  options.creationOptions().setDefineSharedArrayBufferConstructor(
-      IsSharedMemoryAllowed());
-
+  JS::RealmOptions options = CreateRealmOptions();
   return PaintWorkletGlobalScope_Binding::Wrap(
       aCx, this, this, options, nsJSPrincipals::get(mImpl->Principal()), true,
       aReflector);

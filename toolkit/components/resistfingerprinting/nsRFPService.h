@@ -224,6 +224,12 @@ class nsRFPService final : public nsIObserver {
   
 
   
+  
+  static nsCString GetSpoofedJSLocale();
+
+  
+
+  
 
 
 
