@@ -23,6 +23,10 @@
 #  include "nsThreadUtils.h"
 #  include "WavDumper.h"
 
+namespace soundtouch {
+class MOZ_EXPORT SoundTouch;
+}
+
 namespace mozilla {
 
 struct CubebDestroyPolicy {
@@ -34,7 +38,6 @@ struct CubebDestroyPolicy {
 class AudioStream;
 class FrameHistory;
 class AudioConfig;
-class RLBoxSoundTouch;
 
 
 
@@ -325,7 +328,8 @@ class AudioStream final {
   bool CheckThreadIdChanged();
   void AssertIsOnAudioThread() const;
 
-  RLBoxSoundTouch* mTimeStretcher;
+  soundtouch::SoundTouch* mTimeStretcher;
+
   AudioClock mAudioClock;
 
   WavDumper mDumpFile;

@@ -15,10 +15,13 @@
 #include "mozilla/StateMirroring.h"
 #include "nsISerialEventTarget.h"
 
+namespace soundtouch {
+class MOZ_EXPORT SoundTouch;
+}
+
 namespace mozilla {
 
 class AudioData;
-class RLBoxSoundTouch;
 
 
 
@@ -228,7 +231,7 @@ class AudioDecoderInputTrack final : public ProcessedMediaTrack {
   bool mSentAllData = false;
 
   
-  RLBoxSoundTouch* mTimeStretcher = nullptr;
+  soundtouch::SoundTouch* mTimeStretcher = nullptr;
 
   
   AutoTArray<AudioDataValue, 2> mInterleavedBuffer;

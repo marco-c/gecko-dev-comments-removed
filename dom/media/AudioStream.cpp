@@ -30,7 +30,9 @@
 #include "CallbackThreadRegistry.h"
 #include "mozilla/StaticPrefs_media.h"
 
-#include "RLBoxSoundTouch.h"
+
+#define ST_NO_EXCEPTION_HANDLING 1
+#include "soundtouch/SoundTouchFactory.h"
 
 namespace mozilla {
 
@@ -168,7 +170,7 @@ size_t AudioStream::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
 nsresult AudioStream::EnsureTimeStretcherInitialized() {
   AssertIsOnAudioThread();
   if (!mTimeStretcher) {
-    mTimeStretcher = new RLBoxSoundTouch();
+    mTimeStretcher = soundtouch::createSoundTouchObj();
     mTimeStretcher->setSampleRate(mAudioClock.GetInputRate());
     mTimeStretcher->setChannels(mOutChannels);
     mTimeStretcher->setPitch(1.0);
@@ -405,7 +407,7 @@ void AudioStream::ShutDown() {
   
   
   if (mTimeStretcher) {
-    delete mTimeStretcher;
+    soundtouch::destroySoundTouchObj(mTimeStretcher);
     mTimeStretcher = nullptr;
   }
 
@@ -472,32 +474,23 @@ void AudioStream::GetUnprocessed(AudioBufferWriter& aWriter) {
   AssertIsOnAudioThread();
   
   
-  if (mTimeStretcher) {
-    
-    
-    
-    auto numSamples = mTimeStretcher->numSamples().unverified_safe_because(
-        "We only use this to decide whether to receive samples or write "
-        "silence.");
-    if (numSamples) {
-      RLBoxSoundTouch* timeStretcher = mTimeStretcher;
-      aWriter.Write(
-          [timeStretcher](AudioDataValue* aPtr, uint32_t aFrames) {
-            return timeStretcher->receiveSamples(aPtr, aFrames);
-          },
-          aWriter.Available());
+  if (mTimeStretcher && mTimeStretcher->numSamples()) {
+    auto* timeStretcher = mTimeStretcher;
+    aWriter.Write(
+        [timeStretcher](AudioDataValue* aPtr, uint32_t aFrames) {
+          return timeStretcher->receiveSamples(aPtr, aFrames);
+        },
+        aWriter.Available());
 
-      
-      
-      
-      mTimeStretcher->numUnprocessedSamples().copy_and_verify([](auto samples) {
-        NS_WARNING_ASSERTION(samples == 0, "no samples");
-      });
-    }
+    
+    
+    
+    NS_WARNING_ASSERTION(mTimeStretcher->numUnprocessedSamples() == 0,
+                         "no samples");
   } else if (mTimeStretcher) {
     
     
-    delete mTimeStretcher;
+    soundtouch::destroySoundTouchObj(mTimeStretcher);
     mTimeStretcher = nullptr;
   }
 
@@ -521,14 +514,7 @@ void AudioStream::GetTimeStretched(AudioBufferWriter& aWriter) {
   uint32_t toPopFrames =
       ceil(aWriter.Available() * mAudioClock.GetPlaybackRate());
 
-  
-  
-  
-  
-  
-  while (mTimeStretcher->numSamples().unverified_safe_because(
-             "Only used to decide whether to put samples.") <
-         aWriter.Available()) {
+  while (mTimeStretcher->numSamples() < aWriter.Available()) {
     
     AutoTArray<AudioDataValue, 1000> buf;
     auto size = CheckedUint32(mOutChannels) * toPopFrames;
@@ -643,7 +629,7 @@ long AudioStream::DataCallback(void* aBuffer, long aFrames) {
     
     
     if (mTimeStretcher && writer.Available()) {
-      delete mTimeStretcher;
+      soundtouch::destroySoundTouchObj(mTimeStretcher);
       mTimeStretcher = nullptr;
     }
 #ifndef XP_MACOSX
