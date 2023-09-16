@@ -19,6 +19,7 @@ const CHANGE_PAGE_EVENT = [
 const CARD_COLLAPSED_EVENT = [
   ["firefoxview_next", "card_collapsed", "card_container", undefined],
 ];
+const initialTab = gBrowser.selectedTab;
 
 function isElInViewport(element) {
   const boundingRect = element.getBoundingClientRect();
@@ -40,10 +41,25 @@ async function openFirefoxView(win) {
   );
 }
 
-async function dismiss_tab(itemElem, document) {
+async function waitForRecentlyClosedTabsList(doc) {
+  let recentlyClosedComponent = doc.querySelector(
+    "view-recentlyclosed:not([slot=recentlyclosed])"
+  );
+  
+  await TestUtils.waitForCondition(() => {
+    return recentlyClosedComponent.cardEl;
+  });
+  let cardContainer = recentlyClosedComponent.cardEl;
+  let cardMainSlotNode = Array.from(
+    cardContainer?.mainSlot?.assignedNodes()
+  )[0];
+  return [cardMainSlotNode, cardMainSlotNode.rowEls];
+}
+
+async function click_tab_item(itemElem, itemProperty = "") {
   
   is(
-    document.location.href,
+    itemElem.ownerDocument.location.href,
     "about:firefoxview-next#recentlyclosed",
     "about:firefoxview-next is the selected tab and showing the Recently closed view page"
   );
@@ -51,25 +67,140 @@ async function dismiss_tab(itemElem, document) {
   
   itemElem.scrollIntoView();
   is(isElInViewport(itemElem), true, "Tab is visible in viewport");
+  let clickTarget;
+  switch (itemProperty) {
+    case "dismiss":
+      clickTarget = itemElem.buttonEl;
+      break;
+    default:
+      clickTarget = itemElem.mainEl;
+      break;
+  }
 
-  info(`Dismissing tab ${itemElem.url}`);
   const closedObjectsChangePromise = TestUtils.topicObserved(
     "sessionstore-closed-objects-changed"
   );
-  let dismissButton = itemElem.buttonEl;
-  EventUtils.synthesizeMouseAtCenter(dismissButton, {}, document.ownerGlobal);
+  EventUtils.synthesizeMouseAtCenter(clickTarget, {}, itemElem.ownerGlobal);
   await closedObjectsChangePromise;
 }
 
+async function restore_tab(itemElem, browser, expectedURL) {
+  info(`Restoring tab ${itemElem.url}`);
+  let tabRestored = BrowserTestUtils.waitForNewTab(
+    browser.getTabBrowser(),
+    expectedURL
+  );
+  await click_tab_item(itemElem, "main");
+  await tabRestored;
+}
+
+async function dismiss_tab(itemElem) {
+  info(`Dismissing tab ${itemElem.url}`);
+  return click_tab_item(itemElem, "dismiss");
+}
+
+async function tabTestCleanup() {
+  await promiseAllButPrimaryWindowClosed();
+  for (let tab of gBrowser.visibleTabs) {
+    if (tab == initialTab) {
+      continue;
+    }
+    await TabStateFlusher.flush(tab.linkedBrowser);
+    let sessionUpdatePromise = BrowserTestUtils.waitForSessionStoreUpdate(tab);
+    BrowserTestUtils.removeTab(tab);
+    await sessionUpdatePromise;
+  }
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
+}
+
+async function prepareSingleClosedTab() {
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
+  is(
+    SessionStore.getClosedTabCount(window),
+    0,
+    "Closed tab count after purging session history"
+  );
+  await open_then_close(URLs[0]);
+  return {
+    cleanup: tabTestCleanup,
+  };
+}
+
 async function prepareClosedTabs() {
-  const newWin = await BrowserTestUtils.openNewBrowserWindow();
+  Services.obs.notifyObservers(null, "browser:purge-session-history");
+  is(
+    SessionStore.getClosedTabCount(window),
+    0,
+    "Closed tab count after purging session history"
+  );
+  is(
+    SessionStore.getClosedTabCountFromClosedWindows(),
+    0,
+    "Closed tab count after purging session history"
+  );
+
   await open_then_close(URLs[0]);
   await open_then_close(URLs[1]);
-  await open_then_close(URLs[2], newWin);
+
+  
+  info("Opening win2 and open/closing tabs in it");
+  const win2 = await BrowserTestUtils.openNewBrowserWindow();
+  
+  await BrowserTestUtils.openNewForegroundTab(win2.gBrowser, "about:mozilla");
+  await open_then_close(URLs[2], win2);
+
+  info("Opening win3 and open/closing a tab in it");
+  const win3 = await BrowserTestUtils.openNewBrowserWindow();
+  
+  await BrowserTestUtils.openNewForegroundTab(win3.gBrowser, "about:mozilla");
+  await open_then_close(URLs[3], win3);
+
+  
+  info("closing win3 and waiting for sessionstore-closed-objects-changed");
+  await BrowserTestUtils.closeWindow(win3);
+
+  
   await SimpleTest.promiseFocus(window);
-  return async () => {
-    info("Cleaning up after prepareClosedTabs");
-    await promiseAllButPrimaryWindowClosed();
+
+  
+  const expectedURLs = [
+    "https://example.org/", 
+    "https://example.net/", 
+    "https://www.example.com/", 
+    "http://mochi.test:8888/browser/", 
+  ];
+  const preparedClosedTabCount = expectedURLs.length;
+
+  const closedTabsFromClosedWindowsCount =
+    SessionStore.getClosedTabCountFromClosedWindows();
+  is(
+    closedTabsFromClosedWindowsCount,
+    1,
+    "Expected 1 closed tab from a closed window"
+  );
+
+  const closedTabsFromOpenWindowsCount = SessionStore.getClosedTabCount(window);
+  is(
+    closedTabsFromOpenWindowsCount,
+    3,
+    "Expected 3 closed tabs currently-open windows"
+  );
+
+  
+  
+  let actualClosedTabCount =
+    closedTabsFromOpenWindowsCount + closedTabsFromClosedWindowsCount;
+  is(
+    actualClosedTabCount,
+    preparedClosedTabCount,
+    `SessionStore reported the expected number (${actualClosedTabCount}) of closed tabs`
+  );
+
+  return {
+    cleanup: tabTestCleanup,
+    
+    closedTabURLs: [...URLs.slice(0, 4)],
+    expectedURLs,
   };
 }
 
@@ -165,73 +296,39 @@ add_setup(async () => {
   });
 });
 
-add_task(async function test_list_ordering() {
-  Services.obs.notifyObservers(null, "browser:purge-session-history");
-  is(
-    SessionStore.getClosedTabCount(window),
-    0,
-    "Closed tab count after purging session history"
-  );
 
-  let cleanup = await prepareClosedTabs();
+
+
+
+add_task(async function test_list_ordering() {
+  let { cleanup, expectedURLs } = await prepareClosedTabs();
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
     is(document.location.href, "about:firefoxview-next");
     await clearAllParentTelemetryEvents();
     navigateToCategory(document, "recentlyclosed");
     await navigationTelemetry();
-
-    let recentlyClosedComponent = document.querySelector(
-      "view-recentlyclosed:not([slot=recentlyclosed])"
+    let [cardMainSlotNode, listItems] = await waitForRecentlyClosedTabsList(
+      document
     );
 
-    
-    await TestUtils.waitForCondition(() => {
-      return recentlyClosedComponent.cardEl;
-    });
-    let cardContainer = recentlyClosedComponent.cardEl;
-    let cardMainSlotNode = Array.from(
-      cardContainer?.mainSlot?.assignedNodes()
-    )[0];
     is(
       cardMainSlotNode.tagName.toLowerCase(),
       "fxview-tab-list",
       "The tab list component is rendered."
     );
 
-    let tabList = cardMainSlotNode.rowEls;
-
-    is(tabList.length, 3, "Three tabs are shown in the list.");
-    is(
-      tabList[0].url,
-      "https://example.net/",
-      "First list item in recentlyclosed is in the correct order"
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "The initial list has rendered the expected tab items in the right order"
     );
-    is(
-      tabList[2].url,
-      "http://mochi.test:8888/browser/",
-      "Last list item in recentlyclosed is in the correct order"
-    );
-
-    let uri = tabList[0].url;
-    let newTabPromise = BrowserTestUtils.waitForNewTab(gBrowser, uri);
-    tabList[0].mainEl.click();
-    await newTabPromise;
-
-    gBrowser.removeTab(gBrowser.selectedTab);
   });
   await cleanup();
 });
 
 add_task(async function test_collapse_card() {
-  Services.obs.notifyObservers(null, "browser:purge-session-history");
-  is(
-    SessionStore.getClosedTabCount(window),
-    0,
-    "Closed tab count after purging session history"
-  );
-
-  let cleanup = await prepareClosedTabs();
+  const { cleanup } = await prepareSingleClosedTab();
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
     is(document.location.href, "about:firefoxview-next");
@@ -269,77 +366,124 @@ add_task(async function test_collapse_card() {
       true,
       "The card-container is expanded"
     );
-
-    
-    while (gBrowser.tabs.length > 1) {
-      BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
-    }
   });
   await cleanup();
 });
 
-add_task(async function test_list_updates() {
-  Services.obs.notifyObservers(null, "browser:purge-session-history");
-  is(
-    SessionStore.getClosedTabCount(window),
-    0,
-    "Closed tab count after purging session history"
-  );
 
-  let cleanup = await prepareClosedTabs();
+
+
+add_task(async function test_list_updates() {
+  let { cleanup, expectedURLs } = await prepareClosedTabs();
+
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
     is(document.location.href, "about:firefoxview-next");
     navigateToCategory(document, "recentlyclosed");
 
-    let recentlyClosedComponent = document.querySelector(
-      "view-recentlyclosed:not([slot=recentlyclosed])"
+    let [listElem, listItems] = await waitForRecentlyClosedTabsList(document);
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "The initial list has rendered the expected tab items in the right order"
     );
 
     
-    await TestUtils.waitForCondition(() => {
-      return recentlyClosedComponent.cardEl;
-    });
-    let cardContainer = recentlyClosedComponent.cardEl;
-    let cardMainSlotNode = Array.from(
-      cardContainer?.mainSlot?.assignedNodes()
-    )[0];
+    let closedTabItem = listItems[listItems.length - 1];
     is(
-      cardMainSlotNode.tagName.toLowerCase(),
-      "fxview-tab-list",
-      "The tab list component is rendered."
+      closedTabItem.url,
+      "http://mochi.test:8888/browser/",
+      "Sanity-check the least-recently closed tab is https://example.org/"
     );
-
-    let tabList = cardMainSlotNode.rowEls;
-
-    is(tabList.length, 3, "Three tabs are shown in the list.");
+    info(
+      `Restore the last (least-recently) closed tab ${closedTabItem.url}, closedId: ${closedTabItem.closedId} and wait for sessionstore-closed-objects-changed`
+    );
     let promiseClosedObjectsChanged = TestUtils.topicObserved(
       "sessionstore-closed-objects-changed"
     );
-    await clearAllParentTelemetryEvents();
-    await EventUtils.synthesizeMouseAtCenter(tabList[0].mainEl, {}, content);
+    SessionStore.undoCloseById(closedTabItem.closedId);
     await promiseClosedObjectsChanged;
-    await recentlyClosedTelemetry();
-
     await openFirefoxView(window);
-    tabList = cardMainSlotNode.rowEls;
-    is(tabList.length, 2, "Two tabs are shown in the list.");
 
+    
+    expectedURLs.pop();
+    listItems = listElem.rowEls;
+
+    is(
+      listItems.length,
+      3,
+      `Three tabs are shown in the list: ${Array.from(listItems).map(
+        el => el.url
+      )}, of ${expectedURLs.length} expectedURLs: ${expectedURLs}`
+    );
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "The updated list has rendered the expected tab items in the right order"
+    );
+
+    
+    closedTabItem = listItems[0];
     promiseClosedObjectsChanged = TestUtils.topicObserved(
       "sessionstore-closed-objects-changed"
     );
-    await clearAllParentTelemetryEvents();
-    await EventUtils.synthesizeMouseAtCenter(tabList[0].mainEl, {}, content);
+    SessionStore.forgetClosedWindowById(closedTabItem.sourceClosedId);
     await promiseClosedObjectsChanged;
+    await openFirefoxView(window);
+
+    listItems = listElem.rowEls;
+    expectedURLs.shift(); 
+    is(listItems.length, 2, "Two tabs are shown in the list.");
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "After forgetting the closed window that owned the last recent tab, we have expected tab items in the right order"
+    );
+  });
+  await cleanup();
+});
+
+
+
+
+
+add_task(async function test_restore_tab() {
+  let { cleanup, expectedURLs } = await prepareClosedTabs();
+
+  await withFirefoxView({}, async browser => {
+    const { document } = browser.contentWindow;
+    is(document.location.href, "about:firefoxview-next");
+    navigateToCategory(document, "recentlyclosed");
+
+    let [listElem, listItems] = await waitForRecentlyClosedTabsList(document);
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "The initial list has rendered the expected tab items in the right order"
+    );
+    let closeTabItem = listItems[0];
+    info(
+      `Restoring the first closed tab ${closeTabItem.url}, closedId: ${closeTabItem.closedId}, sourceClosedId: ${closeTabItem.sourceClosedId}  and waiting for sessionstore-closed-objects-changed`
+    );
+    await clearAllParentTelemetryEvents();
+    await restore_tab(closeTabItem, browser, closeTabItem.url);
     await recentlyClosedTelemetry();
     await openFirefoxView(window);
-    tabList = cardMainSlotNode.rowEls;
-    is(tabList.length, 1, "One tab is shown in the list.");
 
-    
-    while (gBrowser.tabs.length > 1) {
-      BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
-    }
+    listItems = listElem.rowEls;
+    is(listItems.length, 3, "Three tabs are shown in the list.");
+
+    closeTabItem = listItems[listItems.length - 1];
+    await clearAllParentTelemetryEvents();
+    await restore_tab(closeTabItem, browser, closeTabItem.url);
+    await recentlyClosedTelemetry();
+    await openFirefoxView(window);
+
+    listItems = listElem.rowEls;
+    is(listItems.length, 2, "Two tabs are shown in the list.");
+
+    listItems = listElem.rowEls;
+    is(listItems.length, 2, "Two tabs are shown in the list.");
   });
   await cleanup();
 });
@@ -349,69 +493,69 @@ add_task(async function test_list_updates() {
 
 
 add_task(async function test_dismiss_tab() {
-  Services.obs.notifyObservers(null, "browser:purge-session-history");
-  is(
-    SessionStore.getClosedTabCountForWindow(window),
-    0,
-    "Closed tab count after purging session history"
-  );
+  let { cleanup, expectedURLs } = await prepareClosedTabs();
 
-  let cleanup = await prepareClosedTabs();
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
-
     navigateToCategory(document, "recentlyclosed");
 
-    let recentlyClosedComponent = document.querySelector(
-      "view-recentlyclosed:not([slot=recentlyclosed])"
+    let [listElem, listItems] = await waitForRecentlyClosedTabsList(document);
+    await clearAllParentTelemetryEvents();
+
+    info("calling dismiss_tab on the top, most-recently closed tab");
+    let closedTabItem = listItems[0];
+
+    
+    await dismiss_tab(closedTabItem);
+    await listElem.getUpdateComplete;
+
+    info("check telemetry results");
+    await recentlyClosedDismissTelemetry();
+
+    listItems = listElem.rowEls;
+    expectedURLs.shift(); 
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "After dismissing the most-recent tab we have expected tab items in the right order"
     );
 
     
-    await TestUtils.waitForCondition(() => {
-      return recentlyClosedComponent.cardEl;
-    });
-    let cardContainer = recentlyClosedComponent.cardEl;
-    let cardMainSlotNode = Array.from(
-      cardContainer?.mainSlot?.assignedNodes()
-    )[0];
-    let tabList = cardMainSlotNode.rowEls;
+    closedTabItem = listItems[listItems.length - 1];
+    await dismiss_tab(closedTabItem);
+    await listElem.getUpdateComplete;
 
-    info("calling dismiss_tab");
-    await clearAllParentTelemetryEvents();
-    await dismiss_tab(tabList[0], document);
-    info("waiting for list re-render");
-    await recentlyClosedComponent.getUpdateComplete();
-    info("check results");
-    await recentlyClosedDismissTelemetry();
-    Assert.equal(SessionStore.getClosedTabCountForWindow(window), 2);
-    tabList = cardMainSlotNode.rowEls;
-
+    listItems = listElem.rowEls;
+    expectedURLs.pop(); 
+    let actualClosedTabCount =
+      SessionStore.getClosedTabCount(window) +
+      SessionStore.getClosedTabCountFromClosedWindows();
     Assert.equal(
-      tabList[0].url,
-      URLs[1],
-      `First recently closed item should be ${URLs[1]}`
-    );
-
-    Assert.equal(
-      tabList.length,
+      actualClosedTabCount,
       2,
-      "recentlyclosed should have two list items"
+      "After dismissing the least-recent tab, SessionStore has 2 left"
     );
-
-    while (gBrowser.tabs.length > 1) {
-      BrowserTestUtils.removeTab(gBrowser.tabs.at(-1));
-    }
+    Assert.deepEqual(
+      Array.from(listItems).map(el => el.url),
+      expectedURLs,
+      "After dismissing the least-recent tab we have expected tab items in the right order"
+    );
   });
   await cleanup();
 });
 
 add_task(async function test_empty_states() {
-  Services.obs.notifyObservers(null, "browser:purge-session-history");
   is(
-    SessionStore.getClosedTabCountForWindow(window),
+    SessionStore.getClosedTabCount(window),
     0,
     "Closed tab count after purging session history"
   );
+  is(
+    SessionStore.getClosedTabCountFromClosedWindows(),
+    0,
+    "Closed tabs-from-closed-windows count after purging session history"
+  );
+
   await withFirefoxView({}, async browser => {
     const { document } = browser.contentWindow;
     is(document.location.href, "about:firefoxview-next");
