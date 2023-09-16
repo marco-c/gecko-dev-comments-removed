@@ -147,22 +147,14 @@ static FrameChildListID ChildListIDForOutOfFlow(nsFrameState aPlaceholderState,
 }
 
 void nsPlaceholderFrame::Destroy(DestroyContext& aContext) {
-  nsIFrame* oof = mOutOfFlowFrame;
-  if (oof) {
+  if (nsIFrame* oof = mOutOfFlowFrame) {
     mOutOfFlowFrame = nullptr;
     oof->RemoveProperty(nsIFrame::PlaceholderFrameProperty());
 
     
-    
-    
-    
-    if (oof->IsMenuPopupFrame() ||
-        !nsLayoutUtils::IsProperAncestorFrame(aContext.DestructRoot(), oof)) {
-      ChildListID listId = ChildListIDForOutOfFlow(GetStateBits(), oof);
-      nsFrameManager* fm = PresContext()->FrameConstructor();
-      fm->RemoveFrame(listId, oof);
-    }
-    
+    ChildListID listId = ChildListIDForOutOfFlow(GetStateBits(), oof);
+    nsFrameManager* fm = PresContext()->FrameConstructor();
+    fm->RemoveFrame(listId, oof);
   }
 
   nsIFrame::Destroy(aContext);
