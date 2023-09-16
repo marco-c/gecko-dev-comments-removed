@@ -609,7 +609,7 @@ struct SortComparatorIds {
 
 #endif 
 
-void js::AssertNoEnumerableProperties(NativeObject* obj) {
+static void AssertNoEnumerableProperties(NativeObject* obj) {
 #ifdef DEBUG
   
   
@@ -626,6 +626,29 @@ void js::AssertNoEnumerableProperties(NativeObject* obj) {
     }
   }
 #endif  
+}
+
+static bool ProtoMayHaveEnumerableProperties(JSObject* obj) {
+  if (!obj->is<NativeObject>()) {
+    return true;
+  }
+
+  JSObject* proto = obj->as<NativeObject>().staticPrototype();
+  while (proto) {
+    if (!proto->is<NativeObject>()) {
+      return true;
+    }
+    NativeObject* nproto = &proto->as<NativeObject>();
+    if (nproto->hasEnumerableProperty() ||
+        nproto->getDenseInitializedLength() > 0 ||
+        ClassCanHaveExtraEnumeratedProperties(nproto->getClass())) {
+      return true;
+    }
+    AssertNoEnumerableProperties(nproto);
+    proto = nproto->staticPrototype();
+  }
+
+  return false;
 }
 
 bool PropertyEnumerator::snapshot(JSContext* cx) {
