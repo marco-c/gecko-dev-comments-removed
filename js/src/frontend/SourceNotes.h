@@ -13,7 +13,7 @@
 #include <stddef.h>   
 #include <stdint.h>   
 
-#include "jstypes.h"          
+#include "jstypes.h"  
 #include "js/ColumnNumber.h"  
 
 namespace js {
@@ -43,13 +43,14 @@ namespace js {
   M(ColSpan, "colspan", int8_t(SrcNote::ColSpan::Operands::Count)) \
   /* Bytecode follows a source newline. */                         \
   M(NewLine, "newline", 0)                                         \
+  M(NewLineColumn, "newlinecolumn",                                \
+    int8_t(SrcNote::NewLineColumn::Operands::Count))               \
   M(SetLine, "setline", int8_t(SrcNote::SetLine::Operands::Count)) \
   /* Bytecode is a recommended breakpoint. */                      \
   M(Breakpoint, "breakpoint", 0)                                   \
   /* Bytecode is a recommended breakpoint, and the first in a */   \
   /* new steppable area. */                                        \
   M(BreakpointStepSep, "breakpoint-step-sep", 0)                   \
-  M(Unused5, "unused", 0)                                          \
   M(Unused6, "unused", 0)                                          \
   M(Unused7, "unused", 0)                                          \
   /* 8-15 (0b1xxx) are for extended delta notes. */                \
@@ -232,6 +233,26 @@ class SrcNote {
     static inline JS::ColumnNumberOffset getSpan(const SrcNote* sn);
   };
 
+  class NewLineColumn {
+   public:
+    enum class Operands { Column, Count };
+
+   private:
+    static inline JS::LimitedColumnNumberZeroOrigin fromOperand(
+        ptrdiff_t operand) {
+      return JS::LimitedColumnNumberZeroOrigin(operand);
+    }
+
+   public:
+    static inline ptrdiff_t toOperand(
+        JS::LimitedColumnNumberZeroOrigin column) {
+      return column.zeroOriginValue();
+    }
+
+    static inline JS::LimitedColumnNumberZeroOrigin getColumn(
+        const SrcNote* sn);
+  };
+
   class SetLine {
    public:
     enum class Operands {
@@ -299,6 +320,11 @@ class SrcNoteWriter {
     return true;
   }
 
+  static void convertNote(SrcNote* sn, SrcNoteType newType) {
+    ptrdiff_t delta = sn->delta();
+    sn->value_ = SrcNote::noteValue(newType, delta);
+  }
+
   
   
   
@@ -364,6 +390,12 @@ class SrcNoteReader {
 
 inline JS::ColumnNumberOffset SrcNote::ColSpan::getSpan(const SrcNote* sn) {
   return fromOperand(SrcNoteReader::getOperand(sn, unsigned(Operands::Span)));
+}
+
+
+inline JS::LimitedColumnNumberZeroOrigin SrcNote::NewLineColumn::getColumn(
+    const SrcNote* sn) {
+  return fromOperand(SrcNoteReader::getOperand(sn, unsigned(Operands::Column)));
 }
 
 
