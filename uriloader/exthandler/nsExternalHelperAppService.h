@@ -366,6 +366,12 @@ class nsExternalAppHandler final : public nsIStreamListener,
 
 
 
+  bool mForceSaveInternallyHandled;
+
+  
+
+
+
   bool mCanceled;
 
   

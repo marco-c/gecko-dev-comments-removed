@@ -1273,6 +1273,7 @@ nsExternalAppHandler::nsExternalAppHandler(
       mWindowContext(aWindowContext),
       mSuggestedFileName(aSuggestedFileName),
       mForceSave(aForceSave),
+      mForceSaveInternallyHandled(false),
       mCanceled(false),
       mStopRequestIssued(false),
       mIsFileChannel(false),
@@ -1740,6 +1741,16 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
   bool shouldAutomaticallyHandleInternally =
       action == nsIMIMEInfo::handleInternally;
 
+  if (aChannel) {
+    uint32_t disposition = -1;
+    aChannel->GetContentDisposition(&disposition);
+    mForceSaveInternallyHandled =
+        shouldAutomaticallyHandleInternally &&
+        disposition == nsIChannel::DISPOSITION_ATTACHMENT &&
+        mozilla::StaticPrefs::
+            browser_download_force_save_internally_handled_attachments();
+  }
+
   
   if (!alwaysAsk) {
     alwaysAsk = action != nsIMIMEInfo::saveToDisk &&
@@ -1777,7 +1788,7 @@ NS_IMETHODIMP nsExternalAppHandler::OnStartRequest(nsIRequest* request) {
 
   
   
-  if (mForceSave) {
+  if (mForceSave || mForceSaveInternallyHandled) {
     alwaysAsk = false;
     action = nsIMIMEInfo::saveToDisk;
     shouldAutomaticallyHandleInternally = false;
@@ -2449,7 +2460,7 @@ void nsExternalAppHandler::RequestSaveDestination(
 NS_IMETHODIMP nsExternalAppHandler::PromptForSaveDestination() {
   if (mCanceled) return NS_OK;
 
-  if (mForceSave) {
+  if (mForceSave || mForceSaveInternallyHandled) {
     mMimeInfo->SetPreferredAction(nsIMIMEInfo::saveToDisk);
   }
 
