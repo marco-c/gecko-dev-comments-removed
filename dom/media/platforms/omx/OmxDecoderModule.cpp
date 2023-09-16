@@ -53,7 +53,7 @@ media::DecodeSupportSet OmxDecoderModule::SupportsMimeType(
     
     return media::DecodeSupport::SoftwareDecode;
   }
-  return media::DecodeSupport::Unsupported;
+  return media::DecodeSupportSet{};
 }
 
 }  
