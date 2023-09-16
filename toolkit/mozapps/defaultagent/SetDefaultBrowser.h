@@ -6,6 +6,9 @@
 #ifndef DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H__
 #define DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H__
 
+#include "nsStringFwd.h"
+#include "nsTArray.h"
+
 namespace mozilla::default_agent {
 
 
@@ -32,9 +35,9 @@ namespace mozilla::default_agent {
 
 
 
-
 HRESULT SetDefaultBrowserUserChoice(
-    const wchar_t* aAumi, const wchar_t* const* aExtraFileExtensions = nullptr);
+    const wchar_t* aAumi,
+    const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>());
 
 
 
@@ -51,7 +54,7 @@ HRESULT SetDefaultBrowserUserChoice(
 
 
 HRESULT SetDefaultExtensionHandlersUserChoice(
-    const wchar_t* aAumi, const wchar_t* const* aFileExtensions = nullptr);
+    const wchar_t* aAumi, const nsTArray<nsString>& aFileExtensions);
 
 
 
