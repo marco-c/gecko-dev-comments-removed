@@ -652,17 +652,7 @@ class SourceMediaTrack : public MediaTrack {
 
   void End();
 
-  
-  
   void SetDisabledTrackModeImpl(DisabledTrackMode aMode) override;
-
-  
-  
-  void ApplyTrackDisabling(MediaSegment* aSegment,
-                           MediaSegment* aRawSegment = nullptr) override {
-    mMutex.AssertCurrentThreadOwns();
-    MediaTrack::ApplyTrackDisabling(aSegment, aRawSegment);
-  }
 
   uint32_t NumberOfChannels() const override;
 
@@ -742,6 +732,11 @@ class SourceMediaTrack : public MediaTrack {
   
   float mVolume MOZ_GUARDED_BY(mMutex) = 1.0;
   UniquePtr<TrackData> mUpdateTrack MOZ_GUARDED_BY(mMutex);
+  
+  
+  
+  DisabledTrackMode mDirectDisabledMode MOZ_GUARDED_BY(mMutex) =
+      DisabledTrackMode::ENABLED;
   nsTArray<RefPtr<DirectMediaTrackListener>> mDirectTrackListeners
       MOZ_GUARDED_BY(mMutex);
 };
