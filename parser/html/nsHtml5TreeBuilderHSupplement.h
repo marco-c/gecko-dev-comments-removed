@@ -23,18 +23,7 @@ int32_t mHandlesUsed;
 nsTArray<mozilla::UniquePtr<nsIContent*[]>> mOldHandles;
 nsHtml5TreeOpStage* mSpeculativeLoadStage;
 nsresult mBroken;
-
-
-
-
-
-
-
-
-
-
-
-bool mCurrentHtmlScriptCannotDocumentWriteOrBlock;
+bool mCurrentHtmlScriptIsAsyncOrDefer;
 bool mPreventScriptExecution;
 
 
@@ -117,7 +106,7 @@ void StartPlainText();
 
 void StartPlainTextBody();
 
-bool HasScriptThatMayDocumentWriteOrBlock();
+bool HasScript();
 
 void SetOpSink(nsAHtml5TreeOpSink* aOpSink) { mOpSink = aOpSink; }
 

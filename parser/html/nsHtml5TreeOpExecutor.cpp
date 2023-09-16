@@ -738,7 +738,7 @@ void nsHtml5TreeOpExecutor::RunFlushLoop() {
 #endif
     } else if (scriptElement) {
       
-      RunScript(scriptElement, true);
+      RunScript(scriptElement);
 
       
       StopDeflecting();
@@ -843,7 +843,7 @@ nsresult nsHtml5TreeOpExecutor::FlushDocumentWrite() {
 #endif
   } else if (scriptElement) {
     
-    RunScript(scriptElement, true);
+    RunScript(scriptElement);
   }
   return rv;
 }
@@ -914,8 +914,7 @@ void nsHtml5TreeOpExecutor::PauseDocUpdate(bool* aInterrupted) {
 
 
 
-void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
-                                      bool aMayDocumentWriteOrBlock) {
+void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement) {
   if (mRunsToCompletion) {
     
     
@@ -932,23 +931,18 @@ void nsHtml5TreeOpExecutor::RunScript(nsIContent* aScriptElement,
     return;
   }
 
-  sele->SetCreatorParser(GetParser());
-
-  if (!aMayDocumentWriteOrBlock) {
-    MOZ_ASSERT(sele->GetScriptDeferred() || sele->GetScriptAsync() ||
-               sele->GetScriptIsModule() || sele->GetScriptIsImportMap() ||
-               aScriptElement->AsElement()->HasAttr(nsGkAtoms::nomodule));
+  if (sele->GetScriptDeferred() || sele->GetScriptAsync()) {
     DebugOnly<bool> block = sele->AttemptToExecute();
-    MOZ_ASSERT(!block,
-               "Defer, async, module, importmap, or nomodule tried to block.");
+    NS_ASSERTION(!block, "Defer or async script tried to block.");
     return;
   }
 
-  MOZ_RELEASE_ASSERT(
-      mFlushState == eNotFlushing,
-      "Tried to run a potentially-blocking script while flushing.");
+  MOZ_RELEASE_ASSERT(mFlushState == eNotFlushing,
+                     "Tried to run script while flushing.");
 
   mReadingFromStage = false;
+
+  sele->SetCreatorParser(GetParser());
 
   
   
@@ -1213,7 +1207,7 @@ void nsHtml5TreeOpExecutor::PreloadScript(
     const nsAString& aCrossOrigin, const nsAString& aMedia,
     const nsAString& aNonce, const nsAString& aIntegrity,
     dom::ReferrerPolicy aReferrerPolicy, bool aScriptFromHead, bool aAsync,
-    bool aDefer, bool aLinkPreload) {
+    bool aDefer, bool aNoModule, bool aLinkPreload) {
   nsCOMPtr<nsIURI> uri = ConvertIfNotPreloadedYetAndMediaApplies(aURL, aMedia);
   if (!uri) {
     return;
@@ -1224,8 +1218,8 @@ void nsHtml5TreeOpExecutor::PreloadScript(
   }
   mDocument->ScriptLoader()->PreloadURI(
       uri, aCharset, aType, aCrossOrigin, aNonce, aIntegrity, aScriptFromHead,
-      aAsync, aDefer, aLinkPreload, GetPreloadReferrerPolicy(aReferrerPolicy),
-      0);
+      aAsync, aDefer, aNoModule, aLinkPreload,
+      GetPreloadReferrerPolicy(aReferrerPolicy), 0);
 }
 
 void nsHtml5TreeOpExecutor::PreloadStyle(

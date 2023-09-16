@@ -2479,7 +2479,7 @@ void nsHtml5StreamParser::ParseAvailableData() {
         MarkAsBroken(rv);
         return;
       }
-      if (mTreeBuilder->HasScriptThatMayDocumentWriteOrBlock()) {
+      if (mTreeBuilder->HasScript()) {
         
         
         MOZ_ASSERT(mMode == NORMAL);

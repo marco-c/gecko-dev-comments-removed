@@ -42,7 +42,7 @@ nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder)
       mHandlesUsed(0),
       mSpeculativeLoadStage(nullptr),
       mBroken(NS_OK),
-      mCurrentHtmlScriptCannotDocumentWriteOrBlock(false),
+      mCurrentHtmlScriptIsAsyncOrDefer(false),
       mPreventScriptExecution(false),
       mGenerateSpeculativeLoads(false),
       mHasSeenImportMap(false)
@@ -84,7 +84,7 @@ nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink,
       mHandlesUsed(0),
       mSpeculativeLoadStage(aStage),
       mBroken(NS_OK),
-      mCurrentHtmlScriptCannotDocumentWriteOrBlock(false),
+      mCurrentHtmlScriptIsAsyncOrDefer(false),
       mPreventScriptExecution(false),
       mGenerateSpeculativeLoads(aGenerateSpeculativeLoads),
       mHasSeenImportMap(false)
@@ -232,111 +232,41 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
               aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
           nsAutoString typeString;
           type.ToString(typeString);
-
-          
-          
-          
-
-          
-          
-          static const char kASCIIWhitespace[] = "\t\n\f\r ";
-          typeString.Trim(kASCIIWhitespace);
-
-          bool isModule = typeString.LowerCaseEqualsASCII("module");
-          bool importmap = typeString.LowerCaseEqualsASCII("importmap");
-          bool async = false;
-          bool defer = false;
-          bool nomodule =
-              aAttributes->contains(nsHtml5AttributeName::ATTR_NOMODULE);
-
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-
-          if (importmap) {
+          if (!mHasSeenImportMap) {
             
             
             
             
             
-            
-            
-            
-            
-            
-            
-            mHasSeenImportMap = true;
+            mHasSeenImportMap =
+                typeString.LowerCaseFindASCII("importmap") != kNotFound;
           }
           nsHtml5String url =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_SRC);
-          if (url) {
-            async = aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC);
-            defer = aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER);
-            if ((isModule && !mHasSeenImportMap) ||
-                (!isModule && !importmap && !nomodule)) {
-              nsHtml5String charset =
-                  aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
-              nsHtml5String crossOrigin =
-                  aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
-              nsHtml5String nonce =
-                  aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
-              nsHtml5String integrity =
-                  aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
-              nsHtml5String referrerPolicy = aAttributes->getValue(
-                  nsHtml5AttributeName::ATTR_REFERRERPOLICY);
-              mSpeculativeLoadQueue.AppendElement()->InitScript(
-                  url, charset, type, crossOrigin,  nullptr,
-                  nonce, integrity, referrerPolicy,
-                  mode == nsHtml5TreeBuilder::IN_HEAD, async, defer, false);
-            }
+          if (url && !(mHasSeenImportMap &&
+                       typeString.LowerCaseFindASCII("module") != kNotFound)) {
+            nsHtml5String charset =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_CHARSET);
+            nsHtml5String crossOrigin =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_CROSSORIGIN);
+            nsHtml5String nonce =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_NONCE);
+            nsHtml5String integrity =
+                aAttributes->getValue(nsHtml5AttributeName::ATTR_INTEGRITY);
+            nsHtml5String referrerPolicy = aAttributes->getValue(
+                nsHtml5AttributeName::ATTR_REFERRERPOLICY);
+            bool async =
+                aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC);
+            bool defer =
+                aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER);
+            bool noModule =
+                aAttributes->contains(nsHtml5AttributeName::ATTR_NOMODULE);
+            mSpeculativeLoadQueue.AppendElement()->InitScript(
+                url, charset, type, crossOrigin,  nullptr, nonce,
+                integrity, referrerPolicy, mode == nsHtml5TreeBuilder::IN_HEAD,
+                async, defer, noModule, false);
+            mCurrentHtmlScriptIsAsyncOrDefer = async || defer;
           }
-          
-          
-          
-          
-          
-          
-          mCurrentHtmlScriptCannotDocumentWriteOrBlock =
-              isModule || importmap || async || defer || nomodule;
         } else if (nsGkAtoms::link == aName) {
           nsHtml5String rel =
               aAttributes->getValue(nsHtml5AttributeName::ATTR_REL);
@@ -404,7 +334,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                   mSpeculativeLoadQueue.AppendElement()->InitScript(
                       url, charset, type, crossOrigin, media, nonce, integrity,
                       referrerPolicy, mode == nsHtml5TreeBuilder::IN_HEAD,
-                      false, false, true);
+                      false, false, false, true);
                 } else if (as.LowerCaseEqualsASCII("style")) {
                   mSpeculativeLoadQueue.AppendElement()->InitStyle(
                       url, charset, crossOrigin, media, referrerPolicy, nonce,
@@ -455,7 +385,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
                   mSpeculativeLoadQueue.AppendElement()->InitScript(
                       url, charset, type, crossOrigin, media, nonce, integrity,
                       referrerPolicy, mode == nsHtml5TreeBuilder::IN_HEAD,
-                      false, false, true);
+                      false, false, false, true);
                 }
               }
             }
@@ -555,7 +485,7 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
             mSpeculativeLoadQueue.AppendElement()->InitScript(
                 url, nullptr, type, crossOrigin,  nullptr, nonce,
                 integrity, referrerPolicy, mode == nsHtml5TreeBuilder::IN_HEAD,
-                false, false, false);
+                false, false, false, false);
           }
         } else if (nsGkAtoms::style == aName) {
           mImportScanner.Start();
@@ -591,44 +521,10 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           content, tokenizer->getLineNumber(), tokenizer->getColumnNumber());
       treeOp->Init(mozilla::AsVariant(operation));
       if (aNamespace == kNameSpaceID_XHTML) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        nsHtml5String type =
-            aAttributes->getValue(nsHtml5AttributeName::ATTR_TYPE);
-        nsAutoString typeString;
-        type.ToString(typeString);
-
-        
-        
-        
-
-        
-        
-        static const char kASCIIWhitespace[] = "\t\n\f\r ";
-        typeString.Trim(kASCIIWhitespace);
-
-        mCurrentHtmlScriptCannotDocumentWriteOrBlock =
-            typeString.LowerCaseEqualsASCII("module") ||
-            typeString.LowerCaseEqualsASCII("nomodule") ||
-            typeString.LowerCaseEqualsASCII("importmap");
-
-        if (!mCurrentHtmlScriptCannotDocumentWriteOrBlock &&
-            aAttributes->contains(nsHtml5AttributeName::ATTR_SRC)) {
-          mCurrentHtmlScriptCannotDocumentWriteOrBlock =
-              (aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC) ||
-               aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER));
-        }
+        mCurrentHtmlScriptIsAsyncOrDefer =
+            aAttributes->contains(nsHtml5AttributeName::ATTR_SRC) &&
+            (aAttributes->contains(nsHtml5AttributeName::ATTR_ASYNC) ||
+             aAttributes->contains(nsHtml5AttributeName::ATTR_DEFER));
       }
     } else if (aNamespace == kNameSpaceID_XHTML) {
       if (nsGkAtoms::html == aName) {
@@ -1060,7 +956,7 @@ void nsHtml5TreeBuilder::markMalformedIfScript(nsIContentHandle* aElement) {
 }
 
 void nsHtml5TreeBuilder::start(bool fragment) {
-  mCurrentHtmlScriptCannotDocumentWriteOrBlock = false;
+  mCurrentHtmlScriptIsAsyncOrDefer = false;
 #ifdef DEBUG
   mActive = true;
 #endif
@@ -1192,7 +1088,7 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
     if (mBuilder) {
       return;
     }
-    if (mCurrentHtmlScriptCannotDocumentWriteOrBlock) {
+    if (mCurrentHtmlScriptIsAsyncOrDefer) {
       NS_ASSERTION(aNamespace == kNameSpaceID_XHTML,
                    "Only HTML scripts may be async/defer.");
       nsHtml5TreeOperation* treeOp = mOpQueue.AppendElement(mozilla::fallible);
@@ -1200,9 +1096,9 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
         MarkAsBrokenAndRequestSuspensionWithoutBuilder(NS_ERROR_OUT_OF_MEMORY);
         return;
       }
-      opRunScriptThatCannotDocumentWriteOrBlock operation(aElement);
+      opRunScriptAsyncDefer operation(aElement);
       treeOp->Init(mozilla::AsVariant(operation));
-      mCurrentHtmlScriptCannotDocumentWriteOrBlock = false;
+      mCurrentHtmlScriptIsAsyncOrDefer = false;
       return;
     }
     requestSuspension();
@@ -1211,7 +1107,7 @@ void nsHtml5TreeBuilder::elementPopped(int32_t aNamespace, nsAtom* aName,
       MarkAsBrokenAndRequestSuspensionWithoutBuilder(NS_ERROR_OUT_OF_MEMORY);
       return;
     }
-    opRunScriptThatMayDocumentWriteOrBlock operation(aElement, nullptr);
+    opRunScript operation(aElement, nullptr);
     treeOp->Init(mozilla::AsVariant(operation));
     return;
   }
@@ -1356,12 +1252,12 @@ nsIContentHandle* nsHtml5TreeBuilder::AllocateContentHandle() {
   return &mHandles[mHandlesUsed++];
 }
 
-bool nsHtml5TreeBuilder::HasScriptThatMayDocumentWriteOrBlock() {
+bool nsHtml5TreeBuilder::HasScript() {
   uint32_t len = mOpQueue.Length();
   if (!len) {
     return false;
   }
-  return mOpQueue.ElementAt(len - 1).IsRunScriptThatMayDocumentWriteOrBlock();
+  return mOpQueue.ElementAt(len - 1).IsRunScript();
 }
 
 mozilla::Result<bool, nsresult> nsHtml5TreeBuilder::Flush(bool aDiscretionary) {
@@ -1498,8 +1394,7 @@ void nsHtml5TreeBuilder::AddSnapshotToScript(
     MOZ_ASSERT_UNREACHABLE("Must never use snapshots with builder.");
     return;
   }
-  MOZ_ASSERT(HasScriptThatMayDocumentWriteOrBlock(),
-             "No script to add a snapshot to!");
+  MOZ_ASSERT(HasScript(), "No script to add a snapshot to!");
   MOZ_ASSERT(aSnapshot, "Got null snapshot.");
   mOpQueue.ElementAt(mOpQueue.Length() - 1).SetSnapshot(aSnapshot, aLine);
 }
