@@ -1095,6 +1095,7 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     
     
     
+    
     NS_ASSERTION(mDocument->GetCurrentContentSink() ||
                      aElement->GetParserCreated() == FROM_PARSER_XSLT,
                  "Non-XSLT Defer script on a document without an active "
@@ -3544,12 +3545,14 @@ void ScriptLoader::ParsingComplete(bool aTerminated) {
   }
 }
 
-void ScriptLoader::PreloadURI(
-    nsIURI* aURI, const nsAString& aCharset, const nsAString& aType,
-    const nsAString& aCrossOrigin, const nsAString& aNonce,
-    const nsAString& aIntegrity, bool aScriptFromHead, bool aAsync, bool aDefer,
-    bool aNoModule, bool aLinkPreload, const ReferrerPolicy aReferrerPolicy,
-    uint64_t aEarlyHintPreloaderId) {
+void ScriptLoader::PreloadURI(nsIURI* aURI, const nsAString& aCharset,
+                              const nsAString& aType,
+                              const nsAString& aCrossOrigin,
+                              const nsAString& aNonce,
+                              const nsAString& aIntegrity, bool aScriptFromHead,
+                              bool aAsync, bool aDefer, bool aLinkPreload,
+                              const ReferrerPolicy aReferrerPolicy,
+                              uint64_t aEarlyHintPreloaderId) {
   NS_ENSURE_TRUE_VOID(mDocument);
   
   if (!mEnabled || !mDocument->IsScriptEnabled()) {
@@ -3557,11 +3560,6 @@ void ScriptLoader::PreloadURI(
   }
 
   ScriptKind scriptKind = ScriptKind::eClassic;
-
-  
-  if (aNoModule) {
-    return;
-  }
 
   static const char kASCIIWhitespace[] = "\t\n\f\r ";
 

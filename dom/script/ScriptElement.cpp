@@ -29,6 +29,19 @@ ScriptElement::ScriptAvailable(nsresult aResult, nsIScriptElement* aElement,
   if (!aIsInlineClassicScript && NS_FAILED(aResult)) {
     nsCOMPtr<nsIParser> parser = do_QueryReferent(mCreatorParser);
     if (parser) {
+      nsCOMPtr<nsIContentSink> sink = parser->GetContentSink();
+      if (sink) {
+        nsCOMPtr<Document> parserDoc = do_QueryInterface(sink->GetTarget());
+        if (GetAsContent()->OwnerDoc() != parserDoc) {
+          
+          
+          
+          return NS_OK;
+        }
+      }
+    }
+
+    if (parser) {
       parser->IncrementScriptNestingLevel();
     }
     nsresult rv = FireErrorEvent();
