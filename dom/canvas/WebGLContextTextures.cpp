@@ -35,11 +35,6 @@
 #include "WebGLValidateStrings.h"
 #include <algorithm>
 
-
-#if defined(MOZ_WIDGET_COCOA)
-#  include "nsCocoaFeatures.h"
-#endif
-
 #include "mozilla/DebugOnly.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/ImageData.h"

@@ -968,10 +968,11 @@ bool gfxPlatformMac::SupportsHDR() {
   if (GetScreenDepth() <= 24) {
     return false;
   }
+
   
 #ifdef EARLY_BETA_OR_EARLIER
   
-  return nsCocoaFeatures::OnCatalinaOrLater();
+  return true;
 #else
   
   return nsCocoaFeatures::OnBigSurOrLater();
@@ -1014,13 +1015,7 @@ nsTArray<uint8_t> gfxPlatformMac::GetPlatformCMSOutputProfileData() {
   return result;
 }
 
-bool gfxPlatformMac::CheckVariationFontSupport() {
-  
-  
-  
-  
-  return nsCocoaFeatures::OnHighSierraOrLater();
-}
+bool gfxPlatformMac::CheckVariationFontSupport() { return true; }
 
 void gfxPlatformMac::InitPlatformGPUProcessPrefs() {
   FeatureState& gpuProc = gfxConfig::GetFeature(Feature::GPU_PROCESS);
