@@ -73,9 +73,6 @@ Nullable<T> MaybeToNullable(const Maybe<T>& aOptional) {
 
 
 
-template <class T>
-Result<Span<uint8_t>, nsresult> GetArrayBufferData(const T& aBuffer);
-
 Result<Span<uint8_t>, nsresult> GetSharedArrayBufferData(
     const MaybeSharedArrayBufferViewOrMaybeSharedArrayBuffer& aBuffer);
 
