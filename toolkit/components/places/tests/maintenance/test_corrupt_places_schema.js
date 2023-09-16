@@ -4,11 +4,12 @@
 
 
 add_task(async function () {
-  let path = await setupPlacesDatabase(["migration", "places_v52.sqlite"]);
+  let path = await setupPlacesDatabase(["migration", "places_v43.sqlite"]);
 
   
   
   let db = await Sqlite.openConnection({ path });
+  await db.setSchemaVersion(43);
   await db.execute("DROP TABLE moz_places");
   await db.close();
 
