@@ -145,7 +145,7 @@ generate_profile([], output_filename(0, None))
 
 count = 1
 excludes = []
-for (splitname, splitfunction) in splits:
+for splitname, splitfunction in splits:
     generate_profile(
         excludes + ["-i" + splitfunction], output_filename(count, splitname)
     )

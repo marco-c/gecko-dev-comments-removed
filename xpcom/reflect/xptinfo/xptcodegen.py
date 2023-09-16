@@ -148,7 +148,7 @@ def iid_bytes(iid):
 
 
 def splitint(i):
-    assert i < 2 ** 16
+    assert i < 2**16
     return (i >> 8, i & 0xFF)
 
 

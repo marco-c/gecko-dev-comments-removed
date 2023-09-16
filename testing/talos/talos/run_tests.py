@@ -456,7 +456,6 @@ def make_comparison_result(base_and_reference_results):
     
     
     for x in range(0, len(base_and_reference_results.results[0].results), 2):
-
         
         results = base_and_reference_results.results[0].results
         base_result_runs = results[x]["runs"]

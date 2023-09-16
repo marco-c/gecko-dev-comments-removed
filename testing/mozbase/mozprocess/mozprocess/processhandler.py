@@ -116,7 +116,6 @@ class ProcessHandlerMixin(object):
             ignore_children=False,
             encoding="utf-8",
         ):
-
             
             self._ignore_children = ignore_children
             self._job = None

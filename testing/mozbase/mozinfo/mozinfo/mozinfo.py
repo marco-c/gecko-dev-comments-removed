@@ -349,7 +349,6 @@ __all__ += [
 
 
 def main(args=None):
-
     
     from optparse import OptionParser
 

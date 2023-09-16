@@ -124,7 +124,6 @@ class SupportFilesConverter(object):
         for field, seen in self._fields:
             value = test.get(field, "")
             for pattern in value.split():
-
                 
                 
                 

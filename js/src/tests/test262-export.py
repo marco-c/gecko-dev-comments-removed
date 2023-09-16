@@ -299,7 +299,7 @@ def insertMeta(source, frontmatter):
 
     lines.append("/*---")
 
-    for (key, value) in frontmatter.items():
+    for key, value in frontmatter.items():
         if key in ("description", "info"):
             lines.append("%s: |" % key)
             lines.append(
@@ -336,7 +336,6 @@ def findAndCopyIncludes(dirPath, baseDir, includeDir):
     
     
     while relPath:
-
         
         shellFile = os.path.join(baseDir, relPath, "shell.js")
 
@@ -367,7 +366,6 @@ def findAndCopyIncludes(dirPath, baseDir, includeDir):
 
 
 def exportTest262(args):
-
     outDir = os.path.abspath(args.out)
     providedSrcs = args.src
     includeShell = args.exportshellincludes
@@ -384,15 +382,13 @@ def exportTest262(args):
 
     
     for providedSrc in providedSrcs:
-
         src = os.path.abspath(providedSrc)
         
         
         basename = os.path.basename(src)
 
         
-        for (dirPath, _, fileNames) in os.walk(src):
-
+        for dirPath, _, fileNames in os.walk(src):
             
             includes = []
             if includeShell:

@@ -137,7 +137,7 @@ def clear_module_printers(module_name):
         
         
         to_delete = []
-        for (k, v) in d.items():
+        for k, v in d.items():
             if v.__module__ == module_name:
                 to_delete.append(k)
                 remove_from_subprinter_list(v)
@@ -250,7 +250,6 @@ class TypeCache(object):
 
 
 def implemented_types(t):
-
     
     def followers(t):
         if t.code == gdb.TYPE_CODE_TYPEDEF:
@@ -346,7 +345,7 @@ def lookup_for_objfile(objfile):
         
         
         s = str(value.type)
-        for (r, f) in printers_by_regexp:
+        for r, f in printers_by_regexp:
             if f.enabled:
                 m = r.match(s)
                 if m:

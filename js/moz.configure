@@ -175,6 +175,7 @@ set_define("ENABLE_DECORATORS", enable_decorators)
 
 
 
+
 @depends(target, "--enable-record-tuple")
 def jit_default(target, enable_record_tuple):
     if enable_record_tuple:
@@ -510,6 +511,7 @@ set_config("JS_MASM_VERBOSE", depends_if("--enable-masm-verbose")(lambda _: True
 
 
 
+
 @depends(target)
 def is_apple_silicon(target):
     return target.os == "OSX" and target.kernel == "Darwin" and target.cpu == "aarch64"
@@ -520,6 +522,7 @@ option(
     default=is_apple_silicon,
     help="{Enable|Disable} static use of FJCVTZS instruction on Aarch64 targets.",
 )
+
 
 
 
@@ -548,6 +551,7 @@ def has_pthread_jit_write_protect_np(target):
 
 
 set_define("JS_USE_APPLE_FAST_WX", True, when=has_pthread_jit_write_protect_np)
+
 
 
 

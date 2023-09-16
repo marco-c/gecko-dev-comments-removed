@@ -40,6 +40,7 @@ option(env="CC", nargs=1, help="C Compiler")
 
 
 
+
 @depends("--enable-simple")
 def simple(simple):
     if simple:
@@ -47,6 +48,7 @@ def simple(simple):
 
 
 set_config("ENABLED_SIMPLE", simple)
+
 
 
 @depends("--enable-simple")
@@ -65,12 +67,14 @@ def with_env(with_env):
 set_config("WITH_ENV", with_env)
 
 
+
 @depends("--disable-values")
 def with_env2(values):
     return values
 
 
 set_config("VALUES", with_env2)
+
 
 
 @depends("CC")
@@ -81,12 +85,14 @@ def is_gcc(cc):
 set_config("IS_GCC", is_gcc)
 
 
+
 @depends(with_env2)
 def with_env3(values):
     return values
 
 
 set_config("VALUES2", with_env3)
+
 
 
 
@@ -101,6 +107,7 @@ def with_env5(values):
 
 
 set_config("VALUES3", with_env5)
+
 
 
 
@@ -196,6 +203,7 @@ include(include_path)
 option("--with-imports", nargs="?", help="Imports")
 
 
+
 @depends("--with-imports")
 def with_imports(value):
     if len(value):
@@ -203,6 +211,7 @@ def with_imports(value):
 
 
 set_config("HAS_ABSPATH", with_imports)
+
 
 
 

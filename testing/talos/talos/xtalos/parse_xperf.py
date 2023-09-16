@@ -107,7 +107,6 @@ def stop_from_config(config_file=None, debug=False, **kwargs):
 
 
 def main(args=sys.argv[1:]):
-
     
     parser = xtalos.XtalosOptions()
     args = parser.parse_args(args)

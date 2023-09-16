@@ -21,5 +21,5 @@ def get_header_length_and_flags(value, cache):
         
         
         length = flags >> 32
-        flags = flags % 2 ** 32
+        flags = flags % 2**32
     return length, flags

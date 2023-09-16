@@ -530,10 +530,8 @@ class TryOptionSyntax:
         
         
         for char in reversed(input_str):
-
             
             if char == ",":
-
                 
                 if in_platforms:
                     add_platform(token)

@@ -261,9 +261,7 @@ class GeckoInstance(object):
             if isinstance(profile_path, six.string_types):
                 profile_args["path_from"] = profile_path
                 profile_args["path_to"] = tempfile.mkdtemp(
-                    suffix=u".{}".format(
-                        profile_name or os.path.basename(profile_path)
-                    ),
+                    suffix=".{}".format(profile_name or os.path.basename(profile_path)),
                     dir=self.workspace,
                 )
                 
@@ -274,7 +272,7 @@ class GeckoInstance(object):
             
             else:
                 profile_args["profile"] = tempfile.mkdtemp(
-                    suffix=u".{}".format(profile_name or "mozrunner"),
+                    suffix=".{}".format(profile_name or "mozrunner"),
                     dir=self.workspace,
                 )
                 profile = Profile(**profile_args)

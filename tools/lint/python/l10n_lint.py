@@ -22,6 +22,7 @@ PULL_AFTER = timedelta(days=2)
 
 
 
+
 def lint(paths, lintconfig, **lintargs):
     return lint_strings(LOCALE, paths, lintconfig, **lintargs)
 

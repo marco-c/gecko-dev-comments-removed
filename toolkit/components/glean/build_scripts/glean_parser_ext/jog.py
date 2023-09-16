@@ -81,6 +81,7 @@ def load_monkeypatches():
     Monkeypatch jinja template loading because we're not glean_parser.
     We're glean_parser_ext.
     """
+
     
     def get_local_template(template_name, filters=()):
         env = jinja2.Environment(

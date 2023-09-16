@@ -282,7 +282,6 @@ def _parse_checkstyle_output(config, topsrcdir=None, report_path=None):
     root = tree.getroot()
 
     for file in root.findall("file"):
-
         for error in file.findall("error"):
             
             err = {

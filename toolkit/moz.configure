@@ -6,6 +6,7 @@
 
 
 
+
 @dependable
 @imports(_from="mozbuild.shellutil", _import="quote")
 @imports(_from="mozbuild.util", _import="ensure_unicode")
@@ -169,6 +170,7 @@ imply_option("--enable-replace-malloc", dmd, when=compile_environment)
 
 
 
+
 @depends(target)
 def midir_linux_support(target):
     return (
@@ -183,6 +185,7 @@ def midir_support(target, midir_linux_support):
 
 
 set_config("MOZ_WEBMIDI_MIDIR_IMPL", midir_support)
+
 
 
 
@@ -677,6 +680,7 @@ set_define("MOZ_HAVE_FREETYPE2", depends_if(freetype2_info)(lambda _: True))
 
 
 
+
 @depends(toolkit)
 def applemedia(toolkit):
     if toolkit in ("cocoa", "uikit"):
@@ -803,6 +807,7 @@ def openmax(value):
 
 set_config("MOZ_OMX", openmax)
 set_define("MOZ_OMX", openmax)
+
 
 
 
@@ -1094,6 +1099,7 @@ set_define("NS_PRINT_PREVIEW", printing)
 
 
 
+
 @depends(toolkit)
 def no_speechd_on_non_gtk(toolkit):
     if toolkit != "gtk":
@@ -1141,6 +1147,7 @@ set_define("MOZ_WEBSPEECH_TEST_BACKEND", webspeech_test_backend)
 
 
 
+
 @depends(target, milestone)
 def skia_pdf_default(target, milestone):
     return milestone.is_nightly and target.os != "WINNT"
@@ -1168,6 +1175,7 @@ system_webp = pkg_check_modules(
 )
 
 set_config("MOZ_SYSTEM_WEBP", depends(when=system_webp)(lambda: True))
+
 
 
 
@@ -1728,10 +1736,13 @@ def midl_flags(flags, target, midl):
         return flags + ["-nologo", "-no_cpp", "-env", env]
 
     
-    return flags + {
-        "x86": ["--win32", "-m32"],
-        "x86_64": ["--win64", "-m64"],
-    }[target.cpu]
+    return (
+        flags
+        + {
+            "x86": ["--win32", "-m32"],
+            "x86_64": ["--win64", "-m64"],
+        }[target.cpu]
+    )
 
 
 set_config("MIDL_FLAGS", midl_flags)
@@ -2752,6 +2763,7 @@ check_prog(
 )
 
 
+
 @depends(target, build_project)
 def forkserver_default(target, build_project):
     return build_project == "browser" and (
@@ -3349,6 +3361,7 @@ check_header(
     ),
     when=target_has_linux_kernel & compile_environment,
 )
+
 
 
 

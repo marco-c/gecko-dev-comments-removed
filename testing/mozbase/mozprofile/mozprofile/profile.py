@@ -410,7 +410,6 @@ class Profile(BaseProfile):
         for prefs_file in ("user.js", "prefs.js"):
             path = os.path.join(self.profile, prefs_file)
             if os.path.exists(path):
-
                 
                 
                 

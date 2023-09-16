@@ -118,7 +118,6 @@ def _collect(pipe, poll_interval):
     data = []
 
     try:
-
         
 
         
@@ -178,7 +177,6 @@ def _collect(pipe, poll_interval):
         warnings.warn("_collect failed: %s" % e)
 
     finally:
-
         for entry in data:
             pipe.send(entry)
 

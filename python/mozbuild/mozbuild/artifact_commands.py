@@ -513,7 +513,6 @@ def artifact_toolchain(
                 requests.exceptions.ChunkedEncodingError,
                 requests.exceptions.ConnectionError,
             ) as e:
-
                 if isinstance(e, requests.exceptions.HTTPError):
                     
                     

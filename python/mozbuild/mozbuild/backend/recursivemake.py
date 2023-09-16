@@ -873,7 +873,6 @@ class RecursiveMakeBackend(MakeBackend):
         unified_files_makefile_variable="unified_files",
         include_curdir_build_rules=True,
     ):
-
         
         unified_source_mapping = sorted(unified_source_mapping)
 

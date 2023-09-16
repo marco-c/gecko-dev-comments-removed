@@ -208,7 +208,7 @@ def main():
         if f in ignored_files and (f, 2) in functions:
             fail(f"There should be only one {f} file")
 
-    for (filename, n) in sorted(functions):
+    for filename, n in sorted(functions):
         for fn in functions[(filename, n)]:
             
             fail("'" + fn + "' present in " + filename)

@@ -4135,7 +4135,7 @@ class ADBDevice(ADBCommand):
         
         
         if extras:
-            for (key, val) in extras.items():
+            for key, val in extras.items():
                 if isinstance(val, bool):
                     extra_type_param = "--ez"
                 elif isinstance(val, int):
@@ -4196,7 +4196,7 @@ class ADBDevice(ADBCommand):
         if moz_env:
             
             
-            for (env_count, (env_key, env_val)) in enumerate(moz_env.items()):
+            for env_count, (env_key, env_val) in enumerate(moz_env.items()):
                 extras["env" + str(env_count)] = env_key + "=" + env_val
 
         
@@ -4261,13 +4261,13 @@ class ADBDevice(ADBCommand):
         if moz_env:
             
             
-            for (env_count, (env_key, env_val)) in enumerate(moz_env.items()):
+            for env_count, (env_key, env_val) in enumerate(moz_env.items()):
                 extras["env" + str(env_count)] = env_key + "=" + env_val
 
         
         
         if extra_args:
-            for (arg_count, arg) in enumerate(extra_args):
+            for arg_count, arg in enumerate(extra_args):
                 extras["arg" + str(arg_count)] = arg
 
         extras["use_multiprocess"] = e10s
@@ -4329,13 +4329,13 @@ class ADBDevice(ADBCommand):
         if moz_env:
             
             
-            for (env_count, (env_key, env_val)) in enumerate(moz_env.items()):
+            for env_count, (env_key, env_val) in enumerate(moz_env.items()):
                 extras["env" + str(env_count)] = env_key + "=" + env_val
 
         
         
         if extra_args:
-            for (arg_count, arg) in enumerate(extra_args):
+            for arg_count, arg in enumerate(extra_args):
                 extras["arg" + str(arg_count)] = arg
 
         extras["use_multiprocess"] = e10s

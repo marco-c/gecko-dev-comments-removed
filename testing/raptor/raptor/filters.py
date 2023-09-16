@@ -1,8 +1,8 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-# originally taken from /testing/talos/talos/filter.py
+
+
+
+
 
 import math
 
@@ -64,7 +64,6 @@ def register_filter(func):
 
 
 def filters(*args):
-
     filters_ = [_FILTERS[filter] for filter in args]
     return filters_
 
@@ -94,7 +93,7 @@ def parse(string_):
     return [func, digits]
 
 
-# filters that return a scalar
+
 
 
 @register_filter
@@ -114,14 +113,14 @@ def median(series):
     """
     series = sorted(series)
     if len(series) % 2:
-        # odd
-        # pylint --py3k W1619
-        # must force to int to use as index.
+        
+        
+        
         return series[int(len(series) / 2)]
     else:
-        # even
-        # pylint --py3k W1619
-        middle = int(len(series) / 2)  # the higher of the middle 2, actually
+        
+        
+        middle = int(len(series) / 2)  
         return 0.5 * (series[middle - 1] + series[middle])
 
 
@@ -179,11 +178,11 @@ def geometric_mean(series):
     total = 0
     for i in series:
         total += math.log(i + 1)
-    # pylint --py3k W1619
+    
     return math.exp(total / len(series)) - 1
 
 
-# filters that return a list
+
 
 
 @register_filter
@@ -193,7 +192,7 @@ def ignore_first(series, number=1):
     ignore first datapoint
     """
     if len(series) <= number:
-        # don't modify short series
+        
         return series
     return series[number:]
 
@@ -205,9 +204,9 @@ def ignore(series, function):
     ignore the first value of a list given by function
     """
     if len(series) <= 1:
-        # don't modify short series
+        
         return series
-    series = series[:]  # do not mutate the original series
+    series = series[:]  
     value = function(series)
     series.remove(value)
     return series
@@ -239,9 +238,9 @@ def ignore_negative(series):
     caution: if all data values are < 0, this will return an empty list
     """
     if len(series) <= 1:
-        # don't modify short series
+        
         return series
-    series = series[:]  # do not mutate the original series
+    series = series[:]  
     return list(filter(lambda x: x >= 0, series))
 
 
@@ -268,7 +267,7 @@ def v8_subtest(series, name):
         "Splay": 81491.0,
     }
 
-    # pylint --py3k W1619
+    
     return reference[name] / geometric_mean(series)
 
 

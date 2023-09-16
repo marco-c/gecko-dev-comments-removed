@@ -936,7 +936,6 @@ def gtest(
     debugger,
     debugger_args,
 ):
-
     
     try:
         command_context.config_environment

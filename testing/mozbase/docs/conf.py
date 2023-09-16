@@ -54,8 +54,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 
-project = u"MozBase"
-copyright = u"2012, Mozilla Automation and Tools team"
+project = "MozBase"
+copyright = "2012, Mozilla Automation and Tools team"
 
 
 
@@ -208,8 +208,8 @@ latex_documents = [
     (
         "index",
         "MozBase.tex",
-        u"MozBase Documentation",
-        u"Mozilla Automation and Tools team",
+        "MozBase Documentation",
+        "Mozilla Automation and Tools team",
         "manual",
     ),
 ]
@@ -243,8 +243,8 @@ man_pages = [
     (
         "index",
         "mozbase",
-        u"MozBase Documentation",
-        [u"Mozilla Automation and Tools team"],
+        "MozBase Documentation",
+        ["Mozilla Automation and Tools team"],
         1,
     )
 ]
@@ -262,8 +262,8 @@ texinfo_documents = [
     (
         "index",
         "MozBase",
-        u"MozBase Documentation",
-        u"Mozilla Automation and Tools team",
+        "MozBase Documentation",
+        "Mozilla Automation and Tools team",
         "MozBase",
         "One line description of project.",
         "Miscellaneous",

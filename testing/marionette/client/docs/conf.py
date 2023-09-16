@@ -45,8 +45,8 @@ source_suffix = ".rst"
 master_doc = "index"
 
 
-project = u"Marionette Python Client"
-copyright = u"2013, Mozilla Automation and Tools and individual contributors"
+project = "Marionette Python Client"
+copyright = "2013, Mozilla Automation and Tools and individual contributors"
 
 
 
@@ -202,8 +202,8 @@ latex_documents = [
     (
         "index",
         "MarionettePythonClient.tex",
-        u"Marionette Python Client Documentation",
-        u"Mozilla Automation and Tools team",
+        "Marionette Python Client Documentation",
+        "Mozilla Automation and Tools team",
         "manual",
     ),
 ]
@@ -237,8 +237,8 @@ man_pages = [
     (
         "index",
         "marionettepythonclient",
-        u"Marionette Python Client Documentation",
-        [u"Mozilla Automation and Tools team"],
+        "Marionette Python Client Documentation",
+        ["Mozilla Automation and Tools team"],
         1,
     )
 ]

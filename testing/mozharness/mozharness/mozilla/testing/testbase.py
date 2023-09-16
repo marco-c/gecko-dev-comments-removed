@@ -301,6 +301,7 @@ class TestingMixin(
         This function helps dealing with downloading files while outside
         of the releng network.
         """
+
         
         def _urlopen_basic_auth(url, **kwargs):
             self.info("We want to download this file %s" % url)

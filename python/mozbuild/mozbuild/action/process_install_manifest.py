@@ -23,7 +23,6 @@ COMPLETE = (
 
 
 def process_manifest(destdir, paths, track, no_symlinks=False, defines={}):
-
     if os.path.exists(track):
         
         

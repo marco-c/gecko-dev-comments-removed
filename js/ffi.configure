@@ -27,6 +27,7 @@ building_ffi = depends(system_ffi)(lambda v: v is None)
 set_config("MOZ_SYSTEM_FFI", depends_if(system_ffi)(lambda _: True))
 
 
+
 @depends(target, when=building_ffi)
 def ffi_target(target):
     if target.cpu not in ("x86", "x86_64", "arm", "aarch64"):

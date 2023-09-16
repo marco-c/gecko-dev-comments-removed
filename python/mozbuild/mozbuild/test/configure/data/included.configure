@@ -5,6 +5,7 @@
 
 
 
+
 @template
 def check_compiler_flag(flag):
     @depends(is_gcc)
@@ -17,6 +18,7 @@ def check_compiler_flag(flag):
 
 
 check_compiler_flag("-Werror=foobar")
+
 
 
 def fortytwo():
@@ -44,6 +46,7 @@ def check(value):
 
 
 set_config("TEMPLATE_VALUE_2", check)
+
 
 
 @imports("sys")

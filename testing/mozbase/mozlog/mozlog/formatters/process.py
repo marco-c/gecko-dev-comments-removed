@@ -27,7 +27,6 @@ def strsig(n):
                 and k != "SIGCLD"
                 and k != "SIGPOLL"
             ):
-
                 _SIG_NAME[getattr(signal, k)] = k
 
         
@@ -52,7 +51,7 @@ def strstatus(status):
     if os.name != "posix":
         
         if status < 0:
-            status += 2 ** 32
+            status += 2**32
         return "exit %x" % status
     elif status >= 0:
         return "exit %d" % status

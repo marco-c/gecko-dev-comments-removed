@@ -124,7 +124,6 @@ def makeLookup1():
     
     cp = baseCodepoint
     for index, tag in enumerate(features):
-
         
         glyphName = "%s.pass" % tag
         glyphOrder.append(glyphName)
@@ -303,7 +302,6 @@ def makeLookup3():
     
     cp = baseCodepoint
     for index, tag in enumerate(features):
-
         
         glyphName = "%s.pass" % tag
         glyphOrder.append(glyphName)

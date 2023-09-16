@@ -4,7 +4,6 @@
 
 
 def WebIDLTest(parser, harness):
-
     
     harness.should_throw(
         parser,

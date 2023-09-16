@@ -1033,6 +1033,7 @@ def sysroot(host_or_target, target_sysroot=None):
         opt = "--with-host-sysroot"
         env = "HOST_SYSROOT"
         when = depends(host)(lambda h: h.kernel == "Linux")
+
         
         
         @depends(when, bootstrap_target_when, target_sysroot.bootstrapped)
@@ -1731,7 +1732,6 @@ def select_linker_tmpl(host_or_target):
     @imports("os")
     @imports("shutil")
     def select_linker(linker, c_compiler, developer_options, toolchain_flags, target):
-
         if linker:
             linker = linker[0]
         else:
@@ -2502,6 +2502,7 @@ set_config("MOZ_CETCOMPAT_LDFLAGS", cet_ldflags)
 
 
 
+
 @depends(c_compiler)
 def frame_pointer_flags(compiler):
     if compiler.type == "clang-cl":
@@ -2788,6 +2789,7 @@ add_old_configure_assignment(
 
 
 
+
 @depends(target, host)
 def target_or_host_is_linux(target, host):
     return any(t.os == "GNU" and t.kernel == "Linux" for t in (target, host))
@@ -2962,6 +2964,7 @@ def libfuzzer_flags(value, tsan, enable_js_fuzzilli):
 set_config("HAVE_LIBFUZZER_FLAG_FUZZER_NO_LINK", libfuzzer_flags.no_link_flag_supported)
 set_config("LIBFUZZER_FLAGS", libfuzzer_flags.use_flags)
 add_old_configure_assignment("LIBFUZZER_FLAGS", libfuzzer_flags.use_flags)
+
 
 
 

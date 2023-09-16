@@ -201,7 +201,7 @@ class PlatformMixin(object):
         if self._is_darwin():
             
             return (
-                sys.maxsize > 2 ** 32
+                sys.maxsize > 2**32
             )  
         else:
             
@@ -578,7 +578,7 @@ class ScriptMixin(PlatformMixin):
             else:
                 local_file = open(file_name, "wb")
             while True:
-                block = f.read(1024 ** 2)
+                block = f.read(1024**2)
                 if not block:
                     if f_length is not None and got_length != f_length:
                         raise URLError(

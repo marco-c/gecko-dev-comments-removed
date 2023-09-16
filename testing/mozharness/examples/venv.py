@@ -18,6 +18,7 @@ from mozharness.base.python import virtualenv_config_options, VirtualenvMixin
 from mozharness.base.script import BaseScript
 
 
+
 class VirtualenvExample(VirtualenvMixin, BaseScript):
     config_options = [
         [

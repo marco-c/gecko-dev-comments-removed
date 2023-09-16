@@ -835,7 +835,6 @@ class ManifestParser(object):
 
         
         def callback(directory, dirpath, dirnames, filenames):
-
             
             filenames = [os.path.join(dirpath, filename) for filename in filenames]
             

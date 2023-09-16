@@ -343,8 +343,8 @@ class CppEclipseBackend(CommonBackend):
             for i in args["includes"]:
                 dirsettings += add_abs_include_path(i)
             for d in args["defines"]:
-                assert d[:2] == u"-D" or d[:2] == u"-U"
-                if d[:2] == u"-U":
+                assert d[:2] == "-D" or d[:2] == "-U"
+                if d[:2] == "-U":
                     
                     
                     

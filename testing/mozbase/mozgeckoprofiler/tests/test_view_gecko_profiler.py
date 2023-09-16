@@ -52,12 +52,11 @@ class TestViewGeckoProfile(unittest.TestCase):
         self.response = [None]
 
     def test_view_gecko_profile(self):
-
         
         temp_dir = tempfile.mkdtemp()
         profile_path = os.path.join(temp_dir, "fakeprofile.json")
         with io.open(profile_path, "w") as f:
-            f.write(u"FAKE_PROFILE")
+            f.write("FAKE_PROFILE")
 
         
         

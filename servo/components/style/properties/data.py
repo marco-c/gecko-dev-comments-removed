@@ -733,7 +733,7 @@ class PropertiesData(object):
         
         
         if self.engine == "gecko":
-            for (prefix, pref) in property.extra_prefixes:
+            for prefix, pref in property.extra_prefixes:
                 property.aliases.append(("-%s-%s" % (prefix, property.name), pref))
 
     def declare_longhand(self, name, engines=None, **kwargs):
