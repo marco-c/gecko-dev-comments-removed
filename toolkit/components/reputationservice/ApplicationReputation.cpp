@@ -183,6 +183,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     
     
     
+    
+    
     ".as",  
     
     ".asx",  
@@ -327,6 +329,8 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".mpkg",  
     
     ".msg",  
+    
+    
     
     
     
