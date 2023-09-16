@@ -761,7 +761,7 @@ bool nsCaseTransformTextRunFactory::TransformString(
 
         if (style.other_ & StyleTextTransformOther::FULL_SIZE_KANA) {
           
-          static const uint16_t kSmallKanas[] = {
+          static const uint32_t kSmallKanas[] = {
               
               0x3041, 0x3043, 0x3045, 0x3047, 0x3049, 0x3063, 0x3083, 0x3085, 0x3087,
               
@@ -775,7 +775,11 @@ bool nsCaseTransformTextRunFactory::TransformString(
               
               0x31FF,
               
-              0xFF67, 0xFF68, 0xFF69, 0xFF6A, 0xFF6B, 0xFF6C, 0xFF6D, 0xFF6E, 0xFF6F};
+              0xFF67, 0xFF68, 0xFF69, 0xFF6A, 0xFF6B, 0xFF6C, 0xFF6D, 0xFF6E, 0xFF6F,
+              
+              0x1B132, 0x1B150, 0x1B151, 0x1B152, 0x1B155, 0x1B164, 0x1B165, 0x1B166,
+              
+              0x1B167};
           static const uint16_t kFullSizeKanas[] = {
               
               0x3042, 0x3044, 0x3046, 0x3048, 0x304A, 0x3064, 0x3084, 0x3086, 0x3088,
@@ -790,7 +794,9 @@ bool nsCaseTransformTextRunFactory::TransformString(
               
               0x30ED,
               
-              0xFF71, 0xFF72, 0xFF73, 0xFF74, 0xFF75, 0xFF94, 0xFF95, 0xFF96, 0xFF82};
+              0xFF71, 0xFF72, 0xFF73, 0xFF74, 0xFF75, 0xFF94, 0xFF95, 0xFF96, 0xFF82,
+              
+              0x3053, 0x3090, 0x3091, 0x3092, 0x30B3, 0x30F0, 0x30F1, 0x30F2, 0x30F3};
           
 
           size_t index;
@@ -821,7 +827,6 @@ bool nsCaseTransformTextRunFactory::TransformString(
       }
 
       if (IS_IN_BMP(ch)) {
-        MOZ_ASSERT(IS_IN_BMP(originalCh));
         aConvertedString.Append(maskPassword ? mask : ch);
       } else {
         if (maskPassword) {
@@ -833,12 +838,12 @@ bool nsCaseTransformTextRunFactory::TransformString(
           aConvertedString.Append(L_SURROGATE(ch));
         }
         ++extraChars;
-        if (!IS_IN_BMP(originalCh)) {
-          
-          ++aOffsetInTextRun;
-          ++i;
-          aDeletedCharsArray.AppendElement(true);
-        }
+      }
+      if (!IS_IN_BMP(originalCh)) {
+        
+        ++aOffsetInTextRun;
+        ++i;
+        aDeletedCharsArray.AppendElement(true);
       }
 
       while (extraChars-- > 0) {
