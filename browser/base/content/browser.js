@@ -863,7 +863,14 @@ const gClickAndHoldListenersOnElement = {
       aEvent.button == 0 &&
       aEvent.target == aEvent.currentTarget &&
       !aEvent.currentTarget.open &&
-      !aEvent.currentTarget.disabled
+      !aEvent.currentTarget.disabled &&
+      
+      
+      
+      
+      
+      
+      aEvent.currentTarget.menupopup.hidden
     ) {
       let cmdEvent = document.createEvent("xulcommandevent");
       cmdEvent.initCommandEvent(
