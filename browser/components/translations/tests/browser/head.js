@@ -299,6 +299,137 @@ async function assertCheckboxState(
 
 
 
+
+
+
+
+function assertPanelElementVisibility(expectations = {}) {
+  
+  
+  const finalExpectations = {
+    cancelButton: false,
+    changeSourceLanguageButton: false,
+    dismissErrorButton: false,
+    error: false,
+    fromMenuList: false,
+    fromLabel: false,
+    header: false,
+    intro: false,
+    langSelection: false,
+    restoreButton: false,
+    toLabel: false,
+    toMenuList: false,
+    translateButton: false,
+    unsupportedHint: false,
+    ...expectations,
+  };
+  const elements = TranslationsPanel.elements;
+  for (const propertyName in finalExpectations) {
+    ok(
+      elements.hasOwnProperty(propertyName),
+      `Expected translations panel elements to have property ${propertyName}`
+    );
+    if (finalExpectations.hasOwnProperty(propertyName)) {
+      is(
+        isVisible(elements[propertyName]),
+        finalExpectations[propertyName],
+        `The element "${propertyName}" visibility should match the expectation`
+      );
+    }
+  }
+}
+
+
+
+
+
+
+function assertPanelMainViewId(expectedId) {
+  const mainViewId =
+    TranslationsPanel.elements.multiview.getAttribute("mainViewId");
+  is(
+    mainViewId,
+    expectedId,
+    "The TranslationsPanel mainViewId should match its expected value"
+  );
+}
+
+
+
+
+const defaultViewVisibilityExpectations = {
+  cancelButton: true,
+  fromMenuList: true,
+  fromLabel: true,
+  header: true,
+  langSelection: true,
+  toMenuList: true,
+  toLabel: true,
+  translateButton: true,
+};
+
+
+
+
+function assertPanelDefaultView() {
+  assertPanelMainViewId("translations-panel-view-default");
+  assertPanelElementVisibility({
+    ...defaultViewVisibilityExpectations,
+  });
+}
+
+
+
+
+function assertPanelErrorView() {
+  assertPanelMainViewId("translations-panel-view-default");
+  assertPanelElementVisibility({
+    error: true,
+    ...defaultViewVisibilityExpectations,
+  });
+}
+
+
+
+
+function assertPanelFirstShowView() {
+  assertPanelMainViewId("translations-panel-view-default");
+  assertPanelElementVisibility({
+    intro: true,
+    ...defaultViewVisibilityExpectations,
+  });
+}
+
+
+
+
+function assertPanelRevisitView() {
+  assertPanelMainViewId("translations-panel-view-default");
+  assertPanelElementVisibility({
+    header: true,
+    langSelection: true,
+    restoreButton: true,
+    toLabel: true,
+    toMenuList: true,
+    translateButton: true,
+  });
+}
+
+
+
+
+function assertPanelUnsupportedLanguageView() {
+  assertPanelMainViewId("translations-panel-view-unsupported-language");
+  assertPanelElementVisibility({
+    changeSourceLanguageButton: true,
+    dismissErrorButton: true,
+    unsupportedHint: true,
+  });
+}
+
+
+
+
 async function navigate(url, message) {
   
   
@@ -439,7 +570,13 @@ function maybeGetByL10nId(l10nId, doc = document) {
 
 
 
-async function waitForTranslationsPopupEvent(eventName, callback) {
+
+
+async function waitForTranslationsPopupEvent(
+  eventName,
+  callback,
+  postEventAssertion = null
+) {
   
   TranslationsPanel.elements;
   const panel = document.getElementById("translations-panel");
@@ -450,6 +587,9 @@ async function waitForTranslationsPopupEvent(eventName, callback) {
   await callback();
   info("Waiting for the translations panel popup to be shown");
   await promise;
+  if (postEventAssertion) {
+    postEventAssertion();
+  }
   
   await new Promise(resolve => setTimeout(resolve, 0));
 }
