@@ -119,6 +119,14 @@ class JitZone {
   
   
   
+  WeakHeapPtr<JSScript*> lastStubFoldingBailoutChild_;
+  WeakHeapPtr<JSScript*> lastStubFoldingBailoutParent_;
+
+  
+  
+  
+  
+  
   
   
   
@@ -215,6 +223,24 @@ class JitZone {
 
   void removeInlinedCompilations(JSScript* inlined) {
     inlinedCompilations_.remove(inlined);
+  }
+
+  void noteStubFoldingBailout(JSScript* child, JSScript* parent) {
+    lastStubFoldingBailoutChild_ = child;
+    lastStubFoldingBailoutParent_ = parent;
+  }
+  bool hasStubFoldingBailoutData(JSScript* child) const {
+    return lastStubFoldingBailoutChild_ &&
+           lastStubFoldingBailoutChild_.get() == child &&
+           lastStubFoldingBailoutParent_;
+  }
+  JSScript* stubFoldingBailoutParent() const {
+    MOZ_ASSERT(lastStubFoldingBailoutChild_);
+    return lastStubFoldingBailoutParent_.get();
+  }
+  void clearStubFoldingBailoutData() {
+    lastStubFoldingBailoutChild_ = nullptr;
+    lastStubFoldingBailoutParent_ = nullptr;
   }
 
   void registerJitScript(JitScript* script) { jitScripts_.insertBack(script); }
