@@ -107,6 +107,9 @@ class CookiesStorageActor extends BaseStorageActor {
 
 
   getMatchingHosts(cookies) {
+    if (!cookies) {
+      return [];
+    }
     if (!cookies.length) {
       cookies = [cookies];
     }
@@ -192,45 +195,45 @@ class CookiesStorageActor extends BaseStorageActor {
 
 
 
+  onCookieChanged(cookie, action) {
+    const {
+      COOKIE_ADDED,
+      COOKIE_CHANGED,
+      COOKIE_DELETED,
+      COOKIES_BATCH_DELETED,
+      ALL_COOKIES_CLEARED,
+    } = Ci.nsICookieNotification;
 
-
-
-
-
-  onCookieChanged(subject, topic, action) {
-    if (
-      (topic !== "cookie-changed" && topic !== "private-cookie-changed") ||
-      !this.storageActor ||
-      !this.storageActor.windows
-    ) {
-      return null;
+    const hosts = this.getMatchingHosts(cookie);
+    if (!hosts.length) {
+      return;
     }
 
-    const hosts = this.getMatchingHosts(subject);
     const data = {};
 
     switch (action) {
-      case "added":
-      case "changed":
+      case COOKIE_ADDED:
+      case COOKIE_CHANGED:
         if (hosts.length) {
           for (const host of hosts) {
             const uniqueKey =
-              `${subject.name}${SEPARATOR_GUID}${subject.host}` +
-              `${SEPARATOR_GUID}${subject.path}`;
+              `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
+              `${SEPARATOR_GUID}${cookie.path}`;
 
-            this.hostVsStores.get(host).set(uniqueKey, subject);
+            this.hostVsStores.get(host).set(uniqueKey, cookie);
             data[host] = [uniqueKey];
           }
-          this.storageActor.update(action, "cookies", data);
+          const actionStr = action == COOKIE_ADDED ? "added" : "changed";
+          this.storageActor.update(actionStr, "cookies", data);
         }
         break;
 
-      case "deleted":
+      case COOKIE_DELETED:
         if (hosts.length) {
           for (const host of hosts) {
             const uniqueKey =
-              `${subject.name}${SEPARATOR_GUID}${subject.host}` +
-              `${SEPARATOR_GUID}${subject.path}`;
+              `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
+              `${SEPARATOR_GUID}${cookie.path}`;
 
             this.hostVsStores.get(host).delete(uniqueKey);
             data[host] = [uniqueKey];
@@ -239,14 +242,15 @@ class CookiesStorageActor extends BaseStorageActor {
         }
         break;
 
-      case "batch-deleted":
+      case COOKIES_BATCH_DELETED:
         if (hosts.length) {
           for (const host of hosts) {
             const stores = [];
-            for (const cookie of subject) {
+            
+            for (const batchCookie of cookie) {
               const uniqueKey =
-                `${cookie.name}${SEPARATOR_GUID}${cookie.host}` +
-                `${SEPARATOR_GUID}${cookie.path}`;
+                `${batchCookie.name}${SEPARATOR_GUID}${batchCookie.host}` +
+                `${SEPARATOR_GUID}${batchCookie.path}`;
 
               this.hostVsStores.get(host).delete(uniqueKey);
               stores.push(uniqueKey);
@@ -257,7 +261,7 @@ class CookiesStorageActor extends BaseStorageActor {
         }
         break;
 
-      case "cleared":
+      case ALL_COOKIES_CLEARED:
         if (hosts.length) {
           for (const host of hosts) {
             data[host] = [];
@@ -266,7 +270,6 @@ class CookiesStorageActor extends BaseStorageActor {
         }
         break;
     }
-    return null;
   }
 
   async getFields() {
@@ -525,29 +528,32 @@ class CookiesStorageActor extends BaseStorageActor {
     this._removeCookies(host, { domain, originAttributes });
   }
 
-  observe(subject, topic, data) {
+  observe(subject, topic) {
     if (
       !subject ||
-      (topic != "cookie-changed" && topic != "private-cookie-changed")
+      (topic != "cookie-changed" && topic != "private-cookie-changed") ||
+      !this.storageActor ||
+      !this.storageActor.windows
     ) {
       return;
     }
 
-    if (data === "batch-deleted") {
-      const cookiesNoInterface = subject.QueryInterface(Ci.nsIArray);
-      const cookies = [];
-
+    const notification = subject.QueryInterface(Ci.nsICookieNotification);
+    let cookie;
+    if (notification.action == Ci.nsICookieNotification.COOKIES_BATCH_DELETED) {
+      
+      const cookiesNoInterface =
+        notification.batchDeletedCookies.QueryInterface(Ci.nsIArray);
+      cookie = [];
       for (let i = 0; i < cookiesNoInterface.length; i++) {
-        const cookie = cookiesNoInterface.queryElementAt(i, Ci.nsICookie);
-        cookies.push(cookie);
+        cookie.push(cookiesNoInterface.queryElementAt(i, Ci.nsICookie));
       }
-      this.onCookieChanged(cookies, topic, data);
-
-      return;
+    } else if (notification.cookie) {
+      
+      cookie = notification.cookie.QueryInterface(Ci.nsICookie);
     }
 
-    const cookie = subject.QueryInterface(Ci.nsICookie);
-    this.onCookieChanged(cookie, topic, data);
+    this.onCookieChanged(cookie, notification.action);
   }
 }
 exports.CookiesStorageActor = CookiesStorageActor;
