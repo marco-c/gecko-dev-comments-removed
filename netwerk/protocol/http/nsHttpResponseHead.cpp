@@ -378,7 +378,7 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
     const char* p = start + index + 1;
     while (p < end && NS_IsHTTPWhitespace(*p)) ++p;
     if (p == end || !mozilla::IsAsciiDigit(*p)) {
-      return NS_ERROR_FAILURE;
+      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
     }
     const char* codeStart = p;
     while (p < end && mozilla::IsAsciiDigit(*p)) ++p;
@@ -386,7 +386,7 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
     
     
     if (p - codeStart > 3 || (p < end && !NS_IsHTTPWhitespace(*p))) {
-      return NS_ERROR_FAILURE;
+      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
     }
 
     
@@ -394,7 +394,7 @@ nsresult nsHttpResponseHead::ParseStatusLine_locked(const nsACString& line) {
     nsresult rv;
     mStatus = strCode.ToInteger(&rv);
     if (NS_FAILED(rv)) {
-      return NS_ERROR_FAILURE;
+      return NS_ERROR_PARSING_HTTP_STATUS_LINE;
     }
 
     
