@@ -52,11 +52,17 @@ const SPECIALVALUES = new Set([
 
 
 
-
-
 class CssColor {
+  
+
+
   constructor(colorValue) {
-    this.newColor(colorValue);
+    
+    
+    
+    this.lowerCased = colorValue.toLowerCase();
+    this.authored = colorValue;
+    this.#setColorUnitUppercase(colorValue);
   }
 
   
@@ -370,22 +376,6 @@ class CssColor {
       return "";
     }
     return false;
-  }
-
-  
-
-
-
-
-
-  newColor(color) {
-    
-    
-    
-    this.lowerCased = color.toLowerCase();
-    this.authored = color;
-    this.#setColorUnitUppercase(color);
-    return this;
   }
 
   nextColorUnit() {
