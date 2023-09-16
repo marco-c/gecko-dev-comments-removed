@@ -17,25 +17,22 @@ const ALL_ROOT_GUIDS = [
 ];
 
 add_task(async function setup() {
-  
-  await setupPlacesDatabase("noRoot.sqlite");
+  await setupPlacesDatabase([
+    "migration",
+    `places_v${Ci.nsINavHistoryService.DATABASE_SCHEMA_VERSION}.sqlite`,
+  ]);
 
   
   let path = PathUtils.join(PathUtils.profileDir, DB_FILENAME);
   let db = await Sqlite.openConnection({ path });
-
-  let rows = await db.execute(
+  await db.execute(
     `
-    SELECT guid FROM moz_bookmarks
-    WHERE guid = :guid
-  `,
+    DELETE FROM moz_bookmarks WHERE guid = :guid
+    `,
     {
       guid: PlacesUtils.bookmarks.rootGuid,
     }
   );
-
-  Assert.equal(rows.length, 0, "Root folder should not exist");
-
   await db.close();
 });
 

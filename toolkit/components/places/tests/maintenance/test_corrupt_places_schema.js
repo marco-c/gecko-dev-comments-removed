@@ -9,7 +9,6 @@ add_task(async function () {
   
   
   let db = await Sqlite.openConnection({ path });
-  await db.setSchemaVersion(43);
   await db.execute("DROP TABLE moz_places");
   await db.close();
 
