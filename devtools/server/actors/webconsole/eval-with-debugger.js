@@ -234,6 +234,11 @@ function evalWithDebugger(string, options = {}, webConsole) {
     );
   }
 
+  
+  if (string.trim() === "help" && isHelpFunction(result, bindings)) {
+    return evalWithDebugger(":help", options, webConsole);
+  }
+
   return {
     result,
     
@@ -244,6 +249,18 @@ function evalWithDebugger(string, options = {}, webConsole) {
   };
 }
 exports.evalWithDebugger = evalWithDebugger;
+
+
+
+
+function isHelpFunction(result, bindings) {
+  return (
+    "return" in result &&
+    result.return &&
+    result.return.class === "Function" &&
+    result.return === bindings.help
+  );
+}
 
 function getEvalResult(
   dbg,
@@ -556,11 +573,6 @@ function updateConsoleInputEvaluation(dbg, webConsole) {
 
 function getEvalInput(string, bindings) {
   const trimmedString = string.trim();
-  
-  if (bindings?.help && trimmedString === "help") {
-    return "help()";
-  }
-
   
   if (
     trimmedString == "console.mihai()" ||
