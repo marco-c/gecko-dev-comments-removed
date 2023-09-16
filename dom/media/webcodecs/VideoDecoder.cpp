@@ -354,6 +354,8 @@ static Result<UniquePtr<TrackInfo>, nsresult> CreateVideoInfo(
             static_cast<decltype(gfx::IntSize::height)>(spsdata.display_height);
       }
     }
+  } else {
+    vi->mExtraData = new MediaByteBuffer();
   }
 
   
