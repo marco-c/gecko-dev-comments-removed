@@ -147,7 +147,7 @@ class WebGPUParent final : public PWebGPUParent {
   
   std::unordered_map<layers::RemoteTextureOwnerId, RefPtr<PresentationData>,
                      layers::RemoteTextureOwnerId::HashFn>
-      mCanvasMap;
+      mPresentationDataMap;
 
   RefPtr<layers::RemoteTextureOwnerClient> mRemoteTextureOwner;
 
