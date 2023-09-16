@@ -418,10 +418,10 @@ void nsGenericHTMLElement::UpdateEditableState(bool aNotify) {
   
   ContentEditableTristate value = GetContentEditableValue();
   if (value != eInherit) {
-    DoSetEditableFlag(!!value, aNotify);
+    SetEditableFlag(!!value);
+    UpdateReadOnlyState(aNotify);
     return;
   }
-
   nsStyledElement::UpdateEditableState(aNotify);
 }
 
@@ -486,8 +486,7 @@ void nsGenericHTMLElement::UnbindFromTree(bool aNullParent) {
   RemoveFromNameTable();
 
   if (GetContentEditableValue() == eTrue) {
-    Document* doc = GetComposedDoc();
-    if (doc) {
+    if (Document* doc = GetComposedDoc()) {
       doc->ChangeContentEditableCount(this, -1);
     }
   }
@@ -2166,9 +2165,16 @@ void nsGenericHTMLFormElement::UpdateDisabledState(bool aNotify) {
     ToggleStates(changedStates, aNotify);
     if (DoesReadOnlyApply()) {
       
-      UpdateState(aNotify);
+      UpdateReadOnlyState(aNotify);
     }
   }
+}
+
+bool nsGenericHTMLFormElement::IsReadOnlyInternal() const {
+  if (DoesReadOnlyApply()) {
+    return IsDisabled() || GetBoolAttr(nsGkAtoms::readonly);
+  }
+  return nsGenericHTMLElement::IsReadOnlyInternal();
 }
 
 void nsGenericHTMLFormElement::FieldSetDisabledChanged(bool aNotify) {
@@ -2630,14 +2636,6 @@ ElementState nsGenericHTMLFormControlElement::IntrinsicState() const {
                  "Default submit element that isn't a submit control.");
     
     state |= ElementState::DEFAULT;
-  }
-
-  
-  if (!state.HasState(ElementState::READWRITE) && DoesReadOnlyApply()) {
-    if (!GetBoolAttr(nsGkAtoms::readonly) && !IsDisabled()) {
-      state |= ElementState::READWRITE;
-      state &= ~ElementState::READONLY;
-    }
   }
 
   return state;

@@ -278,6 +278,11 @@ class Element : public FragmentOrElement {
 
 
   bool IsDisabled() const { return State().HasState(ElementState::DISABLED); }
+  bool IsReadOnly() const { return State().HasState(ElementState::READONLY); }
+  bool IsDisabledOrReadOnly() const {
+    return State().HasAtLeastOneOfStates(ElementState::DISABLED |
+                                         ElementState::READONLY);
+  }
 
   virtual int32_t TabIndexDefault() { return -1; }
 
@@ -800,6 +805,11 @@ class Element : public FragmentOrElement {
   }
 
   void UpdateEditableState(bool aNotify) override;
+  
+  void UpdateReadOnlyState(bool aNotify);
+  
+  
+  virtual bool IsReadOnlyInternal() const;
 
   
 

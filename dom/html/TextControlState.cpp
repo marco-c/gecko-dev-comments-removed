@@ -1884,10 +1884,7 @@ nsresult TextControlState::PrepareEditor(const nsAString* aValue) {
   editorFlags = newTextEditor->Flags();
 
   
-  
-  
-  if (mTextCtrlElement->HasAttr(nsGkAtoms::readonly) ||
-      mTextCtrlElement->HasAttr(nsGkAtoms::disabled)) {
+  if (mTextCtrlElement->IsDisabledOrReadOnly()) {
     editorFlags |= nsIEditor::eEditorReadonlyMask;
   }
 

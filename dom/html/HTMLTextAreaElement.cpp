@@ -65,9 +65,10 @@ HTMLTextAreaElement::HTMLTextAreaElement(
   
   
   
-  
   AddStatesSilently(ElementState::ENABLED | ElementState::OPTIONAL_ |
-                    ElementState::VALID | ElementState::VALUE_EMPTY);
+                    ElementState::READWRITE | ElementState::VALID |
+                    ElementState::VALUE_EMPTY);
+  RemoveStatesSilently(ElementState::READONLY);
 }
 
 HTMLTextAreaElement::~HTMLTextAreaElement() {
@@ -897,6 +898,10 @@ void HTMLTextAreaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
         UpdateRequiredState(!!aValue, aNotify);
       }
 
+      if (aName == nsGkAtoms::readonly && !!aValue != !!aOldValue) {
+        UpdateReadOnlyState(aNotify);
+      }
+
       UpdateValueMissingValidityState();
 
       
@@ -948,9 +953,7 @@ nsresult HTMLTextAreaElement::CopyInnerTo(Element* aDest) {
   return NS_OK;
 }
 
-bool HTMLTextAreaElement::IsMutable() const {
-  return !HasAttr(nsGkAtoms::readonly) && !IsDisabled();
-}
+bool HTMLTextAreaElement::IsMutable() const { return !IsDisabledOrReadOnly(); }
 
 void HTMLTextAreaElement::SetCustomValidity(const nsAString& aError) {
   ConstraintValidation::SetCustomValidity(aError);
