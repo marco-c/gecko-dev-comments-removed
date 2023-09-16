@@ -5,6 +5,8 @@
 
 
 
+from wptserve.utils import isomorphic_decode
+
 def main(request, response):
   
   headers = [
@@ -13,8 +15,25 @@ def main(request, response):
   ]
 
   
+  requested_size = request.GET.first(b"requested-size", None)
+
   
-  score_ad_content = ''
+  requested_size_check = ''
+  if requested_size is not None:
+    
+    
+    
+    
+    width, height = isomorphic_decode(requested_size).split('-')
+
+    requested_size_check = (
+      f'''
+        if (!(auctionConfig.requestedSize.width === '{width}') &&
+             (auctionConfig.requestedSize.height === '{height}')) {{
+          throw new Error('requestedSize missing/incorrect in auctionConfig');
+        }}
+      '''
+    )
 
   
   
@@ -26,18 +45,19 @@ def main(request, response):
       auctionConfig,
       trustedScoringSignals,
       browserSignals) {{
-        {score_ad_content}
+        {requested_size_check}
         return 2*bid;
       }}
     '''
   )
 
   report_result = (
-    '''function reportResult(
+    f'''function reportResult(
       auctionConfig,
-      browserSignals) {
+      browserSignals) {{
+        {requested_size_check}
         return;
-      }
+      }}
     '''
   )
 

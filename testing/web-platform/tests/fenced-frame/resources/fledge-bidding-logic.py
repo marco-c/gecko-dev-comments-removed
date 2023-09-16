@@ -5,6 +5,8 @@
 
 
 
+from wptserve.utils import isomorphic_decode
+
 def main(request, response):
   
   headers = [
@@ -13,10 +15,28 @@ def main(request, response):
   ]
 
   
+  requested_size = request.GET.first(b"requested-size", None)
   ad_with_size = request.GET.first(b"ad-with-size", None)
   automatic_beacon = request.GET.first(b"automatic-beacon", None)
 
   
+  requested_size_check = ''
+  if requested_size is not None:
+    
+    
+    
+    
+    width, height = isomorphic_decode(requested_size).split('-')
+
+    requested_size_check = (
+      f'''
+        if (!(browserSignals.requestedSize.width === '{width}') &&
+             (browserSignals.requestedSize.height === '{height}')) {{
+          throw new Error('requestedSize missing/incorrect in browserSignals');
+        }}
+      '''
+    )
+
   render_obj = 'ad.renderUrl'
   if ad_with_size is not None:
     render_obj = '{ url: ad.renderUrl, width: "100px", height: "50px" }'
@@ -53,6 +73,7 @@ def main(request, response):
       perBuyerSignals,
       trustedBiddingSignals,
       browserSignals) {{
+        {requested_size_check}
         const ad = interestGroup.ads[0];
 
         // `auctionSignals` controls whether or not component auctions are
