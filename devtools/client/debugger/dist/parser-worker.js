@@ -30492,10 +30492,6 @@
       return locations.map(parser);
     }
 
-    function generateWhitespace(length) {
-      return Array.from(new Array(length + 1)).join(" ");
-    }
-
     function calcLineAndColumn(source, index) {
       const lines = source.substring(0, index).split(newLines);
       const line = lines.length;
@@ -30513,7 +30509,8 @@
         line,
         column,
         
-        source: generateWhitespace(column) + location.source,
+        
+        source: " ".repeat(column - 1) + location.source,
       });
     }
 
