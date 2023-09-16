@@ -57,13 +57,6 @@ struct AttrAtomArray {
     }
     return CreateDeduplicatedCopyIfDifferentImpl();
   }
-  AttrAtomArray Clone() const {
-    return {mArray.Clone(), mMayContainDuplicates};
-  }
-  void Clear() {
-    mArray.Clear();
-    mMayContainDuplicates = false;
-  }
   bool operator==(const AttrAtomArray& aOther) const {
     return mArray == aOther.mArray;
   }
@@ -245,7 +238,7 @@ class nsAttrValue {
   bool GetColorValue(nscolor& aColor) const;
   inline int16_t GetEnumValue() const;
   inline double GetPercentValue() const;
-  inline mozilla::AttrAtomArray* GetAtomArrayValue() const;
+  inline const mozilla::AttrAtomArray* GetAtomArrayValue() const;
   inline mozilla::DeclarationBlock* GetCSSDeclarationValue() const;
   inline nsIURI* GetURLValue() const;
   inline double GetDoubleValue() const;
@@ -536,7 +529,6 @@ class nsAttrValue {
   
   
   MiscContainer* EnsureEmptyMiscContainer();
-  bool EnsureEmptyAtomArray();
   already_AddRefed<nsStringBuffer> GetStringBuffer(
       const nsAString& aValue) const;
   
