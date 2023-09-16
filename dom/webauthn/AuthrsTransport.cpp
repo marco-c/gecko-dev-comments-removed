@@ -3,17 +3,9 @@
 
 
 #include "AuthrsTransport.h"
+#include "AuthrsBridge_ffi.h"
 #include "nsIWebAuthnController.h"
 #include "nsCOMPtr.h"
-
-namespace {
-extern "C" {
-
-
-nsresult authrs_transport_constructor(nsIWebAuthnTransport** result);
-
-}  
-}  
 
 namespace mozilla::dom {
 
