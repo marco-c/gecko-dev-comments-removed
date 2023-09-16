@@ -458,27 +458,14 @@ class ScriptExecutorRunnable final : public MainThreadWorkerSyncRunnable {
   nsresult Cancel() override;
 };
 
-template <typename Unit>
-static bool EvaluateSourceBuffer(JSContext* aCx,
-                                 const JS::CompileOptions& aOptions,
-                                 JS::loader::ClassicScript* aClassicScript,
-                                 JS::SourceText<Unit>& aSourceBuffer) {
-  static_assert(std::is_same<Unit, char16_t>::value ||
-                    std::is_same<Unit, Utf8Unit>::value,
-                "inferred units must be UTF-8 or UTF-16");
-
-  JS::Rooted<JSScript*> script(aCx, JS::Compile(aCx, aOptions, aSourceBuffer));
-
-  if (!script) {
-    return false;
-  }
-
+static bool EvaluateSourceBuffer(JSContext* aCx, JS::Handle<JSScript*> aScript,
+                                 JS::loader::ClassicScript* aClassicScript) {
   if (aClassicScript) {
-    aClassicScript->AssociateWithScript(script);
+    aClassicScript->AssociateWithScript(aScript);
   }
 
   JS::Rooted<JS::Value> unused(aCx);
-  return JS_ExecuteScript(aCx, script, &unused);
+  return JS_ExecuteScript(aCx, aScript, &unused);
 }
 
 WorkerScriptLoader::WorkerScriptLoader(
@@ -1225,13 +1212,38 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
         new JS::loader::ClassicScript(aRequest->mFetchOptions, requestBaseURI);
   }
 
-  bool successfullyEvaluated =
-      aRequest->IsUTF8Text()
-          ? EvaluateSourceBuffer(aCx, options, classicScript,
-                                 maybeSource.ref<JS::SourceText<Utf8Unit>>())
-          : EvaluateSourceBuffer(aCx, options, classicScript,
-                                 maybeSource.ref<JS::SourceText<char16_t>>());
+  JS::Rooted<JSScript*> script(aCx);
+  script = aRequest->IsUTF8Text()
+               ? JS::Compile(aCx, options,
+                             maybeSource.ref<JS::SourceText<Utf8Unit>>())
+               : JS::Compile(aCx, options,
+                             maybeSource.ref<JS::SourceText<char16_t>>());
+  if (!script) {
+    if (loadContext->IsTopLevel()) {
+      
+      
+      
+      
+      
+      
+      
+      JS_ClearPendingException(aCx);
+      mRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      mRv.StealExceptionFromJSContext(aCx);
+    }
 
+    return false;
+  }
+
+  bool successfullyEvaluated = EvaluateSourceBuffer(aCx, script, classicScript);
   if (aRequest->IsCanceled()) {
     return false;
   }
