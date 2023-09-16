@@ -6218,6 +6218,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
     } else {
       LOG("  set kiosk mode");
     }
+    
+    MakeFullScreen( true);
   }
 
   if (mWindowType == WindowType::Popup) {
