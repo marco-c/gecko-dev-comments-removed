@@ -1,6 +1,8 @@
 importScripts("/resources/testharness.js");
 var unexpected = [
   
+  "SharedWorker",
+  "CanvasPath",
   "SharedWorkerGlobalScope",
   "AbstractView",
   "AbstractWorker",

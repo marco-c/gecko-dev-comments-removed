@@ -2,6 +2,9 @@
 
 var unexpected = [
   
+  "ApplicationCache",
+  "SharedWorker",
+  "CanvasPath",
   "DedicatedWorkerGlobalScope",
   "AbstractView",
   "AbstractWorker",
