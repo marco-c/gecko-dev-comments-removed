@@ -371,11 +371,7 @@ struct StreamDataCounters {
            fec.payload_bytes;
   }
 
-  int64_t first_packet_time_ms;  
-  
-  
-  
-  absl::optional<int64_t> last_packet_received_timestamp_ms;
+  int64_t first_packet_time_ms;    
   RtpPacketCounter transmitted;    
   RtpPacketCounter retransmitted;  
   RtpPacketCounter fec;            
