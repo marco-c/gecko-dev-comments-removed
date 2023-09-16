@@ -35,6 +35,10 @@
 
 #include <algorithm>
 
+#if defined(XP_WIN)
+#  include "mozilla/NativeNt.h"
+#endif
+
 
 
 
@@ -87,8 +91,14 @@ class BackgroundHangManager : public nsIObserver {
 
   ProfilerThreadId mHangMonitorProfilerThreadId;
 
-  void SetMonitorThreadId() {
+  void InitMonitorThread() {
     mHangMonitorProfilerThreadId = profiler_current_thread_id();
+#if defined(MOZ_GECKO_PROFILER) && defined(XP_WIN) && defined(_M_X64)
+    
+    
+    
+    mozilla::nt::CheckStack(5 * 0x1000);
+#endif
   }
 
   
@@ -332,8 +342,8 @@ BackgroundHangManager::BackgroundHangManager()
   DebugOnly<nsresult> rv =
       NS_NewNamedThread("BHMgr Monitor", getter_AddRefs(mHangMonitorThread),
                         mozilla::NewRunnableMethod(
-                            "BackgroundHangManager::SetMonitorThreadId", this,
-                            &BackgroundHangManager::SetMonitorThreadId));
+                            "BackgroundHangManager::InitMonitorThread", this,
+                            &BackgroundHangManager::InitMonitorThread));
 
   MOZ_ASSERT(NS_SUCCEEDED(rv) && mHangMonitorThread,
              "Failed to create BHR processing thread");
