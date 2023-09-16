@@ -261,9 +261,6 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     
     @Test fun loadExternalDenied() {
-        
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
         testLoadExpectError(
             TestLoader()
                 .uri("file:///")

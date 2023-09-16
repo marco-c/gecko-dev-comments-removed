@@ -497,8 +497,8 @@ class ProgressDelegateTest : BaseSessionTest() {
     @Test
     fun saveAndRestoreState() {
         
-        
         assumeThat(sessionRule.env.isX86, equalTo(false))
+        
         assumeThat(sessionRule.env.isFission, equalTo(false))
         val startUri = createTestUrl(SAVE_STATE_PATH)
         val savedState = collectState(startUri)

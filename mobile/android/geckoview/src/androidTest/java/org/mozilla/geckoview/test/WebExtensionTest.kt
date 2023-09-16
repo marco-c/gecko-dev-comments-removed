@@ -2998,9 +2998,6 @@ class WebExtensionTest : BaseSessionTest() {
     @Test
     fun testMozAddonManagerDisabledByDefault() {
         
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
-        
         val geckoPrefs = sessionRule.getPrefs(
             "extensions.webapi.enabled",
         )
