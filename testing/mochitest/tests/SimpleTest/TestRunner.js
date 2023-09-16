@@ -845,6 +845,7 @@ TestRunner.testFinished = function (tests) {
             } else if (
               testwin.SimpleTest._tests.length != testwin.SimpleTest.testsLength
             ) {
+              var didReportError = false;
               var wrongtestlength =
                 testwin.SimpleTest._tests.length -
                 testwin.SimpleTest.testsLength;
@@ -858,6 +859,19 @@ TestRunner.testFinished = function (tests) {
                     TestRunner.currentTestURL +
                     " logged result after SimpleTest.finish(): " +
                     wrongtestname
+                );
+                didReportError = true;
+              }
+              if (!didReportError) {
+                
+                
+                
+                
+                TestRunner.structuredLogger.error(
+                  "TEST-UNEXPECTED-FAIL | " +
+                    TestRunner.currentTestURL +
+                    " hit an unexpected condition when checking for" +
+                    " logged results after SimpleTest.finish()"
                 );
               }
               TestRunner.updateUI([{ result: false }]);
