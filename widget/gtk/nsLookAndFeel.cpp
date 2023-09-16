@@ -982,10 +982,6 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
           
           return false;
         }
-        if (IsKdeDesktopEnvironment()) {
-          
-          return false;
-        }
         return true;
       }();
       break;
