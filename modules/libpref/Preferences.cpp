@@ -2893,7 +2893,9 @@ nsPrefBranch::AddObserverImpl(const nsACString& aDomain, nsIObserver* aObserver,
 
   mObservers.WithEntryHandle(pCallback.get(), [&](auto&& p) {
     if (p) {
-      NS_WARNING("Ignoring duplicate observer.");
+      NS_WARNING(
+          nsPrintfCString("Ignoring duplicate observer: %s", prefName.get())
+              .get());
     } else {
       
       
