@@ -98,6 +98,10 @@ MOZ_COLD JS_PUBLIC_API void ReportOutOfMemory(FrontendContext* fc);
 
 
 
+MOZ_COLD JS_PUBLIC_API void ReportLargeOutOfMemory(JSContext* cx);
+
+
+
 
 
 
