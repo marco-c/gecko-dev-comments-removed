@@ -264,7 +264,7 @@ pub enum GenericNumberOrFromFont<N> {
 pub enum GenericFontSizeAdjust<Factor> {
     #[animation(error)]
     None,
-    
+    #[value_info(starts_with_keyword)]
     ExHeight(Factor),
     #[value_info(starts_with_keyword)]
     CapHeight(Factor),
