@@ -10167,7 +10167,6 @@ var ShoppingSidebarManager = {
 
     
     if (button.hidden && isCurrentBrowserProduct) {
-      console.log("visibility of shopping address bar icon changed");
       Glean.shopping.addressBarIconDisplayed.record();
     }
 
