@@ -5,6 +5,7 @@
 #ifndef AndroidDecoderModule_h_
 #define AndroidDecoderModule_h_
 
+#include "MediaCodecsSupport.h"
 #include "PlatformDecoderModule.h"
 #include "mozilla/MediaDrmCDMProxy.h"
 #include "mozilla/StaticPtr.h"  
@@ -32,12 +33,18 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   static media::DecodeSupportSet SupportsMimeType(const nsACString& aMimeType);
 
   static nsTArray<nsCString> GetSupportedMimeTypes();
+  
+  static nsTArray<nsCString> GetSupportedMimeTypesPrefixed();
 
+  static void SetSupportedMimeTypes();
   static void SetSupportedMimeTypes(nsTArray<nsCString>&& aSupportedTypes);
 
   media::DecodeSupportSet Supports(
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override;
+
+  
+  static media::MediaCodecsSupported GetSupportedCodecs();
 
  protected:
   bool SupportsColorDepth(
@@ -48,7 +55,15 @@ class AndroidDecoderModule : public PlatformDecoderModule {
   explicit AndroidDecoderModule(CDMProxy* aProxy = nullptr);
   virtual ~AndroidDecoderModule() = default;
   RefPtr<MediaDrmCDMProxy> mProxy;
-  static StaticAutoPtr<nsTArray<nsCString>> sSupportedMimeTypes;
+  
+  static StaticAutoPtr<nsTArray<nsCString>> sSupportedSwMimeTypes;
+  
+  static StaticAutoPtr<nsTArray<nsCString>> sSupportedHwMimeTypes;
+  
+  
+  
+  
+  static StaticAutoPtr<media::MediaCodecsSupported> sSupportedCodecs;
 };
 
 extern LazyLogModule sAndroidDecoderModuleLog;
