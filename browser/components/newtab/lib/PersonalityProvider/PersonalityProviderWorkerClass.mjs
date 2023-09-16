@@ -1,44 +1,39 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import {
+  tokenize,
+  toksToTfIdfVector,
+} from "resource://activity-stream/lib/PersonalityProvider/Tokenize.mjs";
+import { NaiveBayesTextTagger } from "resource://activity-stream/lib/PersonalityProvider/NaiveBayesTextTagger.mjs";
+import { NmfTextTagger } from "resource://activity-stream/lib/PersonalityProvider/NmfTextTagger.mjs";
+import { RecipeExecutor } from "resource://activity-stream/lib/PersonalityProvider/RecipeExecutor.mjs";
 
-
-
-"use strict";
-
-
-
-
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["PersonalityProviderWorker"];
-
-
+// A helper function to create a hash out of a file.
 async function _getFileHash(filepath) {
   const data = await IOUtils.read(filepath);
-  
+  // File is an instance of Uint8Array
   const digest = await crypto.subtle.digest("SHA-256", data);
   const uint8 = new Uint8Array(digest);
-  
+  // return the two-digit hexadecimal code for a byte
   const toHex = b => b.toString(16).padStart(2, "0");
   return Array.from(uint8, toHex).join("");
 }
 
-
-
-
-
-
-const PersonalityProviderWorker = class PersonalityProviderWorker {
+/**
+ * V2 provider builds and ranks an interest profile (also called an “interest vector”) off the browse history.
+ * This allows Firefox to classify pages into topics, by examining the text found on the page.
+ * It does this by looking at the history text content, title, and description.
+ */
+export class PersonalityProviderWorker {
   async getPersonalityProviderDir() {
     const personalityProviderDir = PathUtils.join(
       await PathUtils.getLocalProfileDir(),
       "personality-provider"
     );
 
-    
+    // Cache this so we don't need to await again.
     this.getPersonalityProviderDir = () =>
       Promise.resolve(personalityProviderDir);
     return personalityProviderDir;
@@ -60,19 +55,19 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     const {
       data: { created, updated, deleted },
     } = event;
-    
+    // Remove every removed attachment.
     const toRemove = deleted.concat(updated.map(u => u.old));
     toRemove.forEach(record => this.deleteAttachment(record));
 
-    
+    // Download every new/updated attachment.
     const toDownload = created.concat(updated.map(u => u.new));
-    
+    // maybeDownloadAttachment is async but we don't care inside onSync.
     toDownload.forEach(record => this.maybeDownloadAttachment(record));
   }
 
-  
-
-
+  /**
+   * Attempts to download the attachment, but only if it doesn't already exist.
+   */
   async maybeDownloadAttachment(record, retries = 3) {
     const {
       attachment: { filename, hash, size },
@@ -86,7 +81,7 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     let retry = 0;
     while (
       retry++ < retries &&
-      
+      // exists is an issue for perf because I might not need to call it.
       (!(await IOUtils.exists(localFilePath)) ||
         (await IOUtils.stat(localFilePath)).size !== size ||
         (await _getFileHash(localFilePath)) !== hash)
@@ -95,22 +90,22 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     }
   }
 
-  
-
-
-
+  /**
+   * Downloads the attachment to disk assuming the dir already exists
+   * and any existing files matching the filename are clobbered.
+   */
   async _downloadAttachment(record) {
     const {
-      attachment: { location, filename },
+      attachment: { location: loc, filename },
     } = record;
-    const remoteFilePath = this.baseAttachmentsURL + location;
+    const remoteFilePath = this.baseAttachmentsURL + loc;
     const localFilePath = PathUtils.join(
       await this.getPersonalityProviderDir(),
       filename
     );
 
     const xhr = new XMLHttpRequest();
-    
+    // Set false here for a synchronous request, because we're in a worker.
     xhr.open("GET", remoteFilePath, false);
     xhr.setRequestHeader("Accept-Encoding", "gzip");
     xhr.responseType = "arraybuffer";
@@ -141,20 +136,20 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     );
 
     await IOUtils.remove(path, { ignoreAbsent: true });
-    
+    // Cleanup the directory if it is empty, do nothing if it is not empty.
     try {
       await IOUtils.remove(await this.getPersonalityProviderDir(), {
         ignoreAbsent: true,
       });
     } catch (e) {
-      
+      // This is likely because the directory is not empty, so we don't care.
     }
   }
 
-  
-
-
-
+  /**
+   * Gets contents of the attachment if it already exists on file,
+   * and if not attempts to download it.
+   */
   async getAttachment(record) {
     const {
       attachment: { filename },
@@ -212,11 +207,11 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     }
   }
 
-  
-
-
-
-
+  /**
+   * Sets and generates a Recipe Executor.
+   * A Recipe Executor is a set of actions that can be consumed by a Recipe.
+   * The Recipe determines the order and specifics of which the actions are called.
+   */
   generateRecipeExecutor() {
     const recipeExecutor = new RecipeExecutor(
       this.taggers.nbTaggers,
@@ -226,14 +221,14 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     this.recipeExecutor = recipeExecutor;
   }
 
-  
-
-
-
-  createInterestVector(history) {
+  /**
+   * Examines the user's browse history and returns an interest vector that
+   * describes the topics the user frequently browses.
+   */
+  createInterestVector(historyObj) {
     let interestVector = {};
 
-    for (let historyRec of history) {
+    for (let historyRec of historyObj) {
       let ivItem = this.recipeExecutor.executeRecipe(
         historyRec,
         this.interestConfig.history_item_builder
@@ -262,17 +257,17 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
     };
   }
 
-  
-
-
-
-
+  /**
+   * Calculates a score of a Pocket item when compared to the user's interest
+   * vector. Returns the score. Higher scores are better. Assumes this.interestVector
+   * is populated.
+   */
   calculateItemRelevanceScore(pocketItem) {
     const { personalization_models } = pocketItem;
     let scorableItem;
 
-    
-    
+    // If the server provides some models, we can just use them,
+    // and skip generating them.
     if (personalization_models && Object.keys(personalization_models).length) {
       scorableItem = {
         id: pocketItem.id,
@@ -290,7 +285,7 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
       }
     }
 
-    
+    // We're doing a deep copy on an object.
     let rankingVector = JSON.parse(JSON.stringify(this.interestVector));
 
     Object.keys(scorableItem).forEach(key => {
@@ -308,4 +303,4 @@ const PersonalityProviderWorker = class PersonalityProviderWorker {
 
     return { scorableItem, rankingVector };
   }
-};
+}
