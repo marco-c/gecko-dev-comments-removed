@@ -173,6 +173,17 @@ async function clickSettingsMenuItemByL10nId(l10nId) {
 
 
 
+async function clickAlwaysOfferTranslations() {
+  await clickSettingsMenuItemByL10nId(
+    "translations-panel-settings-always-offer-translation"
+  );
+}
+
+
+
+
+
+
 async function clickAlwaysTranslateLanguage() {
   await clickSettingsMenuItemByL10nId(
     "translations-panel-settings-always-translate-language"
