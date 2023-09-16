@@ -897,11 +897,6 @@ class FirefoxWdSpecBrowser(WebDriverBrowser):
                           headless,
                           chaos_mode_flags)
         env["RUST_BACKTRACE"] = "1"
-        
-        
-        
-        
-        del env["MOZ_DISABLE_NONLOCAL_CONNECTIONS"]
         return env
 
     def create_output_handler(self, cmd):
