@@ -140,8 +140,10 @@ pub enum Color {
 #[derive(Clone, Debug, MallocSizeOf, PartialEq, ToShmem, ToCss)]
 #[css(function, comma)]
 pub struct LightDark {
-    light: Color,
-    dark: Color,
+    
+    pub light: Color,
+    
+    pub dark: Color,
 }
 
 impl LightDark {

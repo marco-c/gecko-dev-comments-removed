@@ -769,7 +769,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
       mGradient->IsLinear() &&
       (mLineStart.x == mLineEnd.x) != (mLineStart.y == mLineEnd.y) &&
       aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height &&
-      !mGradient->AsLinear().repeating && !aSrc.IsEmpty() && !cellContainsFill;
+      !(mGradient->Repeating()) && !aSrc.IsEmpty() && !cellContainsFill;
 
   gfxMatrix matrix;
   if (forceRepeatToCoverTiles) {
@@ -819,7 +819,7 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
   
   double firstStop = mStops[0].mPosition;
   if (mGradient->IsRadial() && firstStop < 0.0) {
-    if (mGradient->AsRadial().repeating) {
+    if (mGradient->AsRadial().flags & StyleGradientFlags::REPEATING) {
       
       
       double lastStop = mStops[mStops.Length() - 1].mPosition;
@@ -872,7 +872,8 @@ void nsCSSGradientRenderer::Paint(gfxContext& aContext, const nsRect& aDest,
     MOZ_ASSERT(firstStop >= 0.0, "Failed to fix stop offsets");
   }
 
-  if (mGradient->IsRadial() && !mGradient->AsRadial().repeating) {
+  if (mGradient->IsRadial() &&
+      !(mGradient->AsRadial().flags & StyleGradientFlags::REPEATING)) {
     
     
     
