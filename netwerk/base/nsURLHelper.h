@@ -226,6 +226,12 @@ bool net_IsValidIPv4Addr(const nsACString& aAddr);
 
 bool net_IsValidIPv6Addr(const nsACString& aAddr);
 
+
+
+
+
+bool net_GetDefaultStatusTextForCode(uint16_t aCode, nsACString& aOutText);
+
 namespace mozilla {
 
 
