@@ -378,9 +378,13 @@ impl VirtualFidoDevice for TestToken {
         } else {
             
             
+            
+            
+            
             for credential in eligible_cred_iter.filter(|x| x.is_discoverable_credential) {
                 let assertion = credential.assert(&req.client_data_hash, flags).into();
                 assertions.push(assertion);
+                break;
             }
         }
 
