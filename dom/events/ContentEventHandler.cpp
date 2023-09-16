@@ -31,6 +31,7 @@
 #include "nsFocusManager.h"
 #include "nsFontMetrics.h"
 #include "nsFrameSelection.h"
+#include "nsHTMLTags.h"
 #include "nsIFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
@@ -706,34 +707,56 @@ bool ContentEventHandler::ShouldBreakLineBefore(const nsIContent& aContent,
     return false;
   }
 
-  
-  
-  
-  if (aContent.IsHTMLElement(nsGkAtoms::br)) {
-    return IsContentBR(aContent);
+  switch (
+      nsHTMLTags::CaseSensitiveAtomTagToId(aContent.NodeInfo()->NameAtom())) {
+    case eHTMLTag_br:
+      
+      
+      
+      return IsContentBR(aContent);
+    case eHTMLTag_a:
+    case eHTMLTag_abbr:
+    case eHTMLTag_acronym:
+    case eHTMLTag_b:
+    case eHTMLTag_bdi:
+    case eHTMLTag_bdo:
+    case eHTMLTag_big:
+    case eHTMLTag_cite:
+    case eHTMLTag_code:
+    case eHTMLTag_data:
+    case eHTMLTag_del:
+    case eHTMLTag_dfn:
+    case eHTMLTag_em:
+    case eHTMLTag_font:
+    case eHTMLTag_i:
+    case eHTMLTag_ins:
+    case eHTMLTag_kbd:
+    case eHTMLTag_mark:
+    case eHTMLTag_s:
+    case eHTMLTag_samp:
+    case eHTMLTag_small:
+    case eHTMLTag_span:
+    case eHTMLTag_strike:
+    case eHTMLTag_strong:
+    case eHTMLTag_sub:
+    case eHTMLTag_sup:
+    case eHTMLTag_time:
+    case eHTMLTag_tt:
+    case eHTMLTag_u:
+    case eHTMLTag_var:
+      
+      
+      
+      
+      return false;
+    case eHTMLTag_userdefined:
+    case eHTMLTag_unknown:
+      
+      
+      return false;
+    default:
+      return true;
   }
-
-  
-  
-  
-  
-  if (aContent.IsAnyOfHTMLElements(
-          nsGkAtoms::a, nsGkAtoms::abbr, nsGkAtoms::acronym, nsGkAtoms::b,
-          nsGkAtoms::bdi, nsGkAtoms::bdo, nsGkAtoms::big, nsGkAtoms::cite,
-          nsGkAtoms::code, nsGkAtoms::data, nsGkAtoms::del, nsGkAtoms::dfn,
-          nsGkAtoms::em, nsGkAtoms::font, nsGkAtoms::i, nsGkAtoms::ins,
-          nsGkAtoms::kbd, nsGkAtoms::mark, nsGkAtoms::s, nsGkAtoms::samp,
-          nsGkAtoms::small, nsGkAtoms::span, nsGkAtoms::strike,
-          nsGkAtoms::strong, nsGkAtoms::sub, nsGkAtoms::sup, nsGkAtoms::time,
-          nsGkAtoms::tt, nsGkAtoms::u, nsGkAtoms::var)) {
-    return false;
-  }
-
-  
-  
-  RefPtr<HTMLUnknownElement> unknownHTMLElement =
-      do_QueryObject(const_cast<nsIContent*>(&aContent));
-  return !unknownHTMLElement;
 }
 
 nsresult ContentEventHandler::GenerateFlatTextContent(
