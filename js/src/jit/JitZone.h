@@ -8,6 +8,7 @@
 #define jit_JitZone_h
 
 #include "mozilla/Assertions.h"
+#include "mozilla/EnumeratedArray.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
@@ -113,10 +114,50 @@ class JitZone {
 
   mozilla::LinkedList<JitScript> jitScripts_;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  enum StubIndex : uint32_t {
+    StringConcat = 0,
+    RegExpMatcher,
+    RegExpSearcher,
+    RegExpExecMatch,
+    RegExpExecTest,
+    Count
+  };
+
+  mozilla::EnumeratedArray<StubIndex, StubIndex::Count, WeakHeapPtr<JitCode*>>
+      stubs_;
+
   mozilla::Maybe<IonCompilationId> currentCompilationId_;
   bool keepJitScripts_ = false;
 
+  gc::Heap initialStringHeap = gc::Heap::Tenured;
+
+  JitCode* generateStringConcatStub(JSContext* cx);
+  JitCode* generateRegExpMatcherStub(JSContext* cx);
+  JitCode* generateRegExpSearcherStub(JSContext* cx);
+  JitCode* generateRegExpExecMatchStub(JSContext* cx);
+  JitCode* generateRegExpExecTestStub(JSContext* cx);
+
+  JitCode* getStubNoBarrier(StubIndex stub,
+                            uint32_t* requiredBarriersOut) const {
+    MOZ_ASSERT(CurrentThreadIsIonCompiling());
+    *requiredBarriersOut |= 1 << uint32_t(stub);
+    return stubs_[stub].unbarrieredGet();
+  }
+
  public:
+  explicit JitZone(bool zoneHasNurseryStrings) {
+    setStringsCanBeInNursery(zoneHasNurseryStrings);
+  }
   ~JitZone() {
     MOZ_ASSERT(jitScripts_.isEmpty());
     MOZ_ASSERT(!keepJitScripts_);
@@ -220,6 +261,110 @@ class JitZone {
   }
   mozilla::Maybe<IonCompilationId>& currentCompilationIdRef() {
     return currentCompilationId_;
+  }
+
+  
+  [[nodiscard]] bool ensureIonStubsExist(JSContext* cx) {
+    if (stubs_[StringConcat]) {
+      return true;
+    }
+    stubs_[StringConcat] = generateStringConcatStub(cx);
+    return stubs_[StringConcat];
+  }
+
+  void traceWeak(JSTracer* trc, JS::Realm* realm);
+
+  void discardStubs() {
+    for (WeakHeapPtr<JitCode*>& stubRef : stubs_) {
+      stubRef = nullptr;
+    }
+  }
+
+  bool hasStubs() const {
+    for (const WeakHeapPtr<JitCode*>& stubRef : stubs_) {
+      if (stubRef) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void setStringsCanBeInNursery(bool allow) {
+    MOZ_ASSERT(!hasStubs());
+    initialStringHeap = allow ? gc::Heap::Default : gc::Heap::Tenured;
+  }
+
+  JitCode* stringConcatStubNoBarrier(uint32_t* requiredBarriersOut) const {
+    return getStubNoBarrier(StringConcat, requiredBarriersOut);
+  }
+
+  JitCode* regExpMatcherStubNoBarrier(uint32_t* requiredBarriersOut) const {
+    return getStubNoBarrier(RegExpMatcher, requiredBarriersOut);
+  }
+
+  [[nodiscard]] JitCode* ensureRegExpMatcherStubExists(JSContext* cx) {
+    if (JitCode* code = stubs_[RegExpMatcher]) {
+      return code;
+    }
+    stubs_[RegExpMatcher] = generateRegExpMatcherStub(cx);
+    return stubs_[RegExpMatcher];
+  }
+
+  JitCode* regExpSearcherStubNoBarrier(uint32_t* requiredBarriersOut) const {
+    return getStubNoBarrier(RegExpSearcher, requiredBarriersOut);
+  }
+
+  [[nodiscard]] JitCode* ensureRegExpSearcherStubExists(JSContext* cx) {
+    if (JitCode* code = stubs_[RegExpSearcher]) {
+      return code;
+    }
+    stubs_[RegExpSearcher] = generateRegExpSearcherStub(cx);
+    return stubs_[RegExpSearcher];
+  }
+
+  JitCode* regExpExecMatchStubNoBarrier(uint32_t* requiredBarriersOut) const {
+    return getStubNoBarrier(RegExpExecMatch, requiredBarriersOut);
+  }
+
+  [[nodiscard]] JitCode* ensureRegExpExecMatchStubExists(JSContext* cx) {
+    if (JitCode* code = stubs_[RegExpExecMatch]) {
+      return code;
+    }
+    stubs_[RegExpExecMatch] = generateRegExpExecMatchStub(cx);
+    return stubs_[RegExpExecMatch];
+  }
+
+  JitCode* regExpExecTestStubNoBarrier(uint32_t* requiredBarriersOut) const {
+    return getStubNoBarrier(RegExpExecTest, requiredBarriersOut);
+  }
+
+  [[nodiscard]] JitCode* ensureRegExpExecTestStubExists(JSContext* cx) {
+    if (JitCode* code = stubs_[RegExpExecTest]) {
+      return code;
+    }
+    stubs_[RegExpExecTest] = generateRegExpExecTestStub(cx);
+    return stubs_[RegExpExecTest];
+  }
+
+  
+  
+  
+  
+  
+  
+  void performStubReadBarriers(uint32_t stubsToBarrier) const;
+
+  static constexpr size_t offsetOfRegExpMatcherStub() {
+    return offsetof(JitZone, stubs_) + RegExpMatcher * sizeof(uintptr_t);
+  }
+  static constexpr size_t offsetOfRegExpSearcherStub() {
+    return offsetof(JitZone, stubs_) + RegExpSearcher * sizeof(uintptr_t);
+  }
+  static constexpr size_t offsetOfRegExpExecMatchStub() {
+    return offsetof(JitZone, stubs_) + RegExpExecMatch * sizeof(uintptr_t);
+  }
+  static constexpr size_t offsetOfRegExpExecTestStub() {
+    return offsetof(JitZone, stubs_) + RegExpExecTest * sizeof(uintptr_t);
   }
 };
 

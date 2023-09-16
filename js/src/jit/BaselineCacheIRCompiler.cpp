@@ -4067,7 +4067,7 @@ bool BaselineCacheIRCompiler::emitCloseIterScriptedResult(
   return true;
 }
 
-static void CallRegExpStub(MacroAssembler& masm, size_t jitRealmStubOffset,
+static void CallRegExpStub(MacroAssembler& masm, size_t jitZoneStubOffset,
                            Register temp, Label* vmCall) {
   
   
@@ -4076,9 +4076,9 @@ static void CallRegExpStub(MacroAssembler& masm, size_t jitRealmStubOffset,
   
   
   masm.loadJSContext(temp);
-  masm.loadPtr(Address(temp, JSContext::offsetOfRealm()), temp);
-  masm.loadPtr(Address(temp, Realm::offsetOfJitRealm()), temp);
-  masm.loadPtr(Address(temp, jitRealmStubOffset), temp);
+  masm.loadPtr(Address(temp, JSContext::offsetOfZone()), temp);
+  masm.loadPtr(Address(temp, Zone::offsetOfJitZone()), temp);
+  masm.loadPtr(Address(temp, jitZoneStubOffset), temp);
   masm.branchTestPtr(Assembler::Zero, temp, temp, vmCall);
   masm.call(Address(temp, JitCode::offsetOfCode()));
 }
@@ -4137,7 +4137,7 @@ bool BaselineCacheIRCompiler::emitCallRegExpMatcherResult(
   masm.reserveStack(RegExpReservedStack);
 
   Label done, vmCall, vmCallNoMatches;
-  CallRegExpStub(masm, JitRealm::offsetOfRegExpMatcherStub(), scratch,
+  CallRegExpStub(masm, JitZone::offsetOfRegExpMatcherStub(), scratch,
                  &vmCallNoMatches);
   masm.branchTestUndefined(Assembler::Equal, JSReturnOperand, &vmCall);
 
@@ -4198,7 +4198,7 @@ bool BaselineCacheIRCompiler::emitCallRegExpSearcherResult(
   masm.reserveStack(RegExpReservedStack);
 
   Label done, vmCall, vmCallNoMatches;
-  CallRegExpStub(masm, JitRealm::offsetOfRegExpSearcherStub(), scratch,
+  CallRegExpStub(masm, JitZone::offsetOfRegExpSearcherStub(), scratch,
                  &vmCallNoMatches);
   masm.branch32(Assembler::Equal, scratch, Imm32(RegExpSearcherResultFailed),
                 &vmCall);
@@ -4254,7 +4254,7 @@ bool BaselineCacheIRCompiler::emitRegExpBuiltinExecMatchResult(
   masm.reserveStack(RegExpReservedStack);
 
   Label done, vmCall, vmCallNoMatches;
-  CallRegExpStub(masm, JitRealm::offsetOfRegExpExecMatchStub(), scratch,
+  CallRegExpStub(masm, JitZone::offsetOfRegExpExecMatchStub(), scratch,
                  &vmCallNoMatches);
   masm.branchTestUndefined(Assembler::Equal, JSReturnOperand, &vmCall);
 
@@ -4309,8 +4309,7 @@ bool BaselineCacheIRCompiler::emitRegExpBuiltinExecTestResult(
   scratch = ReturnReg;
 
   Label done, vmCall;
-  CallRegExpStub(masm, JitRealm::offsetOfRegExpExecTestStub(), scratch,
-                 &vmCall);
+  CallRegExpStub(masm, JitZone::offsetOfRegExpExecTestStub(), scratch, &vmCall);
   masm.branch32(Assembler::Equal, scratch, Imm32(RegExpExecTestResultFailed),
                 &vmCall);
 

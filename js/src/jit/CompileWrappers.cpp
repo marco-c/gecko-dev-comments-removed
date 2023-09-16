@@ -187,7 +187,7 @@ CompileRealm::addressOfRandomNumberGenerator() {
   return realm()->addressOfRandomNumberGenerator();
 }
 
-const JitRealm* CompileRealm::jitRealm() { return realm()->jitRealm(); }
+const JitZone* CompileZone::jitZone() { return zone()->jitZone(); }
 
 const GlobalObject* CompileRealm::maybeGlobal() {
   

@@ -1377,10 +1377,6 @@ void GCRuntime::sweepJitDataOnMainThread(JS::GCContext* gcx) {
   {
     gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_JIT_DATA);
 
-    for (SweepGroupRealmsIter r(rt); !r.done(); r.next()) {
-      r->traceWeakEdgesInJitRealm(&trc);
-    }
-
     for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
       if (jit::JitZone* jitZone = zone->jitZone()) {
         jitZone->traceWeak(&trc, zone);

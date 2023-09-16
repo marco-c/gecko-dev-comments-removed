@@ -387,7 +387,7 @@ class CodeGenerator final : public CodeGeneratorSpecific {
   IonPerfSpewer perfSpewer_;
 
   
-  uint32_t realmStubsToReadBarrier_;
+  uint32_t zoneStubsToReadBarrier_;
 
 #ifdef FUZZING_JS_FUZZILLI
   void emitFuzzilliHashDouble(FloatRegister floatDouble, Register scratch,

@@ -268,6 +268,9 @@ template <typename T>
 using MainThreadOrIonCompileData =
     ProtectedDataNoCheckArgs<CheckMainThread<AllowedHelperThread::IonCompile>,
                              T>;
+template <typename T>
+using MainThreadOrGCTaskOrIonCompileData = ProtectedDataNoCheckArgs<
+    CheckMainThread<AllowedHelperThread::GCTaskOrIonCompile>, T>;
 
 
 enum class GlobalLock { GCLock, HelperThreadLock };
