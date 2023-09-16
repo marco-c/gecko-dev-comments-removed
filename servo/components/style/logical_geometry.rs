@@ -25,7 +25,7 @@ pub enum InlineBaseDirection {
 
 
 bitflags!(
-    #[derive(Clone, Copy, Eq, MallocSizeOf, PartialEq, Serialize)]
+    #[derive(MallocSizeOf, Serialize)]
     #[repr(C)]
     pub struct WritingMode: u8 {
         /// A vertical writing mode; writing-mode is vertical-rl,
