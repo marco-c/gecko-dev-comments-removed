@@ -45,10 +45,17 @@ void TransformReferenceBox::EnsureDimensionsAreCached() {
 
   MOZ_ASSERT(mFrame);
 
+  const auto box = mFrame->StyleDisplay()->mTransformBox;
+  if (box == StyleTransformBox::ContentBox ||
+      box == StyleTransformBox::StrokeBox) {
+    
+    return;
+  }
+
   mIsCached = true;
 
   if (mFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    if (mFrame->StyleDisplay()->mTransformBox == StyleGeometryBox::FillBox) {
+    if (box == StyleTransformBox::FillBox) {
       
       
       nsRect bboxInAppUnits = nsLayoutUtils::ComputeGeometryBox(
@@ -63,11 +70,9 @@ void TransformReferenceBox::EnsureDimensionsAreCached() {
       mHeight = bboxInAppUnits.height;
     } else {
       
-      MOZ_ASSERT(
-          mFrame->StyleDisplay()->mTransformBox == StyleGeometryBox::ViewBox ||
-              mFrame->StyleDisplay()->mTransformBox ==
-                  StyleGeometryBox::BorderBox,
-          "Unexpected value for 'transform-box'");
+      MOZ_ASSERT(box == StyleTransformBox::ViewBox ||
+                     box == StyleTransformBox::BorderBox,
+                 "Unexpected value for 'transform-box'");
       
       
       
