@@ -341,6 +341,10 @@ interface nsIContentPolicy : nsISupports
 
 
 
+
+
+
+
     TYPE_INTERNAL_MODULE = 45,
 
     

@@ -602,6 +602,10 @@ nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
     return mWorkerRef->Private()->ContentPolicyType();
   }
   if (aRequest->IsModuleRequest()) {
+    if (aRequest->AsModuleRequest()->IsDynamicImport()) {
+      return nsIContentPolicy::TYPE_INTERNAL_MODULE;
+    }
+
     
     
     
@@ -610,6 +614,7 @@ nsContentPolicyType WorkerScriptLoader::GetContentPolicyType(
     
     return nsIContentPolicy::TYPE_INTERNAL_WORKER_STATIC_MODULE;
   }
+  
   return nsIContentPolicy::TYPE_INTERNAL_WORKER_IMPORT_SCRIPTS;
 }
 
