@@ -77,8 +77,7 @@ Maybe<nscoord> nsListControlFrame::GetNaturalBaselineBOffset(
   return Nothing{};
 }
 
-void nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                                     PostDestroyData& aPostDestroyData) {
+void nsListControlFrame::Destroy(DestroyContext& aContext) {
   
   NS_ENSURE_TRUE_VOID(mContent);
 
@@ -86,7 +85,7 @@ void nsListControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
   
 
   mEventListener->Detach();
-  nsHTMLScrollFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+  nsHTMLScrollFrame::Destroy(aContext);
 }
 
 void nsListControlFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,

@@ -210,10 +210,9 @@ void nsTableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
 
 nsTableFrame::~nsTableFrame() = default;
 
-void nsTableFrame::DestroyFrom(nsIFrame* aDestructRoot,
-                               PostDestroyData& aPostDestroyData) {
-  mColGroups.DestroyFramesFrom(aDestructRoot, aPostDestroyData);
-  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
+void nsTableFrame::Destroy(DestroyContext& aContext) {
+  mColGroups.DestroyFrames(aContext);
+  nsContainerFrame::Destroy(aContext);
 }
 
 
