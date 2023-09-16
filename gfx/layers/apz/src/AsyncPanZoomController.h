@@ -1237,6 +1237,16 @@ class AsyncPanZoomController {
       AsyncTransformComponents aComponents = LayoutAndVisual,
       std::size_t aSampleIndex = 0) const;
 
+  
+
+
+
+
+
+
+
+  Matrix4x4 GetPaintedResolutionTransform() const;
+
   AutoTArray<wr::SampledScrollOffset, 2> GetSampledScrollOffsets() const;
 
   
