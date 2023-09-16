@@ -274,6 +274,66 @@ bool nsWindow::sIsInMouseCapture = false;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+size_t nsWindow::WndProcUrgentInvocation::sDepth = 0;
+
+
+
+
 HHOOK nsWindow::sMsgFilterHook = nullptr;
 HHOOK nsWindow::sCallProcHook = nullptr;
 HHOOK nsWindow::sCallMouseHook = nullptr;
@@ -5876,7 +5936,9 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
                                        mSizeConstraints.mMaxSize.height);
     } break;
 
-    case WM_SETFOCUS:
+    case WM_SETFOCUS: {
+      WndProcUrgentInvocation::Marker _marker;
+
       
       
       if (!WinUtils::IsOurProcessWindow(HWND(wParam))) {
@@ -5886,7 +5948,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         DispatchFocusToTopLevelWindow(true);
       }
       TaskbarConcealer::OnFocusAcquired(this);
-      break;
+    } break;
 
     case WM_KILLFOCUS:
       if (sJustGotDeactivate) {
@@ -5943,7 +6005,16 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
 #endif
 
     case WM_SYSCOMMAND: {
-      WPARAM filteredWParam = (wParam & 0xFFF0);
+      WPARAM const filteredWParam = (wParam & 0xFFF0);
+
+      
+      
+      if (filteredWParam == SC_CLOSE && WndProcUrgentInvocation::IsActive()) {
+        ::PostMessageW(mWnd, msg, wParam, lParam);
+        result = true;
+        break;
+      }
+
       if (mFrameState->GetSizeMode() == nsSizeMode_Fullscreen &&
           filteredWParam == SC_RESTORE &&
           GetCurrentShowCmd(mWnd) != SW_SHOWMINIMIZED) {
@@ -7902,7 +7973,9 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
       allowAnimations = nsIRollupListener::AllowAnimations::No;
       break;
 
-    case WM_ACTIVATE:
+    case WM_ACTIVATE: {
+      WndProcUrgentInvocation::Marker _marker;
+
       
       
       if (LOWORD(aWParam) == WA_ACTIVE && aLParam) {
@@ -7964,7 +8037,7 @@ bool nsWindow::DealWithPopups(HWND aWnd, UINT aMessage, WPARAM aWParam,
         }
       }
       allowAnimations = nsIRollupListener::AllowAnimations::No;
-      break;
+    } break;
 
     case MOZ_WM_REACTIVATE:
       

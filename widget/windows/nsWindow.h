@@ -716,6 +716,17 @@ class nsWindow final : public nsBaseWidget {
 
   
   
+  struct MOZ_STACK_CLASS WndProcUrgentInvocation {
+    struct Marker {
+      Marker() { ++sDepth; }
+      ~Marker() { --sDepth; }
+    };
+    inline static bool IsActive() { return sDepth > 0; }
+    static size_t sDepth;
+  };
+
+  
+  
   
   static HHOOK sMsgFilterHook;
   static HHOOK sCallProcHook;
