@@ -576,6 +576,17 @@ Result<NavigationIsolationOptions, nsresult> IsolationOptionsForNavigation(
     }
   }
 
+#ifdef MOZ_WIDGET_ANDROID
+  
+  
+  
+  if (aLoadStateLoadType == LOAD_ERROR_PAGE) {
+    MOZ_LOG(gProcessIsolationLog, LogLevel::Verbose,
+            ("Forcing error page load to complete in the current process"));
+    behavior = IsolationBehavior::Anywhere;
+  }
+#endif
+
   
   
   
