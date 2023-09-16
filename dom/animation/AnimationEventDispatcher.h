@@ -197,6 +197,25 @@ struct AnimationEventInfo {
   AnimationEventInfo(AnimationEventInfo&& aOther) = default;
   AnimationEventInfo& operator=(AnimationEventInfo&& aOther) = default;
 
+  bool operator<(const AnimationEventInfo& aOther) const {
+    if (this->mScheduledEventTimeStamp != aOther.mScheduledEventTimeStamp) {
+      
+      if (this->mScheduledEventTimeStamp.IsNull() ||
+          aOther.mScheduledEventTimeStamp.IsNull()) {
+        return this->mScheduledEventTimeStamp.IsNull();
+      }
+      return this->mScheduledEventTimeStamp < aOther.mScheduledEventTimeStamp;
+    }
+
+    
+    if (this->IsWebAnimationEvent() != aOther.IsWebAnimationEvent()) {
+      return this->IsWebAnimationEvent();
+    }
+
+    AnimationPtrComparator<RefPtr<dom::Animation>> comparator;
+    return comparator.LessThan(this->mAnimation, aOther.mAnimation);
+  }
+
   bool IsWebAnimationEvent() const { return mData.is<WebAnimationData>(); }
 
   
@@ -300,29 +319,6 @@ class AnimationEventDispatcher final {
   }
 #endif
 
-  class AnimationEventInfoLessThan {
-   public:
-    bool operator()(const AnimationEventInfo& a,
-                    const AnimationEventInfo& b) const {
-      if (a.mScheduledEventTimeStamp != b.mScheduledEventTimeStamp) {
-        
-        if (a.mScheduledEventTimeStamp.IsNull() ||
-            b.mScheduledEventTimeStamp.IsNull()) {
-          return a.mScheduledEventTimeStamp.IsNull();
-        }
-        return a.mScheduledEventTimeStamp < b.mScheduledEventTimeStamp;
-      }
-
-      
-      if (a.IsWebAnimationEvent() != b.IsWebAnimationEvent()) {
-        return a.IsWebAnimationEvent();
-      }
-
-      AnimationPtrComparator<RefPtr<dom::Animation>> comparator;
-      return comparator.LessThan(a.mAnimation, b.mAnimation);
-    }
-  };
-
   
   
   
@@ -335,10 +331,7 @@ class AnimationEventDispatcher final {
       pending.mAnimation->CachedChildIndexRef().reset();
     }
 
-    
-    
-    std::stable_sort(mPendingEvents.begin(), mPendingEvents.end(),
-                     AnimationEventInfoLessThan());
+    mPendingEvents.StableSort();
     mIsSorted = true;
   }
   void ScheduleDispatch();
