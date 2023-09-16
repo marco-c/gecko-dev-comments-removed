@@ -5290,7 +5290,6 @@ void nsWindow::OnDPIChanged() {
     }
     mWidgetListener->UIResolutionChanged();
   }
-  NotifyThemeChanged(ThemeChangeKind::StyleAndLayout);
 }
 
 void nsWindow::OnCheckResize() { mPendingConfigures++; }
@@ -5355,9 +5354,6 @@ void nsWindow::OnScaleChanged(bool aNotify) {
       presShell->BackingScaleFactorChanged();
     }
   }
-  
-  
-  NotifyThemeChanged(ThemeChangeKind::StyleAndLayout);
 
   DispatchResized();
 
