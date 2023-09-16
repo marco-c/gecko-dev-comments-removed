@@ -506,9 +506,9 @@ class IMEContentObserver final : public nsStubMutationObserver,
   
   SelectionChangeData mSelectionData;
 
-  EventStateManager* mESM;
+  EventStateManager* mESM = nullptr;
 
-  const IMENotificationRequests* mIMENotificationRequests;
+  const IMENotificationRequests* mIMENotificationRequests = nullptr;
   int64_t mPreCharacterDataChangeLength = -1;
   uint32_t mSuppressNotifications = 0;
 
@@ -519,18 +519,19 @@ class IMEContentObserver final : public nsStubMutationObserver,
   
   
   
-  IMEMessage mSendingNotification;
+  IMEMessage mSendingNotification = widget::NOTIFY_IME_OF_NOTHING;
 
-  bool mIsObserving;
-  bool mIMEHasFocus;
-  bool mNeedsToNotifyIMEOfFocusSet;
-  bool mNeedsToNotifyIMEOfTextChange;
-  bool mNeedsToNotifyIMEOfSelectionChange;
-  bool mNeedsToNotifyIMEOfPositionChange;
-  bool mNeedsToNotifyIMEOfCompositionEventHandled;
+  bool mIsObserving = false;
+  bool mIsTextControl = false;
+  bool mIMEHasFocus = false;
+  bool mNeedsToNotifyIMEOfFocusSet = false;
+  bool mNeedsToNotifyIMEOfTextChange = false;
+  bool mNeedsToNotifyIMEOfSelectionChange = false;
+  bool mNeedsToNotifyIMEOfPositionChange = false;
+  bool mNeedsToNotifyIMEOfCompositionEventHandled = false;
   
   
-  bool mIsHandlingQueryContentEvent;
+  bool mIsHandlingQueryContentEvent = false;
 };
 
 }  
