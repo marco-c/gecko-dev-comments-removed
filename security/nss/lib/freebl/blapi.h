@@ -1891,6 +1891,11 @@ extern SECStatus EC_CopyParams(PLArenaPool *arena, ECParams *dstParams,
 
 extern int EC_GetPointSize(const ECParams *params);
 
+
+
+
+extern int EC_GetScalarSize(const ECParams *params);
+
 SEC_END_PROTOS
 
 #endif 
