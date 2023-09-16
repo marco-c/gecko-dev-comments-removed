@@ -1845,9 +1845,8 @@ impl Device {
             
             
             false
-        } else if renderer_name == "Adreno (TM) 308"
-            && (version_string.contains("V@331") || version_string.contains("V@415"))
-        {
+        } else if renderer_name == "Adreno (TM) 308" {
+            
             
             
             false
