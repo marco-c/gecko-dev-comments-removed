@@ -4164,19 +4164,7 @@ static constexpr bool IsSafeInteger(int64_t x) {
 
 
 static void TruncateNumber(int64_t numerator, int64_t denominator,
-                           double* quotient, double* rounded) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+                           double* quotient, double* total) {
   
   
 
@@ -4201,20 +4189,12 @@ static void TruncateNumber(int64_t numerator, int64_t denominator,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
   if (::IsSafeInteger(numerator) && ::IsSafeInteger(denominator)) {
     *quotient = double(q);
-    *rounded = double(numerator) / double(denominator);
+    *total = double(numerator) / double(denominator);
   } else {
     *quotient = double(q);
-    *rounded = double(q) + double(r) / double(denominator);
+    *total = double(q) + double(r) / double(denominator);
   }
 }
 
@@ -4223,21 +4203,21 @@ static void TruncateNumber(int64_t numerator, int64_t denominator,
 
 static bool TruncateNumber(JSContext* cx, Handle<BigInt*> numerator,
                            Handle<BigInt*> denominator, double* quotient,
-                           double* rounded) {
+                           double* total) {
   MOZ_ASSERT(!denominator->isNegative());
   MOZ_ASSERT(!denominator->isZero());
 
   
   if (numerator->isZero()) {
     *quotient = 0;
-    *rounded = 0;
+    *total = 0;
     return true;
   }
 
   int64_t num, denom;
   if (BigInt::isInt64(numerator, &num) &&
       BigInt::isInt64(denominator, &denom)) {
-    TruncateNumber(num, denom, quotient, rounded);
+    TruncateNumber(num, denom, quotient, total);
     return true;
   }
 
@@ -4250,7 +4230,7 @@ static bool TruncateNumber(JSContext* cx, Handle<BigInt*> numerator,
 
   double q = BigInt::numberValue(quot);
   *quotient = q;
-  *rounded = q + BigInt::numberValue(rem) / BigInt::numberValue(denominator);
+  *total = q + BigInt::numberValue(rem) / BigInt::numberValue(denominator);
   return true;
 }
 
@@ -4258,8 +4238,7 @@ static bool TruncateNumber(JSContext* cx, Handle<BigInt*> numerator,
 
 
 static bool TruncateNumber(JSContext* cx, const Duration& toRound,
-                           TemporalUnit unit, double* quotient,
-                           double* rounded) {
+                           TemporalUnit unit, double* quotient, double* total) {
   MOZ_ASSERT(unit >= TemporalUnit::Day);
 
   int64_t denominator = ToNanoseconds(unit);
@@ -4268,7 +4247,7 @@ static bool TruncateNumber(JSContext* cx, const Duration& toRound,
 
   
   if (auto numerator = TotalDurationNanoseconds(toRound, 0)) {
-    TruncateNumber(*numerator, denominator, quotient, rounded);
+    TruncateNumber(*numerator, denominator, quotient, total);
     return true;
   }
 
@@ -4281,7 +4260,7 @@ static bool TruncateNumber(JSContext* cx, const Duration& toRound,
   if (denominator == 1) {
     double q = BigInt::numberValue(numerator);
     *quotient = q;
-    *rounded = q;
+    *total = q;
     return true;
   }
 
@@ -4299,7 +4278,7 @@ static bool TruncateNumber(JSContext* cx, const Duration& toRound,
 
   double q = BigInt::numberValue(quot);
   *quotient = q;
-  *rounded = q + BigInt::numberValue(rem) / double(denominator);
+  *total = q + BigInt::numberValue(rem) / double(denominator);
   return true;
 }
 
@@ -4329,7 +4308,7 @@ static bool RoundNumberToIncrement(JSContext* cx, const Duration& toRound,
 
 struct RoundedDuration final {
   Duration duration;
-  double rounded = 0;
+  double total = 0;
 };
 
 enum class ComputeRemainder : bool { No, Yes };
@@ -4583,7 +4562,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
   
   
 
-  double rounded = 0;
+  double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
     if (!RoundNumberToIncrement(cx, toRound, unit, increment, roundingMode,
                                 roundedTime)) {
@@ -4629,7 +4608,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     MOZ_ASSERT(increment == Increment{1});
     MOZ_ASSERT(roundingMode == TemporalRoundingMode::Trunc);
 
-    if (!TruncateNumber(cx, toRound, unit, roundedTime, &rounded)) {
+    if (!TruncateNumber(cx, toRound, unit, roundedTime, &total)) {
       return false;
     }
   }
@@ -4650,7 +4629,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
   }
 
   
-  *result = {resultDuration, rounded};
+  *result = {resultDuration, total};
   return true;
 }
 
@@ -4675,7 +4654,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     return false;
   }
 
-  *result = rounded.rounded;
+  *result = rounded.total;
   return true;
 }
 
@@ -4773,7 +4752,7 @@ static bool RoundDurationYearSlow(
   }
 
   double numYears;
-  double rounded = 0;
+  double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
     if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds, denominator,
                                           increment, roundingMode, &numYears)) {
@@ -4781,7 +4760,7 @@ static bool RoundDurationYearSlow(
     }
   } else {
     if (!::TruncateNumber(cx, totalNanoseconds, denominator, &numYears,
-                          &rounded)) {
+                          &total)) {
       return false;
     }
   }
@@ -4797,7 +4776,7 @@ static bool RoundDurationYearSlow(
   }
 
   
-  *result = {resultDuration, rounded};
+  *result = {resultDuration, total};
   return true;
 }
 
@@ -5271,7 +5250,7 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
     }
 
     double numYears;
-    double rounded = 0;
+    double total = 0;
     if (computeRemainder == ComputeRemainder::No) {
       if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds.value(),
                                             denominator.value(), increment,
@@ -5280,7 +5259,7 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
       }
     } else {
       TruncateNumber(totalNanoseconds.value(), denominator.value(), &numYears,
-                     &rounded);
+                     &total);
     }
 
     
@@ -5294,7 +5273,7 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
     }
 
     
-    *result = {resultDuration, rounded};
+    *result = {resultDuration, total};
     return true;
   } while (false);
 
@@ -5364,7 +5343,7 @@ static bool RoundDurationMonthSlow(
   }
 
   double numMonths;
-  double rounded = 0;
+  double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
     if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds, denominator,
                                           increment, roundingMode,
@@ -5373,7 +5352,7 @@ static bool RoundDurationMonthSlow(
     }
   } else {
     if (!::TruncateNumber(cx, totalNanoseconds, denominator, &numMonths,
-                          &rounded)) {
+                          &total)) {
       return false;
     }
   }
@@ -5391,7 +5370,7 @@ static bool RoundDurationMonthSlow(
   }
 
   
-  *result = {resultDuration, rounded};
+  *result = {resultDuration, total};
   return true;
 }
 
@@ -5782,7 +5761,7 @@ static bool RoundDurationMonth(
     }
 
     double numMonths;
-    double rounded = 0;
+    double total = 0;
     if (computeRemainder == ComputeRemainder::No) {
       if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds.value(),
                                             denominator.value(), increment,
@@ -5791,7 +5770,7 @@ static bool RoundDurationMonth(
       }
     } else {
       TruncateNumber(totalNanoseconds.value(), denominator.value(), &numMonths,
-                     &rounded);
+                     &total);
     }
 
     
@@ -5807,7 +5786,7 @@ static bool RoundDurationMonth(
     }
 
     
-    *result = {resultDuration, rounded};
+    *result = {resultDuration, total};
     return true;
   } while (false);
 
@@ -5883,7 +5862,7 @@ static bool RoundDurationWeekSlow(
   }
 
   double numWeeks;
-  double rounded = 0;
+  double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
     if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds, denominator,
                                           increment, roundingMode, &numWeeks)) {
@@ -5891,7 +5870,7 @@ static bool RoundDurationWeekSlow(
     }
   } else {
     if (!::TruncateNumber(cx, totalNanoseconds, denominator, &numWeeks,
-                          &rounded)) {
+                          &total)) {
       return false;
     }
   }
@@ -5909,7 +5888,7 @@ static bool RoundDurationWeekSlow(
   }
 
   
-  *result = {resultDuration, rounded};
+  *result = {resultDuration, total};
   return true;
 }
 
@@ -6279,7 +6258,7 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
     }
 
     double numWeeks;
-    double rounded = 0;
+    double total = 0;
     if (computeRemainder == ComputeRemainder::No) {
       if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds.value(),
                                             denominator.value(), increment,
@@ -6288,7 +6267,7 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
       }
     } else {
       TruncateNumber(totalNanoseconds.value(), denominator.value(), &numWeeks,
-                     &rounded);
+                     &total);
     }
 
     
@@ -6304,7 +6283,7 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
     }
 
     
-    *result = {resultDuration, rounded};
+    *result = {resultDuration, total};
     return true;
   } while (false);
 
@@ -6378,14 +6357,14 @@ static bool RoundDurationDaySlow(
 
   
   double days;
-  double rounded = 0;
+  double total = 0;
   if (computeRemainder == ComputeRemainder::No) {
     if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds, dayLength,
                                           increment, roundingMode, &days)) {
       return false;
     }
   } else {
-    if (!::TruncateNumber(cx, totalNanoseconds, dayLength, &days, &rounded)) {
+    if (!::TruncateNumber(cx, totalNanoseconds, dayLength, &days, &total)) {
       return false;
     }
   }
@@ -6401,7 +6380,7 @@ static bool RoundDurationDaySlow(
   }
 
   
-  *result = {resultDuration, rounded};
+  *result = {resultDuration, total};
   return true;
 }
 
@@ -6437,7 +6416,7 @@ static bool RoundDurationDay(JSContext* cx, const Duration& duration,
 
     
     double days;
-    double rounded = 0;
+    double total = 0;
     if (computeRemainder == ComputeRemainder::No) {
       if (!temporal::RoundNumberToIncrement(cx, totalNanoseconds.value(),
                                             dayLength.value(), increment,
@@ -6446,7 +6425,7 @@ static bool RoundDurationDay(JSContext* cx, const Duration& duration,
       }
     } else {
       ::TruncateNumber(totalNanoseconds.value(), dayLength.value(), &days,
-                       &rounded);
+                       &total);
     }
 
     
@@ -6460,7 +6439,7 @@ static bool RoundDurationDay(JSContext* cx, const Duration& duration,
     }
 
     
-    *result = {resultDuration, rounded};
+    *result = {resultDuration, total};
     return true;
   } while (false);
 
@@ -6661,7 +6640,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     return false;
   }
 
-  *result = rounded.rounded;
+  *result = rounded.total;
   return true;
 }
 
@@ -7850,28 +7829,27 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
       balanceResult.seconds,      balanceResult.milliseconds,
       balanceResult.microseconds, balanceResult.nanoseconds,
   };
-  double roundResult;
+  double total;
   if (zonedRelativeTo) {
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
                          TemporalRoundingMode::Trunc, zonedRelativeTo,
-                         &roundResult)) {
+                         &total)) {
       return false;
     }
   } else if (dateRelativeTo) {
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
-                         TemporalRoundingMode::Trunc, dateRelativeTo,
-                         &roundResult)) {
+                         TemporalRoundingMode::Trunc, dateRelativeTo, &total)) {
       return false;
     }
   } else {
     if (!::RoundDuration(cx, roundInput, Increment{1}, unit,
-                         TemporalRoundingMode::Trunc, &roundResult)) {
+                         TemporalRoundingMode::Trunc, &total)) {
       return false;
     }
   }
 
   
-  args.rval().setNumber(roundResult);
+  args.rval().setNumber(total);
   return true;
 }
 
