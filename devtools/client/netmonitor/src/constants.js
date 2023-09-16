@@ -573,6 +573,16 @@ const BLOCKED_REASON_MESSAGES = {
   6000: "Blocked By Extension",
 };
 
+
+const WEB_SOCKET_OPCODE = {
+  CONTINUATION: 0,
+  TEXT: 1,
+  BINARY: 2,
+  CLOSE: 8,
+  PING: 9,
+  PONG: 10,
+};
+
 const general = {
   ACTIVITY_TYPE,
   EVENTS,
@@ -595,6 +605,7 @@ const general = {
   AUTO_EXPAND_MAX_LEVEL: 7,
   AUTO_EXPAND_MAX_NODES: 50,
   CHANNEL_TYPE,
+  WEB_SOCKET_OPCODE,
 };
 
 
