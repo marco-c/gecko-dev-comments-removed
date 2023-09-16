@@ -19,13 +19,6 @@ function clearTelemetry() {
   Services.telemetry.getHistogramById("STORAGE_ACCESS_REMAINING_DAYS").clear();
 }
 
-const expectedExpiredDays = getExpectedExpiredDaysFromPref(
-  "privacy.restrict3rdpartystorage.expiration"
-);
-const expectedExpiredDaysRedirect = getExpectedExpiredDaysFromPref(
-  "privacy.restrict3rdpartystorage.expiration_redirect"
-);
-
 function getExpectedExpiredDaysFromPref(pref) {
   let expiredSecond = Services.prefs.getIntPref(pref);
 
@@ -119,6 +112,11 @@ add_setup(async function () {
       ],
       ["privacy.restrict3rdpartystorage.heuristic.redirect", true],
       ["toolkit.telemetry.ipcBatchTimeout", 0],
+      
+      
+      
+      ["privacy.restrict3rdpartystorage.expiration", 2591999],
+      ["privacy.restrict3rdpartystorage.expiration_redirect", 2591999],
     ],
   });
 
@@ -199,6 +197,10 @@ add_task(async function testTelemetryForStorageAccessAPI() {
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
 
+  let expectedExpiredDays = getExpectedExpiredDaysFromPref(
+    "privacy.restrict3rdpartystorage.expiration"
+  );
+
   
   
   await testTelemetry(false, 1, LABEL_STORAGE_ACCESS_API, expectedExpiredDays);
@@ -273,6 +275,10 @@ add_task(async function testTelemetryForWindowOpenHeuristic() {
 
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
+
+  let expectedExpiredDays = getExpectedExpiredDaysFromPref(
+    "privacy.restrict3rdpartystorage.expiration"
+  );
 
   
   
@@ -357,6 +363,10 @@ add_task(async function testTelemetryForUserInteractionHeuristic() {
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
 
+  let expectedExpiredDays = getExpectedExpiredDaysFromPref(
+    "privacy.restrict3rdpartystorage.expiration"
+  );
+
   
   
   
@@ -397,6 +407,10 @@ add_task(async function testTelemetryForRedirectHeuristic() {
 
   info("Removing the tab");
   BrowserTestUtils.removeTab(tab);
+
+  let expectedExpiredDaysRedirect = getExpectedExpiredDaysFromPref(
+    "privacy.restrict3rdpartystorage.expiration_redirect"
+  );
 
   
   
