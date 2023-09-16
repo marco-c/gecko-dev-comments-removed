@@ -1084,7 +1084,8 @@ void nsWindow::Move(double aX, double aY) {
 
   LOG("nsWindow::Move to %d x %d\n", x, y);
 
-  if (mSizeMode != nsSizeMode_Normal && IsTopLevelWindowType()) {
+  if (mSizeMode != nsSizeMode_Normal && (mWindowType == WindowType::TopLevel ||
+                                         mWindowType == WindowType::Dialog)) {
     LOG("  size state is not normal, bailing");
     return;
   }
@@ -3235,7 +3236,8 @@ LayoutDeviceIntRect nsWindow::GetClientBounds() {
 }
 
 void nsWindow::RecomputeClientOffset(bool aNotify) {
-  if (!IsTopLevelWindowType()) {
+  if (mWindowType != WindowType::Dialog &&
+      mWindowType != WindowType::TopLevel) {
     return;
   }
 
@@ -4036,8 +4038,9 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   
   
-  if (mGdkWindow && IsTopLevelWindowType()) {
-    if (mCeiledScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
+  if (mGdkWindow && (mWindowType == WindowType::TopLevel ||
+                     mWindowType == WindowType::Dialog)) {
+    if (mWindowScaleFactor != gdk_window_get_scale_factor(mGdkWindow)) {
       LOG("  scale factor changed to %d,return early",
           gdk_window_get_scale_factor(mGdkWindow));
       return FALSE;
@@ -4046,7 +4049,8 @@ gboolean nsWindow::OnConfigureEvent(GtkWidget* aWidget,
 
   LayoutDeviceIntRect screenBounds = GetScreenBounds();
 
-  if (IsTopLevelWindowType()) {
+  if (mWindowType == WindowType::TopLevel ||
+      mWindowType == WindowType::Dialog) {
     
     
     if (mBounds.x != screenBounds.x || mBounds.y != screenBounds.y) {
@@ -4306,7 +4310,9 @@ void nsWindow::OnLeaveNotifyEvent(GdkEventCrossing* aEvent) {
 
   
   
-  const bool leavingTopLevel = IsTopLevelWindowType();
+  const bool leavingTopLevel =
+      mWindowType == WindowType::TopLevel || mWindowType == WindowType::Dialog;
+
   if (leavingTopLevel && IsBogusLeaveNotifyEvent(mGdkWindow, aEvent)) {
     return;
   }
@@ -4823,7 +4829,8 @@ void nsWindow::OnContainerFocusInEvent(GdkEventFocus* aEvent) {
 void nsWindow::OnContainerFocusOutEvent(GdkEventFocus* aEvent) {
   LOG("OnContainerFocusOutEvent");
 
-  if (IsTopLevelWindowType()) {
+  if (mWindowType == WindowType::TopLevel ||
+      mWindowType == WindowType::Dialog) {
     
     
     
@@ -5938,7 +5945,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   
   Unused << gfxPlatform::GetPlatform();
 
-  if (IsTopLevelWindowType()) {
+  if (mWindowType == WindowType::TopLevel ||
+      mWindowType == WindowType::Dialog) {
     mGtkWindowDecoration = GetSystemGtkWindowDecoration();
   }
 
