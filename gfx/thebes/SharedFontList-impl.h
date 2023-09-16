@@ -334,11 +334,7 @@ class FontList {
     mozilla::UniquePtr<base::SharedMemory> mShmem;
   };
 
-  Header& GetHeader() {
-    
-    MOZ_ASSERT(mBlocks.Length() > 0);
-    return *static_cast<Header*>(mBlocks[0]->Memory());
-  }
+  Header& GetHeader() const;
 
   
 
