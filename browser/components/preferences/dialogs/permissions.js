@@ -319,6 +319,15 @@ var gPermissionManager = {
         }
         principals.push(principal);
       } catch (ex) {
+        
+        
+        
+        if (
+          input_url.startsWith("http://") ||
+          input_url.startsWith("https://")
+        ) {
+          throw ex;
+        }
         this._addNewPrincipalToList(
           principals,
           Services.io.newURI("http://" + input_url)
