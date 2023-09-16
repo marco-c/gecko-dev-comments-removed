@@ -239,8 +239,9 @@ uint64_t MockCubebStream::Position() { return mPosition; }
 void MockCubebStream::Destroy() {
   
   
-  NotifyState(CUBEB_STATE_STOPPED);
-
+  
+  
+  Stop();
   MockCubeb::AsMock(context)->StreamDestroy(AsCubebStream());
 }
 
@@ -410,7 +411,11 @@ void MockCubebStream::NotifyState(cubeb_state aState) {
 
 MockCubeb::MockCubeb() : ops(&mock_ops) {}
 
-MockCubeb::~MockCubeb() { MOZ_ASSERT(!mFakeAudioThread); };
+MockCubeb::~MockCubeb() {
+  auto streams = mLiveStreams.Lock();
+  MOZ_ASSERT(streams->IsEmpty());
+  MOZ_ASSERT(!mFakeAudioThread);
+};
 
 cubeb* MockCubeb::AsCubebContext() { return reinterpret_cast<cubeb*>(this); }
 
