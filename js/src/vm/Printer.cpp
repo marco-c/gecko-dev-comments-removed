@@ -155,12 +155,6 @@ UniqueChars Sprinter::release() {
   return UniqueChars(str);
 }
 
-char* Sprinter::stringAt(ptrdiff_t off) const {
-  MOZ_ASSERT(!hadOutOfMemory());
-  MOZ_ASSERT(off >= 0 && (size_t)off < size);
-  return base + off;
-}
-
 char& Sprinter::operator[](size_t off) {
   MOZ_ASSERT(!hadOutOfMemory());
   MOZ_ASSERT(off < size);
@@ -195,9 +189,8 @@ bool Sprinter::put(const char* s, size_t len) {
   
   if (s >= oldBase && s < oldEnd) {
     
-    if (base != oldBase) {
-      s = stringAt(s - oldBase); 
-    }
+    size_t index = s - oldBase;
+    s = &base[index];
     memmove(bp, s, len);
   } else {
     js_memcpy(bp, s, len);
