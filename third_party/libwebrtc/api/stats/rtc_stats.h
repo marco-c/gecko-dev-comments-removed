@@ -354,6 +354,11 @@ class RTCStatsMember : public RTCStatsMemberInterface {
   }
 
   
+  
+  
+  bool has_value() const { return value_.has_value(); }
+  const T& value() const { return value_.value(); }
+  T& value() { return value_.value(); }
   T& operator*() {
     RTC_DCHECK(value_);
     return *value_;
@@ -362,8 +367,6 @@ class RTCStatsMember : public RTCStatsMemberInterface {
     RTC_DCHECK(value_);
     return *value_;
   }
-
-  
   T* operator->() {
     RTC_DCHECK(value_);
     return &(*value_);
