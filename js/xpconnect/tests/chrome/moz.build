@@ -4,7 +4,7 @@
 
 
 
-MOCHITEST_CHROME_MANIFESTS += ["chrome.ini"]
+MOCHITEST_CHROME_MANIFESTS += ["chrome.toml"]
 
 TEST_HARNESS_FILES.testing.mochitest.tests.js.xpconnect.tests.chrome += [
     "file_discardSystemSource.html",

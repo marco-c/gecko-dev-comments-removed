@@ -5,7 +5,7 @@
 
 
 MOCHITEST_MANIFESTS += ["tests/mochitest/mochitest.ini"]
-MOCHITEST_CHROME_MANIFESTS += ["tests/mochitest/chrome.ini"]
+MOCHITEST_CHROME_MANIFESTS += ["tests/mochitest/chrome.toml"]
 BROWSER_CHROME_MANIFESTS += ["tests/mochitest/browser.ini"]
 XPCSHELL_TESTS_MANIFESTS += ["tests/unit/xpcshell.ini"]
 

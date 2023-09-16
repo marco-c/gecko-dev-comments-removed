@@ -5,7 +5,7 @@
 
 
 if CONFIG["ENABLE_TESTS"]:
-    MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.ini"]
+    MOCHITEST_CHROME_MANIFESTS += ["tests/chrome/chrome.toml"]
     MOCHITEST_MANIFESTS += ["tests/mochitest.ini"]
 
 XPIDL_SOURCES += [
