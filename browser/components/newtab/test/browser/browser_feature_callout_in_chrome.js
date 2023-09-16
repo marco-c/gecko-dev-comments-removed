@@ -870,7 +870,7 @@ add_task(
     );
 
     
-    const navigatorToolBox = doc.querySelector("#navigator-toolbox-background");
+    const navigatorToolBox = doc.querySelector("#navigator-toolbox");
     navigatorToolBox.style.height = "150px";
     
     
