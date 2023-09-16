@@ -25,6 +25,7 @@ namespace dom {
 
 class Document;
 class Element;
+struct BindContext;
 
 #define MOZILLA_DOM_LINK_IMPLEMENTATION_IID          \
   {                                                  \
@@ -54,13 +55,6 @@ class Link : public nsISupports {
   explicit Link();
 
   virtual void VisitedQueryFinished(bool aVisited);
-
-  
-
-
-
-
-  ElementState LinkState() const;
 
   
 
@@ -98,6 +92,11 @@ class Link : public nsISupports {
 
 
   void ResetLinkState(bool aNotify, bool aHasHref);
+  void ResetLinkState(bool aNotify) {
+    ResetLinkState(aNotify, ElementHasHref());
+  }
+  void BindToTree(const BindContext&);
+  void UnbindFromTree() { ResetLinkState(false); }
 
   
   Element* GetElement() const { return mElement; }
@@ -109,6 +108,7 @@ class Link : public nsISupports {
   bool HasPendingLinkUpdate() const { return mHasPendingLinkUpdate; }
   void SetHasPendingLinkUpdate() { mHasPendingLinkUpdate = true; }
   void ClearHasPendingLinkUpdate() { mHasPendingLinkUpdate = false; }
+  void TriggerLinkUpdate(bool aNotify);
 
   
   
@@ -127,23 +127,18 @@ class Link : public nsISupports {
 
 
 
-  void UnregisterFromHistory();
-
+  void Unregister();
+  void SetLinkState(State, bool aNotify);
   void SetHrefAttribute(nsIURI* aURI);
 
   mutable nsCOMPtr<nsIURI> mCachedURI;
 
   Element* const mElement;
 
-  
-  
-  
-  
-  State mState;
   bool mNeedsRegistration : 1;
   bool mRegistered : 1;
   bool mHasPendingLinkUpdate : 1;
-  bool mHistory : 1;
+  const bool mHistory : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Link, MOZILLA_DOM_LINK_IMPLEMENTATION_IID)

@@ -471,8 +471,6 @@ class Document::HeaderData {
   UniquePtr<HeaderData> mNext;
 };
 
-using LinkArray = nsTArray<Link*>;
-
 AutoTArray<Document*, 8>* Document::sLoadingForegroundTopLevelContentDocument =
     nullptr;
 
@@ -12039,12 +12037,12 @@ void Document::RefreshLinkHrefs() {
   
   
   
-  const LinkArray linksToNotify = ToArray(mStyledLinks);
+  const nsTArray<Link*> linksToNotify = ToArray(mStyledLinks);
 
   
   nsAutoScriptBlocker scriptBlocker;
-  for (LinkArray::size_type i = 0; i < linksToNotify.Length(); i++) {
-    linksToNotify[i]->ResetLinkState(true, linksToNotify[i]->ElementHasHref());
+  for (Link* link : linksToNotify) {
+    link->ResetLinkState(true);
   }
 }
 
@@ -13238,7 +13236,7 @@ void Document::FlushPendingLinkUpdates() {
       if (element->OwnerDoc() == this) {
         link->ClearHasPendingLinkUpdate();
         if (element->IsInComposedDoc()) {
-          element->UpdateLinkState(link->LinkState());
+          link->TriggerLinkUpdate( true);
         }
       }
     }

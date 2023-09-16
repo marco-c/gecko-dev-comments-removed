@@ -273,11 +273,6 @@ class Element : public FragmentOrElement {
   
 
 
-  void UpdateLinkState(ElementState aState);
-
-  
-
-
   bool IsDisabled() const { return State().HasState(ElementState::DISABLED); }
   bool IsReadOnly() const { return State().HasState(ElementState::READONLY); }
   bool IsDisabledOrReadOnly() const {
