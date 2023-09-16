@@ -2,12 +2,15 @@
 
 use std::io;
 
-use serde::{de, ser, Deserialize, Serialize};
+use serde::{de, ser};
+use serde_derive::{Deserialize, Serialize};
 
-use crate::de::Deserializer;
-use crate::error::{Result, SpannedResult};
-use crate::extensions::Extensions;
-use crate::ser::{PrettyConfig, Serializer};
+use crate::{
+    de::Deserializer,
+    error::{Result, SpannedResult},
+    extensions::Extensions,
+    ser::{PrettyConfig, Serializer},
+};
 
 
 
@@ -36,12 +39,19 @@ pub struct Options {
     
     
     pub default_extensions: Extensions,
+    
+    
+    
+    
+    
+    pub recursion_limit: Option<usize>,
 }
 
 impl Default for Options {
     fn default() -> Self {
         Self {
             default_extensions: Extensions::empty(),
+            recursion_limit: Some(128),
         }
     }
 }
@@ -58,6 +68,23 @@ impl Options {
     
     pub fn without_default_extension(mut self, default_extension: Extensions) -> Self {
         self.default_extensions &= !default_extension;
+        self
+    }
+
+    #[must_use]
+    
+    pub fn with_recursion_limit(mut self, recursion_limit: usize) -> Self {
+        self.recursion_limit = Some(recursion_limit);
+        self
+    }
+
+    #[must_use]
+    
+    
+    
+    
+    pub fn without_recursion_limit(mut self) -> Self {
+        self.recursion_limit = None;
         self
     }
 }
@@ -137,6 +164,10 @@ impl Options {
     }
 
     
+    
+    
+    
+    
     pub fn to_writer<W, T>(&self, writer: W, value: &T) -> Result<()>
     where
         W: io::Write,
@@ -156,6 +187,7 @@ impl Options {
         value.serialize(&mut s)
     }
 
+    
     
     
     
