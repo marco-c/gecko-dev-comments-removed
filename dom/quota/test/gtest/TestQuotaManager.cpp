@@ -4,178 +4,46 @@
 
 
 
-#include "mozilla/dom/quota/OriginScope.h"
-
 #include "gtest/gtest.h"
+#include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/dom/quota/QuotaManager.h"
+#include "mozilla/gtest/MozAssertions.h"
+#include "QuotaManagerDependencyFixture.h"
 
-#include <cstdint>
-#include <memory>
-#include "ErrorList.h"
-#include "mozilla/Result.h"
-#include "mozilla/dom/quota/QuotaCommon.h"
-#include "mozilla/fallible.h"
-#include "nsCOMPtr.h"
-#include "nsDirectoryServiceDefs.h"
-#include "nsDirectoryServiceUtils.h"
-#include "nsIFile.h"
-#include "nsLiteralString.h"
-#include "nsString.h"
-#include "nsStringFwd.h"
-#include "nsTLiteralString.h"
+namespace mozilla::dom::quota::test {
 
-using namespace mozilla;
-using namespace mozilla::dom::quota;
+class TestQuotaManager : public QuotaManagerDependencyFixture {
+ public:
+  static void SetUpTestCase() { ASSERT_NO_FATAL_FAILURE(InitializeFixture()); }
 
-namespace {
-
-struct OriginTest {
-  const char* mOrigin;
-  bool mMatch;
+  static void TearDownTestCase() { ASSERT_NO_FATAL_FAILURE(ShutdownFixture()); }
 };
 
-void CheckOriginScopeMatchesOrigin(const OriginScope& aOriginScope,
-                                   const char* aOrigin, bool aMatch) {
-  bool result = aOriginScope.Matches(
-      OriginScope::FromOrigin(nsDependentCString(aOrigin)));
 
-  EXPECT_TRUE(result == aMatch);
-}
+TEST_F(TestQuotaManager, ShutdownStorage_Simple) {
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 
-void CheckUnknownFileEntry(nsIFile& aBase, const nsAString& aName,
-                           const bool aWarnIfFile, const bool aWarnIfDir) {
-  nsCOMPtr<nsIFile> file;
-  nsresult rv = aBase.Clone(getter_AddRefs(file));
-  ASSERT_EQ(rv, NS_OK);
+  PerformOnIOThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
 
-  rv = file->Append(aName);
-  ASSERT_EQ(rv, NS_OK);
+    ASSERT_FALSE(quotaManager->IsStorageInitialized());
 
-  rv = file->Create(nsIFile::NORMAL_FILE_TYPE, 0600);
-  ASSERT_EQ(rv, NS_OK);
+    ASSERT_NS_SUCCEEDED(quotaManager->EnsureStorageIsInitialized());
 
-  auto okOrErr = WARN_IF_FILE_IS_UNKNOWN(*file);
-  ASSERT_TRUE(okOrErr.isOk());
+    ASSERT_TRUE(quotaManager->IsStorageInitialized());
+  });
 
-#ifdef DEBUG
-  EXPECT_TRUE(okOrErr.inspect() == aWarnIfFile);
-#else
-  EXPECT_TRUE(okOrErr.inspect() == false);
-#endif
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 
-  rv = file->Remove(false);
-  ASSERT_EQ(rv, NS_OK);
+  PerformOnIOThread([]() {
+    QuotaManager* quotaManager = QuotaManager::Get();
+    ASSERT_TRUE(quotaManager);
 
-  rv = file->Create(nsIFile::DIRECTORY_TYPE, 0700);
-  ASSERT_EQ(rv, NS_OK);
+    ASSERT_FALSE(quotaManager->IsStorageInitialized());
+  });
 
-  okOrErr = WARN_IF_FILE_IS_UNKNOWN(*file);
-  ASSERT_TRUE(okOrErr.isOk());
-
-#ifdef DEBUG
-  EXPECT_TRUE(okOrErr.inspect() == aWarnIfDir);
-#else
-  EXPECT_TRUE(okOrErr.inspect() == false);
-#endif
-
-  rv = file->Remove(false);
-  ASSERT_EQ(rv, NS_OK);
+  ASSERT_NO_FATAL_FAILURE(ShutdownStorage());
 }
 
 }  
-
-TEST(QuotaManager, OriginScope)
-{
-  OriginScope originScope;
-
-  
-
-  {
-    constexpr auto origin = "http://www.mozilla.org"_ns;
-    originScope.SetFromOrigin(origin);
-    EXPECT_TRUE(originScope.IsOrigin());
-    EXPECT_TRUE(originScope.GetOrigin().Equals(origin));
-    EXPECT_TRUE(originScope.GetOriginNoSuffix().Equals(origin));
-  }
-
-  {
-    constexpr auto prefix = "http://www.mozilla.org"_ns;
-    originScope.SetFromPrefix(prefix);
-    EXPECT_TRUE(originScope.IsPrefix());
-    EXPECT_TRUE(originScope.GetOriginNoSuffix().Equals(prefix));
-  }
-
-  {
-    originScope.SetFromNull();
-    EXPECT_TRUE(originScope.IsNull());
-  }
-
-  
-
-  {
-    originScope.SetFromOrigin("http://www.mozilla.org"_ns);
-
-    static const OriginTest tests[] = {
-        {"http://www.mozilla.org", true},
-        {"http://www.example.org", false},
-    };
-
-    for (const auto& test : tests) {
-      CheckOriginScopeMatchesOrigin(originScope, test.mOrigin, test.mMatch);
-    }
-  }
-
-  {
-    originScope.SetFromPrefix("http://www.mozilla.org"_ns);
-
-    static const OriginTest tests[] = {
-        {"http://www.mozilla.org", true},
-        {"http://www.mozilla.org^userContextId=1", true},
-        {"http://www.example.org^userContextId=1", false},
-    };
-
-    for (const auto& test : tests) {
-      CheckOriginScopeMatchesOrigin(originScope, test.mOrigin, test.mMatch);
-    }
-  }
-
-  {
-    originScope.SetFromNull();
-
-    static const OriginTest tests[] = {
-        {"http://www.mozilla.org", true},
-        {"http://www.mozilla.org^userContextId=1", true},
-        {"http://www.example.org^userContextId=1", true},
-    };
-
-    for (const auto& test : tests) {
-      CheckOriginScopeMatchesOrigin(originScope, test.mOrigin, test.mMatch);
-    }
-  }
-}
-
-TEST(QuotaManager, WarnIfUnknownFile)
-{
-  nsCOMPtr<nsIFile> base;
-  nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(base));
-  ASSERT_EQ(rv, NS_OK);
-
-  rv = base->Append(u"mozquotatests"_ns);
-  ASSERT_EQ(rv, NS_OK);
-
-  base->Remove(true);
-
-  rv = base->Create(nsIFile::DIRECTORY_TYPE, 0700);
-  ASSERT_EQ(rv, NS_OK);
-
-  CheckUnknownFileEntry(*base, u"foo.bar"_ns, true, true);
-  CheckUnknownFileEntry(*base, u".DS_Store"_ns, false, true);
-  CheckUnknownFileEntry(*base, u".desktop"_ns, false, true);
-  CheckUnknownFileEntry(*base, u"desktop.ini"_ns, false, true);
-  CheckUnknownFileEntry(*base, u"DESKTOP.INI"_ns, false, true);
-  CheckUnknownFileEntry(*base, u"thumbs.db"_ns, false, true);
-  CheckUnknownFileEntry(*base, u"THUMBS.DB"_ns, false, true);
-  CheckUnknownFileEntry(*base, u".xyz"_ns, false, true);
-
-  rv = base->Remove(true);
-  ASSERT_EQ(rv, NS_OK);
-}
