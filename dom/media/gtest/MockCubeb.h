@@ -290,13 +290,23 @@ class SmartMockCubebStream
 
 
 class MockCubeb {
+  
+  
+  
+  
+  
+  const cubeb_ops* ops;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MockCubeb);
+
  public:
   MockCubeb();
-  ~MockCubeb();
+  
+  
   
   
   cubeb* AsCubebContext();
   static MockCubeb* AsMock(cubeb* aContext);
+  void Destroy();
   
   int EnumerateDevices(cubeb_device_type aType,
                        cubeb_device_collection* aCollection);
@@ -389,11 +399,7 @@ class MockCubeb {
   void ThreadFunction();
 
  private:
-  
-  
-  
-  
-  const cubeb_ops* ops;
+  ~MockCubeb();
   
   cubeb_device_collection_changed_callback
       mInputDeviceCollectionChangeCallback = nullptr;
@@ -413,6 +419,8 @@ class MockCubeb {
   
   
   Atomic<bool> mForcedAudioThread{false};
+  Atomic<bool> mHasCubebContext{false};
+  Atomic<bool> mDestroyed{false};
   MozPromiseHolder<ForcedAudioThreadPromise> mForcedAudioThreadPromise;
   
   nsTArray<cubeb_device_info> mInputDevices;
