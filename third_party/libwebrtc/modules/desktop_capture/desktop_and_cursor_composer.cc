@@ -29,6 +29,17 @@ namespace {
 
 
 
+
+
+
+
+
+int g_ref_count = 0;
+
+uint64_t g_num_flicker_warnings = 0;
+
+
+
 void AlphaBlend(uint8_t* dest,
                 int dest_stride,
                 const uint8_t* src,
@@ -96,6 +107,7 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
                    frame->data(),
                    frame->shared_memory()),
       original_frame_(std::move(frame)) {
+  ++g_ref_count;
   MoveFrameInfoFrom(original_frame_.get());
 
   DesktopVector image_pos = position.subtract(cursor.hotspot());
@@ -105,11 +117,6 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
   cursor_rect_.IntersectWith(DesktopRect::MakeSize(size()));
 
   if (!previous_cursor_rect.equals(cursor_rect_)) {
-    RTC_LOG(LS_VERBOSE) << "[MOUSE] cursors moved => cursor_rect=("
-                        << cursor_rect_.top_left().x() << ","
-                        << cursor_rect_.top_left().y() << ") ("
-                        << cursor_rect_.size().width() << "x"
-                        << cursor_rect_.size().height() << ")";
     mutable_updated_region()->AddRect(cursor_rect_);
     
     
@@ -118,11 +125,6 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
     
     mutable_updated_region()->AddRect(previous_cursor_rect);
   } else if (cursor_changed) {
-    RTC_LOG(LS_VERBOSE) << "[MOUSE] cursor changed => cursor_rect=("
-                        << cursor_rect_.top_left().x() << ","
-                        << cursor_rect_.top_left().y() << ") ("
-                        << cursor_rect_.size().width() << "x"
-                        << cursor_rect_.size().height() << ")";
     mutable_updated_region()->AddRect(cursor_rect_);
   }
 
@@ -148,6 +150,11 @@ DesktopFrameWithCursor::DesktopFrameWithCursor(
 }
 
 DesktopFrameWithCursor::~DesktopFrameWithCursor() {
+  if (--g_ref_count > 0) {
+    ++g_num_flicker_warnings;
+    RTC_LOG(LS_WARNING) << "Cursor might be flickering; number of warnings="
+                        << g_num_flicker_warnings;
+  }
   
   if (restore_frame_) {
     DesktopRect target_rect = DesktopRect::MakeSize(restore_frame_->size());
