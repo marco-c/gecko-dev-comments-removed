@@ -118,8 +118,8 @@ nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings, pid_t aPid) {
   }
 
   MemoryMapping* current = nullptr;
-  std::string buffer;
-  while (std::getline(stream, buffer)) {
+  std::string line;
+  while (std::getline(stream, line)) {
     size_t start, end, offset;
     char flags[4] = "---";
     char name[512];
@@ -131,7 +131,7 @@ nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings, pid_t aPid) {
     
     
     
-    if (sscanf(buffer.c_str(), "%zx-%zx %4c %zx %*u:%*u %*u %511s\n", &start,
+    if (sscanf(line.c_str(), "%zx-%zx %4c %zx %*u:%*u %*u %511s\n", &start,
                &end, flags, &offset, name) >= 4) {
       PermSet perms;
       if (flags[0] == 'r') {
@@ -157,9 +157,8 @@ nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings, pid_t aPid) {
       continue;
     }
 
-    nsAutoCStringN<128> line(buffer.c_str());
     char* savePtr;
-    char* fieldName = strtok_r(line.BeginWriting(), ":", &savePtr);
+    char* fieldName = strtok_r(line.data(), ":", &savePtr);
     if (!fieldName) {
       continue;
     }
