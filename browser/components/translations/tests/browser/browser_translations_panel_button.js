@@ -7,7 +7,6 @@
 
 
 add_task(async function test_button_visible_navigation() {
-  info("Start at a page in Spanish.");
   const { cleanup } = await loadTestPage({
     page: SPANISH_PAGE_URL,
     languagePairs: LANGUAGE_PAIRS,
@@ -39,8 +38,6 @@ add_task(async function test_button_visible_navigation() {
 
 
 add_task(async function test_button_visible() {
-  info("Start at a page in Spanish.");
-
   const { cleanup, tab: spanishTab } = await loadTestPage({
     page: SPANISH_PAGE_URL,
     languagePairs: LANGUAGE_PAIRS,

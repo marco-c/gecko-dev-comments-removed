@@ -7,7 +7,6 @@
 
 
 add_task(async function test_unsupported_lang() {
-  info("Start at a page in Spanish.");
   const { cleanup } = await loadTestPage({
     page: SPANISH_PAGE_URL,
     languagePairs: [
