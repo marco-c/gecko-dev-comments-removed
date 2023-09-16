@@ -20,7 +20,7 @@ use std::ops::DerefMut;
 
 
 pub struct ScopedTLS<'scope, T: Send> {
-    pool: &'scope rayon::ThreadPool,
+    pool: Option<&'scope rayon::ThreadPool>,
     slots: [RefCell<Option<T>>; STYLO_MAX_THREADS],
 }
 
@@ -31,8 +31,8 @@ unsafe impl<'scope, T: Send> Sync for ScopedTLS<'scope, T> {}
 impl<'scope, T: Send> ScopedTLS<'scope, T> {
     
     
-    pub fn new(pool: &'scope rayon::ThreadPool) -> Self {
-        debug_assert!(pool.current_num_threads() <= STYLO_MAX_THREADS);
+    pub fn new(pool: Option<&'scope rayon::ThreadPool>) -> Self {
+        debug_assert!(pool.map_or(true, |p| p.current_num_threads() <= STYLO_MAX_THREADS));
         ScopedTLS {
             pool,
             slots: Default::default(),
@@ -40,14 +40,20 @@ impl<'scope, T: Send> ScopedTLS<'scope, T> {
     }
 
     
+    #[inline]
+    pub fn current_thread_index(&self) -> usize {
+        self.pool.map_or(0, |p| p.current_thread_index().unwrap())
+    }
+
+    
     pub fn borrow(&self) -> Ref<Option<T>> {
-        let idx = self.pool.current_thread_index().unwrap();
+        let idx = self.current_thread_index();
         self.slots[idx].borrow()
     }
 
     
     pub fn borrow_mut(&self) -> RefMut<Option<T>> {
-        let idx = self.pool.current_thread_index().unwrap();
+        let idx = self.current_thread_index();
         self.slots[idx].borrow_mut()
     }
 
