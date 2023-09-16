@@ -65,6 +65,8 @@
 
 
 #include "mozilla/dom/HTMLInputElement.h"
+#include "mozilla/dom/HTMLButtonElement.h"
+#include "mozilla/dom/HTMLSelectElement.h"
 #include "nsIRadioVisitor.h"
 #include "RadioNodeList.h"
 
@@ -388,9 +390,6 @@ static void CollectOrphans(nsINode* aRemovalRoot,
         nsCOMPtr<nsIFormControl> fc = do_QueryInterface(node);
         MOZ_ASSERT(fc);
         fc->ClearForm(true, false);
-
-        
-        node->UpdateState(true);
 #ifdef DEBUG
         removed = true;
 #endif
@@ -1215,7 +1214,6 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
     
     
     
-    nsGenericHTMLFormElement* oldDefaultSubmit = mDefaultSubmitElement;
     if (!*firstSubmitSlot ||
         (!lastElement && nsContentUtils::CompareTreePosition(
                              aChild, *firstSubmitSlot, this) < 0)) {
@@ -1236,13 +1234,6 @@ nsresult HTMLFormElement::AddElement(nsGenericHTMLFormElement* aChild,
                    mDefaultSubmitElement == mFirstSubmitNotInElements ||
                    !mDefaultSubmitElement,
                "What happened here?");
-
-    
-    
-    
-    if (oldDefaultSubmit && oldDefaultSubmit != mDefaultSubmitElement) {
-      oldDefaultSubmit->UpdateState(aNotify);
-    }
   }
 
   
@@ -1794,30 +1785,27 @@ bool HTMLFormElement::CheckValidFormSubmission() {
 
     nsAutoScriptBlocker scriptBlocker;
 
-    for (uint32_t i = 0, length = mControls->mElements.Length(); i < length;
-         ++i) {
+    for (nsGenericHTMLFormElement* element : mControls->mElements) {
       
       
-      if (mControls->mElements[i]->IsHTMLElement(nsGkAtoms::input) &&
-          
-          
-          
-          
-          
-          mControls->mElements[i]->State().HasState(ElementState::FOCUS)) {
-        static_cast<HTMLInputElement*>(mControls->mElements[i])
-            ->UpdateValidityUIBits(true);
+      if (auto* input = HTMLInputElement::FromNode(*element)) {
+        
+        
+        
+        
+        
+        if (input->State().HasState(ElementState::FOCUS)) {
+          input->UpdateValidityUIBits(true);
+        }
       }
-
-      mControls->mElements[i]->UpdateState(true);
+      element->UpdateValidityElementStates(true);
     }
 
     
     
     
-    for (uint32_t i = 0, length = mControls->mNotInElements.Length();
-         i < length; ++i) {
-      mControls->mNotInElements[i]->UpdateState(true);
+    for (nsGenericHTMLFormElement* element : mControls->mNotInElements) {
+      element->UpdateValidityElementStates(true);
     }
   }
 
@@ -1861,7 +1849,10 @@ void HTMLFormElement::UpdateValidity(bool aElementValidity) {
     return;
   }
 
-  UpdateState(true);
+  AutoStateChangeNotifier notifier(*this, true);
+  RemoveStatesSilently(ElementState::VALID | ElementState::INVALID);
+  AddStatesSilently(mInvalidElementsCount ? ElementState::INVALID
+                                          : ElementState::VALID);
 }
 
 int32_t HTMLFormElement::IndexOfContent(nsIContent* aContent) {
@@ -1920,18 +1911,6 @@ bool HTMLFormElement::GetValueMissingState(const nsAString& aName) const {
 void HTMLFormElement::SetValueMissingState(const nsAString& aName,
                                            bool aValue) {
   RadioGroupManager::SetValueMissingState(aName, aValue);
-}
-
-ElementState HTMLFormElement::IntrinsicState() const {
-  ElementState state = nsGenericHTMLElement::IntrinsicState();
-
-  if (mInvalidElementsCount) {
-    state |= ElementState::INVALID;
-  } else {
-    state |= ElementState::VALID;
-  }
-
-  return state;
 }
 
 void HTMLFormElement::Clear() {

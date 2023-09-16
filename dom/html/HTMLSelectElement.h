@@ -214,8 +214,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   void FieldSetDisabledChanged(bool aNotify) override;
 
-  ElementState IntrinsicState() const override;
-
   
 
 
@@ -300,6 +298,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
                                 ValidityStateType aType) override;
 
   void UpdateValueMissingValidityState();
+  void UpdateValidityElementStates(bool aNotify) final;
   
 
 

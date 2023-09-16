@@ -90,8 +90,6 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
 
   
 
-  ElementState IntrinsicState() const override;
-
   
 
 

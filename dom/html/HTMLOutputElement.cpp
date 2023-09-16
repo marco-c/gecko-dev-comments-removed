@@ -45,8 +45,6 @@ NS_IMPL_ELEMENT_CLONE(HTMLOutputElement)
 
 void HTMLOutputElement::SetCustomValidity(const nsAString& aError) {
   ConstraintValidation::SetCustomValidity(aError);
-
-  UpdateState(true);
 }
 
 NS_IMETHODIMP
@@ -77,21 +75,6 @@ void HTMLOutputElement::DoneAddingChildren(bool aHaveNotified) {
   mIsDoneAddingChildren = true;
   
   DescendantsChanged();
-}
-
-nsresult HTMLOutputElement::BindToTree(BindContext& aContext,
-                                       nsINode& aParent) {
-  nsresult rv = nsGenericHTMLFormControlElement::BindToTree(aContext, aParent);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  
-  
-  UpdateState(false);
-
-  return rv;
 }
 
 void HTMLOutputElement::GetValue(nsAString& aValue) const {

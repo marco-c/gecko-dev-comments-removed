@@ -302,9 +302,7 @@ void HTMLTextAreaElement::SetValueChanged(bool aValueChanged) {
   }
   UpdateTooLongValidityState();
   UpdateTooShortValidityState();
-  
-  
-  UpdateState(true);
+  UpdateValidityElementStates(true);
 }
 
 void HTMLTextAreaElement::SetLastValueChangeWasInteractive(
@@ -317,7 +315,7 @@ void HTMLTextAreaElement::SetLastValueChangeWasInteractive(
   UpdateTooLongValidityState();
   UpdateTooShortValidityState();
   if (wasValid != IsValid()) {
-    UpdateState(true);
+    UpdateValidityElementStates(true);
   }
 }
 
@@ -497,8 +495,7 @@ nsresult HTMLTextAreaElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       mCanShowInvalidUI = true;
       mCanShowValidUI = true;
     }
-
-    UpdateState(true);
+    UpdateValidityElementStates(true);
   }
 
   return NS_OK;
@@ -745,37 +742,38 @@ bool HTMLTextAreaElement::RestoreState(PresState* aState) {
   return false;
 }
 
-ElementState HTMLTextAreaElement::IntrinsicState() const {
-  ElementState state =
-      nsGenericHTMLFormControlElementWithState::IntrinsicState();
-
-  if (IsCandidateForConstraintValidation()) {
-    if (IsValid()) {
-      state |= ElementState::VALID;
-    } else {
-      state |= ElementState::INVALID;
-      
-      
-      if (GetValidityState(VALIDITY_STATE_CUSTOM_ERROR) ||
-          (mCanShowInvalidUI && ShouldShowValidityUI())) {
-        state |= ElementState::USER_INVALID;
-      }
-    }
-
+void HTMLTextAreaElement::UpdateValidityElementStates(bool aNotify) {
+  AutoStateChangeNotifier notifier(*this, aNotify);
+  RemoveStatesSilently(ElementState::VALIDITY_STATES);
+  if (!IsCandidateForConstraintValidation()) {
+    return;
+  }
+  ElementState state;
+  if (IsValid()) {
+    state |= ElementState::VALID;
+  } else {
+    state |= ElementState::INVALID;
     
     
-    
-    
-    
-    
-    
-    if (mCanShowValidUI && ShouldShowValidityUI() &&
-        (IsValid() ||
-         (state.HasState(ElementState::USER_INVALID) && !mCanShowInvalidUI))) {
-      state |= ElementState::USER_VALID;
+    if (GetValidityState(VALIDITY_STATE_CUSTOM_ERROR) ||
+        (mCanShowInvalidUI && ShouldShowValidityUI())) {
+      state |= ElementState::USER_INVALID;
     }
   }
-  return state;
+
+  
+  
+  
+  
+  
+  
+  
+  if (mCanShowValidUI && ShouldShowValidityUI() &&
+      (IsValid() ||
+       (state.HasState(ElementState::USER_INVALID) && !mCanShowInvalidUI))) {
+    state |= ElementState::USER_VALID;
+  }
+  AddStatesSilently(state);
 }
 
 nsresult HTMLTextAreaElement::BindToTree(BindContext& aContext,
@@ -795,7 +793,7 @@ nsresult HTMLTextAreaElement::BindToTree(BindContext& aContext,
   UpdateBarredFromConstraintValidation();
 
   
-  UpdateState(false);
+  UpdateValidityElementStates(false);
 
   return rv;
 }
@@ -808,7 +806,7 @@ void HTMLTextAreaElement::UnbindFromTree(bool aNullParent) {
   UpdateBarredFromConstraintValidation();
 
   
-  UpdateState(false);
+  UpdateValidityElementStates(false);
 }
 
 void HTMLTextAreaElement::BeforeSetAttr(int32_t aNameSpaceID, nsAtom* aName,
@@ -908,13 +906,16 @@ void HTMLTextAreaElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       if (aName == nsGkAtoms::readonly || aName == nsGkAtoms::disabled) {
         UpdateBarredFromConstraintValidation();
       }
+      UpdateValidityElementStates(aNotify);
     } else if (aName == nsGkAtoms::autocomplete) {
       
       mAutocompleteAttrState = nsContentUtils::eAutocompleteAttrState_Unknown;
     } else if (aName == nsGkAtoms::maxlength) {
       UpdateTooLongValidityState();
+      UpdateValidityElementStates(aNotify);
     } else if (aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
+      UpdateValidityElementStates(aNotify);
     } else if (aName == nsGkAtoms::placeholder) {
       if (nsTextControlFrame* f = do_QueryFrame(GetPrimaryFrame())) {
         f->PlaceholderChanged(aOldValue, aValue);
@@ -957,8 +958,7 @@ bool HTMLTextAreaElement::IsMutable() const { return !IsDisabledOrReadOnly(); }
 
 void HTMLTextAreaElement::SetCustomValidity(const nsAString& aError) {
   ConstraintValidation::SetCustomValidity(aError);
-
-  UpdateState(true);
+  UpdateValidityElementStates(true);
 }
 
 bool HTMLTextAreaElement::IsTooLong() {
@@ -1147,7 +1147,7 @@ void HTMLTextAreaElement::OnValueChanged(ValueChangeKind aKind,
   }
 
   if (validBefore != IsValid()) {
-    UpdateState(true);
+    UpdateValidityElementStates(true);
   }
 }
 
@@ -1164,7 +1164,7 @@ void HTMLTextAreaElement::FieldSetDisabledChanged(bool aNotify) {
 
   UpdateValueMissingValidityState();
   UpdateBarredFromConstraintValidation();
-  UpdateState(aNotify);
+  UpdateValidityElementStates(true);
 }
 
 JSObject* HTMLTextAreaElement::WrapNode(JSContext* aCx,

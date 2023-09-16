@@ -1015,6 +1015,11 @@ class nsGenericHTMLFormElement : public nsGenericHTMLElement {
 
   already_AddRefed<nsILayoutHistoryState> GetLayoutHistory(bool aRead);
 
+  
+  
+  
+  virtual void UpdateValidityElementStates(bool aNotify) {}
+
  protected:
   virtual ~nsGenericHTMLFormElement() = default;
 

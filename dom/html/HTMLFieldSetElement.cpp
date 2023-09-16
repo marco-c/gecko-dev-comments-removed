@@ -294,25 +294,16 @@ void HTMLFieldSetElement::UpdateValidity(bool aElementValidity) {
   
   if (!mInvalidElementsCount ||
       (mInvalidElementsCount == 1 && !aElementValidity)) {
-    UpdateState(true);
+    AutoStateChangeNotifier notifier(*this, true);
+    RemoveStatesSilently(ElementState::VALID | ElementState::INVALID);
+    AddStatesSilently(mInvalidElementsCount ? ElementState::INVALID
+                                            : ElementState::VALID);
   }
 
   
   if (mFieldSet) {
     mFieldSet->UpdateValidity(aElementValidity);
   }
-}
-
-ElementState HTMLFieldSetElement::IntrinsicState() const {
-  ElementState state = nsGenericHTMLFormControlElement::IntrinsicState();
-
-  if (mInvalidElementsCount) {
-    state |= ElementState::INVALID;
-  } else {
-    state |= ElementState::VALID;
-  }
-
-  return state;
 }
 
 JSObject* HTMLFieldSetElement::WrapNode(JSContext* aCx,
