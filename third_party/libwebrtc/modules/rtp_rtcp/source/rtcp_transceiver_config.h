@@ -16,40 +16,17 @@
 #include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 class ReceiveStatisticsProvider;
 class Transport;
-
-
-
-
-
-
-class NetworkLinkRtcpObserver {
- public:
-  virtual ~NetworkLinkRtcpObserver() = default;
-
-  virtual void OnTransportFeedback(Timestamp receive_time,
-                                   const rtcp::TransportFeedback& feedback) {}
-  virtual void OnReceiverEstimatedMaxBitrate(Timestamp receive_time,
-                                             DataRate bitrate) {}
-
-  
-  
-  virtual void OnReport(Timestamp receive_time,
-                        rtc::ArrayView<const ReportBlockData> report_blocks) {}
-  virtual void OnRttUpdate(Timestamp receive_time, TimeDelta rtt) {}
-};
 
 
 

@@ -25,7 +25,10 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_headers.h"
 #include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/remote_estimate.h"
 #include "system_wrappers/include/clock.h"
 
@@ -164,6 +167,8 @@ class RtcpLossNotificationObserver {
                                           bool decodability_flag) = 0;
 };
 
+
+
 class RtcpBandwidthObserver {
  public:
   
@@ -175,6 +180,27 @@ class RtcpBandwidthObserver {
       int64_t now_ms) = 0;
 
   virtual ~RtcpBandwidthObserver() {}
+};
+
+
+
+
+
+
+class NetworkLinkRtcpObserver {
+ public:
+  virtual ~NetworkLinkRtcpObserver() = default;
+
+  virtual void OnTransportFeedback(Timestamp receive_time,
+                                   const rtcp::TransportFeedback& feedback) {}
+  virtual void OnReceiverEstimatedMaxBitrate(Timestamp receive_time,
+                                             DataRate bitrate) {}
+
+  
+  
+  virtual void OnReport(Timestamp receive_time,
+                        rtc::ArrayView<const ReportBlockData> report_blocks) {}
+  virtual void OnRttUpdate(Timestamp receive_time, TimeDelta rtt) {}
 };
 
 class RtcpEventObserver {
@@ -218,7 +244,10 @@ class TransportFeedbackObserver {
   virtual ~TransportFeedbackObserver() {}
 
   virtual void OnAddPacket(const RtpPacketSendInfo& packet_info) = 0;
-  virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
+
+  
+  
+  virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) {}
 };
 
 
