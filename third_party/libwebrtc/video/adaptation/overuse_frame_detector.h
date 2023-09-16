@@ -30,21 +30,29 @@ namespace webrtc {
 class VideoFrame;
 
 struct CpuOveruseOptions {
-  explicit CpuOveruseOptions(const FieldTrialsView& field_trials);
+  
+  int high_encode_usage_threshold_percent = 85;
+  
+  
+  
+  
+  int low_encode_usage_threshold_percent =
+      (high_encode_usage_threshold_percent - 1) / 2;
+  
+  
+  
+  int frame_timeout_interval_ms = 1500;
+  
+  int min_frame_samples = 120;
 
-  int low_encode_usage_threshold_percent;  
-  int high_encode_usage_threshold_percent;  
   
-  int frame_timeout_interval_ms;  
-                                  
-  int min_frame_samples;          
-  int min_process_count;  
-                          
-  int high_threshold_consecutive_count;  
-                                         
-                                         
   
-  int filter_time_ms;  
+  int min_process_count = 3;
+  
+  
+  int high_threshold_consecutive_count = 2;
+  
+  int filter_time_ms = 0;  
 };
 
 class OveruseFrameDetectorObserverInterface {
@@ -65,8 +73,7 @@ class OveruseFrameDetectorObserverInterface {
 
 class OveruseFrameDetector {
  public:
-  explicit OveruseFrameDetector(CpuOveruseMetricsObserver* metrics_observer,
-                                const FieldTrialsView& field_trials);
+  explicit OveruseFrameDetector(CpuOveruseMetricsObserver* metrics_observer);
   virtual ~OveruseFrameDetector();
 
   OveruseFrameDetector(const OveruseFrameDetector&) = delete;
