@@ -2513,37 +2513,39 @@ class AboutWelcome extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   componentDidMount() {
     if (!this.props.skipFxA) {
       this.fetchFxAFlowUri();
-    } 
+    }
 
-
-    const recordImpression = domState => {
-      const {
-        domComplete,
-        domInteractive
-      } = performance.getEntriesByType("navigation").pop();
-      _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(this.props.messageId, {
-        domComplete,
-        domInteractive,
-        mountStart: performance.getEntriesByName("mount").pop().startTime,
-        domState,
-        source: this.props.UTMTerm
-      });
-    };
-
-    if (document.readyState === "complete") {
+    if (document.location.href === "about:welcome") {
       
+      const recordImpression = domState => {
+        const {
+          domComplete,
+          domInteractive
+        } = performance.getEntriesByType("navigation").pop();
+        _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(this.props.messageId, {
+          domComplete,
+          domInteractive,
+          mountStart: performance.getEntriesByName("mount").pop().startTime,
+          domState,
+          source: this.props.UTMTerm
+        });
+      };
+
+      if (document.readyState === "complete") {
+        
+        
+        
+        recordImpression(document.readyState);
+      } else {
+        window.addEventListener("load", () => recordImpression("load"), {
+          once: true
+        });
+      } 
       
-      
-      recordImpression(document.readyState);
-    } else {
-      window.addEventListener("load", () => recordImpression("load"), {
-        once: true
-      });
-    } 
-    
 
 
-    window.AWSendToParent("SET_WELCOME_MESSAGE_SEEN", this.props.messageId);
+      window.AWSendToParent("SET_WELCOME_MESSAGE_SEEN", this.props.messageId);
+    }
   }
 
   render() {

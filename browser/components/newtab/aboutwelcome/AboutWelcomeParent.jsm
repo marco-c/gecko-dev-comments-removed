@@ -4,7 +4,7 @@
 
 "use strict";
 
-const EXPORTED_SYMBOLS = ["AboutWelcomeParent"];
+const EXPORTED_SYMBOLS = ["AboutWelcomeParent", "AboutWelcomeShoppingParent"];
 
 const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
@@ -127,7 +127,11 @@ class AboutWelcomeObserver {
 class AboutWelcomeParent extends JSWindowActorParent {
   constructor() {
     super();
-    this.AboutWelcomeObserver = new AboutWelcomeObserver(this);
+    this.startAboutWelcomeObserver();
+  }
+
+  startAboutWelcomeObserver() {
+    this.AboutWelcomeObserver = new AboutWelcomeObserver();
   }
 
   
@@ -274,4 +278,31 @@ class AboutWelcomeParent extends JSWindowActorParent {
     lazy.log.warn(`Not handling ${name} because the browser doesn't exist.`);
     return null;
   }
+}
+
+class AboutWelcomeShoppingParent extends AboutWelcomeParent {
+  
+
+
+
+
+
+
+  onContentMessage(type, data, browser) {
+    
+    switch (type) {
+      case "AWPage:SPECIAL_ACTION":
+      case "AWPage:TELEMETRY_EVENT":
+      case "AWPage:EVALUATE_SCREEN_TARGETING":
+      case "AWPage:ADD_SCREEN_IMPRESSION":
+        return super.onContentMessage(type, data, browser);
+    }
+
+    return undefined;
+  }
+
+  
+  startAboutWelcomeObserver() {}
+
+  didDestroy() {}
 }
