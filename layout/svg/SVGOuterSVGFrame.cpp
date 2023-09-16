@@ -774,14 +774,15 @@ void SVGOuterSVGFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
   }
 }
 
-void SVGOuterSVGFrame::Destroy(DestroyContext& aContext) {
+void SVGOuterSVGFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                   PostDestroyData& aPostDestroyData) {
   
   
   
   
   MaybeSendIntrinsicSizeAndRatioToEmbedder(Nothing(), Nothing());
 
-  SVGDisplayContainerFrame::Destroy(aContext);
+  SVGDisplayContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 }  

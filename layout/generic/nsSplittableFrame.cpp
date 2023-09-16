@@ -26,14 +26,15 @@ void nsSplittableFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   nsIFrame::Init(aContent, aParent, aPrevInFlow);
 }
 
-void nsSplittableFrame::Destroy(DestroyContext& aContext) {
+void nsSplittableFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                    PostDestroyData& aPostDestroyData) {
   
   if (mPrevContinuation || mNextContinuation) {
     RemoveFromFlow(this);
   }
 
   
-  nsIFrame::Destroy(aContext);
+  nsIFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 nsIFrame* nsSplittableFrame::GetPrevContinuation() const {

@@ -260,7 +260,8 @@ void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     
     
     for (uint32_t i = 0; i < rtcCount; i++) {
-      if (nsIFrame* nextRTC = textContainers[i]->GetNextInFlow()) {
+      nsIFrame* nextRTC = textContainers[i]->GetNextInFlow();
+      if (nextRTC) {
         nextRTC->GetParent()->DeleteNextInFlowChild(nextRTC, true);
       }
     }

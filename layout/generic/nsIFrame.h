@@ -493,37 +493,6 @@ static void ReleaseValue(T* aPropertyValue) {
 
 
 
-namespace mozilla {
-
-
-
-
-
-
-
-
-
-
-struct MOZ_RAII FrameDestroyContext {
-  explicit FrameDestroyContext(nsIFrame* aRoot);
-
-  nsIFrame* DestructRoot() const { return mDestructRoot; }
-  void AddAnonymousContent(already_AddRefed<nsIContent>&& aContent) {
-    if (RefPtr<nsIContent> content = aContent) {
-      mAnonymousContent.AppendElement(std::move(content));
-    }
-  }
-
-  ~FrameDestroyContext();
-
- private:
-  nsIFrame* const mDestructRoot;
-  nsPresContext* const mPresContext;
-  AutoTArray<RefPtr<nsIContent>, 100> mAnonymousContent;
-};
-
-}  
-
 
 
 
@@ -662,7 +631,31 @@ class nsIFrame : public nsQueryFrame {
 
   void* operator new(size_t, mozilla::PresShell*) MOZ_MUST_OVERRIDE;
 
-  using DestroyContext = mozilla::FrameDestroyContext;
+  using PostDestroyData = mozilla::PostFrameDestroyData;
+  struct MOZ_RAII AutoPostDestroyData {
+    explicit AutoPostDestroyData(nsPresContext* aPresContext)
+        : mPresContext(aPresContext) {}
+    ~AutoPostDestroyData() {
+      for (auto& content : mozilla::Reversed(mData.mAnonymousContent)) {
+        nsIFrame::DestroyAnonymousContent(mPresContext, content.forget());
+      }
+    }
+    nsPresContext* mPresContext;
+    PostDestroyData mData;
+  };
+  
+
+
+
+
+
+
+
+  void Destroy() {
+    AutoPostDestroyData data(PresContext());
+    DestroyFrom(this, data.mData);
+    
+  }
 
   
 
@@ -696,19 +689,32 @@ class nsIFrame : public nsQueryFrame {
         : mRespectClusters(true), mIgnoreUserStyleAll(false) {}
   };
 
-  virtual void Destroy(DestroyContext&);
-
  protected:
+  friend class nsBlockFrame;  
+
   
 
 
 
   virtual bool IsFrameSelected() const;
 
+  
+
+
+
+
+
+
+
+
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData);
+  friend class nsFrameList;  
+  friend class nsLineBox;    
+  friend class nsContainerFrame;  
+                                  
   template <class Source>
   friend class do_QueryFrameHelper;  
-  friend class nsBlockFrame;         
-  friend class nsContainerFrame;     
 
   virtual ~nsIFrame();
 
@@ -4894,6 +4900,9 @@ class nsIFrame : public nsQueryFrame {
   void HandleLastRememberedSize();
 
  protected:
+  static void DestroyAnonymousContent(nsPresContext* aPresContext,
+                                      already_AddRefed<nsIContent>&& aContent);
+
   
 
 
@@ -5614,14 +5623,5 @@ inline nsIFrame* nsFrameList::BackwardFrameTraversal::Prev(nsIFrame* aFrame) {
   MOZ_ASSERT(aFrame);
   return aFrame->GetNextSibling();
 }
-
-namespace mozilla {
-
-inline FrameDestroyContext::FrameDestroyContext(nsIFrame* aRoot)
-    : mDestructRoot(aRoot), mPresContext(aRoot->PresContext()) {
-  MOZ_ASSERT(mDestructRoot);
-}
-
-}  
 
 #endif 

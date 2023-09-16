@@ -136,8 +136,8 @@ class nsBlockFrame : public nsContainerFrame {
       mozilla::WritingMode aWM, BaselineSharingGroup aBaselineGroup,
       BaselineExportContext aExportContext) const override;
   nscoord GetCaretBaseline() const override;
-  void Destroy(DestroyContext&) override;
-
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
   bool IsFloatContainingBlock() const override;
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;
@@ -551,14 +551,19 @@ class nsBlockFrame : public nsContainerFrame {
 
 
   enum { REMOVE_FIXED_CONTINUATIONS = 0x02, FRAMES_ARE_EMPTY = 0x04 };
-  void DoRemoveFrame(nsIFrame* aDeletedFrame, uint32_t aFlags, DestroyContext&);
+  void DoRemoveFrame(nsIFrame* aDeletedFrame, uint32_t aFlags) {
+    AutoPostDestroyData data(PresContext());
+    DoRemoveFrameInternal(aDeletedFrame, aFlags, data.mData);
+  }
 
   void ReparentFloats(nsIFrame* aFirstFrame, nsBlockFrame* aOldParent,
                       bool aReparentSiblings);
 
-  bool ComputeCustomOverflow(mozilla::OverflowAreas&) override;
+  virtual bool ComputeCustomOverflow(
+      mozilla::OverflowAreas& aOverflowAreas) override;
 
-  void UnionChildOverflow(mozilla::OverflowAreas&) override;
+  virtual void UnionChildOverflow(
+      mozilla::OverflowAreas& aOverflowAreas) override;
 
   
 
@@ -596,6 +601,10 @@ class nsBlockFrame : public nsContainerFrame {
   bool IsInLineClampContext() const;
 
  protected:
+  
+  void DoRemoveFrameInternal(nsIFrame* aDeletedFrame, uint32_t aFlags,
+                             PostDestroyData& data);
+
   
 
 
@@ -668,7 +677,7 @@ class nsBlockFrame : public nsContainerFrame {
                        bool aCollectFromSiblings);
 
   
-  static void DoRemoveOutOfFlowFrame(nsIFrame* aFrame, DestroyContext&);
+  static void DoRemoveOutOfFlowFrame(nsIFrame* aFrame);
 
   
 

@@ -56,7 +56,9 @@ class nsTextControlFrame : public nsContainerFrame,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Destroy(DestroyContext&) override;
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void DestroyFrom(nsIFrame* aDestructRoot,
+                                               PostDestroyData&) override;
 
   nsIScrollableFrame* GetScrollTargetFrame() const override;
 

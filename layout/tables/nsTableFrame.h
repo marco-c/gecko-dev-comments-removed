@@ -197,7 +197,8 @@ class nsTableFrame : public nsContainerFrame {
   void RowOrColSpanChanged(nsTableCellFrame* aCellFrame);
 
   
-  void Destroy(DestroyContext&) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
 
   
   virtual void DidSetComputedStyle(ComputedStyle* aOldComputedStyle) override;

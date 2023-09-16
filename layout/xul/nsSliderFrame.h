@@ -73,7 +73,8 @@ class nsSliderFrame final : public nsContainerFrame {
               nsReflowStatus& aStatus) override;
 
   
-  void Destroy(DestroyContext&) override;
+  void DestroyFrom(nsIFrame* aDestructRoot,
+                   PostDestroyData& aPostDestroyData) override;
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
                         const nsDisplayListSet& aLists) override;

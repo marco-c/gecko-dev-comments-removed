@@ -26,9 +26,6 @@ class nsIFrame;
 class nsPresContext;
 
 namespace mozilla {
-
-struct FrameDestroyContext;
-
 class PresShell;
 class FrameChildList;
 enum class FrameChildListID {
@@ -52,6 +49,17 @@ enum class FrameChildListID {
   NoReflowPrincipal,
 };
 
+
+
+struct PostFrameDestroyData {
+  PostFrameDestroyData(const PostFrameDestroyData&) = delete;
+  PostFrameDestroyData() = default;
+
+  AutoTArray<RefPtr<nsIContent>, 100> mAnonymousContent;
+  void AddAnonymousContent(already_AddRefed<nsIContent>&& aContent) {
+    mAnonymousContent.AppendElement(aContent);
+  }
+};
 }  
 
 
@@ -135,7 +143,8 @@ class nsFrameList {
 
 
 
-  void DestroyFrames(mozilla::FrameDestroyContext&);
+  void DestroyFramesFrom(nsIFrame* aDestructRoot,
+                         mozilla::PostFrameDestroyData& aPostDestroyData);
 
   void Clear() { mFirstChild = mLastChild = nullptr; }
 

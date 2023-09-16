@@ -845,16 +845,17 @@ nsIFrame* nsComboboxControlFrame::CreateFrameForDisplayNode() {
   return mDisplayFrame;
 }
 
-void nsComboboxControlFrame::Destroy(DestroyContext& aContext) {
+void nsComboboxControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                         PostDestroyData& aPostDestroyData) {
   
   mRedisplayTextEvent.Revoke();
 
   mEventListener->Detach();
 
   
-  aContext.AddAnonymousContent(mDisplayContent.forget());
-  aContext.AddAnonymousContent(mButtonContent.forget());
-  nsBlockFrame::Destroy(aContext);
+  aPostDestroyData.AddAnonymousContent(mDisplayContent.forget());
+  aPostDestroyData.AddAnonymousContent(mButtonContent.forget());
+  nsBlockFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 const nsFrameList& nsComboboxControlFrame::GetChildList(

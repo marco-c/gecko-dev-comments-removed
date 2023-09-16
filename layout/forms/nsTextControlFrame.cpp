@@ -126,7 +126,8 @@ nsIScrollableFrame* nsTextControlFrame::GetScrollTargetFrame() const {
   return do_QueryFrame(mRootNode->GetPrimaryFrame());
 }
 
-void nsTextControlFrame::Destroy(DestroyContext& aContext) {
+void nsTextControlFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                     PostDestroyData& aPostDestroyData) {
   RemoveProperty(TextControlInitializer());
 
   
@@ -165,12 +166,12 @@ void nsTextControlFrame::Destroy(DestroyContext& aContext) {
 
   
   
-  aContext.AddAnonymousContent(mRootNode.forget());
-  aContext.AddAnonymousContent(mPlaceholderDiv.forget());
-  aContext.AddAnonymousContent(mPreviewDiv.forget());
-  aContext.AddAnonymousContent(mRevealButton.forget());
+  aPostDestroyData.AddAnonymousContent(mRootNode.forget());
+  aPostDestroyData.AddAnonymousContent(mPlaceholderDiv.forget());
+  aPostDestroyData.AddAnonymousContent(mPreviewDiv.forget());
+  aPostDestroyData.AddAnonymousContent(mRevealButton.forget());
 
-  nsContainerFrame::Destroy(aContext);
+  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 LogicalSize nsTextControlFrame::CalcIntrinsicSize(

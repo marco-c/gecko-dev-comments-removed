@@ -166,7 +166,8 @@ nsIFrame::FrameSearchResult nsInlineFrame::PeekOffsetCharacter(
   return CONTINUE;
 }
 
-void nsInlineFrame::Destroy(DestroyContext& aContext) {
+void nsInlineFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                PostDestroyData& aPostDestroyData) {
   nsFrameList* overflowFrames = GetOverflowFrames();
   if (overflowFrames) {
     
@@ -174,7 +175,7 @@ void nsInlineFrame::Destroy(DestroyContext& aContext) {
     
     overflowFrames->ApplySetParent(this);
   }
-  nsContainerFrame::Destroy(aContext);
+  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 void nsInlineFrame::StealFrame(nsIFrame* aChild) {

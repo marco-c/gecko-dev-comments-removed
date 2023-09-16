@@ -183,8 +183,7 @@ void nsContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
     
     
     parent->StealFrame(continuation);
-    DestroyContext context(continuation);
-    continuation->Destroy(context);
+    continuation->Destroy();
     if (generateReflowCommand && parent != lastParent) {
       presShell->FrameNeedsReflow(parent, IntrinsicDirty::FrameAndAncestors,
                                   NS_FRAME_HAS_DIRTY_CHILDREN);
@@ -193,23 +192,25 @@ void nsContainerFrame::RemoveFrame(ChildListID aListID, nsIFrame* aOldFrame) {
   }
 }
 
-void nsContainerFrame::DestroyAbsoluteFrames(DestroyContext& aContext) {
+void nsContainerFrame::DestroyAbsoluteFrames(
+    nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData) {
   if (IsAbsoluteContainer()) {
-    GetAbsoluteContainingBlock()->DestroyFrames(aContext);
+    GetAbsoluteContainingBlock()->DestroyFrames(this, aDestructRoot,
+                                                aPostDestroyData);
     MarkAsNotAbsoluteContainingBlock();
   }
 }
 
 void nsContainerFrame::SafelyDestroyFrameListProp(
-    DestroyContext& aContext, mozilla::PresShell* aPresShell,
-    FrameListPropertyDescriptor aProp) {
+    nsIFrame* aDestructRoot, PostDestroyData& aPostDestroyData,
+    mozilla::PresShell* aPresShell, FrameListPropertyDescriptor aProp) {
   
   
   
   while (nsFrameList* frameList = GetProperty(aProp)) {
     nsIFrame* frame = frameList->RemoveFirstChild();
     if (MOZ_LIKELY(frame)) {
-      frame->Destroy(aContext);
+      frame->DestroyFrom(aDestructRoot, aPostDestroyData);
     } else {
       Unused << TakeProperty(aProp);
       frameList->Delete(aPresShell);
@@ -218,16 +219,17 @@ void nsContainerFrame::SafelyDestroyFrameListProp(
   }
 }
 
-void nsContainerFrame::Destroy(DestroyContext& aContext) {
+void nsContainerFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                   PostDestroyData& aPostDestroyData) {
   
   if (HasView()) {
     GetView()->SetFrame(nullptr);
   }
 
-  DestroyAbsoluteFrames(aContext);
+  DestroyAbsoluteFrames(aDestructRoot, aPostDestroyData);
 
   
-  mFrames.DestroyFrames(aContext);
+  mFrames.DestroyFramesFrom(aDestructRoot, aPostDestroyData);
 
   
   if (HasAnyStateBits(NS_FRAME_PART_OF_IBSPLIT)) {
@@ -273,18 +275,19 @@ void nsContainerFrame::Destroy(DestroyContext& aContext) {
     nsPresContext* pc = PresContext();
     mozilla::PresShell* presShell = pc->PresShell();
     if (hasO) {
-      SafelyDestroyFrameListProp(aContext, presShell, OverflowProperty());
+      SafelyDestroyFrameListProp(aDestructRoot, aPostDestroyData, presShell,
+                                 OverflowProperty());
     }
 
     MOZ_ASSERT(
         IsFrameOfType(eCanContainOverflowContainers) || !(hasOC || hasEOC),
         "this type of frame shouldn't have overflow containers");
     if (hasOC) {
-      SafelyDestroyFrameListProp(aContext, presShell,
+      SafelyDestroyFrameListProp(aDestructRoot, aPostDestroyData, presShell,
                                  OverflowContainersProperty());
     }
     if (hasEOC) {
-      SafelyDestroyFrameListProp(aContext, presShell,
+      SafelyDestroyFrameListProp(aDestructRoot, aPostDestroyData, presShell,
                                  ExcessOverflowContainersProperty());
     }
 
@@ -292,11 +295,12 @@ void nsContainerFrame::Destroy(DestroyContext& aContext) {
                    StyleDisplay()->mTopLayer != StyleTopLayer::None,
                "only top layer frame may have backdrop");
     if (hasBackdrop) {
-      SafelyDestroyFrameListProp(aContext, presShell, BackdropProperty());
+      SafelyDestroyFrameListProp(aDestructRoot, aPostDestroyData, presShell,
+                                 BackdropProperty());
     }
   }
 
-  nsSplittableFrame::Destroy(aContext);
+  nsSplittableFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 
@@ -892,7 +896,8 @@ void nsContainerFrame::ReflowChild(
   
   if (!aStatus.IsInlineBreakBefore() && aStatus.IsFullyComplete() &&
       !(aFlags & ReflowChildFlags::NoDeleteNextInFlowChild)) {
-    if (nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow()) {
+    nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
+    if (kidNextInFlow) {
       
       
       
@@ -931,7 +936,8 @@ void nsContainerFrame::ReflowChild(nsIFrame* aKidFrame,
   
   if (aStatus.IsFullyComplete() &&
       !(aFlags & ReflowChildFlags::NoDeleteNextInFlowChild)) {
-    if (nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow()) {
+    nsIFrame* kidNextInFlow = aKidFrame->GetNextInFlow();
+    if (kidNextInFlow) {
       
       
       
@@ -1375,8 +1381,8 @@ void nsContainerFrame::DeleteNextInFlowChild(nsIFrame* aNextInFlow,
       frames.AppendElement(f);
     }
     for (nsIFrame* delFrame : Reversed(frames)) {
-      nsContainerFrame* parent = delFrame->GetParent();
-      parent->DeleteNextInFlowChild(delFrame, aDeletingEmptyFrames);
+      delFrame->GetParent()->DeleteNextInFlowChild(delFrame,
+                                                   aDeletingEmptyFrames);
     }
   }
 
@@ -1391,8 +1397,7 @@ void nsContainerFrame::DeleteNextInFlowChild(nsIFrame* aNextInFlow,
 
   
   
-  DestroyContext context(aNextInFlow);
-  aNextInFlow->Destroy(context);
+  aNextInFlow->Destroy();
 
   MOZ_ASSERT(!prevInFlow->GetNextInFlow(), "non null next-in-flow");
 }

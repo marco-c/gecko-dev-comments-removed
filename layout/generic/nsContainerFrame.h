@@ -46,19 +46,19 @@ class nsContainerFrame : public nsSplittableFrame {
   NS_DECL_QUERYFRAME
 
   
-  void Init(nsIContent* aContent, nsContainerFrame* aParent,
-            nsIFrame* aPrevInFlow) override;
-  nsContainerFrame* GetContentInsertionFrame() override { return this; }
+  virtual void Init(nsIContent* aContent, nsContainerFrame* aParent,
+                    nsIFrame* aPrevInFlow) override;
+  virtual nsContainerFrame* GetContentInsertionFrame() override { return this; }
 
-  const nsFrameList& GetChildList(ChildListID aList) const override;
-  void GetChildLists(nsTArray<ChildList>* aLists) const override;
-  void Destroy(DestroyContext&) override;
+  virtual const nsFrameList& GetChildList(ChildListID aList) const override;
+  virtual void GetChildLists(nsTArray<ChildList>* aLists) const override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot,
+                           PostDestroyData& aPostDestroyData) override;
+  virtual void ChildIsDirty(nsIFrame* aChild) override;
 
-  void ChildIsDirty(nsIFrame* aChild) override;
-
-  FrameSearchResult PeekOffsetNoAmount(bool aForward,
-                                       int32_t* aOffset) override;
-  FrameSearchResult PeekOffsetCharacter(
+  virtual FrameSearchResult PeekOffsetNoAmount(bool aForward,
+                                               int32_t* aOffset) override;
+  virtual FrameSearchResult PeekOffsetCharacter(
       bool aForward, int32_t* aOffset,
       PeekOffsetCharacterOptions aOptions =
           PeekOffsetCharacterOptions()) override;
@@ -523,7 +523,8 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void DestroyAbsoluteFrames(DestroyContext&);
+  void DestroyAbsoluteFrames(nsIFrame* aDestructRoot,
+                             PostDestroyData& aPostDestroyData);
 
   
 
@@ -851,7 +852,8 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void SafelyDestroyFrameListProp(DestroyContext&,
+  void SafelyDestroyFrameListProp(nsIFrame* aDestructRoot,
+                                  PostDestroyData& aPostDestroyData,
                                   mozilla::PresShell* aPresShell,
                                   FrameListPropertyDescriptor aProp);
 

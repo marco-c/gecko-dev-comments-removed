@@ -1437,7 +1437,8 @@ nsSliderFrame::HandleRelease(nsPresContext* aPresContext,
   return NS_OK;
 }
 
-void nsSliderFrame::Destroy(DestroyContext& aContext) {
+void nsSliderFrame::DestroyFrom(nsIFrame* aDestructRoot,
+                                PostDestroyData& aPostDestroyData) {
   
   if (mMediator) {
     mMediator->SetSlider(nullptr);
@@ -1446,7 +1447,7 @@ void nsSliderFrame::Destroy(DestroyContext& aContext) {
   StopRepeat();
 
   
-  nsContainerFrame::Destroy(aContext);
+  nsContainerFrame::DestroyFrom(aDestructRoot, aPostDestroyData);
 }
 
 void nsSliderFrame::Notify() {
