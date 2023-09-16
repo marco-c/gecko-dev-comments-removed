@@ -13,7 +13,7 @@
 
 #include "js/Array.h"  
 #include "js/CompilationAndEvaluation.h"
-#include "js/ColumnNumber.h"          
+#include "js/ColumnNumber.h"  
 #include "js/ContextOptions.h"        
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
@@ -728,8 +728,8 @@ nsresult ModuleLoaderBase::HandleResolveFailure(
   }
 
   if (!JS::CreateError(aCx, JSEXN_TYPEERR, nullptr, filename, aLineNumber,
-                       aColumnNumber.oneOriginValue(), nullptr, string,
-                       JS::NothingHandleValue, aErrorOut)) {
+                       JS::ColumnNumberOneOrigin(aColumnNumber), nullptr,
+                       string, JS::NothingHandleValue, aErrorOut)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 

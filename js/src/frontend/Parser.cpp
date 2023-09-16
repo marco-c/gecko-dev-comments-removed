@@ -44,7 +44,7 @@
 #include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"           
+#include "js/ErrorReport.h"   
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
 #include "js/RegExpFlags.h"     
@@ -478,8 +478,8 @@ void GeneralParser<ParseHandler, Unit>::reportMissingClosing(
   SprintfLiteral(lineNumber, "%" PRIu32, line);
 
   if (!notes->addNoteASCII(this->fc_, getFilename().c_str(), 0, line,
-                           column.oneOriginValue(), GetErrorMessage, nullptr,
-                           noteNumber, lineNumber, columnNumber)) {
+                           JS::ColumnNumberOneOrigin(column), GetErrorMessage,
+                           nullptr, noteNumber, lineNumber, columnNumber)) {
     return;
   }
 
@@ -520,8 +520,9 @@ void GeneralParser<ParseHandler, Unit>::reportRedeclarationHelper(
   SprintfLiteral(lineNumber, "%" PRIu32, line);
 
   if (!notes->addNoteASCII(this->fc_, getFilename().c_str(), 0, line,
-                           column.oneOriginValue(), GetErrorMessage, nullptr,
-                           noteErrorNumber, lineNumber, columnNumber)) {
+                           JS::ColumnNumberOneOrigin(column), GetErrorMessage,
+                           nullptr, noteErrorNumber, lineNumber,
+                           columnNumber)) {
     return;
   }
 

@@ -8,6 +8,7 @@
 #define mozilla_dom_ClonedErrorHolder_h
 
 #include "nsISupportsImpl.h"
+#include "js/ColumnNumber.h"  
 #include "js/ErrorReport.h"
 #include "js/TypeDecls.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -82,10 +83,10 @@ class ClonedErrorHolder final {
   nsCString mFilename;    
   nsCString mSourceLine;  
 
-  uint32_t mLineNumber = 0;   
-  uint32_t mColumn = 0;       
-  uint32_t mTokenOffset = 0;  
-  uint32_t mErrorNumber = 0;  
+  uint32_t mLineNumber = 0;           
+  JS::ColumnNumberOneOrigin mColumn;  
+  uint32_t mTokenOffset = 0;          
+  uint32_t mErrorNumber = 0;          
 
   Type mType = Type::Uninitialized;
 

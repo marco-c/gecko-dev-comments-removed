@@ -585,7 +585,7 @@ JSErrorReport* js::ErrorObject::getOrCreateErrorReport(JSContext* cx) {
   
   report.sourceId = sourceId();
   report.lineno = lineNumber();
-  report.column = columnNumber();
+  report.column = JS::ColumnNumberOneOrigin(columnNumber());
 
   
   
