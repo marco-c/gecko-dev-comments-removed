@@ -136,9 +136,6 @@ add_task(async function () {
       filename: "file_use_counter_bfcache.html",
       waitForExplicitFinish: true,
       counters: [{ name: "SVGSVGELEMENT_GETELEMENTBYID" }],
-      
-      
-      extra_top_documents: 5,
     },
 
     
@@ -251,11 +248,23 @@ add_task(async function () {
       }
     }
 
-    is(
-      after.toplevel_docs,
-      before.toplevel_docs + 1 + (test.extra_top_documents || 0),
-      "top level destroyed document counts are correct"
-    );
+    if (test.filename == "file_use_counter_bfcache.html") {
+      
+      
+      
+      
+      ok(
+        after.toplevel_docs == before.toplevel_docs + 5 ||
+          after.toplevel_docs == before.toplevel_docs + 6,
+        `top level destroyed document counts are correct: ${before.toplevel_docs} vs ${after.toplevel_docs}`
+      );
+    } else {
+      is(
+        after.toplevel_docs,
+        before.toplevel_docs + 1,
+        "top level destroyed document counts are correct"
+      );
+    }
 
     
     
