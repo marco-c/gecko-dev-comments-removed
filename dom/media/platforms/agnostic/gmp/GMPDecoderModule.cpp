@@ -68,7 +68,7 @@ media::DecodeSupportSet GMPDecoderModule::SupportsMimeType(
   } else if (VPXDecoder::IsVP8(aMimeType)) {
     tags.AppendElement("vp8"_ns);
   } else {
-    return media::DecodeSupportSet{};
+    return media::DecodeSupport::Unsupported;
   }
 
   
@@ -78,7 +78,7 @@ media::DecodeSupportSet GMPDecoderModule::SupportsMimeType(
 
   
   return HaveGMPFor(aApi, tags) ? media::DecodeSupport::SoftwareDecode
-                                : media::DecodeSupportSet{};
+                                : media::DecodeSupport::Unsupported;
 }
 
 media::DecodeSupportSet GMPDecoderModule::SupportsMimeType(

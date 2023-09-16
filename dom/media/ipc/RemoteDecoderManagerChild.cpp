@@ -277,9 +277,9 @@ bool RemoteDecoderManagerChild::Supports(
 
   
   
-  return !PDMFactory::SupportsMimeType(aParams.MimeType(), *supported,
-                                       aLocation)
-              .isEmpty();
+  return PDMFactory::SupportsMimeType(aParams.MimeType(), *supported,
+                                      aLocation) !=
+         media::DecodeSupport::Unsupported;
 }
 
 

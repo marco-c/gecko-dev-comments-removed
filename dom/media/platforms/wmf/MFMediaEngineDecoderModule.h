@@ -16,8 +16,6 @@ class MFMediaEngineDecoderModule final : public PlatformDecoderModule {
 
   static already_AddRefed<PlatformDecoderModule> Create();
 
-  
-  
   static bool SupportsConfig(const TrackInfo& aConfig);
 
   already_AddRefed<MediaDataDecoder> CreateVideoDecoder(

@@ -66,6 +66,7 @@ using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 
 
 enum class DecodeSupport : int {
+  Unsupported = 0,
   SoftwareDecode,
   HardwareDecode,
 };
@@ -176,7 +177,7 @@ class MCSInfo final {
   
   
   static MediaCodecsSupport GetMediaCodecsSupportEnum(
-      const MediaCodec& aCodec, const DecodeSupportSet& aSupport);
+      const MediaCodec& aCodec, const DecodeSupport& aSupport);
 
   
   static bool SupportsSoftwareDecode(
