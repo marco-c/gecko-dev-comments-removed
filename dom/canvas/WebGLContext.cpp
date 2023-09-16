@@ -1154,6 +1154,9 @@ bool WebGLContext::PushRemoteTexture(WebGLFramebuffer* fb,
     desc = surf->ToSurfaceDescriptor();
   }
   if (!desc) {
+    if (surf && surf->mDesc.type != gl::SharedSurfaceType::Basic) {
+      return onFailure();
+    }
     
     
     auto data = mRemoteTextureOwner->CreateOrRecycleBufferTextureData(
