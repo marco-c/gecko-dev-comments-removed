@@ -6,92 +6,56 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
+});
+
 const EXPECTED_ENTRIES = 5;
 const EXPECTED_HSTS_COLUMNS = 3;
 
-var gProfileDir = null;
-var gExpectingWrites = true;
+function contents_is_as_expected() {
+  
+  
+  
+  
+  
+  
+  
+  
+  let contents = get_data_storage_contents(SSS_STATE_FILE_NAME);
+  let keysAndValues = contents.split("\0").filter(s => !!s.length);
+  let keys = keysAndValues
+    .filter((_, i) => i % 2 == 0)
+    .map(key => key.substring(3));
+  let values = keysAndValues.filter((_, i) => i % 2 == 1);
 
-
-
-
-
-function checkStateWritten(aSubject, aTopic, aData) {
-  if (aData == CLIENT_AUTH_FILE_NAME) {
-    return;
+  if (keys.length != EXPECTED_ENTRIES || values.length != EXPECTED_ENTRIES) {
+    return false;
   }
 
-  equal(aData, SSS_STATE_FILE_NAME);
-  ok(gExpectingWrites);
-
-  let stateFile = gProfileDir.clone();
-  stateFile.append(SSS_STATE_FILE_NAME);
-  ok(stateFile.exists());
-  let stateFileContents = readFile(stateFile);
-  
-  let lines = stateFileContents.split("\n").slice(0, -1);
-  equal(lines.length, EXPECTED_ENTRIES);
   let sites = {}; 
-  for (let line of lines) {
-    let parts = line.split("\t");
-    let host = parts[0];
-    let entry = parts[3].split(",");
-    let expectedColumns = EXPECTED_HSTS_COLUMNS;
-    equal(entry.length, expectedColumns);
+  for (let i in keys) {
+    let host = keys[i];
+    let entry = values[i].split(",");
+    equal(entry.length, EXPECTED_HSTS_COLUMNS);
     sites[host] = entry;
   }
 
   
   
   
-  
-  
-  
-  
-  
-  if (sites["includesubdomains.preloaded.test"][1] != 1) {
-    return;
-  }
-  if (sites["includesubdomains.preloaded.test"][2] != 0) {
-    return;
-  }
-  if (sites["a.example.com"][1] != 1) {
-    return;
-  }
-  if (sites["a.example.com"][2] != 1) {
-    return;
-  }
-  if (sites["b.example.com"][1] != 1) {
-    return;
-  }
-  if (sites["b.example.com"][2] != 0) {
-    return;
-  }
-  if (sites["c.c.example.com"][1] != 1) {
-    return;
-  }
-  if (sites["c.c.example.com"][2] != 1) {
-    return;
-  }
-  if (sites["d.example.com"][1] != 1) {
-    return;
-  }
-  if (sites["d.example.com"][2] != 0) {
-    return;
-  }
-
-  
-  
-  gExpectingWrites = false;
-
-  
-  
-  process_headers();
-
-  
-  do_timeout(2000, function () {
-    do_test_finished();
-  });
+  return (
+    sites["includesubdomains.preloaded.test"][1] == 1 &&
+    sites["includesubdomains.preloaded.test"][2] == 0 &&
+    sites["a.example.com"][1] == 1 &&
+    sites["a.example.com"][2] == 1 &&
+    sites["b.example.com"][1] == 1 &&
+    sites["b.example.com"][2] == 0 &&
+    sites["c.c.example.com"][1] == 1 &&
+    sites["c.c.example.com"][2] == 1 &&
+    sites["d.example.com"][1] == 1 &&
+    sites["d.example.com"][2] == 0
+  );
 }
 
 function process_headers() {
@@ -118,9 +82,7 @@ function process_headers() {
 }
 
 function run_test() {
-  Services.prefs.setIntPref("test.datastorage.write_timer_ms", 100);
-  gProfileDir = do_get_profile();
+  do_get_profile();
   process_headers();
-  do_test_pending();
-  Services.obs.addObserver(checkStateWritten, "data-storage-written");
+  TestUtils.waitForCondition(contents_is_as_expected);
 }
