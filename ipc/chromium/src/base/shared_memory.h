@@ -94,9 +94,9 @@ class SharedMemory {
   
   
   
-  mozilla::UniqueFileHandle TakeHandle() {
+  mozilla::UniqueFileHandle TakeHandle(bool unmap_view = true) {
     mozilla::UniqueFileHandle handle = std::move(mapped_file_);
-    Close();
+    Close(unmap_view);
     return handle;
   }
 

@@ -43,14 +43,8 @@ UnsafeSharedMemoryHandle::CreateAndMap(size_t aSize) {
     return Nothing();
   }
 
-  
-  
-  
-  
-  
-  auto handle = shm->CloneHandle();
+  auto handle = shm->TakeHandle();
 
-  shm->CloseHandle();
   auto size = shm->Size();
 
   return Some(std::make_pair(UnsafeSharedMemoryHandle(std::move(handle), size),
