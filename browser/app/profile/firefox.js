@@ -443,6 +443,10 @@ pref("browser.urlbar.suggest.weather", true);
 
 
 
+pref("browser.urlbar.suggest.trending", true);
+
+
+
 
 
 
