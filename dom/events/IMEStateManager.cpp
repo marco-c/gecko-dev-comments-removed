@@ -1581,15 +1581,7 @@ MOZ_CAN_RUN_SCRIPT static void GetActionHint(const IMEState& aState,
     }
   }
 
-  if (!aContent.IsAnyOfHTMLElements(nsGkAtoms::input, nsGkAtoms::textarea)) {
-    return;
-  }
-
-  
-  aContent.AsElement()->GetAttr(nsGkAtoms::moz_action_hint, aActionHint);
-
-  if (!aActionHint.IsEmpty()) {
-    ToLowerCase(aActionHint);
+  if (!aContent.IsHTMLElement(nsGkAtoms::input)) {
     return;
   }
 
