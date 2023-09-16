@@ -10,6 +10,7 @@
 #include "mozilla/dom/ElementInlines.h"
 
 #include "mozilla/dom/Document.h"
+#include "nsObjectLoadingContent.h"
 #include "nsThreadUtils.h"
 #include "nsIWidget.h"
 #include "nsContentUtils.h"
@@ -134,6 +135,16 @@ void HTMLEmbedElement::AfterMaybeChangeAttr(int32_t aNamespaceID, nsAtom* aName,
           self->LoadObject(aNotify, true);
         }
       }));
+}
+
+int32_t HTMLEmbedElement::TabIndexDefault() {
+  
+  
+  
+  
+  
+  
+  return Type() == eType_Document ? 0 : -1;
 }
 
 bool HTMLEmbedElement::IsHTMLFocusable(bool aWithMouse, bool* aIsFocusable,
