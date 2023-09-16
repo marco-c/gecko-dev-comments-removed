@@ -1562,6 +1562,7 @@ static bool str_normalize(JSContext* cx, unsigned argc, Value* vp) {
 
 #endif  
 
+#ifdef NIGHTLY_BUILD
 
 
 
@@ -1691,6 +1692,8 @@ static bool str_toWellFormed(JSContext* cx, unsigned argc, Value* vp) {
 static const JSFunctionSpec wellFormed_functions[] = {
     JS_FN("isWellFormed", str_isWellFormed, 0, 0),
     JS_FN("toWellFormed", str_toWellFormed, 0, 0), JS_FS_END};
+
+#endif  
 
 static bool str_charAt(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "String.prototype", "charAt");
@@ -4037,11 +4040,13 @@ static bool StringClassFinish(JSContext* cx, HandleObject ctor,
     return false;
   }
 
+#ifdef NIGHTLY_BUILD
   
   if (cx->realm()->creationOptions().getWellFormedUnicodeStringsEnabled() &&
       !JS_DefineFunctions(cx, nativeProto, wellFormed_functions)) {
     return false;
   }
+#endif
 
   return true;
 }

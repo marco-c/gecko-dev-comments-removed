@@ -13,6 +13,7 @@
 
 
 
+
 const tests = [
   [true, Boolean.prototype],
   [1, Number.prototype],

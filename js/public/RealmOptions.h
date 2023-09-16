@@ -204,18 +204,18 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
+#ifdef NIGHTLY_BUILD
+  bool getArrayGroupingEnabled() const { return arrayGrouping_; }
+  RealmCreationOptions& setArrayGroupingEnabled(bool flag) {
+    arrayGrouping_ = flag;
+    return *this;
+  }
+
   bool getWellFormedUnicodeStringsEnabled() const {
     return wellFormedUnicodeStrings_;
   }
   RealmCreationOptions& setWellFormedUnicodeStringsEnabled(bool flag) {
     wellFormedUnicodeStrings_ = flag;
-    return *this;
-  }
-
-#ifdef NIGHTLY_BUILD
-  bool getArrayGroupingEnabled() const { return arrayGrouping_; }
-  RealmCreationOptions& setArrayGroupingEnabled(bool flag) {
-    arrayGrouping_ = flag;
     return *this;
   }
 
@@ -292,10 +292,10 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool propertyErrorMessageFix_ = false;
   bool iteratorHelpers_ = false;
   bool shadowRealms_ = false;
-  
-  bool wellFormedUnicodeStrings_ = true;
 #ifdef NIGHTLY_BUILD
   bool arrayGrouping_ = false;
+  
+  bool wellFormedUnicodeStrings_ = false;
   
   bool newSetMethods_ = false;
   
