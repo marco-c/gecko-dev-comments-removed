@@ -13,6 +13,7 @@
 
 
 
+
 verifyProperty(String.prototype.isWellFormed, 'name', {
   enumerable: false,
   writable: false,

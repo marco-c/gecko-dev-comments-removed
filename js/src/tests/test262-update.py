@@ -39,6 +39,8 @@ FEATURE_CHECK_NEEDED = {
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
     "array-grouping": "!Object.groupBy",  
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration()['decorators'])",  
+    "String.prototype.isWellFormed": "!String.prototype.isWellFormed",
+    "String.prototype.toWellFormed": "!String.prototype.toWellFormed",
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "arraybuffer-transfer": "!ArrayBuffer.prototype.transfer",  
 }
@@ -47,6 +49,8 @@ SHELL_OPTIONS = {
     "import-assertions": "--enable-import-assertions",
     "ShadowRealm": "--enable-shadow-realms",
     "array-grouping": "--enable-array-grouping",
+    "String.prototype.isWellFormed": "--enable-well-formed-unicode-strings",
+    "String.prototype.toWellFormed": "--enable-well-formed-unicode-strings",
     "iterator-helpers": "--enable-iterator-helpers",
     "arraybuffer-transfer": "--enable-arraybuffer-transfer",
 }

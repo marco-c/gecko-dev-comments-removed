@@ -13,6 +13,7 @@
 
 
 
+
 assert.sameValue(typeof String.prototype.isWellFormed, 'function');
 
 var leadingPoo = '\uD83D';
