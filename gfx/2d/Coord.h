@@ -17,6 +17,58 @@
 
 namespace mozilla {
 
+namespace gfx {
+
+template <class Units, class Rep = int32_t>
+struct IntCoordTyped;
+template <class Units, class F = Float>
+struct CoordTyped;
+
+}  
+
+}  
+
+namespace std {
+
+template <class Units, class Rep>
+struct common_type<mozilla::gfx::IntCoordTyped<Units, Rep>, float> {
+  using type = mozilla::gfx::CoordTyped<Units, common_type_t<Rep, float>>;
+};
+
+template <class Units, class Rep>
+struct common_type<mozilla::gfx::IntCoordTyped<Units, Rep>, double> {
+  using type = mozilla::gfx::CoordTyped<Units, common_type_t<Rep, double>>;
+};
+
+template <class Units, class Rep>
+struct common_type<mozilla::gfx::IntCoordTyped<Units, Rep>, int32_t> {
+  using type = mozilla::gfx::IntCoordTyped<Units, common_type_t<Rep, int32_t>>;
+};
+
+template <class Units, class Rep>
+struct common_type<mozilla::gfx::IntCoordTyped<Units, Rep>, uint32_t> {
+  using type = mozilla::gfx::IntCoordTyped<Units, common_type_t<Rep, uint32_t>>;
+};
+
+template <class Units, class F, class T>
+struct common_type<mozilla::gfx::CoordTyped<Units, F>, T> {
+  using type = mozilla::gfx::CoordTyped<Units, common_type_t<F, T>>;
+};
+
+
+
+
+
+
+template <class Units, class T>
+struct common_type<mozilla::gfx::CoordTyped<Units, float>, T> {
+  using type = mozilla::gfx::CoordTyped<Units, float>;
+};
+
+}  
+
+namespace mozilla {
+
 template <typename>
 struct IsPixel;
 
@@ -24,11 +76,6 @@ namespace gfx {
 
 
 struct UnknownUnits {};
-
-template <class Units, class Rep = int32_t>
-struct IntCoordTyped;
-template <class Units, class F = Float>
-struct CoordTyped;
 
 
 
@@ -55,13 +102,13 @@ struct CoordOperatorsHelper<true, Coord, Primitive> {
   friend auto operator-(Coord aA, Primitive aB) { return aA.value - aB; }
   friend auto operator-(Primitive aA, Coord aB) { return aA - aB.value; }
   friend auto operator*(Coord aCoord, Primitive aScale) {
-    return aCoord.value * aScale;
+    return std::common_type_t<Coord, Primitive>(aCoord.value * aScale);
   }
   friend auto operator*(Primitive aScale, Coord aCoord) {
-    return aScale * aCoord.value;
+    return aCoord * aScale;
   }
   friend auto operator/(Coord aCoord, Primitive aScale) {
-    return aCoord.value / aScale;
+    return std::common_type_t<Coord, Primitive>(aCoord.value / aScale);
   }
   
 };
@@ -80,9 +127,8 @@ struct MOZ_EMPTY_BASES IntCoordTyped
     static_assert(sizeof(IntCoordTyped) == sizeof(Rep),
                   "Would be unfortunate otherwise!");
   }
-  template <class T,
-            typename = typename std::enable_if<std::is_integral<T>::value ||
-                                               std::is_enum<T>::value>::type>
+  template <class T, typename = typename std::enable_if_t<
+                         std::is_integral_v<T> || std::is_enum_v<T>>>
   constexpr MOZ_IMPLICIT IntCoordTyped(T aValue) : Super(aValue) {
     static_assert(sizeof(IntCoordTyped) == sizeof(Rep),
                   "Would be unfortunate otherwise!");
