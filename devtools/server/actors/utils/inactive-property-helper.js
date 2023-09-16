@@ -382,6 +382,13 @@ class InactivePropertyHelper {
       },
       
       {
+        invalidProperties: ["empty-cells"],
+        when: () => !this.checkComputedStyle("display", ["table-cell"]),
+        fixId: "inactive-css-not-table-cell-fix",
+        msgId: "inactive-css-not-table-cell",
+      },
+      
+      {
         invalidProperties: [
           "scroll-padding",
           "scroll-padding-top",
