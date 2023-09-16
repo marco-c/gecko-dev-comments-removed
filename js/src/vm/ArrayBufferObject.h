@@ -416,6 +416,8 @@ class ArrayBufferObject : public ArrayBufferObjectMaybeShared {
     return true;
   }
 
+  static bool ensureNonInline(JSContext* cx, Handle<ArrayBufferObject*> buffer);
+
   
   
   static void detach(JSContext* cx, Handle<ArrayBufferObject*> buffer);
