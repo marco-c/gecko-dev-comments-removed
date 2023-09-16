@@ -52,26 +52,11 @@ DirectoryLockImpl::DirectoryLockImpl(
 
 DirectoryLockImpl::~DirectoryLockImpl() {
   AssertIsOnOwningThread();
+  MOZ_ASSERT_IF(!mRegistered, mBlocking.IsEmpty());
 
-  
-  
-  
-  
-  
-  
-  
-  
   if (mRegistered) {
-    mQuotaManager->UnregisterDirectoryLock(*this);
+    Unregister();
   }
-
-  MOZ_ASSERT(!mRegistered);
-
-  for (NotNull<RefPtr<DirectoryLockImpl>> blockingLock : mBlocking) {
-    blockingLock->MaybeUnblock(*this);
-  }
-
-  mBlocking.Clear();
 }
 
 #ifdef DEBUG
@@ -151,6 +136,10 @@ void DirectoryLockImpl::NotifyOpenListener() {
   mQuotaManager->RemovePendingDirectoryLock(*this);
 
   mPending.Flip();
+
+  if (mInvalidated) {
+    Unregister();
+  }
 }
 
 void DirectoryLockImpl::Invalidate() {
@@ -166,6 +155,29 @@ void DirectoryLockImpl::Invalidate() {
                                }),
         NS_DISPATCH_NORMAL));
   }
+}
+
+void DirectoryLockImpl::Unregister() {
+  AssertIsOnOwningThread();
+  MOZ_ASSERT(mRegistered);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  mQuotaManager->UnregisterDirectoryLock(*this);
+
+  MOZ_ASSERT(!mRegistered);
+
+  for (NotNull<RefPtr<DirectoryLockImpl>> blockingLock : mBlocking) {
+    blockingLock->MaybeUnblock(*this);
+  }
+
+  mBlocking.Clear();
 }
 
 void DirectoryLockImpl::Acquire(RefPtr<OpenDirectoryListener> aOpenListener) {

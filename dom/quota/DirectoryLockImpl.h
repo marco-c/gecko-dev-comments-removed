@@ -173,6 +173,8 @@ class DirectoryLockImpl final : public ClientDirectoryLock,
 
   void Invalidate();
 
+  void Unregister();
+
   
 
   NS_INLINE_DECL_REFCOUNTING(DirectoryLockImpl, override)

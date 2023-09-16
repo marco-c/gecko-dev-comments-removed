@@ -831,8 +831,7 @@ TEST_F(TestQuotaManager, ShutdownStorage_OngoingWithScheduledInitialization) {
 
 
 
-TEST_F(TestQuotaManager,
-       DISABLED_ShutdownStorage_OngoingWithClientDirectoryLock) {
+TEST_F(TestQuotaManager, ShutdownStorage_OngoingWithClientDirectoryLock) {
   PerformOnBackgroundThread([]() {
     QuotaManager* quotaManager = QuotaManager::Get();
     ASSERT_TRUE(quotaManager);
