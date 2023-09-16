@@ -1,6 +1,6 @@
-// Copyright (c) 2008 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
+
+
+
 
 #include "base/mac_util.h"
 
@@ -14,7 +14,7 @@
 
 namespace mac_util {
 
-// Adapted from http://developer.apple.com/carbon/tipsandtricks.html#AmIBundled
+
 bool AmIBundled() {
   ProcessSerialNumber psn = {0, kCurrentProcess};
 
@@ -22,11 +22,12 @@ bool AmIBundled() {
   if (GetProcessBundleLocation(&psn, &fsref) != noErr) return false;
 
   FSCatalogInfo info;
-  if (FSGetCatalogInfo(&fsref, kFSCatInfoNodeFlags, &info, NULL, NULL, NULL) != noErr) {
+  if (FSGetCatalogInfo(&fsref, kFSCatInfoNodeFlags, &info, NULL, NULL, NULL) !=
+      noErr) {
     return false;
   }
 
   return info.nodeFlags & kFSNodeIsDirectoryMask;
 }
 
-}  // namespace mac_util
+}  

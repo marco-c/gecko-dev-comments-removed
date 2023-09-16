@@ -134,7 +134,8 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   
   
   if (!mPrinter.EqualsLiteral("Mozilla Save to PDF")) {
-    [printInfo setPrinter:[NSPrinter printerWithName:nsCocoaUtils::ToNSString(mPrinter)]];
+    [printInfo setPrinter:[NSPrinter printerWithName:nsCocoaUtils::ToNSString(
+                                                         mPrinter)]];
   }
 
   
@@ -160,7 +161,8 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
 
   NSURL* jobSavingURL = nullptr;
   if (!mToFileName.IsEmpty()) {
-    jobSavingURL = [NSURL fileURLWithPath:nsCocoaUtils::ToNSString(mToFileName)];
+    jobSavingURL =
+        [NSURL fileURLWithPath:nsCocoaUtils::ToNSString(mToFileName)];
     if (jobSavingURL) {
       
       
@@ -206,11 +208,14 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
 
   if (mDestination != kPMDestinationInvalid) {
     
-    [printSettings setObject:[NSNumber numberWithUnsignedShort:mDestination]
-                      forKey:@"com_apple_print_PrintSettings_PMDestinationType"];
+    
+    [printSettings
+        setObject:[NSNumber numberWithUnsignedShort:mDestination]
+           forKey:@"com_apple_print_PrintSettings_PMDestinationType"];
     if (jobSavingURL) {
-      [printSettings setObject:[jobSavingURL absoluteString]
-                        forKey:@"com_apple_print_PrintSettings_PMOutputFilename"];
+      [printSettings
+          setObject:[jobSavingURL absoluteString]
+             forKey:@"com_apple_print_PrintSettings_PMOutputFilename"];
     }
   }
 
@@ -230,7 +235,8 @@ NSPrintInfo* nsPrintSettingsX::CreateOrCopyPrintInfo(bool aWithScaling) {
   NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);
 }
 
-void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrintInfo) {
+void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo,
+                                        bool aAdoptPrintInfo) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
@@ -242,7 +248,8 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
   
   
   
-  const bool arePagesPortraitMode = (areSheetsOfPaperPortraitMode != HasOrthogonalSheetsAndPages());
+  const bool arePagesPortraitMode =
+      (areSheetsOfPaperPortraitMode != HasOrthogonalSheetsAndPages());
 
   if (arePagesPortraitMode) {
     mOrientation = nsIPrintSettings::kPortraitOrientation;
@@ -295,7 +302,8 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
   }();
 
   NSDictionary* dict = [aPrintInfo dictionary];
-  const char* filePath = [[dict objectForKey:NSPrintJobSavingURL] fileSystemRepresentation];
+  const char* filePath =
+      [[dict objectForKey:NSPrintJobSavingURL] fileSystemRepresentation];
   if (filePath && *filePath) {
     CopyUTF8toUTF16(Span(filePath, strlen(filePath)), mToFileName);
   }
@@ -310,7 +318,8 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
   }
 
   NSDictionary* printSettings = [aPrintInfo printSettings];
-  NSNumber* value = [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDuplexing"];
+  NSNumber* value =
+      [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDuplexing"];
   if (value) {
     PMDuplexMode duplexSetting = [value unsignedShortValue];
     switch (duplexSetting) {
@@ -334,7 +343,8 @@ void nsPrintSettingsX::SetFromPrintInfo(NSPrintInfo* aPrintInfo, bool aAdoptPrin
     mDuplex = kDuplexNone;
   }
 
-  value = [printSettings objectForKey:@"com_apple_print_PrintSettings_PMDestinationType"];
+  value = [printSettings
+      objectForKey:@"com_apple_print_PrintSettings_PMDestinationType"];
   if (value) {
     mDestination = [value unsignedShortValue];
   }

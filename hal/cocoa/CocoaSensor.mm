@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 #include "Hal.h"
 #include "nsITimer.h"
 #include "smslib.h"
@@ -20,8 +20,9 @@ static bool sActiveSensors[NUM_SENSOR_TYPE];
 static io_connect_t sDataPort = IO_OBJECT_NULL;
 static uint64_t sLastMean = -1;
 static float LMUvalueToLux(uint64_t aValue) {
-  // Conversion formula from regression. See Bug 793728.
-  // -3*(10^-27)*x^4 + 2.6*(10^-19)*x^3 + -3.4*(10^-12)*x^2 + 3.9*(10^-5)*x - 0.19
+  
+  
+  
   long double powerC4 = 1 / pow((long double)10, 27);
   long double powerC3 = 1 / pow((long double)10, 19);
   long double powerC2 = 1 / pow((long double)10, 12);
@@ -54,7 +55,8 @@ void UpdateHandler(nsITimer* aTimer, void* aClosure) {
       uint32_t outputs = 2;
       uint64_t lightLMU[outputs];
 
-      kr = IOConnectCallMethod(sDataPort, 0, nil, 0, nil, 0, lightLMU, &outputs, nil, 0);
+      kr = IOConnectCallMethod(sDataPort, 0, nil, 0, nil, 0, lightLMU, &outputs,
+                               nil, 0);
       if (kr == KERN_SUCCESS) {
         uint64_t mean = (lightLMU[0] + lightLMU[1]) / 2;
         if (mean == sLastMean) {
@@ -84,8 +86,8 @@ void EnableSensorNotifications(SensorType aSensor) {
     }
   } else if (aSensor == SENSOR_LIGHT) {
     io_service_t serviceObject;
-    serviceObject =
-        IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("AppleLMUController"));
+    serviceObject = IOServiceGetMatchingService(
+        kIOMasterPortDefault, IOServiceMatching("AppleLMUController"));
     if (!serviceObject) {
       return;
     }
@@ -104,14 +106,15 @@ void EnableSensorNotifications(SensorType aSensor) {
   if (!sUpdateTimer) {
     CallCreateInstance("@mozilla.org/timer;1", &sUpdateTimer);
     if (sUpdateTimer) {
-      sUpdateTimer->InitWithNamedFuncCallback(UpdateHandler, nullptr, DEFAULT_SENSOR_POLL,
-                                              nsITimer::TYPE_REPEATING_SLACK,
-                                              "hal_impl::UpdateHandler");
+      sUpdateTimer->InitWithNamedFuncCallback(
+          UpdateHandler, nullptr, DEFAULT_SENSOR_POLL,
+          nsITimer::TYPE_REPEATING_SLACK, "hal_impl::UpdateHandler");
     }
   }
 }
 void DisableSensorNotifications(SensorType aSensor) {
-  if (!sActiveSensors[aSensor] || (aSensor != SENSOR_ACCELERATION && aSensor != SENSOR_LIGHT)) {
+  if (!sActiveSensors[aSensor] ||
+      (aSensor != SENSOR_ACCELERATION && aSensor != SENSOR_LIGHT)) {
     return;
   }
 
@@ -122,7 +125,7 @@ void DisableSensorNotifications(SensorType aSensor) {
   } else if (aSensor == SENSOR_LIGHT) {
     IOServiceClose(sDataPort);
   }
-  // If all sensors are disabled, cancel the update timer.
+  
   if (sUpdateTimer) {
     for (int i = 0; i < NUM_SENSOR_TYPE; i++) {
       if (sActiveSensors[i]) {
@@ -133,5 +136,5 @@ void DisableSensorNotifications(SensorType aSensor) {
     NS_RELEASE(sUpdateTimer);
   }
 }
-}  // namespace hal_impl
-}  // namespace mozilla
+}  
+}  

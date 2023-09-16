@@ -37,7 +37,8 @@ namespace widget {
 
 NativeMenuMac::NativeMenuMac(dom::Element* aElement)
     : mElement(aElement), mContainerStatusBarItem(nil) {
-  MOZ_RELEASE_ASSERT(aElement->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menupopup));
+  MOZ_RELEASE_ASSERT(
+      aElement->IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menupopup));
   mMenuGroupOwner = new nsMenuGroupOwnerX(aElement, nullptr);
   mMenu = MakeRefPtr<nsMenuX>(nullptr, mMenuGroupOwner, aElement);
   mMenu->SetObserver(this);
@@ -78,9 +79,11 @@ bool NativeMenuMac::ActivateNativeMenuItemAt(const nsAString& aIndexString) {
   nsMenuUtilsX::CheckNativeMenuConsistency(menu);
 
   NSString* locationString =
-      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(aIndexString.BeginReading())
+      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
+                                         aIndexString.BeginReading())
                               length:aIndexString.Length()];
-  NSMenuItem* item = nsMenuUtilsX::NativeMenuItemWithLocation(menu, locationString, false);
+  NSMenuItem* item =
+      nsMenuUtilsX::NativeMenuItemWithLocation(menu, locationString, false);
 
   
   
@@ -106,9 +109,11 @@ void NativeMenuMac::ForceUpdateNativeMenuAt(const nsAString& aIndexString) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   NSString* locationString =
-      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(aIndexString.BeginReading())
+      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
+                                         aIndexString.BeginReading())
                               length:aIndexString.Length()];
-  NSArray<NSString*>* indexes = [locationString componentsSeparatedByString:@"|"];
+  NSArray<NSString*>* indexes =
+      [locationString componentsSeparatedByString:@"|"];
   RefPtr<nsMenuX> currentMenu = mMenu.get();
 
   
@@ -124,7 +129,9 @@ void NativeMenuMac::ForceUpdateNativeMenuAt(const nsAString& aIndexString) {
       }
       RefPtr<nsIContent> content = targetMenu->match(
           [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-          [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+          [](const RefPtr<nsMenuItemX>& aMenuItem) {
+            return aMenuItem->Content();
+          });
       if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(content)) {
         visible++;
         if (targetMenu->is<RefPtr<nsMenuX>>() && visible == (targetIndex + 1)) {
@@ -236,7 +243,8 @@ static NSAppearance* NativeAppearanceForContent(nsIContent* aContent) {
   return NSAppearanceForColorScheme(LookAndFeel::ColorSchemeForFrame(f));
 }
 
-void NativeMenuMac::ShowAsContextMenu(nsIFrame* aClickedFrame, const CSSIntPoint& aPosition,
+void NativeMenuMac::ShowAsContextMenu(nsIFrame* aClickedFrame,
+                                      const CSSIntPoint& aPosition,
                                       bool aIsContextMenu) {
   nsPresContext* pc = aClickedFrame->PresContext();
   auto cssToDesktopScale =
@@ -252,22 +260,27 @@ void NativeMenuMac::ShowAsContextMenu(nsIFrame* aClickedFrame, const CSSIntPoint
 
   
   
-  mOpeningHandle = [MOZMenuOpeningCoordinator.sharedInstance asynchronouslyOpenMenu:menu
-                                                                   atScreenPosition:locationOnScreen
-                                                                            forView:view
-                                                                     withAppearance:appearance
-                                                                      asContextMenu:aIsContextMenu];
+  
+  mOpeningHandle = [MOZMenuOpeningCoordinator.sharedInstance
+      asynchronouslyOpenMenu:menu
+            atScreenPosition:locationOnScreen
+                     forView:view
+              withAppearance:appearance
+               asContextMenu:aIsContextMenu];
 }
 
 bool NativeMenuMac::Close() {
   if (mOpeningHandle) {
     
-    [MOZMenuOpeningCoordinator.sharedInstance cancelAsynchronousOpening:mOpeningHandle];
+    
+    [MOZMenuOpeningCoordinator.sharedInstance
+        cancelAsynchronousOpening:mOpeningHandle];
   }
   return mMenu->Close();
 }
 
-RefPtr<nsMenuX> NativeMenuMac::GetOpenMenuContainingElement(dom::Element* aElement) {
+RefPtr<nsMenuX> NativeMenuMac::GetOpenMenuContainingElement(
+    dom::Element* aElement) {
   nsTArray<RefPtr<dom::Element>> submenuChain;
   RefPtr<dom::Element> currentElement = aElement->GetParentElement();
   while (currentElement && currentElement != mElement) {
@@ -281,6 +294,7 @@ RefPtr<nsMenuX> NativeMenuMac::GetOpenMenuContainingElement(dom::Element* aEleme
     return nullptr;
   }
 
+  
   
   submenuChain.Reverse();
   RefPtr<nsMenuX> menu = mMenu;
@@ -321,7 +335,8 @@ static NSEventModifierFlags ConvertModifierFlags(Modifiers aModifiers) {
   return flags;
 }
 
-void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifiers, int16_t aButton,
+void NativeMenuMac::ActivateItem(dom::Element* aItemElement,
+                                 Modifiers aModifiers, int16_t aButton,
                                  ErrorResult& aRv) {
   RefPtr<nsMenuX> menu = GetOpenMenuContainingElement(aItemElement);
   if (!menu) {
@@ -347,6 +362,7 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
   
   
   
+  
   [mMenu->NativeNSMenu() cancelTrackingWithoutAnimation];
 
   
@@ -356,7 +372,8 @@ void NativeMenuMac::ActivateItem(dom::Element* aItemElement, Modifiers aModifier
 
   
   
-  menu->ActivateItemAfterClosing(std::move(item), ConvertModifierFlags(aModifiers), aButton);
+  menu->ActivateItemAfterClosing(std::move(item),
+                                 ConvertModifierFlags(aModifiers), aButton);
 
   
   

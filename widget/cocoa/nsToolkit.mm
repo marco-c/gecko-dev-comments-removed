@@ -45,7 +45,9 @@ static io_connect_t gRootPort = MACH_PORT_NULL;
 nsToolkit* nsToolkit::gToolkit = nullptr;
 
 nsToolkit::nsToolkit()
-    : mSleepWakeNotificationRLS(nullptr), mPowerNotifier{0}, mAllProcessMouseMonitor(nil) {
+    : mSleepWakeNotificationRLS(nullptr),
+      mPowerNotifier{0},
+      mAllProcessMouseMonitor(nil) {
   MOZ_COUNT_CTOR(nsToolkit);
   RegisterForSleepWakeNotifications();
 }
@@ -58,11 +60,13 @@ nsToolkit::~nsToolkit() {
 
 void nsToolkit::PostSleepWakeNotification(const char* aNotification) {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
-  if (observerService) observerService->NotifyObservers(nullptr, aNotification, nullptr);
+  if (observerService)
+    observerService->NotifyObservers(nullptr, aNotification, nullptr);
 }
 
 
-static void ToolkitSleepWakeCallback(void* refCon, io_service_t service, natural_t messageType,
+static void ToolkitSleepWakeCallback(void* refCon, io_service_t service,
+                                     natural_t messageType,
                                      void* messageArgument) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
@@ -98,15 +102,17 @@ nsresult nsToolkit::RegisterForSleepWakeNotifications() {
 
   NS_ASSERTION(!mSleepWakeNotificationRLS, "Already registered for sleep/wake");
 
-  gRootPort =
-      ::IORegisterForSystemPower(0, &notifyPortRef, ToolkitSleepWakeCallback, &mPowerNotifier);
+  gRootPort = ::IORegisterForSystemPower(
+      0, &notifyPortRef, ToolkitSleepWakeCallback, &mPowerNotifier);
   if (gRootPort == MACH_PORT_NULL) {
     NS_ERROR("IORegisterForSystemPower failed");
     return NS_ERROR_FAILURE;
   }
 
-  mSleepWakeNotificationRLS = ::IONotificationPortGetRunLoopSource(notifyPortRef);
-  ::CFRunLoopAddSource(::CFRunLoopGetCurrent(), mSleepWakeNotificationRLS, kCFRunLoopDefaultMode);
+  mSleepWakeNotificationRLS =
+      ::IONotificationPortGetRunLoopSource(notifyPortRef);
+  ::CFRunLoopAddSource(::CFRunLoopGetCurrent(), mSleepWakeNotificationRLS,
+                       kCFRunLoopDefaultMode);
 
   return NS_OK;
 
@@ -146,14 +152,16 @@ void nsToolkit::MonitorAllProcessMouseEvents() {
 
   if (mAllProcessMouseMonitor == nil) {
     mAllProcessMouseMonitor = [NSEvent
-        addGlobalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown | NSEventMaskLeftMouseDown
+        addGlobalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown |
+                                              NSEventMaskLeftMouseDown
                                       handler:^(NSEvent* evt) {
                                         if ([NSApp isActive]) {
                                           return;
                                         }
 
                                         nsIRollupListener* rollupListener =
-                                            nsBaseWidget::GetActiveRollupListener();
+                                            nsBaseWidget::
+                                                GetActiveRollupListener();
                                         if (!rollupListener) {
                                           return;
                                         }
@@ -165,8 +173,9 @@ void nsToolkit::MonitorAllProcessMouseEvents() {
                                         }
 
                                         NSWindow* ctxMenuWindow =
-                                            (NSWindow*)rollupWidget->GetNativeData(
-                                                NS_NATIVE_WINDOW);
+                                            (NSWindow*)
+                                                rollupWidget->GetNativeData(
+                                                    NS_NATIVE_WINDOW);
                                         if (!ctxMenuWindow) {
                                           return;
                                         }
@@ -174,8 +183,12 @@ void nsToolkit::MonitorAllProcessMouseEvents() {
                                         
                                         
                                         
-                                        NSPoint screenLocation = [NSEvent mouseLocation];
-                                        if (NSPointInRect(screenLocation, [ctxMenuWindow frame])) {
+                                        
+                                        NSPoint screenLocation =
+                                            [NSEvent mouseLocation];
+                                        if (NSPointInRect(
+                                                screenLocation,
+                                                [ctxMenuWindow frame])) {
                                           return;
                                         }
 

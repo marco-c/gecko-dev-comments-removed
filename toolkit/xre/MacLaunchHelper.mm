@@ -26,7 +26,8 @@ void LaunchChildMac(int aArgc, char** aArgv, pid_t* aPid) {
     for (int i = 1; i < aArgc; i++) {
       [arguments addObject:[NSString stringWithUTF8String:aArgv[i]]];
     }
-    NSTask* child = [NSTask launchedTaskWithLaunchPath:launchPath arguments:arguments];
+    NSTask* child = [NSTask launchedTaskWithLaunchPath:launchPath
+                                             arguments:arguments];
     if (aPid) {
       *aPid = [child processIdentifier];
       
@@ -43,31 +44,36 @@ bool InstallPrivilegedHelper() {
   AuthorizationRef authRef = NULL;
   OSStatus status = AuthorizationCreate(
       NULL, kAuthorizationEmptyEnvironment,
-      kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed, &authRef);
+      kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed,
+      &authRef);
   if (status != errAuthorizationSuccess) {
     
-    NSLog(@"AuthorizationCreate failed! NSOSStatusErrorDomain / %d", (int)status);
+    NSLog(@"AuthorizationCreate failed! NSOSStatusErrorDomain / %d",
+          (int)status);
     return NO;
   }
 
   BOOL result = NO;
   AuthorizationItem authItem = {kSMRightBlessPrivilegedHelper, 0, NULL, 0};
   AuthorizationRights authRights = {1, &authItem};
-  AuthorizationFlags flags = kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed |
-                             kAuthorizationFlagPreAuthorize | kAuthorizationFlagExtendRights;
+  AuthorizationFlags flags =
+      kAuthorizationFlagDefaults | kAuthorizationFlagInteractionAllowed |
+      kAuthorizationFlagPreAuthorize | kAuthorizationFlagExtendRights;
 
   
-  status =
-      AuthorizationCopyRights(authRef, &authRights, kAuthorizationEmptyEnvironment, flags, NULL);
+  status = AuthorizationCopyRights(authRef, &authRights,
+                                   kAuthorizationEmptyEnvironment, flags, NULL);
   if (status != errAuthorizationSuccess) {
-    NSLog(@"AuthorizationCopyRights failed! NSOSStatusErrorDomain / %d", (int)status);
+    NSLog(@"AuthorizationCopyRights failed! NSOSStatusErrorDomain / %d",
+          (int)status);
   } else {
     CFErrorRef cfError;
     
     
     
     
-    result = (BOOL)SMJobBless(kSMDomainSystemLaunchd, (CFStringRef) @"org.mozilla.updater", authRef,
+    result = (BOOL)SMJobBless(kSMDomainSystemLaunchd,
+                              (CFStringRef) @"org.mozilla.updater", authRef,
                               &cfError);
     if (!result) {
       NSLog(@"Unable to install helper!");
@@ -90,7 +96,8 @@ void AbortElevatedUpdate() {
       updateServer = (id)[NSConnection
           rootProxyForConnectionWithRegisteredName:@"org.mozilla.updater.server"
                                               host:nil
-                                   usingNameServer:[NSSocketPortNameServer sharedInstance]];
+                                   usingNameServer:[NSSocketPortNameServer
+                                                       sharedInstance]];
       if (updateServer && [updateServer respondsToSelector:@selector(abort)]) {
         [updateServer performSelector:@selector(abort)];
         return;

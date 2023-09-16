@@ -29,7 +29,9 @@
 
 
 
+
 - (int)numFrames;
+
 
 
 
@@ -56,7 +58,10 @@
 
 
 
+
 - (void)advanceAnimatedCursor:(NSTimer*)aTimer;
+
+
 
 
 
@@ -78,11 +83,15 @@
 
 
 
+
 @interface nsCocoaCursor : nsMacCursor {
  @private
   NSArray* mFrames;
   NSCursor* mLastSetCocoaCursor;
 }
+
+
+
 
 
 
@@ -117,7 +126,11 @@
 
 
 
-- (id)initWithImageNamed:(NSString*)aCursorImage hotSpot:(NSPoint)aPoint type:(nsCursor)aType;
+
+
+- (id)initWithImageNamed:(NSString*)aCursorImage
+                 hotSpot:(NSPoint)aPoint
+                    type:(nsCursor)aType;
 
 @end
 
@@ -126,7 +139,8 @@
 + (nsMacCursor*)cursorWithCursor:(NSCursor*)aCursor type:(nsCursor)aType {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return [[[nsCocoaCursor alloc] initWithCursor:aCursor type:aType] autorelease];
+  return [[[nsCocoaCursor alloc] initWithCursor:aCursor
+                                           type:aType] autorelease];
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
@@ -136,7 +150,8 @@
                                 type:(nsCursor)aType {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return [[[nsCocoaCursor alloc] initWithImageNamed:aCursorImage hotSpot:aPoint
+  return [[[nsCocoaCursor alloc] initWithImageNamed:aCursorImage
+                                            hotSpot:aPoint
                                                type:aType] autorelease];
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
@@ -145,12 +160,14 @@
 + (nsMacCursor*)cursorWithFrames:(NSArray*)aCursorFrames type:(nsCursor)aType {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return [[[nsCocoaCursor alloc] initWithFrames:aCursorFrames type:aType] autorelease];
+  return [[[nsCocoaCursor alloc] initWithFrames:aCursorFrames
+                                           type:aType] autorelease];
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-+ (NSCursor*)cocoaCursorWithImageNamed:(NSString*)imageName hotSpot:(NSPoint)aPoint {
++ (NSCursor*)cocoaCursorWithImageNamed:(NSString*)imageName
+                               hotSpot:(NSPoint)aPoint {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   nsCOMPtr<nsIFile> resDir;
@@ -174,7 +191,8 @@
   pathToImage = [pathToImage stringByAppendingPathExtension:@"png"];
   pathToHiDpiImage = [pathToHiDpiImage stringByAppendingPathExtension:@"png"];
 
-  cursorImage = [[[NSImage alloc] initWithContentsOfFile:pathToImage] autorelease];
+  cursorImage =
+      [[[NSImage alloc] initWithContentsOfFile:pathToImage] autorelease];
   if (!cursorImage) goto INIT_FAILURE;
 
   
@@ -184,12 +202,15 @@
   
   
   
-  hiDpiCursorImage = [[[NSImage alloc] initWithContentsOfFile:pathToHiDpiImage] autorelease];
+  
+  hiDpiCursorImage =
+      [[[NSImage alloc] initWithContentsOfFile:pathToHiDpiImage] autorelease];
   if (hiDpiCursorImage) {
     NSImageRep* imageRep = [[hiDpiCursorImage representations] objectAtIndex:0];
     [cursorImage addRepresentation:imageRep];
   }
-  return [[[NSCursor alloc] initWithImage:cursorImage hotSpot:aPoint] autorelease];
+  return [[[NSCursor alloc] initWithImage:cursorImage
+                                  hotSpot:aPoint] autorelease];
 
 INIT_FAILURE:
   NS_WARNING("Problem getting path to cursor image file!");
@@ -236,11 +257,12 @@ INIT_FAILURE:
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   if (!mTimer) {
-    mTimer = [[NSTimer scheduledTimerWithTimeInterval:0.25
-                                               target:self
-                                             selector:@selector(advanceAnimatedCursor:)
-                                             userInfo:nil
-                                              repeats:YES] retain];
+    mTimer = [[NSTimer
+        scheduledTimerWithTimeInterval:0.25
+                                target:self
+                              selector:@selector(advanceAnimatedCursor:)
+                              userInfo:nil
+                               repeats:YES] retain];
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -316,11 +338,15 @@ INIT_FAILURE:
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-- (id)initWithImageNamed:(NSString*)aCursorImage hotSpot:(NSPoint)aPoint type:(nsCursor)aType {
+- (id)initWithImageNamed:(NSString*)aCursorImage
+                 hotSpot:(NSPoint)aPoint
+                    type:(nsCursor)aType {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  return [self initWithCursor:[nsMacCursor cocoaCursorWithImageNamed:aCursorImage hotSpot:aPoint]
-                         type:aType];
+  return
+      [self initWithCursor:[nsMacCursor cocoaCursorWithImageNamed:aCursorImage
+                                                          hotSpot:aPoint]
+                      type:aType];
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }

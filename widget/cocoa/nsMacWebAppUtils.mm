@@ -16,10 +16,11 @@
 
 
 
+
 NS_IMPL_ISUPPORTS(nsMacWebAppUtils, nsIMacWebAppUtils)
 
-NS_IMETHODIMP nsMacWebAppUtils::PathForAppWithIdentifier(const nsAString& bundleIdentifier,
-                                                         nsAString& outPath) {
+NS_IMETHODIMP nsMacWebAppUtils::PathForAppWithIdentifier(
+    const nsAString& bundleIdentifier, nsAString& outPath) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   outPath.Truncate();
@@ -27,11 +28,13 @@ NS_IMETHODIMP nsMacWebAppUtils::PathForAppWithIdentifier(const nsAString& bundle
   nsAutoreleasePool localPool;
 
   
+  
   NSString* temp = [[NSWorkspace sharedWorkspace]
       absolutePathForAppBundleWithIdentifier:
-          [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
-                                             ((nsString)bundleIdentifier).get())
-                                  length:((nsString)bundleIdentifier).Length()]];
+          [NSString
+              stringWithCharacters:reinterpret_cast<const unichar*>(
+                                       ((nsString)bundleIdentifier).get())
+                            length:((nsString)bundleIdentifier).Length()]];
 
   if (temp) {
     
@@ -43,18 +46,20 @@ NS_IMETHODIMP nsMacWebAppUtils::PathForAppWithIdentifier(const nsAString& bundle
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-NS_IMETHODIMP nsMacWebAppUtils::LaunchAppWithIdentifier(const nsAString& bundleIdentifier) {
+NS_IMETHODIMP nsMacWebAppUtils::LaunchAppWithIdentifier(
+    const nsAString& bundleIdentifier) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   nsAutoreleasePool localPool;
 
   
+  
   BOOL success = [[NSWorkspace sharedWorkspace]
-       launchAppWithBundleIdentifier:[NSString
-                                         stringWithCharacters:reinterpret_cast<const unichar*>(
-                                                                  ((nsString)bundleIdentifier)
-                                                                      .get())
-                                                       length:((nsString)bundleIdentifier).Length()]
+       launchAppWithBundleIdentifier:
+           [NSString
+               stringWithCharacters:reinterpret_cast<const unichar*>(
+                                        ((nsString)bundleIdentifier).get())
+                             length:((nsString)bundleIdentifier).Length()]
                              options:(NSWorkspaceLaunchOptions)0
       additionalEventParamDescriptor:nil
                     launchIdentifier:NULL];
@@ -64,7 +69,8 @@ NS_IMETHODIMP nsMacWebAppUtils::LaunchAppWithIdentifier(const nsAString& bundleI
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-NS_IMETHODIMP nsMacWebAppUtils::TrashApp(const nsAString& path, nsITrashAppCallback* aCallback) {
+NS_IMETHODIMP nsMacWebAppUtils::TrashApp(const nsAString& path,
+                                         nsITrashAppCallback* aCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if (NS_WARN_IF(!aCallback)) {
@@ -74,11 +80,13 @@ NS_IMETHODIMP nsMacWebAppUtils::TrashApp(const nsAString& path, nsITrashAppCallb
   nsCOMPtr<nsITrashAppCallback> callback = aCallback;
 
   NSString* tempString =
-      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(((nsString)path).get())
+      [NSString stringWithCharacters:reinterpret_cast<const unichar*>(
+                                         ((nsString)path).get())
                               length:path.Length()];
 
   [[NSWorkspace sharedWorkspace]
-            recycleURLs:[NSArray arrayWithObject:[NSURL fileURLWithPath:tempString]]
+            recycleURLs:[NSArray
+                            arrayWithObject:[NSURL fileURLWithPath:tempString]]
       completionHandler:^(NSDictionary* newURLs, NSError* error) {
         nsresult rv = (error == nil) ? NS_OK : NS_ERROR_FAILURE;
         callback->TrashAppFinished(rv);

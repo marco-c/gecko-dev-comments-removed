@@ -75,6 +75,7 @@ void nsMenuItemIconX::SetupIcon(nsIContent* aContent) {
   if (!mIconImage) {
     
     
+    
     NSSize iconSize = NSMakeSize(kIconSize, kIconSize);
     mIconImage = [[MOZIconHelper placeholderIconWithSize:iconSize] retain];
   }
@@ -100,7 +101,8 @@ already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI(nsIContent* aContent) {
   
   nsAutoString imageURIString;
   bool hasImageAttr =
-      aContent->IsElement() && aContent->AsElement()->GetAttr(nsGkAtoms::image, imageURIString);
+      aContent->IsElement() &&
+      aContent->AsElement()->GetAttr(nsGkAtoms::image, imageURIString);
 
   if (hasImageAttr) {
     
@@ -121,7 +123,8 @@ already_AddRefed<nsIURI> nsMenuItemIconX::GetIconURI(nsIContent* aContent) {
     return nullptr;
   }
 
-  RefPtr<const ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(aContent->AsElement());
+  RefPtr<const ComputedStyle> sc =
+      nsComputedDOMStyle::GetComputedStyle(aContent->AsElement());
   if (!sc) {
     return nullptr;
   }
@@ -149,11 +152,12 @@ nsresult nsMenuItemIconX::OnComplete(imgIContainer* aImage) {
     mIconImage = nil;
   }
   RefPtr<nsPresContext> pc = mPresContext.get();
-  mIconImage = [[MOZIconHelper iconImageFromImageContainer:aImage
-                                                  withSize:NSMakeSize(kIconSize, kIconSize)
-                                               presContext:pc
-                                             computedStyle:mComputedStyle
-                                               scaleFactor:0.0f] retain];
+  mIconImage = [[MOZIconHelper
+      iconImageFromImageContainer:aImage
+                         withSize:NSMakeSize(kIconSize, kIconSize)
+                      presContext:pc
+                    computedStyle:mComputedStyle
+                      scaleFactor:0.0f] retain];
   mComputedStyle = nullptr;
   mPresContext = nullptr;
 

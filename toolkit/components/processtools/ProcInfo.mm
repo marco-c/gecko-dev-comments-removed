@@ -31,7 +31,8 @@ namespace mozilla {
 
 nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   struct proc_taskinfo pti;
-  if ((unsigned long)proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &pti, PROC_PIDTASKINFO_SIZE) <
+  if ((unsigned long)proc_pidinfo(getpid(), PROC_PIDTASKINFO, 0, &pti,
+                                  PROC_PIDTASKINFO_SIZE) <
       PROC_PIDTASKINFO_SIZE) {
     return NS_ERROR_FAILURE;
   }
@@ -39,16 +40,16 @@ nsresult GetCpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   mach_timebase_info_data_t timebase;
   GetTimeBase(&timebase);
 
-  *aResult = (pti.pti_total_user + pti.pti_total_system) * timebase.numer / timebase.denom /
-             PR_NSEC_PER_MSEC;
+  *aResult = (pti.pti_total_user + pti.pti_total_system) * timebase.numer /
+             timebase.denom / PR_NSEC_PER_MSEC;
   return NS_OK;
 }
 
 nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
   task_power_info_v2_data_t task_power_info;
   mach_msg_type_number_t count = TASK_POWER_INFO_V2_COUNT;
-  kern_return_t kr =
-      task_info(mach_task_self(), TASK_POWER_INFO_V2, (task_info_t)&task_power_info, &count);
+  kern_return_t kr = task_info(mach_task_self(), TASK_POWER_INFO_V2,
+                               (task_info_t)&task_power_info, &count);
   if (kr != KERN_SUCCESS) {
     return NS_ERROR_FAILURE;
   }
@@ -59,7 +60,8 @@ nsresult GetGpuTimeSinceProcessStartInMs(uint64_t* aResult) {
 
 int GetCycleTimeFrequencyMHz() { return 0; }
 
-ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&& aRequests) {
+ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(
+    nsTArray<ProcInfoRequest>&& aRequests) {
   ProcInfoPromise::ResolveOrRejectValue result;
 
   HashMap<base::ProcessId, ProcInfo> gathered;
@@ -81,14 +83,16 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&
     info.utilityActors = std::move(request.utilityInfo);
 
     struct proc_taskinfo pti;
-    if ((unsigned long)proc_pidinfo(request.pid, PROC_PIDTASKINFO, 0, &pti, PROC_PIDTASKINFO_SIZE) <
+    if ((unsigned long)proc_pidinfo(request.pid, PROC_PIDTASKINFO, 0, &pti,
+                                    PROC_PIDTASKINFO_SIZE) <
         PROC_PIDTASKINFO_SIZE) {
       
       
       
       continue;
     }
-    info.cpuTime = (pti.pti_total_user + pti.pti_total_system) * timebase.numer / timebase.denom;
+    info.cpuTime = (pti.pti_total_user + pti.pti_total_system) *
+                   timebase.numer / timebase.denom;
 
     mach_port_t selectedTask;
     
@@ -102,7 +106,8 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&
     
     task_vm_info_data_t task_vm_info;
     mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
-    kern_return_t kr = task_info(selectedTask, TASK_VM_INFO, (task_info_t)&task_vm_info, &count);
+    kern_return_t kr = task_info(selectedTask, TASK_VM_INFO,
+                                 (task_info_t)&task_vm_info, &count);
     info.memory = kr == KERN_SUCCESS ? task_vm_info.phys_footprint : 0;
 
     
@@ -141,8 +146,8 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&
       
       thread_extended_info_data_t threadInfoData;
       count = THREAD_EXTENDED_INFO_COUNT;
-      kret =
-          thread_info(threadList[i], THREAD_EXTENDED_INFO, (thread_info_t)&threadInfoData, &count);
+      kret = thread_info(threadList[i], THREAD_EXTENDED_INFO,
+                         (thread_info_t)&threadInfoData, &count);
       if (kret != KERN_SUCCESS) {
         continue;
       }
@@ -150,8 +155,8 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&
       
       thread_identifier_info identifierInfo;
       count = THREAD_IDENTIFIER_INFO_COUNT;
-      kret = thread_info(threadList[i], THREAD_IDENTIFIER_INFO, (thread_info_t)&identifierInfo,
-                         &count);
+      kret = thread_info(threadList[i], THREAD_IDENTIFIER_INFO,
+                         (thread_info_t)&identifierInfo, &count);
       if (kret != KERN_SUCCESS) {
         continue;
       }
@@ -162,7 +167,8 @@ ProcInfoPromise::ResolveOrRejectValue GetProcInfoSync(nsTArray<ProcInfoRequest>&
         result.SetReject(NS_ERROR_OUT_OF_MEMORY);
         return result;
       }
-      thread->cpuTime = threadInfoData.pth_user_time + threadInfoData.pth_system_time;
+      thread->cpuTime =
+          threadInfoData.pth_user_time + threadInfoData.pth_system_time;
       thread->name.AssignASCII(threadInfoData.pth_name);
       thread->tid = identifierInfo.thread_id;
     }

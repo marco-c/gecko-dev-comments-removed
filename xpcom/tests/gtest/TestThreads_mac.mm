@@ -20,18 +20,20 @@ bool UiThreadRunsRunLoop(bool aIsUiThread) {
   nsCOMPtr<nsIThread> thread;
   nsIThreadManager::ThreadCreationOptions options;
   options.isUiThread = aIsUiThread;
-  MOZ_ALWAYS_SUCCEEDS(
-      NS_NewNamedThread("Testing Thread", getter_AddRefs(thread), nullptr, options));
+  MOZ_ALWAYS_SUCCEEDS(NS_NewNamedThread(
+      "Testing Thread", getter_AddRefs(thread), nullptr, options));
 
   __block bool blockRanInRunLoop = false;
   {
     
     
     NSRunLoop* loop = nil;
-    auto syncRunnable = MakeRefPtr<SyncRunnable>(NS_NewRunnableFunction(__func__, [&] {
-      
-      loop = NSRunLoop.currentRunLoop;
-    }));
+    auto syncRunnable =
+        MakeRefPtr<SyncRunnable>(NS_NewRunnableFunction(__func__, [&] {
+          
+          
+          loop = NSRunLoop.currentRunLoop;
+        }));
     MOZ_ALWAYS_SUCCEEDS(syncRunnable->DispatchToThread(thread));
 
     [loop performBlock:^void() {

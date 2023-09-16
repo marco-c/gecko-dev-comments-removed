@@ -1,51 +1,51 @@
-/*
- * smslib.m
- *
- * SMSLib Sudden Motion Sensor Access Library
- * Copyright (c) 2010 Suitable Systems
- * All rights reserved.
- *
- * Developed by: Daniel Griscom
- *               Suitable Systems
- *               http://www.suitable.com
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the
- * "Software"), to deal with the Software without restriction, including
- * without limitation the rights to use, copy, modify, merge, publish,
- * distribute, sublicense, and/or sell copies of the Software, and to
- * permit persons to whom the Software is furnished to do so, subject to
- * the following conditions:
- *
- * - Redistributions of source code must retain the above copyright notice,
- * this list of conditions and the following disclaimers.
- *
- * - Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimers in the
- * documentation and/or other materials provided with the distribution.
- *
- * - Neither the names of Suitable Systems nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this Software without specific prior written permission.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR
- * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE SOFTWARE.
- *
- * For more information about SMSLib, see
- *		<http://www.suitable.com/tools/smslib.html>
- * or contact
- *		Daniel Griscom
- *		Suitable Systems
- *		1 Centre Street, Suite 204
- *		Wakefield, MA 01880
- *		(781) 665-0053
- *
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #import <IOKit/IOKitLib.h>
 #import <sys/sysctl.h>
@@ -54,174 +54,192 @@
 
 #pragma mark Internal structures
 
-// Represents a single axis of a type of sensor.
+
 typedef struct axisStruct {
-  int enabled;  // Non-zero if axis is valid in this sensor
-  int index;    // Location in struct of first byte
-  int size;     // Number of bytes
-  float zerog;  // Value meaning "zero g"
-  float oneg;   // Change in value meaning "increase of one g"
-                // (can be negative if axis sensor reversed)
+  int enabled;  
+  int index;    
+  int size;     
+  float zerog;  
+  float oneg;   
+                
 } axisStruct;
 
-// Represents the configuration of a type of sensor.
+
 typedef struct sensorSpec {
-  const char* model;      // Prefix of model to be tested
-  const char* name;       // Name of device to be read
-  unsigned int function;  // Kernel function index
-  int recordSize;         // Size of record to be sent/received
-  axisStruct axes[3];     // Description of three axes (X, Y, Z)
+  const char* model;      
+  const char* name;       
+  unsigned int function;  
+  int recordSize;         
+  axisStruct axes[3];     
 } sensorSpec;
 
-// Configuration of all known types of sensors. The configurations are
-// tried in order until one succeeds in returning data.
-// All default values are set here, but each axis' zerog and oneg values
-// may be changed to saved (calibrated) values.
-//
-// These values came from SeisMaCalibrate calibration reports. In general I've
-// found the following:
-//	- All Intel-based SMSs have 250 counts per g, centered on 0, but the signs
-//		are different (and in one case two axes are swapped)
-//	- PowerBooks and iBooks all have sensors centered on 0, and reading
-//		50-53 steps per gravity (but with differing polarities!)
-//	- PowerBooks and iBooks of the same model all have the same axis polarities
-//	- PowerBook and iBook access methods are model- and OS version-specific
-//
-// So, the sequence of tests is:
-//	- Try model-specific access methods. Note that the test is for a match to the
-//		beginning of the model name, e.g. the record with model name "MacBook"
-//		matches computer models "MacBookPro1,2" and "MacBook1,1" (and ""
-//		matches any model).
-//	- If no model-specific record's access fails, then try each model-independent
-//		access method in order, stopping when one works.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 static const sensorSpec sensors[] = {
-    // ****** Model-dependent methods ******
-    // The PowerBook5,6 is one of the G4 models that seems to lose
-    // SMS access until the next reboot.
+    
+    
+    
     {"PowerBook5,6",
      "IOI2CMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, -51.5}, {1, 2, 1, 0, -51.5}}},
-    // The PowerBook5,7 is one of the G4 models that seems to lose
-    // SMS access until the next reboot.
+    
+    
     {"PowerBook5,7",
      "IOI2CMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
-    // Access seems to be reliable on the PowerBook5,8
+    
     {"PowerBook5,8",
      "PMUMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, -51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, -51.5}}},
-    // Access seems to be reliable on the PowerBook5,9
+    
     {"PowerBook5,9",
      "PMUMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, -51.5}, {1, 2, 1, 0, -51.5}}},
-    // The PowerBook6,7 is one of the G4 models that seems to lose
-    // SMS access until the next reboot.
+    
+    
     {"PowerBook6,7",
      "IOI2CMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
-    // The PowerBook6,8 is one of the G4 models that seems to lose
-    // SMS access until the next reboot.
+    
+    
     {"PowerBook6,8",
      "IOI2CMotionSensor",
      21,
      60,
      {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
-    // MacBook Pro Core 2 Duo 17". Note the reversed Y and Z axes.
+    
     {"MacBookPro2,1",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, 251}, {1, 2, 2, 0, -251}, {1, 4, 2, 0, -251}}},
-    // MacBook Pro Core 2 Duo 15" AND 17" with LED backlight, introduced June '07.
-    // NOTE! The 17" machines have the signs of their X and Y axes reversed
-    // from this calibration, but there's no clear way to discriminate between
-    // the two machines.
+    
+    
+    
+    
+    
     {"MacBookPro3,1",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, -251}, {1, 2, 2, 0, 251}, {1, 4, 2, 0, -251}}},
-    // ... specs?
+    
     {"MacBook5,2",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, -251}, {1, 2, 2, 0, 251}, {1, 4, 2, 0, -251}}},
-    // ... specs?
+    
     {"MacBookPro5,1",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, -251}, {1, 2, 2, 0, -251}, {1, 4, 2, 0, 251}}},
-    // ... specs?
+    
     {"MacBookPro5,2",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, -251}, {1, 2, 2, 0, -251}, {1, 4, 2, 0, 251}}},
-    // This is speculative, based on a single user's report. Looks like the X and Y axes
-    // are swapped. This is true for no other known Appple laptop.
+    
+    
+    
     {"MacBookPro5,3",
      "SMCMotionSensor",
      5,
      40,
      {{1, 2, 2, 0, -251}, {1, 0, 2, 0, -251}, {1, 4, 2, 0, -251}}},
-    // ... specs?
+    
     {"MacBookPro5,4",
      "SMCMotionSensor",
      5,
      40,
      {{1, 0, 2, 0, -251}, {1, 2, 2, 0, -251}, {1, 4, 2, 0, 251}}},
-    // ****** Model-independent methods ******
-    // Seen once with PowerBook6,8 under system 10.3.9; I suspect
-    // other G4-based 10.3.* systems might use this
-    {"", "IOI2CMotionSensor", 24, 60, {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
-    // PowerBook5,6 , PowerBook5,7 , PowerBook6,7 , PowerBook6,8
-    // under OS X 10.4.*
-    {"", "IOI2CMotionSensor", 21, 60, {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
-    // PowerBook5,8 , PowerBook5,9 under OS X 10.4.*
+    
+    
+    
+    {"",
+     "IOI2CMotionSensor",
+     24,
+     60,
+     {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
+    
+    
+    {"",
+     "IOI2CMotionSensor",
+     21,
+     60,
+     {{1, 0, 1, 0, 51.5}, {1, 1, 1, 0, 51.5}, {1, 2, 1, 0, 51.5}}},
+    
     {"",
      "PMUMotionSensor",
      21,
      60,
-     {// Each has two out of three gains negative, but it's different
-      // for the different models. So, this will be right in two out
-      // of three axis for either model.
+     {
+      
+      
       {1, 0, 1, 0, -51.5},
       {1, 1, 1, -6, -51.5},
       {1, 2, 1, 0, -51.5}}},
-    // All MacBook, MacBookPro models. Hardware (at least on early MacBookPro 15")
-    // is Kionix KXM52-1050 three-axis accelerometer chip. Data is at
-    // http://kionix.com/Product-Index/product-index.htm. Specific MB and MBP models
-    // that use this are:
-    //		MacBook1,1
-    //		MacBook2,1
-    //		MacBook3,1
-    //		MacBook4,1
-    //		MacBook5,1
-    //		MacBook6,1
-    //		MacBookAir1,1
-    //		MacBookPro1,1
-    //		MacBookPro1,2
-    //		MacBookPro4,1
-    //		MacBookPro5,5
-    {"", "SMCMotionSensor", 5, 40, {{1, 0, 2, 0, 251}, {1, 2, 2, 0, 251}, {1, 4, 2, 0, 251}}}};
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    {"",
+     "SMCMotionSensor",
+     5,
+     40,
+     {{1, 0, 2, 0, 251}, {1, 2, 2, 0, 251}, {1, 4, 2, 0, 251}}}};
 
 #define SENSOR_COUNT (sizeof(sensors) / sizeof(sensorSpec))
 
 #pragma mark Internal prototypes
 
-static int getData(sms_acceleration* accel, int calibrated, id logObject, SEL logSelector);
+static int getData(sms_acceleration* accel, int calibrated, id logObject,
+                   SEL logSelector);
 static float getAxis(int which, int calibrated);
 static int signExtend(int value, int size);
 static NSString* getModelName(void);
@@ -236,70 +254,74 @@ static float prefFloatRead(NSString* prefName, BOOL* success);
 static void prefFloatWrite(NSString* prefName, float prefValue);
 static void prefDelete(NSString* prefName);
 static void prefSynchronize(void);
-// static long getMicroseconds(void);
+
 float fakeData(NSTimeInterval time);
 
 #pragma mark Static variables
 
-static int debugging = NO;          // True if debugging (synthetic data)
-static io_connect_t connection;     // Connection for reading accel values
-static int running = NO;            // True if we successfully started
-static unsigned int sensorNum = 0;  // The current index into sensors[]
-static const char* serviceName;     // The name of the current service
-static char *iRecord, *oRecord;     // Pointers to read/write records for sensor
-static int recordSize;              // Size of read/write records
-static unsigned int function;       // Which kernel function should be used
-static float zeros[3];              // X, Y and Z zero calibration values
-static float onegs[3];              // X, Y and Z one-g calibration values
+static int debugging = NO;          
+static io_connect_t connection;     
+static int running = NO;            
+static unsigned int sensorNum = 0;  
+static const char* serviceName;     
+static char *iRecord, *oRecord;     
+static int recordSize;              
+static unsigned int function;       
+static float zeros[3];              
+static float onegs[3];              
 
 #pragma mark Defines
 
-// Pattern for building axis letter from axis number
+
 #define INT_TO_AXIS(a) (a == 0 ? @"X" : a == 1 ? @"Y" : @"Z")
-// Name of configuration for given axis' zero (axis specified by integer)
+
 #define ZERO_NAME(a) [NSString stringWithFormat:@"%@-Axis-Zero", INT_TO_AXIS(a)]
-// Name of configuration for given axis' oneg (axis specified by integer)
-#define ONEG_NAME(a) [NSString stringWithFormat:@"%@-Axis-One-g", INT_TO_AXIS(a)]
-// Name of "Is calibrated" preference
+
+#define ONEG_NAME(a) \
+  [NSString stringWithFormat:@"%@-Axis-One-g", INT_TO_AXIS(a)]
+
 #define CALIBRATED_NAME (@"Calibrated")
-// Application domain for SeisMac library
+
 #define APP_ID ((CFStringRef) @"com.suitable.SeisMacLib")
 
-// These #defines make the accelStartup code a LOT easier to read.
+
 #undef LOG
 #define LOG(message)                                            \
   if (logObject) {                                              \
     [logObject performSelector:logSelector withObject:message]; \
   }
-#define LOG_ARG(format, var1)                                                                    \
-  if (logObject) {                                                                               \
-    [logObject performSelector:logSelector withObject:[NSString stringWithFormat:format, var1]]; \
+#define LOG_ARG(format, var1)                                             \
+  if (logObject) {                                                        \
+    [logObject performSelector:logSelector                                \
+                    withObject:[NSString stringWithFormat:format, var1]]; \
   }
-#define LOG_2ARG(format, var1, var2)                                            \
-  if (logObject) {                                                              \
-    [logObject performSelector:logSelector                                      \
-                    withObject:[NSString stringWithFormat:format, var1, var2]]; \
+#define LOG_2ARG(format, var1, var2)                                     \
+  if (logObject) {                                                       \
+    [logObject                                                           \
+        performSelector:logSelector                                      \
+             withObject:[NSString stringWithFormat:format, var1, var2]]; \
   }
-#define LOG_3ARG(format, var1, var2, var3)                                            \
-  if (logObject) {                                                                    \
-    [logObject performSelector:logSelector                                            \
-                    withObject:[NSString stringWithFormat:format, var1, var2, var3]]; \
+#define LOG_3ARG(format, var1, var2, var3)                                     \
+  if (logObject) {                                                             \
+    [logObject                                                                 \
+        performSelector:logSelector                                            \
+             withObject:[NSString stringWithFormat:format, var1, var2, var3]]; \
   }
 
 #pragma mark Function definitions
 
-// This starts up the accelerometer code, trying each possible sensor
-// specification. Note that for logging purposes it
-// takes an object and a selector; the object's selector is then invoked
-// with a single NSString as argument giving progress messages. Example
-// logging method:
-//		- (void)logMessage: (NSString *)theString
-// which would be used in accelStartup's invocation thusly:
-//		result = accelStartup(self, @selector(logMessage:));
-// If the object is nil, then no logging is done. Sets calibation from built-in
-// value table. Returns ACCEL_SUCCESS for success, and other (negative)
-// values for various failures (returns value indicating result of
-// most successful trial).
+
+
+
+
+
+
+
+
+
+
+
+
 int smsStartup(id logObject, SEL logSelector) {
   io_iterator_t iterator;
   io_object_t device;
@@ -317,22 +339,23 @@ int smsStartup(id logObject, SEL logSelector) {
   LOG_ARG(@"Accelerometer library version: %s\n", SMSLIB_VERSION);
 
   for (sensorNum = 0; sensorNum < SENSOR_COUNT; sensorNum++) {
-    // Set up all specs for this type of sensor
+    
     serviceName = sensors[sensorNum].name;
     recordSize = sensors[sensorNum].recordSize;
     function = sensors[sensorNum].function;
 
-    LOG_3ARG(@"Trying service \"%s\" with selector %d and %d byte record:\n", serviceName, function,
-             recordSize);
+    LOG_3ARG(@"Trying service \"%s\" with selector %d and %d byte record:\n",
+             serviceName, function, recordSize);
 
-    NSString* targetName = [NSString stringWithCString:sensors[sensorNum].model
-                                              encoding:NSMacOSRomanStringEncoding];
+    NSString* targetName =
+        [NSString stringWithCString:sensors[sensorNum].model
+                           encoding:NSMacOSRomanStringEncoding];
     LOG_ARG(@"    Comparing model name to target \"%@\": ", targetName);
     if ([targetName length] == 0 || [modelName hasPrefix:targetName]) {
       LOG(@"success.\n");
     } else {
       LOG(@"failure.\n");
-      // Don't need to increment failure_result.
+      
       continue;
     }
 
@@ -350,7 +373,8 @@ int smsStartup(id logObject, SEL logSelector) {
     }
 
     LOG(@"    Getting list of matching services: ");
-    result = IOServiceGetMatchingServices(kIOMasterPortDefault, dict, &iterator);
+    result =
+        IOServiceGetMatchingServices(kIOMasterPortDefault, dict, &iterator);
 
     if (result == KERN_SUCCESS) {
       LOG(@"success.\n");
@@ -386,7 +410,9 @@ int smsStartup(id logObject, SEL logSelector) {
       }
       continue;
     } else if (connection == 0) {
-      LOG_ARG(@"'success', but didn't get a connection (return value was: 0x%x).\n", result);
+      LOG_ARG(
+          @"'success', but didn't get a connection (return value was: 0x%x).\n",
+          result);
       IOObjectRelease(device);
       if (failure_result < SMS_FAIL_CONNECTION) {
         failure_result = SMS_FAIL_CONNECTION;
@@ -426,19 +452,19 @@ int smsStartup(id logObject, SEL logSelector) {
   return failure_result;
 }
 
-// This starts up the library in debug mode, ignoring the actual hardware.
-// Returned data is in the form of 1Hz sine waves, with the X, Y and Z
-// axes 120 degrees out of phase; "calibrated" data has range +/- (1.0/5);
-// "uncalibrated" data has range +/- (256/5). X and Y axes centered on 0.0,
-// Z axes centered on 1 (calibrated) or 256 (uncalibrated).
-// Don't use smsGetBufferLength or smsGetBufferData. Always returns SMS_SUCCESS.
+
+
+
+
+
+
 int smsDebugStartup(id logObject, SEL logSelector) {
   LOG(@"Starting up in debug mode\n");
   debugging = YES;
   return SMS_SUCCESS;
 }
 
-// Returns the current calibration values.
+
 void smsGetCalibration(sms_calibration* calibrationRecord) {
   int x;
 
@@ -448,8 +474,8 @@ void smsGetCalibration(sms_calibration* calibrationRecord) {
   }
 }
 
-// Sets the calibration, but does NOT store it as a preference. If the argument
-// is nil then the current calibration is set from the built-in value table.
+
+
 void smsSetCalibration(sms_calibration* calibrationRecord) {
   int x;
 
@@ -465,13 +491,13 @@ void smsSetCalibration(sms_calibration* calibrationRecord) {
   }
 }
 
-// Stores the current calibration values as a stored preference.
+
 void smsStoreCalibration(void) {
   if (!debugging) storeCalibration();
 }
 
-// Loads the stored preference values into the current calibration.
-// Returns YES if successful.
+
+
 BOOL smsLoadCalibration(void) {
   if (debugging) {
     return YES;
@@ -483,8 +509,8 @@ BOOL smsLoadCalibration(void) {
   }
 }
 
-// Deletes any stored calibration, and then takes the current calibration values
-// from the built-in value table.
+
+
 void smsDeleteCalibration(void) {
   if (!debugging) {
     deleteCalibration();
@@ -492,12 +518,12 @@ void smsDeleteCalibration(void) {
   }
 }
 
-// Fills in the accel record with calibrated acceleration data. Takes
-// 1-2ms to return a value. Returns 0 if success, error number if failure.
+
+
 int smsGetData(sms_acceleration* accel) {
   NSTimeInterval time;
   if (debugging) {
-    usleep(1500);  // Usually takes 1-2 milliseconds
+    usleep(1500);  
     time = [NSDate timeIntervalSinceReferenceDate];
     accel->x = fakeData(time) / 5;
     accel->y = fakeData(time - 1) / 5;
@@ -508,12 +534,12 @@ int smsGetData(sms_acceleration* accel) {
   }
 }
 
-// Fills in the accel record with uncalibrated acceleration data.
-// Returns 0 if success, error number if failure.
+
+
 int smsGetUncalibratedData(sms_acceleration* accel) {
   NSTimeInterval time;
   if (debugging) {
-    usleep(1500);  // Usually takes 1-2 milliseconds
+    usleep(1500);  
     time = [NSDate timeIntervalSinceReferenceDate];
     accel->x = fakeData(time) * 256 / 5;
     accel->y = fakeData(time - 1) * 256 / 5;
@@ -524,7 +550,7 @@ int smsGetUncalibratedData(sms_acceleration* accel) {
   }
 }
 
-// Returns the length of a raw block of data for the current type of sensor.
+
 int smsGetBufferLength(void) {
   if (debugging) {
     return 0;
@@ -535,8 +561,8 @@ int smsGetBufferLength(void) {
   }
 }
 
-// Takes a pointer to accelGetRawLength() bytes; sets those bytes
-// to return value from sensor. Make darn sure the buffer length is right!
+
+
 void smsGetBufferData(char* buffer) {
   IOItemCount iSize = recordSize;
   IOByteCount oSize = recordSize;
@@ -551,23 +577,24 @@ void smsGetBufferData(char* buffer) {
 #if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
   const size_t InStructSize = recordSize;
   size_t OutStructSize = recordSize;
-  result =
-      IOConnectCallStructMethod(connection,
-                                function,  // magic kernel function number
-                                (const void*)iRecord, InStructSize, (void*)buffer, &OutStructSize);
-#else   // __MAC_OS_X_VERSION_MIN_REQUIRED 1050
-  result = IOConnectMethodStructureIStructureO(connection,
-                                               function,  // magic kernel function number
-                                               iSize, &oSize, iRecord, buffer);
-#endif  // __MAC_OS_X_VERSION_MIN_REQUIRED 1050
+  result = IOConnectCallStructMethod(connection,
+                                     function,  
+                                     (const void*)iRecord, InStructSize,
+                                     (void*)buffer, &OutStructSize);
+#else   
+  result = IOConnectMethodStructureIStructureO(
+      connection,
+      function,  
+      iSize, &oSize, iRecord, buffer);
+#endif  
 
   if (result != KERN_SUCCESS) {
     running = NO;
   }
 }
 
-// This returns an NSString describing the current calibration in
-// human-readable form. Also include a description of the machine.
+
+
 NSString* smsGetCalibrationDescription(void) {
   BOOL success;
   NSMutableString* s = [[NSMutableString alloc] init];
@@ -580,9 +607,10 @@ NSString* smsGetCalibrationDescription(void) {
   [s appendString:@"---- SeisMac Calibration Record ----\n \n"];
   [s appendFormat:@"Machine model: %@\n", getModelName()];
   [s appendFormat:@"OS X build: %@\n", getOSVersion()];
-  [s appendFormat:@"SeisMacLib version %s, record %d\n \n", SMSLIB_VERSION, sensorNum];
-  [s appendFormat:@"Using service \"%s\", function index %d, size %d\n \n", serviceName, function,
-                  recordSize];
+  [s appendFormat:@"SeisMacLib version %s, record %d\n \n", SMSLIB_VERSION,
+                  sensorNum];
+  [s appendFormat:@"Using service \"%s\", function index %d, size %d\n \n",
+                  serviceName, function, recordSize];
   if (prefIntRead(CALIBRATED_NAME, &success) && success) {
     [s appendString:@"Calibration values (from calibration):\n"];
   } else {
@@ -598,7 +626,7 @@ NSString* smsGetCalibrationDescription(void) {
   return s;
 }
 
-// Shuts down the accelerometer.
+
 void smsShutdown(void) {
   if (!debugging) {
     running = NO;
@@ -610,8 +638,8 @@ void smsShutdown(void) {
 
 #pragma mark Internal functions
 
-// Loads the current calibration from the stored preferences.
-// Returns true iff successful.
+
+
 BOOL loadCalibration(void) {
   BOOL thisSuccess, allSuccess;
   int x;
@@ -619,7 +647,7 @@ BOOL loadCalibration(void) {
   prefSynchronize();
 
   if (prefIntRead(CALIBRATED_NAME, &thisSuccess) && thisSuccess) {
-    // Calibrated. Set all values from saved values.
+    
     allSuccess = YES;
     for (x = 0; x < 3; x++) {
       zeros[x] = prefFloatRead(ZERO_NAME(x), &thisSuccess);
@@ -633,7 +661,7 @@ BOOL loadCalibration(void) {
   return NO;
 }
 
-// Stores the current calibration into the stored preferences.
+
 static void storeCalibration(void) {
   int x;
   prefIntWrite(CALIBRATED_NAME, 1);
@@ -644,7 +672,7 @@ static void storeCalibration(void) {
   prefSynchronize();
 }
 
-// Sets the calibration to its default values.
+
 void defaultCalibration(void) {
   int x;
   for (x = 0; x < 3; x++) {
@@ -653,7 +681,7 @@ void defaultCalibration(void) {
   }
 }
 
-// Deletes the stored preferences.
+
 static void deleteCalibration(void) {
   int x;
 
@@ -665,26 +693,28 @@ static void deleteCalibration(void) {
   prefSynchronize();
 }
 
-// Read a named floating point value from the stored preferences. Sets
-// the success boolean based on, you guessed it, whether it succeeds.
+
+
 static float prefFloatRead(NSString* prefName, BOOL* success) {
   float result = 0.0f;
 
-  CFPropertyListRef ref = CFPreferencesCopyAppValue((CFStringRef)prefName, APP_ID);
-  // If there isn't such a preference, fail
+  CFPropertyListRef ref =
+      CFPreferencesCopyAppValue((CFStringRef)prefName, APP_ID);
+  
   if (ref == NULL) {
     *success = NO;
     return result;
   }
   CFTypeID typeID = CFGetTypeID(ref);
-  // Is it a number?
+  
   if (typeID == CFNumberGetTypeID()) {
-    // Is it a floating point number?
+    
     if (CFNumberIsFloatType((CFNumberRef)ref)) {
-      // Yup: grab it.
-      *success = CFNumberGetValue((__CFNumber*)ref, kCFNumberFloat32Type, &result);
+      
+      *success =
+          CFNumberGetValue((__CFNumber*)ref, kCFNumberFloat32Type, &result);
     } else {
-      // Nope: grab as an integer, and convert to a float.
+      
       long num;
       if (CFNumberGetValue((CFNumberRef)ref, kCFNumberLongType, &num)) {
         result = num;
@@ -693,50 +723,54 @@ static float prefFloatRead(NSString* prefName, BOOL* success) {
         *success = NO;
       }
     }
-    // Or is it a string (e.g. set by the command line "defaults" command)?
+    
   } else if (typeID == CFStringGetTypeID()) {
     result = (float)CFStringGetDoubleValue((CFStringRef)ref);
     *success = YES;
   } else {
-    // Can't convert to a number: fail.
+    
     *success = NO;
   }
   CFRelease(ref);
   return result;
 }
 
-// Writes a named floating point value to the stored preferences.
+
 static void prefFloatWrite(NSString* prefName, float prefValue) {
-  CFNumberRef cfFloat = CFNumberCreate(kCFAllocatorDefault, kCFNumberFloatType, &prefValue);
+  CFNumberRef cfFloat =
+      CFNumberCreate(kCFAllocatorDefault, kCFNumberFloatType, &prefValue);
   CFPreferencesSetAppValue((CFStringRef)prefName, cfFloat, APP_ID);
   CFRelease(cfFloat);
 }
 
-// Reads a named integer value from the stored preferences.
+
 static int prefIntRead(NSString* prefName, BOOL* success) {
   Boolean internalSuccess;
-  CFIndex result = CFPreferencesGetAppIntegerValue((CFStringRef)prefName, APP_ID, &internalSuccess);
+  CFIndex result = CFPreferencesGetAppIntegerValue((CFStringRef)prefName,
+                                                   APP_ID, &internalSuccess);
   *success = internalSuccess;
 
   return result;
 }
 
-// Writes a named integer value to the stored preferences.
+
 static void prefIntWrite(NSString* prefName, int prefValue) {
-  CFPreferencesSetAppValue((CFStringRef)prefName, (CFNumberRef)[NSNumber numberWithInt:prefValue],
+  CFPreferencesSetAppValue((CFStringRef)prefName,
+                           (CFNumberRef)[NSNumber numberWithInt:prefValue],
                            APP_ID);
 }
 
-// Deletes the named preference values.
+
 static void prefDelete(NSString* prefName) {
   CFPreferencesSetAppValue((CFStringRef)prefName, NULL, APP_ID);
 }
 
-// Synchronizes the local preferences with the stored preferences.
+
 static void prefSynchronize(void) { CFPreferencesAppSynchronize(APP_ID); }
 
-// Internal version of accelGetData, with logging
-int getData(sms_acceleration* accel, int calibrated, id logObject, SEL logSelector) {
+
+int getData(sms_acceleration* accel, int calibrated, id logObject,
+            SEL logSelector) {
   IOItemCount iSize = recordSize;
   IOByteCount oSize = recordSize;
   kern_return_t result;
@@ -754,15 +788,16 @@ int getData(sms_acceleration* accel, int calibrated, id logObject, SEL logSelect
 #if __MAC_OS_X_VERSION_MIN_REQUIRED >= 1050
   const size_t InStructSize = recordSize;
   size_t OutStructSize = recordSize;
-  result =
-      IOConnectCallStructMethod(connection,
-                                function,  // magic kernel function number
-                                (const void*)iRecord, InStructSize, (void*)oRecord, &OutStructSize);
-#else   // __MAC_OS_X_VERSION_MIN_REQUIRED 1050
-  result = IOConnectMethodStructureIStructureO(connection,
-                                               function,  // magic kernel function number
-                                               iSize, &oSize, iRecord, oRecord);
-#endif  // __MAC_OS_X_VERSION_MIN_REQUIRED 1050
+  result = IOConnectCallStructMethod(connection,
+                                     function,  
+                                     (const void*)iRecord, InStructSize,
+                                     (void*)oRecord, &OutStructSize);
+#else   
+  result = IOConnectMethodStructureIStructureO(
+      connection,
+      function,  
+      iSize, &oSize, iRecord, oRecord);
+#endif  
 
   if (result != KERN_SUCCESS) {
     LOG(@"failed.\n");
@@ -778,41 +813,41 @@ int getData(sms_acceleration* accel, int calibrated, id logObject, SEL logSelect
   }
 }
 
-// Given the returned record, extracts the value of the given axis. If
-// calibrated, then zero G is 0.0, and one G is 1.0.
+
+
 float getAxis(int which, int calibrated) {
-  // Get various values (to make code cleaner)
+  
   int indx = sensors[sensorNum].axes[which].index;
   int size = sensors[sensorNum].axes[which].size;
   float zerog = zeros[which];
   float oneg = onegs[which];
-  // Storage for value to be returned
+  
   int value = 0;
 
-  // Although the values in the returned record should have the proper
-  // endianness, we still have to get it into the proper end of value.
+  
+  
 #if (BYTE_ORDER == BIG_ENDIAN)
-  // On PowerPC processors
+  
   memcpy(((char*)&value) + (sizeof(int) - size), &oRecord[indx], size);
 #endif
 #if (BYTE_ORDER == LITTLE_ENDIAN)
-  // On Intel processors
+  
   memcpy(&value, &oRecord[indx], size);
 #endif
 
   value = signExtend(value, size);
 
   if (calibrated) {
-    // Scale and shift for zero.
+    
     return ((float)(value - zerog)) / oneg;
   } else {
     return value;
   }
 }
 
-// Extends the sign, given the length of the value.
+
 int signExtend(int value, int size) {
-  // Extend sign
+  
   switch (size) {
     case 1:
       if (value & 0x00000080) value |= 0xffffff00;
@@ -827,7 +862,7 @@ int signExtend(int value, int size) {
   return value;
 }
 
-// Returns the model name of the computer (e.g. "MacBookPro1,1")
+
 NSString* getModelName(void) {
   char model[32];
   size_t len = sizeof(model);
@@ -843,24 +878,26 @@ NSString* getModelName(void) {
   return result;
 }
 
-// Returns the current OS X version and build (e.g. "10.4.7 (build 8J2135a)")
+
 NSString* getOSVersion(void) {
-  NSDictionary* dict = [NSDictionary
-      dictionaryWithContentsOfFile:@"/System/Library/CoreServices/SystemVersion.plist"];
+  NSDictionary* dict =
+      [NSDictionary dictionaryWithContentsOfFile:
+                        @"/System/Library/CoreServices/SystemVersion.plist"];
   NSString* versionString = [dict objectForKey:@"ProductVersion"];
   NSString* buildString = [dict objectForKey:@"ProductBuildVersion"];
-  NSString* wholeString = [NSString stringWithFormat:@"%@ (build %@)", versionString, buildString];
+  NSString* wholeString =
+      [NSString stringWithFormat:@"%@ (build %@)", versionString, buildString];
   return wholeString;
 }
 
-// Returns time within the current second in microseconds.
-// long getMicroseconds() {
-//	struct timeval t;
-//	gettimeofday(&t, 0);
-//	return t.tv_usec;
-//}
 
-// Returns fake data given the time. Range is +/-1.
+
+
+
+
+
+
+
 float fakeData(NSTimeInterval time) {
   long secs = lround(floor(time));
   int secsMod3 = secs % 3;

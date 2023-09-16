@@ -22,7 +22,8 @@ static nscolor GetColorFromUIColor(UIColor* aColor) {
   CGColorSpaceModel model = CGColorSpaceGetModel(CGColorGetColorSpace(cgColor));
   const CGFloat* components = CGColorGetComponents(cgColor);
   if (model == kCGColorSpaceModelRGB) {
-    return NS_RGB((unsigned int)(components[0] * 255.0), (unsigned int)(components[1] * 255.0),
+    return NS_RGB((unsigned int)(components[0] * 255.0),
+                  (unsigned int)(components[1] * 255.0),
                   (unsigned int)(components[2] * 255.0));
   } else if (model == kCGColorSpaceModelMonochrome) {
     unsigned int val = (unsigned int)(components[0] * 255.0);
@@ -198,6 +199,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID, ColorScheme, nscolor& aResult) {
       break;
     case ColorID::MozNativehyperlinktext:
       
+      
       aResult = NS_RGB(0x14, 0x4F, 0xAE);
       break;
     case ColorID::MozNativevisitedhyperlinktext:
@@ -321,7 +323,8 @@ nsLookAndFeel::NativeGetFloat(FloatID aID, float& aResult) {
   return res;
 }
 
-bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName, gfxFontStyle& aFontStyle) {
+bool nsLookAndFeel::NativeGetFont(FontID aID, nsString& aFontName,
+                                  gfxFontStyle& aFontStyle) {
   
   if (aID == FontID::Window || aID == FontID::Document) {
     aFontStyle.style = FontSlantStyle::Normal();

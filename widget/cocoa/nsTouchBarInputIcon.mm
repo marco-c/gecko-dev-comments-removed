@@ -25,10 +25,16 @@ using mozilla::widget::IconLoader;
 static const uint32_t kIconHeight = 16;
 static const CGFloat kHiDPIScalingFactor = 2.0f;
 
-nsTouchBarInputIcon::nsTouchBarInputIcon(RefPtr<Document> aDocument, TouchBarInput* aInput,
+nsTouchBarInputIcon::nsTouchBarInputIcon(RefPtr<Document> aDocument,
+                                         TouchBarInput* aInput,
                                          NSTouchBarItem* aItem)
-    : mDocument(aDocument), mSetIcon(false), mButton(nil), mShareScrubber(nil), mPopoverItem(nil) {
-  if ([[aInput nativeIdentifier] isEqualToString:[TouchBarInput shareScrubberIdentifier]]) {
+    : mDocument(aDocument),
+      mSetIcon(false),
+      mButton(nil),
+      mShareScrubber(nil),
+      mPopoverItem(nil) {
+  if ([[aInput nativeIdentifier]
+          isEqualToString:[TouchBarInput shareScrubberIdentifier]]) {
     mShareScrubber = (NSSharingServicePickerTouchBarItem*)aItem;
   } else if ([aInput baseType] == TouchBarInputBaseType::kPopover) {
     mPopoverItem = (NSPopoverTouchBarItem*)aItem;
@@ -89,7 +95,8 @@ nsresult nsTouchBarInputIcon::SetupIcon(nsCOMPtr<nsIURI> aIconURI) {
     [mPopoverItem setCollapsedRepresentationImage:placeholder];
   }
 
-  nsresult rv = mIconLoader->LoadIcon(aIconURI, mDocument, true );
+  nsresult rv =
+      mIconLoader->LoadIcon(aIconURI, mDocument, true );
   if (NS_FAILED(rv)) {
     
     
@@ -117,11 +124,12 @@ nsresult nsTouchBarInputIcon::OnComplete(imgIContainer* aImage) {
 
   
   
-  NSImage* image = [MOZIconHelper iconImageFromImageContainer:aImage
-                                                     withSize:NSMakeSize(kIconHeight, kIconHeight)
-                                                  presContext:nullptr
-                                                computedStyle:nullptr
-                                                  scaleFactor:kHiDPIScalingFactor];
+  NSImage* image = [MOZIconHelper
+      iconImageFromImageContainer:aImage
+                         withSize:NSMakeSize(kIconHeight, kIconHeight)
+                      presContext:nullptr
+                    computedStyle:nullptr
+                      scaleFactor:kHiDPIScalingFactor];
   [mButton setImage:image];
   [mShareScrubber setButtonImage:image];
   [mPopoverItem setCollapsedRepresentationImage:image];

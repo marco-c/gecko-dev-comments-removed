@@ -4,6 +4,7 @@
 
 
 
+
 #import <Cocoa/Cocoa.h>
 
 #include "nsMacFinderProgress.h"
@@ -24,16 +25,19 @@ nsMacFinderProgress::~nsMacFinderProgress() {
 }
 
 NS_IMETHODIMP
-nsMacFinderProgress::Init(const nsAString& path,
-                          nsIMacFinderProgressCanceledCallback* cancellationCallback) {
+nsMacFinderProgress::Init(
+    const nsAString& path,
+    nsIMacFinderProgressCanceledCallback* cancellationCallback) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   NSURL* pathUrl = [NSURL
       fileURLWithPath:[NSString
-                          stringWithCharacters:reinterpret_cast<const unichar*>(path.BeginReading())
+                          stringWithCharacters:reinterpret_cast<const unichar*>(
+                                                   path.BeginReading())
                                         length:path.Length()]];
   NSDictionary* userInfo = @{
-    @"NSProgressFileOperationKindKey" : @"NSProgressFileOperationKindDownloading",
+    @"NSProgressFileOperationKindKey" :
+        @"NSProgressFileOperationKindDownloading",
     @"NSProgressFileURLKey" : pathUrl
   };
 
@@ -41,13 +45,14 @@ nsMacFinderProgress::Init(const nsAString& path,
   mProgress.kind = NSProgressKindFile;
   mProgress.cancellable = YES;
 
-  nsMainThreadPtrHandle<nsIMacFinderProgressCanceledCallback> cancellationCallbackHandle(
-      new nsMainThreadPtrHolder<nsIMacFinderProgressCanceledCallback>(
-          "MacFinderProgress::CancellationCallback", cancellationCallback));
+  nsMainThreadPtrHandle<nsIMacFinderProgressCanceledCallback>
+      cancellationCallbackHandle(
+          new nsMainThreadPtrHolder<nsIMacFinderProgressCanceledCallback>(
+              "MacFinderProgress::CancellationCallback", cancellationCallback));
 
   mProgress.cancellationHandler = ^{
-    NS_DispatchToMainThread(
-        NS_NewRunnableFunction("MacFinderProgress::Canceled", [cancellationCallbackHandle] {
+    NS_DispatchToMainThread(NS_NewRunnableFunction(
+        "MacFinderProgress::Canceled", [cancellationCallbackHandle] {
           MOZ_ASSERT(NS_IsMainThread());
           cancellationCallbackHandle->Canceled();
         }));
@@ -61,7 +66,8 @@ nsMacFinderProgress::Init(const nsAString& path,
 }
 
 NS_IMETHODIMP
-nsMacFinderProgress::UpdateProgress(uint64_t currentProgress, uint64_t totalProgress) {
+nsMacFinderProgress::UpdateProgress(uint64_t currentProgress,
+                                    uint64_t totalProgress) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
   if (mProgress) {
     mProgress.totalUnitCount = totalProgress;

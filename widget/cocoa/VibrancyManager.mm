@@ -16,13 +16,15 @@ using namespace mozilla;
 @interface MOZVibrantView : NSVisualEffectView {
   VibrancyType mType;
 }
-- (instancetype)initWithFrame:(NSRect)aRect vibrancyType:(VibrancyType)aVibrancyType;
+- (instancetype)initWithFrame:(NSRect)aRect
+                 vibrancyType:(VibrancyType)aVibrancyType;
 @end
 
 @interface MOZVibrantLeafView : MOZVibrantView
 @end
 
-static NSVisualEffectState VisualEffectStateForVibrancyType(VibrancyType aType) {
+static NSVisualEffectState VisualEffectStateForVibrancyType(
+    VibrancyType aType) {
   switch (aType) {
     case VibrancyType::TOOLTIP:
     case VibrancyType::MENU:
@@ -35,8 +37,8 @@ static NSVisualEffectState VisualEffectStateForVibrancyType(VibrancyType aType) 
   }
 }
 
-static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType aType,
-                                                                  BOOL* aOutIsEmphasized) {
+static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(
+    VibrancyType aType, BOOL* aOutIsEmphasized) {
   switch (aType) {
     case VibrancyType::TOOLTIP:
       return (NSVisualEffectMaterial)NSVisualEffectMaterialToolTip;
@@ -90,8 +92,8 @@ static NSVisualEffectMaterial VisualEffectMaterialForVibrancyType(VibrancyType a
 
 @end
 
-bool VibrancyManager::UpdateVibrantRegion(VibrancyType aType,
-                                          const LayoutDeviceIntRegion& aRegion) {
+bool VibrancyManager::UpdateVibrantRegion(
+    VibrancyType aType, const LayoutDeviceIntRegion& aRegion) {
   if (aRegion.IsEmpty()) {
     return mVibrantRegions.Remove(uint32_t(aType));
   }
@@ -109,7 +111,10 @@ LayoutDeviceIntRegion VibrancyManager::GetUnionOfVibrantRegions() const {
   return result;
 }
 
- NSView* VibrancyManager::CreateEffectView(VibrancyType aType, BOOL aIsContainer) {
-  return aIsContainer ? [[MOZVibrantView alloc] initWithFrame:NSZeroRect vibrancyType:aType]
-                      : [[MOZVibrantLeafView alloc] initWithFrame:NSZeroRect vibrancyType:aType];
+ NSView* VibrancyManager::CreateEffectView(VibrancyType aType,
+                                                       BOOL aIsContainer) {
+  return aIsContainer ? [[MOZVibrantView alloc] initWithFrame:NSZeroRect
+                                                 vibrancyType:aType]
+                      : [[MOZVibrantLeafView alloc] initWithFrame:NSZeroRect
+                                                     vibrancyType:aType];
 }

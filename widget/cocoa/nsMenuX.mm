@@ -57,20 +57,25 @@ static void SwizzleDynamicIndexingMethods() {
   nsToolkit::SwizzleMethods([NSMenu class], @selector(_addItem:toTable:),
                             @selector(nsMenuX_NSMenu_addItem:toTable:), true);
   nsToolkit::SwizzleMethods([NSMenu class], @selector(_removeItem:fromTable:),
-                            @selector(nsMenuX_NSMenu_removeItem:fromTable:), true);
+                            @selector(nsMenuX_NSMenu_removeItem:fromTable:),
+                            true);
   
   
   
   
-  dlopen("/System/Library/PrivateFrameworks/Shortcut.framework/Shortcut", RTLD_LAZY);
+  dlopen("/System/Library/PrivateFrameworks/Shortcut.framework/Shortcut",
+         RTLD_LAZY);
   Class SCTGRLIndexClass = ::NSClassFromString(@"SCTGRLIndex");
-  nsToolkit::SwizzleMethods(SCTGRLIndexClass, @selector(indexMenuBarDynamically),
-                            @selector(nsMenuX_SCTGRLIndex_indexMenuBarDynamically));
+  nsToolkit::SwizzleMethods(
+      SCTGRLIndexClass, @selector(indexMenuBarDynamically),
+      @selector(nsMenuX_SCTGRLIndex_indexMenuBarDynamically));
 
-  Class NSServicesMenuUpdaterClass = ::NSClassFromString(@"_NSServicesMenuUpdater");
-  nsToolkit::SwizzleMethods(NSServicesMenuUpdaterClass,
-                            @selector(populateMenu:withServiceEntries:forDisplay:),
-                            @selector(nsMenuX_populateMenu:withServiceEntries:forDisplay:));
+  Class NSServicesMenuUpdaterClass =
+      ::NSClassFromString(@"_NSServicesMenuUpdater");
+  nsToolkit::SwizzleMethods(
+      NSServicesMenuUpdaterClass,
+      @selector(populateMenu:withServiceEntries:forDisplay:),
+      @selector(nsMenuX_populateMenu:withServiceEntries:forDisplay:));
 
   gMenuMethodsSwizzled = true;
 }
@@ -79,7 +84,8 @@ static void SwizzleDynamicIndexingMethods() {
 
 
 
-nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent)
+nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
+                 nsIContent* aContent)
     : mContent(aContent), mParent(aParent), mMenuGroupOwner(aMenuGroupOwner) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -99,6 +105,7 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   mNativeMenu = CreateMenuWithGeckoString(mLabel);
 
   
+  
   NS_ASSERTION(mMenuGroupOwner, "No menu owner given, must have one");
   mMenuGroupOwner->RegisterForContentChanges(mContent, this);
 
@@ -111,8 +118,9 @@ nsMenuX::nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsI
   mNativeMenuItem.submenu = mNativeMenu;
 
   SetEnabled(!mContent->IsElement() ||
-             !mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                                 nsGkAtoms::_true, eCaseMatters));
+             !mContent->AsElement()->AttrValueIs(
+                 kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
+                 eCaseMatters));
 
   
   
@@ -170,6 +178,7 @@ void nsMenuX::DetachFromGroupOwnerRecursive() {
     
     
     
+    
     return;
   }
 
@@ -180,8 +189,13 @@ void nsMenuX::DetachFromGroupOwnerRecursive() {
 
   
   for (auto& child : mMenuChildren) {
-    child.match([](const RefPtr<nsMenuX>& aMenu) { aMenu->DetachFromGroupOwnerRecursive(); },
-                [](const RefPtr<nsMenuItemX>& aMenuItem) { aMenuItem->DetachFromGroupOwner(); });
+    child.match(
+        [](const RefPtr<nsMenuX>& aMenu) {
+          aMenu->DetachFromGroupOwnerRecursive();
+        },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          aMenuItem->DetachFromGroupOwner();
+        });
   }
 }
 
@@ -199,7 +213,8 @@ void nsMenuX::OnMenuDidOpen(dom::Element* aPopupElement) {
   }
 }
 
-void nsMenuX::OnMenuWillActivateItem(dom::Element* aPopupElement, dom::Element* aMenuItemElement) {
+void nsMenuX::OnMenuWillActivateItem(dom::Element* aPopupElement,
+                                     dom::Element* aMenuItemElement) {
   RefPtr<nsMenuX> kungFuDeathGrip(this);
   if (mObserver) {
     mObserver->OnMenuWillActivateItem(aPopupElement, aMenuItemElement);
@@ -219,12 +234,16 @@ void nsMenuX::AddMenuChild(MenuChild&& aChild) {
   WillInsertChild(aChild);
   mMenuChildren.AppendElement(aChild);
 
-  bool isVisible =
-      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
-                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->IsVisible(); });
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
   NSMenuItem* nativeItem = aChild.match(
       [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
-      [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->NativeNSMenuItem(); });
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->NativeNSMenuItem();
+      });
 
   if (isVisible) {
     RemovePlaceholderIfPresent();
@@ -242,9 +261,11 @@ void nsMenuX::InsertMenuChild(MenuChild&& aChild) {
   size_t insertionIndex = FindInsertionIndex(aChild);
   mMenuChildren.InsertElementAt(insertionIndex, aChild);
 
-  bool isVisible =
-      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
-                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->IsVisible(); });
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
   if (isVisible) {
     MenuChildChangedVisibility(aChild, true);
   }
@@ -253,9 +274,11 @@ void nsMenuX::InsertMenuChild(MenuChild&& aChild) {
 }
 
 void nsMenuX::RemoveMenuChild(const MenuChild& aChild) {
-  bool isVisible =
-      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
-                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->IsVisible(); });
+  bool isVisible = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->IsVisible(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->IsVisible();
+      });
   if (isVisible) {
     MenuChildChangedVisibility(aChild, false);
   }
@@ -268,16 +291,20 @@ size_t nsMenuX::FindInsertionIndex(const MenuChild& aChild) {
   nsCOMPtr<nsIContent> menuPopup = GetMenuPopupContent();
   MOZ_RELEASE_ASSERT(menuPopup);
 
-  RefPtr<nsIContent> insertedContent =
-      aChild.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+  RefPtr<nsIContent> insertedContent = aChild.match(
+      [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->Content();
+      });
 
   MOZ_RELEASE_ASSERT(insertedContent->GetParent() == menuPopup);
 
   
   
+  
   size_t index = 0;
-  for (nsIContent* child = menuPopup->GetFirstChild(); child && index < mMenuChildren.Length();
+  for (nsIContent* child = menuPopup->GetFirstChild();
+       child && index < mMenuChildren.Length();
        child = child->GetNextSibling()) {
     if (child == insertedContent) {
       break;
@@ -285,7 +312,9 @@ size_t nsMenuX::FindInsertionIndex(const MenuChild& aChild) {
 
     RefPtr<nsIContent> contentAtIndex = mMenuChildren[index].match(
         [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-        [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          return aMenuItem->Content();
+        });
     if (child == contentAtIndex) {
       index++;
     }
@@ -314,6 +343,7 @@ nsresult nsMenuX::GetVisibleItemCount(uint32_t& aCount) {
 
 
 
+
 Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   uint32_t count = mMenuChildren.Length();
   if (aPos >= mVisibleItemsCount || aPos >= count) {
@@ -329,9 +359,11 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   uint32_t visibleNodeIndex = 0;
   for (uint32_t i = 0; i < count; i++) {
     MenuChild item = *GetItemAt(i);
-    RefPtr<nsIContent> content =
-        item.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-                   [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+    RefPtr<nsIContent> content = item.match(
+        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          return aMenuItem->Content();
+        });
     if (!nsMenuUtilsX::NodeIsHiddenOrCollapsed(content)) {
       if (aPos == visibleNodeIndex) {
         
@@ -344,11 +376,14 @@ Maybe<nsMenuX::MenuChild> nsMenuX::GetVisibleItemAt(uint32_t aPos) {
   return {};
 }
 
-Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(Element* aMenuChildElement) {
+Maybe<nsMenuX::MenuChild> nsMenuX::GetItemForElement(
+    Element* aMenuChildElement) {
   for (auto& child : mMenuChildren) {
-    RefPtr<nsIContent> content =
-        child.match([](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
-                    [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->Content(); });
+    RefPtr<nsIContent> content = child.match(
+        [](const RefPtr<nsMenuX>& aMenu) { return aMenu->Content(); },
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          return aMenuItem->Content();
+        });
     if (content == aMenuChildElement) {
       return Some(child);
     }
@@ -398,6 +433,7 @@ void nsMenuX::MenuOpened() {
   }
 
   
+  
   FlushMenuOpenedRunnable();
   FlushMenuClosedRunnable();
 
@@ -408,7 +444,8 @@ void nsMenuX::MenuOpened() {
       
       
       
-      NS_WARNING("The popupshowing event had preventDefault() called on it, but in MenuOpened() it "
+      NS_WARNING("The popupshowing event had preventDefault() called on it, "
+                 "but in MenuOpened() it "
                  "is too late to stop the menu from opening.");
     }
   }
@@ -424,7 +461,6 @@ void nsMenuX::MenuOpened() {
     RebuildMenu();
   }
 
-  
   
   
   
@@ -470,7 +506,8 @@ void nsMenuX::MenuOpenedAsync() {
 
   
   if (mContent->IsElement()) {
-    mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open, u"true"_ns, true);
+    mContent->AsElement()->SetAttr(kNameSpaceID_None, nsGkAtoms::open,
+                                   u"true"_ns, true);
   }
 
   RefPtr<nsIContent> popupContent = GetMenuPopupContent();
@@ -482,7 +519,8 @@ void nsMenuX::MenuOpenedAsync() {
 
   
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent event(true, eXULPopupShown, nullptr, WidgetMouseEvent::eReal);
+  WidgetMouseEvent event(true, eXULPopupShown, nullptr,
+                         WidgetMouseEvent::eReal);
   RefPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
   EventDispatcher::Dispatch(dispatchTo, nullptr, &event, nullptr, &status);
 }
@@ -495,6 +533,7 @@ void nsMenuX::MenuClosed() {
   
   FlushMenuOpenedRunnable();
 
+  
   
   for (auto& child : mMenuChildren) {
     if (child.is<RefPtr<nsMenuX>>()) {
@@ -539,6 +578,7 @@ void nsMenuX::MenuClosed() {
 
 void nsMenuX::FlushMenuClosedRunnable() {
   
+  
   for (auto& child : mMenuChildren) {
     if (child.is<RefPtr<nsMenuX>>()) {
       child.as<RefPtr<nsMenuX>>()->FlushMenuClosedRunnable();
@@ -569,8 +609,10 @@ void nsMenuX::MenuClosedAsync() {
   nsCOMPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
 
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent popupHiding(true, eXULPopupHiding, nullptr, WidgetMouseEvent::eReal);
-  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHiding, nullptr, &status);
+  WidgetMouseEvent popupHiding(true, eXULPopupHiding, nullptr,
+                               WidgetMouseEvent::eReal);
+  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHiding, nullptr,
+                            &status);
 
   mIsOpenForGecko = false;
 
@@ -578,8 +620,10 @@ void nsMenuX::MenuClosedAsync() {
     mContent->AsElement()->UnsetAttr(kNameSpaceID_None, nsGkAtoms::open, true);
   }
 
-  WidgetMouseEvent popupHidden(true, eXULPopupHidden, nullptr, WidgetMouseEvent::eReal);
-  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHidden, nullptr, &status);
+  WidgetMouseEvent popupHidden(true, eXULPopupHidden, nullptr,
+                               WidgetMouseEvent::eReal);
+  EventDispatcher::Dispatch(dispatchTo, nullptr, &popupHidden, nullptr,
+                            &status);
 
   
   if (mObserver && popupContent) {
@@ -587,13 +631,18 @@ void nsMenuX::MenuClosedAsync() {
   }
 }
 
-void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
+void nsMenuX::ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem,
+                                       NSEventModifierFlags aModifiers,
                                        int16_t aButton) {
   if (mIsOpenForGecko) {
     
     
-    mPendingCommandEvents.AppendElement(PendingCommandEvent{std::move(aItem), aModifiers, aButton});
+    
+    mPendingCommandEvents.AppendElement(
+        PendingCommandEvent{std::move(aItem), aModifiers, aButton});
   } else {
+    
+    
     
     
     
@@ -614,6 +663,7 @@ bool nsMenuX::Close() {
     
     
     
+    
     MenuOpened();
   }
 
@@ -622,6 +672,7 @@ bool nsMenuX::Close() {
   bool wasOpen = mIsOpenForGecko;
 
   if (mIsOpen) {
+    
     
     
     
@@ -642,7 +693,8 @@ bool nsMenuX::Close() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void nsMenuX::OnHighlightedItemChanged(const Maybe<uint32_t>& aNewHighlightedIndex) {
+void nsMenuX::OnHighlightedItemChanged(
+    const Maybe<uint32_t>& aNewHighlightedIndex) {
   if (mHighlightedItemIndex == aNewHighlightedIndex) {
     return;
   }
@@ -651,16 +703,16 @@ void nsMenuX::OnHighlightedItemChanged(const Maybe<uint32_t>& aNewHighlightedInd
     Maybe<nsMenuX::MenuChild> target = GetVisibleItemAt(*mHighlightedItemIndex);
     if (target && target->is<RefPtr<nsMenuItemX>>()) {
       bool handlerCalledPreventDefault;  
-      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(u"DOMMenuItemInactive"_ns,
-                                                          &handlerCalledPreventDefault);
+      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
+          u"DOMMenuItemInactive"_ns, &handlerCalledPreventDefault);
     }
   }
   if (aNewHighlightedIndex) {
     Maybe<nsMenuX::MenuChild> target = GetVisibleItemAt(*aNewHighlightedIndex);
     if (target && target->is<RefPtr<nsMenuItemX>>()) {
       bool handlerCalledPreventDefault;  
-      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(u"DOMMenuItemActive"_ns,
-                                                          &handlerCalledPreventDefault);
+      target->as<RefPtr<nsMenuItemX>>()->DispatchDOMEvent(
+          u"DOMMenuItemActive"_ns, &handlerCalledPreventDefault);
     }
   }
   mHighlightedItemIndex = aNewHighlightedIndex;
@@ -672,21 +724,25 @@ void nsMenuX::OnWillActivateItem(NSMenuItem* aItem) {
   }
 
   if (mMenuGroupOwner && mObserver) {
-    nsMenuItemX* item = mMenuGroupOwner->GetMenuItemForCommandID(uint32_t(aItem.tag));
+    nsMenuItemX* item =
+        mMenuGroupOwner->GetMenuItemForCommandID(uint32_t(aItem.tag));
     if (item && item->Content()->IsElement()) {
       RefPtr<dom::Element> itemElement = item->Content()->AsElement();
       if (nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent()) {
-        mObserver->OnMenuWillActivateItem(popupContent->AsElement(), itemElement);
+        mObserver->OnMenuWillActivateItem(popupContent->AsElement(),
+                                          itemElement);
       }
     }
   }
 }
 
 
-static NSUserInterfaceLayoutDirection DirectionForElement(dom::Element* aElement) {
+static NSUserInterfaceLayoutDirection DirectionForElement(
+    dom::Element* aElement) {
   
   
-  RefPtr<const ComputedStyle> sc = nsComputedDOMStyle::GetComputedStyle(aElement);
+  RefPtr<const ComputedStyle> sc =
+      nsComputedDOMStyle::GetComputedStyle(aElement);
   if (!sc) {
     return NSApp.userInterfaceLayoutDirection;
   }
@@ -711,11 +767,13 @@ void nsMenuX::RebuildMenu() {
   }
 
   if (menuPopup->IsElement()) {
-    mNativeMenu.userInterfaceLayoutDirection = DirectionForElement(menuPopup->AsElement());
+    mNativeMenu.userInterfaceLayoutDirection =
+        DirectionForElement(menuPopup->AsElement());
   }
 
   
-  for (nsIContent* child = menuPopup->GetFirstChild(); child; child = child->GetNextSibling()) {
+  for (nsIContent* child = menuPopup->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
     if (Maybe<MenuChild> menuChild = CreateMenuChild(child)) {
       AddMenuChild(std::move(*menuChild));
     }
@@ -732,9 +790,12 @@ void nsMenuX::InsertPlaceholderIfNeeded() {
 
   if ([mNativeMenu numberOfItems] == 0) {
     MOZ_RELEASE_ASSERT(mVisibleItemsCount == 0);
-    NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
+    NSMenuItem* item = [[NSMenuItem alloc] initWithTitle:@""
+                                                  action:nil
+                                           keyEquivalent:@""];
     item.enabled = NO;
-    item.view = [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 150, 1)] autorelease];
+    item.view =
+        [[[NSView alloc] initWithFrame:NSMakeRect(0, 0, 150, 1)] autorelease];
     [mNativeMenu addItem:item];
     [item release];
   }
@@ -800,11 +861,13 @@ GeckoNSMenu* nsMenuX::CreateMenuWithGeckoString(nsString& aMenuTitle) {
 }
 
 Maybe<nsMenuX::MenuChild> nsMenuX::CreateMenuChild(nsIContent* aContent) {
-  if (aContent->IsAnyOfXULElements(nsGkAtoms::menuitem, nsGkAtoms::menuseparator)) {
+  if (aContent->IsAnyOfXULElements(nsGkAtoms::menuitem,
+                                   nsGkAtoms::menuseparator)) {
     return Some(MenuChild(CreateMenuItem(aContent)));
   }
   if (aContent->IsXULElement(nsGkAtoms::menu)) {
-    return Some(MenuChild(MakeRefPtr<nsMenuX>(this, mMenuGroupOwner, aContent)));
+    return Some(
+        MenuChild(MakeRefPtr<nsMenuX>(this, mMenuGroupOwner, aContent)));
   }
   return {};
 }
@@ -821,9 +884,10 @@ RefPtr<nsMenuItemX> nsMenuX::CreateMenuItem(nsIContent* aMenuItemContent) {
   if (aMenuItemContent->IsXULElement(nsGkAtoms::menuseparator)) {
     itemType = eSeparatorMenuItemType;
   } else if (aMenuItemContent->IsElement()) {
-    static Element::AttrValuesArray strings[] = {nsGkAtoms::checkbox, nsGkAtoms::radio, nullptr};
-    switch (aMenuItemContent->AsElement()->FindAttrValueIn(kNameSpaceID_None, nsGkAtoms::type,
-                                                           strings, eCaseMatters)) {
+    static Element::AttrValuesArray strings[] = {nsGkAtoms::checkbox,
+                                                 nsGkAtoms::radio, nullptr};
+    switch (aMenuItemContent->AsElement()->FindAttrValueIn(
+        kNameSpaceID_None, nsGkAtoms::type, strings, eCaseMatters)) {
       case 0:
         itemType = eCheckboxMenuItemType;
         break;
@@ -833,8 +897,10 @@ RefPtr<nsMenuItemX> nsMenuX::CreateMenuItem(nsIContent* aMenuItemContent) {
     }
   }
 
-  return MakeRefPtr<nsMenuItemX>(this, menuitemName, itemType, mMenuGroupOwner, aMenuItemContent);
+  return MakeRefPtr<nsMenuItemX>(this, menuitemName, itemType, mMenuGroupOwner,
+                                 aMenuItemContent);
 }
+
 
 
 bool nsMenuX::OnOpen() {
@@ -843,7 +909,8 @@ bool nsMenuX::OnOpen() {
   }
 
   if (mIsOpen) {
-    NS_WARNING("nsMenuX::OnOpen() called while the menu is already considered to be open. This "
+    NS_WARNING("nsMenuX::OnOpen() called while the menu is already considered "
+               "to be open. This "
                "seems odd.");
   }
 
@@ -854,7 +921,8 @@ bool nsMenuX::OnOpen() {
   }
 
   nsEventStatus status = nsEventStatus_eIgnore;
-  WidgetMouseEvent event(true, eXULPopupShowing, nullptr, WidgetMouseEvent::eReal);
+  WidgetMouseEvent event(true, eXULPopupShowing, nullptr,
+                         WidgetMouseEvent::eReal);
 
   nsresult rv = NS_OK;
   RefPtr<nsIContent> dispatchTo = popupContent ? popupContent : mContent;
@@ -935,7 +1003,8 @@ bool nsMenuX::IsXULWindowMenu(nsIContent* aMenuContent) {
 
 
 
-void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aContent,
+void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument,
+                                      nsIContent* aContent,
                                       nsAtom* aAttribute) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -945,14 +1014,17 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
   }
 
   if (aAttribute == nsGkAtoms::disabled) {
-    SetEnabled(!mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::disabled,
-                                                   nsGkAtoms::_true, eCaseMatters));
+    SetEnabled(!mContent->AsElement()->AttrValueIs(
+        kNameSpaceID_None, nsGkAtoms::disabled, nsGkAtoms::_true,
+        eCaseMatters));
   } else if (aAttribute == nsGkAtoms::label) {
     mContent->AsElement()->GetAttr(nsGkAtoms::label, mLabel);
-    NSString* newCocoaLabelString = nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
+    NSString* newCocoaLabelString =
+        nsMenuUtilsX::GetTruncatedCocoaLabel(mLabel);
     mNativeMenu.title = newCocoaLabelString;
     mNativeMenuItem.title = newCocoaLabelString;
-  } else if (aAttribute == nsGkAtoms::hidden || aAttribute == nsGkAtoms::collapsed) {
+  } else if (aAttribute == nsGkAtoms::hidden ||
+             aAttribute == nsGkAtoms::collapsed) {
     SetRebuild(true);
 
     bool newVisible = !nsMenuUtilsX::NodeIsHiddenOrCollapsed(mContent);
@@ -977,8 +1049,9 @@ void nsMenuX::ObserveAttributeChanged(dom::Document* aDocument, nsIContent* aCon
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aContainer,
-                                    nsIContent* aChild, nsIContent* aPreviousSibling) {
+void nsMenuX::ObserveContentRemoved(dom::Document* aDocument,
+                                    nsIContent* aContainer, nsIContent* aChild,
+                                    nsIContent* aPreviousSibling) {
   if (gConstructingMenu) {
     return;
   }
@@ -992,6 +1065,7 @@ void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aConta
   }
 
   
+  
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   if (popupContent && aContainer == popupContent && aChild->IsElement()) {
     if (Maybe<MenuChild> child = GetItemForElement(aChild->AsElement())) {
@@ -1000,7 +1074,8 @@ void nsMenuX::ObserveContentRemoved(dom::Document* aDocument, nsIContent* aConta
   }
 }
 
-void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aContainer,
+void nsMenuX::ObserveContentInserted(dom::Document* aDocument,
+                                     nsIContent* aContainer,
                                      nsIContent* aChild) {
   if (gConstructingMenu) {
     return;
@@ -1013,6 +1088,7 @@ void nsMenuX::ObserveContentInserted(dom::Document* aDocument, nsIContent* aCont
     return;
   }
 
+  
   
   nsCOMPtr<nsIContent> popupContent = GetMenuPopupContent();
   if (popupContent && aContainer == popupContent) {
@@ -1034,22 +1110,27 @@ void nsMenuX::IconUpdated() {
   }
 }
 
-void nsMenuX::MenuChildChangedVisibility(const MenuChild& aChild, bool aIsVisible) {
+void nsMenuX::MenuChildChangedVisibility(const MenuChild& aChild,
+                                         bool aIsVisible) {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   NSMenuItem* nativeItem = aChild.match(
       [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
-      [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->NativeNSMenuItem(); });
+      [](const RefPtr<nsMenuItemX>& aMenuItem) {
+        return aMenuItem->NativeNSMenuItem();
+      });
   if (aIsVisible) {
-    MOZ_RELEASE_ASSERT(!nativeItem.menu,
-                       "The native item should not be in a menu while it is hidden");
+    MOZ_RELEASE_ASSERT(
+        !nativeItem.menu,
+        "The native item should not be in a menu while it is hidden");
     RemovePlaceholderIfPresent();
     NSInteger insertionPoint = CalculateNativeInsertionPoint(aChild);
     [mNativeMenu insertItem:nativeItem atIndex:insertionPoint];
     mVisibleItemsCount++;
   } else {
-    MOZ_RELEASE_ASSERT([mNativeMenu indexOfItem:nativeItem] != -1,
-                       "The native item should be in this menu while it is visible");
+    MOZ_RELEASE_ASSERT(
+        [mNativeMenu indexOfItem:nativeItem] != -1,
+        "The native item should be in this menu while it is visible");
     [mNativeMenu removeItem:nativeItem];
     mVisibleItemsCount--;
     InsertPlaceholderIfNeeded();
@@ -1067,7 +1148,9 @@ NSInteger nsMenuX::CalculateNativeInsertionPoint(const MenuChild& aChild) {
     }
     NSMenuItem* nativeItem = currItem.match(
         [](const RefPtr<nsMenuX>& aMenu) { return aMenu->NativeNSMenuItem(); },
-        [](const RefPtr<nsMenuItemX>& aMenuItem) { return aMenuItem->NativeNSMenuItem(); });
+        [](const RefPtr<nsMenuItemX>& aMenuItem) {
+          return aMenuItem->NativeNSMenuItem();
+        });
     
     if (nativeItem.menu) {
       insertionPoint++;
@@ -1077,9 +1160,10 @@ NSInteger nsMenuX::CalculateNativeInsertionPoint(const MenuChild& aChild) {
 }
 
 void nsMenuX::Dump(uint32_t aIndent) const {
-  printf("%*s - menu [%p] %-16s <%s>", aIndent * 2, "", this,
-         mLabel.IsEmpty() ? "(empty label)" : NS_ConvertUTF16toUTF8(mLabel).get(),
-         NS_ConvertUTF16toUTF8(mContent->NodeName()).get());
+  printf(
+      "%*s - menu [%p] %-16s <%s>", aIndent * 2, "", this,
+      mLabel.IsEmpty() ? "(empty label)" : NS_ConvertUTF16toUTF8(mLabel).get(),
+      NS_ConvertUTF16toUTF8(mContent->NodeName()).get());
   if (mNeedsRebuild) {
     printf(" [NeedsRebuild]");
   }
@@ -1095,8 +1179,11 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   printf(" (%d visible items)", int(mVisibleItemsCount));
   printf("\n");
   for (const auto& subitem : mMenuChildren) {
-    subitem.match([=](const RefPtr<nsMenuX>& aMenu) { aMenu->Dump(aIndent + 1); },
-                  [=](const RefPtr<nsMenuItemX>& aMenuItem) { aMenuItem->Dump(aIndent + 1); });
+    subitem.match(
+        [=](const RefPtr<nsMenuX>& aMenu) { aMenu->Dump(aIndent + 1); },
+        [=](const RefPtr<nsMenuItemX>& aMenuItem) {
+          aMenuItem->Dump(aIndent + 1);
+        });
   }
 }
 
@@ -1108,8 +1195,8 @@ void nsMenuX::Dump(uint32_t aIndent) const {
 
 - (id)initWithGeckoMenu:(nsMenuX*)geckoMenu {
   if ((self = [super init])) {
-    NS_ASSERTION(geckoMenu,
-                 "Cannot initialize native menu delegate with NULL gecko menu! Will crash!");
+    NS_ASSERTION(geckoMenu, "Cannot initialize native menu delegate with NULL "
+                            "gecko menu! Will crash!");
     mGeckoMenu = geckoMenu;
     mBlocksToRunWhenOpen = [[NSMutableArray alloc] init];
   }
@@ -1131,7 +1218,8 @@ void nsMenuX::Dump(uint32_t aIndent) const {
   }
 
   Maybe<uint32_t> index =
-      aItem ? Some(static_cast<uint32_t>([aMenu indexOfItem:aItem])) : Nothing();
+      aItem ? Some(static_cast<uint32_t>([aMenu indexOfItem:aItem]))
+            : Nothing();
   mGeckoMenu->OnHighlightedItemChanged(index);
 }
 
@@ -1269,7 +1357,8 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 
 - (int)removeTable:(NSMapTable*)aTable {
   if (aTable) {
-    NSValue* objectToRemove = [mTables member:[NSValue valueWithPointer:aTable]];
+    NSValue* objectToRemove =
+        [mTables member:[NSValue valueWithPointer:aTable]];
     if (objectToRemove) {
       [mTables removeObject:objectToRemove];
     }
@@ -1281,7 +1370,8 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
 
 @interface NSMenu (MethodSwizzling)
 + (void)nsMenuX_NSMenu_addItem:(NSMenuItem*)aItem toTable:(NSMapTable*)aTable;
-+ (void)nsMenuX_NSMenu_removeItem:(NSMenuItem*)aItem fromTable:(NSMapTable*)aTable;
++ (void)nsMenuX_NSMenu_removeItem:(NSMenuItem*)aItem
+                        fromTable:(NSMapTable*)aTable;
 @end
 
 @implementation NSMenu (MethodSwizzling)
@@ -1304,7 +1394,8 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
   [self nsMenuX_NSMenu_addItem:aItem toTable:aTable];
 }
 
-+ (void)nsMenuX_NSMenu_removeItem:(NSMenuItem*)aItem fromTable:(NSMapTable*)aTable {
++ (void)nsMenuX_NSMenu_removeItem:(NSMenuItem*)aItem
+                        fromTable:(NSMapTable*)aTable {
   [self nsMenuX_NSMenu_removeItem:aItem fromTable:aTable];
 
   if (aItem && aTable) {
@@ -1382,7 +1473,9 @@ static NSMutableDictionary* gShadowKeyEquivDB = nil;
     }
   }
 
-  [self nsMenuX_populateMenu:aMenu withServiceEntries:filteredServices forDisplay:aForDisplay];
+  [self nsMenuX_populateMenu:aMenu
+          withServiceEntries:filteredServices
+                  forDisplay:aForDisplay];
 }
 
 @end

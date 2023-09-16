@@ -57,7 +57,8 @@
 using namespace mozilla;
 using namespace mozilla::widget;
 
-#define WAKE_LOCK_LOG(...) MOZ_LOG(gMacWakeLockLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#define WAKE_LOCK_LOG(...) \
+  MOZ_LOG(gMacWakeLockLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
 static mozilla::LazyLogModule gMacWakeLockLog("MacWakeLock");
 
 
@@ -74,24 +75,30 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
   IOPMAssertionID mAssertionNoDisplaySleepID = kIOPMNullAssertionID;
   IOPMAssertionID mAssertionNoIdleSleepID = kIOPMNullAssertionID;
 
-  NS_IMETHOD Callback(const nsAString& aTopic, const nsAString& aState) override {
+  NS_IMETHOD Callback(const nsAString& aTopic,
+                      const nsAString& aState) override {
     if (!aTopic.EqualsASCII("screen") && !aTopic.EqualsASCII("audio-playing") &&
         !aTopic.EqualsASCII("video-playing")) {
       return NS_OK;
     }
 
     
-    if (aTopic.EqualsASCII("audio-playing") && aState.EqualsASCII("locked-background")) {
+    if (aTopic.EqualsASCII("audio-playing") &&
+        aState.EqualsASCII("locked-background")) {
       WAKE_LOCK_LOG("keep audio playing even in background");
       return NS_OK;
     }
 
-    bool shouldKeepDisplayOn = aTopic.EqualsASCII("screen") || aTopic.EqualsASCII("video-playing");
-    CFStringRef assertionType =
-        shouldKeepDisplayOn ? kIOPMAssertionTypeNoDisplaySleep : kIOPMAssertionTypeNoIdleSleep;
-    IOPMAssertionID& assertionId =
-        shouldKeepDisplayOn ? mAssertionNoDisplaySleepID : mAssertionNoIdleSleepID;
-    WAKE_LOCK_LOG("topic=%s, state=%s, shouldKeepDisplayOn=%d", NS_ConvertUTF16toUTF8(aTopic).get(),
+    bool shouldKeepDisplayOn =
+        aTopic.EqualsASCII("screen") || aTopic.EqualsASCII("video-playing");
+    CFStringRef assertionType = shouldKeepDisplayOn
+                                    ? kIOPMAssertionTypeNoDisplaySleep
+                                    : kIOPMAssertionTypeNoIdleSleep;
+    IOPMAssertionID& assertionId = shouldKeepDisplayOn
+                                       ? mAssertionNoDisplaySleepID
+                                       : mAssertionNoIdleSleepID;
+    WAKE_LOCK_LOG("topic=%s, state=%s, shouldKeepDisplayOn=%d",
+                  NS_ConvertUTF16toUTF8(aTopic).get(),
                   NS_ConvertUTF16toUTF8(aState).get(), shouldKeepDisplayOn);
 
     
@@ -103,9 +110,10 @@ class MacWakeLockListener final : public nsIDOMMozWakeLockListener {
       }
       
       CFStringRef cf_topic = ::CFStringCreateWithCharacters(
-          kCFAllocatorDefault, reinterpret_cast<const UniChar*>(aTopic.Data()), aTopic.Length());
-      IOReturn success = ::IOPMAssertionCreateWithName(assertionType, kIOPMAssertionLevelOn,
-                                                       cf_topic, &assertionId);
+          kCFAllocatorDefault, reinterpret_cast<const UniChar*>(aTopic.Data()),
+          aTopic.Length());
+      IOReturn success = ::IOPMAssertionCreateWithName(
+          assertionType, kIOPMAssertionLevelOn, cf_topic, &assertionId);
       CFRelease(cf_topic);
       if (success != kIOReturnSuccess) {
         WAKE_LOCK_LOG("failed to disable screensaver");
@@ -133,10 +141,12 @@ static bool gAppShellMethodsSwizzled = false;
 
 void OnUncaughtException(NSException* aException) {
   nsObjCExceptionLog(aException);
-  MOZ_CRASH("Uncaught Objective C exception from NSSetUncaughtExceptionHandler");
+  MOZ_CRASH(
+      "Uncaught Objective C exception from NSSetUncaughtExceptionHandler");
 }
 
 @implementation GeckoNSApplication
+
 
 
 + (void)load {
@@ -154,14 +164,16 @@ void OnUncaughtException(NSException* aException) {
   nsObjCExceptionLog(aException);
 
 #ifdef NIGHTLY_BUILD
-  MOZ_CRASH("Uncaught Objective C exception from -[GeckoNSApplication reportException:]");
+  MOZ_CRASH("Uncaught Objective C exception from -[GeckoNSApplication "
+            "reportException:]");
 #endif
 }
 
 - (void)sendEvent:(NSEvent*)anEvent {
   mozilla::BackgroundHangMonitor().NotifyActivity();
 
-  if ([anEvent type] == NSEventTypeApplicationDefined && [anEvent subtype] == kEventSubtypeTrace) {
+  if ([anEvent type] == NSEventTypeApplicationDefined &&
+      [anEvent subtype] == kEventSubtypeTrace) {
     mozilla::SignalTracerThread();
     return;
   }
@@ -208,7 +220,8 @@ void OnUncaughtException(NSException* aException) {
 NS_IMETHODIMP
 nsAppShell::ResumeNative(void) {
   nsresult retval = nsBaseAppShell::ResumeNative();
-  if (NS_SUCCEEDED(retval) && (mSuspendNativeCount == 0) && mSkippedNativeCallback) {
+  if (NS_SUCCEEDED(retval) && (mSuspendNativeCount == 0) &&
+      mSkippedNativeCallback) {
     mSkippedNativeCallback = false;
     ScheduleNativeEventCallback();
   }
@@ -243,11 +256,13 @@ nsAppShell::~nsAppShell() {
 
   if (mCFRunLoop) {
     if (mCFRunLoopSource) {
-      ::CFRunLoopRemoveSource(mCFRunLoop, mCFRunLoopSource, kCFRunLoopCommonModes);
+      ::CFRunLoopRemoveSource(mCFRunLoop, mCFRunLoopSource,
+                              kCFRunLoopCommonModes);
       ::CFRelease(mCFRunLoopSource);
     }
     if (mCFRunLoopObserver) {
-      ::CFRunLoopRemoveObserver(mCFRunLoop, mCFRunLoopObserver, kCFRunLoopCommonModes);
+      ::CFRunLoopRemoveObserver(mCFRunLoop, mCFRunLoopObserver,
+                                kCFRunLoopCommonModes);
       ::CFRelease(mCFRunLoopObserver);
     }
     ::CFRelease(mCFRunLoop);
@@ -274,7 +289,8 @@ static void AddScreenWakeLockListener() {
     sWakeLockListener = new MacWakeLockListener();
     sPowerManagerService->AddWakeLockListener(sWakeLockListener);
   } else {
-    NS_WARNING("Failed to retrieve PowerManagerService, wakelocks will be broken!");
+    NS_WARNING(
+        "Failed to retrieve PowerManagerService, wakelocks will be broken!");
   }
 }
 
@@ -288,8 +304,8 @@ static void RemoveScreenWakeLockListener() {
   }
 }
 
-void RunLoopObserverCallback(CFRunLoopObserverRef aObserver, CFRunLoopActivity aActivity,
-                             void* aInfo) {
+void RunLoopObserverCallback(CFRunLoopObserverRef aObserver,
+                             CFRunLoopActivity aActivity, void* aInfo) {
   static_cast<nsAppShell*>(aInfo)->OnRunLoopActivityChanged(aActivity);
 }
 
@@ -311,17 +327,21 @@ void nsAppShell::OnRunLoopActivityChanged(CFRunLoopActivity aActivity) {
   
   
   
+  
   if (aActivity == kCFRunLoopBeforeWaiting) {
     using ThreadRegistration = mozilla::profiler::ThreadRegistration;
-    ThreadRegistration::WithOnThreadRef([&](ThreadRegistration::OnThreadRef aOnThreadRef) {
-      ProfilingStack& profilingStack =
-          aOnThreadRef.UnlockedConstReaderAndAtomicRWRef().ProfilingStackRef();
-      mProfilingStackWhileWaiting = &profilingStack;
-      uint8_t variableOnStack = 0;
-      profilingStack.pushLabelFrame("Native event loop idle", nullptr, &variableOnStack,
-                                    JS::ProfilingCategoryPair::IDLE, 0);
-      profiler_thread_sleep();
-    });
+    ThreadRegistration::WithOnThreadRef(
+        [&](ThreadRegistration::OnThreadRef aOnThreadRef) {
+          ProfilingStack& profilingStack =
+              aOnThreadRef.UnlockedConstReaderAndAtomicRWRef()
+                  .ProfilingStackRef();
+          mProfilingStackWhileWaiting = &profilingStack;
+          uint8_t variableOnStack = 0;
+          profilingStack.pushLabelFrame("Native event loop idle", nullptr,
+                                        &variableOnStack,
+                                        JS::ProfilingCategoryPair::IDLE, 0);
+          profiler_thread_sleep();
+        });
   } else {
     if (mProfilingStackWhileWaiting) {
       mProfilingStackWhileWaiting->pop();
@@ -356,8 +376,9 @@ nsresult nsAppShell::Init() {
   mAutoreleasePools = ::CFArrayCreateMutable(nullptr, 0, nullptr);
   NS_ENSURE_STATE(mAutoreleasePools);
 
-  bool isNSApplicationProcessType = (XRE_GetProcessType() != GeckoProcessType_RDD) &&
-                                    (XRE_GetProcessType() != GeckoProcessType_Socket);
+  bool isNSApplicationProcessType =
+      (XRE_GetProcessType() != GeckoProcessType_RDD) &&
+      (XRE_GetProcessType() != GeckoProcessType_Socket);
 
   if (isNSApplicationProcessType) {
     
@@ -398,7 +419,8 @@ nsresult nsAppShell::Init() {
   observerContext.info = this;
 
   mCFRunLoopObserver = ::CFRunLoopObserverCreate(
-      kCFAllocatorDefault, kCFRunLoopBeforeWaiting | kCFRunLoopAfterWaiting | kCFRunLoopExit, true,
+      kCFAllocatorDefault,
+      kCFRunLoopBeforeWaiting | kCFRunLoopAfterWaiting | kCFRunLoopExit, true,
       0, RunLoopObserverCallback, &observerContext);
   NS_ENSURE_STATE(mCFRunLoopObserver);
 
@@ -497,6 +519,7 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
     
     
     
+    
     [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
                                         location:NSMakePoint(0, 0)
                                    modifierFlags:0
@@ -551,8 +574,8 @@ void nsAppShell::ProcessGeckoEvents(void* aInfo) {
   if (self->mTerminated) {
     int32_t releaseCount = 0;
     if (self->mNativeEventScheduledDepth > self->mNativeEventCallbackDepth) {
-      releaseCount =
-          PR_ATOMIC_SET(&self->mNativeEventScheduledDepth, self->mNativeEventCallbackDepth);
+      releaseCount = PR_ATOMIC_SET(&self->mNativeEventScheduledDepth,
+                                   self->mNativeEventCallbackDepth);
     }
     while (releaseCount-- > self->mNativeEventCallbackDepth) self->Release();
   } else {
@@ -712,6 +735,7 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       
       
+      
 #if 1
       eventProcessed = false;
       break;
@@ -719,8 +743,8 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       
       
       
-      EventRef currentEvent =
-          AcquireFirstMatchingEventInQueue(currentEventQueue, 0, NULL, kEventQueueOptionsNone);
+      EventRef currentEvent = AcquireFirstMatchingEventInQueue(
+          currentEventQueue, 0, NULL, kEventQueueOptionsNone);
       if (!currentEvent) {
         continue;
       }
@@ -729,7 +753,8 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
       UInt32 eventClass = GetEventClass(currentEvent);
       bool osCocoaEvent =
           ((eventClass == 'appl') || (eventClass == kEventClassAppleEvent) ||
-           ((eventClass == 'cgs ') && (eventKind != NSEventTypeApplicationDefined)));
+           ((eventClass == 'cgs ') &&
+            (eventKind != NSEventTypeApplicationDefined)));
       
       
       
@@ -761,8 +786,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
   } while (mRunningEventLoop);
 
   if (eventProcessed) {
-    moreEvents = (AcquireFirstMatchingEventInQueue(currentEventQueue, 0, NULL,
-                                                   kEventQueueOptionsNone) != NULL);
+    moreEvents =
+        (AcquireFirstMatchingEventInQueue(currentEventQueue, 0, NULL,
+                                          kEventQueueOptionsNone) != NULL);
   }
 
   mRunningEventLoop = wasRunningEventLoop;
@@ -790,7 +816,9 @@ bool nsAppShell::ProcessNextNativeEvent(bool aMayWait) {
 
 
 static void PinSidecarCoreTextCStringSections() {
-  if (!dlopen("/System/Library/PrivateFrameworks/SidecarCore.framework/SidecarCore", RTLD_LAZY)) {
+  if (!dlopen(
+          "/System/Library/PrivateFrameworks/SidecarCore.framework/SidecarCore",
+          RTLD_LAZY)) {
     return;
   }
 
@@ -798,7 +826,8 @@ static void PinSidecarCoreTextCStringSections() {
   
   Class displayManagerClass = NSClassFromString(@"SidecarDisplayManager");
   if ([displayManagerClass respondsToSelector:@selector(sharedManager)]) {
-    id sharedManager = [displayManagerClass performSelector:@selector(sharedManager)];
+    id sharedManager =
+        [displayManagerClass performSelector:@selector(sharedManager)];
     if ([sharedManager respondsToSelector:@selector(devices)]) {
       [sharedManager performSelector:@selector(devices)];
     }
@@ -877,7 +906,8 @@ nsAppShell::Exit(void) {
   
   
   BOOL cocoaModal = [NSApp _isRunningModal];
-  NS_ASSERTION(!cocoaModal, "Don't call nsAppShell::Exit() from a modal event loop!");
+  NS_ASSERTION(!cocoaModal,
+               "Don't call nsAppShell::Exit() from a modal event loop!");
   if (cocoaModal) [NSApp stop:nullptr];
   [NSApp stop:nullptr];
 
@@ -911,7 +941,8 @@ NS_IMETHODIMP
 nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  NS_ASSERTION(mAutoreleasePools, "No stack on which to store autorelease pool");
+  NS_ASSERTION(mAutoreleasePools,
+               "No stack on which to store autorelease pool");
 
   NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
   ::CFArrayAppendValue(mAutoreleasePools, pool);
@@ -929,15 +960,17 @@ nsAppShell::OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) {
 
 
 NS_IMETHODIMP
-nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProcessed) {
+nsAppShell::AfterProcessNextEvent(nsIThreadInternal* aThread,
+                                  bool aEventWasProcessed) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   CFIndex count = ::CFArrayGetCount(mAutoreleasePools);
 
-  NS_ASSERTION(mAutoreleasePools && count, "Processed an event, but there's no autorelease pool?");
+  NS_ASSERTION(mAutoreleasePools && count,
+               "Processed an event, but there's no autorelease pool?");
 
-  const NSAutoreleasePool* pool =
-      static_cast<const NSAutoreleasePool*>(::CFArrayGetValueAtIndex(mAutoreleasePools, count - 1));
+  const NSAutoreleasePool* pool = static_cast<const NSAutoreleasePool*>(
+      ::CFArrayGetValueAtIndex(mAutoreleasePools, count - 1));
   ::CFArrayRemoveValueAtIndex(mAutoreleasePools, count - 1);
   [pool release];
 
@@ -952,11 +985,11 @@ void nsAppShell::InitMemoryPressureObserver() {
   
   
   
-  mMemoryPressureSource =
-      dispatch_source_create(DISPATCH_SOURCE_TYPE_MEMORYPRESSURE, 0,
-                             DISPATCH_MEMORYPRESSURE_NORMAL | DISPATCH_MEMORYPRESSURE_WARN |
-                                 DISPATCH_MEMORYPRESSURE_CRITICAL,
-                             dispatch_get_main_queue());
+  mMemoryPressureSource = dispatch_source_create(
+      DISPATCH_SOURCE_TYPE_MEMORYPRESSURE, 0,
+      DISPATCH_MEMORYPRESSURE_NORMAL | DISPATCH_MEMORYPRESSURE_WARN |
+          DISPATCH_MEMORYPRESSURE_CRITICAL,
+      dispatch_get_main_queue());
 
   dispatch_source_set_event_handler(mMemoryPressureSource, ^{
     dispatch_source_memorypressure_flags_t pressureLevel =
@@ -971,7 +1004,8 @@ void nsAppShell::InitMemoryPressureObserver() {
       nsAvailableMemoryWatcherBase::GetSingleton());
 }
 
-void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t aPressureLevel) {
+void nsAppShell::OnMemoryPressureChanged(
+    dispatch_source_memorypressure_flags_t aPressureLevel) {
   
   
   MOZ_ASSERT(NS_IsMainThread());
@@ -1008,18 +1042,21 @@ void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t 
   if ((self = [self init])) {
     mAppShell = aAppShell;
 
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(applicationWillTerminate:)
-                                                 name:NSApplicationWillTerminateNotification
-                                               object:NSApp];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(applicationDidBecomeActive:)
-                                                 name:NSApplicationDidBecomeActiveNotification
-                                               object:NSApp];
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(timezoneChanged:)
-                                                 name:NSSystemTimeZoneDidChangeNotification
-                                               object:nil];
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(applicationWillTerminate:)
+               name:NSApplicationWillTerminateNotification
+             object:NSApp];
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(applicationDidBecomeActive:)
+               name:NSApplicationDidBecomeActiveNotification
+             object:NSApp];
+    [[NSNotificationCenter defaultCenter]
+        addObserver:self
+           selector:@selector(timezoneChanged:)
+               name:NSSystemTimeZoneDidChangeNotification
+             object:nil];
   }
 
   return self;
@@ -1061,12 +1098,14 @@ void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t 
   NSEvent* currentEvent = [NSApp currentEvent];
   if (currentEvent) {
     TextInputHandler::sLastModifierState =
-        [currentEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+        [currentEvent modifierFlags] &
+        NSEventModifierFlagDeviceIndependentFlagsMask;
   }
 
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
-    observerService->NotifyObservers(nullptr, NS_WIDGET_MAC_APP_ACTIVATE_OBSERVER_TOPIC, nullptr);
+    observerService->NotifyObservers(
+        nullptr, NS_WIDGET_MAC_APP_ACTIVATE_OBSERVER_TOPIC, nullptr);
   }
 
   NS_OBJC_END_TRY_IGNORE_BLOCK;
@@ -1111,8 +1150,9 @@ void nsAppShell::OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t 
 
 
 - (void)nsAppShell_NSApplication_terminate:(id)sender {
-  [[NSNotificationCenter defaultCenter] postNotificationName:NSApplicationWillTerminateNotification
-                                                      object:NSApp];
+  [[NSNotificationCenter defaultCenter]
+      postNotificationName:NSApplicationWillTerminateNotification
+                    object:NSApp];
 }
 
 @end

@@ -19,7 +19,8 @@ namespace {
 
 void NoOp(void* info) {}
 
-const CFTimeInterval kCFTimeIntervalMax = std::numeric_limits<CFTimeInterval>::max();
+const CFTimeInterval kCFTimeIntervalMax =
+    std::numeric_limits<CFTimeInterval>::max();
 
 }  
 
@@ -57,12 +58,13 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   
   CFRunLoopTimerContext timer_context = CFRunLoopTimerContext();
   timer_context.info = this;
-  delayed_work_timer_ = CFRunLoopTimerCreate(NULL,                
-                                             kCFTimeIntervalMax,  
-                                             kCFTimeIntervalMax,  
-                                             0,                   
-                                             0,                   
-                                             RunDelayedWorkTimer, &timer_context);
+  delayed_work_timer_ =
+      CFRunLoopTimerCreate(NULL,                
+                           kCFTimeIntervalMax,  
+                           kCFTimeIntervalMax,  
+                           0,                   
+                           0,                   
+                           RunDelayedWorkTimer, &timer_context);
   CFRunLoopAddTimer(run_loop_, delayed_work_timer_, kCFRunLoopCommonModes);
 
   CFRunLoopSourceContext source_context = CFRunLoopSourceContext();
@@ -89,36 +91,42 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
   nesting_deferred_work_source_ = CFRunLoopSourceCreate(NULL,  
                                                         0,     
                                                         &source_context);
-  CFRunLoopAddSource(run_loop_, nesting_deferred_work_source_, kCFRunLoopCommonModes);
+  CFRunLoopAddSource(run_loop_, nesting_deferred_work_source_,
+                     kCFRunLoopCommonModes);
 
   CFRunLoopObserverContext observer_context = CFRunLoopObserverContext();
   observer_context.info = this;
-  pre_wait_observer_ = CFRunLoopObserverCreate(NULL,  
-                                               kCFRunLoopBeforeWaiting,
-                                               true,  
-                                               0,     
-                                               PreWaitObserver, &observer_context);
+  pre_wait_observer_ =
+      CFRunLoopObserverCreate(NULL,  
+                              kCFRunLoopBeforeWaiting,
+                              true,  
+                              0,     
+                              PreWaitObserver, &observer_context);
   CFRunLoopAddObserver(run_loop_, pre_wait_observer_, kCFRunLoopCommonModes);
 
-  pre_source_observer_ = CFRunLoopObserverCreate(NULL,  
-                                                 kCFRunLoopBeforeSources,
-                                                 true,  
-                                                 0,     
-                                                 PreSourceObserver, &observer_context);
+  pre_source_observer_ =
+      CFRunLoopObserverCreate(NULL,  
+                              kCFRunLoopBeforeSources,
+                              true,  
+                              0,     
+                              PreSourceObserver, &observer_context);
   CFRunLoopAddObserver(run_loop_, pre_source_observer_, kCFRunLoopCommonModes);
 
-  enter_exit_observer_ = CFRunLoopObserverCreate(NULL,  
-                                                 kCFRunLoopEntry | kCFRunLoopExit,
-                                                 true,  
-                                                 0,     
-                                                 EnterExitObserver, &observer_context);
+  enter_exit_observer_ =
+      CFRunLoopObserverCreate(NULL,  
+                              kCFRunLoopEntry | kCFRunLoopExit,
+                              true,  
+                              0,     
+                              EnterExitObserver, &observer_context);
   CFRunLoopAddObserver(run_loop_, enter_exit_observer_, kCFRunLoopCommonModes);
 
-  root_power_domain_ = IORegisterForSystemPower(
-      this, &power_notification_port_, PowerStateNotification, &power_notification_object_);
+  root_power_domain_ = IORegisterForSystemPower(this, &power_notification_port_,
+                                                PowerStateNotification,
+                                                &power_notification_object_);
   if (root_power_domain_ != MACH_PORT_NULL) {
-    CFRunLoopAddSource(run_loop_, IONotificationPortGetRunLoopSource(power_notification_port_),
-                       kCFRunLoopCommonModes);
+    CFRunLoopAddSource(
+        run_loop_, IONotificationPortGetRunLoopSource(power_notification_port_),
+        kCFRunLoopCommonModes);
   }
 }
 
@@ -127,23 +135,27 @@ MessagePumpCFRunLoopBase::MessagePumpCFRunLoopBase()
 
 MessagePumpCFRunLoopBase::~MessagePumpCFRunLoopBase() {
   if (root_power_domain_ != MACH_PORT_NULL) {
-    CFRunLoopRemoveSource(run_loop_, IONotificationPortGetRunLoopSource(power_notification_port_),
-                          kCFRunLoopCommonModes);
+    CFRunLoopRemoveSource(
+        run_loop_, IONotificationPortGetRunLoopSource(power_notification_port_),
+        kCFRunLoopCommonModes);
     IODeregisterForSystemPower(&power_notification_object_);
     IOServiceClose(root_power_domain_);
     IONotificationPortDestroy(power_notification_port_);
   }
 
-  CFRunLoopRemoveObserver(run_loop_, enter_exit_observer_, kCFRunLoopCommonModes);
+  CFRunLoopRemoveObserver(run_loop_, enter_exit_observer_,
+                          kCFRunLoopCommonModes);
   CFRelease(enter_exit_observer_);
 
-  CFRunLoopRemoveObserver(run_loop_, pre_source_observer_, kCFRunLoopCommonModes);
+  CFRunLoopRemoveObserver(run_loop_, pre_source_observer_,
+                          kCFRunLoopCommonModes);
   CFRelease(pre_source_observer_);
 
   CFRunLoopRemoveObserver(run_loop_, pre_wait_observer_, kCFRunLoopCommonModes);
   CFRelease(pre_wait_observer_);
 
-  CFRunLoopRemoveSource(run_loop_, nesting_deferred_work_source_, kCFRunLoopCommonModes);
+  CFRunLoopRemoveSource(run_loop_, nesting_deferred_work_source_,
+                        kCFRunLoopCommonModes);
   CFRelease(nesting_deferred_work_source_);
 
   CFRunLoopRemoveSource(run_loop_, idle_work_source_, kCFRunLoopCommonModes);
@@ -203,7 +215,8 @@ void MessagePumpCFRunLoopBase::ScheduleWork() {
 }
 
 
-void MessagePumpCFRunLoopBase::ScheduleDelayedWork(const TimeTicks& delayed_work_time) {
+void MessagePumpCFRunLoopBase::ScheduleDelayedWork(
+    const TimeTicks& delayed_work_time) {
   TimeDelta delta = delayed_work_time - TimeTicks::Now();
   delayed_work_fire_time_ = CFAbsoluteTimeGetCurrent() + delta.InSecondsF();
   CFRunLoopTimerSetNextFireDate(delayed_work_timer_, delayed_work_fire_time_);
@@ -211,7 +224,8 @@ void MessagePumpCFRunLoopBase::ScheduleDelayedWork(const TimeTicks& delayed_work
 
 
 
-void MessagePumpCFRunLoopBase::RunDelayedWorkTimer(CFRunLoopTimerRef timer, void* info) {
+void MessagePumpCFRunLoopBase::RunDelayedWorkTimer(CFRunLoopTimerRef timer,
+                                                   void* info) {
   MessagePumpCFRunLoopBase* self = static_cast<MessagePumpCFRunLoopBase*>(info);
 
   
@@ -392,7 +406,8 @@ void MessagePumpCFRunLoopBase::MaybeScheduleNestingDeferredWork() {
 
 
 void MessagePumpCFRunLoopBase::PreWaitObserver(CFRunLoopObserverRef observer,
-                                               CFRunLoopActivity activity, void* info) {
+                                               CFRunLoopActivity activity,
+                                               void* info) {
   MessagePumpCFRunLoopBase* self = static_cast<MessagePumpCFRunLoopBase*>(info);
 
   
@@ -408,7 +423,8 @@ void MessagePumpCFRunLoopBase::PreWaitObserver(CFRunLoopObserverRef observer,
 
 
 void MessagePumpCFRunLoopBase::PreSourceObserver(CFRunLoopObserverRef observer,
-                                                 CFRunLoopActivity activity, void* info) {
+                                                 CFRunLoopActivity activity,
+                                                 void* info) {
   MessagePumpCFRunLoopBase* self = static_cast<MessagePumpCFRunLoopBase*>(info);
 
   
@@ -422,7 +438,8 @@ void MessagePumpCFRunLoopBase::PreSourceObserver(CFRunLoopObserverRef observer,
 
 
 void MessagePumpCFRunLoopBase::EnterExitObserver(CFRunLoopObserverRef observer,
-                                                 CFRunLoopActivity activity, void* info) {
+                                                 CFRunLoopActivity activity,
+                                                 void* info) {
   MessagePumpCFRunLoopBase* self = static_cast<MessagePumpCFRunLoopBase*>(info);
 
   switch (activity) {
@@ -463,7 +480,8 @@ void MessagePumpCFRunLoopBase::EnterExitObserver(CFRunLoopObserverRef observer,
 
 
 
-void MessagePumpCFRunLoopBase::PowerStateNotification(void* info, io_service_t service,
+void MessagePumpCFRunLoopBase::PowerStateNotification(void* info,
+                                                      io_service_t service,
                                                       uint32_t message_type,
                                                       void* message_argument) {
   
@@ -508,7 +526,8 @@ void MessagePumpCFRunLoopBase::PowerStateNotification(void* info, io_service_t s
   switch (message_type) {
     case kIOMessageSystemWillPowerOn:
       if (self->delayed_work_fire_time_ != kCFTimeIntervalMax) {
-        CFRunLoopTimerSetNextFireDate(self->delayed_work_timer_, self->delayed_work_fire_time_);
+        CFRunLoopTimerSetNextFireDate(self->delayed_work_timer_,
+                                      self->delayed_work_fire_time_);
       }
       break;
 
@@ -517,7 +536,8 @@ void MessagePumpCFRunLoopBase::PowerStateNotification(void* info, io_service_t s
       
       
       
-      IOAllowPowerChange(self->root_power_domain_, reinterpret_cast<long>(message_argument));
+      IOAllowPowerChange(self->root_power_domain_,
+                         reinterpret_cast<long>(message_argument));
       break;
 
     default:
@@ -546,7 +566,8 @@ void MessagePumpCFRunLoop::DoRun(Delegate* delegate) {
   int result;
   do {
     MessagePumpScopedAutoreleasePool autorelease_pool(this);
-    result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, kCFTimeIntervalMax, false);
+    result =
+        CFRunLoopRunInMode(kCFRunLoopDefaultMode, kCFTimeIntervalMax, false);
   } while (result != kCFRunLoopRunStopped && result != kCFRunLoopRunFinished);
 }
 
@@ -568,7 +589,8 @@ void MessagePumpCFRunLoop::Quit() {
 
 
 void MessagePumpCFRunLoop::EnterExitRunLoop(CFRunLoopActivity activity) {
-  if (activity == kCFRunLoopExit && nesting_level() == run_nesting_level() && quit_pending_) {
+  if (activity == kCFRunLoopExit && nesting_level() == run_nesting_level() &&
+      quit_pending_) {
     
     
     
@@ -595,7 +617,8 @@ MessagePumpNSRunLoop::~MessagePumpNSRunLoop() {
 void MessagePumpNSRunLoop::DoRun(Delegate* delegate) {
   while (keep_running_) {
     
-    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
+                             beforeDate:[NSDate distantFuture]];
   }
 
   keep_running_ = true;

@@ -37,7 +37,8 @@ class CGLLibrary {
       return true;
     }
     if (!mOGLLibrary) {
-      mOGLLibrary = PR_LoadLibrary("/System/Library/Frameworks/OpenGL.framework/OpenGL");
+      mOGLLibrary =
+          PR_LoadLibrary("/System/Library/Frameworks/OpenGL.framework/OpenGL");
       if (!mOGLLibrary) {
         NS_WARNING("Couldn't load OpenGL Framework.");
         return false;
@@ -59,7 +60,8 @@ CGLLibrary sCGLLibrary;
 
 GLContextCGL::GLContextCGL(const GLContextDesc& desc, NSOpenGLContext* context)
     : GLContext(desc), mContext(context) {
-  CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback, this);
+  CGDisplayRegisterReconfigurationCallback(DisplayReconfigurationCallback,
+                                           this);
 }
 
 GLContextCGL::~GLContextCGL() {
@@ -98,24 +100,30 @@ bool GLContextCGL::MakeCurrentImpl() const {
   return true;
 }
 
-bool GLContextCGL::IsCurrentImpl() const { return [NSOpenGLContext currentContext] == mContext; }
+bool GLContextCGL::IsCurrentImpl() const {
+  return [NSOpenGLContext currentContext] == mContext;
+}
 
- void GLContextCGL::DisplayReconfigurationCallback(CGDirectDisplayID aDisplay,
-                                                               CGDisplayChangeSummaryFlags aFlags,
-                                                               void* aUserInfo) {
+ void GLContextCGL::DisplayReconfigurationCallback(
+    CGDirectDisplayID aDisplay, CGDisplayChangeSummaryFlags aFlags,
+    void* aUserInfo) {
   if (aFlags & kCGDisplaySetModeFlag) {
-    static_cast<GLContextCGL*>(aUserInfo)->mActiveGPUSwitchMayHaveOccurred = true;
+    static_cast<GLContextCGL*>(aUserInfo)->mActiveGPUSwitchMayHaveOccurred =
+        true;
   }
 }
 
-static NSOpenGLContext* CreateWithFormat(const NSOpenGLPixelFormatAttribute* attribs) {
-  NSOpenGLPixelFormat* format = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
+static NSOpenGLContext* CreateWithFormat(
+    const NSOpenGLPixelFormatAttribute* attribs) {
+  NSOpenGLPixelFormat* format =
+      [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
   if (!format) {
     NS_WARNING("Failed to create NSOpenGLPixelFormat.");
     return nullptr;
   }
 
-  NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithFormat:format shareContext:nullptr];
+  NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithFormat:format
+                                                        shareContext:nullptr];
 
   [format release];
 
@@ -145,9 +153,19 @@ static NSOpenGLContext* CreateWithFormat(const NSOpenGLPixelFormatAttribute* att
 
 
 
+
+
+
+
+
+
+
+
 static CGOpenGLDisplayMask GetFreshContextDisplayMask() {
-  NSOpenGLPixelFormatAttribute attribs[] = {NSOpenGLPFAAllowOfflineRenderers, 0};
-  NSOpenGLPixelFormat* pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
+  NSOpenGLPixelFormatAttribute attribs[] = {NSOpenGLPFAAllowOfflineRenderers,
+                                            0};
+  NSOpenGLPixelFormat* pixelFormat =
+      [[NSOpenGLPixelFormat alloc] initWithAttributes:attribs];
   MOZ_RELEASE_ASSERT(pixelFormat);
   NSOpenGLContext* context = [[NSOpenGLContext alloc] initWithFormat:pixelFormat
                                                         shareContext:nullptr];
@@ -191,7 +209,9 @@ void GLContextCGL::MigrateToActiveGPU() {
   
   for (const auto i : IntegerRange([pixelFormat numberOfVirtualScreens])) {
     GLint displayMask = 0;
-    [pixelFormat getValues:&displayMask forAttribute:NSOpenGLPFAScreenMask forVirtualScreen:i];
+    [pixelFormat getValues:&displayMask
+              forAttribute:NSOpenGLPFAScreenMask
+          forVirtualScreen:i];
     if (IsSameGPU(displayMask, newPreferredDisplayMask)) {
       CGLSetVirtualScreen([mContext CGLContextObj], i);
       return;
@@ -212,7 +232,9 @@ bool GLContextCGL::SwapBuffers() {
   return true;
 }
 
-void GLContextCGL::GetWSIInfo(nsCString* const out) const { out->AppendLiteral("CGL"); }
+void GLContextCGL::GetWSIInfo(nsCString* const out) const {
+  out->AppendLiteral("CGL");
+}
 
 Maybe<SymbolLoader> GLContextCGL::GetSymbolLoader() const {
   const auto& lib = sCGLLibrary.Library();
@@ -220,7 +242,8 @@ Maybe<SymbolLoader> GLContextCGL::GetSymbolLoader() const {
 }
 
 already_AddRefed<GLContext> GLContextProviderCGL::CreateForCompositorWidget(
-    CompositorWidget* aCompositorWidget, bool aHardwareWebRender, bool aForceAccelerated) {
+    CompositorWidget* aCompositorWidget, bool aHardwareWebRender,
+    bool aForceAccelerated) {
   CreateContextFlags flags = CreateContextFlags::ALLOW_OFFLINE_RENDERER;
   if (aForceAccelerated) {
     flags |= CreateContextFlags::FORBID_SOFTWARE;
@@ -232,7 +255,8 @@ already_AddRefed<GLContext> GLContextProviderCGL::CreateForCompositorWidget(
   return CreateHeadless({flags}, &failureUnused);
 }
 
-static RefPtr<GLContextCGL> CreateOffscreenFBOContext(GLContextCreateDesc desc) {
+static RefPtr<GLContextCGL> CreateOffscreenFBOContext(
+    GLContextCreateDesc desc) {
   if (!sCGLLibrary.EnsureInitialized()) {
     return nullptr;
   }
@@ -247,6 +271,7 @@ static RefPtr<GLContextCGL> CreateOffscreenFBOContext(GLContextCreateDesc desc) 
   }
   if (flags & CreateContextFlags::ALLOW_OFFLINE_RENDERER ||
       !(flags & CreateContextFlags::HIGH_POWER)) {
+    
     
     
     attribs.push_back(NSOpenGLPFAAllowOfflineRenderers);
@@ -298,8 +323,8 @@ static RefPtr<GLContextCGL> CreateOffscreenFBOContext(GLContextCreateDesc desc) 
   return glContext;
 }
 
-already_AddRefed<GLContext> GLContextProviderCGL::CreateHeadless(const GLContextCreateDesc& desc,
-                                                                 nsACString* const out_failureId) {
+already_AddRefed<GLContext> GLContextProviderCGL::CreateHeadless(
+    const GLContextCreateDesc& desc, nsACString* const out_failureId) {
   auto gl = CreateOffscreenFBOContext(desc);
   if (!gl) {
     *out_failureId = "FEATURE_FAILURE_CGL_FBO"_ns;

@@ -11,6 +11,7 @@
 #include "nsIURI.h"
 
 
+
 NS_IMETHODIMP nsLocalHandlerAppMac::GetName(nsAString& aName) {
   if (mExecutable) {
     nsCOMPtr<nsILocalFileMac> macFile = do_QueryInterface(mExecutable);
@@ -30,7 +31,8 @@ NS_IMETHODIMP nsLocalHandlerAppMac::GetName(nsAString& aName) {
 
 
 NS_IMETHODIMP
-nsLocalHandlerAppMac::LaunchWithURI(nsIURI* aURI, mozilla::dom::BrowsingContext* aBrowsingContext) {
+nsLocalHandlerAppMac::LaunchWithURI(
+    nsIURI* aURI, mozilla::dom::BrowsingContext* aBrowsingContext) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   nsresult rv;
@@ -45,14 +47,15 @@ nsLocalHandlerAppMac::LaunchWithURI(nsIURI* aURI, mozilla::dom::BrowsingContext*
   aURI->GetAsciiSpec(uriSpec);
 
   const UInt8* uriString = reinterpret_cast<const UInt8*>(uriSpec.get());
-  CFURLRef uri =
-      ::CFURLCreateWithBytes(NULL, uriString, uriSpec.Length(), kCFStringEncodingUTF8, NULL);
+  CFURLRef uri = ::CFURLCreateWithBytes(NULL, uriString, uriSpec.Length(),
+                                        kCFStringEncodingUTF8, NULL);
   if (!uri) {
     ::CFRelease(appURL);
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  CFArrayRef uris = ::CFArrayCreate(NULL, reinterpret_cast<const void**>(&uri), 1, NULL);
+  CFArrayRef uris =
+      ::CFArrayCreate(NULL, reinterpret_cast<const void**>(&uri), 1, NULL);
   if (!uris) {
     ::CFRelease(uri);
     ::CFRelease(appURL);

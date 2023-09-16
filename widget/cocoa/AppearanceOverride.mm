@@ -29,7 +29,8 @@ static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
     if (XRE_IsParentProcess()) {
       mozilla::Preferences::RegisterCallbackAndCall(
           &ToolbarThemePrefChanged,
-          nsDependentCString(mozilla::StaticPrefs::GetPrefName_browser_theme_toolbar_theme()));
+          nsDependentCString(
+              mozilla::StaticPrefs::GetPrefName_browser_theme_toolbar_theme()));
     }
   }
   return sInstance;
@@ -62,7 +63,8 @@ static void ToolbarThemePrefChanged(const char* aPref, void* aUserInfo);
 + (NSSet*)keyPathsForValuesAffectingEffectiveAppearance {
   
   
-  return [NSSet setWithObjects:@"toolbarTheme", @"_app.effectiveAppearance", nil];
+  return
+      [NSSet setWithObjects:@"toolbarTheme", @"_app.effectiveAppearance", nil];
 }
 
 - (NSAppearance*)effectiveAppearance {

@@ -20,7 +20,8 @@ NS_IMPL_ADDREF_INHERITED(MessagePumpForNonMainUIThreads, MessagePump)
 NS_IMPL_RELEASE_INHERITED(MessagePumpForNonMainUIThreads, MessagePump)
 NS_IMPL_QUERY_INTERFACE(MessagePumpForNonMainUIThreads, nsIThreadObserver)
 
-MessagePumpForNonMainUIThreads::MessagePumpForNonMainUIThreads(nsISerialEventTarget* aEventTarget)
+MessagePumpForNonMainUIThreads::MessagePumpForNonMainUIThreads(
+    nsISerialEventTarget* aEventTarget)
     : mEventTarget(aEventTarget), keep_running_(true) {
   MOZ_ASSERT(mEventTarget);
   CFRunLoopSourceContext source_context = CFRunLoopSourceContext();
@@ -36,12 +37,14 @@ MessagePumpForNonMainUIThreads::~MessagePumpForNonMainUIThreads() {
   CFRelease(quit_source_);
 }
 
-void MessagePumpForNonMainUIThreads::DoRun(base::MessagePump::Delegate* aDelegate) {
+void MessagePumpForNonMainUIThreads::DoRun(
+    base::MessagePump::Delegate* aDelegate) {
   
   
   nsIThread* thread = NS_GetCurrentThread();
   MOZ_ASSERT(thread);
 
+  
   
   nsCOMPtr<nsIThreadInternal> ti(do_QueryInterface(thread));
   MOZ_ASSERT(ti);
@@ -63,7 +66,8 @@ void MessagePumpForNonMainUIThreads::DoRun(base::MessagePump::Delegate* aDelegat
 
     
     
-    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
+    [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode
+                             beforeDate:[NSDate distantFuture]];
   }
 
   ti->SetObserver(nullptr);
@@ -84,7 +88,8 @@ NS_IMETHODIMP MessagePumpForNonMainUIThreads::OnDispatchedEvent() {
 }
 
 NS_IMETHODIMP
-MessagePumpForNonMainUIThreads::OnProcessNextEvent(nsIThreadInternal* thread, bool mayWait) {
+MessagePumpForNonMainUIThreads::OnProcessNextEvent(nsIThreadInternal* thread,
+                                                   bool mayWait) {
   return NS_OK;
 }
 

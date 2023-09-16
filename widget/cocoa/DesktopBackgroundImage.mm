@@ -52,15 +52,16 @@ void SetDesktopImage(nsIFile* aImage) {
   }
 
   
-  NSDictionary* screenOptions =
-      [[NSWorkspace sharedWorkspace] desktopImageOptionsForScreen:currentScreen];
+  NSDictionary* screenOptions = [[NSWorkspace sharedWorkspace]
+      desktopImageOptionsForScreen:currentScreen];
 
   NSError* error = nil;
   if (![[NSWorkspace sharedWorkspace] setDesktopImageURL:url
                                                forScreen:currentScreen
                                                  options:screenOptions
                                                    error:&error]) {
-    LOG("%s ERROR: setDesktopImageURL failed (%ld)", __func__, (long)[error code]);
+    LOG("%s ERROR: setDesktopImageURL failed (%ld)", __func__,
+        (long)[error code]);
   }
 }
 

@@ -18,12 +18,15 @@
 #include "nsError.h"
 
 void nsObjCExceptionLog(NSException* aException) {
-  NSLog(@"Mozilla has caught an Obj-C exception [%@: %@]", [aException name], [aException reason]);
+  NSLog(@"Mozilla has caught an Obj-C exception [%@: %@]", [aException name],
+        [aException reason]);
 
   
-  nsCOMPtr<nsICrashReporter> crashReporter = do_GetService("@mozilla.org/toolkit/crash-reporter;1");
+  nsCOMPtr<nsICrashReporter> crashReporter =
+      do_GetService("@mozilla.org/toolkit/crash-reporter;1");
   if (crashReporter) {
-    crashReporter->AppendObjCExceptionInfoToAppNotes(static_cast<void*>(aException));
+    crashReporter->AppendObjCExceptionInfoToAppNotes(
+        static_cast<void*>(aException));
   }
 
 #ifdef DEBUG

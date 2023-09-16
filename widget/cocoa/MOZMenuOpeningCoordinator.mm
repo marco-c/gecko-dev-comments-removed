@@ -68,7 +68,8 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
                      withAppearance:(NSAppearance*)aAppearance
                       asContextMenu:(BOOL)aIsContextMenu {
   MOZ_RELEASE_ASSERT(!mPendingOpening,
-                     "A menu is already waiting to open. Before opening the next one, either wait "
+                     "A menu is already waiting to open. Before opening the "
+                     "next one, either wait "
                      "for this one to open or cancel the request.");
 
   NSInteger handle = ++mLastHandle;
@@ -158,9 +159,12 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
   
   
   
+  
+  
 
   if (aAppearance) {
-#if !defined(MAC_OS_VERSION_11_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
+#if !defined(MAC_OS_VERSION_11_0) || \
+    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
     if (nsCocoaFeatures::OnBigSurOrLater()) {
 #else
     if (@available(macOS 11.0, *)) {
@@ -174,18 +178,21 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
 
   if (aView) {
     NSWindow* window = aView.window;
-    NSPoint locationInWindow = nsCocoaUtils::ConvertPointFromScreen(window, aPosition);
+    NSPoint locationInWindow =
+        nsCocoaUtils::ConvertPointFromScreen(window, aPosition);
     if (aIsContextMenu) {
       
-      NSEvent* event = [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
-                                          location:locationInWindow
-                                     modifierFlags:0
-                                         timestamp:NSProcessInfo.processInfo.systemUptime
-                                      windowNumber:window.windowNumber
-                                           context:nil
-                                       eventNumber:0
-                                        clickCount:1
-                                          pressure:0.0f];
+      
+      NSEvent* event =
+          [NSEvent mouseEventWithType:NSEventTypeRightMouseDown
+                             location:locationInWindow
+                        modifierFlags:0
+                            timestamp:NSProcessInfo.processInfo.systemUptime
+                         windowNumber:window.windowNumber
+                              context:nil
+                          eventNumber:0
+                           clickCount:1
+                             pressure:0.0f];
       [NSMenu popUpContextMenu:aMenu withEvent:event forView:aView];
     } else {
       
@@ -193,10 +200,14 @@ static BOOL sNeedToUnwindForMenuClosing = NO;
       
       
       
-      NSPoint locationInView = [aView convertPoint:locationInWindow fromView:nil];
-      [aMenu popUpMenuPositioningItem:nil atLocation:locationInView inView:aView];
+      NSPoint locationInView = [aView convertPoint:locationInWindow
+                                          fromView:nil];
+      [aMenu popUpMenuPositioningItem:nil
+                           atLocation:locationInView
+                               inView:aView];
     }
   } else {
+    
     
     
     

@@ -67,7 +67,8 @@ nsDeviceContextSpecX::~nsDeviceContextSpecX() {
 
 NS_IMPL_ISUPPORTS(nsDeviceContextSpecX, nsIDeviceContextSpec)
 
-NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS, bool aIsPrintPreview) {
+NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS,
+                                         bool aIsPrintPreview) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   RefPtr<nsPrintSettingsX> settings(do_QueryObject(aPS));
@@ -81,7 +82,8 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS, bool aIsPrintPre
   if (!printInfo) {
     return NS_ERROR_FAILURE;
   }
-  if (aPS->GetOutputDestination() == nsIPrintSettings::kOutputDestinationStream) {
+  if (aPS->GetOutputDestination() ==
+      nsIPrintSettings::kOutputDestinationStream) {
     aPS->GetOutputStream(getter_AddRefs(mOutputStream));
     if (!mOutputStream) {
       return NS_ERROR_FAILURE;
@@ -109,16 +111,19 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS, bool aIsPrintPre
     
     
     
+    
     OSStatus status = noErr;
     PMDestinationType destination;
-    status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings, &destination);
+    status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings,
+                                           &destination);
     if (status == noErr) {
-      if (destination == kPMDestinationPrinter || destination == kPMDestinationPreview) {
+      if (destination == kPMDestinationPrinter ||
+          destination == kPMDestinationPreview) {
         mPrintViaSkPDF = true;
       } else if (destination == kPMDestinationFile) {
         AutoCFRelease<CFURLRef> destURL(nullptr);
-        status =
-            ::PMSessionCopyDestinationLocation(mPrintSession, mPMPrintSettings, destURL.receive());
+        status = ::PMSessionCopyDestinationLocation(
+            mPrintSession, mPMPrintSettings, destURL.receive());
         if (status == noErr) {
           AutoCFRelease<CFStringRef> destPathRef =
               CFURLCopyFileSystemPath(destURL, kCFURLPOSIXPathStyle);
@@ -139,16 +144,20 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS, bool aIsPrintPre
     
     
     
-    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"pdf_file"_ns, 1);
+    Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                         u"pdf_file"_ns, 1);
   } else {
     PMDestinationType destination;
-    OSStatus status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings, &destination);
-    if (status == noErr &&
-        (destination == kPMDestinationFile || destination == kPMDestinationPreview ||
-         destination == kPMDestinationProcessPDF)) {
-      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"pdf_file"_ns, 1);
+    OSStatus status = ::PMSessionGetDestinationType(
+        mPrintSession, mPMPrintSettings, &destination);
+    if (status == noErr && (destination == kPMDestinationFile ||
+                            destination == kPMDestinationPreview ||
+                            destination == kPMDestinationProcessPDF)) {
+      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                           u"pdf_file"_ns, 1);
     } else {
-      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE, u"unknown"_ns, 1);
+      Telemetry::ScalarAdd(Telemetry::ScalarID::PRINTING_TARGET_TYPE,
+                           u"unknown"_ns, 1);
     }
   }
 
@@ -157,9 +166,9 @@ NS_IMETHODIMP nsDeviceContextSpecX::Init(nsIPrintSettings* aPS, bool aIsPrintPre
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-NS_IMETHODIMP nsDeviceContextSpecX::BeginDocument(const nsAString& aTitle,
-                                                  const nsAString& aPrintToFileName,
-                                                  int32_t aStartPage, int32_t aEndPage) {
+NS_IMETHODIMP nsDeviceContextSpecX::BeginDocument(
+    const nsAString& aTitle, const nsAString& aPrintToFileName,
+    int32_t aStartPage, int32_t aEndPage) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   return NS_OK;
@@ -168,7 +177,8 @@ NS_IMETHODIMP nsDeviceContextSpecX::BeginDocument(const nsAString& aTitle,
 }
 
 RefPtr<PrintEndDocumentPromise> nsDeviceContextSpecX::EndDocument() {
-  return nsIDeviceContextSpec::EndDocumentPromiseFromResult(DoEndDocument(), __func__);
+  return nsIDeviceContextSpec::EndDocumentPromiseFromResult(DoEndDocument(),
+                                                            __func__);
 }
 
 nsresult nsDeviceContextSpecX::DoEndDocument() {
@@ -190,7 +200,8 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
     NS_ENSURE_SUCCESS(rv, rv);
 
     PMDestinationType destination;
-    status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings, &destination);
+    status = ::PMSessionGetDestinationType(mPrintSession, mPMPrintSettings,
+                                           &destination);
 
     switch (destination) {
       case kPMDestinationPrinter: {
@@ -200,13 +211,14 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
           return NS_ERROR_FAILURE;
         }
         CFStringRef mimeType = CFSTR("application/pdf");
-        status = ::PMPrinterPrintWithFile(currentPrinter, mPMPrintSettings, mPageFormat, mimeType,
-                                          pdfURL);
+        status = ::PMPrinterPrintWithFile(currentPrinter, mPMPrintSettings,
+                                          mPageFormat, mimeType, pdfURL);
         break;
       }
       case kPMDestinationPreview: {
         
-        AutoCFRelease<CFStringRef> pdfPath = CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle);
+        AutoCFRelease<CFStringRef> pdfPath =
+            CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle);
         NSString* path = (NSString*)CFStringRef(pdfPath);
         NSWorkspace* ws = [NSWorkspace sharedWorkspace];
         [ws openFile:path];
@@ -214,8 +226,8 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
       }
       case kPMDestinationFile: {
         AutoCFRelease<CFURLRef> destURL(nullptr);
-        status =
-            ::PMSessionCopyDestinationLocation(mPrintSession, mPMPrintSettings, destURL.receive());
+        status = ::PMSessionCopyDestinationLocation(
+            mPrintSession, mPMPrintSettings, destURL.receive());
         if (status == noErr) {
           AutoCFRelease<CFStringRef> sourcePathRef =
               CFURLCopyFileSystemPath(pdfURL, kCFURLPOSIXPathStyle);
@@ -234,12 +246,14 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
           if ([fileManager fileExistsAtPath:sourcePath]) {
             NSURL* src = static_cast<NSURL*>(CFURLRef(pdfURL));
             NSURL* dest = static_cast<NSURL*>(CFURLRef(destURL));
-            bool ok = [fileManager replaceItemAtURL:dest
-                                      withItemAtURL:src
-                                     backupItemName:nil
-                                            options:NSFileManagerItemReplacementUsingNewMetadataOnly
-                                   resultingItemURL:nil
-                                              error:nil];
+            bool ok = [fileManager
+                replaceItemAtURL:dest
+                   withItemAtURL:src
+                  backupItemName:nil
+                         options:
+                             NSFileManagerItemReplacementUsingNewMetadataOnly
+                resultingItemURL:nil
+                           error:nil];
             if (!ok) {
               return NS_ERROR_FAILURE;
             }
@@ -261,8 +275,8 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
 }
 
-void nsDeviceContextSpecX::GetPaperRect(double* aTop, double* aLeft, double* aBottom,
-                                        double* aRight) {
+void nsDeviceContextSpecX::GetPaperRect(double* aTop, double* aLeft,
+                                        double* aBottom, double* aRight) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   PMRect paperRect;
@@ -286,7 +300,8 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
 #ifdef MOZ_ENABLE_SKIA_PDF
   if (mPrintViaSkPDF) {
     
-    nsresult rv = NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mTempFile));
+    nsresult rv =
+        NS_GetSpecialDirectory(NS_OS_TEMP_DIR, getter_AddRefs(mTempFile));
     NS_ENSURE_SUCCESS(rv, nullptr);
     nsAutoCString tempPath("tmp-printing.pdf");
     mTempFile->AppendNative(tempPath);
@@ -298,6 +313,6 @@ already_AddRefed<PrintTarget> nsDeviceContextSpecX::MakePrintTarget() {
   }
 #endif
 
-  return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession, mPageFormat, mPMPrintSettings,
-                                     size);
+  return PrintTargetCG::CreateOrNull(mOutputStream, mPrintSession, mPageFormat,
+                                     mPMPrintSettings, size);
 }

@@ -40,7 +40,10 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
                         
                         
                         
-                        errorPasswordNotSet = error && [error code] == kPasswordNotSetErrorCode;
+                        
+                        
+                        errorPasswordNotSet =
+                            error && [error code] == kPasswordNotSetErrorCode;
                         biometricSuccess = success || errorPasswordNotSet;
                         dispatch_semaphore_signal(sema);
                       });

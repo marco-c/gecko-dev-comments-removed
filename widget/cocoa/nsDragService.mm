@@ -49,24 +49,29 @@ nsDragService::nsDragService()
 
 nsDragService::~nsDragService() {}
 
-NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSIntRegion>& aRegion,
+NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode,
+                                           const Maybe<CSSIntRegion>& aRegion,
                                            NSPoint* aDragPoint) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mNativeDragView);
 
   LayoutDeviceIntRect dragRect(0, 0, 20, 20);
-  NSImage* image = ConstructDragImage(mSourceNode, aRegion, mScreenPosition, &dragRect);
+  NSImage* image =
+      ConstructDragImage(mSourceNode, aRegion, mScreenPosition, &dragRect);
   if (!image) {
     
     NSSize size;
-    size.width = nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.width, scaleFactor);
-    size.height = nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.height, scaleFactor);
+    size.width =
+        nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.width, scaleFactor);
+    size.height =
+        nsCocoaUtils::DevPixelsToCocoaPoints(dragRect.height, scaleFactor);
     image = [NSImage imageWithSize:size
                            flipped:YES
                     drawingHandler:^BOOL(NSRect dstRect) {
                       [[NSColor grayColor] set];
-                      NSBezierPath* path = [NSBezierPath bezierPathWithRect:dstRect];
+                      NSBezierPath* path =
+                          [NSBezierPath bezierPathWithRect:dstRect];
                       [path setLineWidth:2.0];
                       [path stroke];
                       return YES;
@@ -85,8 +90,10 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSIntRegion>& aRegion,
-                                           CSSIntPoint aPoint, LayoutDeviceIntRect* aDragRect) {
+NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode,
+                                           const Maybe<CSSIntRegion>& aRegion,
+                                           CSSIntPoint aPoint,
+                                           LayoutDeviceIntRect* aDragRect) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mNativeDragView);
@@ -97,8 +104,8 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   if (pc && (!aDragRect->width || !aDragRect->height)) {
     
     int32_t size = nsCocoaUtils::CocoaPointsToDevPixels(20, scaleFactor);
-    aDragRect->SetRect(pc->CSSPixelsToDevPixels(aPoint.x), pc->CSSPixelsToDevPixels(aPoint.y), size,
-                       size);
+    aDragRect->SetRect(pc->CSSPixelsToDevPixels(aPoint.x),
+                       pc->CSSPixelsToDevPixels(aPoint.y), size, size);
   }
 
   if (NS_FAILED(rv) || !surface) return nil;
@@ -106,21 +113,23 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   uint32_t width = aDragRect->width;
   uint32_t height = aDragRect->height;
 
-  RefPtr<DataSourceSurface> dataSurface =
-      Factory::CreateDataSourceSurface(IntSize(width, height), SurfaceFormat::B8G8R8A8);
+  RefPtr<DataSourceSurface> dataSurface = Factory::CreateDataSourceSurface(
+      IntSize(width, height), SurfaceFormat::B8G8R8A8);
   DataSourceSurface::MappedSurface map;
   if (!dataSurface->Map(DataSourceSurface::MapType::READ_WRITE, &map)) {
     return nil;
   }
 
   RefPtr<DrawTarget> dt = Factory::CreateDrawTargetForData(
-      BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride, dataSurface->GetFormat());
+      BackendType::CAIRO, map.mData, dataSurface->GetSize(), map.mStride,
+      dataSurface->GetFormat());
   if (!dt) {
     dataSurface->Unmap();
     return nil;
   }
 
-  dt->FillRect(gfx::Rect(0, 0, width, height), SurfacePattern(surface, ExtendMode::CLAMP),
+  dt->FillRect(gfx::Rect(0, 0, width, height),
+               SurfacePattern(surface, ExtendMode::CLAMP),
                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
 
   NSBitmapImageRep* imageRep =
@@ -141,6 +150,7 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
     for (uint32_t j = 0; j < width; ++j) {
       
       
+      
 #ifdef IS_BIG_ENDIAN
       dest[0] = uint8_t(src[1] * DRAG_TRANSLUCENCY);
       dest[1] = uint8_t(src[2] * DRAG_TRANSLUCENCY);
@@ -158,8 +168,8 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   }
   dataSurface->Unmap();
 
-  NSImage* image =
-      [[NSImage alloc] initWithSize:NSMakeSize(width / scaleFactor, height / scaleFactor)];
+  NSImage* image = [[NSImage alloc]
+      initWithSize:NSMakeSize(width / scaleFactor, height / scaleFactor)];
   [image addRepresentation:imageRep];
   [imageRep release];
 
@@ -168,9 +178,9 @@ NSImage* nsDragService::ConstructDragImage(nsINode* aDOMNode, const Maybe<CSSInt
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
 }
 
-nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
-                                              const Maybe<CSSIntRegion>& aRegion,
-                                              uint32_t aActionType) {
+nsresult nsDragService::InvokeDragSessionImpl(
+    nsIArray* aTransferableArray, const Maybe<CSSIntRegion>& aRegion,
+    uint32_t aActionType) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
 #ifdef NIGHTLY_BUILD
@@ -178,6 +188,7 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
 #endif
 
   if (!gLastDragView) {
+    
     
     
     
@@ -205,7 +216,8 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
     gDraggedTransferables->GetLength(&count);
 
     for (uint32_t j = 0; j < count; j++) {
-      nsCOMPtr<nsITransferable> currentTransferable = do_QueryElementAt(aTransferableArray, j);
+      nsCOMPtr<nsITransferable> currentTransferable =
+          do_QueryElementAt(aTransferableArray, j);
       if (!currentTransferable) {
         return NS_ERROR_FAILURE;
       }
@@ -234,7 +246,8 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
   localDragRect.origin.x = draggingPoint.x;
   localDragRect.origin.y = draggingPoint.y - localDragRect.size.height;
 
-  NSDraggingItem* dragItem = [[NSDraggingItem alloc] initWithPasteboardWriter:pbItem];
+  NSDraggingItem* dragItem =
+      [[NSDraggingItem alloc] initWithPasteboardWriter:pbItem];
   [pbItem release];
   [dragItem setDraggingFrame:localDragRect contents:image];
 
@@ -242,7 +255,8 @@ nsresult nsDragService::InvokeDragSessionImpl(nsIArray* aTransferableArray,
   nsBaseDragService::OpenDragPopup();
 
   NSDraggingSession* draggingSession = [mNativeDragView
-      beginDraggingSessionWithItems:[NSArray arrayWithObject:[dragItem autorelease]]
+      beginDraggingSessionWithItems:[NSArray
+                                        arrayWithObject:[dragItem autorelease]]
                               event:mNativeDragEvent
                              source:mNativeDragView];
   draggingSession.animatesToStartingPositionsOnCancelOrFail =
@@ -272,13 +286,15 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
   
   
   if (mDataItems) {
-    nsCOMPtr<nsITransferable> currentTransferable = do_QueryElementAt(mDataItems, aItemIndex);
+    nsCOMPtr<nsITransferable> currentTransferable =
+        do_QueryElementAt(mDataItems, aItemIndex);
     if (currentTransferable) {
       for (uint32_t i = 0; i < flavors.Length(); i++) {
         nsCString& flavorStr = flavors[i];
 
         nsCOMPtr<nsISupports> dataSupports;
-        rv = currentTransferable->GetTransferData(flavorStr.get(), getter_AddRefs(dataSupports));
+        rv = currentTransferable->GetTransferData(flavorStr.get(),
+                                                  getter_AddRefs(dataSupports));
         if (NS_SUCCEEDED(rv)) {
           aTransferable->SetTransferData(flavorStr.get(), dataSupports);
           return NS_OK;  
@@ -304,7 +320,8 @@ nsDragService::GetData(nsITransferable* aTransferable, uint32_t aItemIndex) {
 
   
   for (uint32_t i = 0; i < flavors.Length(); i++) {
-    nsCocoaUtils::SetTransferDataForTypeFromPasteboardItem(aTransferable, flavors[i], item);
+    nsCocoaUtils::SetTransferDataForTypeFromPasteboardItem(aTransferable,
+                                                           flavors[i], item);
   }
 
   return NS_OK;
@@ -327,7 +344,8 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     uint32_t dataItemsCount;
     mDataItems->GetLength(&dataItemsCount);
     for (unsigned int i = 0; i < dataItemsCount; i++) {
-      nsCOMPtr<nsITransferable> currentTransferable = do_QueryElementAt(mDataItems, i);
+      nsCOMPtr<nsITransferable> currentTransferable =
+          do_QueryElementAt(mDataItems, i);
       if (!currentTransferable) continue;
 
       nsTArray<nsCString> flavors;
@@ -352,7 +370,8 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     type = [UTIHelper stringFromPboardType:NSPasteboardTypeString];
   } else if (dataFlavor.EqualsLiteral(kHTMLMime)) {
     type = [UTIHelper stringFromPboardType:NSPasteboardTypeHTML];
-  } else if (dataFlavor.EqualsLiteral(kURLMime) || dataFlavor.EqualsLiteral(kURLDataMime)) {
+  } else if (dataFlavor.EqualsLiteral(kURLMime) ||
+             dataFlavor.EqualsLiteral(kURLDataMime)) {
     type = [UTIHelper stringFromPboardType:kPublicUrlPboardType];
   } else if (dataFlavor.EqualsLiteral(kURLDescriptionMime)) {
     type = [UTIHelper stringFromPboardType:kPublicUrlNamePboardType];
@@ -362,9 +381,10 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
     type = [UTIHelper stringFromPboardType:kMozCustomTypesPboardType];
   }
 
-  NSString* availableType =
-      [globalDragPboard availableTypeFromArray:[NSArray arrayWithObjects:(id)type, nil]];
-  if (availableType && nsCocoaUtils::IsValidPasteboardType(availableType, allowFileURL)) {
+  NSString* availableType = [globalDragPboard
+      availableTypeFromArray:[NSArray arrayWithObjects:(id)type, nil]];
+  if (availableType &&
+      nsCocoaUtils::IsValidPasteboardType(availableType, allowFileURL)) {
     *_retval = true;
   }
 
@@ -396,19 +416,22 @@ nsDragService::GetNumDropItems(uint32_t* aNumItems) {
 }
 
 NS_IMETHODIMP
-nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY) {
+nsDragService::UpdateDragImage(nsINode* aImage, int32_t aImageX,
+                               int32_t aImageY) {
   nsBaseDragService::UpdateDragImage(aImage, aImageX, aImageY);
   mDragImageChanged = true;
   return NS_OK;
 }
 
-void nsDragService::DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoint) {
+void nsDragService::DragMovedWithView(NSDraggingSession* aSession,
+                                      NSPoint aPoint) {
   aPoint.y = nsCocoaUtils::FlippedScreenY(aPoint.y);
 
   
   
   CGFloat scaleFactor = nsCocoaUtils::GetBackingScaleFactor(mNativeDragView);
-  LayoutDeviceIntPoint devPoint = nsCocoaUtils::CocoaPointsToDevPixels(aPoint, scaleFactor);
+  LayoutDeviceIntPoint devPoint =
+      nsCocoaUtils::CocoaPointsToDevPixels(aPoint, scaleFactor);
 
   
   
@@ -422,32 +445,39 @@ void nsDragService::DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoin
     }
 
     if (pc) {
-      void (^changeImageBlock)(NSDraggingItem*, NSInteger, BOOL*) =
-          ^(NSDraggingItem* draggingItem, NSInteger idx, BOOL* stop) {
-            
-            if (idx > 0) {
-              return;
-            }
+      void (^changeImageBlock)(NSDraggingItem*, NSInteger, BOOL*) = ^(
+          NSDraggingItem* draggingItem, NSInteger idx, BOOL* stop) {
+        
+        if (idx > 0) {
+          return;
+        }
 
-            nsPoint pt =
-                LayoutDevicePixel::ToAppUnits(devPoint, pc->DeviceContext()->AppUnitsPerDevPixel());
-            CSSIntPoint screenPoint = CSSIntPoint(nsPresContext::AppUnitsToIntCSSPixels(pt.x),
-                                                  nsPresContext::AppUnitsToIntCSSPixels(pt.y));
+        nsPoint pt = LayoutDevicePixel::ToAppUnits(
+            devPoint, pc->DeviceContext()->AppUnitsPerDevPixel());
+        CSSIntPoint screenPoint =
+            CSSIntPoint(nsPresContext::AppUnitsToIntCSSPixels(pt.x),
+                        nsPresContext::AppUnitsToIntCSSPixels(pt.y));
 
-            
-            LayoutDeviceIntRect newRect;
-            NSImage* image = ConstructDragImage(mSourceNode, Nothing(), screenPoint, &newRect);
-            if (image) {
-              NSRect draggingRect = nsCocoaUtils::GeckoRectToCocoaRectDevPix(newRect, scaleFactor);
-              [draggingItem setDraggingFrame:draggingRect contents:image];
-            }
-          };
+        
+        
+        LayoutDeviceIntRect newRect;
+        NSImage* image =
+            ConstructDragImage(mSourceNode, Nothing(), screenPoint, &newRect);
+        if (image) {
+          NSRect draggingRect =
+              nsCocoaUtils::GeckoRectToCocoaRectDevPix(newRect, scaleFactor);
+          [draggingItem setDraggingFrame:draggingRect contents:image];
+        }
+      };
 
-      [aSession enumerateDraggingItemsWithOptions:NSDraggingItemEnumerationConcurrent
-                                          forView:nil
-                                          classes:[NSArray arrayWithObject:[NSPasteboardItem class]]
-                                    searchOptions:@{}
-                                       usingBlock:changeImageBlock];
+      [aSession
+          enumerateDraggingItemsWithOptions:NSDraggingItemEnumerationConcurrent
+                                    forView:nil
+                                    classes:[NSArray
+                                                arrayWithObject:
+                                                    [NSPasteboardItem class]]
+                              searchOptions:@{}
+                                 usingBlock:changeImageBlock];
     }
   }
 

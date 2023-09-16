@@ -14,14 +14,19 @@
 
 namespace mozilla::widget {
 
-void NativeMenuSupport::CreateNativeMenuBar(nsIWidget* aParent, dom::Element* aMenuBarElement) {
-  MOZ_RELEASE_ASSERT(NS_IsMainThread(), "Attempting to create native menu bar on wrong thread!");
+void NativeMenuSupport::CreateNativeMenuBar(nsIWidget* aParent,
+                                            dom::Element* aMenuBarElement) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread(),
+                     "Attempting to create native menu bar on wrong thread!");
 
   
-  static_cast<nsCocoaWindow*>(aParent)->SetMenuBar(MakeRefPtr<nsMenuBarX>(aMenuBarElement));
+  
+  static_cast<nsCocoaWindow*>(aParent)->SetMenuBar(
+      MakeRefPtr<nsMenuBarX>(aMenuBarElement));
 }
 
-already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativeContextMenu(dom::Element* aPopup) {
+already_AddRefed<NativeMenu> NativeMenuSupport::CreateNativeContextMenu(
+    dom::Element* aPopup) {
   return MakeAndAddRef<NativeMenuMac>(aPopup);
 }
 
