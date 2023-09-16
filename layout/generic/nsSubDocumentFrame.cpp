@@ -1405,18 +1405,6 @@ bool nsDisplayRemote::UpdateScrollData(
   if (aLayerData) {
     aLayerData->SetReferentId(mPaintData.mLayersId);
 
-    
-    
-    
-    
-    nsPresContext* inProcessRootContext =
-        mFrame->PresContext()->GetInProcessRootContentDocumentPresContext();
-    if (inProcessRootContext &&
-        inProcessRootContext->IsRootContentDocumentCrossProcess()) {
-      float resolution = inProcessRootContext->PresShell()->GetResolution();
-      aLayerData->SetResolution(resolution);
-    }
-
     auto size = static_cast<nsSubDocumentFrame*>(mFrame)->GetSubdocumentSize();
     Matrix4x4 m = Matrix4x4::Translation(mOffset.x, mOffset.y, 0.0);
     aLayerData->SetTransform(m);
