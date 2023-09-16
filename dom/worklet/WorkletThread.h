@@ -17,6 +17,10 @@
 
 class nsIRunnable;
 
+namespace JS {
+class ContextOptions;
+};  
+
 namespace mozilla::dom {
 
 class WorkletThread final : public nsThread, public nsIObserver {
@@ -29,7 +33,8 @@ class WorkletThread final : public nsThread, public nsIObserver {
   
   
   
-  static void EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime);
+  static void EnsureCycleCollectedJSContext(JSRuntime* aParentRuntime,
+                                            const JS::ContextOptions& aOptions);
   static void DeleteCycleCollectedJSContext();
 
   static bool IsOnWorkletThread();
