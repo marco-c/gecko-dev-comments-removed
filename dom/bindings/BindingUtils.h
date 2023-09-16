@@ -1969,10 +1969,9 @@ void DoTraceSequence(JSTracer* trc, nsTArray<T>& seq);
 
 
 
-template <typename T,
-          bool isDictionary = std::is_base_of<DictionaryBase, T>::value,
-          bool isTypedArray = std::is_base_of<AllTypedArraysBase, T>::value,
-          bool isOwningUnion = std::is_base_of<AllOwningUnionBase, T>::value>
+template <typename T, bool isDictionary = is_dom_dictionary<T>,
+          bool isTypedArray = is_dom_typed_array<T>,
+          bool isOwningUnion = is_dom_owning_union<T>>
 class SequenceTracer {
   explicit SequenceTracer() = delete;  
 };
