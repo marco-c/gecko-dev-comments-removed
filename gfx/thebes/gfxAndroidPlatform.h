@@ -40,11 +40,7 @@ class gfxAndroidPlatform final : public gfxPlatform {
   already_AddRefed<mozilla::gfx::VsyncSource> CreateGlobalHardwareVsyncSource()
       override;
 
-  static bool CheckVariationFontSupport() {
-    
-    
-    return true;
-  }
+  static bool CheckVariationFontSupport();
 
  protected:
   void InitAcceleration() override;
