@@ -380,7 +380,8 @@ nsTArray<RefPtr<RTCStatsPromise>> RTCRtpReceiver::GetStatsInternal(
               local.mPacketsLost.Construct(audioStats->packets_lost);
               local.mPacketsReceived.Construct(audioStats->packets_received);
               local.mPacketsDiscarded.Construct(audioStats->packets_discarded);
-              local.mBytesReceived.Construct(audioStats->payload_bytes_received);
+              local.mBytesReceived.Construct(
+                  audioStats->payload_bytes_received);
               
               
               
