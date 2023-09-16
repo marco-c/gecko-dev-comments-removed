@@ -2061,9 +2061,9 @@ XMLHttpRequestMainThread::OnStartRequest(nsIRequest* request) {
       } else {
         mIsHtml = true;
       }
-    } else if (!(type.EqualsLiteral("text/xml") ||
-                 type.EqualsLiteral("application/xml") ||
-                 StringEndsWith(type, "+xml"_ns))) {
+    } else if (!type.IsEmpty() && (!(type.EqualsLiteral("text/xml") ||
+                                     type.EqualsLiteral("application/xml") ||
+                                     StringEndsWith(type, "+xml"_ns)))) {
       
       
       
