@@ -1047,18 +1047,15 @@ void nsXULElement::ClickWithInputSource(uint16_t aInputSource,
 
       
       nsEventStatus status = nsEventStatus_eIgnore;
-      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
-                                &eventDown, nullptr, &status);
+      EventDispatcher::Dispatch(this, context, &eventDown, nullptr, &status);
 
       
       status = nsEventStatus_eIgnore;  
-      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
-                                &eventUp, nullptr, &status);
+      EventDispatcher::Dispatch(this, context, &eventUp, nullptr, &status);
 
       
       status = nsEventStatus_eIgnore;  
-      EventDispatcher::Dispatch(static_cast<nsIContent*>(this), context,
-                                &eventClick, nullptr, &status);
+      EventDispatcher::Dispatch(this, context, &eventClick, nullptr, &status);
 
       
       

@@ -840,8 +840,10 @@ void nsDocLoader::DocLoaderIsEmpty(bool aFlushLayout,
                 event.mTarget = doc;
                 nsEventStatus unused = nsEventStatus_eIgnore;
                 doc->SetLoadEventFiring(true);
-                EventDispatcher::Dispatch(window, nullptr, &event, nullptr,
-                                          &unused);
+                
+                EventDispatcher::Dispatch(
+                    MOZ_KnownLive(nsGlobalWindowOuter::Cast(window)), nullptr,
+                    &event, nullptr, &unused);
                 doc->SetLoadEventFiring(false);
 
                 

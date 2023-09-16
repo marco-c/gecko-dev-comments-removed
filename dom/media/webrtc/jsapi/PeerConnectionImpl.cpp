@@ -2814,7 +2814,10 @@ bool PeerConnectionImpl::PluginCrash(uint32_t aPluginID,
   event->WidgetEventPtr()->mFlags.mOnlyChromeDispatch = true;
 
   nsCOMPtr<nsPIDOMWindowInner> window = mWindow;
-  EventDispatcher::DispatchDOMEvent(window, nullptr, event, nullptr, nullptr);
+  
+  EventDispatcher::DispatchDOMEvent(
+      MOZ_KnownLive(nsGlobalWindowInner::Cast(window)), nullptr, event, nullptr,
+      nullptr);
 
   return true;
 }

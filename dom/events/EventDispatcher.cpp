@@ -754,7 +754,7 @@ static void DescribeEventTargetForProfilerMarker(const EventTarget* aTarget,
 }
 
 
-nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
+nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
                                    nsPresContext* aPresContext,
                                    WidgetEvent* aEvent, Event* aDOMEvent,
                                    nsEventStatus* aEventStatus,
@@ -779,7 +779,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
   NS_ENSURE_TRUE(!nsContentUtils::IsInStableOrMetaStableState(),
                  NS_ERROR_DOM_INVALID_STATE_ERR);
 
-  nsCOMPtr<EventTarget> target = do_QueryInterface(aTarget);
+  nsCOMPtr<EventTarget> target(aTarget);
 
   RefPtr<PerformanceEventTiming> eventTimingEntry;
   
@@ -1246,7 +1246,7 @@ nsresult EventDispatcher::Dispatch(nsISupports* aTarget,
 }
 
 
-nsresult EventDispatcher::DispatchDOMEvent(nsISupports* aTarget,
+nsresult EventDispatcher::DispatchDOMEvent(EventTarget* aTarget,
                                            WidgetEvent* aEvent,
                                            Event* aDOMEvent,
                                            nsPresContext* aPresContext,
