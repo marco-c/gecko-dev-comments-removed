@@ -317,8 +317,17 @@ class AsyncPanZoomController {
 
 
 
+
+
+
+
+
+
+
+
+
   Matrix4x4 GetTransformToLastDispatchedPaint(
-      const AsyncTransformComponents& aComponents = LayoutAndVisual) const;
+      const AsyncTransformComponents& aComponents, LayersId aForLayersId) const;
 
   
 
@@ -1236,6 +1245,24 @@ class AsyncPanZoomController {
       AsyncTransformConsumer aMode,
       AsyncTransformComponents aComponents = LayoutAndVisual,
       std::size_t aSampleIndex = 0) const;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  AsyncTransformComponentMatrix GetAsyncTransformForInputTransformation(
+      AsyncTransformComponents aComponents, LayersId aForLayersId) const;
 
   
 

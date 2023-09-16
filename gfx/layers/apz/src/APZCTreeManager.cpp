@@ -3158,8 +3158,8 @@ ScreenToParentLayerMatrix4x4 APZCTreeManager::GetScreenToApzcTransform(
     ancestorUntransform = parent->GetAncestorTransform().Inverse();
     
     Matrix4x4 asyncUntransform = parent
-                                     ->GetCurrentAsyncTransformWithOverscroll(
-                                         AsyncPanZoomController::eForHitTesting)
+                                     ->GetAsyncTransformForInputTransformation(
+                                         LayoutAndVisual, aApzc->GetLayersId())
                                      .Inverse()
                                      .ToUnknownMatrix();
     
@@ -3195,17 +3195,17 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
   
 
   
-  Matrix4x4 asyncUntransform =
-      aApzc
-          ->GetCurrentAsyncTransformWithOverscroll(
-              AsyncPanZoomController::eForHitTesting, aComponents)
-          .Inverse()
-          .ToUnknownMatrix();
+  Matrix4x4 asyncUntransform = aApzc
+                                   ->GetAsyncTransformForInputTransformation(
+                                       aComponents, aApzc->GetLayersId())
+                                   .Inverse()
+                                   .ToUnknownMatrix();
 
   
   
   result = asyncUntransform *
-           aApzc->GetTransformToLastDispatchedPaint(aComponents) *
+           aApzc->GetTransformToLastDispatchedPaint(aComponents,
+                                                    aApzc->GetLayersId()) *
            aApzc->GetAncestorTransform();
 
   for (AsyncPanZoomController* parent = aApzc->GetParent(); parent;
@@ -3216,7 +3216,8 @@ ParentLayerToScreenMatrix4x4 APZCTreeManager::GetApzcToGeckoTransform(
     
     
     result = result *
-             parent->GetTransformToLastDispatchedPaint(LayoutAndVisual) *
+             parent->GetTransformToLastDispatchedPaint(LayoutAndVisual,
+                                                       aApzc->GetLayersId()) *
              parent->GetAncestorTransform();
 
     
