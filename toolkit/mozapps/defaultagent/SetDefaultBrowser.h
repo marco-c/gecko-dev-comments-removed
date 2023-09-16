@@ -6,8 +6,6 @@
 #ifndef DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H__
 #define DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H__
 
-#include "nsStringFwd.h"
-#include "nsTArray.h"
 
 
 
@@ -34,8 +32,7 @@
 
 
 HRESULT SetDefaultBrowserUserChoice(
-    const wchar_t* aAumi,
-    const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>());
+    const wchar_t* aAumi, const wchar_t* const* aExtraFileExtensions = nullptr);
 
 
 
@@ -52,7 +49,7 @@ HRESULT SetDefaultBrowserUserChoice(
 
 
 HRESULT SetDefaultExtensionHandlersUserChoice(
-    const wchar_t* aAumi, const nsTArray<nsString>& aFileExtensions);
+    const wchar_t* aAumi, const wchar_t* const* aFileExtensions = nullptr);
 
 
 

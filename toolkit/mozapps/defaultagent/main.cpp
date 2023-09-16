@@ -1,0 +1,428 @@
+
+
+
+
+
+
+#include <windows.h>
+#include <shlwapi.h>
+#include <objbase.h>
+#include <string.h>
+#include <iostream>
+
+#include "nsAutoRef.h"
+#include "nsWindowsHelpers.h"
+#include "mozilla/WinHeaderOnlyUtils.h"
+
+#include "common.h"
+#include "Policy.h"
+#include "DefaultBrowser.h"
+#include "DefaultPDF.h"
+#include "EventLog.h"
+#include "Notification.h"
+#include "Registry.h"
+#include "RemoteSettings.h"
+#include "ScheduledTask.h"
+#include "SetDefaultBrowser.h"
+#include "Telemetry.h"
+
+
+
+
+#define REGISTRY_MUTEX_NAME \
+  L"" MOZ_APP_VENDOR MOZ_APP_BASENAME L"DefaultBrowserAgentRegistryMutex"
+
+
+
+#define REGISTRY_MUTEX_TIMEOUT_MS (3 * 1000)
+
+
+
+
+
+
+
+static bool IsPrefixedValueName(const wchar_t* valueName) {
+  
+  
+  return wcschr(valueName, L'|') != nullptr;
+}
+
+static void RemoveAllRegistryEntries() {
+  mozilla::UniquePtr<wchar_t[]> installPath = mozilla::GetFullBinaryPath();
+  if (!PathRemoveFileSpecW(installPath.get())) {
+    return;
+  }
+
+  HKEY rawRegKey = nullptr;
+  if (ERROR_SUCCESS !=
+      RegOpenKeyExW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME, 0,
+                    KEY_WRITE | KEY_QUERY_VALUE | KEY_WOW64_64KEY,
+                    &rawRegKey)) {
+    return;
+  }
+  nsAutoRegKey regKey(rawRegKey);
+
+  DWORD maxValueNameLen = 0;
+  if (ERROR_SUCCESS != RegQueryInfoKeyW(regKey.get(), nullptr, nullptr, nullptr,
+                                        nullptr, nullptr, nullptr, nullptr,
+                                        &maxValueNameLen, nullptr, nullptr,
+                                        nullptr)) {
+    return;
+  }
+  
+  maxValueNameLen += 1;
+
+  mozilla::UniquePtr<wchar_t[]> valueName =
+      mozilla::MakeUnique<wchar_t[]>(maxValueNameLen);
+
+  DWORD valueIndex = 0;
+  
+  
+  
+  bool keyStillInUse = false;
+
+  while (true) {
+    DWORD valueNameLen = maxValueNameLen;
+    LSTATUS ls =
+        RegEnumValueW(regKey.get(), valueIndex, valueName.get(), &valueNameLen,
+                      nullptr, nullptr, nullptr, nullptr);
+    if (ls != ERROR_SUCCESS) {
+      break;
+    }
+
+    if (!wcsnicmp(valueName.get(), installPath.get(),
+                  wcslen(installPath.get()))) {
+      RegDeleteValue(regKey.get(), valueName.get());
+      
+      
+      
+      
+    } else {
+      valueIndex++;
+      if (IsPrefixedValueName(valueName.get())) {
+        
+        
+        keyStillInUse = true;
+      }
+    }
+  }
+
+  regKey.reset();
+
+  
+  if (!keyStillInUse) {
+    
+    RegDeleteTreeW(HKEY_CURRENT_USER, AGENT_REGKEY_NAME);
+  }
+}
+
+
+
+
+
+
+
+
+static void WriteInstallationRegistryEntry() {
+  mozilla::WindowsErrorResult<mozilla::Ok> result =
+      RegistrySetValueBool(IsPrefixed::Prefixed, L"Installed", true);
+  if (result.isErr()) {
+    LOG_ERROR_MESSAGE(L"Failed to write installation registry entry: %#X",
+                      result.unwrapErr().AsHResult());
+  }
+}
+
+
+
+
+class RegistryMutex {
+ private:
+  nsAutoHandle mMutex;
+  bool mLocked;
+
+ public:
+  RegistryMutex() : mMutex(nullptr), mLocked(false) {}
+  ~RegistryMutex() {
+    Release();
+    
+  }
+
+  
+  bool Acquire() {
+    if (mLocked) {
+      return true;
+    }
+
+    if (mMutex.get() == nullptr) {
+      
+      
+      
+      
+      mMutex.own(CreateMutexW(nullptr, FALSE, REGISTRY_MUTEX_NAME));
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Couldn't open registry mutex: %#X", GetLastError());
+        return false;
+      }
+    }
+
+    DWORD mutexStatus =
+        WaitForSingleObject(mMutex.get(), REGISTRY_MUTEX_TIMEOUT_MS);
+    if (mutexStatus == WAIT_OBJECT_0) {
+      mLocked = true;
+    } else if (mutexStatus == WAIT_TIMEOUT) {
+      LOG_ERROR_MESSAGE(L"Timed out waiting for registry mutex");
+    } else if (mutexStatus == WAIT_ABANDONED) {
+      
+      
+      
+      
+      
+      LOG_ERROR_MESSAGE(L"Found abandoned registry mutex. Continuing...");
+      mLocked = true;
+    } else {
+      
+      
+      LOG_ERROR_MESSAGE(L"Failed to wait on registry mutex: %#X",
+                        GetLastError());
+    }
+    return mLocked;
+  }
+
+  bool IsLocked() { return mLocked; }
+
+  void Release() {
+    if (mLocked) {
+      if (mMutex.get() == nullptr) {
+        LOG_ERROR_MESSAGE(L"Unexpectedly missing registry mutex");
+        return;
+      }
+      BOOL success = ReleaseMutex(mMutex.get());
+      if (!success) {
+        LOG_ERROR_MESSAGE(L"Failed to release registry mutex");
+      }
+      mLocked = false;
+    }
+  }
+};
+
+
+static bool CheckIfAppRanRecently(bool* aResult) {
+  const ULONGLONG kTaskExpirationDays = 90;
+  const ULONGLONG kTaskExpirationSeconds = kTaskExpirationDays * 24 * 60 * 60;
+
+  MaybeQwordResult lastRunTimeResult =
+      RegistryGetValueQword(IsPrefixed::Prefixed, L"AppLastRunTime");
+  if (lastRunTimeResult.isErr()) {
+    return false;
+  }
+  mozilla::Maybe<ULONGLONG> lastRunTimeMaybe = lastRunTimeResult.unwrap();
+  if (!lastRunTimeMaybe.isSome()) {
+    return false;
+  }
+
+  ULONGLONG secondsSinceLastRunTime =
+      SecondsPassedSince(lastRunTimeMaybe.value());
+
+  *aResult = secondsSinceLastRunTime < kTaskExpirationSeconds;
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int wmain(int argc, wchar_t** argv) {
+  if (argc < 2 || !argv[1]) {
+    return E_INVALIDARG;
+  }
+
+  HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+  if (FAILED(hr)) {
+    return hr;
+  }
+
+  const struct ComUninitializer {
+    ~ComUninitializer() { CoUninitialize(); }
+  } kCUi;
+
+  RegistryMutex regMutex;
+
+  
+  
+  
+  if (!wcscmp(argv[1], L"uninstall")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    regMutex.Acquire();
+
+    RemoveAllRegistryEntries();
+    return RemoveTasks(argv[2], WhichTasks::AllTasksForInstallation);
+  } else if (!wcscmp(argv[1], L"unregister-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    return RemoveTasks(argv[2], WhichTasks::WdbaTaskOnly);
+  } else if (!wcscmp(argv[1], L"debug-remote-disabled")) {
+    int disabled = IsAgentRemoteDisabled();
+    std::cerr << "default-browser-agent: IsAgentRemoteDisabled: " << disabled
+              << std::endl;
+    return S_OK;
+  }
+
+  
+  
+  
+  
+  if (IsAgentDisabled()) {
+    return HRESULT_FROM_WIN32(ERROR_ACCESS_DISABLED_BY_POLICY);
+  }
+
+  if (!wcscmp(argv[1], L"register-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    regMutex.Acquire();
+
+    WriteInstallationRegistryEntry();
+
+    return RegisterTask(argv[2]);
+  } else if (!wcscmp(argv[1], L"update-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+    
+    
+    regMutex.Acquire();
+
+    WriteInstallationRegistryEntry();
+
+    return UpdateTask(argv[2]);
+  } else if (!wcscmp(argv[1], L"do-task")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    bool force = (argc > 3) && ((0 == wcscmp(argv[3], L"--force")) ||
+                                (0 == wcscmp(argv[3], L"-force")));
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (!regMutex.Acquire()) {
+      return HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION);
+    }
+
+    
+    
+    
+    bool ranRecently = false;
+    if (!force && (!CheckIfAppRanRecently(&ranRecently) || !ranRecently)) {
+      return SCHED_E_TASK_ATTEMPTED;
+    }
+
+    
+    
+    if (IsAgentRemoteDisabled()) {
+      return S_OK;
+    }
+
+    DefaultBrowserResult defaultBrowserResult = GetDefaultBrowserInfo();
+    if (defaultBrowserResult.isErr()) {
+      return defaultBrowserResult.unwrapErr().AsHResult();
+    }
+    DefaultBrowserInfo browserInfo = defaultBrowserResult.unwrap();
+
+    DefaultPdfResult defaultPdfResult = GetDefaultPdfInfo();
+    if (defaultPdfResult.isErr()) {
+      return defaultPdfResult.unwrapErr().AsHResult();
+    }
+    DefaultPdfInfo pdfInfo = defaultPdfResult.unwrap();
+
+    NotificationActivities activitiesPerformed =
+        MaybeShowNotification(browserInfo, argv[2], force);
+
+    return SendDefaultBrowserPing(browserInfo, pdfInfo, activitiesPerformed);
+  } else if (!wcscmp(argv[1], L"set-default-browser-user-choice")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    
+    
+    return SetDefaultBrowserUserChoice(argv[2], &argv[3]);
+  } else if (!wcscmp(argv[1], L"set-default-extension-handlers-user-choice")) {
+    if (argc < 3 || !argv[2]) {
+      return E_INVALIDARG;
+    }
+
+    
+    
+    return SetDefaultExtensionHandlersUserChoice(argv[2], &argv[3]);
+  } else {
+    return E_INVALIDARG;
+  }
+}

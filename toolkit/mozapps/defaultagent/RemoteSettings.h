@@ -1,0 +1,14 @@
+
+
+
+
+
+
+#ifndef __DEFAULT_BROWSER_AGENT_REMOTE_SETTINGS_H__
+#define __DEFAULT_BROWSER_AGENT_REMOTE_SETTINGS_H__
+
+#include <windows.h>
+
+bool IsAgentRemoteDisabled();
+
+#endif  
