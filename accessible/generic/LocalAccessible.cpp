@@ -3550,6 +3550,22 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
             currTextFrame->GetCharacterRectsInRange(
                 currTextFrame->GetContentOffset(), length, charBounds);
             for (nsRect& charRect : charBounds) {
+              if (charRect.width == 0 &&
+                  !currTextFrame->StyleText()->WhiteSpaceIsSignificant()) {
+                
+                
+                
+                
+                
+                
+                
+                const char16_t contentChar = mContent->GetText()->CharAt(
+                    charData.Length() / kNumbersInRect);
+                if (contentChar == u' ' || contentChar == u'\t' ||
+                    contentChar == u'\n') {
+                  continue;
+                }
+              }
               
               
               

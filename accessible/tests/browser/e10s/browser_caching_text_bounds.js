@@ -1,17 +1,17 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 "use strict";
 requestLongerTimeout(3);
 
-/* import-globals-from ../../mochitest/layout.js */
+
 loadScripts({ name: "layout.js", dir: MOCHITESTS_DIR });
 
-// Note that testTextNode, testChar and testTextRange currently don't handle
-// white space in the code that doesn't get rendered on screen. To work around
-// this, ensure that containers you want to test are all on a single line in the
-// test snippet.
+
+
+
+
 
 async function testTextNode(accDoc, browser, id) {
   await testTextRange(accDoc, browser, id, 0, -1);
@@ -37,7 +37,7 @@ async function testTextRange(accDoc, browser, id, start, end) {
       let localStart = _start;
       let endTraversal = false;
       for (let element of htNode.childNodes) {
-        // ignore whitespace, but not embedded elements
+        
         let isEmbeddedElement = false;
         if (element.length == undefined) {
           let potentialTextContainer = element;
@@ -48,9 +48,9 @@ async function testTextRange(accDoc, browser, id, start, end) {
             potentialTextContainer = element.firstChild;
           }
           if (potentialTextContainer && potentialTextContainer.length) {
-            // If we can reach some text from this container, use that as part
-            // of our range. This is important when testing with intervening inline
-            // elements. ie. <pre><code>ab%0acd
+            
+            
+            
             element = potentialTextContainer;
           } else if (element.firstChild) {
             isEmbeddedElement = true;
@@ -59,8 +59,8 @@ async function testTextRange(accDoc, browser, id, start, end) {
           }
         }
         if (element.length + traversed < _start) {
-          // If our start index is not within this
-          // node, keep looking.
+          
+          
           traversed += element.length;
           localStart -= element.length;
           continue;
@@ -74,8 +74,8 @@ async function testTextRange(accDoc, browser, id, start, end) {
           range.setStart(element, localStart);
 
           if (_end != -1 && _end - traversed <= element.length) {
-            // If the current node contains
-            // our end index, stop here.
+            
+            
             endTraversal = true;
             range.setEnd(element, _end - traversed);
           } else {
@@ -103,10 +103,10 @@ async function testTextRange(accDoc, browser, id, start, end) {
   );
   let hyperTextNode = findAccessibleChildByID(accDoc, id);
 
-  // Add in the doc's screen coords because getBoundingClientRect
-  // is relative to the document, not the screen. This assumes the doc's
-  // screen coords are correct. We use getBoundsInCSSPixels to avoid factoring
-  // in the DPR ourselves.
+  
+  
+  
+  
   let x = {};
   let y = {};
   let w = {};
@@ -115,17 +115,38 @@ async function testTextRange(accDoc, browser, id, start, end) {
   r[0] += x.value;
   r[1] += y.value;
   if (end != -1 && end - start == 1) {
-    // If we're only testing a character, use this function because it calls
-    // CharBounds() directly instead of TextBounds().
+    
+    
     testTextPos(hyperTextNode, start, [r[0], r[1]], COORDTYPE_SCREEN_RELATIVE);
   } else {
     testTextBounds(hyperTextNode, start, end, r, COORDTYPE_SCREEN_RELATIVE);
   }
 }
 
-/**
- * Test the text range boundary for simple LtR text
- */
+
+
+
+
+
+async function testLineWithNonRenderedSpace(docAcc, browser, id, length) {
+  await testChar(docAcc, browser, id, 0);
+  const acc = findAccessibleChildByID(docAcc, id, [nsIAccessibleText]);
+  let prevX = -1;
+  for (let offset = 0; offset < length; ++offset) {
+    const x = {};
+    const y = {};
+    const w = {};
+    const h = {};
+    acc.getCharacterExtents(offset, x, y, w, h, COORDTYPE_SCREEN_RELATIVE);
+    ok(x.value > prevX, `${id}: offset ${offset} x is larger (${x.value})`);
+    prevX = x.value;
+    ok(w.value > 0, `${id}: offset ${offset} width > 0`);
+  }
+}
+
+
+
+
 addAccessibleTask(
   `
   <p id='p1' style='font-family: monospace;'>Tilimilitryamdiya</p>
@@ -145,9 +166,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test the partial text range boundary for LtR text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p1' style='font-family: monospace;'>Tilimilitryamdiya</p>
@@ -168,9 +189,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test the text boundary for multiline LtR text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p4' dir='ltr' style='font-family: monospace;'>Привіт Світ<br>Привіт Світ</p>
@@ -182,7 +203,7 @@ addAccessibleTask(
     info("Testing multiline LtR text");
     await testTextNode(accDoc, browser, "p4");
     await testTextNode(accDoc, browser, "p5");
-    // await testTextNode(accDoc, browser, "p6"); // w/o cache, fails width (a 259, e 250), w/ cache wrong w, h in iframe (line wrapping)
+    
     await testTextNode(accDoc, browser, "p7");
   },
   {
@@ -191,9 +212,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test the text boundary for simple RtL text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p1' dir='rtl' style='font-family: monospace;'>Tilimilitryamdiya</p>
@@ -214,9 +235,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test the text boundary for multiline RtL text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p4' dir='rtl' style='font-family: monospace;'>لل لللل لل<br>لل لللل لل</p>
@@ -227,8 +248,8 @@ addAccessibleTask(
   async function (browser, accDoc) {
     info("Testing multiline RtL text");
     await testTextNode(accDoc, browser, "p4");
-    //await testTextNode(accDoc, browser, "p5"); // w/ cache fails x, w - off by one char
-    // await testTextNode(accDoc, browser, "p6"); // w/o cache, fails width (a 259, e 250), w/ cache fails w, h in iframe (line wrapping)
+    
+    
     await testTextNode(accDoc, browser, "p7");
   },
   {
@@ -237,9 +258,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test the partial text range boundary for RtL text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p1' dir='rtl' style='font-family: monospace;'>Tilimilitryamdiya</p>
@@ -260,9 +281,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test simple vertical text in rl and lr layouts
- */
+
+
+
 addAccessibleTask(
   `
   <div style="writing-mode: vertical-rl;">
@@ -294,9 +315,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test multiline vertical-rl text
- */
+
+
+
 addAccessibleTask(
   `
   <p id='p1' style='writing-mode: vertical-rl;'>你好世界<br>你好世界</p>
@@ -310,7 +331,7 @@ addAccessibleTask(
     await testTextNode(accDoc, browser, "p1");
     await testTextNode(accDoc, browser, "p2");
     await testTextNode(accDoc, browser, "p3");
-    // await testTextNode(accDoc, browser, "p4"); // off by 4 with caching, iframe
+    
   },
   {
     topLevel: true,
@@ -318,9 +339,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test text with embedded chars
- */
+
+
+
 addAccessibleTask(
   `<p id='p1' style='font-family: monospace;'>hello <a href="google.com">world</a></p>
    <p id='p2' style='font-family: monospace;'>hello<br><a href="google.com">world</a></p>
@@ -341,9 +362,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test bounds after text mutations.
- */
+
+
+
 addAccessibleTask(
   `<p id="p">a</p>`,
   async function (browser, docAcc) {
@@ -364,9 +385,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test character bounds on the insertion point at the end of a text box.
- */
+
+
+
 addAccessibleTask(
   `<input id="input" value="a">`,
   async function (browser, docAcc) {
@@ -380,9 +401,9 @@ addAccessibleTask(
   }
 );
 
-/**
- * Test character bounds after non-br line break.
- */
+
+
+
 addAccessibleTask(
   `
   <style>
@@ -406,9 +427,9 @@ XXX</pre>`,
   }
 );
 
-/**
- * Test character bounds in a pre with padding.
- */
+
+
+
 addAccessibleTask(
   `
   <style>
@@ -434,9 +455,9 @@ XXX</pre>`,
   }
 );
 
-/**
- * Test text bounds with an invalid end offset.
- */
+
+
+
 addAccessibleTask(
   `<p id="p">a</p>`,
   async function (browser, docAcc) {
@@ -446,9 +467,9 @@ addAccessibleTask(
   { chrome: true, topLevel: !true }
 );
 
-/**
- * Test character bounds in an intervening inline element with non-br line breaks
- */
+
+
+
 addAccessibleTask(
   `
   <style>
@@ -477,10 +498,10 @@ X</pre>`,
   }
 );
 
-/**
- * Test character bounds in an intervening inline element with margins
- * and with non-br line breaks
- */
+
+
+
+
 addAccessibleTask(
   `
   <style>
@@ -506,9 +527,9 @@ X</pre></div>`,
   }
 );
 
-/**
- * Test text bounds in a textarea after scrolling.
- */
+
+
+
 addAccessibleTask(
   `
 <textarea id="textarea" rows="1">a
@@ -516,8 +537,8 @@ b
 c</textarea>
   `,
   async function (browser, docAcc) {
-    // We can't use testChar because Range.getBoundingClientRect isn't supported
-    // inside textareas.
+    
+    
     const textarea = findAccessibleChildByID(docAcc, "textarea");
     textarea.QueryInterface(nsIAccessibleText);
     const oldY = {};
@@ -550,9 +571,9 @@ c</textarea>
   { chrome: true, topLevel: true, iframe: !true }
 );
 
-/**
- * Test magic offsets with GetCharacter/RangeExtents.
- */
+
+
+
 addAccessibleTask(
   `<input id="input" value="abc">`,
   async function (browser, docAcc) {
@@ -622,9 +643,9 @@ addAccessibleTask(
   { chrome: true, topLevel: true, remoteIframe: !true }
 );
 
-/**
- * Test wrapped text and pre-formatted text beginning with an empty line.
- */
+
+
+
 addAccessibleTask(
   `
 <style>
@@ -644,9 +665,9 @@ foo</p>
     await testChar(docAcc, browser, "wrappedText", 3);
     await testChar(docAcc, browser, "wrappedText", 4);
 
-    // We can't use testChar for emptyFirstLine because it doesn't handle white
-    // space properly. Instead, verify that the first character is at the top
-    // left of the text leaf.
+    
+    
+    
     const emptyFirstLine = findAccessibleChildByID(docAcc, "emptyFirstLine", [
       nsIAccessibleText,
     ]);
@@ -664,9 +685,9 @@ foo</p>
   { chrome: true, topLevel: true, remoteIframe: !true }
 );
 
-/**
- * Test character bounds in an intervening inline element with non-br line breaks
- */
+
+
+
 addAccessibleTask(
   `
   <style>
@@ -693,4 +714,24 @@ X</pre>`,
     topLevel: true,
     iframe: true,
   }
+);
+
+
+
+
+addAccessibleTask(
+  `
+<p id="single">a  b</p>
+<p id="multi"><ins>a </ins>
+b</p>
+<pre id="pre">a  b</pre>
+  `,
+  async function (browser, docAcc) {
+    await testLineWithNonRenderedSpace(docAcc, browser, "single", 3);
+    await testLineWithNonRenderedSpace(docAcc, browser, "multi", 2);
+    for (let offset = 0; offset < 4; ++offset) {
+      await testChar(docAcc, browser, "pre", offset);
+    }
+  },
+  { chrome: true, topLevel: true }
 );
