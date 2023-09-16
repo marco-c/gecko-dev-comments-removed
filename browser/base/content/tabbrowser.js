@@ -3171,7 +3171,7 @@
           if (!tab.parentNode) {
             tab._tPos = this._numPinnedTabs;
             this.tabContainer.insertBefore(tab, this.tabs[this._numPinnedTabs]);
-            tab.setAttribute("pinned", "true");
+            tab.toggleAttribute("pinned", true);
             this.tabContainer._invalidateCachedTabs();
             
             this._fireTabOpen(tab, {});
@@ -3934,8 +3934,9 @@
         aTab.hidden ||
         this._removingTabs.size >
           3  ||
-        aTab.getAttribute("fadein") !=
-          "true"  ||
+        !aTab.hasAttribute(
+          "fadein"
+        )  ||
         tabWidth == 0 
       ) {
         
