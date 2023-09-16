@@ -120,10 +120,6 @@ class DeviceManagerDx final {
   bool MaybeResetAndReacquireDevices();
 
   
-  
-  bool CheckRemotePresentSupport();
-
-  
   bool HasDeviceReset(DeviceResetReason* aOutReason = nullptr);
 
   

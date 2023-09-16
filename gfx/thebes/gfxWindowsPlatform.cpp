@@ -190,28 +190,15 @@ class GPUAdapterReporter final : public nsIMemoryReporter {
           queryStatistics.QuerySegment.SegmentId = i;
 
           if (NT_SUCCESS(queryD3DKMTStatistics(&queryStatistics))) {
-            bool aperture;
-
-            
-            
-            if (!IsWin8OrLater())
-              aperture = queryStatistics.QueryResult.SegmentInfoWin7.Aperture;
-            else
-              aperture = queryStatistics.QueryResult.SegmentInfoWin8.Aperture;
-
+            bool aperture = queryStatistics.QueryResult.SegmentInfo.Aperture;
             memset(&queryStatistics, 0, sizeof(D3DKMTQS));
             queryStatistics.Type = D3DKMTQS_PROCESS_SEGMENT;
             queryStatistics.AdapterLuid = adapterDesc.AdapterLuid;
             queryStatistics.hProcess = ProcessHandle;
             queryStatistics.QueryProcessSegment.SegmentId = i;
             if (NT_SUCCESS(queryD3DKMTStatistics(&queryStatistics))) {
-              ULONGLONG bytesCommitted;
-              if (!IsWin8OrLater())
-                bytesCommitted = queryStatistics.QueryResult.ProcessSegmentInfo
-                                     .Win7.BytesCommitted;
-              else
-                bytesCommitted = queryStatistics.QueryResult.ProcessSegmentInfo
-                                     .Win8.BytesCommitted;
+              ULONGLONG bytesCommitted =
+                  queryStatistics.QueryResult.ProcessSegmentInfo.BytesCommitted;
               if (aperture)
                 sharedBytesUsed += bytesCommitted;
               else
@@ -652,12 +639,11 @@ mozilla::gfx::BackendType gfxWindowsPlatform::GetPreferredCanvasBackend() {
 }
 
 bool gfxWindowsPlatform::CreatePlatformFontList() {
-  
-  
-  if (IsNotWin7PreRTM() && DWriteEnabled()) {
+  if (DWriteEnabled()) {
     if (gfxPlatformFontList::Initialize(new gfxDWriteFontList)) {
       return true;
     }
+
     
     
     
@@ -1200,16 +1186,6 @@ bool gfxWindowsPlatform::IsOptimus() {
   return knowIsOptimus;
 }
 
-
-
-
-
-
-
-
-
-
-
 static void InitializeANGLEConfig() {
   FeatureState& d3d11ANGLE = gfxConfig::GetFeature(Feature::D3D11_HW_ANGLE);
 
@@ -1268,26 +1244,6 @@ void gfxWindowsPlatform::InitializeD3D11Config() {
   if (StaticPrefs::layers_d3d11_force_warp_AtStartup()) {
     
     d3d11.UserForceEnable("User force-enabled WARP");
-  }
-
-  if (!IsWin8OrLater() &&
-      !DeviceManagerDx::Get()->CheckRemotePresentSupport()) {
-    nsCOMPtr<nsIGfxInfo> gfxInfo;
-    gfxInfo = components::GfxInfo::Service();
-    nsAutoString adaptorId;
-    gfxInfo->GetAdapterDeviceID(adaptorId);
-    
-    
-    if (adaptorId.EqualsLiteral("0x1912") ||
-        adaptorId.EqualsLiteral("0x1916") ||
-        adaptorId.EqualsLiteral("0x1902")) {
-#ifdef RELEASE_OR_BETA
-      d3d11.Disable(FeatureStatus::Blocklisted, "Blocklisted, see bug 1351349",
-                    "FEATURE_FAILURE_BUG_1351349"_ns);
-#else
-      Preferences::SetBool("gfx.compositor.clearstate", true);
-#endif
-    }
   }
 
   nsCString message;
@@ -1528,26 +1484,7 @@ void gfxWindowsPlatform::InitGPUProcessSupport() {
     gpuProc.Disable(FeatureStatus::Unavailable,
                     "Not using GPU Process since D3D11 is unavailable",
                     "FEATURE_FAILURE_NO_D3D11"_ns);
-  } else if (!IsWin7SP1OrLater()) {
-    
-    
-    
-    gpuProc.Disable(FeatureStatus::Unavailable,
-                    "Windows 7 Pre-SP1 cannot use the GPU process",
-                    "FEATURE_FAILURE_OLD_WINDOWS"_ns);
-  } else if (!IsWin8OrLater()) {
-    
-    
-    if (!DeviceManagerDx::Get()->CheckRemotePresentSupport()) {
-      gpuProc.Disable(FeatureStatus::Unavailable,
-                      "GPU Process requires the Windows 7 Platform Update",
-                      "FEATURE_FAILURE_PLATFORM_UPDATE"_ns);
-    } else {
-      
-      DeviceManagerDx::Get()->ResetDevices();
-    }
   }
-
   
 }
 
@@ -1562,14 +1499,11 @@ class D3DVsyncSource final : public VsyncSource {
   D3DVsyncSource()
       : mPrevVsync(TimeStamp::Now()),
         mVsyncEnabled(false),
-        mWaitVBlankMonitor(NULL),
-        mIsWindows8OrLater(false) {
+        mWaitVBlankMonitor(NULL) {
     mVsyncThread = new base::Thread("WindowsVsyncThread");
     MOZ_RELEASE_ASSERT(mVsyncThread->Start(),
                        "GFX: Could not start Windows vsync thread");
     SetVsyncRate();
-
-    mIsWindows8OrLater = IsWin8OrLater();
   }
 
   void SetVsyncRate() {
@@ -1674,22 +1608,20 @@ class D3DVsyncSource final : public VsyncSource {
     int64_t usAdjust = (adjust * microseconds) / frequency.QuadPart;
     vsync -= TimeDuration::FromMicroseconds((double)usAdjust);
 
-    if (IsWin10OrLater()) {
-      
-      
-      
-      
-      
+    
+    
+    
+    
+    
 
-      
-      
-      
-      
-      
-      
-      if (vsync >= now) {
-        vsync = vsync - mVsyncRate;
-      }
+    
+    
+    
+    
+    
+    
+    if (vsync >= now) {
+      vsync = vsync - mVsyncRate;
     }
 
     
@@ -1737,8 +1669,7 @@ class D3DVsyncSource final : public VsyncSource {
       }
 
       HRESULT hr = E_FAIL;
-      if (mIsWindows8OrLater &&
-          !StaticPrefs::gfx_vsync_force_disable_waitforvblank()) {
+      if (!StaticPrefs::gfx_vsync_force_disable_waitforvblank()) {
         UpdateVBlankOutput();
         if (mWaitVBlankOutput) {
           const TimeStamp vblank_begin_wait = TimeStamp::Now();
@@ -1835,7 +1766,6 @@ class D3DVsyncSource final : public VsyncSource {
 
   HMONITOR mWaitVBlankMonitor;
   RefPtr<IDXGIOutput> mWaitVBlankOutput;
-  bool mIsWindows8OrLater;
 };  
 
 already_AddRefed<mozilla::gfx::VsyncSource>
