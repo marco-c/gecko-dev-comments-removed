@@ -108,6 +108,12 @@ class nsHtml5Parser final : public nsIParser, public nsSupportsWeakReference {
   
 
 
+
+  NS_IMETHOD_(bool) IsParserClosed() override;
+
+  
+
+
   NS_IMETHOD_(bool) IsComplete() override;
 
   
