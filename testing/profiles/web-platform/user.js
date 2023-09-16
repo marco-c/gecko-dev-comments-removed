@@ -82,4 +82,6 @@ user_pref("privacy.partition.always_partition_third_party_non_cookie_storage", f
 
 user_pref("security.OCSP.enabled", 0);
 
+user_pref("security.remote_settings.intermediates.enabled", false);
+
 user_pref("general.smoothScroll", true);
