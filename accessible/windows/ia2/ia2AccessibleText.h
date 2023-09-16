@@ -19,7 +19,6 @@ template <class T>
 class StaticRefPtr;
 
 namespace a11y {
-class HyperTextAccessible;
 class HyperTextAccessibleBase;
 
 class ia2AccessibleText : public IAccessibleText {
@@ -139,14 +138,6 @@ class ia2AccessibleText : public IAccessibleText {
   AccessibleTextBoundary GetGeckoTextBoundary(
       enum IA2TextBoundaryType coordinateType);
   HyperTextAccessibleBase* TextAcc();
-
-  
-
-
-
-
-
-  std::pair<HyperTextAccessible*, HRESULT> LocalTextAcc();
 };
 
 }  
