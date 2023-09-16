@@ -1215,8 +1215,7 @@ bool Element::CanAttachShadowDOM() const {
         nameAtom == nsGkAtoms::h5 || nameAtom == nsGkAtoms::h6 ||
         nameAtom == nsGkAtoms::header || nameAtom == nsGkAtoms::main ||
         nameAtom == nsGkAtoms::nav || nameAtom == nsGkAtoms::p ||
-        nameAtom == nsGkAtoms::section || nameAtom == nsGkAtoms::search ||
-        nameAtom == nsGkAtoms::span)) {
+        nameAtom == nsGkAtoms::section || nameAtom == nsGkAtoms::span)) {
     return false;
   }
 
