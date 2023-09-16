@@ -140,6 +140,9 @@ pub(super) struct Registry {
     exit_handler: Option<Box<ExitHandler>>,
 
     
+    used_creator_thread: bool,
+
+    
     
     
     
@@ -210,26 +213,7 @@ fn default_global_registry() -> Result<Arc<Registry>, ThreadPoolBuildError> {
     
     let unsupported = matches!(&result, Err(e) if e.is_unsupported());
     if unsupported && WorkerThread::current().is_null() {
-        let builder = ThreadPoolBuilder::new()
-            .num_threads(1)
-            .spawn_handler(|thread| {
-                
-                
-                
-                let worker_thread = Box::leak(Box::new(WorkerThread::from(thread)));
-                let registry = &*worker_thread.registry;
-                let index = worker_thread.index;
-
-                unsafe {
-                    WorkerThread::set_current(worker_thread);
-
-                    
-                    Latch::set(&registry.thread_infos[index].primed);
-                }
-
-                Ok(())
-            });
-
+        let builder = ThreadPoolBuilder::new().num_threads(1).use_current_thread();
         let fallback_result = Registry::new(builder);
         if fallback_result.is_ok() {
             return fallback_result;
@@ -291,6 +275,7 @@ impl Registry {
             panic_handler: builder.take_panic_handler(),
             start_handler: builder.take_start_handler(),
             exit_handler: builder.take_exit_handler(),
+            used_creator_thread: builder.use_current_thread,
         });
 
         
@@ -305,6 +290,23 @@ impl Registry {
                 stealer,
                 index,
             };
+
+            if index == 0 && builder.use_current_thread {
+                
+                
+                
+                
+                
+                
+                let worker_thread = Box::into_raw(Box::new(WorkerThread::from(thread)));
+
+                unsafe {
+                    WorkerThread::set_current(worker_thread);
+                    Latch::set(&registry.thread_infos[index].primed);
+                }
+                continue;
+            }
+
             if let Err(e) = builder.get_spawn_handler().spawn(thread) {
                 return Err(ThreadPoolBuildError::new(ErrorKind::IOError(e)));
             }
@@ -618,6 +620,10 @@ impl Registry {
     
     pub(super) fn notify_worker_latch_is_set(&self, target_worker_index: usize) {
         self.sleep.notify_worker_latch_is_set(target_worker_index);
+    }
+
+    pub(super) fn used_creator_thread(&self) -> bool {
+        self.used_creator_thread
     }
 }
 
@@ -945,13 +951,8 @@ unsafe fn main_loop(thread: ThreadBuilder) {
         worker: index,
         terminate_addr: my_terminate_latch.as_core_latch().addr(),
     });
-    worker_thread.wait_until(my_terminate_latch);
 
-    
-    debug_assert!(worker_thread.take_local_job().is_none());
-
-    
-    Latch::set(&registry.thread_infos[index].stopped);
+    wait_until_out_of_work(worker_thread);
 
     
     mem::forget(abort_guard);
@@ -963,6 +964,21 @@ unsafe fn main_loop(thread: ThreadBuilder) {
         registry.catch_unwind(|| handler(index));
         
     }
+}
+
+pub(crate) unsafe fn wait_until_out_of_work(worker_thread: &WorkerThread) {
+    debug_assert_eq!(worker_thread as *const _, WorkerThread::current());
+    let registry = &*worker_thread.registry;
+    let index = worker_thread.index;
+    let my_terminate_latch = &registry.thread_infos[index].terminate;
+
+    worker_thread.wait_until(my_terminate_latch);
+
+    
+    debug_assert!(worker_thread.take_local_job().is_none());
+
+    
+    Latch::set(&registry.thread_infos[index].stopped);
 }
 
 
