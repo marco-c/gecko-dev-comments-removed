@@ -1014,11 +1014,6 @@ pref("privacy.temporary_permission_expire_time_ms",  3600000);
 
 pref("privacy.authPromptSpoofingProtection",         true);
 
-
-#ifdef NIGHTLY_BUILD
-pref("privacy.globalprivacycontrol.functionality.enabled",  true);
-#endif
-
 pref("network.proxy.share_proxy_settings",  false); 
 
 
@@ -1526,7 +1521,6 @@ pref("services.sync.prefs.sync.privacy.clearOnShutdown.offlineApps", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.sessions", true);
 pref("services.sync.prefs.sync.privacy.clearOnShutdown.siteSettings", true);
 pref("services.sync.prefs.sync.privacy.donottrackheader.enabled", true);
-pref("services.sync.prefs.sync.privacy.globalprivacycontrol.enabled", true);
 pref("services.sync.prefs.sync.privacy.sanitize.sanitizeOnShutdown", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.enabled", true);
 pref("services.sync.prefs.sync.privacy.trackingprotection.cryptomining.enabled", true);

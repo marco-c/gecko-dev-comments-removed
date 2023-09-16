@@ -149,9 +149,6 @@ Preferences.addAll([
   { id: "privacy.donottrackheader.enabled", type: "bool" },
 
   
-  { id: "privacy.globalprivacycontrol.enabled", type: "bool" },
-
-  
   { id: "media.autoplay.default", type: "int" },
 
   
@@ -995,7 +992,6 @@ var gPrivacyPane = {
 
     this._pane = document.getElementById("panePrivacy");
 
-    this._initGlobalPrivacyControlUI();
     this._initPasswordGenerationUI();
     this._initRelayIntegrationUI();
     this._initMasterPasswordUI();
@@ -2886,22 +2882,6 @@ var gPrivacyPane = {
       features: "resizable=no",
       closingCallback: this._initMasterPasswordUI.bind(this),
     });
-  },
-
-  
-
-
-
-
-  _initGlobalPrivacyControlUI() {
-    let gpcEnabledPrefValue = Services.prefs.getBoolPref(
-      "privacy.globalprivacycontrol.functionality.enabled",
-      false
-    );
-    document.getElementById("globalPrivacyControlBox").hidden =
-      !gpcEnabledPrefValue;
-    document.getElementById("doNotTrackBox").hidden = !gpcEnabledPrefValue;
-    document.getElementById("legacyDoNotTrackBox").hidden = gpcEnabledPrefValue;
   },
 
   
