@@ -34,7 +34,7 @@ namespace {
 
 #if defined(XP_WIN)
 
-#  if (NTDDI_VERSION < NTDDI_WINBLUE) || \
+#  if defined(__MINGW32__) || (NTDDI_VERSION < NTDDI_WINBLUE) || \
       (NTDDI_VERSION == NTDDI_WINBLUE && !defined(WINBLUE_KBSPRING14))
 
 
