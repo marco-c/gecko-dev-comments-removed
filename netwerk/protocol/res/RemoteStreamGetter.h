@@ -26,7 +26,7 @@ using RemoteStreamPromise =
     mozilla::MozPromise<RemoteStreamInfo, nsresult, false>;
 using Method = RefPtr<
     MozPromise<Maybe<RemoteStreamInfo>, ipc::ResponseRejectReason, true>> (
-    PNeckoChild::*)(nsIURI*, const LoadInfoArgs&);
+    PNeckoChild::*)(nsIURI*, const Maybe<LoadInfoArgs>&);
 
 
 

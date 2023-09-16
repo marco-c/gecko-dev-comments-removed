@@ -135,26 +135,27 @@ nsresult RHEntryToRHEntryInfo(
 
 
 
-nsresult LoadInfoToLoadInfoArgs(nsILoadInfo* aLoadInfo,
-                                mozilla::net::LoadInfoArgs* outLoadInfoArgs);
+nsresult LoadInfoToLoadInfoArgs(
+    nsILoadInfo* aLoadInfo,
+    Maybe<mozilla::net::LoadInfoArgs>* outOptionalLoadInfoArgs);
 
 
 
 
-nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
-                                nsILoadInfo** outLoadInfo);
-nsresult LoadInfoArgsToLoadInfo(const mozilla::net::LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
-                                nsINode* aCspToInheritLoadingContext,
-                                nsILoadInfo** outLoadInfo);
-nsresult LoadInfoArgsToLoadInfo(const net::LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
-                                mozilla::net::LoadInfo** outLoadInfo);
-nsresult LoadInfoArgsToLoadInfo(const net::LoadInfoArgs& aLoadInfoArgs,
-                                const nsACString& aOriginRemoteType,
-                                nsINode* aCspToInheritLoadingContext,
-                                mozilla::net::LoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(
+    const Maybe<mozilla::net::LoadInfoArgs>& aOptionalLoadInfoArgs,
+    const nsACString& aOriginRemoteType, nsILoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(
+    const Maybe<mozilla::net::LoadInfoArgs>& aOptionalLoadInfoArgs,
+    const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
+    nsILoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(
+    const Maybe<net::LoadInfoArgs>& aOptionalLoadInfoArgs,
+    const nsACString& aOriginRemoteType, mozilla::net::LoadInfo** outLoadInfo);
+nsresult LoadInfoArgsToLoadInfo(
+    const Maybe<net::LoadInfoArgs>& aOptionalLoadInfoArgs,
+    const nsACString& aOriginRemoteType, nsINode* aCspToInheritLoadingContext,
+    mozilla::net::LoadInfo** outLoadInfo);
 
 
 
