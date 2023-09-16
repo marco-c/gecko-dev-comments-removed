@@ -312,6 +312,18 @@ async function clickManageLanguages() {
 
 
 
+async function assertIsAlwaysOfferTranslationsEnabled(checked) {
+  await assertCheckboxState(
+    "translations-panel-settings-always-offer-translation",
+    { checked }
+  );
+}
+
+
+
+
+
+
 
 
 
