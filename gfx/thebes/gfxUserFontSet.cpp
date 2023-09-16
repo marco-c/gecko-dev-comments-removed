@@ -129,6 +129,20 @@ class MOZ_STACK_CLASS gfxOTSMessageContext : public gfxOTSContext {
   virtual void Message(int level, const char* format,
                        ...) MSGFUNC_FMT_ATTR override {
     va_list va;
+
+    
+    
+    if (level > 0 && strstr(format, "bbox was incorrect")) {
+      
+      
+      const char* lastSpace = strrchr(format, ' ');
+      if (lastSpace) {
+        int gid = atoi(lastSpace + 1);
+        mBadBBoxGlyphs.AppendElement(gid);
+      }
+      return;
+    }
+
     va_start(va, format);
 
     nsCString msg;
@@ -155,12 +169,23 @@ class MOZ_STACK_CLASS gfxOTSMessageContext : public gfxOTSContext {
   }
 
   nsTArray<gfxUserFontEntry::OTSMessage>&& TakeMessages() {
+    if (!mBadBBoxGlyphs.IsEmpty()) {
+      nsAutoCString msg("Glyph bbox was incorrect (glyph ids");
+      for (const auto gid : mBadBBoxGlyphs) {
+        msg.Append(" ");
+        msg.AppendInt(gid);
+      }
+      msg.Append(")");
+      mMessages.AppendElement(gfxUserFontEntry::OTSMessage{msg, 1});
+      mBadBBoxGlyphs.Clear();
+    }
     return std::move(mMessages);
   }
 
  private:
   nsTHashSet<nsCString> mWarningsIssued;
   nsTArray<gfxUserFontEntry::OTSMessage> mMessages;
+  nsTArray<uint16_t> mBadBBoxGlyphs;
 };
 
 
