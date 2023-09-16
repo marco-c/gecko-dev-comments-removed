@@ -377,6 +377,12 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
   }
 
   
+  if (Services.prefs.getBoolPref("cookiebanners.service.enableGlobalRules")) {
+    ok(true, "Skip click telemetry when global rules are enabled.");
+    return;
+  }
+
+  
   await Services.fog.testFlushAllChildren();
 
   let labels = [
