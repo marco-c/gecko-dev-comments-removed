@@ -347,7 +347,8 @@ class WidgetDragEvent : public WidgetMouseEvent {
       : WidgetMouseEvent(aIsTrusted, aMessage, aWidget, eDragEventClass, eReal,
                          aTime),
         mUserCancelled(false),
-        mDefaultPreventedOnContent(false) {}
+        mDefaultPreventedOnContent(false),
+        mInHTMLEditorEventListener(false) {}
 
   virtual WidgetEvent* Duplicate() const override {
     MOZ_ASSERT(mClass == eDragEventClass,
@@ -367,6 +368,8 @@ class WidgetDragEvent : public WidgetMouseEvent {
   bool mUserCancelled;
   
   bool mDefaultPreventedOnContent;
+  
+  bool mInHTMLEditorEventListener;
 
   
   void AssignDragEventData(const WidgetDragEvent& aEvent, bool aCopyTargets) {
@@ -377,8 +380,6 @@ class WidgetDragEvent : public WidgetMouseEvent {
     mUserCancelled = false;
     mDefaultPreventedOnContent = aEvent.mDefaultPreventedOnContent;
   }
-
-  void UpdateDefaultPreventedOnContent(dom::EventTarget* aTarget);
 
   
 
