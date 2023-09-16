@@ -1074,6 +1074,9 @@ add_task(async function testFPPCustomCheckBox() {
     ],
   });
 
+  
+  Services.fog.testResetFOG();
+
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let doc = gBrowser.contentDocument;
 
@@ -1110,6 +1113,10 @@ add_task(async function testFPPCustomCheckBox() {
     `${FPP_PBM_PREF} has been set to true`
   );
 
+  let events = Glean.privacyUiFppClick.menu.testGetValue();
+  is(events.length, 1, "The event length is correct");
+  is(events[0].extra.value, "always", "The extra field is correct.");
+
   
   menu.selectedItem = privateMenuItem;
   privateMenuItem.click();
@@ -1126,6 +1133,10 @@ add_task(async function testFPPCustomCheckBox() {
     true,
     `${FPP_PBM_PREF} has been set to true`
   );
+
+  events = Glean.privacyUiFppClick.menu.testGetValue();
+  is(events.length, 2, "The event length is correct");
+  is(events[1].extra.value, "private", "The extra field is correct.");
 
   
   fppCheckbox.click();
@@ -1144,6 +1155,10 @@ add_task(async function testFPPCustomCheckBox() {
   );
   is(menu.disabled, true, "The menu is disabled as the checkbox is unchecked");
 
+  events = Glean.privacyUiFppClick.checkbox.testGetValue();
+  is(events.length, 1, "The event length is correct");
+  is(events[0].extra.checked, "false", "The extra field is correct.");
+
   
   fppCheckbox.click();
 
@@ -1160,6 +1175,10 @@ add_task(async function testFPPCustomCheckBox() {
     `${FPP_PBM_PREF} has been set to true`
   );
   is(menu.disabled, false, "The menu is enabled as the checkbox is checked");
+
+  events = Glean.privacyUiFppClick.checkbox.testGetValue();
+  is(events.length, 2, "The event length is correct");
+  is(events[1].extra.checked, "true", "The extra field is correct.");
 
   gBrowser.removeCurrentTab();
 });
