@@ -50,11 +50,11 @@ class CharMapHashKey : public PLDHashEntryHdr {
   }
   MOZ_COUNTED_DTOR(CharMapHashKey)
 
-  gfxCharacterMap* GetKey() const { return mCharMap; }
+  gfxCharacterMap* GetKey() const { return mCharMap.get(); }
 
   bool KeyEquals(const gfxCharacterMap* aCharMap) const {
-    NS_ASSERTION(!aCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
-                 "custom cmap used in shared cmap hashtable");
+    MOZ_ASSERT(!aCharMap->mBuildOnTheFly && !mCharMap->mBuildOnTheFly,
+               "custom cmap used in shared cmap hashtable");
     
     if (aCharMap->mHash != mCharMap->mHash) {
       return false;
@@ -72,9 +72,13 @@ class CharMapHashKey : public PLDHashEntryHdr {
   enum { ALLOW_MEMMOVE = true };
 
  protected:
+  friend class gfxPlatformFontList;
+
   
   
-  gfxCharacterMap* MOZ_NON_OWNING_REF mCharMap;
+  
+  
+  RefPtr<gfxCharacterMap> mCharMap;
 };
 
 
@@ -500,7 +504,8 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   already_AddRefed<gfxCharacterMap> FindCharMap(gfxCharacterMap* aCmap);
 
   
-  void RemoveCmap(const gfxCharacterMap* aCharMap);
+  
+  void MaybeRemoveCmap(gfxCharacterMap* aCharMap);
 
   
   void AddUserFontSet(gfxUserFontSet* aUserFontSet) {
