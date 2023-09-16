@@ -6,7 +6,7 @@
 importScripts("/resources/testharness.js");
 importScripts("/html/canvas/resources/canvas-tests.js");
 
-var t = async_test("Testing letter spacing with absolute length");
+var t = async_test("Testing letter spacing with different length units");
 var t_pass = t.done.bind(t);
 var t_fail = t.step_func(function(reason) {
     throw reason;
@@ -19,6 +19,7 @@ t.step(function() {
   _assertSame(ctx.letterSpacing, '0px', "ctx.letterSpacing", "'0px'");
   _assertSame(ctx.wordSpacing, '0px', "ctx.wordSpacing", "'0px'");
   var width_normal = ctx.measureText('Hello World').width;
+  var ch_width = width_normal / 11;
 
   function test_letter_spacing(value, difference_spacing, epsilon) {
     ctx.letterSpacing = value;
@@ -34,11 +35,14 @@ t.step(function() {
   
   
   test_cases = [['3px', 33, 0.1],
-                ['5px', 55, 0.1],
-                ['-2px', -22, 0.1],
-                ['1in', 1056, 0.1],
-                ['-0.1cm', -41.65, 0.2],
-                ['-0.6mm', -24,95, 0.2]]
+               ['5px', 55, 0.1],
+               ['-2px', -22, 0.1],
+               ['1em', 110, 0.1],
+               ['-0.1em', -11, 0.1],
+               ['1in', 1056, 0.1],
+               ['1ch', 11 * ch_width, 0.1],
+               ['-0.1cm', -41.65, 0.2],
+               ['-0.6mm', -24,95, 0.2]]
 
   for (const test_case of test_cases) {
     test_letter_spacing(test_case[0], test_case[1], test_case[2]);

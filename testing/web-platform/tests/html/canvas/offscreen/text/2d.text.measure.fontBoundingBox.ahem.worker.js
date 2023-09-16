@@ -11,18 +11,17 @@ promise_test(async t => {
   var canvas = new OffscreenCanvas(100, 50);
   var ctx = canvas.getContext('2d');
 
-  var f = new FontFace("CanvasTest-ascent256", "url('/fonts/CanvasTest-ascent256.ttf')");
+  var f = new FontFace("Ahem", "url('/fonts/Ahem.ttf')");
   f.load();
   self.fonts.add(f);
   await self.fonts.ready;
-  ctx.font = '40px CanvasTest-ascent256';
+  ctx.font = '50px Ahem';
   ctx.direction = 'ltr';
   ctx.align = 'left'
-  _assertSame(ctx.measureText('A').fontBoundingBoxAscent, 10, "ctx.measureText('A').fontBoundingBoxAscent", "10");
+  _assertSame(ctx.measureText('A').fontBoundingBoxAscent, 40, "ctx.measureText('A').fontBoundingBoxAscent", "40");
   _assertSame(ctx.measureText('A').fontBoundingBoxDescent, 10, "ctx.measureText('A').fontBoundingBoxDescent", "10");
-
-  _assertSame(ctx.measureText('ABCD').fontBoundingBoxAscent, 10, "ctx.measureText('ABCD').fontBoundingBoxAscent", "10");
+  _assertSame(ctx.measureText('ABCD').fontBoundingBoxAscent, 40, "ctx.measureText('ABCD').fontBoundingBoxAscent", "40");
   _assertSame(ctx.measureText('ABCD').fontBoundingBoxDescent, 10, "ctx.measureText('ABCD').fontBoundingBoxDescent", "10");
   t.done();
-}, "Testing fontBoundingBox for OffscreenCanvas with reduced ascent metric");
+}, "Testing fontBoundingBox for font ahem");
 done();
