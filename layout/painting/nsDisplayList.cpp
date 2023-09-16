@@ -6084,13 +6084,13 @@ Point3D nsDisplayTransform::GetDeltaToTransformOrigin(
   CSSPoint origin = nsStyleTransformMatrix::Convert2DPosition(
       transformOrigin.horizontal, transformOrigin.vertical, aRefBox);
 
-  if (aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
-    
-    
-    
-    origin.x += CSSPixel::FromAppUnits(aRefBox.X());
-    origin.y += CSSPixel::FromAppUnits(aRefBox.Y());
-  }
+  
+  
+  
+  
+  
+  origin.x += CSSPixel::FromAppUnits(aRefBox.X());
+  origin.y += CSSPixel::FromAppUnits(aRefBox.Y());
 
   float scale = AppUnitsPerCSSPixel() / float(aAppUnitsPerPixel);
   float z = transformOrigin.depth._0;

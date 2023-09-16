@@ -53,8 +53,6 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
   
   switch (aFrame->StyleDisplay()->mTransformBox) {
     case StyleTransformBox::ContentBox:
-      
-      return {};
     case StyleTransformBox::FillBox: {
       
       
@@ -106,7 +104,7 @@ void TransformReferenceBox::EnsureDimensionsAreCached() {
   switch (mFrame->StyleDisplay()->mTransformBox) {
     case StyleTransformBox::FillBox:
     case StyleTransformBox::ContentBox: {
-      
+      mBox = mFrame->GetContentRectRelativeToSelf();
       return;
     }
     case StyleTransformBox::StrokeBox:
