@@ -374,6 +374,7 @@ class nsWindow final : public nsBaseWidget {
 
   
   gint GdkCeiledScaleFactor();
+  gint GetCachedCeiledScaleFactor() const;
   double FractionalScaleFactor();
 
   
@@ -474,7 +475,7 @@ class nsWindow final : public nsBaseWidget {
 
   nsCOMPtr<nsIWidget> mParent;
   PopupType mPopupHint{};
-  int mWindowScaleFactor = 1;
+  mozilla::Atomic<int, mozilla::Relaxed> mWindowScaleFactor{1};
 
   void UpdateAlpha(mozilla::gfx::SourceSurface* aSourceSurface,
                    nsIntRect aBoundsRect);
