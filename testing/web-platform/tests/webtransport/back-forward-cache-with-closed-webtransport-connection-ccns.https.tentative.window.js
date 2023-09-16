@@ -24,11 +24,8 @@ promise_test(async t => {
   
   
   await assertBFCacheEligibility(rc1,  false);
-  
-  
   await assertNotRestoredFromBFCache(rc1, [
     'WebTransportSticky',
-    'MainResourceHasCacheControlNoStore',
-    'Internal error'
+    'MainResourceHasCacheControlNoStore'
   ]);
 });

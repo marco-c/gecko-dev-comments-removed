@@ -31,5 +31,5 @@ promise_test(async t => {
   
   
   
-  await assertNotRestoredFromBFCache(rc1, ['Internal error']);
+  await assertNotRestoredFromBFCache(rc1, ['internal-error']);
 });

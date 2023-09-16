@@ -17,5 +17,5 @@ promise_test(async t => {
   await openWebSocket(rc1);
   
   await assertBFCacheEligibility(rc1,  false);
-  await assertNotRestoredFromBFCache(rc1, ['WebSocket']);
+  await assertNotRestoredFromBFCache(rc1, ['websocket']);
 });

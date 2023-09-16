@@ -32,7 +32,7 @@ promise_test(async t => {
        null,
        null,
        null,
-      ['WebSocket'],
+      ['websocket'],
       []);
 
   

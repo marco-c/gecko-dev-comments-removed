@@ -23,11 +23,8 @@ promise_test(async t => {
   
   
   await assertBFCacheEligibility(rc1,  false);
-  
-  
   await assertNotRestoredFromBFCache(rc1, [
     'WebRTCSticky',
-    'MainResourceHasCacheControlNoStore',
-    'Internal error'
+    'MainResourceHasCacheControlNoStore'
   ]);
 });
