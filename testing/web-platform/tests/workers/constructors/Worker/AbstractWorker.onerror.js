@@ -1,5 +1,5 @@
-for (;) 
-        
-        
-  break;
+
+
+for (;;)
+  throw new Error("error from onerror.js");
 postMessage(1); 
