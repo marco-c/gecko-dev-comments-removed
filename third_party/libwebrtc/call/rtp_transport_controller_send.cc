@@ -379,18 +379,17 @@ void RtpTransportControllerSend::OnSentPacket(
   if (TaskQueueBase::Current() != task_queue_) {
     task_queue_->PostTask(SafeTask(safety_.flag(), [this, sent_packet]() {
       RTC_DCHECK_RUN_ON(&sequence_checker_);
-      ProcessSentPacket(sent_packet, true);
+      ProcessSentPacket(sent_packet);
     }));
     return;
   }
 
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  ProcessSentPacket(sent_packet, false);
+  ProcessSentPacket(sent_packet);
 }
 
 void RtpTransportControllerSend::ProcessSentPacket(
-    const rtc::SentPacket& sent_packet,
-    bool posted_to_worker) {
+    const rtc::SentPacket& sent_packet) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   absl::optional<SentPacket> packet_msg =
       transport_feedback_adapter_.ProcessSentPacket(sent_packet);
@@ -403,24 +402,7 @@ void RtpTransportControllerSend::ProcessSentPacket(
     control_update = controller_->OnSentPacket(*packet_msg);
   if (!congestion_update && !control_update.has_updates())
     return;
-  if (posted_to_worker) {
-    ProcessSentPacketUpdates(std::move(control_update));
-  } else {
-    
-    
-    
-    
-    
-    
-    
-    
-    task_queue_->PostTask(
-        SafeTask(safety_.flag(),
-                 [this, control_update = std::move(control_update)]() mutable {
-                   RTC_DCHECK_RUN_ON(&sequence_checker_);
-                   ProcessSentPacketUpdates(std::move(control_update));
-                 }));
-  }
+  ProcessSentPacketUpdates(std::move(control_update));
 }
 
 

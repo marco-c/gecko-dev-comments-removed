@@ -133,6 +133,9 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
  private:
   
   
+  void MaybeScheduleProcessPackets() RTC_RUN_ON(task_queue_);
+  
+  
   
   
   
@@ -180,6 +183,8 @@ class TaskQueuePacedSender : public RtpPacketPacer, public RtpPacketSender {
   bool include_overhead_ RTC_GUARDED_BY(task_queue_);
 
   Stats current_stats_ RTC_GUARDED_BY(task_queue_);
+  
+  bool processing_packets_ RTC_GUARDED_BY(task_queue_) = false;
 
   ScopedTaskSafety safety_;
   TaskQueueBase* task_queue_;
