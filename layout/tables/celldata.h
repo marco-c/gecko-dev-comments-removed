@@ -147,15 +147,25 @@ enum BCBorderOwner {
 };
 
 
+typedef uint16_t BCPixelSize;
 
-#define MAX_BORDER_WIDTH nscoord((1u << (sizeof(uint16_t) * 8)) - 1)
 
 
-static inline nscoord BC_BORDER_START_HALF(nscoord aCoord) {
-  return aCoord - aCoord / 2;
+#define MAX_BORDER_WIDTH nscoord((1u << (sizeof(BCPixelSize) * 8)) - 1)
+
+
+static inline BCPixelSize BC_BORDER_START_HALF(BCPixelSize px) {
+  return px - px / 2;
 }
 
-static inline nscoord BC_BORDER_END_HALF(nscoord aCoord) { return aCoord / 2; }
+static inline BCPixelSize BC_BORDER_END_HALF(BCPixelSize px) { return px / 2; }
+
+static inline nscoord BC_BORDER_START_HALF_COORD(int32_t d2a, BCPixelSize px) {
+  return BC_BORDER_START_HALF(px) * d2a;
+}
+static inline nscoord BC_BORDER_END_HALF_COORD(int32_t d2a, BCPixelSize px) {
+  return BC_BORDER_END_HALF(px) * d2a;
+}
 
 
 
@@ -173,9 +183,10 @@ class BCData {
 
   void SetBStartEdge(BCBorderOwner aOwner, nscoord aSize, bool aStart);
 
-  nscoord GetCorner(mozilla::LogicalSide& aOwnerSide, bool& aBevel) const;
+  BCPixelSize GetCorner(mozilla::LogicalSide& aCornerOwner, bool& aBevel) const;
 
-  void SetCorner(nscoord aSubSize, mozilla::LogicalSide aOwner, bool aBevel);
+  void SetCorner(BCPixelSize aSubSize, mozilla::LogicalSide aOwner,
+                 bool aBevel);
 
   inline bool IsIStartStart() const { return (bool)mIStartStart; }
 
@@ -186,23 +197,23 @@ class BCData {
   inline void SetBStartStart(bool aValue) { mBStartStart = aValue; }
 
  protected:
-  nscoord mIStartSize;        
-  nscoord mBStartSize;        
-  nscoord mCornerSubSize;     
-                              
-                              
-                              
-                              
-  unsigned mIStartOwner : 4;  
-  unsigned mBStartOwner : 4;  
-  unsigned mIStartStart : 1;  
-                              
-  unsigned mBStartStart : 1;  
-                              
-  unsigned mCornerSide : 2;   
-                              
-  unsigned mCornerBevel : 1;  
-                              
+  BCPixelSize mIStartSize;     
+  BCPixelSize mBStartSize;     
+  BCPixelSize mCornerSubSize;  
+                               
+                               
+                               
+                               
+  unsigned mIStartOwner : 4;   
+  unsigned mBStartOwner : 4;   
+  unsigned mIStartStart : 1;   
+                               
+  unsigned mBStartStart : 1;   
+                               
+  unsigned mCornerSide : 2;    
+                               
+  unsigned mCornerBevel : 1;   
+                               
 };
 
 
@@ -372,15 +383,15 @@ inline void BCData::SetBStartEdge(BCBorderOwner aOwner, nscoord aSize,
   SetBStartStart(aStart);
 }
 
-inline nscoord BCData::GetCorner(mozilla::LogicalSide& aOwnerSide,
-                                 bool& aBevel) const {
+inline BCPixelSize BCData::GetCorner(mozilla::LogicalSide& aOwnerSide,
+                                     bool& aBevel) const {
   aOwnerSide = mozilla::LogicalSide(mCornerSide);
   aBevel = (bool)mCornerBevel;
   return mCornerSubSize;
 }
 
-inline void BCData::SetCorner(nscoord aSubSize, mozilla::LogicalSide aOwnerSide,
-                              bool aBevel) {
+inline void BCData::SetCorner(BCPixelSize aSubSize,
+                              mozilla::LogicalSide aOwnerSide, bool aBevel) {
   mCornerSubSize = aSubSize;
   mCornerSide = aOwnerSide;
   mCornerBevel = aBevel;
