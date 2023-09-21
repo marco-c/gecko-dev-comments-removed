@@ -146,6 +146,19 @@ PublicKeyCredential::IsUserVerifyingPlatformAuthenticatorAvailable(
 }
 
 
+already_AddRefed<Promise> PublicKeyCredential::IsConditionalMediationAvailable(
+    GlobalObject& aGlobal, ErrorResult& aError) {
+  RefPtr<Promise> promise =
+      Promise::Create(xpc::CurrentNativeGlobal(aGlobal.Context()), aError);
+  if (aError.Failed()) {
+    return nullptr;
+  }
+  
+  promise->MaybeResolve(false);
+  return promise.forget();
+}
+
+
 already_AddRefed<Promise>
 PublicKeyCredential::IsExternalCTAP2SecurityKeySupported(GlobalObject& aGlobal,
                                                          ErrorResult& aError) {
