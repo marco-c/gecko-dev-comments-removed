@@ -1856,10 +1856,17 @@ class ScriptCompileTask final : public Task {
   }
 
  private:
+  static size_t ThreadStackQuotaForSize(size_t size) {
+    
+    
+    return size_t(double(size) * 0.9);
+  }
+
   void Compile() {
     
-    const size_t kDefaultStackQuota = 128 * sizeof(size_t) * 1024;
-    JS::SetNativeStackQuota(mFrontendContext, kDefaultStackQuota);
+    size_t stackSize = TaskController::GetThreadStackSize();
+    JS::SetNativeStackQuota(mFrontendContext,
+                            ThreadStackQuotaForSize(stackSize));
 
     JS::SourceText<Utf8Unit> srcBuf;
     if (NS_WARN_IF(!srcBuf.init(mFrontendContext, mText.get(), mTextLength,
