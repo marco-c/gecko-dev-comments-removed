@@ -1099,7 +1099,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   
   
-  void StorageAccessPermissionGranted();
+  void StorageAccessPermissionChanged();
 
  protected:
   static void NotifyDOMWindowDestroyed(nsGlobalWindowInner* aWindow);
