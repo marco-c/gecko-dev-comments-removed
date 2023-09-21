@@ -315,7 +315,8 @@ class nsNavHistoryResultNode : public nsINavHistoryResultNode {
   virtual void OnRemoving();
 
   nsresult OnItemKeywordChanged(int64_t aItemId, const nsACString& aKeyword);
-  nsresult OnItemTagsChanged(int64_t aItemId, const nsAString& aURL);
+  nsresult OnItemTagsChanged(int64_t aItemId, const nsAString& aURL,
+                             const nsAString& aTags);
   nsresult OnItemTimeChanged(int64_t aItemId, const nsACString& aGUID,
                              PRTime aDateAdded, PRTime aLastModified);
   nsresult OnItemTitleChanged(int64_t aItemId, const nsACString& aGUID,
@@ -332,6 +333,7 @@ class nsNavHistoryResultNode : public nsINavHistoryResultNode {
 
  public:
   nsNavHistoryResult* GetResult();
+  void SetTags(const nsAString& aTags);
 
   
   
@@ -393,7 +395,6 @@ class nsNavHistoryResultNode : public nsINavHistoryResultNode {
   nsCString mURI;  
   nsCString mTitle;
   nsString mTags;
-  bool mAreTagsSorted;
   uint32_t mAccessCount;
   int64_t mTime;
   int32_t mBookmarkIndex;
@@ -695,7 +696,8 @@ class nsNavHistoryQueryResultNode final
                        const nsACString& aOldParentGUID,
                        const nsACString& aNewParentGUID, uint16_t aSource,
                        const nsACString& aURI);
-  nsresult OnItemTagsChanged(int64_t aItemId, const nsAString& aURL);
+  nsresult OnItemTagsChanged(int64_t aItemId, const nsAString& aURL,
+                             const nsAString& aTags);
   nsresult OnItemTimeChanged(int64_t aItemId, const nsACString& aGUID,
                              PRTime aDateAdded, PRTime aLastModified);
   nsresult OnItemTitleChanged(int64_t aItemId, const nsACString& aGUID,

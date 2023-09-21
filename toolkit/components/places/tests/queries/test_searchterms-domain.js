@@ -56,7 +56,7 @@ var testData = [
 
   
   {
-    isInQuery: true,
+    isInQuery: false,
     isVisit: true,
     isDetails: true,
     isTag: true,
