@@ -40,6 +40,8 @@ pub struct Configuration {
     pub log_level: Option<LevelFilter>,
     
     pub rate_limit: Option<crate::PingRateLimit>,
+    
+    pub enable_event_timestamps: bool,
 }
 
 
@@ -80,6 +82,8 @@ pub struct Builder {
     
     
     pub rate_limit: Option<crate::PingRateLimit>,
+    
+    pub enable_event_timestamps: bool,
 }
 
 impl Builder {
@@ -101,6 +105,7 @@ impl Builder {
             trim_data_to_registered_pings: false,
             log_level: None,
             rate_limit: None,
+            enable_event_timestamps: false,
         }
     }
 
@@ -118,6 +123,7 @@ impl Builder {
             trim_data_to_registered_pings: self.trim_data_to_registered_pings,
             log_level: self.log_level,
             rate_limit: self.rate_limit,
+            enable_event_timestamps: self.enable_event_timestamps,
         }
     }
 
@@ -154,6 +160,12 @@ impl Builder {
     
     pub fn with_trim_data_to_registered_pings(mut self, value: bool) -> Self {
         self.trim_data_to_registered_pings = value;
+        self
+    }
+
+    
+    pub fn with_event_timestamps(mut self, value: bool) -> Self {
+        self.enable_event_timestamps = value;
         self
     }
 }

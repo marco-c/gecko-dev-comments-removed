@@ -294,9 +294,7 @@ impl PingMaker {
     fn get_pings_dir(&self, data_path: &Path, ping_type: Option<&str>) -> std::io::Result<PathBuf> {
         
         let pings_dir = match ping_type {
-            Some(ping_type) if ping_type == "deletion-request" => {
-                data_path.join(DELETION_REQUEST_PINGS_DIRECTORY)
-            }
+            Some("deletion-request") => data_path.join(DELETION_REQUEST_PINGS_DIRECTORY),
             _ => data_path.join(PENDING_PINGS_DIRECTORY),
         };
 
