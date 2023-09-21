@@ -6536,7 +6536,7 @@ StoragePressureRunnable::Run() {
 }
 
 TimeStamp RecordTimeDeltaHelper::Start() {
-  AssertIsOnIOThread();
+  MOZ_ASSERT(IsOnIOThread() || IsOnBackgroundThread());
 
   
   
@@ -6548,7 +6548,7 @@ TimeStamp RecordTimeDeltaHelper::Start() {
 }
 
 TimeStamp RecordTimeDeltaHelper::End() {
-  AssertIsOnIOThread();
+  MOZ_ASSERT(IsOnIOThread() || IsOnBackgroundThread());
 
   mEndTime.init(TimeStamp::Now());
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(this));
