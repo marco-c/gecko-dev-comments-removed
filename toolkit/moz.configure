@@ -828,12 +828,10 @@ def eme_choices(target, wmf):
 
 
 
-
-@depends(build_project, eme_choices, target)
-def eme_default(build_project, choices, target):
+@depends(build_project, eme_choices)
+def eme_default(build_project, choices):
     if build_project == "browser":
-        if target.kernel != "WINNT" or target.cpu != "aarch64":
-            return choices
+        return choices
 
 
 option(
@@ -854,15 +852,6 @@ def eme_modules(value):
 
 
 set_config("MOZ_EME_MODULES", eme_modules | dependable([]))
-
-
-@depends(eme_modules, target, when=eme_modules)
-def eme_win32_artifact(modules, target):
-    if "widevine" in modules and target.kernel == "WINNT" and target.cpu == "aarch64":
-        return True
-
-
-set_config("MOZ_EME_WIN32_ARTIFACT", eme_win32_artifact)
 
 
 
