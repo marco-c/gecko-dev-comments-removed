@@ -324,7 +324,7 @@ static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
 
 
-#define DEFAULT_STATE mozilla::phc::Enabled
+#define DEFAULT_STATE mozilla::phc::OnlyFree
 
 
 
@@ -1398,8 +1398,6 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   if (!newPtr) {
     return nullptr;
   }
-
-  MOZ_ASSERT(aNewSize > kPageSize);
 
   Delay reuseDelay = ReuseDelay(lock);
 

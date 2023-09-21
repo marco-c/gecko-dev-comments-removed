@@ -27,3 +27,6 @@ const { CrashTestUtils } = ChromeUtils.importESModule(
 );
 var crashType = CrashTestUtils.CRASH_INVALID_POINTER_DEREF;
 var shouldDelay = false;
+
+
+CrashTestUtils.enablePHC();

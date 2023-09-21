@@ -49,6 +49,8 @@ static const size_t kPageSize = 4096;
 
 TEST(PHC, TestPHCAllocations)
 {
+  ReplaceMalloc::SetPHCState(phc::PHCState::Enabled);
+
   
   
 
@@ -259,6 +261,8 @@ static void TestFreedAllocation(uint8_t* aPtr, size_t aSize) {
 
 TEST(PHC, TestPHCInfo)
 {
+  ReplaceMalloc::SetPHCState(phc::PHCState::Enabled);
+
   int stackVar;
   phc::AddrInfo phcInfo;
 
@@ -289,8 +293,10 @@ TEST(PHC, TestPHCInfo)
   
 }
 
-TEST(PHC, TestPHCDisabling)
+TEST(PHC, TestPHCDisablingThread)
 {
+  ReplaceMalloc::SetPHCState(phc::PHCState::Enabled);
+
   uint8_t* p = GetPHCAllocation(32);
   uint8_t* q = GetPHCAllocation(32);
   if (!p || !q) {
@@ -321,6 +327,49 @@ TEST(PHC, TestPHCDisabling)
 
   ReplaceMalloc::ReenablePHCOnCurrentThread();
   ASSERT_TRUE(ReplaceMalloc::IsPHCEnabledOnCurrentThread());
+
+  
+  
+  uint8_t* s = GetPHCAllocation(32);  
+  ASSERT_TRUE(!!s);
+  free(s);
+}
+
+TEST(PHC, TestPHCDisablingGlobal)
+{
+  ReplaceMalloc::SetPHCState(phc::PHCState::Enabled);
+
+  uint8_t* p1 = GetPHCAllocation(32);
+  uint8_t* p2 = GetPHCAllocation(32);
+  uint8_t* q = GetPHCAllocation(32);
+  if (!p1 || !p2 || !q) {
+    MOZ_CRASH("failed to get a PHC allocation");
+  }
+
+  ReplaceMalloc::SetPHCState(phc::PHCState::OnlyFree);
+
+  
+  uint8_t* p3 = (uint8_t*)realloc(p1, 128);
+  
+  
+  ASSERT_TRUE(p3 != p1);
+  ASSERT_FALSE(ReplaceMalloc::IsPHCAllocation(p3, nullptr));
+  free(p3);
+  uint8_t* p4 = (uint8_t*)realloc(p2, 8192);
+  
+  
+  ASSERT_TRUE(p4 != p2);
+  ASSERT_FALSE(ReplaceMalloc::IsPHCAllocation(p4, nullptr));
+  free(p4);
+
+  
+  free(q);
+
+  
+  uint8_t* r = GetPHCAllocation(32);  
+  ASSERT_FALSE(!!r);
+
+  ReplaceMalloc::SetPHCState(phc::PHCState::Enabled);
 
   
   
