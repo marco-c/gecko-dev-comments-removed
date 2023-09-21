@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/Base64.h"
 #include "mozilla/dom/AuthenticatorResponse.h"
 #include "mozilla/dom/TypedArray.h"
 #include "nsPIDOMWindow.h"
