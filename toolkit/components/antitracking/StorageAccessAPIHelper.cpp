@@ -559,8 +559,13 @@ StorageAccessAPIHelper::CompleteAllowAccessFor(
 
   
   
-  StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(aParentContext,
-                                                            aTrackingOrigin);
+  
+  if (aReason != ContentBlockingNotifier::StorageAccessPermissionGrantedReason::
+                     eStorageAccessAPI ||
+      !StaticPrefs::dom_storage_access_frame_only()) {
+    StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(aParentContext,
+                                                              aTrackingOrigin);
+  }
 
   
   nsCOMPtr<nsPIDOMWindowInner> parentInner =
@@ -642,8 +647,11 @@ StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
   
   
   
-  StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(aParentContext,
-                                                           trackingOrigin);
+  
+  if (!aFrameOnly) {
+    StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(aParentContext,
+                                                             trackingOrigin);
+  }
 
   return StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
       wgp->DocumentPrincipal(), aTrackingPrincipal, aAllowMode, aFrameOnly,
