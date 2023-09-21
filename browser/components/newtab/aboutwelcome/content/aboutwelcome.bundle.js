@@ -684,7 +684,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const CONFIGURABLE_STYLES = ["color", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginInline", "paddingBlock", "paddingInline"];
+const CONFIGURABLE_STYLES = ["color", "fontSize", "fontWeight", "letterSpacing", "lineHeight", "marginBlock", "marginInline", "paddingBlock", "paddingInline", "whiteSpace"];
 const ZAP_SIZE_THRESHOLD = 160;
 
 
@@ -980,10 +980,10 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     reducedMotionImageURL,
     darkModeReducedMotionImageURL,
     alt = "",
-    height,
     width,
-    marginInline,
+    height,
     marginBlock,
+    marginInline,
     className = "logo-container"
   }) {
     function getLoadingStrategy() {
@@ -1082,11 +1082,21 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
   }
 
   renderDismissButton() {
+    const {
+      size,
+      marginBlock,
+      marginInline
+    } = this.props.content.dismiss_button;
     return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("button", {
       className: "dismiss-button",
       onClick: this.props.handleAction,
       value: "dismiss_button",
-      "data-l10n-id": "spotlight-dialog-close-button"
+      "data-l10n-id": "spotlight-dialog-close-button",
+      "button-size": size,
+      style: {
+        marginBlock,
+        marginInline
+      }
     });
   }
 
@@ -1218,9 +1228,10 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       position: "top"
     }) : null, includeNoodles ? this.renderNoodles() : null, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: `main-content ${hideStepsIndicator ? "no-steps" : ""}`,
-      style: content.background && isCenterPosition ? {
-        background: content.background
-      } : {}
+      style: {
+        background: content.background && isCenterPosition ? content.background : null,
+        width: content.width && content.position !== "split" ? content.width : null
+      }
     }, content.logo ? this.renderPicture(content.logo) : null, isRtamo ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
       className: "rtamo-icon"
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("img", {
