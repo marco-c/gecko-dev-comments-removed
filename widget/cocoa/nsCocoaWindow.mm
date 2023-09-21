@@ -191,31 +191,23 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   
   
-  
-  
-  
-  
-  if (!mInLocalRunLoop) {
-    mInLocalRunLoop = true;
-    bool haveRequestedFullscreenExit = false;
-    NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-    while ((mWaitingOnFinishCurrentTransition || inNativeFullscreen() ||
-            WeAreInNativeTransition()) &&
-           [localRunLoop runMode:NSDefaultRunLoopMode
-                      beforeDate:[NSDate distantFuture]]) {
-      
-      
+  bool haveRequestedFullscreenExit = false;
+  NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+  while (!mInProcessTransitions &&
+         (inNativeFullscreen() || WeAreInNativeTransition()) &&
+         [localRunLoop runMode:NSDefaultRunLoopMode
+                    beforeDate:[NSDate distantFuture]]) {
+    
+    
 
-      
-      
-      
-      if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
-          CanStartNativeTransition()) {
-        [mWindow toggleFullScreen:nil];
-        haveRequestedFullscreenExit = true;
-      }
+    
+    
+    
+    if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
+        CanStartNativeTransition()) {
+      [mWindow toggleFullScreen:nil];
+      haveRequestedFullscreenExit = true;
     }
-    mInLocalRunLoop = false;
   }
 
   [mWindow releaseJSObjects];
@@ -1900,16 +1892,12 @@ void nsCocoaWindow::ProcessTransitions() {
           
           
           
-          if (!mInLocalRunLoop) {
-            mInLocalRunLoop = true;
-            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-            while (mWindow && !CanStartNativeTransition() &&
-                   [localRunLoop runMode:NSDefaultRunLoopMode
-                              beforeDate:[NSDate distantFuture]]) {
-              
-              
-            }
-            mInLocalRunLoop = false;
+          NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+          while (mWindow && !CanStartNativeTransition() &&
+                 [localRunLoop runMode:NSDefaultRunLoopMode
+                            beforeDate:[NSDate distantFuture]]) {
+            
+            
           }
 
           
@@ -1942,16 +1930,12 @@ void nsCocoaWindow::ProcessTransitions() {
             
             
             
-            if (!mInLocalRunLoop) {
-              mInLocalRunLoop = true;
-              NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-              while (mWindow && !CanStartNativeTransition() &&
-                     [localRunLoop runMode:NSDefaultRunLoopMode
-                                beforeDate:[NSDate distantFuture]]) {
-                
-                
-              }
-              mInLocalRunLoop = false;
+            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+            while (mWindow && !CanStartNativeTransition() &&
+                   [localRunLoop runMode:NSDefaultRunLoopMode
+                              beforeDate:[NSDate distantFuture]]) {
+              
+              
             }
 
             
@@ -2035,7 +2019,6 @@ void nsCocoaWindow::ProcessTransitions() {
 }
 
 void nsCocoaWindow::FinishCurrentTransition() {
-  mWaitingOnFinishCurrentTransition = false;
   mTransitionCurrent.reset();
   mIsTransitionCurrentAdded = false;
   ProcessTransitions();
@@ -2058,7 +2041,6 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(
     
     
     
-    mWaitingOnFinishCurrentTransition = true;
     NS_DispatchToCurrentThread(
         NewRunnableMethod("FinishCurrentTransition", this,
                           &nsCocoaWindow::FinishCurrentTransition));
