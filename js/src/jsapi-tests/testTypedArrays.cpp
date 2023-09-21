@@ -108,6 +108,62 @@ BEGIN_TEST(testTypedArrays) {
 }
 
 
+bool TestViewLengthPinning(Handle<JSObject*> view) {
+  
+  bool isShared = view.as<NativeObject>()->isSharedMemory();
+  CHECK(JS::PinArrayBufferOrViewLength(view, true) == !isShared);
+
+  
+  CHECK(!JS::PinArrayBufferOrViewLength(view, true));
+
+  
+  
+  bool bufferIsShared;
+  Rooted<JSObject*> buffer(
+      cx, JS_GetArrayBufferViewBuffer(cx, view, &bufferIsShared));
+  CHECK(isShared == bufferIsShared);
+
+  
+  CHECK(!JS::PinArrayBufferOrViewLength(buffer, true));
+
+  
+  CHECK(!JS::DetachArrayBuffer(cx, buffer));
+  CHECK(cx->isExceptionPending());
+  cx->clearPendingException();
+
+  
+  CHECK(JS::PinArrayBufferOrViewLength(view, false) == !isShared);
+
+  
+  CHECK(!JS::PinArrayBufferOrViewLength(view, false));
+
+  return true;
+}
+
+
+bool TestBufferLengthPinning(Handle<JSObject*> buffer) {
+  
+  bool isShared = !buffer->is<ArrayBufferObject>();
+  CHECK(JS::PinArrayBufferOrViewLength(buffer, true) == !isShared);
+
+  
+  CHECK(!JS::PinArrayBufferOrViewLength(buffer, true));
+
+  
+  CHECK(!JS::DetachArrayBuffer(cx, buffer));
+  CHECK(cx->isExceptionPending());
+  cx->clearPendingException();
+
+  
+  CHECK(JS::PinArrayBufferOrViewLength(buffer, false) == !isShared);
+
+  
+  CHECK(!JS::PinArrayBufferOrViewLength(buffer, false));
+
+  return true;
+}
+
+
 
 
 template <JSObject* Create(JSContext*, size_t), typename Element,
@@ -129,6 +185,8 @@ bool TestPlainTypedArray(JSContext* cx) {
   CHECK_EQUAL(JS_GetTypedArrayLength(array), 7u);
   CHECK_EQUAL(JS_GetTypedArrayByteOffset(array), 0u);
   CHECK_EQUAL(JS_GetTypedArrayByteLength(array), sizeof(Element) * 7);
+
+  TestViewLengthPinning(array);
 
   {
     JS::AutoCheckCannotGC nogc;
@@ -159,6 +217,9 @@ bool TestArrayFromBuffer(JSContext* cx) {
   size_t nbytes = elts * sizeof(Element);
   RootedObject buffer(cx, Shared ? JS::NewSharedArrayBuffer(cx, nbytes)
                                  : JS::NewArrayBuffer(cx, nbytes));
+
+  TestBufferLengthPinning(buffer);
+
   {
     JS::AutoCheckCannotGC nogc;
     bool isShared;
@@ -184,6 +245,8 @@ bool TestArrayFromBuffer(JSContext* cx) {
                 (JSObject*)buffer);
     CHECK_EQUAL(Shared, isShared);
   }
+
+  TestViewLengthPinning(array);
 
   {
     JS::AutoCheckCannotGC nogc;
