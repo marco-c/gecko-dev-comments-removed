@@ -1790,11 +1790,15 @@ bool nsIFrame::Extend3DContext(const nsStyleDisplay* aStyleDisplay,
 }
 
 bool nsIFrame::Combines3DTransformWithAncestors() const {
-  nsIFrame* parent = GetClosestFlattenedTreeAncestorPrimaryFrame();
-  if (!parent || !parent->Extend3DContext()) {
+  
+  
+  
+  
+  if (!IsCSSTransformed() && !BackfaceIsHidden()) {
     return false;
   }
-  return IsCSSTransformed() || BackfaceIsHidden();
+  nsIFrame* parent = GetClosestFlattenedTreeAncestorPrimaryFrame();
+  return parent && parent->Extend3DContext();
 }
 
 bool nsIFrame::In3DContextAndBackfaceIsHidden() const {
