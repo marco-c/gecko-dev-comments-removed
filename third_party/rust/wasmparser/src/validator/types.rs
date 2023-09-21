@@ -147,10 +147,7 @@ pub struct TypeId {
     
     pub(crate) index: usize,
     
-    
-    
-    
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     
     
@@ -165,6 +162,82 @@ pub struct TypeId {
 const _: () = {
     assert!(std::mem::size_of::<TypeId>() <= 16);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+pub(crate) struct TypeInfo(u32);
+
+impl TypeInfo {
+    
+    
+    
+    
+    pub(crate) fn new() -> TypeInfo {
+        TypeInfo::_new(1, false)
+    }
+
+    
+    
+    pub(crate) fn borrow() -> TypeInfo {
+        TypeInfo::_new(1, true)
+    }
+
+    
+    
+    pub(crate) fn core(size: u32) -> TypeInfo {
+        TypeInfo::_new(size, false)
+    }
+
+    fn _new(size: u32, contains_borrow: bool) -> TypeInfo {
+        assert!(size < (1 << 24));
+        TypeInfo(size | ((contains_borrow as u32) << 31))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn combine(&mut self, other: TypeInfo, offset: usize) -> Result<()> {
+        *self = TypeInfo::_new(
+            super::combine_type_sizes(self.size(), other.size(), offset)?,
+            self.contains_borrow() || other.contains_borrow(),
+        );
+        Ok(())
+    }
+
+    pub(crate) fn size(&self) -> u32 {
+        self.0 & 0xffffff
+    }
+
+    pub(crate) fn contains_borrow(&self) -> bool {
+        (self.0 >> 31) != 0
+    }
+}
 
 
 #[derive(Debug)]
@@ -291,23 +364,24 @@ impl Type {
         }
     }
 
-    pub(crate) fn type_size(&self) -> u32 {
+    pub(crate) fn info(&self) -> TypeInfo {
         
         match self {
             Self::Sub(ty) => {
-                1 + match ty.clone().structural_type {
+                let size = 1 + match ty.clone().structural_type {
                     StructuralType::Func(ty) => 1 + (ty.params().len() + ty.results().len()) as u32,
                     StructuralType::Array(_) => 2,
                     StructuralType::Struct(ty) => 1 + 2 * ty.fields.len() as u32,
-                }
+                };
+                TypeInfo::core(size)
             }
-            Self::Module(ty) => ty.type_size,
-            Self::Instance(ty) => ty.type_size,
-            Self::Component(ty) => ty.type_size,
-            Self::ComponentInstance(ty) => ty.type_size,
-            Self::ComponentFunc(ty) => ty.type_size,
-            Self::Defined(ty) => ty.type_size(),
-            Self::Resource(_) => 1,
+            Self::Module(ty) => ty.info,
+            Self::Instance(ty) => ty.info,
+            Self::Component(ty) => ty.info,
+            Self::ComponentInstance(ty) => ty.info,
+            Self::ComponentFunc(ty) => ty.info,
+            Self::Defined(ty) => ty.info(),
+            Self::Resource(_) => TypeInfo::new(),
         }
     }
 }
@@ -322,10 +396,10 @@ pub enum ComponentValType {
 }
 
 impl ComponentValType {
-    pub(crate) fn requires_realloc(&self, types: &TypeList) -> bool {
+    pub(crate) fn contains_ptr(&self, types: &TypeList) -> bool {
         match self {
-            ComponentValType::Primitive(ty) => ty.requires_realloc(),
-            ComponentValType::Type(ty) => types[*ty].unwrap_defined().requires_realloc(types),
+            ComponentValType::Primitive(ty) => ty.contains_ptr(),
+            ComponentValType::Type(ty) => types[*ty].unwrap_defined().contains_ptr(types),
         }
     }
 
@@ -338,10 +412,10 @@ impl ComponentValType {
         }
     }
 
-    pub(crate) fn type_size(&self) -> u32 {
+    pub(crate) fn info(&self) -> TypeInfo {
         match self {
-            Self::Primitive(_) => 1,
-            Self::Type(id) => id.type_size,
+            Self::Primitive(_) => TypeInfo::new(),
+            Self::Type(id) => id.info,
         }
     }
 }
@@ -372,10 +446,10 @@ impl EntityType {
         }
     }
 
-    pub(crate) fn type_size(&self) -> u32 {
+    pub(crate) fn info(&self) -> TypeInfo {
         match self {
-            Self::Func(id) | Self::Tag(id) => id.type_size,
-            Self::Table(_) | Self::Memory(_) | Self::Global(_) => 1,
+            Self::Func(id) | Self::Tag(id) => id.info,
+            Self::Table(_) | Self::Memory(_) | Self::Global(_) => TypeInfo::new(),
         }
     }
 }
@@ -430,7 +504,7 @@ impl ModuleImportKey for (&str, &str) {
 #[derive(Debug, Clone)]
 pub struct ModuleType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub imports: IndexMap<(String, String), EntityType>,
     
@@ -459,7 +533,7 @@ pub enum InstanceTypeKind {
 #[derive(Debug, Clone)]
 pub struct InstanceType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub kind: InstanceTypeKind,
 }
@@ -528,14 +602,14 @@ impl ComponentEntityType {
         }
     }
 
-    pub(crate) fn type_size(&self) -> u32 {
+    pub(crate) fn info(&self) -> TypeInfo {
         match self {
             Self::Module(ty)
             | Self::Func(ty)
             | Self::Type { referenced: ty, .. }
             | Self::Instance(ty)
-            | Self::Component(ty) => ty.type_size,
-            Self::Value(ty) => ty.type_size(),
+            | Self::Component(ty) => ty.info,
+            Self::Value(ty) => ty.info(),
         }
     }
 }
@@ -544,7 +618,7 @@ impl ComponentEntityType {
 #[derive(Debug, Clone)]
 pub struct ComponentType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
 
     
     
@@ -600,7 +674,7 @@ pub struct ComponentType {
 #[derive(Debug, Clone)]
 pub struct ComponentInstanceType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
 
     
     
@@ -650,7 +724,7 @@ pub struct ComponentInstanceType {
 #[derive(Debug, Clone)]
 pub struct ComponentFuncType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub params: Box<[(KebabString, ComponentValType)]>,
     
@@ -660,14 +734,24 @@ pub struct ComponentFuncType {
 impl ComponentFuncType {
     
     
-    pub(crate) fn lower(&self, types: &TypeList, import: bool) -> LoweringInfo {
+    pub(crate) fn lower(&self, types: &TypeList, is_lower: bool) -> LoweringInfo {
         let mut info = LoweringInfo::default();
 
         for (_, ty) in self.params.iter() {
             
             
-            if !import && !info.requires_realloc {
-                info.requires_realloc = ty.requires_realloc(types);
+            
+            
+            
+            
+            if is_lower {
+                if !info.requires_memory {
+                    info.requires_memory = ty.contains_ptr(types);
+                }
+            } else {
+                if !info.requires_realloc {
+                    info.requires_realloc = ty.contains_ptr(types);
+                }
             }
 
             if !ty.push_wasm_types(types, &mut info.params) {
@@ -679,7 +763,7 @@ impl ComponentFuncType {
                 info.requires_memory = true;
 
                 
-                if !import {
+                if !is_lower {
                     info.requires_realloc = true;
                 }
                 break;
@@ -689,15 +773,17 @@ impl ComponentFuncType {
         for (_, ty) in self.results.iter() {
             
             
-            if import && !info.requires_realloc {
-                info.requires_realloc = ty.requires_realloc(types);
+            
+            
+            if is_lower && !info.requires_realloc {
+                info.requires_realloc = ty.contains_ptr(types);
             }
 
             if !ty.push_wasm_types(types, &mut info.results) {
                 
                 
                 info.results.clear();
-                if import {
+                if is_lower {
                     info.params.max = MAX_LOWERED_TYPES;
                     assert!(info.params.push(ValType::I32));
                 } else {
@@ -728,7 +814,7 @@ pub struct VariantCase {
 #[derive(Debug, Clone)]
 pub struct RecordType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub fields: IndexMap<KebabString, ComponentValType>,
 }
@@ -737,7 +823,7 @@ pub struct RecordType {
 #[derive(Debug, Clone)]
 pub struct VariantType {
     
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub cases: IndexMap<KebabString, VariantCase>,
 }
@@ -746,16 +832,7 @@ pub struct VariantType {
 #[derive(Debug, Clone)]
 pub struct TupleType {
     
-    pub(crate) type_size: u32,
-    
-    pub types: Box<[ComponentValType]>,
-}
-
-
-#[derive(Debug, Clone)]
-pub struct UnionType {
-    
-    pub(crate) type_size: u32,
+    pub(crate) info: TypeInfo,
     
     pub types: Box<[ComponentValType]>,
 }
@@ -778,8 +855,6 @@ pub enum ComponentDefinedType {
     
     Enum(IndexSet<KebabString>),
     
-    Union(UnionType),
-    
     Option(ComponentValType),
     
     Result {
@@ -795,41 +870,39 @@ pub enum ComponentDefinedType {
 }
 
 impl ComponentDefinedType {
-    pub(crate) fn requires_realloc(&self, types: &TypeList) -> bool {
+    pub(crate) fn contains_ptr(&self, types: &TypeList) -> bool {
         match self {
-            Self::Primitive(ty) => ty.requires_realloc(),
-            Self::Record(r) => r.fields.values().any(|ty| ty.requires_realloc(types)),
-            Self::Variant(v) => v.cases.values().any(|case| {
-                case.ty
-                    .map(|ty| ty.requires_realloc(types))
-                    .unwrap_or(false)
-            }),
+            Self::Primitive(ty) => ty.contains_ptr(),
+            Self::Record(r) => r.fields.values().any(|ty| ty.contains_ptr(types)),
+            Self::Variant(v) => v
+                .cases
+                .values()
+                .any(|case| case.ty.map(|ty| ty.contains_ptr(types)).unwrap_or(false)),
             Self::List(_) => true,
-            Self::Tuple(t) => t.types.iter().any(|ty| ty.requires_realloc(types)),
-            Self::Union(u) => u.types.iter().any(|ty| ty.requires_realloc(types)),
+            Self::Tuple(t) => t.types.iter().any(|ty| ty.contains_ptr(types)),
             Self::Flags(_) | Self::Enum(_) | Self::Own(_) | Self::Borrow(_) => false,
-            Self::Option(ty) => ty.requires_realloc(types),
+            Self::Option(ty) => ty.contains_ptr(types),
             Self::Result { ok, err } => {
-                ok.map(|ty| ty.requires_realloc(types)).unwrap_or(false)
-                    || err.map(|ty| ty.requires_realloc(types)).unwrap_or(false)
+                ok.map(|ty| ty.contains_ptr(types)).unwrap_or(false)
+                    || err.map(|ty| ty.contains_ptr(types)).unwrap_or(false)
             }
         }
     }
 
-    pub(crate) fn type_size(&self) -> u32 {
+    pub(crate) fn info(&self) -> TypeInfo {
         match self {
-            Self::Primitive(_)
-            | Self::Flags(_)
-            | Self::Enum(_)
-            | Self::Own(_)
-            | Self::Borrow(_) => 1,
-            Self::Record(r) => r.type_size,
-            Self::Variant(v) => v.type_size,
-            Self::Tuple(t) => t.type_size,
-            Self::Union(u) => u.type_size,
-            Self::List(ty) | Self::Option(ty) => ty.type_size(),
+            Self::Primitive(_) | Self::Flags(_) | Self::Enum(_) | Self::Own(_) => TypeInfo::new(),
+            Self::Borrow(_) => TypeInfo::borrow(),
+            Self::Record(r) => r.info,
+            Self::Variant(v) => v.info,
+            Self::Tuple(t) => t.info,
+            Self::List(ty) | Self::Option(ty) => ty.info(),
             Self::Result { ok, err } => {
-                ok.map(|ty| ty.type_size()).unwrap_or(1) + err.map(|ty| ty.type_size()).unwrap_or(1)
+                let default = TypeInfo::new();
+                let mut info = ok.map(|ty| ty.info()).unwrap_or(default);
+                info.combine(err.map(|ty| ty.info()).unwrap_or(default), 0)
+                    .unwrap();
+                info
             }
         }
     }
@@ -855,7 +928,6 @@ impl ComponentDefinedType {
                 (0..(names.len() + 31) / 32).all(|_| lowered_types.push(ValType::I32))
             }
             Self::Enum(_) | Self::Own(_) | Self::Borrow(_) => lowered_types.push(ValType::I32),
-            Self::Union(u) => Self::push_variant_wasm_types(u.types.iter(), types, lowered_types),
             Self::Option(ty) => {
                 Self::push_variant_wasm_types([ty].into_iter(), types, lowered_types)
             }
@@ -920,7 +992,6 @@ impl ComponentDefinedType {
             ComponentDefinedType::Flags(_) => "flags",
             ComponentDefinedType::Option(_) => "option",
             ComponentDefinedType::List(_) => "list",
-            ComponentDefinedType::Union(_) => "union",
             ComponentDefinedType::Result { .. } => "result",
             ComponentDefinedType::Own(_) => "own",
             ComponentDefinedType::Borrow(_) => "borrow",
@@ -1887,11 +1958,11 @@ impl TypeAlloc {
     
     pub fn push_ty(&mut self, ty: Type) -> TypeId {
         let index = self.list.len();
-        let type_size = ty.type_size();
+        let info = ty.info();
         self.list.push(ty);
         TypeId {
             index,
-            type_size,
+            info,
             unique_id: 0,
         }
     }
@@ -1979,11 +2050,6 @@ impl TypeAlloc {
                         self.free_variables_valtype(ty, set);
                     }
                 }
-                ComponentDefinedType::Union(r) => {
-                    for ty in r.types.iter() {
-                        self.free_variables_valtype(ty, set);
-                    }
-                }
                 ComponentDefinedType::Variant(r) => {
                     for ty in r.cases.values() {
                         if let Some(ty) = &ty.ty {
@@ -2050,7 +2116,6 @@ impl TypeAlloc {
             ComponentDefinedType::Flags(_)
             | ComponentDefinedType::Enum(_)
             | ComponentDefinedType::Record(_)
-            | ComponentDefinedType::Union(_)
             | ComponentDefinedType::Variant(_) => set.contains(&id),
 
             
@@ -2215,13 +2280,6 @@ pub(crate) trait Remap: Index<TypeId, Output = Type> {
                         }
                     }
                     ComponentDefinedType::Tuple(r) => {
-                        for ty in r.types.iter_mut() {
-                            if self.remap_valtype(ty, map) {
-                                any_changed = true;
-                            }
-                        }
-                    }
-                    ComponentDefinedType::Union(r) => {
                         for ty in r.types.iter_mut() {
                             if self.remap_valtype(ty, map) {
                                 any_changed = true;
@@ -3005,22 +3063,6 @@ impl<'a> SubtypeCx<'a> {
                 Ok(())
             }
             (Tuple(_), b) => bail!(offset, "expected {}, found tuple", b.desc()),
-            (Union(a), Union(b)) => {
-                if a.types.len() != b.types.len() {
-                    bail!(
-                        offset,
-                        "expected {} types, found {}",
-                        b.types.len(),
-                        a.types.len(),
-                    );
-                }
-                for (i, (a, b)) in a.types.iter().zip(b.types.iter()).enumerate() {
-                    self.component_val_type(a, b, offset)
-                        .with_context(|| format!("type mismatch in tuple field {i}"))?;
-                }
-                Ok(())
-            }
-            (Union(_), b) => bail!(offset, "expected {}, found union", b.desc()),
             (at @ Flags(a), Flags(b)) | (at @ Enum(a), Enum(b)) => {
                 let desc = match at {
                     Flags(_) => "flags",
@@ -3156,11 +3198,11 @@ impl Index<TypeId> for SubtypeArena<'_> {
 impl Remap for SubtypeArena<'_> {
     fn push_ty(&mut self, ty: Type) -> TypeId {
         let index = self.list.len() + self.types.len();
-        let type_size = ty.type_size();
+        let info = ty.info();
         self.list.push(ty);
         TypeId {
             index,
-            type_size,
+            info,
             unique_id: 0,
         }
     }

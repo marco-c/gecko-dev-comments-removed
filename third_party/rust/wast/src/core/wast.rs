@@ -15,6 +15,7 @@ pub enum WastArgCore<'a> {
     V128(V128Const),
     RefNull(HeapType<'a>),
     RefExtern(u32),
+    RefHost(u32),
 }
 
 static ARGS: &[(&str, fn(Parser<'_>) -> Result<WastArgCore<'_>>)] = {
@@ -27,6 +28,7 @@ static ARGS: &[(&str, fn(Parser<'_>) -> Result<WastArgCore<'_>>)] = {
         ("v128.const", |p| Ok(V128(p.parse()?))),
         ("ref.null", |p| Ok(RefNull(p.parse()?))),
         ("ref.extern", |p| Ok(RefExtern(p.parse()?))),
+        ("ref.host", |p| Ok(RefHost(p.parse()?))),
     ]
 };
 
@@ -73,9 +75,21 @@ pub enum WastRetCore<'a> {
     RefNull(Option<HeapType<'a>>),
     
     
-    RefExtern(u32),
+    RefExtern(Option<u32>),
+    
+    RefHost(u32),
     
     RefFunc(Option<Index<'a>>),
+    
+    RefAny,
+    
+    RefEq,
+    
+    RefArray,
+    
+    RefStruct,
+    
+    RefI31,
 
     Either(Vec<WastRetCore<'a>>),
 }
@@ -90,7 +104,13 @@ static RETS: &[(&str, fn(Parser<'_>) -> Result<WastRetCore<'_>>)] = {
         ("v128.const", |p| Ok(V128(p.parse()?))),
         ("ref.null", |p| Ok(RefNull(p.parse()?))),
         ("ref.extern", |p| Ok(RefExtern(p.parse()?))),
+        ("ref.host", |p| Ok(RefHost(p.parse()?))),
         ("ref.func", |p| Ok(RefFunc(p.parse()?))),
+        ("ref.any", |_| Ok(RefAny)),
+        ("ref.eq", |_| Ok(RefEq)),
+        ("ref.array", |_| Ok(RefArray)),
+        ("ref.struct", |_| Ok(RefStruct)),
+        ("ref.i31", |_| Ok(RefI31)),
         ("either", |p| {
             p.depth_check()?;
             let mut cases = Vec::new();

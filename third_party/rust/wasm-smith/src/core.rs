@@ -119,6 +119,9 @@ pub struct Module {
     
     
     type_size: u32,
+
+    
+    export_names: HashSet<String>,
 }
 
 impl<'a> Arbitrary<'a> for Module {
@@ -196,6 +199,7 @@ impl Module {
             code: Vec::new(),
             data: Vec::new(),
             type_size: 0,
+            export_names: HashSet::new(),
         }
     }
 }
@@ -547,14 +551,14 @@ impl Module {
         
         
         
-        let mut available_types = Vec::<(wasmparser::StructuralType, Option<u32>)>::new();
+        let mut available_types = Vec::new();
         let mut available_imports = Vec::<wasmparser::Import>::new();
         for payload in wasmparser::Parser::new(0).parse_all(&example_module) {
             match payload.expect("could not parse the available import payload") {
                 wasmparser::Payload::TypeSection(type_reader) => {
-                    for ty in type_reader {
+                    for ty in type_reader.into_iter_err_on_gc_types() {
                         let ty = ty.expect("could not parse type section");
-                        available_types.push((ty.structural_type, None));
+                        available_types.push((ty, None));
                     }
                 }
                 wasmparser::Payload::ImportSection(import_reader) => {
@@ -587,7 +591,7 @@ impl Module {
             let serialized_sig_idx = match available_types.get_mut(parsed_sig_idx as usize) {
                 None => panic!("signature index refers to a type out of bounds"),
                 Some((_, Some(idx))) => *idx as usize,
-                Some((wasmparser::StructuralType::Func(func_type), index_store)) => {
+                Some((func_type, index_store)) => {
                     let multi_value_required = func_type.results().len() > 1;
                     let new_index = first_type_index + new_types.len();
                     if new_index >= max_types || (multi_value_required && !multi_value_enabled) {
@@ -608,12 +612,6 @@ impl Module {
                     index_store.replace(new_index as u32);
                     new_types.push(Type::Func(Rc::clone(&func_type)));
                     new_index
-                }
-                Some((wasmparser::StructuralType::Array(_array_type), _index_store)) => {
-                    unimplemented!("Array types are not supported yet.");
-                }
-                Some((wasmparser::StructuralType::Struct(_struct_type), _index_store)) => {
-                    unimplemented!("Struct types are not supported yet.");
                 }
             };
             match &new_types[serialized_sig_idx - first_type_index] {
@@ -942,14 +940,12 @@ impl Module {
                 .collect(),
         );
 
-        let mut export_names = HashSet::new();
-
         
         
         if self.config.export_everything() {
             for choices_by_kind in choices {
                 for (kind, idx) in choices_by_kind {
-                    let name = unique_string(1_000, &mut export_names, u)?;
+                    let name = unique_string(1_000, &mut self.export_names, u)?;
                     self.add_arbitrary_export(name, kind, idx)?;
                 }
             }
@@ -977,7 +973,7 @@ impl Module {
 
                 
                 
-                let name = unique_string(1_000, &mut export_names, u)?;
+                let name = unique_string(1_000, &mut self.export_names, u)?;
                 let list = u.choose(&choices)?;
                 let (kind, idx) = *u.choose(list)?;
                 self.add_arbitrary_export(name, kind, idx)?;
@@ -1178,6 +1174,7 @@ impl Module {
             let body = self.arbitrary_func_body(u, ty, &mut allocs, allow_invalid)?;
             self.code.push(body);
         }
+        allocs.finish(u, self)?;
         Ok(())
     }
 

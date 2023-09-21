@@ -186,20 +186,7 @@ impl<'a> Parse<'a> for Elem<'a> {
                 Index::Num(0, span)
             };
 
-            
-            
-            
-            
-            
-            
-            
-            
-            let offset = parser.parens(|parser| {
-                if parser.peek::<kw::offset>()? {
-                    parser.parse::<kw::offset>()?;
-                }
-                parser.parse()
-            })?;
+            let offset = parse_expr_or_single_instr::<kw::offset>(parser)?;
             ElemKind::Active { table, offset }
         } else {
             ElemKind::Passive
@@ -289,17 +276,13 @@ fn parse_expr_or_single_instr<'a, T>(parser: Parser<'a>) -> Result<Expression<'a
 where
     T: Parse<'a> + Peek,
 {
-    parser.parens(|parser| {
-        if parser.peek::<T>()? {
+    if parser.peek2::<T>()? {
+        parser.parens(|parser| {
             parser.parse::<T>()?;
             parser.parse()
-        } else {
-            
-            
-            let insn = parser.parse()?;
-            Ok(Expression {
-                instrs: [insn].into(),
-            })
-        }
-    })
+        })
+    } else {
+        
+        Ok(Expression::parse_folded_instruction(parser)?)
+    }
 }
