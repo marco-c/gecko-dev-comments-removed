@@ -7,13 +7,12 @@ const path = "http://{{domains[www1]}}:{{ports[http][0]}}/fetch/orb/resources";
 
 
 promise_test(
-  async () =>
-    await fetchORB(
-      `${path}/text.txt`,
-      null,
-      contentType("text/plain"),
-      contentTypeOptions("nosniff")
-    ),
+  t => testFetchNoCors(
+    `${path}/text.txt`,
+    null,
+    contentType("text/plain"),
+    contentTypeOptions("nosniff")
+  ),
   "ORB shouldn't block opaque text/plain with nosniff"
 );
 
@@ -21,7 +20,7 @@ promise_test(
 
 
 promise_internal_response_is_filtered(
-  fetchORB(
+  testFetchNoCors(
     `${path}/data.json`,
     null,
     contentType("application/json"),
@@ -34,7 +33,7 @@ promise_internal_response_is_filtered(
 
 
 promise_internal_response_is_filtered(
-  fetchORB(
+  testFetchNoCors(
     `${path}/data.json`,
     null,
     contentType(""),

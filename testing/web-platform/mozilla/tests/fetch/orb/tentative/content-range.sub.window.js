@@ -8,7 +8,7 @@ const url =
 
 
 promise_internal_response_is_filtered(
-  fetchORB(
+  testFetchNoCors(
     url,
     { headers: new Headers([["Range", "bytes 10-99"]]) },
     header("Content-Range", "bytes 10-99/1010"),
