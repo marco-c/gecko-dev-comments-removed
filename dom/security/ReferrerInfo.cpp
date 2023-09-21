@@ -1407,13 +1407,6 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
 
   
   
-  if (mPolicy == ReferrerPolicy::Same_origin &&
-      IsCrossOriginRequest(aChannel)) {
-    return NS_OK;
-  }
-
-  
-  
   if (!referrer) {
     rv = NS_GetURIWithoutRef(mOriginalReferrer, getter_AddRefs(referrer));
     if (NS_WARN_IF(NS_FAILED(rv))) {
@@ -1446,6 +1439,13 @@ nsresult ReferrerInfo::ComputeReferrer(nsIHttpChannel* aChannel) {
   
   nsCOMPtr<nsIURI> exposableURI = nsIOService::CreateExposableURI(referrer);
   referrer = exposableURI;
+
+  
+  
+  if (mPolicy == ReferrerPolicy::Same_origin &&
+      IsReferrerCrossOrigin(aChannel, referrer)) {
+    return NS_OK;
+  }
 
   TrimmingPolicy trimmingPolicy = ComputeTrimmingPolicy(aChannel, referrer);
 
