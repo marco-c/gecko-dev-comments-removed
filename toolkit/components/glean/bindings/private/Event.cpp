@@ -48,6 +48,11 @@ void GleanEvent::Record(
   nsTArray<nsCString> extraValues;
   CopyableTArray<Telemetry::EventExtraEntry> telExtras;
   for (const auto& entry : aExtra.Value().Entries()) {
+    if (entry.mValue.IsVoid()) {
+      
+      
+      continue;
+    }
     
     auto snakeKey = camelToSnake(entry.mKey);
 
