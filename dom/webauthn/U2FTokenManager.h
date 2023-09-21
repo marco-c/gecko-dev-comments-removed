@@ -7,6 +7,7 @@
 #ifndef mozilla_dom_U2FTokenManager_h
 #define mozilla_dom_U2FTokenManager_h
 
+#include "nsIU2FTokenManager.h"
 #include "mozilla/dom/U2FTokenTransport.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/Tainting.h"
@@ -26,8 +27,11 @@ namespace mozilla::dom {
 class U2FSoftTokenManager;
 class WebAuthnTransactionParent;
 
-class U2FTokenManager final {
+class U2FTokenManager final : public nsIU2FTokenManager {
  public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIU2FTOKENMANAGER
+
   static U2FTokenManager* Get();
   void Register(PWebAuthnTransactionParent* aTransactionParent,
                 const uint64_t& aTransactionId,
@@ -40,21 +44,56 @@ class U2FTokenManager final {
   void MaybeClearTransaction(PWebAuthnTransactionParent* aParent);
   static void Initialize();
 
-  U2FTokenManager();
-  ~U2FTokenManager() = default;
+  Maybe<nsString> GetCurrentOrigin() {
+    if (mPendingRegisterInfo.isSome()) {
+      return Some(mPendingRegisterInfo.value().Origin());
+    }
+
+    if (mPendingSignInfo.isSome()) {
+      return Some(mPendingSignInfo.value().Origin());
+    }
+    return Nothing();
+  }
+
+  uint64_t GetCurrentTransactionId() { return mLastTransactionId; }
+
+  bool CurrentTransactionIsRegister() { return mPendingRegisterInfo.isSome(); }
+
+  bool CurrentTransactionIsSign() { return mPendingSignInfo.isSome(); }
+
+  
+  template <typename... T>
+  void SendPromptNotification(const char16_t* aFormat, T... aArgs);
+  
+  void RunSendPromptNotification(const nsString& aJSON);
 
  private:
+  U2FTokenManager();
+  ~U2FTokenManager() = default;
   RefPtr<U2FTokenTransport> GetTokenManagerImpl();
-  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
+  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError,
+                        bool shouldCancelActiveDialog);
   void AbortOngoingTransaction();
-  void ClearTransaction();
+  void ClearTransaction(bool send_cancel);
+  
+  void DoRegister(const WebAuthnMakeCredentialInfo& aInfo,
+                  bool aForceNoneAttestation);
+  void DoSign(const WebAuthnGetAssertionInfo& aTransactionInfo);
   void MaybeConfirmRegister(const uint64_t& aTransactionId,
                             const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId,
-                          const nsresult& aError);
+                          const nsresult& aError,
+                          bool shouldCancelActiveDialog);
   void MaybeConfirmSign(const uint64_t& aTransactionId,
                         const WebAuthnGetAssertionResult& aResult);
-  void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
+  void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError,
+                      bool shouldCancelActiveDialog);
+  
+  void RunResumeRegister(uint64_t aTransactionId, bool aForceNoneAttestation);
+  void RunResumeSign(uint64_t aTransactionId);
+  void RunResumeWithSelectedSignResult(uint64_t aTransactionId, uint64_t idx);
+  
+  void RunCancel(uint64_t aTransactionId);
   
   
   
@@ -66,6 +105,11 @@ class U2FTokenManager final {
   
   
   uint64_t mLastTransactionId;
+  
+  Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
+  
+  Maybe<WebAuthnGetAssertionInfo> mPendingSignInfo;
+  nsTArray<WebAuthnGetAssertionResultWrapper> mPendingSignResults;
 };
 
 }  
