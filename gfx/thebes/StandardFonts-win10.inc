@@ -178,7 +178,7 @@ static const char* kLangPackFonts[] = {
   "Simplified Arabic",  
   "Traditional Arabic",  
   "Tunga",  
-  "UD Digi Kyokasho",  
+  "UD Digi Kyokasho N-B",  
   "UD Digi Kyokasho N-R",  
   "UD Digi Kyokasho NK-B",  
   "UD Digi Kyokasho NK-R",  
