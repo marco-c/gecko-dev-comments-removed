@@ -742,8 +742,8 @@ bool shell::enableIteratorHelpers = false;
 bool shell::enableShadowRealms = false;
 
 bool shell::enableWellFormedUnicodeStrings = true;
-#ifdef NIGHTLY_BUILD
 bool shell::enableArrayGrouping = false;
+#ifdef NIGHTLY_BUILD
 
 bool shell::enableNewSetMethods = false;
 
@@ -3407,7 +3407,7 @@ static bool Notes(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  JSString* str = JS_NewStringCopyZ(cx, sprinter.string());
+  JSString* str = sprinter.releaseJS(cx);
   if (!str) {
     return false;
   }
@@ -3502,16 +3502,7 @@ static bool DisassembleToString(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-  const char* chars = sprinter.string();
-  size_t len;
-  JS::UniqueTwoByteChars buf(
-      JS::LossyUTF8CharsToNewTwoByteCharsZ(
-          cx, JS::UTF8Chars(chars, strlen(chars)), &len, js::MallocArena)
-          .get());
-  if (!buf) {
-    return false;
-  }
-  JSString* str = JS_NewUCStringCopyN(cx, buf.get(), len);
+  JSString* str = sprinter.releaseJS(cx);
   if (!str) {
     return false;
   }
@@ -4134,8 +4125,8 @@ static void SetStandardRealmOptions(JS::RealmOptions& options) {
       .setIteratorHelpersEnabled(enableIteratorHelpers)
       .setShadowRealmsEnabled(enableShadowRealms)
       .setWellFormedUnicodeStringsEnabled(enableWellFormedUnicodeStrings)
-#ifdef NIGHTLY_BUILD
       .setArrayGroupingEnabled(enableArrayGrouping)
+#ifdef NIGHTLY_BUILD
       .setNewSetMethodsEnabled(enableNewSetMethods)
       .setArrayBufferTransferEnabled(enableArrayBufferTransfer)
 #endif
@@ -8662,6 +8653,10 @@ static bool TransplantObject(JSContext* cx, unsigned argc, Value* vp) {
     ReportAccessDenied(cx);
     return false;
   }
+  if (JS_IsDeadWrapper(source)) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
+    return false;
+  }
   MOZ_ASSERT(source->getClass()->isDOMClass());
 
   
@@ -11633,8 +11628,8 @@ bool InitOptionParser(OptionParser& op) {
       !op.addBoolOption('\0', "enable-iterator-helpers",
                         "Enable iterator helpers") ||
       !op.addBoolOption('\0', "enable-shadow-realms", "Enable ShadowRealms") ||
-      !op.addBoolOption('\0', "enable-array-grouping",
-                        "Enable Array.grouping") ||
+      !op.addBoolOption('\0', "disable-array-grouping",
+                        "Disable Object.groupBy and Map.groupBy") ||
       !op.addBoolOption('\0', "disable-well-formed-unicode-strings",
                         "Disable String.prototype.{is,to}WellFormed() methods"
                         "(Well-Formed Unicode Strings) (default: Enabled)") ||
@@ -12149,8 +12144,8 @@ bool SetContextOptions(JSContext* cx, const OptionParser& op) {
   enableShadowRealms = op.getBoolOption("enable-shadow-realms");
   enableWellFormedUnicodeStrings =
       !op.getBoolOption("disable-well-formed-unicode-strings");
+  enableArrayGrouping = !op.getBoolOption("disable-array-grouping");
 #ifdef NIGHTLY_BUILD
-  enableArrayGrouping = op.getBoolOption("enable-array-grouping");
   enableNewSetMethods = op.getBoolOption("enable-new-set-methods");
   enableArrayBufferTransfer = op.getBoolOption("enable-arraybuffer-transfer");
 #endif
