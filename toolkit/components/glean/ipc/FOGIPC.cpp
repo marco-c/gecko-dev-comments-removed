@@ -418,9 +418,8 @@ void FlushAllChildData(
     promises.EmplaceBack(socketParent->SendFlushFOGData());
   }
 
-  {
-    RefPtr<mozilla::gmp::GeckoMediaPluginServiceParent> gmps(
-        mozilla::gmp::GeckoMediaPluginServiceParent::GetSingleton());
+  if (RefPtr<mozilla::gmp::GeckoMediaPluginServiceParent> gmps =
+          mozilla::gmp::GeckoMediaPluginServiceParent::GetSingleton()) {
     
     
     
