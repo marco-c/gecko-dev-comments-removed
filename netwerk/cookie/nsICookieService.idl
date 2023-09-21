@@ -50,22 +50,6 @@ interface nsICookieTransactionCallback : nsISupports
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 [scriptable, uuid(1e94e283-2811-4f43-b947-d22b1549d824)]
 interface nsICookieService : nsISupports
 {
