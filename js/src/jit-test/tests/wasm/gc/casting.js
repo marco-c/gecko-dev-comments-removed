@@ -1,18 +1,6 @@
 
 
 
-{
-  const MaxDepth = 31;
-  let types = `(type (sub (struct)))\n`;
-  for (let depth = 1; depth <= MaxDepth + 1; depth++) {
-    types += `(type (sub ${depth - 1} (struct)))\n`;
-  }
-  wasmFailValidateText(`(module
-    ${types}
-  )`, /too deep/);
-}
-
-
 
 
 

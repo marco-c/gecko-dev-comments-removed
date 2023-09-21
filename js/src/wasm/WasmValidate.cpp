@@ -1724,7 +1724,7 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
 
       
       
-      if (typeIndex > MaxTypes) {
+      if (typeIndex >= MaxTypes) {
         return d.fail("too many types");
       }
 

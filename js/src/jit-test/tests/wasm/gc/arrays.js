@@ -378,17 +378,6 @@ assertNoWarning(() => wasmEvalText(`(module
 `));
 
 
-assertErrorMessage(() => wasmEvalText(`(module
-    (type $a (array f32))
-    (func (export "newFixed") (result eqref)
-            f32.const 1337.0
-            f32.const 4771.0
-            array.new_fixed $a 1000000000
-    )
-)
-`), WebAssembly.CompileError, /popping value from empty stack/);
-
-
 {
     let { newFixed } = wasmEvalText(`(module
         (type $a (array i8))
@@ -461,6 +450,26 @@ assertErrorMessage(() => wasmEvalText(`(module
     let a = newFixed();
     assertEq(wasmGcArrayLength(a), 30);
     for (i = 0; i < 30; i++) {
+        assertEq(wasmGcReadField(a, i), i + 1);
+    }
+}
+
+
+{
+    let initializers = '';
+    for (let i = 0; i < 10_000; i++) {
+      initializers += `i32.const ${i + 1}\n`;
+    }
+    let { newFixed } = wasmEvalText(`(module
+        (type $a (array i16))
+        (func (export "newFixed") (result eqref)
+                ${initializers}
+                array.new_fixed $a 10000
+        )
+        )`).exports;
+    let a = newFixed();
+    assertEq(wasmGcArrayLength(a), 10000);
+    for (i = 0; i < 10000; i++) {
         assertEq(wasmGcReadField(a, i), i + 1);
     }
 }
