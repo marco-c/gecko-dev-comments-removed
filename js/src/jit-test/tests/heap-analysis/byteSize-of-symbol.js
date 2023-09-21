@@ -11,9 +11,7 @@
 
 
 
-var config = getBuildConfiguration();
-
-const SIZE_OF_SYMBOL = config['pointer-byte-size'] == 4 ? 16 : 16;
+const SIZE_OF_SYMBOL = getBuildConfiguration("pointer-byte-size") == 4 ? 16 : 16;
 
 
 assertEq(byteSize(Symbol()), SIZE_OF_SYMBOL);
