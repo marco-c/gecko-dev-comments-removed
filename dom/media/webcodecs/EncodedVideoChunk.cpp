@@ -5,6 +5,7 @@
 
 
 #include "mozilla/dom/EncodedVideoChunk.h"
+#include <utility>
 #include "mozilla/dom/EncodedVideoChunkBinding.h"
 
 #include "MediaData.h"
