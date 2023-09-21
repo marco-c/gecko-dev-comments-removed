@@ -474,7 +474,7 @@ class ElfRelHackCode_Section : public ElfSection {
           addr = relhack_section.getAddr();
         } else if (strcmp(name, "relhack_end") == 0) {
           addr = relhack_section.getAddr() + relhack_section.getSize();
-        } else if (strcmp(name, "elf_header") == 0) {
+        } else if (strcmp(name, "__ehdr_start") == 0) {
           
           ElfSection* ehdr = parent.getSection(1)->getPrevious()->getPrevious();
           addr = ehdr->getAddr();
