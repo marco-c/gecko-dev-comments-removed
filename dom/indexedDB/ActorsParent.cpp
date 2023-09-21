@@ -2943,7 +2943,6 @@ class VersionChangeTransaction final
 
 class FactoryOp
     : public DatabaseOperationBase,
-      public OpenDirectoryListener,
       public PBackgroundIDBFactoryRequestParent,
       public SupportsCheckedUnsafePtr<CheckIf<DiagnosticAssertEnabled>> {
  public:
@@ -3132,17 +3131,12 @@ class FactoryOp
   virtual void SendResults() = 0;
 
   
-  
-  NS_DECL_ISUPPORTS_INHERITED
-
-  
   NS_IMETHOD
   Run() final;
 
-  
-  void DirectoryLockAcquired(DirectoryLock* aLock) override;
+  void DirectoryLockAcquired(DirectoryLock* aLock);
 
-  void DirectoryLockFailed() override;
+  void DirectoryLockFailed();
 
   
   void ActorDestroy(ActorDestroyReason aWhy) override;
@@ -4830,8 +4824,7 @@ class QuotaClient final : public mozilla::dom::quota::Client {
   void ProcessMaintenanceQueue();
 };
 
-class DeleteFilesRunnable final : public Runnable,
-                                  public OpenDirectoryListener {
+class DeleteFilesRunnable final : public Runnable {
   using DirectoryLock = mozilla::dom::quota::DirectoryLock;
 
   enum State {
@@ -4878,13 +4871,11 @@ class DeleteFilesRunnable final : public Runnable,
 
   void UnblockOpen();
 
-  NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIRUNNABLE
 
-  
-  virtual void DirectoryLockAcquired(DirectoryLock* aLock) override;
+  void DirectoryLockAcquired(DirectoryLock* aLock);
 
-  virtual void DirectoryLockFailed() override;
+  void DirectoryLockFailed();
 };
 
 class Maintenance final : public Runnable, public OpenDirectoryListener {
@@ -12724,12 +12715,21 @@ void DeleteFilesRunnable::Open() {
     return;
   }
 
-  RefPtr<DirectoryLock> directoryLock = quotaManager->CreateDirectoryLock(
-      {mFileManager->OriginMetadata(), quota::Client::IDB},
-       false);
-
   mState = State_DirectoryOpenPending;
-  directoryLock->Acquire(this);
+
+  quotaManager
+      ->OpenClientDirectory(
+          {mFileManager->OriginMetadata(), quota::Client::IDB})
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr(this)](
+              const ClientDirectoryLockPromise::ResolveOrRejectValue& aValue) {
+            if (aValue.IsResolve()) {
+              self->DirectoryLockAcquired(aValue.ResolveValue());
+            } else {
+              self->DirectoryLockFailed();
+            }
+          });
 }
 
 void DeleteFilesRunnable::DoDatabaseWork() {
@@ -12765,8 +12765,6 @@ void DeleteFilesRunnable::UnblockOpen() {
 
   mState = State_Completed;
 }
-
-NS_IMPL_ISUPPORTS_INHERITED0(DeleteFilesRunnable, Runnable)
 
 NS_IMETHODIMP
 DeleteFilesRunnable::Run() {
@@ -14953,13 +14951,19 @@ nsresult FactoryOp::FinishOpen() {
       }()));
 
   
-  RefPtr<DirectoryLock> directoryLock =
-      quotaManager->CreateDirectoryLock({mOriginMetadata, Client::IDB},
-                                         false);
-
   mState = State::DirectoryOpenPending;
 
-  directoryLock->Acquire(this);
+  quotaManager->OpenClientDirectory({mOriginMetadata, Client::IDB})
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [self = RefPtr(this)](
+              const ClientDirectoryLockPromise::ResolveOrRejectValue& aValue) {
+            if (aValue.IsResolve()) {
+              self->DirectoryLockAcquired(aValue.ResolveValue());
+            } else {
+              self->DirectoryLockFailed();
+            }
+          });
 
   return NS_OK;
 }
@@ -14974,8 +14978,6 @@ bool FactoryOp::MustWaitFor(const FactoryOp& aExistingOp) {
          aExistingOp.mOriginMetadata.mOrigin == mOriginMetadata.mOrigin &&
          aExistingOp.mDatabaseId == mDatabaseId;
 }
-
-NS_IMPL_ISUPPORTS_INHERITED0(FactoryOp, DatabaseOperationBase)
 
 
 
@@ -15135,8 +15137,6 @@ nsresult OpenDatabaseOp::DoDatabaseWork() {
 
   QuotaManager* const quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
-
-  QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitializedInternal()));
 
   QM_TRY_INSPECT(
       const auto& dbDirectory,
