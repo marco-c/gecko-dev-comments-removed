@@ -258,6 +258,13 @@ class QuotaManager final : public BackgroundThreadObject {
 
   Result<OriginMetadata, nsresult> GetOriginMetadata(nsIFile* aDirectory);
 
+  RefPtr<UniversalDirectoryLockPromise> OpenStorageDirectory(
+      const Nullable<PersistenceType>& aPersistenceType,
+      const OriginScope& aOriginScope,
+      const Nullable<Client::Type>& aClientType, bool aExclusive,
+      Maybe<RefPtr<UniversalDirectoryLock>&> aPendingDirectoryLockOut =
+          Nothing());
+
   
   
   
