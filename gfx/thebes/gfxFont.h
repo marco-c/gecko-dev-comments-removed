@@ -2320,6 +2320,7 @@ struct MOZ_STACK_CLASS TextRunDrawParams {
   bool isRTL = false;
   bool paintSVGGlyphs = true;
   bool allowGDI = true;
+  bool hasTextShadow = false;
 
   
   
@@ -2364,6 +2365,7 @@ struct MOZ_STACK_CLASS FontDrawParams {
   bool isVerticalFont;
   bool haveSVGGlyphs;
   bool haveColorGlyphs;
+  bool hasTextShadow;  
 };
 
 struct MOZ_STACK_CLASS EmphasisMarkDrawParams {
