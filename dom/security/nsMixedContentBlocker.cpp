@@ -405,13 +405,18 @@ bool nsMixedContentBlocker::IsUpgradableContentType(nsContentPolicyType aType,
 
 static already_AddRefed<nsIURI> GetPrincipalURIOrPrecursorPrincipalURI(
     nsIPrincipal* aPrincipal) {
-  nsCOMPtr<nsIURI> precursorURI = nullptr;
-  if (aPrincipal->GetIsNullPrincipal()) {
-    nsCOMPtr<nsIPrincipal> precursorPrin = aPrincipal->GetPrecursorPrincipal();
-    precursorURI = precursorPrin ? precursorPrin->GetURI() : nullptr;
-  }
+  nsCOMPtr<nsIPrincipal> precursorPrincipal =
+      aPrincipal->GetPrecursorPrincipal();
 
-  return precursorURI ? precursorURI.forget() : aPrincipal->GetURI();
+#ifdef DEBUG
+  if (precursorPrincipal) {
+    MOZ_ASSERT(aPrincipal->GetIsNullPrincipal(),
+               "Only Null Principals should have a Precursor Principal");
+  }
+#endif
+
+  return precursorPrincipal ? precursorPrincipal->GetURI()
+                            : aPrincipal->GetURI();
 }
 
 
@@ -673,18 +678,11 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   
-  nsCOMPtr<nsIURI> requestingLocation;
-  auto* baseLoadingPrincipal = BasePrincipal::Cast(loadingPrincipal);
-  if (baseLoadingPrincipal) {
-    requestingLocation =
-        GetPrincipalURIOrPrecursorPrincipalURI(baseLoadingPrincipal);
-  }
+  nsCOMPtr<nsIURI> requestingLocation =
+      GetPrincipalURIOrPrecursorPrincipalURI(loadingPrincipal);
   if (!requestingLocation) {
-    auto* baseTriggeringPrincipal = BasePrincipal::Cast(triggeringPrincipal);
-    if (baseTriggeringPrincipal) {
-      requestingLocation =
-          GetPrincipalURIOrPrecursorPrincipalURI(baseTriggeringPrincipal);
-    }
+    requestingLocation =
+        GetPrincipalURIOrPrecursorPrincipalURI(triggeringPrincipal);
   }
 
   
