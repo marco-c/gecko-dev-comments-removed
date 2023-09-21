@@ -381,9 +381,7 @@ void CanonicalBrowsingContext::ReplacedBy(
     aNewContext->SetChildSHistory(childSHistory);
   }
 
-  if (mozilla::SessionHistoryInParent()) {
-    BackgroundSessionStorageManager::PropagateManager(Id(), aNewContext->Id());
-  }
+  BackgroundSessionStorageManager::PropagateManager(Id(), aNewContext->Id());
 
   
   
