@@ -22,7 +22,7 @@ import {
   getSelectedLocation,
   getSettledSourceTextContent,
   getSymbols,
-  getTabs,
+  getSourceTabs,
   getBlackBoxRanges,
   getProjectDirectoryRoot,
 } from "../selectors";
@@ -90,7 +90,7 @@ export class QuickOpenModal extends Component {
       shortcutsModalEnabled: PropTypes.bool.isRequired,
       symbols: PropTypes.object.isRequired,
       symbolsLoading: PropTypes.bool.isRequired,
-      tabUrls: PropTypes.array.isRequired,
+      openedTabUrls: PropTypes.array.isRequired,
       toggleShortcutsModal: PropTypes.func.isRequired,
       projectDirectoryRoot: PropTypes.string,
     };
@@ -136,12 +136,12 @@ export class QuickOpenModal extends Component {
   };
 
   formatSources = memoizeLast(
-    (displayedSources, tabUrls, blackBoxRanges, projectDirectoryRoot) => {
+    (displayedSources, openedTabUrls, blackBoxRanges, projectDirectoryRoot) => {
       
       
       return displayedSources.map(source => {
         const isBlackBoxed = !!blackBoxRanges[source.url];
-        const hasTabOpened = tabUrls.includes(source.url);
+        const hasTabOpened = openedTabUrls.includes(source.url);
         return formatSourceForList(
           source,
           hasTabOpened,
@@ -153,12 +153,16 @@ export class QuickOpenModal extends Component {
   );
 
   searchSources = query => {
-    const { displayedSources, tabUrls, blackBoxRanges, projectDirectoryRoot } =
-      this.props;
+    const {
+      displayedSources,
+      openedTabUrls,
+      blackBoxRanges,
+      projectDirectoryRoot,
+    } = this.props;
 
     const sources = this.formatSources(
       displayedSources,
-      tabUrls,
+      openedTabUrls,
       blackBoxRanges,
       projectDirectoryRoot
     );
@@ -195,22 +199,22 @@ export class QuickOpenModal extends Component {
 
 
   showTopSources = () => {
-    const { tabUrls, blackBoxRanges, projectDirectoryRoot } = this.props;
+    const { openedTabUrls, blackBoxRanges, projectDirectoryRoot } = this.props;
     let { displayedSources } = this.props;
 
     
     
     
-    if (tabUrls.length) {
+    if (openedTabUrls.length) {
       displayedSources = displayedSources.filter(
-        source => !!source.url && tabUrls.includes(source.url)
+        source => !!source.url && openedTabUrls.includes(source.url)
       );
     }
 
     this.setResults(
       this.formatSources(
         displayedSources,
-        tabUrls,
+        openedTabUrls,
         blackBoxRanges,
         projectDirectoryRoot
       )
@@ -495,8 +499,8 @@ function mapStateToProps(state) {
   const selectedSource = getSelectedSource(state);
   const location = getSelectedLocation(state);
   const displayedSources = getDisplayedSourcesList(state);
-  const tabs = getTabs(state);
-  const tabUrls = [...new Set(tabs.map(tab => tab.url))];
+  const tabs = getSourceTabs(state);
+  const openedTabUrls = [...new Set(tabs.map(tab => tab.url))];
   const symbols = getSymbols(state, location);
 
   return {
@@ -512,7 +516,7 @@ function mapStateToProps(state) {
     symbolsLoading: !symbols,
     query: getQuickOpenQuery(state),
     searchType: getQuickOpenType(state),
-    tabUrls,
+    openedTabUrls,
   };
 }
 
