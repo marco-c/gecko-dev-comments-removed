@@ -622,12 +622,7 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       result.MoveBy(frame->GetOffsetTo(boundingFrame));
     }
 
-    if (nsLayoutUtils::GetNextContinuationOrIBSplitSibling(boundingFrame)) {
-      
-      
-      
-      
-      
+    if (boundingFrame->GetRect().IsEmpty()) {
       
       
       
@@ -639,10 +634,6 @@ nsRect LocalAccessible::ParentRelativeBounds() {
       nsRect boundingUnion =
           nsLayoutUtils::GetAllInFlowRectsUnion(boundingFrame, boundingFrame);
       if (!boundingUnion.IsEmpty()) {
-        
-        
-        
-        
         result.MoveBy(-boundingUnion.TopLeft());
       } else {
         
