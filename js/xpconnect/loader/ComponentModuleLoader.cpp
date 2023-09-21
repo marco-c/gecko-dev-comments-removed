@@ -65,9 +65,9 @@ already_AddRefed<ModuleLoadRequest> ComponentModuleLoader::CreateStaticImport(
     nsIURI* aURI, ModuleLoadRequest* aParent) {
   RefPtr<ComponentLoadContext> context = new ComponentLoadContext();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->mFetchOptions, dom::SRIMetadata(), aParent->mURI, context,
-      false, 
-      false, 
+      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions,
+      dom::SRIMetadata(), aParent->mURI, context, false, 
+      false,                                             
       this, aParent->mVisitedSet, aParent->GetRootModule());
   return request.forget();
 }

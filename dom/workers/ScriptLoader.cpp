@@ -645,15 +645,16 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
   
   
   RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
-      CORSMode::CORS_NONE, referrerPolicy,  u""_ns,
-      RequestPriority::Auto, ParserMetadata::NotParserInserted, nullptr);
+      CORSMode::CORS_NONE,  u""_ns, RequestPriority::Auto,
+      ParserMetadata::NotParserInserted, nullptr);
 
   RefPtr<ScriptLoadRequest> request = nullptr;
   
   if (mWorkerRef->Private()->WorkerType() == WorkerType::Classic ||
       IsDebuggerScript()) {
-    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, fetchOptions,
-                                    SRIMetadata(), nullptr,  
+    request = new ScriptLoadRequest(ScriptKind::eClassic, uri, referrerPolicy,
+                                    fetchOptions, SRIMetadata(),
+                                    nullptr,  
                                     loadContext);
   } else {
     
@@ -685,7 +686,7 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
 
     
     request = new ModuleLoadRequest(
-        uri, fetchOptions, SRIMetadata(), referrer, loadContext,
+        uri, referrerPolicy, fetchOptions, SRIMetadata(), referrer, loadContext,
         true,  
         false, 
         moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(uri),
@@ -1209,8 +1210,8 @@ bool WorkerScriptLoader::EvaluateScript(JSContext* aCx,
     } else {
       requestBaseURI = aRequest->mBaseURL;
     }
-    classicScript =
-        new JS::loader::ClassicScript(aRequest->mFetchOptions, requestBaseURI);
+    classicScript = new JS::loader::ClassicScript(
+        aRequest->ReferrerPolicy(), aRequest->mFetchOptions, requestBaseURI);
   }
 
   JS::Rooted<JSScript*> script(aCx);

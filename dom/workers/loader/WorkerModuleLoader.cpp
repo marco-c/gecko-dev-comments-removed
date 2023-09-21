@@ -54,9 +54,9 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
       new WorkerLoadContext(WorkerLoadContext::Kind::StaticImport, clientInfo,
                             aParent->GetWorkerLoadContext()->mScriptLoader);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->mFetchOptions, SRIMetadata(), aParent->mURI, loadContext,
-      false, 
-      false, 
+      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
+      aParent->mURI, loadContext, false, 
+      false,                             
       this, aParent->mVisitedSet, aParent->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();
@@ -115,10 +115,8 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
     
     
     
-    ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
     options = new ScriptFetchOptions(
-        CORSMode::CORS_NONE, referrerPolicy,
-         u""_ns, RequestPriority::Auto,
+        CORSMode::CORS_NONE,  u""_ns, RequestPriority::Auto,
         JS::loader::ParserMetadata::NotParserInserted, nullptr);
     baseURL = GetBaseURI();
   }
@@ -129,8 +127,9 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
       new WorkerLoadContext(WorkerLoadContext::Kind::DynamicImport, clientInfo,
                             GetCurrentScriptLoader());
 
+  ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, options, SRIMetadata(), baseURL, context, true,
+      aURI, referrerPolicy, options, SRIMetadata(), baseURL, context, true,
        true, 
       this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
 

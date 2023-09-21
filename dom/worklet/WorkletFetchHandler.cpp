@@ -98,8 +98,8 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
   
   
   RefPtr<ScriptFetchOptions> fetchOptions = new ScriptFetchOptions(
-      CORSMode::CORS_NONE, ReferrerPolicy::_empty,  u""_ns,
-      RequestPriority::Auto, ParserMetadata::NotParserInserted,
+      CORSMode::CORS_NONE,  u""_ns, RequestPriority::Auto,
+      ParserMetadata::NotParserInserted,
        nullptr);
 
   WorkletModuleLoader* moduleLoader =
@@ -114,9 +114,9 @@ NS_IMETHODIMP StartModuleLoadRunnable::RunOnWorkletThread() {
 
   
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      mURI, fetchOptions, SRIMetadata(), mReferrer, loadContext,
-      true,  
-      false, 
+      mURI, ReferrerPolicy::_empty, fetchOptions, SRIMetadata(), mReferrer,
+      loadContext, true, 
+      false,             
       moduleLoader, ModuleLoadRequest::NewVisitedSetForTopLevelImport(mURI),
       nullptr);
 

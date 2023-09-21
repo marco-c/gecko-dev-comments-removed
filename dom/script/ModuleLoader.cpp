@@ -256,11 +256,12 @@ nsresult ModuleLoader::CompileFetchedModule(
 
 
 already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateTopLevel(
-    nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-    const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
-    ScriptLoadContext* aContext) {
+    nsIURI* aURI, ReferrerPolicy aReferrerPolicy,
+    ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
+    nsIURI* aReferrer, ScriptLoader* aLoader, ScriptLoadContext* aContext) {
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aFetchOptions, aIntegrity, aReferrer, aContext, true,
+      aURI, aReferrerPolicy, aFetchOptions, aIntegrity, aReferrer, aContext,
+      true,
        false, 
       aLoader->GetModuleLoader(),
       ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
@@ -277,9 +278,9 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateStaticImport(
   newContext->mScriptMode = aParent->GetScriptLoadContext()->mScriptMode;
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->mFetchOptions, SRIMetadata(), aParent->mURI, newContext,
-      false, 
-      false, 
+      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
+      aParent->mURI, newContext, false, 
+      false,                            
       aParent->mLoader, aParent->mVisitedSet, aParent->GetRootModule());
 
   return request.forget();
@@ -295,12 +296,14 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
   RefPtr<ScriptFetchOptions> options = nullptr;
   nsIURI* baseURL = nullptr;
   RefPtr<ScriptLoadContext> context = new ScriptLoadContext();
+  ReferrerPolicy referrerPolicy;
 
   if (aMaybeActiveScript) {
     
     
     
     options = aMaybeActiveScript->GetFetchOptions();
+    referrerPolicy = aMaybeActiveScript->ReferrerPolicy();
     baseURL = aMaybeActiveScript->BaseURL();
   } else {
     
@@ -324,9 +327,9 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
     
     
     options = new ScriptFetchOptions(
-        mozilla::CORS_NONE, document->GetReferrerPolicy(),
-         u""_ns, RequestPriority::Auto,
+        mozilla::CORS_NONE,  u""_ns, RequestPriority::Auto,
         ParserMetadata::NotParserInserted, principal, nullptr);
+    referrerPolicy = document->GetReferrerPolicy();
     baseURL = document->GetDocBaseURI();
   }
 
@@ -334,7 +337,7 @@ already_AddRefed<ModuleLoadRequest> ModuleLoader::CreateDynamicImport(
   context->mScriptMode = ScriptLoadContext::ScriptMode::eAsync;
 
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, options, SRIMetadata(), baseURL, context, true,
+      aURI, referrerPolicy, options, SRIMetadata(), baseURL, context, true,
        true, 
       this, ModuleLoadRequest::NewVisitedSetForTopLevelImport(aURI), nullptr);
 

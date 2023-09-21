@@ -77,6 +77,12 @@ enum class ParserMetadata {
 
 
 
+
+
+
+
+
+
 class ScriptFetchOptions {
   ~ScriptFetchOptions();
 
@@ -84,9 +90,7 @@ class ScriptFetchOptions {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(ScriptFetchOptions)
   NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(ScriptFetchOptions)
 
-  ScriptFetchOptions(mozilla::CORSMode aCORSMode,
-                     enum mozilla::dom::ReferrerPolicy aReferrerPolicy,
-                     const nsAString& aNonce,
+  ScriptFetchOptions(mozilla::CORSMode aCORSMode, const nsAString& aNonce,
                      mozilla::dom::RequestPriority aFetchPriority,
                      const ParserMetadata aParserMetadata,
                      nsIPrincipal* aTriggeringPrincipal,
@@ -98,12 +102,6 @@ class ScriptFetchOptions {
 
 
   const mozilla::CORSMode mCORSMode;
-
-  
-
-
-
-  const enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
 
   
 
@@ -182,6 +180,7 @@ class ScriptLoadRequest
  public:
   using SRIMetadata = mozilla::dom::SRIMetadata;
   ScriptLoadRequest(ScriptKind aKind, nsIURI* aURI,
+                    mozilla::dom::ReferrerPolicy aReferrerPolicy,
                     ScriptFetchOptions* aFetchOptions,
                     const SRIMetadata& aIntegrity, nsIURI* aReferrer,
                     LoadContextBase* aContext);
@@ -298,7 +297,7 @@ class ScriptLoadRequest
   }
 
   enum mozilla::dom::ReferrerPolicy ReferrerPolicy() const {
-    return mFetchOptions->mReferrerPolicy;
+    return mReferrerPolicy;
   }
 
   enum ParserMetadata ParserMetadata() const {
@@ -343,6 +342,10 @@ class ScriptLoadRequest
   State mState;           
   bool mFetchSourceOnly;  
   DataType mDataType;     
+
+  
+  
+  enum mozilla::dom::ReferrerPolicy mReferrerPolicy;
   RefPtr<ScriptFetchOptions> mFetchOptions;
   const SRIMetadata mIntegrity;
   const nsCOMPtr<nsIURI> mReferrer;

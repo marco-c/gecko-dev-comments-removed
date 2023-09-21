@@ -68,9 +68,9 @@ already_AddRefed<ModuleLoadRequest> WorkletModuleLoader::CreateStaticImport(
   
   nsIURI* referrer = aParent->mURI;
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
-      aURI, aParent->mFetchOptions, SRIMetadata(), referrer, loadContext,
-      false, 
-      false, 
+      aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
+      referrer, loadContext, false, 
+      false,                        
       this, aParent->mVisitedSet, aParent->GetRootModule());
 
   request->mURL = request->mURI->GetSpecOrDefault();

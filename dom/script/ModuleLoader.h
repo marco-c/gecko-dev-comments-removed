@@ -61,9 +61,9 @@ class ModuleLoader final : public JS::loader::ModuleLoaderBase {
 
   
   static already_AddRefed<ModuleLoadRequest> CreateTopLevel(
-      nsIURI* aURI, ScriptFetchOptions* aFetchOptions,
-      const SRIMetadata& aIntegrity, nsIURI* aReferrer, ScriptLoader* aLoader,
-      ScriptLoadContext* aContext);
+      nsIURI* aURI, ReferrerPolicy aReferrerPolicy,
+      ScriptFetchOptions* aFetchOptions, const SRIMetadata& aIntegrity,
+      nsIURI* aReferrer, ScriptLoader* aLoader, ScriptLoadContext* aContext);
 
   
   already_AddRefed<ModuleLoadRequest> CreateStaticImport(

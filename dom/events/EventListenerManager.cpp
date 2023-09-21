@@ -1245,13 +1245,12 @@ nsresult EventListenerManager::CompileEventHandlerInternal(
 
   RefPtr<JS::loader::ScriptFetchOptions> fetchOptions =
       new JS::loader::ScriptFetchOptions(
-          CORS_NONE, aElement->OwnerDoc()->GetReferrerPolicy(),
-           u""_ns, RequestPriority::Auto,
+          CORS_NONE,  u""_ns, RequestPriority::Auto,
           JS::loader::ParserMetadata::NotParserInserted,
           aElement->OwnerDoc()->NodePrincipal());
 
-  RefPtr<JS::loader::EventScript> eventScript =
-      new JS::loader::EventScript(fetchOptions, uri);
+  RefPtr<JS::loader::EventScript> eventScript = new JS::loader::EventScript(
+      aElement->OwnerDoc()->GetReferrerPolicy(), fetchOptions, uri);
 
   JS::CompileOptions options(cx);
   
