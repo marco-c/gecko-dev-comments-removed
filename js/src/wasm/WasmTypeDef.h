@@ -1137,24 +1137,14 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
     MOZ_ASSERT(!pendingRecGroup_);
 
     
-    pendingRecGroup_ = RecGroup::allocate(numTypes);
-    if (!pendingRecGroup_ || !recGroups_.append(pendingRecGroup_)) {
+    MutableRecGroup recGroup = RecGroup::allocate(numTypes);
+    if (!recGroup || !addRecGroup(recGroup)) {
       return nullptr;
     }
 
     
-    
-    
-    
-    for (uint32_t groupTypeIndex = 0; groupTypeIndex < numTypes;
-         groupTypeIndex++) {
-      const TypeDef* typeDef = &pendingRecGroup_->type(groupTypeIndex);
-      uint32_t typeIndex = types_.length();
-      if (!types_.append(typeDef) || !moduleIndices_.put(typeDef, typeIndex)) {
-        return nullptr;
-      }
-    }
-    return pendingRecGroup_;
+    pendingRecGroup_ = recGroup;
+    return recGroup;
   }
 
   
@@ -1208,6 +1198,33 @@ class TypeContext : public AtomicRefCounted<TypeContext> {
       }
     }
 
+    return true;
+  }
+
+  
+  
+  [[nodiscard]] bool addRecGroup(SharedRecGroup recGroup) {
+    
+    MOZ_ASSERT(!pendingRecGroup_);
+
+    
+    if (!recGroups_.append(recGroup)) {
+      return false;
+    }
+
+    
+    
+    
+    
+    
+    for (uint32_t groupTypeIndex = 0; groupTypeIndex < recGroup->numTypes();
+         groupTypeIndex++) {
+      const TypeDef* typeDef = &recGroup->type(groupTypeIndex);
+      uint32_t typeIndex = types_.length();
+      if (!types_.append(typeDef) || !moduleIndices_.put(typeDef, typeIndex)) {
+        return false;
+      }
+    }
     return true;
   }
 

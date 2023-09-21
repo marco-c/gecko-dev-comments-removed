@@ -598,6 +598,10 @@ CoderResult CodeTypeDef(Coder<mode>& coder, CoderArg<mode, TypeDef> item) {
   return Ok();
 }
 
+using RecGroupIndexMap =
+    HashMap<const RecGroup*, uint32_t, PointerHasher<const RecGroup*>,
+            SystemAllocPolicy>;
+
 template <CoderMode mode>
 CoderResult CodeTypeContext(Coder<mode>& coder,
                             CoderArg<mode, TypeContext> item) {
@@ -614,6 +618,22 @@ CoderResult CodeTypeContext(Coder<mode>& coder,
     
     for (uint32_t recGroupIndex = 0; recGroupIndex < numRecGroups;
          recGroupIndex++) {
+      
+      
+      uint32_t canonRecGroupIndex;
+      MOZ_TRY(CodePod(coder, &canonRecGroupIndex));
+      MOZ_RELEASE_ASSERT(canonRecGroupIndex <= recGroupIndex);
+
+      
+      
+      if (canonRecGroupIndex != recGroupIndex) {
+        SharedRecGroup recGroup = item->groups()[canonRecGroupIndex];
+        if (!item->addRecGroup(recGroup)) {
+          return Err(OutOfMemory());
+        }
+        continue;
+      }
+
       
       uint32_t numTypes;
       MOZ_TRY(CodePod(coder, &numTypes));
@@ -640,8 +660,43 @@ CoderResult CodeTypeContext(Coder<mode>& coder,
     MOZ_TRY(CodePod(coder, &numRecGroups));
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    RecGroupIndexMap canonRecGroups;
+
+    
     for (uint32_t groupIndex = 0; groupIndex < numRecGroups; groupIndex++) {
       SharedRecGroup group = item->groups()[groupIndex];
+
+      
+      
+      RecGroupIndexMap::AddPtr canonRecGroupIndex =
+          canonRecGroups.lookupForAdd(group.get());
+      if (!canonRecGroupIndex) {
+        if (!canonRecGroups.add(canonRecGroupIndex, group.get(), groupIndex)) {
+          return Err(OutOfMemory());
+        }
+      }
+
+      
+      MOZ_TRY(CodePod(coder, &canonRecGroupIndex->value()));
+
+      
+      if (canonRecGroupIndex->value() != groupIndex) {
+        continue;
+      }
 
       
       uint32_t numTypes = group->numTypes();
