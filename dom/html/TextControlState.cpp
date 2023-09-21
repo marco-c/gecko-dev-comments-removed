@@ -1372,7 +1372,7 @@ class MOZ_STACK_CLASS AutoTextControlHandlingState {
   
   
   RefPtr<TextInputListener> const mTextInputListener;
-  nsString mSettingValue;
+  nsAutoString mSettingValue;
   const nsAString* mOldValue = nullptr;
   ValueSetterOptions mValueSetterOptions;
   TextControlAction const mTextControlAction;
@@ -2544,9 +2544,7 @@ void TextControlState::GetValue(nsAString& aValue, bool aIgnoreWrap,
 }
 
 bool TextControlState::ValueEquals(const nsAString& aValue) const {
-  
-  
-  nsString value;
+  nsAutoString value;
   GetValue(value, true,  true);
   return aValue.Equals(value);
 }
