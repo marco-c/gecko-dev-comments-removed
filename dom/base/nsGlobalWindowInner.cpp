@@ -7309,20 +7309,6 @@ External* nsGlobalWindowInner::External() {
   return mExternal;
 }
 
-void nsGlobalWindowInner::GetSidebar(OwningExternalOrWindowProxy& aResult) {
-  
-  RefPtr<BrowsingContext> domWindow = GetChildWindow(u"sidebar"_ns);
-  if (domWindow) {
-    aResult.SetAsWindowProxy() = std::move(domWindow);
-    return;
-  }
-
-  RefPtr<dom::External> external = External();
-  if (external) {
-    aResult.SetAsExternal() = external;
-  }
-}
-
 void nsGlobalWindowInner::ClearDocumentDependentSlots(JSContext* aCx) {
   
   if (!Window_Binding::ClearCachedDocumentValue(aCx, this) ||

@@ -639,7 +639,6 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   
   bool IsSecureContext() const;
 
-  void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult);
   mozilla::dom::External* External();
 
   mozilla::dom::Worklet* GetPaintWorklet(mozilla::ErrorResult& aRv);
