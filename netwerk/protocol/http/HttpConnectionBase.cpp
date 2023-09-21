@@ -60,5 +60,41 @@ void HttpConnectionBase::SetTrafficCategory(HttpTrafficCategory aCategory) {
   Unused << mTrafficCategory.AppendElement(aCategory);
 }
 
+void HttpConnectionBase::ChangeConnectionState(ConnectionState aState) {
+  LOG(("HttpConnectionBase::ChangeConnectionState this=%p (%d->%d)", this,
+       mConnectionState, aState));
+
+  
+  if (aState <= mConnectionState) {
+    return;
+  }
+
+  mConnectionState = aState;
+}
+
+void HttpConnectionBase::RecordConnectionCloseTelemetry(nsresult aReason) {
+  
+
+
+
+
+
+
+
+
+
+
+
+  auto key = nsPrintfCString(
+      "%d_%d_%d_%d_%d", static_cast<uint32_t>(Version()),
+      mConnInfo->EndToEndSSL(), mConnInfo->GetIsTrrServiceChannel(),
+      mExperienceState, static_cast<uint32_t>(mConnectionState));
+  SetCloseReason(ToCloseReason(aReason));
+  LOG(("RecordConnectionCloseTelemetry key=%s reason=%d\n", key.get(),
+       static_cast<uint32_t>(mCloseReason)));
+  Telemetry::Accumulate(Telemetry::HTTP_CONNECTION_CLOSE_REASON, key,
+                        static_cast<uint32_t>(mCloseReason));
+}
+
 }  
 }  
