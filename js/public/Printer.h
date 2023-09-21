@@ -38,9 +38,6 @@ class JS_PUBLIC_API GenericPrinter {
   
   
   virtual bool put(const char* s, size_t len) = 0;
-  virtual void flush() { 
-  }
-
   inline bool put(const char* s) { return put(s, strlen(s)); }
   inline bool putChar(const char c) { return put(&c, 1); }
 
@@ -59,6 +56,10 @@ class JS_PUBLIC_API GenericPrinter {
   
   bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
   bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
+
+  
+  virtual void flush() { 
+  }
 
   
   virtual void reportOutOfMemory();
