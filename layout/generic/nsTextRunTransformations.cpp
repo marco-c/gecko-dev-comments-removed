@@ -583,8 +583,8 @@ bool nsCaseTransformTextRunFactory::TransformString(
               switch (action) {
                 case 1:
                   
-                  NS_ASSERTION(str.Length() > 0 && irishMark < str.Length(),
-                               "bad irishMark!");
+                  MOZ_ASSERT(str.Length() > 0 && irishMark < str.Length(),
+                             "bad irishMark!");
                   str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
                   irishMark = uint32_t(-1);
                   irishMarkSrc = uint32_t(-1);
@@ -592,9 +592,8 @@ bool nsCaseTransformTextRunFactory::TransformString(
                 case 2:
                   
                   
-                  NS_ASSERTION(
-                      str.Length() >= 2 && irishMark == str.Length() - 2,
-                      "bad irishMark!");
+                  MOZ_ASSERT(str.Length() >= 2 && irishMark == str.Length() - 2,
+                             "bad irishMark!");
                   str.SetCharAt(ToLowerCase(str[irishMark]), irishMark);
                   str.SetCharAt(ToLowerCase(str[irishMark + 1]), irishMark + 1);
                   irishMark = uint32_t(-1);
@@ -603,9 +602,8 @@ bool nsCaseTransformTextRunFactory::TransformString(
                 case 3:
                   
                   
-                  NS_ASSERTION(
-                      str.Length() >= 2 && irishMark == str.Length() - 2,
-                      "bad irishMark!");
+                  MOZ_ASSERT(str.Length() >= 2 && irishMark == str.Length() - 2,
+                             "bad irishMark!");
                   MOZ_ASSERT(
                       irishMark != uint32_t(-1) && irishMarkSrc != uint32_t(-1),
                       "failed to set irishMarks");
@@ -613,11 +611,14 @@ bool nsCaseTransformTextRunFactory::TransformString(
                   aDeletedCharsArray[irishMarkSrc + 1] = true;
                   
                   
-                  aCharsToMergeArray.SetLength(aCharsToMergeArray.Length() - 1);
+                  uint32_t len = aCharsToMergeArray.Length();
+                  MOZ_ASSERT(len >= 2);
+                  aCharsToMergeArray.TruncateLength(len - 1);
                   if (auxiliaryOutputArrays) {
-                    aStyleArray->SetLength(aStyleArray->Length() - 1);
-                    aCanBreakBeforeArray->SetLength(
-                        aCanBreakBeforeArray->Length() - 1);
+                    MOZ_ASSERT(aStyleArray->Length() == len);
+                    MOZ_ASSERT(aCanBreakBeforeArray->Length() == len);
+                    aStyleArray->TruncateLength(len - 1);
+                    aCanBreakBeforeArray->TruncateLength(len - 1);
                     inhibitBreakBefore = true;
                   }
                   mergeNeeded = true;
@@ -856,6 +857,13 @@ bool nsCaseTransformTextRunFactory::TransformString(
         }
       }
     }
+  }
+
+  
+  if (auxiliaryOutputArrays) {
+    DebugOnly<uint32_t> len = aCharsToMergeArray.Length();
+    MOZ_ASSERT(aStyleArray->Length() == len);
+    MOZ_ASSERT(aCanBreakBeforeArray->Length() == len);
   }
 
   return mergeNeeded;
