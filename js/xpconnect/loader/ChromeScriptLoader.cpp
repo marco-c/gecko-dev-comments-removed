@@ -24,7 +24,9 @@
 #include "mozilla/AlreadyAddRefed.h"  
 #include "mozilla/Assertions.h"       
 #include "mozilla/Attributes.h"
-#include "mozilla/EventQueue.h"  
+#include "mozilla/ClearOnShutdown.h"  
+#include "mozilla/EventQueue.h"       
+#include "mozilla/Mutex.h"
 #include "mozilla/SchedulerGroup.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "mozilla/dom/ChromeUtils.h"
@@ -33,7 +35,9 @@
 #include "mozilla/HoldDropJSObjects.h"
 #include "mozilla/RefPtr.h"          
 #include "mozilla/TaskController.h"  
-#include "mozilla//Utf8.h"           
+#include "mozilla/ThreadSafety.h"    
+#include "mozilla/Utf8.h"            
+#include "mozilla/Vector.h"
 #include "nsCCUncollectableMarker.h"
 #include "nsCycleCollectionParticipant.h"
 
@@ -42,19 +46,59 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 class AsyncScriptCompileTask final : public Task {
+  static mozilla::Mutex sOngoingTasksMutex;
+  static Vector<AsyncScriptCompileTask*> sOngoingTasks
+      MOZ_GUARDED_BY(sOngoingTasksMutex);
+  static bool sIsShutdownRegistered;
+
+  
+  
+  
+  
+  
+  
+  static bool RegisterTask(AsyncScriptCompileTask* aTask) {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    if (!sIsShutdownRegistered) {
+      sIsShutdownRegistered = true;
+
+      RunOnShutdown([] {
+        MutexAutoLock lock(sOngoingTasksMutex);
+        for (auto* task : sOngoingTasks) {
+          task->Cancel();
+        }
+      });
+    }
+
+    MutexAutoLock lock(sOngoingTasksMutex);
+    return sOngoingTasks.append(aTask);
+  }
+
+  static void UnregisterTask(const AsyncScriptCompileTask* aTask) {
+    MutexAutoLock lock(sOngoingTasksMutex);
+    sOngoingTasks.eraseIfEqual(aTask);
+  }
+
  public:
   explicit AsyncScriptCompileTask(JS::SourceText<Utf8Unit>&& aSrcBuf)
       : Task(Kind::OffMainThreadOnly, EventQueuePriority::Normal),
         mOptions(JS::OwningCompileOptions::ForFrontendContext()),
-        mSrcBuf(std::move(aSrcBuf)) {}
+        mSrcBuf(std::move(aSrcBuf)),
+        mMutex("AsyncScriptCompileTask") {}
 
   ~AsyncScriptCompileTask() {
     if (mFrontendContext) {
       JS::DestroyFrontendContext(mFrontendContext);
     }
+    UnregisterTask(this);
   }
 
   bool Init(const JS::OwningCompileOptions& aOptions) {
+    if (!RegisterTask(this)) {
+      return false;
+    }
+
     mFrontendContext = JS::NewFrontendContext();
     if (!mFrontendContext) {
       return false;
@@ -85,8 +129,26 @@ class AsyncScriptCompileTask final : public Task {
                                                 mSrcBuf, compileStorage);
   }
 
+  
+  
+  void Cancel() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    MutexAutoLock lock(mMutex);
+
+    mIsCancelled = true;
+
+    mStencil = nullptr;
+  }
+
  public:
   bool Run() override {
+    MutexAutoLock lock(mMutex);
+
+    if (mIsCancelled) {
+      return true;
+    }
+
     Compile();
     return true;
   }
@@ -133,7 +195,18 @@ class AsyncScriptCompileTask final : public Task {
   RefPtr<JS::Stencil> mStencil;
 
   JS::SourceText<Utf8Unit> mSrcBuf;
+
+  
+  mozilla::Mutex mMutex;
+
+  bool mIsCancelled MOZ_GUARDED_BY(mMutex) = false;
 };
+
+ mozilla::Mutex AsyncScriptCompileTask::sOngoingTasksMutex(
+    "ongoing AsyncScriptCompileTasks");
+ Vector<AsyncScriptCompileTask*>
+    AsyncScriptCompileTask::sOngoingTasks;
+ bool AsyncScriptCompileTask::sIsShutdownRegistered = false;
 
 class AsyncScriptCompiler;
 
