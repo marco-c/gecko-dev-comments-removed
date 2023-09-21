@@ -75,8 +75,8 @@ pub fn link(input: TokenStream) -> TokenStream {
     let library = library.strip_suffix(".dll").unwrap_or(&library);
 
     let generated = quote! {
-        #[link(name = #library)]
         extern #abi {
+            #[link(name = #library)]
             #link_name_attr
             pub #function;
         }
