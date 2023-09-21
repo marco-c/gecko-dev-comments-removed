@@ -22,6 +22,7 @@ export default {
           "product-not-available-reported",
           "thanks-for-reporting",
           "analysis-in-progress",
+          "reanalysis-in-progress",
           "page-not-supported",
         ],
       },
@@ -33,9 +34,8 @@ export default {
       handles: ["click"],
     },
     fluent: `
-shopping-message-bar-warning-stale-analysis-title = Updates available
-shopping-message-bar-warning-stale-analysis-message = Re-analyze the reviews for this product, so you have the latest info.
-shopping-message-bar-warning-stale-analysis-link = Re-analyze reviews
+shopping-message-bar-warning-stale-analysis-message-2 = New info to check
+shopping-message-bar-warning-stale-analysis-button = Check now
 shopping-message-bar-generic-error-title = Something went wrong
 shopping-message-bar-generic-error-message = Couldn't load information. Please try again later.
 shopping-message-bar-warning-not-enough-reviews-title = Not enough reviews yet
@@ -47,8 +47,8 @@ shopping-message-bar-thanks-for-reporting-title = Thanks for reporting!
 shopping-message-bar-thanks-for-reporting-message = We should have an updated analysis within 24 hours. Please check back.
 shopping-message-bar-warning-product-not-available-reported-title = Analysis coming soon
 shopping-message-bar-warning-product-not-available-reported-message = An updated analysis should be ready within 24 hours. Please check back.
-shopping-message-bar-analysis-in-progress-title = Analysis coming soon
-shopping-message-bar-analysis-in-progress-message = When it’s done, we’ll automatically show the updated info here.
+shopping-message-bar-analysis-in-progress-title2 = Checking review quality
+shopping-message-bar-analysis-in-progress-message2 = This could take about 60 seconds.
 shopping-message-bar-page-not-supported-title = We can't check these reviews
 shopping-message-bar-page-not-supported-message = Unfortunately, we can’t check the review quality for certain types of products. For example, gift cards and streaming video, music, and games.
     `,
