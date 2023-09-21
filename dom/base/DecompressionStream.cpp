@@ -14,6 +14,7 @@
 #include "mozilla/dom/TextDecoderStream.h"
 #include "mozilla/dom/TransformStream.h"
 #include "mozilla/dom/TransformerCallbackHelpers.h"
+#include "mozilla/dom/UnionTypes.h"
 
 #include "ZLibHelper.h"
 
@@ -54,16 +55,21 @@ class DecompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
 
     
-    
-    Span<const uint8_t> input = ExtractSpanFromBufferSource(cx, aChunk, aRv);
-    if (aRv.Failed()) {
+    RootedUnion<OwningArrayBufferViewOrArrayBuffer> bufferSource(cx);
+    if (!bufferSource.Init(cx, aChunk)) {
+      aRv.MightThrowJSException();
+      aRv.StealExceptionFromJSContext(cx);
       return;
     }
 
     
     
     
-    DecompressAndEnqueue(cx, input, ZLibFlush::No, aController, aRv);
+    ProcessTypedArraysFixed(
+        bufferSource,
+        [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+          DecompressAndEnqueue(cx, aData, ZLibFlush::No, aController, aRv);
+        });
   }
 
   

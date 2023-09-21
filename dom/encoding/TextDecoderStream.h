@@ -69,9 +69,6 @@ class TextDecoderStream final : public nsISupports,
   RefPtr<TransformStream> mStream;
 };
 
-Span<const uint8_t> ExtractSpanFromBufferSource(
-    JSContext* aCx, JS::Handle<JS::Value> aBufferSource, ErrorResult& aRv);
-
 }  
 
 #endif  

@@ -8,6 +8,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/dom/CompressionStreamBinding.h"
 #include "mozilla/dom/ReadableStream.h"
 #include "mozilla/dom/WritableStream.h"
@@ -57,16 +58,21 @@ class CompressionStreamAlgorithms : public TransformerAlgorithmsWrapper {
     
 
     
-    
-    Span<const uint8_t> input = ExtractSpanFromBufferSource(cx, aChunk, aRv);
-    if (aRv.Failed()) {
+    RootedUnion<OwningArrayBufferViewOrArrayBuffer> bufferSource(cx);
+    if (!bufferSource.Init(cx, aChunk)) {
+      aRv.MightThrowJSException();
+      aRv.StealExceptionFromJSContext(cx);
       return;
     }
 
     
     
     
-    CompressAndEnqueue(cx, input, ZLibFlush::No, aController, aRv);
+    ProcessTypedArraysFixed(
+        bufferSource,
+        [&](const Span<uint8_t>& aData) MOZ_CAN_RUN_SCRIPT_BOUNDARY {
+          CompressAndEnqueue(cx, aData, ZLibFlush::No, aController, aRv);
+        });
   }
 
   

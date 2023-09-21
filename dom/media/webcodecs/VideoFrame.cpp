@@ -906,38 +906,39 @@ static Result<RefPtr<VideoFrame>, nsCString> CreateVideoFrameFromBuffer(
   MOZ_TRY_VAR(combinedLayout,
               ComputeLayoutAndAllocationSize(parsedRect, format, optLayout));
 
-  Span<uint8_t> buffer;
-  MOZ_TRY_VAR(buffer, GetArrayBufferData(aBuffer).mapErr([](nsresult aError) {
-    return nsPrintfCString("Failed to get buffer data: %x",
-                           static_cast<uint32_t>(aError));
-  }));
-
-  if (buffer.size_bytes() <
-      static_cast<size_t>(combinedLayout.mAllocationSize)) {
-    return Err(nsCString("data is too small"));
-  }
-
-  
-  
-  
-  if (buffer.size_bytes() < format.SampleCount(codedSize)) {  
-    return Err(nsCString("data is too small"));
-  }
-
-  
-  
-  
-
   Maybe<uint64_t> duration = OptionalToMaybe(aInit.mDuration);
 
   VideoColorSpaceInit colorSpace =
       PickColorSpace(OptionalToPointer(aInit.mColorSpace), aInit.mFormat);
 
   RefPtr<layers::Image> data;
-  MOZ_TRY_VAR(data,
-              CreateImageFromBuffer(format, colorSpace, codedSize, buffer));
+  MOZ_TRY_VAR(
+      data,
+      aBuffer.ProcessFixedData([&](const Span<uint8_t>& aData)
+                                   -> Result<RefPtr<layers::Image>, nsCString> {
+        if (aData.Length() <
+            static_cast<size_t>(combinedLayout.mAllocationSize)) {
+          return Err(nsCString("data is too small"));
+        }
+
+        
+        
+        
+        
+        if (aData.Length() < format.SampleCount(codedSize)) {  
+          return Err(nsCString("data is too small"));
+        }
+
+        return CreateImageFromBuffer(format, colorSpace, codedSize,
+                                     Span(aData.Elements(), aData.Length()));
+      }));
+
   MOZ_ASSERT(data);
   MOZ_ASSERT(data->GetSize() == codedSize);
+
+  
+  
+  
 
   
   
@@ -1660,61 +1661,56 @@ already_AddRefed<Promise> VideoFrame::CopyTo(
   }
   layout = r1.unwrap();
 
-  auto r2 = GetSharedArrayBufferData(aDestination);
-  if (r2.isErr()) {
-    p->MaybeRejectWithTypeError("Failed to get buffer");
-    return p.forget();
-  }
-  Span<uint8_t> buffer = r2.unwrap();
-
-  if (buffer.size_bytes() < layout.mAllocationSize) {
-    p->MaybeRejectWithTypeError("Destination buffer is too small");
-    return p.forget();
-  }
-
-  Sequence<PlaneLayout> planeLayouts;
-
-  nsTArray<Format::Plane> planes = mResource->mFormat->Planes();
-  MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
-
-  
-  
-  for (size_t i = 0; i < layout.mComputedLayouts.Length(); ++i) {
-    ComputedPlaneLayout& l = layout.mComputedLayouts[i];
-    uint32_t destinationOffset = l.mDestinationOffset;
-
-    PlaneLayout* pl = planeLayouts.AppendElement(fallible);
-    if (!pl) {
-      p->MaybeRejectWithTypeError("Out of memory");
+  return ProcessTypedArraysFixed(aDestination, [&](const Span<uint8_t>& aData) {
+    if (aData.size_bytes() < layout.mAllocationSize) {
+      p->MaybeRejectWithTypeError("Destination buffer is too small");
       return p.forget();
     }
-    pl->mOffset = l.mDestinationOffset;
-    pl->mStride = l.mDestinationStride;
+
+    Sequence<PlaneLayout> planeLayouts;
+
+    nsTArray<Format::Plane> planes = mResource->mFormat->Planes();
+    MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
 
     
     
-    gfx::IntPoint origin(
-        l.mSourceLeftBytes / mResource->mFormat->SampleBytes(planes[i]),
-        l.mSourceTop);
-    gfx::IntSize size(
-        l.mSourceWidthBytes / mResource->mFormat->SampleBytes(planes[i]),
-        l.mSourceHeight);
-    if (!mResource->CopyTo(planes[i], {origin, size},
-                           buffer.From(destinationOffset),
-                           static_cast<size_t>(l.mDestinationStride))) {
-      p->MaybeRejectWithTypeError(
-          nsPrintfCString("Failed to copy image data in %s plane",
-                          mResource->mFormat->PlaneName(planes[i])));
-      return p.forget();
-    }
-  }
+    for (size_t i = 0; i < layout.mComputedLayouts.Length(); ++i) {
+      ComputedPlaneLayout& l = layout.mComputedLayouts[i];
+      uint32_t destinationOffset = l.mDestinationOffset;
 
-  MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
-  
-  
-  
-  p->MaybeResolve(planeLayouts);
-  return p.forget();
+      PlaneLayout* pl = planeLayouts.AppendElement(fallible);
+      if (!pl) {
+        p->MaybeRejectWithTypeError("Out of memory");
+        return p.forget();
+      }
+      pl->mOffset = l.mDestinationOffset;
+      pl->mStride = l.mDestinationStride;
+
+      
+      
+      gfx::IntPoint origin(
+          l.mSourceLeftBytes / mResource->mFormat->SampleBytes(planes[i]),
+          l.mSourceTop);
+      gfx::IntSize size(
+          l.mSourceWidthBytes / mResource->mFormat->SampleBytes(planes[i]),
+          l.mSourceHeight);
+      if (!mResource->CopyTo(planes[i], {origin, size},
+                             aData.From(destinationOffset),
+                             static_cast<size_t>(l.mDestinationStride))) {
+        p->MaybeRejectWithTypeError(
+            nsPrintfCString("Failed to copy image data in %s plane",
+                            mResource->mFormat->PlaneName(planes[i])));
+        return p.forget();
+      }
+    }
+
+    MOZ_ASSERT(layout.mComputedLayouts.Length() == planes.Length());
+    
+    
+    
+    p->MaybeResolve(planeLayouts);
+    return p.forget();
+  });
 }
 
 

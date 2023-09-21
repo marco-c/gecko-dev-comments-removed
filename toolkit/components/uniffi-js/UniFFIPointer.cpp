@@ -71,18 +71,19 @@ void UniFFIPointer::Write(const ArrayBuffer& aArrayBuff, uint32_t aPosition,
   }
   MOZ_LOG(sUniFFIPointerLogger, LogLevel::Info,
           ("[UniFFI] Writing Pointer to buffer"));
-  aArrayBuff.ComputeState();
-  CheckedUint32 position = aPosition;
-  CheckedUint32 end = position + 8;
-  if (!end.isValid() || end.value() > aArrayBuff.Length()) {
-    aError.ThrowRangeError("position is out of range");
-    return;
-  }
-  
-  
-  uint8_t* data_ptr = aArrayBuff.Data() +
-                      aPosition;  
-  mozilla::BigEndian::writeUint64(data_ptr, (uint64_t)GetPtr());
+
+  aArrayBuff.ProcessData([&](const Span<uint8_t>& aData,
+                             JS::AutoCheckCannotGC&&) {
+    CheckedUint32 end = aPosition + 8;
+    if (!end.isValid() || end.value() > aData.Length()) {
+      aError.ThrowRangeError("position is out of range");
+      return;
+    }
+    
+    
+    const auto& data_ptr = aData.Subspan(aPosition, 8);
+    mozilla::BigEndian::writeUint64(data_ptr.Elements(), (uint64_t)GetPtr());
+  });
 }
 
 UniFFIPointer::UniFFIPointer(void* aPtr, const UniFFIPointerType* aType) {

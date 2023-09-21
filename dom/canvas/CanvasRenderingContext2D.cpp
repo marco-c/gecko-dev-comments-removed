@@ -5908,7 +5908,6 @@ nsresult CanvasRenderingContext2D::GetImageDataArray(
   MOZ_ASSERT(aWidth && aHeight);
 
   
-  
   CheckedInt<uint32_t> len = CheckedInt<uint32_t>(aWidth) * aHeight * 4;
   if (!len.isValid() || len.value() > INT32_MAX) {
     return NS_ERROR_DOM_INDEX_SIZE_ERR;
@@ -6137,15 +6136,10 @@ void CanvasRenderingContext2D::PutImageData_explicit(
     return;
   }
 
-  arr.ComputeState();
+  RefPtr<DataSourceSurface> sourceSurface;
+  uint8_t* lockedBits = nullptr;
 
-  uint32_t dataLen = arr.Length();
-
-  uint32_t len = width * height * 4;
-  if (dataLen != len) {
-    return aRv.ThrowInvalidStateError("Invalid width or height");
-  }
-
+  
   
   
   
@@ -6157,8 +6151,6 @@ void CanvasRenderingContext2D::PutImageData_explicit(
   }
 
   DataSourceSurface::MappedSurface map;
-  RefPtr<DataSourceSurface> sourceSurface;
-  uint8_t* lockedBits = nullptr;
   uint8_t* dstData;
   IntSize dstSize;
   int32_t dstStride;
@@ -6169,6 +6161,7 @@ void CanvasRenderingContext2D::PutImageData_explicit(
     sourceSurface = Factory::CreateDataSourceSurface(
         dirtyRect.Size(), SurfaceFormat::B8G8R8A8, false);
 
+    
     
     
     
@@ -6188,12 +6181,27 @@ void CanvasRenderingContext2D::PutImageData_explicit(
     dstFormat = sourceSurface->GetFormat();
   }
 
-  uint8_t* srcData = arr.Data() + srcRect.y * (width * 4) + srcRect.x * 4;
+  arr.ProcessData(
+      [&](const Span<uint8_t>& aData, JS::AutoCheckCannotGC&& nogc) {
+        
+        if (aData.Length() != width * height * 4) {
+          
+          return aRv.ThrowInvalidStateError("Invalid width or height");
+        }
 
-  PremultiplyData(
-      srcData, width * 4, SurfaceFormat::R8G8B8A8, dstData, dstStride,
-      mOpaque ? SurfaceFormat::X8R8G8B8_UINT32 : SurfaceFormat::A8R8G8B8_UINT32,
-      dirtyRect.Size());
+        uint8_t* srcData =
+            aData.Elements() + srcRect.y * (width * 4) + srcRect.x * 4;
+
+        PremultiplyData(srcData, width * 4, SurfaceFormat::R8G8B8A8, dstData,
+                        dstStride,
+                        mOpaque ? SurfaceFormat::X8R8G8B8_UINT32
+                                : SurfaceFormat::A8R8G8B8_UINT32,
+                        dirtyRect.Size());
+      });
+
+  if (aRv.Failed()) {
+    return;
+  }
 
   if (lockedBits) {
     mTarget->ReleaseBits(lockedBits);
