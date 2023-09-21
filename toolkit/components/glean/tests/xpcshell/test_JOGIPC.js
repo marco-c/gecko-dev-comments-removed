@@ -238,7 +238,7 @@ add_task(
 
     Assert.throws(
       () => Glean.jogIpc.jogLabeledCounterErr.__other__.testGetValue(),
-      /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
+      /DataError/,
       "Invalid labels record errors, which throw"
     );
 
