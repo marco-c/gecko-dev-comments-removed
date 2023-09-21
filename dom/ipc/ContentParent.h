@@ -406,6 +406,12 @@ class ContentParent final : public PContentParent,
 
   
   
+  
+  bool NeedsSecondaryKeyPermissionsUpdate(
+      const nsACString& aPermissionKey) const;
+
+  
+  
   already_AddRefed<nsDocShellLoadState> TakePendingLoadStateForId(
       uint64_t aLoadIdentifier);
   void StorePendingLoadState(nsDocShellLoadState* aLoadState);
@@ -1592,6 +1598,7 @@ class ContentParent final : public PContentParent,
   nsRefPtrHashtable<nsIDHashKey, GetFilesHelper> mGetFilesPendingRequests;
 
   nsTHashSet<nsCString> mActivePermissionKeys;
+  nsTHashSet<nsCString> mActiveSecondaryPermissionKeys;
 
   nsTArray<nsCString> mBlobURLs;
 
