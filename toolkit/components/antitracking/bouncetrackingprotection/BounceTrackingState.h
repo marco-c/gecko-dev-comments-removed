@@ -45,6 +45,10 @@ class BounceTrackingState : public nsIWebProgressListener,
   static already_AddRefed<BounceTrackingState> GetOrCreate(
       dom::BrowsingContextWebProgress* aWebProgress);
 
+  
+  
+  static void ResetAll();
+
   BounceTrackingRecord* GetBounceTrackingRecord();
 
   void ResetBounceTrackingRecord();
