@@ -559,13 +559,8 @@ StorageAccessAPIHelper::CompleteAllowAccessFor(
 
   
   
-  
-  if (aReason != ContentBlockingNotifier::StorageAccessPermissionGrantedReason::
-                     eStorageAccessAPI ||
-      !StaticPrefs::dom_storage_access_frame_only()) {
-    StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(aParentContext,
-                                                              aTrackingOrigin);
-  }
+  StorageAccessAPIHelper::UpdateAllowAccessOnCurrentProcess(aParentContext,
+                                                            aTrackingOrigin);
 
   
   nsCOMPtr<nsPIDOMWindowInner> parentInner =
@@ -647,11 +642,8 @@ StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
   
   
   
-  
-  if (!aFrameOnly) {
-    StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(aParentContext,
-                                                             trackingOrigin);
-  }
+  StorageAccessAPIHelper::UpdateAllowAccessOnParentProcess(aParentContext,
+                                                           trackingOrigin);
 
   return StorageAccessAPIHelper::SaveAccessForOriginOnParentProcess(
       wgp->DocumentPrincipal(), aTrackingPrincipal, aAllowMode, aFrameOnly,
@@ -830,6 +822,9 @@ Maybe<bool> StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
       }
       return Nothing();
     case nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+      if (!aThirdParty) {
+        return Some(true);
+      }
       if (aIsOnThirdPartySkipList) {
         return Some(true);
       }
@@ -845,9 +840,20 @@ Maybe<bool> StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
 Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
     Document* aDocument, bool aRequestingStorageAccess) {
   MOZ_ASSERT(aDocument);
+  
+  if (aRequestingStorageAccess) {
+    if (!aDocument->HasValidTransientUserGestureActivation()) {
+      
+      nsContentUtils::ReportToConsole(
+          nsIScriptError::errorFlag, nsLiteralCString("requestStorageAccess"),
+          aDocument, nsContentUtils::eDOM_PROPERTIES,
+          "RequestStorageAccessUserGesture");
+      return Some(false);
+    }
+  }
 
-  if (!aDocument->IsCurrentActiveDocument()) {
-    return Some(false);
+  if (aDocument->IsTopLevelContentDocument()) {
+    return Some(true);
   }
 
   if (aRequestingStorageAccess) {
@@ -868,6 +874,31 @@ Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
   RefPtr<BrowsingContext> bc = aDocument->GetBrowsingContext();
   if (!bc) {
     return Some(false);
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (bc->Top()->IsInProcess()) {
+    nsCOMPtr<nsPIDOMWindowOuter> topOuter = bc->Top()->GetDOMWindow();
+    if (!topOuter) {
+      return Some(false);
+    }
+    nsCOMPtr<Document> topLevelDoc = topOuter->GetExtantDoc();
+    if (!topLevelDoc) {
+      return Some(false);
+    }
+
+    if (topLevelDoc->NodePrincipal()->Equals(aDocument->NodePrincipal())) {
+      return Some(true);
+    }
   }
 
   
@@ -899,14 +930,6 @@ Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
           "RequestStorageAccessNullPrincipal");
     }
     return Some(false);
-  }
-
-  if (!AntiTrackingUtils::IsThirdPartyDocument(aDocument)) {
-    return Some(true);
-  }
-
-  if (aDocument->IsTopLevelContentDocument()) {
-    return Some(true);
   }
 
   if (aRequestingStorageAccess) {
@@ -983,7 +1006,7 @@ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
 StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
     dom::Document* aDocument, nsPIDOMWindowInner* aInnerWindow,
     dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction, bool aRequireUserInteraction, bool aFrameOnly,
+    bool aHasUserInteraction, bool aFrameOnly,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
     bool aRequireGrant) {
   MOZ_ASSERT(aDocument);
@@ -999,8 +1022,7 @@ StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
   
   
   auto performPermissionGrant = aDocument->CreatePermissionGrantPromise(
-      aInnerWindow, principal, aHasUserInteraction, aRequireUserInteraction,
-      Nothing(), aFrameOnly);
+      aInnerWindow, principal, aHasUserInteraction, Nothing(), aFrameOnly);
 
   
   return StorageAccessAPIHelper::AllowAccessFor(
