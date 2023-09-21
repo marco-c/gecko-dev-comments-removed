@@ -43,7 +43,6 @@ interface nsICtapRegisterArgs : nsISupports {
     
     
     
-    [must_use] readonly attribute bool credProps;
     [must_use] readonly attribute bool hmacCreateSecret;
 
     
@@ -123,8 +122,6 @@ interface nsICtapRegisterResult : nsISupports {
 
     
     
-
-    readonly attribute bool credPropsRk;
 };
 
 [uuid(91e41be0-ed73-4a10-b55e-3312319bfddf)]

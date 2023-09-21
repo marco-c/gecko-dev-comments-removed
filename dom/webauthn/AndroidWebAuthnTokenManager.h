@@ -129,19 +129,12 @@ class AndroidWebAuthnTokenManager final : public U2FTokenTransport {
   void ClearPromises() {
     mRegisterPromise.RejectIfExists(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
     mSignPromise.RejectIfExists(NS_ERROR_DOM_UNKNOWN_ERR, __func__);
-    mRegisterCredPropsRk = Nothing();
   }
 
   void AssertIsOnOwningThread() const;
 
   MozPromiseHolder<U2FRegisterPromise> mRegisterPromise;
   MozPromiseHolder<U2FSignPromise> mSignPromise;
-
-  
-  
-  
-  
-  Maybe<bool> mRegisterCredPropsRk;
 };
 
 }  
