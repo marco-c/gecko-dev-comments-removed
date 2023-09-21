@@ -585,55 +585,36 @@ void JSONTokenizer<CharT, ParserT, StringBuilderT>::getTextPosition(
   *line = row;
 }
 
+
+
+
+
+
+
+
+
+
+
+
 JSONFullParseHandlerAnyChar::JSONFullParseHandlerAnyChar(JSContext* cx)
-    : cx(cx), freeElements(cx), freeProperties(cx) {
-  JS::AddGCNurseryCollectionCallback(cx, &NurseryCollectionCallback, this);
-}
+    : cx(cx), gcHeap(cx, 1), freeElements(cx), freeProperties(cx) {}
 
 JSONFullParseHandlerAnyChar::JSONFullParseHandlerAnyChar(
     JSONFullParseHandlerAnyChar&& other) noexcept
     : cx(other.cx),
       v(other.v),
       parseType(other.parseType),
+      gcHeap(cx, 1),
       freeElements(std::move(other.freeElements)),
-      freeProperties(std::move(other.freeProperties)) {
-  JS::AddGCNurseryCollectionCallback(cx, &NurseryCollectionCallback, this);
-}
+      freeProperties(std::move(other.freeProperties)) {}
 
 JSONFullParseHandlerAnyChar::~JSONFullParseHandlerAnyChar() {
-  JS::RemoveGCNurseryCollectionCallback(cx, &NurseryCollectionCallback, this);
-
   for (size_t i = 0; i < freeElements.length(); i++) {
     js_delete(freeElements[i]);
   }
 
   for (size_t i = 0; i < freeProperties.length(); i++) {
     js_delete(freeProperties[i]);
-  }
-}
-
-
-void JSONFullParseHandlerAnyChar::NurseryCollectionCallback(
-    JSContext* cx, JS::GCNurseryProgress progress, JS::GCReason reason,
-    void* data) {
-  auto* handler = static_cast<JSONFullParseHandlerAnyChar*>(data);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  if (progress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_END) {
-    handler->nurseryCollectionCount++;
-    if (handler->nurseryCollectionCount == 2) {
-      handler->gcHeap = gc::Heap::Tenured;
-    }
   }
 }
 
