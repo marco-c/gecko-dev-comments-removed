@@ -81,14 +81,14 @@ async function createTrackerFrame(params, count, callback) {
   }
 }
 
-async function testPermission(browser, block, params) {
+async function testPermission(browser, block, params, frameNumber) {
   await SpecialPowers.spawn(
     browser,
-    [block, params],
-    async function (block, params) {
+    [block, params, frameNumber],
+    async function (block, params, frameNumber) {
       for (let i = 0; ; i++) {
         let ifr = content.document.getElementById("ifr" + i);
-        if (!ifr) {
+        if (!ifr || (frameNumber !== undefined && i != frameNumber)) {
           break;
         }
 
@@ -264,11 +264,12 @@ add_task(async function testPermissionGrantedOn3rdParty() {
     });
   });
 
-  info("Both iframs of the first tab should have stroage permission");
-  await testPermission(browser1, false , params);
+  info("Second iframe of the first tab should not have stroage permission");
+  await testPermission(browser1, false , params, 0);
+  await testPermission(browser1, true , params, 1);
 
-  info("The iframe of the second tab should have storage permission");
-  await testPermission(browser2, false , params);
+  info("The iframe of the second tab should not have storage permission");
+  await testPermission(browser2, true , params);
 
   info("The iframe of the third tab should not have storage permission");
   await testPermission(browser3, true , params);
