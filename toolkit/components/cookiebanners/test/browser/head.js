@@ -40,7 +40,6 @@ async function testSetup() {
   });
 
   
-  await Services.fog.testFlushAllChildren();
   Services.fog.testResetFOG();
 
   registerCleanupFunction(() => {
@@ -402,15 +401,15 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
 
   let testMetricState = doAssert => {
     for (let label of labels) {
-      let expectedValue = expected[label] ?? null;
       if (doAssert) {
         is(
           Glean.cookieBannersClick.result[label].testGetValue(),
-          expectedValue,
+          expected[label],
           `Counter for label '${label}' has correct state.`
         );
       } else if (
-        Glean.cookieBannersClick.result[label].testGetValue() !== expectedValue
+        Glean.cookieBannersClick.result[label].testGetValue() !==
+        expected[label]
       ) {
         return false;
       }
@@ -433,7 +432,6 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
     
     
     if (resetFOG) {
-      await Services.fog.testFlushAllChildren();
       Services.fog.testResetFOG();
     }
   }

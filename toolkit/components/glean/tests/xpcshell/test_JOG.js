@@ -214,6 +214,14 @@ add_task(async function test_jog_event_works() {
   Assert.deepEqual(expectedExtra, events[0].extra);
 
   
+  let extra4 = {
+    extra2: -1,
+  };
+  Glean.jogCat.jogEventWithExtra.record(extra4);
+  events = Glean.jogCat.jogEventWithExtra.testGetValue();
+  Assert.equal(1, events.length, "Recorded one event too many.");
+
+  
   let extra3 = {
     extra1_nonexistent_extra: "this does not crash",
   };
@@ -221,7 +229,7 @@ add_task(async function test_jog_event_works() {
   
   Assert.throws(
     () => Glean.jogCat.jogEventWithExtra.testGetValue(),
-    /DataError/
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/
   );
 });
 
@@ -277,7 +285,10 @@ add_task(async function test_jog_custom_distribution_works() {
 
   
   Glean.jogCat.jogCustomDist.accumulateSamples([-7]);
-  Assert.throws(() => Glean.jogCat.jogCustomDist.testGetValue(), /DataError/);
+  Assert.throws(
+    () => Glean.jogCat.jogCustomDist.testGetValue(),
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/
+  );
 });
 
 add_task(async function test_jog_custom_pings() {
@@ -371,7 +382,7 @@ add_task(async function test_jog_labeled_boolean_works() {
   Glean.jogCat.jogLabeledBool["1".repeat(72)].set(true);
   Assert.throws(
     () => Glean.jogCat.jogLabeledBool.__other__.testGetValue(),
-    /DataError/,
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
     "Should throw because of a recording error."
   );
 });
@@ -440,7 +451,7 @@ add_task(async function test_jog_labeled_counter_works() {
   Glean.jogCat.jogLabeledCounter["1".repeat(72)].add(1);
   Assert.throws(
     () => Glean.jogCat.jogLabeledCounter.__other__.testGetValue(),
-    /DataError/,
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/,
     "Should throw because of a recording error."
   );
 });
@@ -514,7 +525,7 @@ add_task(async function test_jog_labeled_string_works() {
   Glean.jogCat.jogLabeledString["1".repeat(72)].set("valid");
   Assert.throws(
     () => Glean.jogCat.jogLabeledString.__other__.testGetValue(),
-    /DataError/
+    /NS_ERROR_LOSS_OF_SIGNIFICANT_DATA/
   );
 });
 
