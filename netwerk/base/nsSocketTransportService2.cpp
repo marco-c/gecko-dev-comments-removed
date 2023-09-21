@@ -1075,8 +1075,14 @@ nsSocketTransportService::Run() {
   gSocketThread = PR_GetCurrentThread();
 
   {
+    
+    
+    
+    
+    PollableEvent* pollable = new PollableEvent();
     MutexAutoLock lock(mLock);
-    mPollableEvent.reset(new PollableEvent());
+    mPollableEvent.reset(pollable);
+
     
     
     
