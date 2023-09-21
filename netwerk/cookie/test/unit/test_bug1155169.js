@@ -4,6 +4,8 @@ const { NetUtil } = ChromeUtils.importESModule(
 
 const URI = Services.io.newURI("http://example.org/");
 
+const { COOKIE_CHANGED, COOKIE_ADDED } = Ci.nsICookieNotification;
+
 function run_test() {
   
   Services.prefs.setIntPref("network.cookie.cookieBehavior", 0);
@@ -13,7 +15,7 @@ function run_test() {
 
   
   setCookie("foo=bar", {
-    type: "added",
+    type: COOKIE_ADDED,
     isSession: true,
     isSecure: false,
     isHttpOnly: false,
@@ -21,7 +23,7 @@ function run_test() {
 
   
   setCookie("foo=bar; HttpOnly", {
-    type: "changed",
+    type: COOKIE_CHANGED,
     isSession: true,
     isSecure: false,
     isHttpOnly: true,
@@ -29,7 +31,7 @@ function run_test() {
 
   
   setCookie("foo=bar; Secure", {
-    type: "changed",
+    type: COOKIE_CHANGED,
     isSession: true,
     isSecure: true,
     isHttpOnly: false,
@@ -39,7 +41,7 @@ function run_test() {
   let expiry = new Date();
   expiry.setUTCFullYear(expiry.getUTCFullYear() + 2);
   setCookie(`foo=bar; Expires=${expiry.toGMTString()}`, {
-    type: "changed",
+    type: COOKIE_CHANGED,
     isSession: false,
     isSecure: false,
     isHttpOnly: false,
@@ -47,7 +49,7 @@ function run_test() {
 
   
   setCookie("foo=bar", {
-    type: "changed",
+    type: COOKIE_CHANGED,
     isSession: true,
     isSecure: false,
     isHttpOnly: false,
@@ -56,17 +58,19 @@ function run_test() {
 
 function setCookie(value, expected) {
   function setCookieInternal(valueInternal, expectedInternal = null) {
-    function observer(subject, topic, data) {
+    function observer(subject) {
       if (!expectedInternal) {
         do_throw("no notification expected");
         return;
       }
 
-      
-      Assert.equal(data, expectedInternal.type);
+      let notification = subject.QueryInterface(Ci.nsICookieNotification);
 
       
-      let cookie = subject.QueryInterface(Ci.nsICookie);
+      Assert.equal(notification.action, expectedInternal.type);
+
+      
+      let cookie = notification.cookie.QueryInterface(Ci.nsICookie);
       Assert.equal(cookie.isSession, expectedInternal.isSession);
       Assert.equal(cookie.isSecure, expectedInternal.isSecure);
       Assert.equal(cookie.isHttpOnly, expectedInternal.isHttpOnly);
