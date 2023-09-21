@@ -143,11 +143,6 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   }
   virtual size_t index() const override { return length(); }
 
-  
-  
-  
-  void jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-
   void putString(JSString* str);
 
   size_t length() const;
