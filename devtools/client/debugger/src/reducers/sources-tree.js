@@ -227,8 +227,13 @@ function updateBlackbox(state, sources, shouldBlackBox) {
   for (const source of sources) {
     for (const threadItem of threadItems) {
       const sourceTreeItem = findSourceInThreadItem(source, threadItem);
-      if (sourceTreeItem) {
-        sourceTreeItem.isBlackBoxed = shouldBlackBox;
+      if (sourceTreeItem && sourceTreeItem.isBlackBoxed != shouldBlackBox) {
+        
+        const { children } = sourceTreeItem.parent;
+        children.splice(children.indexOf(sourceTreeItem), 1, {
+          ...sourceTreeItem,
+          isBlackBoxed: shouldBlackBox,
+        });
       }
     }
   }
