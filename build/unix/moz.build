@@ -4,7 +4,7 @@
 
 
 
-if CONFIG["USE_ELF_HACK"]:
+if CONFIG["USE_ELF_HACK"] or CONFIG["RELRHACK"]:
     DIRS += ["elfhack"]
 
 FINAL_TARGET_FILES += [
