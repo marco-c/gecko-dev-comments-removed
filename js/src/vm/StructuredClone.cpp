@@ -43,7 +43,6 @@
 
 #include "builtin/DataViewObject.h"
 #include "builtin/MapObject.h"
-#include "gc/GC.h"           
 #include "js/Array.h"        
 #include "js/ArrayBuffer.h"  
 #include "js/ColumnNumber.h"  
@@ -423,6 +422,7 @@ struct JSStructuredCloneReader {
                                    const JS::CloneDataPolicy& cloneDataPolicy,
                                    const JSStructuredCloneCallbacks* cb,
                                    void* cbClosure);
+  ~JSStructuredCloneReader();
 
   SCInput& input() { return in; }
   bool read(MutableHandleValue vp, size_t nbytes);
@@ -481,6 +481,10 @@ struct JSStructuredCloneReader {
       MutableHandleValue vp,
       ShouldAtomizeStrings atomizeStrings = DontAtomizeStrings);
 
+  static void NurseryCollectionCallback(JSContext* cx,
+                                        JS::GCNurseryProgress progress,
+                                        JS::GCReason reason, void* data);
+
   SCInput& in;
 
   
@@ -534,7 +538,7 @@ struct JSStructuredCloneReader {
   
   
   
-  AutoSelectGCHeap gcHeap;
+  gc::Heap gcHeap = gc::Heap::Default;
 
   friend bool JS_ReadString(JSStructuredCloneReader* r,
                             JS::MutableHandleString str);
@@ -2453,12 +2457,31 @@ JSStructuredCloneReader::JSStructuredCloneReader(
       allObjs(in.context()),
       numItemsRead(0),
       callbacks(cb),
-      closure(cbClosure),
-      gcHeap(in.context()) {
+      closure(cbClosure) {
   
   
   
   MOZ_ALWAYS_TRUE(objState.append(std::make_pair(nullptr, true)));
+
+  JS::AddGCNurseryCollectionCallback(in.context(), &NurseryCollectionCallback,
+                                     this);
+}
+
+JSStructuredCloneReader::~JSStructuredCloneReader() {
+  JS::RemoveGCNurseryCollectionCallback(in.context(),
+                                        &NurseryCollectionCallback, this);
+}
+
+
+void JSStructuredCloneReader::NurseryCollectionCallback(
+    JSContext* cx, JS::GCNurseryProgress progress, JS::GCReason reason,
+    void* data) {
+  auto* reader = static_cast<JSStructuredCloneReader*>(data);
+
+  
+  if (progress == JS::GCNurseryProgress::GC_NURSERY_COLLECTION_END) {
+    reader->gcHeap = gc::Heap::Tenured;
+  }
 }
 
 template <typename CharT>

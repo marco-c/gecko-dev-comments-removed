@@ -17,7 +17,6 @@
 #include <utility>   
 
 #include "ds/IdValuePair.h"  
-#include "gc/GC.h"           
 #include "js/GCVector.h"     
 #include "js/RootingAPI.h"  
 #include "js/Value.h"           
@@ -195,7 +194,11 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
 
   ParseType parseType = ParseType::JSONParse;
 
-  AutoSelectGCHeap gcHeap;
+  
+  size_t nurseryCollectionCount = 0;
+
+  
+  gc::Heap gcHeap = gc::Heap::Default;
 
  private:
   
@@ -268,6 +271,10 @@ class MOZ_STACK_CLASS JSONFullParseHandlerAnyChar {
   inline void freeStackEntry(StackEntry& entry);
 
   void trace(JSTracer* trc);
+
+  static void NurseryCollectionCallback(JSContext* cx,
+                                        JS::GCNurseryProgress progress,
+                                        JS::GCReason reason, void* data);
 };
 
 template <typename CharT>
