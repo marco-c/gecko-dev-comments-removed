@@ -43,14 +43,6 @@ add_task(async function test_in_progress_analysis_unanalyzed() {
           );
 
           analysisLink.click();
-          await shoppingContainer.updateComplete;
-
-          
-          shoppingContainer.isAnalysisInProgress = true;
-          
-          
-          shoppingContainer.data = Cu.cloneInto(mockData, content);
-
           await messageBarVisiblePromise;
           await shoppingContainer.updateComplete;
 
@@ -107,14 +99,6 @@ add_task(async function test_in_progress_analysis_stale() {
           );
 
           analysisLink.click();
-          await shoppingContainer.updateComplete;
-
-          
-          shoppingContainer.isAnalysisInProgress = true;
-          
-          
-          shoppingContainer.data = Cu.cloneInto(mockData, content);
-
           await messageBarVisiblePromise;
           await shoppingContainer.updateComplete;
 
