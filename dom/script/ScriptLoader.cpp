@@ -666,6 +666,47 @@ void ScriptLoader::PrepareCacheInfoChannel(nsIChannel* aChannel,
   }
 }
 
+static void AdjustPriorityForNonLinkPreloadScripts(
+    nsIChannel* aChannel, ScriptLoadRequest* aRequest) {
+  MOZ_ASSERT(!aRequest->GetScriptLoadContext()->IsLinkPreloadScript());
+
+  if (!StaticPrefs::network_fetchpriority_enabled()) {
+    return;
+  }
+
+  if (nsCOMPtr<nsISupportsPriority> supportsPriority =
+          do_QueryInterface(aChannel)) {
+    const RequestPriority fetchPriority = aRequest->FetchPriority();
+    
+    
+    
+    
+    
+    
+    switch (fetchPriority) {
+      case RequestPriority::Auto:
+        LOG(("ScriptLoader::%s:, fetchpriority=auto", __FUNCTION__));
+        break;
+      case RequestPriority::Low: {
+        LOG(("ScriptLoader::%s:, fetchpriority=low, setting priority",
+             __FUNCTION__));
+        supportsPriority->SetPriority(nsISupportsPriority::PRIORITY_LOW);
+        break;
+      }
+      case RequestPriority::High: {
+        LOG(("ScriptLoader::%s:, fetchpriority=high, setting priority",
+             __FUNCTION__));
+        supportsPriority->SetPriority(nsISupportsPriority::PRIORITY_HIGH);
+        break;
+      }
+      default: {
+        MOZ_ASSERT_UNREACHABLE();
+        break;
+      }
+    }
+  }
+}
+
 
 void ScriptLoader::PrepareRequestPriorityAndRequestDependencies(
     nsIChannel* aChannel, ScriptLoadRequest* aRequest) {
@@ -679,6 +720,8 @@ void ScriptLoader::PrepareRequestPriorityAndRequestDependencies(
     ScriptLoadContext::PrioritizeAsPreload(aChannel);
     ScriptLoadContext::AddLoadBackgroundFlag(aChannel);
   } else if (nsCOMPtr<nsIClassOfService> cos = do_QueryInterface(aChannel)) {
+    AdjustPriorityForNonLinkPreloadScripts(aChannel, aRequest);
+
     if (aRequest->GetScriptLoadContext()->mScriptFromHead &&
         aRequest->GetScriptLoadContext()->IsBlockingScript()) {
       
