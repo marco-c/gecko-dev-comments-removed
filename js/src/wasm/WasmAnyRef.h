@@ -127,27 +127,8 @@ class AnyRef {
   
   
   static AnyRef fromInt32(int32_t value) {
-    
-    
     MOZ_ASSERT(!int32NeedsBoxing(value));
-    
-    
-    uintptr_t wideValue = (uintptr_t)value;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    uintptr_t shiftedValue = wideValue << 1;
-    uintptr_t taggedValue = shiftedValue | (uintptr_t)AnyRefTag::I31;
-    return AnyRef(taggedValue);
+    return AnyRef::fromUint32Truncate(uint32_t(value));
   }
 
  public:
@@ -209,6 +190,30 @@ class AnyRef {
   
   static bool fromJSValue(JSContext* cx, JS::HandleValue value,
                           JS::MutableHandle<AnyRef> result);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static AnyRef fromUint32Truncate(uint32_t value) {
+    
+    uintptr_t wideValue = (uintptr_t)value;
+    
+    uintptr_t shiftedValue = wideValue << 1;
+    uintptr_t taggedValue = shiftedValue | (uintptr_t)AnyRefTag::I31;
+    return AnyRef(taggedValue);
+  }
 
   static bool int32NeedsBoxing(int32_t value) {
     
