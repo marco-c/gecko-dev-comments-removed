@@ -60,6 +60,13 @@ class Shim {
     this.runFirst = opts.runFirst;
     this.unblocksOnOptIn = unblocksOnOptIn;
     this.requestStorageAccessForRedirect = opts.requestStorageAccessForRedirect;
+    this.shouldUseScriptingAPI =
+      browser.aboutConfigPrefs.getBoolPrefSync("useScriptingAPI");
+    debug(
+      `WebCompat Shim ${this.id} will be injected using ${
+        this.shouldUseScriptingAPI ? "scripting" : "contentScripts"
+      } API`
+    );
 
     this._hostOptIns = new Set();
 
@@ -76,14 +83,26 @@ class Shim {
 
     this.redirectsRequests = !!this.file && matches?.length;
 
+    
+    
+    
     this._contentScriptRegistrations = [];
+
     this.contentScripts = contentScripts || [];
     for (const script of this.contentScripts) {
       if (typeof script.css === "string") {
-        script.css = [{ file: `/shims/${script.css}` }];
+        script.css = [
+          this.shouldUseScriptingAPI
+            ? `/shims/${script.css}`
+            : { file: `/shims/${script.css}` },
+        ];
       }
       if (typeof script.js === "string") {
-        script.js = [{ file: `/shims/${script.js}` }];
+        script.js = [
+          this.shouldUseScriptingAPI
+            ? `/shims/${script.js}`
+            : { file: `/shims/${script.js}` },
+        ];
       }
     }
 
@@ -244,10 +263,52 @@ class Shim {
       !this._contentScriptRegistrations.length
     ) {
       const matches = [];
+      let idx = 0;
       for (const options of this.contentScripts) {
         matches.push(options.matches);
-        const reg = await browser.contentScripts.register(options);
-        this._contentScriptRegistrations.push(reg);
+        if (this.shouldUseScriptingAPI) {
+          
+          
+          
+          options.id = `shim-${this.id}-${idx++}`;
+          options.persistAcrossSessions = false;
+          
+          
+          
+          
+          
+          
+          
+          
+          let isAlreadyRegistered = false;
+          try {
+            const registeredScripts =
+              await browser.scripting.getRegisteredContentScripts({
+                ids: [options.id],
+              });
+            isAlreadyRegistered = !!registeredScripts.length;
+          } catch (ex) {
+            console.error(
+              "Retrieve WebCompat GoFaster registered content scripts failed: ",
+              ex
+            );
+          }
+          try {
+            if (!isAlreadyRegistered) {
+              await browser.scripting.registerContentScripts([options]);
+            }
+            this._contentScriptRegistrations.push(options.id);
+          } catch (ex) {
+            console.error(
+              "Registering WebCompat Shim content scripts failed: ",
+              options,
+              ex
+            );
+          }
+        } else {
+          const reg = await browser.contentScripts.register(options);
+          this._contentScriptRegistrations.push(reg);
+        }
       }
       const urls = Array.from(new Set(matches.flat()));
       debug("Enabling content scripts for these URLs:", urls);
@@ -255,8 +316,13 @@ class Shim {
   }
 
   async _unregisterContentScripts() {
-    for (const registration of this._contentScriptRegistrations) {
-      registration.unregister();
+    if (this.shouldUseScriptingAPI) {
+      const ids = this._contentScriptRegistrations;
+      await browser.scripting.unregisterContentScripts({ ids });
+    } else {
+      for (const registration of this._contentScriptRegistrations) {
+        registration.unregister();
+      }
     }
     this._contentScriptRegistrations = [];
   }

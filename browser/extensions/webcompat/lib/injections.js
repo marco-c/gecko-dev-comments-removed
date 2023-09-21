@@ -13,8 +13,25 @@ class Injections {
     this._injectionsEnabled = true;
 
     this._availableInjections = availableInjections;
-    this._activeInjections = new Map();
+    this._activeInjections = new Set();
+    
+    
+    this._activeInjectionHandles = new Map();
     this._customFunctions = customFunctions;
+
+    this.shouldUseScriptingAPI =
+      browser.aboutConfigPrefs.getBoolPrefSync("useScriptingAPI");
+    
+    
+    browser.appConstants.getReleaseBranch().then(releaseBranch => {
+      if (releaseBranch !== "release_or_beta") {
+        console.debug(
+          `WebCompat Injections will be injected using ${
+            this.shouldUseScriptingAPI ? "scripting" : "contentScripts"
+          } API`
+        );
+      }
+    });
   }
 
   bindAboutCompatBroker(broker) {
@@ -48,6 +65,33 @@ class Injections {
     return this._injectionsEnabled;
   }
 
+  async getPromiseRegisteredScriptIds(scriptIds) {
+    let registeredScriptIds = [];
+
+    
+    
+    
+    
+    
+    
+    try {
+      const registeredScripts =
+        await browser.scripting.getRegisteredContentScripts({
+          
+          
+          ids: scriptIds ?? this._availableInjections.map(inj => inj.id),
+        });
+      registeredScriptIds = registeredScripts.map(script => script.id);
+    } catch (ex) {
+      console.error(
+        "Retrieve WebCompat GoFaster registered content scripts failed: ",
+        ex
+      );
+    }
+
+    return registeredScriptIds;
+  }
+
   async registerContentScripts() {
     const platformInfo = await browser.runtime.getPlatformInfo();
     const platformMatches = [
@@ -55,10 +99,15 @@ class Injections {
       platformInfo.os,
       platformInfo.os == "android" ? "android" : "desktop",
     ];
+
+    let registeredScriptIds = this.shouldUseScriptingAPI
+      ? await this.getPromiseRegisteredScriptIds()
+      : [];
+
     for (const injection of this._availableInjections) {
       if (platformMatches.includes(injection.platform)) {
         injection.availableOnPlatform = true;
-        await this.enableInjection(injection);
+        await this.enableInjection(injection, registeredScriptIds);
       }
     }
 
@@ -70,17 +119,42 @@ class Injections {
     });
   }
 
-  assignContentScriptDefaults(contentScripts) {
+  buildContentScriptRegistrations(contentScripts) {
     let finalConfig = Object.assign({}, contentScripts);
 
     if (!finalConfig.runAt) {
       finalConfig.runAt = "document_start";
     }
 
+    if (this.shouldUseScriptingAPI) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      finalConfig.persistAcrossSessions = false;
+
+      
+      
+      
+      if (Array.isArray(finalConfig.js)) {
+        finalConfig.js = finalConfig.js.map(e => e.file);
+      }
+
+      if (Array.isArray(finalConfig.css)) {
+        finalConfig.css = finalConfig.css.map(e => e.file);
+      }
+    }
+
     return finalConfig;
   }
 
-  async enableInjection(injection) {
+  async enableInjection(injection, registeredScriptIds) {
     if (injection.active) {
       return undefined;
     }
@@ -89,7 +163,7 @@ class Injections {
       return this.enableCustomInjection(injection);
     }
 
-    return this.enableContentScripts(injection);
+    return this.enableContentScripts(injection, registeredScriptIds);
   }
 
   enableCustomInjection(injection) {
@@ -103,16 +177,40 @@ class Injections {
     }
   }
 
-  async enableContentScripts(injection) {
+  async enableContentScripts(injection, registeredScriptIds) {
+    let injectProps;
     try {
-      const handle = await browser.contentScripts.register(
-        this.assignContentScriptDefaults(injection.contentScripts)
-      );
-      this._activeInjections.set(injection, handle);
+      const { id } = injection;
+      if (this.shouldUseScriptingAPI) {
+        
+        
+        
+        
+        
+        let activeScriptIds = Array.isArray(registeredScriptIds)
+          ? registeredScriptIds
+          : await this.getPromiseRegisteredScriptIds([id]);
+        injectProps = this.buildContentScriptRegistrations(
+          injection.contentScripts
+        );
+        injectProps.id = id;
+        if (!activeScriptIds.includes(id)) {
+          await browser.scripting.registerContentScripts([injectProps]);
+        }
+        this._activeInjections.add(id);
+      } else {
+        const handle = await browser.contentScripts.register(
+          this.buildContentScriptRegistrations(injection.contentScripts)
+        );
+        this._activeInjections.add(id);
+        this._activeInjectionHandles.set(id, handle);
+      }
+
       injection.active = true;
     } catch (ex) {
       console.error(
         "Registering WebCompat GoFaster content scripts failed: ",
+        { injection, injectProps },
         ex
       );
     }
@@ -155,9 +253,18 @@ class Injections {
   }
 
   async disableContentScripts(injection) {
-    const contentScript = this._activeInjections.get(injection);
-    await contentScript.unregister();
-    this._activeInjections.delete(injection);
+    if (this._activeInjections.has(injection.id)) {
+      if (this.shouldUseScriptingAPI) {
+        await browser.scripting.unregisterContentScripts({
+          ids: [injection.id],
+        });
+      } else {
+        const handle = this._activeInjectionHandles.get(injection.id);
+        await handle.unregister();
+        this._activeInjectionHandles.delete(injection.id);
+      }
+      this._activeInjections.delete(injection);
+    }
     injection.active = false;
   }
 }

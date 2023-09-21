@@ -4010,3 +4010,8 @@ pref("dom.sitepermsaddon-provider.separatedBlocklistedDomains", "shopee.co.th,sh
 
 
 pref("privacy.query_stripping.listService.logLevel", "Error");
+
+
+
+
+pref("extensions.webcompat.useScriptingAPI", true);
