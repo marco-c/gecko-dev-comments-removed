@@ -473,6 +473,7 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   void ProcessTransitions();
 
   bool mInProcessTransitions = false;
+  bool mInLocalRunLoop = false;
 
   
   
@@ -489,6 +490,8 @@ class nsCocoaWindow final : public nsBaseWidget, public nsPIWidgetCocoa {
   
   
   bool mHasStartedNativeFullscreen;
+
+  bool mWaitingOnFinishCurrentTransition = false;
 
   bool mModal;
   bool mFakeModal;
