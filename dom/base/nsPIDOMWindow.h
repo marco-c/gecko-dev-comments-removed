@@ -762,10 +762,6 @@ class nsPIDOMWindowInner : public mozIDOMWindow {
 
   
   
-  bool mUsingStorageAccess;
-
-  
-  
   
   
   RefPtr<mozilla::dom::WindowGlobalChild> mWindowGlobalChild;
