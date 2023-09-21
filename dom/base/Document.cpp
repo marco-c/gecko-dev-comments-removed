@@ -17269,16 +17269,16 @@ Document::GetContentBlockingEvents() {
 StorageAccessAPIHelper::PerformPermissionGrant
 Document::CreatePermissionGrantPromise(
     nsPIDOMWindowInner* aInnerWindow, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction, const Maybe<nsCString>& aTopLevelBaseDomain,
-    bool aFrameOnly) {
+    bool aHasUserInteraction, bool aRequireUserInteraction,
+    const Maybe<nsCString>& aTopLevelBaseDomain, bool aFrameOnly) {
   MOZ_ASSERT(aInnerWindow);
   MOZ_ASSERT(aPrincipal);
   RefPtr<Document> self(this);
   RefPtr<nsPIDOMWindowInner> inner(aInnerWindow);
   RefPtr<nsIPrincipal> principal(aPrincipal);
 
-  return [inner, self, principal, aHasUserInteraction, aTopLevelBaseDomain,
-          aFrameOnly]() {
+  return [inner, self, principal, aHasUserInteraction, aRequireUserInteraction,
+          aTopLevelBaseDomain, aFrameOnly]() {
     RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::Private>
         p = new StorageAccessAPIHelper::StorageAccessPermissionGrantPromise::
             Private(__func__);
@@ -17294,10 +17294,28 @@ Document::CreatePermissionGrantPromise(
     MOZ_ASSERT(promise);
     promise->Then(
         GetCurrentSerialEventTarget(), __func__,
-        [self, p, inner, principal, aHasUserInteraction, aTopLevelBaseDomain,
+        [self, p, inner, principal, aHasUserInteraction,
+         aRequireUserInteraction, aTopLevelBaseDomain,
          aFrameOnly](bool aGranted) {
           if (aGranted) {
             p->Resolve(true, __func__);
+            return;
+          }
+
+          
+          
+          
+          
+          
+          
+          if (!aHasUserInteraction && aRequireUserInteraction) {
+            
+            nsContentUtils::ReportToConsole(
+                nsIScriptError::errorFlag,
+                nsLiteralCString("requestStorageAccess"), self,
+                nsContentUtils::eDOM_PROPERTIES,
+                "RequestStorageAccessUserGesture");
+            p->Reject(false, __func__);
             return;
           }
 
@@ -17415,20 +17433,6 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   }
 
   
-  
-  if (!HasValidTransientUserGestureActivation()) {
-    
-    nsContentUtils::ReportToConsole(nsIScriptError::errorFlag,
-                                    nsLiteralCString("requestStorageAccess"),
-                                    this, nsContentUtils::eDOM_PROPERTIES,
-                                    "RequestStorageAccessUserGesture");
-    ConsumeTransientUserGestureActivation();
-    promise->MaybeRejectWithNotAllowedError(
-        "requestStorageAccess not allowed"_ns);
-    return promise.forget();
-  }
-
-  
   RefPtr<nsPIDOMWindowInner> inner = GetInnerWindow();
   if (!inner) {
     ConsumeTransientUserGestureActivation();
@@ -17536,7 +17540,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccess(
   
   
   StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-      this, inner, bc, NodePrincipal(), true, true,
+      this, inner, bc, NodePrincipal(),
+      self->HasValidTransientUserGestureActivation(), true, true,
       ContentBlockingNotifier::eStorageAccessAPI, true)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
@@ -17665,8 +17670,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
       GetBrowsingContext(), principal)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
-          [inner, thirdPartyURI, bc, principal, hasUserActivation, self,
-           promise](Maybe<bool> cookieResult) {
+          [inner, thirdPartyURI, bc, principal, hasUserActivation,
+           aRequireUserActivation, self, promise](Maybe<bool> cookieResult) {
             
             
             if (cookieResult.isSome()) {
@@ -17697,7 +17702,8 @@ already_AddRefed<mozilla::dom::Promise> Document::RequestStorageAccessForOrigin(
             
             
             return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, hasUserActivation, false,
+                self, inner, bc, principal, hasUserActivation,
+                aRequireUserActivation, false,
                 ContentBlockingNotifier::ePrivilegeStorageAccessForOriginAPI,
                 true);
           },
@@ -17857,7 +17863,7 @@ already_AddRefed<Promise> Document::RequestStorageAccessUnderSite(
                       false, __func__);
             }
             return self->CreatePermissionGrantPromise(
-                self->GetInnerWindow(), self->NodePrincipal(), true,
+                self->GetInnerWindow(), self->NodePrincipal(), true, true,
                 Some(serializedSite), false)();
           },
           [](const ContentChild::TestStorageAccessPermissionPromise::
@@ -18030,7 +18036,7 @@ already_AddRefed<Promise> Document::CompleteStorageAccessRequestFromSite(
             
             
             return StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
-                self, inner, bc, principal, true, false,
+                self, inner, bc, principal, true, true, false,
                 ContentBlockingNotifier::eStorageAccessAPI, false);
           },
           

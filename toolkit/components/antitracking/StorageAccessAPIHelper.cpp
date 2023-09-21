@@ -840,17 +840,6 @@ Maybe<bool> StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
 Maybe<bool> StorageAccessAPIHelper::CheckCallingContextDecidesStorageAccessAPI(
     Document* aDocument, bool aRequestingStorageAccess) {
   MOZ_ASSERT(aDocument);
-  
-  if (aRequestingStorageAccess) {
-    if (!aDocument->HasValidTransientUserGestureActivation()) {
-      
-      nsContentUtils::ReportToConsole(
-          nsIScriptError::errorFlag, nsLiteralCString("requestStorageAccess"),
-          aDocument, nsContentUtils::eDOM_PROPERTIES,
-          "RequestStorageAccessUserGesture");
-      return Some(false);
-    }
-  }
 
   if (aDocument->IsTopLevelContentDocument()) {
     return Some(true);
@@ -1006,7 +995,7 @@ RefPtr<StorageAccessAPIHelper::StorageAccessPermissionGrantPromise>
 StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
     dom::Document* aDocument, nsPIDOMWindowInner* aInnerWindow,
     dom::BrowsingContext* aBrowsingContext, nsIPrincipal* aPrincipal,
-    bool aHasUserInteraction, bool aFrameOnly,
+    bool aHasUserInteraction, bool aRequireUserInteraction, bool aFrameOnly,
     ContentBlockingNotifier::StorageAccessPermissionGrantedReason aNotifier,
     bool aRequireGrant) {
   MOZ_ASSERT(aDocument);
@@ -1022,7 +1011,8 @@ StorageAccessAPIHelper::RequestStorageAccessAsyncHelper(
   
   
   auto performPermissionGrant = aDocument->CreatePermissionGrantPromise(
-      aInnerWindow, principal, aHasUserInteraction, Nothing(), aFrameOnly);
+      aInnerWindow, principal, aHasUserInteraction, aRequireUserInteraction,
+      Nothing(), aFrameOnly);
 
   
   return StorageAccessAPIHelper::AllowAccessFor(
