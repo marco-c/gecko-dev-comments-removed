@@ -74,6 +74,7 @@ user_pref("layout.css.prefers-color-scheme.content-override", 1);
 user_pref("gfx.offscreencanvas.enabled", true);
 
 user_pref("dom.reporting.enabled", true);
+user_pref("layout.css.font-loading-api.workers.enabled", true);
 
 user_pref("remote.experimental.enabled", true);
 

@@ -300,13 +300,18 @@ void FontFace::EnsurePromise() {
     return;
   }
 
-  ErrorResult rv;
-  mLoaded = Promise::Create(mParent, rv);
+  
+  
+  
+  if (FontFaceSet::IsEnabled()) {
+    ErrorResult rv;
+    mLoaded = Promise::Create(mParent, rv);
 
-  if (mImpl->Status() == FontFaceLoadStatus::Loaded) {
-    mLoaded->MaybeResolve(this);
-  } else if (mLoadedRejection != NS_OK) {
-    mLoaded->MaybeReject(mLoadedRejection);
+    if (mImpl->Status() == FontFaceLoadStatus::Loaded) {
+      mLoaded->MaybeResolve(this);
+    } else if (mLoadedRejection != NS_OK) {
+      mLoaded->MaybeReject(mLoadedRejection);
+    }
   }
 }
 
