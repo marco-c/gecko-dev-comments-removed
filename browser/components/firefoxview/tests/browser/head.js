@@ -605,25 +605,3 @@ function navigateToCategory(document, category) {
 async function switchToFxViewTab(win = window) {
   return BrowserTestUtils.switchTab(win.gBrowser, win.FirefoxViewHandler.tab);
 }
-
-function isElInViewport(element) {
-  const boundingRect = element.getBoundingClientRect();
-  return (
-    boundingRect.top >= 0 &&
-    boundingRect.left >= 0 &&
-    boundingRect.bottom <=
-      (window.innerHeight || document.documentElement.clientHeight) &&
-    boundingRect.right <=
-      (window.innerWidth || document.documentElement.clientWidth)
-  );
-}
-
-
-
-async function clickFirefoxViewButton(win) {
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "#firefox-view-button",
-    { type: "mousedown" },
-    win.browsingContext
-  );
-}
