@@ -63,8 +63,8 @@ enum class TypeCode {
   F64 = 0x7c,   
   V128 = 0x7b,  
 
-  I8 = 0x7a,   
-  I16 = 0x79,  
+  I8 = 0x78,   
+  I16 = 0x77,  
 
   
   FuncRef = 0x70,  
@@ -79,28 +79,28 @@ enum class TypeCode {
   EqRef = 0x6d,  
 
   
-  NullableRef = 0x6c,  
+  NullableRef = 0x63,  
 
   
-  Ref = 0x6b,  
+  Ref = 0x64,  
 
   
-  I31Ref = 0x6a,  
+  I31Ref = 0x6c,  
 
   
-  NullExternRef = 0x69,  
+  NullExternRef = 0x72,  
 
   
-  NullFuncRef = 0x68,  
+  NullFuncRef = 0x73,  
 
   
-  StructRef = 0x67,  
+  StructRef = 0x6b,  
 
   
-  ArrayRef = 0x66,  
+  ArrayRef = 0x6a,  
 
   
-  NullAnyRef = 0x65,  
+  NullAnyRef = 0x71,  
 
   
   Func = 0x60,  
@@ -118,13 +118,13 @@ enum class TypeCode {
   BlockVoid = 0x40,  
 
   
-  RecGroup = 0x4f,  
+  RecGroup = 0x4e,  
 
   
   SubNoFinalType = 0x50,  
 
   
-  SubFinalType = 0x4e,  
+  SubFinalType = 0x4f,  
 
   Limit = 0x80
 };
@@ -458,11 +458,11 @@ enum class Op {
   RefFunc = 0xd2,
 
   
-  RefAsNonNull = 0xd3,
-  BrOnNull = 0xd4,
+  RefAsNonNull = 0xd4,
+  BrOnNull = 0xd5,
 
   
-  RefEq = 0xd5,
+  RefEq = 0xd3,
 
   
   BrOnNonNull = 0xd6,
@@ -482,42 +482,42 @@ inline bool IsPrefixByte(uint8_t b) { return b >= uint8_t(Op::FirstPrefix); }
 
 enum class GcOp {
   
-  StructNew = 0x7,
-  StructNewDefault = 0x8,
-  StructGet = 0x03,
-  StructGetS = 0x04,
-  StructGetU = 0x05,
-  StructSet = 0x06,
+  StructNew = 0x0,
+  StructNewDefault = 0x1,
+  StructGet = 0x02,
+  StructGetS = 0x03,
+  StructGetU = 0x04,
+  StructSet = 0x05,
 
   
-  ArrayNew = 0x1b,
-  ArrayNewFixed = 0x1a,
-  ArrayNewDefault = 0x1c,
-  ArrayNewData = 0x1d,
-  ArrayNewElem = 0x1f,
-  ArrayGet = 0x13,
-  ArrayGetS = 0x14,
-  ArrayGetU = 0x15,
-  ArraySet = 0x16,
-  ArrayCopy = 0x18,
-  ArrayLen = 0x19,
+  ArrayNew = 0x6,
+  ArrayNewDefault = 0x7,
+  ArrayNewFixed = 0x8,
+  ArrayNewData = 0x9,
+  ArrayNewElem = 0xa,
+  ArrayGet = 0xb,
+  ArrayGetS = 0xc,
+  ArrayGetU = 0xd,
+  ArraySet = 0xe,
+  ArrayLen = 0xf,
+  ArrayCopy = 0x11,
 
   
-  I31New = 0x20,
-  I31GetS = 0x21,
-  I31GetU = 0x22,
+  RefTest = 0x14,
+  RefTestNull = 0x15,
+  RefCast = 0x16,
+  RefCastNull = 0x17,
+  BrOnCast = 0x18,
+  BrOnCastFail = 0x19,
 
   
-  RefTest = 0x40,
-  RefCast = 0x41,
-  RefTestNull = 0x48,
-  RefCastNull = 0x49,
-  BrOnCast = 0x4e,
-  BrOnCastFail = 0x4f,
+  ExternInternalize = 0x1a,
+  ExternExternalize = 0x1b,
 
   
-  ExternInternalize = 0x70,
-  ExternExternalize = 0x71,
+  I31New = 0x1c,
+  I31GetS = 0x1d,
+  I31GetU = 0x1e,
 
   Limit
 };

@@ -144,9 +144,9 @@ function checkPassiveElemSegment(mangle, err) {
                let body = [];
                body.push(1);           
                body.push(0x1 | 0x4);   
-               body.push(AnyFuncCode + (mangle == "type" ? 1 : 0)); 
+               body.push(mangle == "type" ? BadType : AnyFuncCode); 
                body.push(1);           
-               body.push(RefFuncCode + (mangle == "ref.func" ? 1 : 0)); 
+               body.push(mangle == "ref.func" ? BadType : RefFuncCode); 
                body.push(0);           
                body.push(EndCode + (mangle == "end" ? 1 : 0));
                return body;
