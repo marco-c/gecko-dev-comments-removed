@@ -8379,7 +8379,13 @@ var gPrivateBrowsingUI = {
 
     
     if (gUseFeltPrivacyUI) {
-      document.getElementById("save-to-pocket-button").remove();
+      const saveToPocketButton = document.getElementById(
+        "save-to-pocket-button"
+      );
+      if (saveToPocketButton) {
+        saveToPocketButton.remove();
+        document.documentElement.setAttribute("pocketdisabled", "true");
+      }
     }
 
     if (PrivateBrowsingUtils.permanentPrivateBrowsing) {
@@ -10046,6 +10052,12 @@ var ShoppingSidebarManager = {
     this._enabled =
       NimbusFeatures.shopping2023.getVariable("enabled") && !isPBM && !optedOut;
 
+    if (!this.isActive) {
+      document.querySelectorAll("shopping-sidebar").forEach(sidebar => {
+        sidebar.hidden = true;
+      });
+    }
+
     if (!this._enabled) {
       document.querySelectorAll("shopping-sidebar").forEach(sidebar => {
         sidebar.remove();
@@ -10130,6 +10142,14 @@ var ShoppingSidebarManager = {
       
       
       ShoppingUtils.handleAutoActivateOnProduct();
+
+      if (!this.isActive) {
+        ShoppingUtils.sendTrigger({
+          browser: aBrowser,
+          id: "shoppingProductPageWithSidebarClosed",
+          context: { isSidebarClosing: !!sidebar },
+        });
+      }
     }
   },
 
