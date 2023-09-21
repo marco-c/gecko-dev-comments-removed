@@ -629,6 +629,8 @@ const SHOPPING_MICROSURVEY = {
   ],
 };
 
+const OPTED_IN_TIME_PREF = "browser.shopping.experience2023.survey.optedInTime";
+
 XPCOMUtils.defineLazyPreferenceGetter(
   lazy,
   "isSurveySeen",
@@ -643,9 +645,18 @@ XPCOMUtils.defineLazyPreferenceGetter(
   0
 );
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "optedInTime",
+  OPTED_IN_TIME_PREF,
+  0
+);
+
 let optInDynamicContent;
 
 const MIN_VISITS_TO_SHOW_SURVEY = 5;
+
+const MIN_TIME_AFTER_OPT_IN = 24 * 60 * 60;
 
 class AboutWelcomeShoppingChild extends AboutWelcomeChild {
   
@@ -688,15 +699,33 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
   evaluateAndShowSurvey() {
     
     
+    const now = Date.now() / 1000;
+    const hasBeen24HrsSinceOptin =
+      lazy.optedInTime && now - lazy.optedInTime >= MIN_TIME_AFTER_OPT_IN;
+
     this.showMicroSurvey =
       this.surveyEnabled &&
       !lazy.isSurveySeen &&
       !AboutWelcomeShoppingChild.optedInSession &&
-      lazy.pdpVisits >= MIN_VISITS_TO_SHOW_SURVEY;
+      lazy.pdpVisits >= MIN_VISITS_TO_SHOW_SURVEY &&
+      hasBeen24HrsSinceOptin;
 
     if (this.showMicroSurvey) {
       this.renderMessage();
     }
+  }
+
+  setOptInTime() {
+    const now = Date.now() / 1000;
+    this.AWSendToParent("SPECIAL_ACTION", {
+      type: "SET_PREF",
+      data: {
+        pref: {
+          name: OPTED_IN_TIME_PREF,
+          value: now,
+        },
+      },
+    });
   }
 
   handleEvent(event) {
@@ -713,6 +742,14 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
       return;
     }
 
+    
+    if (
+      Object.hasOwn(event.detail, "showOnboarding") &&
+      !event.detail.showOnboarding &&
+      !lazy.optedInTime
+    ) {
+      this.setOptInTime();
+    }
     
     if (!lazy.isSurveySeen) {
       this.document.getElementById("multi-stage-message-root").hidden = true;
