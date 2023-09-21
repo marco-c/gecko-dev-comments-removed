@@ -48,7 +48,7 @@ nsBlockFrame* NS_NewBlockFrame(mozilla::PresShell* aPresShell,
 
 nsresult NS_NewAttributeContent(nsNodeInfoManager* aNodeInfoManager,
                                 int32_t aNameSpaceID, nsAtom* aAttrName,
-                                nsIContent** aResult);
+                                nsAtom* aFallback, nsIContent** aResult);
 
 
 

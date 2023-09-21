@@ -17,7 +17,7 @@ use super::{CSSFloat, CSSInteger};
 use crate::context::QuirksMode;
 use crate::parser::{Parse, ParserContext};
 use crate::values::specified::calc::CalcNode;
-use crate::values::{serialize_atom_identifier, serialize_number};
+use crate::values::{AtomString, serialize_atom_identifier, serialize_number};
 use crate::{Atom, Namespace, One, Prefix, Zero};
 use cssparser::{Parser, Token};
 use std::fmt::{self, Write};
@@ -872,6 +872,8 @@ pub struct Attr {
     pub namespace_url: Namespace,
     
     pub attribute: Atom,
+    
+    pub fallback: AtomString
 }
 
 impl Parse for Attr {
@@ -889,6 +891,29 @@ fn get_namespace_for_prefix(prefix: &Prefix, context: &ParserContext) -> Option<
     context.namespaces.prefixes.get(prefix).cloned()
 }
 
+
+fn parse_namespace<'i, 't>(context: &ParserContext, input: &mut Parser<'i, 't>) -> Result<(Prefix, Namespace), ParseError<'i>> {
+    let ns_prefix = match input.next()? {
+        Token::Ident(ref prefix) => Some(Prefix::from(prefix.as_ref())),
+        Token::Delim('|') => None,
+        _ => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+    };
+
+    if ns_prefix.is_some() && !matches!(*input.next_including_whitespace()?, Token::Delim('|')) {
+        return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
+    }
+
+    if let Some(prefix) = ns_prefix {
+        let ns = match get_namespace_for_prefix(&prefix, context) {
+            Some(ns) => ns,
+            None => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
+        };
+        Ok((prefix, ns))
+    } else {
+        Ok((Prefix::default(), Namespace::default()))
+    }
+}
+
 impl Attr {
     
     
@@ -897,53 +922,34 @@ impl Attr {
         input: &mut Parser<'i, 't>,
     ) -> Result<Attr, ParseError<'i>> {
         
+        let namespace = input.try_parse(|input| parse_namespace(context, input)).ok();
+        let namespace_is_some = namespace.is_some();
+        let (namespace_prefix, namespace_url) = namespace.unwrap_or_default();
+
         
-        let first = input.try_parse(|i| i.expect_ident_cloned()).ok();
-        if let Ok(token) = input.try_parse(|i| i.next_including_whitespace().map(|t| t.clone())) {
-            match token {
-                Token::Delim('|') => {
-                    let location = input.current_source_location();
-                    
-                    let second_token = match *input.next_including_whitespace()? {
-                        Token::Ident(ref second) => second,
-                        ref t => return Err(location.new_unexpected_token_error(t.clone())),
-                    };
-
-                    let (namespace_prefix, namespace_url) = if let Some(ns) = first {
-                        let prefix = Prefix::from(ns.as_ref());
-                        let ns = match get_namespace_for_prefix(&prefix, context) {
-                            Some(ns) => ns,
-                            None => {
-                                return Err(location
-                                    .new_custom_error(StyleParseErrorKind::UnspecifiedError));
-                            },
-                        };
-                        (prefix, ns)
-                    } else {
-                        (Prefix::default(), Namespace::default())
-                    };
-                    return Ok(Attr {
-                        namespace_prefix,
-                        namespace_url,
-                        attribute: Atom::from(second_token.as_ref()),
-                    });
-                },
-                
-                
-                Token::WhiteSpace(..) => {},
-                ref t => return Err(input.new_unexpected_token_error(t.clone())),
+        let attribute = Atom::from(if namespace_is_some {
+            let location = input.current_source_location();
+            match *input.next_including_whitespace()? {
+                Token::Ident(ref ident) => ident.as_ref(),
+                ref t => return Err(location.new_unexpected_token_error(t.clone())),
             }
-        }
-
-        if let Some(first) = first {
-            Ok(Attr {
-                namespace_prefix: Prefix::default(),
-                namespace_url: Namespace::default(),
-                attribute: Atom::from(first.as_ref()),
-            })
         } else {
-            Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
-        }
+            input.expect_ident()?.as_ref()
+        });
+
+        
+        
+        let fallback = input.try_parse(|input| -> Result<AtomString, ParseError<'i>> {
+            input.expect_comma()?;
+            Ok(input.expect_string()?.as_ref().into())
+        }).unwrap_or_default();
+
+        Ok(Attr {
+            namespace_prefix,
+            namespace_url,
+            attribute,
+            fallback,
+        })
     }
 }
 
@@ -958,6 +964,14 @@ impl ToCss for Attr {
             dest.write_char('|')?;
         }
         serialize_atom_identifier(&self.attribute, dest)?;
+
+        if !self.fallback.is_empty() {
+            
+            dest.write_str(", \"")?;
+            self.fallback.to_css(dest)?;
+            dest.write_char('"')?;
+        }
+
         dest.write_char(')')
     }
 }
