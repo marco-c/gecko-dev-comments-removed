@@ -26,17 +26,12 @@ namespace {
 template <class T>
 bool ReadFloat32Array(T& aDestination, const Float32Array& aSource,
                       ErrorResult& aRv) {
-  constexpr size_t length = std::extent<T>::value;
-  aSource.ComputeState();
-  if (aSource.Length() != length) {
+  if (!aSource.CopyDataTo(aDestination)) {
     aRv.Throw(NS_ERROR_INVALID_ARG);
     
     
     
     return false;
-  }
-  for (size_t i = 0; i < length; i++) {
-    aDestination[i] = aSource.Data()[i];
   }
   return true;
 }
