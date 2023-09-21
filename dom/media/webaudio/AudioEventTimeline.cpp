@@ -147,31 +147,20 @@ void AudioEventTimeline::GetValuesAtTimeHelper(TimeType aTime, float* aBuffer,
 #endif
 
       if (TimesEqual(aTime, TimeOf(*next))) {
-        mLastComputedValue = mComputedValue;
-        
-        while (eventIndex < mEvents.Length() - 1 &&
-               TimesEqual(aTime, TimeOf(mEvents[eventIndex + 1]))) {
-          mLastComputedValue =
-              GetValueAtTimeOfEvent<TimeType>(&mEvents[eventIndex]);
-          ++eventIndex;
-        }
-
         timeMatchesEventIndex = true;
-        break;
+        aBuffer[bufferIndex] = GetValueAtTimeOfEvent<TimeType>(next, previous);
+        
       }
-
       previous = next;
     }
 
     if (timeMatchesEventIndex) {
       
-      MOZ_ASSERT(TimesEqual(aTime, TimeOf(mEvents[eventIndex])));
-      mComputedValue = GetValueAtTimeOfEvent<TimeType>(&mEvents[eventIndex]);
+      MOZ_ASSERT(TimesEqual(aTime, TimeOf(mEvents[eventIndex - 1])));
     } else {
-      mComputedValue = GetValuesAtTimeHelperInternal(aTime, previous, next);
+      aBuffer[bufferIndex] =
+          GetValuesAtTimeHelperInternal(aTime, previous, next);
     }
-
-    aBuffer[bufferIndex] = mComputedValue;
   }
 }
 template void AudioEventTimeline::GetValuesAtTimeHelper(double aTime,
@@ -183,26 +172,23 @@ template void AudioEventTimeline::GetValuesAtTimeHelper(int64_t aTime,
 
 template <class TimeType>
 float AudioEventTimeline::GetValueAtTimeOfEvent(
-    const AudioTimelineEvent* aNext) {
-  TimeType time = aNext->Time<TimeType>();
-  switch (aNext->mType) {
+    const AudioTimelineEvent* aEvent, const AudioTimelineEvent* aPrevious) {
+  TimeType time = aEvent->Time<TimeType>();
+  switch (aEvent->mType) {
     case AudioTimelineEvent::SetTarget:
       
-      
-      
-      
-      return ExponentialApproach(time, mLastComputedValue, aNext->mValue,
-                                 aNext->mTimeConstant, time);
-      break;
+      mSetTargetStartValue =
+          GetValuesAtTimeHelperInternal(time, aPrevious, nullptr);
+      return mSetTargetStartValue;
     case AudioTimelineEvent::SetValueCurve:
       
       
-      return ExtractValueFromCurve(time, aNext->mCurve, aNext->mCurveLength,
-                                   aNext->mDuration, time);
+      return ExtractValueFromCurve(time, aEvent->mCurve, aEvent->mCurveLength,
+                                   aEvent->mDuration, time);
       break;
     default:
       
-      return aNext->mValue;
+      return aEvent->mValue;
   }
 }
 
@@ -236,7 +222,7 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
   
   
   if (aPrevious->mType == AudioTimelineEvent::SetTarget) {
-    return ExponentialApproach(TimeOf(aPrevious), mLastComputedValue,
+    return ExponentialApproach(TimeOf(aPrevious), mSetTargetStartValue,
                                ValueOf(aPrevious), aPrevious->mTimeConstant,
                                aTime);
   }
