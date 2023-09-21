@@ -175,6 +175,8 @@ bool nsImageRenderer::PrepareImage() {
   } else if (mImage->IsGradient()) {
     mGradientData = &*mImage->AsGradient();
     mPrepareResult = ImgDrawResult::SUCCESS;
+  } else if (mImage->IsMozThemed()) {
+    mPrepareResult = ImgDrawResult::SUCCESS;
   } else if (mImage->IsElement()) {
     dom::Element* paintElement =  
         SVGObserverUtils::GetAndObserveBackgroundImage(
@@ -202,7 +204,6 @@ bool nsImageRenderer::PrepareImage() {
 
     mPrepareResult = ImgDrawResult::SUCCESS;
   } else if (mImage->IsCrossFade()) {
-    
     
     mPrepareResult = ImgDrawResult::BAD_IMAGE;
     return false;
@@ -281,6 +282,7 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       MOZ_FALLTHROUGH_ASSERT("image-set should be resolved already");
     
     case StyleImage::Tag::CrossFade:
+    case StyleImage::Tag::MozThemed:
     
     
     case StyleImage::Tag::Gradient:
@@ -534,6 +536,13 @@ ImgDrawResult nsImageRenderer::Draw(nsPresContext* aPresContext,
           *ctx, mForFrame->Style(), aPresContext, image, samplingFilter, aDest,
           aFill, aAnchor, aDirtyRect, ConvertImageRendererToDrawFlags(mFlags),
           aOpacity);
+      break;
+    }
+    case StyleImage::Tag::MozThemed: {
+      auto appearance = mImage->AsMozThemed();
+      mForFrame->PresContext()->Theme()->DrawWidgetBackground(
+          ctx, mForFrame, appearance, aDest, aDirtyRect,
+          nsITheme::DrawOverflow::Yes);
       break;
     }
     case StyleImage::Tag::ImageSet:
