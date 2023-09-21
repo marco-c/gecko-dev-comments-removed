@@ -537,19 +537,17 @@ public class MediaSession {
 
      static long fromBundle(final GeckoBundle bundle) {
       
-      final long features =
-          NONE
-              | (bundle.getBoolean("play") ? PLAY : NONE)
-              | (bundle.getBoolean("pause") ? PAUSE : NONE)
-              | (bundle.getBoolean("stop") ? STOP : NONE)
-              | (bundle.getBoolean("seekto") ? SEEK_TO : NONE)
-              | (bundle.getBoolean("seekforward") ? SEEK_FORWARD : NONE)
-              | (bundle.getBoolean("seekbackward") ? SEEK_BACKWARD : NONE)
-              | (bundle.getBoolean("nexttrack") ? NEXT_TRACK : NONE)
-              | (bundle.getBoolean("previoustrack") ? PREVIOUS_TRACK : NONE)
-              | (bundle.getBoolean("skipad") ? SKIP_AD : NONE)
-              | (bundle.getBoolean("focus") ? FOCUS : NONE);
-      return features;
+      return NONE
+          | (bundle.getBoolean("play") ? PLAY : NONE)
+          | (bundle.getBoolean("pause") ? PAUSE : NONE)
+          | (bundle.getBoolean("stop") ? STOP : NONE)
+          | (bundle.getBoolean("seekto") ? SEEK_TO : NONE)
+          | (bundle.getBoolean("seekforward") ? SEEK_FORWARD : NONE)
+          | (bundle.getBoolean("seekbackward") ? SEEK_BACKWARD : NONE)
+          | (bundle.getBoolean("nexttrack") ? NEXT_TRACK : NONE)
+          | (bundle.getBoolean("previoustrack") ? PREVIOUS_TRACK : NONE)
+          | (bundle.getBoolean("skipad") ? SKIP_AD : NONE)
+          | (bundle.getBoolean("focus") ? FOCUS : NONE);
     }
   }
 

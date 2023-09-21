@@ -765,7 +765,6 @@ public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
   private String getCDMUserAgent() {
     
     
-    final String ua = "Widevine CDM v1.0";
-    return ua;
+    return "Widevine CDM v1.0";
   }
 }
