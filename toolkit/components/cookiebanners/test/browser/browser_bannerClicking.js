@@ -60,7 +60,7 @@ add_task(async function test_no_rules() {
   });
 
   
-  testClickResultTelemetry({});
+  await testClickResultTelemetry({});
 });
 
 
