@@ -19,11 +19,6 @@ const skipLocalStorageTests = Services.prefs.getBoolPref(
 );
 
 
-const skipCleanupAfterDeletionAtShutdownTests = Services.prefs.getBoolPref(
-  "dom.quotaManager.backgroundTask.enabled"
-);
-
-
 
 
 
@@ -538,23 +533,5 @@ add_task(async function test_deleteAllAtShutdown() {
     countSubitems(toBeRemovedDir),
     TEST_ORIGINS.length,
     `storage/to-be-removed has ${TEST_ORIGINS.length} subdirectories`
-  );
-
-  if (skipCleanupAfterDeletionAtShutdownTests) {
-    
-    return;
-  }
-
-  info("Verifying cleanupAfterDeletionAtShutdown");
-  await new Promise(aResolve => {
-    Services.clearData.cleanupAfterDeletionAtShutdown(
-      Ci.nsIClearDataService.CLEAR_DOM_QUOTA,
-      aResolve
-    );
-  });
-
-  Assert.ok(
-    !toBeRemovedDir.exists(),
-    "to-be-removed directory should disappear"
   );
 });
