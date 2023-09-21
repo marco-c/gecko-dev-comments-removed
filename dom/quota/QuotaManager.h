@@ -81,6 +81,7 @@ class QuotaManager final : public BackgroundThreadObject {
   friend class ClearStorageOp;
   friend class DirectoryLockImpl;
   friend class GroupInfo;
+  friend class InitOp;
   friend class OriginInfo;
   friend class ShutdownStorageOp;
 
@@ -337,8 +338,10 @@ class QuotaManager final : public BackgroundThreadObject {
   }
 #endif
 
+ private:
   nsresult EnsureStorageIsInitializedInternal();
 
+ public:
   
   
   Result<std::pair<nsCOMPtr<nsIFile>, bool>, nsresult>
