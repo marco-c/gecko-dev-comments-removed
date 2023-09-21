@@ -130,8 +130,6 @@ pub struct InternalConfiguration {
     pub log_level: Option<LevelFilter>,
     
     pub rate_limit: Option<PingRateLimit>,
-    
-    pub enable_event_timestamps: bool,
 }
 
 
