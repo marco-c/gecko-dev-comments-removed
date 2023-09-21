@@ -242,6 +242,12 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   static bool Initialize(gfxPlatformFontList* aList);
 
   static void Shutdown() {
+    
+    
+    if (sInitFontListThread && !IsInitFontListThread()) {
+      PR_JoinThread(sInitFontListThread);
+      sInitFontListThread = nullptr;
+    }
     delete sPlatformFontList;
     sPlatformFontList = nullptr;
   }

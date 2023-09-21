@@ -345,8 +345,7 @@ gfxPlatformFontList::gfxPlatformFontList(bool aNeedFullnamePostscriptNames)
 gfxPlatformFontList::~gfxPlatformFontList() {
   
   
-  
-  
+
   AutoLock lock(mLock);
 
   
