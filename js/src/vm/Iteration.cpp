@@ -24,6 +24,7 @@
 #include "builtin/Array.h"
 #include "builtin/SelfHostingDefines.h"
 #include "ds/Sort.h"
+#include "gc/GC.h"
 #include "gc/GCContext.h"
 #include "js/ForOfIterator.h"         
 #include "js/friend/ErrorMessages.h"  
@@ -964,9 +965,14 @@ NativeIterator::NativeIterator(JSContext* cx,
   }
   MOZ_ASSERT(static_cast<void*>(shapesEnd_) == propertyCursor_);
 
+  
+  
+  
+  AutoSelectGCHeap gcHeap(cx);
+
   size_t numProps = props.length();
   for (size_t i = 0; i < numProps; i++) {
-    JSLinearString* str = IdToString(cx, props[i]);
+    JSLinearString* str = IdToString(cx, props[i], gcHeap);
     if (!str) {
       *hadError = true;
       return;
