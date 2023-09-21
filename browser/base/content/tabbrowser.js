@@ -713,7 +713,10 @@
     },
 
     _notifyPinnedStatus(aTab) {
-      aTab.linkedBrowser.browsingContext.isAppTab = aTab.pinned;
+      
+      if (aTab.linkedBrowser.browsingContext) {
+        aTab.linkedBrowser.browsingContext.isAppTab = aTab.pinned;
+      }
 
       let event = document.createEvent("Events");
       event.initEvent(aTab.pinned ? "TabPinned" : "TabUnpinned", true, false);

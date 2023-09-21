@@ -47,6 +47,10 @@ function test() {
   indexTest(2, 2);
   indexTest(3, 3);
 
+  
+  
+  gBrowser.discardBrowser(tabs[1], true);
+
   var eh = new PinUnpinHandler(tabs[3], "TabPinned");
   gBrowser.pinTab(tabs[3]);
   is(eh.eventCount, 2, "TabPinned event should be fired");
