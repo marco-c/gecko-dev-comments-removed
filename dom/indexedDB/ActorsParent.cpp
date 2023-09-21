@@ -4878,7 +4878,7 @@ class DeleteFilesRunnable final : public Runnable {
   void DirectoryLockFailed();
 };
 
-class Maintenance final : public Runnable, public OpenDirectoryListener {
+class Maintenance final : public Runnable {
   struct DirectoryInfo final {
     InitializedOnce<const OriginMetadata> mOriginMetadata;
     InitializedOnce<const nsTArray<nsString>> mDatabasePaths;
@@ -5024,16 +5024,11 @@ class Maintenance final : public Runnable, public OpenDirectoryListener {
   
   void Finish();
 
-  
-  
-  NS_DECL_ISUPPORTS_INHERITED
-
   NS_DECL_NSIRUNNABLE
 
-  
-  void DirectoryLockAcquired(DirectoryLock* aLock) override;
+  void DirectoryLockAcquired(DirectoryLock* aLock);
 
-  void DirectoryLockFailed() override;
+  void DirectoryLockFailed();
 };
 
 Maintenance::DirectoryInfo::DirectoryInfo(PersistenceType aPersistenceType,
@@ -12939,21 +12934,28 @@ nsresult Maintenance::OpenDirectory() {
     return NS_ERROR_ABORT;
   }
 
-  
+  QuotaManager* quotaManager = QuotaManager::Get();
+  MOZ_ASSERT(quotaManager);
 
-  mPendingDirectoryLock = QuotaManager::Get()->CreateDirectoryLockInternal(
-      Nullable<PersistenceType>(), OriginScope::FromNull(),
-      Nullable<Client::Type>(Client::IDB),
-       false);
+  
 
   mState = State::DirectoryOpenPending;
 
-  {
-    
-    
-    RefPtr pinnedDirectoryLock = mPendingDirectoryLock;
-    pinnedDirectoryLock->Acquire(this);
-  }
+  quotaManager
+      ->OpenStorageDirectory(
+          Nullable<PersistenceType>(), OriginScope::FromNull(),
+          Nullable<Client::Type>(Client::IDB),  false,
+          SomeRef(mPendingDirectoryLock))
+      ->Then(GetCurrentSerialEventTarget(), __func__,
+             [self = RefPtr(this)](
+                 const UniversalDirectoryLockPromise::ResolveOrRejectValue&
+                     aValue) {
+               if (aValue.IsResolve()) {
+                 self->DirectoryLockAcquired(aValue.ResolveValue());
+               } else {
+                 self->DirectoryLockFailed();
+               }
+             });
 
   return NS_OK;
 }
@@ -12998,8 +13000,6 @@ nsresult Maintenance::DirectoryWork() {
 
   QuotaManager* const quotaManager = QuotaManager::Get();
   MOZ_ASSERT(quotaManager);
-
-  QM_TRY(MOZ_TO_RESULT(quotaManager->EnsureStorageIsInitializedInternal()));
 
   
   
@@ -13351,8 +13351,6 @@ void Maintenance::Finish() {
 
   mState = State::Complete;
 }
-
-NS_IMPL_ISUPPORTS_INHERITED0(Maintenance, Runnable)
 
 NS_IMETHODIMP
 Maintenance::Run() {
