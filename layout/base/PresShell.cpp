@@ -787,8 +787,6 @@ PresShell::PresShell(Document* aDocument)
       mForceDispatchKeyPressEventsForNonPrintableKeys(false),
       mForceUseLegacyKeyCodeAndCharCodeValues(false),
       mInitializedWithKeyPressEventDispatchingBlacklist(false),
-      mForceUseLegacyNonPrimaryDispatch(false),
-      mInitializedWithClickEventDispatchingBlacklist(false),
       mMouseLocationWasSetBySynthesizedMouseEventForTests(false),
       mHasTriedFastUnsuppress(false),
       mProcessingReflowCommands(false),
@@ -8689,29 +8687,6 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
       }
       if (mPresShell->mForceUseLegacyKeyCodeAndCharCodeValues) {
         aEvent->AsKeyboardEvent()->mUseLegacyKeyCodeAndCharCodeValues = true;
-      }
-    } else if (aEvent->mMessage == eMouseUp) {
-      
-      
-      
-      
-      
-      
-      
-      if (!mPresShell->mInitializedWithClickEventDispatchingBlacklist) {
-        mPresShell->mInitializedWithClickEventDispatchingBlacklist = true;
-
-        nsCOMPtr<nsIPrincipal> principal =
-            GetDocumentPrincipalToCompareWithBlacklist(*mPresShell);
-
-        if (principal) {
-          mPresShell->mForceUseLegacyNonPrimaryDispatch =
-              principal->IsURIInPrefList(
-                  "dom.mouseevent.click.hack.use_legacy_non-primary_dispatch");
-        }
-      }
-      if (mPresShell->mForceUseLegacyNonPrimaryDispatch) {
-        aEvent->AsMouseEvent()->mUseLegacyNonPrimaryDispatch = true;
       }
     }
 

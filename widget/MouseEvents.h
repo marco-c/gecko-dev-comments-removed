@@ -205,7 +205,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(eNormal),
         mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
         mClickEventPrevented(false) {}
 
   WidgetMouseEvent(bool aIsTrusted, EventMessage aMessage, nsIWidget* aWidget,
@@ -217,7 +216,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(eNormal),
         mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
         mClickEventPrevented(false) {}
 
 #ifdef DEBUG
@@ -237,7 +235,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
         mContextMenuTrigger(aContextMenuTrigger),
         mClickCount(0),
         mIgnoreRootScrollFrame(false),
-        mUseLegacyNonPrimaryDispatch(false),
         mClickEventPrevented(false) {
     if (aMessage == eContextMenu) {
       mButton = (mContextMenuTrigger == eNormal) ? MouseButton::eSecondary
@@ -289,10 +286,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
   bool mIgnoreRootScrollFrame;
 
   
-  
-  bool mUseLegacyNonPrimaryDispatch;
-
-  
   bool mClickEventPrevented;
 
   void AssignMouseEventData(const WidgetMouseEvent& aEvent, bool aCopyTargets) {
@@ -302,7 +295,6 @@ class WidgetMouseEvent : public WidgetMouseEventBase,
     mExitFrom = aEvent.mExitFrom;
     mClickCount = aEvent.mClickCount;
     mIgnoreRootScrollFrame = aEvent.mIgnoreRootScrollFrame;
-    mUseLegacyNonPrimaryDispatch = aEvent.mUseLegacyNonPrimaryDispatch;
     mClickEventPrevented = aEvent.mClickEventPrevented;
   }
 
