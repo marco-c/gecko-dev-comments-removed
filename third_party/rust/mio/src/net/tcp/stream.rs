@@ -3,10 +3,13 @@ use std::io::{self, IoSlice, IoSliceMut, Read, Write};
 use std::net::{self, Shutdown, SocketAddr};
 #[cfg(unix)]
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
+#[cfg(target_os = "wasi")]
+use std::os::wasi::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 #[cfg(windows)]
 use std::os::windows::io::{AsRawSocket, FromRawSocket, IntoRawSocket, RawSocket};
 
 use crate::io_source::IoSource;
+#[cfg(not(target_os = "wasi"))]
 use crate::sys::tcp::{connect, new_for_addr};
 use crate::{event, Interest, Registry, Token};
 
@@ -73,6 +76,11 @@ impl TcpStream {
     
     
     
+    
+    
+    
+    
+    #[cfg(not(target_os = "wasi"))]
     pub fn connect(addr: SocketAddr) -> io::Result<TcpStream> {
         let socket = new_for_addr(addr)?;
         #[cfg(unix)]
@@ -199,53 +207,111 @@ impl TcpStream {
     pub fn peek(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.peek(buf)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(unix, doc = "```no_run")]
+    #[cfg_attr(windows, doc = "```ignore")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_io<F, T>(&self, f: F) -> io::Result<T>
+    where
+        F: FnOnce() -> io::Result<T>,
+    {
+        self.inner.do_io(|_| f())
+    }
 }
 
 impl Read for TcpStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).read(buf))
+        self.inner.do_io(|mut inner| inner.read(buf))
     }
 
     fn read_vectored(&mut self, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).read_vectored(bufs))
+        self.inner.do_io(|mut inner| inner.read_vectored(bufs))
     }
 }
 
 impl<'a> Read for &'a TcpStream {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).read(buf))
+        self.inner.do_io(|mut inner| inner.read(buf))
     }
 
     fn read_vectored(&mut self, bufs: &mut [IoSliceMut<'_>]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).read_vectored(bufs))
+        self.inner.do_io(|mut inner| inner.read_vectored(bufs))
     }
 }
 
 impl Write for TcpStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).write(buf))
+        self.inner.do_io(|mut inner| inner.write(buf))
     }
 
     fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).write_vectored(bufs))
+        self.inner.do_io(|mut inner| inner.write_vectored(bufs))
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.do_io(|inner| (&*inner).flush())
+        self.inner.do_io(|mut inner| inner.flush())
     }
 }
 
 impl<'a> Write for &'a TcpStream {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).write(buf))
+        self.inner.do_io(|mut inner| inner.write(buf))
     }
 
     fn write_vectored(&mut self, bufs: &[IoSlice<'_>]) -> io::Result<usize> {
-        self.inner.do_io(|inner| (&*inner).write_vectored(bufs))
+        self.inner.do_io(|mut inner| inner.write_vectored(bufs))
     }
 
     fn flush(&mut self) -> io::Result<()> {
-        self.inner.do_io(|inner| (&*inner).flush())
+        self.inner.do_io(|mut inner| inner.flush())
     }
 }
 
@@ -330,5 +396,32 @@ impl FromRawSocket for TcpStream {
     
     unsafe fn from_raw_socket(socket: RawSocket) -> TcpStream {
         TcpStream::from_std(FromRawSocket::from_raw_socket(socket))
+    }
+}
+
+#[cfg(target_os = "wasi")]
+impl IntoRawFd for TcpStream {
+    fn into_raw_fd(self) -> RawFd {
+        self.inner.into_inner().into_raw_fd()
+    }
+}
+
+#[cfg(target_os = "wasi")]
+impl AsRawFd for TcpStream {
+    fn as_raw_fd(&self) -> RawFd {
+        self.inner.as_raw_fd()
+    }
+}
+
+#[cfg(target_os = "wasi")]
+impl FromRawFd for TcpStream {
+    
+    
+    
+    
+    
+    
+    unsafe fn from_raw_fd(fd: RawFd) -> TcpStream {
+        TcpStream::from_std(FromRawFd::from_raw_fd(fd))
     }
 }

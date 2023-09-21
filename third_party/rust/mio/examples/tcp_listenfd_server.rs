@@ -1,5 +1,9 @@
 
 
+
+
+
+
 use mio::event::Event;
 use mio::net::{TcpListener, TcpStream};
 use mio::{Events, Interest, Poll, Registry, Token};
@@ -13,9 +17,28 @@ const SERVER: Token = Token(0);
 
 const DATA: &[u8] = b"Hello world!\n";
 
-#[cfg(not(target_os = "wasi"))]
+#[cfg(not(windows))]
+fn get_first_listen_fd_listener() -> Option<std::net::TcpListener> {
+    #[cfg(unix)]
+    use std::os::unix::io::FromRawFd;
+    #[cfg(target_os = "wasi")]
+    use std::os::wasi::io::FromRawFd;
+
+    let stdlistener = unsafe { std::net::TcpListener::from_raw_fd(3) };
+    stdlistener.set_nonblocking(true).unwrap();
+    Some(stdlistener)
+}
+
+#[cfg(windows)]
+fn get_first_listen_fd_listener() -> Option<std::net::TcpListener> {
+    
+    None
+}
+
 fn main() -> io::Result<()> {
     env_logger::init();
+
+    std::env::var("LISTEN_FDS").expect("LISTEN_FDS environment variable unset");
 
     
     let mut poll = Poll::new()?;
@@ -23,8 +46,17 @@ fn main() -> io::Result<()> {
     let mut events = Events::with_capacity(128);
 
     
-    let addr = "127.0.0.1:9000".parse().unwrap();
-    let mut server = TcpListener::bind(addr)?;
+    let mut server = {
+        let stdlistener = get_first_listen_fd_listener().unwrap();
+        println!("Using preopened socket FD 3");
+        println!("You can connect to the server using `nc`:");
+        match stdlistener.local_addr() {
+            Ok(a) => println!(" $ nc {} {}", a.ip(), a.port()),
+            Err(_) => println!(" $ nc <IP> <PORT>"),
+        }
+        println!("You'll see our welcome message and anything you type will be printed here.");
+        TcpListener::from_std(stdlistener)
+    };
 
     
     poll.registry()
@@ -34,10 +66,6 @@ fn main() -> io::Result<()> {
     let mut connections = HashMap::new();
     
     let mut unique_token = Token(SERVER.0 + 1);
-
-    println!("You can connect to the server using `nc`:");
-    println!(" $ nc 127.0.0.1 9000");
-    println!("You'll see our welcome message and anything you type will be printed here.");
 
     loop {
         poll.poll(&mut events, None)?;
@@ -49,7 +77,7 @@ fn main() -> io::Result<()> {
                     
                     let (mut connection, address) = match server.accept() {
                         Ok((connection, address)) => (connection, address),
-                        Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                        Err(ref e) if would_block(e) => {
                             
                             
                             
@@ -66,11 +94,8 @@ fn main() -> io::Result<()> {
                     println!("Accepted connection from: {}", address);
 
                     let token = next(&mut unique_token);
-                    poll.registry().register(
-                        &mut connection,
-                        token,
-                        Interest::READABLE.add(Interest::WRITABLE),
-                    )?;
+                    poll.registry()
+                        .register(&mut connection, token, Interest::WRITABLE)?;
 
                     connections.insert(token, connection);
                 },
@@ -181,9 +206,4 @@ fn would_block(err: &io::Error) -> bool {
 
 fn interrupted(err: &io::Error) -> bool {
     err.kind() == io::ErrorKind::Interrupted
-}
-
-#[cfg(target_os = "wasi")]
-fn main() {
-    panic!("can't bind to an address with wasi")
 }

@@ -320,6 +320,10 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
     pub fn connect(&self, addr: SocketAddr) -> io::Result<()> {
         self.inner.connect(addr)
     }
@@ -547,6 +551,64 @@ impl UdpSocket {
     
     pub fn take_error(&self) -> io::Result<Option<io::Error>> {
         self.inner.take_error()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(unix, doc = "```no_run")]
+    #[cfg_attr(windows, doc = "```ignore")]
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_io<F, T>(&self, f: F) -> io::Result<T>
+    where
+        F: FnOnce() -> io::Result<T>,
+    {
+        self.inner.do_io(|_| f())
     }
 }
 

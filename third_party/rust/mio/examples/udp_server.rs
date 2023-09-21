@@ -1,14 +1,16 @@
 
 
 use log::warn;
-use mio::net::UdpSocket;
 use mio::{Events, Interest, Poll, Token};
 use std::io;
 
 
 const UDP_SOCKET: Token = Token(0);
 
+#[cfg(not(target_os = "wasi"))]
 fn main() -> io::Result<()> {
+    use mio::net::UdpSocket;
+
     env_logger::init();
 
     
@@ -19,6 +21,7 @@ fn main() -> io::Result<()> {
 
     
     let addr = "127.0.0.1:9000".parse().unwrap();
+
     let mut socket = UdpSocket::bind(addr)?;
 
     
@@ -74,4 +77,9 @@ fn main() -> io::Result<()> {
             }
         }
     }
+}
+
+#[cfg(target_os = "wasi")]
+fn main() {
+    panic!("can't bind to an address with wasi")
 }
