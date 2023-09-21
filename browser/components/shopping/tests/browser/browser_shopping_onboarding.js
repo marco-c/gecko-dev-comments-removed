@@ -273,7 +273,7 @@ add_task(async function test_onOptIn() {
 
 
 
-async function legalParagraphClickLinks() {
+async function linkParagraphClickLinks() {
   const sandbox = sinon.createSandbox();
 
   let handleActionStub = sandbox
@@ -358,13 +358,13 @@ async function legalParagraphClickLinks() {
         await ContentTaskUtils.waitForMutationCondition(
           content.document,
           { childList: true, subtree: true },
-          () => content.document.querySelector(".cta-paragraph a")
+          () => content.document.querySelector(".link-paragraph a")
         );
-        let cta = content.document.querySelector(
-          "shopping-container .cta-paragraph a"
+        let learnMore = content.document.querySelector(
+          "shopping-container .link-paragraph a[value='learn_more']"
         );
         
-        cta.click();
+        learnMore.click();
       });
     }
   );
@@ -385,7 +385,7 @@ add_task(async function test_linkParagraph() {
   Services.fog.testResetFOG();
   setOnboardingPrefs({ active: false, optedIn: 0, telemetryEnabled: true });
 
-  await legalParagraphClickLinks();
+  await linkParagraphClickLinks();
 
   await Services.fog.testFlushAllChildren();
   let privacyEvents =

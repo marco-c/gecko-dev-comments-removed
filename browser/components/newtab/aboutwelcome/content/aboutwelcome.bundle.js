@@ -804,7 +804,7 @@ __webpack_require__.r(__webpack_exports__);
  var _AdditionalCTA__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(15);
  var _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(16);
  var _AddonsPicker__WEBPACK_IMPORTED_MODULE_14__ = __webpack_require__(17);
- var _LegalParagraph__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(18);
+ var _LinkParagraph__WEBPACK_IMPORTED_MODULE_15__ = __webpack_require__(18);
 
 
 
@@ -1151,7 +1151,7 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     for (const item of content) {
       switch (item.type) {
         case "text":
-          elements.push( react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LegalParagraph__WEBPACK_IMPORTED_MODULE_15__.LegalParagraph, {
+          elements.push( react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_LinkParagraph__WEBPACK_IMPORTED_MODULE_15__.LinkParagraph, {
             text_content: item,
             handleAction: this.props.handleAction
           }));
@@ -2232,7 +2232,7 @@ const AddonsPicker = props => {
 
 __webpack_require__.r(__webpack_exports__);
  __webpack_require__.d(__webpack_exports__, {
-   "LegalParagraph": () => ( LegalParagraph)
+   "LinkParagraph": () => ( LinkParagraph)
  });
  var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(1);
  var react__WEBPACK_IMPORTED_MODULE_0___default = __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
@@ -2242,7 +2242,7 @@ __webpack_require__.r(__webpack_exports__);
 
 
 
-const LegalParagraph = props => {
+const LinkParagraph = props => {
   var _text_content$link_ke;
 
   const {
@@ -2264,9 +2264,9 @@ const LegalParagraph = props => {
   return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
     text: text_content.text
   }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("span", {
-    className: "legal-paragraph",
+    className: text_content.font_styles === "legal" ? "legal-paragraph" : "link-paragraph",
     onClick: handleParagraphAction,
-    value: "legal_paragraph",
+    value: "link_paragraph",
     onKeyPress: onKeyPress
   }, (_text_content$link_ke = text_content.link_keys) === null || _text_content$link_ke === void 0 ? void 0 : _text_content$link_ke.map(link => react__WEBPACK_IMPORTED_MODULE_0___default().createElement("a", {
     key: link,
