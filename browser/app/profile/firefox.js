@@ -1182,13 +1182,8 @@ pref("browser.sessionstore.resuming_after_os_restart", false);
 
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.sessionstore.closedTabsFromAllWindows", true);
-  pref("browser.sessionstore.closedTabsFromClosedWindows", true);
-#else
-  pref("browser.sessionstore.closedTabsFromAllWindows", false);
-  pref("browser.sessionstore.closedTabsFromClosedWindows", false);
-#endif
+pref("browser.sessionstore.closedTabsFromAllWindows", true);
+pref("browser.sessionstore.closedTabsFromClosedWindows", true);
 
 
 pref("browser.sessionstore.interval.idle", 3600000); 
@@ -1236,11 +1231,7 @@ pref("browser.sessionstore.cleanup.forget_closed_after", 1209600000);
 pref("browser.sessionstore.collect_session_storage", true);
 
 
-#ifdef NIGHTLY_BUILD
-  pref("browser.sessionstore.persist_closed_tabs_between_sessions", true);
-#else
-  pref("browser.sessionstore.persist_closed_tabs_between_sessions", false);
-#endif
+pref("browser.sessionstore.persist_closed_tabs_between_sessions", true);
 
 
 pref("browser.quitShortcut.disabled", false);
