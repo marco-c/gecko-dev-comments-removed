@@ -559,21 +559,21 @@ AntiTrackingUtils::GetStoragePermissionStateInParent(nsIChannel* aChannel) {
   } else if (!bc->IsTop()) {
     
     
-    RefPtr<nsEffectiveTLDService> etld = nsEffectiveTLDService::GetInstance();
-    if (!etld) {
+    WindowContext* wc = bc->GetCurrentWindowContext();
+    if (!wc) {
       return nsILoadInfo::NoStoragePermission;
     }
-    nsCString trackingSite;
-    rv = etld->GetSite(trackingURI, trackingSite);
-    if (NS_WARN_IF(NS_FAILED(rv))) {
+    WindowGlobalParent* wgp = wc->Canonical();
+    if (!wgp) {
       return nsILoadInfo::NoStoragePermission;
     }
-    nsAutoCString type;
-    AntiTrackingUtils::CreateStorageFramePermissionKey(trackingSite, type);
-
-    if (AntiTrackingUtils::CheckStoragePermission(
-            targetPrincipal, type, NS_UsePrivateBrowsing(aChannel),
-            &unusedReason, unusedReason)) {
+    nsIPrincipal* framePrincipal = wgp->DocumentPrincipal();
+    if (!framePrincipal) {
+      return nsILoadInfo::NoStoragePermission;
+    }
+    bool isThirdParty = true;
+    nsresult rv = framePrincipal->IsThirdPartyURI(trackingURI, &isThirdParty);
+    if (NS_SUCCEEDED(rv) && wc->GetUsingStorageAccess() && !isThirdParty) {
       return nsILoadInfo::HasStoragePermission;
     }
   }
