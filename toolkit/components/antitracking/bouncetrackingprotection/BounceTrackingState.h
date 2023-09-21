@@ -63,6 +63,10 @@ class BounceTrackingState : public nsIWebProgressListener,
 
   
   
+  nsresult OnCookieWrite(const nsACString& aSiteHost);
+
+  
+  
   static bool ShouldCreateBounceTrackingStateForBC(
       dom::CanonicalBrowsingContext* aBrowsingContext);
 
@@ -124,10 +128,6 @@ class BounceTrackingState : public nsIWebProgressListener,
   
   
   nsresult OnServiceWorkerActivation();
-
-  
-  
-  nsresult OnNetworkCookieWrite();
 };
 
 }  
