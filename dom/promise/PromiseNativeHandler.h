@@ -73,32 +73,6 @@ class MozPromiseRejectOnDestruction final
   const char* mCallSite;
 };
 
-
-
-class DomPromiseListener final : public PromiseNativeHandler {
-  NS_DECL_ISUPPORTS
-
- public:
-  using CallbackTypeResolved =
-      std::function<void(JSContext*, JS::Handle<JS::Value>)>;
-  using CallbackTypeRejected = std::function<void(nsresult)>;
-
-  DomPromiseListener(CallbackTypeResolved&& aResolve,
-                     CallbackTypeRejected&& aReject);
-
-  void Clear();
-
-  void ResolvedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override;
-  void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
-                        ErrorResult& aRv) override;
-
- private:
-  ~DomPromiseListener();
-  CallbackTypeResolved mResolve;
-  CallbackTypeRejected mReject;
-};
-
 }  
 
 #endif  
