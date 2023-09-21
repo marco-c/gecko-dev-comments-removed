@@ -106,6 +106,8 @@ HB_SUBSET_PLAN_MEMBER (hb_vector_t<int>, normalized_coords)
 
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, Triple>), user_axes_location)
 
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<hb_tag_t, TripleDistances>), axes_triple_distances)
+
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, axes_index_map)
 
@@ -120,6 +122,9 @@ HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<hb_codepoint_t, hb_pair_t E(<unsi
 HB_SUBSET_PLAN_MEMBER (mutable hb_vector_t<unsigned>, bounds_width_vec)
 
 HB_SUBSET_PLAN_MEMBER (mutable hb_vector_t<unsigned>, bounds_height_vec)
+
+
+HB_SUBSET_PLAN_MEMBER (mutable hb_hashmap_t E(<hb_codepoint_t, contour_point_vector_t>), new_gid_contour_points_map)
 
 #ifdef HB_EXPERIMENTAL_API
 

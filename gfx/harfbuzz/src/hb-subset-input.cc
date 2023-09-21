@@ -69,14 +69,12 @@ hb_subset_input_t::hb_subset_input_t ()
   sets.drop_tables->add_array (default_drop_tables, ARRAY_LENGTH (default_drop_tables));
 
   hb_tag_t default_no_subset_tables[] = {
-    HB_TAG ('a', 'v', 'a', 'r'),
     HB_TAG ('g', 'a', 's', 'p'),
     HB_TAG ('f', 'p', 'g', 'm'),
     HB_TAG ('p', 'r', 'e', 'p'),
     HB_TAG ('V', 'D', 'M', 'X'),
     HB_TAG ('D', 'S', 'I', 'G'),
     HB_TAG ('M', 'V', 'A', 'R'),
-    HB_TAG ('c', 'v', 'a', 'r'),
   };
   sets.no_subset_tables->add_array (default_no_subset_tables,
 					 ARRAY_LENGTH (default_no_subset_tables));
@@ -495,12 +493,18 @@ hb_subset_input_pin_axis_location (hb_subset_input_t  *input,
 
 
 
+
+
+
+
+
 HB_EXTERN hb_bool_t
 hb_subset_input_set_axis_range (hb_subset_input_t  *input,
                                 hb_face_t          *face,
                                 hb_tag_t            axis_tag,
                                 float               axis_min_value,
-                                float               axis_max_value)
+                                float               axis_max_value,
+                                float              *axis_def_value )
 {
   if (axis_min_value > axis_max_value)
     return false;
@@ -511,7 +515,8 @@ hb_subset_input_set_axis_range (hb_subset_input_t  *input,
 
   float new_min_val = hb_clamp(axis_min_value, axis_info.min_value, axis_info.max_value);
   float new_max_val = hb_clamp(axis_max_value, axis_info.min_value, axis_info.max_value);
-  float new_default_val = hb_clamp(axis_info.default_value, new_min_val, new_max_val);
+  float new_default_val = axis_def_value ? *axis_def_value : axis_info.default_value;
+  new_default_val = hb_clamp(new_default_val, new_min_val, new_max_val);
   return input->axes_location.set (axis_tag, Triple (new_min_val, new_default_val, new_max_val));
 }
 #endif

@@ -79,7 +79,12 @@ bool _presplit_subtables_if_needed (graph::gsubgpos_graph_context_t& ext_context
   
   
   
-  for (unsigned lookup_index : ext_context.lookups.keys ())
+
+  
+  
+  
+  hb_set_t lookup_indices(ext_context.lookups.keys ());
+  for (unsigned lookup_index : lookup_indices)
   {
     graph::Lookup* lookup = ext_context.lookups.get(lookup_index);
     if (!lookup->split_subtables_if_needed (ext_context, lookup_index))
@@ -114,11 +119,15 @@ bool _promote_extensions_if_needed (graph::gsubgpos_graph_context_t& ext_context
   
   if (!ext_context.lookups) return true;
 
+  unsigned total_lookup_table_sizes = 0;
   hb_vector_t<lookup_size_t> lookup_sizes;
   lookup_sizes.alloc (ext_context.lookups.get_population (), true);
 
   for (unsigned lookup_index : ext_context.lookups.keys ())
   {
+    const auto& lookup_v = ext_context.graph.vertices_[lookup_index];
+    total_lookup_table_sizes += lookup_v.table_size ();
+
     const graph::Lookup* lookup = ext_context.lookups.get(lookup_index);
     hb_set_t visited;
     lookup_sizes.push (lookup_size_t {
@@ -131,14 +140,16 @@ bool _promote_extensions_if_needed (graph::gsubgpos_graph_context_t& ext_context
   lookup_sizes.qsort ();
 
   size_t lookup_list_size = ext_context.graph.vertices_[ext_context.lookup_list_index].table_size ();
-  size_t l2_l3_size = lookup_list_size; 
-  size_t l3_l4_size = 0; 
+  size_t l2_l3_size = lookup_list_size + total_lookup_table_sizes; 
+  size_t l3_l4_size = total_lookup_table_sizes; 
   size_t l4_plus_size = 0; 
 
   
   
   for (auto p : lookup_sizes)
   {
+    
+    
     unsigned subtables_size = p.num_subtables * 8;
     l3_l4_size += subtables_size;
     l4_plus_size += subtables_size;
@@ -159,8 +170,7 @@ bool _promote_extensions_if_needed (graph::gsubgpos_graph_context_t& ext_context
       size_t subtables_size = ext_context.graph.find_subgraph_size (p.lookup_index, visited, 1) - lookup_size;
       size_t remaining_size = p.size - subtables_size - lookup_size;
 
-      l2_l3_size   += lookup_size;
-      l3_l4_size   += lookup_size + subtables_size;
+      l3_l4_size   += subtables_size;
       l3_l4_size   -= p.num_subtables * 8;
       l4_plus_size += subtables_size + remaining_size;
 
