@@ -86,72 +86,31 @@ bool IsBinaryArmExecutable(const char* executablePath) {
 
   return isArmExecutable;
 }
-
-
-
-
-
-
-
-
-bool ShouldPreferArmLaunch(const char* archPath, const char* executablePath) {
-  
-  if (!IsProcessRosettaTranslated()) {
-    return false;
-  }
-
-  
-  NSFileManager* fileMgr = [NSFileManager defaultManager];
-  NSString* archPathString = [NSString stringWithUTF8String:archPath];
-  if (![fileMgr isExecutableFileAtPath:archPathString]) {
-    return false;
-  }
-
-  
-  return IsBinaryArmExecutable(executablePath);
-}
 #endif  
 
 void LaunchChild(int argc, const char** argv) {
   MacAutoreleasePool pool;
 
   @try {
-    bool preferArmLaunch = false;
-
-#if defined(__x86_64__)
-    
-    
-    
-    
-    
-    
-    
-    preferArmLaunch = ShouldPreferArmLaunch(ARCH_PATH, argv[0]);
-#endif  
-
-    NSString* launchPath;
-    NSMutableArray* arguments;
-
-    if (preferArmLaunch) {
-      launchPath = [NSString stringWithUTF8String:ARCH_PATH];
-
-      
-      
-      arguments = [NSMutableArray arrayWithCapacity:argc + 2];
-      [arguments addObject:[NSString stringWithUTF8String:"-arm64"]];
-      [arguments addObject:[NSString stringWithUTF8String:"-x86_64"]];
-
-      
-      [arguments addObject:[NSString stringWithUTF8String:argv[0]]];
-    } else {
-      launchPath = [NSString stringWithUTF8String:argv[0]];
-      arguments = [NSMutableArray arrayWithCapacity:argc - 1];
-    }
+    NSString* launchPath = [NSString stringWithUTF8String:argv[0]];
+    NSMutableArray* arguments = [NSMutableArray arrayWithCapacity:argc - 1];
 
     for (int i = 1; i < argc; i++) {
       [arguments addObject:[NSString stringWithUTF8String:argv[i]]];
     }
-    [NSTask launchedTaskWithLaunchPath:launchPath arguments:arguments];
+    NSWorkspaceOpenConfiguration* config =
+        [NSWorkspaceOpenConfiguration configuration];
+    [config setArguments:arguments];
+    [config setCreatesNewApplicationInstance:YES];
+
+    [[NSWorkspace sharedWorkspace]
+        openApplicationAtURL:[NSURL URLWithString:launchPath]
+               configuration:config
+           completionHandler:^(NSRunningApplication* child, NSError* error) {
+             if (error) {
+               NSLog(@"Failed to run: %@", error);
+             }
+           }];
   } @catch (NSException* e) {
     NSLog(@"%@: %@", e.name, e.reason);
   }
