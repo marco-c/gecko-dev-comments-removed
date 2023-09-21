@@ -59,8 +59,9 @@ class AudioParamTimeline : public AudioEventTimeline {
   
   
   
-  template <class TimeType>
-  void GetValuesAtTime(TimeType aTime, float* aBuffer, const size_t aSize);
+  void GetValuesAtTime(int64_t aTime, float* aBuffer, const size_t aSize);
+  void GetValuesAtTime(double aTime, float* aBuffer,
+                       const size_t aSize) = delete;
 
   virtual size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
     return mTrack ? mTrack->SizeOfIncludingThis(aMallocSizeOf) : 0;
@@ -95,18 +96,6 @@ inline float AudioParamTimeline::GetValueAtTime(int64_t aTime) {
          (mTrack ? AudioNodeInputValue(0) : 0.0f);
 }
 
-template <>
-inline void AudioParamTimeline::GetValuesAtTime(double aTime, float* aBuffer,
-                                                const size_t aSize) {
-  MOZ_ASSERT(aBuffer);
-  MOZ_ASSERT(aSize == 1);
-
-  
-  
-  *aBuffer = BaseClass::GetValueAtTime(aTime);
-}
-
-template <>
 inline void AudioParamTimeline::GetValuesAtTime(int64_t aTime, float* aBuffer,
                                                 const size_t aSize) {
   MOZ_ASSERT(aBuffer);
