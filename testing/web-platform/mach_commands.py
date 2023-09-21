@@ -502,6 +502,9 @@ def run_web_platform_tests(command_context, **params):
             params["test_types"] = list(test_types)
         params["include"] = include
         del params["test_objects"]
+        
+        if "subsuite" in params:
+            del params["subsuite"]
     if params.get("debugger", None):
         import mozdebug
 
