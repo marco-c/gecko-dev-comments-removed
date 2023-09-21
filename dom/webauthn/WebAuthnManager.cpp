@@ -386,6 +386,13 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
     }
   }
 
+  if (aOptions.mExtensions.mCredProps.WasPassed()) {
+    bool credProps = aOptions.mExtensions.mCredProps.Value();
+    if (credProps) {
+      extensions.AppendElement(WebAuthnExtensionCredProps(credProps));
+    }
+  }
+
   const auto& selection = aOptions.mAuthenticatorSelection;
   const auto& attachment = selection.mAuthenticatorAttachment;
   const nsString& attestation = aOptions.mAttestation;
@@ -611,6 +618,12 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   nsTArray<WebAuthnExtension> extensions;
 
   
+  if (aOptions.mExtensions.mCredProps.WasPassed()) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return promise.forget();
+  }
+
+  
   if (aOptions.mExtensions.mAppid.WasPassed()) {
     nsString appId(aOptions.mExtensions.mAppid.Value());
 
@@ -721,6 +734,11 @@ void WebAuthnManager::FinishMakeCredential(
 
   
   for (const auto& ext : aResult.Extensions()) {
+    if (ext.type() ==
+        WebAuthnExtensionResult::TWebAuthnExtensionResultCredProps) {
+      bool credPropsRk = ext.get_WebAuthnExtensionResultCredProps().rk();
+      credential->SetClientExtensionResultCredPropsRk(credPropsRk);
+    }
     if (ext.type() ==
         WebAuthnExtensionResult::TWebAuthnExtensionResultHmacSecret) {
       bool hmacCreateSecret =
