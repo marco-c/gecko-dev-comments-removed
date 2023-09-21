@@ -10069,7 +10069,7 @@ var ShoppingSidebarManager = {
     }
 
     let { selectedBrowser, currentURI } = gBrowser;
-    this.onLocationChange(selectedBrowser, currentURI, 0);
+    this._maybeToggleSidebar(selectedBrowser, currentURI, 0);
   },
 
   
@@ -10079,6 +10079,15 @@ var ShoppingSidebarManager = {
 
 
   onLocationChange(aBrowser, aLocationURI, aFlags) {
+    ShoppingUtils.maybeRecordExposure(aLocationURI, aFlags);
+    this._maybeToggleSidebar(aBrowser, aLocationURI, aFlags);
+  },
+
+  
+  
+  
+  
+  _maybeToggleSidebar(aBrowser, aLocationURI, aFlags) {
     if (!this._enabled) {
       return;
     }
@@ -10110,30 +10119,12 @@ var ShoppingSidebarManager = {
     this._updateBCActiveness(aBrowser);
     this._setShoppingButtonState(aBrowser);
 
-    if (isProduct) {
-      let isVisible = sidebar && !sidebar.hidden;
-
-      
-      
-      let isWalmart = aLocationURI.host.includes("walmart");
-      let isNewDocument = !aFlags;
-
-      let isSameDocument =
-        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SAME_DOCUMENT;
-      let isReload = aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_RELOAD;
-      let isSessionRestore =
-        aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_SESSION_STORE;
-
-      if (
-        isVisible &&
-        
-        
-        
-        ((!isWalmart && (isNewDocument || isReload || isSessionRestore)) ||
-          (isWalmart && isSameDocument))
-      ) {
-        Glean.shopping.surfaceDisplayed.record();
-      }
+    if (
+      sidebar &&
+      !sidebar.hidden &&
+      ShoppingUtils.isProductPageNavigation(aLocationURI, aFlags)
+    ) {
+      Glean.shopping.surfaceDisplayed.record();
     }
 
     if (isProduct) {
