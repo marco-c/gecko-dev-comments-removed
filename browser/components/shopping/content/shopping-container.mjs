@@ -35,6 +35,7 @@ export class ShoppingContainer extends MozLitElement {
     userReportedAvailable: { type: Boolean },
     adsEnabled: { type: Boolean },
     adsEnabledByUser: { type: Boolean },
+    isAnalysisInProgress: { type: Boolean },
   };
 
   static get queries() {
@@ -60,7 +61,7 @@ export class ShoppingContainer extends MozLitElement {
 
     window.document.addEventListener("Update", this);
     window.document.addEventListener("NewAnalysisRequested", this);
-    window.document.addEventListener("ReAnalysisRequested", this);
+    window.document.addEventListener("ReanalysisRequested", this);
     window.document.addEventListener("ReportedProductAvailable", this);
     window.document.addEventListener("adsEnabledByUserChanged", this);
 
@@ -77,9 +78,9 @@ export class ShoppingContainer extends MozLitElement {
     showOnboarding,
     productUrl,
     recommendationData,
-    isPolledRequestDone,
     adsEnabled,
     adsEnabledByUser,
+    isAnalysisInProgress,
   }) {
     // If we're not opted in or there's no shopping URL in the main browser,
     // the actor will pass `null`, which means this will clear out any existing
@@ -89,7 +90,7 @@ export class ShoppingContainer extends MozLitElement {
     this.productUrl = productUrl;
     this.recommendationData = recommendationData;
     this.isOffline = !navigator.onLine;
-    this.isPolledRequestDone = isPolledRequestDone;
+    this.isAnalysisInProgress = isAnalysisInProgress;
     this.adsEnabled = adsEnabled;
     this.adsEnabledByUser = adsEnabledByUser;
   }
@@ -100,7 +101,8 @@ export class ShoppingContainer extends MozLitElement {
         this._update(event.detail);
         break;
       case "NewAnalysisRequested":
-      case "ReAnalysisRequested":
+      case "ReanalysisRequested":
+        this.isAnalysisInProgress = true;
         this.analysisEvent = {
           type: event.type,
           productUrl: this.productUrl,
@@ -146,18 +148,17 @@ export class ShoppingContainer extends MozLitElement {
 
   getContentTemplate() {
     // The user requested an analysis which is not done yet.
-    // We only want to show the analysis-in-progress message-bar
-    // for the product currently in view.
     if (
       this.analysisEvent?.productUrl == this.productUrl &&
-      !this.isPolledRequestDone
+      this.isAnalysisInProgress
     ) {
+      const isReanalysis = this.analysisEvent.type === "ReanalysisRequested";
       return html`<shopping-message-bar
-          type="analysis-in-progress"
+          type=${isReanalysis
+            ? "reanalysis-in-progress"
+            : "analysis-in-progress"}
         ></shopping-message-bar>
-        ${this.analysisEvent.type == "ReAnalysisRequested"
-          ? this.getAnalysisDetailsTemplate()
-          : null}`;
+        ${isReanalysis ? this.getAnalysisDetailsTemplate() : null}`;
     }
 
     if (this.data?.error) {
@@ -309,8 +310,14 @@ export class ShoppingContainer extends MozLitElement {
       content = this.getLoadingTemplate({ animate: false });
       hideFooter = true;
     } else if (!this.data) {
-      content = this.getLoadingTemplate();
-      hideFooter = true;
+      if (this.isAnalysisInProgress) {
+        content = html`<shopping-message-bar
+          type="analysis-in-progress"
+        ></shopping-message-bar>`;
+      } else {
+        content = this.getLoadingTemplate();
+        hideFooter = true;
+      }
     } else {
       content = this.getContentTemplate();
     }
