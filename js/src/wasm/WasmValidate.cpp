@@ -1731,24 +1731,14 @@ static bool DecodeTypeSection(Decoder& d, ModuleEnvironment* env) {
       uint8_t form;
       const TypeDef* superTypeDef = nullptr;
 
-      bool finalTypeFlag = false;
-
       
-      if (env->finalTypesEnabled()) {
-        
-        finalTypeFlag = true;
-      }
+      bool finalTypeFlag = true;
 
       
       
       if (env->gcEnabled() && d.peekByte(&form) &&
           (form == (uint8_t)TypeCode::SubNoFinalType ||
            form == (uint8_t)TypeCode::SubFinalType)) {
-        if (!env->finalTypesEnabled() &&
-            form == (uint8_t)TypeCode::SubFinalType) {
-          return d.fail("final types are not enabled");
-        }
-
         if (form == (uint8_t)TypeCode::SubNoFinalType) {
           finalTypeFlag = false;
         }
