@@ -2134,7 +2134,7 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
 
         let (mut surface_guard, mut token) = self.surfaces.write(&mut token);
         let (adapter_guard, mut token) = hub.adapters.read(&mut token);
-        let (device_guard, _token) = hub.devices.read(&mut token);
+        let (device_guard, mut token) = hub.devices.read(&mut token);
 
         let error = 'outer: loop {
             let device = match device_guard.get(device_id) {
@@ -2207,6 +2207,24 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                 break error;
             }
 
+            
+            if let Err(e) = device.maintain(hub, wgt::Maintain::Wait, &mut token) {
+                break e.into();
+            }
+
+            
+            if let Some(present) = surface.presentation.take() {
+                if present.acquired_texture.is_some() {
+                    break E::PreviousOutputExists;
+                }
+            }
+
+            
+            
+            
+            
+            
+
             match unsafe {
                 A::get_surface_mut(surface)
                     .unwrap()
@@ -2223,12 +2241,6 @@ impl<G: GlobalIdentityHandlerFactory> Global<G> {
                             E::InvalidSurface
                         }
                     }
-                }
-            }
-
-            if let Some(present) = surface.presentation.take() {
-                if present.acquired_texture.is_some() {
-                    break E::PreviousOutputExists;
                 }
             }
 

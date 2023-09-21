@@ -922,6 +922,8 @@ pub enum Binding {
     
     Location {
         location: u32,
+        
+        second_blend_source: bool,
         interpolation: Option<Interpolation>,
         sampling: Option<Sampling>,
     },
@@ -1944,6 +1946,31 @@ pub struct EntryPoint {
 }
 
 
+
+
+
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "clone", derive(Clone))]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub enum PredeclaredType {
+    AtomicCompareExchangeWeakResult {
+        kind: ScalarKind,
+        width: Bytes,
+    },
+    ModfResult {
+        size: Option<VectorSize>,
+        width: Bytes,
+    },
+    FrexpResult {
+        size: Option<VectorSize>,
+        width: Bytes,
+    },
+}
+
+
 #[derive(Debug, Default)]
 #[cfg_attr(feature = "clone", derive(Clone))]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
@@ -1961,6 +1988,12 @@ pub struct SpecialTypes {
     
     
     pub ray_intersection: Option<Handle<Type>>,
+
+    
+    
+    
+    
+    pub predeclared_types: indexmap::IndexMap<PredeclaredType, Handle<Type>>,
 }
 
 

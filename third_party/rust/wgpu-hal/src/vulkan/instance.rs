@@ -152,12 +152,11 @@ unsafe extern "system" fn debug_utils_messenger_callback(
 }
 
 impl super::Swapchain {
+    
+    
+    
     unsafe fn release_resources(self, device: &ash::Device) -> Self {
         profiling::scope!("Swapchain::release_resources");
-        {
-            profiling::scope!("vkDeviceWaitIdle");
-            let _ = unsafe { device.device_wait_idle() };
-        };
         unsafe { device.destroy_fence(self.fence, None) };
         self
     }
@@ -186,7 +185,20 @@ impl super::Instance {
         &self.shared
     }
 
-    pub fn required_extensions(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn desired_extensions(
         entry: &ash::Entry,
         _driver_api_version: u32,
         flags: crate::InstanceFlags,
@@ -592,7 +604,7 @@ impl crate::Instance<super::Api> for super::Instance {
                 },
             );
 
-        let extensions = Self::required_extensions(&entry, driver_api_version, desc.flags)?;
+        let extensions = Self::desired_extensions(&entry, driver_api_version, desc.flags)?;
 
         let instance_layers = entry.enumerate_instance_layer_properties().map_err(|e| {
             log::info!("enumerate_instance_layer_properties: {:?}", e);
@@ -787,12 +799,21 @@ impl crate::Instance<super::Api> for super::Instance {
                     && exposed.info.vendor == db::intel::VENDOR
                 {
                     
-                    log::warn!(
-                        "Disabling presentation on '{}' (id {:?}) because of NV Optimus (on Linux)",
-                        exposed.info.name,
-                        exposed.adapter.raw
-                    );
-                    exposed.adapter.private_caps.can_present = false;
+                    if let Some(version) = exposed.info.driver_info.split_once("Mesa ").map(|s| {
+                        s.1.rsplit_once('.')
+                            .map(|v| v.0.parse::<f32>().unwrap_or_default())
+                            .unwrap_or_default()
+                    }) {
+                        if version < 21.2 {
+                            
+                            log::warn!(
+                                "Disabling presentation on '{}' (id {:?}) due to NV Optimus and Intel Mesa < v21.2",
+                                exposed.info.name,
+                                exposed.adapter.raw
+                            );
+                            exposed.adapter.private_caps.can_present = false;
+                        }
+                    }
                 }
             }
         }
@@ -807,6 +828,7 @@ impl crate::Surface<super::Api> for super::Surface {
         device: &super::Device,
         config: &crate::SurfaceConfiguration,
     ) -> Result<(), crate::SurfaceError> {
+        
         let old = self
             .swapchain
             .take()
@@ -820,6 +842,7 @@ impl crate::Surface<super::Api> for super::Surface {
 
     unsafe fn unconfigure(&mut self, device: &super::Device) {
         if let Some(sc) = self.swapchain.take() {
+            
             let swapchain = unsafe { sc.release_resources(&device.shared.raw) };
             unsafe { swapchain.functor.destroy_swapchain(swapchain.raw, None) };
         }

@@ -477,4 +477,7 @@ pub const RESERVED_KEYWORDS: &[&str] = &[
     
     
     "main",
+    
+    super::MODF_FUNCTION,
+    super::FREXP_FUNCTION,
 ];

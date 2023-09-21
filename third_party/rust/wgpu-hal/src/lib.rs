@@ -227,12 +227,28 @@ pub trait Instance<A: Api>: Sized + WasmNotSend + WasmNotSync {
 }
 
 pub trait Surface<A: Api>: WasmNotSend + WasmNotSync {
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn configure(
         &mut self,
         device: &A::Device,
         config: &SurfaceConfiguration,
     ) -> Result<(), SurfaceError>;
 
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn unconfigure(&mut self, device: &A::Device);
 
     

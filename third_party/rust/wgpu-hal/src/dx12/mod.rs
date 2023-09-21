@@ -614,18 +614,22 @@ impl crate::Surface<Api> for Surface {
         
         
         
+        
+        
+        
         if self.supports_allow_tearing {
             flags |= dxgi::DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
         }
+
+        
+        
+        unsafe { device.wait_for_present_queue_idle() }?;
 
         let non_srgb_format = auxil::dxgi::conv::map_texture_format_nosrgb(config.format);
 
         let swap_chain = match self.swap_chain.take() {
             
             Some(sc) => {
-                
-                let _ = unsafe { device.wait_idle() };
-
                 let raw = unsafe { sc.release_resources() };
                 let result = unsafe {
                     raw.ResizeBuffers(
@@ -773,12 +777,16 @@ impl crate::Surface<Api> for Surface {
     }
 
     unsafe fn unconfigure(&mut self, device: &Device) {
-        if let Some(mut sc) = self.swap_chain.take() {
+        if let Some(sc) = self.swap_chain.take() {
             unsafe {
-                let _ = sc.wait(None);
                 
                 
-                let _ = device.wait_idle();
+
+                
+                
+                
+                let _ = device.wait_for_present_queue_idle();
+
                 let _raw = sc.release_resources();
             }
         }
@@ -837,6 +845,13 @@ impl crate::Queue<Api> for Queue {
                 .signal(&fence.raw, value)
                 .into_device_result("Signal fence")?;
         }
+
+        
+        
+        
+        
+        
+
         Ok(())
     }
     unsafe fn present(

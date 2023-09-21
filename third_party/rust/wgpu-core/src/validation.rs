@@ -812,6 +812,7 @@ impl Interface {
                 location,
                 interpolation,
                 sampling,
+                .. 
             }) => Varying::Local {
                 location,
                 iv: InterfaceVar {

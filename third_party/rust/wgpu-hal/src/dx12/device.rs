@@ -181,7 +181,10 @@ impl super::Device {
         })
     }
 
-    pub(super) unsafe fn wait_idle(&self) -> Result<(), crate::DeviceError> {
+    
+    
+    
+    pub(super) unsafe fn wait_for_present_queue_idle(&self) -> Result<(), crate::DeviceError> {
         let cur_value = self.idler.fence.get_value();
         if cur_value == !0 {
             return Err(crate::DeviceError::Lost);
