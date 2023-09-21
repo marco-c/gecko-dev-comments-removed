@@ -1,5 +1,7 @@
+var config = getBuildConfiguration();
 
-if (!getBuildConfiguration("debug") && !getBuildConfiguration("asan")) {
+
+if (!config.debug && !config.asan) {
     let longArray = [];
     longArray.length = getMaxArgs() + 1;
     let shortArray = [];

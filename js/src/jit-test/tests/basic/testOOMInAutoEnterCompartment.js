@@ -9,7 +9,7 @@ function fatty() {
     }
 }
 
-if (!getBuildConfiguration("root-analysis")) { 
+if (!getBuildConfiguration()['root-analysis']) { 
     foo = evalcx("(function foo() { foo.bar() })");
     foo.bar = evalcx("(function bar() {})");
 

@@ -9,6 +9,7 @@ var warp = true;
 
 gczeal(0);
 
+var config = getBuildConfiguration();
 var max = 200;
 
 
@@ -1566,13 +1567,13 @@ function rhypot_object_4args(i) {
 var uceFault_random = eval(`(${uceFault})`.replace('uceFault', 'uceFault_random'));
 function rrandom(i) {
     
-    if (getBuildConfiguration("debug")) setRNGState(2, 1+i);
+    if(config.debug) setRNGState(2, 1+i);
 
     var x = Math.random();
     if (uceFault_random(i) || uceFault_random(i)) {
       
       
-      if (getBuildConfiguration("debug")) {
+      if (config.debug) {
         assertEq(x, setRNGState(2, 1+i) || Math.random());
       } else {
         assertEq(x, x);

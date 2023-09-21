@@ -30,7 +30,7 @@ codegenTestX64_adhoc(
         (v128.bitselect (local.get 0) (local.get 1) (v128.const i32x4 -1 0 0 -1))))`,
       'f',
   `66 0f 3a 0e c1 c3         pblendw \\$0xC3, %xmm1, %xmm0`);
-
+  
 
 
 codegenTestX64_adhoc(

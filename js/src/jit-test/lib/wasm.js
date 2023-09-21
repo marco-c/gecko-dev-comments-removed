@@ -4,6 +4,7 @@ if (!wasmIsSupported())
 load(libdir + "asserts.js");
 
 function canRunHugeMemoryTests() {
+    let conf = getBuildConfiguration();
     
     
     
@@ -15,12 +16,12 @@ function canRunHugeMemoryTests() {
     let blocked = ['rooting-analysis','simulator',
                    'android','wasi','asan','tsan','ubsan','dtrace','valgrind'];
     for ( let b of blocked ) {
-        if (getBuildConfiguration(b)) {
+        if (conf[b]) {
             print("Failing canRunHugeMemoryTests() because '" + b + "' is true");
             return false;
         }
     }
-    if (getBuildConfiguration("pointer-byte-size") != 8) {
+    if (conf['pointer-byte-size'] != 8) {
         print("Failing canRunHugeMemoryTests() because the build is not 64-bit");
         return false;
     }
@@ -582,6 +583,6 @@ function assertSame(got, expected) {
 
 
 
-var TailCallIterations = getBuildConfiguration("simulator") ? 1000 : 100000;
+var TailCallIterations = getBuildConfiguration().simulator ? 1000 : 100000;
 
 var TailCallBallast = 30;

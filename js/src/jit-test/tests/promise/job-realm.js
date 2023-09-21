@@ -1,5 +1,5 @@
 
-if (!getBuildConfiguration("debug")) {
+if (!getBuildConfiguration().debug) {
   quit();
 }
 

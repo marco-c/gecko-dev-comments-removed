@@ -111,7 +111,7 @@ fill(src_buf);
 
 
 
-if (this.getBuildConfiguration && !getBuildConfiguration("debug"))
+if (this.getBuildConfiguration && !getBuildConfiguration().debug)
 {
     let t = new Uint8Array(target_buf);
     for (let my_src_buf of [src_buf, target_buf]) {

@@ -11,7 +11,9 @@
 
 
 
-const pointerByteSize = getBuildConfiguration("pointer-byte-size");
+const config = getBuildConfiguration();
+
+const pointerByteSize = config["pointer-byte-size"];
 assertEq(pointerByteSize === 4 || pointerByteSize === 8, true);
 
 const m32 = pointerByteSize === 4;

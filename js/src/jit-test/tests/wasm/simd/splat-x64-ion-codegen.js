@@ -13,7 +13,7 @@ codegenTestX64_PTYPE_v128(
 
 
 
-if (!getBuildConfiguration("windows")) {
+if (!getBuildConfiguration().windows) {
     codegenTestX64_PTYPE_v128(
         [['v128.load32_splat', 'i32', `
 f3 41 0f 10 04 3f         movssl \\(%r15,%rdi,1\\), %xmm0

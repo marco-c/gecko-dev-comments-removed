@@ -11,7 +11,7 @@
 
 
 
-var isArm64 = getBuildConfiguration("arm64");
+var isArm64 = getBuildConfiguration().arm64;
 
 
 let perm32x4_pattern = [4, 5, 6, 7, 12, 13, 14, 15, 8, 9, 10, 11, 0, 1, 2, 3];

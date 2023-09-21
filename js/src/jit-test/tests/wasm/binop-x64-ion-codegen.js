@@ -249,7 +249,7 @@ function cmpSel32vs64(cmpTy, cmpOp, selTy) {
               )
             )`;
 }
-if (getBuildConfiguration("windows")) {
+if (getBuildConfiguration().windows) {
     for ( [cmpTy, cmpOp, selTy, insn1, insn2, insn3] of
           [ ['i32', 'le_s', 'i32',  '8b c3        mov %ebx, %eax',
                                     '3b ca        cmp %edx, %ecx',
@@ -326,7 +326,7 @@ for ( [pAnyCmp, pAnySel, cmpBytes, cmpArgL, cmovBytes, cmovArgL ] of
     )`,
     'f',
     
-    (getBuildConfiguration("windows") ? '' : '48 89 ..       mov %r.+, %r.+\n') +
+    (getBuildConfiguration().windows ? '' : '48 89 ..       mov %r.+, %r.+\n') +
     
     `48 89 ..       mov %r.+, %r.+
      ${cmpBytes}    cmpq*    ${cmpArgL}, %r.+

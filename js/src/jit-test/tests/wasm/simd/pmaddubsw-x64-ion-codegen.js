@@ -5,7 +5,7 @@
 
 
 
-const isX64 = getBuildConfiguration("x64") && !getBuildConfiguration("simulator");
+const isX64 = getBuildConfiguration().x64 && !getBuildConfiguration().simulator;
 
 
 const simple = wasmTextToBinary(`(module 

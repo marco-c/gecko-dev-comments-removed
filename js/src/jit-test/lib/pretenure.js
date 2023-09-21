@@ -1,6 +1,6 @@
 
 
-const is64bit = getBuildConfiguration("pointer-byte-size") === 8;
+const is64bit = getBuildConfiguration()['pointer-byte-size'] === 8;
 
 
 const nurseryCount = is64bit ? 25000 : 50000;

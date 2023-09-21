@@ -336,7 +336,7 @@ testCases.push(
 );
 
 
-const maxError = getBuildConfiguration("windows") ? 3 : 1;
+const maxError = getBuildConfiguration().windows ? 3 : 1;
 
 
 for (let [x, y] of testCases) {

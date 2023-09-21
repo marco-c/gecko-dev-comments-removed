@@ -37,7 +37,7 @@ FEATURE_CHECK_NEEDED = {
     "SharedArrayBuffer": "!this.hasOwnProperty('SharedArrayBuffer')",
     "Temporal": "!this.hasOwnProperty('Temporal')",
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
-    "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
+    "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration()['decorators'])",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
     "arraybuffer-transfer": "!ArrayBuffer.prototype.transfer",  
 }
@@ -364,7 +364,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
                 refTestSkipIf.append(
                     (
                         "(this.hasOwnProperty('getBuildConfiguration')"
-                        "&&getBuildConfiguration('arm64-simulator'))",
+                        "&&getBuildConfiguration()['arm64-simulator'])",
                         "ARM64 Simulator cannot emulate atomics",
                     )
                 )
