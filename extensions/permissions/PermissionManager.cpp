@@ -3439,6 +3439,7 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
 
   nsTArray<std::pair<nsCString, nsCString>> pairs;
   nsCOMPtr<nsIPrincipal> prin = aPrincipal;
+
   while (prin) {
     
     std::pair<nsCString, nsCString>* pair =
@@ -3459,6 +3460,17 @@ PermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal) {
     Unused << GetOriginFromPrincipal(prin, false, pair->second);
     prin = prin->GetNextSubDomainPrincipal();
     
+  }
+
+  
+  
+  
+  nsCString siteKey;
+  nsresult rv = GetKeyForPrincipal(aPrincipal, false, true, siteKey);
+  if (NS_SUCCEEDED(rv) && !siteKey.IsEmpty()) {
+    std::pair<nsCString, nsCString>* pair =
+        pairs.AppendElement(std::make_pair(siteKey, ""_ns));
+    Unused << GetSiteFromPrincipal(aPrincipal, false, pair->second);
   }
 
   MOZ_ASSERT(pairs.Length() >= 1,
