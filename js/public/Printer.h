@@ -18,111 +18,6 @@
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 namespace js {
 
 class LifoAlloc;
@@ -141,64 +36,16 @@ class JS_PUBLIC_API GenericPrinter {
  public:
   
   
-  
-  
-  
-  virtual void put(const char* s, size_t len) = 0;
-  inline void put(const char* s) { put(s, strlen(s)); }
-
-  
-  
-  
-  
-  
-  virtual void put(mozilla::Span<const JS::Latin1Char> str);
-  virtual void put(mozilla::Span<const char16_t> str);
-
-  
-  
-  
-  
-  virtual inline void putChar(const char c) { put(&c, 1); }
-  virtual inline void putChar(const JS::Latin1Char c) { putChar(char(c)); }
-  virtual inline void putChar(const char16_t c) {
-    MOZ_CRASH("Use an EscapePrinter to handle all characters");
-  }
-
-  virtual void putString(JSContext* cx, JSString* str);
-
-  
-  void printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-  void vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  virtual bool canPutFromIndex() const { return false; }
-
-  
-  
-  virtual void putFromIndex(size_t index, size_t length) {
-    MOZ_CRASH("Calls to putFromIndex should be guarded by canPutFromIndex.");
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  virtual size_t index() const { return 0; }
-
-  
+  virtual bool put(const char* s, size_t len) = 0;
   virtual void flush() { 
   }
+
+  inline bool put(const char* s) { return put(s, strlen(s)); }
+  inline bool putChar(const char c) { return put(&c, 1); }
+
+  
+  bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
 
   
   virtual void reportOutOfMemory();
@@ -251,8 +98,17 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
 
   void checkInvariants() const;
 
+  const char* string() const {
+    MOZ_ASSERT(!hadOutOfMemory());
+    return base;
+  }
+  const char* stringEnd() const { return string() + offset; }
   JS::UniqueChars release();
-  JSString* releaseJS(JSContext* cx);
+
+  
+  char* stringAt(ptrdiff_t off) const;
+  
+  char& operator[](size_t off);
 
   
   
@@ -262,27 +118,22 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
 
   
   
-  virtual void put(const char* s, size_t len) override;
+  virtual bool put(const char* s, size_t len) override;
   using GenericPrinter::put;  
 
-  virtual bool canPutFromIndex() const override { return true; }
-  virtual void putFromIndex(size_t index, size_t length) override {
-    MOZ_ASSERT(index <= this->index());
-    MOZ_ASSERT(index + length <= this->index());
-    put(base + index, length);
-  }
-  virtual size_t index() const override { return length(); }
+  
+  
+  
+  [[nodiscard]] bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
 
-  virtual void putString(JSContext* cx, JSString* str) override;
+  bool putString(JSString* str);
 
-  size_t length() const;
+  ptrdiff_t getOffset() const;
 
   
   
   
-  
-  
-  void forwardOutOfMemory();
+  virtual void reportOutOfMemory() override;
 };
 
 
@@ -309,7 +160,7 @@ class JS_PUBLIC_API Fprinter final : public GenericPrinter {
 
   
   
-  virtual void put(const char* s, size_t len) override;
+  virtual bool put(const char* s, size_t len) override;
   using GenericPrinter::put;  
 };
 
@@ -345,100 +196,8 @@ class JS_PUBLIC_API LSprinter final : public GenericPrinter {
 
   
   
-  virtual void put(const char* s, size_t len) override;
+  virtual bool put(const char* s, size_t len) override;
   using GenericPrinter::put;  
-};
-
-
-
-
-template <typename Delegate, typename Escape>
-class JS_PUBLIC_API EscapePrinter final : public GenericPrinter {
-  size_t lengthOfSafeChars(const char* s, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-      if (!esc.isSafeChar(s[i])) {
-        return i;
-      }
-    }
-    return len;
-  }
-
- private:
-  Delegate& out;
-  Escape& esc;
-
- public:
-  EscapePrinter(Delegate& out, Escape& esc) : out(out), esc(esc) {}
-  ~EscapePrinter() {}
-
-  using GenericPrinter::put;
-  void put(const char* s, size_t len) override {
-    const char* b = s;
-    while (len) {
-      size_t index = lengthOfSafeChars(b, len);
-      if (index) {
-        out.put(b, index);
-        len -= index;
-        b += index;
-      }
-      if (len) {
-        esc.convertInto(out, char16_t(*b));
-        len -= 1;
-        b += 1;
-      }
-    }
-  }
-
-  inline void putChar(const char c) override {
-    if (esc.isSafeChar(char16_t(c))) {
-      out.putChar(char(c));
-      return;
-    }
-    esc.convertInto(out, char16_t(c));
-  }
-
-  inline void putChar(const JS::Latin1Char c) override {
-    if (esc.isSafeChar(char16_t(c))) {
-      out.putChar(char(c));
-      return;
-    }
-    esc.convertInto(out, char16_t(c));
-  }
-
-  inline void putChar(const char16_t c) override {
-    if (esc.isSafeChar(c)) {
-      out.putChar(char(c));
-      return;
-    }
-    esc.convertInto(out, c);
-  }
-
-  
-  bool canPutFromIndex() const override { return out.canPutFromIndex(); }
-  void putFromIndex(size_t index, size_t length) final {
-    out.putFromIndex(index, length);
-  }
-  size_t index() const final { return out.index(); }
-  void flush() final { out.flush(); }
-  void reportOutOfMemory() final { out.reportOutOfMemory(); }
-  bool hadOutOfMemory() const final { return out.hadOutOfMemory(); }
-};
-
-class JS_PUBLIC_API JSONEscape {
- public:
-  bool isSafeChar(char16_t c);
-  void convertInto(GenericPrinter& out, char16_t c);
-};
-
-class JS_PUBLIC_API StringEscape {
- private:
-  const char quote = '\0';
-
- public:
-  explicit StringEscape(const char quote = '\0') : quote(quote) {}
-
-  bool isSafeChar(char16_t c);
-  void convertInto(GenericPrinter& out, char16_t c);
 };
 
 
@@ -454,18 +213,18 @@ extern JS_PUBLIC_API JS::UniqueChars QuoteString(JSContext* cx, JSString* str,
 
 
 
-extern JS_PUBLIC_API void QuoteString(Sprinter* sp, JSString* str,
+extern JS_PUBLIC_API bool QuoteString(Sprinter* sp, JSString* str,
                                       char quote = '\0');
 
 
 
-extern JS_PUBLIC_API void JSONQuoteString(Sprinter* sp, JSString* str);
+extern JS_PUBLIC_API bool JSONQuoteString(Sprinter* sp, JSString* str);
 
 
 enum class QuoteTarget { String, JSON };
 
 template <QuoteTarget target, typename CharT>
-void JS_PUBLIC_API QuoteString(Sprinter* sp,
+bool JS_PUBLIC_API QuoteString(Sprinter* sp,
                                const mozilla::Range<const CharT> chars,
                                char quote = '\0');
 
