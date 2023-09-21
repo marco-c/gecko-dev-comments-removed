@@ -9,6 +9,12 @@ include protocol PGMPTimer;
 include protocol PGMPStorage;
 include protocol PProfiler;
 
+#if defined(XP_WIN)
+[MoveOnly] using mozilla::UntrustedModulesData from "mozilla/UntrustedModulesData.h";
+[MoveOnly] using mozilla::ModulePaths from "mozilla/UntrustedModulesData.h";
+[MoveOnly] using mozilla::ModulesMapResult from "mozilla/UntrustedModulesData.h";
+#endif
+
 include "mozilla/ipc/ByteBufUtils.h";
 include "GMPParent.h";
 include "GMPChild.h";
@@ -36,6 +42,11 @@ parent:
   
   async FOGData(ByteBuf buf);
 
+#if defined(XP_WIN)
+  async GetModulesTrust(ModulePaths aModPaths, bool aRunAtNormalPriority)
+      returns (ModulesMapResult? modMapResult);
+#endif  
+
 child:
   async CrashPluginNow();
   [Nested=inside_sync] sync StartPlugin(nsString adapter);
@@ -50,6 +61,20 @@ child:
   
   
   async FlushFOGData() returns (ByteBuf buf);
+
+#if defined(XP_WIN)
+  async InitDllServices(bool canRecordReleaseTelemetry,
+                        bool aIsReadyForBackgroundProcessing);
+
+  async GetUntrustedModulesData() returns (UntrustedModulesData? data);
+
+  
+
+
+
+
+  async UnblockUntrustedModulesThread();
+#endif  
 
   
   
