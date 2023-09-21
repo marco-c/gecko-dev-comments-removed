@@ -173,6 +173,12 @@ class ReferrerInfo : public nsIReferrerInfo {
   
 
 
+  static bool IsReferrerCrossOrigin(nsIHttpChannel* aChannel,
+                                    nsIURI* aReferrer);
+
+  
+
+
   static bool IsCrossSiteRequest(nsIHttpChannel* aChannel);
 
   
@@ -328,7 +334,8 @@ class ReferrerInfo : public nsIReferrerInfo {
 
 
 
-  TrimmingPolicy ComputeTrimmingPolicy(nsIHttpChannel* aChannel) const;
+  TrimmingPolicy ComputeTrimmingPolicy(nsIHttpChannel* aChannel,
+                                       nsIURI* aReferrer) const;
 
   
   friend class mozilla::net::HttpBaseChannel;
