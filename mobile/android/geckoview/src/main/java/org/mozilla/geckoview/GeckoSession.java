@@ -3014,6 +3014,45 @@ public class GeckoSession {
 
 
   @AnyThread
+  public @NonNull GeckoResult<String> requestCreateAnalysis(@NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher.queryString("GeckoView:RequestCreateAnalysis", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<String> requestAnalysisCreationStatus(@NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher.queryString("GeckoView:RequestAnalysisCreationStatus", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<String> pollForAnalysisCompleted(@NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher.queryString("GeckoView:PollForAnalysisCompleted", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
   public @NonNull GeckoResult<List<Recommendation>> requestRecommendations(
       @NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
