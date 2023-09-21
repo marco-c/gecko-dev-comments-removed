@@ -723,7 +723,7 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
           
           
           Register subTypingDepth = WasmTableCallIndexReg;
-          masm.load8ZeroExtend(
+          masm.load32(
               Address(WasmTableCallSigReg,
                       int32_t(SuperTypeVector::offsetOfSubTypingDepth())),
               subTypingDepth);
