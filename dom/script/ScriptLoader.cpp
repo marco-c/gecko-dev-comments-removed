@@ -3730,6 +3730,17 @@ nsresult ScriptLoader::PrepareLoadedRequest(ScriptLoadRequest* aRequest,
       return NS_ERROR_NOT_AVAILABLE;
     }
 
+    if (aRequest->IsModuleRequest()) {
+      
+      
+      
+      ReferrerPolicy policy =
+          nsContentUtils::GetReferrerPolicyFromChannel(httpChannel);
+      if (policy != ReferrerPolicy::_empty) {
+        aRequest->UpdateReferrerPolicy(policy);
+      }
+    }
+
     nsAutoCString sourceMapURL;
     if (nsContentUtils::GetSourceMapURL(httpChannel, sourceMapURL)) {
       aRequest->mSourceMapURL = Some(NS_ConvertUTF8toUTF16(sourceMapURL));
