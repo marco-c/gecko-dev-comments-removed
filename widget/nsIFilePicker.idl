@@ -73,18 +73,6 @@ interface nsIFilePicker : nsISupports
 
   void init(in mozIDOMWindowProxy parent, in AString title, in nsIFilePicker_Mode mode);
 
-  
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise isModeSupported(in nsIFilePicker_Mode mode);
-
  
 
 
