@@ -101,9 +101,7 @@ nsresult SMILCSSProperty::SetAnimValue(const SMILValue& aValue) {
 }
 
 void SMILCSSProperty::ClearAnimValue() {
-  
-  mElement->SMILOverrideStyle()->SetPropertyValue(mPropID, ""_ns, nullptr,
-                                                  IgnoreErrors());
+  mElement->SMILOverrideStyle()->ClearSMILValue(mPropID);
 }
 
 
