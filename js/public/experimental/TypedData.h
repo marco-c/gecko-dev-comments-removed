@@ -289,6 +289,18 @@ JS_PUBLIC_API bool IsLargeArrayBufferView(JSObject* obj);
 
 JS_PUBLIC_API bool PinArrayBufferOrViewLength(JSObject* obj, bool pin);
 
+
+
+
+
+
+
+
+
+
+JS_PUBLIC_API bool EnsureNonInlineArrayBufferOrView(JSContext* cx,
+                                                    JSObject* obj);
+
 namespace detail {
 
 
