@@ -34,9 +34,7 @@ class AudioParamTimeline : public AudioEventTimeline {
   }
 
   template <class TimeType>
-  float GetValueAtTime(TimeType aTime) {
-    return GetValueAtTime(aTime, 0);
-  }
+  float GetValueAtTime(TimeType aTime);
 
   template <typename TimeType>
   void InsertEvent(const AudioTimelineEvent& aEvent) {
@@ -54,12 +52,6 @@ class AudioParamTimeline : public AudioEventTimeline {
     }
     AudioEventTimeline::InsertEvent<TimeType>(aEvent);
   }
-
-  
-  
-  
-  template <class TimeType>
-  float GetValueAtTime(TimeType aTime, size_t aCounter);
 
   
   
@@ -87,23 +79,20 @@ class AudioParamTimeline : public AudioEventTimeline {
 };
 
 template <>
-inline float AudioParamTimeline::GetValueAtTime(double aTime, size_t aCounter) {
-  MOZ_ASSERT(!aCounter);
-
+inline float AudioParamTimeline::GetValueAtTime(double aTime) {
   
   
   return BaseClass::GetValueAtTime(aTime);
 }
 
 template <>
-inline float AudioParamTimeline::GetValueAtTime(int64_t aTime,
-                                                size_t aCounter) {
-  MOZ_ASSERT(aCounter < WEBAUDIO_BLOCK_SIZE);
-  MOZ_ASSERT(!aCounter || !HasSimpleValue());
+inline float AudioParamTimeline::GetValueAtTime(int64_t aTime) {
+  
+  MOZ_ASSERT(aTime % WEBAUDIO_BLOCK_SIZE == 0);
 
   
-  return BaseClass::GetValueAtTime(static_cast<int64_t>(aTime + aCounter)) +
-         (mTrack ? AudioNodeInputValue(aCounter) : 0.0f);
+  return BaseClass::GetValueAtTime(aTime) +
+         (mTrack ? AudioNodeInputValue(0) : 0.0f);
 }
 
 template <>
