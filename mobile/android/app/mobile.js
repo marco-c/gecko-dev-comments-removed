@@ -238,9 +238,6 @@ pref("media.video-queue.send-to-compositor-size", 1);
 pref("media.mediadrm-widevinecdm.visible", true);
 
 
-pref("media.webspeech.synth.enabled", true);
-
-
 pref("media.gmp-gmpopenh264.visible", true);
 pref("media.gmp-gmpopenh264.enabled", true);
 
