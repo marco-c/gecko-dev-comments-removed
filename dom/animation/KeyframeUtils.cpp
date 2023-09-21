@@ -23,7 +23,6 @@
 #include "mozilla/TimingParams.h"
 #include "mozilla/dom/BaseKeyframeTypesBinding.h"  
 #include "mozilla/dom/BindingCallContext.h"
-#include "mozilla/dom/Document.h"  
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyframeEffect.h"  
 #include "mozilla/dom/KeyframeEffectBinding.h"
@@ -182,9 +181,6 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
     JSContext* aCx, dom::Document* aDocument, JS::Handle<JS::Value> aValue,
     nsTArray<Keyframe>& aResult, ErrorResult& aRv);
 
-static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                                      dom::Document* aDocument);
-
 static void DistributeRange(const Range<Keyframe>& aRange);
 
 
@@ -228,13 +224,6 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
     MOZ_ASSERT(keyframes.IsEmpty(),
                "Should not set any keyframes when there is an error");
     return keyframes;
-  }
-
-  if (!dom::Document::AreWebAnimationsImplicitKeyframesEnabled(aCx, nullptr) &&
-      HasImplicitKeyframeValues(keyframes, aDocument)) {
-    keyframes.Clear();
-    aRv.ThrowNotSupportedError(
-        "Animation to or from an underlying value is not yet supported");
   }
 
   return keyframes;
@@ -756,12 +745,6 @@ static AnimationProperty* HandleMissingInitialKeyframe(
   MOZ_ASSERT(aEntry.mOffset != 0.0f,
              "The offset of the entry should not be 0.0");
 
-  
-  
-  if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled()) {
-    return nullptr;
-  }
-
   AnimationProperty* result = aResult.AppendElement();
   result->mProperty = aEntry.mProperty;
 
@@ -775,17 +758,6 @@ static void HandleMissingFinalKeyframe(
     AnimationProperty* aCurrentAnimationProperty) {
   MOZ_ASSERT(aEntry.mOffset != 1.0f,
              "The offset of the entry should not be 1.0");
-
-  
-  
-  if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled()) {
-    
-    
-    if (aCurrentAnimationProperty) {
-      aResult.RemoveLastElement();
-    }
-    return;
-  }
 
   
   
@@ -1009,15 +981,6 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
       continue;
     }
 
-    
-    
-    if (!StaticPrefs::dom_animations_api_implicit_keyframes_enabled() &&
-        count == 1) {
-      aRv.ThrowNotSupportedError(
-          "Animation to or from an underlying value is not yet supported");
-      return;
-    }
-
     size_t n = pair.mValues.Length() - 1;
     size_t i = 0;
 
@@ -1167,71 +1130,6 @@ static void GetKeyframeListFromPropertyIndexedKeyframe(
       }
     }
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-static bool HasImplicitKeyframeValues(const nsTArray<Keyframe>& aKeyframes,
-                                      dom::Document* aDocument) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  nsCSSPropertyIDSet properties;               
-  nsCSSPropertyIDSet propertiesWithFromValue;  
-  nsCSSPropertyIDSet propertiesWithToValue;  
-
-  auto addToPropertySets = [&](nsCSSPropertyID aProperty, double aOffset) {
-    properties.AddProperty(aProperty);
-    if (aOffset == 0.0) {
-      propertiesWithFromValue.AddProperty(aProperty);
-    } else if (aOffset == 1.0) {
-      propertiesWithToValue.AddProperty(aProperty);
-    }
-  };
-
-  for (size_t i = 0, len = aKeyframes.Length(); i < len; i++) {
-    const Keyframe& frame = aKeyframes[i];
-
-    
-    
-    
-    
-    double computedOffset = i == len - 1 ? 1.0 : i == 0 ? 0.0 : 0.5;
-    double offsetToUse = frame.mOffset ? frame.mOffset.value() : computedOffset;
-
-    for (const PropertyValuePair& pair : frame.mPropertyValues) {
-      if (nsCSSProps::IsShorthand(pair.mProperty)) {
-        MOZ_ASSERT(pair.mServoDeclarationBlock);
-        CSSPROPS_FOR_SHORTHAND_SUBPROPERTIES(prop, pair.mProperty,
-                                             CSSEnabledState::ForAllContent) {
-          addToPropertySets(*prop, offsetToUse);
-        }
-      } else {
-        addToPropertySets(pair.mProperty, offsetToUse);
-      }
-    }
-  }
-
-  return !propertiesWithFromValue.Equals(properties) ||
-         !propertiesWithToValue.Equals(properties);
 }
 
 

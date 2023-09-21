@@ -248,9 +248,6 @@ function waitForFrame() {
 
 
 
-
-
-
 function waitForNextFrame(aWindow = window) {
   const timeAtStart = aWindow.document.timeline.currentTime;
   return new Promise(resolve => {
