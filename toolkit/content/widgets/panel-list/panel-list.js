@@ -63,6 +63,14 @@
       this.toggleAttribute("open", val);
     }
 
+    get stayOpen() {
+      return this.hasAttribute("stay-open");
+    }
+
+    set stayOpen(val) {
+      this.toggleAttribute("stay-open", val);
+    }
+
     getTargetForEvent(event) {
       if (!event) {
         return null;
@@ -77,13 +85,17 @@
       return event._savedComposedTarget || event.target;
     }
 
-    show(triggeringEvent) {
+    show(triggeringEvent, target) {
       this.triggeringEvent = triggeringEvent;
-      this.lastAnchorNode = this.getTargetForEvent(this.triggeringEvent);
+      this.lastAnchorNode =
+        target || this.getTargetForEvent(this.triggeringEvent);
+
       this.wasOpenedByKeyboard =
         triggeringEvent &&
         (triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD ||
-          triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN);
+          triggeringEvent.inputSource == MouseEvent.MOZ_SOURCE_UNKNOWN ||
+          triggeringEvent.code == "ArrowRight" ||
+          triggeringEvent.code == "ArrowLeft");
       this.open = true;
 
       if (this.parentIsXULPanel()) {
@@ -112,7 +124,7 @@
       }
     }
 
-    hide(triggeringEvent, { force = false } = {}) {
+    hide(triggeringEvent, { force = false } = {}, eventTarget) {
       
       
       const autohideDisabled = this.hasServices()
@@ -136,18 +148,18 @@
         panel.hidePopup();
       }
 
-      let target = this.getTargetForEvent(openingEvent);
+      let target = eventTarget || this.getTargetForEvent(openingEvent);
       
       if (target && this.wasOpenedByKeyboard) {
         target.focus();
       }
     }
 
-    toggle(triggeringEvent) {
+    toggle(triggeringEvent, target = null) {
       if (this.open) {
-        this.hide(triggeringEvent, { force: true });
+        this.hide(triggeringEvent, { force: true }, target);
       } else {
-        this.show(triggeringEvent);
+        this.show(triggeringEvent, target);
       }
     }
 
@@ -276,12 +288,15 @@
     }
 
     addHideListeners() {
-      if (this.hasAttribute("stay-open")) {
+      if (this.hasAttribute("stay-open") && !this.lastAnchorNode.hasSubmenu) {
         
         return;
       }
       
       this.addEventListener("click", this);
+      
+      this.addEventListener("keydown", this);
+      
       document.addEventListener("keydown", this);
       
       document.addEventListener("mousedown", this);
@@ -300,6 +315,7 @@
 
     removeHideListeners() {
       this.removeEventListener("click", this);
+      this.removeEventListener("keydown", this);
       document.removeEventListener("keydown", this);
       document.removeEventListener("mousedown", this);
       document.removeEventListener("focusin", this);
@@ -359,17 +375,13 @@
 
             
             
-            let moveForward =
-              e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey);
+            e.stopPropagation();
 
             
             
-            
-            this.focusWalker.currentNode = this.contains(
-              this.getRootNode().activeElement
-            )
-              ? this.getRootNode().activeElement
-              : this;
+            let moveForward =
+              e.key === "ArrowDown" || (e.key === "Tab" && !e.shiftKey);
+
             let nextItem = moveForward
               ? this.focusWalker.nextNode()
               : this.focusWalker.previousNode();
@@ -458,18 +470,70 @@
       }
       return this._focusWalker;
     }
+    async setSubmenuAlign() {
+      const hostElement =
+        this.lastAnchorNode.parentElement || this.getRootNode().host;
+      
+      
+      this.setAttribute("showing", "true");
+
+      
+      let { anchorWidth, anchorTop, panelTop } = await new Promise(resolve => {
+        requestAnimationFrame(() => {
+          
+          
+          let getBounds = el =>
+            window.windowUtils
+              ? window.windowUtils.getBoundsWithoutFlushing(el)
+              : el.getBoundingClientRect();
+          let anchorBounds = getBounds(this.lastAnchorNode);
+          let panelBounds = getBounds(hostElement);
+          resolve({
+            anchorWidth: anchorBounds.width,
+            anchorTop: anchorBounds.top,
+            panelTop: panelBounds.top,
+          });
+        });
+      });
+
+      let align = hostElement.getAttribute("align");
+
+      if (align == "right") {
+        this.style.right = `${anchorWidth}px`;
+        this.style.left = "";
+      } else {
+        this.style.left = `${anchorWidth}px`;
+        this.style.right = "";
+      }
+
+      let topOffset =
+        anchorTop -
+        panelTop -
+        (parseFloat(window.getComputedStyle(this)?.paddingTop) || 0);
+      this.style.top = `${topOffset}px`;
+
+      this.removeAttribute("showing");
+    }
 
     async onShow() {
       this.sendEvent("showing");
       this.addHideListeners();
-      await this.setAlign();
+
+      if (this.lastAnchorNode?.hasSubmenu) {
+        await this.setSubmenuAlign();
+      } else {
+        await this.setAlign();
+      }
+
+      
+      
+      this.focusWalker.currentNode = this;
 
       
       
       requestAnimationFrame(() => {
         if (this.wasOpenedByKeyboard) {
           
-          this.focusWalker.currentNode = this;
           this.focusWalker.nextNode();
         }
 
@@ -514,11 +578,11 @@
       this.button = document.createElement("button");
       this.button.setAttribute("role", "menuitem");
       this.button.setAttribute("part", "button");
-
       
       this.label = document.createXULElement
         ? document.createXULElement("label")
         : document.createElement("span");
+
       this.button.appendChild(this.label);
 
       let supportLinkSlot = document.createElement("slot");
@@ -527,15 +591,39 @@
       this.#defaultSlot = document.createElement("slot");
       this.#defaultSlot.style.display = "none";
 
-      this.shadowRoot.append(
-        style,
-        this.button,
-        supportLinkSlot,
-        this.#defaultSlot
-      );
+      if (this.hasSubmenu) {
+        this.icon = document.createElement("div");
+        this.icon.setAttribute("class", "submenu-icon");
+        this.label.setAttribute("class", "submenu-label");
+
+        this.button.setAttribute("class", "submenu-container");
+        this.button.appendChild(this.icon);
+
+        this.submenuSlot = document.createElement("slot");
+        this.submenuSlot.name = "submenu";
+
+        this.shadowRoot.append(
+          style,
+          this.button,
+          this.#defaultSlot,
+          this.submenuSlot
+        );
+      } else {
+        this.shadowRoot.append(
+          style,
+          this.button,
+          supportLinkSlot,
+          this.#defaultSlot
+        );
+      }
     }
 
     connectedCallback() {
+      if (!this._l10nRootConnected && document.l10n) {
+        document.l10n.connectRoot(this.shadowRoot);
+        this._l10nRootConnected = true;
+      }
+
       if (!this.#initialized) {
         this.#initialized = true;
         
@@ -553,22 +641,48 @@
           childList: true,
           subtree: true,
         });
+
+        if (this.hasSubmenu) {
+          this.setSubmenuContents();
+        }
       }
 
-      this.panel = this.closest("panel-list");
+      this.panel =
+        this.getRootNode()?.host?.closest("panel-list") ||
+        this.closest("panel-list");
 
       if (this.panel) {
         this.panel.addEventListener("hidden", this);
         this.panel.addEventListener("shown", this);
       }
+      if (this.hasSubmenu) {
+        this.addEventListener("mouseenter", this);
+        this.addEventListener("mouseleave", this);
+        this.addEventListener("keydown", this);
+      }
     }
 
     disconnectedCallback() {
+      if (this._l10nRootConnected) {
+        document.l10n.disconnectRoot(this.shadowRoot);
+        this._l10nRootConnected = false;
+      }
+
       if (this.panel) {
         this.panel.removeEventListener("hidden", this);
         this.panel.removeEventListener("shown", this);
         this.panel = null;
       }
+
+      if (this.hasSubmenu) {
+        this.removeEventListener("mouseenter", this);
+        this.removeEventListener("mouseleave", this);
+        this.removeEventListener("keydown", this);
+      }
+    }
+
+    get hasSubmenu() {
+      return this.hasAttribute("submenu");
     }
 
     attributeChangedCallback(name, oldVal, newVal) {
@@ -606,6 +720,11 @@
         .join("");
     }
 
+    setSubmenuContents() {
+      this.submenuPanel = this.submenuSlot.assignedNodes()[0];
+      this.shadowRoot.append(this.submenuPanel);
+    }
+
     get disabled() {
       return this.button.hasAttribute("disabled");
     }
@@ -626,6 +745,17 @@
       this.button.focus();
     }
 
+    setArrowKeyRTL() {
+      let arrowOpenKey = "ArrowRight";
+      let arrowCloseKey = "ArrowLeft";
+
+      if (this.submenuPanel.isDocumentRTL()) {
+        arrowOpenKey = "ArrowLeft";
+        arrowCloseKey = "ArrowRight";
+      }
+      return [arrowOpenKey, arrowCloseKey];
+    }
+
     handleEvent(e) {
       
       
@@ -642,6 +772,21 @@
             this._accessKey = this.accessKey;
             this._modifyingAccessKey = true;
             this.accessKey = "";
+          }
+          break;
+        case "mouseenter":
+        case "mouseleave":
+          this.submenuPanel.toggle(e);
+          break;
+        case "keydown":
+          let [arrowOpenKey, arrowCloseKey] = this.setArrowKeyRTL();
+          if (e.key === arrowOpenKey) {
+            this.submenuPanel.show(e, e.target);
+            e.stopPropagation();
+          }
+          if (e.key === arrowCloseKey) {
+            this.submenuPanel.hide(e, { force: true }, e.target);
+            e.stopPropagation();
           }
           break;
       }
