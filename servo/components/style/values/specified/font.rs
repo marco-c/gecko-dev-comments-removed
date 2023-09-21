@@ -10,9 +10,9 @@ use crate::values::computed::font::{FamilyName, FontFamilyList, SingleFontFamily
 use crate::values::computed::Percentage as ComputedPercentage;
 use crate::values::computed::{font as computed, Length, NonNegativeLength};
 use crate::values::computed::{CSSPixelLength, Context, ToComputedValue};
-use crate::values::generics::font::VariationValue;
-use crate::values::generics::font::{self as generics, FeatureTagValue, FontSettings, FontTag};
-use crate::values::generics::font::{GenericFontSizeAdjust, GenericNumberOrFromFont};
+use crate::values::generics::font::{
+    self as generics, FeatureTagValue, FontSettings, FontTag, VariationValue,
+};
 use crate::values::generics::NonNegative;
 use crate::values::specified::length::{FontBaseSize, PX_PER_PT};
 use crate::values::specified::{AllowQuirks, Angle, Integer, LengthPercentage};
@@ -701,13 +701,21 @@ impl Parse for FamilyName {
 
 
 
-pub type FontSizeAdjustFactor = GenericNumberOrFromFont<NonNegativeNumber>;
+#[derive(
+    Clone, Copy, Debug, MallocSizeOf, Parse, PartialEq, SpecifiedValueInfo, ToCss, ToShmem,
+)]
+pub enum FontSizeAdjustFactor {
+    
+    Number(NonNegativeNumber),
+    
+    FromFont,
+}
 
 
 
 
 
-pub type FontSizeAdjust = GenericFontSizeAdjust<FontSizeAdjustFactor>;
+pub type FontSizeAdjust = generics::GenericFontSizeAdjust<FontSizeAdjustFactor>;
 
 impl Parse for FontSizeAdjust {
     fn parse<'i, 't>(

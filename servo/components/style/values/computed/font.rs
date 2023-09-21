@@ -380,7 +380,10 @@ impl FontFamily {
             GenericFontFamily::MozEmoji => &*MOZ_EMOJI,
             GenericFontFamily::SystemUi => &*SYSTEM_UI,
         };
-        debug_assert_eq!(*family.families.iter().next().unwrap(), SingleFontFamily::Generic(generic));
+        debug_assert_eq!(
+            *family.families.iter().next().unwrap(),
+            SingleFontFamily::Generic(generic)
+        );
         family
     }
 }
@@ -747,25 +750,85 @@ impl FontFamilyList {
 }
 
 
-
-pub type FontSizeAdjustFactor = generics::GenericNumberOrFromFont<NonNegativeNumber>;
-
-impl FontSizeAdjustFactor {
-    #[inline]
-    
-    pub fn new(val: f32) -> Self {
-        FontSizeAdjustFactor::Number(NonNegative(val))
-    }
-}
-
-
-pub type FontSizeAdjust = generics::GenericFontSizeAdjust<FontSizeAdjustFactor>;
+pub type FontSizeAdjust = generics::GenericFontSizeAdjust<NonNegativeNumber>;
 
 impl FontSizeAdjust {
     #[inline]
     
     pub fn none() -> Self {
         FontSizeAdjust::None
+    }
+}
+
+impl ToComputedValue for specified::FontSizeAdjust {
+    type ComputedValue = FontSizeAdjust;
+
+    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
+        use crate::font_metrics::FontMetricsOrientation;
+
+        let font_metrics = |vertical| {
+            let orient = if vertical {
+                FontMetricsOrientation::MatchContextPreferVertical
+            } else {
+                FontMetricsOrientation::Horizontal
+            };
+            let metrics = context.query_font_metrics(FontBaseSize::CurrentStyle, orient, false);
+            let font_size = context.style().get_font().clone_font_size().used_size.0;
+            (metrics, font_size)
+        };
+
+        
+        
+        
+        macro_rules! resolve {
+            ($basis:ident, $value:expr, $vertical:expr, $field:ident, $fallback:expr) => {{
+                match $value {
+                    specified::FontSizeAdjustFactor::Number(f) => {
+                        FontSizeAdjust::$basis(f.to_computed_value(context))
+                    },
+                    specified::FontSizeAdjustFactor::FromFont => {
+                        let (metrics, font_size) = font_metrics($vertical);
+                        let ratio = if let Some(metric) = metrics.$field {
+                            metric / font_size
+                        } else if $fallback >= 0.0 {
+                            $fallback
+                        } else {
+                            metrics.ascent / font_size
+                        };
+                        FontSizeAdjust::$basis(NonNegative(ratio))
+                    },
+                }
+            }};
+        }
+
+        match *self {
+            Self::None => FontSizeAdjust::None,
+            Self::ExHeight(val) => resolve!(ExHeight, val, false, x_height, 0.5),
+            Self::CapHeight(val) => {
+                resolve!(CapHeight, val, false, cap_height, -1.0 /* fall back to ascent */)
+            },
+            Self::ChWidth(val) => resolve!(ChWidth, val, false, zero_advance_measure, 0.5),
+            Self::IcWidth(val) => resolve!(IcWidth, val, false, ic_width, 1.0),
+            Self::IcHeight(val) => resolve!(IcHeight, val, true, ic_width, 1.0),
+        }
+    }
+
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        macro_rules! case {
+            ($basis:ident, $val:expr) => {
+                Self::$basis(specified::FontSizeAdjustFactor::Number(
+                    ToComputedValue::from_computed_value($val),
+                ))
+            };
+        }
+        match *computed {
+            FontSizeAdjust::None => Self::None,
+            FontSizeAdjust::ExHeight(ref val) => case!(ExHeight, val),
+            FontSizeAdjust::CapHeight(ref val) => case!(CapHeight, val),
+            FontSizeAdjust::ChWidth(ref val) => case!(ChWidth, val),
+            FontSizeAdjust::IcWidth(ref val) => case!(IcWidth, val),
+            FontSizeAdjust::IcHeight(ref val) => case!(IcHeight, val),
+        }
     }
 }
 

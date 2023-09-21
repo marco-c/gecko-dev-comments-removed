@@ -215,33 +215,6 @@ pub enum FontStyle<Angle> {
 
 
 
-#[repr(u8)]
-#[derive(
-    Animate,
-    Clone,
-    ComputeSquaredDistance,
-    Copy,
-    Debug,
-    MallocSizeOf,
-    Parse,
-    PartialEq,
-    SpecifiedValueInfo,
-    ToAnimatedValue,
-    ToAnimatedZero,
-    ToComputedValue,
-    ToResolvedValue,
-    ToCss,
-    ToShmem,
-)]
-pub enum GenericNumberOrFromFont<N> {
-    
-    Number(N),
-    
-    FromFont,
-}
-
-
-
 
 #[allow(missing_docs)]
 #[repr(u8)]
