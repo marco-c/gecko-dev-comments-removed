@@ -239,6 +239,20 @@ global.TabContext = class extends EventEmitter {
   }
 };
 
+
+
+
+
+ChromeUtils.defineLazyGetter(global, "searchInitialized", () => {
+  if (Services.search.isInitialized) {
+    return Promise.resolve();
+  }
+  return ExtensionUtils.promiseObserved(
+    "browser-search-service",
+    (_, data) => data == "init-complete"
+  );
+});
+
 class WindowTracker extends WindowTrackerBase {
   addProgressListener(window, listener) {
     window.gBrowser.addTabsProgressListener(listener);
