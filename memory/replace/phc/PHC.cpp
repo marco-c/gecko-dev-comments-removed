@@ -324,6 +324,9 @@ static const size_t kAllPagesSize = kNumAllPages * kPageSize;
 static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
 
 
+#define DEFAULT_STATE mozilla::phc::Enabled
+
+
 
 
 
@@ -874,6 +877,14 @@ class GMut {
   }
 #endif
 
+  
+  bool ShouldMakeNewAllocations() const {
+    return mPhcState == mozilla::phc::Enabled;
+  }
+
+  using PHCState = mozilla::phc::PHCState;
+  void SetState(PHCState aState) { mPhcState = aState; }
+
  private:
   template <int N>
   uint64_t RandomSeed() {
@@ -933,6 +944,11 @@ class GMut {
   size_t mPageAllocHits = 0;
   size_t mPageAllocMisses = 0;
 #endif
+
+  
+  
+  Atomic<PHCState, Relaxed> mPhcState =
+      Atomic<PHCState, Relaxed>(DEFAULT_STATE);
 };
 
 Mutex GMut::sMutex;
@@ -1071,6 +1087,11 @@ static void* MaybePageAlloc(const Maybe<arena_id_t>& aArenaId, size_t aReqSize,
   MOZ_ASSERT(IsPowerOfTwo(aAlignment));
 
   if (aReqSize > kPageSize) {
+    return nullptr;
+  }
+
+  MOZ_ASSERT(gMut);
+  if (!gMut->ShouldMakeNewAllocations()) {
     return nullptr;
   }
 
@@ -1344,7 +1365,7 @@ MOZ_ALWAYS_INLINE static void* PageRealloc(const Maybe<arena_id_t>& aArenaId,
   
   gMut->EnsureValidAndInUse(lock, aOldPtr, index);
 
-  if (aNewSize <= kPageSize) {
+  if (aNewSize <= kPageSize && gMut->ShouldMakeNewAllocations()) {
     
     
     
@@ -1686,6 +1707,12 @@ class PHCBridge : public ReplaceMallocBridge {
     } else {
       aMemoryUsage.mFragmentationBytes = 0;
     }
+  }
+
+  
+  
+  virtual void SetPHCState(mozilla::phc::PHCState aState) override {
+    gMut->SetState(aState);
   }
 };
 
