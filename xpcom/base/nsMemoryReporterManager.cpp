@@ -13,7 +13,6 @@
 #include "nsProxyRelease.h"
 #include "nsServiceManagerUtils.h"
 #include "nsITimer.h"
-#include "nsThreadManager.h"
 #include "nsThreadUtils.h"
 #include "nsPIDOMWindow.h"
 #include "nsIObserverService.h"
@@ -1425,87 +1424,80 @@ class ThreadsReporter final : public nsIMemoryReporter {
     size_t wrapperSizes = 0;
     size_t threadCount = 0;
 
-    {
-      nsThreadManager& tm = nsThreadManager::get();
-      OffTheBooksMutexAutoLock lock(tm.ThreadListMutex());
-      for (auto* thread : tm.ThreadList()) {
-        threadCount++;
-        eventQueueSizes += thread->SizeOfEventQueues(MallocSizeOf);
-        wrapperSizes += thread->ShallowSizeOfIncludingThis(MallocSizeOf);
+    for (auto* thread : nsThread::Enumerate()) {
+      threadCount++;
+      eventQueueSizes += thread->SizeOfEventQueues(MallocSizeOf);
+      wrapperSizes += thread->ShallowSizeOfIncludingThis(MallocSizeOf);
 
-        if (!thread->StackBase()) {
-          continue;
-        }
+      if (!thread->StackBase()) {
+        continue;
+      }
 
 #if defined(XP_LINUX)
-        int idx = mappings.BinaryIndexOf(thread->StackBase());
-        if (idx < 0) {
-          continue;
-        }
-        
-        
-        
-        
-        size_t privateSize = mappings[idx].Referenced();
+      int idx = mappings.BinaryIndexOf(thread->StackBase());
+      if (idx < 0) {
+        continue;
+      }
+      
+      
+      
+      
+      size_t privateSize = mappings[idx].Referenced();
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
 #  ifndef ANDROID
-        MOZ_ASSERT(mappings[idx].Size() == thread->StackSize(),
-                   "Mapping region size doesn't match stack allocation size");
+      MOZ_ASSERT(mappings[idx].Size() == thread->StackSize(),
+                 "Mapping region size doesn't match stack allocation size");
 #  endif
 #elif defined(XP_WIN)
-        auto memInfo =
-            MemoryInfo::Get(thread->StackBase(), thread->StackSize());
-        size_t privateSize = memInfo.Committed();
+      auto memInfo = MemoryInfo::Get(thread->StackBase(), thread->StackSize());
+      size_t privateSize = memInfo.Committed();
 #else
-        size_t privateSize = thread->StackSize();
-        MOZ_ASSERT_UNREACHABLE(
-            "Shouldn't have stack base pointer on this "
-            "platform");
+      size_t privateSize = thread->StackSize();
+      MOZ_ASSERT_UNREACHABLE(
+          "Shouldn't have stack base pointer on this "
+          "platform");
 #endif
 
-        nsCString threadName;
-        thread->GetThreadName(threadName);
-        threads.AppendElement(ThreadData{
-            std::move(threadName),
-            thread->ThreadId(),
-            
-            
-            
-            
-            
-            std::min(privateSize, thread->StackSize()),
-        });
-      }
+      nsCString threadName;
+      thread->GetThreadName(threadName);
+      threads.AppendElement(ThreadData{
+          std::move(threadName),
+          thread->ThreadId(),
+          
+          
+          
+          
+          
+          std::min(privateSize, thread->StackSize()),
+      });
     }
 
     for (auto& thread : threads) {

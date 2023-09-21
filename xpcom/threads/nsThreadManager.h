@@ -86,22 +86,6 @@ class nsThreadManager : public nsIThreadManager {
 
   nsIThread* GetMainThreadWeak() { return mMainThread; }
 
-  
-  
-  
-  mozilla::OffTheBooksMutex& ThreadListMutex() MOZ_RETURN_CAPABILITY(mMutex) {
-    return mMutex;
-  }
-
-  bool AllowNewXPCOMThreads() MOZ_EXCLUDES(mMutex);
-  bool AllowNewXPCOMThreadsLocked() MOZ_REQUIRES(mMutex) {
-    return mState == State::eActive;
-  }
-
-  mozilla::LinkedList<nsThread>& ThreadList() MOZ_REQUIRES(mMutex) {
-    return mThreadList;
-  }
-
  private:
   nsThreadManager();
 
@@ -112,34 +96,14 @@ class nsThreadManager : public nsIThreadManager {
 
   static void ReleaseThread(void* aData);
 
-  enum class State : uint8_t {
-    
-    eUninit,
-    
-    eActive,
-    
-    
-    eShutdown,
-  };
-
   unsigned mCurThreadIndex;  
+  RefPtr<mozilla::IdleTaskManager> mIdleTaskManager;
   RefPtr<nsThread> mMainThread;
-
-  mutable mozilla::OffTheBooksMutex mMutex;
-
-  
-  State mState MOZ_GUARDED_BY(mMutex);
+  PRThread* mMainPRThread;
+  mozilla::Atomic<bool, mozilla::SequentiallyConsistent> mInitialized;
 
   
-  
-  
-  
-  
-  
-  mozilla::LinkedList<nsThread> mThreadList MOZ_GUARDED_BY(mMutex);
-
-  
-  RefPtr<BackgroundEventTarget> mBackgroundEventTarget MOZ_GUARDED_BY(mMutex);
+  RefPtr<BackgroundEventTarget> mBackgroundEventTarget;
 };
 
 #define NS_THREADMANAGER_CID                         \

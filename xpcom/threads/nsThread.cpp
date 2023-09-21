@@ -306,17 +306,38 @@ static void SetupCurrentThreadForChaosMode() {
 namespace {
 
 struct ThreadInitData {
-  RefPtr<nsThread> thread;
+  nsThread* thread;
   nsCString name;
 };
 
 }  
 
+ mozilla::OffTheBooksMutex& nsThread::ThreadListMutex() {
+  static StaticLocalAutoPtr<OffTheBooksMutex> sMutex(
+      new OffTheBooksMutex("nsThread::ThreadListMutex"));
+  return *sMutex;
+}
+
+ LinkedList<nsThread>& nsThread::ThreadList() {
+  static StaticLocalAutoPtr<LinkedList<nsThread>> sList(
+      new LinkedList<nsThread>());
+  return *sList;
+}
+
+
+nsThreadEnumerator nsThread::Enumerate() { return {}; }
+
+void nsThread::AddToThreadList() {
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
+  MOZ_ASSERT(!isInList());
+
+  ThreadList().insertBack(this);
+}
+
 void nsThread::MaybeRemoveFromThreadList() {
-  nsThreadManager& tm = nsThreadManager::get();
-  OffTheBooksMutexAutoLock mal(tm.ThreadListMutex());
+  OffTheBooksMutexAutoLock mal(ThreadListMutex());
   if (isInList()) {
-    removeFrom(tm.ThreadList());
+    removeFrom(ThreadList());
   }
 }
 
@@ -325,7 +346,7 @@ void nsThread::ThreadFunc(void* aArg) {
   using mozilla::ipc::BackgroundChild;
 
   UniquePtr<ThreadInitData> initData(static_cast<ThreadInitData*>(aArg));
-  RefPtr<nsThread>& self = initData->thread;
+  nsThread* self = initData->thread;  
 
   MOZ_ASSERT(self->mEventTarget);
   MOZ_ASSERT(self->mEvents);
@@ -447,6 +468,7 @@ void nsThread::ThreadFunc(void* aArg) {
   
   self->mThread = nullptr;
   self->mEventTarget->ClearCurrentThread();
+  NS_RELEASE(self);
 }
 
 void nsThread::InitCommon() {
@@ -520,6 +542,7 @@ void nsThread::InitCommon() {
   }
 
   InitThreadLocalVariables();
+  AddToThreadList();
 }
 
 
@@ -597,39 +620,26 @@ nsresult nsThread::Init(const nsACString& aName) {
   MOZ_ASSERT(mEventTarget);
   MOZ_ASSERT(!mThread);
 
+  NS_ADDREF_THIS();
+
   SetThreadNameInternal(aName);
 
+  mShutdownRequired = true;
+
+  UniquePtr<ThreadInitData> initData(
+      new ThreadInitData{this, nsCString(aName)});
+
   PRThread* thread = nullptr;
-
-  nsThreadManager& tm = nsThreadManager::get();
-  {
-    OffTheBooksMutexAutoLock lock(tm.ThreadListMutex());
-    if (!tm.AllowNewXPCOMThreadsLocked()) {
-      return NS_ERROR_NOT_INITIALIZED;
-    }
-
-    
-    
-    
-
-    UniquePtr<ThreadInitData> initData(
-        new ThreadInitData{this, nsCString(aName)});
-
-    
-    if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData.get(),
-                                   PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
-                                   PR_JOINABLE_THREAD, mStackSize))) {
-      return NS_ERROR_OUT_OF_MEMORY;
-    }
-
-    
-    Unused << initData.release();
-
-    
-    
-    mShutdownRequired = true;
-    tm.ThreadList().insertBack(this);
+  
+  if (!(thread = PR_CreateThread(PR_USER_THREAD, ThreadFunc, initData.get(),
+                                 PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
+                                 PR_JOINABLE_THREAD, mStackSize))) {
+    NS_RELEASE_THIS();
+    return NS_ERROR_OUT_OF_MEMORY;
   }
+
+  
+  Unused << initData.release();
 
   
   
@@ -643,21 +653,10 @@ nsresult nsThread::Init(const nsACString& aName) {
 
 nsresult nsThread::InitCurrentThread() {
   mThread = PR_GetCurrentThread();
-
-  nsThreadManager& tm = nsThreadManager::get();
-  {
-    OffTheBooksMutexAutoLock lock(tm.ThreadListMutex());
-    
-    
-    
-    
-    tm.ThreadList().insertBack(this);
-  }
-
   SetupCurrentThreadForChaosMode();
   InitCommon();
 
-  tm.RegisterCurrentThread(*this);
+  nsThreadManager::get().RegisterCurrentThread(*this);
   return NS_OK;
 }
 
@@ -823,6 +822,8 @@ nsThread::BeginShutdown(nsIThreadShutdown** aShutdown) {
     return NS_ERROR_UNEXPECTED;
   }
   MOZ_ASSERT(mThread);
+
+  MaybeRemoveFromThreadList();
 
   RefPtr<nsThread> currentThread = nsThreadManager::get().GetCurrentThread();
 
