@@ -61,16 +61,24 @@ def run(path, server_config, session_config, timeout=0):
 
             try:
                 basetemp = os.path.join(cache, "pytest")
-                pytest.main(["--strict-markers",  
-                             "-vv",  
-                             "--capture", "no",  
-                             "--basetemp", basetemp,  
-                             "--showlocals",  
-                             "-p", "no:mozlog",  
-                             "-p", "no:cacheprovider",  
-                             "-o=console_output_style=classic",  
-                             path],
-                            plugins=[harness, subtests])
+                pytest.main(
+                    [
+                        "--strict-markers",  
+                        "-vv",  
+                        "--capture",
+                        "no",  
+                        "--basetemp",
+                        basetemp,  
+                        "--showlocals",  
+                        "-p",
+                        "no:mozlog",  
+                        "-p",
+                        "no:cacheprovider",  
+                        "-o=console_output_style=classic",  
+                        path,
+                    ],
+                    plugins=[harness, subtests],
+                )
             except Exception as e:
                 harness.outcome = ("INTERNAL-ERROR", str(e))
 
@@ -136,9 +144,12 @@ class SubtestResultRecorder:
         self.record(report.nodeid, "ERROR", message, report.longrepr)
 
     def record_skip(self, report):
-        self.record(report.nodeid, "ERROR",
-                    "In-test skip decorators are disallowed, "
-                    "please use WPT metadata to ignore tests.")
+        self.record(
+            report.nodeid,
+            "ERROR",
+            "In-test skip decorators are disallowed, "
+            "please use WPT metadata to ignore tests.",
+        )
 
     def record(self, test, status, message=None, stack=None):
         if stack is not None:
