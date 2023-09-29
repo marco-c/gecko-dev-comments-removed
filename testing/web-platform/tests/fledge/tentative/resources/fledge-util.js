@@ -2,6 +2,7 @@
 
 const BASE_URL = document.baseURI.substring(0, document.baseURI.lastIndexOf('/') + 1);
 const BASE_PATH = (new URL(BASE_URL)).pathname;
+const RESOURCE_PATH = `${BASE_PATH}resources/`
 
 const DEFAULT_INTEREST_GROUP_NAME = 'default name';
 
@@ -127,7 +128,8 @@ async function waitForObservedRequests(uuid, expectedRequests) {
 
 
 function createBiddingScriptURL(params = {}) {
-  let url = new URL(`${BASE_URL}resources/bidding-logic.sub.py`);
+  let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
+  let url = new URL(`${origin}${RESOURCE_PATH}bidding-logic.sub.py`);
   if (params.generateBid)
     url.searchParams.append('generateBid', params.generateBid);
   if (params.reportWin)
@@ -177,6 +179,23 @@ function createRenderURL(uuid, script, signalsParams) {
 
 
 
+function createInterestGroupForOrigin(uuid, origin,
+                                      interestGroupOverrides = {}) {
+  return {
+    owner: origin,
+    name: DEFAULT_INTEREST_GROUP_NAME,
+    biddingLogicURL: createBiddingScriptURL(
+        { origin: origin,
+          reportWin: `sendReportTo('${createBidderReportURL(uuid)}');` }),
+    ads: [{ renderURL: createRenderURL(uuid) }],
+    ...interestGroupOverrides
+  };
+}
+
+
+
+
+
 
 
 
@@ -184,14 +203,8 @@ function createRenderURL(uuid, script, signalsParams) {
 
 async function joinInterestGroup(test, uuid, interestGroupOverrides = {},
                                  durationSeconds = 60) {
-  let interestGroup = {
-    owner: window.location.origin,
-    name: DEFAULT_INTEREST_GROUP_NAME,
-    biddingLogicURL: createBiddingScriptURL(
-      { reportWin: `sendReportTo('${createBidderReportURL(uuid)}');` }),
-    ads: [{ renderURL: createRenderURL(uuid) }],
-    ...interestGroupOverrides
-  };
+  let interestGroup = createInterestGroupForOrigin(uuid, window.location.origin,
+                                                   interestGroupOverrides);
 
   await navigator.joinAdInterestGroup(interestGroup, durationSeconds);
   test.add_cleanup(
@@ -235,12 +248,30 @@ async function runBasicFledgeAuction(test, uuid, auctionConfigOverrides = {}) {
 
 
 
+async function runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides = {}) {
+  let config = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
+  assert_true(config !== null, `Auction unexpectedly had no winner`);
+  assert_true(config instanceof FencedFrameConfig,
+      `Wrong value type returned from auction: ${config.constructor.type}`);
+  return config;
+}
+
+
+
+async function runBasicFledgeTestExpectingNoWinner(
+    test, uuid, auctionConfigOverrides = {}) {
+  let result = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
+  assert_true(result === null, 'Auction unexpectedly had a winner');
+}
+
+
+
+
 
 async function runBasicFledgeAuctionAndNavigate(test, uuid,
                                                 auctionConfigOverrides = {}) {
-  let config = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
-  assert_true(config instanceof FencedFrameConfig,
-      `Wrong value type returned from auction: ${config.constructor.type}`);
+  let config = await runBasicFledgeTestExpectingWinner(test, uuid,
+                                                       auctionConfigOverrides);
 
   let fencedFrame = document.createElement('fencedframe');
   fencedFrame.mode = 'opaque-ads';
@@ -252,24 +283,19 @@ async function runBasicFledgeAuctionAndNavigate(test, uuid,
 
 
 
-async function runBasicFledgeTestExpectingWinner(test, testConfig = {}) {
+async function joinGroupAndRunBasicFledgeTestExpectingWinner(test, testConfig = {}) {
   const uuid = testConfig.uuid ? testConfig.uuid : generateUuid(test);
   await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
-  let config = await runBasicFledgeAuction(
-      test, uuid, testConfig.auctionConfigOverrides);
-  assert_true(config instanceof FencedFrameConfig,
-      `Wrong value type returned from auction: ${config.constructor.type}`);
+  await runBasicFledgeTestExpectingWinner(test, uuid, testConfig.auctionConfigOverrides);
 }
 
 
 
 
-async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
+async function joinGroupAndRunBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
   const uuid = testConfig.uuid ? testConfig.uuid : generateUuid(test);
   await joinInterestGroup(test, uuid, testConfig.interestGroupOverrides);
-  let result = await runBasicFledgeAuction(
-      test, uuid, testConfig.auctionConfigOverrides);
-  assert_true(result === null, 'Auction unexpectedly had a winner');
+  await runBasicFledgeTestExpectingNoWinner(test, uuid, testConfig.auctionConfigOverrides);
 }
 
 
