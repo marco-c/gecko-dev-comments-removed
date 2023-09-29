@@ -611,6 +611,10 @@ bool Gecko_IsDOMWorkerThread();
 
 
 
+int32_t Gecko_GetNumStyleThreads();
+
+
+
 
 mozilla::StyleDisplayMode Gecko_MediaFeatures_GetDisplayMode(
     const mozilla::dom::Document*);
