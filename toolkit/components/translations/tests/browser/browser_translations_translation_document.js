@@ -671,24 +671,22 @@ add_task(async function test_presumed_inlines3() {
 
   translate();
 
-  
-  
   await htmlMatches(
     "Conflicting inlines will be sent in as separate blocks if there are more block elements",
      `
     <div>
-      Text node
+      aaaa aaaa
       <span>
-        aaaaaa
+        bbbbbb
       </span>
-      <div>
-        bbbbb bbbbbbb
-      </div>
       <div>
         ccccc ccccccc
       </div>
       <div>
         ddddd ddddddd
+      </div>
+      <div>
+        eeeee eeeeeee
       </div>
     </div>
     `
