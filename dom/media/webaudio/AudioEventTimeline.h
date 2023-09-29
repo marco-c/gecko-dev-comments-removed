@@ -371,8 +371,6 @@ class AudioEventTimeline {
     }
   }
 
-  void CancelAllEvents() { mEvents.Clear(); }
-
   static bool TimesEqual(int64_t aLhs, int64_t aRhs) { return aLhs == aRhs; }
 
   
