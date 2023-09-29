@@ -54,6 +54,9 @@ module.exports = {
     
     
     "mozilla/no-redeclare-with-import-autofix": "off",
+    
+    
+    "mozilla/use-chromeutils-generateqi": "off",
     "no-shadow": "error",
   },
 };

@@ -1,4 +1,3 @@
-
 var MockServices = (function () {
   "use strict";
 
