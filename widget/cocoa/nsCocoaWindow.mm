@@ -211,8 +211,6 @@ void nsCocoaWindow::DestroyNativeWindow() {
       
       if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
           CanStartNativeTransition()) {
-        NSLog(@"BJW nsCocoaWindow::DestroyNativeWindow: one-time request to "
-              @"request fullscreen exit.\n");
         [mWindow toggleFullScreen:nil];
         haveRequestedFullscreenExit = true;
       }
@@ -2037,7 +2035,6 @@ void nsCocoaWindow::ProcessTransitions() {
 }
 
 void nsCocoaWindow::FinishCurrentTransition() {
-  NSLog(@"BJW nsCocoaWindow::FinishCurrentTransition.\n");
   mWaitingOnFinishCurrentTransition = false;
   mTransitionCurrent.reset();
   mIsTransitionCurrentAdded = false;
@@ -2061,7 +2058,6 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(
     
     
     
-    NSLog(@"BJW nsCocoaWindow::FinishCurrentTransitionIfMatching.\n");
     if (NS_SUCCEEDED(NS_DispatchToCurrentThread(
             NewRunnableMethod("FinishCurrentTransition", this,
                               &nsCocoaWindow::FinishCurrentTransition)))) {
