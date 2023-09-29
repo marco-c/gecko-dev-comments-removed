@@ -996,9 +996,12 @@ function WaitForTestEnd(
   
   CheckForLivenessOfContentRootElement();
   if (contentRootElement?.hasAttribute("class")) {
-    attrModifiedObserver = new contentRootElement.ownerGlobal.MutationObserver(
-      AttrModifiedListener
-    );
+    attrModifiedObserver =
+      
+      
+      new contentRootElement.ownerDocument.defaultView.MutationObserver(
+        AttrModifiedListener
+      );
     attrModifiedObserver.observe(contentRootElement, { attributes: true });
   }
   gTimeoutHook = RemoveListeners;
