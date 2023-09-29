@@ -14233,6 +14233,12 @@ class ContentSection extends (external_React_default()).PureComponent {
       if (eventSource) {
         this.inputUserEvent(eventSource, value);
       }
+    } else if (e.target.nodeName === "MOZ-TOGGLE") {
+      value = e.target.pressed;
+
+      if (eventSource) {
+        this.inputUserEvent(eventSource, value);
+      }
     }
 
     this.props.setPref(prefName, value);
@@ -14300,31 +14306,15 @@ class ContentSection extends (external_React_default()).PureComponent {
     }, external_React_default().createElement("div", {
       id: "shortcuts-section",
       className: "section"
-    }, external_React_default().createElement("label", {
-      className: "switch"
-    }, external_React_default().createElement("input", {
+    }, external_React_default().createElement("moz-toggle", {
       id: "shortcuts-toggle",
-      checked: topSitesEnabled,
-      type: "checkbox",
-      onChange: this.onPreferenceSelect,
+      pressed: topSitesEnabled || null,
+      onToggle: this.onPreferenceSelect,
       preference: "feeds.topsites",
-      "aria-labelledby": "custom-shortcuts-title",
-      "aria-describedby": "custom-shortcuts-subtitle",
-      eventSource: "TOP_SITES"
-    }), external_React_default().createElement("span", {
-      className: "slider",
-      role: "presentation"
-    })), external_React_default().createElement("div", null, external_React_default().createElement("h2", {
-      id: "custom-shortcuts-title",
-      className: "title"
-    }, external_React_default().createElement("label", {
-      htmlFor: "shortcuts-toggle",
-      "data-l10n-id": "newtab-custom-shortcuts-title"
-    })), external_React_default().createElement("p", {
-      id: "custom-shortcuts-subtitle",
-      className: "subtitle",
-      "data-l10n-id": "newtab-custom-shortcuts-subtitle"
-    }), external_React_default().createElement("div", {
+      eventSource: "TOP_SITES",
+      "data-l10n-id": "newtab-custom-shortcuts-toggle",
+      "data-l10n-attrs": "label, description"
+    }), external_React_default().createElement("div", null, external_React_default().createElement("div", {
       className: "more-info-top-wrapper"
     }, external_React_default().createElement("div", {
       className: "more-information",
@@ -14375,29 +14365,16 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "section"
     }, external_React_default().createElement("label", {
       className: "switch"
-    }, external_React_default().createElement("input", {
+    }, external_React_default().createElement("moz-toggle", {
       id: "pocket-toggle",
-      checked: pocketEnabled,
-      type: "checkbox",
-      onChange: this.onPreferenceSelect,
+      pressed: pocketEnabled || null,
+      onToggle: this.onPreferenceSelect,
       preference: "feeds.section.topstories",
-      "aria-labelledby": "custom-pocket-title",
       "aria-describedby": "custom-pocket-subtitle",
-      eventSource: "TOP_STORIES"
-    }), external_React_default().createElement("span", {
-      className: "slider",
-      role: "presentation"
-    })), external_React_default().createElement("div", null, external_React_default().createElement("h2", {
-      id: "custom-pocket-title",
-      className: "title"
-    }, external_React_default().createElement("label", {
-      htmlFor: "pocket-toggle",
-      "data-l10n-id": "newtab-custom-pocket-title"
-    })), external_React_default().createElement("p", {
-      id: "custom-pocket-subtitle",
-      className: "subtitle",
-      "data-l10n-id": "newtab-custom-pocket-subtitle"
-    }), (mayHaveSponsoredStories || mayHaveRecentSaves) && external_React_default().createElement("div", {
+      eventSource: "TOP_STORIES",
+      "data-l10n-id": "newtab-custom-pocket-toggle",
+      "data-l10n-attrs": "label, description"
+    })), external_React_default().createElement("div", null, (mayHaveSponsoredStories || mayHaveRecentSaves) && external_React_default().createElement("div", {
       className: "more-info-pocket-wrapper"
     }, external_React_default().createElement("div", {
       className: "more-information",
@@ -14439,28 +14416,14 @@ class ContentSection extends (external_React_default()).PureComponent {
       className: "section"
     }, external_React_default().createElement("label", {
       className: "switch"
-    }, external_React_default().createElement("input", {
+    }, external_React_default().createElement("moz-toggle", {
       id: "highlights-toggle",
-      checked: highlightsEnabled,
-      type: "checkbox",
-      onChange: this.onPreferenceSelect,
+      pressed: highlightsEnabled || null,
+      onToggle: this.onPreferenceSelect,
       preference: "feeds.section.highlights",
       eventSource: "HIGHLIGHTS",
-      "aria-labelledby": "custom-recent-title",
-      "aria-describedby": "custom-recent-subtitle"
-    }), external_React_default().createElement("span", {
-      className: "slider",
-      role: "presentation"
-    })), external_React_default().createElement("div", null, external_React_default().createElement("h2", {
-      id: "custom-recent-title",
-      className: "title"
-    }, external_React_default().createElement("label", {
-      htmlFor: "highlights-toggle",
-      "data-l10n-id": "newtab-custom-recent-title"
-    })), external_React_default().createElement("p", {
-      id: "custom-recent-subtitle",
-      className: "subtitle",
-      "data-l10n-id": "newtab-custom-recent-subtitle"
+      "data-l10n-id": "newtab-custom-recent-toggle",
+      "data-l10n-attrs": "label, description"
     }))), external_React_default().createElement("span", {
       className: "divider",
       role: "separator"
