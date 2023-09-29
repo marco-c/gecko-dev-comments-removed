@@ -33,14 +33,7 @@ class WordBreaker final {
   
   
   
-  
-  
-  
-  enum class FindWordOptions { None, StopAtPunctuation };
-
-  static WordRange FindWord(
-      const nsAString& aText, uint32_t aPos,
-      const FindWordOptions aOptions = FindWordOptions::None);
+  static WordRange FindWord(const nsAString& aText, uint32_t aPos);
 
   
   
