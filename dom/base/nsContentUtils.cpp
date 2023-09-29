@@ -6524,22 +6524,6 @@ nsresult nsContentUtils::GetWebExposedOriginSerialization(nsIURI* aURI,
     return GetWebExposedOriginSerialization(uri, aOrigin);
   }
 
-  nsAutoCString scheme;
-  aURI->GetScheme(scheme);
-
-  
-  
-  
-  
-  uint32_t flags;
-  if (!scheme.Equals("ftp") &&
-      NS_SUCCEEDED(sIOService->GetProtocolFlags(scheme.get(), &flags))) {
-    if (!(flags & nsIProtocolHandler::URI_HAS_WEB_EXPOSED_ORIGIN)) {
-      aOrigin.AssignLiteral("null");
-      return NS_OK;
-    }
-  }
-
   aOrigin.Truncate();
 
   nsCOMPtr<nsIURI> uri = NS_GetInnermostURI(aURI);
