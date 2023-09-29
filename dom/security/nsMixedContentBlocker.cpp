@@ -833,7 +833,7 @@ nsresult nsMixedContentBlocker::ShouldLoad(bool aHadInsecureImageRedirect,
   
   
   if (contentType == ExtContentPolicyType::TYPE_SUBDOCUMENT &&
-      !rootHasSecureConnection && !parentIsHttps) {
+      !rootHasSecureConnection) {
     bool httpsParentExists = false;
 
     RefPtr<WindowContext> curWindow = requestingWindow;
