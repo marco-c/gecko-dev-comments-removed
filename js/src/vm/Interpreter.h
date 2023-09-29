@@ -396,6 +396,7 @@ class MOZ_STACK_CLASS BaseTryNoteIter {
 
 
 
+
       if (tn_->kind() == TryNoteKind::ForOfIterClose) {
         uint32_t iterCloseDepth = 1;
         do {
