@@ -481,9 +481,9 @@ class nsBlockFrame : public nsContainerFrame {
   
   void MoveChildFramesOfLine(nsLineBox* aLine, nscoord aDeltaBCoord);
 
-  void ComputeFinalSize(const ReflowInput& aReflowInput,
-                        BlockReflowState& aState, ReflowOutput& aMetrics,
-                        nscoord* aBEndEdgeOfChildren);
+  
+  nscoord ComputeFinalSize(const ReflowInput& aReflowInput,
+                           BlockReflowState& aState, ReflowOutput& aMetrics);
 
   
 
@@ -533,6 +533,61 @@ class nsBlockFrame : public nsContainerFrame {
 
 
   bool IsVisualFormControl(nsPresContext* aPresContext);
+
+  
+
+
+
+
+
+
+  struct TrialReflowState {
+    
+    const nscoord mConsumedBSize;
+    const nscoord mEffectiveContentBoxBSize;
+    bool mNeedFloatManager;
+    
+    bool mBalancing = false;
+    nscoord mInset = 0;
+    
+    
+    mozilla::OverflowAreas mOcBounds;
+    mozilla::OverflowAreas mFcBounds;
+    nscoord mBlockEndEdgeOfChildren = 0;
+    nscoord mContainerWidth = 0;
+
+    
+    TrialReflowState(nscoord aConsumedBSize, nscoord aEffectiveContentBoxBSize,
+                     bool aNeedFloatManager)
+        : mConsumedBSize(aConsumedBSize),
+          mEffectiveContentBoxBSize(aEffectiveContentBoxBSize),
+          mNeedFloatManager(aNeedFloatManager) {}
+
+    
+    void ResetForBalance(nscoord aInsetDelta) {
+      
+      
+      mBalancing = true;
+      
+      mInset += aInsetDelta;
+      
+      mOcBounds.Clear();
+      mFcBounds.Clear();
+      mBlockEndEdgeOfChildren = 0;
+      mContainerWidth = 0;
+    }
+  };
+
+  
+
+
+
+
+
+  nsReflowStatus TrialReflow(nsPresContext* aPresContext,
+                             ReflowOutput& aMetrics,
+                             const ReflowInput& aReflowInput,
+                             TrialReflowState& aTrialState);
 
  public:
   
