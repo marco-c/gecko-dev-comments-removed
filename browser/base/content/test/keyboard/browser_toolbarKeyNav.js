@@ -44,17 +44,17 @@ function AddOldMenuSideButtons() {
   CustomizableUI.addWidgetToArea(
     "library-button",
     "nav-bar",
-    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 2
+    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
   );
   CustomizableUI.addWidgetToArea(
     "sidebar-button",
     "nav-bar",
-    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 2
+    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
   );
   CustomizableUI.addWidgetToArea(
     "unified-extensions-button",
     "nav-bar",
-    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 2
+    CustomizableUI.getWidgetIdsInArea("nav-bar").length - 3
   );
 }
 
@@ -117,7 +117,7 @@ add_setup(async function () {
   let bookmarks = new Array(BOOKMARKS_COUNT);
   for (let i = 0; i < BOOKMARKS_COUNT; ++i) {
     
-    bookmarks[i] = { url: `http://test.places.${i}/` };
+    bookmarks[i] = { url: `http://test.places.${i}y/` };
   }
   await PlacesUtils.bookmarks.insertTree({
     guid: PlacesUtils.bookmarks.toolbarGuid,
