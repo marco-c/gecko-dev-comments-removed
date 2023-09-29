@@ -459,6 +459,7 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
     Maybe<const SdpMediaSection&> local) {
   std::vector<UniquePtr<JsepCodecDescription>> negotiatedCodecs;
   std::vector<UniquePtr<JsepCodecDescription>> newPrototypeCodecs;
+  bool onlyRedUlpFec = true;
 
   
   for (const std::string& fmt : remote.GetFormats()) {
@@ -487,6 +488,10 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
           videoCodec->mRtxPayloadType = cloneVideoCodec->mRtxPayloadType;
         }
 
+        if (codec->mName != "red" && codec->mName != "ulpfec") {
+          onlyRedUlpFec = false;
+        }
+
         
         
         
@@ -495,6 +500,12 @@ std::vector<UniquePtr<JsepCodecDescription>> JsepTrack::NegotiateCodecs(
         break;
       }
     }
+  }
+
+  if (onlyRedUlpFec) {
+    
+    
+    negotiatedCodecs.clear();
   }
 
   
