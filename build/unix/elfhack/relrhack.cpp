@@ -180,6 +180,12 @@ bool RelR<bits>::hack(std::fstream& f) {
     return false;
   }
 
+  
+  for (const auto& [offset, tag] : relr_tags) {
+    f.seekg(offset, std::ios::beg);
+    f.write(reinterpret_cast<const char*>(&tag), sizeof(tag));
+  }
+
   if (verneednum && verneed_off && strsz && strtab_off) {
     
     
@@ -220,10 +226,6 @@ bool RelR<bits>::hack(std::fstream& f) {
           
           f.write(reinterpret_cast<char*>(&reuse),
                   sizeof(reuse) - sizeof(Elf_Word));
-          for (const auto& [offset, tag] : relr_tags) {
-            f.seekg(offset, std::ios::beg);
-            f.write(reinterpret_cast<const char*>(&tag), sizeof(tag));
-          }
         }
       }
       verneed_off += verneed.vn_next;
