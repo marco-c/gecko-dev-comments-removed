@@ -1256,13 +1256,13 @@ static inline void MapLangAttributeInto(MappedDeclarationsBuilder& aBuilder) {
     const nsAtom* lang = langValue->GetAtomValue();
     if (nsStyleUtil::MatchesLanguagePrefix(lang, u"zh")) {
       aBuilder.SetKeywordValue(eCSSProperty_text_emphasis_position,
-                               StyleTextEmphasisPosition::UNDER.bits);
+                               StyleTextEmphasisPosition::UNDER._0);
     } else if (nsStyleUtil::MatchesLanguagePrefix(lang, u"ja") ||
                nsStyleUtil::MatchesLanguagePrefix(lang, u"mn")) {
       
       
       aBuilder.SetKeywordValue(eCSSProperty_text_emphasis_position,
-                               StyleTextEmphasisPosition::OVER.bits);
+                               StyleTextEmphasisPosition::OVER._0);
     }
   }
 }
