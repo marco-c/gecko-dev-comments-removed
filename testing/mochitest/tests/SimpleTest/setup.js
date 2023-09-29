@@ -199,7 +199,10 @@ if (params.dumpDMDAfterTest) {
   TestRunner.dumpDMDAfterTest = true;
 }
 
-if (params.interactiveDebugger) {
+
+
+
+if (params.interactiveDebugger || params.jsdebugger || params.debugger) {
   TestRunner.interactiveDebugger = true;
 }
 
