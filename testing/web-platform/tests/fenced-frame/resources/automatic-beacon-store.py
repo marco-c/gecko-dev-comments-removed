@@ -10,16 +10,19 @@
 BEACON_KEY = "0c02dba4-f01e-11ed-a05b-0242ac120003"
 
 def main(request, response):
-    
-    
-    
-    if request.body:
-        request.server.stash.put(BEACON_KEY, request.body)
-        return (200, [], b"")
+    stash = request.server.stash;
 
     
     
-    data = request.server.stash.take(BEACON_KEY)
-    if not data and data != "":
-        return (200, [], b"<Not set>")
-    return (200, [], data)
+    with stash.lock:
+        
+        
+        
+        if request.method == "POST":
+            stash.put(BEACON_KEY, request.body or "<No data>")
+            return (200, [], b"")
+
+        
+        
+        data = stash.take(BEACON_KEY) or "<Not set>"
+        return(200, [], data)
