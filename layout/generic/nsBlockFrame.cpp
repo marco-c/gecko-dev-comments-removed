@@ -1451,7 +1451,23 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   
-  int32_t balanceTarget = -1;
+  struct BalanceTarget {
+    
+    
+    
+    
+    nsIContent* mContent = nullptr;
+    int32_t mOffset = -1;
+
+    bool operator==(const BalanceTarget& aOther) const {
+      return mContent == aOther.mContent && mOffset == aOther.mOffset;
+    }
+    bool operator!=(const BalanceTarget& aOther) const {
+      return !(*this == aOther);
+    }
+  };
+
+  BalanceTarget balanceTarget;
 
   
 
@@ -1465,6 +1481,24 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       }
     }
     return n;
+  };
+
+  
+  
+  
+  auto getClampPosition = [&](int32_t aClampCount) -> BalanceTarget {
+    MOZ_ASSERT(aClampCount < mLines.size());
+    auto iter = mLines.begin();
+    for (auto i = 0; i < aClampCount; i++) {
+      ++iter;
+    }
+    nsIContent* content = iter->mFirstChild->GetContent();
+    int32_t offset = 0;
+    if (content && iter->mFirstChild->IsTextFrame()) {
+      auto* textFrame = static_cast<nsTextFrame*>(iter->mFirstChild);
+      offset = textFrame->GetContentOffset();
+    }
+    return BalanceTarget{content, offset};
   };
 
   
@@ -1495,17 +1529,31 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       if (!reflowStatus.IsFullyComplete()) {
         break;
       }
-      balanceTarget =
+      balanceTarget.mOffset =
           countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      if (balanceTarget < 2) {
+      if (balanceTarget.mOffset < 2) {
         
         
         break;
       }
       
-      balanceStep = aReflowInput.ComputedISize() / balanceTarget;
+      balanceStep = aReflowInput.ComputedISize() / balanceTarget.mOffset;
       trialState.ResetForBalance(balanceStep);
       balanceStep /= 2;
+
+      
+      
+      
+      if (StaticPrefs::layout_css_text_wrap_balance_after_clamp_enabled() &&
+          IsLineClampRoot(this)) {
+        int32_t lineClampCount = aReflowInput.mStyleDisplay->mWebkitLineClamp;
+        if (balanceTarget.mOffset > lineClampCount) {
+          auto t = getClampPosition(lineClampCount);
+          if (t.mContent) {
+            balanceTarget = t;
+          }
+        }
+      }
 
       
       aReflowInput.mFloatManager->PopState(&floatManagerState);
@@ -1514,11 +1562,24 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
     
     
-    
-    if (balanceStep > 0) {
+    auto trialSucceeded = [&]() -> bool {
+      if (!reflowStatus.IsFullyComplete()) {
+        return false;
+      }
+      if (balanceTarget.mContent) {
+        auto t = getClampPosition(aReflowInput.mStyleDisplay->mWebkitLineClamp);
+        return t == balanceTarget;
+      }
       int32_t numLines =
           countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      if (reflowStatus.IsFullyComplete() && numLines == balanceTarget) {
+      return numLines == balanceTarget.mOffset;
+    };
+
+    
+    
+    
+    if (balanceStep > 0) {
+      if (trialSucceeded()) {
         trialState.ResetForBalance(balanceStep);
       } else {
         trialState.ResetForBalance(-balanceStep);
@@ -1531,10 +1592,8 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
     
     
-    if (balanceTarget >= 0) {
-      int32_t numLines =
-          countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      if (reflowStatus.IsFullyComplete() && numLines == balanceTarget) {
+    if (balanceTarget.mOffset >= 0) {
+      if (trialSucceeded()) {
         break;
       }
       trialState.ResetForBalance(-1);
