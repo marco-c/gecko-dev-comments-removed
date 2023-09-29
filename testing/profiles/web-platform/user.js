@@ -90,3 +90,5 @@ user_pref("security.webauth.webauthn_enable_usbtoken", false);
 user_pref("security.webauth.webauthn_enable_android_fido2", false);
 
 user_pref("security.webauth.webauthn_testing_allow_direct_attestation", true);
+
+user_pref("network.captive-portal-service.enabled", false);
