@@ -233,6 +233,31 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  [must_use] nsIQuotaRequest
+  clearStoragesForOriginPrefix(in nsIPrincipal aPrincipal,
+                            [optional] in ACString aPersistenceType);
+
+  
+
+
+
+
+
+
+
+
   [must_use] nsIQuotaRequest
   reset();
 
