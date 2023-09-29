@@ -417,7 +417,10 @@ void nsAvailableMemoryWatcher::OnMemoryPressureChangedInternal(
 
   
   if ((mLevel >= mResponseLevel) && (aNewLevel < mResponseLevel)) {
-    RecordTelemetryEventOnHighMemory();
+    {
+      MutexAutoLock lock(mMutex);
+      RecordTelemetryEventOnHighMemory(lock);
+    }
     StopPolling();
     MP_LOG("Issuing MemoryPressureState::NoPressure");
     NS_NotifyOfMemoryPressure(MemoryPressureState::NoPressure);
@@ -479,6 +482,9 @@ nsAvailableMemoryWatcher::Notify(nsITimer* aTimer) {
 
 NS_IMETHODIMP
 nsAvailableMemoryWatcher::OnUnloadAttemptCompleted(nsresult aResult) {
+  
+  
+  MutexAutoLock lock(mMutex);
   switch (aResult) {
     
     case NS_OK:
@@ -578,7 +584,10 @@ void nsAvailableMemoryWatcher::OnPrefChange() {
 
   
   if (IsPolling() && (newResponseLevel > mLevel)) {
-    RecordTelemetryEventOnHighMemory();
+    {
+      MutexAutoLock lock(mMutex);
+      RecordTelemetryEventOnHighMemory(lock);
+    }
     StopPolling();
     MP_LOG("Issuing MemoryPressureState::NoPressure");
     NS_NotifyOfMemoryPressure(MemoryPressureState::NoPressure);

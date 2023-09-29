@@ -65,11 +65,6 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
   void StopPollingIfUserIdle(const MutexAutoLock&) MOZ_REQUIRES(mMutex);
   void OnUserInteracting(const MutexAutoLock&) MOZ_REQUIRES(mMutex);
 
-  
-  
-  
-  
-  Mutex mMutex;
   nsCOMPtr<nsITimer> mTimer MOZ_GUARDED_BY(mMutex);
   nsAutoHandle mLowMemoryHandle MOZ_GUARDED_BY(mMutex);
   HANDLE mWaitHandle MOZ_GUARDED_BY(mMutex);
@@ -99,8 +94,7 @@ NS_IMPL_ISUPPORTS_INHERITED(nsAvailableMemoryWatcher,
                             nsITimerCallback, nsINamed)
 
 nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
-    : mMutex("low memory callback mutex"),
-      mWaitHandle(nullptr),
+    : mWaitHandle(nullptr),
       mPolling(false),
       mNeedToRestartTimerOnUserInteracting(false),
       mUnderMemoryPressure(false),
@@ -290,7 +284,7 @@ void nsAvailableMemoryWatcher::OnHighMemory(const MutexAutoLock& aLock) {
   MOZ_ASSERT(NS_IsMainThread());
 
   if (mUnderMemoryPressure) {
-    RecordTelemetryEventOnHighMemory();
+    RecordTelemetryEventOnHighMemory(aLock);
     NS_NotifyOfEventualMemoryPressure(MemoryPressureState::NoPressure);
   }
 

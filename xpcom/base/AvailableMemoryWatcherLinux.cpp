@@ -51,10 +51,6 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
 
   
   
-  Mutex mMutex;
-
-  
-  
   static const uint32_t kHighMemoryPollingIntervalMS = 5000;
 
   
@@ -67,9 +63,7 @@ class nsAvailableMemoryWatcher final : public nsITimerCallback,
 static const char* kMeminfoPath = "/proc/meminfo";
 
 nsAvailableMemoryWatcher::nsAvailableMemoryWatcher()
-    : mPolling(false),
-      mUnderMemoryPressure(false),
-      mMutex("Memory Poller mutex") {}
+    : mPolling(false), mUnderMemoryPressure(false) {}
 
 nsresult nsAvailableMemoryWatcher::Init() {
   nsresult rv = nsAvailableMemoryWatcherBase::Init();
@@ -207,6 +201,8 @@ void nsAvailableMemoryWatcher::HandleLowMemory() {
   
   
   
+  
+  
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       "nsAvailableMemoryWatcher::OnLowMemory",
       [self = RefPtr{this}]() { self->mTabUnloader->UnloadTabAsync(); }));
@@ -229,7 +225,7 @@ void nsAvailableMemoryWatcher::MaybeHandleHighMemory() {
     return;
   }
   if (mUnderMemoryPressure) {
-    RecordTelemetryEventOnHighMemory();
+    RecordTelemetryEventOnHighMemory(lock);
     NS_NotifyOfEventualMemoryPressure(MemoryPressureState::NoPressure);
     mUnderMemoryPressure = false;
     UpdateCrashAnnotation(lock);

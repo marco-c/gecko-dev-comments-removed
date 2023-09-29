@@ -30,8 +30,17 @@ class nsAvailableMemoryWatcherBase : public nsIAvailableMemoryWatcherBase,
   TimeStamp mLowMemoryStart;
 
  protected:
-  uint32_t mNumOfTabUnloading;
-  uint32_t mNumOfMemoryPressure;
+  
+  
+  
+  
+  
+  
+  
+  Mutex mMutex;
+
+  uint32_t mNumOfTabUnloading MOZ_GUARDED_BY(mMutex);
+  uint32_t mNumOfMemoryPressure MOZ_GUARDED_BY(mMutex);
 
   nsCOMPtr<nsITabUnloader> mTabUnloader;
   nsCOMPtr<nsIObserverService> mObserverSvc;
@@ -42,7 +51,8 @@ class nsAvailableMemoryWatcherBase : public nsIAvailableMemoryWatcherBase,
   virtual nsresult Init();
   void Shutdown();
   void UpdateLowMemoryTimeStamp();
-  void RecordTelemetryEventOnHighMemory();
+  void RecordTelemetryEventOnHighMemory(const MutexAutoLock&)
+      MOZ_REQUIRES(mMutex);
 
  public:
   static already_AddRefed<nsAvailableMemoryWatcherBase> GetSingleton();
