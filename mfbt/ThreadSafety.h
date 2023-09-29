@@ -22,7 +22,7 @@
 #define mozilla_ThreadSafety_h
 #include "mozilla/Attributes.h"
 
-#if defined(__clang__) && (__clang_major__ >= 8) && !defined(SWIG)
+#if defined(__clang__) && (__clang_major__ >= 11) && !defined(SWIG)
 #  define MOZ_THREAD_ANNOTATION_ATTRIBUTE__(x) __attribute__((x))
 
 
