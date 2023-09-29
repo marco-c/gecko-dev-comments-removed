@@ -1304,8 +1304,7 @@ nsresult nsRFPService::GenerateCanvasKeyFromImageData(
 
 
 nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
-                                       uint8_t* aData, uint32_t aWidth,
-                                       uint32_t aHeight, uint32_t aSize,
+                                       uint8_t* aData, uint32_t aSize,
                                        gfx::SurfaceFormat aSurfaceFormat) {
   NS_ENSURE_ARG_POINTER(aData);
 
@@ -1313,24 +1312,7 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
     return NS_OK;
   }
 
-  if (aSize <= 4) {
-    return NS_OK;
-  }
-
-  
-  static constexpr size_t bytesPerPixel = 4;
-  MOZ_ASSERT(aSize == aWidth * aHeight * bytesPerPixel,
-             "Pixels must be tightly-packed");
-  const bool allPixelsMatch = [&]() {
-    auto itr = RangedPtr<const uint8_t>(aData, aSize);
-    const auto itrEnd = itr + aSize;
-    for (; itr != itrEnd; itr += bytesPerPixel) {
-      if (memcmp(itr.get(), aData, bytesPerPixel) != 0) {
-        return false;
-      }
-    }
-  }();
-  if (allPixelsMatch) {
+  if (aSize == 0) {
     return NS_OK;
   }
 
@@ -1377,22 +1359,6 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
 
   
   uint8_t numNoises = std::clamp<uint8_t>(rnd3, 15, 255);
-
-  if (0) {
-    
-    
-    
-    
-    
-    static int calls = 0;
-    char filename[256];
-    snprintf(filename, sizeof(filename), "rendered_image_%dx%d_%d_pre", aWidth,
-             aHeight, calls);
-    FILE* outputFile = fopen(filename, "wb");  
-    fwrite(aData, 1, aSize, outputFile);
-    fclose(outputFile);
-    calls++;
-  }
 
   for (uint8_t i = 0; i <= numNoises; i++) {
     
