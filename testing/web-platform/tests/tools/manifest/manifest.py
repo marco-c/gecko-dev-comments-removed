@@ -1,9 +1,8 @@
 import os
-import sys
 from atomicwrites import atomic_write
 from copy import deepcopy
 from logging import Logger
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 from typing import (Any, Callable, Container, Dict, IO, Iterator, Iterable, Optional, Set, Text, Tuple, Type,
                     Union)
 
@@ -21,9 +20,9 @@ from .item import (ConformanceCheckerTest,
                    VisualTest,
                    WebDriverSpecTest)
 from .log import get_logger
+from .mputil import max_parallelism
 from .sourcefile import SourceFile
 from .typedata import TypeData
-
 
 
 CURRENT_VERSION: int = 8
@@ -206,24 +205,16 @@ class Manifest:
         
         
         pool = None
-        if parallel and len(to_update) > 25 and cpu_count() > 1:
-            
-            
-            
-            
-            
-            
-            processes = cpu_count()
-            if sys.platform == "win32" and processes > 48:
-                processes = 48
+        processes = max_parallelism()
+        if parallel and len(to_update) > 25 and processes > 1:
             pool = Pool(processes)
 
             
             
             
             chunksize = max(1, len(to_update) // 10000)
-            logger.debug("Doing a multiprocessed update. CPU count: %s, "
-                "processes: %s, chunksize: %s" % (cpu_count(), processes, chunksize))
+            logger.debug("Doing a multiprocessed update. "
+                "Processes: %s, chunksize: %s" % (processes, chunksize))
             results: Iterator[Optional[Tuple[Tuple[Text, ...],
                                     Text,
                                     Set[ManifestItem], Text]]] = pool.imap_unordered(

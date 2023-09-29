@@ -482,7 +482,9 @@ def get_test_src(**kwargs):
     test_source_kwargs = {"processes": kwargs["processes"],
                           "logger": kwargs["logger"]}
     chunker_kwargs = {}
-    if kwargs["run_by_dir"] is not False:
+    if kwargs["fully_parallel"]:
+        test_source_cls = FullyParallelGroupedSource
+    elif kwargs["run_by_dir"] is not False:
         
         test_source_cls = PathGroupedSource
         test_source_kwargs["depth"] = kwargs["run_by_dir"]
@@ -638,6 +640,17 @@ class PathGroupedSource(TestSource):
     @classmethod
     def group_metadata(cls, state):
         return {"scope": "/%s" % "/".join(state["prev_group_key"][2])}
+
+
+class FullyParallelGroupedSource(PathGroupedSource):
+    
+    
+    
+    @classmethod
+    def new_group(cls, state, subsuite, test_type, test, **kwargs):
+        path = urlsplit(test.url).path.split("/")[1:-1]
+        state["prev_group_key"] = (subsuite, test_type, path)
+        return True
 
 
 class GroupFileTestSource(TestSource):
