@@ -1322,6 +1322,17 @@ class nsIFrame : public nsQueryFrame {
     return nullptr;
   }
 
+  
+  
+  const nsAtom* GetStylePageName() const {
+    const mozilla::StylePageName& pageName = StylePage()->mPage;
+    if (pageName.IsPageName()) {
+      return pageName.AsPageName().AsAtom();
+    }
+    MOZ_ASSERT(pageName.IsAuto(), "Impossible page name");
+    return nullptr;
+  }
+
  private:
   
   
@@ -1574,6 +1585,16 @@ class nsIFrame : public nsQueryFrame {
 
   CaretBlockAxisMetrics GetCaretBlockAxisMetrics(mozilla::WritingMode,
                                                  const nsFontMetrics&) const;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   const nsAtom* ComputePageValue() const MOZ_NONNULL_RETURN;

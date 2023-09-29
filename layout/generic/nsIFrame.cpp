@@ -2135,12 +2135,17 @@ nsIFrame::CaretBlockAxisMetrics nsIFrame::GetCaretBlockAxisMetrics(
 const nsAtom* nsIFrame::ComputePageValue() const {
   const nsAtom* value = nsGkAtoms::_empty;
   const nsIFrame* frame = this;
+  
+  
+  
+  
+  
+  
+  
   do {
-    
-    if (const nsAtom* const startValue = frame->GetStartPageValue()) {
-      value = startValue;
+    if (const nsAtom* maybePageName = frame->GetStylePageName()) {
+      value = maybePageName;
     }
-    MOZ_ASSERT(value, "Should not have a NULL page value.");
     
     const nsIFrame* firstNonPlaceholderFrame = nullptr;
     
