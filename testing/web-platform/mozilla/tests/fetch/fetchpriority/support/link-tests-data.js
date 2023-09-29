@@ -66,6 +66,21 @@ const kExpectedRequestsOfLinkPreload = [
     },
 ];
 
+const kExpectedRequestsOfModulepreload = [
+    {   fileNameAndSuffix: "dummy.js?1",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGH
+    },
+    {   fileNameAndSuffix: "dummy.js?2",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
+    },
+    {   fileNameAndSuffix: "dummy.js?3",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
+    },
+    {   fileNameAndSuffix: "dummy.js?4",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
+    }
+];
+
 
 
 
@@ -92,20 +107,10 @@ export const kTestData = [
         expectedRequests: kExpectedRequestsOfLinkPreload
     },
     {   testFileName: "link-initial-modulepreload.h2.html",
-        expectedRequests: [
-        {   fileNameAndSuffix: "dummy.js?1",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGH
-        },
-        {   fileNameAndSuffix: "dummy.js?2",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
-        },
-        {   fileNameAndSuffix: "dummy.js?3",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
-        },
-        {   fileNameAndSuffix: "dummy.js?4",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGHEST
-        }
-        ]
+        expectedRequests: kExpectedRequestsOfModulepreload
+    },
+    {   testFileName: "link-dynamic-modulepreload.h2.html",
+        expectedRequests: kExpectedRequestsOfModulepreload
     },
     {   testFileName: "link-initial-prefetch.h2.html",
         expectedRequests: [
