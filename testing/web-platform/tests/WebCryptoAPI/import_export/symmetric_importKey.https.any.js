@@ -49,7 +49,7 @@
                         data = jwkData(keyData, algorithm);
                     }
                     
-                    allValidUsages(vector.legalUsages, []).forEach(function(usages) {
+                    allValidUsages(vector.legalUsages).forEach(function(usages) {
                         testFormat(format, algorithm, data, keyData.length * 8, usages, extractable);
                     });
                     testEmptyUsages(format, algorithm, data, keyData.length * 8, extractable);
@@ -171,46 +171,6 @@
         var base64String = btoa(binaryString);
 
         return base64String.replace(/=/g, "");
-    }
-
-    
-    
-    function allNonemptySubsetsOf(arr) {
-        var results = [];
-        var firstElement;
-        var remainingElements;
-
-        for(var i=0; i<arr.length; i++) {
-            firstElement = arr[i];
-            remainingElements = arr.slice(i+1);
-            results.push([firstElement]);
-
-            if (remainingElements.length > 0) {
-                allNonemptySubsetsOf(remainingElements).forEach(function(combination) {
-                    combination.push(firstElement);
-                    results.push(combination);
-                });
-            }
-        }
-
-        return results;
-    }
-
-    
-    
-    function allValidUsages(possibleUsages, requiredUsages) {
-        var allUsages = [];
-
-        allNonemptySubsetsOf(possibleUsages).forEach(function(usage) {
-            for (var i=0; i<requiredUsages.length; i++) {
-                if (!usage.includes(requiredUsages[i])) {
-                    return;
-                }
-            }
-            allUsages.push(usage);
-        });
-
-        return allUsages;
     }
 
     
