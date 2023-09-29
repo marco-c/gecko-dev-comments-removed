@@ -26,7 +26,7 @@ function generateUuid() {
 
 
 
-function createReportingUrl(uuid, operation, report = 'default-report') {
+function createReportingURL(uuid, operation, report = 'default-report') {
   let url = new URL(`${window.location.origin}${BASE_PATH}resources/protected_audience_event_level_report_handler.py`);
   url.searchParams.append('uuid', uuid);
   url.searchParams.append('operation', operation);
@@ -37,21 +37,21 @@ function createReportingUrl(uuid, operation, report = 'default-report') {
   return url.toString();
 }
 
-function createWritingUrl(uuid, report) {
-  return createReportingUrl(uuid, 'write');
+function createWritingURL(uuid, report) {
+  return createReportingURL(uuid, 'write');
 }
 
-function createReadingUrl(uuid) {
-  return createReportingUrl(uuid, 'read');
+function createReadingURL(uuid) {
+  return createReportingURL(uuid, 'read');
 }
 
 async function waitForObservedReports(uuid, expectedNumReports, timeout = 1000 ) {
   expectedReports = Array(expectedNumReports).fill('default-report');
-  const reportUrl = createReadingUrl(uuid);
+  const reportURL = createReadingURL(uuid);
   let startTime = performance.now();
 
   while (performance.now() - startTime < timeout) {
-    let response = await fetch(reportUrl, { credentials: 'omit', mode: 'cors' });
+    let response = await fetch(reportURL, { credentials: 'omit', mode: 'cors' });
     let actualReports = await response.json();
 
     
@@ -108,7 +108,7 @@ function createDecisionScriptURL(uuid, params = {}) {
 
 
 
-function createRenderUrl(uuid, script) {
+function createRenderURL(uuid, script) {
   let url = new URL(`${FLEDGE_BASE_URL}resources/fenced-frame.sub.py`);
   if (script)
     url.searchParams.append('script', script);
@@ -127,7 +127,7 @@ async function joinInterestGroup(test, uuid, interestGroupOverrides) {
   let interestGroup = {
     owner: window.location.origin,
     name: DEFAULT_INTEREST_GROUP_NAME,
-    ads: [{renderUrl: createRenderUrl(uuid)}],
+    ads: [{renderURL: createRenderURL(uuid)}],
     ...interestGroupOverrides
   };
 

@@ -20,7 +20,7 @@ const TRUSTED_SCORING_SIGNALS_URL =
 
 
 
-function createTrackerUrl(origin, uuid, dispatch, id = null) {
+function createTrackerURL(origin, uuid, dispatch, id = null) {
   let url = new URL(`${origin}${BASE_PATH}resources/request-tracker.py`);
   url.searchParams.append('uuid', uuid);
   url.searchParams.append('dispatch', dispatch);
@@ -32,23 +32,23 @@ function createTrackerUrl(origin, uuid, dispatch, id = null) {
 
 
 
-function createBidderReportUrl(uuid, id = '1') {
-  return createTrackerUrl(window.location.origin, uuid, `track_get`,
+function createBidderReportURL(uuid, id = '1') {
+  return createTrackerURL(window.location.origin, uuid, `track_get`,
                           `bidder_report_${id}`);
 }
-function createSellerReportUrl(uuid, id = '1') {
-  return createTrackerUrl(window.location.origin, uuid, `track_get`,
+function createSellerReportURL(uuid, id = '1') {
+  return createTrackerURL(window.location.origin, uuid, `track_get`,
                           `seller_report_${id}`);
 }
 
 
 
-function createBidderBeaconUrl(uuid, id = '1') {
-  return createTrackerUrl(window.location.origin, uuid, `track_post`,
+function createBidderBeaconURL(uuid, id = '1') {
+  return createTrackerURL(window.location.origin, uuid, `track_post`,
                           `bidder_beacon_${id}`);
 }
-function createSellerBeaconUrl(uuid, id = '1') {
-  return createTrackerUrl(window.location.origin, uuid, `track_post`,
+function createSellerBeaconURL(uuid, id = '1') {
+  return createTrackerURL(window.location.origin, uuid, `track_post`,
                           `seller_beacon_${id}`);
 }
 
@@ -58,8 +58,8 @@ function createSellerBeaconUrl(uuid, id = '1') {
 function generateUuid(test) {
   let uuid = token();
   test.add_cleanup(async () => {
-    let cleanupUrl = createTrackerUrl(window.location.origin, uuid, 'clean_up');
-    let response = await fetch(cleanupUrl, {credentials: 'omit', mode: 'cors'});
+    let cleanupURL = createTrackerURL(window.location.origin, uuid, 'clean_up');
+    let response = await fetch(cleanupURL, {credentials: 'omit', mode: 'cors'});
     assert_equals(await response.text(), 'cleanup complete',
                   `Sever state cleanup failed`);
   });
@@ -76,18 +76,18 @@ function generateUuid(test) {
 
 
 async function waitForObservedRequests(uuid, expectedRequests) {
-  let trackedRequestsUrl = createTrackerUrl(window.location.origin, uuid,
+  let trackedRequestsURL = createTrackerURL(window.location.origin, uuid,
                                             'request_list');
   
   expectedRequests.sort();
   while (true) {
-    let response = await fetch(trackedRequestsUrl,
+    let response = await fetch(trackedRequestsURL,
                                {credentials: 'omit', mode: 'cors'});
     let trackerData = await response.json();
 
     
     if (trackerData.error) {
-      throw trackedRequestsUrl + ' fetch failed:' +
+      throw trackedRequestsURL + ' fetch failed:' +
           JSON.stringify(trackerData);
     }
 
@@ -163,7 +163,7 @@ function createDecisionScriptURL(uuid, params = {}) {
 
 
 
-function createRenderUrl(uuid, script, signalsParams) {
+function createRenderURL(uuid, script, signalsParams) {
   let url = new URL(`${BASE_URL}resources/fenced-frame.sub.py`);
   if (script)
     url.searchParams.append('script', script);
@@ -188,8 +188,8 @@ async function joinInterestGroup(test, uuid, interestGroupOverrides = {},
     owner: window.location.origin,
     name: DEFAULT_INTEREST_GROUP_NAME,
     biddingLogicURL: createBiddingScriptURL(
-      { reportWin: `sendReportTo('${createBiddingScriptURL(uuid)}');` }),
-    ads: [{renderUrl: createRenderUrl(uuid)}],
+      { reportWin: `sendReportTo('${createBidderReportURL(uuid)}');` }),
+    ads: [{ renderURL: createRenderURL(uuid) }],
     ...interestGroupOverrides
   };
 
@@ -224,7 +224,7 @@ async function runBasicFledgeAuction(test, uuid, auctionConfigOverrides = {}) {
     seller: window.location.origin,
     decisionLogicURL: createDecisionScriptURL(
         uuid,
-        { reportResult: `sendReportTo('${createSellerReportUrl(uuid)}');` }),
+        { reportResult: `sendReportTo('${createSellerReportURL(uuid)}');` }),
     interestGroupBuyers: [window.location.origin],
     resolveToConfig: true,
     ...auctionConfigOverrides
@@ -300,8 +300,8 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig = {}) {
 
 
 
-async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
-                             renderUrlOverride) {
+async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
+                             renderURLOverride) {
   let scoreAd = codeToInsert.scoreAd;
   let reportResultSuccessCondition = codeToInsert.reportResultSuccessCondition;
   let reportResult = codeToInsert.reportResult;
@@ -311,7 +311,7 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
 
   if (reportResultSuccessCondition) {
     reportResult = `if (!(${reportResultSuccessCondition})) {
-                      sendReportTo('${createSellerReportUrl(uuid, 'error')}');
+                      sendReportTo('${createSellerReportURL(uuid, 'error')}');
                       return false;
                     }
                     ${reportResult}`;
@@ -329,7 +329,7 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
 
   if (reportWinSuccessCondition) {
     reportWin = `if (!(${reportWinSuccessCondition})) {
-                   sendReportTo('${createSellerReportUrl(uuid, 'error')}');
+                   sendReportTo('${createSellerReportURL(uuid, 'error')}');
                    return false;
                  }
                  ${reportWin}`;
@@ -346,9 +346,9 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
     biddingScriptURLParams.error = 'no-reportWin';
 
   let interestGroupOverrides =
-    { biddingLogicURL: createBiddingScriptURL(biddingScriptURLParams) };
-  if (renderUrlOverride)
-    interestGroupOverrides.ads = [{renderUrl: renderUrlOverride}]
+      { biddingLogicURL: createBiddingScriptURL(biddingScriptURLParams) };
+  if (renderURLOverride)
+    interestGroupOverrides.ads = [{ renderURL: renderURLOverride }]
 
   await joinInterestGroup(test, uuid, interestGroupOverrides);
   await runBasicFledgeAuctionAndNavigate(
@@ -356,5 +356,5 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportUrls,
     {
       decisionLogicURL: createDecisionScriptURL(
                               uuid, decisionScriptURLParams) });
-  await waitForObservedRequests(uuid, expectedReportUrls);
+  await waitForObservedRequests(uuid, expectedReportURLs);
 }
