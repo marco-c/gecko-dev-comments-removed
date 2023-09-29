@@ -244,7 +244,7 @@ class ReftestFissionChild extends JSWindowActorChild {
             msg.data.originalTargetUri,
              true
           );
-          return;
+          return undefined;
         }
 
         
@@ -393,5 +393,6 @@ class ReftestFissionChild extends JSWindowActorChild {
         return returns;
       }
     }
+    return undefined;
   }
 }
