@@ -1,6 +1,7 @@
 
 
 
+#include "mozilla/Try.h"
 #include "mozilla/intl/NumberFormat.h"
 #include "NumberFormatFields.h"
 #include "NumberFormatterSkeleton.h"

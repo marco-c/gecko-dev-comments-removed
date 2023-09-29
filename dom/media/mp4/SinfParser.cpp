@@ -2,6 +2,7 @@
 
 
 
+#include "mozilla/Try.h"
 #include "mozilla/Unused.h"
 #include "SinfParser.h"
 #include "AtomType.h"

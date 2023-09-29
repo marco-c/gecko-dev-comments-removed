@@ -1,27 +1,27 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef vm_Xdr_h
 #define vm_Xdr_h
 
-#include "mozilla/Assertions.h"  // MOZ_ASSERT, MOZ_CRASH
-#include "mozilla/MaybeOneOf.h"  // mozilla::MaybeOneOf
-#include "mozilla/Result.h"      // mozilla::{Result, Ok, Err}, MOZ_TRY
-#include "mozilla/Utf8.h"        // mozilla::Utf8Unit
+#include "mozilla/Assertions.h"  
+#include "mozilla/MaybeOneOf.h"  
+#include "mozilla/Try.h"         
+#include "mozilla/Utf8.h"        
 
-#include <stddef.h>     // size_t
-#include <stdint.h>     // uint8_t, uint16_t, uint32_t, uint64_t
-#include <string.h>     // memcpy
-#include <type_traits>  // std::enable_if_t
+#include <stddef.h>     
+#include <stdint.h>     
+#include <string.h>     
+#include <type_traits>  
 
-#include "js/AllocPolicy.h"  // ReportOutOfMemory
-#include "js/Transcoding.h"  // JS::TranscodeResult, JS::TranscodeBuffer, JS::TranscodeRange, IsTranscodingBytecodeAligned, IsTranscodingBytecodeOffsetAligned
-#include "js/TypeDecls.h"    // JS::Latin1Char
-#include "js/UniquePtr.h"    // UniquePtr
-#include "js/Utility.h"      // JS::FreePolicy
+#include "js/AllocPolicy.h"  
+#include "js/Transcoding.h"  
+#include "js/TypeDecls.h"    
+#include "js/UniquePtr.h"    
+#include "js/Utility.h"      
 
 struct JSContext;
 
@@ -107,8 +107,8 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
   XDRBuffer(FrontendContext* fc, const JS::TranscodeRange& range)
       : XDRBufferBase(fc), buffer_(range) {}
 
-  // This isn't used by XDRStencilDecoder.
-  // Defined just for XDRState, shared with XDRStencilEncoder.
+  
+  
   XDRBuffer(FrontendContext* fc, JS::TranscodeBuffer& buffer, size_t cursor = 0)
       : XDRBufferBase(fc, cursor), buffer_(buffer.begin(), buffer.length()) {}
 
@@ -118,7 +118,7 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
       size_t padding = 4 - extra;
       cursor_ += padding;
 
-      // Don't let buggy code read past our buffer
+      
       if (cursor_ > buffer_.length()) {
         return false;
       }
@@ -133,7 +133,7 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
     const uint8_t* ptr = &buffer_[cursor_];
     cursor_ += n;
 
-    // Don't let buggy code read past our buffer
+    
     if (cursor_ > buffer_.length()) {
       return nullptr;
     }
@@ -145,7 +145,7 @@ class XDRBuffer<XDR_DECODE> : public XDRBufferBase {
     MOZ_ASSERT(cursor_ < buffer_.length());
     const uint8_t* ptr = &buffer_[cursor_];
 
-    // Don't let buggy code read past our buffer
+    
     if (cursor_ + n > buffer_.length()) {
       return nullptr;
     }
@@ -182,7 +182,7 @@ class XDRCoderBase {
 
  public:
 #ifdef DEBUG
-  // Record logical failures of XDR.
+  
   JS::TranscodeResult resultCode() const { return resultCode_; }
   void setResultCode(JS::TranscodeResult code) {
     MOZ_ASSERT(resultCode() == JS::TranscodeResult::Ok);
@@ -192,10 +192,10 @@ class XDRCoderBase {
 #endif
 };
 
-/*
- * XDR serialization state.  All data is encoded in native endian, except
- * bytecode.
- */
+
+
+
+
 template <XDRMode mode>
 class XDRState : public XDRCoderBase {
  protected:
@@ -210,8 +210,8 @@ class XDRState : public XDRCoderBase {
   XDRState(FrontendContext* fc, const RangeType& range)
       : mainBuf(fc, range), buf(&mainBuf) {}
 
-  // No default copy constructor or copying assignment, because |buf|
-  // is an internal pointer.
+  
+  
   XDRState(const XDRState&) = delete;
   XDRState& operator=(const XDRState&) = delete;
 
@@ -247,8 +247,8 @@ class XDRState : public XDRCoderBase {
     return mozilla::Ok();
   }
 
-  // Peek the `sizeof(T)` bytes and return the pointer to `*pptr`.
-  // The caller is responsible for aligning the buffer by calling `align32`.
+  
+  
   template <typename T>
   XDRResult peekData(const T** pptr) {
     static_assert(alignof(T) <= 4);
@@ -261,7 +261,7 @@ class XDRState : public XDRCoderBase {
     return mozilla::Ok();
   }
 
-  // Peek uint32_t data.
+  
   XDRResult peekUint32(uint32_t* n) {
     MOZ_ASSERT(mode == XDR_DECODE);
     const uint8_t* ptr = buf->peek(sizeof(*n));
@@ -347,16 +347,16 @@ class XDRState : public XDRCoderBase {
     MOZ_CRASH("not supported.");
   }
 
-  /*
-   * Use SFINAE to refuse any specialization which is not an enum.  Uses of
-   * this function do not have to specialize the type of the enumerated field
-   * as C++ will extract the parameterized from the argument list.
-   */
+  
+
+
+
+
   template <typename T>
   XDRResult codeEnum32(T* val, std::enable_if_t<std::is_enum_v<T>>* = nullptr) {
-    // Mix the enumeration value with a random magic number, such that a
-    // corruption with a low-ranged value (like 0) is less likely to cause a
-    // miss-interpretation of the XDR content and instead cause a failure.
+    
+    
+    
     const uint32_t MAGIC = 0x21AB218C;
     uint32_t tmp;
     if (mode == XDR_ENCODE) {
@@ -388,7 +388,7 @@ class XDRState : public XDRCoderBase {
     uint32_t actual = magic;
     MOZ_TRY(codeUint32(&actual));
     if (actual != magic) {
-      // Fail in debug, but only soft-fail in release
+      
       MOZ_ASSERT(false, "Bad XDR marker");
       return fail(JS::TranscodeResult::Failure_BadDecode);
     }
@@ -415,13 +415,13 @@ class XDRState : public XDRCoderBase {
     return mozilla::Ok();
   }
 
-  // While encoding, code the given data to the buffer.
-  // While decoding, borrow the buffer and return it to `*data`.
-  //
-  // The data can have extra bytes after `sizeof(T)`, and the caller should
-  // provide the entire data length as `length`.
-  //
-  // The caller is responsible for aligning the buffer by calling `align32`.
+  
+  
+  
+  
+  
+  
+  
   template <typename T>
   XDRResult borrowedData(T** data, uint32_t length) {
     static_assert(alignof(T) <= 4);
@@ -437,21 +437,21 @@ class XDRState : public XDRCoderBase {
     return mozilla::Ok();
   }
 
-  // Prefer using a variant below that is encoding aware.
+  
   XDRResult codeChars(char* chars, size_t nchars);
 
   XDRResult codeChars(JS::Latin1Char* chars, size_t nchars);
   XDRResult codeChars(mozilla::Utf8Unit* units, size_t nchars);
   XDRResult codeChars(char16_t* chars, size_t nchars);
 
-  // Transcode null-terminated strings. When decoding, a new buffer is
-  // allocated and ownership is returned to caller.
-  //
-  // NOTE: Throws if string longer than JSString::MAX_LENGTH.
+  
+  
+  
+  
   XDRResult codeCharsZ(XDRTranscodeString<char>& buffer);
   XDRResult codeCharsZ(XDRTranscodeString<char16_t>& buffer);
 };
 
-} /* namespace js */
+} 
 
-#endif /* vm_Xdr_h */
+#endif 

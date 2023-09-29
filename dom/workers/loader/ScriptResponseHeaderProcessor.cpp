@@ -5,6 +5,7 @@
 
 
 #include "ScriptResponseHeaderProcessor.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/WorkerScope.h"
 
 namespace mozilla {

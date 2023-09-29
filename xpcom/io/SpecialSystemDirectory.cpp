@@ -5,6 +5,7 @@
 
 
 #include "SpecialSystemDirectory.h"
+#include "mozilla/Try.h"
 #include "nsString.h"
 #include "nsDependentString.h"
 #include "nsIXULAppInfo.h"

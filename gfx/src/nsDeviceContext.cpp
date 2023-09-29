@@ -16,6 +16,7 @@
 #include "mozilla/Preferences.h"  
 #include "mozilla/Services.h"     
 #include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/Try.h"            
 #include "mozilla/mozalloc.h"       
 #include "mozilla/widget/Screen.h"  
 #include "nsCRT.h"                  

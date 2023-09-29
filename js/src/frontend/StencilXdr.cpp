@@ -9,6 +9,7 @@
 #include "mozilla/ArrayUtils.h"             
 #include "mozilla/OperatorNewExtensions.h"  
 #include "mozilla/ScopeExit.h"              
+#include "mozilla/Try.h"                    
 
 #include <stddef.h>     
 #include <stdint.h>     

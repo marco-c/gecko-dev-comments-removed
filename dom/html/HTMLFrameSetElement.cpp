@@ -5,6 +5,7 @@
 
 
 #include "HTMLFrameSetElement.h"
+#include "mozilla/Try.h"
 #include "mozilla/dom/HTMLFrameSetElementBinding.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/EventHandlerBinding.h"

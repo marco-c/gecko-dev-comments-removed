@@ -87,6 +87,7 @@
 #include "mozilla/Range.h"
 #include "mozilla/RangedPtr.h"
 #include "mozilla/Span.h"  
+#include "mozilla/Try.h"
 #include "mozilla/WrappingOperations.h"
 
 #include <functional>
