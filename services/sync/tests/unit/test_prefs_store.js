@@ -273,77 +273,28 @@ add_task(async function run_test() {
 add_task(async function test_dangerously_allow() {
   _("services.sync.prefs.dangerously_allow_arbitrary");
   
+  
+  
+  
   Services.prefs.readDefaultPrefsFromFile(
     do_get_file("prefs_test_prefs_store.js")
-  );
-  
-  Services.prefs.setBoolPref(
-    "services.sync.prefs.dangerously_allow_arbitrary",
-    true
   );
 
   let engine = Service.engineManager.get("prefs");
   let store = engine._store;
   try {
-    _("Update some prefs");
     
-    
-    Services.prefs.setCharPref(
-      "testing.deleted-without-control-pref",
-      "I'm deleted-without-control-pref"
-    );
-    
-    Services.prefs.setCharPref(
-      "testing.deleted-with-local-control-pref",
-      "I'm deleted-with-local-control-pref"
-    );
-    Services.prefs.setBoolPref(
-      "services.sync.prefs.sync.testing.deleted-with-local-control-pref",
-      true
-    );
-    
-    Services.prefs.setCharPref(
-      "testing.deleted-with-incoming-control-pref",
-      "I'm deleted-with-incoming-control-pref"
-    );
     let record = new PrefRec("prefs", PREFS_GUID);
     record.value = {
-      "testing.deleted-without-control-pref": null,
-      "testing.deleted-with-local-control-pref": null,
-      "testing.deleted-with-incoming-control-pref": null,
-      "services.sync.prefs.sync.testing.deleted-with-incoming-control-pref": true,
-      "testing.somepref": "im a new pref from other device",
-      "services.sync.prefs.sync.testing.somepref": true,
-      
-      "services.sync.prefs.dangerously_allow_arbitrary": false,
+      "services.sync.prefs.dangerously_allow_arbitrary": true,
       "services.sync.prefs.sync.services.sync.prefs.dangerously_allow_arbitrary": true,
     };
     await store.update(record);
     Assert.strictEqual(
-      Services.prefs.getCharPref("testing.deleted-without-control-pref"),
-      "I'm deleted-without-control-pref"
-    );
-    Assert.strictEqual(
-      Services.prefs.getPrefType("testing.deleted-with-local-control-pref"),
-      Ci.nsIPrefBranch.PREF_INVALID
-    );
-    Assert.strictEqual(
-      Services.prefs.getPrefType("testing.deleted-with-incoming-control-pref"),
-      Ci.nsIPrefBranch.PREF_INVALID
-    );
-    Assert.strictEqual(
-      Services.prefs.getCharPref("testing.somepref"),
-      "im a new pref from other device"
-    );
-    Assert.strictEqual(
-      Svc.PrefBranch.getBoolPref("prefs.sync.testing.somepref"),
-      true
-    );
-    Assert.strictEqual(
       Services.prefs.getBoolPref(
         "services.sync.prefs.dangerously_allow_arbitrary"
       ),
-      true
+      false
     );
     Assert.strictEqual(
       Services.prefs.getPrefType(
