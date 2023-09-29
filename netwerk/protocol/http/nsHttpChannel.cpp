@@ -2453,10 +2453,6 @@ nsresult nsHttpChannel::ContinueProcessResponse3(nsresult rv) {
         
         
         rv = NS_ERROR_FAILURE;
-      } else if (httpStatus == 401 &&
-                 mLoadInfo->GetTainting() == mozilla::LoadTainting::CORS) {
-        
-        rv = NS_ERROR_FAILURE;
       } else {
         rv = mAuthProvider->ProcessAuthentication(
             httpStatus, mConnectionInfo->EndToEndSSL() && mTransaction &&
