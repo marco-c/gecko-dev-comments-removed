@@ -1345,6 +1345,15 @@ class LogicalMargin {
 
 
 
+  LogicalPoint StartOffset(WritingMode aWritingMode) const {
+    CHECK_WRITING_MODE(aWritingMode);
+    return LogicalPoint(aWritingMode, IStart(), BStart());
+  }
+
+  
+
+
+
   nscoord Top(WritingMode aWritingMode) const {
     CHECK_WRITING_MODE(aWritingMode);
     return aWritingMode.IsVertical()

@@ -5400,8 +5400,8 @@ std::tuple<nscoord, bool> nsFlexContainerFrame::ReflowChildren(
   
   
   WritingMode flexWM = aReflowInput.GetWritingMode();
-  const LogicalPoint containerContentBoxOrigin(
-      flexWM, aBorderPadding.IStart(flexWM), aBorderPadding.BStart(flexWM));
+  const LogicalPoint containerContentBoxOrigin =
+      aBorderPadding.StartOffset(flexWM);
 
   
   nscoord maxBlockEndEdgeOfChildren = containerContentBoxOrigin.B(flexWM);
