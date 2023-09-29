@@ -209,6 +209,11 @@ bool MP4Decoder::IsAAC(const nsACString& aMimeType) {
 }
 
 
+bool MP4Decoder::IsHEVC(const nsACString& aMimeType) {
+  return aMimeType.EqualsLiteral("video/hevc");
+}
+
+
 bool MP4Decoder::IsEnabled() { return StaticPrefs::media_mp4_enabled(); }
 
 
