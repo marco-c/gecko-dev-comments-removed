@@ -10,7 +10,7 @@ fn test_automatic_rollover() {
     let mut buf = Vec::new();
 
     assert!(!t.is_rolled());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 0);
+    assert_eq!(t.stream_position().unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 0);
     assert_eq!(buf.as_slice(), b"");
     buf.clear();
@@ -24,7 +24,7 @@ fn test_automatic_rollover() {
 
     assert_eq!(t.write(b"fghijklmno").unwrap(), 10);
 
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 15);
+    assert_eq!(t.stream_position().unwrap(), 15);
     assert!(t.is_rolled());
 }
 
@@ -32,13 +32,13 @@ fn test_automatic_rollover() {
 fn test_explicit_rollover() {
     let mut t = SpooledTempFile::new(100);
     assert_eq!(t.write(b"abcdefghijklmnopqrstuvwxyz").unwrap(), 26);
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26);
+    assert_eq!(t.stream_position().unwrap(), 26);
     assert!(!t.is_rolled());
 
     
     assert!(t.roll().is_ok());
     assert!(t.is_rolled());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26);
+    assert_eq!(t.stream_position().unwrap(), 26);
 
     let mut buf = Vec::new();
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 0);
@@ -48,7 +48,7 @@ fn test_explicit_rollover() {
     assert_eq!(t.seek(SeekFrom::Start(0)).unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 26);
     assert_eq!(buf.as_slice(), b"abcdefghijklmnopqrstuvwxyz");
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26);
+    assert_eq!(t.stream_position().unwrap(), 26);
 }
 
 
@@ -56,7 +56,7 @@ fn test_explicit_rollover() {
 fn test_seek(t: &mut SpooledTempFile) {
     assert_eq!(t.write(b"abcdefghijklmnopqrstuvwxyz").unwrap(), 26);
 
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26); 
+    assert_eq!(t.stream_position().unwrap(), 26); 
     assert_eq!(t.seek(SeekFrom::Current(-1)).unwrap(), 25);
     assert_eq!(t.seek(SeekFrom::Current(1)).unwrap(), 26);
     assert_eq!(t.seek(SeekFrom::Current(1)).unwrap(), 27);
@@ -110,7 +110,7 @@ fn test_seek_read(t: &mut SpooledTempFile) {
     buf.clear();
 
     
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26); 
+    assert_eq!(t.stream_position().unwrap(), 26); 
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 0);
     assert_eq!(buf.as_slice(), b"");
     buf.clear();
@@ -122,7 +122,7 @@ fn test_seek_read(t: &mut SpooledTempFile) {
     assert_eq!(buf, *b"fghij");
 
     
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 10); 
+    assert_eq!(t.stream_position().unwrap(), 10); 
     assert!(t.read_exact(&mut buf).is_ok());
     assert_eq!(buf, *b"klmno");
 
@@ -190,11 +190,11 @@ fn test_overwrite_and_extend_rollover() {
     assert_eq!(t.write(b"abcdefghijklmno").unwrap(), 15);
     assert!(!t.is_rolled());
     assert_eq!(t.seek(SeekFrom::End(-5)).unwrap(), 10);
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 10); 
+    assert_eq!(t.stream_position().unwrap(), 10); 
     assert!(!t.is_rolled());
     assert_eq!(t.write(b"0123456789)!@#$%^&*(").unwrap(), 20);
     assert!(t.is_rolled());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 30); 
+    assert_eq!(t.stream_position().unwrap(), 30); 
     let mut buf = Vec::new();
     assert_eq!(t.seek(SeekFrom::Start(0)).unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 30);
@@ -247,11 +247,11 @@ fn test_set_len(t: &mut SpooledTempFile) {
     assert!(t.set_len(10).is_ok());
 
     
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26); 
+    assert_eq!(t.stream_position().unwrap(), 26); 
 
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 0);
     assert_eq!(buf.as_slice(), b"");
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 26); 
+    assert_eq!(t.stream_position().unwrap(), 26); 
     buf.clear();
 
     
@@ -262,7 +262,7 @@ fn test_set_len(t: &mut SpooledTempFile) {
 
     
     assert!(t.set_len(40).is_ok());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 10); 
+    assert_eq!(t.stream_position().unwrap(), 10); 
     assert_eq!(t.seek(SeekFrom::Start(0)).unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 40);
     assert_eq!(
@@ -290,17 +290,17 @@ fn test_set_len_rollover() {
     let mut t = spooled_tempfile(10);
     assert_eq!(t.write(b"abcde").unwrap(), 5);
     assert!(!t.is_rolled());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 5); 
+    assert_eq!(t.stream_position().unwrap(), 5); 
 
     assert_eq!(t.seek(SeekFrom::Start(0)).unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 5);
     assert_eq!(buf.as_slice(), b"abcde");
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 5); 
+    assert_eq!(t.stream_position().unwrap(), 5); 
     buf.clear();
 
     assert!(t.set_len(20).is_ok());
     assert!(t.is_rolled());
-    assert_eq!(t.seek(SeekFrom::Current(0)).unwrap(), 5); 
+    assert_eq!(t.stream_position().unwrap(), 5); 
     assert_eq!(t.seek(SeekFrom::Start(0)).unwrap(), 0);
     assert_eq!(t.read_to_end(&mut buf).unwrap(), 20);
     assert_eq!(buf.as_slice(), b"abcde\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0");
