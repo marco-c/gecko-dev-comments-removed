@@ -17,16 +17,16 @@ for (let [key, val] of Object.entries({
   NS_DIRECTORY_SERVICE_CONTRACTID: "@mozilla.org/file/directory_service;1",
   NS_OBSERVER_SERVICE_CONTRACTID: "@mozilla.org/observer-service;1",
 
-  TYPE_REFTEST_EQUAL: '==',
-  TYPE_REFTEST_NOTEQUAL: '!=',
-  TYPE_LOAD: 'load',     
-                         
-  TYPE_SCRIPT: 'script', 
-  TYPE_PRINT: 'print',   
-                         
+  TYPE_REFTEST_EQUAL: "==",
+  TYPE_REFTEST_NOTEQUAL: "!=",
+  TYPE_LOAD: "load", 
+  
+  TYPE_SCRIPT: "script", 
+  TYPE_PRINT: "print", 
+  
 
   
-  URL_TARGET_TYPE_TEST: 0,      
+  URL_TARGET_TYPE_TEST: 0, 
   URL_TARGET_TYPE_REFERENCE: 1, 
 
   
@@ -50,7 +50,8 @@ for (let [key, val] of Object.entries({
   FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS: "non-needs-focus",
 
   
-  BLANK_URL_FOR_CLEARING: "data:text/html;charset=UTF-8,%3C%21%2D%2DCLEAR%2D%2D%3E",
+  BLANK_URL_FOR_CLEARING:
+    "data:text/html;charset=UTF-8,%3C%21%2D%2DCLEAR%2D%2D%3E",
 
   
   g: {
@@ -73,11 +74,11 @@ for (let [key, val] of Object.entries({
 
     browser: undefined,
     
-    browserIsRemote: undefined,        
+    browserIsRemote: undefined, 
     
-    browserIsIframe: undefined,        
-    browserMessageManager: undefined,  
-    useDrawSnapshot: undefined,        
+    browserIsIframe: undefined, 
+    browserMessageManager: undefined, 
+    useDrawSnapshot: undefined, 
     canvas1: undefined,
     canvas2: undefined,
     
@@ -100,9 +101,9 @@ for (let [key, val] of Object.entries({
       AssertionUnexpected: 0,
       AssertionUnexpectedFixed: 0,
       
-      KnownFail : 0,
+      KnownFail: 0,
       AssertionKnown: 0,
-      Random : 0,
+      Random: 0,
       Skip: 0,
       Slow: 0,
     },
@@ -159,7 +160,7 @@ for (let [key, val] of Object.entries({
     
     
     dumpedConditionSandbox: false,
-  }
+  },
 })) {
   this[key] = val;
   EXPORTED_SYMBOLS.push(key);

@@ -1,20 +1,28 @@
 var EXPORTED_SYMBOLS = ["ReftestFissionChild"];
 
 class ReftestFissionChild extends JSWindowActorChild {
-
-  forwardAfterPaintEventToParent(rects, originalTargetUri, dispatchToSelfAsWell) {
+  forwardAfterPaintEventToParent(
+    rects,
+    originalTargetUri,
+    dispatchToSelfAsWell
+  ) {
     if (dispatchToSelfAsWell) {
-      let event = new this.contentWindow.CustomEvent("Reftest:MozAfterPaintFromChild",
-        {bubbles: true, detail: {rects, originalTargetUri}});
+      let event = new this.contentWindow.CustomEvent(
+        "Reftest:MozAfterPaintFromChild",
+        { bubbles: true, detail: { rects, originalTargetUri } }
+      );
       this.contentWindow.dispatchEvent(event);
     }
 
     let parentContext = this.browsingContext.parent;
     if (parentContext) {
       try {
-        this.sendAsyncMessage("ForwardAfterPaintEvent",
-          {toBrowsingContext: parentContext, fromBrowsingContext: this.browsingContext,
-           rects, originalTargetUri});
+        this.sendAsyncMessage("ForwardAfterPaintEvent", {
+          toBrowsingContext: parentContext,
+          fromBrowsingContext: this.browsingContext,
+          rects,
+          originalTargetUri,
+        });
       } catch (e) {
         
         
@@ -32,24 +40,33 @@ class ReftestFissionChild extends JSWindowActorChild {
         
         var rects = [];
         for (let r of evt.clientRects) {
-            rects.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+          rects.push({
+            left: r.left,
+            top: r.top,
+            right: r.right,
+            bottom: r.bottom,
+          });
         }
-        this.forwardAfterPaintEventToParent(rects, this.document.documentURI,  false);
+        this.forwardAfterPaintEventToParent(
+          rects,
+          this.document.documentURI,
+           false
+        );
         break;
     }
   }
 
   transformRect(transform, rect) {
-    let p1 = transform.transformPoint({x: rect.left, y: rect.top});
-    let p2 = transform.transformPoint({x: rect.right, y: rect.top});
-    let p3 = transform.transformPoint({x: rect.left, y: rect.bottom});
-    let p4 = transform.transformPoint({x: rect.right, y: rect.bottom});
+    let p1 = transform.transformPoint({ x: rect.left, y: rect.top });
+    let p2 = transform.transformPoint({ x: rect.right, y: rect.top });
+    let p3 = transform.transformPoint({ x: rect.left, y: rect.bottom });
+    let p4 = transform.transformPoint({ x: rect.right, y: rect.bottom });
     let quad = new DOMQuad(p1, p2, p3, p4);
     return quad.getBounds();
   }
 
   SetupDisplayportRoot() {
-    let returnStrings = {infoStrings: [], errorStrings: []};
+    let returnStrings = { infoStrings: [], errorStrings: [] };
 
     let contentRootElement = this.contentWindow.document.documentElement;
     if (!contentRootElement) {
@@ -60,31 +77,43 @@ class ReftestFissionChild extends JSWindowActorChild {
     
     if (!contentRootElement.hasAttribute("reftest-async-scroll")) {
       let winUtils = this.contentWindow.windowUtils;
-      this.setupDisplayportForElement(contentRootElement, winUtils, returnStrings);
+      this.setupDisplayportForElement(
+        contentRootElement,
+        winUtils,
+        returnStrings
+      );
       return Promise.resolve(returnStrings);
     }
 
     
     
     let browsingContext = this.browsingContext;
-    let promise = this.sendQuery("TellChildrenToSetupDisplayport", {browsingContext});
-    return promise.then(function(result) {
-      for (let errorString of result.errorStrings) {
-          returnStrings.errorStrings.push(errorString);
-      }
-      for (let infoString of result.infoStrings) {
-          returnStrings.infoStrings.push(infoString);
-      }
-      return returnStrings;
-    },
-    function(reason) {
-      returnStrings.errorStrings.push("SetupDisplayport SendQuery to parent promise rejected: " + reason);
-      return returnStrings;
+    let promise = this.sendQuery("TellChildrenToSetupDisplayport", {
+      browsingContext,
     });
+    return promise.then(
+      function (result) {
+        for (let errorString of result.errorStrings) {
+          returnStrings.errorStrings.push(errorString);
+        }
+        for (let infoString of result.infoStrings) {
+          returnStrings.infoStrings.push(infoString);
+        }
+        return returnStrings;
+      },
+      function (reason) {
+        returnStrings.errorStrings.push(
+          "SetupDisplayport SendQuery to parent promise rejected: " + reason
+        );
+        return returnStrings;
+      }
+    );
   }
 
   attrOrDefault(element, attr, def) {
-    return element.hasAttribute(attr) ? Number(element.getAttribute(attr)) : def;
+    return element.hasAttribute(attr)
+      ? Number(element.getAttribute(attr))
+      : def;
   }
 
   setupDisplayportForElement(element, winUtils, returnStrings) {
@@ -93,7 +122,17 @@ class ReftestFissionChild extends JSWindowActorChild {
     var dpx = this.attrOrDefault(element, "reftest-displayport-x", 0);
     var dpy = this.attrOrDefault(element, "reftest-displayport-y", 0);
     if (dpw !== 0 || dph !== 0 || dpx != 0 || dpy != 0) {
-      returnStrings.infoStrings.push("Setting displayport to <x="+ dpx +", y="+ dpy +", w="+ dpw +", h="+ dph +">");
+      returnStrings.infoStrings.push(
+        "Setting displayport to <x=" +
+          dpx +
+          ", y=" +
+          dpy +
+          ", w=" +
+          dpw +
+          ", h=" +
+          dph +
+          ">"
+      );
       winUtils.setDisplayPortForElement(dpx, dpy, dpw, dph, element, 1);
     }
   }
@@ -103,87 +142,140 @@ class ReftestFissionChild extends JSWindowActorChild {
     for (let c = element.firstElementChild; c; c = c.nextElementSibling) {
       this.setupDisplayportForElementSubtree(c, winUtils, returnStrings);
     }
-    if (typeof element.contentDocument !== "undefined" &&
-        element.contentDocument) {
-      returnStrings.infoStrings.push("setupDisplayportForElementSubtree descending into subdocument");
-      this.setupDisplayportForElementSubtree(element.contentDocument.documentElement,
-        element.contentWindow.windowUtils, returnStrings);
+    if (
+      typeof element.contentDocument !== "undefined" &&
+      element.contentDocument
+    ) {
+      returnStrings.infoStrings.push(
+        "setupDisplayportForElementSubtree descending into subdocument"
+      );
+      this.setupDisplayportForElementSubtree(
+        element.contentDocument.documentElement,
+        element.contentWindow.windowUtils,
+        returnStrings
+      );
     }
   }
 
-    setupAsyncScrollOffsetsForElement(element, winUtils, allowFailure, returnStrings) {
-      let sx = this.attrOrDefault(element, "reftest-async-scroll-x", 0);
-      let sy = this.attrOrDefault(element, "reftest-async-scroll-y", 0);
-      if (sx != 0 || sy != 0) {
-        try {
-          
-          
-          winUtils.setAsyncScrollOffset(element, sx, sy);
-          return true;
-        } catch (e) {
-          if (allowFailure) {
-            returnStrings.infoStrings.push("setupAsyncScrollOffsetsForElement error calling setAsyncScrollOffset: " + e);
-          } else {
-            returnStrings.errorStrings.push("setupAsyncScrollOffsetsForElement error calling setAsyncScrollOffset: " + e);
-          }
+  setupAsyncScrollOffsetsForElement(
+    element,
+    winUtils,
+    allowFailure,
+    returnStrings
+  ) {
+    let sx = this.attrOrDefault(element, "reftest-async-scroll-x", 0);
+    let sy = this.attrOrDefault(element, "reftest-async-scroll-y", 0);
+    if (sx != 0 || sy != 0) {
+      try {
+        
+        
+        winUtils.setAsyncScrollOffset(element, sx, sy);
+        return true;
+      } catch (e) {
+        if (allowFailure) {
+          returnStrings.infoStrings.push(
+            "setupAsyncScrollOffsetsForElement error calling setAsyncScrollOffset: " +
+              e
+          );
+        } else {
+          returnStrings.errorStrings.push(
+            "setupAsyncScrollOffsetsForElement error calling setAsyncScrollOffset: " +
+              e
+          );
         }
       }
-      return false;
     }
+    return false;
+  }
 
-    setupAsyncScrollOffsetsForElementSubtree(element, winUtils, allowFailure, returnStrings) {
-      let updatedAny = this.setupAsyncScrollOffsetsForElement(element, winUtils, returnStrings);
-      for (let c = element.firstElementChild; c; c = c.nextElementSibling) {
-        if (this.setupAsyncScrollOffsetsForElementSubtree(c, winUtils, allowFailure, returnStrings)) {
-          updatedAny = true;
-        }
+  setupAsyncScrollOffsetsForElementSubtree(
+    element,
+    winUtils,
+    allowFailure,
+    returnStrings
+  ) {
+    let updatedAny = this.setupAsyncScrollOffsetsForElement(
+      element,
+      winUtils,
+      returnStrings
+    );
+    for (let c = element.firstElementChild; c; c = c.nextElementSibling) {
+      if (
+        this.setupAsyncScrollOffsetsForElementSubtree(
+          c,
+          winUtils,
+          allowFailure,
+          returnStrings
+        )
+      ) {
+        updatedAny = true;
       }
-      if (typeof element.contentDocument !== "undefined" &&
-          element.contentDocument) {
-        returnStrings.infoStrings.push("setupAsyncScrollOffsetsForElementSubtree Descending into subdocument");
-        if (this.setupAsyncScrollOffsetsForElementSubtree(element.contentDocument.documentElement,
-              element.contentWindow.windowUtils, allowFailure, returnStrings)) {
-          updatedAny = true;
-        }
-      }
-      return updatedAny;
     }
+    if (
+      typeof element.contentDocument !== "undefined" &&
+      element.contentDocument
+    ) {
+      returnStrings.infoStrings.push(
+        "setupAsyncScrollOffsetsForElementSubtree Descending into subdocument"
+      );
+      if (
+        this.setupAsyncScrollOffsetsForElementSubtree(
+          element.contentDocument.documentElement,
+          element.contentWindow.windowUtils,
+          allowFailure,
+          returnStrings
+        )
+      ) {
+        updatedAny = true;
+      }
+    }
+    return updatedAny;
+  }
 
   async receiveMessage(msg) {
     switch (msg.name) {
-      case "ForwardAfterPaintEventToSelfAndParent":
-      {
+      case "ForwardAfterPaintEventToSelfAndParent": {
         
         
         
         if (msg.data.fromBrowsingContext.embedderElement == null) {
-          this.forwardAfterPaintEventToParent(msg.data.rects, msg.data.originalTargetUri,
-             true);
+          this.forwardAfterPaintEventToParent(
+            msg.data.rects,
+            msg.data.originalTargetUri,
+             true
+          );
           return;
         }
 
         
         
-        let style = this.contentWindow.getComputedStyle(msg.data.fromBrowsingContext.embedderElement);
+        let style = this.contentWindow.getComputedStyle(
+          msg.data.fromBrowsingContext.embedderElement
+        );
         let translate = new DOMMatrixReadOnly().translate(
           parseFloat(style.paddingLeft) + parseFloat(style.borderLeftWidth),
-          parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth));
+          parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth)
+        );
 
         
         
-        let transform = msg.data.fromBrowsingContext.embedderElement.getTransformToViewport();
+        let transform =
+          msg.data.fromBrowsingContext.embedderElement.getTransformToViewport();
         let combined = translate.multiply(transform);
 
-        let newrects = msg.data.rects.map(r => this.transformRect(combined, r))
+        let newrects = msg.data.rects.map(r => this.transformRect(combined, r));
 
-        this.forwardAfterPaintEventToParent(newrects, msg.data.originalTargetUri,  true);
+        this.forwardAfterPaintEventToParent(
+          newrects,
+          msg.data.originalTargetUri,
+           true
+        );
         break;
       }
 
       case "EmptyMessage":
         return undefined;
-      case "UpdateLayerTree":
-      {
+      case "UpdateLayerTree": {
         let errorStrings = [];
         try {
           if (this.manager.isProcessRoot) {
@@ -192,22 +284,23 @@ class ReftestFissionChild extends JSWindowActorChild {
         } catch (e) {
           errorStrings.push("updateLayerTree failed: " + e);
         }
-        return {errorStrings};
+        return { errorStrings };
       }
-      case "FlushRendering":
-      {
+      case "FlushRendering": {
         let errorStrings = [];
         let warningStrings = [];
         let infoStrings = [];
 
         try {
-          let {ignoreThrottledAnimations, needsAnimationFrame} = msg.data;
+          let { ignoreThrottledAnimations, needsAnimationFrame } = msg.data;
 
           if (this.manager.isProcessRoot) {
             var anyPendingPaintsGeneratedInDescendants = false;
 
             if (needsAnimationFrame) {
-              await new Promise(resolve => this.contentWindow.requestAnimationFrame(resolve));
+              await new Promise(resolve =>
+                this.contentWindow.requestAnimationFrame(resolve)
+              );
             }
 
             function flushWindow(win) {
@@ -228,7 +321,10 @@ class ReftestFissionChild extends JSWindowActorChild {
               }
 
               if (!afterPaintWasPending && utils.isMozAfterPaintPending) {
-                infoStrings.push("FlushRendering generated paint for window " + win.location.href);
+                infoStrings.push(
+                  "FlushRendering generated paint for window " +
+                    win.location.href
+                );
                 anyPendingPaintsGeneratedInDescendants = true;
               }
 
@@ -249,32 +345,37 @@ class ReftestFissionChild extends JSWindowActorChild {
               flushWindow(this.contentWindow);
             }
 
-            if (anyPendingPaintsGeneratedInDescendants &&
-                !this.contentWindow.windowUtils.isMozAfterPaintPending) {
-              warningStrings.push("Internal error: descendant frame generated a MozAfterPaint event, but the root document doesn't have one!");
+            if (
+              anyPendingPaintsGeneratedInDescendants &&
+              !this.contentWindow.windowUtils.isMozAfterPaintPending
+            ) {
+              warningStrings.push(
+                "Internal error: descendant frame generated a MozAfterPaint event, but the root document doesn't have one!"
+              );
             }
-
           }
         } catch (e) {
           errorStrings.push("flushWindow failed: " + e);
         }
-        return {errorStrings, warningStrings, infoStrings};
+        return { errorStrings, warningStrings, infoStrings };
       }
 
-      case "SetupDisplayport":
-      {
+      case "SetupDisplayport": {
         let contentRootElement = this.document.documentElement;
         let winUtils = this.contentWindow.windowUtils;
-        let returnStrings = {infoStrings: [], errorStrings: []};
+        let returnStrings = { infoStrings: [], errorStrings: [] };
         if (contentRootElement) {
-          this.setupDisplayportForElementSubtree(contentRootElement, winUtils, returnStrings);
+          this.setupDisplayportForElementSubtree(
+            contentRootElement,
+            winUtils,
+            returnStrings
+          );
         }
         return returnStrings;
       }
 
-      case "SetupAsyncScrollOffsets":
-      {
-        let returns = {infoStrings: [], errorStrings: [], updatedAny: false};
+      case "SetupAsyncScrollOffsets": {
+        let returns = { infoStrings: [], errorStrings: [], updatedAny: false };
         let contentRootElement = this.document.documentElement;
 
         if (!contentRootElement) {
@@ -283,10 +384,14 @@ class ReftestFissionChild extends JSWindowActorChild {
 
         let winUtils = this.contentWindow.windowUtils;
 
-        returns.updatedAny = this.setupAsyncScrollOffsetsForElementSubtree(contentRootElement, winUtils, msg.data.allowFailure, returns);
+        returns.updatedAny = this.setupAsyncScrollOffsetsForElementSubtree(
+          contentRootElement,
+          winUtils,
+          msg.data.allowFailure,
+          returns
+        );
         return returns;
       }
-
     }
   }
 }
