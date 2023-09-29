@@ -85,9 +85,6 @@ pub const SO_BINDTOIFINDEX: ::c_int = 62;
 
 
 
-pub const FICLONE: ::c_ulong = 0x80049409;
-pub const FICLONERANGE: ::c_ulong = 0x8020940D;
-
 
 
 pub const SCM_TIMESTAMPNS: ::c_int = SO_TIMESTAMPNS;

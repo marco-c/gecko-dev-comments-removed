@@ -8,8 +8,7 @@
 
 
 
-use std::ffi::OsStr;
-use std::fs::remove_dir_all;
+use remove_dir_all::remove_dir_all;
 use std::mem;
 use std::path::{self, Path, PathBuf};
 use std::{fmt, fs, io};
@@ -289,70 +288,10 @@ impl TempDir {
     
     
     
-    pub fn with_prefix<S: AsRef<OsStr>>(prefix: S) -> io::Result<TempDir> {
-        Builder::new().prefix(&prefix).tempdir()
-    }
-
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn with_prefix_in<S: AsRef<OsStr>, P: AsRef<Path>>(
-        prefix: S,
-        dir: P,
-    ) -> io::Result<TempDir> {
-        Builder::new().prefix(&prefix).tempdir_in(dir)
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[must_use]
     pub fn path(&self) -> &path::Path {
         self.path.as_ref()
     }
@@ -384,7 +323,6 @@ impl TempDir {
     
     
     
-    #[must_use]
     pub fn into_path(self) -> PathBuf {
         
         let mut this = mem::ManuallyDrop::new(self);

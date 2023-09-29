@@ -1,11 +1,13 @@
 use std::env;
-use std::ffi::OsStr;
+use std::ffi::{CString, OsStr};
 use std::fs::{self, File, OpenOptions};
 use std::io;
 cfg_if::cfg_if! {
     if #[cfg(not(target_os = "wasi"))] {
+        use std::os::unix::ffi::OsStrExt;
         use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
     } else {
+        use std::os::wasi::ffi::OsStrExt;
         #[cfg(feature = "nightly")]
         use std::os::wasi::fs::MetadataExt;
     }
@@ -14,10 +16,29 @@ use crate::util;
 use std::path::Path;
 
 #[cfg(not(target_os = "redox"))]
-use {
-    rustix::fs::{rename, unlink},
-    std::fs::hard_link,
-};
+use libc::{c_char, c_int, link, rename, unlink};
+
+#[cfg(not(target_os = "redox"))]
+#[inline(always)]
+pub fn cvt_err(result: c_int) -> io::Result<c_int> {
+    if result == -1 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(result)
+    }
+}
+
+#[cfg(target_os = "redox")]
+#[inline(always)]
+pub fn cvt_err(result: Result<usize, syscall::Error>) -> io::Result<usize> {
+    result.map_err(|err| io::Error::from_raw_os_error(err.errno))
+}
+
+
+pub fn cstr(path: &Path) -> io::Result<CString> {
+    CString::new(path.as_os_str().as_bytes())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contained a null"))
+}
 
 pub fn create_named(path: &Path, open_options: &mut OpenOptions) -> io::Result<File> {
     open_options.read(true).write(true).create_new(true);
@@ -49,18 +70,16 @@ fn create_unlinked(path: &Path) -> io::Result<File> {
 
 #[cfg(target_os = "linux")]
 pub fn create(dir: &Path) -> io::Result<File> {
-    use rustix::{fs::OFlags, io::Errno};
+    use libc::{EISDIR, ENOENT, EOPNOTSUPP, O_TMPFILE};
     OpenOptions::new()
         .read(true)
         .write(true)
-        .custom_flags(OFlags::TMPFILE.bits() as i32) 
+        .custom_flags(O_TMPFILE) 
         .open(dir)
         .or_else(|e| {
-            match Errno::from_io_error(&e) {
+            match e.raw_os_error() {
                 
-                Some(Errno::OPNOTSUPP) | Some(Errno::ISDIR) | Some(Errno::NOENT) => {
-                    create_unix(dir)
-                }
+                Some(EOPNOTSUPP) | Some(EISDIR) | Some(ENOENT) => create_unix(dir),
                 _ => Err(e),
             }
         })
@@ -105,41 +124,29 @@ pub fn reopen(_file: &File, _path: &Path) -> io::Result<File> {
 
 #[cfg(not(target_os = "redox"))]
 pub fn persist(old_path: &Path, new_path: &Path, overwrite: bool) -> io::Result<()> {
-    if overwrite {
-        rename(old_path, new_path)?;
-    } else {
-        
-        
-        #[cfg(any(target_os = "android", target_os = "linux"))]
-        {
-            use rustix::fs::{renameat_with, RenameFlags, CWD};
-            use rustix::io::Errno;
-            use std::sync::atomic::{AtomicBool, Ordering::Relaxed};
-
-            static NOSYS: AtomicBool = AtomicBool::new(false);
-            if !NOSYS.load(Relaxed) {
-                match renameat_with(CWD, old_path, CWD, new_path, RenameFlags::NOREPLACE) {
-                    Ok(()) => return Ok(()),
-                    Err(Errno::NOSYS) => NOSYS.store(true, Relaxed),
-                    Err(Errno::INVAL) => {}
-                    Err(e) => return Err(e.into()),
-                }
-            }
+    unsafe {
+        let old_path = cstr(old_path)?;
+        let new_path = cstr(new_path)?;
+        if overwrite {
+            cvt_err(rename(
+                old_path.as_ptr() as *const c_char,
+                new_path.as_ptr() as *const c_char,
+            ))?;
+        } else {
+            cvt_err(link(
+                old_path.as_ptr() as *const c_char,
+                new_path.as_ptr() as *const c_char,
+            ))?;
+            
+            
+            let _ = unlink(old_path.as_ptr() as *const c_char);
         }
-
-        
-        
-        
-        hard_link(old_path, new_path)?;
-
-        
-        let _ = unlink(old_path);
+        Ok(())
     }
-    Ok(())
 }
 
 #[cfg(target_os = "redox")]
-pub fn persist(_old_path: &Path, _new_path: &Path, _overwrite: bool) -> io::Result<()> {
+pub fn persist(old_path: &Path, new_path: &Path, overwrite: bool) -> io::Result<()> {
     
     Err(io::Error::from_raw_os_error(syscall::ENOSYS))
 }

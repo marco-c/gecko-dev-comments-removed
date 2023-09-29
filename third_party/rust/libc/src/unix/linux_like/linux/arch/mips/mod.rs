@@ -103,9 +103,6 @@ pub const SO_TIMESTAMPING: ::c_int = 37;
 
 
 
-pub const FICLONE: ::c_ulong = 0x80049409;
-pub const FICLONERANGE: ::c_ulong = 0x8020940D;
-
 
 
 pub const SCM_TIMESTAMPNS: ::c_int = SO_TIMESTAMPNS;
@@ -272,7 +269,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(target_arch = "mips64", target_arch = "mips64r6"),
+    if #[cfg(target_arch = "mips64",
          any(target_env = "gnu",
              target_env = "uclibc"))] {
         pub const RLIM_INFINITY: ::rlim_t = !0;
@@ -280,7 +277,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(any(target_arch = "mips", target_arch = "mips32r6"),
+    if #[cfg(target_arch = "mips",
          any(target_env = "gnu",
              target_env = "uclibc"))] {
         pub const RLIM_INFINITY: ::rlim_t = 0x7fffffff;
