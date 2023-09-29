@@ -474,6 +474,10 @@ pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
+
+pref("browser.urlbar.quicksuggest.rustEnabled", false);
+
+
 pref("browser.urlbar.quicksuggest.shouldShowOnboardingDialog", true);
 
 
