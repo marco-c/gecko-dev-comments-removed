@@ -159,19 +159,12 @@ class AboutWelcomeTelemetry {
     lazy.log.debug(`Submitting Glean ping for ${JSON.stringify(ping)}`);
     
     let event_context = ping?.event_context;
-    let shopping_callout_impression =
-      ping?.message_id.startsWith("FAKESPOT_CALLOUT") &&
-      ping?.event === "IMPRESSION";
-
     if (typeof event_context === "string") {
       try {
         event_context = JSON.parse(event_context);
         
         
-        if (
-          event_context?.page === "about:shoppingsidebar" ||
-          shopping_callout_impression
-        ) {
+        if (event_context?.page === "about:shoppingsidebar") {
           this.handleShoppingPings(ping, event_context);
         }
       } catch (e) {
@@ -258,9 +251,8 @@ class AboutWelcomeTelemetry {
   }
 
   handleShoppingPings(ping, event_context) {
-    const message_id = ping?.message_id;
     
-    if (message_id.startsWith("FAKESPOT_OPTIN_DEFAULT")) {
+    if (ping?.message_id.startsWith("FAKESPOT_OPTIN_DEFAULT")) {
       
       
       switch (ping?.event) {
@@ -291,11 +283,6 @@ class AboutWelcomeTelemetry {
           });
           break;
       }
-    }
-    if (message_id.startsWith("FAKESPOT_CALLOUT")) {
-      Glean.shopping.addressBarFeatureCalloutDisplayed.record({
-        configuration: message_id,
-      });
     }
   }
 }
