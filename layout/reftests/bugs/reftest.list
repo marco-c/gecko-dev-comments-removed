@@ -1398,7 +1398,6 @@ fuzzy(0-5,0-50) == 526463-1.html 526463-1-ref.html
 == 528038-1e.html 528038-1-ref.html
 == 528038-1f.html 528038-1-ref.html
 == 528038-2.html 528038-2-ref.html
-== 528096-1.html 528096-1-ref.html
 == 530686-1.html 530686-1-ref.html
 fuzzy-if(Android,0-2,0-48) fuzzy-if(cocoaWidget&&swgl,0-1,0-3) == 531200-1.html 531200-1-ref.html
 == 531371-1.html 531371-1-ref.html
@@ -1790,8 +1789,6 @@ pref(browser.display.use_document_fonts,0) == 1022481-1.html 1022481-1-ref.html
 fuzzy(0-1,0-126000) == 1022612-1.html 1022612-1-ref.html
 skip-if(Android&&emulator) == 1024473-1.html 1024473-1-ref.html
 fuzzy(0-1,0-24000) == 1025914-1.html 1025914-1-ref.html
-pref(layout.css.moz-document.content.enabled,true) == 1035091.html 1035091-ref.html
-pref(layout.css.moz-document.content.enabled,false) == 1035091-2.html 1035091-ref.html
 == 1042104-1.html 1042104-1-ref.html
 == 1043537-1.html 1043537-1-ref.html
 == 1044198-1.html 1044198-1-ref.html

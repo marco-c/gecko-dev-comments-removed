@@ -240,10 +240,6 @@ var validNonUrlImageValues = [
   
   "repeating-radial-gradient(circle closest-side at left 0px bottom 7in, hsl(2,2%,5%), rgb(1,6,0))",
 
-  "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 2, 10, 10, 2)",
-  "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 10%, 50%, 30%, 0%)",
-  "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), 10, 50%, 30%, 0)",
-
   "radial-gradient(at calc(25%) top, red, blue)",
   "radial-gradient(at left calc(25%), red, blue)",
   "radial-gradient(at calc(25px) top, red, blue)",
@@ -4079,7 +4075,6 @@ var gCSSProperties = {
       "url(404.png) rgba(0, 0, 0, 0) rgb(255, 0, 0), url(404.png) rgba(0, 0, 0, 0) rgb(255, 0, 0)",
       "url(404.png) rgb(255, 0, 0), url(404.png) rgb(255, 0, 0)",
       
-      "-moz-image-rect(url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAIAAAD8GO2jAAAAKElEQVR42u3NQQ0AAAgEoNP+nTWFDzcoQE1udQQCgUAgEAgEAsGTYAGjxAE/G/Q2tQAAAABJRU5ErkJggg==), rubbish, 50%, 30%, 0) transparent",
       "-moz-element(#a rubbish) black",
       "content-box text text",
       "padding-box text url(404.png) text",
