@@ -357,6 +357,27 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   Maybe<nsID> mPrivateBrowsingSessionKey;
 
   nsCOMPtr<nsIFingerprintingWebCompatService> mWebCompatService;
+  nsTHashMap<nsCStringHashKey, RFPTarget> mFingerprintingOverrides;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static nsresult CreateOverrideDomainKey(nsIFingerprintingOverride* aOverride,
+                                          nsACString& aDomainKey);
+
+  
+  
+  
+  
+  static RFPTarget CreateOverridesFromText(
+      const nsString& aOverridesText, RFPTarget aBaseOverrides = RFPTarget(0));
 };
 
 }  
