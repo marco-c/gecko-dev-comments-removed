@@ -20,6 +20,7 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/TimeStamp.h"
 #include "nsGkAtoms.h"
+#include "nsIConsoleService.h"
 #include "nsString.h"
 #include "nsStringFwd.h"
 #include "nsUnicodeProperties.h"
@@ -1746,15 +1747,17 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
   int fcVersion = FcGetVersion();
   bool fcCharsetParseBug = fcVersion >= 21094 && fcVersion <= 21101;
 
+  
+  
   auto addPattern = [this, fcCharsetParseBug, &families, &faces](
                         FcPattern* aPattern, FcChar8*& aLastFamilyName,
-                        nsCString& aFamilyName, bool aAppFont) -> void {
+                        nsCString& aFamilyName, bool aAppFont) -> bool {
     
     uint32_t cIndex = FindCanonicalNameIndex(aPattern, FC_FAMILYLANG);
     FcChar8* canonical = nullptr;
     FcPatternGetString(aPattern, FC_FAMILY, cIndex, &canonical);
     if (!canonical) {
-      return;
+      return false;
     }
 
     nsAutoCString keyName;
@@ -1861,13 +1864,17 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
         });
       }
     }
+
+    return visibility == FontVisibility::Base;
   };
 
+  
   auto addFontSetFamilies = [&addPattern](FcFontSet* aFontSet,
                                           SandboxPolicy* aPolicy,
-                                          bool aAppFonts) -> void {
+                                          bool aAppFonts) -> size_t {
+    size_t count = 0;
     if (NS_WARN_IF(!aFontSet)) {
-      return;
+      return count;
     }
     FcChar8* lastFamilyName = (FcChar8*)"";
     RefPtr<gfxFontconfigFontFamily> fontFamily;
@@ -1920,13 +1927,18 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
           (!FcStrCmp(fontFormat, (const FcChar8*)"TrueType") ||
            !FcStrCmp(fontFormat, (const FcChar8*)"CFF"))) {
         FcPatternDel(clone, FC_CHARSET);
-        addPattern(clone, lastFamilyName, familyName, aAppFonts);
+        if (addPattern(clone, lastFamilyName, familyName, aAppFonts)) {
+          ++count;
+        }
       } else {
-        addPattern(clone, lastFamilyName, familyName, aAppFonts);
+        if (addPattern(clone, lastFamilyName, familyName, aAppFonts)) {
+          ++count;
+        }
       }
 
       FcPatternDestroy(clone);
     }
+    return count;
   };
 
 #ifdef MOZ_BUNDLED_FONTS
@@ -1940,7 +1952,25 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
   
   FcFontSet* systemFonts = FcConfigGetFonts(nullptr, FcSetSystem);
-  addFontSetFamilies(systemFonts, policy.get(),  false);
+  auto numBaseFamilies = addFontSetFamilies(systemFonts, policy.get(),
+                                             false);
+  if (GetDistroID() != DistroID::Unknown && numBaseFamilies < 3) {
+    
+    
+    
+    
+    for (auto& f : families) {
+      f.mVisibility = FontVisibility::Unknown;
+    }
+    
+    nsCOMPtr<nsIConsoleService> console(
+        do_GetService("@mozilla.org/consoleservice;1"));
+    if (console) {
+      console->LogStringMessage(
+          u"Font-fingerprinting protection disabled; not enough standard "
+          u"distro fonts installed.");
+    }
+  }
 
   mozilla::fontlist::FontList* list = SharedFontList();
   list->SetFamilyNames(families);
