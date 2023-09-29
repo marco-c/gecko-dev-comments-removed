@@ -4,6 +4,7 @@
 
 
 
+include protocol PCanvasManager;
 include "mozilla/layers/LayersMessageUtils.h";
 include "mozilla/layers/CanvasTranslator.h";
 
@@ -17,8 +18,10 @@ namespace layers {
 
 
 
-[NeedsOtherPid, ParentImpl="CanvasTranslator"]
+[ParentImpl="CanvasTranslator"]
 async protocol PCanvas {
+  manager PCanvasManager;
+
 parent:
   
 
@@ -28,7 +31,8 @@ parent:
 
   async InitTranslator(TextureType aTextureType, Handle aReadHandle,
                        CrossProcessSemaphoreHandle aReaderSem,
-                       CrossProcessSemaphoreHandle aWriterSem);
+                       CrossProcessSemaphoreHandle aWriterSem,
+                       bool aUseIPDLThread);
 
   
 
@@ -41,7 +45,9 @@ parent:
 
   async ResumeTranslation();
 
-  child:
+  async __delete__();
+
+child:
   
 
 

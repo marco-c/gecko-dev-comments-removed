@@ -12,7 +12,6 @@
 
 #include "mozilla/gfx/InlineTranslator.h"
 #include "mozilla/layers/CanvasDrawEventRecorder.h"
-#include "mozilla/layers/CanvasThread.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/PCanvasParent.h"
 #include "mozilla/ipc/CrossProcessSemaphore.h"
@@ -33,22 +32,11 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
   friend class PProtocolParent;
 
-  
-
-
-
-
-
-
-  static already_AddRefed<CanvasTranslator> Create(
-      Endpoint<PCanvasParent>&& aEndpoint);
+  CanvasTranslator();
 
   
 
 
-  static void Shutdown();
-
-  
 
 
 
@@ -62,7 +50,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       const TextureType& aTextureType,
       ipc::SharedMemoryBasic::Handle&& aReadHandle,
       CrossProcessSemaphoreHandle&& aReaderSem,
-      CrossProcessSemaphoreHandle&& aWriterSem);
+      CrossProcessSemaphoreHandle&& aWriterSem, const bool& aUseIPDLThread);
 
   
 
@@ -160,15 +148,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-
-
-  UniquePtr<SurfaceDescriptor> WaitForSurfaceDescriptor(int64_t aTextureId);
-
-  
-
-
-
-
   void RemoveTexture(int64_t aTextureId);
 
   
@@ -253,9 +232,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
       gfx::ReferencePtr aSurface);
 
  private:
-  explicit CanvasTranslator(
-      already_AddRefed<CanvasThreadHolder> aCanvasThreadHolder);
-
   ~CanvasTranslator();
 
   void Bind(Endpoint<PCanvasParent>&& aEndpoint);
@@ -280,7 +256,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   bool CheckForFreshCanvasDevice(int aLineNumber);
   void NotifyDeviceChanged();
 
-  RefPtr<CanvasThreadHolder> mCanvasThreadHolder;
   RefPtr<TaskQueue> mTranslationTaskQueue;
 #if defined(XP_WIN)
   RefPtr<ID3D11Device> mDevice;
@@ -299,11 +274,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   nsRefPtrHashtable<nsPtrHashKey<void>, gfx::DataSourceSurface> mDataSurfaces;
   gfx::ReferencePtr mMappedSurface;
   UniquePtr<gfx::DataSourceSurface::ScopedMap> mPreparedMap;
-  typedef std::unordered_map<int64_t, UniquePtr<SurfaceDescriptor>>
-      DescriptorMap;
-  DescriptorMap mSurfaceDescriptors MOZ_GUARDED_BY(mSurfaceDescriptorsMonitor);
-  Monitor mSurfaceDescriptorsMonitor{
-      "CanvasTranslator::mSurfaceDescriptorsMonitor"};
   Atomic<bool> mDeactivated{false};
   bool mIsInTransaction = false;
   bool mDeviceResetInProgress = false;
