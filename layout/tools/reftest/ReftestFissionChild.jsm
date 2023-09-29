@@ -27,7 +27,7 @@ class ReftestFissionChild extends JSWindowActorChild {
         
         
         
-        Cu.reportError(e);
+        console.error(e);
       }
     }
   }
@@ -334,7 +334,7 @@ class ReftestFissionChild extends JSWindowActorChild {
                     flushWindow(win.frames[i]);
                   }
                 } catch (e) {
-                  Cu.reportError(e);
+                  console.error(e);
                 }
               }
             }
