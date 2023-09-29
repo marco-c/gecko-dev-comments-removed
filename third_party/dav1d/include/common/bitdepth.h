@@ -34,7 +34,7 @@
 #include "common/attributes.h"
 
 #if !defined(BITDEPTH)
-typedef void pixel;
+typedef uint8_t pixel; 
 typedef void coef;
 #define HIGHBD_DECL_SUFFIX
 #define HIGHBD_CALL_SUFFIX
