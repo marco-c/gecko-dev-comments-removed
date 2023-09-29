@@ -7,15 +7,18 @@
 #ifndef _include_gfx_ipc_CanvasRenderThread_h__
 #define _include_gfx_ipc_CanvasRenderThread_h__
 
-#include "mozilla/DataMutex.h"
-#include "mozilla/layers/SynchronousTask.h"
-#include "mozilla/StaticPtr.h"
+#include "mozilla/AlreadyAddRefed.h"
+#include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
-#include "nsThread.h"
 
 class nsIRunnable;
+class nsIThread;
+class nsIThreadPool;
 
-namespace mozilla::gfx {
+namespace mozilla {
+class TaskQueue;
+
+namespace gfx {
 
 
 
@@ -40,21 +43,33 @@ class CanvasRenderThread final {
   static bool IsInCanvasRenderThread();
 
   
+  static bool IsInCanvasWorkerThread();
+
+  
+  static bool IsInCanvasRenderOrWorkerThread();
+
+  
   static already_AddRefed<nsIThread> GetCanvasRenderThread();
 
+  static already_AddRefed<TaskQueue> CreateTaskQueue(bool aPreferWorkers);
+
+  static void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
+
  private:
-  CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread, bool aCreatedThread);
+  CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread,
+                     nsCOMPtr<nsIThreadPool>&& aWorkers, bool aCreatedThread);
   ~CanvasRenderThread();
 
-  void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
-
   nsCOMPtr<nsIThread> const mThread;
+
+  nsCOMPtr<nsIThreadPool> const mWorkers;
 
   
   
   bool mCreatedThread;
 };
 
+}  
 }  
 
 #endif  
