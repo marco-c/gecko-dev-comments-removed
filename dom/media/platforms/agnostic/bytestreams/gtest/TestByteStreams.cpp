@@ -7,7 +7,6 @@
 #include "gtest/gtest.h"
 
 #include "AnnexB.h"
-#include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
 #include "H265.h"
@@ -55,88 +54,7 @@ static already_AddRefed<MediaRawData> GetAvccSample(uint32_t aSampleSize) {
 }
 
 
-static already_AddRefed<MediaRawData> GetHVCCSample(uint32_t aSampleSize) {
-  if (aSampleSize < 4) {
-    
-    EXPECT_FALSE(true) << "Samples should be requested with sane sizes";
-  }
-  auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
-  uint8_t hvccBytesBuffer[] = {
-      1 ,
-      1 ,
-      0x60 ,
-      0 ,
-      0 ,
-      0 ,
-      0x90 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0x5A ,
-      0 ,
-      0 ,
-      0 ,
-      1 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0x0F 
-
-      ,
-      2 ,
-      
-      0x21 ,
-      0 ,
-      1 ,
-
-      
-      0 ,
-      8 ,
-      0x42 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-
-      
-      0x22 ,
-      0 ,
-      1 ,
-
-      
-      0 ,
-      3 ,
-      0x44 ,
-      0 ,
-      0 ,
-  };
-  extradata->AppendElements(hvccBytesBuffer, ArrayLength(hvccBytesBuffer));
-
-  
-  nsTArray<uint8_t> sampleData;
-  ByteWriter<BigEndian> writer(sampleData);
-  EXPECT_TRUE(writer.WriteU32(aSampleSize - 4));  
-
-  
-  for (uint32_t idx = 0; idx < aSampleSize - 4; idx++) {
-    sampleData.AppendElement(0);
-  }
-  RefPtr<MediaRawData> rawData =
-      new MediaRawData{sampleData.Elements(), sampleData.Length()};
-  EXPECT_NE(rawData->Data(), nullptr);
-  EXPECT_EQ(rawData->Size(), aSampleSize);
-  rawData->mExtraData = extradata;
-  return rawData.forget();
-}
-
-
-TEST(AnnexB, AVCCToAnnexBConversion)
+TEST(AnnexB, AnnexBConversion)
 {
   RefPtr<MediaRawData> rawData{GetAvccSample(128)};
 
@@ -144,7 +62,7 @@ TEST(AnnexB, AVCCToAnnexBConversion)
     
     RefPtr<MediaRawData> rawDataClone = rawData->Clone();
     Result<Ok, nsresult> result =
-        AnnexB::ConvertAVCCSampleToAnnexB(rawDataClone,  false);
+        AnnexB::ConvertSampleToAnnexB(rawDataClone,  false);
     EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
     EXPECT_EQ(rawDataClone->Size(), rawData->Size())
         << "AnnexB sample should be the same size as the AVCC sample -- the 4 "
@@ -160,7 +78,7 @@ TEST(AnnexB, AVCCToAnnexBConversion)
     rawDataClone->mKeyframe =
         false;  
     Result<Ok, nsresult> result =
-        AnnexB::ConvertAVCCSampleToAnnexB(rawDataClone,  true);
+        AnnexB::ConvertSampleToAnnexB(rawDataClone,  true);
     EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
     EXPECT_EQ(rawDataClone->Size(), rawData->Size())
         << "AnnexB sample should be the same size as the AVCC sample -- the 4 "
@@ -176,7 +94,7 @@ TEST(AnnexB, AVCCToAnnexBConversion)
     RefPtr<MediaRawData> rawDataClone = rawData->Clone();
     rawDataClone->mKeyframe = true;
     Result<Ok, nsresult> result =
-        AnnexB::ConvertAVCCSampleToAnnexB(rawDataClone,  true);
+        AnnexB::ConvertSampleToAnnexB(rawDataClone,  true);
     EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
     EXPECT_GT(rawDataClone->Size(), rawData->Size())
         << "AnnexB sample should be larger than the AVCC sample because we've "
@@ -207,95 +125,11 @@ TEST(AnnexB, AVCCToAnnexBConversion)
                                                          clearSize);
 
     RefPtr<MediaRawData> rawCryptoDataClone = rawCryptoData->Clone();
-    Result<Ok, nsresult> result = AnnexB::ConvertAVCCSampleToAnnexB(
-        rawCryptoDataClone,  true);
+    Result<Ok, nsresult> result =
+        AnnexB::ConvertSampleToAnnexB(rawCryptoDataClone,  true);
     EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
     EXPECT_GT(rawCryptoDataClone->Size(), rawCryptoData->Size())
         << "AnnexB sample should be larger than the AVCC sample because we've "
-           "added SPS data";
-    EXPECT_GT(rawCryptoDataClone->mCrypto.mPlainSizes[0],
-              rawCryptoData->mCrypto.mPlainSizes[0])
-        << "Conversion should have increased clear data sizes without overflow";
-    EXPECT_EQ(rawCryptoDataClone->mCrypto.mEncryptedSizes[0],
-              rawCryptoData->mCrypto.mEncryptedSizes[0])
-        << "Conversion should not affect encrypted sizes";
-    EXPECT_TRUE(AnnexB::IsAnnexB(rawCryptoDataClone))
-        << "The sample should be AnnexB following conversion";
-  }
-}
-
-TEST(AnnexB, HVCCToAnnexBConversion)
-{
-  RefPtr<MediaRawData> rawData{GetHVCCSample(128)};
-  {
-    
-    RefPtr<MediaRawData> rawDataClone = rawData->Clone();
-    Result<Ok, nsresult> result =
-        AnnexB::ConvertHVCCSampleToAnnexB(rawDataClone,  false);
-    EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
-    EXPECT_EQ(rawDataClone->Size(), rawData->Size())
-        << "AnnexB sample should be the same size as the HVCC sample -- the 4 "
-           "byte NAL length data (HVCC) is replaced with 4 bytes of NAL "
-           "separator (AnnexB)";
-    EXPECT_TRUE(AnnexB::IsAnnexB(rawDataClone))
-        << "The sample should be AnnexB following conversion";
-  }
-  {
-    
-    RefPtr<MediaRawData> rawDataClone = rawData->Clone();
-    rawDataClone->mKeyframe =
-        false;  
-    Result<Ok, nsresult> result =
-        AnnexB::ConvertHVCCSampleToAnnexB(rawDataClone,  true);
-    EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
-    EXPECT_EQ(rawDataClone->Size(), rawData->Size())
-        << "AnnexB sample should be the same size as the HVCC sample -- the 4 "
-           "byte NAL length data (HVCC) is replaced with 4 bytes of NAL "
-           "separator (AnnexB) and SPS data is not added as the frame is not a "
-           "keyframe";
-    EXPECT_TRUE(AnnexB::IsAnnexB(rawDataClone))
-        << "The sample should be AnnexB following conversion";
-  }
-  {
-    
-    RefPtr<MediaRawData> rawDataClone = rawData->Clone();
-    rawDataClone->mKeyframe = true;
-    Result<Ok, nsresult> result =
-        AnnexB::ConvertHVCCSampleToAnnexB(rawDataClone,  true);
-    EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
-    EXPECT_GT(rawDataClone->Size(), rawData->Size())
-        << "AnnexB sample should be larger than the HVCC sample because we've "
-           "added SPS data";
-    EXPECT_TRUE(AnnexB::IsAnnexB(rawDataClone))
-        << "The sample should be AnnexB following conversion";
-    
-    
-  }
-  {
-    
-    const uint32_t sampleSize = UINT16_MAX * 2;
-    RefPtr<MediaRawData> rawCryptoData{GetHVCCSample(sampleSize)};
-    
-    rawCryptoData->mKeyframe = true;
-    UniquePtr<MediaRawDataWriter> rawDataWriter = rawCryptoData->CreateWriter();
-
-    rawDataWriter->mCrypto.mCryptoScheme = CryptoScheme::Cenc;
-
-    
-    
-    
-    const uint16_t clearSize = UINT16_MAX - 10;
-    
-    rawDataWriter->mCrypto.mPlainSizes.AppendElement(clearSize);
-    rawDataWriter->mCrypto.mEncryptedSizes.AppendElement(sampleSize -
-                                                         clearSize);
-
-    RefPtr<MediaRawData> rawCryptoDataClone = rawCryptoData->Clone();
-    Result<Ok, nsresult> result = AnnexB::ConvertHVCCSampleToAnnexB(
-        rawCryptoDataClone,  true);
-    EXPECT_TRUE(result.isOk()) << "Conversion should succeed";
-    EXPECT_GT(rawCryptoDataClone->Size(), rawCryptoData->Size())
-        << "AnnexB sample should be larger than the HVCC sample because we've "
            "added SPS data";
     EXPECT_GT(rawCryptoDataClone->mCrypto.mPlainSizes[0],
               rawCryptoData->mCrypto.mPlainSizes[0])
@@ -402,23 +236,22 @@ TEST(H265, HVCCParsingSuccess)
     auto rv = HVCCConfig::Parse(extradata);
     EXPECT_TRUE(rv.isOk());
     auto hvcc = rv.unwrap();
-    EXPECT_EQ(hvcc.configurationVersion, 1);
-    EXPECT_EQ(hvcc.general_profile_space, 0);
-    EXPECT_EQ(hvcc.general_tier_flag, false);
-    EXPECT_EQ(hvcc.general_profile_idc, 1);
-    EXPECT_EQ(hvcc.general_profile_compatibility_flags, (uint32_t)0x60000000);
-    EXPECT_EQ(hvcc.general_constraint_indicator_flags,
-              (uint64_t)0x900000000000);
-    EXPECT_EQ(hvcc.general_level_idc, 0x5A);
-    EXPECT_EQ(hvcc.min_spatial_segmentation_idc, 0);
-    EXPECT_EQ(hvcc.parallelismType, 0);
-    EXPECT_EQ(hvcc.chroma_format_idc, 1);
-    EXPECT_EQ(hvcc.bit_depth_luma_minus8, 0);
-    EXPECT_EQ(hvcc.bit_depth_chroma_minus8, 0);
-    EXPECT_EQ(hvcc.avgFrameRate, 0);
-    EXPECT_EQ(hvcc.constantFrameRate, 0);
-    EXPECT_EQ(hvcc.numTemporalLayers, 1);
-    EXPECT_EQ(hvcc.temporalIdNested, true);
+    EXPECT_EQ(hvcc.mConfigurationVersion, 1);
+    EXPECT_EQ(hvcc.mGeneralProfileSpace, 0);
+    EXPECT_EQ(hvcc.mGeneralTierFlag, false);
+    EXPECT_EQ(hvcc.mGeneralProfileIdc, 1);
+    EXPECT_EQ(hvcc.mGeneralProfileCompatibilityFlags, (uint32_t)0x60000000);
+    EXPECT_EQ(hvcc.mGeneralConstraintIndicatorFlags, (uint64_t)0x900000000000);
+    EXPECT_EQ(hvcc.mGeneralLevelIdc, 0x5A);
+    EXPECT_EQ(hvcc.mMinSpatialSegmentationIdc, 0);
+    EXPECT_EQ(hvcc.mParallelismType, 0);
+    EXPECT_EQ(hvcc.mChromaFormatIdc, 1);
+    EXPECT_EQ(hvcc.mBitDepthLumaMinus8, 0);
+    EXPECT_EQ(hvcc.mBitDepthChromaMinus8, 0);
+    EXPECT_EQ(hvcc.mAvgFrameRate, 0);
+    EXPECT_EQ(hvcc.mConstantFrameRate, 0);
+    EXPECT_EQ(hvcc.mNumTemporalLayers, 1);
+    EXPECT_EQ(hvcc.mTemporalIdNested, true);
     EXPECT_EQ(hvcc.NALUSize(), 4);
     EXPECT_EQ(hvcc.mNALUs.Length(), uint32_t(0));
   }
@@ -497,19 +330,16 @@ TEST(H265, HVCCParsingSuccess)
     EXPECT_EQ(hvcc.mNALUs[0].mNuhLayerId, 0);
     EXPECT_EQ(hvcc.mNALUs[0].mNuhTemporalIdPlus1, 0);
     EXPECT_EQ(hvcc.mNALUs[0].IsSPS(), true);
-    EXPECT_EQ(hvcc.mNALUs[0].mNALU.Length(), 8u);
 
     EXPECT_EQ(hvcc.mNALUs[1].mNalUnitType, H265NALU::NAL_TYPES::PPS_NUT);
     EXPECT_EQ(hvcc.mNALUs[1].mNuhLayerId, 0);
     EXPECT_EQ(hvcc.mNALUs[1].mNuhTemporalIdPlus1, 0);
     EXPECT_EQ(hvcc.mNALUs[1].IsSPS(), false);
-    EXPECT_EQ(hvcc.mNALUs[1].mNALU.Length(), 3u);
 
     EXPECT_EQ(hvcc.mNALUs[2].mNalUnitType, H265NALU::NAL_TYPES::PPS_NUT);
     EXPECT_EQ(hvcc.mNALUs[2].mNuhLayerId, 0);
     EXPECT_EQ(hvcc.mNALUs[2].mNuhTemporalIdPlus1, 0);
     EXPECT_EQ(hvcc.mNALUs[2].IsSPS(), false);
-    EXPECT_EQ(hvcc.mNALUs[2].mNALU.Length(), 3u);
   }
 }
 
@@ -571,91 +401,6 @@ TEST(H265, HVCCParsingFailure)
     auto avcc = HVCCConfig::Parse(extradata);
     EXPECT_TRUE(avcc.isErr());
   }
-}
-
-TEST(H265, HVCCToAnnexB)
-{
-  auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
-  uint8_t hvccBytesBuffer[] = {
-      1 ,
-      1 ,
-      0x60 ,
-      0 ,
-      0 ,
-      0 ,
-      0x90 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0x5A ,
-      0 ,
-      0 ,
-      0 ,
-      1 ,
-      0 ,
-      0 ,
-      0 ,
-      0 ,
-      0x0F 
-
-      ,
-      2 ,
-      
-      0x21 ,
-      0 ,
-      1 ,
-
-      
-      0 ,
-      3 ,
-      0x42 ,
-      0 ,
-      0 ,
-
-      
-      0x22 ,
-      0 ,
-      1 ,
-
-      
-      0 ,
-      3 ,
-      0x44 ,
-      0 ,
-      0 ,
-  };
-  extradata->AppendElements(hvccBytesBuffer, ArrayLength(hvccBytesBuffer));
-
-  
-  
-  const size_t naluBytesSize = 3;  
-  const size_t delimiterBytesSize = 4;  
-  const size_t naluPlusDelimiterBytesSize = naluBytesSize + delimiterBytesSize;
-  RefPtr<mozilla::MediaByteBuffer> annexBExtraData =
-      AnnexB::ConvertHVCCExtraDataToAnnexB(extradata);
-  
-  EXPECT_EQ(annexBExtraData->Length(), naluPlusDelimiterBytesSize * 2);
-
-  H265NALU sps(
-      static_cast<uint8_t*>(annexBExtraData->Elements() + delimiterBytesSize),
-      naluBytesSize);
-  EXPECT_EQ(sps.mNalUnitType, H265NALU::NAL_TYPES::SPS_NUT);
-  EXPECT_EQ(sps.mNuhLayerId, 0);
-  EXPECT_EQ(sps.mNuhTemporalIdPlus1, 0);
-  EXPECT_EQ(sps.IsSPS(), true);
-  EXPECT_EQ(sps.mNALU.Length(), 3u);
-
-  H265NALU pps(
-      static_cast<uint8_t*>(annexBExtraData->Elements() +
-                            naluPlusDelimiterBytesSize + delimiterBytesSize),
-      naluBytesSize);
-  EXPECT_EQ(pps.mNalUnitType, H265NALU::NAL_TYPES::PPS_NUT);
-  EXPECT_EQ(pps.mNuhLayerId, 0);
-  EXPECT_EQ(pps.mNuhTemporalIdPlus1, 0);
-  EXPECT_EQ(pps.IsSPS(), false);
-  EXPECT_EQ(pps.mNALU.Length(), 3u);
 }
 
 }  

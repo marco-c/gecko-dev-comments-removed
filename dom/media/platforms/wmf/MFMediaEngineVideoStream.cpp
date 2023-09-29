@@ -288,8 +288,7 @@ void MFMediaEngineVideoStream::ResolvePendingDrainPromiseIfNeeded() {
 
 MediaDataDecoder::ConversionRequired MFMediaEngineVideoStream::NeedsConversion()
     const {
-  return mStreamType == WMFStreamType::H264 ||
-                 mStreamType == WMFStreamType::HEVC
+  return mStreamType == WMFStreamType::H264
              ? MediaDataDecoder::ConversionRequired::kNeedAnnexB
              : MediaDataDecoder::ConversionRequired::kNeedNone;
 }
@@ -318,8 +317,7 @@ void MFMediaEngineVideoStream::UpdateConfig(const VideoInfo& aInfo) {
   
   
   
-  if (mStreamType == WMFStreamType::H264 ||
-      mStreamType == WMFStreamType::HEVC) {
+  if (mStreamType == WMFStreamType::H264) {
     return;
   }
 
@@ -363,8 +361,6 @@ nsCString MFMediaEngineVideoStream::GetCodecName() const {
       return "vp9"_ns;
     case WMFStreamType::AV1:
       return "av1"_ns;
-    case WMFStreamType::HEVC:
-      return "hevc"_ns;
     default:
       return "unknown"_ns;
   };

@@ -31,36 +31,22 @@ class AnnexB {
   };
   
   
-  static mozilla::Result<mozilla::Ok, nsresult> ConvertAVCCSampleToAnnexB(
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertSampleToAnnexB(
       mozilla::MediaRawData* aSample, bool aAddSPS = true);
-  
-  
-  static mozilla::Result<mozilla::Ok, nsresult> ConvertHVCCSampleToAnnexB(
-      mozilla::MediaRawData* aSample, bool aAddSPS = true);
-
   
   
   static bool ConvertSampleToAVCC(
       mozilla::MediaRawData* aSample,
       const RefPtr<mozilla::MediaByteBuffer>& aAVCCHeader = nullptr);
 
-  
   static mozilla::Result<mozilla::Ok, nsresult> ConvertAVCCTo4BytesAVCC(
       mozilla::MediaRawData* aSample);
-  static mozilla::Result<mozilla::Ok, nsresult> ConvertHVCCTo4BytesHVCC(
-      mozilla::MediaRawData* aSample);
 
   
-  static already_AddRefed<mozilla::MediaByteBuffer>
-  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
-  
-  static already_AddRefed<mozilla::MediaByteBuffer>
-  ConvertHVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
-
+  static already_AddRefed<mozilla::MediaByteBuffer> ConvertExtraDataToAnnexB(
+      const mozilla::MediaByteBuffer* aExtraData);
   
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
-  
-  static bool IsHVCC(const mozilla::MediaRawData* aSample);
   
   static bool IsAnnexB(const mozilla::MediaRawData* aSample);
 

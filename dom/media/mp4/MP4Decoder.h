@@ -37,11 +37,6 @@ class MP4Decoder {
   static bool IsAAC(const nsACString& aMimeType);
 
   
-  
-  
-  static bool IsHEVC(const nsACString& aMimeType);
-
-  
   static bool IsEnabled();
 
   static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
