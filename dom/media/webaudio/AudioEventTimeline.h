@@ -39,6 +39,66 @@ struct AudioTimelineEvent final {
     Cancel
   };
 
+  class TimeUnion {
+   public:
+    
+    TimeUnion()
+        : mSeconds()
+#if DEBUG
+          ,
+          mIsInSeconds(true),
+          mIsInTicks(true)
+#endif
+    {
+    }
+    explicit TimeUnion(double aTime)
+        : mSeconds(aTime)
+#if DEBUG
+          ,
+          mIsInSeconds(true),
+          mIsInTicks(false)
+#endif
+    {
+    }
+    explicit TimeUnion(int64_t aTime)
+        : mTicks(aTime)
+#if DEBUG
+          ,
+          mIsInSeconds(false),
+          mIsInTicks(true)
+#endif
+    {
+    }
+
+    double operator=(double aTime) {
+#if DEBUG
+      mIsInSeconds = true;
+      mIsInTicks = true;
+#endif
+      return mSeconds = aTime;
+    }
+    int64_t operator=(int64_t aTime) {
+#if DEBUG
+      mIsInSeconds = true;
+      mIsInTicks = true;
+#endif
+      return mTicks = aTime;
+    }
+
+    template <class TimeType>
+    TimeType Get() const;
+
+   private:
+    union {
+      double mSeconds;
+      int64_t mTicks;
+    };
+#ifdef DEBUG
+    bool mIsInSeconds;
+    bool mIsInTicks;
+#endif
+  };
+
   AudioTimelineEvent(Type aType, double aTime, float aValue,
                      double aTimeConstant = 0.0, double aDuration = 0.0,
                      const float* aCurve = nullptr, uint32_t aCurveLength = 0);
@@ -47,14 +107,11 @@ struct AudioTimelineEvent final {
   ~AudioTimelineEvent();
 
   template <class TimeType>
-  TimeType Time() const;
-
-  void SetTimeInTicks(int64_t aTimeInTicks) {
-    mTimeInTicks = aTimeInTicks;
-#ifdef DEBUG
-    mTimeIsInTicks = true;
-#endif
+  TimeType Time() const {
+    return mTime.Get<TimeType>();
   }
+
+  void SetTimeInTicks(int64_t aTimeInTicks) { mTime = aTimeInTicks; }
 
   void SetCurveParams(const float* aCurve, uint32_t aCurveLength) {
     mCurveLength = aCurveLength;
@@ -80,9 +137,6 @@ struct AudioTimelineEvent final {
   RefPtr<AudioNodeTrack> mTrack;
   double mTimeConstant;
   double mDuration;
-#ifdef DEBUG
-  bool mTimeIsInTicks;
-#endif
 
  private:
   
@@ -92,23 +146,18 @@ struct AudioTimelineEvent final {
   
   
   
-  union {
-    double mTime;
-    int64_t mTimeInTicks;
-  };
+  TimeUnion mTime;
 };
 
 template <>
-inline double AudioTimelineEvent::Time<double>() const {
-  MOZ_ASSERT(!mTimeIsInTicks);
-  return mTime;
+inline double AudioTimelineEvent::TimeUnion::Get<double>() const {
+  MOZ_ASSERT(mIsInSeconds);
+  return mSeconds;
 }
-
 template <>
-inline int64_t AudioTimelineEvent::Time<int64_t>() const {
-  MOZ_ASSERT(!NS_IsMainThread());
-  MOZ_ASSERT(mTimeIsInTicks);
-  return mTimeInTicks;
+inline int64_t AudioTimelineEvent::TimeUnion::Get<int64_t>() const {
+  MOZ_ASSERT(mIsInTicks);
+  return mTicks;
 }
 
 class AudioEventTimeline {
