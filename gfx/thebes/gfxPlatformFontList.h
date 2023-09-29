@@ -213,7 +213,13 @@ class gfxPlatformFontList : public gfxFontInfoLoader {
   
   typedef nsTArray<FontFamily> PrefFontList;
 
-  static gfxPlatformFontList* PlatformFontList() {
+  
+  
+  static gfxPlatformFontList* PlatformFontList(bool aMustInitialize = true) {
+    if (!aMustInitialize &&
+        !(sPlatformFontList && sPlatformFontList->IsInitialized())) {
+      return nullptr;
+    }
     
     
     if (sInitFontListThread) {
