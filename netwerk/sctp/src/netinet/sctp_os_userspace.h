@@ -523,8 +523,6 @@ struct sx {int dummy;};
 #endif
 #if defined(__FreeBSD__)
 #include <netinet6/in6_pcb.h>
-#include <netinet6/ip6protosw.h>
-
 #include <netinet6/scope6_var.h>
 #endif
 #endif 
@@ -962,6 +960,14 @@ int sctp_userspace_get_mtu_from_ifn(uint32_t if_index);
 #define SCTP_SOWAKEUP(so)	wakeup(&(so)->so_timeo, so)
 
 #define SCTP_SBAVAIL(sb)	(sb)->sb_cc
+#define SCTP_SB_INCR(sb, incr)			\
+{						\
+	atomic_add_int(&(sb)->sb_cc, incr);	\
+}
+#define SCTP_SB_DECR(sb, decr)					\
+{								\
+	SCTP_SAVE_ATOMIC_DECREMENT(&(sb)->sb_cc, (int)(decr));	\
+}
 
 #define SCTP_SB_CLEAR(sb)	\
 	(sb).sb_cc = 0;		\

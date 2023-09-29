@@ -32,11 +32,6 @@
 
 
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-#endif
-
 #ifndef _NETINET_SCTP_HEADER_H_
 #define _NETINET_SCTP_HEADER_H_
 
@@ -226,7 +221,7 @@ struct sctp_state_cookie {
 
 	uint8_t ipv4_scope;	
 	uint8_t loopback_scope;	
-	uint8_t zero_checksum;	
+	uint8_t rcv_edmid;	
 	uint8_t reserved[SCTP_RESERVE_SPACE];    
 	
 
@@ -537,6 +532,13 @@ struct sctp_auth_chunk {
 	uint16_t shared_key_id;
 	uint16_t hmac_id;
 	uint8_t hmac[];
+} SCTP_PACKED;
+
+
+
+struct sctp_zero_checksum_acceptable {
+	struct sctp_paramhdr ph;
+	uint32_t edmid;
 } SCTP_PACKED;
 
 

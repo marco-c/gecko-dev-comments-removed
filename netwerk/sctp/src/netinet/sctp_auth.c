@@ -32,11 +32,6 @@
 
 
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-#endif
-
 #include <netinet/sctp_os.h>
 #include <netinet/sctp.h>
 #include <netinet/sctp_header.h>
@@ -580,7 +575,7 @@ sctp_auth_key_release(struct sctp_tcb *stcb, uint16_t key_id, int so_locked)
 		if ((skey->refcount <= 2) && (skey->deactivated)) {
 			
 			sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb,
-					key_id, 0, so_locked);
+			                0, &key_id, so_locked);
 			SCTPDBG(SCTP_DEBUG_AUTH2,
 				"%s: stcb %p key %u no longer used, %d\n",
 				__func__, (void *)stcb, key_id, skey->refcount);
@@ -1339,8 +1334,8 @@ sctp_deact_sharedkey(struct sctp_tcb *stcb, uint16_t keyid)
 	
 	if (skey->refcount == 1) {
 		
-		sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb, keyid, 0,
-				SCTP_SO_LOCKED);
+		sctp_ulp_notify(SCTP_NOTIFY_AUTH_FREE_KEY, stcb, 0, &keyid,
+		                SCTP_SO_LOCKED);
 	}
 
 	
@@ -1684,15 +1679,10 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 			return (-1);
 		}
 		
-		if (stcb->asoc.authinfo.recv_keyid != shared_key_id)
-			
-
-
-
-
-			sctp_notify_authentication(stcb, SCTP_AUTH_NEW_KEY,
-			    shared_key_id, stcb->asoc.authinfo.recv_keyid,
-			    SCTP_SO_NOT_LOCKED);
+		if (stcb->asoc.authinfo.recv_keyid != shared_key_id) {
+			sctp_ulp_notify(SCTP_NOTIFY_AUTH_NEW_KEY, stcb, 0,
+			                &shared_key_id, SCTP_SO_NOT_LOCKED);
+		}
 		
 		if (stcb->asoc.authinfo.recv_key != NULL)
 			sctp_free_key(stcb->asoc.authinfo.recv_key);
@@ -1735,27 +1725,22 @@ sctp_handle_auth(struct sctp_tcb *stcb, struct sctp_auth_chunk *auth,
 
 void
 sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
-			   uint16_t keyid, uint16_t alt_keyid, int so_locked)
+                           uint16_t keyid, int so_locked)
 {
 	struct mbuf *m_notify;
 	struct sctp_authkey_event *auth;
 	struct sctp_queued_to_read *control;
 
-	if ((stcb == NULL) ||
-	   (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_GONE) ||
-	   (stcb->sctp_ep->sctp_flags & SCTP_PCB_FLAGS_SOCKET_ALLGONE) ||
-	   (stcb->asoc.state & SCTP_STATE_CLOSED_SOCKET)
-		) {
-		
-		return;
-	}
+	KASSERT(stcb != NULL, ("stcb == NULL"));
+	SCTP_TCB_LOCK_ASSERT(stcb);
+	SCTP_INP_READ_LOCK_ASSERT(stcb->sctp_ep);
 
 	if (sctp_stcb_is_feature_off(stcb->sctp_ep, stcb, SCTP_PCB_FLAGS_AUTHEVNT))
 		
 		return;
 
 	m_notify = sctp_get_mbuf_for_msg(sizeof(struct sctp_authkey_event),
-					  0, M_NOWAIT, 1, MT_HEADER);
+	                                 0, M_NOWAIT, 1, MT_HEADER);
 	if (m_notify == NULL)
 		
 		return;
@@ -1767,7 +1752,12 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 	auth->auth_flags = 0;
 	auth->auth_length = sizeof(*auth);
 	auth->auth_keynumber = keyid;
-	auth->auth_altkeynumber = alt_keyid;
+	
+	if (indication == SCTP_AUTH_NEW_KEY) {
+		auth->auth_altkeynumber = stcb->asoc.authinfo.recv_keyid;
+	} else {
+		auth->auth_altkeynumber = 0;
+	}
 	auth->auth_indication = indication;
 	auth->auth_assoc_id = sctp_get_associd(stcb);
 
@@ -1787,7 +1777,8 @@ sctp_notify_authentication(struct sctp_tcb *stcb, uint32_t indication,
 	
 	control->tail_mbuf = m_notify;
 	sctp_add_to_readq(stcb->sctp_ep, stcb, control,
-	    &stcb->sctp_socket->so_rcv, 1, SCTP_READ_LOCK_NOT_HELD, so_locked);
+	                  &stcb->sctp_socket->so_rcv, 1,
+	                  SCTP_READ_LOCK_HELD, so_locked);
 }
 
 

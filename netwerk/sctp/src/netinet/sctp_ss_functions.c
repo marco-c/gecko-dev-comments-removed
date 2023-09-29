@@ -28,15 +28,8 @@
 
 
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-#endif
-
+#include <netinet/sctp_os.h>
 #include <netinet/sctp_pcb.h>
-#if defined(__Userspace__)
-#include <netinet/sctp_os_userspace.h>
-#endif
 
 
 

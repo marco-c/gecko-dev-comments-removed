@@ -32,11 +32,6 @@
 
 
 
-#if defined(__FreeBSD__) && !defined(__Userspace__)
-#include <sys/cdefs.h>
-__FBSDID("$FreeBSD$");
-#endif
-
 #ifndef _NETINET_SCTP_STRUCTS_H_
 #define _NETINET_SCTP_STRUCTS_H_
 
@@ -1008,15 +1003,6 @@ struct sctp_association {
 	uint32_t fast_recovery_tsn;
 	uint32_t sat_t3_recovery_tsn;
 	uint32_t tsn_last_delivered;
-	
-
-
-
-
-
-
-	struct sctp_queued_to_read *control_pdapi;
-
 	uint32_t tsn_of_pdapi_last_delivered;
 	uint32_t pdapi_ppid;
 	uint32_t context;
@@ -1235,11 +1221,8 @@ struct sctp_association {
 	uint8_t idata_supported;
 
 	
-
-
-
-
-	uint8_t zero_checksum;
+	uint8_t rcv_edmid;
+	uint8_t snd_edmid;
 
 	
 	uint8_t peer_req_out;
