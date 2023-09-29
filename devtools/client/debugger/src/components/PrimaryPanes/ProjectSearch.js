@@ -3,7 +3,7 @@
 
 
 import React, { Component } from "react";
-import { div, span } from "react-dom-factories";
+import { button, div, span } from "react-dom-factories";
 import PropTypes from "prop-types";
 import { connect } from "../../utils/connect";
 import actions from "../../actions";
@@ -13,7 +13,7 @@ import { searchKeys } from "../../constants";
 
 import { getRelativePath } from "../../utils/sources-tree/utils";
 import { getFormattedSourceId } from "../../utils/source";
-import { getProjectSearchQuery } from "../../selectors";
+import { getProjectSearchQuery, getNavigateCounter } from "../../selectors";
 
 import SearchInput from "../shared/SearchInput";
 import AccessibleImage from "../shared/AccessibleImage";
@@ -55,6 +55,7 @@ export class ProjectSearch extends Component {
       focusedItem: null,
       expanded: new Set(),
       results: [],
+      navigateCounter: null,
       status: statusType.done,
     };
     
@@ -104,7 +105,11 @@ export class ProjectSearch extends Component {
       return;
     }
 
-    this.setState({ status: statusType.fetching, results: [] });
+    this.setState({
+      status: statusType.fetching,
+      results: [],
+      navigateCounter: this.props.navigateCounter,
+    });
 
     
     
@@ -276,7 +281,46 @@ export class ProjectSearch extends Component {
     return this.renderMatch(item, focused);
   };
 
-  renderResults = () => {
+  renderRefreshButton() {
+    if (!this.state.query) {
+      return null;
+    }
+
+    
+    
+    
+    
+    const highlight =
+      this.state.navigateCounter != null &&
+      this.state.navigateCounter != this.props.navigateCounter;
+    return button(
+      {
+        className: classnames("refresh-btn devtools-button", {
+          highlight,
+        }),
+        title: highlight
+          ? L10N.getStr("projectTextSearch.refreshButtonTooltipOnNavigation")
+          : L10N.getStr("projectTextSearch.refreshButtonTooltip"),
+        onClick: this.doSearch,
+      },
+      React.createElement(AccessibleImage, {
+        className: "refresh",
+      })
+    );
+  }
+
+  renderResultsToolbar() {
+    if (!this.state.query) {
+      return null;
+    }
+    return div(
+      { className: "project-search-results-toolbar" },
+      span({ className: "results-count" }, this.renderSummary()),
+      this.renderRefreshButton()
+    );
+  }
+
+  renderResults() {
     const { status, results } = this.state;
     if (!this.state.query) {
       return null;
@@ -324,15 +368,18 @@ export class ProjectSearch extends Component {
       },
       msg
     );
-  };
+  }
 
   renderSummary = () => {
-    if (this.state.query !== "") {
-      const resultsSummaryString = L10N.getStr("sourceSearch.resultsSummary2");
-      const count = this.getResultCount();
-      return PluralForm.get(count, resultsSummaryString).replace("#1", count);
+    if (this.state.query === "") {
+      return "";
     }
-    return "";
+    const resultsSummaryString = L10N.getStr("sourceSearch.resultsSummary2");
+    const count = this.getResultCount();
+    if (count === 0) {
+      return "";
+    }
+    return PluralForm.get(count, resultsSummaryString).replace("#1", count);
   };
 
   shouldShowErrorEmoji() {
@@ -347,7 +394,6 @@ export class ProjectSearch extends Component {
       placeholder: L10N.getStr("projectTextSearch.placeholder"),
       size: "small",
       showErrorEmoji: this.shouldShowErrorEmoji(),
-      summaryMsg: this.renderSummary(),
       isLoading: status === statusType.fetching,
       onChange: this.inputOnChange,
       onFocus: () =>
@@ -390,6 +436,7 @@ export class ProjectSearch extends Component {
           },
           this.renderInput()
         ),
+        this.renderResultsToolbar(),
         this.renderResults()
       )
     );
@@ -402,6 +449,7 @@ ProjectSearch.contextTypes = {
 
 const mapStateToProps = state => ({
   query: getProjectSearchQuery(state),
+  navigateCounter: getNavigateCounter(state),
 });
 
 export default connect(mapStateToProps, {
