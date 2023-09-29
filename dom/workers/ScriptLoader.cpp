@@ -396,14 +396,15 @@ nsresult GetModuleSecFlags(bool aIsTopLevel, nsIPrincipal* principal,
   
   
   
-  secFlags = aIsTopLevel
-                 ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
-                 : nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
+
+  
+  secFlags = aIsTopLevel ? nsILoadInfo::SEC_REQUIRE_SAME_ORIGIN_DATA_IS_BLOCKED
+                         : nsILoadInfo::SEC_REQUIRE_CORS_INHERITS_SEC_CONTEXT;
 
   
   
   
-  
+
   if (aCredentials == RequestCredentials::Include) {
     secFlags |= nsILoadInfo::nsILoadInfo::SEC_COOKIES_INCLUDE;
   } else if (aCredentials == RequestCredentials::Same_origin) {
