@@ -8,12 +8,15 @@
 
 #include "gfxGradientCache.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/gfx/CanvasManagerParent.h"
+#include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/Endpoint.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/layers/TextureClient.h"
 #include "mozilla/SyncRunnable.h"
+#include "mozilla/TaskQueue.h"
 #include "mozilla/Telemetry.h"
 #include "nsTHashSet.h"
 #include "RecordedCanvasEventImpl.h"
@@ -171,7 +174,7 @@ ipc::IPCResult CanvasTranslator::RecvNewBuffer(
 }
 
 ipc::IPCResult CanvasTranslator::RecvResumeTranslation() {
-  if (mDeactivated) {
+  if (CheckDeactivated()) {
     
     return IPC_OK();
   }
@@ -236,6 +239,18 @@ void CanvasTranslator::FinishShutdown() {
   canvasTranslators.Remove(this);
 }
 
+bool CanvasTranslator::CheckDeactivated() {
+  if (mDeactivated) {
+    return true;
+  }
+
+  if (NS_WARN_IF(!gfx::gfxVars::RemoteCanvasEnabled())) {
+    Deactivate();
+  }
+
+  return mDeactivated;
+}
+
 void CanvasTranslator::Deactivate() {
   if (mDeactivated) {
     return;
@@ -257,6 +272,9 @@ void CanvasTranslator::Deactivate() {
   
   
   mSurfaceDescriptorsMonitor.NotifyAll();
+
+  
+  gfx::CanvasManagerParent::DisableRemoteCanvas();
 }
 
 bool CanvasTranslator::TranslateRecording() {
