@@ -3221,13 +3221,17 @@ nsresult nsFocusManager::GetSelectionLocation(Document* aDocument,
     nsIFrame* startFrame = start->GetPrimaryFrame();
     
     nsCOMPtr<nsIFrameEnumerator> frameTraversal;
+    nsIFrame* limiter =
+        domSelection && domSelection->GetAncestorLimiter()
+            ? domSelection->GetAncestorLimiter()->GetPrimaryFrame()
+            : nullptr;
     MOZ_TRY(NS_NewFrameTraversal(getter_AddRefs(frameTraversal), presContext,
                                  startFrame, eLeaf,
                                  false,  
                                  false,  
                                  true,   
-                                 false   
-                                 ));
+                                 false,  
+                                 limiter));
 
     nsIFrame* newCaretFrame = nullptr;
     nsIContent* newCaretContent = start;

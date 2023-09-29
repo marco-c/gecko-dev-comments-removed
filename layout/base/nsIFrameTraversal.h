@@ -73,11 +73,14 @@ class nsIFrameTraversal : public nsISupports {
 
 
 
+
+
   NS_IMETHOD NewFrameTraversal(nsIFrameEnumerator** aEnumerator,
                                nsPresContext* aPresContext, nsIFrame* aStart,
                                int32_t aType, bool aVisual,
                                bool aLockInScrollView, bool aFollowOOFs,
-                               bool aSkipPopupChecks) = 0;
+                               bool aSkipPopupChecks,
+                               nsIFrame* aLimiter = nullptr) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIFrameTraversal, NS_IFRAMETRAVERSAL_IID)
