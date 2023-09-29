@@ -44,6 +44,7 @@ namespace mozilla {
 
 namespace layers {
 
+class GPUVideoImage;
 class ImageClient;
 class ImageCompositeNotification;
 class ImageContainer;
@@ -140,6 +141,7 @@ class Image {
 
   
   virtual GLImage* AsGLImage() { return nullptr; }
+  virtual GPUVideoImage* AsGPUVideoImage() { return nullptr; }
 #ifdef MOZ_WIDGET_ANDROID
   virtual SurfaceTextureImage* AsSurfaceTextureImage() { return nullptr; }
 #endif
