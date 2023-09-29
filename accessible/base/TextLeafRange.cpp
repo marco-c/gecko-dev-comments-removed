@@ -31,7 +31,7 @@
 #include "nsStyleStructInlines.h"
 #include "nsTArray.h"
 #include "nsTextFrame.h"
-#include "nsUnicodeProperties.h"
+#include "nsUnicharUtils.h"
 #include "Pivot.h"
 #include "TextAttrs.h"
 
@@ -300,30 +300,7 @@ static WordBreakClass GetWordBreakClass(char16_t aChar) {
     default:
       break;
   }
-  
-  
-  uint8_t cat = unicode::GetGeneralCategory(aChar);
-  switch (cat) {
-    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
-      if (aChar == '_' &&
-          !StaticPrefs::layout_word_select_stop_at_underscore()) {
-        return eWbcOther;
-      }
-      [[fallthrough]];
-    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
-    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
-    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
-    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
-    case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
-    case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:         
-    case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL:        
-      return eWbcPunct;
-    default:
-      break;
-  }
-  return eWbcOther;
+  return mozilla::IsPunctuationForWordSelect(aChar) ? eWbcPunct : eWbcOther;
 }
 
 
