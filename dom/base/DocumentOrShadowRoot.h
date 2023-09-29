@@ -15,11 +15,13 @@
 #include "nsContentListDeclarations.h"
 #include "nsTArray.h"
 #include "nsTHashSet.h"
+#include "RadioGroupManager.h"
 
 class nsContentList;
 class nsCycleCollectionTraversalCallback;
 class nsINode;
 class nsINodeList;
+class nsIRadioVisitor;
 class nsWindowSizes;
 
 namespace mozilla {
@@ -46,7 +48,7 @@ class Sequence;
 
 
 
-class DocumentOrShadowRoot {
+class DocumentOrShadowRoot : public RadioGroupManager {
   enum class Kind {
     Document,
     ShadowRoot,
