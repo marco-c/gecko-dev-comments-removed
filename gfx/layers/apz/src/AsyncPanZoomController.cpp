@@ -5908,9 +5908,10 @@ void AsyncPanZoomController::ZoomToRect(const ZoomTarget& aZoomTarget,
     
     
     
+    const CSSRect cssExpandedPageRect = Metrics().GetExpandedScrollableRect();
     CSSToParentLayerScale localMinZoom(
-        std::max(compositionBounds.Width() / cssPageRect.Width(),
-                 compositionBounds.Height() / cssPageRect.Height()));
+        std::max(compositionBounds.Width() / cssExpandedPageRect.Width(),
+                 compositionBounds.Height() / cssExpandedPageRect.Height()));
 
     localMinZoom.scale =
         clamped(localMinZoom.scale, mZoomConstraints.mMinZoom.scale,
