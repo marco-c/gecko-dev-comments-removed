@@ -247,7 +247,7 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
 
   
   
-  auto EndTimeOf = [](const AudioTimelineEvent* aEvent) -> TimeType {
+  auto EndTimeOf = [](const AudioTimelineEvent* aEvent) -> double {
     MOZ_ASSERT(aEvent->mType != AudioTimelineEvent::SetTarget);
     if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
       return aEvent->Time<TimeType>() + aEvent->mDuration;
