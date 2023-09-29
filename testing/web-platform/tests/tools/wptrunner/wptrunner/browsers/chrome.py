@@ -31,6 +31,18 @@ __wptrunner__ = {"product": "chrome",
                  "timeout_multiplier": "get_timeout_multiplier",}
 
 
+def debug_args(debug_info):
+    if debug_info.interactive:
+        
+        
+        return [
+            "--no-sandbox",
+            "--disable-hang-monitor",
+            "--wait-for-debugger-on-navigation",
+        ]
+    return []
+
+
 def check_args(**kwargs):
     require_arg(kwargs, "webdriver_binary")
 
@@ -148,6 +160,8 @@ def env_extras(**kwargs):
 
 
 def env_options():
+    
+    
     return {"server_host": "127.0.0.1"}
 
 
