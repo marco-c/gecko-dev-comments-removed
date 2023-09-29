@@ -37,8 +37,13 @@
 
 
 
-#include "content/common/set_process_title_linux.h"
 
+
+#include "base/set_process_title_linux.h"
+
+#include "mozilla/UniquePtrExtensions.h"
+
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -48,9 +53,6 @@
 
 #include <string>
 #include <vector>
-
-#include "base/files/file_util.h"
-#include "base/no_destructor.h"
 
 extern char** environ;
 
@@ -73,8 +75,9 @@ void setproctitle(const char* fmt, ...) {
 
   
   
-  if (!g_orig_argv0 || !fmt)
+  if (!g_orig_argv0 || !fmt) {
     return;
+  }
 
   
   const size_t avail_size = g_envp_end - g_argv_start - 1;
@@ -90,12 +93,26 @@ void setproctitle(const char* fmt, ...) {
     memset(g_argv_start, 0, avail_size + 1);
     g_argv_end[-1] = '.';
 
-    std::string cmdline;
-    if (!base::ReadFileToString(base::FilePath("/proc/self/cmdline"),
-                                &cmdline)) {
+    mozilla::UniqueFileHandle fd(
+        open("/proc/self/cmdline", O_RDONLY | O_CLOEXEC));
+    if (!fd) {
       return false;
     }
-    return cmdline.size() >= 2;
+
+    
+    
+    
+    
+    char buf[2];
+    ssize_t total_read = 0;
+    while (total_read < 2) {
+      ssize_t rd = read(fd.get(), buf, 2);
+      if (rd <= 0) {
+        return false;
+      }
+      total_read += rd;
+    }
+    return true;
   }();
 
   memset(g_argv_start, 0, avail_size + 1);
@@ -106,8 +123,9 @@ void setproctitle(const char* fmt, ...) {
     size = vsnprintf(g_argv_start, avail_size, &fmt[1], ap);
   } else {
     size = snprintf(g_argv_start, avail_size, "%s ", g_orig_argv0);
-    if (size < avail_size)
+    if (size < avail_size) {
       size += vsnprintf(&g_argv_start[size], avail_size - size, fmt, ap);
+    }
   }
   va_end(ap);
 
@@ -123,35 +141,40 @@ void setproctitle(const char* fmt, ...) {
   
   
   const size_t argv_size = g_argv_end - g_argv_start - 1;
-  if (!buggy_kernel && size < argv_size)
+  if (!buggy_kernel && size < argv_size) {
     g_argv_end[-1] = '.';
+  }
 }
 
 
 
-void setproctitle_init(const char** main_argv) {
+void setproctitle_init(char** main_argv) {
   static bool init_called = false;
-  if (init_called)
+  if (init_called) {
     return;
+  }
   init_called = true;
 
-  if (!main_argv)
+  if (!main_argv) {
     return;
+  }
 
   
-  char** argv = const_cast<char**>(main_argv);
+  char** const argv = main_argv;
   char* argv_start = argv[0];
   char* p = argv_start;
   for (size_t i = 0; argv[i]; ++i) {
-    if (p != argv[i])
+    if (p != argv[i]) {
       return;
+    }
     p += strlen(p) + 1;
   }
   char* argv_end = p;
   size_t environ_size = 0;
   for (size_t i = 0; environ[i]; ++i, ++environ_size) {
-    if (p != environ[i])
+    if (p != environ[i]) {
       return;
+    }
     p += strlen(p) + 1;
   }
   char* envp_end = p;
@@ -161,18 +184,22 @@ void setproctitle_init(const char** main_argv) {
   
   
   
-  static base::NoDestructor<std::vector<std::string>> environ_copy(
-      environ_size);
+  
+  
+  
+  
+  for (size_t i = 0; argv[i]; ++i) {
+    argv[i] = strdup(argv[i]);
+  }
   for (size_t i = 0; environ[i]; ++i) {
-    (*environ_copy)[i] = environ[i];
-    environ[i] = &(*environ_copy)[i][0];
+    environ[i] = strdup(environ[i]);
   }
 
-  if (!argv[0])
+  if (!argv[0]) {
     return;
+  }
 
-  static base::NoDestructor<std::string> argv0_storage(argv[0]);
-  g_orig_argv0 = argv0_storage->data();
+  g_orig_argv0 = argv[0];
   g_argv_start = argv_start;
   g_argv_end = argv_end;
   g_envp_end = envp_end;
