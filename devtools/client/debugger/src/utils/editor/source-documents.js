@@ -78,14 +78,15 @@ export function clearEditor(editor) {
 }
 
 export function showLoading(editor) {
+  
   let doc = getDocument("loading");
-
-  if (doc) {
-    editor.replaceDocument(doc);
-  } else {
+  if (!doc) {
     doc = editor.createDocument(L10N.getStr("loadingText"), { name: "text" });
     setDocument("loading", doc);
   }
+  
+  
+  editor.replaceDocument(doc);
 }
 
 export function showErrorMessage(editor, msg) {
