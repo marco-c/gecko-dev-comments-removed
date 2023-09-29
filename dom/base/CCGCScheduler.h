@@ -16,50 +16,45 @@
 
 namespace mozilla {
 
-static const TimeDuration kOneMinute = TimeDuration::FromSeconds(60.0f);
+extern const TimeDuration kOneMinute;
 
 
 
-static const TimeDuration kCCDelay = TimeDuration::FromSeconds(6);
+extern const TimeDuration kCCDelay;
 
-static const TimeDuration kCCSkippableDelay =
-    TimeDuration::FromMilliseconds(250);
-
-
-
-
-static const TimeDuration kTimeBetweenForgetSkippableCycles =
-    TimeDuration::FromSeconds(2);
+extern const TimeDuration kCCSkippableDelay;
 
 
 
 
-static const TimeDuration kForgetSkippableSliceDuration =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kICCIntersliceDelay =
-    TimeDuration::FromMilliseconds(64);
-
-
-static const TimeDuration kICCSliceBudget = TimeDuration::FromMilliseconds(3);
-
-static const TimeDuration kIdleICCSliceBudget =
-    TimeDuration::FromMilliseconds(2);
-
-
-static const TimeDuration kMaxICCDuration = TimeDuration::FromSeconds(2);
+extern const TimeDuration kTimeBetweenForgetSkippableCycles;
 
 
 
-static const TimeDuration kCCForced = kOneMinute * 2;
-static const uint32_t kCCForcedPurpleLimit = 10;
+
+extern const TimeDuration kForgetSkippableSliceDuration;
 
 
-static const TimeDuration kMaxCCLockedoutTime = TimeDuration::FromSeconds(30);
+extern const TimeDuration kICCIntersliceDelay;
 
 
-static const uint32_t kCCPurpleLimit = 200;
+extern const TimeDuration kICCSliceBudget;
+
+extern const TimeDuration kIdleICCSliceBudget;
+
+
+extern const TimeDuration kMaxICCDuration;
+
+
+
+extern const TimeDuration kCCForced;
+constexpr uint32_t kCCForcedPurpleLimit = 10;
+
+
+extern const TimeDuration kMaxCCLockedoutTime;
+
+
+constexpr uint32_t kCCPurpleLimit = 200;
 
 
 enum class GCRunnerAction {
