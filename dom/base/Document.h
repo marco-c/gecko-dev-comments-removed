@@ -3689,6 +3689,9 @@ class Document : public nsINode,
   void ResetUserInteractionTimer();
 
   
+  bool CloningForSVGUse() const { return mCloningForSVGUse; }
+
+  
   
   
   
@@ -4871,6 +4874,9 @@ class Document : public nsINode,
 
   
   bool mShouldResistFingerprinting : 1;
+
+  
+  bool mCloningForSVGUse : 1;
 
   uint8_t mXMLDeclarationBits;
 

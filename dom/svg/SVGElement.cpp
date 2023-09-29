@@ -206,7 +206,8 @@ nsresult SVGElement::CopyInnerTo(mozilla::dom::Element* aDest) {
 
   
   
-  if (aDest->OwnerDoc()->IsStaticDocument()) {
+  if (aDest->OwnerDoc()->IsStaticDocument() ||
+      aDest->OwnerDoc()->CloningForSVGUse()) {
     LengthAttributesInfo lengthInfo = GetLengthInfo();
     dest->GetLengthInfo().CopyAllFrom(lengthInfo);
     if (SVGGeometryProperty::ElementMapsLengthsToStyle(this)) {
