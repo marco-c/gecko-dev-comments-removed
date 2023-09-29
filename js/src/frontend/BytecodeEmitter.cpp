@@ -4049,6 +4049,7 @@ bool BytecodeEmitter::emitAssignmentRhs(
 
 
 
+
 bool BytecodeEmitter::emitAssignmentRhs(uint8_t offset) {
   if (offset != 1) {
     return emitPickN(offset - 1);
