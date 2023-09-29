@@ -5461,7 +5461,8 @@ void CanvasRenderingContext2D::DrawImage(const CanvasImageSource& aImage,
 
   if (srcSurf) {
     gfx::Rect sourceRect(aSx, aSy, aSw, aSh);
-    if (element == mCanvasElement) {
+    if ((element && element == mCanvasElement) ||
+        (offscreenCanvas && offscreenCanvas == mOffscreenCanvas)) {
       
       
       
