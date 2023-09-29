@@ -67,12 +67,4 @@ interface nsICookieNotification : nsISupports {
 
 
     [infallible] readonly attribute BrowsingContext browsingContext;
-
-    
-
-
-
-
-
-    [infallible] readonly attribute boolean isThirdPartyCookie;
 };
