@@ -783,7 +783,7 @@ Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
   nsTArray<MP4Interval<TimeUnit>> timeRanges;
   uint64_t decodeTime = *aDecodeTime;
 
-  if (!mIndex.SetCapacity(sampleCount, fallible)) {
+  if (!mIndex.SetCapacity(mIndex.Length() + sampleCount, fallible)) {
     LOG_ERROR(Moof, "Out of Memory");
     return Err(NS_ERROR_FAILURE);
   }
@@ -826,7 +826,6 @@ Result<Ok, nsresult> Moof::ParseTrun(Box& aBox, Mvhd& aMvhd, Mdhd& aMdhd,
       
       sample.mSync = !(sampleFlags & 0x1010000) || aIsAudio;
 
-      
       MOZ_ALWAYS_TRUE(mIndex.AppendElement(sample, fallible));
 
       mMdatRange = mMdatRange.Span(sample.mByteRange);
