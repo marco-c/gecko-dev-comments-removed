@@ -944,13 +944,13 @@ pref("javascript.options.mem.gc_parallel_marking", false);
 
 
 #if defined(XP_WIN)
-pref("javascript.options.mem.gc_parallel_marking_threshold_kb", 20000);
+pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 20);
 #elif defined(XP_MACOSX)
-pref("javascript.options.mem.gc_parallel_marking_threshold_kb", 4000);
+pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 4);
 #elif defined(ANDROID)
-pref("javascript.options.mem.gc_parallel_marking_threshold_kb", 200000);
+pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 200);
 #elif defined(XP_UNIX)
-pref("javascript.options.mem.gc_parallel_marking_threshold_kb", 200000);
+pref("javascript.options.mem.gc_parallel_marking_threshold_mb", 200);
 #endif
 
 
