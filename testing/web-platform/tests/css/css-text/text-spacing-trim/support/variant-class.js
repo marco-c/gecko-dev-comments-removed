@@ -3,22 +3,11 @@
 
 
 
-
-
-
 if (window.location.search) {
   const params = new URLSearchParams(window.location.search);
   if (params.has('class')) {
-    const classes = document.documentElement.classList;
-    const links = document.querySelectorAll('link[rel="match"]');
-    for (const value of params.getAll('class')) {
-      classes.add(...value.split(','));
-
-      for (const link of links) {
-        const url = new URL(link.href);
-        url.searchParams.append('class', value);
-        link.href = url;
-      }
-    }
+    const values = params.getAll('class')
+                         .flatMap(value => value.split(','));
+    document.documentElement.classList.add(...values);
   }
 }
