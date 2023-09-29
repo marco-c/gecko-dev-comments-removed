@@ -6,7 +6,7 @@
 const fs = require("fs");
 const { mkdir } = require("shelljs");
 const path = require("path");
-const meow = require("meow");
+const { pathToFileURL } = require("url");
 const chalk = require("chalk");
 
 const DEFAULT_OPTIONS = {
@@ -134,7 +134,9 @@ const STATIC_FILES = new Map([
 
 
 
-function main() {
+async function main() {
+  const { default: meow } = await import("meow");
+  const fileUrl = pathToFileURL(__filename);
   const cli = meow(
     `
     Usage
@@ -157,6 +159,10 @@ function main() {
         name: "render-activity-stream-html",
         version: "0.0.0",
       },
+      
+      
+      
+      importMeta: { url: fileUrl },
       flags: {
         addonPath: {
           type: "string",
