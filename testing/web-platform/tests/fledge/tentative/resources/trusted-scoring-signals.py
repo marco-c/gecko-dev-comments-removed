@@ -10,7 +10,7 @@ from urllib.parse import unquote_plus, urlparse
 def main(request, response):
     hostname = None
     renderUrls = None
-    adComponentRenderUrls = None
+    adComponentRenderURLs = None
     
     
     
@@ -35,9 +35,9 @@ def main(request, response):
             renderUrls = list(map(unquote_plus, pair[1].split(",")))
             urlLists.append({"type":"renderUrls", "urls":renderUrls})
             continue
-        if pair[0] == "adComponentRenderUrls" and adComponentRenderUrls == None:
-            adComponentRenderUrls = list(map(unquote_plus, pair[1].split(",")))
-            urlLists.append({"type":"adComponentRenderUrls", "urls":adComponentRenderUrls})
+        if pair[0] == "adComponentRenderUrls" and adComponentRenderURLs == None:
+            adComponentRenderURLs = list(map(unquote_plus, pair[1].split(",")))
+            urlLists.append({"type":"adComponentRenderURLs", "urls":adComponentRenderURLs})
             continue
         return fail(response, "Unexpected query parameter: " + param)
 
