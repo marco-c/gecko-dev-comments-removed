@@ -28,6 +28,7 @@
 #include "mozilla/dom/ConstraintValidation.h"
 #include "mozilla/dom/FileInputType.h"
 #include "mozilla/dom/HiddenInputType.h"
+#include "mozilla/dom/RadioGroupContainer.h"
 #include "nsGenericHTMLElement.h"
 #include "nsImageLoadingContent.h"
 #include "nsCOMPtr.h"
@@ -35,7 +36,6 @@
 #include "nsIContentPrefService2.h"
 #include "nsContentUtils.h"
 
-class nsIRadioGroupContainer;
 class nsIRadioVisitor;
 
 namespace mozilla {
@@ -277,8 +277,9 @@ class HTMLInputElement final : public TextControlElement,
 
   void SetCheckedChangedInternal(bool aCheckedChanged);
   bool GetCheckedChanged() const { return mCheckedChanged; }
-  void AddedToRadioGroup();
-  void WillRemoveFromRadioGroup();
+  void AddToRadioGroup();
+  void RemoveFromRadioGroup();
+  void DisconnectRadioGroupContainer();
 
   
 
@@ -1147,9 +1148,12 @@ class HTMLInputElement final : public TextControlElement,
 
 
 
+  RadioGroupContainer* GetCurrentRadioGroupContainer() const;
+  
 
 
-  nsIRadioGroupContainer* GetRadioGroupContainer() const;
+
+  RadioGroupContainer* FindTreeRadioGroupContainer() const;
 
   
 
@@ -1632,6 +1636,12 @@ class HTMLInputElement final : public TextControlElement,
 
 
   static bool IsDateTimeTypeSupported(FormControlType);
+
+  
+
+
+
+  RadioGroupContainer* mRadioGroupContainer;
 
   struct nsFilePickerFilter {
     nsFilePickerFilter() : mFilterMask(0) {}
