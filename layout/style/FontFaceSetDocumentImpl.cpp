@@ -452,7 +452,7 @@ bool FontFaceSetDocumentImpl::UpdateRules(
 
   for (size_t i = 0, i_end = mNonRuleFaces.Length(); i < i_end; ++i) {
     
-    InsertNonRuleFontFace(mNonRuleFaces[i].mFontFace, modified);
+    InsertNonRuleFontFace(mNonRuleFaces[i].mFontFace);
   }
 
   
