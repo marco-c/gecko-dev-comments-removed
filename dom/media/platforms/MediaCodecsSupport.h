@@ -23,6 +23,7 @@ namespace mozilla::media {
   X(VP8)           \
   X(VP9)           \
   X(AV1)           \
+  X(HEVC)          \
   X(Theora)        \
   X(AAC)           \
   X(FLAC)          \
@@ -167,7 +168,7 @@ class MCSInfo final {
   static MediaCodec GetMediaCodecFromMimeType(const nsACString& aMimeType);
 
   
-  static std::array<CodecDefinition, 12> GetAllCodecDefinitions();
+  static std::array<CodecDefinition, 13> GetAllCodecDefinitions();
 
   
   static MediaCodecSet GetMediaCodecSetFromMimeTypes(
