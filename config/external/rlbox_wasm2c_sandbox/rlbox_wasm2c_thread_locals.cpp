@@ -15,9 +15,7 @@
 #  include "mozilla/rlbox/rlbox_wasm2c_tls.hpp"
 #  include "wasm-rt.h"
 
-#  ifndef WASM_RT_GROW_FAILED_CRASH
-#    include "nsExceptionHandler.h"
-#  endif
+#  include "nsExceptionHandler.h"
 
 
 
@@ -35,12 +33,8 @@ void moz_wasm2c_trap_handler(wasm_rt_trap_t code) {
 
 
 void moz_wasm2c_memgrow_failed() {
-#  ifdef WASM_RT_GROW_FAILED_CRASH
-  MOZ_CRASH("wasm2c memory grow failed");
-#  else
   CrashReporter::AnnotateCrashReport(
       CrashReporter::Annotation::WasmLibrarySandboxMallocFailed, true);
-#  endif
 }
 
 
