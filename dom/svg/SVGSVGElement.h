@@ -149,14 +149,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
     return mCurrentTranslate != SVGPoint() || mCurrentScale != 1.0f;
   }
 
-  
-
-
-
-
-
-  int32_t GetIntrinsicWidth();
-  int32_t GetIntrinsicHeight();
+  LengthPercentage GetIntrinsicWidth();
+  LengthPercentage GetIntrinsicHeight();
 
   
   
@@ -184,6 +178,8 @@ class SVGSVGElement final : public SVGSVGElementBase {
 
 
   bool WillBeOutermostSVG(nsINode& aParent) const;
+
+  LengthPercentage GetIntrinsicWidthOrHeight(int aAttr);
 
   
   void InvalidateTransformNotifyFrame();

@@ -377,31 +377,31 @@ bool SVGSVGElement::IsEventAttributeNameInternal(nsAtom* aName) {
       aName, (EventNameType_SVGGraphic | EventNameType_SVGSVG));
 }
 
+LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
+  MOZ_ASSERT(aAttr == ATTR_WIDTH || aAttr == ATTR_HEIGHT);
 
-
-
-int32_t SVGSVGElement::GetIntrinsicWidth() {
-  if (mLengthAttributes[ATTR_WIDTH].IsPercentage()) {
-    return -1;
+  if (mLengthAttributes[aAttr].IsPercentage()) {
+    float rawSize = mLengthAttributes[aAttr].GetAnimValInSpecifiedUnits();
+    return LengthPercentage::FromPercentage(rawSize);
   }
+
   
   
   
   
-  float width = mLengthAttributes[ATTR_WIDTH].GetAnimValue(this);
-  return SVGUtils::ClampToInt(width);
+  float rawSize = mLengthAttributes[aAttr].GetAnimValue(this);
+  return LengthPercentage::FromPixels(rawSize);
 }
 
-int32_t SVGSVGElement::GetIntrinsicHeight() {
-  if (mLengthAttributes[ATTR_HEIGHT].IsPercentage()) {
-    return -1;
-  }
-  
-  
-  
-  
-  float height = mLengthAttributes[ATTR_HEIGHT].GetAnimValue(this);
-  return SVGUtils::ClampToInt(height);
+
+
+
+LengthPercentage SVGSVGElement::GetIntrinsicWidth() {
+  return GetIntrinsicWidthOrHeight(ATTR_WIDTH);
+}
+
+LengthPercentage SVGSVGElement::GetIntrinsicHeight() {
+  return GetIntrinsicWidthOrHeight(ATTR_HEIGHT);
 }
 
 void SVGSVGElement::FlushImageTransformInvalidation() {
