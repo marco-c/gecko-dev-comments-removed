@@ -320,6 +320,7 @@ void CanonicalBrowsingContext::ReplacedBy(
   txn.SetEmbedderColorSchemes(GetEmbedderColorSchemes());
   txn.SetHasRestoreData(GetHasRestoreData());
   txn.SetShouldDelayMediaFromStart(GetShouldDelayMediaFromStart());
+  txn.SetForceOffline(GetForceOffline());
 
   
   
