@@ -110,6 +110,13 @@ struct AudioTimelineEvent final {
   TimeType Time() const {
     return mTime.Get<TimeType>();
   }
+  
+  
+  template <class TimeType>
+  double EndTime() const;
+  
+  
+  float EndValue() const;
 
   void SetTimeInTicks(int64_t aTimeInTicks) { mTime = aTimeInTicks; }
 

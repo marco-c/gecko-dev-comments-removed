@@ -95,6 +95,22 @@ AudioTimelineEvent::~AudioTimelineEvent() {
 }
 
 template <class TimeType>
+double AudioTimelineEvent::EndTime() const {
+  MOZ_ASSERT(mType != AudioTimelineEvent::SetTarget);
+  if (mType == AudioTimelineEvent::SetValueCurve) {
+    return Time<TimeType>() + mDuration;
+  }
+  return Time<TimeType>();
+};
+
+float AudioTimelineEvent::EndValue() const {
+  if (mType == AudioTimelineEvent::SetValueCurve) {
+    return mCurve[mCurveLength - 1];
+  }
+  return mValue;
+};
+
+template <class TimeType>
 float AudioEventTimeline::ComputeSetTargetStartValue(
     const AudioTimelineEvent* aPreviousEvent, TimeType aTime) {
   mSetTargetStartTime = aTime;
@@ -244,24 +260,8 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
   auto TimeOf = [](const AudioTimelineEvent* aEvent) -> TimeType {
     return aEvent->Time<TimeType>();
   };
-
-  
-  
   auto EndTimeOf = [](const AudioTimelineEvent* aEvent) -> double {
-    MOZ_ASSERT(aEvent->mType != AudioTimelineEvent::SetTarget);
-    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
-      return aEvent->Time<TimeType>() + aEvent->mDuration;
-    }
-    return aEvent->Time<TimeType>();
-  };
-
-  
-  
-  auto EndValueOf = [](const AudioTimelineEvent* aEvent) -> float {
-    if (aEvent->mType == AudioTimelineEvent::SetValueCurve) {
-      return aEvent->mCurve[aEvent->mCurveLength - 1];
-    }
-    return aEvent->mValue;
+    return aEvent->EndTime<TimeType>();
   };
 
   
@@ -285,12 +285,12 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
   if (aNext) {
     switch (aNext->mType) {
       case AudioTimelineEvent::LinearRamp:
-        return LinearInterpolate(EndTimeOf(aPrevious), EndValueOf(aPrevious),
+        return LinearInterpolate(EndTimeOf(aPrevious), aPrevious->EndValue(),
                                  TimeOf(aNext), aNext->mValue, aTime);
 
       case AudioTimelineEvent::ExponentialRamp:
         return ExponentialInterpolate(EndTimeOf(aPrevious),
-                                      EndValueOf(aPrevious), TimeOf(aNext),
+                                      aPrevious->EndValue(), TimeOf(aNext),
                                       aNext->mValue, aTime);
 
       case AudioTimelineEvent::SetValueAtTime:
