@@ -79,9 +79,9 @@ IPCResult IPCResult::FailImpl(NotNull<IProtocol*> actor, const char* where,
   
   
   MOZ_CRASH_UNSAFE(crashMsg.get());
-#endif
-
+#else
   return IPCResult(false);
+#endif
 }
 
 void AnnotateSystemError() {
