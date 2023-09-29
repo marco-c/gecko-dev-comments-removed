@@ -1,5 +1,4 @@
 
-# -*- coding: utf-8 -*-
 
 """
 requests.certs
@@ -14,5 +13,5 @@ packaged CA bundle.
 """
 from certifi import where
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(where())

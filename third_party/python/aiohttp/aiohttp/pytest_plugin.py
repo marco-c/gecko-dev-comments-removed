@@ -2,6 +2,7 @@ import asyncio
 import contextlib
 import warnings
 from collections.abc import Callable
+from typing import Any, Awaitable, Callable, Dict, Generator, Optional, Union
 
 import pytest
 
@@ -29,6 +30,8 @@ try:
 except ImportError:  
     tokio = None
 
+AiohttpClient = Callable[[Union[Application, BaseTestServer]], Awaitable[TestClient]]
+
 
 def pytest_addoption(parser):  
     parser.addoption(
@@ -52,7 +55,8 @@ def pytest_addoption(parser):
 
 
 def pytest_fixture_setup(fixturedef):  
-    """
+    """Set up pytest fixture.
+
     Allow fixtures to be coroutines. Run coroutine fixtures in an event loop.
     """
     func = fixturedef.func
@@ -121,8 +125,9 @@ def loop_debug(request):
 
 @contextlib.contextmanager
 def _runtime_warning_context():  
-    """
-    Context manager which checks for RuntimeWarnings, specifically to
+    """Context manager which checks for RuntimeWarnings.
+
+    This exists specifically to
     avoid "coroutine 'X' was never awaited" warnings being missed.
 
     If RuntimeWarnings occur in the context a RuntimeError is raised.
@@ -144,8 +149,9 @@ def _runtime_warning_context():
 
 @contextlib.contextmanager
 def _passthrough_loop_context(loop, fast=False):  
-    """
-    setups and tears down a loop unless one is passed in via the loop
+    """Passthrough loop context.
+
+    Sets up and tears down a loop unless one is passed in via the loop
     argument when it's passed straight through.
     """
     if loop:
@@ -159,17 +165,13 @@ def _passthrough_loop_context(loop, fast=False):
 
 
 def pytest_pycollect_makeitem(collector, name, obj):  
-    """
-    Fix pytest collecting for coroutines.
-    """
+    """Fix pytest collecting for coroutines."""
     if collector.funcnamefilter(name) and asyncio.iscoroutinefunction(obj):
         return list(collector._genfunctions(name, obj))
 
 
 def pytest_pyfunc_call(pyfuncitem):  
-    """
-    Run coroutines in an event loop instead of a normal function call.
-    """
+    """Run coroutines in an event loop instead of a normal function call."""
     fast = pyfuncitem.config.getoption("--aiohttp-fast")
     if asyncio.iscoroutinefunction(pyfuncitem.function):
         existing_loop = pyfuncitem.funcargs.get(
@@ -278,7 +280,7 @@ def aiohttp_server(loop):
 
     yield go
 
-    async def finalize():  
+    async def finalize() -> None:
         while servers:
             await servers.pop().close()
 
@@ -311,7 +313,7 @@ def aiohttp_raw_server(loop):
 
     yield go
 
-    async def finalize():  
+    async def finalize() -> None:
         while servers:
             await servers.pop().close()
 
@@ -319,7 +321,9 @@ def aiohttp_raw_server(loop):
 
 
 @pytest.fixture
-def raw_test_server(aiohttp_raw_server):  
+def raw_test_server(  
+    aiohttp_raw_server,
+):
     warnings.warn(
         "Deprecated, use aiohttp_raw_server fixture instead",
         DeprecationWarning,
@@ -329,7 +333,9 @@ def raw_test_server(aiohttp_raw_server):
 
 
 @pytest.fixture
-def aiohttp_client(loop):  
+def aiohttp_client(
+    loop: asyncio.AbstractEventLoop,
+) -> Generator[AiohttpClient, None, None]:
     """Factory to create a TestClient instance.
 
     aiohttp_client(app, **kwargs)
@@ -338,7 +344,12 @@ def aiohttp_client(loop):
     """
     clients = []
 
-    async def go(__param, *args, server_kwargs=None, **kwargs):  
+    async def go(
+        __param: Union[Application, BaseTestServer],
+        *args: Any,
+        server_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any
+    ) -> TestClient:
 
         if isinstance(__param, Callable) and not isinstance(  
             __param, (Application, BaseTestServer)
@@ -363,7 +374,7 @@ def aiohttp_client(loop):
 
     yield go
 
-    async def finalize():  
+    async def finalize() -> None:
         while clients:
             await clients.pop().close()
 
