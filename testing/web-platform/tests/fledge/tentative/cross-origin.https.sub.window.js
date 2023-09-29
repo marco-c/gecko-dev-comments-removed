@@ -3,11 +3,21 @@
 
 
 
+
+
+
+
 "use strict;"
 
 const OTHER_ORIGIN1 = 'https://{{hosts[alt][]}}:{{ports[https][0]}}';
+const OTHER_ORIGIN2 = 'https://{{hosts[alt][]}}:{{ports[https][1]}}';
 
-function runInIframe(test, iframe, script) {
+
+
+
+
+
+function runInIframe(test, iframe, script, param) {
   const messageUuid = generateUuid(test);
 
   return new Promise(function(resolve, reject) {
@@ -21,7 +31,8 @@ function runInIframe(test, iframe, script) {
       }
     }
     window.addEventListener('message', WaitForMessage);
-    iframe.contentWindow.postMessage({messageUuid: messageUuid, script: script}, '*');
+    iframe.contentWindow.postMessage(
+        {messageUuid: messageUuid, script: script, param: param}, '*');
   });
 }
 
@@ -64,7 +75,7 @@ async function createIframe(test, origin, permissions) {
 
 
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   let iframe = await createIframe(test, document.location.origin);
 
@@ -73,10 +84,10 @@ promise_test(async test => {
 
   
   
-  let config = await runBasicFledgeTestExpectingWinner(test, uuid);
+  await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'Join interest group in same-origin iframe, default permissions.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   let iframe = await createIframe(test, OTHER_ORIGIN1);
 
@@ -88,7 +99,7 @@ promise_test(async test => {
   
   
   
-  let config = await runBasicFledgeTestExpectingWinner(
+  await runBasicFledgeTestExpectingWinner(
       test, uuid,
       { interestGroupBuyers: [OTHER_ORIGIN1],
         scoreAd: `if (browserSignals.interestGroupOwner !== "${OTHER_ORIGIN1}")
@@ -96,7 +107,7 @@ promise_test(async test => {
       });
 }, 'Join interest group in cross-origin iframe, default permissions.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   let iframe = await createIframe(test, OTHER_ORIGIN1, 'join-ad-interest-group');
 
@@ -105,7 +116,7 @@ promise_test(async test => {
 
   
   
-  let config = await runBasicFledgeTestExpectingWinner(
+  await runBasicFledgeTestExpectingWinner(
       test, uuid,
       { interestGroupBuyers: [OTHER_ORIGIN1],
         scoreAd: `if (browserSignals.interestGroupOwner !== "${OTHER_ORIGIN1}")
@@ -113,7 +124,7 @@ promise_test(async test => {
       });
 }, 'Join interest group in cross-origin iframe with join-ad-interest-group permission.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   let iframe = await createIframe(test, OTHER_ORIGIN1, "join-ad-interest-group 'none'");
 
@@ -124,18 +135,20 @@ promise_test(async test => {
                     `try {
                        await joinInterestGroup(test_instance, "${uuid}");
                      } catch (e) {
+                       assert_true(e instanceof DOMException, "DOMException thrown");
+                       assert_equals(e.name, "NotAllowedError", "NotAllowedError DOMException thrown");
                        return "success";
                      }
                      return "exception unexpectedly not thrown";`);
 
   
   
-  let config = await runBasicFledgeTestExpectingNoWinner(
+  await runBasicFledgeTestExpectingNoWinner(
       test, uuid,
       { interestGroupBuyers: [OTHER_ORIGIN1] });
 }, 'Join interest group in cross-origin iframe with join-ad-interest-group permission denied.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   let iframe = await createIframe(test, OTHER_ORIGIN1, 'join-ad-interest-group');
 
@@ -148,5 +161,128 @@ promise_test(async test => {
 
   
   
-  let config = await runBasicFledgeTestExpectingNoWinner(test, uuid);
+  await runBasicFledgeTestExpectingNoWinner(test, uuid);
 }, "Join interest group owned by parent's origin in cross-origin iframe.");
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  await joinInterestGroup(test, uuid);
+
+  let iframe = await createIframe(test, document.location.origin);
+
+  
+  await runInIframe(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
+
+  
+  await runInIframe(
+    test, iframe,
+    `await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");`);
+}, 'Run auction in same-origin iframe, default permissions.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  
+  await joinInterestGroup(test, uuid);
+
+  let iframe = await createIframe(test, OTHER_ORIGIN1);
+
+  
+  await runInIframe(
+      test, iframe,
+      `await runBasicFledgeTestExpectingWinner(
+           test_instance, "${uuid}",
+           {interestGroupBuyers: ["${window.location.origin}"]});`);
+}, 'Run auction in cross-origin iframe, default permissions.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  
+  await joinInterestGroup(test, uuid);
+
+  let iframe = await createIframe(test, OTHER_ORIGIN1, "run-ad-auction");
+
+  
+  await runInIframe(
+      test, iframe,
+      `await runBasicFledgeTestExpectingWinner(
+           test_instance, "${uuid}",
+           {interestGroupBuyers: ["${window.location.origin}"]});`);
+}, 'Run auction in cross-origin iframe with run-ad-auction permission.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  
+  
+  
+
+  let iframe = await createIframe(test, OTHER_ORIGIN1, "run-ad-auction 'none'");
+
+  
+  await runInIframe(
+      test, iframe,
+      `try {
+         await runBasicFledgeAuction(test_instance, "${uuid}");
+       } catch (e) {
+         assert_true(e instanceof DOMException, "DOMException thrown");
+         assert_equals(e.name, "NotAllowedError", "NotAllowedError DOMException thrown");
+         return "success";
+       }
+       throw "Attempting to run auction unexpectedly did not throw"`);
+}, 'Run auction in cross-origin iframe with run-ad-auction permission denied.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+  
+  await joinInterestGroup(test, uuid);
+
+  let iframe = await createIframe(test, OTHER_ORIGIN1, `run-ad-auction ${OTHER_ORIGIN1}`);
+
+  await runInIframe(
+      test, iframe,
+      `await runBasicFledgeTestExpectingWinner(
+        test_instance, "${uuid}",
+        { interestGroupBuyers: ["${window.location.origin}"],
+          seller: "${OTHER_ORIGIN2}",
+          decisionLogicURL: createDecisionScriptURL("${uuid}", {origin: "${OTHER_ORIGIN2}"})
+        });`);
+}, 'Run auction in cross-origin iframe with run-ad-auction for iframe origin, which is different from seller origin.');
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  await joinInterestGroup(test, uuid);
+  let config = await runBasicFledgeTestExpectingWinner(test, uuid);
+
+  
+  
+  let iframe = await createIframe(
+      test, OTHER_ORIGIN1, "join-ad-interest-group 'none'; run-ad-auction 'none'");
+  await runInIframe(
+      test, iframe,
+      `await createAndNavigateFencedFrame(test_instance, param);`,
+      config);
+  await waitForObservedRequests(
+      uuid, [createBidderReportURL(uuid), createSellerReportURL(uuid)]);
+}, 'Run auction main frame, open winning ad in cross-origin iframe.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let iframe = await createIframe(
+      test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
+  await runInIframe(
+      test, iframe,
+      `await joinInterestGroup(test_instance, "${uuid}");
+       await runBasicFledgeAuctionAndNavigate(test_instance, "${uuid}");
+       await waitForObservedRequests(
+         "${uuid}", [createBidderReportURL("${uuid}"), createSellerReportURL("${uuid}")])`);
+}, 'Run auction in cross-origin iframe and open winning ad in nested fenced frame.');

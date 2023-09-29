@@ -149,7 +149,8 @@ function createBiddingScriptURL(params = {}) {
 
 
 function createDecisionScriptURL(uuid, params = {}) {
-  let url = new URL(`${BASE_URL}resources/decision-logic.sub.py`);
+  let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
+  let url = new URL(`${origin}${RESOURCE_PATH}decision-logic.sub.py`);
   url.searchParams.append('uuid', uuid);
   if (params.scoreAd)
     url.searchParams.append('scoreAd', params.scoreAd);
@@ -266,18 +267,23 @@ async function runBasicFledgeTestExpectingNoWinner(
 
 
 
+function createAndNavigateFencedFrame(test, fencedFrameConfig) {
+  let fencedFrame = document.createElement('fencedframe');
+  fencedFrame.mode = 'opaque-ads';
+  fencedFrame.config = fencedFrameConfig;
+  document.body.appendChild(fencedFrame);
+  test.add_cleanup(() => { document.body.removeChild(fencedFrame); });
+}
+
+
+
 
 
 async function runBasicFledgeAuctionAndNavigate(test, uuid,
                                                 auctionConfigOverrides = {}) {
   let config = await runBasicFledgeTestExpectingWinner(test, uuid,
                                                        auctionConfigOverrides);
-
-  let fencedFrame = document.createElement('fencedframe');
-  fencedFrame.mode = 'opaque-ads';
-  fencedFrame.config = config;
-  document.body.appendChild(fencedFrame);
-  test.add_cleanup(() => { document.body.removeChild(fencedFrame); });
+  createAndNavigateFencedFrame(test, config);
 }
 
 
