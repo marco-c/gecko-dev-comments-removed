@@ -4,11 +4,6 @@
 
 "use strict";
 
-
-
-
-
-
 global.EventManager = ExtensionCommon.EventManager;
 
 extensions.registerModules({

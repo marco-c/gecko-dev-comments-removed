@@ -6,9 +6,6 @@
 
 "use strict";
 
-
-
-
 var { ExtensionUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionUtils.sys.mjs"
 );
