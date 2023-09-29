@@ -403,6 +403,10 @@ class AudioEventTimeline {
 
   static bool IsValid(double value) { return std::isfinite(value); }
 
+  template <class TimeType>
+  float ComputeSetTargetStartValue(const AudioTimelineEvent* aPreviousEvent,
+                                   TimeType aTime);
+
   
   
   
@@ -413,6 +417,7 @@ class AudioEventTimeline {
   
   
   float mSetTargetStartValue;
+  AudioTimelineEvent::TimeUnion mSetTargetStartTime;
 };
 
 }  

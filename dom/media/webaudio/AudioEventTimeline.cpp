@@ -94,22 +94,57 @@ AudioTimelineEvent::~AudioTimelineEvent() {
   }
 }
 
+template <class TimeType>
+float AudioEventTimeline::ComputeSetTargetStartValue(
+    const AudioTimelineEvent* aPreviousEvent, TimeType aTime) {
+  mSetTargetStartTime = aTime;
+  mSetTargetStartValue =
+      GetValuesAtTimeHelperInternal(aTime, aPreviousEvent, nullptr);
+  return mSetTargetStartValue;
+}
+
 template void AudioEventTimeline::CleanupEventsOlderThan(double);
 template void AudioEventTimeline::CleanupEventsOlderThan(int64_t);
 template <class TimeType>
 void AudioEventTimeline::CleanupEventsOlderThan(TimeType aTime) {
-  while (mEvents.Length() > 1 && aTime > mEvents[1].Time<TimeType>()) {
-    if (mEvents[1].mType == AudioTimelineEvent::SetTarget) {
-      mSetTargetStartValue = GetValuesAtTimeHelperInternal(
-          mEvents[1].Time<TimeType>(), &mEvents[0], nullptr);
-    }
+  auto TimeOf =
+      [](const decltype(mEvents)::const_iterator& aEvent) -> TimeType {
+    return aEvent->Time<TimeType>();
+  };
 
-    MOZ_ASSERT(!mEvents[0].mTrack,
+  
+  auto begin = mEvents.cbegin();
+  auto end = mEvents.cend();
+  auto event = begin + 1;
+  for (; event < end && aTime > TimeOf(event); ++event) {
+    MOZ_ASSERT(!(event - 1)->mTrack,
                "AudioParam tracks should never be destroyed on the real-time "
                "thread.");
-    JS::AutoSuppressGCAnalysis suppress;
-    mEvents.RemoveElementAt(0);
   }
+  auto firstToKeep = event - 1;
+  if (firstToKeep == begin) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  
+  for (event = firstToKeep;
+       event > begin && event->mType == AudioTimelineEvent::SetTarget &&
+       TimeOf(event) > mSetTargetStartTime.Get<TimeType>();
+       --event) {
+  }
+  
+  for (; event < firstToKeep; ++event) {
+    MOZ_ASSERT((event + 1)->mType == AudioTimelineEvent::SetTarget);
+    ComputeSetTargetStartValue(&*event, TimeOf(event + 1));
+  }
+
+  JS::AutoSuppressGCAnalysis suppress;  
+  mEvents.RemoveElementsRange(begin, firstToKeep);
 }
 
 
@@ -184,9 +219,7 @@ float AudioEventTimeline::GetValueAtTimeOfEvent(
   switch (aEvent->mType) {
     case AudioTimelineEvent::SetTarget:
       
-      mSetTargetStartValue =
-          GetValuesAtTimeHelperInternal(time, aPrevious, nullptr);
-      return mSetTargetStartValue;
+      return ComputeSetTargetStartValue(aPrevious, time);
     case AudioTimelineEvent::SetValueCurve:
       
       
