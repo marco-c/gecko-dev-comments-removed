@@ -395,19 +395,34 @@ class TbplFormatter(BaseFormatter):
         if data["bytes"] == 0:
             return "TEST-PASS | leakcheck | %s no leaks detected!\n" % data["process"]
 
-        
-        
-        
-        max_objects = 5
-        object_summary = ", ".join(data["objects"][:max_objects])
-        if len(data["objects"]) > max_objects:
-            object_summary += ", ..."
+        message = ""
+        bigLeakers = [
+            "nsGlobalWindowInner",
+            "nsGlobalWindowOuter",
+            "Document",
+            "nsDocShell",
+            "BrowsingContext",
+            "BackstagePass",
+        ]
+        for bigLeakName in bigLeakers:
+            if bigLeakName in data["objects"]:
+                message = "leakcheck large %s | %s" % (bigLeakName, data["scope"])
+                break
 
-        message = "leakcheck | %s %d bytes leaked (%s)\n" % (
-            data["process"],
-            data["bytes"],
-            object_summary,
-        )
+        
+        
+        
+        if message == "":
+            max_objects = 5
+            object_summary = ", ".join(data["objects"][:max_objects])
+            if len(data["objects"]) > max_objects:
+                object_summary += ", ..."
+
+            message = "leakcheck | %s %d bytes leaked (%s)\n" % (
+                data["process"],
+                data["bytes"],
+                object_summary,
+            )
 
         
         
