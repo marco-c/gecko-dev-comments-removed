@@ -7,6 +7,7 @@
 #include "gtest/gtest.h"
 
 #include "AnnexB.h"
+#include "BufferReader.h"
 #include "ByteWriter.h"
 #include "H264.h"
 #include "H265.h"
@@ -401,6 +402,89 @@ TEST(H265, HVCCParsingFailure)
     auto avcc = HVCCConfig::Parse(extradata);
     EXPECT_TRUE(avcc.isErr());
   }
+}
+
+TEST(H265, HVCCToAnnexB)
+{
+  auto extradata = MakeRefPtr<mozilla::MediaByteBuffer>();
+  uint8_t hvccBytesBuffer[] = {
+      1 ,
+      1 ,
+      0x60 ,
+      0 ,
+      0 ,
+      0 ,
+      0x90 ,
+      0 ,
+      0 ,
+      0 ,
+      0 ,
+      0 ,
+      0x5A ,
+      0 ,
+      0 ,
+      0 ,
+      1 ,
+      0 ,
+      0 ,
+      0 ,
+      0 ,
+      0x0F 
+
+      ,
+      2 ,
+      
+      0x21 ,
+      0 ,
+      1 ,
+
+      
+      0 ,
+      3 ,
+      0x42 ,
+      0 ,
+      0 ,
+
+      
+      0x22 ,
+      0 ,
+      1 ,
+
+      
+      0 ,
+      3 ,
+      0x44 ,
+      0 ,
+      0 ,
+  };
+  extradata->AppendElements(hvccBytesBuffer, ArrayLength(hvccBytesBuffer));
+
+  
+  
+  const size_t naluBytesSize = 3;  
+  const size_t delimiterBytesSize = 4;  
+  const size_t naluPlusDelimiterBytesSize = naluBytesSize + delimiterBytesSize;
+  RefPtr<mozilla::MediaByteBuffer> annexBExtraData =
+      AnnexB::ConvertHVCCExtraDataToAnnexB(extradata);
+  
+  EXPECT_EQ(annexBExtraData->Length(), naluPlusDelimiterBytesSize * 2);
+
+  H265NALU sps(
+      static_cast<uint8_t*>(annexBExtraData->Elements() + delimiterBytesSize),
+      naluBytesSize);
+  EXPECT_EQ(sps.mNalUnitType, H265NALU::NAL_TYPES::SPS_NUT);
+  EXPECT_EQ(sps.mNuhLayerId, 0);
+  EXPECT_EQ(sps.mNuhTemporalIdPlus1, 0);
+  EXPECT_EQ(sps.IsSPS(), true);
+
+  H265NALU pps(
+      static_cast<uint8_t*>(annexBExtraData->Elements() +
+                            naluPlusDelimiterBytesSize + delimiterBytesSize),
+      naluBytesSize);
+  EXPECT_EQ(pps.mNalUnitType, H265NALU::NAL_TYPES::PPS_NUT);
+  EXPECT_EQ(pps.mNuhLayerId, 0);
+  EXPECT_EQ(pps.mNuhTemporalIdPlus1, 0);
+  EXPECT_EQ(pps.IsSPS(), false);
 }
 
 }  
