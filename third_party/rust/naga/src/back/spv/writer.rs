@@ -1016,11 +1016,26 @@ impl Writer {
                     ref members,
                     span: _,
                 } => {
+                    let mut has_runtime_array = false;
                     let mut member_ids = Vec::with_capacity(members.len());
                     for (index, member) in members.iter().enumerate() {
+                        let member_ty = &arena[member.ty];
+                        match member_ty.inner {
+                            crate::TypeInner::Array {
+                                base: _,
+                                size: crate::ArraySize::Dynamic,
+                                stride: _,
+                            } => {
+                                has_runtime_array = true;
+                            }
+                            _ => (),
+                        }
                         self.decorate_struct_member(id, index, member, arena)?;
                         let member_id = self.get_type_id(LookupType::Handle(member.ty));
                         member_ids.push(member_id);
+                    }
+                    if has_runtime_array {
+                        self.decorate(id, Decoration::Block, &[]);
                     }
                     Instruction::type_struct(id, member_ids.as_slice())
                 }
@@ -1621,7 +1636,6 @@ impl Writer {
                             space: global_variable.space,
                         }))
                 }
-            } else {
             }
         };
 
@@ -1658,14 +1672,15 @@ impl Writer {
             
             
             
+            
             if let crate::AddressSpace::Storage { .. } = global_variable.space {
-                let decorated_id = match ir_module.types[global_variable.ty].inner {
+                match ir_module.types[global_variable.ty].inner {
                     crate::TypeInner::BindingArray { base, .. } => {
-                        self.get_type_id(LookupType::Handle(base))
+                        let decorated_id = self.get_type_id(LookupType::Handle(base));
+                        self.decorate(decorated_id, Decoration::Block, &[]);
                     }
-                    _ => inner_type_id,
+                    _ => (),
                 };
-                self.decorate(decorated_id, Decoration::Block, &[]);
             }
             if substitute_inner_type_lookup.is_some() {
                 inner_type_id

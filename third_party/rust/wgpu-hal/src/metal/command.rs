@@ -1,4 +1,4 @@
-use super::{conv, AsNative};
+use super::{conv, AsNative, TimestampQuerySupport};
 use crate::CommandEncoder as _;
 use std::{borrow::Cow, mem, ops::Range};
 
@@ -18,6 +18,7 @@ impl Default for super::CommandState {
             storage_buffer_length_map: Default::default(),
             work_group_memory_sizes: Vec::new(),
             push_constants: Vec::new(),
+            pending_timer_queries: Vec::new(),
         }
     }
 }
@@ -26,10 +27,85 @@ impl super::CommandEncoder {
     fn enter_blit(&mut self) -> &metal::BlitCommandEncoderRef {
         if self.state.blit.is_none() {
             debug_assert!(self.state.render.is_none() && self.state.compute.is_none());
+            let cmd_buf = self.raw_cmd_buf.as_ref().unwrap();
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            let supports_sample_counters_in_buffer = self
+                .shared
+                .private_caps
+                .timestamp_query_support
+                .contains(TimestampQuerySupport::ON_BLIT_ENCODER);
+
+            if !self.state.pending_timer_queries.is_empty() && !supports_sample_counters_in_buffer {
+                objc::rc::autoreleasepool(|| {
+                    let descriptor = metal::BlitPassDescriptor::new();
+                    let mut last_query = None;
+                    for (i, (set, index)) in self.state.pending_timer_queries.drain(..).enumerate()
+                    {
+                        let sba_descriptor = descriptor
+                            .sample_buffer_attachments()
+                            .object_at(i as _)
+                            .unwrap();
+                        sba_descriptor
+                            .set_sample_buffer(set.counter_sample_buffer.as_ref().unwrap());
+
+                        
+                        
+                        sba_descriptor
+                            .set_start_of_encoder_sample_index(metal::COUNTER_DONT_SAMPLE);
+                        sba_descriptor.set_end_of_encoder_sample_index(index as _);
+
+                        last_query = Some((set, index));
+                    }
+                    let encoder = cmd_buf.blit_command_encoder_with_descriptor(descriptor);
+
+                    
+                    
+                    
+                    let raw_range = metal::NSRange {
+                        location: last_query.as_ref().unwrap().1 as u64 * crate::QUERY_SIZE,
+                        length: 1,
+                    };
+                    encoder.fill_buffer(
+                        &last_query.as_ref().unwrap().0.raw_buffer,
+                        raw_range,
+                        255, 
+                    );
+
+                    encoder.end_encoding();
+                });
+            }
+
             objc::rc::autoreleasepool(|| {
-                let cmd_buf = self.raw_cmd_buf.as_ref().unwrap();
                 self.state.blit = Some(cmd_buf.new_blit_command_encoder().to_owned());
             });
+
+            let encoder = self.state.blit.as_ref().unwrap();
+
+            
+            
+            for (set, index) in self.state.pending_timer_queries.drain(..) {
+                debug_assert!(supports_sample_counters_in_buffer);
+                encoder.sample_counters_in_buffer(
+                    set.counter_sample_buffer.as_ref().unwrap(),
+                    index as _,
+                    true,
+                )
+            }
         }
         self.state.blit.as_ref().unwrap()
     }
@@ -40,7 +116,7 @@ impl super::CommandEncoder {
         }
     }
 
-    fn enter_any(&mut self) -> Option<&metal::CommandEncoderRef> {
+    fn active_encoder(&mut self) -> Option<&metal::CommandEncoderRef> {
         if let Some(ref encoder) = self.state.render {
             Some(encoder)
         } else if let Some(ref encoder) = self.state.compute {
@@ -127,9 +203,17 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
     }
 
     unsafe fn end_encoding(&mut self) -> Result<super::CommandBuffer, crate::DeviceError> {
+        
+        if !self.state.pending_timer_queries.is_empty() {
+            self.leave_blit();
+            self.enter_blit();
+        }
+
         self.leave_blit();
         debug_assert!(self.state.render.is_none());
         debug_assert!(self.state.compute.is_none());
+        debug_assert!(self.state.pending_timer_queries.is_empty());
+
         Ok(super::CommandBuffer {
             raw: self.raw_cmd_buf.take().unwrap(),
         })
@@ -322,16 +406,43 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
             _ => {}
         }
     }
-    unsafe fn write_timestamp(&mut self, _set: &super::QuerySet, _index: u32) {
-        
-        
-        
+    unsafe fn write_timestamp(&mut self, set: &super::QuerySet, index: u32) {
+        let support = self.shared.private_caps.timestamp_query_support;
+        debug_assert!(
+            support.contains(TimestampQuerySupport::STAGE_BOUNDARIES),
+            "Timestamp queries are not supported"
+        );
+        let sample_buffer = set.counter_sample_buffer.as_ref().unwrap();
+        let with_barrier = true;
 
         
         
-        
+        if let (true, Some(encoder)) = (
+            support.contains(TimestampQuerySupport::ON_BLIT_ENCODER),
+            self.state.blit.as_ref(),
+        ) {
+            encoder.sample_counters_in_buffer(sample_buffer, index as _, with_barrier);
+        } else if let (true, Some(encoder)) = (
+            support.contains(TimestampQuerySupport::ON_RENDER_ENCODER),
+            self.state.render.as_ref(),
+        ) {
+            encoder.sample_counters_in_buffer(sample_buffer, index as _, with_barrier);
+        } else if let (true, Some(encoder)) = (
+            support.contains(TimestampQuerySupport::ON_COMPUTE_ENCODER),
+            self.state.compute.as_ref(),
+        ) {
+            encoder.sample_counters_in_buffer(sample_buffer, index as _, with_barrier);
+        } else {
+            
+            
+            debug_assert!(self.state.render.is_none() && self.state.compute.is_none());
 
-        
+            
+            self.state.pending_timer_queries.push((set.clone(), index));
+
+            
+            self.leave_blit();
+        };
     }
 
     unsafe fn reset_queries(&mut self, set: &super::QuerySet, range: Range<u32>) {
@@ -342,6 +453,7 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
         };
         encoder.fill_buffer(&set.raw_buffer, raw_range, 0);
     }
+
     unsafe fn copy_query_results(
         &mut self,
         set: &super::QuerySet,
@@ -454,8 +566,29 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
                 }
             }
 
+            let mut sba_index = 0;
+            let mut next_sba_descriptor = || {
+                let sba_descriptor = descriptor
+                    .sample_buffer_attachments()
+                    .object_at(sba_index)
+                    .unwrap();
+
+                sba_descriptor.set_end_of_vertex_sample_index(metal::COUNTER_DONT_SAMPLE);
+                sba_descriptor.set_start_of_fragment_sample_index(metal::COUNTER_DONT_SAMPLE);
+
+                sba_index += 1;
+                sba_descriptor
+            };
+
+            for (set, index) in self.state.pending_timer_queries.drain(..) {
+                let sba_descriptor = next_sba_descriptor();
+                sba_descriptor.set_sample_buffer(set.counter_sample_buffer.as_ref().unwrap());
+                sba_descriptor.set_start_of_vertex_sample_index(index as _);
+                sba_descriptor.set_end_of_fragment_sample_index(metal::COUNTER_DONT_SAMPLE);
+            }
+
             if let Some(ref timestamp_writes) = desc.timestamp_writes {
-                let sba_descriptor = descriptor.sample_buffer_attachments().object_at(0).unwrap();
+                let sba_descriptor = next_sba_descriptor();
                 sba_descriptor.set_sample_buffer(
                     timestamp_writes
                         .query_set
@@ -464,12 +597,16 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
                         .unwrap(),
                 );
 
-                if let Some(start_index) = timestamp_writes.beginning_of_pass_write_index {
-                    sba_descriptor.set_start_of_vertex_sample_index(start_index as _);
-                }
-                if let Some(end_index) = timestamp_writes.end_of_pass_write_index {
-                    sba_descriptor.set_end_of_fragment_sample_index(end_index as _);
-                }
+                sba_descriptor.set_start_of_vertex_sample_index(
+                    timestamp_writes
+                        .beginning_of_pass_write_index
+                        .map_or(metal::COUNTER_DONT_SAMPLE, |i| i as _),
+                );
+                sba_descriptor.set_end_of_fragment_sample_index(
+                    timestamp_writes
+                        .end_of_pass_write_index
+                        .map_or(metal::COUNTER_DONT_SAMPLE, |i| i as _),
+                );
             }
 
             if let Some(occlusion_query_set) = desc.occlusion_query_set {
@@ -697,19 +834,19 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
     }
 
     unsafe fn insert_debug_marker(&mut self, label: &str) {
-        if let Some(encoder) = self.enter_any() {
+        if let Some(encoder) = self.active_encoder() {
             encoder.insert_debug_signpost(label);
         }
     }
     unsafe fn begin_debug_marker(&mut self, group_label: &str) {
-        if let Some(encoder) = self.enter_any() {
+        if let Some(encoder) = self.active_encoder() {
             encoder.push_debug_group(group_label);
         } else if let Some(ref buf) = self.raw_cmd_buf {
             buf.push_debug_group(group_label);
         }
     }
     unsafe fn end_debug_marker(&mut self) {
-        if let Some(encoder) = self.enter_any() {
+        if let Some(encoder) = self.active_encoder() {
             encoder.pop_debug_group();
         } else if let Some(ref buf) = self.raw_cmd_buf {
             buf.pop_debug_group();
@@ -969,11 +1106,25 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
         objc::rc::autoreleasepool(|| {
             let descriptor = metal::ComputePassDescriptor::new();
 
-            if let Some(timestamp_writes) = desc.timestamp_writes.as_ref() {
+            let mut sba_index = 0;
+            let mut next_sba_descriptor = || {
                 let sba_descriptor = descriptor
                     .sample_buffer_attachments()
-                    .object_at(0 as _)
+                    .object_at(sba_index)
                     .unwrap();
+                sba_index += 1;
+                sba_descriptor
+            };
+
+            for (set, index) in self.state.pending_timer_queries.drain(..) {
+                let sba_descriptor = next_sba_descriptor();
+                sba_descriptor.set_sample_buffer(set.counter_sample_buffer.as_ref().unwrap());
+                sba_descriptor.set_start_of_encoder_sample_index(index as _);
+                sba_descriptor.set_end_of_encoder_sample_index(metal::COUNTER_DONT_SAMPLE);
+            }
+
+            if let Some(timestamp_writes) = desc.timestamp_writes.as_ref() {
+                let sba_descriptor = next_sba_descriptor();
                 sba_descriptor.set_sample_buffer(
                     timestamp_writes
                         .query_set
@@ -982,12 +1133,16 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
                         .unwrap(),
                 );
 
-                if let Some(start_index) = timestamp_writes.beginning_of_pass_write_index {
-                    sba_descriptor.set_start_of_encoder_sample_index(start_index as _);
-                }
-                if let Some(end_index) = timestamp_writes.end_of_pass_write_index {
-                    sba_descriptor.set_end_of_encoder_sample_index(end_index as _);
-                }
+                sba_descriptor.set_start_of_encoder_sample_index(
+                    timestamp_writes
+                        .beginning_of_pass_write_index
+                        .map_or(metal::COUNTER_DONT_SAMPLE, |i| i as _),
+                );
+                sba_descriptor.set_end_of_encoder_sample_index(
+                    timestamp_writes
+                        .end_of_pass_write_index
+                        .map_or(metal::COUNTER_DONT_SAMPLE, |i| i as _),
+                );
             }
 
             let encoder = raw.compute_command_encoder_with_descriptor(descriptor);
