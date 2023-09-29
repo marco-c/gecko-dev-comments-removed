@@ -40,6 +40,12 @@ impl ScriptRegistry {
     }
 
     
+    #[inline]
+    pub fn properties(&self) -> &PrecomputedHashMap<Atom, PropertyRegistration> {
+        &self.properties
+    }
+
+    
     
     
     #[inline]
