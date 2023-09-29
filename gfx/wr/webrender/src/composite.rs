@@ -16,26 +16,12 @@ use crate::resource_cache::{ImageRequest, ResourceCache};
 use crate::util::{Preallocator, ScaleOffset};
 use crate::tile_cache::PictureCacheDebugInfo;
 use crate::device::Device;
-use crate::space::SpaceMapper;
 use std::{ops, u64, os::raw::c_void};
 
 
 
 
 
-
-
-#[cfg_attr(feature = "capture", derive(Serialize))]
-#[cfg_attr(feature = "replay", derive(Deserialize))]
-#[derive(Debug, Copy, Clone, MallocSizeOf)]
-pub enum CompositorSurfaceKind {
-    
-    Blit,
-    
-    Underlay,
-    
-    Overlay,
-}
 
 
 #[derive(Debug, Clone)]
@@ -203,28 +189,6 @@ pub struct ExternalSurfaceDescriptor {
     
     
     pub update_params: Option<DeviceIntSize>,
-}
-
-impl ExternalSurfaceDescriptor {
-    
-    pub fn get_occluder_rect(
-        &self,
-        local_clip_rect: &PictureRect,
-        map_pic_to_world: &SpaceMapper<PicturePixel, WorldPixel>,
-    ) -> Option<WorldRect> {
-        let local_surface_rect = self
-            .local_rect
-            .intersection(&self.local_clip_rect)
-            .and_then(|r| {
-                r.intersection(local_clip_rect)
-            });
-
-        local_surface_rect.map(|local_surface_rect| {
-            map_pic_to_world
-                .map(&local_surface_rect)
-                .expect("bug: unable to map external surface to world space")
-        })
-    }
 }
 
 
@@ -667,110 +631,6 @@ impl CompositeState {
     }
 
     
-    fn push_compositor_surface(
-        &mut self,
-        external_surface: &ExternalSurfaceDescriptor,
-        is_opaque: bool,
-        device_clip_rect: DeviceRect,
-        resource_cache: &ResourceCache,
-        gpu_cache: &mut GpuCache,
-        deferred_resolves: &mut Vec<DeferredResolve>,
-    ) {
-        let clip_rect = external_surface
-            .clip_rect
-            .intersection(&device_clip_rect)
-            .unwrap_or_else(DeviceRect::zero);
-
-        
-        if clip_rect.is_empty() {
-            return;
-        }
-
-        let required_plane_count =
-            match external_surface.dependency {
-                ExternalSurfaceDependency::Yuv { format, .. } => {
-                    format.get_plane_num()
-                },
-                ExternalSurfaceDependency::Rgb { .. } => {
-                    1
-                }
-            };
-
-        let mut image_dependencies = [ImageDependency::INVALID; 3];
-
-        for i in 0 .. required_plane_count {
-            let dependency = match external_surface.dependency {
-                ExternalSurfaceDependency::Yuv { image_dependencies, .. } => {
-                    image_dependencies[i]
-                },
-                ExternalSurfaceDependency::Rgb { image_dependency, .. } => {
-                    image_dependency
-                }
-            };
-            image_dependencies[i] = dependency;
-        }
-
-        
-        
-        
-        let needs_external_surface_update = match self.compositor_kind {
-            CompositorKind::Draw { .. } => true,
-            _ => external_surface.update_params.is_some(),
-        };
-        let external_surface_index = if needs_external_surface_update {
-            let external_surface_index = self.compute_external_surface_dependencies(
-                &external_surface,
-                &image_dependencies,
-                required_plane_count,
-                resource_cache,
-                gpu_cache,
-                deferred_resolves,
-            );
-            if external_surface_index == ResolvedExternalSurfaceIndex::INVALID {
-                return;
-            }
-            external_surface_index
-        } else {
-            ResolvedExternalSurfaceIndex::INVALID
-        };
-
-        let surface = CompositeTileSurface::ExternalSurface { external_surface_index };
-        let local_rect = external_surface.local_surface_size.cast_unit().into();
-
-        let tile = CompositeTile {
-            kind: tile_kind(&surface, is_opaque),
-            surface,
-            local_rect,
-            local_valid_rect: local_rect,
-            local_dirty_rect: local_rect,
-            device_clip_rect: clip_rect,
-            z_id: external_surface.z_id,
-            transform_index: external_surface.transform_index,
-        };
-
-        
-        
-        
-        self.descriptor.surfaces.push(
-            CompositeSurfaceDescriptor {
-                surface_id: external_surface.native_surface_id,
-                clip_rect,
-                transform: self.get_compositor_transform(external_surface.transform_index),
-                image_dependencies: image_dependencies,
-                image_rendering: external_surface.image_rendering,
-                tile_descriptors: Vec::new(),
-            }
-        );
-
-        let device_rect =
-            self.get_device_rect(&local_rect, external_surface.transform_index);
-        self.descriptor.external_surfaces_rect =
-            self.descriptor.external_surfaces_rect.union(&device_rect);
-
-        self.tiles.push(tile);
-    }
-
-    
     pub fn push_surface(
         &mut self,
         tile_cache: &TileCacheInstance,
@@ -798,18 +658,6 @@ impl CompositeState {
                     image_rendering,
                     tile_descriptors: Vec::new(),
                 }
-            );
-        }
-
-        
-        for underlay in &tile_cache.underlays {
-            self.push_compositor_surface(
-                underlay,
-                true,
-                device_clip_rect,
-                resource_cache,
-                gpu_cache,
-                deferred_resolves,
             );
         }
 
@@ -860,7 +708,7 @@ impl CompositeState {
                         }
                     );
                 }
-
+    
                 
                 if !sub_slice.alpha_tile_descriptors.is_empty() {
                     self.descriptor.surfaces.push(
@@ -879,14 +727,100 @@ impl CompositeState {
             
             
             for compositor_surface in &sub_slice.compositor_surfaces {
-                self.push_compositor_surface(
-                    &compositor_surface.descriptor,
-                    compositor_surface.is_opaque,
-                    device_clip_rect,
-                    resource_cache,
-                    gpu_cache,
-                    deferred_resolves,
+                let external_surface = &compositor_surface.descriptor;
+
+                let clip_rect = external_surface
+                    .clip_rect
+                    .intersection(&device_clip_rect)
+                    .unwrap_or_else(DeviceRect::zero);
+                    
+                
+                if clip_rect.is_empty() {
+                    continue;
+                }
+
+                let required_plane_count =
+                    match external_surface.dependency {
+                        ExternalSurfaceDependency::Yuv { format, .. } => {
+                            format.get_plane_num()
+                        },
+                        ExternalSurfaceDependency::Rgb { .. } => {
+                            1
+                        }
+                    };
+
+                let mut image_dependencies = [ImageDependency::INVALID; 3];
+
+                for i in 0 .. required_plane_count {
+                    let dependency = match external_surface.dependency {
+                        ExternalSurfaceDependency::Yuv { image_dependencies, .. } => {
+                            image_dependencies[i]
+                        },
+                        ExternalSurfaceDependency::Rgb { image_dependency, .. } => {
+                            image_dependency
+                        }
+                    };
+                    image_dependencies[i] = dependency;
+                }
+
+                
+                
+                
+                let needs_external_surface_update = match self.compositor_kind {
+                    CompositorKind::Draw { .. } => true,
+                    _ => external_surface.update_params.is_some(),
+                };
+                let external_surface_index = if needs_external_surface_update {
+                    let external_surface_index = self.compute_external_surface_dependencies(
+                        &external_surface,
+                        &image_dependencies,
+                        required_plane_count,
+                        resource_cache,
+                        gpu_cache,
+                        deferred_resolves,
+                    );
+                    if external_surface_index == ResolvedExternalSurfaceIndex::INVALID {
+                        continue;
+                    }
+                    external_surface_index
+                } else {
+                    ResolvedExternalSurfaceIndex::INVALID
+                };
+
+                let surface = CompositeTileSurface::ExternalSurface { external_surface_index };
+                let local_rect = external_surface.local_surface_size.cast_unit().into();
+
+                let tile = CompositeTile {
+                    kind: tile_kind(&surface, compositor_surface.is_opaque),
+                    surface,
+                    local_rect,
+                    local_valid_rect: local_rect,
+                    local_dirty_rect: local_rect,
+                    device_clip_rect: clip_rect,
+                    z_id: external_surface.z_id,
+                    transform_index: external_surface.transform_index,
+                };
+
+                
+                
+                
+                self.descriptor.surfaces.push(
+                    CompositeSurfaceDescriptor {
+                        surface_id: external_surface.native_surface_id,
+                        clip_rect,
+                        transform: self.get_compositor_transform(external_surface.transform_index),
+                        image_dependencies: image_dependencies,
+                        image_rendering: external_surface.image_rendering,
+                        tile_descriptors: Vec::new(),
+                    }
                 );
+
+                let device_rect =
+                    self.get_device_rect(&local_rect, external_surface.transform_index);
+                self.descriptor.external_surfaces_rect =
+                    self.descriptor.external_surfaces_rect.union(&device_rect);
+
+                self.tiles.push(tile);
             }
         }
     }
