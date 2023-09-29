@@ -11,7 +11,6 @@
 
 
 
-#include "ipc/EnumSerializer.h"
 #include "mozilla/dom/WebAuthenticationBinding.h"
 #include "ipc/IPCMessageUtils.h"
 
@@ -21,11 +20,6 @@ bool EvaluateAppID(nsPIDOMWindowInner* aParent, const nsString& aOrigin,
                     nsString& aAppId);
 
 nsresult HashCString(const nsACString& aIn,  nsTArray<uint8_t>& aOut);
-
-nsresult BuildTransactionHashes(const nsCString& aRpId,
-                                const nsCString& aClientDataJSON,
-                                 nsTArray<uint8_t>& aRpIdHash,
-                                 nsTArray<uint8_t>& aClientDataHash);
 
 }  
 

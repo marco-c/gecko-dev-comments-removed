@@ -166,11 +166,7 @@ interface nsICtapSignResult : nsISupports {
     [must_use] readonly attribute ACString userName;
 
     
-    
-    readonly attribute Array<octet> rpIdHash;
-
-    
-    
+    [must_use] readonly attribute bool usedAppId;
 };
 
 
