@@ -3010,7 +3010,6 @@ nsresult nsHttpChannel::RedirectToNewChannelForAuthRetry() {
   httpChannelImpl->SetBlockAuthPrompt(LoadBlockAuthPrompt());
   mRedirectChannel = newChannel;
 
-  PushRedirectAsyncFunc(&nsHttpChannel::OpenRedirectChannel);
   rv = gHttpHandler->AsyncOnChannelRedirect(
       this, newChannel,
       nsIChannelEventSink::REDIRECT_INTERNAL |
@@ -3018,10 +3017,11 @@ nsresult nsHttpChannel::RedirectToNewChannelForAuthRetry() {
 
   if (NS_SUCCEEDED(rv)) rv = WaitForRedirectCallback();
 
+  
+
   if (NS_FAILED(rv)) {
     AutoRedirectVetoNotifier notifier(this, rv);
     mRedirectChannel = nullptr;
-    PopRedirectAsyncFunc(&nsHttpChannel::OpenRedirectChannel);
   }
 
   return rv;
@@ -3114,6 +3114,13 @@ nsresult nsHttpChannel::OpenRedirectChannel(nsresult rv) {
   AutoRedirectVetoNotifier notifier(this, rv);
 
   if (NS_FAILED(rv)) return rv;
+
+  if (!mRedirectChannel) {
+    LOG((
+        "nsHttpChannel::OpenRedirectChannel unexpected null redirect channel"));
+    return NS_ERROR_FAILURE;
+  }
+
   
   
   mRedirectChannel->SetOriginalURI(mOriginalURI);
@@ -7624,8 +7631,11 @@ nsHttpChannel::OnStopRequest(nsIRequest* request, nsresult status) {
 
   if (mTransaction) {
     
-    bool authRetry = (!StaticPrefs::network_auth_use_redirect_for_retries() &&
-                      mAuthRetryPending && NS_SUCCEEDED(status));
+    bool authRetry = (mAuthRetryPending && NS_SUCCEEDED(status) &&
+                      
+                      
+                      !StaticPrefs::network_auth_use_redirect_for_retries());
+
     StoreStronglyFramed(mTransaction->ResponseIsComplete());
     LOG(("nsHttpChannel %p has a strongly framed transaction: %d", this,
          LoadStronglyFramed()));
@@ -8057,6 +8067,15 @@ nsresult nsHttpChannel::ContinueOnStopRequest(nsresult aStatus, bool aIsFromNet,
         mLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0,
         &mTransactionTimings, std::move(mSource),
         Some(nsDependentCString(contentType.get())));
+  }
+
+  if (mAuthRetryPending &&
+      StaticPrefs::network_auth_use_redirect_for_retries()) {
+    MOZ_ASSERT(mRedirectChannel);
+    nsresult rv = OpenRedirectChannel(aStatus);
+    LOG(("Opening redirect channel for auth retry %x",
+         static_cast<uint32_t>(rv)));
+    mRedirectChannel = nullptr;
   }
 
   if (mListener) {
@@ -8847,12 +8866,6 @@ nsHttpChannel::OnRedirectVerifyCallback(nsresult result) {
     
     
     Cancel(result);
-  }
-
-  if (!LoadWaitingForRedirectCallback()) {
-    
-    
-    mRedirectChannel = nullptr;
   }
 
   
