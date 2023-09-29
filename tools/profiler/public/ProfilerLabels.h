@@ -11,6 +11,7 @@
 #ifndef ProfilerLabels_h
 #define ProfilerLabels_h
 
+#include "mozilla/ProfilerState.h"
 #include "mozilla/ProfilerThreadState.h"
 
 #include "js/ProfilingCategory.h"
@@ -39,8 +40,22 @@ struct JSContext;
 
 
 
+
+
 #define AUTO_PROFILER_LABEL(label, categoryPair) \
   mozilla::AutoProfilerLabel PROFILER_RAII(      \
+      label, nullptr, JS::ProfilingCategoryPair::categoryPair)
+
+
+
+
+
+
+
+
+
+#define AUTO_PROFILER_LABEL_HOT(label, categoryPair) \
+  mozilla::AutoProfilerLabelHot PROFILER_RAII(       \
       label, nullptr, JS::ProfilingCategoryPair::categoryPair)
 
 
@@ -171,7 +186,7 @@ struct JSContext;
 
 
 #define AUTO_PROFILER_LABEL_FAST(label, categoryPair, ctx) \
-  mozilla::AutoProfilerLabel PROFILER_RAII(                \
+  mozilla::AutoProfilerLabelHot PROFILER_RAII(             \
       ctx, label, nullptr, JS::ProfilingCategoryPair::categoryPair)
 
 
@@ -179,7 +194,7 @@ struct JSContext;
 
 #define AUTO_PROFILER_LABEL_DYNAMIC_FAST(label, dynamicString, categoryPair, \
                                          ctx, flags)                         \
-  mozilla::AutoProfilerLabel PROFILER_RAII(                                  \
+  mozilla::AutoProfilerLabelHot PROFILER_RAII(                               \
       ctx, label, dynamicString, JS::ProfilingCategoryPair::categoryPair,    \
       flags)
 
@@ -194,12 +209,23 @@ class MOZ_RAII AutoProfilerLabel {
                     JS::ProfilingCategoryPair aCategoryPair,
                     uint32_t aFlags = 0) {}
 
-  
-  AutoProfilerLabel(JSContext* aJSContext, const char* aLabel,
-                    const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair, uint32_t aFlags) {}
-
   ~AutoProfilerLabel() {}
+};
+
+class MOZ_RAII AutoProfilerLabelHot {
+ public:
+  
+  AutoProfilerLabelHot(const char* aLabel, const char* aDynamicString,
+                       JS::ProfilingCategoryPair aCategoryPair,
+                       uint32_t aFlags = 0) {}
+
+  
+  AutoProfilerLabelHot(JSContext* aJSContext, const char* aLabel,
+                       const char* aDynamicString,
+                       JS::ProfilingCategoryPair aCategoryPair,
+                       uint32_t aFlags) {}
+
+  ~AutoProfilerLabelHot() {}
 };
 
 #else  
@@ -227,23 +253,62 @@ class MOZ_RAII AutoProfilerLabel {
     }
   }
 
+  ~AutoProfilerLabel() {
+    
+
+    if (mProfilingStack) {
+      mProfilingStack->pop();
+    }
+  }
+
+ private:
   
   
+  ProfilingStack* mProfilingStack;
+};
+
+class MOZ_RAII AutoProfilerLabelHot {
+ public:
   
-  AutoProfilerLabel(JSContext* aJSContext, const char* aLabel,
-                    const char* aDynamicString,
-                    JS::ProfilingCategoryPair aCategoryPair, uint32_t aFlags) {
-    mProfilingStack = js::GetContextProfilingStackIfEnabled(aJSContext);
+  
+  AutoProfilerLabelHot(const char* aLabel, const char* aDynamicString,
+                       JS::ProfilingCategoryPair aCategoryPair,
+                       uint32_t aFlags = 0) {
+    if (MOZ_LIKELY(!profiler_is_active())) {
+      mProfilingStack = nullptr;
+      return;
+    }
+
+    
+    mProfilingStack = profiler::ThreadRegistration::WithOnThreadRefOr(
+        [](profiler::ThreadRegistration::OnThreadRef aThread) {
+          return &aThread.UnlockedConstReaderAndAtomicRWRef()
+                      .ProfilingStackRef();
+        },
+        nullptr);
     if (mProfilingStack) {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
     }
   }
 
-  ~AutoProfilerLabel() {
-    
+  
+  
+  
+  AutoProfilerLabelHot(JSContext* aJSContext, const char* aLabel,
+                       const char* aDynamicString,
+                       JS::ProfilingCategoryPair aCategoryPair,
+                       uint32_t aFlags) {
+    mProfilingStack = js::GetContextProfilingStackIfEnabled(aJSContext);
+    if (MOZ_UNLIKELY(mProfilingStack)) {
+      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
+                                      aCategoryPair, aFlags);
+    }
+  }
 
-    if (mProfilingStack) {
+  ~AutoProfilerLabelHot() {
+    
+    if (MOZ_UNLIKELY(mProfilingStack)) {
       mProfilingStack->pop();
     }
   }
