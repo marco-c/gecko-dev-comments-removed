@@ -236,8 +236,6 @@ void AssertIsOnMainThread() { MOZ_ASSERT(NS_IsMainThread(), "Wrong thread!"); }
 
 #endif
 
-typedef nsTArray<NotNull<RefPtr<nsThread>>> nsThreadArray;
-
 
 
 
@@ -263,7 +261,10 @@ NS_IMPL_CI_INTERFACE_GETTER(nsThreadManager, nsIThreadManager)
   return sInstance;
 }
 
-nsThreadManager::nsThreadManager() : mCurThreadIndex(0), mInitialized(false) {}
+nsThreadManager::nsThreadManager()
+    : mCurThreadIndex(0),
+      mMutex("nsThreadManager::mMutex"),
+      mState(State::eUninit) {}
 
 nsThreadManager::~nsThreadManager() = default;
 
@@ -271,8 +272,11 @@ nsresult nsThreadManager::Init() {
   
   
   
-  if (mInitialized) {
-    return NS_OK;
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    if (mState > State::eUninit) {
+      return NS_OK;
+    }
   }
 
   if (PR_NewThreadPrivateIndex(&mCurThreadIndex, ReleaseThread) == PR_FAILURE) {
@@ -325,9 +329,13 @@ nsresult nsThreadManager::Init() {
   rv = target->Init();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  mBackgroundEventTarget = std::move(target);
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
 
-  mInitialized = true;
+    mBackgroundEventTarget = std::move(target);
+
+    mState = State::eActive;
+  }
 
   return NS_OK;
 }
@@ -336,28 +344,26 @@ void nsThreadManager::ShutdownNonMainThreads() {
   MOZ_ASSERT(NS_IsMainThread(), "shutdown not called from main thread");
 
   
-  
-  
-  
-  
-  
-  
-  mInitialized = false;
-
-  
   NS_ProcessPendingEvents(mMainThread);
 
   mMainThread->mEvents->RunShutdownTasks();
 
+  RefPtr<BackgroundEventTarget> backgroundEventTarget;
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mState == State::eActive, "shutdown called multiple times");
+    backgroundEventTarget = mBackgroundEventTarget;
+  }
+
   nsTArray<RefPtr<ShutdownPromise>> promises;
-  mBackgroundEventTarget->BeginShutdown(promises);
+  backgroundEventTarget->BeginShutdown(promises);
 
   bool taskQueuesShutdown = false;
   
   
   
   ShutdownPromise::All(mMainThread, promises)->Then(mMainThread, __func__, [&] {
-    mBackgroundEventTarget->FinishShutdown();
+    backgroundEventTarget->FinishShutdown();
     taskQueuesShutdown = true;
   });
 
@@ -373,10 +379,19 @@ void nsThreadManager::ShutdownNonMainThreads() {
   {
     
     
+    
+    
+    
+    
     nsTArray<RefPtr<nsThread>> threadsToShutdown;
-    for (auto* thread : nsThread::Enumerate()) {
-      if (thread->ShutdownRequired()) {
-        threadsToShutdown.AppendElement(thread);
+    {
+      OffTheBooksMutexAutoLock lock(mMutex);
+      mState = State::eShutdown;
+
+      for (auto* thread : mThreadList) {
+        if (thread->ShutdownRequired()) {
+          threadsToShutdown.AppendElement(thread);
+        }
       }
     }
 
@@ -390,8 +405,10 @@ void nsThreadManager::ShutdownNonMainThreads() {
     
 
     
-    for (auto& thread : threadsToShutdown) {
-      thread->Shutdown();
+    
+    
+    for (const auto& thread : threadsToShutdown) {
+      thread->AsyncShutdown();
     }
   }
 
@@ -405,7 +422,12 @@ void nsThreadManager::ShutdownNonMainThreads() {
 }
 
 void nsThreadManager::ShutdownMainThread() {
-  MOZ_ASSERT(!mInitialized, "Must have called BeginShutdown");
+#ifdef DEBUG
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mState == State::eShutdown, "Must have called BeginShutdown");
+  }
+#endif
 
   
   
@@ -424,12 +446,18 @@ void nsThreadManager::ShutdownMainThread() {
   
   mMainThread->SetObserver(nullptr);
 
+  OffTheBooksMutexAutoLock lock(mMutex);
   mBackgroundEventTarget = nullptr;
 }
 
 void nsThreadManager::ReleaseMainThread() {
-  MOZ_ASSERT(!mInitialized, "Must have called BeginShutdown");
-  MOZ_ASSERT(!mBackgroundEventTarget, "Must have called ShutdownMainThread");
+#ifdef DEBUG
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    MOZ_ASSERT(mState == State::eShutdown, "Must have called BeginShutdown");
+    MOZ_ASSERT(!mBackgroundEventTarget, "Must have called ShutdownMainThread");
+  }
+#endif
   MOZ_ASSERT(mMainThread);
 
   
@@ -444,6 +472,14 @@ void nsThreadManager::RegisterCurrentThread(nsThread& aThread) {
 
   aThread.AddRef();  
   PR_SetThreadPrivate(mCurThreadIndex, &aThread);
+
+#ifdef DEBUG
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    MOZ_ASSERT(aThread.isInList(),
+               "Thread was not added to the thread list before registering!");
+  }
+#endif
 }
 
 void nsThreadManager::UnregisterCurrentThread(nsThread& aThread) {
@@ -458,13 +494,13 @@ nsThread* nsThreadManager::CreateCurrentThread(
   
   MOZ_ASSERT(!PR_GetThreadPrivate(mCurThreadIndex));
 
-  if (!mInitialized) {
+  if (!AllowNewXPCOMThreads()) {
     return nullptr;
   }
 
   RefPtr<nsThread> thread =
       new nsThread(WrapNotNull(aQueue), aMainThread, {.stackSize = 0});
-  if (!thread || NS_FAILED(thread->InitCurrentThread())) {
+  if (NS_FAILED(thread->InitCurrentThread())) {
     return nullptr;
   }
 
@@ -473,21 +509,30 @@ nsThread* nsThreadManager::CreateCurrentThread(
 
 nsresult nsThreadManager::DispatchToBackgroundThread(nsIRunnable* aEvent,
                                                      uint32_t aDispatchFlags) {
-  if (!mInitialized) {
-    return NS_ERROR_FAILURE;
+  RefPtr<BackgroundEventTarget> backgroundTarget;
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    if (!AllowNewXPCOMThreadsLocked() || !mBackgroundEventTarget) {
+      return NS_ERROR_FAILURE;
+    }
+    backgroundTarget = mBackgroundEventTarget;
   }
 
-  nsCOMPtr<nsIEventTarget> backgroundTarget(mBackgroundEventTarget);
   return backgroundTarget->Dispatch(aEvent, aDispatchFlags);
 }
 
 already_AddRefed<TaskQueue> nsThreadManager::CreateBackgroundTaskQueue(
     const char* aName) {
-  if (!mInitialized) {
-    return nullptr;
+  RefPtr<BackgroundEventTarget> backgroundTarget;
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    if (!AllowNewXPCOMThreadsLocked() || !mBackgroundEventTarget) {
+      return nullptr;
+    }
+    backgroundTarget = mBackgroundEventTarget;
   }
 
-  return mBackgroundEventTarget->CreateBackgroundTaskQueue(aName);
+  return backgroundTarget->CreateBackgroundTaskQueue(aName);
 }
 
 nsThread* nsThreadManager::GetCurrentThread() {
@@ -497,7 +542,9 @@ nsThread* nsThreadManager::GetCurrentThread() {
     return static_cast<nsThread*>(data);
   }
 
-  if (!mInitialized) {
+  
+  
+  if (!AllowNewXPCOMThreads() || NS_IsMainThread()) {
     return nullptr;
   }
 
@@ -506,8 +553,11 @@ nsThread* nsThreadManager::GetCurrentThread() {
   
   
   
+  
+  
+  
   RefPtr<nsThread> thread = new nsThread();
-  if (!thread || NS_FAILED(thread->InitCurrentThread())) {
+  if (NS_FAILED(thread->InitCurrentThread())) {
     return nullptr;
   }
 
@@ -515,8 +565,11 @@ nsThread* nsThreadManager::GetCurrentThread() {
 }
 
 bool nsThreadManager::IsNSThread() const {
-  if (!mInitialized) {
-    return false;
+  {
+    OffTheBooksMutexAutoLock lock(mMutex);
+    if (mState == State::eUninit) {
+      return false;
+    }
   }
   if (auto* thread = (nsThread*)PR_GetThreadPrivate(mCurThreadIndex)) {
     return thread->EventQueue();
@@ -530,33 +583,19 @@ nsThreadManager::NewNamedThread(
     nsIThread** aResult) {
   
 
-  
-  if (NS_WARN_IF(!mInitialized)) {
-    return NS_ERROR_NOT_INITIALIZED;
-  }
-
   [[maybe_unused]] TimeStamp startTime = TimeStamp::Now();
 
   RefPtr<ThreadEventQueue> queue =
       new ThreadEventQueue(MakeUnique<EventQueue>());
   RefPtr<nsThread> thr =
       new nsThread(WrapNotNull(queue), nsThread::NOT_MAIN_THREAD, aOptions);
-  nsresult rv =
-      thr->Init(aName);  
+
+  
+  
+  
+  nsresult rv = thr->Init(aName);
   if (NS_FAILED(rv)) {
     return rv;
-  }
-
-  
-  
-  
-  
-
-  if (NS_WARN_IF(!mInitialized)) {
-    if (thr->ShutdownRequired()) {
-      thr->Shutdown();  
-    }
-    return NS_ERROR_NOT_INITIALIZED;
   }
 
   PROFILER_MARKER_TEXT(
@@ -792,4 +831,9 @@ nsThreadManager::DispatchDirectTaskToCurrentThread(nsIRunnable* aEvent) {
   NS_ENSURE_STATE(aEvent);
   nsCOMPtr<nsIRunnable> runnable = aEvent;
   return GetCurrentThread()->DispatchDirectTask(runnable.forget());
+}
+
+bool nsThreadManager::AllowNewXPCOMThreads() {
+  mozilla::OffTheBooksMutexAutoLock lock(mMutex);
+  return AllowNewXPCOMThreadsLocked();
 }
