@@ -16,6 +16,7 @@
 
 
 
+
 let $0 = instantiate(`(module
   (global (import "spectest" "global_i32") i32)
   (global (import "spectest" "global_i64") i64)
