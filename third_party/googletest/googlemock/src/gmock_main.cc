@@ -32,8 +32,9 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#if GTEST_OS_ESP8266 || GTEST_OS_ESP32
-#if GTEST_OS_ESP8266
+#if defined(GTEST_OS_ESP8266) || defined(GTEST_OS_ESP32) || \
+    (defined(GTEST_OS_NRF52) && defined(ARDUINO))
+#ifdef GTEST_OS_ESP8266
 extern "C" {
 #endif
 void setup() {
@@ -43,7 +44,7 @@ void setup() {
   testing::InitGoogleMock();
 }
 void loop() { RUN_ALL_TESTS(); }
-#if GTEST_OS_ESP8266
+#ifdef GTEST_OS_ESP8266
 }
 #endif
 
@@ -55,7 +56,7 @@ void loop() { RUN_ALL_TESTS(); }
 
 
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 #include <tchar.h>  
 
 GTEST_API_ int _tmain(int argc, TCHAR** argv) {

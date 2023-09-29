@@ -65,6 +65,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <set>
 #include <sstream>
 #include <string>
@@ -202,6 +203,9 @@ class GTEST_API_ UntypedFunctionMockerBase {
   typedef std::vector<const void*> UntypedOnCallSpecs;
 
   using UntypedExpectations = std::vector<std::shared_ptr<ExpectationBase>>;
+
+  struct UninterestingCallCleanupHandler;
+  struct FailureCleanupHandler;
 
   
   
@@ -562,7 +566,7 @@ class ExpectationSet {
   typedef Expectation::Set::value_type value_type;
 
   
-  ExpectationSet() {}
+  ExpectationSet() = default;
 
   
   
@@ -656,7 +660,7 @@ class GTEST_API_ InSequence {
 
   InSequence(const InSequence&) = delete;
   InSequence& operator=(const InSequence&) = delete;
-} GTEST_ATTRIBUTE_UNUSED_;
+};
 
 namespace internal {
 
@@ -705,6 +709,12 @@ class GTEST_API_ ExpectationBase {
   
   
   virtual void MaybeDescribeExtraMatcherTo(::std::ostream* os) = 0;
+
+  
+  
+  void UntypedDescription(std::string description) {
+    description_ = std::move(description);
+  }
 
  protected:
   friend class ::testing::Expectation;
@@ -773,6 +783,10 @@ class GTEST_API_ ExpectationBase {
   }
 
   
+  
+  const std::string& GetDescription() const { return description_; }
+
+  
   bool IsSatisfied() const GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
     g_gmock_mutex.AssertHeld();
     return cardinality().IsSatisfiedByCallCount(call_count_);
@@ -831,6 +845,7 @@ class GTEST_API_ ExpectationBase {
   const char* file_;               
   int line_;                       
   const std::string source_text_;  
+  std::string description_;        
   
   bool cardinality_specified_;
   Cardinality cardinality_;  
@@ -906,6 +921,13 @@ class TypedExpectation<R(Args...)> : public ExpectationBase {
 
     extra_matcher_ = m;
     extra_matcher_specified_ = true;
+    return *this;
+  }
+
+  
+  
+  TypedExpectation& Description(std::string name) {
+    ExpectationBase::UntypedDescription(std::move(name));
     return *this;
   }
 
@@ -1199,10 +1221,15 @@ class TypedExpectation<R(Args...)> : public ExpectationBase {
                                          ::std::ostream* why)
       GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
     g_gmock_mutex.AssertHeld();
+    const ::std::string& expectation_description = GetDescription();
     if (IsSaturated()) {
       
       IncrementCallCount();
-      *what << "Mock function called more times than expected - ";
+      *what << "Mock function ";
+      if (!expectation_description.empty()) {
+        *what << "\"" << expectation_description << "\" ";
+      }
+      *what << "called more times than expected - ";
       mocker->DescribeDefaultActionTo(args, what);
       DescribeCallCountTo(why);
 
@@ -1217,7 +1244,11 @@ class TypedExpectation<R(Args...)> : public ExpectationBase {
     }
 
     
-    *what << "Mock function call matches " << source_text() << "...\n";
+    *what << "Mock function ";
+    if (!expectation_description.empty()) {
+      *what << "\"" << expectation_description << "\" ";
+    }
+    *what << "call matches " << source_text() << "...\n";
     return &(GetCurrentAction(mocker, args));
   }
 
@@ -1368,6 +1399,41 @@ class Cleanup final {
   std::function<void()> f_;
 };
 
+struct UntypedFunctionMockerBase::UninterestingCallCleanupHandler {
+  CallReaction reaction;
+  std::stringstream& ss;
+
+  ~UninterestingCallCleanupHandler() {
+    ReportUninterestingCall(reaction, ss.str());
+  }
+};
+
+struct UntypedFunctionMockerBase::FailureCleanupHandler {
+  std::stringstream& ss;
+  std::stringstream& why;
+  std::stringstream& loc;
+  const ExpectationBase* untyped_expectation;
+  bool found;
+  bool is_excessive;
+
+  ~FailureCleanupHandler() {
+    ss << "\n" << why.str();
+
+    if (!found) {
+      
+      Expect(false, nullptr, -1, ss.str());
+    } else if (is_excessive) {
+      
+      Expect(false, untyped_expectation->file(), untyped_expectation->line(),
+             ss.str());
+    } else {
+      
+      
+      Log(kInfo, loc.str() + ss.str(), 2);
+    }
+  }
+};
+
 template <typename F>
 class FunctionMocker;
 
@@ -1380,7 +1446,7 @@ class FunctionMocker<R(Args...)> final : public UntypedFunctionMockerBase {
   using ArgumentTuple = std::tuple<Args...>;
   using ArgumentMatcherTuple = std::tuple<Matcher<Args>...>;
 
-  FunctionMocker() {}
+  FunctionMocker() = default;
 
   
   
@@ -1766,8 +1832,15 @@ R FunctionMocker<R(Args...)>::InvokeWith(ArgumentTuple&& args)
     
     
     
-    const Cleanup report_uninteresting_call(
-        [&] { ReportUninterestingCall(reaction, ss.str()); });
+    
+    
+    
+    
+    
+    
+    const UninterestingCallCleanupHandler report_uninteresting_call = {
+        reaction, ss
+    };
 
     return PerformActionAndPrintResult(nullptr, std::move(args), ss.str(), ss);
   }
@@ -1811,22 +1884,14 @@ R FunctionMocker<R(Args...)>::InvokeWith(ArgumentTuple&& args)
   
   
   
-  const Cleanup handle_failures([&] {
-    ss << "\n" << why.str();
-
-    if (!found) {
-      
-      Expect(false, nullptr, -1, ss.str());
-    } else if (is_excessive) {
-      
-      Expect(false, untyped_expectation->file(), untyped_expectation->line(),
-             ss.str());
-    } else {
-      
-      
-      Log(kInfo, loc.str() + ss.str(), 2);
-    }
-  });
+  
+  
+  
+  
+  
+  const FailureCleanupHandler handle_failures = {
+      ss, why, loc, untyped_expectation, found, is_excessive
+  };
 
   return PerformActionAndPrintResult(untyped_action, std::move(args), ss.str(),
                                      ss);

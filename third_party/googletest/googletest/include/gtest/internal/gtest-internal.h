@@ -41,7 +41,7 @@
 
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_LINUX
+#ifdef GTEST_OS_LINUX
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -58,12 +58,12 @@
 
 #include <cstdint>
 #include <functional>
-#include <iomanip>
 #include <limits>
 #include <map>
 #include <set>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "gtest/gtest-message.h"
@@ -307,9 +307,6 @@ class FloatingPoint {
   static RawType Infinity() { return ReinterpretBits(kExponentBitMask); }
 
   
-  static RawType Max();
-
-  
 
   
   const Bits& bits() const { return u_.bits_; }
@@ -391,17 +388,6 @@ class FloatingPoint {
 
 
 
-template <>
-inline float FloatingPoint<float>::Max() {
-  return FLT_MAX;
-}
-template <>
-inline double FloatingPoint<double>::Max() {
-  return DBL_MAX;
-}
-
-
-
 typedef FloatingPoint<float> Float;
 typedef FloatingPoint<double> Double;
 
@@ -448,7 +434,7 @@ GTEST_API_ TypeId GetTestTypeId();
 
 class TestFactoryBase {
  public:
-  virtual ~TestFactoryBase() {}
+  virtual ~TestFactoryBase() = default;
 
   
   
@@ -470,7 +456,7 @@ class TestFactoryImpl : public TestFactoryBase {
   Test* CreateTest() override { return new TestClass; }
 };
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 
 
@@ -830,8 +816,7 @@ class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
 
 
 
-GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(UnitTest* unit_test,
-                                                       int skip_count);
+GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(int skip_count);
 
 
 
@@ -914,8 +899,10 @@ class HasDebugStringAndShortDebugString {
       HasDebugStringType::value && HasShortDebugStringType::value;
 };
 
+#ifdef GTEST_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 template <typename T>
 constexpr bool HasDebugStringAndShortDebugString<T>::value;
+#endif
 
 
 
@@ -1509,19 +1496,20 @@ class NeverThrown {
              gtest_ar_, text, #actual, #expected)                     \
              .c_str())
 
-#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)                          \
-  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
-  if (::testing::internal::AlwaysTrue()) {                                     \
-    ::testing::internal::HasNewFatalFailureHelper gtest_fatal_failure_checker; \
-    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);                 \
-    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {                 \
-      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__);            \
-    }                                                                          \
-  } else                                                                       \
-    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)                    \
-        : fail("Expected: " #statement                                         \
-               " doesn't generate new fatal "                                  \
-               "failures in the current thread.\n"                             \
+#define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)               \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                     \
+  if (::testing::internal::AlwaysTrue()) {                          \
+    const ::testing::internal::HasNewFatalFailureHelper             \
+        gtest_fatal_failure_checker;                                \
+    GTEST_SUPPRESS_UNREACHABLE_CODE_WARNING_BELOW_(statement);      \
+    if (gtest_fatal_failure_checker.has_new_fatal_failure()) {      \
+      goto GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__); \
+    }                                                               \
+  } else /* NOLINT */                                               \
+    GTEST_CONCAT_TOKEN_(gtest_label_testnofatal_, __LINE__)         \
+        : fail("Expected: " #statement                              \
+               " doesn't generate new fatal "                       \
+               "failures in the current thread.\n"                  \
                "  Actual: it does.")
 
 

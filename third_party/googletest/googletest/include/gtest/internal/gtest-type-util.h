@@ -37,6 +37,10 @@
 #ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 #define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
+#include <string>
+#include <type_traits>
+#include <typeinfo>
+
 #include "gtest/internal/gtest-port.h"
 
 
@@ -63,6 +67,22 @@ inline std::string CanonicalizeForStdLibVersioning(std::string s) {
       s.erase(strlen("std"), end - strlen("std"));
     }
   }
+
+  
+  
+  static const char to_search[] = ", ";
+  static const char replace_str[] = ",";
+  size_t pos = 0;
+  while (true) {
+    
+    pos = s.find(to_search, pos);
+    if (pos == std::string::npos) {
+      break;
+    }
+    
+    s.replace(pos, strlen(to_search), replace_str);
+    pos += strlen(replace_str);
+  }
   return s;
 }
 
@@ -81,6 +101,20 @@ inline std::string GetTypeName(const std::type_info& type) {
   const std::string name_str(status == 0 ? readable_name : name);
   free(readable_name);
   return CanonicalizeForStdLibVersioning(name_str);
+#elif defined(_MSC_VER)
+  
+  
+  
+  
+  std::string s = name;
+  
+  
+  if (s.rfind("struct ", 0) == 0) {
+    s = s.substr(strlen("struct "));
+  } else if (s.rfind("class ", 0) == 0) {
+    s = s.substr(strlen("class "));
+  }
+  return s;
 #else
   return name;
 #endif  

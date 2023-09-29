@@ -58,11 +58,7 @@ namespace internal {
 
 
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#pragma warning(disable : 4805)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100 4805)
 
 
 
@@ -94,6 +90,24 @@ template <typename Element>
 inline Element* GetRawPointer(Element* p) {
   return p;
 }
+
+
+
+
+
+#define GMOCK_INTERNAL_WARNING_PUSH()
+#define GMOCK_INTERNAL_WARNING_CLANG(Level, Name)
+#define GMOCK_INTERNAL_WARNING_POP()
+
+#if defined(__clang__)
+#undef GMOCK_INTERNAL_WARNING_PUSH
+#define GMOCK_INTERNAL_WARNING_PUSH() _Pragma("clang diagnostic push")
+#undef GMOCK_INTERNAL_WARNING_CLANG
+#define GMOCK_INTERNAL_WARNING_CLANG(Level, Warning) \
+  _Pragma(GMOCK_PP_INTERNAL_STRINGIZE(clang diagnostic Level Warning))
+#undef GMOCK_INTERNAL_WARNING_POP
+#define GMOCK_INTERNAL_WARNING_POP() _Pragma("clang diagnostic pop")
+#endif
 
 
 
@@ -210,7 +224,7 @@ class FailureReporterInterface {
   
   enum FailureType { kNonfatal, kFatal };
 
-  virtual ~FailureReporterInterface() {}
+  virtual ~FailureReporterInterface() = default;
 
   
   virtual void ReportFailure(FailureType type, const char* file, int line,
@@ -292,19 +306,13 @@ GTEST_API_ WithoutMatchers GetWithoutMatchers();
 
 
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4717)
-#endif
-
-
-
 
 
 
 template <typename T>
 inline T Invalid() {
-  Assert(false, "", -1, "Internal error: attempt to return invalid value");
+  Assert(false, "", -1,
+         "Internal error: attempt to return invalid value");
 #if defined(__GNUC__) || defined(__clang__)
   __builtin_unreachable();
 #elif defined(_MSC_VER)
@@ -313,10 +321,6 @@ inline T Invalid() {
   return Invalid<T>();
 #endif
 }
-
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
 
 
 
@@ -461,14 +465,21 @@ struct Function<R(Args...)> {
   using MakeResultIgnoredValue = IgnoredValue(Args...);
 };
 
+#ifdef GTEST_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
 template <typename R, typename... Args>
 constexpr size_t Function<R(Args...)>::ArgumentCount;
+#endif
+
+
+
+
+
+template <size_t I, typename T>
+using TupleElement = typename std::tuple_element<I, T>::type;
 
 bool Base64Unescape(const std::string& encoded, std::string* decoded);
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 }  
 }  

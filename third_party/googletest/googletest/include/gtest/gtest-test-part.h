@@ -35,6 +35,8 @@
 #define GOOGLETEST_INCLUDE_GTEST_GTEST_TEST_PART_H_
 
 #include <iosfwd>
+#include <ostream>
+#include <string>
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
@@ -131,7 +133,7 @@ std::ostream& operator<<(std::ostream& os, const TestPartResult& result);
 
 class GTEST_API_ TestPartResultArray {
  public:
-  TestPartResultArray() {}
+  TestPartResultArray() = default;
 
   
   void Append(const TestPartResult& result);
@@ -152,7 +154,7 @@ class GTEST_API_ TestPartResultArray {
 
 class GTEST_API_ TestPartResultReporterInterface {
  public:
-  virtual ~TestPartResultReporterInterface() {}
+  virtual ~TestPartResultReporterInterface() = default;
 
   virtual void ReportTestPartResult(const TestPartResult& result) = 0;
 };

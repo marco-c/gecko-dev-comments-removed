@@ -40,30 +40,58 @@
 #ifndef GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_MORE_MATCHERS_H_
 #define GOOGLEMOCK_INCLUDE_GMOCK_GMOCK_MORE_MATCHERS_H_
 
+#include <ostream>
+#include <string>
+
 #include "gmock/gmock-matchers.h"
 
 namespace testing {
 
 
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#if (_MSC_VER == 1900)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100)
+#if defined(_MSC_VER) && (_MSC_VER == 1900)
 
 
-#pragma warning(disable : 4800)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4800)
 #endif
 
+namespace internal {
 
 
-MATCHER(IsEmpty, negation ? "isn't empty" : "is empty") {
-  if (arg.empty()) {
-    return true;
+
+
+class IsEmptyMatcher {
+ public:
+  
+  template <typename MatcheeContainerType>
+  bool MatchAndExplain(const MatcheeContainerType& c,
+                       MatchResultListener* listener) const {
+    if (c.empty()) {
+      return true;
+    }
+    *listener << "whose size is " << c.size();
+    return false;
   }
-  *result_listener << "whose size is " << arg.size();
-  return false;
+
+  
+  bool MatchAndExplain(const char* s, MatchResultListener* listener) const {
+    return MatchAndExplain(std::string(s), listener);
+  }
+
+  
+  void DescribeTo(std::ostream* os) const { *os << "is empty"; }
+
+  void DescribeNegationTo(std::ostream* os) const { *os << "isn't empty"; }
+};
+
+}  
+
+
+
+
+inline PolymorphicMatcher<internal::IsEmptyMatcher> IsEmpty() {
+  return MakePolymorphicMatcher(internal::IsEmptyMatcher());
 }
 
 
@@ -82,9 +110,10 @@ MATCHER(IsFalse, negation ? "is true" : "is false") {
   return !static_cast<bool>(arg);
 }
 
-#ifdef _MSC_VER
-#pragma warning(pop)
+#if defined(_MSC_VER) && (_MSC_VER == 1900)
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 #endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 }  
 

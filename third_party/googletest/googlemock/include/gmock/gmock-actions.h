@@ -146,10 +146,7 @@
 #include "gmock/internal/gmock-port.h"
 #include "gmock/internal/gmock-pp.h"
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4100)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4100)
 
 namespace testing {
 
@@ -178,9 +175,15 @@ struct BuiltInDefaultValueGetter<T, false> {
   static T Get() {
     Assert(false, __FILE__, __LINE__,
            "Default action undefined for the function return type.");
-    return internal::Invalid<T>();
+#if defined(__GNUC__) || defined(__clang__)
+    __builtin_unreachable();
+#elif defined(_MSC_VER)
+    __assume(0);
+#else
+    return Invalid<T>();
     
     
+#endif
   }
 };
 
@@ -614,7 +617,7 @@ class DefaultValue {
  private:
   class ValueProducer {
    public:
-    virtual ~ValueProducer() {}
+    virtual ~ValueProducer() = default;
     virtual T Produce() = 0;
   };
 
@@ -702,8 +705,8 @@ class ActionInterface {
   typedef typename internal::Function<F>::Result Result;
   typedef typename internal::Function<F>::ArgumentTuple ArgumentTuple;
 
-  ActionInterface() {}
-  virtual ~ActionInterface() {}
+  ActionInterface() = default;
+  virtual ~ActionInterface() = default;
 
   
   
@@ -752,7 +755,7 @@ class Action<R(Args...)> {
 
   
   
-  Action() {}
+  Action() = default;
 
   
   
@@ -1276,7 +1279,7 @@ class AssignAction {
   const T2 value_;
 };
 
-#if !GTEST_OS_WINDOWS_MOBILE
+#ifndef GTEST_OS_WINDOWS_MOBILE
 
 
 
@@ -1420,17 +1423,19 @@ struct WithArgsAction {
   
   
 
-  template <typename R, typename... Args,
-            typename std::enable_if<
-                std::is_convertible<
-                    InnerAction,
-                    
-                    
-                    
-                    
-                    OnceAction<R(typename std::tuple_element<
-                                 I, std::tuple<Args...>>::type...)>>::value,
-                int>::type = 0>
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          std::is_convertible<InnerAction,
+                              
+                              
+                              
+                              
+                              
+                              
+                              OnceAction<R(internal::TupleElement<
+                                           I, std::tuple<Args...>>...)>>::value,
+          int>::type = 0>
   operator OnceAction<R(Args...)>() && {  
     struct OA {
       OnceAction<InnerSignature<R, Args...>> inner_action;
@@ -1445,17 +1450,19 @@ struct WithArgsAction {
     return OA{std::move(inner_action)};
   }
 
-  template <typename R, typename... Args,
-            typename std::enable_if<
-                std::is_convertible<
-                    const InnerAction&,
-                    
-                    
-                    
-                    
-                    Action<R(typename std::tuple_element<
-                             I, std::tuple<Args...>>::type...)>>::value,
-                int>::type = 0>
+  template <
+      typename R, typename... Args,
+      typename std::enable_if<
+          std::is_convertible<const InnerAction&,
+                              
+                              
+                              
+                              
+                              
+                              
+                              Action<R(internal::TupleElement<
+                                       I, std::tuple<Args...>>...)>>::value,
+          int>::type = 0>
   operator Action<R(Args...)>() const {  
     Action<InnerSignature<R, Args...>> converted(inner_action);
 
@@ -1925,7 +1932,7 @@ PolymorphicAction<internal::AssignAction<T1, T2>> Assign(T1* ptr, T2 val) {
   return MakePolymorphicAction(internal::AssignAction<T1, T2>(ptr, val));
 }
 
-#if !GTEST_OS_WINDOWS_MOBILE
+#ifndef GTEST_OS_WINDOWS_MOBILE
 
 
 template <typename T>
@@ -2291,8 +2298,6 @@ template <typename F, typename Impl>
 
 }  
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 #endif  

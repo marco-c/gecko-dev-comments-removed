@@ -98,6 +98,9 @@
 
 
 
+
+
+
 #ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
 #define GOOGLETEST_INCLUDE_GTEST_GTEST_PRINTERS_H_
 
@@ -108,11 +111,20 @@
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
+#ifdef GTEST_HAS_ABSL
+#include "absl/strings/has_absl_stringify.h"
+#include "absl/strings/str_cat.h"
+#endif  
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-port.h"
+
+#if GTEST_INTERNAL_HAS_STD_SPAN
+#include <span>  
+#endif  
 
 namespace testing {
 
@@ -123,13 +135,32 @@ namespace internal {
 template <typename T>
 void UniversalPrint(const T& value, ::std::ostream* os);
 
+template <typename T>
+struct IsStdSpan {
+  static constexpr bool value = false;
+};
+
+#if GTEST_INTERNAL_HAS_STD_SPAN
+template <typename E>
+struct IsStdSpan<std::span<E>> {
+  static constexpr bool value = true;
+};
+#endif  
+
+
+
+
+
+
+
 
 
 struct ContainerPrinter {
   template <typename T,
             typename = typename std::enable_if<
-                (sizeof(IsContainerTest<T>(0)) == sizeof(IsContainer)) &&
-                !IsRecursiveContainer<T>::value>::type>
+                ((sizeof(IsContainerTest<T>(0)) == sizeof(IsContainer)) &&
+                 !IsRecursiveContainer<T>::value) ||
+                IsStdSpan<T>::value>::type>
   static void PrintValue(const T& container, std::ostream* os) {
     const size_t kMaxCount = 32;  
     *os << '{';
@@ -205,12 +236,13 @@ struct StreamPrinter {
             
             
             typename = typename std::enable_if<
-                !std::is_member_pointer<T>::value>::type,
-            
-            
-            typename = decltype(std::declval<std::ostream&>()
-                                << std::declval<const T&>())>
-  static void PrintValue(const T& value, ::std::ostream* os) {
+                !std::is_member_pointer<T>::value>::type>
+  
+  
+  
+  
+  static auto PrintValue(const T& value, ::std::ostream* os)
+      -> decltype((void)(*os << value)) {
     
     
     *os << value;
@@ -257,6 +289,17 @@ struct ConvertibleToStringViewPrinter {
   }
 #endif
 };
+
+#ifdef GTEST_HAS_ABSL
+struct ConvertibleToAbslStringifyPrinter {
+  template <typename T,
+            typename = typename std::enable_if<
+                absl::HasAbslStringify<T>::value>::type>  
+  static void PrintValue(const T& value, ::std::ostream* os) {
+    *os << absl::StrCat(value);
+  }
+};
+#endif  
 
 
 
@@ -305,9 +348,13 @@ template <typename T>
 void PrintWithFallback(const T& value, ::std::ostream* os) {
   using Printer = typename FindFirstPrinter<
       T, void, ContainerPrinter, FunctionPointerPrinter, PointerPrinter,
+      ProtobufPrinter,
+#ifdef GTEST_HAS_ABSL
+      ConvertibleToAbslStringifyPrinter,
+#endif  
       internal_stream_operator_without_lexical_name_lookup::StreamPrinter,
-      ProtobufPrinter, ConvertibleToIntegerPrinter,
-      ConvertibleToStringViewPrinter, RawBytesPrinter, FallbackPrinter>::type;
+      ConvertibleToIntegerPrinter, ConvertibleToStringViewPrinter,
+      RawBytesPrinter, FallbackPrinter>::type;
   Printer::PrintValue(value, os);
 }
 
@@ -384,7 +431,7 @@ GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char32_t);
 
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char, ::std::string);
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char, ::std::string);
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char8_t, ::std::u8string);
 GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char8_t, ::std::u8string);
 #endif
@@ -472,7 +519,7 @@ GTEST_API_ void PrintTo(char32_t c, ::std::ostream* os);
 inline void PrintTo(char16_t c, ::std::ostream* os) {
   PrintTo(ImplicitCast_<char32_t>(c), os);
 }
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 inline void PrintTo(char8_t c, ::std::ostream* os) {
   PrintTo(ImplicitCast_<char32_t>(c), os);
 }
@@ -483,6 +530,87 @@ inline void PrintTo(char8_t c, ::std::ostream* os) {
 GTEST_API_ void PrintTo(__uint128_t v, ::std::ostream* os);
 GTEST_API_ void PrintTo(__int128_t v, ::std::ostream* os);
 #endif  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename FloatType>
+int AppropriateResolution(FloatType val) {
+  int full = std::numeric_limits<FloatType>::max_digits10;
+  if (val < 0) val = -val;
+
+  if (val < 1000000) {
+    FloatType mulfor6 = 1e10;
+    if (val >= 100000.0) {  
+      mulfor6 = 1.0;
+    } else if (val >= 10000.0) {
+      mulfor6 = 1e1;
+    } else if (val >= 1000.0) {
+      mulfor6 = 1e2;
+    } else if (val >= 100.0) {
+      mulfor6 = 1e3;
+    } else if (val >= 10.0) {
+      mulfor6 = 1e4;
+    } else if (val >= 1.0) {
+      mulfor6 = 1e5;
+    } else if (val >= 0.1) {
+      mulfor6 = 1e6;
+    } else if (val >= 0.01) {
+      mulfor6 = 1e7;
+    } else if (val >= 0.001) {
+      mulfor6 = 1e8;
+    } else if (val >= 0.0001) {
+      mulfor6 = 1e9;
+    }
+    if (static_cast<FloatType>(static_cast<int32_t>(val * mulfor6 + 0.5)) /
+            mulfor6 ==
+        val)
+      return 6;
+  } else if (val < 1e10) {
+    FloatType divfor6 = 1.0;
+    if (val >= 1e9) {  
+      divfor6 = 10000;
+    } else if (val >= 1e8) {  
+      divfor6 = 1000;
+    } else if (val >= 1e7) {  
+      divfor6 = 100;
+    } else if (val >= 1e6) {  
+      divfor6 = 10;
+    }
+    if (static_cast<FloatType>(static_cast<int32_t>(val / divfor6 + 0.5)) *
+            divfor6 ==
+        val)
+      return 6;
+  }
+  return full;
+}
+
+inline void PrintTo(float f, ::std::ostream* os) {
+  auto old_precision = os->precision();
+  os->precision(AppropriateResolution(f));
+  *os << f;
+  os->precision(old_precision);
+}
+
+inline void PrintTo(double d, ::std::ostream* os) {
+  auto old_precision = os->precision();
+  os->precision(AppropriateResolution(d));
+  *os << d;
+  os->precision(old_precision);
+}
 
 
 GTEST_API_ void PrintTo(const char* s, ::std::ostream* os);
@@ -504,7 +632,7 @@ inline void PrintTo(const unsigned char* s, ::std::ostream* os) {
 inline void PrintTo(unsigned char* s, ::std::ostream* os) {
   PrintTo(ImplicitCast_<const void*>(s), os);
 }
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 
 GTEST_API_ void PrintTo(const char8_t* s, ::std::ostream* os);
 inline void PrintTo(char8_t* s, ::std::ostream* os) {
@@ -556,7 +684,7 @@ inline void PrintTo(const ::std::string& s, ::std::ostream* os) {
 }
 
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 GTEST_API_ void PrintU8StringTo(const ::std::u8string& s, ::std::ostream* os);
 inline void PrintTo(const ::std::u8string& s, ::std::ostream* os) {
   PrintU8StringTo(s, os);
@@ -774,7 +902,7 @@ class UniversalPrinter<Variant<T...>> {
  public:
   static void Print(const Variant<T...>& value, ::std::ostream* os) {
     *os << '(';
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
     absl::visit(Visitor{os, value.index()}, value);
 #else
     std::visit(Visitor{os, value.index()}, value);
@@ -824,7 +952,7 @@ void UniversalPrintArray(const T* begin, size_t len, ::std::ostream* os) {
 GTEST_API_ void UniversalPrintArray(const char* begin, size_t len,
                                     ::std::ostream* os);
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 
 GTEST_API_ void UniversalPrintArray(const char8_t* begin, size_t len,
                                     ::std::ostream* os);
@@ -891,6 +1019,13 @@ class UniversalTersePrinter<T&> {
     UniversalPrint(value, os);
   }
 };
+template <typename T>
+class UniversalTersePrinter<std::reference_wrapper<T>> {
+ public:
+  static void Print(std::reference_wrapper<T> value, ::std::ostream* os) {
+    UniversalTersePrinter<T>::Print(value.get(), os);
+  }
+};
 template <typename T, size_t N>
 class UniversalTersePrinter<T[N]> {
  public:
@@ -913,7 +1048,7 @@ template <>
 class UniversalTersePrinter<char*> : public UniversalTersePrinter<const char*> {
 };
 
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 template <>
 class UniversalTersePrinter<const char8_t*> {
  public:

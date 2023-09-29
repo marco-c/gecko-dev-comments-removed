@@ -98,7 +98,7 @@ constexpr bool HasStrictnessModifier() {
 
 
 
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MINGW && \
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MINGW) && \
     (defined(_MSC_VER) || defined(__clang__))
 
 

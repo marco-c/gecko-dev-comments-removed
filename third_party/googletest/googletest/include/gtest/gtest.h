@@ -50,9 +50,13 @@
 #define GOOGLETEST_INCLUDE_GTEST_GTEST_H_
 
 #include <cstddef>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <ostream>
+#include <set>
+#include <sstream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -68,8 +72,6 @@
 #include "gtest/gtest_prod.h"
 #include "gtest/internal/gtest-internal.h"
 #include "gtest/internal/gtest-string.h"
-
-#include "mozilla/Attributes.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
@@ -163,11 +165,7 @@ namespace testing {
 
 
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4805)
-#pragma warning(disable : 4100)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4805 4100)
 
 
 const int kMaxStackTraceDepth = 100;
@@ -191,6 +189,17 @@ class UnitTestImpl* GetUnitTestImpl();
 void ReportFailureInUnknownLocation(TestPartResult::Type result_type,
                                     const std::string& message);
 std::set<std::string>* GetIgnoredParameterizedTestSuites();
+
+
+
+
+class GTestNonCopyable {
+ public:
+  GTestNonCopyable() = default;
+  GTestNonCopyable(const GTestNonCopyable&) = delete;
+  GTestNonCopyable& operator=(const GTestNonCopyable&) = delete;
+  ~GTestNonCopyable() = default;
+};
 
 }  
 
@@ -287,7 +296,13 @@ class GTEST_API_ Test {
   
   
   static void RecordProperty(const std::string& key, const std::string& value);
-  static void RecordProperty(const std::string& key, int value);
+  
+  
+  template <typename T, std::enable_if_t<std::is_convertible<T, int64_t>::value,
+                                         bool> = true>
+  static void RecordProperty(const std::string& key, const T& value) {
+    RecordProperty(key, (Message() << value).GetString());
+  }
 
  protected:
   
@@ -310,7 +325,7 @@ class GTEST_API_ Test {
   
   
   
-  MOZ_CAN_RUN_SCRIPT virtual void TestBody() = 0;
+  virtual void TestBody() = 0;
 
   
   void Run();
@@ -535,14 +550,14 @@ class GTEST_API_ TestInfo {
   
   
   const char* type_param() const {
-    if (type_param_.get() != nullptr) return type_param_->c_str();
+    if (type_param_ != nullptr) return type_param_->c_str();
     return nullptr;
   }
 
   
   
   const char* value_param() const {
-    if (value_param_.get() != nullptr) return value_param_->c_str();
+    if (value_param_ != nullptr) return value_param_->c_str();
     return nullptr;
   }
 
@@ -584,7 +599,7 @@ class GTEST_API_ TestInfo {
   const TestResult* result() const { return &result_; }
 
  private:
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
   friend class internal::DefaultDeathTestFactory;
 #endif  
   friend class Test;
@@ -681,7 +696,7 @@ class GTEST_API_ TestSuite {
   
   
   const char* type_param() const {
-    if (type_param_.get() != nullptr) return type_param_->c_str();
+    if (type_param_ != nullptr) return type_param_->c_str();
     return nullptr;
   }
 
@@ -878,7 +893,7 @@ class GTEST_API_ TestSuite {
 class Environment {
  public:
   
-  virtual ~Environment() {}
+  virtual ~Environment() = default;
 
   
   virtual void SetUp() {}
@@ -909,7 +924,7 @@ class GTEST_API_ AssertionException
 
 class TestEventListener {
  public:
-  virtual ~TestEventListener() {}
+  virtual ~TestEventListener() = default;
 
   
   virtual void OnTestProgramStart(const UnitTest& unit_test) = 0;
@@ -1039,6 +1054,10 @@ class GTEST_API_ TestEventListeners {
     return default_xml_generator_;
   }
 
+  
+  
+  void SuppressEventForwarding(bool);
+
  private:
   friend class TestSuite;
   friend class TestInfo;
@@ -1068,7 +1087,6 @@ class GTEST_API_ TestEventListeners {
   
   
   bool EventForwardingEnabled() const;
-  void SuppressEventForwarding();
 
   
   internal::TestEventRepeater* repeater_;
@@ -1555,12 +1573,12 @@ AssertionResult CmpHelperFloatingPointEQ(const char* lhs_expression,
   }
 
   ::std::stringstream lhs_ss;
-  lhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
-         << lhs_value;
+  lhs_ss.precision(std::numeric_limits<RawType>::digits10 + 2);
+  lhs_ss << lhs_value;
 
   ::std::stringstream rhs_ss;
-  rhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
-         << rhs_value;
+  rhs_ss.precision(std::numeric_limits<RawType>::digits10 + 2);
+  rhs_ss << rhs_value;
 
   return EqFailure(lhs_expression, rhs_expression,
                    StringStreamToString(&lhs_ss), StringStreamToString(&rhs_ss),
@@ -1655,7 +1673,7 @@ template <typename T>
 class WithParamInterface {
  public:
   typedef T ParamType;
-  virtual ~WithParamInterface() {}
+  virtual ~WithParamInterface() = default;
 
   
   
@@ -1725,13 +1743,13 @@ class TestWithParam : public Test, public WithParamInterface<T> {};
 #define GTEST_FAIL() GTEST_FATAL_FAILURE_("Failed")
 
 
-#define GTEST_FAIL_AT(file, line)         \
-  GTEST_MESSAGE_AT_(file, line, "Failed", \
-                    ::testing::TestPartResult::kFatalFailure)
+#define GTEST_FAIL_AT(file, line)                \
+  return GTEST_MESSAGE_AT_(file, line, "Failed", \
+                           ::testing::TestPartResult::kFatalFailure)
 
 
 
-#if !GTEST_DONT_DEFINE_FAIL
+#if !(defined(GTEST_DONT_DEFINE_FAIL) && GTEST_DONT_DEFINE_FAIL)
 #define FAIL() GTEST_FAIL()
 #endif
 
@@ -1740,7 +1758,7 @@ class TestWithParam : public Test, public WithParamInterface<T> {};
 
 
 
-#if !GTEST_DONT_DEFINE_SUCCEED
+#if !(defined(GTEST_DONT_DEFINE_SUCCEED) && GTEST_DONT_DEFINE_SUCCEED)
 #define SUCCEED() GTEST_SUCCEED()
 #endif
 
@@ -1784,19 +1802,19 @@ class TestWithParam : public Test, public WithParamInterface<T> {};
 
 
 
-#if !GTEST_DONT_DEFINE_EXPECT_TRUE
+#if !(defined(GTEST_DONT_DEFINE_EXPECT_TRUE) && GTEST_DONT_DEFINE_EXPECT_TRUE)
 #define EXPECT_TRUE(condition) GTEST_EXPECT_TRUE(condition)
 #endif
 
-#if !GTEST_DONT_DEFINE_EXPECT_FALSE
+#if !(defined(GTEST_DONT_DEFINE_EXPECT_FALSE) && GTEST_DONT_DEFINE_EXPECT_FALSE)
 #define EXPECT_FALSE(condition) GTEST_EXPECT_FALSE(condition)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_TRUE
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_TRUE) && GTEST_DONT_DEFINE_ASSERT_TRUE)
 #define ASSERT_TRUE(condition) GTEST_ASSERT_TRUE(condition)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_FALSE
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_FALSE) && GTEST_DONT_DEFINE_ASSERT_FALSE)
 #define ASSERT_FALSE(condition) GTEST_ASSERT_FALSE(condition)
 #endif
 
@@ -1875,27 +1893,27 @@ class TestWithParam : public Test, public WithParamInterface<T> {};
 
 
 
-#if !GTEST_DONT_DEFINE_ASSERT_EQ
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_EQ) && GTEST_DONT_DEFINE_ASSERT_EQ)
 #define ASSERT_EQ(val1, val2) GTEST_ASSERT_EQ(val1, val2)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_NE
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_NE) && GTEST_DONT_DEFINE_ASSERT_NE)
 #define ASSERT_NE(val1, val2) GTEST_ASSERT_NE(val1, val2)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_LE
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_LE) && GTEST_DONT_DEFINE_ASSERT_LE)
 #define ASSERT_LE(val1, val2) GTEST_ASSERT_LE(val1, val2)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_LT
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_LT) && GTEST_DONT_DEFINE_ASSERT_LT)
 #define ASSERT_LT(val1, val2) GTEST_ASSERT_LT(val1, val2)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_GE
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_GE) && GTEST_DONT_DEFINE_ASSERT_GE)
 #define ASSERT_GE(val1, val2) GTEST_ASSERT_GE(val1, val2)
 #endif
 
-#if !GTEST_DONT_DEFINE_ASSERT_GT
+#if !(defined(GTEST_DONT_DEFINE_ASSERT_GT) && GTEST_DONT_DEFINE_ASSERT_GT)
 #define ASSERT_GT(val1, val2) GTEST_ASSERT_GT(val1, val2)
 #endif
 
@@ -1983,7 +2001,7 @@ GTEST_API_ AssertionResult FloatLE(const char* expr1, const char* expr2,
 GTEST_API_ AssertionResult DoubleLE(const char* expr1, const char* expr2,
                                     double val1, double val2);
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 
 
@@ -2065,9 +2083,7 @@ class GTEST_API_ ScopedTrace {
 
   ScopedTrace(const ScopedTrace&) = delete;
   ScopedTrace& operator=(const ScopedTrace&) = delete;
-} GTEST_ATTRIBUTE_UNUSED_;  
-                            
-                            
+};
 
 
 
@@ -2084,8 +2100,8 @@ class GTEST_API_ ScopedTrace {
 
 
 
-#define SCOPED_TRACE(message)                                         \
-  ::testing::ScopedTrace GTEST_CONCAT_TOKEN_(gtest_trace_, __LINE__)( \
+#define SCOPED_TRACE(message)                                               \
+  const ::testing::ScopedTrace GTEST_CONCAT_TOKEN_(gtest_trace_, __LINE__)( \
       __FILE__, __LINE__, (message))
 
 
@@ -2155,7 +2171,7 @@ constexpr bool StaticAssertTypeEq() noexcept {
 
 
 
-#if !GTEST_DONT_DEFINE_TEST
+#if !(defined(GTEST_DONT_DEFINE_TEST) && GTEST_DONT_DEFINE_TEST)
 #define TEST(test_suite_name, test_name) GTEST_TEST(test_suite_name, test_name)
 #endif
 
@@ -2187,17 +2203,22 @@ constexpr bool StaticAssertTypeEq() noexcept {
 #define GTEST_TEST_F(test_fixture, test_name)        \
   GTEST_TEST_(test_fixture, test_name, test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())
-#if !GTEST_DONT_DEFINE_TEST_F
+#if !(defined(GTEST_DONT_DEFINE_TEST_F) && GTEST_DONT_DEFINE_TEST_F)
 #define TEST_F(test_fixture, test_name) GTEST_TEST_F(test_fixture, test_name)
 #endif
 
 
 
+
 GTEST_API_ std::string TempDir();
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
+
+
+
+
+GTEST_API_ std::string SrcDir();
+
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 
 
 

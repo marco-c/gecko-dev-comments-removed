@@ -65,7 +65,7 @@ namespace testing {
 
 class CardinalityInterface {
  public:
-  virtual ~CardinalityInterface() {}
+  virtual ~CardinalityInterface() = default;
 
   
   
@@ -92,7 +92,7 @@ class GTEST_API_ Cardinality {
  public:
   
   
-  Cardinality() {}
+  Cardinality() = default;
 
   
   explicit Cardinality(const CardinalityInterface* impl) : impl_(impl) {}

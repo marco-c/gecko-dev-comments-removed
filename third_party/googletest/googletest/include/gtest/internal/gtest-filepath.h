@@ -42,10 +42,15 @@
 #ifndef GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
 #define GOOGLETEST_INCLUDE_GTEST_INTERNAL_GTEST_FILEPATH_H_
 
+#include <string>
+
+#include "gtest/internal/gtest-port.h"
 #include "gtest/internal/gtest-string.h"
 
 GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
 )
+
+#if GTEST_HAS_FILE_SYSTEM
 
 namespace testing {
 namespace internal {
@@ -199,6 +204,16 @@ class GTEST_API_ FilePath {
   
   const char* FindLastPathSeparator() const;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t CalculateRootLength() const;
+
   std::string pathname_;
 };  
 
@@ -206,5 +221,7 @@ class GTEST_API_ FilePath {
 }  
 
 GTEST_DISABLE_MSC_WARNINGS_POP_()  
+
+#endif  
 
 #endif  

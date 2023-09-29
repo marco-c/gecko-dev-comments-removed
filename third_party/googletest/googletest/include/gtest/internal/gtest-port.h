@@ -255,6 +255,48 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(_MSVC_LANG)
+#define GTEST_INTERNAL_CPLUSPLUS_LANG _MSVC_LANG
+#elif defined(__cplusplus)
+#define GTEST_INTERNAL_CPLUSPLUS_LANG __cplusplus
+#endif
+
+#if !defined(GTEST_INTERNAL_CPLUSPLUS_LANG) || \
+    GTEST_INTERNAL_CPLUSPLUS_LANG < 201402L
+#error C++ versions less than C++14 are not supported.
+#endif
+
+
+#ifdef __has_include
+#define GTEST_INTERNAL_HAS_INCLUDE __has_include
+#else
+#define GTEST_INTERNAL_HAS_INCLUDE(...) 0
+#endif
+
+
+
+#if GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L && \
+    (!defined(__has_include) || GTEST_INTERNAL_HAS_INCLUDE(<version>))
+#include <version>  
+#elif (!defined(__has_include) || GTEST_INTERNAL_HAS_INCLUDE(<ciso646>))
+#include <ciso646>  
+#endif
+
 #include <ctype.h>   
 #include <stddef.h>  
 #include <stdio.h>
@@ -268,6 +310,7 @@
 #include <limits>
 #include <locale>
 #include <memory>
+#include <ostream>
 #include <string>
 
 #include <tuple>
@@ -287,7 +330,15 @@
 #include "gtest/internal/custom/gtest-port.h"
 #include "gtest/internal/gtest-port-arch.h"
 
-#if GTEST_HAS_ABSL
+#ifndef GTEST_HAS_MUTEX_AND_THREAD_LOCAL_
+#define GTEST_HAS_MUTEX_AND_THREAD_LOCAL_ 0
+#endif
+
+#ifndef GTEST_HAS_NOTIFICATION_
+#define GTEST_HAS_NOTIFICATION_ 0
+#endif
+
+#ifdef GTEST_HAS_ABSL
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/reflection.h"
@@ -345,13 +396,13 @@
 
 
 
-#if GTEST_OS_WINDOWS
-#if !GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS
+#ifndef GTEST_OS_WINDOWS_MOBILE
 #include <direct.h>
 #include <io.h>
 #endif
 
-#if GTEST_OS_WINDOWS_MINGW && !defined(__MINGW64_VERSION_MAJOR)
+#if defined(GTEST_OS_WINDOWS_MINGW) && !defined(__MINGW64_VERSION_MAJOR)
 
 
 typedef struct _CRITICAL_SECTION GTEST_CRITICAL_SECTION;
@@ -361,7 +412,7 @@ typedef struct _CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #endif
-#elif GTEST_OS_XTENSA
+#elif defined(GTEST_OS_XTENSA)
 #include <unistd.h>
 
 
@@ -373,7 +424,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #include <unistd.h>
 #endif  
 
-#if GTEST_OS_LINUX_ANDROID
+#ifdef GTEST_OS_LINUX_ANDROID
 
 #include <android/api-level.h>  
 #endif
@@ -381,16 +432,21 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 #ifndef GTEST_HAS_POSIX_RE
-#if GTEST_OS_LINUX_ANDROID
+#ifdef GTEST_OS_LINUX_ANDROID
 
 #define GTEST_HAS_POSIX_RE (__ANDROID_API__ >= 9)
 #else
-#define GTEST_HAS_POSIX_RE (!GTEST_OS_WINDOWS && !GTEST_OS_XTENSA)
+#if !(defined(GTEST_OS_WINDOWS) || defined(GTEST_OS_XTENSA) || \
+      defined(GTEST_OS_QURT))
+#define GTEST_HAS_POSIX_RE 1
+#else
+#define GTEST_HAS_POSIX_RE 0
 #endif
+#endif  
 #endif
 
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
 
 #include "absl/strings/string_view.h"
 #include "re2/re2.h"
@@ -426,8 +482,12 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#define GTEST_HAS_EXCEPTIONS (__EXCEPTIONS && __has_feature(cxx_exceptions))
-#elif defined(__GNUC__) && __EXCEPTIONS
+#if defined(__EXCEPTIONS) && __EXCEPTIONS && __has_feature(cxx_exceptions)
+#define GTEST_HAS_EXCEPTIONS 1
+#else
+#define GTEST_HAS_EXCEPTIONS 0
+#endif
+#elif defined(__GNUC__) && defined(__EXCEPTIONS) && __EXCEPTIONS
 
 #define GTEST_HAS_EXCEPTIONS 1
 #elif defined(__SUNPRO_CC)
@@ -435,7 +495,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 #define GTEST_HAS_EXCEPTIONS 1
-#elif defined(__IBMCPP__) && __EXCEPTIONS
+#elif defined(__IBMCPP__) && defined(__EXCEPTIONS) && __EXCEPTIONS
 
 #define GTEST_HAS_EXCEPTIONS 1
 #elif defined(__HP_aCC)
@@ -455,10 +515,20 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#define GTEST_HAS_STD_WSTRING                                         \
-  (!(GTEST_OS_LINUX_ANDROID || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS || \
-     GTEST_OS_HAIKU || GTEST_OS_ESP32 || GTEST_OS_ESP8266 || GTEST_OS_XTENSA))
+#if (!(defined(GTEST_OS_LINUX_ANDROID) || defined(GTEST_OS_CYGWIN) || \
+       defined(GTEST_OS_SOLARIS) || defined(GTEST_OS_HAIKU) ||        \
+       defined(GTEST_OS_ESP32) || defined(GTEST_OS_ESP8266) ||        \
+       defined(GTEST_OS_XTENSA) || defined(GTEST_OS_QURT) ||          \
+       defined(GTEST_OS_NXP_QN9090) || defined(GTEST_OS_NRF52)))
+#define GTEST_HAS_STD_WSTRING 1
+#else
+#define GTEST_HAS_STD_WSTRING 0
+#endif
+#endif  
 
+#ifndef GTEST_HAS_FILE_SYSTEM
+
+#define GTEST_HAS_FILE_SYSTEM 1
 #endif  
 
 
@@ -483,7 +553,8 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#if GTEST_OS_LINUX_ANDROID && defined(_STLPORT_MAJOR) && !defined(__EXCEPTIONS)
+#if defined(GTEST_OS_LINUX_ANDROID) && defined(_STLPORT_MAJOR) && \
+    !defined(__EXCEPTIONS)
 #define GTEST_HAS_RTTI 0
 #else
 #define GTEST_HAS_RTTI 1
@@ -531,11 +602,17 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#define GTEST_HAS_PTHREAD                                                      \
-  (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX || GTEST_OS_QNX ||          \
-   GTEST_OS_FREEBSD || GTEST_OS_NACL || GTEST_OS_NETBSD || GTEST_OS_FUCHSIA || \
-   GTEST_OS_DRAGONFLY || GTEST_OS_GNU_KFREEBSD || GTEST_OS_OPENBSD ||          \
-   GTEST_OS_HAIKU || GTEST_OS_GNU_HURD)
+#if (defined(GTEST_OS_LINUX) || defined(GTEST_OS_MAC) ||              \
+     defined(GTEST_OS_HPUX) || defined(GTEST_OS_QNX) ||               \
+     defined(GTEST_OS_FREEBSD) || defined(GTEST_OS_NACL) ||           \
+     defined(GTEST_OS_NETBSD) || defined(GTEST_OS_FUCHSIA) ||         \
+     defined(GTEST_OS_DRAGONFLY) || defined(GTEST_OS_GNU_KFREEBSD) || \
+     defined(GTEST_OS_OPENBSD) || defined(GTEST_OS_HAIKU) ||          \
+     defined(GTEST_OS_GNU_HURD))
+#define GTEST_HAS_PTHREAD 1
+#else
+#define GTEST_HAS_PTHREAD 0
+#endif
 #endif  
 
 #if GTEST_HAS_PTHREAD
@@ -554,8 +631,8 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #ifndef GTEST_HAS_CLONE
 
 
-#if GTEST_OS_LINUX && !defined(__ia64__)
-#if GTEST_OS_LINUX_ANDROID
+#if defined(GTEST_OS_LINUX) && !defined(__ia64__)
+#if defined(GTEST_OS_LINUX_ANDROID)
 
 
 #if defined(__LP64__) || (defined(__arm__) && __ANDROID_API__ >= 9) || \
@@ -579,8 +656,11 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #ifndef GTEST_HAS_STREAM_REDIRECTION
 
 
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || \
-    GTEST_OS_WINDOWS_RT || GTEST_OS_ESP8266 || GTEST_OS_XTENSA
+
+#if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_WINDOWS_PHONE) || \
+    defined(GTEST_OS_WINDOWS_RT) || defined(GTEST_OS_ESP8266) ||           \
+    defined(GTEST_OS_XTENSA) || defined(GTEST_OS_QURT) ||                  \
+    !GTEST_HAS_FILE_SYSTEM
 #define GTEST_HAS_STREAM_REDIRECTION 0
 #else
 #define GTEST_HAS_STREAM_REDIRECTION 1
@@ -589,14 +669,20 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#if (GTEST_OS_LINUX || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS ||             \
-     (GTEST_OS_MAC && !GTEST_OS_IOS) ||                                   \
-     (GTEST_OS_WINDOWS_DESKTOP && _MSC_VER) || GTEST_OS_WINDOWS_MINGW ||  \
-     GTEST_OS_AIX || GTEST_OS_HPUX || GTEST_OS_OPENBSD || GTEST_OS_QNX || \
-     GTEST_OS_FREEBSD || GTEST_OS_NETBSD || GTEST_OS_FUCHSIA ||           \
-     GTEST_OS_DRAGONFLY || GTEST_OS_GNU_KFREEBSD || GTEST_OS_HAIKU ||     \
-     GTEST_OS_GNU_HURD)
+#if (defined(GTEST_OS_LINUX) || defined(GTEST_OS_CYGWIN) ||           \
+     defined(GTEST_OS_SOLARIS) ||                                     \
+     (defined(GTEST_OS_MAC) && !defined(GTEST_OS_IOS)) ||             \
+     (defined(GTEST_OS_WINDOWS_DESKTOP) && _MSC_VER) ||               \
+     defined(GTEST_OS_WINDOWS_MINGW) || defined(GTEST_OS_AIX) ||      \
+     defined(GTEST_OS_HPUX) || defined(GTEST_OS_OPENBSD) ||           \
+     defined(GTEST_OS_QNX) || defined(GTEST_OS_FREEBSD) ||            \
+     defined(GTEST_OS_NETBSD) || defined(GTEST_OS_FUCHSIA) ||         \
+     defined(GTEST_OS_DRAGONFLY) || defined(GTEST_OS_GNU_KFREEBSD) || \
+     defined(GTEST_OS_HAIKU) || defined(GTEST_OS_GNU_HURD))
+
+#if GTEST_HAS_FILE_SYSTEM
 #define GTEST_HAS_DEATH_TEST 1
+#endif  
 #endif
 
 
@@ -610,14 +696,21 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #endif
 
 
-#define GTEST_WIDE_STRING_USES_UTF16_ \
-  (GTEST_OS_WINDOWS || GTEST_OS_CYGWIN || GTEST_OS_AIX || GTEST_OS_OS2)
+#if defined(GTEST_OS_WINDOWS) || defined(GTEST_OS_CYGWIN) || \
+    defined(GTEST_OS_AIX) || defined(GTEST_OS_OS2)
+#define GTEST_WIDE_STRING_USES_UTF16_ 1
+#else
+#define GTEST_WIDE_STRING_USES_UTF16_ 0
+#endif
 
 
-#if GTEST_OS_LINUX || GTEST_OS_GNU_KFREEBSD || GTEST_OS_DRAGONFLY || \
-    GTEST_OS_FREEBSD || GTEST_OS_NETBSD || GTEST_OS_OPENBSD ||       \
-    GTEST_OS_GNU_HURD
+#if defined(GTEST_OS_LINUX) || defined(GTEST_OS_GNU_KFREEBSD) || \
+    defined(GTEST_OS_DRAGONFLY) || defined(GTEST_OS_FREEBSD) ||  \
+    defined(GTEST_OS_NETBSD) || defined(GTEST_OS_OPENBSD) ||     \
+    defined(GTEST_OS_GNU_HURD) || defined(GTEST_OS_MAC)
 #define GTEST_CAN_STREAM_RESULTS_ 1
+#else
+#define GTEST_CAN_STREAM_RESULTS_ 0
 #endif
 
 
@@ -649,31 +742,43 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
+#ifdef __has_attribute
+#define GTEST_HAVE_ATTRIBUTE_(x) __has_attribute(x)
+#else
+#define GTEST_HAVE_ATTRIBUTE_(x) 0
+#endif
 
-#if defined(__GNUC__) && !defined(COMPILER_ICC)
-#define GTEST_ATTRIBUTE_UNUSED_ __attribute__((unused))
-#elif defined(__clang__)
-#if __has_attribute(unused)
-#define GTEST_ATTRIBUTE_UNUSED_ __attribute__((unused))
+
+
+
+
+#ifdef __has_feature
+#define GTEST_HAVE_FEATURE_(x) __has_feature(x)
+#else
+#define GTEST_HAVE_FEATURE_(x) 0
 #endif
-#endif
-#ifndef GTEST_ATTRIBUTE_UNUSED_
+
+
+
+
+
+
+#if GTEST_HAVE_ATTRIBUTE_(unused)
+#define GTEST_ATTRIBUTE_UNUSED_ __attribute__((unused))
+#else
 #define GTEST_ATTRIBUTE_UNUSED_
 #endif
 
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(COMPILER_ICC)
-#if defined(__MINGW_PRINTF_FORMAT)
+#if GTEST_HAVE_ATTRIBUTE_(format) && defined(__MINGW_PRINTF_FORMAT)
 
 
 
 #define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check) \
-  __attribute__((                                             \
-      __format__(__MINGW_PRINTF_FORMAT, string_index, first_to_check)))
-#else
+  __attribute__((format(__MINGW_PRINTF_FORMAT, string_index, first_to_check)))
+#elif GTEST_HAVE_ATTRIBUTE_(format)
 #define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check) \
-  __attribute__((__format__(__printf__, string_index, first_to_check)))
-#endif
+  __attribute__((format(printf, string_index, first_to_check)))
 #else
 #define GTEST_ATTRIBUTE_PRINTF_(string_index, first_to_check)
 #endif
@@ -683,11 +788,11 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#if defined(__GNUC__) && !defined(COMPILER_ICC)
+#if GTEST_HAVE_ATTRIBUTE_(warn_unused_result)
 #define GTEST_MUST_USE_RESULT_ __attribute__((warn_unused_result))
 #else
 #define GTEST_MUST_USE_RESULT_
-#endif  
+#endif
 
 
 
@@ -719,14 +824,16 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 #ifndef GTEST_IS_THREADSAFE
 
-#define GTEST_IS_THREADSAFE                                                 \
-  (GTEST_HAS_MUTEX_AND_THREAD_LOCAL_ ||                                     \
-   (GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT) || \
-   GTEST_HAS_PTHREAD)
+#if (GTEST_HAS_MUTEX_AND_THREAD_LOCAL_ ||                              \
+     (defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+      !defined(GTEST_OS_WINDOWS_RT)) ||                                \
+     GTEST_HAS_PTHREAD)
+#define GTEST_IS_THREADSAFE 1
+#endif
 
 #endif  
 
-#if GTEST_IS_THREADSAFE
+#ifdef GTEST_IS_THREADSAFE
 
 #include <condition_variable>  
 #include <mutex>               
@@ -743,7 +850,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #elif GTEST_CREATE_SHARED_LIBRARY
 #define GTEST_API_ __declspec(dllexport)
 #endif
-#elif __GNUC__ >= 4 || defined(__clang__)
+#elif GTEST_HAVE_ATTRIBUTE_(visibility)
 #define GTEST_API_ __attribute__((visibility("default")))
 #endif  
 
@@ -757,21 +864,18 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #define GTEST_DEFAULT_DEATH_TEST_STYLE "fast"
 #endif  
 
-#ifdef __GNUC__
+#if GTEST_HAVE_ATTRIBUTE_(noinline)
 
 #define GTEST_NO_INLINE_ __attribute__((noinline))
 #else
 #define GTEST_NO_INLINE_
 #endif
 
-#if defined(__clang__)
-
-#if __has_attribute(disable_tail_calls)
+#if GTEST_HAVE_ATTRIBUTE_(disable_tail_calls)
 
 
 #define GTEST_NO_TAIL_CALL_ __attribute__((disable_tail_calls))
-#endif
-#elif __GNUC__
+#elif defined(__GNUC__) && !defined(__NVCOMPILER)
 #define GTEST_NO_TAIL_CALL_ \
   __attribute__((optimize("no-optimize-sibling-calls")))
 #else
@@ -789,50 +893,35 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 
 
 
-#if defined(__clang__)
-#if __has_feature(memory_sanitizer)
+#if GTEST_HAVE_ATTRIBUTE_(no_sanitize_memory)
 #define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_ __attribute__((no_sanitize_memory))
 #else
 #define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_
-#endif  
-#else
-#define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_
-#endif  
+#endif
 
 
-#if defined(__clang__)
-#if __has_feature(address_sanitizer)
+#if GTEST_HAVE_ATTRIBUTE_(no_sanitize_address)
 #define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_ \
   __attribute__((no_sanitize_address))
 #else
 #define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_
-#endif  
-#else
-#define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_
-#endif  
+#endif
 
 
-#if defined(__clang__)
-#if __has_feature(hwaddress_sanitizer)
+#if GTEST_HAVE_FEATURE_(hwaddress_sanitizer) && \
+    GTEST_HAVE_ATTRIBUTE_(no_sanitize)
 #define GTEST_ATTRIBUTE_NO_SANITIZE_HWADDRESS_ \
   __attribute__((no_sanitize("hwaddress")))
 #else
 #define GTEST_ATTRIBUTE_NO_SANITIZE_HWADDRESS_
-#endif  
-#else
-#define GTEST_ATTRIBUTE_NO_SANITIZE_HWADDRESS_
-#endif  
+#endif
 
 
-#if defined(__clang__)
-#if __has_feature(thread_sanitizer)
-#define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_ __attribute__((no_sanitize_thread))
+#if GTEST_HAVE_ATTRIBUTE_(no_sanitize_thread)
+#define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_ __attribute((no_sanitize_thread))
 #else
 #define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_
-#endif  
-#else
-#define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_
-#endif  
+#endif
 
 namespace testing {
 
@@ -851,7 +940,9 @@ namespace internal {
 
 
 
-class Secret;
+class Secret {
+  Secret(const Secret&) = delete;
+};
 
 
 
@@ -859,7 +950,7 @@ GTEST_API_ bool IsTrue(bool condition);
 
 
 
-#if GTEST_USES_RE2
+#ifdef GTEST_USES_RE2
 
 
 
@@ -884,7 +975,9 @@ class GTEST_API_ RE {
   RE2 regex_;
 };
 
-#elif GTEST_USES_POSIX_RE || GTEST_USES_SIMPLE_RE
+#elif defined(GTEST_USES_POSIX_RE) || defined(GTEST_USES_SIMPLE_RE)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4251 \
+)
 
 
 
@@ -901,7 +994,7 @@ class GTEST_API_ RE {
   ~RE();
 
   
-  const char* pattern() const { return pattern_; }
+  const char* pattern() const { return pattern_.c_str(); }
 
   
   
@@ -919,21 +1012,21 @@ class GTEST_API_ RE {
 
  private:
   void Init(const char* regex);
-  const char* pattern_;
+  std::string pattern_;
   bool is_valid_;
 
-#if GTEST_USES_POSIX_RE
+#ifdef GTEST_USES_POSIX_RE
 
   regex_t full_regex_;     
   regex_t partial_regex_;  
 
 #else  
 
-  const char* full_pattern_;  
+  std::string full_pattern_;  
 
 #endif
 };
-
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 #endif  
 
 
@@ -1071,60 +1164,14 @@ inline To ImplicitCast_(To x) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename To, typename From>  
-inline To DownCast_(From* f) {         
-  
-  
-  
-  
-  GTEST_INTENTIONAL_CONST_COND_PUSH_()
-  if (false) {
-    GTEST_INTENTIONAL_CONST_COND_POP_()
-    const To to = nullptr;
-    ::testing::internal::ImplicitCast_<From*>(to);
-  }
-
-#if GTEST_HAS_RTTI
-  
-  GTEST_CHECK_(f == nullptr || dynamic_cast<To>(f) != nullptr);
-#endif
-  return static_cast<To>(f);
-}
-
-
-
-
-
-
 template <class Derived, class Base>
 Derived* CheckedDowncastToActualType(Base* base) {
+  static_assert(std::is_base_of<Base, Derived>::value,
+                "target type not derived from source type");
 #if GTEST_HAS_RTTI
-  GTEST_CHECK_(typeid(*base) == typeid(Derived));
+  GTEST_CHECK_(base == nullptr || dynamic_cast<Derived*>(base) != nullptr);
 #endif
-
-#if GTEST_HAS_DOWNCAST_
-  return ::down_cast<Derived*>(base);
-#elif GTEST_HAS_RTTI
-  return dynamic_cast<Derived*>(base);  
-#else
-  return static_cast<Derived*>(base);  
-#endif
+  return static_cast<Derived*>(base);
 }
 
 #if GTEST_HAS_STREAM_REDIRECTION
@@ -1150,7 +1197,7 @@ GTEST_API_ std::string ReadEntireFile(FILE* file);
 
 GTEST_API_ std::vector<std::string> GetArgvs();
 
-#if GTEST_HAS_DEATH_TEST
+#ifdef GTEST_HAS_DEATH_TEST
 
 std::vector<std::string> GetInjectableArgvs();
 
@@ -1161,9 +1208,9 @@ void ClearInjectableArgvs();
 #endif  
 
 
-#if GTEST_IS_THREADSAFE
+#ifdef GTEST_IS_THREADSAFE
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 
 
 class GTEST_API_ AutoHandle {
@@ -1242,7 +1289,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 
 
-#if GTEST_HAS_PTHREAD && !GTEST_OS_WINDOWS_MINGW
+#if GTEST_HAS_PTHREAD && !defined(GTEST_OS_WINDOWS_MINGW)
 
 
 
@@ -1251,7 +1298,7 @@ GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 class ThreadWithParamBase {
  public:
-  virtual ~ThreadWithParamBase() {}
+  virtual ~ThreadWithParamBase() = default;
   virtual void Run() = 0;
 };
 
@@ -1328,7 +1375,8 @@ class ThreadWithParam : public ThreadWithParamBase {
 
 
 
-#elif GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+#elif defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT)
 
 
 
@@ -1710,9 +1758,9 @@ typedef GTestMutexLock MutexLock;
 
 
 
-class ThreadLocalValueHolderBase {
+class GTEST_API_ ThreadLocalValueHolderBase {
  public:
-  virtual ~ThreadLocalValueHolderBase() {}
+  virtual ~ThreadLocalValueHolderBase() = default;
 };
 
 
@@ -1784,8 +1832,8 @@ class GTEST_API_ ThreadLocal {
 
   class ValueHolderFactory {
    public:
-    ValueHolderFactory() {}
-    virtual ~ValueHolderFactory() {}
+    ValueHolderFactory() = default;
+    virtual ~ValueHolderFactory() = default;
     virtual ValueHolder* MakeNewHolder() const = 0;
 
    private:
@@ -1795,7 +1843,7 @@ class GTEST_API_ ThreadLocal {
 
   class DefaultValueHolderFactory : public ValueHolderFactory {
    public:
-    DefaultValueHolderFactory() {}
+    DefaultValueHolderFactory() = default;
     ValueHolder* MakeNewHolder() const override { return new ValueHolder(); }
 
    private:
@@ -1881,7 +1929,7 @@ class GTEST_API_ ThreadLocal {
 
 GTEST_API_ size_t GetThreadCount();
 
-#if GTEST_OS_WINDOWS
+#ifdef GTEST_OS_WINDOWS
 #define GTEST_PATH_SEP_ "\\"
 #define GTEST_HAS_ALT_PATH_SEP_ 1
 #else
@@ -1917,7 +1965,7 @@ inline bool IsUpper(char ch) {
 inline bool IsXDigit(char ch) {
   return isxdigit(static_cast<unsigned char>(ch)) != 0;
 }
-#ifdef __cpp_char8_t
+#ifdef __cpp_lib_char8_t
 inline bool IsXDigit(char8_t ch) {
   return isxdigit(static_cast<unsigned char>(ch)) != 0;
 }
@@ -1957,31 +2005,12 @@ inline std::string StripTrailingSpaces(std::string str) {
 namespace posix {
 
 
-
-#if GTEST_OS_WINDOWS
+#if GTEST_HAS_FILE_SYSTEM
+#ifdef GTEST_OS_WINDOWS
 
 typedef struct _stat StatStruct;
 
-#ifdef __BORLANDC__
-inline int DoIsATTY(int fd) { return isatty(fd); }
-inline int StrCaseCmp(const char* s1, const char* s2) {
-  return stricmp(s1, s2);
-}
-inline char* StrDup(const char* src) { return strdup(src); }
-#else  
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_ZOS || GTEST_OS_IOS || \
-    GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT || defined(ESP_PLATFORM)
-inline int DoIsATTY(int ) { return 0; }
-#else
-inline int DoIsATTY(int fd) { return _isatty(fd); }
-#endif  
-inline int StrCaseCmp(const char* s1, const char* s2) {
-  return _stricmp(s1, s2);
-}
-inline char* StrDup(const char* src) { return _strdup(src); }
-#endif  
-
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 inline int FileNo(FILE* file) { return reinterpret_cast<int>(_fileno(file)); }
 
 
@@ -1992,19 +2021,14 @@ inline int RmDir(const char* dir) { return _rmdir(dir); }
 inline bool IsDir(const StatStruct& st) { return (_S_IFDIR & st.st_mode) != 0; }
 #endif  
 
-#elif GTEST_OS_ESP8266
+#elif defined(GTEST_OS_ESP8266)
 typedef struct stat StatStruct;
 
 inline int FileNo(FILE* file) { return fileno(file); }
-inline int DoIsATTY(int fd) { return isatty(fd); }
 inline int Stat(const char* path, StatStruct* buf) {
   
   return 0;
 }
-inline int StrCaseCmp(const char* s1, const char* s2) {
-  return strcasecmp(s1, s2);
-}
-inline char* StrDup(const char* src) { return strdup(src); }
 inline int RmDir(const char* dir) { return rmdir(dir); }
 inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
 
@@ -2013,14 +2037,46 @@ inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
 typedef struct stat StatStruct;
 
 inline int FileNo(FILE* file) { return fileno(file); }
-inline int DoIsATTY(int fd) { return isatty(fd); }
 inline int Stat(const char* path, StatStruct* buf) { return stat(path, buf); }
+#ifdef GTEST_OS_QURT
+
+inline int RmDir(const char*) { return 0; }
+#else
+inline int RmDir(const char* dir) { return rmdir(dir); }
+#endif
+inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
+
+#endif  
+#endif  
+
+
+
+#ifdef GTEST_OS_WINDOWS
+
+#ifdef __BORLANDC__
+inline int DoIsATTY(int fd) { return isatty(fd); }
+inline int StrCaseCmp(const char* s1, const char* s2) {
+  return stricmp(s1, s2);
+}
+#else  
+#if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_ZOS) || \
+    defined(GTEST_OS_IOS) || defined(GTEST_OS_WINDOWS_PHONE) ||  \
+    defined(GTEST_OS_WINDOWS_RT) || defined(ESP_PLATFORM)
+inline int DoIsATTY(int ) { return 0; }
+#else
+inline int DoIsATTY(int fd) { return _isatty(fd); }
+#endif  
+inline int StrCaseCmp(const char* s1, const char* s2) {
+  return _stricmp(s1, s2);
+}
+#endif  
+
+#else
+
+inline int DoIsATTY(int fd) { return isatty(fd); }
 inline int StrCaseCmp(const char* s1, const char* s2) {
   return strcasecmp(s1, s2);
 }
-inline char* StrDup(const char* src) { return strdup(src); }
-inline int RmDir(const char* dir) { return rmdir(dir); }
-inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
 
 #endif  
 
@@ -2042,13 +2098,14 @@ GTEST_DISABLE_MSC_DEPRECATED_PUSH_()
 
 
 
-
-#if !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && \
-    !GTEST_OS_WINDOWS_RT && !GTEST_OS_ESP8266 && !GTEST_OS_XTENSA
+#if GTEST_HAS_FILE_SYSTEM
+#if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_WINDOWS_PHONE) && \
+    !defined(GTEST_OS_WINDOWS_RT) && !defined(GTEST_OS_ESP8266) &&           \
+    !defined(GTEST_OS_XTENSA) && !defined(GTEST_OS_QURT)
 inline int ChDir(const char* dir) { return chdir(dir); }
 #endif
 inline FILE* FOpen(const char* path, const char* mode) {
-#if GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_MINGW
+#if defined(GTEST_OS_WINDOWS) && !defined(GTEST_OS_WINDOWS_MINGW)
   struct wchar_codecvt : public std::codecvt<wchar_t, char, std::mbstate_t> {};
   std::wstring_convert<wchar_codecvt> converter;
   std::wstring wide_path = converter.from_bytes(path);
@@ -2058,14 +2115,14 @@ inline FILE* FOpen(const char* path, const char* mode) {
   return fopen(path, mode);
 #endif  
 }
-#if !GTEST_OS_WINDOWS_MOBILE
+#if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_QURT)
 inline FILE* FReopen(const char* path, const char* mode, FILE* stream) {
   return freopen(path, mode, stream);
 }
 inline FILE* FDOpen(int fd, const char* mode) { return fdopen(fd, mode); }
-#endif
+#endif  
 inline int FClose(FILE* fp) { return fclose(fp); }
-#if !GTEST_OS_WINDOWS_MOBILE
+#if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_QURT)
 inline int Read(int fd, void* buf, unsigned int count) {
   return static_cast<int>(read(fd, buf, count));
 }
@@ -2073,11 +2130,17 @@ inline int Write(int fd, const void* buf, unsigned int count) {
   return static_cast<int>(write(fd, buf, count));
 }
 inline int Close(int fd) { return close(fd); }
+#endif  
+#endif  
+
+#if !defined(GTEST_OS_WINDOWS_MOBILE) && !defined(GTEST_OS_QURT)
 inline const char* StrError(int errnum) { return strerror(errnum); }
-#endif
+#endif  
+
 inline const char* GetEnv(const char* name) {
-#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || \
-    GTEST_OS_WINDOWS_RT || GTEST_OS_ESP8266 || GTEST_OS_XTENSA
+#if defined(GTEST_OS_WINDOWS_MOBILE) || defined(GTEST_OS_WINDOWS_PHONE) || \
+    defined(GTEST_OS_ESP8266) || defined(GTEST_OS_XTENSA) ||               \
+    defined(GTEST_OS_QURT)
   
   static_cast<void>(name);  
   return nullptr;
@@ -2093,7 +2156,7 @@ inline const char* GetEnv(const char* name) {
 
 GTEST_DISABLE_MSC_DEPRECATED_POP_()
 
-#if GTEST_OS_WINDOWS_MOBILE
+#ifdef GTEST_OS_WINDOWS_MOBILE
 
 
 
@@ -2109,7 +2172,7 @@ GTEST_DISABLE_MSC_DEPRECATED_POP_()
 
 
 
-#if _MSC_VER && !GTEST_OS_WINDOWS_MOBILE
+#if defined(_MSC_VER) && !defined(GTEST_OS_WINDOWS_MOBILE)
 
 #define GTEST_SNPRINTF_(buffer, size, format, ...) \
   _snprintf_s(buffer, size, size, format, __VA_ARGS__)
@@ -2182,7 +2245,7 @@ using TimeInMillis = int64_t;
 #endif  
 
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
 
 
 #define GTEST_DEFINE_bool_(name, default_val, doc) \
@@ -2293,7 +2356,7 @@ const char* StringFromGTestEnv(const char* flag, const char* default_val);
 
 #endif  
 
-#if GTEST_HAS_ABSL
+#ifdef GTEST_HAS_ABSL
 
 
 #define GTEST_INTERNAL_HAS_ANY 1
@@ -2304,8 +2367,9 @@ using Any = ::absl::any;
 }  
 }  
 #else
-#ifdef __has_include
-#if __has_include(<any>) && __cplusplus >= 201703L
+#if defined(__cpp_lib_any) || (GTEST_INTERNAL_HAS_INCLUDE(<any>) &&        \
+                               GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
+                               (!defined(_MSC_VER) || GTEST_HAS_RTTI))
 
 
 #define GTEST_INTERNAL_HAS_ANY 1
@@ -2319,9 +2383,12 @@ using Any = ::std::any;
 
 #endif  
 #endif  
-#endif  
 
-#if GTEST_HAS_ABSL
+#ifndef GTEST_INTERNAL_HAS_ANY
+#define GTEST_INTERNAL_HAS_ANY 0
+#endif
+
+#ifdef GTEST_HAS_ABSL
 
 
 #define GTEST_INTERNAL_HAS_OPTIONAL 1
@@ -2334,8 +2401,8 @@ inline ::absl::nullopt_t Nullopt() { return ::absl::nullopt; }
 }  
 }  
 #else
-#ifdef __has_include
-#if __has_include(<optional>) && __cplusplus >= 201703L
+#if defined(__cpp_lib_optional) || (GTEST_INTERNAL_HAS_INCLUDE(<optional>) && \
+                                    GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L)
 
 
 #define GTEST_INTERNAL_HAS_OPTIONAL 1
@@ -2351,9 +2418,21 @@ inline ::std::nullopt_t Nullopt() { return ::std::nullopt; }
 
 #endif  
 #endif  
+
+#ifndef GTEST_INTERNAL_HAS_OPTIONAL
+#define GTEST_INTERNAL_HAS_OPTIONAL 0
+#endif
+
+#if defined(__cpp_lib_span) || (GTEST_INTERNAL_HAS_INCLUDE(<span>) && \
+                                GTEST_INTERNAL_CPLUSPLUS_LANG >= 202002L)
+#define GTEST_INTERNAL_HAS_STD_SPAN 1
 #endif  
 
-#if GTEST_HAS_ABSL
+#ifndef GTEST_INTERNAL_HAS_STD_SPAN
+#define GTEST_INTERNAL_HAS_STD_SPAN 0
+#endif
+
+#ifdef GTEST_HAS_ABSL
 
 
 #define GTEST_INTERNAL_HAS_STRING_VIEW 1
@@ -2364,8 +2443,9 @@ using StringView = ::absl::string_view;
 }  
 }  
 #else
-#ifdef __has_include
-#if __has_include(<string_view>) && __cplusplus >= 201703L
+#if defined(__cpp_lib_string_view) ||             \
+    (GTEST_INTERNAL_HAS_INCLUDE(<string_view>) && \
+     GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L)
 
 
 #define GTEST_INTERNAL_HAS_STRING_VIEW 1
@@ -2379,9 +2459,12 @@ using StringView = ::std::string_view;
 
 #endif  
 #endif  
-#endif  
 
-#if GTEST_HAS_ABSL
+#ifndef GTEST_INTERNAL_HAS_STRING_VIEW
+#define GTEST_INTERNAL_HAS_STRING_VIEW 0
+#endif
+
+#ifdef GTEST_HAS_ABSL
 
 
 #define GTEST_INTERNAL_HAS_VARIANT 1
@@ -2393,8 +2476,8 @@ using Variant = ::absl::variant<T...>;
 }  
 }  
 #else
-#ifdef __has_include
-#if __has_include(<variant>) && __cplusplus >= 201703L
+#if defined(__cpp_lib_variant) || (GTEST_INTERNAL_HAS_INCLUDE(<variant>) && \
+                                   GTEST_INTERNAL_CPLUSPLUS_LANG >= 201703L)
 
 
 #define GTEST_INTERNAL_HAS_VARIANT 1
@@ -2408,6 +2491,15 @@ using Variant = ::std::variant<T...>;
 
 #endif  
 #endif  
-#endif  
+
+#ifndef GTEST_INTERNAL_HAS_VARIANT
+#define GTEST_INTERNAL_HAS_VARIANT 0
+#endif
+
+#if (defined(__cpp_constexpr) && !defined(__cpp_inline_variables)) || \
+    (defined(GTEST_INTERNAL_CPLUSPLUS_LANG) &&                        \
+     GTEST_INTERNAL_CPLUSPLUS_LANG < 201703L)
+#define GTEST_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL 1
+#endif
 
 #endif  

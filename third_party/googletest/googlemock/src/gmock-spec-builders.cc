@@ -40,6 +40,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -48,17 +49,17 @@
 #include "gtest/gtest.h"
 #include "gtest/internal/gtest-port.h"
 
-#if GTEST_OS_CYGWIN || GTEST_OS_LINUX || GTEST_OS_MAC
+#if defined(GTEST_OS_CYGWIN) || defined(GTEST_OS_LINUX) || defined(GTEST_OS_MAC)
 #include <unistd.h>  
 #endif
-
-
-
-#ifdef _MSC_VER
-#if _MSC_VER == 1900
-#pragma warning(push)
-#pragma warning(disable : 4800)
+#ifdef GTEST_OS_QURT
+#include <qurt_event.h>
 #endif
+
+
+
+#if defined(_MSC_VER) && (_MSC_VER == 1900)
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4800)
 #endif
 
 namespace testing {
@@ -95,7 +96,7 @@ ExpectationBase::ExpectationBase(const char* a_file, int a_line,
       action_count_checked_(false) {}
 
 
-ExpectationBase::~ExpectationBase() {}
+ExpectationBase::~ExpectationBase() = default;
 
 
 
@@ -295,9 +296,9 @@ void ReportUninterestingCall(CallReaction reaction, const std::string& msg) {
               "call should not happen.  Do not suppress it by blindly adding "
               "an EXPECT_CALL() if you don't mean to enforce the call.  "
               "See "
-              "https://github.com/google/googletest/blob/master/docs/"
+              "https://github.com/google/googletest/blob/main/docs/"
               "gmock_cook_book.md#"
-              "knowing-when-to-expect for details.\n",
+              "knowing-when-to-expect-useoncall for details.\n",
           stack_frames_to_skip);
       break;
     default:  
@@ -308,7 +309,7 @@ void ReportUninterestingCall(CallReaction reaction, const std::string& msg) {
 UntypedFunctionMockerBase::UntypedFunctionMockerBase()
     : mock_obj_(nullptr), name_("") {}
 
-UntypedFunctionMockerBase::~UntypedFunctionMockerBase() {}
+UntypedFunctionMockerBase::~UntypedFunctionMockerBase() = default;
 
 
 
@@ -406,8 +407,15 @@ bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked()
     } else if (!untyped_expectation->IsSatisfied()) {
       expectations_met = false;
       ::std::stringstream ss;
-      ss << "Actual function call count doesn't match "
-         << untyped_expectation->source_text() << "...\n";
+
+      const ::std::string& expectation_name =
+          untyped_expectation->GetDescription();
+      ss << "Actual function ";
+      if (!expectation_name.empty()) {
+        ss << "\"" << expectation_name << "\" ";
+      }
+      ss << "call count doesn't match " << untyped_expectation->source_text()
+         << "...\n";
       
       
       
@@ -496,7 +504,7 @@ class MockObjectRegistry {
       std::cout << internal::FormatFileLocation(state.first_used_file,
                                                 state.first_used_line);
       std::cout << " ERROR: this mock object";
-      if (state.first_used_test != "") {
+      if (!state.first_used_test.empty()) {
         std::cout << " (used in test " << state.first_used_test_suite << "."
                   << state.first_used_test << ")";
       }
@@ -519,8 +527,12 @@ class MockObjectRegistry {
       
       
       
+#ifdef GTEST_OS_QURT
+      qurt_exception_raise_fatal();
+#else
       _exit(1);  
                  
+#endif
     }
   }
 
@@ -734,13 +746,13 @@ void Mock::ClearDefaultActionsLocked(void* mock_obj)
   
 }
 
-Expectation::Expectation() {}
+Expectation::Expectation() = default;
 
 Expectation::Expectation(
     const std::shared_ptr<internal::ExpectationBase>& an_expectation_base)
     : expectation_base_(an_expectation_base) {}
 
-Expectation::~Expectation() {}
+Expectation::~Expectation() = default;
 
 
 void Sequence::AddExpectation(const Expectation& expectation) const {
@@ -774,8 +786,6 @@ InSequence::~InSequence() {
 
 }  
 
-#ifdef _MSC_VER
-#if _MSC_VER == 1900
-#pragma warning(pop)
-#endif
+#if defined(_MSC_VER) && (_MSC_VER == 1900)
+GTEST_DISABLE_MSC_WARNINGS_POP_()  
 #endif
