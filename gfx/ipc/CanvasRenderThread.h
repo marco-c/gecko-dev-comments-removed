@@ -13,7 +13,14 @@
 #include "nsISupportsImpl.h"
 #include "nsThread.h"
 
+class nsIRunnable;
+
 namespace mozilla::gfx {
+
+
+
+
+
 
 class CanvasRenderThread final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_DELETE_ON_MAIN_THREAD(
@@ -21,14 +28,13 @@ class CanvasRenderThread final {
 
  public:
   
-  static CanvasRenderThread* Get();
-
   
   
   static void Start();
 
   
-  static void ShutDown();
+  
+  static void Shutdown();
 
   
   static bool IsInCanvasRenderThread();
@@ -37,12 +43,16 @@ class CanvasRenderThread final {
   static already_AddRefed<nsIThread> GetCanvasRenderThread();
 
  private:
-  explicit CanvasRenderThread(RefPtr<nsIThread> aThread);
+  CanvasRenderThread(nsCOMPtr<nsIThread>&& aThread, bool aCreatedThread);
   ~CanvasRenderThread();
 
   void PostRunnable(already_AddRefed<nsIRunnable> aRunnable);
 
-  RefPtr<nsIThread> const mThread;
+  nsCOMPtr<nsIThread> const mThread;
+
+  
+  
+  bool mCreatedThread;
 };
 
 }  

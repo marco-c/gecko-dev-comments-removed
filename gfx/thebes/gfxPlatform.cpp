@@ -22,7 +22,6 @@
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/gfx/GraphicsMessages.h"
 #include "mozilla/gfx/CanvasManagerChild.h"
-#include "mozilla/gfx/CanvasManagerParent.h"
 #include "mozilla/gfx/CanvasRenderThread.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/DebugOnly.h"
@@ -1309,14 +1308,15 @@ void gfxPlatform::InitLayersIPC() {
 #endif
     if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
       RemoteTextureMap::Init();
-      if (gfxVars::UseCanvasRenderThread()) {
-        gfx::CanvasRenderThread::Start();
-      }
       wr::RenderThread::Start(GPUProcessManager::Get()->AllocateNamespace());
       image::ImageMemoryReporter::InitForWebRender();
     }
 
     layers::CompositorThreadHolder::Start();
+
+    if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
+      gfx::CanvasRenderThread::Start();
+    }
   }
 }
 
@@ -1344,7 +1344,9 @@ void gfxPlatform::ShutdownLayersIPC() {
     layers::CompositorManagerChild::Shutdown();
     layers::ImageBridgeChild::ShutDown();
     
-    gfx::CanvasManagerParent::Shutdown();
+    
+    
+    gfx::CanvasRenderThread::Shutdown();
     
     layers::CompositorThreadHolder::Shutdown();
     RemoteTextureMap::Shutdown();
@@ -1362,9 +1364,6 @@ void gfxPlatform::ShutdownLayersIPC() {
           WebRenderBlobTileSizePrefChangeCallback,
           nsDependentCString(
               StaticPrefs::GetPrefName_gfx_webrender_blob_tile_size()));
-    }
-    if (gfx::CanvasRenderThread::Get()) {
-      gfx::CanvasRenderThread::ShutDown();
     }
 #if defined(XP_WIN)
     widget::WinWindowOcclusionTracker::ShutDown();
@@ -3851,12 +3850,10 @@ void gfxPlatform::DisableGPUProcess() {
   }
 
   RemoteTextureMap::Init();
-  if (gfxVars::UseCanvasRenderThread()) {
-    gfx::CanvasRenderThread::Start();
-  }
   
   
   wr::RenderThread::Start(GPUProcessManager::Get()->AllocateNamespace());
+  gfx::CanvasRenderThread::Start();
   image::ImageMemoryReporter::InitForWebRender();
 }
 

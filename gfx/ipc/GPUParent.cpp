@@ -14,7 +14,6 @@
 #include "GPUProcessManager.h"
 #include "gfxGradientCache.h"
 #include "GfxInfoBase.h"
-#include "CanvasManagerParent.h"
 #include "VRGPUChild.h"
 #include "VRManager.h"
 #include "VRManagerParent.h"
@@ -378,10 +377,8 @@ mozilla::ipc::IPCResult GPUParent::RecvInit(
 #endif
 
   
-  if (gfxVars::UseCanvasRenderThread()) {
-    gfx::CanvasRenderThread::Start();
-  }
   wr::RenderThread::Start(aWrNamespace);
+  gfx::CanvasRenderThread::Start();
   image::ImageMemoryReporter::InitForWebRender();
 
   VRManager::ManagerInit();
@@ -702,7 +699,8 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         VideoBridgeParent::Shutdown();
         
         
-        CanvasManagerParent::Shutdown();
+        
+        CanvasRenderThread::Shutdown();
         CompositorThreadHolder::Shutdown();
         RemoteTextureMap::Shutdown();
         
@@ -710,9 +708,6 @@ void GPUParent::ActorDestroy(ActorDestroyReason aWhy) {
         
         if (wr::RenderThread::Get()) {
           wr::RenderThread::ShutDown();
-        }
-        if (gfx::CanvasRenderThread::Get()) {
-          gfx::CanvasRenderThread::ShutDown();
         }
 #ifdef XP_WIN
         if (widget::WinCompositorWindowThread::Get()) {
