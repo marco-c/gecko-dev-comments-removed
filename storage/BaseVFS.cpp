@@ -4,6 +4,8 @@
 
 
 
+#include "BaseVFS.h"
+
 #include <string.h>
 #include "sqlite3.h"
 #include "mozilla/net/IOActivityMonitor.h"
@@ -194,13 +196,13 @@ int BaseOpen(sqlite3_vfs* vfs, const char* zName, sqlite3_file* pFile,
 
 }  
 
-namespace mozilla::storage {
+namespace mozilla::storage::basevfs {
 
-const char* GetBaseVFSName(bool exclusive) {
+const char* GetVFSName(bool exclusive) {
   return exclusive ? "base-vfs-excl" : "base-vfs";
 }
 
-UniquePtr<sqlite3_vfs> ConstructBaseVFS(bool exclusive) {
+UniquePtr<sqlite3_vfs> ConstructVFS(bool exclusive) {
 #if defined(XP_WIN)
 #  define EXPECTED_VFS "win32"
 #  define EXPECTED_VFS_EXCL "win32"
@@ -209,7 +211,7 @@ UniquePtr<sqlite3_vfs> ConstructBaseVFS(bool exclusive) {
 #  define EXPECTED_VFS_EXCL "unix-excl"
 #endif
 
-  if (sqlite3_vfs_find(GetBaseVFSName(exclusive))) {
+  if (sqlite3_vfs_find(GetVFSName(exclusive))) {
     return nullptr;
   }
 
@@ -237,7 +239,7 @@ UniquePtr<sqlite3_vfs> ConstructBaseVFS(bool exclusive) {
       origVfs->szOsFile + static_cast<int>(sizeof(BaseFile)), 
       origVfs->mxPathname,                                    
       nullptr,                                                
-      GetBaseVFSName(exclusive),                              
+      GetVFSName(exclusive),                                  
       origVfs,                                                
       BaseOpen,                                               
       origVfs->xDelete,                                       
