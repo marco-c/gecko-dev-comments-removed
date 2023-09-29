@@ -1152,12 +1152,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void NotifyTargetUserActivation(WidgetEvent* aEvent,
                                   nsIContent* aTargetContent);
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT void LightDismissOpenPopovers(WidgetEvent* aEvent,
-                                                   nsIContent* aTargetContent);
-
   already_AddRefed<EventStateManager> ESMFromContentOrThis(
       nsIContent* aContent);
 
@@ -1216,7 +1210,6 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   nsCOMPtr<nsIContent> mHoverContent;
   static nsCOMPtr<nsIContent> sDragOverContent;
   nsCOMPtr<nsIContent> mURLTargetContent;
-  nsCOMPtr<nsINode> mPopoverPointerDownTarget;
 
   nsPresContext* mPresContext;      
   RefPtr<dom::Document> mDocument;  
