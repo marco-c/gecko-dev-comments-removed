@@ -81,6 +81,21 @@ const kExpectedRequestsOfModulepreload = [
     }
 ];
 
+const kExpectedRequestsOfPrefetch = [
+    {   fileNameAndSuffix: "dummy.txt?1",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
+    },
+    {   fileNameAndSuffix: "dummy.txt?2",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
+    },
+    {   fileNameAndSuffix: "dummy.txt?3",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
+    },
+    {   fileNameAndSuffix: "dummy.txt?4",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
+    }
+];
+
 
 
 
@@ -113,19 +128,9 @@ export const kTestData = [
         expectedRequests: kExpectedRequestsOfModulepreload
     },
     {   testFileName: "link-initial-prefetch.h2.html",
-        expectedRequests: [
-        {   fileNameAndSuffix: "dummy.txt?1",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
-        },
-        {   fileNameAndSuffix: "dummy.txt?2",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
-        },
-        {   fileNameAndSuffix: "dummy.txt?3",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
-        },
-        {   fileNameAndSuffix: "dummy.txt?4",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOWEST
-        }
-        ]
+        expectedRequests: kExpectedRequestsOfPrefetch
+    },
+    {   testFileName: "link-dynamic-prefetch.h2.html",
+        expectedRequests: kExpectedRequestsOfPrefetch
     }
 ];
