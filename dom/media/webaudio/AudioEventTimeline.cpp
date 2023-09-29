@@ -238,7 +238,7 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
     const AudioTimelineEvent* aNext) {
   
   if (!aPrevious) {
-    return mValue;
+    return mDefaultValue;
   }
 
   

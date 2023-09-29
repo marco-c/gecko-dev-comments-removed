@@ -163,7 +163,7 @@ inline int64_t AudioTimelineEvent::TimeUnion::Get<int64_t>() const {
 class AudioEventTimeline {
  public:
   explicit AudioEventTimeline(float aDefaultValue)
-      : mValue(aDefaultValue), mSetTargetStartValue(aDefaultValue) {}
+      : mDefaultValue(aDefaultValue), mSetTargetStartValue(aDefaultValue) {}
 
   bool ValidateEvent(const AudioTimelineEvent& aEvent, ErrorResult& aRv) const {
     MOZ_ASSERT(NS_IsMainThread());
@@ -240,7 +240,7 @@ class AudioEventTimeline {
           return false;
         }
       } else {
-        if (mValue <= 0.f) {
+        if (mDefaultValue <= 0.f) {
           
           aRv.ThrowSyntaxError("Our value must be positive");
           return false;
@@ -279,13 +279,16 @@ class AudioEventTimeline {
   float GetValue() const {
     
     MOZ_ASSERT(HasSimpleValue());
-    return mValue;
+    return mDefaultValue;
   }
 
   void SetValue(float aValue) {
     
+    
+
+    
     if (mEvents.IsEmpty()) {
-      mSetTargetStartValue = mValue = aValue;
+      mSetTargetStartValue = mDefaultValue = aValue;
     }
   }
 
@@ -413,7 +416,7 @@ class AudioEventTimeline {
   
   
   nsTArray<AudioTimelineEvent> mEvents;
-  float mValue;
+  float mDefaultValue;
   
   
   float mSetTargetStartValue;
