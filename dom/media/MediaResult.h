@@ -67,7 +67,7 @@ class MediaResult {
   nsresult mCode;
   nsCString mMessage;
   
-  CDMProxy* mCDMProxy;
+  CDMProxy* mCDMProxy = nullptr;
 };
 
 #ifdef _MSC_VER
