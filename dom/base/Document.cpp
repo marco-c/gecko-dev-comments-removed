@@ -7343,18 +7343,17 @@ void Document::AddStyleSheetToStyleSets(StyleSheet& aSheet) {
 
 void Document::RecordShadowStyleChange(ShadowRoot& aShadowRoot) {
   mStyleSet->RecordShadowStyleChange(aShadowRoot);
-  ApplicableStylesChanged( true);
+  ApplicableStylesChanged();
 }
 
-void Document::ApplicableStylesChanged(bool aKnownInShadowTree) {
+void Document::ApplicableStylesChanged() {
   
   
   if (!mStyleSetFilled) {
     return;
   }
-  if (!aKnownInShadowTree) {
-    MarkUserFontSetDirty();
-  }
+
+  MarkUserFontSetDirty();
   PresShell* ps = GetPresShell();
   if (!ps) {
     return;
@@ -7366,11 +7365,9 @@ void Document::ApplicableStylesChanged(bool aKnownInShadowTree) {
     return;
   }
 
-  if (!aKnownInShadowTree) {
-    pc->MarkCounterStylesDirty();
-    pc->MarkFontFeatureValuesDirty();
-    pc->MarkFontPaletteValuesDirty();
-  }
+  pc->MarkCounterStylesDirty();
+  pc->MarkFontFeatureValuesDirty();
+  pc->MarkFontPaletteValuesDirty();
   pc->RestyleManager()->NextRestyleIsForCSSRuleChanges();
 }
 
