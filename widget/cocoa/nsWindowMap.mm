@@ -235,7 +235,7 @@
   id delegate = [window delegate];
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData activateInWindowViews:window];
-  } else if ([window isSheet]) {
+  } else if ([window isSheet] || [NSApp modalWindow]) {
     [TopLevelWindowData activateInWindow:window];
   }
 }
@@ -246,7 +246,7 @@
   id delegate = [window delegate];
   if (!delegate || ![delegate isKindOfClass:[WindowDelegate class]]) {
     [TopLevelWindowData deactivateInWindowViews:window];
-  } else if ([window isSheet]) {
+  } else if ([window isSheet] || [NSApp modalWindow]) {
     [TopLevelWindowData deactivateInWindow:window];
   }
 }
@@ -262,7 +262,7 @@
   
   
   if (delegate && [delegate isKindOfClass:[WindowDelegate class]] &&
-      ![window attachedSheet])
+      ![window attachedSheet] && ![NSApp modalWindow])
     [TopLevelWindowData activateInWindow:window];
 }
 
@@ -271,7 +271,7 @@
 
   id delegate = [window delegate];
   if (delegate && [delegate isKindOfClass:[WindowDelegate class]] &&
-      ![window attachedSheet])
+      ![window attachedSheet] && ![NSApp modalWindow])
     [TopLevelWindowData deactivateInWindow:window];
 }
 
