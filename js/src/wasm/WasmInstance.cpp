@@ -1985,6 +1985,79 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       cx->compartment()->zone()->addressOfNeedsIncrementalBarrier();
 
   
+  const SharedTypeContext& types = metadata().types;
+  Zone* zone = realm()->zone();
+  for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
+    const TypeDef& typeDef = types->type(typeIndex);
+    TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
+
+    
+    new (typeDefData) TypeDefInstanceData();
+
+    
+    typeDefData->typeDef = &typeDef;
+    typeDefData->superTypeVector = typeDef.superTypeVector();
+
+    if (typeDef.kind() == TypeDefKind::Struct ||
+        typeDef.kind() == TypeDefKind::Array) {
+      
+      
+      const JSClass* clasp;
+      gc::AllocKind allocKind;
+
+      if (typeDef.kind() == TypeDefKind::Struct) {
+        clasp = WasmStructObject::classForTypeDef(&typeDef);
+        allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
+      } else {
+        clasp = &WasmArrayObject::class_;
+        allocKind = WasmArrayObject::allocKind();
+      }
+
+      
+      if (CanChangeToBackgroundAllocKind(allocKind, clasp)) {
+        allocKind = ForegroundToBackgroundAllocKind(allocKind);
+      }
+
+      
+      const ObjectFlags objectFlags = {ObjectFlag::NotExtensible};
+      typeDefData->shape =
+          WasmGCShape::getShape(cx, clasp, cx->realm(), TaggedProto(),
+                                &typeDef.recGroup(), objectFlags);
+      if (!typeDefData->shape) {
+        return false;
+      }
+
+      typeDefData->clasp = clasp;
+      typeDefData->allocKind = allocKind;
+
+      
+      typeDefData->allocSite.initWasm(zone);
+
+      
+      
+      
+      
+      MOZ_ASSERT(typeDefData->unused == 0);
+      if (typeDef.kind() == TypeDefKind::Struct) {
+        typeDefData->structTypeSize = typeDef.structType().size_;
+        
+        MOZ_ASSERT((typeDefData->structTypeSize % sizeof(uintptr_t)) == 0);
+      } else {
+        uint32_t arrayElemSize = typeDef.arrayType().elementType_.size();
+        typeDefData->arrayElemSize = arrayElemSize;
+        MOZ_ASSERT(arrayElemSize == 16 || arrayElemSize == 8 ||
+                   arrayElemSize == 4 || arrayElemSize == 2 ||
+                   arrayElemSize == 1);
+      }
+    } else if (typeDef.kind() == TypeDefKind::Func) {
+      
+    } else {
+      MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
+      MOZ_CRASH();
+    }
+  }
+
+  
   Tier callerTier = code_->bestTier();
   for (size_t i = 0; i < metadata(callerTier).funcImports.length(); i++) {
     JSObject* f = funcImports[i];
@@ -2022,6 +2095,66 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       import.code = codeBase(callerTier) + fi.interpExitCodeOffset();
     }
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  maxInitializedGlobalsIndexPlus1_ = 0;
+  for (size_t i = 0; i < metadata().globals.length();
+       i++, maxInitializedGlobalsIndexPlus1_ = i) {
+    const GlobalDesc& global = metadata().globals[i];
+
+    
+    if (global.isConstant()) {
+      continue;
+    }
+
+    uint8_t* globalAddr = data() + global.offset();
+    switch (global.kind()) {
+      case GlobalKind::Import: {
+        size_t imported = global.importIndex();
+        if (global.isIndirect()) {
+          *(void**)globalAddr =
+              (void*)&globalObjs[imported]->val().get().cell();
+        } else {
+          globalImportValues[imported].writeToHeapLocation(globalAddr);
+        }
+        break;
+      }
+      case GlobalKind::Variable: {
+        RootedVal val(cx);
+        const InitExpr& init = global.initExpr();
+        Rooted<WasmInstanceObject*> instanceObj(cx, object());
+        if (!init.evaluate(cx, instanceObj, &val)) {
+          return false;
+        }
+
+        if (global.isIndirect()) {
+          
+          wasm::GCPtrVal& cell = globalObjs[i]->val();
+          cell = val.get();
+          
+          void* address = (void*)&cell.get().cell();
+          *(void**)globalAddr = address;
+        } else {
+          val.get().writeToHeapLocation(globalAddr);
+        }
+        break;
+      }
+      case GlobalKind::Constant: {
+        MOZ_CRASH("skipped at the top");
+      }
+    }
+  }
+
+  
+  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == metadata().globals.length());
 
   
   for (size_t i = 0; i < memories.length(); i++) {
@@ -2109,139 +2242,6 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
       return false;
     }
   }
-
-  
-  const SharedTypeContext& types = metadata().types;
-  Zone* zone = realm()->zone();
-  for (uint32_t typeIndex = 0; typeIndex < types->length(); typeIndex++) {
-    const TypeDef& typeDef = types->type(typeIndex);
-    TypeDefInstanceData* typeDefData = typeDefInstanceData(typeIndex);
-
-    
-    new (typeDefData) TypeDefInstanceData();
-
-    
-    typeDefData->typeDef = &typeDef;
-    typeDefData->superTypeVector = typeDef.superTypeVector();
-
-    if (typeDef.kind() == TypeDefKind::Struct ||
-        typeDef.kind() == TypeDefKind::Array) {
-      
-      
-      const JSClass* clasp;
-      gc::AllocKind allocKind;
-
-      if (typeDef.kind() == TypeDefKind::Struct) {
-        clasp = WasmStructObject::classForTypeDef(&typeDef);
-        allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
-      } else {
-        clasp = &WasmArrayObject::class_;
-        allocKind = WasmArrayObject::allocKind();
-      }
-
-      
-      if (CanChangeToBackgroundAllocKind(allocKind, clasp)) {
-        allocKind = ForegroundToBackgroundAllocKind(allocKind);
-      }
-
-      
-      const ObjectFlags objectFlags = {ObjectFlag::NotExtensible};
-      typeDefData->shape =
-          WasmGCShape::getShape(cx, clasp, cx->realm(), TaggedProto(),
-                                &typeDef.recGroup(), objectFlags);
-      if (!typeDefData->shape) {
-        return false;
-      }
-
-      typeDefData->clasp = clasp;
-      typeDefData->allocKind = allocKind;
-
-      
-      typeDefData->allocSite.initWasm(zone);
-
-      
-      
-      
-      
-      MOZ_ASSERT(typeDefData->unused == 0);
-      if (typeDef.kind() == TypeDefKind::Struct) {
-        typeDefData->structTypeSize = typeDef.structType().size_;
-        
-        MOZ_ASSERT((typeDefData->structTypeSize % sizeof(uintptr_t)) == 0);
-      } else {
-        uint32_t arrayElemSize = typeDef.arrayType().elementType_.size();
-        typeDefData->arrayElemSize = arrayElemSize;
-        MOZ_ASSERT(arrayElemSize == 16 || arrayElemSize == 8 ||
-                   arrayElemSize == 4 || arrayElemSize == 2 ||
-                   arrayElemSize == 1);
-      }
-    } else if (typeDef.kind() == TypeDefKind::Func) {
-      
-    } else {
-      MOZ_ASSERT(typeDef.kind() == TypeDefKind::None);
-      MOZ_CRASH();
-    }
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  maxInitializedGlobalsIndexPlus1_ = 0;
-  for (size_t i = 0; i < metadata().globals.length();
-       i++, maxInitializedGlobalsIndexPlus1_ = i) {
-    const GlobalDesc& global = metadata().globals[i];
-
-    
-    if (global.isConstant()) {
-      continue;
-    }
-
-    uint8_t* globalAddr = data() + global.offset();
-    switch (global.kind()) {
-      case GlobalKind::Import: {
-        size_t imported = global.importIndex();
-        if (global.isIndirect()) {
-          *(void**)globalAddr =
-              (void*)&globalObjs[imported]->val().get().cell();
-        } else {
-          globalImportValues[imported].writeToHeapLocation(globalAddr);
-        }
-        break;
-      }
-      case GlobalKind::Variable: {
-        RootedVal val(cx);
-        const InitExpr& init = global.initExpr();
-        Rooted<WasmInstanceObject*> instanceObj(cx, object());
-        if (!init.evaluate(cx, instanceObj, &val)) {
-          return false;
-        }
-
-        if (global.isIndirect()) {
-          
-          wasm::GCPtrVal& cell = globalObjs[i]->val();
-          cell = val.get();
-          
-          void* address = (void*)&cell.get().cell();
-          *(void**)globalAddr = address;
-        } else {
-          val.get().writeToHeapLocation(globalAddr);
-        }
-        break;
-      }
-      case GlobalKind::Constant: {
-        MOZ_CRASH("skipped at the top");
-      }
-    }
-  }
-
-  
-  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == metadata().globals.length());
 
   
   if (!passiveDataSegments_.resize(dataSegments.length())) {
