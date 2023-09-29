@@ -1,0 +1,14 @@
+use crate::backend;
+
+
+
+
+
+
+
+
+
+#[inline]
+pub fn sync() {
+    backend::fs::syscalls::sync();
+}
