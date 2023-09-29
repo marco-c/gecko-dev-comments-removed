@@ -212,3 +212,7 @@ class SafariBrowser(WebDriverBrowser):
                         proc.wait(10)
                 except psutil.NoSuchProcess:
                     pass
+                except Exception:
+                    
+                    self.logger.critical("Failed to stop Safari")
+                    raise
