@@ -161,13 +161,12 @@ pub(crate) fn do_credential_list_filtering_ctap2<Dev: FidoDevice>(
         );
         silent_assert.set_pin_uv_auth_param(pin_uv_auth_token.clone())?;
         match dev.send_msg(&silent_assert) {
-            Ok(response) => {
+            Ok(mut response) => {
                 
                 
                 let credential_ids = response
-                    .assertions
-                    .iter()
-                    .filter_map(|a| a.credentials.clone())
+                    .iter_mut()
+                    .filter_map(|result| result.assertion.credentials.take())
                     .collect();
                 
                 final_list = credential_ids;

@@ -12,7 +12,7 @@ use authenticator::ctap2::{
     client_data::ClientDataHash,
     commands::{
         client_pin::{ClientPIN, ClientPinResponse, PINSubcommand},
-        get_assertion::{Assertion, GetAssertion, GetAssertionResponse, GetAssertionResult},
+        get_assertion::{GetAssertion, GetAssertionResponse, GetAssertionResult},
         get_info::{AuthenticatorInfo, AuthenticatorOptions, AuthenticatorVersion},
         get_version::{GetVersion, U2FInfo},
         make_credentials::{MakeCredentials, MakeCredentialsResult},
@@ -21,7 +21,10 @@ use authenticator::ctap2::{
         RequestCtap1, RequestCtap2, StatusCode,
     },
     preflight::CheckKeyHandle,
-    server::{PublicKeyCredentialDescriptor, RelyingParty, RelyingPartyWrapper, User},
+    server::{
+        PublicKeyCredentialDescriptor, PublicKeyCredentialUserEntity, RelyingParty,
+        RelyingPartyWrapper,
+    },
 };
 use authenticator::errors::{AuthenticatorError, CommandError, HIDError, U2FTokenError};
 use authenticator::{ctap2, statecallback::StateCallback};
@@ -75,7 +78,7 @@ impl TestTokenCredential {
             extensions: Extension::default(),
         };
 
-        let user = Some(User {
+        let user = Some(PublicKeyCredentialUserEntity {
             id: self.user_handle.clone(),
             ..Default::default()
         });
@@ -311,7 +314,7 @@ impl VirtualFidoDevice for TestToken {
         }
     }
 
-    fn get_assertion(&self, req: &GetAssertion) -> Result<GetAssertionResult, HIDError> {
+    fn get_assertion(&self, req: &GetAssertion) -> Result<Vec<GetAssertionResult>, HIDError> {
         
         
 
@@ -368,34 +371,40 @@ impl VirtualFidoDevice for TestToken {
         
         
 
-        let mut assertions: Vec<Assertion> = vec![];
+        let mut assertions: Vec<GetAssertionResult> = vec![];
         if !req.allow_list.is_empty() {
             
             
             for credential in eligible_cred_iter {
                 if req.allow_list.iter().any(|x| x.id == credential.id) {
                     let assertion = credential.assert(&req.client_data_hash, flags)?.into();
-                    assertions.push(assertion);
+                    assertions.push(GetAssertionResult {
+                        assertion,
+                        extensions: Default::default(),
+                    });
                     break;
                 }
             }
         } else {
             
             
-            
-            
-            
             for credential in eligible_cred_iter.filter(|x| x.is_discoverable_credential) {
                 let assertion = credential.assert(&req.client_data_hash, flags)?.into();
-                assertions.push(assertion);
-                break;
+                assertions.push(GetAssertionResult {
+                    assertion,
+                    extensions: Default::default(),
+                });
             }
         }
 
-        Ok(GetAssertionResult {
-            assertions,
-            extensions: Default::default(),
-        })
+        if assertions.is_empty() {
+            return Err(HIDError::Command(CommandError::StatusCode(
+                StatusCode::NoCredentials,
+                None,
+            )));
+        }
+
+        Ok(assertions)
     }
 
     fn get_info(&self) -> Result<AuthenticatorInfo, HIDError> {

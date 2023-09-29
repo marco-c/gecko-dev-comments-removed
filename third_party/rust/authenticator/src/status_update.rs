@@ -7,7 +7,7 @@ use crate::{
             get_info::AuthenticatorInfo,
             PinUvAuthResult,
         },
-        server::{PublicKeyCredentialDescriptor, User},
+        server::{PublicKeyCredentialDescriptor, PublicKeyCredentialUserEntity},
     },
     BioEnrollmentResult, CredentialManagementResult,
 };
@@ -18,7 +18,7 @@ use std::sync::mpsc::Sender;
 pub enum CredManagementCmd {
     GetCredentials,
     DeleteCredential(PublicKeyCredentialDescriptor),
-    UpdateUserInformation(PublicKeyCredentialDescriptor, User),
+    UpdateUserInformation(PublicKeyCredentialDescriptor, PublicKeyCredentialUserEntity),
 }
 
 #[derive(Debug, Deserialize, DeriveSer)]
@@ -105,6 +105,8 @@ pub enum StatusUpdate {
     SelectDeviceNotice,
     
     InteractiveManagement(InteractiveUpdate),
+    
+    SelectResultNotice(Sender<Option<usize>>, Vec<PublicKeyCredentialUserEntity>),
 }
 
 pub(crate) fn send_status(status: &Sender<StatusUpdate>, msg: StatusUpdate) {

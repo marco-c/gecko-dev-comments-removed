@@ -40,12 +40,9 @@ impl RpIdHash {
     }
 }
 
+
 #[derive(Debug, Serialize, Clone, Default, Deserialize, PartialEq, Eq)]
 pub struct RelyingParty {
-    
-    
-    
-    
     pub id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
@@ -96,7 +93,7 @@ impl RelyingPartyWrapper {
 
 
 #[derive(Debug, Serialize, Clone, Eq, PartialEq, Deserialize, Default)]
-pub struct User {
+pub struct PublicKeyCredentialUserEntity {
     #[serde(with = "serde_bytes")]
     pub id: Vec<u8>,
     pub name: Option<String>,
@@ -406,13 +403,13 @@ pub struct AuthenticationExtensionsClientOutputs {
 #[cfg(test)]
 mod test {
     use super::{
-        COSEAlgorithm, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters, RelyingParty,
-        Transport, User,
+        COSEAlgorithm, PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
+        PublicKeyCredentialUserEntity, RelyingParty, Transport,
     };
     use serde_cbor::from_slice;
 
-    fn create_user() -> User {
-        User {
+    fn create_user() -> PublicKeyCredentialUserEntity {
+        PublicKeyCredentialUserEntity {
             id: vec![
                 0x30, 0x82, 0x01, 0x93, 0x30, 0x82, 0x01, 0x38, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x30,
                 0x82, 0x01, 0x93, 0x30, 0x82, 0x01, 0x38, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x30, 0x82,
@@ -479,7 +476,7 @@ mod test {
             0x69, 0x74, 0x68, // ...
         ];
         let expected = create_user();
-        let actual: User = from_slice(&input).unwrap();
+        let actual: PublicKeyCredentialUserEntity = from_slice(&input).unwrap();
         assert_eq!(expected, actual);
     }
 
@@ -519,7 +516,7 @@ mod test {
 
     #[test]
     fn serialize_user_nodisplayname() {
-        let user = User {
+        let user = PublicKeyCredentialUserEntity {
             id: vec![
                 0x30, 0x82, 0x01, 0x93, 0x30, 0x82, 0x01, 0x38, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x30,
                 0x82, 0x01, 0x93, 0x30, 0x82, 0x01, 0x38, 0xa0, 0x03, 0x02, 0x01, 0x02, 0x30, 0x82,
