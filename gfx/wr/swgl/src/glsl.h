@@ -753,6 +753,8 @@ Float fract(Float v) { return v - floor(v); }
 
 vec2 fract(vec2 v) { return vec2(fract(v.x), fract(v.y)); }
 
+vec2_scalar fract(vec2_scalar v) { return vec2_scalar(fract(v.x), fract(v.y)); }
+
 
 
 
