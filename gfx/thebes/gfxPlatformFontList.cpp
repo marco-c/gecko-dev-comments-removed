@@ -1309,6 +1309,7 @@ class StartCmapLoadingRunnable : public mozilla::Runnable {
 };
 
 void gfxPlatformFontList::StartCmapLoadingFromFamily(uint32_t aStartIndex) {
+  AutoLock lock(mLock);
   if (aStartIndex > mStartedLoadingCmapsFrom) {
     
     
