@@ -1417,6 +1417,7 @@ void BrowserParent::MouseEnterIntoWidget() {
     
     mRemoteTargetSetsCursor = true;
     widget->SetCursor(mCursor);
+    EventStateManager::ClearCursorSettingManager();
   }
 
   
@@ -1449,13 +1450,13 @@ void BrowserParent::SendRealMouseEvent(WidgetMouseEvent& aEvent) {
 
   aEvent.mRefPoint = TransformParentToChild(aEvent.mRefPoint);
 
-  nsCOMPtr<nsIWidget> widget = GetWidget();
-  if (widget) {
+  if (nsCOMPtr<nsIWidget> widget = GetWidget()) {
     
     
     if (eMouseEnterIntoWidget == aEvent.mMessage) {
       mRemoteTargetSetsCursor = true;
       widget->SetCursor(mCursor);
+      EventStateManager::ClearCursorSettingManager();
     } else if (eMouseExitFromWidget == aEvent.mMessage) {
       mRemoteTargetSetsCursor = false;
     }

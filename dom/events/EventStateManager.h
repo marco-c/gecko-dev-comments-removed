@@ -289,7 +289,10 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(EventStateManager, nsIObserver)
 
-  static dom::Document* sMouseOverDocument;
+  
+  
+  static EventStateManager* sCursorSettingManager;
+  static void ClearCursorSettingManager() { sCursorSettingManager = nullptr; }
 
   static EventStateManager* GetActiveEventStateManager() { return sActiveESM; }
 
@@ -1160,6 +1163,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
 
   LastMouseDownInfo& GetLastMouseDownInfo(int16_t aButton);
 
+  
   StyleCursorKind mLockCursor;
   bool mLastFrameConsumedSetCursor = false;
   bool mHidingCursorWhileTyping = false;
