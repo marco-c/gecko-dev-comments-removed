@@ -23,6 +23,7 @@ from mach.telemetry_interface import GleanTelemetry, NoopTelemetry
 from mach.util import get_state_dir
 
 MACH_METRICS_PATH = (Path(__file__) / ".." / ".." / "metrics.yaml").resolve()
+SITE_DIR = (Path(__file__) / ".." / ".." / ".." / "sites").resolve()
 
 
 def create_telemetry_from_environment(settings):
@@ -36,7 +37,8 @@ def create_telemetry_from_environment(settings):
     """
 
     active_metadata = MozSiteMetadata.from_runtime()
-    is_mach_virtualenv = active_metadata and active_metadata.site_name == "mach"
+    mach_sites = [site_path.stem for site_path in SITE_DIR.glob("*.txt")]
+    is_a_mach_virtualenv = active_metadata and active_metadata.site_name in mach_sites
 
     if not (
         is_applicable_telemetry_environment()
@@ -45,7 +47,7 @@ def create_telemetry_from_environment(settings):
         
         
         
-        and is_mach_virtualenv
+        and is_a_mach_virtualenv
     ):
         return NoopTelemetry(False)
 
