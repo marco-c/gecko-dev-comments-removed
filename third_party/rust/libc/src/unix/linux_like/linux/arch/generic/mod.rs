@@ -94,8 +94,10 @@ cfg_if! {
     // But they may still not have those _OLD ones.
     if #[cfg(all(any(target_arch = "x86",
                      target_arch = "x86_64",
-                     target_arch = "aarch64"),
-                 not(target_env = "musl")))] {
+                     target_arch = "aarch64",
+                     target_arch = "csky",
+                     target_arch = "loongarch64"),
+                 not(any(target_env = "musl", target_env = "ohos"))))] {
         pub const SO_TIMESTAMP_NEW: ::c_int = 63;
         pub const SO_TIMESTAMPNS_NEW: ::c_int = 64;
         pub const SO_TIMESTAMPING_NEW: ::c_int = 65;
@@ -105,16 +107,21 @@ cfg_if! {
     }
 }
 
+
+
 cfg_if! {
     if #[cfg(any(target_arch = "x86",
                  target_arch = "x86_64",
-                 target_arch = "aarch64"))] {
+                 target_arch = "arm",
+                 target_arch = "aarch64",
+                 target_arch = "riscv64",
+                 target_arch = "s390x",
+                 target_arch = "csky",
+                 target_arch = "loongarch64"))] {
         pub const FICLONE: ::c_ulong = 0x40049409;
         pub const FICLONERANGE: ::c_ulong = 0x4020940D;
     }
 }
-
-
 
 
 
@@ -252,7 +259,7 @@ cfg_if! {
         pub const RLIMIT_RTTIME: ::__rlimit_resource_t = 15;
         pub const RLIMIT_NLIMITS: ::__rlimit_resource_t = RLIM_NLIMITS;
 
-    } else if #[cfg(target_env = "musl")] {
+    } else if #[cfg(any(target_env = "musl", target_env = "ohos"))] {
 
         pub const RLIMIT_CPU: ::c_int = 0;
         pub const RLIMIT_FSIZE: ::c_int = 1;
