@@ -776,6 +776,8 @@ class GCRuntime {
       ParallelMarking allowParallelMarking = SingleThreadedMarking,
       ShouldReportMarkTime reportTime = ReportMarkTime);
   bool canMarkInParallel() const;
+  bool initParallelMarkers();
+  void finishParallelMarkers();
 
   bool hasMarkingWork(MarkColor color) const;
 
@@ -1098,6 +1100,9 @@ class GCRuntime {
 
   
   MainThreadData<bool> isCompacting;
+
+  
+  MainThreadData<ParallelMarking> useParallelMarking;
 
   
   MainThreadOrGCTaskData<mozilla::Maybe<JS::GCOptions>> maybeGcOptions;
