@@ -70,33 +70,35 @@ function waitForWheelEvent(eventTarget) {
   return waitForEvent(eventTarget, 'wheel');
 }
 
-
-
-
-
-function waitForScrollEnd(eventTarget) {
-  const MAX_UNCHANGED_FRAMES = 15;
+function waitForScrollStop(eventTarget) {
+  const TIMEOUT_IN_MS = 200;
 
   return new Promise(resolve => {
-    let unchanged_frames = 0;
-    let lastScrollEventTime;
+    let lastScrollEventTime = performance.now();
 
     const scrollListener = () => {
-      lastScrollEventTime = document.timeline.currentTime;
+      lastScrollEventTime = performance.now();
     };
     eventTarget.addEventListener('scroll', scrollListener);
 
-    const animationFrame = () => {
-      if (lastScrollEventTime == document.timeline.currentTime) {
-        unchanged_frames = 0;
-      } else if (++unchanged_frames >= MAX_UNCHANGED_FRAMES) {
+    const tick = () => {
+      if (performance.now() - lastScrollEventTime > TIMEOUT_IN_MS) {
         eventTarget.removeEventListener('scroll', scrollListener);
         resolve();
         return;
       }
-      requestAnimationFrame(animationFrame); 
+      requestAnimationFrame(tick); 
     }
-    requestAnimationFrame(animationFrame);
+    requestAnimationFrame(tick);
+  });
+}
+
+function waitForScrollEnd(eventTarget) {
+  if (window.onscrollend !== undefined) {
+    return waitForScrollendEventNoTimeout(eventTarget);
+  }
+  return waitForScrollEvent(eventTarget).then(() => {
+    return waitForScrollStop(eventTarget);
   });
 }
 
