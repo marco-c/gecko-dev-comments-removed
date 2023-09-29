@@ -161,11 +161,14 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
 
         
         
-        kwargs["channel"] = None
-        kwargs["prompt"] = True
-        kwargs["install_browser"] = False
-        kwargs["install_webdriver"] = None
-        kwargs["affected"] = None
+        
+        
+        run_parser = run.create_parser()
+        run_kwargs = run_parser.parse_args([kwargs["product"], kwargs["test_list"]])
+
+        for key, value in vars(run_kwargs).items():
+            if key not in kwargs:
+                kwargs[key] = value
 
         
         
@@ -197,7 +200,7 @@ class WebPlatformTestsRunnerSetup(MozbuildObject):
         for key, value in list(iteritems(kwargs["test_paths"])):
             meta_suffix = key.strip("/")
             meta_dir = os.path.join(
-                self._here, "products", kwargs["product"], meta_suffix
+                self._here, "products", kwargs["product"].name, meta_suffix
             )
             value["metadata_path"] = meta_dir
             if not os.path.exists(meta_dir):
