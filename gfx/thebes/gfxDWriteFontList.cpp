@@ -1196,28 +1196,32 @@ void gfxDWriteFontList::AppendFamiliesFromCollection(
       continue;
     }
 
-    auto addFamily = [&](const nsACString& name, bool altLocale = false) {
+    auto addFamily = [&](const nsACString& name, FontVisibility visibility,
+                         bool altLocale = false) {
       nsAutoCString key;
       key = name;
       BuildKeyNameFromFontName(key);
       bool bad = mBadUnderlineFamilyNames.ContainsSorted(key);
       bool classic =
           aForceClassicFams && aForceClassicFams->ContainsSorted(key);
-      FontVisibility visibility;
-      
-      
-      
-      
-      
-      if (key.EqualsLiteral("gill sans") && allFacesUltraBold(family)) {
-        visibility = FontVisibility::Hidden;
-      } else {
-        visibility = aCollection == mSystemFonts ? GetVisibilityForFamily(name)
-                                                 : FontVisibility::Base;
-      }
       aFamilies.AppendElement(fontlist::Family::InitData(
           key, name, i, visibility, aCollection != mSystemFonts, bad, classic,
           altLocale));
+    };
+
+    auto visibilityForName = [&](const nsACString& aName) -> FontVisibility {
+      
+      
+      
+      
+      
+      if (aName.EqualsLiteral("Gill Sans") && allFacesUltraBold(family)) {
+        return FontVisibility::Hidden;
+      }
+      
+      
+      return aCollection == mSystemFonts ? GetVisibilityForFamily(aName)
+                                         : FontVisibility::Base;
     };
 
     unsigned count = localizedNames->GetCount();
@@ -1229,10 +1233,11 @@ void gfxDWriteFontList::AppendFamiliesFromCollection(
         gfxWarning() << "GetNameAsUtf8 failed for index 0 in font-family " << i;
         continue;
       }
-      addFamily(name);
+      addFamily(name, visibilityForName(name));
     } else {
       AutoTArray<nsCString, 4> names;
       int sysLocIndex = -1;
+      FontVisibility visibility = FontVisibility::User;
       for (unsigned index = 0; index < count; ++index) {
         nsAutoCString name;
         if (!GetNameAsUtf8(name, localizedNames, index)) {
@@ -1240,16 +1245,29 @@ void gfxDWriteFontList::AppendFamiliesFromCollection(
                        << " in font-family " << i;
           continue;
         }
-        if (!names.Contains(name)) {
-          if (sysLocIndex == -1) {
-            WCHAR buf[32];
-            if (SUCCEEDED(localizedNames->GetLocaleName(index, buf, 32))) {
-              if (loc16.Equals(buf)) {
-                sysLocIndex = names.Length();
-              }
+        if (names.Contains(name)) {
+          continue;
+        }
+        if (sysLocIndex == -1) {
+          WCHAR buf[32];
+          if (SUCCEEDED(localizedNames->GetLocaleName(index, buf, 32))) {
+            if (loc16.Equals(buf)) {
+              sysLocIndex = names.Length();
             }
           }
-          names.AppendElement(name);
+        }
+        names.AppendElement(name);
+        
+        
+        
+        
+        if (visibility != FontVisibility::Hidden) {
+          FontVisibility v = visibilityForName(name);
+          if (v == FontVisibility::Hidden) {
+            visibility = FontVisibility::Hidden;
+          } else {
+            visibility = std::min(visibility, v);
+          }
         }
       }
       
@@ -1265,7 +1283,8 @@ void gfxDWriteFontList::AppendFamiliesFromCollection(
         sysLocIndex = 1;
       }
       for (unsigned index = 0; index < names.Length(); ++index) {
-        addFamily(names[index], index != static_cast<unsigned>(sysLocIndex));
+        addFamily(names[index], visibility,
+                  index != static_cast<unsigned>(sysLocIndex));
       }
     }
   }

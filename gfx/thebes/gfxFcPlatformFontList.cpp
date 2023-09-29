@@ -1764,6 +1764,9 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
     aLastFamilyName = canonical;
     aFamilyName = ToCharPtr(canonical);
 
+    const FontVisibility visibility =
+        aAppFont ? FontVisibility::Base : GetVisibilityForFamily(keyName);
+
     
     
     auto* faceList =
@@ -1771,9 +1774,6 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
             .LookupOrInsertWith(
                 keyName,
                 [&] {
-                  FontVisibility visibility =
-                      aAppFont ? FontVisibility::Base
-                               : GetVisibilityForFamily(keyName);
                   families.AppendElement(fontlist::Family::InitData(
                       keyName, aFamilyName, fontlist::Family::kNoIndex,
                       visibility,
@@ -1806,6 +1806,7 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
 
     
     
+    
     FcChar8* otherName;
     int n = (cIndex == 0 ? 1 : 0);
     while (FcPatternGetString(aPattern, FC_FAMILY, n, &otherName) ==
@@ -1818,9 +1819,6 @@ void gfxFcPlatformFontList::InitSharedFontListForPlatform() {
           .LookupOrInsertWith(
               keyName,
               [&] {
-                FontVisibility visibility =
-                    aAppFont ? FontVisibility::Base
-                             : GetVisibilityForFamily(keyName);
                 families.AppendElement(fontlist::Family::InitData(
                     keyName, otherFamilyName, fontlist::Family::kNoIndex,
                     visibility,
