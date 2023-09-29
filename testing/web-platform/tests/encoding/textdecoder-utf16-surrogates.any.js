@@ -1,5 +1,6 @@
 
 
+
 var bad = [
     {
         encoding: 'utf-16le',

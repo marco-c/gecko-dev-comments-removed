@@ -1,5 +1,6 @@
 
 
+
 var badStrings = [
     {
         input: 'abc123',

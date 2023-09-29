@@ -1,5 +1,6 @@
 
 
+
 test(function() {
     assert_equals((new TextEncoder).encoding, 'utf-8', 'default encoding is utf-8');
     assert_equals((new TextDecoder).encoding, 'utf-8', 'default encoding is utf-8');

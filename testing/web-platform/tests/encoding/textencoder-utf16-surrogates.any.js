@@ -1,5 +1,6 @@
 
 
+
 var bad = [
     {
         input: '\uD800',

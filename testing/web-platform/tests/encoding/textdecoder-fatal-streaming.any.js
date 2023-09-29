@@ -1,5 +1,6 @@
 
 
+
 test(function() {
     [
         {encoding: 'utf-8', sequence: [0xC0]},

@@ -1,5 +1,6 @@
 
 
+
 var bad = [
     { encoding: 'utf-8', input: [0xFF], name: 'invalid code' },
     { encoding: 'utf-8', input: [0xC0], name: 'ends early' },
