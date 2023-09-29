@@ -430,6 +430,11 @@ class HTMLEditUtils final {
   
 
 
+  static bool IsInclusiveAncestorCSSDisplayNone(const nsIContent& aContent);
+
+  
+
+
 
 
 
