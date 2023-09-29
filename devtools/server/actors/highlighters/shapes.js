@@ -2332,9 +2332,7 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       this.origCoordUnits = this.coordUnits;
     }
     const values = definition.split(" round ");
-    const offsets = splitCoords(values[0]).map(
-      this.convertCoordsToPercent.bind(this)
-    );
+    const offsets = splitCoords(values[0]);
 
     let top, left, right, bottom;
     
@@ -2353,6 +2351,11 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
       bottom = offsets[2];
       left = offsets[3];
     }
+
+    top = this.convertCoordsToPercentFromCurrentDimension(top, "height");
+    bottom = this.convertCoordsToPercentFromCurrentDimension(bottom, "height");
+    left = this.convertCoordsToPercentFromCurrentDimension(left, "width");
+    right = this.convertCoordsToPercentFromCurrentDimension(right, "width");
 
     
     
@@ -2412,9 +2415,32 @@ class ShapesHighlighter extends AutoRefreshHighlighter {
     return { top, left, right, bottom };
   }
 
+  
+
+
+
+
+
+
+
   convertCoordsToPercent(coord, i) {
     const { width, height } = this.currentDimensions;
     const size = i % 2 === 0 ? width : height;
+    if (coord.includes("calc(")) {
+      return evalCalcExpression(coord.substring(5, coord.length - 1), size);
+    }
+    return coordToPercent(coord, size);
+  }
+
+  
+
+
+
+
+
+
+  convertCoordsToPercentFromCurrentDimension(coord, currentDimensionProperty) {
+    const size = this.currentDimensions[currentDimensionProperty];
     if (coord.includes("calc(")) {
       return evalCalcExpression(coord.substring(5, coord.length - 1), size);
     }
