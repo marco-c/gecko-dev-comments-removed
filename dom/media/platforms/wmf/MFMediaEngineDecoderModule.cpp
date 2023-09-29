@@ -90,9 +90,6 @@ media::DecodeSupportSet MFMediaEngineDecoderModule::SupportsMimeType(
 media::DecodeSupportSet MFMediaEngineDecoderModule::Supports(
     const SupportDecoderParams& aParams,
     DecoderDoctorDiagnostics* aDiagnostics) const {
-  if (!aParams.mMediaEngineId) {
-    return media::DecodeSupportSet{};
-  }
   return SupportInternal(aParams, aDiagnostics);
 }
 
@@ -155,6 +152,13 @@ static bool CreateMFTDecoderOnMTA(const WMFStreamType& aType) {
                                          MFVideoFormat_AV1, GUID_NULL));
       break;
 #endif
+    case WMFStreamType::HEVC:
+      if (StaticPrefs::media_wmf_hevc_enabled()) {
+        result =
+            SUCCEEDED(decoder->Create(MFT_CATEGORY_VIDEO_DECODER,
+                                      MFVideoFormat_HEVC, MFVideoFormat_NV12));
+      }
+      break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unexpected type");
   }
