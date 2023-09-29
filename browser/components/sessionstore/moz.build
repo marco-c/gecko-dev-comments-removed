@@ -5,7 +5,7 @@
 
 
 XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.ini"]
-BROWSER_CHROME_MANIFESTS += ["test/browser.ini"]
+BROWSER_CHROME_MANIFESTS += ["test/browser.toml"]
 
 JAR_MANIFESTS += ["jar.mn"]
 

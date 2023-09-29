@@ -57,4 +57,4 @@ FINAL_TARGET_FILES.features["screenshots@mozilla.org"]["selector"] += [
 
 
 
-BROWSER_CHROME_MANIFESTS += ["test/browser/browser.ini"]
+BROWSER_CHROME_MANIFESTS += ["test/browser/browser.toml"]
