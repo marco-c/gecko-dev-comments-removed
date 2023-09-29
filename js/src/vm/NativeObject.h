@@ -570,6 +570,17 @@ class TaggedSlotOffset {
   }
 };
 
+enum class CanReuseShape {
+  
+  CanReuseShape,
+
+  
+  CanReusePropMap,
+
+  
+  NoReuse,
+};
+
 
 
 
@@ -686,33 +697,36 @@ class NativeObject : public JSObject {
   void setShapeAndRemoveLastSlot(JSContext* cx, SharedShape* newShape,
                                  uint32_t slot);
 
-  MOZ_ALWAYS_INLINE bool canReuseShapeForNewProperties(
-      NativeShape* newShape) const {
+  MOZ_ALWAYS_INLINE CanReuseShape
+  canReuseShapeForNewProperties(NativeShape* newShape) const {
     NativeShape* oldShape = shape();
     MOZ_ASSERT(oldShape->propMapLength() == 0,
                "object must have no properties");
     MOZ_ASSERT(newShape->propMapLength() > 0,
                "new shape must have at least one property");
-    if (oldShape->numFixedSlots() != newShape->numFixedSlots()) {
-      return false;
-    }
     if (oldShape->isDictionary() || newShape->isDictionary()) {
-      return false;
+      return CanReuseShape::NoReuse;
     }
-    if (oldShape->base() != newShape->base()) {
-      return false;
-    }
-    MOZ_ASSERT(oldShape->getObjectClass() == newShape->getObjectClass());
-    MOZ_ASSERT(oldShape->proto() == newShape->proto());
-    MOZ_ASSERT(oldShape->realm() == newShape->realm());
     
     
     
     if (!oldShape->objectFlags().isEmpty()) {
-      return false;
+      return CanReuseShape::NoReuse;
     }
     MOZ_ASSERT(newShape->hasObjectFlag(ObjectFlag::HasEnumerable));
-    return newShape->objectFlags() == ObjectFlags({ObjectFlag::HasEnumerable});
+    if (newShape->objectFlags() != ObjectFlags({ObjectFlag::HasEnumerable})) {
+      return CanReuseShape::NoReuse;
+    }
+    
+    
+    if (oldShape->numFixedSlots() != newShape->numFixedSlots() ||
+        oldShape->base() != newShape->base()) {
+      return CanReuseShape::CanReusePropMap;
+    }
+    MOZ_ASSERT(oldShape->getObjectClass() == newShape->getObjectClass());
+    MOZ_ASSERT(oldShape->proto() == newShape->proto());
+    MOZ_ASSERT(oldShape->realm() == newShape->realm());
+    return CanReuseShape::CanReuseShape;
   }
 
   
