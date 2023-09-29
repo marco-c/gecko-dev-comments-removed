@@ -83,14 +83,53 @@ add_task(async function test_shopping_sidebar_displayed() {
       BrowserTestUtils.is_visible(sidebar),
       "Sidebar should be visible."
     );
+
+    
+    let contentTab = await BrowserTestUtils.openNewForegroundTab({
+      gBrowser,
+      url: CONTENT_PAGE,
+    });
+
+    
+    
+    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
+    await BrowserTestUtils.switchTab(gBrowser, contentTab);
+    await BrowserTestUtils.switchTab(gBrowser, gBrowser.tabs[0]);
+
+    BrowserTestUtils.removeTab(contentTab);
   });
 
   Services.fog.testFlushAllChildren();
-  var events = Glean.shopping.surfaceDisplayed.testGetValue();
 
-  Assert.greater(events.length, 0);
-  Assert.equal(events[0].category, "shopping");
-  Assert.equal(events[0].name, "surface_displayed");
+  var displayedEvents = Glean.shopping.surfaceDisplayed.testGetValue();
+  Assert.equal(1, displayedEvents.length);
+  assertEventMatches(displayedEvents[0], {
+    category: "shopping",
+    name: "surface_displayed",
+  });
+
+  var addressBarIconDisplayedEvents =
+    Glean.shopping.addressBarIconDisplayed.testGetValue();
+  assertEventMatches(addressBarIconDisplayedEvents[0], {
+    category: "shopping",
+    name: "address_bar_icon_displayed",
+  });
+
+  
+  Services.fog.testResetFOG();
+
+  await BrowserTestUtils.withNewTab(CONTENT_PAGE, async function (browser) {
+    let sidebar = gBrowser.getPanel(browser).querySelector("shopping-sidebar");
+
+    Assert.equal(sidebar, null);
+  });
+
+  var emptyDisplayedEvents = Glean.shopping.surfaceDisplayed.testGetValue();
+  var emptyAddressBarIconDisplayedEvents =
+    Glean.shopping.addressBarIconDisplayed.testGetValue();
+
+  Assert.equal(emptyDisplayedEvents, null);
+  Assert.equal(emptyAddressBarIconDisplayedEvents, null);
 });
 
 function clickReAnalyzeLink(browser, data) {
