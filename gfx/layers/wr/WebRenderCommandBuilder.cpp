@@ -2426,19 +2426,14 @@ WebRenderCommandBuilder::GenerateFallbackData(
   RefPtr<WebRenderFallbackData> fallbackData =
       CreateOrRecycleWebRenderUserData<WebRenderFallbackData>(aItem);
 
+  
+  
+  
+  
+  
+  
   bool snap;
-  nsRect itemBounds = aItem->GetBounds(aDisplayListBuilder, &snap);
-
-  
-  
-  
-  
-  
-  
-  nsRect paintBounds = (useBlobImage || paintOnContentSide)
-                           ? itemBounds
-                           : aItem->GetClippedBounds(aDisplayListBuilder);
-
+  nsRect paintBounds = aItem->GetBounds(aDisplayListBuilder, &snap);
   nsRect buildingRect = aItem->GetBuildingRect();
 
   const int32_t appUnitsPerDevPixel =
@@ -2531,7 +2526,7 @@ WebRenderCommandBuilder::GenerateFallbackData(
       aItem->GetType() != DisplayItemType::TYPE_SVG_WRAPPER && differentScale) {
     nsRect invalid;
     if (!aItem->IsInvalid(invalid)) {
-      nsPoint shift = itemBounds.TopLeft() - geometry->mBounds.TopLeft();
+      nsPoint shift = paintBounds.TopLeft() - geometry->mBounds.TopLeft();
       geometry->MoveBy(shift);
 
       nsRegion invalidRegion;
