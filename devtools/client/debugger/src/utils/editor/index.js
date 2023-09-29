@@ -88,6 +88,13 @@ export function toSourceLine(sourceId, line) {
 }
 
 export function scrollToPosition(codeMirror, line, column) {
+  
+  
+  if (!line && !column) {
+    codeMirror.scrollTo(0, 0);
+    return;
+  }
+
   const { top, left } = codeMirror.charCoords({ line, ch: column }, "local");
 
   if (!isVisible(codeMirror, top, left)) {
