@@ -1,5 +1,20 @@
 export const kTestFolderName = "link-tests";
 
+const kExpectedRequestsOfLoadStylesheet = [
+    {   fileNameAndSuffix: "dummy.css?1",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOW
+    },
+    {   fileNameAndSuffix: "dummy.css?2",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGH
+    },
+    {   fileNameAndSuffix: "dummy.css?3",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_NORMAL
+    },
+    {   fileNameAndSuffix: "dummy.css?4",
+        internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_NORMAL
+    }
+];
+
 
 
 
@@ -13,21 +28,11 @@ export const kTestFolderName = "link-tests";
 
 
 export const kTestData = [
-    {   testFileName: "link-initial-load.h2.html",
-        expectedRequests: [
-        {   fileNameAndSuffix: "dummy.css?1",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_LOW
-        },
-        {   fileNameAndSuffix: "dummy.css?2",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_HIGH
-        },
-        {   fileNameAndSuffix: "dummy.css?3",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_NORMAL
-        },
-        {   fileNameAndSuffix: "dummy.css?4",
-            internalPriority: SpecialPowers.Ci.nsISupportsPriority.PRIORITY_NORMAL
-        }
-        ]
+    {   testFileName: "link-initial-load-stylesheet.h2.html",
+        expectedRequests: kExpectedRequestsOfLoadStylesheet
+    },
+    {   testFileName: "link-dynamic-load-stylesheet.h2.html",
+        expectedRequests: kExpectedRequestsOfLoadStylesheet
     },
     {   testFileName: "link-initial-preload.h2.html",
         expectedRequests: [
