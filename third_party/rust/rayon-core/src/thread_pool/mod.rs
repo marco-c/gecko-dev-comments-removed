@@ -462,39 +462,6 @@ pub fn yield_local() -> Option<Yield> {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn clean_up_use_current_thread() {
-    unsafe {
-        let thread = WorkerThread::current()
-            .as_ref()
-            .expect("Should be called from a worker thread");
-        assert!(
-            thread.registry().used_creator_thread(),
-            "Should only be used to clean up the pool creator constructor thread"
-        );
-        assert_eq!(
-            thread.index(),
-            0,
-            "Should be called from the thread that created the pool"
-        );
-        crate::registry::wait_until_out_of_work(thread);
-        let _ = Box::from_raw(WorkerThread::current() as *mut WorkerThread);
-    }
-    assert!(WorkerThread::current().is_null());
-}
-
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Yield {
     
