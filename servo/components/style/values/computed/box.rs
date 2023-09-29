@@ -4,13 +4,16 @@
 
 
 
-use crate::values::animated::{Animate, Procedure};
+use crate::values::animated::{Animate, Procedure, ToAnimatedValue};
+use crate::values::computed::font::FixedPoint;
 use crate::values::computed::length::{LengthPercentage, NonNegativeLength};
-use crate::values::computed::{Context, Integer, ToComputedValue};
+use crate::values::computed::{Context, Integer, Number, ToComputedValue};
 use crate::values::generics::box_::{
     GenericContainIntrinsicSize, GenericLineClamp, GenericPerspective, GenericVerticalAlign,
 };
 use crate::values::specified::box_ as specified;
+use std::fmt;
+use style_traits::{CssWriter, ToCss};
 
 pub use crate::values::specified::box_::{
     Appearance, BaselineSource, BreakBetween, BreakWithin, Clear as SpecifiedClear, Contain,
@@ -261,5 +264,116 @@ impl ToComputedValue for specified::Resize {
             Resize::Horizontal => specified::Resize::Horizontal,
             Resize::Vertical => specified::Resize::Vertical,
         }
+    }
+}
+
+
+pub const ZOOM_FRACTION_BITS: u16 = 6;
+
+
+pub type ZoomFixedPoint = FixedPoint<u16, ZOOM_FRACTION_BITS>;
+
+
+
+
+#[derive(
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    Hash,
+    MallocSizeOf,
+    PartialEq,
+    PartialOrd,
+    ToResolvedValue,
+)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
+#[repr(C)]
+pub struct Zoom(ZoomFixedPoint);
+
+impl std::ops::Mul for Zoom {
+    type Output = Zoom;
+
+    fn mul(self, rhs: Self) -> Self {
+        if self == Self::ONE {
+            return rhs;
+        }
+        if rhs == Self::ONE {
+            return self;
+        }
+        Zoom(ZoomFixedPoint::from_float(self.value() * rhs.value()))
+    }
+}
+
+impl ToComputedValue for specified::Zoom {
+    type ComputedValue = Zoom;
+
+    #[inline]
+    fn to_computed_value(&self, _: &Context) -> Self::ComputedValue {
+        let n = match *self {
+            Self::Normal => return Zoom::ONE,
+            Self::Value(ref n) => n.0.to_number().get(),
+        };
+        if n == 0.0 {
+            
+            return Zoom::ONE;
+        }
+        Zoom(ZoomFixedPoint::from_float(n))
+    }
+
+    #[inline]
+    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
+        Self::new_number(computed.value())
+    }
+}
+
+impl ToCss for Zoom {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: fmt::Write,
+    {
+        self.value().to_css(dest)
+    }
+}
+
+impl ToAnimatedValue for Zoom {
+    type AnimatedValue = Number;
+
+    #[inline]
+    fn to_animated_value(self) -> Self::AnimatedValue {
+        self.value()
+    }
+
+    #[inline]
+    fn from_animated_value(animated: Self::AnimatedValue) -> Self {
+        Zoom(ZoomFixedPoint::from_float(animated.max(0.0)))
+    }
+}
+
+impl Zoom {
+    
+    pub const ONE: Zoom = Zoom(ZoomFixedPoint {
+        value: 1 << ZOOM_FRACTION_BITS,
+    });
+
+    
+    #[inline]
+    pub fn is_one(self) -> bool {
+        self == Self::ONE
+    }
+
+    
+    #[inline]
+    pub fn value(&self) -> f32 {
+        self.0.to_float()
+    }
+
+    
+    #[inline]
+    pub fn zoom(self, value: f32) -> f32 {
+        if self == Self::ONE {
+            return value;
+        }
+        self.value() * value
     }
 }

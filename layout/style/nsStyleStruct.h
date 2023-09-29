@@ -1331,6 +1331,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay {
   
   float mShapeImageThreshold = 0.0f;
 
+  mozilla::StyleZoom mZoom = mozilla::StyleZoom::ONE;
+
   
   mozilla::NonNegativeLengthPercentage mShapeMargin;
 
