@@ -195,6 +195,8 @@ Preferences.addAll([
 
   { id: "security.OCSP.enabled", type: "int" },
 
+  { id: "security.enterprise_roots.enabled", type: "bool" },
+
   
   { id: "xpinstall.whitelist.required", type: "bool" },
 
@@ -456,6 +458,19 @@ var gPrivacyPane = {
     };
     showPref.on("change", showQuickActionsGroup);
     showQuickActionsGroup();
+  },
+
+  _initThirdPartyCertsToggle() {
+    
+    
+    
+    let canConfigureThirdPartyCerts =
+      (AppConstants.platform == "win" || AppConstants.platform == "macosx") &&
+      typeof Services.policies.getActivePolicies()?.Certificates
+        ?.ImportEnterpriseRoots == "undefined";
+
+    document.getElementById("certEnableThirdPartyToggleBox").hidden =
+      !canConfigureThirdPartyCerts;
   },
 
   syncFromHttpsOnlyPref() {
@@ -894,6 +909,7 @@ var gPrivacyPane = {
     this.fingerprintingProtectionReadPrefs();
     this.networkCookieBehaviorReadPrefs();
     this._initTrackingProtectionExtensionControl();
+    this._initThirdPartyCertsToggle();
 
     Services.telemetry.setEventRecordingEnabled("privacy.ui.fpp", true);
 

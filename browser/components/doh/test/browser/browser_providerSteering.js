@@ -81,27 +81,6 @@ add_task(async function testProviderSteering() {
   await testNetChangeResult(provider.uri, "enable_doh", provider.id);
 
   
-  Preferences.set("security.enterprise_roots.enabled", true);
-  await testNetChangeResult(AUTO_TRR_URI, "disable_doh");
-  checkScalars(
-    [
-      [
-        "networking.doh_heuristics_result",
-        { value: Heuristics.Telemetry.modifiedRoots },
-      ],
-      [
-        "networking.doh_heuristic_ever_tripped",
-        { value: true, key: "modifiedRoots" },
-      ],
-      
-    ].concat(falseExpectations(["modifiedRoots"]))
-  );
-  Preferences.reset("security.enterprise_roots.enabled");
-
-  
-  await testNetChangeResult(provider.uri, "enable_doh", provider.id);
-
-  
   let googleDomain = "google.com.";
   let googleIP = "1.1.1.1";
   let googleSafeSearchIP = "1.1.1.2";
@@ -117,12 +96,8 @@ add_task(async function testProviderSteering() {
         { value: Heuristics.Telemetry.google },
       ],
       ["networking.doh_heuristic_ever_tripped", { value: true, key: "google" }],
-      [
-        "networking.doh_heuristic_ever_tripped",
-        { value: true, key: "modifiedRoots" },
-      ],
       
-    ].concat(falseExpectations(["modifiedRoots", "google"]))
+    ].concat(falseExpectations(["google"]))
   );
 
   
@@ -139,11 +114,7 @@ add_task(async function testProviderSteering() {
         { value: Heuristics.Telemetry.pass },
       ],
       ["networking.doh_heuristic_ever_tripped", { value: true, key: "google" }],
-      [
-        "networking.doh_heuristic_ever_tripped",
-        { value: true, key: "modifiedRoots" },
-      ],
       
-    ].concat(falseExpectations(["modifiedRoots", "google"]))
+    ].concat(falseExpectations(["google"]))
   );
 });
