@@ -4,7 +4,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   registerCleanupFunction(async () => {
     Services.prefs.clearUserPref("browser.urlbar.suggest.searches");
     Services.prefs.clearUserPref("browser.urlbar.suggest.quickactions");

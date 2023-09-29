@@ -5,7 +5,7 @@
 
 
 
-add_task(async function setup() {
+add_setup(async function () {
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref("browser.urlbar.autoFill");
