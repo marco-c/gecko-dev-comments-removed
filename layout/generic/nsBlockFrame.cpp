@@ -1375,12 +1375,18 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     AddStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE);
   }
 
-  const ReflowInput* reflowInput = &aReflowInput;
+  Maybe<nscoord> restoreReflowInputAvailBSize;
+  auto MaybeRestore = MakeScopeExit([&] {
+    if (MOZ_UNLIKELY(restoreReflowInputAvailBSize)) {
+      const_cast<ReflowInput&>(aReflowInput)
+          .SetAvailableBSize(*restoreReflowInputAvailBSize);
+    }
+  });
+
   WritingMode wm = aReflowInput.GetWritingMode();
   const nscoord consumedBSize = CalcAndCacheConsumedBSize();
   const nscoord effectiveContentBoxBSize =
       GetEffectiveComputedBSize(aReflowInput, consumedBSize);
-  Maybe<ReflowInput> mutableReflowInput;
   
   
   const PhysicalAxes physicalBlockAxis =
@@ -1402,9 +1408,9 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
     if (effectiveContentBoxBSize + blockDirExtras.BStartEnd(wm) <=
         aReflowInput.AvailableBSize()) {
-      mutableReflowInput.emplace(aReflowInput);
-      mutableReflowInput->SetAvailableBSize(NS_UNCONSTRAINEDSIZE);
-      reflowInput = mutableReflowInput.ptr();
+      restoreReflowInputAvailBSize.emplace(aReflowInput.AvailableBSize());
+      const_cast<ReflowInput&>(aReflowInput)
+          .SetAvailableBSize(NS_UNCONSTRAINEDSIZE);
     }
   }
 
@@ -1413,7 +1419,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   nsSize oldSize = GetSize();
 
   
-  nsAutoFloatManager autoFloatManager(const_cast<ReflowInput&>(*reflowInput));
+  nsAutoFloatManager autoFloatManager(const_cast<ReflowInput&>(aReflowInput));
 
   
   
@@ -1430,7 +1436,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   ClearLineCursors();
 
-  if (IsFrameTreeTooDeep(*reflowInput, aMetrics, aStatus)) {
+  if (IsFrameTreeTooDeep(aReflowInput, aMetrics, aStatus)) {
     return;
   }
 
@@ -1451,7 +1457,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   bool blockStartMarginRoot, blockEndMarginRoot;
   IsMarginRoot(&blockStartMarginRoot, &blockEndMarginRoot);
 
-  BlockReflowState state(*reflowInput, aPresContext, this, blockStartMarginRoot,
+  BlockReflowState state(aReflowInput, aPresContext, this, blockStartMarginRoot,
                          blockEndMarginRoot, needFloatManager, consumedBSize,
                          effectiveContentBoxBSize);
 
@@ -1465,7 +1471,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   nsReflowStatus ocStatus;
   if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(
-        aPresContext, *reflowInput, ocBounds, ReflowChildFlags::Default,
+        aPresContext, aReflowInput, ocBounds, ReflowChildFlags::Default,
         ocStatus, DefaultChildFrameMerge, Some(state.ContainerSize()));
   }
 
@@ -1482,14 +1488,14 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   
   
   
-  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && reflowInput->IsIResize()) {
+  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && aReflowInput.IsIResize()) {
     PrepareResizeReflow(state);
   }
 
   
   
-  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && reflowInput->mCBReflowInput &&
-      reflowInput->mCBReflowInput->IsIResize() &&
+  if (!HasAnyStateBits(NS_FRAME_IS_DIRTY) && aReflowInput.mCBReflowInput &&
+      aReflowInput.mCBReflowInput->IsIResize() &&
       StyleText()->mTextIndent.HasPercent() && !mLines.empty()) {
     mLines.front()->MarkDirty();
   }
@@ -1528,7 +1534,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   
-  if (NS_UNCONSTRAINEDSIZE != reflowInput->AvailableBSize() &&
+  if (NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableBSize() &&
       state.mReflowStatus.IsComplete() &&
       state.FloatManager()->ClearContinues(FindTrailingClear())) {
     state.mReflowStatus.SetIncomplete();
@@ -1569,7 +1575,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
         nsLayoutUtils::GetFirstLinePosition(wm, this, &position);
     nscoord lineBStart =
         havePosition ? position.mBStart
-                     : reflowInput->ComputedLogicalBorderPadding(wm).BStart(wm);
+                     : aReflowInput.ComputedLogicalBorderPadding(wm).BStart(wm);
     nsIFrame* marker = GetOutsideMarker();
     ReflowOutsideMarker(marker, state, reflowOutput, lineBStart);
     NS_ASSERTION(!MarkerIsEmpty() || reflowOutput.BSize(wm) == 0,
@@ -1609,7 +1615,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   
   nscoord blockEndEdgeOfChildren;
-  ComputeFinalSize(*reflowInput, state, aMetrics, &blockEndEdgeOfChildren);
+  ComputeFinalSize(aReflowInput, state, aMetrics, &blockEndEdgeOfChildren);
 
   
   
@@ -1657,7 +1663,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
 
   aMetrics.SetOverflowAreasToDesiredBounds();
   ComputeOverflowAreas(aMetrics.mOverflowAreas, blockEndEdgeOfChildren,
-                       reflowInput->mStyleDisplay);
+                       aReflowInput.mStyleDisplay);
   
   aMetrics.mOverflowAreas.UnionWith(ocBounds);
   
@@ -1684,7 +1690,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   if (HasAbsolutelyPositionedChildren()) {
     nsAbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
     bool haveInterrupt = aPresContext->HasPendingInterrupt();
-    if (reflowInput->WillReflowAgainForClearance() || haveInterrupt) {
+    if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
       
       
       
@@ -1712,7 +1718,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       }
     } else {
       LogicalSize containingBlockSize =
-          CalculateContainingBlockSizeForAbsolutes(parentWM, *reflowInput,
+          CalculateContainingBlockSizeForAbsolutes(parentWM, aReflowInput,
                                                    aMetrics.Size(parentWM));
 
       
@@ -1731,7 +1737,7 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       
       bool cbHeightChanged =
-          !(isRoot && NS_UNCONSTRAINEDSIZE == reflowInput->ComputedHeight()) &&
+          !(isRoot && NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedHeight()) &&
           aMetrics.Height() != oldSize.height;
 
       nsRect containingBlock(nsPoint(0, 0),
@@ -1747,13 +1753,13 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       
       
       SetupLineCursorForQuery();
-      absoluteContainer->Reflow(this, aPresContext, *reflowInput,
+      absoluteContainer->Reflow(this, aPresContext, aReflowInput,
                                 state.mReflowStatus, containingBlock, flags,
                                 &aMetrics.mOverflowAreas);
     }
   }
 
-  FinishAndStoreOverflow(&aMetrics, reflowInput->mStyleDisplay);
+  FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
 
   aStatus = state.mReflowStatus;
 
