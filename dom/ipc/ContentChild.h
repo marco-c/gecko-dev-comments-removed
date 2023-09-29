@@ -13,6 +13,7 @@
 #include "mozilla/dom/PContentChild.h"
 #include "mozilla/dom/ProcessActor.h"
 #include "mozilla/dom/RemoteType.h"
+#include "mozilla/Hal.h"
 #include "mozilla/ipc/InputStreamUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/StaticPtr.h"
@@ -797,6 +798,18 @@ class ContentChild final : public PContentChild,
 
   hal::ProcessPriority GetProcessPriority() const { return mProcessPriority; }
 
+  hal::PerformanceHintSession* PerformanceHintSession() const {
+    return mPerformanceHintSession.get();
+  }
+
+  
+  
+  
+  
+  static TimeDuration GetPerformanceHintTarget(TimeDuration aRefreshInterval) {
+    return aRefreshInterval / int64_t(2);
+  }
+
  private:
   void AddProfileToProcessName(const nsACString& aProfile);
   mozilla::ipc::IPCResult RecvFlushFOGData(FlushFOGDataResolver&& aResolver);
@@ -812,6 +825,8 @@ class ContentChild final : public PContentChild,
   virtual PContentChild::Result OnMessageReceived(
       const Message& aMsg, UniquePtr<Message>& aReply) override;
 #endif
+
+  void ConfigureThreadPerformanceHints(const hal::ProcessPriority& aPriority);
 
   nsTArray<mozilla::UniquePtr<AlertObserver>> mAlertObservers;
   RefPtr<ConsoleListener> mConsoleListener;
@@ -883,6 +898,11 @@ class ContentChild final : public PContentChild,
   uint64_t mBrowsingContextFieldEpoch = 0;
 
   hal::ProcessPriority mProcessPriority = hal::PROCESS_PRIORITY_UNKNOWN;
+
+  
+  
+  
+  UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
 };
 
 inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {

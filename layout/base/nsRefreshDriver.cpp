@@ -65,6 +65,7 @@
 #include "GeckoProfiler.h"
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/dom/CallbackDebuggerNotification.h"
+#include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/Selection.h"
@@ -630,10 +631,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     
     mVsyncObserver->Shutdown();
     mVsyncObserver = nullptr;
-
-    if (mClosePerfSessionTimer) {
-      mClosePerfSessionTimer->Cancel();
-    }
   }
 
   bool ShouldGiveNonVsyncTasksMoreTime() {
@@ -784,10 +781,18 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     mProcessedVsync = true;
   }
 
-  TimeDuration GetPerformanceHintTarget() {
+  hal::PerformanceHintSession* GetPerformanceHintSession() {
     
     
-    return GetTimerRate() / int64_t(2);
+    
+    
+    
+    const ContentChild* contentChild = ContentChild::GetSingleton();
+    if (contentChild && mVsyncChild) {
+      return contentChild->PerformanceHintSession();
+    }
+
+    return nullptr;
   }
 
   void TickRefreshDriver(VsyncId aId, TimeStamp aVsyncTimestamp) {
@@ -800,9 +805,11 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
     const TimeDuration previousRate = mVsyncRate;
     const TimeDuration rate = GetTimerRate();
 
-    if (mPerformanceHintSession && rate != previousRate) {
-      mPerformanceHintSession->UpdateTargetWorkDuration(
-          GetPerformanceHintTarget());
+    hal::PerformanceHintSession* const performanceHintSession =
+        GetPerformanceHintSession();
+    if (performanceHintSession && rate != previousRate) {
+      performanceHintSession->UpdateTargetWorkDuration(
+          ContentChild::GetPerformanceHintTarget(rate));
     }
 
     if (TimeDuration::FromMilliseconds(nsRefreshDriver::DefaultInterval() / 2) >
@@ -828,8 +835,8 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
 
     TimeStamp tickEnd = TimeStamp::Now();
 
-    if (mPerformanceHintSession) {
-      mPerformanceHintSession->ReportActualWorkDuration(tickEnd - tickStart);
+    if (performanceHintSession) {
+      performanceHintSession->ReportActualWorkDuration(tickEnd - tickStart);
     }
 
     
@@ -891,35 +898,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       OnTimerStart();
     }
     mIsTicking = true;
-
-    static bool canUsePerformanceHintSession = true;
-    if (canUsePerformanceHintSession) {
-      if (mClosePerfSessionTimer) {
-        mClosePerfSessionTimer->Cancel();
-      }
-
-      
-      
-      
-      
-      
-      if (XRE_IsContentProcess() && !mPerformanceHintSession && mVsyncChild) {
-        nsTArray<PlatformThreadHandle> threads;
-        Servo_ThreadPool_GetThreadHandles(&threads);
-#ifdef XP_WIN
-        threads.AppendElement(GetCurrentThread());
-#else
-        threads.AppendElement(pthread_self());
-#endif
-
-        mPerformanceHintSession = hal::CreatePerformanceHintSession(
-            threads, GetPerformanceHintTarget());
-
-        
-        
-        canUsePerformanceHintSession = mPerformanceHintSession != nullptr;
-      }
-    }
   }
 
   void StopTimer() override {
@@ -931,25 +909,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
       mVsyncChild->RemoveChildRefreshTimer(mVsyncObserver);
     }
     mIsTicking = false;
-
-    if (mPerformanceHintSession) {
-      if (!mClosePerfSessionTimer) {
-        mClosePerfSessionTimer = NS_NewTimer();
-      }
-      
-      
-      
-      
-      
-      mClosePerfSessionTimer->InitWithNamedFuncCallback(
-          [](nsITimer* aTimer, void* aClosure) {
-            VsyncRefreshDriverTimer* self =
-                static_cast<VsyncRefreshDriverTimer*>(aClosure);
-            self->mPerformanceHintSession.reset();
-          },
-          this, 5000, nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
-          "VsyncRefreshDriverTimer::mClosePerfSessionTimer");
-    }
   }
 
  public:
@@ -1007,12 +966,6 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
   
   TimeStamp mSuspendVsyncPriorityTicksUntil;
   bool mProcessedVsync;
-
-  UniquePtr<hal::PerformanceHintSession> mPerformanceHintSession;
-  
-  
-  
-  RefPtr<nsITimer> mClosePerfSessionTimer;
 };  
 
 
