@@ -270,7 +270,7 @@ class TestEnvironment:
 
     def ensure_started(self):
         
-        total_sleep_secs = 30
+        total_sleep_secs = 60
         each_sleep_secs = 0.5
         end_time = time.time() + total_sleep_secs
         while time.time() < end_time:
