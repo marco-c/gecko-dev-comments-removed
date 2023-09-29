@@ -208,6 +208,11 @@ already_AddRefed<dom::Promise> Buffer::MapAsync(
           return;
         }
 
+        
+        
+        
+        MOZ_RELEASE_ASSERT(self->mValid);
+
         switch (aResult.type()) {
           case BufferMapResult::TBufferMapSuccess: {
             auto& success = aResult.get_BufferMapSuccess();
