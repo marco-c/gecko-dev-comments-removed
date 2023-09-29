@@ -98,8 +98,7 @@ class BlockReflowState {
                    nsBlockFrame* aFrame, bool aBStartMarginRoot,
                    bool aBEndMarginRoot, bool aBlockNeedsFloatManager,
                    const nscoord aConsumedBSize,
-                   const nscoord aEffectiveContentBoxBSize,
-                   const nscoord aInset = 0);
+                   const nscoord aEffectiveContentBoxBSize);
 
   
 
@@ -244,9 +243,9 @@ class BlockReflowState {
   
 
   
-  nsBlockFrame* const mBlock;
+  nsBlockFrame* mBlock;
 
-  nsPresContext* const mPresContext;
+  nsPresContext* mPresContext;
 
   const ReflowInput& mReflowInput;
 
@@ -303,10 +302,6 @@ class BlockReflowState {
   }
 
   
-  
-  nscoord mInsetForBalance;
-
-  
   nsSize mContainerSize;
   const nsSize& ContainerSize() const { return mContainerSize; }
 
@@ -350,7 +345,7 @@ class BlockReflowState {
 
   
   
-  const LogicalMargin mBorderPadding;
+  LogicalMargin mBorderPadding;
 
   
   OverflowAreas mFloatOverflowAreas;
@@ -388,7 +383,7 @@ class BlockReflowState {
   
   nsTArray<nsIFrame*> mNoWrapFloats;
 
-  const nscoord mMinLineHeight;
+  nscoord mMinLineHeight;
 
   int32_t mLineNumber;
 

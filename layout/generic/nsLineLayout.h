@@ -48,10 +48,7 @@ class nsLineLayout {
   void BeginLineReflow(nscoord aICoord, nscoord aBCoord, nscoord aISize,
                        nscoord aBSize, bool aImpactedByFloats,
                        bool aIsTopOfPage, mozilla::WritingMode aWritingMode,
-                       const nsSize& aContainerSize,
-                       
-                       
-                       nscoord aInset = 0);
+                       const nsSize& aContainerSize);
 
   void EndLineReflow();
 
@@ -497,7 +494,6 @@ class nsLineLayout {
     nscoord mIStart;
     nscoord mICoord;
     nscoord mIEnd;
-    nscoord mInset;
 
     nscoord mBStartLeading, mBEndLeading;
     nscoord mLogicalBSize;

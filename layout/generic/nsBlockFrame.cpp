@@ -1414,16 +1414,6 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     }
   }
 
-  if (IsFrameTreeTooDeep(aReflowInput, aMetrics, aStatus)) {
-    return;
-  }
-
-  
-  
-  
-  
-  ClearLineCursors();
-
   
   
   nsSize oldSize = GetSize();
@@ -1440,375 +1430,16 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
     autoFloatManager.CreateFloatManager(aPresContext);
   }
 
-  if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION) &&
-      PresContext()->BidiEnabled()) {
-    static_cast<nsBlockFrame*>(FirstContinuation())->ResolveBidi();
+  
+  
+  
+  
+  ClearLineCursors();
+
+  if (IsFrameTreeTooDeep(aReflowInput, aMetrics, aStatus)) {
+    return;
   }
 
-  
-  bool tryBalance = StyleText()->mTextWrap == StyleTextWrap::Balance &&
-                    !GetPrevContinuation();
-
-  
-  
-  struct BalanceTarget {
-    
-    
-    
-    
-    nsIContent* mContent = nullptr;
-    int32_t mOffset = -1;
-
-    bool operator==(const BalanceTarget& aOther) const {
-      return mContent == aOther.mContent && mOffset == aOther.mOffset;
-    }
-    bool operator!=(const BalanceTarget& aOther) const {
-      return !(*this == aOther);
-    }
-  };
-
-  BalanceTarget balanceTarget;
-
-  
-
-  
-  
-  auto countLinesUpTo = [&](int32_t aLimit) -> int32_t {
-    int32_t n = 0;
-    for (auto iter = mLines.begin(); iter != mLines.end(); ++iter) {
-      if (++n > aLimit) {
-        return -1;
-      }
-    }
-    return n;
-  };
-
-  
-  
-  
-  auto getClampPosition = [&](int32_t aClampCount) -> BalanceTarget {
-    MOZ_ASSERT(aClampCount < mLines.size());
-    auto iter = mLines.begin();
-    for (auto i = 0; i < aClampCount; i++) {
-      ++iter;
-    }
-    nsIContent* content = iter->mFirstChild->GetContent();
-    int32_t offset = 0;
-    if (content && iter->mFirstChild->IsTextFrame()) {
-      auto* textFrame = static_cast<nsTextFrame*>(iter->mFirstChild);
-      offset = textFrame->GetContentOffset();
-    }
-    return BalanceTarget{content, offset};
-  };
-
-  
-  
-  
-  
-  nscoord balanceStep = 0;
-
-  
-  nsReflowStatus reflowStatus;
-  TrialReflowState trialState(consumedBSize, effectiveContentBoxBSize,
-                              needFloatManager);
-  while (true) {
-    
-    
-    
-    nsFloatManager::SavedState floatManagerState;
-    aReflowInput.mFloatManager->PushState(&floatManagerState);
-
-    aMetrics = ReflowOutput(aMetrics.GetWritingMode());
-    reflowStatus =
-        TrialReflow(aPresContext, aMetrics, aReflowInput, trialState);
-
-    
-    if (tryBalance) {
-      tryBalance = false;
-      
-      if (!reflowStatus.IsFullyComplete()) {
-        break;
-      }
-      balanceTarget.mOffset =
-          countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      if (balanceTarget.mOffset < 2) {
-        
-        
-        break;
-      }
-      
-      balanceStep = aReflowInput.ComputedISize() / balanceTarget.mOffset;
-      trialState.ResetForBalance(balanceStep);
-      balanceStep /= 2;
-
-      
-      
-      
-      if (StaticPrefs::layout_css_text_wrap_balance_after_clamp_enabled() &&
-          IsLineClampRoot(this)) {
-        int32_t lineClampCount = aReflowInput.mStyleDisplay->mWebkitLineClamp;
-        if (balanceTarget.mOffset > lineClampCount) {
-          auto t = getClampPosition(lineClampCount);
-          if (t.mContent) {
-            balanceTarget = t;
-          }
-        }
-      }
-
-      
-      aReflowInput.mFloatManager->PopState(&floatManagerState);
-      continue;
-    }
-
-    
-    
-    auto trialSucceeded = [&]() -> bool {
-      if (!reflowStatus.IsFullyComplete()) {
-        return false;
-      }
-      if (balanceTarget.mContent) {
-        auto t = getClampPosition(aReflowInput.mStyleDisplay->mWebkitLineClamp);
-        return t == balanceTarget;
-      }
-      int32_t numLines =
-          countLinesUpTo(StaticPrefs::layout_css_text_wrap_balance_limit());
-      return numLines == balanceTarget.mOffset;
-    };
-
-    
-    
-    
-    if (balanceStep > 0) {
-      if (trialSucceeded()) {
-        trialState.ResetForBalance(balanceStep);
-      } else {
-        trialState.ResetForBalance(-balanceStep);
-      }
-      balanceStep /= 2;
-
-      aReflowInput.mFloatManager->PopState(&floatManagerState);
-      continue;
-    }
-
-    
-    
-    if (balanceTarget.mOffset >= 0) {
-      if (trialSucceeded()) {
-        break;
-      }
-      trialState.ResetForBalance(-1);
-
-      aReflowInput.mFloatManager->PopState(&floatManagerState);
-      continue;
-    }
-
-    
-    
-    
-    break;
-  }  
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aReflowInput.GetWritingMode().IsVerticalRL()) {
-    nsSize containerSize = aMetrics.PhysicalSize();
-    nscoord deltaX = containerSize.width - trialState.mContainerWidth;
-    if (deltaX != 0) {
-      
-      
-      
-      const nsPoint physicalDelta(deltaX, 0);
-      for (auto& line : Lines()) {
-        UpdateLineContainerSize(&line, containerSize);
-      }
-      trialState.mFcBounds.Clear();
-      for (nsIFrame* f : mFloats) {
-        f->MovePositionBy(physicalDelta);
-        ConsiderChildOverflow(trialState.mFcBounds, f);
-      }
-      nsFrameList* markerList = GetOutsideMarkerList();
-      if (markerList) {
-        for (nsIFrame* f : *markerList) {
-          f->MovePositionBy(physicalDelta);
-        }
-      }
-      if (nsFrameList* overflowContainers = GetOverflowContainers()) {
-        trialState.mOcBounds.Clear();
-        for (nsIFrame* f : *overflowContainers) {
-          f->MovePositionBy(physicalDelta);
-          ConsiderChildOverflow(trialState.mOcBounds, f);
-        }
-      }
-    }
-  }
-
-  aMetrics.SetOverflowAreasToDesiredBounds();
-  ComputeOverflowAreas(aMetrics.mOverflowAreas,
-                       trialState.mBlockEndEdgeOfChildren,
-                       aReflowInput.mStyleDisplay);
-  
-  aMetrics.mOverflowAreas.UnionWith(trialState.mOcBounds);
-  
-  aMetrics.mOverflowAreas.UnionWith(trialState.mFcBounds);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  WritingMode parentWM = aMetrics.GetWritingMode();
-  if (HasAbsolutelyPositionedChildren()) {
-    nsAbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
-    bool haveInterrupt = aPresContext->HasPendingInterrupt();
-    if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
-      
-      
-      
-      
-      
-      
-      if (haveInterrupt && HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
-        absoluteContainer->MarkAllFramesDirty();
-      } else {
-        absoluteContainer->MarkSizeDependentFramesDirty();
-      }
-      if (haveInterrupt) {
-        
-        
-        
-        
-        
-        
-        
-        
-        for (nsIFrame* kid = absoluteContainer->GetChildList().FirstChild();
-             kid; kid = kid->GetNextSibling()) {
-          ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
-        }
-      }
-    } else {
-      LogicalSize containingBlockSize =
-          CalculateContainingBlockSizeForAbsolutes(parentWM, aReflowInput,
-                                                   aMetrics.Size(parentWM));
-
-      
-      
-      
-      
-      
-      
-
-      
-      
-      bool cbWidthChanged = aMetrics.Width() != oldSize.width;
-      bool isRoot = !GetContent()->GetParent();
-      
-      
-      
-      
-      bool cbHeightChanged =
-          !(isRoot && NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedHeight()) &&
-          aMetrics.Height() != oldSize.height;
-
-      nsRect containingBlock(nsPoint(0, 0),
-                             containingBlockSize.GetPhysicalSize(parentWM));
-      AbsPosReflowFlags flags = AbsPosReflowFlags::ConstrainHeight;
-      if (cbWidthChanged) {
-        flags |= AbsPosReflowFlags::CBWidthChanged;
-      }
-      if (cbHeightChanged) {
-        flags |= AbsPosReflowFlags::CBHeightChanged;
-      }
-      
-      
-      
-      SetupLineCursorForQuery();
-      absoluteContainer->Reflow(this, aPresContext, aReflowInput, reflowStatus,
-                                containingBlock, flags,
-                                &aMetrics.mOverflowAreas);
-    }
-  }
-
-  FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
-
-  aStatus = reflowStatus;
-
-#ifdef DEBUG
-  
-  
-  
-  
-  
-  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
-
-  if (gNoisyReflow) {
-    IndentBy(stdout, gNoiseIndent);
-    ListTag(stdout);
-    printf(": status=%s metrics=%d,%d carriedMargin=%d",
-           ToString(aStatus).c_str(), aMetrics.ISize(parentWM),
-           aMetrics.BSize(parentWM), aMetrics.mCarriedOutBEndMargin.get());
-    if (HasOverflowAreas()) {
-      printf(" overflow-vis={%d,%d,%d,%d}", aMetrics.InkOverflow().x,
-             aMetrics.InkOverflow().y, aMetrics.InkOverflow().width,
-             aMetrics.InkOverflow().height);
-      printf(" overflow-scr={%d,%d,%d,%d}", aMetrics.ScrollableOverflow().x,
-             aMetrics.ScrollableOverflow().y,
-             aMetrics.ScrollableOverflow().width,
-             aMetrics.ScrollableOverflow().height);
-    }
-    printf("\n");
-  }
-
-  if (gLameReflowMetrics) {
-    PRTime end = PR_Now();
-
-    int32_t ectc = nsLineBox::GetCtorCount();
-    int32_t numLines = mLines.size();
-    if (!numLines) {
-      numLines = 1;
-    }
-    PRTime delta, perLineDelta, lines;
-    lines = int64_t(numLines);
-    delta = end - start;
-    perLineDelta = delta / lines;
-
-    ListTag(stdout);
-    char buf[400];
-    SprintfLiteral(buf,
-                   ": %" PRId64 " elapsed (%" PRId64
-                   " per line) (%d lines; %d new lines)",
-                   delta, perLineDelta, numLines, ectc - ctc);
-    printf("%s\n", buf);
-  }
-#endif
-}
-
-nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
-                                         ReflowOutput& aMetrics,
-                                         const ReflowInput& aReflowInput,
-                                         TrialReflowState& aTrialState) {
 #ifdef DEBUG
   
   
@@ -1827,18 +1458,21 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   IsMarginRoot(&blockStartMarginRoot, &blockEndMarginRoot);
 
   BlockReflowState state(aReflowInput, aPresContext, this, blockStartMarginRoot,
-                         blockEndMarginRoot, aTrialState.mNeedFloatManager,
-                         aTrialState.mConsumedBSize,
-                         aTrialState.mEffectiveContentBoxBSize,
-                         aTrialState.mInset);
+                         blockEndMarginRoot, needFloatManager, consumedBSize,
+                         effectiveContentBoxBSize);
+
+  if (HasAnyStateBits(NS_BLOCK_NEEDS_BIDI_RESOLUTION) &&
+      PresContext()->BidiEnabled()) {
+    static_cast<nsBlockFrame*>(FirstContinuation())->ResolveBidi();
+  }
 
   
+  OverflowAreas ocBounds;
   nsReflowStatus ocStatus;
   if (GetPrevInFlow()) {
     ReflowOverflowContainerChildren(
-        aPresContext, aReflowInput, aTrialState.mOcBounds,
-        ReflowChildFlags::Default, ocStatus, DefaultChildFrameMerge,
-        Some(state.ContainerSize()));
+        aPresContext, aReflowInput, ocBounds, ReflowChildFlags::Default,
+        ocStatus, DefaultChildFrameMerge, Some(state.ContainerSize()));
   }
 
   
@@ -1848,7 +1482,8 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
 
   
   DrainPushedFloats();
-  ReflowPushedFloats(state, aTrialState.mFcBounds);
+  OverflowAreas fcBounds;
+  ReflowPushedFloats(state, fcBounds);
 
   
   
@@ -1865,13 +1500,7 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
     mLines.front()->MarkDirty();
   }
 
-  
-  
-  if (aTrialState.mBalancing) {
-    MarkAllDescendantLinesDirty(this);
-  } else {
-    LazyMarkLinesDirty();
-  }
+  LazyMarkLinesDirty();
 
   
   ReflowDirtyLines(state);
@@ -1985,11 +1614,203 @@ nsReflowStatus nsBlockFrame::TrialReflow(nsPresContext* aPresContext,
   CheckFloats(state);
 
   
-  aTrialState.mBlockEndEdgeOfChildren =
-      ComputeFinalSize(aReflowInput, state, aMetrics);
-  aTrialState.mContainerWidth = state.ContainerSize().width;
+  nscoord blockEndEdgeOfChildren;
+  ComputeFinalSize(aReflowInput, state, aMetrics, &blockEndEdgeOfChildren);
 
-  return state.mReflowStatus;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (wm.IsVerticalRL()) {
+    nsSize containerSize = aMetrics.PhysicalSize();
+    nscoord deltaX = containerSize.width - state.ContainerSize().width;
+    if (deltaX != 0) {
+      
+      
+      
+      const nsPoint physicalDelta(deltaX, 0);
+      for (auto& line : Lines()) {
+        UpdateLineContainerSize(&line, containerSize);
+      }
+      fcBounds.Clear();
+      for (nsIFrame* f : mFloats) {
+        f->MovePositionBy(physicalDelta);
+        ConsiderChildOverflow(fcBounds, f);
+      }
+      nsFrameList* markerList = GetOutsideMarkerList();
+      if (markerList) {
+        for (nsIFrame* f : *markerList) {
+          f->MovePositionBy(physicalDelta);
+        }
+      }
+      if (nsFrameList* overflowContainers = GetOverflowContainers()) {
+        ocBounds.Clear();
+        for (nsIFrame* f : *overflowContainers) {
+          f->MovePositionBy(physicalDelta);
+          ConsiderChildOverflow(ocBounds, f);
+        }
+      }
+    }
+  }
+
+  aMetrics.SetOverflowAreasToDesiredBounds();
+  ComputeOverflowAreas(aMetrics.mOverflowAreas, blockEndEdgeOfChildren,
+                       aReflowInput.mStyleDisplay);
+  
+  aMetrics.mOverflowAreas.UnionWith(ocBounds);
+  
+  aMetrics.mOverflowAreas.UnionWith(fcBounds);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  WritingMode parentWM = aMetrics.GetWritingMode();
+  if (HasAbsolutelyPositionedChildren()) {
+    nsAbsoluteContainingBlock* absoluteContainer = GetAbsoluteContainingBlock();
+    bool haveInterrupt = aPresContext->HasPendingInterrupt();
+    if (aReflowInput.WillReflowAgainForClearance() || haveInterrupt) {
+      
+      
+      
+      
+      
+      
+      if (haveInterrupt && HasAnyStateBits(NS_FRAME_IS_DIRTY)) {
+        absoluteContainer->MarkAllFramesDirty();
+      } else {
+        absoluteContainer->MarkSizeDependentFramesDirty();
+      }
+      if (haveInterrupt) {
+        
+        
+        
+        
+        
+        
+        
+        
+        for (nsIFrame* kid = absoluteContainer->GetChildList().FirstChild();
+             kid; kid = kid->GetNextSibling()) {
+          ConsiderChildOverflow(aMetrics.mOverflowAreas, kid);
+        }
+      }
+    } else {
+      LogicalSize containingBlockSize =
+          CalculateContainingBlockSizeForAbsolutes(parentWM, aReflowInput,
+                                                   aMetrics.Size(parentWM));
+
+      
+      
+      
+      
+      
+      
+
+      
+      
+      bool cbWidthChanged = aMetrics.Width() != oldSize.width;
+      bool isRoot = !GetContent()->GetParent();
+      
+      
+      
+      
+      bool cbHeightChanged =
+          !(isRoot && NS_UNCONSTRAINEDSIZE == aReflowInput.ComputedHeight()) &&
+          aMetrics.Height() != oldSize.height;
+
+      nsRect containingBlock(nsPoint(0, 0),
+                             containingBlockSize.GetPhysicalSize(parentWM));
+      AbsPosReflowFlags flags = AbsPosReflowFlags::ConstrainHeight;
+      if (cbWidthChanged) {
+        flags |= AbsPosReflowFlags::CBWidthChanged;
+      }
+      if (cbHeightChanged) {
+        flags |= AbsPosReflowFlags::CBHeightChanged;
+      }
+      
+      
+      
+      SetupLineCursorForQuery();
+      absoluteContainer->Reflow(this, aPresContext, aReflowInput,
+                                state.mReflowStatus, containingBlock, flags,
+                                &aMetrics.mOverflowAreas);
+    }
+  }
+
+  FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
+
+  aStatus = state.mReflowStatus;
+
+#ifdef DEBUG
+  
+  
+  
+  
+  
+  nsLayoutUtils::AssertNoDuplicateContinuations(this, mFloats);
+
+  if (gNoisyReflow) {
+    IndentBy(stdout, gNoiseIndent);
+    ListTag(stdout);
+    printf(": status=%s metrics=%d,%d carriedMargin=%d",
+           ToString(aStatus).c_str(), aMetrics.ISize(parentWM),
+           aMetrics.BSize(parentWM), aMetrics.mCarriedOutBEndMargin.get());
+    if (HasOverflowAreas()) {
+      printf(" overflow-vis={%d,%d,%d,%d}", aMetrics.InkOverflow().x,
+             aMetrics.InkOverflow().y, aMetrics.InkOverflow().width,
+             aMetrics.InkOverflow().height);
+      printf(" overflow-scr={%d,%d,%d,%d}", aMetrics.ScrollableOverflow().x,
+             aMetrics.ScrollableOverflow().y,
+             aMetrics.ScrollableOverflow().width,
+             aMetrics.ScrollableOverflow().height);
+    }
+    printf("\n");
+  }
+
+  if (gLameReflowMetrics) {
+    PRTime end = PR_Now();
+
+    int32_t ectc = nsLineBox::GetCtorCount();
+    int32_t numLines = mLines.size();
+    if (!numLines) {
+      numLines = 1;
+    }
+    PRTime delta, perLineDelta, lines;
+    lines = int64_t(numLines);
+    delta = end - start;
+    perLineDelta = delta / lines;
+
+    ListTag(stdout);
+    char buf[400];
+    SprintfLiteral(buf,
+                   ": %" PRId64 " elapsed (%" PRId64
+                   " per line) (%d lines; %d new lines)",
+                   delta, perLineDelta, numLines, ectc - ctc);
+    printf("%s\n", buf);
+  }
+#endif
 }
 
 bool nsBlockFrame::CheckForCollapsedBEndMarginFromClearanceLine() {
@@ -2087,9 +1908,10 @@ static nscoord ApplyLineClamp(const ReflowInput& aReflowInput,
   return edge;
 }
 
-nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
-                                       BlockReflowState& aState,
-                                       ReflowOutput& aMetrics) {
+void nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
+                                    BlockReflowState& aState,
+                                    ReflowOutput& aMetrics,
+                                    nscoord* aBEndEdgeOfChildren) {
   WritingMode wm = aState.mReflowInput.GetWritingMode();
   const LogicalMargin& borderPadding = aState.BorderPadding();
 #ifdef NOISY_FINAL_SIZE
@@ -2327,6 +2149,7 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
 
   
   finalSize.BSize(wm) = std::max(0, finalSize.BSize(wm));
+  *aBEndEdgeOfChildren = blockEndEdgeOfChildren;
 
   if (blockEndEdgeOfChildren != finalSize.BSize(wm) - borderPadding.BEnd(wm)) {
     SetProperty(BlockEndEdgeOfChildrenProperty(), blockEndEdgeOfChildren);
@@ -2343,8 +2166,6 @@ nscoord nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
     printf(": WARNING: desired:%d,%d\n", aMetrics.Width(), aMetrics.Height());
   }
 #endif
-
-  return blockEndEdgeOfChildren;
 }
 
 void nsBlockFrame::ConsiderBlockEndEdgeOfChildren(
@@ -4731,10 +4552,10 @@ void nsBlockFrame::DoReflowInlineFrames(
   
   aLine->EnableResizeReflowOptimization();
 
-  aLineLayout.BeginLineReflow(
-      iStart, aState.mBCoord, availISize, availBSize,
-      aFloatAvailableSpace.HasFloats(), false, 
-      lineWM, aState.mContainerSize, aState.mInsetForBalance);
+  aLineLayout.BeginLineReflow(iStart, aState.mBCoord, availISize, availBSize,
+                              aFloatAvailableSpace.HasFloats(),
+                              false, 
+                              lineWM, aState.mContainerSize);
 
   aState.mFlags.mIsLineLayoutEmpty = false;
 
