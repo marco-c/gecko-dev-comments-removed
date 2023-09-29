@@ -119,6 +119,8 @@ function memoryAddressToString(address, code) {
         case 65090 :
         case 65097 :
         case 1036381 :
+        case 1036375 :
+        case 1036379 :
             defaultAlignFlags = 3;
             break;
         case 40 :
@@ -149,6 +151,8 @@ function memoryAddressToString(address, code) {
         case 65096 :
         case 65102 :
         case 1036380 :
+        case 1036374 :
+        case 1036378 :
             defaultAlignFlags = 2;
             break;
         case 46 :
@@ -175,6 +179,8 @@ function memoryAddressToString(address, code) {
         case 65094 :
         case 65099 :
         case 65101 :
+        case 1036373 :
+        case 1036377 :
             defaultAlignFlags = 1;
             break;
         case 44 :
@@ -201,6 +207,8 @@ function memoryAddressToString(address, code) {
         case 65093 :
         case 65098 :
         case 65100 :
+        case 1036372 :
+        case 1036376 :
             defaultAlignFlags = 0;
             break;
     }
@@ -466,17 +474,17 @@ var WasmDisassembler =  (function () {
                 return "any";
             case -19 :
                 return "eq";
-            case -22 :
+            case -20 :
                 return "i31";
-            case -25 :
+            case -21 :
                 return "struct";
-            case -26 :
+            case -22 :
                 return "array";
-            case -24 :
+            case -13 :
                 return "nofunc";
-            case -23 :
+            case -14 :
                 return "noextern";
-            case -27 :
+            case -15 :
                 return "none";
         }
     };
@@ -492,9 +500,9 @@ var WasmDisassembler =  (function () {
                 return "f64";
             case -5 :
                 return "v128";
-            case -6 :
+            case -8 :
                 return "i8";
-            case -7 :
+            case -9 :
                 return "i16";
             case -16 :
                 return "funcref";
@@ -504,21 +512,21 @@ var WasmDisassembler =  (function () {
                 return "anyref";
             case -19 :
                 return "eqref";
-            case -22 :
-                return "i31ref";
-            case -25 :
-                return "structref";
-            case -26 :
-                return "arrayref";
-            case -24 :
-                return "nullfuncref";
-            case -23 :
-                return "nullexternref";
-            case -27 :
-                return "nullref";
-            case -21 :
-                return "(ref ".concat(this.typeIndexToString(type.ref_index), ")");
             case -20 :
+                return "i31ref";
+            case -21 :
+                return "structref";
+            case -22 :
+                return "arrayref";
+            case -13 :
+                return "nullfuncref";
+            case -14 :
+                return "nullexternref";
+            case -15 :
+                return "nullref";
+            case -28 :
+                return "(ref ".concat(this.typeIndexToString(type.ref_index), ")");
+            case -29 :
                 return "(ref null ".concat(this.typeIndexToString(type.ref_index), ")");
             default:
                 throw new Error("Unexpected type ".concat(JSON.stringify(type)));
@@ -670,22 +678,13 @@ var WasmDisassembler =  (function () {
                 break;
             case 12 :
             case 13 :
-            case 212 :
+            case 213 :
             case 214 :
                 this.appendBuffer(" ");
                 this.appendBuffer(this.useLabel(operator.brDepth));
                 break;
-            case 64322 :
-            case 64323 :
-            case 64326 :
-            case 64327 :
-                this.appendBuffer(" ");
-                this.appendBuffer(this.typeIndexToString(operator.refType));
-                this.appendBuffer(" ");
-                this.appendBuffer(this.useLabel(operator.brDepth));
-                break;
-            case 64334 :
-            case 64335 :
+            case 64280 :
+            case 64281 :
                 this.appendBuffer(" flags=" + operator.literal);
                 this.appendBuffer(" ");
                 this.appendBuffer(this.typeIndexToString(operator.srcType));
@@ -889,6 +888,21 @@ var WasmDisassembler =  (function () {
             case 1036322 :
                 this.appendBuffer(" ".concat(operator.lineIndex));
                 break;
+            case 1036372 :
+            case 1036373 :
+            case 1036374 :
+            case 1036375 :
+            case 1036376 :
+            case 1036377 :
+            case 1036378 :
+            case 1036379 :
+                var memoryAddress = memoryAddressToString(operator.memoryAddress, operator.code);
+                if (memoryAddress !== null) {
+                    this.appendBuffer(" ");
+                    this.appendBuffer(memoryAddress);
+                }
+                this.appendBuffer(" ".concat(operator.lineIndex));
+                break;
             case 64520 :
             case 64521 :
                 this.appendBuffer(" ".concat(operator.segmentIndex));
@@ -923,46 +937,43 @@ var WasmDisassembler =  (function () {
                 this.appendBuffer(" ".concat(elementName_1));
                 break;
             }
+            case 64258 :
             case 64259 :
             case 64260 :
-            case 64261 :
-            case 64262 : {
+            case 64261 : {
                 var refType = this.typeIndexToString(operator.refType);
                 var fieldName = this._nameResolver.getFieldName(operator.refType, operator.fieldIndex, true);
                 this.appendBuffer(" ".concat(refType, " ").concat(fieldName));
                 break;
             }
-            case 64304 :
-            case 64305 :
-            case 64306 :
-            case 64321 :
-            case 64329 :
-            case 64320 :
-            case 64328 :
-            case 64264 :
-            case 64258 :
-            case 64263 :
-            case 64257 :
-            case 64284 :
-            case 64274 :
-            case 64283 :
-            case 64273 :
-            case 64275 :
+            case 64278 :
+            case 64279 :
             case 64276 :
             case 64277 :
-            case 64278 :
-            case 64279 : {
+            case 64257 :
+            case 64256 :
+            case 64263 :
+            case 64262 :
+            case 64267 :
+            case 64268 :
+            case 64269 :
+            case 64270 : {
                 var refType = this.typeIndexToString(operator.refType);
                 this.appendBuffer(" ".concat(refType));
                 break;
             }
-            case 64280 : {
+            case 64272 : {
+                var dstType = this.typeIndexToString(operator.refType);
+                this.appendBuffer(" ".concat(dstType));
+                break;
+            }
+            case 64273 : {
                 var dstType = this.typeIndexToString(operator.refType);
                 var srcType = this.typeIndexToString(operator.srcType);
                 this.appendBuffer(" ".concat(dstType, " ").concat(srcType));
                 break;
             }
-            case 64282 : {
+            case 64264 : {
                 var refType = this.typeIndexToString(operator.refType);
                 var length_1 = operator.len;
                 this.appendBuffer(" ".concat(refType, " ").concat(length_1));
