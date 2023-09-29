@@ -542,6 +542,21 @@ public class WebExtensionController {
     EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:EnableProcessSpawning", null);
   }
 
+  
+
+
+
+
+
+
+
+
+
+  @AnyThread
+  public void disableExtensionProcessSpawning() {
+    EventDispatcher.getInstance().dispatch("GeckoView:WebExtension:DisableProcessSpawning", null);
+  }
+
   private static class InstallCanceller implements GeckoResult.CancellationDelegate {
     public final String installId;
 
