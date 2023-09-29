@@ -3263,11 +3263,10 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
         
         if (nsIDocShell* shell = OwnerDoc()->GetDocShell()) {
           if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
-            if (nsCOMPtr<nsISpeculativeConnect> sc =
-                    mozilla::components::IO::Service()) {
-              nsCOMPtr<nsIInterfaceRequestor> ir = do_QueryInterface(shell);
-              sc->SpeculativeConnect(absURI, NodePrincipal(), ir, false);
-            }
+            nsCOMPtr<nsISpeculativeConnect> sc =
+                do_QueryInterface(nsContentUtils::GetIOService());
+            nsCOMPtr<nsIInterfaceRequestor> ir = do_QueryInterface(shell);
+            sc->SpeculativeConnect(absURI, NodePrincipal(), ir, false);
           }
         }
       }
