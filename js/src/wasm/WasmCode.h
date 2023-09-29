@@ -485,6 +485,7 @@ struct MetadataTier {
   FuncExportVector funcExports;
   StackMaps stackMaps;
   TryNoteVector tryNotes;
+  CodeRangeUnwindInfoVector codeRangeUnwindInfos;
 
   
   uint32_t debugTrapOffset;
@@ -847,6 +848,7 @@ class Code : public ShareableBase<Code> {
   const TryNote* lookupTryNote(void* pc, Tier* tier) const;
   bool containsCodePC(const void* pc) const;
   bool lookupTrap(void* pc, Trap* trap, BytecodeOffset* bytecode) const;
+  const CodeRangeUnwindInfo* lookupUnwindInfo(void* pc) const;
 
   
   

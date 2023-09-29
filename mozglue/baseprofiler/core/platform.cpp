@@ -1197,10 +1197,48 @@ static const char* const kMainThreadName = "GeckoMain";
 
 
 
+#if defined(GP_PLAT_x86_linux) || defined(GP_PLAT_x86_android) || \
+    defined(GP_ARCH_x86)
+#  define UNWINDING_REGS_HAVE_ECX_EDX
+#elif defined(GP_PLAT_amd64_linux) || defined(GP_PLAT_amd64_android) || \
+    defined(GP_PLAT_amd64_freebsd) || defined(GP_ARCH_amd64) ||         \
+    defined(__x86_64__)
+#  define UNWINDING_REGS_HAVE_R10_R12
+#elif defined(GP_PLAT_arm_linux) || defined(GP_PLAT_arm_android)
+#  define UNWINDING_REGS_HAVE_LR_R7
+#elif defined(GP_PLAT_arm64_linux) || defined(GP_PLAT_arm64_android) || \
+    defined(GP_PLAT_arm64_freebsd) || defined(GP_ARCH_arm64) ||         \
+    defined(__aarch64__)
+#  define UNWINDING_REGS_HAVE_LR_R11
+#endif
+
+
 
 class Registers {
  public:
-  Registers() : mPC{nullptr}, mSP{nullptr}, mFP{nullptr}, mLR{nullptr} {}
+  Registers()
+      : mPC{nullptr},
+        mSP{nullptr},
+        mFP{nullptr}
+#if defined(UNWINDING_REGS_HAVE_ECX_EDX)
+        ,
+        mEcx{nullptr},
+        mEdx{nullptr}
+#elif defined(UNWINDING_REGS_HAVE_R10_R12)
+        ,
+        mR10{nullptr},
+        mR12{nullptr}
+#elif defined(UNWINDING_REGS_HAVE_LR_R7)
+        ,
+        mLR{nullptr},
+        mR7{nullptr}
+#elif defined(UNWINDING_REGS_HAVE_LR_R11)
+        ,
+        mLR{nullptr},
+        mR11{nullptr}
+#endif
+  {
+  }
 
   void Clear() { memset(this, 0, sizeof(*this)); }
 
@@ -1210,7 +1248,20 @@ class Registers {
   Address mPC;  
   Address mSP;  
   Address mFP;  
+#if defined(UNWINDING_REGS_HAVE_ECX_EDX)
+  Address mEcx;  
+  Address mEdx;  
+#elif defined(UNWINDING_REGS_HAVE_R10_R12)
+  Address mR10;  
+  Address mR12;  
+#elif defined(UNWINDING_REGS_HAVE_LR_R7)
   Address mLR;  
+  Address mR7;  
+#elif defined(UNWINDING_REGS_HAVE_LR_R11)
+  Address mLR;   
+  Address mR11;  
+#endif
+
 #if defined(GP_OS_linux) || defined(GP_OS_android) || defined(GP_OS_freebsd)
   
   
@@ -1695,6 +1746,11 @@ static void DoPeriodicSample(PSLockRef aLock,
   DoSharedSample(aLock,  false, aRegisteredThread, aRegs,
                  aSamplePos, aBufferRangeStart, aBuffer);
 }
+
+#undef UNWINDING_REGS_HAVE_ECX_EDX
+#undef UNWINDING_REGS_HAVE_R10_R12
+#undef UNWINDING_REGS_HAVE_LR_R7
+#undef UNWINDING_REGS_HAVE_LR_R11
 
 
 
