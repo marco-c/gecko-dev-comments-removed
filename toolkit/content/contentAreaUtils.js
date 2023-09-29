@@ -326,7 +326,8 @@ function internalSave(
     };
 
     
-    let relatedURI = aReferrerInfo?.originalReferrer || sourceURI;
+    let relatedURI =
+      aOriginalURL || aReferrerInfo?.originalReferrer || sourceURI;
 
     promiseTargetFile(fpParams, aSkipPrompt, relatedURI)
       .then(aDialogAccepted => {
