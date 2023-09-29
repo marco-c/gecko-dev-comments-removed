@@ -521,7 +521,17 @@ impl VirtualFidoDevice for TestToken {
         }
 
         
-        
+        let mut extensions = Extension::default();
+        if req.extensions.min_pin_length == Some(true) {
+            
+            
+            
+            extensions.min_pin_length = Some(4);
+        }
+
+        if extensions.has_some() {
+            flags |= AuthenticatorDataFlags::EXTENSION_DATA;
+        }
 
         
         let (private, public) =
@@ -556,7 +566,7 @@ impl VirtualFidoDevice for TestToken {
                 credential_id: id.to_vec(),
                 credential_public_key: public,
             }),
-            extensions: Extension::default(),
+            extensions,
         };
 
         let mut data = auth_data.to_vec();

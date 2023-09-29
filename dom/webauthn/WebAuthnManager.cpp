@@ -393,6 +393,13 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
     }
   }
 
+  if (aOptions.mExtensions.mMinPinLength.WasPassed()) {
+    bool minPinLength = aOptions.mExtensions.mMinPinLength.Value();
+    if (minPinLength) {
+      extensions.AppendElement(WebAuthnExtensionMinPinLength(minPinLength));
+    }
+  }
+
   const auto& selection = aOptions.mAuthenticatorSelection;
   const auto& attachment = selection.mAuthenticatorAttachment;
   const nsString& attestation = aOptions.mAttestation;
@@ -619,6 +626,12 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
 
   
   if (aOptions.mExtensions.mCredProps.WasPassed()) {
+    promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+    return promise.forget();
+  }
+
+  
+  if (aOptions.mExtensions.mMinPinLength.WasPassed()) {
     promise->MaybeReject(NS_ERROR_DOM_NOT_SUPPORTED_ERR);
     return promise.forget();
   }

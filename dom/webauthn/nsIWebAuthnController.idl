@@ -45,6 +45,7 @@ interface nsICtapRegisterArgs : nsISupports {
     
     [must_use] readonly attribute bool credProps;
     [must_use] readonly attribute bool hmacCreateSecret;
+    [must_use] readonly attribute bool minPinLength;
 
     
     [must_use] readonly attribute AString residentKey;
