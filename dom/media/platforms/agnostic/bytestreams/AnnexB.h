@@ -39,12 +39,19 @@ class AnnexB {
       mozilla::MediaRawData* aSample,
       const RefPtr<mozilla::MediaByteBuffer>& aAVCCHeader = nullptr);
 
+  
   static mozilla::Result<mozilla::Ok, nsresult> ConvertAVCCTo4BytesAVCC(
+      mozilla::MediaRawData* aSample);
+  static mozilla::Result<mozilla::Ok, nsresult> ConvertHVCCTo4BytesHVCC(
       mozilla::MediaRawData* aSample);
 
   
-  static already_AddRefed<mozilla::MediaByteBuffer> ConvertExtraDataToAnnexB(
-      const mozilla::MediaByteBuffer* aExtraData);
+  static already_AddRefed<mozilla::MediaByteBuffer>
+  ConvertAVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
+  
+  static already_AddRefed<mozilla::MediaByteBuffer>
+  ConvertHVCCExtraDataToAnnexB(const mozilla::MediaByteBuffer* aExtraData);
+
   
   static bool IsAVCC(const mozilla::MediaRawData* aSample);
   
