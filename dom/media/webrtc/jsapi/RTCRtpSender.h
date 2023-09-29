@@ -190,7 +190,6 @@ class RTCRtpSender : public nsISupports,
   bool mHaveWarnedBecauseNoGetParameters = false;
   bool mHaveWarnedBecauseEncodingCountChange = false;
   bool mHaveWarnedBecauseNoTransactionId = false;
-  bool mHaveWarnedBecauseStaleTransactionId = false;
   
   bool mHaveFailedBecauseNoGetParameters = false;
   bool mHaveFailedBecauseEncodingCountChange = false;
