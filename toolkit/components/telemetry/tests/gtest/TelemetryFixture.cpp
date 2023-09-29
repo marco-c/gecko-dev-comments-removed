@@ -22,10 +22,7 @@ AutoJSContextWithGlobal::AutoJSContextWithGlobal(JSObject* aGlobalObject)
     : mCx(nullptr) {
   
   JS::Rooted<JSObject*> globalObject(dom::RootingCx(), aGlobalObject);
-  mJsAPI.emplace();
-  MOZ_ALWAYS_TRUE(mJsAPI->Init(globalObject));
+  MOZ_ALWAYS_TRUE(mJsAPI.Init(globalObject));
 }
 
-JSContext* AutoJSContextWithGlobal::GetJSContext() const {
-  return mJsAPI->cx();
-}
+JSContext* AutoJSContextWithGlobal::GetJSContext() const { return mJsAPI.cx(); }
