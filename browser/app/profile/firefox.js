@@ -2879,9 +2879,3 @@ pref("cookiebanners.ui.desktop.cfrVariant", 0);
 #ifdef NIGHTLY_BUILD
   pref("dom.security.credentialmanagement.identity.enabled", true);
 #endif
-
-
-pref("browser.privatebrowsing.resetPBM.enabled", false);
-
-
-pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
