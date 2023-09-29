@@ -696,7 +696,7 @@ static inline bool IsMethodDefinitionKind(FunctionSyntaxKind kind) {
 #endif
 
 class ParseNode {
-  const ParseNodeKind pn_type; 
+  const ParseNodeKind pn_type;
 
   bool pn_parens : 1;       
   bool pn_rhs_anon_fun : 1; 
