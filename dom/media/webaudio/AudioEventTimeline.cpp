@@ -249,11 +249,7 @@ float AudioEventTimeline::GetValueAtTimeOfEvent(
       
       return ComputeSetTargetStartValue(aPrevious, time);
     case AudioTimelineEvent::SetValueCurve:
-      
-      
-      return ExtractValueFromCurve(time, aEvent->mCurve, aEvent->mCurveLength,
-                                   aEvent->mDuration, time);
-      break;
+      return aEvent->mCurve[0];
     default:
       
       return aEvent->mValue;
@@ -321,13 +317,10 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
     case AudioTimelineEvent::SetValueAtTime:
     case AudioTimelineEvent::LinearRamp:
     case AudioTimelineEvent::ExponentialRamp:
-      
-      
-      return aPrevious->mValue;
+      break;
     case AudioTimelineEvent::SetValueCurve:
-      return ExtractValueFromCurve(aPrevious->Time<TimeType>(),
-                                   aPrevious->mCurve, aPrevious->mCurveLength,
-                                   aPrevious->mDuration, aTime);
+      MOZ_ASSERT(aTime >= TimeOf(aPrevious) + aPrevious->mDuration);
+      break;
     case AudioTimelineEvent::SetTarget:
       MOZ_FALLTHROUGH_ASSERT("AudioTimelineEvent::SetTarget");
     case AudioTimelineEvent::SetValue:
@@ -335,9 +328,9 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
     case AudioTimelineEvent::Track:
       MOZ_ASSERT(false, "Should have been handled earlier.");
   }
-
-  MOZ_ASSERT(false, "unreached");
-  return 0.0f;
+  
+  
+  return aPrevious->EndValue();
 }
 template float AudioEventTimeline::GetValuesAtTimeHelperInternal(
     double aTime, const AudioTimelineEvent* aPrevious,
