@@ -480,11 +480,10 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         Telemetry::Accumulate(Telemetry::WEBFONT_SRCTYPE,
                               currSrc.mSourceType + 1);
         return;
-      } else {
-        LOG(("userfonts (%p) [src %d] failed local: (%s) for (%s)\n",
-             fontSet.get(), mCurrentSrcIndex, currSrc.mLocalName.get(),
-             mFamilyName.get()));
       }
+      LOG(("userfonts (%p) [src %d] failed local: (%s) for (%s)\n",
+           fontSet.get(), mCurrentSrcIndex, currSrc.mLocalName.get(),
+           mFamilyName.get()));
     }
 
     
@@ -510,13 +509,11 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         if (fe) {
           mPlatformFontEntry = fe;
           SetLoadState(STATUS_LOADED);
-          if (LOG_ENABLED()) {
-            LOG(
-                ("userfonts (%p) [src %d] "
-                 "loaded uri from cache: (%s) for (%s)\n",
-                 fontSet.get(), mCurrentSrcIndex,
-                 currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
-          }
+          LOG(
+              ("userfonts (%p) [src %d] "
+               "loaded uri from cache: (%s) for (%s)\n",
+               fontSet.get(), mCurrentSrcIndex,
+               currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
           return;
         }
 
@@ -532,8 +529,8 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         
         mPrincipal = currSrc.LoadPrincipal(*fontSet);
 
-        bool loadDoesntSpin = !aForceAsync && currSrc.mURI->SyncLoadIsOK();
-
+        const bool loadDoesntSpin =
+            !aForceAsync && currSrc.mURI->SyncLoadIsOK();
         if (loadDoesntSpin) {
           uint8_t* buffer = nullptr;
           uint32_t bufferLength = 0;
@@ -548,39 +545,29 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
             Telemetry::Accumulate(Telemetry::WEBFONT_SRCTYPE,
                                   currSrc.mSourceType + 1);
             return;
-          } else {
-            fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
-                                nsIScriptError::errorFlag, rv);
           }
-
+          fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
+                              nsIScriptError::errorFlag, rv);
         } else {
           
           nsresult rv = fontSet->StartLoad(this, mCurrentSrcIndex);
-          bool loadOK = NS_SUCCEEDED(rv);
-
-          if (loadOK) {
-            if (LOG_ENABLED()) {
-              LOG(("userfonts (%p) [src %d] loading uri: (%s) for (%s)\n",
-                   fontSet.get(), mCurrentSrcIndex,
-                   currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
-            }
+          if (NS_SUCCEEDED(rv)) {
+            LOG(("userfonts (%p) [src %d] loading uri: (%s) for (%s)\n",
+                 fontSet.get(), mCurrentSrcIndex,
+                 currSrc.mURI->GetSpecOrDefault().get(), mFamilyName.get()));
             return;
-          } else {
-            fontSet->LogMessage(this, mCurrentSrcIndex,
-                                "failed to start download",
-                                nsIScriptError::errorFlag, rv);
           }
+          fontSet->LogMessage(this, mCurrentSrcIndex,
+                              "failed to start download",
+                              nsIScriptError::errorFlag, rv);
         }
       } else {
         
         
         mUnsupportedFormat = true;
       }
-    }
-
-    
-
-    else {
+    } else {
+      
       MOZ_ASSERT(currSrc.mSourceType == gfxFontFaceSrc::eSourceType_Buffer);
 
       uint8_t* buffer = nullptr;
@@ -596,10 +583,9 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aForceAsync) {
         Telemetry::Accumulate(Telemetry::WEBFONT_SRCTYPE,
                               currSrc.mSourceType + 1);
         return;
-      } else {
-        fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
-                            nsIScriptError::errorFlag);
       }
+      fontSet->LogMessage(this, mCurrentSrcIndex, "font load failed",
+                          nsIScriptError::errorFlag);
     }
 
     mCurrentSrcIndex++;
@@ -782,26 +768,21 @@ bool gfxUserFontEntry::LoadPlatformFont(uint32_t aSrcIndex,
     fe->mSizeAdjust = mSizeAdjust;
     StoreUserFontData(fe, aSrcIndex, fontSet->GetPrivateBrowsing(),
                       originalFullName, &metadata, metaOrigLen, compression);
-    if (LOG_ENABLED()) {
-      LOG((
-          "userfonts (%p) [src %d] loaded uri: (%s) for (%s) "
-          "(%p) gen: %8.8x compress: %d%%\n",
-          fontSet.get(), aSrcIndex,
-          mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(), mFamilyName.get(),
-          this, uint32_t(fontSet->mGeneration), fontCompressionRatio));
-    }
+    LOG(
+        ("userfonts (%p) [src %d] loaded uri: (%s) for (%s) "
+         "(%p) gen: %8.8x compress: %d%%\n",
+         fontSet.get(), aSrcIndex,
+         mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(), mFamilyName.get(),
+         this, uint32_t(fontSet->mGeneration), fontCompressionRatio));
     mPlatformFontEntry = fe;
     SetLoadState(STATUS_LOADED);
     gfxUserFontSet::UserFontCache::CacheFont(fe);
   } else {
-    if (LOG_ENABLED()) {
-      LOG(
-          ("userfonts (%p) [src %d] failed uri: (%s) for (%s)"
-           " error making platform font\n",
-           fontSet.get(), aSrcIndex,
-           mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(),
-           mFamilyName.get()));
-    }
+    LOG((
+        "userfonts (%p) [src %d] failed uri: (%s) for (%s)"
+        " error making platform font\n",
+        fontSet.get(), aSrcIndex,
+        mSrcList[aSrcIndex].mURI->GetSpecOrDefault().get(), mFamilyName.get()));
   }
 
   
