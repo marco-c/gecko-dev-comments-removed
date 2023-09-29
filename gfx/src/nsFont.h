@@ -41,14 +41,11 @@ struct nsFont final {
   mozilla::StyleFontSizeAdjust sizeAdjust =
       mozilla::StyleFontSizeAdjust::None();
 
-#pragma push_macro("TRANSPARENT")
-#undef TRANSPARENT
   
   
   
   mozilla::StyleAbsoluteColor fontSmoothingBackgroundColor =
-      mozilla::StyleAbsoluteColor::TRANSPARENT;
-#pragma pop_macro("TRANSPARENT")
+      mozilla::StyleAbsoluteColor::TRANSPARENT_BLACK;
 
   
   
