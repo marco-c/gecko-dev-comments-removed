@@ -171,25 +171,10 @@ interface nsICtapSignResult : nsISupports {
 };
 
 
-
-
-
-
-
-
 [scriptable, uuid(c0744f48-ad64-11ed-b515-cf5149f4d6a6)]
 interface nsIWebAuthnController : nsISupports
 {
-    
-    void pinCallback(in uint64_t aTransactionId, in ACString aPin);
-    void signatureSelectionCallback(in uint64_t aTransactionId, in uint64_t aIndex);
-    void resumeRegister(in uint64_t aTransactionID, in bool aForceNoneAttestation);
-
-    
-    void cancel(in uint64_t aTransactionID);
-
-    
-    [noscript] void sendPromptNotificationPreformatted(in uint64_t aTransactionId, in ACString aJSON);
+    [noscript] void cancel(in uint64_t aTransactionID);
     [noscript] void finishRegister(in uint64_t aTransactionId, in nsICtapRegisterResult aResult);
     [noscript] void finishSign(in uint64_t aTransactionId, in nsICtapSignResult aResult);
 };
@@ -214,6 +199,14 @@ interface nsIWebAuthnTransport : nsISupports
 
     void makeCredential(in uint64_t aTransactionId, in uint64_t browsingContextId, in nsICtapRegisterArgs args);
     void getAssertion(in uint64_t aTransactionId, in uint64_t browsingContextId, in nsICtapSignArgs args);
+
+    [noscript] void reset();
+
+    
+    void cancel(in uint64_t aTransactionId);
+    void pinCallback(in uint64_t aTransactionId, in ACString aPin);
+    void resumeMakeCredential(in uint64_t aTransactionId, in bool aForceNoneAttestation);
+    void selectionCallback(in uint64_t aTransactionId, in uint64_t aIndex);
 
     
     
@@ -257,10 +250,4 @@ interface nsIWebAuthnTransport : nsISupports
     
     
     void setUserVerified(in uint64_t authenticatorId, in bool isUserVerified);
-
-    
-    
-    [noscript] void selectionCallback(in uint64_t aTransactionId, in uint64_t aIndex);
-    [noscript] void pinCallback(in uint64_t aTransactionId, in ACString aPin);
-    [noscript] void cancel();
 };

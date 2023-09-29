@@ -25,89 +25,57 @@ class WebAuthnController final : public nsIWebAuthnController {
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIWEBAUTHNCONTROLLER
 
+  
   static void Initialize();
+
+  
   static WebAuthnController* Get();
+
+  
   void Register(PWebAuthnTransactionParent* aTransactionParent,
                 const uint64_t& aTransactionId,
                 const WebAuthnMakeCredentialInfo& aInfo);
 
+  
   void Sign(PWebAuthnTransactionParent* aTransactionParent,
             const uint64_t& aTransactionId,
             const WebAuthnGetAssertionInfo& aInfo);
 
+  
   void Cancel(PWebAuthnTransactionParent* aTransactionParent,
               const Tainted<uint64_t>& aTransactionId);
 
+  
   void MaybeClearTransaction(PWebAuthnTransactionParent* aParent);
-
-  uint64_t GetCurrentTransactionId() {
-    return mTransaction.isNothing() ? 0 : mTransaction.ref().mTransactionId;
-  }
-
-  bool CurrentTransactionIsRegister() { return mPendingRegisterInfo.isSome(); }
-
-  bool CurrentTransactionIsSign() { return mPendingSignInfo.isSome(); }
-
-  
-  template <typename... T>
-  void SendPromptNotification(const char16_t* aFormat, T... aArgs);
-
-  
-  
-  
-  void RunSendPromptNotification(const nsString& aJSON);
 
  private:
   WebAuthnController();
   ~WebAuthnController() = default;
+
+  
+  
+
   nsCOMPtr<nsIWebAuthnTransport> GetTransportImpl();
+  nsCOMPtr<nsIWebAuthnTransport> mTransportImpl;
 
-  void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError,
-                        bool shouldCancelActiveDialog);
-  void AbortOngoingTransaction();
-  void ClearTransaction(bool cancel_prompt);
-
-  void DoRegister(const WebAuthnMakeCredentialInfo& aInfo,
-                  bool aForceNoneAttestation);
-  void DoSign(const WebAuthnGetAssertionInfo& aTransactionInfo);
-
+  void AbortTransaction(const nsresult& aError);
+  void ClearTransaction();
+  void RunCancel(uint64_t aTransactionId);
   void RunFinishRegister(uint64_t aTransactionId,
                          const RefPtr<nsICtapRegisterResult>& aResult);
   void RunFinishSign(uint64_t aTransactionId,
                      const RefPtr<nsICtapSignResult>& aResult);
 
   
-  void RunResumeRegister(uint64_t aTransactionId, bool aForceNoneAttestation);
-  void RunResumeSign(uint64_t aTransactionId);
-  void RunResumeWithSelectedSignResult(uint64_t aTransactionId, uint64_t idx);
-  void RunPinCallback(uint64_t aTransactionId, const nsCString& aPin);
-
-  
-  void RunCancel(uint64_t aTransactionId);
-
-  
   
   
   PWebAuthnTransactionParent* mTransactionParent;
 
-  nsCOMPtr<nsIWebAuthnTransport> mTransportImpl;
+  
+  Maybe<uint64_t> mTransactionId;
 
   
-  Maybe<WebAuthnMakeCredentialInfo> mPendingRegisterInfo;
-
-  
-  Maybe<WebAuthnGetAssertionInfo> mPendingSignInfo;
-
-  class Transaction {
-   public:
-    Transaction(uint64_t aTransactionId, const nsCString& aClientDataJSON)
-        : mTransactionId(aTransactionId), mClientDataJSON(aClientDataJSON) {}
-    uint64_t mTransactionId;
-    nsCString mClientDataJSON;
-    bool mCredProps;
-  };
-
-  Maybe<Transaction> mTransaction;
+  Maybe<nsCString> mPendingClientData;
 };
 
 }  
