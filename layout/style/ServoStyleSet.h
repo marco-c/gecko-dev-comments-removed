@@ -466,29 +466,32 @@ class ServoStyleSet {
 
 
 
-  void MaybeInvalidateRelativeSelectorIDDependency(const dom::Element&,
-                                                   nsAtom* aOldID,
-                                                   nsAtom* aNewID);
+  void MaybeInvalidateRelativeSelectorIDDependency(
+      const dom::Element&, nsAtom* aOldID, nsAtom* aNewID,
+      const ServoElementSnapshotTable& aSnapshots);
 
   
 
 
 
-  void MaybeInvalidateRelativeSelectorClassDependency(const dom::Element&);
+  void MaybeInvalidateRelativeSelectorClassDependency(
+      const dom::Element&, const ServoElementSnapshotTable& aSnapshots);
 
   
 
 
 
-  void MaybeInvalidateRelativeSelectorAttributeDependency(const dom::Element&,
-                                                          nsAtom* aAttribute);
+  void MaybeInvalidateRelativeSelectorAttributeDependency(
+      const dom::Element&, nsAtom* aAttribute,
+      const ServoElementSnapshotTable& aSnapshots);
 
   
 
 
 
-  void MaybeInvalidateRelativeSelectorStateDependency(const dom::Element&,
-                                                      dom::ElementState);
+  void MaybeInvalidateRelativeSelectorStateDependency(
+      const dom::Element&, dom::ElementState,
+      const ServoElementSnapshotTable& aSnapshots);
 
   
 
