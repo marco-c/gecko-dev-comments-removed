@@ -5,7 +5,7 @@
 
 
 if CONFIG["MOZ_BUILD_APP"] != "mobile/android":
-    BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.ini"]
+    BROWSER_CHROME_MANIFESTS += ["tests/browser/browser.toml"]
 
 DevToolsModules(
     "helper.js",
