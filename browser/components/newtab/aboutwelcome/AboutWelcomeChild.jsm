@@ -757,7 +757,8 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
       this.setOptInTime();
     }
     
-    if (!lazy.isSurveySeen) {
+    
+    if (!lazy.isSurveySeen || AboutWelcomeShoppingChild.optedInSession) {
       this.document.getElementById("multi-stage-message-root").hidden = true;
     }
 
