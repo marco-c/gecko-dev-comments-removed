@@ -5,7 +5,7 @@
 
 
 BROWSER_CHROME_MANIFESTS += [
-    "browser.ini",
+    "browser.toml",
     "browser_audio_fallback.ini",
     "browser_audio_fallback_content.ini",
     "browser_audio_locked.ini",
