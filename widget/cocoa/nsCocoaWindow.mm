@@ -191,23 +191,33 @@ void nsCocoaWindow::DestroyNativeWindow() {
   
   
   
-  bool haveRequestedFullscreenExit = false;
-  NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-  while (!mInProcessTransitions &&
-         (inNativeFullscreen() || WeAreInNativeTransition()) &&
-         [localRunLoop runMode:NSDefaultRunLoopMode
-                    beforeDate:[NSDate distantFuture]]) {
-    
-    
+  
+  
+  
+  
+  if (!mInLocalRunLoop) {
+    mInLocalRunLoop = true;
+    bool haveRequestedFullscreenExit = false;
+    NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+    while ((mWaitingOnFinishCurrentTransition || inNativeFullscreen() ||
+            WeAreInNativeTransition()) &&
+           [localRunLoop runMode:NSDefaultRunLoopMode
+                      beforeDate:[NSDate distantFuture]]) {
+      
+      
 
-    
-    
-    
-    if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
-        CanStartNativeTransition()) {
-      [mWindow toggleFullScreen:nil];
-      haveRequestedFullscreenExit = true;
+      
+      
+      
+      if (!haveRequestedFullscreenExit && inNativeFullscreen() &&
+          CanStartNativeTransition()) {
+        NSLog(@"BJW nsCocoaWindow::DestroyNativeWindow: one-time request to "
+              @"request fullscreen exit.\n");
+        [mWindow toggleFullScreen:nil];
+        haveRequestedFullscreenExit = true;
+      }
     }
+    mInLocalRunLoop = false;
   }
 
   [mWindow releaseJSObjects];
@@ -1892,12 +1902,16 @@ void nsCocoaWindow::ProcessTransitions() {
           
           
           
-          NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-          while (mWindow && !CanStartNativeTransition() &&
-                 [localRunLoop runMode:NSDefaultRunLoopMode
-                            beforeDate:[NSDate distantFuture]]) {
-            
-            
+          if (!mInLocalRunLoop) {
+            mInLocalRunLoop = true;
+            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+            while (mWindow && !CanStartNativeTransition() &&
+                   [localRunLoop runMode:NSDefaultRunLoopMode
+                              beforeDate:[NSDate distantFuture]]) {
+              
+              
+            }
+            mInLocalRunLoop = false;
           }
 
           
@@ -1930,12 +1944,16 @@ void nsCocoaWindow::ProcessTransitions() {
             
             
             
-            NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
-            while (mWindow && !CanStartNativeTransition() &&
-                   [localRunLoop runMode:NSDefaultRunLoopMode
-                              beforeDate:[NSDate distantFuture]]) {
-              
-              
+            if (!mInLocalRunLoop) {
+              mInLocalRunLoop = true;
+              NSRunLoop* localRunLoop = [NSRunLoop currentRunLoop];
+              while (mWindow && !CanStartNativeTransition() &&
+                     [localRunLoop runMode:NSDefaultRunLoopMode
+                                beforeDate:[NSDate distantFuture]]) {
+                
+                
+              }
+              mInLocalRunLoop = false;
             }
 
             
@@ -2019,6 +2037,8 @@ void nsCocoaWindow::ProcessTransitions() {
 }
 
 void nsCocoaWindow::FinishCurrentTransition() {
+  NSLog(@"BJW nsCocoaWindow::FinishCurrentTransition.\n");
+  mWaitingOnFinishCurrentTransition = false;
   mTransitionCurrent.reset();
   mIsTransitionCurrentAdded = false;
   ProcessTransitions();
@@ -2041,9 +2061,21 @@ void nsCocoaWindow::FinishCurrentTransitionIfMatching(
     
     
     
-    NS_DispatchToCurrentThread(
-        NewRunnableMethod("FinishCurrentTransition", this,
-                          &nsCocoaWindow::FinishCurrentTransition));
+    NSLog(@"BJW nsCocoaWindow::FinishCurrentTransitionIfMatching.\n");
+    if (NS_SUCCEEDED(NS_DispatchToCurrentThread(
+            NewRunnableMethod("FinishCurrentTransition", this,
+                              &nsCocoaWindow::FinishCurrentTransition)))) {
+      mWaitingOnFinishCurrentTransition = true;
+    } else {
+      
+      
+      MOZ_ASSERT(mTransitionsPending.empty(),
+                 "Pending transitions won't be executed until the next call to "
+                 "QueueTransition.");
+      mTransitionCurrent.reset();
+      mIsTransitionCurrentAdded = false;
+      DispatchSizeModeEvent();
+    }
   }
 }
 
