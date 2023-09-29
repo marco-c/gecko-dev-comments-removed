@@ -11,15 +11,9 @@ import actions from "../../actions";
 import { getEditor } from "../../utils/editor";
 import { searchKeys } from "../../constants";
 
-import { statusType } from "../../reducers/project-text-search";
 import { getRelativePath } from "../../utils/sources-tree/utils";
 import { getFormattedSourceId } from "../../utils/source";
-import {
-  getProjectSearchResults,
-  getProjectSearchStatus,
-  getProjectSearchQuery,
-  getContext,
-} from "../../selectors";
+import { getProjectSearchQuery } from "../../selectors";
 
 import SearchInput from "../shared/SearchInput";
 import AccessibleImage from "../shared/AccessibleImage";
@@ -27,8 +21,18 @@ import AccessibleImage from "../shared/AccessibleImage";
 const { PluralForm } = require("devtools/shared/plural-form");
 const classnames = require("devtools/client/shared/classnames.js");
 const Tree = require("devtools/client/shared/components/Tree");
+const { debounce } = require("devtools/shared/debounce");
+const { throttle } = require("devtools/shared/throttle");
 
 import "./ProjectSearch.css";
+
+export const statusType = {
+  initial: "INITIAL",
+  fetching: "FETCHING",
+  cancelled: "CANCELLED",
+  done: "DONE",
+  error: "ERROR",
+};
 
 function getFilePath(item, index) {
   return item.type === "RESULT"
@@ -41,23 +45,32 @@ function getFilePath(item, index) {
 export class ProjectSearch extends Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      inputValue: this.props.query || "",
+      
+      
+      query: this.props.query || "",
+
       inputFocused: false,
       focusedItem: null,
       expanded: new Set(),
+      results: [],
+      status: statusType.done,
     };
+    
+    this.onUpdatedResults = throttle(this.onUpdatedResults.bind(this), 100);
+    
+    this.doSearch = debounce(this.doSearch.bind(this), 100);
+    this.doSearch();
   }
 
   static get propTypes() {
     return {
-      clearSearch: PropTypes.func.isRequired,
       doSearchForHighlight: PropTypes.func.isRequired,
       query: PropTypes.string.isRequired,
       results: PropTypes.array.isRequired,
       searchSources: PropTypes.func.isRequired,
       selectSpecificLocation: PropTypes.func.isRequired,
-      setActiveSearch: PropTypes.func.isRequired,
       status: PropTypes.oneOf([
         "INITIAL",
         "FETCHING",
@@ -80,23 +93,48 @@ export class ProjectSearch extends Component {
     shortcuts.off("Enter", this.onEnterPress);
   }
 
-  componentDidUpdate(prevProps) {
+  async doSearch() {
     
-    if (prevProps.query !== this.props.query) {
-      this.setState({ inputValue: this.props.query });
+    if (this.searchAbortController) {
+      this.searchAbortController.abort();
     }
+
+    if (!this.state.query) {
+      this.setState({ status: statusType.done });
+      return;
+    }
+
+    this.setState({ status: statusType.fetching, results: [] });
+
+    
+    
+    
+    
+    this.searchAbortController = new AbortController();
+
+    await this.props.searchSources(
+      this.state.query,
+      this.onUpdatedResults,
+      this.searchAbortController.signal
+    );
   }
 
-  doSearch(searchTerm) {
-    if (searchTerm) {
-      this.props.searchSources(this.props.cx, searchTerm);
+  onUpdatedResults(results, done, signal) {
+    
+    if (signal.aborted) {
+      return;
     }
+
+    this.setState({
+      results,
+      status: done ? statusType.done : statusType.fetching,
+    });
   }
 
   selectMatchItem = matchItem => {
     this.props.selectSpecificLocation(matchItem.location);
     this.props.doSearchForHighlight(
-      this.state.inputValue,
+      this.state.query,
       getEditor(),
       matchItem.location.line,
       matchItem.location.column
@@ -135,7 +173,7 @@ export class ProjectSearch extends Component {
   };
 
   getResultCount = () =>
-    this.props.results.reduce((count, file) => count + file.matches.length, 0);
+    this.state.results.reduce((count, file) => count + file.matches.length, 0);
 
   onKeyDown = e => {
     if (e.key === "Escape") {
@@ -145,13 +183,12 @@ export class ProjectSearch extends Component {
     e.stopPropagation();
 
     this.setState({ focusedItem: null });
-    this.doSearch(this.state.inputValue);
+    this.doSearch();
   };
 
   onHistoryScroll = query => {
-    this.setState({
-      inputValue: query,
-    });
+    this.setState({ query });
+    this.doSearch();
   };
 
   onEnterPress = () => {
@@ -174,11 +211,8 @@ export class ProjectSearch extends Component {
 
   inputOnChange = e => {
     const inputValue = e.target.value;
-    const { cx, clearSearch } = this.props;
-    this.setState({ inputValue });
-    if (inputValue === "") {
-      clearSearch(cx);
-    }
+    this.setState({ query: inputValue });
+    this.doSearch();
   };
 
   renderFile = (file, focused, expanded) => {
@@ -243,8 +277,8 @@ export class ProjectSearch extends Component {
   };
 
   renderResults = () => {
-    const { status, results } = this.props;
-    if (!this.props.query) {
+    const { status, results } = this.state;
+    if (!this.state.query) {
       return null;
     }
     if (results.length) {
@@ -293,7 +327,7 @@ export class ProjectSearch extends Component {
   };
 
   renderSummary = () => {
-    if (this.props.query !== "") {
+    if (this.state.query !== "") {
       const resultsSummaryString = L10N.getStr("sourceSearch.resultsSummary2");
       const count = this.getResultCount();
       return PluralForm.get(count, resultsSummaryString).replace("#1", count);
@@ -302,13 +336,13 @@ export class ProjectSearch extends Component {
   };
 
   shouldShowErrorEmoji() {
-    return !this.getResultCount() && this.props.status === statusType.done;
+    return !this.getResultCount() && this.state.status === statusType.done;
   }
 
   renderInput() {
-    const { status } = this.props;
+    const { status } = this.state;
     return React.createElement(SearchInput, {
-      query: this.state.inputValue,
+      query: this.state.query,
       count: this.getResultCount(),
       placeholder: L10N.getStr("projectTextSearch.placeholder"),
       size: "small",
@@ -337,7 +371,7 @@ export class ProjectSearch extends Component {
       ref: "searchInput",
       showSearchModifiers: true,
       searchKey: searchKeys.PROJECT_SEARCH,
-      onToggleSearchModifier: () => this.doSearch(this.state.inputValue),
+      onToggleSearchModifier: this.doSearch,
     });
   }
 
@@ -367,16 +401,11 @@ ProjectSearch.contextTypes = {
 };
 
 const mapStateToProps = state => ({
-  cx: getContext(state),
-  results: getProjectSearchResults(state),
   query: getProjectSearchQuery(state),
-  status: getProjectSearchStatus(state),
 });
 
 export default connect(mapStateToProps, {
   searchSources: actions.searchSources,
-  clearSearch: actions.clearSearch,
   selectSpecificLocation: actions.selectSpecificLocation,
-  setActiveSearch: actions.setActiveSearch,
   doSearchForHighlight: actions.doSearchForHighlight,
 })(ProjectSearch);

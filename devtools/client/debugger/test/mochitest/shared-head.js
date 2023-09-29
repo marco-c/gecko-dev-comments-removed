@@ -2783,11 +2783,14 @@ function openProjectSearch(dbg) {
 
 
 
-async function doProjectSearch(dbg, searchTerm) {
+
+
+
+async function doProjectSearch(dbg, searchTerm, expectedResults) {
   await clearElement(dbg, "projectSearchSearchInput");
   type(dbg, searchTerm);
   pressKey(dbg, "Enter");
-  return waitForSearchResults(dbg);
+  return waitForSearchResults(dbg, expectedResults);
 }
 
 
@@ -2797,14 +2800,28 @@ async function doProjectSearch(dbg, searchTerm) {
 
 
 
+
 async function waitForSearchResults(dbg, expectedResults) {
-  await waitForState(dbg, state => state.projectTextSearch.status === "DONE");
   if (expectedResults) {
+    info(`Wait for ${expectedResults} project search results`);
     await waitUntil(
       () =>
         findAllElements(dbg, "projectSearchFileResults").length ==
         expectedResults
     );
+  } else {
+    
+    info("Wait for project search to complete with no results");
+    await waitUntil(() => {
+      const projectSearchResult = findElementWithSelector(
+        dbg,
+        ".no-result-msg"
+      );
+      return projectSearchResult
+        ? projectSearchResult.textContent ==
+            DEBUGGER_L10N.getStr("projectTextSearch.noResults")
+        : false;
+    });
   }
   return findAllElements(dbg, "projectSearchFileResults");
 }
