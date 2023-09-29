@@ -11,7 +11,7 @@
 
 
 
-if (getBuildConfiguration()['pointer-byte-size'] == 4)
+if (getBuildConfiguration("pointer-byte-size") == 4)
   var s = (s32, s64) => s32
 else
   var s = (s32, s64) => s64

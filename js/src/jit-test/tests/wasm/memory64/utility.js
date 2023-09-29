@@ -1,15 +1,13 @@
 
 
 
-var conf = getBuildConfiguration();
 
-
-if (conf["pointer-byte-size"] != 8) {
+if (getBuildConfiguration("pointer-byte-size") != 8) {
     quit(0);
 }
 
 
-if (conf["mips64"]) {
+if (getBuildConfiguration("mips64")) {
     quit(0);
 }
 

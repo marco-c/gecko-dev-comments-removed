@@ -22,7 +22,7 @@
 
 
 
-let { release_or_beta } = getBuildConfiguration();
+let release_or_beta = getBuildConfiguration("release_or_beta");
 let nightly = !release_or_beta;
 
 let nightlyOnlyFeatures = [

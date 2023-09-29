@@ -11,8 +11,6 @@
 
 
 
-var config = getBuildConfiguration();
-
 gczeal(0); 
 
 
@@ -35,7 +33,7 @@ gczeal(0);
 if (getJitCompilerOptions()["ion.warmup.trigger"] <= 100)
     setJitCompilerOption("ion.warmup.trigger", 100);
 
-if (config['pointer-byte-size'] == 4)
+if (getBuildConfiguration("pointer-byte-size") == 4)
   var s = (s32, s64) => s32
 else
   var s = (s32, s64) => s64
@@ -82,7 +80,7 @@ function tByteSize(str) {
 
 
 
-const m32 = (config['pointer-byte-size'] == 4);
+const m32 = (getBuildConfiguration("pointer-byte-size") == 4);
 const TA = m32 ? 24 : 32; 
 const TN = m32 ? 16 : 24; 
 const FN = m32 ? 32 : 32; 
@@ -234,7 +232,7 @@ assertEq(byteSize(rope16),                                              s(Nurser
 
 
 
-if (config['windows']) {
+if (getBuildConfiguration("windows")) {
   assertEq(byteSize(newString("", {external: true})),                        s(EN+8, EN+16));
   assertEq(byteSize(newString("1", {external: true})),                       s(EN+8, EN+16));
   assertEq(byteSize(newString("12", {external: true})),                      s(EN+8, EN+16));

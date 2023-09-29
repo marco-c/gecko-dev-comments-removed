@@ -141,7 +141,7 @@ function assertEqNum(e, a) {
 }
 
 
-if (getBuildConfiguration()["mapped-array-buffer"]) {
+if (getBuildConfiguration("mapped-array-buffer")) {
   let fileName = "arraybuffer-transfer-mapped.txt";
   let fileContent = os.file.readRelativeToScript(fileName, "binary");
 
