@@ -251,6 +251,15 @@ UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
     const nsTArray<PlatformThreadHandle>& aThreads,
     mozilla::TimeDuration aTargetWorkDuration);
 
+
+
+
+
+
+
+
+const Maybe<hal::HeterogeneousCpuInfo>& GetHeterogeneousCpuInfo();
+
 }  
 }  
 

@@ -7,6 +7,7 @@
 #define mozilla_hal_Types_h
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/BitSet.h"
 #include "mozilla/Observer.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -78,6 +79,29 @@ class PerformanceHintSession {
 
   
   virtual void ReportActualWorkDuration(TimeDuration aDuration) = 0;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct HeterogeneousCpuInfo {
+  
+  
+  
+  static const size_t MAX_CPUS = 32;
+  size_t mTotalNumCpus;
+  mozilla::BitSet<MAX_CPUS> mLittleCpus;
+  mozilla::BitSet<MAX_CPUS> mMediumCpus;
+  mozilla::BitSet<MAX_CPUS> mBigCpus;
 };
 
 }  
