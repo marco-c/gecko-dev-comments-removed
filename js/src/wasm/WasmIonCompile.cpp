@@ -4171,35 +4171,24 @@ class FunctionCompiler {
     return getWasmArrayObjectData(arrayObject);
   }
 
-  
-  
-  [[nodiscard]] MDefinition* createArrayNewCallAndLoop(uint32_t lineOrBytecode,
-                                                       uint32_t typeIndex,
-                                                       MDefinition* numElements,
-                                                       MDefinition* fillValue) {
-    const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
+  [[nodiscard]] bool fillArray(uint32_t lineOrBytecode,
+                               const ArrayType& arrayType,
+                               MDefinition* arrayObject, MDefinition* index,
+                               MDefinition* numElements, MDefinition* val) {
+    mozilla::DebugOnly<MIRType> valMIRType = val->type();
+    FieldType valFieldType = arrayType.elementType_;
+    MOZ_ASSERT(valFieldType.widenToValType().toMIRType() == valMIRType);
 
-    
-    MDefinition* arrayObject =
-        createUninitializedArrayObject(lineOrBytecode, typeIndex, numElements);
-    if (!arrayObject) {
-      return nullptr;
-    }
-
-    mozilla::DebugOnly<MIRType> fillValueMIRType = fillValue->type();
-    FieldType fillValueFieldType = arrayType.elementType_;
-    MOZ_ASSERT(fillValueFieldType.widenToValType().toMIRType() ==
-               fillValueMIRType);
-
-    uint32_t elemSize = fillValueFieldType.size();
+    uint32_t elemSize = valFieldType.size();
     MOZ_ASSERT(elemSize >= 1 && elemSize <= 16);
 
     
-    MDefinition* base = getWasmArrayObjectData(arrayObject);
-    if (!base) {
-      return nullptr;
+    MDefinition* arrayBase = getWasmArrayObjectData(arrayObject);
+    if (!arrayBase) {
+      return false;
     }
 
+    
     
     
     
@@ -4225,59 +4214,59 @@ class FunctionCompiler {
     
     MBasicBlock* loopBlock;
     if (!newBlock(curBlock_, &loopBlock, MBasicBlock::LOOP_HEADER)) {
-      return nullptr;
+      return false;
     }
     MBasicBlock* afterBlock;
     if (!newBlock(loopBlock, &afterBlock)) {
-      return nullptr;
+      return false;
     }
 
     
     MDefinition* elemSizeDef = constantTargetWord(intptr_t(elemSize));
     if (!elemSizeDef) {
-      return nullptr;
+      return false;
     }
 
+    MDefinition* fillBase =
+        computeBasePlusScaledIndex(arrayBase, elemSizeDef, index);
+    if (!fillBase) {
+      return false;
+    }
     MDefinition* limit =
-        computeBasePlusScaledIndex(base, elemSizeDef, numElements);
+        computeBasePlusScaledIndex(fillBase, elemSizeDef, numElements);
     if (!limit) {
-      return nullptr;
+      return false;
     }
 
     
     
     
     MDefinition* limitEqualsBase = compare(
-        limit, base, JSOp::StrictEq,
+        limit, fillBase, JSOp::StrictEq,
         targetIs64Bit() ? MCompare::Compare_UInt64 : MCompare::Compare_UInt32);
     if (!limitEqualsBase) {
-      return nullptr;
+      return false;
     }
     MTest* skipIfLimitEqualsBase =
         MTest::New(alloc(), limitEqualsBase, afterBlock, loopBlock);
     if (!skipIfLimitEqualsBase) {
-      return nullptr;
+      return false;
     }
     curBlock_->end(skipIfLimitEqualsBase);
     if (!afterBlock->addPredecessor(alloc(), curBlock_)) {
-      return nullptr;
+      return false;
     }
-    
-    
-    
-    
-    
 
     
     curBlock_ = loopBlock;
     MPhi* ptrPhi = MPhi::New(alloc(), TargetWordMIRType());
     if (!ptrPhi) {
-      return nullptr;
+      return false;
     }
     if (!ptrPhi->reserveLength(2)) {
-      return nullptr;
+      return false;
     }
-    ptrPhi->addInput(base);
+    ptrPhi->addInput(fillBase);
     curBlock_->addPhi(ptrPhi);
     curBlock_->setLoopDepth(loopDepth_ + 1);
 
@@ -4285,16 +4274,16 @@ class FunctionCompiler {
     
     
     if (!writeGcValueAtBasePlusOffset(
-            lineOrBytecode, fillValueFieldType, arrayObject,
-            AliasSet::WasmArrayDataArea, fillValue, ptrPhi, 0,
+            lineOrBytecode, valFieldType, arrayObject,
+            AliasSet::WasmArrayDataArea, val, ptrPhi, 0,
             false, WasmPreBarrierKind::None)) {
-      return nullptr;
+      return false;
     }
 
     auto* ptrNext =
         MAdd::NewWasm(alloc(), ptrPhi, elemSizeDef, TargetWordMIRType());
     if (!ptrNext) {
-      return nullptr;
+      return false;
     }
     curBlock_->add(ptrNext);
     ptrPhi->addInput(ptrNext);
@@ -4303,21 +4292,81 @@ class FunctionCompiler {
         ptrNext, limit, JSOp::Lt,
         targetIs64Bit() ? MCompare::Compare_UInt64 : MCompare::Compare_UInt32);
     if (!ptrNextLtuLimit) {
-      return nullptr;
+      return false;
     }
     auto* continueIfPtrNextLtuLimit =
         MTest::New(alloc(), ptrNextLtuLimit, loopBlock, afterBlock);
     if (!continueIfPtrNextLtuLimit) {
-      return nullptr;
+      return false;
     }
     curBlock_->end(continueIfPtrNextLtuLimit);
     if (!loopBlock->addPredecessor(alloc(), loopBlock)) {
-      return nullptr;
+      return false;
     }
     
 
     curBlock_ = afterBlock;
+    return true;
+  }
+
+  
+  
+  [[nodiscard]] MDefinition* createArrayNewCallAndLoop(uint32_t lineOrBytecode,
+                                                       uint32_t typeIndex,
+                                                       MDefinition* numElements,
+                                                       MDefinition* fillValue) {
+    const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
+
+    
+    MDefinition* arrayObject =
+        createUninitializedArrayObject(lineOrBytecode, typeIndex, numElements);
+    if (!arrayObject) {
+      return nullptr;
+    }
+
+    
+    
+    
+    
+    
+
+    if (!fillArray(lineOrBytecode, arrayType, arrayObject, constantI32(0),
+                   numElements, fillValue)) {
+      return nullptr;
+    }
+
     return arrayObject;
+  }
+
+  [[nodiscard]] bool createArrayFill(uint32_t lineOrBytecode,
+                                     uint32_t typeIndex,
+                                     MDefinition* arrayObject,
+                                     MDefinition* index, MDefinition* val,
+                                     MDefinition* numElements) {
+    MOZ_ASSERT(arrayObject->type() == MIRType::WasmAnyRef);
+    MOZ_ASSERT(index->type() == MIRType::Int32);
+    MOZ_ASSERT(numElements->type() == MIRType::Int32);
+
+    const ArrayType& arrayType = (*moduleEnv_.types)[typeIndex].arrayType();
+
+    
+
+    
+    MDefinition* actualNumElements = getWasmArrayObjectNumElements(arrayObject);
+    if (!actualNumElements) {
+      return false;
+    }
+
+    
+    auto* boundsCheck = MWasmBoundsCheckRange32::New(
+        alloc(), index, numElements, actualNumElements, bytecodeOffset());
+    if (!boundsCheck) {
+      return false;
+    }
+    curBlock_->add(boundsCheck);
+
+    return fillArray(lineOrBytecode, arrayType, arrayObject, index, numElements,
+                     val);
   }
 
   
@@ -7273,6 +7322,82 @@ static bool EmitArrayNewElem(FunctionCompiler& f) {
   return true;
 }
 
+static bool EmitArrayInitData(FunctionCompiler& f) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  uint32_t typeIndex, segIndex;
+  MDefinition* array;
+  MDefinition* arrayIndex;
+  MDefinition* segOffset;
+  MDefinition* length;
+  if (!f.iter().readArrayInitData(&typeIndex, &segIndex, &array, &arrayIndex,
+                                  &segOffset, &length)) {
+    return false;
+  }
+
+  if (f.inDeadCode()) {
+    return true;
+  }
+
+  
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
+    return false;
+  }
+
+  
+  MDefinition* segIndexM = f.constantI32(int32_t(segIndex));
+  if (!segIndexM) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return f.emitInstanceCall6(lineOrBytecode, SASigArrayInitData, array,
+                             arrayIndex, segOffset, length, typeDefData,
+                             segIndexM);
+}
+
+static bool EmitArrayInitElem(FunctionCompiler& f) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  uint32_t typeIndex, segIndex;
+  MDefinition* array;
+  MDefinition* arrayIndex;
+  MDefinition* segOffset;
+  MDefinition* length;
+  if (!f.iter().readArrayInitElem(&typeIndex, &segIndex, &array, &arrayIndex,
+                                  &segOffset, &length)) {
+    return false;
+  }
+
+  if (f.inDeadCode()) {
+    return true;
+  }
+
+  
+  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
+  if (!typeDefData) {
+    return false;
+  }
+
+  
+  MDefinition* segIndexM = f.constantI32(int32_t(segIndex));
+  if (!segIndexM) {
+    return false;
+  }
+
+  
+  
+  
+  
+  return f.emitInstanceCall6(lineOrBytecode, SASigArrayInitElem, array,
+                             arrayIndex, segOffset, length, typeDefData,
+                             segIndexM);
+}
+
 static bool EmitArraySet(FunctionCompiler& f) {
   uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
 
@@ -7411,6 +7536,26 @@ static bool EmitArrayCopy(FunctionCompiler& f) {
   return f.emitInstanceCall6(lineOrBytecode, SASigArrayCopy, dstArrayObject,
                              dstArrayIndex, srcArrayObject, srcArrayIndex,
                              numElements, elemSizeDef);
+}
+
+static bool EmitArrayFill(FunctionCompiler& f) {
+  uint32_t lineOrBytecode = f.readCallSiteLineOrBytecode();
+
+  uint32_t typeIndex;
+  MDefinition* array;
+  MDefinition* index;
+  MDefinition* val;
+  MDefinition* numElements;
+  if (!f.iter().readArrayFill(&typeIndex, &array, &index, &val, &numElements)) {
+    return false;
+  }
+
+  if (f.inDeadCode()) {
+    return true;
+  }
+
+  return f.createArrayFill(lineOrBytecode, typeIndex, array, index, val,
+                           numElements);
 }
 
 static bool EmitRefI31(FunctionCompiler& f) {
@@ -8151,6 +8296,10 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
             CHECK(EmitArrayNewData(f));
           case uint32_t(GcOp::ArrayNewElem):
             CHECK(EmitArrayNewElem(f));
+          case uint32_t(GcOp::ArrayInitData):
+            CHECK(EmitArrayInitData(f));
+          case uint32_t(GcOp::ArrayInitElem):
+            CHECK(EmitArrayInitElem(f));
           case uint32_t(GcOp::ArraySet):
             CHECK(EmitArraySet(f));
           case uint32_t(GcOp::ArrayGet):
@@ -8163,6 +8312,8 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
             CHECK(EmitArrayLen(f));
           case uint32_t(GcOp::ArrayCopy):
             CHECK(EmitArrayCopy(f));
+          case uint32_t(GcOp::ArrayFill):
+            CHECK(EmitArrayFill(f));
           case uint32_t(GcOp::RefI31):
             CHECK(EmitRefI31(f));
           case uint32_t(GcOp::I31GetS):

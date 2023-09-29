@@ -63,11 +63,13 @@
 
 #include "wasm/WasmBaselineCompile.h"
 
+#include "wasm/WasmAnyRef.h"
 #include "wasm/WasmBCClass.h"
 #include "wasm/WasmBCDefs.h"
 #include "wasm/WasmBCFrame.h"
 #include "wasm/WasmBCRegDefs.h"
 #include "wasm/WasmBCStk.h"
+#include "wasm/WasmValType.h"
 
 #include "jit/MacroAssembler-inl.h"
 #include "wasm/WasmBCClass-inl.h"
@@ -302,37 +304,58 @@ void BaseCompiler::tableSwitch(Label* theTable, RegI32 switchValue,
 #endif
 }
 
+
+void BaseCompiler::stashWord(RegPtr instancePtr, size_t index, RegPtr r) {
+  MOZ_ASSERT(r != instancePtr);
+  MOZ_ASSERT(index < Instance::N_BASELINE_SCRATCH_WORDS);
+  masm.storePtr(r,
+                Address(instancePtr, Instance::offsetOfBaselineScratchWords() +
+                                         index * sizeof(uintptr_t)));
+}
+
+void BaseCompiler::unstashWord(RegPtr instancePtr, size_t index, RegPtr r) {
+  MOZ_ASSERT(index < Instance::N_BASELINE_SCRATCH_WORDS);
+  masm.loadPtr(Address(instancePtr, Instance::offsetOfBaselineScratchWords() +
+                                        index * sizeof(uintptr_t)),
+               r);
+}
+
+
 #ifdef JS_CODEGEN_X86
 void BaseCompiler::stashI64(RegPtr regForInstance, RegI64 r) {
-  MOZ_ASSERT(Instance::sizeOfBaselineScratch() >= 8);
+  static_assert(sizeof(uintptr_t) == 4);
+  MOZ_ASSERT(Instance::sizeOfBaselineScratchWords() >= 8);
   MOZ_ASSERT(regForInstance != r.low && regForInstance != r.high);
 #  ifdef RABALDR_PIN_INSTANCE
 #    error "Pinned instance not expected"
 #  endif
   fr.loadInstancePtr(regForInstance);
-  masm.store32(r.low,
-               Address(regForInstance, Instance::offsetOfBaselineScratch()));
   masm.store32(
-      r.high, Address(regForInstance, Instance::offsetOfBaselineScratch() + 4));
+      r.low, Address(regForInstance, Instance::offsetOfBaselineScratchWords()));
+  masm.store32(r.high, Address(regForInstance,
+                               Instance::offsetOfBaselineScratchWords() + 4));
 }
 
 void BaseCompiler::unstashI64(RegPtr regForInstance, RegI64 r) {
-  MOZ_ASSERT(Instance::sizeOfBaselineScratch() >= 8);
+  static_assert(sizeof(uintptr_t) == 4);
+  MOZ_ASSERT(Instance::sizeOfBaselineScratchWords() >= 8);
 #  ifdef RABALDR_PIN_INSTANCE
 #    error "Pinned instance not expected"
 #  endif
   fr.loadInstancePtr(regForInstance);
   if (regForInstance == r.low) {
     masm.load32(
-        Address(regForInstance, Instance::offsetOfBaselineScratch() + 4),
+        Address(regForInstance, Instance::offsetOfBaselineScratchWords() + 4),
         r.high);
-    masm.load32(Address(regForInstance, Instance::offsetOfBaselineScratch()),
-                r.low);
-  } else {
-    masm.load32(Address(regForInstance, Instance::offsetOfBaselineScratch()),
-                r.low);
     masm.load32(
-        Address(regForInstance, Instance::offsetOfBaselineScratch() + 4),
+        Address(regForInstance, Instance::offsetOfBaselineScratchWords()),
+        r.low);
+  } else {
+    masm.load32(
+        Address(regForInstance, Instance::offsetOfBaselineScratchWords()),
+        r.low);
+    masm.load32(
+        Address(regForInstance, Instance::offsetOfBaselineScratchWords() + 4),
         r.high);
   }
 }
@@ -6680,10 +6703,12 @@ void BaseCompiler::SignalNullCheck::emitTrapSite(BaseCompiler* bc) {
               wasm::TrapSite(masm.currentOffset(), trapOffset));
 }
 
+template <typename NullCheckPolicy>
 RegPtr BaseCompiler::emitGcArrayGetData(RegRef rp) {
   
   
   RegPtr rdata = needPtr();
+  NullCheckPolicy::emitTrapSite(this);
   masm.loadPtr(Address(rp, WasmArrayObject::offsetOfData()), rdata);
   return rdata;
 }
@@ -7186,7 +7211,7 @@ bool BaseCompiler::emitArrayNew() {
   AnyReg value = popAny();
 
   
-  RegPtr rdata = emitGcArrayGetData(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
 
   
   RegI32 numElements = emitGcArrayGetNumElements<NoNullCheck>(rp);
@@ -7259,7 +7284,7 @@ bool BaseCompiler::emitArrayNewFixed() {
   RegRef rp = popRef();
 
   
-  RegPtr rdata = emitGcArrayGetData(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
 
   
   if (avoidPreBarrierReg) {
@@ -7358,6 +7383,48 @@ bool BaseCompiler::emitArrayNewElem() {
   return emitInstanceCall(SASigArrayNewElem);
 }
 
+bool BaseCompiler::emitArrayInitData() {
+  uint32_t typeIndex, segIndex;
+  Nothing nothing;
+  if (!iter_.readArrayInitData(&typeIndex, &segIndex, &nothing, &nothing,
+                               &nothing, &nothing)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushI32(int32_t(segIndex));
+
+  
+  
+  
+  return emitInstanceCall(SASigArrayInitData);
+}
+
+bool BaseCompiler::emitArrayInitElem() {
+  uint32_t typeIndex, segIndex;
+  Nothing nothing;
+  if (!iter_.readArrayInitElem(&typeIndex, &segIndex, &nothing, &nothing,
+                               &nothing, &nothing)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  pushPtr(loadTypeDefInstanceData(typeIndex));
+  pushI32(int32_t(segIndex));
+
+  
+  
+  
+  return emitInstanceCall(SASigArrayInitElem);
+}
+
 bool BaseCompiler::emitArrayGet(FieldWideningOp wideningOp) {
   uint32_t typeIndex;
   Nothing nothing;
@@ -7382,7 +7449,7 @@ bool BaseCompiler::emitArrayGet(FieldWideningOp wideningOp) {
   freeI32(numElements);
 
   
-  RegPtr rdata = emitGcArrayGetData(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
 
   
   uint32_t shift = arrayType.elementType_.indexingShift();
@@ -7434,7 +7501,7 @@ bool BaseCompiler::emitArraySet() {
   freeI32(numElements);
 
   
-  RegPtr rdata = emitGcArrayGetData(rp);
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
 
   
   if (arrayType.elementType_.isRefRepr()) {
@@ -7494,6 +7561,69 @@ bool BaseCompiler::emitArrayCopy() {
   
   
   
+  pushI32(elemsAreRefTyped ? -elemSize : elemSize);
+
+  return emitInstanceCall(SASigArrayCopy);
+}
+
+bool BaseCompiler::emitArrayFill() {
+  AutoCreatedBy acb(masm, "(wasm)BaseCompiler::emitArrayFill");
+  uint32_t typeIndex;
+  Nothing nothing;
+  if (!iter_.readArrayFill(&typeIndex, &nothing, &nothing, &nothing,
+                           &nothing)) {
+    return false;
+  }
+
+  if (deadCode_) {
+    return true;
+  }
+
+  const TypeDef& typeDef = moduleEnv_.types->type(typeIndex);
+  const ArrayType& arrayType = typeDef.arrayType();
+  FieldType fieldType = arrayType.elementType_;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -7506,26 +7636,188 @@ bool BaseCompiler::emitArrayCopy() {
   
   
 
-  MOZ_ASSERT_IF(elemsAreRefTyped, elemSize == sizeof(void*));
-  MOZ_ASSERT_IF(!elemsAreRefTyped, elemSize == 1 || elemSize == 2 ||
-                                       elemSize == 4 || elemSize == 8 ||
-                                       elemSize == 16);
-  bool avoidPreBarrierReg = elemsAreRefTyped;
-
   
   
-  if (avoidPreBarrierReg) {
+  if (fieldType.isRefRepr()) {
     needPtr(RegPtr(PreBarrierReg));
   }
 
   
-  pushI32(elemsAreRefTyped ? -elemSize : elemSize);
+#  ifdef RABALDR_PIN_INSTANCE
+  RegPtr instancePtr = RegPtr(InstanceReg);
+#  else
+  RegPtr instancePtr = needPtr();
+  fr.loadInstancePtr(instancePtr);
+#  endif
 
-  if (avoidPreBarrierReg) {
+  
+  RegI32 numElements = popI32();
+  stashWord(instancePtr, 0, RegPtr(numElements));
+  freeI32(numElements);
+  numElements = RegI32::Invalid();
+
+  AnyReg value = popAny();
+
+  RegI32 index = popI32();
+  stashWord(instancePtr, 1, RegPtr(index));
+  freeI32(index);
+  index = RegI32::Invalid();
+
+  RegRef rp = popRef();
+  stashWord(instancePtr, 2, RegPtr(rp));
+  
+
+  
+  RegI32 arrayNumElements = emitGcArrayGetNumElements<SignalNullCheck>(rp);
+  
+
+  
+  freeRef(rp);
+  rp = RegRef::Invalid();
+  
+
+  
+  index = needI32();
+  unstashWord(instancePtr, 1, RegPtr(index));
+  
+
+  
+#  ifdef RABALDR_PIN_INSTANCE
+  numElements = needI32();
+#  else
+  numElements = RegI32(instancePtr);
+#  endif
+  unstashWord(instancePtr, 0, RegPtr(numElements));
+  instancePtr = RegPtr::Invalid();
+  
+
+  
+  
+  {
+    ScratchI32 scratch(*this);
+    MOZ_ASSERT(RegI32(scratch) != arrayNumElements);
+    MOZ_ASSERT(RegI32(scratch) != index);
+    MOZ_ASSERT(RegI32(scratch) != numElements);
+    masm.wasmBoundsCheckRange32(index, numElements, arrayNumElements, scratch,
+                                bytecodeOffset());
+  }
+  
+
+  
+  freeI32(arrayNumElements);
+  arrayNumElements = RegI32::Invalid();
+  freeI32(numElements);
+  numElements = RegI32::Invalid();
+  
+
+  
+#  ifdef RABALDR_PIN_INSTANCE
+  instancePtr = RegPtr(InstanceReg);
+#  else
+  instancePtr = needPtr();
+  fr.loadInstancePtr(instancePtr);
+#  endif
+  
+
+  
+  rp = needRef();
+  unstashWord(instancePtr, 2, RegPtr(rp));
+  
+
+  
+#  ifdef RABALDR_PIN_INSTANCE
+  instancePtr = RegPtr::Invalid();
+#  else
+  freePtr(instancePtr);
+  instancePtr = RegPtr::Invalid();
+#  endif
+  
+
+  
+  RegPtr rdata = emitGcArrayGetData<NoNullCheck>(rp);
+  
+
+  
+  
+  
+  uint32_t shift = arrayType.elementType_.indexingShift();
+  if (shift > 0) {
+    masm.lshift32(Imm32(shift), index);
+    
+    
+#  ifdef JS_64BIT
+    masm.move32To64ZeroExtend(index, widenI32(index));
+#  endif
+  }
+  masm.addPtr(index, rdata);
+  
+
+  
+  
+  
+  
+
+  
+  freeI32(index);
+  index = RegI32::Invalid();
+  
+
+  
+#  ifdef RABALDR_PIN_INSTANCE
+  instancePtr = RegPtr(InstanceReg);
+#  else
+  instancePtr = needPtr();
+  fr.loadInstancePtr(instancePtr);
+#  endif
+  
+
+  
+#  ifdef RABALDR_PIN_INSTANCE
+  numElements = needI32();
+  unstashWord(instancePtr, 0, RegPtr(numElements));
+  instancePtr = RegPtr::Invalid();
+#  else
+  numElements = RegI32(instancePtr);
+  unstashWord(instancePtr, 0, RegPtr(numElements));
+  instancePtr = RegPtr::Invalid();
+#  endif
+  
+
+  
+  if (fieldType.isRefRepr()) {
     freePtr(RegPtr(PreBarrierReg));
   }
 
-  return emitInstanceCall(SASigArrayCopy);
+  
+  
+  Label done;
+  Label loop;
+  
+  masm.branch32(Assembler::Equal, numElements, Imm32(0), &done);
+  masm.bind(&loop);
+
+  
+  masm.sub32(Imm32(1), numElements);
+
+  
+  if (!emitGcArraySet(rp, rdata, numElements, arrayType, value,
+                      PreBarrierKind::None)) {
+    return false;
+  }
+
+  
+  masm.branch32(Assembler::NotEqual, numElements, Imm32(0), &loop);
+  masm.bind(&done);
+
+  freePtr(rdata);
+  freeRef(rp);
+  freeI32(numElements);
+  freeAny(value);
+  MOZ_ASSERT(index == RegPtr::Invalid());
+  MOZ_ASSERT(instancePtr == RegPtr::Invalid());
+  MOZ_ASSERT(arrayNumElements == RegI32::Invalid());
+
+  return true;
 }
 
 bool BaseCompiler::emitRefI31() {
@@ -9922,6 +10214,10 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitArrayNewData());
           case uint32_t(GcOp::ArrayNewElem):
             CHECK_NEXT(emitArrayNewElem());
+          case uint32_t(GcOp::ArrayInitData):
+            CHECK_NEXT(emitArrayInitData());
+          case uint32_t(GcOp::ArrayInitElem):
+            CHECK_NEXT(emitArrayInitElem());
           case uint32_t(GcOp::ArrayGet):
             CHECK_NEXT(emitArrayGet(FieldWideningOp::None));
           case uint32_t(GcOp::ArrayGetS):
@@ -9934,6 +10230,8 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitArrayLen());
           case uint32_t(GcOp::ArrayCopy):
             CHECK_NEXT(emitArrayCopy());
+          case uint32_t(GcOp::ArrayFill):
+            CHECK_NEXT(emitArrayFill());
           case uint32_t(GcOp::RefI31):
             CHECK_NEXT(emitRefI31());
           case uint32_t(GcOp::I31GetS):

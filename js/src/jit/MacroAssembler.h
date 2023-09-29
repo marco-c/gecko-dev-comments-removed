@@ -3907,6 +3907,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  void wasmBoundsCheckRange32(Register index, Register length, Register limit,
+                              Register tmp,
+                              wasm::BytecodeOffset bytecodeOffset);
+
+  
+  
+  
+  
+  
+  
   
   
   

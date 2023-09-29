@@ -1460,6 +1460,87 @@ template void* Instance::arrayNew<false>(Instance* instance,
 
 
 
+static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
+                              const TypeDef* typeDef, uint32_t arrayIndex,
+                              const DataSegment* seg, uint32_t segByteOffset,
+                              uint32_t numElements) {
+  
+  CheckedUint32 numBytesToCopy =
+      CheckedUint32(numElements) *
+      CheckedUint32(typeDef->arrayType().elementType_.size());
+  if (!numBytesToCopy.isValid()) {
+    
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return false;
+  }
+
+  
+  
+  
+  
+  CheckedUint32 lastByteOffsetPlus1 =
+      CheckedUint32(segByteOffset) + numBytesToCopy;
+
+  CheckedUint32 numBytesAvailable(seg->bytes.length());
+  if (!lastByteOffsetPlus1.isValid() || !numBytesAvailable.isValid() ||
+      lastByteOffsetPlus1.value() > numBytesAvailable.value()) {
+    
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return false;
+  }
+
+  
+  uint64_t dstNumElements = uint64_t(arrayObj->numElements_);
+  if (uint64_t(arrayIndex) + uint64_t(numElements) > dstNumElements) {
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return false;
+  }
+
+  
+  
+  memcpy(arrayObj->data_, &seg->bytes[segByteOffset],
+         size_t(numBytesToCopy.value()));
+
+  return true;
+}
+
+
+
+
+static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
+                              uint32_t arrayIndex,
+                              const InstanceElemSegment& seg,
+                              uint32_t segOffset, uint32_t numElements) {
+  
+  
+  CheckedUint32 lastIndexPlus1 =
+      CheckedUint32(segOffset) + CheckedUint32(numElements);
+  CheckedUint32 numElemsAvailable(seg.length());
+  if (!lastIndexPlus1.isValid() || !numElemsAvailable.isValid() ||
+      lastIndexPlus1.value() > numElemsAvailable.value()) {
+    
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return false;
+  }
+
+  
+  uint64_t dstNumElements = uint64_t(arrayObj->numElements_);
+  if (uint64_t(arrayIndex) + uint64_t(numElements) > dstNumElements) {
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return false;
+  }
+
+  GCPtr<AnyRef>* dst = reinterpret_cast<GCPtr<AnyRef>*>(arrayObj->data_);
+  for (uint32_t i = 0; i < numElements; i++) {
+    dst[i] = seg[segOffset + i];
+  }
+
+  return true;
+}
+
+
+
+
 
 
  void* Instance::arrayNewData(Instance* instance,
@@ -1502,35 +1583,11 @@ template void* Instance::arrayNew<false>(Instance* instance,
     return arrayObj;
   }
 
-  
-  CheckedUint32 numBytesToCopy =
-      CheckedUint32(numElements) *
-      CheckedUint32(typeDef->arrayType().elementType_.size());
-  if (!numBytesToCopy.isValid()) {
+  if (!ArrayCopyFromData(cx, arrayObj, typeDef, 0, seg, segByteOffset,
+                         numElements)) {
     
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
     return nullptr;
   }
-
-  
-  
-  
-  
-  CheckedUint32 lastByteOffsetPlus1 =
-      CheckedUint32(segByteOffset) + numBytesToCopy;
-
-  CheckedUint32 numBytesAvailable(seg->bytes.length());
-  if (!lastByteOffsetPlus1.isValid() || !numBytesAvailable.isValid() ||
-      lastByteOffsetPlus1.value() > numBytesAvailable.value()) {
-    
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return nullptr;
-  }
-
-  
-  
-  memcpy(arrayObj->data_, &seg->bytes[segByteOffset],
-         size_t(numBytesToCopy.value()));
 
   return arrayObj;
 }
@@ -1554,18 +1611,6 @@ template void* Instance::arrayNew<false>(Instance* instance,
                      "ensured by validation");
   const InstanceElemSegment& seg = instance->passiveElemSegments_[segIndex];
 
-  
-  
-  CheckedUint32 lastIndexPlus1 =
-      CheckedUint32(srcOffset) + CheckedUint32(numElements);
-  CheckedUint32 numElemsAvailable(seg.length());
-  if (!lastIndexPlus1.isValid() || !numElemsAvailable.isValid() ||
-      lastIndexPlus1.value() > numElemsAvailable.value()) {
-    
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return nullptr;
-  }
-
   const TypeDef* typeDef = typeDefData->typeDef;
 
   
@@ -1584,17 +1629,112 @@ template void* Instance::arrayNew<false>(Instance* instance,
   }
   MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
 
-  if (seg.length() == 0) {
+  if (!ArrayCopyFromElem(cx, arrayObj, 0, seg, srcOffset, numElements)) {
     
-    return arrayObj;
-  }
-
-  GCPtr<AnyRef>* dst = reinterpret_cast<GCPtr<AnyRef>*>(arrayObj->data_);
-  for (uint32_t i = 0; i < numElements; i++) {
-    dst[i] = seg[srcOffset + i];
+    return nullptr;
   }
 
   return arrayObj;
+}
+
+
+
+
+
+
+
+
+
+ int32_t Instance::arrayInitData(
+    Instance* instance, void* array, uint32_t index, uint32_t segByteOffset,
+    uint32_t numElements, TypeDefInstanceData* typeDefData, uint32_t segIndex) {
+  MOZ_ASSERT(SASigArrayInitData.failureMode == FailureMode::FailOnNegI32);
+  JSContext* cx = instance->cx();
+
+  
+  MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveDataSegments_.length(),
+                     "ensured by validation");
+  const DataSegment* seg = instance->passiveDataSegments_[segIndex];
+
+  
+  
+  
+  
+  if (!seg && (numElements != 0 || segByteOffset != 0)) {
+    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
+    return -1;
+  }
+  
+  
+
+  
+  if (!array) {
+    ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
+    return -1;
+  }
+
+  if (!seg) {
+    
+    return 0;
+  }
+
+  
+  const TypeDef* typeDef = typeDefData->typeDef;
+  Rooted<WasmArrayObject*> arrayObj(cx, static_cast<WasmArrayObject*>(array));
+  MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
+
+  if (!ArrayCopyFromData(cx, arrayObj, typeDef, index, seg, segByteOffset,
+                         numElements)) {
+    
+    return -1;
+  }
+
+  return 0;
+}
+
+
+
+
+
+
+
+ int32_t Instance::arrayInitElem(Instance* instance, void* array,
+                                             uint32_t index, uint32_t segOffset,
+                                             uint32_t numElements,
+                                             TypeDefInstanceData* typeDefData,
+                                             uint32_t segIndex) {
+  MOZ_ASSERT(SASigArrayInitElem.failureMode == FailureMode::FailOnNegI32);
+  JSContext* cx = instance->cx();
+
+  
+  MOZ_RELEASE_ASSERT(size_t(segIndex) < instance->passiveElemSegments_.length(),
+                     "ensured by validation");
+  const InstanceElemSegment& seg = instance->passiveElemSegments_[segIndex];
+
+  
+  if (!array) {
+    ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
+    return -1;
+  }
+
+  const TypeDef* typeDef = typeDefData->typeDef;
+
+  
+  
+  
+  MOZ_RELEASE_ASSERT(typeDef->arrayType().elementType_.size() ==
+                     sizeof(AnyRef));
+
+  
+  Rooted<WasmArrayObject*> arrayObj(cx, static_cast<WasmArrayObject*>(array));
+  MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
+
+  if (!ArrayCopyFromElem(cx, arrayObj, index, seg, segOffset, numElements)) {
+    
+    return -1;
+  }
+
+  return 0;
 }
 
  int32_t Instance::arrayCopy(Instance* instance, void* dstArray,
@@ -1791,7 +1931,11 @@ Instance::Instance(JSContext* cx, Handle<WasmInstanceObject*> object,
       tables_(std::move(tables)),
       maybeDebug_(std::move(maybeDebug)),
       debugFilter_(nullptr),
-      maxInitializedGlobalsIndexPlus1_(0) {}
+      maxInitializedGlobalsIndexPlus1_(0) {
+  for (size_t i = 0; i < N_BASELINE_SCRATCH_WORDS; i++) {
+    baselineScratchWords_[i] = 0;
+  }
+}
 
 Instance* Instance::create(JSContext* cx, Handle<WasmInstanceObject*> object,
                            const SharedCode& code, uint32_t instanceDataLength,

@@ -1064,6 +1064,17 @@ struct BaseCompiler final {
   inline void branchTo(Assembler::Condition c, RegRef lhs, ImmWord rhs,
                        Label* l);
 
+  
+  
+  
+
+  
+  
+  
+  
+  void stashWord(RegPtr instancePtr, size_t index, RegPtr r);
+  void unstashWord(RegPtr instancePtr, size_t index, RegPtr r);
+
 #ifdef JS_CODEGEN_X86
   
   
@@ -1664,10 +1675,13 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitArrayNewDefault();
   [[nodiscard]] bool emitArrayNewData();
   [[nodiscard]] bool emitArrayNewElem();
+  [[nodiscard]] bool emitArrayInitData();
+  [[nodiscard]] bool emitArrayInitElem();
   [[nodiscard]] bool emitArrayGet(FieldWideningOp wideningOp);
   [[nodiscard]] bool emitArraySet();
   [[nodiscard]] bool emitArrayLen();
   [[nodiscard]] bool emitArrayCopy();
+  [[nodiscard]] bool emitArrayFill();
   [[nodiscard]] bool emitRefI31();
   [[nodiscard]] bool emitI31Get(FieldWideningOp wideningOp);
   [[nodiscard]] bool emitRefTest(bool nullable);
@@ -1696,6 +1710,7 @@ struct BaseCompiler final {
   
   RegPtr loadSuperTypeVector(uint32_t typeIndex);
 
+  template <typename NullCheckPolicy>
   RegPtr emitGcArrayGetData(RegRef rp);
   template <typename NullCheckPolicy>
   RegI32 emitGcArrayGetNumElements(RegRef rp);
