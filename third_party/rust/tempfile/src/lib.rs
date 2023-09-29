@@ -153,6 +153,10 @@
 
 
 
+
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk-v2.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
@@ -161,7 +165,7 @@
 #![cfg_attr(test, deny(warnings))]
 #![deny(rust_2018_idioms)]
 #![allow(clippy::redundant_field_names)]
-#![cfg_attr(feature = "nightly", feature(wasi_ext))]
+#![cfg_attr(all(feature = "nightly", target_os = "wasi"), feature(wasi_ext))]
 
 #[cfg(doctest)]
 doc_comment::doctest!("../README.md");
@@ -276,6 +280,15 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -419,7 +432,7 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     pub fn tempfile(&self) -> io::Result<NamedTempFile> {
-        self.tempfile_in(&env::temp_dir())
+        self.tempfile_in(env::temp_dir())
     }
 
     
@@ -493,7 +506,7 @@ impl<'a, 'b> Builder<'a, 'b> {
     
     
     pub fn tempdir(&self) -> io::Result<TempDir> {
-        self.tempdir_in(&env::temp_dir())
+        self.tempdir_in(env::temp_dir())
     }
 
     
@@ -533,5 +546,156 @@ impl<'a, 'b> Builder<'a, 'b> {
         }
 
         util::create_helper(dir, self.prefix, self.suffix, self.random_len, dir::create)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn make<F, R>(&self, f: F) -> io::Result<NamedTempFile<R>>
+    where
+        F: FnMut(&Path) -> io::Result<R>,
+    {
+        self.make_in(env::temp_dir(), f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn make_in<F, R, P>(&self, dir: P, mut f: F) -> io::Result<NamedTempFile<R>>
+    where
+        F: FnMut(&Path) -> io::Result<R>,
+        P: AsRef<Path>,
+    {
+        util::create_helper(
+            dir.as_ref(),
+            self.prefix,
+            self.suffix,
+            self.random_len,
+            move |path| {
+                Ok(NamedTempFile::from_parts(
+                    f(&path)?,
+                    TempPath::from_path(path),
+                ))
+            },
+        )
     }
 }
