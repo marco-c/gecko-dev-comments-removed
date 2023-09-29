@@ -2604,7 +2604,10 @@ class nsDisplayItem {
 
 
 
-  virtual bool MustPaintOnContentSide() const { return false; }
+
+
+
+  virtual bool ShouldUseBlobRenderingForFallback() const { return true; }
 
   
 
@@ -4299,7 +4302,9 @@ class nsDisplayThemedBackground : public nsPaintedDisplayItem {
       layers::RenderRootStateManager* aManager,
       nsDisplayListBuilder* aDisplayListBuilder) override;
 
-  bool MustPaintOnContentSide() const override { return XRE_IsParentProcess(); }
+  bool ShouldUseBlobRenderingForFallback() const override {
+    return !XRE_IsParentProcess();
+  }
 
   
 
@@ -4639,10 +4644,10 @@ class nsDisplayOutline final : public nsPaintedDisplayItem {
 
   NS_DISPLAY_DECL_NAME("Outline", TYPE_OUTLINE)
 
-  bool MustPaintOnContentSide() const override {
+  bool ShouldUseBlobRenderingForFallback() const override {
     MOZ_ASSERT(IsThemedOutline(),
                "The only fallback path we have is for themed outlines");
-    return XRE_IsParentProcess();
+    return !XRE_IsParentProcess();
   }
 
   bool CreateWebRenderCommands(
