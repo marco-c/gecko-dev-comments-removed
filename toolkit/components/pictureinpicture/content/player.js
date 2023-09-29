@@ -989,7 +989,11 @@ let Player = {
     let quadrant = this.determineCurrentQuadrant();
     let dragAction = this.determineDirectionDragged();
 
-    if (event.metaKey && AppConstants.platform == "macosx" && dragAction) {
+    if (
+      ((event.ctrlKey && AppConstants.platform !== "macosx") ||
+        (event.metaKey && AppConstants.platform === "macosx")) &&
+      dragAction
+    ) {
       
       switch (quadrant) {
         case TOP_RIGHT_QUADRANT:

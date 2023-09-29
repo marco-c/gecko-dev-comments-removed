@@ -5652,6 +5652,20 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
         NotifySizeMoveDone();
       }
 
+      
+      
+      
+      
+      
+      
+      if (mDraggingWindowWithMouse) {
+        mDraggingWindowWithMouse = false;
+        result = DispatchMouseEvent(
+            eMouseUp, wParam, lParam, false, MouseButton::ePrimary,
+            MOUSE_INPUT_SOURCE(),
+            mPointerEvents.GetCachedPointerInfo(msg, wParam));
+      }
+
       break;
     }
 
@@ -5679,6 +5693,7 @@ bool nsWindow::ProcessMessageInternal(UINT msg, WPARAM& wParam, LPARAM& lParam,
       if (ClientMarginHitTestPoint(GET_X_LPARAM(lParam),
                                    GET_Y_LPARAM(lParam)) == HTCAPTION) {
         DispatchCustomEvent(u"draggableregionleftmousedown"_ns);
+        mDraggingWindowWithMouse = true;
       }
 
       if (IsWindowButton(wParam) && mCustomNonClient) {
