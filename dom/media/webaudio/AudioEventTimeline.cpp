@@ -128,6 +128,10 @@ void AudioEventTimeline::CleanupEventsOlderThan(TimeType aTime) {
     return aEvent->Time<TimeType>();
   };
 
+  if (mSimpleValue.isSome()) {
+    return;  
+  }
+
   
   auto begin = mEvents.cbegin();
   auto end = mEvents.cend();
@@ -138,25 +142,33 @@ void AudioEventTimeline::CleanupEventsOlderThan(TimeType aTime) {
                "thread.");
   }
   auto firstToKeep = event - 1;
+
+  if (firstToKeep->mType != AudioTimelineEvent::SetTarget) {
+    
+    
+    if (end - firstToKeep == 1 && aTime >= firstToKeep->EndTime<TimeType>()) {
+      mSimpleValue.emplace(firstToKeep->EndValue());
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    for (event = firstToKeep;
+         event > begin && event->mType == AudioTimelineEvent::SetTarget &&
+         TimeOf(event) > mSetTargetStartTime.Get<TimeType>();
+         --event) {
+    }
+    
+    for (; event < firstToKeep; ++event) {
+      MOZ_ASSERT((event + 1)->mType == AudioTimelineEvent::SetTarget);
+      ComputeSetTargetStartValue(&*event, TimeOf(event + 1));
+    }
+  }
   if (firstToKeep == begin) {
     return;
-  }
-
-  
-  
-  
-  
-  
-  
-  for (event = firstToKeep;
-       event > begin && event->mType == AudioTimelineEvent::SetTarget &&
-       TimeOf(event) > mSetTargetStartTime.Get<TimeType>();
-       --event) {
-  }
-  
-  for (; event < firstToKeep; ++event) {
-    MOZ_ASSERT((event + 1)->mType == AudioTimelineEvent::SetTarget);
-    ComputeSetTargetStartValue(&*event, TimeOf(event + 1));
   }
 
   JS::AutoSuppressGCAnalysis suppress;  
