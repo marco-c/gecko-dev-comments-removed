@@ -29,6 +29,8 @@ import {
   canPrettyPrintSource,
   getSourceTextContent,
   tabExists,
+  hasSource,
+  hasSourceActor,
 } from "../../selectors";
 
 
@@ -213,6 +215,53 @@ export function selectLocation(location, { keepContext = true } = {}) {
 
 export function selectSpecificLocation(location) {
   return selectLocation(location, { keepContext: false });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function selectSpecificLocationOrSameUrl(location) {
+  return async ({ dispatch, getState }) => {
+    
+    
+    if (!hasSource(getState(), location.source.id)) {
+      
+      
+      if (!location.source.url) {
+        return false;
+      }
+      const source = getSourceByURL(getState(), location.source.url);
+      if (!source) {
+        return false;
+      }
+      
+      const sourceActor = getFirstSourceActorForGeneratedSource(
+        getState(),
+        location.source.id
+      );
+      location = createLocation({ ...location, source, sourceActor });
+    } else if (!hasSourceActor(getState(), location.sourceActor.id)) {
+      
+      const sourceActor = getFirstSourceActorForGeneratedSource(
+        getState(),
+        location.source.id
+      );
+      location = createLocation({ ...location, sourceActor });
+    }
+    await dispatch(selectSpecificLocation(location));
+    return true;
+  };
 }
 
 

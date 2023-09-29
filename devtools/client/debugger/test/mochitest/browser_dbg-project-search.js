@@ -51,7 +51,23 @@ add_task(async function testProjectSearchCloseOnNavigation() {
     "Refresh button is highlighted after navigation"
   );
 
+  info("Try to open a discarded source");
+  await clickElement(dbg, "fileMatch");
+
+  info("Wait for the warning popup to be visible");
+  
+  await waitFor(() => dbg.win.document.querySelector(".unavailable-source"));
+  
+  await waitFor(() => dbg.win.document.querySelector(".tooltip-visible"));
+  info("Retry to open the discard source, this should hide the popup");
+  await clickElement(dbg, "fileMatch");
+  info("Wait for the popup to be hidden");
+  
+  await waitFor(() => !dbg.win.document.querySelector(".tooltip-visible"));
+
+  info("Refresh results against the new page");
   refreshButton.click();
+
   
   await waitForSearchResults(dbg, 5);
   is(getExpandedResultsCount(dbg), 29);
