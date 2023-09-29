@@ -51,7 +51,12 @@ nsPoint ShapeUtils::ComputeCircleOrEllipseCenter(
   const auto& position = aBasicShape.IsCircle()
                              ? aBasicShape.AsCircle().position
                              : aBasicShape.AsEllipse().position;
-  MOZ_ASSERT(position.IsPosition(), "A default position should be given");
+  
+  if (position.IsAuto()) {
+    return ComputePosition(StylePosition::FromPercentage(0.5), aRefBox);
+  }
+
+  MOZ_ASSERT(position.IsPosition());
   return ComputePosition(position.AsPosition(), aRefBox);
 }
 
