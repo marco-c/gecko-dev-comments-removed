@@ -1399,7 +1399,6 @@ namespace js {
 
 
 
-
 class PropertyName : public JSAtom {
  private:
   
