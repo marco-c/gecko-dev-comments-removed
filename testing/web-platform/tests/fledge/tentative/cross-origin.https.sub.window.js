@@ -7,6 +7,7 @@
 
 
 
+
 "use strict;"
 
 const OTHER_ORIGIN1 = 'https://{{hosts[alt][]}}:{{ports[https][0]}}';
@@ -17,13 +18,15 @@ const OTHER_ORIGIN2 = 'https://{{hosts[alt][]}}:{{ports[https][1]}}';
 
 
 
-function runInIframe(test, iframe, script, param) {
+async function runInIframe(test, iframe, script, param) {
   const messageUuid = generateUuid(test);
+  let receivedResponse = {};
 
-  return new Promise(function(resolve, reject) {
+  let promise = new Promise(function(resolve, reject) {
     function WaitForMessage(event) {
       if (event.data.messageUuid != messageUuid)
         return;
+      receivedResponse = event.data;
       if (event.data.result === 'success') {
         resolve();
       } else {
@@ -34,6 +37,8 @@ function runInIframe(test, iframe, script, param) {
     iframe.contentWindow.postMessage(
         {messageUuid: messageUuid, script: script, param: param}, '*');
   });
+  await promise;
+  return receivedResponse.returnValue;
 }
 
 
@@ -137,7 +142,7 @@ subsetTest(promise_test, async test => {
                      } catch (e) {
                        assert_true(e instanceof DOMException, "DOMException thrown");
                        assert_equals(e.name, "NotAllowedError", "NotAllowedError DOMException thrown");
-                       return "success";
+                       return {result: "success"};
                      }
                      return "exception unexpectedly not thrown";`);
 
@@ -229,7 +234,7 @@ subsetTest(promise_test, async test => {
        } catch (e) {
          assert_true(e instanceof DOMException, "DOMException thrown");
          assert_equals(e.name, "NotAllowedError", "NotAllowedError DOMException thrown");
-         return "success";
+         return {result: "success"};
        }
        throw "Attempting to run auction unexpectedly did not throw"`);
 }, 'Run auction in cross-origin iframe with run-ad-auction permission denied.');
@@ -286,3 +291,57 @@ subsetTest(promise_test, async test => {
        await waitForObservedRequests(
          "${uuid}", [createBidderReportURL("${uuid}"), createSellerReportURL("${uuid}")])`);
 }, 'Run auction in cross-origin iframe and open winning ad in nested fenced frame.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  let iframe = await createIframe(
+      test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
+  let config = await runInIframe(
+      test, iframe,
+      `await joinInterestGroup(test_instance, "${uuid}");
+       let config = await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");
+       return {result: "success", returnValue: config};`);
+  assert_true(config != null, "Value not returned from auction in iframe");
+  assert_true(config instanceof FencedFrameConfig,
+    `Wrong value type returned from auction: ${config.constructor.type}`);
+
+  
+  
+  await createAndNavigateFencedFrame(test, config);
+  await waitForObservedRequests(
+      uuid,
+      [ createBidderReportURL(uuid, '1', OTHER_ORIGIN1),
+        createSellerReportURL(uuid, '1', OTHER_ORIGIN1)]);
+}, 'Run auction in cross-origin iframe and open winning ad in a fenced frame child of the main frame.');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  let iframe = await createIframe(
+      test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
+  let config = await runInIframe(
+      test, iframe,
+      `await joinInterestGroup(test_instance, "${uuid}");
+       let config = await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");
+       return {result: "success", returnValue: config};`);
+  assert_true(config != null, "Value not returned from auction in iframe");
+  assert_true(config instanceof FencedFrameConfig,
+    `Wrong value type returned from auction: ${config.constructor.type}`);
+
+  
+  
+  
+  let iframe2 = await createIframe(
+    test, OTHER_ORIGIN2, "join-ad-interest-group 'none'; run-ad-auction 'none'");
+  await runInIframe(
+      test, iframe2,
+      `await createAndNavigateFencedFrame(test_instance, param);`,
+      config);
+  await waitForObservedRequests(
+      uuid,
+      [ createBidderReportURL(uuid, '1', OTHER_ORIGIN1),
+        createSellerReportURL(uuid, '1', OTHER_ORIGIN1)]);
+}, 'Run auction in cross-origin iframe and open winning ad in a fenced frame child of another cross-origin iframe.');
