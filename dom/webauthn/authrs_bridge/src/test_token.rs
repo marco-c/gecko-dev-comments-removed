@@ -31,6 +31,7 @@ use authenticator::{ctap2, statecallback::StateCallback};
 use authenticator::{FidoDevice, FidoDeviceIO, FidoProtocol, VirtualFidoDevice};
 use authenticator::{RegisterResult, SignResult, StatusUpdate};
 use base64::Engine;
+use moz_task::RunnableBuilder;
 use nserror::{nsresult, NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_IMPLEMENTED, NS_OK};
 use nsstring::{nsACString, nsCString};
 use rand::{thread_rng, RngCore};
@@ -39,7 +40,7 @@ use std::collections::{hash_map::Entry, HashMap};
 use std::ops::{Deref, DerefMut};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::mpsc::Sender;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use thin_vec::ThinVec;
 use xpcom::interfaces::nsICredentialParameters;
 use xpcom::{xpcom_method, RefPtr};
@@ -626,7 +627,7 @@ impl CredentialParameters {
 
 #[derive(Default)]
 pub(crate) struct TestTokenManager {
-    state: Mutex<HashMap<u64, TestToken>>,
+    state: Arc<Mutex<HashMap<u64, TestToken>>>,
 }
 
 impl TestTokenManager {
@@ -772,7 +773,7 @@ impl TestTokenManager {
 
     pub fn register(
         &self,
-        _timeout: u64,
+        _timeout_ms: u64,
         ctap_args: RegisterArgs,
         status: Sender<StatusUpdate>,
         callback: StateCallback<Result<RegisterResult, AuthenticatorError>>,
@@ -781,30 +782,37 @@ impl TestTokenManager {
             return;
         }
 
-        let mut state_obj = self.state.lock().unwrap();
+        let state_obj = self.state.clone();
 
         
-        for token in state_obj.values_mut() {
-            let _ = token.init();
-            if ctap2::register(
-                token,
-                ctap_args.clone(),
-                status.clone(),
-                callback.clone(),
-                &|| true,
-            ) {
-                
-                return;
+        
+        let _ = RunnableBuilder::new("TestTokenManager::register", move || {
+            
+            
+            for token in state_obj.lock().unwrap().values_mut() {
+                let _ = token.init();
+                if ctap2::register(
+                    token,
+                    ctap_args.clone(),
+                    status.clone(),
+                    callback.clone(),
+                    &|| true,
+                ) {
+                    
+                    return;
+                }
             }
-        }
 
-        
-        callback.call(Err(AuthenticatorError::U2FToken(U2FTokenError::NotAllowed)));
+            
+            callback.call(Err(AuthenticatorError::U2FToken(U2FTokenError::NotAllowed)));
+        })
+        .may_block(true)
+        .dispatch_background_task();
     }
 
     pub fn sign(
         &self,
-        _timeout: u64,
+        _timeout_ms: u64,
         ctap_args: SignArgs,
         status: Sender<StatusUpdate>,
         callback: StateCallback<Result<SignResult, AuthenticatorError>>,
@@ -813,23 +821,30 @@ impl TestTokenManager {
             return;
         }
 
-        let mut state_obj = self.state.lock().unwrap();
+        let state_obj = self.state.clone();
 
         
-        for token in state_obj.values_mut() {
-            let _ = token.init();
-            if ctap2::sign(
-                token,
-                ctap_args.clone(),
-                status.clone(),
-                callback.clone(),
-                &|| true,
-            ) {
-                
-                return;
+        let _ = RunnableBuilder::new("TestTokenManager::sign", move || {
+            
+            
+            for token in state_obj.lock().unwrap().values_mut() {
+                let _ = token.init();
+                if ctap2::sign(
+                    token,
+                    ctap_args.clone(),
+                    status.clone(),
+                    callback.clone(),
+                    &|| true,
+                ) {
+                    
+                    return;
+                }
             }
-        }
-        
-        callback.call(Err(AuthenticatorError::U2FToken(U2FTokenError::NotAllowed)));
+
+            
+            callback.call(Err(AuthenticatorError::U2FToken(U2FTokenError::NotAllowed)));
+        })
+        .may_block(true)
+        .dispatch_background_task();
     }
 }

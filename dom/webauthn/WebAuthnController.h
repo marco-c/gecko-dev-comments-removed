@@ -74,7 +74,7 @@ class WebAuthnController final : public nsIWebAuthnController {
   void RunFinishRegister(uint64_t aTransactionId,
                          const RefPtr<nsICtapRegisterResult>& aResult);
   void RunFinishSign(uint64_t aTransactionId,
-                     const nsTArray<RefPtr<nsICtapSignResult>>& aResult);
+                     const RefPtr<nsICtapSignResult>& aResult);
 
   
   void RunResumeRegister(uint64_t aTransactionId, bool aForceNoneAttestation);
@@ -97,8 +97,6 @@ class WebAuthnController final : public nsIWebAuthnController {
 
   
   Maybe<WebAuthnGetAssertionInfo> mPendingSignInfo;
-
-  nsTArray<RefPtr<nsICtapSignResult>> mPendingSignResults;
 
   class Transaction {
    public:
