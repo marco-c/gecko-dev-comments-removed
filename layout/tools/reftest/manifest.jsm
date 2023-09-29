@@ -1,8 +1,6 @@
 
 
 
-
-
 "use strict";
 
 var EXPORTED_SYMBOLS = ["ReadTopManifest", "CreateUrls"];
