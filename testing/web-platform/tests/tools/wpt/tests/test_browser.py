@@ -34,26 +34,35 @@ def test_edgechromium_webdriver_supports_browser():
     
     edge = browser.EdgeChromium(logger)
     edge.webdriver_version = mock.MagicMock(return_value=None)
-    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
     edge = browser.EdgeChromium(logger)
     edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
     edge.version = mock.MagicMock(return_value=None)
-    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
     edge = browser.EdgeChromium(logger)
-    edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
+    
+    edge.webdriver_version = mock.MagicMock(return_value='70.1.5')
     edge.version = mock.MagicMock(return_value='70.1.5')
-    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
     
     edge = browser.EdgeChromium(logger)
     edge.webdriver_version = mock.MagicMock(return_value='70.0.1')
     edge.version = mock.MagicMock(return_value='69.0.1')
-    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge')
+    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'stable')
 
+    
+    edge = browser.EdgeChromium(logger)
+    edge.webdriver_version = mock.MagicMock(return_value='70.0.1.0')
+    edge.version = mock.MagicMock(return_value='70.0.1.1 dev')
+    assert edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'dev')
+    
+    edge.webdriver_version = mock.MagicMock(return_value='70.9.1')
+    assert not edge.webdriver_supports_browser('/usr/bin/edgedriver', '/usr/bin/edge', 'dev')
 
 
 
