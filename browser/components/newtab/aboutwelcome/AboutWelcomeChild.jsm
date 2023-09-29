@@ -767,10 +767,11 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     if (
       lazy.isSurveySeen ||
       !data ||
+      data.error ||
       !productUrl ||
-      (data?.needs_analysis &&
-        (!data?.product_id || !data?.grade || !data?.adjusted_rating)) ||
-      AboutWelcomeShoppingChild.eligiblePDPvisits.includes(data?.product_id)
+      (data.needs_analysis &&
+        (!data.product_id || !data.grade || !data.adjusted_rating)) ||
+      AboutWelcomeShoppingChild.eligiblePDPvisits.includes(data.product_id)
     ) {
       return;
     }
