@@ -977,6 +977,7 @@ void nsWindow::Show(bool aState) {
 #endif
 
   NativeShow(aState);
+  RefreshWindowClass();
 }
 
 void nsWindow::ResizeInt(const Maybe<LayoutDeviceIntPoint>& aMove,
@@ -6419,6 +6420,17 @@ void nsWindow::RefreshWindowClass(void) {
     XSetClassHint(GDK_DISPLAY_XDISPLAY(display),
                   gdk_x11_window_get_xid(gdkWindow), class_hint);
     XFree(class_hint);
+  }
+#endif 
+
+#ifdef MOZ_WAYLAND
+  static auto sGdkWaylandWindowSetApplicationId =
+      (void (*)(GdkWindow*, const char*))dlsym(
+          RTLD_DEFAULT, "gdk_wayland_window_set_application_id");
+
+  if (GdkIsWaylandDisplay() && sGdkWaylandWindowSetApplicationId &&
+      !mGtkWindowAppClass.IsEmpty()) {
+    sGdkWaylandWindowSetApplicationId(gdkWindow, mGtkWindowAppClass.get());
   }
 #endif 
 }
