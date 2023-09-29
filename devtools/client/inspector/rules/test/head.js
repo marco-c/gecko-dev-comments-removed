@@ -353,89 +353,6 @@ var addProperty = async function (
 
 
 
-
-
-
-
-
-
-
-
-
-
-var setProperty = async function (
-  view,
-  textProp,
-  value,
-  { blurNewProperty = true, flushCount = 1 } = {}
-) {
-  info("Set property to: " + value);
-  await focusEditableField(view, textProp.editor.valueSpan);
-
-  
-  
-  
-  
-  
-  let previewStartedCounter = 0;
-  const onStartPreview = () => previewStartedCounter++;
-  view.on("start-preview-property-value", onStartPreview);
-
-  let previewCounter = 0;
-  const onPreviewApplied = () => previewCounter++;
-  view.on("ruleview-changed", onPreviewApplied);
-
-  if (value === null) {
-    const onPopupOpened = once(view.popup, "popup-opened");
-    EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
-    await onPopupOpened;
-  } else {
-    EventUtils.sendString(value, view.styleWindow);
-  }
-
-  info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
-  view.debounce.flush();
-  await waitFor(() => previewCounter >= previewStartedCounter);
-
-  flushCount--;
-
-  while (flushCount > 0) {
-    
-    
-    await wait(100);
-
-    info(`Flush debounced ruleview methods (remaining: ${flushCount})`);
-    view.debounce.flush();
-    await waitFor(() => previewCounter >= previewStartedCounter);
-
-    flushCount--;
-  }
-
-  view.off("start-preview-property-value", onStartPreview);
-  view.off("ruleview-changed", onPreviewApplied);
-
-  const onValueDone = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
-
-  info("Waiting for another ruleview-changed after setting property");
-  await onValueDone;
-
-  if (blurNewProperty) {
-    info("Force blur on the active element");
-    view.styleDocument.activeElement.blur();
-  }
-};
-
-
-
-
-
-
-
-
-
-
-
 var renameProperty = async function (view, textProp, name) {
   await focusEditableField(view, textProp.editor.nameSpan);
 
@@ -854,35 +771,6 @@ async function updateDeclaration(
     );
     await setProperty(view, textProp, newValue);
   }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getTextProperty(view, ruleIndex, declaration) {
-  const ruleEditor = getRuleViewRuleEditor(view, ruleIndex);
-  const [[name, value]] = Object.entries(declaration);
-  const textProp = ruleEditor.rule.textProps.find(prop => {
-    return prop.name === name && prop.value === value;
-  });
-
-  if (!textProp) {
-    throw Error(
-      `Declaration ${name}:${value} not found on rule at index ${ruleIndex}`
-    );
-  }
-
-  return textProp;
 }
 
 

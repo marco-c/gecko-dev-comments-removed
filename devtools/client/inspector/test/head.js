@@ -1004,28 +1004,6 @@ async function assertTooltipHiddenOnMouseOut(tooltip, target) {
 
 
 
-
-
-
-function getRuleViewRuleEditor(view, childrenIndex, nodeIndex) {
-  const child = view.element.children[childrenIndex];
-  if (!child) {
-    return null;
-  }
-
-  return nodeIndex !== undefined
-    ? child.childNodes[nodeIndex]?._ruleEditor
-    : child._ruleEditor;
-}
-
-
-
-
-
-
-
-
-
 async function getDisplayedNodeTextContent(selector, inspector) {
   
   
