@@ -45,12 +45,8 @@ test_newtab({
     );
 
     
-    
-    
-    
-    
-    let shortcutsSwitch = Cu.waiveXrays(
-      content.document.querySelector("#shortcuts-section moz-toggle")
+    let shortcutsSwitch = content.document.querySelector(
+      "#shortcuts-section .switch"
     );
     Assert.ok(
       !Services.prefs.getBoolPref(TOPSITES_PREF),
@@ -65,12 +61,8 @@ test_newtab({
     Assert.ok(getSection("topsites"), "Shortcuts section is rendered");
 
     
-    
-    
-    
-    
-    let pocketSwitch = Cu.waiveXrays(
-      content.document.querySelector("#pocket-section moz-toggle")
+    let pocketSwitch = content.document.querySelector(
+      "#pocket-section .switch"
     );
     Assert.ok(
       !Services.prefs.getBoolPref(TOPSTORIES_PREF),
@@ -85,12 +77,8 @@ test_newtab({
     Assert.ok(getSection("topstories"), "Pocket section is rendered");
 
     
-    
-    
-    
-    
-    let highlightsSwitch = Cu.waiveXrays(
-      content.document.querySelector("#recent-section moz-toggle")
+    let highlightsSwitch = content.document.querySelector(
+      "#recent-section .switch"
     );
     Assert.ok(
       !Services.prefs.getBoolPref(HIGHLIGHTS_PREF),
