@@ -17,6 +17,7 @@
 #include "mozilla/EnumSet.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/RadioGroupContainer.h"
 #include "nsCycleCollectionParticipant.h"  
 #include "nsIContent.h"                    
 #include "nsAtomHashKeys.h"
@@ -114,6 +115,14 @@ class FragmentOrElement : public nsIContent {
     return Children()->Length();
   }
 
+  RadioGroupContainer& OwnedRadioGroupContainer() {
+    auto* slots = ExtendedDOMSlots();
+    if (!slots->mRadioGroupContainer) {
+      slots->mRadioGroupContainer = MakeUnique<RadioGroupContainer>();
+    }
+    return *slots->mRadioGroupContainer;
+  }
+
  public:
   
 
@@ -207,6 +216,12 @@ class FragmentOrElement : public nsIContent {
 
 
     UniquePtr<PopoverData> mPopoverData;
+
+    
+
+
+
+    UniquePtr<RadioGroupContainer> mRadioGroupContainer;
 
     
 

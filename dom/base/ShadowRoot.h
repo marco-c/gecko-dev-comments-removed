@@ -16,7 +16,6 @@
 #include "mozilla/ServoBindings.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsIRadioGroupContainer.h"
 #include "nsStubMutationObserver.h"
 #include "nsTHashtable.h"
 
@@ -40,9 +39,7 @@ class CSSImportRule;
 class Element;
 class HTMLInputElement;
 
-class ShadowRoot final : public DocumentFragment,
-                         public DocumentOrShadowRoot,
-                         public nsIRadioGroupContainer {
+class ShadowRoot final : public DocumentFragment, public DocumentOrShadowRoot {
   friend class DocumentOrShadowRoot;
 
  public:
@@ -234,58 +231,16 @@ class ShadowRoot final : public DocumentFragment,
 
   void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
 
-  
-  NS_IMETHOD WalkRadioGroup(const nsAString& aName,
-                            nsIRadioVisitor* aVisitor) override {
-    return DocumentOrShadowRoot::WalkRadioGroup(aName, aVisitor);
-  }
-  void SetCurrentRadioButton(const nsAString& aName,
-                             HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::SetCurrentRadioButton(aName, aRadio);
-  }
-  HTMLInputElement* GetCurrentRadioButton(const nsAString& aName) override {
-    return DocumentOrShadowRoot::GetCurrentRadioButton(aName);
-  }
-  NS_IMETHOD
-  GetNextRadioButton(const nsAString& aName, const bool aPrevious,
-                     HTMLInputElement* aFocusedRadio,
-                     HTMLInputElement** aRadioOut) override {
-    return DocumentOrShadowRoot::GetNextRadioButton(aName, aPrevious,
-                                                    aFocusedRadio, aRadioOut);
-  }
-  void AddToRadioGroup(const nsAString& aName,
-                       HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::AddToRadioGroup(aName, aRadio, this);
-  }
-  void RemoveFromRadioGroup(const nsAString& aName,
-                            HTMLInputElement* aRadio) override {
-    DocumentOrShadowRoot::RemoveFromRadioGroup(aName, aRadio);
-  }
-  uint32_t GetRequiredRadioCount(const nsAString& aName) const override {
-    return DocumentOrShadowRoot::GetRequiredRadioCount(aName);
-  }
-  void RadioRequiredWillChange(const nsAString& aName,
-                               bool aRequiredAdded) override {
-    DocumentOrShadowRoot::RadioRequiredWillChange(aName, aRequiredAdded);
-  }
-  bool GetValueMissingState(const nsAString& aName) const override {
-    return DocumentOrShadowRoot::GetValueMissingState(aName);
-  }
-  void SetValueMissingState(const nsAString& aName, bool aValue) override {
-    return DocumentOrShadowRoot::SetValueMissingState(aName, aValue);
-  }
-
  protected:
   
   void ApplicableRulesChanged();
 
   virtual ~ShadowRoot();
 
-  const ShadowRootMode mMode;
-
-  Element::DelegatesFocus mDelegatesFocus;
-
-  const SlotAssignmentMode mSlotAssignment;
+  
+  
+  
+  
 
   
   UniquePtr<StyleAuthorStyles> mServoStyles;
@@ -300,6 +255,12 @@ class ShadowRoot final : public DocumentFragment,
   
   
   nsTArray<const Element*> mParts;
+
+  const ShadowRootMode mMode;
+
+  Element::DelegatesFocus mDelegatesFocus;
+
+  const SlotAssignmentMode mSlotAssignment;
 
   
   bool mIsDetailsShadowTree : 1;
