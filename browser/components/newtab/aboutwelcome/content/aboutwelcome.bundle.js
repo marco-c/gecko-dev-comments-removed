@@ -961,13 +961,23 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
     title,
     title_logo
   }) {
-    return title_logo ? react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
-      className: "inline-icon-container"
-    }, this.renderPicture(title_logo), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-      text: title
-    }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
-      id: "mainContentHeader"
-    }))) : react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+    if (title_logo) {
+      const {
+        alignment,
+        ...rest
+      } = title_logo;
+      return react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", {
+        className: "inline-icon-container",
+        alignment: alignment ?? "center"
+      }, this.renderPicture({ ...rest
+      }), react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
+        text: title
+      }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
+        id: "mainContentHeader"
+      })));
+    }
+
+    return react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: title
     }, react__WEBPACK_IMPORTED_MODULE_0___default().createElement("h1", {
       id: "mainContentHeader"
