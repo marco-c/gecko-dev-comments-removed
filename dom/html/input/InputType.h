@@ -48,7 +48,7 @@ class InputType {
   virtual ~InputType() = default;
 
   
-  static const Decimal kStepAny;
+  static constexpr Decimal kStepAny = Decimal(0_d);
 
   
 
