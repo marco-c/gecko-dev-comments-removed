@@ -62,7 +62,7 @@ function assertNavigationEvents(
   navigableId,
   isSameDocument
 ) {
-  const expectedEvents = isSameDocument ? 3 : 2;
+  const expectedEvents = isSameDocument ? 1 : 2;
 
   const navigationEvents = events.filter(
     e => e.data.navigationId == navigationId
@@ -73,21 +73,11 @@ function assertNavigationEvents(
     `Found ${expectedEvents} events for navigationId ${navigationId}`
   );
 
-  const started = navigationEvents.find(e => e.name === "navigation-started");
-  const stopped = navigationEvents.find(e => e.name === "navigation-stopped");
-
-  
-  is(started.name, "navigation-started", "event has the expected name");
-  is(started.data.url, url, "event has the expected url");
-  is(started.data.navigableId, navigableId, "event has the expected navigable");
-
-  
-  is(stopped.name, "navigation-stopped", "event has the expected name");
-  is(stopped.data.url, url, "event has the expected url");
-  is(stopped.data.navigableId, navigableId, "event has the expected navigable");
-
   if (isSameDocument) {
     
+    ok(!navigationEvents.some(e => e.name === "navigation-started"));
+    ok(!navigationEvents.some(e => e.name === "navigation-stopped"));
+
     const locationChanged = navigationEvents.find(
       e => e.name === "location-changed"
     );
@@ -95,6 +85,30 @@ function assertNavigationEvents(
     is(locationChanged.data.url, url, "event has the expected url");
     is(
       locationChanged.data.navigableId,
+      navigableId,
+      "event has the expected navigable"
+    );
+  } else {
+    
+    ok(!navigationEvents.some(e => e.name === "location-changed"));
+
+    const started = navigationEvents.find(e => e.name === "navigation-started");
+    const stopped = navigationEvents.find(e => e.name === "navigation-stopped");
+
+    
+    is(started.name, "navigation-started", "event has the expected name");
+    is(started.data.url, url, "event has the expected url");
+    is(
+      started.data.navigableId,
+      navigableId,
+      "event has the expected navigable"
+    );
+
+    
+    is(stopped.name, "navigation-stopped", "event has the expected name");
+    is(stopped.data.url, url, "event has the expected url");
+    is(
+      stopped.data.navigableId,
       navigableId,
       "event has the expected navigable"
     );
