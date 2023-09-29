@@ -581,7 +581,7 @@
   if (!runningInBrowser) {
     
     
-    gcparam('parallelMarkingThresholdKB', 0);
+    gcparam('parallelMarkingThresholdMB', 0);
   }
 })(this);
 

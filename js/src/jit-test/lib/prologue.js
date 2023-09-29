@@ -26,4 +26,4 @@ for (const name of ["gczeal",
 }
 
 
-gcparam('parallelMarkingThresholdKB', 0);
+gcparam('parallelMarkingThresholdMB', 0);
