@@ -286,6 +286,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       
       
       
+      
       let searchStartupPromise =
         this.processSearchProviderManifestEntry().finally(() => {
           if (
@@ -405,7 +406,7 @@ this.chrome_settings_overrides = class extends ExtensionAPI {
       return;
     }
 
-    await searchInitialized;
+    await Services.search.promiseInitialized;
     if (!this.extension) {
       Cu.reportError(
         `Extension shut down before search provider was registered`
