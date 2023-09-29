@@ -58,14 +58,6 @@ interface nsIChannelEventSink : nsISupports
 
 
 
-    const unsigned long REDIRECT_AUTH_RETRY = 1 << 4;
-
-    
-
-
-
-
-
 
 
 
