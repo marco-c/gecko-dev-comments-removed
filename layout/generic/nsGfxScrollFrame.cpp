@@ -3039,8 +3039,10 @@ void nsHTMLScrollFrame::ScrollToImpl(
     
     if (mApzSmoothScrollDestination && aOrigin != ScrollOrigin::Clamp) {
       if (aOrigin == ScrollOrigin::Relative) {
-        AppendScrollUpdate(
-            ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
+        AppendScrollUpdate(ScrollPositionUpdate::NewRelativeScroll(
+            
+            
+            GetLayoutScrollRange().ClampPoint(mApzScrollPos), pt));
         mApzScrollPos = pt;
       } else if (aOrigin != ScrollOrigin::Apz) {
         ScrollOrigin origin =
@@ -3127,8 +3129,12 @@ void nsHTMLScrollFrame::ScrollToImpl(
   if (aOrigin == ScrollOrigin::Relative) {
     MOZ_ASSERT(!isScrollOriginDowngrade);
     MOZ_ASSERT(mLastScrollOrigin == ScrollOrigin::Relative);
-    AppendScrollUpdate(
-        ScrollPositionUpdate::NewRelativeScroll(mApzScrollPos, pt));
+    AppendScrollUpdate(ScrollPositionUpdate::NewRelativeScroll(
+        
+        
+        
+        
+        GetLayoutScrollRange().ClampPoint(mApzScrollPos), pt));
     mApzScrollPos = pt;
   } else if (aOrigin != ScrollOrigin::Apz) {
     AppendScrollUpdate(ScrollPositionUpdate::NewScroll(mLastScrollOrigin, pt));
