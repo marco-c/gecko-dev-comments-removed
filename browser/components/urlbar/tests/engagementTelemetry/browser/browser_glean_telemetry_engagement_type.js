@@ -6,6 +6,9 @@
 
 
 
+
+requestLongerTimeout(5);
+
 add_setup(async function () {
   await setup();
 });
@@ -118,7 +121,7 @@ add_task(async function engagement_type_dismiss() {
     await SpecialPowers.popPrefEnv();
   }
 
-  cleanupQuickSuggest();
+  await cleanupQuickSuggest();
 });
 
 add_task(async function engagement_type_help() {
@@ -147,5 +150,5 @@ add_task(async function engagement_type_help() {
     await SpecialPowers.popPrefEnv();
   }
 
-  cleanupQuickSuggest();
+  await cleanupQuickSuggest();
 });
