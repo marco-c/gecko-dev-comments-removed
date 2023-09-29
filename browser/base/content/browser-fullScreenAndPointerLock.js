@@ -411,13 +411,23 @@ var FullScreen = {
     
     
     shiftSize = shiftSize.toFixed(2);
-    let toolbox = document.getElementById("navigator-toolbox");
+    let toolbox = gNavToolbox;
     if (shiftSize > 0) {
       toolbox.style.setProperty("transform", `translateY(${shiftSize}px)`);
       toolbox.style.setProperty("z-index", "2");
+
+      
+      
+      
+      if (!this.fullScreenToggler.hidden) {
+        this.showNavToolbox();
+      }
     } else {
       toolbox.style.removeProperty("transform");
       toolbox.style.removeProperty("z-index");
+
+      
+      this.hideNavToolbox(false);
     }
   },
 
