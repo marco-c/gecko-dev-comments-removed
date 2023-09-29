@@ -491,7 +491,7 @@ class StringHandler:
         return rv
 
 
-class StaticHandler(StringHandler):
+class StaticHandler:
     def __init__(self, path, format_args, content_type, **headers):
         """Handler that reads a file from a path and substitutes some fixed data
 
@@ -501,10 +501,26 @@ class StaticHandler(StringHandler):
         :param format_args: Dictionary of values to substitute into the template file
         :param content_type: Content type header to server the response with
         :param headers: List of headers to send with responses"""
+        self._path = path
+        self._format_args = format_args
+        self._content_type = content_type
+        self._headers = headers
+        self._handler = None
 
-        with open(path) as f:
-            data = f.read()
-            if format_args:
-                data = data % format_args
+    def __getnewargs_ex__(self):
+        
+        args = self._path, self._format_args, self._content_type
+        return args, self._headers
 
-        return super().__init__(data, content_type, **headers)
+    def __call__(self, request, response):
+        
+        
+        
+        
+        if not self._handler:
+            with open(self._path) as f:
+                data = f.read()
+            if self._format_args:
+                data = data % self._format_args
+            self._handler = StringHandler(data, self._content_type, **self._headers)
+        return self._handler(request, response)
