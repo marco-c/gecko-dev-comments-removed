@@ -215,14 +215,16 @@ class MOZ_RAII AutoProfilerLabel {
                     JS::ProfilingCategoryPair aCategoryPair,
                     uint32_t aFlags = 0) {
     
-    ProfilingStack* profilingStack =
-        profiler::ThreadRegistration::WithOnThreadRefOr(
-            [](profiler::ThreadRegistration::OnThreadRef aThread) {
-              return &aThread.UnlockedConstReaderAndAtomicRWRef()
-                          .ProfilingStackRef();
-            },
-            nullptr);
-    Push(profilingStack, aLabel, aDynamicString, aCategoryPair, aFlags);
+    mProfilingStack = profiler::ThreadRegistration::WithOnThreadRefOr(
+        [](profiler::ThreadRegistration::OnThreadRef aThread) {
+          return &aThread.UnlockedConstReaderAndAtomicRWRef()
+                      .ProfilingStackRef();
+        },
+        nullptr);
+    if (mProfilingStack) {
+      mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
+                                      aCategoryPair, aFlags);
+    }
   }
 
   
@@ -231,16 +233,7 @@ class MOZ_RAII AutoProfilerLabel {
   AutoProfilerLabel(JSContext* aJSContext, const char* aLabel,
                     const char* aDynamicString,
                     JS::ProfilingCategoryPair aCategoryPair, uint32_t aFlags) {
-    Push(js::GetContextProfilingStackIfEnabled(aJSContext), aLabel,
-         aDynamicString, aCategoryPair, aFlags);
-  }
-
-  void Push(ProfilingStack* aProfilingStack, const char* aLabel,
-            const char* aDynamicString, JS::ProfilingCategoryPair aCategoryPair,
-            uint32_t aFlags = 0) {
-    
-
-    mProfilingStack = aProfilingStack;
+    mProfilingStack = js::GetContextProfilingStackIfEnabled(aJSContext);
     if (mProfilingStack) {
       mProfilingStack->pushLabelFrame(aLabel, aDynamicString, this,
                                       aCategoryPair, aFlags);
