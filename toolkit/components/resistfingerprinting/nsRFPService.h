@@ -282,8 +282,7 @@ class nsRFPService final : public nsIObserver {
   
   
   static nsresult RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
-                                  uint8_t* aData, uint32_t aWidth,
-                                  uint32_t aHeight, uint32_t aSize,
+                                  uint8_t* aData, uint32_t aSize,
                                   mozilla::gfx::SurfaceFormat aSurfaceFormat);
 
   
