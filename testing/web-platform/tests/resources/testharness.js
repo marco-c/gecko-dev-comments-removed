@@ -2740,17 +2740,18 @@
 
 
 
+
     Test.prototype.step_wait_func = function(cond, func, description,
                                              timeout=3000, interval=100) {
         var timeout_full = timeout * tests.timeout_multiplier;
         var remaining = Math.ceil(timeout_full / interval);
         var test_this = this;
 
-        var wait_for_inner = test_this.step_func(() => {
-            if (cond()) {
+        const step = test_this.step_func((result) => {
+            if (result) {
                 func();
             } else {
-                if(remaining === 0) {
+                if (remaining === 0) {
                     assert(false, "step_wait_func", description,
                            "Timed out waiting on condition");
                 }
@@ -2759,10 +2760,17 @@
             }
         });
 
+        var wait_for_inner = test_this.step_func(() => {
+            Promise.resolve(cond()).then(
+                step,
+                test_this.unreached_func("step_wait_func"));
+        });
+
         wait_for_inner();
     };
 
     
+
 
 
 
