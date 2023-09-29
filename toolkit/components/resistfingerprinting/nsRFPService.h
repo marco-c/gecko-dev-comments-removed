@@ -7,7 +7,6 @@
 #define __nsRFPService_h__
 
 #include <cstdint>
-#include <tuple>
 #include "ErrorList.h"
 #include "PLDHashTable.h"
 #include "mozilla/BasicEvents.h"
@@ -15,10 +14,8 @@
 #include "mozilla/TypedEnumBits.h"
 #include "nsHashtablesFwd.h"
 #include "nsICookieJarSettings.h"
-#include "nsIFingerprintingWebCompatService.h"
 #include "nsIObserver.h"
 #include "nsISupports.h"
-#include "nsIRFPService.h"
 #include "nsStringFwd.h"
 
 
@@ -160,13 +157,12 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(RFPTarget);
 
 
 
-class nsRFPService final : public nsIObserver, public nsIRFPService {
+class nsRFPService final : public nsIObserver {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIOBSERVER
-  NS_DECL_NSIRFPSERVICE
 
-  static already_AddRefed<nsRFPService> GetOrCreate();
+  static nsRFPService* GetOrCreate();
 
   
   
@@ -355,29 +351,6 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   Maybe<nsID> mBrowsingSessionKey;
   Maybe<nsID> mPrivateBrowsingSessionKey;
-
-  nsCOMPtr<nsIFingerprintingWebCompatService> mWebCompatService;
-  nsTHashMap<nsCStringHashKey, RFPTarget> mFingerprintingOverrides;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  static nsresult CreateOverrideDomainKey(nsIFingerprintingOverride* aOverride,
-                                          nsACString& aDomainKey);
-
-  
-  
-  
-  
-  static RFPTarget CreateOverridesFromText(
-      const nsString& aOverridesText, RFPTarget aBaseOverrides = RFPTarget(0));
 };
 
 }  
