@@ -333,6 +333,7 @@ void ServoStyleSet::PreTraverseSync() {
   
   
   mDocument->FlushUserFontSet();
+  UpdateStylistIfNeeded();
 
   mDocument->ResolveScheduledPresAttrs();
 

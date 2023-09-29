@@ -1646,7 +1646,11 @@ class Document : public nsINode,
 
   
   
-  void ApplicableStylesChanged();
+  
+  
+  
+  
+  void ApplicableStylesChanged(bool aKnownInShadowTree = false);
 
   
   
