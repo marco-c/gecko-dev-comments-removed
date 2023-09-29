@@ -4,11 +4,16 @@ import os
 import pytest
 
 
-def test_profile_root(tmp_path, configuration, geckodriver):
+def test_profile_root(tmp_path, configuration, geckodriver, user_prefs):
     profile_path = os.path.join(tmp_path, "geckodriver-test")
     os.makedirs(profile_path)
 
     config = copy.deepcopy(configuration)
+
+    
+    
+    config["capabilities"]["moz:firefoxOptions"]["prefs"] = user_prefs
+
     
     del config["capabilities"]["moz:firefoxOptions"]["args"]
 
