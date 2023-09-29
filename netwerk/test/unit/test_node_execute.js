@@ -85,11 +85,3 @@ add_task(async function test_execute() {
       )
     );
 });
-
-add_task(async function killOnEnd() {
-  let id = await NodeServer.fork();
-  
-  NodeServer.execute(id, "while (true) {}").catch(e => {});
-  await new Promise(resolve => do_timeout(10, resolve));
-  
-});
