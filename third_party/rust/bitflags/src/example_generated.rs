@@ -1,14 +1,65 @@
 
 
 
-bitflags! {
+
+
+
+
+__declare_public_bitflags! {
     /// This is the same `Flags` struct defined in the [crate level example](../index.html#example).
     /// Note that this struct is just for documentation purposes only, it must not be used outside
     /// this crate.
-    pub struct Flags: u32 {
+    pub struct Flags
+}
+
+__declare_internal_bitflags! {
+    pub struct Field0: u32
+}
+
+__impl_internal_bitflags! {
+    Field0: u32, Flags {
+        // Field `A`.
+        ///
+        /// This flag has the value `0b00000001`.
         const A = 0b00000001;
+        /// Field `B`.
+        ///
+        /// This flag has the value `0b00000010`.
         const B = 0b00000010;
+        /// Field `C`.
+        ///
+        /// This flag has the value `0b00000100`.
         const C = 0b00000100;
-        const ABC = Self::A.bits | Self::B.bits | Self::C.bits;
+        const ABC = Self::A.bits() | Self::B.bits() | Self::C.bits();
+    }
+}
+
+__impl_public_bitflags_forward! {
+    Flags: u32, Field0
+}
+
+__impl_public_bitflags_ops! {
+    Flags
+}
+
+__impl_public_bitflags_iter! {
+    Flags: u32, Flags
+}
+
+__impl_public_bitflags_consts! {
+    Flags: u32 {
+        /// Field `A`.
+        ///
+        /// This flag has the value `0b00000001`.
+        const A = 0b00000001;
+        /// Field `B`.
+        ///
+        /// This flag has the value `0b00000010`.
+        const B = 0b00000010;
+        /// Field `C`.
+        ///
+        /// This flag has the value `0b00000100`.
+        const C = 0b00000100;
+        const ABC = Self::A.bits() | Self::B.bits() | Self::C.bits();
     }
 }
