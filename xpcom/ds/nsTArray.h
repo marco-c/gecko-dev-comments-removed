@@ -1848,14 +1848,18 @@ class nsTArray_Impl
   
   void RemoveElementsAt(index_type aStart, size_type aCount);
 
+ private:
   
   
   
   
   void RemoveElementsAtUnsafe(index_type aStart, size_type aCount);
 
+ public:
+  
   
   void RemoveElementAtUnsafe(index_type aIndex) {
+    MOZ_ASSERT(aIndex < Length(), "Trying to remove an invalid element");
     RemoveElementsAtUnsafe(aIndex, 1);
   }
 
