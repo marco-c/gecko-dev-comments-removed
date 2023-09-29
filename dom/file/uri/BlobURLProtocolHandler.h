@@ -46,16 +46,13 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   static nsresult AddDataEntry(BlobImpl*, nsIPrincipal*,
-                               const Maybe<nsID>& aAgentClusterId,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
   static nsresult AddDataEntry(MediaSource*, nsIPrincipal*,
-                               const Maybe<nsID>& aAgentClusterId,
                                const nsCString& aPartitionKey,
                                nsACString& aUri);
   
   static void AddDataEntry(const nsACString& aURI, nsIPrincipal* aPrincipal,
-                           const Maybe<nsID>& aAgentClusterId,
                            const nsCString& aPartitionKey, BlobImpl* aBlobImpl);
 
   
@@ -65,7 +62,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                               bool aBroadcastToOTherProcesses = true);
   
   static bool RemoveDataEntry(const nsACString& aUri, nsIPrincipal* aPrincipal,
-                              const Maybe<nsID>& aAgentClusterId,
                               const nsCString& aPartitionKey);
 
   static void RemoveDataEntries();
@@ -77,7 +73,6 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
                            nsIPrincipal* aTriggeringPrincipal,
                            const OriginAttributes& aOriginAttributes,
                            uint64_t aInnerWindowId,
-                           const Maybe<nsID>& aAgentClusterId,
                            const nsCString& aPartitionKey,
                            bool aAlsoIfRevoked = false);
 
@@ -90,9 +85,8 @@ class BlobURLProtocolHandler final : public nsIProtocolHandler,
   
   
   static bool ForEachBlobURL(
-      std::function<bool(BlobImpl*, nsIPrincipal*, const Maybe<nsID>&,
-                         const nsCString&, const nsACString&, bool aRevoked)>&&
-          aCb);
+      std::function<bool(BlobImpl*, nsIPrincipal*, const nsCString&,
+                         const nsACString&, bool aRevoked)>&& aCb);
 
   
   
