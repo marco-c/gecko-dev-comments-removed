@@ -32,6 +32,9 @@ const XPCStringConvert::LiteralExternalString
 const XPCStringConvert::DOMStringExternalString
     XPCStringConvert::sDOMStringExternalString;
 
+const XPCStringConvert::DynamicAtomExternalString
+    XPCStringConvert::sDynamicAtomExternalString;
+
 void XPCStringConvert::LiteralExternalString::finalize(char16_t* aChars) const {
   
 }
@@ -59,6 +62,22 @@ size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
   
   
   return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
+}
+
+void XPCStringConvert::DynamicAtomExternalString::finalize(
+    char16_t* aChars) const {
+  nsDynamicAtom* atom = nsDynamicAtom::FromChars(aChars);
+  
+  
+  
+  static_cast<nsAtom*>(atom)->Release();
+}
+
+size_t XPCStringConvert::DynamicAtomExternalString::sizeOfBuffer(
+    const char16_t* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
+  
+  
+  return 0;
 }
 
 

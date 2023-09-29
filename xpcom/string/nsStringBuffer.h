@@ -45,21 +45,7 @@ class nsStringBuffer {
 
 
 
-
-
-
   static already_AddRefed<nsStringBuffer> Alloc(size_t aStorageSize);
-
-  
-
-
-
-
-
-  static already_AddRefed<nsStringBuffer> Create(const char16_t* aData,
-                                                 size_t aLength);
-  static already_AddRefed<nsStringBuffer> Create(const char* aData,
-                                                 size_t aLength);
 
   
 
