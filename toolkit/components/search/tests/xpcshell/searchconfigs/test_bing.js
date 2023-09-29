@@ -1,5 +1,5 @@
-
-
+/* Any copyright is dedicated to the Public Domain.
+   http://creativecommons.org/publicdomain/zero/1.0/ */
 
 "use strict";
 
@@ -7,17 +7,17 @@ const test = new SearchConfigTest({
   identifier: "bing",
   aliases: ["@bing"],
   default: {
-    
+    // Not included anywhere.
   },
   available: {
     included: [
       {
-        
-        
-        
-        
-        
-        
+        // regions: [
+        // These arent currently enforced.
+        // "au", "at", "be", "br", "ca", "fi", "fr", "de",
+        // "in", "ie", "it", "jp", "my", "mx", "nl", "nz",
+        // "no", "sg", "es", "se", "ch", "gb", "us",
+        // ],
         locales: {
           matches: [
             "ach",
@@ -26,9 +26,12 @@ const test = new SearchConfigTest({
             "ar",
             "ast",
             "az",
+            "bs",
             "ca",
             "ca-valencia",
             "cak",
+            "cs",
+            "cy",
             "da",
             "de",
             "dsb",
@@ -44,12 +47,17 @@ const test = new SearchConfigTest({
             "fr",
             "fur",
             "fy-NL",
+            "gd",
+            "gl",
             "gn",
             "gu-IN",
+            "he",
             "hi-IN",
             "hr",
             "hsb",
+            "hy-AM",
             "ia",
+            "id",
             "is",
             "it",
             "ja-JP-macos",
@@ -61,6 +69,7 @@ const test = new SearchConfigTest({
             "lij",
             "lo",
             "lt",
+            "meh",
             "mk",
             "ms",
             "my",
@@ -79,8 +88,10 @@ const test = new SearchConfigTest({
             "sq",
             "sr",
             "sv-SE",
+            "te",
             "th",
             "tl",
+            "tr",
             "trs",
             "uk",
             "ur",
