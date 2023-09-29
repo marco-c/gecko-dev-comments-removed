@@ -277,47 +277,25 @@ float AudioEventTimeline::GetValuesAtTimeHelperInternal(
   }
 
   
-  if (!aNext) {
-    switch (aPrevious->mType) {
-      case AudioTimelineEvent::SetValueAtTime:
+  if (aNext) {
+    switch (aNext->mType) {
       case AudioTimelineEvent::LinearRamp:
+        return LinearInterpolate(TimeOf(aPrevious), ValueOf(aPrevious),
+                                 TimeOf(aNext), ValueOf(aNext), aTime);
+
       case AudioTimelineEvent::ExponentialRamp:
-        
-        return aPrevious->mValue;
-      case AudioTimelineEvent::SetValueCurve:
-        return ExtractValueFromCurve(aPrevious->Time<TimeType>(),
-                                     aPrevious->mCurve, aPrevious->mCurveLength,
-                                     aPrevious->mDuration, aTime);
+        return ExponentialInterpolate(TimeOf(aPrevious), ValueOf(aPrevious),
+                                      TimeOf(aNext), ValueOf(aNext), aTime);
+
+      case AudioTimelineEvent::SetValueAtTime:
       case AudioTimelineEvent::SetTarget:
-        MOZ_FALLTHROUGH_ASSERT("AudioTimelineEvent::SetTarget");
+      case AudioTimelineEvent::SetValueCurve:
+        break;
       case AudioTimelineEvent::SetValue:
       case AudioTimelineEvent::Cancel:
       case AudioTimelineEvent::Track:
         MOZ_ASSERT(false, "Should have been handled earlier.");
     }
-    MOZ_ASSERT(false, "unreached");
-  }
-
-  
-
-  
-  switch (aNext->mType) {
-    case AudioTimelineEvent::LinearRamp:
-      return LinearInterpolate(TimeOf(aPrevious), ValueOf(aPrevious),
-                               TimeOf(aNext), ValueOf(aNext), aTime);
-
-    case AudioTimelineEvent::ExponentialRamp:
-      return ExponentialInterpolate(TimeOf(aPrevious), ValueOf(aPrevious),
-                                    TimeOf(aNext), ValueOf(aNext), aTime);
-
-    case AudioTimelineEvent::SetValueAtTime:
-    case AudioTimelineEvent::SetTarget:
-    case AudioTimelineEvent::SetValueCurve:
-      break;
-    case AudioTimelineEvent::SetValue:
-    case AudioTimelineEvent::Cancel:
-    case AudioTimelineEvent::Track:
-      MOZ_ASSERT(false, "Should have been handled earlier.");
   }
 
   
