@@ -26,6 +26,22 @@ async function assertImplementsBFCacheOptional(remoteContextHelper) {
 }
 
 
+function setMinus(a, b) {
+  const minus = new Set();
+  a.forEach(e => {
+    if (!b.has(e)) {
+      minus.add(e);
+    }
+  });
+  return minus;
+}
+
+
+function sorted(s) {
+  return Array.from(s).sort();
+}
+
+
 
 
 
@@ -40,7 +56,7 @@ async function assertImplementsBFCacheOptional(remoteContextHelper) {
 async function assertNotRestoredFromBFCache(
     remoteContextHelper, notRestoredReasons) {
   var beforeBFCache = await getBeforeBFCache(remoteContextHelper);
-  assert_equals(beforeBFCache, undefined);
+  assert_equals(beforeBFCache, undefined, 'document unexpectedly BFCached');
 
   
   
@@ -49,7 +65,8 @@ async function assertNotRestoredFromBFCache(
   }
 
   let isFeatureEnabled = await remoteContextHelper.executeScript(() => {
-    return 'notRestoredReasons' in performance.getEntriesByType('navigation')[0];
+    return 'notRestoredReasons' in
+        performance.getEntriesByType('navigation')[0];
   });
 
   
@@ -72,15 +89,16 @@ async function assertNotRestoredFromBFCache(
     for (let child of node.children) {
       collectReason(child);
     }
-  }
+  };
   collectReason(result);
-
-  assert_equals(notRestoredReasonsSet.size,
-      expectedNotRestoredReasonsSet.size);
-
-  for (let reason of expectedNotRestoredReasonsSet) {
-    assert_true(notRestoredReasonsSet.has(reason));
-  }
+  const missing = setMinus(
+      expectedNotRestoredReasonsSet, notRestoredReasonsSet, 'Missing reasons');
+  const extra = setMinus(
+      notRestoredReasonsSet, expectedNotRestoredReasonsSet, 'Extra reasons');
+  assert_true(missing.size + extra.size == 0, `Expected: ${sorted(expectedNotRestoredReasonsSet)}\n` +
+    `Got: ${sorted(notRestoredReasonsSet)}\n` +
+    `Missing: ${sorted(missing)}\n` +
+    `Extra: ${sorted(extra)}\n`);
 }
 
 
