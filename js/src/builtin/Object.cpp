@@ -858,6 +858,23 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
   }
 }
 
+#ifdef DEBUG
+void PlainObjectAssignCache::assertValid() const {
+  MOZ_ASSERT(emptyToShape_);
+  MOZ_ASSERT(fromShape_);
+  MOZ_ASSERT(newToShape_);
+
+  MOZ_ASSERT(emptyToShape_->propMapLength() == 0);
+  MOZ_ASSERT(emptyToShape_->base() == newToShape_->base());
+  MOZ_ASSERT(emptyToShape_->numFixedSlots() == newToShape_->numFixedSlots());
+
+  MOZ_ASSERT(emptyToShape_->getObjectClass() == &PlainObject::class_);
+  MOZ_ASSERT(fromShape_->getObjectClass() == &PlainObject::class_);
+
+  MOZ_ASSERT(fromShape_->slotSpan() == newToShape_->slotSpan());
+}
+#endif
+
 [[nodiscard]] static bool TryAssignPlain(JSContext* cx, HandleObject to,
                                          HandleObject from, bool* optimized) {
   
@@ -889,6 +906,25 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
     return true;
   }
 
+  const bool toWasEmpty = toPlain->empty();
+  if (toWasEmpty) {
+    const PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
+    SharedShape* newShape = cache.lookup(toPlain->shape(), fromPlain->shape());
+    if (newShape) {
+      *optimized = true;
+      uint32_t oldSpan = 0;
+      uint32_t newSpan = newShape->slotSpan();
+      if (!toPlain->setShapeAndAddNewSlots(cx, newShape, oldSpan, newSpan)) {
+        return false;
+      }
+      MOZ_ASSERT(fromPlain->slotSpan() == newSpan);
+      for (size_t i = 0; i < newSpan; i++) {
+        toPlain->initSlot(i, fromPlain->getSlot(i));
+      }
+      return true;
+    }
+  }
+
   
 
   Rooted<PropertyInfoWithKeyVector> props(cx, PropertyInfoWithKeyVector(cx));
@@ -898,6 +934,7 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
 #endif
 
   bool hasPropsWithNonDefaultAttrs = false;
+  bool hasOnlyEnumerableProps = true;
   for (ShapePropertyIter<NoGC> iter(fromPlain->shape()); !iter.done(); iter++) {
     
     
@@ -914,18 +951,22 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
     }
     if (iter->flags() != PropertyFlags::defaultDataPropFlags) {
       hasPropsWithNonDefaultAttrs = true;
-    }
-    if (!iter->enumerable()) {
-      continue;
+      if (!iter->enumerable()) {
+        hasOnlyEnumerableProps = false;
+        continue;
+      }
     }
     if (MOZ_UNLIKELY(!props.append(*iter))) {
       return false;
     }
   }
 
+  MOZ_ASSERT_IF(hasOnlyEnumerableProps && !fromPlain->inDictionaryMode(),
+                fromPlain->slotSpan() == props.length());
+
   *optimized = true;
 
-  bool toWasEmpty = toPlain->empty();
+  Rooted<Shape*> origToShape(cx, toPlain->shape());
 
   
   
@@ -963,6 +1004,8 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
       for (size_t i = 0; i < newSpan; i++) {
         toPlain->initSlot(i, fromPlain->getSlot(i));
       }
+      PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
+      cache.fill(&origToShape->asShared(), fromPlain->sharedShape(), newShape);
       return true;
     }
   }
@@ -995,6 +1038,16 @@ static bool CanAddNewPropertyExcludingProtoFast(PlainObject* obj) {
     if (!AddDataPropertyToPlainObject(cx, toPlain, nextKey, propValue)) {
       return false;
     }
+  }
+
+  
+  
+  
+  if (toWasEmpty && hasOnlyEnumerableProps && !fromPlain->inDictionaryMode() &&
+      !toPlain->inDictionaryMode()) {
+    PlainObjectAssignCache& cache = cx->realm()->plainObjectAssignCache;
+    cache.fill(&origToShape->asShared(), fromPlain->sharedShape(),
+               toPlain->sharedShape());
   }
 
   return true;
