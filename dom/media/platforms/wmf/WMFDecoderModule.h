@@ -38,8 +38,13 @@ class WMFDecoderModule : public PlatformDecoderModule {
       const SupportDecoderParams& aParams,
       DecoderDoctorDiagnostics* aDiagnostics) const override;
 
+  enum class Config {
+    None,
+    ForceEnableHEVC,
+  };
+
   
-  static void Init();
+  static void Init(Config aConfig = Config::None);
 
   
   static int GetNumDecoderThreads();
@@ -49,6 +54,13 @@ class WMFDecoderModule : public PlatformDecoderModule {
   static bool CanCreateMFTDecoder(const WMFStreamType& aType);
 
  private:
+  
+  
+  
+  static inline bool sForceEnableHEVC = false;
+
+  static bool IsHEVCSupported();
+
   WMFDecoderModule() = default;
   virtual ~WMFDecoderModule() = default;
 };
