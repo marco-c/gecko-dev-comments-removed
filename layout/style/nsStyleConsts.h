@@ -415,6 +415,17 @@ enum class StyleWhiteSpace : uint8_t {
 };
 
 
+
+
+
+
+enum class StyleTextWrap : uint8_t {
+  Auto = 0,
+  Stable,
+  Balance,
+};
+
+
 enum class StyleRubyAlign : uint8_t {
   Start,
   Center,
