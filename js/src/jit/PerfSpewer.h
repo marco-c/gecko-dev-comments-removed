@@ -46,21 +46,24 @@ class PerfSpewer {
     
     UniqueChars str;
 
-    OpcodeEntry(uint32_t offset_, unsigned opcode_, UniqueChars& str_,
-                jsbytecode* pc)
+    explicit OpcodeEntry(uint32_t offset_, unsigned opcode_, UniqueChars& str_,
+                         jsbytecode* pc)
         : offset(offset_), opcode(opcode_), bytecodepc(pc) {
       str = std::move(str_);
     }
 
-    OpcodeEntry(uint32_t offset_, unsigned opcode_, UniqueChars& str_)
+    explicit OpcodeEntry(uint32_t offset_, unsigned opcode_, UniqueChars& str_)
         : offset(offset_), opcode(opcode_) {
       str = std::move(str_);
     }
-    OpcodeEntry(uint32_t offset_, UniqueChars& str_) : offset(offset_) {
+    explicit OpcodeEntry(uint32_t offset_, UniqueChars& str_)
+        : offset(offset_) {
       str = std::move(str_);
     }
-    OpcodeEntry(uint32_t offset_, unsigned opcode_)
+    explicit OpcodeEntry(uint32_t offset_, unsigned opcode_)
         : offset(offset_), opcode(opcode_) {}
+
+    explicit OpcodeEntry(jsbytecode* pc) : bytecodepc(pc) {}
 
     OpcodeEntry(OpcodeEntry&& copy) {
       offset = copy.offset;
@@ -165,6 +168,11 @@ class InlineCachePerfSpewer : public PerfSpewer {
   JS::JitTier GetTier() override { return JS::JitTier::IC; }
   const char* CodeName(unsigned op) override;
 
+ public:
+  void recordInstruction(MacroAssembler& masm, CacheOp op);
+};
+
+class BaselineICPerfSpewer : public InlineCachePerfSpewer {
   void saveJitCodeSourceInfo(JSScript* script, JitCode* code,
                              JS::JitCodeRecord* record,
                              AutoLockPerfSpewer& lock) override {
@@ -173,16 +181,17 @@ class InlineCachePerfSpewer : public PerfSpewer {
   }
 
  public:
-  void recordInstruction(MacroAssembler& masm, CacheOp op);
-};
-
-class BaselineICPerfSpewer : public InlineCachePerfSpewer {
- public:
   void saveProfile(JitCode* code, const char* stubName);
 };
 
 class IonICPerfSpewer : public InlineCachePerfSpewer {
  public:
+  explicit IonICPerfSpewer(jsbytecode* pc);
+
+  void saveJitCodeSourceInfo(JSScript* script, JitCode* code,
+                             JS::JitCodeRecord* record,
+                             AutoLockPerfSpewer& lock) override;
+
   void saveProfile(JSContext* cx, JSScript* script, JitCode* code,
                    const char* stubName);
 };
