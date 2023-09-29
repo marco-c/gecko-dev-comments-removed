@@ -6,6 +6,7 @@
 
 use crate::parser::{Parse, ParserContext};
 use crate::One;
+use crate::values::animated::ToAnimatedZero;
 use byteorder::{BigEndian, ReadBytesExt};
 use cssparser::Parser;
 use std::fmt::{self, Write};
@@ -265,5 +266,51 @@ impl<Factor: ToCss> ToCss for GenericFontSizeAdjust<Factor> {
 
         dest.write_str(prefix)?;
         value.to_css(dest)
+    }
+}
+
+
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToCss,
+    ToShmem,
+    Parse,
+)]
+#[repr(C, u8)]
+pub enum GenericLineHeight<N, L> {
+    
+    Normal,
+    
+    #[cfg(feature = "gecko")]
+    #[parse(condition = "ParserContext::in_ua_sheet")]
+    MozBlockHeight,
+    
+    Number(N),
+    
+    Length(L),
+}
+
+pub use self::GenericLineHeight as LineHeight;
+
+impl<N, L> ToAnimatedZero for LineHeight<N, L> {
+    #[inline]
+    fn to_animated_zero(&self) -> Result<Self, ()> {
+        Err(())
+    }
+}
+
+impl<N, L> LineHeight<N, L> {
+    
+    #[inline]
+    pub fn normal() -> Self {
+        LineHeight::Normal
     }
 }

@@ -140,6 +140,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleFont {
 
   
   int8_t mMathDepth;
+  mozilla::StyleLineHeight mLineHeight;
   
   mozilla::StyleMathVariant mMathVariant;
   
@@ -871,7 +872,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText {
   mozilla::StyleNonNegativeLengthOrNumber mTabSize;
   mozilla::LengthPercentage mWordSpacing;
   mozilla::StyleLetterSpacing mLetterSpacing;
-  mozilla::StyleLineHeight mLineHeight;
   mozilla::LengthPercentage mTextIndent;
 
   mozilla::LengthPercentageOrAuto mTextUnderlineOffset;
