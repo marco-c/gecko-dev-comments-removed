@@ -78,14 +78,14 @@ pub struct FrameGlobalResources {
     
     
     
-    pub default_transparent_rect_handle: GpuCacheHandle,
+    pub default_black_rect_handle: GpuCacheHandle,
 }
 
 impl FrameGlobalResources {
     pub fn empty() -> Self {
         FrameGlobalResources {
             default_image_handle: GpuCacheHandle::new(),
-            default_transparent_rect_handle: GpuCacheHandle::new(),
+            default_black_rect_handle: GpuCacheHandle::new(),
         }
     }
 
@@ -104,8 +104,8 @@ impl FrameGlobalResources {
             ]);
         }
 
-        if let Some(mut request) = gpu_cache.request(&mut self.default_transparent_rect_handle) {
-            request.push(PremultipliedColorF::TRANSPARENT);
+        if let Some(mut request) = gpu_cache.request(&mut self.default_black_rect_handle) {
+            request.push(PremultipliedColorF::BLACK);
         }
     }
 }
