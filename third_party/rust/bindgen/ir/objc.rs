@@ -260,10 +260,16 @@ impl ObjCMethod {
                     
                     
                     
+                    
+                    
                     Some(
                         syn::parse_str::<Ident>(name)
                             .or_else(|err| {
                                 syn::parse_str::<Ident>(&format!("r#{}", name))
+                                    .map_err(|_| err)
+                            })
+                            .or_else(|err| {
+                                syn::parse_str::<Ident>(&format!("{}_", name))
                                     .map_err(|_| err)
                             })
                             .expect("Invalid identifier"),
