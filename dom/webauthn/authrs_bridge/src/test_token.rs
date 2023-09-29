@@ -365,8 +365,15 @@ impl VirtualFidoDevice for TestToken {
         
 
         
-        if self.is_user_consenting && effective_up_opt {
-            flags |= AuthenticatorDataFlags::USER_PRESENT;
+        if effective_up_opt {
+            if self.is_user_consenting {
+                flags |= AuthenticatorDataFlags::USER_PRESENT;
+            } else {
+                return Err(HIDError::Command(CommandError::StatusCode(
+                    StatusCode::UpRequired,
+                    None,
+                )));
+            }
         }
 
         
@@ -506,6 +513,11 @@ impl VirtualFidoDevice for TestToken {
         
         if self.is_user_consenting {
             flags |= AuthenticatorDataFlags::USER_PRESENT;
+        } else {
+            return Err(HIDError::Command(CommandError::StatusCode(
+                StatusCode::UpRequired,
+                None,
+            )));
         }
 
         
