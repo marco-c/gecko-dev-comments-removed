@@ -70,11 +70,15 @@ bool MoofParser::RebuildFragmentedIndex(BoxContext& aContext) {
       Moof moof(box, mTrackParseMode, mTrex, mMvhd, mMdhd, mEdts, mSinf,
                 &mLastDecodeTime, mIsAudio, mTracksEndCts);
 
-      if (!moof.IsValid() && !box.Next().IsAvailable()) {
+      if (!moof.IsValid()) {
+        if (!box.Next().IsAvailable()) {
+          
+          
+          LOG_WARN(Moof, "Invalid moof. moof may not be complete yet.");
+          break;
+        }
         
-        LOG_WARN(Moof,
-                 "Could not find valid moof, moof may not be complete yet.");
-        break;
+        continue;
       }
 
       if (!mMoofs.IsEmpty()) {
@@ -720,7 +724,7 @@ void Moof::ParseTraf(Box& aBox, const TrackParseMode& aTrackParseMode,
       } else {
         LOG_WARN(Moof, "ParseTrun failed");
         mValid = false;
-        break;
+        return;
       }
     }
   }
