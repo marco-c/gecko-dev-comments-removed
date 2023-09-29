@@ -7407,16 +7407,25 @@ SurfaceFromElementResult nsLayoutUtils::SurfaceFromElement(
       res.ApplyXTo(imgWidth);
     } else if (aResizeWidth.isSome()) {
       imgWidth = *aResizeWidth;
-      rv = NS_OK;
+    } else {
+      
+      
+      
+      
+      imgWidth = kFallbackIntrinsicWidthInPixels;
     }
-    nsresult rv2 = imgContainer->GetHeight(&imgHeight);
-    if (NS_SUCCEEDED(rv2)) {
+    rv = imgContainer->GetHeight(&imgHeight);
+    if (NS_SUCCEEDED(rv)) {
       res.ApplyYTo(imgHeight);
     } else if (aResizeHeight.isSome()) {
       imgHeight = *aResizeHeight;
-      rv2 = NS_OK;
+    } else {
+      
+      
+      
+      
+      imgHeight = kFallbackIntrinsicHeightInPixels;
     }
-    if (NS_FAILED(rv) || NS_FAILED(rv2)) return result;
   }
   result.mSize = result.mIntrinsicSize = IntSize(imgWidth, imgHeight);
 
