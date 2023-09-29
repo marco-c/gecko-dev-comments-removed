@@ -251,6 +251,12 @@ class InspectorUtils {
   static void GetRegisteredCssHighlights(GlobalObject& aGlobal,
                                          Document& aDocument, bool aActiveOnly,
                                          nsTArray<nsString>& aResult);
+  
+
+
+  static void GetCSSRegisteredProperties(
+      GlobalObject& aGlobal, Document& aDocument,
+      nsTArray<InspectorCSSPropertyDefinition>& aResult);
 };
 
 }  

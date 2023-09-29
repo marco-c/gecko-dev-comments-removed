@@ -3238,6 +3238,11 @@ impl CascadeData {
     }
 
     
+    pub fn custom_property_registrations(&self) -> &LayerOrderedMap<PropertyRegistration> {
+        &self.custom_property_registrations
+    }
+
+    
     fn clear_cascade_data(&mut self) {
         self.normal_rules.clear();
         if let Some(ref mut slotted_rules) = self.slotted_rules {

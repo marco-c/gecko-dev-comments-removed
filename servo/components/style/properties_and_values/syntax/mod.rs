@@ -66,6 +66,26 @@ impl Descriptor {
     }
 }
 
+impl ToCss for Descriptor {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        if  self.is_universal() {
+            return dest.write_char('*');
+        }
+
+        for (i, component) in self.0.iter().enumerate() {
+            component.to_css(dest)?;
+            if i != self.0.len() - 1 {
+                dest.write_str(" | ")?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
 
 #[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
 pub struct ParsedDescriptor {
@@ -121,6 +141,20 @@ pub enum Multiplier {
     Comma,
 }
 
+impl ToCss for Multiplier {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_char(
+            match *self {
+                Multiplier::Space => '+',
+                Multiplier::Comma => '#',
+            }
+        )
+    }
+}
+
 
 #[derive(Clone, Debug, MallocSizeOf, PartialEq)]
 pub struct Component {
@@ -157,8 +191,18 @@ impl Component {
     }
 }
 
+impl ToCss for Component {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.name().to_css(dest)?;
+        self.multiplier().to_css(dest)
+    }
+}
 
-#[derive(Clone, Debug, MallocSizeOf, PartialEq)]
+
+#[derive(Clone, Debug, MallocSizeOf, PartialEq, ToCss)]
 pub enum ComponentName {
     
     DataType(DataType),
