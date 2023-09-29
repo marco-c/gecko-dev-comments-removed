@@ -17,10 +17,10 @@
   <span contenteditable></span><hr>
   <div contenteditable style="display: inline;"></div><hr>
   <div contenteditable style="display: inline-block;"></div><hr>
-  
-
-
-
+  <!--
+    FIXME: https://bugzilla.mozilla.org/show_bug.cgi?id=1654364
+    <table contenteditable style="display: inline-table;"><tr><td></table><hr>
+  -->
   <div contenteditable style="display: inline-flex;"></div><hr>
   <div contenteditable style="display: inline-grid;"></div>
 </div>
@@ -40,7 +40,12 @@ function nonCollapsedDeletionTest(host, clickCount) {
   is(selection.isCollapsed, false, "Noncollapsed selection should occur");
 
   synthesizeKey("KEY_Backspace");
-  is(host.textContent, "", "Backspace should delete the content of the editing host");
+  is(
+    host.textContent,
+    "",
+    `Backspace should delete the content of the editing host (<div contenteditable style="${
+      host.getAttribute("style")
+    }">)`);
 }
 
 function collapsedSelectionTest(host, clickCount) {

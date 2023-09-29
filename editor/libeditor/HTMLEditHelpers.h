@@ -15,7 +15,6 @@
 #include "EditorDOMPoint.h"
 #include "EditorForwards.h"
 #include "EditorUtils.h"  
-#include "HTMLEditHelpers.h"
 #include "JoinSplitNodeDirection.h"
 
 #include "mozilla/AlreadyAddRefed.h"
@@ -39,6 +38,41 @@
 class nsISimpleEnumerator;
 
 namespace mozilla {
+
+enum class BlockInlineCheck : uint8_t {
+  
+  Unused,
+  
+  
+  UseHTMLDefaultStyle,
+  
+  
+  
+  
+  UseComputedDisplayOutsideStyle,
+  
+  
+  
+  
+  
+  
+  
+  
+  UseComputedDisplayStyle,
+};
+
+
+
+
+
+
+
+[[nodiscard]] inline BlockInlineCheck IgnoreInsideBlockBoundary(
+    BlockInlineCheck aBlockInlineCheck) {
+  return aBlockInlineCheck == BlockInlineCheck::UseComputedDisplayStyle
+             ? BlockInlineCheck::UseComputedDisplayOutsideStyle
+             : aBlockInlineCheck;
+}
 
 enum class WithTransaction { No, Yes };
 inline std::ostream& operator<<(std::ostream& aStream,

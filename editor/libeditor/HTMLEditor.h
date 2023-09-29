@@ -1216,9 +1216,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
-  SplitParentInlineElementsAtRangeBoundaries(
-      RangeItem& aRangeItem, const Element& aEditingHost,
+  SplitInlineAncestorsAtRangeBoundaries(
+      RangeItem& aRangeItem, BlockInlineCheck aBlockInlineCheck,
+      const Element& aEditingHost,
       const nsIContent* aAncestorLimiter = nullptr);
 
   
@@ -1442,11 +1445,14 @@ class HTMLEditor final : public EditorBase,
 
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
-  SplitRangeOffFromBlock(Element& aBlockElement,
-                         nsIContent& aStartOfMiddleElement,
-                         nsIContent& aEndOfMiddleElement);
+  SplitRangeOffFromElement(Element& aElementToSplit,
+                           nsIContent& aStartOfMiddleElement,
+                           nsIContent& aEndOfMiddleElement);
 
   
+
+
+
 
 
 
@@ -1469,7 +1475,7 @@ class HTMLEditor final : public EditorBase,
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitRangeOffFromNodeResult, nsresult>
   RemoveBlockContainerElementWithTransactionBetween(
       Element& aBlockContainerElement, nsIContent& aStartOfRange,
-      nsIContent& aEndOfRange);
+      nsIContent& aEndOfRange, BlockInlineCheck aBlockInlineCheck);
 
   
 
@@ -1504,7 +1510,8 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   RemoveBlockContainerElementsWithTransaction(
-      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents);
+      const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+      BlockInlineCheck aBlockInlineCheck);
 
   
 

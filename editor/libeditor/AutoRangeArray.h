@@ -10,7 +10,8 @@
 #include "EditorBase.h"      
 #include "EditorDOMPoint.h"  
 #include "EditorForwards.h"
-#include "SelectionState.h"  
+#include "HTMLEditHelpers.h"  
+#include "SelectionState.h"   
 
 #include "mozilla/ErrorResult.h"        
 #include "mozilla/IntegerRange.h"       
@@ -428,9 +429,12 @@ class MOZ_STACK_CLASS AutoRangeArray final {
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   SplitTextAtEndBoundariesAndInlineAncestorsAtBothBoundaries(
-      HTMLEditor& aHTMLEditor, const dom::Element& aEditingHost,
+      HTMLEditor& aHTMLEditor, BlockInlineCheck aBlockInlineCheck,
+      const dom::Element& aEditingHost,
       const nsIContent* aAncestorLimiter = nullptr);
 
   

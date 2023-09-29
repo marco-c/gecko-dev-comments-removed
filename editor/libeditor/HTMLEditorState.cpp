@@ -283,7 +283,7 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
            atStartOfSelection.Offset() == atBodyOrDocumentElement.Offset()) {
     editTargetContent = HTMLEditUtils::GetNextContent(
         atStartOfSelection, {WalkTreeOption::IgnoreNonEditableNode},
-        aHTMLEditor.ComputeEditingHost());
+        BlockInlineCheck::Unused, aHTMLEditor.ComputeEditingHost());
     if (NS_WARN_IF(!editTargetContent)) {
       aRv.Throw(NS_ERROR_FAILURE);
       return;
@@ -330,7 +330,8 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
 
   const RefPtr<dom::Element> maybeNonEditableBlockElement =
       HTMLEditUtils::GetInclusiveAncestorElement(
-          *editTargetContent, HTMLEditUtils::ClosestBlockElement);
+          *editTargetContent, HTMLEditUtils::ClosestBlockElement,
+          BlockInlineCheck::UseHTMLDefaultStyle);
   if (NS_WARN_IF(!maybeNonEditableBlockElement)) {
     aRv.Throw(NS_ERROR_FAILURE);
     return;
@@ -487,10 +488,10 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(HTMLEditor& aHTMLEditor,
   
   
   
-  for (int32_t i = arrayOfContents.Length() - 1; i >= 0; i--) {
-    auto& content = arrayOfContents[i];
-    nsAutoString format;
-    if (HTMLEditUtils::IsBlockElement(content) &&
+  for (size_t index : Reversed(IntegerRange(arrayOfContents.Length()))) {
+    OwningNonNull<nsIContent>& content = arrayOfContents[index];
+    if (HTMLEditUtils::IsBlockElement(content,
+                                      BlockInlineCheck::UseHTMLDefaultStyle) &&
         !HTMLEditUtils::IsFormatNode(content)) {
       
       
@@ -529,7 +530,8 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(HTMLEditor& aHTMLEditor,
     }
     
     
-    else if (HTMLEditUtils::IsBlockElement(content)) {
+    else if (HTMLEditUtils::IsBlockElement(
+                 content, BlockInlineCheck::UseHTMLDefaultStyle)) {
       continue;
     }
     
@@ -566,7 +568,8 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(HTMLEditor& aHTMLEditor,
 void ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
     nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
     dom::Element& aNonFormatBlockElement) {
-  MOZ_ASSERT(HTMLEditUtils::IsBlockElement(aNonFormatBlockElement));
+  MOZ_ASSERT(HTMLEditUtils::IsBlockElement(
+      aNonFormatBlockElement, BlockInlineCheck::UseHTMLDefaultStyle));
   MOZ_ASSERT(!HTMLEditUtils::IsFormatNode(&aNonFormatBlockElement));
 
   
@@ -576,8 +579,9 @@ void ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
   bool foundInline = false;
   for (nsIContent* childContent = aNonFormatBlockElement.GetFirstChild();
        childContent; childContent = childContent->GetNextSibling()) {
-    bool isBlock = HTMLEditUtils::IsBlockElement(*childContent);
-    bool isFormat = HTMLEditUtils::IsFormatNode(childContent);
+    const bool isBlock = HTMLEditUtils::IsBlockElement(
+        *childContent, BlockInlineCheck::UseHTMLDefaultStyle);
+    const bool isFormat = HTMLEditUtils::IsFormatNode(childContent);
     
     
     if (isBlock && !isFormat) {
@@ -627,12 +631,12 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
   }
 
   
-  for (int32_t i = aArrayOfContents.Length() - 1; i >= 0; i--) {
-    OwningNonNull<nsIContent> content = aArrayOfContents[i];
+  for (size_t index : Reversed(IntegerRange(aArrayOfContents.Length()))) {
+    OwningNonNull<nsIContent> content = aArrayOfContents[index];
 
     
     if (!EditorUtils::IsEditableContent(content, EditorType::HTML)) {
-      aArrayOfContents.RemoveElementAt(i);
+      aArrayOfContents.RemoveElementAt(index);
       continue;
     }
 
@@ -642,9 +646,9 @@ nsresult ParagraphStateAtSelection::CollectEditableFormatNodesInSelection(
     if (HTMLEditUtils::IsAnyTableElement(content) ||
         HTMLEditUtils::IsAnyListElement(content) ||
         HTMLEditUtils::IsListItem(content)) {
-      aArrayOfContents.RemoveElementAt(i);
+      aArrayOfContents.RemoveElementAt(index);
       HTMLEditUtils::CollectChildren(
-          content, aArrayOfContents, i,
+          content, aArrayOfContents, index,
           {CollectChildrenOption::CollectListChildren,
            CollectChildrenOption::CollectTableChildren});
     }

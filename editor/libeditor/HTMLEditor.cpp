@@ -30,6 +30,7 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/EditorForwards.h"
 #include "mozilla/Encoding.h"  
+#include "mozilla/FlushType.h"
 #include "mozilla/IMEStateManager.h"
 #include "mozilla/IntegerRange.h"  
 #include "mozilla/InternalMutationEvent.h"
@@ -1104,7 +1105,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
            *editingHost,
            {LeafNodeType::LeafNodeOrNonEditableNode,
             LeafNodeType::LeafNodeOrChildBlock},
-           editingHost);
+           BlockInlineCheck::UseComputedDisplayStyle, editingHost);
        leafContent;) {
     
     
@@ -1115,8 +1116,8 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       if (const Element* editableBlockElementOrInlineEditingHost =
               HTMLEditUtils::GetAncestorElement(
                   *leafContent,
-                  HTMLEditUtils::
-                      ClosestEditableBlockElementOrInlineEditingHost)) {
+                  HTMLEditUtils::ClosestEditableBlockElementOrInlineEditingHost,
+                  BlockInlineCheck::UseComputedDisplayStyle)) {
         nsresult rv = CollapseSelectionTo(
             EditorDOMPoint(editableBlockElementOrInlineEditingHost, 0));
         NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
@@ -1132,18 +1133,21 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     
     
     
-    if (leafContent->IsElement() &&
-        HTMLEditUtils::IsInlineElement(*leafContent) &&
-        !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent) &&
-        HTMLEditUtils::CanNodeContain(*leafContent, *nsGkAtoms::textTagName)) {
-      
-      
-      leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
-          *leafContent, *editingHost,
-          {LeafNodeType::LeafNodeOrNonEditableNode,
-           LeafNodeType::LeafNodeOrChildBlock},
-          editingHost);
-      continue;
+    if (Element* leafElement = Element::FromNode(leafContent)) {
+      if (HTMLEditUtils::IsInlineContent(
+              *leafElement, BlockInlineCheck::UseComputedDisplayStyle) &&
+          !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafElement) &&
+          HTMLEditUtils::CanNodeContain(*leafElement,
+                                        *nsGkAtoms::textTagName)) {
+        
+        
+        leafContent = HTMLEditUtils::GetNextLeafContentOrNextBlockElement(
+            *leafElement, *editingHost,
+            {LeafNodeType::LeafNodeOrNonEditableNode,
+             LeafNodeType::LeafNodeOrChildBlock},
+            BlockInlineCheck::UseComputedDisplayStyle, editingHost);
+        continue;
+      }
     }
 
     if (Text* text = leafContent->GetAsText()) {
@@ -1151,7 +1155,8 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
       
       WSScanResult scanResultInTextNode =
           WSRunScanner::ScanNextVisibleNodeOrBlockBoundary(
-              editingHost, EditorRawDOMPoint(text, 0));
+              editingHost, EditorRawDOMPoint(text, 0),
+              BlockInlineCheck::UseComputedDisplayStyle);
       if ((scanResultInTextNode.InVisibleOrCollapsibleCharacters() ||
            scanResultInTextNode.ReachedPreformattedLineBreak()) &&
           scanResultInTextNode.TextPtr() == text) {
@@ -1166,7 +1171,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
           *leafContent, *editingHost,
           {LeafNodeType::LeafNodeOrNonEditableNode,
            LeafNodeType::LeafNodeOrChildBlock},
-          editingHost);
+          BlockInlineCheck::UseComputedDisplayStyle, editingHost);
       continue;
     }
 
@@ -1192,7 +1197,8 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
     }
 
     
-    if (HTMLEditUtils::IsBlockElement(*leafContent) &&
+    if (HTMLEditUtils::IsBlockElement(
+            *leafContent, BlockInlineCheck::UseComputedDisplayStyle) &&
         !HTMLEditUtils::IsEmptyNode(
             *leafContent, {EmptyCheckOption::TreatSingleBRElementAsVisible}) &&
         !HTMLEditUtils::IsNeverElementContentsEditableByUser(*leafContent)) {
@@ -1200,7 +1206,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
           *leafContent,
           {LeafNodeType::LeafNodeOrNonEditableNode,
            LeafNodeType::LeafNodeOrChildBlock},
-          editingHost);
+          BlockInlineCheck::UseComputedDisplayStyle, editingHost);
       continue;
     }
 
@@ -1210,7 +1216,7 @@ nsresult HTMLEditor::MaybeCollapseSelectionAtFirstEditableNode(
         *leafContent, *editingHost,
         {LeafNodeType::LeafNodeOrNonEditableNode,
          LeafNodeType::LeafNodeOrChildBlock},
-        editingHost);
+        BlockInlineCheck::UseComputedDisplayStyle, editingHost);
   }
 
   
@@ -1374,7 +1380,8 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
       const Element* editableBlockElement =
           HTMLEditUtils::GetInclusiveAncestorElement(
               *startContainer->AsContent(),
-              HTMLEditUtils::ClosestEditableBlockElement);
+              HTMLEditUtils::ClosestEditableBlockElement,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (!editableBlockElement) {
         break;
       }
@@ -1469,8 +1476,23 @@ nsresult HTMLEditor::HandleKeyPressEvent(WidgetKeyboardEvent* aKeyboardEvent) {
 }
 
 NS_IMETHODIMP HTMLEditor::NodeIsBlock(nsINode* aNode, bool* aIsBlock) {
-  *aIsBlock = aNode && aNode->IsContent() &&
-              HTMLEditUtils::IsBlockElement(*aNode->AsContent());
+  if (NS_WARN_IF(!aNode)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+  if (MOZ_UNLIKELY(!aNode->IsElement())) {
+    *aIsBlock = false;
+    return NS_OK;
+  }
+  
+  
+  
+  if (aNode->IsInComposedDoc()) {
+    if (RefPtr<PresShell> presShell = GetPresShell()) {
+      presShell->FlushPendingNotifications(FlushType::Style);
+    }
+  }
+  *aIsBlock = HTMLEditUtils::IsBlockElement(
+      *aNode->AsElement(), BlockInlineCheck::UseComputedDisplayOutsideStyle);
   return NS_OK;
 }
 
@@ -2136,7 +2158,8 @@ nsresult HTMLEditor::InsertElementAtSelectionAsAction(
   }
 
   if (aDeleteSelection) {
-    if (!HTMLEditUtils::IsBlockElement(*aElement)) {
+    if (!HTMLEditUtils::IsBlockElement(
+            *aElement, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
       
       
       
@@ -2585,14 +2608,16 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
     
     Element* const closestBlockElement =
         HTMLEditUtils::GetInclusiveAncestorElement(
-            *contentToExamine, HTMLEditUtils::ClosestBlockElement);
+            *contentToExamine, HTMLEditUtils::ClosestBlockElement,
+            BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (NS_WARN_IF(!closestBlockElement)) {
       return NS_OK;
     }
 
     for (RefPtr<Element> blockElement = closestBlockElement; blockElement;) {
       RefPtr<Element> nextBlockElement = HTMLEditUtils::GetAncestorElement(
-          *blockElement, HTMLEditUtils::ClosestBlockElement);
+          *blockElement, HTMLEditUtils::ClosestBlockElement,
+          BlockInlineCheck::UseComputedDisplayOutsideStyle);
       DebugOnly<nsresult> rvIgnored = CSSEditUtils::GetComputedProperty(
           *blockElement, *nsGkAtoms::backgroundColor, aOutColor);
       if (NS_WARN_IF(Destroyed())) {
@@ -2601,7 +2626,8 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
       if (MayHaveMutationEventListeners() &&
           NS_WARN_IF(nextBlockElement !=
                      HTMLEditUtils::GetAncestorElement(
-                         *blockElement, HTMLEditUtils::ClosestBlockElement))) {
+                         *blockElement, HTMLEditUtils::ClosestBlockElement,
+                         BlockInlineCheck::UseComputedDisplayOutsideStyle))) {
         return NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE;
       }
       NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
@@ -2638,7 +2664,8 @@ nsresult HTMLEditor::GetCSSBackgroundColorState(bool* aMixed,
              contentToExamine->GetAsElementOrParentElement();
          element; element = element->GetParentElement()) {
       
-      if (HTMLEditUtils::IsBlockElement(*element)) {
+      if (HTMLEditUtils::IsBlockElement(
+              *element, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
         
         
         aOutColor.AssignLiteral("transparent");
@@ -3817,7 +3844,9 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
     return NS_ERROR_FAILURE;
   }
 
-  if (&aContent == editingHost || HTMLEditUtils::IsBlockElement(aContent) ||
+  if (&aContent == editingHost ||
+      HTMLEditUtils::IsBlockElement(
+          aContent, BlockInlineCheck::UseComputedDisplayOutsideStyle) ||
       !EditorUtils::IsEditableContent(aContent, EditorType::HTML) ||
       !aContent.GetParent()) {
     return NS_OK;
@@ -3829,7 +3858,8 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
   
   {
     const Element* editableBlockElement = HTMLEditUtils::GetAncestorElement(
-        aContent, HTMLEditUtils::ClosestEditableBlockElement);
+        aContent, HTMLEditUtils::ClosestEditableBlockElement,
+        BlockInlineCheck::UseComputedDisplayOutsideStyle);
     if (!editableBlockElement ||
         HTMLEditUtils::IsEmptyNode(
             *editableBlockElement,
@@ -3840,7 +3870,8 @@ nsresult HTMLEditor::RemoveEmptyInclusiveAncestorInlineElements(
 
   OwningNonNull<nsIContent> content = aContent;
   for (nsIContent* parentContent : aContent.AncestorsOfType<nsIContent>()) {
-    if (HTMLEditUtils::IsBlockElement(*parentContent) ||
+    if (HTMLEditUtils::IsBlockElement(
+            *parentContent, BlockInlineCheck::UseComputedDisplayOutsideStyle) ||
         parentContent->Length() != 1 ||
         !EditorUtils::IsEditableContent(*parentContent, EditorType::HTML) ||
         parentContent == editingHost) {
@@ -4829,9 +4860,12 @@ HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
 
     if (nsIContent* previousSibling = HTMLEditUtils::GetPreviousSibling(
             aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-      if (!HTMLEditUtils::IsBlockElement(*previousSibling) &&
+      if (!HTMLEditUtils::IsBlockElement(
+              *previousSibling,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle) &&
           !previousSibling->IsHTMLElement(nsGkAtoms::br) &&
-          !HTMLEditUtils::IsBlockElement(*child)) {
+          !HTMLEditUtils::IsBlockElement(
+              *child, BlockInlineCheck::UseComputedDisplayOutsideStyle)) {
         
         Result<CreateElementResult, nsresult> insertBRElementResult =
             InsertBRElement(WithTransaction::Yes,
@@ -4857,10 +4891,14 @@ HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
 
     if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
             aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-      if (nextSibling && !HTMLEditUtils::IsBlockElement(*nextSibling)) {
+      if (nextSibling &&
+          !HTMLEditUtils::IsBlockElement(
+              *nextSibling, BlockInlineCheck::UseComputedDisplayStyle)) {
         if (nsIContent* lastChild = HTMLEditUtils::GetLastChild(
-                aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-          if (!HTMLEditUtils::IsBlockElement(*lastChild) &&
+                aElement, {WalkTreeOption::IgnoreNonEditableNode},
+                BlockInlineCheck::Unused)) {
+          if (!HTMLEditUtils::IsBlockElement(
+                  *lastChild, BlockInlineCheck::UseComputedDisplayStyle) &&
               !lastChild->IsHTMLElement(nsGkAtoms::br)) {
             Result<CreateElementResult, nsresult> insertBRElementResult =
                 InsertBRElement(WithTransaction::Yes,
@@ -4887,11 +4925,13 @@ HTMLEditor::RemoveBlockContainerWithTransaction(Element& aElement) {
     
     
     
-    if (!HTMLEditUtils::IsBlockElement(*previousSibling) &&
+    if (!HTMLEditUtils::IsBlockElement(
+            *previousSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
         !previousSibling->IsHTMLElement(nsGkAtoms::br)) {
       if (nsIContent* nextSibling = HTMLEditUtils::GetNextSibling(
               aElement, {WalkTreeOption::IgnoreNonEditableNode})) {
-        if (!HTMLEditUtils::IsBlockElement(*nextSibling) &&
+        if (!HTMLEditUtils::IsBlockElement(
+                *nextSibling, BlockInlineCheck::UseComputedDisplayStyle) &&
             !nextSibling->IsHTMLElement(nsGkAtoms::br)) {
           Result<CreateElementResult, nsresult> insertBRElementResult =
               InsertBRElement(WithTransaction::Yes,
@@ -6212,7 +6252,8 @@ nsresult HTMLEditor::SetBlockBackgroundColorWithCSSAsSubAction(
         const RefPtr<nsStyledElement> editableBlockStyledElement =
             nsStyledElement::FromNodeOrNull(HTMLEditUtils::GetAncestorElement(
                 *range.StartRef().ContainerAs<Text>(),
-                HTMLEditUtils::ClosestEditableBlockElement));
+                HTMLEditUtils::ClosestEditableBlockElement,
+                BlockInlineCheck::UseComputedDisplayOutsideStyle));
         if (!editableBlockStyledElement ||
             !EditorElementStyle::BGColor().IsCSSSettable(
                 *editableBlockStyledElement)) {
@@ -6268,7 +6309,8 @@ nsresult HTMLEditor::SetBlockBackgroundColorWithCSSAsSubAction(
             nsStyledElement::FromNodeOrNull(
                 HTMLEditUtils::GetInclusiveAncestorElement(
                     *range.StartRef().GetChild(),
-                    HTMLEditUtils::ClosestEditableBlockElement));
+                    HTMLEditUtils::ClosestEditableBlockElement,
+                    BlockInlineCheck::UseComputedDisplayOutsideStyle));
         if (!editableBlockStyledElement ||
             !EditorElementStyle::BGColor().IsCSSSettable(
                 *editableBlockStyledElement)) {
@@ -6325,7 +6367,8 @@ nsresult HTMLEditor::SetBlockBackgroundColorWithCSSAsSubAction(
                                        EditorType::HTML)) {
       Element* const editableBlockElement = HTMLEditUtils::GetAncestorElement(
           *range.StartRef().ContainerAs<Text>(),
-          HTMLEditUtils::ClosestEditableBlockElement);
+          HTMLEditUtils::ClosestEditableBlockElement,
+          BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (editableBlockElement && handledBlockParent != editableBlockElement) {
         handledBlockParent = editableBlockElement;
         nsStyledElement* const blockStyledElement =
@@ -6356,7 +6399,8 @@ nsresult HTMLEditor::SetBlockBackgroundColorWithCSSAsSubAction(
     for (OwningNonNull<nsIContent>& content : arrayOfContents) {
       Element* const editableBlockElement =
           HTMLEditUtils::GetInclusiveAncestorElement(
-              content, HTMLEditUtils::ClosestEditableBlockElement);
+              content, HTMLEditUtils::ClosestEditableBlockElement,
+              BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (editableBlockElement && handledBlockParent != editableBlockElement) {
         handledBlockParent = editableBlockElement;
         nsStyledElement* const blockStyledElement =
@@ -6389,7 +6433,8 @@ nsresult HTMLEditor::SetBlockBackgroundColorWithCSSAsSubAction(
                                        EditorType::HTML)) {
       Element* const editableBlockElement = HTMLEditUtils::GetAncestorElement(
           *range.EndRef().ContainerAs<Text>(),
-          HTMLEditUtils::ClosestEditableBlockElement);
+          HTMLEditUtils::ClosestEditableBlockElement,
+          BlockInlineCheck::UseComputedDisplayOutsideStyle);
       if (editableBlockElement && handledBlockParent != editableBlockElement) {
         const RefPtr<nsStyledElement> blockStyledElement =
             nsStyledElement::FromNode(editableBlockElement);
@@ -6495,7 +6540,7 @@ HTMLEditor::CopyLastEditableChildStylesWithTransaction(
          deepestEditableContent->IsHTMLElement(nsGkAtoms::br)) {
     deepestEditableContent = HTMLEditUtils::GetPreviousContent(
         *deepestEditableContent, {WalkTreeOption::IgnoreNonEditableNode},
-        &aEditingHost);
+        BlockInlineCheck::UseComputedDisplayOutsideStyle, &aEditingHost);
   }
   if (!deepestEditableContent) {
     return EditorDOMPoint(&aNewBlock, 0u);

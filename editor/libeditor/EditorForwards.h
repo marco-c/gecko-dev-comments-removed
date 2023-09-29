@@ -39,6 +39,7 @@ class Text;
 
 
 
+enum class BlockInlineCheck : uint8_t;         
 enum class CollectChildrenOption;              
 enum class EditAction;                         
 enum class EditorCommandParamType : uint16_t;  
