@@ -14,6 +14,9 @@ const DATA_URI = "data:text/html,<title>foo</title>";
 
 add_task(async function () {
   
+  await pushPref("devtools.debugger.threads-visible", true);
+
+  
   
   const dbg = await initDebuggerWithAbsoluteURL(
     TEST_COM_URI,
