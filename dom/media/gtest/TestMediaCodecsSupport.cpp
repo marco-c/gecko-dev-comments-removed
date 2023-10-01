@@ -173,11 +173,36 @@ TEST(MediaCodecsSupport, GetMediaCodecsSupportedString)
   
   MCSInfo::AddSupport({MediaCodecsSupport::H264SoftwareDecode,
                        MediaCodecsSupport::H264HardwareDecode,
-                       MediaCodecsSupport::VP8SoftwareDecode});
+                       MediaCodecsSupport::VP8SoftwareDecode,
+                       MediaCodecsSupport::VP9HardwareDecode});
 
   nsCString supportString;
+  nsCString targetString;
   MCSInfo::GetMediaCodecsSupportedString(supportString, MCSInfo::GetSupport());
-  EXPECT_TRUE(supportString.Equals("H264 SW\nH264 HW\nVP8 SW"_ns));
+
+  
+  for (const auto& it : MCSInfo::GetAllCodecDefinitions()) {
+    if (it.codec == MediaCodec::SENTINEL) {
+      break;
+    }
+    nsCString cn(it.commonName);
+    
+    if (cn == "H264"_ns) {
+      targetString += "H264 SW HW"_ns;
+    } else if (cn.Equals("VP8"_ns)) {
+      targetString += "VP8 SW"_ns;
+    } else if (cn.Equals("VP9"_ns)) {
+      targetString += "VP9 HW"_ns;
+    } else {
+      targetString += nsCString(it.commonName) + " NONE"_ns;
+    }
+    targetString += "\n"_ns;
+  }
+  
+  if (!targetString.IsEmpty()) {
+    targetString.Truncate(targetString.Length() - 1);
+  }
+  EXPECT_TRUE(supportString.Equals(targetString));
 }
 
 
