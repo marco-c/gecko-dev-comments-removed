@@ -23,6 +23,14 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 this.runtime = class extends ExtensionAPIPersistent {
   PERSISTENT_EVENTS = {
+    
+    
+    
+    
+    
+    
+    
+
     onInstalled({ fire }) {
       let { extension } = this;
       let temporary = !!extension.addonData.temporarilyInstalled;

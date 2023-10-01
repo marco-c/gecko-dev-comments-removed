@@ -1,5 +1,11 @@
 "use strict";
 
+
+
+
+
+
+
 const { ExtensionTestCommon } = ChromeUtils.importESModule(
   "resource://testing-common/ExtensionTestCommon.sys.mjs"
 );
