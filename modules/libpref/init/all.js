@@ -3995,19 +3995,7 @@ pref("cookiebanners.listService.logLevel", "Error");
 pref("cookiebanners.bannerClicking.logLevel", "Error");
 
 
-
-pref("cookiebanners.bannerClicking.enabled", true);
-
-
-pref("cookiebanners.bannerClicking.testing", false);
-
-
-
-pref("cookiebanners.bannerClicking.timeout", 3000);
-
-
-
-pref("cookiebanners.bannerClicking.pollingInterval", 500);
+pref("privacy.fingerprintingProtection.WebCompatService.logLevel", "Error");
 
 
 
