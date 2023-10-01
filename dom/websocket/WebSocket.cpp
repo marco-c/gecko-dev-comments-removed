@@ -5,6 +5,7 @@
 
 
 #include "WebSocket.h"
+#include "ErrorList.h"
 #include "mozilla/dom/WebSocketBinding.h"
 #include "mozilla/net/WebSocketChannel.h"
 
@@ -1737,13 +1738,35 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
   }
 
   
+  
+  
   if (!mIsServerSide && !mSecure &&
       !Preferences::GetBool("network.websocket.allowInsecureFromHTTPS",
                             false) &&
       !nsMixedContentBlocker::IsPotentiallyTrustworthyLoopbackHost(
           mAsciiHost)) {
+    
     if (aIsSecure) {
       return NS_ERROR_DOM_SECURITY_ERR;
+    }
+
+    
+    
+    nsCOMPtr<nsIPrincipal> precursorPrincipal =
+        aPrincipal->GetPrecursorPrincipal();
+    nsCOMPtr<nsIURI> precursorOrLoadingURI = precursorPrincipal
+                                                 ? precursorPrincipal->GetURI()
+                                                 : aPrincipal->GetURI();
+
+    
+    if (precursorOrLoadingURI) {
+      nsCOMPtr<nsIURI> precursorOrLoadingInnermostURI =
+          NS_GetInnermostURI(precursorOrLoadingURI);
+      
+      if (precursorOrLoadingInnermostURI &&
+          precursorOrLoadingInnermostURI->SchemeIs("https")) {
+        return NS_ERROR_DOM_SECURITY_ERR;
+      }
     }
   }
 
