@@ -117,6 +117,7 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
     return base;
   }
   JS::UniqueChars release();
+  JSString* releaseJS(JSContext* cx);
 
   
   
