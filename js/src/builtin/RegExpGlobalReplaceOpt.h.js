@@ -48,6 +48,10 @@ function FUNC_NAME(
   var originalFlags = flags;
 #endif
 
+#if defined(FUNCTIONAL)
+  var hasCaptureGroups = RegExpHasCaptureGroups(rx, S);
+#endif
+
   
   var accumulatedResult = "";
 
@@ -56,76 +60,109 @@ function FUNC_NAME(
 
   
   while (true) {
-    
-    var result = RegExpMatcher(rx, S, lastIndex);
-
-    
-    if (result === null) {
-      break;
-    }
-
-    
-    assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
-
-    
-    var matched = result[0];
-
-    
-    var matchLength = matched.length | 0;
-
-    
-    var position = result.index | 0;
-    lastIndex = position + matchLength;
-
-    
     var replacement;
+    var matchLength;
 #if defined(FUNCTIONAL)
-    replacement = RegExpGetFunctionalReplacement(
-      result,
-      S,
-      position,
-      replaceValue
-    );
-#elif defined(SUBSTITUTION)
     
-    var namedCaptures = result.groups;
-    if (namedCaptures !== undefined) {
-      namedCaptures = ToObject(namedCaptures);
-    }
     
-    replacement = RegExpGetSubstitution(
-      result,
-      S,
-      position,
-      replaceValue,
-      firstDollarIndex,
-      namedCaptures
-    );
-#elif defined(ELEMBASE)
-    if (IsObject(elemBase)) {
-      var prop = GetStringDataProperty(elemBase, matched);
-      if (prop !== undefined) {
-        assert(
-          typeof prop === "string",
-          "GetStringDataProperty should return either string or undefined"
-        );
-        replacement = prop;
-      } else {
-        elemBase = undefined;
-      }
-    }
+    
+    if (!hasCaptureGroups) {
+      
+      var position = RegExpSearcher(rx, S, lastIndex);
 
-    if (!IsObject(elemBase)) {
+      
+      if (position === -1) {
+        break;
+      }
+
+      
+      lastIndex = RegExpSearcherLastLimit(S);
+      var matched = SubstringKernel(S, position, lastIndex - position);
+      matchLength = matched.length;
+
+      
+      replacement = ToString(
+        callContentFunction(
+          replaceValue,
+          undefined,
+          matched,
+          position,
+          S
+        )
+      );
+    } else
+#endif
+    {
+      
+      var result = RegExpMatcher(rx, S, lastIndex);
+
+      
+      if (result === null) {
+        break;
+      }
+
+      
+      assert(result.length >= 1, "RegExpMatcher doesn't return an empty array");
+
+      
+      var matched = result[0];
+
+      
+      matchLength = matched.length | 0;
+
+      
+      var position = result.index | 0;
+      lastIndex = position + matchLength;
+
+      
+#if defined(FUNCTIONAL)
       replacement = RegExpGetFunctionalReplacement(
         result,
         S,
         position,
         replaceValue
       );
-    }
+#elif defined(SUBSTITUTION)
+      
+      var namedCaptures = result.groups;
+      if (namedCaptures !== undefined) {
+        namedCaptures = ToObject(namedCaptures);
+      }
+      
+      replacement = RegExpGetSubstitution(
+        result,
+        S,
+        position,
+        replaceValue,
+        firstDollarIndex,
+        namedCaptures
+      );
+#elif defined(ELEMBASE)
+      if (IsObject(elemBase)) {
+        var prop = GetStringDataProperty(elemBase, matched);
+        if (prop !== undefined) {
+          assert(
+            typeof prop === "string",
+            "GetStringDataProperty should return either string or undefined"
+          );
+          replacement = prop;
+        } else {
+          elemBase = undefined;
+        }
+      }
+
+      if (!IsObject(elemBase)) {
+        replacement = RegExpGetFunctionalReplacement(
+          result,
+          S,
+          position,
+          replaceValue
+        );
+      }
 #else
 #error "Unexpected case"
 #endif
+    }
 
     
     accumulatedResult +=
