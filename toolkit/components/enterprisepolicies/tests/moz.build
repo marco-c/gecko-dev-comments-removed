@@ -5,7 +5,7 @@
 
 
 BROWSER_CHROME_MANIFESTS += [
-    "browser/browser.ini",
+    "browser/browser.toml",
 ]
 
 TESTING_JS_MODULES += [
