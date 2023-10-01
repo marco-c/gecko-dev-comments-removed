@@ -1253,6 +1253,7 @@ static constexpr CharsAndAction keywords[] = {
   { "december", 12 },
   
   { "gmt", 10000 + 0 },
+  { "z", 10000 + 0 },
   { "ut", 10000 + 0 },
   { "utc", 10000 + 0 },
   { "est", 10000 + 5 * 60 },
@@ -1454,6 +1455,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         }
       } else if (index < length && c != ',' && c > ' ' && c != '-' &&
                  c != '(' &&
+                 
+                 !(hour != -1 && strchr("Zz", c)) &&
                  
                  
                  (c != '.' || mday != -1) &&
