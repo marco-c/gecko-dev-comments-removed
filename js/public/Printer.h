@@ -37,25 +37,34 @@ class JS_PUBLIC_API GenericPrinter {
  public:
   
   
-  virtual bool put(const char* s, size_t len) = 0;
-  inline bool put(const char* s) { return put(s, strlen(s)); }
-  inline bool putChar(const char c) { return put(&c, 1); }
+  
+  
+  
+  virtual void put(const char* s, size_t len) = 0;
+  inline void put(const char* s) { put(s, strlen(s)); }
+  inline void putChar(const char c) { put(&c, 1); }
 
-  virtual bool putAsciiPrintable(mozilla::Span<const JS::Latin1Char> str);
-  virtual bool putAsciiPrintable(mozilla::Span<const char16_t> str);
+  virtual void putAsciiPrintable(mozilla::Span<const JS::Latin1Char> str);
+  virtual void putAsciiPrintable(mozilla::Span<const char16_t> str);
 
-  inline bool putAsciiPrintable(const char c) {
+  inline void putAsciiPrintable(const char c) {
     MOZ_ASSERT(IsAsciiPrintable(c));
-    return putChar(c);
+    putChar(c);
   }
-  inline bool putAsciiPrintable(const char16_t c) {
+  inline void putAsciiPrintable(const char16_t c) {
     MOZ_ASSERT(IsAsciiPrintable(c));
-    return putChar(char(c));
+    putChar(char(c));
   }
 
   
-  bool printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
-  bool vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
+  void printf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  void vprintf(const char* fmt, va_list ap) MOZ_FORMAT_PRINTF(2, 0);
+
+  virtual bool canPutFromIndex() const { return false; }
+  virtual void putFromIndex(size_t index, size_t length) {
+    MOZ_CRASH("Calls to putFromIndex should be guarded by canPutFromIndex.");
+  }
+  virtual size_t index() const { return 0; }
 
   
   virtual void flush() { 
@@ -123,15 +132,23 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
 
   
   
-  virtual bool put(const char* s, size_t len) override;
+  virtual void put(const char* s, size_t len) override;
   using GenericPrinter::put;  
 
-  
-  
-  
-  [[nodiscard]] bool jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+  virtual bool canPutFromIndex() const override { return true; }
+  virtual void putFromIndex(size_t index, size_t length) override {
+    MOZ_ASSERT(index <= this->index());
+    MOZ_ASSERT(index + length <= this->index());
+    put(base + index, length);
+  }
+  virtual size_t index() const override { return length(); }
 
-  bool putString(JSString* str);
+  
+  
+  
+  void jsprintf(const char* fmt, ...) MOZ_FORMAT_PRINTF(2, 3);
+
+  void putString(JSString* str);
 
   size_t length() const;
 
@@ -167,7 +184,7 @@ class JS_PUBLIC_API Fprinter final : public GenericPrinter {
 
   
   
-  virtual bool put(const char* s, size_t len) override;
+  virtual void put(const char* s, size_t len) override;
   using GenericPrinter::put;  
 };
 
@@ -203,7 +220,7 @@ class JS_PUBLIC_API LSprinter final : public GenericPrinter {
 
   
   
-  virtual bool put(const char* s, size_t len) override;
+  virtual void put(const char* s, size_t len) override;
   using GenericPrinter::put;  
 };
 
