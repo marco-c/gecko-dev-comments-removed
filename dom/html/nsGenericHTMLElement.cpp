@@ -3394,9 +3394,17 @@ void nsGenericHTMLElement::FocusPreviousElementAfterHidingPopover() {
   }
 
   
-  FocusOptions options;
-  options.mPreventScroll = true;
-  control->Focus(options, CallerType::NonSystem, IgnoreErrors());
+  
+  
+  
+  
+  nsIContent* currentFocus = OwnerDoc()->GetUnretargetedFocusedContent();
+  if (currentFocus &&
+      currentFocus->IsShadowIncludingInclusiveDescendantOf(this)) {
+    FocusOptions options;
+    options.mPreventScroll = true;
+    control->Focus(options, CallerType::NonSystem, IgnoreErrors());
+  }
 }
 
 
