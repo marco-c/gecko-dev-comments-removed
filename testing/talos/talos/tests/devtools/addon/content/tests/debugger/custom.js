@@ -227,17 +227,15 @@ async function testOpeningLargeMinifiedFile(dbg, tab) {
   await onSelected;
   fullTest.done();
 
-  dbg.actions.closeTabs([MINIFIED_URL]);
+  await dbg.actions.closeTabs([findSource(dbg, MINIFIED_URL)]);
+
+  
+  await dbg.actions.clearSelectedLocation();
 
   await garbageCollect();
 }
 
 async function testPrettyPrint(dbg, toolbox) {
-  
-  const state = dbg.getState();
-  const tabURLs = dbg.selectors.getSourcesForTabs(state).map(t => t.url);
-  await dbg.actions.closeTabs(tabURLs);
-
   const formattedFileUrl = `${MINIFIED_URL}:formatted`;
   const filePrettyChars = "82603: (e, t, n) => {\n";
 
@@ -270,7 +268,16 @@ async function testPrettyPrint(dbg, toolbox) {
     threadsCount: EXPECTED.threadsCount,
   });
 
-  dbg.actions.closeTabs([MINIFIED_URL, formattedFileUrl]);
+  
+  
+  await dbg.actions.clearSelectedLocation();
+
+  
+  
+  
+  
+  const sources = dbg.selectors.getSourceList(dbg.getState());
+  await dbg.actions.closeTabs(sources);
 
   await garbageCollect();
 }
