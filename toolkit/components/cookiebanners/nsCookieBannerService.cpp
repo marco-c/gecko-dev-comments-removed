@@ -424,9 +424,13 @@ nsresult nsCookieBannerService::GetClickRulesForDomainInternal(
       aDomain, aIsTopLevel, getter_AddRefs(ruleForDomain), aReportTelemetry);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  bool useGlobalSubFrameRules =
+      StaticPrefs::cookiebanners_service_enableGlobalRules_subFrames();
+
   
   
-  auto appendClickRule = [&](const nsCOMPtr<nsICookieBannerRule>& bannerRule) {
+  auto appendClickRule = [&](const nsCOMPtr<nsICookieBannerRule>& bannerRule,
+                             bool isGlobal) {
     nsCOMPtr<nsIClickRule> clickRule;
     rv = bannerRule->GetClickRule(getter_AddRefs(clickRule));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -446,17 +450,33 @@ nsresult nsCookieBannerService::GetClickRulesForDomainInternal(
         (runContext == nsIClickRule::RUN_TOP && aIsTopLevel) ||
         (runContext == nsIClickRule::RUN_CHILD && !aIsTopLevel);
 
-    if (runContextMatchesRule) {
-      aRules.AppendElement(clickRule);
+    if (!runContextMatchesRule) {
+      return NS_OK;
     }
 
+    
+    if (!useGlobalSubFrameRules && isGlobal && !aIsTopLevel) {
+      if (MOZ_LOG_TEST(gCookieBannerLog, LogLevel::Debug)) {
+        nsAutoCString ruleId;
+        rv = bannerRule->GetId(ruleId);
+        NS_ENSURE_SUCCESS(rv, rv);
+
+        MOZ_LOG(gCookieBannerLog, LogLevel::Debug,
+                ("%s. Skip adding global sub-frame rule: %s.", __FUNCTION__,
+                 ruleId.get()));
+      }
+
+      return NS_OK;
+    }
+
+    aRules.AppendElement(clickRule);
     return NS_OK;
   };
 
   
   
   if (ruleForDomain) {
-    return appendClickRule(ruleForDomain);
+    return appendClickRule(ruleForDomain, false);
   }
 
   if (!StaticPrefs::cookiebanners_service_enableGlobalRules()) {
@@ -466,7 +486,7 @@ nsresult nsCookieBannerService::GetClickRulesForDomainInternal(
 
   
   for (nsICookieBannerRule* globalRule : mGlobalRules.Values()) {
-    rv = appendClickRule(globalRule);
+    rv = appendClickRule(globalRule, true);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
