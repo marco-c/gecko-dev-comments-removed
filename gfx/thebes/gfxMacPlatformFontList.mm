@@ -433,26 +433,18 @@ static NSString* GetRealFamilyName(NSFont* aFont) {
   return [familyName autorelease];
 }
 
-
-const nsCString& gfxMacPlatformFontList::GetSystemFontName() {
-  if (sSystemFontName.IsEmpty()) {
-    NSString* name = GetRealFamilyName([NSFont systemFontOfSize:0.0]);
-    nsAutoString familyName;
-    nsCocoaUtils::GetStringForNSString(name, familyName);
-    CopyUTF16toUTF8(familyName, sSystemFontName);
-  }
-  return sSystemFontName;
-}
-nsCString gfxMacPlatformFontList::sSystemFontName;
-
 void gfxMacPlatformFontList::InitSystemFontNames() {
-  mSystemFontFamilyName = GetSystemFontName();
-
-  
-  
-  
   
   NSFont* sys = [NSFont systemFontOfSize:0.0];
+  NSString* textFamilyName = GetRealFamilyName(sys);
+  nsAutoString familyName;
+  nsCocoaUtils::GetStringForNSString(textFamilyName, familyName);
+  CopyUTF16toUTF8(familyName, mSystemFontFamilyName);
+
+  
+  
+  
+  
   RefPtr<gfxFontFamily> fam = new gfxMacFontFamily(mSystemFontFamilyName, sys);
   if (fam) {
     nsAutoCString key;

@@ -112,8 +112,7 @@ already_AddRefed<NativeFontResourceMac> NativeFontResourceMac::Create(
 
   
   
-  CTFontRef ctFont = CTFontCreateWithFontDescriptorAndOptions(
-      ctFontDesc, 0, NULL, kCTFontOptionsPreferSystemFont);
+  CTFontRef ctFont = CTFontCreateWithFontDescriptor(ctFontDesc, 0, NULL);
 
   
   
