@@ -41974,6 +41974,20 @@
       return symbols;
     }
 
+    function getFunctionSymbols(sourceId, maxResults) {
+      const symbols = getInternalSymbols(sourceId);
+      if (!symbols) {
+        return [];
+      }
+      let { functions } = symbols;
+      
+      if (maxResults && functions.length > maxResults) {
+        functions = functions.slice(0, maxResults);
+      }
+      
+      return functions.filter(fn => fn.name !== "anonymous");
+    }
+
     
     function getSymbols(sourceId) {
       const symbols = getInternalSymbols(sourceId);
@@ -43889,6 +43903,7 @@
       findOutOfScopeLocations,
       findBestMatchExpression,
       getSymbols,
+      getFunctionSymbols,
       getScopes,
       clearSources: clearAllHelpersForSources,
       hasSyntaxError,

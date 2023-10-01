@@ -313,6 +313,20 @@ export function getInternalSymbols(sourceId) {
   return symbols;
 }
 
+export function getFunctionSymbols(sourceId, maxResults) {
+  const symbols = getInternalSymbols(sourceId);
+  if (!symbols) {
+    return [];
+  }
+  let { functions } = symbols;
+  
+  if (maxResults && functions.length > maxResults) {
+    functions = functions.slice(0, maxResults);
+  }
+  
+  return functions.filter(fn => fn.name !== "anonymous");
+}
+
 
 export function getSymbols(sourceId) {
   const symbols = getInternalSymbols(sourceId);
