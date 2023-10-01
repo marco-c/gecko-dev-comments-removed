@@ -27,7 +27,7 @@ class AudioNodeTrack;
 
 namespace dom {
 
-struct AudioTimelineEvent final {
+struct AudioTimelineEvent {
   enum Type : uint32_t {
     SetValue,
     SetValueAtTime,
@@ -104,7 +104,6 @@ struct AudioTimelineEvent final {
   
   AudioTimelineEvent(Type aType, const nsTArray<float>& aValues,
                      double aStartTime, double aDuration);
-  explicit AudioTimelineEvent(AudioNodeTrack* aTrack);
   AudioTimelineEvent(const AudioTimelineEvent& rhs);
   ~AudioTimelineEvent();
 
@@ -151,7 +150,6 @@ struct AudioTimelineEvent final {
   
   
   float* mCurve;
-  RefPtr<AudioNodeTrack> mTrack;
   double mTimeConstant;
   double mDuration;
 
