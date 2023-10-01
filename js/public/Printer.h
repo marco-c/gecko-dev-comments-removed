@@ -134,6 +134,13 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   
   
   virtual void reportOutOfMemory() override;
+
+  
+  
+  
+  
+  
+  void forwardOutOfMemory();
 };
 
 
