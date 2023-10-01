@@ -184,7 +184,9 @@ async function waitForElement(dbg, name) {
 }
 
 async function waitForLoadedScopes(dbg) {
-  const element = '.scopes-list .tree-node[aria-level="1"]';
+  
+  
+  const element = '.scopes-list .tree-node[aria-level="2"]';
   return waitForElement(dbg, element);
 }
 
