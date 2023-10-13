@@ -1161,9 +1161,6 @@ PWebRenderBridgeParent* CompositorBridgeParent::AllocPWebRenderBridgeParent(
                                         mVsyncRate);
   mWrBridge.get()->AddRef();  
 
-  mAsyncImageManager->SetTextureFactoryIdentifier(
-      mWrBridge->GetTextureFactoryIdentifier());
-
   mCompositorScheduler = mWrBridge->CompositorScheduler();
   MOZ_ASSERT(mCompositorScheduler);
   {  
