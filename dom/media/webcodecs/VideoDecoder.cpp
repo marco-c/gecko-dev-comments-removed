@@ -180,18 +180,6 @@ class VideoDecoderConfigInternal {
 
 
 
-static Maybe<nsString> ParseCodecString(const nsAString& aCodec) {
-  
-  nsString str(aCodec);
-  str.Trim(" ");
-  nsTArray<nsString> codecs;
-  if (!ParseCodecsString(str, codecs) || codecs.Length() != 1 ||
-      codecs[0] != str) {
-    return Nothing();
-  }
-  return Some(codecs[0]);
-}
-
 
 static Result<Ok, nsCString> Validate(const VideoDecoderConfig& aConfig) {
   Maybe<nsString> codec = ParseCodecString(aConfig.mCodec);
