@@ -3459,7 +3459,7 @@ nsresult nsWindow::SetTitle(const nsAString& aTitle) {
   if (!mShell) return NS_OK;
 
     
-#define UTF8_FOLLOWBYTE(ch) (((ch)&0xC0) == 0x80)
+#define UTF8_FOLLOWBYTE(ch) (((ch) & 0xC0) == 0x80)
   NS_ConvertUTF16toUTF8 titleUTF8(aTitle);
   if (titleUTF8.Length() > NS_WINDOW_TITLE_MAX_LENGTH) {
     
@@ -4694,6 +4694,7 @@ void nsWindow::OnButtonPressEvent(GdkEventButton* aEvent) {
       DispatchCommandEvent(nsGkAtoms::Back);
       return;
     case 9:
+    case 10:
       if (!Preferences::GetBool("mousebutton.5th.enabled", true)) {
         return;
       }
