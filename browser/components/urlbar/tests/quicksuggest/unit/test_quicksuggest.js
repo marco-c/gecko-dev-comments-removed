@@ -1285,14 +1285,9 @@ add_task(async function remoteSettingsDataType() {
 
 
 
-
 const EXPECTED_SPONSORED_PRIORITY_RESULT = {
   ...expectedSponsoredResult(),
   isBestMatch: true,
-  payload: {
-    ...expectedSponsoredResult().payload,
-    descriptionL10n: undefined,
-  },
 };
 
 add_task(async function sponsoredPriority_normal() {
