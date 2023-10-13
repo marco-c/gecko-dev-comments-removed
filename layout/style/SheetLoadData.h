@@ -163,6 +163,7 @@ class SheetLoadData final
 
   
   
+  
   const bool mWasAlternate : 1;
 
   
