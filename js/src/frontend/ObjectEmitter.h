@@ -837,10 +837,18 @@ class MOZ_STACK_CLASS ClassEmitter : public PropertyEmitter {
 
   [[nodiscard]] bool emitBinding();
 
+#ifdef ENABLE_DECORATORS
+  
+  
+  [[nodiscard]] bool prepareForDecorators();
+#endif
+
   [[nodiscard]] bool emitEnd(Kind kind);
 
  private:
   [[nodiscard]] bool initProtoAndCtor();
+
+  [[nodiscard]] bool leaveBodyAndInnerScope();
 };
 
 } 
