@@ -100,7 +100,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
     
     TimeDelta jitter_buffer_delay = TimeDelta::Zero();
     
+    TimeDelta jitter_buffer_target_delay = TimeDelta::Zero();
+    
     uint64_t jitter_buffer_emitted_count = 0;
+    
+    TimeDelta jitter_buffer_minimum_delay = TimeDelta::Zero();
     int min_playout_delay_ms = 0;
     int render_delay_ms = 10;
     int64_t interframe_delay_max_ms = -1;

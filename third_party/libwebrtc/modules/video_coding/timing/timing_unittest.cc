@@ -13,6 +13,7 @@
 #include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "system_wrappers/include/clock.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scoped_key_value_config.h"
 
@@ -22,9 +23,54 @@ namespace {
 constexpr Frequency k25Fps = Frequency::Hertz(25);
 constexpr Frequency k90kHz = Frequency::KiloHertz(90);
 
+MATCHER(HasConsistentVideoDelayTimings, "") {
+  
+  bool p1 = arg.minimum_delay >= TimeDelta::Zero();
+  bool p2 = arg.estimated_max_decode_time >= TimeDelta::Zero();
+  bool p3 = arg.render_delay >= TimeDelta::Zero();
+  bool p4 = arg.min_playout_delay >= TimeDelta::Zero();
+  bool p5 = arg.max_playout_delay >= TimeDelta::Zero();
+  bool p6 = arg.target_delay >= TimeDelta::Zero();
+  bool p7 = arg.current_delay >= TimeDelta::Zero();
+  *result_listener << "\np: " << p1 << p2 << p3 << p4 << p5 << p6 << p7;
+  bool p = p1 && p2 && p3 && p4 && p5 && p6 && p7;
+
+  
+  bool m1 = arg.minimum_delay <= arg.target_delay;
+  if (!m1) {
+    *result_listener << "\nminimum_delay: " << arg.minimum_delay << ", "
+                     << "target_delay: " << arg.target_delay << "\n";
+  }
+  bool m2 = arg.minimum_delay <= arg.current_delay;
+  if (!m2) {
+    *result_listener << "\nminimum_delay: " << arg.minimum_delay << ", "
+                     << "current_delay: " << arg.current_delay;
+  }
+  bool m3 = arg.target_delay >= arg.min_playout_delay;
+  if (!m3) {
+    *result_listener << "\ntarget_delay: " << arg.target_delay << ", "
+                     << "min_playout_delay: " << arg.min_playout_delay << "\n";
+  }
+  
+  
+  bool m5 = arg.current_delay >= arg.min_playout_delay;
+  if (!m5) {
+    *result_listener << "\ncurrent_delay: " << arg.current_delay << ", "
+                     << "min_playout_delay: " << arg.min_playout_delay << "\n";
+  }
+  bool m6 = arg.current_delay <= arg.max_playout_delay;
+  if (!m6) {
+    *result_listener << "\ncurrent_delay: " << arg.current_delay << ", "
+                     << "max_playout_delay: " << arg.max_playout_delay << "\n";
+  }
+  bool m = m1 && m2 && m3 && m5 && m6;
+
+  return p && m;
+}
+
 }  
 
-TEST(ReceiverTimingTest, JitterDelay) {
+TEST(VCMTimingTest, JitterDelay) {
   test::ScopedKeyValueConfig field_trials;
   SimulatedClock clock(0);
   VCMTiming timing(&clock, field_trials);
@@ -115,9 +161,11 @@ TEST(ReceiverTimingTest, JitterDelay) {
   clock.AdvanceTimeMilliseconds(5000);
   timestamp += 5 * 90000;
   timing.UpdateCurrentDelay(timestamp);
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, TimestampWrapAround) {
+TEST(VCMTimingTest, TimestampWrapAround) {
   constexpr auto kStartTime = Timestamp::Millis(1337);
   test::ScopedKeyValueConfig field_trials;
   SimulatedClock clock(kStartTime);
@@ -136,9 +184,11 @@ TEST(ReceiverTimingTest, TimestampWrapAround) {
     EXPECT_EQ(kStartTime + 3 / k25Fps + TimeDelta::Millis(1),
               timing.RenderTime(89u, clock.CurrentTime()));
   }
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, UseLowLatencyRenderer) {
+TEST(VCMTimingTest, UseLowLatencyRenderer) {
   test::ScopedKeyValueConfig field_trials;
   SimulatedClock clock(0);
   VCMTiming timing(&clock, field_trials);
@@ -161,9 +211,11 @@ TEST(ReceiverTimingTest, UseLowLatencyRenderer) {
   
   timing.set_max_playout_delay(TimeDelta::Millis(501));
   EXPECT_FALSE(timing.RenderParameters().use_low_latency_rendering);
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
+TEST(VCMTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
   
   
   constexpr int64_t kStartTimeUs = 3.15e13;  
@@ -197,9 +249,11 @@ TEST(ReceiverTimingTest, MaxWaitingTimeIsZeroForZeroRenderTime) {
   EXPECT_LT(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
             TimeDelta::Zero());
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
+TEST(VCMTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
   
   
   constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
@@ -247,9 +301,11 @@ TEST(ReceiverTimingTest, MaxWaitingTimeZeroDelayPacingExperiment) {
   EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now,
                                   false),
             kMinPacing);
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
+TEST(VCMTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
   
   
   test::ScopedKeyValueConfig field_trials(
@@ -277,9 +333,11 @@ TEST(ReceiverTimingTest, DefaultMaxWaitingTimeUnaffectedByPacingExperiment) {
                                     false),
               render_time - now - estimated_processing_delay);
   }
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
+TEST(VCMTimingTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
   
   
   constexpr TimeDelta kMinPacing = TimeDelta::Millis(3);
@@ -314,9 +372,11 @@ TEST(ReceiverTimingTest, MaxWaitingTimeReturnsZeroIfTooManyFramesQueuedIsTrue) {
   EXPECT_EQ(timing.MaxWaitingTime(kZeroRenderTime, now_ms,
                                   true),
             TimeDelta::Zero());
+
+  EXPECT_THAT(timing.GetTimings(), HasConsistentVideoDelayTimings());
 }
 
-TEST(ReceiverTimingTest, UpdateCurrentDelayCapsWhenOffByMicroseconds) {
+TEST(VCMTimingTest, UpdateCurrentDelayCapsWhenOffByMicroseconds) {
   test::ScopedKeyValueConfig field_trials;
   SimulatedClock clock(0);
   VCMTiming timing(&clock, field_trials);
@@ -334,6 +394,52 @@ TEST(ReceiverTimingTest, UpdateCurrentDelayCapsWhenOffByMicroseconds) {
       decode_time + TimeDelta::Millis(10) + TimeDelta::Micros(37);
   timing.UpdateCurrentDelay(render_time, decode_time);
   EXPECT_EQ(timing.GetTimings().current_delay, timing.TargetVideoDelay());
+
+  
+  
+}
+
+TEST(VCMTimingTest, GetTimings) {
+  test::ScopedKeyValueConfig field_trials;
+  SimulatedClock clock(33);
+  VCMTiming timing(&clock, field_trials);
+  timing.Reset();
+
+  
+  TimeDelta render_delay = TimeDelta::Millis(11);
+  timing.set_render_delay(render_delay);
+  TimeDelta min_playout_delay = TimeDelta::Millis(50);
+  timing.set_min_playout_delay(min_playout_delay);
+  TimeDelta max_playout_delay = TimeDelta::Millis(500);
+  timing.set_max_playout_delay(max_playout_delay);
+
+  
+  timing.IncomingTimestamp(3000, clock.CurrentTime());
+  clock.AdvanceTimeMilliseconds(1);
+
+  
+  Timestamp render_time =
+      timing.RenderTime(3000, clock.CurrentTime());
+  TimeDelta minimum_delay = TimeDelta::Millis(123);
+  timing.SetJitterDelay(minimum_delay);
+  timing.UpdateCurrentDelay(render_time, clock.CurrentTime());
+  clock.AdvanceTimeMilliseconds(100);
+
+  
+  TimeDelta decode_time = TimeDelta::Millis(4);
+  timing.StopDecodeTimer(decode_time, clock.CurrentTime());
+
+  VCMTiming::VideoDelayTimings timings = timing.GetTimings();
+  EXPECT_EQ(timings.num_decoded_frames, 1u);
+  EXPECT_EQ(timings.minimum_delay, minimum_delay);
+  
+  EXPECT_EQ(timings.estimated_max_decode_time, TimeDelta::Zero());
+  EXPECT_EQ(timings.render_delay, render_delay);
+  EXPECT_EQ(timings.min_playout_delay, min_playout_delay);
+  EXPECT_EQ(timings.max_playout_delay, max_playout_delay);
+  EXPECT_EQ(timings.target_delay, minimum_delay);
+  EXPECT_EQ(timings.current_delay, minimum_delay);
+  EXPECT_THAT(timings, HasConsistentVideoDelayTimings());
 }
 
 }  

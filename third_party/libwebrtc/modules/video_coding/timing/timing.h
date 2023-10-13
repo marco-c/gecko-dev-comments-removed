@@ -33,10 +33,12 @@ class VCMTiming {
     size_t num_decoded_frames;
     
     
-    TimeDelta jitter_delay;
+    
+    TimeDelta minimum_delay;
     
     
     TimeDelta estimated_max_decode_time;
+    
     
     TimeDelta render_delay;
     
@@ -133,6 +135,8 @@ class VCMTiming {
   Timestamp RenderTimeInternal(uint32_t frame_timestamp, Timestamp now) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   TimeDelta TargetDelayInternal() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+  TimeDelta StatsTargetDelayInternal() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   bool UseLowLatencyRendering() const RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   mutable Mutex mutex_;

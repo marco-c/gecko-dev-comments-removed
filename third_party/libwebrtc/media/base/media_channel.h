@@ -439,14 +439,10 @@ struct MediaReceiverInfo {
   double jitter_buffer_delay_seconds = 0.0;
   
   
+  double jitter_buffer_target_delay_seconds = 0.0;
   
   
-  absl::optional<double> jitter_buffer_target_delay_seconds;
-  
-  
-  
-  
-  absl::optional<double> jitter_buffer_minimum_delay_seconds;
+  double jitter_buffer_minimum_delay_seconds = 0.0;
   
   
   uint64_t jitter_buffer_emitted_count = 0;

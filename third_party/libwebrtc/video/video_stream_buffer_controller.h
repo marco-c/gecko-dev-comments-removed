@@ -46,7 +46,11 @@ class VideoStreamBufferControllerStatsObserver {
   virtual void OnDroppedFrames(uint32_t frames_dropped) = 0;
 
   
-  virtual void OnDecodableFrame(TimeDelta jitter_buffer_delay) = 0;
+  
+  
+  virtual void OnDecodableFrame(TimeDelta jitter_buffer_delay,
+                                TimeDelta target_delay,
+                                TimeDelta minimum_delay) = 0;
 
   virtual void OnDiscardedPackets(uint32_t packets_discarded) = 0;
 
