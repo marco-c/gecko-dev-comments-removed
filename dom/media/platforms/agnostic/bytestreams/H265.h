@@ -36,7 +36,6 @@ enum {
 class H265NALU final {
  public:
   H265NALU(const uint8_t* aData, uint32_t aByteSize);
-  H265NALU() = default;
 
   
   enum NAL_TYPES {
@@ -139,12 +138,6 @@ struct H265ProfileTierLevel final {
   };
 
   
-  uint32_t GetMaxLumaPs() const;
-
-  
-  uint32_t GetDpbMaxPicBuf() const;
-
-  
   uint8_t general_profile_space = {};
   bool general_tier_flag = {};
   uint8_t general_profile_idc = {};
@@ -189,9 +182,6 @@ struct H265VUIParameters {
 
 struct H265SPS final {
   H265SPS() = default;
-
-  bool operator==(const H265SPS& aOther) const;
-  bool operator!=(const H265SPS& aOther) const;
 
   
   uint8_t sps_video_parameter_set_id = {};
@@ -243,7 +233,6 @@ struct H265SPS final {
   uint32_t subHeightC = {};      
   CheckedUint32 mDisplayWidth;   
   CheckedUint32 mDisplayHeight;  
-  uint32_t maxDpbSize = {};
 
   
   uint32_t BitDepthLuma() const { return bit_depth_luma_minus8 + 8; }
@@ -266,7 +255,6 @@ struct HVCCConfig final {
       const mozilla::MediaByteBuffer* aExtraData);
 
   uint8_t NALUSize() const { return lengthSizeMinusOne + 1; }
-  uint32_t NumSPS() const;
   bool HasSPS() const;
 
   uint8_t configurationVersion;
@@ -304,14 +292,6 @@ class H265 final {
   static Result<H265SPS, nsresult> DecodeSPSFromSPSNALU(
       const H265NALU& aSPSNALU);
 
-  
-  static already_AddRefed<mozilla::MediaByteBuffer> ExtractHVCCExtraData(
-      const mozilla::MediaRawData* aSample);
-
-  
-  static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
-                               const mozilla::MediaByteBuffer* aExtraData2);
-
  private:
   
   static already_AddRefed<mozilla::MediaByteBuffer> DecodeNALUnit(
@@ -319,9 +299,10 @@ class H265 final {
 
   
   
-  static Result<Ok, nsresult> ParseProfileTierLevel(
-      BitReader& aReader, bool aProfilePresentFlag,
-      uint8_t aMaxNumSubLayersMinus1, H265ProfileTierLevel& aProfile);
+  static void ParseProfileTierLevel(BitReader& aReader,
+                                    bool aProfilePresentFlag,
+                                    uint8_t aMaxNumSubLayersMinus1,
+                                    H265ProfileTierLevel& aProfile);
 
   
   
