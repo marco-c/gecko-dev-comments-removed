@@ -133,7 +133,9 @@ class NavigationDelegateTest : BaseSessionTest() {
 
                 @AssertCalled(count = 1, order = [2])
                 override fun onTitleChange(session: GeckoSession, title: String?) {
-                    assertThat("Title should not be empty", title, not(isEmptyOrNullString()))
+                    if (!errorPageUrl.startsWith("about:")) {
+                        assertThat("Title should not be empty", title, not(isEmptyOrNullString()))
+                    }
                 }
             })
         }
@@ -162,7 +164,7 @@ class NavigationDelegateTest : BaseSessionTest() {
             testLoader,
             expectedCategory,
             expectedError,
-            null,
+            "about:blank",
         )
     }
 
@@ -234,18 +236,15 @@ class NavigationDelegateTest : BaseSessionTest() {
             WebRequestError.ERROR_FILE_NOT_FOUND,
         )
 
-        
-        if (!sessionRule.env.isFission) {
-            val promise = mainSession.evaluatePromiseJS("document.addCertException(false)")
-            var exceptionCaught = false
-            try {
-                val result = promise.value as Boolean
-                assertThat("Promise should not resolve", result, equalTo(false))
-            } catch (e: GeckoSessionTestRule.RejectedPromiseException) {
-                exceptionCaught = true
-            }
-            assertThat("document.addCertException failed with exception", exceptionCaught, equalTo(true))
+        val promise = mainSession.evaluatePromiseJS("document.addCertException(false)")
+        var exceptionCaught = false
+        try {
+            val result = promise.value as Boolean
+            assertThat("Promise should not resolve", result, equalTo(false))
+        } catch (e: GeckoSessionTestRule.RejectedPromiseException) {
+            exceptionCaught = true
         }
+        assertThat("document.addCertException failed with exception", exceptionCaught, equalTo(true))
     }
 
     @Test fun loadUnknownHost() {
@@ -535,7 +534,7 @@ class NavigationDelegateTest : BaseSessionTest() {
 
     @Test fun bypassHTTPSOnlyError() {
         
-        assumeThat(sessionRule.env.isFission, equalTo(false))
+        assumeThat(sessionRule.env.isFission and sessionRule.env.isDebugBuild, equalTo(false))
 
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
 
@@ -636,7 +635,10 @@ class NavigationDelegateTest : BaseSessionTest() {
                         error.code,
                         equalTo(WebRequestError.ERROR_HTTPS_ONLY),
                     )
-                    return GeckoResult.fromValue(null)
+                    
+                    
+                    
+                    return GeckoResult.fromValue("about:blank")
                 }
 
                 @AssertCalled(count = 1, order = [5])
@@ -648,6 +650,21 @@ class NavigationDelegateTest : BaseSessionTest() {
 
         mainSession.load(testLoader)
         sessionRule.waitForPageStop()
+
+        
+        sessionRule.waitUntilCalled(object : ContentDelegate, NavigationDelegate {
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: MutableList<PermissionDelegate.ContentPermission>,
+            ) {
+                assertThat("URL should match", url, equalTo(httpsUri))
+            }
+
+            override fun onTitleChange(session: GeckoSession, title: String?) {
+                assertThat("Title should not be empty", title, not(isEmptyOrNullString()))
+            }
+        })
 
         sessionRule.delegateDuringNextWait(
             object : ProgressDelegate, NavigationDelegate, ContentDelegate {
@@ -673,7 +690,9 @@ class NavigationDelegateTest : BaseSessionTest() {
             },
         )
 
-        mainSession.waitForJS("document.reloadWithHttpsOnlyException()")
+        
+        
+        mainSession.evaluateJS("window.setTimeout(() => { document.reloadWithHttpsOnlyException(); }, 100)")
         mainSession.waitForPageStop()
 
         sessionRule.runtime.settings.setAllowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
