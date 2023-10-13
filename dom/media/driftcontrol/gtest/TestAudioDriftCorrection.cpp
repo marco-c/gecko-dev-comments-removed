@@ -18,36 +18,32 @@ AudioChunk CreateAudioChunk(uint32_t aFrames, uint32_t aChannels,
                             AudioSampleFormat aSampleFormat);
 
 void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
-  const uint32_t sampleRateTransmitter = aSourceRate;
-  const uint32_t sampleRateReceiver = aTargetRate;
   const uint32_t frequency = 100;
   const PrincipalHandle testPrincipal =
       MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
-  AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver,
-                          testPrincipal);
+  AudioDriftCorrection ad(aSourceRate, aTargetRate, testPrincipal);
 
-  AudioGenerator<AudioDataValue> tone(1, sampleRateTransmitter, frequency);
-  AudioVerifier<AudioDataValue> inToneVerifier(sampleRateTransmitter,
-                                               frequency);
-  AudioVerifier<AudioDataValue> outToneVerifier(sampleRateReceiver, frequency);
-
-  uint32_t sourceFrames;
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  AudioGenerator<AudioDataValue> tone(1, aSourceRate, frequency);
+  AudioVerifier<AudioDataValue> inToneVerifier(aSourceRate, frequency);
+  AudioVerifier<AudioDataValue> outToneVerifier(aTargetRate, frequency);
 
   
   for (uint32_t j = 0; j < 3; ++j) {
+    TrackTime sourceFramesIteration = 0;
+    TrackTime targetFramesIteration = 0;
+
     
-    if (j % 2 == 0) {
-      sourceFrames =
-          sampleRateTransmitter *  1002 / 1000 /  100;
-    } else {
-      sourceFrames =
-          sampleRateTransmitter *  998 / 1000 /  100;
-    }
+    const int8_t additionalDriftFrames =
+        ((j % 2 == 0) ? aSourceRate : -aSourceRate) * 2 / 1000;
 
     
     
     for (uint32_t n = 0; n < 5000; ++n) {
+      const TrackTime sourceFrames =
+          (n + 1) * (aSourceRate + additionalDriftFrames) / 100 -
+          sourceFramesIteration;
+      const TrackTime targetFrames =
+          (n + 1) * aTargetRate / 100 - targetFramesIteration;
       
       AudioSegment inSegment;
       tone.Generate(inSegment, sourceFrames);
@@ -61,17 +57,19 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
         EXPECT_EQ(ci->mPrincipalHandle, testPrincipal);
       }
       outToneVerifier.AppendData(outSegment);
+      sourceFramesIteration += sourceFrames;
+      targetFramesIteration += targetFrames;
     }
   }
 
   const int32_t expectedBuffering =
       StaticPrefs::media_clockdrift_buffering() * aSourceRate / 1000 -
-      sampleRateTransmitter / 100 ;
+      aSourceRate / 100 ;
   EXPECT_NEAR(ad.CurrentBuffering(), expectedBuffering, 512);
 
   EXPECT_EQ(ad.NumUnderruns(), 0U);
 
-  EXPECT_NEAR(inToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
+  EXPECT_FLOAT_EQ(inToneVerifier.EstimatedFreq(), tone.mFrequency);
   EXPECT_EQ(inToneVerifier.PreSilenceSamples(), 0U);
   EXPECT_EQ(inToneVerifier.CountDiscontinuities(), 0U);
 
@@ -97,36 +95,54 @@ TEST(TestAudioDriftCorrection, Basic)
 
 void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
   const uint32_t frequency = 100;
-  const uint32_t sampleRateTransmitter = aSourceRate;
-  const uint32_t sampleRateReceiver = aTargetRate;
   const PrincipalHandle testPrincipal =
       MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
-  AudioDriftCorrection ad(sampleRateTransmitter, sampleRateReceiver,
-                          testPrincipal);
+  AudioDriftCorrection ad(aSourceRate, aTargetRate, testPrincipal);
 
-  AudioGenerator<AudioDataValue> tone(1, sampleRateTransmitter, frequency);
-  AudioVerifier<AudioDataValue> inToneVerify(sampleRateTransmitter, frequency);
-  AudioVerifier<AudioDataValue> outToneVerify(sampleRateReceiver, frequency);
-
-  uint32_t sourceFrames;
-  const uint32_t targetFrames = sampleRateReceiver / 100;
+  AudioGenerator<AudioDataValue> tone(1, aSourceRate, frequency);
+  AudioVerifier<AudioDataValue> inToneVerify(aSourceRate, frequency);
+  AudioVerifier<AudioDataValue> outToneVerify(aTargetRate, frequency);
 
   
-  for (uint32_t j = 0; j < 6; ++j) {
-    
-    if (j % 2 == 0) {
-      sourceFrames = sampleRateTransmitter / 100 + 10;
-    } else {
-      sourceFrames = sampleRateTransmitter / 100 - 10;
-    }
+  for (uint32_t j = 0; j < 3; ++j) {
+    TrackTime sourceFramesIteration = 0;
+    TrackTime targetFramesIteration = 0;
 
-    for (uint32_t n = 0; n < 250; ++n) {
+    
+    const int8_t additionalDriftFrames =
+        ((j % 2 == 0) ? aSourceRate : -aSourceRate) * 2 / 1000;
+
+    
+    
+    
+    
+    const uint32_t numFramesBeforeChangingChannelCount = aSourceRate;
+    uint32_t numFramesAtCurrentChannelCount = 0;
+    uint8_t numChannels = 1;
+    tone.SetChannelsCount(numChannels);
+
+    
+    
+    for (uint32_t n = 0; n < 5000; ++n) {
+      const TrackTime sourceFrames =
+          (n + 1) * (aSourceRate + additionalDriftFrames) / 100 -
+          sourceFramesIteration;
+      const TrackTime sourceFramesPart1 = std::min<TrackTime>(
+          sourceFrames,
+          numFramesBeforeChangingChannelCount - numFramesAtCurrentChannelCount);
+      const TrackTime targetFrames =
+          (n + 1) * aTargetRate / 100 - targetFramesIteration;
       
       AudioSegment inSegment;
-      tone.Generate(inSegment, sourceFrames / 2);
-      tone.SetChannelsCount(2);
-      tone.Generate(inSegment, sourceFrames / 2);
-      tone.SetChannelsCount(1);
+      tone.Generate(inSegment, sourceFramesPart1);
+      numFramesAtCurrentChannelCount += sourceFramesPart1;
+      if (numFramesBeforeChangingChannelCount ==
+          numFramesAtCurrentChannelCount) {
+        tone.SetChannelsCount(numChannels = (numChannels % 2) + 1);
+        numFramesAtCurrentChannelCount = sourceFrames - sourceFramesPart1;
+        tone.Generate(inSegment, numFramesAtCurrentChannelCount);
+      }
+      MOZ_ASSERT(inSegment.GetDuration() == sourceFrames);
       inToneVerify.AppendData(inSegment);
 
       
@@ -137,12 +153,14 @@ void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
         EXPECT_EQ(ci->mPrincipalHandle, testPrincipal);
       }
       outToneVerify.AppendData(outSegment);
+      sourceFramesIteration += sourceFrames;
+      targetFramesIteration += targetFrames;
     }
   }
 
   EXPECT_EQ(ad.NumUnderruns(), 0U);
 
-  EXPECT_EQ(inToneVerify.EstimatedFreq(), frequency);
+  EXPECT_FLOAT_EQ(inToneVerify.EstimatedFreq(), tone.mFrequency);
   EXPECT_EQ(inToneVerify.PreSilenceSamples(), 0U);
   EXPECT_EQ(inToneVerify.CountDiscontinuities(), 0U);
 
@@ -158,8 +176,11 @@ void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
 
 TEST(TestAudioDriftCorrection, MonoToStereoInput)
 {
+  printf("Testing MonoToStereoInput 48 -> 48\n");
   testMonoToStereoInput(48000, 48000);
+  printf("Testing MonoToStereoInput 48 -> 44.1\n");
   testMonoToStereoInput(48000, 44100);
+  printf("Testing MonoToStereoInput 44.1 -> 48\n");
   testMonoToStereoInput(44100, 48000);
 }
 
