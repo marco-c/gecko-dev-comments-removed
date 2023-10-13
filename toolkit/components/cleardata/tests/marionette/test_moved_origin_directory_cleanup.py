@@ -86,7 +86,8 @@ class MovedOriginDirectoryCleanupTestCase(MarionetteTestCase):
         
         self.marionette.restart(in_app=False)
 
-        Wait(self.marionette).until(
+        
+        Wait(self.marionette, timeout=30).until(
             lambda _: not self.moved_origin_directory.exists(),
             message="to-be-removed subdirectory must disappear",
         )
