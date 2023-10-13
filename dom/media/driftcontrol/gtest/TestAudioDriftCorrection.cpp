@@ -184,6 +184,7 @@ TEST(TestAudioDriftCorrection, MonoToStereoInput)
 
 TEST(TestAudioDriftCorrection, NotEnoughFrames)
 {
+  const uint32_t frequency = 100;
   const uint32_t sampleRateTransmitter = 48000;
   const uint32_t sampleRateReceiver = 48000;
   const uint32_t buffering = StaticPrefs::media_clockdrift_buffering();
@@ -193,27 +194,30 @@ TEST(TestAudioDriftCorrection, NotEnoughFrames)
                           testPrincipal);
   const uint32_t targetFrames = sampleRateReceiver / 100;
 
+  AudioGenerator<AudioDataValue> tone(1, sampleRateTransmitter, frequency);
+  AudioVerifier<AudioDataValue> outToneVerifier(sampleRateReceiver, frequency);
+
   for (uint32_t i = 0; i < 7; ++i) {
     
     
-    AudioChunk chunk = CreateAudioChunk<float>(10, 1, AUDIO_FORMAT_FLOAT32);
     AudioSegment inSegment;
-    inSegment.AppendAndConsumeChunk(std::move(chunk));
+    tone.Generate(inSegment, 10);
 
     AudioSegment outSegment = ad.RequestFrames(inSegment, targetFrames);
     EXPECT_EQ(outSegment.GetDuration(), targetFrames);
-    if (i < 5) {
-      EXPECT_FALSE(outSegment.IsNull());
-      for (AudioSegment::ConstChunkIterator ci(outSegment); !ci.IsEnded();
-           ci.Next()) {
-        EXPECT_EQ(ci->mPrincipalHandle, testPrincipal);
+    EXPECT_FALSE(outSegment.IsNull());
+    for (AudioSegment::ConstChunkIterator ci(outSegment); !ci.IsEnded();
+         ci.Next()) {
+      if (i < 5) {
+        if (!ci->IsNull()) {
+          EXPECT_EQ(ci->mPrincipalHandle, testPrincipal);
+        }
       }
-    } else {
-      
-      
-      EXPECT_TRUE(outSegment.IsNull());
     }
+
+    outToneVerifier.AppendData(outSegment);
   }
+  EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 1u);
 }
 
 TEST(TestAudioDriftCorrection, CrashInAudioResampler)
@@ -235,9 +239,9 @@ TEST(TestAudioDriftCorrection, CrashInAudioResampler)
 
     AudioSegment outSegment = ad.RequestFrames(inSegment, targetFrames);
     EXPECT_EQ(outSegment.GetDuration(), targetFrames);
-    if (!outSegment.IsNull()) {  
-      for (AudioSegment::ConstChunkIterator ci(outSegment); !ci.IsEnded();
-           ci.Next()) {
+    for (AudioSegment::ConstChunkIterator ci(outSegment); !ci.IsEnded();
+         ci.Next()) {
+      if (!ci->IsNull()) {  
         EXPECT_EQ(ci->mPrincipalHandle, testPrincipal);
       }
     }

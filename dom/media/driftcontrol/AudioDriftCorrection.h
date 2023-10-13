@@ -51,6 +51,7 @@ class AudioDriftCorrection final {
 
 
 
+
   AudioSegment RequestFrames(const AudioSegment& aInput,
                              uint32_t aOutputFrames);
 

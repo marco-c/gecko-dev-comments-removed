@@ -58,21 +58,15 @@ void AudioResampler::AppendInput(const AudioSegment& aInSegment) {
   }
 }
 
-AudioSegment AudioResampler::Resample(uint32_t aOutFrames) {
+AudioSegment AudioResampler::Resample(uint32_t aOutFrames, bool* aHasUnderrun) {
+  MOZ_ASSERT(aHasUnderrun);
+
   AudioSegment segment;
 
   
   
   if (!mIsSampleFormatSet) {
     segment.AppendNullData(aOutFrames);
-    return segment;
-  }
-
-  
-  
-  
-  
-  if (!mResampler.CanResample(aOutFrames + 1)) {
     return segment;
   }
 
@@ -84,25 +78,15 @@ AudioSegment AudioResampler::Resample(uint32_t aOutFrames) {
     totalFrames -= outFrames;
 
     for (uint32_t i = 0; i < chunk.ChannelCount(); ++i) {
-      uint32_t outFramesUsed = outFrames;
       if (chunk.mBufferFormat == AUDIO_FORMAT_FLOAT32) {
-#ifdef DEBUG
-        bool rv =
-#endif
-            mResampler.Resample(chunk.ChannelDataForWrite<float>(i),
-                                &outFramesUsed, i);
-        MOZ_ASSERT(rv);
+        *aHasUnderrun |= mResampler.Resample(
+            chunk.ChannelDataForWrite<float>(i), outFrames, i);
       } else {
-#ifdef DEBUG
-        bool rv =
-#endif
-            mResampler.Resample(chunk.ChannelDataForWrite<int16_t>(i),
-                                &outFramesUsed, i);
-        MOZ_ASSERT(rv);
+        *aHasUnderrun |= mResampler.Resample(
+            chunk.ChannelDataForWrite<int16_t>(i), outFrames, i);
       }
-      MOZ_ASSERT(outFramesUsed == outFrames);
-      chunk.mDuration = outFrames;
     }
+    chunk.mDuration = outFrames;
 
     
     

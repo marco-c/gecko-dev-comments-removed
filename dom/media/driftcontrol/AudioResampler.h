@@ -59,7 +59,8 @@ class AudioResampler final {
 
 
 
-  AudioSegment Resample(uint32_t aOutFrames);
+
+  AudioSegment Resample(uint32_t aOutFrames, bool* aHasUnderrun);
 
   
 
