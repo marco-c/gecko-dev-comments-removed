@@ -163,6 +163,27 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   VideoEngineInterface(const VideoEngineInterface&) = delete;
   VideoEngineInterface& operator=(const VideoEngineInterface&) = delete;
 
+  virtual std::unique_ptr<VideoMediaSendChannelInterface> CreateSendChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options,
+      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
+  virtual std::unique_ptr<VideoMediaReceiveChannelInterface>
+  CreateReceiveChannel(webrtc::Call* call,
+                       const MediaConfig& config,
+                       const VideoOptions& options,
+                       const webrtc::CryptoOptions& crypto_options) {
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
   
   
   virtual VideoMediaChannel* CreateMediaChannel(
