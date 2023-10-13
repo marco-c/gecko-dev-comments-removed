@@ -27,6 +27,7 @@ class nsAvailableMemoryWatcherBase;
 
 @interface GeckoNSApplication : NSApplication {
 }
+@property(readonly) BOOL didLaunch;
 @end
 
 @class AppShellDelegate;
@@ -41,15 +42,18 @@ class nsAppShell : public nsBaseAppShell {
 
   NS_IMETHOD Run(void) override;
   NS_IMETHOD Exit(void) override;
-  NS_IMETHOD OnProcessNextEvent(nsIThreadInternal* aThread, bool aMayWait) override;
-  NS_IMETHOD AfterProcessNextEvent(nsIThreadInternal* aThread, bool aEventWasProcessed) override;
+  NS_IMETHOD OnProcessNextEvent(nsIThreadInternal* aThread,
+                                bool aMayWait) override;
+  NS_IMETHOD AfterProcessNextEvent(nsIThreadInternal* aThread,
+                                   bool aEventWasProcessed) override;
 
   void OnRunLoopActivityChanged(CFRunLoopActivity aActivity);
 
   
   void WillTerminate();
 
-  static void OnMemoryPressureChanged(dispatch_source_memorypressure_flags_t aPressureLevel);
+  static void OnMemoryPressureChanged(
+      dispatch_source_memorypressure_flags_t aPressureLevel);
 
  protected:
   virtual ~nsAppShell();

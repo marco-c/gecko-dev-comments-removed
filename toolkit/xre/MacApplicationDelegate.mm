@@ -13,10 +13,12 @@
 
 
 
+#include <AppKit/AppKit.h>
 #import <Cocoa/Cocoa.h>
 #include "NativeMenuMac.h"
 #import <Carbon/Carbon.h>
 
+#include "CustomCocoaEvents.h"
 #include "nsCOMPtr.h"
 #include "nsINativeAppSupport.h"
 #include "nsAppRunner.h"
@@ -53,7 +55,9 @@ class AutoAutoreleasePool {
 
 @end
 
-static bool sProcessedGetURLEvent = false;
+enum class LaunchStatus { Initial, ProcessingURLs, ProcessedURLs };
+
+static LaunchStatus sLaunchStatus = LaunchStatus::Initial;
 
 
 
@@ -114,17 +118,14 @@ void SetupMacApplicationDelegate(bool* gRestartedByOS) {
 
 
 void ProcessPendingGetURLAppleEvents() {
-  AutoAutoreleasePool pool;
-  bool keepSpinning = true;
-  while (keepSpinning) {
-    sProcessedGetURLEvent = false;
-    NSEvent* event = [NSApp nextEventMatchingMask:NSEventMaskAny
-                                        untilDate:nil
-                                           inMode:NSDefaultRunLoopMode
-                                          dequeue:YES];
-    if (event) [NSApp sendEvent:event];
-    keepSpinning = sProcessedGetURLEvent;
+  if (sLaunchStatus != LaunchStatus::Initial) {
+    
+    return;
   }
+
+  sLaunchStatus = LaunchStatus::ProcessingURLs;
+  [NSApp run];
+  sLaunchStatus = LaunchStatus::ProcessedURLs;
 }
 
 @implementation MacApplicationDelegate
@@ -133,23 +134,6 @@ void ProcessPendingGetURLAppleEvents() {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   if ((self = [super init])) {
-    NSAppleEventManager* aeMgr = [NSAppleEventManager sharedAppleEventManager];
-
-    [aeMgr setEventHandler:self
-               andSelector:@selector(handleAppleEvent:withReplyEvent:)
-             forEventClass:kInternetEventClass
-                andEventID:kAEGetURL];
-
-    [aeMgr setEventHandler:self
-               andSelector:@selector(handleAppleEvent:withReplyEvent:)
-             forEventClass:'WWW!'
-                andEventID:'OURL'];
-
-    [aeMgr setEventHandler:self
-               andSelector:@selector(handleAppleEvent:withReplyEvent:)
-             forEventClass:kCoreEventClass
-                andEventID:kAEOpenDocuments];
-
     if (![NSApp windowsMenu]) {
       
       
@@ -161,20 +145,6 @@ void ProcessPendingGetURLAppleEvents() {
   return self;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nil);
-}
-
-- (void)dealloc {
-  NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
-
-  NSAppleEventManager* aeMgr = [NSAppleEventManager sharedAppleEventManager];
-  [aeMgr removeEventHandlerForEventClass:kInternetEventClass
-                              andEventID:kAEGetURL];
-  [aeMgr removeEventHandlerForEventClass:'WWW!' andEventID:'OURL'];
-  [aeMgr removeEventHandlerForEventClass:kCoreEventClass
-                              andEventID:kAEOpenDocuments];
-  [super dealloc];
-
-  NS_OBJC_END_TRY_IGNORE_BLOCK;
 }
 
 
@@ -191,53 +161,6 @@ void ProcessPendingGetURLAppleEvents() {
 
   
   return NO;
-}
-
-
-
-- (BOOL)application:(NSApplication*)theApplication
-           openFile:(NSString*)filename {
-  NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
-
-  NSURL* url = [NSURL fileURLWithPath:filename];
-  if (!url) return NO;
-
-  NSString* urlString = [url absoluteString];
-  if (!urlString) return NO;
-
-  
-  if (CommandLineServiceMac::AddURLToCurrentCommandLine([urlString UTF8String]))
-    return YES;
-
-  nsCOMPtr<nsILocalFileMac> inFile;
-  nsresult rv =
-      NS_NewLocalFileWithCFURL((CFURLRef)url, true, getter_AddRefs(inFile));
-  if (NS_FAILED(rv)) return NO;
-
-  nsCOMPtr<nsICommandLineRunner> cmdLine(new nsCommandLine());
-
-  nsCString filePath;
-  rv = inFile->GetNativePath(filePath);
-  if (NS_FAILED(rv)) return NO;
-
-  nsCOMPtr<nsIFile> workingDir;
-  rv = NS_GetSpecialDirectory(NS_OS_CURRENT_WORKING_DIR,
-                              getter_AddRefs(workingDir));
-  if (NS_FAILED(rv)) {
-    
-    workingDir = nullptr;
-  }
-
-  const char* argv[3] = {nullptr, "-file", filePath.get()};
-  rv =
-      cmdLine->Init(3, argv, workingDir, nsICommandLine::STATE_REMOTE_EXPLICIT);
-  if (NS_FAILED(rv)) return NO;
-
-  if (NS_SUCCEEDED(cmdLine->Run())) return YES;
-
-  return NO;
-
-  NS_OBJC_END_TRY_BLOCK_RETURN(NO);
 }
 
 
@@ -306,6 +229,32 @@ void ProcessPendingGetURLAppleEvents() {
        forKey:@"NSFullScreenMenuItemEverywhere"];
 }
 
+- (void)applicationDidFinishLaunching:(NSNotification*)notification {
+  if (sLaunchStatus == LaunchStatus::ProcessingURLs) {
+    
+    
+    
+    
+    
+    
+    [NSApp stop:self];
+
+    
+    
+    
+    [NSApp postEvent:[NSEvent otherEventWithType:NSEventTypeApplicationDefined
+                                        location:NSMakePoint(0, 0)
+                                   modifierFlags:0
+                                       timestamp:0
+                                    windowNumber:0
+                                         context:NULL
+                                         subtype:kEventSubtypeNone
+                                           data1:0
+                                           data2:0]
+             atStart:NO];
+  }
+}
+
 
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:
@@ -338,43 +287,9 @@ void ProcessPendingGetURLAppleEvents() {
   return NSTerminateNow;
 }
 
-- (void)handleAppleEvent:(NSAppleEventDescriptor*)event
-          withReplyEvent:(NSAppleEventDescriptor*)replyEvent {
-  if (!event) return;
-
-  AutoAutoreleasePool pool;
-
-  bool isGetURLEvent = ([event eventClass] == kInternetEventClass &&
-                        [event eventID] == kAEGetURL);
-  if (isGetURLEvent) sProcessedGetURLEvent = true;
-
-  if (isGetURLEvent ||
-      ([event eventClass] == 'WWW!' && [event eventID] == 'OURL')) {
-    NSString* urlString =
-        [[event paramDescriptorForKeyword:keyDirectObject] stringValue];
-    NSURL* url = [NSURL URLWithString:urlString];
-
-    [self openURL:url];
-  } else if ([event eventClass] == kCoreEventClass &&
-             [event eventID] == kAEOpenDocuments) {
-    NSAppleEventDescriptor* fileListDescriptor =
-        [event paramDescriptorForKeyword:keyDirectObject];
-    if (!fileListDescriptor) return;
-
-    
-    NSInteger numberOfFiles = [fileListDescriptor numberOfItems];
-    for (NSInteger i = 1; i <= numberOfFiles; i++) {
-      NSString* urlString =
-          [[fileListDescriptor descriptorAtIndex:i] stringValue];
-      if (!urlString) continue;
-
-      
-      NSURL* url = [NSURL URLWithString:urlString];
-      if (!url) continue;
-
-      [self application:NSApp openFile:[url path]];
-    }
-  }
+- (void)application:(NSApplication*)application
+           openURLs:(NSArray<NSURL*>*)urls {
+  [self openURLs:urls];
 }
 
 - (BOOL)application:(NSApplication*)application
@@ -391,7 +306,7 @@ void ProcessPendingGetURLAppleEvents() {
     return NO;
   }
 
-  return [self openURL:userActivity.webpageURL];
+  return [self openURLs:@[ userActivity.webpageURL ]];
 }
 
 - (void)application:(NSApplication*)application
@@ -400,15 +315,29 @@ void ProcessPendingGetURLAppleEvents() {
   NSLog(@"Failed to continue user activity %@: %@", userActivityType, error);
 }
 
-- (BOOL)openURL:(NSURL*)url {
-  if (!url || !url.scheme ||
-      [url.scheme caseInsensitiveCompare:@"chrome"] == NSOrderedSame) {
-    return NO;
+- (BOOL)openURLs:(NSArray<NSURL*>*)urls {
+  nsTArray<const char*> args([urls count] * 2 + 2);
+  
+  args.AppendElement(nullptr);
+
+  for (NSURL* url in urls) {
+    if (!url || !url.scheme ||
+        [url.scheme caseInsensitiveCompare:@"chrome"] == NSOrderedSame) {
+      continue;
+    }
+
+    const char* const urlString = [[url absoluteString] UTF8String];
+    
+    if (CommandLineServiceMac::AddURLToCurrentCommandLine(urlString)) {
+      continue;
+    }
+
+    args.AppendElement("-url");
+    args.AppendElement(urlString);
   }
 
-  const char* const urlString = [[url absoluteString] UTF8String];
-  
-  if (CommandLineServiceMac::AddURLToCurrentCommandLine(urlString)) {
+  if (args.Length() <= 1) {
+    
     return NO;
   }
 
@@ -421,9 +350,8 @@ void ProcessPendingGetURLAppleEvents() {
     workingDir = nullptr;
   }
 
-  const char* argv[3] = {nullptr, "-url", urlString};
-  rv =
-      cmdLine->Init(3, argv, workingDir, nsICommandLine::STATE_REMOTE_EXPLICIT);
+  rv = cmdLine->Init(args.Length() - 1, args.Elements(), workingDir,
+                     nsICommandLine::STATE_REMOTE_EXPLICIT);
   if (NS_FAILED(rv)) {
     return NO;
   }
