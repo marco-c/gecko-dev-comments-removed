@@ -403,6 +403,20 @@ def run_mochitest_general(
         
         sys.executable = command_context.virtualenv_manager.python_path
 
+    if ("browser-chrome", "a11y") in suites and sys.platform == "win32":
+        
+        req = os.path.join(
+            "accessible",
+            "tests",
+            "browser",
+            "windows",
+            "a11y_setup_requirements.txt",
+        )
+        command_context.virtualenv_manager.activate()
+        command_context.virtualenv_manager.install_pip_requirements(
+            req, require_hashes=False
+        )
+
     
     
     

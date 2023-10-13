@@ -287,6 +287,13 @@ ARCHIVE_FILES = {
             "pattern": "specialpowers/**",
             "dest": "mochitest/extensions",
         },
+        
+        {
+            "source": buildconfig.topobjdir,
+            "base": "accessible/interfaces/ia2",
+            "pattern": "IA2Typelib.tlb",
+            "dest": "mochitest",
+        },
     ],
     "mozharness": [
         {
