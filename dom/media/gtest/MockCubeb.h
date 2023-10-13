@@ -140,6 +140,8 @@ class SmartMockCubebStream;
 
 
 class MockCubebStream {
+  friend class MockCubeb;
+
   
   
   
@@ -147,13 +149,17 @@ class MockCubebStream {
   void* mUserPtr;
 
  public:
+  enum class KeepProcessing { No, Yes };
+  enum class RunningMode { Automatic, Manual };
+
   MockCubebStream(cubeb* aContext, cubeb_devid aInputDevice,
                   cubeb_stream_params* aInputStreamParams,
                   cubeb_devid aOutputDevice,
                   cubeb_stream_params* aOutputStreamParams,
                   cubeb_data_callback aDataCallback,
                   cubeb_state_callback aStateCallback, void* aUserPtr,
-                  SmartMockCubebStream* aSelf, bool aFrozenStart);
+                  SmartMockCubebStream* aSelf, RunningMode aRunningMode,
+                  bool aFrozenStart);
 
   ~MockCubebStream();
 
@@ -181,6 +187,9 @@ class MockCubebStream {
   void Thaw();
 
   
+  KeepProcessing ManualDataCallback(long aNrFrames);
+
+  
   
   void SetOutputRecordingEnabled(bool aEnabled);
   
@@ -201,10 +210,12 @@ class MockCubebStream {
   MediaEventSource<void>& ErrorForcedEvent();
   MediaEventSource<void>& DeviceChangeForcedEvent();
 
-  enum class KeepProcessing { No, Yes };
+ private:
+  KeepProcessing Process(long aNrFrames);
   KeepProcessing Process10Ms();
 
  public:
+  const RunningMode mRunningMode;
   const bool mHasInput;
   const bool mHasOutput;
   SmartMockCubebStream* const mSelf;
@@ -212,6 +223,7 @@ class MockCubebStream {
  private:
   void NotifyState(cubeb_state aState);
 
+  static constexpr long kMaxNrFrames = 1920;
   
   Monitor mFrozenStartMonitor MOZ_UNANNOTATED;
   
@@ -229,8 +241,8 @@ class MockCubebStream {
   
   std::atomic_bool mInputRecordingEnabled{false};
   
-  AudioDataValue mOutputBuffer[MAX_OUTPUT_CHANNELS * 1920] = {};
-  AudioDataValue mInputBuffer[MAX_INPUT_CHANNELS * 1920] = {};
+  AudioDataValue mOutputBuffer[MAX_OUTPUT_CHANNELS * kMaxNrFrames] = {};
+  AudioDataValue mInputBuffer[MAX_INPUT_CHANNELS * kMaxNrFrames] = {};
   
   cubeb_data_callback mDataCallback = nullptr;
   
@@ -279,10 +291,11 @@ class SmartMockCubebStream
                        cubeb_stream_params* aOutputStreamParams,
                        cubeb_data_callback aDataCallback,
                        cubeb_state_callback aStateCallback, void* aUserPtr,
-                       bool aFrozenStart)
+                       RunningMode aRunningMode, bool aFrozenStart)
       : MockCubebStream(aContext, aInputDevice, aInputStreamParams,
                         aOutputDevice, aOutputStreamParams, aDataCallback,
-                        aStateCallback, aUserPtr, this, aFrozenStart) {}
+                        aStateCallback, aUserPtr, this, aRunningMode,
+                        aFrozenStart) {}
 };
 
 
@@ -299,7 +312,10 @@ class MockCubeb {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MockCubeb);
 
  public:
+  using RunningMode = MockCubebStream::RunningMode;
+
   MockCubeb();
+  explicit MockCubeb(RunningMode aRunningMode);
   
   
   
@@ -413,6 +429,7 @@ class MockCubeb {
   
   
   bool mSupportsDeviceCollectionChangedCallback = true;
+  const RunningMode mRunningMode;
   Atomic<bool> mStreamInitErrorState;
   
   Atomic<bool> mStreamStartFreezeEnabled{false};
