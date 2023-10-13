@@ -339,10 +339,22 @@ class VoiceMediaChannel : public MediaChannel,
   }
 
   
+  bool AddSendStream(const StreamParams& sp) override = 0;
+  bool AddRecvStream(const StreamParams& sp) override = 0;
+  void OnPacketReceived(const webrtc::RtpPacketReceived& packet) override = 0;
+  void SetEncoderSelector(uint32_t ssrc,
+                          webrtc::VideoEncoderFactory::EncoderSelectorInterface*
+                              encoder_selector) override {}
   void ChooseReceiverReportSsrc(const std::set<uint32_t>& choices) override = 0;
   void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) override =
       0;
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override = 0;
+  webrtc::RTCError SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters,
+      webrtc::SetParametersCallback callback = nullptr) override = 0;
+
   void SetExtmapAllowMixed(bool mixed) override {
     MediaChannel::SetExtmapAllowMixed(mixed);
   }
@@ -360,18 +372,16 @@ class VoiceMediaChannel : public MediaChannel,
   virtual bool GetSendStats(VoiceMediaSendInfo* info) = 0;
   virtual bool GetReceiveStats(VoiceMediaReceiveInfo* info,
                                bool get_and_clear_legacy_stats) = 0;
-
- private:
-  
   bool GetStats(VoiceMediaSendInfo* info) override {
-    RTC_CHECK_NOTREACHED();
-    return false;
+    return GetSendStats(info);
   }
   bool GetStats(VoiceMediaReceiveInfo* info,
                 bool get_and_clear_legacy_stats) override {
-    RTC_CHECK_NOTREACHED();
-    return false;
+    return GetReceiveStats(info, get_and_clear_legacy_stats);
   }
+
+ private:
+  
   MediaChannel* ImplForTesting() override {
     
     RTC_CHECK_NOTREACHED();
