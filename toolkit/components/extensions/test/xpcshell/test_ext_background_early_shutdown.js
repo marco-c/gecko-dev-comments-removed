@@ -64,6 +64,30 @@ add_setup(function () {
   
   do_get_profile();
   Services.fog.initializeFOG();
+
+  Assert.equal(
+    ExtensionProcessCrashObserver.appInForeground,
+    AppConstants.platform !== "android",
+    "Expect appInForeground to be initially true on desktop and false on android builds"
+  );
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (AppConstants.platform === "android") {
+    info("Mock geckoview-initial-foreground observer service topic");
+    ExtensionProcessCrashObserver.observe(null, "geckoview-initial-foreground");
+    Assert.equal(
+      ExtensionProcessCrashObserver.appInForeground,
+      true,
+      "Expect appInForeground to be true after geckoview-initial-foreground topic"
+    );
+  }
 });
 
 add_setup(

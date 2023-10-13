@@ -166,6 +166,12 @@ public final class GeckoRuntime implements Parcelable {
         
         
         GeckoThread.onResume();
+      } else {
+        
+        
+        
+        
+        EventDispatcher.getInstance().dispatch("GeckoView:InitialForeground", null);
       }
       mPaused = false;
       
