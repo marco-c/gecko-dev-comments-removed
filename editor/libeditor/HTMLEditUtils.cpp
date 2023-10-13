@@ -1042,10 +1042,8 @@ bool HTMLEditUtils::ShouldInsertLinefeedCharacter(
 
   
   
-  
   return (!closestEditableBlockElement ||
           closestEditableBlockElement == &aEditingHost) &&
-         HTMLEditUtils::IsDisplayOutsideInline(aEditingHost) &&
          EditorUtils::IsNewLinePreformatted(
              *aPointToInsert.ContainerAs<nsIContent>());
 }
