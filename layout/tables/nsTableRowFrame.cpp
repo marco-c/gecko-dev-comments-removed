@@ -950,7 +950,7 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       if (isPaginated && HasStyleBSize()) {
         
         SetHasUnpaginatedBSize(true);
-        SetUnpaginatedBSize(aPresContext, aDesiredSize.BSize(wm));
+        SetUnpaginatedBSize(aDesiredSize.BSize(wm));
       }
       if (isPaginated && HasUnpaginatedBSize()) {
         aDesiredSize.BSize(wm) =
@@ -1311,8 +1311,7 @@ nsTableRowFrame* nsTableRowFrame::GetNextRow() const {
 
 NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(RowUnpaginatedHeightProperty, nscoord)
 
-void nsTableRowFrame::SetUnpaginatedBSize(nsPresContext* aPresContext,
-                                          nscoord aValue) {
+void nsTableRowFrame::SetUnpaginatedBSize(nscoord aValue) {
   NS_ASSERTION(!GetPrevInFlow(), "program error");
   
   SetProperty(RowUnpaginatedHeightProperty(), aValue);
