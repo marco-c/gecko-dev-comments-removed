@@ -4,8 +4,8 @@
 
 
 
-#ifndef CtapArgs_h
-#define CtapArgs_h
+#ifndef mozilla_dom_WebAuthnArgs_H_
+#define mozilla_dom_WebAuthnArgs_H_
 
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
@@ -13,24 +13,16 @@
 
 namespace mozilla::dom {
 
-
-
-
-
-
-
-
-class CtapRegisterArgs final : public nsICtapRegisterArgs {
+class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
  public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSICTAPREGISTERARGS
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIWEBAUTHNREGISTERARGS
 
-  explicit CtapRegisterArgs(const WebAuthnMakeCredentialInfo& aInfo)
+  explicit WebAuthnRegisterArgs(const WebAuthnMakeCredentialInfo& aInfo)
       : mInfo(aInfo),
         mCredProps(false),
         mHmacCreateSecret(false),
         mMinPinLength(false) {
-    mozilla::ipc::AssertIsOnBackgroundThread();
     for (const WebAuthnExtension& ext : mInfo.Extensions()) {
       switch (ext.type()) {
         case WebAuthnExtension::TWebAuthnExtensionCredProps:
@@ -53,9 +45,9 @@ class CtapRegisterArgs final : public nsICtapRegisterArgs {
   }
 
  private:
-  ~CtapRegisterArgs() = default;
+  ~WebAuthnRegisterArgs() = default;
 
-  const WebAuthnMakeCredentialInfo& mInfo;
+  const WebAuthnMakeCredentialInfo mInfo;
 
   
   bool mCredProps;
@@ -63,19 +55,18 @@ class CtapRegisterArgs final : public nsICtapRegisterArgs {
   bool mMinPinLength;
 };
 
-class CtapSignArgs final : public nsICtapSignArgs {
+class WebAuthnSignArgs final : public nsIWebAuthnSignArgs {
  public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSICTAPSIGNARGS
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIWEBAUTHNSIGNARGS
 
-  explicit CtapSignArgs(const WebAuthnGetAssertionInfo& aInfo) : mInfo(aInfo) {
-    mozilla::ipc::AssertIsOnBackgroundThread();
-  }
+  explicit WebAuthnSignArgs(const WebAuthnGetAssertionInfo& aInfo)
+      : mInfo(aInfo) {}
 
  private:
-  ~CtapSignArgs() = default;
+  ~WebAuthnSignArgs() = default;
 
-  const WebAuthnGetAssertionInfo& mInfo;
+  const WebAuthnGetAssertionInfo mInfo;
 };
 
 }  
