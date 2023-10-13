@@ -109,14 +109,16 @@ size_t ComputePreEchoLag(
 }
 
 webrtc::MatchedFilter::PreEchoConfiguration FetchPreEchoConfiguration() {
-  float threshold = 0.5f;
-  int mode = 0;
+  constexpr float kDefaultThreshold = 0.5f;
+  constexpr int kDefaultMode = 3;
+  float threshold = kDefaultThreshold;
+  int mode = kDefaultMode;
   const std::string pre_echo_configuration_field_trial =
       webrtc::field_trial::FindFullName("WebRTC-Aec3PreEchoConfiguration");
   webrtc::FieldTrialParameter<double> threshold_field_trial_parameter(
-      "threshold", threshold);
+      "threshold", kDefaultThreshold);
   webrtc::FieldTrialParameter<int> mode_field_trial_parameter(
-      "mode", mode);
+      "mode", kDefaultMode);
   webrtc::ParseFieldTrial(
       {&threshold_field_trial_parameter, &mode_field_trial_parameter},
       pre_echo_configuration_field_trial);
