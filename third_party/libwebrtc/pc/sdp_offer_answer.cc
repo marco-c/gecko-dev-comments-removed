@@ -501,7 +501,7 @@ RTCError FindDuplicateHeaderExtensionIds(
     return RTCError(
         RTCErrorType::INVALID_PARAMETER,
         "A BUNDLE group contains a codec collision for "
-        "header extension id='" +
+        "header extension id=" +
             rtc::ToString(extension.id) +
             ". The id must be the same across all bundled media descriptions");
   }
@@ -3530,9 +3530,13 @@ RTCError SdpOfferAnswerHandler::ValidateSessionDescription(
 
   
   error = ValidateBundledRtpHeaderExtensions(*sdesc->description());
-  
   RTC_HISTOGRAM_BOOLEAN("WebRTC.PeerConnection.ValidBundledExtensionIds",
                         error.ok());
+  
+  if (!error.ok() && !pc_->trials().IsDisabled(
+                         "WebRTC-PreventBundleHeaderExtensionIdCollision")) {
+    return error;
+  }
 
   if (!pc_->ValidateBundleSettings(sdesc->description(),
                                    bundle_groups_by_mid)) {
