@@ -172,9 +172,17 @@ class nsTableRowFrame : public nsContainerFrame {
 
   void InsertCellFrame(nsTableCellFrame* aFrame, int32_t aColIndex);
 
-  nsresult CalculateCellActualBSize(nsTableCellFrame* aCellFrame,
-                                    nscoord& aDesiredBSize,
-                                    mozilla::WritingMode aWM);
+  
+
+
+
+
+
+
+
+  nscoord CalcCellActualBSize(nsTableCellFrame* aCellFrame,
+                              const nscoord& aDesiredBSize,
+                              mozilla::WritingMode aWM);
 
   bool IsFirstInserted() const;
   void SetFirstInserted(bool aValue);

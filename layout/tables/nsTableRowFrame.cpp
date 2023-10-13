@@ -502,7 +502,7 @@ nscoord nsTableRowFrame::CalcBSize(const ReflowInput& aReflowInput) {
     LogicalSize desSize = kidFrame->GetDesiredSize();
     if ((NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) &&
         !GetPrevInFlow()) {
-      CalculateCellActualBSize(kidFrame, desSize.BSize(wm), wm);
+      desSize.BSize(wm) = CalcCellActualBSize(kidFrame, desSize.BSize(wm), wm);
     }
     
     nscoord ascent;
@@ -574,12 +574,9 @@ LogicalSides nsTableRowFrame::GetLogicalSkipSides() const {
   return skip;
 }
 
-
-
-
-nsresult nsTableRowFrame::CalculateCellActualBSize(nsTableCellFrame* aCellFrame,
-                                                   nscoord& aDesiredBSize,
-                                                   WritingMode aWM) {
+nscoord nsTableRowFrame::CalcCellActualBSize(nsTableCellFrame* aCellFrame,
+                                             const nscoord& aDesiredBSize,
+                                             WritingMode aWM) {
   nscoord specifiedBSize = 0;
 
   
@@ -612,11 +609,7 @@ nsresult nsTableRowFrame::CalculateCellActualBSize(nsTableCellFrame* aCellFrame,
 
   
   
-  if (specifiedBSize > aDesiredBSize) {
-    aDesiredBSize = specifiedBSize;
-  }
-
-  return NS_OK;
+  return std::max(specifiedBSize, aDesiredBSize);
 }
 
 
@@ -822,9 +815,8 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
 
       if (NS_UNCONSTRAINEDSIZE == aReflowInput.AvailableBSize()) {
         if (!GetPrevInFlow()) {
-          
-          
-          CalculateCellActualBSize(kidFrame, desiredSize.BSize(wm), wm);
+          desiredSize.BSize(wm) =
+              CalcCellActualBSize(kidFrame, desiredSize.BSize(wm), wm);
         }
         
         
