@@ -203,7 +203,7 @@ impl Drop for Listener {
 }
 
 pub fn start<T, U>(
-    address: SocketAddr,
+    mut address: SocketAddr,
     allow_hosts: Vec<Host>,
     allow_origins: Vec<Url>,
     handler: T,
@@ -216,6 +216,11 @@ where
     let listener = StdTcpListener::bind(address)?;
     listener.set_nonblocking(true)?;
     let addr = listener.local_addr()?;
+    if address.port() == 0 {
+        
+        
+        address.set_port(addr.port())
+    }
     let (msg_send, msg_recv) = channel();
 
     let builder = thread::Builder::new().name("webdriver server".to_string());
