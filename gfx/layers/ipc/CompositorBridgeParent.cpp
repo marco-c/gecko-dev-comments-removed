@@ -1677,10 +1677,10 @@ bool CompositorBridgeParent::CallWithIndirectShadowTree(
 
 static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
     LayersId aContentLayersId, const MonitorAutoLock& aProofOfLock) {
-  CompositorBridgeParent::LayerTreeState* state = nullptr;
+  CompositorBridgeParent::LayerTreeState* contentState = nullptr;
   LayerTreeMap::iterator itr = sIndirectLayerTrees.find(aContentLayersId);
   if (sIndirectLayerTrees.end() != itr) {
-    state = &itr->second;
+    contentState = &itr->second;
   }
 
   
@@ -1689,13 +1689,16 @@ static CompositorBridgeParent::LayerTreeState* GetStateForRoot(
   
   
   
-  if (state && state->mParent) {
-    LayersId rootLayersId = state->mParent->RootLayerTreeId();
+  if (contentState && contentState->mParent) {
+    LayersId rootLayersId = contentState->mParent->RootLayerTreeId();
     itr = sIndirectLayerTrees.find(rootLayersId);
-    state = (sIndirectLayerTrees.end() != itr) ? &itr->second : nullptr;
+    CompositorBridgeParent::LayerTreeState* rootState =
+        (sIndirectLayerTrees.end() != itr) ? &itr->second : nullptr;
+    return rootState;
   }
 
-  return state;
+  
+  return nullptr;
 }
 
 
