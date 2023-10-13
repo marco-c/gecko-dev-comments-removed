@@ -25,10 +25,13 @@
 #include "json/json.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/CmdLineAndEnvUtils.h"
+#include "mozilla/glean/GleanMetrics.h"
+#include "mozilla/glean/GleanPings.h"
 #include "mozilla/HelperMacros.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/WinHeaderOnlyUtils.h"
+#include "nsStringFwd.h"
 
 #define TELEMETRY_BASE_URL "https://incoming.telemetry.mozilla.org/submit"
 #define TELEMETRY_NAMESPACE "default-browser-agent"
@@ -150,7 +153,9 @@ static FilePathResult GetPingFilePath(std::wstring& uuid) {
   return std::wstring(pingFilePath);
 }
 
-static mozilla::WindowsError SendPing(
+
+
+static mozilla::WindowsError SendDesktopTelemetryPing(
     const std::string defaultBrowser, const std::string previousDefaultBrowser,
     const std::string defaultPdf, const std::string osVersion,
     const std::string osLocale, const std::string notificationType,
@@ -411,7 +416,8 @@ HRESULT MaybeWritePreviousNotificationAction(
   return S_OK;
 }
 
-HRESULT SendDefaultBrowserPing(
+
+HRESULT SendDefaultAgentPing(
     const DefaultBrowserInfo& browserInfo, const DefaultPdfInfo& pdfInfo,
     const NotificationActivities& activitiesPerformed) {
   std::string currentDefaultBrowser =
@@ -459,44 +465,68 @@ HRESULT SendDefaultBrowserPing(
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  BoolResult pingAlreadySentResult = GetPingAlreadySentToday();
-  if (pingAlreadySentResult.isErr()) {
-    return pingAlreadySentResult.unwrapErr().AsHResult();
-  }
-  bool pingAlreadySent = pingAlreadySentResult.unwrap();
-  if (pingAlreadySent) {
-    return MaybeCache(cache, notificationType, notificationShown,
-                      notificationAction, prevNotificationAction);
-  }
-
-  hr = MaybeSwapForCached(cache, notificationType, notificationShown,
-                          notificationAction, prevNotificationAction);
-  if (FAILED(hr)) {
-    return hr;
+  if (activitiesPerformed.shown != NotificationShown::NotShown) {
+    mozilla::glean::notification::show_success.Set(activitiesPerformed.shown ==
+                                                   NotificationShown::Shown);
+    if (activitiesPerformed.shown == NotificationShown::Shown) {
+      mozilla::glean::notification::action.Set(
+          nsDependentCString(notificationAction.c_str()));
+    }
   }
 
   
   
   
-  TelemetryFieldResult previousDefaultBrowserResult =
-      GetAndUpdatePreviousDefaultBrowser(currentDefaultBrowser,
-                                         browserInfo.previousDefaultBrowser);
-  if (previousDefaultBrowserResult.isErr()) {
-    return previousDefaultBrowserResult.unwrapErr().AsHResult();
-  }
-  std::string previousDefaultBrowser = previousDefaultBrowserResult.unwrap();
+  
+  
+  
+  
+  
+  
+  
+  hr = [&]() {
+    BoolResult pingAlreadySentResult = GetPingAlreadySentToday();
+    if (pingAlreadySentResult.isErr()) {
+      return pingAlreadySentResult.unwrapErr().AsHResult();
+    }
+    bool pingAlreadySent = pingAlreadySentResult.unwrap();
+    if (pingAlreadySent) {
+      return MaybeCache(cache, notificationType, notificationShown,
+                        notificationAction, prevNotificationAction);
+    }
 
-  return SendPing(currentDefaultBrowser, previousDefaultBrowser,
-                  currentDefaultPdf, osVersion, osLocale, notificationType,
-                  notificationShown, notificationAction, prevNotificationAction)
-      .AsHResult();
+    hr = MaybeSwapForCached(cache, notificationType, notificationShown,
+                            notificationAction, prevNotificationAction);
+    if (FAILED(hr)) {
+      return hr;
+    }
+
+    
+    
+    
+    TelemetryFieldResult previousDefaultBrowserResult =
+        GetAndUpdatePreviousDefaultBrowser(currentDefaultBrowser,
+                                           browserInfo.previousDefaultBrowser);
+    if (previousDefaultBrowserResult.isErr()) {
+      return previousDefaultBrowserResult.unwrapErr().AsHResult();
+    }
+    std::string previousDefaultBrowser = previousDefaultBrowserResult.unwrap();
+
+    mozilla::glean::system_default::browser.Set(
+        nsDependentCString(currentDefaultBrowser.c_str()));
+    mozilla::glean::system_default::previous_browser.Set(
+        nsDependentCString(previousDefaultBrowser.c_str()));
+
+    return SendDesktopTelemetryPing(
+               currentDefaultBrowser, previousDefaultBrowser, currentDefaultPdf,
+               osVersion, osLocale, notificationType, notificationShown,
+               notificationAction, prevNotificationAction)
+        .AsHResult();
+  }();
+
+  mozilla::glean_pings::DefaultAgent.Submit("daily_ping"_ns);
+
+  return hr;
 }
 
 }  
