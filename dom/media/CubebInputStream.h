@@ -51,6 +51,9 @@ class CubebInputStream final {
   
   int Stop();
 
+  
+  int Latency(uint32_t* aLatencyFrames);
+
  private:
   struct CubebDestroyPolicy {
     void operator()(cubeb_stream* aStream) const;

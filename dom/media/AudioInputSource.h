@@ -15,6 +15,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SPSCQueue.h"
 #include "mozilla/SharedThreadPool.h"
+#include "mozilla/Variant.h"
 
 namespace mozilla {
 
@@ -116,9 +117,22 @@ class AudioInputSource : public CubebInputStream::Listener {
   
   UniquePtr<CubebInputStream> mStream;
 
+  struct Empty {};
+
+  struct LatencyChangeData {
+    uint32_t mLatencyFrames;
+  };
+
+  struct Data : public Variant<AudioChunk, LatencyChangeData, Empty> {
+    Data() : Variant(AsVariant(Empty())) {}
+    explicit Data(AudioChunk aChunk) : Variant(AsVariant(std::move(aChunk))) {}
+    explicit Data(LatencyChangeData aLatencyChangeData)
+        : Variant(AsVariant(std::move(aLatencyChangeData))) {}
+  };
+
   
   
-  SPSCQueue<AudioChunk> mSPSCQueue{30};
+  SPSCQueue<Data> mSPSCQueue{30};
 };
 
 }  
