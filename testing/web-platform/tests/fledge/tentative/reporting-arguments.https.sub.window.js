@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 "use strict;"
 
 
@@ -30,7 +35,7 @@ async function runReportArgumentValidationTest(
 
 
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
@@ -46,7 +51,7 @@ promise_test(async test => {
   );
 }, 'Seller passes number to bidder.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
@@ -62,7 +67,7 @@ promise_test(async test => {
   );
 }, 'Seller passes string to bidder.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
@@ -78,7 +83,7 @@ promise_test(async test => {
   );
 }, 'Seller passes array to bidder.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportTest(
       test, uuid,
@@ -98,7 +103,7 @@ promise_test(async test => {
 
 
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -108,7 +113,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.topWindowHostname test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -118,7 +123,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.seller test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -130,7 +135,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.topLevelSeller and browserSignals.componentSeller test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportArgumentValidationTest(
     test,
@@ -142,7 +147,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.renderURL test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -152,7 +157,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.bid test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -162,7 +167,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.desirability test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -172,7 +177,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.topLevelSellerSignals test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -182,7 +187,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.dataVersion test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -192,7 +197,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.modifiedBid test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runReportArgumentValidationTest(
     test,
@@ -204,7 +209,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.highestScoringOtherBid with no other interest groups test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await joinInterestGroup(test, uuid,
     {
@@ -224,7 +229,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.highestScoringOtherBid with other groups that do not bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await joinInterestGroup(test, uuid,
     {
@@ -248,7 +253,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.highestScoringOtherBid with other bids.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -258,7 +263,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.interestGroupName test.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   await runReportArgumentValidationTest(
     test,
     
@@ -268,7 +273,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.madeHighestScoringOtherBid with no other bids.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await joinInterestGroup(test, uuid,
     {
@@ -283,7 +288,7 @@ promise_test(async test => {
   );
 }, 'browserSignals.madeHighestScoringOtherBid with group that did not bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await joinInterestGroup(test, uuid,
     {

@@ -3,6 +3,11 @@
 
 
 
+
+
+
+
+
 "use strict";
 
 
@@ -133,7 +138,7 @@ async function runComponentAdLoadingTest(test, uuid, numComponentAdsInInterestGr
   await waitForObservedRequests(uuid, expectedTrackerURLs);
 }
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   const renderURL = createRenderURL(
@@ -165,7 +170,7 @@ promise_test(async test => {
   await waitForObservedRequests(uuid, [`${createBidderBeaconURL(uuid)}, body: ok`]);
 }, 'Group has no component ads, no adComponents in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -180,7 +185,7 @@ promise_test(async test => {
                             adComponents: []};`})}});
 }, 'Group has no component ads, adComponents in bid is empty array.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, null,
@@ -191,7 +196,7 @@ promise_test(async test => {
       [0, 1]);
 }, 'Group has component ads, but not used in bid (no adComponents field).');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, [],
@@ -202,7 +207,7 @@ promise_test(async test => {
       [0, 1]);
 }, 'Group has component ads, but not used in bid (adComponents field empty array).');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, null,
@@ -213,7 +218,7 @@ promise_test(async test => {
       [0, 1], true);
 }, 'Unused component ads with metadata.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -229,7 +234,7 @@ promise_test(async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Unknown component ad URL in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -245,7 +250,7 @@ promise_test(async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Render URL used as component ad URL in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -259,26 +264,26 @@ promise_test(async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Component ad URL used as render URL.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 1], [0, 1]);
 }, '2 of 2 component ads in bid and then shown.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 1], [0, 1],
                                   true);
 }, '2 of 2 component ads in bid and then shown, with metadata.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 20,
                                   [3, 10], [0, 1]);
 }, '2 of 20 component ads in bid and then shown.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const intsUpTo19 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
   await runComponentAdLoadingTest(test, uuid, 20,
@@ -286,14 +291,14 @@ promise_test(async test => {
                                   intsUpTo19);
 }, '20 of 20 component ads in bid and then shown.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 20,
                                   [1, 2, 3, 4, 5, 6],
                                   [1, 3]);
 }, '6 of 20 component ads in bid, 2 shown.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   
   
@@ -302,14 +307,14 @@ promise_test(async test => {
                                   [0, 1, 1, 0, 3, 3, 2, 2, 1, 0]);
 }, '4 of 4 component ads shown multiple times.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 0, 0, 0],
                                   [0, 1, 2, 3]);
 }, 'Same component ad used multiple times in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   
   
@@ -319,7 +324,7 @@ promise_test(async test => {
                                   [4, 3, 2, 1, 0]);
 }, 'Load component ads not in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid);
 
@@ -345,7 +350,7 @@ promise_test(async test => {
             adComponents: adComponents}});
 }, '21 component ads not allowed in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid);
 
@@ -371,7 +376,7 @@ promise_test(async test => {
             adComponents: adComponents}});
 }, 'Same component ad not allowed 21 times in bid.');
 
-promise_test(async test => {
+subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
 
   
