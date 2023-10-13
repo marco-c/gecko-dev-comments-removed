@@ -256,38 +256,34 @@ nsProfiler::WaitOnePeriodicSampling(JSContext* aCx, Promise** aPromise) {
                new nsMainThreadPtrHolder<Promise>(
                    "WaitOnePeriodicSampling promise for Sampler", promise))](
               SamplingState aSamplingState) mutable {
-            SchedulerGroup::Dispatch(
-                TaskCategory::Other,
-                NS_NewRunnableFunction(
-                    "nsProfiler::WaitOnePeriodicSampling result on main thread",
-                    [promiseHandleInMT = std::move(promiseHandleInSampler),
-                     aSamplingState]() mutable {
-                      switch (aSamplingState) {
-                        case SamplingState::JustStopped:
-                        case SamplingState::SamplingPaused:
-                          promiseHandleInMT->MaybeReject(NS_ERROR_FAILURE);
-                          break;
+            SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+                "nsProfiler::WaitOnePeriodicSampling result on main thread",
+                [promiseHandleInMT = std::move(promiseHandleInSampler),
+                 aSamplingState]() mutable {
+                  switch (aSamplingState) {
+                    case SamplingState::JustStopped:
+                    case SamplingState::SamplingPaused:
+                      promiseHandleInMT->MaybeReject(NS_ERROR_FAILURE);
+                      break;
 
-                        case SamplingState::NoStackSamplingCompleted:
-                        case SamplingState::SamplingCompleted:
-                          
-                          
-                          ProfilerParent::WaitOnePeriodicSampling()->Then(
-                              GetMainThreadSerialEventTarget(), __func__,
-                              [promiseHandleInMT =
-                                   std::move(promiseHandleInMT)](
-                                  GenericPromise::ResolveOrRejectValue&&) {
-                                promiseHandleInMT->MaybeResolveWithUndefined();
-                              });
-                          break;
+                    case SamplingState::NoStackSamplingCompleted:
+                    case SamplingState::SamplingCompleted:
+                      
+                      
+                      ProfilerParent::WaitOnePeriodicSampling()->Then(
+                          GetMainThreadSerialEventTarget(), __func__,
+                          [promiseHandleInMT = std::move(promiseHandleInMT)](
+                              GenericPromise::ResolveOrRejectValue&&) {
+                            promiseHandleInMT->MaybeResolveWithUndefined();
+                          });
+                      break;
 
-                        default:
-                          MOZ_ASSERT(false, "Unexpected SamplingState value");
-                          promiseHandleInMT->MaybeReject(
-                              NS_ERROR_DOM_UNKNOWN_ERR);
-                          break;
-                      }
-                    }));
+                    default:
+                      MOZ_ASSERT(false, "Unexpected SamplingState value");
+                      promiseHandleInMT->MaybeReject(NS_ERROR_DOM_UNKNOWN_ERR);
+                      break;
+                  }
+                }));
           })) {
     
     

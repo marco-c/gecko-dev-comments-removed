@@ -74,14 +74,9 @@ JSObject* MediaElementAudioSourceNode::WrapObject(
 
 void MediaElementAudioSourceNode::ListenForAllowedToPlay(
     const MediaElementAudioSourceOptions& aOptions) {
-  if (!GetAbstractMainThread()) {
-    
-    return;
-  }
-
   aOptions.mMediaElement->GetAllowedToPlayPromise()
       ->Then(
-          GetAbstractMainThread(), __func__,
+          AbstractThread::MainThread(), __func__,
           
           
           

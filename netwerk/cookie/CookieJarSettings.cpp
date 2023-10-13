@@ -185,8 +185,7 @@ CookieJarSettings::~CookieJarSettings() {
     RefPtr<Runnable> r =
         new ReleaseCookiePermissions(std::move(mCookiePermissions));
     MOZ_ASSERT(mCookiePermissions.IsEmpty());
-
-    SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
+    SchedulerGroup::Dispatch(r.forget());
   }
 }
 
@@ -304,7 +303,7 @@ CookieJarSettings::GetFingerprintingRandomizationKey(
 NS_IMETHODIMP
 CookieJarSettings::CookiePermission(nsIPrincipal* aPrincipal,
                                     uint32_t* aCookiePermission) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   NS_ENSURE_ARG_POINTER(aPrincipal);
   NS_ENSURE_ARG_POINTER(aCookiePermission);
 
@@ -370,7 +369,7 @@ CookieJarSettings::CookiePermission(nsIPrincipal* aPrincipal,
 }
 
 void CookieJarSettings::Serialize(CookieJarSettingsArgs& aData) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   aData.isFixed() = mState == eFixed;
   aData.cookieBehavior() = mCookieBehavior;
@@ -415,7 +414,7 @@ void CookieJarSettings::Serialize(CookieJarSettingsArgs& aData) {
  void CookieJarSettings::Deserialize(
     const CookieJarSettingsArgs& aData,
     nsICookieJarSettings** aCookieJarSettings) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
   CookiePermissionList list;
   for (const CookiePermissionData& data : aData.cookiePermissions()) {
@@ -456,7 +455,7 @@ void CookieJarSettings::Serialize(CookieJarSettingsArgs& aData) {
 }
 
 void CookieJarSettings::Merge(const CookieJarSettingsArgs& aData) {
-  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(
       mCookieBehavior == aData.cookieBehavior() ||
       (mCookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER &&
@@ -579,6 +578,7 @@ bool CookieJarSettings::IsRejectThirdPartyContexts(uint32_t aCookieBehavior) {
 
 NS_IMETHODIMP
 CookieJarSettings::Read(nsIObjectInputStream* aStream) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   nsresult rv = aStream->Read32(&mCookieBehavior);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
@@ -660,6 +660,7 @@ CookieJarSettings::Read(nsIObjectInputStream* aStream) {
 
 NS_IMETHODIMP
 CookieJarSettings::Write(nsIObjectOutputStream* aStream) {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
   nsresult rv = aStream->Write32(mCookieBehavior);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;

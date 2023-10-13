@@ -51,12 +51,9 @@ void BackgroundVideoDecodingPermissionObserver::RegisterEvent() {
       
       
       if (nsCOMPtr<dom::Document> doc = GetOwnerDoc()) {
-        doc->Dispatch(
-            TaskCategory::Other,
-            NewRunnableMethod(
-                "BackgroundVideoDecodingPermissionObserver::"
-                "EnableEvent",
-                this, &BackgroundVideoDecodingPermissionObserver::EnableEvent));
+        doc->Dispatch(NewRunnableMethod(
+            "BackgroundVideoDecodingPermissionObserver::EnableEvent", this,
+            &BackgroundVideoDecodingPermissionObserver::EnableEvent));
       }
     } else {
       EnableEvent();
@@ -75,13 +72,9 @@ void BackgroundVideoDecodingPermissionObserver::UnregisterEvent() {
       
       
       if (nsCOMPtr<dom::Document> doc = GetOwnerDoc()) {
-        doc->Dispatch(
-            TaskCategory::Other,
-            NewRunnableMethod(
-                "BackgroundVideoDecodingPermissionObserver::"
-                "DisableEvent",
-                this,
-                &BackgroundVideoDecodingPermissionObserver::DisableEvent));
+        doc->Dispatch(NewRunnableMethod(
+            "BackgroundVideoDecodingPermissionObserver::DisableEvent", this,
+            &BackgroundVideoDecodingPermissionObserver::DisableEvent));
       }
     } else {
       DisableEvent();

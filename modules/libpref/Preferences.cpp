@@ -3335,15 +3335,13 @@ class PWRunnable : public Runnable {
         
         nsresult rvCopy = rv;
         nsCOMPtr<nsIFile> fileCopy(mFile);
-        SchedulerGroup::Dispatch(
-            TaskCategory::Other,
-            NS_NewRunnableFunction("Preferences::WriterRunnable",
-                                   [fileCopy, rvCopy] {
-                                     MOZ_RELEASE_ASSERT(NS_IsMainThread());
-                                     if (NS_FAILED(rvCopy)) {
-                                       Preferences::HandleDirty();
-                                     }
-                                   }));
+        SchedulerGroup::Dispatch(NS_NewRunnableFunction(
+            "Preferences::WriterRunnable", [fileCopy, rvCopy] {
+              MOZ_RELEASE_ASSERT(NS_IsMainThread());
+              if (NS_FAILED(rvCopy)) {
+                Preferences::HandleDirty();
+              }
+            }));
       }
     }
     

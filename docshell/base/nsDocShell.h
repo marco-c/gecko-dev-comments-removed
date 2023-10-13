@@ -980,8 +980,7 @@ class nsDocShell final : public nsDocLoader,
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
 
-  nsresult Dispatch(mozilla::TaskCategory aCategory,
-                    already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
 
   void ReattachEditorToWindow(nsISHEntry* aSHEntry);
   void ClearFrameHistory(nsISHEntry* aEntry);

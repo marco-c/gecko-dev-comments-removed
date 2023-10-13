@@ -2154,7 +2154,7 @@ nsDocumentViewer::Show() {
   
   RefPtr<nsDocumentShownDispatcher> event =
       new nsDocumentShownDispatcher(document);
-  document->Dispatch(TaskCategory::Other, event.forget());
+  document->Dispatch(event.forget());
 
   return NS_OK;
 }

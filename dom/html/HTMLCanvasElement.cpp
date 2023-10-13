@@ -645,7 +645,7 @@ nsresult HTMLCanvasElement::DispatchPrintCallback(nsITimerCallback* aCallback) {
   RefPtr<nsRunnableMethod<HTMLCanvasElement>> renderEvent =
       NewRunnableMethod("dom::HTMLCanvasElement::CallPrintCallback", this,
                         &HTMLCanvasElement::CallPrintCallback);
-  return OwnerDoc()->Dispatch(TaskCategory::Other, renderEvent.forget());
+  return OwnerDoc()->Dispatch(renderEvent.forget());
 }
 
 void HTMLCanvasElement::CallPrintCallback() {
@@ -972,13 +972,11 @@ void HTMLCanvasElement::ToBlob(JSContext* aCx, BlobCallback& aCallback,
     
     
     
-    OwnerDoc()->Dispatch(
-        TaskCategory::Other,
-        NewRunnableMethod<Blob*, const char*>(
-            "dom::HTMLCanvasElement::ToBlob", &aCallback,
-            static_cast<void (BlobCallback::*)(Blob*, const char*)>(
-                &BlobCallback::Call),
-            nullptr, nullptr));
+    OwnerDoc()->Dispatch(NewRunnableMethod<Blob*, const char*>(
+        "dom::HTMLCanvasElement::ToBlob", &aCallback,
+        static_cast<void (BlobCallback::*)(Blob*, const char*)>(
+            &BlobCallback::Call),
+        nullptr, nullptr));
     return;
   }
 

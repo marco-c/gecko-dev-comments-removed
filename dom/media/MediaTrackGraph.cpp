@@ -3418,22 +3418,14 @@ MediaTrackGraph* MediaTrackGraph::GetInstance(
       aGraphDriverRequested, aWindow->WindowID(),
       aWindow->AsGlobal()->ShouldResistFingerprinting(
           RFPTarget::AudioSampleRate),
-      aSampleRate, aOutputDeviceID,
-      aWindow->EventTargetFor(TaskCategory::Other));
+      aSampleRate, aOutputDeviceID, GetMainThreadSerialEventTarget());
 }
 
 MediaTrackGraph* MediaTrackGraph::CreateNonRealtimeInstance(
-    TrackRate aSampleRate, nsPIDOMWindowInner* aWindow) {
+    TrackRate aSampleRate) {
   MOZ_ASSERT(NS_IsMainThread(), "Main thread only");
 
   nsISerialEventTarget* mainThread = GetMainThreadSerialEventTarget();
-  
-  
-  if (aWindow) {
-    mainThread =
-        aWindow->AsGlobal()->AbstractMainThreadFor(TaskCategory::Other);
-  }
-
   
   
   MediaTrackGraphImpl* graph =

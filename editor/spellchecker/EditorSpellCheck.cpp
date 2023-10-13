@@ -432,7 +432,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
     
     
     RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
-    rv = doc->Dispatch(TaskCategory::Other, caller.forget());
+    rv = doc->Dispatch(caller.forget());
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

@@ -2121,19 +2121,8 @@ nsresult HttpChannelChild::AsyncOpenInternal(nsIStreamListener* aListener) {
 
 
 void HttpChannelChild::SetEventTarget() {
-  nsCOMPtr<nsILoadInfo> loadInfo = LoadInfo();
-
-  nsCOMPtr<nsISerialEventTarget> target =
-      nsContentUtils::GetEventTargetByLoadInfo(loadInfo, TaskCategory::Network);
-
-  if (!target) {
-    return;
-  }
-
-  {
-    MutexAutoLock lock(mEventTargetMutex);
-    mNeckoTarget = target;
-  }
+  MutexAutoLock lock(mEventTargetMutex);
+  mNeckoTarget = GetMainThreadSerialEventTarget();
 }
 
 already_AddRefed<nsISerialEventTarget> HttpChannelChild::GetNeckoTarget() {

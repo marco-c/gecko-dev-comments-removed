@@ -689,7 +689,7 @@ void nsMenuPopupFrame::LayoutPopup(nsPresContext* aPresContext,
     
     nsCOMPtr<nsIRunnable> event =
         new nsXULPopupShownEvent(GetContent(), aPresContext);
-    mContent->OwnerDoc()->Dispatch(TaskCategory::Other, event.forget());
+    mContent->OwnerDoc()->Dispatch(event.forget());
   }
 }
 

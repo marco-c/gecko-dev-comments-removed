@@ -596,11 +596,6 @@ class nsHtml5StreamParser final : public nsISupports {
   
 
 
-  nsCOMPtr<nsISerialEventTarget> mNetworkEventTarget;
-
-  
-
-
   mozilla::UniquePtr<nsHtml5TreeBuilder> mTreeBuilder;
 
   

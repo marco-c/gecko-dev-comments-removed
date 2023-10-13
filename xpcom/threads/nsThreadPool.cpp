@@ -170,10 +170,8 @@ void nsThreadPool::ShutdownThread(nsIThread* aThread) {
   
   
   
-  SchedulerGroup::Dispatch(
-      TaskCategory::Other,
-      NewRunnableMethod("nsIThread::AsyncShutdown", aThread,
-                        &nsIThread::AsyncShutdown));
+  SchedulerGroup::Dispatch(NewRunnableMethod(
+      "nsIThread::AsyncShutdown", aThread, &nsIThread::AsyncShutdown));
 }
 
 NS_IMETHODIMP

@@ -841,17 +841,8 @@ nsresult nsIconChannel::StartAsyncOpen() {
         [outputStream](nsresult rv) { outputStream->CloseWithStatus(rv); });
   }
 
-  
-  
-  nsCOMPtr<nsISerialEventTarget> listenerTarget =
-      nsContentUtils::GetEventTargetByLoadInfo(mLoadInfo,
-                                               mozilla::TaskCategory::Other);
-  if (!listenerTarget) {
-    listenerTarget = do_GetMainThread();
-  }
-
   rv = mPump->Init(inputStream.get(), 0 , 0 ,
-                   false , listenerTarget);
+                   false , GetMainThreadSerialEventTarget());
   NS_ENSURE_SUCCESS(rv, rv);
 
   return mPump->AsyncRead(this);

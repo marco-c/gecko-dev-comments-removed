@@ -389,7 +389,7 @@ nsresult nsConsoleService::LogMessageWithMode(
     
     nsCOMPtr<nsIThread> mainThread = do_GetMainThread();
     if (mainThread) {
-      SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
+      SchedulerGroup::Dispatch(r.forget());
     }
   }
 

@@ -207,10 +207,6 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   virtual const char* NodeType() const = 0;
 
-  
-  
-  AbstractThread* GetAbstractMainThread() const { return mAbstractMainThread; }
-
   const nsTArray<RefPtr<AudioParam>>& GetAudioParams() const { return mParams; }
 
  private:
@@ -286,9 +282,6 @@ class AudioNode : public DOMEventTargetHelper, public nsSupportsWeakReference {
   
   
   bool mPassThrough;
-  
-  
-  const RefPtr<AbstractThread> mAbstractMainThread;
 };
 
 }  

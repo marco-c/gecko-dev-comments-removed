@@ -255,9 +255,6 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   RefPtr<WebSocketEventService> mService;
   nsCOMPtr<nsIPrincipal> mLoadingPrincipal;
 
-  
-  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
-
   RefPtr<WebSocketImplProxy> mImplProxy;
 
  private:
@@ -1922,10 +1919,6 @@ nsresult WebSocketImpl::InitializeConnection(
                                                  mChannel->Serial());
   }
 
-  if (mIsMainThread && doc) {
-    mMainThreadEventTarget = doc->EventTargetFor(TaskCategory::Other);
-  }
-
   return NS_OK;
 }
 
@@ -2797,12 +2790,8 @@ WebSocketImpl::DispatchFromScript(nsIRunnable* aEvent, uint32_t aFlags) {
 NS_IMETHODIMP
 WebSocketImpl::Dispatch(already_AddRefed<nsIRunnable> aEvent, uint32_t aFlags) {
   nsCOMPtr<nsIRunnable> event_ref(aEvent);
-  
-  
   if (mIsMainThread) {
-    return mMainThreadEventTarget
-               ? mMainThreadEventTarget->Dispatch(event_ref.forget())
-               : GetMainThreadSerialEventTarget()->Dispatch(event_ref.forget());
+    return GetMainThreadSerialEventTarget()->Dispatch(event_ref.forget());
   }
 
   MutexAutoLock lock(mMutex);

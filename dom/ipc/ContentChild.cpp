@@ -802,7 +802,6 @@ void ContentChild::Init(mozilla::ipc::UntypedEndpoint&& aEndpoint,
   
   
   SchedulerGroup::Dispatch(
-      TaskCategory::Other,
       NS_NewRunnableFunction("RegisterPendingInputEventHangAnnotator", [] {
         BackgroundHangMonitor::RegisterAnnotator(
             PendingInputEventHangAnnotator::sSingleton);

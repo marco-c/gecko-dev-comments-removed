@@ -10,7 +10,6 @@
 #include "mozilla/LinkedList.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/dom/ClientInfo.h"
-#include "mozilla/dom/DispatcherTrait.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/OriginTrials.h"
 #include "nsContentUtils.h"
@@ -65,8 +64,7 @@ class ModuleLoaderBase;
 
 
 
-class nsIGlobalObject : public nsISupports,
-                        public mozilla::dom::DispatcherTrait {
+class nsIGlobalObject : public nsISupports {
  private:
   nsTArray<nsCString> mHostObjectURIs;
 
@@ -139,6 +137,9 @@ class nsIGlobalObject : public nsISupports,
 
 
   bool HasJSGlobal() const { return GetGlobalJSObjectPreserveColor(); }
+
+  virtual nsISerialEventTarget* SerialEventTarget() const = 0;
+  virtual nsresult Dispatch(already_AddRefed<nsIRunnable>&&) const = 0;
 
   
   nsIPrincipal* PrincipalOrNull() const;

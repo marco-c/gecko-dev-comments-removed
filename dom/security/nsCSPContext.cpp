@@ -852,7 +852,7 @@ nsCSPContext::SetRequestContextWithDocument(Document* aDocument) {
   mQueueUpMessages = !mInnerWindowID;
   mCallingChannelLoadGroup = aDocument->GetDocumentLoadGroup();
   
-  mEventTarget = aDocument->EventTargetFor(TaskCategory::Other);
+  mEventTarget = GetMainThreadSerialEventTarget();
 
   MOZ_ASSERT(mLoadingPrincipal, "need a valid requestPrincipal");
   MOZ_ASSERT(mSelfURI, "need mSelfURI to translate 'self' into actual URI");

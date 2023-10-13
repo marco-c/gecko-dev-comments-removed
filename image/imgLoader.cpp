@@ -1154,8 +1154,7 @@ nsresult imgLoader::CreateNewProxyForRequest(
   proxyRequest->SetLoadFlags(aLoadFlags);
 
   
-  nsresult rv = proxyRequest->Init(aRequest, aLoadGroup, aLoadingDocument, aURI,
-                                   aObserver);
+  nsresult rv = proxyRequest->Init(aRequest, aLoadGroup, aURI, aObserver);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }

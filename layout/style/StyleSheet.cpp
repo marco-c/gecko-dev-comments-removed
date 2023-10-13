@@ -728,8 +728,7 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
   
   
   
-  nsCOMPtr<nsISerialEventTarget> target =
-      mConstructorDocument->EventTargetFor(TaskCategory::Other);
+  nsISerialEventTarget* target = GetMainThreadSerialEventTarget();
   loadData->mIsBeingParsed = true;
   MOZ_ASSERT(!mReplacePromise);
   mReplacePromise = promise;

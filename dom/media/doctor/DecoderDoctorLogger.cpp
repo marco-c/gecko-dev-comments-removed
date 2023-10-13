@@ -113,7 +113,6 @@ bool DecoderDoctorLogger::EnsureLogIsEnabled() {
           sMediaLogs = mediaLogsConstruction.mMediaLogs;
           
           MOZ_ALWAYS_SUCCEEDS(SchedulerGroup::Dispatch(
-              TaskCategory::Other,
               NS_NewRunnableFunction("DDLogger shutdown setup", [] {
                 sDDLogShutdowner = MakeUnique<DDLogShutdowner>();
                 ClearOnShutdown(&sDDLogShutdowner,

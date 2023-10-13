@@ -193,7 +193,7 @@ void Gecko_LoadData_Drop(StyleLoadData* aData) {
     
     
     auto task = MakeRefPtr<StyleImageRequestCleanupTask>(*aData);
-    SchedulerGroup::Dispatch(TaskCategory::Other, task.forget());
+    SchedulerGroup::Dispatch(task.forget());
   }
 
   

@@ -6,7 +6,6 @@
 
 #include "gfxCrashReporterUtils.h"
 #include <string.h>                  
-#include "mozilla/Assertions.h"      
 #include "mozilla/SchedulerGroup.h"  
 #include "mozilla/Services.h"        
 #include "mozilla/StaticMutex.h"
@@ -16,13 +15,13 @@
 #include "nsCOMPtr.h"            
 #include "nsError.h"             
 #include "nsExceptionHandler.h"  
-#include "nsID.h"
 #include "nsIObserver.h"         
 #include "nsIObserverService.h"  
 #include "nsIRunnable.h"         
 #include "nsISupports.h"
-#include "nsTArray.h"  
-#include "nscore.h"    
+#include "nsThreadUtils.h"  
+#include "nsTArray.h"       
+#include "nscore.h"         
 
 namespace mozilla {
 
@@ -99,7 +98,7 @@ void ScopedGfxFeatureReporter::WriteAppNote(char statusChar,
   if (!gFeaturesAlreadyReported) {
     gFeaturesAlreadyReported = new nsTArray<nsCString>;
     nsCOMPtr<nsIRunnable> r = new RegisterObserverRunnable();
-    SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
+    SchedulerGroup::Dispatch(r.forget());
   }
 
   nsAutoCString featureString;
@@ -120,7 +119,7 @@ void ScopedGfxFeatureReporter::AppNote(const nsACString& aMessage) {
     CrashReporter::AppendAppNotesToCrashReport(aMessage);
   } else {
     nsCOMPtr<nsIRunnable> r = new AppendAppNotesRunnable(aMessage);
-    SchedulerGroup::Dispatch(TaskCategory::Other, r.forget());
+    NS_DispatchToMainThread(r.forget());
   }
 }
 

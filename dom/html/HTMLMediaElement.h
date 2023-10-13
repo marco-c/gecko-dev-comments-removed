@@ -809,10 +809,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
   already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() override;
 
-  nsISerialEventTarget* MainThreadEventTarget() {
-    return mMainThreadEventTarget;
-  }
-
   
   
   already_AddRefed<Promise> SetSinkId(const nsAString& aSinkId,
@@ -1415,13 +1411,6 @@ class HTMLMediaElement : public nsGenericHTMLElement,
   
   
   RefPtr<MediaDecoder> mDecoder;
-
-  
-  
-  nsCOMPtr<nsISerialEventTarget> mMainThreadEventTarget;
-
-  
-  RefPtr<AbstractThread> mAbstractMainThread;
 
   
   

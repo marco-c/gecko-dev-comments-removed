@@ -182,7 +182,7 @@ RefPtr<ClientOpPromise> ClientNavigateOpChild::DoNavigate(
 
   MOZ_ASSERT(NS_IsMainThread());
 
-  mSerialEventTarget = window->EventTargetFor(TaskCategory::Other);
+  mSerialEventTarget = GetMainThreadSerialEventTarget();
 
   
   

@@ -66,8 +66,7 @@ class imgRequestProxy : public mozilla::PreloaderBase,
 
   
   
-  nsresult Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup,
-                Document* aLoadingDocument, nsIURI* aURI,
+  nsresult Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup, nsIURI* aURI,
                 imgINotificationObserver* aObserver);
 
   nsresult ChangeOwner(imgRequest* aNewOwner);  
@@ -114,8 +113,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   
   
   void SetCancelable(bool);
-
-  already_AddRefed<nsIEventTarget> GetEventTarget() const override;
 
   
   
@@ -197,7 +194,7 @@ class imgRequestProxy : public mozilla::PreloaderBase,
  private:
   friend class imgCacheValidator;
 
-  void AddToOwner(Document* aLoadingDocument);
+  void AddToOwner();
   void RemoveFromOwner(nsresult aStatus);
 
   nsresult DispatchWithTargetIfAvailable(already_AddRefed<nsIRunnable> aEvent);
@@ -214,7 +211,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
       "they are destroyed") mListener;
 
   nsCOMPtr<nsILoadGroup> mLoadGroup;
-  nsCOMPtr<nsIEventTarget> mEventTarget;
 
   nsLoadFlags mLoadFlags;
   uint32_t mLockCount;
@@ -231,7 +227,6 @@ class imgRequestProxy : public mozilla::PreloaderBase,
   bool mPendingNotify : 1;
   bool mValidating : 1;
   bool mHadListener : 1;
-  bool mHadDispatch : 1;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(imgRequestProxy, NS_IMGREQUESTPROXY_CID)

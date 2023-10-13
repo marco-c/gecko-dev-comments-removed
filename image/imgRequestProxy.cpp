@@ -116,8 +116,7 @@ imgRequestProxy::imgRequestProxy()
       mDecodeRequested(false),
       mPendingNotify(false),
       mValidating(false),
-      mHadListener(false),
-      mHadDispatch(false) {
+      mHadListener(false) {
   
   LOG_FUNC(gImgLog, "imgRequestProxy::imgRequestProxy");
 }
@@ -125,22 +124,6 @@ imgRequestProxy::imgRequestProxy()
 imgRequestProxy::~imgRequestProxy() {
   
   MOZ_ASSERT(!mListener, "Someone forgot to properly cancel this request!");
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mHadListener) {
-    mozilla::Telemetry::Accumulate(mozilla::Telemetry::IMAGE_REQUEST_DISPATCHED,
-                                   mHadDispatch);
-  }
-
   MOZ_RELEASE_ASSERT(!mLockCount, "Someone forgot to unlock on time?");
 
   ClearAnimationConsumers();
@@ -164,7 +147,7 @@ imgRequestProxy::~imgRequestProxy() {
 }
 
 nsresult imgRequestProxy::Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup,
-                               Document* aLoadingDocument, nsIURI* aURI,
+                               nsIURI* aURI,
                                imgINotificationObserver* aObserver) {
   MOZ_ASSERT(!GetOwner() && !mListener,
              "imgRequestProxy is already initialized");
@@ -187,7 +170,7 @@ nsresult imgRequestProxy::Init(imgRequest* aOwner, nsILoadGroup* aLoadGroup,
   mURI = aURI;
 
   
-  AddToOwner(aLoadingDocument);
+  AddToOwner();
 
   return NS_OK;
 }
@@ -229,7 +212,7 @@ nsresult imgRequestProxy::ChangeOwner(imgRequest* aNewOwner) {
     IncrementAnimationConsumers();
   }
 
-  AddToOwner(nullptr);
+  AddToOwner();
   return NS_OK;
 }
 
@@ -260,11 +243,6 @@ void imgRequestProxy::ClearValidating() {
   }
 }
 
-already_AddRefed<nsIEventTarget> imgRequestProxy::GetEventTarget() const {
-  nsCOMPtr<nsIEventTarget> target(mEventTarget);
-  return target.forget();
-}
-
 bool imgRequestProxy::HasDecodedPixels() {
   if (IsValidating()) {
     return false;
@@ -281,47 +259,11 @@ bool imgRequestProxy::HasDecodedPixels() {
 nsresult imgRequestProxy::DispatchWithTargetIfAvailable(
     already_AddRefed<nsIRunnable> aEvent) {
   LOG_FUNC(gImgLog, "imgRequestProxy::DispatchWithTargetIfAvailable");
-
-  
-  
-  
-  
-  if (mEventTarget) {
-    mEventTarget->Dispatch(CreateRenderBlockingRunnable(std::move(aEvent)),
-                           NS_DISPATCH_NORMAL);
-    return NS_OK;
-  }
-
   return NS_DispatchToMainThread(
       CreateRenderBlockingRunnable(std::move(aEvent)));
 }
 
-void imgRequestProxy::AddToOwner(Document* aLoadingDocument) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (aLoadingDocument) {
-    RefPtr<mozilla::dom::DocGroup> docGroup = aLoadingDocument->GetDocGroup();
-    if (docGroup) {
-      mEventTarget = docGroup->EventTargetFor(mozilla::TaskCategory::Other);
-      MOZ_ASSERT(mEventTarget);
-    }
-  }
-
-  if (mListener && !mEventTarget) {
-    mEventTarget = do_GetMainThread();
-  }
-
+void imgRequestProxy::AddToOwner() {
   imgRequest* owner = GetOwner();
   if (!owner) {
     return;
@@ -859,8 +801,7 @@ nsresult imgRequestProxy::PerformClone(imgINotificationObserver* aObserver,
   
   
   clone->SetLoadFlags(mLoadFlags);
-  nsresult rv = clone->Init(mBehaviour->GetOwner(), loadGroup, aLoadingDocument,
-                            mURI, aObserver);
+  nsresult rv = clone->Init(mBehaviour->GetOwner(), loadGroup, mURI, aObserver);
   if (NS_FAILED(rv)) {
     return rv;
   }
@@ -1163,7 +1104,7 @@ already_AddRefed<imgRequestProxy> imgRequestProxy::GetStaticRequest(
   RefPtr<imgRequestProxy> req =
       new imgRequestProxyStatic(frozenImage, currentPrincipal,
                                 triggeringPrincipal, hadCrossOriginRedirects);
-  req->Init(nullptr, nullptr, aLoadingDocument, mURI, nullptr);
+  req->Init(nullptr, nullptr, mURI, nullptr);
 
   return req.forget();
 }

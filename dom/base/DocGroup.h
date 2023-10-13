@@ -87,13 +87,6 @@ class DocGroup final {
     return mDocuments.end();
   }
 
-  nsresult Dispatch(TaskCategory aCategory,
-                    already_AddRefed<nsIRunnable>&& aRunnable);
-
-  nsISerialEventTarget* EventTargetFor(TaskCategory aCategory) const;
-
-  AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
-
   
   
   
@@ -135,7 +128,6 @@ class DocGroup final {
   RefPtr<BrowsingContextGroup> mBrowsingContextGroup;
   RefPtr<mozilla::ThrottledEventQueue> mIframePostMessageQueue;
   nsTHashSet<uint64_t> mIframesUsedPostMessageQueue;
-  nsCOMPtr<nsISerialEventTarget> mEventTarget;
 
   
   

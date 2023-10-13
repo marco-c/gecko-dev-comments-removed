@@ -146,8 +146,7 @@ ErrorReporter::~ErrorReporter() {
   
   if (sSpecCache && sSpecCache->IsInUse() && !sSpecCache->IsPending()) {
     nsCOMPtr<nsIRunnable> runnable(sSpecCache);
-    nsresult rv =
-        SchedulerGroup::Dispatch(TaskCategory::Other, runnable.forget());
+    nsresult rv = SchedulerGroup::Dispatch(runnable.forget());
     if (NS_FAILED(rv)) {
       
       sSpecCache->Run();

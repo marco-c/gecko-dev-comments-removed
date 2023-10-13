@@ -15,6 +15,7 @@
 
 #include "mozilla/AppShutdown.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/SchedulerGroup.h"
 #include "mozilla/Services.h"
 
 using mozilla::WeakPtr;
@@ -67,9 +68,6 @@ static void CheckProgressConsistency(Progress aOldProgress,
 ProgressTracker::ProgressTracker()
     : mMutex("ProgressTracker::mMutex"),
       mImage(nullptr),
-      mEventTarget(WrapNotNull(
-          nsCOMPtr<nsIEventTarget>(GetMainThreadSerialEventTarget()))),
-      mObserversWithTargets(0),
       mObservers(new ObserverTable),
       mProgress(NoProgress),
       mIsMultipart(false) {}
@@ -203,7 +201,7 @@ void ProgressTracker::Notify(IProgressObserver* aObserver) {
     
     RefPtr<AsyncNotifyRunnable> ev = new AsyncNotifyRunnable(this, aObserver);
     mRunnable = ProgressTracker::RenderBlockingRunnable::Create(ev.forget());
-    mEventTarget->Dispatch(mRunnable, NS_DISPATCH_NORMAL);
+    SchedulerGroup::Dispatch(do_AddRef(mRunnable));
   }
 }
 
@@ -259,7 +257,7 @@ void ProgressTracker::NotifyCurrentState(IProgressObserver* aObserver) {
   if (!AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
     nsCOMPtr<nsIRunnable> ev =
         new AsyncNotifyCurrentStateRunnable(this, aObserver);
-    mEventTarget->Dispatch(ev.forget(), NS_DISPATCH_NORMAL);
+    SchedulerGroup::Dispatch(ev.forget());
   }
 }
 
@@ -411,33 +409,12 @@ void ProgressTracker::EmulateRequestFinished(IProgressObserver* aObserver) {
 }
 
 already_AddRefed<nsIEventTarget> ProgressTracker::GetEventTarget() const {
-  MutexAutoLock lock(mMutex);
-  nsCOMPtr<nsIEventTarget> target = mEventTarget;
-  return target.forget();
+  return do_AddRef(GetMainThreadSerialEventTarget());
 }
 
 void ProgressTracker::AddObserver(IProgressObserver* aObserver) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<IProgressObserver> observer = aObserver;
-
-  nsCOMPtr<nsIEventTarget> target = observer->GetEventTarget();
-  if (target) {
-    if (mObserversWithTargets == 0) {
-      
-      
-      
-      MutexAutoLock lock(mMutex);
-      mEventTarget = WrapNotNull(target);
-    } else if (mEventTarget.get() != target.get()) {
-      
-      
-      MutexAutoLock lock(mMutex);
-      nsCOMPtr<nsIEventTarget> mainTarget(do_GetMainThread());
-      mEventTarget = WrapNotNull(mainTarget);
-    }
-    ++mObserversWithTargets;
-  }
-
   mObservers.Write([=](ObserverTable* aTable) {
     MOZ_ASSERT(!aTable->Contains(observer),
                "Adding duplicate entry for image observer");
@@ -445,8 +422,6 @@ void ProgressTracker::AddObserver(IProgressObserver* aObserver) {
     WeakPtr<IProgressObserver> weakPtr = observer.get();
     aTable->InsertOrUpdate(observer, weakPtr);
   });
-
-  MOZ_ASSERT(mObserversWithTargets <= ObserverCount());
 }
 
 bool ProgressTracker::RemoveObserver(IProgressObserver* aObserver) {
@@ -456,31 +431,6 @@ bool ProgressTracker::RemoveObserver(IProgressObserver* aObserver) {
   
   bool removed = mObservers.Write(
       [observer](ObserverTable* aTable) { return aTable->Remove(observer); });
-
-  
-  
-  
-  
-  
-  
-  
-  if (removed) {
-    nsCOMPtr<nsIEventTarget> target = observer->GetEventTarget();
-    if (target) {
-      MOZ_ASSERT(mObserversWithTargets > 0);
-      --mObserversWithTargets;
-
-      
-      if ((mObserversWithTargets == 0) &&
-          !AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
-        MutexAutoLock lock(mMutex);
-        nsCOMPtr<nsIEventTarget> target(do_GetMainThread());
-        mEventTarget = WrapNotNull(target);
-      }
-    }
-
-    MOZ_ASSERT(mObserversWithTargets <= ObserverCount());
-  }
 
   
   

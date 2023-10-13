@@ -234,22 +234,6 @@ class ProgressTracker : public mozilla::SupportsWeakPtr {
 
   
   
-  
-  NotNull<nsCOMPtr<nsIEventTarget>> mEventTarget;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  uint32_t mObserversWithTargets;
-
-  
-  
   CopyOnWrite<ObserverTable> mObservers;
 
   Progress mProgress;
