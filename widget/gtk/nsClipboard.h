@@ -97,7 +97,7 @@ class nsRetrievalContext {
   static void ClearCachedTargetsPrimary(GtkClipboard* aClipboard,
                                         GdkEvent* aEvent, gpointer data);
 
-  nsRetrievalContext() = default;
+  nsRetrievalContext();
 
  protected:
   virtual ClipboardTargets GetTargetsImpl(int32_t aWhichClipboard) = 0;
@@ -107,12 +107,26 @@ class nsRetrievalContext {
   static ClipboardTargets sPrimaryTargets;
 };
 
-class nsClipboard : public nsBaseClipboard, public nsIObserver {
+class nsClipboard : public ClipboardSetDataHelper, public nsIObserver {
  public:
   nsClipboard();
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_NSIOBSERVER
+
+  
+  NS_IMETHOD GetData(nsITransferable* aTransferable,
+                     int32_t aWhichClipboard) override;
+  NS_IMETHOD EmptyClipboard(int32_t aWhichClipboard) override;
+  NS_IMETHOD HasDataMatchingFlavors(const nsTArray<nsCString>& aFlavorList,
+                                    int32_t aWhichClipboard,
+                                    bool* _retval) override;
+  NS_IMETHOD IsClipboardTypeSupported(int32_t aWhichClipboard,
+                                      bool* _retval) override;
+  RefPtr<mozilla::GenericPromise> AsyncGetData(
+      nsITransferable* aTransferable, int32_t aWhichClipboard) override;
+  RefPtr<DataFlavorsPromise> AsyncHasDataMatchingFlavors(
+      const nsTArray<nsCString>& aFlavorList, int32_t aWhichClipboard) override;
 
   
   
@@ -123,31 +137,14 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
                          GtkSelectionData* aSelectionData);
   void SelectionClearEvent(GtkClipboard* aGtkClipboard);
 
-  
-  void OwnerChangedEvent(GtkClipboard* aGtkClipboard,
-                         GdkEventOwnerChange* aEvent);
-
  protected:
   
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     nsIClipboardOwner* aOwner,
                                     int32_t aWhichClipboard) override;
-  NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
-                                    int32_t aWhichClipboard) override;
-  void AsyncGetNativeClipboardData(nsITransferable* aTransferable,
-                                   int32_t aWhichClipboard,
-                                   GetDataCallback&& aCallback) override;
-  nsresult EmptyNativeClipboardData(int32_t aWhichClipboard) override;
-  mozilla::Result<int32_t, nsresult> GetNativeClipboardSequenceNumber(
-      int32_t aWhichClipboard) override;
-  mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
-      const nsTArray<nsCString>& aFlavorList, int32_t aWhichClipboard) override;
-  void AsyncHasNativeClipboardDataMatchingFlavors(
-      const nsTArray<nsCString>& aFlavorList, int32_t aWhichClipboard,
-      HasMatchingFlavorsCallback&& aCallback) override;
 
  private:
-  virtual ~nsClipboard();
+  virtual ~nsClipboard() = default;
 
   
   
@@ -160,13 +157,12 @@ class nsClipboard : public nsBaseClipboard, public nsIObserver {
                              nsTArray<nsCString>& aFlavors);
 
   
+  
+  nsCOMPtr<nsIClipboardOwner> mSelectionOwner;
+  nsCOMPtr<nsIClipboardOwner> mGlobalOwner;
   nsCOMPtr<nsITransferable> mSelectionTransferable;
   nsCOMPtr<nsITransferable> mGlobalTransferable;
   RefPtr<nsRetrievalContext> mContext;
-
-  
-  int32_t mSelectionSequenceNumber = 0;
-  int32_t mGlobalSequenceNumber = 0;
 };
 
 extern const int kClipboardTimeout;
