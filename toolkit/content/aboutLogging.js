@@ -52,6 +52,25 @@ function moduleEnvVarPresent() {
 
 
 
+
+const gOsSpecificLoggingPresets = (() => {
+  
+  if (navigator.platform.startsWith("Win")) {
+    return {
+      windows: {
+        modules:
+          "timestamp,sync,Widget:5,BaseWidget:5,WindowsEvent:4,TaskbarConcealer:5",
+        l10nIds: {
+          label: "about-logging-preset-windows-label",
+          description: "about-logging-preset-windows-description",
+        },
+      },
+    };
+  }
+
+  return {};
+})();
+
 const gLoggingPresets = {
   networking: {
     modules:
@@ -122,6 +141,7 @@ const gLoggingPresets = {
     
     profilerPreset: "graphics",
   },
+  ...gOsSpecificLoggingPresets,
   custom: {
     modules: "",
     l10nIds: {
