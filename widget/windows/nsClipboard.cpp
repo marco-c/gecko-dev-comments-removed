@@ -47,6 +47,7 @@
 #include "nsMimeTypes.h"
 #include "imgITools.h"
 #include "imgIContainer.h"
+#include "WinUtils.h"
 
 
 UINT nsClipboard::GetClipboardFileDescriptorFormatA() {
@@ -469,41 +470,6 @@ static HRESULT RepeatedlyTry(Function aFunction, LogFunction aLogFunction,
 
 static void RepeatedlyTryOleSetClipboard(IDataObject* aDataObj) {
   RepeatedlyTry(::OleSetClipboard, LogOleSetClipboardResult, aDataObj);
-}
-
-static void GetClipboardFormatAsString(UINT aFormat, nsAString& aOutput) {
-  wchar_t buf[256] = {};
-  
-  
-  if (::GetClipboardFormatNameW(aFormat, buf, ARRAYSIZE(buf) - 1)) {
-    aOutput.Append(buf);
-    return;
-  }
-  
-  
-  switch (aFormat) {
-    case CF_TEXT:  
-      aOutput.Append(u"CF_TEXT"_ns);
-      break;
-    case CF_BITMAP:  
-      aOutput.Append(u"CF_BITMAP"_ns);
-      break;
-    case CF_DIB:  
-      aOutput.Append(u"CF_DIB"_ns);
-      break;
-    case CF_UNICODETEXT:  
-      aOutput.Append(u"CF_UNICODETEXT"_ns);
-      break;
-    case CF_HDROP:  
-      aOutput.Append(u"CF_HDROP"_ns);
-      break;
-    case CF_DIBV5:  
-      aOutput.Append(u"CF_DIBV5"_ns);
-      break;
-    default:
-      aOutput.AppendPrintf("%u", aFormat);
-      break;
-  }
 }
 
 
@@ -1361,7 +1327,8 @@ nsClipboard::GetNativeClipboardData(nsITransferable* aTransferable,
         FORMATETC fEtc;
         while (S_OK == pEnum->Next(1, &fEtc, nullptr)) {
           nsAutoString format;
-          GetClipboardFormatAsString(fEtc.cfFormat, format);
+          mozilla::widget::WinUtils::GetClipboardFormatAsString(fEtc.cfFormat,
+                                                                format);
           MOZ_CLIPBOARD_LOG("        FORMAT %s",
                             NS_ConvertUTF16toUTF8(format).get());
         }
