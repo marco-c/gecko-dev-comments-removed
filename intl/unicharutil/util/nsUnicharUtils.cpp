@@ -9,6 +9,7 @@
 #include "mozilla/Likely.h"
 #include "mozilla/HashFunctions.h"
 #include "mozilla/intl/UnicodeProperties.h"
+#include "mozilla/StaticPrefs_layout.h"
 
 
 
@@ -517,6 +518,31 @@ uint32_t HashUTF8AsUTF16(const char* aUTF8, size_t aLength, bool* aErr) {
 bool IsSegmentBreakSkipChar(uint32_t u) {
   return intl::UnicodeProperties::IsEastAsianWidthFHWexcludingEmoji(u) &&
          intl::UnicodeProperties::GetScriptCode(u) != intl::Script::HANGUL;
+}
+
+bool IsPunctuationForWordSelect(char16_t aCh) {
+  const uint8_t cat = unicode::GetGeneralCategory(aCh);
+  switch (cat) {
+    case HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION: 
+      if (aCh == '_' && !StaticPrefs::layout_word_select_stop_at_underscore()) {
+        return false;
+      }
+      [[fallthrough]];
+    case HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION: 
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION:   
+    case HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION:    
+    case HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL:     
+    
+    
+    case HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL:  
+    case HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL: 
+      return true;
+    default:
+      return false;
+  }
 }
 
 }  
