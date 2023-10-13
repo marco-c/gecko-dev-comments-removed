@@ -20,11 +20,32 @@ import {
 } from "../../utils/location";
 import { validateSource } from "../../utils/context";
 
-async function mapLocations(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function mapToLocations(
   breakpointPositions,
   generatedSource,
-  isOriginal,
-  originalSourceId,
+  mappedLocation,
   { getState, sourceMapLoader }
 ) {
   
@@ -38,91 +59,83 @@ async function mapLocations(
     mappedBreakpointPositions = breakpointPositions;
   }
 
-  const locations = [];
+  const positions = {};
+
+  
+  if (typeof mappedLocation.line === "number") {
+    positions[mappedLocation.line] = [];
+  }
+
+  const handledBreakpointIds = new Set();
+  const isOriginal = mappedLocation.source.isOriginal;
+  const originalSourceId = mappedLocation.source.id;
+
   for (let line in mappedBreakpointPositions) {
     
     line = parseInt(line, 10);
     for (const columnOrSourceMapLocation of mappedBreakpointPositions[line]) {
+      let location, generatedLocation;
+
       
       
       
       
       
       if (typeof columnOrSourceMapLocation == "number") {
-        const generatedLocation = createLocation({
+        
+        
+        if (isOriginal) {
+          continue;
+        }
+        location = generatedLocation = createLocation({
           line,
           column: columnOrSourceMapLocation,
           source: generatedSource,
         });
-        locations.push({ location: generatedLocation, generatedLocation });
       } else {
         
         
         
-        const generatedLocation = createLocation({
+
+        
+        if (
+          isOriginal &&
+          columnOrSourceMapLocation.sourceId != originalSourceId
+        ) {
+          continue;
+        }
+
+        location = sourceMapToDebuggerLocation(
+          getState(),
+          columnOrSourceMapLocation
+        );
+
+        
+        
+        const breakpointId = makeBreakpointId(location);
+        if (handledBreakpointIds.has(breakpointId)) {
+          continue;
+        }
+        handledBreakpointIds.add(breakpointId);
+
+        generatedLocation = createLocation({
           line,
           column: columnOrSourceMapLocation.generatedColumn,
           source: generatedSource,
         });
-
-        locations.push({
-          location: sourceMapToDebuggerLocation(
-            getState(),
-            columnOrSourceMapLocation
-          ),
-          generatedLocation,
-        });
       }
+
+      
+      
+      
+      
+      const keyLocation = isOriginal ? location : generatedLocation;
+      const keyLine = keyLocation.line;
+      if (!positions[keyLine]) {
+        positions[keyLine] = [];
+      }
+      positions[keyLine].push({ location, generatedLocation });
     }
-  }
-  return locations;
-}
-
-
-function filterBySource(positions, source) {
-  if (!source.isOriginal) {
-    return positions;
-  }
-  return positions.filter(position => position.location.source == source);
-}
-
-
-
-
-
-
-
-
-function filterByUniqLocation(positions) {
-  const handledBreakpointIds = new Set();
-  return positions.filter(({ location }) => {
-    const breakpointId = makeBreakpointId(location);
-    if (handledBreakpointIds.has(breakpointId)) {
-      return false;
-    }
-
-    handledBreakpointIds.add(breakpointId);
-    return true;
-  });
-}
-
-function groupByLine(results, source, line) {
-  const isOriginal = source.isOriginal;
-  const positions = {};
-
-  
-  if (typeof line === "number") {
-    positions[line] = [];
-  }
-
-  for (const result of results) {
-    const location = isOriginal ? result.location : result.generatedLocation;
-
-    if (!positions[location.line]) {
-      positions[location.line] = [];
-    }
-
-    positions[location.line].push(result);
   }
 
   return positions;
@@ -230,20 +243,15 @@ async function _setBreakpointPositions(location, thunkArgs) {
     }
   }
 
-  let positions = await mapLocations(
+  const positions = await mapToLocations(
     results,
     generatedSource,
-    location.source.isOriginal,
-    location.source.id,
+    location,
     thunkArgs
   );
   
   
   validateSource(getState(), location.source);
-
-  positions = filterBySource(positions, location.source);
-  positions = filterByUniqLocation(positions);
-  positions = groupByLine(positions, location.source, location.line);
 
   dispatch({
     type: "ADD_BREAKPOINT_POSITIONS",
