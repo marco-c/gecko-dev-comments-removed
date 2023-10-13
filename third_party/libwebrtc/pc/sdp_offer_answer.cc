@@ -973,7 +973,7 @@ class SdpOfferAnswerHandler::RemoteDescriptionOperation {
   }
 
   
-  bool ReplaceRemoteDescriptionAndCheckEror() {
+  bool ReplaceRemoteDescriptionAndCheckError() {
     RTC_DCHECK_RUN_ON(handler_->signaling_thread());
     RTC_DCHECK(ok());
     RTC_DCHECK(desc_);
@@ -1981,7 +1981,7 @@ void SdpOfferAnswerHandler::ApplyRemoteDescription(
   
   pc_->ClearStatsCache();
 
-  if (!operation->ReplaceRemoteDescriptionAndCheckEror())
+  if (!operation->ReplaceRemoteDescriptionAndCheckError())
     return;
 
   if (!operation->UpdateChannels())
