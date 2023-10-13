@@ -529,7 +529,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   void UnlockTree() MOZ_CAPABILITY_RELEASE(mTreeLock);
 
   
-  virtual AsyncPanZoomController* NewAPZCInstance(
+  virtual already_AddRefed<AsyncPanZoomController> NewAPZCInstance(
       LayersId aLayersId, GeckoContentController* aController);
 
  public:
