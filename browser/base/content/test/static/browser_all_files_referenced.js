@@ -103,7 +103,6 @@ if (AppConstants.NIGHTLY_BUILD) {
 
 var allowlist = [
   
-  { file: "chrome://pdf.js/locale/chrome.properties" },
   { file: "chrome://pdf.js/locale/viewer.properties" },
 
   
