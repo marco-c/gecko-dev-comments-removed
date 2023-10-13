@@ -40,7 +40,6 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Tools.h"
-#include "mozilla/ScopeExit.h"
 
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -455,24 +454,6 @@ nsDragService::SetIDataObject(IDataObject* aDataObj) {
   mDataObject = aDataObj;
   NS_IF_ADDREF(mDataObject);
 
-  if (MOZ_DRAGSERVICE_LOG_ENABLED()) {
-    MOZ_DRAGSERVICE_LOG("nsDragService::SetIDataObject (%p)", mDataObject);
-    IEnumFORMATETC* pEnum = nullptr;
-    if (mDataObject &&
-        S_OK == mDataObject->EnumFormatEtc(DATADIR_GET, &pEnum)) {
-      MOZ_DRAGSERVICE_LOG("    formats in DataObject:");
-
-      FORMATETC fEtc;
-      while (S_OK == pEnum->Next(1, &fEtc, nullptr)) {
-        nsAutoString format;
-        WinUtils::GetClipboardFormatAsString(fEtc.cfFormat, format);
-        MOZ_DRAGSERVICE_LOG("        FORMAT %s",
-                            NS_ConvertUTF16toUTF8(format).get());
-      }
-      pEnum->Release();
-    }
-  }
-
   return NS_OK;
 }
 
@@ -487,16 +468,9 @@ void nsDragService::SetDroppedLocal() {
 
 NS_IMETHODIMP
 nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
-  if (!aDataFlavor || !mDataObject || !_retval) {
-    MOZ_DRAGSERVICE_LOG("%s: error", __PRETTY_FUNCTION__);
-    return NS_ERROR_FAILURE;
-  }
+  if (!aDataFlavor || !mDataObject || !_retval) return NS_ERROR_FAILURE;
 
   *_retval = false;
-  auto logging = MakeScopeExit([&] {
-    MOZ_DRAGSERVICE_LOG("IsDataFlavorSupported: %s is%s found", aDataFlavor,
-                        *_retval ? "" : " not");
-  });
 
   FORMATETC fe;
   UINT format = 0;
@@ -514,76 +488,53 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
       uint32_t cnt = dataObjCol->GetNumDataObjects();
       for (uint32_t i = 0; i < cnt; ++i) {
         IDataObject* dataObj = dataObjCol->GetDataObjectAt(i);
-        if (S_OK == dataObj->QueryGetData(&fe)) {
-          *_retval = true;  
-        }
+        if (S_OK == dataObj->QueryGetData(&fe)) *_retval = true;  
       }
     }
-    return NS_OK;
-  }
-
-  
-  
-  
-  
-  format = nsClipboard::GetFormat(aDataFlavor);
-  SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
-                TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
-  if (mDataObject->QueryGetData(&fe) == S_OK) {
-    *_retval = true;  
-    return NS_OK;
-  }
-
-  
-  
-  
-  if (strcmp(aDataFlavor, kTextMime) == 0) {
+  }  
+  else {
     
     
     
     
-    SET_FORMATETC(fe, CF_TEXT, 0, DVASPECT_CONTENT, -1,
-                  TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
-    if (mDataObject->QueryGetData(&fe) == S_OK) {
-      *_retval = true;  
-    }
-    return NS_OK;
-  }
-
-  if (strcmp(aDataFlavor, kURLMime) == 0) {
-    
-    
-    
-    format = nsClipboard::GetFormat(kFileMime);
+    format = nsClipboard::GetFormat(aDataFlavor);
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
                   TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
     if (mDataObject->QueryGetData(&fe) == S_OK) {
       *_retval = true;  
-    }
-    return NS_OK;
-  }
-
-  if (format == CF_HDROP) {
-    
-    
-    
-    
-    
-    format = nsClipboard::GetFormat(kURLMime);
-    SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-    if (mDataObject->QueryGetData(&fe) == S_OK) {
-      return NS_OK;
-    }
-
-    
-    format = nsClipboard::GetClipboardFileDescriptorFormatW();
-    SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-    if (mDataObject->QueryGetData(&fe) == S_OK) {
-      *_retval = true;  
-    }
-
-    
-    return NS_OK;
+    } else {
+      
+      
+      
+      if (strcmp(aDataFlavor, kTextMime) == 0) {
+        
+        
+        
+        
+        SET_FORMATETC(fe, CF_TEXT, 0, DVASPECT_CONTENT, -1,
+                      TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
+        if (mDataObject->QueryGetData(&fe) == S_OK) {
+          *_retval = true;  
+        }
+      } else if (strcmp(aDataFlavor, kURLMime) == 0) {
+        
+        
+        
+        format = nsClipboard::GetFormat(kFileMime);
+        SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
+                      TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
+        if (mDataObject->QueryGetData(&fe) == S_OK) {
+          *_retval = true;  
+        }
+      } else if (format == CF_HDROP) {
+        
+        format = nsClipboard::GetClipboardFileDescriptorFormatW();
+        SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
+        if (mDataObject->QueryGetData(&fe) == S_OK) {
+          *_retval = true;  
+        }
+      }
+    }  
   }
 
   return NS_OK;
