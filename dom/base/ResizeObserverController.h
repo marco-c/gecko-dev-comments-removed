@@ -21,40 +21,6 @@ class PresShell;
 
 namespace dom {
 
-class ResizeObserverController;
-
-
-
-
-
-class ResizeObserverNotificationHelper final : public nsARefreshObserver {
- public:
-  NS_INLINE_DECL_REFCOUNTING(ResizeObserverNotificationHelper, override)
-
-  explicit ResizeObserverNotificationHelper(ResizeObserverController* aOwner)
-      : mOwner(aOwner), mRegistered(false) {
-    MOZ_ASSERT(mOwner, "Need a non-null owner");
-  }
-
-  MOZ_CAN_RUN_SCRIPT void WillRefresh(TimeStamp aTime) override;
-
-  nsRefreshDriver* GetRefreshDriver() const;
-
-  void Register();
-
-  void Unregister();
-
-  bool IsRegistered() const { return mRegistered; }
-
-  void DetachFromOwner() { mOwner = nullptr; }
-
- private:
-  virtual ~ResizeObserverNotificationHelper();
-
-  ResizeObserverController* mOwner;
-  bool mRegistered;
-};
-
 
 
 
@@ -62,15 +28,13 @@ class ResizeObserverNotificationHelper final : public nsARefreshObserver {
 class ResizeObserverController final {
  public:
   explicit ResizeObserverController(Document* aDocument)
-      : mDocument(aDocument),
-        mResizeObserverNotificationHelper(
-            new ResizeObserverNotificationHelper(this)) {
+      : mDocument(aDocument) {
     MOZ_ASSERT(mDocument, "Need a non-null document");
   }
 
   void AddSizeOfIncludingThis(nsWindowSizes&) const;
 
-  void ShellDetachedFromDocument();
+  void ShellDetachedFromDocument() { UnscheduleNotification(); }
   void AddResizeObserver(ResizeObserver& aObserver) {
     MOZ_ASSERT(!mResizeObservers.Contains(&aObserver));
     
@@ -90,8 +54,8 @@ class ResizeObserverController final {
   
 
 
-
   void ScheduleNotification();
+  void UnscheduleNotification();
 
   
 
@@ -99,11 +63,13 @@ class ResizeObserverController final {
 
   MOZ_CAN_RUN_SCRIPT void Notify();
 
-  PresShell* GetPresShell() const { return mDocument->GetPresShell(); }
+  bool IsScheduled() const { return mScheduled; }
 
   ~ResizeObserverController();
 
  private:
+  nsRefreshDriver* GetRefreshDriver() const;
+
   
 
 
@@ -134,8 +100,11 @@ class ResizeObserverController final {
   
   Document* const mDocument;
 
-  RefPtr<ResizeObserverNotificationHelper> mResizeObserverNotificationHelper;
   nsTArray<ResizeObserver*> mResizeObservers;
+
+  
+  
+  bool mScheduled = false;
 };
 
 }  
