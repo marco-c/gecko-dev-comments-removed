@@ -463,12 +463,7 @@ bool DecoratorEmitter::emitApplyDecoratorsToClassDefinition(
                           CallOrNewEmitter::ArgumentsKind::Other,
                           ValueUsage::WantValue);
 
-    if (!emitDecoratorCallee(cone, decorator)) {
-      
-      return false;
-    }
-
-    if (!cone.emitThis()) {
+    if (!bce_->emitCalleeAndThis(decorator, nullptr, cone)) {
       
       return false;
     }
@@ -794,68 +789,6 @@ bool DecoratorEmitter::emitUpdateDecorationState() {
   return true;
 }
 
-bool DecoratorEmitter::emitDecoratorCallee(CallOrNewEmitter& cone,
-                                           ParseNode* decorator) {
-  
-  if (decorator->is<NameNode>()) {
-    if (!cone.emitNameCallee(decorator->as<NameNode>().name())) {
-      return false;
-    }
-  } else if (decorator->is<ListNode>()) {
-    
-    
-    PropOpEmitter& poe = cone.prepareForPropCallee(false);
-    if (!poe.prepareForObj()) {
-      return false;
-    }
-
-    ListNode* ln = &decorator->as<ListNode>();
-    bool first = true;
-    for (ParseNode* node : ln->contentsTo(ln->last())) {
-      
-      
-      MOZ_ASSERT(node->is<NameNode>());
-
-      if (first) {
-        NameNode* obj = &node->as<NameNode>();
-        if (!bce_->emitGetName(obj)) {
-          return false;
-        }
-        first = false;
-      } else {
-        NameNode* prop = &node->as<NameNode>();
-        GCThingIndex propAtomIndex;
-
-        if (!bce_->makeAtomIndex(prop->atom(), ParserAtom::Atomize::Yes,
-                                 &propAtomIndex)) {
-          return false;
-        }
-
-        if (!bce_->emitAtomOp(JSOp::GetProp, propAtomIndex)) {
-          return false;
-        }
-      }
-    }
-
-    NameNode* prop = &ln->last()->as<NameNode>();
-    if (!poe.emitGet(prop->atom())) {
-      return false;
-    }
-  } else {
-    
-    
-    if (!cone.prepareForFunctionCallee()) {
-      return false;
-    }
-
-    if (!bce_->emitTree(decorator)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
                                                    bool isStatic,
                                                    ParseNode* decorator) {
@@ -870,12 +803,7 @@ bool DecoratorEmitter::emitCallDecoratorForElement(Kind kind, ParseNode* key,
                         CallOrNewEmitter::ArgumentsKind::Other,
                         ValueUsage::WantValue);
 
-  if (!emitDecoratorCallee(cone, decorator)) {
-    
-    return false;
-  }
-
-  if (!cone.emitThis()) {
+  if (!bce_->emitCalleeAndThis(decorator, nullptr, cone)) {
     
     return false;
   }
