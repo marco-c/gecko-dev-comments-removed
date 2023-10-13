@@ -2,6 +2,7 @@
 
 
 const {
+  getFirefoxViewURL,
   withFirefoxView,
   assertFirefoxViewTab,
   assertFirefoxViewTabSelected,

@@ -259,6 +259,21 @@
       return this._lastAccessed == Infinity ? Date.now() : this._lastAccessed;
     }
 
+    get lastSeenActive() {
+      const isForegroundWindow =
+        this.ownerGlobal ==
+        BrowserWindowTracker.getTopWindow({ allowPopups: true });
+      
+      if (isForegroundWindow && this.selected) {
+        return Date.now();
+      }
+      if (this._lastSeenActive) {
+        return this._lastSeenActive;
+      }
+      
+      return Services.startup.getStartupInfo().start.getTime();
+    }
+
     get _overPlayingIcon() {
       return this.overlayIcon?.matches(":hover");
     }
@@ -289,6 +304,10 @@
 
     updateLastAccessed(aDate) {
       this._lastAccessed = this.selected ? Infinity : aDate || Date.now();
+    }
+
+    updateLastSeenActive() {
+      this._lastSeenActive = Date.now();
     }
 
     updateLastUnloadedByTabUnloader() {
