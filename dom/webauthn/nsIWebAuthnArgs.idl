@@ -12,6 +12,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     
     readonly attribute AString origin;
 
+    readonly attribute Array<octet> challenge;
+
     readonly attribute Array<octet> clientDataHash;
 
     
@@ -63,6 +65,8 @@ interface nsIWebAuthnSignArgs : nsISupports {
 
     
     readonly attribute AString rpId;
+
+    readonly attribute Array<octet> challenge;
 
     readonly attribute Array<octet> clientDataHash;
 
