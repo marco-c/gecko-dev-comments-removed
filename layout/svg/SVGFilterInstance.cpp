@@ -15,7 +15,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/HTMLCanvasElement.h"
-#include "mozilla/dom/IDTracker.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGUnitTypesBinding.h"
 #include "mozilla/dom/SVGFilterElement.h"
@@ -30,23 +29,18 @@ using namespace mozilla::gfx;
 namespace mozilla {
 
 SVGFilterInstance::SVGFilterInstance(
-    const StyleFilter& aFilter, nsIFrame* aTargetFrame,
+    const StyleFilter& aFilter, SVGFilterFrame* aFilterFrame,
     nsIContent* aTargetContent, const UserSpaceMetrics& aMetrics,
     const gfxRect& aTargetBBox,
     const MatrixScalesDouble& aUserSpaceToFilterSpaceScale)
     : mFilter(aFilter),
       mTargetContent(aTargetContent),
       mMetrics(aMetrics),
+      mFilterFrame(aFilterFrame),
       mTargetBBox(aTargetBBox),
       mUserSpaceToFilterSpaceScale(aUserSpaceToFilterSpaceScale),
       mSourceAlphaAvailable(false),
       mInitialized(false) {
-  
-  mFilterFrame = GetFilterFrame(aTargetFrame);
-  if (!mFilterFrame) {
-    return;
-  }
-
   
   mFilterElement = mFilterFrame->GetFilterContent();
   if (!mFilterElement) {
@@ -108,61 +102,6 @@ bool SVGFilterInstance::ComputeBounds() {
   }
 
   return true;
-}
-
-SVGFilterFrame* SVGFilterInstance::GetFilterFrame(nsIFrame* aTargetFrame) {
-  if (!mFilter.IsUrl()) {
-    
-    return nullptr;
-  }
-
-  
-  
-  if (!mTargetContent) {
-    return nullptr;
-  }
-
-  
-  
-  nsCOMPtr<nsIURI> url;
-  if (aTargetFrame) {
-    RefPtr<URLAndReferrerInfo> urlExtraReferrer =
-        SVGObserverUtils::GetFilterURI(aTargetFrame, mFilter);
-
-    
-    if (!urlExtraReferrer) {
-      return nullptr;
-    }
-
-    url = urlExtraReferrer->GetURI();
-  } else {
-    url = mFilter.AsUrl().ResolveLocalRef(mTargetContent);
-  }
-
-  if (!url) {
-    return nullptr;
-  }
-
-  
-  IDTracker idTracker;
-  bool watch = false;
-  idTracker.ResetToURIFragmentID(
-      mTargetContent, url, mFilter.AsUrl().ExtraData().ReferrerInfo(), watch);
-  Element* element = idTracker.get();
-  if (!element) {
-    
-    return nullptr;
-  }
-
-  
-  nsIFrame* frame = element->GetPrimaryFrame();
-  if (!frame || !frame->IsSVGFilterFrame()) {
-    
-    
-    return nullptr;
-  }
-
-  return static_cast<SVGFilterFrame*>(frame);
 }
 
 float SVGFilterInstance::GetPrimitiveNumber(uint8_t aCtxType,

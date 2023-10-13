@@ -80,7 +80,7 @@ class SVGFilterInstance {
 
 
   SVGFilterInstance(
-      const StyleFilter& aFilter, nsIFrame* aTargetFrame,
+      const StyleFilter& aFilter, SVGFilterFrame* aFilterFrame,
       nsIContent* aTargetContent, const UserSpaceMetrics& aMetrics,
       const gfxRect& aTargetBBox,
       const gfx::MatrixScalesDouble& aUserSpaceToFilterSpaceScale);

@@ -369,10 +369,8 @@ nsRect SVGIntegrationUtils::ComputePostEffectsInkOverflowRect(
   
   
   
-  
-  
-  
-  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) ==
+  nsTArray<SVGFilterFrame*> filterFrames;
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, &filterFrames) ==
       SVGObserverUtils::eHasRefsSomeInvalid) {
     return aPreEffectsOverflowRect;
   }
@@ -388,8 +386,8 @@ nsRect SVGIntegrationUtils::ComputePostEffectsInkOverflowRect(
       AppUnitsPerCSSPixel());
   overrideBBox.RoundOut();
 
-  Maybe<nsRect> overflowRect =
-      FilterInstance::GetPostFilterBounds(firstFrame, &overrideBBox);
+  Maybe<nsRect> overflowRect = FilterInstance::GetPostFilterBounds(
+      firstFrame, filterFrames, &overrideBBox);
   if (!overflowRect) {
     return aPreEffectsOverflowRect;
   }
@@ -408,8 +406,9 @@ nsRect SVGIntegrationUtils::GetRequiredSourceForInvalidArea(
   
   
   
+  nsTArray<SVGFilterFrame*> filterFrames;
   if (!aFrame->StyleEffects()->HasFilters() ||
-      SVGObserverUtils::GetFiltersIfObserving(firstFrame, nullptr) ==
+      SVGObserverUtils::GetFiltersIfObserving(firstFrame, &filterFrames) ==
           SVGObserverUtils::eHasRefsSomeInvalid) {
     return aDirtyRect;
   }
@@ -420,7 +419,8 @@ nsRect SVGIntegrationUtils::GetRequiredSourceForInvalidArea(
   nsRect postEffectsRect = aDirtyRect + toUserSpace;
 
   
-  return FilterInstance::GetPreFilterNeededArea(firstFrame, postEffectsRect)
+  return FilterInstance::GetPreFilterNeededArea(firstFrame, filterFrames,
+                                                postEffectsRect)
              .GetBounds() -
          toUserSpace;
 }
@@ -954,10 +954,8 @@ void SVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams,
   
   
   
-  
-  
-  
-  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, nullptr) ==
+  nsTArray<SVGFilterFrame*> filterFrames;
+  if (SVGObserverUtils::GetAndObserveFilters(firstFrame, &filterFrames) ==
       SVGObserverUtils::eHasRefsSomeInvalid) {
     aCallback(aParams.ctx, aParams.imgParams, nullptr, nullptr);
     return;
@@ -971,8 +969,9 @@ void SVGIntegrationUtils::PaintFilter(const PaintFramesParams& aParams,
   
   nsRegion dirtyRegion = aParams.dirtyRect - offsets.offsetToBoundingBox;
 
-  FilterInstance::PaintFilteredFrame(frame, aFilters, &context, aCallback,
-                                     &dirtyRegion, aParams.imgParams, opacity);
+  FilterInstance::PaintFilteredFrame(frame, aFilters, filterFrames, &context,
+                                     aCallback, &dirtyRegion, aParams.imgParams,
+                                     opacity);
 }
 
 bool SVGIntegrationUtils::CreateWebRenderCSSFilters(

@@ -127,15 +127,12 @@ SVGFilterFrame* SVGFilterFrame::GetReferencedFilter() {
   };
 
   nsIFrame* tframe = SVGObserverUtils::GetAndObserveTemplate(this, GetHref);
-  if (tframe) {
-    LayoutFrameType frameType = tframe->Type();
-    if (frameType == LayoutFrameType::SVGFilter) {
-      return static_cast<SVGFilterFrame*>(tframe);
-    }
-    
-    
-    
+  if (tframe && tframe->IsSVGFilterFrame()) {
+    return static_cast<SVGFilterFrame*>(tframe);
   }
+  
+  
+  
 
   return nullptr;
 }

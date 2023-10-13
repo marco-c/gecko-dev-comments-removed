@@ -286,6 +286,9 @@ class SVGObserverUtils {
   static ReferenceState GetAndObserveFilters(
       nsIFrame* aFilteredFrame, nsTArray<SVGFilterFrame*>* aFilterFrames);
 
+  static ReferenceState GetAndObserveFilters(
+      nsISupports* aObserverList, nsTArray<SVGFilterFrame*>* aFilterFrames);
+
   
 
 

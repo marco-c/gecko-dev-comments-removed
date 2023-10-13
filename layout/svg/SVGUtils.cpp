@@ -116,17 +116,15 @@ nsRect SVGUtils::GetPostFilterInkOverflowRect(nsIFrame* aFrame,
   
   
   
-  
-  
-  
-  
+  nsTArray<SVGFilterFrame*> filterFrames;
   if (!aFrame->StyleEffects()->HasFilters() ||
-      SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+      SVGObserverUtils::GetAndObserveFilters(aFrame, &filterFrames) ==
           SVGObserverUtils::eHasRefsSomeInvalid) {
     return aPreFilterRect;
   }
 
-  return FilterInstance::GetPostFilterBounds(aFrame, nullptr, &aPreFilterRect)
+  return FilterInstance::GetPostFilterBounds(aFrame, filterFrames, nullptr,
+                                             &aPreFilterRect)
       .valueOr(aPreFilterRect);
 }
 
@@ -600,11 +598,9 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
 
   SVGClipPathFrame* clipPathFrame;
   nsTArray<SVGMaskFrame*> maskFrames;
-  
-  
-  
+  nsTArray<SVGFilterFrame*> filterFrames;
   const bool hasInvalidFilter =
-      SVGObserverUtils::GetAndObserveFilters(aFrame, nullptr) ==
+      SVGObserverUtils::GetAndObserveFilters(aFrame, &filterFrames) ==
       SVGObserverUtils::eHasRefsSomeInvalid;
   if (SVGObserverUtils::GetAndObserveClipPath(aFrame, &clipPathFrame) ==
           SVGObserverUtils::eHasRefsSomeInvalid ||
@@ -731,8 +727,8 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
                                        SVGUtils::eBBoxIncludeFillGeometry |
                                        SVGUtils::eBBoxIncludeStroke);
     FilterInstance::PaintFilteredFrame(
-        aFrame, aFrame->StyleEffects()->mFilters.AsSpan(), target, callback,
-        nullptr, aImgParams, 1.0f, &bbox);
+        aFrame, aFrame->StyleEffects()->mFilters.AsSpan(), filterFrames, target,
+        callback, nullptr, aImgParams, 1.0f, &bbox);
   } else {
     svgFrame->PaintSVG(*target, aTransform, aImgParams);
   }
