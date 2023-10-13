@@ -26,7 +26,6 @@
 
 namespace webrtc {
 class ReceiveStatisticsProvider;
-class Transport;
 
 
 
@@ -114,10 +113,6 @@ struct RtcpTransceiverConfig {
   Clock* clock = nullptr;
 
   
-  union {
-    [[deprecated]] Transport* outgoing_transport = nullptr;
-    Transport* deprecated_outgoing_transport;
-  };
   std::function<void(rtc::ArrayView<const uint8_t>)> rtcp_transport;
 
   
