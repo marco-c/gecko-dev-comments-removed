@@ -7,6 +7,7 @@
 #include "ScaledFontMac.h"
 #include "UnscaledFontMac.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "nsCocoaFeatures.h"
 #include "PathSkia.h"
 #include "skia/include/core/SkPaint.h"
 #include "skia/include/core/SkPath.h"
@@ -72,6 +73,31 @@ class AutoRelease final {
 CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
                                                bool aInstalledFont,
                                                CTFontDescriptorRef aFontDesc) {
+  
+  if (nsCocoaFeatures::OnVenturaOrLater()) {
+    
+    
+    AutoRelease<CTFontRef> ctFont(
+        CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aFontDesc));
+    AutoRelease<CFDictionaryRef> vars(CGFontCopyVariations(aCGFont));
+    if (vars) {
+      
+      AutoRelease<CFDictionaryRef> attrs(CFDictionaryCreate(
+          nullptr, (const void**)&kCTFontVariationAttribute,
+          (const void**)&vars, 1, &kCFTypeDictionaryKeyCallBacks,
+          &kCFTypeDictionaryValueCallBacks));
+      
+      
+      AutoRelease<CTFontDescriptorRef> desc(CTFontCopyFontDescriptor(ctFont));
+      desc = CTFontDescriptorCreateCopyWithAttributes(desc, attrs);
+      
+      return CTFontCreateCopyWithAttributes(ctFont, 0.0, nullptr, desc);
+    }
+    
+    return ctFont.forget();
+  }
+
+  
   CTFontRef ctFont;
   if (aInstalledFont) {
     AutoRelease<CFDictionaryRef> vars(CGFontCopyVariations(aCGFont));
