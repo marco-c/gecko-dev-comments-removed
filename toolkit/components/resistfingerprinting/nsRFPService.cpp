@@ -1362,7 +1362,7 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
       *reinterpret_cast<uint64_t*>(canvasKey.Elements() + 24));
 
   
-  uint8_t numNoises = std::clamp<uint8_t>(rnd3, 15, 255);
+  uint8_t numNoises = std::clamp<uint8_t>(rnd3, 20, 255);
 
   if (false) {
     
@@ -1396,7 +1396,8 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
     uint32_t idx = 4 * (rng1.next() % pixelCnt) + channel;
     uint8_t bit = rng2.next();
 
-    aData[idx] = aData[idx] ^ (bit & 0x1);
+    
+    aData[idx] = aData[idx] ^ (0x2 >> (bit & 0x1));
   }
 
   glean::fingerprinting_protection::canvas_noise_calculate_time
