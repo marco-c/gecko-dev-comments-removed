@@ -468,7 +468,9 @@ void nsDragService::SetDroppedLocal() {
 
 NS_IMETHODIMP
 nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
-  if (!aDataFlavor || !mDataObject || !_retval) return NS_ERROR_FAILURE;
+  if (!aDataFlavor || !mDataObject || !_retval) {
+    return NS_ERROR_FAILURE;
+  }
 
   *_retval = false;
 
@@ -488,53 +490,63 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
       uint32_t cnt = dataObjCol->GetNumDataObjects();
       for (uint32_t i = 0; i < cnt; ++i) {
         IDataObject* dataObj = dataObjCol->GetDataObjectAt(i);
-        if (S_OK == dataObj->QueryGetData(&fe)) *_retval = true;  
+        if (S_OK == dataObj->QueryGetData(&fe)) {
+          *_retval = true;  
+        }
       }
     }
-  }  
-  else {
+    return NS_OK;
+  }
+
+  
+  
+  
+  
+  format = nsClipboard::GetFormat(aDataFlavor);
+  SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
+                TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
+  if (mDataObject->QueryGetData(&fe) == S_OK) {
+    *_retval = true;  
+    return NS_OK;
+  }
+
+  
+  
+  
+  if (strcmp(aDataFlavor, kTextMime) == 0) {
     
     
     
     
-    format = nsClipboard::GetFormat(aDataFlavor);
+    SET_FORMATETC(fe, CF_TEXT, 0, DVASPECT_CONTENT, -1,
+                  TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
+    if (mDataObject->QueryGetData(&fe) == S_OK) {
+      *_retval = true;  
+    }
+    return NS_OK;
+  }
+
+  if (strcmp(aDataFlavor, kURLMime) == 0) {
+    
+    
+    
+    format = nsClipboard::GetFormat(kFileMime);
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
                   TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
     if (mDataObject->QueryGetData(&fe) == S_OK) {
       *_retval = true;  
-    } else {
-      
-      
-      
-      if (strcmp(aDataFlavor, kTextMime) == 0) {
-        
-        
-        
-        
-        SET_FORMATETC(fe, CF_TEXT, 0, DVASPECT_CONTENT, -1,
-                      TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
-        if (mDataObject->QueryGetData(&fe) == S_OK) {
-          *_retval = true;  
-        }
-      } else if (strcmp(aDataFlavor, kURLMime) == 0) {
-        
-        
-        
-        format = nsClipboard::GetFormat(kFileMime);
-        SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1,
-                      TYMED_HGLOBAL | TYMED_FILE | TYMED_GDI);
-        if (mDataObject->QueryGetData(&fe) == S_OK) {
-          *_retval = true;  
-        }
-      } else if (format == CF_HDROP) {
-        
-        format = nsClipboard::GetClipboardFileDescriptorFormatW();
-        SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
-        if (mDataObject->QueryGetData(&fe) == S_OK) {
-          *_retval = true;  
-        }
-      }
-    }  
+    }
+    return NS_OK;
+  }
+
+  if (format == CF_HDROP) {
+    
+    format = nsClipboard::GetClipboardFileDescriptorFormatW();
+    SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
+    if (mDataObject->QueryGetData(&fe) == S_OK) {
+      *_retval = true;  
+    }
+    return NS_OK;
   }
 
   return NS_OK;
