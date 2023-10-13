@@ -215,7 +215,7 @@ impl<T: HIDDevice> FidoDeviceIO for T {
                 
                 let status = ApduErrorStatus::from([status[0], status[1]]);
 
-                match msg.handle_response_ctap1(status, &data, &add_info) {
+                match msg.handle_response_ctap1(self, status, &data, &add_info) {
                     Ok(out) => return Ok(out),
                     Err(Retryable::Retry) => {
                         

@@ -60,8 +60,9 @@ pub trait RequestCtap1: fmt::Debug {
     fn ctap1_format(&self) -> Result<(Vec<u8>, Self::AdditionalInfo), HIDError>;
 
     
-    fn handle_response_ctap1(
+    fn handle_response_ctap1<Dev: FidoDevice>(
         &self,
+        dev: &mut Dev,
         status: Result<(), ApduErrorStatus>,
         input: &[u8],
         add_info: &Self::AdditionalInfo,
