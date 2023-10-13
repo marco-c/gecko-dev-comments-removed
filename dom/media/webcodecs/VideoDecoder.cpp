@@ -911,6 +911,41 @@ already_AddRefed<Promise> VideoDecoder::IsConfigSupported(
   return p.forget();
 }
 
+already_AddRefed<MediaRawData> VideoDecoder::InputDataToMediaRawData(
+    UniquePtr<EncodedVideoChunkData>&& aData, TrackInfo& aInfo,
+    const VideoDecoderConfigInternal& aConfig) {
+  MOZ_ASSERT(aInfo.GetAsVideoInfo());
+  AssertIsOnOwningThread();
+
+  if (!aData) {
+    LOGE("No data for conversion");
+    return nullptr;
+  }
+
+  RefPtr<MediaRawData> sample = aData->TakeData();
+  if (!sample) {
+    LOGE("Take no data for conversion");
+    return nullptr;
+  }
+
+  
+  
+  
+  if (aConfig.mDescription && aInfo.GetAsVideoInfo()->mExtraData) {
+    sample->mExtraData = aInfo.GetAsVideoInfo()->mExtraData;
+  }
+
+  LOGV(
+      "EncodedVideoChunkData %p converted to %zu-byte MediaRawData - time: "
+      "%" PRIi64 "us, timecode: %" PRIi64 "us, duration: %" PRIi64
+      "us, key-frame: %s, has extra data: %s",
+      aData.get(), sample->Size(), sample->mTime.ToMicroseconds(),
+      sample->mTimecode.ToMicroseconds(), sample->mDuration.ToMicroseconds(),
+      sample->mKeyframe ? "yes" : "no", sample->mExtraData ? "yes" : "no");
+
+  return sample.forget();
+}
+
 nsTArray<RefPtr<VideoFrame>> VideoDecoder::DecodedDataToOutputType(
     nsIGlobalObject* aGlobalObject, nsTArray<RefPtr<MediaData>>&& aData,
     VideoDecoderConfigInternal& aConfig) {
