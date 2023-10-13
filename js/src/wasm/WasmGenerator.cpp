@@ -37,6 +37,7 @@
 #include "wasm/WasmGC.h"
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmStubs.h"
+#include "wasm/WasmSummarizeInsn.h"
 
 using namespace js;
 using namespace js::jit;
@@ -1064,12 +1065,49 @@ UniqueCodeTier ModuleGenerator::finishCodeTier() {
 
   metadataTier_->stackMaps.offsetBy(uintptr_t(segment->base()));
 
-#ifdef DEBUG
+#if defined(DEBUG)
   
   for (size_t i = 0; i < metadataTier_->stackMaps.length(); i++) {
     MOZ_ASSERT(
         IsPlausibleStackMapKey(metadataTier_->stackMaps.get(i).nextInsnAddr),
         "wasm stackmap does not reference a valid insn");
+  }
+#endif
+
+#if defined(DEBUG) && (defined(JS_CODEGEN_X64) || defined(JS_CODEGEN_X86) || \
+                       defined(JS_CODEGEN_ARM64))
+  
+  
+  
+  
+  
+  
+  for (Trap trap : MakeEnumeratedRange(Trap::Limit)) {
+    const TrapSiteVector& trapSites = metadataTier_->trapSites[trap];
+    for (const TrapSite& trapSite : trapSites) {
+      const uint8_t* insnAddr =
+          ((const uint8_t*)(segment->base())) + uintptr_t(trapSite.pcOffset);
+      
+      
+      const TrapMachineInsn expected = trapSite.insn;
+      mozilla::Maybe<TrapMachineInsn> actual =
+          SummarizeTrapInstruction(insnAddr);
+      bool valid = actual.isSome() && actual.value() == expected;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      MOZ_ASSERT(valid, "wasm trapsite does not reference a valid insn");
+    }
   }
 #endif
 
