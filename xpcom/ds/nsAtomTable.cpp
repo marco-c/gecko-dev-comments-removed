@@ -252,7 +252,7 @@ class nsAtomTable {
   
   
   
-  constexpr static size_t kNumSubTables = 128;  
+  constexpr static size_t kNumSubTables = 512;  
 
   
   
