@@ -470,7 +470,9 @@ class VendorManifest(MozbuildObject):
                 
                 if has_prefix:
                     tardir = mozpath.join(tmpextractdir.name, one_prefix)
-                    mozfile.copy_contents(tardir, tmpextractdir.name)
+                    mozfile.copy_contents(
+                        tardir, tmpextractdir.name, ignore_dangling_symlinks=True
+                    )
                     mozfile.remove(tardir)
 
                 if self.should_perform_step("include"):
