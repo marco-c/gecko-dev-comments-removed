@@ -292,10 +292,16 @@ int LibaomAv1Encoder::InitEncode(const VideoCodec* codec_settings,
     SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_ENABLE_PALETTE, 0);
   }
 
-  if (cfg_.g_threads == 4 && cfg_.g_w == 640 &&
-      (cfg_.g_h == 360 || cfg_.g_h == 480)) {
-    SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_ROWS,
-                                      static_cast<int>(log2(cfg_.g_threads)));
+  if (cfg_.g_threads == 8) {
+    
+    
+    
+    SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_ROWS, 1);
+    SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_COLUMNS, 2);
+  } else if (cfg_.g_threads == 4) {
+    
+    SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_ROWS, 1);
+    SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_COLUMNS, 1);
   } else {
     SET_ENCODER_PARAM_OR_RETURN_ERROR(AV1E_SET_TILE_COLUMNS,
                                       static_cast<int>(log2(cfg_.g_threads)));
@@ -399,7 +405,9 @@ int LibaomAv1Encoder::NumberOfThreads(int width,
   
   
   
-  if (width * height >= 640 * 360 && number_of_cores > 4) {
+  if (width * height > 1280 * 720 && number_of_cores > 8) {
+    return 8;
+  } else if (width * height >= 640 * 360 && number_of_cores > 4) {
     return 4;
   } else if (width * height >= 320 * 180 && number_of_cores > 2) {
     return 2;
