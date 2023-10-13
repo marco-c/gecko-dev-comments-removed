@@ -20,6 +20,9 @@ const { FxAccounts } = ChromeUtils.importESModule(
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+const { DiscoveryStreamFeed } = ChromeUtils.import(
+  "resource://activity-stream/lib/DiscoveryStreamFeed.jsm"
+);
 
 const ABOUT_WELCOME_OVERRIDE_CONTENT_PREF = "browser.aboutwelcome.screens";
 

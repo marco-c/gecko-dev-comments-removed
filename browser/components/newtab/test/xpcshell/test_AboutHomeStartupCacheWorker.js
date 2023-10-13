@@ -18,6 +18,12 @@ const { SearchTestUtils } = ChromeUtils.importESModule(
 const { TestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/TestUtils.sys.mjs"
 );
+const { sinon } = ChromeUtils.importESModule(
+  "resource://testing-common/Sinon.sys.mjs"
+);
+const { DiscoveryStreamFeed } = ChromeUtils.import(
+  "resource://activity-stream/lib/DiscoveryStreamFeed.jsm"
+);
 
 SearchTestUtils.init(this);
 AddonTestUtils.init(this);
@@ -81,9 +87,12 @@ add_setup(async function () {
 
   let newConfig = Object.assign(defaultDSConfig, {
     show_spocs: false,
-    hardcoded_layout: false,
-    layout_endpoint: "http://example.com/ds_layout.json",
   });
+
+  const sandbox = sinon.createSandbox();
+  sandbox
+    .stub(DiscoveryStreamFeed.prototype, "generateFeedUrl")
+    .returns("http://example.com/topstories.json");
 
   
   
@@ -226,8 +235,8 @@ add_task(async function test_cache_worker() {
   
   equal(
     Array.from(root.querySelectorAll(".ds-card")).length,
-    3,
-    "There are 3 DSCards"
+    21,
+    "There are 21 DSCards"
   );
   let cardHostname = doc.querySelector(
     "[data-section-id='topstories'] .source"
@@ -235,7 +244,7 @@ add_task(async function test_cache_worker() {
   equal(cardHostname, "bbc.com", "Card hostname is bbc.com");
 
   let placeholders = doc.querySelectorAll(".ds-card.placeholder");
-  equal(placeholders.length, 2, "There should be 2 placeholders");
+  equal(placeholders.length, 20, "There should be 20 placeholders");
 });
 
 
