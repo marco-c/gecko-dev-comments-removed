@@ -19,12 +19,14 @@
 #include <stdint.h>
 
 #include "api/scoped_refptr.h"
+#include "api/sequence_checker.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_defines.h"
+#include "rtc_base/race_checker.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/system/rtc_export.h"
 
@@ -89,37 +91,46 @@ class RTC_EXPORT VideoCaptureImpl : public VideoCaptureModule {
   ~VideoCaptureImpl() override;
 
   
-  int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
+  SequenceChecker api_checker_;
+  
+  
+  rtc::RaceChecker capture_checker_;
+  
+  char* _deviceUniqueId RTC_GUARDED_BY(api_checker_);
 
-  char* _deviceUniqueId;  
+  
+  int32_t DeliverCapturedFrame(VideoFrame& captureFrame)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(api_lock_);
   Mutex api_lock_;
-  VideoCaptureCapability _requestedCapability;  
-                                                
-                                                
+  
+  VideoCaptureCapability _requestedCapability RTC_GUARDED_BY(api_checker_);
+
  private:
   void UpdateFrameCount();
   uint32_t CalculateFrameRate(int64_t now_ns);
   void DeliverRawFrame(uint8_t* videoFrame,
                        size_t videoFrameLength,
                        const VideoCaptureCapability& frameInfo,
-                       int64_t captureTime);
+                       int64_t captureTime)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(api_lock_);
 
   
-  int64_t _lastProcessTimeNanos;
+  int64_t _lastProcessTimeNanos RTC_GUARDED_BY(capture_checker_);
   
-  int64_t _lastFrameRateCallbackTimeNanos;
+  int64_t _lastFrameRateCallbackTimeNanos RTC_GUARDED_BY(capture_checker_);
 
-  std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks;
-  RawVideoSinkInterface* _rawDataCallBack;
+  std::set<rtc::VideoSinkInterface<VideoFrame>*> _dataCallBacks RTC_GUARDED_BY(api_lock_);
+  RawVideoSinkInterface* _rawDataCallBack RTC_GUARDED_BY(api_lock_);
 
-  int64_t _lastProcessFrameTimeNanos;
+  int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
   
-  int64_t _incomingFrameTimesNanos[kFrameRateCountHistorySize];
-  VideoRotation _rotateFrame;  
-                               
+  int64_t _incomingFrameTimesNanos[kFrameRateCountHistorySize] RTC_GUARDED_BY(
+      capture_checker_);
+  
+  VideoRotation _rotateFrame RTC_GUARDED_BY(api_lock_);
 
   
-  bool apply_rotation_;
+  bool apply_rotation_ RTC_GUARDED_BY(api_lock_);
 };
 }  
 }  
