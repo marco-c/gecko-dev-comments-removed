@@ -22,13 +22,13 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/synchronization/mutex.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
 class Clock;
-class RtpPacketToSend;
 
 class RtpPacketHistory {
  public:
@@ -36,6 +36,16 @@ class RtpPacketHistory {
     kDisabled,     
     kStoreAndCull  
                    
+  };
+
+  enum class PaddingMode {
+    kDefault,   
+                
+    kPriority,  
+    
+    
+    kRecentLargePacket  
+                        
   };
 
   
@@ -48,7 +58,11 @@ class RtpPacketHistory {
   
   static constexpr int kPacketCullingDelayFactor = 3;
 
-  RtpPacketHistory(Clock* clock, bool enable_padding_prio);
+  RtpPacketHistory(Clock* clock, bool enable_padding_prio)
+      : RtpPacketHistory(clock,
+                         enable_padding_prio ? PaddingMode::kPriority
+                                             : PaddingMode::kDefault) {}
+  RtpPacketHistory(Clock* clock, PaddingMode padding_mode);
 
   RtpPacketHistory() = delete;
   RtpPacketHistory(const RtpPacketHistory&) = delete;
@@ -157,6 +171,8 @@ class RtpPacketHistory {
     bool operator()(StoredPacket* lhs, StoredPacket* rhs) const;
   };
 
+  bool padding_priority_enabled() const;
+
   
   bool VerifyRtt(const StoredPacket& packet) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
@@ -172,7 +188,7 @@ class RtpPacketHistory {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
   Clock* const clock_;
-  const bool enable_padding_prio_;
+  const PaddingMode padding_mode_;
   mutable Mutex lock_;
   size_t number_to_store_ RTC_GUARDED_BY(lock_);
   StorageMode mode_ RTC_GUARDED_BY(lock_);
@@ -191,6 +207,8 @@ class RtpPacketHistory {
   
   
   PacketPrioritySet padding_priority_ RTC_GUARDED_BY(lock_);
+
+  std::optional<RtpPacketToSend> large_payload_packet_ RTC_GUARDED_BY(lock_);
 };
 }  
 #endif  

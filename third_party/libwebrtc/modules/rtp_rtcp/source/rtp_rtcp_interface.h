@@ -137,13 +137,6 @@ class RtpRtcpInterface : public RtcpFeedbackSenderInterface {
 
     
     
-    
-    
-    
-    bool enable_rtx_padding_prioritization = true;
-
-    
-    
     bool non_sender_rtt_measurement = false;
 
     
