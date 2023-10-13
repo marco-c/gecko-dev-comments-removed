@@ -1844,6 +1844,15 @@ class _ASRouter {
 
 
 
+  setAttributionString(attrStr) {
+    return lazy.MacAttribution.setAttributionString(attrStr);
+  }
+
+  
+
+
+
+
 
 
   async forceAttribution(data) {
@@ -1857,16 +1866,9 @@ class _ASRouter {
         encodeURIComponent(attributionData)
       );
     } else if (AppConstants.platform === "macosx") {
-      let appPath = lazy.MacAttribution.applicationPath;
-      let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-        Ci.nsIMacAttributionService
+      await this.setAttributionString(
+        `__MOZCUSTOM__${encodeURIComponent(attributionData)}`
       );
-
-      
-      let referrer = `https://www.mozilla.org/anything/?${attributionData}`;
-
-      
-      attributionSvc.setReferrerUrl(appPath, referrer, true);
 
       
       await AttributionCode.deleteFileAsync();
