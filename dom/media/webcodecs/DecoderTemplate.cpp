@@ -4,9 +4,11 @@
 
 
 
+#include "DecoderTemplate.h"
+
 #include <atomic>
 
-#include "DecoderTemplate.h"
+#include "DecoderTypes.h"
 #include "MediaInfo.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Try.h"
@@ -15,6 +17,7 @@
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/VideoDecoderBinding.h"
+#include "mozilla/dom/VideoFrame.h"
 #include "mozilla/dom/WorkerCommon.h"
 #include "nsGkAtoms.h"
 #include "nsString.h"
@@ -973,6 +976,8 @@ void DecoderTemplate<DecoderType>::DestroyDecoderAgentIfAny() {
             aResult.IsResolve() ? "resolved" : "rejected");
       });
 }
+
+template class DecoderTemplate<VideoDecoderTraits>;
 
 #undef LOG
 #undef LOGW
