@@ -14,6 +14,9 @@ add_setup(clickTestSetup);
 
 
 async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
+  if (mode == null) {
+    throw new Error("Invalid cookie banner service mode.");
+  }
   let initFn = () => {
     
     if (Services.cookieBanners.isEnabled) {
@@ -23,6 +26,7 @@ async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
 
   let shouldHandleBanner =
     mode == Ci.nsICookieBannerService.MODE_REJECT && !detectOnly;
+  let expectActorEnabled = mode != Ci.nsICookieBannerService.MODE_DISABLED;
   let testURL = openPageOptions.testURL || TEST_PAGE_A;
   let triggerFn = async () => {
     await openPageAndVerify({
@@ -32,6 +36,7 @@ async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
       visible: !shouldHandleBanner,
       expected: shouldHandleBanner ? "OptOut" : "NoClick",
       keepTabOpen: true,
+      expectActorEnabled,
       ...openPageOptions, 
     });
   };
