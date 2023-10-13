@@ -373,12 +373,16 @@ def unpack(target):
                     os.path.join(LIBWEBRTC_DIR, "build", path),
                 )
     elif target == "third_party":
-        try:
-            shutil.rmtree(os.path.join(LIBWEBRTC_DIR, "third_party"))
-        except FileNotFoundError:
-            pass
-        except NotADirectoryError:
-            pass
+        
+        
+        
+        for path in THIRDPARTY_USED_IN_FIREFOX:
+            try:
+                shutil.rmtree(os.path.join(LIBWEBRTC_DIR, "third_party", path))
+            except FileNotFoundError:
+                pass
+            except NotADirectoryError:
+                pass
 
         if os.path.exists(os.path.join(target_path, THIRDPARTY_USED_IN_FIREFOX[0])):
             for path in THIRDPARTY_USED_IN_FIREFOX:
