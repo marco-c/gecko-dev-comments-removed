@@ -43,6 +43,8 @@ if (!this.runTest) {
     enableStorageTesting();
     enableTesting();
 
+    Cu.importGlobalProperties(["indexedDB", "File", "Blob", "FileReader"]);
+
     
     
     

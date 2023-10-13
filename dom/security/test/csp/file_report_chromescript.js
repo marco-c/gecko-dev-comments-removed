@@ -4,7 +4,6 @@ const { NetUtil } = ChromeUtils.importESModule(
   "resource://gre/modules/NetUtil.sys.mjs"
 );
 
-
 Cu.importGlobalProperties(["TextDecoder"]);
 
 const reportURI = "http://mochi.test:8888/foo.sjs";

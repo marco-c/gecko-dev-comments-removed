@@ -102,7 +102,6 @@ function createNetObserver(test) {
   const finished = new Promise(resolver => {
     finishedTest = resolver;
   });
-  
   const timeoutId = setTimeout(() => {
     if (!success) {
       test.run("This test timed out.");
