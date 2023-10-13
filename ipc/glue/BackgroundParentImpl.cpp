@@ -816,6 +816,11 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
     return IPC_OK();
   }
 
+  
+  
+
+  
+  
   RefPtr<CheckPrincipalRunnable> runnable =
       new CheckPrincipalRunnable(parent.forget(), aPrincipalInfo, aOrigin);
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));

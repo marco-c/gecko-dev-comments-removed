@@ -185,6 +185,10 @@ class ParentImpl final : public BackgroundParentImpl {
   static uint64_t GetChildID(PBackgroundParent* aBackgroundActor);
 
   
+  static void KillHardAsync(PBackgroundParent* aBackgroundActor,
+                            const char* aReason);
+
+  
   static bool AllocStarter(ContentParent* aContent,
                            Endpoint<PBackgroundStarterParent>&& aEndpoint,
                            bool aCrossProcess = true);
@@ -654,6 +658,12 @@ uint64_t BackgroundParent::GetChildID(PBackgroundParent* aBackgroundActor) {
 }
 
 
+void BackgroundParent::KillHardAsync(PBackgroundParent* aBackgroundActor,
+                                     const char* aReason) {
+  ParentImpl::KillHardAsync(aBackgroundActor, aReason);
+}
+
+
 bool BackgroundParent::AllocStarter(
     ContentParent* aContent, Endpoint<PBackgroundStarterParent>&& aEndpoint) {
   return ParentImpl::AllocStarter(aContent, std::move(aEndpoint));
@@ -754,6 +764,38 @@ uint64_t ParentImpl::GetChildID(PBackgroundParent* aBackgroundActor) {
   }
 
   return 0;
+}
+
+
+void ParentImpl::KillHardAsync(PBackgroundParent* aBackgroundActor,
+                               const char* aReason) {
+  AssertIsInMainProcess();
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(aBackgroundActor);
+  MOZ_ASSERT(BackgroundParent::IsOtherProcessActor(aBackgroundActor));
+
+  RefPtr<ThreadsafeContentParentHandle> handle =
+      GetContentParentHandle(aBackgroundActor);
+  MOZ_ASSERT(handle);
+
+  MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(
+      NS_NewRunnableFunction("ParentImpl::KillHardAsync",
+                             [handle = std::move(handle), aReason]() {
+                               mozilla::AssertIsOnMainThread();
+
+                               if (RefPtr<ContentParent> contentParent =
+                                       handle->GetContentParent()) {
+                                 contentParent->KillHard(aReason);
+                               }
+                             }),
+      NS_DISPATCH_NORMAL));
+
+  
+  
+  
+  if (aBackgroundActor->CanSend()) {
+    aBackgroundActor->GetIPCChannel()->InduceConnectionError();
+  }
 }
 
 
