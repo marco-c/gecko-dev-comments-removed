@@ -24,99 +24,6 @@
 namespace webrtc {
 
 
-struct RTCDataChannelState {
-  static const char* const kConnecting;
-  static const char* const kOpen;
-  static const char* const kClosing;
-  static const char* const kClosed;
-};
-
-
-struct RTCStatsIceCandidatePairState {
-  static const char* const kFrozen;
-  static const char* const kWaiting;
-  static const char* const kInProgress;
-  static const char* const kFailed;
-  static const char* const kSucceeded;
-};
-
-
-struct RTCIceCandidateType {
-  static const char* const kHost;
-  static const char* const kSrflx;
-  static const char* const kPrflx;
-  static const char* const kRelay;
-};
-
-
-struct RTCDtlsTransportState {
-  static const char* const kNew;
-  static const char* const kConnecting;
-  static const char* const kConnected;
-  static const char* const kClosed;
-  static const char* const kFailed;
-};
-
-
-
-
-
-struct RTCMediaStreamTrackKind {
-  static const char* const kAudio;
-  static const char* const kVideo;
-};
-
-
-struct RTCNetworkType {
-  static const char* const kBluetooth;
-  static const char* const kCellular;
-  static const char* const kEthernet;
-  static const char* const kWifi;
-  static const char* const kWimax;
-  static const char* const kVpn;
-  static const char* const kUnknown;
-};
-
-
-struct RTCQualityLimitationReason {
-  static const char* const kNone;
-  static const char* const kCpu;
-  static const char* const kBandwidth;
-  static const char* const kOther;
-};
-
-
-struct RTCContentType {
-  static const char* const kUnspecified;
-  static const char* const kScreenshare;
-};
-
-
-struct RTCDtlsRole {
-  static const char* const kUnknown;
-  static const char* const kClient;
-  static const char* const kServer;
-};
-
-
-struct RTCIceRole {
-  static const char* const kUnknown;
-  static const char* const kControlled;
-  static const char* const kControlling;
-};
-
-
-struct RTCIceTransportState {
-  static const char* const kNew;
-  static const char* const kChecking;
-  static const char* const kConnected;
-  static const char* const kCompleted;
-  static const char* const kDisconnected;
-  static const char* const kFailed;
-  static const char* const kClosed;
-};
-
-
 class RTC_EXPORT RTCCertificateStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
@@ -129,20 +36,6 @@ class RTC_EXPORT RTCCertificateStats final : public RTCStats {
   RTCStatsMember<std::string> fingerprint_algorithm;
   RTCStatsMember<std::string> base64_certificate;
   RTCStatsMember<std::string> issuer_certificate_id;
-};
-
-
-struct RTCNetworkAdapterType {
-  static constexpr char kUnknown[] = "unknown";
-  static constexpr char kEthernet[] = "ethernet";
-  static constexpr char kWifi[] = "wifi";
-  static constexpr char kCellular[] = "cellular";
-  static constexpr char kLoopback[] = "loopback";
-  static constexpr char kAny[] = "any";
-  static constexpr char kCellular2g[] = "cellular2g";
-  static constexpr char kCellular3g[] = "cellular3g";
-  static constexpr char kCellular4g[] = "cellular4g";
-  static constexpr char kCellular5g[] = "cellular5g";
 };
 
 
@@ -174,7 +67,6 @@ class RTC_EXPORT RTCDataChannelStats final : public RTCStats {
   RTCStatsMember<std::string> label;
   RTCStatsMember<std::string> protocol;
   RTCStatsMember<int32_t> data_channel_identifier;
-  
   RTCStatsMember<std::string> state;
   RTCStatsMember<uint32_t> messages_sent;
   RTCStatsMember<uint64_t> bytes_sent;
@@ -194,7 +86,6 @@ class RTC_EXPORT RTCIceCandidatePairStats final : public RTCStats {
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> local_candidate_id;
   RTCStatsMember<std::string> remote_candidate_id;
-  
   RTCStatsMember<std::string> state;
   
   RTCStatsMember<uint64_t> priority;
@@ -240,7 +131,6 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<int32_t> port;
   RTCStatsMember<std::string> protocol;
   RTCStatsMember<std::string> relay_protocol;
-  
   RTCStatsMember<std::string> candidate_type;
   RTCStatsMember<int32_t> priority;
   RTCStatsMember<std::string> url;
@@ -248,7 +138,6 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<std::string> related_address;
   RTCStatsMember<int32_t> related_port;
   RTCStatsMember<std::string> username_fragment;
-  
   RTCStatsMember<std::string> tcp_type;
 
   
@@ -459,7 +348,6 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   RTCStatsMember<uint32_t> frames_sent;
   RTCStatsMember<uint32_t> huge_frames_sent;
   RTCStatsMember<double> total_packet_send_delay;
-  
   RTCStatsMember<std::string> quality_limitation_reason;
   RTCStatsMember<std::map<std::string, double>> quality_limitation_durations;
   
@@ -576,7 +464,6 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   RTCStatsMember<uint64_t> bytes_received;
   RTCStatsMember<uint64_t> packets_received;
   RTCStatsMember<std::string> rtcp_transport_stats_id;
-  
   RTCStatsMember<std::string> dtls_state;
   RTCStatsMember<std::string> selected_candidate_pair_id;
   RTCStatsMember<std::string> local_certificate_id;
