@@ -57,6 +57,8 @@ class AudioDriftCorrection final {
   
   uint32_t CurrentBuffering() const;
 
+  uint32_t BufferSize() const;
+
   
   uint32_t NumCorrectionChanges() const;
 

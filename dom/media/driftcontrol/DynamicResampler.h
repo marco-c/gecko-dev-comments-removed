@@ -72,6 +72,10 @@ class DynamicResampler final {
   
 
 
+  uint32_t InFramesBufferSize() const;
+  
+
+
   uint32_t InFramesBuffered(uint32_t aChannelIndex) const;
 
   

@@ -58,7 +58,7 @@ class DriftController final {
 
 
   void UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
-                   uint32_t aBufferedFrames);
+                   uint32_t aBufferedFrames, uint32_t aBufferSize);
 
  private:
   
@@ -84,7 +84,7 @@ class DriftController final {
   
   
   
-  void CalculateCorrection(uint32_t aBufferedFrames);
+  void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aBufferSize);
 
  public:
   const uint8_t mPlotId;

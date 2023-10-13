@@ -46,6 +46,10 @@ class AudioResampler final {
   
 
 
+  uint32_t InputCapacityFrames() const;
+  
+
+
 
   uint32_t InputReadableFrames() const;
 
