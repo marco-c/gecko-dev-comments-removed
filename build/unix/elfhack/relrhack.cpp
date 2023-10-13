@@ -85,9 +85,11 @@ struct RelR : public Elf<bits> {
     std::unordered_map<Tag, std::pair<off_t, Value>> data;
 
     const std::unordered_map<Tag, const char*> tag_names = {
-        TAG_NAME(DT_RELR),    TAG_NAME(DT_RELRENT), TAG_NAME(DT_RELRSZ),
-        TAG_NAME(DT_RELAENT), TAG_NAME(DT_RELENT),  TAG_NAME(DT_STRTAB),
-        TAG_NAME(DT_STRSZ),   TAG_NAME(DT_VERNEED), TAG_NAME(DT_VERNEEDNUM),
+        TAG_NAME(DT_JMPREL),  TAG_NAME(DT_PLTRELSZ), TAG_NAME(DT_RELR),
+        TAG_NAME(DT_RELRENT), TAG_NAME(DT_RELRSZ),   TAG_NAME(DT_RELA),
+        TAG_NAME(DT_RELASZ),  TAG_NAME(DT_RELAENT),  TAG_NAME(DT_REL),
+        TAG_NAME(DT_RELSZ),   TAG_NAME(DT_RELENT),   TAG_NAME(DT_STRTAB),
+        TAG_NAME(DT_STRSZ),   TAG_NAME(DT_VERNEED),  TAG_NAME(DT_VERNEEDNUM),
     };
   };
 
@@ -132,6 +134,12 @@ void write_one_at(std::ostream& out, off_t pos, const T& data) {
   write_at(out, pos, reinterpret_cast<const char*>(&data), sizeof(T));
 }
 
+template <typename T>
+void write_vector_at(std::ostream& out, off_t pos, const std::vector<T>& vec) {
+  write_at(out, pos, reinterpret_cast<const char*>(&vec.front()),
+           vec.size() * sizeof(T));
+}
+
 template <int bits>
 bool RelR<bits>::hack(std::fstream& f) {
   auto ehdr = read_one_at<Elf_Ehdr>(f, 0);
@@ -173,10 +181,15 @@ bool RelR<bits>::hack(std::fstream& f) {
   Elf_Addr relr_off =
       dyn_info.contains(DT_RELR) ? get_offset(phdr, dyn_info[DT_RELR]) : 0;
   Elf_Off relrsz = dyn_info[DT_RELRSZ];
-  if (dyn_info.contains(DT_RELENT) && dyn_info.contains(DT_RELAENT)) {
-    std::stringstream msg;
-    msg << "Both DT_RELENT and DT_RELAENT appear?";
-    throw std::runtime_error(msg.str());
+  const decltype(Elf_Dyn::d_tag) rel_tags[3][2] = {
+      {DT_REL, DT_RELA}, {DT_RELSZ, DT_RELASZ}, {DT_RELENT, DT_RELAENT}};
+  for (const auto& [rel_tag, rela_tag] : rel_tags) {
+    if (dyn_info.contains(rel_tag) && dyn_info.contains(rela_tag)) {
+      std::stringstream msg;
+      msg << "Both " << dyn_info.name(rel_tag) << " and "
+          << dyn_info.name(rela_tag) << " appear?";
+      throw std::runtime_error(msg.str());
+    }
   }
   Elf_Off relent =
       dyn_info.contains(DT_RELENT) ? dyn_info[DT_RELENT] : dyn_info[DT_RELAENT];
@@ -206,6 +219,38 @@ bool RelR<bits>::hack(std::fstream& f) {
   
   for (const auto tag : {DT_RELR, DT_RELRSZ, DT_RELRENT}) {
     write_one_at(f, dyn_info.offset(tag), tag | DT_RELRHACK_BIT);
+  }
+
+  
+  
+  
+  
+  
+  Elf_Addr rel_end = dyn_info.contains(DT_REL)
+                         ? (dyn_info[DT_REL] + dyn_info[DT_RELSZ])
+                         : (dyn_info[DT_RELA] + dyn_info[DT_RELASZ]);
+  
+  Elf_Addr jmprel = dyn_info.contains(DT_JMPREL) ? dyn_info[DT_JMPREL] : 0;
+  if (dyn_info.contains(DT_JMPREL) && dyn_info[DT_PLTRELSZ] &&
+      dyn_info[DT_JMPREL] != rel_end) {
+    if (dyn_info[DT_RELR] != rel_end) {
+      throw std::runtime_error("RELR section doesn't follow REL/RELA?");
+    }
+    if (dyn_info[DT_JMPREL] != dyn_info[DT_RELR] + dyn_info[DT_RELRSZ]) {
+      throw std::runtime_error("PLT REL/RELA doesn't follow RELR?");
+    }
+    auto plt_rel = read_vector_at<char>(
+        f, get_offset(phdr, dyn_info[DT_JMPREL]), dyn_info[DT_PLTRELSZ]);
+    
+    
+    write_vector_at(f, relr_off, plt_rel);
+    write_vector_at(f, relr_off + plt_rel.size(), relr);
+    dyn_info[DT_JMPREL] = rel_end;
+    dyn_info[DT_RELR] = rel_end + plt_rel.size();
+    for (const auto tag : {DT_JMPREL, DT_RELR}) {
+      write_one_at(f, dyn_info.offset(tag) + sizeof(typename DynInfo::Tag),
+                   dyn_info[tag]);
+    }
   }
 
   if (dyn_info.contains(DT_VERNEEDNUM) && dyn_info.contains(DT_VERNEED) &&
@@ -258,13 +303,27 @@ bool RelR<bits>::hack(std::fstream& f) {
       verneed_off += verneed.vn_next;
     }
   }
-  off_t shdr_offset = ehdr.e_shoff + offsetof(Elf_Shdr, sh_type);
+  off_t shdr_offset = ehdr.e_shoff;
   auto shdr = read_vector_at<Elf_Shdr>(f, ehdr.e_shoff, ehdr.e_shnum);
-  for (const auto& s : shdr) {
+  for (auto& s : shdr) {
     
     
     if (s.sh_type == SHT_RELR) {
-      write_one_at(f, shdr_offset, Elf_Word(SHT_PROGBITS));
+      s.sh_type = SHT_PROGBITS;
+      
+      
+      if (s.sh_addr != dyn_info[DT_RELR]) {
+        s.sh_offset += dyn_info[DT_RELR] - s.sh_addr;
+        s.sh_addr = dyn_info[DT_RELR];
+      }
+      write_one_at(f, shdr_offset, s);
+    }
+    
+    
+    if (jmprel && (s.sh_addr == jmprel) && (s.sh_addr != dyn_info[DT_JMPREL])) {
+      s.sh_offset -= s.sh_addr - dyn_info[DT_JMPREL];
+      s.sh_addr = dyn_info[DT_JMPREL];
+      write_one_at(f, shdr_offset, s);
     }
     shdr_offset += sizeof(Elf_Shdr);
   }
