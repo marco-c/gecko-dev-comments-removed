@@ -144,10 +144,11 @@ nsChromeProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
 
   
   
-  nsCOMPtr<nsIURL> url = do_QueryInterface(aURI);
+  
   nsAutoCString path;
-  rv = url->GetPathQueryRef(path);
-  if (StringBeginsWith(path, "/content/"_ns)) {
+  aURI->GetPathQueryRef(path);
+  if (StringBeginsWith(path, "/content/"_ns) ||
+      StringBeginsWith(path, "/skin/"_ns)) {
     result->SetOwner(nsContentUtils::GetSystemPrincipal());
   }
 
@@ -158,8 +159,7 @@ nsChromeProtocolHandler::NewChannel(nsIURI* aURI, nsILoadInfo* aLoadInfo,
   
   result->SetContentCharset("UTF-8"_ns);
 
-  *aResult = result;
-  NS_ADDREF(*aResult);
+  result.forget(aResult);
   return NS_OK;
 }
 
