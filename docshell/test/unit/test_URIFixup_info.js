@@ -410,17 +410,11 @@ var testcases = [
   },
   {
     input: "47.6182,-122.830",
-    fixedURI: "http://47.6182,-122.830/",
     keywordLookup: true,
-    protocolChange: true,
-    affectedByDNSForSingleWordHosts: true,
   },
   {
     input: "-47.6182,-23.51",
-    fixedURI: "http://-47.6182,-23.51/",
     keywordLookup: true,
-    protocolChange: true,
-    affectedByDNSForSingleWordHosts: true,
   },
   {
     input: "-22.14,23.51-",
@@ -801,6 +795,7 @@ if (AppConstants.platform == "win") {
   });
 } else {
   const homeDir = Services.dirsvc.get("Home", Ci.nsIFile).path;
+  const homeBase = AppConstants.platform == "macosx" ? "/Users" : "/home";
 
   testcases.push({
     input: "~",
@@ -810,6 +805,16 @@ if (AppConstants.platform == "win") {
   testcases.push({
     input: "~/foo",
     fixedURI: `file://${homeDir}/foo`,
+    protocolChange: true,
+  });
+  testcases.push({
+    input: "~foo",
+    fixedURI: `file://${homeBase}/foo`,
+    protocolChange: true,
+  });
+  testcases.push({
+    input: "~foo/bar",
+    fixedURI: `file://${homeBase}/foo/bar`,
     protocolChange: true,
   });
   testcases.push({
