@@ -652,45 +652,47 @@ constexpr PopoverAttributeState ToPopoverAttributeState(
 }  
 
 void nsGenericHTMLElement::AfterSetPopoverAttr() {
-  const nsAttrValue* newValue = GetParsedAttr(nsGkAtoms::popover);
-
-  const PopoverAttributeState newState = [&newValue]() {
-    if (newValue) {
-      MOZ_ASSERT(newValue->Type() == nsAttrValue::eEnum);
+  auto mapPopoverState = [](const nsAttrValue* value) -> PopoverAttributeState {
+    if (value) {
+      MOZ_ASSERT(value->Type() == nsAttrValue::eEnum);
       const auto popoverAttributeKeyword =
-          static_cast<PopoverAttributeKeyword>(newValue->GetEnumValue());
+          static_cast<PopoverAttributeKeyword>(value->GetEnumValue());
       return ToPopoverAttributeState(popoverAttributeKeyword);
     }
 
     
     
     return PopoverAttributeState::None;
-  }();
+  };
+
+  PopoverAttributeState newState =
+      mapPopoverState(GetParsedAttr(nsGkAtoms::popover));
 
   const PopoverAttributeState oldState = GetPopoverAttributeState();
 
   if (newState != oldState) {
-    EnsurePopoverData().SetPopoverAttributeState(newState);
+    PopoverPseudoStateUpdate(false, true);
 
-    HidePopoverInternal( true,
-                         true, IgnoreErrors());
+    if (IsPopoverOpen()) {
+      HidePopoverInternal( true,
+                           true, IgnoreErrors());
+      
+      
+      
+      newState = mapPopoverState(GetParsedAttr(nsGkAtoms::popover));
+    }
 
-    
-    
-    if (newState == GetPopoverAttributeState()) {
-      if (newState == PopoverAttributeState::None) {
-        
-        
-        
-        
+    if (newState == PopoverAttributeState::None) {
+      
+      
+      if (GetPopoverData()) {
         OwnerDoc()->RemovePopoverFromTopLayer(*this);
-
-        ClearPopoverData();
-        RemoveStates(ElementState::POPOVER_OPEN);
-      } else {
-        
-        PopoverPseudoStateUpdate(false, true);
       }
+      ClearPopoverData();
+      RemoveStates(ElementState::POPOVER_OPEN);
+    } else {
+      
+      EnsurePopoverData().SetPopoverAttributeState(newState);
     }
   }
 }
@@ -3165,17 +3167,12 @@ bool nsGenericHTMLElement::PopoverOpen() const {
 bool nsGenericHTMLElement::CheckPopoverValidity(
     PopoverVisibilityState aExpectedState, Document* aExpectedDocument,
     ErrorResult& aRv) {
-  const PopoverData* data = GetPopoverData();
-  if (!data ||
-      data->GetPopoverAttributeState() == PopoverAttributeState::None) {
-    MOZ_ASSERT(!HasAttr(nsGkAtoms::popover));
+  if (GetPopoverAttributeState() == PopoverAttributeState::None) {
     aRv.ThrowNotSupportedError("Element is in the no popover state");
     return false;
   }
 
-  MOZ_ASSERT(HasAttr(nsGkAtoms::popover));
-
-  if (data->GetPopoverVisibilityState() != aExpectedState) {
+  if (GetPopoverData()->GetPopoverVisibilityState() != aExpectedState) {
     return false;
   }
 
