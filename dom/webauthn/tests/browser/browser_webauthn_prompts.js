@@ -24,6 +24,7 @@ add_task(async function test_setup_usbtoken() {
 add_task(test_register);
 add_task(test_register_escape);
 add_task(test_register_direct_cancel);
+add_task(test_register_direct_presence);
 add_task(test_sign);
 add_task(test_sign_escape);
 add_task(test_tab_switching);
@@ -218,6 +219,32 @@ async function test_register_direct_cancel() {
   
   ok(active, "request should still be active");
   PopupNotifications.panel.firstElementChild.secondaryButton.click();
+  await promise;
+
+  
+  await BrowserTestUtils.removeTab(tab);
+}
+
+async function test_register_direct_presence() {
+  
+  let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_URL);
+
+  
+  let active = true;
+  let promise = promiseWebAuthnMakeCredential(tab, "direct")
+    .then(arrivingHereIsBad)
+    .catch(expectNotAllowedError)
+    .then(() => (active = false));
+  await promiseNotification("webauthn-prompt-register-direct");
+
+  
+  let presence = promiseNotification("webauthn-prompt-presence");
+  PopupNotifications.panel.firstElementChild.button.click();
+  await presence;
+
+  
+  ok(active, "request should still be active");
+  PopupNotifications.panel.firstElementChild.button.click();
   await promise;
 
   
