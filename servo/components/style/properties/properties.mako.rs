@@ -365,6 +365,14 @@ impl MallocSizeOf for PropertyDeclaration {
 impl PropertyDeclaration {
     
     
+    
+    #[cold]
+    pub(crate) fn debug_crash(&self, reason: &str) {
+        panic!("{}: {:?}", reason, self);
+    }
+
+    
+    
     fn is_longhand_value(&self) -> bool {
         match *self {
             % for v in extra_variants:
