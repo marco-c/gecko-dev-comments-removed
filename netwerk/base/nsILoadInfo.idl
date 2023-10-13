@@ -1505,9 +1505,4 @@ interface nsILoadInfo : nsISupports
 
 
   [infallible] attribute boolean hasInjectedCookieForCookieBannerHandling;
-
-  
-
-
-   [infallible] attribute boolean wasSchemelessInput;
 };

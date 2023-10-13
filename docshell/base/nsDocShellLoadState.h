@@ -327,12 +327,6 @@ class nsDocShellLoadState final {
     mRemoteTypeOverride = mozilla::Some(aRemoteTypeOverride);
   }
 
-  void SetWasSchemelessInput(bool aWasSchemelessInput) {
-    mWasSchemelessInput = aWasSchemelessInput;
-  }
-
-  bool GetWasSchemelessInput() { return mWasSchemelessInput; }
-
   
   
   
@@ -600,9 +594,6 @@ class nsDocShellLoadState final {
 
   
   nsCString mTriggeringRemoteType;
-
-  
-  bool mWasSchemelessInput = false;
 };
 
 #endif 

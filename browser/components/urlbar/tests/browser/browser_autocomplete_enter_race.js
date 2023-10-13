@@ -8,16 +8,11 @@
 
 
 
-const IS_UPGRADING_SCHEMELESS = SpecialPowers.getBoolPref(
-  "dom.security.https_first_schemeless"
-);
-
-const DEFAULT_URL_SCHEME = IS_UPGRADING_SCHEMELESS ? "https://" : "http://";
 
 add_setup(async function () {
   let bm = await PlacesUtils.bookmarks.insert({
     parentGuid: PlacesUtils.bookmarks.unfiledGuid,
-    url: DEFAULT_URL_SCHEME + "/example.com/?q=%s",
+    url: "http://example.com/?q=%s",
     title: "test",
   });
   registerCleanupFunction(async function () {
@@ -44,7 +39,7 @@ add_task(
     await BrowserTestUtils.browserLoaded(
       gBrowser.selectedTab.linkedBrowser,
       false,
-      DEFAULT_URL_SCHEME + "example.com/"
+      "http://example.com/"
     );
     await SpecialPowers.popPrefEnv();
   })
@@ -71,7 +66,7 @@ add_task(
     await BrowserTestUtils.browserLoaded(
       gBrowser.selectedTab.linkedBrowser,
       false,
-      DEFAULT_URL_SCHEME + "example.com/"
+      "http://example.com/"
     );
   })
 );
@@ -91,7 +86,7 @@ add_task(
     await BrowserTestUtils.browserLoaded(
       gBrowser.selectedTab.linkedBrowser,
       false,
-      DEFAULT_URL_SCHEME + "example.com/"
+      "http://example.com/"
     );
   })
 );

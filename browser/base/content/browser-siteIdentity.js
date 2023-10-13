@@ -228,12 +228,6 @@ var gIdentityHandler = {
       "identity-popup-securityView"
     ));
   },
-  get _identityPopupHttpsOnlyMode() {
-    delete this._identityPopupHttpsOnlyMode;
-    return (this._identityPopupHttpsOnlyMode = document.getElementById(
-      "identity-popup-security-httpsonlymode"
-    ));
-  },
   get _identityPopupHttpsOnlyModeMenuList() {
     delete this._identityPopupHttpsOnlyModeMenuList;
     return (this._identityPopupHttpsOnlyModeMenuList = document.getElementById(
@@ -358,15 +352,6 @@ var gIdentityHandler = {
     );
     return this._httpsFirstModeEnabledPBM;
   },
-  get _schemelessHttpsFirstModeEnabled() {
-    delete this._schemelessHttpsFirstModeEnabled;
-    XPCOMUtils.defineLazyPreferenceGetter(
-      this,
-      "_schemelessHttpsFirstModeEnabled",
-      "dom.security.https_first_schemeless"
-    );
-    return this._schemelessHttpsFirstModeEnabled;
-  },
 
   _isHttpsOnlyModeActive(isWindowPrivate) {
     return (
@@ -379,12 +364,6 @@ var gIdentityHandler = {
       !this._isHttpsOnlyModeActive(isWindowPrivate) &&
       (this._httpsFirstModeEnabled ||
         (isWindowPrivate && this._httpsFirstModeEnabledPBM))
-    );
-  },
-  _isSchemelessHttpsFirstModeActive(isWindowPrivate) {
-    return (
-      !this._isHttpsFirstModeActive(isWindowPrivate) &&
-      this._schemelessHttpsFirstModeEnabled
     );
   },
 
@@ -1038,22 +1017,11 @@ var gIdentityHandler = {
     const isHttpsFirstModeActive = this._isHttpsFirstModeActive(
       privateBrowsingWindow
     );
-    const isSchemelessHttpsFirstModeActive =
-      this._isSchemelessHttpsFirstModeActive(privateBrowsingWindow);
     let httpsOnlyStatus = "";
-    if (
-      isHttpsFirstModeActive ||
-      isHttpsOnlyModeActive ||
-      isSchemelessHttpsFirstModeActive
-    ) {
+    if (isHttpsFirstModeActive || isHttpsOnlyModeActive) {
       
       
       let value = this._getHttpsOnlyPermission();
-
-      
-      
-      this._identityPopupHttpsOnlyMode.hidden =
-        isSchemelessHttpsFirstModeActive;
 
       this._identityPopupHttpsOnlyModeMenuListOffItem.hidden =
         privateBrowsingWindow && value != 1;

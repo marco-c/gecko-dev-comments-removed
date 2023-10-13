@@ -47,14 +47,8 @@ const DYNAMIC_TYPE_VIEW_TEMPLATE = {
   ],
 };
 
-const IS_UPGRADING_SCHEMELESS = SpecialPowers.getBoolPref(
-  "dom.security.https_first_schemeless"
-);
-
-const DEFAULT_URL_SCHEME = IS_UPGRADING_SCHEMELESS ? "https://" : "http://";
 const DUMMY_PAGE =
-  DEFAULT_URL_SCHEME +
-  "example.com/browser/browser/base/content/test/general/dummy_page.html";
+  "http://example.com/browser/browser/base/content/test/general/dummy_page.html";
 
 
 add_task(async function registration() {
