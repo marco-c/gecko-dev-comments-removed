@@ -245,7 +245,6 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
     }
 
     RTC_DCHECK(!media_send_channel()->HasNetworkInterface());
-    RTC_DCHECK(!media_receive_channel()->HasNetworkInterface());
     media_send_channel()->SetInterface(this);
     media_receive_channel()->SetInterface(this);
 
@@ -379,7 +378,6 @@ void BaseChannel::OnNetworkRouteChanged(
   
   
   media_send_channel()->OnNetworkRouteChanged(transport_name(), new_route);
-  media_receive_channel()->OnNetworkRouteChanged(transport_name(), new_route);
 }
 
 void BaseChannel::SetFirstPacketReceivedCallback(

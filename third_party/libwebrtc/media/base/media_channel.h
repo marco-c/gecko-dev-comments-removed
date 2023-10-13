@@ -179,58 +179,14 @@ class MediaChannelNetworkInterface {
   virtual ~MediaChannelNetworkInterface() {}
 };
 
-
-
-
-template <class T>
-class MediaBaseChannelInterface {
- public:
-  virtual ~MediaBaseChannelInterface() = default;
-  virtual cricket::MediaType media_type() const = 0;
-
-  
-  
-  
-
-  
-  virtual void OnPacketReceived(const webrtc::RtpPacketReceived& packet) = 0;
-  
-  
-  virtual void OnPacketSent(const rtc::SentPacket& sent_packet) = 0;
-  
-  virtual void OnReadyToSend(bool ready) = 0;
-  
-  virtual void OnNetworkRouteChanged(
-      absl::string_view transport_name,
-      const rtc::NetworkRoute& network_route) = 0;
-
-  
-  
-  
-  
-  virtual void SetExtmapAllowMixed(bool extmap_allow_mixed) = 0;
-  virtual bool ExtmapAllowMixed() const = 0;
-
-  
-  virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
-
-  
-  
-  virtual bool HasNetworkInterface() const = 0;
-
-  
-  
-  virtual MediaChannel* ImplForTesting() = 0;
-};
-
-class MediaSendChannelInterface
-    : public MediaBaseChannelInterface<MediaSendChannelInterface> {
+class MediaSendChannelInterface {
  public:
   virtual ~MediaSendChannelInterface() = default;
 
   virtual VideoMediaSendChannelInterface* AsVideoSendChannel() = 0;
 
   virtual VoiceMediaSendChannelInterface* AsVoiceSendChannel() = 0;
+  virtual cricket::MediaType media_type() const = 0;
 
   
   
@@ -240,6 +196,29 @@ class MediaSendChannelInterface
   
   
   virtual bool RemoveSendStream(uint32_t ssrc) = 0;
+  
+  
+  virtual void OnPacketSent(const rtc::SentPacket& sent_packet) = 0;
+  
+  virtual void OnReadyToSend(bool ready) = 0;
+  
+  virtual void OnNetworkRouteChanged(
+      absl::string_view transport_name,
+      const rtc::NetworkRoute& network_route) = 0;
+  
+  virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
+
+  
+  
+  virtual bool HasNetworkInterface() const = 0;
+
+  
+  
+  
+  
+  virtual void SetExtmapAllowMixed(bool extmap_allow_mixed) = 0;
+  virtual bool ExtmapAllowMixed() const = 0;
+
   
   
   
@@ -267,17 +246,19 @@ class MediaSendChannelInterface
   
   virtual void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) = 0;
+  
+  
+  virtual MediaChannel* ImplForTesting() = 0;
 };
 
-class MediaReceiveChannelInterface
-    : public MediaBaseChannelInterface<MediaReceiveChannelInterface>,
-      public Delayable {
+class MediaReceiveChannelInterface : public Delayable {
  public:
   virtual ~MediaReceiveChannelInterface() = default;
 
   virtual VideoMediaReceiveChannelInterface* AsVideoReceiveChannel() = 0;
   virtual VoiceMediaReceiveChannelInterface* AsVoiceReceiveChannel() = 0;
 
+  virtual cricket::MediaType media_type() const = 0;
   
   
   
@@ -289,6 +270,10 @@ class MediaReceiveChannelInterface
   
   
   virtual void ResetUnsignaledRecvStream() = 0;
+  
+  virtual void SetInterface(MediaChannelNetworkInterface* iface) = 0;
+  
+  virtual void OnPacketReceived(const webrtc::RtpPacketReceived& packet) = 0;
   
   virtual absl::optional<uint32_t> GetUnsignaledSsrc() const = 0;
   
@@ -318,6 +303,9 @@ class MediaReceiveChannelInterface
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameTransformerInterface>
           frame_transformer) = 0;
+  
+  
+  virtual MediaChannel* ImplForTesting() = 0;
 };
 
 
