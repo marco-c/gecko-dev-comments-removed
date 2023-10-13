@@ -490,7 +490,12 @@ void EmitWasmPostBarrierGuard(jit::MacroAssembler& masm,
 #ifdef DEBUG
 
 
-bool IsValidStackMapKey(bool debugEnabled, const uint8_t* nextPC);
+
+
+
+
+
+bool IsPlausibleStackMapKey(const uint8_t* nextPC);
 #endif
 
 }  
