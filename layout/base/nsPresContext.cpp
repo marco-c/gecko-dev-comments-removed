@@ -1289,6 +1289,13 @@ void nsPresContext::MaybeIncreaseMeasuredTicksSinceLoading() {
   }
 }
 
+bool nsPresContext::NeedsMoreTicksForUserInput() const {
+  MOZ_ASSERT(IsRoot());
+  return mMeasuredTicksSinceLoading <
+         StaticPrefs::dom_input_events_security_minNumTicks();
+}
+
+
 static void SetImgAnimModeOnImgReq(imgIRequest* aImgReq, uint16_t aMode) {
   if (aImgReq) {
     nsCOMPtr<imgIContainer> imgCon;
