@@ -62,9 +62,6 @@ pref("media.geckoview.autoplay.request", true);
 
 pref("media.eme.require-app-approval", true);
 
-
-pref("dom.ipc.processPriorityManager.enabled", true);
-
 pref("signon.debug", false);
 pref("signon.showAutoCompleteFooter", true);
 pref("toolkit.autocomplete.delegate", true);
