@@ -2141,6 +2141,7 @@ class nsLayoutUtils {
 
 
 
+
   static bool IsReallyFixedPos(const nsIFrame* aFrame);
 
   

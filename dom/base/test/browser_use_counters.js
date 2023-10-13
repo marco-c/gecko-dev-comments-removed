@@ -68,7 +68,7 @@ add_task(async function () {
         
         { name: "CSS_PROPERTY_Padding" },
         
-        { name: "CSS_PROPERTY_MozTransform" },
+        { name: "CSS_PROPERTY_MozAppearance" },
         
         { name: "CSS_PROPERTY_WebkitPaddingStart" },
       ],
