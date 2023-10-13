@@ -181,7 +181,7 @@ class DOMSVGLength final : public nsWrapperCache {
 
 
 
-  void FlushStyleIfNeeded();
+  void FlushIfNeeded();
 
 #ifdef DEBUG
   bool IndexIsValid();
