@@ -294,19 +294,6 @@ struct RtpPacketCounter {
     total_packet_delay += other.total_packet_delay;
   }
 
-  void Subtract(const RtpPacketCounter& other) {
-    RTC_DCHECK_GE(header_bytes, other.header_bytes);
-    header_bytes -= other.header_bytes;
-    RTC_DCHECK_GE(payload_bytes, other.payload_bytes);
-    payload_bytes -= other.payload_bytes;
-    RTC_DCHECK_GE(padding_bytes, other.padding_bytes);
-    padding_bytes -= other.padding_bytes;
-    RTC_DCHECK_GE(packets, other.packets);
-    packets -= other.packets;
-    RTC_DCHECK_GE(total_packet_delay, other.total_packet_delay);
-    total_packet_delay -= other.total_packet_delay;
-  }
-
   bool operator==(const RtpPacketCounter& other) const {
     return header_bytes == other.header_bytes &&
            payload_bytes == other.payload_bytes &&
@@ -339,28 +326,24 @@ struct StreamDataCounters {
     transmitted.Add(other.transmitted);
     retransmitted.Add(other.retransmitted);
     fec.Add(other.fec);
-    if (other.first_packet_time_ms != -1 &&
-        (other.first_packet_time_ms < first_packet_time_ms ||
-         first_packet_time_ms == -1)) {
+    if (other.first_packet_time < first_packet_time) {
       
-      first_packet_time_ms = other.first_packet_time_ms;
+      first_packet_time = other.first_packet_time;
     }
   }
 
-  void Subtract(const StreamDataCounters& other) {
-    transmitted.Subtract(other.transmitted);
-    retransmitted.Subtract(other.retransmitted);
-    fec.Subtract(other.fec);
-    if (other.first_packet_time_ms != -1 &&
-        (other.first_packet_time_ms > first_packet_time_ms ||
-         first_packet_time_ms == -1)) {
-      
-      first_packet_time_ms = other.first_packet_time_ms;
+  void MaybeSetFirstPacketTime(Timestamp now) {
+    if (first_packet_time == Timestamp::PlusInfinity()) {
+      first_packet_time = now;
     }
   }
 
-  int64_t TimeSinceFirstPacketInMs(int64_t now_ms) const {
-    return (first_packet_time_ms == -1) ? -1 : (now_ms - first_packet_time_ms);
+  
+  
+  TimeDelta TimeSinceFirstPacket(Timestamp now) const {
+    return first_packet_time == Timestamp::PlusInfinity()
+               ? TimeDelta::Zero()
+               : now - first_packet_time;
   }
 
   
@@ -371,7 +354,9 @@ struct StreamDataCounters {
            fec.payload_bytes;
   }
 
-  int64_t first_packet_time_ms;    
+  
+  Timestamp first_packet_time = Timestamp::PlusInfinity();
+
   RtpPacketCounter transmitted;    
   RtpPacketCounter retransmitted;  
   RtpPacketCounter fec;            
