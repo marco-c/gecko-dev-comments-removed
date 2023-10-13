@@ -5,5 +5,6 @@ worker.onmessage = function (event) {
   postMessage("child:" + event.data);
 };
 
+
 debugger;
 postMessage("worker");

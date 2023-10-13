@@ -2,5 +2,6 @@
 
 self.onmessage = function () {};
 
+
 debugger;
 postMessage("worker");

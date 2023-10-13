@@ -18,6 +18,7 @@ self.onmessage = function (event) {
       Promise.resolve().then(function () {
         postMessage("resumed");
       });
+      
       debugger;
     };
     postMessage("resolved");

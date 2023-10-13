@@ -1,6 +1,7 @@
 "use strict";
 
 function f() {
+  
   debugger;
 }
 
@@ -20,6 +21,7 @@ self.onmessage = function (event) {
   }
   switch (message) {
     case "ping":
+      
       debugger;
       postMessage("pong");
       break;
