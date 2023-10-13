@@ -1844,6 +1844,27 @@ public class WebExtension {
     public final @Nullable String description;
 
     
+    public final @Nullable String fullDescription;
+
+    
+    public final double averageRating;
+
+    
+    public final int reviewCount;
+
+    
+    public final @Nullable String reviewUrl;
+
+    
+
+
+
+    public final @Nullable String updateDate;
+
+    
+    public final @Nullable String downloadUrl;
+
+    
 
 
 
@@ -1979,6 +2000,12 @@ public class WebExtension {
       temporary = false;
       baseUrl = null;
       allowedInPrivateBrowsing = false;
+      fullDescription = null;
+      averageRating = 0;
+      reviewCount = 0;
+      reviewUrl = null;
+      updateDate = null;
+      downloadUrl = null;
     }
 
      MetaData(final GeckoBundle bundle) {
@@ -1999,6 +2026,12 @@ public class WebExtension {
       temporary = bundle.getBoolean("temporary", false);
       baseUrl = bundle.getString("baseURL");
       allowedInPrivateBrowsing = bundle.getBoolean("privateBrowsingAllowed", false);
+      fullDescription = bundle.getString("fullDescription");
+      averageRating = bundle.getDouble("averageRating");
+      reviewCount = bundle.getInt("reviewCount");
+      reviewUrl = bundle.getString("reviewURL");
+      updateDate = bundle.getString("updateDate");
+      downloadUrl = bundle.getString("downloadUrl");
 
       final int signedState = bundle.getInt("signedState", SignedStateFlags.UNKNOWN);
       if (signedState <= SignedStateFlags.LAST) {
