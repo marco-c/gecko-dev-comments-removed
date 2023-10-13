@@ -4,20 +4,31 @@
 
 
 
-#ifndef mozilla_dom_WinWebAuthnManager_h
-#define mozilla_dom_WinWebAuthnManager_h
+#ifndef mozilla_dom_U2FTokenManager_h
+#define mozilla_dom_U2FTokenManager_h
 
 #include "mozilla/dom/U2FTokenTransport.h"
 #include "mozilla/dom/PWebAuthnTransaction.h"
 #include "mozilla/Tainting.h"
 
+
+
+
+
+
+
+
+
+
+
 namespace mozilla::dom {
 
+class U2FSoftTokenManager;
 class WebAuthnTransactionParent;
 
-class WinWebAuthnManager final {
+class U2FTokenManager final {
  public:
-  static WinWebAuthnManager* Get();
+  static U2FTokenManager* Get();
   void Register(PWebAuthnTransactionParent* aTransactionParent,
                 const uint64_t& aTransactionId,
                 const WebAuthnMakeCredentialInfo& aTransactionInfo);
@@ -28,24 +39,33 @@ class WinWebAuthnManager final {
               const Tainted<uint64_t>& aTransactionId);
   void MaybeClearTransaction(PWebAuthnTransactionParent* aParent);
   static void Initialize();
-  static bool IsUserVerifyingPlatformAuthenticatorAvailable();
-  static bool AreWebAuthNApisAvailable();
 
-  WinWebAuthnManager();
-  ~WinWebAuthnManager();
+  U2FTokenManager();
+  ~U2FTokenManager() = default;
 
  private:
+  RefPtr<U2FTokenTransport> GetTokenManagerImpl();
   void AbortTransaction(const uint64_t& aTransactionId, const nsresult& aError);
+  void AbortOngoingTransaction();
   void ClearTransaction();
+  void MaybeConfirmRegister(const uint64_t& aTransactionId,
+                            const WebAuthnMakeCredentialResult& aResult);
   void MaybeAbortRegister(const uint64_t& aTransactionId,
                           const nsresult& aError);
+  void MaybeConfirmSign(const uint64_t& aTransactionId,
+                        const WebAuthnGetAssertionResult& aResult);
   void MaybeAbortSign(const uint64_t& aTransactionId, const nsresult& aError);
-  bool IsUserVerifyingPlatformAuthenticatorAvailableInternal();
-  uint32_t GetWebAuthNApiVersion();
-
+  
+  
+  
   PWebAuthnTransactionParent* mTransactionParent;
-  uint32_t mWinWebAuthNApiVersion = 0;
-  std::map<uint64_t, GUID*> mCancellationIds;
+  RefPtr<U2FTokenTransport> mTokenManagerImpl;
+  MozPromiseRequestHolder<U2FRegisterPromise> mRegisterPromise;
+  MozPromiseRequestHolder<U2FSignPromise> mSignPromise;
+  
+  
+  
+  uint64_t mLastTransactionId;
 };
 
 }  

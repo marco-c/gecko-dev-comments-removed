@@ -7,8 +7,15 @@
 
 typedef long COSEAlgorithmIdentifier;
 
+
+
+
+
+
+
+
 [uuid(2fc8febe-a277-11ed-bda2-8f6495a5e75c)]
-interface nsIWebAuthnRegisterArgs : nsISupports {
+interface nsICtapRegisterArgs : nsISupports {
     
     readonly attribute AString origin;
 
@@ -41,8 +48,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     [must_use] readonly attribute bool minPinLength;
 
     
-    readonly attribute AString residentKey;
-    readonly attribute AString userVerification;
+    [must_use] readonly attribute AString residentKey;
+    [must_use] readonly attribute AString userVerification;
     [must_use] readonly attribute AString authenticatorAttachment;
 
     
@@ -56,8 +63,15 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
     [must_use] readonly attribute AString attestationConveyancePreference;
 };
 
+
+
+
+
+
+
+
 [uuid(2e621cf4-a277-11ed-ae00-bf41a54ef553)]
-interface nsIWebAuthnSignArgs : nsISupports {
+interface nsICtapSignArgs : nsISupports {
     
     readonly attribute AString origin;
 

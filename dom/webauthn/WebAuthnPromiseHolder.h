@@ -24,11 +24,11 @@ namespace mozilla::dom {
 
 
 
-using WebAuthnRegisterPromise =
-    MozPromise<RefPtr<nsIWebAuthnRegisterResult>, nsresult, true>;
+typedef MozPromise<RefPtr<nsICtapRegisterResult>, nsresult, true>
+    WebAuthnRegisterPromise;
 
-using WebAuthnSignPromise =
-    MozPromise<RefPtr<nsIWebAuthnSignResult>, nsresult, true>;
+typedef MozPromise<RefPtr<nsICtapSignResult>, nsresult, true>
+    WebAuthnSignPromise;
 
 class WebAuthnRegisterPromiseHolder final : public nsIWebAuthnRegisterPromise {
  public:

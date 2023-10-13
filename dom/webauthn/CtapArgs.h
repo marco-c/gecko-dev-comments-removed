@@ -4,8 +4,8 @@
 
 
 
-#ifndef mozilla_dom_WebAuthnArgs_H_
-#define mozilla_dom_WebAuthnArgs_H_
+#ifndef CtapArgs_h
+#define CtapArgs_h
 
 #include "mozilla/dom/WebAuthnTransactionChild.h"
 #include "mozilla/ipc/BackgroundParent.h"
@@ -13,16 +13,24 @@
 
 namespace mozilla::dom {
 
-class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
+
+
+
+
+
+
+
+class CtapRegisterArgs final : public nsICtapRegisterArgs {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIWEBAUTHNREGISTERARGS
+  NS_DECL_NSICTAPREGISTERARGS
 
-  explicit WebAuthnRegisterArgs(const WebAuthnMakeCredentialInfo& aInfo)
+  explicit CtapRegisterArgs(const WebAuthnMakeCredentialInfo& aInfo)
       : mInfo(aInfo),
         mCredProps(false),
         mHmacCreateSecret(false),
         mMinPinLength(false) {
+    mozilla::ipc::AssertIsOnBackgroundThread();
     for (const WebAuthnExtension& ext : mInfo.Extensions()) {
       switch (ext.type()) {
         case WebAuthnExtension::TWebAuthnExtensionCredProps:
@@ -45,9 +53,9 @@ class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
   }
 
  private:
-  ~WebAuthnRegisterArgs() = default;
+  ~CtapRegisterArgs() = default;
 
-  const WebAuthnMakeCredentialInfo mInfo;
+  const WebAuthnMakeCredentialInfo& mInfo;
 
   
   bool mCredProps;
@@ -55,18 +63,19 @@ class WebAuthnRegisterArgs final : public nsIWebAuthnRegisterArgs {
   bool mMinPinLength;
 };
 
-class WebAuthnSignArgs final : public nsIWebAuthnSignArgs {
+class CtapSignArgs final : public nsICtapSignArgs {
  public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIWEBAUTHNSIGNARGS
+  NS_DECL_NSICTAPSIGNARGS
 
-  explicit WebAuthnSignArgs(const WebAuthnGetAssertionInfo& aInfo)
-      : mInfo(aInfo) {}
+  explicit CtapSignArgs(const WebAuthnGetAssertionInfo& aInfo) : mInfo(aInfo) {
+    mozilla::ipc::AssertIsOnBackgroundThread();
+  }
 
  private:
-  ~WebAuthnSignArgs() = default;
+  ~CtapSignArgs() = default;
 
-  const WebAuthnGetAssertionInfo mInfo;
+  const WebAuthnGetAssertionInfo& mInfo;
 };
 
 }  

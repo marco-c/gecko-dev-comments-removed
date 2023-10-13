@@ -6,7 +6,7 @@
 #include "nsISupports.idl"
 
 [uuid(0567c384-a728-11ed-85f7-030324a370f0)]
-interface nsIWebAuthnRegisterResult : nsISupports {
+interface nsICtapRegisterResult : nsISupports {
     
     
     
@@ -24,14 +24,14 @@ interface nsIWebAuthnRegisterResult : nsISupports {
     
     
 
-    [must_use] attribute bool credPropsRk;
+    readonly attribute bool credPropsRk;
 };
 
 
 
 
 [uuid(05fff816-a728-11ed-b9ac-ff38cc2c8c28)]
-interface nsIWebAuthnSignResult : nsISupports {
+interface nsICtapSignResult : nsISupports {
     
     
     readonly attribute Array<octet> credentialId;
