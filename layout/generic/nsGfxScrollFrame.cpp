@@ -4467,10 +4467,9 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
   
   
   
-  if (ShouldActivateAllScrollFrames() && !hasDisplayPort &&
-      !DisplayPortUtils::HasDisplayPort(content) &&
-      nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll() &&
-      aBuilder->IsPaintingToWindow() && aSetBase) {
+  if (aSetBase && !hasDisplayPort && aBuilder->IsPaintingToWindow() &&
+      ShouldActivateAllScrollFrames() &&
+      nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll()) {
     
     
     
