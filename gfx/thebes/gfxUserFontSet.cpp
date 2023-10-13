@@ -564,7 +564,7 @@ void gfxUserFontEntry::DoLoadNextSrc(bool aIsContinue) {
             
             
             NS_DispatchToCurrentThreadQueue(runnable.forget(),
-                                            EventQueuePriority::Vsync);
+                                            EventQueuePriority::MediumHigh);
           }
           return;
         } else {
