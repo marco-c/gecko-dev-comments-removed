@@ -114,7 +114,7 @@ class nsTableRowFrame : public nsContainerFrame {
                    nsTableFrame* aTableFrame = nullptr,
                    nsTableCellFrame* aCellFrame = nullptr);
 
-  void ResetBSize(nscoord aRowStyleBSize);
+  void ResetBSize();
 
   
   
