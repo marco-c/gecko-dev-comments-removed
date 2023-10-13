@@ -500,7 +500,7 @@ def extra_default_args(command_context, args=[]):
         "Extracts the browser name if any"
         
         
-        res = re.findall("(--browser|-b)[= ]([\w]+)", " ".join(args))
+        res = re.findall(r"(--browser|-b)[= ]([\w]+)", " ".join(args))
         if res == []:
             return None
         return res[0][-1]
