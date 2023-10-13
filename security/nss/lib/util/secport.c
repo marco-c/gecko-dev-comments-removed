@@ -877,3 +877,49 @@ NSS_SecureSelect(void *dest, const void *src0, const void *src1, size_t n, unsig
         ((unsigned char *)dest)[i] = s0i ^ (mask & (s0i ^ s1i));
     }
 }
+
+
+
+
+
+PRBool
+NSS_GetSystemFIPSEnabled(void)
+{
+
+
+#ifndef NSS_FIPS_DISABLED
+    const char *env;
+
+    
+    env = PR_GetEnvSecure("NSS_FIPS");
+    
+
+    if (env && (*env == 'y' || *env == '1' || *env == 'Y' ||
+                (PORT_Strcasecmp(env, "fips") == 0) ||
+                (PORT_Strcasecmp(env, "true") == 0) ||
+                (PORT_Strcasecmp(env, "on") == 0))) {
+        return PR_TRUE;
+    }
+
+
+
+#ifdef LINUX
+    {
+        FILE *f;
+        char d;
+        size_t size;
+        f = fopen("/proc/sys/crypto/fips_enabled", "r");
+        if (!f)
+            return PR_FALSE;
+
+        size = fread(&d, 1, 1, f);
+        fclose(f);
+        if (size != 1)
+            return PR_FALSE;
+        if (d == '1')
+            return PR_TRUE;
+    }
+#endif 
+#endif 
+    return PR_FALSE;
+}
