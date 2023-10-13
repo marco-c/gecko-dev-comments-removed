@@ -29,9 +29,6 @@ add_setup(async function () {
     set: [
       
       
-      ["browser.urlbar.bestMatch.enabled", true],
-      
-      
       ["browser.urlbar.suggest.engines", false],
     ],
   });

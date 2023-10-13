@@ -457,13 +457,6 @@ pref("browser.urlbar.suggest.trending", true);
 
 
 
-
-pref("browser.urlbar.suggest.bestmatch", true, sticky);
-
-
-
-
-
 pref("browser.urlbar.suggest.quicksuggest.nonsponsored", false, sticky);
 
 
@@ -615,13 +608,6 @@ pref("browser.urlbar.merino.providers", "");
 
 
 pref("browser.urlbar.merino.clientVariants", "");
-
-
-pref("browser.urlbar.bestMatch.enabled", false);
-
-
-
-pref("browser.urlbar.bestMatch.blockingEnabled", true);
 
 
 pref("browser.urlbar.contextualSearch.enabled", false);

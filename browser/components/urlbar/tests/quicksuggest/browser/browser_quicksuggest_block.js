@@ -3,11 +3,6 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -49,10 +44,7 @@ let spy;
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.bestMatch.blockingEnabled", true],
-      ["browser.urlbar.quicksuggest.blockingEnabled", true],
-    ],
+    set: [["browser.urlbar.quicksuggest.blockingEnabled", true]],
   });
 
   ({ spy } = QuickSuggestTestUtils.createTelemetryPingSpy());
@@ -74,7 +66,6 @@ add_setup(async function () {
         attachment: REMOTE_SETTINGS_RESULTS,
       },
     ],
-    config: QuickSuggestTestUtils.BEST_MATCH_CONFIG,
   });
 });
 
@@ -85,18 +76,11 @@ add_setup(async function () {
 
 
 
-
-
-
 function add_combo_task(fn) {
   let taskFn = async () => {
-    for (let isBestMatch of [false, true]) {
-      UrlbarPrefs.set("bestMatch.enabled", isBestMatch);
-      for (let result of REMOTE_SETTINGS_RESULTS) {
-        info(`Running ${fn.name}: ${JSON.stringify({ isBestMatch, result })}`);
-        await fn({ isBestMatch, result });
-      }
-      UrlbarPrefs.clear("bestMatch.enabled");
+    for (let result of REMOTE_SETTINGS_RESULTS) {
+      info(`Running ${fn.name}: ${JSON.stringify({ result })}`);
+      await fn({ result });
     }
   };
   Object.defineProperty(taskFn, "name", { value: fn.name });
@@ -104,10 +88,9 @@ function add_combo_task(fn) {
 }
 
 
-add_combo_task(async function basic_keyboard({ result, isBestMatch }) {
+add_combo_task(async function basic_keyboard({ result }) {
   await doBasicBlockTest({
     result,
-    isBestMatch,
     block: async () => {
       if (UrlbarPrefs.get("resultMenu")) {
         await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D", {
@@ -124,10 +107,9 @@ add_combo_task(async function basic_keyboard({ result, isBestMatch }) {
 });
 
 
-add_combo_task(async function basic_mouse({ result, isBestMatch }) {
+add_combo_task(async function basic_mouse({ result }) {
   await doBasicBlockTest({
     result,
-    isBestMatch,
     block: async () => {
       if (UrlbarPrefs.get("resultMenu")) {
         await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D", {
@@ -145,10 +127,9 @@ add_combo_task(async function basic_mouse({ result, isBestMatch }) {
 });
 
 
-add_combo_task(async function basic_keyShortcut({ result, isBestMatch }) {
+add_combo_task(async function basic_keyShortcut({ result }) {
   await doBasicBlockTest({
     result,
-    isBestMatch,
     block: () => {
       
       EventUtils.synthesizeKey("KEY_ArrowDown");
@@ -157,12 +138,12 @@ add_combo_task(async function basic_keyShortcut({ result, isBestMatch }) {
   });
 });
 
-async function doBasicBlockTest({ result, isBestMatch, block }) {
+async function doBasicBlockTest({ result, block }) {
   spy.resetHistory();
   let index = 2;
-  let suggested_index = isBestMatch ? 1 : -1;
-  let suggested_index_relative_to_group = !isBestMatch;
-  let match_type = isBestMatch ? "best-match" : "firefox-suggest";
+  let suggested_index = -1;
+  let suggested_index_relative_to_group = true;
+  let match_type = "firefox-suggest";
 
   let pingsSubmitted = 0;
   GleanPings.quickSuggest.testBeforeNextSubmit(() => {
@@ -216,7 +197,6 @@ async function doBasicBlockTest({ result, isBestMatch, block }) {
   let isSponsored = result.keywords[0] == "sponsored";
   await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
-    isBestMatch,
     isSponsored,
     originalUrl: result.url,
   });
@@ -253,21 +233,6 @@ async function doBasicBlockTest({ result, isBestMatch, block }) {
   } else {
     scalars[TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED] = index;
     scalars[TELEMETRY_SCALARS.BLOCK_NONSPONSORED] = index;
-  }
-  if (isBestMatch) {
-    if (isSponsored) {
-      scalars = {
-        ...scalars,
-        [TELEMETRY_SCALARS.IMPRESSION_SPONSORED_BEST_MATCH]: index,
-        [TELEMETRY_SCALARS.BLOCK_SPONSORED_BEST_MATCH]: index,
-      };
-    } else {
-      scalars = {
-        ...scalars,
-        [TELEMETRY_SCALARS.IMPRESSION_NONSPONSORED_BEST_MATCH]: index,
-        [TELEMETRY_SCALARS.BLOCK_NONSPONSORED_BEST_MATCH]: index,
-      };
-    }
   }
   QuickSuggestTestUtils.assertScalars(scalars);
 
@@ -317,96 +282,61 @@ async function doBasicBlockTest({ result, isBestMatch, block }) {
 
 
 add_task(async function blockMultiple() {
-  for (let isBestMatch of [false, true]) {
-    UrlbarPrefs.set("bestMatch.enabled", isBestMatch);
-    info(`Testing with best match enabled: ${isBestMatch}`);
+  for (let i = 0; i < REMOTE_SETTINGS_RESULTS.length; i++) {
+    
+    let { keywords, url } = REMOTE_SETTINGS_RESULTS[i];
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: keywords[0],
+    });
+    await QuickSuggestTestUtils.assertIsQuickSuggest({
+      window,
+      originalUrl: url,
+      isSponsored: keywords[0] == "sponsored",
+    });
 
-    for (let i = 0; i < REMOTE_SETTINGS_RESULTS.length; i++) {
-      
-      let { keywords, url } = REMOTE_SETTINGS_RESULTS[i];
-      await UrlbarTestUtils.promiseAutocompleteResultPopup({
-        window,
-        value: keywords[0],
+    
+    if (UrlbarPrefs.get("resultMenu")) {
+      await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D", {
+        resultIndex: 1,
       });
-      await QuickSuggestTestUtils.assertIsQuickSuggest({
-        window,
-        isBestMatch,
-        originalUrl: url,
-        isSponsored: keywords[0] == "sponsored",
-      });
-
-      
-      if (UrlbarPrefs.get("resultMenu")) {
-        await UrlbarTestUtils.openResultMenuAndPressAccesskey(window, "D", {
-          resultIndex: 1,
-        });
-      } else {
-        EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
-        EventUtils.synthesizeKey("KEY_Enter");
-      }
-      Assert.ok(
-        await QuickSuggest.blockedSuggestions.has(url),
-        "Suggestion is blocked after picking block button"
-      );
-
-      
-      
-      for (let j = 0; j < REMOTE_SETTINGS_RESULTS.length; j++) {
-        Assert.equal(
-          await QuickSuggest.blockedSuggestions.has(
-            REMOTE_SETTINGS_RESULTS[j].url
-          ),
-          j <= i,
-          `Suggestion at index ${j} is blocked or not as expected`
-        );
-      }
+    } else {
+      EventUtils.synthesizeKey("KEY_Tab", { repeat: 2 });
+      EventUtils.synthesizeKey("KEY_Enter");
     }
+    Assert.ok(
+      await QuickSuggest.blockedSuggestions.has(url),
+      "Suggestion is blocked after picking block button"
+    );
 
-    await UrlbarTestUtils.promisePopupClose(window);
-    await QuickSuggest.blockedSuggestions.clear();
-    UrlbarPrefs.clear("bestMatch.enabled");
+    
+    
+    for (let j = 0; j < REMOTE_SETTINGS_RESULTS.length; j++) {
+      Assert.equal(
+        await QuickSuggest.blockedSuggestions.has(
+          REMOTE_SETTINGS_RESULTS[j].url
+        ),
+        j <= i,
+        `Suggestion at index ${j} is blocked or not as expected`
+      );
+    }
   }
+
+  await UrlbarTestUtils.promisePopupClose(window);
+  await QuickSuggest.blockedSuggestions.clear();
 });
 
 
-add_combo_task(async function disabled_both({ result, isBestMatch }) {
+add_combo_task(async function disabled({ result }) {
   await doDisabledTest({
     result,
-    isBestMatch,
     quickSuggestBlockingEnabled: false,
-    bestMatchBlockingEnabled: false,
   });
 });
 
-
-add_combo_task(async function disabled_quickSuggest({ result, isBestMatch }) {
-  await doDisabledTest({
-    result,
-    isBestMatch,
-    quickSuggestBlockingEnabled: false,
-    bestMatchBlockingEnabled: true,
-  });
-});
-
-
-add_combo_task(async function disabled_bestMatch({ result, isBestMatch }) {
-  await doDisabledTest({
-    result,
-    isBestMatch,
-    quickSuggestBlockingEnabled: true,
-    bestMatchBlockingEnabled: false,
-  });
-});
-
-async function doDisabledTest({
-  result,
-  isBestMatch,
-  bestMatchBlockingEnabled,
-  quickSuggestBlockingEnabled,
-}) {
+async function doDisabledTest({ result, quickSuggestBlockingEnabled }) {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.bestMatch.blockingEnabled", bestMatchBlockingEnabled],
       [
         "browser.urlbar.quicksuggest.blockingEnabled",
         quickSuggestBlockingEnabled,
@@ -427,7 +357,6 @@ async function doDisabledTest({
   );
   let details = await QuickSuggestTestUtils.assertIsQuickSuggest({
     window,
-    isBestMatch,
     originalUrl: result.url,
     isSponsored: result.keywords[0] == "sponsored",
   });
@@ -440,10 +369,7 @@ async function doDisabledTest({
     "View remains open after trying to block result"
   );
 
-  if (
-    (isBestMatch && !bestMatchBlockingEnabled) ||
-    (!isBestMatch && !quickSuggestBlockingEnabled)
-  ) {
+  if (!quickSuggestBlockingEnabled) {
     
     if (!UrlbarPrefs.get("resultMenu")) {
       Assert.ok(
@@ -458,7 +384,6 @@ async function doDisabledTest({
     );
     await QuickSuggestTestUtils.assertIsQuickSuggest({
       window,
-      isBestMatch,
       originalUrl: result.url,
       isSponsored: result.keywords[0] == "sponsored",
     });

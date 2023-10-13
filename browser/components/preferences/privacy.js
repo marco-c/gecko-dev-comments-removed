@@ -119,7 +119,6 @@ Preferences.addAll([
   },
 
   
-  { id: "browser.urlbar.suggest.bestmatch", type: "bool" },
   { id: "browser.urlbar.suggest.bookmark", type: "bool" },
   { id: "browser.urlbar.suggest.clipboard", type: "bool" },
   { id: "browser.urlbar.suggest.history", type: "bool" },
@@ -2595,6 +2594,10 @@ var gPrivacyPane = {
       );
     }
 
+    document.getElementById("clipboardSuggestion").hidden = !UrlbarPrefs.get(
+      "clipboard.featureGate"
+    );
+
     this._updateFirefoxSuggestSection(true);
     this._initQuickActionsSection();
   },
@@ -2607,14 +2610,6 @@ var gPrivacyPane = {
 
 
   _updateFirefoxSuggestSection(onInit = false) {
-    
-    document.getElementById("firefoxSuggestBestMatchContainer").hidden =
-      !UrlbarPrefs.get("bestMatchEnabled");
-
-    document.getElementById("clipboardSuggestion").hidden = !UrlbarPrefs.get(
-      "clipboard.featureGate"
-    );
-
     let container = document.getElementById("firefoxSuggestContainer");
 
     if (UrlbarPrefs.get("quickSuggestEnabled")) {
