@@ -5487,6 +5487,17 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.GetOverscrollBehavior());
   }
 
+  if (needToReclampScroll) {
+    
+    
+    
+    
+    ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
+    for (auto& sampledState : mSampledState) {
+      sampledState.ClampVisualScrollOffset(Metrics());
+    }
+  }
+
   bool scrollOffsetUpdated = false;
   bool smoothScrollRequested = false;
   bool didCancelAnimation = false;
@@ -5696,14 +5707,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     ScheduleComposite();
-  } else if (needToReclampScroll) {
-    
-    
-    
-    ClampAndSetVisualScrollOffset(Metrics().GetVisualScrollOffset());
-    for (auto& sampledState : mSampledState) {
-      sampledState.ClampVisualScrollOffset(Metrics());
-    }
   }
 
   
