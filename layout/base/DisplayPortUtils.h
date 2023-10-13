@@ -298,13 +298,6 @@ class DisplayPortUtils {
 
 
   static Maybe<nsRect> GetRootDisplayportBase(PresShell* aPresShell);
-
-  
-
-
-
-
-  static bool WillUseEmptyDisplayPortMargins(nsIContent* aContent);
 };
 
 }  
