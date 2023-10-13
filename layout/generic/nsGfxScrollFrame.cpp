@@ -1766,17 +1766,19 @@ void nsHTMLScrollFrame::SetHasOutOfFlowContentInsideFilter() {
 
 bool nsHTMLScrollFrame::WantAsyncScroll() const {
   ScrollStyles styles = GetScrollStyles();
-  nscoord oneDevPixel =
-      GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
-  nsRect scrollRange = GetLayoutScrollRange();
 
   
   
-  
-  
-  if (!GetVisualScrollRange().IsEqualInterior(scrollRange)) {
-    return true;
+  if (styles.mHorizontal == StyleOverflow::Hidden &&
+      styles.mVertical == StyleOverflow::Hidden) {
+    if (!mIsRoot || GetVisualViewportSize() == mScrollPort.Size()) {
+      return false;
+    }
   }
+
+  nscoord oneDevPixel =
+      GetScrolledFrame()->PresContext()->AppUnitsPerDevPixel();
+  nsRect scrollRange = GetLayoutScrollRange();
 
   bool isVScrollable = (scrollRange.height >= oneDevPixel) &&
                        (styles.mVertical != StyleOverflow::Hidden);
@@ -1797,7 +1799,16 @@ bool nsHTMLScrollFrame::WantAsyncScroll() const {
       isVScrollable && (mVScrollbarBox || canScrollWithoutScrollbars);
   bool isHAsyncScrollable =
       isHScrollable && (mHScrollbarBox || canScrollWithoutScrollbars);
-  return isVAsyncScrollable || isHAsyncScrollable;
+  if (isVAsyncScrollable || isHAsyncScrollable) {
+    return true;
+  }
+
+  
+  
+  
+  
+  return mIsRoot && GetVisualViewportSize() != mScrollPort.Size() &&
+         !GetVisualScrollRange().IsEqualInterior(scrollRange);
 }
 
 static nsRect GetOnePixelRangeAroundPoint(const nsPoint& aPoint,
