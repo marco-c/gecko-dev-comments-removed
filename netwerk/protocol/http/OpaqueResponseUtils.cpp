@@ -562,7 +562,8 @@ nsresult OpaqueResponseBlocker::ValidateJavaScript(HttpBaseChannel* aChannel,
             self->AllowResponse();
             break;
           case OpaqueResponse::Block:
-            self->BlockResponse(channel, NS_ERROR_FAILURE);
+            
+            self->AllowResponse();
             break;
           default:
             MOZ_ASSERT_UNREACHABLE(
@@ -622,10 +623,19 @@ void OpaqueResponseBlocker::FilterResponse() {
 
 void OpaqueResponseBlocker::ResolveAndProcessData(
     HttpBaseChannel* aChannel, bool aAllowed, Maybe<ipc::Shmem>& aSharedData) {
+  if (!aAllowed) {
+    
+    mNext = new OpaqueResponseFilter(mNext);
+  }
+
   nsresult rv = OnStartRequest(aChannel);
 
   if (!aAllowed || NS_FAILED(rv)) {
-    MOZ_ASSERT_IF(!aAllowed, mState == State::Blocked);
+    MOZ_ASSERT_IF(!aAllowed, mState == State::Allowed);
+    
+    
+    
+    
     MaybeRunOnStopRequest(aChannel);
     return;
   }
