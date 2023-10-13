@@ -1792,11 +1792,12 @@ bool nsImageLoadingContent::ScriptedImageObserver::CancelRequests() {
 }
 
 Element* nsImageLoadingContent::FindImageMap() {
-  nsIContent* thisContent = AsContent();
-  Element* thisElement = thisContent->AsElement();
+  return FindImageMap(AsContent()->AsElement());
+}
 
+ Element* nsImageLoadingContent::FindImageMap(Element* aElement) {
   nsAutoString useMap;
-  thisElement->GetAttr(nsGkAtoms::usemap, useMap);
+  aElement->GetAttr(nsGkAtoms::usemap, useMap);
   if (useMap.IsEmpty()) {
     return nullptr;
   }
@@ -1817,15 +1818,15 @@ Element* nsImageLoadingContent::FindImageMap() {
   }
 
   RefPtr<nsContentList> imageMapList;
-  if (thisElement->IsInUncomposedDoc()) {
+  if (aElement->IsInUncomposedDoc()) {
     
-    imageMapList = thisElement->OwnerDoc()->ImageMapList();
+    imageMapList = aElement->OwnerDoc()->ImageMapList();
   } else {
     
     
     
     imageMapList =
-        new nsContentList(thisElement->SubtreeRoot(), kNameSpaceID_XHTML,
+        new nsContentList(aElement->SubtreeRoot(), kNameSpaceID_XHTML,
                           nsGkAtoms::map, nsGkAtoms::map, true, 
                           false );
   }
