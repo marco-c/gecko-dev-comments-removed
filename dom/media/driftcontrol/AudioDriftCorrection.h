@@ -51,12 +51,10 @@ class AudioDriftCorrection final {
   AudioSegment RequestFrames(const AudioSegment& aInput,
                              uint32_t aOutputFrames);
 
-  
   uint32_t CurrentBuffering() const;
 
   uint32_t BufferSize() const;
 
-  
   uint32_t NumCorrectionChanges() const;
 
   uint32_t NumUnderruns() const { return mNumUnderruns; }
