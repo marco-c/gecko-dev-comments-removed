@@ -8,9 +8,11 @@ additional features:
   * options set attributes of a passed-in object
 """
 
-import sys, string, re
+import sys
+import string
+import re
 import getopt
-from distutils.errors import *
+from .errors import DistutilsGetoptError, DistutilsArgError
 
 
 
@@ -20,11 +22,12 @@ longopt_pat = r'[a-zA-Z](?:[a-zA-Z0-9-]*)'
 longopt_re = re.compile(r'^%s$' % longopt_pat)
 
 
-neg_alias_re = re.compile("^(%s)=!(%s)$" % (longopt_pat, longopt_pat))
+neg_alias_re = re.compile("^({})=!({})$".format(longopt_pat, longopt_pat))
 
 
 
 longopt_xlate = str.maketrans('-', '_')
+
 
 class FancyGetopt:
     """Wrapper around the standard 'getopt()' module that provides some
@@ -90,7 +93,8 @@ class FancyGetopt:
     def add_option(self, long_option, short_option=None, help_string=None):
         if long_option in self.option_index:
             raise DistutilsGetoptError(
-                  "option conflict: already an option '%s'" % long_option)
+                "option conflict: already an option '%s'" % long_option
+            )
         else:
             option = (long_option, short_option, help_string)
             self.option_table.append(option)
@@ -109,13 +113,17 @@ class FancyGetopt:
 
     def _check_alias_dict(self, aliases, what):
         assert isinstance(aliases, dict)
-        for (alias, opt) in aliases.items():
+        for alias, opt in aliases.items():
             if alias not in self.option_index:
-                raise DistutilsGetoptError(("invalid %s '%s': "
-                       "option '%s' not defined") % (what, alias, alias))
+                raise DistutilsGetoptError(
+                    ("invalid %s '%s': " "option '%s' not defined")
+                    % (what, alias, alias)
+                )
             if opt not in self.option_index:
-                raise DistutilsGetoptError(("invalid %s '%s': "
-                       "aliased option '%s' not defined") % (what, alias, opt))
+                raise DistutilsGetoptError(
+                    ("invalid %s '%s': " "aliased option '%s' not defined")
+                    % (what, alias, opt)
+                )
 
     def set_aliases(self, alias):
         """Set the aliases for this option parser."""
@@ -130,7 +138,7 @@ class FancyGetopt:
         self._check_alias_dict(negative_alias, "negative alias")
         self.negative_alias = negative_alias
 
-    def _grok_option_table(self):
+    def _grok_option_table(self):  
         """Populate the various data structures that keep tabs on the
         option table.  Called by 'getopt()' before it can do anything
         worthwhile.
@@ -149,23 +157,27 @@ class FancyGetopt:
             else:
                 
                 
-                raise ValueError("invalid option tuple: %r" % (option,))
+                raise ValueError("invalid option tuple: {!r}".format(option))
 
             
             if not isinstance(long, str) or len(long) < 2:
-                raise DistutilsGetoptError(("invalid long option '%s': "
-                       "must be a string of length >= 2") % long)
+                raise DistutilsGetoptError(
+                    ("invalid long option '%s': " "must be a string of length >= 2")
+                    % long
+                )
 
-            if (not ((short is None) or
-                     (isinstance(short, str) and len(short) == 1))):
-                raise DistutilsGetoptError("invalid short option '%s': "
-                       "must a single character or None" % short)
+            if not ((short is None) or (isinstance(short, str) and len(short) == 1)):
+                raise DistutilsGetoptError(
+                    "invalid short option '%s': "
+                    "must a single character or None" % short
+                )
 
             self.repeat[long] = repeat
             self.long_opts.append(long)
 
-            if long[-1] == '=':             
-                if short: short = short + ':'
+            if long[-1] == '=':  
+                if short:
+                    short = short + ':'
                 long = long[0:-1]
                 self.takes_arg[long] = 1
             else:
@@ -175,11 +187,11 @@ class FancyGetopt:
                 if alias_to is not None:
                     if self.takes_arg[alias_to]:
                         raise DistutilsGetoptError(
-                              "invalid negative alias '%s': "
-                              "aliased option '%s' takes a value"
-                              % (long, alias_to))
+                            "invalid negative alias '%s': "
+                            "aliased option '%s' takes a value" % (long, alias_to)
+                        )
 
-                    self.long_opts[-1] = long 
+                    self.long_opts[-1] = long  
                 self.takes_arg[long] = 0
 
             
@@ -188,10 +200,10 @@ class FancyGetopt:
             if alias_to is not None:
                 if self.takes_arg[long] != self.takes_arg[alias_to]:
                     raise DistutilsGetoptError(
-                          "invalid alias '%s': inconsistent with "
-                          "aliased option '%s' (one of them takes a value, "
-                          "the other doesn't"
-                          % (long, alias_to))
+                        "invalid alias '%s': inconsistent with "
+                        "aliased option '%s' (one of them takes a value, "
+                        "the other doesn't" % (long, alias_to)
+                    )
 
             
             
@@ -199,15 +211,16 @@ class FancyGetopt:
             
             if not longopt_re.match(long):
                 raise DistutilsGetoptError(
-                       "invalid long option name '%s' "
-                       "(must be letters, numbers, hyphens only" % long)
+                    "invalid long option name '%s' "
+                    "(must be letters, numbers, hyphens only" % long
+                )
 
             self.attr_name[long] = self.get_attr_name(long)
             if short:
                 self.short_opts.append(short)
                 self.short2long[short[0]] = long
 
-    def getopt(self, args=None, object=None):
+    def getopt(self, args=None, object=None):  
         """Parse command-line options in args. Store as attributes on object.
 
         If 'args' is None or not supplied, uses 'sys.argv[1:]'.  If
@@ -235,7 +248,7 @@ class FancyGetopt:
             raise DistutilsArgError(msg)
 
         for opt, val in opts:
-            if len(opt) == 2 and opt[0] == '-': 
+            if len(opt) == 2 and opt[0] == '-':  
                 opt = self.short2long[opt[1]]
             else:
                 assert len(opt) > 2 and opt[:2] == '--'
@@ -245,7 +258,7 @@ class FancyGetopt:
             if alias:
                 opt = alias
 
-            if not self.takes_arg[opt]:     
+            if not self.takes_arg[opt]:  
                 assert val == '', "boolean option can't have value"
                 alias = self.negative_alias.get(opt)
                 if alias:
@@ -278,7 +291,7 @@ class FancyGetopt:
         else:
             return self.option_order
 
-    def generate_help(self, header=None):
+    def generate_help(self, header=None):  
         """Generate help text (a list of strings, one per suggested line of
         output) from the option table for this FancyGetopt object.
         """
@@ -290,15 +303,15 @@ class FancyGetopt:
         for option in self.option_table:
             long = option[0]
             short = option[1]
-            l = len(long)
+            ell = len(long)
             if long[-1] == '=':
-                l = l - 1
+                ell = ell - 1
             if short is not None:
-                l = l + 5                   
-            if l > max_opt:
-                max_opt = l
+                ell = ell + 5  
+            if ell > max_opt:
+                max_opt = ell
 
-        opt_width = max_opt + 2 + 2 + 2     
+        opt_width = max_opt + 2 + 2 + 2  
 
         
         
@@ -346,15 +359,14 @@ class FancyGetopt:
             
             
             else:
-                opt_names = "%s (-%s)" % (long, short)
+                opt_names = "{} (-{})".format(long, short)
                 if text:
-                    lines.append("  --%-*s  %s" %
-                                 (max_opt, opt_names, text[0]))
+                    lines.append("  --%-*s  %s" % (max_opt, opt_names, text[0]))
                 else:
                     lines.append("  --%-*s" % opt_names)
 
-            for l in text[1:]:
-                lines.append(big_indent + l)
+            for ell in text[1:]:
+                lines.append(big_indent + ell)
         return lines
 
     def print_help(self, header=None, file=None):
@@ -370,7 +382,8 @@ def fancy_getopt(options, negative_opt, object, args):
     return parser.getopt(args, object)
 
 
-WS_TRANS = {ord(_wschar) : ' ' for _wschar in string.whitespace}
+WS_TRANS = {ord(_wschar): ' ' for _wschar in string.whitespace}
+
 
 def wrap_text(text, width):
     """wrap_text(text : string, width : int) -> [string]
@@ -386,26 +399,26 @@ def wrap_text(text, width):
     text = text.expandtabs()
     text = text.translate(WS_TRANS)
     chunks = re.split(r'( +|-+)', text)
-    chunks = [ch for ch in chunks if ch] 
+    chunks = [ch for ch in chunks if ch]  
     lines = []
 
     while chunks:
-        cur_line = []                   
-        cur_len = 0                     
+        cur_line = []  
+        cur_len = 0  
 
         while chunks:
-            l = len(chunks[0])
-            if cur_len + l <= width:    
+            ell = len(chunks[0])
+            if cur_len + ell <= width:  
                 cur_line.append(chunks[0])
                 del chunks[0]
-                cur_len = cur_len + l
-            else:                       
+                cur_len = cur_len + ell
+            else:  
                 
                 if cur_line and cur_line[-1][0] == ' ':
                     del cur_line[-1]
                 break
 
-        if chunks:                      
+        if chunks:  
             
             
             

@@ -27,6 +27,20 @@ Every version number class implements the following interface:
 """
 
 import re
+import warnings
+import contextlib
+
+
+@contextlib.contextmanager
+def suppress_known_deprecation():
+    with warnings.catch_warnings(record=True) as ctx:
+        warnings.filterwarnings(
+            action='default',
+            category=DeprecationWarning,
+            message="distutils Version classes are deprecated.",
+        )
+        yield ctx
+
 
 class Version:
     """Abstract base class for version numbering classes.  Just provides
@@ -35,12 +49,18 @@ class Version:
     rich comparisons to _cmp.
     """
 
-    def __init__ (self, vstring=None):
+    def __init__(self, vstring=None):
         if vstring:
             self.parse(vstring)
+        warnings.warn(
+            "distutils Version classes are deprecated. "
+            "Use packaging.version instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
-    def __repr__ (self):
-        return "%s ('%s')" % (self.__class__.__name__, str(self))
+    def __repr__(self):
+        return "{} ('{}')".format(self.__class__.__name__, str(self))
 
     def __eq__(self, other):
         c = self._cmp(other)
@@ -90,7 +110,7 @@ class Version:
 
 
 
-class StrictVersion (Version):
+class StrictVersion(Version):
 
     """Version numbering for anal retentives and software idealists.
     Implements the standard interface for version number classes as
@@ -127,17 +147,16 @@ class StrictVersion (Version):
     in the distutils documentation.
     """
 
-    version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
-                            re.VERBOSE | re.ASCII)
+    version_re = re.compile(
+        r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$', re.VERBOSE | re.ASCII
+    )
 
-
-    def parse (self, vstring):
+    def parse(self, vstring):
         match = self.version_re.match(vstring)
         if not match:
             raise ValueError("invalid version number '%s'" % vstring)
 
-        (major, minor, patch, prerelease, prerelease_num) = \
-            match.group(1, 2, 4, 5, 6)
+        (major, minor, patch, prerelease, prerelease_num) = match.group(1, 2, 4, 5, 6)
 
         if patch:
             self.version = tuple(map(int, [major, minor, patch]))
@@ -149,9 +168,7 @@ class StrictVersion (Version):
         else:
             self.prerelease = None
 
-
-    def __str__ (self):
-
+    def __str__(self):
         if self.version[2] == 0:
             vstring = '.'.join(map(str, self.version[0:2]))
         else:
@@ -162,10 +179,10 @@ class StrictVersion (Version):
 
         return vstring
 
-
-    def _cmp (self, other):
+    def _cmp(self, other):  
         if isinstance(other, str):
-            other = StrictVersion(other)
+            with suppress_known_deprecation():
+                other = StrictVersion(other)
         elif not isinstance(other, StrictVersion):
             return NotImplemented
 
@@ -183,13 +200,13 @@ class StrictVersion (Version):
         
         
 
-        if (not self.prerelease and not other.prerelease):
+        if not self.prerelease and not other.prerelease:
             return 0
-        elif (self.prerelease and not other.prerelease):
+        elif self.prerelease and not other.prerelease:
             return -1
-        elif (not self.prerelease and other.prerelease):
+        elif not self.prerelease and other.prerelease:
             return 1
-        elif (self.prerelease and other.prerelease):
+        elif self.prerelease and other.prerelease:
             if self.prerelease == other.prerelease:
                 return 0
             elif self.prerelease < other.prerelease:
@@ -266,7 +283,9 @@ class StrictVersion (Version):
 
 
 
-class LooseVersion (Version):
+
+
+class LooseVersion(Version):
 
     """Version numbering for anarchists and software realists.
     Implements the standard interface for version number classes as
@@ -301,18 +320,12 @@ class LooseVersion (Version):
 
     component_re = re.compile(r'(\d+ | [a-z]+ | \.)', re.VERBOSE)
 
-    def __init__ (self, vstring=None):
-        if vstring:
-            self.parse(vstring)
-
-
-    def parse (self, vstring):
+    def parse(self, vstring):
         
         
         
         self.vstring = vstring
-        components = [x for x in self.component_re.split(vstring)
-                              if x and x != '.']
+        components = [x for x in self.component_re.split(vstring) if x and x != '.']
         for i, obj in enumerate(components):
             try:
                 components[i] = int(obj)
@@ -321,16 +334,13 @@ class LooseVersion (Version):
 
         self.version = components
 
-
-    def __str__ (self):
+    def __str__(self):
         return self.vstring
 
-
-    def __repr__ (self):
+    def __repr__(self):
         return "LooseVersion ('%s')" % str(self)
 
-
-    def _cmp (self, other):
+    def _cmp(self, other):
         if isinstance(other, str):
             other = LooseVersion(other)
         elif not isinstance(other, LooseVersion):
