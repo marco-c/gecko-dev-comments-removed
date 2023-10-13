@@ -1,3 +1,6 @@
+#[cfg(debug_assertions)]
+use crate::util::AnyValueId;
+
 
 
 
@@ -279,6 +282,58 @@ pub enum ArgAction {
     
     
     
+    HelpShort,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    HelpLong,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     Version,
 }
@@ -296,6 +351,8 @@ impl ArgAction {
             Self::SetFalse => false,
             Self::Count => false,
             Self::Help => false,
+            Self::HelpShort => false,
+            Self::HelpLong => false,
             Self::Version => false,
         }
     }
@@ -308,6 +365,8 @@ impl ArgAction {
             Self::SetFalse => Some(std::ffi::OsStr::new("true")),
             Self::Count => Some(std::ffi::OsStr::new("0")),
             Self::Help => None,
+            Self::HelpShort => None,
+            Self::HelpLong => None,
             Self::Version => None,
         }
     }
@@ -320,6 +379,8 @@ impl ArgAction {
             Self::SetFalse => Some(std::ffi::OsStr::new("false")),
             Self::Count => None,
             Self::Help => None,
+            Self::HelpShort => None,
+            Self::HelpLong => None,
             Self::Version => None,
         }
     }
@@ -332,14 +393,14 @@ impl ArgAction {
             Self::SetFalse => Some(super::ValueParser::bool()),
             Self::Count => Some(crate::value_parser!(u8).into()),
             Self::Help => None,
+            Self::HelpShort => None,
+            Self::HelpLong => None,
             Self::Version => None,
         }
     }
 
     #[cfg(debug_assertions)]
-    pub(crate) fn value_type_id(&self) -> Option<crate::parser::AnyValueId> {
-        use crate::parser::AnyValueId;
-
+    pub(crate) fn value_type_id(&self) -> Option<AnyValueId> {
         match self {
             Self::Set => None,
             Self::Append => None,
@@ -347,6 +408,8 @@ impl ArgAction {
             Self::SetFalse => None,
             Self::Count => Some(AnyValueId::of::<CountType>()),
             Self::Help => None,
+            Self::HelpShort => None,
+            Self::HelpLong => None,
             Self::Version => None,
         }
     }

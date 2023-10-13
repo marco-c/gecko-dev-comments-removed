@@ -25,7 +25,7 @@ fn main() {
 
     
     if let Some(name) = matches.get_one::<String>("name") {
-        println!("Value for name: {}", name);
+        println!("Value for name: {name}");
     }
 
     if let Some(config_path) = matches.get_one::<PathBuf>("config") {

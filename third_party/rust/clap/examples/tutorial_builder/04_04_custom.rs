@@ -57,10 +57,10 @@ fn main() {
                 .exit();
             }
         };
-        format!("{}.{}.{}", major, minor, patch)
+        format!("{major}.{minor}.{patch}")
     };
 
-    println!("Version: {}", version);
+    println!("Version: {version}");
 
     
     if matches.contains_id("config") {

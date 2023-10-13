@@ -163,18 +163,6 @@ impl PossibleValue {
     }
 
     
-    
-    #[inline]
-    #[cfg(feature = "help")]
-    pub(crate) fn get_visible_help(&self) -> Option<&StyledStr> {
-        if !self.hide {
-            self.get_help()
-        } else {
-            None
-        }
-    }
-
-    
     #[inline]
     pub fn is_hide_set(&self) -> bool {
         self.hide

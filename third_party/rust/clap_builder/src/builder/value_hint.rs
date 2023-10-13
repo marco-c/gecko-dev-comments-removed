@@ -24,11 +24,12 @@ use std::str::FromStr;
 
 
 
-#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
+#[derive(Debug, Default, PartialEq, Eq, Hash, Copy, Clone)]
 #[non_exhaustive]
 pub enum ValueHint {
     
     
+    #[default]
     Unknown,
     
     Other,
@@ -64,12 +65,6 @@ pub enum ValueHint {
     Url,
     
     EmailAddress,
-}
-
-impl Default for ValueHint {
-    fn default() -> Self {
-        ValueHint::Unknown
-    }
 }
 
 impl FromStr for ValueHint {

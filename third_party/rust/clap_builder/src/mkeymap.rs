@@ -124,6 +124,15 @@ impl MKeyMap {
     }
 
     
+    pub(crate) fn mut_args<F>(&mut self, f: F)
+    where
+        F: FnMut(Arg) -> Arg,
+    {
+        let mut args = std::mem::take(&mut self.args);
+        self.args.extend(args.drain(..).map(f));
+    }
+
+    
     
     pub(crate) fn _build(&mut self) {
         

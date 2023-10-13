@@ -83,7 +83,7 @@ mod test {
 
     #[test]
     fn leading_whitespace() {
-        assert_eq!(wrap("  foo bar", 6), vec!["  foo", "bar"]);
+        assert_eq!(wrap("  foo bar", 6), vec!["  foo", "  bar"]);
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod test {
         
         
         
-        assert_eq!(wrap(" foobar baz", 6), vec!["", "foobar", "baz"]);
+        assert_eq!(wrap(" foobar baz", 6), vec!["", " foobar", " baz"]);
     }
 
     #[test]

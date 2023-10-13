@@ -416,6 +416,9 @@
 
 
 
+
+
+
 #![doc = include_str!("../../examples/derive_ref/augment_args.rs")]
 
 
@@ -481,6 +484,20 @@
 
 
 
+
+
+
+#![doc(alias = "skip")]
+#![doc(alias = "verbatim_doc_comment")]
+#![doc(alias = "flatten")]
+#![doc(alias = "external_subcommand")]
+#![doc(alias = "subcommand")]
+#![doc(alias = "rename_all")]
+#![doc(alias = "rename_all_env")]
+#![doc(alias = "default_value_t")]
+#![doc(alias = "default_values_t")]
+#![doc(alias = "default_value_os_t")]
+#![doc(alias = "default_values_os_t")]
 
 pub mod _tutorial;
 #[doc(inline)]

@@ -175,39 +175,6 @@ pub trait OsStrExt: private::Sealed {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(since = "4.1.0", note = "This is not sound for all `index`")]
-    fn split_at(&self, index: usize) -> (&OsStr, &OsStr);
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn split_once(&self, needle: &'_ str) -> Option<(&OsStr, &OsStr)>;
 }
 
@@ -246,15 +213,6 @@ impl OsStrExt for OsStr {
         Split {
             haystack: Some(self),
             needle,
-        }
-    }
-
-    fn split_at(&self, index: usize) -> (&OsStr, &OsStr) {
-        let bytes = to_bytes(self);
-        unsafe {
-            
-            let (first, second) = bytes.split_at(index);
-            (to_os_str_unchecked(first), to_os_str_unchecked(second))
         }
     }
 

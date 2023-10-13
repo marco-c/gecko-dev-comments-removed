@@ -1,3 +1,5 @@
+use crate::util::AnyValueId;
+
 
 #[derive(Clone, Debug)]
 #[allow(missing_copy_implementations)] 
@@ -7,9 +9,9 @@ pub enum MatchesError {
     #[non_exhaustive]
     Downcast {
         
-        actual: super::AnyValueId,
+        actual: AnyValueId,
         
-        expected: super::AnyValueId,
+        expected: AnyValueId,
     },
     
     #[non_exhaustive]

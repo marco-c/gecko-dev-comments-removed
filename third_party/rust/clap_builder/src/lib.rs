@@ -17,6 +17,10 @@
 )]
 #![forbid(unsafe_code)]
 
+#![allow(clippy::write_with_newline)]
+
+#![allow(clippy::let_and_return)]
+
 #![allow(clippy::single_component_path_imports)]
 #![allow(clippy::branches_sharing_code)]
 
@@ -43,13 +47,6 @@ pub use crate::util::Id;
 pub type Error = crate::error::Error<crate::error::DefaultFormatter>;
 
 pub use crate::derive::{Args, CommandFactory, FromArgMatches, Parser, Subcommand, ValueEnum};
-
-#[doc(hidden)]
-pub mod __macro_refs {
-    #[cfg(feature = "cargo")]
-    #[doc(hidden)]
-    pub use once_cell;
-}
 
 #[macro_use]
 #[allow(missing_docs)]

@@ -75,6 +75,7 @@
 
 
 
+
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
 #![doc(html_logo_url = "https://raw.githubusercontent.com/clap-rs/clap/master/assets/clap.png")]
 #![warn(
@@ -110,10 +111,3 @@ pub mod _faq;
 pub mod _features;
 #[cfg(feature = "unstable-doc")]
 pub mod _tutorial;
-
-#[doc(hidden)]
-#[cfg(feature = "derive")]
-pub mod __derive_refs {
-    #[doc(hidden)]
-    pub use once_cell;
-}
