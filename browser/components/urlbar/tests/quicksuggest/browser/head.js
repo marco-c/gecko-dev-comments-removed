@@ -115,9 +115,6 @@ async function setUpTelemetryTest({
     set: [
       
       
-      ["browser.urlbar.quicksuggest.blockingEnabled", true],
-      
-      
       
       ["browser.urlbar.suggest.openpage", false],
       
