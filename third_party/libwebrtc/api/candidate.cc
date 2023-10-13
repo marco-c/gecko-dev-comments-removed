@@ -88,7 +88,8 @@ std::string Candidate::ToStringInternal(bool sensitive) const {
 
 uint32_t Candidate::GetPriority(uint32_t type_preference,
                                 int network_adapter_preference,
-                                int relay_preference) const {
+                                int relay_preference,
+                                bool adjust_local_preference) const {
   
   
   
@@ -106,10 +107,24 @@ uint32_t Candidate::GetPriority(uint32_t type_preference,
   
   
   
-
   int addr_pref = IPAddressPrecedence(address_.ipaddr());
   int local_preference =
       ((network_adapter_preference << 8) | addr_pref) + relay_preference;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  RTC_DCHECK_LT(local_preference + kMaxTurnServers, 0x10000);
+  if (adjust_local_preference && relay_protocol_.empty()) {
+    local_preference += kMaxTurnServers;
+  }
 
   return (type_preference << 24) | (local_preference << 8) | (256 - component_);
 }
