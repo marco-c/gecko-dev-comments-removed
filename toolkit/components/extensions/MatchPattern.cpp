@@ -325,7 +325,24 @@ MatchPatternCore::MatchPatternCore(const nsAString& aPattern, bool aIgnorePath,
     return;
   }
 
-  mPath = new MatchGlobCore(path, false, aRv);
+  
+  
+  
+  bool isPathGlob = requireHostLocatorScheme;
+  mPath = new MatchGlobCore(path, false, isPathGlob, aRv);
+}
+
+bool MatchPatternCore::MatchesAllWebUrls() const {
+  
+  
+  
+  return (mSchemes->Contains(nsGkAtoms::http) &&
+          MatchesAllUrlsWithScheme(nsGkAtoms::https));
+}
+
+bool MatchPatternCore::MatchesAllUrlsWithScheme(const nsAtom* scheme) const {
+  return (mSchemes->Contains(scheme) && DomainIsWildcard() &&
+          (!mPath || mPath->IsWildcard()));
 }
 
 bool MatchPatternCore::MatchesDomain(const nsACString& aDomain) const {
@@ -491,6 +508,27 @@ bool MatchPatternSetCore::Matches(const URLInfo& aURL, bool aExplicit) const {
   return false;
 }
 
+bool MatchPatternSetCore::MatchesAllWebUrls() const {
+  
+  
+  
+  
+  bool hasHttp = false;
+  bool hasHttps = false;
+  for (const auto& pattern : mPatterns) {
+    if (!hasHttp && pattern->MatchesAllUrlsWithScheme(nsGkAtoms::http)) {
+      hasHttp = true;
+    }
+    if (!hasHttps && pattern->MatchesAllUrlsWithScheme(nsGkAtoms::https)) {
+      hasHttps = true;
+    }
+    if (hasHttp && hasHttps) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool MatchPatternSetCore::MatchesCookie(const CookieInfo& aCookie) const {
   for (const auto& pattern : mPatterns) {
     if (pattern->MatchesCookie(aCookie)) {
@@ -501,6 +539,12 @@ bool MatchPatternSetCore::MatchesCookie(const CookieInfo& aCookie) const {
 }
 
 bool MatchPatternSetCore::Subsumes(const MatchPatternCore& aPattern) const {
+  
+  
+  
+  
+  
+  
   for (const auto& pattern : mPatterns) {
     if (pattern->Subsumes(aPattern)) {
       return true;
@@ -610,7 +654,7 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(MatchPatternSet)
 
 
 MatchGlobCore::MatchGlobCore(const nsACString& aGlob, bool aAllowQuestion,
-                             ErrorResult& aRv)
+                             bool aIsPathGlob, ErrorResult& aRv)
     : mGlob(aGlob) {
   
   auto index = mGlob.FindCharInSet(aAllowQuestion ? "*?" : "*");
@@ -621,10 +665,16 @@ MatchGlobCore::MatchGlobCore(const nsACString& aGlob, bool aAllowQuestion,
 
   
   
-  if (index == (int32_t)mGlob.Length() - 1 && mGlob[index] == '*') {
-    mPathLiteral = StringHead(mGlob, index);
-    mIsPrefix = true;
-    return;
+  for (int32_t i = mGlob.Length() - 1; i >= index && mGlob[i] == '*'; --i) {
+    if (i == index) {
+      mPathLiteral = StringHead(mGlob, index);
+      if (aIsPathGlob && mPathLiteral.EqualsLiteral("/")) {
+        
+        mPathLiteral.Truncate();
+      }
+      mIsPrefix = true;
+      return;
+    }
   }
 
   
@@ -686,9 +736,9 @@ already_AddRefed<MatchGlob> MatchGlob::Constructor(dom::GlobalObject& aGlobal,
                                                    const nsACString& aGlob,
                                                    bool aAllowQuestion,
                                                    ErrorResult& aRv) {
-  RefPtr<MatchGlob> glob =
-      new MatchGlob(aGlobal.GetAsSupports(),
-                    MakeAndAddRef<MatchGlobCore>(aGlob, aAllowQuestion, aRv));
+  RefPtr<MatchGlob> glob = new MatchGlob(
+      aGlobal.GetAsSupports(),
+      MakeAndAddRef<MatchGlobCore>(aGlob, aAllowQuestion, false, aRv));
   if (aRv.Failed()) {
     return nullptr;
   }
