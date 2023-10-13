@@ -6,6 +6,7 @@
 
 
 
+
 var { AppConstants } = ChromeUtils.importESModule(
   "resource://gre/modules/AppConstants.sys.mjs"
 );
@@ -32,10 +33,13 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionTestUtils:
     "resource://testing-common/ExtensionXPCShellUtils.sys.mjs",
   FileUtils: "resource://gre/modules/FileUtils.sys.mjs",
+  Management: "resource://gre/modules/Extension.sys.mjs",
   MessageChannel: "resource://testing-common/MessageChannel.sys.mjs",
+  MockRegistrar: "resource://testing-common/MockRegistrar.sys.mjs",
   NetUtil: "resource://gre/modules/NetUtil.sys.mjs",
   PromiseTestUtils: "resource://testing-common/PromiseTestUtils.sys.mjs",
   Schemas: "resource://gre/modules/Schemas.sys.mjs",
+  TestUtils: "resource://testing-common/TestUtils.sys.mjs",
 });
 
 PromiseTestUtils.allowMatchingRejectionsGlobally(
@@ -405,4 +409,123 @@ async function assertIsPersistentScriptsCachedFlag(ext, expectedValue) {
     expectedValue,
     "Expected cached value set on hasPersistedScripts flag"
   );
+}
+
+function setup_crash_reporter_override_and_cleaner() {
+  const crashIds = [];
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let mockClassId = MockRegistrar.register("@mozilla.org/crashservice;1", {
+    addCrash(processType, crashType, id) {
+      
+      
+      
+      crashIds.push(id);
+    },
+    QueryInterface: ChromeUtils.generateQI(["nsICrashService"]),
+  });
+  registerCleanupFunction(async () => {
+    MockRegistrar.unregister(mockClassId);
+
+    
+    
+    const appinfo = Cc["@mozilla.org/toolkit/crash-reporter;1"].getService(
+      Ci.nsICrashReporter
+    );
+
+    info(`Observed ${crashIds.length} crash dump(s).`);
+    let deletedCount = 0;
+    for (let id of crashIds) {
+      info(`Checking whether dumpID ${id} should be removed`);
+      let minidumpFile = appinfo.getMinidumpForID(id);
+      let extraFile = appinfo.getExtraFileForID(id);
+      let extra;
+      try {
+        extra = await IOUtils.readJSON(extraFile.path);
+      } catch (e) {
+        info(`Cannot parse crash metadata from ${extraFile.path} :: ${e}\n`);
+        continue;
+      }
+      
+      
+      if (extra.TestKey !== "CrashFrame") {
+        info(`Keeping ${minidumpFile.path}; we did not trigger the crash`);
+        continue;
+      }
+      info(`Deleting minidump ${minidumpFile.path} and ${extraFile.path}`);
+      minidumpFile.remove(false);
+      extraFile.remove(false);
+      ++deletedCount;
+    }
+    info(`Removed ${deletedCount} crash dumps out of ${crashIds.length}`);
+  });
+}
+
+
+
+function crashFrame(browser) {
+  if (!browser.isRemoteBrowser) {
+    
+    throw new Error("<browser> must be remote");
+  }
+
+  const { BrowserTestUtils } = ChromeUtils.importESModule(
+    "resource://testing-common/BrowserTestUtils.sys.mjs"
+  );
+
+  
+  BrowserTestUtils.sendAsyncMessage(
+    browser.browsingContext,
+    "BrowserTestUtils:CrashFrame",
+    {}
+  );
+}
+
+
+
+
+
+
+
+
+
+async function crashExtensionBackground(extension, bgBrowser) {
+  bgBrowser ??= extension.extension.backgroundContext.xulBrowser;
+
+  let byeProm = promiseExtensionEvent(extension, "shutdown-background-script");
+  if (WebExtensionPolicy.useRemoteWebExtensions) {
+    info("Killing background page through process crash.");
+    crashFrame(bgBrowser);
+  } else {
+    
+    
+    
+    
+    info("Closing background page by destroying <browser>.");
+
+    if (extension.extension.backgroundState === "running") {
+      
+      
+      
+      let messageManager = bgBrowser.messageManager;
+      TestUtils.topicObserved(
+        "message-manager-close",
+        subject => subject === messageManager
+      ).then(() => {
+        Management.emit("extension-process-crash", { childID: 1337 });
+      });
+    }
+    bgBrowser.remove();
+  }
+
+  info("Waiting for crash to be detected by the internals");
+  await byeProm;
 }
