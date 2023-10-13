@@ -3467,6 +3467,11 @@ pref("browser.search.removeEngineInfobar.enabled", true);
 
 
 
+pref("browser.search.newSearchConfig.enabled", false);
+
+
+
+
 
 
 
