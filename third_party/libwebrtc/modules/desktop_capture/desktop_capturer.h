@@ -180,15 +180,16 @@ class RTC_EXPORT DesktopCapturer {
   virtual bool IsOccluded(const DesktopVector& pos);
 
   
-  static std::unique_ptr<DesktopCapturer> CreateGenericCapturer(
-      const DesktopCaptureOptions& options);
-
-  
   static std::unique_ptr<DesktopCapturer> CreateWindowCapturer(
       const DesktopCaptureOptions& options);
 
   
   static std::unique_ptr<DesktopCapturer> CreateScreenCapturer(
+      const DesktopCaptureOptions& options);
+
+  
+  
+  static std::unique_ptr<DesktopCapturer> CreateGenericCapturer(
       const DesktopCaptureOptions& options);
 
 #if defined(WEBRTC_USE_PIPEWIRE) || defined(WEBRTC_USE_X11)
@@ -206,11 +207,6 @@ class RTC_EXPORT DesktopCapturer {
  protected:
   
   
-
-  
-  
-  static std::unique_ptr<DesktopCapturer> CreateRawGenericCapturer(
-      const DesktopCaptureOptions& options);
 
   
   
