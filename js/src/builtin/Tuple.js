@@ -63,7 +63,7 @@ function TupleToSpliced(start, deleteCount ) {
     
     insertCount = ArgumentsLength() - 2;
     
-    let dc = ToInteger(deleteCount);
+    var dc = ToInteger(deleteCount);
     
     actualDeleteCount = std_Math_min(std_Math_max(dc, 0), len - actualStart);
   }
@@ -85,7 +85,7 @@ function TupleToSpliced(start, deleteCount ) {
   
   while (k < actualStart) {
     
-    let E = list[k];
+    var E = list[k];
     
     DefineDataProperty(newList, k, E);
     
@@ -97,7 +97,7 @@ function TupleToSpliced(start, deleteCount ) {
   
   while (itemK < itemCount) {
     
-    let E = GetArgument(itemK + 2);
+    var E = GetArgument(itemK + 2);
     
     if (IsObject(E)) {
       ThrowTypeError(JSMSG_RECORD_TUPLE_NO_OBJECT);
@@ -114,7 +114,7 @@ function TupleToSpliced(start, deleteCount ) {
   
   while (itemK < len) {
     
-    let E = list[itemK];
+    var E = list[itemK];
     
     DefineDataProperty(newList, k, E);
     
@@ -141,7 +141,7 @@ function TupleToReversed() {
   
   for (var k = len - 1; k >= 0; k--) {
     
-    let E = T[k];
+    var E = T[k];
     
     DefineDataProperty(newList, len - k - 1, E);
   }
@@ -186,7 +186,7 @@ function TupleConcat() {
   
   for (var i = 0; i < ArgumentsLength(); i++) {
     
-    let E = GetArgument(i);
+    var E = GetArgument(i);
     
     var spreadable = IsConcatSpreadable(E);
     
@@ -266,15 +266,15 @@ function TupleIndexOf(valueToFind ) {
 
 
 function TupleJoin(separator) {
-  let T = ThisTupleValue(this);
+  var T = ThisTupleValue(this);
 
   
-  let len = TupleLength(T);
+  var len = TupleLength(T);
 
   
   var sep = ",";
   if (!IsNullOrUndefined(separator)) {
-    let toString = IsCallable(separator.toString)
+    var toString = IsCallable(separator.toString)
       ? separator.toString
       : std_Object_toString;
     sep = callContentFunction(toString, separator);
@@ -293,11 +293,11 @@ function TupleJoin(separator) {
       R += sep;
     }
     
-    let element = T[k];
+    var element = T[k];
     
     var next = "";
     if (!IsNullOrUndefined(element)) {
-      let toString = IsCallable(element.toString)
+      var toString = IsCallable(element.toString)
         ? element.toString
         : std_Object_toString;
       next = callContentFunction(toString, element);
@@ -651,12 +651,12 @@ function TupleFrom(items ) {
   var k = 0;
 
   
-  let usingIterator = GetMethod(items, GetBuiltinSymbol("iterator"));
+  var usingIterator = GetMethod(items, GetBuiltinSymbol("iterator"));
 
   
   if (usingIterator !== undefined) {
     
-    let adder = function(value) {
+    var adder = function(value) {
       var mappedValue;
       
       if (mapping) {
@@ -685,16 +685,16 @@ function TupleFrom(items ) {
   
   
   
-  let arrayLike = ToObject(items);
+  var arrayLike = ToObject(items);
   
-  let len = ToLength(arrayLike.length);
+  var len = ToLength(arrayLike.length);
   
   while (k < len) {
     
     
-    let kValue = arrayLike[k];
+    var kValue = arrayLike[k];
     
-    let mappedValue = mapping
+    var mappedValue = mapping
       ? callContentFunction(mapfn, thisArg, kValue, k)
       : kValue;
     

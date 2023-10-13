@@ -206,11 +206,11 @@ function SetNumberFormatDigitOptions(
   assert(typeof notation === "string", "SetNumberFormatDigitOptions");
 
   
-  const mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
-  let mnfd = options.minimumFractionDigits;
-  let mxfd = options.maximumFractionDigits;
-  let mnsd = options.minimumSignificantDigits;
-  let mxsd = options.maximumSignificantDigits;
+  var mnid = GetNumberOption(options, "minimumIntegerDigits", 1, 21, 1);
+  var mnfd = options.minimumFractionDigits;
+  var mxfd = options.maximumFractionDigits;
+  var mnsd = options.minimumSignificantDigits;
+  var mxsd = options.maximumSignificantDigits;
 
   
   lazyData.minimumIntegerDigits = mnid;
@@ -304,17 +304,17 @@ function SetNumberFormatDigitOptions(
   lazyData.trailingZeroDisplay = trailingZeroDisplay;
 
   
-  const hasSignificantDigits = mnsd !== undefined || mxsd !== undefined;
+  var hasSignificantDigits = mnsd !== undefined || mxsd !== undefined;
 
   
-  const hasFractionDigits = mnfd !== undefined || mxfd !== undefined;
+  var hasFractionDigits = mnfd !== undefined || mxfd !== undefined;
 
   
-  const needSignificantDigits =
+  var needSignificantDigits =
     roundingPriority !== "auto" || hasSignificantDigits;
 
   
-  const needFractionalDigits =
+  var needFractionalDigits =
     roundingPriority !== "auto" ||
     !(hasSignificantDigits || (!hasFractionDigits && notation === "compact"));
 

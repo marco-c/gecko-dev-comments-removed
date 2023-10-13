@@ -9,7 +9,7 @@ function IteratorIdentity() {
 
 function IteratorNext(iteratorRecord, value) {
   
-  const result =
+  var result =
     ArgumentsLength() < 2
       ? callContentFunction(iteratorRecord.nextMethod, iteratorRecord.iterator)
       : callContentFunction(
@@ -242,7 +242,7 @@ function IteratorHelperNext() {
 
 function IteratorHelperReturn() {
   
-  let O = this;
+  var O = this;
 
   
   if (!IsObject(O) || (O = GuardToIteratorHelper(O)) === null) {
@@ -256,7 +256,7 @@ function IteratorHelperReturn() {
   
 
   
-  const generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
+  var generator = UnsafeGetReservedSlot(O, ITERATOR_HELPER_GENERATOR_SLOT);
   return callFunction(GeneratorReturn, generator, undefined);
 }
 

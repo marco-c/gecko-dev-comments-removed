@@ -225,7 +225,7 @@ function DefaultTimeZone() {
     
     
     
-    const msPerHour = 60 * 60 * 1000;
+    var msPerHour = 60 * 60 * 1000;
     var offset = intl_defaultTimeZoneOffset();
     assert(
       offset === (offset | 0),
@@ -419,7 +419,7 @@ function InitializeDateTimeFormat(
   lazyDateTimeFormatData.formatOpt = formatOpt;
 
   if (mozExtensions) {
-    let pattern = GetOption(options, "pattern", "string", undefined, undefined);
+    var pattern = GetOption(options, "pattern", "string", undefined, undefined);
     lazyDateTimeFormatData.patternOption = pattern;
   }
 

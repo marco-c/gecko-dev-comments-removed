@@ -347,9 +347,9 @@ function ObjectFromEntries(iter) {
   
   
   
-  const obj = {};
+  var obj = {};
 
-  for (const pair of allowContentIter(iter)) {
+  for (var pair of allowContentIter(iter)) {
     if (!IsObject(pair)) {
       ThrowTypeError(JSMSG_INVALID_MAP_ITERABLE, "Object.fromEntries");
     }
@@ -368,7 +368,6 @@ function ObjectHasOwn(O, P) {
   return hasOwn(P, obj);
 }
 
-#ifdef NIGHTLY_BUILD
 
 
 
@@ -435,4 +434,3 @@ function ObjectGroupBy(items, callbackfn) {
   
   return obj;
 }
-#endif

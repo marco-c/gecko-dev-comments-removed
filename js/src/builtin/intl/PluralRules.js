@@ -40,7 +40,7 @@ function resolvePluralRulesInternals(lazyPluralRulesData) {
   var localeData = PluralRules.localeData;
 
   
-  const r = ResolveLocale(
+  var r = ResolveLocale(
     "PluralRules",
     lazyPluralRulesData.requestedLocales,
     lazyPluralRulesData.opt,
@@ -182,10 +182,10 @@ function InitializePluralRules(pluralRules, locales, options) {
   
   
   
-  const lazyPluralRulesData = std_Object_create(null);
+  var lazyPluralRulesData = std_Object_create(null);
 
   
-  let requestedLocales = CanonicalizeLocaleList(locales);
+  var requestedLocales = CanonicalizeLocaleList(locales);
   lazyPluralRulesData.requestedLocales = requestedLocales;
 
   
@@ -196,11 +196,11 @@ function InitializePluralRules(pluralRules, locales, options) {
   }
 
   
-  let opt = new_Record();
+  var opt = new_Record();
   lazyPluralRulesData.opt = opt;
 
   
-  let matcher = GetOption(
+  var matcher = GetOption(
     options,
     "localeMatcher",
     "string",
@@ -210,7 +210,7 @@ function InitializePluralRules(pluralRules, locales, options) {
   opt.localeMatcher = matcher;
 
   
-  const type = GetOption(
+  var type = GetOption(
     options,
     "type",
     "string",
@@ -245,7 +245,7 @@ function Intl_PluralRules_supportedLocalesOf(locales ) {
   var availableLocales = "PluralRules";
 
   
-  let requestedLocales = CanonicalizeLocaleList(locales);
+  var requestedLocales = CanonicalizeLocaleList(locales);
 
   
   return SupportedLocales(availableLocales, requestedLocales, options);
@@ -262,7 +262,7 @@ function Intl_PluralRules_supportedLocalesOf(locales ) {
 
 function Intl_PluralRules_select(value) {
   
-  let pluralRules = this;
+  var pluralRules = this;
 
   
   if (
@@ -278,7 +278,7 @@ function Intl_PluralRules_select(value) {
   }
 
   
-  let n = ToNumber(value);
+  var n = ToNumber(value);
 
   
   getPluralRulesInternals(pluralRules);

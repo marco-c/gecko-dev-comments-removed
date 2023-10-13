@@ -131,11 +131,11 @@ function String_pad(maxLength, fillString, padEnd) {
   }
 
   
-  let str = ToString(this);
+  var str = ToString(this);
 
   
-  let intMaxLength = ToLength(maxLength);
-  let strLen = str.length;
+  var intMaxLength = ToLength(maxLength);
+  var strLen = str.length;
 
   
   if (intMaxLength <= strLen) {
@@ -144,7 +144,7 @@ function String_pad(maxLength, fillString, padEnd) {
 
   
   assert(fillString !== undefined, "never called when fillString is undefined");
-  let filler = ToString(fillString);
+  var filler = ToString(fillString);
 
   
   if (filler === "") {
@@ -158,12 +158,12 @@ function String_pad(maxLength, fillString, padEnd) {
   }
 
   
-  let fillLen = intMaxLength - strLen;
+  var fillLen = intMaxLength - strLen;
 
   
   
   
-  let truncatedStringFiller = callFunction(
+  var truncatedStringFiller = callFunction(
     String_repeat,
     filler,
     (fillLen / filler.length) | 0

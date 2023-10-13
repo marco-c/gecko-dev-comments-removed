@@ -1932,7 +1932,7 @@ function TypedArrayCreateSameType(exemplar, length) {
   );
 
   
-  let constructor = ConstructorForTypedArray(exemplar);
+  var constructor = ConstructorForTypedArray(exemplar);
 
   
   

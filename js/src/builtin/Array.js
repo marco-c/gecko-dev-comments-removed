@@ -703,7 +703,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
 
   
   
-  let fromAsyncClosure = async () => {
+  var fromAsyncClosure = async () => {
     
     
     
@@ -714,12 +714,12 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
     }
 
     
-    let usingAsyncIterator = asyncItems[GetBuiltinSymbol("asyncIterator")];
+    var usingAsyncIterator = asyncItems[GetBuiltinSymbol("asyncIterator")];
     if (usingAsyncIterator === null) {
       usingAsyncIterator = undefined;
     }
 
-    let usingSyncIterator = undefined;
+    var usingSyncIterator = undefined;
     if (usingAsyncIterator !== undefined) {
       if (!IsCallable(usingAsyncIterator)) {
         ThrowTypeError(JSMSG_NOT_ITERABLE, ToSource(asyncItems));
@@ -760,14 +760,14 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
       
       
       
-      let A = IsConstructor(C) ? constructContentFunction(C, C) : [];
+      var A = IsConstructor(C) ? constructContentFunction(C, C) : [];
 
 
       
-      let k = 0;
+      var k = 0;
 
       
-      for await (let nextValue of allowContentIterWith(
+      for await (var nextValue of allowContentIterWith(
         asyncItems,
         usingAsyncIterator,
         usingSyncIterator
@@ -785,7 +785,7 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
         
 
         
-        let mappedValue = nextValue;
+        var mappedValue = nextValue;
 
         
         if (mapping) {
@@ -820,32 +820,32 @@ function ArrayFromAsync(asyncItems, mapfn = undefined, thisArg = undefined) {
 
     
     
-    let arrayLike = ToObject(asyncItems);
+    var arrayLike = ToObject(asyncItems);
 
     
-    let len = ToLength(arrayLike.length);
+    var len = ToLength(arrayLike.length);
 
     
     
     
     
-    let A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
+    var A = IsConstructor(C) ? constructContentFunction(C, C, len) : std_Array(len);
 
     
-    let k = 0;
+    var k = 0;
 
     
     while (k < len) {
       
       
       
-      let kValue = await arrayLike[k];
+      var kValue = await arrayLike[k];
 
       
       
       
       
-      let mappedValue = mapping
+      var mappedValue = mapping
         ? await callContentFunction(mapfn, thisArg, kValue, k)
         : kValue;
 
