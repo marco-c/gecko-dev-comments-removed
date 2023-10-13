@@ -8,7 +8,7 @@ var profileDir = do_get_profile();
 
 
 async function cleanUp() {
-  let files = ["places.sqlite", "cookies.sqlite", "signons.sqlite"];
+  let files = ["places.sqlite", "cookies.sqlite"];
 
   for (let i = 0; i < files.length; i++) {
     let file = Services.dirsvc.get("ProfD", Ci.nsIFile);
