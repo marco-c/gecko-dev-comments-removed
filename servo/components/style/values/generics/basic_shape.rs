@@ -56,6 +56,15 @@ impl Default for ShapeGeometryBox {
 }
 
 
+#[inline]
+fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
+    
+    
+    matches!(b, ShapeGeometryBox::ElementDependent)
+        || matches!(b, ShapeGeometryBox::ShapeBox(ShapeBox::BorderBox))
+}
+
+
 #[allow(missing_docs)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
@@ -114,7 +123,7 @@ pub enum GenericClipPath<BasicShape, U> {
     Url(U),
     Shape(
         Box<BasicShape>,
-        #[css(skip_if = "is_default")] ShapeGeometryBox,
+        #[css(skip_if = "is_default_box_for_clip_path")] ShapeGeometryBox,
     ),
     #[animation(error)]
     Box(ShapeGeometryBox),
