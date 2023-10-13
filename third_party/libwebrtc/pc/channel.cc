@@ -886,7 +886,9 @@ VoiceChannel::VoiceChannel(
                   crypto_options,
                   ssrc_generator),
       send_channel_(media_channel_impl_->AsVoiceChannel()),
-      receive_channel_(media_channel_impl_->AsVoiceChannel()) {}
+      receive_channel_(media_channel_impl_->AsVoiceChannel()) {
+  InitCallback();
+}
 
 VoiceChannel::~VoiceChannel() {
   TRACE_EVENT0("webrtc", "VoiceChannel::~VoiceChannel");
@@ -894,6 +896,18 @@ VoiceChannel::~VoiceChannel() {
   DisableMedia_w();
 }
 
+void VoiceChannel::InitCallback() {
+  RTC_DCHECK_RUN_ON(worker_thread());
+  
+  
+  send_channel_.SetSendCodecChangedCallback([this]() {
+    RTC_DCHECK_RUN_ON(worker_thread());
+    
+    receive_channel_.SetReceiveNackEnabled(send_channel_.SendCodecHasNack());
+    receive_channel_.SetReceiveNonSenderRttEnabled(
+        send_channel_.SenderNonSenderRttEnabled());
+  });
+}
 void VoiceChannel::UpdateMediaSendRecvState_w() {
   
   
