@@ -124,8 +124,6 @@ add_task(async function test_shopping_settings_ads_disabled() {
 
 
 
-
-
 add_task(async function test_settings_toggle_ad_and_multiple_tabs() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -241,4 +239,4 @@ add_task(async function test_settings_toggle_ad_and_multiple_tabs() {
 
   await SpecialPowers.popPrefEnv();
   await SpecialPowers.popPrefEnv();
-}).skip();
+});
