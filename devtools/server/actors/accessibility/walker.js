@@ -1099,11 +1099,17 @@ class AccessibleWalkerActor extends Actor {
 
   _findAndAttachAccessible(event) {
     const target = event.originalTarget || event.target;
-    const docAcc = this.getRawAccessibleFor(this.rootDoc);
     const win = target.ownerGlobal;
+    
+    const docAcc = this.getRawAccessibleFor(win.document);
     const zoom = this.isXUL ? 1 : getCurrentZoom(win);
     const scale = this.pixelRatio / zoom;
-    const rawAccessible = docAcc.getDeepestChildAtPointInProcess(
+    
+    
+    
+    const popup = win.isChromeWindow ? target.closest("panel") : null;
+    const containerAcc = popup ? this.getRawAccessibleFor(popup) : docAcc;
+    const rawAccessible = containerAcc.getDeepestChildAtPointInProcess(
       event.screenX * scale,
       event.screenY * scale
     );
