@@ -32,7 +32,7 @@ std::unique_ptr<TransformableVideoFrameInterface> CreateVideoSenderFrame();
 std::unique_ptr<TransformableVideoFrameInterface> CreateVideoReceiverFrame();
 
 
-RTC_EXPORT std::unique_ptr<TransformableFrameInterface> CloneAudioFrame(
+RTC_EXPORT std::unique_ptr<TransformableAudioFrameInterface> CloneAudioFrame(
     TransformableAudioFrameInterface* original);
 RTC_EXPORT std::unique_ptr<TransformableVideoFrameInterface> CloneVideoFrame(
     TransformableVideoFrameInterface* original);

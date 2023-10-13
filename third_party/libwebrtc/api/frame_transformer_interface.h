@@ -73,9 +73,17 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   
+  
+  
   virtual const RTPHeader& GetHeader() const = 0;
 
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
+
+  
+  
+  virtual const absl::optional<uint16_t> SequenceNumber() const {
+    return absl::nullopt;
+  }
 };
 
 

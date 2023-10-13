@@ -25,7 +25,7 @@ std::unique_ptr<TransformableVideoFrameInterface> CreateVideoReceiverFrame() {
   return nullptr;
 }
 
-std::unique_ptr<TransformableFrameInterface> CloneAudioFrame(
+std::unique_ptr<TransformableAudioFrameInterface> CloneAudioFrame(
     TransformableAudioFrameInterface* original) {
   
   return CloneSenderAudioFrame(original);
