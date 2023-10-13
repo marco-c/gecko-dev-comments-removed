@@ -471,6 +471,7 @@ RuleEditor.prototype = {
       ".ruleview-rule-source-label"
     );
     sourceLabel.setAttribute("title", title);
+    sourceLabel.setAttribute("data-url", displayURL);
     sourceLabel.textContent = sourceTextContent;
   },
 
@@ -484,6 +485,7 @@ RuleEditor.prototype = {
 
       const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
       sourceLabel.textContent = uaLabel + " " + title;
+      sourceLabel.setAttribute("data-url", this.rule.sheet?.href);
 
       
       
