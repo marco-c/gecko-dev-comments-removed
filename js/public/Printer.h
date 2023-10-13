@@ -208,19 +208,21 @@ class JS_PUBLIC_API GenericPrinter {
 };
 
 
-class JS_PUBLIC_API Sprinter final : public GenericPrinter {
- public:
-  struct InvariantChecker {
-    const Sprinter* parent;
 
-    explicit InvariantChecker(const Sprinter* p) : parent(p) {
+class JS_PUBLIC_API StringPrinter : public GenericPrinter {
+ public:
+  
+  struct InvariantChecker {
+    const StringPrinter* parent;
+
+    explicit InvariantChecker(const StringPrinter* p) : parent(p) {
       parent->checkInvariants();
     }
 
     ~InvariantChecker() { parent->checkInvariants(); }
   };
 
-  JSContext* maybeCx;  
+  JSContext* maybeCx;
 
  private:
   static const size_t DefaultSize;
@@ -232,9 +234,17 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   size_t size;           
   ptrdiff_t offset;      
 
+  
+  
+  
+  
+  
+  arena_id_t arena;
+
+ private:
   [[nodiscard]] bool realloc_(size_t newSize);
 
- public:
+ protected:
   
   
   
@@ -243,16 +253,18 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   
   
   
-  explicit Sprinter(JSContext* maybeCx = nullptr, bool shouldReportOOM = true);
-  ~Sprinter();
+  explicit StringPrinter(arena_id_t arena, JSContext* maybeCx = nullptr,
+                         bool shouldReportOOM = true);
+  ~StringPrinter();
 
+  JS::UniqueChars releaseChars();
+  JSString* releaseJS(JSContext* cx);
+
+ public:
   
   [[nodiscard]] bool init();
 
   void checkInvariants() const;
-
-  JS::UniqueChars release();
-  JSString* releaseJS(JSContext* cx);
 
   
   
@@ -262,18 +274,18 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
 
   
   
-  virtual void put(const char* s, size_t len) override;
+  virtual void put(const char* s, size_t len) final;
   using GenericPrinter::put;  
 
-  virtual bool canPutFromIndex() const override { return true; }
-  virtual void putFromIndex(size_t index, size_t length) override {
+  virtual bool canPutFromIndex() const final { return true; }
+  virtual void putFromIndex(size_t index, size_t length) final {
     MOZ_ASSERT(index <= this->index());
     MOZ_ASSERT(index + length <= this->index());
     put(base + index, length);
   }
-  virtual size_t index() const override { return length(); }
+  virtual size_t index() const final { return length(); }
 
-  virtual void putString(JSContext* cx, JSString* str) override;
+  virtual void putString(JSContext* cx, JSString* str) final;
 
   size_t length() const;
 
@@ -283,6 +295,26 @@ class JS_PUBLIC_API Sprinter final : public GenericPrinter {
   
   
   void forwardOutOfMemory();
+};
+
+class JS_PUBLIC_API Sprinter : public StringPrinter {
+ public:
+  explicit Sprinter(JSContext* maybeCx = nullptr, bool shouldReportOOM = true)
+      : StringPrinter(js::MallocArena, maybeCx, shouldReportOOM) {}
+  ~Sprinter() {}
+
+  JS::UniqueChars release() {
+    return releaseChars();
+  }
+};
+
+class JS_PUBLIC_API JSSprinter : public StringPrinter {
+ public:
+  explicit JSSprinter(JSContext* cx)
+      : StringPrinter(js::StringBufferArena, cx, true) {}
+  ~JSSprinter() {}
+
+  JSString* release(JSContext* cx) { return releaseJS(cx); }
 };
 
 
@@ -458,7 +490,7 @@ extern JS_PUBLIC_API void QuoteString(Sprinter* sp, JSString* str,
 
 
 
-extern JS_PUBLIC_API void JSONQuoteString(Sprinter* sp, JSString* str);
+extern JS_PUBLIC_API void JSONQuoteString(StringPrinter* sp, JSString* str);
 
 
 enum class QuoteTarget { String, JSON };
