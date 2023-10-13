@@ -316,8 +316,7 @@ nsresult nsLookAndFeel::NativeGetColor(ColorID aID, ColorScheme aScheme,
 
     case ColorID::Inactivecaption:
     case ColorID::Activecaption: {
-      if (aScheme == ColorScheme::Light &&
-          NSWorkspace.sharedWorkspace
+      if (NSWorkspace.sharedWorkspace
               .accessibilityDisplayShouldIncreaseContrast) {
         
         aColor = GetColorFromNSColor(NSColor.windowBackgroundColor);
