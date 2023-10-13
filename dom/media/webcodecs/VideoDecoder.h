@@ -7,21 +7,17 @@
 #ifndef mozilla_dom_VideoDecoder_h
 #define mozilla_dom_VideoDecoder_h
 
-#include <queue>
-
+#include "DecoderTemplate.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Attributes.h"
-#include "mozilla/DOMEventTargetHelper.h"
-#include "mozilla/DecoderAgent.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
-#include "mozilla/Result.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/RootedDictionary.h"
+#include "mozilla/dom/VideoFrame.h"
 #include "nsCycleCollectionParticipant.h"
-#include "nsStringFwd.h"
 #include "nsWrapperCache.h"
 
 class nsIGlobalObject;
@@ -29,28 +25,22 @@ class nsIGlobalObject;
 namespace mozilla {
 
 class MediaData;
-class TrackInfo;
 class VideoInfo;
 
 namespace dom {
 
 class EncodedVideoChunk;
+class EncodedVideoChunkData;
 class EventHandlerNonNull;
 class GlobalObject;
 class Promise;
-class ThreadSafeWorkerRef;
 class VideoFrameOutputCallback;
 class WebCodecsErrorCallback;
-enum class CodecState : uint8_t;
 enum class HardwareAcceleration : uint8_t;
 struct VideoDecoderConfig;
 struct VideoDecoderInit;
 
 }  
-
-namespace media {
-class ShutdownBlockingTicket;
-}
 
 }  
 
@@ -58,26 +48,19 @@ namespace mozilla::dom {
 
 class VideoDecoderConfigInternal;
 
-class ConfigureMessage;
-class DecodeMessage;
-class FlushMessage;
-
-class ControlMessage {
+class VideoDecoderTraits {
  public:
-  explicit ControlMessage(const nsACString& aTitle);
-  virtual ~ControlMessage() = default;
-  virtual void Cancel() = 0;
-  virtual bool IsProcessing() = 0;
+  using ConfigTypeInternal = VideoDecoderConfigInternal;
+  using InputTypeInternal = EncodedVideoChunkData;
+  using OutputType = VideoFrame;
+  using OutputCallbackType = VideoFrameOutputCallback;
 
-  virtual const nsCString& ToString() const { return mTitle; }
-  virtual ConfigureMessage* AsConfigureMessage() { return nullptr; }
-  virtual DecodeMessage* AsDecodeMessage() { return nullptr; }
-  virtual FlushMessage* AsFlushMessage() { return nullptr; }
-
-  const nsCString mTitle;  
+  static bool IsSupported(const ConfigTypeInternal& aConfig);
+  static Result<UniquePtr<TrackInfo>, nsresult> CreateTrackInfo(
+      const ConfigTypeInternal& aConfig);
 };
 
-class VideoDecoder final : public DOMEventTargetHelper {
+class VideoDecoder final : public DecoderTemplate<VideoDecoderTraits> {
  public:
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(VideoDecoder, DOMEventTargetHelper)
@@ -118,104 +101,10 @@ class VideoDecoder final : public DOMEventTargetHelper {
       const GlobalObject& aGlobal, const VideoDecoderConfig& aConfig,
       ErrorResult& aRv);
 
- private:
-  
-  void AssertIsOnOwningThread() const { NS_ASSERT_OWNINGTHREAD(VideoDecoder); }
-
-  Result<Ok, nsresult> Reset(const nsresult& aResult);
-  Result<Ok, nsresult> Close(const nsresult& aResult);
-
-  MOZ_CAN_RUN_SCRIPT void ReportError(const nsresult& aResult);
-  MOZ_CAN_RUN_SCRIPT void OutputVideoFrames(
-      nsTArray<RefPtr<MediaData>>&& aData);
-
-  class ErrorRunnable;
-  void ScheduleReportError(const nsresult& aResult);
-
-  class OutputRunnable;
-  void ScheduleOutputVideoFrames(nsTArray<RefPtr<MediaData>>&& aData,
-                                 const nsACString& aLabel);
-
-  void ScheduleClose(const nsresult& aResult);
-
-  void ScheduleDequeueEvent();
-
-  void SchedulePromiseResolveOrReject(already_AddRefed<Promise> aPromise,
-                                      const nsresult& aResult);
-
-  void ProcessControlMessageQueue();
-  void CancelPendingControlMessages(const nsresult& aResult);
-
-  enum class MessageProcessedResult { NotProcessed, Processed };
-
-  MessageProcessedResult ProcessConfigureMessage(
-      UniquePtr<ControlMessage>& aMessage);
-
-  MessageProcessedResult ProcessDecodeMessage(
-      UniquePtr<ControlMessage>& aMessage);
-
-  MessageProcessedResult ProcessFlushMessage(
-      UniquePtr<ControlMessage>& aMessage);
-
-  
-  bool CreateDecoderAgent(DecoderAgent::Id aId,
-                          UniquePtr<VideoDecoderConfigInternal>&& aConfig,
-                          UniquePtr<TrackInfo>&& aInfo);
-  void DestroyDecoderAgentIfAny();
-
-  
-  RefPtr<WebCodecsErrorCallback> mErrorCallback;
-  RefPtr<VideoFrameOutputCallback> mOutputCallback;
-
-  CodecState mState;
-  bool mKeyChunkRequired;
-
-  bool mMessageQueueBlocked;
-  std::queue<UniquePtr<ControlMessage>> mControlMessageQueue;
-  UniquePtr<ControlMessage> mProcessingMessage;
-
-  
-  
-  
-  RefPtr<DecoderAgent> mAgent;
-  UniquePtr<VideoDecoderConfigInternal> mActiveConfig;
-  uint32_t mDecodeQueueSize;
-  bool mDequeueEventScheduled;
-
-  
-  
-  uint32_t mLatestConfigureId;
-  
-  
-  size_t mDecodeCounter;
-  
-  
-  size_t mFlushCounter;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  UniquePtr<media::ShutdownBlockingTicket> mShutdownBlocker;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  RefPtr<dom::ThreadSafeWorkerRef> mWorkerRef;
+ protected:
+  virtual nsTArray<RefPtr<VideoFrame>> DecodedDataToOutputType(
+      nsIGlobalObject* aGlobalObject, nsTArray<RefPtr<MediaData>>&& aData,
+      VideoDecoderConfigInternal& aConfig) override;
 };
 
 }  
