@@ -157,6 +157,12 @@ class gfxVars final {
     size_t mIndex;
   };
 
+  
+  
+  
+  
+  static bool IsInitialized() { return sInstance != nullptr; }
+
  private:
   static StaticAutoPtr<gfxVars> sInstance;
   static StaticAutoPtr<nsTArray<VarBase*>> sVarList;
