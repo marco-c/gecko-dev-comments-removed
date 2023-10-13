@@ -11,7 +11,6 @@ from test_toolchain_helpers import CompilerResult
 
 from common import BaseConfigureTest
 from mozbuild.configure.options import InvalidOptionError
-from mozbuild.configure.util import Version
 
 
 class TestToolkitMozConfigure(BaseConfigureTest):
@@ -154,11 +153,7 @@ class TestToolkitMozConfigure(BaseConfigureTest):
             
             dep = sandbox._depends[sandbox["c_compiler"]]
             value_for_depends[(dep,)] = CompilerResult(
-                compiler="/usr/bin/mockcc",
-                language="C",
-                type="clang",
-                version=Version("16.0"),
-                flags=[],
+                compiler="/usr/bin/mockcc", language="C", type="clang", flags=[]
             )
             dep = sandbox._depends[sandbox["readelf"]]
             value_for_depends[(dep,)] = "/usr/bin/readelf"
@@ -170,33 +165,11 @@ class TestToolkitMozConfigure(BaseConfigureTest):
             )
 
         PACK = ["-Wl,-z,pack-relative-relocs"]
-        
-        
-        mockcc = MockCC(True, False)
-        readelf = ReadElf(True)
-        self.assertEqual(get_values(mockcc, readelf), ("lld", None, "relr"))
-        self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-release"]), ("lld", None, "relr")
-        )
-        self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-elf-hack"]), ("lld", None, "relr")
-        )
-        self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-elf-hack=relr"]),
-            ("lld", None, "relr"),
-        )
-        
-        with self.assertRaises(SystemExit):
-            get_values(mockcc, readelf, ["--enable-elf-hack=legacy"])
-        
-        self.assertEqual(
-            get_values(
-                mockcc, readelf, ["--enable-elf-hack=legacy", "--enable-linker=bfd"]
-            ),
-            ("bfd", None, "legacy"),
-        )
-
         for mockcc, readelf in (
+            
+            
+            
+            (MockCC(True, False), ReadElf(True)),
             
             (MockCC(False, False), ReadElf(False)),
             
@@ -209,15 +182,23 @@ class TestToolkitMozConfigure(BaseConfigureTest):
             self.assertEqual(get_values(mockcc, readelf), ("lld", None, None))
             self.assertEqual(
                 get_values(mockcc, readelf, ["--enable-release"]),
-                ("lld", None, None),
+                ("bfd", None, "legacy"),
             )
+            
             with self.assertRaises(SystemExit):
                 get_values(mockcc, readelf, ["--enable-elf-hack"])
             with self.assertRaises(SystemExit):
-                get_values(mockcc, readelf, ["--enable-elf-hack=relr"])
-            
-            with self.assertRaises(SystemExit):
                 get_values(mockcc, readelf, ["--enable-elf-hack=legacy"])
+            if readelf.with_relr:
+                
+                self.assertEqual(
+                    get_values(mockcc, readelf, ["--enable-elf-hack=relr"]),
+                    ("lld", None, "relr"),
+                )
+            else:
+                
+                with self.assertRaises(SystemExit):
+                    get_values(mockcc, readelf, ["--enable-elf-hack=relr"])
             
             self.assertEqual(
                 get_values(
@@ -238,29 +219,28 @@ class TestToolkitMozConfigure(BaseConfigureTest):
         readelf = ReadElf(True)
         self.assertEqual(get_values(mockcc, readelf), ("lld", PACK, None))
         self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-release"]), ("lld", PACK, None)
-        )
-        self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-elf-hack"]),
-            ("lld", None, "relr"),
-        )
-        self.assertEqual(
-            get_values(mockcc, readelf, ["--enable-elf-hack=relr"]),
-            ("lld", None, "relr"),
+            get_values(mockcc, readelf, ["--enable-release"]), ("bfd", PACK, None)
         )
         
+        with self.assertRaises(SystemExit):
+            get_values(mockcc, readelf, ["--enable-elf-hack"])
         with self.assertRaises(SystemExit):
             get_values(mockcc, readelf, ["--enable-elf-hack=legacy"])
         
         self.assertEqual(
             get_values(mockcc, readelf, ["--enable-elf-hack", "--enable-linker=bfd"]),
-            ("bfd", None, "relr"),
+            ("bfd", None, "legacy"),
         )
         self.assertEqual(
             get_values(
                 mockcc, readelf, ["--enable-elf-hack=legacy", "--enable-linker=bfd"]
             ),
             ("bfd", None, "legacy"),
+        )
+        
+        self.assertEqual(
+            get_values(mockcc, readelf, ["--enable-elf-hack=relr"]),
+            ("lld", None, "relr"),
         )
 
 
