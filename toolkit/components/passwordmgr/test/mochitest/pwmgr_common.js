@@ -1116,9 +1116,14 @@ function setContentForTask(html) {
     
     () => (content.innerHTML = innerHTMLBefore)
   );
-  
-  content.innerHTML = html;
-  return content.firstChild;
+  if (html.content?.cloneNode) {
+    const clone = html.content.cloneNode(true);
+    content.replaceChildren(clone);
+  } else {
+    
+    content.innerHTML = html;
+  }
+  return content.firstElementChild;
 }
 
 
