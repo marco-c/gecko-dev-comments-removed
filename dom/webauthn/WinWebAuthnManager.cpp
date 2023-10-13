@@ -394,7 +394,7 @@ void WinWebAuthnManager::Register(
 
   
   WEBAUTHN_AUTHENTICATOR_MAKE_CREDENTIAL_OPTIONS WebAuthNCredentialOptions = {
-      WEBAUTHN_AUTHENTICATOR_MAKE_CREDENTIAL_OPTIONS_VERSION_4,
+      WEBAUTHN_AUTHENTICATOR_MAKE_CREDENTIAL_OPTIONS_VERSION_7,
       aInfo.TimeoutMS(),
       {0, NULL},
       {0, NULL},
@@ -408,6 +408,11 @@ void WinWebAuthnManager::Register(
       WEBAUTHN_ENTERPRISE_ATTESTATION_NONE,
       WEBAUTHN_LARGE_BLOB_SUPPORT_NONE,
       winPreferResidentKey,  
+      FALSE,                 
+      FALSE,                 
+      NULL,                  
+      0,                     
+      NULL,                  
   };
 
   GUID cancellationId = {0};
@@ -421,7 +426,7 @@ void WinWebAuthnManager::Register(
     WebAuthNCredentialOptions.Extensions.pExtensions = rgExtension;
   }
 
-  WEBAUTHN_CREDENTIAL_ATTESTATION* pWebAuthNCredentialAttestation = nullptr;
+  PWEBAUTHN_CREDENTIAL_ATTESTATION pWebAuthNCredentialAttestation = nullptr;
 
   
   
@@ -525,6 +530,16 @@ void WinWebAuthnManager::Register(
       if (pWebAuthNCredentialAttestation->dwUsedTransport &
           WEBAUTHN_CTAP_TRANSPORT_INTERNAL) {
         transports.AppendElement(u"internal"_ns);
+      }
+    }
+    
+    
+    
+    if (pWebAuthNCredentialAttestation->dwVersion >=
+        WEBAUTHN_CREDENTIAL_ATTESTATION_VERSION_5) {
+      if (pWebAuthNCredentialAttestation->dwUsedTransport &
+          WEBAUTHN_CTAP_TRANSPORT_HYBRID) {
+        transports.AppendElement(u"hybrid"_ns);
       }
     }
 
@@ -657,7 +672,7 @@ void WinWebAuthnManager::Sign(PWebAuthnTransactionParent* aTransactionParent,
   }
 
   WEBAUTHN_AUTHENTICATOR_GET_ASSERTION_OPTIONS WebAuthNAssertionOptions = {
-      WEBAUTHN_AUTHENTICATOR_GET_ASSERTION_OPTIONS_CURRENT_VERSION,
+      WEBAUTHN_AUTHENTICATOR_GET_ASSERTION_OPTIONS_VERSION_7,
       aInfo.TimeoutMS(),
       {0, NULL},
       {0, NULL},
@@ -668,6 +683,15 @@ void WinWebAuthnManager::Sign(PWebAuthnTransactionParent* aTransactionParent,
       pbU2fAppIdUsed,
       nullptr,  
       pAllowCredentialList,
+      WEBAUTHN_CRED_LARGE_BLOB_OPERATION_NONE,
+      0,      
+      NULL,   
+      NULL,   
+      FALSE,  
+      NULL,   
+      FALSE,  
+      0,      
+      NULL,   
   };
 
   GUID cancellationId = {0};
