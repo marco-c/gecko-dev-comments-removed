@@ -223,21 +223,15 @@ class RefreshDriverTimer {
   TimeStamp GetIdleDeadlineHint(TimeStamp aDefault) {
     MOZ_ASSERT(NS_IsMainThread());
 
+    bool inHighRateMode = nsRefreshDriver::IsInHighRateMode();
+
+    if (!IsTicking() && !inHighRateMode) {
+      return aDefault;
+    }
+
     TimeStamp mostRecentRefresh = MostRecentRefresh();
     TimeDuration refreshPeriod = GetTimerRate();
     TimeStamp idleEnd = mostRecentRefresh + refreshPeriod;
-    bool inHighRateMode = nsRefreshDriver::IsInHighRateMode();
-
-    
-    
-    
-    if (!inHighRateMode &&
-        (idleEnd +
-             refreshPeriod *
-                 StaticPrefs::layout_idle_period_required_quiescent_frames() <
-         TimeStamp::Now())) {
-      return aDefault;
-    }
 
     
     

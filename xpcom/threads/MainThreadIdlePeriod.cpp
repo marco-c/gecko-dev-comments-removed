@@ -25,7 +25,7 @@ static const double kLongIdlePeriodMS = 50.0;
 
 
 
-static const uint32_t kMaxTimerThreadBound = 5;  
+static const uint32_t kMaxTimerThreadBound = 25;  
 
 namespace mozilla {
 
