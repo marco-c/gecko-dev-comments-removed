@@ -196,12 +196,6 @@ class RTCStatsCollector : public rtc::RefCountInterface {
       const Call::Stats& call_stats,
       RTCStatsReport* report) const;
   
-  void ProduceMediaStreamStats_s(Timestamp timestamp,
-                                 RTCStatsReport* report) const;
-  
-  void ProduceMediaStreamTrackStats_s(Timestamp timestamp,
-                                      RTCStatsReport* report) const;
-  
   
   void ProduceMediaSourceStats_s(Timestamp timestamp,
                                  RTCStatsReport* report) const;

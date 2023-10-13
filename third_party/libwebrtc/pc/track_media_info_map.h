@@ -33,20 +33,6 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class TrackMediaInfoMap {
  public:
   TrackMediaInfoMap();
@@ -68,15 +54,6 @@ class TrackMediaInfoMap {
     RTC_DCHECK(is_initialized_);
     return video_media_info_;
   }
-
-  const std::vector<cricket::VoiceSenderInfo*>* GetVoiceSenderInfos(
-      const AudioTrackInterface& local_audio_track) const;
-  const cricket::VoiceReceiverInfo* GetVoiceReceiverInfo(
-      const AudioTrackInterface& remote_audio_track) const;
-  const std::vector<cricket::VideoSenderInfo*>* GetVideoSenderInfos(
-      const VideoTrackInterface& local_video_track) const;
-  const cricket::VideoReceiverInfo* GetVideoReceiverInfo(
-      const VideoTrackInterface& remote_video_track) const;
 
   const cricket::VoiceSenderInfo* GetVoiceSenderInfoBySsrc(uint32_t ssrc) const;
   const cricket::VoiceReceiverInfo* GetVoiceReceiverInfoBySsrc(
@@ -105,18 +82,6 @@ class TrackMediaInfoMap {
   bool is_initialized_ = false;
   absl::optional<cricket::VoiceMediaInfo> voice_media_info_;
   absl::optional<cricket::VideoMediaInfo> video_media_info_;
-  
-  
-  
-  
-  std::map<const AudioTrackInterface*, std::vector<cricket::VoiceSenderInfo*>>
-      voice_infos_by_local_track_;
-  std::map<const AudioTrackInterface*, cricket::VoiceReceiverInfo*>
-      voice_info_by_remote_track_;
-  std::map<const VideoTrackInterface*, std::vector<cricket::VideoSenderInfo*>>
-      video_infos_by_local_track_;
-  std::map<const VideoTrackInterface*, cricket::VideoReceiverInfo*>
-      video_info_by_remote_track_;
   
   
   
