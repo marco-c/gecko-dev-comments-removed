@@ -83,6 +83,14 @@ class DynamicResampler final {
 
 
 
+  void EnsurePreBuffer(uint32_t aOutFrames);
+
+  
+
+
+
+
+
 
 
 
@@ -203,6 +211,7 @@ class DynamicResampler final {
   const uint32_t mPreBufferFrames;
 
  private:
+  bool mIsPreBufferSet = false;
   bool mIsWarmingUp = false;
   uint32_t mChannels = 0;
   uint32_t mOutRate;

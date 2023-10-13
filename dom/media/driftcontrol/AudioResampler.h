@@ -40,8 +40,6 @@ class AudioResampler final {
 
 
 
-
-
   void AppendInput(const AudioSegment& aInSegment);
   
 
@@ -55,6 +53,10 @@ class AudioResampler final {
   uint32_t InputWritableFrames() const;
 
   
+
+
+
+
 
 
 

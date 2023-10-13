@@ -403,8 +403,8 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   EXPECT_NEAR(outToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
   
   
-  EXPECT_GE(outToneVerifier.PreSilenceSamples(),
-            sampleRate * bufferingMs / 1000U - transmitterBlockSize1);
+  EXPECT_EQ(outToneVerifier.PreSilenceSamples(),
+            sampleRate * bufferingMs / 1000U + receiverBlockSize);
 }
 
 
