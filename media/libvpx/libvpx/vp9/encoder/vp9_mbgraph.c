@@ -237,7 +237,7 @@ static void update_mbgraph_frame_stats(VP9_COMP *cpi,
   xd->mi[0] = &mi_local;
   mi_local.sb_type = BLOCK_16X16;
   mi_local.ref_frame[0] = LAST_FRAME;
-  mi_local.ref_frame[1] = NONE;
+  mi_local.ref_frame[1] = NO_REF_FRAME;
 
   for (mb_row = 0; mb_row < cm->mb_rows; mb_row++) {
     MV gld_left_mv = gld_top_mv;
@@ -334,22 +334,15 @@ static void separate_arf_mbs(VP9_COMP *cpi) {
   }
 
   
+  if (cm->MBs)
+    cpi->static_mb_pct = (ncnt[1] * 100) / (cm->mi_rows * cm->mi_cols);
+
   
-  if (1) {
-    
-    if (cm->MBs)
-      cpi->static_mb_pct = (ncnt[1] * 100) / (cm->mi_rows * cm->mi_cols);
-
-    
-    
-    else
-      cpi->static_mb_pct = 0;
-
-    vp9_enable_segmentation(&cm->seg);
-  } else {
+  
+  else
     cpi->static_mb_pct = 0;
-    vp9_disable_segmentation(&cm->seg);
-  }
+
+  vp9_enable_segmentation(&cm->seg);
 
   
   vpx_free(arf_not_zz);

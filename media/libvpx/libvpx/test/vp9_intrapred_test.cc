@@ -96,7 +96,7 @@ class IntraPredTest : public ::testing::TestWithParam<PredParam> {
   }
 
  protected:
-  virtual void SetUp() {
+  void SetUp() override {
     params_ = this->GetParam();
     stride_ = params_.block_size * 3;
     mask_ = (1 << params_.bit_depth) - 1;
@@ -487,6 +487,15 @@ INSTANTIATE_TEST_SUITE_P(
                                      &vpx_v_predictor_16x16_c, 16, 8),
                       IntraPredParam(&vpx_v_predictor_32x32_vsx,
                                      &vpx_v_predictor_32x32_c, 32, 8)));
+#endif  
+
+#if HAVE_LSX
+INSTANTIATE_TEST_SUITE_P(
+    LSX, VP9IntraPredTest,
+    ::testing::Values(IntraPredParam(&vpx_dc_predictor_8x8_lsx,
+                                     &vpx_dc_predictor_8x8_c, 8, 8),
+                      IntraPredParam(&vpx_dc_predictor_16x16_lsx,
+                                     &vpx_dc_predictor_16x16_c, 16, 8)));
 #endif  
 
 #if CONFIG_VP9_HIGHBITDEPTH

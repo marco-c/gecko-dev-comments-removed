@@ -49,14 +49,14 @@ class BlockinessTestBase : public ::testing::Test {
     reference_data_ = nullptr;
   }
 
-  virtual void TearDown() { libvpx_test::ClearSystemState(); }
+  void TearDown() override { libvpx_test::ClearSystemState(); }
 
  protected:
   
   static const int kDataAlignment = 16;
   static const int kDataBufferSize = 640 * 480;
 
-  virtual void SetUp() {
+  void SetUp() override {
     source_stride_ = (width_ + 31) & ~31;
     reference_stride_ = width_ * 2;
     rnd_.Reset(ACMRandom::DeterministicSeed());

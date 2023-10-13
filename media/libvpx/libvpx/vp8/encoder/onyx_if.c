@@ -488,7 +488,7 @@ static void set_segmentation_map(VP8_COMP *cpi,
 
 static void set_segment_data(VP8_COMP *cpi, signed char *feature_data,
                              unsigned char abs_delta) {
-  cpi->mb.e_mbd.mb_segement_abs_delta = abs_delta;
+  cpi->mb.e_mbd.mb_segment_abs_delta = abs_delta;
   memcpy(cpi->segment_feature_data, feature_data,
          sizeof(cpi->segment_feature_data));
 }
@@ -1452,7 +1452,6 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf) {
     
     oxcf->multi_threaded = cpi->oxcf.multi_threaded;
   }
-
   cpi->oxcf = *oxcf;
 
   switch (cpi->oxcf.Mode) {
@@ -2257,7 +2256,7 @@ void vp8_remove_compressor(VP8_COMP **comp) {
 #if 0
         {
             printf("\n_pick_loop_filter_level:%d\n", cpi->time_pick_lpf / 1000);
-            printf("\n_frames recive_data encod_mb_row compress_frame  Total\n");
+            printf("\n_frames receive_data encod_mb_row compress_frame  Total\n");
             printf("%6d %10ld %10ld %10ld %10ld\n", cpi->common.current_video_frame, cpi->time_receive_data / 1000, cpi->time_encode_mb_row / 1000, cpi->time_compress_data / 1000, (cpi->time_receive_data + cpi->time_compress_data) / 1000);
         }
 #endif
@@ -4333,7 +4332,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 
 
   if (cpi->oxcf.number_of_layers == 1) {
-    vp8_update_gf_useage_maps(cpi, cm, &cpi->mb);
+    vp8_update_gf_usage_maps(cpi, cm, &cpi->mb);
   }
 
   if (cm->frame_type == KEY_FRAME) cm->refresh_last_frame = 1;

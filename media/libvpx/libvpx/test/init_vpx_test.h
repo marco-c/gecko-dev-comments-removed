@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+
+
+#ifndef TEST_INIT_VPX_TEST_H_
+#define TEST_INIT_VPX_TEST_H_
+
+namespace libvpx_test {
+void init_vpx_test();
+}
+
+#endif  

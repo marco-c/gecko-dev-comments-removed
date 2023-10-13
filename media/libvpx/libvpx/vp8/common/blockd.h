@@ -251,7 +251,7 @@ typedef struct macroblockd {
   unsigned char update_mb_segmentation_data;
 
   
-  unsigned char mb_segement_abs_delta;
+  unsigned char mb_segment_abs_delta;
 
   
 
