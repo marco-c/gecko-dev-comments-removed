@@ -25,101 +25,22 @@ function contains(location, range) {
   );
 }
 
-function groupBreakpoints(breakpoints, selectedSource) {
-  const breakpointsMap = {};
-  if (!breakpoints) {
-    return breakpointsMap;
-  }
-
-  for (const breakpoint of breakpoints) {
-    if (breakpoint.options.hidden) {
-      continue;
-    }
-    const location = getSelectedLocation(breakpoint, selectedSource);
-    const { line, column } = location;
-
-    if (!breakpointsMap[line]) {
-      breakpointsMap[line] = {};
-    }
-
-    if (!breakpointsMap[line][column]) {
-      breakpointsMap[line][column] = [];
-    }
-
-    breakpointsMap[line][column].push(breakpoint);
-  }
-
-  return breakpointsMap;
-}
-
-function findBreakpoint(location, breakpointMap) {
-  const { line, column } = location;
-  const breakpoints = breakpointMap[line]?.[column];
-
-  if (!breakpoints) {
-    return null;
-  }
-  return breakpoints[0];
-}
-
-function filterByLineCount(positions, selectedSource) {
-  const lineCount = {};
-
-  for (const breakpoint of positions) {
-    const { line } = getSelectedLocation(breakpoint, selectedSource);
-    if (!lineCount[line]) {
-      lineCount[line] = 0;
-    }
-    lineCount[line] = lineCount[line] + 1;
-  }
-
-  return positions.filter(
-    breakpoint =>
-      lineCount[getSelectedLocation(breakpoint, selectedSource).line] > 1
-  );
-}
-
-function filterVisible(positions, selectedSource, viewport) {
-  return positions.filter(columnBreakpoint => {
-    const location = getSelectedLocation(columnBreakpoint, selectedSource);
-    return viewport && contains(location, viewport);
-  });
-}
-
-function filterByBreakpoints(positions, selectedSource, breakpointMap) {
-  return positions.filter(position => {
-    const location = getSelectedLocation(position, selectedSource);
-    return breakpointMap[location.line];
-  });
-}
-
-
-function filterInLine(positions, selectedSource, selectedContent) {
-  return positions.filter(position => {
-    const location = getSelectedLocation(position, selectedSource);
-    const lineText = getLineText(
-      selectedSource.id,
-      selectedContent,
-      location.line
-    );
-
-    return lineText.length >= (location.column || 0);
-  });
-}
-
-function formatPositions(positions, selectedSource, breakpointMap) {
-  return positions.map(position => {
-    const location = getSelectedLocation(position, selectedSource);
-    return {
-      location,
-      breakpoint: findBreakpoint(location, breakpointMap),
-    };
-  });
-}
-
 function convertToList(breakpointPositions) {
   return [].concat(...Object.values(breakpointPositions));
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export function getColumnBreakpoints(
   positions,
@@ -128,40 +49,83 @@ export function getColumnBreakpoints(
   selectedSource,
   selectedSourceTextContent
 ) {
-  if (!positions || !selectedSource) {
+  if (!positions || !selectedSource || !breakpoints.length || !viewport) {
     return [];
   }
 
-  
-  
-  
-  
-  
-  const breakpointMap = groupBreakpoints(breakpoints, selectedSource);
-  positions = filterByLineCount(positions, selectedSource);
-  positions = filterVisible(positions, selectedSource, viewport);
-  positions = filterInLine(
-    positions,
-    selectedSource,
-    selectedSourceTextContent
-  );
-  positions = filterByBreakpoints(positions, selectedSource, breakpointMap);
+  const breakpointsPerLine = new Map();
+  for (const breakpoint of breakpoints) {
+    if (breakpoint.options.hidden) {
+      continue;
+    }
+    const location = getSelectedLocation(breakpoint, selectedSource);
+    const { line } = location;
+    let breakpointsPerColumn = breakpointsPerLine.get(line);
+    if (!breakpointsPerColumn) {
+      breakpointsPerColumn = new Map();
+      breakpointsPerLine.set(line, breakpointsPerColumn);
+    }
+    breakpointsPerColumn.set(location.column, breakpoint);
+  }
 
-  return formatPositions(positions, selectedSource, breakpointMap);
+  const columnBreakpoints = [];
+  for (const keyLine in positions) {
+    const positionsPerLine = positions[keyLine];
+    
+    
+    if (positionsPerLine.length <= 1) {
+      continue;
+    }
+    for (const breakpointPosition of positionsPerLine) {
+      const location = getSelectedLocation(breakpointPosition, selectedSource);
+      const { line } = location;
+
+      
+      const breakpointsPerColumn = breakpointsPerLine.get(line);
+      if (!breakpointsPerColumn) {
+        continue;
+      }
+
+      
+      if (!contains(location, viewport)) {
+        continue;
+      }
+
+      
+      
+      const { column } = location;
+      if (column) {
+        const lineText = getLineText(
+          selectedSource.id,
+          selectedSourceTextContent,
+          line
+        );
+        if (column > lineText.length) {
+          continue;
+        }
+      }
+
+      
+      
+      const breakpoint = breakpointsPerColumn.get(column);
+
+      columnBreakpoints.push({
+        location,
+        breakpoint,
+      });
+    }
+  }
+
+  return columnBreakpoints;
 }
 
-const getVisibleBreakpointPositions = createSelector(
-  state => {
-    const source = getSelectedSource(state);
-    if (!source) {
-      return null;
-    }
-    return getBreakpointPositionsForSource(state, source.id);
-  },
-  sourcePositions => {
-    return convertToList(sourcePositions || []);
+function getVisibleBreakpointPositions(state) {
+  const source = getSelectedSource(state);
+  if (!source) {
+    return null;
   }
-);
+  return getBreakpointPositionsForSource(state, source.id);
+}
 
 export const visibleColumnBreakpoints = createSelector(
   getVisibleBreakpointPositions,
