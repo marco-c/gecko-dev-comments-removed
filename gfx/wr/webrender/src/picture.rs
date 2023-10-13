@@ -160,6 +160,7 @@ pub enum SubpixelMode {
     
     Conditional {
         allowed_rect: PictureRect,
+        prohibited_rect: PictureRect,
     },
 }
 
@@ -3510,11 +3511,21 @@ impl TileCacheInstance {
     }
 
     fn calculate_subpixel_mode(&self) -> SubpixelMode {
-        let has_opaque_bg_color = self.background_color.map_or(false, |c| c.a >= 1.0);
-
         
-        if has_opaque_bg_color {
-            return SubpixelMode::Allow;
+        if self.underlays.is_empty() {
+            let has_opaque_bg_color = self.background_color.map_or(false, |c| c.a >= 1.0);
+
+            
+            if has_opaque_bg_color {
+                return SubpixelMode::Allow;
+            }
+
+            
+            
+            
+            if self.backdrop.opaque_rect.contains_box(&self.local_rect) {
+                return SubpixelMode::Allow;
+            }
         }
 
         
@@ -3525,9 +3536,17 @@ impl TileCacheInstance {
         
         
         
-        if self.backdrop.opaque_rect.contains_box(&self.local_rect) {
-            return SubpixelMode::Allow;
-        }
+        
+        
+        let prohibited_rect = self
+            .underlays
+            .iter()
+            .fold(
+                PictureRect::zero(),
+                |acc, underlay| {
+                    acc.union(&underlay.local_rect)
+                }
+            );
 
         
         
@@ -3538,6 +3557,7 @@ impl TileCacheInstance {
         
         SubpixelMode::Conditional {
             allowed_rect: self.backdrop.opaque_rect,
+            prohibited_rect,
         }
     }
 
@@ -5762,16 +5782,18 @@ impl PicturePrimitive {
                 
                 SubpixelMode::Allow
             }
-            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect }) => {
+            (SubpixelMode::Allow, SubpixelMode::Conditional { allowed_rect, prohibited_rect }) => {
                 
                 SubpixelMode::Conditional {
                     allowed_rect,
+                    prohibited_rect,
                 }
             }
-            (SubpixelMode::Conditional { allowed_rect }, SubpixelMode::Allow) => {
+            (SubpixelMode::Conditional { allowed_rect, prohibited_rect }, SubpixelMode::Allow) => {
                 
                 SubpixelMode::Conditional {
                     allowed_rect,
+                    prohibited_rect,
                 }
             }
             (SubpixelMode::Conditional { .. }, SubpixelMode::Conditional { ..}) => {
