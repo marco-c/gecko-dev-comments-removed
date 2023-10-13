@@ -1,17 +1,17 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/* Copyright 2012 Mozilla Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 const { OPS } = globalThis.pdfjsLib || (await import("pdfjs-lib"));
 
@@ -63,7 +63,7 @@ const FontInspector = (function FontInspectorClosure() {
     }
   }
   return {
-    
+    // Properties/functions needed by PDFBug.
     id: "FontInspector",
     name: "Font Inspector",
     panel: null,
@@ -95,7 +95,7 @@ const FontInspector = (function FontInspectorClosure() {
         removeSelection();
       }
     },
-    
+    // FontInspector specific functions.
     fontAdded(fontObj, url) {
       function properties(obj, list) {
         const moreInfo = document.createElement("table");
@@ -111,21 +111,29 @@ const FontInspector = (function FontInspectorClosure() {
         }
         return moreInfo;
       }
-      const moreInfo = properties(fontObj, ["name", "type"]);
+
+      const moreInfo = fontObj.css
+        ? properties(fontObj, ["baseFontName"])
+        : properties(fontObj, ["name", "type"]);
+
       const fontName = fontObj.loadedName;
       const font = document.createElement("div");
       const name = document.createElement("span");
       name.textContent = fontName;
-      const download = document.createElement("a");
-      if (url) {
-        url = /url\(['"]?([^)"']+)/.exec(url);
-        download.href = url[1];
-      } else if (fontObj.data) {
-        download.href = URL.createObjectURL(
-          new Blob([fontObj.data], { type: fontObj.mimetype })
-        );
+      let download;
+      if (!fontObj.css) {
+        download = document.createElement("a");
+        if (url) {
+          url = /url\(['"]?([^)"']+)/.exec(url);
+          download.href = url[1];
+        } else if (fontObj.data) {
+          download.href = URL.createObjectURL(
+            new Blob([fontObj.data], { type: fontObj.mimetype })
+          );
+        }
+        download.textContent = "Download";
       }
-      download.textContent = "Download";
+
       const logIt = document.createElement("a");
       logIt.href = "";
       logIt.textContent = "Log";
@@ -139,10 +147,14 @@ const FontInspector = (function FontInspectorClosure() {
       select.addEventListener("click", function () {
         selectFont(fontName, select.checked);
       });
-      font.append(select, name, " ", download, " ", logIt, moreInfo);
+      if (download) {
+        font.append(select, name, " ", download, " ", logIt, moreInfo);
+      } else {
+        font.append(select, name, " ", logIt, moreInfo);
+      }
       fonts.append(font);
-      
-      
+      // Somewhat of a hack, should probably add a hook for when the text layer
+      // is done rendering.
       setTimeout(() => {
         if (this.active) {
           resetSelection();
@@ -152,7 +164,7 @@ const FontInspector = (function FontInspectorClosure() {
   };
 })();
 
-
+// Manages all the page steppers.
 const StepperManager = (function StepperManagerClosure() {
   let steppers = [];
   let stepperDiv = null;
@@ -160,7 +172,7 @@ const StepperManager = (function StepperManagerClosure() {
   let stepperChooser = null;
   let breakPoints = Object.create(null);
   return {
-    
+    // Properties/functions needed by PDFBug.
     id: "Stepper",
     name: "Stepper",
     panel: null,
@@ -186,7 +198,7 @@ const StepperManager = (function StepperManagerClosure() {
     },
     enabled: false,
     active: false,
-    
+    // Stepper specific functions.
     create(pageIndex) {
       const debug = document.createElement("div");
       debug.id = "stepper" + pageIndex;
@@ -224,9 +236,9 @@ const StepperManager = (function StepperManagerClosure() {
   };
 })();
 
-
+// The stepper for each page's operatorList.
 class Stepper {
-  
+  // Shorter way to create element and optionally set textContent.
   #c(tag, textContent) {
     const d = document.createElement(tag);
     if (textContent) {
@@ -246,7 +258,7 @@ class Stepper {
       return args;
     }
     if ("length" in args) {
-      
+      // array
       const MAX_ITEMS = 10,
         simpleArgs = [];
       let i, ii;
@@ -349,7 +361,7 @@ class Stepper {
             fontCharRow.append(this.#c("td", glyph.fontChar));
             unicodeRow.append(this.#c("td", glyph.unicode));
           } else {
-            
+            // null or number
             const advanceEl = this.#c("td", glyph);
             advanceEl.classList.add("advance");
             charCodeRow.append(advanceEl);
@@ -403,13 +415,13 @@ class Stepper {
 
     const listener = evt => {
       switch (evt.keyCode) {
-        case 83: 
+        case 83: // step
           document.removeEventListener("keydown", listener);
           this.nextBreakPoint = this.currentIdx + 1;
           this.goTo(-1);
           callback();
           break;
-        case 67: 
+        case 67: // continue
           document.removeEventListener("keydown", listener);
           this.nextBreakPoint = this.getNextBreakPoint();
           this.goTo(-1);
@@ -437,7 +449,7 @@ class Stepper {
 const Stats = (function Stats() {
   let stats = [];
   function clear(node) {
-    node.textContent = ""; 
+    node.textContent = ""; // Remove any `node` contents from the DOM.
   }
   function getStatIndex(pageNumber) {
     for (const [i, stat] of stats.entries()) {
@@ -448,7 +460,7 @@ const Stats = (function Stats() {
     return false;
   }
   return {
-    
+    // Properties/functions needed by PDFBug.
     id: "Stats",
     name: "Stats",
     panel: null,
@@ -456,7 +468,7 @@ const Stats = (function Stats() {
     init() {},
     enabled: false,
     active: false,
-    
+    // Stats specific functions.
     add(pageNumber, stat) {
       if (!stat) {
         return;
@@ -490,7 +502,7 @@ const Stats = (function Stats() {
   };
 })();
 
-
+// Manages all the debugging tools.
 class PDFBug {
   static #buttons = [];
 
@@ -507,7 +519,7 @@ class PDFBug {
       }
     }
     if (!all) {
-      
+      // Sort the tools by the order they are enabled.
       tools.sort(function (a, b) {
         let indexA = ids.indexOf(a.id);
         indexA = indexA < 0 ? tools.length : indexA;
@@ -521,15 +533,15 @@ class PDFBug {
   static init(container, ids) {
     this.loadCSS();
     this.enable(ids);
-    
-
-
-
-
-
-
-
-
+    /*
+     * Basic Layout:
+     * PDFBug
+     *  Controls
+     *  Panels
+     *    Panel
+     *    Panel
+     *    ...
+     */
     const ui = document.createElement("div");
     ui.id = "PDFBug";
 
@@ -544,7 +556,7 @@ class PDFBug {
     container.append(ui);
     container.style.right = "var(--panel-width)";
 
-    
+    // Initialize all the debugging tools.
     for (const tool of this.tools) {
       const panel = document.createElement("div");
       const panelButton = document.createElement("button");
@@ -574,7 +586,7 @@ class PDFBug {
 
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = url.replace(/.js$/, ".css");
+    link.href = url.replace(/\.mjs$/, ".css");
 
     document.head.append(link);
   }

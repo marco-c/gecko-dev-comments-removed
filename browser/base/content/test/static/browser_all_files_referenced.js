@@ -201,7 +201,7 @@ var allowlist = [
   },
 
   
-  { file: "resource://pdf.js/web/debugger.js" },
+  { file: "resource://pdf.js/web/debugger.mjs" },
   { file: "resource://pdf.js/web/debugger.css" },
 
   
