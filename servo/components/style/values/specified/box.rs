@@ -1891,6 +1891,10 @@ impl ScrollbarGutter {
 #[allow(missing_docs)]
 pub enum Zoom {
     Normal,
+    
+    
+    #[parse(condition = "ParserContext::in_ua_sheet")]
+    Document,
     Value(NonNegativeNumberOrPercentage),
 }
 
