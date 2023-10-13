@@ -51,17 +51,6 @@ constexpr size_t kHeaderSizes[] = {
 
 
 
-constexpr uint8_t kSsrcCount = 1;
-
-
-constexpr uint32_t kReservedBits = 0;
-
-
-constexpr size_t kPacketMaskOffset =
-    kBaseHeaderSize + kStreamSpecificHeaderSize;
-
-
-
 
 
 size_t FlexfecHeaderSize(size_t packet_mask_size) {
@@ -260,73 +249,79 @@ size_t FlexfecHeaderWriter::FecHeaderSize(size_t packet_mask_size) const {
 void FlexfecHeaderWriter::FinalizeFecHeader(
     rtc::ArrayView<const ProtectedStream> protected_streams,
     ForwardErrorCorrection::Packet& fec_packet) const {
-  
-  
-  RTC_CHECK_EQ(protected_streams.size(), 1);
-  uint32_t media_ssrc = protected_streams[0].ssrc;
-  uint16_t seq_num_base = protected_streams[0].seq_num_base;
-  const uint8_t* packet_mask = protected_streams[0].packet_mask.data();
-  size_t packet_mask_size = protected_streams[0].packet_mask.size();
-
   uint8_t* data = fec_packet.data.MutableData();
-  data[0] &= 0x7f;  
-  data[0] &= 0xbf;  
-  ByteWriter<uint8_t>::WriteBigEndian(&data[8], kSsrcCount);
-  ByteWriter<uint32_t, 3>::WriteBigEndian(&data[9], kReservedBits);
-  ByteWriter<uint32_t>::WriteBigEndian(&data[12], media_ssrc);
-  ByteWriter<uint16_t>::WriteBigEndian(&data[16], seq_num_base);
-  
-  
-  
-  
-  uint8_t* const written_packet_mask = data + kPacketMaskOffset;
-  if (packet_mask_size == kUlpfecPacketMaskSizeLBitSet) {
-    
-    uint16_t tmp_mask_part0 =
-        ByteReader<uint16_t>::ReadBigEndian(&packet_mask[0]);
-    uint32_t tmp_mask_part1 =
-        ByteReader<uint32_t>::ReadBigEndian(&packet_mask[2]);
+  *data &= 0x7f;  
+  *data &= 0xbf;  
 
-    tmp_mask_part0 >>= 1;  
-    ByteWriter<uint16_t>::WriteBigEndian(&written_packet_mask[0],
-                                         tmp_mask_part0);
-    tmp_mask_part1 >>= 2;  
-    ByteWriter<uint32_t>::WriteBigEndian(&written_packet_mask[2],
-                                         tmp_mask_part1);
-    bool bit15 = (packet_mask[1] & 0x01) != 0;
-    if (bit15)
-      written_packet_mask[2] |= 0x40;  
-    bool bit46 = (packet_mask[5] & 0x02) != 0;
-    bool bit47 = (packet_mask[5] & 0x01) != 0;
-    if (!bit46 && !bit47) {
-      written_packet_mask[2] |= 0x80;  
-    } else {
-      memset(&written_packet_mask[6], 0, 8);  
-      written_packet_mask[6] |= 0x80;         
-      if (bit46)
-        written_packet_mask[6] |= 0x40;  
-      if (bit47)
-        written_packet_mask[6] |= 0x20;  
-    }
-  } else if (packet_mask_size == kUlpfecPacketMaskSizeLBitClear) {
+  
+  
+  uint8_t* write_at = data + 8;
+  for (const ProtectedStream& protected_stream : protected_streams) {
+    ByteWriter<uint16_t>::WriteBigEndian(write_at,
+                                         protected_stream.seq_num_base);
+    write_at += kStreamSpecificHeaderSize;
     
-    uint16_t tmp_mask_part0 =
-        ByteReader<uint16_t>::ReadBigEndian(&packet_mask[0]);
+    
+    
+    
+    if (protected_stream.packet_mask.size() == kUlpfecPacketMaskSizeLBitSet) {
+      
+      uint16_t tmp_mask_part0 =
+          ByteReader<uint16_t>::ReadBigEndian(&protected_stream.packet_mask[0]);
+      uint32_t tmp_mask_part1 =
+          ByteReader<uint32_t>::ReadBigEndian(&protected_stream.packet_mask[2]);
 
-    tmp_mask_part0 >>= 1;  
-    ByteWriter<uint16_t>::WriteBigEndian(&written_packet_mask[0],
-                                         tmp_mask_part0);
-    bool bit15 = (packet_mask[1] & 0x01) != 0;
-    if (!bit15) {
-      written_packet_mask[0] |= 0x80;  
+      tmp_mask_part0 >>= 1;  
+      ByteWriter<uint16_t>::WriteBigEndian(write_at, tmp_mask_part0);
+      write_at += kFlexfecPacketMaskSizes[0];
+      tmp_mask_part1 >>= 2;  
+      ByteWriter<uint32_t>::WriteBigEndian(write_at, tmp_mask_part1);
+
+      bool bit15 = (protected_stream.packet_mask[1] & 0x01) != 0;
+      if (bit15)
+        *write_at |= 0x40;  
+
+      bool bit46 = (protected_stream.packet_mask[5] & 0x02) != 0;
+      bool bit47 = (protected_stream.packet_mask[5] & 0x01) != 0;
+      if (!bit46 && !bit47) {
+        *write_at |= 0x80;  
+        write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
+      } else {
+        write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
+        
+        memset(write_at, 0,
+               kFlexfecPacketMaskSizes[2] - kFlexfecPacketMaskSizes[1]);
+        if (bit46)
+          *write_at |= 0x80;  
+        if (bit47)
+          *write_at |= 0x40;  
+        write_at += kFlexfecPacketMaskSizes[2] - kFlexfecPacketMaskSizes[1];
+      }
+    } else if (protected_stream.packet_mask.size() ==
+               kUlpfecPacketMaskSizeLBitClear) {
+      
+      uint16_t tmp_mask_part0 =
+          ByteReader<uint16_t>::ReadBigEndian(&protected_stream.packet_mask[0]);
+
+      tmp_mask_part0 >>= 1;  
+      ByteWriter<uint16_t>::WriteBigEndian(write_at, tmp_mask_part0);
+      bool bit15 = (protected_stream.packet_mask[1] & 0x01) != 0;
+      if (!bit15) {
+        *write_at |= 0x80;  
+        write_at += kFlexfecPacketMaskSizes[0];
+      } else {
+        write_at += kFlexfecPacketMaskSizes[0];
+        
+        memset(write_at, 0U,
+               kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0]);
+        *write_at |= 0x80;  
+        *write_at |= 0x40;  
+        write_at += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
+      }
     } else {
-      memset(&written_packet_mask[2], 0U, 4);  
-      written_packet_mask[2] |= 0x80;          
-      written_packet_mask[2] |= 0x40;          
+      RTC_DCHECK_NOTREACHED() << "Incorrect packet mask size: "
+                              << protected_stream.packet_mask.size() << ".";
     }
-  } else {
-    RTC_DCHECK_NOTREACHED()
-        << "Incorrect packet mask size: " << packet_mask_size << ".";
   }
 }
 
