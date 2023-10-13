@@ -174,16 +174,18 @@ struct AudioTimelineEvent {
  private:
   union {
     float mValue;
-    uint32_t mCurveLength;
+    uint32_t mCurveLength;  
   };
-  
-  
-  
-  
-  
-  float* mCurve;
-  double mTimeConstant;
-  double mDuration;
+  union {
+    double mTimeConstant;
+    
+    
+    
+    
+    
+    float* mCurve;
+  };
+  double mDuration;  
 
   
   
