@@ -570,9 +570,7 @@ class Nursery {
 
   
   
-  
-  
-  void setCurrentChunk(unsigned chunkno);
+  void moveToStartOfChunk(unsigned chunkno);
 
   bool initFirstChunk(AutoLockGCBgAlloc& lock);
 
