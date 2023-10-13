@@ -1236,6 +1236,13 @@ bool nsPresContext::UserInputEventsAllowed() {
     return true;
   }
 
+  if (mRefreshDriver->IsThrottled()) {
+    MOZ_ASSERT(!mPresShell->IsVisible());
+    
+    
+    return true;
+  }
+
   if (mMeasuredTicksSinceLoading <
       StaticPrefs::dom_input_events_security_minNumTicks()) {
     return false;
