@@ -242,6 +242,7 @@ function getLineCountInComments(text) {
 
 
 
+
 function prettifyCSS(text, ruleCount) {
   if (prettifyCSS.LINE_SEPARATOR == null) {
     const os = Services.appinfo.OS;
@@ -489,6 +490,7 @@ function prettifyCSS(text, ruleCount) {
     
     
     if (
+      ruleCount !== null &&
       pushbackToken &&
       token &&
       token.tokenType === "whitespace" &&
