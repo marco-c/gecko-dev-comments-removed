@@ -52,8 +52,7 @@ export default connect((state, props) => {
   const symbols = getSymbols(state, location);
   const isBlackBoxed = isSourceBlackBoxed(state, location.source);
   
-  const hasMatchingPrettyTab =
-    !forTab && hasPrettyTab(state, location.source.url);
+  const hasMatchingPrettyTab = !forTab && hasPrettyTab(state, location.source);
 
   
   

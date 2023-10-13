@@ -9,7 +9,7 @@
 
 import { setSymbols } from "./symbols";
 import { setInScopeLines } from "../ast";
-import { togglePrettyPrint } from "./prettyPrint";
+import { prettyPrintAndSelectSource } from "./prettyPrint";
 import { addTab, closeTab } from "../tabs";
 import { loadSourceText } from "./loadSourceText";
 import { setBreakableLines } from ".";
@@ -31,6 +31,7 @@ import {
   tabExists,
   hasSource,
   hasSourceActor,
+  hasPrettyTab,
 } from "../../selectors";
 
 
@@ -143,6 +144,18 @@ export function selectLocation(location, { keepContext = true } = {}) {
       getState()
     );
     if (keepContext) {
+      
+      
+      if (
+        !location.source.isOriginal &&
+        shouldSelectOriginalLocation &&
+        hasPrettyTab(getState(), location.source)
+      ) {
+        
+        
+        
+        await dispatch(prettyPrintAndSelectSource(location.source));
+      }
       if (shouldSelectOriginalLocation != location.source.isOriginal) {
         
         
@@ -194,7 +207,7 @@ export function selectLocation(location, { keepContext = true } = {}) {
       canPrettyPrintSource(getState(), location) &&
       isMinified(source, sourceTextContent)
     ) {
-      await dispatch(togglePrettyPrint(loadedSource.id));
+      await dispatch(prettyPrintAndSelectSource(loadedSource));
       dispatch(closeTab(loadedSource));
     }
 
