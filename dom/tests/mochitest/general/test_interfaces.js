@@ -1378,6 +1378,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "TimeRanges", insecureContext: true },
   
+  { name: "ToggleEvent", insecureContext: true },
+  
   { name: "Touch", insecureContext: true },
   
   { name: "TouchEvent", insecureContext: true },
