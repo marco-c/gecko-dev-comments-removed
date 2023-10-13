@@ -4672,11 +4672,7 @@ let gShareUtils = {
     }
 
     
-    if (
-      AppConstants.platform != "macosx" &&
-      
-      !AppConstants.isPlatformAndVersionAtLeast("win", "6.4")
-    ) {
+    if (AppConstants.platform != "macosx" && AppConstants.platform != "win") {
       return;
     }
 
@@ -6624,7 +6620,7 @@ var TabletModeUpdater = {
 var gTabletModePageCounter = {
   enabled: false,
   inc() {
-    this.enabled = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+    this.enabled = AppConstants.platform == "win";
     if (!this.enabled) {
       this.inc = () => {};
       return;

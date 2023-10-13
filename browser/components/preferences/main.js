@@ -489,9 +489,8 @@ var gMainPane = {
 
     
     
-    
     if (
-      AppConstants.isPlatformAndVersionAtLeast("win", "6.3") ||
+      AppConstants.platform == "win" ||
       AppConstants.platform == "macosx" ||
       AppConstants.MOZ_WIDGET_GTK
     ) {

@@ -256,7 +256,7 @@ add_task(condition, async function testInstallationTelemetry() {
   
   fullData.install_timestamp = "2";
   
-  if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
+  if (AppConstants.platform == "win") {
     fullExtra.other_msix_inst = "true";
   }
   await writeJsonUtf16(dataFilePath, fullData);

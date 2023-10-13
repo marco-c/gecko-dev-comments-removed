@@ -50,10 +50,7 @@ add_task(async function ready() {
 });
 
 
-Assert.ok(
-  AppConstants.isPlatformAndVersionAtLeast("win", "10"),
-  "Windows version 10+"
-);
+Assert.ok(AppConstants.platform == "win", "Platform is Windows");
 
 add_task(async function remoteEnableWithPDF() {
   let doCleanup = await ExperimentFakes.enrollWithRollout({
