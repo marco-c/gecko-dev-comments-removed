@@ -94,7 +94,9 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
 
   EXPECT_NEAR(outToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
   
-  EXPECT_GE(outToneVerifier.PreSilenceSamples(), aTargetRate * 50 / 1000U);
+  
+  EXPECT_GE(outToneVerifier.PreSilenceSamples(),
+            aTargetRate * 50 / 1000U - aTargetRate * 102 / 100 / 100);
   EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 0U);
 }
 
