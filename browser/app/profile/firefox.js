@@ -332,10 +332,6 @@ pref("browser.startup.windowsLaunchOnLogin.disableLaunchOnLoginPrompt", false);
 
 pref("browser.startup.upgradeDialog.enabled", false);
 
-
-
-pref("toolkit.lazyHiddenWindow", true);
-
 pref("browser.chrome.site_icons", true);
 
 pref("browser.warnOnQuit", true);
