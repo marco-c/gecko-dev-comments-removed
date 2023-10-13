@@ -653,6 +653,7 @@ this.AccessibilityUtils = (function () {
     },
 
     init() {
+      this._shouldHandleClicks = true;
       
       
       
@@ -666,7 +667,21 @@ this.AccessibilityUtils = (function () {
       this._handler = null;
     },
 
+    
+
+
+
+
+
+
+    suppressClickHandling(shouldSuppress) {
+      this._shouldHandleClicks = !shouldSuppress;
+    },
+
     handleEvent({ composedTarget }) {
+      if (!this._shouldHandleClicks) {
+        return;
+      }
       const bounds =
         composedTarget.ownerGlobal?.windowUtils?.getBoundsWithoutFlushing(
           composedTarget

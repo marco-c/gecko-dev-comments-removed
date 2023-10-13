@@ -19,12 +19,6 @@ add_task(async function () {
 
   await pushPrefs([HOMEPAGE_PREF, "about:mozilla"]);
 
-  let EventUtils = {};
-  Services.scriptloader.loadSubScript(
-    "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
-    EventUtils
-  );
-
   
   
   let dragSrcElement = document.getElementById("sidebar-button");
