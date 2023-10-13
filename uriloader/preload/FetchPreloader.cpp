@@ -185,8 +185,6 @@ void FetchPreloader::PrioritizeAsPreload(nsIChannel* aChannel) {
   }
 }
 
-void FetchPreloader::PrioritizeAsPreload() { PrioritizeAsPreload(Channel()); }
-
 
 
 NS_IMETHODIMP FetchPreloader::OnStartRequest(nsIRequest* request) {

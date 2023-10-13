@@ -51,9 +51,7 @@ class SheetLoadData final
   virtual ~SheetLoadData();
 
  public:
-  
   static void PrioritizeAsPreload(nsIChannel* aChannel);
-  void PrioritizeAsPreload() final;
 
   
   void StartPendingLoad();

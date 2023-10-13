@@ -94,11 +94,6 @@ class PreloaderBase : public SupportsWeakPtr, public nsISupports {
 
   
   
-  
-  virtual void PrioritizeAsPreload() = 0;
-
-  
-  
   static void AddLoadBackgroundFlag(nsIChannel* aChannel);
 
   
