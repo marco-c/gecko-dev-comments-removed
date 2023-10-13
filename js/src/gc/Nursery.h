@@ -309,14 +309,10 @@ class Nursery {
 
   size_t sizeOfTrailerBlockSets(mozilla::MallocSizeOf mallocSizeOf) const;
 
-  
-  
-  
-  
-  size_t spaceToEnd(unsigned chunkCount) const;
-
   size_t capacity() const { return capacity_; }
-  size_t committed() const { return spaceToEnd(allocatedChunkCount()); }
+  size_t committed() const {
+    return std::min(capacity_, allocatedChunkCount() * gc::ChunkSize);
+  }
 
   
   
