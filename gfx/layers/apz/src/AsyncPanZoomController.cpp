@@ -5520,6 +5520,7 @@ void AsyncPanZoomController::NotifyLayersUpdated(
         aScrollMetadata.GetOverscrollBehavior());
   }
 
+  bool instantScrollMayTriggerTransform = false;
   bool scrollOffsetUpdated = false;
   bool smoothScrollRequested = false;
   bool didCancelAnimation = false;
@@ -5596,6 +5597,11 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     MOZ_ASSERT(scrollUpdate.GetMode() == ScrollMode::Instant ||
                scrollUpdate.GetMode() == ScrollMode::Normal);
+
+    instantScrollMayTriggerTransform =
+        scrollUpdate.GetMode() == ScrollMode::Instant &&
+        scrollUpdate.GetScrollTriggeredByScript() ==
+            ScrollTriggeredByScript::No;
 
     
     
@@ -5729,6 +5735,15 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     ScheduleComposite();
+
+    
+    
+    
+    if (!IsTransformingState(mState) && instantScrollMayTriggerTransform &&
+        cumulativeRelativeDelta && *cumulativeRelativeDelta != CSSPoint() &&
+        !didCancelAnimation) {
+      SendTransformBeginAndEnd();
+    }
   } else if (needToReclampScroll) {
     
     
@@ -6258,6 +6273,14 @@ void AsyncPanZoomController::DispatchStateChangeNotification(
       controller->NotifyAPZStateChange(GetGuid(),
                                        APZStateChange::eTransformEnd);
     }
+  }
+}
+void AsyncPanZoomController::SendTransformBeginAndEnd() {
+  RefPtr<GeckoContentController> controller = GetGeckoContentController();
+  if (controller) {
+    controller->NotifyAPZStateChange(GetGuid(),
+                                     APZStateChange::eTransformBegin);
+    controller->NotifyAPZStateChange(GetGuid(), APZStateChange::eTransformEnd);
   }
 }
 
