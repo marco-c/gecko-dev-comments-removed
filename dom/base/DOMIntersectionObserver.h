@@ -185,7 +185,7 @@ class DOMIntersectionObserver final : public nsISupports,
   Variant<RefPtr<dom::IntersectionCallback>, NativeCallback> mCallback;
   RefPtr<nsINode> mRoot;
   StyleRect<LengthPercentage> mRootMargin;
-  nsTArray<double> mThresholds;
+  AutoTArray<double, 1> mThresholds;
 
   
   
@@ -195,7 +195,7 @@ class DOMIntersectionObserver final : public nsISupports,
   nsTHashSet<Element*> mObservationTargetSet;
 
   nsTArray<RefPtr<DOMIntersectionObserverEntry>> mQueuedEntries;
-  bool mConnected;
+  bool mConnected = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMIntersectionObserver,
