@@ -24,7 +24,6 @@ def get_deps():
     
     
     return {
-        "metrics_index.py",
         *[str(p) for p in (Path(os.path.dirname(__file__)) / "templates").iterdir()],
     }
 
