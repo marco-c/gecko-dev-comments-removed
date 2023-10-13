@@ -1651,6 +1651,7 @@ pref("browser.newtabpage.activity-stream.asrouter.providers.messaging-experiment
 
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.addons", true);
 pref("browser.newtabpage.activity-stream.asrouter.userprefs.cfr.features", true);
+pref("messaging-system.askForFeedback", true);
 
 
 
