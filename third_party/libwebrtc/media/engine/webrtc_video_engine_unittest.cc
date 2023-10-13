@@ -1820,10 +1820,10 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
   }
 
   
-  WebRtcVideoChannel* SendImpl() {
+  WebRtcVideoSendChannel* SendImpl() {
     
     
-    return static_cast<cricket::WebRtcVideoChannel*>(
+    return static_cast<cricket::WebRtcVideoSendChannel*>(
         static_cast<VideoMediaShimChannel*>(channel_.get())
             ->SendImplForTesting());
   }
@@ -2685,10 +2685,10 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
   }
 
   
-  WebRtcVideoChannel* SendImpl() {
+  WebRtcVideoSendChannel* SendImpl() {
     
     
-    return static_cast<cricket::WebRtcVideoChannel*>(
+    return static_cast<cricket::WebRtcVideoSendChannel*>(
         static_cast<VideoMediaShimChannel*>(channel_.get())
             ->SendImplForTesting());
   }
@@ -2696,7 +2696,7 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
   
   webrtc::Transport* ChannelImplAsTransport(VideoMediaChannel* channel) {
     return static_cast<webrtc::Transport*>(
-        static_cast<cricket::WebRtcVideoChannel*>(
+        static_cast<cricket::WebRtcVideoSendChannel*>(
             static_cast<VideoMediaShimChannel*>(channel)
                 ->SendImplForTesting()));
   }
