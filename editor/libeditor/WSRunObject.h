@@ -141,13 +141,34 @@ class MOZ_STACK_CLASS WSScanResult final {
     
     
     
-    MOZ_ASSERT_IF(
-        mReason == WSType::CurrentBlockBoundary,
-        !mContent || !mContent->GetParentElement() ||
-            HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck) ||
-            HTMLEditUtils::IsBlockElement(*mContent->GetParentElement(),
-                                          aBlockInlineCheck) ||
-            !mContent->GetParentElement()->IsEditable());
+    if (mReason == WSType::CurrentBlockBoundary) {
+      if (!mContent ||
+          
+          
+          !mContent->IsInComposedDoc() ||
+          
+          
+          HTMLEditUtils::IsBlockElement(*mContent, aBlockInlineCheck) ||
+          
+          
+          
+          !mContent->IsEditable()) {
+        return;
+      }
+      const DebugOnly<Element*> closestAncestorEditableBlockElement =
+          HTMLEditUtils::GetAncestorElement(
+              *mContent, HTMLEditUtils::ClosestEditableBlockElement,
+              aBlockInlineCheck);
+      MOZ_ASSERT_IF(
+          mReason == WSType::CurrentBlockBoundary,
+          
+          !closestAncestorEditableBlockElement ||
+              
+              
+              !closestAncestorEditableBlockElement->GetParentElement() ||
+              !closestAncestorEditableBlockElement->GetParentElement()
+                   ->IsEditable());
+    }
 #endif  
   }
 
