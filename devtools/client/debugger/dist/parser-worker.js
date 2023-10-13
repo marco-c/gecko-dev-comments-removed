@@ -42210,12 +42210,28 @@
       const { global, lexical } = createGlobalScope(ast, sourceId);
 
       const state = {
+        
         sourceId,
+
+        
+        
         freeVariables: new Map(),
+
+        
+        
         freeVariableStack: [],
+
         inType: null,
+
+        
+        
+        
         scope: lexical,
+
+        
+        
         scopeStack: [],
+
         declarationBindingIds: new Set(),
       };
       lib$3.traverse(ast, scopeCollectionVisitor, state);
@@ -42266,20 +42282,39 @@
       }));
     }
 
+    
+
+
+
+
+
+
+
+
     function createTempScope(type, displayName, parent, loc) {
-      const result = {
+      const scope = {
         type,
         displayName,
         parent,
+
+        
         children: [],
         loc,
+
+        
+        
+        
         bindings: Object.create(null),
       };
+
       if (parent) {
-        parent.children.push(result);
+        parent.children.push(scope);
       }
-      return result;
+      return scope;
     }
+
+    
+    
     function pushTempScope(state, type, displayName, loc) {
       const scope = createTempScope(type, displayName, state.scope, loc);
 
@@ -42294,6 +42329,7 @@
       return node ? node.type === type : false;
     }
 
+    
     function getVarScope(scope) {
       let s = scope;
       while (s.type !== "function" && s.type !== "module") {
@@ -42419,6 +42455,8 @@
       return isNode(node, "VariableDeclaration") && isLetOrConst(node);
     }
 
+    
+    
     function createGlobalScope(ast, sourceId) {
       const global = createTempScope("object", "Global", null, {
         start: fromBabelLocation(ast.loc.start, sourceId),
@@ -42456,6 +42494,7 @@
           };
         } else if (lib$3.isFunction(node)) {
           let { scope } = state;
+
           if (lib$3.isFunctionExpression(node) && isNode(node.id, "Identifier")) {
             scope = pushTempScope(state, "block", "Function Expression", {
               start: fromBabelLocation(node.loc.start, state.sourceId),
@@ -42500,6 +42539,7 @@
                 refs,
               };
             } else {
+              
               getVarScope(scope).bindings[node.id.name] = {
                 type: "var",
                 refs,

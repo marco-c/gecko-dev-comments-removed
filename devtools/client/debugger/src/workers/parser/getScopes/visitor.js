@@ -48,12 +48,28 @@ export function buildScopeList(ast, sourceId) {
   const { global, lexical } = createGlobalScope(ast, sourceId);
 
   const state = {
+    
     sourceId,
+
+    
+    
     freeVariables: new Map(),
+
+    
+    
     freeVariableStack: [],
+
     inType: null,
+
+    
+    
+    
     scope: lexical,
+
+    
+    
     scopeStack: [],
+
     declarationBindingIds: new Set(),
   };
   t.traverse(ast, scopeCollectionVisitor, state);
@@ -104,20 +120,39 @@ function toParsedScopes(children, sourceId) {
   }));
 }
 
+
+
+
+
+
+
+
+
+
 function createTempScope(type, displayName, parent, loc) {
-  const result = {
+  const scope = {
     type,
     displayName,
     parent,
+
+    
     children: [],
     loc,
+
+    
+    
+    
     bindings: Object.create(null),
   };
+
   if (parent) {
-    parent.children.push(result);
+    parent.children.push(scope);
   }
-  return result;
+  return scope;
 }
+
+
+
 function pushTempScope(state, type, displayName, loc) {
   const scope = createTempScope(type, displayName, state.scope, loc);
 
@@ -131,6 +166,7 @@ function pushTempScope(state, type, displayName, loc) {
 function isNode(node, type) {
   return node ? node.type === type : false;
 }
+
 
 function getVarScope(scope) {
   let s = scope;
@@ -257,6 +293,8 @@ function isLexicalVariable(node) {
   return isNode(node, "VariableDeclaration") && isLetOrConst(node);
 }
 
+
+
 function createGlobalScope(ast, sourceId) {
   const global = createTempScope("object", "Global", null, {
     start: fromBabelLocation(ast.loc.start, sourceId),
@@ -294,6 +332,7 @@ const scopeCollectionVisitor = {
       };
     } else if (t.isFunction(node)) {
       let { scope } = state;
+
       if (t.isFunctionExpression(node) && isNode(node.id, "Identifier")) {
         scope = pushTempScope(state, "block", "Function Expression", {
           start: fromBabelLocation(node.loc.start, state.sourceId),
@@ -338,6 +377,7 @@ const scopeCollectionVisitor = {
             refs,
           };
         } else {
+          
           getVarScope(scope).bindings[node.id.name] = {
             type: "var",
             refs,
