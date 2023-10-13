@@ -129,10 +129,14 @@ function buildTestCases(testCases, testType) {
     return results;
 }
 
+function isAbsoluteLength(unit) {
+    return unit == "cm" || unit == "mm" || unit == "Q" || unit == "in" ||
+           unit == "pt" || unit == "pc" || unit == "px";
+}
 
 function buildPositionTests(shape, valid, type, units) {
     var results = new Array();
-    var convert = type.indexOf('computed') != -1 ? true : false;
+    var is_computed = type.indexOf('computed') != -1 ? true : false;
 
     if(Object.prototype.toString.call( units ) === '[object Array]') {
         units.forEach(function(unit) {
@@ -144,23 +148,47 @@ function buildPositionTests(shape, valid, type, units) {
             validPositions.forEach(function(test) {
                 var testCase = [], testName, actual, expected;
                 
-                if( !(type.indexOf('lengthUnit') != -1 && test[0].indexOf("u1") == -1)) {
+                if (!(type.indexOf('lengthUnit') != -1 && test[0].indexOf("u1") == -1)) {
                     
                     actual = shape + '(at ' + setUnit(test[0], false, units) +')';
 
+                    let position = test[1];
+                    let convert = is_computed;
+                    if (!is_computed) {
+                      
+                      
+                      
+                      if (position.includes('[convert]')) {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        convert = isAbsoluteLength(units);
+                      }
+                    } else if (test.length == 3) {
+                      
+                      position = test[2];
+                    }
+
                     
-                  
-                  
-                  
-                  
-                  
-                   expected = shape + '(at ' + setUnit(test[1], convert, units) +')';
+                    position = position.replace('[convert] ', '');
+
+                    
+                    
+                    
+                    
+                    
+                    
+                    expected = shape + '(at ' + setUnit(position, convert, units) +')';
 
                     
                     if (type == 'lengthUnit + inline')
                         testName = 'test unit (inline): ' + units +' - '+ actual;
                     else if (type == 'lengthUnit + computed')
-                         testName = 'test unit (computed): ' + units +' - '+ actual;
+                        testName = 'test unit (computed): ' + units +' - '+ actual;
                     else
                         testName = (actual + ' serializes as ' + expected +' - '+ type);
 
@@ -549,39 +577,35 @@ var validPositions = [
 
     ["left 50% top 50%", "50% 50%"],
     ["left 50% top 50u1", "50% 50u1"],
-    ["left 50% bottom 70%", "50% 30%"],
-    ["left 50% bottom 70u1", "left 50% bottom 70u1"],
+    ["left 50% bottom 70%", "50% calc(30%)", "50% 30%"],
+    ["left 50% bottom 70u1", "[convert] 50% calc(100% - 70u1)"],
     ["left 50u1 top 50%", "50u1 50%"],
     ["left 50u1 top 50u1", "50u1 50u1"],
-    ["left 50u1 bottom 70%", "50u1 30%"],
-    ["left 50u1 bottom 70u1", "left 50u1 bottom 70u1"],
+    ["left 50u1 bottom 70%", "50u1 calc(30%)", "50u1 30%"],
 
     ["top 50% left 50%", "50% 50%"],
     ["top 50% left 50u1", "50u1 50%"],
-    ["top 50% right 80%", "20% 50%"],
-    ["top 50% right 80u1", "right 80u1 top 50%"],
+    ["top 50% right 80%", "calc(20%) 50%", "20% 50%"],
+    ["top 50% right 80u1", "[convert] calc(100% - 80u1) 50%"],
     ["top 50u1 left 50%", "50% 50u1"],
     ["top 50u1 left 50u1", "50u1 50u1"],
-    ["top 50u1 right 80%", "20% 50u1"],
-    ["top 50u1 right 80u1", "right 80u1 top 50u1"],
+    ["top 50u1 right 80%", "calc(20%) 50u1", "20% 50u1"],
 
-    ["bottom 70% left 50%", "50% 30%"],
-    ["bottom 70% left 50u1", "50u1 30%"],
-    ["bottom 70% right 80%", "20% 30%"],
-    ["bottom 70% right 80u1", "right 80u1 top 30%"],
-    ["bottom 70u1 left 50%", "left 50% bottom 70u1"],
-    ["bottom 70u1 left 50u1", "left 50u1 bottom 70u1"],
-    ["bottom 70u1 right 80%", "left 20% bottom 70u1"],
-    ["bottom 70u1 right 80u1", "right 80u1 bottom 70u1"],
+    ["bottom 70% left 50%", "50% calc(30%)", "50% 30%"],
+    ["bottom 70% left 50u1", "50u1 calc(30%)", "50u1 30%"],
+    ["bottom 70% right 80%", "calc(20%) calc(30%)", "20% 30%"],
+    ["bottom 70% right 80u1", "[convert] calc(100% - 80u1) calc(30%)", "calc(100% - 80u1) 30%"],
+    ["bottom 70u1 left 50%", "[convert] 50% calc(100% - 70u1)"],
+    ["bottom 70u1 right 50%", "[convert] calc(50%) calc(100% - 70u1)", "50% calc(100% - 70u1)"],
+    ["bottom 70u1 right 80u1", "[convert] calc(100% - 80u1) calc(100% - 70u1)"],
 
-    ["right 80% top 50%", "20% 50%"],
-    ["right 80% top 50u1", "20% 50u1"],
-    ["right 80% bottom 70%", "20% 30%"],
-    ["right 80% bottom 70u1", "left 20% bottom 70u1"],
-    ["right 80u1 top 50%", "right 80u1 top 50%"],
-    ["right 80u1 top 50u1", "right 80u1 top 50u1"],
-    ["right 80u1 bottom 70%", "right 80u1 top 30%"],
-    ["right 80u1 bottom 70u1", "right 80u1 bottom 70u1"],
+    ["right 80% top 50%", "calc(20%) 50%", "20% 50%"],
+    ["right 80% top 50u1", "calc(20%) 50u1", "20% 50u1"],
+    ["right 80% bottom 70%", "calc(20%) calc(30%)", "20% 30%"],
+    ["right 80% bottom 70u1", "[convert] calc(20%) calc(100% - 70u1)", "20% calc(100% - 70u1)"],
+    ["right 80u1 top 50%", "[convert] calc(100% - 80u1) 50%"],
+    ["right 80u1 bottom 70%", "[convert] calc(100% - 80u1) calc(30%)", "calc(100% - 80u1) 30%"],
+    ["right 80u1 bottom 70u1", "[convert] calc(100% - 80u1) calc(100% - 70u1)"],
 ];
 
 var invalidPositions = [
