@@ -21360,15 +21360,7 @@ class CallbackMember(CGNativeMember):
             if arg.canHaveMissingValue():
                 argval += ".Value()"
 
-        if arg.type.isDOMString():
-            
-            
-            
-            result = "mutableStr"
-            prepend = "nsString mutableStr(%s);\n" % argval
-        else:
-            result = argval
-            prepend = ""
+        prepend = ""
 
         wrapScope = self.wrapScope
         if arg.type.isUnion() and wrapScope is None:
@@ -21381,7 +21373,7 @@ class CallbackMember(CGNativeMember):
             arg.type,
             self.descriptorProvider,
             {
-                "result": result,
+                "result": argval,
                 "successCode": "continue;\n" if arg.variadic else "break;\n",
                 "jsvalRef": "argv[%s]" % jsvalIndex,
                 "jsvalHandle": "argv[%s]" % jsvalIndex,
