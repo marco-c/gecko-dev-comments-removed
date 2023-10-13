@@ -161,10 +161,14 @@ async function openPageAndVerify({
   expected,
   bannerId = "banner",
   keepTabOpen = false,
+  expectActorEnabled = true,
 }) {
   info(`Opening ${testURL}`);
 
-  let promise = promiseBannerClickingFinish(domain);
+  
+  let promise = expectActorEnabled
+    ? promiseBannerClickingFinish(domain)
+    : new Promise(resolve => setTimeout(resolve, 0));
 
   let tab = await BrowserTestUtils.openNewForegroundTab(win.gBrowser, testURL);
 
