@@ -115,10 +115,31 @@ struct AudioTimelineEvent {
   
   template <class TimeType>
   double EndTime() const;
+
+  float NominalValue() const {
+    MOZ_ASSERT(mType != SetValueCurve);
+    return mValue;
+  }
+  float StartValue() const {
+    MOZ_ASSERT(mType == SetValueCurve);
+    return mCurve[0];
+  }
   
   
   float EndValue() const;
 
+  double TimeConstant() const {
+    MOZ_ASSERT(mType == SetTarget);
+    return mTimeConstant;
+  }
+  uint32_t CurveLength() const {
+    MOZ_ASSERT(mType == SetValueCurve);
+    return mCurveLength;
+  }
+  double Duration() const {
+    MOZ_ASSERT(mType == SetValueCurve);
+    return mDuration;
+  }
   
 
 
@@ -148,7 +169,9 @@ struct AudioTimelineEvent {
   }
 
  public:
-  Type mType;
+  const Type mType;
+
+ private:
   union {
     float mValue;
     uint32_t mCurveLength;
@@ -162,7 +185,6 @@ struct AudioTimelineEvent {
   double mTimeConstant;
   double mDuration;
 
- private:
   
   
   
@@ -203,34 +225,39 @@ class AudioEventTimeline {
       aRv.ThrowRangeError<MSG_INVALID_AUDIOPARAM_METHOD_START_TIME_ERROR>();
       return false;
     }
-    if (!WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
-      aRv.ThrowRangeError(
-          "The exponential constant passed to setTargetAtTime must be "
-          "non-negative.");
-      return false;
-    }
 
-    if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
-      if (!aEvent.mCurve || aEvent.mCurveLength < 2) {
-        aRv.ThrowInvalidStateError("Curve length must be at least 2");
-        return false;
-      }
-      if (aEvent.mDuration <= 0) {
-        aRv.ThrowRangeError(
-            "The curve duration for setValueCurveAtTime must be strictly "
-            "positive.");
-        return false;
-      }
+    switch (aEvent.mType) {
+      case AudioTimelineEvent::SetValueCurve:
+        if (aEvent.CurveLength() < 2) {
+          aRv.ThrowInvalidStateError("Curve length must be at least 2");
+          return false;
+        }
+        if (aEvent.Duration() <= 0) {
+          aRv.ThrowRangeError(
+              "The curve duration for setValueCurveAtTime must be strictly "
+              "positive.");
+          return false;
+        }
+        MOZ_ASSERT(IsValid(aEvent.Duration()));
+        break;
+      case AudioTimelineEvent::SetTarget:
+        if (!WebAudioUtils::IsTimeValid(aEvent.TimeConstant())) {
+          aRv.ThrowRangeError(
+              "The exponential constant passed to setTargetAtTime must be "
+              "non-negative.");
+          return false;
+        }
+        [[fallthrough]];
+      default:
+        MOZ_ASSERT(IsValid(aEvent.NominalValue()));
     }
-
-    MOZ_ASSERT(IsValid(aEvent.mValue) && IsValid(aEvent.mDuration));
 
     
     
     for (unsigned i = 0; i < mEvents.Length(); ++i) {
       if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
           TimeOf(mEvents[i]) <= TimeOf(aEvent) &&
-          TimeOf(mEvents[i]) + mEvents[i].mDuration > TimeOf(aEvent)) {
+          TimeOf(mEvents[i]) + mEvents[i].Duration() > TimeOf(aEvent)) {
         aRv.ThrowNotSupportedError("Can't add events during a curve event");
         return false;
       }
@@ -241,7 +268,7 @@ class AudioEventTimeline {
     if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
       for (unsigned i = 0; i < mEvents.Length(); ++i) {
         if (TimeOf(aEvent) < TimeOf(mEvents[i]) &&
-            TimeOf(aEvent) + aEvent.mDuration > TimeOf(mEvents[i])) {
+            TimeOf(aEvent) + aEvent.Duration() > TimeOf(mEvents[i])) {
           aRv.ThrowNotSupportedError(
               "Can't add curve events that overlap other events");
           return false;
@@ -251,7 +278,7 @@ class AudioEventTimeline {
 
     
     if (aEvent.mType == AudioTimelineEvent::ExponentialRamp) {
-      if (aEvent.mValue == 0.f) {
+      if (aEvent.NominalValue() == 0.f) {
         aRv.ThrowRangeError(
             "The value passed to exponentialRampToValueAtTime must be "
             "non-zero.");
