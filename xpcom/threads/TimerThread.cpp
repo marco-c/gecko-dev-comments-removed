@@ -1066,9 +1066,9 @@ TimeStamp TimerThread::FindNextFireTimeForCurrentThread(TimeStamp aDefault,
       if (aSearchBound == 0) {
         
         
-        
-        
-        return timer->mTimeout;
+        TimeStamp fallbackDeadline =
+            TimeStamp::Now() + TimeDuration::FromMilliseconds(16);
+        return fallbackDeadline < aDefault ? fallbackDeadline : aDefault;
       }
 
       --aSearchBound;
