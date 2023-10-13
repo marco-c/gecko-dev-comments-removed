@@ -14,8 +14,6 @@
 
 pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml", locked);
 
-pref("toolkit.zoomManager.zoomValues", ".2,.3,.5,.67,.8,.9,1,1.1,1.2,1.33,1.5,1.7,2,2.4,3,4");
-
 
 pref("ui.useOverlayScrollbars", 1);
 pref("ui.scrollbarFadeBeginDelay", 450);
@@ -96,7 +94,6 @@ pref("extensions.update.enabled", true);
 pref("extensions.update.interval", 86400);
 pref("extensions.logging.enabled", false);
 pref("extensions.strictCompatibility", false);
-pref("extensions.minCompatibleAppVersion", "11.0");
 
 pref("extensions.update.url", "https://versioncheck.addons.mozilla.org/update/VersionCheck.php?reqVersion=%REQ_VERSION%&id=%ITEM_ID%&version=%ITEM_VERSION%&maxAppVersion=%ITEM_MAXAPPVERSION%&status=%ITEM_STATUS%&appID=%APP_ID%&appVersion=%APP_VERSION%&appOS=%APP_OS%&appABI=%APP_ABI%&locale=%APP_LOCALE%&currentAppVersion=%CURRENT_APP_VERSION%&updateType=%UPDATE_TYPE%&compatMode=%COMPATIBILITY_MODE%");
 pref("extensions.update.background.url", "https://versioncheck-bg.addons.mozilla.org/update/VersionCheck.php?reqVersion=%REQ_VERSION%&id=%ITEM_ID%&version=%ITEM_VERSION%&maxAppVersion=%ITEM_MAXAPPVERSION%&status=%ITEM_STATUS%&appID=%APP_ID%&appVersion=%APP_VERSION%&appOS=%APP_OS%&appABI=%APP_ABI%&locale=%APP_LOCALE%&currentAppVersion=%CURRENT_APP_VERSION%&updateType=%UPDATE_TYPE%&compatMode=%COMPATIBILITY_MODE%");
@@ -173,11 +170,6 @@ pref("devtools.debugger.unix-domain-socket", "@ANDROID_PACKAGE_NAME@/firefox-deb
 pref("breakpad.reportURL", "https://crash-stats.mozilla.org/report/index/");
 
 pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%/%LOCALE%/");
-#if MOZ_UPDATE_CHANNEL == beta
-  pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%beta/releasenotes/");
-#else
-  pref("app.releaseNotesURL", "https://www.mozilla.com/%LOCALE%/mobile/%VERSION%/releasenotes/");
-#endif
 
 
 pref("app.update.timerFirstInterval", 30000); 
@@ -266,20 +258,6 @@ pref("dom.meta-viewport.enabled", true);
 
 
 pref("media.gmp-provider.enabled", true);
-
-
-
-
-
-
-pref("reader.color_scheme", "light");
-
-
-
-pref("reader.color_scheme.values", "[\"dark\",\"sepia\",\"light\"]");
-
-
-pref("reader.toolbar.vertical", false);
 
 
 
