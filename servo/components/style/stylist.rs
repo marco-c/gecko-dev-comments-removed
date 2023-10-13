@@ -8,7 +8,7 @@ use crate::applicable_declarations::{
     ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority,
 };
 use crate::context::{CascadeInputs, QuirksMode};
-use crate::custom_properties::CustomPropertiesMap;
+use crate::custom_properties::{CustomPropertiesMap, ComputedCustomProperties};
 use crate::dom::TElement;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{ServoStyleSetSizes, StyleRuleInclusion};
@@ -549,6 +549,9 @@ pub struct Stylist {
     script_custom_properties: CustomPropertyScriptRegistry,
 
     
+    initial_values_for_custom_properties: ComputedCustomProperties,
+
+    
     num_rebuilds: usize,
 }
 
@@ -654,6 +657,7 @@ impl Stylist {
             author_styles_enabled: AuthorStylesEnabled::Yes,
             rule_tree: RuleTree::new(),
             script_custom_properties: Default::default(),
+            initial_values_for_custom_properties: Default::default(),
             num_rebuilds: 0,
         }
     }
@@ -697,36 +701,55 @@ impl Stylist {
     }
 
     
+    pub fn get_custom_property_initial_values(&self) -> &ComputedCustomProperties {
+        &self.initial_values_for_custom_properties
+    }
+
     
     
-    pub fn get_custom_property_initial_values(&self) -> Option<CustomPropertiesMap> {
+    pub fn rebuild_initial_values_for_custom_properties(&mut self) {
         let mut seen_names = PrecomputedHashSet::default();
-        let mut map = CustomPropertiesMap::default();
+        let mut inherited_map = CustomPropertiesMap::default();
+        let mut non_inherited_map = CustomPropertiesMap::default();
         for (k, v) in self.custom_property_script_registry().properties().iter() {
             seen_names.insert(k.clone());
-            if v.inherits {
-                if let Some(value) = &v.initial_value {
-                    map.insert(k.clone(), value.clone());
-                }
+            if let Some(value) = &v.initial_value {
+                let map = if v.inherits {
+                    &mut inherited_map
+                } else {
+                    &mut non_inherited_map
+                };
+                map.insert(k.clone(), value.clone());
             }
         }
         for (data, _) in self.iter_origins() {
             for (k, v) in data.custom_property_registrations.iter() {
                 if seen_names.insert(k.clone()) {
                     let last_value = &v.last().unwrap().0;
-                    if last_value.inherits {
-                        if let Some(ref value) = last_value.initial_value {
-                            map.insert(k.clone(), value.clone());
-                        }
+                    if let Some(ref value) = last_value.initial_value {
+                        let map = if last_value.inherits {
+                            &mut inherited_map
+                        } else {
+                            &mut non_inherited_map
+                        };
+                        map.insert(k.clone(), value.clone());
                     }
                 }
             }
         }
-        if map.is_empty() {
-            None
-        } else {
-            map.shrink_to_fit();
-            Some(map)
+        self.initial_values_for_custom_properties = ComputedCustomProperties {
+            inherited: if inherited_map.is_empty() {
+                None
+            } else {
+                inherited_map.shrink_to_fit();
+                Some(Arc::new(inherited_map))
+            },
+            non_inherited: if non_inherited_map.is_empty() {
+                None
+            } else {
+                non_inherited_map.shrink_to_fit();
+                Some(Arc::new(non_inherited_map))
+            },
         }
     }
 
@@ -827,6 +850,8 @@ impl Stylist {
         self.cascade_data
             .rebuild(&self.device, self.quirks_mode, flusher, guards)
             .unwrap_or_else(|_| warn!("OOM in Stylist::flush"));
+
+        self.rebuild_initial_values_for_custom_properties();
 
         had_invalidations
     }

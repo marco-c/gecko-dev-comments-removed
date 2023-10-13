@@ -3274,8 +3274,6 @@ impl ComputedValues {
                 
                 
                 
-                
-                
                 let p = &self.custom_properties;
                 let value = p
                     .inherited
