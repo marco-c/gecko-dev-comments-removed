@@ -154,28 +154,19 @@ void nsSubDocumentFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
       
       frameloader->Hide();
     }
+
+    if (RefPtr<BrowsingContext> bc = frameloader->GetExtantBrowsingContext()) {
+      mIsInObjectOrEmbed = bc->IsEmbedderTypeObjectOrEmbed();
+    }
   }
 
-  
-  
-  UpdateEmbeddedBrowsingContextDependentData();
-  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
-}
-
-void nsSubDocumentFrame::UpdateEmbeddedBrowsingContextDependentData() {
-  if (!mFrameLoader) {
-    return;
-  }
-  BrowsingContext* bc = mFrameLoader->GetExtantBrowsingContext();
-  if (!bc) {
-    return;
-  }
-  mIsInObjectOrEmbed = bc->IsEmbedderTypeObjectOrEmbed();
   MaybeUpdateRemoteStyle();
-  MaybeUpdateEmbedderColorScheme();
+
   PropagateIsUnderHiddenEmbedderElement(
       PresShell()->IsUnderHiddenEmbedderElement() ||
       !StyleVisibility()->IsVisible());
+
+  nsContentUtils::AddScriptRunner(new AsyncFrameInit(this));
 }
 
 void nsSubDocumentFrame::PropagateIsUnderHiddenEmbedderElement(bool aValue) {
@@ -205,13 +196,16 @@ void nsSubDocumentFrame::ShowViewer() {
     }
     mCallingShow = false;
     mDidCreateDoc = didCreateDoc;
+
     if (!HasAnyStateBits(NS_FRAME_FIRST_REFLOW)) {
       frameloader->UpdatePositionAndSize(this);
     }
+
+    MaybeUpdateEmbedderColorScheme();
+
     if (!weakThis.IsAlive()) {
       return;
     }
-    UpdateEmbeddedBrowsingContextDependentData();
     InvalidateFrame();
   }
 }
