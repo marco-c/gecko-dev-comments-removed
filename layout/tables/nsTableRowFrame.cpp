@@ -946,7 +946,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
     } else {
       if (isPaginated && HasStyleBSize()) {
         
-        SetHasUnpaginatedBSize(true);
         SetUnpaginatedBSize(aDesiredSize.BSize(wm));
       }
       if (isPaginated && HasUnpaginatedBSize()) {
@@ -1306,16 +1305,19 @@ nsTableRowFrame* nsTableRowFrame::GetNextRow() const {
   return nullptr;
 }
 
-NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(RowUnpaginatedHeightProperty, nscoord)
+
+NS_DECLARE_FRAME_PROPERTY_SMALL_VALUE(TableRowUnpaginatedBSizeProperty, nscoord)
 
 void nsTableRowFrame::SetUnpaginatedBSize(nscoord aValue) {
-  NS_ASSERTION(!GetPrevInFlow(), "program error");
-  
-  SetProperty(RowUnpaginatedHeightProperty(), aValue);
+  MOZ_ASSERT(!GetPrevInFlow(),
+             "TableRowUnpaginatedBSizeProperty should only be set on the "
+             "first-in-flow!");
+  AddStateBits(NS_TABLE_ROW_HAS_UNPAGINATED_BSIZE);
+  SetProperty(TableRowUnpaginatedBSizeProperty(), aValue);
 }
 
-nscoord nsTableRowFrame::GetUnpaginatedBSize() {
-  return GetProperty(RowUnpaginatedHeightProperty());
+nscoord nsTableRowFrame::GetUnpaginatedBSize() const {
+  return GetProperty(TableRowUnpaginatedBSizeProperty());
 }
 
 void nsTableRowFrame::SetContinuousBCBorderWidth(LogicalSide aForSide,
