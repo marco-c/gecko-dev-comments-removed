@@ -16,7 +16,6 @@ extern "C" {
 #endif
 
 #include "./vpx_integer.h"
-#include "./vpx_tpl.h"
 
 
 
@@ -26,7 +25,7 @@ extern "C" {
 
 
 
-#define VPX_EXT_RATECTRL_ABI_VERSION (7)
+#define VPX_EXT_RATECTRL_ABI_VERSION (6)
 
 
 
@@ -47,14 +46,6 @@ typedef enum vpx_rc_type {
   VPX_RC_GOP_QP = VPX_RC_QP | VPX_RC_GOP,
   VPX_RC_GOP_QP_RDMULT = VPX_RC_QP | VPX_RC_GOP | VPX_RC_RDMULT
 } vpx_rc_type_t;
-
-
-
-typedef enum vpx_ext_rc_mode {
-  VPX_RC_QMODE = 0,
-  VPX_RC_VBR = 1,
-  VPX_RC_CQ = 2,
-} vpx_ext_rc_mode_t;
 
 
 
@@ -280,10 +271,6 @@ typedef struct vpx_rc_frame_stats {
 
 
   double count;
-  
-
-
-  double new_mv_count;
 } vpx_rc_frame_stats_t;
 
 
@@ -307,21 +294,12 @@ typedef struct vpx_rc_config {
   int frame_width;      
   int frame_height;     
   int show_frame_count; 
-  int max_gf_interval;  
-  int min_gf_interval;  
   
 
 
   int target_bitrate_kbps;
   int frame_rate_num; 
   int frame_rate_den; 
-  
-
-
-
-  vpx_ext_rc_mode_t rc_mode; 
-  int overshoot_percent;     
-  int undershoot_percent;    
 } vpx_rc_config_t;
 
 
@@ -413,7 +391,7 @@ typedef struct vpx_rc_gop_decision {
 
 typedef vpx_rc_status_t (*vpx_rc_create_model_cb_fn_t)(
     void *priv, const vpx_rc_config_t *ratectrl_config,
-    vpx_rc_model_t *rate_ctrl_model_ptr);
+    vpx_rc_model_t *rate_ctrl_model_pt);
 
 
 
@@ -427,18 +405,6 @@ typedef vpx_rc_status_t (*vpx_rc_create_model_cb_fn_t)(
 typedef vpx_rc_status_t (*vpx_rc_send_firstpass_stats_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model,
     const vpx_rc_firstpass_stats_t *first_pass_stats);
-
-
-
-
-
-
-
-
-
-
-typedef vpx_rc_status_t (*vpx_rc_send_tpl_gop_stats_cb_fn_t)(
-    vpx_rc_model_t rate_ctrl_model, const VpxTplGopStats *tpl_gop_stats);
 
 
 
@@ -521,10 +487,6 @@ typedef struct vpx_rc_funcs {
 
 
   vpx_rc_send_firstpass_stats_cb_fn_t send_firstpass_stats;
-  
-
-
-  vpx_rc_send_tpl_gop_stats_cb_fn_t send_tpl_gop_stats;
   
 
 

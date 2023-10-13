@@ -130,19 +130,13 @@ std::ostream &operator<<(std::ostream &os, const HadamardFuncWithSize &hfs) {
 
 class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
  public:
-  void SetUp() override {
+  virtual void SetUp() {
     h_func_ = GetParam().func;
     bwh_ = GetParam().block_size;
     block_size_ = bwh_ * bwh_;
     rnd_.Reset(ACMRandom::DeterministicSeed());
   }
 
-  
-  
-  
-  
-  
-  
   virtual int16_t Rand() = 0;
 
   void ReferenceHadamard(const int16_t *a, int a_stride, tran_low_t *b,
@@ -174,31 +168,6 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
     std::sort(b, b + block_size_);
     std::sort(b_ref, b_ref + block_size_);
     EXPECT_EQ(0, memcmp(b, b_ref, sizeof(b)));
-  }
-
-  void ExtremeValuesTest() {
-    const int kMaxBlockSize = 32 * 32;
-    DECLARE_ALIGNED(16, int16_t, input_extreme_block[kMaxBlockSize]);
-    DECLARE_ALIGNED(16, tran_low_t, b[kMaxBlockSize]);
-    memset(b, 0, sizeof(b));
-
-    tran_low_t b_ref[kMaxBlockSize];
-    memset(b_ref, 0, sizeof(b_ref));
-
-    for (int i = 0; i < 2; ++i) {
-      
-      const int sign = (i == 0) ? 1 : -1;
-      for (int j = 0; j < kMaxBlockSize; ++j)
-        input_extreme_block[j] = sign * 255;
-
-      ReferenceHadamard(input_extreme_block, bwh_, b_ref, bwh_);
-      ASM_REGISTER_STATE_CHECK(h_func_(input_extreme_block, bwh_, b));
-
-      
-      std::sort(b, b + block_size_);
-      std::sort(b_ref, b_ref + block_size_);
-      EXPECT_EQ(0, memcmp(b, b_ref, sizeof(b)));
-    }
   }
 
   void VaryStride() {
@@ -251,17 +220,10 @@ class HadamardTestBase : public ::testing::TestWithParam<HadamardFuncWithSize> {
 
 class HadamardLowbdTest : public HadamardTestBase {
  protected:
-  
-  int16_t Rand() override {
-    int16_t src = rnd_.Rand8();
-    int16_t pred = rnd_.Rand8();
-    return src - pred;
-  }
+  virtual int16_t Rand() { return rnd_.Rand9Signed(); }
 };
 
 TEST_P(HadamardLowbdTest, CompareReferenceRandom) { CompareReferenceRandom(); }
-
-TEST_P(HadamardLowbdTest, ExtremeValuesTest) { ExtremeValuesTest(); }
 
 TEST_P(HadamardLowbdTest, VaryStride) { VaryStride(); }
 
@@ -334,12 +296,7 @@ INSTANTIATE_TEST_SUITE_P(
 #if CONFIG_VP9_HIGHBITDEPTH
 class HadamardHighbdTest : public HadamardTestBase {
  protected:
-  
-  int16_t Rand() override {
-    int16_t src = rnd_.Rand12();
-    int16_t pred = rnd_.Rand12();
-    return src - pred;
-  }
+  virtual int16_t Rand() { return rnd_.Rand13Signed(); }
 };
 
 TEST_P(HadamardHighbdTest, CompareReferenceRandom) { CompareReferenceRandom(); }

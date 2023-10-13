@@ -18,7 +18,6 @@
 #include "vpx/internal/vpx_codec_internal.h"
 #include "vpx/vpx_ext_ratectrl.h"
 #include "vpx/vp8cx.h"
-#include "vpx/vpx_tpl.h"
 #if CONFIG_INTERNAL_STATS
 #include "vpx_dsp/ssim.h"
 #endif
@@ -338,7 +337,6 @@ typedef struct TileDataEnc {
 
   
   int *row_base_thresh_freq_fact;
-  MV firstpass_top_mv;
 } TileDataEnc;
 
 typedef struct RowMTInfo {
@@ -1077,8 +1075,8 @@ static INLINE void free_partition_info(struct VP9_COMP *cpi) {
 }
 
 static INLINE void reset_mv_info(MOTION_VECTOR_INFO *mv_info) {
-  mv_info->ref_frame[0] = NO_REF_FRAME;
-  mv_info->ref_frame[1] = NO_REF_FRAME;
+  mv_info->ref_frame[0] = NONE;
+  mv_info->ref_frame[1] = NONE;
   mv_info->mv[0].as_int = INVALID_MV;
   mv_info->mv[1].as_int = INVALID_MV;
 }

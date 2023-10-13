@@ -45,21 +45,9 @@ typedef int16_t tran_low_t;
 
 typedef int16_t tran_coef_t;
 
-
-
-
-
-
-
-#if defined(_MSC_VER) && defined(_M_ARM64) && !defined(__clang__)
-static INLINE int clip_pixel(int val) {
-  return (val > 255) ? 255 : (val < 0) ? 0 : val;
-}
-#else
 static INLINE uint8_t clip_pixel(int val) {
   return (val > 255) ? 255 : (val < 0) ? 0 : val;
 }
-#endif
 
 static INLINE int clamp(int value, int low, int high) {
   return value < low ? low : (value > high ? high : value);

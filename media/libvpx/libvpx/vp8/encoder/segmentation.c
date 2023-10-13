@@ -11,7 +11,7 @@
 #include "segmentation.h"
 #include "vpx_mem/vpx_mem.h"
 
-void vp8_update_gf_usage_maps(VP8_COMP *cpi, VP8_COMMON *cm, MACROBLOCK *x) {
+void vp8_update_gf_useage_maps(VP8_COMP *cpi, VP8_COMMON *cm, MACROBLOCK *x) {
   int mb_row, mb_col;
 
   MODE_INFO *this_mb_mode_info = cm->mi;

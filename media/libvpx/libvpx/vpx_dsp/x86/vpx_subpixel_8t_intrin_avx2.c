@@ -46,7 +46,7 @@ DECLARE_ALIGNED(32, static const uint8_t, filt_d4_global_avx2[64]) = {
 };
 
 #define CALC_CONVOLVE8_HORZ_ROW                                               \
-  srcReg = mm256_loadu2_si128(src_ptr - 3, src_ptr - 3 + src_pitch);          \
+  srcReg = xx_loadu2_mi128(src_ptr - 3 + src_pitch, src_ptr - 3);             \
   s1[0] = _mm256_shuffle_epi8(srcReg, filt[0]);                               \
   s1[1] = _mm256_shuffle_epi8(srcReg, filt[1]);                               \
   s1[2] = _mm256_shuffle_epi8(srcReg, filt[2]);                               \
@@ -59,6 +59,16 @@ DECLARE_ALIGNED(32, static const uint8_t, filt_d4_global_avx2[64]) = {
   _mm_storel_epi64((__m128i *)&output_ptr[0],                                 \
                    _mm256_extractf128_si256(s1[0], 1));                       \
   output_ptr += output_pitch;
+
+
+static INLINE __m256i xx_loadu2_mi128(const void *hi, const void *lo) {
+  
+  __m256i a = _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(lo)));
+
+  
+  a = _mm256_inserti128_si256(a, _mm_loadu_si128((const __m128i *)(hi)), 1);
+  return a;
+}
 
 static INLINE void vpx_filter_block1d16_h8_x_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_pixels_per_line, uint8_t *output_ptr,
@@ -83,7 +93,12 @@ static INLINE void vpx_filter_block1d16_h8_x_avx2(
     __m256i srcReg;
 
     
-    srcReg = mm256_loadu2_si128(src_ptr - 3, src_ptr + src_pixels_per_line - 3);
+    srcReg =
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(src_ptr - 3)));
+    srcReg = _mm256_inserti128_si256(
+        srcReg,
+        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line - 3)),
+        1);
 
     
     s[0] = _mm256_shuffle_epi8(srcReg, filt[0]);
@@ -94,7 +109,12 @@ static INLINE void vpx_filter_block1d16_h8_x_avx2(
 
     
     
-    srcReg = mm256_loadu2_si128(src_ptr + 5, src_ptr + src_pixels_per_line + 5);
+    srcReg =
+        _mm256_castsi128_si256(_mm_loadu_si128((const __m128i *)(src_ptr + 5)));
+    srcReg = _mm256_inserti128_si256(
+        srcReg,
+        _mm_loadu_si128((const __m128i *)(src_ptr + src_pixels_per_line + 5)),
+        1);
 
     
     s[0] = _mm256_shuffle_epi8(srcReg, filt[0]);
@@ -109,36 +129,59 @@ static INLINE void vpx_filter_block1d16_h8_x_avx2(
 
     src_ptr += src_stride;
 
+    
+    outReg1 = _mm256_castsi256_si128(outReg32b1);
+    outReg2 = _mm256_extractf128_si256(outReg32b1, 1);
     if (avg) {
-      const __m256i outReg = mm256_loadu2_si128(
-          (__m128i *)output_ptr, (__m128i *)(output_ptr + output_pitch));
-      outReg32b1 = _mm256_avg_epu8(outReg32b1, outReg);
+      outReg1 = _mm_avg_epu8(outReg1, _mm_load_si128((__m128i *)output_ptr));
+      outReg2 = _mm_avg_epu8(
+          outReg2, _mm_load_si128((__m128i *)(output_ptr + output_pitch)));
     }
-    mm256_store2_si128((__m128i *)output_ptr,
-                       (__m128i *)(output_ptr + output_pitch), &outReg32b1);
+
+    
+    _mm_store_si128((__m128i *)output_ptr, outReg1);
+
+    
+    _mm_store_si128((__m128i *)(output_ptr + output_pitch), outReg2);
+
     output_ptr += dst_stride;
   }
 
   
   
   if (i > 0) {
-    const __m128i srcReg1 = _mm_loadu_si128((const __m128i *)(src_ptr - 3));
-    const __m128i srcReg2 = _mm_loadu_si128((const __m128i *)(src_ptr + 5));
-    const __m256i srcReg =
-        _mm256_inserti128_si256(_mm256_castsi128_si256(srcReg1), srcReg2, 1);
+    __m128i srcReg;
 
     
-    s[0] = _mm256_shuffle_epi8(srcReg, filt[0]);
-    s[1] = _mm256_shuffle_epi8(srcReg, filt[1]);
-    s[2] = _mm256_shuffle_epi8(srcReg, filt[2]);
-    s[3] = _mm256_shuffle_epi8(srcReg, filt[3]);
+    srcReg = _mm_loadu_si128((const __m128i *)(src_ptr - 3));
+
+    
+    s[0] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[0])));
+    s[1] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[1])));
+    s[2] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[2])));
+    s[3] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[3])));
+    outReg1 = convolve8_8_avx2(s, f);
 
     
     
-    outReg32b1 = convolve8_16_avx2(s, f);
-    outReg1 = _mm256_castsi256_si128(outReg32b1);
-    outReg2 = _mm256_extractf128_si256(outReg32b1, 1);
+    srcReg = _mm_loadu_si128((const __m128i *)(src_ptr + 5));
 
+    
+    s[0] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[0])));
+    s[1] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[1])));
+    s[2] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[2])));
+    s[3] = _mm256_castsi128_si256(
+        _mm_shuffle_epi8(srcReg, _mm256_castsi256_si128(filt[3])));
+    outReg2 = convolve8_8_avx2(s, f);
+
+    
     
     outReg1 = _mm_packus_epi16(outReg1, outReg2);
 
@@ -223,6 +266,7 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_pitch, uint8_t *output_ptr,
     ptrdiff_t out_pitch, uint32_t output_height, const int16_t *filter,
     const int avg) {
+  __m128i outReg1, outReg2;
   __m256i srcRegHead1;
   unsigned int i;
   ptrdiff_t src_stride, dst_stride;
@@ -301,14 +345,19 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
     src_ptr += src_stride;
 
     
+    outReg1 = _mm256_castsi256_si128(s1[0]);
+    outReg2 = _mm256_extractf128_si256(s1[0], 1);
     if (avg) {
-      const __m256i outReg = mm256_loadu2_si128(
-          (__m128i *)output_ptr, (__m128i *)(output_ptr + out_pitch));
-      s1[0] = _mm256_avg_epu8(s1[0], outReg);
+      outReg1 = _mm_avg_epu8(outReg1, _mm_load_si128((__m128i *)output_ptr));
+      outReg2 = _mm_avg_epu8(
+          outReg2, _mm_load_si128((__m128i *)(output_ptr + out_pitch)));
     }
 
-    mm256_store2_si128((__m128i *)output_ptr,
-                       (__m128i *)(output_ptr + out_pitch), s1);
+    
+    _mm_store_si128((__m128i *)output_ptr, outReg1);
+
+    
+    _mm_store_si128((__m128i *)(output_ptr + out_pitch), outReg2);
 
     output_ptr += dst_stride;
 
@@ -1045,7 +1094,7 @@ static void vpx_filter_block1d4_h8_avx2(
       
       
       
-      srcReg32b1 = mm256_loadu2_si128(src_ptr - 3, src_ptr - 3 + src_pitch);
+      srcReg32b1 = xx_loadu2_mi128(src_ptr - 3 + src_pitch, src_ptr - 3);
 
       
       
@@ -1139,7 +1188,8 @@ static void vpx_filter_block1d4_v8_avx2(
     const uint8_t *src_ptr, ptrdiff_t src_pitch, uint8_t *output_ptr,
     ptrdiff_t out_pitch, uint32_t output_height, const int16_t *filter) {
   __m256i f[4], ss[4];
-  __m256i r[9], rr[2];
+  __m256i r[8];
+  __m128i r1[10];
   __m128i s[11];
 
   unsigned int y = output_height;
@@ -1160,35 +1210,48 @@ static void vpx_filter_block1d4_v8_avx2(
   s[5] = _mm_loadl_epi64((const __m128i *)(src_ptr + 5 * src_pitch));
   s[6] = _mm_loadl_epi64((const __m128i *)(src_ptr + 6 * src_pitch));
 
-  r[0] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[0]), s[2], 1);
-  r[1] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[1]), s[3], 1);
-  r[2] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[2]), s[4], 1);
-  r[3] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[3]), s[5], 1);
-  r[4] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[4]), s[6], 1);
+  
+  r1[0] = _mm_unpacklo_epi32(s[0], s[1]);
+
+  
+  r1[1] = _mm_unpacklo_epi32(s[1], s[2]);
+
+  
+  r1[2] = _mm_unpacklo_epi32(s[2], s[3]);
+
+  
+  r1[3] = _mm_unpacklo_epi32(s[3], s[4]);
+
+  
+  r1[4] = _mm_unpacklo_epi32(s[4], s[5]);
+
+  
+  r1[5] = _mm_unpacklo_epi32(s[5], s[6]);
 
   
   
-  rr[0] = _mm256_unpacklo_epi32(r[0], r[1]);
+  r[0] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[0]), r1[2], 1);
 
   
   
-  rr[1] = _mm256_unpacklo_epi32(r[1], r[2]);
+  r[1] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[1]), r1[3], 1);
 
   
   
-  ss[0] = _mm256_unpacklo_epi8(rr[0], rr[1]);
+  r[2] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[2]), r1[4], 1);
 
   
   
-  rr[0] = _mm256_unpacklo_epi32(r[2], r[3]);
+  r[3] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[3]), r1[5], 1);
 
   
   
-  rr[1] = _mm256_unpacklo_epi32(r[3], r[4]);
+  ss[0] = _mm256_unpacklo_epi8(r[0], r[1]);
 
   
   
-  ss[1] = _mm256_unpacklo_epi8(rr[0], rr[1]);
+  ss[1] = _mm256_unpacklo_epi8(r[2], r[3]);
+
   
   while (y >= 4) {
     s[7] = _mm_loadl_epi64((const __m128i *)(src_ptr + 7 * src_pitch));
@@ -1196,17 +1259,41 @@ static void vpx_filter_block1d4_v8_avx2(
     s[9] = _mm_loadl_epi64((const __m128i *)(src_ptr + 9 * src_pitch));
     s[10] = _mm_loadl_epi64((const __m128i *)(src_ptr + 10 * src_pitch));
 
-    r[5] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[5]), s[7], 1);
-    r[6] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[6]), s[8], 1);
-    rr[0] = _mm256_unpacklo_epi32(r[4], r[5]);
-    rr[1] = _mm256_unpacklo_epi32(r[5], r[6]);
-    ss[2] = _mm256_unpacklo_epi8(rr[0], rr[1]);
+    
+    r1[6] = _mm_unpacklo_epi32(s[6], s[7]);
 
-    r[7] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[7]), s[9], 1);
-    r[8] = _mm256_inserti128_si256(_mm256_castsi128_si256(s[8]), s[10], 1);
-    rr[0] = _mm256_unpacklo_epi32(r[6], r[7]);
-    rr[1] = _mm256_unpacklo_epi32(r[7], r[8]);
-    ss[3] = _mm256_unpacklo_epi8(rr[0], rr[1]);
+    
+    r1[7] = _mm_unpacklo_epi32(s[7], s[8]);
+
+    
+    r1[8] = _mm_unpacklo_epi32(s[8], s[9]);
+
+    
+    r1[9] = _mm_unpacklo_epi32(s[9], s[10]);
+
+    
+    
+    r[4] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[4]), r1[6], 1);
+
+    
+    
+    r[5] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[5]), r1[7], 1);
+
+    
+    
+    r[6] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[6]), r1[8], 1);
+
+    
+    
+    r[7] = _mm256_inserti128_si256(_mm256_castsi128_si256(r1[7]), r1[9], 1);
+
+    
+    
+    ss[2] = _mm256_unpacklo_epi8(r[4], r[5]);
+
+    
+    
+    ss[3] = _mm256_unpacklo_epi8(r[6], r[7]);
 
     ss[0] = convolve8_16_avx2(ss, f);
 
@@ -1228,17 +1315,17 @@ static void vpx_filter_block1d4_v8_avx2(
     ss[1] = ss[3];
 
     s[6] = s[10];
-    s[5] = s[9];
 
-    r[4] = r[8];
+    r1[4] = r1[8];
+    r1[5] = r1[9];
+
     y -= 4;
   }
 
   
   if (y == 2) {
-    __m128i ss1[4], f1[4], r1[4];
+    __m128i ss1[4], f1[4];
 
-    s[4] = _mm_loadl_epi64((const __m128i *)(src_ptr + 4 * src_pitch));
     s[7] = _mm_loadl_epi64((const __m128i *)(src_ptr + 7 * src_pitch));
     s[8] = _mm_loadl_epi64((const __m128i *)(src_ptr + 8 * src_pitch));
 
@@ -1247,14 +1334,11 @@ static void vpx_filter_block1d4_v8_avx2(
     f1[2] = _mm256_castsi256_si128(f[2]);
     f1[3] = _mm256_castsi256_si128(f[3]);
 
-    r1[0] = _mm_unpacklo_epi32(s[4], s[5]);
-    r1[1] = _mm_unpacklo_epi32(s[5], s[6]);
+    
+    r1[6] = _mm_unpacklo_epi32(s[6], s[7]);
 
     
-    r1[2] = _mm_unpacklo_epi32(s[6], s[7]);
-
-    
-    r1[3] = _mm_unpacklo_epi32(s[7], s[8]);
+    r1[7] = _mm_unpacklo_epi32(s[7], s[8]);
 
     
     ss1[0] = _mm256_castsi256_si128(ss[0]);
@@ -1263,10 +1347,10 @@ static void vpx_filter_block1d4_v8_avx2(
     ss1[1] = _mm256_castsi256_si128(ss[1]);
 
     
-    ss1[2] = _mm_unpacklo_epi8(r1[0], r1[1]);
+    ss1[2] = _mm_unpacklo_epi8(r1[4], r1[5]);
 
     
-    ss1[3] = _mm_unpacklo_epi8(r1[2], r1[3]);
+    ss1[3] = _mm_unpacklo_epi8(r1[6], r1[7]);
 
     ss1[0] = convolve8_8_ssse3(ss1, f1);
 

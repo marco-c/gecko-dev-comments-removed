@@ -22,24 +22,24 @@ class ConfigTest
   ConfigTest()
       : EncoderTest(GET_PARAM(0)), frame_count_in_(0), frame_count_out_(0),
         frame_count_max_(0) {}
-  ~ConfigTest() override = default;
+  virtual ~ConfigTest() {}
 
-  void SetUp() override {
+  virtual void SetUp() {
     InitializeConfig();
     SetMode(GET_PARAM(1));
   }
 
-  void BeginPassHook(unsigned int ) override {
+  virtual void BeginPassHook(unsigned int ) {
     frame_count_in_ = 0;
     frame_count_out_ = 0;
   }
 
-  void PreEncodeFrameHook(libvpx_test::VideoSource * ) override {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource * ) {
     ++frame_count_in_;
     abort_ |= (frame_count_in_ >= frame_count_max_);
   }
 
-  void FramePktHook(const vpx_codec_cx_pkt_t * ) override {
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t * ) {
     ++frame_count_out_;
   }
 

@@ -26,7 +26,7 @@ namespace {
 
 
 
-const int kDbl = 26;
+const int kDbl = 25;
 const int kInt = 1;
 const size_t kFirstPassStatsSz = kDbl * sizeof(double) + kInt * sizeof(int64_t);
 
@@ -44,9 +44,9 @@ class VPxFirstPassEncoderThreadTest
     firstpass_stats_.buf = nullptr;
     firstpass_stats_.sz = 0;
   }
-  ~VPxFirstPassEncoderThreadTest() override { free(firstpass_stats_.buf); }
+  virtual ~VPxFirstPassEncoderThreadTest() { free(firstpass_stats_.buf); }
 
-  void SetUp() override {
+  virtual void SetUp() {
     InitializeConfig();
     SetMode(encoding_mode_);
 
@@ -57,19 +57,19 @@ class VPxFirstPassEncoderThreadTest
     cfg_.rc_min_quantizer = 0;
   }
 
-  void BeginPassHook(unsigned int ) override {
+  virtual void BeginPassHook(unsigned int ) {
     encoder_initialized_ = false;
     abort_ = false;
   }
 
-  void EndPassHook() override {
+  virtual void EndPassHook() {
     
     if (first_pass_only_ && cfg_.g_pass == VPX_RC_FIRST_PASS)
       abort_ |= first_pass_only_;
   }
 
-  void PreEncodeFrameHook(::libvpx_test::VideoSource * ,
-                          ::libvpx_test::Encoder *encoder) override {
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource * ,
+                                  ::libvpx_test::Encoder *encoder) {
     if (!encoder_initialized_) {
       
       encoder->Control(VP9E_SET_TILE_COLUMNS, tiles_);
@@ -87,7 +87,7 @@ class VPxFirstPassEncoderThreadTest
     }
   }
 
-  void StatsPktHook(const vpx_codec_cx_pkt_t *pkt) override {
+  virtual void StatsPktHook(const vpx_codec_cx_pkt_t *pkt) {
     const uint8_t *const pkt_buf =
         reinterpret_cast<uint8_t *>(pkt->data.twopass_stats.buf);
     const size_t pkt_size = pkt->data.twopass_stats.sz;
@@ -185,7 +185,7 @@ TEST_P(VPxFirstPassEncoderThreadTest, FirstPassStatsTest) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
   
-  ASSERT_NO_FATAL_FAILURE(compare_fp_stats(&firstpass_stats_, 400.0));
+  ASSERT_NO_FATAL_FAILURE(compare_fp_stats(&firstpass_stats_, 1000.0));
 
   
   row_mt_mode_ = 1;
@@ -199,7 +199,7 @@ TEST_P(VPxFirstPassEncoderThreadTest, FirstPassStatsTest) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 
   
-  ASSERT_NO_FATAL_FAILURE(compare_fp_stats(&firstpass_stats_, 400.0));
+  ASSERT_NO_FATAL_FAILURE(compare_fp_stats(&firstpass_stats_, 1000.0));
 
   
   
@@ -233,9 +233,9 @@ class VPxEncoderThreadTest
     psnr_ = 0.0;
     nframes_ = 0;
   }
-  ~VPxEncoderThreadTest() override = default;
+  virtual ~VPxEncoderThreadTest() {}
 
-  void SetUp() override {
+  virtual void SetUp() {
     InitializeConfig();
     SetMode(encoding_mode_);
 
@@ -252,14 +252,14 @@ class VPxEncoderThreadTest
     cfg_.rc_min_quantizer = 0;
   }
 
-  void BeginPassHook(unsigned int ) override {
+  virtual void BeginPassHook(unsigned int ) {
     encoder_initialized_ = false;
     psnr_ = 0.0;
     nframes_ = 0;
   }
 
-  void PreEncodeFrameHook(::libvpx_test::VideoSource * ,
-                          ::libvpx_test::Encoder *encoder) override {
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource * ,
+                                  ::libvpx_test::Encoder *encoder) {
     if (!encoder_initialized_) {
       
       encoder->Control(VP9E_SET_TILE_COLUMNS, tiles_);
@@ -280,21 +280,21 @@ class VPxEncoderThreadTest
     }
   }
 
-  void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) override {
+  virtual void PSNRPktHook(const vpx_codec_cx_pkt_t *pkt) {
     psnr_ += pkt->data.psnr.psnr[0];
     nframes_++;
   }
 
-  void DecompressedFrameHook(const vpx_image_t &img,
-                             vpx_codec_pts_t ) override {
+  virtual void DecompressedFrameHook(const vpx_image_t &img,
+                                     vpx_codec_pts_t ) {
     ::libvpx_test::MD5 md5_res;
     md5_res.Add(&img);
     md5_.push_back(md5_res.Get());
   }
 
-  bool HandleDecodeResult(const vpx_codec_err_t res,
-                          const libvpx_test::VideoSource & ,
-                          libvpx_test::Decoder * ) override {
+  virtual bool HandleDecodeResult(const vpx_codec_err_t res,
+                                  const libvpx_test::VideoSource & ,
+                                  libvpx_test::Decoder * ) {
     if (res != VPX_CODEC_OK) {
       EXPECT_EQ(VPX_CODEC_OK, res);
       return false;

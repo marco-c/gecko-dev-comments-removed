@@ -29,8 +29,6 @@
 #include "vp9/vp9_cx_iface.h"
 #include "vp9/vp9_iface_common.h"
 
-#include "vpx/vpx_tpl.h"
-
 typedef struct vp9_extracfg {
   int cpu_used;  
   unsigned int enable_auto_alt_ref;
@@ -639,12 +637,8 @@ static vpx_codec_err_t set_encoder_config(
 
   for (sl = 0; sl < oxcf->ss_number_layers; ++sl) {
     for (tl = 0; tl < oxcf->ts_number_layers; ++tl) {
-      const int layer = sl * oxcf->ts_number_layers + tl;
-      if (cfg->layer_target_bitrate[layer] > INT_MAX / 1000)
-        oxcf->layer_target_bitrate[layer] = INT_MAX;
-      else
-        oxcf->layer_target_bitrate[layer] =
-            1000 * cfg->layer_target_bitrate[layer];
+      oxcf->layer_target_bitrate[sl * oxcf->ts_number_layers + tl] =
+          1000 * cfg->layer_target_bitrate[sl * oxcf->ts_number_layers + tl];
     }
   }
   if (oxcf->ss_number_layers == 1 && oxcf->pass != 0) {
@@ -1964,28 +1958,16 @@ static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
     const FRAME_INFO *frame_info = &cpi->frame_info;
     vpx_rc_config_t ratectrl_config;
     vpx_codec_err_t codec_status;
-    memset(&ratectrl_config, 0, sizeof(ratectrl_config));
 
     ratectrl_config.frame_width = frame_info->frame_width;
     ratectrl_config.frame_height = frame_info->frame_height;
     ratectrl_config.show_frame_count = cpi->twopass.first_pass_info.num_frames;
-    ratectrl_config.max_gf_interval = oxcf->max_gf_interval;
-    ratectrl_config.min_gf_interval = oxcf->min_gf_interval;
+
     
     
     ratectrl_config.target_bitrate_kbps = (int)(oxcf->target_bandwidth / 1000);
     ratectrl_config.frame_rate_num = oxcf->g_timebase.den;
     ratectrl_config.frame_rate_den = oxcf->g_timebase.num;
-    ratectrl_config.overshoot_percent = oxcf->over_shoot_pct;
-    ratectrl_config.undershoot_percent = oxcf->under_shoot_pct;
-
-    if (oxcf->rc_mode == VPX_VBR) {
-      ratectrl_config.rc_mode = VPX_RC_VBR;
-    } else if (oxcf->rc_mode == VPX_Q) {
-      ratectrl_config.rc_mode = VPX_RC_QMODE;
-    } else if (oxcf->rc_mode == VPX_CQ) {
-      ratectrl_config.rc_mode = VPX_RC_CQ;
-    }
 
     codec_status = vp9_extrc_create(funcs, ratectrl_config, ext_ratectrl);
     if (codec_status != VPX_CODEC_OK) {

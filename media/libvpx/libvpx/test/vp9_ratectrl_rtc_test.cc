@@ -40,16 +40,16 @@ class RcInterfaceTest
       : EncoderTest(GET_PARAM(0)), aq_mode_(GET_PARAM(1)), key_interval_(3000),
         encoder_exit_(false) {}
 
-  ~RcInterfaceTest() override = default;
+  virtual ~RcInterfaceTest() {}
 
  protected:
-  void SetUp() override {
+  virtual void SetUp() {
     InitializeConfig();
     SetMode(::libvpx_test::kRealTime);
   }
 
-  void PreEncodeFrameHook(libvpx_test::VideoSource *video,
-                          libvpx_test::Encoder *encoder) override {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  libvpx_test::Encoder *encoder) {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, 7);
       encoder->Control(VP9E_SET_AQ_MODE, aq_mode_);
@@ -69,7 +69,7 @@ class RcInterfaceTest
     encoder_exit_ = video->frame() == kNumFrames;
   }
 
-  void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) override {
+  virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
     if (encoder_exit_) {
       return;
     }
@@ -81,7 +81,7 @@ class RcInterfaceTest
     ASSERT_EQ(rc_api_->GetLoopfilterLevel(), loopfilter_level);
   }
 
-  void FramePktHook(const vpx_codec_cx_pkt_t *pkt) override {
+  virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
     rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
   }
 
@@ -170,16 +170,16 @@ class RcInterfaceSvcTest
       : EncoderTest(GET_PARAM(0)), aq_mode_(GET_PARAM(1)), key_interval_(3000),
         dynamic_spatial_layers_(0), inter_layer_pred_off_(GET_PARAM(2)),
         parallel_spatial_layers_(false) {}
-  ~RcInterfaceSvcTest() override = default;
+  virtual ~RcInterfaceSvcTest() {}
 
  protected:
-  void SetUp() override {
+  virtual void SetUp() {
     InitializeConfig();
     SetMode(::libvpx_test::kRealTime);
   }
 
-  void PreEncodeFrameHook(libvpx_test::VideoSource *video,
-                          ::libvpx_test::Encoder *encoder) override {
+  virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, 7);
       encoder->Control(VP9E_SET_AQ_MODE, aq_mode_);
@@ -227,7 +227,7 @@ class RcInterfaceSvcTest
         rc_cfg_.layer_target_bitrate[4] = 0;
         rc_cfg_.layer_target_bitrate[5] = 0;
         ASSERT_TRUE(rc_api_->UpdateRateControl(rc_cfg_));
-      } else if ( (false) && video->frame() == 280) {
+      } else if (0 && video->frame() == 280) {
         
         
         
@@ -256,7 +256,7 @@ class RcInterfaceSvcTest
             : libvpx::RcFrameType::kInterFrame;
   }
 
-  void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) override {
+  virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
     ::libvpx_test::CxDataIterator iter = encoder->GetCxData();
     for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) sizes_[sl] = 0;
     std::vector<int> rc_qp;
@@ -301,8 +301,8 @@ class RcInterfaceSvcTest
   
   
   
-  void MismatchHook(const vpx_image_t * ,
-                    const vpx_image_t * ) override {}
+  virtual void MismatchHook(const vpx_image_t * ,
+                            const vpx_image_t * ) {}
 
   void RunSvc() {
     SetRCConfigSvc(3, 3);

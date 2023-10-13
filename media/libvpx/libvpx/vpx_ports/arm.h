@@ -18,11 +18,11 @@ extern "C" {
 #endif
 
 
-#define HAS_NEON (1 << 0)
+#define HAS_EDSP 0x01
 
-#define HAS_NEON_DOTPROD (1 << 1)
+#define HAS_MEDIA 0x02
 
-#define HAS_NEON_I8MM (1 << 2)
+#define HAS_NEON 0x04
 
 int arm_cpu_caps(void);
 
