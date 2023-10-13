@@ -16,11 +16,11 @@ use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
 use crate::values::{specified, CustomIdent};
 use cssparser::{BasicParseErrorKind, ParseErrorKind, Parser as CSSParser};
 use selectors::matching::QuirksMode;
-use servo_arc::Arc;
+use servo_arc::{Arc, ThinArc};
 use smallvec::SmallVec;
 use style_traits::{
-    arc_slice::ArcSlice, owned_str::OwnedStr, ParseError as StyleParseError, ParsingMode,
-    PropertySyntaxParseError, StyleParseErrorKind,
+    owned_str::OwnedStr, ParseError as StyleParseError, ParsingMode, PropertySyntaxParseError,
+    StyleParseErrorKind,
 };
 
 #[derive(Clone)]
@@ -53,9 +53,22 @@ pub enum ValueComponent {
     
     CustomIdent(CustomIdent),
     
-    TransformList(ArcSlice<specified::Transform>),
+    TransformList(ValueComponentList),
     
     String(OwnedStr),
+}
+
+#[derive(Clone)]
+
+pub struct ValueComponentList(ThinArc<Multiplier, ValueComponent>);
+
+impl ValueComponentList {
+    fn new<I>(multiplier: Multiplier, values: I) -> Self
+    where
+        I: Iterator<Item = ValueComponent> + ExactSizeIterator,
+    {
+        Self(ThinArc::from_header_and_iter(multiplier, values))
+    }
 }
 
 
@@ -67,7 +80,7 @@ pub enum ComputedValue {
     Universal(Arc<ComputedPropertyValue>),
     
     
-    List(ArcSlice<ValueComponent>),
+    List(ValueComponentList),
 }
 
 impl ComputedValue {
@@ -102,16 +115,17 @@ impl ComputedValue {
         }
 
         let mut values = SmallComponentVec::new();
-        let mut has_multiplier = false;
+        let mut multiplier = None;
         {
-            let mut parser = Parser::new(syntax, &mut values, &mut has_multiplier);
+            let mut parser = Parser::new(syntax, &mut values, &mut multiplier);
             parser.parse(&mut input, url_data, allow_computationally_dependent)?;
         }
-        Ok(if has_multiplier {
-            Self::List(ArcSlice::from_iter(values.into_iter()))
+        let computed_value = if let Some(ref multiplier) = multiplier {
+            Self::List(ValueComponentList::new(*multiplier, values.into_iter()))
         } else {
             Self::Component(values[0].clone())
-        })
+        };
+        Ok(computed_value)
     }
 }
 
@@ -131,19 +145,19 @@ type SmallComponentVec = SmallVec<[ValueComponent; 1]>;
 struct Parser<'a> {
     syntax: &'a Descriptor,
     output: &'a mut SmallComponentVec,
-    output_has_multiplier: &'a mut bool,
+    output_multiplier: &'a mut Option<Multiplier>,
 }
 
 impl<'a> Parser<'a> {
     fn new(
         syntax: &'a Descriptor,
         output: &'a mut SmallComponentVec,
-        output_has_multiplier: &'a mut bool,
+        output_multiplier: &'a mut Option<Multiplier>,
     ) -> Self {
         Self {
             syntax,
             output,
-            output_has_multiplier,
+            output_multiplier,
         }
     }
 
@@ -176,7 +190,7 @@ impl<'a> Parser<'a> {
             });
             let Ok(values) = result else { continue };
             self.output.extend(values);
-            *self.output_has_multiplier = component.multiplier().is_some();
+            *self.output_multiplier = component.multiplier();
             break;
         }
         if self.output.is_empty() {
@@ -267,14 +281,17 @@ impl<'a> Parser<'a> {
                 };
                 debug_assert_matches!(multiplier, Multiplier::Space);
                 loop {
-                    values.push(specified::Transform::parse(context, input)?);
+                    values.push(ValueComponent::TransformFunction(
+                        specified::Transform::parse(context, input)?,
+                    ));
                     let result = Self::expect_multiplier(input, &multiplier);
                     if Self::expect_multiplier_yielded_eof_error(&result) {
                         break;
                     }
                     result?;
                 }
-                ValueComponent::TransformList(ArcSlice::from_iter(values.into_iter()))
+                let list = ValueComponentList::new(multiplier, values.into_iter());
+                ValueComponent::TransformList(list)
             },
             DataType::String => {
                 let string = input.expect_string()?;
