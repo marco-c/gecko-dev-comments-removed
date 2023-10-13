@@ -5,5 +5,5 @@
 
 
 XPCSHELL_TESTS_MANIFESTS += [
-    "xpcshell.ini",
+    "xpcshell.toml",
 ]
