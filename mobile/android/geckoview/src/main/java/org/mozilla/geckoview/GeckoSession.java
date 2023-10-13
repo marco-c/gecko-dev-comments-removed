@@ -3612,20 +3612,163 @@ public class GeckoSession {
     }
 
     
-    protected ReviewAnalysis() {
-      analysisURL = "";
-      productId = "";
-      grade = null;
-      adjustedRating = 0.0;
-      needsAnalysis = false;
-      highlights = null;
-      lastAnalysisTime = 0;
-      deletedProductReported = false;
-      deletedProduct = false;
+
+
+
+
+    protected ReviewAnalysis(final @NonNull Builder builder) {
+      adjustedRating = builder.mAdjustedRating;
+      analysisURL = builder.mAnalysisUrl;
+      productId = builder.mProductId;
+      grade = builder.mGrade;
+      needsAnalysis = builder.mNeedsAnalysis;
+      highlights = builder.mHighlights;
+      lastAnalysisTime = builder.mLastAnalysisTime;
+      deletedProduct = builder.mDeletedProduct;
+      deletedProductReported = builder.mDeletedProductReported;
     }
 
     
-    public class Highlight {
+    public static class Builder {
+       String mAnalysisUrl = "";
+       String mProductId = "";
+       String mGrade = null;
+       Double mAdjustedRating = 0.0;
+       Boolean mNeedsAnalysis = false;
+       Highlight mHighlights = new Highlight();
+       long mLastAnalysisTime = 0;
+       Boolean mDeletedProductReported = false;
+       Boolean mDeletedProduct = false;
+
+      
+
+
+
+
+      public Builder(final @Nullable String productId) {
+        productId(productId);
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder analysisUrl(final @Nullable String analysisUrl) {
+        mAnalysisUrl = analysisUrl;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder productId(final @Nullable String productId) {
+        mProductId = productId;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder grade(final @Nullable String grade) {
+        mGrade = grade;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder adjustedRating(final @NonNull Double adjustedRating) {
+        mAdjustedRating = adjustedRating;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder needsAnalysis(final @NonNull Boolean needsAnalysis) {
+        mNeedsAnalysis = needsAnalysis;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder highlights(final @Nullable Highlight highlight) {
+        mHighlights = highlight;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder lastAnalysisTime(final long lastAnalysisTime) {
+        mLastAnalysisTime = lastAnalysisTime;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder deletedProductReported(
+          final @NonNull Boolean deletedProductReported) {
+        mDeletedProductReported = deletedProductReported;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder deletedProduct(final @NonNull Boolean deletedProduct) {
+        mDeletedProduct = deletedProduct;
+        return this;
+      }
+
+      
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis build() {
+        return new ReviewAnalysis(this);
+      }
+    }
+
+    
+    public static class Highlight {
       
       @Nullable public final String[] quality;
 
@@ -3707,17 +3850,172 @@ public class GeckoSession {
     }
 
     
-    protected Recommendation() {
-      analysisUrl = "";
-      adjustedRating = 0.0;
-      sponsored = false;
-      imageUrl = "";
-      aid = "";
-      url = "";
-      name = "";
-      grade = "";
-      price = "";
-      currency = "";
+
+
+
+
+    protected Recommendation(final @NonNull Builder builder) {
+      url = builder.mUrl;
+      analysisUrl = builder.mAnalysisUrl;
+      adjustedRating = builder.mAdjustedRating;
+      sponsored = builder.mSponsored;
+      imageUrl = builder.mImageUrl;
+      aid = builder.mAid;
+      name = builder.mName;
+      grade = builder.mGrade;
+      price = builder.mPrice;
+      currency = builder.mCurrency;
+    }
+
+    
+    public static class Builder {
+       String mAnalysisUrl = "";
+       Double mAdjustedRating = 0.0;
+       Boolean mSponsored = false;
+       String mImageUrl = "";
+       String mAid = "";
+       String mUrl = "";
+       String mName = "";
+       String mGrade = "";
+       String mPrice = "";
+       String mCurrency = "";
+
+      
+
+
+
+
+      public Builder(final @NonNull String recommendationUrl) {
+        url(recommendationUrl);
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder analysisUrl(final @NonNull String analysisUrl) {
+        mAnalysisUrl = analysisUrl;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder adjustedRating(final @NonNull Double adjustedRating) {
+        mAdjustedRating = adjustedRating;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder sponsored(final @NonNull Boolean sponsored) {
+        mSponsored = sponsored;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder imageUrl(final @NonNull String imageUrl) {
+        mImageUrl = imageUrl;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder aid(final @NonNull String aid) {
+        mAid = aid;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder url(final @NonNull String url) {
+        mUrl = url;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder name(final @NonNull String name) {
+        mName = name;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder grade(final @NonNull String grade) {
+        mGrade = grade;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder price(final @NonNull String price) {
+        mPrice = price;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull Recommendation.Builder currency(final @NonNull String currency) {
+        mCurrency = currency;
+        return this;
+      }
+
+      
+
+
+      @AnyThread
+      public @NonNull Recommendation build() {
+        return new Recommendation(this);
+      }
     }
   }
 
