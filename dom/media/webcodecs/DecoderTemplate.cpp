@@ -335,16 +335,15 @@ void DecoderTemplate<DecoderType>::OutputDecodedData(
   }
 }
 
-
 template <typename DecoderType>
 class DecoderTemplate<DecoderType>::ErrorRunnable final
     : public DiscardableRunnable {
  public:
-  ErrorRunnable(Self* aVideoDecoder, const nsresult& aError)
+  ErrorRunnable(Self* aDecoder, const nsresult& aError)
       : DiscardableRunnable("Decoder ErrorRunnable"),
-        mVideoDecoder(aVideoDecoder),
+        mDecoder(aDecoder),
         mError(aError) {
-    MOZ_ASSERT(mVideoDecoder);
+    MOZ_ASSERT(mDecoder);
   }
   ~ErrorRunnable() = default;
 
@@ -352,14 +351,14 @@ class DecoderTemplate<DecoderType>::ErrorRunnable final
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
     LOGE("%s %p report error: 0x%08" PRIx32, DecoderType::Name.get(),
-         mVideoDecoder.get(), static_cast<uint32_t>(mError));
-    RefPtr<Self> d = std::move(mVideoDecoder);
+         mDecoder.get(), static_cast<uint32_t>(mError));
+    RefPtr<Self> d = std::move(mDecoder);
     d->ReportError(mError);
     return NS_OK;
   }
 
  private:
-  RefPtr<Self> mVideoDecoder;
+  RefPtr<Self> mDecoder;
   const nsresult mError;
 };
 
@@ -376,46 +375,46 @@ template <typename DecoderType>
 class DecoderTemplate<DecoderType>::OutputRunnable final
     : public DiscardableRunnable {
  public:
-  OutputRunnable(Self* aVideoDecoder, DecoderAgent::Id aAgentId,
+  OutputRunnable(Self* aDecoder, DecoderAgent::Id aAgentId,
                  const nsACString& aLabel, nsTArray<RefPtr<MediaData>>&& aData)
       : DiscardableRunnable("Decoder OutputRunnable"),
-        mVideoDecoder(aVideoDecoder),
+        mDecoder(aDecoder),
         mAgentId(aAgentId),
         mLabel(aLabel),
         mData(std::move(aData)) {
-    MOZ_ASSERT(mVideoDecoder);
+    MOZ_ASSERT(mDecoder);
   }
   ~OutputRunnable() = default;
 
   
   
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD Run() override {
-    if (mVideoDecoder->mState != CodecState::Configured) {
+    if (mDecoder->mState != CodecState::Configured) {
       LOGV("%s %p has been %s. Discard %s-result for DecoderAgent #%d",
-           DecoderType::Name.get(), mVideoDecoder.get(),
-           mVideoDecoder->mState == CodecState::Closed ? "closed" : "reset",
+           DecoderType::Name.get(), mDecoder.get(),
+           mDecoder->mState == CodecState::Closed ? "closed" : "reset",
            mLabel.get(), mAgentId);
       return NS_OK;
     }
 
-    MOZ_ASSERT(mVideoDecoder->mAgent);
-    if (mAgentId != mVideoDecoder->mAgent->mId) {
+    MOZ_ASSERT(mDecoder->mAgent);
+    if (mAgentId != mDecoder->mAgent->mId) {
       LOGW(
           "%s %p has been re-configured. Still yield %s-result for "
           "DecoderAgent #%d",
-          DecoderType::Name.get(), mVideoDecoder.get(), mLabel.get(), mAgentId);
+          DecoderType::Name.get(), mDecoder.get(), mLabel.get(), mAgentId);
     }
 
     LOGV("%s %p, yields %s-result for DecoderAgent #%d",
-         DecoderType::Name.get(), mVideoDecoder.get(), mLabel.get(), mAgentId);
-    RefPtr<Self> d = std::move(mVideoDecoder);
+         DecoderType::Name.get(), mDecoder.get(), mLabel.get(), mAgentId);
+    RefPtr<Self> d = std::move(mDecoder);
     d->OutputDecodedData(std::move(mData));
 
     return NS_OK;
   }
 
  private:
-  RefPtr<Self> mVideoDecoder;
+  RefPtr<Self> mDecoder;
   const DecoderAgent::Id mAgentId;
   const nsCString mLabel;
   nsTArray<RefPtr<MediaData>> mData;
