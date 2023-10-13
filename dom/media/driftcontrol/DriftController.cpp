@@ -108,13 +108,18 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
   
   const float cap = static_cast<float>(mTargetRate) / 1000.0f;
 
+  
+  
+  const float integralCap = cap / kIntegralGain;
+
   int32_t error = (CheckedInt32(mDesiredBuffering) - aBufferedFrames).value();
   int32_t proportional = error;
   
   
   float targetClockSec = static_cast<float>(mTargetClock) / mTargetRate;
   
-  float integralStep = static_cast<float>(error) * targetClockSec;
+  float integralStep = std::clamp(static_cast<float>(error) * targetClockSec,
+                                  -integralCap, integralCap);
   mIntegral += integralStep;
   float derivative =
       static_cast<float>(error - mPreviousError) / targetClockSec;
