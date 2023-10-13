@@ -40,9 +40,24 @@ impl std::fmt::Display for Level {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 enum FunctionType {
     
     Function(crate::Handle<crate::Function>),
+    
+    
+    
     
     EntryPoint(crate::proc::EntryPointIndex),
 }

@@ -279,6 +279,8 @@
 mod arena;
 pub mod back;
 mod block;
+#[cfg(feature = "compact")]
+pub mod compact;
 pub mod front;
 pub mod keywords;
 pub mod proc;
@@ -309,11 +311,12 @@ pub type FastIndexSet<K> =
     indexmap::IndexSet<K, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 
-pub(crate) type NamedExpressions = indexmap::IndexMap<
-    Handle<Expression>,
-    String,
-    std::hash::BuildHasherDefault<rustc_hash::FxHasher>,
->;
+
+pub type FastIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
+
+
+pub(crate) type NamedExpressions = FastIndexMap<Handle<Expression>, String>;
 
 
 
@@ -598,6 +601,7 @@ pub enum StorageFormat {
     Rgba8Sint,
 
     
+    Rgb10a2Uint,
     Rgb10a2Unorm,
     Rg11b10Float,
 
@@ -1993,7 +1997,7 @@ pub struct SpecialTypes {
     
     
     
-    pub predeclared_types: indexmap::IndexMap<PredeclaredType, Handle<Type>>,
+    pub predeclared_types: FastIndexMap<PredeclaredType, Handle<Type>>,
 }
 
 

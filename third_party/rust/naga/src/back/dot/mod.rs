@@ -18,7 +18,7 @@ use std::{
 };
 
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Options {
     
     pub cfg_only: bool,

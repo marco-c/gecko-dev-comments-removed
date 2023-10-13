@@ -85,7 +85,7 @@ impl IdGenerator {
 #[derive(Debug, Clone)]
 pub struct DebugInfo<'a> {
     pub source_code: &'a str,
-    pub file_name: &'a str,
+    pub file_name: &'a std::path::Path,
 }
 
 
