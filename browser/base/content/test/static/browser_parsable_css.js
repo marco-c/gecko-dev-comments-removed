@@ -47,6 +47,12 @@ let ignoreList = [
     isFromDevTools: false,
   },
   
+  {
+    sourceName: /\bscrollbars\.css$/i,
+    errorMessage: /Unknown property ‘zoom’/i,
+    isFromDevTools: false,
+  },
+  
   
   
   {
