@@ -547,7 +547,7 @@ NS_IMETHODIMP nsClipboard::SetNativeClipboardData(
           
           
           return mightNeedToFlush == MightNeedToFlush::Yes &&
-                 mozilla::NeedsWindows11SuggestedActionsWorkaround();
+                 mozilla::IsWin1122H2OrLater();
       }
     }();
     if (doFlush) {

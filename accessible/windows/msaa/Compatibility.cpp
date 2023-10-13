@@ -160,7 +160,8 @@ void Compatibility::SuppressA11yForClipboardCopy() {
       case 1:
         return true;
       default:
-        return NeedsWindows11SuggestedActionsWorkaround();
+        
+        return IsWin1122H2OrLater();
     }
   }();
 
