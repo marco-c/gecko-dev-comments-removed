@@ -490,9 +490,6 @@ pref("browser.urlbar.quicksuggest.sponsoredIndex", -1);
 pref("browser.urlbar.quicksuggest.nonSponsoredIndex", -1);
 
 
-pref("browser.urlbar.quicksuggest.remoteSettings.enabled", true);
-
-
 
 pref("browser.urlbar.quicksuggest.allowPositionInSuggestions", true);
 

@@ -9,7 +9,6 @@
 
 const PREF_DATA_COLLECTION_ENABLED = "quicksuggest.dataCollection.enabled";
 const PREF_MERINO_ENABLED = "merino.enabled";
-const PREF_REMOTE_SETTINGS_ENABLED = "quicksuggest.remoteSettings.enabled";
 
 const SEARCH_STRING = "frab";
 
@@ -132,42 +131,8 @@ add_task(async function init() {
 });
 
 
-add_task(async function oneEnabled_merino() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = MerinoTestUtils.getAndClearHistograms();
-
-  
-  
-  MerinoTestUtils.server.response.body.suggestions[0].score =
-    DEFAULT_SUGGESTION_SCORE / 2;
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({
-    context,
-    matches: [EXPECTED_MERINO_URLBAR_RESULT],
-  });
-
-  MerinoTestUtils.checkAndClearHistograms({
-    histograms,
-    response: "success",
-    latencyRecorded: true,
-    client: gClient,
-  });
-
-  MerinoTestUtils.server.reset();
-  gClient.resetSession();
-});
-
-
-add_task(async function oneEnabled_remoteSettings() {
+add_task(async function merinoDisabled() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, false);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -185,16 +150,14 @@ add_task(async function oneEnabled_remoteSettings() {
     histograms,
     response: null,
     latencyRecorded: false,
-    client: gClient,
+    client: UrlbarProviderQuickSuggest._test_merino,
   });
 });
 
 
 
-
 add_task(async function dataCollectionDisabled() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, false);
 
   let context = createContext(SEARCH_STRING, {
@@ -211,7 +174,6 @@ add_task(async function dataCollectionDisabled() {
 
 add_task(async function higherScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -243,7 +205,6 @@ add_task(async function higherScore() {
 
 add_task(async function lowerScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -275,7 +236,6 @@ add_task(async function lowerScore() {
 
 add_task(async function sameScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -307,7 +267,6 @@ add_task(async function sameScore() {
 
 add_task(async function noMerinoScore() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -343,7 +302,6 @@ add_task(async function noMerinoScore() {
 
 add_task(async function noSuggestion_remoteSettings() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -372,7 +330,6 @@ add_task(async function noSuggestion_remoteSettings() {
 
 add_task(async function noSuggestion_merino() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -400,32 +357,9 @@ add_task(async function noSuggestion_merino() {
 });
 
 
-add_task(async function bothDisabled() {
-  UrlbarPrefs.set(PREF_MERINO_ENABLED, false);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
-  UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
-
-  let histograms = MerinoTestUtils.getAndClearHistograms();
-
-  let context = createContext(SEARCH_STRING, {
-    providers: [UrlbarProviderQuickSuggest.name],
-    isPrivate: false,
-  });
-  await check_results({ context, matches: [] });
-
-  MerinoTestUtils.checkAndClearHistograms({
-    histograms,
-    response: null,
-    latencyRecorded: false,
-    client: gClient,
-  });
-});
-
-
 
 add_task(async function multipleMerinoSuggestions() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   let histograms = MerinoTestUtils.getAndClearHistograms();
@@ -531,7 +465,6 @@ add_task(async function multipleMerinoSuggestions() {
 
 add_task(async function timestamps() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   
@@ -582,7 +515,6 @@ add_task(async function timestamps() {
 
 add_task(async function suggestedDisabled_dataCollectionEnabled() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, false);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
   UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", false);
@@ -624,7 +556,6 @@ add_task(async function suggestedDisabled_dataCollectionEnabled() {
 
 add_task(async function block() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   for (const suggestion of MerinoTestUtils.server.response.body.suggestions) {
@@ -649,7 +580,6 @@ add_task(async function block() {
 
 add_task(async function bestMatch() {
   UrlbarPrefs.set(PREF_MERINO_ENABLED, true);
-  UrlbarPrefs.set(PREF_REMOTE_SETTINGS_ENABLED, true);
   UrlbarPrefs.set(PREF_DATA_COLLECTION_ENABLED, true);
 
   
