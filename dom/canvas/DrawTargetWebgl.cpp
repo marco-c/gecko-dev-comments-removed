@@ -490,7 +490,6 @@ void DrawTargetWebgl::SharedContext::SetBlendState(
   
   
   
-  mDirtyAA = true;
 
   
   bool enabled = true;
@@ -556,8 +555,6 @@ bool DrawTargetWebgl::SharedContext::SetTarget(DrawTargetWebgl* aDT) {
       mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, aDT->mFramebuffer);
       mViewportSize = aDT->GetSize();
       mWebgl->Viewport(0, 0, mViewportSize.width, mViewportSize.height);
-      
-      mDirtyViewport = true;
     }
   }
   return true;
@@ -570,8 +567,6 @@ void DrawTargetWebgl::SharedContext::SetClipRect(const Rect& aClipRect) {
     mClipAARect = aClipRect;
     
     mClipRect = RoundedOut(aClipRect);
-    
-    mDirtyClip = true;
   }
 }
 
@@ -2018,6 +2013,19 @@ static inline Maybe<IntRect> IsAlignedRect(bool aTransformed,
   return Nothing();
 }
 
+template <class T, size_t N>
+void DrawTargetWebgl::SharedContext::MaybeUniformData(
+    GLenum aFuncElemType, const WebGLUniformLocationJS* const aLoc,
+    const Array<T, N>& aData, Maybe<Array<T, N>>& aCached) {
+  if (aCached.isNothing() || !(*aCached == aData)) {
+    aCached = Some(aData);
+    Span<const uint8_t> bytes = AsBytes(Span(aData));
+    
+    
+    mWebgl->UniformData(aFuncElemType, aLoc, false, bytes);
+  }
+}
+
 
 
 
@@ -2145,47 +2153,38 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
       if (mLastProgram != mSolidProgram) {
         mWebgl->UseProgram(mSolidProgram);
         mLastProgram = mSolidProgram;
-        
-        mDirtyViewport = true;
-        mDirtyAA = true;
-        mDirtyClip = true;
       }
-      if (mDirtyViewport) {
-        float viewportData[2] = {float(mViewportSize.width),
-                                 float(mViewportSize.height)};
-        mWebgl->UniformData(
-            LOCAL_GL_FLOAT_VEC2, mSolidProgramViewport, false,
-            {(const uint8_t*)viewportData, sizeof(viewportData)});
-        mDirtyViewport = false;
-      }
-      if (mDirtyAA || aVertexRange) {
-        
-        float aaData = aVertexRange ? 0.0f : 1.0f;
-        mWebgl->UniformData(LOCAL_GL_FLOAT, mSolidProgramAA, false,
-                            {(const uint8_t*)&aaData, sizeof(aaData)});
-        mDirtyAA = aaData == 0.0f;
-      }
-      if (mDirtyClip) {
-        
-        
-        float clipData[4] = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
-                             mClipAARect.XMost() + 0.5f,
-                             mClipAARect.YMost() + 0.5f};
-        mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramClipBounds, false,
-                            {(const uint8_t*)clipData, sizeof(clipData)});
-        mDirtyClip = false;
-      }
-      float colorData[4] = {color.b, color.g, color.r, color.a};
+      Array<float, 2> viewportData = {float(mViewportSize.width),
+                                      float(mViewportSize.height)};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramViewport, viewportData,
+                       mSolidProgramUniformState.mViewport);
+
+      
+      Array<float, 1> aaData = {aVertexRange ? 0.0f : 1.0f};
+      MaybeUniformData(LOCAL_GL_FLOAT, mSolidProgramAA, aaData,
+                       mSolidProgramUniformState.mAA);
+
+      
+      
+      Array<float, 4> clipData = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
+                                  mClipAARect.XMost() + 0.5f,
+                                  mClipAARect.YMost() + 0.5f};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramClipBounds, clipData,
+                       mSolidProgramUniformState.mClipBounds);
+
+      Array<float, 4> colorData = {color.b, color.g, color.r, color.a};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
         xform *= currentTransform;
       }
-      float xformData[6] = {xform._11, xform._12, xform._21,
-                            xform._22, xform._31, xform._32};
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramTransform, false,
-                          {(const uint8_t*)xformData, sizeof(xformData)});
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramColor, false,
-                          {(const uint8_t*)colorData, sizeof(colorData)});
+      Array<float, 6> xformData = {xform._11, xform._12, xform._21,
+                                   xform._22, xform._31, xform._32};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramTransform, xformData,
+                       mSolidProgramUniformState.mTransform);
+
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramColor, colorData,
+                       mSolidProgramUniformState.mColor);
+
       
       if (aVertexRange) {
         
@@ -2309,41 +2308,30 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
       if (mLastProgram != mImageProgram) {
         mWebgl->UseProgram(mImageProgram);
         mLastProgram = mImageProgram;
-        
-        mDirtyViewport = true;
-        mDirtyAA = true;
-        mDirtyClip = true;
       }
-      if (mDirtyViewport) {
-        float viewportData[2] = {float(mViewportSize.width),
-                                 float(mViewportSize.height)};
-        mWebgl->UniformData(
-            LOCAL_GL_FLOAT_VEC2, mImageProgramViewport, false,
-            {(const uint8_t*)viewportData, sizeof(viewportData)});
-        mDirtyViewport = false;
-      }
-      if (mDirtyAA || aVertexRange) {
-        
-        
 
-        float aaData =
-            mLastCompositionOp == CompositionOp::OP_SOURCE || aVertexRange
-                ? 0.0f
-                : 1.0f;
-        mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramAA, false,
-                            {(const uint8_t*)&aaData, sizeof(aaData)});
-        mDirtyAA = aaData == 0.0f;
-      }
-      if (mDirtyClip) {
-        
-        
-        float clipData[4] = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
-                             mClipAARect.XMost() + 0.5f,
-                             mClipAARect.YMost() + 0.5f};
-        mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramClipBounds, false,
-                            {(const uint8_t*)clipData, sizeof(clipData)});
-        mDirtyClip = false;
-      }
+      Array<float, 2> viewportData = {float(mViewportSize.width),
+                                      float(mViewportSize.height)};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramViewport, viewportData,
+                       mImageProgramUniformState.mViewport);
+
+      
+      
+      Array<float, 1> aaData = {
+          mLastCompositionOp == CompositionOp::OP_SOURCE || aVertexRange
+              ? 0.0f
+              : 1.0f};
+      MaybeUniformData(LOCAL_GL_FLOAT, mImageProgramAA, aaData,
+                       mImageProgramUniformState.mAA);
+
+      
+      
+      Array<float, 4> clipData = {mClipAARect.x - 0.5f, mClipAARect.y - 0.5f,
+                                  mClipAARect.XMost() + 0.5f,
+                                  mClipAARect.YMost() + 0.5f};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramClipBounds, clipData,
+                       mImageProgramUniformState.mClipBounds);
+
       DeviceColor color =
           mLastCompositionOp == CompositionOp::OP_CLEAR
               ? DeviceColor(1, 1, 1, 1)
@@ -2352,20 +2340,22 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                         ? DeviceColor::Mask(1.0f, aMaskColor->a)
                         : aMaskColor.valueOr(DeviceColor(1, 1, 1, 1)),
                     aOptions.mAlpha);
-      float colorData[4] = {color.b, color.g, color.r, color.a};
-      float swizzleData = format == SurfaceFormat::A8 ? 1.0f : 0.0f;
+      Array<float, 4> colorData = {color.b, color.g, color.r, color.a};
+      Array<float, 1> swizzleData = {format == SurfaceFormat::A8 ? 1.0f : 0.0f};
       Matrix xform(aRect.width, 0.0f, 0.0f, aRect.height, aRect.x, aRect.y);
       if (aTransformed) {
         xform *= currentTransform;
       }
-      float xformData[6] = {xform._11, xform._12, xform._21,
-                            xform._22, xform._31, xform._32};
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTransform, false,
-                          {(const uint8_t*)xformData, sizeof(xformData)});
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramColor, false,
-                          {(const uint8_t*)colorData, sizeof(colorData)});
-      mWebgl->UniformData(LOCAL_GL_FLOAT, mImageProgramSwizzle, false,
-                          {(const uint8_t*)&swizzleData, sizeof(swizzleData)});
+      Array<float, 6> xformData = {xform._11, xform._12, xform._21,
+                                   xform._22, xform._31, xform._32};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTransform, xformData,
+                       mImageProgramUniformState.mTransform);
+
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramColor, colorData,
+                       mImageProgramUniformState.mColor);
+
+      MaybeUniformData(LOCAL_GL_FLOAT, mImageProgramSwizzle, swizzleData,
+                       mImageProgramUniformState.mSwizzle);
 
       
       BackingTexture* backing = nullptr;
@@ -2415,20 +2405,20 @@ bool DrawTargetWebgl::SharedContext::DrawRectAccel(
                          1.0f / backingSizeF.height,
                          float(bounds.x - offset.x) / backingSizeF.width,
                          float(bounds.y - offset.y) / backingSizeF.height);
-      float uvData[6] = {uvMatrix._11, uvMatrix._12, uvMatrix._21,
-                         uvMatrix._22, uvMatrix._31, uvMatrix._32};
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTexMatrix, false,
-                          {(const uint8_t*)uvData, sizeof(uvData)});
+      Array<float, 6> uvData = {uvMatrix._11, uvMatrix._12, uvMatrix._21,
+                                uvMatrix._22, uvMatrix._31, uvMatrix._32};
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mImageProgramTexMatrix, uvData,
+                       mImageProgramUniformState.mTexMatrix);
 
       
-      float texBounds[4] = {
+      Array<float, 4> texBounds = {
           (bounds.x + 0.5f) / backingSizeF.width,
           (bounds.y + 0.5f) / backingSizeF.height,
           (bounds.XMost() - 0.5f) / backingSizeF.width,
           (bounds.YMost() - 0.5f) / backingSizeF.height,
       };
-      mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramTexBounds, false,
-                          {(const uint8_t*)texBounds, sizeof(texBounds)});
+      MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mImageProgramTexBounds, texBounds,
+                       mImageProgramUniformState.mTexBounds);
 
       
       if (UseNearestFilter(surfacePattern)) {
@@ -3109,22 +3099,23 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
     mWebgl->UseProgram(mSolidProgram);
     mLastProgram = mSolidProgram;
   }
-  float viewportData[2] = {float(texBounds.width), float(texBounds.height)};
-  mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramViewport, false,
-                      {(const uint8_t*)viewportData, sizeof(viewportData)});
-  float aaData = 0.0f;
-  mWebgl->UniformData(LOCAL_GL_FLOAT, mSolidProgramAA, false,
-                      {(const uint8_t*)&aaData, sizeof(aaData)});
-  float clipData[4] = {-0.5f, -0.5f, float(texBounds.width) + 0.5f,
-                       float(texBounds.height) + 0.5f};
-  mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramClipBounds, false,
-                      {(const uint8_t*)clipData, sizeof(clipData)});
-  float colorData[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-  mWebgl->UniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramColor, false,
-                      {(const uint8_t*)colorData, sizeof(colorData)});
-  float xformData[6] = {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f};
-  mWebgl->UniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramTransform, false,
-                      {(const uint8_t*)xformData, sizeof(xformData)});
+  Array<float, 2> viewportData = {float(texBounds.width),
+                                  float(texBounds.height)};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramViewport, viewportData,
+                   mSolidProgramUniformState.mViewport);
+  Array<float, 1> aaData = {0.0f};
+  MaybeUniformData(LOCAL_GL_FLOAT, mSolidProgramAA, aaData,
+                   mSolidProgramUniformState.mAA);
+  Array<float, 4> clipData = {-0.5f, -0.5f, float(texBounds.width) + 0.5f,
+                              float(texBounds.height) + 0.5f};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramClipBounds, clipData,
+                   mSolidProgramUniformState.mClipBounds);
+  Array<float, 4> colorData = {1.0f, 1.0f, 1.0f, 1.0f};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC4, mSolidProgramColor, colorData,
+                   mSolidProgramUniformState.mColor);
+  Array<float, 6> xformData = {1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f};
+  MaybeUniformData(LOCAL_GL_FLOAT_VEC2, mSolidProgramTransform, xformData,
+                   mSolidProgramUniformState.mTransform);
 
   
   RefPtr<WebGLTextureJS> prevClipMask = mLastClipMask;
@@ -3137,9 +3128,6 @@ already_AddRefed<TextureHandle> DrawTargetWebgl::SharedContext::DrawStrokeMask(
   
   mWebgl->BindFramebuffer(LOCAL_GL_FRAMEBUFFER, mCurrentTarget->mFramebuffer);
   mWebgl->Viewport(0, 0, mViewportSize.width, mViewportSize.height);
-  mDirtyViewport = true;
-  mDirtyAA = true;
-  mDirtyClip = true;
   if (prevClipMask) {
     SetClipMask(prevClipMask);
   }

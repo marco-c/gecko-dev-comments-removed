@@ -7,6 +7,8 @@
 #ifndef _MOZILLA_GFX_DRAWTARGETWEBGL_H
 #define _MOZILLA_GFX_DRAWTARGETWEBGL_H
 
+#include "GLTypes.h"
+#include "mozilla/Array.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/PathSkia.h"
 #include "mozilla/LinkedList.h"
@@ -180,12 +182,6 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLProgramJS> mLastProgram;
     RefPtr<WebGLTextureJS> mLastTexture;
     RefPtr<WebGLTextureJS> mLastClipMask;
-    
-    bool mDirtyViewport = true;
-    
-    bool mDirtyAA = true;
-    
-    bool mDirtyClip = true;
 
     
     RefPtr<WebGLBufferJS> mPathVertexBuffer;
@@ -220,6 +216,25 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     RefPtr<WebGLUniformLocationJS> mImageProgramSampler;
     RefPtr<WebGLUniformLocationJS> mImageProgramClipMask;
     RefPtr<WebGLUniformLocationJS> mImageProgramClipBounds;
+
+    struct SolidProgramUniformState {
+      Maybe<Array<float, 2>> mViewport;
+      Maybe<Array<float, 1>> mAA;
+      Maybe<Array<float, 6>> mTransform;
+      Maybe<Array<float, 4>> mColor;
+      Maybe<Array<float, 4>> mClipBounds;
+    } mSolidProgramUniformState;
+
+    struct ImageProgramUniformState {
+      Maybe<Array<float, 2>> mViewport;
+      Maybe<Array<float, 1>> mAA;
+      Maybe<Array<float, 6>> mTransform;
+      Maybe<Array<float, 6>> mTexMatrix;
+      Maybe<Array<float, 4>> mTexBounds;
+      Maybe<Array<float, 4>> mColor;
+      Maybe<Array<float, 1>> mSwizzle;
+      Maybe<Array<float, 4>> mClipBounds;
+    } mImageProgramUniformState;
 
     
     RefPtr<WebGLFramebufferJS> mScratchFramebuffer;
@@ -292,6 +307,13 @@ class DrawTargetWebgl : public DrawTarget, public SupportsWeakPtr {
     bool HasClipMask() const {
       return mLastClipMask && mLastClipMask != mNoClipMask;
     }
+
+    
+    template <class T, size_t N>
+    void MaybeUniformData(GLenum aFuncElemType,
+                          const WebGLUniformLocationJS* const aLoc,
+                          const Array<T, N>& aData,
+                          Maybe<Array<T, N>>& aCached);
 
     bool IsCurrentTarget(DrawTargetWebgl* aDT) const {
       return aDT == mCurrentTarget;
