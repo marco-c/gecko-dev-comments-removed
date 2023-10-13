@@ -428,10 +428,6 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
 
   
   RTCNonStandardStatsMember<double> min_playout_delay;
-
-  
-  
-  RTCStatsMember<std::string> track_id;
 };
 
 
@@ -483,10 +479,6 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   RTCRestrictedStatsMember<bool, StatExposureCriteria::kHardwareCapability>
       power_efficient_encoder;
   RTCStatsMember<std::string> scalability_mode;
-
-  
-  
-  RTCStatsMember<std::string> track_id;
 };
 
 
