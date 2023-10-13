@@ -768,6 +768,7 @@ inline Imm32 Imm64::firstHalf() const { return low(); }
 inline Imm32 Imm64::secondHalf() const { return hi(); }
 
 
+
 class AutoForbidNops {
  protected:
   Assembler* asm_;
@@ -776,6 +777,8 @@ class AutoForbidNops {
   explicit AutoForbidNops(Assembler* asm_) : asm_(asm_) { asm_->enterNoNops(); }
   ~AutoForbidNops() { asm_->leaveNoNops(); }
 };
+
+
 
 
 class AutoForbidPoolsAndNops : public AutoForbidNops {
