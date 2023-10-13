@@ -13,9 +13,10 @@ use authenticator::{
     ctap2::attestation::AttestationObject,
     ctap2::commands::get_info::AuthenticatorVersion,
     ctap2::server::{
-        AuthenticationExtensionsClientInputs, PublicKeyCredentialDescriptor,
-        PublicKeyCredentialParameters, PublicKeyCredentialUserEntity, RelyingParty,
-        ResidentKeyRequirement, UserVerificationRequirement,
+        AuthenticationExtensionsClientInputs, AuthenticatorAttachment,
+        PublicKeyCredentialDescriptor, PublicKeyCredentialParameters,
+        PublicKeyCredentialUserEntity, RelyingParty, ResidentKeyRequirement,
+        UserVerificationRequirement,
     },
     errors::AuthenticatorError,
     statecallback::StateCallback,
@@ -29,7 +30,7 @@ use nserror::{
     NS_ERROR_FAILURE, NS_ERROR_INVALID_ARG, NS_ERROR_NOT_AVAILABLE, NS_ERROR_NOT_IMPLEMENTED,
     NS_ERROR_NULL_POINTER, NS_OK,
 };
-use nsstring::{nsACString, nsCString, nsString};
+use nsstring::{nsACString, nsAString, nsCString, nsString};
 use serde::Serialize;
 use serde_cbor;
 use serde_json::json;
@@ -163,7 +164,13 @@ impl WebAuthnRegisterResult {
         
         
         
-        Ok(thin_vec![nsString::from("usb")])
+        if static_prefs::pref!("security.webauth.webauthn_enable_softtoken")
+            && self.result.attachment == AuthenticatorAttachment::Platform
+        {
+            Ok(thin_vec![nsString::from("internal")])
+        } else {
+            Ok(thin_vec![nsString::from("usb")])
+        }
     }
 
     xpcom_method!(get_cred_props_rk => GetCredPropsRk() -> bool);
@@ -177,6 +184,15 @@ impl WebAuthnRegisterResult {
     xpcom_method!(set_cred_props_rk => SetCredPropsRk(aCredPropsRk: bool));
     fn set_cred_props_rk(&self, _cred_props_rk: bool) -> Result<(), nsresult> {
         Err(NS_ERROR_NOT_IMPLEMENTED)
+    }
+
+    xpcom_method!(get_authenticator_attachment => GetAuthenticatorAttachment() -> nsAString);
+    fn get_authenticator_attachment(&self) -> Result<nsString, nsresult> {
+        match self.result.attachment {
+            AuthenticatorAttachment::CrossPlatform => Ok(nsString::from("cross-platform")),
+            AuthenticatorAttachment::Platform => Ok(nsString::from("platform")),
+            AuthenticatorAttachment::Unknown => Err(NS_ERROR_NOT_AVAILABLE),
+        }
     }
 }
 
@@ -262,6 +278,15 @@ impl WebAuthnSignResult {
             return Err(NS_ERROR_NOT_AVAILABLE);
         };
         Ok(nsCString::from(name))
+    }
+
+    xpcom_method!(get_authenticator_attachment => GetAuthenticatorAttachment() -> nsAString);
+    fn get_authenticator_attachment(&self) -> Result<nsString, nsresult> {
+        match self.result.attachment {
+            AuthenticatorAttachment::CrossPlatform => Ok(nsString::from("cross-platform")),
+            AuthenticatorAttachment::Platform => Ok(nsString::from("platform")),
+            AuthenticatorAttachment::Unknown => Err(NS_ERROR_NOT_AVAILABLE),
+        }
     }
 
     xpcom_method!(get_used_app_id => GetUsedAppId() -> bool);

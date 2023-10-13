@@ -25,6 +25,8 @@ interface nsIWebAuthnRegisterResult : nsISupports {
     
 
     [must_use] attribute bool credPropsRk;
+
+    [must_use] readonly attribute AString authenticatorAttachment;
 };
 
 
@@ -52,4 +54,6 @@ interface nsIWebAuthnSignResult : nsISupports {
 
     
     [must_use] readonly attribute bool usedAppId;
+
+    [must_use] readonly attribute AString authenticatorAttachment;
 };
