@@ -308,23 +308,23 @@ class RTCErrorOr {
   
   const T& value() const {
     RTC_DCHECK(ok());
-    return value_;
+    return *value_;
   }
   T& value() {
     RTC_DCHECK(ok());
-    return value_;
+    return *value_;
   }
 
   
   
   T MoveValue() {
     RTC_DCHECK(ok());
-    return std::move(value_);
+    return std::move(*value_);
   }
 
  private:
   RTCError error_;
-  T value_;
+  absl::optional<T> value_;
 };
 
 }  
