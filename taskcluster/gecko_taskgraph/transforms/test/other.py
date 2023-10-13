@@ -871,6 +871,9 @@ def set_test_setting(config, tasks):
             if parts[0] == "wayland":
                 display = parts.pop(0)
 
+            if parts and parts[0] == "aarch64":
+                arch = parts.pop(0)
+
         
         
         setting["platform"]["arch"] = arch
