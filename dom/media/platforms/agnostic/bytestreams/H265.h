@@ -139,6 +139,12 @@ struct H265ProfileTierLevel final {
   };
 
   
+  uint32_t GetMaxLumaPs() const;
+
+  
+  uint32_t GetDpbMaxPicBuf() const;
+
+  
   uint8_t general_profile_space = {};
   bool general_tier_flag = {};
   uint8_t general_profile_idc = {};
@@ -237,6 +243,7 @@ struct H265SPS final {
   uint32_t subHeightC = {};      
   CheckedUint32 mDisplayWidth;   
   CheckedUint32 mDisplayHeight;  
+  uint32_t maxDpbSize = {};
 
   
   uint32_t BitDepthLuma() const { return bit_depth_luma_minus8 + 8; }
@@ -312,10 +319,9 @@ class H265 final {
 
   
   
-  static void ParseProfileTierLevel(BitReader& aReader,
-                                    bool aProfilePresentFlag,
-                                    uint8_t aMaxNumSubLayersMinus1,
-                                    H265ProfileTierLevel& aProfile);
+  static Result<Ok, nsresult> ParseProfileTierLevel(
+      BitReader& aReader, bool aProfilePresentFlag,
+      uint8_t aMaxNumSubLayersMinus1, H265ProfileTierLevel& aProfile);
 
   
   
