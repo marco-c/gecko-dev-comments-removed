@@ -105,9 +105,7 @@ AndroidWebAuthnService::MakeCredential(uint64_t aTransactionId,
         }
 
         nsTArray<uint8_t> transportBuf;
-        
-
-
+        Unused << aArgs->GetExcludeListTransports(transportBuf);
         jni::ByteBuffer::LocalRef transportList = jni::ByteBuffer::New(
             const_cast<void*>(
                 static_cast<const void*>(transportBuf.Elements())),
@@ -231,9 +229,7 @@ AndroidWebAuthnService::GetAssertion(uint64_t aTransactionId,
         }
 
         nsTArray<uint8_t> transportBuf;
-        
-
-
+        Unused << aArgs->GetAllowListTransports(transportBuf);
         jni::ByteBuffer::LocalRef transportList = jni::ByteBuffer::New(
             const_cast<void*>(
                 static_cast<const void*>(transportBuf.Elements())),

@@ -31,8 +31,8 @@ interface nsIWebAuthnRegisterArgs : nsISupports {
 
     
     
-    
     readonly attribute Array<Array<octet> > excludeList;
+    readonly attribute Array<octet> excludeListTransports;
 
     
     
@@ -72,8 +72,8 @@ interface nsIWebAuthnSignArgs : nsISupports {
 
     
     
-    
     readonly attribute Array<Array<octet> > allowList;
+    readonly attribute Array<octet> allowListTransports;
 
     
     
