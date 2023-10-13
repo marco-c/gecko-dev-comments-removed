@@ -107,8 +107,27 @@ class AudioVerifier {
   }
 
   void CountDiscontinuities(Sample aCurrentSample) {
-    mDiscontinuitiesCount += fabs(fabs(aCurrentSample) - fabs(mPrevious)) >
-                             3 * MaxMagnitudeDifference();
+    const bool discontinuity = fabs(fabs(aCurrentSample) - fabs(mPrevious)) >
+                               3 * MaxMagnitudeDifference();
+
+    if (mCurrentDiscontinuityFrameCount > 0) {
+      if (++mCurrentDiscontinuityFrameCount == 5) {
+        
+        
+        
+        mCurrentDiscontinuityFrameCount = 0;
+      }
+      return;
+    }
+
+    MOZ_ASSERT(mCurrentDiscontinuityFrameCount == 0);
+    if (!discontinuity) {
+      return;
+    }
+
+    
+    ++mCurrentDiscontinuityFrameCount;
+    ++mDiscontinuitiesCount;
   }
 
   bool IsZero(float aValue) { return fabs(aValue) < 1e-8; }
@@ -125,6 +144,7 @@ class AudioVerifier {
   uint64_t mTotalFramesSoFar = 0;
   uint64_t mPreSilenceSamples = 0;
 
+  uint32_t mCurrentDiscontinuityFrameCount = 0;
   uint32_t mDiscontinuitiesCount = 0;
   
   Sample mPrevious = {};
