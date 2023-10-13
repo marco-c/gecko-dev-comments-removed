@@ -2436,19 +2436,6 @@ nsresult nsNavHistory::RowToResult(mozIStorageValueArray* aRow,
 
   if (IsQueryURI(url)) {
     
-    if (itemId != -1) {
-      
-      
-      
-      
-      
-      nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
-      NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
-
-      rv = bookmarks->GetItemTitle(itemId, title);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     nsAutoCString guid;
     if (itemId != -1) {
       rv = aRow->GetUTF8String(nsNavBookmarks::kGetChildrenIndex_Guid, guid);
