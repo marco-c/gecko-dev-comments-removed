@@ -36,7 +36,6 @@ enum {
 class H265NALU final {
  public:
   H265NALU(const uint8_t* aData, uint32_t aByteSize);
-  H265NALU() = default;
 
   
   enum NAL_TYPES {
@@ -184,9 +183,6 @@ struct H265VUIParameters {
 struct H265SPS final {
   H265SPS() = default;
 
-  bool operator==(const H265SPS& aOther) const;
-  bool operator!=(const H265SPS& aOther) const;
-
   
   uint8_t sps_video_parameter_set_id = {};
   uint8_t sps_max_sub_layers_minus1 = {};
@@ -259,7 +255,6 @@ struct HVCCConfig final {
       const mozilla::MediaByteBuffer* aExtraData);
 
   uint8_t NALUSize() const { return lengthSizeMinusOne + 1; }
-  uint32_t NumSPS() const;
   bool HasSPS() const;
 
   uint8_t configurationVersion;
@@ -296,14 +291,6 @@ class H265 final {
       const mozilla::MediaByteBuffer* aExtraData);
   static Result<H265SPS, nsresult> DecodeSPSFromSPSNALU(
       const H265NALU& aSPSNALU);
-
-  
-  static already_AddRefed<mozilla::MediaByteBuffer> ExtractHVCCExtraData(
-      const mozilla::MediaRawData* aSample);
-
-  
-  static bool CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
-                               const mozilla::MediaByteBuffer* aExtraData2);
 
  private:
   

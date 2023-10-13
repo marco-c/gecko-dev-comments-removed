@@ -30,12 +30,6 @@ class BitWriter {
   void CloseWithRbspTrailing();
 
   
-  
-  
-  
-  void AdvanceBytes(uint32_t aByteOffset);
-
-  
   size_t BitCount() const { return mPosition * 8 + mBitIndex; }
 
  private:
