@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["AboutWelcomeChild", "AboutWelcomeShoppingChild"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -29,9 +23,9 @@ XPCOMUtils.defineLazyGetter(lazy, "log", () => {
   return new Logger("AboutWelcomeChild");
 });
 
-class AboutWelcomeChild extends JSWindowActorChild {
-  
-  
+export class AboutWelcomeChild extends JSWindowActorChild {
+  // Can be used to avoid accesses to the document/contentWindow after it's
+  // destroyed, which may throw unhandled exceptions.
   _destroyed = false;
 
   didDestroy() {
@@ -42,10 +36,10 @@ class AboutWelcomeChild extends JSWindowActorChild {
     this.exportFunctions();
   }
 
-  
-
-
-
+  /**
+   * Send event that can be handled by the page
+   * @param {{type: string, data?: any}} action
+   */
   sendToPage(action) {
     lazy.log.debug(`Sending to page: ${action.type}`);
     const win = this.document.defaultView;
@@ -55,9 +49,9 @@ class AboutWelcomeChild extends JSWindowActorChild {
     win.dispatchEvent(event);
   }
 
-  
-
-
+  /**
+   * Export functions that can be called by page js
+   */
   exportFunctions() {
     let window = this.contentWindow;
 
@@ -126,18 +120,18 @@ class AboutWelcomeChild extends JSWindowActorChild {
     });
   }
 
-  
-
-
+  /**
+   * Wrap a promise so content can use Promise methods.
+   */
   wrapPromise(promise) {
     return new this.contentWindow.Promise((resolve, reject) =>
       promise.then(resolve, reject)
     );
   }
 
-  
-
-
+  /**
+   * Clones the result of the query into the content window.
+   */
   sendQueryAndCloneForContent(...sendQueryArgs) {
     return this.wrapPromise(
       (async () => {
@@ -168,13 +162,13 @@ class AboutWelcomeChild extends JSWindowActorChild {
     );
   }
 
-  
-
-
+  /**
+   * Send initial data to page including experiment information
+   */
   async getAWContent() {
     let attributionData = await this.sendQuery("AWPage:GET_ATTRIBUTION_DATA");
 
-    
+    // Return to AMO gets returned early.
     if (attributionData?.template) {
       lazy.log.debug("Loading about:welcome with RTAMO attribution data");
       return Cu.cloneInto(attributionData, this.contentWindow);
@@ -202,9 +196,9 @@ class AboutWelcomeChild extends JSWindowActorChild {
       );
     }
 
-    
-    
-    
+    // FeatureConfig (from experiments) has higher precendence
+    // to defaults. But the `screens` property isn't defined we shouldn't
+    // override the default with `null`
     let defaults = lazy.AboutWelcomeDefaults.getDefaults();
 
     const content = await lazy.AboutWelcomeDefaults.prepareContentForReact({
@@ -231,10 +225,10 @@ class AboutWelcomeChild extends JSWindowActorChild {
     return this.wrapPromise(this.sendQuery("AWPage:GET_SELECTED_THEME"));
   }
 
-  
-
-
-
+  /**
+   * Send Event Telemetry
+   * @param {object} eventData
+   */
   AWSendEventTelemetry(eventData) {
     this.AWSendToParent("TELEMETRY_EVENT", {
       ...eventData,
@@ -244,12 +238,12 @@ class AboutWelcomeChild extends JSWindowActorChild {
     });
   }
 
-  
-
-
-
-
-
+  /**
+   * Send message that can be handled by AboutWelcomeParent.jsm
+   * @param {string} type
+   * @param {any=} data
+   * @returns {Promise<unknown>}
+   */
   AWSendToParent(type, data) {
     return this.sendQueryAndCloneForContent(`AWPage:${type}`, data);
   }
@@ -274,11 +268,11 @@ class AboutWelcomeChild extends JSWindowActorChild {
           ["branding/brand.ftl", "browser/newtab/onboarding.ftl"],
           false,
           undefined,
-          
+          // Use the system-ish then app then default locale.
           [...negotiated.requestSystemLocales, "en-US"]
         );
 
-        
+        // Add the negotiated language name as args.
         function addMessageArgsAndUseLangPack(obj) {
           for (const value of Object.values(obj)) {
             if (value?.string_id) {
@@ -287,7 +281,7 @@ class AboutWelcomeChild extends JSWindowActorChild {
                 negotiatedLanguage: negotiated.langPackDisplayName,
               };
 
-              
+              // Expose fluent strings wanting lang pack as raw.
               if (value.useLangPack) {
                 formatting.push(
                   l10n.formatValue(value.string_id, value.args).then(raw => {
@@ -332,10 +326,10 @@ class AboutWelcomeChild extends JSWindowActorChild {
     return this.wrapPromise(this.sendQuery("AWPage:NEW_SCREEN", screenId));
   }
 
-  
-
-
-
+  /**
+   * @param {{type: string, detail?: any}} event
+   * @override
+   */
   handleEvent(event) {
     lazy.log.debug(`Received page event ${event.type}`);
   }
@@ -659,16 +653,16 @@ XPCOMUtils.defineLazyPreferenceGetter(
 );
 
 let optInDynamicContent;
-
+// Limit pref increase to 5 as we don't need to count any higher than that
 const MIN_VISITS_TO_SHOW_SURVEY = 5;
-
+// Wait 24 hours after opt in to show survey
 const MIN_TIME_AFTER_OPT_IN = 24 * 60 * 60;
 
-class AboutWelcomeShoppingChild extends AboutWelcomeChild {
-  
+export class AboutWelcomeShoppingChild extends AboutWelcomeChild {
+  // Static state used to track session in which user opted-in
   static optedInSession = false;
 
-  
+  // Static used to track PDP visits per session for showing survey
   static eligiblePDPvisits = [];
 
   constructor() {
@@ -676,7 +670,7 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     this.surveyEnabled =
       lazy.NimbusFeatures.shopping2023.getVariable("surveyEnabled");
 
-    
+    // Used by tests
     this.resetChildStates = () => {
       AboutWelcomeShoppingChild.eligiblePDPvisits.length = 0;
       AboutWelcomeShoppingChild.optedInSession = false;
@@ -684,7 +678,7 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
   }
 
   computeEligiblePDPCount(data) {
-    
+    // Increment our pref if this isn't a page we've already seen this session
     if (lazy.pdpVisits < MIN_VISITS_TO_SHOW_SURVEY) {
       this.AWSendToParent("SPECIAL_ACTION", {
         type: "SET_PREF",
@@ -697,14 +691,14 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
       });
     }
 
-    
-    
+    // Add this product to our list of unique eligible PDPs visited
+    // to prevent errors caused by multiple events being fired simultaneously
     AboutWelcomeShoppingChild.eligiblePDPvisits.push(data?.product_id);
   }
 
   evaluateAndShowSurvey() {
-    
-    
+    // Re-evaluate if we should show the survey
+    // Render survey if user is opted-in and has met survey seen conditions
     const now = Date.now() / 1000;
     const hasBeen24HrsSinceOptin =
       lazy.optedInTime && now - lazy.optedInTime >= MIN_TIME_AFTER_OPT_IN;
@@ -735,20 +729,20 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
   }
 
   handleEvent(event) {
-    
+    // Decide when to show/hide onboarding and survey message
     const { productUrl, showOnboarding, data } = event.detail;
 
-    
+    // Display onboarding if a user hasn't opted-in
     const optInReady = showOnboarding && productUrl;
     if (optInReady) {
-      
+      // Render opt-in message
       AboutWelcomeShoppingChild.optedInSession = true;
       this.AWSetProductURL(new URL(productUrl).hostname);
       this.renderMessage();
       return;
     }
 
-    
+    //Store timestamp if user opts in
     if (
       Object.hasOwn(event.detail, "showOnboarding") &&
       !event.detail.showOnboarding &&
@@ -756,14 +750,14 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     ) {
       this.setOptInTime();
     }
-    
-    
+    // Hide the container until the user is eligible to see the survey
+    // or user has just completed opt-in
     if (!lazy.isSurveySeen || AboutWelcomeShoppingChild.optedInSession) {
       this.document.getElementById("multi-stage-message-root").hidden = true;
     }
 
-    
-    
+    // Early exit if user has seen survey, if we have no data, encountered
+    // an error, or if pdp is ineligible or not unique
     if (
       lazy.isSurveySeen ||
       !data ||
@@ -789,7 +783,7 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     );
   }
 
-  
+  // TODO - Move messages into an ASRouter message provider. See bug 1848251.
   AWGetFeatureConfig() {
     let messageContent = optInDynamicContent;
     if (this.showMicroSurvey) {
@@ -811,8 +805,8 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
     });
   }
 
-  
-  
+  // TODO - Add dismiss: true to the primary CTA so it cleans up the React
+  // content, which will stop being rendered on opt-in. See bug 1848429.
   AWFinish() {
     if (this._destroyed) {
       return;
@@ -835,7 +829,7 @@ class AboutWelcomeShoppingChild extends AboutWelcomeChild {
 
     if (productUrl) {
       switch (
-        productUrl 
+        productUrl // Insert the productUrl into content
       ) {
         case "www.amazon.com":
           optInScreen.content.subtitle.args = {

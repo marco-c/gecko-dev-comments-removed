@@ -1,14 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-"use strict";
-
-const EXPORTED_SYMBOLS = ["AboutWelcomeParent", "AboutWelcomeShoppingParent"];
-
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 
 const lazy = {};
 
@@ -107,7 +101,7 @@ class AboutWelcomeObserver {
     }
   }
 
-  
+  // Added for testing
   get AWTerminate() {
     return AWTerminate;
   }
@@ -124,7 +118,7 @@ class AboutWelcomeObserver {
   }
 }
 
-class AboutWelcomeParent extends JSWindowActorParent {
+export class AboutWelcomeParent extends JSWindowActorParent {
   constructor() {
     super();
     this.startAboutWelcomeObserver();
@@ -134,8 +128,8 @@ class AboutWelcomeParent extends JSWindowActorParent {
     this.AboutWelcomeObserver = new AboutWelcomeObserver();
   }
 
-  
-  
+  // Static methods that calls into ShellService to check
+  // if Firefox is pinned or already default
   static doesAppNeedPin() {
     return lazy.ShellService.doesAppNeedPin();
   }
@@ -160,13 +154,13 @@ class AboutWelcomeParent extends JSWindowActorParent {
     });
   }
 
-  
-
-
-
-
-
-
+  /**
+   * Handle messages from AboutWelcomeChild.jsm
+   *
+   * @param {string} type
+   * @param {any=} data
+   * @param {Browser} the xul:browser rendering the page
+   */
   async onContentMessage(type, data, browser) {
     lazy.log.debug(`Received content event: ${type}`);
     switch (type) {
@@ -208,12 +202,12 @@ class AboutWelcomeParent extends JSWindowActorParent {
       case "AWPage:GET_SELECTED_THEME":
         let themes = await lazy.AddonManager.getAddonsByTypes(["theme"]);
         let activeTheme = themes.find(addon => addon.isActive);
-        
+        // Store the current theme ID so user can restore their previous theme.
         if (activeTheme?.id) {
           LIGHT_WEIGHT_THEMES.AUTOMATIC = activeTheme.id;
         }
-        
-        
+        // convert this to the short form name that the front end code
+        // expects
         let themeShortName = Object.keys(LIGHT_WEIGHT_THEMES).find(
           key => LIGHT_WEIGHT_THEMES[key] === activeTheme?.id
         );
@@ -221,14 +215,14 @@ class AboutWelcomeParent extends JSWindowActorParent {
       case "AWPage:DOES_APP_NEED_PIN":
         return AboutWelcomeParent.doesAppNeedPin();
       case "AWPage:NEED_DEFAULT":
-        
+        // Only need to set default if we're supposed to check and not default.
         return (
           Services.prefs.getBoolPref("browser.shell.checkDefaultBrowser") &&
           !AboutWelcomeParent.isDefaultBrowser()
         );
       case "AWPage:WAIT_FOR_MIGRATION_CLOSE":
-        
-        
+        // Support multiples types of migration: 1) content modal 2) old
+        // migration modal 3) standalone content modal
         return new Promise(resolve => {
           const topics = [
             "MigrationWizard:Closed",
@@ -262,10 +256,10 @@ class AboutWelcomeParent extends JSWindowActorParent {
     return undefined;
   }
 
-  
-
-
-
+  /**
+   * @param {{name: string, data?: any}} message
+   * @override
+   */
   receiveMessage(message) {
     const { name, data } = message;
     let browser;
@@ -280,16 +274,16 @@ class AboutWelcomeParent extends JSWindowActorParent {
   }
 }
 
-class AboutWelcomeShoppingParent extends AboutWelcomeParent {
-  
-
-
-
-
-
-
+export class AboutWelcomeShoppingParent extends AboutWelcomeParent {
+  /**
+   * Handle messages from AboutWelcomeChild.jsm
+   *
+   * @param {string} type
+   * @param {any=} data
+   * @param {Browser} the xul:browser rendering the page
+   */
   onContentMessage(type, data, browser) {
-    
+    // Only handle the messages that are relevant to the shopping page.
     switch (type) {
       case "AWPage:SPECIAL_ACTION":
       case "AWPage:TELEMETRY_EVENT":
@@ -301,7 +295,7 @@ class AboutWelcomeShoppingParent extends AboutWelcomeParent {
     return undefined;
   }
 
-  
+  // Override unnecessary methods
   startAboutWelcomeObserver() {}
 
   didDestroy() {}
