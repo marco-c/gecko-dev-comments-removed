@@ -164,18 +164,6 @@ SVGElement::EnumInfo SVGComponentTransferFunctionElement::sEnumInfo[1] = {
 
 
 
-NS_IMPL_ADDREF_INHERITED(SVGComponentTransferFunctionElement,
-                         SVGComponentTransferFunctionElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGComponentTransferFunctionElement,
-                          SVGComponentTransferFunctionElementBase)
-
-NS_INTERFACE_MAP_BEGIN(SVGComponentTransferFunctionElement)
-  NS_INTERFACE_MAP_ENTRY_CONCRETE(SVGComponentTransferFunctionElement)
-NS_INTERFACE_MAP_END_INHERITING(SVGComponentTransferFunctionElementBase)
-
-
-
-
 bool SVGComponentTransferFunctionElement::AttributeAffectsRendering(
     int32_t aNameSpaceID, nsAtom* aAttribute) const {
   return aNameSpaceID == kNameSpaceID_None &&
