@@ -20,7 +20,6 @@
 #include "nsPIDOMWindow.h"
 #include "StreamBlobImpl.h"
 #include "StringBlobImpl.h"
-#include "js/GCAPI.h"
 
 namespace mozilla::dom {
 
@@ -250,11 +249,6 @@ void Blob::CreateInputStream(nsIInputStream** aStream, ErrorResult& aRv) const {
 
 size_t BindingJSObjectMallocBytes(Blob* aBlob) {
   MOZ_ASSERT(aBlob);
-
-  
-  
-  
-  JS::AutoSuppressGCAnalysis nogc;
 
   return aBlob->GetAllocationSize();
 }
