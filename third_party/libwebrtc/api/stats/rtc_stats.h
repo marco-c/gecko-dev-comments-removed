@@ -208,21 +208,6 @@ class RTC_EXPORT RTCStats {
 
 
 
-
-
-enum class NonStandardGroupId {
-  
-  kGroupIdForTesting,
-  
-  
-  kRtcAudioJitterBufferMaxPackets,
-  
-  
-  kRtcStatsRelativePacketArrivalDelay,
-};
-
-
-
 enum class StatExposureCriteria : uint8_t {
   
   kAlways,
@@ -274,9 +259,6 @@ class RTCStatsMemberInterface {
   bool is_standardized() const {
     return exposure_criteria() != StatExposureCriteria::kNonStandard;
   }
-  
-  
-  virtual std::vector<NonStandardGroupId> group_ids() const { return {}; }
   
   
   
@@ -512,22 +494,14 @@ class RTCNonStandardStatsMember
  public:
   explicit RTCNonStandardStatsMember(const char* name)
       : RTCRestrictedStatsBase(name) {}
-  RTCNonStandardStatsMember(const char* name,
-                            std::initializer_list<NonStandardGroupId> group_ids)
-      : RTCRestrictedStatsBase(name), group_ids_(group_ids) {}
   RTCNonStandardStatsMember(const char* name, const T& value)
       : RTCRestrictedStatsBase(name, value) {}
   RTCNonStandardStatsMember(const char* name, T&& value)
       : RTCRestrictedStatsBase(name, std::move(value)) {}
   RTCNonStandardStatsMember(const RTCNonStandardStatsMember<T>& other)
-      : RTCRestrictedStatsBase(other), group_ids_(other.group_ids_) {}
+      : RTCRestrictedStatsBase(other) {}
   RTCNonStandardStatsMember(RTCNonStandardStatsMember<T>&& other)
-      : RTCRestrictedStatsBase(std::move(other)),
-        group_ids_(std::move(other.group_ids_)) {}
-
-  std::vector<NonStandardGroupId> group_ids() const override {
-    return group_ids_;
-  }
+      : RTCRestrictedStatsBase(std::move(other)) {}
 
   T& operator=(const T& value) {
     return RTCRestrictedStatsMember<
@@ -541,7 +515,6 @@ class RTCNonStandardStatsMember
  private:
   using RTCRestrictedStatsBase =
       RTCRestrictedStatsMember<T, StatExposureCriteria::kNonStandard>;
-  std::vector<NonStandardGroupId> group_ids_;
 };
 
 extern template class RTC_EXPORT_TEMPLATE_DECLARE(RTC_EXPORT)
