@@ -1407,6 +1407,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "URLSearchParams", insecureContext: true },
   
+  { name: "UserActivation", insecureContext: true },
+  
   { name: "UserProximityEvent", insecureContext: true, disabled: true },
   
   { name: "ValidityState", insecureContext: true },
