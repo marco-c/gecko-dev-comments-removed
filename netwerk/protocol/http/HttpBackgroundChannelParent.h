@@ -44,19 +44,22 @@ class HttpBackgroundChannelParent final : public PHttpBackgroundChannelParent {
                       const bool& aUseResponseHead,
                       const nsHttpHeaderArray& aRequestHeaders,
                       const HttpChannelOnStartRequestArgs& aArgs,
-                      const nsCOMPtr<nsICacheEntry>& aCacheEntry);
+                      const nsCOMPtr<nsICacheEntry>& aCacheEntry,
+                      TimeStamp aOnStartRequestStart);
 
   
   bool OnTransportAndData(const nsresult& aChannelStatus,
                           const nsresult& aTransportStatus,
                           const uint64_t& aOffset, const uint32_t& aCount,
-                          const nsCString& aData);
+                          const nsCString& aData,
+                          TimeStamp aOnDataAvailableStart);
 
   
   bool OnStopRequest(const nsresult& aChannelStatus,
                      const ResourceTimingStructArgs& aTiming,
                      const nsHttpHeaderArray& aResponseTrailers,
-                     const nsTArray<ConsoleReportCollected>& aConsoleReports);
+                     const nsTArray<ConsoleReportCollected>& aConsoleReports,
+                     TimeStamp aOnStopRequestStart);
 
   
   

@@ -802,6 +802,8 @@ class nsHttpChannel final : public HttpBaseChannel,
 
   void SetHTTPSSVCRecord(already_AddRefed<nsIDNSHTTPSSVCRecord>&& aRecord);
 
+  void RecordOnStartTelemetry(nsresult aStatus, bool aIsNavigation);
+
   
   
   nsCOMPtr<nsITimer> mNetworkTriggerTimer;
