@@ -132,21 +132,39 @@ async function _setBreakpointPositions(location, thunkArgs) {
         };
       }
 
-      const actorBps = await Promise.all(
+      
+      
+      
+      
+      const allActorsPositions = await Promise.all(
         getSourceActorsForSource(getState(), generatedSourceId).map(actor =>
           client.getSourceActorBreakpointPositions(actor, range)
         )
       );
 
-      for (const actorPositions of actorBps) {
-        for (const rangeLine of Object.keys(actorPositions)) {
-          let columns = actorPositions[parseInt(rangeLine, 10)];
+      
+      
+      
+      
+      
+      
+      
+      
+      for (const actorPositions of allActorsPositions) {
+        for (const rangeLine in actorPositions) {
+          const columns = actorPositions[rangeLine];
+
+          
           const existing = results[rangeLine];
           if (existing) {
-            columns = [...new Set([...existing, ...columns])];
+            for (const column of columns) {
+              if (!existing.includes(column)) {
+                existing.push(column);
+              }
+            }
+          } else {
+            results[rangeLine] = columns;
           }
-
-          results[rangeLine] = columns;
         }
       }
     }
@@ -156,13 +174,17 @@ async function _setBreakpointPositions(location, thunkArgs) {
       throw new Error("Line is required for generated sources");
     }
 
-    const actorColumns = await Promise.all(
+    
+    
+    
+    const allActorsBreakableColumns = await Promise.all(
       getSourceActorsForSource(getState(), location.source.id).map(
         async actor => {
           const positions = await client.getSourceActorBreakpointPositions(
             actor,
             {
-              start: { line: line, column: 0 },
+              
+              start: { line, column: 0 },
               end: { line: line + 1, column: 0 },
             }
           );
@@ -171,8 +193,18 @@ async function _setBreakpointPositions(location, thunkArgs) {
       )
     );
 
-    for (const columns of actorColumns) {
-      results[line] = (results[line] || []).concat(columns);
+    for (const columns of allActorsBreakableColumns) {
+      
+      const existing = results[line];
+      if (existing) {
+        for (const column of columns) {
+          if (!existing.includes(column)) {
+            existing.push(column);
+          }
+        }
+      } else {
+        results[line] = columns;
+      }
     }
   }
 
