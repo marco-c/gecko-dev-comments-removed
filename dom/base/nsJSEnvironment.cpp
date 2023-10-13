@@ -1696,9 +1696,17 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
     Maybe<TimeStamp> next = nsRefreshDriver::GetNextTickHint();
     
     
-    if (next.isSome() &&
-        (sScheduler.InIncrementalGC() || sScheduler.IsCollectingCycles())) {
-      sScheduler.RunNextCollectorTimer(aReason, next.value());
+    if (next.isSome()) {
+      if (sScheduler.InIncrementalGC() || sScheduler.IsCollectingCycles()) {
+        sScheduler.RunNextCollectorTimer(aReason, next.value());
+      } else {
+        
+        
+        
+        JS::RunNurseryCollection(CycleCollectedJSRuntime::Get()->Runtime(),
+                                 JS::GCReason::PREPARE_FOR_PAGELOAD,
+                                 mozilla::TimeDuration::FromMilliseconds(16));
+      }
     }
   }
 }
