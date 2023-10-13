@@ -58,7 +58,7 @@ class DriftController final {
 
 
   void UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
-                   uint32_t aBufferedFrames, uint32_t aRemainingFrames);
+                   uint32_t aBufferedFrames);
 
  private:
   
@@ -84,7 +84,7 @@ class DriftController final {
   
   
   
-  void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aRemainingFrames);
+  void CalculateCorrection(uint32_t aBufferedFrames);
 
  public:
   const uint8_t mPlotId;
@@ -99,7 +99,6 @@ class DriftController final {
   float mCorrectedTargetRate;
   uint32_t mNumCorrectionChanges = 0;
 
-  uint32_t mSourceClock = 0;
   
   RollingMean<TrackTime, TrackTime> mMeasuredSourceLatency;
   

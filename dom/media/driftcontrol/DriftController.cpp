@@ -63,10 +63,8 @@ uint32_t DriftController::GetCorrectedTargetRate() const {
 
 void DriftController::UpdateClock(uint32_t aSourceFrames,
                                   uint32_t aTargetFrames,
-                                  uint32_t aBufferedFrames,
-                                  uint32_t aRemainingFrames) {
+                                  uint32_t aBufferedFrames) {
   mTargetClock += aTargetFrames;
-  mSourceClock += aSourceFrames;
   mTotalTargetClock += aTargetFrames;
 
   mMeasuredTargetLatency.insert(aTargetFrames);
@@ -81,23 +79,13 @@ void DriftController::UpdateClock(uint32_t aSourceFrames,
 
   mMeasuredSourceLatency.insert(aSourceFrames);
 
-  if (mSourceClock >= mSourceRate / 10 || mTargetClock >= mTargetRate / 10) {
+  if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs) {
     
-    if (aBufferedFrames < mDesiredBuffering * 4 / 10  ||
-        aRemainingFrames < mDesiredBuffering * 4 / 10 ) {
-      
-      
-      CalculateCorrection(aBufferedFrames, aRemainingFrames);
-    } else if ((mTargetClock * 1000 / mTargetRate) >= mAdjustmentIntervalMs ||
-               (mSourceClock * 1000 / mSourceRate) >= mAdjustmentIntervalMs) {
-      
-      CalculateCorrection(aBufferedFrames, aRemainingFrames);
-    }
+    CalculateCorrection(aBufferedFrames);
   }
 }
 
-void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
-                                          uint32_t aRemainingFrames) {
+void DriftController::CalculateCorrection(uint32_t aBufferedFrames) {
   static constexpr float kProportionalGain = 0.07;
   static constexpr float kIntegralGain = 0.006;
   static constexpr float kDerivativeGain = 0.12;
@@ -146,7 +134,6 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
 
   
   mTargetClock = 0;
-  mSourceClock = 0;
 }
 }  
 
