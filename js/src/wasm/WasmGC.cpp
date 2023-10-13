@@ -283,7 +283,7 @@ bool wasm::IsPlausibleStackMapKey(const uint8_t* nextPC) {
   return ((uintptr_t(insn) & 3) == 0) &&            
          (insn[-1] == 0xe7f000f0 ||                 
           (insn[-1] & 0xfffffff0) == 0xe12fff30 ||  
-          (insn[-1] & 0x0f000000) == 0x0b000000);   
+          (insn[-1] & 0x0f000000) == 0x0b000000);  
 
 #  elif defined(JS_CODEGEN_ARM64)
   const uint32_t hltInsn = 0xd4a00000;
