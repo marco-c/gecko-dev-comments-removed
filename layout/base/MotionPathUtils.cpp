@@ -39,11 +39,32 @@ CSSPoint MotionPathUtils::ComputeAnchorPointAdjustment(const nsIFrame& aFrame) {
   }
 
   if (aFrame.IsFrameOfType(nsIFrame::eSVGContainer)) {
-    nsRect boxRect = nsLayoutUtils::ComputeGeometryBox(
+    nsRect boxRect = nsLayoutUtils::ComputeSVGReferenceRect(
         const_cast<nsIFrame*>(&aFrame), StyleGeometryBox::FillBox);
     return CSSPoint::FromAppUnits(boxRect.TopLeft());
   }
   return CSSPoint::FromAppUnits(aFrame.GetPosition());
+}
+
+
+
+static StyleGeometryBox CoordBoxToGeometryBoxInCSSLayout(
+    StyleCoordBox aCoordBox) {
+  switch (aCoordBox) {
+    case StyleCoordBox::ContentBox:
+      return StyleGeometryBox::ContentBox;
+    case StyleCoordBox::PaddingBox:
+      return StyleGeometryBox::PaddingBox;
+    case StyleCoordBox::BorderBox:
+      return StyleGeometryBox::BorderBox;
+    case StyleCoordBox::FillBox:
+      return StyleGeometryBox::ContentBox;
+    case StyleCoordBox::StrokeBox:
+    case StyleCoordBox::ViewBox:
+      return StyleGeometryBox::BorderBox;
+  }
+  MOZ_ASSERT_UNREACHABLE("Unknown coord-box type");
+  return StyleGeometryBox::BorderBox;
 }
 
 
@@ -67,7 +88,7 @@ const nsIFrame* MotionPathUtils::GetOffsetPathReferenceBox(
                                      ? offsetPath.AsCoordBox()
                                      : offsetPath.AsOffsetPath().coord_box;
   aOutputRect = nsLayoutUtils::ComputeHTMLReferenceRect(
-      containingBlock, nsLayoutUtils::CoordBoxToGeometryBox(coordBox));
+      containingBlock, CoordBoxToGeometryBoxInCSSLayout(coordBox));
   return containingBlock;
 }
 
@@ -79,14 +100,13 @@ CSSCoord MotionPathUtils::GetRayContainReferenceSize(nsIFrame* aFrame) {
   
   
   
-  
-  
-  CSSSize size = CSSSize::FromAppUnits(
-      nsLayoutUtils::ComputeGeometryBox(aFrame,
-                                        
-                                        
-                                        StyleGeometryBox::StrokeBox)
-          .Size());
+  const auto size =
+      CSSSize::FromAppUnits((aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)
+                                 ? nsLayoutUtils::ComputeSVGReferenceRect(
+                                       aFrame, StyleGeometryBox::StrokeBox)
+                                 : nsLayoutUtils::ComputeHTMLReferenceRect(
+                                       aFrame, StyleGeometryBox::BorderBox))
+                                .Size());
   return std::max(size.width, size.height);
 }
 

@@ -57,7 +57,7 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
     case StyleTransformBox::FillBox: {
       
       
-      nsRect bboxInAppUnits = nsLayoutUtils::ComputeGeometryBox(
+      nsRect bboxInAppUnits = nsLayoutUtils::ComputeSVGReferenceRect(
           const_cast<nsIFrame*>(aFrame), StyleGeometryBox::FillBox);
       
       
@@ -86,7 +86,7 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
       
       
       
-      nsRect strokeBox = nsLayoutUtils::ComputeGeometryBox(
+      nsRect strokeBox = nsLayoutUtils::ComputeSVGReferenceRect(
           const_cast<nsIFrame*>(aFrame), StyleGeometryBox::StrokeBox);
       
       

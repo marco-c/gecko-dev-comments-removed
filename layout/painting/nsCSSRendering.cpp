@@ -2029,8 +2029,10 @@ static bool IsHTMLStyleGeometryBox(StyleGeometryBox aBox) {
           aBox == StyleGeometryBox::MarginBox);
 }
 
-static StyleGeometryBox ComputeBoxValue(nsIFrame* aForFrame,
-                                        StyleGeometryBox aBox) {
+static StyleGeometryBox ComputeBoxValueForOrigin(nsIFrame* aForFrame,
+                                                 StyleGeometryBox aBox) {
+  
+  
   if (!aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     
     
@@ -2046,6 +2048,40 @@ static StyleGeometryBox ComputeBoxValue(nsIFrame* aForFrame,
   }
 
   return aBox;
+}
+
+static StyleGeometryBox ComputeBoxValueForClip(const nsIFrame* aForFrame,
+                                               StyleGeometryBox aBox) {
+  
+  
+  if (aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    
+    
+    
+    switch (aBox) {
+      case StyleGeometryBox::ContentBox:
+      case StyleGeometryBox::PaddingBox:
+        return StyleGeometryBox::FillBox;
+      case StyleGeometryBox::BorderBox:
+      case StyleGeometryBox::MarginBox:
+        return StyleGeometryBox::StrokeBox;
+      default:
+        return aBox;
+    }
+  }
+
+  
+  
+  
+  switch (aBox) {
+    case StyleGeometryBox::FillBox:
+      return StyleGeometryBox::ContentBox;
+    case StyleGeometryBox::StrokeBox:
+    case StyleGeometryBox::ViewBox:
+      return StyleGeometryBox::BorderBox;
+    default:
+      return aBox;
+  }
 }
 
 bool nsCSSRendering::ImageLayerClipState::IsValid() const {
@@ -2069,16 +2105,17 @@ void nsCSSRendering::GetImageLayerClip(
     const nsRect& aCallerDirtyRect, bool aWillPaintBorder,
     nscoord aAppUnitsPerPixel,
      ImageLayerClipState* aClipState) {
-  StyleGeometryBox layerClip = ComputeBoxValue(aForFrame, aLayer.mClip);
+  StyleGeometryBox layerClip = ComputeBoxValueForClip(aForFrame, aLayer.mClip);
   if (IsSVGStyleGeometryBox(layerClip)) {
     MOZ_ASSERT(aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT));
 
     
-    nsRect clipArea = nsLayoutUtils::ComputeGeometryBox(aForFrame, layerClip);
+    nsRect clipArea =
+        nsLayoutUtils::ComputeSVGReferenceRect(aForFrame, layerClip);
 
     nsRect strokeBox = (layerClip == StyleGeometryBox::StrokeBox)
                            ? clipArea
-                           : nsLayoutUtils::ComputeGeometryBox(
+                           : nsLayoutUtils::ComputeSVGReferenceRect(
                                  aForFrame, StyleGeometryBox::StrokeBox);
     nsRect clipAreaRelativeToStrokeBox = clipArea - strokeBox.TopLeft();
 
@@ -2708,17 +2745,19 @@ nsRect nsCSSRendering::ComputeImageLayerPositioningArea(
   
   nsRect positionArea;
 
-  StyleGeometryBox layerOrigin = ComputeBoxValue(aForFrame, aLayer.mOrigin);
+  StyleGeometryBox layerOrigin =
+      ComputeBoxValueForOrigin(aForFrame, aLayer.mOrigin);
 
   if (IsSVGStyleGeometryBox(layerOrigin)) {
     MOZ_ASSERT(aForFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT));
     *aAttachedToFrame = aForFrame;
 
-    positionArea = nsLayoutUtils::ComputeGeometryBox(aForFrame, layerOrigin);
+    positionArea =
+        nsLayoutUtils::ComputeSVGReferenceRect(aForFrame, layerOrigin);
 
     nsPoint toStrokeBoxOffset = nsPoint(0, 0);
     if (layerOrigin != StyleGeometryBox::StrokeBox) {
-      nsRect strokeBox = nsLayoutUtils::ComputeGeometryBox(
+      nsRect strokeBox = nsLayoutUtils::ComputeSVGReferenceRect(
           aForFrame, StyleGeometryBox::StrokeBox);
       toStrokeBoxOffset = positionArea.TopLeft() - strokeBox.TopLeft();
     }

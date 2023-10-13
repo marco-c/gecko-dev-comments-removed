@@ -2958,11 +2958,13 @@ class nsLayoutUtils {
 
   static nsRect ComputeSVGOriginBox(mozilla::dom::SVGViewportElement*);
 
+  
+  
+  static nsRect ComputeSVGReferenceRect(nsIFrame*, StyleGeometryBox);
+
+  
+  
   static nsRect ComputeHTMLReferenceRect(const nsIFrame*, StyleGeometryBox);
-
-  static StyleGeometryBox CoordBoxToGeometryBox(mozilla::StyleCoordBox);
-
-  static nsRect ComputeGeometryBox(nsIFrame*, StyleGeometryBox);
 
   static nsRect ComputeClipPathGeometryBox(
       nsIFrame*, const mozilla::StyleShapeGeometryBox&);
