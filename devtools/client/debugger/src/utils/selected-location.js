@@ -2,16 +2,14 @@
 
 
 
-import { isOriginalId } from "devtools/client/shared/source-map-loader/index";
-
 export function getSelectedLocation(mappedLocation, context) {
   if (!context) {
     return mappedLocation.location;
   }
 
   
-  const sourceId = context.source?.id || context.id;
-  return isOriginalId(sourceId)
+  const source = context.source || context;
+  return source.isOriginal
     ? mappedLocation.location
     : mappedLocation.generatedLocation;
 }
