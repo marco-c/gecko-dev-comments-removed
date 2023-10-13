@@ -117,6 +117,16 @@ function _EU_maybeWrap(o) {
 }
 
 function _EU_maybeUnwrap(o) {
+  var haveWrap = false;
+  try {
+    haveWrap = SpecialPowers.unwrap != undefined;
+  } catch (e) {
+    
+  }
+  if (!haveWrap) {
+    
+    return o;
+  }
   var c = Object.getOwnPropertyDescriptor(window, "Components");
   return c && c.value && !c.writable ? o : SpecialPowers.unwrap(o);
 }
@@ -569,6 +579,77 @@ function synthesizeTouch(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
   );
 }
 
+function getDragService() {
+  return _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
+    _EU_Ci.nsIDragService
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function _maybeEndDragSession(left, top, aEvent, aWindow) {
+  const dragService = getDragService();
+  const dragSession = dragService?.getCurrentSession();
+  if (!dragSession) {
+    return false;
+  }
+  
+  
+  
+  
+  try {
+    dragService.endDragSession(false, _parseModifiers(aEvent, aWindow));
+  } catch (e) {}
+  return true;
+}
+
+function _maybeSynthesizeDragOver(left, top, aEvent, aWindow) {
+  const dragSession = getDragService()?.getCurrentSession();
+  if (!dragSession) {
+    return false;
+  }
+  const target = aWindow.document.elementFromPoint(left, top);
+  if (target) {
+    sendDragEvent(
+      createDragEventObject(
+        "dragover",
+        target,
+        aWindow,
+        dragSession.dataTransfer,
+        {
+          accelKey: aEvent.accelKey,
+          altKey: aEvent.altKey,
+          altGrKey: aEvent.altGrKey,
+          ctrlKey: aEvent.ctrlKey,
+          metaKey: aEvent.metaKey,
+          shiftKey: aEvent.shiftKey,
+          capsLockKey: aEvent.capsLockKey,
+          fnKey: aEvent.fnKey,
+          fnLockKey: aEvent.fnLockKey,
+          numLockKey: aEvent.numLockKey,
+          scrollLockKey: aEvent.scrollLockKey,
+          symbolKey: aEvent.symbolKey,
+          symbolLockKey: aEvent.symbolLockKey,
+        }
+      ),
+      target,
+      aWindow
+    );
+  }
+  return true;
+}
+
 
 
 
@@ -583,6 +664,18 @@ function synthesizeTouch(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
 
 
 function synthesizeMouseAtPoint(left, top, aEvent, aWindow = window) {
+  if (aEvent.allowToHandleDragDrop) {
+    if (aEvent.type == "mouseup" || !aEvent.type) {
+      if (_maybeEndDragSession(left, top, aEvent, aWindow)) {
+        return false;
+      }
+    } else if (aEvent.type == "mousemove") {
+      if (_maybeSynthesizeDragOver(left, top, aEvent, aWindow)) {
+        return false;
+      }
+    }
+  }
+
   var utils = _getDOMWindowUtils(aWindow);
   var defaultPrevented = false;
 
@@ -1394,7 +1487,32 @@ function synthesizeAndWaitNativeMouseMove(
 
 
 function synthesizeKey(aKey, aEvent = undefined, aWindow = window, aCallback) {
-  var event = aEvent === undefined || aEvent === null ? {} : aEvent;
+  const event = aEvent === undefined || aEvent === null ? {} : aEvent;
+  let dispatchKeydown =
+    !("type" in event) || event.type === "keydown" || !event.type;
+  const dispatchKeyup =
+    !("type" in event) || event.type === "keyup" || !event.type;
+
+  if (dispatchKeydown && aKey == "KEY_Escape") {
+    let eventForKeydown = Object.assign({}, JSON.parse(JSON.stringify(event)));
+    eventForKeydown.type = "keydown";
+    if (
+      _maybeEndDragSession(
+        
+        0,
+        0,
+        eventForKeydown,
+        aWindow
+      )
+    ) {
+      if (!dispatchKeyup) {
+        return;
+      }
+      
+      
+      dispatchKeydown = false;
+    }
+  }
 
   var TIP = _getTIP(aWindow, aCallback);
   if (!TIP) {
@@ -1404,10 +1522,6 @@ function synthesizeKey(aKey, aEvent = undefined, aWindow = window, aCallback) {
   var modifiers = _emulateToActivateModifiers(TIP, event, aWindow);
   var keyEventDict = _createKeyboardEventDictionary(aKey, event, TIP, aWindow);
   var keyEvent = new KeyboardEvent("", keyEventDict.dictionary);
-  var dispatchKeydown =
-    !("type" in event) || event.type === "keydown" || !event.type;
-  var dispatchKeyup =
-    !("type" in event) || event.type === "keyup" || !event.type;
 
   try {
     if (dispatchKeydown) {
