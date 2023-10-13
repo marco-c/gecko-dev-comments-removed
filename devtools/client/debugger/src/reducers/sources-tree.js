@@ -246,9 +246,11 @@ function updateBlackbox(state, sources, shouldBlackBox) {
 function updateExpanded(state, action) {
   
   
+  
   return {
     ...state,
-    expanded: new Set(action.expanded),
+    
+    expanded: action.expanded,
   };
 }
 
