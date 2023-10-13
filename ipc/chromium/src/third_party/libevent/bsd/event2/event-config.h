@@ -512,7 +512,13 @@
 #endif
 
 
-#ifdef __LP64__
+
+
+
+
+
+
+#if defined(__LP64__) || defined(__OpenBSD__) || defined(__NetBSD__) || (defined(__FreeBSD__) && !defined(__i386__))
 #define EVENT__SIZEOF_TIME_T 8
 #else
 #define EVENT__SIZEOF_TIME_T 4
