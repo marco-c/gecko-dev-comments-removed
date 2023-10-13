@@ -4,16 +4,34 @@
 
 
 
-#ifndef mozilla_dom_UserAcitvation_h
-#define mozilla_dom_UserAcitvation_h
+#ifndef mozilla_dom_UserActivation_h
+#define mozilla_dom_UserActivation_h
 
 #include "mozilla/EventForwards.h"
 #include "mozilla/TimeStamp.h"
+#include "nsCycleCollectionParticipant.h"
+#include "nsWrapperCache.h"
+#include "nsPIDOMWindow.h"
 
 namespace mozilla::dom {
 
-class UserActivation final {
+class UserActivation final : public nsISupports, public nsWrapperCache {
  public:
+  
+
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(UserActivation)
+
+  explicit UserActivation(nsPIDOMWindowInner* aWindow);
+
+  nsPIDOMWindowInner* GetParentObject() const { return mWindow; }
+  JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
+
+  bool HasBeenActive() const;
+  bool IsActive() const;
+
+  
+
   enum class State : uint8_t {
     
     None,
@@ -64,6 +82,11 @@ class UserActivation final {
 
 
   static TimeStamp LatestUserInputStart();
+
+ private:
+  ~UserActivation() = default;
+
+  nsCOMPtr<nsPIDOMWindowInner> mWindow;
 };
 
 
