@@ -179,12 +179,33 @@ TEST_P(TaskQueueTest, PostedUnexecutedClosureDestroyedOnTaskQueue) {
   queue->PostTask([] { SleepFor(TimeDelta::Millis(100)); });
   
   SleepFor(TimeDelta::Millis(10));
+  rtc::Event finished;
   
   
-  auto cleanup = absl::Cleanup(
-      [queue_ptr] { EXPECT_EQ(queue_ptr, TaskQueueBase::Current()); });
+  auto cleanup = absl::Cleanup([queue_ptr, &finished] {
+    EXPECT_EQ(queue_ptr, TaskQueueBase::Current());
+    finished.Set();
+  });
   queue->PostTask([cleanup = std::move(cleanup)] {});
   queue = nullptr;
+  finished.Wait(TimeDelta::Seconds(1));
+}
+
+TEST_P(TaskQueueTest, PostedClosureDestroyedOnTaskQueue) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()(nullptr);
+  auto queue = CreateTaskQueue(factory, "PostedClosureDestroyedOnTaskQueue");
+  TaskQueueBase* queue_ptr = queue.get();
+  rtc::Event finished;
+  auto cleanup = absl::Cleanup([queue_ptr, &finished] {
+    EXPECT_EQ(queue_ptr, TaskQueueBase::Current());
+    finished.Set();
+  });
+  
+  
+  
+  queue->PostTask([cleanup = std::move(cleanup)] {});
+  queue = nullptr;
+  finished.Wait(TimeDelta::Seconds(1));
 }
 
 TEST_P(TaskQueueTest, PostedExecutedClosureDestroyedOnTaskQueue) {
@@ -198,7 +219,7 @@ TEST_P(TaskQueueTest, PostedExecutedClosureDestroyedOnTaskQueue) {
                      EXPECT_EQ(queue_ptr, TaskQueueBase::Current());
                      finished.Set();
                    })] {});
-  finished.Wait(rtc::Event::kForever);
+  finished.Wait(TimeDelta::Seconds(1));
 }
 
 TEST_P(TaskQueueTest, PostAndReuse) {
