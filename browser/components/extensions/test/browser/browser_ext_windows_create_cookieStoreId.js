@@ -259,6 +259,7 @@ add_task(async function valid_cookieStoreId() {
   }
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
+      host_permissions: ["*://*/*"], 
       permissions: ["cookies", "webNavigation"],
     },
     background: `(${background})(${JSON.stringify(testCases)})`,

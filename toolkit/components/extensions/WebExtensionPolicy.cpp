@@ -805,6 +805,8 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
     }
   }
 
+  
+  
   if (!mMatchAboutBlank && aDoc.URL().InheritsPrincipal()) {
     return false;
   }
@@ -812,11 +814,26 @@ bool MozDocumentMatcher::Matches(const DocInfo& aDoc,
   
   
   
+  
+  
   if (mMatchAboutBlank && aDoc.IsTopLevel() &&
       (aDoc.URL().Spec().EqualsLiteral("about:blank") ||
        aDoc.URL().Scheme() == nsGkAtoms::data) &&
       aDoc.Principal() && aDoc.Principal()->GetIsNullPrincipal()) {
-    return true;
+    if (StaticPrefs::extensions_script_about_blank_without_permission()) {
+      return true;
+    }
+    if (mHasActiveTabPermission) {
+      return true;
+    }
+    if (mMatches->MatchesAllWebUrls() && mIncludeGlobs.IsNull()) {
+      
+      
+      
+      return true;
+    }
+    
+    return false;
   }
 
   if (mRestricted && WebExtensionPolicy::IsRestrictedDoc(aDoc)) {
