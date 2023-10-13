@@ -67,6 +67,30 @@ class DriftController final {
 
 
 
+  media::TimeUnit DurationWithinHysteresis() const {
+    return mDurationWithinHysteresis;
+  }
+
+  
+
+
+
+  media::TimeUnit DurationSinceDesiredBufferingChange() const {
+    return mTotalTargetClock - mLastDesiredBufferingChangeTime;
+  }
+
+  
+
+
+
+  media::TimeUnit MeasuredSourceLatency() const {
+    return mMeasuredSourceLatency.mean();
+  }
+
+  
+
+
+
 
 
 
@@ -132,6 +156,7 @@ class DriftController final {
 
   media::TimeUnit mTargetClock;
   media::TimeUnit mTotalTargetClock;
+  media::TimeUnit mLastDesiredBufferingChangeTime;
 };
 
 }  

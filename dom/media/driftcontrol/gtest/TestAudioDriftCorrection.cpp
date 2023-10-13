@@ -368,12 +368,12 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   TrackTime totalFramesTransmitted = 0;
   TrackTime totalFramesReceived = 0;
 
-  
-  const auto produceSomeData = [&](uint32_t aTransmitterBlockSize) {
+  const auto produceSomeData = [&](uint32_t aTransmitterBlockSize,
+                                   uint32_t aDuration) {
     TrackTime transmittedFramesStart = totalFramesTransmitted;
     TrackTime receivedFramesStart = totalFramesReceived;
     uint32_t numBlocksTransmitted = 0;
-    for (uint32_t i = 0; i < 10 * sampleRate; i += receiverBlockSize) {
+    for (uint32_t i = 0; i < aDuration; i += receiverBlockSize) {
       AudioSegment inSegment;
       if (((receivedFramesStart - transmittedFramesStart + i) /
            aTransmitterBlockSize) > numBlocksTransmitted) {
@@ -392,7 +392,7 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
     }
   };
 
-  produceSomeData(transmitterBlockSize1);
+  produceSomeData(transmitterBlockSize1, 5 * sampleRate);
   EXPECT_EQ(ad.BufferSize(), 4800U);
   
   EXPECT_EQ(ad.NumCorrectionChanges(), 0U);
@@ -400,25 +400,25 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
 
   
   
-  produceSomeData(transmitterBlockSize2);
+  produceSomeData(transmitterBlockSize2, 10 * sampleRate);
   auto numCorrectionChanges = ad.NumCorrectionChanges();
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   
   EXPECT_GT(ad.BufferSize(), 4800U);
-  produceSomeData(transmitterBlockSize2);
+  produceSomeData(transmitterBlockSize2, 10 * sampleRate);
   EXPECT_EQ(ad.NumCorrectionChanges(), numCorrectionChanges);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   
   
-  produceSomeData(transmitterBlockSize1);
+  produceSomeData(transmitterBlockSize1, 100 * sampleRate);
   numCorrectionChanges = ad.NumCorrectionChanges();
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   
   EXPECT_EQ(ad.BufferSize(), 9600U);
-  produceSomeData(transmitterBlockSize1);
+  produceSomeData(transmitterBlockSize1, 10 * sampleRate);
   EXPECT_EQ(ad.NumCorrectionChanges(), numCorrectionChanges);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
