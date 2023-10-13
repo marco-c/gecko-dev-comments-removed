@@ -1076,8 +1076,6 @@ class HTMLInputElement final : public TextControlElement,
   MOZ_CAN_RUN_SCRIPT
   void HandleTypeChange(FormControlType aNewType, bool aNotify);
 
-  enum class SanitizationKind { ForValueGetter, ForDisplay, Other };
-
   
 
 
@@ -1085,13 +1083,13 @@ class HTMLInputElement final : public TextControlElement,
 
   void MaybeSnapToTickMark(Decimal& aValue);
 
+  enum class SanitizationKind { ForValueGetter, ForValueSetter, ForDisplay };
   
 
 
 
 
-  void SanitizeValue(nsAString& aValue,
-                     SanitizationKind = SanitizationKind::Other);
+  void SanitizeValue(nsAString& aValue, SanitizationKind) const;
 
   
 

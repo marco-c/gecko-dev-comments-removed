@@ -2685,7 +2685,7 @@ nsresult HTMLInputElement::SetValueInternal(
         
         
         
-        SanitizeValue(value);
+        SanitizeValue(value, SanitizationKind::ForValueSetter);
       }
       
 
@@ -4658,7 +4658,7 @@ void HTMLInputElement::MaybeSnapToTickMark(Decimal& aValue) {
 }
 
 void HTMLInputElement::SanitizeValue(nsAString& aValue,
-                                     SanitizationKind aKind) {
+                                     SanitizationKind aKind) const {
   NS_ASSERTION(mDoneCreating, "The element creation should be finished!");
 
   switch (mType) {
@@ -4692,8 +4692,13 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
           aValue);
     } break;
     case FormControlType::InputNumber: {
-      if (aKind == SanitizationKind::Other && !aValue.IsEmpty() &&
+      if (aKind == SanitizationKind::ForValueSetter && !aValue.IsEmpty() &&
           (aValue.First() == '+' || aValue.Last() == '.')) {
+        
+        
+        
+        
+        
         
         
         
@@ -4707,39 +4712,41 @@ void HTMLInputElement::SanitizeValue(nsAString& aValue,
         aValue.Truncate();
         return;
       }
-
-      if (aKind == SanitizationKind::ForValueGetter) {
-        
-        
-        
-        if (!result.mLocalized) {
-          return;
+      switch (aKind) {
+        case SanitizationKind::ForValueGetter: {
+          
+          
+          
+          if (!result.mLocalized) {
+            return;
+          }
+          
+          
+          
+          char buf[32];
+          DebugOnly<bool> ok = result.mResult.toString(buf, ArrayLength(buf));
+          aValue.AssignASCII(buf);
+          MOZ_ASSERT(ok, "buf not big enough");
+          break;
         }
-        
-        
-        
-        char buf[32];
-        DebugOnly<bool> ok = result.mResult.toString(buf, ArrayLength(buf));
-        aValue.AssignASCII(buf);
-        MOZ_ASSERT(ok, "buf not big enough");
-      } else if (aKind == SanitizationKind::ForDisplay) {
-        
-        
-        
-        
-        
-        
-        
-        nsString localizedValue;
-        mInputType->ConvertNumberToString(result.mResult, localizedValue);
-        if (StringToDecimal(localizedValue).isFinite()) {
-          return;
+        case SanitizationKind::ForDisplay:
+        case SanitizationKind::ForValueSetter: {
+          
+          
+          
+          
+          
+          
+          nsString localizedValue;
+          mInputType->ConvertNumberToString(result.mResult, localizedValue);
+          if (!StringToDecimal(localizedValue).isFinite()) {
+            aValue = std::move(localizedValue);
+          }
+          break;
         }
-        aValue = std::move(localizedValue);
-      } else {
-        
       }
-    } break;
+      break;
+    }
     case FormControlType::InputRange: {
       Decimal minimum = GetMinimum();
       Decimal maximum = GetMaximum();
@@ -6826,7 +6833,7 @@ void HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue,
   
   if (mDoneCreating) {
     SanitizeValue(aValue, aForDisplay ? SanitizationKind::ForDisplay
-                                      : SanitizationKind::Other);
+                                      : SanitizationKind::ForValueGetter);
   }
 }
 
