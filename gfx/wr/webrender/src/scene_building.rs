@@ -703,13 +703,15 @@ impl<'a> SceneBuilder<'a> {
             }
         }
 
-        let lca_node = shared_clip_node_id
+        let lca_tree_node = shared_clip_node_id
             .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id))
-            .map(|node_id| clip_tree_builder.get_node(node_id))
+            .map(|node_id| clip_tree_builder.get_node(node_id));
+        let lca_node = lca_tree_node
             .map(|tree_node| &clip_interner[tree_node.handle]);
-        let pic_node = prim_index
+        let pic_node_id = prim_index
             .map(|prim_index| clip_tree_builder.get_leaf(prim_instances[prim_index].clip_leaf_id).node_id)
-            .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id))
+            .and_then(|node_id| (node_id != ClipNodeId::NONE).then_some(node_id));
+        let pic_node = pic_node_id
             .map(|node_id| clip_tree_builder.get_node(node_id))
             .map(|tree_node| &clip_interner[tree_node.handle]);
 
@@ -725,6 +727,16 @@ impl<'a> SceneBuilder<'a> {
             _ => false,
         };
 
+        
+        
+        
+        
+        
+        let direct_parent = lca_tree_node
+            .zip(pic_node_id)
+            .map(|(lca_tree_node, pic_node_id)| lca_tree_node.parent == pic_node_id)
+            .unwrap_or(false);
+
         if let Some((lca_node, pic_node)) = lca_node.zip(pic_node) {
             
             
@@ -734,7 +746,7 @@ impl<'a> SceneBuilder<'a> {
             
             
             
-            if lca_node.key == pic_node.key && !has_blur {
+            if lca_node.key == pic_node.key && !has_blur && direct_parent {
                 pictures[pic_index.0].clip_root = shared_clip_node_id;
             }
         }
