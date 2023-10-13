@@ -65,7 +65,7 @@ public class VideoTrack extends MediaStreamTrack {
   }
 
   
-  long getNativeVideoTrack() {
+  public long getNativeVideoTrack() {
     return getNativeMediaStreamTrack();
   }
 
