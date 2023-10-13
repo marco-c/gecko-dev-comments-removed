@@ -32,96 +32,133 @@ use style_traits::{
 };
 
 
+pub type SpecifiedValueComponent = GenericValueComponent<
+    specified::Length,
+    specified::Number,
+    specified::Percentage,
+    specified::LengthPercentage,
+    specified::Color,
+    specified::Image,
+    specified::url::SpecifiedUrl,
+    specified::Integer,
+    specified::Angle,
+    specified::Time,
+    specified::Resolution,
+    specified::Transform,
+    SpecifiedValueComponentList,
+>;
+
+
 #[derive(Clone, ToCss)]
-pub enum ValueComponent {
+pub enum GenericValueComponent<
+    Length,
+    Number,
+    Percentage,
+    LengthPercentage,
+    Color,
+    Image,
+    Url,
+    Integer,
+    Angle,
+    Time,
+    Resolution,
+    TransformFunction,
+    TransformList,
+> {
     
-    Length(specified::Length),
+    Length(Length),
     
-    Number(specified::Number),
+    Number(Number),
     
-    Percentage(specified::Percentage),
+    Percentage(Percentage),
     
-    LengthPercentage(specified::LengthPercentage),
+    LengthPercentage(LengthPercentage),
     
-    Color(specified::Color),
+    Color(Color),
     
-    Image(specified::Image),
+    Image(Image),
     
-    Url(specified::url::SpecifiedUrl),
+    Url(Url),
     
-    Integer(specified::Integer),
+    Integer(Integer),
     
-    Angle(specified::Angle),
+    Angle(Angle),
     
-    Time(specified::Time),
+    Time(Time),
     
-    Resolution(specified::Resolution),
+    Resolution(Resolution),
     
-    TransformFunction(specified::Transform),
+    TransformFunction(TransformFunction),
     
     CustomIdent(CustomIdent),
     
-    TransformList(ValueComponentList),
+    TransformList(TransformList),
     
     String(OwnedStr),
 }
 
-impl ToComputedValue for ValueComponent {
+impl ToComputedValue for SpecifiedValueComponent {
     
     type ComputedValue = Self;
 
     fn to_computed_value(&self, context: &computed::Context) -> Self::ComputedValue {
         match self {
-            ValueComponent::Length(length) => ValueComponent::Length(
+            SpecifiedValueComponent::Length(length) => SpecifiedValueComponent::Length(
                 
                 
                 length.clone(),
             ),
-            ValueComponent::Number(number) => ValueComponent::Number(
+            SpecifiedValueComponent::Number(number) => SpecifiedValueComponent::Number(
                 ToComputedValue::from_computed_value(&number.to_computed_value(context)),
             ),
-            ValueComponent::Percentage(percentage) => ValueComponent::Percentage(
+            SpecifiedValueComponent::Percentage(percentage) => SpecifiedValueComponent::Percentage(
                 ToComputedValue::from_computed_value(&percentage.to_computed_value(context)),
             ),
-            ValueComponent::LengthPercentage(length_percentage) => {
+            SpecifiedValueComponent::LengthPercentage(length_percentage) => {
                 
                 
-                ValueComponent::LengthPercentage(length_percentage.clone())
+                SpecifiedValueComponent::LengthPercentage(length_percentage.clone())
             },
-            ValueComponent::Color(color) => ValueComponent::Color(
+            SpecifiedValueComponent::Color(color) => SpecifiedValueComponent::Color(
                 ToComputedValue::from_computed_value(&color.to_computed_value(context)),
             ),
-            ValueComponent::Image(image) => ValueComponent::Image(
+            SpecifiedValueComponent::Image(image) => SpecifiedValueComponent::Image(
                 ToComputedValue::from_computed_value(&image.to_computed_value(context)),
             ),
-            ValueComponent::Url(url) => ValueComponent::Url(ToComputedValue::from_computed_value(
-                
-                &url.to_computed_value(context),
-            )),
-            ValueComponent::Integer(integer) => ValueComponent::Integer(
+            SpecifiedValueComponent::Url(url) => {
+                SpecifiedValueComponent::Url(ToComputedValue::from_computed_value(
+                    
+                    &url.to_computed_value(context),
+                ))
+            },
+            SpecifiedValueComponent::Integer(integer) => SpecifiedValueComponent::Integer(
                 ToComputedValue::from_computed_value(&integer.to_computed_value(context)),
             ),
-            ValueComponent::Angle(angle) => ValueComponent::Angle(
+            SpecifiedValueComponent::Angle(angle) => SpecifiedValueComponent::Angle(
                 ToComputedValue::from_computed_value(&angle.to_computed_value(context)),
             ),
-            ValueComponent::Time(time) => ValueComponent::Time(
+            SpecifiedValueComponent::Time(time) => SpecifiedValueComponent::Time(
                 ToComputedValue::from_computed_value(&time.to_computed_value(context)),
             ),
-            ValueComponent::Resolution(resolution) => ValueComponent::Resolution(
+            SpecifiedValueComponent::Resolution(resolution) => SpecifiedValueComponent::Resolution(
                 ToComputedValue::from_computed_value(&resolution.to_computed_value(context)),
             ),
-            ValueComponent::TransformFunction(transform_function) => {
-                ValueComponent::TransformFunction(ToComputedValue::from_computed_value(
+            SpecifiedValueComponent::TransformFunction(transform_function) => {
+                SpecifiedValueComponent::TransformFunction(ToComputedValue::from_computed_value(
                     &transform_function.to_computed_value(context),
                 ))
             },
-            ValueComponent::CustomIdent(custom_ident) => ValueComponent::CustomIdent(
-                ToComputedValue::from_computed_value(&custom_ident.to_computed_value(context)),
-            ),
-            ValueComponent::TransformList(transform_list) => ValueComponent::TransformList(
-                ToComputedValue::from_computed_value(&transform_list.to_computed_value(context)),
-            ),
-            ValueComponent::String(string) => ValueComponent::String(
+            SpecifiedValueComponent::CustomIdent(custom_ident) => {
+                SpecifiedValueComponent::CustomIdent(ToComputedValue::from_computed_value(
+                    &custom_ident.to_computed_value(context),
+                ))
+            },
+            SpecifiedValueComponent::TransformList(transform_list) => {
+                SpecifiedValueComponent::TransformList(ToComputedValue::from_computed_value(
+                    &transform_list.to_computed_value(context),
+                ))
+            },
+            SpecifiedValueComponent::String(string) => SpecifiedValueComponent::String(
                 ToComputedValue::from_computed_value(&string.to_computed_value(context)),
             ),
         }
@@ -134,9 +171,9 @@ impl ToComputedValue for ValueComponent {
 
 
 #[derive(Clone)]
-pub struct ValueComponentList(ThinArc<Multiplier, ValueComponent>);
+pub struct SpecifiedValueComponentList(ThinArc<Multiplier, SpecifiedValueComponent>);
 
-impl ToComputedValue for ValueComponentList {
+impl ToComputedValue for SpecifiedValueComponentList {
     type ComputedValue = Self;
 
     fn to_computed_value(&self, context: &computed::Context) -> Self::ComputedValue {
@@ -153,7 +190,7 @@ impl ToComputedValue for ValueComponentList {
     }
 }
 
-impl ToCss for ValueComponentList {
+impl ToCss for SpecifiedValueComponentList {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
@@ -179,10 +216,10 @@ impl ToCss for ValueComponentList {
     }
 }
 
-impl ValueComponentList {
+impl SpecifiedValueComponentList {
     fn new<I>(multiplier: Multiplier, values: I) -> Self
     where
-        I: Iterator<Item = ValueComponent> + ExactSizeIterator,
+        I: Iterator<Item = SpecifiedValueComponent> + ExactSizeIterator,
     {
         Self(ThinArc::from_header_and_iter(multiplier, values))
     }
@@ -190,27 +227,26 @@ impl ValueComponentList {
 
 
 #[derive(Clone, ToCss)]
-pub enum ComputedValue {
+pub enum SpecifiedValue {
     
     
-    Component(ValueComponent),
+    Component(SpecifiedValueComponent),
     
     Universal(Arc<ComputedPropertyValue>),
     
-    
-    List(ValueComponentList),
+    List(SpecifiedValueComponentList),
 }
 
-impl ToComputedValue for ComputedValue {
+impl ToComputedValue for SpecifiedValue {
     type ComputedValue = Self;
 
     fn to_computed_value(&self, context: &computed::Context) -> Self::ComputedValue {
         match self {
-            ComputedValue::Component(component) => {
-                ComputedValue::Component(component.to_computed_value(context))
+            SpecifiedValue::Component(component) => {
+                SpecifiedValue::Component(component.to_computed_value(context))
             },
-            ComputedValue::Universal(value) => ComputedValue::Universal(value.clone()),
-            ComputedValue::List(list) => ComputedValue::List(list.to_computed_value(context)),
+            SpecifiedValue::Universal(value) => SpecifiedValue::Universal(value.clone()),
+            SpecifiedValue::List(list) => SpecifiedValue::List(list.to_computed_value(context)),
         }
     }
 
@@ -219,7 +255,7 @@ impl ToComputedValue for ComputedValue {
     }
 }
 
-impl ComputedValue {
+impl SpecifiedValue {
     
     
     pub fn compute<'i, 't>(
@@ -279,7 +315,10 @@ impl ComputedValue {
             parser.parse(&mut input, url_data, allow_computationally_dependent)?;
         }
         let computed_value = if let Some(ref multiplier) = multiplier {
-            Self::List(ValueComponentList::new(*multiplier, values.into_iter()))
+            Self::List(SpecifiedValueComponentList::new(
+                *multiplier,
+                values.into_iter(),
+            ))
         } else {
             Self::Component(values[0].clone())
         };
@@ -298,7 +337,7 @@ pub enum AllowComputationallyDependent {
     Yes,
 }
 
-type SmallComponentVec = SmallVec<[ValueComponent; 1]>;
+type SmallComponentVec = SmallVec<[SpecifiedValueComponent; 1]>;
 
 struct Parser<'a> {
     syntax: &'a Descriptor,
@@ -386,7 +425,7 @@ impl<'a> Parser<'a> {
         context: &ParserContext,
         input: &mut CSSParser<'i, 't>,
         component: &SyntaxComponent,
-    ) -> Result<ValueComponent, StyleParseError<'i>> {
+    ) -> Result<SpecifiedValueComponent, StyleParseError<'i>> {
         let data_type = match component.name() {
             ComponentName::DataType(ty) => ty,
             ComponentName::Ident(ref name) => {
@@ -394,38 +433,50 @@ impl<'a> Parser<'a> {
                 if ident != *name {
                     return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
-                return Ok(ValueComponent::CustomIdent(ident));
+                return Ok(SpecifiedValueComponent::CustomIdent(ident));
             },
         };
 
         let value = match data_type {
-            DataType::Length => ValueComponent::Length(specified::Length::parse(context, input)?),
-            DataType::Number => ValueComponent::Number(specified::Number::parse(context, input)?),
-            DataType::Percentage => {
-                ValueComponent::Percentage(specified::Percentage::parse(context, input)?)
+            DataType::Length => {
+                SpecifiedValueComponent::Length(specified::Length::parse(context, input)?)
             },
-            DataType::LengthPercentage => ValueComponent::LengthPercentage(
+            DataType::Number => {
+                SpecifiedValueComponent::Number(specified::Number::parse(context, input)?)
+            },
+            DataType::Percentage => {
+                SpecifiedValueComponent::Percentage(specified::Percentage::parse(context, input)?)
+            },
+            DataType::LengthPercentage => SpecifiedValueComponent::LengthPercentage(
                 specified::LengthPercentage::parse(context, input)?,
             ),
-            DataType::Color => ValueComponent::Color(specified::Color::parse(context, input)?),
-            DataType::Image => ValueComponent::Image(specified::Image::parse(context, input)?),
+            DataType::Color => {
+                SpecifiedValueComponent::Color(specified::Color::parse(context, input)?)
+            },
+            DataType::Image => {
+                SpecifiedValueComponent::Image(specified::Image::parse(context, input)?)
+            },
             DataType::Url => {
-                ValueComponent::Url(specified::url::SpecifiedUrl::parse(context, input)?)
+                SpecifiedValueComponent::Url(specified::url::SpecifiedUrl::parse(context, input)?)
             },
             DataType::Integer => {
-                ValueComponent::Integer(specified::Integer::parse(context, input)?)
+                SpecifiedValueComponent::Integer(specified::Integer::parse(context, input)?)
             },
-            DataType::Angle => ValueComponent::Angle(specified::Angle::parse(context, input)?),
-            DataType::Time => ValueComponent::Time(specified::Time::parse(context, input)?),
+            DataType::Angle => {
+                SpecifiedValueComponent::Angle(specified::Angle::parse(context, input)?)
+            },
+            DataType::Time => {
+                SpecifiedValueComponent::Time(specified::Time::parse(context, input)?)
+            },
             DataType::Resolution => {
-                ValueComponent::Resolution(specified::Resolution::parse(context, input)?)
+                SpecifiedValueComponent::Resolution(specified::Resolution::parse(context, input)?)
             },
-            DataType::TransformFunction => {
-                ValueComponent::TransformFunction(specified::Transform::parse(context, input)?)
-            },
+            DataType::TransformFunction => SpecifiedValueComponent::TransformFunction(
+                specified::Transform::parse(context, input)?,
+            ),
             DataType::CustomIdent => {
                 let name = CustomIdent::parse(input, &[])?;
-                ValueComponent::CustomIdent(name)
+                SpecifiedValueComponent::CustomIdent(name)
             },
             DataType::TransformList => {
                 let mut values = vec![];
@@ -439,7 +490,7 @@ impl<'a> Parser<'a> {
                 };
                 debug_assert_matches!(multiplier, Multiplier::Space);
                 loop {
-                    values.push(ValueComponent::TransformFunction(
+                    values.push(SpecifiedValueComponent::TransformFunction(
                         specified::Transform::parse(context, input)?,
                     ));
                     let result = Self::expect_multiplier(input, &multiplier);
@@ -448,12 +499,12 @@ impl<'a> Parser<'a> {
                     }
                     result?;
                 }
-                let list = ValueComponentList::new(multiplier, values.into_iter());
-                ValueComponent::TransformList(list)
+                let list = SpecifiedValueComponentList::new(multiplier, values.into_iter());
+                SpecifiedValueComponent::TransformList(list)
             },
             DataType::String => {
                 let string = input.expect_string()?;
-                ValueComponent::String(string.as_ref().to_owned().into())
+                SpecifiedValueComponent::String(string.as_ref().to_owned().into())
             },
         };
         Ok(value)
