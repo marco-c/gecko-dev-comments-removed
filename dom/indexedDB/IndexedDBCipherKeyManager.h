@@ -7,6 +7,7 @@
 #ifndef DOM_INDEXEDDB_INDEXEDDBCIPHERKEYMANAGER_H_
 #define DOM_INDEXEDDB_INDEXEDDBCIPHERKEYMANAGER_H_
 
+#include "FlippedOnce.h"
 #include "mozilla/DataMutex.h"
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
 #include "nsTHashMap.h"
@@ -33,10 +34,18 @@ class IndexedDBCipherKeyManager {
 
   CipherKey Ensure(const nsACString& aKeyId = "default"_ns);
 
+  bool Invalidated();
+
+  
+  
+  void Invalidate();
+
  private:
   
   
   DataMutex<nsTHashMap<nsCStringHashKey, CipherKey>> mCipherKeys;
+
+  FlippedOnce<false> mInvalidated;
 };
 
 }  

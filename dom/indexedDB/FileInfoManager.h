@@ -71,7 +71,9 @@ class FileInfoManager : public FileInfoManagerBase {
     mFileInfos.Remove(aId);
   }
 
-  nsresult Invalidate() {
+  
+  
+  virtual nsresult Invalidate() {
     AutoLockType lock(FileManager::Mutex());
 
     FileInfoManagerBase::Invalidate();
