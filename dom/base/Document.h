@@ -1764,7 +1764,9 @@ class Document : public nsINode,
     return GetInnerWindow() ? GetInnerWindow()->GetWindowContext() : nullptr;
   }
 
-  bool IsTopLevelWindowInactive() const;
+  bool IsTopLevelWindowInactive() const {
+    return mState.HasState(DocumentState::WINDOW_INACTIVE);
+  }
 
   
 
@@ -3004,7 +3006,7 @@ class Document : public nsINode,
     return MediaDocumentKind::NotMedia;
   }
 
-  DocumentState GetDocumentState() const { return mDocumentState; }
+  DocumentState State() const { return mState; }
 
   nsISupports* GetCurrentContentSink();
 
@@ -4524,7 +4526,7 @@ class Document : public nsINode,
   
   TimeStamp mLastScrollLinkedEffectDetectionTime;
 
-  DocumentState mDocumentState{DocumentState::LTR_LOCALE};
+  DocumentState mState{DocumentState::LTR_LOCALE};
 
   RefPtr<Promise> mReadyForIdle;
 
