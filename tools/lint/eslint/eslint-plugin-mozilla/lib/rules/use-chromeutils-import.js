@@ -6,7 +6,6 @@
 
 
 
-
 "use strict";
 
 function isIdentifier(node, id) {
@@ -30,9 +29,6 @@ module.exports = {
     messages: {
       useChromeUtilsImport:
         "Please use ChromeUtils.import instead of Cu.import",
-      useDefineModuleGetter:
-        "Please use ChromeUtils.defineModuleGetter instead of " +
-        "XPCOMUtils.defineLazyModuleGetter",
     },
     schema: [],
     type: "suggestion",
@@ -58,22 +54,6 @@ module.exports = {
             messageId: "useChromeUtilsImport",
             fix(fixer) {
               return fixer.replaceText(callee, "ChromeUtils.import");
-            },
-          });
-        }
-
-        if (
-          isMemberExpression(callee, "XPCOMUtils", "defineLazyModuleGetter") &&
-          node.arguments.length < 4
-        ) {
-          context.report({
-            node,
-            messageId: "useDefineModuleGetter",
-            fix(fixer) {
-              return fixer.replaceText(
-                callee,
-                "ChromeUtils.defineModuleGetter"
-              );
             },
           });
         }
