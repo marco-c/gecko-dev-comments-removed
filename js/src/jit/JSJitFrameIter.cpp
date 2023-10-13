@@ -525,25 +525,27 @@ JSJitProfilingFrameIterator::JSJitProfilingFrameIterator(JSContext* cx,
     return;
   }
 
-  
-  JitcodeGlobalTable* table =
-      cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
-  if (tryInitWithTable(table, pc,  false)) {
-    endStackAddress_ = sp;
-    return;
-  }
-
-  
-  void* lastCallSite = act->lastProfilingCallSite();
-  if (lastCallSite) {
-    if (tryInitWithPC(lastCallSite)) {
+  if (!IsPortableBaselineInterpreterEnabled()) {
+    
+    JitcodeGlobalTable* table =
+        cx->runtime()->jitRuntime()->getJitcodeGlobalTable();
+    if (tryInitWithTable(table, pc,  false)) {
+      endStackAddress_ = sp;
       return;
     }
 
     
-    
-    if (tryInitWithTable(table, lastCallSite,  true)) {
-      return;
+    void* lastCallSite = act->lastProfilingCallSite();
+    if (lastCallSite) {
+      if (tryInitWithPC(lastCallSite)) {
+        return;
+      }
+
+      
+      
+      if (tryInitWithTable(table, lastCallSite,  true)) {
+        return;
+      }
     }
   }
 
