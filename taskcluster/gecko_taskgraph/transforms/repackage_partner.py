@@ -24,6 +24,11 @@ from gecko_taskgraph.util.platforms import archive_format, executable_extension
 from gecko_taskgraph.util.workertypes import worker_type_implementation
 
 
+def _by_platform(arg):
+    return optionally_keyed_by("build-platform", arg)
+
+
+
 
 PACKAGE_FORMATS = copy.deepcopy(PACKAGE_FORMATS_VANILLA)
 PACKAGE_FORMATS["installer-stub"]["inputs"]["package"] = "target-stub{archive_format}"
@@ -40,13 +45,11 @@ packaging_description_schema = Schema(
         
         Optional("shipping-product"): task_description_schema["shipping-product"],
         Optional("shipping-phase"): task_description_schema["shipping-phase"],
-        Required("package-formats"): optionally_keyed_by(
-            "build-platform", "build-type", [str]
-        ),
+        Required("package-formats"): _by_platform([str]),
         
         Required("mozharness"): {
             
-            Required("config"): optionally_keyed_by("build-platform", [str]),
+            Required("config"): _by_platform([str]),
             
             
             Optional("config-paths"): [str],
