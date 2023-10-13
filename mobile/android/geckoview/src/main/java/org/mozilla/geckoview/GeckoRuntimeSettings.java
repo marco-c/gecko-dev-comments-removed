@@ -103,6 +103,32 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+
+    public @NonNull Builder extensionsProcessCrashThreshold(final @NonNull Integer crashThreshold) {
+      getSettings().mExtensionsProcessCrashThreshold.set(crashThreshold);
+      return this;
+    }
+
+    
+
+
+
+
+
+
+
+
+    public @NonNull Builder extensionsProcessCrashTimeframe(final @NonNull Long timeframeMs) {
+      getSettings().mExtensionsProcessCrashTimeframe.set(timeframeMs);
+      return this;
+    }
+
+    
+
+
+
+
+
     public @NonNull Builder javaScriptEnabled(final boolean flag) {
       getSettings().mJavaScript.set(flag);
       return this;
@@ -542,6 +568,10 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<>("extensions.webapi.enabled", false);
    final PrefWithoutDefault<Boolean> mExtensionsProcess =
       new PrefWithoutDefault<Boolean>("extensions.webextensions.remote");
+   final PrefWithoutDefault<Long> mExtensionsProcessCrashTimeframe =
+      new PrefWithoutDefault<Long>("extensions.webextensions.crash.timeframe");
+   final PrefWithoutDefault<Integer> mExtensionsProcessCrashThreshold =
+      new PrefWithoutDefault<Integer>("extensions.webextensions.crash.threshold");
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -688,6 +718,50 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setExtensionsProcessEnabled(final boolean flag) {
     mExtensionsProcess.commit(flag);
+    return this;
+  }
+
+  
+
+
+
+
+  public @Nullable Integer getExtensionsProcessCrashThreshold() {
+    return mExtensionsProcessCrashThreshold.get();
+  }
+
+  
+
+
+
+
+
+  public @Nullable Long getExtensionsProcessCrashTimeframe() {
+    return mExtensionsProcessCrashTimeframe.get();
+  }
+
+  
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setExtensionsProcessCrashThreshold(
+      final @NonNull Integer crashThreshold) {
+    mExtensionsProcessCrashThreshold.commit(crashThreshold);
+    return this;
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setExtensionsProcessCrashTimeframe(
+      final @NonNull Long timeframeMs) {
+    mExtensionsProcessCrashTimeframe.commit(timeframeMs);
     return this;
   }
 
