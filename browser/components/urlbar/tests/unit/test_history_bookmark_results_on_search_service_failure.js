@@ -18,7 +18,9 @@ add_setup(async function setup() {
   
   
   
-  PromiseTestUtils.expectUncaughtRejection(/2147500037/);
+  PromiseTestUtils.expectUncaughtRejection(
+    /Fake error during search service initialization./
+  );
 
   registerCleanupFunction(async () => {
     searchService.willThrowErrorDuringInitInTest = false;
