@@ -16,6 +16,11 @@ const INACTIVE_CSS_ENABLED = Services.prefs.getBoolPref(
   false
 );
 
+const TEXT_WRAP_BALANCE_LIMIT = Services.prefs.getIntPref(
+  "layout.css.text-wrap-balance.limit",
+  10
+);
+
 const VISITED_MDN_LINK = "https://developer.mozilla.org/docs/Web/CSS/:visited";
 const VISITED_INVALID_PROPERTIES = allCssPropertiesExcept([
   "all",
@@ -493,6 +498,38 @@ class InactivePropertyHelper {
         fixId: "inactive-css-ruby-element-fix",
         msgId: "inactive-css-ruby-element",
       },
+      
+      {
+        invalidProperties: ["text-wrap"],
+        when: () => {
+          if (!this.checkComputedStyle("text-wrap", ["balance"])) {
+            return false;
+          }
+          const blockLineCounts = InspectorUtils.getBlockLineCounts(this.node);
+          
+          
+          
+          
+          return blockLineCounts[0] > TEXT_WRAP_BALANCE_LIMIT;
+        },
+        fixId: "inactive-css-text-wrap-balance-lines-exceeded-fix",
+        msgId: "inactive-css-text-wrap-balance-lines-exceeded",
+        lineCount: TEXT_WRAP_BALANCE_LIMIT,
+      },
+      
+      {
+        invalidProperties: ["text-wrap"],
+        when: () => {
+          if (!this.checkComputedStyle("text-wrap", ["balance"])) {
+            return false;
+          }
+          const blockLineCounts = InspectorUtils.getBlockLineCounts(this.node);
+          const isFragmented = blockLineCounts.length > 1;
+          return isFragmented;
+        },
+        fixId: "inactive-css-text-wrap-balance-fragmented-fix",
+        msgId: "inactive-css-text-wrap-balance-fragmented",
+      },
     ];
   }
 
@@ -683,6 +720,7 @@ class InactivePropertyHelper {
     let fixId = "";
     let msgId = "";
     let learnMoreURL = null;
+    let lineCount = null;
     let used = true;
 
     const someFn = validator => {
@@ -707,6 +745,7 @@ class InactivePropertyHelper {
         fixId = validator.fixId;
         msgId = validator.msgId;
         learnMoreURL = validator.learnMoreURL;
+        lineCount = validator.lineCount;
         used = false;
 
         
@@ -747,6 +786,7 @@ class InactivePropertyHelper {
       msgId,
       property,
       learnMoreURL,
+      lineCount,
       used,
     };
   }
