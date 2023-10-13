@@ -7,7 +7,6 @@
 
 
 use super::{
-    registry::PropertyRegistration,
     syntax::{Descriptor, ParsedDescriptor},
     value::{AllowComputationallyDependent, SpecifiedValue as SpecifiedRegisteredValue},
 };
@@ -19,8 +18,8 @@ use crate::str::CssStringWriter;
 use crate::stylesheets::UrlExtraData;
 use crate::values::serialize_atom_name;
 use cssparser::{
-    AtRuleParser, CowRcStr, DeclarationParser, ParseErrorKind, Parser, ParserInput,
-    QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
+    AtRuleParser, BasicParseErrorKind, CowRcStr, DeclarationParser, ParseErrorKind, Parser,
+    ParserInput, QualifiedRuleParser, RuleBodyItemParser, RuleBodyParser, SourceLocation,
 };
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use selectors::parser::SelectorParseErrorKind;
@@ -33,12 +32,12 @@ use to_shmem::{SharedMemoryBuilder, ToShmem};
 
 
 
-pub fn parse_property_block(
+pub fn parse_property_block<'i, 't>(
     context: &ParserContext,
-    input: &mut Parser,
+    input: &mut Parser<'i, 't>,
     name: PropertyRuleName,
     location: SourceLocation,
-) -> PropertyRuleData {
+) -> Result<PropertyRuleData, ParseError<'i>> {
     let mut rule = PropertyRuleData::empty(name, location);
     let mut parser = PropertyRuleParser {
         context,
@@ -55,14 +54,22 @@ pub fn parse_property_block(
                 error.kind,
                 ParseErrorKind::Custom(StyleParseErrorKind::PropertySyntaxField(_))
             ) {
+                
+                
+                
                 ContextualParseError::UnsupportedValue(slice, error)
             } else {
+                
+                
                 ContextualParseError::UnsupportedPropertyDescriptor(slice, error)
             };
             context.log_css_error(location, error);
         }
     }
-    rule
+    if rule.validate_registration(context.url_data).is_err() {
+        return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid));
+    }
+    Ok(rule)
 }
 
 struct PropertyRuleParser<'a, 'b: 'a> {
@@ -181,7 +188,7 @@ property_descriptors! {
 
 
 #[allow(missing_docs)]
-pub enum ToRegistrationError {
+pub enum PropertyRegistrationError {
     MissingSyntax,
     MissingInherits,
     NoInitialValue,
@@ -209,7 +216,7 @@ impl PropertyRuleData {
         syntax: &Descriptor,
         initial_value: Option<&InitialValue>,
         url_data: &UrlExtraData,
-    ) -> Result<(), ToRegistrationError> {
+    ) -> Result<(), PropertyRegistrationError> {
         use crate::properties::CSSWideKeyword;
         
         
@@ -222,12 +229,14 @@ impl PropertyRuleData {
         
 
         
-        let Some(initial) = initial_value else { return Err(ToRegistrationError::NoInitialValue) };
+        let Some(initial) = initial_value else {
+            return Err(PropertyRegistrationError::NoInitialValue)
+        };
 
         
         
         if initial.has_references() {
-            return Err(ToRegistrationError::InitialValueNotComputationallyIndependent);
+            return Err(PropertyRegistrationError::InitialValueNotComputationallyIndependent);
         }
 
         let mut input = ParserInput::new(initial.css_text());
@@ -236,7 +245,7 @@ impl PropertyRuleData {
 
         
         if input.try_parse(CSSWideKeyword::parse).is_ok() {
-            return Err(ToRegistrationError::InitialValueNotComputationallyIndependent);
+            return Err(PropertyRegistrationError::InitialValueNotComputationallyIndependent);
         }
 
         match SpecifiedRegisteredValue::parse(
@@ -246,23 +255,18 @@ impl PropertyRuleData {
             AllowComputationallyDependent::No,
         ) {
             Ok(_) => {},
-            Err(_) => return Err(ToRegistrationError::InvalidInitialValue),
+            Err(_) => return Err(PropertyRegistrationError::InvalidInitialValue),
         }
 
         Ok(())
     }
 
     
-    
-    
-    
-    
-    
-    pub fn to_valid_registration(
+    fn validate_registration(
         &self,
         url_data: &UrlExtraData,
-    ) -> Result<PropertyRegistration, ToRegistrationError> {
-        use self::ToRegistrationError::*;
+    ) -> Result<(), PropertyRegistrationError> {
+        use self::PropertyRegistrationError::*;
 
         
         
@@ -274,16 +278,9 @@ impl PropertyRuleData {
         
         
         
-        let Some(ref inherits) = self.inherits else { return Err(MissingInherits) };
+        if self.inherits.is_none() { return Err(MissingInherits) };
 
-        Self::validate_initial_value(syntax.descriptor(), self.initial_value.as_ref(), url_data)?;
-
-        Ok(PropertyRegistration {
-            syntax: syntax.descriptor().clone(),
-            inherits: *inherits == Inherits::True,
-            initial_value: self.initial_value.clone(),
-            url_data: url_data.clone(),
-        })
+        Self::validate_initial_value(syntax.descriptor(), self.initial_value.as_ref(), url_data)
     }
 }
 
