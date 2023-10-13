@@ -588,9 +588,6 @@ pref("browser.urlbar.keepPanelOpenDuringImeComposition", false);
 pref("browser.urlbar.groupLabels.enabled", true);
 
 
-pref("browser.urlbar.merino.enabled", true);
-
-
 pref("browser.urlbar.merino.endpointURL", "https://merino.services.mozilla.com/api/v1/suggest");
 
 
