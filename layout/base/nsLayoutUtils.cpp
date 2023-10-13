@@ -9578,7 +9578,7 @@ bool nsLayoutUtils::IsInvisibleBreak(nsINode* aNode,
 }
 
 
-nsRect nsLayoutUtils::ComputeSVGViewBox(SVGViewportElement* aElement) {
+nsRect nsLayoutUtils::ComputeSVGOriginBox(SVGViewportElement* aElement) {
   if (!aElement) {
     return {};
   }
@@ -9590,10 +9590,9 @@ nsRect nsLayoutUtils::ComputeSVGViewBox(SVGViewportElement* aElement) {
     
     
     
+    
     const SVGViewBox& value = aElement->GetAnimatedViewBox()->GetAnimValue();
-    return nsRect(nsPresContext::CSSPixelsToAppUnits(value.x),
-                  nsPresContext::CSSPixelsToAppUnits(value.y),
-                  nsPresContext::CSSPixelsToAppUnits(value.width),
+    return nsRect(0, 0, nsPresContext::CSSPixelsToAppUnits(value.width),
                   nsPresContext::CSSPixelsToAppUnits(value.height));
   }
 
@@ -9633,7 +9632,7 @@ static nsRect ComputeSVGReferenceRect(nsIFrame* aFrame,
         
         break;
       }
-      r = nsLayoutUtils::ComputeSVGViewBox(viewportElement);
+      r = nsLayoutUtils::ComputeSVGOriginBox(viewportElement);
       break;
     }
     case StyleGeometryBox::ContentBox:
