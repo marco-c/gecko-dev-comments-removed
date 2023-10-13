@@ -26,8 +26,8 @@ static void FillLinearRamp(double aBufferStartTime, Span<float> aBuffer,
 static void FillExponentialRamp(double aBufferStartTime, Span<float> aBuffer,
                                 double t0, float v0, double t1, float v1) {
   MOZ_ASSERT(aBuffer.Length() >= 1);
-  float fullRatio = v1 / v0;
-  if (v0 == 0.f || fullRatio < 0.f) {
+  double fullRatio = static_cast<double>(v1) / v0;
+  if (v0 == 0.f || fullRatio < 0.0) {
     std::fill_n(aBuffer.Elements(), aBuffer.Length(), v0);
     return;
   }
@@ -36,7 +36,13 @@ static void FillExponentialRamp(double aBufferStartTime, Span<float> aBuffer,
   
   
   double exponent = (aBufferStartTime - t0) / tDelta;
-  aBuffer[0] = v0 * fdlibm_powf(fullRatio, static_cast<float>(exponent));
+  
+  
+  
+  
+  
+  double v = v0 * fdlibm_pow(fullRatio, exponent);
+  aBuffer[0] = static_cast<float>(v);
   if (aBuffer.Length() == 1) {
     return;
   }
@@ -45,7 +51,6 @@ static void FillExponentialRamp(double aBufferStartTime, Span<float> aBuffer,
   
   
   
-  double v = aBuffer[0];
   double tickRatio = fdlibm_pow(fullRatio, 1.0 / tDelta);
   for (size_t i = 1; i < aBuffer.Length(); ++i) {
     v *= tickRatio;
