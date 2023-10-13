@@ -2979,7 +2979,14 @@ function synthesizeDropAfterDragOver(
     );
     sendDragEvent(event, aDestElement, aDestWindow);
   }
+  
+  
+  
+  
+  
+  this.AccessibilityUtils?.suppressClickHandling(true);
   synthesizeMouse(aDestElement, 2, 2, { type: "mouseup" }, aDestWindow);
+  this.AccessibilityUtils?.suppressClickHandling(false);
 
   return effect;
 }
