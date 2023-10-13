@@ -404,6 +404,9 @@ static bool GetDisplayPortImpl(nsIContent* aContent, nsRect* aResult,
              aContent->GetProperty(nsGkAtoms::MinimalDisplayPort)) {
     
     
+
+    
+    
     
     
     
@@ -954,6 +957,20 @@ Maybe<nsRect> DisplayPortUtils::GetRootDisplayportBase(PresShell* aPresShell) {
   }
 
   return Some(baseRect);
+}
+
+bool DisplayPortUtils::WillUseEmptyDisplayPortMargins(nsIContent* aContent) {
+  MOZ_ASSERT(HasDisplayPort(aContent));
+  nsIFrame* frame = aContent->GetPrimaryFrame();
+  if (!frame) {
+    return false;
+  }
+
+  
+  
+  return aContent->GetProperty(nsGkAtoms::MinimalDisplayPort) ||
+         frame->PresShell()->IsDisplayportSuppressed() ||
+         nsLayoutUtils::ShouldDisableApzForElement(aContent);
 }
 
 }  

@@ -4520,7 +4520,8 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
         
         
         
-        if (usingDisplayPort && (!mIsRoot || pc->GetParentPresContext())) {
+        if (usingDisplayPort && (!mIsRoot || pc->GetParentPresContext()) &&
+            !DisplayPortUtils::WillUseEmptyDisplayPortMargins(content)) {
           displayportBase = RestrictToRootDisplayPort(displayportBase);
           MOZ_LOG(sDisplayportLog, LogLevel::Verbose,
                   ("Scroll id %" PRIu64 " has restricted base %s\n", viewID,
