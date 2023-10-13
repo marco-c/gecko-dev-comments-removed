@@ -66,6 +66,7 @@ struct SharedDummyTrack;
 class VideoFrameContainer;
 class VideoOutput;
 namespace dom {
+class HTMLSourceElement;
 class MediaKeys;
 class TextTrack;
 class TimeRanges;
@@ -1125,7 +1126,7 @@ class HTMLMediaElement : public nsGenericHTMLElement,
 
 
 
-  Element* GetNextSource();
+  HTMLSourceElement* GetNextSource();
 
   
 
