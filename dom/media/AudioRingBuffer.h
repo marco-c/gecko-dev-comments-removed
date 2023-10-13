@@ -50,6 +50,11 @@ class AudioRingBuffer final {
   
 
 
+  uint32_t PrependSilence(uint32_t aSamples);
+
+  
+
+
   uint32_t WriteSilence(uint32_t aSamples);
 
   
