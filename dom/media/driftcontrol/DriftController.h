@@ -30,6 +30,7 @@ namespace mozilla {
 
 
 
+
 class DriftController final {
  public:
   
@@ -37,6 +38,11 @@ class DriftController final {
 
   DriftController(uint32_t aSourceRate, uint32_t aTargetRate,
                   uint32_t aDesiredBuffering);
+
+  
+
+
+  void SetDesiredBuffering(uint32_t aDesiredBuffering);
 
   
 
@@ -91,9 +97,9 @@ class DriftController final {
   const uint32_t mSourceRate;
   const uint32_t mTargetRate;
   const uint32_t mAdjustmentIntervalMs = 1000;
-  const uint32_t mDesiredBuffering;
 
  private:
+  uint32_t mDesiredBuffering;
   int32_t mPreviousError = 0;
   float mIntegral = 0.0;
   float mCorrectedTargetRate;

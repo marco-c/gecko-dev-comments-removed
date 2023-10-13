@@ -72,6 +72,13 @@ class AudioResampler final {
     Update(aOutRate, mResampler.GetChannels());
   }
 
+  
+
+
+  void SetPreBufferFrames(uint32_t aPreBufferFrames) {
+    mResampler.SetPreBufferFrames(aPreBufferFrames);
+  }
+
  private:
   void UpdateChannels(uint32_t aChannels) {
     Update(mResampler.GetOutRate(), aChannels);
