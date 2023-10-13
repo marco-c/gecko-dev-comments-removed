@@ -146,7 +146,7 @@ function getInlineOptionsBrowser(aboutAddonsBrowser) {
   return contentDocument.getElementById("addon-inline-options");
 }
 
-function getListStyleImage(button) {
+function getRawListStyleImage(button) {
   
   
   for (
@@ -157,10 +157,11 @@ function getListStyleImage(button) {
     popup.ensureInitialized();
   }
 
-  let style = button.ownerGlobal.getComputedStyle(button);
+  return button.ownerGlobal.getComputedStyle(button).listStyleImage;
+}
 
-  let match = /^url\("(.*)"\)$/.exec(style.listStyleImage);
-
+function getListStyleImage(button) {
+  let match = /url\("([^"]*)"\)/.exec(getRawListStyleImage(button));
   return match && match[1];
 }
 
