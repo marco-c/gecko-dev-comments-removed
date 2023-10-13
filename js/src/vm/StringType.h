@@ -1566,6 +1566,10 @@ extern bool EqualStrings(const JSLinearString* str1,
 
 
 
+
+
+
+
 extern bool EqualChars(const JSLinearString* str1, const JSLinearString* str2);
 
 
