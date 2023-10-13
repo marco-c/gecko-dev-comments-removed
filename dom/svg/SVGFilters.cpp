@@ -57,18 +57,6 @@ SVGElement::LengthInfo SVGFilterPrimitiveElement::sLengthInfo[4] = {
 
 
 
-NS_IMPL_ADDREF_INHERITED(SVGFilterPrimitiveElement,
-                         SVGFilterPrimitiveElementBase)
-NS_IMPL_RELEASE_INHERITED(SVGFilterPrimitiveElement,
-                          SVGFilterPrimitiveElementBase)
-
-NS_INTERFACE_MAP_BEGIN(SVGFilterPrimitiveElement)
-  NS_INTERFACE_MAP_ENTRY_CONCRETE(SVGFilterPrimitiveElement)
-NS_INTERFACE_MAP_END_INHERITING(SVGFilterPrimitiveElementBase)
-
-
-
-
 void SVGFilterPrimitiveElement::GetSourceImageNames(
     nsTArray<SVGStringInfo>& aSources) {}
 
