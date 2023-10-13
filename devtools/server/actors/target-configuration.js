@@ -48,6 +48,8 @@ const SUPPORTED_OPTIONS = {
   
   serviceWorkersTestingEnabled: true,
   
+  setTabOffline: true,
+  
   touchEventsOverride: true,
   
   useSimpleHighlightersForReducedMotion: true,
@@ -266,6 +268,9 @@ class TargetConfigurationActor extends Actor {
         case "cacheDisabled":
           this._setCacheDisabled(value);
           break;
+        case "setTabOffline":
+          this._setTabOffline(value);
+          break;
       }
     }
 
@@ -282,6 +287,7 @@ class TargetConfigurationActor extends Actor {
     this._setServiceWorkersTestingEnabled(false);
     this._setPrintSimulationEnabled(false);
     this._setCacheDisabled(false);
+    this._setTabOffline(false);
 
     
     
@@ -450,6 +456,17 @@ class TargetConfigurationActor extends Actor {
       : Ci.nsIRequest.LOAD_NORMAL;
     if (this._browsingContext.defaultLoadFlags != value) {
       this._browsingContext.defaultLoadFlags = value;
+    }
+  }
+
+  
+
+
+
+
+  _setTabOffline(offline) {
+    if (!this._browsingContext.isDiscarded) {
+      this._browsingContext.forceOffline = offline;
     }
   }
 
