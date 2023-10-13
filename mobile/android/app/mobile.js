@@ -180,9 +180,6 @@ pref("app.support.baseURL", "https://support.mozilla.org/1/mobile/%VERSION%/%OS%
 #endif
 
 
-pref("security.cert_pinning.enforcement_level", 1);
-
-
 pref("app.update.timerFirstInterval", 30000); 
 pref("app.update.timerMinimumDelay", 30); 
 

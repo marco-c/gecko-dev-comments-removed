@@ -1796,10 +1796,6 @@ pref("security.insecure_connection_text.enabled", false);
 pref("security.insecure_connection_text.pbmode.enabled", false);
 
 
-pref("security.cert_pinning.enforcement_level", 1);
-
-
-
 
 pref("dom.debug.propagate_gesture_events_through_content", false);
 
