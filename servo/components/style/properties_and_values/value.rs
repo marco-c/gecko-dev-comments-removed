@@ -16,7 +16,7 @@ use crate::custom_properties::ComputedValue as ComputedPropertyValue;
 use crate::parser::{Parse, ParserContext};
 use crate::stylesheets::{CssRuleType, Origin, UrlExtraData};
 use crate::values::{specified, CustomIdent};
-use cssparser::{BasicParseErrorKind, ParseErrorKind, Parser as CSSParser};
+use cssparser::{BasicParseErrorKind, ParseErrorKind, Parser as CSSParser, ParserInput};
 use selectors::matching::QuirksMode;
 use servo_arc::{Arc, ThinArc};
 use smallvec::SmallVec;
@@ -114,21 +114,33 @@ pub enum ComputedValue {
 
 impl ComputedValue {
     
+    
     pub fn compute<'i, 't>(
         input: &mut CSSParser<'i, 't>,
         registration: &PropertyRegistration,
-    ) -> Result<(), ()> {
-        let parse_result = Self::parse(
+    ) -> Result<Arc<ComputedPropertyValue>, ()> {
+        let Ok(value) = Self::parse(
             input,
             &registration.syntax,
             &registration.url_data,
             AllowComputationallyDependent::Yes,
-        );
-        if parse_result.is_err() {
+        ) else {
             return Err(());
-        }
+        };
         
-        Ok(())
+        let value = value.to_css_string();
+
+        let result = {
+            let mut input = ParserInput::new(&value);
+            let mut input = CSSParser::new(&mut input);
+            
+            ComputedPropertyValue::parse(&mut input)
+        };
+        if let Ok(value) = result {
+            Ok(value)
+        } else {
+            Err(())
+        }
     }
 
     
