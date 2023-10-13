@@ -231,14 +231,6 @@ struct Parser<'a> {
 }
 
 
-fn is_whitespace(byte: u8) -> bool {
-    match byte {
-        b'\t' | b'\n' | b'\r' | b' ' => true,
-        _ => false,
-    }
-}
-
-
 fn is_letter(byte: u8) -> bool {
     match byte {
         b'A'..=b'Z' | b'a'..=b'z' => true,
@@ -292,7 +284,7 @@ impl<'a> Parser<'a> {
     fn skip_whitespace(&mut self) {
         loop {
             match self.peek() {
-                Some(c) if is_whitespace(c) => self.position += 1,
+                Some(c) if c.is_ascii_whitespace() => self.position += 1,
                 _ => return,
             }
         }
