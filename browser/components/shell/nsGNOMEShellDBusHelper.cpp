@@ -146,7 +146,7 @@ static void DBusAppendIcon(GVariantBuilder* aBuilder, GnomeHistoryIcon* aIcon) {
 
 
 static already_AddRefed<GVariant> DBusAppendResultID(
-    RefPtr<nsGNOMEShellHistorySearchResult> aSearchResult, const char* aID) {
+    nsGNOMEShellHistorySearchResult* aSearchResult, const char* aID) {
   nsCOMPtr<nsINavHistoryContainerResultNode> container =
       aSearchResult->GetSearchResultContainer();
 
@@ -178,9 +178,8 @@ static already_AddRefed<GVariant> DBusAppendResultID(
     g_variant_builder_add(&b, "{sv}", "gicon",
                           g_variant_new_string("text-html"));
   }
-  return dont_AddRef(g_variant_builder_end(&b));
+  return dont_AddRef(g_variant_ref_sink(g_variant_builder_end(&b)));
 }
-
 
 
 static already_AddRefed<GVariant> DBusAppendSearchID(const char* aID) {
@@ -204,7 +203,7 @@ static already_AddRefed<GVariant> DBusAppendSearchID(const char* aID) {
                         g_variant_new_string(KEYWORD_SEARCH_STRING));
 
   
-  auto searchTerm = nsAutoCStringN<32>(aID + KEYWORD_SEARCH_STRING_LEN + 1);
+  nsAutoCString searchTerm(aID + KEYWORD_SEARCH_STRING_LEN + 1);
   nsAutoCString gnomeSearchTitle;
   if (GetGnomeSearchTitle(searchTerm.get(), gnomeSearchTitle)) {
     g_variant_builder_add(&b, "{sv}", "name",
@@ -214,7 +213,7 @@ static already_AddRefed<GVariant> DBusAppendSearchID(const char* aID) {
     g_variant_builder_add(&b, "{sv}", "gicon", g_variant_new_string("firefox"));
   }
 
-  return dont_AddRef(g_variant_builder_end(&b));
+  return dont_AddRef(g_variant_ref_sink(g_variant_builder_end(&b)));
 }
 
 
