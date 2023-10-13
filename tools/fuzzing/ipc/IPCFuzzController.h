@@ -183,6 +183,10 @@ class IPCFuzzController {
   
   Mutex mMutex;  
 
+  
+  
+  uint32_t mIPCTriggerMsg;
+
   IPCFuzzController();
   NYX_DISALLOW_COPY_AND_ASSIGN(IPCFuzzController);
 };
