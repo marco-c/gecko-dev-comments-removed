@@ -159,11 +159,6 @@ class CoreTextFontList : public gfxPlatformFontList {
 
   
   
-  void LookupSystemFont(mozilla::LookAndFeel::FontID aSystemFontID,
-                        nsACString& aSystemFontName, gfxFontStyle& aFontStyle);
-
-  
-  
   enum FontFamilyEntryType {
     kStandardFontFamily = 0,  
     kSystemFontFamily = 1,    
