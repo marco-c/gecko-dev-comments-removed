@@ -19,6 +19,7 @@
 #include <optional>
 #include <spawn.h>
 #include <sstream>
+#include <stdexcept>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <unordered_map>
@@ -26,6 +27,11 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+class CantSwapSections : public std::runtime_error {
+ public:
+  CantSwapSections(const char* what) : std::runtime_error(what) {}
+};
 
 template <int bits>
 struct Elf {};
@@ -221,37 +227,7 @@ bool RelR<bits>::hack(std::fstream& f) {
     write_one_at(f, dyn_info.offset(tag), tag | DT_RELRHACK_BIT);
   }
 
-  
-  
-  
-  
-  
-  Elf_Addr rel_end = dyn_info.contains(DT_REL)
-                         ? (dyn_info[DT_REL] + dyn_info[DT_RELSZ])
-                         : (dyn_info[DT_RELA] + dyn_info[DT_RELASZ]);
-  
-  Elf_Addr jmprel = dyn_info.contains(DT_JMPREL) ? dyn_info[DT_JMPREL] : 0;
-  if (dyn_info.contains(DT_JMPREL) && dyn_info[DT_PLTRELSZ] &&
-      dyn_info[DT_JMPREL] != rel_end) {
-    if (dyn_info[DT_RELR] != rel_end) {
-      throw std::runtime_error("RELR section doesn't follow REL/RELA?");
-    }
-    if (dyn_info[DT_JMPREL] != dyn_info[DT_RELR] + dyn_info[DT_RELRSZ]) {
-      throw std::runtime_error("PLT REL/RELA doesn't follow RELR?");
-    }
-    auto plt_rel = read_vector_at<char>(
-        f, get_offset(phdr, dyn_info[DT_JMPREL]), dyn_info[DT_PLTRELSZ]);
-    
-    
-    write_vector_at(f, relr_off, plt_rel);
-    write_vector_at(f, relr_off + plt_rel.size(), relr);
-    dyn_info[DT_JMPREL] = rel_end;
-    dyn_info[DT_RELR] = rel_end + plt_rel.size();
-    for (const auto tag : {DT_JMPREL, DT_RELR}) {
-      write_one_at(f, dyn_info.offset(tag) + sizeof(typename DynInfo::Tag),
-                   dyn_info[tag]);
-    }
-  }
+  bool is_glibc = false;
 
   if (dyn_info.contains(DT_VERNEEDNUM) && dyn_info.contains(DT_VERNEED) &&
       dyn_info.contains(DT_STRSZ) && dyn_info.contains(DT_STRTAB)) {
@@ -268,6 +244,7 @@ bool RelR<bits>::hack(std::fstream& f) {
     while (verneednum--) {
       auto verneed = read_one_at<Elf_Verneed>(f, verneed_off);
       if (std::string_view{"libc.so.6"} == &strtab.at(verneed.vn_file)) {
+        is_glibc = true;
         Elf_Addr vernaux_off = verneed_off + verneed.vn_aux;
         Elf_Addr relr = 0;
         Elf_Vernaux reuse;
@@ -303,6 +280,51 @@ bool RelR<bits>::hack(std::fstream& f) {
       verneed_off += verneed.vn_next;
     }
   }
+
+  
+  Elf_Addr jmprel = dyn_info.contains(DT_JMPREL) ? dyn_info[DT_JMPREL] : 0;
+  if (is_glibc) {
+#ifndef MOZ_STDCXX_COMPAT
+    try {
+#endif
+
+
+
+
+
+      Elf_Addr rel_end = dyn_info.contains(DT_REL)
+                             ? (dyn_info[DT_REL] + dyn_info[DT_RELSZ])
+                             : (dyn_info[DT_RELA] + dyn_info[DT_RELASZ]);
+      if (dyn_info.contains(DT_JMPREL) && dyn_info[DT_PLTRELSZ] &&
+          dyn_info[DT_JMPREL] != rel_end) {
+        if (dyn_info[DT_RELR] != rel_end) {
+          throw CantSwapSections("RELR section doesn't follow REL/RELA?");
+        }
+        if (dyn_info[DT_JMPREL] != dyn_info[DT_RELR] + dyn_info[DT_RELRSZ]) {
+          throw CantSwapSections("PLT REL/RELA doesn't follow RELR?");
+        }
+        auto plt_rel = read_vector_at<char>(
+            f, get_offset(phdr, dyn_info[DT_JMPREL]), dyn_info[DT_PLTRELSZ]);
+        
+        
+        write_vector_at(f, relr_off, plt_rel);
+        write_vector_at(f, relr_off + plt_rel.size(), relr);
+        dyn_info[DT_JMPREL] = rel_end;
+        dyn_info[DT_RELR] = rel_end + plt_rel.size();
+        for (const auto tag : {DT_JMPREL, DT_RELR}) {
+          write_one_at(f, dyn_info.offset(tag) + sizeof(typename DynInfo::Tag),
+                       dyn_info[tag]);
+        }
+      }
+#ifndef MOZ_STDCXX_COMPAT
+    } catch (const CantSwapSections& err) {
+      
+      
+      std::cerr << "WARNING: " << err.what() << std::endl;
+    }
+#endif
+  }
+
   off_t shdr_offset = ehdr.e_shoff;
   auto shdr = read_vector_at<Elf_Shdr>(f, ehdr.e_shoff, ehdr.e_shnum);
   for (auto& s : shdr) {
