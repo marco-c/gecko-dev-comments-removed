@@ -3,8 +3,9 @@
 
 
 
-#ifndef DOM_MEDIA_DRIFTCONTROL_CLOCKDRIFT_H_
-#define DOM_MEDIA_DRIFTCONTROL_CLOCKDRIFT_H_
+#ifndef DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
+#define DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
+
 #include "mozilla/RollingMean.h"
 
 #include <algorithm>
@@ -29,28 +30,21 @@ namespace mozilla {
 
 
 
-
-
-
-
-
-
-class ClockDrift final {
+class DriftController final {
  public:
   
 
 
-  ClockDrift(uint32_t aSourceRate, uint32_t aTargetRate,
-             uint32_t aDesiredBuffering);
+  DriftController(uint32_t aSourceRate, uint32_t aTargetRate,
+                  uint32_t aDesiredBuffering);
 
   
 
 
-
-
-  float GetCorrection() { return mCorrection; }
+  uint32_t GetCorrectedTargetRate() const;
 
   
+
 
 
   uint32_t NumCorrectionChanges() const { return mNumCorrectionChanges; }
@@ -63,21 +57,34 @@ class ClockDrift final {
 
 
 
-
-
-
   void UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
                    uint32_t aBufferedFrames, uint32_t aRemainingFrames);
 
  private:
   
-
-
-
-
-
-  void CalculateCorrection(float aCalculationWeight, uint32_t aBufferedFrames,
-                           uint32_t aRemainingFrames);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aRemainingFrames);
 
  public:
   const uint8_t mPlotId;
@@ -87,15 +94,17 @@ class ClockDrift final {
   const uint32_t mDesiredBuffering;
 
  private:
-  float mCorrection = 1.0;
+  int32_t mPreviousError = 0;
+  float mIntegral = 0.0;
+  float mCorrectedTargetRate;
   uint32_t mNumCorrectionChanges = 0;
 
+  uint32_t mSourceClock = 0;
   
   RollingMean<TrackTime, TrackTime> mMeasuredSourceLatency;
   
   RollingMean<TrackTime, TrackTime> mMeasuredTargetLatency;
 
-  uint32_t mSourceClock = 0;
   uint32_t mTargetClock = 0;
   TrackTime mTotalTargetClock = 0;
 };

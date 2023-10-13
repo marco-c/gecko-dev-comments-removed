@@ -55,15 +55,15 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate) {
     
     if (j % 2 == 0) {
       sourceFrames =
-          sampleRateTransmitter *  102 / 100 /  100;
+          sampleRateTransmitter *  1002 / 1000 /  100;
     } else {
       sourceFrames =
-          sampleRateTransmitter *  98 / 100 /  100;
+          sampleRateTransmitter *  998 / 1000 /  100;
     }
 
     
     
-    for (uint32_t n = 0; n < 1050; ++n) {
+    for (uint32_t n = 0; n < 5000; ++n) {
       
       AudioSegment inSegment;
       tone.Generate(inSegment, sourceFrames);

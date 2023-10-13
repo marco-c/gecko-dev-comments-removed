@@ -11,9 +11,7 @@
 namespace mozilla {
 
 class AudioResampler;
-class ClockDrift;
-
-
+class DriftController;
 
 
 
@@ -65,9 +63,8 @@ class AudioDriftCorrection final {
   const uint32_t mTargetRate;
 
  private:
-  const UniquePtr<ClockDrift> mClockDrift;
+  const UniquePtr<DriftController> mDriftController;
   const UniquePtr<AudioResampler> mResampler;
 };
-
 }  
 #endif  
