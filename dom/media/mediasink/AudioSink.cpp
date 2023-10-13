@@ -196,7 +196,7 @@ TimeUnit AudioSink::UnplayedDuration() const {
 void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
   
   
-  mProcessedSPSCQueue->ResetThreadIds();
+  mProcessedSPSCQueue->ResetConsumerThreadId();
 
   
   int sampleInRingbuffer = mProcessedSPSCQueue->AvailableRead();
@@ -355,7 +355,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
   
   
   if (aAudioThreadChanged) {
-    mProcessedSPSCQueue->ResetThreadIds();
+    mProcessedSPSCQueue->ResetConsumerThreadId();
   }
 
   TRACE_COMMENT("AudioSink::PopFrames", "%u frames (ringbuffer: %u/%u)",

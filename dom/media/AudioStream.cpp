@@ -694,7 +694,7 @@ void AudioClock::UpdateFrameHistory(uint32_t aServiced, uint32_t aUnderrun,
                                     bool aAudioThreadChanged) {
 #ifdef XP_MACOSX
   if (aAudioThreadChanged) {
-    mCallbackInfoQueue.ResetThreadIds();
+    mCallbackInfoQueue.ResetProducerThreadId();
   }
   
   

@@ -255,26 +255,39 @@ class SPSCRingBufferBase {
 
 
   int Capacity() const { return StorageCapacity() - 1; }
+
   
 
 
 
 
-  void ResetThreadIds() {
-    ResetProducerThreadId();
-    ResetConsumerThreadId();
-  }
 
   void ResetConsumerThreadId() {
 #ifdef DEBUG
-    mConsumerId = std::thread::id();
+    mConsumerId = std::this_thread::get_id();
 #endif
+
+    
+    
+    
+    std::ignore = mReadIndex.load(std::memory_order_acquire);
   }
+
+  
+
+
+
+
 
   void ResetProducerThreadId() {
 #ifdef DEBUG
-    mProducerId = std::thread::id();
+    mProducerId = std::this_thread::get_id();
 #endif
+
+    
+    
+    
+    std::ignore = mWriteIndex.load(std::memory_order_acquire);
   }
 
  private:
