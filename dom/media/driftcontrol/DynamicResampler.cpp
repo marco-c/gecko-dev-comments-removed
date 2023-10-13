@@ -31,6 +31,8 @@ void DynamicResampler::SetSampleFormat(AudioSampleFormat aFormat) {
   for (AudioRingBuffer& b : mInternalInBuffer) {
     b.SetSampleFormat(mSampleFormat);
   }
+
+  EnsureInputBufferSize(CalculateInputBufferSizeInFrames());
 }
 
 void DynamicResampler::EnsurePreBuffer(uint32_t aOutFrames) {
@@ -50,6 +52,8 @@ void DynamicResampler::EnsurePreBuffer(uint32_t aOutFrames) {
 
   uint32_t toRead = static_cast<int64_t>(aOutFrames) * mInRate / mOutRate;
   uint32_t needed = mPreBufferFrames + toRead;
+
+  EnsureInputBufferSize(needed);
 
   if (needed > buffered) {
     for (auto& b : mInternalInBuffer) {
@@ -175,14 +179,16 @@ void DynamicResampler::UpdateResampler(uint32_t aOutRate, uint32_t aChannels) {
     
     mInternalInBuffer.Clear();
     for (uint32_t i = 0; i < mChannels; ++i) {
-      
-      AudioRingBuffer* b = mInternalInBuffer.AppendElement(
-          sizeof(float) * std::max(2 * mPreBufferFrames, mInRate / 10));
+      AudioRingBuffer* b = mInternalInBuffer.AppendElement(0);
+
       if (mSampleFormat != AUDIO_FORMAT_SILENCE) {
         
         b->SetSampleFormat(mSampleFormat);
       }
     }
+    uint32_t sz = mSetBufferSizeInFrames;
+    mSetBufferSizeInFrames = 0;
+    EnsureInputBufferSize(sz);
     mInputTail.SetLength(mChannels);
     return;
   }
