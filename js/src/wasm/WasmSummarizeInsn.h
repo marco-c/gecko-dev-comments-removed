@@ -1,0 +1,36 @@
+
+
+
+
+
+
+#ifndef wasm_WasmSummarizeInsn_h
+#define wasm_WasmSummarizeInsn_h
+
+#include "mozilla/Maybe.h"
+#include "wasm/WasmCodegenTypes.h"  
+
+namespace js {
+namespace wasm {
+
+#ifdef DEBUG
+
+
+
+
+
+
+
+
+
+
+
+
+mozilla::Maybe<TrapMachineInsn> SummarizeTrapInstruction(const uint8_t* insn);
+
+#endif
+
+}  
+}  
+
+#endif 
