@@ -100,6 +100,13 @@ class DynamicResampler final {
 
 
 
+
+
+
+
+
+
+
   bool Resample(float* aOutBuffer, uint32_t aOutFrames, uint32_t aChannelIndex);
   bool Resample(int16_t* aOutBuffer, uint32_t aOutFrames,
                 uint32_t aChannelIndex);
@@ -147,6 +154,7 @@ class DynamicResampler final {
       if (uint32_t buffered = mInternalInBuffer[aChannelIndex].AvailableRead();
           buffered < aOutFrames) {
         underrun = true;
+        mIsPreBufferSet = false;
         mInternalInBuffer[aChannelIndex].WriteSilence(aOutFrames - buffered);
       }
       mInternalInBuffer[aChannelIndex].Read(Span(aOutBuffer, aOutFrames));
@@ -196,6 +204,7 @@ class DynamicResampler final {
       mInternalInBuffer[aChannelIndex].WriteSilence(totalInFramesNeeded);
       resample();
     }
+    mIsPreBufferSet = false;
     return true;
   }
 

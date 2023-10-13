@@ -31,6 +31,7 @@ namespace mozilla {
 
 
 
+
 class DriftController final {
  public:
   
@@ -43,6 +44,12 @@ class DriftController final {
 
 
   void SetDesiredBuffering(uint32_t aDesiredBuffering);
+
+  
+
+
+
+  void ResetAfterUnderrun();
 
   
 
