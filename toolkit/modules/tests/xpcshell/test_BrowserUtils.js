@@ -68,6 +68,7 @@ add_task(async function test_shouldShowVPNPromo() {
   const disallowedRegion = "SY";
   const illegalRegion = "CN";
   const unsupportedRegion = "LY";
+  const regionNotInDefaultPref = "QQ";
 
   
   setupRegions(allowedRegion, allowedRegion);
@@ -101,6 +102,16 @@ add_task(async function test_shouldShowVPNPromo() {
   
   setupRegions(unsupportedRegion, allowedRegion); 
   Assert.ok(BrowserUtils.shouldShowVPNPromo());
+
+  
+  
+  setupRegions(regionNotInDefaultPref);
+  Services.prefs.setStringPref(
+    "browser.contentblocking.report.vpn_regions",
+    "qq"
+  );
+  Assert.ok(BrowserUtils.shouldShowVPNPromo());
+  Services.prefs.clearUserPref("browser.contentblocking.report.vpn_regions");
 
   if (AppConstants.platform !== "android") {
     
