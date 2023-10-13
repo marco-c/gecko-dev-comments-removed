@@ -4005,7 +4005,11 @@ pref("cookiebanners.bannerClicking.testing", false);
 
 
 
-pref("cookiebanners.bannerClicking.timeout", 3000);
+pref("cookiebanners.bannerClicking.timeoutAfterLoad", 5000);
+
+
+
+pref("cookiebanners.bannerClicking.timeoutAfterDOMContentLoaded", 20000);
 
 
 
