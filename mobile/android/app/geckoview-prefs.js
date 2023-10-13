@@ -62,7 +62,6 @@ pref("media.geckoview.autoplay.request", true);
 
 pref("media.eme.require-app-approval", true);
 
-pref("signon.debug", false);
 pref("signon.showAutoCompleteFooter", true);
 pref("toolkit.autocomplete.delegate", true);
 
@@ -77,10 +76,6 @@ pref("dom.ipc.processCount.webCOOP+COEP", 38);
 
 
 pref("extensions.formautofill.addresses.capture.enabled", true);
-
-
-pref("browser.formfill.debug", false);
-pref("extensions.formautofill.loglevel", "Warn");
 
 
 
