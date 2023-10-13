@@ -5861,10 +5861,18 @@ void IRGenerator::emitCalleeGuard(ObjOperandId calleeId, JSFunction* callee) {
   
   
   
+  
+  
+  
+  
+  
+  
   if (isFirstStub_ || !callee->hasBaseScript() ||
-      callee->isSelfHostedBuiltin()) {
+      (callee->isSelfHostedBuiltin() && !callee->isLambda())) {
     writer.guardSpecificFunction(calleeId, callee);
   } else {
+    MOZ_ASSERT_IF(callee->isSelfHostedBuiltin(),
+                  !callee->baseScript()->allowRelazify());
     writer.guardClass(calleeId, GuardClassKind::JSFunction);
     writer.guardFunctionScript(calleeId, callee->baseScript());
   }

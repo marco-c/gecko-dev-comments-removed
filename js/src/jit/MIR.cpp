@@ -6499,7 +6499,8 @@ AliasSet MGuardFunctionScript::getAliasSet() const {
   
   
   
-  MOZ_ASSERT(!flags_.isSelfHostedOrIntrinsic());
+  
+  MOZ_ASSERT_IF(flags_.isSelfHostedOrIntrinsic(), flags_.isLambda());
   return AliasSet::None();
 }
 
