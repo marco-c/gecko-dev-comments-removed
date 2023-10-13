@@ -490,7 +490,7 @@ AVCodecID FFmpegAudioDecoder<LIBAV_VER>::GetCodecId(const nsACString& aMimeType,
     }
     
     if (aMimeType.EqualsLiteral("audio/wave; codecs=6")) {
-      return AV_CODEC_ID_PCM_MULAW;
+      return AV_CODEC_ID_PCM_ALAW;
     }
     
     if (aMimeType.EqualsLiteral("audio/wave; codecs=7")) {
