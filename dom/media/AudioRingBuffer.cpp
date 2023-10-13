@@ -22,6 +22,8 @@ namespace mozilla {
 
 
 
+
+
 template <typename T>
 class RingBuffer final {
  public:
@@ -29,7 +31,6 @@ class RingBuffer final {
       : mStorage(ConvertToSpan(aMemoryBuffer)),
         mMemoryBuffer(std::move(aMemoryBuffer)) {
     MOZ_ASSERT(std::is_trivial<T>::value);
-    MOZ_ASSERT(!mStorage.IsEmpty());
   }
 
   
@@ -98,8 +99,8 @@ class RingBuffer final {
 
 
   uint32_t Write(const Span<const T>& aBuffer, uint32_t aSamples) {
-    MOZ_ASSERT(aSamples > 0 &&
-               aBuffer.Length() <= static_cast<uint32_t>(aSamples));
+    MOZ_ASSERT(aSamples > 0);
+    MOZ_ASSERT(aBuffer.IsEmpty() || aBuffer.Length() == aSamples);
 
     if (IsFull()) {
       return 0;
@@ -267,6 +268,55 @@ class RingBuffer final {
 
 
 
+
+
+  bool SetLengthBytes(uint32_t aLengthBytes) {
+    MOZ_ASSERT(aLengthBytes % sizeof(T) == 0,
+               "Length in bytes is not a whole number of samples");
+
+    uint32_t lengthSamples = aLengthBytes / sizeof(T);
+    uint32_t oldLengthSamples = Capacity();
+    uint32_t availableRead = AvailableRead();
+    if (!mMemoryBuffer.SetLength(aLengthBytes)) {
+      return false;
+    }
+
+    
+    mStorage = ConvertToSpan(mMemoryBuffer);
+    if (mWriteIndex < mReadIndex) {
+      
+      
+      const uint32_t toMove = mWriteIndex;
+
+      
+      const uint32_t toMove1 =
+          std::min(lengthSamples - oldLengthSamples, toMove);
+      {
+        
+        Span<T> from1 = mStorage.Subspan(0, toMove1);
+        Span<T> to1 = mStorage.Subspan(oldLengthSamples, toMove1);
+        PodMove(to1.Elements(), from1.Elements(), toMove1);
+      }
+
+      
+      const uint32_t toMove2 = toMove - toMove1;
+      {
+        
+        Span<T> from2 = mStorage.Subspan(toMove1, toMove2);
+        Span<T> to2 = mStorage.Subspan(0, toMove2);
+        PodMove(to2.Elements(), from2.Elements(), toMove2);
+      }
+
+      mWriteIndex = NextIndex(mReadIndex, availableRead);
+    }
+
+    return true;
+  }
+
+  
+
+
+
   bool IsFull() const { return (mWriteIndex + 1) % Capacity() == mReadIndex; }
 
   
@@ -298,6 +348,11 @@ class RingBuffer final {
     return mWriteIndex + Capacity() - mReadIndex;
   }
 
+  
+
+
+  uint32_t Capacity() const { return mStorage.Length(); }
+
  private:
   uint32_t NextIndex(uint32_t aIndex, uint32_t aStep) const {
     MOZ_ASSERT(aStep < Capacity());
@@ -305,10 +360,8 @@ class RingBuffer final {
     return (aIndex + aStep) % Capacity();
   }
 
-  uint32_t Capacity() const { return mStorage.Length(); }
-
   Span<T> ConvertToSpan(const AlignedByteBuffer& aOther) const {
-    MOZ_ASSERT(aOther.Length() >= sizeof(T));
+    MOZ_ASSERT(aOther.Length() % sizeof(T) == 0);
     return Span<T>(reinterpret_cast<T*>(aOther.Data()),
                    aOther.Length() / sizeof(T));
   }
@@ -322,12 +375,14 @@ class RingBuffer final {
   uint32_t mReadIndex = 0;
   uint32_t mWriteIndex = 0;
   
-  const Span<T> mStorage;
+  Span<T> mStorage;
   
 
 
 
-  const AlignedByteBuffer mMemoryBuffer;
+
+
+  AlignedByteBuffer mMemoryBuffer;
 };
 
 
@@ -343,7 +398,6 @@ class AudioRingBuffer::AudioRingBufferPrivate {
 
 AudioRingBuffer::AudioRingBuffer(uint32_t aSizeInBytes)
     : mPtr(MakeUnique<AudioRingBufferPrivate>()) {
-  MOZ_ASSERT(aSizeInBytes > 0);
   mPtr->mBackingBuffer.emplace(aSizeInBytes);
   MOZ_ASSERT(mPtr->mBackingBuffer);
 }
@@ -474,6 +528,31 @@ uint32_t AudioRingBuffer::Clear() {
   MOZ_ASSERT(!mPtr->mIntRingBuffer);
   MOZ_ASSERT(mPtr->mFloatRingBuffer);
   return mPtr->mFloatRingBuffer->Clear();
+}
+
+bool AudioRingBuffer::SetLengthBytes(uint32_t aLengthBytes) {
+  if (mPtr->mFloatRingBuffer) {
+    return mPtr->mFloatRingBuffer->SetLengthBytes(aLengthBytes);
+  }
+  if (mPtr->mIntRingBuffer) {
+    return mPtr->mIntRingBuffer->SetLengthBytes(aLengthBytes);
+  }
+  if (mPtr->mBackingBuffer) {
+    return mPtr->mBackingBuffer->SetLength(aLengthBytes);
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected");
+  return true;
+}
+
+uint32_t AudioRingBuffer::Capacity() const {
+  if (mPtr->mFloatRingBuffer) {
+    return mPtr->mFloatRingBuffer->Capacity();
+  }
+  if (mPtr->mIntRingBuffer) {
+    return mPtr->mIntRingBuffer->Capacity();
+  }
+  MOZ_ASSERT_UNREACHABLE("Unexpected");
+  return 0;
 }
 
 bool AudioRingBuffer::IsFull() const {

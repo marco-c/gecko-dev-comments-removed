@@ -20,6 +20,7 @@ namespace mozilla {
 
 
 
+
 class AudioRingBuffer final {
  public:
   explicit AudioRingBuffer(uint32_t aSizeInBytes);
@@ -90,6 +91,19 @@ class AudioRingBuffer final {
 
 
   uint32_t Clear();
+
+  
+
+
+
+
+
+  bool SetLengthBytes(uint32_t aLengthBytes);
+
+  
+
+
+  uint32_t Capacity() const;
 
   
 
