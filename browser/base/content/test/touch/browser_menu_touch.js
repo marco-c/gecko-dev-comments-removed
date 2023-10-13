@@ -113,7 +113,7 @@ async function openAndCheckCustomizationUIMenu(target) {
 
 
 add_setup(async function () {
-  let isWindows = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
+  let isWindows = AppConstants.platform == "win";
   await SpecialPowers.pushPrefEnv({
     set: [["apz.test.fails_with_native_injection", isWindows]],
   });

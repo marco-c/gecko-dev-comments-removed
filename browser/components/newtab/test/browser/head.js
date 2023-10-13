@@ -23,8 +23,6 @@ const { sinon } = ChromeUtils.importESModule(
 
 const ABOUT_WELCOME_OVERRIDE_CONTENT_PREF = "browser.aboutwelcome.screens";
 
-const win7Content = AppConstants.isPlatformAndVersionAtMost("win", "6.1");
-
 const calloutId = "feature-callout";
 const calloutSelector = `#${calloutId}.featureCallout`;
 const calloutCTASelector = `#${calloutId} :is(.primary, .secondary)`;

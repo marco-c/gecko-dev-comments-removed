@@ -691,13 +691,6 @@ async function prepareContentForReact(content) {
   }
 
   
-  if (AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
-    await lazy.AWScreenUtils.removeScreens(screens, screen =>
-      ["theme"].includes(screen.content?.tiles?.type)
-    );
-  }
-
-  
   if (content?.ua) {
     
     
