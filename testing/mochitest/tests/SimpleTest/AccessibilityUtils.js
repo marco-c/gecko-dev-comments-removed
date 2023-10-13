@@ -460,15 +460,61 @@ this.AccessibilityUtils = (function () {
 
 
 
-  function assertLabelled(accessible) {
-    const name = accessible.name && accessible.name.trim();
+  function assertLabelled(accessible, allowRecurse = true) {
+    const { DOMNode } = accessible;
+    let name = accessible.name;
+    if (!name) {
+      
+      
+      forceRefreshDriverTick(DOMNode);
+      try {
+        name = accessible.name;
+      } catch (e) {
+        
+        if (gEnv.labelRule) {
+          a11yWarn("Unlabeled element removed before l10n finished", {
+            DOMNode,
+          });
+        }
+        return;
+      }
+      const doc = DOMNode.ownerDocument;
+      if (
+        !name &&
+        allowRecurse &&
+        gEnv.labelRule &&
+        doc.hasPendingL10nMutations
+      ) {
+        
+        
+        doc.addEventListener(
+          "L10nMutationsFinished",
+          () => {
+            try {
+              accessible.name;
+            } catch (e) {
+              
+              a11yWarn("Unlabeled element removed before l10n finished", {
+                DOMNode,
+              });
+              return;
+            }
+            assertLabelled(accessible, false);
+          },
+          { once: true }
+        );
+        return;
+      }
+    }
+    if (name) {
+      name = name.trim();
+    }
     if (gEnv.labelRule && !name) {
       a11yFail("Interactive elements must be labeled", accessible);
 
       return;
     }
 
-    const { DOMNode } = accessible;
     if (FORM_ROLES.has(accessible.role)) {
       const labels = getLabels(accessible);
       const hasNameFromVisibleLabel = labels.some(
