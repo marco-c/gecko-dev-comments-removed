@@ -3,53 +3,10 @@
 
 
 
+async function run_test() {
+  setupTestCommon();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-async function testCleanupSuccessLogsFIFO(
-  createUpdateLog,
-  createLastUpdateLog,
-  createBackupUpdateLog,
-  createUpdateElevatedLog,
-  createLastUpdateElevatedLog,
-  createBackupUpdateElevatedLog
-) {
-  logTestInfo(
-    `createUpdateLog=${createUpdateLog} ` +
-      `createLastUpdateLog=${createLastUpdateLog} ` +
-      `createBackupUpdateLog=${createBackupUpdateLog} ` +
-      `createUpdateElevatedLog=${createUpdateElevatedLog} ` +
-      `createLastUpdateElevatedLog=${createLastUpdateElevatedLog} ` +
-      `createBackupUpdateElevatedLog=${createBackupUpdateElevatedLog}`
-  );
+  debugDump("testing update logs are first in first out deleted");
 
   let patchProps = { state: STATE_PENDING };
   let patches = getLocalPatchString(patchProps);
@@ -57,47 +14,14 @@ async function testCleanupSuccessLogsFIFO(
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
   writeStatusFile(STATE_SUCCEEDED);
 
-  const createOrDeleteFile = (shouldCreate, filename, contents) => {
-    let log = getUpdateDirFile(filename);
-    if (shouldCreate) {
-      writeFile(log, contents);
-    } else {
-      try {
-        log.remove(false);
-      } catch (ex) {
-        if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
-          throw ex;
-        }
-      }
-    }
-  };
+  let log = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
+  writeFile(log, "Backup Update Log");
 
-  createOrDeleteFile(
-    createLastUpdateLog,
-    FILE_LAST_UPDATE_LOG,
-    "Backup Update Log"
-  );
-  createOrDeleteFile(
-    createBackupUpdateLog,
-    FILE_BACKUP_UPDATE_LOG,
-    "To Be Deleted Backup Update Log"
-  );
-  createOrDeleteFile(createUpdateLog, FILE_UPDATE_LOG, "Last Update Log");
-  createOrDeleteFile(
-    createLastUpdateElevatedLog,
-    FILE_LAST_UPDATE_ELEVATED_LOG,
-    "Backup Update Elevated Log"
-  );
-  createOrDeleteFile(
-    createBackupUpdateElevatedLog,
-    FILE_BACKUP_UPDATE_ELEVATED_LOG,
-    "To Be Deleted Backup Update Elevated Log"
-  );
-  createOrDeleteFile(
-    createUpdateElevatedLog,
-    FILE_UPDATE_ELEVATED_LOG,
-    "Last Update Elevated Log"
-  );
+  log = getUpdateDirFile(FILE_BACKUP_UPDATE_LOG);
+  writeFile(log, "To Be Deleted Backup Update Log");
+
+  log = getUpdateDirFile(FILE_UPDATE_LOG);
+  writeFile(log, "Last Update Log");
 
   standardInit();
 
@@ -113,114 +37,27 @@ async function testCleanupSuccessLogsFIFO(
   );
   await waitForUpdateXMLFiles();
 
-  let log = getUpdateDirFile(FILE_UPDATE_LOG);
-  Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
-
-  log = getUpdateDirFile(FILE_UPDATE_ELEVATED_LOG);
+  log = getUpdateDirFile(FILE_UPDATE_LOG);
   Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
 
   log = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
-  if (createUpdateLog) {
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "Last Update Log",
-      "the last update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else {
-    Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
-  }
-
-  log = getUpdateDirFile(FILE_LAST_UPDATE_ELEVATED_LOG);
-  if (createUpdateElevatedLog) {
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "Last Update Elevated Log",
-      "the last update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else {
-    Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
-  }
+  Assert.ok(log.exists(), MSG_SHOULD_EXIST);
+  Assert.equal(
+    readFile(log),
+    "Last Update Log",
+    "the last update log contents" + MSG_SHOULD_EQUAL
+  );
 
   log = getUpdateDirFile(FILE_BACKUP_UPDATE_LOG);
-  if (createLastUpdateLog) {
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "Backup Update Log",
-      "the backup update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else if (!createLastUpdateElevatedLog && createBackupUpdateLog) {
-    
-    
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "To Be Deleted Backup Update Log",
-      "the backup update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else {
-    Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
-  }
-
-  log = getUpdateDirFile(FILE_BACKUP_UPDATE_ELEVATED_LOG);
-  if (createLastUpdateElevatedLog) {
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "Backup Update Elevated Log",
-      "the backup update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else if (!createLastUpdateLog && createBackupUpdateElevatedLog) {
-    
-    
-    Assert.ok(log.exists(), MSG_SHOULD_EXIST);
-    Assert.equal(
-      readFile(log),
-      "To Be Deleted Backup Update Elevated Log",
-      "the backup update log contents" + MSG_SHOULD_EQUAL
-    );
-  } else {
-    Assert.ok(!log.exists(), MSG_SHOULD_NOT_EXIST);
-  }
+  Assert.ok(log.exists(), MSG_SHOULD_EXIST);
+  Assert.equal(
+    readFile(log),
+    "Backup Update Log",
+    "the backup update log contents" + MSG_SHOULD_EQUAL
+  );
 
   let dir = getUpdateDirFile(DIR_PATCH);
   Assert.ok(dir.exists(), MSG_SHOULD_EXIST);
 
-  
-  reloadUpdateManagerData(true);
-}
-
-async function run_test() {
-  debugDump("testing update logs are first in first out deleted");
-  setupTestCommon();
-
-  
-  
-  
-  for (const createUpdateLog of [true, false]) {
-    for (const createUpdateElevatedLog of [true, false]) {
-      if (!createUpdateLog && !createUpdateElevatedLog) {
-        continue;
-      }
-      for (const createLastUpdateLog of [true, false]) {
-        for (const createLastUpdateElevatedLog of [true, false]) {
-          for (const createBackupUpdateLog of [true, false]) {
-            for (const createBackupUpdateElevatedLog of [true, false]) {
-              await testCleanupSuccessLogsFIFO(
-                createUpdateLog,
-                createLastUpdateLog,
-                createBackupUpdateLog,
-                createUpdateElevatedLog,
-                createLastUpdateElevatedLog,
-                createBackupUpdateElevatedLog
-              );
-            }
-          }
-        }
-      }
-    }
-  }
   doTestFinish();
 }

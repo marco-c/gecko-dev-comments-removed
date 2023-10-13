@@ -3365,37 +3365,6 @@ function removeTimeStamps(aLogContents) {
 
 
 
-function getLogFileContents() {
-  let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_ELEVATED_LOG);
-  let updateLogContents;
-  try {
-    updateLogContents = readFileBytes(updateLog);
-  } catch (ex) {
-    if (ex.result != Cr.NS_ERROR_FILE_NOT_FOUND) {
-      throw ex;
-    }
-    updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
-    updateLogContents = readFileBytes(updateLog);
-  }
-  return updateLogContents;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function checkUpdateLogContents(
   aCompareLogFile,
   aStaged = false,
@@ -3408,7 +3377,8 @@ function checkUpdateLogContents(
     return;
   }
 
-  let updateLogContents = getLogFileContents();
+  let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
+  let updateLogContents = readFileBytes(updateLog);
 
   
   updateLogContents = removeTimeStamps(updateLogContents);
@@ -3550,25 +3520,38 @@ function checkUpdateLogContents(
 
   
   
-  
-  let compareLogContentsArray = compareLogContents.split("\n");
-  let updateLogContentsArray = updateLogContents.split("\n");
-  while (updateLogContentsArray.length && compareLogContentsArray.length) {
-    if (updateLogContentsArray[0] == compareLogContentsArray[0]) {
-      compareLogContentsArray.shift();
-    }
-    updateLogContentsArray.shift();
-  }
-
-  
-  
-  if (!compareLogContentsArray.length) {
+  if (compareLogContents == updateLogContents) {
     Assert.ok(true, "the update log contents" + MSG_SHOULD_EQUAL);
   } else {
-    Assert.ok(
-      false,
-      `the update log is missing the line: '${compareLogContentsArray[0]}'`
-    );
+    logTestInfo("the update log contents are not correct");
+    logUpdateLog(FILE_LAST_UPDATE_LOG);
+    let aryLog = updateLogContents.split("\n");
+    let aryCompare = compareLogContents.split("\n");
+    
+    
+    aryLog.push("");
+    aryCompare.push("");
+    
+    
+    for (let i = 0; i < aryLog.length; ++i) {
+      if (aryLog[i] != aryCompare[i]) {
+        logTestInfo(
+          "the first incorrect line is line #" +
+            i +
+            " and the " +
+            "value is: '" +
+            aryLog[i] +
+            "'"
+        );
+        Assert.equal(
+          aryLog[i],
+          aryCompare[i],
+          "the update log contents" + MSG_SHOULD_EQUAL
+        );
+      }
+    }
+    
+    do_throw("Unable to find incorrect update log contents!");
   }
 }
 
@@ -3579,47 +3562,19 @@ function checkUpdateLogContents(
 
 
 function checkUpdateLogContains(aCheckString) {
-  let updateLogContents = getLogFileContents();
-  updateLogContents = updateLogContents.replace(/\r\n/g, "\n");
+  let updateLog = getUpdateDirFile(FILE_LAST_UPDATE_LOG);
+  let updateLogContents = readFileBytes(updateLog).replace(/\r\n/g, "\n");
   updateLogContents = removeTimeStamps(updateLogContents);
   updateLogContents = replaceLogPaths(updateLogContents);
-
-  
-  
-  
-  let isFirstCompareLine = true;
-  let compareLogContentsArray = aCheckString.split("\n");
-  let updateLogContentsArray = updateLogContents.split("\n");
-  while (updateLogContentsArray.length && compareLogContentsArray.length) {
-    let isLastCompareLine = compareLogContentsArray.length == 1;
-    if (isFirstCompareLine && isLastCompareLine) {
-      if (updateLogContentsArray[0].includes(compareLogContentsArray[0])) {
-        compareLogContentsArray.shift();
-        isFirstCompareLine = false;
-      }
-    } else if (isFirstCompareLine) {
-      if (updateLogContentsArray[0].endsWith(compareLogContentsArray[0])) {
-        compareLogContentsArray.shift();
-        isFirstCompareLine = false;
-      }
-    } else if (isLastCompareLine) {
-      if (updateLogContentsArray[0].startsWith(compareLogContentsArray[0])) {
-        compareLogContentsArray.shift();
-      }
-    } else if (updateLogContentsArray[0] == compareLogContentsArray[0]) {
-      compareLogContentsArray.shift();
-    }
-    updateLogContentsArray.shift();
-  }
-
-  if (!compareLogContentsArray.length) {
-    Assert.ok(true, "the update log contents" + MSG_SHOULD_EQUAL);
-  } else {
-    Assert.ok(
-      false,
-      `the update log is missing the line: '${compareLogContentsArray[0]}'`
-    );
-  }
+  Assert.notEqual(
+    updateLogContents.indexOf(aCheckString),
+    -1,
+    "the update log '" +
+      updateLog +
+      "' contents should contain value: '" +
+      aCheckString +
+      "'"
+  );
 }
 
 
