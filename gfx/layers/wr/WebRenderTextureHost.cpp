@@ -99,6 +99,12 @@ gfx::SurfaceFormat WebRenderTextureHost::GetFormat() const {
   return mWrappedTextureHost->GetFormat();
 }
 
+void WebRenderTextureHost::MaybeDestroyRenderTexture() {
+  
+  
+  mExternalImageId = Nothing();
+}
+
 void WebRenderTextureHost::NotifyNotUsed() {
 #ifdef MOZ_WIDGET_ANDROID
   

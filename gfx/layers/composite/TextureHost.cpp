@@ -364,6 +364,8 @@ TextureHost::TextureHost(TextureHostType aType, TextureFlags aFlags)
       mReadLocked(false) {}
 
 TextureHost::~TextureHost() {
+  MOZ_ASSERT(mExternalImageId.isNothing());
+
   if (mReadLocked) {
     
     
@@ -506,6 +508,8 @@ void BufferTextureHost::DeallocateDeviceData() {}
 
 void BufferTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
+  MOZ_ASSERT(mExternalImageId.isSome());
+
   RefPtr<wr::RenderTextureHost> texture;
 
   if (UseExternalTextures()) {
