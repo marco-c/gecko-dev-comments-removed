@@ -244,8 +244,7 @@ class GetOriginUsageOp final
     : public OpenStorageDirectoryHelper<QuotaUsageRequestBase> {
   const OriginUsageParams mParams;
   PrincipalMetadata mPrincipalMetadata;
-  uint64_t mUsage;
-  uint64_t mFileUsage;
+  UsageInfo mUsageInfo;
   bool mFromMemory;
 
  public:
@@ -1196,9 +1195,7 @@ GetOriginUsageOp::GetOriginUsageOp(
     const UsageRequestParams& aParams)
     : OpenStorageDirectoryHelper(std::move(aQuotaManager),
                                  "dom::quota::GetOriginUsageOp"),
-      mParams(aParams.get_OriginUsageParams()),
-      mUsage(0),
-      mFileUsage(0) {
+      mParams(aParams.get_OriginUsageParams()) {
   AssertIsOnOwningThread();
   MOZ_ASSERT(aParams.type() == UsageRequestParams::TOriginUsageParams);
 
@@ -1231,8 +1228,7 @@ RefPtr<BoolPromise> GetOriginUsageOp::OpenDirectory() {
 nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
   AssertIsOnIOThread();
   aQuotaManager.AssertStorageIsInitializedInternal();
-  MOZ_ASSERT(mUsage == 0);
-  MOZ_ASSERT(mFileUsage == 0);
+  MOZ_ASSERT(mUsageInfo.TotalUsage().isNothing());
 
   AUTO_PROFILER_LABEL("GetOriginUsageOp::DoDirectoryWork", OTHER);
 
@@ -1244,12 +1240,11 @@ nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
 
     
     
-    mUsage = aQuotaManager.GetOriginUsage(mPrincipalMetadata);
+    mUsageInfo += DatabaseUsageType(
+        Some(aQuotaManager.GetOriginUsage(mPrincipalMetadata)));
 
     return NS_OK;
   }
-
-  UsageInfo usageInfo;
 
   
   for (const PersistenceType type : kAllPersistenceTypes) {
@@ -1261,11 +1256,8 @@ nsresult GetOriginUsageOp::DoDirectoryWork(QuotaManager& aQuotaManager) {
       return usageInfoOrErr.unwrapErr();
     }
 
-    usageInfo += usageInfoOrErr.unwrap();
+    mUsageInfo += usageInfoOrErr.unwrap();
   }
-
-  mUsage = usageInfo.TotalUsage().valueOr(0);
-  mFileUsage = usageInfo.FileUsage().valueOr(0);
 
   return NS_OK;
 }
@@ -1275,8 +1267,7 @@ void GetOriginUsageOp::GetResponse(UsageRequestResponse& aResponse) {
 
   OriginUsageResponse usageResponse;
 
-  usageResponse.usage() = mUsage;
-  usageResponse.fileUsage() = mFileUsage;
+  usageResponse.usageInfo() = mUsageInfo;
 
   aResponse = usageResponse;
 }
