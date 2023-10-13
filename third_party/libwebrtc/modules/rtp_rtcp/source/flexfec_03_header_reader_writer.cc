@@ -8,7 +8,7 @@
 
 
 
-#include "modules/rtp_rtcp/source/flexfec_header_reader_writer2.h"
+#include "modules/rtp_rtcp/source/flexfec_03_header_reader_writer.h"
 
 #include <string.h>
 
@@ -37,10 +37,10 @@ constexpr size_t kMaxFecPackets = kMaxMediaPackets;
 constexpr size_t kFlexfecPacketMaskSizes[] = {2, 6, 14};
 
 
-constexpr size_t kBaseHeaderSize = 8;
+constexpr size_t kBaseHeaderSize = 12;
 
 
-constexpr size_t kStreamSpecificHeaderSize = 2;
+constexpr size_t kStreamSpecificHeaderSize = 6;
 
 
 
@@ -76,21 +76,15 @@ size_t FlexfecHeaderSize(size_t packet_mask_size) {
 
 }  
 
-FlexfecHeaderReader2::FlexfecHeaderReader2()
+Flexfec03HeaderReader::Flexfec03HeaderReader()
     : FecHeaderReader(kMaxTrackedMediaPackets, kMaxFecPackets) {}
 
-FlexfecHeaderReader2::~FlexfecHeaderReader2() = default;
+Flexfec03HeaderReader::~Flexfec03HeaderReader() = default;
 
 
 
-bool FlexfecHeaderReader2::ReadFecHeader(
+bool Flexfec03HeaderReader::ReadFecHeader(
     ForwardErrorCorrection::ReceivedFecPacket* fec_packet) const {
-  
-  if (fec_packet->protected_streams.empty()) {
-    RTC_LOG(LS_WARNING)
-        << "Discarding FlexFEC packet with no protected sources.";
-    return false;
-  }
   if (fec_packet->pkt->data.size() <=
       kBaseHeaderSize + kStreamSpecificHeaderSize) {
     RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
@@ -111,103 +105,100 @@ bool FlexfecHeaderReader2::ReadFecHeader(
            "not yet support this, thus discarding packet.";
     return false;
   }
+  uint8_t ssrc_count = ByteReader<uint8_t>::ReadBigEndian(&data[8]);
+  if (ssrc_count != 1) {
+    RTC_LOG(LS_INFO)
+        << "FlexFEC packet protecting multiple media SSRCs. We do not "
+           "yet support this, thus discarding packet.";
+    return false;
+  }
+  uint32_t protected_ssrc = ByteReader<uint32_t>::ReadBigEndian(&data[12]);
+  uint16_t seq_num_base = ByteReader<uint16_t>::ReadBigEndian(&data[16]);
 
   
   
-  size_t byte_index = 8;
-  for (size_t i = 0; i < fec_packet->protected_streams.size(); ++i) {
-    if (fec_packet->pkt->data.size() < byte_index + kStreamSpecificHeaderSize) {
-      RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
+  
+  
+  
+  
+  
+  
+  
+  
+  if (fec_packet->pkt->data.size() < kHeaderSizes[0]) {
+    RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
+    return false;
+  }
+  uint8_t* const packet_mask = data + kPacketMaskOffset;
+  bool k_bit0 = (packet_mask[0] & 0x80) != 0;
+  uint16_t mask_part0 = ByteReader<uint16_t>::ReadBigEndian(&packet_mask[0]);
+  
+  mask_part0 <<= 1;
+  ByteWriter<uint16_t>::WriteBigEndian(&packet_mask[0], mask_part0);
+  size_t packet_mask_size;
+  if (k_bit0) {
+    
+    
+    
+    packet_mask_size = kFlexfecPacketMaskSizes[0];
+  } else {
+    if (fec_packet->pkt->data.size() < kHeaderSizes[1]) {
       return false;
     }
-
-    fec_packet->protected_streams[i].seq_num_base =
-        ByteReader<uint16_t>::ReadBigEndian(&data[byte_index]);
-    byte_index += kStreamSpecificHeaderSize;
-
+    bool k_bit1 = (packet_mask[2] & 0x80) != 0;
     
     
     
     
+    uint8_t bit15 = (packet_mask[2] >> 6) & 0x01;
+    packet_mask[1] |= bit15;
+    uint32_t mask_part1 = ByteReader<uint32_t>::ReadBigEndian(&packet_mask[2]);
     
-    
-    
-    
-    
-    
-    
-    if (fec_packet->pkt->data.size() <
-        (byte_index + kFlexfecPacketMaskSizes[0])) {
-      RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
-      return false;
-    }
-    fec_packet->protected_streams[i].packet_mask_offset = byte_index;
-    bool k_bit0 = (data[byte_index] & 0x80) != 0;
-    uint16_t mask_part0 =
-        ByteReader<uint16_t>::ReadBigEndian(&data[byte_index]);
-    
-    mask_part0 <<= 1;
-    ByteWriter<uint16_t>::WriteBigEndian(&data[byte_index], mask_part0);
-    byte_index += kFlexfecPacketMaskSizes[0];
-    if (k_bit0) {
+    mask_part1 <<= 2;
+    ByteWriter<uint32_t>::WriteBigEndian(&packet_mask[2], mask_part1);
+    if (k_bit1) {
       
       
-      fec_packet->protected_streams[i].packet_mask_size =
-          kFlexfecPacketMaskSizes[0];
+      
+      packet_mask_size = kFlexfecPacketMaskSizes[1];
     } else {
-      if (fec_packet->pkt->data.size() <
-          (byte_index + kFlexfecPacketMaskSizes[1] -
-           kFlexfecPacketMaskSizes[0])) {
+      if (fec_packet->pkt->data.size() < kHeaderSizes[2]) {
+        RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
         return false;
       }
-      bool k_bit1 = (data[byte_index] & 0x80) != 0;
-      
-      
-      
-      
-      uint8_t bit15 = (data[byte_index] >> 6) & 0x01;
-      data[byte_index - 1] |= bit15;
-      uint32_t mask_part1 =
-          ByteReader<uint32_t>::ReadBigEndian(&data[byte_index]);
-      
-      mask_part1 <<= 2;
-      ByteWriter<uint32_t>::WriteBigEndian(&data[byte_index], mask_part1);
-      byte_index += kFlexfecPacketMaskSizes[1] - kFlexfecPacketMaskSizes[0];
-      if (k_bit1) {
+      bool k_bit2 = (packet_mask[6] & 0x80) != 0;
+      if (k_bit2) {
         
         
         
-        fec_packet->protected_streams[i].packet_mask_size =
-            kFlexfecPacketMaskSizes[1];
+        packet_mask_size = kFlexfecPacketMaskSizes[2];
       } else {
-        if (fec_packet->pkt->data.size() <
-            (byte_index + kFlexfecPacketMaskSizes[2] -
-             kFlexfecPacketMaskSizes[1])) {
-          RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
-          return false;
-        }
-        fec_packet->protected_streams[i].packet_mask_size =
-            kFlexfecPacketMaskSizes[2];
-        
-        
-        
-        
-        
-        uint8_t tail_bits = (data[byte_index] >> 6) & 0x03;
-        data[byte_index - 1] |= tail_bits;
-        uint64_t mask_part2 =
-            ByteReader<uint64_t>::ReadBigEndian(&data[byte_index]);
-        
-        
-        mask_part2 <<= 2;
-        ByteWriter<uint64_t>::WriteBigEndian(&data[byte_index], mask_part2);
-        byte_index += kFlexfecPacketMaskSizes[2] - kFlexfecPacketMaskSizes[1];
+        RTC_LOG(LS_WARNING)
+            << "Discarding FlexFEC packet with malformed header.";
+        return false;
       }
+      
+      
+      
+      
+      
+      uint8_t tail_bits = (packet_mask[6] >> 5) & 0x03;
+      packet_mask[5] |= tail_bits;
+      uint64_t mask_part2 =
+          ByteReader<uint64_t>::ReadBigEndian(&packet_mask[6]);
+      
+      
+      mask_part2 <<= 3;
+      ByteWriter<uint64_t>::WriteBigEndian(&packet_mask[6], mask_part2);
     }
   }
 
-  fec_packet->fec_header_size = byte_index;
-
+  
+  fec_packet->fec_header_size = FlexfecHeaderSize(packet_mask_size);
+  fec_packet->protected_streams = {{.ssrc = protected_ssrc,
+                                    .seq_num_base = seq_num_base,
+                                    .packet_mask_offset = kPacketMaskOffset,
+                                    .packet_mask_size = packet_mask_size}};
   
   fec_packet->protection_length =
       fec_packet->pkt->data.size() - fec_packet->fec_header_size;
@@ -215,13 +206,13 @@ bool FlexfecHeaderReader2::ReadFecHeader(
   return true;
 }
 
-FlexfecHeaderWriter2::FlexfecHeaderWriter2()
+Flexfec03HeaderWriter::Flexfec03HeaderWriter()
     : FecHeaderWriter(kMaxMediaPackets, kMaxFecPackets, kHeaderSizes[2]) {}
 
-FlexfecHeaderWriter2::~FlexfecHeaderWriter2() = default;
+Flexfec03HeaderWriter::~Flexfec03HeaderWriter() = default;
 
-size_t FlexfecHeaderWriter2::MinPacketMaskSize(const uint8_t* packet_mask,
-                                               size_t packet_mask_size) const {
+size_t Flexfec03HeaderWriter::MinPacketMaskSize(const uint8_t* packet_mask,
+                                                size_t packet_mask_size) const {
   if (packet_mask_size == kUlpfecPacketMaskSizeLBitClear &&
       (packet_mask[1] & 0x01) == 0) {
     
@@ -246,7 +237,7 @@ size_t FlexfecHeaderWriter2::MinPacketMaskSize(const uint8_t* packet_mask,
   return kFlexfecPacketMaskSizes[2];
 }
 
-size_t FlexfecHeaderWriter2::FecHeaderSize(size_t packet_mask_size) const {
+size_t Flexfec03HeaderWriter::FecHeaderSize(size_t packet_mask_size) const {
   return FlexfecHeaderSize(packet_mask_size);
 }
 
@@ -257,7 +248,7 @@ size_t FlexfecHeaderWriter2::FecHeaderSize(size_t packet_mask_size) const {
 
 
 
-void FlexfecHeaderWriter2::FinalizeFecHeader(
+void Flexfec03HeaderWriter::FinalizeFecHeader(
     uint32_t media_ssrc,
     uint16_t seq_num_base,
     const uint8_t* packet_mask,

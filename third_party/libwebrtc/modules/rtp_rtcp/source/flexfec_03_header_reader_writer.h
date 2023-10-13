@@ -8,8 +8,8 @@
 
 
 
-#ifndef MODULES_RTP_RTCP_SOURCE_FLEXFEC_HEADER_READER_WRITER2_H_
-#define MODULES_RTP_RTCP_SOURCE_FLEXFEC_HEADER_READER_WRITER2_H_
+#ifndef MODULES_RTP_RTCP_SOURCE_FLEXFEC_03_HEADER_READER_WRITER_H_
+#define MODULES_RTP_RTCP_SOURCE_FLEXFEC_03_HEADER_READER_WRITER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -38,19 +38,37 @@ namespace webrtc {
 
 
 
-class FlexfecHeaderReader2 : public FecHeaderReader {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class Flexfec03HeaderReader : public FecHeaderReader {
  public:
-  FlexfecHeaderReader2();
-  ~FlexfecHeaderReader2() override;
+  Flexfec03HeaderReader();
+  ~Flexfec03HeaderReader() override;
 
   bool ReadFecHeader(
       ForwardErrorCorrection::ReceivedFecPacket* fec_packet) const override;
 };
 
-class FlexfecHeaderWriter2 : public FecHeaderWriter {
+class Flexfec03HeaderWriter : public FecHeaderWriter {
  public:
-  FlexfecHeaderWriter2();
-  ~FlexfecHeaderWriter2() override;
+  Flexfec03HeaderWriter();
+  ~Flexfec03HeaderWriter() override;
 
   size_t MinPacketMaskSize(const uint8_t* packet_mask,
                            size_t packet_mask_size) const override;
