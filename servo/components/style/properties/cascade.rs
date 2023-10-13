@@ -553,8 +553,15 @@ struct CascadeData<'a> {
 
 impl<'a> CascadeData<'a> {
     fn note_prioritary_property(&mut self, id: PrioritaryPropertyId) {
+        let new_index = self.longhand_declarations.len();
+        if new_index >= DeclarationIndex::MAX as usize {
+            
+            
+            return;
+        }
+
         self.has_prioritary_properties = true;
-        let new_index = self.longhand_declarations.len() as DeclarationIndex;
+        let new_index = new_index as DeclarationIndex;
         let position = &mut self.prioritary_positions[id as usize];
         if position.most_important == DeclarationIndex::MAX {
             
