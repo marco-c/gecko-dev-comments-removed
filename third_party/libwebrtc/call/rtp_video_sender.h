@@ -121,6 +121,11 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       RTC_LOCKS_EXCLUDED(mutex_) override;
 
   
+  
+  void SetRetransmissionMode(int retransmission_mode)
+      RTC_LOCKS_EXCLUDED(mutex_) override;
+
+  
   void SetFecAllowed(bool fec_allowed) RTC_LOCKS_EXCLUDED(mutex_) override;
 
   
