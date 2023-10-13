@@ -357,13 +357,14 @@ ElementEditor.prototype = {
   },
 
   _createEventBadge() {
-    this._eventBadge = this.doc.createElement("div");
+    this._eventBadge = this.doc.createElement("button");
     this._eventBadge.className = "inspector-badge interactive";
     this._eventBadge.dataset.event = "true";
     this._eventBadge.textContent = "event";
     this._eventBadge.title = INSPECTOR_L10N.getStr(
       "markupView.event.tooltiptext"
     );
+    this._eventBadge.setAttribute("aria-pressed", "false");
     
     this.elt.insertBefore(
       this._eventBadge,
@@ -388,7 +389,9 @@ ElementEditor.prototype = {
       
       !this.node.isDocumentElement;
 
-    this._scrollableBadge = this.doc.createElement("div");
+    this._scrollableBadge = this.doc.createElement(
+      isInteractive ? "button" : "div"
+    );
     this._scrollableBadge.className = `inspector-badge scrollable-badge ${
       isInteractive ? "interactive" : ""
     }`;
@@ -407,6 +410,7 @@ ElementEditor.prototype = {
         "click",
         this.onScrollableBadgeClick
       );
+      this._scrollableBadge.setAttribute("aria-pressed", "false");
     }
     this.elt.insertBefore(this._scrollableBadge, this._customBadge);
   },
@@ -431,7 +435,7 @@ ElementEditor.prototype = {
   },
 
   _createDisplayBadge() {
-    this._displayBadge = this.doc.createElement("div");
+    this._displayBadge = this.doc.createElement("button");
     this._displayBadge.className = "inspector-badge";
     this._displayBadge.addEventListener("click", this.onDisplayBadgeClick);
     
@@ -455,6 +459,16 @@ ElementEditor.prototype = {
       (isGrid && this.highlighters.canGridHighlighterToggle(this.node));
 
     this._displayBadge.classList.toggle("interactive", isInteractive);
+
+    
+    
+    
+    
+    if (isInteractive) {
+      this._displayBadge.removeAttribute("role");
+    } else {
+      this._displayBadge.setAttribute("role", "presentation");
+    }
   },
 
   updateOverflowBadge() {
@@ -496,7 +510,7 @@ ElementEditor.prototype = {
   },
 
   _createCustomBadge() {
-    this._customBadge = this.doc.createElement("div");
+    this._customBadge = this.doc.createElement("button");
     this._customBadge.className = "inspector-badge interactive";
     this._customBadge.dataset.custom = "true";
     this._customBadge.textContent = "custom…";
