@@ -225,16 +225,97 @@ this.AccessibilityUtils = (function () {
 
 
 
+  function isKeyboardFocusableBrowserToolbarButton(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const toolbar = node.closest("toolbar");
+    if (!toolbar || toolbar.getAttribute("keyNav") != "true") {
+      return false;
+    }
+    return node.ownerGlobal.ToolbarKeyboardNavigator._isButton(node);
+  }
+
+  
+
+
+
+
+
+  function isKeyboardFocusablePanelMultiViewControl(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const panelview = node.closest("panelview");
+    if (!panelview || panelview.hasAttribute("disablekeynav")) {
+      return false;
+    }
+    return (
+      node.ownerGlobal.PanelView.forNode(panelview)._tabNavigableWalker.filter(
+        node
+      ) == NodeFilter.FILTER_ACCEPT
+    );
+  }
+
+  
+
+
+
+
+  function isKeyboardFocusableXULTab(accessible) {
+    const node = accessible.DOMNode;
+    return node && XULElement.isInstance(node) && node.tagName == "tab";
+  }
+
+  
+
+
+
+
+  function shouldIgnoreTabIndex(node) {
+    if (!XULElement.isInstance(node)) {
+      return false;
+    }
+    return node.tagName == "label" && node.getAttribute("is") == "text-link";
+  }
+
+  
+
+
+
+
+
+
 
 
   function isKeyboardFocusable(accessible) {
+    if (
+      isKeyboardFocusableBrowserToolbarButton(accessible) ||
+      isKeyboardFocusablePanelMultiViewControl(accessible) ||
+      isKeyboardFocusableXULTab(accessible)
+    ) {
+      return true;
+    }
     
+    const node = accessible.DOMNode;
+    const role = accessible.role;
     return (
       matchState(accessible, STATE_FOCUSABLE) &&
       
       
       
-      (!gEnv.nonNegativeTabIndexRule || accessible.DOMNode.tabIndex > -1)
+      (!gEnv.nonNegativeTabIndexRule ||
+        node.tabIndex > -1 ||
+        node.closest('[aria-activedescendant][tabindex="0"]') ||
+        
+        
+        
+        ((role == Ci.nsIAccessibleRole.ROLE_PUSHBUTTON ||
+          role == Ci.nsIAccessibleRole.ROLE_TOGGLE_BUTTON) &&
+          node.closest('[role="toolbar"]')) ||
+        shouldIgnoreTabIndex(node))
     );
   }
 
