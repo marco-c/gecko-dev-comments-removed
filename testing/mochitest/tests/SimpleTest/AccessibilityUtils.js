@@ -484,6 +484,29 @@ this.AccessibilityUtils = (function () {
     return accessibilityService.getAccessibleFor(node);
   }
 
+  
+
+
+  function findInteractiveAccessible(node) {
+    let acc;
+    
+    for (; node && !acc; node = node.parentNode) {
+      acc = getAccessible(node);
+    }
+    if (!acc) {
+      
+      return acc;
+    }
+    
+    for (; acc; acc = acc.parent) {
+      if (INTERACTIVE_ROLES.has(acc.role)) {
+        return acc;
+      }
+    }
+    
+    return null;
+  }
+
   function runIfA11YChecks(task) {
     return (...args) => (gA11YChecks ? task(...args) : null);
   }
@@ -499,7 +522,11 @@ this.AccessibilityUtils = (function () {
 
   const AccessibilityUtils = {
     assertCanBeClicked(node) {
-      const acc = getAccessible(node);
+      
+      
+      
+      
+      const acc = findInteractiveAccessible(node);
       if (!acc) {
         if (gEnv.mustHaveAccessibleRule) {
           a11yFail("Node is not accessible via accessibility API", {
@@ -542,6 +569,34 @@ this.AccessibilityUtils = (function () {
       
       
       this.resetEnv();
+    },
+
+    init() {
+      
+      
+      
+      this._handler ??=
+        window.docShell.chromeEventHandler ?? window.docShell.domWindow;
+      this._handler.addEventListener("click", this, true, true);
+    },
+
+    uninit() {
+      this._handler?.removeEventListener("click", this, true);
+      this._handler = null;
+    },
+
+    handleEvent({ composedTarget }) {
+      const bounds =
+        composedTarget.ownerGlobal?.windowUtils?.getBoundsWithoutFlushing(
+          composedTarget
+        );
+      if (bounds && (bounds.width == 0 || bounds.height == 0)) {
+        
+        
+        
+        return;
+      }
+      this.assertCanBeClicked(composedTarget);
     },
   };
 
