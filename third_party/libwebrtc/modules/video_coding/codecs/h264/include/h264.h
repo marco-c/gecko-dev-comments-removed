@@ -52,6 +52,7 @@ std::vector<SdpVideoFormat> SupportedH264DecoderCodecs();
 class RTC_EXPORT H264Encoder : public VideoEncoder {
  public:
   static std::unique_ptr<H264Encoder> Create(const cricket::VideoCodec& codec);
+  static std::unique_ptr<H264Encoder> Create();
   
   static bool IsSupported();
   static bool SupportsScalabilityMode(ScalabilityMode scalability_mode);
