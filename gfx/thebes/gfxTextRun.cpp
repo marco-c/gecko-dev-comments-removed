@@ -2246,13 +2246,14 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
   
   
   
+  
   auto isValidForChar = [](gfxFont* aFont, uint32_t aCh) -> bool {
     if (!aFont) {
       return false;
     }
-    if (aCh == 0x20) {
+    if (aCh == kCSSFirstAvailableFont) {
       if (const auto* unicodeRange = aFont->GetUnicodeRangeMap()) {
-        return unicodeRange->test(aCh);
+        return unicodeRange->test(' ');
       }
       return true;
     }
@@ -2283,7 +2284,8 @@ already_AddRefed<gfxFont> gfxFontGroup::GetFirstValidFont(
     gfxFontEntry* fe = ff.FontEntry();
     if (fe && fe->mIsUserFontContainer) {
       gfxUserFontEntry* ufe = static_cast<gfxUserFontEntry*>(fe);
-      bool inRange = ufe->CharacterInUnicodeRange(aCh);
+      bool inRange = ufe->CharacterInUnicodeRange(
+          aCh == kCSSFirstAvailableFont ? ' ' : aCh);
       if (inRange) {
         if (!loading &&
             ufe->LoadState() == gfxUserFontEntry::STATUS_NOT_LOADED) {
