@@ -2318,9 +2318,11 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
       NS_WARNING("WhiteSpaceVisibilityKeeper::InsertBRElement() failed");
       return invisibleAdditionalBRElementResult;
     }
+    
+    
+    
     afterBRElement.Set(
         invisibleAdditionalBRElementResult.inspect().GetNewNode());
-    invisibleAdditionalBRElementResult.inspect().IgnoreCaretPointSuggestion();
     return invisibleAdditionalBRElementResult;
   };
 
@@ -2331,15 +2333,19 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
     
     
     
+    EditorDOMPoint pointToPutCaret;
     if (editingHostIsEmpty) {
-      auto invisibleAdditionalBRElementResult =
+      Result<CreateElementResult, nsresult> invisibleAdditionalBRElementResult =
           InsertAdditionalInvisibleLineBreak();
       if (invisibleAdditionalBRElementResult.isErr()) {
         return invisibleAdditionalBRElementResult;
       }
+      invisibleAdditionalBRElementResult.unwrap().IgnoreCaretPointSuggestion();
+      pointToPutCaret = std::move(afterBRElement);
+    } else {
+      pointToPutCaret =
+          EditorDOMPoint(brElement, InterlinePosition::StartOfNextLine);
     }
-    EditorDOMPoint pointToPutCaret(brElement,
-                                   InterlinePosition::StartOfNextLine);
     return CreateElementResult(std::move(brElement),
                                std::move(pointToPutCaret));
   }
@@ -2385,11 +2391,12 @@ Result<CreateElementResult, nsresult> HTMLEditor::HandleInsertBRElement(
     }
   } else if (forwardScanFromAfterBRElementResult.ReachedBlockBoundary() &&
              !brElementIsAfterBlock) {
-    auto invisibleAdditionalBRElementResult =
+    Result<CreateElementResult, nsresult> invisibleAdditionalBRElementResult =
         InsertAdditionalInvisibleLineBreak();
     if (invisibleAdditionalBRElementResult.isErr()) {
       return invisibleAdditionalBRElementResult;
     }
+    invisibleAdditionalBRElementResult.unwrap().IgnoreCaretPointSuggestion();
   }
 
   
