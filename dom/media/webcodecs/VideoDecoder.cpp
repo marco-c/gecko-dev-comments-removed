@@ -836,28 +836,6 @@ already_AddRefed<Promise> VideoDecoder::Flush(ErrorResult& aRv) {
 }
 
 
-void VideoDecoder::Reset(ErrorResult& aRv) {
-  AssertIsOnOwningThread();
-
-  LOG("VideoDecoder %p, Reset", this);
-
-  if (auto r = ResetInternal(NS_ERROR_DOM_ABORT_ERR); r.isErr()) {
-    aRv.Throw(r.unwrapErr());
-  }
-}
-
-
-void VideoDecoder::Close(ErrorResult& aRv) {
-  AssertIsOnOwningThread();
-
-  LOG("VideoDecoder %p, Close", this);
-
-  if (auto r = CloseInternal(NS_ERROR_DOM_ABORT_ERR); r.isErr()) {
-    aRv.Throw(r.unwrapErr());
-  }
-}
-
-
 
 already_AddRefed<Promise> VideoDecoder::IsConfigSupported(
     const GlobalObject& aGlobal, const VideoDecoderConfig& aConfig,
