@@ -1,6 +1,13 @@
 
 
 
+
+var EventUtils = {};
+Services.scriptloader.loadSubScript(
+  "chrome://mochikit/content/tests/SimpleTest/EventUtils.js",
+  EventUtils
+);
+
 add_task(async function test() {
   
   let toolbar = document.getElementById("PersonalToolbar");

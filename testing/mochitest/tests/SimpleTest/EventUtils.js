@@ -255,6 +255,10 @@ function sendMouseEvent(aEvent, aTarget, aWindow) {
     aTarget = aWindow.document.getElementById(aTarget);
   }
 
+  if (aEvent.type === "click" && this.AccessibilityUtils) {
+    this.AccessibilityUtils.assertCanBeClicked(aTarget);
+  }
+
   var event = aWindow.document.createEvent("MouseEvent");
 
   var typeArg = aEvent.type;
@@ -2979,14 +2983,7 @@ function synthesizeDropAfterDragOver(
     );
     sendDragEvent(event, aDestElement, aDestWindow);
   }
-  
-  
-  
-  
-  
-  this.AccessibilityUtils?.suppressClickHandling(true);
   synthesizeMouse(aDestElement, 2, 2, { type: "mouseup" }, aDestWindow);
-  this.AccessibilityUtils?.suppressClickHandling(false);
 
   return effect;
 }
