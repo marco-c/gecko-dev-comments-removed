@@ -19,19 +19,14 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/synchronization/mutex.h"
 
 
 #undef max
 
 namespace rtc {
 
-
-class RandomGenerator {
- public:
-  virtual ~RandomGenerator() {}
-  virtual bool Init(const void* seed, size_t len) = 0;
-  virtual bool Generate(void* buf, size_t len) = 0;
-};
+namespace {
 
 
 class SecureRandomGenerator : public RandomGenerator {
@@ -64,8 +59,6 @@ class TestRandomGenerator : public RandomGenerator {
   int seed_;
 };
 
-namespace {
-
 
 static const char kBase64[64] = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
@@ -78,6 +71,13 @@ static const char kHex[16] = {'0', '1', '2', '3', '4', '5', '6', '7',
                               '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
 static const char kUuidDigit17[4] = {'8', '9', 'a', 'b'};
+
+
+
+webrtc::Mutex& GetRandomGeneratorLock() {
+  static webrtc::Mutex& mutex = *new webrtc::Mutex();
+  return mutex;
+}
 
 
 
@@ -94,7 +94,18 @@ RandomGenerator& Rng() {
 
 }  
 
+void SetDefaultRandomGenerator() {
+  webrtc::MutexLock lock(&GetRandomGeneratorLock());
+  GetGlobalRng().reset(new SecureRandomGenerator());
+}
+
+void SetRandomGenerator(std::unique_ptr<RandomGenerator> generator) {
+  webrtc::MutexLock lock(&GetRandomGeneratorLock());
+  GetGlobalRng() = std::move(generator);
+}
+
 void SetRandomTestMode(bool test) {
+  webrtc::MutexLock lock(&GetRandomGeneratorLock());
   if (!test) {
     GetGlobalRng().reset(new SecureRandomGenerator());
   } else {
