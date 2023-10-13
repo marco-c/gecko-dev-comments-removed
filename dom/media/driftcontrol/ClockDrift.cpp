@@ -45,6 +45,14 @@ void ClockDrift::UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
   mSourceClock += aSourceFrames;
   mTotalTargetClock += aTargetFrames;
 
+  if (aSourceFrames == 0) {
+    
+    
+    
+    
+    return;
+  }
+
   if (mSourceClock >= mSourceRate / 10 || mTargetClock >= mTargetRate / 10) {
     
     if (aBufferedFrames < mDesiredBuffering * 4 / 10  ||
