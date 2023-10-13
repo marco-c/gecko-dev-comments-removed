@@ -1589,16 +1589,30 @@ Toolbox.prototype = {
   },
 
   _splitConsoleOnKeypress(e) {
-    if (e.keyCode === KeyCodes.DOM_VK_ESCAPE) {
-      this.toggleSplitConsole();
-      
-      
-      if (
-        this.threadFront.state == "paused" ||
-        this.hostType === Toolbox.HostType.PAGE
-      ) {
-        e.preventDefault();
+    if (e.keyCode !== KeyCodes.DOM_VK_ESCAPE) {
+      return;
+    }
+
+    const currentPanel = this.getCurrentPanel();
+    if (
+      typeof currentPanel.onToolboxChromeEventHandlerEscapeKeyDown ===
+      "function"
+    ) {
+      const ac = new this.win.AbortController();
+      currentPanel.onToolboxChromeEventHandlerEscapeKeyDown(ac);
+      if (ac.signal.aborted) {
+        return;
       }
+    }
+
+    this.toggleSplitConsole();
+    
+    
+    if (
+      this.threadFront.state == "paused" ||
+      this.hostType === Toolbox.HostType.PAGE
+    ) {
+      e.preventDefault();
     }
   },
 

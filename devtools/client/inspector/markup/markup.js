@@ -401,6 +401,10 @@ MarkupView.prototype = {
     return this._contextMenu;
   },
 
+  hasEventDetailsTooltip() {
+    return !!this._eventDetailsTooltip;
+  },
+
   get eventDetailsTooltip() {
     if (!this._eventDetailsTooltip) {
       

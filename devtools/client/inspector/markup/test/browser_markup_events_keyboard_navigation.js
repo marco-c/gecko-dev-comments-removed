@@ -30,4 +30,13 @@ add_task(async function () {
   ok(true, "The tooltip is shown");
 
   
+
+  const onTooltipHidden = tooltip.once("hidden");
+  EventUtils.sendKey("ESCAPE", inspector.toolbox.win);
+  await onTooltipHidden;
+  ok(true, "The tooltip is hidden");
+
+  
+  await wait(500);
+  ok(!inspector.toolbox.splitConsole, "Split console is now hidden.");
 });

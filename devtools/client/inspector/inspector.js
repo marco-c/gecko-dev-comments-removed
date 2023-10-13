@@ -2015,6 +2015,23 @@ Inspector.prototype = {
     await this.selection.setNodeFront(nodeFront, { reason });
     return true;
   },
+
+  
+
+
+
+
+  onToolboxChromeEventHandlerEscapeKeyDown(abortController) {
+    
+    
+    if (
+      this.markup.hasEventDetailsTooltip() &&
+      this.markup.eventDetailsTooltip.isVisible()
+    ) {
+      this.markup.eventDetailsTooltip.hide();
+      abortController.abort();
+    }
+  },
 };
 
 exports.Inspector = Inspector;
