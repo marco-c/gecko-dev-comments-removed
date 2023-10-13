@@ -912,12 +912,11 @@ WebRtcVideoEngine::GetRtpHeaderExtensions() const {
           ? webrtc::RtpTransceiverDirection::kSendRecv
           : webrtc::RtpTransceiverDirection::kStopped);
 
-  result.emplace_back(
-      webrtc::RtpExtension::kVideoFrameTrackingIdUri, id++,
-      IsEnabled(trials_, "WebRTC-VideoFrameTrackingIdAdvertised")
-          ? webrtc::RtpTransceiverDirection::kSendRecv
-          : webrtc::RtpTransceiverDirection::kStopped);
-
+  
+  if (IsEnabled(trials_, "WebRTC-VideoFrameTrackingIdAdvertised")) {
+    result.emplace_back(webrtc::RtpExtension::kVideoFrameTrackingIdUri, id++,
+                        webrtc::RtpTransceiverDirection::kSendRecv);
+  }
   return result;
 }
 
