@@ -13,6 +13,21 @@ using mozilla::Some;
 namespace js {
 namespace wasm {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #if defined(DEBUG)
 
 
