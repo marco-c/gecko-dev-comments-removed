@@ -1590,7 +1590,7 @@ void Loader::NotifyObservers(SheetLoadData& aData, nsresult aStatus) {
     
     
     if (aData.BlocksLoadEvent()) {
-      DecrementOngoingLoadCount();
+      DecrementOngoingLoadCountAndMaybeUnblockOnload();
       if (mPendingLoadCount && mPendingLoadCount == mOngoingLoadCount) {
         LOG(("  No more loading sheets; starting deferred loads"));
         StartDeferredLoads();
@@ -2161,6 +2161,7 @@ void Loader::NotifyOfCachedLoad(RefPtr<SheetLoadData> aLoadData) {
   MOZ_ASSERT(!aLoadData->mLoadFailed, "Why are we marked as failed?");
   aLoadData->mSheetAlreadyComplete = true;
 
+  
   
   if (aLoadData->mURI && aLoadData->BlocksLoadEvent()) {
     IncrementOngoingLoadCountAndMaybeBlockOnload();
