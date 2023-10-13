@@ -1065,9 +1065,7 @@ fn change_bits_for_longhand(longhand: LonghandId) -> WillChangeBits {
         LonghandId::Rotate |
         LonghandId::Scale |
         LonghandId::OffsetPath => WillChangeBits::TRANSFORM,
-        LonghandId::MozTopLayer | LonghandId::BackdropFilter | LonghandId::Filter => {
-            
-            
+        LonghandId::BackdropFilter | LonghandId::Filter => {
             WillChangeBits::STACKING_CONTEXT_UNCONDITIONAL | WillChangeBits::FIXPOS_CB_NON_SVG
         },
         LonghandId::MixBlendMode |
