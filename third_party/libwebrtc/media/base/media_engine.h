@@ -98,6 +98,28 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
   
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const = 0;
 
+  virtual std::unique_ptr<VoiceMediaSendChannelInterface> CreateSendChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options,
+      webrtc::AudioCodecPairId codec_pair_id) {
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
+  virtual std::unique_ptr<VoiceMediaReceiveChannelInterface>
+  CreateReceiveChannel(webrtc::Call* call,
+                       const MediaConfig& config,
+                       const AudioOptions& options,
+                       const webrtc::CryptoOptions& crypto_options,
+                       webrtc::AudioCodecPairId codec_pair_id) {
+    
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
   
   
   virtual VoiceMediaChannel* CreateMediaChannel(
