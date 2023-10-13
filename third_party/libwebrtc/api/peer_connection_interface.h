@@ -448,9 +448,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     
     absl::optional<int> screencast_min_bitrate;
 
-    
-    absl::optional<bool> combined_audio_video_bwe;
-
 #if defined(WEBRTC_FUCHSIA)
     
     

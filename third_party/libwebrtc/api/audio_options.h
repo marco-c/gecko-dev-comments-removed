@@ -61,11 +61,6 @@ struct RTC_EXPORT AudioOptions {
   
   
   
-  
-  absl::optional<bool> combined_audio_video_bwe;
-  
-  
-  
   absl::optional<bool> audio_network_adaptor;
   
   absl::optional<std::string> audio_network_adaptor_config;
