@@ -47,7 +47,6 @@ module.exports = {
       {
         ignoreFunctions: [
           "light-dark" ,
-          "-moz-image-rect" ,
           "add" ,
         ],
       },
