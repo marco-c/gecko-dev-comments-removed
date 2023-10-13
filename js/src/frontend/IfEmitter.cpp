@@ -226,8 +226,9 @@ bool IfEmitter::emitEnd() {
   return true;
 }
 
-InternalIfEmitter::InternalIfEmitter(BytecodeEmitter* bce)
-    : IfEmitter(bce, LexicalKind::NoLexicalAccessInBranch) {
+InternalIfEmitter::InternalIfEmitter(BytecodeEmitter* bce,
+                                     LexicalKind lexicalKind)
+    : IfEmitter(bce, lexicalKind) {
 #ifdef DEBUG
   
   state_ = State::If;

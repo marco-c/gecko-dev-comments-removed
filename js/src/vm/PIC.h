@@ -149,8 +149,11 @@ struct ForOfPIC {
     const GCPtr<JSObject*> picObject_;
 
     
+    
     GCPtr<NativeObject*> arrayProto_;
     GCPtr<NativeObject*> arrayIteratorProto_;
+    GCPtr<NativeObject*> iteratorProto_;
+    GCPtr<NativeObject*> objectProto_;
 
     
     
@@ -163,6 +166,11 @@ struct ForOfPIC {
     GCPtr<Shape*> arrayIteratorProtoShape_;
     uint32_t arrayIteratorProtoNextSlot_;
     GCPtr<Value> canonicalNextFunc_;
+
+    
+    GCPtr<Shape*> iteratorProtoShape_;
+    
+    GCPtr<Shape*> objectProtoShape_;
 
     
     bool initialized_;
@@ -211,10 +219,24 @@ struct ForOfPIC {
     bool isArrayStateStillSane();
 
     
-    inline bool isArrayNextStillSane() {
-      return (arrayIteratorProto_->shape() == arrayIteratorProtoShape_) &&
-             (arrayIteratorProto_->getSlot(arrayIteratorProtoNextSlot_) ==
-              canonicalNextFunc_);
+    
+    inline bool isArrayIteratorStateStillSane() {
+      
+      
+      if (arrayIteratorProto_->shape() != arrayIteratorProtoShape_) {
+        return false;
+      }
+
+      if (iteratorProto_->shape() != iteratorProtoShape_) {
+        return false;
+      }
+
+      if (objectProto_->shape() != objectProtoShape_) {
+        return false;
+      }
+
+      return arrayIteratorProto_->getSlot(arrayIteratorProtoNextSlot_) ==
+             canonicalNextFunc_;
     }
 
     

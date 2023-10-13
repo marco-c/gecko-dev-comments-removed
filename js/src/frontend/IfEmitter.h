@@ -21,23 +21,7 @@ namespace frontend {
 struct BytecodeEmitter;
 
 class MOZ_STACK_CLASS BranchEmitterBase {
- protected:
-  BytecodeEmitter* bce_;
-
-  
-  JumpList jumpAroundThen_;
-
-  
-  JumpList jumpsAroundElse_;
-
-  
-  
-  
-  
-  int32_t thenDepth_ = 0;
-
-  enum class ConditionKind { Positive, Negative };
-
+ public:
   
   
   
@@ -57,6 +41,23 @@ class MOZ_STACK_CLASS BranchEmitterBase {
     
     NoLexicalAccessInBranch
   };
+
+ protected:
+  BytecodeEmitter* bce_;
+
+  
+  JumpList jumpAroundThen_;
+
+  
+  JumpList jumpsAroundElse_;
+
+  
+  
+  
+  
+  int32_t thenDepth_ = 0;
+
+  enum class ConditionKind { Positive, Negative };
   LexicalKind lexicalKind_;
 
   mozilla::Maybe<TDZCheckCache> tdzCache_;
@@ -246,7 +247,10 @@ class MOZ_STACK_CLASS IfEmitter : public BranchEmitterBase {
 
 class MOZ_STACK_CLASS InternalIfEmitter : public IfEmitter {
  public:
-  explicit InternalIfEmitter(BytecodeEmitter* bce);
+  explicit InternalIfEmitter(
+      BytecodeEmitter* bce,
+      LexicalKind lexicalKind =
+          BranchEmitterBase::LexicalKind::NoLexicalAccessInBranch);
 };
 
 

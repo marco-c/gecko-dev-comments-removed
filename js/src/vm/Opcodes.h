@@ -1420,6 +1420,18 @@
 
 
 
+ \
+    MACRO(OptimizeGetIterator, optimize_get_iterator, NULL, 1, 1, 1, JOF_BYTE|JOF_IC) \
+    
+
+
+
+
+
+
+
+
+
 
 
 
@@ -3573,14 +3585,13 @@
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(MACRO) \
-  IF_RECORD_TUPLE(, MACRO(231))     \
   IF_RECORD_TUPLE(, MACRO(232))     \
   IF_RECORD_TUPLE(, MACRO(233))     \
   IF_RECORD_TUPLE(, MACRO(234))     \
   IF_RECORD_TUPLE(, MACRO(235))     \
   IF_RECORD_TUPLE(, MACRO(236))     \
   IF_RECORD_TUPLE(, MACRO(237))     \
-  MACRO(238)                                   \
+  IF_RECORD_TUPLE(, MACRO(238))     \
   MACRO(239)                                   \
   MACRO(240)                                   \
   MACRO(241)                                   \

@@ -56,10 +56,24 @@ bool js::ForOfPIC::Chain::initialize(JSContext* cx) {
   }
 
   
+  Rooted<NativeObject*> iteratorProto(
+      cx, MaybeNativeObject(
+              GlobalObject::getOrCreateIteratorPrototype(cx, cx->global())));
+  if (!iteratorProto) {
+    return false;
+  }
+
+  Rooted<NativeObject*> objectProto(
+      cx, MaybeNativeObject(&cx->global()->getObjectPrototype()));
+  MOZ_ASSERT(objectProto);
+
+  
   
   initialized_ = true;
   arrayProto_ = arrayProto;
   arrayIteratorProto_ = arrayIteratorProto;
+  iteratorProto_ = iteratorProto;
+  objectProto_ = objectProto;
 
   
   
@@ -101,6 +115,31 @@ bool js::ForOfPIC::Chain::initialize(JSContext* cx) {
     return true;
   }
 
+  
+  if (arrayIteratorProto->lookup(cx, cx->names().return_).isSome()) {
+    return true;
+  }
+
+  
+  if (arrayIteratorProto->staticPrototype() != iteratorProto) {
+    return true;
+  }
+
+  
+  if (iteratorProto->lookup(cx, cx->names().return_).isSome()) {
+    return true;
+  }
+
+  
+  if (iteratorProto->staticPrototype() != objectProto) {
+    return true;
+  }
+
+  
+  if (objectProto->lookup(cx, cx->names().return_).isSome()) {
+    return true;
+  }
+
   disabled_ = false;
   arrayProtoShape_ = arrayProto->shape();
   arrayProtoIteratorSlot_ = iterProp->slot();
@@ -108,6 +147,8 @@ bool js::ForOfPIC::Chain::initialize(JSContext* cx) {
   arrayIteratorProtoShape_ = arrayIteratorProto->shape();
   arrayIteratorProtoNextSlot_ = nextProp->slot();
   canonicalNextFunc_ = next;
+  iteratorProtoShape_ = iteratorProto->shape();
+  objectProtoShape_ = objectProto->shape();
   return true;
 }
 
@@ -221,7 +262,7 @@ bool js::ForOfPIC::Chain::tryOptimizeArrayIteratorNext(JSContext* cx,
     if (!initialize(cx)) {
       return false;
     }
-  } else if (!disabled_ && !isArrayNextStillSane()) {
+  } else if (!disabled_ && !isArrayIteratorStateStillSane()) {
     
     reset(cx);
 
@@ -237,7 +278,7 @@ bool js::ForOfPIC::Chain::tryOptimizeArrayIteratorNext(JSContext* cx,
   }
 
   
-  MOZ_ASSERT(isArrayNextStillSane());
+  MOZ_ASSERT(isArrayIteratorStateStillSane());
 
   *optimized = true;
   return true;
@@ -270,7 +311,7 @@ bool js::ForOfPIC::Chain::isArrayStateStillSane() {
   }
 
   
-  return isArrayNextStillSane();
+  return isArrayIteratorStateStillSane();
 }
 
 void js::ForOfPIC::Chain::reset(JSContext* cx) {
@@ -282,6 +323,8 @@ void js::ForOfPIC::Chain::reset(JSContext* cx) {
 
   arrayProto_ = nullptr;
   arrayIteratorProto_ = nullptr;
+  iteratorProto_ = nullptr;
+  objectProto_ = nullptr;
 
   arrayProtoShape_ = nullptr;
   arrayProtoIteratorSlot_ = -1;
@@ -290,6 +333,9 @@ void js::ForOfPIC::Chain::reset(JSContext* cx) {
   arrayIteratorProtoShape_ = nullptr;
   arrayIteratorProtoNextSlot_ = -1;
   canonicalNextFunc_ = UndefinedValue();
+
+  iteratorProtoShape_ = nullptr;
+  objectProtoShape_ = nullptr;
 
   initialized_ = false;
 }
@@ -310,10 +356,14 @@ void js::ForOfPIC::Chain::trace(JSTracer* trc) {
 
   TraceEdge(trc, &arrayProto_, "ForOfPIC Array.prototype.");
   TraceEdge(trc, &arrayIteratorProto_, "ForOfPIC ArrayIterator.prototype.");
+  TraceEdge(trc, &iteratorProto_, "ForOfPIC Iterator.prototype.");
+  TraceEdge(trc, &objectProto_, "ForOfPIC Object.prototype.");
 
   TraceEdge(trc, &arrayProtoShape_, "ForOfPIC Array.prototype shape.");
   TraceEdge(trc, &arrayIteratorProtoShape_,
             "ForOfPIC ArrayIterator.prototype shape.");
+  TraceEdge(trc, &iteratorProtoShape_, "ForOfPIC Iterator.prototype shape.");
+  TraceEdge(trc, &objectProtoShape_, "ForOfPIC Object.prototype shape.");
 
   TraceEdge(trc, &canonicalIteratorFunc_, "ForOfPIC ArrayValues builtin.");
   TraceEdge(trc, &canonicalNextFunc_,

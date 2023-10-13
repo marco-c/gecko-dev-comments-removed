@@ -3243,6 +3243,46 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  bool isEligibleForArrayOptimizations = true;
+  for (ParseNode* member : pattern->contents()) {
+    switch (member->getKind()) {
+      case ParseNodeKind::Elision:
+        break;
+      case ParseNodeKind::Name: {
+        auto name = member->as<NameNode>().name();
+        NameLocation loc = lookupName(name);
+        if (loc.kind() != NameLocation::Kind::ArgumentSlot &&
+            loc.kind() != NameLocation::Kind::FrameSlot &&
+            loc.kind() != NameLocation::Kind::EnvironmentCoordinate) {
+          isEligibleForArrayOptimizations = false;
+        }
+        break;
+      }
+      default:
+        
+        
+        
+        
+        isEligibleForArrayOptimizations = false;
+        break;
+    }
+    if (!isEligibleForArrayOptimizations) {
+      break;
+    }
+  }
 
   
   
@@ -3250,6 +3290,126 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
     
     return false;
   }
+
+  Maybe<InternalIfEmitter> ifArrayOptimizable;
+
+  if (isEligibleForArrayOptimizations) {
+    ifArrayOptimizable.emplace(
+        this, BranchEmitterBase::LexicalKind::MayContainLexicalAccessInBranch);
+
+    if (!emit1(JSOp::Dup)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::OptimizeGetIterator)) {
+      
+      return false;
+    }
+
+    if (!ifArrayOptimizable->emitThenElse()) {
+      
+      return false;
+    }
+
+    if (!emitAtomOp(JSOp::GetProp,
+                    TaggedParserAtomIndex::WellKnown::length())) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+
+    uint32_t idx = 0;
+    for (ParseNode* member : pattern->contents()) {
+      if (member->isKind(ParseNodeKind::Elision)) {
+        idx += 1;
+        continue;
+      }
+
+      if (!emit1(JSOp::Dup)) {
+        
+        return false;
+      }
+
+      if (!emitNumberOp(idx)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Dup)) {
+        
+        return false;
+      }
+
+      if (!emitDupAt(4)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Lt)) {
+        
+        return false;
+      }
+
+      InternalIfEmitter isInDenseBounds(this);
+      if (!isInDenseBounds.emitThenElse()) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::GetElem)) {
+        
+        return false;
+      }
+
+      if (!isInDenseBounds.emitElse()) {
+        
+        return false;
+      }
+
+      if (!emitPopN(2)) {
+        
+        return false;
+      }
+
+      if (!emit1(JSOp::Undefined)) {
+        
+        return false;
+      }
+
+      if (!isInDenseBounds.emitEnd()) {
+        
+        return false;
+      }
+
+      if (!emitSetOrInitializeDestructuring(member, flav)) {
+        
+        return false;
+      }
+
+      idx += 1;
+    }
+
+    if (!emit1(JSOp::Swap)) {
+      
+      return false;
+    }
+
+    if (!emit1(JSOp::Pop)) {
+      
+      return false;
+    }
+
+    if (!ifArrayOptimizable->emitElse()) {
+      
+      return false;
+    }
+  }
+
   if (!emitIterator(SelfHostedIter::Deny)) {
     
     return false;
@@ -3267,8 +3427,19 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
       return false;
     }
 
-    return emitIteratorCloseInInnermostScope();
-    
+    if (!emitIteratorCloseInInnermostScope()) {
+      
+      return false;
+    }
+
+    if (ifArrayOptimizable.isSome()) {
+      if (!ifArrayOptimizable->emitEnd()) {
+        
+        return false;
+      }
+    }
+
+    return true;
   }
 
   
@@ -3571,6 +3742,13 @@ bool BytecodeEmitter::emitDestructuringOpsArray(ListNode* pattern,
   }
   if (!ifDone.emitEnd()) {
     return false;
+  }
+
+  if (ifArrayOptimizable.isSome()) {
+    if (!ifArrayOptimizable->emitEnd()) {
+      
+      return false;
+    }
   }
 
   return true;
