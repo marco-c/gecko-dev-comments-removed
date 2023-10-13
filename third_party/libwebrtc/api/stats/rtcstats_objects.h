@@ -251,8 +251,10 @@ class RTC_EXPORT RTCIceCandidateStats : public RTCStats {
   
   RTCStatsMember<std::string> tcp_type;
 
-  RTCNonStandardStatsMember<bool> vpn;
-  RTCNonStandardStatsMember<std::string> network_adapter_type;
+  
+  
+  RTCStatsMember<bool> vpn;
+  RTCStatsMember<std::string> network_adapter_type;
 
  protected:
   RTCIceCandidateStats(std::string id, Timestamp timestamp, bool is_remote);
@@ -402,9 +404,8 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   
   RTCStatsMember<double> estimated_playout_timestamp;
   
-  RTCRestrictedStatsMember<std::string,
-                           StatExposureCriteria::kHardwareCapability>
-      decoder_implementation;
+  
+  RTCStatsMember<std::string> decoder_implementation;
   
   RTCStatsMember<uint32_t> fir_count;
   RTCStatsMember<uint32_t> pli_count;
@@ -417,17 +418,17 @@ class RTC_EXPORT RTCInboundRtpStreamStats final
   
   
   RTCStatsMember<std::string> goog_timing_frame_info;
-  RTCRestrictedStatsMember<bool, StatExposureCriteria::kHardwareCapability>
-      power_efficient_decoder;
   
-  RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
-  RTCNonStandardStatsMember<uint64_t> delayed_packet_outage_samples;
-  RTCNonStandardStatsMember<double> relative_packet_arrival_delay;
-  RTCNonStandardStatsMember<uint32_t> interruption_count;
-  RTCNonStandardStatsMember<double> total_interruption_duration;
+  RTCStatsMember<bool> power_efficient_decoder;
 
   
-  RTCNonStandardStatsMember<double> min_playout_delay;
+  
+  RTCStatsMember<uint64_t> jitter_buffer_flushes;
+  RTCStatsMember<uint64_t> delayed_packet_outage_samples;
+  RTCStatsMember<double> relative_packet_arrival_delay;
+  RTCStatsMember<uint32_t> interruption_count;
+  RTCStatsMember<double> total_interruption_duration;
+  RTCStatsMember<double> min_playout_delay;
 };
 
 
@@ -467,17 +468,16 @@ class RTC_EXPORT RTCOutboundRtpStreamStats final
   RTCStatsMember<std::string> content_type;
   
   
-  RTCRestrictedStatsMember<std::string,
-                           StatExposureCriteria::kHardwareCapability>
-      encoder_implementation;
+  
+  RTCStatsMember<std::string> encoder_implementation;
   
   RTCStatsMember<uint32_t> fir_count;
   RTCStatsMember<uint32_t> pli_count;
   RTCStatsMember<uint32_t> nack_count;
   RTCStatsMember<uint64_t> qp_sum;
   RTCStatsMember<bool> active;
-  RTCRestrictedStatsMember<bool, StatExposureCriteria::kHardwareCapability>
-      power_efficient_encoder;
+  
+  RTCStatsMember<bool> power_efficient_encoder;
   RTCStatsMember<std::string> scalability_mode;
 };
 
