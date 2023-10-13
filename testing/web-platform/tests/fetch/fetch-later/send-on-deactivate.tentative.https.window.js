@@ -9,6 +9,11 @@
 
 'use strict';
 
+
+
+
+
+
 parallelPromiseTest(async t => {
   const uuid = token();
   const url = generateSetBeaconURL(uuid);
@@ -36,8 +41,10 @@ parallelPromiseTest(async t => {
     return window.pageshowEvent.persisted;
   }));
 
-  await expectBeacon(uuid, {count: 0});
-}, `fetchLater() does not send on page entering BFCache.`);
+  
+  
+  await expectBeacon(uuid, {count: 1});
+}, `fetchLater() sends on page entering BFCache if BackgroundSync is off.`);
 
 parallelPromiseTest(async t => {
   const uuid = token();
@@ -69,6 +76,7 @@ parallelPromiseTest(async t => {
     return window.pageshowEvent.persisted;
   }));
 
+  
   await expectBeacon(uuid, {count: 1});
 }, `Call fetchLater() when BFCached with activationTimeout=0 sends immediately.`);
 
@@ -101,3 +109,37 @@ parallelPromiseTest(async t => {
 
   await expectBeacon(uuid, {count: 1});
 }, `fetchLater() sends on navigating away a page w/o BFCache.`);
+
+parallelPromiseTest(async t => {
+  const uuid = token();
+  const url = generateSetBeaconURL(uuid);
+  
+  
+  const options = {backgroundTimeout: 60000};
+  const helper = new RemoteContextHelper();
+  
+  const rc1 = await helper.addWindow(
+       null,  {features: 'noopener'});
+
+  
+  
+  await rc1.executeScript((url, options) => {
+    fetchLater(url, options);
+    
+    window.addEventListener('pageshow', e => {
+      window.pageshowEvent = e;
+    });
+  }, [url, options]);
+  
+  const rc2 = await rc1.navigateToNew();
+  
+  await rc2.historyBack();
+  
+  assert_true(await rc1.executeScript(() => {
+    return window.pageshowEvent.persisted;
+  }));
+
+  
+  
+  await expectBeacon(uuid, {count: 1});
+}, `fetchLater() with backgroundTimeout=1m sends on page entering BFCache if BackgroundSync is off.`);

@@ -3,11 +3,6 @@
 
 
 
-
-
-
-
-
 "use strict";
 
 
@@ -138,7 +133,7 @@ async function runComponentAdLoadingTest(test, uuid, numComponentAdsInInterestGr
   await waitForObservedRequests(uuid, expectedTrackerURLs);
 }
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   const renderURL = createRenderURL(
@@ -170,7 +165,7 @@ subsetTest(promise_test, async test => {
   await waitForObservedRequests(uuid, [`${createBidderBeaconURL(uuid)}, body: ok`]);
 }, 'Group has no component ads, no adComponents in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -185,7 +180,7 @@ subsetTest(promise_test, async test => {
                             adComponents: []};`})}});
 }, 'Group has no component ads, adComponents in bid is empty array.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, null,
@@ -196,7 +191,7 @@ subsetTest(promise_test, async test => {
       [0, 1]);
 }, 'Group has component ads, but not used in bid (no adComponents field).');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, [],
@@ -207,7 +202,7 @@ subsetTest(promise_test, async test => {
       [0, 1]);
 }, 'Group has component ads, but not used in bid (adComponents field empty array).');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(
       test, uuid, 2, null,
@@ -218,7 +213,7 @@ subsetTest(promise_test, async test => {
       [0, 1], true);
 }, 'Unused component ads with metadata.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -234,7 +229,7 @@ subsetTest(promise_test, async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Unknown component ad URL in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -250,7 +245,7 @@ subsetTest(promise_test, async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Render URL used as component ad URL in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   await joinGroupAndRunBasicFledgeTestExpectingNoWinner(
@@ -264,26 +259,26 @@ subsetTest(promise_test, async test => {
             adComponents: [{renderURL: createComponentAdRenderURL(uuid, 0)}]}});
 }, 'Component ad URL used as render URL.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 1], [0, 1]);
 }, '2 of 2 component ads in bid and then shown.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 1], [0, 1],
                                   true);
 }, '2 of 2 component ads in bid and then shown, with metadata.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 20,
                                   [3, 10], [0, 1]);
 }, '2 of 20 component ads in bid and then shown.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   const intsUpTo19 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19];
   await runComponentAdLoadingTest(test, uuid, 20,
@@ -291,14 +286,14 @@ subsetTest(promise_test, async test => {
                                   intsUpTo19);
 }, '20 of 20 component ads in bid and then shown.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 20,
                                   [1, 2, 3, 4, 5, 6],
                                   [1, 3]);
 }, '6 of 20 component ads in bid, 2 shown.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   
   
@@ -307,14 +302,14 @@ subsetTest(promise_test, async test => {
                                   [0, 1, 1, 0, 3, 3, 2, 2, 1, 0]);
 }, '4 of 4 component ads shown multiple times.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   await runComponentAdLoadingTest(test, uuid, 2,
                                   [0, 0, 0, 0],
                                   [0, 1, 2, 3]);
 }, 'Same component ad used multiple times in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   
   
@@ -324,7 +319,7 @@ subsetTest(promise_test, async test => {
                                   [4, 3, 2, 1, 0]);
 }, 'Load component ads not in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid);
 
@@ -350,7 +345,7 @@ subsetTest(promise_test, async test => {
             adComponents: adComponents}});
 }, '21 component ads not allowed in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
   const renderURL = createRenderURL(uuid);
 
@@ -376,7 +371,7 @@ subsetTest(promise_test, async test => {
             adComponents: adComponents}});
 }, 'Same component ad not allowed 21 times in bid.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   

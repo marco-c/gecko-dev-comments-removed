@@ -3,16 +3,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 "use strict;"
 
 
@@ -502,7 +492,7 @@ for (testCase of SIMPLE_JOIN_LEAVE_TEST_CASES) {
     test_name += JSON.stringify(testCase);
   }
 
-  subsetTest(promise_test, (async (testCase) => {
+  promise_test((async (testCase) => {
     const INTEREST_GROUP_LIFETIME_SECS = 1;
 
     let join_promise = navigator.joinAdInterestGroup(testCase.interestGroup,
@@ -536,7 +526,7 @@ for (testCase of SIMPLE_JOIN_LEAVE_TEST_CASES) {
   }).bind(undefined, testCase), test_name);
 }
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   
@@ -561,7 +551,7 @@ subsetTest(promise_test, async test => {
                 'Auction unexpectedly had a winner');
 }, 'Join same interest group overwrites old matching group.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   
@@ -577,7 +567,7 @@ subsetTest(promise_test, async test => {
                 'Auction unexpectedly had a winner');
 }, 'Leaving interest group actually leaves interest group.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   
   await leaveInterestGroup({ name: 'Never join group' });
 }, 'Leave an interest group that was never joined.');
@@ -586,7 +576,7 @@ subsetTest(promise_test, async test => {
 
 
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   
@@ -600,7 +590,7 @@ subsetTest(promise_test, async test => {
   while (await runBasicFledgeAuction(test, uuid) !== null);
 }, 'Interest group duration.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   
@@ -609,7 +599,7 @@ subsetTest(promise_test, async test => {
   assert_true(await runBasicFledgeAuction(test, uuid) === null);
 }, 'Interest group duration of -600.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   
@@ -625,7 +615,7 @@ subsetTest(promise_test, async test => {
   while (await runBasicFledgeAuction(test, uuid) !== null);
 }, 'Interest group test with overwritten duration.');
 
-subsetTest(promise_test, async test => {
+promise_test(async test => {
   const uuid = generateUuid(test);
 
   

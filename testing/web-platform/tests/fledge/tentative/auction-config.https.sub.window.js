@@ -2,13 +2,6 @@
 
 
 
-
-
-
-
-
-
-
 "use strict;"
 
 
@@ -50,7 +43,7 @@ const makeTest = ({
   
   expectPromiseError,
 }) => {
-  subsetTest(promise_test, async test => {
+  promise_test(async test => {
     let waitPromiseError, dontExpectPromiseError;
     if (expectPromiseError) {
       waitPromiseError = interceptUnhandledRejection();
