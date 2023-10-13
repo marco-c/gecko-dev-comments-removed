@@ -740,11 +740,6 @@ already_AddRefed<VideoDecoder> VideoDecoder::Constructor(
 }
 
 
-CodecState VideoDecoder::State() const { return mState; }
-
-uint32_t VideoDecoder::DecodeQueueSize() const { return mDecodeQueueSize; }
-
-
 void VideoDecoder::Configure(const VideoDecoderConfig& aConfig,
                              ErrorResult& aRv) {
   AssertIsOnOwningThread();
