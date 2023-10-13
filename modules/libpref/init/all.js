@@ -4039,5 +4039,3 @@ pref("extensions.webcompat.useScriptingAPI", true);
 
 
 pref("privacy.fingerprintingProtection.WebCompatService.logLevel", "Error");
-
-pref("privacy.query_stripping.strip_on_share.enableTestMode", false);
