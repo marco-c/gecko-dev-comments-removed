@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=567938
+-->
 <head>
   <title>Test for Bug 567938</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -39,6 +39,7 @@ function initializeNextTest()
   var element = document.createElement("input");
   element.id = 'i';
   element.type = gTestData[gCurrentTest];
+  // eslint-disable-next-line no-implied-eval
   element.onclick = function() { setTimeout("document.forms[0].submit();",0); return false; };
   form.appendChild(element);
   form.action = gTestData[gCurrentTest];

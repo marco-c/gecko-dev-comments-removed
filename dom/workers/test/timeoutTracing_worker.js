@@ -10,6 +10,7 @@ onmessage = function (event) {
 setInterval(function () {
   postMessage("Still alive!");
 }, 20);
+
 setInterval(";", 20);
 
 postMessage("Begin!");

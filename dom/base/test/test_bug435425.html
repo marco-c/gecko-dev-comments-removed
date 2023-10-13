@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=435425
+-->
 <head>
   <title>Test for Bug 435425</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -414,7 +414,7 @@ function runTest() {
 
 function nextTest() {
   if (tests.length) {
-    setTimeout("runTest()", 0);
+    setTimeout(runTest, 0);
   } else {
     SimpleTest.finish();
   }
