@@ -302,10 +302,6 @@ class VideoMediaChannel : public MediaChannel,
   bool HasNetworkInterface() const override {
     return MediaChannel::HasNetworkInterface();
   }
-  MediaChannel* ImplForTesting() override {
-    
-    RTC_CHECK_NOTREACHED();
-  }
 };
 
 
@@ -378,13 +374,6 @@ class VoiceMediaChannel : public MediaChannel,
   bool GetStats(VoiceMediaReceiveInfo* info,
                 bool get_and_clear_legacy_stats) override {
     return GetReceiveStats(info, get_and_clear_legacy_stats);
-  }
-
- private:
-  
-  MediaChannel* ImplForTesting() override {
-    
-    RTC_CHECK_NOTREACHED();
   }
 };
 

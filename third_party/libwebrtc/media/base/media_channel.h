@@ -251,10 +251,6 @@ class MediaSendChannelInterface {
   
   virtual void SetSendCodecChangedCallback(
       absl::AnyInvocable<void()> callback) = 0;
-
-  
-  
-  virtual MediaChannel* ImplForTesting() = 0;
 };
 
 class MediaReceiveChannelInterface : public Delayable {
@@ -309,9 +305,6 @@ class MediaReceiveChannelInterface : public Delayable {
       uint32_t ssrc,
       rtc::scoped_refptr<webrtc::FrameTransformerInterface>
           frame_transformer) = 0;
-  
-  
-  virtual MediaChannel* ImplForTesting() = 0;
 };
 
 
