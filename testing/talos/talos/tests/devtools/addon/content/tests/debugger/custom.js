@@ -298,6 +298,12 @@ async function testPrettyPrint(dbg, toolbox) {
 
   reloadAndPauseInPrettyPrintedFileTest.done();
 
+  
+  
+  
+  
+  await new Promise(r => setTimeout(r, 0));
+
   await removeBreakpoints(dbg);
 
   
