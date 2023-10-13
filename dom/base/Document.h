@@ -3764,7 +3764,30 @@ class Document : public nsINode,
   void AddResizeObserver(ResizeObserver&);
   void RemoveResizeObserver(ResizeObserver&);
   void ScheduleResizeObserversNotification() const;
-  bool HasResizeObservers() const;
+  bool HasResizeObservers() const { return !mResizeObservers.IsEmpty(); }
+  
+
+
+
+
+  void GatherAllActiveResizeObservations(uint32_t aDepth);
+  
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT uint32_t BroadcastAllActiveResizeObservations();
+  
+
+
+
+  bool HasAnyActiveResizeObservations() const;
+  
+
+
+  bool HasAnySkippedResizeObservations() const;
   MOZ_CAN_RUN_SCRIPT void NotifyResizeObservers();
 
   
@@ -4515,8 +4538,6 @@ class Document : public nsINode,
 
   RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
-  UniquePtr<ResizeObserverController> mResizeObserverController;
-
   
   
   RefPtr<PermissionDelegateHandler> mPermissionDelegateHandler;
@@ -5106,6 +5127,9 @@ class Document : public nsINode,
 
   
   nsTHashSet<DOMIntersectionObserver*> mIntersectionObservers;
+
+  
+  nsTArray<ResizeObserver*> mResizeObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
   

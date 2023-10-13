@@ -9486,19 +9486,7 @@ void PresShell::DidDoReflow(bool aInterruptible) {
   }
 
   if (!mPresContext->HasPendingInterrupt()) {
-    
-    
-    
-    
-    if (RefPtr<BrowsingContext> bc = mDocument->GetBrowsingContext()) {
-      bc->Top()->PreOrderWalk([](BrowsingContext* aCur) {
-        
-        
-        if (const Document* doc = aCur->GetExtantDocument()) {
-          doc->ScheduleResizeObserversNotification();
-        }
-      });
-    }
+    mPresContext->RefreshDriver()->EnsureResizeObserverUpdateHappens();
   }
 
   if (StaticPrefs::layout_reflow_synthMouseMove()) {
