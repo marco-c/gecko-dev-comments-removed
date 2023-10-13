@@ -177,9 +177,8 @@ extern "C" {
 
 
 
-#if !defined(MOZ_PROFILING) && \
-     (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
-      defined(_MSC_VER))
+#if defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+    defined(_MSC_VER)
 
 
 #define HAS_I422ALPHATOARGBROW_SSSE3
@@ -248,9 +247,8 @@ extern "C" {
 #define HAS_ARGBATTENUATEROW_AVX2
 #endif
 
-#if !defined(MOZ_PROFILING) && \
-  (defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
-   defined(_MSC_VER))
+#if defined(__x86_64__) || !defined(__pic__) || defined(__clang__) || \
+    defined(_MSC_VER)
 
 
 #define HAS_I422ALPHATOARGBROW_AVX2
@@ -404,9 +402,11 @@ extern "C" {
 
 
 
+
 #if !defined(LIBYUV_DISABLE_X86) && \
-    (defined(__x86_64__) || defined(__i386__)) && (defined(CLANG_HAS_AVX512))
+    (defined(__x86_64__) || defined(__i386__)) && (defined(CLANG_HAS_AVX512) && !defined(_MSC_VER))
 #define HAS_ARGBTORGB24ROW_AVX512VBMI
+#define HAS_MERGEUVROW_AVX512BW
 #endif
 
 
@@ -2186,6 +2186,10 @@ void MergeUVRow_AVX2(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
                      int width);
+void MergeUVRow_AVX512BW(const uint8_t* src_u,
+                         const uint8_t* src_v,
+                         uint8_t* dst_uv,
+                         int width);
 void MergeUVRow_NEON(const uint8_t* src_u,
                      const uint8_t* src_v,
                      uint8_t* dst_uv,
@@ -2206,6 +2210,10 @@ void MergeUVRow_Any_AVX2(const uint8_t* y_buf,
                          const uint8_t* uv_buf,
                          uint8_t* dst_ptr,
                          int width);
+void MergeUVRow_Any_AVX512BW(const uint8_t* y_buf,
+                             const uint8_t* uv_buf,
+                             uint8_t* dst_ptr,
+                             int width);
 void MergeUVRow_Any_NEON(const uint8_t* y_buf,
                          const uint8_t* uv_buf,
                          uint8_t* dst_ptr,
