@@ -1,9 +1,9 @@
-
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 
 #include "TouchManager.h"
 
@@ -25,14 +25,14 @@ StaticAutoPtr<nsTHashMap<nsUint32HashKey, TouchManager::TouchInfo>>
     TouchManager::sCaptureTouchList;
 layers::LayersId TouchManager::sCaptureTouchLayersId;
 
-
+/*static*/
 void TouchManager::InitializeStatics() {
   NS_ASSERTION(!sCaptureTouchList, "InitializeStatics called multiple times!");
   sCaptureTouchList = new nsTHashMap<nsUint32HashKey, TouchManager::TouchInfo>;
   sCaptureTouchLayersId = layers::LayersId{0};
 }
 
-
+/*static*/
 void TouchManager::ReleaseStatics() {
   NS_ASSERTION(sCaptureTouchList, "ReleaseStatics called without Initialize!");
   sCaptureTouchList = nullptr;
@@ -57,7 +57,7 @@ static nsIContent* GetNonAnonymousAncestor(EventTarget* aTarget) {
   return content;
 }
 
-
+/*static*/
 void TouchManager::EvictTouchPoint(RefPtr<Touch>& aTouch,
                                    Document* aLimitToDocument) {
   nsCOMPtr<nsINode> node(
@@ -69,7 +69,8 @@ void TouchManager::EvictTouchPoint(RefPtr<Touch>& aTouch,
       if (presShell) {
         nsIFrame* frame = presShell->GetRootFrame();
         if (frame) {
-          nsCOMPtr<nsIWidget> widget = frame->GetView()->GetNearestWidget();
+          nsPoint pt(aTouch->mRefPoint.x, aTouch->mRefPoint.y);
+          nsCOMPtr<nsIWidget> widget = frame->GetView()->GetNearestWidget(&pt);
           if (widget) {
             WidgetTouchEvent event(true, eTouchEnd, widget);
             event.mTouches.AppendElement(aTouch);
@@ -85,7 +86,7 @@ void TouchManager::EvictTouchPoint(RefPtr<Touch>& aTouch,
   }
 }
 
-
+/*static*/
 void TouchManager::AppendToTouchList(
     WidgetTouchEvent::TouchArrayBase* aTouchList) {
   for (const auto& data : sCaptureTouchList->Values()) {
@@ -104,13 +105,13 @@ void TouchManager::EvictTouches(Document* aLimitToDocument) {
   sCaptureTouchLayersId = layers::LayersId{0};
 }
 
-
+/* static */
 nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
                                     nsIFrame* aFrame) {
   MOZ_ASSERT(aEvent);
 
   if (!aEvent || aEvent->mMessage != eTouchStart) {
-    
+    // All touch events except for touchstart use a captured target.
     return aFrame;
   }
 
@@ -121,7 +122,7 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
 
     int32_t id = touch->Identifier();
     if (!TouchManager::HasCapturedTouch(id)) {
-      
+      // find the target for this touch
       RelativeTo relativeTo{aFrame};
       nsPoint eventPoint = nsLayoutUtils::GetEventCoordinatesRelativeTo(
           aEvent, touch->mRefPoint, relativeTo);
@@ -136,8 +137,8 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
         aEvent->mTouches.RemoveElementAt(i);
       }
     } else {
-      
-      
+      // This touch is an old touch, we need to ensure that is not
+      // marked as changed and set its target correctly
       touch->mChanged = false;
       RefPtr<dom::Touch> oldTouch = TouchManager::GetCapturedTouch(id);
       if (oldTouch) {
@@ -148,19 +149,19 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
   return target;
 }
 
-
+/* static */
 nsIFrame* TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
     WidgetTouchEvent* aEvent) {
   MOZ_ASSERT(aEvent);
 
   if (!aEvent || aEvent->mMessage != eTouchStart) {
-    
+    // All touch events except for touchstart use a captured target.
     return nullptr;
   }
 
-  
-  
-  
+  // if this is a continuing session, ensure that all these events are
+  // in the same document by taking the target of the events already in
+  // the capture list
   nsCOMPtr<nsIContent> anyTarget;
   if (aEvent->mTouches.Length() > 1) {
     anyTarget = TouchManager::GetAnyCapturedTouchTarget();
@@ -188,15 +189,15 @@ nsIFrame* TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
           newTargetFrame = f;
           break;
         }
-        
-        
-        
+        // We must be in a subdocument so jump directly to the root frame.
+        // GetParentOrPlaceholderForCrossDoc gets called immediately to
+        // jump up to the containing document.
         f = f->PresShell()->GetRootFrame();
       }
-      
-      
-      
-      
+      // if we couldn't find a target frame in the same document as
+      // anyTarget, remove the touch from the capture touch list, as
+      // well as the event->mTouches array. touchmove events that aren't
+      // in the captured touch list will be discarded
       if (!newTargetFrame) {
         touch->mIsTouchEventSuppressed = true;
       } else {
@@ -219,33 +220,33 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
                                   nsCOMPtr<nsIContent>& aCurrentEventContent) {
   MOZ_DIAGNOSTIC_ASSERT(aEvent->IsTrusted());
 
-  
-  
+  // NOTE: If you need to handle new event messages here, you need to add new
+  //       cases in PresShell::EventHandler::PrepareToDispatchEvent().
   switch (aEvent->mMessage) {
     case eTouchStart: {
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
-      
-      
-      
+      // if there is only one touch in this touchstart event, assume that it is
+      // the start of a new touch session and evict any old touches in the
+      // queue
       if (touchEvent->mTouches.Length() == 1) {
         EvictTouches();
-        
-        
-        
-        
-        
+        // Per
+        // https://w3c.github.io/touch-events/#touchevent-implementer-s-note,
+        // all touch event should be dispatched to the same document that first
+        // touch event associated to. We cache layers id of the first touchstart
+        // event, all subsequent touch events will use the same layers id.
         sCaptureTouchLayersId = aEvent->mLayersId;
       } else {
         touchEvent->mLayersId = sCaptureTouchLayersId;
       }
-      
+      // Add any new touches to the queue
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       for (int32_t i = touches.Length(); i;) {
         --i;
         Touch* touch = touches[i];
         int32_t id = touch->Identifier();
         if (!sCaptureTouchList->Get(id, nullptr)) {
-          
+          // If it is not already in the queue, it is a new touch
           touch->mChanged = true;
         }
         touch->mMessage = aEvent->mMessage;
@@ -253,8 +254,8 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
             touch, GetNonAnonymousAncestor(touch->mOriginalTarget), true};
         sCaptureTouchList->InsertOrUpdate(id, info);
         if (touch->mIsTouchEventSuppressed) {
-          
-          
+          // We're going to dispatch touch event. Remove this touch instance if
+          // it is suppressed.
           touches.RemoveElementAt(i);
           continue;
         }
@@ -262,7 +263,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
       break;
     }
     case eTouchMove: {
-      
+      // Check for touches that changed. Mark them add to queue
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       touchEvent->mLayersId = sCaptureTouchLayersId;
@@ -299,10 +300,10 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
         touch->SetTouchTarget(targetPtr);
 
         info.mTouch = touch;
-        
+        // info.mNonAnonymousTarget is still valid from above
         sCaptureTouchList->InsertOrUpdate(id, info);
-        
-        
+        // if we're moving from touchstart to touchmove for this touch
+        // we allow preventDefault to prevent mouse events
         if (oldTouch->mMessage != touch->mMessage) {
           aTouchIsNew = true;
         }
@@ -312,15 +313,15 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
           continue;
         }
       }
-      
+      // is nothing has changed, we should just return
       if (!haveChanged) {
         if (aTouchIsNew) {
-          
-          
-          
-          
-          
-          
+          // however, if this is the first touchmove after a touchstart,
+          // it is special in that preventDefault is allowed on it, so
+          // we must dispatch it to content even if nothing changed. we
+          // arbitrarily pick the first touch point to be the "changed"
+          // touch because firing an event with no changed events doesn't
+          // work.
           for (uint32_t i = 0; i < touchEvent->mTouches.Length(); ++i) {
             if (touchEvent->mTouches[i]) {
               touchEvent->mTouches[i]->mChanged = true;
@@ -328,9 +329,9 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
             }
           }
         } else {
-          
-          
-          
+          // This touch event isn't going to be dispatched on the main-thread,
+          // we need to tell it to APZ because returned nsEventStatus is
+          // unreliable to tell whether the event was preventDefaulted or not.
           layers::InputAPZContext::SetDropped();
           return false;
         }
@@ -339,8 +340,8 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
     }
     case eTouchEnd:
     case eTouchCancel: {
-      
-      
+      // Remove the changed touches
+      // need to make sure we only remove touches that are ending here
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       touchEvent->mLayersId = sCaptureTouchLayersId;
@@ -372,13 +373,13 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
           continue;
         }
       }
-      
+      // add any touches left in the touch list, but ensure changed=false
       AppendToTouchList(&touches);
       break;
     }
     case eTouchPointerCancel: {
-      
-      
+      // Don't generate pointer events by touch events after eTouchPointerCancel
+      // is received.
       WidgetTouchEvent* touchEvent = aEvent->AsTouchEvent();
       WidgetTouchEvent::TouchArray& touches = touchEvent->mTouches;
       touchEvent->mLayersId = sCaptureTouchLayersId;
@@ -403,7 +404,7 @@ bool TouchManager::PreHandleEvent(WidgetEvent* aEvent, nsEventStatus* aStatus,
   return true;
 }
 
-
+/*static*/
 already_AddRefed<nsIContent> TouchManager::GetAnyCapturedTouchTarget() {
   nsCOMPtr<nsIContent> result = nullptr;
   if (sCaptureTouchList->Count() == 0) {
@@ -422,12 +423,12 @@ already_AddRefed<nsIContent> TouchManager::GetAnyCapturedTouchTarget() {
   return result.forget();
 }
 
-
+/*static*/
 bool TouchManager::HasCapturedTouch(int32_t aId) {
   return sCaptureTouchList->Contains(aId);
 }
 
-
+/*static*/
 already_AddRefed<Touch> TouchManager::GetCapturedTouch(int32_t aId) {
   RefPtr<Touch> touch;
   TouchInfo info;
@@ -437,7 +438,7 @@ already_AddRefed<Touch> TouchManager::GetCapturedTouch(int32_t aId) {
   return touch.forget();
 }
 
-
+/*static*/
 bool TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
                                                const WidgetTouchEvent* aEvent) {
   if (!aTouch || !aTouch->convertToPointer) {
@@ -445,12 +446,12 @@ bool TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
   }
   TouchInfo info;
   if (!sCaptureTouchList->Get(aTouch->Identifier(), &info)) {
-    
-    
-    
-    
-    
-    
+    // This check runs before the TouchManager has the touch registered in its
+    // touch list. It's because we dispatching pointer events before handling
+    // touch events. So we convert eTouchStart to pointerdown even it's not
+    // registered.
+    // Check WidgetTouchEvent::mMessage because Touch::mMessage is assigned when
+    // pre-handling touch events.
     return aEvent->mMessage == eTouchStart;
   }
 
@@ -460,7 +461,7 @@ bool TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
 
   switch (aEvent->mMessage) {
     case eTouchStart: {
-      
+      // We don't want to fire duplicated pointerdown.
       return false;
     }
     case eTouchMove: {
@@ -472,4 +473,4 @@ bool TouchManager::ShouldConvertTouchToPointer(const Touch* aTouch,
   return true;
 }
 
-}  
+}  // namespace mozilla
