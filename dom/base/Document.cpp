@@ -16734,46 +16734,36 @@ BrowsingContext* Document::GetBrowsingContext() const {
 }
 
 void Document::NotifyUserGestureActivation() {
-  
-  
-  RefPtr<BrowsingContext> currentBC = GetBrowsingContext();
-  if (!currentBC) {
-    return;
-  }
+  if (RefPtr<BrowsingContext> bc = GetBrowsingContext()) {
+    bc->PreOrderWalk([&](BrowsingContext* aBC) {
+      WindowContext* windowContext = aBC->GetCurrentWindowContext();
+      if (!windowContext) {
+        return;
+      }
 
-  RefPtr<WindowContext> currentWC = GetWindowContext();
-  if (!currentWC) {
-    return;
-  }
+      nsIDocShell* docShell = aBC->GetDocShell();
+      if (!docShell) {
+        return;
+      }
 
-  
-  
-  
-  currentWC->NotifyUserGestureActivation();
+      Document* document = docShell->GetDocument();
+      if (!document) {
+        return;
+      }
 
-  
-  
-  for (WindowContext* wc = currentWC; wc; wc = wc->GetParentWindowContext()) {
-    wc->NotifyUserGestureActivation();
-  }
+      
+      
+      if (NodePrincipal()->Equals(document->NodePrincipal())) {
+        windowContext->NotifyUserGestureActivation();
+      }
+    });
 
-  
-  
-  
-  currentBC->PreOrderWalk([&](BrowsingContext* bc) {
-    WindowContext* wc = bc->GetCurrentWindowContext();
-    if (!wc) {
-      return;
+    for (bc = bc->GetParent(); bc; bc = bc->GetParent()) {
+      if (WindowContext* windowContext = bc->GetCurrentWindowContext()) {
+        windowContext->NotifyUserGestureActivation();
+      }
     }
-
-    
-    WindowGlobalChild* wgc = wc->GetWindowGlobalChild();
-    if (!wgc || !wgc->IsSameOriginWith(currentWC)) {
-      return;
-    }
-
-    wc->NotifyUserGestureActivation();
-  });
+  }
 }
 
 bool Document::HasBeenUserGestureActivated() {
