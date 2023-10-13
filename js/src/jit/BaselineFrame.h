@@ -123,36 +123,12 @@ class BaselineFrame {
     return frameSize / sizeof(Value);
   }
 
-  Value newTarget() const {
-    MOZ_ASSERT(isFunctionFrame());
-    MOZ_ASSERT(!callee()->isArrow());
-
-    if (isConstructing()) {
-      unsigned pushedArgs = std::max(numFormalArgs(), numActualArgs());
-      return argv()[pushedArgs];
-    }
-    return UndefinedValue();
-  }
-
 #ifdef DEBUG
   size_t debugNumValueSlots() const { return numValueSlots(debugFrameSize()); }
 #endif
 
   Value* valueSlot(size_t slot) const {
-#ifndef ENABLE_PORTABLE_BASELINE_INTERP
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     MOZ_ASSERT(slot < debugNumValueSlots());
-#endif
     return (Value*)this - (slot + 1);
   }
 
@@ -249,19 +225,6 @@ class BaselineFrame {
     MOZ_ASSERT(runningInInterpreter());
     return interpreterPC_;
   }
-  jsbytecode*& interpreterPC() {
-    MOZ_ASSERT(runningInInterpreter());
-    return interpreterPC_;
-  }
-
-  ICEntry* interpreterICEntry() const {
-    MOZ_ASSERT(runningInInterpreter());
-    return interpreterICEntry_;
-  }
-  ICEntry*& interpreterICEntry() {
-    MOZ_ASSERT(runningInInterpreter());
-    return interpreterICEntry_;
-  }
 
   void setInterpreterFields(JSScript* script, jsbytecode* pc);
 
@@ -298,7 +261,6 @@ class BaselineFrame {
 
   inline CallObject& callObj() const;
 
-  void setFlag(uint32_t flag) { flags_ |= flag; }
   void setFlags(uint32_t flags) { flags_ = flags; }
 
   [[nodiscard]] inline bool pushLexicalEnvironment(JSContext* cx,

@@ -642,10 +642,6 @@ JS::ProfilingFrameIterator::getPhysicalFrameAndEntry(
 
   MOZ_ASSERT(isJSJit());
 
-  if (jit::IsPortableBaselineInterpreterEnabled()) {
-    return mozilla::Nothing();
-  }
-
   
   void* returnAddr = jsJitIter().resumePCinCurrentFrame();
   jit::JitcodeGlobalTable* table =

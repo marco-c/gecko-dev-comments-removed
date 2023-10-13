@@ -6756,9 +6756,6 @@ static bool HasOptimizableLastIndexSlot(RegExpObject* regexp, JSContext* cx) {
 
 
 static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
-#ifdef ENABLE_PORTABLE_BASELINE_INTERP
-  return nullptr;
-#else
   
   
   if (!GlobalObject::getRegExpStatics(cx, cx->global()) ||
@@ -6767,6 +6764,7 @@ static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
     cx->clearPendingException();
     return nullptr;
   }
+
   JitCode* code;
   switch (native) {
     case InlinableNative::IntrinsicRegExpBuiltinExecForTest:
@@ -6792,7 +6790,6 @@ static JitCode* GetOrCreateRegExpStub(JSContext* cx, InlinableNative native) {
     return nullptr;
   }
   return code;
-#endif
 }
 
 static void EmitGuardLastIndexIsNonNegativeInt32(CacheIRWriter& writer,

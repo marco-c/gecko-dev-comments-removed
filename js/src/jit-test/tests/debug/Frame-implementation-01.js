@@ -1,6 +1,5 @@
 
 
-
 load(libdir + "jitopts.js");
 
 function testFrameImpl(jitopts, assertFrameImpl) {

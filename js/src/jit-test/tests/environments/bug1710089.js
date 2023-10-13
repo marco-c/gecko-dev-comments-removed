@@ -1,8 +1,6 @@
 
 
-
-
-var iters = 75;
+var iters = 250;
 
 
 

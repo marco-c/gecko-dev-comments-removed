@@ -1,4 +1,5 @@
 
+
 var global = 0;
 setInterruptCallback(function() {
     foo("A");

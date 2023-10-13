@@ -306,18 +306,8 @@ struct JSRuntime {
   
   js::MainThreadData<js::InterpreterStack> interpreterStack_;
 
-#ifdef ENABLE_PORTABLE_BASELINE_INTERP
-  
-  js::MainThreadData<js::PortableBaselineStack> portableBaselineStack_;
-#endif
-
  public:
   js::InterpreterStack& interpreterStack() { return interpreterStack_.ref(); }
-#ifdef ENABLE_PORTABLE_BASELINE_INTERP
-  js::PortableBaselineStack& portableBaselineStack() {
-    return portableBaselineStack_.ref();
-  }
-#endif
 
   
 
