@@ -1,5 +1,6 @@
 
 
+
 Cu.importGlobalProperties(["File"]);
 
 addMessageListener("files.open", function (message) {
