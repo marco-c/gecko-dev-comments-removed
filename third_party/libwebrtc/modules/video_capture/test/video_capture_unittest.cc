@@ -191,7 +191,8 @@ class VideoCaptureTest : public ::testing::Test {
   unsigned int number_of_devices_;
 };
 
-#ifdef WEBRTC_MAC
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+
 
 
 #define MAYBE_CreateDelete DISABLED_CreateDelete
@@ -233,7 +234,8 @@ TEST_F(VideoCaptureTest, MAYBE_CreateDelete) {
   }
 }
 
-#ifdef WEBRTC_MAC
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+
 
 
 #define MAYBE_Capabilities DISABLED_Capabilities
@@ -342,7 +344,9 @@ TEST_F(VideoCaptureTest, DISABLED_TestTwoCameras) {
   EXPECT_EQ(0, module1->StopCapture());
 }
 
-#ifdef WEBRTC_MAC
+#if defined(WEBRTC_MAC) || defined(WEBRTC_LINUX)
+
+
 
 #define MAYBE_ConcurrentAccess DISABLED_ConcurrentAccess
 #else
