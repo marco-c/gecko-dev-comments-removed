@@ -1378,13 +1378,6 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                    nsFrameList& aFrameList);
 
   
-  nsIFrame* ConstructDetails(nsFrameConstructorState& aState,
-                             FrameConstructionItem& aItem,
-                             nsContainerFrame* aParentFrame,
-                             const nsStyleDisplay* aStyleDisplay,
-                             nsFrameList& aFrameList);
-
-  
   nsIFrame* ConstructBlockRubyFrame(nsFrameConstructorState& aState,
                                     FrameConstructionItem& aItem,
                                     nsContainerFrame* aParentFrame,
@@ -1444,6 +1437,9 @@ class nsCSSFrameConstructor final : public nsFrameManager {
                                                      ComputedStyle&);
   static const FrameConstructionData* FindCanvasData(const Element&,
                                                      ComputedStyle&);
+  
+  static const FrameConstructionData* FindDetailsData(const Element&,
+                                                      ComputedStyle&);
 
   
 
