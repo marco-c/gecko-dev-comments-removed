@@ -38,6 +38,7 @@ class FeedbackParam {
       : id_(id), param_(kParamValueEmpty) {}
 
   bool operator==(const FeedbackParam& other) const;
+  bool operator!=(const FeedbackParam& c) const { return !(*this == c); }
 
   const std::string& id() const { return id_; }
   const std::string& param() const { return param_; }
@@ -52,6 +53,7 @@ class FeedbackParams {
   FeedbackParams();
   ~FeedbackParams();
   bool operator==(const FeedbackParams& other) const;
+  bool operator!=(const FeedbackParams& c) const { return !(*this == c); }
 
   bool Has(const FeedbackParam& param) const;
   void Add(const FeedbackParam& param);
@@ -163,71 +165,34 @@ struct RTC_EXPORT Codec {
         const std::string& name,
         int clockrate,
         size_t channels);
+
   explicit Codec(const webrtc::SdpVideoFormat& c);
+
+  friend Codec CreateAudioCodec(int id,
+                                const std::string& name,
+                                int clockrate,
+                                size_t channels);
+  friend Codec CreateAudioRtxCodec(int rtx_payload_type,
+                                   int associated_payload_type);
+  friend Codec CreateVideoCodec(int id, const std::string& name);
+  friend Codec CreateVideoCodec(const webrtc::SdpVideoFormat& c);
+  friend Codec CreateVideoRtxCodec(int rtx_payload_type,
+                                   int associated_payload_type);
 };
 
-struct AudioCodec : public Codec {
-  
-  [[deprecated("Use cricket::CreateAudioCodec")]] AudioCodec(
-      int id,
-      const std::string& name,
-      int clockrate,
-      int unused_bitrate,
-      size_t channels);
-  
-  [[deprecated("Do not create empty AudioCodec")]] AudioCodec();
-  AudioCodec(const AudioCodec& c);
-  AudioCodec(AudioCodec&& c);
-  ~AudioCodec() override = default;
 
-  AudioCodec& operator=(const AudioCodec& c);
-  AudioCodec& operator=(AudioCodec&& c);
-};
+using VideoCodec = Codec;
+using AudioCodec = Codec;
 
-struct RTC_EXPORT VideoCodec : public Codec {
-  
-  [[deprecated("Use cricket::CreateVideoCodec")]] VideoCodec(
-      int id,
-      const std::string& name);
-  
-  [[deprecated("Use cricket::CreateVideoCodec")]] explicit VideoCodec(
-      const std::string& name);
-  
-  [[deprecated("Do not create empty VideoCodec")]] VideoCodec();
-  VideoCodec(const VideoCodec& c);
-  [[deprecated]] explicit VideoCodec(const webrtc::SdpVideoFormat& c);
-  VideoCodec(VideoCodec&& c);
-  ~VideoCodec() override = default;
-
-  VideoCodec& operator=(const VideoCodec& c);
-  VideoCodec& operator=(VideoCodec&& c);
-
-  [[deprecated]] static VideoCodec CreateRtxCodec(int rtx_payload_type,
-                                                  int associated_payload_type);
-
-  enum [[deprecated]] CodecType {
-    CODEC_VIDEO,
-    CODEC_RED,
-    CODEC_ULPFEC,
-    CODEC_FLEXFEC,
-    CODEC_RTX,
-  };
-
-  [[deprecated]] CodecType GetCodecType() const;
-
- private:
-  void SetDefaultParameters();
-};
-
-AudioCodec CreateAudioCodec(int id,
-                            const std::string& name,
-                            int clockrate,
-                            size_t channels);
-VideoCodec CreateVideoCodec(const std::string& name);
-VideoCodec CreateVideoCodec(int id, const std::string& name);
-VideoCodec CreateVideoCodec(const webrtc::SdpVideoFormat& c);
-VideoCodec CreateVideoRtxCodec(int rtx_payload_type,
-                               int associated_payload_type);
+Codec CreateAudioCodec(int id,
+                       const std::string& name,
+                       int clockrate,
+                       size_t channels);
+Codec CreateAudioRtxCodec(int rtx_payload_type, int associated_payload_type);
+Codec CreateVideoCodec(const std::string& name);
+Codec CreateVideoCodec(int id, const std::string& name);
+Codec CreateVideoCodec(const webrtc::SdpVideoFormat& c);
+Codec CreateVideoRtxCodec(int rtx_payload_type, int associated_payload_type);
 
 
 
@@ -256,4 +221,4 @@ RTC_EXPORT void AddH264ConstrainedBaselineProfileToSupportedFormats(
 
 }  
 
-#endif
+#endif  

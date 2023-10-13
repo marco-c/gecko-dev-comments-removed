@@ -48,13 +48,11 @@ RTCErrorOr<cricket::FeedbackParam> ToCricketFeedbackParam(
 
 
 
-template <typename C>
-RTCErrorOr<C> ToCricketCodec(const RtpCodecParameters& codec);
+RTCErrorOr<cricket::Codec> ToCricketCodec(const RtpCodecParameters& codec);
 
 
 
-template <typename C>
-RTCErrorOr<std::vector<C>> ToCricketCodecs(
+RTCErrorOr<std::vector<cricket::Codec>> ToCricketCodecs(
     const std::vector<RtpCodecParameters>& codecs);
 
 
@@ -82,20 +80,15 @@ absl::optional<RtcpFeedback> ToRtcpFeedback(
 std::vector<RtpEncodingParameters> ToRtpEncodings(
     const cricket::StreamParamsVec& stream_params);
 
-template <typename C>
-RtpCodecParameters ToRtpCodecParameters(const C& cricket_codec);
+RtpCodecParameters ToRtpCodecParameters(const cricket::Codec& cricket_codec);
+RtpCodecCapability ToRtpCodecCapability(const cricket::Codec& cricket_codec);
 
-template <typename C>
-RtpCodecCapability ToRtpCodecCapability(const C& cricket_codec);
-
-template <class C>
 RtpCapabilities ToRtpCapabilities(
-    const std::vector<C>& cricket_codecs,
+    const std::vector<cricket::Codec>& cricket_codecs,
     const cricket::RtpHeaderExtensions& cricket_extensions);
 
-template <class C>
 RtpParameters ToRtpParameters(
-    const std::vector<C>& cricket_codecs,
+    const std::vector<cricket::Codec>& cricket_codecs,
     const cricket::RtpHeaderExtensions& cricket_extensions,
     const cricket::StreamParamsVec& stream_params);
 
