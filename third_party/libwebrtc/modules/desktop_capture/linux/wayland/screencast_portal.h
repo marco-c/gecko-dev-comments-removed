@@ -17,6 +17,7 @@
 
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/linux/wayland/screen_capture_portal_interface.h"
+#include "modules/portal/pipewire_utils.h"
 #include "modules/portal/portal_request_response.h"
 #include "modules/portal/xdg_desktop_portal_utils.h"
 #include "modules/portal/xdg_session_details.h"
@@ -137,7 +138,7 @@ class RTC_EXPORT ScreenCastPortal
   
   uint32_t pw_stream_node_id_ = 0;
   
-  int pw_fd_ = -1;
+  int pw_fd_ = kInvalidPipeWireFd;
   
   std::string restore_token_;
 

@@ -15,6 +15,8 @@ struct pw_thread_loop;
 
 namespace webrtc {
 
+constexpr int kInvalidPipeWireFd = -1;
+
 
 
 
