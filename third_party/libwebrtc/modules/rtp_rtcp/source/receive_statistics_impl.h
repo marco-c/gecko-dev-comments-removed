@@ -18,6 +18,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/containers/flat_map.h"
@@ -63,21 +65,21 @@ class StreamStatisticianImpl : public StreamStatisticianImplInterface {
 
  private:
   bool IsRetransmitOfOldPacket(const RtpPacketReceived& packet,
-                               int64_t now_ms) const;
-  void UpdateJitter(const RtpPacketReceived& packet, int64_t receive_time_ms);
+                               Timestamp now) const;
+  void UpdateJitter(const RtpPacketReceived& packet, Timestamp receive_time);
   void ReviseFrequencyAndJitter(int payload_type_frequency);
   
   
   bool UpdateOutOfOrder(const RtpPacketReceived& packet,
                         int64_t sequence_number,
-                        int64_t now_ms);
+                        Timestamp now);
   
-  bool ReceivedRtpPacket() const { return received_seq_first_ >= 0; }
+  bool ReceivedRtpPacket() const { return last_receive_time_.has_value(); }
 
   const uint32_t ssrc_;
   Clock* const clock_;
   
-  const int64_t delta_internal_unix_epoch_ms_;
+  const TimeDelta delta_internal_unix_epoch_;
   RateStatistics incoming_bitrate_;
   
   int max_reordering_threshold_;
@@ -94,7 +96,7 @@ class StreamStatisticianImpl : public StreamStatisticianImplInterface {
   
   int32_t cumulative_loss_rtcp_offset_;
 
-  int64_t last_receive_time_ms_;
+  absl::optional<Timestamp> last_receive_time_;
   uint32_t last_received_timestamp_;
   RtpSequenceNumberUnwrapper seq_unwrapper_;
   int64_t received_seq_first_;
