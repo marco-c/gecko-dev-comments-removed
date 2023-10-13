@@ -1493,9 +1493,6 @@ pub enum Appearance {
     Menupopup,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Menuarrow,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Meterchunk,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
