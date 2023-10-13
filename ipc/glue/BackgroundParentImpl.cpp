@@ -126,6 +126,29 @@ BackgroundParentImpl::~BackgroundParentImpl() {
   MOZ_COUNT_DTOR(mozilla::ipc::BackgroundParentImpl);
 }
 
+void BackgroundParentImpl::ProcessingError(Result aCode, const char* aReason) {
+  if (MsgDropped == aCode) {
+    return;
+  }
+
+  
+  
+  
+  if (MsgValueError == aCode) {
+    return;
+  }
+
+  
+  if (BackgroundParent::IsOtherProcessActor(this)) {
+#ifndef FUZZING
+    BackgroundParent::KillHardAsync(this, aReason);
+#endif
+    if (CanSend()) {
+      GetIPCChannel()->InduceConnectionError();
+    }
+  }
+}
+
 void BackgroundParentImpl::ActorDestroy(ActorDestroyReason aWhy) {
   AssertIsInMainProcess();
   AssertIsOnBackgroundThread();
@@ -818,9 +841,8 @@ mozilla::ipc::IPCResult BackgroundParentImpl::RecvPBroadcastChannelConstructor(
 
   
   
+  
 
-  
-  
   RefPtr<CheckPrincipalRunnable> runnable =
       new CheckPrincipalRunnable(parent.forget(), aPrincipalInfo, aOrigin);
   MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));
