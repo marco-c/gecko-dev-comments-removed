@@ -36,14 +36,7 @@ async function assertCacheExistsAndIsEmpty() {
 
 add_task(async function test_write_error() {
   const sandbox = sinon.createSandbox();
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
-  attributionSvc.setReferrerUrl(
-    MacAttribution.applicationPath,
-    "https://example.com?content=content",
-    true
-  );
+  await MacAttribution.setAttributionString("__MOZCUSTOM__content%3Dcontent");
 
   await AttributionCode.deleteFileAsync();
   AttributionCode._clearCache();
@@ -85,51 +78,9 @@ add_task(async function test_write_error() {
   }
 });
 
-add_task(async function test_unusual_referrer() {
+add_task(async function test_blank_attribution() {
   
-  
-  
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
-  attributionSvc.setReferrerUrl(
-    MacAttribution.applicationPath,
-    "https://example.com?content=&=campaign",
-    true
-  );
-
-  await AttributionCode.deleteFileAsync();
-  AttributionCode._clearCache();
-
-  const histogram = Services.telemetry.getHistogramById(
-    "BROWSER_ATTRIBUTION_ERRORS"
-  );
-  try {
-    
-    histogram.clear();
-
-    
-    await AttributionCode.getAttrDataAsync();
-
-    let result = await AttributionCode.getAttrDataAsync();
-    Assert.deepEqual(result, {}, "Should be able to get empty result");
-
-    Assert.deepEqual({}, histogram.snapshot().values || {});
-
-    await assertCacheExistsAndIsEmpty();
-  } finally {
-    await AttributionCode.deleteFileAsync();
-    AttributionCode._clearCache();
-    histogram.clear();
-  }
-});
-
-add_task(async function test_blank_referrer() {
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
-  attributionSvc.setReferrerUrl(MacAttribution.applicationPath, "", true);
-
+  await MacAttribution.delAttributionString();
   await AttributionCode.deleteFileAsync();
   AttributionCode._clearCache();
 
@@ -155,7 +106,7 @@ add_task(async function test_blank_referrer() {
   }
 });
 
-add_task(async function test_no_referrer() {
+add_task(async function test_no_attribution() {
   const sandbox = sinon.createSandbox();
   let newApplicationPath = MacAttribution.applicationPath + ".test";
   sandbox.stub(MacAttribution, "applicationPath").get(() => newApplicationPath);
@@ -184,65 +135,5 @@ add_task(async function test_no_referrer() {
     AttributionCode._clearCache();
     histogram.clear();
     sandbox.restore();
-  }
-});
-
-add_task(async function test_broken_referrer() {
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
-  attributionSvc.setReferrerUrl(
-    MacAttribution.applicationPath,
-    "https://example.com?content=content",
-    true
-  );
-
-  
-  
-  
-  function generateQuarantineGUID() {
-    let str = Services.uuid.generateUUID().toString().toUpperCase();
-    
-    return str.substring(1, str.length - 1);
-  }
-
-  
-  let string = [
-    "01c1",
-    "5991b778",
-    "Safari.app",
-    generateQuarantineGUID(),
-  ].join(";");
-  let bytes = new TextEncoder().encode(string);
-  await IOUtils.setMacXAttr(
-    MacAttribution.applicationPath,
-    "com.apple.quarantine",
-    bytes
-  );
-
-  await AttributionCode.deleteFileAsync();
-  AttributionCode._clearCache();
-
-  const histogram = Services.telemetry.getHistogramById(
-    "BROWSER_ATTRIBUTION_ERRORS"
-  );
-  try {
-    
-    histogram.clear();
-
-    
-    await AttributionCode.getAttrDataAsync();
-
-    let result = await AttributionCode.getAttrDataAsync();
-    Assert.deepEqual(result, {}, "Should be able to get empty result");
-
-    TelemetryTestUtils.assertHistogram(histogram, INDEX_QUARANTINE_ERROR, 1);
-    histogram.clear();
-
-    await assertCacheExistsAndIsEmpty();
-  } finally {
-    await AttributionCode.deleteFileAsync();
-    AttributionCode._clearCache();
-    histogram.clear();
   }
 });

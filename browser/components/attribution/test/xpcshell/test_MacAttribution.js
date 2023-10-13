@@ -8,30 +8,88 @@ const { MacAttribution } = ChromeUtils.importESModule(
   "resource:///modules/MacAttribution.sys.mjs"
 );
 
+let extendedAttributeTestCases = [
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci\0\0\0\0\0",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci\t\t\t\t\t",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci\0\0\0\t\t",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci\t\t\0\0",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "__MOZCUSTOM__dlsource%3D=mozci\0\t\0\t\0\t",
+    expected: "dlsource%3D=mozci",
+    error: false,
+  },
+  {
+    raw: "",
+    expected: "",
+    error: true,
+  },
+  {
+    raw: "dlsource%3D=mozci\0\t\0\t\0\t",
+    expected: "",
+    error: true,
+  },
+];
+
 add_task(async () => {
   await setupStubs();
 });
 
-add_task(async function testValidAttrCodes() {
-  let appPath = MacAttribution.applicationPath;
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
 
+
+
+
+add_task(async function testExtendedAttributeProcessing() {
+  for (let entry of extendedAttributeTestCases) {
+    await MacAttribution.setAttributionString(entry.raw);
+    try {
+      let got = await MacAttribution.getAttributionString();
+      if (entry.error === true) {
+        Assert.ok(false, "Expected error, raw code was: " + entry.raw);
+      }
+      Assert.equal(
+        got,
+        entry.expected,
+        "Returned code should match expected value, raw code was: " + entry.raw
+      );
+    } catch (err) {
+      if (entry.error === false) {
+        Assert.ok(
+          false,
+          "Unexpected error, raw code was: " + entry.raw + " error is: " + err
+        );
+      }
+    }
+  }
+});
+
+add_task(async function testValidAttrCodes() {
   for (let entry of validAttrCodes) {
     if (entry.platforms && !entry.platforms.includes("mac")) {
       continue;
     }
 
-    
-    
-    
-    
-    
-    let url = `http://example.com?${encodeURI(decodeURIComponent(entry.code))}`;
-    attributionSvc.setReferrerUrl(appPath, url, true);
-    let referrer = await MacAttribution.getReferrerUrl(appPath);
-    equal(referrer, url, "overwrite referrer url");
+    await MacAttribution.setAttributionString("__MOZCUSTOM__" + entry.code);
 
     
     await AttributionCode.deleteFileAsync();
@@ -53,10 +111,7 @@ add_task(async function testValidAttrCodes() {
     );
 
     
-    attributionSvc.setReferrerUrl(appPath, "http://test.com", false);
-    referrer = await MacAttribution.getReferrerUrl(appPath);
-    equal(referrer, url, "update referrer url");
-
+    await MacAttribution.setAttributionString("__MOZCUSTOM__testcode");
     result = await AttributionCode.getAttrDataAsync();
     Assert.deepEqual(
       result,
@@ -67,26 +122,8 @@ add_task(async function testValidAttrCodes() {
 });
 
 add_task(async function testInvalidAttrCodes() {
-  let appPath = MacAttribution.applicationPath;
-  let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-    Ci.nsIMacAttributionService
-  );
-
   for (let code of invalidAttrCodes) {
-    
-    
-    let url = `http://example.com?${code}`;
-    let referrer;
-    try {
-      attributionSvc.setReferrerUrl(appPath, url, true);
-      referrer = await MacAttribution.getReferrerUrl(appPath);
-    } catch (ex) {
-      continue;
-    }
-    if (!referrer) {
-      continue;
-    }
-    equal(referrer, url, "overwrite referrer url");
+    await MacAttribution.setAttributionString("__MOZCUSTOM__" + code);
 
     
     await AttributionCode.deleteFileAsync();

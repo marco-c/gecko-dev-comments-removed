@@ -7,15 +7,10 @@ const { AttributionIOUtils } = ChromeUtils.importESModule(
 
 add_task(async function test_parse_error() {
   if (AppConstants.platform == "macosx") {
-    
-    
     const { MacAttribution } = ChromeUtils.importESModule(
       "resource:///modules/MacAttribution.sys.mjs"
     );
-    let attributionSvc = Cc["@mozilla.org/mac-attribution;1"].getService(
-      Ci.nsIMacAttributionService
-    );
-    attributionSvc.setReferrerUrl(MacAttribution.applicationPath, "", true);
+    MacAttribution.setAttributionString("");
   }
 
   registerCleanupFunction(async () => {
