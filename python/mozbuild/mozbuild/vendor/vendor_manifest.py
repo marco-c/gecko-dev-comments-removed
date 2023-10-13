@@ -30,6 +30,16 @@ DEFAULT_KEEP_FILES = ["**/moz.build", "**/moz.yaml"]
 DEFAULT_INCLUDE_FILES = []
 
 
+def iglob_hidden(*args, **kwargs):
+    
+    old_ishidden = glob._ishidden
+    glob._ishidden = lambda x: False
+    try:
+        yield from glob.iglob(*args, **kwargs)
+    finally:
+        glob._ishidden = old_ishidden
+
+
 def throwe():
     raise Exception
 
@@ -366,11 +376,11 @@ class VendorManifest(MozbuildObject):
                 
                 
                 paths.extend(
-                    glob.iglob(mozpath.join(pattern_full_path, "**"), recursive=True)
+                    iglob_hidden(mozpath.join(pattern_full_path, "**"), recursive=True)
                 )
             
             else:
-                paths.extend(glob.iglob(pattern_full_path, recursive=True))
+                paths.extend(iglob_hidden(pattern_full_path, recursive=True))
         
         
         
