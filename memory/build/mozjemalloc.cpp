@@ -639,7 +639,7 @@ static void* base_alloc(size_t aSize);
 
 static bool malloc_initialized;
 #else
-static Atomic<bool, SequentiallyConsistent> malloc_initialized;
+static Atomic<bool, MemoryOrdering::ReleaseAcquire> malloc_initialized;
 #endif
 
 static StaticMutex gInitLock MOZ_UNANNOTATED = {STATIC_MUTEX_INIT};
@@ -1518,10 +1518,9 @@ FORK_HOOK void _malloc_postfork_child(void);
 
 
 static inline bool malloc_init() {
-  if (malloc_initialized == false) {
+  if (!malloc_initialized) {
     return malloc_init_hard();
   }
-
   return true;
 }
 
@@ -3492,7 +3491,7 @@ class AllocInfo {
   template <bool Validate = false>
   static inline AllocInfo Get(const void* aPtr) {
     
-    if (Validate && malloc_initialized == false) {
+    if (Validate && !malloc_initialized) {
       return AllocInfo();
     }
 
