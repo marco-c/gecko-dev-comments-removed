@@ -6,6 +6,7 @@
 #ifndef DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
 #define DOM_MEDIA_DRIFTCONTROL_DRIFTCONTROLLER_H_
 
+#include "TimeUnits.h"
 #include "mozilla/RollingMean.h"
 
 #include <algorithm>
@@ -38,12 +39,12 @@ class DriftController final {
 
 
   DriftController(uint32_t aSourceRate, uint32_t aTargetRate,
-                  uint32_t aDesiredBuffering);
+                  media::TimeUnit aDesiredBuffering);
 
   
 
 
-  void SetDesiredBuffering(uint32_t aDesiredBuffering);
+  void SetDesiredBuffering(media::TimeUnit aDesiredBuffering);
 
   
 
@@ -69,9 +70,9 @@ class DriftController final {
 
 
 
-
-  void UpdateClock(uint32_t aSourceFrames, uint32_t aTargetFrames,
-                   uint32_t aBufferedFrames, uint32_t aBufferSize);
+  void UpdateClock(media::TimeUnit aSourceDuration,
+                   media::TimeUnit aTargetDuration, uint32_t aBufferedFrames,
+                   uint32_t aBufferSize);
 
  private:
   
@@ -110,26 +111,27 @@ class DriftController final {
   const uint8_t mPlotId;
   const uint32_t mSourceRate;
   const uint32_t mTargetRate;
-  const uint32_t mAdjustmentIntervalMs = 1000;
-  const TrackTime mIntegralCapFrameLimit = 10 * mTargetRate;
+  const media::TimeUnit mAdjustmentInterval = media::TimeUnit::FromSeconds(1);
+  const media::TimeUnit mIntegralCapTimeLimit =
+      media::TimeUnit(10, 1).ToBase(mTargetRate);
 
  private:
-  uint32_t mDesiredBuffering;
+  media::TimeUnit mDesiredBuffering;
   int32_t mPreviousError = 0;
   float mIntegral = 0.0;
   Maybe<float> mIntegralCenterForCap;
   float mCorrectedTargetRate;
   Maybe<int32_t> mLastHysteresisBoundaryCorrection;
-  uint32_t mTargetFramesWithinHysteresis = 0;
+  media::TimeUnit mDurationWithinHysteresis;
   uint32_t mNumCorrectionChanges = 0;
 
   
-  RollingMean<TrackTime, TrackTime> mMeasuredSourceLatency;
+  RollingMean<media::TimeUnit, media::TimeUnit> mMeasuredSourceLatency;
   
-  RollingMean<TrackTime, TrackTime> mMeasuredTargetLatency;
+  RollingMean<media::TimeUnit, media::TimeUnit> mMeasuredTargetLatency;
 
-  uint32_t mTargetClock = 0;
-  TrackTime mTotalTargetClock = 0;
+  media::TimeUnit mTargetClock;
+  media::TimeUnit mTotalTargetClock;
 };
 
 }  
