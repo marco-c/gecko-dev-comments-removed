@@ -1077,9 +1077,12 @@ class PerfParser(CompareParser):
         )
 
         
-        msg = "Perf selections={} (queries={})".format(
-            ",".join(selected_categories),
-            "&".join([q for q in queries if q is not None and len(q) > 0]),
+        selected_categories_msg = ", ".join(selected_categories)
+        if len(selected_categories_msg) > 200:
+            selected_categories_msg = f"{selected_categories_msg[:200]}...\n...{selected_categories_msg[200:]}"
+        msg = "Perf selections={} \nQueries={}".format(
+            selected_categories_msg,
+            json.dumps(queries, indent=4),
         )
         if alert_summary_id:
             msg = f"Perf alert summary id={alert_summary_id}"
