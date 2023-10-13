@@ -258,12 +258,17 @@ size_t FlexfecHeaderWriter::FecHeaderSize(size_t packet_mask_size) const {
 
 
 void FlexfecHeaderWriter::FinalizeFecHeader(
-    uint32_t media_ssrc,
-    uint16_t seq_num_base,
-    const uint8_t* packet_mask,
-    size_t packet_mask_size,
-    ForwardErrorCorrection::Packet* fec_packet) const {
-  uint8_t* data = fec_packet->data.MutableData();
+    rtc::ArrayView<const ProtectedStream> protected_streams,
+    ForwardErrorCorrection::Packet& fec_packet) const {
+  
+  
+  RTC_CHECK_EQ(protected_streams.size(), 1);
+  uint32_t media_ssrc = protected_streams[0].ssrc;
+  uint16_t seq_num_base = protected_streams[0].seq_num_base;
+  const uint8_t* packet_mask = protected_streams[0].packet_mask.data();
+  size_t packet_mask_size = protected_streams[0].packet_mask.size();
+
+  uint8_t* data = fec_packet.data.MutableData();
   data[0] &= 0x7f;  
   data[0] &= 0xbf;  
   ByteWriter<uint8_t>::WriteBigEndian(&data[8], kSsrcCount);
