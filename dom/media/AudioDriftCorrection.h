@@ -54,6 +54,11 @@ class ClockDrift final {
   
 
 
+  uint32_t NumCorrectionChanges() const { return mNumCorrectionChanges; }
+
+  
+
+
 
 
 
@@ -105,8 +110,17 @@ class ClockDrift final {
                  aCalculationWeight * mTargetClock / resampledSourceClock,
              aBufferedFrames, mDesiredBuffering, aRemainingFrames));
 
+    auto oldCorrection = mCorrection;
+
     mCorrection = (1 - aCalculationWeight) * mCorrection +
                   aCalculationWeight * mTargetClock / resampledSourceClock;
+
+    if (oldCorrection != mCorrection) {
+      
+      
+      
+      ++mNumCorrectionChanges;
+    }
 
     
     mCorrection = std::min(std::max(mCorrection, 0.9f), 1.1f);
@@ -124,6 +138,7 @@ class ClockDrift final {
 
  private:
   float mCorrection = 1.0;
+  uint32_t mNumCorrectionChanges = 0;
 
   uint32_t mSourceClock = 0;
   uint32_t mTargetClock = 0;
@@ -196,6 +211,11 @@ class AudioDriftCorrection final {
 
   
   uint32_t CurrentBuffering() const { return mResampler.InputReadableFrames(); }
+
+  
+  uint32_t NumCorrectionChanges() const {
+    return mClockDrift.NumCorrectionChanges();
+  }
 
   const uint32_t mDesiredBuffering;
   const uint32_t mTargetRate;
