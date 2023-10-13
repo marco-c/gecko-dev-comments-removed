@@ -433,8 +433,8 @@ class Nursery {
   
   
   
-  uint32_t currentStartChunk_;
-  uintptr_t currentStartPosition_;
+  uint32_t startChunk_;
+  uintptr_t startPosition_;
 
   
   
@@ -616,8 +616,7 @@ class Nursery {
   void* tryAllocate(size_t size) {
     MOZ_ASSERT(isEnabled());
     MOZ_ASSERT(!JS::RuntimeHeapIsBusy());
-    MOZ_ASSERT_IF(currentChunk_ == currentStartChunk_,
-                  position() >= currentStartPosition_);
+    MOZ_ASSERT_IF(currentChunk_ == startChunk_, position() >= startPosition_);
     MOZ_ASSERT(size % gc::CellAlignBytes == 0);
     MOZ_ASSERT(position() % gc::CellAlignBytes == 0);
 

@@ -216,8 +216,8 @@ js::Nursery::Nursery(GCRuntime* gc)
       currentEnd_(0),
       gc(gc),
       currentChunk_(0),
-      currentStartChunk_(0),
-      currentStartPosition_(0),
+      startChunk_(0),
+      startPosition_(0),
       capacity_(0),
       enableProfiling_(false),
       canAllocateStrings_(true),
@@ -467,10 +467,10 @@ bool js::Nursery::isEmpty() const {
   }
 
   if (!gc->hasZealMode(ZealMode::GenerationalGC)) {
-    MOZ_ASSERT(currentStartChunk_ == 0);
-    MOZ_ASSERT(currentStartPosition_ == chunk(0).start());
+    MOZ_ASSERT(startChunk_ == 0);
+    MOZ_ASSERT(startPosition_ == chunk(0).start());
   }
-  return position() == currentStartPosition_;
+  return position() == startPosition_;
 }
 
 #ifdef JS_GC_ZEAL
@@ -1684,11 +1684,11 @@ void js::Nursery::clear() {
     
     
     
-    firstClearChunk = currentStartChunk_;
+    firstClearChunk = startChunk_;
   } else {
     
     
-    MOZ_ASSERT(currentStartChunk_ == 0);
+    MOZ_ASSERT(startChunk_ == 0);
     firstClearChunk = 1;
   }
   for (unsigned i = firstClearChunk; i < currentChunk_; ++i) {
@@ -1721,8 +1721,8 @@ size_t js::Nursery::spaceToEnd(unsigned chunkCount) const {
 
   unsigned lastChunk = chunkCount - 1;
 
-  MOZ_ASSERT(lastChunk >= currentStartChunk_);
-  MOZ_ASSERT(currentStartPosition_ - chunk(currentStartChunk_).start() <=
+  MOZ_ASSERT(lastChunk >= startChunk_);
+  MOZ_ASSERT(startPosition_ - chunk(startChunk_).start() <=
              NurseryChunkUsableSize);
 
   size_t bytes;
@@ -1733,13 +1733,12 @@ size_t js::Nursery::spaceToEnd(unsigned chunkCount) const {
     
     
     
-    
-    bytes = (chunk(currentStartChunk_).end() - currentStartPosition_) +
-            ((lastChunk - currentStartChunk_) * ChunkSize);
+    bytes = (chunk(startChunk_).end() - startPosition_) +
+            ((lastChunk - startChunk_) * ChunkSize);
   } else {
     
     
-    bytes = currentEnd_ - currentStartPosition_;
+    bytes = currentEnd_ - startPosition_;
   }
 
   MOZ_ASSERT(bytes <= maxChunkCount() * ChunkSize);
@@ -1803,8 +1802,8 @@ bool js::Nursery::allocateNextChunk(const unsigned chunkno,
 }
 
 MOZ_ALWAYS_INLINE void js::Nursery::setStartPosition() {
-  currentStartChunk_ = currentChunk_;
-  currentStartPosition_ = position();
+  startChunk_ = currentChunk_;
+  startPosition_ = position();
 }
 
 void js::Nursery::maybeResizeNursery(JS::GCOptions options,
