@@ -304,10 +304,6 @@ pub enum SystemColor {
     
     MozMacFocusring,
     
-    MozMacMenutextdisable,
-    
-    MozMacMenutextselect,
-    
     MozMacDisabledtoolbartext,
 
     MozMacMenupopup,
