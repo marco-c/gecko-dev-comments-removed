@@ -64,7 +64,6 @@ class SpecifierRequirement(Requirement):
         return format_name(self.project_name, self._extras)
 
     def format_for_error(self) -> str:
-
         
         
         

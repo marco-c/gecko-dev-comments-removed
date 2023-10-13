@@ -143,16 +143,18 @@ def message_about_scripts_not_on_PATH(scripts: Sequence[str]) -> Optional[str]:
 
     
     not_warn_dirs = [
-        os.path.normcase(i).rstrip(os.sep)
+        os.path.normcase(os.path.normpath(i)).rstrip(os.sep)
         for i in os.environ.get("PATH", "").split(os.pathsep)
     ]
     
     
-    not_warn_dirs.append(os.path.normcase(os.path.dirname(sys.executable)))
+    not_warn_dirs.append(
+        os.path.normcase(os.path.normpath(os.path.dirname(sys.executable)))
+    )
     warn_for: Dict[str, Set[str]] = {
         parent_dir: scripts
         for parent_dir, scripts in grouped_by_dir.items()
-        if os.path.normcase(parent_dir) not in not_warn_dirs
+        if os.path.normcase(os.path.normpath(parent_dir)) not in not_warn_dirs
     }
     if not warn_for:
         return None

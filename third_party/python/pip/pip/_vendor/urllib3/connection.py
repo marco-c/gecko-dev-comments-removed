@@ -229,6 +229,11 @@ class HTTPConnection(_HTTPConnection, object):
             )
 
     def request(self, method, url, body=None, headers=None):
+        
+        
+        if getattr(self, "sock", None) is not None:
+            self.sock.settimeout(self.timeout)
+
         if headers is None:
             headers = {}
         else:

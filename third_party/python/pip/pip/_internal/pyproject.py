@@ -97,8 +97,13 @@ def load_pyproject_toml(
     
     
     
+    
     elif use_pep517 is None:
-        use_pep517 = has_pyproject or not importlib.util.find_spec("setuptools")
+        use_pep517 = (
+            has_pyproject
+            or not importlib.util.find_spec("setuptools")
+            or not importlib.util.find_spec("wheel")
+        )
 
     
     assert use_pep517 is not None

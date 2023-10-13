@@ -4,6 +4,7 @@ import locale
 import logging
 import os
 import sys
+import warnings
 from typing import List, Optional
 
 from pip._internal.cli.autocompletion import autocomplete
@@ -45,6 +46,14 @@ logger = logging.getLogger(__name__)
 def main(args: Optional[List[str]] = None) -> int:
     if args is None:
         args = sys.argv[1:]
+
+    
+    
+    
+    
+    warnings.filterwarnings(
+        action="ignore", category=DeprecationWarning, module=".*pkg_resources"
+    )
 
     
     deprecation.install_warning_logger()

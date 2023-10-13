@@ -22,7 +22,7 @@ class InstallationReport:
             
             
             
-            "is_direct": bool(ireq.original_link),
+            "is_direct": ireq.is_direct,
             
             
             

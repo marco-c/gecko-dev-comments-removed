@@ -122,6 +122,26 @@ class Command(CommandContextMixIn):
             user_log_file=options.log,
         )
 
+        always_enabled_features = set(options.features_enabled) & set(
+            cmdoptions.ALWAYS_ENABLED_FEATURES
+        )
+        if always_enabled_features:
+            logger.warning(
+                "The following features are always enabled: %s. ",
+                ", ".join(sorted(always_enabled_features)),
+            )
+
+        
+        
+        
+        
+        
+        if options.python and "_PIP_RUNNING_IN_SUBPROCESS" not in os.environ:
+            logger.critical(
+                "The --python option must be placed before the pip subcommand name"
+            )
+            sys.exit(ERROR)
+
         
         
         

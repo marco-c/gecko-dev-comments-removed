@@ -64,9 +64,9 @@ def check_compatibility(urllib3_version, chardet_version, charset_normalizer_ver
     major, minor, patch = urllib3_version  
     major, minor, patch = int(major), int(minor), int(patch)
     
-    assert major == 1
-    assert minor >= 21
-    assert minor <= 26
+    assert major >= 1
+    if major == 1:
+        assert minor >= 21
 
     
     if chardet_version:

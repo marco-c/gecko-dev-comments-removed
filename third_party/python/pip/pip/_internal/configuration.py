@@ -210,8 +210,15 @@ class Configuration:
             
             ensure_dir(os.path.dirname(fname))
 
-            with open(fname, "w") as f:
-                parser.write(f)
+            
+            try:
+                with open(fname, "w") as f:
+                    parser.write(f)
+            except OSError as error:
+                raise ConfigurationError(
+                    f"An error occurred while writing to the configuration file "
+                    f"{fname}: {error}"
+                )
 
     
     

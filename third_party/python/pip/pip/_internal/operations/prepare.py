@@ -179,7 +179,10 @@ def unpack_url(
 
 
 def _check_download_dir(
-    link: Link, download_dir: str, hashes: Optional[Hashes]
+    link: Link,
+    download_dir: str,
+    hashes: Optional[Hashes],
+    warn_on_hash_mismatch: bool = True,
 ) -> Optional[str]:
     """Check download_dir for previously downloaded file with correct hash
     If a correct file is found return its path else None
@@ -195,10 +198,11 @@ def _check_download_dir(
         try:
             hashes.check_against_path(download_path)
         except HashMismatch:
-            logger.warning(
-                "Previously-downloaded file %s has bad hash. Re-downloading.",
-                download_path,
-            )
+            if warn_on_hash_mismatch:
+                logger.warning(
+                    "Previously-downloaded file %s has bad hash. Re-downloading.",
+                    download_path,
+                )
             os.unlink(download_path)
             return None
     return download_path
@@ -222,6 +226,7 @@ class RequirementPreparer:
         use_user_site: bool,
         lazy_wheel: bool,
         verbosity: int,
+        legacy_resolver: bool,
     ) -> None:
         super().__init__()
 
@@ -256,6 +261,9 @@ class RequirementPreparer:
         self.verbosity = verbosity
 
         
+        self.legacy_resolver = legacy_resolver
+
+        
         self._downloaded: Dict[str, str] = {}
 
         
@@ -263,18 +271,28 @@ class RequirementPreparer:
 
     def _log_preparing_link(self, req: InstallRequirement) -> None:
         """Provide context for the requirement being prepared."""
-        if req.link.is_file and not req.original_link_is_in_wheel_cache:
+        if req.link.is_file and not req.is_wheel_from_cache:
             message = "Processing %s"
             information = str(display_path(req.link.file_path))
         else:
             message = "Collecting %s"
             information = str(req.req or req)
 
+        
+        
+        if req.req and req.comes_from:
+            if isinstance(req.comes_from, str):
+                comes_from: Optional[str] = req.comes_from
+            else:
+                comes_from = req.comes_from.from_path()
+            if comes_from:
+                information += f" (from {comes_from})"
+
         if (message, information) != self._previous_requirement_header:
             self._previous_requirement_header = (message, information)
             logger.info(message, information)
 
-        if req.original_link_is_in_wheel_cache:
+        if req.is_wheel_from_cache:
             with indent_log():
                 logger.info("Using cached %s", req.link.filename)
 
@@ -338,7 +356,7 @@ class RequirementPreparer:
         
         
         
-        if req.original_link is None and not req.is_pinned:
+        if not req.is_direct and not req.is_pinned:
             raise HashUnpinned()
 
         
@@ -351,6 +369,11 @@ class RequirementPreparer:
         self,
         req: InstallRequirement,
     ) -> Optional[BaseDistribution]:
+        if self.legacy_resolver:
+            logger.debug(
+                "Metadata-only fetching is not used in the legacy resolver",
+            )
+            return None
         if self.require_hashes:
             logger.debug(
                 "Metadata-only fetching is not used as hash checking is required",
@@ -396,7 +419,7 @@ class RequirementPreparer:
         
         
         
-        if metadata_dist.raw_name != req.req.name:
+        if canonicalize_name(metadata_dist.raw_name) != canonicalize_name(req.req.name):
             raise MetadataInconsistent(
                 req, "Name", req.req.name, metadata_dist.raw_name
             )
@@ -457,6 +480,19 @@ class RequirementPreparer:
             logger.debug("Downloading link %s to %s", link, filepath)
             req = links_to_fully_download[link]
             req.local_file_path = filepath
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            if req.is_wheel:
+                self._downloaded[req.link.url] = filepath
 
         
         
@@ -475,7 +511,18 @@ class RequirementPreparer:
             file_path = None
             if self.download_dir is not None and req.link.is_wheel:
                 hashes = self._get_linked_req_hashes(req)
-                file_path = _check_download_dir(req.link, self.download_dir, hashes)
+                file_path = _check_download_dir(
+                    req.link,
+                    self.download_dir,
+                    hashes,
+                    
+                    
+                    
+                    
+                    
+                    
+                    warn_on_hash_mismatch=not req.is_wheel_from_cache,
+                )
 
             if file_path is not None:
                 
@@ -526,8 +573,34 @@ class RequirementPreparer:
         assert req.link
         link = req.link
 
-        self._ensure_link_req_src_dir(req, parallel_builds)
         hashes = self._get_linked_req_hashes(req)
+
+        if hashes and req.is_wheel_from_cache:
+            assert req.download_info is not None
+            assert link.is_wheel
+            assert link.is_file
+            
+            
+            if (
+                isinstance(req.download_info.info, ArchiveInfo)
+                and req.download_info.info.hashes
+                and hashes.has_one_of(req.download_info.info.hashes)
+            ):
+                
+                
+                
+                
+                hashes = None
+            else:
+                logger.warning(
+                    "The hashes of the source archive found in cache entry "
+                    "don't match, ignoring cached built wheel "
+                    "and re-downloading source."
+                )
+                req.link = req.cached_wheel_source_link
+                link = req.link
+
+        self._ensure_link_req_src_dir(req, parallel_builds)
 
         if link.is_existing_dir():
             local_file = None
@@ -561,12 +634,15 @@ class RequirementPreparer:
             
             
             
+            
             if (
                 isinstance(req.download_info.info, ArchiveInfo)
-                and not req.download_info.info.hash
+                and not req.download_info.info.hashes
                 and local_file
             ):
                 hash = hash_file(local_file.path)[0].hexdigest()
+                
+                
                 req.download_info.info.hash = f"sha256={hash}"
 
         
