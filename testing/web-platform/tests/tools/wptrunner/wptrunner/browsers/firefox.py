@@ -696,6 +696,18 @@ class ProfileCreator:
         if self.test_type in ("reftest", "print-reftest"):
             profile.set_preferences({"layout.interruptible-reflow.enabled": False})
 
+        if self.test_type == "testharness":
+            
+            
+            
+            
+            
+            
+            profile.set_preferences({"test.events.async.enabled": True})
+            profile.set_preferences({"test.events.async.touch.enabled": True})
+            profile.set_preferences({"test.events.async.wheel.enabled": True})
+            profile.set_preferences({"mousewheel.transaction.timeout": 0})
+
         if self.test_type == "print-reftest":
             profile.set_preferences({"print.always_print_silent": True})
 

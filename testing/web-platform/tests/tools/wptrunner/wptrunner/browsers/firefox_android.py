@@ -142,6 +142,17 @@ class ProfileCreator(FirefoxProfileCreator):
                 "layout.testing.overlay-scrollbars.always-visible": True,
             })
 
+        if self.test_type == "testharness":
+            
+            
+            
+            
+            
+            
+            profile.set_preferences({"test.events.async.enabled": True})
+            profile.set_preferences({"test.events.async.touch.enabled": True})
+            profile.set_preferences({"test.events.async.wheel.enabled": True})
+
         profile.set_preferences({"fission.autostart": True})
         if self.disable_fission:
             profile.set_preferences({"fission.autostart": False})
