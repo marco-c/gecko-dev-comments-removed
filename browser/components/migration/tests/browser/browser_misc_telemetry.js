@@ -71,6 +71,10 @@ add_task(async function test_discovered_migrators_keyed_scalar() {
     { id: "chrome-test-2", name: "Chrome test profile 2" },
   ]);
 
+  sandbox
+    .stub(ChromeProfileMigrator.prototype, "hasPermissions")
+    .resolves(true);
+
   
   
   sandbox
