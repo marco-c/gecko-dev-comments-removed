@@ -37,15 +37,6 @@ static void FillExponentialRamp(double aBufferStartTime, Span<float> aBuffer,
   }
 }
 
-static float ExponentialApproach(double t0, double v0, float v1,
-                                 double timeConstant, double t) {
-  if (!mozilla::dom::WebAudioUtils::FuzzyEqual(timeConstant, 0.0)) {
-    return v1 + (v0 - v1) * fdlibm_expf(-(t - t0) / timeConstant);
-  } else {
-    return v1;
-  }
-}
-
 template <typename TimeType, typename DurationType>
 static size_t LimitedCountForDuration(size_t aMax, DurationType aDuration);
 
@@ -98,7 +89,7 @@ AudioTimelineEvent::AudioTimelineEvent(Type aType, double aTime, float aValue,
     : mType(aType),
       mValue(aValue),
       mTimeConstant(aTimeConstant),
-      mDuration(0.0),
+      mPerTickRatio(std::numeric_limits<double>::quiet_NaN()),
       mTime(aTime) {}
 
 AudioTimelineEvent::AudioTimelineEvent(Type aType,
@@ -150,6 +141,15 @@ void AudioTimelineEvent::ConvertToTicks(AudioNodeTrack* aDestination) {
   switch (mType) {
     case SetTarget:
       mTimeConstant *= aDestination->mSampleRate;
+      
+      
+      
+      
+      
+      
+      mPerTickRatio =
+          mTimeConstant == 0.0 ? 0.0 : fdlibm_exp(-1.0 / mTimeConstant);
+
       break;
     case SetValueCurve:
       mDuration *= aDestination->mSampleRate;
@@ -164,9 +164,28 @@ void AudioTimelineEvent::FillTargetApproach(TimeType aBufferStartTime,
                                             Span<float> aBuffer,
                                             double v0) const {
   MOZ_ASSERT(mType == SetTarget);
-  for (size_t i = 0; i < aBuffer.Length(); ++i) {
-    aBuffer[i] = ::ExponentialApproach(Time<TimeType>(), v0, mValue,
-                                       mTimeConstant, aBufferStartTime + i);
+  MOZ_ASSERT(aBuffer.Length() >= 1);
+  double v1 = mValue;
+  double vDelta = v0 - v1;
+  if (vDelta == 0.0 || mTimeConstant == 0.0) {
+    std::fill_n(aBuffer.Elements(), aBuffer.Length(), mValue);
+    return;
+  }
+
+  
+  
+  
+  vDelta *= fdlibm_expf(-(aBufferStartTime - Time<TimeType>()) / mTimeConstant);
+  for (size_t i = 0; true;) {
+    aBuffer[i] = static_cast<float>(v1 + vDelta);
+    ++i;
+    if (i == aBuffer.Length()) {
+      return;
+    }
+    
+    
+    
+    vDelta *= mPerTickRatio;
   }
 }
 

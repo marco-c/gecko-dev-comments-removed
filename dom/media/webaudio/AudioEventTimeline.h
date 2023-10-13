@@ -96,6 +96,9 @@ struct AudioTimelineEvent {
 #ifdef DEBUG
     bool mIsInSeconds;
     bool mIsInTicks;
+
+   public:
+    bool IsInTicks() const { return mIsInTicks; };
 #endif
   };
 
@@ -173,7 +176,11 @@ struct AudioTimelineEvent {
     
     float* mCurve;
   };
-  double mDuration;  
+  union {
+    
+    double mPerTickRatio;
+    double mDuration;  
+  };
 
   
   
