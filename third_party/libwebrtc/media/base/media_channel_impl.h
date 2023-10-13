@@ -64,54 +64,19 @@
 
 
 
-
-
 namespace cricket {
 
 class VoiceMediaChannel;
 class VideoMediaChannel;
 
-class MediaChannel : public MediaSendChannelInterface,
-                     public MediaReceiveChannelInterface {
+
+
+
+class MediaChannelUtil {
  public:
-  
-  
-  
-  enum class Role {
-    kSend,
-    kReceive,
-    kBoth  
-    
-  };
-
-  explicit MediaChannel(Role role,
-                        webrtc::TaskQueueBase* network_thread,
-                        bool enable_dscp = false);
-  virtual ~MediaChannel();
-
-  Role role() const { return role_; }
-
-  
-  virtual VideoMediaChannel* AsVideoChannel() {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
-
-  virtual VoiceMediaChannel* AsVoiceChannel() {
-    RTC_CHECK_NOTREACHED();
-    return nullptr;
-  }
-  
-  
-  
-  cricket::MediaType media_type() const override = 0;
-  void OnPacketReceived(const webrtc::RtpPacketReceived& packet) override = 0;
-  void OnPacketSent(const rtc::SentPacket& sent_packet) override = 0;
-  void OnReadyToSend(bool ready) override = 0;
-  void OnNetworkRouteChanged(absl::string_view transport_name,
-                             const rtc::NetworkRoute& network_route) override =
-      0;
-
+  MediaChannelUtil(webrtc::TaskQueueBase* network_thread,
+                   bool enable_dscp = false);
+  virtual ~MediaChannelUtil();
   
   virtual int GetRtpSendTimeExtnId() const;
   
@@ -128,30 +93,32 @@ class MediaChannel : public MediaSendChannelInterface,
   
   
   
-  
-  void SetExtmapAllowMixed(bool extmap_allow_mixed) override;
-  bool ExtmapAllowMixed() const override;
 
-  void SetInterface(MediaChannelNetworkInterface* iface) override;
   
   
-  bool HasNetworkInterface() const override;
+  
+  
+  void SetExtmapAllowMixed(bool extmap_allow_mixed);
+  bool ExtmapAllowMixed() const;
 
-  void SetFrameEncryptor(uint32_t ssrc,
-                         rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
-                             frame_encryptor) override;
-  void SetFrameDecryptor(uint32_t ssrc,
-                         rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
-                             frame_decryptor) override;
+  void SetInterface(MediaChannelNetworkInterface* iface);
+  
+  
+  bool HasNetworkInterface() const;
+
+  void SetFrameEncryptor(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor);
+  void SetFrameDecryptor(
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor);
 
   void SetEncoderToPacketizerFrameTransformer(
       uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
-      override;
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
   void SetDepacketizerToDecoderFrameTransformer(
       uint32_t ssrc,
-      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer)
-      override;
+      rtc::scoped_refptr<webrtc::FrameTransformerInterface> frame_transformer);
 
  protected:
   int SetOptionLocked(MediaChannelNetworkInterface::SocketType type,
@@ -184,7 +151,6 @@ class MediaChannel : public MediaSendChannelInterface,
                     bool rtcp,
                     const rtc::PacketOptions& options);
 
-  const Role role_;
   const bool enable_dscp_;
   const rtc::scoped_refptr<webrtc::PendingTaskSafetyFlag> network_safety_
       RTC_PT_GUARDED_BY(network_thread_);
@@ -194,6 +160,61 @@ class MediaChannel : public MediaSendChannelInterface,
   rtc::DiffServCodePoint preferred_dscp_ RTC_GUARDED_BY(network_thread_) =
       rtc::DSCP_DEFAULT;
   bool extmap_allow_mixed_ = false;
+};
+
+
+
+
+class MediaChannel : public MediaChannelUtil,
+                     public MediaSendChannelInterface,
+                     public MediaReceiveChannelInterface {
+ public:
+  
+  
+  
+  enum class Role {
+    kSend,
+    kReceive,
+    kBoth  
+    
+  };
+
+  explicit MediaChannel(Role role,
+                        webrtc::TaskQueueBase* network_thread,
+                        bool enable_dscp = false);
+  virtual ~MediaChannel() = default;
+
+  Role role() const { return role_; }
+
+  
+  virtual VideoMediaChannel* AsVideoChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+
+  virtual VoiceMediaChannel* AsVoiceChannel() {
+    RTC_CHECK_NOTREACHED();
+    return nullptr;
+  }
+  
+  
+  
+  cricket::MediaType media_type() const override = 0;
+  void OnPacketReceived(const webrtc::RtpPacketReceived& packet) override = 0;
+  void OnPacketSent(const rtc::SentPacket& sent_packet) override = 0;
+  void OnReadyToSend(bool ready) override = 0;
+  void OnNetworkRouteChanged(absl::string_view transport_name,
+                             const rtc::NetworkRoute& network_route) override =
+      0;
+
+  
+  using MediaChannelUtil::ExtmapAllowMixed;
+  using MediaChannelUtil::HasNetworkInterface;
+  using MediaChannelUtil::SetExtmapAllowMixed;
+  using MediaChannelUtil::SetInterface;
+
+ private:
+  const Role role_;
 };
 
 
