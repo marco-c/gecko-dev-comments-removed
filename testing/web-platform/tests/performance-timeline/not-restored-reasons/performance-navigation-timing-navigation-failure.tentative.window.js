@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+'use strict';
+const {ORIGIN} = get_host_info();
+
+promise_test(async t => {
+  const rcHelper = new RemoteContextHelper();
+  
+  const rc1 = await rcHelper.addWindow(
+       {status: 404},  {features: 'noopener'});
+  const rc1_url = await rc1.executeScript(() => {
+    return location.href;
+  });
+
+  
+  await assertBFCacheEligibility(rc1,  false);
+  await assertNotRestoredFromBFCache(rc1, ['error-document']);
+});

@@ -1,0 +1,41 @@
+
+
+
+
+
+
+
+
+
+'use strict';
+
+promise_test(async t => {
+  const rcHelper = new RemoteContextHelper();
+  
+  const rc1 = await rcHelper.addWindow(
+       null,  {features: 'noopener'});
+  const rc1_url = await rc1.executeScript(() => {
+    return location.href;
+  });
+  const wavURL = new URL(get_host_info().HTTP_REMOTE_ORIGIN + '/fetch/range/resources/long-wav.py');
+  await rc1.executeScript((wavURL) => {
+    
+    addEventListener('pagehide', (wavURL) => {
+      fetch(wavURL, {
+        keepalive: true
+      });
+    })
+  });
+
+  
+  await assertBFCacheEligibility(rc1,  false);
+  await assertNotRestoredReasonsEquals(
+      rc1,
+       "yes",
+       rc1_url,
+       null,
+       null,
+       null,
+      ['fetch'],
+      []);
+});
