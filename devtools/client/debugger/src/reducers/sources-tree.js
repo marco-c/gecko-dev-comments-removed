@@ -22,7 +22,7 @@
 
 const IGNORED_URLS = ["debugger eval code", "XStringBundle"];
 const IGNORED_EXTENSIONS = ["css", "svg", "png"];
-import { isPretty } from "../utils/source";
+import { isPretty, getRawSourceURL } from "../utils/source";
 import { prefs } from "../utils/prefs";
 
 export function initialSourcesTreeState() {
@@ -176,6 +176,9 @@ export default function update(state = initialSourcesTreeState(), action) {
 
     case "SET_FOCUSED_SOURCE_ITEM":
       return { ...state, focusedItem: action.item };
+
+    case "SET_SELECTED_LOCATION":
+      return updateSelectedLocation(state, action.location);
 
     case "SET_PROJECT_DIRECTORY_ROOT":
       const { uniquePath, name } = action;
@@ -587,4 +590,92 @@ function createSourceTreeItem(source, sourceActor, parent) {
     source,
     sourceActor,
   };
+}
+
+
+
+
+
+
+
+
+
+function updateSelectedLocation(state, selectedLocation) {
+  const sourceItem = getSourceItemForSelectedLocation(state, selectedLocation);
+  if (sourceItem) {
+    
+    const expanded = new Set(state.expanded);
+    let parentDirectory = sourceItem;
+    while (parentDirectory) {
+      expanded.add(parentDirectory.uniquePath);
+      parentDirectory = parentDirectory.parent;
+    }
+
+    return {
+      ...state,
+      expanded,
+      focusedItem: sourceItem,
+    };
+  }
+  return state;
+}
+
+
+
+
+
+
+
+
+
+function getSourceItemForSelectedLocation(state, selectedLocation) {
+  const { source, sourceActor } = selectedLocation;
+
+  
+  if (!source.url) {
+    return null;
+  }
+
+  
+  
+  
+  const sourceUrl = getRawSourceURL(source.url);
+
+  const { displayURL } = source;
+  function findSourceInItem(item, path) {
+    if (item.type == "source") {
+      if (item.source.url == sourceUrl) {
+        return item;
+      }
+      return null;
+    }
+    
+    if (item.type == "thread" && item.threadActorID != sourceActor?.thread) {
+      return null;
+    }
+    if (item.type == "group" && displayURL.group != item.groupName) {
+      return null;
+    }
+    if (item.type == "directory" && !path.startsWith(item.path)) {
+      return null;
+    }
+    
+    for (const child of item.children) {
+      const match = findSourceInItem(child, path);
+      if (match) {
+        return match;
+      }
+    }
+
+    return null;
+  }
+  for (const rootItem of state.threadItems) {
+    
+    
+    const item = findSourceInItem(rootItem, displayURL.path);
+    if (item) {
+      return item;
+    }
+  }
+  return null;
 }

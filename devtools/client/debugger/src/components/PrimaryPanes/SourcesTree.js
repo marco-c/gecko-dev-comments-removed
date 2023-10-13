@@ -10,14 +10,12 @@ import { connect } from "../../utils/connect";
 
 
 import {
-  getSelectedLocation,
   getMainThreadHost,
   getExpandedState,
   getProjectDirectoryRoot,
   getProjectDirectoryRootName,
   getSourcesTreeSources,
   getFocusedSourceItem,
-  getGeneratedSourceByURL,
   getHideIgnoredSources,
 } from "../../selectors";
 
@@ -28,10 +26,6 @@ import actions from "../../actions";
 import SourcesTreeItem from "./SourcesTreeItem";
 import AccessibleImage from "../shared/AccessibleImage";
 
-
-import { getRawSourceURL } from "../../utils/source";
-import { createLocation } from "../../utils/location";
-
 const classnames = require("devtools/client/shared/classnames.js");
 const Tree = require("devtools/client/shared/components/Tree");
 
@@ -39,64 +33,6 @@ function shouldAutoExpand(item, mainThreadHost) {
   
   
   return item.type == "group" && item.groupName === mainThreadHost;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-function getSourceItemForTreeLocation(treeLocation, rootItems) {
-  
-  const { source, sourceActor } = treeLocation;
-
-  if (!source.url) {
-    return null;
-  }
-  const { displayURL } = source;
-  function findSourceInItem(item, path) {
-    if (item.type == "source") {
-      if (item.source.url == source.url) {
-        return item;
-      }
-      return null;
-    }
-    
-    if (item.type == "thread" && item.threadActorID != sourceActor?.thread) {
-      return null;
-    }
-    if (item.type == "group" && displayURL.group != item.groupName) {
-      return null;
-    }
-    if (item.type == "directory" && !path.startsWith(item.path)) {
-      return null;
-    }
-    
-    for (const child of item.children) {
-      const match = findSourceInItem(child, path);
-      if (match) {
-        return match;
-      }
-    }
-
-    return null;
-  }
-  for (const rootItem of rootItems) {
-    
-    
-    const item = findSourceInItem(rootItem, displayURL.path);
-    if (item) {
-      return item;
-    }
-  }
-  return null;
 }
 
 class SourcesTree extends Component {
@@ -114,7 +50,6 @@ class SourcesTree extends Component {
       focused: PropTypes.object,
       projectRoot: PropTypes.string.isRequired,
       selectSource: PropTypes.func.isRequired,
-      selectedTreeLocation: PropTypes.object,
       setExpandedState: PropTypes.func.isRequired,
       rootItems: PropTypes.object.isRequired,
       clearProjectDirectoryRoot: PropTypes.func.isRequired,
@@ -122,39 +57,6 @@ class SourcesTree extends Component {
       setHideOrShowIgnoredSources: PropTypes.func.isRequired,
       hideIgnoredSources: PropTypes.bool.isRequired,
     };
-  }
-
-  
-  UNSAFE_componentWillReceiveProps(nextProps) {
-    const { selectedTreeLocation } = this.props;
-
-    
-    
-    if (
-      nextProps.selectedTreeLocation?.source &&
-      (nextProps.selectedTreeLocation.source != selectedTreeLocation?.source ||
-        (nextProps.selectedTreeLocation.source ===
-          selectedTreeLocation?.source &&
-          nextProps.selectedTreeLocation.sourceActor !=
-            selectedTreeLocation?.sourceActor) ||
-        !this.props.focused)
-    ) {
-      const sourceItem = getSourceItemForTreeLocation(
-        nextProps.selectedTreeLocation,
-        this.props.rootItems
-      );
-      if (sourceItem) {
-        
-        const expanded = new Set(this.props.expanded);
-        let parentDirectory = sourceItem;
-        while (parentDirectory) {
-          expanded.add(this.getKey(parentDirectory));
-          parentDirectory = this.getParent(parentDirectory);
-        }
-        this.props.setExpandedState(expanded);
-        this.onFocus(sourceItem);
-      }
-    }
   }
 
   selectSourceItem = item => {
@@ -419,30 +321,8 @@ class SourcesTree extends Component {
   }
 }
 
-function getTreeLocation(state, location) {
-  
-  
-  
-  if (location?.source.isPrettyPrinted) {
-    const source = getGeneratedSourceByURL(
-      state,
-      getRawSourceURL(location.source.url)
-    );
-    if (source) {
-      return createLocation({
-        source,
-        
-        
-        sourceActor: location.sourceActor,
-      });
-    }
-  }
-  return location;
-}
-
 const mapStateToProps = state => {
   return {
-    selectedTreeLocation: getTreeLocation(state, getSelectedLocation(state)),
     mainThreadHost: getMainThreadHost(state),
     expanded: getExpandedState(state),
     focused: getFocusedSourceItem(state),
