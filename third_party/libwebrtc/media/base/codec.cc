@@ -135,15 +135,8 @@ bool Codec::Matches(const Codec& codec,
                     const webrtc::FieldTrialsView* field_trials) const {
   
   
-
   
-  if (field_trials &&
-      field_trials->IsDisabled("WebRTC-PayloadTypes-Lower-Dynamic-Range")) {
-    const int kMaxStaticPayloadId = 95;
-    return (id <= kMaxStaticPayloadId || codec.id <= kMaxStaticPayloadId)
-               ? (id == codec.id)
-               : (absl::EqualsIgnoreCase(name, codec.name));
-  }
+  
   
   
   
