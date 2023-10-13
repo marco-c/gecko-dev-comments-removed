@@ -143,6 +143,12 @@ class DecoderTemplate : public DOMEventTargetHelper {
   virtual ~DecoderTemplate() = default;
 
   
+ public:
+  CodecState State() const { return mState; };
+
+  uint32_t DecodeQueueSize() const { return mDecodeQueueSize; };
+
+  
  protected:
   virtual already_AddRefed<MediaRawData> InputDataToMediaRawData(
       UniquePtr<InputTypeInternal>&& aData, TrackInfo& aInfo,
