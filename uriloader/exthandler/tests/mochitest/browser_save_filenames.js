@@ -372,7 +372,11 @@ if (AppConstants.platform != "macosx") {
 
 
 
-if (AppConstants.platform == "win") {
+const imageAsFileEnabled = SpecialPowers.getBoolPref(
+  "clipboard.imageAsFile.enabled",
+  false
+);
+if (AppConstants.platform == "win" && imageAsFileEnabled) {
   add_task(async function copy_image() {
     for (let idx = 0; idx < expectedItems.length; idx++) {
       if (!expectedItems[idx].draggable) {
