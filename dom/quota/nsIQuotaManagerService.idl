@@ -106,6 +106,44 @@ interface nsIQuotaManagerService : nsISupports
 
 
 
+  [must_use] nsIQuotaRequest
+  initializePersistentClient(in nsIPrincipal aPrincipal,
+                             in AString aClientType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  [must_use] nsIQuotaRequest
+  initializeTemporaryClient(in ACString aPersistenceType,
+                            in nsIPrincipal aPrincipal,
+                            in AString aClientType);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   [must_use] nsIQuotaRequest
   getFullOriginMetadata(in ACString aPersistenceType,
