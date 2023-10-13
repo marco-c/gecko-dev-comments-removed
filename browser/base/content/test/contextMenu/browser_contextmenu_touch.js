@@ -36,7 +36,7 @@ async function openAndCheckContextMenu(contextMenu, target) {
 
 
 add_setup(async function () {
-  let isWindows = AppConstants.platform == "win";
+  let isWindows = AppConstants.isPlatformAndVersionAtLeast("win", "10.0");
   await SpecialPowers.pushPrefEnv({
     set: [["apz.test.fails_with_native_injection", isWindows]],
   });

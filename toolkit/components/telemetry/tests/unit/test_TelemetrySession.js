@@ -581,12 +581,19 @@ add_task(async function sessionTimeExcludingAndIncludingSuspend() {
   );
 
   
-  Assert.greaterOrEqual(
-    withSuspend,
-    withoutSuspend,
-    `The uptime with suspend must always been greater or equal to the uptime
-     without suspend`
-  );
+  
+  
+  if (
+    AppConstants.platform != "win" ||
+    AppConstants.isPlatformAndVersionAtLeast("win", "10.0")
+  ) {
+    Assert.greaterOrEqual(
+      withSuspend,
+      withoutSuspend,
+      `The uptime with suspend must always been greater or equal to the uptime
+       without suspend`
+    );
+  }
 
   Services.prefs.setBoolPref(
     "toolkit.telemetry.testing.overrideProductsCheck",

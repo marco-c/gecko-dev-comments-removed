@@ -176,7 +176,7 @@ add_task(async function test_touch_mode_menuitem() {
 
   
   
-  if (AppConstants.platform == "win") {
+  if (AppConstants.isPlatformAndVersionAtLeast("win", "10")) {
     await startCustomizing();
 
     let popupButton = document.getElementById("customization-uidensity-button");

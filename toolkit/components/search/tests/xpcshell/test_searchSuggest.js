@@ -8,6 +8,9 @@
 
 "use strict";
 
+const { AppConstants } = ChromeUtils.importESModule(
+  "resource://gre/modules/AppConstants.sys.mjs"
+);
 const { FormHistory } = ChromeUtils.importESModule(
   "resource://gre/modules/FormHistory.sys.mjs"
 );
@@ -802,7 +805,10 @@ add_task(async function unresolvable_server() {
   Assert.equal(result.local[0].value, "Unresolvable Server Entry");
   Assert.equal(result.remote.length, 0);
 
-  assertLatencyHistogram(histogram, true);
+  
+  if (!AppConstants.isPlatformAndVersionAtMost("win", "6.1")) {
+    assertLatencyHistogram(histogram, true);
+  }
 });
 
 

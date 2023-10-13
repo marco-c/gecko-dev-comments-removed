@@ -46,7 +46,10 @@ var gSetBackground = {
         multiMonitors = monitors.length > 1;
       }
 
-      if (!multiMonitors) {
+      if (
+        !multiMonitors ||
+        AppConstants.isPlatformAndVersionAtMost("win", 6.1)
+      ) {
         
         document.getElementById("spanPosition").hidden = true;
       }
