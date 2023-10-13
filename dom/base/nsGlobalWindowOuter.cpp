@@ -4961,6 +4961,11 @@ void nsGlobalWindowOuter::PrintOuter(ErrorResult& aError) {
   }
 
   
+  if (!StaticPrefs::print_enabled()) {
+    return;
+  }
+
+  
   
   
   if (mShouldDelayPrintUntilAfterLoad) {
