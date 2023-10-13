@@ -255,6 +255,15 @@ if __name__ == "__main__":
 
         
         
+        
+        
+        cmd = "hg revert -r tip^ third_party/libwebrtc/README.mozilla"
+        run_hg(cmd)
+        cmd = "hg amend"
+        run_hg(cmd)
+
+        
+        
         cmd = "hg status --change tip --exclude '**/README.*'"
         stdout_lines = run_shell(cmd)  
         print("Mercurial changes:\n{}".format(stdout_lines))
