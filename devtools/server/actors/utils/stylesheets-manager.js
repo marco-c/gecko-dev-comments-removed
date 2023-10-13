@@ -863,13 +863,7 @@ class StyleSheetsManager extends EventEmitter {
 
 
   _shouldListSheet(styleSheet) {
-    
-    
-    
     const href = styleSheet.href?.toLowerCase();
-    if (href === "about:preferencestylesheet") {
-      return false;
-    }
     
     
     if (

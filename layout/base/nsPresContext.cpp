@@ -615,18 +615,6 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     changeHint |= NS_STYLE_HINT_REFLOW;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (GlobalStyleSheetCache::AffectedByPref(prefName)) {
-    restyleHint |= RestyleHint::RestyleSubtree();
-    GlobalStyleSheetCache::InvalidatePreferenceSheets();
-  }
-
   if (PreferenceSheet::AffectedByPref(prefName)) {
     restyleHint |= RestyleHint::RestyleSubtree();
     PreferenceSheet::Refresh();

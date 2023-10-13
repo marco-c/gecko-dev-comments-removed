@@ -490,6 +490,10 @@ RuleEditor.prototype = {
       
       
       
+      
+      
+      
+      
       if (sourceHref === "about:PreferenceStyleSheet") {
         this.source.setAttribute("unselectable", "permanent");
         sourceLabel.textContent = uaLabel;

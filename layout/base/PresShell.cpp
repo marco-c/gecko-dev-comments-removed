@@ -897,9 +897,6 @@ void PresShell::Init(nsPresContext* aPresContext, nsViewManager* aViewManager) {
   
   EnsureStyleFlush();
 
-  
-  UpdatePreferenceStyles();
-
   const bool accessibleCaretEnabled =
       AccessibleCaretEnabled(mDocument->GetDocShell());
   if (accessibleCaretEnabled) {
@@ -1268,11 +1265,6 @@ void PresShell::Destroy() {
     frameSelection->DisconnectFromPresShell();
   }
 
-  
-  
-  
-  RemovePreferenceStyles();
-
   mIsDestroying = true;
 
   
@@ -1419,53 +1411,6 @@ void PresShell::SetAuthorStyleDisabled(bool aStyleDisabled) {
 
 bool PresShell::GetAuthorStyleDisabled() const {
   return StyleSet()->GetAuthorStyleDisabled();
-}
-
-void PresShell::UpdatePreferenceStyles() {
-  if (!mDocument) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (!mDocument->GetWindow()) {
-    return;
-  }
-
-  
-  if (mDocument->IsInChromeDocShell()) {
-    return;
-  }
-
-  PreferenceSheet::EnsureInitialized();
-  auto* cache = GlobalStyleSheetCache::Singleton();
-
-  RefPtr<StyleSheet> newPrefSheet =
-      PreferenceSheet::ShouldUseChromePrefs(*mDocument)
-          ? cache->ChromePreferenceSheet()
-          : cache->ContentPreferenceSheet();
-
-  if (mPrefStyleSheet == newPrefSheet) {
-    return;
-  }
-
-  RemovePreferenceStyles();
-
-  
-  
-  
-  
-  StyleSet()->AppendStyleSheet(*newPrefSheet);
-  mPrefStyleSheet = newPrefSheet;
-}
-
-void PresShell::RemovePreferenceStyles() {
-  if (mPrefStyleSheet) {
-    StyleSet()->RemoveStyleSheet(*mPrefStyleSheet);
-    mPrefStyleSheet = nullptr;
-  }
 }
 
 void PresShell::AddUserSheet(StyleSheet* aSheet) {
@@ -4292,9 +4237,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
     mDocument->FlushPendingNotifications(FlushType::ContentAndNotify);
 
     mDocument->UpdateSVGUseElementShadowTrees();
-
-    
-    UpdatePreferenceStyles();
 
     
     

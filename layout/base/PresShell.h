@@ -1547,12 +1547,6 @@ class PresShell final : public nsStubDocumentObserver,
   bool GetAuthorStyleDisabled() const;
 
   
-
-
-
-  void UpdatePreferenceStyles();
-
-  
   void NotifyStyleSheetServiceSheetAdded(StyleSheet* aSheet,
                                          uint32_t aSheetType);
   void NotifyStyleSheetServiceSheetRemoved(StyleSheet* aSheet,
@@ -1875,7 +1869,6 @@ class PresShell final : public nsStubDocumentObserver,
   void AddUserSheet(StyleSheet*);
   void AddAgentSheet(StyleSheet*);
   void AddAuthorSheet(StyleSheet*);
-  void RemovePreferenceStyles();
 
   
 
@@ -2879,8 +2872,6 @@ class PresShell final : public nsStubDocumentObserver,
   
   MOZ_KNOWN_LIVE RefPtr<Document> const mDocument;
   MOZ_KNOWN_LIVE RefPtr<nsPresContext> const mPresContext;
-  
-  RefPtr<StyleSheet> mPrefStyleSheet;
   UniquePtr<nsCSSFrameConstructor> mFrameConstructor;
   nsViewManager* mViewManager;  
   RefPtr<nsFrameSelection> mSelection;

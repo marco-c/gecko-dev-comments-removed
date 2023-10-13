@@ -156,15 +156,6 @@ void PreferenceSheet::Prefs::LoadColors(bool aIsLight) {
     }
   }
 
-  {
-    
-    
-    GetColor("browser.display.focus_text_color", ColorScheme::Light,
-             colors.mFocusText);
-    GetColor("browser.display.focus_background_color", ColorScheme::Light,
-             colors.mFocusBackground);
-  }
-
   
   colors.mDefaultBackground =
       NS_ComposeColors(NS_RGB(0xFF, 0xFF, 0xFF), colors.mDefaultBackground);

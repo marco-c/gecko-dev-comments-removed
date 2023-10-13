@@ -137,12 +137,6 @@ class StyleRuleActor extends Actor {
       
       return false;
     }
-    if (this._parentSheet.href === "about:PreferenceStyleSheet") {
-      
-      
-      
-      return false;
-    }
     return true;
   }
 
