@@ -9,6 +9,7 @@
 #include <stdint.h>
 
 #include "mozilla/BasicEvents.h"
+#include "mozilla/EventForwards.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/dom/DataTransfer.h"
 #include "mozilla/ipc/IPCForwards.h"
@@ -166,6 +167,59 @@ class WidgetMouseEventBase : public WidgetInputEvent {
   bool IsLeftClickEvent() const {
     return mMessage == eMouseClick && mButton == MouseButton::ePrimary;
   }
+
+  
+
+
+  [[nodiscard]] bool IsPressingButton() const {
+    MOZ_ASSERT(IsTrusted());
+    if (mClass == eMouseEventClass) {
+      return mMessage == eMouseDown;
+    }
+    if (mButton == MouseButton::eNotPressed) {
+      return false;
+    }
+    
+    
+    if (mMessage == ePointerDown) {
+      return true;
+    }
+    
+    
+    
+    const bool buttonsContainButton = !!(
+        mButtons & MouseButtonsFlagToChange(static_cast<MouseButton>(mButton)));
+    return mMessage == ePointerMove && buttonsContainButton;
+  }
+
+  
+
+
+  [[nodiscard]] bool IsReleasingButton() const {
+    MOZ_ASSERT(IsTrusted());
+    if (mClass == eMouseEventClass) {
+      return mMessage == eMouseUp;
+    }
+    if (mButton == MouseButton::eNotPressed) {
+      return false;
+    }
+    
+    
+    if (mMessage == ePointerUp) {
+      return true;
+    }
+    
+    
+    
+    const bool buttonsLoseTheButton = !(
+        mButtons & MouseButtonsFlagToChange(static_cast<MouseButton>(mButton)));
+    return mMessage == ePointerMove && buttonsLoseTheButton;
+  }
+
+  
+
+
+  [[nodiscard]] bool InputSourceSupportsHover() const;
 };
 
 

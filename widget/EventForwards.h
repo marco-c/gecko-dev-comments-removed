@@ -460,6 +460,29 @@ enum MouseButtonsFlag {
   eEraserFlag = 0x20
 };
 
+
+
+
+
+inline MouseButtonsFlag MouseButtonsFlagToChange(MouseButton aMouseButton) {
+  switch (aMouseButton) {
+    case MouseButton::ePrimary:
+      return MouseButtonsFlag::ePrimaryFlag;
+    case MouseButton::eMiddle:
+      return MouseButtonsFlag::eMiddleFlag;
+    case MouseButton::eSecondary:
+      return MouseButtonsFlag::eSecondaryFlag;
+    case MouseButton::eX1:
+      return MouseButtonsFlag::e4thFlag;
+    case MouseButton::eX2:
+      return MouseButtonsFlag::e5thFlag;
+    case MouseButton::eEraser:
+      return MouseButtonsFlag::eEraserFlag;
+    default:
+      return MouseButtonsFlag::eNoButtons;
+  }
+}
+
 enum class TextRangeType : RawTextRangeType;
 
 

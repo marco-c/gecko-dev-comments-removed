@@ -2999,6 +2999,9 @@ class PresShell final : public nsStubDocumentObserver,
   nsPoint mMouseLocation;
   
   
+  static int16_t sMouseButtons;
+  
+  
   nsPoint mLastOverWindowPointerLocation;
   
   

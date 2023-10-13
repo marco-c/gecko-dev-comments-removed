@@ -4539,6 +4539,20 @@ class MOZ_STACK_CLASS ESMEventCB : public EventDispatchingCallback {
 static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
     WidgetMouseEvent* aMouseEvent, EventMessage aMessage,
     EventTarget* aRelatedTarget) {
+  
+  
+  MOZ_ASSERT(aMessage != eMouseDown);
+  MOZ_ASSERT(aMessage != eMouseUp);
+  MOZ_ASSERT(aMessage != ePointerDown);
+  MOZ_ASSERT(aMessage != ePointerUp);
+  
+  MOZ_ASSERT(aMessage == eMouseOver || aMessage == eMouseEnter ||
+             aMessage == eMouseOut || aMessage == eMouseLeave ||
+             aMessage == ePointerOver || aMessage == ePointerEnter ||
+             aMessage == ePointerOut || aMessage == ePointerLeave ||
+             aMessage == eMouseEnterIntoWidget ||
+             aMessage == eMouseExitFromWidget);
+
   WidgetPointerEvent* sourcePointer = aMouseEvent->AsPointerEvent();
   UniquePtr<WidgetMouseEvent> newEvent;
   if (sourcePointer) {
@@ -4560,9 +4574,62 @@ static UniquePtr<WidgetMouseEvent> CreateMouseOrPointerWidgetEvent(
   newEvent->mRelatedTarget = aRelatedTarget;
   newEvent->mRefPoint = aMouseEvent->mRefPoint;
   newEvent->mModifiers = aMouseEvent->mModifiers;
-  newEvent->mButton = aMouseEvent->mButton;
-  newEvent->mButtons = aMouseEvent->mButtons;
-  newEvent->mPressure = aMouseEvent->mPressure;
+  if (!aMouseEvent->mFlags.mDispatchedAtLeastOnce &&
+      aMouseEvent->InputSourceSupportsHover()) {
+    
+    
+    
+    
+    
+    
+    
+    newEvent->mButton =
+        sourcePointer ? MouseButton::eNotPressed : MouseButton::ePrimary;
+    if (aMouseEvent->IsPressingButton()) {
+      
+      
+      newEvent->mButtons = static_cast<decltype(WidgetMouseEvent::mButtons)>(
+          aMouseEvent->mButtons &
+          ~MouseButtonsFlagToChange(
+              static_cast<MouseButton>(aMouseEvent->mButton)));
+    } else if (aMouseEvent->IsReleasingButton()) {
+      
+      
+      newEvent->mButtons = static_cast<decltype(WidgetMouseEvent::mButtons)>(
+          aMouseEvent->mButtons |
+          MouseButtonsFlagToChange(
+              static_cast<MouseButton>(aMouseEvent->mButton)));
+    } else {
+      
+      
+      newEvent->mButtons = aMouseEvent->mButtons;
+    }
+    
+    
+    
+    
+    if (newEvent->mButtons && aMouseEvent->mPressure == 0) {
+      newEvent->mPressure = 0.5f;
+    } else if (!newEvent->mButtons && aMouseEvent->mPressure != 0) {
+      newEvent->mPressure = 0;
+    } else {
+      newEvent->mPressure = aMouseEvent->mPressure;
+    }
+  } else {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    newEvent->mButton = aMouseEvent->mButton;
+    newEvent->mButtons = aMouseEvent->mButtons;
+    newEvent->mPressure = aMouseEvent->mPressure;
+  }
+
   newEvent->mInputSource = aMouseEvent->mInputSource;
   newEvent->pointerId = aMouseEvent->pointerId;
 
