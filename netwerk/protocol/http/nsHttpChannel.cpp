@@ -560,6 +560,12 @@ nsresult nsHttpChannel::OnBeforeConnect() {
   
   mLoadInfo->SetHstsStatus(isSecureURI);
 
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+  if (bc && bc->Top()->GetForceOffline()) {
+    return NS_ERROR_OFFLINE;
+  }
+
   
   
   StoreUpgradableToSecure(false);
@@ -1031,8 +1037,12 @@ void nsHttpChannel::SpeculativeConnect() {
   
   
   
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+
   if (gIOService->IsOffline() || mUpgradeProtocolCallback ||
-      !(mCaps & NS_HTTP_ALLOW_KEEPALIVE)) {
+      !(mCaps & NS_HTTP_ALLOW_KEEPALIVE) ||
+      (bc && bc->Top()->GetForceOffline())) {
     return;
   }
 
@@ -3672,6 +3682,9 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
   uint32_t cacheEntryOpenFlags;
   bool offline = gIOService->IsOffline();
 
+  RefPtr<mozilla::dom::BrowsingContext> bc;
+  mLoadInfo->GetBrowsingContext(getter_AddRefs(bc));
+
   bool maybeRCWN = false;
 
   nsAutoCString cacheControlRequestHeader;
@@ -3682,7 +3695,8 @@ nsresult nsHttpChannel::OpenCacheEntryInternal(bool isHttps) {
     return NS_OK;
   }
 
-  if (offline || (mLoadFlags & INHIBIT_CACHING)) {
+  if (offline || (mLoadFlags & INHIBIT_CACHING) ||
+      (bc && bc->Top()->GetForceOffline())) {
     if (BYPASS_LOCAL_CACHE(mLoadFlags, LoadPreferCacheLoadOverBypass()) &&
         !offline) {
       return NS_OK;
