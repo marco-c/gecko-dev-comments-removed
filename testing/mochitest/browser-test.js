@@ -166,6 +166,8 @@ function Tester(aTests, structuredLogger, aCallback) {
   );
   this.AccessibilityUtils = this.EventUtils.AccessibilityUtils;
 
+  this.AccessibilityUtils.init();
+
   
   
   
@@ -524,6 +526,8 @@ Tester.prototype = {
     TabDestroyObserver.destroy();
     Services.console.unregisterListener(this);
 
+    this.AccessibilityUtils.uninit();
+
     
     this.PromiseTestUtils.uninit();
 
@@ -549,7 +553,6 @@ Tester.prototype = {
 
     
     this.callback(this.tests);
-    this.accService = null;
     this.callback = null;
     this.tests = null;
   },
