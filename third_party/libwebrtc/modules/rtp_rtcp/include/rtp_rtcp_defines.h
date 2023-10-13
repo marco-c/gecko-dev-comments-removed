@@ -397,7 +397,10 @@ struct RtpReceiveStats {
 
   
   
-  absl::optional<int64_t> last_packet_received_timestamp_ms;
+  absl::optional<Timestamp> last_packet_received;
+
+  
+  
   RtpPacketCounter packet_counter;
 };
 

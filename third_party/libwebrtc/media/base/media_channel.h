@@ -33,6 +33,7 @@
 #include "api/transport/data_channel_transport_interface.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -454,7 +455,7 @@ struct MediaReceiverInfo {
   
   
   
-  absl::optional<int64_t> last_packet_received_timestamp_ms;
+  absl::optional<webrtc::Timestamp> last_packet_received;
   
   absl::optional<int64_t> estimated_playout_ntp_timestamp_ms;
   std::string codec_name;
