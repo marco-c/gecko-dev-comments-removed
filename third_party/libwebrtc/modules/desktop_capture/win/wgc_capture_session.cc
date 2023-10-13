@@ -430,8 +430,12 @@ HRESULT WgcCaptureSession::ProcessFrame() {
   
   
   uint8_t* src_data = static_cast<uint8_t*>(map_info.pData);
-  current_frame->CopyPixelsFrom(src_data, current_frame->stride(),
-                                DesktopRect::MakeSize(current_frame->size()));
+  uint8_t* dst_data = current_frame->data();
+  for (int i = 0; i < image_height; i++) {
+    memcpy(dst_data, src_data, current_frame->stride());
+    dst_data += current_frame->stride();
+    src_data += map_info.RowPitch;
+  }
 
   d3d_context->Unmap(mapped_texture_.Get(), 0);
 
