@@ -950,6 +950,9 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   virtual bool SendCodecHasLntf() const = 0;
   virtual bool SendCodecHasNack() const = 0;
   virtual absl::optional<int> SendCodecRtxTime() const = 0;
+  
+  virtual void SetSendCodecChangedCallback(
+      absl::AnyInvocable<void()> callback) = 0;
 };
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {

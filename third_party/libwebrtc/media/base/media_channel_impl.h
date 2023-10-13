@@ -244,6 +244,9 @@ class VideoMediaChannel : public MediaChannel,
       0;
   bool AddRecvStream(const StreamParams& sp) override = 0;
   void OnPacketReceived(const webrtc::RtpPacketReceived& packet) override = 0;
+  void SetEncoderSelector(uint32_t ssrc,
+                          webrtc::VideoEncoderFactory::EncoderSelectorInterface*
+                              encoder_selector) override {}
 
   
   
@@ -257,27 +260,25 @@ class VideoMediaChannel : public MediaChannel,
   
   virtual bool GetSendStats(VideoMediaSendInfo* info) = 0;
   virtual bool GetReceiveStats(VideoMediaReceiveInfo* info) = 0;
-
-  
-  virtual void SetSendCodecChangedCallback(
-      absl::AnyInvocable<void()> callback) = 0;
-
- private:
-  
   bool GetStats(VideoMediaSendInfo* info) override {
-    RTC_CHECK_NOTREACHED();
-    return false;
+    return GetSendStats(info);
   }
   bool GetStats(VideoMediaReceiveInfo* info) override {
-    RTC_CHECK_NOTREACHED();
-    return false;
+    return GetReceiveStats(info);
   }
-  bool HasNetworkInterface() const override {
-    return MediaChannel::HasNetworkInterface();
-  }
+
+  
+  void SetSendCodecChangedCallback(
+      absl::AnyInvocable<void()> callback) override = 0;
+  
   
   void SetVideoCodecSwitchingEnabled(bool enabled) override;
 
+ private:
+  
+  bool HasNetworkInterface() const override {
+    return MediaChannel::HasNetworkInterface();
+  }
   MediaChannel* ImplForTesting() override {
     
     RTC_CHECK_NOTREACHED();
@@ -665,6 +666,10 @@ class VideoMediaSendChannel : public VideoMediaSendChannelInterface {
   void SetSsrcListChangedCallback(
       absl::AnyInvocable<void(const std::set<uint32_t>&)> callback) override {
     impl()->SetSsrcListChangedCallback(std::move(callback));
+  }
+  void SetSendCodecChangedCallback(
+      absl::AnyInvocable<void()> callback) override {
+    impl()->SetSendCodecChangedCallback(std::move(callback));
   }
 
   MediaChannel* ImplForTesting() override { return impl_; }
