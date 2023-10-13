@@ -21,6 +21,14 @@
 namespace mozilla {
 namespace gfx {
 
+
+
+
+
+CTFontRef CreateCTFontFromCGFontWithVariations(
+    CGFontRef aCGFont, CGFloat aSize, bool aInstalledFont,
+    CTFontDescriptorRef aFontDesc = nullptr);
+
 class UnscaledFontMac;
 
 class ScaledFontMac : public ScaledFontBase {

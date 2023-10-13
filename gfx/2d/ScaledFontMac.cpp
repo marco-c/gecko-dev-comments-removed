@@ -45,11 +45,14 @@ class AutoRelease final {
     }
   }
 
-  void operator=(T aObject) {
-    if (mObject) {
-      CFRelease(mObject);
+  AutoRelease<T>& operator=(const T& aObject) {
+    if (aObject != mObject) {
+      if (mObject) {
+        CFRelease(mObject);
+      }
+      mObject = aObject;
     }
-    mObject = aObject;
+    return *this;
   }
 
   operator T() { return mObject; }
@@ -66,49 +69,24 @@ class AutoRelease final {
 
 
 
-static CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
-                                                      CGFloat aSize,
-                                                      bool aInstalledFont) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
+CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
+                                               bool aInstalledFont,
+                                               CTFontDescriptorRef aFontDesc) {
   CTFontRef ctFont;
   if (aInstalledFont) {
-    CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
+    AutoRelease<CFDictionaryRef> vars(CGFontCopyVariations(aCGFont));
     if (vars) {
-      CFDictionaryRef varAttr = CFDictionaryCreate(
+      AutoRelease<CFDictionaryRef> varAttr(CFDictionaryCreate(
           nullptr, (const void**)&kCTFontVariationAttribute,
           (const void**)&vars, 1, &kCFTypeDictionaryKeyCallBacks,
-          &kCFTypeDictionaryValueCallBacks);
-      CFRelease(vars);
+          &kCFTypeDictionaryValueCallBacks));
 
-      CTFontDescriptorRef varDesc =
-          CTFontDescriptorCreateWithAttributes(varAttr);
-      CFRelease(varAttr);
+      AutoRelease<CTFontDescriptorRef> varDesc(
+          aFontDesc
+              ? ::CTFontDescriptorCreateCopyWithAttributes(aFontDesc, varAttr)
+              : ::CTFontDescriptorCreateWithAttributes(varAttr));
 
       ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, varDesc);
-      CFRelease(varDesc);
     } else {
       ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
     }

@@ -54,13 +54,6 @@ class gfxMacFont final : public gfxFont {
 
   bool UseNativeColrFontSupport() const override;
 
-  
-  
-  
-  static CTFontRef CreateCTFontFromCGFontWithVariations(
-      CGFontRef aCGFont, CGFloat aSize, bool aInstalledFont,
-      CTFontDescriptorRef aFontDesc = nullptr);
-
  protected:
   ~gfxMacFont() override;
 
