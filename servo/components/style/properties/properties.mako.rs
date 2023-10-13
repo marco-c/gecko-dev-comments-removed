@@ -364,12 +364,14 @@ impl MallocSizeOf for PropertyDeclaration {
 
 impl PropertyDeclaration {
     
-    
-    
     #[cold]
+    #[cfg(debug_assertions)]
     pub(crate) fn debug_crash(&self, reason: &str) {
         panic!("{}: {:?}", reason, self);
     }
+    #[cfg(not(debug_assertions))]
+    #[inline(always)]
+    pub(crate) fn debug_crash(&self, reason: &str) {}
 
     
     
