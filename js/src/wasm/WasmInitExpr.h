@@ -33,11 +33,9 @@ struct ModuleEnvironment;
 
 
 
-[[nodiscard]] bool DecodeConstantExpression(
-    Decoder& d, ModuleEnvironment* env, ValType expected,
-    uint32_t
-        maxInitializedGlobalsIndexPlus1,  
-    Maybe<LitVal>* literal);
+[[nodiscard]] bool DecodeConstantExpression(Decoder& d, ModuleEnvironment* env,
+                                            ValType expected,
+                                            Maybe<LitVal>* literal);
 
 enum class InitExprKind {
   None,
@@ -76,9 +74,7 @@ class InitExpr {
   
   
   static bool decodeAndValidate(Decoder& d, ModuleEnvironment* env,
-                                ValType expected,
-                                uint32_t maxInitializedGlobalsIndexPlus1,
-                                InitExpr* expr);
+                                ValType expected, InitExpr* expr);
 
   
   

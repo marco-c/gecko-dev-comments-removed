@@ -598,8 +598,7 @@ class MOZ_STACK_CLASS OpIter : private Policy {
                                    const ValTypeVector& locals);
   [[nodiscard]] bool endFunction(const uint8_t* bodyEnd);
 
-  [[nodiscard]] bool startInitExpr(ValType expected,
-                                   uint32_t maxInitializedGlobalsIndexPlus1);
+  [[nodiscard]] bool startInitExpr(ValType expected);
   [[nodiscard]] bool endInitExpr();
 
   
@@ -1289,19 +1288,19 @@ inline bool OpIter<Policy>::endFunction(const uint8_t* bodyEnd) {
 }
 
 template <typename Policy>
-inline bool OpIter<Policy>::startInitExpr(
-    ValType expected, uint32_t maxInitializedGlobalsIndexPlus1) {
+inline bool OpIter<Policy>::startInitExpr(ValType expected) {
   MOZ_ASSERT(kind_ == OpIter::InitExpr);
   MOZ_ASSERT(elseParamStack_.empty());
   MOZ_ASSERT(valueStack_.empty());
   MOZ_ASSERT(controlStack_.empty());
-  MOZ_ASSERT(maxInitializedGlobalsIndexPlus1_ == 0);
   MOZ_ASSERT(op_.b0 == uint16_t(Op::Limit));
 
   
   
   if (env_.features.gc) {
-    maxInitializedGlobalsIndexPlus1_ = maxInitializedGlobalsIndexPlus1;
+    maxInitializedGlobalsIndexPlus1_ = env_.globals.length();
+  } else {
+    maxInitializedGlobalsIndexPlus1_ = env_.numGlobalImports;
   }
 
   BlockType type = BlockType::VoidToSingle(expected);
@@ -2148,8 +2147,8 @@ inline bool OpIter<Policy>::readGetGlobal(uint32_t* id) {
 
   
   
-  if (kind_ == OpIter::InitExpr && *id >= maxInitializedGlobalsIndexPlus1_ &&
-      (!env_.globals[*id].isImport() || env_.globals[*id].isMutable())) {
+  if (kind_ == OpIter::InitExpr && (env_.globals[*id].isMutable() ||
+                                    *id >= maxInitializedGlobalsIndexPlus1_)) {
     return fail(
         "global.get in initializer expression must reference a global "
         "immutable import");
