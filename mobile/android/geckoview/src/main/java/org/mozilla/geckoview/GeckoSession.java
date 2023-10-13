@@ -3865,34 +3865,34 @@ public class GeckoSession {
   @AnyThread
   public static class Recommendation {
     
-    @Nullable public final String analysisUrl;
+    @NonNull public final String analysisUrl;
 
     
-    @Nullable public final Double adjustedRating;
+    @NonNull public final Double adjustedRating;
 
     
-    @Nullable public final Boolean sponsored;
+    @NonNull public final Boolean sponsored;
 
     
-    @Nullable public final String imageUrl;
+    @NonNull public final String imageUrl;
 
     
-    @Nullable public final String aid;
+    @NonNull public final String aid;
 
     
-    @Nullable public final String url;
+    @NonNull public final String url;
 
     
-    @Nullable public final String name;
+    @NonNull public final String name;
 
     
-    @Nullable public final String grade;
+    @NonNull public final String grade;
 
     
-    @Nullable public final String price;
+    @NonNull public final String price;
 
     
-    @Nullable public final String currency;
+    @NonNull public final String currency;
 
      Recommendation(@NonNull final GeckoBundle message) {
       analysisUrl = message.getString("analysis_url");
