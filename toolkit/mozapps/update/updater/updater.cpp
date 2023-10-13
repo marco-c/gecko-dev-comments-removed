@@ -290,6 +290,10 @@ static bool sUsingService = false;
 
 
 
+static bool gIsElevated = false;
+
+
+
 
 
 
@@ -313,6 +317,7 @@ static NS_tchar gDeleteDirPath[MAXPATHLEN];
 
 
 static bool gCopyOutputFiles = false;
+
 
 static bool gUseSecureOutputPath = false;
 #endif
@@ -368,6 +373,13 @@ static bool EnvHasValue(const char* name) {
   return (val && *val);
 }
 #endif
+
+static const NS_tchar* UpdateLogFilename() {
+  if (gIsElevated) {
+    return NS_T("update-elevated.log");
+  }
+  return NS_T("update.log");
+}
 
 #ifdef XP_WIN
 
@@ -426,8 +438,13 @@ static void output_finish() {
     NS_tchar srcLogPath[MAXPATHLEN + 1] = {NS_T('\0')};
     if (GetSecureOutputFilePath(gPatchDirPath, L".log", srcLogPath)) {
       NS_tchar dstLogPath[MAXPATHLEN + 1] = {NS_T('\0')};
+      
+      
+      
+      
+      
       NS_tsnprintf(dstLogPath, sizeof(dstLogPath) / sizeof(dstLogPath[0]),
-                   NS_T("%s\\update.log"), gPatchDirPath);
+                   NS_T("%s\\update-elevated.log"), gPatchDirPath);
       CopyFileW(srcLogPath, dstLogPath, false);
     }
   }
@@ -2068,7 +2085,7 @@ bool LaunchWinPostProcess(const WCHAR* installationDir,
     }
   } else {
     wcsncpy(slogFile, updateInfoDir, MAX_PATH);
-    if (!PathAppendSafe(slogFile, L"update.log")) {
+    if (!PathAppendSafe(slogFile, UpdateLogFilename())) {
       LOG(("LaunchWinPostProcess failed because slogFile path is unavailable"));
       return false;
     }
@@ -2825,7 +2842,6 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
                                      HANDLE updateLockFileHandle
 #elif XP_MACOSX
                                      ,
-                                     bool isElevated,
                                      mozilla::UniquePtr<UmaskContext>
                                          umaskContext
 #endif
@@ -2881,7 +2897,7 @@ int LaunchCallbackAndPostProcessApps(int argc, NS_tchar** argv,
 
     EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
 #elif XP_MACOSX
-    if (!isElevated) {
+    if (!gIsElevated) {
       if (gSucceeded) {
         LOG(("Launching macOS post update process"));
         LaunchMacPostProcess(gInstallDirPath);
@@ -2955,6 +2971,8 @@ int NS_main(int argc, NS_tchar** argv) {
   
   mozilla::UniquePtr<UmaskContext> umaskContext(new UmaskContext(0));
 
+  
+  
   bool isElevated =
       strstr(argv[0], "/Library/PrivilegedHelperTools/org.mozilla.updater") !=
       0;
@@ -3042,6 +3060,16 @@ int NS_main(int argc, NS_tchar** argv) {
                NS_T("%s\\update_elevated.lock"), gPatchDirPath);
   gUseSecureOutputPath =
       sUsingService || (NS_tremove(elevatedLockFilePath) && errno != ENOENT);
+
+  
+  
+  
+  gIsElevated =
+      GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
+#elif defined(XP_MACOSX)
+    
+    
+    gIsElevated = isElevated;
 #endif
 
   if (!isDMGInstall) {
@@ -3272,7 +3300,7 @@ int NS_main(int argc, NS_tchar** argv) {
       t1.Join();
     }
 
-    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex, false,
+    LaunchCallbackAndPostProcessApps(argc, argv, callbackIndex,
                                      std::move(umaskContext));
     return gSucceeded ? 0 : 1;
   }
@@ -3293,11 +3321,11 @@ int NS_main(int argc, NS_tchar** argv) {
       (void)GetSecureOutputFilePath(gPatchDirPath, L".log", logFilePath);
     } else {
       NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
-                   NS_T("%s\\update.log"), gPatchDirPath);
+                   NS_T("%s\\%s"), gPatchDirPath, UpdateLogFilename());
     }
 #else
       NS_tsnprintf(logFilePath, sizeof(logFilePath) / sizeof(logFilePath[0]),
-                   NS_T("%s/update.log"), gPatchDirPath);
+                   NS_T("%s/%s"), gPatchDirPath, UpdateLogFilename());
 #endif
     LogInit(logFilePath);
 
@@ -3308,9 +3336,7 @@ int NS_main(int argc, NS_tchar** argv) {
     
     LOG(("useService=%s", useService ? "true" : "false"));
 #endif
-#ifdef XP_MACOSX
-    LOG(("isElevated=%s", isElevated ? "true" : "false"));
-#endif
+    LOG(("gIsElevated=%s", gIsElevated ? "true" : "false"));
 
     if (!WriteStatusFile("applying")) {
       LOG(("failed setting status to 'applying'"));
@@ -3475,19 +3501,12 @@ int NS_main(int argc, NS_tchar** argv) {
       }
 
       
-      bool startedFromUnelevatedUpdater =
-          GetFileAttributesW(elevatedLockFilePath) != INVALID_FILE_ATTRIBUTES;
-
-      LOG(("startedFromUnelevatedUpdater=%s",
-           startedFromUnelevatedUpdater ? "true" : "false"));
-
       
       
       
       
       
-      
-      if (startedFromUnelevatedUpdater) {
+      if (gIsElevated) {
         
         
         UACHelper::DisablePrivileges(nullptr);
@@ -4237,7 +4256,6 @@ int NS_main(int argc, NS_tchar** argv) {
                                                 updateLockFileHandle
 #elif XP_MACOSX
                                                   ,
-                                                  isElevated,
                                                   std::move(umaskContext)
 #endif
   );
