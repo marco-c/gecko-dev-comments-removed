@@ -791,7 +791,6 @@ void nsTableRowFrame::ReflowChildren(nsPresContext* aPresContext,
       
       
       
-      WritingMode wm = aReflowInput.GetWritingMode();
       NS_ASSERTION(cellFrame->GetWritingMode() == wm,
                    "expected consistent writing-mode within table");
       LogicalSize cellDesiredSize = cellFrame->GetDesiredSize();
