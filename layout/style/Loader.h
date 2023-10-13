@@ -474,6 +474,10 @@ class Loader final {
   friend class StreamLoader;
 
   
+  [[nodiscard]] nsresult LoadSheetSyncInternal(SheetLoadData& aLoadData,
+                                               SheetState aSheetState);
+
+  
   void IncrementOngoingLoadCountAndMaybeBlockOnload() {
     if (!mOngoingLoadCount++) {
       BlockOnload();

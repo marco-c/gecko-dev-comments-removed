@@ -1136,6 +1136,102 @@ void Loader::InsertChildSheet(StyleSheet& aSheet, StyleSheet& aParentSheet) {
   LOG(("  Inserting into parent sheet"));
 }
 
+nsresult Loader::LoadSheetSyncInternal(SheetLoadData& aLoadData,
+                                       SheetState aSheetState) {
+  LOG(("  Synchronous load"));
+  MOZ_ASSERT(!aLoadData.mObserver, "Observer for a sync load?");
+  MOZ_ASSERT(aSheetState == SheetState::NeedsParser,
+             "Sync loads can't reuse existing async loads");
+
+  nsINode* requestingNode = aLoadData.GetRequestingNode();
+
+  nsresult rv = NS_OK;
+
+  
+  
+  
+  auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
+
+  if (mDocument) {
+    net::PredictorLearn(aLoadData.mURI, mDocument->GetDocumentURI(),
+                        nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE, mDocument);
+  }
+
+  
+  
+  nsSecurityFlags securityFlags =
+      nsContentSecurityManager::ComputeSecurityFlags(
+          CORSMode::CORS_NONE, nsContentSecurityManager::CORSSecurityMapping::
+                                   CORS_NONE_MAPS_TO_INHERITED_CONTEXT);
+
+  securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
+
+  nsContentPolicyType contentPolicyType =
+      aLoadData.mPreloadKind == StylePreloadKind::None
+          ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET
+          : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
+
+  
+  nsCOMPtr<nsIChannel> channel;
+  
+  
+  
+  
+  
+  if (requestingNode) {
+    rv = NS_NewChannelWithTriggeringPrincipal(
+        getter_AddRefs(channel), aLoadData.mURI, requestingNode,
+        aLoadData.mTriggeringPrincipal, securityFlags, contentPolicyType);
+  } else {
+    MOZ_ASSERT(aLoadData.mTriggeringPrincipal->Equals(LoaderPrincipal()));
+    auto result = URLPreloader::ReadURI(aLoadData.mURI);
+    if (result.isOk()) {
+      nsCOMPtr<nsIInputStream> stream;
+      MOZ_TRY(
+          NS_NewCStringInputStream(getter_AddRefs(stream), result.unwrap()));
+
+      rv = NS_NewInputStreamChannel(
+          getter_AddRefs(channel), aLoadData.mURI, stream.forget(),
+          aLoadData.mTriggeringPrincipal, securityFlags, contentPolicyType);
+    } else {
+      rv = NS_NewChannel(getter_AddRefs(channel), aLoadData.mURI,
+                         aLoadData.mTriggeringPrincipal, securityFlags,
+                         contentPolicyType);
+    }
+  }
+  if (NS_FAILED(rv)) {
+    LOG_ERROR(("  Failed to create channel"));
+    streamLoader->ChannelOpenFailed(rv);
+    SheetComplete(aLoadData, rv);
+    return rv;
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
+  loadInfo->SetCspNonce(aLoadData.Nonce());
+
+  nsCOMPtr<nsIInputStream> stream;
+  rv = channel->Open(getter_AddRefs(stream));
+
+  if (NS_FAILED(rv)) {
+    LOG_ERROR(("  Failed to open URI synchronously"));
+    streamLoader->ChannelOpenFailed(rv);
+    SheetComplete(aLoadData, rv);
+    return rv;
+  }
+
+  
+  
+  
+  channel->SetContentCharset("UTF-8"_ns);
+
+  
+  
+  
+  
+  return nsSyncLoadService::PushSyncStreamToListener(stream.forget(),
+                                                     streamLoader, channel);
+}
+
 
 
 
@@ -1185,95 +1281,7 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState,
   nsINode* requestingNode = aLoadData.GetRequestingNode();
 
   if (aLoadData.mSyncLoad) {
-    LOG(("  Synchronous load"));
-    MOZ_ASSERT(!aLoadData.mObserver, "Observer for a sync load?");
-    MOZ_ASSERT(aSheetState == SheetState::NeedsParser,
-               "Sync loads can't reuse existing async loads");
-
-    
-    
-    
-    auto streamLoader = MakeRefPtr<StreamLoader>(aLoadData);
-
-    if (mDocument) {
-      net::PredictorLearn(aLoadData.mURI, mDocument->GetDocumentURI(),
-                          nsINetworkPredictor::LEARN_LOAD_SUBRESOURCE,
-                          mDocument);
-    }
-
-    
-    
-    nsSecurityFlags securityFlags =
-        nsContentSecurityManager::ComputeSecurityFlags(
-            CORSMode::CORS_NONE, nsContentSecurityManager::CORSSecurityMapping::
-                                     CORS_NONE_MAPS_TO_INHERITED_CONTEXT);
-
-    securityFlags |= nsILoadInfo::SEC_ALLOW_CHROME;
-
-    nsContentPolicyType contentPolicyType =
-        aLoadData.mPreloadKind == StylePreloadKind::None
-            ? nsIContentPolicy::TYPE_INTERNAL_STYLESHEET
-            : nsIContentPolicy::TYPE_INTERNAL_STYLESHEET_PRELOAD;
-
-    
-    nsCOMPtr<nsIChannel> channel;
-    
-    
-    
-    
-    
-    if (requestingNode) {
-      rv = NS_NewChannelWithTriggeringPrincipal(
-          getter_AddRefs(channel), aLoadData.mURI, requestingNode,
-          aLoadData.mTriggeringPrincipal, securityFlags, contentPolicyType);
-    } else {
-      MOZ_ASSERT(aLoadData.mTriggeringPrincipal->Equals(LoaderPrincipal()));
-      auto result = URLPreloader::ReadURI(aLoadData.mURI);
-      if (result.isOk()) {
-        nsCOMPtr<nsIInputStream> stream;
-        MOZ_TRY(
-            NS_NewCStringInputStream(getter_AddRefs(stream), result.unwrap()));
-
-        rv = NS_NewInputStreamChannel(
-            getter_AddRefs(channel), aLoadData.mURI, stream.forget(),
-            aLoadData.mTriggeringPrincipal, securityFlags, contentPolicyType);
-      } else {
-        rv = NS_NewChannel(getter_AddRefs(channel), aLoadData.mURI,
-                           aLoadData.mTriggeringPrincipal, securityFlags,
-                           contentPolicyType);
-      }
-    }
-    if (NS_FAILED(rv)) {
-      LOG_ERROR(("  Failed to create channel"));
-      streamLoader->ChannelOpenFailed(rv);
-      SheetComplete(aLoadData, rv);
-      return rv;
-    }
-
-    nsCOMPtr<nsILoadInfo> loadInfo = channel->LoadInfo();
-    loadInfo->SetCspNonce(aLoadData.Nonce());
-
-    nsCOMPtr<nsIInputStream> stream;
-    rv = channel->Open(getter_AddRefs(stream));
-
-    if (NS_FAILED(rv)) {
-      LOG_ERROR(("  Failed to open URI synchronously"));
-      streamLoader->ChannelOpenFailed(rv);
-      SheetComplete(aLoadData, rv);
-      return rv;
-    }
-
-    
-    
-    
-    channel->SetContentCharset("UTF-8"_ns);
-
-    
-    
-    
-    
-    return nsSyncLoadService::PushSyncStreamToListener(stream.forget(),
-                                                       streamLoader, channel);
+    return LoadSheetSyncInternal(aLoadData, aSheetState);
   }
 
   SheetLoadDataHashKey key(aLoadData);
