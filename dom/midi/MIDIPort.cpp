@@ -14,7 +14,6 @@
 #include "mozilla/ipc/BackgroundChild.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Promise.h"
-#include "mozilla/Unused.h"
 #include "nsContentUtils.h"
 #include "nsISupportsImpl.h"  
 #include "MIDILog.h"
