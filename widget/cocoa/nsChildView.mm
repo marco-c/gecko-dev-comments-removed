@@ -1897,7 +1897,10 @@ void nsChildView::UpdateBoundsFromView() {
   
   
   
-  return [self visibleRect];
+  
+  
+  
+  return self.bounds;
 }
 @end
 
