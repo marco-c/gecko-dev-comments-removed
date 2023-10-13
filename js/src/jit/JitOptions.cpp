@@ -129,6 +129,16 @@ DefaultJitOptions::DefaultJitOptions() {
   
   SET_DEFAULT(baselineInterpreter, true);
 
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  
+  SET_DEFAULT(portableBaselineInterpreter, false);
+#endif
+
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP_FORCE
+  SET_DEFAULT(portableBaselineInterpreter, true);
+  SET_DEFAULT(portableBaselineInterpreterWarmUpThreshold, 0);
+#endif
+
   
   
   
@@ -173,6 +183,12 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   SET_DEFAULT(baselineInterpreterWarmUpThreshold, 10);
+
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  
+  
+  SET_DEFAULT(portableBaselineInterpreterWarmUpThreshold, 10);
+#endif
 
   
   
@@ -387,6 +403,12 @@ bool DefaultJitOptions::isSmallFunction(JSScript* script) const {
 }
 
 void DefaultJitOptions::enableGvn(bool enable) { disableGvn = !enable; }
+
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+void DefaultJitOptions::setEagerPortableBaselineInterpreter() {
+  portableBaselineInterpreterWarmUpThreshold = 0;
+}
+#endif
 
 void DefaultJitOptions::setEagerBaselineCompilation() {
   baselineInterpreterWarmUpThreshold = 0;
