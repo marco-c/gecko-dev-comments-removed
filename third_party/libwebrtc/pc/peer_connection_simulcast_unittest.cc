@@ -540,7 +540,7 @@ TEST_F(PeerConnectionSimulcastTests,
 
 
 
-TEST_F(PeerConnectionSimulcastTests, NegotiationDoesNotHaveRidExtension) {
+TEST_F(PeerConnectionSimulcastTests, NegotiationDoesNotHaveRidExtensionFails) {
   auto local = CreatePeerConnectionWrapper();
   auto remote = CreatePeerConnectionWrapper();
   auto layers = CreateLayers({"1", "2", "3"}, true);
@@ -570,8 +570,7 @@ TEST_F(PeerConnectionSimulcastTests, NegotiationDoesNotHaveRidExtension) {
                                .receive_layers()
                                .GetAllLayers()
                                .size());
-  EXPECT_TRUE(local->SetRemoteDescription(std::move(answer), &err)) << err;
-  ValidateTransceiverParameters(transceiver, expected_layers);
+  EXPECT_FALSE(local->SetRemoteDescription(std::move(answer), &err)) << err;
 }
 
 TEST_F(PeerConnectionSimulcastTests, SimulcastAudioRejected) {

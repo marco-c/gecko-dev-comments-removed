@@ -41,7 +41,6 @@ struct RTC_EXPORT RtpTransceiverInit final {
   
   std::vector<std::string> stream_ids;
 
-  
   std::vector<RtpEncodingParameters> send_encodings;
 };
 
