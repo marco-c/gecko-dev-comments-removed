@@ -18,7 +18,6 @@
 #include "js/Id.h"                  
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
-#include "js/PropertyDescriptor.h"  
 #include "js/Proxy.h"  
 #include "js/RootingAPI.h"  
 #include "js/TypeDecls.h"   
