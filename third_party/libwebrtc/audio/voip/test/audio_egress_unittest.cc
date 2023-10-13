@@ -13,6 +13,8 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/call/transport.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "modules/audio_mixer/sine_wave_generator.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl2.h"
@@ -22,6 +24,7 @@
 #include "test/gtest.h"
 #include "test/mock_transport.h"
 #include "test/run_loop.h"
+#include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
 namespace {
@@ -57,18 +60,18 @@ class AudioEgressTest : public ::testing::Test {
   static constexpr uint32_t kRemoteSsrc = 0xDEADBEEF;
   const SdpAudioFormat kPcmuFormat = {"pcmu", 8000, 1};
 
-  AudioEgressTest()
-      : fake_clock_(kStartTime), wave_generator_(1000.0, kAudioLevel) {
-    task_queue_factory_ = CreateDefaultTaskQueueFactory();
+  AudioEgressTest() : wave_generator_(1000.0, kAudioLevel) {
     encoder_factory_ = CreateBuiltinAudioEncoderFactory();
   }
 
   
   
   void SetUp() override {
-    rtp_rtcp_ = CreateRtpStack(&fake_clock_, &transport_, kRemoteSsrc);
-    egress_ = std::make_unique<AudioEgress>(rtp_rtcp_.get(), &fake_clock_,
-                                            task_queue_factory_.get());
+    rtp_rtcp_ =
+        CreateRtpStack(time_controller_.GetClock(), &transport_, kRemoteSsrc);
+    egress_ = std::make_unique<AudioEgress>(
+        rtp_rtcp_.get(), time_controller_.GetClock(),
+        time_controller_.GetTaskQueueFactory());
     constexpr int kPcmuPayload = 0;
     egress_->SetEncoder(kPcmuPayload, kPcmuFormat,
                         encoder_factory_->MakeAudioEncoder(
@@ -100,14 +103,10 @@ class AudioEgressTest : public ::testing::Test {
     return frame;
   }
 
-  test::RunLoop run_loop_;
-  
-  
-  SimulatedClock fake_clock_;
+  GlobalSimulatedTimeController time_controller_{Timestamp::Micros(kStartTime)};
   NiceMock<MockTransport> transport_;
   SineWaveGenerator wave_generator_;
   std::unique_ptr<ModuleRtpRtcpImpl2> rtp_rtcp_;
-  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory_;
   std::unique_ptr<AudioEgress> egress_;
 };
@@ -138,7 +137,7 @@ TEST_F(AudioEgressTest, ProcessAudioWithMute) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 
   event.Wait(TimeDelta::Seconds(1));
@@ -174,7 +173,7 @@ TEST_F(AudioEgressTest, ProcessAudioWithSineWave) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 
   event.Wait(TimeDelta::Seconds(1));
@@ -208,7 +207,7 @@ TEST_F(AudioEgressTest, SkipAudioEncodingAfterStopSend) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 
   event.Wait(TimeDelta::Seconds(1));
@@ -222,7 +221,7 @@ TEST_F(AudioEgressTest, SkipAudioEncodingAfterStopSend) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 }
 
@@ -284,7 +283,7 @@ TEST_F(AudioEgressTest, SendDTMF) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 
   event.Wait(TimeDelta::Seconds(1));
@@ -309,7 +308,7 @@ TEST_F(AudioEgressTest, TestAudioInputLevelAndEnergyDuration) {
   
   for (size_t i = 0; i < kExpected * 2; i++) {
     egress_->SendAudioData(GetAudioFrame(i));
-    fake_clock_.AdvanceTimeMilliseconds(10);
+    time_controller_.AdvanceTime(TimeDelta::Millis(10));
   }
 
   event.Wait(TimeDelta::Seconds(1));
