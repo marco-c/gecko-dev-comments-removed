@@ -252,7 +252,26 @@ class nsAtomTable {
   
   
   
-  const static size_t kNumSubTables = 128;  
+  constexpr static size_t kNumSubTables = 128;  
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  constexpr static size_t kInitialSubTableSize = 4096 / kNumSubTables;
 
  private:
   nsAtomSubTable mSubTables[kNumSubTables];
@@ -294,25 +313,6 @@ static void AtomTableInitEntry(PLDHashEntryHdr* aEntry, const void* aKey) {
 static const PLDHashTableOps AtomTableOps = {
     AtomTableGetHash, AtomTableMatchKey, PLDHashTable::MoveEntryStub,
     nsAtomTable::AtomTableClearEntry, AtomTableInitEntry};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define INITIAL_SUBTABLE_LENGTH (4096 / nsAtomTable::kNumSubTables)
 
 nsAtomSubTable& nsAtomTable::SelectSubTable(AtomTableKey& aKey) {
   
@@ -396,7 +396,8 @@ size_t nsAtomTable::RacySlowCount() {
 
 nsAtomSubTable::nsAtomSubTable()
     : mLock("Atom Sub-Table Lock"),
-      mTable(&AtomTableOps, sizeof(AtomTableEntry), INITIAL_SUBTABLE_LENGTH) {}
+      mTable(&AtomTableOps, sizeof(AtomTableEntry),
+             nsAtomTable::kInitialSubTableSize) {}
 
 void nsAtomSubTable::GCLocked(GCKind aKind) {
   MOZ_ASSERT(NS_IsMainThread());
