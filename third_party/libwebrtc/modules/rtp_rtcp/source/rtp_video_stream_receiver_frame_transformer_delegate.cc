@@ -83,12 +83,14 @@ class TransformableVideoReceiverFrame
 RtpVideoStreamReceiverFrameTransformerDelegate::
     RtpVideoStreamReceiverFrameTransformerDelegate(
         RtpVideoFrameReceiver* receiver,
+        Clock* clock,
         rtc::scoped_refptr<FrameTransformerInterface> frame_transformer,
         TaskQueueBase* network_thread, uint32_t ssrc)
     : receiver_(receiver),
       frame_transformer_(std::move(frame_transformer)),
       network_thread_(network_thread),
-      ssrc_(ssrc) {}
+      ssrc_(ssrc),
+      clock_(clock) {}
 
 void RtpVideoStreamReceiverFrameTransformerDelegate::Init() {
   RTC_DCHECK_RUN_ON(&network_sequence_checker_);
@@ -163,13 +165,14 @@ void RtpVideoStreamReceiverFrameTransformerDelegate::ManageFrame(
     RTPVideoHeader video_header = RTPVideoHeader::FromMetadata(metadata);
     VideoSendTiming timing;
     rtc::ArrayView<const uint8_t> data = transformed_frame->GetData();
+    int64_t receive_time = clock_->CurrentTime().ms();
     receiver_->ManageFrame(std::make_unique<RtpFrameObject>(
         metadata.GetFrameId().value_or(0),
         metadata.GetFrameId().value_or(0),
         video_header.is_last_frame_in_picture,
         0,
-        0,
-        0,
+        receive_time,
+        receive_time,
         transformed_frame->GetTimestamp(),
         0, timing, transformed_frame->GetPayloadType(),
         metadata.GetCodec(), metadata.GetRotation(), metadata.GetContentType(),
