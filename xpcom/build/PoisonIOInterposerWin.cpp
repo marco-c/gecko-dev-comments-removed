@@ -25,7 +25,6 @@
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
 #include "nsWindowsDllInterceptor.h"
-#include "plstr.h"
 
 #ifdef MOZ_REPLACE_MALLOC
 #  include "replace_malloc_bridge.h"
@@ -441,7 +440,9 @@ void InitPoisonIOInterposer() {
 
   
   
-  if (::GetModuleHandleW(L"kwsui64.dll")) {
+  
+  
+  if (::GetModuleHandleW(L"kwsui64.dll") || ::GetModuleHandleW(L"ffm64.dll")) {
     return;
   }
 
