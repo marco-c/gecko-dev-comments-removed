@@ -17,6 +17,8 @@
 
 
 
+
+
 const CURRENT_FILE_DIR = "/browser/accessible/tests/browser/";
 
 
@@ -445,6 +447,10 @@ function accessibleTask(doc, task, options = {}) {
         "accessible-event"
       )) {
         Services.obs.removeObserver(observer, "accessible-event");
+      }
+      if (gPythonSocket) {
+        
+        runPython(`__reset__`);
       }
     });
 
@@ -915,4 +921,51 @@ async function testBoundsWithContent(iframeDocAcc, id, browser) {
   assertBoundsFuzzyEqual(accBounds, expectedBounds);
 
   return accBounds;
+}
+
+let gPythonSocket = null;
+
+
+
+
+
+
+
+
+
+
+
+
+function runPython(code) {
+  if (!gPythonSocket) {
+    
+    gPythonSocket = new WebSocket(
+      "ws://mochi.test:8888/browser/accessible/tests/browser/python_runner"
+    );
+    if (gPythonSocket.readyState != WebSocket.OPEN) {
+      gPythonSocket.onopen = evt => {
+        gPythonSocket.send(code);
+        gPythonSocket.onopen = null;
+      };
+    }
+  }
+  return new Promise((resolve, reject) => {
+    gPythonSocket.onmessage = evt => {
+      const message = JSON.parse(evt.data);
+      if (message[0] == "return") {
+        gPythonSocket.onmessage = null;
+        resolve(message[1]);
+      } else if (message[0] == "exception") {
+        gPythonSocket.onmessage = null;
+        reject(new Error(message[1]));
+      } else if (message[0] == "info") {
+        info(message[1]);
+      }
+    };
+    
+    
+    if (gPythonSocket.readyState == WebSocket.OPEN) {
+      gPythonSocket.send(code);
+    }
+  });
 }
