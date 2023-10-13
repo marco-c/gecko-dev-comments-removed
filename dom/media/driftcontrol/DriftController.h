@@ -97,6 +97,13 @@ class DriftController final {
   
   
   
+  
+  
+  
+  
+  
+  
+  
   void CalculateCorrection(uint32_t aBufferedFrames, uint32_t aBufferSize);
 
  public:
@@ -104,12 +111,16 @@ class DriftController final {
   const uint32_t mSourceRate;
   const uint32_t mTargetRate;
   const uint32_t mAdjustmentIntervalMs = 1000;
+  const TrackTime mIntegralCapFrameLimit = 10 * mTargetRate;
 
  private:
   uint32_t mDesiredBuffering;
   int32_t mPreviousError = 0;
   float mIntegral = 0.0;
+  Maybe<float> mIntegralCenterForCap;
   float mCorrectedTargetRate;
+  Maybe<int32_t> mLastHysteresisBoundaryCorrection;
+  uint32_t mTargetFramesWithinHysteresis = 0;
   uint32_t mNumCorrectionChanges = 0;
 
   

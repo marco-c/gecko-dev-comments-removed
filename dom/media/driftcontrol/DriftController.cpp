@@ -21,19 +21,22 @@ extern LazyLogModule gMediaTrackGraphLog;
   MOZ_LOG(gMediaTrackGraphLog, level,                              \
           ("DriftController %p: (plot-id %u) " format, controller, \
            (controller)->mPlotId, ##__VA_ARGS__))
-#define LOG_PLOT_NAMES()                                                    \
-  MOZ_LOG(gDriftControllerGraphsLog, LogLevel::Verbose,                     \
-          ("id,t,buffering,desired,buffersize,inlatency,outlatency,inrate," \
-           "outrate,corrected,configured,p,i,d,kpp,kii,kdd,control"))
-#define LOG_PLOT_VALUES(id, t, buffering, desired, buffersize, inlatency,      \
-                        outlatency, inrate, outrate, corrected, configured, p, \
-                        i, d, kpp, kii, kdd, control)                          \
+#define LOG_PLOT_NAMES()                                                       \
   MOZ_LOG(                                                                     \
       gDriftControllerGraphsLog, LogLevel::Verbose,                            \
-      ("DriftController %u,%.3f,%u,%u,%u,%u,%u,%u,%u,%.5f,%ld,%d,%.5f,%.5f,"   \
-       "%.5f,%.5f,%.5f,%.5f",                                                  \
-       id, t, buffering, desired, buffersize, inlatency, outlatency, inrate,   \
-       outrate, corrected, configured, p, i, d, kpp, kii, kdd, control))
+      ("id,t,buffering,desired,buffersize,inlatency,outlatency,inrate,"        \
+       "outrate,hysteresisthreshold,corrected,hysteresiscorrected,configured," \
+       "p,i,d,kpp,kii,kdd,control"))
+#define LOG_PLOT_VALUES(id, t, buffering, desired, buffersize, inlatency,      \
+                        outlatency, inrate, outrate, hysteresisthreshold,      \
+                        corrected, hysteresiscorrected, configured, p, i, d,   \
+                        kpp, kii, kdd, control)                                \
+  MOZ_LOG(gDriftControllerGraphsLog, LogLevel::Verbose,                        \
+          ("DriftController %u,%.3f,%u,%u,%u,%u,%u,%u,%u,%u,%.5f,%.5f,%ld,%d," \
+           "%.5f,%.5f,%.5f,%.5f,%.5f,%.5f",                                    \
+           id, t, buffering, desired, buffersize, inlatency, outlatency,       \
+           inrate, outrate, hysteresisthreshold, corrected,                    \
+           hysteresiscorrected, configured, p, i, d, kpp, kii, kdd, control))
 
 static uint8_t GenerateId() {
   static std::atomic<uint8_t> id{0};
@@ -130,27 +133,89 @@ void DriftController::CalculateCorrection(uint32_t aBufferedFrames,
       std::clamp(static_cast<float>(mTargetRate) + controlSignal,
                  mCorrectedTargetRate - cap, mCorrectedTargetRate + cap);
 
+  
+  
+  
+  
+  static constexpr uint32_t kHysteresisDenominator = 5;  
+
+  
+  const uint32_t hysteresisCap = mSourceRate * 10 / 1000;
+
+  
+  
+  
+  const uint32_t hysteresisThreshold =
+      std::min(hysteresisCap, mDesiredBuffering / kHysteresisDenominator);
+
+  float hysteresisCorrectedRate = [&] {
+    uint32_t abserror = std::abs(error);
+    if (abserror > hysteresisThreshold) {
+      
+      mTargetFramesWithinHysteresis = 0;
+      mIntegralCenterForCap = Nothing();
+      mLastHysteresisBoundaryCorrection = Some(error);
+      return correctedRate;
+    }
+
+    
+    mTargetFramesWithinHysteresis += mTargetClock;
+    if (!mIntegralCenterForCap) {
+      mIntegralCenterForCap = Some(mIntegral);
+    }
+
+    
+    
+    if (mLastHysteresisBoundaryCorrection &&
+        (*mLastHysteresisBoundaryCorrection < 0) != (error < 0) &&
+        abserror > hysteresisThreshold * 3 / 10) {
+      
+      
+      
+      
+      mLastHysteresisBoundaryCorrection = Nothing();
+      return correctedRate;
+    }
+
+    return mCorrectedTargetRate;
+  }();
+
+  if (mTargetFramesWithinHysteresis > mIntegralCapFrameLimit) {
+    
+    
+    
+    
+    
+    
+    
+    mIntegral = std::clamp(mIntegral, *mIntegralCenterForCap - integralCap,
+                           *mIntegralCenterForCap + integralCap);
+  }
+
   LOG_CONTROLLER(
       LogLevel::Verbose, this,
       "Recalculating Correction: Nominal: %uHz->%uHz, Corrected: "
       "%uHz->%.2fHz  (diff %.2fHz), buffering: %u, desired buffering: %u",
-      mSourceRate, mTargetRate, mSourceRate, correctedRate,
-      correctedRate - mCorrectedTargetRate, aBufferedFrames, mDesiredBuffering);
-  LOG_PLOT_VALUES(
-      mPlotId, static_cast<double>(mTotalTargetClock) / mTargetRate,
-      aBufferedFrames, mDesiredBuffering, aBufferSize,
-      static_cast<uint32_t>(mMeasuredSourceLatency.mean()),
-      static_cast<uint32_t>(mMeasuredTargetLatency.mean()), mSourceRate,
-      mTargetRate, correctedRate, std::lround(correctedRate), proportional,
-      mIntegral, derivative, kProportionalGain * proportional,
-      kIntegralGain * mIntegral, kDerivativeGain * derivative, controlSignal);
+      mSourceRate, mTargetRate, mSourceRate, hysteresisCorrectedRate,
+      hysteresisCorrectedRate - mCorrectedTargetRate, aBufferedFrames,
+      mDesiredBuffering);
+  LOG_PLOT_VALUES(mPlotId, static_cast<double>(mTotalTargetClock) / mTargetRate,
+                  aBufferedFrames, mDesiredBuffering, aBufferSize,
+                  static_cast<uint32_t>(mMeasuredSourceLatency.mean()),
+                  static_cast<uint32_t>(mMeasuredTargetLatency.mean()),
+                  mSourceRate, mTargetRate, hysteresisThreshold, correctedRate,
+                  hysteresisCorrectedRate, std::lround(hysteresisCorrectedRate),
+                  proportional, mIntegral, derivative,
+                  kProportionalGain * proportional, kIntegralGain * mIntegral,
+                  kDerivativeGain * derivative, controlSignal);
 
-  if (std::lround(mCorrectedTargetRate) != std::lround(correctedRate)) {
+  if (std::lround(mCorrectedTargetRate) !=
+      std::lround(hysteresisCorrectedRate)) {
     ++mNumCorrectionChanges;
   }
 
   mPreviousError = error;
-  mCorrectedTargetRate = correctedRate;
+  mCorrectedTargetRate = hysteresisCorrectedRate;
 
   
   mTargetClock = 0;
