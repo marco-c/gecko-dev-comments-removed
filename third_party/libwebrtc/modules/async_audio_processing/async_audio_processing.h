@@ -38,12 +38,23 @@ class AsyncAudioProcessing final {
     ~Factory();
     Factory(AudioFrameProcessor& frame_processor,
             TaskQueueFactory& task_queue_factory);
+    Factory(std::unique_ptr<AudioFrameProcessor> frame_processor,
+            TaskQueueFactory& task_queue_factory);
 
     std::unique_ptr<AsyncAudioProcessing> CreateAsyncAudioProcessing(
         AudioFrameProcessor::OnAudioFrameCallback on_frame_processed_callback);
 
    private:
+    
+    
+    
+    
+    
+    
+    
+    
     AudioFrameProcessor& frame_processor_;
+    std::unique_ptr<AudioFrameProcessor> owned_frame_processor_;
     TaskQueueFactory& task_queue_factory_;
   };
 
@@ -57,8 +68,21 @@ class AsyncAudioProcessing final {
   
   
   
+  
+  
+  
   AsyncAudioProcessing(
       AudioFrameProcessor& frame_processor,
+      TaskQueueFactory& task_queue_factory,
+      AudioFrameProcessor::OnAudioFrameCallback on_frame_processed_callback);
+
+  
+  
+  
+  
+  
+  AsyncAudioProcessing(
+      std::unique_ptr<AudioFrameProcessor> frame_processor,
       TaskQueueFactory& task_queue_factory,
       AudioFrameProcessor::OnAudioFrameCallback on_frame_processed_callback);
 
@@ -67,7 +91,16 @@ class AsyncAudioProcessing final {
 
  private:
   AudioFrameProcessor::OnAudioFrameCallback on_frame_processed_callback_;
+  
+  
+  
+  
+  
+  
+  
+  
   AudioFrameProcessor& frame_processor_;
+  std::unique_ptr<AudioFrameProcessor> owned_frame_processor_;
   rtc::TaskQueue task_queue_;
 };
 
