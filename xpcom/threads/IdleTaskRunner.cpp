@@ -185,6 +185,17 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
   mDeadline = TimeStamp();
 
   TimeStamp now = TimeStamp::Now();
+
+  if (aAllowIdleDispatch) {
+    SetTimerInternal(mMaxDelay);
+    if (!mTask) {
+      mTask = new IdleTaskRunnerTask(this);
+      RefPtr<Task> task(mTask);
+      TaskController::Get()->AddTask(task.forget());
+    }
+    return;
+  }
+
   bool useRefreshDriver = false;
   if (now >= mStartTime) {
     
@@ -193,9 +204,6 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
         (nsRefreshDriver::GetIdleDeadlineHint(
              now, nsRefreshDriver::IdleCheck::OnlyThisProcessRefreshDriver) !=
          now);
-  } else {
-    NS_WARNING_ASSERTION(!aAllowIdleDispatch,
-                         "early callback, or time went backwards");
   }
 
   if (useRefreshDriver) {
@@ -209,36 +217,25 @@ void IdleTaskRunner::Schedule(bool aAllowIdleDispatch) {
     SetTimerInternal(mMaxDelay);
   } else {
     
-    if (aAllowIdleDispatch) {
-      SetTimerInternal(mMaxDelay);
-      if (!mTask) {
-        
-        
-        mTask = new IdleTaskRunnerTask(this);
-        RefPtr<Task> task(mTask);
-        TaskController::Get()->AddTask(task.forget());
+    if (!mScheduleTimer) {
+      mScheduleTimer = NS_NewTimer();
+      if (!mScheduleTimer) {
+        return;
       }
     } else {
-      if (!mScheduleTimer) {
-        mScheduleTimer = NS_NewTimer();
-        if (!mScheduleTimer) {
-          return;
-        }
-      } else {
-        mScheduleTimer->Cancel();
-      }
-      
-      
-      uint32_t waitToSchedule = 16; 
-      if (now < mStartTime) {
-        
-        
-        waitToSchedule = (mStartTime - now).ToMilliseconds() + 1;
-      }
-      mScheduleTimer->InitWithNamedFuncCallback(
-          ScheduleTimedOut, this, waitToSchedule,
-          nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
+      mScheduleTimer->Cancel();
     }
+    
+    
+    uint32_t waitToSchedule = 16; 
+    if (now < mStartTime) {
+      
+      
+      waitToSchedule = (mStartTime - now).ToMilliseconds() + 1;
+    }
+    mScheduleTimer->InitWithNamedFuncCallback(
+        ScheduleTimedOut, this, waitToSchedule,
+        nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY, mName);
   }
 }
 
