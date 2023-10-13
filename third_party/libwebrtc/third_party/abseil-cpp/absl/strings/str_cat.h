@@ -50,16 +50,61 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #ifndef ABSL_STRINGS_STR_CAT_H_
 #define ABSL_STRINGS_STR_CAT_H_
 
+#include <algorithm>
 #include <array>
+#include <cassert>
+#include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <limits>
 #include <string>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/base/port.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/has_absl_stringify.h"
+#include "absl/strings/internal/resize_uninitialized.h"
+#include "absl/strings/internal/stringify_sink.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
 
@@ -164,6 +209,27 @@ struct Hex {
   explicit Hex(Pointee* v, PadSpec spec = absl::kNoPad)
       : Hex(spec, reinterpret_cast<uintptr_t>(v)) {}
 
+  template <typename S>
+  friend void AbslStringify(S& sink, Hex hex) {
+    static_assert(
+        numbers_internal::kFastToBufferSize >= 32,
+        "This function only works when output buffer >= 32 bytes long");
+    char buffer[numbers_internal::kFastToBufferSize];
+    char* const end = &buffer[numbers_internal::kFastToBufferSize];
+    auto real_width =
+        absl::numbers_internal::FastHexToBufferZeroPad16(hex.value, end - 16);
+    if (real_width >= hex.width) {
+      sink.Append(absl::string_view(end - real_width, real_width));
+    } else {
+      
+      
+      std::memset(end - 32, hex.fill, 16);
+      
+      std::memset(end - real_width - 16, hex.fill, 16);
+      sink.Append(absl::string_view(end - hex.width, hex.width));
+    }
+  }
+
  private:
   Hex(PadSpec spec, uint64_t v)
       : value(v),
@@ -198,7 +264,41 @@ struct Dec {
                                              : spec - absl::kZeroPad2 + 2),
         fill(spec >= absl::kSpacePad2 ? ' ' : '0'),
         neg(v < 0) {}
+
+  template <typename S>
+  friend void AbslStringify(S& sink, Dec dec) {
+    assert(dec.width <= numbers_internal::kFastToBufferSize);
+    char buffer[numbers_internal::kFastToBufferSize];
+    char* const end = &buffer[numbers_internal::kFastToBufferSize];
+    char* const minfill = end - dec.width;
+    char* writer = end;
+    uint64_t val = dec.value;
+    while (val > 9) {
+      *--writer = '0' + (val % 10);
+      val /= 10;
+    }
+    *--writer = '0' + static_cast<char>(val);
+    if (dec.neg) *--writer = '-';
+
+    ptrdiff_t fillers = writer - minfill;
+    if (fillers > 0) {
+      
+      
+      bool add_sign_again = false;
+      if (dec.neg && dec.fill == '0') {  
+        ++writer;                    
+        add_sign_again = true;       
+      }
+      writer -= fillers;
+      std::fill_n(writer, fillers, dec.fill);
+      if (add_sign_again) *--writer = '-';
+    }
+
+    sink.Append(absl::string_view(writer, static_cast<size_t>(end - writer)));
+  }
 };
+
+
 
 
 
@@ -243,21 +343,30 @@ class AlphaNum {
   AlphaNum(double f)  
       : piece_(digits_, numbers_internal::SixDigitsToBuffer(f, digits_)) {}
 
-  AlphaNum(Hex hex);  
-  AlphaNum(Dec dec);  
-
   template <size_t size>
   AlphaNum(  
-      const strings_internal::AlphaNumBuffer<size>& buf)
+      const strings_internal::AlphaNumBuffer<size>& buf
+          ABSL_ATTRIBUTE_LIFETIME_BOUND)
       : piece_(&buf.data[0], buf.size) {}
 
-  AlphaNum(const char* c_str)                     
-      : piece_(NullSafeStringView(c_str)) {}      
-  AlphaNum(absl::string_view pc) : piece_(pc) {}  
+  AlphaNum(const char* c_str  
+               ABSL_ATTRIBUTE_LIFETIME_BOUND)
+      : piece_(NullSafeStringView(c_str)) {}
+  AlphaNum(absl::string_view pc  
+               ABSL_ATTRIBUTE_LIFETIME_BOUND)
+      : piece_(pc) {}
+
+  template <typename T, typename = typename std::enable_if<
+                            HasAbslStringify<T>::value>::type>
+  AlphaNum(  
+      const T& v ABSL_ATTRIBUTE_LIFETIME_BOUND,
+      strings_internal::StringifySink&& sink ABSL_ATTRIBUTE_LIFETIME_BOUND = {})
+      : piece_(strings_internal::ExtractStringification(sink, v)) {}
 
   template <typename Allocator>
   AlphaNum(  
-      const std::basic_string<char, std::char_traits<char>, Allocator>& str)
+      const std::basic_string<char, std::char_traits<char>, Allocator>& str
+          ABSL_ATTRIBUTE_LIFETIME_BOUND)
       : piece_(str) {}
 
   
@@ -274,9 +383,20 @@ class AlphaNum {
   
   template <typename T,
             typename = typename std::enable_if<
-                std::is_enum<T>{} && !std::is_convertible<T, int>{}>::type>
+                std::is_enum<T>{} && std::is_convertible<T, int>{} &&
+                !HasAbslStringify<T>::value>::type>
   AlphaNum(T e)  
-      : AlphaNum(static_cast<typename std::underlying_type<T>::type>(e)) {}
+      : AlphaNum(+e) {}
+
+  
+  
+  template <typename T,
+            typename std::enable_if<std::is_enum<T>{} &&
+                                        !std::is_convertible<T, int>{} &&
+                                        !HasAbslStringify<T>::value,
+                                    char*>::type = nullptr>
+  AlphaNum(T e)  
+      : AlphaNum(+static_cast<typename std::underlying_type<T>::type>(e)) {}
 
   
   
@@ -329,10 +449,86 @@ std::string CatPieces(std::initializer_list<absl::string_view> pieces);
 void AppendPieces(std::string* dest,
                   std::initializer_list<absl::string_view> pieces);
 
+template <typename Integer>
+std::string IntegerToString(Integer i) {
+  
+  
+  constexpr size_t kMaxDigits10 = 22;
+  std::string result;
+  strings_internal::STLStringResizeUninitialized(&result, kMaxDigits10);
+  char* start = &result[0];
+  
+  char* end = numbers_internal::FastIntToBuffer(i, start);
+  auto size = static_cast<size_t>(end - start);
+  assert((size < result.size()) &&
+         "StrCat(Integer) does not fit into kMaxDigits10");
+  result.erase(size);
+  return result;
+}
+template <typename Float>
+std::string FloatToString(Float f) {
+  std::string result;
+  strings_internal::STLStringResizeUninitialized(
+      &result, numbers_internal::kSixDigitsToBufferSize);
+  char* start = &result[0];
+  result.erase(numbers_internal::SixDigitsToBuffer(f, start));
+  return result;
+}
+
+
+
+
+
+inline std::string SingleArgStrCat(int x) { return IntegerToString(x); }
+inline std::string SingleArgStrCat(unsigned int x) {
+  return IntegerToString(x);
+}
+
+inline std::string SingleArgStrCat(long x) { return IntegerToString(x); }
+
+inline std::string SingleArgStrCat(unsigned long x) {
+  return IntegerToString(x);
+}
+
+inline std::string SingleArgStrCat(long long x) { return IntegerToString(x); }
+
+inline std::string SingleArgStrCat(unsigned long long x) {
+  return IntegerToString(x);
+}
+inline std::string SingleArgStrCat(float x) { return FloatToString(x); }
+inline std::string SingleArgStrCat(double x) { return FloatToString(x); }
+
+
+
+
+
+
+
+
+
+
+#ifdef _LIBCPP_VERSION
+#define ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE true
+#else
+#define ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE false
+#endif
+
+template <typename T, typename = std::enable_if_t<
+                          ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE &&
+                          std::is_arithmetic<T>{} && !std::is_same<T, char>{}>>
+using EnableIfFastCase = T;
+
+#undef ABSL_INTERNAL_STRCAT_ENABLE_FAST_CASE
+
 }  
 
 ABSL_MUST_USE_RESULT inline std::string StrCat() { return std::string(); }
 
+template <typename T>
+ABSL_MUST_USE_RESULT inline std::string StrCat(
+    strings_internal::EnableIfFastCase<T> a) {
+  return strings_internal::SingleArgStrCat(a);
+}
 ABSL_MUST_USE_RESULT inline std::string StrCat(const AlphaNum& a) {
   return std::string(a.data(), a.size());
 }

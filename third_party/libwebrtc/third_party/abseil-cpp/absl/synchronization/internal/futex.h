@@ -16,9 +16,7 @@
 
 #include "absl/base/config.h"
 
-#ifdef _WIN32
-#include <windows.h>
-#else
+#ifndef _WIN32
 #include <sys/time.h>
 #include <unistd.h>
 #endif
@@ -34,6 +32,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <limits>
 
 #include "absl/base/optimization.h"
 #include "absl/synchronization/internal/kernel_timeout.h"
@@ -81,65 +80,89 @@ namespace synchronization_internal {
 
 #if defined(SYS_futex_time64) && !defined(SYS_futex)
 #define SYS_futex SYS_futex_time64
+using FutexTimespec = struct timespec;
+#else
+
+
+
+
+
+
+struct FutexTimespec {
+  long tv_sec;   
+  long tv_nsec;  
+};
 #endif
 
 class FutexImpl {
  public:
-  static int WaitUntil(std::atomic<int32_t> *v, int32_t val,
-                       KernelTimeout t) {
-    int err = 0;
-    if (t.has_timeout()) {
-      
-      
-      struct timespec abs_timeout = t.MakeAbsTimespec();
-      
-      
-      err = syscall(
-          SYS_futex, reinterpret_cast<int32_t *>(v),
-          FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG | FUTEX_CLOCK_REALTIME, val,
-          &abs_timeout, nullptr, FUTEX_BITSET_MATCH_ANY);
-    } else {
-      
-      
-      err = syscall(SYS_futex, reinterpret_cast<int32_t *>(v),
-                    FUTEX_WAIT | FUTEX_PRIVATE_FLAG, val, nullptr);
-    }
-    if (ABSL_PREDICT_FALSE(err != 0)) {
-      err = -errno;
-    }
-    return err;
-  }
-
-  static int WaitBitsetAbsoluteTimeout(std::atomic<int32_t> *v, int32_t val,
-                                       int32_t bits,
-                                       const struct timespec *abstime) {
-    int err = syscall(SYS_futex, reinterpret_cast<int32_t *>(v),
-                      FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG, val, abstime,
-                      nullptr, bits);
-    if (ABSL_PREDICT_FALSE(err != 0)) {
-      err = -errno;
-    }
-    return err;
-  }
-
-  static int Wake(std::atomic<int32_t> *v, int32_t count) {
-    int err = syscall(SYS_futex, reinterpret_cast<int32_t *>(v),
-                      FUTEX_WAKE | FUTEX_PRIVATE_FLAG, count);
-    if (ABSL_PREDICT_FALSE(err < 0)) {
-      err = -errno;
-    }
-    return err;
+  
+  
+  static int Wait(std::atomic<int32_t>* v, int32_t val) {
+    return WaitAbsoluteTimeout(v, val, nullptr);
   }
 
   
-  static int WakeBitset(std::atomic<int32_t> *v, int32_t count, int32_t bits) {
-    int err = syscall(SYS_futex, reinterpret_cast<int32_t *>(v),
-                      FUTEX_WAKE_BITSET | FUTEX_PRIVATE_FLAG, count, nullptr,
-                      nullptr, bits);
-    if (ABSL_PREDICT_FALSE(err < 0)) {
-      err = -errno;
+  
+  static int WaitAbsoluteTimeout(std::atomic<int32_t>* v, int32_t val,
+                                 const struct timespec* abs_timeout) {
+    FutexTimespec ts;
+    
+    
+    auto err = syscall(
+        SYS_futex, reinterpret_cast<int32_t*>(v),
+        FUTEX_WAIT_BITSET | FUTEX_PRIVATE_FLAG | FUTEX_CLOCK_REALTIME, val,
+        ToFutexTimespec(abs_timeout, &ts), nullptr, FUTEX_BITSET_MATCH_ANY);
+    if (err != 0) {
+      return -errno;
     }
-    return err;
+    return 0;
+  }
+
+  
+  
+  static int WaitRelativeTimeout(std::atomic<int32_t>* v, int32_t val,
+                                 const struct timespec* rel_timeout) {
+    FutexTimespec ts;
+    
+    
+    auto err =
+        syscall(SYS_futex, reinterpret_cast<int32_t*>(v), FUTEX_PRIVATE_FLAG,
+                val, ToFutexTimespec(rel_timeout, &ts));
+    if (err != 0) {
+      return -errno;
+    }
+    return 0;
+  }
+
+  
+  static int Wake(std::atomic<int32_t>* v, int32_t count) {
+    auto err = syscall(SYS_futex, reinterpret_cast<int32_t*>(v),
+                       FUTEX_WAKE | FUTEX_PRIVATE_FLAG, count);
+    if (ABSL_PREDICT_FALSE(err < 0)) {
+      return -errno;
+    }
+    return 0;
+  }
+
+ private:
+  static FutexTimespec* ToFutexTimespec(const struct timespec* userspace_ts,
+                                        FutexTimespec* futex_ts) {
+    if (userspace_ts == nullptr) {
+      return nullptr;
+    }
+
+    using FutexSeconds = decltype(futex_ts->tv_sec);
+    using FutexNanoseconds = decltype(futex_ts->tv_nsec);
+
+    constexpr auto kMaxSeconds{(std::numeric_limits<FutexSeconds>::max)()};
+    if (userspace_ts->tv_sec > kMaxSeconds) {
+      futex_ts->tv_sec = kMaxSeconds;
+    } else {
+      futex_ts->tv_sec = static_cast<FutexSeconds>(userspace_ts->tv_sec);
+    }
+    futex_ts->tv_nsec = static_cast<FutexNanoseconds>(userspace_ts->tv_nsec);
+    return futex_ts;
   }
 };
 

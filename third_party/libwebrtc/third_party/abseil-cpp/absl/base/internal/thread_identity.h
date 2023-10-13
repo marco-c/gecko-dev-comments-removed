@@ -62,8 +62,8 @@ struct PerThreadSynch {
     return reinterpret_cast<ThreadIdentity*>(this);
   }
 
-  PerThreadSynch *next;  
-  PerThreadSynch *skip;  
+  PerThreadSynch* next;  
+  PerThreadSynch* skip;  
                          
                          
   bool may_skip;         
@@ -104,10 +104,7 @@ struct PerThreadSynch {
   
   
   
-  enum State {
-    kAvailable,
-    kQueued
-  };
+  enum State { kAvailable, kQueued };
   std::atomic<State> state;
 
   
@@ -122,15 +119,19 @@ struct PerThreadSynch {
   
   SynchWaitParams* waitp;
 
-  intptr_t readers;     
+  intptr_t readers;  
 
   
   int64_t next_priority_read_cycles;
 
   
   
-  SynchLocksHeld *all_locks;
+  SynchLocksHeld* all_locks;
 };
+
+
+
+
 
 
 
@@ -143,7 +144,7 @@ struct ThreadIdentity {
 
   
   struct WaiterState {
-    alignas(void*) char data[128];
+    alignas(void*) char data[256];
   } waiter_state;
 
   
@@ -158,6 +159,9 @@ struct ThreadIdentity {
 
   ThreadIdentity* next;
 };
+
+
+
 
 
 
@@ -213,7 +217,7 @@ void ClearCurrentThreadIdentity();
 #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
 #elif defined(__APPLE__) && defined(ABSL_HAVE_THREAD_LOCAL)
 #define ABSL_THREAD_IDENTITY_MODE ABSL_THREAD_IDENTITY_MODE_USE_CPP11
-#elif ABSL_PER_THREAD_TLS && defined(__GOOGLE_GRTE_VERSION__) &&        \
+#elif ABSL_PER_THREAD_TLS && defined(__GOOGLE_GRTE_VERSION__) && \
     (__GOOGLE_GRTE_VERSION__ >= 20140228L)
 
 

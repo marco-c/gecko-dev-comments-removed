@@ -115,7 +115,7 @@ bool RemoveSymbolDecorator(int ticket);
 
 
 
-bool RemoveAllSymbolDecorators(void);
+bool RemoveAllSymbolDecorators();
 
 
 

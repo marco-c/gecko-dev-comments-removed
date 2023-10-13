@@ -23,6 +23,7 @@
 #ifndef ABSL_FLAGS_PARSE_H_
 #define ABSL_FLAGS_PARSE_H_
 
+#include <string>
 #include <vector>
 
 #include "absl/base/config.h"
@@ -33,6 +34,75 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+struct UnrecognizedFlag {
+  enum Source { kFromArgv, kFromFlagfile };
+
+  explicit UnrecognizedFlag(Source s, absl::string_view f)
+      : source(s), flag_name(f) {}
+  
+  
+  Source source;
+  
+  std::string flag_name;
+};
+
+inline bool operator==(const UnrecognizedFlag& lhs,
+                       const UnrecognizedFlag& rhs) {
+  return lhs.source == rhs.source && lhs.flag_name == rhs.flag_name;
+}
+
+namespace flags_internal {
+
+HelpMode ParseAbseilFlagsOnlyImpl(
+    int argc, char* argv[], std::vector<char*>& positional_args,
+    std::vector<UnrecognizedFlag>& unrecognized_flags,
+    UsageFlagsAction usage_flag_action);
+
+}  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+void ParseAbseilFlagsOnly(int argc, char* argv[],
+                          std::vector<char*>& positional_args,
+                          std::vector<UnrecognizedFlag>& unrecognized_flags);
+
+
+
+
+
+void ReportUnrecognizedFlags(
+    const std::vector<UnrecognizedFlag>& unrecognized_flags);
 
 
 

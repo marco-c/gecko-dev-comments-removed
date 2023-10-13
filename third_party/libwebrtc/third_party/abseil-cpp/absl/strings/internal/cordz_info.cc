@@ -21,21 +21,19 @@
 #include "absl/strings/internal/cord_internal.h"
 #include "absl/strings/internal/cord_rep_btree.h"
 #include "absl/strings/internal/cord_rep_crc.h"
-#include "absl/strings/internal/cord_rep_ring.h"
 #include "absl/strings/internal/cordz_handle.h"
 #include "absl/strings/internal/cordz_statistics.h"
 #include "absl/strings/internal/cordz_update_tracker.h"
 #include "absl/synchronization/mutex.h"
+#include "absl/time/clock.h"
 #include "absl/types/span.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
 
-using ::absl::base_internal::SpinLockHolder;
-
 #ifdef ABSL_INTERNAL_NEED_REDUNDANT_CONSTEXPR_DECL
-constexpr int CordzInfo::kMaxStackDepth;
+constexpr size_t CordzInfo::kMaxStackDepth;
 #endif
 
 ABSL_CONST_INIT CordzInfo::List CordzInfo::global_list_{absl::kConstInit};
@@ -78,6 +76,8 @@ class CordRepAnalyzer {
   
   
   void AnalyzeCordRep(const CordRep* rep) {
+    ABSL_ASSERT(rep != nullptr);
+
     
     
     
@@ -85,7 +85,7 @@ class CordRepAnalyzer {
     RepRef repref{rep, (refcount > 1) ? refcount - 1 : 1};
 
     
-    if (repref.rep->tag == CRC) {
+    if (repref.tag() == CRC) {
       statistics_.node_count++;
       statistics_.node_counts.crc++;
       memory_usage_.Add(sizeof(CordRepCrc), repref.refcount);
@@ -95,15 +95,14 @@ class CordRepAnalyzer {
     
     repref = CountLinearReps(repref, memory_usage_);
 
-    if (repref.rep != nullptr) {
-      if (repref.rep->tag == RING) {
-        AnalyzeRing(repref);
-      } else if (repref.rep->tag == BTREE) {
+    switch (repref.tag()) {
+      case CordRepKind::BTREE:
         AnalyzeBtree(repref);
-      } else {
+        break;
+      default:
         
-        assert(false);
-      }
+        ABSL_ASSERT(repref.tag() == CordRepKind::UNUSED_0);
+        break;
     }
 
     
@@ -123,8 +122,16 @@ class CordRepAnalyzer {
 
     
     
+    
     RepRef Child(const CordRep* child) const {
+      if (child == nullptr) return RepRef{nullptr, 0};
       return RepRef{child, refcount * child->refcount.Get()};
+    }
+
+    
+    constexpr CordRepKind tag() const {
+      ABSL_ASSERT(rep == nullptr || rep->tag != CordRepKind::UNUSED_0);
+      return rep ? static_cast<CordRepKind>(rep->tag) : CordRepKind::UNUSED_0;
     }
   };
 
@@ -166,7 +173,7 @@ class CordRepAnalyzer {
   
   RepRef CountLinearReps(RepRef rep, MemoryUsage& memory_usage) {
     
-    while (rep.rep->tag == SUBSTRING) {
+    while (rep.tag() == SUBSTRING) {
       statistics_.node_count++;
       statistics_.node_counts.substring++;
       memory_usage.Add(sizeof(CordRepSubstring), rep.refcount);
@@ -174,7 +181,7 @@ class CordRepAnalyzer {
     }
 
     
-    if (rep.rep->tag >= FLAT) {
+    if (rep.tag() >= FLAT) {
       size_t size = rep.rep->flat()->AllocatedSize();
       CountFlat(size);
       memory_usage.Add(size, rep.refcount);
@@ -182,7 +189,7 @@ class CordRepAnalyzer {
     }
 
     
-    if (rep.rep->tag == EXTERNAL) {
+    if (rep.tag() == EXTERNAL) {
       statistics_.node_count++;
       statistics_.node_counts.external++;
       size_t size = rep.rep->length + sizeof(CordRepExternalImpl<intptr_t>);
@@ -191,17 +198,6 @@ class CordRepAnalyzer {
     }
 
     return rep;
-  }
-
-  
-  void AnalyzeRing(RepRef rep) {
-    statistics_.node_count++;
-    statistics_.node_counts.ring++;
-    const CordRepRing* ring = rep.rep->ring();
-    memory_usage_.Add(CordRepRing::AllocSize(ring->capacity()), rep.refcount);
-    ring->ForEach([&](CordRepRing::index_type pos) {
-      CountLinearReps(rep.Child(ring->entry_child(pos)), memory_usage_);
-    });
   }
 
   
@@ -291,7 +287,7 @@ CordzInfo::MethodIdentifier CordzInfo::GetParentMethod(const CordzInfo* src) {
                                                            : src->method_;
 }
 
-int CordzInfo::FillParentStack(const CordzInfo* src, void** stack) {
+size_t CordzInfo::FillParentStack(const CordzInfo* src, void** stack) {
   assert(stack);
   if (src == nullptr) return 0;
   if (src->parent_stack_depth_) {
@@ -302,11 +298,14 @@ int CordzInfo::FillParentStack(const CordzInfo* src, void** stack) {
   return src->stack_depth_;
 }
 
-CordzInfo::CordzInfo(CordRep* rep, const CordzInfo* src,
+CordzInfo::CordzInfo(CordRep* rep,
+                     const CordzInfo* src,
                      MethodIdentifier method)
     : rep_(rep),
-      stack_depth_(absl::GetStackTrace(stack_, kMaxStackDepth,
-                                       1)),
+      stack_depth_(
+          static_cast<size_t>(absl::GetStackTrace(stack_,
+                                                  kMaxStackDepth,
+                                                  1))),
       parent_stack_depth_(FillParentStack(src, parent_stack_)),
       method_(method),
       parent_method_(GetParentMethod(src)),

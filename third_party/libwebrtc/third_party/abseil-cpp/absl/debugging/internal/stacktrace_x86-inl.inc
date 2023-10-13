@@ -29,13 +29,12 @@
 #include <cstdint>
 #include <limits>
 
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
 #include "absl/base/port.h"
 #include "absl/debugging/internal/address_is_readable.h"
 #include "absl/debugging/internal/vdso_support.h"  
 #include "absl/debugging/stacktrace.h"
-
-#include "absl/base/internal/raw_logging.h"
 
 using absl::debugging_internal::AddressIsReadable;
 
@@ -115,6 +114,10 @@ static int CountPushInstructions(const unsigned char *const addr) {
 static const int kMaxFrameBytes = 100000;
 
 
+constexpr uintptr_t kUnknownStackEnd =
+    std::numeric_limits<size_t>::max() - sizeof(void *);
+
+
 
 
 static uintptr_t GetFP(const void *vuc) {
@@ -140,13 +143,14 @@ static uintptr_t GetFP(const void *vuc) {
     
     
     
-    if (bp >= sp && bp - sp <= kMaxFrameBytes) return bp;
+    if (bp >= sp && bp - sp <= kMaxFrameBytes)
+      return static_cast<uintptr_t>(bp);
 
     
     
     
     
-    return sp;
+    return static_cast<uintptr_t>(sp);
   }
 #endif
   return 0;
@@ -258,8 +262,26 @@ static void **NextStackFrame(void **old_fp, const void *uc,
     
     
     if (new_fp_u <= old_fp_u) return nullptr;
-    if (new_fp_u - old_fp_u > kMaxFrameBytes) return nullptr;
 
+    
+    
+    
+    
+    
+    
+    if (new_fp_u - old_fp_u > kMaxFrameBytes) {
+      if (stack_high < kUnknownStackEnd &&
+          static_cast<size_t>(getpagesize()) < stack_low) {
+        
+        if (!(stack_low < new_fp_u && new_fp_u <= stack_high)) {
+          
+          return nullptr;
+        }
+      } else {
+        
+        return nullptr;
+      }
+    }
     if (stack_low < old_fp_u && old_fp_u <= stack_high) {
       
       if (!(stack_low < new_fp_u && new_fp_u <= stack_high)) {
@@ -310,8 +332,9 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
   int n = 0;
   void **fp = reinterpret_cast<void **>(__builtin_frame_address(0));
 
-  size_t stack_low = getpagesize();  
-  size_t stack_high = std::numeric_limits<size_t>::max() - sizeof(void *);
+  
+  size_t stack_low = static_cast<size_t>(getpagesize());
+  size_t stack_high = kUnknownStackEnd;
 
   while (fp && n < max_depth) {
     if (*(fp + 1) == reinterpret_cast<void *>(0)) {
@@ -327,7 +350,9 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
       result[n] = *(fp + 1);
       if (IS_STACK_FRAMES) {
         if (next_fp > fp) {
-          sizes[n] = (uintptr_t)next_fp - (uintptr_t)fp;
+          sizes[n] = static_cast<int>(
+              reinterpret_cast<uintptr_t>(next_fp) -
+              reinterpret_cast<uintptr_t>(fp));
         } else {
           
           sizes[n] = 0;

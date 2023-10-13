@@ -62,7 +62,7 @@ namespace debugging_internal {
 
 
 
-bool Demangle(const char *mangled, char *out, int out_size);
+bool Demangle(const char* mangled, char* out, size_t out_size);
 
 }  
 ABSL_NAMESPACE_END

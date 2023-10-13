@@ -32,6 +32,14 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace cord_internal {
 
+
+
+
+
+
+void SetCordBtreeExhaustiveValidation(bool do_exaustive_validation);
+bool IsCordBtreeExhaustiveValidationEnabled();
+
 class CordRepBtreeNavigator;
 
 
@@ -95,8 +103,9 @@ class CordRepBtree : public CordRep {
   
   
   
-  static constexpr int kMaxDepth = 12;
-  static constexpr int kMaxHeight = kMaxDepth - 1;
+  static constexpr size_t kMaxDepth = 12;
+  
+  static constexpr int kMaxHeight = static_cast<int>(kMaxDepth - 1);
 
   
   
@@ -447,7 +456,7 @@ class CordRepBtree : public CordRep {
 
   
   
-  CordRepBtree* CopyRaw() const;
+  CordRepBtree* CopyRaw(size_t new_length) const;
 
   
   CordRepBtree* Copy() const;
@@ -665,15 +674,28 @@ inline void CordRepBtree::Unref(absl::Span<CordRep* const> edges) {
   }
 }
 
-inline CordRepBtree* CordRepBtree::CopyRaw() const {
-  auto* tree = static_cast<CordRepBtree*>(::operator new(sizeof(CordRepBtree)));
-  memcpy(static_cast<void*>(tree), this, sizeof(CordRepBtree));
-  new (&tree->refcount) RefcountAndFlags;
+inline CordRepBtree* CordRepBtree::CopyRaw(size_t new_length) const {
+  CordRepBtree* tree = new CordRepBtree;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  tree->length = new_length;
+  uint8_t* dst = &tree->tag;
+  const uint8_t* src = &tag;
+  const ptrdiff_t offset = src - reinterpret_cast<const uint8_t*>(this);
+  memcpy(dst, src, sizeof(CordRepBtree) - static_cast<size_t>(offset));
   return tree;
+  
 }
 
 inline CordRepBtree* CordRepBtree::Copy() const {
-  CordRepBtree* tree = CopyRaw();
+  CordRepBtree* tree = CopyRaw(length);
   for (CordRep* rep : Edges()) CordRep::Ref(rep);
   return tree;
 }
@@ -682,8 +704,7 @@ inline CordRepBtree* CordRepBtree::CopyToEndFrom(size_t begin,
                                                  size_t new_length) const {
   assert(begin >= this->begin());
   assert(begin <= this->end());
-  CordRepBtree* tree = CopyRaw();
-  tree->length = new_length;
+  CordRepBtree* tree = CopyRaw(new_length);
   tree->set_begin(begin);
   for (CordRep* edge : tree->Edges()) CordRep::Ref(edge);
   return tree;
@@ -693,8 +714,7 @@ inline CordRepBtree* CordRepBtree::CopyBeginTo(size_t end,
                                                size_t new_length) const {
   assert(end <= capacity());
   assert(end >= this->begin());
-  CordRepBtree* tree = CopyRaw();
-  tree->length = new_length;
+  CordRepBtree* tree = CopyRaw(new_length);
   tree->set_end(end);
   for (CordRep* edge : tree->Edges()) CordRep::Ref(edge);
   return tree;

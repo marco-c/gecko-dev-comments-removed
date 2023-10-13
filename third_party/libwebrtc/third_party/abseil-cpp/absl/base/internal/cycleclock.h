@@ -47,6 +47,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/internal/cycleclock_config.h"
 #include "absl/base/internal/unscaledcycleclock.h"
 
 namespace absl {
@@ -76,25 +77,9 @@ class CycleClock {
 #if ABSL_USE_UNSCALED_CYCLECLOCK
   static CycleClockSourceFunc LoadCycleClockSource();
 
-#ifdef NDEBUG
-#ifdef ABSL_INTERNAL_UNSCALED_CYCLECLOCK_FREQUENCY_IS_CPU_FREQUENCY
-  
-  
-  
-  static constexpr int32_t kShift = 1;
-#else
-  
-  
-  
-  static constexpr int32_t kShift = 0;
-#endif
-#else   
-  
-  
-  static constexpr int32_t kShift = 2;
-#endif  
+  static constexpr int32_t kShift = kCycleClockShift;
+  static constexpr double kFrequencyScale = kCycleClockFrequencyScale;
 
-  static constexpr double kFrequencyScale = 1.0 / (1 << kShift);
   ABSL_CONST_INIT static std::atomic<CycleClockSourceFunc> cycle_clock_source_;
 #endif  
 

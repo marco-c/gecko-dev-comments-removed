@@ -18,8 +18,8 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/const_init.h"
-#include "absl/base/internal/raw_logging.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
 
@@ -41,14 +41,14 @@ namespace {
 void ThreadOne(absl::Mutex* mutex, absl::CondVar* condvar,
                absl::Notification* notification, bool* state) {
   
-  ABSL_RAW_CHECK(!notification->HasBeenNotified(), "invalid Notification");
-  ABSL_RAW_CHECK(*state == false, "*state not initialized");
+  CHECK(!notification->HasBeenNotified()) << "invalid Notification";
+  CHECK(!*state) << "*state not initialized";
 
   {
     absl::MutexLock lock(mutex);
 
     notification->Notify();
-    ABSL_RAW_CHECK(notification->HasBeenNotified(), "invalid Notification");
+    CHECK(notification->HasBeenNotified()) << "invalid Notification";
 
     while (*state == false) {
       condvar->Wait(mutex);
@@ -58,11 +58,11 @@ void ThreadOne(absl::Mutex* mutex, absl::CondVar* condvar,
 
 void ThreadTwo(absl::Mutex* mutex, absl::CondVar* condvar,
                absl::Notification* notification, bool* state) {
-  ABSL_RAW_CHECK(*state == false, "*state not initialized");
+  CHECK(!*state) << "*state not initialized";
 
   
   notification->WaitForNotification();
-  ABSL_RAW_CHECK(notification->HasBeenNotified(), "invalid Notification");
+  CHECK(notification->HasBeenNotified()) << "invalid Notification";
   {
     absl::MutexLock lock(mutex);
     *state = true;
@@ -125,8 +125,8 @@ class OnDestruction {
 
 
 
-
-#if defined(__clang__) || !(defined(_MSC_VER) && _MSC_VER > 1900)
+#if defined(__clang__) || \
+    !(defined(_MSC_VER) && _MSC_VER > 1900 && _MSC_VER < 1925)
 
 
 

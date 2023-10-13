@@ -29,7 +29,10 @@ import time
 
 
 
-ABSL_SYM_RE = re.compile(r'0* [BT] (?P<symbol>(\?+)[^\?].*absl.*)')
+
+
+
+ABSL_SYM_RE = r'0* [BT] (?P<symbol>[?]+[^?].*absl.*|_?Absl.*)'
 if sys.platform == 'win32':
   
   
@@ -40,10 +43,10 @@ if sys.platform == 'win32':
   
   
   
-  ABSL_SYM_RE = '.*External     \| (?P<symbol>(\?+)[^\?].*?absl.*?) \(.*'
+  ABSL_SYM_RE = r'.*External     \| (?P<symbol>[?]+[^?].*?absl.*?|_?Absl.*?)($| \(.*)'
   
   
-  ABSL_EXPORTED_RE = '.*/EXPORT:(.*),.*'
+  ABSL_EXPORTED_RE = r'.*/EXPORT:(.*),.*'
 
 
 def _DebugOrRelease(is_debug):
@@ -135,6 +138,10 @@ def _GenerateDefFile(cpu, is_debug, extra_gn_args=[], suffix=None):
           
           if symbol.startswith('??_G'):
             continue
+          
+          
+          if cpu == 'x86' and symbol.startswith('_'):
+            symbol = symbol[1:]
           absl_symbols.add(symbol)
 
     logging.info('[%s - %s] Found %d absl symbols.', cpu, flavor, len(absl_symbols))

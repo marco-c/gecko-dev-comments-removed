@@ -125,8 +125,6 @@ namespace numbers_internal {
 ABSL_DLL extern const char kHexChar[17];  
 ABSL_DLL extern const char
     kHexTable[513];  
-ABSL_DLL extern const char
-    two_ASCII_digits[100][2];  
 
 
 
@@ -134,10 +132,7 @@ ABSL_DLL extern const char
 
 
 
-inline void PutTwoDigits(size_t i, char* buf) {
-  assert(i < 100);
-  memcpy(buf, two_ASCII_digits[i], 2);
-}
+void PutTwoDigits(uint32_t i, char* buf);
 
 
 

@@ -12,8 +12,8 @@
 
 
 
-#ifndef ABSL_STRINGS_CORDZ_FUNCTIONS_H_
-#define ABSL_STRINGS_CORDZ_FUNCTIONS_H_
+#ifndef ABSL_STRINGS_INTERNAL_CORDZ_FUNCTIONS_H_
+#define ABSL_STRINGS_INTERNAL_CORDZ_FUNCTIONS_H_
 
 #include <stdint.h>
 
@@ -33,17 +33,9 @@ int32_t get_cordz_mean_interval();
 void set_cordz_mean_interval(int32_t mean_interval);
 
 
-
-
-
-
-
-
-
-
-#if defined(ABSL_HAVE_THREAD_LOCAL) && !defined(_MSC_VER)  && \
-    !defined(ABSL_BUILD_DLL) && !defined(ABSL_CONSUME_DLL) && \
-    !defined(__ANDROID__) && !defined(__APPLE__)
+#if defined(ABSL_INTERNAL_CORDZ_ENABLED)
+#error ABSL_INTERNAL_CORDZ_ENABLED cannot be set directly
+#elif defined(__linux__) && defined(ABSL_HAVE_THREAD_LOCAL)
 #define ABSL_INTERNAL_CORDZ_ENABLED 1
 #endif
 

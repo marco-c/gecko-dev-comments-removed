@@ -18,13 +18,16 @@
 #ifdef ABSL_INTERNAL_HAVE_DEBUGGING_STACK_CONSUMPTION
 
 #include <signal.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
-#include <string.h>
-
 #include "absl/base/attributes.h"
 #include "absl/base/internal/raw_logging.h"
+
+#if defined(MAP_ANON) && !defined(MAP_ANONYMOUS)
+#define MAP_ANONYMOUS MAP_ANON
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -162,7 +165,7 @@ int GetSignalHandlerStackConsumption(void (*signal_handler)(int)) {
     
     
     
-    old_sigstk.ss_size = MINSIGSTKSZ;
+    old_sigstk.ss_size = static_cast<size_t>(MINSIGSTKSZ);
   }
   ABSL_RAW_CHECK(sigaltstack(&old_sigstk, nullptr) == 0,
                  "sigaltstack() failed");

@@ -241,10 +241,11 @@ BENCHMARK(BM_ThreadedFindCommandLineFlag)->ThreadRange(1, 16);
 
 }  
 
+#ifdef __llvm__
+
 #define InvokeGetFlag(T)                                             \
   T AbslInvokeGetFlag##T() { return absl::GetFlag(SINGLE_FLAG(T)); } \
   int odr##T = (benchmark::DoNotOptimize(AbslInvokeGetFlag##T), 1);
 
 BENCHMARKED_TYPES(InvokeGetFlag)
-
-
+#endif  

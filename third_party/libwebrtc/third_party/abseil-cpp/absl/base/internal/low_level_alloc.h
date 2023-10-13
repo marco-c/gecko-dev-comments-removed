@@ -46,7 +46,8 @@
 
 #ifdef ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING
 #error ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING cannot be directly set
-#elif defined(_WIN32) || defined(__asmjs__) || defined(__wasm__)
+#elif defined(_WIN32) || defined(__asmjs__) || defined(__wasm__) || \
+    defined(__hexagon__)
 #define ABSL_LOW_LEVEL_ALLOC_ASYNC_SIGNAL_SAFE_MISSING 1
 #endif
 
@@ -103,7 +104,7 @@ class LowLevelAlloc {
   
   
   
-  static Arena *NewArena(int32_t flags);
+  static Arena *NewArena(uint32_t flags);
 
   
   

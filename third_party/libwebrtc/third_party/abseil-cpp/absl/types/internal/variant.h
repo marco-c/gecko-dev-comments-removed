@@ -16,8 +16,8 @@
 
 
 
-#ifndef ABSL_TYPES_VARIANT_INTERNAL_H_
-#define ABSL_TYPES_VARIANT_INTERNAL_H_
+#ifndef ABSL_TYPES_INTERNAL_VARIANT_H_
+#define ABSL_TYPES_INTERNAL_VARIANT_H_
 
 #include <cassert>
 #include <cstddef>
@@ -449,7 +449,7 @@ struct FlattenIndices;
 
 template <std::size_t HeadSize, std::size_t... TailSize>
 struct FlattenIndices<HeadSize, TailSize...> {
-  template<class... SizeType>
+  template <class... SizeType>
   static constexpr std::size_t Run(std::size_t head, SizeType... tail) {
     return head + HeadSize * FlattenIndices<TailSize...>::Run(tail...);
   }
@@ -498,8 +498,8 @@ struct VisitIndicesVariadicImpl<absl::index_sequence<N...>, EndIndices...> {
   };
 
   template <class Op, class... SizeType>
-  static VisitIndicesResultT<Op, decltype(EndIndices)...> Run(
-      Op&& op, SizeType... i) {
+  static VisitIndicesResultT<Op, decltype(EndIndices)...> Run(Op&& op,
+                                                              SizeType... i) {
     return VisitIndicesSwitch<NumCasesOfSwitch<EndIndices...>::value>::Run(
         FlattenedOp<Op>{absl::forward<Op>(op)},
         FlattenIndices<(EndIndices + std::size_t{1})...>::Run(
@@ -683,13 +683,13 @@ struct VariantCoreAccess {
         variant_internal::IndexOfConstructedType<Left, QualifiedNew>;
 
     void operator()(SizeT<NewIndex::value> 
-                    ) const {
+    ) const {
       Access<NewIndex::value>(*left) = absl::forward<QualifiedNew>(other);
     }
 
     template <std::size_t OldIndex>
     void operator()(SizeT<OldIndex> 
-                    ) const {
+    ) const {
       using New =
           typename absl::variant_alternative<NewIndex::value, Left>::type;
       if (std::is_nothrow_constructible<New, QualifiedNew>::value ||
@@ -868,18 +868,6 @@ struct IsNeitherSelfNorInPlace<Self, in_place_type_t<T>> : std::false_type {};
 template <class Self, std::size_t I>
 struct IsNeitherSelfNorInPlace<Self, in_place_index_t<I>> : std::false_type {};
 
-template <class Variant, class T, class = void>
-struct ConversionIsPossibleImpl : std::false_type {};
-
-template <class Variant, class T>
-struct ConversionIsPossibleImpl<
-    Variant, T,
-    void_t<decltype(ImaginaryFun<Variant>::Run(std::declval<T>(), {}))>>
-    : std::true_type {};
-
-template <class Variant, class T>
-struct ConversionIsPossible : ConversionIsPossibleImpl<Variant, T>::type {};
-
 template <class Variant, class T>
 struct IndexOfConstructedType<
     Variant, T,
@@ -889,8 +877,8 @@ struct IndexOfConstructedType<
 template <std::size_t... Is>
 struct ContainsVariantNPos
     : absl::negation<std::is_same<  
-          absl::integer_sequence<bool, 0 <= Is...>,
-          absl::integer_sequence<bool, Is != absl::variant_npos...>>> {};
+          std::integer_sequence<bool, 0 <= Is...>,
+          std::integer_sequence<bool, Is != absl::variant_npos...>>> {};
 
 template <class Op, class... QualifiedVariants>
 using RawVisitResult =
@@ -1151,16 +1139,16 @@ struct VariantHelper<variant<Ts...>> {
   
   
   template <typename U>
-  using BestMatch = decltype(
-      variant_internal::OverloadSet<Ts...>::Overload(std::declval<U>()));
+  using BestMatch = decltype(variant_internal::OverloadSet<Ts...>::Overload(
+      std::declval<U>()));
 
   
   
   
   
   template <typename U>
-  struct CanAccept :
-      std::integral_constant<bool, !std::is_void<BestMatch<U>>::value> {};
+  struct CanAccept
+      : std::integral_constant<bool, !std::is_void<BestMatch<U>>::value> {};
 
   
   
@@ -1183,8 +1171,8 @@ struct TrivialMoveOnly {
 
 
 template <typename T>
-struct IsTriviallyMoveConstructible:
-  std::is_move_constructible<Union<T, TrivialMoveOnly>> {};
+struct IsTriviallyMoveConstructible
+    : std::is_move_constructible<Union<T, TrivialMoveOnly>> {};
 
 
 
@@ -1419,14 +1407,14 @@ class VariantMoveAssignBaseNontrivial : protected VariantCopyBase<T...> {
   VariantMoveAssignBaseNontrivial& operator=(
       VariantMoveAssignBaseNontrivial const&) = default;
 
-    VariantMoveAssignBaseNontrivial&
-    operator=(VariantMoveAssignBaseNontrivial&& other) noexcept(
-        absl::conjunction<std::is_nothrow_move_constructible<T>...,
-                          std::is_nothrow_move_assignable<T>...>::value) {
-      VisitIndices<sizeof...(T)>::Run(
-          VariantCoreAccess::MakeMoveAssignVisitor(this, &other), other.index_);
-      return *this;
-    }
+  VariantMoveAssignBaseNontrivial&
+  operator=(VariantMoveAssignBaseNontrivial&& other) noexcept(
+      absl::conjunction<std::is_nothrow_move_constructible<T>...,
+                        std::is_nothrow_move_assignable<T>...>::value) {
+    VisitIndices<sizeof...(T)>::Run(
+        VariantCoreAccess::MakeMoveAssignVisitor(this, &other), other.index_);
+    return *this;
+  }
 
  protected:
   using Base::index_;
@@ -1450,12 +1438,12 @@ class VariantCopyAssignBaseNontrivial : protected VariantMoveAssignBase<T...> {
   VariantCopyAssignBaseNontrivial& operator=(
       VariantCopyAssignBaseNontrivial&&) = default;
 
-    VariantCopyAssignBaseNontrivial& operator=(
-        const VariantCopyAssignBaseNontrivial& other) {
-      VisitIndices<sizeof...(T)>::Run(
-          VariantCoreAccess::MakeCopyAssignVisitor(this, other), other.index_);
-      return *this;
-    }
+  VariantCopyAssignBaseNontrivial& operator=(
+      const VariantCopyAssignBaseNontrivial& other) {
+    VisitIndices<sizeof...(T)>::Run(
+        VariantCoreAccess::MakeCopyAssignVisitor(this, other), other.index_);
+    return *this;
+  }
 
  protected:
   using Base::index_;

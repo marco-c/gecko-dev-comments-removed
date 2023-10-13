@@ -18,6 +18,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -64,12 +65,9 @@ struct TransitionType {
 
 class TimeZoneInfo : public TimeZoneIf {
  public:
-  TimeZoneInfo() = default;
-  TimeZoneInfo(const TimeZoneInfo&) = delete;
-  TimeZoneInfo& operator=(const TimeZoneInfo&) = delete;
-
   
-  bool Load(const std::string& name);
+  static std::unique_ptr<TimeZoneInfo> UTC();  
+  static std::unique_ptr<TimeZoneInfo> Make(const std::string& name);
 
   
   time_zone::absolute_lookup BreakTime(
@@ -83,17 +81,9 @@ class TimeZoneInfo : public TimeZoneIf {
   std::string Description() const override;
 
  private:
-  struct Header {            
-    std::size_t timecnt;     
-    std::size_t typecnt;     
-    std::size_t charcnt;     
-    std::size_t leapcnt;     
-    std::size_t ttisstdcnt;  
-    std::size_t ttisutcnt;   
-
-    bool Build(const tzhead& tzh);
-    std::size_t DataLength(std::size_t time_len) const;
-  };
+  TimeZoneInfo() = default;
+  TimeZoneInfo(const TimeZoneInfo&) = delete;
+  TimeZoneInfo& operator=(const TimeZoneInfo&) = delete;
 
   bool GetTransitionType(std::int_fast32_t utc_offset, bool is_dst,
                          const std::string& abbr, std::uint_least8_t* index);
@@ -102,6 +92,7 @@ class TimeZoneInfo : public TimeZoneIf {
   bool ExtendTransitions();
 
   bool ResetToBuiltinUTC(const seconds& offset);
+  bool Load(const std::string& name);
   bool Load(ZoneInfoSource* zip);
 
   

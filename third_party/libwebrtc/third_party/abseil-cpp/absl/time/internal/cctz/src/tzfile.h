@@ -102,6 +102,7 @@ struct tzhead {
 
 
 #ifndef TZ_MAX_TIMES
+
 #define TZ_MAX_TIMES 2000
 #endif 
 
@@ -111,11 +112,14 @@ struct tzhead {
 #endif                   
 
 #ifndef TZ_MAX_CHARS
+
 #define TZ_MAX_CHARS 50 /* Maximum number of abbreviation characters */
                         
 #endif                  
 
 #ifndef TZ_MAX_LEAPS
+
+
 #define TZ_MAX_LEAPS 50 /* Maximum number of leap second corrections */
 #endif                  
 

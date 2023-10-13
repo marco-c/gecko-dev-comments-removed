@@ -211,11 +211,20 @@
 
 
 
-#if ABSL_HAVE_ATTRIBUTE(no_sanitize_address)
+#if defined(ABSL_HAVE_ADDRESS_SANITIZER) && \
+    ABSL_HAVE_ATTRIBUTE(no_sanitize_address)
 #define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS __attribute__((no_sanitize_address))
-#elif defined(_MSC_VER) && _MSC_VER >= 1928
+#elif defined(ABSL_HAVE_ADDRESS_SANITIZER) && defined(_MSC_VER) && \
+    _MSC_VER >= 1928
 
 #define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS __declspec(no_sanitize_address)
+#elif defined(ABSL_HAVE_HWADDRESS_SANITIZER) && ABSL_HAVE_ATTRIBUTE(no_sanitize)
+
+
+
+
+#define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS \
+  __attribute__((no_sanitize("hwaddress")))
 #else
 #define ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS
 #endif
@@ -265,7 +274,7 @@
 
 
 
-#if ABSL_HAVE_ATTRIBUTE(no_sanitize)
+#if ABSL_HAVE_ATTRIBUTE(no_sanitize) && defined(__llvm__)
 #define ABSL_ATTRIBUTE_NO_SANITIZE_CFI __attribute__((no_sanitize("cfi")))
 #else
 #define ABSL_ATTRIBUTE_NO_SANITIZE_CFI
@@ -686,6 +695,28 @@
 
 
 
+#if defined(__GNUC__) || defined(__clang__)
+
+#define ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING \
+  _Pragma("GCC diagnostic push")             \
+  _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+#define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING \
+  _Pragma("GCC diagnostic pop")
+#else
+#define ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
+#define ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
+#endif  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -734,7 +765,33 @@
 #elif ABSL_HAVE_ATTRIBUTE(pure)
 #define ABSL_ATTRIBUTE_PURE_FUNCTION __attribute__((pure))
 #else
-#define ABSL_ATTRIBUTE_PURE_FUNCTION
+
+
+#define ABSL_ATTRIBUTE_PURE_FUNCTION ABSL_MUST_USE_RESULT
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(_MSC_VER) && !defined(__clang__)
+
+#define ABSL_ATTRIBUTE_CONST_FUNCTION ABSL_ATTRIBUTE_PURE_FUNCTION
+#elif ABSL_HAVE_CPP_ATTRIBUTE(gnu::const)
+#define ABSL_ATTRIBUTE_CONST_FUNCTION [[gnu::const]]
+#elif ABSL_HAVE_ATTRIBUTE(const)
+#define ABSL_ATTRIBUTE_CONST_FUNCTION __attribute__((const))
+#else
+
+
+#define ABSL_ATTRIBUTE_CONST_FUNCTION ABSL_ATTRIBUTE_PURE_FUNCTION
 #endif
 
 
@@ -757,6 +814,65 @@
 #define ABSL_ATTRIBUTE_LIFETIME_BOUND __attribute__((lifetimebound))
 #else
 #define ABSL_ATTRIBUTE_LIFETIME_BOUND
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if ABSL_HAVE_CPP_ATTRIBUTE(clang::trivial_abi)
+#define ABSL_ATTRIBUTE_TRIVIAL_ABI [[clang::trivial_abi]]
+#define ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI 1
+#elif ABSL_HAVE_ATTRIBUTE(trivial_abi)
+#define ABSL_ATTRIBUTE_TRIVIAL_ABI __attribute__((trivial_abi))
+#define ABSL_HAVE_ATTRIBUTE_TRIVIAL_ABI 1
+#else
+#define ABSL_ATTRIBUTE_TRIVIAL_ABI
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(_MSC_VER) && _MSC_VER >= 1929
+#define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#elif ABSL_HAVE_CPP_ATTRIBUTE(no_unique_address)
+#define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#else
+#define ABSL_ATTRIBUTE_NO_UNIQUE_ADDRESS
 #endif
 
 #endif  

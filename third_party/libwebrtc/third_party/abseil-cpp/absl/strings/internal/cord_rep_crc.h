@@ -20,6 +20,7 @@
 
 #include "absl/base/config.h"
 #include "absl/base/optimization.h"
+#include "absl/crc/internal/crc_cord_state.h"
 #include "absl/strings/internal/cord_internal.h"
 
 namespace absl {
@@ -34,14 +35,14 @@ namespace cord_internal {
 
 struct CordRepCrc : public CordRep {
   CordRep* child;
-  uint32_t crc;
+  absl::crc_internal::CrcCordState crc_cord_state;
 
   
   
   
   
   
-  static CordRepCrc* New(CordRep* child, uint32_t crc);
+  static CordRepCrc* New(CordRep* child, crc_internal::CrcCordState state);
 
   
   static void Destroy(CordRepCrc* node);

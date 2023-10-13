@@ -95,55 +95,19 @@ struct HashtablezInfo : public profiling_internal::Sample<HashtablezInfo> {
   size_t inline_element_size;  
 };
 
-inline void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length) {
-#ifdef ABSL_INTERNAL_HAVE_SSE2
-  total_probe_length /= 16;
-#else
-  total_probe_length /= 8;
-#endif
-  info->total_probe_length.store(total_probe_length, std::memory_order_relaxed);
-  info->num_erases.store(0, std::memory_order_relaxed);
-  
-  
-  info->num_rehashes.store(
-      1 + info->num_rehashes.load(std::memory_order_relaxed),
-      std::memory_order_relaxed);
-}
+void RecordRehashSlow(HashtablezInfo* info, size_t total_probe_length);
 
-inline void RecordReservationSlow(HashtablezInfo* info,
-                                  size_t target_capacity) {
-  info->max_reserve.store(
-      (std::max)(info->max_reserve.load(std::memory_order_relaxed),
-                 target_capacity),
-      std::memory_order_relaxed);
-}
+void RecordReservationSlow(HashtablezInfo* info, size_t target_capacity);
 
-inline void RecordClearedReservationSlow(HashtablezInfo* info) {
-  info->max_reserve.store(0, std::memory_order_relaxed);
-}
+void RecordClearedReservationSlow(HashtablezInfo* info);
 
-inline void RecordStorageChangedSlow(HashtablezInfo* info, size_t size,
-                                     size_t capacity) {
-  info->size.store(size, std::memory_order_relaxed);
-  info->capacity.store(capacity, std::memory_order_relaxed);
-  if (size == 0) {
-    
-    info->total_probe_length.store(0, std::memory_order_relaxed);
-    info->num_erases.store(0, std::memory_order_relaxed);
-  }
-}
+void RecordStorageChangedSlow(HashtablezInfo* info, size_t size,
+                              size_t capacity);
 
 void RecordInsertSlow(HashtablezInfo* info, size_t hash,
                       size_t distance_from_desired);
 
-inline void RecordEraseSlow(HashtablezInfo* info) {
-  info->size.fetch_sub(1, std::memory_order_relaxed);
-  
-  
-  info->num_erases.store(
-      1 + info->num_erases.load(std::memory_order_relaxed),
-      std::memory_order_relaxed);
-}
+void RecordEraseSlow(HashtablezInfo* info);
 
 struct SamplingState {
   int64_t next_sample;
@@ -165,23 +129,15 @@ class HashtablezInfoHandle {
  public:
   explicit HashtablezInfoHandle() : info_(nullptr) {}
   explicit HashtablezInfoHandle(HashtablezInfo* info) : info_(info) {}
-  ~HashtablezInfoHandle() {
+
+  
+  
+  void Unregister() {
     if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
     UnsampleSlow(info_);
   }
 
-  HashtablezInfoHandle(const HashtablezInfoHandle&) = delete;
-  HashtablezInfoHandle& operator=(const HashtablezInfoHandle&) = delete;
-
-  HashtablezInfoHandle(HashtablezInfoHandle&& o) noexcept
-      : info_(absl::exchange(o.info_, nullptr)) {}
-  HashtablezInfoHandle& operator=(HashtablezInfoHandle&& o) noexcept {
-    if (ABSL_PREDICT_FALSE(info_ != nullptr)) {
-      UnsampleSlow(info_);
-    }
-    info_ = absl::exchange(o.info_, nullptr);
-    return *this;
-  }
+  inline bool IsSampled() const { return ABSL_PREDICT_FALSE(info_ != nullptr); }
 
   inline void RecordStorageChanged(size_t size, size_t capacity) {
     if (ABSL_PREDICT_TRUE(info_ == nullptr)) return;
@@ -230,6 +186,8 @@ class HashtablezInfoHandle {
   explicit HashtablezInfoHandle() = default;
   explicit HashtablezInfoHandle(std::nullptr_t) {}
 
+  inline void Unregister() {}
+  inline bool IsSampled() const { return false; }
   inline void RecordStorageChanged(size_t , size_t ) {}
   inline void RecordRehash(size_t ) {}
   inline void RecordReservation(size_t ) {}
@@ -281,9 +239,9 @@ void SetHashtablezSampleParameter(int32_t rate);
 void SetHashtablezSampleParameterInternal(int32_t rate);
 
 
-int32_t GetHashtablezMaxSamples();
-void SetHashtablezMaxSamples(int32_t max);
-void SetHashtablezMaxSamplesInternal(int32_t max);
+size_t GetHashtablezMaxSamples();
+void SetHashtablezMaxSamples(size_t max);
+void SetHashtablezMaxSamplesInternal(size_t max);
 
 
 

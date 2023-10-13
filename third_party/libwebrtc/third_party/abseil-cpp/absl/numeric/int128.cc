@@ -111,7 +111,7 @@ uint128 MakeUint128FromFloat(T v) {
   return MakeUint128(0, static_cast<uint64_t>(v));
 }
 
-#if defined(__clang__) && !defined(__SSE3__)
+#if defined(__clang__) && (__clang_major__ < 9) && !defined(__SSE3__)
 
 
 
@@ -202,6 +202,10 @@ std::string Uint128ToFormattedString(uint128 v, std::ios_base::fmtflags flags) {
 
 }  
 
+std::string uint128::ToString() const {
+  return Uint128ToFormattedString(*this, std::ios_base::dec);
+}
+
 std::ostream& operator<<(std::ostream& os, uint128 v) {
   std::ios_base::fmtflags flags = os.flags();
   std::string rep = Uint128ToFormattedString(v, flags);
@@ -209,15 +213,16 @@ std::ostream& operator<<(std::ostream& os, uint128 v) {
   
   std::streamsize width = os.width(0);
   if (static_cast<size_t>(width) > rep.size()) {
+    const size_t count = static_cast<size_t>(width) - rep.size();
     std::ios::fmtflags adjustfield = flags & std::ios::adjustfield;
     if (adjustfield == std::ios::left) {
-      rep.append(width - rep.size(), os.fill());
+      rep.append(count, os.fill());
     } else if (adjustfield == std::ios::internal &&
                (flags & std::ios::showbase) &&
                (flags & std::ios::basefield) == std::ios::hex && v != 0) {
-      rep.insert(2, width - rep.size(), os.fill());
+      rep.insert(size_t{2}, count, os.fill());
     } else {
-      rep.insert(0, width - rep.size(), os.fill());
+      rep.insert(size_t{0}, count, os.fill());
     }
   }
 
@@ -284,6 +289,14 @@ int128 operator%(int128 lhs, int128 rhs) {
 }
 #endif  
 
+std::string int128::ToString() const {
+  std::string rep;
+  if (Int128High64(*this) < 0) rep = "-";
+  rep.append(Uint128ToFormattedString(UnsignedAbsoluteValue(*this),
+                                      std::ios_base::dec));
+  return rep;
+}
+
 std::ostream& operator<<(std::ostream& os, int128 v) {
   std::ios_base::fmtflags flags = os.flags();
   std::string rep;
@@ -306,22 +319,23 @@ std::ostream& operator<<(std::ostream& os, int128 v) {
   
   std::streamsize width = os.width(0);
   if (static_cast<size_t>(width) > rep.size()) {
+    const size_t count = static_cast<size_t>(width) - rep.size();
     switch (flags & std::ios::adjustfield) {
       case std::ios::left:
-        rep.append(width - rep.size(), os.fill());
+        rep.append(count, os.fill());
         break;
       case std::ios::internal:
         if (print_as_decimal && (rep[0] == '+' || rep[0] == '-')) {
-          rep.insert(1, width - rep.size(), os.fill());
+          rep.insert(size_t{1}, count, os.fill());
         } else if ((flags & std::ios::basefield) == std::ios::hex &&
                    (flags & std::ios::showbase) && v != 0) {
-          rep.insert(2, width - rep.size(), os.fill());
+          rep.insert(size_t{2}, count, os.fill());
         } else {
-          rep.insert(0, width - rep.size(), os.fill());
+          rep.insert(size_t{0}, count, os.fill());
         }
         break;
       default:  
-        rep.insert(0, width - rep.size(), os.fill());
+        rep.insert(size_t{0}, count, os.fill());
         break;
     }
   }

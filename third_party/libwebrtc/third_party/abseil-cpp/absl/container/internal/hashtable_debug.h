@@ -95,14 +95,6 @@ size_t AllocatedByteSize(const C& c) {
       HashtableDebugAccess<C>::AllocatedByteSize(c);
 }
 
-
-
-template <typename C>
-size_t LowerBoundAllocatedByteSize(size_t num_elements) {
-  return absl::container_internal::hashtable_debug_internal::
-      HashtableDebugAccess<C>::LowerBoundAllocatedByteSize(num_elements);
-}
-
 }  
 ABSL_NAMESPACE_END
 }  

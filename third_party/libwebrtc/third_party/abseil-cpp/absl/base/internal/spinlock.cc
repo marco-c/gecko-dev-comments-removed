@@ -178,7 +178,7 @@ void SpinLock::SlowUnlock(uint32_t lock_value) {
   
   
   if ((lock_value & kWaitTimeMask) != kSpinLockSleeper) {
-    const uint64_t wait_cycles = DecodeWaitCycles(lock_value);
+    const int64_t wait_cycles = DecodeWaitCycles(lock_value);
     ABSL_TSAN_MUTEX_PRE_DIVERT(this, 0);
     submit_profile_data(this, wait_cycles);
     ABSL_TSAN_MUTEX_POST_DIVERT(this, 0);
@@ -220,9 +220,9 @@ uint32_t SpinLock::EncodeWaitCycles(int64_t wait_start_time,
   return clamped;
 }
 
-uint64_t SpinLock::DecodeWaitCycles(uint32_t lock_value) {
+int64_t SpinLock::DecodeWaitCycles(uint32_t lock_value) {
   
-  const uint64_t scaled_wait_time =
+  const int64_t scaled_wait_time =
       static_cast<uint32_t>(lock_value & kWaitTimeMask);
   return scaled_wait_time << (kProfileTimestampShift - kLockwordReservedShift);
 }

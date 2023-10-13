@@ -103,17 +103,11 @@ ABSL_NAMESPACE_END
 
 
 
-#if (ABSL_HAVE_BUILTIN(__builtin_trap) &&         \
-     ABSL_HAVE_BUILTIN(__builtin_unreachable)) || \
-    (defined(__GNUC__) && !defined(__clang__))
-#define ABSL_INTERNAL_HARDENING_ABORT() \
-  do {                                  \
-    __builtin_trap();                   \
-    __builtin_unreachable();            \
+#define ABSL_INTERNAL_HARDENING_ABORT()   \
+  do {                                    \
+    ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL(); \
+    ABSL_INTERNAL_UNREACHABLE_IMPL();     \
   } while (false)
-#else
-#define ABSL_INTERNAL_HARDENING_ABORT() abort()
-#endif
 
 
 
@@ -143,16 +137,5 @@ ABSL_NAMESPACE_END
 #define ABSL_INTERNAL_CATCH_ANY else if (false)
 #define ABSL_INTERNAL_RETHROW do {} while (false)
 #endif  
-
-
-
-
-#if defined(__GNUC__) || ABSL_HAVE_BUILTIN(__builtin_unreachable)
-#define ABSL_INTERNAL_UNREACHABLE __builtin_unreachable()
-#elif defined(_MSC_VER)
-#define ABSL_INTERNAL_UNREACHABLE __assume(0)
-#else
-#define ABSL_INTERNAL_UNREACHABLE
-#endif
 
 #endif  

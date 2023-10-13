@@ -76,6 +76,15 @@ inline bool EndsWith(absl::string_view text,
 
 
 
+bool StrContainsIgnoreCase(absl::string_view haystack,
+                           absl::string_view needle) noexcept;
+
+bool StrContainsIgnoreCase(absl::string_view haystack,
+                           char needle) noexcept;
+
+
+
+
 
 bool EqualsIgnoreCase(absl::string_view piece1,
                       absl::string_view piece2) noexcept;
@@ -93,6 +102,16 @@ bool StartsWithIgnoreCase(absl::string_view text,
 
 bool EndsWithIgnoreCase(absl::string_view text,
                         absl::string_view suffix) noexcept;
+
+
+
+absl::string_view FindLongestCommonPrefix(absl::string_view a,
+                                          absl::string_view b);
+
+
+
+absl::string_view FindLongestCommonSuffix(absl::string_view a,
+                                          absl::string_view b);
 
 ABSL_NAMESPACE_END
 }  

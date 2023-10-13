@@ -12,16 +12,14 @@
 
 
 
-#ifndef ABSL_STRINGS_CORDZ_HANDLE_H_
-#define ABSL_STRINGS_CORDZ_HANDLE_H_
+#ifndef ABSL_STRINGS_INTERNAL_CORDZ_HANDLE_H_
+#define ABSL_STRINGS_INTERNAL_CORDZ_HANDLE_H_
 
 #include <atomic>
 #include <vector>
 
 #include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
-#include "absl/base/internal/spinlock.h"
-#include "absl/synchronization/mutex.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -34,7 +32,7 @@ namespace cord_internal {
 
 
 
-class CordzHandle {
+class ABSL_DLL CordzHandle {
  public:
   CordzHandle() : CordzHandle(false) {}
 
@@ -79,37 +77,6 @@ class CordzHandle {
   virtual ~CordzHandle();
 
  private:
-  
-  
-  struct Queue {
-    constexpr explicit Queue(absl::ConstInitType)
-        : mutex(absl::kConstInit,
-                absl::base_internal::SCHEDULE_COOPERATIVE_AND_KERNEL) {}
-
-    absl::base_internal::SpinLock mutex;
-    std::atomic<CordzHandle*> dq_tail ABSL_GUARDED_BY(mutex){nullptr};
-
-    
-    
-    
-    
-    
-    
-    
-    
-    bool IsEmpty() const ABSL_NO_THREAD_SAFETY_ANALYSIS {
-      return dq_tail.load(std::memory_order_acquire) == nullptr;
-    }
-  };
-
-  void ODRCheck() const {
-#ifndef NDEBUG
-    ABSL_RAW_CHECK(queue_ == &global_queue_, "ODR violation in Cord");
-#endif
-  }
-
-  ABSL_CONST_INIT static Queue global_queue_;
-  Queue* const queue_ = &global_queue_;
   const bool is_snapshot_;
 
   

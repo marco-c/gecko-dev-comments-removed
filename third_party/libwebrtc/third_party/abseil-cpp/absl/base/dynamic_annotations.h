@@ -46,11 +46,16 @@
 #define ABSL_BASE_DYNAMIC_ANNOTATIONS_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #ifdef __cplusplus
 #include "absl/base/macros.h"
+#endif
+
+#ifdef ABSL_HAVE_HWADDRESS_SANITIZER
+#include <sanitizer/hwasan_interface.h>
 #endif
 
 
@@ -452,6 +457,26 @@ ABSL_NAMESPACE_END
 #define ABSL_ADDRESS_SANITIZER_REDZONE(name) static_assert(true, "")
 
 #endif  
+
+
+
+
+#ifdef __cplusplus
+namespace absl {
+#ifdef ABSL_HAVE_HWADDRESS_SANITIZER
+
+template <typename T>
+T* HwasanTagPointer(T* ptr, uintptr_t tag) {
+  return reinterpret_cast<T*>(__hwasan_tag_pointer(ptr, tag));
+}
+#else
+template <typename T>
+T* HwasanTagPointer(T* ptr, uintptr_t) {
+  return ptr;
+}
+#endif
+}  
+#endif
 
 
 

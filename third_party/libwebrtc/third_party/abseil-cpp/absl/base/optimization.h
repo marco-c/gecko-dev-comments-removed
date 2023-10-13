@@ -25,6 +25,7 @@
 #include <assert.h>
 
 #include "absl/base/config.h"
+#include "absl/base/options.h"
 
 
 
@@ -91,6 +92,7 @@
 #define ABSL_CACHELINE_SIZE 64
 #endif
 #endif
+#endif
 
 #ifndef ABSL_CACHELINE_SIZE
 
@@ -141,12 +143,11 @@
 
 
 
+#if defined(__clang__) || defined(__GNUC__)
 #define ABSL_CACHELINE_ALIGNED __attribute__((aligned(ABSL_CACHELINE_SIZE)))
 #elif defined(_MSC_VER)
-#define ABSL_CACHELINE_SIZE 64
 #define ABSL_CACHELINE_ALIGNED __declspec(align(ABSL_CACHELINE_SIZE))
 #else
-#define ABSL_CACHELINE_SIZE 64
 #define ABSL_CACHELINE_ALIGNED
 #endif
 
@@ -185,6 +186,53 @@
 
 
 
+#if ABSL_HAVE_BUILTIN(__builtin_trap) || \
+    (defined(__GNUC__) && !defined(__clang__))
+#define ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL() __builtin_trap()
+#else
+#define ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL() abort()
+#endif
+
+
+
+
+
+#if defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+#define ABSL_INTERNAL_UNREACHABLE_IMPL() std::unreachable()
+#elif defined(__GNUC__) || ABSL_HAVE_BUILTIN(__builtin_unreachable)
+#define ABSL_INTERNAL_UNREACHABLE_IMPL() __builtin_unreachable()
+#elif ABSL_HAVE_BUILTIN(__builtin_assume)
+#define ABSL_INTERNAL_UNREACHABLE_IMPL() __builtin_assume(false)
+#elif defined(_MSC_VER)
+#define ABSL_INTERNAL_UNREACHABLE_IMPL() __assume(false)
+#else
+#define ABSL_INTERNAL_UNREACHABLE_IMPL()
+#endif
+
+
+
+#if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
+
+#define ABSL_UNREACHABLE()                \
+  do {                                    \
+    ABSL_INTERNAL_IMMEDIATE_ABORT_IMPL(); \
+    ABSL_INTERNAL_UNREACHABLE_IMPL();     \
+  } while (false)
+#else
+
+
+#define ABSL_UNREACHABLE()                       \
+  do {                                           \
+    /* NOLINTNEXTLINE: misc-static-assert */     \
+    assert(false && "ABSL_UNREACHABLE reached"); \
+    ABSL_INTERNAL_UNREACHABLE_IMPL();            \
+  } while (false)
+#endif
+
+
+
+
+
 
 
 
@@ -209,18 +257,23 @@
 #define ABSL_ASSUME(cond) assert(cond)
 #elif ABSL_HAVE_BUILTIN(__builtin_assume)
 #define ABSL_ASSUME(cond) __builtin_assume(cond)
+#elif defined(_MSC_VER)
+#define ABSL_ASSUME(cond) __assume(cond)
+#elif defined(__cpp_lib_unreachable) && __cpp_lib_unreachable >= 202202L
+#define ABSL_ASSUME(cond)            \
+  do {                               \
+    if (!(cond)) std::unreachable(); \
+  } while (false)
 #elif defined(__GNUC__) || ABSL_HAVE_BUILTIN(__builtin_unreachable)
 #define ABSL_ASSUME(cond)                 \
   do {                                    \
     if (!(cond)) __builtin_unreachable(); \
-  } while (0)
-#elif defined(_MSC_VER)
-#define ABSL_ASSUME(cond) __assume(cond)
+  } while (false)
 #else
 #define ABSL_ASSUME(cond)               \
   do {                                  \
     static_cast<void>(false && (cond)); \
-  } while (0)
+  } while (false)
 #endif
 
 

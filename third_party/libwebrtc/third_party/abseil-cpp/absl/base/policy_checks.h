@@ -46,15 +46,15 @@
 
 
 
-#if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 190023918 && !defined(__clang__)
-#error "This package requires Visual Studio 2015 Update 2 or higher."
+#if defined(_MSC_VER) && _MSC_VER < 1920 && !defined(__clang__)
+#error "This package requires Visual Studio 2019 (MSVC++ 16.0) or higher."
 #endif
 
 
 
 #if defined(__GNUC__) && !defined(__clang__)
-#if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 7)
-#error "This package requires gcc 4.7 or higher."
+#if __GNUC__ < 7
+#error "This package requires GCC 7 or higher."
 #endif
 #endif
 
@@ -70,12 +70,14 @@
 
 
 
-
-
-#if defined(__cplusplus) && !defined(_MSC_VER)
-#if __cplusplus < 201103L
-#error "C++ versions less than C++11 are not supported."
-#endif
+#if defined(_MSVC_LANG)
+#if _MSVC_LANG < 201402L
+#error "C++ versions less than C++14 are not supported."
+#endif  
+#elif defined(__cplusplus)
+#if __cplusplus < 201402L
+#error "C++ versions less than C++14 are not supported."
+#endif  
 #endif
 
 

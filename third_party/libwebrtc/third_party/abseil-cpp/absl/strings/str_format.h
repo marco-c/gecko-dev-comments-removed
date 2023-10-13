@@ -67,6 +67,8 @@
 
 
 
+
+
 #ifndef ABSL_STRINGS_STR_FORMAT_H_
 #define ABSL_STRINGS_STR_FORMAT_H_
 
@@ -154,6 +156,20 @@ class FormatCountCapture {
   int* Unused() { return p_; }
   int* p_;
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -633,11 +649,46 @@ ABSL_MUST_USE_RESULT inline bool FormatUntyped(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class FormatConversionChar : uint8_t {
   c, s,                    
   d, i, o, u, x, X,        
   f, F, e, E, g, G, a, A,  
-  n, p                     
+  n, p, v                  
 };
 
 
@@ -757,6 +808,7 @@ enum class FormatConversionCharSet : uint64_t {
   
   n = str_format_internal::FormatConversionCharToConvInt('n'),
   p = str_format_internal::FormatConversionCharToConvInt('p'),
+  v = str_format_internal::FormatConversionCharToConvInt('v'),
 
   
   kStar = static_cast<uint64_t>(
@@ -773,19 +825,32 @@ enum class FormatConversionCharSet : uint64_t {
 
 
 
+
+
 class FormatSink {
  public:
   
+  
+  
   void Append(size_t count, char ch) { sink_->Append(count, ch); }
 
+  
+  
   void Append(string_view v) { sink_->Append(v); }
 
   
   
   
   
+  
+  
   bool PutPaddedString(string_view v, int width, int precision, bool left) {
     return sink_->PutPaddedString(v, width, precision, left);
+  }
+
+  
+  friend void AbslFormatFlush(FormatSink* sink, absl::string_view v) {
+    sink->Append(v);
   }
 
  private:

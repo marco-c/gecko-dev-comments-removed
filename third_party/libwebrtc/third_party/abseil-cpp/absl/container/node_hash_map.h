@@ -232,6 +232,10 @@ class node_hash_map
   
   
   
+  
+  
+  
+  
   using Base::erase;
 
   

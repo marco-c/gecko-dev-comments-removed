@@ -15,6 +15,7 @@
 #ifndef ABSL_TIME_INTERNAL_CCTZ_TIME_ZONE_LIBC_H_
 #define ABSL_TIME_INTERNAL_CCTZ_TIME_ZONE_LIBC_H_
 
+#include <memory>
 #include <string>
 
 #include "absl/base/config.h"
@@ -27,10 +28,10 @@ namespace cctz {
 
 
 
-
 class TimeZoneLibC : public TimeZoneIf {
  public:
-  explicit TimeZoneLibC(const std::string& name);
+  
+  static std::unique_ptr<TimeZoneLibC> Make(const std::string& name);
 
   
   time_zone::absolute_lookup BreakTime(
@@ -44,6 +45,10 @@ class TimeZoneLibC : public TimeZoneIf {
   std::string Description() const override;
 
  private:
+  explicit TimeZoneLibC(const std::string& name);
+  TimeZoneLibC(const TimeZoneLibC&) = delete;
+  TimeZoneLibC& operator=(const TimeZoneLibC&) = delete;
+
   const bool local_;  
 };
 

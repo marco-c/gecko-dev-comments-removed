@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/container/internal/common_policy_traits.h"
 #include "absl/meta/type_traits.h"
 
 namespace absl {
@@ -29,7 +30,7 @@ namespace container_internal {
 
 
 template <class Policy, class = void>
-struct hash_policy_traits {
+struct hash_policy_traits : common_policy_traits<Policy> {
   
   using key_type = typename Policy::key_type;
 
@@ -89,43 +90,6 @@ struct hash_policy_traits {
 
   
   
-  template <class Alloc, class... Args>
-  static void construct(Alloc* alloc, slot_type* slot, Args&&... args) {
-    Policy::construct(alloc, slot, std::forward<Args>(args)...);
-  }
-
-  
-  
-  template <class Alloc>
-  static void destroy(Alloc* alloc, slot_type* slot) {
-    Policy::destroy(alloc, slot);
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  template <class Alloc>
-  static void transfer(Alloc* alloc, slot_type* new_slot, slot_type* old_slot) {
-    transfer_impl(alloc, new_slot, old_slot, 0);
-  }
-
-  
-  
-  template <class P = Policy>
-  static auto element(slot_type* slot) -> decltype(P::element(slot)) {
-    return P::element(slot);
-  }
-
-  
-  
   
   
   
@@ -174,8 +138,8 @@ struct hash_policy_traits {
   
   template <class P = Policy>
   static auto mutable_key(slot_type* slot)
-      -> decltype(P::apply(ReturnKey(), element(slot))) {
-    return P::apply(ReturnKey(), element(slot));
+      -> decltype(P::apply(ReturnKey(), hash_policy_traits::element(slot))) {
+    return P::apply(ReturnKey(), hash_policy_traits::element(slot));
   }
 
   
@@ -183,21 +147,6 @@ struct hash_policy_traits {
   template <class T, class P = Policy>
   static auto value(T* elem) -> decltype(P::value(elem)) {
     return P::value(elem);
-  }
-
- private:
-  
-  template <class Alloc, class P = Policy>
-  static auto transfer_impl(Alloc* alloc, slot_type* new_slot,
-                            slot_type* old_slot, int)
-      -> decltype((void)P::transfer(alloc, new_slot, old_slot)) {
-    P::transfer(alloc, new_slot, old_slot);
-  }
-  template <class Alloc>
-  static void transfer_impl(Alloc* alloc, slot_type* new_slot,
-                            slot_type* old_slot, char) {
-    construct(alloc, new_slot, std::move(element(old_slot)));
-    destroy(alloc, old_slot);
   }
 };
 

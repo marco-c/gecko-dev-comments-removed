@@ -14,12 +14,18 @@
 #ifndef ABSL_STATUS_INTERNAL_STATUS_INTERNAL_H_
 #define ABSL_STATUS_INTERNAL_STATUS_INTERNAL_H_
 
+#include <atomic>
+#include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #ifndef SWIG
 
@@ -43,6 +49,7 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 
 enum class StatusCode : int;
+enum class StatusToStringMode : int;
 
 namespace status_internal {
 
@@ -55,18 +62,54 @@ struct Payload {
 using Payloads = absl::InlinedVector<Payload, 1>;
 
 
-struct StatusRep {
+class StatusRep {
+ public:
   StatusRep(absl::StatusCode code_arg, absl::string_view message_arg,
             std::unique_ptr<status_internal::Payloads> payloads_arg)
-      : ref(int32_t{1}),
-        code(code_arg),
-        message(message_arg),
-        payloads(std::move(payloads_arg)) {}
+      : ref_(int32_t{1}),
+        code_(code_arg),
+        message_(message_arg),
+        payloads_(std::move(payloads_arg)) {}
 
-  std::atomic<int32_t> ref;
-  absl::StatusCode code;
-  std::string message;
-  std::unique_ptr<status_internal::Payloads> payloads;
+  absl::StatusCode code() const { return code_; }
+  const std::string& message() const { return message_; }
+
+  
+  
+  void Ref() const { ref_.fetch_add(1, std::memory_order_relaxed); }
+  void Unref() const;
+
+  
+  absl::optional<absl::Cord> GetPayload(absl::string_view type_url) const;
+  void SetPayload(absl::string_view type_url, absl::Cord payload);
+  struct EraseResult {
+    bool erased;
+    uintptr_t new_rep;
+  };
+  EraseResult ErasePayload(absl::string_view type_url);
+  void ForEachPayload(
+      absl::FunctionRef<void(absl::string_view, const absl::Cord&)> visitor)
+      const;
+
+  std::string ToString(StatusToStringMode mode) const;
+
+  bool operator==(const StatusRep& other) const;
+  bool operator!=(const StatusRep& other) const { return !(*this == other); }
+
+  
+  
+  
+  StatusRep* CloneAndUnref() const;
+
+ private:
+  mutable std::atomic<int32_t> ref_;
+  absl::StatusCode code_;
+
+  
+  
+  
+  std::string message_;
+  std::unique_ptr<status_internal::Payloads> payloads_;
 };
 
 absl::StatusCode MapToLocalCode(int value);

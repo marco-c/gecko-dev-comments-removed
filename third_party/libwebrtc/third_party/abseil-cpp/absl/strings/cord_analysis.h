@@ -34,6 +34,24 @@ size_t GetEstimatedMemoryUsage(const CordRep* rep);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+size_t GetMorePreciseMemoryUsage(const CordRep* rep);
+
+
+
+
+
 size_t GetEstimatedFairShareMemoryUsage(const CordRep* rep);
 
 }  

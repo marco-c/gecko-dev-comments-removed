@@ -45,28 +45,28 @@ struct CordzStatistics {
   };
 
   
-  int64_t size = 0;
+  size_t size = 0;
 
   
   
   
-  int64_t estimated_memory_usage = 0;
-
-  
-  
-  
-  
-  
-  
-  
-  int64_t estimated_fair_share_memory_usage = 0;
+  size_t estimated_memory_usage = 0;
 
   
   
   
   
   
-  int64_t node_count = 0;
+  
+  
+  size_t estimated_fair_share_memory_usage = 0;
+
+  
+  
+  
+  
+  
+  size_t node_count = 0;
 
   
   NodeCounts node_counts;

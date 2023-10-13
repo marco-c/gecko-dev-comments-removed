@@ -122,19 +122,6 @@ std::string Utf8SafeCHexEscape(absl::string_view src);
 
 
 
-bool Base64Unescape(absl::string_view src, std::string* dest);
-
-
-
-
-
-
-bool WebSafeBase64Unescape(absl::string_view src, std::string* dest);
-
-
-
-
-
 void Base64Escape(absl::string_view src, std::string* dest);
 std::string Base64Escape(absl::string_view src);
 
@@ -145,6 +132,24 @@ std::string Base64Escape(absl::string_view src);
 
 void WebSafeBase64Escape(absl::string_view src, std::string* dest);
 std::string WebSafeBase64Escape(absl::string_view src);
+
+
+
+
+
+
+
+
+bool Base64Unescape(absl::string_view src, std::string* dest);
+
+
+
+
+
+
+
+
+bool WebSafeBase64Unescape(absl::string_view src, std::string* dest);
 
 
 

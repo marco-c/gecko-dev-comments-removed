@@ -12,24 +12,20 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
 #ifndef ABSL_SYNCHRONIZATION_INTERNAL_KERNEL_TIMEOUT_H_
 #define ABSL_SYNCHRONIZATION_INTERNAL_KERNEL_TIMEOUT_H_
 
-#include <time.h>
+#ifndef _WIN32
+#include <sys/types.h>
+#endif
 
 #include <algorithm>
+#include <chrono>  
+#include <cstdint>
+#include <ctime>
 #include <limits>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/raw_logging.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -38,56 +34,73 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace synchronization_internal {
 
-class Futex;
-class Waiter;
+
+
+
+
 
 class KernelTimeout {
  public:
   
-  
-  
-  explicit KernelTimeout(absl::Time t) : ns_(MakeNs(t)) {}
-  
-  KernelTimeout() : ns_(0) {}
+  explicit KernelTimeout(absl::Time t);
 
   
-  static KernelTimeout Never() { return {}; }
+  explicit KernelTimeout(absl::Duration d);
 
   
-  
-
-  bool has_timeout() const { return ns_ != 0; }
+  constexpr KernelTimeout() : rep_(kNoTimeout) {}
 
   
   
-  struct timespec MakeAbsTimespec();
+  static constexpr KernelTimeout Never() { return KernelTimeout(); }
 
- private:
+  
+  
+  bool has_timeout() const { return rep_ != kNoTimeout; }
+
+  
+  
+  
+  bool is_absolute_timeout() const { return (rep_ & 1) == 0; }
+
+  
+  
+  
+  bool is_relative_timeout() const { return (rep_ & 1) == 1; }
+
   
   
   
   
-  int64_t ns_;
+  struct timespec MakeAbsTimespec() const;
 
-  static int64_t MakeNs(absl::Time t) {
-    
-    
-    if (t == absl::InfiniteFuture()) return 0;
-    int64_t x = ToUnixNanos(t);
+  
+  
+  
+  
+  
+  
+  struct timespec MakeRelativeTimespec() const;
 
-    
-    
-    
-    
-    
-    if (x <= 0) x = 1;
-    
-    
-    if (x == (std::numeric_limits<int64_t>::max)()) x = 0;
-    return x;
-  }
+#ifndef _WIN32
+  
+  
+  
+  
+  
+  
+  
+  
+  struct timespec MakeClockAbsoluteTimespec(clockid_t c) const;
+#endif
 
-#ifdef _WIN32
+  
+  
+  
+  
+  
+  int64_t MakeAbsNanos() const;
+
   
   
   
@@ -97,57 +110,66 @@ class KernelTimeout {
   
   
   typedef unsigned long DWord;  
-  DWord InMillisecondsFromNow() const {
-    constexpr DWord kInfinite = (std::numeric_limits<DWord>::max)();
-    if (!has_timeout()) {
-      return kInfinite;
-    }
-    
-    
-    
-    int64_t now = ToUnixNanos(absl::Now());
-    if (ns_ >= now) {
-      
-      constexpr uint64_t max_nanos =
-          (std::numeric_limits<int64_t>::max)() - 999999u;
-      uint64_t ms_from_now =
-          (std::min<uint64_t>(max_nanos, ns_ - now) + 999999u) / 1000000u;
-      if (ms_from_now > kInfinite) {
-        return kInfinite;
-      }
-      return static_cast<DWord>(ms_from_now);
-    }
-    return 0;
-  }
-#endif
+  DWord InMillisecondsFromNow() const;
 
-  friend class Futex;
-  friend class Waiter;
+  
+  
+  
+  
+  
+  std::chrono::time_point<std::chrono::system_clock> ToChronoTimePoint() const;
+
+  
+  
+  
+  
+  
+  
+  
+  std::chrono::nanoseconds ToChronoDuration() const;
+
+  
+  
+  
+  static constexpr bool SupportsSteadyClock() { return true; }
+
+ private:
+  
+  
+  
+  static int64_t SteadyClockNow();
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  uint64_t rep_;
+
+  
+  
+  
+  
+  int64_t RawAbsNanos() const { return static_cast<int64_t>(rep_ >> 1); }
+
+  
+  
+  
+  int64_t InNanosecondsFromNow() const;
+
+  
+  static constexpr uint64_t kNoTimeout = (std::numeric_limits<uint64_t>::max)();
+
+  
+  static constexpr int64_t kMaxNanos = (std::numeric_limits<int64_t>::max)();
 };
-
-inline struct timespec KernelTimeout::MakeAbsTimespec() {
-  int64_t n = ns_;
-  static const int64_t kNanosPerSecond = 1000 * 1000 * 1000;
-  if (n == 0) {
-    ABSL_RAW_LOG(
-        ERROR, "Tried to create a timespec from a non-timeout; never do this.");
-    
-    n = (std::numeric_limits<int64_t>::max)();
-  }
-
-  
-  
-  
-  
-  if (n < 0) n = 0;
-
-  struct timespec abstime;
-  int64_t seconds = (std::min)(n / kNanosPerSecond,
-                               int64_t{(std::numeric_limits<time_t>::max)()});
-  abstime.tv_sec = static_cast<time_t>(seconds);
-  abstime.tv_nsec = static_cast<decltype(abstime.tv_nsec)>(n % kNanosPerSecond);
-  return abstime;
-}
 
 }  
 ABSL_NAMESPACE_END

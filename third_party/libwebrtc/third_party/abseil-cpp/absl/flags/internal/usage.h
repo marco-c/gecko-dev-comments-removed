@@ -17,11 +17,11 @@
 #define ABSL_FLAGS_INTERNAL_USAGE_H_
 
 #include <iosfwd>
+#include <ostream>
 #include <string>
 
 #include "absl/base/config.h"
 #include "absl/flags/commandlineflag.h"
-#include "absl/flags/declare.h"
 #include "absl/strings/string_view.h"
 
 
@@ -34,6 +34,18 @@ namespace flags_internal {
 
 enum class HelpFormat {
   kHumanReadable,
+};
+
+
+enum class HelpMode {
+  kNone,
+  kImportant,
+  kShort,
+  kFull,
+  kPackage,
+  kMatch,
+  kVersion,
+  kOnlyCheckArgs
 };
 
 
@@ -59,26 +71,16 @@ void FlagsHelp(std::ostream& out, absl::string_view filter,
 
 
 
+HelpMode HandleUsageFlags(std::ostream& out,
+                          absl::string_view program_usage_message);
 
 
 
 
-int HandleUsageFlags(std::ostream& out,
-                     absl::string_view program_usage_message);
+void MaybeExit(HelpMode mode);
 
 
 
-
-enum class HelpMode {
-  kNone,
-  kImportant,
-  kShort,
-  kFull,
-  kPackage,
-  kMatch,
-  kVersion,
-  kOnlyCheckArgs
-};
 
 
 std::string GetFlagsHelpMatchSubstr();

@@ -92,27 +92,30 @@ class StackArray {
 
 
 
+
 template <typename Int>
-inline Int MultiplyBy10WithCarry(Int *v, Int carry) {
+inline char MultiplyBy10WithCarry(Int* v, char carry) {
   using BiggerInt = absl::conditional_t<sizeof(Int) == 4, uint64_t, uint128>;
-  BiggerInt tmp = 10 * static_cast<BiggerInt>(*v) + carry;
+  BiggerInt tmp =
+      10 * static_cast<BiggerInt>(*v) + static_cast<BiggerInt>(carry);
   *v = static_cast<Int>(tmp);
-  return static_cast<Int>(tmp >> (sizeof(Int) * 8));
+  return static_cast<char>(tmp >> (sizeof(Int) * 8));
 }
 
 
 
 
-inline uint64_t DivideBy10WithCarry(uint64_t *v, uint64_t carry) {
+inline char DivideBy10WithCarry(uint64_t* v, char carry) {
   constexpr uint64_t divisor = 10;
   
   constexpr uint64_t chunk_quotient = (uint64_t{1} << 63) / (divisor / 2);
   constexpr uint64_t chunk_remainder = uint64_t{} - chunk_quotient * divisor;
 
+  const uint64_t carry_u64 = static_cast<uint64_t>(carry);
   const uint64_t mod = *v % divisor;
-  const uint64_t next_carry = chunk_remainder * carry + mod;
-  *v = *v / divisor + carry * chunk_quotient + next_carry / divisor;
-  return next_carry % divisor;
+  const uint64_t next_carry = chunk_remainder * carry_u64 + mod;
+  *v = *v / divisor + carry_u64 * chunk_quotient + next_carry / divisor;
+  return static_cast<char>(next_carry % divisor);
 }
 
 using MaxFloatType =
@@ -125,11 +128,11 @@ using MaxFloatType =
 
 
 class BinaryToDecimal {
-  static constexpr int ChunksNeeded(int exp) {
+  static constexpr size_t ChunksNeeded(int exp) {
     
     
     
-    return (128 + exp + 31) / 32 * 11 / 10;
+    return static_cast<size_t>((128 + exp + 31) / 32 * 11 / 10);
   }
 
  public:
@@ -140,7 +143,7 @@ class BinaryToDecimal {
     assert(exp > 0);
     assert(exp <= std::numeric_limits<MaxFloatType>::max_exponent);
     static_assert(
-        static_cast<int>(StackArray::kMaxCapacity) >=
+        StackArray::kMaxCapacity >=
             ChunksNeeded(std::numeric_limits<MaxFloatType>::max_exponent),
         "");
 
@@ -149,9 +152,9 @@ class BinaryToDecimal {
         [=](absl::Span<uint32_t> input) { f(BinaryToDecimal(input, v, exp)); });
   }
 
-  int TotalDigits() const {
-    return static_cast<int>((decimal_end_ - decimal_start_) * kDigitsPerChunk +
-                            CurrentDigits().size());
+  size_t TotalDigits() const {
+    return (decimal_end_ - decimal_start_) * kDigitsPerChunk +
+           CurrentDigits().size();
   }
 
   
@@ -190,30 +193,31 @@ class BinaryToDecimal {
     
     
     
-    int chunk_index = exp / 32;
+    size_t after_chunk_index = static_cast<size_t>(exp / 32 + 1);
     decimal_start_ = decimal_end_ = ChunksNeeded(exp);
     const int offset = exp % 32;
     
-    data_[chunk_index] = static_cast<uint32_t>(v << offset);
+    data_[after_chunk_index - 1] = static_cast<uint32_t>(v << offset);
     for (v >>= (32 - offset); v; v >>= 32)
-      data_[++chunk_index] = static_cast<uint32_t>(v);
+      data_[++after_chunk_index - 1] = static_cast<uint32_t>(v);
 
-    while (chunk_index >= 0) {
+    while (after_chunk_index > 0) {
       
       
       
       uint32_t carry = 0;
-      for (int i = chunk_index; i >= 0; --i) {
-        uint64_t tmp = uint64_t{data_[i]} + (uint64_t{carry} << 32);
-        data_[i] = static_cast<uint32_t>(tmp / uint64_t{1000000000});
+      for (size_t i = after_chunk_index; i > 0; --i) {
+        uint64_t tmp = uint64_t{data_[i - 1]} + (uint64_t{carry} << 32);
+        data_[i - 1] = static_cast<uint32_t>(tmp / uint64_t{1000000000});
         carry = static_cast<uint32_t>(tmp % uint64_t{1000000000});
       }
 
       
-      if (data_[chunk_index] == 0) --chunk_index;
+      if (data_[after_chunk_index - 1] == 0)
+        --after_chunk_index;
 
       --decimal_start_;
-      assert(decimal_start_ != chunk_index);
+      assert(decimal_start_ != after_chunk_index - 1);
       data_[decimal_start_] = carry;
     }
 
@@ -225,13 +229,13 @@ class BinaryToDecimal {
   }
 
  private:
-  static constexpr int kDigitsPerChunk = 9;
+  static constexpr size_t kDigitsPerChunk = 9;
 
-  int decimal_start_;
-  int decimal_end_;
+  size_t decimal_start_;
+  size_t decimal_end_;
 
   char digits_[kDigitsPerChunk];
-  int size_ = 0;
+  size_t size_ = 0;
 
   absl::Span<uint32_t> data_;
 };
@@ -251,25 +255,26 @@ class FractionalDigitGenerator {
     static_assert(StackArray::kMaxCapacity >=
                       (Limits::digits + 128 - Limits::min_exponent + 31) / 32,
                   "");
-    StackArray::RunWithCapacity((Limits::digits + exp + 31) / 32,
-                                [=](absl::Span<uint32_t> input) {
-                                  f(FractionalDigitGenerator(input, v, exp));
-                                });
+    StackArray::RunWithCapacity(
+        static_cast<size_t>((Limits::digits + exp + 31) / 32),
+        [=](absl::Span<uint32_t> input) {
+          f(FractionalDigitGenerator(input, v, exp));
+        });
   }
 
   
-  bool HasMoreDigits() const { return next_digit_ != 0 || chunk_index_ >= 0; }
+  bool HasMoreDigits() const { return next_digit_ != 0 || after_chunk_index_; }
 
   
   bool IsGreaterThanHalf() const {
-    return next_digit_ > 5 || (next_digit_ == 5 && chunk_index_ >= 0);
+    return next_digit_ > 5 || (next_digit_ == 5 && after_chunk_index_);
   }
   
-  bool IsExactlyHalf() const { return next_digit_ == 5 && chunk_index_ < 0; }
+  bool IsExactlyHalf() const { return next_digit_ == 5 && !after_chunk_index_; }
 
   struct Digits {
-    int digit_before_nine;
-    int num_nines;
+    char digit_before_nine;
+    size_t num_nines;
   };
 
   
@@ -288,35 +293,37 @@ class FractionalDigitGenerator {
 
  private:
   
-  int GetOneDigit() {
-    if (chunk_index_ < 0) return 0;
+  char GetOneDigit() {
+    if (!after_chunk_index_)
+      return 0;
 
-    uint32_t carry = 0;
-    for (int i = chunk_index_; i >= 0; --i) {
-      carry = MultiplyBy10WithCarry(&data_[i], carry);
+    char carry = 0;
+    for (size_t i = after_chunk_index_; i > 0; --i) {
+      carry = MultiplyBy10WithCarry(&data_[i - 1], carry);
     }
     
-    if (data_[chunk_index_] == 0) --chunk_index_;
+    if (data_[after_chunk_index_ - 1] == 0)
+      --after_chunk_index_;
     return carry;
   }
 
   FractionalDigitGenerator(absl::Span<uint32_t> data, uint128 v, int exp)
-      : chunk_index_(exp / 32), data_(data) {
+      : after_chunk_index_(static_cast<size_t>(exp / 32 + 1)), data_(data) {
     const int offset = exp % 32;
     
-    data_[chunk_index_] = static_cast<uint32_t>(v << (32 - offset));
+    data_[after_chunk_index_ - 1] = static_cast<uint32_t>(v << (32 - offset));
     v >>= offset;
     
     
-    for (int pos = chunk_index_; v; v >>= 32)
+    for (size_t pos = after_chunk_index_ - 1; v; v >>= 32)
       data_[--pos] = static_cast<uint32_t>(v);
 
     
     next_digit_ = GetOneDigit();
   }
 
-  int next_digit_;
-  int chunk_index_;
+  char next_digit_;
+  size_t after_chunk_index_;
   absl::Span<uint32_t> data_;
 };
 
@@ -362,7 +369,7 @@ char *PrintIntegralDigitsFromRightFast(uint128 v, char *p) {
   auto low = static_cast<uint64_t>(v);
 
   while (high != 0) {
-    uint64_t carry = DivideBy10WithCarry(&high, 0);
+    char carry = DivideBy10WithCarry(&high, 0);
     carry = DivideBy10WithCarry(&low, carry);
     *--p = carry + '0';
   }
@@ -373,13 +380,15 @@ char *PrintIntegralDigitsFromRightFast(uint128 v, char *p) {
 
 
 
-char *PrintFractionalDigitsFast(uint64_t v, char *start, int exp,
-                                int precision) {
+char* PrintFractionalDigitsFast(uint64_t v,
+                                char* start,
+                                int exp,
+                                size_t precision) {
   char *p = start;
   v <<= (64 - exp);
   while (precision > 0) {
     if (!v) return p;
-    *p++ = MultiplyBy10WithCarry(&v, uint64_t{0}) + '0';
+    *p++ = MultiplyBy10WithCarry(&v, 0) + '0';
     --precision;
   }
 
@@ -393,8 +402,6 @@ char *PrintFractionalDigitsFast(uint64_t v, char *start, int exp,
     RoundToEven(p - 1);
   }
 
-  assert(precision == 0);
-  
   return p;
 }
 
@@ -402,8 +409,10 @@ char *PrintFractionalDigitsFast(uint64_t v, char *start, int exp,
 
 
 
-char *PrintFractionalDigitsFast(uint128 v, char *start, int exp,
-                                int precision) {
+char* PrintFractionalDigitsFast(uint128 v,
+                                char* start,
+                                int exp,
+                                size_t precision) {
   char *p = start;
   v <<= (128 - exp);
   auto high = static_cast<uint64_t>(v >> 64);
@@ -412,7 +421,7 @@ char *PrintFractionalDigitsFast(uint128 v, char *start, int exp,
   
   
   while (precision > 0 && low != 0) {
-    uint64_t carry = MultiplyBy10WithCarry(&low, uint64_t{0});
+    char carry = MultiplyBy10WithCarry(&low, 0);
     carry = MultiplyBy10WithCarry(&high, carry);
 
     *p++ = carry + '0';
@@ -424,7 +433,7 @@ char *PrintFractionalDigitsFast(uint128 v, char *start, int exp,
   
   while (precision > 0) {
     if (!high) return p;
-    *p++ = MultiplyBy10WithCarry(&high, uint64_t{0}) + '0';
+    *p++ = MultiplyBy10WithCarry(&high, 0) + '0';
     --precision;
   }
 
@@ -438,14 +447,12 @@ char *PrintFractionalDigitsFast(uint128 v, char *start, int exp,
     RoundToEven(p - 1);
   }
 
-  assert(precision == 0);
-  
   return p;
 }
 
 struct FormatState {
   char sign_char;
-  int precision;
+  size_t precision;
   const FormatConversionSpecImpl &conv;
   FormatSinkImpl *sink;
 
@@ -455,9 +462,9 @@ struct FormatState {
 };
 
 struct Padding {
-  int left_spaces;
-  int zeros;
-  int right_spaces;
+  size_t left_spaces;
+  size_t zeros;
+  size_t right_spaces;
 };
 
 Padding ExtraWidthToPadding(size_t total_size, const FormatState &state) {
@@ -465,7 +472,7 @@ Padding ExtraWidthToPadding(size_t total_size, const FormatState &state) {
       static_cast<size_t>(state.conv.width()) <= total_size) {
     return {0, 0, 0};
   }
-  int missing_chars = state.conv.width() - total_size;
+  size_t missing_chars = static_cast<size_t>(state.conv.width()) - total_size;
   if (state.conv.has_left_flag()) {
     return {0, 0, missing_chars};
   } else if (state.conv.has_zero_flag()) {
@@ -475,8 +482,10 @@ Padding ExtraWidthToPadding(size_t total_size, const FormatState &state) {
   }
 }
 
-void FinalPrint(const FormatState &state, absl::string_view data,
-                int padding_offset, int trailing_zeros,
+void FinalPrint(const FormatState& state,
+                absl::string_view data,
+                size_t padding_offset,
+                size_t trailing_zeros,
                 absl::string_view data_postfix) {
   if (state.conv.width() < 0) {
     
@@ -487,10 +496,10 @@ void FinalPrint(const FormatState &state, absl::string_view data,
     return;
   }
 
-  auto padding = ExtraWidthToPadding((state.sign_char != '\0' ? 1 : 0) +
-                                         data.size() + data_postfix.size() +
-                                         static_cast<size_t>(trailing_zeros),
-                                     state);
+  auto padding =
+      ExtraWidthToPadding((state.sign_char != '\0' ? 1 : 0) + data.size() +
+                              data_postfix.size() + trailing_zeros,
+                          state);
 
   state.sink->Append(padding.left_spaces, ' ');
   if (state.sign_char != '\0') state.sink->Append(1, state.sign_char);
@@ -547,15 +556,16 @@ void FormatFFast(Int v, int exp, const FormatState &state) {
     if (integral_digits_start[-1] != '0') --integral_digits_start;
   }
 
-  size_t size = fractional_digits_end - integral_digits_start;
+  size_t size =
+      static_cast<size_t>(fractional_digits_end - integral_digits_start);
 
   
   
   if (!state.ShouldPrintDot()) --size;
   FinalPrint(state, absl::string_view(integral_digits_start, size),
              0,
-             static_cast<int>(state.precision - (fractional_digits_end -
-                                                 fractional_digits_start)),
+             state.precision - static_cast<size_t>(fractional_digits_end -
+                                                   fractional_digits_start),
              "");
 }
 
@@ -567,21 +577,22 @@ void FormatFFast(Int v, int exp, const FormatState &state) {
 void FormatFPositiveExpSlow(uint128 v, int exp, const FormatState &state) {
   BinaryToDecimal::RunConversion(v, exp, [&](BinaryToDecimal btd) {
     const size_t total_digits =
-        btd.TotalDigits() +
-        (state.ShouldPrintDot() ? static_cast<size_t>(state.precision) + 1 : 0);
+        btd.TotalDigits() + (state.ShouldPrintDot() ? state.precision + 1 : 0);
 
     const auto padding = ExtraWidthToPadding(
         total_digits + (state.sign_char != '\0' ? 1 : 0), state);
 
     state.sink->Append(padding.left_spaces, ' ');
-    if (state.sign_char != '\0') state.sink->Append(1, state.sign_char);
+    if (state.sign_char != '\0')
+      state.sink->Append(1, state.sign_char);
     state.sink->Append(padding.zeros, '0');
 
     do {
       state.sink->Append(btd.CurrentDigits());
     } while (btd.AdvanceDigits());
 
-    if (state.ShouldPrintDot()) state.sink->Append(1, '.');
+    if (state.ShouldPrintDot())
+      state.sink->Append(1, '.');
     state.sink->Append(state.precision, '0');
     state.sink->Append(padding.right_spaces, ' ');
   });
@@ -594,8 +605,7 @@ void FormatFPositiveExpSlow(uint128 v, int exp, const FormatState &state) {
 
 void FormatFNegativeExpSlow(uint128 v, int exp, const FormatState &state) {
   const size_t total_digits =
-       1 +
-      (state.ShouldPrintDot() ? static_cast<size_t>(state.precision) + 1 : 0);
+       1 + (state.ShouldPrintDot() ? state.precision + 1 : 0);
   auto padding =
       ExtraWidthToPadding(total_digits + (state.sign_char ? 1 : 0), state);
   padding.zeros += 1;
@@ -606,7 +616,7 @@ void FormatFNegativeExpSlow(uint128 v, int exp, const FormatState &state) {
   if (state.ShouldPrintDot()) state.sink->Append(1, '.');
 
   
-  int digits_to_go = state.precision;
+  size_t digits_to_go = state.precision;
 
   FractionalDigitGenerator::RunConversion(
       v, exp, [&](FractionalDigitGenerator digit_gen) {
@@ -666,7 +676,8 @@ void FormatFNegativeExpSlow(uint128 v, int exp, const FormatState &state) {
 template <typename Int>
 void FormatF(Int mantissa, int exp, const FormatState &state) {
   if (exp >= 0) {
-    const int total_bits = sizeof(Int) * 8 - LeadingZeros(mantissa) + exp;
+    const int total_bits =
+        static_cast<int>(sizeof(Int) * 8) - LeadingZeros(mantissa) + exp;
 
     
     
@@ -686,9 +697,9 @@ void FormatF(Int mantissa, int exp, const FormatState &state) {
 
 
 template <typename Int>
-uint8_t GetNibble(Int n, int nibble_index) {
+uint8_t GetNibble(Int n, size_t nibble_index) {
   constexpr Int mask_low_nibble = Int{0xf};
-  int shift = nibble_index * 4;
+  int shift = static_cast<int>(nibble_index * 4);
   n &= mask_low_nibble << shift;
   return static_cast<uint8_t>((n >> shift) & 0xf);
 }
@@ -696,9 +707,9 @@ uint8_t GetNibble(Int n, int nibble_index) {
 
 
 template <typename Int>
-bool IncrementNibble(int nibble_index, Int *n) {
-  constexpr int kShift = sizeof(Int) * 8 - 1;
-  constexpr int kNumNibbles = sizeof(Int) * 8 / 4;
+bool IncrementNibble(size_t nibble_index, Int* n) {
+  constexpr size_t kShift = sizeof(Int) * 8 - 1;
+  constexpr size_t kNumNibbles = sizeof(Int) * 8 / 4;
   Int before = *n >> kShift;
   
   
@@ -706,28 +717,32 @@ bool IncrementNibble(int nibble_index, Int *n) {
   
   
   
-  *n += ((nibble_index >= kNumNibbles) ? 0 : (Int{1} << (nibble_index * 4)));
+  *n += ((nibble_index >= kNumNibbles)
+             ? 0
+             : (Int{1} << static_cast<int>(nibble_index * 4)));
   Int after = *n >> kShift;
   return (before && !after) || (nibble_index >= kNumNibbles);
 }
 
 
 template <typename Int>
-Int MaskUpToNibbleInclusive(int nibble_index) {
-  constexpr int kNumNibbles = sizeof(Int) * 8 / 4;
+Int MaskUpToNibbleInclusive(size_t nibble_index) {
+  constexpr size_t kNumNibbles = sizeof(Int) * 8 / 4;
   static const Int ones = ~Int{0};
-  return ones >> std::max(0, 4 * (kNumNibbles - nibble_index - 1));
+  ++nibble_index;
+  return ones >> static_cast<int>(
+                     4 * (std::max(kNumNibbles, nibble_index) - nibble_index));
 }
 
 
 template <typename Int>
-Int MaskUpToNibbleExclusive(int nibble_index) {
-  return nibble_index <= 0 ? 0 : MaskUpToNibbleInclusive<Int>(nibble_index - 1);
+Int MaskUpToNibbleExclusive(size_t nibble_index) {
+  return nibble_index == 0 ? 0 : MaskUpToNibbleInclusive<Int>(nibble_index - 1);
 }
 
 template <typename Int>
-Int MoveToNibble(uint8_t nibble, int nibble_index) {
-  return Int{nibble} << (4 * nibble_index);
+Int MoveToNibble(uint8_t nibble, size_t nibble_index) {
+  return Int{nibble} << static_cast<int>(4 * nibble_index);
 }
 
 
@@ -744,10 +759,10 @@ Int MoveToNibble(uint8_t nibble, int nibble_index) {
 
 
 template <typename Float>
-constexpr int HexFloatLeadingDigitSizeInBits() {
+constexpr size_t HexFloatLeadingDigitSizeInBits() {
   return std::numeric_limits<Float>::digits % 4 > 0
-             ? std::numeric_limits<Float>::digits % 4
-             : 4;
+             ? static_cast<size_t>(std::numeric_limits<Float>::digits % 4)
+             : size_t{4};
 }
 
 
@@ -757,16 +772,17 @@ constexpr int HexFloatLeadingDigitSizeInBits() {
 
 
 template <typename Int>
-bool HexFloatNeedsRoundUp(Int mantissa, int final_nibble_displayed,
+bool HexFloatNeedsRoundUp(Int mantissa,
+                          size_t final_nibble_displayed,
                           uint8_t leading) {
   
   
   
-  if (final_nibble_displayed <= 0) {
+  if (final_nibble_displayed == 0) {
     return false;
   }
-  int rounding_nibble_idx = final_nibble_displayed - 1;
-  constexpr int kTotalNibbles = sizeof(Int) * 8 / 4;
+  size_t rounding_nibble_idx = final_nibble_displayed - 1;
+  constexpr size_t kTotalNibbles = sizeof(Int) * 8 / 4;
   assert(final_nibble_displayed <= kTotalNibbles);
   Int mantissa_up_to_rounding_nibble_inclusive =
       mantissa & MaskUpToNibbleInclusive<Int>(rounding_nibble_idx);
@@ -793,7 +809,7 @@ struct HexFloatTypeParams {
   }
 
   int min_exponent;
-  int leading_digit_size_bits;
+  size_t leading_digit_size_bits;
 };
 
 
@@ -803,10 +819,12 @@ struct HexFloatTypeParams {
 template <typename Int>
 void FormatARound(bool precision_specified, const FormatState &state,
                   uint8_t *leading, Int *mantissa, int *exp) {
-  constexpr int kTotalNibbles = sizeof(Int) * 8 / 4;
+  constexpr size_t kTotalNibbles = sizeof(Int) * 8 / 4;
   
-  int final_nibble_displayed =
-      precision_specified ? std::max(0, (kTotalNibbles - state.precision)) : 0;
+  size_t final_nibble_displayed =
+      precision_specified
+          ? (std::max(kTotalNibbles, state.precision) - state.precision)
+          : 0;
   if (HexFloatNeedsRoundUp(*mantissa, final_nibble_displayed, *leading)) {
     
     bool overflow = IncrementNibble(final_nibble_displayed, mantissa);
@@ -830,9 +848,9 @@ void FormatARound(bool precision_specified, const FormatState &state,
 template <typename Int>
 void FormatANormalize(const HexFloatTypeParams float_traits, uint8_t *leading,
                       Int *mantissa, int *exp) {
-  constexpr int kIntBits = sizeof(Int) * 8;
+  constexpr size_t kIntBits = sizeof(Int) * 8;
   static const Int kHighIntBit = Int{1} << (kIntBits - 1);
-  const int kLeadDigitBitsCount = float_traits.leading_digit_size_bits;
+  const size_t kLeadDigitBitsCount = float_traits.leading_digit_size_bits;
   
   
   while (*mantissa && !(*mantissa & kHighIntBit)) {
@@ -846,18 +864,18 @@ void FormatANormalize(const HexFloatTypeParams float_traits, uint8_t *leading,
   }
   
   
-  *leading =
-      static_cast<uint8_t>(*mantissa >> (kIntBits - kLeadDigitBitsCount));
-  *exp -= (*mantissa != 0) ? kLeadDigitBitsCount : *exp;
-  *mantissa <<= kLeadDigitBitsCount;
+  *leading = static_cast<uint8_t>(
+      *mantissa >> static_cast<int>(kIntBits - kLeadDigitBitsCount));
+  *exp -= (*mantissa != 0) ? static_cast<int>(kLeadDigitBitsCount) : *exp;
+  *mantissa <<= static_cast<int>(kLeadDigitBitsCount);
 }
 
 template <typename Int>
 void FormatA(const HexFloatTypeParams float_traits, Int mantissa, int exp,
              bool uppercase, const FormatState &state) {
   
-  constexpr int kIntBits = sizeof(Int) * 8;
-  constexpr int kTotalNibbles = sizeof(Int) * 8 / 4;
+  constexpr size_t kIntBits = sizeof(Int) * 8;
+  constexpr size_t kTotalNibbles = sizeof(Int) * 8 / 4;
   
   const bool precision_specified = state.conv.precision() >= 0;
 
@@ -903,16 +921,19 @@ void FormatA(const HexFloatTypeParams float_traits, Int mantissa, int exp,
   }
 
   
-  int digits_emitted = 0;
+  size_t digits_emitted = 0;
   while (mantissa > 0) {
     *digits_iter++ = digits[GetNibble(mantissa, kTotalNibbles - 1)];
     mantissa <<= 4;
     ++digits_emitted;
   }
-  int trailing_zeros =
-      precision_specified ? state.precision - digits_emitted : 0;
-  assert(trailing_zeros >= 0);
-  auto digits_result = string_view(digits_buffer, digits_iter - digits_buffer);
+  size_t trailing_zeros = 0;
+  if (precision_specified) {
+    assert(state.precision >= digits_emitted);
+    trailing_zeros = state.precision - digits_emitted;
+  }
+  auto digits_result = string_view(
+      digits_buffer, static_cast<size_t>(digits_iter - digits_buffer));
 
   
   constexpr size_t kBufSizeForExpDecRepr =
@@ -925,11 +946,11 @@ void FormatA(const HexFloatTypeParams float_traits, Int mantissa, int exp,
   numbers_internal::FastIntToBuffer(exp < 0 ? -exp : exp, exp_buffer + 2);
 
   
-  FinalPrint(state,           
-             digits_result,   
-             2,               
-             trailing_zeros,  
-             exp_buffer);     
+  FinalPrint(state,
+             digits_result,                        
+             2,                                    
+             static_cast<size_t>(trailing_zeros),  
+             exp_buffer);                          
 }
 
 char *CopyStringTo(absl::string_view v, char *out) {
@@ -961,10 +982,10 @@ bool FallbackToSnprintf(const Float v, const FormatConversionSpecImpl &conv,
     int n = snprintf(&space[0], space.size(), fmt, w, p, v);
     if (n < 0) return false;
     if (static_cast<size_t>(n) < space.size()) {
-      result = absl::string_view(space.data(), n);
+      result = absl::string_view(space.data(), static_cast<size_t>(n));
       break;
     }
-    space.resize(n + 1);
+    space.resize(static_cast<size_t>(n) + 1);
   }
   sink->Append(result);
   return true;
@@ -972,13 +993,13 @@ bool FallbackToSnprintf(const Float v, const FormatConversionSpecImpl &conv,
 
 
 
-constexpr int kMaxFixedPrecision = 39;
+constexpr size_t kMaxFixedPrecision = 39;
 
-constexpr int kBufferLength =  1 +
-                               kMaxFixedPrecision +
-                               1 +
-                               kMaxFixedPrecision +
-                               5;
+constexpr size_t kBufferLength =  1 +
+                                  kMaxFixedPrecision +
+                                  1 +
+                                  kMaxFixedPrecision +
+                                  5;
 
 struct Buffer {
   void push_front(char c) {
@@ -994,14 +1015,14 @@ struct Buffer {
     --end;
   }
 
-  char &back() {
+  char &back() const {
     assert(begin < end);
     return end[-1];
   }
 
   char last_digit() const { return end[-1] == '.' ? end[-2] : end[-1]; }
 
-  int size() const { return static_cast<int>(end - begin); }
+  size_t size() const { return static_cast<size_t>(end - begin); }
 
   char data[kBufferLength];
   char *begin;
@@ -1030,8 +1051,9 @@ bool ConvertNonNumericFloats(char sign_char, Float v,
     return false;
   }
 
-  return sink->PutPaddedString(string_view(text, ptr - text), conv.width(), -1,
-                               conv.has_left_flag());
+  return sink->PutPaddedString(
+      string_view(text, static_cast<size_t>(ptr - text)), conv.width(), -1,
+      conv.has_left_flag());
 }
 
 
@@ -1068,19 +1090,19 @@ void PrintExponent(int exp, char e, Buffer *out) {
   }
   
   if (exp > 99) {
-    out->push_back(exp / 100 + '0');
-    out->push_back(exp / 10 % 10 + '0');
-    out->push_back(exp % 10 + '0');
+    out->push_back(static_cast<char>(exp / 100 + '0'));
+    out->push_back(static_cast<char>(exp / 10 % 10 + '0'));
+    out->push_back(static_cast<char>(exp % 10 + '0'));
   } else {
-    out->push_back(exp / 10 + '0');
-    out->push_back(exp % 10 + '0');
+    out->push_back(static_cast<char>(exp / 10 + '0'));
+    out->push_back(static_cast<char>(exp % 10 + '0'));
   }
 }
 
 template <typename Float, typename Int>
 constexpr bool CanFitMantissa() {
   return
-#if defined(__clang__) && !defined(__SSE3__)
+#if defined(__clang__) && (__clang_major__ < 9) && !defined(__SSE3__)
       
       
       (!std::is_same<Float, long double>::value ||
@@ -1115,8 +1137,8 @@ Decomposed<Float> Decompose(Float v) {
 
 
 template <FormatStyle mode, typename Int>
-int PrintIntegralDigits(Int digits, Buffer *out) {
-  int printed = 0;
+size_t PrintIntegralDigits(Int digits, Buffer* out) {
+  size_t printed = 0;
   if (digits) {
     for (; digits; digits /= 10) out->push_front(digits % 10 + '0');
     printed = out->size();
@@ -1135,10 +1157,10 @@ int PrintIntegralDigits(Int digits, Buffer *out) {
 }
 
 
-bool RemoveExtraPrecision(int extra_digits, bool has_leftover_value,
-                          Buffer *out, int *exp_out) {
-  if (extra_digits <= 0) return false;
-
+void RemoveExtraPrecision(size_t extra_digits,
+                          bool has_leftover_value,
+                          Buffer* out,
+                          int* exp_out) {
   
   out->end -= extra_digits;
 
@@ -1158,15 +1180,17 @@ bool RemoveExtraPrecision(int extra_digits, bool has_leftover_value,
   if (needs_to_round_up) {
     RoundUp<FormatStyle::Precision>(out, exp_out);
   }
-  return true;
 }
 
 
 
 
 template <typename Int, typename Float, FormatStyle mode>
-bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
-                       int *exp_out) {
+bool FloatToBufferImpl(Int int_mantissa,
+                       int exp,
+                       size_t precision,
+                       Buffer* out,
+                       int* exp_out) {
   assert((CanFitMantissa<Float, Int>()));
 
   const int int_bits = std::numeric_limits<Int>::digits;
@@ -1182,14 +1206,16 @@ bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
       
       return false;
     }
-    int digits_printed = PrintIntegralDigits<mode>(int_mantissa << exp, out);
-    int digits_to_zero_pad = precision;
+    size_t digits_printed = PrintIntegralDigits<mode>(int_mantissa << exp, out);
+    size_t digits_to_zero_pad = precision;
     if (mode == FormatStyle::Precision) {
-      *exp_out = digits_printed - 1;
-      digits_to_zero_pad -= digits_printed - 1;
-      if (RemoveExtraPrecision(-digits_to_zero_pad, false, out, exp_out)) {
+      *exp_out = static_cast<int>(digits_printed - 1);
+      if (digits_to_zero_pad < digits_printed - 1) {
+        RemoveExtraPrecision(digits_printed - 1 - digits_to_zero_pad, false,
+                             out, exp_out);
         return true;
       }
+      digits_to_zero_pad -= digits_printed - 1;
     }
     for (; digits_to_zero_pad-- > 0;) out->push_back('0');
     return true;
@@ -1203,10 +1229,10 @@ bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
   const Int mask = (Int{1} << exp) - 1;
 
   
-  int digits_printed = PrintIntegralDigits<mode>(int_mantissa >> exp, out);
+  size_t digits_printed = PrintIntegralDigits<mode>(int_mantissa >> exp, out);
   int_mantissa &= mask;
 
-  int fractional_count = precision;
+  size_t fractional_count = precision;
   if (mode == FormatStyle::Precision) {
     if (digits_printed == 0) {
       
@@ -1222,20 +1248,21 @@ bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
       int_mantissa &= mask;
     } else {
       
-      *exp_out = digits_printed - 1;
-      fractional_count -= *exp_out;
-      if (RemoveExtraPrecision(-fractional_count, int_mantissa != 0, out,
-                               exp_out)) {
+      *exp_out = static_cast<int>(digits_printed - 1);
+      if (fractional_count < digits_printed - 1) {
         
         
+        RemoveExtraPrecision(digits_printed - 1 - fractional_count,
+                             int_mantissa != 0, out, exp_out);
         return true;
       }
+      fractional_count -= digits_printed - 1;
     }
   }
 
   auto get_next_digit = [&] {
     int_mantissa *= 10;
-    int digit = static_cast<int>(int_mantissa >> exp);
+    char digit = static_cast<char>(int_mantissa >> exp);
     int_mantissa &= mask;
     return digit;
   };
@@ -1245,7 +1272,7 @@ bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
     out->push_back(get_next_digit() + '0');
   }
 
-  int next_digit = get_next_digit();
+  char next_digit = get_next_digit();
   if (next_digit > 5 ||
       (next_digit == 5 && (int_mantissa || out->last_digit() % 2 == 1))) {
     RoundUp<mode>(out, exp_out);
@@ -1255,24 +1282,25 @@ bool FloatToBufferImpl(Int int_mantissa, int exp, int precision, Buffer *out,
 }
 
 template <FormatStyle mode, typename Float>
-bool FloatToBuffer(Decomposed<Float> decomposed, int precision, Buffer *out,
-                   int *exp) {
+bool FloatToBuffer(Decomposed<Float> decomposed,
+                   size_t precision,
+                   Buffer* out,
+                   int* exp) {
   if (precision > kMaxFixedPrecision) return false;
 
   
   if (CanFitMantissa<Float, std::uint64_t>() &&
       FloatToBufferImpl<std::uint64_t, Float, mode>(
-          static_cast<std::uint64_t>(decomposed.mantissa),
-          static_cast<std::uint64_t>(decomposed.exponent), precision, out, exp))
+          static_cast<std::uint64_t>(decomposed.mantissa), decomposed.exponent,
+          precision, out, exp))
     return true;
 
 #if defined(ABSL_HAVE_INTRINSIC_INT128)
   
   return CanFitMantissa<Float, __uint128_t>() &&
          FloatToBufferImpl<__uint128_t, Float, mode>(
-             static_cast<__uint128_t>(decomposed.mantissa),
-             static_cast<__uint128_t>(decomposed.exponent), precision, out,
-             exp);
+             static_cast<__uint128_t>(decomposed.mantissa), decomposed.exponent,
+             precision, out, exp);
 #endif
   return false;
 }
@@ -1280,12 +1308,15 @@ bool FloatToBuffer(Decomposed<Float> decomposed, int precision, Buffer *out,
 void WriteBufferToSink(char sign_char, absl::string_view str,
                        const FormatConversionSpecImpl &conv,
                        FormatSinkImpl *sink) {
-  int left_spaces = 0, zeros = 0, right_spaces = 0;
-  int missing_chars =
-      conv.width() >= 0 ? std::max(conv.width() - static_cast<int>(str.size()) -
-                                       static_cast<int>(sign_char != 0),
-                                   0)
-                        : 0;
+  size_t left_spaces = 0, zeros = 0, right_spaces = 0;
+  size_t missing_chars = 0;
+  if (conv.width() >= 0) {
+    const size_t conv_width_size_t = static_cast<size_t>(conv.width());
+    const size_t existing_chars =
+        str.size() + static_cast<size_t>(sign_char != 0);
+    if (conv_width_size_t > existing_chars)
+      missing_chars = conv_width_size_t - existing_chars;
+  }
   if (conv.has_left_flag()) {
     right_spaces = missing_chars;
   } else if (conv.has_zero_flag()) {
@@ -1321,7 +1352,8 @@ bool FloatToSink(const Float v, const FormatConversionSpecImpl &conv,
     return true;
   }
 
-  int precision = conv.precision() < 0 ? 6 : conv.precision();
+  size_t precision =
+      conv.precision() < 0 ? 6 : static_cast<size_t>(conv.precision());
 
   int exp = 0;
 
@@ -1348,12 +1380,12 @@ bool FloatToSink(const Float v, const FormatConversionSpecImpl &conv,
         &buffer);
   } else if (c == FormatConversionCharInternal::g ||
              c == FormatConversionCharInternal::G) {
-    precision = std::max(0, precision - 1);
+    precision = std::max(precision, size_t{1}) - 1;
     if (!FloatToBuffer<FormatStyle::Precision>(decomposed, precision, &buffer,
                                                &exp)) {
       return FallbackToSnprintf(v, conv, sink);
     }
-    if (precision + 1 > exp && exp >= -4) {
+    if ((exp < 0 || precision + 1 > static_cast<size_t>(exp)) && exp >= -4) {
       if (exp < 0) {
         
         
@@ -1388,9 +1420,11 @@ bool FloatToSink(const Float v, const FormatConversionSpecImpl &conv,
     return false;
   }
 
-  WriteBufferToSink(sign_char,
-                    absl::string_view(buffer.begin, buffer.end - buffer.begin),
-                    conv, sink);
+  WriteBufferToSink(
+      sign_char,
+      absl::string_view(buffer.begin,
+                        static_cast<size_t>(buffer.end - buffer.begin)),
+      conv, sink);
 
   return true;
 }

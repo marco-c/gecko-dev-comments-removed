@@ -66,6 +66,8 @@ ABSL_NAMESPACE_BEGIN
 
 
 
+
+
 enum class LogSeverity : int {
   kInfo = 0,
   kWarning = 1,
@@ -81,6 +83,16 @@ constexpr std::array<absl::LogSeverity, 4> LogSeverities() {
   return {{absl::LogSeverity::kInfo, absl::LogSeverity::kWarning,
            absl::LogSeverity::kError, absl::LogSeverity::kFatal}};
 }
+
+
+
+
+
+#ifdef NDEBUG
+static constexpr absl::LogSeverity kLogDebugFatal = absl::LogSeverity::kError;
+#else
+static constexpr absl::LogSeverity kLogDebugFatal = absl::LogSeverity::kFatal;
+#endif
 
 
 

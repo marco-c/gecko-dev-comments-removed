@@ -19,8 +19,8 @@
 
 #include "gtest/gtest.h"
 #include "absl/base/config.h"
-#include "absl/base/internal/raw_logging.h"
 #include "absl/debugging/internal/stack_consumption.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 namespace absl {
@@ -103,6 +103,30 @@ TEST(Demangle, Clones) {
 }
 
 
+TEST(Demangle, AbiTags) {
+  char tmp[80];
+
+  
+  
+  
+  EXPECT_TRUE(Demangle("_Z1aB3abc", tmp, sizeof(tmp)));
+  EXPECT_STREQ("a[abi:abc]", tmp);
+
+  
+  
+  
+  
+  
+  EXPECT_TRUE(Demangle("_ZN1BC2B3xyzEv", tmp, sizeof(tmp)));
+  EXPECT_STREQ("B::B[abi:xyz]()", tmp);
+
+  
+  
+  EXPECT_TRUE(Demangle("_Z1CB3barB3foov", tmp, sizeof(tmp)));
+  EXPECT_STREQ("C[abi:bar][abi:foo]()", tmp);
+}
+
+
 
 
 #if defined(ABSL_INTERNAL_HAVE_DEBUGGING_STACK_CONSUMPTION) && \
@@ -127,7 +151,7 @@ static const char *DemangleStackConsumption(const char *mangled,
                                             int *stack_consumed) {
   g_mangled = mangled;
   *stack_consumed = GetSignalHandlerStackConsumption(DemangleSignalHandler);
-  ABSL_RAW_LOG(INFO, "Stack consumption of Demangle: %d", *stack_consumed);
+  LOG(INFO) << "Stack consumption of Demangle: " << *stack_consumed;
   return g_demangle_result;
 }
 

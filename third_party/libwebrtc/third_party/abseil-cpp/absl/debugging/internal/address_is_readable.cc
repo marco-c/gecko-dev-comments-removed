@@ -52,7 +52,7 @@ namespace debugging_internal {
 bool AddressIsReadable(const void *addr) {
   
   
-  const uintptr_t u_addr = reinterpret_cast<uintptr_t>(addr) & ~7;
+  const uintptr_t u_addr = reinterpret_cast<uintptr_t>(addr) & ~uintptr_t{7};
   addr = reinterpret_cast<const void *>(u_addr);
 
   

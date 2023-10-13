@@ -47,6 +47,9 @@
 
 
 
+
+
+
 #ifndef ABSL_CONTAINER_BTREE_MAP_H_
 #define ABSL_CONTAINER_BTREE_MAP_H_
 
@@ -345,7 +348,23 @@ class btree_map
   
   
   
+  
   using Base::extract;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::extract_and_get_next;
 
   
   
@@ -697,6 +716,21 @@ class btree_multimap
   
   
   using Base::extract;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  using Base::extract_and_get_next;
 
   
   

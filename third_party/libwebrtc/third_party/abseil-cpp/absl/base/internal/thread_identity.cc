@@ -16,7 +16,11 @@
 
 #if !defined(_WIN32) || defined(__MINGW32__)
 #include <pthread.h>
+#ifndef __wasi__
+
+
 #include <signal.h>
+#endif
 #endif
 
 #include <atomic>
@@ -58,18 +62,19 @@ void AllocateThreadIdentityKey(ThreadIdentityReclaimerFunction reclaimer) {
 
 ABSL_CONST_INIT  
 #if ABSL_HAVE_ATTRIBUTE(visibility) && !defined(__APPLE__)
-__attribute__((visibility("protected")))
+    __attribute__((visibility("protected")))
 #endif  
 #if ABSL_PER_THREAD_TLS
-
-ABSL_PER_THREAD_TLS_KEYWORD ThreadIdentity* thread_identity_ptr = nullptr;
+    
+    
+    ABSL_PER_THREAD_TLS_KEYWORD ThreadIdentity* thread_identity_ptr = nullptr;
 #elif defined(ABSL_HAVE_THREAD_LOCAL)
-thread_local ThreadIdentity* thread_identity_ptr = nullptr;
+    thread_local ThreadIdentity* thread_identity_ptr = nullptr;
 #endif  
 #endif  
 
-void SetCurrentThreadIdentity(
-    ThreadIdentity* identity, ThreadIdentityReclaimerFunction reclaimer) {
+void SetCurrentThreadIdentity(ThreadIdentity* identity,
+                              ThreadIdentityReclaimerFunction reclaimer) {
   assert(CurrentThreadIdentityIfPresent() == nullptr);
   
   
@@ -79,7 +84,9 @@ void SetCurrentThreadIdentity(
   absl::call_once(init_thread_identity_key_once, AllocateThreadIdentityKey,
                   reclaimer);
 
-#if defined(__EMSCRIPTEN__) || defined(__MINGW32__)
+#if defined(__wasi__) || defined(__EMSCRIPTEN__) || defined(__MINGW32__) || \
+    defined(__hexagon__)
+  
   
   
   
@@ -134,7 +141,7 @@ void ClearCurrentThreadIdentity() {
     ABSL_THREAD_IDENTITY_MODE == ABSL_THREAD_IDENTITY_MODE_USE_CPP11
   thread_identity_ptr = nullptr;
 #elif ABSL_THREAD_IDENTITY_MODE == \
-      ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC
+    ABSL_THREAD_IDENTITY_MODE_USE_POSIX_SETSPECIFIC
   
   assert(CurrentThreadIdentityIfPresent() == nullptr);
 #endif

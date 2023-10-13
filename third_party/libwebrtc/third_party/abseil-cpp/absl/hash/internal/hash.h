@@ -49,11 +49,16 @@
 #include "absl/hash/internal/city.h"
 #include "absl/hash/internal/low_level_hash.h"
 #include "absl/meta/type_traits.h"
+#include "absl/numeric/bits.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "absl/utility/utility.h"
+
+#ifdef ABSL_HAVE_STD_STRING_VIEW
+#include <string_view>
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -423,7 +428,7 @@ H AbslHashValue(H hash_state, std::nullptr_t) {
 
 
 template <typename H, typename T, typename C>
-H AbslHashValue(H hash_state, T C::* ptr) {
+H AbslHashValue(H hash_state, T C::*ptr) {
   auto salient_ptm_size = [](std::size_t n) -> std::size_t {
 #if defined(_MSC_VER)
     
@@ -441,10 +446,10 @@ H AbslHashValue(H hash_state, T C::* ptr) {
       return n == 24 ? 20 : n == 16 ? 12 : n;
     }
 #else
-    
-    
+  
+  
 #ifdef __cpp_lib_has_unique_object_representations
-    static_assert(std::has_unique_object_representations_v<T C::*>);
+    static_assert(std::has_unique_object_representations<T C::*>::value);
 #endif  
     return n;
 #endif
@@ -523,6 +528,7 @@ H AbslHashValue(H hash_state, const std::shared_ptr<T>& ptr) {
 
 
 
+
 template <typename H>
 H AbslHashValue(H hash_state, absl::string_view str) {
   return H::combine(
@@ -542,6 +548,21 @@ H AbslHashValue(
       H::combine_contiguous(std::move(hash_state), str.data(), str.size()),
       str.size());
 }
+
+#ifdef ABSL_HAVE_STD_STRING_VIEW
+
+
+template <typename Char, typename H,
+          typename = absl::enable_if_t<std::is_same<Char, wchar_t>::value ||
+                                       std::is_same<Char, char16_t>::value ||
+                                       std::is_same<Char, char32_t>::value>>
+H AbslHashValue(H hash_state, std::basic_string_view<Char> str) {
+  return H::combine(
+      H::combine_contiguous(std::move(hash_state), str.data(), str.size()),
+      str.size());
+}
+
+#endif  
 
 
 
@@ -934,8 +955,8 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
 #endif  
 
   static constexpr uint64_t kMul =
-      sizeof(size_t) == 4 ? uint64_t{0xcc9e2d51}
-                          : uint64_t{0x9ddfea08eb382d69};
+  sizeof(size_t) == 4 ? uint64_t{0xcc9e2d51}
+                      : uint64_t{0x9ddfea08eb382d69};
 
   template <typename T>
   using IntegralFastPath =
@@ -968,7 +989,8 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   
   template <typename T, absl::enable_if_t<IntegralFastPath<T>::value, int> = 0>
   static size_t hash(T value) {
-    return static_cast<size_t>(Mix(Seed(), static_cast<uint64_t>(value)));
+    return static_cast<size_t>(
+        Mix(Seed(), static_cast<std::make_unsigned_t<T>>(value)));
   }
 
   
@@ -1052,7 +1074,7 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
     uint64_t most_significant = low_mem;
     uint64_t least_significant = high_mem;
 #endif
-    return {least_significant, most_significant >> (128 - len * 8)};
+    return {least_significant, most_significant};
   }
 
   
@@ -1072,6 +1094,7 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
 
   
   static uint32_t Read1To3(const unsigned char* p, size_t len) {
+    
     unsigned char mem0 = p[0];
     unsigned char mem1 = p[len / 2];
     unsigned char mem2 = p[len - 1];
@@ -1081,7 +1104,7 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
     unsigned char significant0 = mem0;
 #else
     unsigned char significant2 = mem0;
-    unsigned char significant1 = mem1;
+    unsigned char significant1 = len == 2 ? mem0 : mem1;
     unsigned char significant0 = mem2;
 #endif
     return static_cast<uint32_t>(significant0 |                     
@@ -1134,7 +1157,8 @@ class ABSL_DLL MixingHashState : public HashStateBase<MixingHashState> {
   
   ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Seed() {
 #if (!defined(__clang__) || __clang_major__ > 11) && \
-    !defined(__apple_build_version__)
+    (!defined(__apple_build_version__) ||            \
+     __apple_build_version__ >= 19558921)  
     return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(&kSeed));
 #else
     
@@ -1183,9 +1207,22 @@ inline uint64_t MixingHashState::CombineContiguousImpl(
     }
     v = Hash64(first, len);
   } else if (len > 8) {
+    
+    
+    
+    
     auto p = Read9To16(first, len);
-    state = Mix(state, p.first);
-    v = p.second;
+    uint64_t lo = p.first;
+    uint64_t hi = p.second;
+    
+    
+    lo = absl::rotr(lo, 53);
+    state += kMul;
+    lo += state;
+    state ^= hi;
+    uint128 m = state;
+    m *= lo;
+    return static_cast<uint64_t>(m ^ (m >> 64));
   } else if (len >= 4) {
     v = Read4To8(first, len);
   } else if (len > 0) {

@@ -52,12 +52,11 @@ ABSL_NAMESPACE_END
 
 
 
+
+
+
 #ifndef ABSL_USE_CYCLECLOCK_FOR_GET_CURRENT_TIME_NANOS
-#if ABSL_USE_UNSCALED_CYCLECLOCK
-#define ABSL_USE_CYCLECLOCK_FOR_GET_CURRENT_TIME_NANOS 1
-#else
 #define ABSL_USE_CYCLECLOCK_FOR_GET_CURRENT_TIME_NANOS 0
-#endif
 #endif
 
 #if defined(__APPLE__) || defined(_WIN32)
@@ -196,7 +195,7 @@ struct ABSL_CACHELINE_ALIGNED TimeState {
   absl::base_internal::SpinLock lock{absl::kConstInit,
                                      base_internal::SCHEDULE_KERNEL_ONLY};
 };
-ABSL_CONST_INIT static TimeState time_state{};
+ABSL_CONST_INIT static TimeState time_state;
 
 
 
@@ -217,9 +216,11 @@ static int64_t GetCurrentTimeNanosFromKernel(uint64_t last_cycleclock,
   uint64_t elapsed_cycles;
   int loops = 0;
   do {
-    before_cycles = GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW();
+    before_cycles =
+        static_cast<uint64_t>(GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW());
     current_time_nanos_from_system = GET_CURRENT_TIME_NANOS_FROM_SYSTEM();
-    after_cycles = GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW();
+    after_cycles =
+        static_cast<uint64_t>(GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW());
     
     elapsed_cycles = after_cycles - before_cycles;
     if (elapsed_cycles >= local_approx_syscall_time_in_cycles &&
@@ -316,7 +317,8 @@ int64_t GetCurrentTimeNanos() {
   
   
   
-  uint64_t now_cycles = GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW();
+  uint64_t now_cycles =
+      static_cast<uint64_t>(GET_CURRENT_TIME_NANOS_CYCLECLOCK_NOW());
 
   
   
@@ -356,7 +358,8 @@ int64_t GetCurrentTimeNanos() {
   uint64_t delta_cycles;
   if (seq_read0 == seq_read1 && (seq_read0 & 1) == 0 &&
       (delta_cycles = now_cycles - base_cycles) < min_cycles_per_sample) {
-    return base_ns + ((delta_cycles * nsscaled_per_cycle) >> kScale);
+    return static_cast<int64_t>(
+        base_ns + ((delta_cycles * nsscaled_per_cycle) >> kScale));
   }
   return GetCurrentTimeNanosSlowPath();
 }
@@ -404,8 +407,8 @@ static int64_t GetCurrentTimeNanosSlowPath()
   
   
   uint64_t now_cycles;
-  uint64_t now_ns =
-      GetCurrentTimeNanosFromKernel(time_state.last_now_cycles, &now_cycles);
+  uint64_t now_ns = static_cast<uint64_t>(
+      GetCurrentTimeNanosFromKernel(time_state.last_now_cycles, &now_cycles));
   time_state.last_now_cycles = now_cycles;
 
   uint64_t estimated_base_ns;
@@ -432,7 +435,7 @@ static int64_t GetCurrentTimeNanosSlowPath()
 
   time_state.lock.Unlock();
 
-  return estimated_base_ns;
+  return static_cast<int64_t>(estimated_base_ns);
 }
 
 
@@ -489,7 +492,8 @@ static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
     uint64_t assumed_next_sample_delta_cycles =
         SafeDivideAndScale(kMinNSBetweenSamples, measured_nsscaled_per_cycle);
 
-    int64_t diff_ns = now_ns - estimated_base_ns;  
+    
+    int64_t diff_ns = static_cast<int64_t>(now_ns - estimated_base_ns);
 
     
     
@@ -500,7 +504,8 @@ static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
     
     
     
-    ns = kMinNSBetweenSamples + diff_ns - (diff_ns / 16);
+    ns = static_cast<uint64_t>(static_cast<int64_t>(kMinNSBetweenSamples) +
+                               diff_ns - (diff_ns / 16));
     uint64_t new_nsscaled_per_cycle =
         SafeDivideAndScale(ns, assumed_next_sample_delta_cycles);
     if (new_nsscaled_per_cycle != 0 &&
@@ -558,7 +563,7 @@ constexpr absl::Duration MaxSleep() {
 
 void SleepOnce(absl::Duration to_sleep) {
 #ifdef _WIN32
-  Sleep(to_sleep / absl::Milliseconds(1));
+  Sleep(static_cast<DWORD>(to_sleep / absl::Milliseconds(1)));
 #else
   struct timespec sleep_time = absl::ToTimespec(to_sleep);
   while (nanosleep(&sleep_time, &sleep_time) != 0 && errno == EINTR) {

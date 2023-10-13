@@ -29,111 +29,18 @@
 #include <vector>
 
 #include "absl/strings/internal/str_format/checker.h"
+#include "absl/strings/internal/str_format/constexpr_parser.h"
 #include "absl/strings/internal/str_format/extension.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace str_format_internal {
 
-enum class LengthMod : std::uint8_t { h, hh, l, ll, L, j, z, t, q, none };
-
 std::string LengthModToString(LengthMod v);
 
-
-struct UnboundConversion {
-  UnboundConversion() {}
-
-  class InputValue {
-   public:
-    void set_value(int value) {
-      assert(value >= 0);
-      value_ = value;
-    }
-    int value() const { return value_; }
-
-    
-    
-    
-    
-    
-    void set_from_arg(int value) {
-      assert(value > 0);
-      value_ = -value - 1;
-    }
-    bool is_from_arg() const { return value_ < -1; }
-    int get_from_arg() const {
-      assert(is_from_arg());
-      return -value_ - 1;
-    }
-
-   private:
-    int value_ = -1;
-  };
-
-  
-  int arg_position;
-
-  InputValue width;
-  InputValue precision;
-
-  Flags flags = Flags::kBasic;
-  LengthMod length_mod = LengthMod::none;
-  FormatConversionChar conv = FormatConversionCharInternal::kNone;
-};
-
-
-
-
-
-
-const char* ConsumeUnboundConversion(const char* p, const char* end,
-                                     UnboundConversion* conv, int* next_arg);
-
-
-
-
-class ConvTag {
- public:
-  constexpr ConvTag(FormatConversionChar conversion_char)  
-      : tag_(static_cast<uint8_t>(conversion_char)) {}
-  constexpr ConvTag(LengthMod length_mod)  
-      : tag_(0x80 | static_cast<uint8_t>(length_mod)) {}
-  constexpr ConvTag(Flags flags)  
-      : tag_(0xc0 | static_cast<uint8_t>(flags)) {}
-  constexpr ConvTag() : tag_(0xFF) {}
-
-  bool is_conv() const { return (tag_ & 0x80) == 0; }
-  bool is_length() const { return (tag_ & 0xC0) == 0x80; }
-  bool is_flags() const { return (tag_ & 0xE0) == 0xC0; }
-
-  FormatConversionChar as_conv() const {
-    assert(is_conv());
-    assert(!is_length());
-    assert(!is_flags());
-    return static_cast<FormatConversionChar>(tag_);
-  }
-  LengthMod as_length() const {
-    assert(!is_conv());
-    assert(is_length());
-    assert(!is_flags());
-    return static_cast<LengthMod>(tag_ & 0x3F);
-  }
-  Flags as_flags() const {
-    assert(!is_conv());
-    assert(!is_length());
-    assert(is_flags());
-    return static_cast<Flags>(tag_ & 0x1F);
-  }
-
- private:
-  uint8_t tag_;
-};
-
-extern const ConvTag kTags[256];
-
-inline ConvTag GetTagForChar(char c) {
-  return kTags[static_cast<unsigned char>(c)];
-}
+const char* ConsumeUnboundConversionNoInline(const char* p, const char* end,
+                                             UnboundConversion* conv,
+                                             int* next_arg);
 
 
 
@@ -155,10 +62,11 @@ bool ParseFormatString(string_view src, Consumer consumer) {
         static_cast<const char*>(memchr(p, '%', static_cast<size_t>(end - p)));
     if (!percent) {
       
-      return consumer.Append(string_view(p, end - p));
+      return consumer.Append(string_view(p, static_cast<size_t>(end - p)));
     }
     
-    if (ABSL_PREDICT_FALSE(!consumer.Append(string_view(p, percent - p)))) {
+    if (ABSL_PREDICT_FALSE(!consumer.Append(
+            string_view(p, static_cast<size_t>(percent - p))))) {
       return false;
     }
     if (ABSL_PREDICT_FALSE(percent + 1 >= end)) return false;
@@ -186,10 +94,11 @@ bool ParseFormatString(string_view src, Consumer consumer) {
       }
     } else if (percent[1] != '%') {
       UnboundConversion conv;
-      p = ConsumeUnboundConversion(percent + 1, end, &conv, &next_arg);
+      p = ConsumeUnboundConversionNoInline(percent + 1, end, &conv, &next_arg);
       if (ABSL_PREDICT_FALSE(p == nullptr)) return false;
       if (ABSL_PREDICT_FALSE(!consumer.ConvertOne(
-          conv, string_view(percent + 1, p - (percent + 1))))) {
+              conv, string_view(percent + 1,
+                                static_cast<size_t>(p - (percent + 1)))))) {
         return false;
       }
     } else {

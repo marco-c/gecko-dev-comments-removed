@@ -169,7 +169,7 @@ inline std::ostream& operator<<(std::ostream& os, Flags v) {
   X_VAL(f) X_SEP X_VAL(F) X_SEP X_VAL(e) X_SEP X_VAL(E) X_SEP \
   X_VAL(g) X_SEP X_VAL(G) X_SEP X_VAL(a) X_SEP X_VAL(A) X_SEP \
   /* misc */ \
-  X_VAL(n) X_SEP X_VAL(p)
+  X_VAL(n) X_SEP X_VAL(p) X_SEP X_VAL(v)
 
 
 
@@ -191,7 +191,7 @@ struct FormatConversionCharInternal {
     c, s,                    
     d, i, o, u, x, X,        
     f, F, e, E, g, G, a, A,  
-    n, p,                    
+    n, p, v,                    
     kNone
   };
   
@@ -291,6 +291,8 @@ class FormatConversionSpecImpl {
     static_assert(offsetof(FormatConversionSpecImpl, conv_) == 0, "");
     return conv_;
   }
+
+  void set_conversion_char(FormatConversionChar c) { conv_ = c; }
 
   
   

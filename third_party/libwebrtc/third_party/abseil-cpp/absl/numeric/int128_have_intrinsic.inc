@@ -163,9 +163,6 @@ inline int128::operator long double() const {
 
 #else  
 
-constexpr int128 operator-(int128 v);
-constexpr bool operator!=(int128 lhs, int128 rhs);
-
 inline int128::operator float() const {
   
   

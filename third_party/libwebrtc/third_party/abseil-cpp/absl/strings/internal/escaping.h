@@ -24,6 +24,8 @@ ABSL_NAMESPACE_BEGIN
 namespace strings_internal {
 
 ABSL_CONST_INIT extern const char kBase64Chars[];
+ABSL_CONST_INIT extern const char kWebSafeBase64Chars[];
+
 
 
 
@@ -32,12 +34,9 @@ size_t CalculateBase64EscapedLenInternal(size_t input_len, bool do_padding);
 
 
 
+
 size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
                             size_t szdest, const char* base64, bool do_padding);
-
-
-
-
 template <typename String>
 void Base64EscapeInternal(const unsigned char* src, size_t szsrc, String* dest,
                           bool do_padding, const char* base64_chars) {

@@ -67,6 +67,8 @@
 
 
 
+
+
 #ifndef ABSL_STRINGS_SUBSTITUTE_H_
 #define ABSL_STRINGS_SUBSTITUTE_H_
 
@@ -79,6 +81,7 @@
 #include "absl/base/port.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/internal/stringify_sink.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -125,28 +128,44 @@ class Arg {
   }
   Arg(short value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(unsigned short value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(int value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(unsigned int value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(long value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(unsigned long value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(long long value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(unsigned long long value)  
       : piece_(scratch_,
-               numbers_internal::FastIntToBuffer(value, scratch_) - scratch_) {}
+               static_cast<size_t>(
+                   numbers_internal::FastIntToBuffer(value, scratch_) -
+                   scratch_)) {}
   Arg(float value)  
       : piece_(scratch_, numbers_internal::SixDigitsToBuffer(value, scratch_)) {
   }
@@ -155,6 +174,12 @@ class Arg {
   }
   Arg(bool value)  
       : piece_(value ? "true" : "false") {}
+
+  template <typename T, typename = typename std::enable_if<
+                            HasAbslStringify<T>::value>::type>
+  Arg(  
+      const T& v, strings_internal::StringifySink&& sink = {})
+      : piece_(strings_internal::ExtractStringification(sink, v)) {}
 
   Arg(Hex hex);  
   Arg(Dec dec);  
@@ -178,7 +203,8 @@ class Arg {
   
   template <typename T,
             typename = typename std::enable_if<
-                std::is_enum<T>{} && !std::is_convertible<T, int>{}>::type>
+                std::is_enum<T>{} && !std::is_convertible<T, int>{} &&
+                !HasAbslStringify<T>::value>::type>
   Arg(T value)  
       : Arg(static_cast<typename std::underlying_type<T>::type>(value)) {}
 

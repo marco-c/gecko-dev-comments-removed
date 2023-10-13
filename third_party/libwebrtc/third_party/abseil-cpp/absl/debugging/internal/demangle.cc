@@ -151,12 +151,12 @@ static const AbbrevPair kSubstitutionList[] = {
 
 
 typedef struct {
-  int mangled_idx;                   
-  int out_cur_idx;                   
-  int prev_name_idx;                 
-  signed int prev_name_length : 16;  
-  signed int nest_level : 15;        
-  unsigned int append : 1;           
+  int mangled_idx;                     
+  int out_cur_idx;                     
+  int prev_name_idx;                   
+  unsigned int prev_name_length : 16;  
+  signed int nest_level : 15;          
+  unsigned int append : 1;             
   
   
   
@@ -235,8 +235,8 @@ static size_t StrLen(const char *str) {
 }
 
 
-static bool AtLeastNumCharsRemaining(const char *str, int n) {
-  for (int i = 0; i < n; ++i) {
+static bool AtLeastNumCharsRemaining(const char *str, size_t n) {
+  for (size_t i = 0; i < n; ++i) {
     if (str[i] == '\0') {
       return false;
     }
@@ -253,18 +253,20 @@ static bool StrPrefix(const char *str, const char *prefix) {
   return prefix[i] == '\0';  
 }
 
-static void InitState(State *state, const char *mangled, char *out,
-                      int out_size) {
+static void InitState(State* state,
+                      const char* mangled,
+                      char* out,
+                      size_t out_size) {
   state->mangled_begin = mangled;
   state->out = out;
-  state->out_end_idx = out_size;
+  state->out_end_idx = static_cast<int>(out_size);
   state->recursion_depth = 0;
   state->steps = 0;
 
   state->parse_state.mangled_idx = 0;
   state->parse_state.out_cur_idx = 0;
   state->parse_state.prev_name_idx = 0;
-  state->parse_state.prev_name_length = -1;
+  state->parse_state.prev_name_length = 0;
   state->parse_state.nest_level = -1;
   state->parse_state.append = true;
 }
@@ -356,8 +358,8 @@ static bool ZeroOrMore(ParseFunc parse_func, State *state) {
 
 
 
-static void Append(State *state, const char *const str, const int length) {
-  for (int i = 0; i < length; ++i) {
+static void Append(State *state, const char *const str, const size_t length) {
+  for (size_t i = 0; i < length; ++i) {
     if (state->parse_state.out_cur_idx + 1 <
         state->out_end_idx) {  
       state->out[state->parse_state.out_cur_idx++] = str[i];
@@ -420,7 +422,7 @@ static bool EndsWith(State *state, const char chr) {
 
 
 static void MaybeAppendWithLength(State *state, const char *const str,
-                                  const int length) {
+                                  const size_t length) {
   if (state->parse_state.append && length > 0) {
     
     
@@ -432,14 +434,14 @@ static void MaybeAppendWithLength(State *state, const char *const str,
     if (state->parse_state.out_cur_idx < state->out_end_idx &&
         (IsAlpha(str[0]) || str[0] == '_')) {
       state->parse_state.prev_name_idx = state->parse_state.out_cur_idx;
-      state->parse_state.prev_name_length = length;
+      state->parse_state.prev_name_length = static_cast<unsigned int>(length);
     }
     Append(state, str, length);
   }
 }
 
 
-static bool MaybeAppendDecimal(State *state, unsigned int val) {
+static bool MaybeAppendDecimal(State *state, int val) {
   
   constexpr size_t kMaxLength = 20;
   char buf[kMaxLength];
@@ -451,12 +453,12 @@ static bool MaybeAppendDecimal(State *state, unsigned int val) {
     
     char *p = &buf[kMaxLength];
     do {  
-      *--p = (val % 10) + '0';
+      *--p = static_cast<char>((val % 10) + '0');
       val /= 10;
     } while (p > buf && val != 0);
 
     
-    Append(state, p, kMaxLength - (p - buf));
+    Append(state, p, kMaxLength - static_cast<size_t>(p - buf));
   }
 
   return true;
@@ -466,7 +468,7 @@ static bool MaybeAppendDecimal(State *state, unsigned int val) {
 
 static bool MaybeAppend(State *state, const char *const str) {
   if (state->parse_state.append) {
-    int length = StrLen(str);
+    size_t length = StrLen(str);
     MaybeAppendWithLength(state, str, length);
   }
   return true;
@@ -521,10 +523,10 @@ static void MaybeCancelLastSeparator(State *state) {
 
 
 
-static bool IdentifierIsAnonymousNamespace(State *state, int length) {
+static bool IdentifierIsAnonymousNamespace(State *state, size_t length) {
   
   static const char anon_prefix[] = "_GLOBAL__N_";
-  return (length > static_cast<int>(sizeof(anon_prefix) - 1) &&
+  return (length > (sizeof(anon_prefix) - 1) &&
           StrPrefix(RemainingInput(state), anon_prefix));
 }
 
@@ -542,12 +544,13 @@ static bool ParseUnnamedTypeName(State *state);
 static bool ParseNumber(State *state, int *number_out);
 static bool ParseFloatNumber(State *state);
 static bool ParseSeqId(State *state);
-static bool ParseIdentifier(State *state, int length);
+static bool ParseIdentifier(State *state, size_t length);
 static bool ParseOperatorName(State *state, int *arity);
 static bool ParseSpecialName(State *state);
 static bool ParseCallOffset(State *state);
 static bool ParseNVOffset(State *state);
 static bool ParseVOffset(State *state);
+static bool ParseAbiTags(State *state);
 static bool ParseCtorDtorName(State *state);
 static bool ParseDecltype(State *state);
 static bool ParseType(State *state);
@@ -746,12 +749,37 @@ static bool ParsePrefix(State *state) {
 
 
 
+
+
 static bool ParseUnqualifiedName(State *state) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
-  return (ParseOperatorName(state, nullptr) || ParseCtorDtorName(state) ||
-          ParseSourceName(state) || ParseLocalSourceName(state) ||
-          ParseUnnamedTypeName(state));
+  if (ParseOperatorName(state, nullptr) || ParseCtorDtorName(state) ||
+      ParseSourceName(state) || ParseLocalSourceName(state) ||
+      ParseUnnamedTypeName(state)) {
+    return ParseAbiTags(state);
+  }
+  return false;
+}
+
+
+
+static bool ParseAbiTags(State *state) {
+  ComplexityGuard guard(state);
+  if (guard.IsTooComplex()) return false;
+
+  while (ParseOneCharToken(state, 'B')) {
+    ParseState copy = state->parse_state;
+    MaybeAppend(state, "[abi:");
+
+    if (!ParseSourceName(state)) {
+      state->parse_state = copy;
+      return false;
+    }
+    MaybeAppend(state, "]");
+  }
+
+  return true;
 }
 
 
@@ -760,7 +788,8 @@ static bool ParseSourceName(State *state) {
   if (guard.IsTooComplex()) return false;
   ParseState copy = state->parse_state;
   int length = -1;
-  if (ParseNumber(state, &length) && ParseIdentifier(state, length)) {
+  if (ParseNumber(state, &length) &&
+      ParseIdentifier(state, static_cast<size_t>(length))) {
     return true;
   }
   state->parse_state = copy;
@@ -838,7 +867,7 @@ static bool ParseNumber(State *state, int *number_out) {
   uint64_t number = 0;
   for (; *p != '\0'; ++p) {
     if (IsDigit(*p)) {
-      number = number * 10 + (*p - '0');
+      number = number * 10 + static_cast<uint64_t>(*p - '0');
     } else {
       break;
     }
@@ -853,7 +882,7 @@ static bool ParseNumber(State *state, int *number_out) {
     state->parse_state.mangled_idx += p - RemainingInput(state);
     if (number_out != nullptr) {
       
-      *number_out = number;
+      *number_out = static_cast<int>(number);
     }
     return true;
   }
@@ -897,10 +926,10 @@ static bool ParseSeqId(State *state) {
 }
 
 
-static bool ParseIdentifier(State *state, int length) {
+static bool ParseIdentifier(State *state, size_t length) {
   ComplexityGuard guard(state);
   if (guard.IsTooComplex()) return false;
-  if (length < 0 || !AtLeastNumCharsRemaining(RemainingInput(state), length)) {
+  if (!AtLeastNumCharsRemaining(RemainingInput(state), length)) {
     return false;
   }
   if (IdentifierIsAnonymousNamespace(state, length)) {
@@ -1947,7 +1976,7 @@ static bool Overflowed(const State *state) {
 }
 
 
-bool Demangle(const char *mangled, char *out, int out_size) {
+bool Demangle(const char* mangled, char* out, size_t out_size) {
   State state;
   InitState(&state, mangled, out, out_size);
   return ParseTopLevelMangledName(&state) && !Overflowed(&state) &&

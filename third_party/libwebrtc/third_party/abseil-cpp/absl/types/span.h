@@ -60,6 +60,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/base/internal/throw_delegate.h"
 #include "absl/base/macros.h"
 #include "absl/base/optimization.h"
@@ -160,12 +161,12 @@ class Span {
 
   
   template <typename U>
-  using EnableIfConstView =
+  using EnableIfValueIsConst =
       typename std::enable_if<std::is_const<T>::value, U>::type;
 
   
   template <typename U>
-  using EnableIfMutableView =
+  using EnableIfValueIsMutable =
       typename std::enable_if<!std::is_const<T>::value, U>::type;
 
  public:
@@ -196,13 +197,34 @@ class Span {
   
   
   template <typename V, typename = EnableIfConvertibleFrom<V>,
-            typename = EnableIfMutableView<V>>
-  explicit Span(V& v) noexcept  
+            typename = EnableIfValueIsMutable<V>,
+            typename = span_internal::EnableIfNotIsView<V>>
+  explicit Span(
+      V& v
+          ABSL_ATTRIBUTE_LIFETIME_BOUND) noexcept  
       : Span(span_internal::GetData(v), v.size()) {}
 
   
   template <typename V, typename = EnableIfConvertibleFrom<V>,
-            typename = EnableIfConstView<V>>
+            typename = EnableIfValueIsConst<V>,
+            typename = span_internal::EnableIfNotIsView<V>>
+  constexpr Span(
+      const V& v
+          ABSL_ATTRIBUTE_LIFETIME_BOUND) noexcept  
+      : Span(span_internal::GetData(v), v.size()) {}
+
+  
+  
+  
+  
+  template <typename V, typename = EnableIfConvertibleFrom<V>,
+            typename = EnableIfValueIsMutable<V>,
+            span_internal::EnableIfIsView<V> = 0>
+  explicit Span(V& v) noexcept  
+      : Span(span_internal::GetData(v), v.size()) {}
+  template <typename V, typename = EnableIfConvertibleFrom<V>,
+            typename = EnableIfValueIsConst<V>,
+            span_internal::EnableIfIsView<V> = 0>
   constexpr Span(const V& v) noexcept  
       : Span(span_internal::GetData(v), v.size()) {}
 
@@ -242,7 +264,7 @@ class Span {
   
   
   template <typename LazyT = T,
-            typename = EnableIfConstView<LazyT>>
+            typename = EnableIfValueIsConst<LazyT>>
   Span(std::initializer_list<value_type> v
            ABSL_ATTRIBUTE_LIFETIME_BOUND) noexcept  
       : Span(v.begin(), v.size()) {}
@@ -274,8 +296,7 @@ class Span {
   
   
   constexpr reference operator[](size_type i) const noexcept {
-    
-    return ABSL_HARDENING_ASSERT(i < size()), *(data() + i);
+    return ABSL_HARDENING_ASSERT(i < size()), ptr_[i];
   }
 
   
@@ -398,7 +419,7 @@ class Span {
   
   constexpr Span subspan(size_type pos = 0, size_type len = npos) const {
     return (pos <= size())
-               ? Span(data() + pos, span_internal::Min(size() - pos, len))
+               ? Span(data() + pos, (std::min)(size() - pos, len))
                : (base_internal::ThrowStdOutOfRange("pos > size()"), Span());
   }
 

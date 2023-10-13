@@ -69,9 +69,6 @@
 
 
 
-#ifdef __cplusplus
-#include <ciso646>
-#endif
 
 
 
@@ -97,10 +94,7 @@
 
 
 
-
-
-
-#define ABSL_OPTION_USE_STD_ANY 0
+#define ABSL_OPTION_USE_STD_ANY 2
 
 
 
@@ -154,7 +148,7 @@
 
 
 
-#define ABSL_OPTION_USE_STD_STRING_VIEW 0
+#define ABSL_OPTION_USE_STD_STRING_VIEW 2
 
 
 

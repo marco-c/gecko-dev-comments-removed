@@ -12,7 +12,13 @@
 
 
 
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <typeindex>
 #include <utility>

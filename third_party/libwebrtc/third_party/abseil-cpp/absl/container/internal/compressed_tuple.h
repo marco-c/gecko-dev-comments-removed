@@ -68,38 +68,20 @@ using ElemT = typename Elem<D, I>::type;
 
 
 
-template <typename T>
-constexpr bool IsFinal() {
-#if defined(__clang__) || defined(__GNUC__)
-  return __is_final(T);
-#else
-  return false;
-#endif
-}
-
-
-
-
-
 
 struct uses_inheritance {};
 
 template <typename T>
 constexpr bool ShouldUseBase() {
-  return std::is_class<T>::value && std::is_empty<T>::value && !IsFinal<T>() &&
+  return std::is_class<T>::value && std::is_empty<T>::value &&
+         !std::is_final<T>::value &&
          !std::is_base_of<uses_inheritance, T>::value;
 }
 
 
 
 
-template <typename T, size_t I,
-#if defined(_MSC_VER)
-          bool UseBase =
-              ShouldUseBase<typename std::enable_if<true, T>::type>()>
-#else
-          bool UseBase = ShouldUseBase<T>()>
-#endif
+template <typename T, size_t I, bool UseBase = ShouldUseBase<T>()>
 struct Storage {
   T value;
   constexpr Storage() = default;

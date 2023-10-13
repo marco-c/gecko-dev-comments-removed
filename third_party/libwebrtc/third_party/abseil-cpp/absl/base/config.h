@@ -75,6 +75,12 @@
 #define ABSL_INTERNAL_CPLUSPLUS_LANG __cplusplus
 #endif
 
+#if defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
+
+#include <version>
+#endif
+
 #if defined(__APPLE__)
 
 
@@ -237,15 +243,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-
-
-
 #ifdef ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE
 #error ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE cannot be directly set
-#elif defined(_LIBCPP_VERSION) || defined(_MSC_VER) || \
-    (defined(__clang__) && __clang_major__ >= 15) ||    \
-    (!defined(__clang__) && defined(__GLIBCXX__) &&    \
-     ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(4, 8))
 #define ABSL_HAVE_STD_IS_TRIVIALLY_DESTRUCTIBLE 1
 #endif
 
@@ -253,36 +252,26 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-
-
-
-
-
-
-
-#if defined(ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE)
+#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE
 #error ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE cannot be directly set
-#elif defined(ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE)
-#error ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot directly set
-#elif (defined(__clang__) && defined(_LIBCPP_VERSION)) ||                    \
-    (defined(__clang__) && __clang_major__ >= 15) ||                         \
-    (!defined(__clang__) &&                                                  \
-     ((ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(7, 4) && defined(__GLIBCXX__)) || \
-      (ABSL_INTERNAL_HAVE_MIN_GNUC_VERSION(8, 2) &&                          \
-       defined(_LIBCPP_VERSION)))) ||                                        \
-    (defined(_MSC_VER) && !defined(__NVCC__))
+#else
 #define ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
+#endif
+
+
+
+
+#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE
+#error ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE cannot be directly set
+#else
 #define ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
 #endif
 
 
 
 
-
-
-#if defined(ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE)
+#ifdef ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE
 #error ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE cannot be directly set
-#elif defined(__clang__) && (__clang_major__ >= 15)
 #define ABSL_HAVE_STD_IS_TRIVIALLY_COPYABLE 1
 #endif
 
@@ -349,8 +338,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #ifdef ABSL_HAVE_INTRINSIC_INT128
 #error ABSL_HAVE_INTRINSIC_INT128 cannot be directly set
 #elif defined(__SIZEOF_INT128__)
-#if (defined(__clang__) && !defined(_WIN32)) || \
-    (defined(__CUDACC__) && __CUDACC_VER_MAJOR__ >= 9) ||                \
+#if (defined(__clang__) && !defined(_WIN32)) ||           \
+    (defined(__CUDACC__) && __CUDACC_VER_MAJOR__ >= 9) || \
     (defined(__GNUC__) && !defined(__clang__) && !defined(__CUDACC__))
 #define ABSL_HAVE_INTRINSIC_INT128 1
 #elif defined(__CUDACC__)
@@ -424,12 +413,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_MMAP
 #error ABSL_HAVE_MMAP cannot be directly set
-#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
-    defined(_AIX) || defined(__ros__) || defined(__native_client__) ||    \
-    defined(__asmjs__) || defined(__wasm__) || defined(__Fuchsia__) ||    \
-    defined(__sun) || defined(__ASYLO__) || defined(__myriad2__) ||       \
-    defined(__HAIKU__) || defined(__OpenBSD__) || defined(__NetBSD__) ||  \
-    defined(__QNX__)
+#elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) ||    \
+    defined(_AIX) || defined(__ros__) || defined(__native_client__) ||       \
+    defined(__asmjs__) || defined(__EMSCRIPTEN__) || defined(__Fuchsia__) || \
+    defined(__sun) || defined(__ASYLO__) || defined(__myriad2__) ||          \
+    defined(__HAIKU__) || defined(__OpenBSD__) || defined(__NetBSD__) ||     \
+    defined(__QNX__) || defined(__VXWORKS__) || defined(__hexagon__)
 #define ABSL_HAVE_MMAP 1
 #endif
 
@@ -441,7 +430,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_HAVE_PTHREAD_GETSCHEDPARAM cannot be directly set
 #elif defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
     defined(_AIX) || defined(__ros__) || defined(__OpenBSD__) ||          \
-    defined(__NetBSD__)
+    defined(__NetBSD__) || defined(__VXWORKS__)
 #define ABSL_HAVE_PTHREAD_GETSCHEDPARAM 1
 #endif
 
@@ -460,7 +449,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_SCHED_YIELD
 #error ABSL_HAVE_SCHED_YIELD cannot be directly set
-#elif defined(__linux__) || defined(__ros__) || defined(__native_client__)
+#elif defined(__linux__) || defined(__ros__) || defined(__native_client__) || \
+    defined(__VXWORKS__)
 #define ABSL_HAVE_SCHED_YIELD 1
 #endif
 
@@ -475,7 +465,7 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_SEMAPHORE_H
 #error ABSL_HAVE_SEMAPHORE_H cannot be directly set
-#elif defined(__linux__) || defined(__ros__)
+#elif defined(__linux__) || defined(__ros__) || defined(__VXWORKS__)
 #define ABSL_HAVE_SEMAPHORE_H 1
 #endif
 
@@ -500,9 +490,13 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #elif defined(__EMSCRIPTEN__)
 
+#elif defined(__wasi__)
+
 #elif defined(__Fuchsia__)
 
 #elif defined(__native_client__)
+
+#elif defined(__hexagon__)
 #else
 
 #define ABSL_HAVE_ALARM 1
@@ -550,27 +544,15 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
-
-
-#if defined(__APPLE__) && defined(_LIBCPP_VERSION) &&               \
-    ((_LIBCPP_VERSION >= 11000 &&         \
-      ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
-        __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101300) ||  \
-       (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
-        __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 110000) || \
-       (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
-        __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 40000) ||   \
-       (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
-        __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 110000))) ||   \
-     (_LIBCPP_VERSION < 11000 &&               \
-      ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
-        __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101400) ||  \
-       (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
-        __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 120000) || \
-       (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
-        __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 50000) ||   \
-       (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
-        __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 120000))))
+#if defined(__APPLE__) &&                                         \
+    ((defined(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__) &&   \
+      __ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101300) ||  \
+     (defined(__ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__) &&  \
+      __ENVIRONMENT_IPHONE_OS_VERSION_MIN_REQUIRED__ < 120000) || \
+     (defined(__ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__) &&   \
+      __ENVIRONMENT_WATCH_OS_VERSION_MIN_REQUIRED__ < 50000) ||   \
+     (defined(__ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__) &&      \
+      __ENVIRONMENT_TV_OS_VERSION_MIN_REQUIRED__ < 120000))
 #define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 1
 #else
 #define ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE 0
@@ -581,13 +563,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_STD_ANY
 #error "ABSL_HAVE_STD_ANY cannot be directly set."
-#endif
-
-#ifdef __has_include
-#if __has_include(<any>) && defined(__cplusplus) && __cplusplus >= 201703L && \
+#elif defined(__cpp_lib_any) && __cpp_lib_any >= 201606L
+#define ABSL_HAVE_STD_ANY 1
+#elif defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
     !ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE
 #define ABSL_HAVE_STD_ANY 1
-#endif
 #endif
 
 
@@ -595,13 +576,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_STD_OPTIONAL
 #error "ABSL_HAVE_STD_OPTIONAL cannot be directly set."
-#endif
-
-#ifdef __has_include
-#if __has_include(<optional>) && defined(__cplusplus) && \
-    __cplusplus >= 201703L && !ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE
+#elif defined(__cpp_lib_optional) && __cpp_lib_optional >= 202106L
 #define ABSL_HAVE_STD_OPTIONAL 1
-#endif
+#elif defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
+    !ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE
+#define ABSL_HAVE_STD_OPTIONAL 1
 #endif
 
 
@@ -609,13 +589,12 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_STD_VARIANT
 #error "ABSL_HAVE_STD_VARIANT cannot be directly set."
-#endif
-
-#ifdef __has_include
-#if __has_include(<variant>) && defined(__cplusplus) && \
-    __cplusplus >= 201703L && !ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE
+#elif defined(__cpp_lib_variant) && __cpp_lib_variant >= 201606L
 #define ABSL_HAVE_STD_VARIANT 1
-#endif
+#elif defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L && \
+    !ABSL_INTERNAL_APPLE_CXX17_TYPES_UNAVAILABLE
+#define ABSL_HAVE_STD_VARIANT 1
 #endif
 
 
@@ -623,28 +602,10 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_HAVE_STD_STRING_VIEW
 #error "ABSL_HAVE_STD_STRING_VIEW cannot be directly set."
-#endif
-
-#ifdef __has_include
-#if __has_include(<string_view>) && defined(__cplusplus) && \
-    __cplusplus >= 201703L
+#elif defined(__cpp_lib_string_view) && __cpp_lib_string_view >= 201606L
 #define ABSL_HAVE_STD_STRING_VIEW 1
-#endif
-#endif
-
-
-
-
-
-
-
-
-#if defined(_MSC_VER) && _MSC_VER >= 1910 &&         \
-    ((defined(_MSVC_LANG) && _MSVC_LANG > 201402) || \
-     (defined(__cplusplus) && __cplusplus > 201402))
-
-#define ABSL_HAVE_STD_OPTIONAL 1
-#define ABSL_HAVE_STD_VARIANT 1
+#elif defined(ABSL_INTERNAL_CPLUSPLUS_LANG) && \
+    ABSL_INTERNAL_CPLUSPLUS_LANG >= 201703L
 #define ABSL_HAVE_STD_STRING_VIEW 1
 #endif
 
@@ -759,6 +720,18 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_DLL
 #endif  
 
+#if defined(_MSC_VER)
+#if defined(ABSL_BUILD_TEST_DLL)
+#define ABSL_TEST_DLL __declspec(dllexport)
+#elif defined(ABSL_CONSUME_TEST_DLL)
+#define ABSL_TEST_DLL __declspec(dllimport)
+#else
+#define ABSL_TEST_DLL
+#endif
+#else
+#define ABSL_TEST_DLL
+#endif  
+
 
 
 
@@ -802,6 +775,20 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_HAVE_HWADDRESS_SANITIZER 1
 #elif ABSL_HAVE_FEATURE(hwaddress_sanitizer)
 #define ABSL_HAVE_HWADDRESS_SANITIZER 1
+#endif
+
+
+
+
+#ifdef ABSL_HAVE_DATAFLOW_SANITIZER
+#error "ABSL_HAVE_DATAFLOW_SANITIZER cannot be directly set."
+#elif defined(DATAFLOW_SANITIZER)
+
+
+
+#define ABSL_HAVE_DATAFLOW_SANITIZER 1
+#elif ABSL_HAVE_FEATURE(dataflow_sanitizer)
+#define ABSL_HAVE_DATAFLOW_SANITIZER 1
 #endif
 
 
@@ -866,9 +853,16 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 #ifdef ABSL_INTERNAL_HAS_RTTI
 #error ABSL_INTERNAL_HAS_RTTI cannot be directly set
-#elif !defined(__GNUC__) || defined(__GXX_RTTI)
+#elif ABSL_HAVE_FEATURE(cxx_rtti)
 #define ABSL_INTERNAL_HAS_RTTI 1
-#endif  
+#elif defined(__GNUC__) && defined(__GXX_RTTI)
+#define ABSL_INTERNAL_HAS_RTTI 1
+#elif defined(_MSC_VER) && defined(_CPPRTTI)
+#define ABSL_INTERNAL_HAS_RTTI 1
+#elif !defined(__GNUC__) && !defined(_MSC_VER)
+
+#define ABSL_INTERNAL_HAS_RTTI 1
+#endif
 
 
 
@@ -877,7 +871,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_INTERNAL_HAVE_SSE cannot be directly set
 #elif defined(__SSE__)
 #define ABSL_INTERNAL_HAVE_SSE 1
-#elif defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)
+#elif (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 1)) && \
+    !defined(_M_ARM64EC)
 
 
 
@@ -892,7 +887,8 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_INTERNAL_HAVE_SSE2 cannot be directly set
 #elif defined(__SSE2__)
 #define ABSL_INTERNAL_HAVE_SSE2 1
-#elif defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)
+#elif (defined(_M_X64) || (defined(_M_IX86_FP) && _M_IX86_FP >= 2)) && \
+    !defined(_M_ARM64EC)
 
 
 
@@ -917,10 +913,46 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 
 
 
+
+
+
+
+
 #ifdef ABSL_INTERNAL_HAVE_ARM_NEON
 #error ABSL_INTERNAL_HAVE_ARM_NEON cannot be directly set
-#elif defined(__ARM_NEON)
+#elif defined(__ARM_NEON) && !defined(__CUDA_ARCH__)
 #define ABSL_INTERNAL_HAVE_ARM_NEON 1
+#endif
+
+
+
+#ifdef ABSL_HAVE_CONSTANT_EVALUATED
+#error ABSL_HAVE_CONSTANT_EVALUATED cannot be directly set
+#endif
+#ifdef __cpp_lib_is_constant_evaluated
+#define ABSL_HAVE_CONSTANT_EVALUATED 1
+#elif ABSL_HAVE_BUILTIN(__builtin_is_constant_evaluated)
+#define ABSL_HAVE_CONSTANT_EVALUATED 1
+#endif
+
+
+
+#ifdef ABSL_INTERNAL_EMSCRIPTEN_VERSION
+#error ABSL_INTERNAL_EMSCRIPTEN_VERSION cannot be directly set
+#endif
+#ifdef __EMSCRIPTEN__
+#include <emscripten/version.h>
+#ifdef __EMSCRIPTEN_major__
+#if __EMSCRIPTEN_minor__ >= 1000
+#error __EMSCRIPTEN_minor__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
+#endif
+#if __EMSCRIPTEN_tiny__ >= 1000
+#error __EMSCRIPTEN_tiny__ is too big to fit in ABSL_INTERNAL_EMSCRIPTEN_VERSION
+#endif
+#define ABSL_INTERNAL_EMSCRIPTEN_VERSION                              \
+  ((__EMSCRIPTEN_major__) * 1000000 + (__EMSCRIPTEN_minor__) * 1000 + \
+   (__EMSCRIPTEN_tiny__))
+#endif
 #endif
 
 #endif

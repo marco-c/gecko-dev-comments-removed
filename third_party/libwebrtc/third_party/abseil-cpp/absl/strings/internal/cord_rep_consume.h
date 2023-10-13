@@ -27,7 +27,6 @@ namespace cord_internal {
 
 
 
-using ConsumeFn = FunctionRef<void(CordRep*, size_t, size_t)>;
 
 
 
@@ -36,12 +35,10 @@ using ConsumeFn = FunctionRef<void(CordRep*, size_t, size_t)>;
 
 
 
-
-
-
-
-void Consume(CordRep* rep, ConsumeFn consume_fn);
-void ReverseConsume(CordRep* rep, ConsumeFn consume_fn);
+void Consume(CordRep* rep,
+             FunctionRef<void(CordRep*, size_t, size_t)> consume_fn);
+void ReverseConsume(CordRep* rep,
+                    FunctionRef<void(CordRep*, size_t, size_t)> consume_fn);
 
 }  
 ABSL_NAMESPACE_END

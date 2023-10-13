@@ -14,10 +14,12 @@
 
 #include "absl/utility/utility.h"
 
+#include <memory>
 #include <sstream>
 #include <string>
 #include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "gmock/gmock.h"
@@ -35,10 +37,10 @@ namespace {
 
 
 
-#pragma warning( push )
-#pragma warning( disable : 4503 )  // decorated name length exceeded
-#pragma warning( disable : 4101 )  // unreferenced local variable
-#endif  
+#pragma warning(push)
+#pragma warning(disable : 4503)  // decorated name length exceeded
+#pragma warning(disable : 4101)  // unreferenced local variable
+#endif                           
 
 using ::testing::ElementsAre;
 using ::testing::Pointee;
@@ -227,8 +229,7 @@ TEST(ApplyTest, NonCopyableArgument) {
 }
 
 TEST(ApplyTest, NonCopyableResult) {
-  EXPECT_THAT(absl::apply(Factory, std::make_tuple(42)),
-              ::testing::Pointee(42));
+  EXPECT_THAT(absl::apply(Factory, std::make_tuple(42)), Pointee(42));
 }
 
 TEST(ApplyTest, VoidResult) { absl::apply(NoOp, std::tuple<>()); }
@@ -373,4 +374,3 @@ TEST(MakeFromTupleTest, Pair) {
 }
 
 }  
-

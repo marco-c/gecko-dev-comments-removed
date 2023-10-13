@@ -18,9 +18,11 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <iterator>
+#include <ostream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -30,6 +32,7 @@
 #include <windows.h>
 #endif
 
+#include "absl/algorithm/container.h"
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/base/const_init.h"
@@ -47,7 +50,9 @@
 #include "absl/flags/usage.h"
 #include "absl/flags/usage_config.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/internal/damerau_levenshtein_distance.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/synchronization/mutex.h"
@@ -72,6 +77,11 @@ ABSL_CONST_INIT absl::Mutex specified_flags_guard(absl::kConstInit);
 ABSL_CONST_INIT std::vector<const CommandLineFlag*>* specified_flags
     ABSL_GUARDED_BY(specified_flags_guard) = nullptr;
 
+
+ABSL_CONST_INIT const size_t kMaxHints = 100;
+
+ABSL_CONST_INIT const size_t kMaxDistance = 3;
+
 struct SpecifiedFlagsCompare {
   bool operator()(const CommandLineFlag* a, const CommandLineFlag* b) const {
     return a->Name() < b->Name();
@@ -88,6 +98,8 @@ struct SpecifiedFlagsCompare {
 }  
 ABSL_NAMESPACE_END
 }  
+
+
 
 ABSL_FLAG(std::vector<std::string>, flagfile, {},
           "comma-separated list of files to load flags from")
@@ -138,6 +150,8 @@ ABSL_FLAG(std::vector<std::string>, tryfromenv, {},
       absl::flags_internal::tryfromenv_needs_processing = true;
     });
 
+
+
 ABSL_FLAG(std::vector<std::string>, undefok, {},
           "comma-separated list of flag names that it is okay to specify "
           "on the command line even if the program does not define a flag "
@@ -159,14 +173,14 @@ class ArgsList {
   
   bool ReadFromFlagfile(const std::string& flag_file_name);
 
-  int Size() const { return args_.size() - next_arg_; }
-  int FrontIndex() const { return next_arg_; }
+  size_t Size() const { return args_.size() - next_arg_; }
+  size_t FrontIndex() const { return next_arg_; }
   absl::string_view Front() const { return args_[next_arg_]; }
   void PopFront() { next_arg_++; }
 
  private:
   std::vector<std::string> args_;
-  int next_arg_;
+  size_t next_arg_;
 };
 
 bool ArgsList::ReadFromFlagfile(const std::string& flag_file_name) {
@@ -181,7 +195,7 @@ bool ArgsList::ReadFromFlagfile(const std::string& flag_file_name) {
 
   
   
-  args_.push_back("");
+  args_.emplace_back("");
 
   std::string line;
   bool success = true;
@@ -203,7 +217,7 @@ bool ArgsList::ReadFromFlagfile(const std::string& flag_file_name) {
         break;
       }
 
-      args_.push_back(std::string(stripped));
+      args_.emplace_back(stripped);
       continue;
     }
 
@@ -269,7 +283,7 @@ std::tuple<absl::string_view, absl::string_view, bool> SplitNameAndValue(
     return std::make_tuple("", "", false);
   }
 
-  auto equal_sign_pos = arg.find("=");
+  auto equal_sign_pos = arg.find('=');
 
   absl::string_view flag_name = arg.substr(0, equal_sign_pos);
 
@@ -358,7 +372,7 @@ bool ReadFlagsFromEnv(const std::vector<std::string>& flag_names,
 
   
   
-  args.push_back("");
+  args.emplace_back("");
 
   for (const auto& flag_name : flag_names) {
     
@@ -590,12 +604,40 @@ bool CanIgnoreUndefinedFlag(absl::string_view flag_name) {
   return false;
 }
 
+
+
+void ReportUnrecognizedFlags(
+    const std::vector<UnrecognizedFlag>& unrecognized_flags,
+    bool report_as_fatal_error) {
+  for (const auto& unrecognized : unrecognized_flags) {
+    
+    std::vector<std::string> misspelling_hints;
+    if (unrecognized.source == UnrecognizedFlag::kFromArgv) {
+      misspelling_hints =
+          flags_internal::GetMisspellingHints(unrecognized.flag_name);
+    }
+
+    if (misspelling_hints.empty()) {
+      flags_internal::ReportUsageError(
+          absl::StrCat("Unknown command line flag '", unrecognized.flag_name,
+                       "'"),
+          report_as_fatal_error);
+    } else {
+      flags_internal::ReportUsageError(
+          absl::StrCat("Unknown command line flag '", unrecognized.flag_name,
+                       "'. Did you mean: ",
+                       absl::StrJoin(misspelling_hints, ", "), " ?"),
+          report_as_fatal_error);
+    }
+  }
+}
+
 }  
 
 
 
 bool WasPresentOnCommandLine(absl::string_view flag_name) {
-  absl::MutexLock l(&specified_flags_guard);
+  absl::ReaderMutexLock l(&specified_flags_guard);
   ABSL_INTERNAL_CHECK(specified_flags != nullptr,
                       "ParseCommandLine is not invoked yet");
 
@@ -605,42 +647,124 @@ bool WasPresentOnCommandLine(absl::string_view flag_name) {
 
 
 
+struct BestHints {
+  explicit BestHints(uint8_t _max) : best_distance(_max + 1) {}
+  bool AddHint(absl::string_view hint, uint8_t distance) {
+    if (hints.size() >= kMaxHints) return false;
+    if (distance == best_distance) {
+      hints.emplace_back(hint);
+    }
+    if (distance < best_distance) {
+      best_distance = distance;
+      hints = std::vector<std::string>{std::string(hint)};
+    }
+    return true;
+  }
+
+  uint8_t best_distance;
+  std::vector<std::string> hints;
+};
+
+
+
+std::vector<std::string> GetMisspellingHints(const absl::string_view flag) {
+  const size_t maxCutoff = std::min(flag.size() / 2 + 1, kMaxDistance);
+  auto undefok = absl::GetFlag(FLAGS_undefok);
+  BestHints best_hints(static_cast<uint8_t>(maxCutoff));
+  flags_internal::ForEachFlag([&](const CommandLineFlag& f) {
+    if (best_hints.hints.size() >= kMaxHints) return;
+    uint8_t distance = strings_internal::CappedDamerauLevenshteinDistance(
+        flag, f.Name(), best_hints.best_distance);
+    best_hints.AddHint(f.Name(), distance);
+    
+    if (f.IsOfType<bool>()) {
+      const std::string negated_flag = absl::StrCat("no", f.Name());
+      distance = strings_internal::CappedDamerauLevenshteinDistance(
+          flag, negated_flag, best_hints.best_distance);
+      best_hints.AddHint(negated_flag, distance);
+    }
+  });
+  
+  absl::c_for_each(undefok, [&](const absl::string_view f) {
+    if (best_hints.hints.size() >= kMaxHints) return;
+    uint8_t distance = strings_internal::CappedDamerauLevenshteinDistance(
+        flag, f, best_hints.best_distance);
+    best_hints.AddHint(absl::StrCat(f, " (undefok)"), distance);
+  });
+  return best_hints.hints;
+}
+
+
+
 std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
-                                        ArgvListAction arg_list_act,
-                                        UsageFlagsAction usage_flag_act,
-                                        OnUndefinedFlag on_undef_flag) {
+                                        UsageFlagsAction usage_flag_action,
+                                        OnUndefinedFlag undef_flag_action,
+                                        std::ostream& error_help_output) {
+  std::vector<char*> positional_args;
+  std::vector<UnrecognizedFlag> unrecognized_flags;
+
+  auto help_mode = flags_internal::ParseAbseilFlagsOnlyImpl(
+      argc, argv, positional_args, unrecognized_flags, usage_flag_action);
+
+  if (undef_flag_action != OnUndefinedFlag::kIgnoreUndefined) {
+    flags_internal::ReportUnrecognizedFlags(
+        unrecognized_flags,
+        (undef_flag_action == OnUndefinedFlag::kAbortIfUndefined));
+
+    if (undef_flag_action == OnUndefinedFlag::kAbortIfUndefined) {
+      if (!unrecognized_flags.empty()) {
+        flags_internal::HandleUsageFlags(error_help_output,
+        ProgramUsageMessage()); std::exit(1);
+      }
+    }
+  }
+
+  flags_internal::MaybeExit(help_mode);
+
+  return positional_args;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+HelpMode ParseAbseilFlagsOnlyImpl(
+    int argc, char* argv[], std::vector<char*>& positional_args,
+    std::vector<UnrecognizedFlag>& unrecognized_flags,
+    UsageFlagsAction usage_flag_action) {
   ABSL_INTERNAL_CHECK(argc > 0, "Missing argv[0]");
 
-  
-  
+  using flags_internal::ArgsList;
+  using flags_internal::specified_flags;
+
+  std::vector<std::string> flagfile_value;
+  std::vector<ArgsList> input_args;
+
   
   flags_internal::FinalizeRegistry();
 
   
-  CheckDefaultValuesParsingRoundtrip();
+  flags_internal::CheckDefaultValuesParsingRoundtrip();
 
-  std::vector<std::string> flagfile_value;
-
-  std::vector<ArgsList> input_args;
   input_args.push_back(ArgsList(argc, argv));
 
-  std::vector<char*> output_args;
-  std::vector<char*> positional_args;
-  output_args.reserve(argc);
-
   
-  
-  
-  
-  std::vector<std::pair<bool, std::string>> undefined_flag_names;
-
-  
-  if (ProgramInvocationName() == "UNKNOWN") {
+  if (flags_internal::ProgramInvocationName() == "UNKNOWN") {
     flags_internal::SetProgramInvocationName(argv[0]);
   }
-  output_args.push_back(argv[0]);
+  positional_args.push_back(argv[0]);
 
-  absl::MutexLock l(&specified_flags_guard);
+  absl::MutexLock l(&flags_internal::specified_flags_guard);
   if (specified_flags == nullptr) {
     specified_flags = new std::vector<const CommandLineFlag*>;
   } else {
@@ -653,12 +777,14 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
   bool success = true;
   while (!input_args.empty()) {
     
-    success &= HandleGeneratorFlags(input_args, flagfile_value);
+    success &= flags_internal::HandleGeneratorFlags(input_args, flagfile_value);
 
     
     
     ArgsList& curr_list = input_args.back();
 
+    
+    
     curr_list.PopFront();
 
     if (curr_list.Size() == 0) {
@@ -682,10 +808,6 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
       continue;
     }
 
-    if (arg_from_argv && (arg_list_act == ArgvListAction::kKeepParsedArgs)) {
-      output_args.push_back(argv[curr_list.FrontIndex()]);
-    }
-
     
     
     
@@ -695,7 +817,8 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
     absl::string_view value;
     bool is_empty_value = false;
 
-    std::tie(flag_name, value, is_empty_value) = SplitNameAndValue(arg);
+    std::tie(flag_name, value, is_empty_value) =
+        flags_internal::SplitNameAndValue(arg);
 
     
     
@@ -710,40 +833,33 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
     
     CommandLineFlag* flag = nullptr;
     bool is_negative = false;
-    std::tie(flag, is_negative) = LocateFlag(flag_name);
+    std::tie(flag, is_negative) = flags_internal::LocateFlag(flag_name);
 
     if (flag == nullptr) {
       
       if (flags_internal::DeduceUsageFlags(flag_name, value)) {
         continue;
       }
-
-      if (on_undef_flag != OnUndefinedFlag::kIgnoreUndefined) {
-        undefined_flag_names.emplace_back(arg_from_argv,
-                                          std::string(flag_name));
-      }
+      unrecognized_flags.emplace_back(arg_from_argv
+                                          ? UnrecognizedFlag::kFromArgv
+                                          : UnrecognizedFlag::kFromFlagfile,
+                                      flag_name);
       continue;
     }
 
     
-    auto curr_index = curr_list.FrontIndex();
     bool value_success = true;
-    std::tie(value_success, value) =
-        DeduceFlagValue(*flag, value, is_negative, is_empty_value, &curr_list);
+    std::tie(value_success, value) = flags_internal::DeduceFlagValue(
+        *flag, value, is_negative, is_empty_value, &curr_list);
     success &= value_success;
-
-    
-    if (arg_from_argv && (arg_list_act == ArgvListAction::kKeepParsedArgs) &&
-        (curr_index != curr_list.FrontIndex())) {
-      output_args.push_back(argv[curr_list.FrontIndex()]);
-    }
 
     
     
     
     std::string error;
     if (!flags_internal::PrivateHandleAccessor::ParseFrom(
-            *flag, value, SET_FLAGS_VALUE, kCommandLine, error)) {
+            *flag, value, flags_internal::SET_FLAGS_VALUE,
+            flags_internal::kCommandLine, error)) {
       if (flag->IsRetired()) continue;
 
       flags_internal::ReportUsageError(error, true);
@@ -753,69 +869,73 @@ std::vector<char*> ParseCommandLineImpl(int argc, char* argv[],
     }
   }
 
-  for (const auto& flag_name : undefined_flag_names) {
-    if (CanIgnoreUndefinedFlag(flag_name.second)) continue;
-
-    flags_internal::ReportUsageError(
-        absl::StrCat("Unknown command line flag '", flag_name.second, "'"),
-        true);
-
-    success = false;
-  }
-
-#if ABSL_FLAGS_STRIP_NAMES
-  if (!success) {
-    flags_internal::ReportUsageError(
-        "NOTE: command line flags are disabled in this build", true);
-  }
-#endif
-
-  if (!success) {
-    flags_internal::HandleUsageFlags(std::cout,
-                                     ProgramUsageMessage());
-    std::exit(1);
-  }
-
-  if (usage_flag_act == UsageFlagsAction::kHandleUsage) {
-    int exit_code = flags_internal::HandleUsageFlags(
-        std::cout, ProgramUsageMessage());
-
-    if (exit_code != -1) {
-      std::exit(exit_code);
-    }
-  }
-
-  ResetGeneratorFlags(flagfile_value);
-
-  
-  
-  for (auto arg : positional_args) {
-    output_args.push_back(arg);
-  }
+  flags_internal::ResetGeneratorFlags(flagfile_value);
 
   
   if (!input_args.empty()) {
-    for (int arg_index = input_args.back().FrontIndex(); arg_index < argc;
-         ++arg_index) {
-      output_args.push_back(argv[arg_index]);
+    for (size_t arg_index = input_args.back().FrontIndex();
+         arg_index < static_cast<size_t>(argc); ++arg_index) {
+      positional_args.push_back(argv[arg_index]);
     }
   }
 
   
   specified_flags->shrink_to_fit();
   std::sort(specified_flags->begin(), specified_flags->end(),
-            SpecifiedFlagsCompare{});
-  return output_args;
+            flags_internal::SpecifiedFlagsCompare{});
+
+  
+  std::vector<UnrecognizedFlag> filtered;
+  filtered.reserve(unrecognized_flags.size());
+  for (const auto& unrecognized : unrecognized_flags) {
+    if (flags_internal::CanIgnoreUndefinedFlag(unrecognized.flag_name))
+      continue;
+    filtered.push_back(unrecognized);
+  }
+
+  std::swap(unrecognized_flags, filtered);
+
+  if (!success) {
+#if ABSL_FLAGS_STRIP_NAMES
+    flags_internal::ReportUsageError(
+        "NOTE: command line flags are disabled in this build", true);
+#else
+    flags_internal::HandleUsageFlags(std::cerr, ProgramUsageMessage());
+#endif
+    return HelpMode::kFull;  
+                             
+  }
+
+  return usage_flag_action == UsageFlagsAction::kHandleUsage
+             ? flags_internal::HandleUsageFlags(std::cout,
+                                                ProgramUsageMessage())
+             : HelpMode::kNone;
 }
 
 }  
+
+void ParseAbseilFlagsOnly(int argc, char* argv[],
+                          std::vector<char*>& positional_args,
+                          std::vector<UnrecognizedFlag>& unrecognized_flags) {
+  auto help_mode = flags_internal::ParseAbseilFlagsOnlyImpl(
+      argc, argv, positional_args, unrecognized_flags,
+      flags_internal::UsageFlagsAction::kHandleUsage);
+
+  flags_internal::MaybeExit(help_mode);
+}
+
+
+
+void ReportUnrecognizedFlags(
+    const std::vector<UnrecognizedFlag>& unrecognized_flags) {
+  flags_internal::ReportUnrecognizedFlags(unrecognized_flags, true);
+}
 
 
 
 std::vector<char*> ParseCommandLine(int argc, char* argv[]) {
   return flags_internal::ParseCommandLineImpl(
-      argc, argv, flags_internal::ArgvListAction::kRemoveParsedArgs,
-      flags_internal::UsageFlagsAction::kHandleUsage,
+      argc, argv, flags_internal::UsageFlagsAction::kHandleUsage,
       flags_internal::OnUndefinedFlag::kAbortIfUndefined);
 }
 

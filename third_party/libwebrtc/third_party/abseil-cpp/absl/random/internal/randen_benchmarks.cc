@@ -47,8 +47,10 @@ static constexpr size_t kSeedSizeT = Randen::kSeedBytes / sizeof(uint32_t);
 
 template <typename T>
 struct AbsorbFn : public T {
-  mutable uint64_t state[kStateSizeT] = {};
-  mutable uint32_t seed[kSeedSizeT] = {};
+  
+  
+  alignas(16) mutable uint64_t state[kStateSizeT] = {};
+  alignas(16) mutable uint32_t seed[kSeedSizeT] = {};
 
   static constexpr size_t bytes() { return sizeof(seed); }
 

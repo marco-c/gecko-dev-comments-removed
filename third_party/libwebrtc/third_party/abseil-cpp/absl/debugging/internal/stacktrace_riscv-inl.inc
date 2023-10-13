@@ -30,55 +30,13 @@
 #include <cassert>
 #include <cstdint>
 #include <iostream>
+#include <limits>
+#include <utility>
 
 #include "absl/base/attributes.h"
-#include "absl/debugging/internal/address_is_readable.h"
-#include "absl/debugging/internal/vdso_support.h"
 #include "absl/debugging/stacktrace.h"
 
 static const uintptr_t kUnknownFrameSize = 0;
-
-#if defined(__linux__)
-
-static const unsigned char *GetKernelRtSigreturnAddress() {
-  constexpr uintptr_t kImpossibleAddress = 0;
-  ABSL_CONST_INIT static std::atomic<uintptr_t> memoized(kImpossibleAddress);
-  uintptr_t address = memoized.load(std::memory_order_relaxed);
-  if (address != kImpossibleAddress) {
-    return reinterpret_cast<const unsigned char *>(address);
-  }
-
-  address = reinterpret_cast<uintptr_t>(nullptr);
-
-#if ABSL_HAVE_VDSO_SUPPORT
-  absl::debugging_internal::VDSOSupport vdso;
-  if (vdso.IsPresent()) {
-    absl::debugging_internal::VDSOSupport::SymbolInfo symbol_info;
-    
-    auto lookup = [&](int type) {
-      return vdso.LookupSymbol("__vdso_rt_sigreturn", "LINUX_4.15", type,
-                               &symbol_info);
-    };
-    if ((!lookup(STT_FUNC) && !lookup(STT_NOTYPE)) ||
-        symbol_info.address == nullptr) {
-      
-      
-      assert(false && "VDSO is present, but doesn't have expected symbol");
-    } else {
-      if (reinterpret_cast<uintptr_t>(symbol_info.address) !=
-          kImpossibleAddress) {
-        address = reinterpret_cast<uintptr_t>(symbol_info.address);
-      } else {
-        assert(false && "VDSO returned invalid address");
-      }
-    }
-  }
-#endif
-
-  memoized.store(address, std::memory_order_relaxed);
-  return reinterpret_cast<const unsigned char *>(address);
-}
-#endif  
 
 
 
@@ -96,7 +54,8 @@ static inline uintptr_t ComputeStackFrameSize(const T *low, const T *high) {
 template <bool STRICT_UNWINDING, bool WITH_CONTEXT>
 ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS  
 ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY   
-static void ** NextStackFrame(void **old_frame_pointer, const void *uc) {
+static void ** NextStackFrame(void **old_frame_pointer, const void *uc,
+                              const std::pair<size_t, size_t> range) {
   
   
   
@@ -114,54 +73,42 @@ static void ** NextStackFrame(void **old_frame_pointer, const void *uc) {
   
   
   void **new_frame_pointer = reinterpret_cast<void **>(old_frame_pointer[-2]);
-  bool check_frame_size = true;
-
-#if defined(__linux__)
-  if (WITH_CONTEXT && uc != nullptr) {
-    
-    if (old_frame_pointer[-1] == GetKernelRtSigreturnAddress()) {
-      const ucontext_t *ucv = static_cast<const ucontext_t *>(uc);
-      
-      
-      
-      
-      
-      void **const pre_signal_frame_pointer =
-          reinterpret_cast<void **>(ucv->uc_mcontext.__gregs[8]);
-
-      
-      
-      
-      if (!absl::debugging_internal::AddressIsReadable(
-              pre_signal_frame_pointer))
-        return nullptr;
-
-      
-      new_frame_pointer = pre_signal_frame_pointer;
-
-      
-      
-      check_frame_size = false;
-    }
-  }
-#endif
+  uintptr_t frame_pointer = reinterpret_cast<uintptr_t>(new_frame_pointer);
 
   
   
   
   
-  if ((reinterpret_cast<uintptr_t>(new_frame_pointer) & 15) != 0)
+  if (frame_pointer & 15)
     return nullptr;
 
   
   
-  if (check_frame_size) {
-    const uintptr_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
-    const uintptr_t frame_size =
-        ComputeStackFrameSize(old_frame_pointer, new_frame_pointer);
-    if (frame_size == kUnknownFrameSize || frame_size > max_size)
+  if (WITH_CONTEXT)
+    if (const ucontext_t *ucv = static_cast<const ucontext_t *>(uc))
+      
+      
+      if (ucv->uc_mcontext.__gregs[8] == frame_pointer)
+        return new_frame_pointer;
+
+  
+  
+  const uintptr_t max_size = STRICT_UNWINDING ? 100000 : 1000000;
+  const uintptr_t frame_size =
+      ComputeStackFrameSize(old_frame_pointer, new_frame_pointer);
+  if (frame_size == kUnknownFrameSize) {
+    if (STRICT_UNWINDING)
+      return nullptr;
+
+    
+    
+    if (reinterpret_cast<uintptr_t>(new_frame_pointer) < range.first ||
+        reinterpret_cast<uintptr_t>(new_frame_pointer) > range.second)
       return nullptr;
   }
+
+  if (frame_size > max_size)
+    return nullptr;
 
   return new_frame_pointer;
 }
@@ -180,6 +127,12 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
 #error reading stack pointer not yet supported on this platform
 #endif
 
+  std::pair<size_t, size_t> stack = {
+      
+      static_cast<size_t>(sysconf(_SC_PAGESIZE)),
+      std::numeric_limits<size_t>::max() - sizeof(void *)
+  };
+
   int n = 0;
   void *return_address = nullptr;
   while (frame_pointer && n < max_depth) {
@@ -190,7 +143,8 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
     
     
     void **next_frame_pointer =
-        NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(frame_pointer, ucp);
+        NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(frame_pointer, ucp,
+                                                          stack);
 
     if (skip_count > 0) {
       skip_count--;
@@ -217,7 +171,8 @@ static int UnwindImpl(void **result, int *sizes, int max_depth, int skip_count,
         num_dropped_frames++;
       }
       frame_pointer =
-          NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(frame_pointer, ucp);
+          NextStackFrame<!IS_STACK_FRAMES, IS_WITH_CONTEXT>(frame_pointer, ucp,
+                                                            stack);
     }
     *min_dropped_frames = num_dropped_frames;
   }

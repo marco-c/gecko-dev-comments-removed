@@ -72,7 +72,6 @@ constexpr static auto kFixedArrayUseDefault = static_cast<size_t>(-1);
 
 
 
-
 template <typename T, size_t N = kFixedArrayUseDefault,
           typename A = std::allocator<T>>
 class FixedArray {
@@ -118,14 +117,20 @@ class FixedArray {
       (N == kFixedArrayUseDefault ? kInlineBytesDefault / sizeof(value_type)
                                   : static_cast<size_type>(N));
 
-  FixedArray(
-      const FixedArray& other,
-      const allocator_type& a = allocator_type()) noexcept(NoexceptCopyable())
+  FixedArray(const FixedArray& other) noexcept(NoexceptCopyable())
+      : FixedArray(other,
+                   AllocatorTraits::select_on_container_copy_construction(
+                       other.storage_.alloc())) {}
+
+  FixedArray(const FixedArray& other,
+             const allocator_type& a) noexcept(NoexceptCopyable())
       : FixedArray(other.begin(), other.end(), a) {}
 
-  FixedArray(
-      FixedArray&& other,
-      const allocator_type& a = allocator_type()) noexcept(NoexceptMovable())
+  FixedArray(FixedArray&& other) noexcept(NoexceptMovable())
+      : FixedArray(std::move(other), other.storage_.alloc()) {}
+
+  FixedArray(FixedArray&& other,
+             const allocator_type& a) noexcept(NoexceptMovable())
       : FixedArray(std::make_move_iterator(other.begin()),
                    std::make_move_iterator(other.end()), a) {}
 
@@ -201,18 +206,22 @@ class FixedArray {
   
   
   
-  const_pointer data() const { return AsValueType(storage_.begin()); }
+  const_pointer data() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return AsValueType(storage_.begin());
+  }
 
   
   
   
-  pointer data() { return AsValueType(storage_.begin()); }
+  pointer data() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return AsValueType(storage_.begin());
+  }
 
   
   
   
   
-  reference operator[](size_type i) {
+  reference operator[](size_type i) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(i < size());
     return data()[i];
   }
@@ -220,7 +229,7 @@ class FixedArray {
   
   
   
-  const_reference operator[](size_type i) const {
+  const_reference operator[](size_type i) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(i < size());
     return data()[i];
   }
@@ -229,7 +238,7 @@ class FixedArray {
   
   
   
-  reference at(size_type i) {
+  reference at(size_type i) ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (ABSL_PREDICT_FALSE(i >= size())) {
       base_internal::ThrowStdOutOfRange("FixedArray::at failed bounds check");
     }
@@ -238,7 +247,7 @@ class FixedArray {
 
   
   
-  const_reference at(size_type i) const {
+  const_reference at(size_type i) const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     if (ABSL_PREDICT_FALSE(i >= size())) {
       base_internal::ThrowStdOutOfRange("FixedArray::at failed bounds check");
     }
@@ -248,14 +257,14 @@ class FixedArray {
   
   
   
-  reference front() {
+  reference front() ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(!empty());
     return data()[0];
   }
 
   
   
-  const_reference front() const {
+  const_reference front() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(!empty());
     return data()[0];
   }
@@ -263,14 +272,14 @@ class FixedArray {
   
   
   
-  reference back() {
+  reference back() ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(!empty());
     return data()[size() - 1];
   }
 
   
   
-  const_reference back() const {
+  const_reference back() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     ABSL_HARDENING_ASSERT(!empty());
     return data()[size() - 1];
   }
@@ -278,62 +287,74 @@ class FixedArray {
   
   
   
-  iterator begin() { return data(); }
+  iterator begin() ABSL_ATTRIBUTE_LIFETIME_BOUND { return data(); }
 
   
   
-  const_iterator begin() const { return data(); }
-
-  
-  
-  
-  const_iterator cbegin() const { return begin(); }
+  const_iterator begin() const ABSL_ATTRIBUTE_LIFETIME_BOUND { return data(); }
 
   
   
   
-  iterator end() { return data() + size(); }
-
-  
-  
-  const_iterator end() const { return data() + size(); }
-
-  
-  
-  
-  const_iterator cend() const { return end(); }
+  const_iterator cbegin() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return begin();
+  }
 
   
   
   
-  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  iterator end() ABSL_ATTRIBUTE_LIFETIME_BOUND { return data() + size(); }
 
   
   
-  const_reverse_iterator rbegin() const {
+  const_iterator end() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return data() + size();
+  }
+
+  
+  
+  
+  const_iterator cend() const ABSL_ATTRIBUTE_LIFETIME_BOUND { return end(); }
+
+  
+  
+  
+  reverse_iterator rbegin() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return reverse_iterator(end());
+  }
+
+  
+  
+  const_reverse_iterator rbegin() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return const_reverse_iterator(end());
   }
 
   
   
   
-  const_reverse_iterator crbegin() const { return rbegin(); }
+  const_reverse_iterator crbegin() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return rbegin();
+  }
 
   
   
   
-  reverse_iterator rend() { return reverse_iterator(begin()); }
+  reverse_iterator rend() ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return reverse_iterator(begin());
+  }
 
   
   
-  const_reverse_iterator rend() const {
+  const_reverse_iterator rend() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
     return const_reverse_iterator(begin());
   }
 
   
   
   
-  const_reverse_iterator crend() const { return rend(); }
+  const_reverse_iterator crend() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+    return rend();
+  }
 
   
   
@@ -343,7 +364,7 @@ class FixedArray {
   
   
   friend bool operator==(const FixedArray& lhs, const FixedArray& rhs) {
-    return absl::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
   }
 
   friend bool operator!=(const FixedArray& lhs, const FixedArray& rhs) {
@@ -465,12 +486,18 @@ class FixedArray {
     StorageElement* begin() const { return data_; }
     StorageElement* end() const { return begin() + size(); }
     allocator_type& alloc() { return size_alloc_.template get<1>(); }
+    const allocator_type& alloc() const {
+      return size_alloc_.template get<1>();
+    }
 
    private:
     static bool UsingInlinedStorage(size_type n) {
       return n <= inline_elements;
     }
 
+#ifdef ABSL_HAVE_ADDRESS_SANITIZER
+    ABSL_ATTRIBUTE_NOINLINE
+#endif  
     StorageElement* InitializeData() {
       if (UsingInlinedStorage(size())) {
         InlinedStorage::AnnotateConstruct(size());

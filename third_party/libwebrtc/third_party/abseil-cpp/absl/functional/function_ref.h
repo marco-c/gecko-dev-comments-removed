@@ -137,6 +137,14 @@ class FunctionRef<R(Args...)> {
   absl::functional_internal::Invoker<R, Args...> invoker_;
 };
 
+
+
+template <typename R, typename... Args>
+class FunctionRef<R(Args...) const> : public FunctionRef<R(Args...)> {
+ public:
+  using FunctionRef<R(Args...)>::FunctionRef;
+};
+
 ABSL_NAMESPACE_END
 }  
 

@@ -27,8 +27,19 @@
 #include "absl/base/internal/invoke.h"
 #include "absl/base/optimization.h"
 #include "absl/container/internal/compressed_tuple.h"
+#include "absl/container/internal/container_memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
+
+
+#if defined(ABSL_HAVE_CONSTANT_EVALUATED) && \
+    (defined(ABSL_HAVE_ADDRESS_SANITIZER) || \
+     defined(ABSL_HAVE_MEMORY_SANITIZER))
+#define ABSL_INTERNAL_CORD_HAVE_SANITIZER 1
+#endif
+
+#define ABSL_CORD_INTERNAL_NO_SANITIZE \
+  ABSL_ATTRIBUTE_NO_SANITIZE_ADDRESS ABSL_ATTRIBUTE_NO_SANITIZE_MEMORY
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -44,29 +55,14 @@ struct CordRepExternal;
 struct CordRepFlat;
 struct CordRepSubstring;
 struct CordRepCrc;
-class CordRepRing;
 class CordRepBtree;
 
 class CordzInfo;
 
 
-enum CordFeatureDefaults {
-  kCordEnableRingBufferDefault = false,
-  kCordShallowSubcordsDefault = false
-};
+enum CordFeatureDefaults { kCordShallowSubcordsDefault = false };
 
-extern std::atomic<bool> cord_ring_buffer_enabled;
 extern std::atomic<bool> shallow_subcords_enabled;
-
-
-
-
-
-extern std::atomic<bool> cord_btree_exhaustive_validation;
-
-inline void enable_cord_ring_buffer(bool enable) {
-  cord_ring_buffer_enabled.store(enable, std::memory_order_relaxed);
-}
 
 inline void enable_shallow_subcords(bool enable) {
   shallow_subcords_enabled.store(enable, std::memory_order_relaxed);
@@ -93,6 +89,46 @@ ABSL_ATTRIBUTE_NORETURN void LogFatalNodeType(CordRep* rep);
 
 
 
+
+template <bool nullify_tail = false>
+inline void SmallMemmove(char* dst, const char* src, size_t n) {
+  if (n >= 8) {
+    assert(n <= 15);
+    uint64_t buf1;
+    uint64_t buf2;
+    memcpy(&buf1, src, 8);
+    memcpy(&buf2, src + n - 8, 8);
+    if (nullify_tail) {
+      memset(dst + 7, 0, 8);
+    }
+    memcpy(dst, &buf1, 8);
+    memcpy(dst + n - 8, &buf2, 8);
+  } else if (n >= 4) {
+    uint32_t buf1;
+    uint32_t buf2;
+    memcpy(&buf1, src, 4);
+    memcpy(&buf2, src + n - 4, 4);
+    if (nullify_tail) {
+      memset(dst + 4, 0, 4);
+      memset(dst + 7, 0, 8);
+    }
+    memcpy(dst, &buf1, 4);
+    memcpy(dst + n - 4, &buf2, 4);
+  } else {
+    if (n != 0) {
+      dst[0] = src[0];
+      dst[n / 2] = src[n / 2];
+      dst[n - 1] = src[n - 1];
+    }
+    if (nullify_tail) {
+      memset(dst + 7, 0, 8);
+      memset(dst + n, 0, 8);
+    }
+  }
+}
+
+
+
 class RefcountAndFlags {
  public:
   constexpr RefcountAndFlags() : count_{kRefIncrement} {}
@@ -112,25 +148,25 @@ class RefcountAndFlags {
   
   
   inline bool Decrement() {
-    int32_t refcount = count_.load(std::memory_order_acquire) & kRefcountMask;
+    int32_t refcount = count_.load(std::memory_order_acquire);
     assert(refcount > 0 || refcount & kImmortalFlag);
     return refcount != kRefIncrement &&
-           (count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) &
-            kRefcountMask) != kRefIncrement;
+           count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) !=
+               kRefIncrement;
   }
 
   
   inline bool DecrementExpectHighRefcount() {
     int32_t refcount =
-        count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel) &
-        kRefcountMask;
+        count_.fetch_sub(kRefIncrement, std::memory_order_acq_rel);
     assert(refcount > 0 || refcount & kImmortalFlag);
     return refcount != kRefIncrement;
   }
 
   
-  inline int32_t Get() const {
-    return count_.load(std::memory_order_acquire) >> kNumFlags;
+  inline size_t Get() const {
+    return static_cast<size_t>(count_.load(std::memory_order_acquire) >>
+                               kNumFlags);
   }
 
   
@@ -142,8 +178,7 @@ class RefcountAndFlags {
   
   
   inline bool IsOne() {
-    return (count_.load(std::memory_order_acquire) & kRefcountMask) ==
-           kRefIncrement;
+    return count_.load(std::memory_order_acquire) == kRefIncrement;
   }
 
   bool IsImmortal() const {
@@ -155,19 +190,11 @@ class RefcountAndFlags {
   
   
   
-  
   enum Flags {
-    kNumFlags = 2,
+    kNumFlags = 1,
 
     kImmortalFlag = 0x1,
-    kReservedFlag = 0x2,
     kRefIncrement = (1 << kNumFlags),
-
-    
-    
-    
-    
-    kRefcountMask = ~kReservedFlag,
   };
 
   std::atomic<int32_t> count_;
@@ -179,7 +206,7 @@ enum CordRepKind {
   SUBSTRING = 1,
   CRC = 2,
   BTREE = 3,
-  RING = 4,
+  UNUSED_4 = 4,
   EXTERNAL = 5,
 
   
@@ -200,10 +227,6 @@ enum CordRepKind {
 
 
 
-
-
-static_assert(RING == BTREE + 1, "BTREE and RING not consecutive");
-static_assert(EXTERNAL == RING + 1, "BTREE and EXTERNAL not consecutive");
 static_assert(FLAT == EXTERNAL + 1, "EXTERNAL and FLAT not consecutive");
 
 struct CordRep {
@@ -225,6 +248,10 @@ struct CordRep {
 
   
   
+  
+  
+  
+  
   size_t length;
   RefcountAndFlags refcount;
   
@@ -240,17 +267,15 @@ struct CordRep {
   
   
   uint8_t storage[3];
+  
 
   
-  constexpr bool IsRing() const { return tag == RING; }
   constexpr bool IsSubstring() const { return tag == SUBSTRING; }
   constexpr bool IsCrc() const { return tag == CRC; }
   constexpr bool IsExternal() const { return tag == EXTERNAL; }
   constexpr bool IsFlat() const { return tag >= FLAT; }
   constexpr bool IsBtree() const { return tag == BTREE; }
 
-  inline CordRepRing* ring();
-  inline const CordRepRing* ring() const;
   inline CordRepSubstring* substring();
   inline const CordRepSubstring* substring() const;
   inline CordRepCrc* crc();
@@ -436,11 +461,11 @@ static_assert(sizeof(cordz_info_t) >= sizeof(intptr_t), "");
 
 
 
-static constexpr cordz_info_t BigEndianByte(unsigned char value) {
+static constexpr cordz_info_t LittleEndianByte(unsigned char value) {
 #if defined(ABSL_IS_BIG_ENDIAN)
-  return value;
-#else
   return static_cast<cordz_info_t>(value) << ((sizeof(cordz_info_t) - 1) * 8);
+#else
+  return value;
 #endif
 }
 
@@ -453,34 +478,76 @@ class InlineData {
   
   
   
-  static constexpr cordz_info_t kNullCordzInfo = BigEndianByte(1);
-
-  constexpr InlineData() : as_chars_{0} {}
-  explicit InlineData(DefaultInitType) {}
-  explicit constexpr InlineData(CordRep* rep) : as_tree_(rep) {}
-  explicit constexpr InlineData(absl::string_view chars)
-      : as_chars_{
-            GetOrNull(chars, 0),  GetOrNull(chars, 1),
-            GetOrNull(chars, 2),  GetOrNull(chars, 3),
-            GetOrNull(chars, 4),  GetOrNull(chars, 5),
-            GetOrNull(chars, 6),  GetOrNull(chars, 7),
-            GetOrNull(chars, 8),  GetOrNull(chars, 9),
-            GetOrNull(chars, 10), GetOrNull(chars, 11),
-            GetOrNull(chars, 12), GetOrNull(chars, 13),
-            GetOrNull(chars, 14), static_cast<char>((chars.size() << 1))} {}
+  static constexpr cordz_info_t kNullCordzInfo = LittleEndianByte(1);
 
   
   
-  bool is_empty() const { return tag() == 0; }
+  
+  static constexpr size_t kTagOffset = 0;
 
   
-  bool is_tree() const { return (tag() & 1) != 0; }
+  
+  
+#ifdef ABSL_INTERNAL_CORD_HAVE_SANITIZER
+  ~InlineData() noexcept { unpoison(); }
+#endif
+
+  constexpr InlineData() noexcept { poison_this(); }
+
+  explicit InlineData(DefaultInitType) noexcept : rep_(kDefaultInit) {
+    poison_this();
+  }
+
+  explicit InlineData(CordRep* rep) noexcept : rep_(rep) {
+    ABSL_ASSERT(rep != nullptr);
+  }
+
+  
+  
+  
+  constexpr InlineData(absl::string_view sv, CordRep* rep) noexcept
+      : rep_(rep ? Rep(rep) : Rep(sv)) {
+    poison();
+  }
+
+  constexpr InlineData(const InlineData& rhs) noexcept;
+  InlineData& operator=(const InlineData& rhs) noexcept;
+
+  friend bool operator==(const InlineData& lhs, const InlineData& rhs) {
+#ifdef ABSL_INTERNAL_CORD_HAVE_SANITIZER
+    const Rep l = lhs.rep_.SanitizerSafeCopy();
+    const Rep r = rhs.rep_.SanitizerSafeCopy();
+    return memcmp(&l, &r, sizeof(l)) == 0;
+#else
+    return memcmp(&lhs, &rhs, sizeof(lhs)) == 0;
+#endif
+  }
+  friend bool operator!=(const InlineData& lhs, const InlineData& rhs) {
+    return !operator==(lhs, rhs);
+  }
+
+  
+  
+  constexpr void poison();
+
+  
+  constexpr void unpoison();
+
+  
+  constexpr void poison_this();
+
+  
+  
+  bool is_empty() const { return rep_.tag() == 0; }
+
+  
+  bool is_tree() const { return (rep_.tag() & 1) != 0; }
 
   
   
   bool is_profiled() const {
     assert(is_tree());
-    return as_tree_.cordz_info != kNullCordzInfo;
+    return rep_.cordz_info() != kNullCordzInfo;
   }
 
   
@@ -489,7 +556,7 @@ class InlineData {
   static bool is_either_profiled(const InlineData& data1,
                                  const InlineData& data2) {
     assert(data1.is_tree() && data2.is_tree());
-    return (data1.as_tree_.cordz_info | data2.as_tree_.cordz_info) !=
+    return (data1.rep_.cordz_info() | data2.rep_.cordz_info()) !=
            kNullCordzInfo;
   }
 
@@ -498,8 +565,8 @@ class InlineData {
   
   CordzInfo* cordz_info() const {
     assert(is_tree());
-    intptr_t info = static_cast<intptr_t>(
-        absl::big_endian::ToHost64(static_cast<uint64_t>(as_tree_.cordz_info)));
+    intptr_t info = static_cast<intptr_t>(absl::little_endian::ToHost64(
+        static_cast<uint64_t>(rep_.cordz_info())));
     assert(info & 1);
     return reinterpret_cast<CordzInfo*>(info - 1);
   }
@@ -510,21 +577,21 @@ class InlineData {
   void set_cordz_info(CordzInfo* cordz_info) {
     assert(is_tree());
     uintptr_t info = reinterpret_cast<uintptr_t>(cordz_info) | 1;
-    as_tree_.cordz_info =
-        static_cast<cordz_info_t>(absl::big_endian::FromHost64(info));
+    rep_.set_cordz_info(
+        static_cast<cordz_info_t>(absl::little_endian::FromHost64(info)));
   }
 
   
   void clear_cordz_info() {
     assert(is_tree());
-    as_tree_.cordz_info = kNullCordzInfo;
+    rep_.set_cordz_info(kNullCordzInfo);
   }
 
   
   
   const char* as_chars() const {
     assert(!is_tree());
-    return as_chars_;
+    return rep_.as_chars();
   }
 
   
@@ -542,20 +609,33 @@ class InlineData {
   
   
   
-  char* as_chars() { return as_chars_; }
+  char* as_chars() { return rep_.as_chars(); }
 
   
   
   CordRep* as_tree() const {
     assert(is_tree());
-    return as_tree_.rep;
+    return rep_.tree();
+  }
+
+  void set_inline_data(const char* data, size_t n) {
+    ABSL_ASSERT(n <= kMaxInline);
+    unpoison();
+    rep_.set_tag(static_cast<int8_t>(n << 1));
+    SmallMemmove<true>(rep_.as_chars(), data, n);
+    poison();
+  }
+
+  void copy_max_inline_to(char* dst) const {
+    assert(!is_tree());
+    memcpy(dst, rep_.SanitizerSafeCopy().as_chars(), kMaxInline);
   }
 
   
   
   void make_tree(CordRep* rep) {
-    as_tree_.rep = rep;
-    as_tree_.cordz_info = kNullCordzInfo;
+    unpoison();
+    rep_.make_tree(rep);
   }
 
   
@@ -563,53 +643,201 @@ class InlineData {
   
   void set_tree(CordRep* rep) {
     assert(is_tree());
-    as_tree_.rep = rep;
+    rep_.set_tree(rep);
   }
 
   
   
-  size_t inline_size() const {
-    assert(!is_tree());
-    return tag() >> 1;
-  }
+  size_t inline_size() const { return rep_.inline_size(); }
 
   
   
   
   void set_inline_size(size_t size) {
-    ABSL_ASSERT(size <= kMaxInline);
-    tag() = static_cast<char>(size << 1);
+    unpoison();
+    rep_.set_inline_size(size);
+    poison();
+  }
+
+  
+  
+  
+  
+  
+  
+  int Compare(const InlineData& rhs) const {
+    return Compare(rep_.SanitizerSafeCopy(), rhs.rep_.SanitizerSafeCopy());
   }
 
  private:
-  
-  struct AsTree {
-    explicit constexpr AsTree(absl::cord_internal::CordRep* tree)
-        : rep(tree), cordz_info(kNullCordzInfo) {}
+  struct Rep {
+    
+    struct AsTree {
+      explicit constexpr AsTree(absl::cord_internal::CordRep* tree)
+          : rep(tree) {}
+      cordz_info_t cordz_info = kNullCordzInfo;
+      absl::cord_internal::CordRep* rep;
+    };
+
+    explicit Rep(DefaultInitType) {}
+    constexpr Rep() : data{0} {}
+    constexpr Rep(const Rep&) = default;
+    constexpr Rep& operator=(const Rep&) = default;
+
+    explicit constexpr Rep(CordRep* rep) : as_tree(rep) {}
+
+    explicit constexpr Rep(absl::string_view chars)
+        : data{static_cast<char>((chars.size() << 1)),
+               GetOrNull(chars, 0),
+               GetOrNull(chars, 1),
+               GetOrNull(chars, 2),
+               GetOrNull(chars, 3),
+               GetOrNull(chars, 4),
+               GetOrNull(chars, 5),
+               GetOrNull(chars, 6),
+               GetOrNull(chars, 7),
+               GetOrNull(chars, 8),
+               GetOrNull(chars, 9),
+               GetOrNull(chars, 10),
+               GetOrNull(chars, 11),
+               GetOrNull(chars, 12),
+               GetOrNull(chars, 13),
+               GetOrNull(chars, 14)} {}
+
+    
+    ABSL_CORD_INTERNAL_NO_SANITIZE
+    int8_t tag() const { return reinterpret_cast<const int8_t*>(this)[0]; }
+    void set_tag(int8_t rhs) { reinterpret_cast<int8_t*>(this)[0] = rhs; }
+
+    char* as_chars() { return data + 1; }
+    const char* as_chars() const { return data + 1; }
+
+    bool is_tree() const { return (tag() & 1) != 0; }
+
+    size_t inline_size() const {
+      ABSL_ASSERT(!is_tree());
+      return static_cast<size_t>(tag()) >> 1;
+    }
+
+    void set_inline_size(size_t size) {
+      ABSL_ASSERT(size <= kMaxInline);
+      set_tag(static_cast<int8_t>(size << 1));
+    }
+
+    CordRep* tree() const { return as_tree.rep; }
+    void set_tree(CordRep* rhs) { as_tree.rep = rhs; }
+
+    cordz_info_t cordz_info() const { return as_tree.cordz_info; }
+    void set_cordz_info(cordz_info_t rhs) { as_tree.cordz_info = rhs; }
+
+    void make_tree(CordRep* tree) {
+      as_tree.rep = tree;
+      as_tree.cordz_info = kNullCordzInfo;
+    }
+
+#ifdef ABSL_INTERNAL_CORD_HAVE_SANITIZER
+    constexpr Rep SanitizerSafeCopy() const {
+      if (!absl::is_constant_evaluated()) {
+        Rep res;
+        if (is_tree()) {
+          res = *this;
+        } else {
+          res.set_tag(tag());
+          memcpy(res.as_chars(), as_chars(), inline_size());
+        }
+        return res;
+      } else {
+        return *this;
+      }
+    }
+#else
+    constexpr const Rep& SanitizerSafeCopy() const { return *this; }
+#endif
+
+    
     
     
     
     union {
-      absl::cord_internal::CordRep* rep;
-      cordz_info_t unused_aligner;
+      char data[kMaxInline + 1];
+      AsTree as_tree;
     };
-    cordz_info_t cordz_info;
   };
 
-  char& tag() { return reinterpret_cast<char*>(this)[kMaxInline]; }
-  char tag() const { return reinterpret_cast<const char*>(this)[kMaxInline]; }
+  
+  static inline int Compare(const Rep& lhs, const Rep& rhs) {
+    uint64_t x, y;
+    memcpy(&x, lhs.as_chars(), sizeof(x));
+    memcpy(&y, rhs.as_chars(), sizeof(y));
+    if (x == y) {
+      memcpy(&x, lhs.as_chars() + 7, sizeof(x));
+      memcpy(&y, rhs.as_chars() + 7, sizeof(y));
+      if (x == y) {
+        if (lhs.inline_size() == rhs.inline_size()) return 0;
+        return lhs.inline_size() < rhs.inline_size() ? -1 : 1;
+      }
+    }
+    x = absl::big_endian::FromHost64(x);
+    y = absl::big_endian::FromHost64(y);
+    return x < y ? -1 : 1;
+  }
 
-  
-  
-  
-  
-  union {
-    char as_chars_[kMaxInline + 1];
-    AsTree as_tree_;
-  };
+  Rep rep_;
 };
 
 static_assert(sizeof(InlineData) == kMaxInline + 1, "");
+
+#ifdef ABSL_INTERNAL_CORD_HAVE_SANITIZER
+
+constexpr InlineData::InlineData(const InlineData& rhs) noexcept
+    : rep_(rhs.rep_.SanitizerSafeCopy()) {
+  poison();
+}
+
+inline InlineData& InlineData::operator=(const InlineData& rhs) noexcept {
+  unpoison();
+  rep_ = rhs.rep_.SanitizerSafeCopy();
+  poison();
+  return *this;
+}
+
+constexpr void InlineData::poison_this() {
+  if (!absl::is_constant_evaluated()) {
+    container_internal::SanitizerPoisonObject(this);
+  }
+}
+
+constexpr void InlineData::unpoison() {
+  if (!absl::is_constant_evaluated()) {
+    container_internal::SanitizerUnpoisonObject(this);
+  }
+}
+
+constexpr void InlineData::poison() {
+  if (!absl::is_constant_evaluated()) {
+    if (is_tree()) {
+      container_internal::SanitizerUnpoisonObject(this);
+    } else if (const size_t size = inline_size()) {
+      if (size < kMaxInline) {
+        const char* end = rep_.as_chars() + size;
+        container_internal::SanitizerPoisonMemoryRegion(end, kMaxInline - size);
+      }
+    } else {
+      container_internal::SanitizerPoisonObject(this);
+    }
+  }
+}
+
+#else  
+
+constexpr InlineData::InlineData(const InlineData&) noexcept = default;
+inline InlineData& InlineData::operator=(const InlineData&) noexcept = default;
+
+constexpr void InlineData::poison_this() {}
+constexpr void InlineData::unpoison() {}
+constexpr void InlineData::poison() {}
+
+#endif  
 
 inline CordRepSubstring* CordRep::substring() {
   assert(IsSubstring());

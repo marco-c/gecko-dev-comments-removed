@@ -160,7 +160,6 @@ class CordBuffer {
   
   static CordBuffer CreateWithDefaultLimit(size_t capacity);
 
-
   
   
   
@@ -330,14 +329,13 @@ class CordBuffer {
 
     
     absl::Span<char> short_available() {
-      assert(is_short());
-      const size_t length = (short_rep.raw_size >> 1);
+      const size_t length = short_length();
       return absl::Span<char>(short_rep.data + length,
                               kInlineCapacity - length);
     }
 
     
-    absl::Span<char> long_available() {
+    absl::Span<char> long_available() const {
       assert(!is_short());
       const size_t length = long_rep.rep->length;
       return absl::Span<char>(long_rep.rep->Data() + length,
@@ -347,7 +345,7 @@ class CordBuffer {
     
     size_t short_length() const {
       assert(is_short());
-      return short_rep.raw_size >> 1;
+      return static_cast<size_t>(short_rep.raw_size >> 1);
     }
 
     
@@ -412,8 +410,12 @@ class CordBuffer {
 
   
   static bool IsPow2(size_t size) { return absl::has_single_bit(size); }
-  static size_t Log2Floor(size_t size) { return absl::bit_width(size) - 1; }
-  static size_t Log2Ceil(size_t size) { return absl::bit_width(size - 1); }
+  static size_t Log2Floor(size_t size) {
+    return static_cast<size_t>(absl::bit_width(size) - 1);
+  }
+  static size_t Log2Ceil(size_t size) {
+    return static_cast<size_t>(absl::bit_width(size - 1));
+  }
 
   
   
@@ -457,9 +459,7 @@ inline constexpr size_t CordBuffer::MaximumPayload() {
 }
 
 inline constexpr size_t CordBuffer::MaximumPayload(size_t block_size) {
-  
-  return (kCustomLimit < block_size ? kCustomLimit : block_size) -
-         cord_internal::kFlatOverhead;
+  return (std::min)(kCustomLimit, block_size) - cord_internal::kFlatOverhead;
 }
 
 inline CordBuffer CordBuffer::CreateWithDefaultLimit(size_t capacity) {

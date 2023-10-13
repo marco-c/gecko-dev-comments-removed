@@ -38,19 +38,29 @@
 #include <limits>
 #include <type_traits>
 
-#if (defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L) || \
-    (defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L)
+#include "absl/base/config.h"
+
+#if ABSL_INTERNAL_CPLUSPLUS_LANG >= 202002L
 #include <bit>
 #endif
 
 #include "absl/base/attributes.h"
-#include "absl/base/config.h"
 #include "absl/numeric/internal/bits.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
-#if !(defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L)
+
+
+
+
+#if (defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L) &&     \
+    (!defined(_LIBCPP_VERSION) || _LIBCPP_VERSION >= 180000)
+using std::rotl;
+using std::rotr;
+
+#else
+
 
 template <class T>
 ABSL_MUST_USE_RESULT constexpr
@@ -65,6 +75,22 @@ ABSL_MUST_USE_RESULT constexpr
     rotr(T x, int s) noexcept {
   return numeric_internal::RotateRight(x, s);
 }
+
+#endif
+
+
+
+
+
+#if (defined(__cpp_lib_bitops) && __cpp_lib_bitops >= 201907L)
+
+using std::countl_one;
+using std::countl_zero;
+using std::countr_one;
+using std::countr_zero;
+using std::popcount;
+
+#else
 
 
 
@@ -107,19 +133,18 @@ ABSL_INTERNAL_CONSTEXPR_POPCOUNT inline
     popcount(T x) noexcept {
   return numeric_internal::Popcount(x);
 }
-#else  
-
-using std::countl_one;
-using std::countl_zero;
-using std::countr_one;
-using std::countr_zero;
-using std::popcount;
-using std::rotl;
-using std::rotr;
 
 #endif
 
-#if !(defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L)
+#if (defined(__cpp_lib_int_pow2) && __cpp_lib_int_pow2 >= 202002L)
+
+using std::bit_ceil;
+using std::bit_floor;
+using std::bit_width;
+using std::has_single_bit;
+
+#else
+
 
 template <class T>
 constexpr inline typename std::enable_if<std::is_unsigned<T>::value, bool>::type
@@ -131,10 +156,9 @@ has_single_bit(T x) noexcept {
 
 template <class T>
 ABSL_INTERNAL_CONSTEXPR_CLZ inline
-    typename std::enable_if<std::is_unsigned<T>::value, T>::type
+    typename std::enable_if<std::is_unsigned<T>::value, int>::type
     bit_width(T x) noexcept {
-  return std::numeric_limits<T>::digits -
-         static_cast<unsigned int>(countl_zero(x));
+  return std::numeric_limits<T>::digits - countl_zero(x);
 }
 
 
@@ -163,12 +187,6 @@ ABSL_INTERNAL_CONSTEXPR_CLZ inline
   return has_single_bit(x) ? T{1} << (bit_width(x) - 1)
                            : numeric_internal::BitCeilNonPowerOf2(x);
 }
-#else  
-
-using std::bit_ceil;
-using std::bit_floor;
-using std::bit_width;
-using std::has_single_bit;
 
 #endif
 

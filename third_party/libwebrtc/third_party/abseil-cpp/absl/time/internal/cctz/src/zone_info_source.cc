@@ -58,7 +58,8 @@ std::unique_ptr<absl::time_internal::cctz::ZoneInfoSource> DefaultFactory(
 
 
 
-#if (__has_attribute(weak) || defined(__GNUC__)) && !defined(__MINGW32__)
+#if (__has_attribute(weak) || defined(__GNUC__)) && !defined(__MINGW32__) && \
+    !defined(__CYGWIN__)
 ZoneInfoSourceFactory zone_info_source_factory __attribute__((weak)) =
     DefaultFactory;
 #elif defined(_MSC_VER) && !defined(__MINGW32__) && !defined(_LIBCPP_VERSION)

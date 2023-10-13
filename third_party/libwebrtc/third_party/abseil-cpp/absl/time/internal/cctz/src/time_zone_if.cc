@@ -23,17 +23,19 @@ ABSL_NAMESPACE_BEGIN
 namespace time_internal {
 namespace cctz {
 
-std::unique_ptr<TimeZoneIf> TimeZoneIf::Load(const std::string& name) {
+std::unique_ptr<TimeZoneIf> TimeZoneIf::UTC() { return TimeZoneInfo::UTC(); }
+
+std::unique_ptr<TimeZoneIf> TimeZoneIf::Make(const std::string& name) {
+  
+  
   
   
   if (name.compare(0, 5, "libc:") == 0) {
-    return std::unique_ptr<TimeZoneIf>(new TimeZoneLibC(name.substr(5)));
+    return TimeZoneLibC::Make(name.substr(5));
   }
 
   
-  std::unique_ptr<TimeZoneInfo> tz(new TimeZoneInfo);
-  if (!tz->Load(name)) tz.reset();
-  return std::unique_ptr<TimeZoneIf>(tz.release());
+  return TimeZoneInfo::Make(name);
 }
 
 

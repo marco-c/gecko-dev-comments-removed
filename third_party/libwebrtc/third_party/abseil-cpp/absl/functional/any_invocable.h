@@ -27,6 +27,9 @@
 
 
 
+
+
+
 #ifndef ABSL_FUNCTIONAL_ANY_INVOCABLE_H_
 #define ABSL_FUNCTIONAL_ANY_INVOCABLE_H_
 
@@ -263,6 +266,14 @@ class AnyInvocable : private internal_any_invocable::Impl<Sig> {
   
   void swap(AnyInvocable& other) noexcept { std::swap(*this, other); }
 
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   

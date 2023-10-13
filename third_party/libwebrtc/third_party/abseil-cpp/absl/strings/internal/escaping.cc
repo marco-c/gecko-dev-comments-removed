@@ -21,26 +21,26 @@ namespace absl {
 ABSL_NAMESPACE_BEGIN
 namespace strings_internal {
 
+
+
+
+
 ABSL_CONST_INIT const char kBase64Chars[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+ABSL_CONST_INIT const char kWebSafeBase64Chars[] =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
 
 size_t CalculateBase64EscapedLenInternal(size_t input_len, bool do_padding) {
   
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
   size_t len = (input_len / 3) * 4;
 
+  
+  
   if (input_len % 3 == 0) {
     
     
@@ -70,6 +70,21 @@ size_t CalculateBase64EscapedLenInternal(size_t input_len, bool do_padding) {
   return len;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
                             size_t szdest, const char* base64,
                             bool do_padding) {
@@ -82,6 +97,16 @@ size_t Base64EscapeInternal(const unsigned char* src, size_t szsrc, char* dest,
 
   char* const limit_dest = dest + szdest;
   const unsigned char* const limit_src = src + szsrc;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   
   

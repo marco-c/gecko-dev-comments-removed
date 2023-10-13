@@ -57,9 +57,10 @@ constexpr UIntType IntegerLog2(UIntType n) {
 
 template <typename URBG>
 constexpr size_t NumBits() {
-  return RangeSize<URBG>() == 0
-             ? std::numeric_limits<typename URBG::result_type>::digits
-             : IntegerLog2(RangeSize<URBG>());
+  return static_cast<size_t>(
+      RangeSize<URBG>() == 0
+          ? std::numeric_limits<typename URBG::result_type>::digits
+          : IntegerLog2(RangeSize<URBG>()));
 }
 
 
@@ -151,7 +152,8 @@ FastUniformBits<UIntType>::Generate(URBG& g,
 
   result_type r = static_cast<result_type>(g() - kMin);
   for (size_t n = 1; n < kIters; ++n) {
-    r = (r << kShift) + static_cast<result_type>(g() - kMin);
+    r = static_cast<result_type>(r << kShift) +
+        static_cast<result_type>(g() - kMin);
   }
   return r;
 }

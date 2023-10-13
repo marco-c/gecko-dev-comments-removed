@@ -15,9 +15,14 @@
 #include "absl/container/internal/raw_hash_set.h"
 
 #include <atomic>
+#include <cassert>
 #include <cstddef>
+#include <cstring>
 
+#include "absl/base/attributes.h"
 #include "absl/base/config.h"
+#include "absl/base/dynamic_annotations.h"
+#include "absl/hash/hash.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -25,7 +30,15 @@ namespace container_internal {
 
 
 
-alignas(16) ABSL_CONST_INIT ABSL_DLL const ctrl_t kEmptyGroup[16] = {
+
+
+
+constexpr ctrl_t ZeroCtrlT() { return static_cast<ctrl_t>(0); }
+alignas(16) ABSL_CONST_INIT ABSL_DLL const ctrl_t kEmptyGroup[32] = {
+    ZeroCtrlT(),       ZeroCtrlT(),    ZeroCtrlT(),    ZeroCtrlT(),
+    ZeroCtrlT(),       ZeroCtrlT(),    ZeroCtrlT(),    ZeroCtrlT(),
+    ZeroCtrlT(),       ZeroCtrlT(),    ZeroCtrlT(),    ZeroCtrlT(),
+    ZeroCtrlT(),       ZeroCtrlT(),    ZeroCtrlT(),    ZeroCtrlT(),
     ctrl_t::kSentinel, ctrl_t::kEmpty, ctrl_t::kEmpty, ctrl_t::kEmpty,
     ctrl_t::kEmpty,    ctrl_t::kEmpty, ctrl_t::kEmpty, ctrl_t::kEmpty,
     ctrl_t::kEmpty,    ctrl_t::kEmpty, ctrl_t::kEmpty, ctrl_t::kEmpty,
@@ -35,16 +48,49 @@ alignas(16) ABSL_CONST_INIT ABSL_DLL const ctrl_t kEmptyGroup[16] = {
 constexpr size_t Group::kWidth;
 #endif
 
+namespace {
+
 
 inline size_t RandomSeed() {
 #ifdef ABSL_HAVE_THREAD_LOCAL
   static thread_local size_t counter = 0;
+  
+  
+  
+  
+  ABSL_ANNOTATE_MEMORY_IS_INITIALIZED(&counter, sizeof(size_t));
   size_t value = ++counter;
 #else   
   static std::atomic<size_t> counter(0);
   size_t value = counter.fetch_add(1, std::memory_order_relaxed);
 #endif  
   return value ^ static_cast<size_t>(reinterpret_cast<uintptr_t>(&counter));
+}
+
+}  
+
+GenerationType* EmptyGeneration() {
+  if (SwisstableGenerationsEnabled()) {
+    constexpr size_t kNumEmptyGenerations = 1024;
+    static constexpr GenerationType kEmptyGenerations[kNumEmptyGenerations]{};
+    return const_cast<GenerationType*>(
+        &kEmptyGenerations[RandomSeed() % kNumEmptyGenerations]);
+  }
+  return nullptr;
+}
+
+bool CommonFieldsGenerationInfoEnabled::
+    should_rehash_for_bug_detection_on_insert(const ctrl_t* ctrl,
+                                              size_t capacity) const {
+  if (reserved_growth_ == kReservedGrowthJustRanOut) return true;
+  if (reserved_growth_ > 0) return false;
+  
+  
+  
+  
+  
+  return probe(ctrl, capacity, absl::HashOf(RandomSeed())).offset() <
+         RehashProbabilityConstant();
 }
 
 bool ShouldInsertBackwards(size_t hash, const ctrl_t* ctrl) {
@@ -64,7 +110,154 @@ void ConvertDeletedToEmptyAndFullToDeleted(ctrl_t* ctrl, size_t capacity) {
   ctrl[capacity] = ctrl_t::kSentinel;
 }
 
-template FindInfo find_first_non_full(const ctrl_t*, size_t, size_t);
+template FindInfo find_first_non_full(const CommonFields&, size_t);
+
+FindInfo find_first_non_full_outofline(const CommonFields& common,
+                                       size_t hash) {
+  return find_first_non_full(common, hash);
+}
+
+
+
+static inline void* SlotAddress(void* slot_array, size_t slot,
+                                size_t slot_size) {
+  return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(slot_array) +
+                                 (slot * slot_size));
+}
+
+
+
+static inline void* NextSlot(void* slot, size_t slot_size) {
+  return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(slot) + slot_size);
+}
+
+
+
+static inline void* PrevSlot(void* slot, size_t slot_size) {
+  return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(slot) - slot_size);
+}
+
+void DropDeletesWithoutResize(CommonFields& common,
+                              const PolicyFunctions& policy, void* tmp_space) {
+  void* set = &common;
+  void* slot_array = common.slot_array();
+  const size_t capacity = common.capacity();
+  assert(IsValidCapacity(capacity));
+  assert(!is_small(capacity));
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  ctrl_t* ctrl = common.control();
+  ConvertDeletedToEmptyAndFullToDeleted(ctrl, capacity);
+  auto hasher = policy.hash_slot;
+  auto transfer = policy.transfer;
+  const size_t slot_size = policy.slot_size;
+
+  size_t total_probe_length = 0;
+  void* slot_ptr = SlotAddress(slot_array, 0, slot_size);
+  for (size_t i = 0; i != capacity;
+       ++i, slot_ptr = NextSlot(slot_ptr, slot_size)) {
+    assert(slot_ptr == SlotAddress(slot_array, i, slot_size));
+    if (!IsDeleted(ctrl[i])) continue;
+    const size_t hash = (*hasher)(set, slot_ptr);
+    const FindInfo target = find_first_non_full(common, hash);
+    const size_t new_i = target.offset;
+    total_probe_length += target.probe_length;
+
+    
+    
+    
+    const size_t probe_offset = probe(common, hash).offset();
+    const auto probe_index = [probe_offset, capacity](size_t pos) {
+      return ((pos - probe_offset) & capacity) / Group::kWidth;
+    };
+
+    
+    if (ABSL_PREDICT_TRUE(probe_index(new_i) == probe_index(i))) {
+      SetCtrl(common, i, H2(hash), slot_size);
+      continue;
+    }
+
+    void* new_slot_ptr = SlotAddress(slot_array, new_i, slot_size);
+    if (IsEmpty(ctrl[new_i])) {
+      
+      
+      
+      SetCtrl(common, new_i, H2(hash), slot_size);
+      (*transfer)(set, new_slot_ptr, slot_ptr);
+      SetCtrl(common, i, ctrl_t::kEmpty, slot_size);
+    } else {
+      assert(IsDeleted(ctrl[new_i]));
+      SetCtrl(common, new_i, H2(hash), slot_size);
+      
+
+      
+      (*transfer)(set, tmp_space, new_slot_ptr);
+      (*transfer)(set, new_slot_ptr, slot_ptr);
+      (*transfer)(set, slot_ptr, tmp_space);
+
+      
+      --i;
+      slot_ptr = PrevSlot(slot_ptr, slot_size);
+    }
+  }
+  ResetGrowthLeft(common);
+  common.infoz().RecordRehash(total_probe_length);
+}
+
+void EraseMetaOnly(CommonFields& c, ctrl_t* it, size_t slot_size) {
+  assert(IsFull(*it) && "erasing a dangling iterator");
+  c.decrement_size();
+  const auto index = static_cast<size_t>(it - c.control());
+  const size_t index_before = (index - Group::kWidth) & c.capacity();
+  const auto empty_after = Group(it).MaskEmpty();
+  const auto empty_before = Group(c.control() + index_before).MaskEmpty();
+
+  
+  
+  
+  bool was_never_full = empty_before && empty_after &&
+                        static_cast<size_t>(empty_after.TrailingZeros()) +
+                                empty_before.LeadingZeros() <
+                            Group::kWidth;
+
+  SetCtrl(c, index, was_never_full ? ctrl_t::kEmpty : ctrl_t::kDeleted,
+          slot_size);
+  c.set_growth_left(c.growth_left() + (was_never_full ? 1 : 0));
+  c.infoz().RecordErase();
+}
+
+void ClearBackingArray(CommonFields& c, const PolicyFunctions& policy,
+                       bool reuse) {
+  c.set_size(0);
+  if (reuse) {
+    ResetCtrl(c, policy.slot_size);
+    c.infoz().RecordStorageChanged(0, c.capacity());
+  } else {
+    
+    
+    c.infoz().RecordClearedReservation();
+    c.infoz().RecordStorageChanged(0, 0);
+    (*policy.dealloc)(c, policy);
+    c.set_control(EmptyGroup());
+    c.set_generation_ptr(EmptyGeneration());
+    c.set_slots(nullptr);
+    c.set_capacity(0);
+  }
+}
 
 }  
 ABSL_NAMESPACE_END
