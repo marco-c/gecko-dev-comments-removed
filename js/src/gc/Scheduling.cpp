@@ -28,7 +28,6 @@ using mozilla::Maybe;
 using mozilla::Nothing;
 using mozilla::Some;
 using mozilla::TimeDuration;
-using mozilla::TimeStamp;
 
 
 
