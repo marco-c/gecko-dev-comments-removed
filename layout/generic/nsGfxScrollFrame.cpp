@@ -4462,11 +4462,12 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
     nsDisplayListBuilder* aBuilder, nsRect* aVisibleRect, nsRect* aDirtyRect,
     bool aSetBase, bool* aDirtyRectHasBeenOverriden) {
   nsIContent* content = GetContent();
+  bool hasDisplayPort = DisplayPortUtils::HasDisplayPort(content);
   
   
   
   
-  if (ShouldActivateAllScrollFrames() &&
+  if (ShouldActivateAllScrollFrames() && !hasDisplayPort &&
       !DisplayPortUtils::HasDisplayPort(content) &&
       nsLayoutUtils::AsyncPanZoomEnabled(this) && WantAsyncScroll() &&
       aBuilder->IsPaintingToWindow() && aSetBase) {
@@ -4482,9 +4483,9 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
         content, PresShell(), DisplayPortMargins::Empty(content),
         DisplayPortUtils::ClearMinimalDisplayPortProperty::No, 0,
         DisplayPortUtils::RepaintMode::DoNotRepaint);
+    hasDisplayPort = true;
   }
 
-  bool usingDisplayPort = DisplayPortUtils::HasDisplayPort(content);
   if (aBuilder->IsPaintingToWindow()) {
     if (aSetBase) {
       nsRect displayportBase = *aVisibleRect;
@@ -4520,7 +4521,7 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
         
         
         
-        if (usingDisplayPort && (!mIsRoot || pc->GetParentPresContext()) &&
+        if (hasDisplayPort && (!mIsRoot || pc->GetParentPresContext()) &&
             !DisplayPortUtils::WillUseEmptyDisplayPortMargins(content)) {
           displayportBase = RestrictToRootDisplayPort(displayportBase);
           MOZ_LOG(sDisplayportLog, LogLevel::Verbose,
@@ -4538,7 +4539,7 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
     
     MOZ_ASSERT(content->GetProperty(nsGkAtoms::DisplayPortBase));
     nsRect displayPort;
-    usingDisplayPort = DisplayPortUtils::GetDisplayPort(
+    hasDisplayPort = DisplayPortUtils::GetDisplayPort(
         content, &displayPort,
         DisplayPortOptions().With(DisplayportRelativeTo::ScrollFrame));
 
@@ -4549,7 +4550,7 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
       }
     };
 
-    if (usingDisplayPort) {
+    if (hasDisplayPort) {
       
       *aVisibleRect = displayPort;
       if (aBuilder->IsReusingStackingContextItems() ||
@@ -4580,7 +4581,7 @@ bool nsHTMLScrollFrame::DecideScrollableLayer(
   
   
   
-  mWillBuildScrollableLayer = usingDisplayPort ||
+  mWillBuildScrollableLayer = hasDisplayPort ||
                               nsContentUtils::HasScrollgrab(content) ||
                               mZoomableByAPZ;
   return mWillBuildScrollableLayer;
