@@ -2367,18 +2367,32 @@ TEST(TestAudioTrackGraph, SwitchNativeAudioProcessingTrack)
   std::cerr << "No native input now" << std::endl;
 }
 
+class OnFallbackListener : public MediaTrackListener {
+  const RefPtr<MediaTrack> mTrack;
+  Atomic<bool> mOnFallback{true};
+
+ public:
+  explicit OnFallbackListener(MediaTrack* aTrack) : mTrack(aTrack) {}
+
+  bool OnFallback() { return mOnFallback; }
+
+  void NotifyOutput(MediaTrackGraph*, TrackTime) override {
+    if (auto* ad =
+            mTrack->GraphImpl()->CurrentDriver()->AsAudioCallbackDriver()) {
+      mOnFallback = ad->OnFallback();
+    }
+  }
+};
+
 void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
-                        float aDriftFactor, uint32_t aBufferMs = 50) {
+                        float aDriftFactor, uint32_t aRunTimeSeconds = 10,
+                        uint32_t aNumExpectedUnderruns = 0) {
   std::cerr << "TestCrossGraphPort input: " << aInputRate
             << ", output: " << aOutputRate << ", driftFactor: " << aDriftFactor
             << std::endl;
 
-  MockCubeb* cubeb = new MockCubeb();
+  MockCubeb* cubeb = new MockCubeb(MockCubeb::RunningMode::Manual);
   CubebUtils::ForceSetCubebContext(cubeb->AsCubebContext());
-  auto unforcer = WaitFor(cubeb->ForceAudioThread()).unwrap();
-  Unused << unforcer;
-
-  cubeb->SetStreamStartFreezeEnabled(true);
 
   
   MediaTrackGraph* primary = MediaTrackGraphImpl::GetInstance(
@@ -2397,7 +2411,8 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
   RefPtr<AudioProcessingTrack> processingTrack;
   RefPtr<AudioInputProcessing> listener;
-  auto primaryStarted = Invoke([&] {
+  RefPtr<OnFallbackListener> primaryFallbackListener;
+  DispatchFunction([&] {
     
     processingTrack = AudioProcessingTrack::Create(primary);
     listener = new AudioInputProcessing(2);
@@ -2408,15 +2423,26 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
         MakeUnique<StartInputProcessing>(processingTrack, listener));
     processingTrack->ConnectDeviceInput(deviceId, listener,
                                         PRINCIPAL_HANDLE_NONE);
-    return primary->NotifyWhenDeviceStarted(processingTrack);
+    primaryFallbackListener = new OnFallbackListener(processingTrack);
+    processingTrack->AddListener(primaryFallbackListener);
   });
 
   RefPtr<SmartMockCubebStream> inputStream = WaitFor(cubeb->StreamInitEvent());
 
+  
+  while (primaryFallbackListener->OnFallback()) {
+    EXPECT_EQ(inputStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
   RefPtr<CrossGraphTransmitter> transmitter;
   RefPtr<MediaInputPort> port;
   RefPtr<CrossGraphReceiver> receiver;
-  auto partnerStarted = Invoke([&] {
+  RefPtr<OnFallbackListener> partnerFallbackListener;
+  DispatchFunction([&] {
+    processingTrack->RemoveListener(primaryFallbackListener);
+
     
     receiver = partner->CreateCrossGraphReceiver(primary->GraphRate());
 
@@ -2427,33 +2453,28 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 
     port = transmitter->AllocateInputPort(processingTrack);
     receiver->AddAudioOutput((void*)1);
-    return partner->NotifyWhenDeviceStarted(receiver);
+
+    partnerFallbackListener = new OnFallbackListener(receiver);
+    receiver->AddListener(partnerFallbackListener);
   });
 
   RefPtr<SmartMockCubebStream> partnerStream =
       WaitFor(cubeb->StreamInitEvent());
-  partnerStream->SetDriftFactor(aDriftFactor);
-
-  cubeb->SetStreamStartFreezeEnabled(false);
 
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  inputStream->Thaw();
-  partnerStream->Thaw();
+  EXPECT_EQ(inputStream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
 
-  Unused << WaitFor(primaryStarted);
-  Unused << WaitFor(partnerStarted);
+  
+  while (partnerFallbackListener->OnFallback()) {
+    EXPECT_EQ(partnerStream->ManualDataCallback(0),
+              MockCubebStream::KeepProcessing::Yes);
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  }
+
+  DispatchFunction([&] { receiver->RemoveListener(partnerFallbackListener); });
+  while (NS_ProcessNextEvent(nullptr, false)) {
+  }
 
   nsIThread* currentThread = NS_GetCurrentThread();
   cubeb_state inputState = CUBEB_STATE_STARTED;
@@ -2463,16 +2484,28 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   MediaEventListener partnerStateListener = partnerStream->StateEvent().Connect(
       currentThread, [&](cubeb_state aState) { partnerState = aState; });
 
+  const media::TimeUnit runtime = media::TimeUnit::FromSeconds(aRunTimeSeconds);
   
-  DispatchFunction([&] {
-    processingTrack->GraphImpl()->AppendMessage(MakeUnique<GoFaster>(cubeb));
-  });
-  uint32_t totalFrames = 0;
-  WaitUntil(partnerStream->FramesVerifiedEvent(), [&](uint32_t aFrames) {
-    totalFrames += aFrames;
-    return totalFrames > static_cast<uint32_t>(partner->GraphRate() * 3);
-  });
-  cubeb->DontGoFaster();
+  const media::TimeUnit step = media::TimeUnit::FromSeconds(0.01);
+  {
+    media::TimeUnit pos = media::TimeUnit::Zero();
+    long inputFrames = 0;
+    long outputFrames = 0;
+    while (pos < runtime) {
+      pos += step;
+      const long newInputFrames = pos.ToTicksAtRate(aInputRate);
+      const long newOutputFrames =
+          (pos.MultDouble(aDriftFactor)).ToTicksAtRate(aOutputRate);
+      EXPECT_EQ(inputStream->ManualDataCallback(newInputFrames - inputFrames),
+                MockCubebStream::KeepProcessing::Yes);
+      EXPECT_EQ(
+          partnerStream->ManualDataCallback(newOutputFrames - outputFrames),
+          MockCubebStream::KeepProcessing::Yes);
+
+      inputFrames = newInputFrames;
+      outputFrames = newOutputFrames;
+    }
+  }
 
   DispatchFunction([&] {
     
@@ -2486,8 +2519,20 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
     processingTrack->Destroy();
   });
 
+  while (NS_ProcessNextEvent(nullptr, false)) {
+  }
+
+  EXPECT_EQ(inputStream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+  EXPECT_EQ(partnerStream->ManualDataCallback(0),
+            MockCubebStream::KeepProcessing::Yes);
+
+  EXPECT_EQ(inputStream->ManualDataCallback(128),
+            MockCubebStream::KeepProcessing::No);
+  EXPECT_EQ(partnerStream->ManualDataCallback(128),
+            MockCubebStream::KeepProcessing::No);
+
   uint32_t inputFrequency = inputStream->InputFrequency();
-  uint32_t partnerRate = partnerStream->InputSampleRate();
 
   uint64_t preSilenceSamples;
   float estimatedFreq;
@@ -2496,13 +2541,41 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
       WaitFor(partnerStream->OutputVerificationEvent());
 
   EXPECT_NEAR(estimatedFreq, inputFrequency / aDriftFactor, 5);
-  uint32_t expectedPreSilence =
-      static_cast<uint32_t>(partnerRate * aDriftFactor / 1000 * aBufferMs);
-  uint32_t margin = partnerRate / 20 ;
+  
+  
+  
+  
+  
+  
+  const media::TimeUnit inputBuffering(WEBAUDIO_BLOCK_SIZE, aInputRate);
+  const media::TimeUnit buffering =
+      media::TimeUnit(Preferences::GetInt(DRIFT_BUFFERING_PREF), MSECS_PER_S)
+          .ToBase(aInputRate);
+  const media::TimeUnit inputStepSize(
+      MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(
+          step.ToTicksAtRate(aInputRate)),
+      aInputRate);
+  const media::TimeUnit outputStepSize =
+      media::TimeUnit(MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(
+                          step.ToBase(aOutputRate)
+                              .MultDouble(aDriftFactor)
+                              .ToTicksAtRate(aOutputRate)),
+                      aOutputRate)
+          .ToBase(aInputRate);
+  const uint32_t expectedPreSilence =
+      (inputBuffering + buffering - inputStepSize + outputStepSize)
+          .ToBase<media::TimeUnit::CeilingPolicy>(aOutputRate)
+          .ToTicksAtRate(aOutputRate);
+  
+  
+  
+  const uint32_t margin = std::max(1U, expectedPreSilence / 1000);
   EXPECT_NEAR(preSilenceSamples, expectedPreSilence, margin);
   
   
-  EXPECT_LE(nrDiscontinuities, 1U);
+  
+  
+  EXPECT_LE(nrDiscontinuities, 1U + 2 * aNumExpectedUnderruns);
 
   SpinEventLoopUntil("streams have stopped"_ns, [&] {
     return inputState == CUBEB_STATE_STOPPED &&
@@ -2515,34 +2588,46 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
 TEST(TestAudioTrackGraph, CrossGraphPort)
 {
   TestCrossGraphPort(44100, 44100, 1);
-  TestCrossGraphPort(44100, 44100, 1.08);
-  TestCrossGraphPort(44100, 44100, 0.92);
+  TestCrossGraphPort(44100, 44100, 1.006);
+  TestCrossGraphPort(44100, 44100, 0.994);
 
   TestCrossGraphPort(48000, 44100, 1);
-  TestCrossGraphPort(48000, 44100, 1.08);
-  TestCrossGraphPort(48000, 44100, 0.92);
+  TestCrossGraphPort(48000, 44100, 1.006);
+  TestCrossGraphPort(48000, 44100, 0.994);
 
   TestCrossGraphPort(44100, 48000, 1);
-  TestCrossGraphPort(44100, 48000, 1.08);
-  TestCrossGraphPort(44100, 48000, 0.92);
+  TestCrossGraphPort(44100, 48000, 1.006);
+  TestCrossGraphPort(44100, 48000, 0.994);
 
   TestCrossGraphPort(52110, 17781, 1);
-  TestCrossGraphPort(52110, 17781, 1.08);
-  TestCrossGraphPort(52110, 17781, 0.92);
+  TestCrossGraphPort(52110, 17781, 1.006);
+  TestCrossGraphPort(52110, 17781, 0.994);
+}
+
+TEST(TestAudioTrackGraph, CrossGraphPortUnderrun)
+{
+  TestCrossGraphPort(44100, 44100, 1.01, 30, 1);
+  TestCrossGraphPort(44100, 44100, 1.03, 40, 3);
+
+  TestCrossGraphPort(48000, 44100, 1.01, 30, 1);
+  TestCrossGraphPort(48000, 44100, 1.03, 40, 3);
+
+  TestCrossGraphPort(44100, 48000, 1.01, 30, 1);
+  TestCrossGraphPort(44100, 48000, 1.03, 40, 3);
+
+  TestCrossGraphPort(52110, 17781, 1.01, 30, 1);
+  TestCrossGraphPort(52110, 17781, 1.03, 40, 3);
 }
 
 TEST(TestAudioTrackGraph, CrossGraphPortLargeBuffer)
 {
-  const int32_t oldBuffering = Preferences::GetInt(DRIFT_BUFFERING_PREF);
-  const int32_t longBuffering = 5000;
+  const int32_t longBuffering = 2500;
   Preferences::SetInt(DRIFT_BUFFERING_PREF, longBuffering);
 
-  TestCrossGraphPort(44100, 44100, 1.02, longBuffering);
-  TestCrossGraphPort(48000, 44100, 1.08, longBuffering);
-  TestCrossGraphPort(44100, 48000, 0.95, longBuffering);
-  TestCrossGraphPort(52110, 17781, 0.92, longBuffering);
+  TestCrossGraphPort(44100, 48000, 1.05, 60);
+  TestCrossGraphPort(52110, 17781, 0.95, 60);
 
-  Preferences::SetInt(DRIFT_BUFFERING_PREF, oldBuffering);
+  Preferences::ClearUser(DRIFT_BUFFERING_PREF);
 }
 #endif  
 
