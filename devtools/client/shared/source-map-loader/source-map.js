@@ -216,20 +216,43 @@ async function getGeneratedLocation(location) {
   };
 }
 
-async function getOriginalLocations(locations) {
-  const maps = {};
 
-  const results = [];
-  for (const location of locations) {
-    let map = maps[location.sourceId];
-    if (map === undefined) {
-      map = await getSourceMap(location.sourceId);
-      maps[location.sourceId] = map || null;
-    }
 
-    results.push(map ? getOriginalLocationSync(map, location) : null);
+
+
+
+
+
+
+
+
+
+
+
+async function getOriginalLocations(breakpointPositions, sourceId) {
+  const map = await getSourceMap(sourceId);
+  if (!map) {
+    return null;
   }
-  return results;
+  for (const line in breakpointPositions) {
+    const breakableColumnsPerLine = breakpointPositions[line];
+    for (let i = 0; i < breakableColumnsPerLine.length; i++) {
+      const column = breakableColumnsPerLine[i];
+      const mappedLocation = getOriginalLocationSync(map, {
+        sourceId,
+        line: parseInt(line, 10),
+        column,
+      });
+      if (mappedLocation) {
+        
+        
+        
+        mappedLocation.generatedColumn = column;
+        breakableColumnsPerLine[i] = mappedLocation;
+      }
+    }
+  }
+  return breakpointPositions;
 }
 
 function getOriginalLocationSync(map, location) {

@@ -15,27 +15,67 @@ import { makeBreakpointId } from "../../utils/breakpoint";
 import { memoizeableAction } from "../../utils/memoizableAction";
 import { fulfilled } from "../../utils/async-value";
 import {
-  debuggerToSourceMapLocation,
   sourceMapToDebuggerLocation,
   createLocation,
 } from "../../utils/location";
 import { validateSource } from "../../utils/context";
 
-async function mapLocations(generatedLocations, { getState, sourceMapLoader }) {
-  if (!generatedLocations.length) {
-    return [];
+async function mapLocations(
+  breakpointPositions,
+  generatedSource,
+  isOriginal,
+  originalSourceId,
+  { getState, sourceMapLoader }
+) {
+  
+  let mappedBreakpointPositions = await sourceMapLoader.getOriginalLocations(
+    breakpointPositions,
+    generatedSource.id
+  );
+  
+  
+  if (!mappedBreakpointPositions) {
+    mappedBreakpointPositions = breakpointPositions;
   }
 
-  const originalLocations = await sourceMapLoader.getOriginalLocations(
-    generatedLocations.map(debuggerToSourceMapLocation)
-  );
-  return originalLocations.map((location, index) => ({
+  const locations = [];
+  for (let line in mappedBreakpointPositions) {
     
-    location: location
-      ? sourceMapToDebuggerLocation(getState(), location)
-      : generatedLocations[index],
-    generatedLocation: generatedLocations[index],
-  }));
+    line = parseInt(line, 10);
+    for (const columnOrSourceMapLocation of mappedBreakpointPositions[line]) {
+      
+      
+      
+      
+      
+      if (typeof columnOrSourceMapLocation == "number") {
+        const generatedLocation = createLocation({
+          line,
+          column: columnOrSourceMapLocation,
+          source: generatedSource,
+        });
+        locations.push({ location: generatedLocation, generatedLocation });
+      } else {
+        
+        
+        
+        const generatedLocation = createLocation({
+          line,
+          column: columnOrSourceMapLocation.generatedColumn,
+          source: generatedSource,
+        });
+
+        locations.push({
+          location: sourceMapToDebuggerLocation(
+            getState(),
+            columnOrSourceMapLocation
+          ),
+          generatedLocation,
+        });
+      }
+    }
+  }
+  return locations;
 }
 
 
@@ -64,24 +104,6 @@ function filterByUniqLocation(positions) {
     handledBreakpointIds.add(breakpointId);
     return true;
   });
-}
-
-function convertToList(results, source) {
-  const positions = [];
-
-  for (const line in results) {
-    for (const column of results[line]) {
-      positions.push(
-        createLocation({
-          line: Number(line),
-          column,
-          source,
-        })
-      );
-    }
-  }
-
-  return positions;
 }
 
 function groupByLine(results, source, line) {
@@ -208,8 +230,13 @@ async function _setBreakpointPositions(location, thunkArgs) {
     }
   }
 
-  let positions = convertToList(results, generatedSource);
-  positions = await mapLocations(positions, thunkArgs);
+  let positions = await mapLocations(
+    results,
+    generatedSource,
+    location.source.isOriginal,
+    location.source.id,
+    thunkArgs
+  );
   
   
   validateSource(getState(), location.source);
