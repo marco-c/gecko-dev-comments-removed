@@ -44,15 +44,10 @@ class FileSystemThreadSafeStreamOwner;
 
 class FileSystemWritableFileStream final : public WritableStream {
  public:
-  
-  using CreatePromise =
-      MozPromise<already_AddRefed<FileSystemWritableFileStream>, nsresult,
-                  true>;
-
   using WriteDataPromise =
       MozPromise<Maybe<int64_t>, CopyableErrorResult,  true>;
 
-  static RefPtr<CreatePromise> Create(
+  static Result<RefPtr<FileSystemWritableFileStream>, nsresult> Create(
       const nsCOMPtr<nsIGlobalObject>& aGlobal,
       RefPtr<FileSystemManager>& aManager,
       mozilla::ipc::RandomAccessStreamParams&& aStreamParams,
