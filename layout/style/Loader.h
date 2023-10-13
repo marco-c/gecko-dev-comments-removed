@@ -474,7 +474,7 @@ class Loader final {
   friend class StreamLoader;
 
   
-  void IncrementOngoingLoadCount() {
+  void IncrementOngoingLoadCountAndMaybeBlockOnload() {
     if (!mOngoingLoadCount++) {
       BlockOnload();
     }

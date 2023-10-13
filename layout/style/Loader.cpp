@@ -1160,7 +1160,7 @@ nsresult Loader::LoadSheet(SheetLoadData& aLoadData, SheetState aSheetState,
   
   if (aPendingLoad == PendingLoad::No) {
     if (aLoadData.BlocksLoadEvent()) {
-      IncrementOngoingLoadCount();
+      IncrementOngoingLoadCountAndMaybeBlockOnload();
     }
 
     
@@ -2128,7 +2128,7 @@ void Loader::NotifyOfCachedLoad(RefPtr<SheetLoadData> aLoadData) {
 
   
   if (aLoadData->mURI && aLoadData->BlocksLoadEvent()) {
-    IncrementOngoingLoadCount();
+    IncrementOngoingLoadCountAndMaybeBlockOnload();
   }
   SheetComplete(*aLoadData, NS_OK);
 }
