@@ -581,7 +581,7 @@ class Nursery {
   void poisonAndInitCurrentChunk(size_t extent = gc::ChunkSize);
 
   void setCurrentEnd();
-  void setStartPosition();
+  void setStartToCurrentPosition();
 
   
   

@@ -351,7 +351,7 @@ bool js::Nursery::initFirstChunk(AutoLockGCBgAlloc& lock) {
   }
 
   setCurrentChunk(0);
-  setStartPosition();
+  setStartToCurrentPosition();
   poisonAndInitCurrentChunk();
 
   
@@ -515,7 +515,7 @@ void js::Nursery::leaveZealMode() {
   MOZ_ASSERT(isEmpty());
 
   setCurrentChunk(0);
-  setStartPosition();
+  setStartToCurrentPosition();
   poisonAndInitCurrentChunk();
 }
 #endif  
@@ -1711,7 +1711,7 @@ void js::Nursery::clear() {
   }
 
   
-  setStartPosition();
+  setStartToCurrentPosition();
 }
 
 MOZ_ALWAYS_INLINE void js::Nursery::setCurrentChunk(unsigned chunkno) {
@@ -1769,7 +1769,7 @@ bool js::Nursery::allocateNextChunk(const unsigned chunkno,
   return true;
 }
 
-MOZ_ALWAYS_INLINE void js::Nursery::setStartPosition() {
+MOZ_ALWAYS_INLINE void js::Nursery::setStartToCurrentPosition() {
   startChunk_ = currentChunk_;
   startPosition_ = position();
 }
