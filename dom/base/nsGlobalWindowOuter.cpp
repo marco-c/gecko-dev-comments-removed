@@ -5957,10 +5957,11 @@ void nsGlobalWindowOuter::CloseOuter(bool aTrustedCaller) {
       if (!allowClose) {
         
         
-        nsContentUtils::ReportToConsole(
-            nsIScriptError::warningFlag, "DOM Window"_ns,
-            mDoc,  
-            nsContentUtils::eDOM_PROPERTIES, "WindowCloseBlockedWarning");
+        nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
+                                        "DOM Window"_ns,
+                                        mDoc,  
+                                        nsContentUtils::eDOM_PROPERTIES,
+                                        "WindowCloseByScriptBlockedWarning");
 
         return;
       }
