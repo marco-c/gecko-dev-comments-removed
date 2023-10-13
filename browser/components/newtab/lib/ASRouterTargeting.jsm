@@ -992,25 +992,6 @@ const TargetingGetters = {
 
     return attributionData?.campaign === "migration";
   },
-
-  
-
-
-
-
-
-
-
-  get primaryResolution() {
-    
-    
-    
-    let window = Services.appShell.hiddenDOMWindow;
-    return {
-      width: window?.screen.availWidth,
-      height: window?.screen.availHeight,
-    };
-  },
 };
 
 const ASRouterTargeting = {
