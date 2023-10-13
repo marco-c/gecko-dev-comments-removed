@@ -8,14 +8,16 @@
 #define mozilla_dom_WebAuthnTransactionParent_h
 
 #include "mozilla/dom/PWebAuthnTransactionParent.h"
-
-
+#include "mozilla/dom/WebAuthnPromiseHolder.h"
 
 
 
 
 
 namespace mozilla::dom {
+
+class WebAuthnRegisterPromiseHolder;
+class WebAuthnSignPromiseHolder;
 
 class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
  public:
@@ -39,6 +41,10 @@ class WebAuthnTransactionParent final : public PWebAuthnTransactionParent {
 
  private:
   ~WebAuthnTransactionParent() = default;
+
+  Maybe<uint64_t> mTransactionId;
+  MozPromiseRequestHolder<WebAuthnRegisterPromise> mRegisterPromiseRequest;
+  MozPromiseRequestHolder<WebAuthnSignPromise> mSignPromiseRequest;
 };
 
 }  
