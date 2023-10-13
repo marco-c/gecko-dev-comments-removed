@@ -38,24 +38,6 @@ namespace webrtc {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class FlexfecHeaderReader2 : public FecHeaderReader {
  public:
   FlexfecHeaderReader2();
