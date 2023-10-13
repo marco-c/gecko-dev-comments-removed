@@ -196,7 +196,10 @@ class VideoMediaShimChannel : public VideoMediaChannel {
       absl::AnyInvocable<void()> callback) override {
     
     
-    RTC_CHECK_NOTREACHED();
+    if (send_impl_ && receive_impl_) {
+      RTC_CHECK_NOTREACHED();
+    }
+    send_impl()->SetSendCodecChangedCallback(std::move(callback));
   }
 
   
