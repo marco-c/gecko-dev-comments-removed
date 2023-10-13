@@ -565,11 +565,24 @@ nsDragService::IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) {
 
   if (format == CF_HDROP) {
     
+    
+    
+    
+    
+    format = nsClipboard::GetFormat(kURLMime);
+    SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
+    if (mDataObject->QueryGetData(&fe) == S_OK) {
+      return NS_OK;
+    }
+
+    
     format = nsClipboard::GetClipboardFileDescriptorFormatW();
     SET_FORMATETC(fe, format, 0, DVASPECT_CONTENT, -1, TYMED_HGLOBAL);
     if (mDataObject->QueryGetData(&fe) == S_OK) {
       *_retval = true;  
     }
+
+    
     return NS_OK;
   }
 
