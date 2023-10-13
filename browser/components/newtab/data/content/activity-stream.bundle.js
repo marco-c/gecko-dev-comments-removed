@@ -211,6 +211,7 @@ for (const type of [
   "SNIPPETS_PREVIEW_MODE",
   "SNIPPETS_RESET",
   "SNIPPET_BLOCKED",
+  "SOV_UPDATED",
   "SUBMIT_EMAIL",
   "SUBMIT_SIGNIN",
   "SYSTEM_TICK",
@@ -10689,6 +10690,14 @@ const INITIAL_STATE = {
     showSearchShortcutsForm: false,
     
     searchShortcuts: [],
+    
+    sov: {
+      ready: false,
+      positions: [
+        
+        
+      ],
+    },
   },
   Prefs: {
     initialized: false,
@@ -10943,6 +10952,12 @@ function TopSites(prevState = INITIAL_STATE.TopSites, action) {
       return { ...prevState, searchShortcuts: action.data.searchShortcuts };
     case actionTypes.SNIPPETS_PREVIEW_MODE:
       return { ...prevState, rows: [] };
+    case actionTypes.SOV_UPDATED:
+      const sov = {
+        ready: action.data.ready,
+        positions: action.data.positions,
+      };
+      return { ...prevState, sov };
     default:
       return prevState;
   }

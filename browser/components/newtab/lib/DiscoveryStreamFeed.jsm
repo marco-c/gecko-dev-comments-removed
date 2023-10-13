@@ -47,6 +47,8 @@ const PREF_SYSTEM_TOPSITES = "feeds.system.topsites";
 const PREF_SPOCS_CLEAR_ENDPOINT = "discoverystream.endpointSpocsClear";
 const PREF_SHOW_SPONSORED = "showSponsored";
 const PREF_SHOW_SPONSORED_TOPSITES = "showSponsoredTopSites";
+
+const NIMBUS_VARIABLE_CONTILE_SOV_ENABLED = "topSitesContileSovEnabled";
 const PREF_SPOC_IMPRESSIONS = "discoverystream.spoc.impressions";
 const PREF_FLIGHT_BLOCKS = "discoverystream.flight.blocks";
 const PREF_REC_IMPRESSIONS = "discoverystream.rec.impressions";
@@ -1006,13 +1008,48 @@ class DiscoveryStreamFeed {
 
   async loadSpocs(sendUpdate, isStartup) {
     const cachedData = (await this.cache.get()) || {};
-    let spocsState;
+    let spocsState = cachedData.spocs;
+    let placements = this.getPlacements();
 
-    const placements = this.getPlacements();
+    if (
+      this.showSpocs &&
+      placements?.length &&
+      this.isExpired({ cachedData, key: "spocs", isStartup })
+    ) {
+      
+      let useTopsitesPlacement = true;
 
-    if (this.showSpocs && placements?.length) {
-      spocsState = cachedData.spocs;
-      if (this.isExpired({ cachedData, key: "spocs", isStartup })) {
+      
+      if (
+        lazy.NimbusFeatures.pocketNewtab.getVariable(
+          NIMBUS_VARIABLE_CONTILE_SOV_ENABLED
+        )
+      ) {
+        let { positions, ready } = this.store.getState().TopSites.sov;
+        if (ready) {
+          
+          this.cache.set("sov", positions);
+        } else {
+          
+          positions = cachedData.sov;
+        }
+
+        if (positions?.length) {
+          
+          useTopsitesPlacement = positions.some(
+            allocation => allocation.assignedPartner === "moz-sales"
+          );
+        }
+      }
+
+      
+      if (!useTopsitesPlacement) {
+        placements = placements.filter(
+          placement => placement.name !== "sponsored-topsites"
+        );
+      }
+
+      if (placements?.length) {
         const endpoint =
           this.store.getState().DiscoveryStream.spocs.spocs_endpoint;
 
@@ -1741,6 +1778,7 @@ class DiscoveryStreamFeed {
     await this.cache.set("layout", {});
     await this.cache.set("feeds", {});
     await this.cache.set("spocs", {});
+    await this.cache.set("sov", {});
   }
 
   async resetAllCache() {
