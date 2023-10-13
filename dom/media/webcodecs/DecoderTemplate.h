@@ -144,6 +144,8 @@ class DecoderTemplate : public DOMEventTargetHelper {
 
   
  public:
+  IMPL_EVENT_HANDLER(dequeue)
+
   CodecState State() const { return mState; };
 
   uint32_t DecodeQueueSize() const { return mDecodeQueueSize; };
