@@ -5,6 +5,7 @@ let { ExtensionTestCommon } = ChromeUtils.importESModule(
 );
 
 const {
+  PERMISSION_L10N,
   PERMISSION_L10N_ID_OVERRIDES,
   PERMISSIONS_WITH_MESSAGE,
   permissionToL10nId,
@@ -74,49 +75,73 @@ async function getPermissionWarningsForUpdate(
 
 
 
+
+
 add_task(async function customized_permission_keys_mapping() {
-  const mockLocalization = {
-    formatMessagesSync: args =>
-      args.map(arg => ({
-        value: `Fake localized ${arg.id ?? arg}`,
-        attributes: [],
-      })),
-    formatValueSync: key => `Fake localized ${key}`,
-    formatValuesSync: args =>
-      args.map(arg => `Fake localized ${arg.id ?? arg}`),
-  };
+  
+  const l10nReg = L10nRegistry.getInstance();
+  const source = L10nFileSource.createMock(
+    "mock",
+    "app",
+    ["en-US"],
+    "/localization/",
+    [
+      {
+        path: "/localization/mock.ftl",
+        source: `
+webext-perms-description-test-downloads = Custom description for the downloads permission
+
+webext-perms-description-test-proxy = Custom description for the proxy permission
+`,
+      },
+    ]
+  );
+  l10nReg.registerSources([source]);
 
   
-  const getKeyForPermission = perm => `custom-webext-perms-description-${perm}`;
+  
+  
+  
+  
+  PERMISSION_L10N.addResourceIds(["mock.ftl"]);
+  PERMISSION_L10N_ID_OVERRIDES.set(
+    "downloads",
+    "webext-perms-description-test-downloads"
+  );
+  PERMISSION_L10N_ID_OVERRIDES.set(
+    "proxy",
+    "webext-perms-description-test-proxy"
+  );
+
+  let mockCleanup = () => {
+    
+    mockCleanup = () => {};
+
+    
+    PERMISSION_L10N.removeResourceIds(["mock.ftl"]);
+    PERMISSION_L10N_ID_OVERRIDES.delete("downloads");
+    PERMISSION_L10N_ID_OVERRIDES.delete("proxy");
+    l10nReg.removeSources(["mock"]);
+  };
+  registerCleanupFunction(mockCleanup);
 
   const manifest = {
     permissions: ["downloads", "proxy"],
   };
-  const expectedWarnings = mockLocalization.formatValuesSync(
-    manifest.permissions.map(getKeyForPermission)
+
+  const manifestPermissions = await getManifestPermissions({ manifest });
+  let expectedWarnings = [
+    "Custom description for the downloads permission",
+    "Custom description for the proxy permission",
+  ];
+  const warnings = getPermissionWarnings(manifestPermissions);
+  deepEqual(
+    warnings,
+    expectedWarnings,
+    "Got the expected string from customized permission mapping"
   );
 
-  try {
-    for (let perm of manifest.permissions) {
-      PERMISSION_L10N_ID_OVERRIDES.set(perm, getKeyForPermission(perm));
-    }
-    const manifestPermissions = await getManifestPermissions({ manifest });
-
-    
-    
-    const warnings = getPermissionWarnings(manifestPermissions, {
-      localization: mockLocalization,
-    });
-    deepEqual(
-      warnings,
-      expectedWarnings,
-      "Got the expected string from customized permission mapping"
-    );
-  } finally {
-    for (let perm of manifest.permissions) {
-      PERMISSION_L10N_ID_OVERRIDES.delete(perm);
-    }
-  }
+  mockCleanup();
 });
 
 
