@@ -266,8 +266,8 @@ void TestNonIdleCC::RunSlice(TimeStamp aCCStartTime, TimeStamp aPrevSliceEnd,
     
     EXPECT_FALSE(budget.isUnlimited());
     
-    
-    EXPECT_NEAR(budget.timeBudget(), kICCSliceBudget.ToMilliseconds() * 2, 0.1);
+    EXPECT_NEAR(budget.timeBudget(),
+                MainThreadIdlePeriod::GetLongIdlePeriod() / 2, 0.1);
   } else {
     
     EXPECT_FALSE(budget.isUnlimited());

@@ -1696,7 +1696,8 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
     Maybe<TimeStamp> next = nsRefreshDriver::GetNextTickHint();
     
     
-    if (next.isSome()) {
+    if (next.isSome() &&
+        (sScheduler.InIncrementalGC() || sScheduler.IsCollectingCycles())) {
       sScheduler.RunNextCollectorTimer(aReason, next.value());
     }
   }
