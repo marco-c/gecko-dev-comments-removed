@@ -2882,7 +2882,11 @@ pref("cookiebanners.ui.desktop.cfrVariant", 0);
 #endif
 
 
-pref("browser.privatebrowsing.resetPBM.enabled", false);
+#if defined(NIGHTLY_BUILD)
+  pref("browser.privatebrowsing.resetPBM.enabled", true);
+#else
+  pref("browser.privatebrowsing.resetPBM.enabled", false);
+#endif
 
 
 pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
