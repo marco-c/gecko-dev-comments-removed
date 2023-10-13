@@ -4956,7 +4956,7 @@ nsCSSFrameConstructor::FindSVGData(const Element& aElement,
   
   
   bool parentIsFilter = aParentFrame && aParentFrame->IsSVGFilterFrame();
-  nsCOMPtr<SVGFE> filterPrimitive =
+  nsCOMPtr<SVGFilterPrimitiveElement> filterPrimitive =
       do_QueryInterface(const_cast<Element*>(&aElement));
   if ((parentIsFilter && !filterPrimitive) ||
       (!parentIsFilter && filterPrimitive)) {
