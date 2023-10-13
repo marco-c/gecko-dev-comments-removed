@@ -2590,6 +2590,7 @@
         insertTab = true,
         globalHistoryOptions,
         triggeringRemoteType,
+        wasSchemelessInput,
       } = {}
     ) {
       
@@ -2779,6 +2780,7 @@
           csp,
           globalHistoryOptions,
           triggeringRemoteType,
+          wasSchemelessInput,
         });
       }
 
@@ -3020,6 +3022,7 @@
         csp,
         globalHistoryOptions,
         triggeringRemoteType,
+        wasSchemelessInput,
       }
     ) {
       if (
@@ -3083,6 +3086,7 @@
             csp,
             globalHistoryOptions,
             triggeringRemoteType,
+            wasSchemelessInput,
           });
         } catch (ex) {
           console.error(ex);
