@@ -1,7 +1,7 @@
-
-
-
-
+<!--
+  Any copyright is dedicated to the Public Domain.
+  http://creativecommons.org/publicdomain/zero/1.0/
+-->
 <!DOCTYPE HTML>
 <html>
 <head>
@@ -20,6 +20,7 @@
 
   function runTest() {
     try {
+      // eslint-disable-next-line no-eval
       eval("1");
       ok(false, "should throw");
     }

@@ -26,6 +26,7 @@ function talk_with_worker(worker) {
     };
 
     try {
+      
       eval("/");
     } catch (e) {
       worker.postMessage(new ClonedErrorHolder(e));

@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html id="html">
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=375003
+-->
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
     <title>Test 1 for bug 375003</title>
@@ -26,6 +26,7 @@ var x = [ 'Left','Top','Width','Height' ];
 function test(id,s,expected) {
   var el = document.getElementById(id);
   for(var i = 0; i < x.length; ++i) {
+    // eslint-disable-next-line no-eval
     var actual = eval('el.'+s+x[i]);
     if (expected[i] != -1 && s+x[i]!='scrollHeight')
       is(actual, expected[i], id+"."+s+x[i]);

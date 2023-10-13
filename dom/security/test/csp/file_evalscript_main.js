@@ -1,5 +1,6 @@
 
 
+
 function logResult(str, passed) {
   var elt = document.createElement("div");
   var color = passed ? "#cfc;" : "#fcc";

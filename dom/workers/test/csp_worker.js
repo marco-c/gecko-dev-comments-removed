@@ -6,6 +6,7 @@ onmessage = function (event) {
   if (event.data.do == "eval") {
     var res;
     try {
+      
       res = eval("40+2");
     } catch (ex) {
       res = ex + "";
