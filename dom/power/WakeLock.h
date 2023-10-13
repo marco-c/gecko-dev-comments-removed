@@ -62,11 +62,8 @@ class WakeLock final : public nsIDOMEventListener,
   void AttachEventListener();
   void DetachEventListener();
 
-  
-  bool IsDocumentInvisible(const Document& aDocument) const;
-
-  bool mLocked;
-  bool mHidden;
+  bool mLocked = false;
+  bool mHidden = true;
 
   
   
