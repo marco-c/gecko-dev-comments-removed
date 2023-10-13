@@ -232,15 +232,12 @@ static Result<Ok, nsCString> Validate(const VideoDecoderConfig& aConfig) {
   return Ok();
 }
 
-
-
-
 struct MIMECreateParam {
-  MOZ_IMPLICIT MIMECreateParam(const VideoDecoderConfigInternal& aConfig)
+  explicit MIMECreateParam(const VideoDecoderConfigInternal& aConfig)
       : mParsedCodec(ParseCodecString(aConfig.mCodec).valueOr(EmptyString())),
         mWidth(aConfig.mCodedWidth),
         mHeight(aConfig.mCodedHeight) {}
-  MOZ_IMPLICIT MIMECreateParam(const VideoDecoderConfig& aConfig)
+  explicit MIMECreateParam(const VideoDecoderConfig& aConfig)
       : mParsedCodec(ParseCodecString(aConfig.mCodec).valueOr(EmptyString())),
         mWidth(OptionalToMaybe(aConfig.mCodedWidth)),
         mHeight(OptionalToMaybe(aConfig.mCodedHeight)) {}
@@ -293,18 +290,20 @@ static bool IsSupportedCodec(const nsAString& aCodec) {
 }
 
 
-static bool CanDecode(MIMECreateParam aParam) {
+template <typename Config>
+static bool CanDecode(const Config& aConfig) {
+  auto param = MIMECreateParam(aConfig);
   
   if (IsOnAndroid()) {
     return false;
   }
-  if (!IsSupportedCodec(aParam.mParsedCodec)) {
+  if (!IsSupportedCodec(param.mParsedCodec)) {
     return false;
   }
   
   
   
-  for (const nsCString& mime : GuessMIMETypes(aParam)) {
+  for (const nsCString& mime : GuessMIMETypes(param)) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (DecoderTraits::CanHandleContainerType(
@@ -317,10 +316,11 @@ static bool CanDecode(MIMECreateParam aParam) {
   return false;
 }
 
-static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(MIMECreateParam aParam) {
+static nsTArray<UniquePtr<TrackInfo>> GetTracksInfo(
+    const VideoDecoderConfigInternal& aConfig) {
   
   
-  for (const nsCString& mime : GuessMIMETypes(aParam)) {
+  for (const nsCString& mime : GuessMIMETypes(MIMECreateParam(aConfig))) {
     if (Maybe<MediaContainerType> containerType =
             MakeMediaExtendedMIMEType(mime)) {
       if (nsTArray<UniquePtr<TrackInfo>> tracks =
