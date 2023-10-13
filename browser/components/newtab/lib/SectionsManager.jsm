@@ -25,6 +25,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
 
 
 
+
 const BUILT_IN_SECTIONS = ({ newtab, pocketNewtab }) => ({
   "feeds.section.topstories": options => ({
     id: "topstories",
@@ -38,7 +39,10 @@ const BUILT_IN_SECTIONS = ({ newtab, pocketNewtab }) => ({
         values: { provider: options.provider_name },
       },
       nestedPrefs: [
-        ...(options.show_spocs
+        ...(Services.prefs.getBoolPref(
+          "browser.newtabpage.activity-stream.system.showSponsored",
+          true
+        )
           ? [
               {
                 name: "showSponsored",

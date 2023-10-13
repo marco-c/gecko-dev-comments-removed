@@ -30,15 +30,11 @@ const { DiscoveryStreamFeed } = ChromeUtils.import(
     })
   );
 
-  let newConfig = Object.assign(defaultDSConfig, {
-    show_spocs: false,
-  });
-
   
   
   Services.prefs.setCharPref(
     "browser.newtabpage.activity-stream.discoverystream.config",
-    JSON.stringify(newConfig)
+    JSON.stringify(defaultDSConfig)
   );
 }
 
