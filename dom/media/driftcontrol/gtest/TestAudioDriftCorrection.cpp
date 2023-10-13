@@ -8,7 +8,6 @@
 #include "AudioDriftCorrection.h"
 #include "AudioGenerator.h"
 #include "AudioVerifier.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "nsContentUtils.h"
 
 using namespace mozilla;
@@ -86,10 +85,12 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate,
     }
   }
 
-  const int32_t expectedBuffering =
-      StaticPrefs::media_clockdrift_buffering() * aSourceRate / 1000 -
-      aSourceRate / 100 ;
-  EXPECT_NEAR(ad.CurrentBuffering(), expectedBuffering, 512);
+  
+  
+  EXPECT_LT(ad.CurrentBuffering(), aSourceRate * 50U / 1000);
+  
+  
+  EXPECT_GT(ad.CurrentBuffering(), aSourceRate * 10U / 1000);
 
   EXPECT_EQ(ad.NumUnderruns(), 0U);
 
@@ -100,8 +101,16 @@ void testAudioCorrection(int32_t aSourceRate, int32_t aTargetRate,
   EXPECT_NEAR(outToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
   
   
-  EXPECT_GE(outToneVerifier.PreSilenceSamples(),
-            aTargetRate * 50 / 1000U - aTargetRate * 102 / 100 / 100);
+  const auto buffering = media::TimeUnit::FromSeconds(0.05);
+  const auto sourceStep =
+      media::TimeUnit(aSourceRate * 1002 / 1000 / 100, aSourceRate);
+  const auto targetStep = media::TimeUnit(aTargetRate / 100, aTargetRate);
+  EXPECT_NEAR(static_cast<int64_t>(outToneVerifier.PreSilenceSamples()),
+              (targetStep + buffering - sourceStep)
+                  .ToBase(aSourceRate)
+                  .ToBase<media::TimeUnit::CeilingPolicy>(aTargetRate)
+                  .ToTicksAtRate(aTargetRate),
+              1U);
   EXPECT_EQ(outToneVerifier.CountDiscontinuities(), 0U);
 }
 
@@ -347,7 +356,7 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   
-  EXPECT_GT(ad.BufferSize(), 4800U);
+  EXPECT_GT(ad.BufferSize(), transmitterBlockSize2);
   produceSomeData(transmitterBlockSize2, 10 * sampleRate);
   EXPECT_EQ(ad.NumCorrectionChanges(), numCorrectionChanges);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
@@ -360,8 +369,8 @@ TEST(TestAudioDriftCorrection, DynamicInputBufferSizeChanges)
 
   
   EXPECT_EQ(ad.BufferSize(), 9600U);
-  produceSomeData(transmitterBlockSize1, 10 * sampleRate);
-  EXPECT_EQ(ad.NumCorrectionChanges(), numCorrectionChanges);
+  produceSomeData(transmitterBlockSize1, 20 * sampleRate);
+  EXPECT_NEAR(ad.NumCorrectionChanges(), numCorrectionChanges, 1U);
   EXPECT_EQ(ad.NumUnderruns(), 1U);
 
   EXPECT_NEAR(inToneVerifier.EstimatedFreq(), tone.mFrequency, 1.0f);
@@ -418,7 +427,6 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrun)
       MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
   uint32_t inputRate = nominalRate * 1005 / 1000;  
   uint32_t inputInterval = inputRate;
-  Preferences::SetUint("media.clockdrift.buffering", 10);
   AudioGenerator<AudioDataValue> tone(1, nominalRate, 440);
   AudioDriftCorrection ad(nominalRate, nominalRate, testPrincipal);
   for (uint32_t i = 0; i < interval * iterations; i += interval / 100) {
@@ -437,7 +445,6 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrun)
 
   EXPECT_EQ(ad.BufferSize(), 4800U);
   EXPECT_EQ(ad.NumUnderruns(), 1u);
-  Preferences::ClearUser("media.clockdrift.buffering");
 }
 
 
@@ -454,7 +461,6 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrunHighLatencyInput)
       MakePrincipalHandle(nsContentUtils::GetSystemPrincipal());
   uint32_t inputRate = nominalRate * 1005 / 1000;  
   uint32_t inputInterval = inputRate;
-  Preferences::SetUint("media.clockdrift.buffering", 10);
   AudioGenerator<AudioDataValue> tone(1, nominalRate, 440);
   AudioDriftCorrection ad(nominalRate, nominalRate, testPrincipal);
   for (uint32_t i = 0; i < interval * iterations; i += interval / 100) {
@@ -477,7 +483,6 @@ TEST(TestAudioDriftCorrection, DriftStepResponseUnderrunHighLatencyInput)
 
   EXPECT_EQ(ad.BufferSize(), 220800U);
   EXPECT_EQ(ad.NumUnderruns(), 1u);
-  Preferences::ClearUser("media.clockdrift.buffering");
 }
 
 

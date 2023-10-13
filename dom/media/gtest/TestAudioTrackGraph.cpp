@@ -18,10 +18,7 @@
 #include "mozilla/gtest/WaitFor.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/SpinEventLoopUntil.h"
-#include "mozilla/StaticPrefs_media.h"
 #include "WavDumper.h"
-
-#define DRIFT_BUFFERING_PREF "media.clockdrift.buffering"
 
 using namespace mozilla;
 
@@ -2547,10 +2544,10 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
   
   
   
+  
   const media::TimeUnit inputBuffering(WEBAUDIO_BLOCK_SIZE, aInputRate);
   const media::TimeUnit buffering =
-      media::TimeUnit(Preferences::GetInt(DRIFT_BUFFERING_PREF), MSECS_PER_S)
-          .ToBase(aInputRate);
+      media::TimeUnit::FromSeconds(0.05).ToBase(aInputRate);
   const media::TimeUnit inputStepSize(
       MediaTrackGraphImpl::RoundUpToEndOfAudioBlock(
           step.ToTicksAtRate(aInputRate)),
@@ -2563,7 +2560,8 @@ void TestCrossGraphPort(uint32_t aInputRate, uint32_t aOutputRate,
                       aOutputRate)
           .ToBase(aInputRate);
   const uint32_t expectedPreSilence =
-      (inputBuffering + buffering - inputStepSize + outputStepSize)
+      (outputStepSize + inputBuffering + buffering - inputStepSize)
+          .ToBase(aInputRate)
           .ToBase<media::TimeUnit::CeilingPolicy>(aOutputRate)
           .ToTicksAtRate(aOutputRate);
   
@@ -2617,17 +2615,6 @@ TEST(TestAudioTrackGraph, CrossGraphPortUnderrun)
 
   TestCrossGraphPort(52110, 17781, 1.01, 30, 1);
   TestCrossGraphPort(52110, 17781, 1.03, 40, 3);
-}
-
-TEST(TestAudioTrackGraph, CrossGraphPortLargeBuffer)
-{
-  const int32_t longBuffering = 2500;
-  Preferences::SetInt(DRIFT_BUFFERING_PREF, longBuffering);
-
-  TestCrossGraphPort(44100, 48000, 1.05, 60);
-  TestCrossGraphPort(52110, 17781, 0.95, 60);
-
-  Preferences::ClearUser(DRIFT_BUFFERING_PREF);
 }
 #endif  
 
