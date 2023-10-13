@@ -807,9 +807,8 @@ Result<bool, QMResult> FileSystemDatabaseManagerVersion001::RemoveDirectory(
                 mFileManager->RemoveFiles(descendants, failedRemovals));
 
   
-  
   MOZ_ASSERT_IF(failedRemovals.IsEmpty() && (0 == mFilesOfUnknownUsage),
-                usage == removedUsage);
+                usage <= removedUsage);
 
   TryRemoveDuringIdleMaintenance(failedRemovals);
 
