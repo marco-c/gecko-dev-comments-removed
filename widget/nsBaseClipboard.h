@@ -28,84 +28,20 @@ class nsIWidget;
 
 
 
-
-
-
-
-class ClipboardSetDataHelper : public nsIClipboard {
- public:
-  NS_DECL_ISUPPORTS
-
-  ClipboardSetDataHelper() = default;
-
-  
-  NS_IMETHOD SetData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
-                     int32_t aWhichClipboard) override;
-  NS_IMETHOD AsyncSetData(int32_t aWhichClipboard,
-                          nsIAsyncSetClipboardDataCallback* aCallback,
-                          nsIAsyncSetClipboardData** _retval) override final;
-
- protected:
-  virtual ~ClipboardSetDataHelper();
-
-  
-  NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
-                                    nsIClipboardOwner* aOwner,
-                                    int32_t aWhichClipboard) = 0;
-
-  class AsyncSetClipboardData final : public nsIAsyncSetClipboardData {
-   public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIASYNCSETCLIPBOARDDATA
-
-    AsyncSetClipboardData(int32_t aClipboardType,
-                          ClipboardSetDataHelper* aClipboard,
-                          nsIAsyncSetClipboardDataCallback* aCallback);
-
-   private:
-    virtual ~AsyncSetClipboardData() = default;
-    bool IsValid() const {
-      
-      MOZ_ASSERT_IF(!mClipboard, !mCallback);
-      return !!mClipboard;
-    }
-    void MaybeNotifyCallback(nsresult aResult);
-
-    
-    int32_t mClipboardType;
-    
-    
-    
-    ClipboardSetDataHelper* mClipboard;
-    
-    
-    nsCOMPtr<nsIAsyncSetClipboardDataCallback> mCallback;
-  };
-
- private:
-  void RejectPendingAsyncSetDataRequestIfAny(int32_t aClipboardType);
-
-  
-  
-  
-  RefPtr<AsyncSetClipboardData>
-      mPendingWriteRequests[nsIClipboard::kClipboardTypeCount];
-};
-
-
-
-
-class nsBaseClipboard : public ClipboardSetDataHelper {
+class nsBaseClipboard : public nsIClipboard {
  public:
   explicit nsBaseClipboard(
       const mozilla::dom::ClipboardCapabilities& aClipboardCaps);
 
   
-  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_ISUPPORTS
 
   
-  NS_IMETHOD SetData(nsITransferable* aTransferable, nsIClipboardOwner* anOwner,
+  NS_IMETHOD SetData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
                      int32_t aWhichClipboard) override final;
+  NS_IMETHOD AsyncSetData(int32_t aWhichClipboard,
+                          nsIAsyncSetClipboardDataCallback* aCallback,
+                          nsIAsyncSetClipboardData** _retval) override final;
   NS_IMETHOD GetData(nsITransferable* aTransferable,
                      int32_t aWhichClipboard) override final;
   NS_IMETHOD EmptyClipboard(int32_t aWhichClipboard) override final;
@@ -125,9 +61,12 @@ class nsBaseClipboard : public ClipboardSetDataHelper {
       mozilla::Result<nsTArray<nsCString>, nsresult>)>;
 
  protected:
-  virtual ~nsBaseClipboard() = default;
+  virtual ~nsBaseClipboard();
 
   
+  NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
+                                    nsIClipboardOwner* aOwner,
+                                    int32_t aWhichClipboard) = 0;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) = 0;
   virtual void AsyncGetNativeClipboardData(nsITransferable* aTransferable,
@@ -145,6 +84,36 @@ class nsBaseClipboard : public ClipboardSetDataHelper {
   void ClearClipboardCache(int32_t aClipboardType);
 
  private:
+  void RejectPendingAsyncSetDataRequestIfAny(int32_t aClipboardType);
+
+  class AsyncSetClipboardData final : public nsIAsyncSetClipboardData {
+   public:
+    NS_DECL_ISUPPORTS
+    NS_DECL_NSIASYNCSETCLIPBOARDDATA
+
+    AsyncSetClipboardData(int32_t aClipboardType, nsBaseClipboard* aClipboard,
+                          nsIAsyncSetClipboardDataCallback* aCallback);
+
+   private:
+    virtual ~AsyncSetClipboardData() = default;
+    bool IsValid() const {
+      
+      MOZ_ASSERT_IF(!mClipboard, !mCallback);
+      return !!mClipboard;
+    }
+    void MaybeNotifyCallback(nsresult aResult);
+
+    
+    int32_t mClipboardType;
+    
+    
+    
+    nsBaseClipboard* mClipboard;
+    
+    
+    nsCOMPtr<nsIAsyncSetClipboardDataCallback> mCallback;
+  };
+
   class ClipboardCache final {
    public:
     ~ClipboardCache() {
@@ -183,6 +152,12 @@ class nsBaseClipboard : public ClipboardSetDataHelper {
       int32_t aClipboardType);
   nsresult GetDataFromClipboardCache(nsITransferable* aTransferable,
                                      int32_t aClipboardType);
+
+  
+  
+  
+  RefPtr<AsyncSetClipboardData>
+      mPendingWriteRequests[nsIClipboard::kClipboardTypeCount];
 
   mozilla::UniquePtr<ClipboardCache> mCaches[nsIClipboard::kClipboardTypeCount];
   const mozilla::dom::ClipboardCapabilities mClipboardCaps;
