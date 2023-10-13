@@ -774,6 +774,7 @@ void VideoReceiveStream2::OnEncodedFrame(std::unique_ptr<EncodedFrame> frame) {
       frame->FrameType() == VideoFrameType::kVideoFrameKey;
 
   
+  
   int qp = -1;
   if (frame->CodecSpecific()->codecType == kVideoCodecVP8) {
     if (!vp8::GetQp(frame->data(), frame->size(), &qp)) {
