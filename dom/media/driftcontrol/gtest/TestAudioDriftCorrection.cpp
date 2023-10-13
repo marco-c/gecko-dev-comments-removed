@@ -164,14 +164,12 @@ void testMonoToStereoInput(uint32_t aSourceRate, uint32_t aTargetRate) {
   EXPECT_EQ(inToneVerify.PreSilenceSamples(), 0U);
   EXPECT_EQ(inToneVerify.CountDiscontinuities(), 0U);
 
-  EXPECT_GT(outToneVerify.CountDiscontinuities(), 0U)
-      << "Expect discontinuities";
-  EXPECT_NE(outToneVerify.EstimatedFreq(), frequency)
-      << "Estimation is not accurate due to discontinuities";
+  EXPECT_EQ(outToneVerify.CountDiscontinuities(), 0U);
+  EXPECT_NEAR(outToneVerify.EstimatedFreq(), tone.mFrequency, 1.0f);
   
   
-  
-  EXPECT_GT(outToneVerify.PreSilenceSamples(), 400U);
+  EXPECT_GE(outToneVerify.PreSilenceSamples(),
+            aTargetRate * 50 / 1000U - aTargetRate * 102 / 100 / 100);
 }
 
 TEST(TestAudioDriftCorrection, MonoToStereoInput)
