@@ -3563,7 +3563,9 @@
 
 
 
-    removeAllTabsBut(aTab, aParams) {
+
+
+    removeAllTabsBut(aTab, aParams, skipWarnAboutClosingTabs = false) {
       let tabsToRemove = [];
       if (aTab && aTab.multiselected) {
         tabsToRemove = this.visibleTabs.filter(
@@ -3576,6 +3578,7 @@
       }
 
       if (
+        !skipWarnAboutClosingTabs &&
         !this.warnAboutClosingTabs(
           tabsToRemove.length,
           this.closingTabsEnum.OTHER
