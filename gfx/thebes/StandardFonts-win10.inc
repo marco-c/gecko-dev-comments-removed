@@ -103,7 +103,7 @@ static const char* kBaseFonts[] = {
 
 
 static const char* kLangPackFonts[] = {
-  "Aharoni Bold",  
+  "Aharoni",  
   "Aldhabi",  
   "Andalus",  
   "Angsana New",  
