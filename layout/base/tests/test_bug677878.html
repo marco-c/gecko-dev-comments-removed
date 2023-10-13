@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=677878
+-->
 <head>
   <title>Test for Bug 677878</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -14,8 +14,8 @@
       background: green;
       height: 100px;
       width: 100px;
-      -moz-transform: scale(20, 20);
-      -moz-transform-origin: 0 0%;
+      transform: scale(20, 20);
+      transform-origin: 0 0%;
     }
   </style>
 </head>

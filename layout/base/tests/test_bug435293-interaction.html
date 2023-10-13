@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=435293
+-->
 <head>
   <title>Test for Bug 435293</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -14,8 +14,8 @@
       background: green;
       height: 100px;
       width: 100px;
-      -moz-transform: skew(30deg, 60deg) scale(2, 5) rotate(45deg) translate(2%, 50px);
-      -moz-transform-origin: 100% 50%;
+      transform: skew(30deg, 60deg) scale(2, 5) rotate(45deg) translate(2%, 50px);
+      transform-origin: 100% 50%;
     }
   </style>
 </head>
