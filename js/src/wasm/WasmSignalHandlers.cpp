@@ -801,10 +801,6 @@ static void WasmTrapHandler(int signum, siginfo_t* info, void* context) {
 }
 #  endif  
 
-#  if defined(ANDROID) && defined(MOZ_LINKER)
-extern "C" MFBT_API bool IsSignalHandlingBroken();
-#  endif
-
 struct InstallState {
   bool tried;
   bool success;
@@ -828,13 +824,6 @@ void wasm::EnsureEagerProcessSignalHandlers() {
 
   eagerInstallState->tried = true;
   MOZ_RELEASE_ASSERT(eagerInstallState->success == false);
-
-#  if defined(ANDROID) && defined(MOZ_LINKER)
-  
-  if (IsSignalHandlingBroken()) {
-    return;
-  }
-#  endif
 
   sAlreadyHandlingTrap.infallibleInit();
 

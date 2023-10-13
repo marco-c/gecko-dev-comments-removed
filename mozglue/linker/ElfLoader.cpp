@@ -46,18 +46,7 @@ static int GetAndroidSDKVersion() {
   return version;
 }
 
-#  if __ANDROID_API__ < 8
-
-
-extern "C" {
-
-inline int sigaltstack(const stack_t* ss, stack_t* oss) {
-  return syscall(__NR_sigaltstack, ss, oss);
-}
-
-} 
-#  endif 
-#endif   
+#endif 
 
 #ifdef __ARM_EABI__
 extern "C" MOZ_EXPORT const void* __gnu_Unwind_Find_exidx(void* pc, int* pcount)
@@ -313,10 +302,6 @@ MFBT_API void* __dl_mmap(void* handle, void* addr, size_t length,
 MFBT_API void __dl_munmap(void* handle, void* addr, size_t length) {
   if (!handle) return;
   return reinterpret_cast<LibHandle*>(handle)->MappableMUnmap(addr, length);
-}
-
-MFBT_API bool IsSignalHandlingBroken() {
-  return ElfLoader::Singleton.isSignalHandlingBroken();
 }
 
 namespace {
@@ -1164,10 +1149,7 @@ struct TmpData {
 };
 
 SEGVHandler::SEGVHandler()
-    : initialized(false),
-      registeredHandler(false),
-      signalHandlingBroken(true),
-      signalHandlingSlow(true) {
+    : initialized(false), registeredHandler(false), signalHandlingSlow(true) {
   
 
 
@@ -1185,11 +1167,6 @@ SEGVHandler::SEGVHandler()
   sys_sigaction(SIGSEGV, nullptr, &old_action);
 
   
-
-
-
-
-
 
 
 
@@ -1217,7 +1194,9 @@ void SEGVHandler::FinishInitialization() {
 
   initialized = true;
 
-  if (signalHandlingBroken || signalHandlingSlow) return;
+  if (signalHandlingSlow) {
+    return;
+  }
 
   typedef int (*sigaction_func)(int, const struct sigaction*,
                                 struct sigaction*);
@@ -1305,12 +1284,8 @@ SEGVHandler::~SEGVHandler() {
 
 
 
-
-
 void SEGVHandler::test_handler(int signum, siginfo_t* info, void* context) {
   SEGVHandler& that = ElfLoader::Singleton;
-  if (signum == SIGSEGV && info && info->si_addr == that.stackPtr.get())
-    that.signalHandlingBroken = false;
   mprotect(that.stackPtr, that.stackPtr.GetLength(), PROT_READ | PROT_WRITE);
   TmpData* data = reinterpret_cast<TmpData*>(that.stackPtr.get());
   uint64_t latency = ProcessTimeStamp_Now() - data->crash_timestamp;
