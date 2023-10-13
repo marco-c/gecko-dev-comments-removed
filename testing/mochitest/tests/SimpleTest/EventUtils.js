@@ -579,10 +579,23 @@ function synthesizeTouch(aTarget, aOffsetX, aOffsetY, aEvent, aWindow) {
   );
 }
 
+
+
+
+
+
 function getDragService() {
-  return _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
-    _EU_Ci.nsIDragService
-  );
+  try {
+    return _EU_Cc["@mozilla.org/widget/dragservice;1"].getService(
+      _EU_Ci.nsIDragService
+    );
+  } catch (e) {
+    
+    
+    
+    
+    return null;
+  }
 }
 
 
