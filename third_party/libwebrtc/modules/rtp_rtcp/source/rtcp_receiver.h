@@ -129,7 +129,7 @@ class RTCPReceiver final {
   NonSenderRttStats GetNonSenderRTT() const;
 
   void SetNonSenderRttMeasurement(bool enabled);
-  bool GetAndResetXrRrRtt(int64_t* rtt_ms);
+  absl::optional<TimeDelta> GetAndResetXrRrRtt();
 
   
   
@@ -385,7 +385,7 @@ class RTCPReceiver final {
 
   
   bool xr_rrtr_status_ RTC_GUARDED_BY(rtcp_receiver_lock_);
-  int64_t xr_rr_rtt_ms_;
+  absl::optional<TimeDelta> xr_rr_rtt_;
 
   int64_t oldest_tmmbr_info_ms_ RTC_GUARDED_BY(rtcp_receiver_lock_);
   
