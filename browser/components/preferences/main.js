@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(this, {
   BackgroundUpdate: "resource://gre/modules/BackgroundUpdate.sys.mjs",
   MigrationUtils: "resource:///modules/MigrationUtils.sys.mjs",
   TranslationsParent: "resource://gre/actors/TranslationsParent.sys.mjs",
+  WindowsLaunchOnLogin: "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs",
 });
 
 
@@ -411,6 +412,13 @@ var gMainPane = {
       "command",
       gMainPane.onBrowserRestoreSessionChange
     );
+    if (AppConstants.platform == "win") {
+      setEventListener(
+        "windowsLaunchOnLogin",
+        "command",
+        gMainPane.onWindowsLaunchOnLoginChange
+      );
+    }
     gMainPane.updateBrowserStartupUI =
       gMainPane.updateBrowserStartupUI.bind(gMainPane);
     Preferences.get("browser.privatebrowsing.autostart").on(
@@ -634,6 +642,31 @@ var gMainPane = {
       }
 
       if (AppConstants.platform == "win") {
+        
+        
+        
+        
+        
+        
+        let launchOnLoginCheckbox = document.getElementById(
+          "windowsLaunchOnLogin"
+        );
+        let registryName = WindowsLaunchOnLogin.getLaunchOnLoginRegistryName();
+        WindowsLaunchOnLogin.withLaunchOnLoginRegistryKey(async wrk => {
+          try {
+            
+            launchOnLoginCheckbox.checked = wrk.hasValue(registryName);
+          } catch (e) {
+            
+            console.error("Failed to open Windows registry", e);
+          }
+        });
+
+        let approvedByWindows = WindowsLaunchOnLogin.getLaunchOnLoginApproved();
+        launchOnLoginCheckbox.disabled = !approvedByWindows;
+        document.getElementById("windowsLaunchOnLoginDisabledBox").hidden =
+          approvedByWindows;
+
         
         
         
@@ -1622,6 +1655,18 @@ var gMainPane = {
       newValue = this.STARTUP_PREF_HOMEPAGE;
     }
     startupPref.value = newValue;
+  },
+
+  onWindowsLaunchOnLoginChange(event) {
+    if (AppConstants.platform !== "win") {
+      return;
+    }
+    if (event.target.checked) {
+      WindowsLaunchOnLogin.createLaunchOnLoginRegistryKey();
+    } else {
+      
+      WindowsLaunchOnLogin.removeLaunchOnLoginRegistryKey();
+    }
   },
 
   
