@@ -200,7 +200,7 @@
 
       
       let {
-        anchorHeight,
+        anchorBottom, 
         anchorLeft,
         anchorTop,
         anchorWidth,
@@ -228,6 +228,7 @@
             let anchorBounds = getBounds(anchorElement);
             let panelBounds = getBounds(this);
             resolve({
+              anchorBottom: anchorBounds.bottom,
               anchorHeight: anchorBounds.height,
               anchorLeft: anchorBounds.left,
               anchorTop: anchorBounds.top,
@@ -260,14 +261,31 @@
         }
         leftOffset = align === "left" ? leftAlignX : rightAlignX;
 
-        let bottomAlignY = anchorTop + anchorHeight;
+        let bottomSpaceY = winHeight - anchorBottom;
+
         let valign;
         let topOffset;
-        if (bottomAlignY + panelHeight > winHeight) {
-          topOffset = anchorTop - panelHeight;
+        const VIEWPORT_PANEL_MIN_MARGIN = 10; 
+
+        
+        
+        if (
+          anchorBottom > bottomSpaceY &&
+          anchorBottom + panelHeight > winHeight
+        ) {
+          
+          topOffset = Math.max(
+            anchorTop - panelHeight,
+            VIEWPORT_PANEL_MIN_MARGIN
+          );
+          
+          this.style.maxHeight = `${anchorTop + VIEWPORT_PANEL_MIN_MARGIN}px`;
           valign = "top";
         } else {
-          topOffset = bottomAlignY;
+          topOffset = anchorBottom;
+          this.style.maxHeight = `${
+            bottomSpaceY - VIEWPORT_PANEL_MIN_MARGIN
+          }px`;
           valign = "bottom";
         }
 
