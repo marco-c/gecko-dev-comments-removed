@@ -73,6 +73,7 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   
   
   virtual const RTPHeader& GetHeader() const = 0;
+  virtual void SetRTPTimestamp(uint32_t timestamp) { RTC_CHECK_NOTREACHED(); }
 
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
 };
