@@ -114,7 +114,11 @@ struct RtcpTransceiverConfig {
   Clock* clock = nullptr;
 
   
-  Transport* outgoing_transport = nullptr;
+  union {
+    [[deprecated]] Transport* outgoing_transport = nullptr;
+    Transport* deprecated_outgoing_transport;
+  };
+  std::function<void(rtc::ArrayView<const uint8_t>)> rtcp_transport;
 
   
   TaskQueueBase* task_queue = nullptr;
@@ -131,11 +135,15 @@ struct RtcpTransceiverConfig {
   
   
   RtcpMode rtcp_mode = RtcpMode::kCompound;
+
+  
+  
   
   
   
   
   bool initial_ready_to_send = true;
+
   
   TimeDelta initial_report_delay = TimeDelta::Millis(500);
 
