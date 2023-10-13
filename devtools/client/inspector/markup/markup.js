@@ -499,9 +499,6 @@ MarkupView.prototype = {
   },
 
   _disableImagePreviewTooltip() {
-    if (!this.imagePreviewTooltip) {
-      return;
-    }
     this.imagePreviewTooltip.stopTogglingOnHover();
   },
 
@@ -828,9 +825,7 @@ MarkupView.prototype = {
         const container = this.getContainer(nodeFront);
         const badge = container?.editor?.displayBadge;
         if (badge) {
-          const isActive = eventName == "highlighter-shown";
-          badge.classList.toggle("active", isActive);
-          badge.setAttribute("aria-pressed", isActive);
+          badge.classList.toggle("active", eventName == "highlighter-shown");
         }
 
         
@@ -1278,15 +1273,6 @@ MarkupView.prototype = {
 
   _onShortcut(name, event) {
     if (this._isInputOrTextarea(event.target)) {
-      return;
-    }
-
-    
-    
-    if (
-      event.target.closest(":is(button, [role=button])") &&
-      (name === "Enter" || name === "Space")
-    ) {
       return;
     }
 
