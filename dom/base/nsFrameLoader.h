@@ -360,17 +360,12 @@ class nsFrameLoader final : public nsStubMutationObserver,
 
 
 
-
-
-
-  void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame,
-                              Document* aContainerDoc);
+  void SetDetachedSubdocFrame(nsIFrame* aDetachedFrame);
 
   
 
 
-
-  nsIFrame* GetDetachedSubdocFrame(Document** aContainerDoc) const;
+  nsIFrame* GetDetachedSubdocFrame(bool* aOutIsSet = nullptr) const;
 
   
 
@@ -510,12 +505,6 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   
   WeakFrame mDetachedSubdocFrame;
-  
-  
-  
-  
-  
-  RefPtr<Document> mContainerDocWhileDetached;
 
   
   
@@ -559,6 +548,8 @@ class nsFrameLoader final : public nsStubMutationObserver,
   
   bool mWillChangeProcess : 1;
   bool mObservingOwnerContent : 1;
+  
+  bool mHadDetachedFrame : 1;
 
   
   
