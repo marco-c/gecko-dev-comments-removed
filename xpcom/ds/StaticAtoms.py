@@ -2396,6 +2396,7 @@ STATIC_ATOMS = [
     Atom("_moz_popover_enabled", "-moz-popover-enabled"),
     
     Atom("_moz_mathml_core_mi", "-moz-mathml-core-mi"),
+    Atom("_moz_always_underline_links", "-moz-always-underline-links"),
     
     Atom("usercontextid", "usercontextid"),
     Atom("geckoViewSessionContextId", "geckoViewSessionContextId"),

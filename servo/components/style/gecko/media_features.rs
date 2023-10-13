@@ -684,7 +684,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 61] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 62] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -1000,5 +1000,9 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 61] = [
     bool_pref_feature!(
         atom!("-moz-mathml-core-mi"),
         "mathml.legacy_mathvariant_attribute.disabled"
+    ),
+    bool_pref_feature!(
+        atom!("-moz-always-underline-links"),
+        "layout.css.always_underline_links"
     ),
 ];
