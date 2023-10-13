@@ -225,14 +225,14 @@ RTC_OBJC_EXPORT
 
 
 
-- (BOOL)setCategory:(NSString *)category
-               mode:(NSString *)mode
+- (BOOL)setCategory:(AVAudioSessionCategory)category
+               mode:(AVAudioSessionMode)mode
             options:(AVAudioSessionCategoryOptions)options
               error:(NSError **)outError;
-- (BOOL)setCategory:(NSString *)category
+- (BOOL)setCategory:(AVAudioSessionCategory)category
         withOptions:(AVAudioSessionCategoryOptions)options
               error:(NSError **)outError;
-- (BOOL)setMode:(NSString *)mode error:(NSError **)outError;
+- (BOOL)setMode:(AVAudioSessionMode)mode error:(NSError **)outError;
 - (BOOL)setInputGain:(float)gain error:(NSError **)outError;
 - (BOOL)setPreferredSampleRate:(double)sampleRate error:(NSError **)outError;
 - (BOOL)setPreferredIOBufferDuration:(NSTimeInterval)duration error:(NSError **)outError;
