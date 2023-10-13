@@ -120,7 +120,6 @@ pref("extensions.abuseReport.amWebAPI.enabled", false);
 
 
 pref("dom.disable_open_during_load", true);
-pref("privacy.popups.showBrowserMessage", true);
 
 
 pref("dom.disable_window_open_dialog_feature", true);
@@ -248,10 +247,6 @@ pref("media.gmp-gmpopenh264.autoupdate", false);
 pref("browser.safebrowsing.downloads.enabled", false);
 
 
-pref("urlclassifier.downloadAllowTable", "");
-pref("urlclassifier.downloadBlockTable", "");
-
-
 pref("urlclassifier.malwareTable", "goog-harmful-proto,goog-unwanted-proto,moztest-harmful-simple,moztest-malware-simple,moztest-unwanted-simple");
 
 
@@ -268,14 +263,6 @@ pref("devtools.console.stdout.chrome", true);
 
 
 pref("network.tickle-wifi.enabled", true);
-
-
-
-
-pref("home.sync.updateMode", 0);
-
-
-pref("home.sync.checkIntervalSecs", 3600);
 
 
 pref("dom.meta-viewport.enabled", true);
