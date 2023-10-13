@@ -151,6 +151,21 @@ static constexpr TypeCode AbstractTypeRefCode = TypeCode::Ref;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 enum class Trap {
   
   Unreachable,
