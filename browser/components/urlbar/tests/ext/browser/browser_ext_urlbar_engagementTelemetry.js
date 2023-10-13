@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+
+"use strict";
+
+add_settings_tasks("browser.urlbar.eventTelemetry.enabled", "boolean", () => {
+  browser.test.onMessage.addListener(async (method, arg) => {
+    let result = await browser.experiments.urlbar.engagementTelemetry[method](
+      arg
+    );
+    browser.test.sendMessage("done", result);
+  });
+});
