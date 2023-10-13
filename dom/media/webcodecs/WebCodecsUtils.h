@@ -36,8 +36,6 @@ namespace dom {
 
 nsTArray<nsCString> GuessContainers(const nsAString& aCodec);
 
-Maybe<nsString> ParseCodecString(const nsAString& aCodec);
-
 
 
 
