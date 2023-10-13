@@ -43,7 +43,7 @@ const {
   unhighlight,
 } = require("resource://devtools/client/accessibility/actions/accessibles.js");
 
-const Tree = createFactory(
+const VirtualizedTree = createFactory(
   require("resource://devtools/client/shared/components/VirtualizedTree.js")
 );
 
@@ -370,7 +370,7 @@ class Accessible extends Component {
     const { items, parents, accessibleFront, labelledby } = this.props;
 
     if (accessibleFront) {
-      return Tree({
+      return VirtualizedTree({
         ref: "props",
         key: "accessible-properties",
         itemHeight: TREE_ROW_HEIGHT,

@@ -333,8 +333,6 @@ function oncePerAnimationFrame(fn, { getDocument }) {
 
 
 
-
-
 class Tree extends Component {
   static get propTypes() {
     return {
