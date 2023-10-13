@@ -2736,16 +2736,12 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
   bool legacy_scalability_mode = true;
-  
-  
-  if (!call_->trials().IsDisabled("WebRTC-AllowDisablingLegacyScalability")) {
-    for (const webrtc::RtpEncodingParameters& encoding :
-         rtp_parameters_.encodings) {
-      if (encoding.scalability_mode.has_value() &&
-          encoding.scale_resolution_down_by.has_value()) {
-        legacy_scalability_mode = false;
-        break;
-      }
+  for (const webrtc::RtpEncodingParameters& encoding :
+       rtp_parameters_.encodings) {
+    if (encoding.scalability_mode.has_value() &&
+        encoding.scale_resolution_down_by.has_value()) {
+      legacy_scalability_mode = false;
+      break;
     }
   }
   
