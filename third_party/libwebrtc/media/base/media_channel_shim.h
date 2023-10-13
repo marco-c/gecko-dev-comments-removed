@@ -90,7 +90,7 @@ class VoiceMediaShimChannel : public VoiceMediaChannel {
   }
 
   
-  cricket::MediaType media_type() const override { return MEDIA_TYPE_VIDEO; }
+  cricket::MediaType media_type() const override { return MEDIA_TYPE_AUDIO; }
 
   
   void OnPacketSent(const rtc::SentPacket& sent_packet) override {

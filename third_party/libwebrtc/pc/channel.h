@@ -84,15 +84,16 @@ class BaseChannel : public ChannelInterface,
   
 
   
-  BaseChannel(rtc::Thread* worker_thread,
-              rtc::Thread* network_thread,
-              rtc::Thread* signaling_thread,
-              std::unique_ptr<MediaChannel> media_send_channel_impl,
-              std::unique_ptr<MediaChannel> media_receive_channel_impl,
-              absl::string_view mid,
-              bool srtp_required,
-              webrtc::CryptoOptions crypto_options,
-              rtc::UniqueRandomIdGenerator* ssrc_generator);
+  BaseChannel(
+      rtc::Thread* worker_thread,
+      rtc::Thread* network_thread,
+      rtc::Thread* signaling_thread,
+      std::unique_ptr<MediaSendChannelInterface> media_send_channel,
+      std::unique_ptr<MediaReceiveChannelInterface> media_receive_channel,
+      absl::string_view mid,
+      bool srtp_required,
+      webrtc::CryptoOptions crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator);
   
   
   BaseChannel(rtc::Thread* worker_thread,
@@ -320,11 +321,10 @@ class BaseChannel : public ChannelInterface,
   
   
   
-  
-  const std::unique_ptr<MediaChannel> media_channel_impl_;
+  const std::unique_ptr<MediaChannel> media_channel_;
 
-  const std::unique_ptr<MediaChannel> media_send_channel_impl_;
-  const std::unique_ptr<MediaChannel> media_receive_channel_impl_;
+  const std::unique_ptr<MediaSendChannelInterface> media_send_channel_;
+  const std::unique_ptr<MediaReceiveChannelInterface> media_receive_channel_;
 
  private:
   bool ConnectToRtpTransport_n() RTC_RUN_ON(network_thread());
@@ -386,15 +386,16 @@ class BaseChannel : public ChannelInterface,
 
 class VoiceChannel : public BaseChannel {
  public:
-  VoiceChannel(rtc::Thread* worker_thread,
-               rtc::Thread* network_thread,
-               rtc::Thread* signaling_thread,
-               std::unique_ptr<VoiceMediaChannel> send_channel_impl,
-               std::unique_ptr<VoiceMediaChannel> receive_channel_impl,
-               absl::string_view mid,
-               bool srtp_required,
-               webrtc::CryptoOptions crypto_options,
-               rtc::UniqueRandomIdGenerator* ssrc_generator);
+  VoiceChannel(
+      rtc::Thread* worker_thread,
+      rtc::Thread* network_thread,
+      rtc::Thread* signaling_thread,
+      std::unique_ptr<VoiceMediaSendChannelInterface> send_channel_impl,
+      std::unique_ptr<VoiceMediaReceiveChannelInterface> receive_channel_impl,
+      absl::string_view mid,
+      bool srtp_required,
+      webrtc::CryptoOptions crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator);
   
   
   VoiceChannel(rtc::Thread* worker_thread,
@@ -414,20 +415,34 @@ class VoiceChannel : public BaseChannel {
   }
   VoiceChannel* AsVoiceChannel() override { return this; }
 
+  VoiceMediaSendChannelInterface* send_channel() {
+    if (media_send_channel_) {
+      return media_send_channel_->AsVoiceSendChannel();
+    }
+    return media_channel_->AsVoiceSendChannel();
+  }
+
+  VoiceMediaReceiveChannelInterface* receive_channel() {
+    if (media_receive_channel_) {
+      return media_receive_channel_->AsVoiceReceiveChannel();
+    }
+    return media_channel_->AsVoiceReceiveChannel();
+  }
+
   VoiceMediaSendChannelInterface* media_send_channel() override {
-    return &send_channel_;
+    return send_channel();
   }
 
   VoiceMediaSendChannelInterface* voice_media_send_channel() override {
-    return &send_channel_;
+    return send_channel();
   }
 
   VoiceMediaReceiveChannelInterface* media_receive_channel() override {
-    return &receive_channel_;
+    return receive_channel();
   }
 
   VoiceMediaReceiveChannelInterface* voice_media_receive_channel() override {
-    return &receive_channel_;
+    return receive_channel();
   }
 
   cricket::MediaType media_type() const override {
@@ -447,8 +462,6 @@ class VoiceChannel : public BaseChannel {
                           std::string& error_desc)
       RTC_RUN_ON(worker_thread()) override;
 
-  VoiceMediaSendChannel send_channel_ RTC_GUARDED_BY(worker_thread());
-  VoiceMediaReceiveChannel receive_channel_ RTC_GUARDED_BY(worker_thread());
   
   
   AudioSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
@@ -460,15 +473,16 @@ class VoiceChannel : public BaseChannel {
 
 class VideoChannel : public BaseChannel {
  public:
-  VideoChannel(rtc::Thread* worker_thread,
-               rtc::Thread* network_thread,
-               rtc::Thread* signaling_thread,
-               std::unique_ptr<VideoMediaChannel> media_send_channel_impl,
-               std::unique_ptr<VideoMediaChannel> media_receive_channel_impl,
-               absl::string_view mid,
-               bool srtp_required,
-               webrtc::CryptoOptions crypto_options,
-               rtc::UniqueRandomIdGenerator* ssrc_generator);
+  VideoChannel(
+      rtc::Thread* worker_thread,
+      rtc::Thread* network_thread,
+      rtc::Thread* signaling_thread,
+      std::unique_ptr<VideoMediaSendChannelInterface> media_send_channel,
+      std::unique_ptr<VideoMediaReceiveChannelInterface> media_receive_channel,
+      absl::string_view mid,
+      bool srtp_required,
+      webrtc::CryptoOptions crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator);
   
   
   VideoChannel(rtc::Thread* worker_thread,
@@ -487,20 +501,34 @@ class VideoChannel : public BaseChannel {
     return nullptr;
   }
 
+  VideoMediaSendChannelInterface* send_channel() {
+    if (media_send_channel_) {
+      return media_send_channel_->AsVideoSendChannel();
+    }
+    return media_channel_->AsVideoSendChannel();
+  }
+
+  VideoMediaReceiveChannelInterface* receive_channel() {
+    if (media_receive_channel_) {
+      return media_receive_channel_->AsVideoReceiveChannel();
+    }
+    return media_channel_->AsVideoReceiveChannel();
+  }
+
   VideoMediaSendChannelInterface* media_send_channel() override {
-    return &send_channel_;
+    return send_channel();
   }
 
   VideoMediaSendChannelInterface* video_media_send_channel() override {
-    return &send_channel_;
+    return send_channel();
   }
 
   VideoMediaReceiveChannelInterface* media_receive_channel() override {
-    return &receive_channel_;
+    return receive_channel();
   }
 
   VideoMediaReceiveChannelInterface* video_media_receive_channel() override {
-    return &receive_channel_;
+    return receive_channel();
   }
 
   cricket::MediaType media_type() const override {
@@ -519,8 +547,6 @@ class VideoChannel : public BaseChannel {
                           std::string& error_desc)
       RTC_RUN_ON(worker_thread()) override;
 
-  VideoMediaSendChannel send_channel_ RTC_GUARDED_BY(worker_thread());
-  VideoMediaReceiveChannel receive_channel_ RTC_GUARDED_BY(worker_thread());
   
   
   VideoSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
