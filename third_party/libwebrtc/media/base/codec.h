@@ -168,13 +168,14 @@ struct RTC_EXPORT Codec {
 
 struct AudioCodec : public Codec {
   
-  AudioCodec(int id,
-             const std::string& name,
-             int clockrate,
-             int unused_bitrate,
-             size_t channels);
+  [[deprecated("Use cricket::CreateAudioCodec")]] AudioCodec(
+      int id,
+      const std::string& name,
+      int clockrate,
+      int unused_bitrate,
+      size_t channels);
   
-  AudioCodec();
+  [[deprecated("Do not create empty AudioCodec")]] AudioCodec();
   AudioCodec(const AudioCodec& c);
   AudioCodec(AudioCodec&& c);
   ~AudioCodec() override = default;
@@ -185,13 +186,16 @@ struct AudioCodec : public Codec {
 
 struct RTC_EXPORT VideoCodec : public Codec {
   
-  VideoCodec(int id, const std::string& name);
+  [[deprecated("Use cricket::CreateVideoCodec")]] VideoCodec(
+      int id,
+      const std::string& name);
   
-  explicit VideoCodec(const std::string& name);
+  [[deprecated("Use cricket::CreateVideoCodec")]] explicit VideoCodec(
+      const std::string& name);
   
-  VideoCodec();
+  [[deprecated("Do not create empty VideoCodec")]] VideoCodec();
   VideoCodec(const VideoCodec& c);
-  explicit VideoCodec(const webrtc::SdpVideoFormat& c);
+  [[deprecated]] explicit VideoCodec(const webrtc::SdpVideoFormat& c);
   VideoCodec(VideoCodec&& c);
   ~VideoCodec() override = default;
 
@@ -221,6 +225,7 @@ AudioCodec CreateAudioCodec(int id,
                             size_t channels);
 VideoCodec CreateVideoCodec(const std::string& name);
 VideoCodec CreateVideoCodec(int id, const std::string& name);
+VideoCodec CreateVideoCodec(const webrtc::SdpVideoFormat& c);
 VideoCodec CreateVideoRtxCodec(int rtx_payload_type,
                                int associated_payload_type);
 

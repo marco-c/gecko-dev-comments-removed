@@ -935,7 +935,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   
-  virtual bool GetSendCodec(VideoCodec* send_codec) = 0;
+  virtual absl::optional<VideoCodec> GetSendCodec() = 0;
   
   virtual bool SetSend(bool send) = 0;
   
