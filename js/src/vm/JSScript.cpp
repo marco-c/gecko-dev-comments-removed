@@ -71,6 +71,7 @@
 #include "vm/JSObject.h"
 #include "vm/JSONPrinter.h"  
 #include "vm/Opcodes.h"
+#include "vm/PortableBaselineInterpret.h"
 #include "vm/Scope.h"  
 #include "vm/SharedImmutableStringsCache.h"
 #include "vm/StencilEnums.h"  
@@ -3169,6 +3170,12 @@ BaseScript* BaseScript::CreateRawLazy(JSContext* cx, uint32_t ngcthings,
   return lazy;
 }
 
+
+
+
+
+static uint8_t* const PBLJitCodePtr = reinterpret_cast<uint8_t*>(8);
+
 void JSScript::updateJitCodeRaw(JSRuntime* rt) {
   MOZ_ASSERT(rt);
   if (hasBaselineScript() && baselineScript()->hasPendingIonCompileTask()) {
@@ -3191,10 +3198,20 @@ void JSScript::updateJitCodeRaw(JSRuntime* rt) {
     if (!usingEntryTrampoline) {
       setJitCodeRaw(rt->jitRuntime()->baselineInterpreter().codeRaw());
     }
+#ifdef ENABLE_PORTABLE_BASELINE_INTERP
+  } else if (hasJitScript() &&
+             js::jit::IsPortableBaselineInterpreterEnabled()) {
+    
+    
+    
+    setJitCodeRaw(PBLJitCodePtr);
+#endif
+  } else if (!js::jit::IsBaselineInterpreterEnabled()) {
+    setJitCodeRaw(nullptr);
   } else {
     setJitCodeRaw(rt->jitRuntime()->interpreterStub().value);
   }
-  MOZ_ASSERT(jitCodeRaw());
+  MOZ_ASSERT_IF(!js::jit::IsPortableBaselineInterpreterEnabled(), jitCodeRaw());
 }
 
 bool JSScript::hasLoops() {
