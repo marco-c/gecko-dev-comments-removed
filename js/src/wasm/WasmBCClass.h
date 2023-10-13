@@ -26,6 +26,7 @@
 #include "wasm/WasmBCFrame.h"
 #include "wasm/WasmBCRegDefs.h"
 #include "wasm/WasmBCStk.h"
+#include "wasm/WasmConstants.h"
 
 namespace js {
 namespace wasm {
@@ -1697,12 +1698,14 @@ struct BaseCompiler final {
   
   
   struct NoNullCheck {
-    static void emitNullCheck(BaseCompiler*, RegRef) {}
-    static void emitTrapSite(BaseCompiler*) {}
+    static void emitNullCheck(BaseCompiler* bc, RegRef rp) {}
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+                             TrapMachineInsn tmi) {}
   };
   struct SignalNullCheck {
     static void emitNullCheck(BaseCompiler* bc, RegRef rp);
-    static void emitTrapSite(BaseCompiler* bc);
+    static void emitTrapSite(BaseCompiler* bc, FaultingCodeOffset fco,
+                             TrapMachineInsn tmi);
   };
 
   

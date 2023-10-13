@@ -214,14 +214,15 @@ void wasm::EmitWasmPreBarrierGuard(MacroAssembler& masm, Register instance,
                     skipBarrier);
 
   
-  if (trapOffset) {
-    masm.append(wasm::Trap::NullPointerDereference,
-                wasm::TrapSite(masm.currentOffset(), *trapOffset));
-  }
+  FaultingCodeOffset fco =
+      masm.loadPtr(Address(valueAddr, valueOffset), scratch);
+  masm.branchWasmAnyRefIsGCThing(false, scratch, skipBarrier);
 
   
-  masm.loadPtr(Address(valueAddr, valueOffset), scratch);
-  masm.branchWasmAnyRefIsGCThing(false, scratch, skipBarrier);
+  if (trapOffset) {
+    masm.append(wasm::Trap::NullPointerDereference,
+                wasm::TrapSite(TrapMachineInsnForLoadWord(), fco, *trapOffset));
+  }
 }
 
 void wasm::EmitWasmPreBarrierCall(MacroAssembler& masm, Register instance,

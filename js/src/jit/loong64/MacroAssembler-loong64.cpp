@@ -2909,10 +2909,10 @@ void MacroAssembler::comment(const char* msg) { Assembler::comment(msg); }
 
 
 
-CodeOffset MacroAssembler::wasmTrapInstruction() {
-  CodeOffset offset(currentOffset());
+FaultingCodeOffset MacroAssembler::wasmTrapInstruction() {
+  FaultingCodeOffset fco = FaultingCodeOffset(currentOffset());
   as_break(WASM_TRAP);  
-  return offset;
+  return fco;
 }
 
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
