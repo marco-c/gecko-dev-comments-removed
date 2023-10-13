@@ -317,10 +317,11 @@ RuleEditor.prototype = {
 
       const isHighlighted = this.ruleView.isSelectorHighlighted(selector);
       
-      createChild(header, "button", {
+      createChild(header, "span", {
         class:
           "ruleview-selectorhighlighter js-toggle-selector-highlighter" +
           (isHighlighted ? " highlighted" : ""),
+        role: "button",
         "aria-pressed": isHighlighted,
         
         "data-computed-selector": desugaredSelector,
