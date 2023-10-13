@@ -101,11 +101,6 @@ add_setup(async function () {
 
 add_task(async function pickButton_onboard() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-
-  Services.telemetry.clearEvents();
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: "about:newtab",
@@ -141,18 +136,12 @@ add_task(async function pickButton_onboard() {
   resetSearchTipsProvider();
 
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 add_task(async function pickButton_redirect() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -188,7 +177,6 @@ add_task(async function pickButton_redirect() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -197,12 +185,8 @@ add_task(async function pickButton_redirect() {
 add_task(async function pickButton_persist() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.eventTelemetry.enabled", true],
-      ["browser.urlbar.showSearchTerms.featureGate", true],
-    ],
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
   });
-  Services.telemetry.clearEvents();
 
   await setDefaultEngine("Example");
 
@@ -259,11 +243,6 @@ add_task(async function pickButton_persist() {
 
 add_task(async function clickInInput_onboard() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Google");
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -296,20 +275,13 @@ add_task(async function clickInInput_onboard() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 add_task(async function openLocation_onboard() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Google");
   let tab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
@@ -342,20 +314,13 @@ add_task(async function openLocation_onboard() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-
   BrowserTestUtils.removeTab(tab);
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 add_task(async function clickInInput_redirect() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -389,7 +354,6 @@ add_task(async function clickInInput_redirect() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -397,12 +361,8 @@ add_task(async function clickInInput_redirect() {
 add_task(async function clickInInput_persist() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.eventTelemetry.enabled", true],
-      ["browser.urlbar.showSearchTerms.featureGate", true],
-    ],
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
   });
-  Services.telemetry.clearEvents();
 
   await setDefaultEngine("Example");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
@@ -448,18 +408,12 @@ add_task(async function clickInInput_persist() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
 });
 
 
 
 add_task(async function openLocation_redirect() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.eventTelemetry.enabled", true]],
-  });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Google");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     await withDNSRedirect("www.google.com", "/", async url => {
@@ -493,7 +447,6 @@ add_task(async function openLocation_redirect() {
   );
   Assert.equal(gURLBar.value, "", "The Urlbar should be empty.");
   resetSearchTipsProvider();
-  await SpecialPowers.popPrefEnv();
 });
 
 
@@ -501,13 +454,8 @@ add_task(async function openLocation_redirect() {
 add_task(async function openLocation_persist() {
   UrlbarProviderSearchTips.disableTipsForCurrentSession = false;
   await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.urlbar.eventTelemetry.enabled", true],
-      ["browser.urlbar.showSearchTerms.featureGate", true],
-    ],
+    set: [["browser.urlbar.showSearchTerms.featureGate", true]],
   });
-  Services.telemetry.clearEvents();
-
   await setDefaultEngine("Example");
   await BrowserTestUtils.withNewTab("about:blank", async () => {
     let browserLoadedPromise = BrowserTestUtils.browserLoaded(
