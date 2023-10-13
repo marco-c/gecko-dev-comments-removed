@@ -8,7 +8,6 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Sprintf.h"
 #include "mozilla/StaticPrefs_gfx.h"
-#include "mozilla/gfx/ScaledFontMac.h"
 
 #include <algorithm>
 
@@ -435,6 +434,61 @@ gfxFloat gfxMacFont::GetCharWidth(CFDataRef aCmap, char16_t aUniChar,
   return 0;
 }
 
+
+CTFontRef gfxMacFont::CreateCTFontFromCGFontWithVariations(
+    CGFontRef aCGFont, CGFloat aSize, bool aInstalledFont,
+    CTFontDescriptorRef aFontDesc) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  CTFontRef ctFont;
+  if (aInstalledFont) {
+    AutoCFRelease<CFDictionaryRef> variations = ::CGFontCopyVariations(aCGFont);
+    if (variations) {
+      AutoCFRelease<CFDictionaryRef> varAttr = ::CFDictionaryCreate(
+          nullptr, (const void**)&kCTFontVariationAttribute,
+          (const void**)&variations, 1, &kCFTypeDictionaryKeyCallBacks,
+          &kCFTypeDictionaryValueCallBacks);
+
+      AutoCFRelease<CTFontDescriptorRef> varDesc =
+          aFontDesc
+              ? ::CTFontDescriptorCreateCopyWithAttributes(aFontDesc, varAttr)
+              : ::CTFontDescriptorCreateWithAttributes(varAttr);
+
+      ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, varDesc);
+    } else {
+      ctFont =
+          ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aFontDesc);
+    }
+  } else {
+    ctFont = ::CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aFontDesc);
+  }
+
+  return ctFont;
+}
+
 int32_t gfxMacFont::GetGlyphWidth(uint16_t aGID) {
   if (mVariationFont) {
     
@@ -447,7 +501,10 @@ int32_t gfxMacFont::GetGlyphWidth(uint16_t aGID) {
   }
 
   if (!mCTFont) {
-    mCTFont = CreateCTFontFromCGFontWithVariations(mCGFont, mAdjustedSize);
+    bool isInstalledFont =
+        !mFontEntry->IsUserFont() || mFontEntry->IsLocalUserFont();
+    mCTFont = CreateCTFontFromCGFontWithVariations(mCGFont, mAdjustedSize,
+                                                   isInstalledFont);
     if (!mCTFont) {  
       NS_WARNING("failed to create CTFontRef to measure glyph width");
       return 0;

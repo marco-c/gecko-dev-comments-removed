@@ -45,17 +45,14 @@ class AutoRelease final {
     }
   }
 
-  AutoRelease<T>& operator=(const T& aObject) {
-    if (aObject != mObject) {
-      if (mObject) {
-        CFRelease(mObject);
-      }
-      mObject = aObject;
+  void operator=(T aObject) {
+    if (mObject) {
+      CFRelease(mObject);
     }
-    return *this;
+    mObject = aObject;
   }
 
-  operator T() const { return mObject; }
+  operator T() { return mObject; }
 
   T forget() {
     T obj = mObject;
@@ -69,22 +66,55 @@ class AutoRelease final {
 
 
 
+static CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont,
+                                                      CGFloat aSize,
+                                                      bool aInstalledFont) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  CTFontRef ctFont;
+  if (aInstalledFont) {
+    CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
+    if (vars) {
+      CFDictionaryRef varAttr = CFDictionaryCreate(
+          nullptr, (const void**)&kCTFontVariationAttribute,
+          (const void**)&vars, 1, &kCFTypeDictionaryKeyCallBacks,
+          &kCFTypeDictionaryValueCallBacks);
+      CFRelease(vars);
 
-CTFontRef CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize,
-                                               CTFontDescriptorRef aDesc) {
-  CTFontRef ctFont =
-      CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, aDesc);
+      CTFontDescriptorRef varDesc =
+          CTFontDescriptorCreateWithAttributes(varAttr);
+      CFRelease(varAttr);
 
-  AutoRelease<CFDictionaryRef> vars(CGFontCopyVariations(aCGFont));
-  if (vars) {
-    AutoRelease<CFDictionaryRef> attrs(CFDictionaryCreate(
-        nullptr, (const void**)&kCTFontVariationAttribute, (const void**)&vars,
-        1, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks));
-    AutoRelease<CTFontDescriptorRef> desc(CTFontCopyFontDescriptor(ctFont));
-    desc = CTFontDescriptorCreateCopyWithAttributes(desc, attrs);
-    ctFont = CTFontCreateCopyWithAttributes(ctFont, 0.0, nullptr, desc);
+      ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, varDesc);
+      CFRelease(varDesc);
+    } else {
+      ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
+    }
+  } else {
+    ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, nullptr, nullptr);
   }
-
   return ctFont;
 }
 
@@ -105,7 +135,9 @@ ScaledFontMac::ScaledFontMac(CGFontRef aFont,
     CGFontRetain(aFont);
   }
 
-  mCTFont = CreateCTFontFromCGFontWithVariations(aFont, aSize);
+  auto unscaledMac = static_cast<UnscaledFontMac*>(aUnscaledFont.get());
+  bool dataFont = unscaledMac->IsDataFont();
+  mCTFont = CreateCTFontFromCGFontWithVariations(aFont, aSize, !dataFont);
 }
 
 ScaledFontMac::ScaledFontMac(CTFontRef aFont,
