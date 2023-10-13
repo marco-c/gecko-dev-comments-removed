@@ -1418,11 +1418,13 @@ fn substitute_references_in_value_and_apply(
 
         if let Ok(kw) = input.try_parse(CSSWideKeyword::parse) {
             match (kw, inherits) {
-                (CSSWideKeyword::Initial, _) |
+                (CSSWideKeyword::Initial, false) |
                 (CSSWideKeyword::Revert, false) |
                 (CSSWideKeyword::RevertLayer, false) |
                 (CSSWideKeyword::Unset, false) => {
-                    
+                    custom_properties.remove(custom_registration, name);
+                },
+                (CSSWideKeyword::Initial, true) => {
                     custom_properties.remove(custom_registration, name);
                     if let Some(registration) = custom_registration {
                         if let Some(ref initial_value) = registration.initial_value {
