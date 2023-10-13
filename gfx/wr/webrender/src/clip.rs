@@ -911,7 +911,7 @@ bitflags! {
 
 
 
-#[derive(Debug, MallocSizeOf)]
+#[derive(Debug, Clone, MallocSizeOf)]
 #[cfg_attr(feature = "capture", derive(Serialize))]
 #[cfg_attr(feature = "replay", derive(Deserialize))]
 pub struct ClipNodeInstance {

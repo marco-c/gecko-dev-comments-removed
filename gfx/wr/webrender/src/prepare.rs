@@ -15,7 +15,7 @@ use crate::composite::CompositorSurfaceKind;
 use crate::command_buffer::{PrimitiveCommand, QuadFlags, CommandBufferIndex};
 use crate::image_tiling::{self, Repetition};
 use crate::border::{get_max_scale_for_border, build_border_instances};
-use crate::clip::{ClipStore};
+use crate::clip::{ClipStore, ClipNodeRange};
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::clip::{ClipDataStore, ClipNodeFlags, ClipChainInstance, ClipItemKind};
 use crate::frame_builder::{FrameBuildingContext, FrameBuildingState, PictureContext, PictureState};
@@ -1257,48 +1257,37 @@ fn prepare_interned_prim_for_render(
                 
 
                 
-                let mut in_place_mask = match pic.composite_mode {
+                
+                
+                let mut source_masks = Vec::new();
+                let mut target_masks = Vec::new();
+
+                
+                
+                
+                let force_target_mask = match pic.composite_mode {
                     
                     
                     
                     Some(PictureCompositeMode::Filter(Filter::Blur { .. })) |
                     Some(PictureCompositeMode::Filter(Filter::DropShadows { .. })) => {
-                        false
-                    }
-                    _ => {
                         true
                     }
+                    _ => {
+                        false
+                    }
                 };
+
+                
                 for i in 0 .. prim_instance.vis.clip_chain.clips_range.count {
                     let clip_instance = frame_state.clip_store.get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, i);
 
-                    if !clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
-                        in_place_mask = false;
-                        break;
+                    if !force_target_mask && clip_instance.flags.contains(ClipNodeFlags::SAME_COORD_SYSTEM) {
+                        source_masks.push(i);
+                    } else {
+                        target_masks.push(i);
                     }
                 }
-
-                let (surface_index, coverage_rect) = if in_place_mask {
-                    (pic.raster_config.as_ref().unwrap().surface_index, PictureRect::max_rect())
-                } else {
-                    (pic_context.surface_index, prim_instance.vis.clip_chain.pic_coverage_rect)
-                };
-
-                let surface = &frame_state.surfaces[surface_index.0];
-
-                let device_pixel_scale = surface.device_pixel_scale;
-                let raster_spatial_node_index = surface.raster_spatial_node_index;
-
-                let clipped_surface_rect = surface.get_surface_rect(
-                    &coverage_rect,
-                    frame_context.spatial_tree,
-                ).expect("bug: what can cause this?");
-
-                let p0 = clipped_surface_rect.min.floor();
-                let x0 = p0.x;
-                let y0 = p0.y;
-
-                let content_origin = DevicePoint::new(x0, y0);
 
                 let pic_surface_index = pic.raster_config.as_ref().unwrap().surface_index;
                 let prim_local_rect = frame_state
@@ -1314,22 +1303,66 @@ fn prepare_interned_prim_for_render(
                     &[],
                 );
 
-                let masks = MaskSubPass {
-                    clip_node_range: prim_instance.vis.clip_chain.clips_range,
-                    prim_spatial_node_index,
-                    main_prim_address,
-                };
+                
+                
+                
+                if !source_masks.is_empty() {
+                    let first_clip_node_index = frame_state.clip_store.clip_node_instances.len() as u32;
+                    let parent_task_id = pic.primary_render_task_id.expect("bug: no composite mode");
 
-                let parent_task_id = if in_place_mask {
+                    
+                    for instance in source_masks {
+                        let clip_instance = frame_state.clip_store.get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, instance);
+
+                        for tile in frame_state.clip_store.visible_mask_tiles(clip_instance) {
+                            frame_state.rg_builder.add_dependency(
+                                parent_task_id,
+                                tile.task_id,
+                            );
+                        }
+
+                        frame_state.clip_store.clip_node_instances.push(clip_instance.clone());
+                    }
+
+                    let clip_node_range = ClipNodeRange {
+                        first: first_clip_node_index,
+                        count: frame_state.clip_store.clip_node_instances.len() as u32 - first_clip_node_index,
+                    };
+
+                    let masks = MaskSubPass {
+                        clip_node_range,
+                        prim_spatial_node_index,
+                        main_prim_address,
+                    };
+
                     
                     let pic_task_id = pic.primary_render_task_id.expect("uh oh");
                     let pic_task = frame_state.rg_builder.get_task_mut(pic_task_id);
                     pic_task.add_sub_pass(SubPass::Masks {
                         masks,
                     });
+                }
 
-                    pic_task_id
-                } else {
+                
+                
+                if !target_masks.is_empty() {
+                    let surface = &frame_state.surfaces[pic_context.surface_index.0];
+                    let coverage_rect = prim_instance.vis.clip_chain.pic_coverage_rect;
+
+                    let device_pixel_scale = surface.device_pixel_scale;
+                    let raster_spatial_node_index = surface.raster_spatial_node_index;
+
+                    let clipped_surface_rect = surface.get_surface_rect(
+                        &coverage_rect,
+                        frame_context.spatial_tree,
+                    ).expect("bug: what can cause this?");
+
+                    let p0 = clipped_surface_rect.min.floor();
+                    let x0 = p0.x;
+                    let y0 = p0.y;
+
+                    let content_origin = DevicePoint::new(x0, y0);
+
                     
                     
                     let empty_task = EmptyTask {
@@ -1349,6 +1382,32 @@ fn prepare_interned_prim_for_render(
                         RenderTaskKind::Empty(empty_task),
                     ));
 
+                    
+                    let first_clip_node_index = frame_state.clip_store.clip_node_instances.len() as u32;
+                    for instance in target_masks {
+                        let clip_instance = frame_state.clip_store.get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, instance);
+
+                        for tile in frame_state.clip_store.visible_mask_tiles(clip_instance) {
+                            frame_state.rg_builder.add_dependency(
+                                clip_task_id,
+                                tile.task_id,
+                            );
+                        }
+
+                        frame_state.clip_store.clip_node_instances.push(clip_instance.clone());
+                    }
+
+                    let clip_node_range = ClipNodeRange {
+                        first: first_clip_node_index,
+                        count: frame_state.clip_store.clip_node_instances.len() as u32 - first_clip_node_index,
+                    };
+
+                    let masks = MaskSubPass {
+                        clip_node_range,
+                        prim_spatial_node_index,
+                        main_prim_address,
+                    };
+
                     let clip_task = frame_state.rg_builder.get_task_mut(clip_task_id);
                     clip_task.add_sub_pass(SubPass::Masks {
                         masks,
@@ -1361,23 +1420,6 @@ fn prepare_interned_prim_for_render(
                         clip_task_id,
                         frame_state.rg_builder,
                     );
-
-                    clip_task_id
-                };
-
-                
-                
-                for i in 0 .. prim_instance.vis.clip_chain.clips_range.count {
-                    let clip_instance = frame_state
-                        .clip_store
-                        .get_instance_from_range(&prim_instance.vis.clip_chain.clips_range, i);
-
-                    for tile in frame_state.clip_store.visible_mask_tiles(&clip_instance) {
-                        frame_state.rg_builder.add_dependency(
-                            parent_task_id,
-                            tile.task_id,
-                        );
-                    }
                 }
             }
 
