@@ -112,6 +112,8 @@ AudioTimelineEvent::AudioTimelineEvent(Type aType,
   MOZ_ASSERT(aType == AudioTimelineEvent::SetValueCurve);
 }
 
+
+
 AudioTimelineEvent::AudioTimelineEvent(const AudioTimelineEvent& rhs)
     : mType(rhs.mType) {
   PodCopy(this, &rhs, 1);
