@@ -372,7 +372,7 @@ def verify_test_packaging(task, taskgraph, scratch_pad, graph_config, parameters
         missing_tests_allowed = any(
             (
                 
-                parameters.get("target-kind") is not None,
+                bool(parameters.get("target-kinds")),
                 
                 parameters["test_manifest_loader"] != "default",
             )
