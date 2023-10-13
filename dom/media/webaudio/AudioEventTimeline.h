@@ -119,7 +119,16 @@ struct AudioTimelineEvent {
   
   float EndValue() const;
 
-  void SetTimeInTicks(int64_t aTimeInTicks) { mTime = aTimeInTicks; }
+  
+
+
+
+
+
+
+
+
+  void ConvertToTicks(AudioNodeTrack* aDestination);
 
   template <class TimeType>
   void FillTargetApproach(TimeType aBufferStartTime, Span<float> aBuffer,

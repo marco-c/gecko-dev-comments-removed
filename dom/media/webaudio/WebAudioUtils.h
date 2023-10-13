@@ -20,17 +20,12 @@ typedef struct SpeexResamplerState_ SpeexResamplerState;
 
 namespace mozilla {
 
-class AudioNodeTrack;
-
 extern LazyLogModule gWebAudioAPILog;
 #define WEB_AUDIO_API_LOG(...) \
   MOZ_LOG(gWebAudioAPILog, LogLevel::Debug, (__VA_ARGS__))
 
-namespace dom {
+namespace dom::WebAudioUtils {
 
-struct AudioTimelineEvent;
-
-namespace WebAudioUtils {
 
 
 
@@ -42,18 +37,6 @@ const uint32_t MaxSampleRate = 192000;
 
 inline bool FuzzyEqual(float v1, float v2) { return fabsf(v1 - v2) < 1e-7f; }
 inline bool FuzzyEqual(double v1, double v2) { return fabs(v1 - v2) < 1e-7; }
-
-
-
-
-
-
-
-
-
-
-void ConvertAudioTimelineEventToTicks(AudioTimelineEvent& aEvent,
-                                      AudioNodeTrack* aDest);
 
 
 
@@ -201,8 +184,6 @@ int SpeexResamplerProcess(SpeexResamplerState* aResampler, uint32_t aChannel,
                           uint32_t* aOutLen);
 
 void LogToDeveloperConsole(uint64_t aWindowID, const char* aKey);
-
-}  
 
 }  
 }  
