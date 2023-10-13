@@ -139,7 +139,20 @@ class BaselineFrame {
 #endif
 
   Value* valueSlot(size_t slot) const {
+#ifndef ENABLE_PORTABLE_BASELINE_INTERP
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     MOZ_ASSERT(slot < debugNumValueSlots());
+#endif
     return (Value*)this - (slot + 1);
   }
 
