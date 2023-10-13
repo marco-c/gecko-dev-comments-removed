@@ -4,4 +4,4 @@
 
 
 
-MOCHITEST_MANIFESTS += ["hasinstance/mochitest.ini", "mochitest.ini"]
+MOCHITEST_MANIFESTS += ["hasinstance/mochitest.toml", "mochitest.toml"]

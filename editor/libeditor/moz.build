@@ -5,8 +5,8 @@
 
 
 MOCHITEST_MANIFESTS += [
-    "tests/browserscope/mochitest.ini",
-    "tests/mochitest.ini",
+    "tests/browserscope/mochitest.toml",
+    "tests/mochitest.toml",
 ]
 
 MOCHITEST_CHROME_MANIFESTS += ["tests/chrome.toml"]
