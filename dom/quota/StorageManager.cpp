@@ -427,13 +427,19 @@ void RequestResolver::ResolveOrReject() {
   } else {
     MOZ_ASSERT(mProxy);
 
-    promise = mProxy->WorkerPromise();
-
     
-    autoCleanup.emplace(mProxy);
+    MutexAutoLock lock(mProxy->Lock());
+    if (!mProxy->CleanedUp()) {
+      promise = mProxy->WorkerPromise();
+
+      
+      autoCleanup.emplace(mProxy);
+    }
   }
 
-  MOZ_ASSERT(promise);
+  if (!promise) {
+    return;
+  }
 
   if (mType == Type::Estimate) {
     if (NS_SUCCEEDED(mResultCode)) {
