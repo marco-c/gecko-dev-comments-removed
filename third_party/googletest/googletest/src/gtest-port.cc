@@ -699,11 +699,22 @@ void RE::Init(const char* regex) {
 
   
   
+  
+  
+  
+#if defined(REG_GNU)
+  constexpr int reg_flags = REG_EXTENDED | REG_GNU;
+#else
+  constexpr int reg_flags = REG_EXTENDED;
+#endif
+
+  
+  
   const size_t full_regex_len = strlen(regex) + 10;
   char* const full_pattern = new char[full_regex_len];
 
   snprintf(full_pattern, full_regex_len, "^(%s)$", regex);
-  is_valid_ = regcomp(&full_regex_, full_pattern, REG_EXTENDED) == 0;
+  is_valid_ = regcomp(&full_regex_, full_pattern, reg_flags) == 0;
   
   
   
@@ -714,7 +725,7 @@ void RE::Init(const char* regex) {
   
   if (is_valid_) {
     const char* const partial_regex = (*regex == '\0') ? "()" : regex;
-    is_valid_ = regcomp(&partial_regex_, partial_regex, REG_EXTENDED) == 0;
+    is_valid_ = regcomp(&partial_regex_, partial_regex, reg_flags) == 0;
   }
   EXPECT_TRUE(is_valid_)
       << "Regular expression \"" << regex
