@@ -144,6 +144,8 @@ public class GeckoSession {
   private SessionAccessibility mAccessibility;
   private SessionFinder mFinder;
   private SessionPdfFileSaver mPdfFileSaver;
+  private TranslationsController.SessionTranslation mTranslations =
+      new TranslationsController.SessionTranslation(this);
 
   
    interface SessionMagnifier {
@@ -1219,6 +1221,8 @@ public class GeckoSession {
       };
 
   private final MediaSession.Handler mMediaSessionHandler = new MediaSession.Handler(this);
+  private final TranslationsController.SessionTranslation.Handler mTranslationsHandler =
+      mTranslations.getHandler();
 
    int handlersCount;
 
@@ -1234,6 +1238,7 @@ public class GeckoSession {
         mProgressHandler,
         mScrollHandler,
         mSelectionActionDelegate,
+        mTranslationsHandler,
         mContentBlockingHandler,
         mMediaSessionHandler,
         mExperimentHandler
@@ -3353,6 +3358,40 @@ public class GeckoSession {
   @AnyThread
   public @Nullable MediaSession.Delegate getMediaSessionDelegate() {
     return mMediaSessionHandler.getDelegate();
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public @Nullable TranslationsController.SessionTranslation getSessionTranslation() {
+    return mTranslations;
+  }
+
+  
+
+
+
+
+  @AnyThread
+  public void setTranslationsSessionDelegate(
+      final @Nullable TranslationsController.SessionTranslation.Delegate delegate) {
+    mTranslationsHandler.setDelegate(delegate, this);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public @Nullable TranslationsController.SessionTranslation.Delegate
+      getTranslationsSessionDelegate() {
+    return mTranslationsHandler.getDelegate();
   }
 
   
