@@ -62,6 +62,11 @@ class Preview extends PureComponent {
 
     const { editor, getPreview, getExceptionPreview } = this.props;
 
+    
+    if (target.closest(".CodeMirror-widget")) {
+      return;
+    }
+
     const isTargetException = target.classList.contains(EXCEPTION_MARKER);
 
     let preview;
