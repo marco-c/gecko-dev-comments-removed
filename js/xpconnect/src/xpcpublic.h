@@ -576,6 +576,18 @@ void SetPrefableContextOptions(JS::ContextOptions& options);
 
 void SetPrefableCompileOptions(JS::PrefableCompileOptions& options);
 
+
+
+
+
+
+
+
+
+void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
+                             bool aIsSystemPrincipal, bool aForceUTC,
+                             bool aAlwaysUseFdlibm, bool aLocaleEnUS);
+
 class ErrorBase {
  public:
   nsString mErrorMsg;

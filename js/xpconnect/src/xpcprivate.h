@@ -2413,18 +2413,6 @@ JSObject* CreateGlobalObject(JSContext* cx, const JSClass* clasp,
 
 
 
-
-
-
-void InitGlobalObjectOptions(JS::RealmOptions& aOptions,
-                             bool aIsSystemPrincipal, bool aForceUTC,
-                             bool aAlwaysUseFdlibm, bool aLocaleEnUS);
-
-
-
-
-
-
 bool InitGlobalObject(JSContext* aJSContext, JS::Handle<JSObject*> aGlobal,
                       uint32_t aFlags);
 
