@@ -56,27 +56,28 @@ add_task(async function () {
         },
       },
     },
-    selectables: {
-      
-      "urlbarView-row-inner": {
-        scalars: {
-          [TELEMETRY_SCALARS.IMPRESSION_DYNAMIC_WIKIPEDIA]: position,
-          [TELEMETRY_SCALARS.CLICK_DYNAMIC_WIKIPEDIA]: position,
-          "urlbar.picked.dynamic_wikipedia": index.toString(),
-        },
-        event: {
-          category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
-          method: "engagement",
-          object: "click",
-          extra: {
-            suggestion_type,
-            match_type,
-            position: position.toString(),
-          },
+    
+    click: {
+      scalars: {
+        [TELEMETRY_SCALARS.IMPRESSION_DYNAMIC_WIKIPEDIA]: position,
+        [TELEMETRY_SCALARS.CLICK_DYNAMIC_WIKIPEDIA]: position,
+        "urlbar.picked.dynamic_wikipedia": index.toString(),
+      },
+      event: {
+        category: QuickSuggest.TELEMETRY_EVENT_CATEGORY,
+        method: "engagement",
+        object: "click",
+        extra: {
+          suggestion_type,
+          match_type,
+          position: position.toString(),
         },
       },
+    },
+    commands: [
       
-      "urlbarView-button-block": {
+      {
+        command: "dismiss",
         scalars: {
           [TELEMETRY_SCALARS.IMPRESSION_DYNAMIC_WIKIPEDIA]: position,
           [TELEMETRY_SCALARS.BLOCK_DYNAMIC_WIKIPEDIA]: position,
@@ -93,7 +94,8 @@ add_task(async function () {
         },
       },
       
-      "urlbarView-button-help": {
+      {
+        command: "help",
         scalars: {
           [TELEMETRY_SCALARS.IMPRESSION_DYNAMIC_WIKIPEDIA]: position,
           [TELEMETRY_SCALARS.HELP_DYNAMIC_WIKIPEDIA]: position,
@@ -109,6 +111,6 @@ add_task(async function () {
           },
         },
       },
-    },
+    ],
   });
 });

@@ -102,15 +102,6 @@ async function setUpTelemetryTest({
   merinoSuggestions = null,
   config = QuickSuggestTestUtils.DEFAULT_CONFIG,
 }) {
-  if (UrlbarPrefs.get("resultMenu")) {
-    todo(
-      false,
-      "telemetry for the result menu to be implemented in bug 1790020"
-    );
-    await SpecialPowers.pushPrefEnv({
-      set: [["browser.urlbar.resultMenu", false]],
-    });
-  }
   await SpecialPowers.pushPrefEnv({
     set: [
       
@@ -186,11 +177,16 @@ async function setUpTelemetryTest({
 
 
 
+
+
+
+
 async function doTelemetryTest({
   index,
   suggestion,
   impressionOnly,
-  selectables,
+  click,
+  commands,
   providerName = UrlbarProviderQuickSuggest.name,
   teardown = null,
   showSuggestion = () =>
@@ -204,78 +200,30 @@ async function doTelemetryTest({
       fireInputEvent: true,
     }),
 }) {
-  
-  
-  let selectableClassLists = await doImpressionOnlyTest({
+  await doImpressionOnlyTest({
     index,
     suggestion,
     providerName,
     showSuggestion,
     expected: impressionOnly,
   });
-  if (!selectableClassLists) {
-    Assert.ok(
-      false,
-      "Impression test didn't complete successfully, stopping telemetry test"
-    );
-    return;
-  }
 
-  info(
-    "Got classLists of actual selectable elements in the row: " +
-      JSON.stringify(selectableClassLists)
-  );
+  await doClickTest({
+    suggestion,
+    providerName,
+    showSuggestion,
+    index,
+    expected: click,
+  });
 
-  let allMatchedExpectedClasses = new Set();
-
-  
-  
-  for (let classList of selectableClassLists) {
-    info(
-      "Setting up selectable test for actual element with classList " +
-        JSON.stringify(classList)
-    );
-
-    
-    
-    
-    
-    
-    
-    
-
-    
-    let matchingExpectedClasses = Object.keys(selectables).filter(className =>
-      classList.includes(className)
-    );
-
-    if (!matchingExpectedClasses.length) {
-      Assert.ok(
-        false,
-        "Actual selectable element doesn't match any expected classes. The element's classList is " +
-          JSON.stringify(classList)
-      );
-      continue;
-    }
-    if (matchingExpectedClasses.length > 1) {
-      Assert.ok(
-        false,
-        "Actual selectable element matches multiple expected classes. The element's classList is " +
-          JSON.stringify(classList)
-      );
-      continue;
-    }
-
-    let className = matchingExpectedClasses[0];
-    allMatchedExpectedClasses.add(className);
-
-    await doSelectableTest({
+  for (let command of commands) {
+    await doCommandTest({
       suggestion,
       providerName,
       showSuggestion,
       index,
-      className,
-      expected: selectables[className],
+      commandOrArray: command.command,
+      expected: command,
     });
 
     if (teardown) {
@@ -284,22 +232,7 @@ async function doTelemetryTest({
       info("Finished teardown");
     }
   }
-
-  
-  
-  
-  Assert.deepEqual(
-    Object.keys(selectables).filter(
-      className => !allMatchedExpectedClasses.has(className)
-    ),
-    [],
-    "There should be no expected classes that didn't match actual selectable elements"
-  );
 }
-
-
-
-
 
 
 
@@ -338,14 +271,8 @@ async function doImpressionOnlyTest({
   Services.telemetry.clearEvents();
   let { spy, spyCleanup } = QuickSuggestTestUtils.createTelemetryPingSpy();
 
-  let gleanPingSubmitted = false;
-  GleanPings.quickSuggest.testBeforeNextSubmit(() => {
-    gleanPingSubmitted = true;
-    if (!expected.ping || !("type" in expected.ping)) {
-      return;
-    }
-    _assertGleanPing(expected.ping);
-  });
+  let expectedPings = expected.ping ? [expected.ping] : [];
+  let gleanPingCount = watchGleanPings(expectedPings);
 
   info("Showing suggestion");
   await showSuggestion();
@@ -358,7 +285,7 @@ async function doImpressionOnlyTest({
       "Couldn't get suggestion row, stopping impression-only test"
     );
     await spyCleanup();
-    return null;
+    return;
   }
 
   
@@ -392,14 +319,7 @@ async function doImpressionOnlyTest({
       "Couldn't get a different selectable row with a URL, stopping impression-only test"
     );
     await spyCleanup();
-    return null;
-  }
-
-  
-  let selectableClassLists = [];
-  let selectables = row.querySelectorAll(":is([selectable], [role=button])");
-  for (let element of selectables) {
-    selectableClassLists.push([...element.classList]);
+    return;
   }
 
   
@@ -421,13 +341,13 @@ async function doImpressionOnlyTest({
   info("Checking events. Expected: " + JSON.stringify([expected.event]));
   QuickSuggestTestUtils.assertEvents([expected.event]);
 
-  let expectedPings = expected.ping ? [expected.ping] : [];
   info("Checking pings. Expected: " + JSON.stringify(expectedPings));
   QuickSuggestTestUtils.assertPings(spy, expectedPings);
 
-  Assert.ok(
-    !expected.ping || gleanPingSubmitted,
-    "No ping checked or Glean ping submitted ok."
+  Assert.equal(
+    expectedPings.length,
+    gleanPingCount.value,
+    "Submitted one Glean ping per expected ping"
   );
 
   
@@ -436,8 +356,88 @@ async function doImpressionOnlyTest({
   await spyCleanup();
 
   info("Finished impression-only test");
+}
 
-  return selectableClassLists;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function doClickTest({
+  index,
+  suggestion,
+  providerName,
+  expected,
+  showSuggestion,
+}) {
+  info("Starting click test");
+
+  Services.telemetry.clearEvents();
+  let { spy, spyCleanup } = QuickSuggestTestUtils.createTelemetryPingSpy();
+
+  let expectedPings = expected.pings ?? [];
+  let gleanPingCount = watchGleanPings(expectedPings);
+
+  info("Showing suggestion");
+  await showSuggestion();
+
+  let row = await validateSuggestionRow(index, suggestion, providerName);
+  if (!row) {
+    Assert.ok(false, "Couldn't get suggestion row, stopping click test");
+    await spyCleanup();
+    return;
+  }
+
+  
+  let loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
+
+  info("Clicking row");
+  EventUtils.synthesizeMouseAtCenter(row, {});
+
+  info("Waiting for load");
+  await loadPromise;
+  await TestUtils.waitForTick();
+
+  info("Checking scalars. Expected: " + JSON.stringify(expected.scalars));
+  QuickSuggestTestUtils.assertScalars(expected.scalars);
+
+  info("Checking events. Expected: " + JSON.stringify([expected.event]));
+  QuickSuggestTestUtils.assertEvents([expected.event]);
+
+  info("Checking pings. Expected: " + JSON.stringify(expectedPings));
+  QuickSuggestTestUtils.assertPings(spy, expectedPings);
+
+  Assert.equal(
+    expectedPings.length,
+    gleanPingCount.value,
+    "Submitted one Glean ping per expected ping"
+  );
+
+  await PlacesUtils.history.clear();
+  await spyCleanup();
+
+  info("Finished click test");
 }
 
 
@@ -469,69 +469,55 @@ async function doImpressionOnlyTest({
 
 
 
-async function doSelectableTest({
+
+async function doCommandTest({
   index,
   suggestion,
   providerName,
-  className,
+  commandOrArray,
   expected,
   showSuggestion,
 }) {
-  info("Starting selectable test: " + JSON.stringify({ className }));
+  info("Starting command test: " + JSON.stringify({ commandOrArray }));
 
   Services.telemetry.clearEvents();
   let { spy, spyCleanup } = QuickSuggestTestUtils.createTelemetryPingSpy();
 
-  let gleanPingsSubmitted = 0;
-  if (expected.pings) {
-    let checkPing = (ping, next) => {
-      gleanPingsSubmitted++;
-      _assertGleanPing(ping);
-      if (next) {
-        GleanPings.quickSuggest.testBeforeNextSubmit(next);
-      }
-    };
-    
-    let next = undefined;
-    expected.pings
-      .slice()
-      .reverse()
-      .forEach(ping => {
-        next = checkPing.bind(null, ping, next);
-      });
-    GleanPings.quickSuggest.testBeforeNextSubmit(next);
-  }
+  let expectedPings = expected.pings ?? [];
+  let gleanPingCount = watchGleanPings(expectedPings);
 
   info("Showing suggestion");
   await showSuggestion();
 
   let row = await validateSuggestionRow(index, suggestion, providerName);
   if (!row) {
-    Assert.ok(false, "Couldn't get suggestion row, stopping selectable test");
+    Assert.ok(false, "Couldn't get suggestion row, stopping click test");
     await spyCleanup();
     return;
   }
 
-  let element = row.querySelector("." + className);
-  Assert.ok(element, "Sanity check: Target selectable element should exist");
+  let command =
+    typeof commandOrArray == "string"
+      ? commandOrArray
+      : commandOrArray[commandOrArray.length - 1];
 
   let loadPromise;
-  if (className == "urlbarView-row-inner") {
+  if (command == "help") {
     
-    
-    loadPromise = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  } else if (className == "urlbarView-button-help") {
     loadPromise = BrowserTestUtils.waitForNewTab(gBrowser);
   }
 
-  info("Clicking element: " + className);
-  EventUtils.synthesizeMouseAtCenter(element, {});
+  info("Clicking command");
+  await UrlbarTestUtils.openResultMenuAndClickItem(window, commandOrArray, {
+    resultIndex: index,
+    openByMouse: true,
+  });
 
   if (loadPromise) {
     info("Waiting for load");
     await loadPromise;
     await TestUtils.waitForTick();
-    if (className == "urlbarView-button-help") {
+    if (command == "help") {
       info("Closing help tab");
       BrowserTestUtils.removeTab(gBrowser.selectedTab);
     }
@@ -543,23 +529,22 @@ async function doSelectableTest({
   info("Checking events. Expected: " + JSON.stringify([expected.event]));
   QuickSuggestTestUtils.assertEvents([expected.event]);
 
-  let expectedPings = expected.pings ?? [];
   info("Checking pings. Expected: " + JSON.stringify(expectedPings));
   QuickSuggestTestUtils.assertPings(spy, expectedPings);
 
   Assert.equal(
     expectedPings.length,
-    gleanPingsSubmitted,
-    "Submitted one Glean ping per PC ping."
+    gleanPingCount.value,
+    "Submitted one Glean ping per expected ping"
   );
 
-  if (className == "urlbarView-button-block") {
+  if (command == "dismiss") {
     await QuickSuggest.blockedSuggestions.clear();
   }
   await PlacesUtils.history.clear();
   await spyCleanup();
 
-  info("Finished selectable test: " + JSON.stringify({ className }));
+  info("Finished command test: " + JSON.stringify({ commandOrArray }));
 }
 
 
@@ -608,6 +593,32 @@ async function validateSuggestionRow(index, suggestion, providerName) {
   }
 
   return row;
+}
+
+function watchGleanPings(pings) {
+  let countObject = { value: 0 };
+
+  let checkPing = (ping, next) => {
+    countObject.value++;
+    _assertGleanPing(ping);
+    if (next) {
+      GleanPings.quickSuggest.testBeforeNextSubmit(next);
+    }
+  };
+
+  
+  let next = undefined;
+  pings
+    .slice()
+    .reverse()
+    .forEach(ping => {
+      next = checkPing.bind(null, ping, next);
+    });
+  if (next) {
+    GleanPings.quickSuggest.testBeforeNextSubmit(next);
+  }
+
+  return countObject;
 }
 
 function _assertGleanPing(ping) {
