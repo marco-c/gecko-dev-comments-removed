@@ -61,28 +61,27 @@ async function selectAndPaste(str, win = window) {
 
 
 
-
-
-async function waitForLoadOrTimeout(win = window, timeoutMs = 1000) {
-  let event;
+function waitForLoadStartOrTimeout(win = window, timeoutMs = 1000) {
   let listener;
   let timeout;
-  let eventName = "BrowserTestUtils:ContentEvent:load";
-  try {
-    event = await Promise.race([
-      new Promise(resolve => {
-        listener = resolve;
-        win.addEventListener(eventName, listener, true);
-      }),
-      new Promise(resolve => {
-        timeout = win.setTimeout(resolve, timeoutMs);
-      }),
-    ]);
-  } finally {
-    win.removeEventListener(eventName, listener, true);
+  return Promise.race([
+    new Promise(resolve => {
+      listener = {
+        onStateChange(browser, webprogress, request, flags, status) {
+          if (flags & Ci.nsIWebProgressListener.STATE_START) {
+            resolve(request.QueryInterface(Ci.nsIChannel).URI);
+          }
+        },
+      };
+      win.gBrowser.addTabsProgressListener(listener);
+    }),
+    new Promise((resolve, reject) => {
+      timeout = win.setTimeout(() => reject("timed out"), timeoutMs);
+    }),
+  ]).finally(() => {
+    win.gBrowser.removeTabsProgressListener(listener);
     win.clearTimeout(timeout);
-  }
-  return event || null;
+  });
 }
 
 
