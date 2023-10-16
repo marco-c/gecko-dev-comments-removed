@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/x64/Assembler-x64.h"
 
@@ -16,13 +16,13 @@ ABIArgGenerator::ABIArgGenerator()
     :
 #if defined(XP_WIN)
       regIndex_(0),
-      stackOffset_(ShadowStackSpace),
+      stackOffset_(ShadowStackSpace)
 #else
       intRegIndex_(0),
       floatRegIndex_(0),
-      stackOffset_(0),
+      stackOffset_(0)
 #endif
-      current_() {
+{
 }
 
 ABIArg ABIArgGenerator::next(MIRType type) {
@@ -30,10 +30,10 @@ ABIArg ABIArgGenerator::next(MIRType type) {
   static_assert(NumIntArgRegs == NumFloatArgRegs);
   if (regIndex_ == NumIntArgRegs) {
     if (type == MIRType::Simd128) {
-      // On Win64, >64 bit args need to be passed by reference.  However, wasm
-      // doesn't allow passing SIMD values to JS, so the only way to reach this
-      // is wasm to wasm calls.  Ergo we can break the native ABI here and use
-      // the Wasm ABI instead.
+      
+      
+      
+      
       stackOffset_ = AlignBytes(stackOffset_, SimdMemoryAlignment);
       current_ = ABIArg(stackOffset_);
       stackOffset_ += Simd128DataSize;
@@ -58,9 +58,9 @@ ABIArg ABIArgGenerator::next(MIRType type) {
       current_ = ABIArg(FloatArgRegs[regIndex_++]);
       break;
     case MIRType::Simd128:
-      // On Win64, >64 bit args need to be passed by reference, but wasm
-      // doesn't allow passing SIMD values to FFIs. The only way to reach
-      // here is asm to asm calls, so we can break the ABI here.
+      
+      
+      
       current_ = ABIArg(FloatArgRegs[regIndex_++].asSimd128());
       break;
     default:
@@ -114,8 +114,8 @@ void Assembler::addPendingJump(JmpSrc src, ImmPtr target,
                                RelocationKind reloc) {
   MOZ_ASSERT(target.value != nullptr);
 
-  // Emit reloc before modifying the jump table, since it computes a 0-based
-  // index. This jump is not patchable at runtime.
+  
+  
   if (reloc == RelocationKind::JITCODE) {
     jumpRelocations_.writeUnsigned(src.offset());
   }
@@ -143,18 +143,18 @@ void Assembler::finish() {
   AutoCreatedBy acb(*this, "Assembler::finish");
 
   if (!extendedJumps_.length()) {
-    // Since we may be folowed by non-executable data, eagerly insert an
-    // undefined instruction byte to prevent processors from decoding
-    // gibberish into their pipelines. See Intel performance guides.
+    
+    
+    
     masm.ud2();
     return;
   }
 
-  // Emit the jump table.
+  
   masm.haltingAlign(SizeOfJumpTableEntry);
   extendedJumpTable_ = masm.size();
 
-  // Zero the extended jumps table.
+  
   for (size_t i = 0; i < extendedJumps_.length(); i++) {
 #ifdef DEBUG
     size_t oldSize = masm.size();
@@ -162,8 +162,8 @@ void Assembler::finish() {
     MOZ_ASSERT(hasCreator());
     masm.jmp_rip(2);
     MOZ_ASSERT_IF(!masm.oom(), masm.size() - oldSize == 6);
-    // Following an indirect branch with ud2 hints to the hardware that
-    // there's no fall-through. This also aligns the 64-bit immediate.
+    
+    
     masm.ud2();
     MOZ_ASSERT_IF(!masm.oom(), masm.size() - oldSize == 8);
     masm.immediate64(0);
@@ -191,18 +191,18 @@ void Assembler::executableCopy(uint8_t* buffer) {
     if (X86Encoding::CanRelinkJump(src, rp.target)) {
       X86Encoding::SetRel32(src, rp.target);
     } else {
-      // An extended jump table must exist, and its offset must be in
-      // range.
+      
+      
       MOZ_ASSERT(extendedJumpTable_);
       MOZ_ASSERT((extendedJumpTable_ + i * SizeOfJumpTableEntry) <=
                  size() - SizeOfJumpTableEntry);
 
-      // Patch the jump to go to the extended jump entry.
+      
       uint8_t* entry = buffer + extendedJumpTable_ + i * SizeOfJumpTableEntry;
       X86Encoding::SetRel32(src, entry);
 
-      // Now patch the pointer, note that we need to align it to
-      // *after* the extended jump, i.e. after the 64-bit immedate.
+      
+      
       X86Encoding::SetPointer(entry + SizeOfExtendedJump, rp.target);
     }
   }

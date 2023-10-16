@@ -97,8 +97,7 @@ BaselineCodeGen<Handler>::BaselineCodeGen(JSContext* cx, TempAllocator& alloc,
 
 BaselineCompiler::BaselineCompiler(JSContext* cx, TempAllocator& alloc,
                                    JSScript* script)
-    : BaselineCodeGen(cx, alloc,  alloc, script),
-      profilerPushToggleOffset_() {
+    : BaselineCodeGen(cx, alloc,  alloc, script) {
 #ifdef JS_CODEGEN_NONE
   MOZ_CRASH();
 #endif

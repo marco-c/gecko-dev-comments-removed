@@ -15,7 +15,7 @@
 class Lock {
  public:
   
-  Lock() : lock_() {}
+  Lock() {}
   ~Lock() {}
   void Acquire() { lock_.Lock(); }
   void Release() { lock_.Unlock(); }

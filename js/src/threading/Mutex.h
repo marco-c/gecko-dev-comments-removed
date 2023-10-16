@@ -36,7 +36,7 @@ struct MutexId {
 
 class MutexImpl : public mozilla::detail::MutexImpl {
  protected:
-  MutexImpl() : mozilla::detail::MutexImpl() {}
+  MutexImpl() {}
 
   friend class Mutex;
 };

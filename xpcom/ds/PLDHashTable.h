@@ -414,7 +414,7 @@ class PLDHashTable {
   PLDHashTable(PLDHashTable&& aOther)
       
       
-      : mOps(nullptr), mEntryStore(), mGeneration(0), mEntrySize(0) {
+      : mOps(nullptr), mGeneration(0), mEntrySize(0) {
     *this = std::move(aOther);
   }
 
