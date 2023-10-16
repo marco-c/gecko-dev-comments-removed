@@ -123,25 +123,11 @@ export function getTokenEnd(codeMirror, line, column) {
 
 
 export function getTokenLocation(codeMirror, tokenEl) {
-  
-  
-  
-  
-  
-  
-  const { p1, p2, p3 } = tokenEl.getBoxQuads()[0];
-  const left = p1.x + (p2.x - p1.x) / 2;
-  const top = p1.y + (p3.y - p1.y) / 2;
-  const { line, ch } = codeMirror.coordsChar(
-    {
-      left,
-      top,
-    },
-    
-    
-    
-    "window"
-  );
+  const { left, top, width, height } = tokenEl.getBoundingClientRect();
+  const { line, ch } = codeMirror.coordsChar({
+    left: left + width / 2,
+    top: top + height / 2,
+  });
 
   return {
     line: line + 1,
