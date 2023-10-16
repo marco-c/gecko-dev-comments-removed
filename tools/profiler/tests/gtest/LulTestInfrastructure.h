@@ -262,7 +262,7 @@ class Section {
 
   
   
-  virtual ~Section(){};
+  virtual ~Section() = default;
 
   
   Endianness endianness() const { return endianness_; }
