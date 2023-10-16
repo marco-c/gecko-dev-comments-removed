@@ -230,8 +230,7 @@ Preferences.addAll([
 
   
   { id: "cookiebanners.ui.desktop.enabled", type: "bool" },
-  { id: "cookiebanners.service.mode", type: "int" },
-  { id: "cookiebanners.service.detectOnly", type: "bool" },
+  { id: "cookiebanners.service.mode.privateBrowsing", type: "int" },
 
   
   { id: "network.trr.mode", type: "int" },
@@ -2513,11 +2512,8 @@ var gPrivacyPane = {
 
 
   readCookieBannerMode() {
-    if (Preferences.get("cookiebanners.service.detectOnly").value) {
-      return false;
-    }
     return (
-      Preferences.get("cookiebanners.service.mode").value !=
+      Preferences.get("cookiebanners.service.mode.privateBrowsing").value !=
       Ci.nsICookieBannerService.MODE_DISABLED
     );
   },
@@ -2528,27 +2524,16 @@ var gPrivacyPane = {
 
   writeCookieBannerMode() {
     let checkbox = document.getElementById("handleCookieBanners");
-    let mode;
-    if (checkbox.checked) {
-      mode = Ci.nsICookieBannerService.MODE_REJECT;
+    if (!checkbox.checked) {
+      
 
-      
-      
-      Services.prefs.setBoolPref("cookiebanners.service.detectOnly", false);
-    } else {
-      mode = Ci.nsICookieBannerService.MODE_DISABLED;
+      Services.prefs.setIntPref(
+        "cookiebanners.service.mode",
+        Ci.nsICookieBannerService.MODE_DISABLED
+      );
+      return Ci.nsICookieBannerService.MODE_DISABLED;
     }
-
-    
-
-
-
-
-    Services.prefs.setIntPref(
-      "cookiebanners.service.mode.privateBrowsing",
-      mode
-    );
-    return mode;
+    return Ci.nsICookieBannerService.MODE_REJECT;
   },
 
   

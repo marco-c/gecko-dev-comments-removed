@@ -13,6 +13,9 @@ add_task(async function () {
 
 
 add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["cookiebanners.ui.desktop.enabled", false]],
+  });
   await openPreferencesViaOpenPreferencesAPI("paneGeneral", {
     leaveOpen: true,
   });
