@@ -91,6 +91,12 @@ add_task(async function () {
     }
   );
 
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
   EventUtils.synthesizeNativeMouseEvent({
     type: "click",
     target: window.document.documentElement,
