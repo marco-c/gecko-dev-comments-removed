@@ -509,7 +509,12 @@ function makeOmniboxResult(
 
 
 
-function makeTabSwitchResult(queryContext, { uri, title, iconUri }) {
+
+
+function makeTabSwitchResult(
+  queryContext,
+  { uri, title, iconUri, userContextId }
+) {
   return new UrlbarResult(
     UrlbarUtils.RESULT_TYPE.TAB_SWITCH,
     UrlbarUtils.RESULT_SOURCE.TABS,
@@ -518,6 +523,7 @@ function makeTabSwitchResult(queryContext, { uri, title, iconUri }) {
       title: [title, UrlbarUtils.HIGHLIGHT.TYPED],
       
       icon: typeof iconUri != "undefined" ? iconUri : `page-icon:${uri}`,
+      userContextId: [userContextId || 0],
     })
   );
 }

@@ -8464,7 +8464,15 @@ var gPrivateBrowsingUI = {
 
 
 
-function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
+
+
+
+function switchToTabHavingURI(
+  aURI,
+  aOpenNew,
+  aOpenParams = {},
+  aUserContextId = null
+) {
   
   
   const kPrivateBrowsingWhitelist = new Set(["about:addons"]);
@@ -8532,6 +8540,10 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
         ignoreQueryString || replaceQueryString,
         ignoreFragmentWhenComparing
       );
+      let browserUserContextId = browser.getAttribute("usercontextid");
+      if (aUserContextId != null && aUserContextId != browserUserContextId) {
+        continue;
+      }
       if (requestedCompare == browserCompare) {
         
         
@@ -8593,6 +8605,12 @@ function switchToTabHavingURI(aURI, aOpenNew, aOpenParams = {}) {
 
   
   if (aOpenNew) {
+    if (
+      UrlbarPrefs.get("switchTabs.searchAllContainers") &&
+      aUserContextId != null
+    ) {
+      aOpenParams.userContextId = aUserContextId;
+    }
     if (isBrowserWindow && gBrowser.selectedTab.isEmpty) {
       openTrustedLinkIn(aURI.spec, "current", aOpenParams);
     } else {

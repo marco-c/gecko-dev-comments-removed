@@ -46,3 +46,22 @@ function openTabInContainer(gBrowser, url, reopenMenu, id) {
 function loadTestSubscript(filePath) {
   Services.scriptloader.loadSubScript(new URL(filePath, gTestPath).href, this);
 }
+
+
+
+
+
+
+
+
+
+async function openTabInUserContext(uri, userContextId) {
+  let tab = BrowserTestUtils.addTab(gBrowser, uri, { userContextId });
+
+  gBrowser.selectedTab = tab;
+  tab.ownerGlobal.focus();
+
+  let browser = gBrowser.getBrowserForTab(tab);
+  await BrowserTestUtils.browserLoaded(browser);
+  return tab;
+}

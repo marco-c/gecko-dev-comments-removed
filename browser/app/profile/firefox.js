@@ -530,6 +530,10 @@ pref("browser.urlbar.switchTabs.adoptIntoActiveWindow", false);
 
 
 
+pref("browser.urlbar.switchTabs.searchAllContainers", false);
+
+
+
 pref("browser.urlbar.openintab", false);
 
 
