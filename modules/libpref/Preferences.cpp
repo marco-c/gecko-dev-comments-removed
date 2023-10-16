@@ -2293,10 +2293,7 @@ class nsPrefLocalizedString final : public nsIPrefLocalizedString {
 
 
 nsPrefBranch::nsPrefBranch(const char* aPrefRoot, PrefValueKind aKind)
-    : mPrefRoot(aPrefRoot),
-      mKind(aKind),
-      mFreeingObserverList(false),
-      mObservers() {
+    : mPrefRoot(aPrefRoot), mKind(aKind), mFreeingObserverList(false) {
   nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
   if (observerService) {
     ++mRefCnt;  
