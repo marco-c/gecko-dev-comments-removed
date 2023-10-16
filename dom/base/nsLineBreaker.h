@@ -63,7 +63,6 @@ class nsILineBreakSink {
 
 
 
-
 class nsLineBreaker {
  public:
   nsLineBreaker();
@@ -71,21 +70,6 @@ class nsLineBreaker {
 
   static inline bool IsSpace(char16_t u) {
     return mozilla::intl::NS_IsSpace(u);
-  }
-
-  static inline bool IsComplexASCIIChar(char16_t u) {
-    return !((0x0030 <= u && u <= 0x0039) || (0x0041 <= u && u <= 0x005A) ||
-             (0x0061 <= u && u <= 0x007A) || (0x000a == u));
-  }
-
-  static inline bool IsComplexChar(char16_t u) {
-    return IsComplexASCIIChar(u) ||
-           mozilla::intl::NS_NeedsPlatformNativeHandling(u) ||
-           (0x1100 <= u && u <= 0x11ff) ||  
-           (0x2000 <= u && u <= 0x21ff) ||  
-           (0x2e80 <= u && u <= 0xd7ff) ||  
-           (0xf900 <= u && u <= 0xfaff) ||  
-           (0xff00 <= u && u <= 0xffef);    
   }
 
   
@@ -263,7 +247,7 @@ class nsLineBreaker {
   AutoTArray<TextItem, 2> mTextItems;
   nsAtom* mCurrentWordLanguage;
   bool mCurrentWordContainsMixedLang;
-  bool mCurrentWordContainsComplexChar;
+  bool mCurrentWordMightBeBreakable = false;
   bool mScriptIsChineseOrJapanese;
 
   
