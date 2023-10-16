@@ -91,7 +91,12 @@ class AddrInfo {
   bool mPhcWasLocked = false;
 
   
-  AddrInfo() : mKind(Kind::Unknown), mBaseAddr(nullptr), mUsableSize(0) {}
+  AddrInfo()
+      : mKind(Kind::Unknown),
+        mBaseAddr(nullptr),
+        mUsableSize(0),
+        mAllocStack(),
+        mFreeStack() {}
 };
 
 

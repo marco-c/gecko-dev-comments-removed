@@ -67,7 +67,7 @@ TextureData* CanvasTranslator::CreateTextureData(TextureType aTextureType,
   return textureData;
 }
 
-CanvasTranslator::CanvasTranslator() {
+CanvasTranslator::CanvasTranslator() : gfx::InlineTranslator() {
   
   Telemetry::ScalarAdd(Telemetry::ScalarID::GFX_CANVAS_REMOTE_ACTIVATED, 1);
 }

@@ -568,7 +568,8 @@ class PtrInfo final {
         mParticipant(aParticipant),
         mColor(grey),
         mInternalRefs(0),
-        mRefCount(kInitialRefCount) {
+        mRefCount(kInitialRefCount),
+        mFirstChild() {
     MOZ_ASSERT(aParticipant);
 
     

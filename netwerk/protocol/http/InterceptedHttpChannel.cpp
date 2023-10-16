@@ -41,7 +41,8 @@ InterceptedHttpChannel::InterceptedHttpChannel(
       mProgressReported(0),
       mSynthesizedStreamLength(-1),
       mResumeStartPos(0),
-      mCallingStatusAndProgress(false) {
+      mCallingStatusAndProgress(false),
+      mTimeStamps() {
   
   
   

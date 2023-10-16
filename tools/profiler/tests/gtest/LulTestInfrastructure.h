@@ -262,7 +262,7 @@ class Section {
 
   
   
-  virtual ~Section() = default;
+  virtual ~Section(){};
 
   
   Endianness endianness() const { return endianness_; }
@@ -533,6 +533,7 @@ class CFISection : public Section {
         address_size_(address_size),
         eh_frame_(eh_frame),
         pointer_encoding_(lul::DW_EH_PE_absptr),
+        encoded_pointer_bases_(),
         entry_length_(NULL),
         in_fde_(false) {
     
