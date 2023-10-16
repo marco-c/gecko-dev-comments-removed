@@ -100,7 +100,7 @@ static std::ostream& operator<<(std::ostream& aStream, UINT12 aId) {
 
 class STUNUDPSocketFilter : public nsISocketFilter {
  public:
-  STUNUDPSocketFilter() {}
+  STUNUDPSocketFilter() = default;
 
   
   NS_DECL_ISUPPORTS

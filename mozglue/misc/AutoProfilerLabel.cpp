@@ -38,7 +38,7 @@ class MOZ_RAII AutoProfilerLabelData {
   
   class Mutex : private mozilla::detail::MutexImpl {
    public:
-    Mutex() {}
+    Mutex() = default;
     void Lock() { mozilla::detail::MutexImpl::lock(); }
     void Unlock() { mozilla::detail::MutexImpl::unlock(); }
   };

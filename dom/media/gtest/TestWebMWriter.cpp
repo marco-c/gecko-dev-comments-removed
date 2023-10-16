@@ -66,7 +66,7 @@ const uint32_t FIXED_FRAMESIZE = 500;
 
 class TestWebMWriter : public WebMWriter {
  public:
-  TestWebMWriter() {}
+  TestWebMWriter() = default;
 
   
   
