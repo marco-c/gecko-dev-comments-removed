@@ -136,7 +136,7 @@ public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarg
     public void execute(final Runnable runnable) {
       final IXPCOMEventTarget target = XPCOMEventTarget.getTarget(mTargetName);
 
-      if (target != null && target instanceof XPCOMEventTarget) {
+      if (target instanceof XPCOMEventTarget) {
         target.execute(runnable);
         return;
       }
@@ -158,7 +158,7 @@ public final class XPCOMEventTarget extends JNIObject implements IXPCOMEventTarg
       
       
       
-      if (target == null || !(target instanceof XPCOMEventTarget)) {
+      if (!(target instanceof XPCOMEventTarget)) {
         return false;
       }
 
