@@ -237,7 +237,6 @@ pub struct Response {
     
     pub headers: Headers,
     
-    
     pub body: Vec<u8>,
 }
 

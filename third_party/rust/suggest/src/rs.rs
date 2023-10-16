@@ -29,6 +29,8 @@
 
 
 
+
+
 use std::borrow::Cow;
 
 use remote_settings::{GetItemsOptions, RemoteSettingsResponse};
@@ -84,6 +86,10 @@ pub(crate) enum SuggestRecord {
     Icon,
     #[serde(rename = "data")]
     AmpWikipedia,
+    #[serde(rename = "amo-suggestions")]
+    Amo,
+    #[serde(rename = "pocket-suggestions")]
+    Pocket,
 }
 
 
@@ -233,4 +239,30 @@ impl<'de> Deserialize<'de> for DownloadedAmpWikipediaSuggestion {
             MaybeTagged::Untagged(amp) => Self::Amp(amp),
         })
     }
+}
+
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedAmoSuggestion {
+    pub description: String,
+    pub url: String,
+    pub guid: String,
+    #[serde(rename = "icon")]
+    pub icon_url: String,
+    pub rating: Option<String>,
+    pub number_of_ratings: i64,
+    pub title: String,
+    pub keywords: Vec<String>,
+    pub score: f64,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub(crate) struct DownloadedPocketSuggestion {
+    pub url: String,
+    pub title: String,
+    #[serde(rename = "lowConfidenceKeywords")]
+    pub low_confidence_keywords: Vec<String>,
+    #[serde(rename = "highConfidenceKeywords")]
+    pub high_confidence_keywords: Vec<String>,
+    pub score: f64,
 }

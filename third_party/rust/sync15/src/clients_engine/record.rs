@@ -79,7 +79,7 @@ pub struct CommandRecord {
     
     
     #[serde(default)]
-    pub args: Vec<String>,
+    pub args: Vec<Option<String>>,
 
     
     
@@ -91,11 +91,42 @@ pub struct CommandRecord {
 impl CommandRecord {
     
     
+    
+    
+    fn get_single_string_arg(&self) -> Option<String> {
+        let cmd_name = &self.name;
+        if self.args.len() == 1 {
+            match &self.args[0] {
+                Some(name) => Some(name.into()),
+                None => {
+                    log::error!("Incoming '{cmd_name}' command has null argument");
+                    None
+                }
+            }
+        } else {
+            log::error!(
+                "Incoming '{cmd_name}' command has wrong number of arguments ({})",
+                self.args.len()
+            );
+            None
+        }
+    }
+
+    
+    
     pub fn as_command(&self) -> Option<Command> {
         match self.name.as_str() {
-            "wipeEngine" => self.args.get(0).map(|e| Command::Wipe(e.into())),
-            "resetEngine" => self.args.get(0).map(|e| Command::Reset(e.into())),
-            "resetAll" => Some(Command::ResetAll),
+            "wipeEngine" => self.get_single_string_arg().map(Command::Wipe),
+            "resetEngine" => self.get_single_string_arg().map(Command::Reset),
+            "resetAll" => {
+                if self.args.is_empty() {
+                    Some(Command::ResetAll)
+                } else {
+                    log::error!("Invalid arguments for 'resetAll' command");
+                    None
+                }
+            }
+            
             _ => None,
         }
     }
@@ -106,12 +137,12 @@ impl From<Command> for CommandRecord {
         match command {
             Command::Wipe(engine) => CommandRecord {
                 name: "wipeEngine".into(),
-                args: vec![engine],
+                args: vec![Some(engine)],
                 flow_id: None,
             },
             Command::Reset(engine) => CommandRecord {
                 name: "resetEngine".into(),
-                args: vec![engine],
+                args: vec![Some(engine)],
                 flow_id: None,
             },
             Command::ResetAll => CommandRecord {
@@ -120,5 +151,54 @@ impl From<Command> for CommandRecord {
                 flow_id: None,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_valid_commands() {
+        let ser = serde_json::json!({"command": "wipeEngine", "args": ["foo"]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), Some(Command::Wipe("foo".to_string())));
+
+        let ser = serde_json::json!({"command": "resetEngine", "args": ["foo"]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), Some(Command::Reset("foo".to_string())));
+
+        let ser = serde_json::json!({"command": "resetAll"});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), Some(Command::ResetAll));
+    }
+
+    #[test]
+    fn test_unknown_command() {
+        let ser = serde_json::json!({"command": "unknown", "args": ["foo", "bar"]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), None);
+    }
+
+    #[test]
+    fn test_bad_args() {
+        let ser = serde_json::json!({"command": "wipeEngine", "args": ["foo", "bar"]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), None);
+
+        let ser = serde_json::json!({"command": "wipeEngine"});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), None);
+
+        let ser = serde_json::json!({"command": "resetAll", "args": ["foo"]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), None);
+    }
+
+    #[test]
+    fn test_null_args() {
+        let ser = serde_json::json!({"command": "unknown", "args": ["foo", null]});
+        let record: CommandRecord = serde_json::from_value(ser).unwrap();
+        assert_eq!(record.as_command(), None);
     }
 }
