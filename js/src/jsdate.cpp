@@ -928,10 +928,6 @@ static int DaysInMonth(int year, int month) {
 
 
 
-
-
-
-
 template <typename CharT>
 static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
                               size_t length, ClippedTime* result) {
@@ -1143,8 +1139,6 @@ static constexpr const char* const months_names[] = {
 
 
 
-
-
 template <typename CharT>
 static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
                                      size_t* indexOut, int* yearOut,
@@ -1216,96 +1210,6 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
   }
 
   if (yearDigits < 4) {
-    year = FixupNonFullYear(year);
-  }
-
-  *indexOut = i;
-  *yearOut = year;
-  *monOut = mon;
-  *mdayOut = mday;
-  return true;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename CharT>
-static bool TryParseDashedNumericDatePrefix(const CharT* s, size_t length,
-                                            size_t* indexOut, int* yearOut,
-                                            int* monOut, int* mdayOut) {
-  size_t i = 0;
-
-  size_t first;
-  if (!ParseDigitsNOrLess(6, &first, s, &i, length)) {
-    return false;
-  }
-
-  if (i >= length || s[i] != '-') {
-    return false;
-  }
-  ++i;
-
-  size_t second;
-  if (!ParseDigitsNOrLess(2, &second, s, &i, length)) {
-    return false;
-  }
-
-  if (i >= length || s[i] != '-') {
-    return false;
-  }
-  ++i;
-
-  size_t third;
-  if (!ParseDigitsNOrLess(6, &third, s, &i, length)) {
-    return false;
-  }
-
-  int year;
-  int mon = -1;
-  int mday = -1;
-
-  
-  
-  if (first >= 1 && first <= 12) {
-    mon = first;
-  } else if (first == 0 || first > 31) {
-    year = first;
-  } else {
-    return false;
-  }
-
-  if (mon < 0) {
-    
-    mon = second;
-  } else {
-    
-    mday = second;
-  }
-
-  if (mday < 0) {
-    
-    mday = third;
-  } else {
-    
-    year = third;
-  }
-
-  if (mon > 12 || mday > 31) {
-    return false;
-  }
-
-  if (year < 100) {
     year = FixupNonFullYear(year);
   }
 
@@ -1409,15 +1313,7 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   
   
   bool isDashedDate =
-      TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday) ||
-      TryParseDashedNumericDatePrefix(s, length, &index, &year, &mon, &mday);
-
-  
-  
-  
-  if (isDashedDate && s[index] == 'T') {
-    return false;
-  }
+      TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday);
 
   while (index < length) {
     int c = s[index];
