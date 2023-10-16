@@ -13,6 +13,7 @@
 #include "vm/ObjectOperations.h"
 #include "vm/SelfHosting.h"
 #include "vm/StringType.h"
+#include "vm/JSContext-inl.h"  
 #include "vm/JSObject-inl.h"
 
 using namespace js;
@@ -22,6 +23,8 @@ namespace JS {
 
 
 JSObject* GetIteratorObject(JSContext* cx, HandleValue obj, bool isAsync) {
+  cx->check(obj);
+
   FixedInvokeArgs<3> args(cx);
   args[0].set(obj);
   args[1].setBoolean(isAsync);
@@ -40,6 +43,8 @@ JSObject* GetIteratorObject(JSContext* cx, HandleValue obj, bool isAsync) {
 
 bool IteratorNext(JSContext* cx, HandleObject iteratorRecord,
                   MutableHandleValue result) {
+  cx->check(iteratorRecord);
+
   FixedInvokeArgs<1> args(cx);
   args[0].setObject(*iteratorRecord);
   return CallSelfHostedFunction(cx, cx->names().IteratorNext,
@@ -48,6 +53,8 @@ bool IteratorNext(JSContext* cx, HandleObject iteratorRecord,
 
 
 bool IteratorComplete(JSContext* cx, HandleObject iterResult, bool* done) {
+  cx->check(iterResult);
+
   RootedValue doneV(cx);
   if (!GetProperty(cx, iterResult, iterResult, cx->names().done, &doneV)) {
     return false;
@@ -60,14 +67,17 @@ bool IteratorComplete(JSContext* cx, HandleObject iterResult, bool* done) {
 
 bool IteratorValue(JSContext* cx, HandleObject iterResult,
                    MutableHandleValue value) {
+  cx->check(iterResult);
   return GetProperty(cx, iterResult, iterResult, cx->names().value, value);
 }
 
 bool GetIteratorRecordIterator(JSContext* cx, HandleObject iteratorRecord,
                                MutableHandleValue iterator) {
+  cx->check(iteratorRecord);
   return GetProperty(cx, iteratorRecord, iteratorRecord, cx->names().iterator,
                      iterator);
 }
+
 
 static bool GetMethod(JSContext* cx, HandleValue v, Handle<PropertyName*> name,
                       MutableHandleValue result) {
@@ -95,6 +105,7 @@ static bool GetMethod(JSContext* cx, HandleValue v, Handle<PropertyName*> name,
 
 bool GetReturnMethod(JSContext* cx, HandleValue iterator,
                      MutableHandleValue result) {
+  cx->check(iterator);
   
   return GetMethod(cx, iterator, cx->names().return_, result);
 }
