@@ -1,6 +1,7 @@
 
 
 var file;
+
 Cu.importGlobalProperties(["File"]);
 
 addMessageListener("file.create", function (message) {
