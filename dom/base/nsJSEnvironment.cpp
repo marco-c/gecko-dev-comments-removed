@@ -1693,20 +1693,35 @@ void nsJSContext::MaybeRunNextCollectorSlice(nsIDocShell* aDocShell,
   }
 
   if (!sScheduler.IsUserActive()) {
-    Maybe<TimeStamp> next = nsRefreshDriver::GetNextTickHint();
-    
-    
-    if (next.isSome()) {
-      if (sScheduler.InIncrementalGC() || sScheduler.IsCollectingCycles()) {
+    if (sScheduler.InIncrementalGC() || sScheduler.IsCollectingCycles()) {
+      Maybe<TimeStamp> next = nsRefreshDriver::GetNextTickHint();
+      if (next.isSome()) {
+        
+        
         sScheduler.RunNextCollectorTimer(aReason, next.value());
-      } else {
-        
-        
-        
-        JS::RunNurseryCollection(CycleCollectedJSRuntime::Get()->Runtime(),
-                                 JS::GCReason::PREPARE_FOR_PAGELOAD,
-                                 mozilla::TimeDuration::FromMilliseconds(16));
       }
+    } else {
+      nsCOMPtr<nsIDocShell> shell = aDocShell;
+      NS_DispatchToCurrentThreadQueue(
+          NS_NewRunnableFunction(
+              "nsJSContext::MaybeRunNextCollectorSlice",
+              [shell] {
+                nsIDocShell::BusyFlags busyFlags = nsIDocShell::BUSY_FLAGS_NONE;
+                shell->GetBusyFlags(&busyFlags);
+                if (busyFlags == nsIDocShell::BUSY_FLAGS_NONE) {
+                  return;
+                }
+
+                
+                
+                
+                
+                JS::RunNurseryCollection(
+                    CycleCollectedJSRuntime::Get()->Runtime(),
+                    JS::GCReason::PREPARE_FOR_PAGELOAD,
+                    mozilla::TimeDuration::FromMilliseconds(16));
+              }),
+          EventQueuePriority::Idle);
     }
   }
 }
