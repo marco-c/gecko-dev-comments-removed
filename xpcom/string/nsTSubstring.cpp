@@ -516,7 +516,8 @@ bool nsTSubstring<T>::Assign(const self_type& aStr,
     
     nsStringBuffer::FromData(this->mData)->AddRef();
     return true;
-  } else if (aStr.mDataFlags & DataFlags::LITERAL) {
+  }
+  if (aStr.mDataFlags & DataFlags::LITERAL) {
     MOZ_ASSERT(aStr.mDataFlags & DataFlags::TERMINATED, "Unterminated literal");
 
     AssignLiteral(aStr.mData, aStr.mLength);
@@ -1312,7 +1313,7 @@ int_type ToIntegerCommon(const nsTSubstring<T>& aSrc, nsresult* aErrorCode,
   
   while ((cp < endcp) && (!done)) {
     switch (*cp++) {
-      
+        
       case 'a': case 'b': case 'c': case 'd': case 'e': case 'f':
       case 'A': case 'B': case 'C': case 'D': case 'E': case 'F':
       case '0': case '1': case '2': case '3': case '4':
@@ -1347,16 +1348,14 @@ int_type ToIntegerCommon(const nsTSubstring<T>& aSrc, nsresult* aErrorCode,
       if (10 == aRadix) {
         
         return 0;
-      } else {
-        result = (aRadix * result) + ((theChar - 'A') + 10);
       }
+      result = (aRadix * result) + ((theChar - 'A') + 10);
     } else if ((theChar >= 'a') && (theChar <= 'f')) {
       if (10 == aRadix) {
         
         return 0;
-      } else {
-        result = (aRadix * result) + ((theChar - 'a') + 10);
       }
+      result = (aRadix * result) + ((theChar - 'a') + 10);
     } else if ((('X' == theChar) || ('x' == theChar)) && result == 0) {
       
       
