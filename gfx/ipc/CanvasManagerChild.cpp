@@ -34,6 +34,7 @@ void CanvasManagerChild::ActorDestroy(ActorDestroyReason aReason) {
   if (sLocalManager.get() == this) {
     sLocalManager.set(nullptr);
   }
+  mWorkerRef = nullptr;
 }
 
 void CanvasManagerChild::Destroy() {
@@ -43,8 +44,8 @@ void CanvasManagerChild::Destroy() {
   }
 
   
+  
   Close();
-  mWorkerRef = nullptr;
 }
 
  void CanvasManagerChild::Shutdown() {
