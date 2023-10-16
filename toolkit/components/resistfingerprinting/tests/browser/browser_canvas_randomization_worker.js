@@ -62,9 +62,9 @@ var TEST_CASES = [
 
       return [imageData.data, imageDataSecond.data];
     },
-    isDataRandomized(data1, data2, isCompareOriginal) {
-      let diffCnt = compareUint8Arrays(data1, data2);
-      info(`There are ${diffCnt} bits are different.`);
+    isDataRandomized(name, data1, data2, isCompareOriginal) {
+      let diffCnt = countDifferencesInUint8Arrays(data1, data2);
+      info(`For ${name} there are ${diffCnt} bits are different.`);
 
       
       
@@ -117,8 +117,10 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(data1, data2) {
-      return compareArrayBuffer(data1, data2);
+    isDataRandomized(name, data1, data2) {
+      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
+      info(`For ${name} there are ${diffCnt} bits are different.`);
+      return diffCnt > 0;
     },
   },
   {
@@ -161,8 +163,10 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(data1, data2) {
-      return compareArrayBuffer(data1, data2);
+    isDataRandomized(name, data1, data2) {
+      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
+      info(`For ${name} there are ${diffCnt} bits are different.`);
+      return diffCnt > 0;
     },
   },
   {
@@ -206,8 +210,10 @@ var TEST_CASES = [
 
       return [data, dataSecond];
     },
-    isDataRandomized(data1, data2) {
-      return compareArrayBuffer(data1, data2);
+    isDataRandomized(name, data1, data2) {
+      let diffCnt = countDifferencesInArrayBuffers(data1, data2);
+      info(`For ${name} there are ${diffCnt} bits are different.`);
+      return diffCnt > 0;
     },
   },
 ];
@@ -248,16 +254,18 @@ async function runTest(enabled) {
       test.extractCanvasData
     );
 
-    let result = test.isDataRandomized(data[0], test.originalData);
+    let result = test.isDataRandomized(test.name, data[0], test.originalData);
     is(
       result,
       enabled,
-      `The image data is ${enabled ? "randomized" : "the same"}.`
+      `The image data for for '${test.name}' is ${
+        enabled ? "randomized" : "the same"
+      }.`
     );
 
     ok(
-      !test.isDataRandomized(data[0], data[1]),
-      "The data of first and second access should be the same."
+      !test.isDataRandomized(test.name, data[0], data[1]),
+      `The data for '${test.name}' of first and second access should be the same.`
     );
 
     let privateData = await await runFunctionInWorker(
@@ -266,25 +274,34 @@ async function runTest(enabled) {
     );
 
     
-    result = test.isDataRandomized(privateData[0], test.originalData, true);
+    result = test.isDataRandomized(
+      test.name,
+      privateData[0],
+      test.originalData,
+      true
+    );
     is(
       result,
       enabled,
-      `The private image data is ${enabled ? "randomized" : "the same"}.`
+      `The private image data for '${test.name}' is ${
+        enabled ? "randomized" : "the same"
+      }.`
     );
 
     ok(
-      !test.isDataRandomized(privateData[0], privateData[1]),
-      "The data of first and second access should be the same."
+      !test.isDataRandomized(test.name, privateData[0], privateData[1]),
+      `"The data for '${test.name}' of first and second access should be the same.`
     );
 
     
     
-    result = test.isDataRandomized(privateData[0], data[0]);
+    result = test.isDataRandomized(test.name, privateData[0], data[0]);
     is(
       result,
       enabled,
-      `The image data between the normal window and the private window are ${
+      `The image data for '${
+        test.name
+      }' between the normal window and the private window are ${
         enabled ? "different" : "the same"
       }.`
     );

@@ -10,7 +10,7 @@ const NUM_RANDOMIZED_CANVAS_BITS = 256;
 
 
 
-function compareUint8Arrays(arr1, arr2) {
+function countDifferencesInUint8Arrays(arr1, arr2) {
   let count = 0;
   for (let i = 0; i < arr1.length; i++) {
     let diff = arr1[i] ^ arr2[i];
@@ -30,7 +30,7 @@ function compareUint8Arrays(arr1, arr2) {
 
 
 
-function compareArrayBuffer(buffer1, buffer2) {
+function countDifferencesInArrayBuffers(buffer1, buffer2) {
   
   if (buffer1.byteLength !== buffer2.byteLength) {
     return true;
@@ -40,15 +40,16 @@ function compareArrayBuffer(buffer1, buffer2) {
   const view1 = new DataView(buffer1);
   const view2 = new DataView(buffer2);
 
+  let differences = 0;
   
   for (let i = 0; i < buffer1.byteLength; i++) {
     if (view1.getUint8(i) !== view2.getUint8(i)) {
-      return true;
+      differences += 1;
     }
   }
 
   
-  return false;
+  return differences;
 }
 
 function promiseObserver(topic) {
