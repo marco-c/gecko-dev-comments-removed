@@ -537,8 +537,6 @@ pref("browser.urlbar.switchTabs.searchAllContainers", false);
 pref("browser.urlbar.openintab", false);
 
 
-pref("browser.urlbar.resultMenu", true);
-
 pref("browser.urlbar.resultMenu.keyboardAccessible", true);
 
 
