@@ -7,9 +7,20 @@ export type TestConfig = {
 
 
 
+  frameworkDebugLog?: (msg: string) => void;
+
+  
+
+
+
 
 
   unrollConstEvalLoops: boolean;
+
+  
+
+
+  compatibility: boolean;
 };
 
 export const globalTestConfig: TestConfig = {
@@ -17,4 +28,5 @@ export const globalTestConfig: TestConfig = {
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,
+  compatibility: false,
 };

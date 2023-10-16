@@ -1,7 +1,7 @@
 
 
  import { runRefTest } from './gpu_ref_test.js';
-runRefTest(async t => {
+runRefTest(t => {
   function draw(canvasId, format) {
     const canvas = document.getElementById(canvasId);
 

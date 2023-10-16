@@ -10,9 +10,9 @@ Returns e1 if dot(e2,e3) is negative, and -e1 otherwise.
 import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
 import { GPUTest } from '../../../../../gpu_test.js';
 import { anyOf } from '../../../../../util/compare.js';
-import { f32, TypeF32, TypeVec, Vector } from '../../../../../util/conversion.js';
-import { faceForwardIntervals } from '../../../../../util/f32_interval.js';
-import { cartesianProduct, quantizeToF32, sparseVectorF32Range } from '../../../../../util/math.js';
+import { toVector, TypeF32, TypeVec } from '../../../../../util/conversion.js';
+import { FP } from '../../../../../util/floating_point.js';
+import { cartesianProduct, sparseVectorF32Range } from '../../../../../util/math.js';
 import { makeCaseCache } from '../../case_cache.js';
 import { allInputSources, run } from '../../expression.js';
 
@@ -35,17 +35,15 @@ export const g = makeTestGroup(GPUTest);
 
 
 
-function makeCaseF32(x, y, z, check) {
-  x = x.map(quantizeToF32);
-  y = y.map(quantizeToF32);
-  z = z.map(quantizeToF32);
 
-  const x_f32 = x.map(f32);
-  const y_f32 = y.map(f32);
-  const z_f32 = z.map(f32);
+function makeCase(kind, x, y, z, check) {
+  const fp = FP[kind];
+  x = x.map(fp.quantize);
+  y = y.map(fp.quantize);
+  z = z.map(fp.quantize);
 
-  const results = faceForwardIntervals(x, y, z);
-  if (check === 'f32-only' && results.some(r => r === undefined)) {
+  const results = FP.f32.faceForwardIntervals(x, y, z);
+  if (check === 'finite' && results.some(r => r === undefined)) {
     return undefined;
   }
 
@@ -55,7 +53,12 @@ function makeCaseF32(x, y, z, check) {
   const define_results = results.filter(r => r !== undefined);
 
   return {
-    input: [new Vector(x_f32), new Vector(y_f32), new Vector(z_f32)],
+    input: [
+      toVector(x, fp.scalarBuilder),
+      toVector(y, fp.scalarBuilder),
+      toVector(z, fp.scalarBuilder),
+    ],
+
     expected: anyOf(...define_results),
   };
 }
@@ -67,24 +70,27 @@ function makeCaseF32(x, y, z, check) {
 
 
 
-function generateCasesF32(xs, ys, zs, check) {
+
+function generateCases(kind, xs, ys, zs, check) {
   
   return cartesianProduct(xs, ys, zs)
-    .map(e => makeCaseF32(e[0], e[1], e[2], check))
+    .map(e => makeCase('f32', e[0], e[1], e[2], check))
     .filter(c => c !== undefined);
 }
 
 export const d = makeCaseCache('faceForward', {
   f32_vec2_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(2),
       sparseVectorF32Range(2),
       sparseVectorF32Range(2),
-      'f32-only'
+      'finite'
     );
   },
   f32_vec2_non_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(2),
       sparseVectorF32Range(2),
       sparseVectorF32Range(2),
@@ -92,15 +98,17 @@ export const d = makeCaseCache('faceForward', {
     );
   },
   f32_vec3_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(3),
       sparseVectorF32Range(3),
       sparseVectorF32Range(3),
-      'f32-only'
+      'finite'
     );
   },
   f32_vec3_non_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(3),
       sparseVectorF32Range(3),
       sparseVectorF32Range(3),
@@ -108,15 +116,17 @@ export const d = makeCaseCache('faceForward', {
     );
   },
   f32_vec4_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(4),
       sparseVectorF32Range(4),
       sparseVectorF32Range(4),
-      'f32-only'
+      'finite'
     );
   },
   f32_vec4_non_const: () => {
-    return generateCasesF32(
+    return generateCases(
+      'f32',
       sparseVectorF32Range(4),
       sparseVectorF32Range(4),
       sparseVectorF32Range(4),

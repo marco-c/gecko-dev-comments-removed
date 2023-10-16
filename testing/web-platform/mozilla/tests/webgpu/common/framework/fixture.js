@@ -10,16 +10,13 @@ export { TestCaseRecorder } from '../internal/logging/test_case_recorder.js';
 
 
 export class SubcaseBatchState {
-  constructor(params) {
-    this._params = params;
-  }
-
-  
-
-
-
-  get params() {
-    return this._params;
+  constructor(
+    recorder,
+    
+    params
+  ) {
+    this.recorder = recorder;
+    this.params = params;
   }
 
   
@@ -55,8 +52,8 @@ export class Fixture {
   numOutstandingAsyncExpectations = 0;
   objectsToCleanUp = [];
 
-  static MakeSharedState(params) {
-    return new SubcaseBatchState(params);
+  static MakeSharedState(recorder, params) {
+    return new SubcaseBatchState(recorder, params);
   }
 
   
@@ -241,6 +238,8 @@ export class Fixture {
   }
 
   
+
+
 
 
 

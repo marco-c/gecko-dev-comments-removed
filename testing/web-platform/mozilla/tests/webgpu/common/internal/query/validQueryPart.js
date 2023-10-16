@@ -1,3 +1,3 @@
 
 
- export const validQueryPart = /^[a-zA-Z0-9_]+$/;
+  export const validQueryPart = /^[a-zA-Z0-9_]+$/;

@@ -7,7 +7,21 @@ export function keysOf(obj) {
 }
 
 export function numericKeysOf(obj) {
-  return Object.keys(obj).map((n) => Number(n));
+  return Object.keys(obj).map(n => Number(n));
+}
+
+
+
+
+
+export function objectsToRecord(objects) {
+  const record = {};
+  return objects.reduce((obj, type) => {
+    return {
+      ...obj,
+      [type.toString()]: type,
+    };
+  }, record);
 }
 
 
@@ -15,17 +29,7 @@ export function numericKeysOf(obj) {
 
 
 
-export function makeTable(
-
-
-
-
-members,
-defaults,
-table)
-
-
-{
+export function makeTable(members, defaults, table) {
   const result = {};
   for (const [k, v] of Object.entries(table)) {
     const item = {};

@@ -12,7 +12,6 @@ import { makeTestGroup } from '../../../common/framework/test_group.js';
 import { getGPU } from '../../../common/util/navigator_gpu.js';
 import { assert, raceWithRejectOnTimeout } from '../../../common/util/util.js';
 import { kErrorScopeFilters, kGeneratableErrorScopeFilters } from '../../capability_info.js';
-import { kMaxUnsignedLongLongValue } from '../../constants.js';
 
 class ErrorScopeTests extends Fixture {
   _device: GPUDevice | undefined = undefined;
@@ -24,7 +23,7 @@ class ErrorScopeTests extends Fixture {
 
   async init(): Promise<void> {
     await super.init();
-    const gpu = getGPU();
+    const gpu = getGPU(this.rec);
     const adapter = await gpu.requestAdapter();
     assert(adapter !== null);
     const device = await adapter.requestDevice();
@@ -38,18 +37,27 @@ class ErrorScopeTests extends Fixture {
   generateError(filter: GPUErrorFilter): void {
     switch (filter) {
       case 'out-of-memory':
-        
-        this.device.createBuffer({
-          size: kMaxUnsignedLongLongValue, 
-          usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
-        });
+        this.trackForCleanup(
+          this.device.createTexture({
+            
+            format: 'rgba32float',
+            usage: GPUTextureUsage.COPY_DST,
+            size: [
+              this.device.limits.maxTextureDimension2D,
+              this.device.limits.maxTextureDimension2D,
+              this.device.limits.maxTextureArrayLayers,
+            ],
+          })
+        );
         break;
       case 'validation':
         
-        this.device.createBuffer({
-          size: 1024,
-          usage: 0xffff, 
-        });
+        this.trackForCleanup(
+          this.device.createBuffer({
+            size: 1024,
+            usage: 0xffff, 
+          })
+        );
         break;
     }
     
@@ -136,7 +144,7 @@ g.test('empty')
 Tests that popping an empty error scope stack should reject.
     `
   )
-  .fn(async t => {
+  .fn(t => {
     const promise = t.device.popErrorScope();
     t.shouldReject('OperationError', promise);
   });

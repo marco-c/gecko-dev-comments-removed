@@ -1,5 +1,6 @@
 import { getIsBuildingDataCache } from '../../common/framework/data_cache.js';
 import { Colors } from '../../common/util/colors.js';
+import { assert, unreachable } from '../../common/util/util.js';
 import {
   deserializeExpectation,
   SerializedExpectation,
@@ -7,8 +8,8 @@ import {
 } from '../shader/execution/expression/case_cache.js';
 import { Expectation, toComparator } from '../shader/execution/expression/expression.js';
 
-import { isFloatValue, Scalar, Value, Vector } from './conversion.js';
-import { F32Interval } from './f32_interval.js';
+import { isFloatValue, Matrix, Scalar, Value, Vector } from './conversion.js';
+import { FPInterval } from './floating_point.js';
 
 
 export interface Comparison {
@@ -18,9 +19,29 @@ export interface Comparison {
 }
 
 
+
+
+
+
+
+
+
+
+
+export type SerializableComparatorKind = 'anyOf' | 'skipUndefined' | 'alwaysPass';
+type InternalComparatorKind = 'value' | 'packed';
+export type ComparatorKind = SerializableComparatorKind | InternalComparatorKind;
+export type ComparatorImpl = (got: Value) => Comparison;
+
+
 export interface Comparator {
-  (got: Value): Comparison;
+  compare: ComparatorImpl;
+  kind: ComparatorKind;
+  data?: Expectation | Expectation[] | string;
 }
+
+
+
 
 
 
@@ -57,35 +78,47 @@ function compareValue(got: Value, expected: Value): Comparison {
   }
 
   if (got instanceof Vector) {
+    const e = expected as Vector;
     const gLen = got.elements.length;
-    const eLen = (expected as Vector).elements.length;
+    const eLen = e.elements.length;
     let matched = gLen === eLen;
-    const gElements = new Array<string>(gLen);
-    const eElements = new Array<string>(eLen);
-    for (let i = 0; i < Math.max(gLen, eLen); i++) {
-      if (i < gLen && i < eLen) {
-        const g = got.elements[i];
-        const e = (expected as Vector).elements[i];
-        const cmp = compare(g, e);
-        matched = matched && cmp.matched;
-        gElements[i] = cmp.got;
-        eElements[i] = cmp.expected;
-        continue;
-      }
-      matched = false;
-      if (i < gLen) {
-        gElements[i] = got.elements[i].toString();
-      }
-      if (i < eLen) {
-        eElements[i] = (expected as Vector).elements[i].toString();
-      }
+    if (matched) {
+      
+      matched = got.elements.every((_, i) => {
+        return compare(got.elements[i], e.elements[i]).matched;
+      });
     }
+
     return {
       matched,
-      got: `${got.type}(${gElements.join(', ')})`,
-      expected: `${expected.type}(${eElements.join(', ')})`,
+      got: `${got.toString()}`,
+      expected: matched ? Colors.green(e.toString()) : Colors.red(e.toString()),
     };
   }
+
+  if (got instanceof Matrix) {
+    const e = expected as Matrix;
+    const gCols = got.type.cols;
+    const eCols = e.type.cols;
+    const gRows = got.type.rows;
+    const eRows = e.type.rows;
+    let matched = gCols === eCols && gRows === eRows;
+    if (matched) {
+      
+      matched = got.elements.every((c, i) => {
+        return c.every((_, j) => {
+          return compare(got.elements[i][j], e.elements[i][j]).matched;
+        });
+      });
+    }
+
+    return {
+      matched,
+      got: `${got.toString()}`,
+      expected: matched ? Colors.green(e.toString()) : Colors.red(e.toString()),
+    };
+  }
+
   throw new Error(`unhandled type '${typeof got}`);
 }
 
@@ -95,7 +128,7 @@ function compareValue(got: Value, expected: Value): Comparison {
 
 
 
-function compareInterval(got: Value, expected: F32Interval): Comparison {
+function compareInterval(got: Value, expected: FPInterval): Comparison {
   {
     
     const gTy = got.type;
@@ -128,7 +161,7 @@ function compareInterval(got: Value, expected: F32Interval): Comparison {
 
 
 
-function compareVector(got: Value, expected: F32Interval[]): Comparison {
+function compareVector(got: Value, expected: FPInterval[]): Comparison {
   
   if (!(got instanceof Vector)) {
     return {
@@ -183,17 +216,101 @@ function compareVector(got: Value, expected: F32Interval[]): Comparison {
 }
 
 
+function convertArrayToString<T>(m: T[]): string {
+  return `[${m.join(',')}]`;
+}
 
 
 
 
 
-export function compare(got: Value, expected: Value | F32Interval | F32Interval[]): Comparison {
-  if (expected instanceof Array) {
-    return compareVector(got, expected);
+
+
+function compareMatrix(got: Value, expected: FPInterval[][]): Comparison {
+  
+  if (!(got instanceof Matrix)) {
+    return {
+      matched: false,
+      got: `${Colors.red((typeof got).toString())}(${got})`,
+      expected: `Matrix`,
+    };
   }
 
-  if (expected instanceof F32Interval) {
+  
+  {
+    const gTy = got.type.elementType;
+    if (!isFloatValue(got.elements[0][0])) {
+      return {
+        matched: false,
+        got: `${Colors.red(gTy.toString())}(${got})`,
+        expected: `floating point elements`,
+      };
+    }
+  }
+
+  
+  {
+    const gCols = got.elements.length;
+    const gRows = got.elements[0].length;
+    const eCols = expected.length;
+    const eRows = expected[0].length;
+
+    if (gCols !== eCols || gRows !== eRows) {
+      assert(false);
+      return {
+        matched: false,
+        got: `Matrix of ${gCols}x${gRows} elements`,
+        expected: `Matrix of ${eCols}x${eRows} elements`,
+      };
+    }
+  }
+
+  
+  let matched = true;
+  const expected_strings: string[][] = [...Array(got.elements.length)].map(_ => [
+    ...Array(got.elements[0].length),
+  ]);
+
+  got.elements.forEach((c, i) => {
+    c.forEach((r, j) => {
+      const g = r.value as number;
+      if (expected[i][j].contains(g)) {
+        expected_strings[i][j] = Colors.green(`[${expected[i][j]}]`);
+      } else {
+        matched = false;
+        expected_strings[i][j] = Colors.red(`[${expected[i][j]}]`);
+      }
+    });
+  });
+
+  return {
+    matched,
+    got: convertArrayToString(got.elements.map(convertArrayToString)),
+    expected: convertArrayToString(expected_strings.map(convertArrayToString)),
+  };
+}
+
+
+
+
+
+
+
+export function compare(
+  got: Value,
+  expected: Value | FPInterval | FPInterval[] | FPInterval[][]
+): Comparison {
+  if (expected instanceof Array) {
+    if (expected[0] instanceof Array) {
+      expected = expected as FPInterval[][];
+      return compareMatrix(got, expected);
+    } else {
+      expected = expected as FPInterval[];
+      return compareVector(got, expected);
+    }
+  }
+
+  if (expected instanceof FPInterval) {
     return compareInterval(got, expected);
   }
 
@@ -201,52 +318,69 @@ export function compare(got: Value, expected: Value | F32Interval | F32Interval[
 }
 
 
-export function anyOf(
-  ...expectations: Expectation[]
-): Comparator | (Comparator & SerializedComparator) {
-  const comparator = (got: Value) => {
-    const failed = new Set<string>();
-    for (const e of expectations) {
-      const cmp = toComparator(e)(got);
-      if (cmp.matched) {
-        return cmp;
+export function anyOf(...expectations: Expectation[]): Comparator {
+  const c: Comparator = {
+    compare: (got: Value) => {
+      const failed = new Set<string>();
+      for (const e of expectations) {
+        const cmp = toComparator(e).compare(got);
+        if (cmp.matched) {
+          return cmp;
+        }
+        failed.add(cmp.expected);
       }
-      failed.add(cmp.expected);
-    }
-    return { matched: false, got: got.toString(), expected: [...failed].join(' or ') };
+      return { matched: false, got: got.toString(), expected: [...failed].join(' or ') };
+    },
+    kind: 'anyOf',
   };
 
   if (getIsBuildingDataCache()) {
     
     
-    
-    comparator.kind = 'anyOf';
-    comparator.data = expectations.map(e => serializeExpectation(e));
+    c.data = expectations;
   }
-  return comparator;
+  return c;
 }
 
 
-export function skipUndefined(
-  expectation: Expectation | undefined
-): Comparator | (Comparator & SerializedComparator) {
-  const comparator = (got: Value) => {
-    if (expectation !== undefined) {
-      return toComparator(expectation)(got);
-    }
-    return { matched: true, got: got.toString(), expected: `Treating 'undefined' as Any` };
+export function skipUndefined(expectation: Expectation | undefined): Comparator {
+  const c: Comparator = {
+    compare: (got: Value) => {
+      if (expectation !== undefined) {
+        return toComparator(expectation).compare(got);
+      }
+      return { matched: true, got: got.toString(), expected: `Treating 'undefined' as Any` };
+    },
+    kind: 'skipUndefined',
+  };
+
+  if (expectation !== undefined && getIsBuildingDataCache()) {
+    
+    
+    c.data = expectation;
+  }
+  return c;
+}
+
+
+
+
+
+
+export function alwaysPass(msg: string = 'always pass'): Comparator {
+  const c: Comparator = {
+    compare: (got: Value) => {
+      return { matched: true, got: got.toString(), expected: msg };
+    },
+    kind: 'alwaysPass',
   };
 
   if (getIsBuildingDataCache()) {
     
     
-    
-    comparator.kind = 'skipUndefined';
-    if (expectation !== undefined) {
-      comparator.data = serializeExpectation(expectation);
-    }
+    c.data = msg;
   }
-  return comparator;
+  return c;
 }
 
 
@@ -262,21 +396,67 @@ type SerializedComparatorSkipUndefined = {
 };
 
 
-export type SerializedComparator = SerializedComparatorAnyOf | SerializedComparatorSkipUndefined;
+type SerializedComparatorAlwaysPass = {
+  kind: 'alwaysPass';
+  reason: string;
+};
+
+
+
+
+
+export type SerializedComparator =
+  | SerializedComparatorAnyOf
+  | SerializedComparatorSkipUndefined
+  | SerializedComparatorAlwaysPass;
 
 
 
 
 
 
-export function deserializeComparator(data: SerializedComparator): Comparator {
-  switch (data.kind) {
+export function serializeComparator(c: Comparator): SerializedComparator {
+  switch (c.kind) {
     case 'anyOf': {
-      return anyOf(...data.data.map(e => deserializeExpectation(e)));
+      const d = c.data as Expectation[];
+      return { kind: 'anyOf', data: d.map(serializeExpectation) };
     }
     case 'skipUndefined': {
-      return skipUndefined(data.data !== undefined ? deserializeExpectation(data.data) : undefined);
+      if (c.data !== undefined) {
+        const d = c.data as Expectation;
+        return { kind: 'skipUndefined', data: serializeExpectation(d) };
+      }
+      return { kind: 'skipUndefined', data: undefined };
+    }
+    case 'alwaysPass': {
+      const d = c.data as string;
+      return { kind: 'alwaysPass', reason: d };
+    }
+    case 'value':
+    case 'packed': {
+      unreachable(`Serializing '${c.kind}' comparators is not allowed (${c})`);
+      break;
     }
   }
-  throw `unhandled comparator kind`;
+  unreachable(`Unable serialize comparator '${c}'`);
+}
+
+
+
+
+
+
+export function deserializeComparator(s: SerializedComparator): Comparator {
+  switch (s.kind) {
+    case 'anyOf': {
+      return anyOf(...s.data.map(e => deserializeExpectation(e)));
+    }
+    case 'skipUndefined': {
+      return skipUndefined(s.data !== undefined ? deserializeExpectation(s.data) : undefined);
+    }
+    case 'alwaysPass': {
+      return alwaysPass(s.reason);
+    }
+  }
+  unreachable(`Unable deserialize comparator '${s}'`);
 }

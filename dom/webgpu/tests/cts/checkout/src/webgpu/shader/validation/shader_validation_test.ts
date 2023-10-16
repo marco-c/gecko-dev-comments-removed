@@ -1,3 +1,4 @@
+import { keysOf } from '../../../common/util/data_tables.js';
 import { ErrorWithExtra } from '../../../common/util/util.js';
 import { GPUTest } from '../../gpu_test.js';
 
@@ -26,7 +27,7 @@ export class ShaderValidationTest extends GPUTest {
 
     const error = new ErrorWithExtra('', () => ({ shaderModule }));
     this.eventualAsyncExpectation(async () => {
-      const compilationInfo = await shaderModule!.compilationInfo();
+      const compilationInfo = await shaderModule!.getCompilationInfo();
 
       
       const messagesLog = compilationInfo.messages
@@ -52,6 +53,106 @@ export class ShaderValidationTest extends GPUTest {
         }
       }
     });
+  }
+
+  
+
+
+
+
+
+
+
+
+  expectCompileWarning(expectWarning: boolean, code: string) {
+    let shaderModule: GPUShaderModule;
+    this.expectGPUError(
+      'validation',
+      () => {
+        shaderModule = this.device.createShaderModule({ code });
+      },
+      false
+    );
+
+    const error = new ErrorWithExtra('', () => ({ shaderModule }));
+    this.eventualAsyncExpectation(async () => {
+      const compilationInfo = await shaderModule!.getCompilationInfo();
+
+      
+      const messagesLog = compilationInfo.messages
+        .map(m => `${m.lineNum}:${m.linePos}: ${m.type}: ${m.message}`)
+        .join('\n');
+      error.extra.compilationInfo = compilationInfo;
+
+      if (compilationInfo.messages.some(m => m.type === 'warning')) {
+        if (expectWarning) {
+          error.message = `No 'warning' message as expected.\n` + messagesLog;
+          this.rec.debug(error);
+        } else {
+          error.message = `Missing expected compilationInfo 'warning' message.\n` + messagesLog;
+          this.rec.validationFailed(error);
+        }
+      } else {
+        if (expectWarning) {
+          error.message = `Missing expected 'warning' message.\n` + messagesLog;
+          this.rec.validationFailed(error);
+        } else {
+          error.message = `Found a 'warning' message as expected.\n` + messagesLog;
+          this.rec.debug(error);
+        }
+      }
+    });
+  }
+
+  
+
+
+  expectPipelineResult(args: {
+    
+    expectedResult: boolean;
+    
+    code: string;
+    
+    constants?: Record<string, GPUPipelineConstantValue>;
+    
+    reference?: string[];
+  }) {
+    const phonies: Array<string> = [];
+
+    if (args.constants !== undefined) {
+      phonies.push(...keysOf(args.constants).map(c => `_ = ${c};`));
+    }
+    if (args.reference !== undefined) {
+      phonies.push(...args.reference.map(c => `_ = ${c};`));
+    }
+
+    const code =
+      args.code +
+      `
+@compute @workgroup_size(1)
+fn main() {
+  ${phonies.join('\n')}
+}`;
+
+    let shaderModule: GPUShaderModule;
+    this.expectGPUError(
+      'validation',
+      () => {
+        shaderModule = this.device.createShaderModule({ code });
+      },
+      false
+    );
+
+    this.expectGPUError(
+      'validation',
+      () => {
+        this.device.createComputePipeline({
+          layout: 'auto',
+          compute: { module: shaderModule!, entryPoint: 'main', constants: args.constants },
+        });
+      },
+      !args.expectedResult
+    );
   }
 
   

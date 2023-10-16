@@ -28,19 +28,6 @@ export const kValidCanvasContextIds = [
 export type CanvasContext = typeof kValidCanvasContextIds[number];
 
 
-export function canCopyFromCanvasContext(contextName: CanvasContext) {
-  switch (contextName) {
-    case '2d':
-    case 'webgl':
-    case 'webgl2':
-    case 'webgpu':
-      return true;
-    default:
-      return false;
-  }
-}
-
-
 export function createCanvas<T extends CanvasType>(
   test: Fixture,
   canvasType: T,

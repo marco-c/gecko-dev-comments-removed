@@ -1,6 +1,15 @@
-import { ExpressionBuilder } from '../expression.js';
+import {
+  abstractFloatShaderBuilder,
+  basicExpressionBuilder,
+  ShaderBuilder,
+} from '../expression.js';
 
 
-export function unary(op: string): ExpressionBuilder {
-  return value => `${op}(${value})`;
+export function unary(op: string): ShaderBuilder {
+  return basicExpressionBuilder(value => `${op}(${value})`);
+}
+
+
+export function abstractUnary(op: string): ShaderBuilder {
+  return abstractFloatShaderBuilder(value => `${op}(${value})`);
 }

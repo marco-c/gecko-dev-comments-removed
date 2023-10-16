@@ -1,59 +1,74 @@
 
 
  import { assert } from '../../common/util/util.js';
-import { kTextureFormatInfo } from '../capability_info.js';
-import { align } from './math.js';
+import { getTextureCopyLayout } from './texture/layout.js';
 
 import { reifyExtent3D } from './unions.js';
 
 
 
 
-export function makeTextureWithContents(device, texelView, desc) {
+
+export function createTextureFromTexelViews(device, texelViews, desc) {
+  
+  assert(texelViews.length > 0 && texelViews.every(e => e.format === texelViews[0].format));
+  const format = texelViews[0].format;
   const { width, height, depthOrArrayLayers } = reifyExtent3D(desc.size);
-
-  const { bytesPerBlock, blockWidth } = kTextureFormatInfo[texelView.format];
-  
-  assert(blockWidth === 1);
-
-  
-  const bytesPerRow = align(bytesPerBlock * width, 256);
-
-  
-  const stagingBuffer = device.createBuffer({
-    mappedAtCreation: true,
-    size: bytesPerRow * height * depthOrArrayLayers,
-    usage: GPUBufferUsage.COPY_SRC,
-  });
-
-  
-  texelView.writeTextureData(new Uint8Array(stagingBuffer.getMappedRange()), {
-    bytesPerRow,
-    rowsPerImage: height,
-    subrectOrigin: [0, 0, 0],
-    subrectSize: [width, height, depthOrArrayLayers],
-  });
-  stagingBuffer.unmap();
 
   
   const texture = device.createTexture({
     ...desc,
-    format: texelView.format,
+    format: texelViews[0].format,
     usage: desc.usage | GPUTextureUsage.COPY_DST,
+    mipLevelCount: texelViews.length,
   });
 
   
   const commandEncoder = device.createCommandEncoder();
-  commandEncoder.copyBufferToTexture(
-    { buffer: stagingBuffer, bytesPerRow },
-    { texture },
-    desc.size
-  );
+  const stagingBuffers = [];
+  for (let mipLevel = 0; mipLevel < texelViews.length; mipLevel++) {
+    const {
+      bytesPerRow,
+      mipSize: [mipWidth, mipHeight, mipDepthOrArray],
+    } = getTextureCopyLayout(format, desc.dimension ?? '2d', [width, height, depthOrArrayLayers], {
+      mipLevel,
+    });
 
+    
+    const stagingBuffer = device.createBuffer({
+      mappedAtCreation: true,
+      size: bytesPerRow * mipHeight * mipDepthOrArray,
+      usage: GPUBufferUsage.COPY_SRC,
+    });
+    stagingBuffers.push(stagingBuffer);
+
+    
+    texelViews[mipLevel].writeTextureData(new Uint8Array(stagingBuffer.getMappedRange()), {
+      bytesPerRow,
+      rowsPerImage: mipHeight,
+      subrectOrigin: [0, 0, 0],
+      subrectSize: [mipWidth, mipHeight, mipDepthOrArray],
+    });
+    stagingBuffer.unmap();
+
+    
+    commandEncoder.copyBufferToTexture(
+      { buffer: stagingBuffer, bytesPerRow },
+      { texture, mipLevel },
+      [mipWidth, mipHeight, mipDepthOrArray]
+    );
+  }
   device.queue.submit([commandEncoder.finish()]);
 
   
-  stagingBuffer.destroy();
+  stagingBuffers.forEach(value => value.destroy());
 
   return texture;
+}
+
+
+
+
+export function createTextureFromTexelView(device, texelView, desc) {
+  return createTextureFromTexelViews(device, [texelView], desc);
 }

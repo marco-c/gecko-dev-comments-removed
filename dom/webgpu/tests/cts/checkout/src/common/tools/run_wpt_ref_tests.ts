@@ -151,7 +151,7 @@ function parseFuzzy(fuzzy: string) {
 
 
 
-async function compareImages(
+function compareImages(
   filename1: string,
   filename2: string,
   fuzzy: string,
@@ -361,7 +361,7 @@ async function main() {
     }
     await screenshotManager.takeScreenshot(page, refScreenshotName);
 
-    const pass = await compareImages(testScreenshotName, refScreenshotName, fuzzy, diffName);
+    const pass = compareImages(testScreenshotName, refScreenshotName, fuzzy, diffName);
     addResult(
       pass ? 'PASS' : 'FAILURE',
       testName,

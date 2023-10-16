@@ -49,7 +49,7 @@ export class ScreenshotManager {
     
 
     
-    await page.evaluate(async () => {
+    await page.evaluate(() => {
       document.title = 'screenshot';
       window.history.replaceState({}, '', '/screenshot');
     });

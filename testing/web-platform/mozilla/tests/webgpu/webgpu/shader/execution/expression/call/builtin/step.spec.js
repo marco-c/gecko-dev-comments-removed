@@ -11,9 +11,9 @@ Returns 1.0 if edge ≤ x, and 0.0 otherwise. Component-wise when T is a vector.
 import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
 import { GPUTest } from '../../../../../gpu_test.js';
 import { anyOf } from '../../../../../util/compare.js';
-import { f32, TypeF32 } from '../../../../../util/conversion.js';
-import { stepInterval, toF32Interval } from '../../../../../util/f32_interval.js';
-import { fullF32Range, quantizeToF32 } from '../../../../../util/math.js';
+import { TypeF32, TypeF16 } from '../../../../../util/conversion.js';
+import { FP } from '../../../../../util/floating_point.js';
+import { fullF32Range, fullF16Range } from '../../../../../util/math.js';
 import { makeCaseCache } from '../../case_cache.js';
 import { allInputSources, run } from '../../expression.js';
 
@@ -21,40 +21,36 @@ import { builtin } from './builtin.js';
 
 export const g = makeTestGroup(GPUTest);
 
+
+
+
+
+const makeCase = (trait, edge, x) => {
+  const FPTrait = FP[trait];
+  edge = FPTrait.quantize(edge);
+  x = FPTrait.quantize(x);
+  const expected = FPTrait.stepInterval(edge, x);
+
+  
+  if (expected.isPoint() || !expected.isFinite()) {
+    return { input: [FPTrait.scalarBuilder(edge), FPTrait.scalarBuilder(x)], expected };
+  }
+
+  
+  const zeroInterval = FPTrait.toInterval(0);
+  const oneInterval = FPTrait.toInterval(1);
+  return {
+    input: [FPTrait.scalarBuilder(edge), FPTrait.scalarBuilder(x)],
+    expected: anyOf(zeroInterval, oneInterval),
+  };
+};
+
 export const d = makeCaseCache('step', {
   f32: () => {
-    const zeroInterval = toF32Interval(0);
-    const oneInterval = toF32Interval(1);
-
-    
-    
-    
-    const makeCase = (edge, x) => {
-      edge = quantizeToF32(edge);
-      x = quantizeToF32(x);
-      const expected = stepInterval(edge, x);
-
-      
-      if (expected.isPoint() || !expected.isFinite()) {
-        return { input: [f32(edge), f32(x)], expected };
-      }
-
-      
-      return {
-        input: [f32(edge), f32(x)],
-        expected: anyOf(zeroInterval, oneInterval),
-      };
-    };
-
-    const range = fullF32Range();
-    const cases = [];
-    range.forEach(edge => {
-      range.forEach(x => {
-        cases.push(makeCase(edge, x));
-      });
-    });
-
-    return cases;
+    return fullF32Range().flatMap(edge => fullF32Range().map(x => makeCase('f32', edge, x)));
+  },
+  f16: () => {
+    return fullF16Range().flatMap(edge => fullF16Range().map(x => makeCase('f16', edge, x)));
   },
 });
 
@@ -77,4 +73,10 @@ g.test('f16')
   .specURL('https://www.w3.org/TR/WGSL/#float-builtin-functions')
   .desc(`f16 tests`)
   .params(u => u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3, 4]))
-  .unimplemented();
+  .beforeAllSubcases(t => {
+    t.selectDeviceOrSkipTestCase('shader-f16');
+  })
+  .fn(async t => {
+    const cases = await d.get('f16');
+    await run(t, builtin('step'), [TypeF16, TypeF16], TypeF16, t.params, cases);
+  });

@@ -8,7 +8,8 @@
 
 
 
-export function encodeURIComponentSelectively(s) {let ret = encodeURIComponent(s);
+ export function encodeURIComponentSelectively(s) {
+  let ret = encodeURIComponent(s);
   ret = ret.replace(/%22/g, '"'); 
   ret = ret.replace(/%2C/g, ','); 
   ret = ret.replace(/%3A/g, ':'); 

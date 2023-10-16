@@ -1,4 +1,5 @@
 import { Float16Array } from '../../external/petamoriken/float16/float16.js';
+import { SkipTestCase } from '../framework/fixture.js';
 import { globalTestConfig } from '../framework/test_config.js';
 import { Logger } from '../internal/logging/logger.js';
 
@@ -63,6 +64,13 @@ export async function assertReject(p: Promise<unknown>, msg?: string): Promise<v
 
 export function unreachable(msg?: string): never {
   throw new Error(msg);
+}
+
+
+
+
+export function skipTestCase(msg: string): never {
+  throw new SkipTestCase(msg);
 }
 
 
@@ -157,6 +165,13 @@ export function rejectWithoutUncaught<T>(err: unknown): Promise<T> {
 
 
 
+export function isPlainObject(v: unknown) {
+  return !!v && Object.getPrototypeOf(v).constructor === Object.prototype.constructor;
+}
+
+
+
+
 export function sortObjectByKey(v: { [k: string]: unknown }): { [k: string]: unknown } {
   const sortedObject: { [k: string]: unknown } = {};
   for (const k of Object.keys(v).sort()) {
@@ -219,6 +234,41 @@ export function mapLazy<T, R>(xs: Iterable<T>, f: (x: T) => R): Iterable<R> {
   };
 }
 
+const ReorderOrders = {
+  forward: true,
+  backward: true,
+  shiftByHalf: true,
+};
+export type ReorderOrder = keyof typeof ReorderOrders;
+export const kReorderOrderKeys = keysOf(ReorderOrders);
+
+
+
+
+
+export function shiftByHalf<R>(arr: R[]): R[] {
+  const len = arr.length;
+  const half = (len / 2) | 0;
+  const firstHalf = arr.splice(0, half);
+  return [...arr, ...firstHalf];
+}
+
+
+
+
+export function reorder<R>(order: ReorderOrder, arr: R[]): R[] {
+  switch (order) {
+    case 'forward':
+      return arr.slice();
+    case 'backward':
+      return arr.slice().reverse();
+    case 'shiftByHalf': {
+      
+      return shiftByHalf(arr);
+    }
+  }
+}
+
 const TypedArrayBufferViewInstances = [
   new Uint8Array(),
   new Uint8ClampedArray(),
@@ -269,6 +319,78 @@ export const kTypedArrayBufferViews: {
 };
 export const kTypedArrayBufferViewKeys = keysOf(kTypedArrayBufferViews);
 export const kTypedArrayBufferViewConstructors = Object.values(kTypedArrayBufferViews);
+
+interface TypedArrayMap {
+  Int8Array: Int8Array;
+  Uint8Array: Uint8Array;
+  Int16Array: Int16Array;
+  Uint16Array: Uint16Array;
+  Uint8ClampedArray: Uint8ClampedArray;
+  Int32Array: Int32Array;
+  Uint32Array: Uint32Array;
+  Float32Array: Float32Array;
+  Float64Array: Float64Array;
+  BigInt64Array: BigInt64Array;
+  BigUint64Array: BigUint64Array;
+}
+
+type TypedArrayParam<K extends keyof TypedArrayMap> = {
+  type: K;
+  data: number[];
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function typedArrayParam<K extends keyof TypedArrayMap>(
+  type: K,
+  data: number[]
+): TypedArrayParam<K> {
+  return { type, data };
+}
+
+export function createTypedArray<K extends keyof TypedArrayMap>(
+  type: K,
+  data: number[]
+): TypedArrayMap[K] {
+  return new kTypedArrayBufferViews[type](data) as TypedArrayMap[K];
+}
+
+
+
+
+export function typedArrayFromParam<K extends keyof TypedArrayMap>(
+  param: TypedArrayParam<K>
+): TypedArrayMap[K] {
+  const { type, data } = param;
+  return createTypedArray(type, data);
+}
 
 function subarrayAsU8(
   buf: ArrayBuffer | TypedArrayBufferView,

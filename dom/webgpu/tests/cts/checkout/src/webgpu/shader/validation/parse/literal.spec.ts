@@ -193,7 +193,7 @@ const kAbstractFloat = new Set([
   ]);
   const kInvalidF16s = new Set([
     '1.1eh', 
-    '1.1e%2h', 
+    '1.1e!2h', 
     '1.1e+h', 
     '1.0e+999999h', 
     '0x1.0p+999999h', 
@@ -277,7 +277,7 @@ const kAbstractFloat = new Set([
     '1u', 
     '1f', 
     '1.1eh', 
-    '1.1e%2h', 
+    '1.1e!2h', 
     '1.1e+h', 
     '1.0e+999999h', 
     '0x1.0p+999999h', 

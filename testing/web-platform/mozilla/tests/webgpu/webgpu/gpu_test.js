@@ -1,22 +1,33 @@
 
 
- import { Fixture, SubcaseBatchState } from '../common/framework/fixture.js';
-import { assert, range, unreachable } from '../common/util/util.js';
+ import { Fixture, SkipTestCase, SubcaseBatchState } from '../common/framework/fixture.js';
+import { globalTestConfig } from '../common/framework/test_config.js';
+import { assert, memcpy, range, unreachable } from '../common/util/util.js';
 
-import { kTextureFormatInfo, kQueryTypeInfo, resolvePerAspectFormat } from './capability_info.js';
-import { makeBufferWithContents } from './util/buffer.js';
+import { kQueryTypeInfo } from './capability_info.js';
 import {
-  checkElementsEqual,
-  checkElementsBetween,
-  checkElementsFloat16Between,
-} from './util/check_contents.js';
+  kTextureFormatInfo,
+  kEncodableTextureFormats,
+  resolvePerAspectFormat,
+  isCompressedTextureFormat,
+} from './format_info.js';
+import { makeBufferWithContents } from './util/buffer.js';
+import { checkElementsEqual, checkElementsBetween } from './util/check_contents.js';
 import { CommandBufferMaker } from './util/command_buffer_maker.js';
 
 import { DevicePool } from './util/device_pool.js';
 import { align, roundDown } from './util/math.js';
-import { makeTextureWithContents } from './util/texture.js';
-import { getTextureCopyLayout, getTextureSubCopyLayout } from './util/texture/layout.js';
+import { createTextureFromTexelView, createTextureFromTexelViews } from './util/texture.js';
+import { physicalMipSizeFromTexture, virtualMipSize } from './util/texture/base.js';
+import {
+  bytesInACompleteRow,
+  getTextureCopyLayout,
+  getTextureSubCopyLayout,
+} from './util/texture/layout.js';
 import { kTexelRepresentationInfo } from './util/texture/texel_data.js';
+import { TexelView } from './util/texture/texel_view.js';
+import { textureContentIsOKByT2B } from './util/texture/texture_ok.js';
+import { reifyOrigin3D } from './util/unions.js';
 
 const devicePool = new DevicePool();
 
@@ -71,6 +82,10 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     return this.provider;
   }
 
+  get isCompatibility() {
+    return globalTestConfig.compatibility;
+  }
+
   
 
 
@@ -80,7 +95,11 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
 
   selectDeviceOrSkipTestCase(descriptor) {
     assert(this.provider === undefined, "Can't selectDeviceOrSkipTestCase() multiple times");
-    this.provider = devicePool.acquire(initUncanonicalizedDeviceDescriptor(descriptor));
+    this.provider = devicePool.acquire(
+      this.recorder,
+      initUncanonicalizedDeviceDescriptor(descriptor)
+    );
+
     
     this.provider.catch(() => {});
   }
@@ -97,6 +116,7 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     const features = new Set();
     for (const format of formats) {
       if (format !== undefined) {
+        this.skipIfTextureFormatNotSupported(format);
         features.add(kTextureFormatInfo[format].feature);
       }
     }
@@ -136,55 +156,81 @@ export class GPUTestSubcaseBatchState extends SubcaseBatchState {
     );
 
     this.mismatchedProvider = mismatchedDevicePool.acquire(
+      this.recorder,
       initUncanonicalizedDeviceDescriptor(descriptor)
     );
 
     
     this.mismatchedProvider.catch(() => {});
   }
+
+  
+  skip(msg) {
+    throw new SkipTestCase(msg);
+  }
+
+  
+
+
+  skipIfTextureFormatNotSupported(...formats) {
+    if (this.isCompatibility) {
+      for (const format of formats) {
+        if (format === 'bgra8unorm-srgb') {
+          this.skip(`texture format '${format} is not supported`);
+        }
+      }
+    }
+  }
+
+  skipIfCopyTextureToTextureNotSupportedForFormat(...formats) {
+    if (this.isCompatibility) {
+      for (const format of formats) {
+        if (format && isCompressedTextureFormat(format)) {
+          this.skip(`copyTextureToTexture with ${format} is not supported`);
+        }
+      }
+    }
+  }
+
+  skipIfTextureViewDimensionNotSupported(...dimensions) {
+    if (this.isCompatibility) {
+      for (const dimension of dimensions) {
+        if (dimension === 'cube-array') {
+          this.skip(`texture view dimension '${dimension}' is not supported`);
+        }
+      }
+    }
+  }
 }
 
 
 
 
-export class GPUTest extends Fixture {
-  static MakeSharedState(params) {
-    return new GPUTestSubcaseBatchState(params);
+
+
+
+export class GPUTestBase extends Fixture {
+  static MakeSharedState(recorder, params) {
+    return new GPUTestSubcaseBatchState(recorder, params);
   }
 
   
-
-  async init() {
-    await super.init();
-
-    this.provider = await this.sharedState.acquireProvider();
-    this.mismatchedProvider = await this.sharedState.acquireMismatchedProvider();
-  }
-
-  
-
-
   get device() {
-    assert(this.provider !== undefined, 'internal error: GPUDevice missing?');
-    return this.provider.device;
-  }
-
-  
-
-
-
-  get mismatchedDevice() {
-    assert(
-      this.mismatchedProvider !== undefined,
-      'selectMismatchedDeviceOrSkipTestCase was not called in beforeAllSubcases'
-    );
-
-    return this.mismatchedProvider.device;
+    unreachable();
+    return null;
   }
 
   
   get queue() {
     return this.device.queue;
+  }
+
+  get isCompatibility() {
+    return globalTestConfig.compatibility;
+  }
+
+  canCallCopyTextureToBufferWithTextureFormat(format) {
+    return !this.isCompatibility || !isCompressedTextureFormat(format);
   }
 
   
@@ -263,6 +309,29 @@ export class GPUTest extends Fixture {
         mappable.destroy();
       },
     };
+  }
+
+  
+
+
+  skipIfTextureFormatNotSupported(...formats) {
+    if (this.isCompatibility) {
+      for (const format of formats) {
+        if (format === 'bgra8unorm-srgb') {
+          this.skip(`texture format '${format} is not supported`);
+        }
+      }
+    }
+  }
+
+  skipIfTextureViewDimensionNotSupported(...dimensions) {
+    if (this.isCompatibility) {
+      for (const dimension of dimensions) {
+        if (dimension === 'cube-array') {
+          this.skip(`texture view dimension '${dimension}' is not supported`);
+        }
+      }
+    }
   }
 
   
@@ -436,7 +505,13 @@ export class GPUTest extends Fixture {
   
 
 
+
   expectSingleColor(src, format, { size, exp, dimension = '2d', slice = 0, layout }) {
+    assert(
+      slice === 0 || dimension === '2d',
+      'texture slices are only implemented for 2d textures'
+    );
+
     format = resolvePerAspectFormat(format, layout?.aspect);
     const { byteLength, minBytesPerRow, bytesPerRow, rowsPerImage, mipSize } = getTextureCopyLayout(
       format,
@@ -444,6 +519,16 @@ export class GPUTest extends Fixture {
       size,
       layout
     );
+
+    
+    
+    
+    
+    const copySize = [
+      mipSize[0],
+      dimension !== '1d' ? mipSize[1] : 1,
+      dimension === '3d' ? mipSize[2] : 1,
+    ];
 
     const rep = kTexelRepresentationInfo[format];
     const expectedTexelData = rep.pack(rep.encode(exp));
@@ -463,20 +548,23 @@ export class GPUTest extends Fixture {
         aspect: layout?.aspect,
       },
       { buffer, bytesPerRow, rowsPerImage },
-      mipSize
+      copySize
     );
 
     this.queue.submit([commandEncoder.finish()]);
 
     this.expectGPUBufferRepeatsSingleValue(buffer, {
       expectedValue: expectedTexelData,
-      numRows: rowsPerImage,
+      numRows: rowsPerImage * copySize[2],
       minBytesPerRow,
       bytesPerRow,
     });
   }
 
   
+
+
+
   readSinglePixelFrom2DTexture(src, format, { x, y }, { slice = 0, layout }) {
     const { byteLength, bytesPerRow, rowsPerImage } = getTextureSubCopyLayout(
       format,
@@ -508,23 +596,6 @@ export class GPUTest extends Fixture {
 
 
 
-  expectSinglePixelIn2DTexture(
-    src,
-    format,
-    { x, y },
-    { exp, slice = 0, layout, generateWarningOnly = false }
-  ) {
-    const buffer = this.readSinglePixelFrom2DTexture(src, format, { x, y }, { slice, layout });
-    this.expectGPUBufferValuesEqual(buffer, exp, 0, {
-      mode: generateWarningOnly ? 'warn' : 'fail',
-    });
-  }
-
-  
-
-
-
-
   expectSinglePixelBetweenTwoValuesIn2DTexture(
     src,
     format,
@@ -548,30 +619,6 @@ export class GPUTest extends Fixture {
       typedLength,
       mode: generateWarningOnly ? 'warn' : 'fail',
     });
-  }
-
-  
-
-
-
-  expectSinglePixelBetweenTwoValuesFloat16In2DTexture(
-    src,
-    format,
-    { x, y },
-    { exp, slice = 0, layout, generateWarningOnly = false }
-  ) {
-    this.expectSinglePixelBetweenTwoValuesIn2DTexture(
-      src,
-      format,
-      { x, y },
-      {
-        exp,
-        slice,
-        layout,
-        generateWarningOnly,
-        checkElementsBetweenFn: checkElementsFloat16Between,
-      }
-    );
   }
 
   
@@ -743,77 +790,10 @@ export class GPUTest extends Fixture {
   
 
 
-  expectDeviceLost(reason) {
-    assert(this.provider !== undefined, 'internal error: GPUDevice missing?');
-    this.provider.expectDeviceLost(reason);
-  }
-
-  
-
-
 
 
   makeBufferWithContents(dataArray, usage) {
     return this.trackForCleanup(makeBufferWithContents(this.device, dataArray, usage));
-  }
-
-  
-
-
-  makeTextureWithContents(texelView, desc) {
-    return this.trackForCleanup(makeTextureWithContents(this.device, texelView, desc));
-  }
-
-  
-
-
-  createTexture2DWithMipmaps(mipmapDataArray) {
-    const format = 'rgba8unorm';
-    const mipLevelCount = mipmapDataArray.length;
-    const textureSizeMipmap0 = 1 << (mipLevelCount - 1);
-    const texture = this.device.createTexture({
-      mipLevelCount,
-      size: { width: textureSizeMipmap0, height: textureSizeMipmap0, depthOrArrayLayers: 1 },
-      format,
-      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.TEXTURE_BINDING,
-    });
-    this.trackForCleanup(texture);
-
-    const textureEncoder = this.device.createCommandEncoder();
-    for (let i = 0; i < mipLevelCount; i++) {
-      const { byteLength, bytesPerRow, rowsPerImage, mipSize } = getTextureCopyLayout(
-        format,
-        '2d',
-        [textureSizeMipmap0, textureSizeMipmap0, 1],
-        { mipLevel: i }
-      );
-
-      const data = new Uint8Array(byteLength);
-      const mipLevelData = mipmapDataArray[i];
-      assert(rowsPerImage === mipSize[0]); 
-      for (let r = 0; r < rowsPerImage; r++) {
-        const o = r * bytesPerRow;
-        for (let c = o, end = o + mipSize[1] * 4; c < end; c += 4) {
-          data[c] = mipLevelData[0];
-          data[c + 1] = mipLevelData[1];
-          data[c + 2] = mipLevelData[2];
-          data[c + 3] = mipLevelData[3];
-        }
-      }
-      const buffer = this.makeBufferWithContents(
-        data,
-        GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
-      );
-
-      textureEncoder.copyBufferToTexture(
-        { buffer, bytesPerRow, rowsPerImage },
-        { texture, mipLevel: i, origin: [0, 0, 0] },
-        mipSize
-      );
-    }
-    this.device.queue.submit([textureEncoder.finish()]);
-
-    return texture;
   }
 
   
@@ -938,4 +918,449 @@ export class GPUTest extends Fixture {
 
     unreachable();
   }
+}
+
+
+
+
+export class GPUTest extends GPUTestBase {
+  
+
+  async init() {
+    await super.init();
+
+    this.provider = await this.sharedState.acquireProvider();
+    this.mismatchedProvider = await this.sharedState.acquireMismatchedProvider();
+  }
+
+  
+
+
+  get device() {
+    assert(this.provider !== undefined, 'internal error: GPUDevice missing?');
+    return this.provider.device;
+  }
+
+  
+
+
+
+  get mismatchedDevice() {
+    assert(
+      this.mismatchedProvider !== undefined,
+      'selectMismatchedDeviceOrSkipTestCase was not called in beforeAllSubcases'
+    );
+
+    return this.mismatchedProvider.device;
+  }
+
+  
+
+
+  expectDeviceLost(reason) {
+    assert(this.provider !== undefined, 'internal error: GPUDevice missing?');
+    this.provider.expectDeviceLost(reason);
+  }
+}
+
+
+
+
+
+
+const s_deviceToResourcesMap = new WeakMap();
+
+
+
+
+function getPipelineToRenderTextureToRGB8UnormTexture(device) {
+  if (!s_deviceToResourcesMap.has(device)) {
+    const module = device.createShaderModule({
+      code: `
+        struct VSOutput {
+          @builtin(position) position: vec4f,
+          @location(0) texcoord: vec2f,
+        };
+
+        @vertex fn vs(
+          @builtin(vertex_index) vertexIndex : u32
+        ) -> VSOutput {
+            let pos = array(
+               vec2f(-1, -1),
+               vec2f(-1,  3),
+               vec2f( 3, -1),
+            );
+
+            var vsOutput: VSOutput;
+
+            let xy = pos[vertexIndex];
+
+            vsOutput.position = vec4f(xy, 0.0, 1.0);
+            vsOutput.texcoord = xy * vec2f(0.5, -0.5) + vec2f(0.5);
+
+            return vsOutput;
+         }
+
+         @group(0) @binding(0) var ourSampler: sampler;
+         @group(0) @binding(1) var ourTexture: texture_2d<f32>;
+
+         @fragment fn fs(fsInput: VSOutput) -> @location(0) vec4f {
+            return textureSample(ourTexture, ourSampler, fsInput.texcoord);
+         }
+      `,
+    });
+    const pipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module,
+        entryPoint: 'vs',
+      },
+      fragment: {
+        module,
+        entryPoint: 'fs',
+        targets: [{ format: 'rgba8unorm' }],
+      },
+    });
+    s_deviceToResourcesMap.set(device, { pipeline });
+  }
+  const { pipeline } = s_deviceToResourcesMap.get(device);
+  return pipeline;
+}
+
+export function TextureTestMixin(Base) {
+  class TextureExpectations extends Base {
+    createTextureFromTexelView(texelView, desc) {
+      return this.trackForCleanup(createTextureFromTexelView(this.device, texelView, desc));
+    }
+
+    createTextureFromTexelViewsMultipleMipmaps(texelViews, desc) {
+      return this.trackForCleanup(createTextureFromTexelViews(this.device, texelViews, desc));
+    }
+
+    expectTexelViewComparisonIsOkInTexture(
+      src,
+      exp,
+      size,
+      comparisonOptions = {
+        maxIntDiff: 0,
+        maxDiffULPsForNormFormat: 1,
+        maxDiffULPsForFloatFormat: 1,
+      }
+    ) {
+      this.eventualExpectOK(
+        textureContentIsOKByT2B(this, src, size, { expTexelView: exp }, comparisonOptions)
+      );
+    }
+
+    expectSinglePixelComparisonsAreOkInTexture(
+      src,
+      exp,
+      comparisonOptions = {
+        maxIntDiff: 0,
+        maxDiffULPsForNormFormat: 1,
+        maxDiffULPsForFloatFormat: 1,
+      }
+    ) {
+      assert(exp.length > 0, 'must specify at least one pixel comparison');
+      assert(
+        kEncodableTextureFormats.includes(src.texture.format),
+        () => `${src.texture.format} is not an encodable format`
+      );
+
+      const lowerCorner = [src.texture.width, src.texture.height, src.texture.depthOrArrayLayers];
+      const upperCorner = [0, 0, 0];
+      const expMap = new Map();
+      const coords = [];
+      for (const e of exp) {
+        const coord = reifyOrigin3D(e.coord);
+        const coordKey = JSON.stringify(coord);
+        coords.push(coord);
+
+        
+        
+        
+        lowerCorner[0] = Math.min(lowerCorner[0], coord.x);
+        lowerCorner[1] = Math.min(lowerCorner[1], coord.y);
+        lowerCorner[2] = Math.min(lowerCorner[2], coord.z);
+        upperCorner[0] = Math.max(upperCorner[0], coord.x);
+        upperCorner[1] = Math.max(upperCorner[1], coord.y);
+        upperCorner[2] = Math.max(upperCorner[2], coord.z);
+
+        
+        assert(
+          !expMap.has(coordKey),
+          () => `duplicate pixel expectation at coordinate (${coord.x},${coord.y},${coord.z})`
+        );
+
+        expMap.set(coordKey, e.exp);
+      }
+      const size = [
+        upperCorner[0] - lowerCorner[0] + 1,
+        upperCorner[1] - lowerCorner[1] + 1,
+        upperCorner[2] - lowerCorner[2] + 1,
+      ];
+
+      let expTexelView;
+      if (Symbol.iterator in exp[0].exp) {
+        expTexelView = TexelView.fromTexelsAsBytes(src.texture.format, coord => {
+          const res = expMap.get(JSON.stringify(coord));
+          assert(
+            res !== undefined,
+            () => `invalid coordinate (${coord.x},${coord.y},${coord.z}) in sparse texel view`
+          );
+
+          return res;
+        });
+      } else {
+        expTexelView = TexelView.fromTexelsAsColors(src.texture.format, coord => {
+          const res = expMap.get(JSON.stringify(coord));
+          assert(
+            res !== undefined,
+            () => `invalid coordinate (${coord.x},${coord.y},${coord.z}) in sparse texel view`
+          );
+
+          return res;
+        });
+      }
+      const coordsF = (function* () {
+        for (const coord of coords) {
+          yield coord;
+        }
+      })();
+
+      this.eventualExpectOK(
+        textureContentIsOKByT2B(
+          this,
+          { ...src, origin: reifyOrigin3D(lowerCorner) },
+          size,
+          { expTexelView },
+          comparisonOptions,
+          coordsF
+        )
+      );
+    }
+
+    expectTexturesToMatchByRendering(actualTexture, expectedTexture, mipLevel, origin, size) {
+      
+      
+      
+      const pipeline = getPipelineToRenderTextureToRGB8UnormTexture(this.device);
+      const readbackPromisesPerTexturePerLayer = [actualTexture, expectedTexture].map(
+        (texture, ndx) => {
+          const attachmentSize = virtualMipSize('2d', [texture.width, texture.height, 1], mipLevel);
+          const attachment = this.device.createTexture({
+            label: `readback${ndx}`,
+            size: attachmentSize,
+            format: 'rgba8unorm',
+            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+          });
+          this.trackForCleanup(attachment);
+
+          const sampler = this.device.createSampler();
+
+          const numLayers = texture.depthOrArrayLayers;
+          const readbackPromisesPerLayer = [];
+          for (let layer = 0; layer < numLayers; ++layer) {
+            const bindGroup = this.device.createBindGroup({
+              layout: pipeline.getBindGroupLayout(0),
+              entries: [
+                { binding: 0, resource: sampler },
+                {
+                  binding: 1,
+                  resource: texture.createView({
+                    baseMipLevel: mipLevel,
+                    mipLevelCount: 1,
+                    baseArrayLayer: layer,
+                    arrayLayerCount: 1,
+                    dimension: '2d',
+                  }),
+                },
+              ],
+            });
+
+            const encoder = this.device.createCommandEncoder();
+            const pass = encoder.beginRenderPass({
+              colorAttachments: [
+                {
+                  view: attachment.createView(),
+                  clearValue: [0.5, 0.5, 0.5, 0.5],
+                  loadOp: 'clear',
+                  storeOp: 'store',
+                },
+              ],
+            });
+            pass.setPipeline(pipeline);
+            pass.setBindGroup(0, bindGroup);
+            pass.draw(3);
+            pass.end();
+            this.queue.submit([encoder.finish()]);
+
+            const buffer = this.copyWholeTextureToNewBufferSimple(attachment, 0);
+
+            readbackPromisesPerLayer.push(
+              this.readGPUBufferRangeTyped(buffer, {
+                type: Uint8Array,
+                typedLength: buffer.size,
+              })
+            );
+          }
+          return readbackPromisesPerLayer;
+        }
+      );
+
+      this.eventualAsyncExpectation(async niceStack => {
+        const readbacksPerTexturePerLayer = [];
+
+        
+        for (const readbackPromises of readbackPromisesPerTexturePerLayer) {
+          readbacksPerTexturePerLayer.push(await Promise.all(readbackPromises));
+        }
+
+        function arrayNotAllTheSameValue(arr, msg) {
+          const first = arr[0];
+          return arr.length <= 1 || arr.findIndex(v => v !== first) >= 0
+            ? undefined
+            : Error(`array is entirely ${first} so likely nothing was tested: ${msg || ''}`);
+        }
+
+        
+        const [actualReadbacksPerLayer, expectedReadbacksPerLayer] = readbacksPerTexturePerLayer;
+        for (let layer = 0; layer < actualReadbacksPerLayer.length; ++layer) {
+          const actualReadback = actualReadbacksPerLayer[layer];
+          const expectedReadback = expectedReadbacksPerLayer[layer];
+          const sameOk =
+            size.width === 0 ||
+            size.height === 0 ||
+            layer < origin.z ||
+            layer >= origin.z + size.depthOrArrayLayers;
+          this.expectOK(
+            sameOk ? undefined : arrayNotAllTheSameValue(actualReadback.data, 'actualTexture')
+          );
+
+          this.expectOK(
+            sameOk ? undefined : arrayNotAllTheSameValue(expectedReadback.data, 'expectedTexture')
+          );
+
+          this.expectOK(checkElementsEqual(actualReadback.data, expectedReadback.data), {
+            mode: 'fail',
+            niceStack,
+          });
+          actualReadback.cleanup();
+          expectedReadback.cleanup();
+        }
+      });
+    }
+
+    copyWholeTextureToNewBufferSimple(texture, mipLevel) {
+      const { blockWidth, blockHeight, bytesPerBlock } = kTextureFormatInfo[texture.format];
+      const mipSize = physicalMipSizeFromTexture(texture, mipLevel);
+      assert(bytesPerBlock !== undefined);
+
+      const blocksPerRow = mipSize[0] / blockWidth;
+      const blocksPerColumn = mipSize[1] / blockHeight;
+
+      assert(blocksPerRow % 1 === 0);
+      assert(blocksPerColumn % 1 === 0);
+
+      const bytesPerRow = align(blocksPerRow * bytesPerBlock, 256);
+      const byteLength = bytesPerRow * blocksPerColumn * mipSize[2];
+
+      return this.copyWholeTextureToNewBuffer(
+        { texture, mipLevel },
+        {
+          bytesPerBlock,
+          bytesPerRow,
+          rowsPerImage: blocksPerColumn,
+          byteLength,
+        }
+      );
+    }
+
+    copyWholeTextureToNewBuffer({ texture, mipLevel }, resultDataLayout) {
+      const { byteLength, bytesPerRow, rowsPerImage } = resultDataLayout;
+      const buffer = this.device.createBuffer({
+        size: align(byteLength, 4), 
+        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST,
+      });
+      this.trackForCleanup(buffer);
+
+      const mipSize = physicalMipSizeFromTexture(texture, mipLevel || 0);
+      const encoder = this.device.createCommandEncoder();
+      encoder.copyTextureToBuffer(
+        { texture, mipLevel },
+        { buffer, bytesPerRow, rowsPerImage },
+        mipSize
+      );
+
+      this.device.queue.submit([encoder.finish()]);
+
+      return buffer;
+    }
+
+    updateLinearTextureDataSubBox(format, copySize, copyParams) {
+      const { src, dest } = copyParams;
+      const rowLength = bytesInACompleteRow(copySize.width, format);
+      for (const texel of this.iterateBlockRows(copySize, format)) {
+        const srcOffsetElements = this.getTexelOffsetInBytes(
+          src.dataLayout,
+          format,
+          texel,
+          src.origin
+        );
+
+        const dstOffsetElements = this.getTexelOffsetInBytes(
+          dest.dataLayout,
+          format,
+          texel,
+          dest.origin
+        );
+
+        memcpy(
+          { src: src.data, start: srcOffsetElements, length: rowLength },
+          { dst: dest.data, start: dstOffsetElements }
+        );
+      }
+    }
+
+    
+    getTexelOffsetInBytes(textureDataLayout, format, texel, origin = { x: 0, y: 0, z: 0 }) {
+      const { offset, bytesPerRow, rowsPerImage } = textureDataLayout;
+      const info = kTextureFormatInfo[format];
+
+      assert(texel.x % info.blockWidth === 0);
+      assert(texel.y % info.blockHeight === 0);
+      assert(origin.x % info.blockWidth === 0);
+      assert(origin.y % info.blockHeight === 0);
+
+      const bytesPerImage = rowsPerImage * bytesPerRow;
+
+      return (
+        offset +
+        (texel.z + origin.z) * bytesPerImage +
+        ((texel.y + origin.y) / info.blockHeight) * bytesPerRow +
+        ((texel.x + origin.x) / info.blockWidth) * info.color.bytes
+      );
+    }
+
+    *iterateBlockRows(size, format) {
+      if (size.width === 0 || size.height === 0 || size.depthOrArrayLayers === 0) {
+        
+        return;
+      }
+      const info = kTextureFormatInfo[format];
+      assert(size.height % info.blockHeight === 0);
+      
+      for (let z = 0; z < size.depthOrArrayLayers; ++z) {
+        for (let y = 0; y < size.height; y += info.blockHeight) {
+          yield {
+            x: 0,
+            y,
+            z,
+          };
+        }
+      }
+    }
+  }
+
+  return TextureExpectations;
 }

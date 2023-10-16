@@ -41,7 +41,12 @@ function createCanvas(colorSpace) {
 
 const u = kUnitCaseParamsBuilder
   .combine('alphaMode', kCanvasAlphaModes)
-  .combine('colorSpace', kCanvasColorSpaces);
+  .combine('colorSpace', kCanvasColorSpaces)
+  .combine('creation', [
+    'canvas',
+    'transferControlToOffscreen',
+    'transferControlToOffscreenWorker',
+  ]);
 
 
 

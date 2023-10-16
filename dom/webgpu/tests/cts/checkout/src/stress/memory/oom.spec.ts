@@ -3,10 +3,53 @@ Stress tests covering robustness when available VRAM is exhausted.
 `;
 
 import { makeTestGroup } from '../../common/framework/test_group.js';
+import { unreachable } from '../../common/util/util.js';
+import { GPUConst } from '../../webgpu/constants.js';
 import { GPUTest } from '../../webgpu/gpu_test.js';
 import { exhaustVramUntilUnder64MB } from '../../webgpu/util/memory.js';
 
 export const g = makeTestGroup(GPUTest);
+
+function createBufferWithMapState(
+  device: GPUDevice,
+  size: number,
+  mapState: GPUBufferMapState,
+  mode: GPUMapModeFlags,
+  mappedAtCreation: boolean
+) {
+  const mappable = mapState === 'unmapped';
+  if (!mappable && !mappedAtCreation) {
+    return device.createBuffer({
+      size,
+      usage: GPUBufferUsage.UNIFORM,
+      mappedAtCreation,
+    });
+  }
+  let buffer: GPUBuffer;
+  switch (mode) {
+    case GPUMapMode.READ:
+      buffer = device.createBuffer({
+        size,
+        usage: GPUBufferUsage.MAP_READ,
+        mappedAtCreation,
+      });
+      break;
+    case GPUMapMode.WRITE:
+      buffer = device.createBuffer({
+        size,
+        usage: GPUBufferUsage.MAP_WRITE,
+        mappedAtCreation,
+      });
+      break;
+    default:
+      unreachable();
+  }
+  
+  if (mappable && mappedAtCreation) {
+    buffer.unmap();
+  }
+  return buffer;
+}
 
 g.test('vram_oom')
   .desc(`Tests that we can allocate buffers until we run out of VRAM.`)
@@ -14,21 +57,111 @@ g.test('vram_oom')
     await exhaustVramUntilUnder64MB(t.device);
   });
 
-g.test('get_mapped_range')
-  .desc(
-    `Tests getMappedRange on a mappedAtCreation GPUBuffer that failed allocation due
-to OOM. This should throw a RangeError, but below a certain threshold may just
-crash the page.`
-  )
-  .unimplemented();
-
 g.test('map_after_vram_oom')
   .desc(
     `Allocates tons of buffers and textures with varying mapping states (unmappable,
 mappable, mapAtCreation, mapAtCreation-then-unmapped) until OOM; then attempts
-to mapAsync all the mappable objects.`
+to mapAsync all the mappable objects. The last buffer should be an error buffer so
+mapAsync on it should reject and produce a validation error. `
   )
-  .unimplemented();
+  .params(u =>
+    u
+      .combine('mapState', ['mapped', 'unmapped'] as GPUBufferMapState[])
+      .combine('mode', [GPUConst.MapMode.READ, GPUConst.MapMode.WRITE])
+      .combine('mappedAtCreation', [true, false])
+      .combine('unmapBeforeResolve', [true, false])
+  )
+  .fn(async t => {
+    
+    const kSize = 512 * 1024 * 1024;
+
+    const { mapState, mode, mappedAtCreation, unmapBeforeResolve } = t.params;
+    const mappable = mapState === 'unmapped';
+    const buffers: GPUBuffer[] = [];
+    
+    const finish = async () => {
+      if (mappable) {
+        await Promise.all(buffers.map(value => value.mapAsync(mode)));
+      } else {
+        buffers.forEach(value => {
+          t.expectValidationError(() => {
+            void value.mapAsync(mode);
+          });
+        });
+      }
+      
+      buffers.forEach(buffer => buffer.destroy());
+    };
+
+    let errorBuffer: GPUBuffer;
+    for (;;) {
+      if (mappedAtCreation) {
+        
+        
+        try {
+          t.device.pushErrorScope('out-of-memory');
+          const buffer = t.trackForCleanup(
+            createBufferWithMapState(t.device, kSize, mapState, mode, mappedAtCreation)
+          );
+          if (await t.device.popErrorScope()) {
+            errorBuffer = buffer;
+            break;
+          }
+          buffers.push(buffer);
+        } catch (ex) {
+          t.expect(ex instanceof RangeError);
+          await finish();
+          return;
+        }
+      } else {
+        t.device.pushErrorScope('out-of-memory');
+        const buffer = t.trackForCleanup(
+          createBufferWithMapState(t.device, kSize, mapState, mode, mappedAtCreation)
+        );
+        if (await t.device.popErrorScope()) {
+          errorBuffer = buffer;
+          break;
+        }
+        buffers.push(buffer);
+      }
+    }
+
+    
+    let promise: Promise<void>;
+    t.expectValidationError(() => {
+      promise = errorBuffer.mapAsync(mode);
+    });
+    if (unmapBeforeResolve) {
+      
+      
+      t.shouldReject('AbortError', promise!);
+    } else {
+      
+      t.shouldReject('OperationError', promise!);
+
+      
+      
+      try {
+        await promise!;
+        throw new Error('The promise should be rejected.');
+      } catch {
+        
+      }
+    }
+
+    
+    
+    t.shouldThrow('OperationError', () => {
+      errorBuffer.getMappedRange();
+    });
+
+    
+    errorBuffer.unmap();
+    errorBuffer.destroy();
+
+    
+    await finish();
+  });
 
 g.test('validation_vs_oom')
   .desc(

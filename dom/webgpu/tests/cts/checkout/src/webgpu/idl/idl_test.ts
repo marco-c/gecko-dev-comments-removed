@@ -10,9 +10,10 @@ interface UnknownObject {
 
 
 export class IDLTest extends Fixture {
-  async init(): Promise<void> {
+  init(): Promise<void> {
     
-    getGPU();
+    getGPU(this.rec);
+    return Promise.resolve();
   }
 
   

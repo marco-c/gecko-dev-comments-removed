@@ -1,7 +1,7 @@
 
 
  import { assert, unreachable } from '../../../common/util/util.js';
-import { kTextureFormatInfo } from '../../capability_info.js';
+import { kTextureFormatInfo } from '../../format_info.js';
 import { align } from '../../util/math.js';
 import { reifyExtent3D } from '../../util/unions.js';
 
@@ -82,6 +82,15 @@ export function physicalMipSize(baseSize, format, dimension, level) {
       };
     }
   }
+}
+
+
+
+
+
+export function physicalMipSizeFromTexture(texture, mipLevel) {
+  const size = physicalMipSize(texture, texture.format, texture.dimension, mipLevel);
+  return [size.width, size.height, size.depthOrArrayLayers];
 }
 
 
@@ -196,4 +205,19 @@ export function reifyTextureViewDescriptor(textureDescriptor, view) {
     baseArrayLayer,
     arrayLayerCount,
   };
+}
+
+
+
+
+
+
+export function* fullSubrectCoordinates(subrectOrigin, subrectSize) {
+  for (let z = subrectOrigin.z; z < subrectOrigin.z + subrectSize.depthOrArrayLayers; ++z) {
+    for (let y = subrectOrigin.y; y < subrectOrigin.y + subrectSize.height; ++y) {
+      for (let x = subrectOrigin.x; x < subrectOrigin.x + subrectSize.width; ++x) {
+        yield { x, y, z };
+      }
+    }
+  }
 }

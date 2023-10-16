@@ -8,9 +8,10 @@ import { assert } from '../../common/util/util.js';
 
 
 export class IDLTest extends Fixture {
-  async init() {
+  init() {
     
-    getGPU();
+    getGPU(this.rec);
+    return Promise.resolve();
   }
 
   

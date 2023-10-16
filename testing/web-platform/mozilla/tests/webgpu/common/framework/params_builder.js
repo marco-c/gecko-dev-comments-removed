@@ -1,17 +1,9 @@
 
 
- import { mergeParams } from '../internal/params_utils.js';
+ import { mergeParams, mergeParamsChecked } from '../internal/params_utils.js';
+import { comparePublicParamsPaths, Ordering } from '../internal/query/compare.js';
 import { stringifyPublicParams } from '../internal/query/stringify_params.js';
-import { assert, mapLazy } from '../util/util.js';
-
-
-
-
-
-
-
-
-
+import { assert, mapLazy, objectEquals } from '../util/util.js';
 
 
 
@@ -29,8 +21,8 @@ export class ParamsBuilderBase {
 
 
 
-export function builderIterateCasesWithSubcases(builder) {
-  return builder.iterateCasesWithSubcases();
+export function builderIterateCasesWithSubcases(builder, caseFilter) {
+  return builder.iterateCasesWithSubcases(caseFilter);
 }
 
 
@@ -42,27 +34,61 @@ export function builderIterateCasesWithSubcases(builder) {
 
 
 export class CaseParamsBuilder extends ParamsBuilderBase {
-  *iterateCasesWithSubcases() {
-    for (const a of this.cases()) {
-      yield [a, undefined];
+  *iterateCasesWithSubcases(caseFilter) {
+    for (const caseP of this.cases(caseFilter)) {
+      if (caseFilter) {
+        
+        
+        const ordering = comparePublicParamsPaths(caseP, caseFilter);
+        if (ordering === Ordering.StrictSuperset || ordering === Ordering.Unordered) {
+          continue;
+        }
+      }
+
+      yield [caseP, undefined];
     }
   }
 
   [Symbol.iterator]() {
-    return this.cases();
+    return this.cases(null);
   }
 
   
   expandWithParams(expander) {
-    const newGenerator = expanderGenerator(this.cases, expander);
-    return new CaseParamsBuilder(() => newGenerator({}));
+    const baseGenerator = this.cases;
+    return new CaseParamsBuilder(function* (caseFilter) {
+      for (const a of baseGenerator(caseFilter)) {
+        for (const b of expander(a)) {
+          if (caseFilter) {
+            
+            const kvPairs = Object.entries(b);
+            if (kvPairs.some(([k, v]) => k in caseFilter && !objectEquals(caseFilter[k], v))) {
+              continue;
+            }
+          }
+
+          yield mergeParamsChecked(a, b);
+        }
+      }
+    });
   }
 
   
   expand(key, expander) {
-    return this.expandWithParams(function* (p) {
-      for (const value of expander(p)) {
-        yield { [key]: value };
+    const baseGenerator = this.cases;
+    return new CaseParamsBuilder(function* (caseFilter) {
+      for (const a of baseGenerator(caseFilter)) {
+        assert(!(key in a), `New key '${key}' already exists in ${JSON.stringify(a)}`);
+
+        for (const v of expander(a)) {
+          
+          if (caseFilter && key in caseFilter) {
+            if (!objectEquals(caseFilter[key], v)) {
+              continue;
+            }
+          }
+          yield { ...a, [key]: v };
+        }
       }
     });
   }
@@ -89,8 +115,12 @@ export class CaseParamsBuilder extends ParamsBuilderBase {
 
   
   filter(pred) {
-    const newGenerator = filterGenerator(this.cases, pred);
-    return new CaseParamsBuilder(() => newGenerator({}));
+    const baseGenerator = this.cases;
+    return new CaseParamsBuilder(function* (caseFilter) {
+      for (const a of baseGenerator(caseFilter)) {
+        if (pred(a)) yield a;
+      }
+    });
   }
 
   
@@ -104,12 +134,9 @@ export class CaseParamsBuilder extends ParamsBuilderBase {
 
 
   beginSubcases() {
-    return new SubcaseParamsBuilder(
-      () => this.cases(),
-      function* () {
-        yield {};
-      }
-    );
+    return new SubcaseParamsBuilder(this.cases, function* () {
+      yield {};
+    });
   }
 }
 
@@ -135,8 +162,17 @@ export class SubcaseParamsBuilder extends ParamsBuilderBase {
     this.subcases = generator;
   }
 
-  *iterateCasesWithSubcases() {
-    for (const caseP of this.cases()) {
+  *iterateCasesWithSubcases(caseFilter) {
+    for (const caseP of this.cases(caseFilter)) {
+      if (caseFilter) {
+        
+        
+        const ordering = comparePublicParamsPaths(caseP, caseFilter);
+        if (ordering === Ordering.StrictSuperset || ordering === Ordering.Unordered) {
+          continue;
+        }
+      }
+
       const subcases = Array.from(this.subcases(caseP));
       if (subcases.length) {
         yield [caseP, subcases];
@@ -146,15 +182,27 @@ export class SubcaseParamsBuilder extends ParamsBuilderBase {
 
   
   expandWithParams(expander) {
-    return new SubcaseParamsBuilder(this.cases, expanderGenerator(this.subcases, expander));
+    const baseGenerator = this.subcases;
+    return new SubcaseParamsBuilder(this.cases, function* (base) {
+      for (const a of baseGenerator(base)) {
+        for (const b of expander(mergeParams(base, a))) {
+          yield mergeParamsChecked(a, b);
+        }
+      }
+    });
   }
 
   
   expand(key, expander) {
-    return this.expandWithParams(function* (p) {
-      for (const value of expander(p)) {
-        
-        yield { [key]: value };
+    const baseGenerator = this.subcases;
+    return new SubcaseParamsBuilder(this.cases, function* (base) {
+      for (const a of baseGenerator(base)) {
+        const before = mergeParams(base, a);
+        assert(!(key in before), () => `Key '${key}' already exists in ${JSON.stringify(before)}`);
+
+        for (const v of expander(before)) {
+          yield { ...a, [key]: v };
+        }
       }
     });
   }
@@ -173,33 +221,18 @@ export class SubcaseParamsBuilder extends ParamsBuilderBase {
 
   
   filter(pred) {
-    return new SubcaseParamsBuilder(this.cases, filterGenerator(this.subcases, pred));
+    const baseGenerator = this.subcases;
+    return new SubcaseParamsBuilder(this.cases, function* (base) {
+      for (const a of baseGenerator(base)) {
+        if (pred(mergeParams(base, a))) yield a;
+      }
+    });
   }
 
   
   unless(pred) {
     return this.filter(x => !pred(x));
   }
-}
-
-function expanderGenerator(baseGenerator, expander) {
-  return function* (base) {
-    for (const a of baseGenerator(base)) {
-      for (const b of expander(mergeParams(base, a))) {
-        yield mergeParams(a, b);
-      }
-    }
-  };
-}
-
-function filterGenerator(baseGenerator, pred) {
-  return function* (base) {
-    for (const a of baseGenerator(base)) {
-      if (pred(mergeParams(base, a))) {
-        yield a;
-      }
-    }
-  };
 }
 
 

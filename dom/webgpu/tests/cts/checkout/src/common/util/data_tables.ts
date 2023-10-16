@@ -14,6 +14,20 @@ export function numericKeysOf<T>(obj: object): readonly T[] {
 
 
 
+export function objectsToRecord<T extends Object>(objects: readonly T[]): Record<string, T> {
+  const record = {};
+  return objects.reduce((obj, type) => {
+    return {
+      ...obj,
+      [type.toString()]: type,
+    };
+  }, record);
+}
+
+
+
+
+
 
 export function makeTable<
   Members extends readonly string[],

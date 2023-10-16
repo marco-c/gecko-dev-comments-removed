@@ -47,6 +47,57 @@ export const kMatrixContainerTypeInfo = {
 
 export const kMatrixContainerTypes = keysOf(kMatrixContainerTypeInfo);
 
+export const kAccessModeInfo = {
+  read: { read: true, write: false },
+  write: { read: false, write: true },
+  read_write: { read: true, write: true },
+};
+
+export const kAddressSpaceInfo = {
+  storage: {
+    scope: 'module',
+    binding: true,
+    spell: 'must',
+    accessModes: ['read', 'read_write'],
+    spellAccessMode: 'may',
+  },
+  uniform: {
+    scope: 'module',
+    binding: true,
+    spell: 'must',
+    accessModes: ['read'],
+    spellAccessMode: 'never',
+  },
+  private: {
+    scope: 'module',
+    binding: false,
+    spell: 'must',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  workgroup: {
+    scope: 'module',
+    binding: false,
+    spell: 'must',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  function: {
+    scope: 'function',
+    binding: false,
+    spell: 'may',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  handle: {
+    scope: 'module',
+    binding: true,
+    spell: 'never',
+    accessModes: [],
+    spellAccessMode: 'never',
+  },
+};
+
 
 export const TexelFormats = [
   { format: 'rgba8unorm', _shaderType: 'f32' },
@@ -70,7 +121,7 @@ export const TexelFormats = [
 
 
 
-export function* generateTypes({ storageClass, baseType, containerType, isAtomic = false }) {
+export function* generateTypes({ addressSpace, baseType, containerType, isAtomic = false }) {
   const scalarInfo = kScalarTypeInfo[baseType];
   if (isAtomic) {
     assert(scalarInfo.supportsAtomics, 'type does not support atomics');
@@ -78,7 +129,7 @@ export function* generateTypes({ storageClass, baseType, containerType, isAtomic
   const scalarType = isAtomic ? `atomic<${baseType}>` : baseType;
 
   
-  if (storageClass === 'storage' || storageClass === 'uniform') {
+  if (addressSpace === 'storage' || addressSpace === 'uniform') {
     assert(isHostSharable(baseType), 'type ' + baseType.toString() + ' is not host sharable');
   }
 
@@ -128,7 +179,7 @@ export function* generateTypes({ storageClass, baseType, containerType, isAtomic
         ? {
             alignment: scalarInfo.layout.alignment,
             size:
-              storageClass === 'uniform'
+              addressSpace === 'uniform'
                 ? 
                   kArrayLength *
                   arrayStride({
@@ -141,7 +192,7 @@ export function* generateTypes({ storageClass, baseType, containerType, isAtomic
     };
 
     
-    if (storageClass === 'uniform') {
+    if (addressSpace === 'uniform') {
       yield {
         type: `array<vec4<${scalarType}>,${kArrayLength}>`,
         _kTypeInfo: arrayTypeInfo,
@@ -150,7 +201,7 @@ export function* generateTypes({ storageClass, baseType, containerType, isAtomic
       yield { type: `array<${scalarType},${kArrayLength}>`, _kTypeInfo: arrayTypeInfo };
     }
     
-    if (storageClass === 'storage') {
+    if (addressSpace === 'storage') {
       yield { type: `array<${scalarType}>`, _kTypeInfo: arrayTypeInfo };
     }
   }
@@ -170,8 +221,8 @@ export function* generateTypes({ storageClass, baseType, containerType, isAtomic
 
 export function supportsAtomics(p) {
   return (
-    ((p.storageClass === 'storage' && p.storageMode === 'read_write') ||
-      p.storageClass === 'workgroup') &&
+    ((p.addressSpace === 'storage' && p.storageMode === 'read_write') ||
+      p.addressSpace === 'workgroup') &&
     (p.containerType === 'scalar' || p.containerType === 'array')
   );
 }
@@ -185,7 +236,7 @@ export function* supportedScalarTypes(p) {
     if (p.isAtomic && !info.supportsAtomics) continue;
 
     
-    const isHostShared = p.storageClass === 'storage' || p.storageClass === 'uniform';
+    const isHostShared = p.addressSpace === 'storage' || p.addressSpace === 'uniform';
     if (isHostShared && info.layout === undefined) continue;
 
     yield scalarType;

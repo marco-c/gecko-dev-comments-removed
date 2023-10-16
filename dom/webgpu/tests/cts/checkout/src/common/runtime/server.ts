@@ -100,7 +100,7 @@ for (let i = 0; i < sys.args.length; ++i) {
     } else if (a === '--verbose') {
       verbose = true;
     } else {
-      console.log(`unrecognised flag: ${a}`);
+      console.log(`unrecognized flag: ${a}`);
     }
   }
 }
@@ -140,6 +140,7 @@ if (dataPath !== undefined) {
 if (verbose) {
   dataCache.setDebugLogger(console.log);
 }
+
 
 (async () => {
   Logger.globalDebugMode = verbose;

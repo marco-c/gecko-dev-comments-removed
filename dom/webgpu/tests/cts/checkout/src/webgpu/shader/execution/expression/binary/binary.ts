@@ -1,9 +1,21 @@
-import { ExpressionBuilder } from '../expression.js';
+import {
+  ShaderBuilder,
+  basicExpressionBuilder,
+  compoundAssignmentBuilder,
+  abstractFloatShaderBuilder,
+} from '../expression.js';
 
 
-export function binary(op: string): ExpressionBuilder {
-  return values => {
-    const values_str = values.map(v => `(${v})`);
-    return `(${values_str.join(op)})`;
-  };
+export function binary(op: string): ShaderBuilder {
+  return basicExpressionBuilder(values => `(${values.map(v => `(${v})`).join(op)})`);
+}
+
+
+export function compoundBinary(op: string): ShaderBuilder {
+  return compoundAssignmentBuilder(op);
+}
+
+
+export function abstractBinary(op: string): ShaderBuilder {
+  return abstractFloatShaderBuilder(values => `(${values.map(v => `(${v})`).join(op)})`);
 }

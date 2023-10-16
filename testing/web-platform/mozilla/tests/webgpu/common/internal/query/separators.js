@@ -1,6 +1,6 @@
 
 
- export const kBigSeparator = ':';
+  export const kBigSeparator = ':';
 
 export const kPathSeparator = ',';
 

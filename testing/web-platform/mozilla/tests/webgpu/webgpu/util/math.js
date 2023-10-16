@@ -1,13 +1,16 @@
 
 
  import { assert } from '../../common/util/util.js';
-import { Float16Array } from '../../external/petamoriken/float16/float16.js';
+import {
+  Float16Array,
+  getFloat16,
+  setFloat16,
+} from '../../external/petamoriken/float16/float16.js';
+
 import { kBit, kValue } from './constants.js';
 import {
-  f16,
-  f16Bits,
   f32,
-  f32Bits,
+  f16,
   floatBitsToNumber,
   i32,
   kFloat16Format,
@@ -46,30 +49,18 @@ export function clamp(n, { min, max }) {
 }
 
 
+export function flushSubnormalNumberF64(val) {
+  return isSubnormalNumberF64(val) ? 0 : val;
+}
+
+
+export function isSubnormalNumberF64(n) {
+  return n > kValue.f64.negative.max && n < kValue.f64.positive.min;
+}
+
+
 export function flushSubnormalNumberF32(val) {
   return isSubnormalNumberF32(val) ? 0 : val;
-}
-
-
-export function flushSubnormalScalarF32(val) {
-  return isSubnormalScalarF32(val) ? f32(0) : val;
-}
-
-
-
-
-
-export function isSubnormalScalarF32(val) {
-  if (val.type.kind !== 'f32') {
-    return false;
-  }
-
-  if (val === f32(0)) {
-    return false;
-  }
-
-  const u32_val = new Uint32Array(new Float32Array([val.value.valueOf()]).buffer)[0];
-  return (u32_val & 0x7f800000) === 0;
 }
 
 
@@ -85,28 +76,6 @@ export function isFiniteF32(n) {
 
 export function flushSubnormalNumberF16(val) {
   return isSubnormalNumberF16(val) ? 0 : val;
-}
-
-
-export function flushSubnormalScalarF16(val) {
-  return isSubnormalScalarF16(val) ? f16(0) : val;
-}
-
-
-
-
-
-export function isSubnormalScalarF16(val) {
-  if (val.type.kind !== 'f16') {
-    return false;
-  }
-
-  if (val === f16(0)) {
-    return false;
-  }
-
-  const u16_val = new Uint16Array(new Float16Array([val.value.valueOf()]).buffer)[0];
-  return (u16_val & 0x7f800000) === 0;
 }
 
 
@@ -128,6 +97,9 @@ export function isFiniteF16(n) {
 
 
 
+const nextAfterF64Data = new ArrayBuffer(8);
+const nextAfterF64Int = new BigUint64Array(nextAfterF64Data);
+const nextAfterF64Float = new Float64Array(nextAfterF64Data);
 
 
 
@@ -135,74 +107,141 @@ export function isFiniteF16(n) {
 
 
 
-export function nextAfterF32(val, dir = true, mode) {
+
+
+
+
+
+
+
+export function nextAfterF64(val, dir, mode) {
   if (Number.isNaN(val)) {
-    return f32Bits(kBit.f32.nan.positive.s);
+    return val;
   }
 
   if (val === Number.POSITIVE_INFINITY) {
-    return f32Bits(kBit.f32.infinity.positive);
+    return kValue.f64.infinity.positive;
   }
 
   if (val === Number.NEGATIVE_INFINITY) {
-    return f32Bits(kBit.f32.infinity.negative);
+    return kValue.f64.infinity.negative;
+  }
+
+  assert(
+    val <= kValue.f64.positive.max && val >= kValue.f64.negative.min,
+    `${val} is not in the range of f64`
+  );
+
+  val = mode === 'flush' ? flushSubnormalNumberF64(val) : val;
+
+  
+  if (val === 0) {
+    if (dir === 'positive') {
+      return mode === 'flush' ? kValue.f64.positive.min : kValue.f64.subnormal.positive.min;
+    } else {
+      return mode === 'flush' ? kValue.f64.negative.max : kValue.f64.subnormal.negative.max;
+    }
+  }
+
+  nextAfterF64Float[0] = val;
+  const is_positive = (nextAfterF64Int[0] & 0x8000_0000_0000_0000n) === 0n;
+  if (is_positive === (dir === 'positive')) {
+    nextAfterF64Int[0] += 1n;
+  } else {
+    nextAfterF64Int[0] -= 1n;
+  }
+
+  
+  if ((nextAfterF64Int[0] & 0x7ff0_0000_0000_0000n) === 0x7ff0_0000_0000_0000n) {
+    if (dir === 'positive') {
+      return kValue.f64.infinity.positive;
+    } else {
+      return kValue.f64.infinity.negative;
+    }
+  }
+
+  return mode === 'flush' ? flushSubnormalNumberF64(nextAfterF64Float[0]) : nextAfterF64Float[0];
+}
+
+
+
+
+
+
+
+
+const nextAfterF32Data = new ArrayBuffer(4);
+const nextAfterF32Int = new Uint32Array(nextAfterF32Data);
+const nextAfterF32Float = new Float32Array(nextAfterF32Data);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function nextAfterF32(val, dir, mode) {
+  if (Number.isNaN(val)) {
+    return val;
+  }
+
+  if (val === Number.POSITIVE_INFINITY) {
+    return kValue.f32.infinity.positive;
+  }
+
+  if (val === Number.NEGATIVE_INFINITY) {
+    return kValue.f32.infinity.negative;
   }
 
   assert(
     val <= kValue.f32.positive.max && val >= kValue.f32.negative.min,
-    `${val} is not in the range of float32`
+    `${val} is not in the range of f32`
   );
 
   val = mode === 'flush' ? flushSubnormalNumberF32(val) : val;
 
   
   if (val === 0) {
-    if (dir) {
-      return mode === 'flush'
-        ? f32Bits(kBit.f32.positive.min)
-        : f32Bits(kBit.f32.subnormal.positive.min);
+    if (dir === 'positive') {
+      return mode === 'flush' ? kValue.f32.positive.min : kValue.f32.subnormal.positive.min;
     } else {
-      return mode === 'flush'
-        ? f32Bits(kBit.f32.negative.max)
-        : f32Bits(kBit.f32.subnormal.negative.max);
+      return mode === 'flush' ? kValue.f32.negative.max : kValue.f32.subnormal.negative.max;
     }
   }
 
-  const converted = new Float32Array([val])[0];
-  let u32_result;
-  if (val === converted) {
+  nextAfterF32Float[0] = val; 
+  if (
+    (dir === 'positive' && nextAfterF32Float[0] <= val) ||
+    (dir === 'negative' && nextAfterF32Float[0] >= val)
+  ) {
     
-    u32_result = new Uint32Array(new Float32Array([val]).buffer)[0];
-    const is_positive = (u32_result & 0x80000000) === 0;
-    if (dir === is_positive) {
-      u32_result += 1;
-    } else {
-      u32_result -= 1;
-    }
-  } else {
     
-    if (dir === converted > val) {
-      
-      u32_result = new Uint32Array(new Float32Array([converted]).buffer)[0];
+    
+    const is_positive = (nextAfterF32Int[0] & 0x80000000) === 0;
+    if (is_positive === (dir === 'positive')) {
+      nextAfterF32Int[0] += 1;
     } else {
-      
-      
-      const next = nextAfterF32(converted, dir, mode).value.valueOf();
-      u32_result = new Uint32Array(new Float32Array([next]).buffer)[0];
+      nextAfterF32Int[0] -= 1;
     }
   }
 
   
-  if ((u32_result & 0x7f800000) === 0x7f800000) {
-    if (dir) {
-      return f32Bits(kBit.f32.infinity.positive);
+  if ((nextAfterF32Int[0] & 0x7f800000) === 0x7f800000) {
+    if (dir === 'positive') {
+      return kValue.f32.infinity.positive;
     } else {
-      return f32Bits(kBit.f32.infinity.negative);
+      return kValue.f32.infinity.negative;
     }
   }
 
-  const f32_result = f32Bits(u32_result);
-  return mode === 'flush' ? flushSubnormalScalarF32(f32_result) : f32_result;
+  return mode === 'flush' ? flushSubnormalNumberF32(nextAfterF32Float[0]) : nextAfterF32Float[0];
 }
 
 
@@ -212,6 +251,9 @@ export function nextAfterF32(val, dir = true, mode) {
 
 
 
+const nextAfterF16Data = new ArrayBuffer(2);
+const nextAfterF16Hex = new Uint16Array(nextAfterF16Data);
+const nextAfterF16Float = new Float16Array(nextAfterF16Data);
 
 
 
@@ -219,74 +261,68 @@ export function nextAfterF32(val, dir = true, mode) {
 
 
 
-export function nextAfterF16(val, dir = true, mode) {
+
+
+
+
+
+
+
+export function nextAfterF16(val, dir, mode) {
   if (Number.isNaN(val)) {
-    return f16Bits(kBit.f16.nan.positive.s);
+    return val;
   }
 
   if (val === Number.POSITIVE_INFINITY) {
-    return f16Bits(kBit.f16.infinity.positive);
+    return kValue.f16.infinity.positive;
   }
 
   if (val === Number.NEGATIVE_INFINITY) {
-    return f16Bits(kBit.f16.infinity.negative);
+    return kValue.f16.infinity.negative;
   }
 
   assert(
     val <= kValue.f16.positive.max && val >= kValue.f16.negative.min,
-    `${val} is not in the range of float16`
+    `${val} is not in the range of f16`
   );
 
   val = mode === 'flush' ? flushSubnormalNumberF16(val) : val;
 
   
   if (val === 0) {
-    if (dir) {
-      return mode === 'flush'
-        ? f16Bits(kBit.f16.positive.min)
-        : f16Bits(kBit.f16.subnormal.positive.min);
+    if (dir === 'positive') {
+      return mode === 'flush' ? kValue.f16.positive.min : kValue.f16.subnormal.positive.min;
     } else {
-      return mode === 'flush'
-        ? f16Bits(kBit.f16.negative.max)
-        : f16Bits(kBit.f16.subnormal.negative.max);
+      return mode === 'flush' ? kValue.f16.negative.max : kValue.f16.subnormal.negative.max;
     }
   }
 
-  const converted = new Float16Array([val])[0];
-  let u16_result;
-  if (val === converted) {
+  nextAfterF16Float[0] = val; 
+  if (
+    (dir === 'positive' && nextAfterF16Float[0] <= val) ||
+    (dir === 'negative' && nextAfterF16Float[0] >= val)
+  ) {
     
-    u16_result = new Uint16Array(new Float16Array([val]).buffer)[0];
-    const is_positive = (u16_result & 0x8000) === 0;
-    if (dir === is_positive) {
-      u16_result += 1;
-    } else {
-      u16_result -= 1;
-    }
-  } else {
     
-    if (dir === converted > val) {
-      
-      u16_result = new Uint16Array(new Float16Array([converted]).buffer)[0];
+    
+    const is_positive = (nextAfterF16Hex[0] & 0x8000) === 0;
+    if (is_positive === (dir === 'positive')) {
+      nextAfterF16Hex[0] += 1;
     } else {
-      
-      
-      const next = nextAfterF16(converted, dir, mode).value.valueOf();
-      u16_result = new Uint16Array(new Float16Array([next]).buffer)[0];
+      nextAfterF16Hex[0] -= 1;
     }
   }
 
   
-  if ((u16_result & 0x7f800000) === 0x7f800000) {
-    if (dir) {
-      return f16Bits(kBit.f16.infinity.positive);
+  if ((nextAfterF16Hex[0] & 0x7c00) === 0x7c00) {
+    if (dir === 'positive') {
+      return kValue.f16.infinity.positive;
     } else {
-      return f16Bits(kBit.f16.infinity.negative);
+      return kValue.f16.infinity.negative;
     }
   }
 
-  const f16_result = f16Bits(u16_result);
-  return mode === 'flush' ? flushSubnormalScalarF16(f16_result) : f16_result;
+  return mode === 'flush' ? flushSubnormalNumberF16(nextAfterF16Float[0]) : nextAfterF16Float[0];
 }
 
 
@@ -300,7 +336,48 @@ export function nextAfterF16(val, dir = true, mode) {
 
 
 
-export function oneULP(target, mode = 'flush') {
+export function oneULPF64(target, mode = 'flush') {
+  if (Number.isNaN(target)) {
+    return Number.NaN;
+  }
+
+  target = mode === 'flush' ? flushSubnormalNumberF64(target) : target;
+
+  
+  
+  
+  if (
+    target === Number.POSITIVE_INFINITY ||
+    target >= kValue.f64.positive.max ||
+    target === Number.NEGATIVE_INFINITY ||
+    target <= kValue.f64.negative.min
+  ) {
+    return kValue.f64.max_ulp;
+  }
+
+  
+  
+  
+  
+  const before = nextAfterF64(target, 'negative', mode);
+  const after = nextAfterF64(target, 'positive', mode);
+  
+  
+  return Math.min(target - before, after - target);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+export function oneULPF32(target, mode = 'flush') {
   if (Number.isNaN(target)) {
     return Number.NaN;
   }
@@ -309,19 +386,69 @@ export function oneULP(target, mode = 'flush') {
 
   
   
-  if (target === Number.POSITIVE_INFINITY || target >= kValue.f32.positive.max) {
-    return kValue.f32.positive.max - kValue.f32.positive.nearest_max;
-  } else if (target === Number.NEGATIVE_INFINITY || target <= kValue.f32.negative.min) {
-    return kValue.f32.negative.nearest_min - kValue.f32.negative.min;
+  
+  if (
+    target === Number.POSITIVE_INFINITY ||
+    target >= kValue.f32.positive.max ||
+    target === Number.NEGATIVE_INFINITY ||
+    target <= kValue.f32.negative.min
+  ) {
+    return kValue.f32.max_ulp;
   }
 
   
   
   
   
-  const before = nextAfterF32(target, false, mode).value.valueOf();
-  const after = nextAfterF32(target, true, mode).value.valueOf();
-  const converted = new Float32Array([target])[0];
+  const before = nextAfterF32(target, 'negative', mode);
+  const after = nextAfterF32(target, 'positive', mode);
+  const converted = quantizeToF32(target);
+  if (converted === target) {
+    
+    return Math.min(target - before, after - target);
+  } else {
+    
+    return after - before;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+export function oneULPF16(target, mode = 'flush') {
+  if (Number.isNaN(target)) {
+    return Number.NaN;
+  }
+
+  target = mode === 'flush' ? flushSubnormalNumberF16(target) : target;
+
+  
+  
+  
+  if (
+    target === Number.POSITIVE_INFINITY ||
+    target >= kValue.f16.positive.max ||
+    target === Number.NEGATIVE_INFINITY ||
+    target <= kValue.f16.negative.min
+  ) {
+    return kValue.f16.max_ulp;
+  }
+
+  
+  
+  
+  
+  const before = nextAfterF16(target, 'negative', mode);
+  const after = nextAfterF16(target, 'positive', mode);
+  const converted = quantizeToF16(target);
   if (converted === target) {
     
     return Math.min(target - before, after - target);
@@ -343,41 +470,19 @@ export function oneULP(target, mode = 'flush') {
 
 
 
-
-
-
-
-
-
-
-export function correctlyRoundedF32(n) {
+export function correctlyRoundedF64(n) {
   assert(!Number.isNaN(n), `correctlyRoundedF32 not defined for NaN`);
   
-  if (n === Number.POSITIVE_INFINITY || n > kValue.f32.positive.max) {
-    return [kValue.f32.positive.max, Number.POSITIVE_INFINITY];
+  if (n === Number.POSITIVE_INFINITY) {
+    return [kValue.f64.positive.max, Number.POSITIVE_INFINITY];
   }
 
   
-  if (n === Number.NEGATIVE_INFINITY || n < kValue.f32.negative.min) {
-    return [Number.NEGATIVE_INFINITY, kValue.f32.negative.min];
+  if (n === Number.NEGATIVE_INFINITY) {
+    return [Number.NEGATIVE_INFINITY, kValue.f64.negative.min];
   }
 
-  const n_32 = new Float32Array([n])[0];
-  const converted = n_32;
-  if (n === converted) {
-    
-    return [n];
-  }
-
-  if (converted > n) {
-    
-    const other = nextAfterF32(n_32, false, 'no-flush').value;
-    return [other, converted];
-  } else {
-    
-    const other = nextAfterF32(n_32, true, 'no-flush').value;
-    return [converted, other];
-  }
+  return [n];
 }
 
 
@@ -399,34 +504,255 @@ export function correctlyRoundedF32(n) {
 
 
 
-export function correctlyRoundedF16(n) {
-  assert(!Number.isNaN(n), `correctlyRoundedF16 not defined for NaN`);
+
+
+
+
+
+
+export function correctlyRoundedF32(n) {
+  if (Number.isNaN(n)) {
+    return [n];
+  }
+
   
-  if (n === Number.POSITIVE_INFINITY || n > kValue.f16.positive.max) {
+  if (n >= 2 ** (kValue.f32.emax + 1)) {
+    return [Number.POSITIVE_INFINITY];
+  }
+
+  
+  if (n > kValue.f32.positive.max) {
+    return [kValue.f32.positive.max, Number.POSITIVE_INFINITY];
+  }
+
+  
+  if (n <= kValue.f32.positive.max && n >= kValue.f32.negative.min) {
+    const n_32 = new Float32Array([n])[0];
+    const converted = n_32;
+    if (n === converted) {
+      
+      return [n];
+    }
+
+    if (converted > n) {
+      
+      const other = nextAfterF32(n_32, 'negative', 'no-flush');
+      return [other, converted];
+    } else {
+      
+      const other = nextAfterF32(n_32, 'positive', 'no-flush');
+      return [converted, other];
+    }
+  }
+
+  
+  if (n > -(2 ** (kValue.f32.emax + 1))) {
+    return [Number.NEGATIVE_INFINITY, kValue.f32.negative.min];
+  }
+
+  
+  return [Number.NEGATIVE_INFINITY];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function correctlyRoundedF16(n) {
+  if (Number.isNaN(n)) {
+    return [n];
+  }
+
+  
+  if (n >= 2 ** (kValue.f16.emax + 1)) {
+    return [Number.POSITIVE_INFINITY];
+  }
+
+  
+  if (n > kValue.f16.positive.max) {
     return [kValue.f16.positive.max, Number.POSITIVE_INFINITY];
   }
 
   
-  if (n === Number.NEGATIVE_INFINITY || n < kValue.f16.negative.min) {
+  if (n <= kValue.f16.positive.max && n >= kValue.f16.negative.min) {
+    const n_16 = new Float16Array([n])[0];
+    const converted = n_16;
+    if (n === converted) {
+      
+      return [n];
+    }
+
+    if (converted > n) {
+      
+      const other = nextAfterF16(n_16, 'negative', 'no-flush');
+      return [other, converted];
+    } else {
+      
+      const other = nextAfterF16(n_16, 'positive', 'no-flush');
+      return [converted, other];
+    }
+  }
+
+  
+  if (n > -(2 ** (kValue.f16.emax + 1))) {
     return [Number.NEGATIVE_INFINITY, kValue.f16.negative.min];
   }
 
-  const n_16 = new Float16Array([n])[0];
-  const converted = n_16;
-  if (n === converted) {
+  
+  return [Number.NEGATIVE_INFINITY];
+}
+
+
+
+
+
+
+
+
+
+
+
+
+export function frexp(val, trait) {
+  const buffer = new ArrayBuffer(8);
+  const dataView = new DataView(buffer);
+
+  
+  
+  
+  let expBitCount, fractBitCount, expBias;
+  
+  
+  
+  
+  
+  let expMaskForHigh16Bits, targetExpBitsForHigh16Bits;
+  
+  let setFloatToBuffer;
+  
+  let getFloatFromBuffer;
+
+  let isFinite;
+  let isSubnormal;
+
+  if (trait === 'f32') {
     
-    return [n];
+    expBitCount = 8;
+    fractBitCount = 23;
+    expBias = 127;
+    
+    expMaskForHigh16Bits = 0x7f80;
+    
+    targetExpBitsForHigh16Bits = 0x3f00;
+    isFinite = isFiniteF32;
+    isSubnormal = isSubnormalNumberF32;
+    
+    setFloatToBuffer = v => dataView.setFloat32(0, v, false);
+    getFloatFromBuffer = () => dataView.getFloat32(0, false);
+  } else if (trait === 'f16') {
+    
+    expBitCount = 5;
+    fractBitCount = 10;
+    expBias = 15;
+    
+    expMaskForHigh16Bits = 0x7c00;
+    
+    targetExpBitsForHigh16Bits = 0x3800;
+    isFinite = isFiniteF16;
+    isSubnormal = isSubnormalNumberF16;
+    
+    setFloatToBuffer = v => setFloat16(dataView, 0, v, false);
+    getFloatFromBuffer = () => getFloat16(dataView, 0, false);
+  } else {
+    assert(trait === 'f64');
+    
+    expBitCount = 11;
+    fractBitCount = 52;
+    expBias = 1023;
+    
+    expMaskForHigh16Bits = 0x7ff0;
+    
+    targetExpBitsForHigh16Bits = 0x3fe0;
+    isFinite = Number.isFinite;
+    isSubnormal = isSubnormalNumberF64;
+    
+    setFloatToBuffer = v => dataView.setFloat64(0, v, false);
+    getFloatFromBuffer = () => dataView.getFloat64(0, false);
+  }
+  
+  const extractUnbiasedExpFromNormalFloatInBuffer = () => {
+    
+    assert(isFinite(getFloatFromBuffer()) && !isSubnormal(getFloatFromBuffer()));
+    
+    const high16BitsAsUint16 = dataView.getUint16(0, false);
+    
+    return ((high16BitsAsUint16 & expMaskForHigh16Bits) >> (16 - 1 - expBitCount)) - expBias;
+  };
+  
+  
+  const modifyExpOfNormalFloatInBuffer = () => {
+    
+    assert(isFinite(getFloatFromBuffer()) && !isSubnormal(getFloatFromBuffer()));
+    
+    const high16BitsAsUint16 = dataView.getUint16(0, false);
+    
+    const modifiedHigh16Bits =
+      (high16BitsAsUint16 & ~expMaskForHigh16Bits) | targetExpBitsForHigh16Bits;
+    
+    dataView.setUint16(0, modifiedHigh16Bits, false);
+  };
+
+  
+  if (val === 0) {
+    return { fract: val, exp: 0 };
+  }
+  
+  if (!isFinite(val)) {
+    return { fract: val, exp: 0 };
   }
 
-  if (converted > n) {
-    
-    const other = nextAfterF16(n_16, false, 'no-flush').value;
-    return [other, converted];
-  } else {
-    
-    const other = nextAfterF16(n_16, true, 'no-flush').value;
-    return [converted, other];
+  setFloatToBuffer(val);
+  
+
+  let exp = 0;
+  
+  
+  if (isSubnormal(getFloatFromBuffer())) {
+    setFloatToBuffer(getFloatFromBuffer() * 2 ** fractBitCount);
+    exp = -fractBitCount;
   }
+  
+  
+  
+  
+  
+  
+  exp += extractUnbiasedExpFromNormalFloatInBuffer() + 1;
+  
+  modifyExpOfNormalFloatInBuffer();
+
+  return { fract: getFloatFromBuffer(), exp };
 }
 
 
@@ -455,9 +781,54 @@ export function lerp(a, b, t) {
 }
 
 
+
+
+
+
+
+export function lerpBigInt(a, b, idx, steps) {
+  assert(Math.trunc(idx) === idx);
+  assert(Math.trunc(steps) === steps);
+
+  
+  assert(idx >= 0);
+  assert(steps > 0);
+  assert(idx < steps);
+
+  if (steps === 1) {
+    return a;
+  }
+  if (idx === 0) {
+    return a;
+  }
+  if (idx === steps - 1) {
+    return b;
+  }
+
+  const min = (x, y) => {
+    return x < y ? x : y;
+  };
+  const max = (x, y) => {
+    return x > y ? x : y;
+  };
+
+  
+  
+  
+  const big_idx = BigInt(idx);
+  const big_steps = BigInt(steps);
+  if ((a <= 0n && b >= 0n) || (a >= 0n && b <= 0n)) {
+    return (b * big_idx) / (big_steps - 1n) + (a - (a * big_idx) / (big_steps - 1n));
+  }
+
+  const x = a + (b * big_idx) / (big_steps - 1n) - (a * big_idx) / (big_steps - 1n);
+  return !(b > a) ? max(b, x) : min(b, x);
+}
+
+
 export function linearRange(a, b, num_steps) {
   if (num_steps <= 0) {
-    return Array();
+    return [];
   }
 
   
@@ -475,11 +846,31 @@ export function linearRange(a, b, num_steps) {
 
 
 
+export function linearRangeBigInt(a, b, num_steps) {
+  if (num_steps <= 0) {
+    return [];
+  }
+
+  
+  if (num_steps === 1) {
+    return [a];
+  }
+
+  return Array.from(Array(num_steps).keys()).map(i => lerpBigInt(a, b, i, num_steps));
+}
+
+
+
+
+
+
+
+
 
 export function biasedRange(a, b, num_steps) {
   const c = 2;
   if (num_steps <= 0) {
-    return Array();
+    return [];
   }
 
   
@@ -530,7 +921,7 @@ export function fullF32Range(counts = { pos_sub: 10, pos_norm: 50 }) {
 
     ...linearRange(kBit.f32.positive.min, kBit.f32.positive.max, counts.pos_norm),
   ].map(Math.trunc);
-  return bit_fields.map(hexToF32);
+  return bit_fields.map(reinterpretU32AsF32);
 }
 
 
@@ -589,7 +980,183 @@ export function fullF16Range(counts = { pos_sub: 10, pos_norm: 50 }) {
 
     ...linearRange(kBit.f16.positive.min, kBit.f16.positive.max, counts.pos_norm),
   ].map(Math.trunc);
-  return bit_fields.map(hexToF16);
+  return bit_fields.map(reinterpretU16AsF16);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function fullF64Range(counts = { pos_sub: 10, pos_norm: 50 }) {
+  counts.neg_norm = counts.neg_norm === undefined ? counts.pos_norm : counts.neg_norm;
+  counts.neg_sub = counts.neg_sub === undefined ? counts.pos_sub : counts.neg_sub;
+
+  
+  
+  
+  const bit_fields = [
+    ...linearRangeBigInt(kBit.f64.negative.min, kBit.f64.negative.max, counts.neg_norm),
+    ...linearRangeBigInt(
+      kBit.f64.subnormal.negative.min,
+      kBit.f64.subnormal.negative.max,
+      counts.neg_sub
+    ),
+
+    0n,
+    ...linearRangeBigInt(
+      kBit.f64.subnormal.positive.min,
+      kBit.f64.subnormal.positive.max,
+      counts.pos_sub
+    ),
+
+    ...linearRangeBigInt(kBit.f64.positive.min, kBit.f64.positive.max, counts.pos_norm),
+  ];
+
+  return bit_fields.map(reinterpretU64AsF64);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function filteredF64Range(
+  begin,
+  end,
+  counts = {
+    pos_sub: 10,
+    pos_norm: 50,
+  }
+) {
+  assert(
+    begin <= kValue.f64.negative.max,
+    `Beginning of range ${begin} must be negative f64 normal`
+  );
+
+  assert(end >= kValue.f64.positive.min, `Ending of range ${end} must be positive f64 normal`);
+
+  counts.neg_norm = counts.neg_norm === undefined ? counts.pos_norm : counts.neg_norm;
+  counts.neg_sub = counts.neg_sub === undefined ? counts.pos_sub : counts.neg_sub;
+
+  const u64_begin = reinterpretF64AsU64(begin);
+  const u64_end = reinterpretF64AsU64(end);
+  
+  
+  
+  const bit_fields = [
+    ...linearRangeBigInt(u64_begin, kBit.f64.negative.max, counts.neg_norm),
+    ...linearRangeBigInt(
+      kBit.f64.subnormal.negative.min,
+      kBit.f64.subnormal.negative.max,
+      counts.neg_sub
+    ),
+
+    0n,
+    ...linearRangeBigInt(
+      kBit.f64.subnormal.positive.min,
+      kBit.f64.subnormal.positive.max,
+      counts.pos_sub
+    ),
+
+    ...linearRangeBigInt(kBit.f64.positive.min, u64_end, counts.pos_norm),
+  ];
+
+  return bit_fields.map(reinterpretU64AsF64);
+}
+
+
+const kInterestingI32Values = [
+  kValue.i32.negative.max,
+  Math.trunc(kValue.i32.negative.max / 2),
+  -256,
+  -10,
+  -1,
+  0,
+  1,
+  10,
+  256,
+  Math.trunc(kValue.i32.positive.max / 2),
+  kValue.i32.positive.max,
+];
+
+
+
+
+
+
+
+export function sparseI32Range() {
+  return kInterestingI32Values;
+}
+
+const kVectorI32Values = {
+  2: kInterestingI32Values.flatMap(f => [
+    [f, 1],
+    [1, f],
+    [f, -1],
+    [-1, f],
+  ]),
+
+  3: kInterestingI32Values.flatMap(f => [
+    [f, 1, 2],
+    [1, f, 2],
+    [1, 2, f],
+    [f, -1, -2],
+    [-1, f, -2],
+    [-1, -2, f],
+  ]),
+
+  4: kInterestingI32Values.flatMap(f => [
+    [f, 1, 2, 3],
+    [1, f, 2, 3],
+    [1, 2, f, 3],
+    [1, 2, 3, f],
+    [f, -1, -2, -3],
+    [-1, f, -2, -3],
+    [-1, -2, f, -3],
+    [-1, -2, -3, f],
+  ]),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function vectorI32Range(dim) {
+  assert(dim === 2 || dim === 3 || dim === 4, 'vectorI32Range only accepts dimensions 2, 3, and 4');
+  return kVectorI32Values[dim];
 }
 
 
@@ -610,7 +1177,7 @@ export function fullI32Range(counts = { positive: 50 }) {
 }
 
 
-const kInterestingU32Values = [0, 1, kValue.u32.max / 2, kValue.u32.max];
+const kInterestingU32Values = [0, 1, 10, 256, Math.trunc(kValue.u32.max / 2), kValue.u32.max];
 
 
 
@@ -676,13 +1243,16 @@ const kInterestingF32Values = [
   kValue.f32.negative.min,
   -10.0,
   -1.0,
+  -0.125,
   kValue.f32.negative.max,
   kValue.f32.subnormal.negative.min,
   kValue.f32.subnormal.negative.max,
+  -0.0,
   0.0,
   kValue.f32.subnormal.positive.min,
   kValue.f32.subnormal.positive.max,
   kValue.f32.positive.min,
+  0.125,
   1.0,
   10.0,
   kValue.f32.positive.max,
@@ -705,14 +1275,14 @@ export function sparseF32Range() {
 }
 
 const kVectorF32Values = {
-  2: kInterestingF32Values.flatMap(f => [
+  2: sparseF32Range().flatMap(f => [
     [f, 1.0],
     [1.0, f],
     [f, -1.0],
     [-1.0, f],
   ]),
 
-  3: kInterestingF32Values.flatMap(f => [
+  3: sparseF32Range().flatMap(f => [
     [f, 1.0, 2.0],
     [1.0, f, 2.0],
     [1.0, 2.0, f],
@@ -721,7 +1291,7 @@ const kVectorF32Values = {
     [-1.0, -2.0, f],
   ]),
 
-  4: kInterestingF32Values.flatMap(f => [
+  4: sparseF32Range().flatMap(f => [
     [f, 1.0, 2.0, 3.0],
     [1.0, f, 2.0, 3.0],
     [1.0, 2.0, f, 3.0],
@@ -785,6 +1355,652 @@ export function sparseVectorF32Range(dim) {
   return kSparseVectorF32Values[dim];
 }
 
+const kSparseMatrixF32Values = {
+  2: {
+    2: kInterestingF32Values.map((f, idx) => [
+      [idx % 4 === 0 ? f : idx, idx % 4 === 1 ? f : -idx],
+      [idx % 4 === 2 ? f : -idx, idx % 4 === 3 ? f : idx],
+    ]),
+
+    3: kInterestingF32Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx, idx % 6 === 2 ? f : idx],
+      [idx % 6 === 3 ? f : -idx, idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    4: kInterestingF32Values.map((f, idx) => [
+      [
+        idx % 8 === 0 ? f : idx,
+        idx % 8 === 1 ? f : -idx,
+        idx % 8 === 2 ? f : idx,
+        idx % 8 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 8 === 4 ? f : -idx,
+        idx % 8 === 5 ? f : idx,
+        idx % 8 === 6 ? f : -idx,
+        idx % 8 === 7 ? f : idx,
+      ],
+    ]),
+  },
+  3: {
+    2: kInterestingF32Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx],
+      [idx % 6 === 2 ? f : -idx, idx % 6 === 3 ? f : idx],
+      [idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    3: kInterestingF32Values.map((f, idx) => [
+      [idx % 9 === 0 ? f : idx, idx % 9 === 1 ? f : -idx, idx % 9 === 2 ? f : idx],
+      [idx % 9 === 3 ? f : -idx, idx % 9 === 4 ? f : idx, idx % 9 === 5 ? f : -idx],
+      [idx % 9 === 6 ? f : idx, idx % 9 === 7 ? f : -idx, idx % 9 === 8 ? f : idx],
+    ]),
+
+    4: kInterestingF32Values.map((f, idx) => [
+      [
+        idx % 12 === 0 ? f : idx,
+        idx % 12 === 1 ? f : -idx,
+        idx % 12 === 2 ? f : idx,
+        idx % 12 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 12 === 4 ? f : -idx,
+        idx % 12 === 5 ? f : idx,
+        idx % 12 === 6 ? f : -idx,
+        idx % 12 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 12 === 8 ? f : idx,
+        idx % 12 === 9 ? f : -idx,
+        idx % 12 === 10 ? f : idx,
+        idx % 12 === 11 ? f : -idx,
+      ],
+    ]),
+  },
+  4: {
+    2: kInterestingF32Values.map((f, idx) => [
+      [idx % 8 === 0 ? f : idx, idx % 8 === 1 ? f : -idx],
+      [idx % 8 === 2 ? f : -idx, idx % 8 === 3 ? f : idx],
+      [idx % 8 === 4 ? f : idx, idx % 8 === 5 ? f : -idx],
+      [idx % 8 === 6 ? f : -idx, idx % 8 === 7 ? f : idx],
+    ]),
+
+    3: kInterestingF32Values.map((f, idx) => [
+      [idx % 12 === 0 ? f : idx, idx % 12 === 1 ? f : -idx, idx % 12 === 2 ? f : idx],
+      [idx % 12 === 3 ? f : -idx, idx % 12 === 4 ? f : idx, idx % 12 === 5 ? f : -idx],
+      [idx % 12 === 6 ? f : idx, idx % 12 === 7 ? f : -idx, idx % 12 === 8 ? f : idx],
+      [idx % 12 === 9 ? f : -idx, idx % 12 === 10 ? f : idx, idx % 12 === 11 ? f : -idx],
+    ]),
+
+    4: kInterestingF32Values.map((f, idx) => [
+      [
+        idx % 16 === 0 ? f : idx,
+        idx % 16 === 1 ? f : -idx,
+        idx % 16 === 2 ? f : idx,
+        idx % 16 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 4 ? f : -idx,
+        idx % 16 === 5 ? f : idx,
+        idx % 16 === 6 ? f : -idx,
+        idx % 16 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 16 === 8 ? f : idx,
+        idx % 16 === 9 ? f : -idx,
+        idx % 16 === 10 ? f : idx,
+        idx % 16 === 11 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 12 ? f : -idx,
+        idx % 16 === 13 ? f : idx,
+        idx % 16 === 14 ? f : -idx,
+        idx % 16 === 15 ? f : idx,
+      ],
+    ]),
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function sparseMatrixF32Range(c, r) {
+  assert(
+    c === 2 || c === 3 || c === 4,
+    'sparseMatrixF32Range only accepts column counts of 2, 3, and 4'
+  );
+
+  assert(
+    r === 2 || r === 3 || r === 4,
+    'sparseMatrixF32Range only accepts row counts of 2, 3, and 4'
+  );
+
+  return kSparseMatrixF32Values[c][r];
+}
+
+
+const kInterestingF16Values = [
+  kValue.f16.negative.min,
+  -10.0,
+  -1.0,
+  -0.125,
+  kValue.f16.negative.max,
+  kValue.f16.subnormal.negative.min,
+  kValue.f16.subnormal.negative.max,
+  -0.0,
+  0.0,
+  kValue.f16.subnormal.positive.min,
+  kValue.f16.subnormal.positive.max,
+  kValue.f16.positive.min,
+  0.125,
+  1.0,
+  10.0,
+  kValue.f16.positive.max,
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function sparseF16Range() {
+  return kInterestingF16Values;
+}
+
+const kVectorF16Values = {
+  2: sparseF16Range().flatMap(f => [
+    [f, 1.0],
+    [1.0, f],
+    [f, -1.0],
+    [-1.0, f],
+  ]),
+
+  3: sparseF16Range().flatMap(f => [
+    [f, 1.0, 2.0],
+    [1.0, f, 2.0],
+    [1.0, 2.0, f],
+    [f, -1.0, -2.0],
+    [-1.0, f, -2.0],
+    [-1.0, -2.0, f],
+  ]),
+
+  4: sparseF16Range().flatMap(f => [
+    [f, 1.0, 2.0, 3.0],
+    [1.0, f, 2.0, 3.0],
+    [1.0, 2.0, f, 3.0],
+    [1.0, 2.0, 3.0, f],
+    [f, -1.0, -2.0, -3.0],
+    [-1.0, f, -2.0, -3.0],
+    [-1.0, -2.0, f, -3.0],
+    [-1.0, -2.0, -3.0, f],
+  ]),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function vectorF16Range(dim) {
+  assert(dim === 2 || dim === 3 || dim === 4, 'vectorF16Range only accepts dimensions 2, 3, and 4');
+  return kVectorF16Values[dim];
+}
+
+const kSparseVectorF16Values = {
+  2: sparseF16Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
+  3: sparseF16Range().map((f, idx) => [
+    idx % 3 === 0 ? f : idx,
+    idx % 3 === 1 ? f : -idx,
+    idx % 3 === 2 ? f : idx,
+  ]),
+
+  4: sparseF16Range().map((f, idx) => [
+    idx % 4 === 0 ? f : idx,
+    idx % 4 === 1 ? f : -idx,
+    idx % 4 === 2 ? f : idx,
+    idx % 4 === 3 ? f : -idx,
+  ]),
+};
+
+
+
+
+
+
+
+
+
+
+export function sparseVectorF16Range(dim) {
+  assert(
+    dim === 2 || dim === 3 || dim === 4,
+    'sparseVectorF16Range only accepts dimensions 2, 3, and 4'
+  );
+
+  return kSparseVectorF16Values[dim];
+}
+
+const kSparseMatrixF16Values = {
+  2: {
+    2: kInterestingF16Values.map((f, idx) => [
+      [idx % 4 === 0 ? f : idx, idx % 4 === 1 ? f : -idx],
+      [idx % 4 === 2 ? f : -idx, idx % 4 === 3 ? f : idx],
+    ]),
+
+    3: kInterestingF16Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx, idx % 6 === 2 ? f : idx],
+      [idx % 6 === 3 ? f : -idx, idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    4: kInterestingF16Values.map((f, idx) => [
+      [
+        idx % 8 === 0 ? f : idx,
+        idx % 8 === 1 ? f : -idx,
+        idx % 8 === 2 ? f : idx,
+        idx % 8 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 8 === 4 ? f : -idx,
+        idx % 8 === 5 ? f : idx,
+        idx % 8 === 6 ? f : -idx,
+        idx % 8 === 7 ? f : idx,
+      ],
+    ]),
+  },
+  3: {
+    2: kInterestingF16Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx],
+      [idx % 6 === 2 ? f : -idx, idx % 6 === 3 ? f : idx],
+      [idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    3: kInterestingF16Values.map((f, idx) => [
+      [idx % 9 === 0 ? f : idx, idx % 9 === 1 ? f : -idx, idx % 9 === 2 ? f : idx],
+      [idx % 9 === 3 ? f : -idx, idx % 9 === 4 ? f : idx, idx % 9 === 5 ? f : -idx],
+      [idx % 9 === 6 ? f : idx, idx % 9 === 7 ? f : -idx, idx % 9 === 8 ? f : idx],
+    ]),
+
+    4: kInterestingF16Values.map((f, idx) => [
+      [
+        idx % 12 === 0 ? f : idx,
+        idx % 12 === 1 ? f : -idx,
+        idx % 12 === 2 ? f : idx,
+        idx % 12 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 12 === 4 ? f : -idx,
+        idx % 12 === 5 ? f : idx,
+        idx % 12 === 6 ? f : -idx,
+        idx % 12 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 12 === 8 ? f : idx,
+        idx % 12 === 9 ? f : -idx,
+        idx % 12 === 10 ? f : idx,
+        idx % 12 === 11 ? f : -idx,
+      ],
+    ]),
+  },
+  4: {
+    2: kInterestingF16Values.map((f, idx) => [
+      [idx % 8 === 0 ? f : idx, idx % 8 === 1 ? f : -idx],
+      [idx % 8 === 2 ? f : -idx, idx % 8 === 3 ? f : idx],
+      [idx % 8 === 4 ? f : idx, idx % 8 === 5 ? f : -idx],
+      [idx % 8 === 6 ? f : -idx, idx % 8 === 7 ? f : idx],
+    ]),
+
+    3: kInterestingF16Values.map((f, idx) => [
+      [idx % 12 === 0 ? f : idx, idx % 12 === 1 ? f : -idx, idx % 12 === 2 ? f : idx],
+      [idx % 12 === 3 ? f : -idx, idx % 12 === 4 ? f : idx, idx % 12 === 5 ? f : -idx],
+      [idx % 12 === 6 ? f : idx, idx % 12 === 7 ? f : -idx, idx % 12 === 8 ? f : idx],
+      [idx % 12 === 9 ? f : -idx, idx % 12 === 10 ? f : idx, idx % 12 === 11 ? f : -idx],
+    ]),
+
+    4: kInterestingF16Values.map((f, idx) => [
+      [
+        idx % 16 === 0 ? f : idx,
+        idx % 16 === 1 ? f : -idx,
+        idx % 16 === 2 ? f : idx,
+        idx % 16 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 4 ? f : -idx,
+        idx % 16 === 5 ? f : idx,
+        idx % 16 === 6 ? f : -idx,
+        idx % 16 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 16 === 8 ? f : idx,
+        idx % 16 === 9 ? f : -idx,
+        idx % 16 === 10 ? f : idx,
+        idx % 16 === 11 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 12 ? f : -idx,
+        idx % 16 === 13 ? f : idx,
+        idx % 16 === 14 ? f : -idx,
+        idx % 16 === 15 ? f : idx,
+      ],
+    ]),
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function sparseMatrixF16Range(c, r) {
+  assert(
+    c === 2 || c === 3 || c === 4,
+    'sparseMatrixF16Range only accepts column counts of 2, 3, and 4'
+  );
+
+  assert(
+    r === 2 || r === 3 || r === 4,
+    'sparseMatrixF16Range only accepts row counts of 2, 3, and 4'
+  );
+
+  return kSparseMatrixF16Values[c][r];
+}
+
+
+const kInterestingF64Values = [
+  kValue.f64.negative.min,
+  -10.0,
+  -1.0,
+  -0.125,
+  kValue.f64.negative.max,
+  kValue.f64.subnormal.negative.min,
+  kValue.f64.subnormal.negative.max,
+  -0.0,
+  0.0,
+  kValue.f64.subnormal.positive.min,
+  kValue.f64.subnormal.positive.max,
+  kValue.f64.positive.min,
+  0.125,
+  1.0,
+  10.0,
+  kValue.f64.positive.max,
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function sparseF64Range() {
+  return kInterestingF64Values;
+}
+
+const kVectorF64Values = {
+  2: sparseF64Range().flatMap(f => [
+    [f, 1.0],
+    [1.0, f],
+    [f, -1.0],
+    [-1.0, f],
+  ]),
+
+  3: sparseF64Range().flatMap(f => [
+    [f, 1.0, 2.0],
+    [1.0, f, 2.0],
+    [1.0, 2.0, f],
+    [f, -1.0, -2.0],
+    [-1.0, f, -2.0],
+    [-1.0, -2.0, f],
+  ]),
+
+  4: sparseF64Range().flatMap(f => [
+    [f, 1.0, 2.0, 3.0],
+    [1.0, f, 2.0, 3.0],
+    [1.0, 2.0, f, 3.0],
+    [1.0, 2.0, 3.0, f],
+    [f, -1.0, -2.0, -3.0],
+    [-1.0, f, -2.0, -3.0],
+    [-1.0, -2.0, f, -3.0],
+    [-1.0, -2.0, -3.0, f],
+  ]),
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function vectorF64Range(dim) {
+  assert(dim === 2 || dim === 3 || dim === 4, 'vectorF64Range only accepts dimensions 2, 3, and 4');
+  return kVectorF64Values[dim];
+}
+
+const kSparseVectorF64Values = {
+  2: sparseF64Range().map((f, idx) => [idx % 2 === 0 ? f : idx, idx % 2 === 1 ? f : -idx]),
+  3: sparseF64Range().map((f, idx) => [
+    idx % 3 === 0 ? f : idx,
+    idx % 3 === 1 ? f : -idx,
+    idx % 3 === 2 ? f : idx,
+  ]),
+
+  4: sparseF64Range().map((f, idx) => [
+    idx % 4 === 0 ? f : idx,
+    idx % 4 === 1 ? f : -idx,
+    idx % 4 === 2 ? f : idx,
+    idx % 4 === 3 ? f : -idx,
+  ]),
+};
+
+
+
+
+
+
+
+
+
+
+export function sparseVectorF64Range(dim) {
+  assert(
+    dim === 2 || dim === 3 || dim === 4,
+    'sparseVectorF64Range only accepts dimensions 2, 3, and 4'
+  );
+
+  return kSparseVectorF64Values[dim];
+}
+
+const kSparseMatrixF64Values = {
+  2: {
+    2: kInterestingF64Values.map((f, idx) => [
+      [idx % 4 === 0 ? f : idx, idx % 4 === 1 ? f : -idx],
+      [idx % 4 === 2 ? f : -idx, idx % 4 === 3 ? f : idx],
+    ]),
+
+    3: kInterestingF64Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx, idx % 6 === 2 ? f : idx],
+      [idx % 6 === 3 ? f : -idx, idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    4: kInterestingF64Values.map((f, idx) => [
+      [
+        idx % 8 === 0 ? f : idx,
+        idx % 8 === 1 ? f : -idx,
+        idx % 8 === 2 ? f : idx,
+        idx % 8 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 8 === 4 ? f : -idx,
+        idx % 8 === 5 ? f : idx,
+        idx % 8 === 6 ? f : -idx,
+        idx % 8 === 7 ? f : idx,
+      ],
+    ]),
+  },
+  3: {
+    2: kInterestingF64Values.map((f, idx) => [
+      [idx % 6 === 0 ? f : idx, idx % 6 === 1 ? f : -idx],
+      [idx % 6 === 2 ? f : -idx, idx % 6 === 3 ? f : idx],
+      [idx % 6 === 4 ? f : idx, idx % 6 === 5 ? f : -idx],
+    ]),
+
+    3: kInterestingF64Values.map((f, idx) => [
+      [idx % 9 === 0 ? f : idx, idx % 9 === 1 ? f : -idx, idx % 9 === 2 ? f : idx],
+      [idx % 9 === 3 ? f : -idx, idx % 9 === 4 ? f : idx, idx % 9 === 5 ? f : -idx],
+      [idx % 9 === 6 ? f : idx, idx % 9 === 7 ? f : -idx, idx % 9 === 8 ? f : idx],
+    ]),
+
+    4: kInterestingF64Values.map((f, idx) => [
+      [
+        idx % 12 === 0 ? f : idx,
+        idx % 12 === 1 ? f : -idx,
+        idx % 12 === 2 ? f : idx,
+        idx % 12 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 12 === 4 ? f : -idx,
+        idx % 12 === 5 ? f : idx,
+        idx % 12 === 6 ? f : -idx,
+        idx % 12 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 12 === 8 ? f : idx,
+        idx % 12 === 9 ? f : -idx,
+        idx % 12 === 10 ? f : idx,
+        idx % 12 === 11 ? f : -idx,
+      ],
+    ]),
+  },
+  4: {
+    2: kInterestingF64Values.map((f, idx) => [
+      [idx % 8 === 0 ? f : idx, idx % 8 === 1 ? f : -idx],
+      [idx % 8 === 2 ? f : -idx, idx % 8 === 3 ? f : idx],
+      [idx % 8 === 4 ? f : idx, idx % 8 === 5 ? f : -idx],
+      [idx % 8 === 6 ? f : -idx, idx % 8 === 7 ? f : idx],
+    ]),
+
+    3: kInterestingF64Values.map((f, idx) => [
+      [idx % 12 === 0 ? f : idx, idx % 12 === 1 ? f : -idx, idx % 12 === 2 ? f : idx],
+      [idx % 12 === 3 ? f : -idx, idx % 12 === 4 ? f : idx, idx % 12 === 5 ? f : -idx],
+      [idx % 12 === 6 ? f : idx, idx % 12 === 7 ? f : -idx, idx % 12 === 8 ? f : idx],
+      [idx % 12 === 9 ? f : -idx, idx % 12 === 10 ? f : idx, idx % 12 === 11 ? f : -idx],
+    ]),
+
+    4: kInterestingF64Values.map((f, idx) => [
+      [
+        idx % 16 === 0 ? f : idx,
+        idx % 16 === 1 ? f : -idx,
+        idx % 16 === 2 ? f : idx,
+        idx % 16 === 3 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 4 ? f : -idx,
+        idx % 16 === 5 ? f : idx,
+        idx % 16 === 6 ? f : -idx,
+        idx % 16 === 7 ? f : idx,
+      ],
+
+      [
+        idx % 16 === 8 ? f : idx,
+        idx % 16 === 9 ? f : -idx,
+        idx % 16 === 10 ? f : idx,
+        idx % 16 === 11 ? f : -idx,
+      ],
+
+      [
+        idx % 16 === 12 ? f : -idx,
+        idx % 16 === 13 ? f : idx,
+        idx % 16 === 14 ? f : -idx,
+        idx % 16 === 15 ? f : idx,
+      ],
+    ]),
+  },
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function sparseMatrixF64Range(c, r) {
+  assert(
+    c === 2 || c === 3 || c === 4,
+    'sparseMatrixF64Range only accepts column counts of 2, 3, and 4'
+  );
+
+  assert(
+    r === 2 || r === 3 || r === 4,
+    'sparseMatrixF64Range only accepts row counts of 2, 3, and 4'
+  );
+
+  return kSparseMatrixF64Values[c][r];
+}
+
+
 
 
 
@@ -818,6 +2034,11 @@ export function signExtend(n, bits) {
 
 export function quantizeToF32(num) {
   return f32(num).value;
+}
+
+
+export function quantizeToF16(num) {
+  return f16(num).value;
 }
 
 
@@ -858,22 +2079,35 @@ export function lcm(a, b) {
 }
 
 
-export function hexToF32(hex) {
-  return floatBitsToNumber(hex, kFloat32Format);
+
+
+
+export function reinterpretF64AsU64(input) {
+  return new BigUint64Array(new Float64Array([input]).buffer)[0];
 }
 
 
-export function hexToF16(hex) {
+
+
+
+export function reinterpretU64AsF64(input) {
+  return new Float64Array(new BigUint64Array([input]).buffer)[0];
+}
+
+
+
+
+
+export function reinterpretU32AsF32(input) {
+  return floatBitsToNumber(input, kFloat32Format);
+}
+
+
+
+
+
+export function reinterpretU16AsF16(hex) {
   return floatBitsToNumber(hex, kFloat16Format);
-}
-
-
-export function hexToF64(h32, l32) {
-  const u32Arr = new Uint32Array(2);
-  u32Arr[0] = l32;
-  u32Arr[1] = h32;
-  const f64Arr = new Float64Array(u32Arr.buffer);
-  return f64Arr[0];
 }
 
 
@@ -923,6 +2157,14 @@ export function cartesianProduct(...inputs) {
 
 
 
+
+
+
+
+
+
+
+
 export function calculatePermutations(input) {
   if (input.length === 0) {
     return [];
@@ -945,5 +2187,77 @@ export function calculatePermutations(input) {
     });
   });
 
+  return result;
+}
+
+
+
+
+
+
+
+
+
+export function flatten2DArray(m) {
+  const c = m.length;
+  const r = m[0].length;
+  assert(
+    m.every(c => c.length === r),
+    `Unexpectedly received jagged array to flatten`
+  );
+
+  const result = Array(c * r);
+  for (let i = 0; i < c; i++) {
+    for (let j = 0; j < r; j++) {
+      result[j + i * r] = m[i][j];
+    }
+  }
+  return result;
+}
+
+
+
+
+
+
+
+export function unflatten2DArray(n, c, r) {
+  assert(
+    c > 0 && Number.isInteger(c) && r > 0 && Number.isInteger(r),
+    `columns (${c}) and rows (${r}) need to be positive integers`
+  );
+
+  assert(n.length === c * r, `m.length(${n.length}) should equal c * r (${c * r})`);
+  const result = [...Array(c)].map(_ => [...Array(r)]);
+  for (let i = 0; i < c; i++) {
+    for (let j = 0; j < r; j++) {
+      result[i][j] = n[j + i * r];
+    }
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
+
+export function map2DArray(m, op) {
+  const c = m.length;
+  const r = m[0].length;
+  assert(
+    m.every(c => c.length === r),
+    `Unexpectedly received jagged array to map`
+  );
+
+  const result = [...Array(c)].map(_ => [...Array(r)]);
+  for (let i = 0; i < c; i++) {
+    for (let j = 0; j < r; j++) {
+      result[i][j] = op(m[i][j]);
+    }
+  }
   return result;
 }

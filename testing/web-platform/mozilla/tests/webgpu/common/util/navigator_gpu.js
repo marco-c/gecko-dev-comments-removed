@@ -1,19 +1,21 @@
 
 
- 
-import { assert } from './util.js';
+
+
+import { ErrorWithExtra, assert, objectEquals } from './util.js';
+
 
 
 
 
 function defaultGPUProvider() {
   assert(
-  typeof navigator !== 'undefined' && navigator.gpu !== undefined,
-  'No WebGPU implementation found');
+    typeof navigator !== 'undefined' && navigator.gpu !== undefined,
+    'No WebGPU implementation found'
+  );
 
   return navigator.gpu;
 }
-
 
 
 
@@ -35,17 +37,25 @@ let impl = undefined;
 let defaultRequestAdapterOptions;
 
 export function setDefaultRequestAdapterOptions(options) {
+  
+  if (objectEquals(options, defaultRequestAdapterOptions)) {
+    return;
+  }
   if (impl) {
     throw new Error('must call setDefaultRequestAdapterOptions before getGPU');
   }
   defaultRequestAdapterOptions = { ...options };
 }
 
+export function getDefaultRequestAdapterOptions() {
+  return defaultRequestAdapterOptions;
+}
 
 
 
 
-export function getGPU() {
+
+export function getGPU(recorder) {
   if (impl) {
     return impl;
   }
@@ -53,19 +63,18 @@ export function getGPU() {
   impl = gpuProvider();
 
   if (defaultRequestAdapterOptions) {
-
     const oldFn = impl.requestAdapter;
-    impl.requestAdapter = function (
-    options)
-    {
-      const promise = oldFn.call(this, { ...defaultRequestAdapterOptions, ...(options || {}) });
-      void promise.then(async (adapter) => {
-        if (adapter) {
-          const info = await adapter.requestAdapterInfo();
-
-          console.log(info);
-        }
-      });
+    impl.requestAdapter = function (options) {
+      const promise = oldFn.call(this, { ...defaultRequestAdapterOptions, ...options });
+      if (recorder) {
+        void promise.then(async adapter => {
+          if (adapter) {
+            const info = await adapter.requestAdapterInfo();
+            const infoString = `Adapter: ${info.vendor} / ${info.architecture} / ${info.device}`;
+            recorder.debug(new ErrorWithExtra(infoString, () => ({ adapterInfo: info })));
+          }
+        });
+      }
       return promise;
     };
   }

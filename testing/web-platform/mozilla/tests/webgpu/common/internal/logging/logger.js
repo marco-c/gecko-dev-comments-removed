@@ -1,13 +1,10 @@
 
 
-import { version } from '../version.js';
+ import { version } from '../version.js';
 import { TestCaseRecorder } from './test_case_recorder.js';
-
-
 
 export class Logger {
   static globalDebugMode = false;
-
 
   results = new Map();
 
@@ -19,9 +16,9 @@ export class Logger {
     const result = { status: 'running', timems: -1 };
     this.results.set(name, result);
     return [
-    new TestCaseRecorder(result, this.overriddenDebugMode ?? Logger.globalDebugMode),
-    result];
-
+      new TestCaseRecorder(result, this.overriddenDebugMode ?? Logger.globalDebugMode),
+      result,
+    ];
   }
 
   asJSON(space) {

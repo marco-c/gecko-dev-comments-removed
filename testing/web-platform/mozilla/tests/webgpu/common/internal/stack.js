@@ -2,7 +2,9 @@
 
  
 
-export function extractImportantStackTrace(e) {let stack = e.stack;if (!stack) {
+export function extractImportantStackTrace(e) {
+  let stack = e.stack;
+  if (!stack) {
     return '';
   }
   const redundantMessage = 'Error: ' + e.message + '\n';

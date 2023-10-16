@@ -1,6 +1,6 @@
 
 
-import { assert, sortObjectByKey } from '../../util/util.js';
+ import { assert, sortObjectByKey, isPlainObject } from '../../util/util.js';
 
 
 const jsUndefinedMagicValue = '_undef_';
@@ -13,39 +13,62 @@ const jsNegativeInfinityMagicValue = '_neginfinity_';
 
 const jsNegativeZeroMagicValue = '_negzero_';
 
-const toStringMagicValue = new Map([
-[undefined, jsUndefinedMagicValue],
-[NaN, jsNaNMagicValue],
-[Number.POSITIVE_INFINITY, jsPositiveInfinityMagicValue],
-[Number.NEGATIVE_INFINITY, jsNegativeInfinityMagicValue]
 
+const jsBigIntMagicPattern = /^(\d+)n$/;
+
+const toStringMagicValue = new Map([
+  [undefined, jsUndefinedMagicValue],
+  [NaN, jsNaNMagicValue],
+  [Number.POSITIVE_INFINITY, jsPositiveInfinityMagicValue],
+  [Number.NEGATIVE_INFINITY, jsNegativeInfinityMagicValue],
+  
 ]);
 
 const fromStringMagicValue = new Map([
-[jsUndefinedMagicValue, undefined],
-[jsNaNMagicValue, NaN],
-[jsPositiveInfinityMagicValue, Number.POSITIVE_INFINITY],
-[jsNegativeInfinityMagicValue, Number.NEGATIVE_INFINITY],
-
-[jsNegativeZeroMagicValue, -0]]);
-
+  [jsUndefinedMagicValue, undefined],
+  [jsNaNMagicValue, NaN],
+  [jsPositiveInfinityMagicValue, Number.POSITIVE_INFINITY],
+  [jsNegativeInfinityMagicValue, Number.NEGATIVE_INFINITY],
+  
+  [jsNegativeZeroMagicValue, -0],
+]);
 
 function stringifyFilter(k, v) {
   
   if (typeof v === 'string') {
     assert(
-    !fromStringMagicValue.has(v),
-    `${v} is a magic value for stringification, so cannot be used`);
-
+      !fromStringMagicValue.has(v),
+      `${v} is a magic value for stringification, so cannot be used`
+    );
 
     assert(
-    v !== jsNegativeZeroMagicValue,
-    `${v} is a magic value for stringification, so cannot be used`);
+      v !== jsNegativeZeroMagicValue,
+      `${v} is a magic value for stringification, so cannot be used`
+    );
 
+    assert(
+      v.match(jsBigIntMagicPattern) === null,
+      `${v} matches bigint magic pattern for stringification, so cannot be used`
+    );
   }
+
+  const isObject = v !== null && typeof v === 'object' && !Array.isArray(v);
+  if (isObject) {
+    assert(
+      isPlainObject(v),
+      `value must be a plain object but it appears to be a '${
+        Object.getPrototypeOf(v).constructor.name
+      }`
+    );
+  }
+  assert(typeof v !== 'function', `${v} can not be a function`);
 
   if (Object.is(v, -0)) {
     return jsNegativeZeroMagicValue;
+  }
+
+  if (typeof v === 'bigint') {
+    return `${v}n`;
   }
 
   return toStringMagicValue.has(v) ? toStringMagicValue.get(v) : v;
@@ -73,6 +96,14 @@ export function stringifyParamValueUniquely(value) {
 function parseParamValueReviver(k, v) {
   if (fromStringMagicValue.has(v)) {
     return fromStringMagicValue.get(v);
+  }
+
+  if (typeof v === 'string') {
+    const match = v.match(jsBigIntMagicPattern);
+    if (match !== null) {
+      
+      return BigInt(match[1]);
+    }
   }
 
   return v;

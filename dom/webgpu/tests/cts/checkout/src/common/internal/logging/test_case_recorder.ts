@@ -19,7 +19,8 @@ const kMinSeverityForStack = LogSeverity.Warn;
 
 
 export class TestCaseRecorder {
-  private result: LiveTestCaseResult;
+  readonly result: LiveTestCaseResult;
+  public nonskippedSubcaseCount: number = 0;
   private inSubCase: boolean = false;
   private subCaseStatus = LogSeverity.Pass;
   private finalCaseStatus = LogSeverity.Pass;
@@ -42,11 +43,17 @@ export class TestCaseRecorder {
   }
 
   finish(): void {
-    assert(this.startTime >= 0, 'finish() before start()');
+    
+    
+    assert(this.startTime >= 0, 'internal error: finish() before start()');
 
     const timeMilliseconds = now() - this.startTime;
     
     this.result.timems = Math.ceil(timeMilliseconds * 1000) / 1000;
+
+    if (this.finalCaseStatus === LogSeverity.Skip && this.nonskippedSubcaseCount !== 0) {
+      this.threw(new Error('internal error: case is "skip" but has nonskipped subcases'));
+    }
 
     
     this.result.status =
@@ -67,6 +74,9 @@ export class TestCaseRecorder {
   }
 
   endSubCase(expectedStatus: Expectation) {
+    if (this.subCaseStatus !== LogSeverity.Skip) {
+      this.nonskippedSubcaseCount++;
+    }
     try {
       if (expectedStatus === 'fail') {
         if (this.subCaseStatus <= LogSeverity.Warn) {

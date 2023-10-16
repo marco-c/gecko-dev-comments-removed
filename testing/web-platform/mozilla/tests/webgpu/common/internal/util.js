@@ -3,7 +3,8 @@
  
 
 
-export class StacklessError extends Error {constructor(message) {
+ export class StacklessError extends Error {
+  constructor(message) {
     super(message);
     this.stack = undefined;
   }

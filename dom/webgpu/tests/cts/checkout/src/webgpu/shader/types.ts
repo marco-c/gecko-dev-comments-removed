@@ -4,6 +4,7 @@ import { align } from '../util/math.js';
 
 const kArrayLength = 3;
 
+export type Requirement = 'never' | 'may' | 'must'; 
 export type ContainerType = 'scalar' | 'vector' | 'matrix' | 'atomic' | 'array';
 export type ScalarType = 'i32' | 'u32' | 'f32' | 'bool';
 
@@ -43,7 +44,83 @@ export const kMatrixContainerTypeInfo =  {
 
 export const kMatrixContainerTypes = keysOf(kMatrixContainerTypeInfo);
 
-export type StorageClass = 'storage' | 'uniform' | 'private' | 'function' | 'workgroup';
+export type AddressSpace = 'storage' | 'uniform' | 'private' | 'function' | 'workgroup' | 'handle';
+export type AccessMode = 'read' | 'write' | 'read_write';
+export type Scope = 'module' | 'function';
+
+export const kAccessModeInfo = {
+  read: { read: true, write: false },
+  write: { read: false, write: true },
+  read_write: { read: true, write: true },
+} as const;
+
+export type AddressSpaceInfo = {
+  
+  scope: Scope;
+
+  
+  binding: boolean;
+
+  
+  spell: Requirement;
+
+  
+  
+  
+  accessModes: readonly AccessMode[];
+
+  
+  
+  
+  
+  
+  spellAccessMode: Requirement;
+};
+
+export const kAddressSpaceInfo: Record<string, AddressSpaceInfo> = {
+  storage: {
+    scope: 'module',
+    binding: true,
+    spell: 'must',
+    accessModes: ['read', 'read_write'],
+    spellAccessMode: 'may',
+  },
+  uniform: {
+    scope: 'module',
+    binding: true,
+    spell: 'must',
+    accessModes: ['read'],
+    spellAccessMode: 'never',
+  },
+  private: {
+    scope: 'module',
+    binding: false,
+    spell: 'must',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  workgroup: {
+    scope: 'module',
+    binding: false,
+    spell: 'must',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  function: {
+    scope: 'function',
+    binding: false,
+    spell: 'may',
+    accessModes: ['read_write'],
+    spellAccessMode: 'never',
+  },
+  handle: {
+    scope: 'module',
+    binding: true,
+    spell: 'never',
+    accessModes: [],
+    spellAccessMode: 'never',
+  },
+} as const;
 
 
 export const TexelFormats = [
@@ -69,12 +146,12 @@ export const TexelFormats = [
 
 
 export function* generateTypes({
-  storageClass,
+  addressSpace,
   baseType,
   containerType,
   isAtomic = false,
 }: {
-  storageClass: StorageClass;
+  addressSpace: AddressSpace;
   
   baseType: ScalarType;
   
@@ -89,7 +166,7 @@ export function* generateTypes({
   const scalarType = isAtomic ? `atomic<${baseType}>` : baseType;
 
   
-  if (storageClass === 'storage' || storageClass === 'uniform') {
+  if (addressSpace === 'storage' || addressSpace === 'uniform') {
     assert(isHostSharable(baseType), 'type ' + baseType.toString() + ' is not host sharable');
   }
 
@@ -139,7 +216,7 @@ export function* generateTypes({
         ? {
             alignment: scalarInfo.layout.alignment,
             size:
-              storageClass === 'uniform'
+              addressSpace === 'uniform'
                 ? 
                   kArrayLength *
                   arrayStride({
@@ -152,7 +229,7 @@ export function* generateTypes({
     };
 
     
-    if (storageClass === 'uniform') {
+    if (addressSpace === 'uniform') {
       yield {
         type: `array<vec4<${scalarType}>,${kArrayLength}>`,
         _kTypeInfo: arrayTypeInfo,
@@ -161,7 +238,7 @@ export function* generateTypes({
       yield { type: `array<${scalarType},${kArrayLength}>`, _kTypeInfo: arrayTypeInfo };
     }
     
-    if (storageClass === 'storage') {
+    if (addressSpace === 'storage') {
       yield { type: `array<${scalarType}>`, _kTypeInfo: arrayTypeInfo };
     }
   }
@@ -180,20 +257,20 @@ export function* generateTypes({
 
 
 export function supportsAtomics(p: {
-  storageClass: string;
-  storageMode: string | undefined;
+  addressSpace: string;
+  storageMode: AccessMode | undefined;
   access: string;
   containerType: ContainerType;
 }) {
   return (
-    ((p.storageClass === 'storage' && p.storageMode === 'read_write') ||
-      p.storageClass === 'workgroup') &&
+    ((p.addressSpace === 'storage' && p.storageMode === 'read_write') ||
+      p.addressSpace === 'workgroup') &&
     (p.containerType === 'scalar' || p.containerType === 'array')
   );
 }
 
 
-export function* supportedScalarTypes(p: { isAtomic: boolean; storageClass: string }) {
+export function* supportedScalarTypes(p: { isAtomic: boolean; addressSpace: string }) {
   for (const scalarType of kScalarTypes) {
     const info = kScalarTypeInfo[scalarType];
 
@@ -201,7 +278,7 @@ export function* supportedScalarTypes(p: { isAtomic: boolean; storageClass: stri
     if (p.isAtomic && !info.supportsAtomics) continue;
 
     
-    const isHostShared = p.storageClass === 'storage' || p.storageClass === 'uniform';
+    const isHostShared = p.addressSpace === 'storage' || p.addressSpace === 'uniform';
     if (isHostShared && info.layout === undefined) continue;
 
     yield scalarType;
