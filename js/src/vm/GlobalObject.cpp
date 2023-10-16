@@ -231,14 +231,16 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
 }
 
 static bool ShouldFreezeBuiltin(JSProtoKey key) {
-  switch (key) {
-    case JSProto_Object:
-    case JSProto_Array:
-    case JSProto_Function:
-      return true;
-    default:
-      return false;
+  
+  if (key == JSProto_Reflect) {
+    return false;
   }
+  
+  
+  if (key == JSProto_Date) {
+    return false;
+  }
+  return true;
 }
 
 static unsigned GetAttrsForResolvedGlobal(GlobalObject* global,
