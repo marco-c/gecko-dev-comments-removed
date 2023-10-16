@@ -79,15 +79,17 @@ class InlinePreviewRow extends PureComponent {
           })
         )
       ),
-      this.widgetNode
-    );
-
-    this.bookmark = editor.codeMirror.setBookmark(
-      {
-        line,
-        ch: Infinity,
-      },
-      this.widgetNode
+      this.widgetNode,
+      () => {
+        
+        this.bookmark = editor.codeMirror.setBookmark(
+          {
+            line,
+            ch: Infinity,
+          },
+          this.widgetNode
+        );
+      }
     );
   }
 

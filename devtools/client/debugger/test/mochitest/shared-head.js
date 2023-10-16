@@ -2172,11 +2172,25 @@ async function hoverAtPos(dbg, pos) {
 }
 
 function hoverToken(tokenEl) {
-  info(`Hovering on token "${tokenEl.innerText}"`);
+  info(`Hovering on token <${tokenEl.innerText}>`);
 
   
-  EventUtils.synthesizeMouseAtCenter(
-    tokenEl,
+  
+  
+  
+  
+  
+  
+
+  
+  const { p1, p2, p3 } = tokenEl.getBoxQuads()[0];
+  const x = p1.x + (p2.x - p1.x) / 2;
+  const y = p1.y + (p3.y - p1.y) / 2;
+
+  
+  EventUtils.synthesizeMouseAtPoint(
+    x,
+    y,
     {
       type: "mouseover",
     },
@@ -2184,8 +2198,9 @@ function hoverToken(tokenEl) {
   );
 
   
-  EventUtils.synthesizeMouseAtCenter(
-    tokenEl,
+  EventUtils.synthesizeMouseAtPoint(
+    x,
+    y,
     {
       type: "mousemove",
     },
@@ -2217,8 +2232,22 @@ async function closePreviewForToken(
   
   
   
-  EventUtils.synthesizeMouseAtCenter(
+  
+  
+  
+  
+  
+  
+  
+
+  
+  const { p1, p2, p3 } = tokenEl.getBoxQuads()[0];
+  const x = p1.x + (p2.x - p1.x) / 2;
+  const y = p1.y + (p3.y - p1.y) / 2;
+  EventUtils.synthesizeMouseAtPoint(
     tokenEl,
+    x,
+    y,
     {
       type: "mouseout",
     },
@@ -2249,6 +2278,17 @@ async function closePreviewForToken(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 async function tryHovering(dbg, line, column, elementName) {
   ok(
     !findElement(dbg, elementName),
@@ -2256,13 +2296,75 @@ async function tryHovering(dbg, line, column, elementName) {
   );
 
   const tokenEl = await getTokenFromPosition(dbg, { line, column });
+  return tryHoverToken(dbg, tokenEl, elementName);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function tryHoverTokenAtLine(dbg, expression, line, elementName) {
+  
+  const tokenEl = getTokenElAtLine(dbg, expression, line);
+  if (!tokenEl) {
+    throw new Error(`Couldn't find token <${expression}> on line ${line}\n`);
+  }
+
+  ok(true, `Found token <${expression}> on line ${line}`);
+
+  info("Scroll codeMirror to make the token visible");
+  const cm = getCM(dbg);
+  const onScrolled = waitForScrolling(cm);
+  cm.scrollIntoView({ line: line - 1, ch: 0 }, 0);
+  await onScrolled;
+
+  return tryHoverToken(dbg, tokenEl, elementName);
+}
+
+async function tryHoverToken(dbg, tokenEl, elementName) {
   hoverToken(tokenEl);
 
   
   const element = await waitForElement(dbg, elementName);
-
   return { element, tokenEl };
 }
+
+
+
+
+
+
+
+
+
+function getTokenElAtLine(dbg, expression, line) {
+  info(`Search for <${expression}> token on line ${line}`);
+  
+  const lineGutterEl = [
+    ...dbg.win.document.querySelectorAll(".CodeMirror-linenumber"),
+  ].find(el => el.textContent === `${line}`);
+
+  
+  const editorLineEl = lineGutterEl
+    .closest(".CodeMirror-gutter-wrapper")
+    .parentElement.querySelector(".CodeMirror-line");
+
+  
+  return Array.from(editorLineEl.querySelectorAll("span")).find(
+    span => span.textContent === expression
+  );
+}
+
 
 
 
@@ -2276,22 +2378,16 @@ async function tryHovering(dbg, line, column, elementName) {
 async function assertPreviewTextValue(
   dbg,
   line,
-  column,
   { result, expression, doNotClose = false }
 ) {
-  const { element: previewEl, tokenEl } = await tryHovering(
-    dbg,
-    line,
-    column,
-    "previewPopup"
-  );
+  
+  await waitForInlinePreviews(dbg);
 
-  ok(
-    tokenEl.innerText.includes(expression),
-    "Popup preview hovered expression is correct. Got: " +
-      tokenEl.innerText +
-      " Expected: " +
-      expression
+  const { element: previewEl, tokenEl } = await tryHoverTokenAtLine(
+    dbg,
+    expression,
+    line,
+    "previewPopup"
   );
 
   ok(
@@ -2313,23 +2409,34 @@ async function assertPreviewTextValue(
 
 
 async function assertPreviews(dbg, previews) {
+  
+  EventUtils.synthesizeMouse(
+    findElement(dbg, "codeMirror"),
+    0,
+    0,
+    {
+      type: "mousemove",
+    },
+    dbg.win
+  );
+
+  
+  await waitForInlinePreviews(dbg);
+
   for (const { line, column, expression, result, header, fields } of previews) {
     info(" # Assert preview on " + line + ":" + column);
 
     if (result) {
-      await assertPreviewTextValue(dbg, line, column, {
+      await assertPreviewTextValue(dbg, line, {
         expression,
         result,
       });
     }
 
     if (fields) {
-      const { element: popupEl, tokenEl } = await tryHovering(
-        dbg,
-        line,
-        column,
-        "popup"
-      );
+      const { element: popupEl, tokenEl } = expression
+        ? await tryHoverTokenAtLine(dbg, expression, line, "popup")
+        : await tryHovering(dbg, line, column, "popup");
 
       info("Wait for child nodes to load");
       await waitUntil(
