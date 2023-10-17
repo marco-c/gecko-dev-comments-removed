@@ -93,6 +93,7 @@ void GenericPrinter::vprintf(const char* fmt, va_list ap) {
   
   if (strchr(fmt, '%') == nullptr) {
     put(fmt);
+    return;
   }
 
   GenericPrinterPrintfTarget printer(*this);
