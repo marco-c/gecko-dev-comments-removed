@@ -1,4 +1,4 @@
-use crate::arena::{Arena, Handle, UniqueArena};
+use crate::arena::{Arena, Handle, Range, UniqueArena};
 
 type Index = std::num::NonZeroU32;
 
@@ -121,5 +121,38 @@ impl<T: 'static> HandleMap<T> {
         if let Some(ref mut handle) = *handle {
             self.adjust(handle);
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn adjust_range(&self, range: &mut Range<T>, compacted_arena: &Arena<T>) {
+        let mut index_range = range.zero_based_index_range();
+        let compacted;
+        
+        
+        
+        if let Some(first1) = index_range.find_map(|i| self.new_index[i as usize]) {
+            
+            
+            
+            if let Some(last1) = index_range.rev().find_map(|i| self.new_index[i as usize]) {
+                
+                compacted = first1.get() - 1..last1.get();
+            } else {
+                compacted = first1.get() - 1..first1.get();
+            }
+        } else {
+            compacted = 0..0;
+        };
+        *range = Range::from_zero_based_index_range(compacted, compacted_arena);
     }
 }

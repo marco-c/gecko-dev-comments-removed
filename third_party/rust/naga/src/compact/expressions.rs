@@ -271,7 +271,6 @@ impl ModuleMap {
                 adjust(sampler);
                 adjust(coordinate);
                 operand_map.adjust_option(array_index);
-                
                 if let Some(ref mut offset) = *offset {
                     self.const_expressions.adjust(offset);
                 }

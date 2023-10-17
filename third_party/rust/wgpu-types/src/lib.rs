@@ -818,6 +818,76 @@ impl Features {
     }
 }
 
+bitflags::bitflags! {
+    /// Instance debugging flags.
+    ///
+    /// These are not part of the webgpu standard.
+    ///
+    /// Defaults to enabling debugging-related flags if the build configuration has `debug_assertions`.
+    #[repr(transparent)]
+    #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+    pub struct InstanceFlags: u32 {
+        /// Generate debug information in shaders and objects.
+        const DEBUG = 1 << 0;
+        /// Enable validation, if possible.
+        const VALIDATION = 1 << 1;
+    }
+}
+
+impl Default for InstanceFlags {
+    fn default() -> Self {
+        Self::from_build_config()
+    }
+}
+
+impl InstanceFlags {
+    
+    pub fn debugging() -> Self {
+        InstanceFlags::DEBUG | InstanceFlags::VALIDATION
+    }
+
+    
+    
+    
+    pub fn from_build_config() -> Self {
+        if cfg!(debug_assertions) {
+            return InstanceFlags::debugging();
+        }
+
+        InstanceFlags::empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn with_env(mut self) -> Self {
+        fn env(key: &str) -> Option<bool> {
+            std::env::var(key).ok().map(|s| match s.as_str() {
+                "0" => false,
+                _ => true,
+            })
+        }
+
+        if let Some(bit) = env("WGPU_VALIDATION") {
+            self.set(Self::VALIDATION, bit);
+        }
+        if let Some(bit) = env("WGPU_DEBUG") {
+            self.set(Self::DEBUG, bit);
+        }
+
+        self
+    }
+}
+
 
 
 
@@ -6497,6 +6567,8 @@ pub struct InstanceDescriptor {
     
     pub backends: Backends,
     
+    pub flags: InstanceFlags,
+    
     pub dx12_shader_compiler: Dx12Compiler,
     
     pub gles_minor_version: Gles3MinorVersion,
@@ -6506,6 +6578,7 @@ impl Default for InstanceDescriptor {
     fn default() -> Self {
         Self {
             backends: Backends::all(),
+            flags: InstanceFlags::default(),
             dx12_shader_compiler: Dx12Compiler::default(),
             gles_minor_version: Gles3MinorVersion::default(),
         }

@@ -216,6 +216,24 @@ impl<T> Range<T> {
             None
         }
     }
+
+    
+    pub fn zero_based_index_range(&self) -> ops::Range<u32> {
+        self.inner.clone()
+    }
+
+    
+    pub fn from_zero_based_index_range(inner: ops::Range<u32>, arena: &Arena<T>) -> Self {
+        
+        
+        
+        assert!(inner.start <= inner.end);
+        assert!(inner.end as usize <= arena.len());
+        Self {
+            inner,
+            marker: Default::default(),
+        }
+    }
 }
 
 
@@ -389,16 +407,24 @@ impl<T> Arena<T> {
     pub fn check_contains_range(&self, range: &Range<T>) -> Result<(), BadRangeError> {
         
         
-        
-        if range.inner.start > range.inner.end
-            || self
-                .check_contains_handle(Handle::new(range.inner.end.try_into().unwrap()))
-                .is_err()
-        {
-            Err(BadRangeError::new(range.clone()))
-        } else {
-            Ok(())
+        if range.inner.start > range.inner.end {
+            return Err(BadRangeError::new(range.clone()));
         }
+
+        
+        if range.inner.start == range.inner.end {
+            return Ok(());
+        }
+
+        
+        
+        
+        let last_handle = Handle::new(range.inner.end.try_into().unwrap());
+        if self.check_contains_handle(last_handle).is_err() {
+            return Err(BadRangeError::new(range.clone()));
+        }
+
+        Ok(())
     }
 
     #[cfg(feature = "compact")]

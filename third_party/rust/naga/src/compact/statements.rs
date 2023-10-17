@@ -9,11 +9,12 @@ impl FunctionTracer<'_> {
             for stmt in last {
                 use crate::Statement as St;
                 match *stmt {
-                    St::Emit(ref range) => {
-                        for expr in range.clone() {
-                            log::trace!("trace emitted expression {:?}", expr);
-                            self.trace_expression(expr);
-                        }
+                    St::Emit(ref _range) => {
+                        
+                        
+                        
+                        
+                        
                     }
                     St::Block(ref block) => worklist.push(block),
                     St::If {
@@ -140,7 +141,8 @@ impl FunctionTracer<'_> {
 }
 
 impl FunctionMap {
-    pub fn adjust_block(&self, block: &mut [crate::Statement]) {
+    pub fn adjust_body(&self, function: &mut crate::Function) {
+        let block = &mut function.body;
         let mut worklist: Vec<&mut [crate::Statement]> = vec![block];
         let adjust = |handle: &mut Handle<crate::Expression>| {
             self.expressions.adjust(handle);
@@ -150,17 +152,7 @@ impl FunctionMap {
                 use crate::Statement as St;
                 match *stmt {
                     St::Emit(ref mut range) => {
-                        
-                        
-                        
-                        
-                        
-                        
-                        
-                        let (mut first, mut last) = range.first_and_last().unwrap();
-                        self.expressions.adjust(&mut first);
-                        self.expressions.adjust(&mut last);
-                        *range = crate::arena::Range::new_from_bounds(first, last);
+                        self.expressions.adjust_range(range, &function.expressions);
                     }
                     St::Block(ref mut block) => worklist.push(block),
                     St::If {
