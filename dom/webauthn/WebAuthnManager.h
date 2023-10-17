@@ -113,32 +113,16 @@ class WebAuthnManager final : public WebAuthnManagerBase, public AbortFollower {
 
  protected:
   
+  
+  void CancelTransaction(const nsresult& aError);
+  
   void HandleVisibilityChange() override;
 
  private:
   virtual ~WebAuthnManager();
 
   
-  
-  template <typename T>
-  void CancelTransaction(const T& aReason) {
-    CancelParent();
-    RejectTransaction(aReason);
-  }
-
-  
-  
-  template <typename T>
-  void RejectTransaction(const T& aReason) {
-    if (!NS_WARN_IF(mTransaction.isNothing())) {
-      mTransaction.ref().mPromise->MaybeReject(aReason);
-    }
-
-    ClearTransaction();
-  }
-
-  
-  void CancelParent();
+  void RejectTransaction(const nsresult& aError);
 
   
   void ClearTransaction();
