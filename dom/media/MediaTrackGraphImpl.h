@@ -77,7 +77,9 @@ struct TrackUpdate {
 
 class ControlMessage : public MediaTrack::ControlMessageInterface {
  public:
-  explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {}
+  explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {
+    MOZ_RELEASE_ASSERT(!aTrack || !NS_IsMainThread() || !aTrack->IsDestroyed());
+  }
 
   MediaTrack* GetTrack() { return mTrack; }
 
@@ -90,7 +92,7 @@ class ControlMessage : public MediaTrack::ControlMessageInterface {
 
 class MessageBlock {
  public:
-  nsTArray<UniquePtr<ControlMessage>> mMessages;
+  nsTArray<UniquePtr<MediaTrack::ControlMessageInterface>> mMessages;
 };
 
 
@@ -183,7 +185,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  virtual void AppendMessage(UniquePtr<ControlMessage> aMessage);
+  virtual void AppendMessage(UniquePtr<ControlMessageInterface> aMessage);
 
   
 
@@ -330,7 +332,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  void RunMessageAfterProcessing(UniquePtr<ControlMessage> aMessage);
+  void RunMessageAfterProcessing(UniquePtr<ControlMessageInterface> aMessage);
 
   
 
@@ -925,7 +927,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
-  nsTArray<UniquePtr<ControlMessage>> mCurrentTaskMessageQueue;
+  nsTArray<UniquePtr<ControlMessageInterface>> mCurrentTaskMessageQueue;
   
 
 
