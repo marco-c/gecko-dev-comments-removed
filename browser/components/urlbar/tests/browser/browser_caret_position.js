@@ -8,9 +8,6 @@ const LARGE_DATA_URL =
 
 
 add_task(async function setURI() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.urlbar.trimHttps", false]],
-  });
   const testData = [
     {
       firstURL: "https://example.com/test",
