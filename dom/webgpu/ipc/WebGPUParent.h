@@ -182,6 +182,10 @@ class WebGPUParent final : public PWebGPUParent {
 
   std::unordered_map<ffi::WGPUTextureId, std::shared_ptr<ExternalTexture>>
       mExternalTextures;
+
+  
+  
+  nsTHashSet<RawId> mLostDeviceIds;
 };
 
 }  
