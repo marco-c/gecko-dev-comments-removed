@@ -33,4 +33,14 @@
 #  define QM_COLLECTING_OPERATION_TELEMETRY
 #endif
 
+
+
+
+
+
+
+#if 0
+#  define CACHING_DB_CONNECTION_CHECK_THREAD_OWNERSHIP 1
+#endif
+
 #endif  
