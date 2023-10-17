@@ -2168,18 +2168,10 @@ var gMainPane = {
     
     
     
-    
-    
-    const browser = window.docShell.chromeEventHandler;
-    const browserWindow = browser.ownerGlobal;
+    const browserWindow = window.browsingContext.topChromeWindow;
 
-    
-    
-    
-    Services.tm.dispatchToMainThread(() => {
-      MigrationUtils.showMigrationWizard(browserWindow, {
-        entrypoint: MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
-      });
+    MigrationUtils.showMigrationWizard(browserWindow, {
+      entrypoint: MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES,
     });
   },
 

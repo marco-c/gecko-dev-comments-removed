@@ -15,13 +15,9 @@ add_setup(async () => {
 });
 
 add_task(async function file_menu_import_wizard() {
-  
-  
-  executeSoon(() =>
-    document.getElementById("menu_importFromAnotherBrowser").doCommand()
-  );
-
-  let wizard = await BrowserTestUtils.waitForMigrationWizard(window);
-  ok(wizard, "Migrator window opened");
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  let wizardTabPromise = BrowserTestUtils.waitForMigrationWizard(window);
+  document.getElementById("menu_importFromAnotherBrowser").doCommand();
+  let wizardTab = await wizardTabPromise;
+  ok(wizardTab, "Migration wizard tab opened");
+  BrowserTestUtils.removeTab(wizardTab);
 });

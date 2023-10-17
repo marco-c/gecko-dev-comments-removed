@@ -82,7 +82,7 @@ add_task(async function check_fluent_ids() {
 
 
 add_task(async function import_suggestion_wizard() {
-  let wizard;
+  let wizardTab;
 
   await BrowserTestUtils.withNewTab(
     {
@@ -110,11 +110,10 @@ add_task(async function import_suggestion_wizard() {
       info("Clicking on importable suggestion");
       const wizardPromise = BrowserTestUtils.waitForMigrationWizard(window);
 
-      
-      executeSoon(() => EventUtils.synthesizeMouseAtCenter(importableItem, {}));
+      EventUtils.synthesizeMouseAtCenter(importableItem, {});
 
-      wizard = await wizardPromise;
-      Assert.ok(wizard, "Wizard opened");
+      wizardTab = await wizardPromise;
+      Assert.ok(wizardTab, "Wizard opened");
       Assert.equal(
         gTestMigrator.migrate.callCount,
         0,
@@ -128,7 +127,7 @@ add_task(async function import_suggestion_wizard() {
   
   
   
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  await BrowserTestUtils.removeTab(wizardTab);
 });
 
 add_task(async function import_suggestion_learn_more() {

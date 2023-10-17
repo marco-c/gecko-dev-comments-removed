@@ -3,50 +3,19 @@
 
 "use strict";
 
-const CONTENT_MODAL_ENABLED_PREF = "browser.migrate.content-modal.enabled";
 const HISTOGRAM_ID = "FX_MIGRATION_ENTRY_POINT_CATEGORICAL";
-const LEGACY_HISTOGRAM_ID = "FX_MIGRATION_ENTRY_POINT";
 
 async function showThenCloseMigrationWizardViaEntrypoint(entrypoint) {
   let openedPromise = BrowserTestUtils.waitForMigrationWizard(window);
 
-  
-  
-  executeSoon(() => {
-    MigrationUtils.showMigrationWizard(window, {
-      entrypoint,
-    });
+  MigrationUtils.showMigrationWizard(window, {
+    entrypoint,
   });
 
-  let wizard = await openedPromise;
-  Assert.ok(wizard, "Migration wizard opened.");
+  let wizardTab = await openedPromise;
+  Assert.ok(wizardTab, "Migration wizard opened.");
 
-  if (!Services.prefs.getBoolPref(CONTENT_MODAL_ENABLED_PREF)) {
-    
-    
-    
-    await BrowserTestUtils.waitForCondition(() => {
-      
-      
-      
-      let scalars = TelemetryTestUtils.getProcessScalars(
-        "parent",
-        false,
-        false
-      );
-      if (!scalars["migration.time_to_produce_legacy_migrator_list"]) {
-        return false;
-      }
-
-      Assert.ok(
-        scalars["migration.time_to_produce_legacy_migrator_list"] > 0,
-        "Non-zero scalar value recorded for migration.time_to_produce_migrator_list"
-      );
-      return true;
-    });
-  }
-
-  await BrowserTestUtils.closeMigrationWizard(wizard);
+  await BrowserTestUtils.removeTab(wizardTab);
 }
 
 add_setup(async () => {
@@ -64,74 +33,40 @@ add_setup(async () => {
 
 
 
-
-
-add_task(async function test_legacy_wizard() {
-  for (let contentModalEnabled of [true, false]) {
-    info("Testing with content modal enabled: " + contentModalEnabled);
-    await SpecialPowers.pushPrefEnv({
-      set: [[CONTENT_MODAL_ENABLED_PREF, contentModalEnabled]],
-    });
-
-    let histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    let legacyHistogram =
-      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
-
-    
-    
-    await showThenCloseMigrationWizardViaEntrypoint(
-      MigrationUtils.MIGRATION_ENTRYPOINTS.BOOKMARKS
-    );
-    let entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
-      MigrationUtils.MIGRATION_ENTRYPOINTS.BOOKMARKS
-    );
-
-    TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
-
-    if (!contentModalEnabled) {
-      TelemetryTestUtils.assertHistogram(legacyHistogram, entrypointId, 1);
-    }
-
-    histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    legacyHistogram =
-      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
-
-    
-    
-    await showThenCloseMigrationWizardViaEntrypoint(
-      MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES
-    );
-    entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
-      MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES
-    );
-
-    TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
-    if (!contentModalEnabled) {
-      TelemetryTestUtils.assertHistogram(legacyHistogram, entrypointId, 1);
-    }
-
-    histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
-    legacyHistogram =
-      TelemetryTestUtils.getAndClearHistogram(LEGACY_HISTOGRAM_ID);
-
-    
-    await showThenCloseMigrationWizardViaEntrypoint(undefined);
-    entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
-      MigrationUtils.MIGRATION_ENTRYPOINTS.UNKNOWN
-    );
-
-    TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
-    if (!contentModalEnabled) {
-      TelemetryTestUtils.assertHistogram(legacyHistogram, entrypointId, 1);
-    }
-  }
+add_task(async function test_entrypoints() {
+  let histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
 
   
   
-  
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
-  Assert.ok(
-    scalars["migration.time_to_produce_legacy_migrator_list"] > 0,
-    "Non-zero scalar value recorded for migration.time_to_produce_migrator_list"
+  await showThenCloseMigrationWizardViaEntrypoint(
+    MigrationUtils.MIGRATION_ENTRYPOINTS.BOOKMARKS
   );
+  let entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
+    MigrationUtils.MIGRATION_ENTRYPOINTS.BOOKMARKS
+  );
+
+  TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
+
+  histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
+
+  
+  
+  await showThenCloseMigrationWizardViaEntrypoint(
+    MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES
+  );
+  entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
+    MigrationUtils.MIGRATION_ENTRYPOINTS.PREFERENCES
+  );
+
+  TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
+
+  histogram = TelemetryTestUtils.getAndClearHistogram(HISTOGRAM_ID);
+
+  
+  await showThenCloseMigrationWizardViaEntrypoint(undefined);
+  entrypointId = MigrationUtils.getLegacyMigrationEntrypoint(
+    MigrationUtils.MIGRATION_ENTRYPOINTS.UNKNOWN
+  );
+
+  TelemetryTestUtils.assertHistogram(histogram, entrypointId, 1);
 });

@@ -3,14 +3,7 @@
 
 "use strict";
 
-const FORCE_LEGACY =
-  Services.prefs.getCharPref(
-    "browser.migrate.content-modal.about-welcome-behavior",
-    "default"
-  ) == "legacy";
-
 add_setup(async () => {
-  
   
   
   
@@ -21,10 +14,7 @@ add_setup(async () => {
 });
 
 add_task(async function test_SHOW_MIGRATION_WIZARD() {
-  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(
-    window,
-    FORCE_LEGACY
-  );
+  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(window);
 
   await SMATestUtils.executeAndValidateAction({
     type: "SHOW_MIGRATION_WIZARD",
@@ -32,14 +22,11 @@ add_task(async function test_SHOW_MIGRATION_WIZARD() {
 
   let wizard = await wizardOpened;
   ok(wizard, "Migration wizard opened");
-  await BrowserTestUtils.closeMigrationWizard(wizard, FORCE_LEGACY);
+  await BrowserTestUtils.removeTab(wizard);
 });
 
 add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
-  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(
-    window,
-    FORCE_LEGACY
-  );
+  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(window);
 
   await SMATestUtils.executeAndValidateAction({
     type: "SHOW_MIGRATION_WIZARD",
@@ -48,22 +35,5 @@ add_task(async function test_SHOW_MIGRATION_WIZARD_WITH_SOURCE() {
 
   let wizard = await wizardOpened;
   ok(wizard, "Migrator window opened when source param specified");
-  await BrowserTestUtils.closeMigrationWizard(wizard, FORCE_LEGACY);
-});
-
-add_task(async function test_SHOW_MIGRATION_WIZARD_forcing_legacy() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.migrate.content-modal.about-welcome-behavior", "legacy"]],
-  });
-
-  let wizardOpened = BrowserTestUtils.waitForMigrationWizard(window, true);
-
-  await SMATestUtils.executeAndValidateAction({
-    type: "SHOW_MIGRATION_WIZARD",
-    data: { source: "chrome" },
-  });
-
-  let wizard = await wizardOpened;
-  ok(wizard, "Legacy migrator window opened");
-  await BrowserTestUtils.closeMigrationWizard(wizard, true);
+  await BrowserTestUtils.removeTab(wizard);
 });
