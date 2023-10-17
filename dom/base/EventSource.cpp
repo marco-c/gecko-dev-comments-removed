@@ -714,7 +714,7 @@ EventSourceImpl::OnStartRequest(nsIRequest* aRequest) {
   if (NS_FAILED(status)) {
     
     
-    return NS_ERROR_ABORT;
+    return status;
   }
 
   uint32_t httpStatus;
