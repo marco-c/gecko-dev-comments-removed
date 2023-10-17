@@ -37,29 +37,41 @@ impl<'a> Object<'a> {
     pub(crate) fn coff_section_info(
         &self,
         section: StandardSection,
-    ) -> (&'static [u8], &'static [u8], SectionKind) {
+    ) -> (&'static [u8], &'static [u8], SectionKind, SectionFlags) {
         match section {
-            StandardSection::Text => (&[], &b".text"[..], SectionKind::Text),
-            StandardSection::Data => (&[], &b".data"[..], SectionKind::Data),
+            StandardSection::Text => (&[], &b".text"[..], SectionKind::Text, SectionFlags::None),
+            StandardSection::Data => (&[], &b".data"[..], SectionKind::Data, SectionFlags::None),
             StandardSection::ReadOnlyData
             | StandardSection::ReadOnlyDataWithRel
-            | StandardSection::ReadOnlyString => (&[], &b".rdata"[..], SectionKind::ReadOnlyData),
-            StandardSection::UninitializedData => {
-                (&[], &b".bss"[..], SectionKind::UninitializedData)
-            }
+            | StandardSection::ReadOnlyString => (
+                &[],
+                &b".rdata"[..],
+                SectionKind::ReadOnlyData,
+                SectionFlags::None,
+            ),
+            StandardSection::UninitializedData => (
+                &[],
+                &b".bss"[..],
+                SectionKind::UninitializedData,
+                SectionFlags::None,
+            ),
             
-            StandardSection::Tls => (&[], &b".tls$"[..], SectionKind::Data),
+            StandardSection::Tls => (&[], &b".tls$"[..], SectionKind::Data, SectionFlags::None),
             StandardSection::UninitializedTls => {
                 
-                (&[], &[], SectionKind::UninitializedTls)
+                (&[], &[], SectionKind::UninitializedTls, SectionFlags::None)
             }
             StandardSection::TlsVariables => {
                 
-                (&[], &[], SectionKind::TlsVariables)
+                (&[], &[], SectionKind::TlsVariables, SectionFlags::None)
             }
             StandardSection::Common => {
                 
-                (&[], &[], SectionKind::Common)
+                (&[], &[], SectionKind::Common, SectionFlags::None)
+            }
+            StandardSection::GnuProperty => {
+                
+                (&[], &[], SectionKind::Note, SectionFlags::None)
             }
         }
     }
@@ -575,11 +587,11 @@ impl<'a> Object<'a> {
             let section_number = match symbol.section {
                 SymbolSection::None => {
                     debug_assert_eq!(symbol.kind, SymbolKind::File);
-                    coff::IMAGE_SYM_DEBUG
+                    coff::IMAGE_SYM_DEBUG as u16
                 }
-                SymbolSection::Undefined => coff::IMAGE_SYM_UNDEFINED,
-                SymbolSection::Absolute => coff::IMAGE_SYM_ABSOLUTE,
-                SymbolSection::Common => coff::IMAGE_SYM_UNDEFINED,
+                SymbolSection::Undefined => coff::IMAGE_SYM_UNDEFINED as u16,
+                SymbolSection::Absolute => coff::IMAGE_SYM_ABSOLUTE as u16,
+                SymbolSection::Common => coff::IMAGE_SYM_UNDEFINED as u16,
                 SymbolSection::Section(id) => id.0 as u16 + 1,
             };
             let typ = if symbol.kind == SymbolKind::Text {
@@ -642,7 +654,7 @@ impl<'a> Object<'a> {
             let mut coff_symbol = coff::ImageSymbol {
                 name: [0; 8],
                 value: U32Bytes::new(LE, value),
-                section_number: U16Bytes::new(LE, section_number as u16),
+                section_number: U16Bytes::new(LE, section_number),
                 typ: U16Bytes::new(LE, typ),
                 storage_class,
                 number_of_aux_symbols,

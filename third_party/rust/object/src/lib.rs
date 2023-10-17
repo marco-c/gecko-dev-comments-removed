@@ -52,9 +52,13 @@
 
 
 
+
+
+
 #![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![no_std]
+#![warn(rust_2018_idioms)]
 
 #![allow(clippy::collapsible_if)]
 #![allow(clippy::comparison_chain)]
@@ -66,15 +70,10 @@
 
 #![allow(clippy::result_unit_err)]
 
-#![allow(clippy::transmute_ptr_to_ptr)]
-
 #![allow(clippy::collapsible_else_if)]
 
 #[cfg(feature = "cargo-all")]
 compile_error!("'--all-features' is not supported; use '--features all' instead");
-
-#[cfg(all(feature = "xcoff", not(feature = "unstable")))]
-compile_error!("'xcoff` is an unstable feature; enable 'unstable' as well");
 
 #[cfg(any(feature = "read_core", feature = "write_core"))]
 #[allow(unused_imports)]

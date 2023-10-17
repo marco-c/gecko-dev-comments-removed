@@ -178,7 +178,7 @@ impl pe::ImageDataDirectory {
     
     
     
-    pub fn file_range<'data>(&self, sections: &SectionTable<'data>) -> Result<(u32, u32)> {
+    pub fn file_range(&self, sections: &SectionTable<'_>) -> Result<(u32, u32)> {
         let (offset, section_size) = sections
             .pe_file_range_at(self.virtual_address.get(LE))
             .read_error("Invalid data dir virtual address")?;

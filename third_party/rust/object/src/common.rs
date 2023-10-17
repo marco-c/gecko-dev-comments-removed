@@ -10,6 +10,7 @@ pub enum Architecture {
     Arm,
     Avr,
     Bpf,
+    Csky,
     I386,
     X86_64,
     #[allow(non_camel_case_types)]
@@ -27,6 +28,7 @@ pub enum Architecture {
     Sbf,
     Sparc64,
     Wasm32,
+    Wasm64,
     Xtensa,
 }
 
@@ -42,6 +44,7 @@ impl Architecture {
             Architecture::Arm => Some(AddressSize::U32),
             Architecture::Avr => Some(AddressSize::U8),
             Architecture::Bpf => Some(AddressSize::U64),
+            Architecture::Csky => Some(AddressSize::U32),
             Architecture::I386 => Some(AddressSize::U32),
             Architecture::X86_64 => Some(AddressSize::U64),
             Architecture::X86_64_X32 => Some(AddressSize::U32),
@@ -58,6 +61,7 @@ impl Architecture {
             Architecture::Sbf => Some(AddressSize::U64),
             Architecture::Sparc64 => Some(AddressSize::U64),
             Architecture::Wasm32 => Some(AddressSize::U32),
+            Architecture::Wasm64 => Some(AddressSize::U64),
             Architecture::Xtensa => Some(AddressSize::U32),
         }
     }
@@ -455,7 +459,7 @@ pub enum SectionFlags {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
-pub enum SymbolFlags<Section> {
+pub enum SymbolFlags<Section, Symbol> {
     
     None,
     
@@ -476,5 +480,22 @@ pub enum SymbolFlags<Section> {
         selection: u8,
         
         associative_section: Option<Section>,
+    },
+    
+    Xcoff {
+        
+        n_sclass: u8,
+        
+        
+        
+        x_smtyp: u8,
+        
+        
+        
+        x_smclas: u8,
+        
+        
+        
+        containing_csect: Option<Symbol>,
     },
 }

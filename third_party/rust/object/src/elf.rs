@@ -5,6 +5,7 @@
 
 
 
+#![allow(missing_docs)]
 #![allow(clippy::identity_op)]
 
 use crate::endian::{Endian, U32Bytes, U64Bytes, I32, I64, U16, U32, U64};
@@ -721,11 +722,10 @@ pub const SHT_GNU_LIBLIST: u32 = 0x6fff_fff7;
 pub const SHT_CHECKSUM: u32 = 0x6fff_fff8;
 
 pub const SHT_LOSUNW: u32 = 0x6fff_fffa;
-#[allow(missing_docs, non_upper_case_globals)]
+#[allow(non_upper_case_globals)]
 pub const SHT_SUNW_move: u32 = 0x6fff_fffa;
-#[allow(missing_docs)]
 pub const SHT_SUNW_COMDAT: u32 = 0x6fff_fffb;
-#[allow(missing_docs, non_upper_case_globals)]
+#[allow(non_upper_case_globals)]
 pub const SHT_SUNW_syminfo: u32 = 0x6fff_fffc;
 
 #[allow(non_upper_case_globals)]
@@ -819,6 +819,8 @@ pub struct CompressionHeader64<E: Endian> {
 
 
 pub const ELFCOMPRESS_ZLIB: u32 = 1;
+
+pub const ELFCOMPRESS_ZSTD: u32 = 2;
 
 pub const ELFCOMPRESS_LOOS: u32 = 0x6000_0000;
 
@@ -971,11 +973,8 @@ pub const SYMINFO_FLG_COPY: u16 = 0x0004;
 pub const SYMINFO_FLG_LAZYLOAD: u16 = 0x0008;
 
 
-#[allow(missing_docs)]
 pub const SYMINFO_NONE: u16 = 0;
-#[allow(missing_docs)]
 pub const SYMINFO_CURRENT: u16 = 1;
-#[allow(missing_docs)]
 pub const SYMINFO_NUM: u16 = 2;
 
 
@@ -1288,6 +1287,8 @@ pub const PT_GNU_STACK: u32 = 0x6474_e551;
 
 pub const PT_GNU_RELRO: u32 = 0x6474_e552;
 
+pub const PT_GNU_PROPERTY: u32 = 0x6474_e553;
+
 pub const PT_HIOS: u32 = 0x6fff_ffff;
 
 pub const PT_LOPROC: u32 = 0x7000_0000;
@@ -1307,11 +1308,11 @@ pub const PF_MASKOS: u32 = 0x0ff0_0000;
 pub const PF_MASKPROC: u32 = 0xf000_0000;
 
 
-pub static ELF_NOTE_CORE: &[u8] = b"CORE";
+pub const ELF_NOTE_CORE: &[u8] = b"CORE";
 
 
 
-pub static ELF_NOTE_LINUX: &[u8] = b"LINUX";
+pub const ELF_NOTE_LINUX: &[u8] = b"LINUX";
 
 
 
@@ -1552,7 +1553,6 @@ pub const DT_LOPROC: u32 = 0x7000_0000;
 pub const DT_HIPROC: u32 = 0x7fff_ffff;
 
 
-#[allow(missing_docs)]
 pub const DT_VALRNGLO: u32 = 0x6fff_fd00;
 
 pub const DT_GNU_PRELINKED: u32 = 0x6fff_fdf5;
@@ -1560,13 +1560,9 @@ pub const DT_GNU_PRELINKED: u32 = 0x6fff_fdf5;
 pub const DT_GNU_CONFLICTSZ: u32 = 0x6fff_fdf6;
 
 pub const DT_GNU_LIBLISTSZ: u32 = 0x6fff_fdf7;
-#[allow(missing_docs)]
 pub const DT_CHECKSUM: u32 = 0x6fff_fdf8;
-#[allow(missing_docs)]
 pub const DT_PLTPADSZ: u32 = 0x6fff_fdf9;
-#[allow(missing_docs)]
 pub const DT_MOVEENT: u32 = 0x6fff_fdfa;
-#[allow(missing_docs)]
 pub const DT_MOVESZ: u32 = 0x6fff_fdfb;
 
 pub const DT_FEATURE_1: u32 = 0x6fff_fdfc;
@@ -1576,20 +1572,16 @@ pub const DT_POSFLAG_1: u32 = 0x6fff_fdfd;
 pub const DT_SYMINSZ: u32 = 0x6fff_fdfe;
 
 pub const DT_SYMINENT: u32 = 0x6fff_fdff;
-#[allow(missing_docs)]
 pub const DT_VALRNGHI: u32 = 0x6fff_fdff;
 
 
 
 
 
-#[allow(missing_docs)]
 pub const DT_ADDRRNGLO: u32 = 0x6fff_fe00;
 
 pub const DT_GNU_HASH: u32 = 0x6fff_fef5;
-#[allow(missing_docs)]
 pub const DT_TLSDESC_PLT: u32 = 0x6fff_fef6;
-#[allow(missing_docs)]
 pub const DT_TLSDESC_GOT: u32 = 0x6fff_fef7;
 
 pub const DT_GNU_CONFLICT: u32 = 0x6fff_fef8;
@@ -1607,16 +1599,12 @@ pub const DT_PLTPAD: u32 = 0x6fff_fefd;
 pub const DT_MOVETAB: u32 = 0x6fff_fefe;
 
 pub const DT_SYMINFO: u32 = 0x6fff_feff;
-#[allow(missing_docs)]
 pub const DT_ADDRRNGHI: u32 = 0x6fff_feff;
 
 
 
-#[allow(missing_docs)]
 pub const DT_VERSYM: u32 = 0x6fff_fff0;
-#[allow(missing_docs)]
 pub const DT_RELACOUNT: u32 = 0x6fff_fff9;
-#[allow(missing_docs)]
 pub const DT_RELCOUNT: u32 = 0x6fff_fffa;
 
 pub const DT_FLAGS_1: u32 = 0x6fff_fffb;
@@ -1666,7 +1654,6 @@ pub const DF_1_NOOPEN: u32 = 0x0000_0040;
 pub const DF_1_ORIGIN: u32 = 0x0000_0080;
 
 pub const DF_1_DIRECT: u32 = 0x0000_0100;
-#[allow(missing_docs)]
 pub const DF_1_TRANS: u32 = 0x0000_0200;
 
 pub const DF_1_INTERPOSE: u32 = 0x0000_0400;
@@ -1684,15 +1671,11 @@ pub const DF_1_DISPRELDNE: u32 = 0x0000_8000;
 pub const DF_1_DISPRELPND: u32 = 0x0001_0000;
 
 pub const DF_1_NODIRECT: u32 = 0x0002_0000;
-#[allow(missing_docs)]
 pub const DF_1_IGNMULDEF: u32 = 0x0004_0000;
-#[allow(missing_docs)]
 pub const DF_1_NOKSYMS: u32 = 0x0008_0000;
-#[allow(missing_docs)]
 pub const DF_1_NOHDR: u32 = 0x0010_0000;
 
 pub const DF_1_EDITED: u32 = 0x0020_0000;
-#[allow(missing_docs)]
 pub const DF_1_NORELOC: u32 = 0x0040_0000;
 
 pub const DF_1_SYMINTPOSE: u32 = 0x0080_0000;
@@ -1700,9 +1683,7 @@ pub const DF_1_SYMINTPOSE: u32 = 0x0080_0000;
 pub const DF_1_GLOBAUDIT: u32 = 0x0100_0000;
 
 pub const DF_1_SINGLETON: u32 = 0x0200_0000;
-#[allow(missing_docs)]
 pub const DF_1_STUB: u32 = 0x0400_0000;
-#[allow(missing_docs)]
 pub const DF_1_PIE: u32 = 0x0800_0000;
 
 
@@ -1845,14 +1826,18 @@ pub struct NoteHeader64<E: Endian> {
 }
 
 
-pub static ELF_NOTE_SOLARIS: &[u8] = b"SUNW Solaris";
+pub const ELF_NOTE_SOLARIS: &[u8] = b"SUNW Solaris";
 
 
 
 pub const NT_SOLARIS_PAGESIZE_HINT: u32 = 1;
 
 
-pub static ELF_NOTE_GNU: &[u8] = b"GNU";
+pub const ELF_NOTE_GNU: &[u8] = b"GNU";
+
+
+
+pub const ELF_NOTE_GO: &[u8] = b"Go";
 
 
 
@@ -1890,11 +1875,99 @@ pub const NT_GNU_HWCAP: u32 = 2;
 pub const NT_GNU_BUILD_ID: u32 = 3;
 
 
+
+
+
+pub const NT_GO_BUILD_ID: u32 = 4;
+
+
 pub const NT_GNU_GOLD_VERSION: u32 = 4;
 
 
 pub const NT_GNU_PROPERTY_TYPE_0: u32 = 5;
 
+
+
+
+pub const GNU_PROPERTY_STACK_SIZE: u32 = 1;
+
+pub const GNU_PROPERTY_NO_COPY_ON_PROTECTED: u32 = 2;
+
+
+
+pub const GNU_PROPERTY_UINT32_AND_LO: u32 = 0xb0000000;
+pub const GNU_PROPERTY_UINT32_AND_HI: u32 = 0xb0007fff;
+
+
+
+pub const GNU_PROPERTY_UINT32_OR_LO: u32 = 0xb0008000;
+pub const GNU_PROPERTY_UINT32_OR_HI: u32 = 0xb000ffff;
+
+
+pub const GNU_PROPERTY_1_NEEDED: u32 = GNU_PROPERTY_UINT32_OR_LO;
+
+
+
+pub const GNU_PROPERTY_1_NEEDED_INDIRECT_EXTERN_ACCESS: u32 = 1 << 0;
+
+
+pub const GNU_PROPERTY_LOPROC: u32 = 0xc0000000;
+
+pub const GNU_PROPERTY_HIPROC: u32 = 0xdfffffff;
+
+pub const GNU_PROPERTY_LOUSER: u32 = 0xe0000000;
+
+pub const GNU_PROPERTY_HIUSER: u32 = 0xffffffff;
+
+
+pub const GNU_PROPERTY_AARCH64_FEATURE_1_AND: u32 = 0xc0000000;
+
+pub const GNU_PROPERTY_AARCH64_FEATURE_1_BTI: u32 = 1 << 0;
+pub const GNU_PROPERTY_AARCH64_FEATURE_1_PAC: u32 = 1 << 1;
+
+
+
+pub const GNU_PROPERTY_X86_UINT32_AND_LO: u32 = 0xc0000002;
+pub const GNU_PROPERTY_X86_UINT32_AND_HI: u32 = 0xc0007fff;
+
+
+
+pub const GNU_PROPERTY_X86_UINT32_OR_LO: u32 = 0xc0008000;
+pub const GNU_PROPERTY_X86_UINT32_OR_HI: u32 = 0xc000ffff;
+
+
+
+
+pub const GNU_PROPERTY_X86_UINT32_OR_AND_LO: u32 = 0xc0010000;
+pub const GNU_PROPERTY_X86_UINT32_OR_AND_HI: u32 = 0xc0017fff;
+
+
+
+pub const GNU_PROPERTY_X86_ISA_1_USED: u32 = 0xc0010002;
+
+
+pub const GNU_PROPERTY_X86_ISA_1_NEEDED: u32 = 0xc0008002;
+
+pub const GNU_PROPERTY_X86_FEATURE_1_AND: u32 = 0xc0000002;
+
+
+
+pub const GNU_PROPERTY_X86_ISA_1_BASELINE: u32 = 1 << 0;
+
+
+
+pub const GNU_PROPERTY_X86_ISA_1_V2: u32 = 1 << 1;
+
+
+pub const GNU_PROPERTY_X86_ISA_1_V3: u32 = 1 << 2;
+
+
+pub const GNU_PROPERTY_X86_ISA_1_V4: u32 = 1 << 3;
+
+
+pub const GNU_PROPERTY_X86_FEATURE_1_IBT: u32 = 1 << 0;
+
+pub const GNU_PROPERTY_X86_FEATURE_1_SHSTK: u32 = 1 << 1;
 
 
 
@@ -2142,17 +2215,12 @@ pub const STT_SPARC_REGISTER: u8 = 13;
 
 
 
-#[allow(missing_docs)]
 pub const EF_SPARCV9_MM: u32 = 3;
-#[allow(missing_docs)]
 pub const EF_SPARCV9_TSO: u32 = 0;
-#[allow(missing_docs)]
 pub const EF_SPARCV9_PSO: u32 = 1;
-#[allow(missing_docs)]
 pub const EF_SPARCV9_RMO: u32 = 2;
 
 pub const EF_SPARC_LEDATA: u32 = 0x80_0000;
-#[allow(missing_docs)]
 pub const EF_SPARC_EXT_MASK: u32 = 0xFF_FF00;
 
 pub const EF_SPARC_32PLUS: u32 = 0x00_0100;
@@ -2280,86 +2348,47 @@ pub const R_SPARC_REGISTER: u32 = 53;
 pub const R_SPARC_UA64: u32 = 54;
 
 pub const R_SPARC_UA16: u32 = 55;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_GD_HI22: u32 = 56;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_GD_LO10: u32 = 57;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_GD_ADD: u32 = 58;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_GD_CALL: u32 = 59;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDM_HI22: u32 = 60;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDM_LO10: u32 = 61;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDM_ADD: u32 = 62;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDM_CALL: u32 = 63;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDO_HIX22: u32 = 64;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDO_LOX10: u32 = 65;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LDO_ADD: u32 = 66;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_IE_HI22: u32 = 67;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_IE_LO10: u32 = 68;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_IE_LD: u32 = 69;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_IE_LDX: u32 = 70;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_IE_ADD: u32 = 71;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LE_HIX22: u32 = 72;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_LE_LOX10: u32 = 73;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_DTPMOD32: u32 = 74;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_DTPMOD64: u32 = 75;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_DTPOFF32: u32 = 76;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_DTPOFF64: u32 = 77;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_TPOFF32: u32 = 78;
-#[allow(missing_docs)]
 pub const R_SPARC_TLS_TPOFF64: u32 = 79;
-#[allow(missing_docs)]
 pub const R_SPARC_GOTDATA_HIX22: u32 = 80;
-#[allow(missing_docs)]
 pub const R_SPARC_GOTDATA_LOX10: u32 = 81;
-#[allow(missing_docs)]
 pub const R_SPARC_GOTDATA_OP_HIX22: u32 = 82;
-#[allow(missing_docs)]
 pub const R_SPARC_GOTDATA_OP_LOX10: u32 = 83;
-#[allow(missing_docs)]
 pub const R_SPARC_GOTDATA_OP: u32 = 84;
-#[allow(missing_docs)]
 pub const R_SPARC_H34: u32 = 85;
-#[allow(missing_docs)]
 pub const R_SPARC_SIZE32: u32 = 86;
-#[allow(missing_docs)]
 pub const R_SPARC_SIZE64: u32 = 87;
-#[allow(missing_docs)]
 pub const R_SPARC_WDISP10: u32 = 88;
-#[allow(missing_docs)]
 pub const R_SPARC_JMP_IREL: u32 = 248;
-#[allow(missing_docs)]
 pub const R_SPARC_IRELATIVE: u32 = 249;
-#[allow(missing_docs)]
 pub const R_SPARC_GNU_VTINHERIT: u32 = 250;
-#[allow(missing_docs)]
 pub const R_SPARC_GNU_VTENTRY: u32 = 251;
-#[allow(missing_docs)]
 pub const R_SPARC_REV32: u32 = 252;
 
 
 
-#[allow(missing_docs)]
 pub const DT_SPARC_REGISTER: u32 = 0x7000_0001;
 
 
@@ -2372,13 +2401,9 @@ pub const EF_MIPS_NOREORDER: u32 = 1;
 pub const EF_MIPS_PIC: u32 = 2;
 
 pub const EF_MIPS_CPIC: u32 = 4;
-#[allow(missing_docs)]
 pub const EF_MIPS_XGOT: u32 = 8;
-#[allow(missing_docs)]
 pub const EF_MIPS_64BIT_WHIRL: u32 = 16;
-#[allow(missing_docs)]
 pub const EF_MIPS_ABI2: u32 = 32;
-#[allow(missing_docs)]
 pub const EF_MIPS_ABI_ON32: u32 = 64;
 
 pub const EF_MIPS_FP64: u32 = 512;
@@ -2440,7 +2465,6 @@ pub const SHN_MIPS_SUNDEFINED: u16 = 0xff04;
 
 
 pub const SHT_MIPS_LIBLIST: u32 = 0x7000_0000;
-#[allow(missing_docs)]
 pub const SHT_MIPS_MSYM: u32 = 0x7000_0001;
 
 pub const SHT_MIPS_CONFLICT: u32 = 0x7000_0002;
@@ -2452,99 +2476,61 @@ pub const SHT_MIPS_UCODE: u32 = 0x7000_0004;
 pub const SHT_MIPS_DEBUG: u32 = 0x7000_0005;
 
 pub const SHT_MIPS_REGINFO: u32 = 0x7000_0006;
-#[allow(missing_docs)]
 pub const SHT_MIPS_PACKAGE: u32 = 0x7000_0007;
-#[allow(missing_docs)]
 pub const SHT_MIPS_PACKSYM: u32 = 0x7000_0008;
-#[allow(missing_docs)]
 pub const SHT_MIPS_RELD: u32 = 0x7000_0009;
-#[allow(missing_docs)]
 pub const SHT_MIPS_IFACE: u32 = 0x7000_000b;
-#[allow(missing_docs)]
 pub const SHT_MIPS_CONTENT: u32 = 0x7000_000c;
 
 pub const SHT_MIPS_OPTIONS: u32 = 0x7000_000d;
-#[allow(missing_docs)]
 pub const SHT_MIPS_SHDR: u32 = 0x7000_0010;
-#[allow(missing_docs)]
 pub const SHT_MIPS_FDESC: u32 = 0x7000_0011;
-#[allow(missing_docs)]
 pub const SHT_MIPS_EXTSYM: u32 = 0x7000_0012;
-#[allow(missing_docs)]
 pub const SHT_MIPS_DENSE: u32 = 0x7000_0013;
-#[allow(missing_docs)]
 pub const SHT_MIPS_PDESC: u32 = 0x7000_0014;
-#[allow(missing_docs)]
 pub const SHT_MIPS_LOCSYM: u32 = 0x7000_0015;
-#[allow(missing_docs)]
 pub const SHT_MIPS_AUXSYM: u32 = 0x7000_0016;
-#[allow(missing_docs)]
 pub const SHT_MIPS_OPTSYM: u32 = 0x7000_0017;
-#[allow(missing_docs)]
 pub const SHT_MIPS_LOCSTR: u32 = 0x7000_0018;
-#[allow(missing_docs)]
 pub const SHT_MIPS_LINE: u32 = 0x7000_0019;
-#[allow(missing_docs)]
 pub const SHT_MIPS_RFDESC: u32 = 0x7000_001a;
-#[allow(missing_docs)]
 pub const SHT_MIPS_DELTASYM: u32 = 0x7000_001b;
-#[allow(missing_docs)]
 pub const SHT_MIPS_DELTAINST: u32 = 0x7000_001c;
-#[allow(missing_docs)]
 pub const SHT_MIPS_DELTACLASS: u32 = 0x7000_001d;
 
 pub const SHT_MIPS_DWARF: u32 = 0x7000_001e;
-#[allow(missing_docs)]
 pub const SHT_MIPS_DELTADECL: u32 = 0x7000_001f;
-#[allow(missing_docs)]
 pub const SHT_MIPS_SYMBOL_LIB: u32 = 0x7000_0020;
 
 pub const SHT_MIPS_EVENTS: u32 = 0x7000_0021;
-#[allow(missing_docs)]
 pub const SHT_MIPS_TRANSLATE: u32 = 0x7000_0022;
-#[allow(missing_docs)]
 pub const SHT_MIPS_PIXIE: u32 = 0x7000_0023;
-#[allow(missing_docs)]
 pub const SHT_MIPS_XLATE: u32 = 0x7000_0024;
-#[allow(missing_docs)]
 pub const SHT_MIPS_XLATE_DEBUG: u32 = 0x7000_0025;
-#[allow(missing_docs)]
 pub const SHT_MIPS_WHIRL: u32 = 0x7000_0026;
-#[allow(missing_docs)]
 pub const SHT_MIPS_EH_REGION: u32 = 0x7000_0027;
-#[allow(missing_docs)]
 pub const SHT_MIPS_XLATE_OLD: u32 = 0x7000_0028;
-#[allow(missing_docs)]
 pub const SHT_MIPS_PDR_EXCEPTION: u32 = 0x7000_0029;
 
 
 
 
 pub const SHF_MIPS_GPREL: u32 = 0x1000_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_MERGE: u32 = 0x2000_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_ADDR: u32 = 0x4000_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_STRINGS: u32 = 0x8000_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_NOSTRIP: u32 = 0x0800_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_LOCAL: u32 = 0x0400_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_NAMES: u32 = 0x0200_0000;
-#[allow(missing_docs)]
 pub const SHF_MIPS_NODUPE: u32 = 0x0100_0000;
 
 
 
-#[allow(missing_docs)]
 pub const STO_MIPS_PLT: u8 = 0x8;
 
 pub const STO_MIPS_SC_ALIGN_UNUSED: u8 = 0xff;
 
 
-#[allow(missing_docs)]
 pub const STB_MIPS_SPLIT_COMMON: u8 = 13;
 
 
@@ -2584,20 +2570,14 @@ pub const OEX_PAGE0: u32 = 0x10000;
 pub const OEX_SMM: u32 = 0x20000;
 
 pub const OEX_FPDBUG: u32 = 0x40000;
-#[allow(missing_docs)]
 pub const OEX_PRECISEFP: u32 = OEX_FPDBUG;
 
 pub const OEX_DISMISS: u32 = 0x80000;
 
-#[allow(missing_docs)]
 pub const OEX_FPU_INVAL: u32 = 0x10;
-#[allow(missing_docs)]
 pub const OEX_FPU_DIV0: u32 = 0x08;
-#[allow(missing_docs)]
 pub const OEX_FPU_OFLO: u32 = 0x04;
-#[allow(missing_docs)]
 pub const OEX_FPU_UFLO: u32 = 0x02;
-#[allow(missing_docs)]
 pub const OEX_FPU_INEX: u32 = 0x01;
 
 
@@ -2610,11 +2590,8 @@ pub const OHW_R5KEOP: u32 = 0x4;
 
 pub const OHW_R5KCVTL: u32 = 0x8;
 
-#[allow(missing_docs)]
 pub const OPAD_PREFIX: u32 = 0x1;
-#[allow(missing_docs)]
 pub const OPAD_POSTFIX: u32 = 0x2;
-#[allow(missing_docs)]
 pub const OPAD_SYMBOL: u32 = 0x4;
 
 
@@ -2623,9 +2600,7 @@ pub const OPAD_SYMBOL: u32 = 0x4;
 
 
 
-#[allow(missing_docs)]
 pub const OHWA0_R4KEOP_CHECKED: u32 = 0x0000_0001;
-#[allow(missing_docs)]
 pub const OHWA1_R4KEOP_CLEAN: u32 = 0x0000_0002;
 
 
@@ -2657,49 +2632,27 @@ pub const R_MIPS_CALL16: u32 = 11;
 
 pub const R_MIPS_GPREL32: u32 = 12;
 
-#[allow(missing_docs)]
 pub const R_MIPS_SHIFT5: u32 = 16;
-#[allow(missing_docs)]
 pub const R_MIPS_SHIFT6: u32 = 17;
-#[allow(missing_docs)]
 pub const R_MIPS_64: u32 = 18;
-#[allow(missing_docs)]
 pub const R_MIPS_GOT_DISP: u32 = 19;
-#[allow(missing_docs)]
 pub const R_MIPS_GOT_PAGE: u32 = 20;
-#[allow(missing_docs)]
 pub const R_MIPS_GOT_OFST: u32 = 21;
-#[allow(missing_docs)]
 pub const R_MIPS_GOT_HI16: u32 = 22;
-#[allow(missing_docs)]
 pub const R_MIPS_GOT_LO16: u32 = 23;
-#[allow(missing_docs)]
 pub const R_MIPS_SUB: u32 = 24;
-#[allow(missing_docs)]
 pub const R_MIPS_INSERT_A: u32 = 25;
-#[allow(missing_docs)]
 pub const R_MIPS_INSERT_B: u32 = 26;
-#[allow(missing_docs)]
 pub const R_MIPS_DELETE: u32 = 27;
-#[allow(missing_docs)]
 pub const R_MIPS_HIGHER: u32 = 28;
-#[allow(missing_docs)]
 pub const R_MIPS_HIGHEST: u32 = 29;
-#[allow(missing_docs)]
 pub const R_MIPS_CALL_HI16: u32 = 30;
-#[allow(missing_docs)]
 pub const R_MIPS_CALL_LO16: u32 = 31;
-#[allow(missing_docs)]
 pub const R_MIPS_SCN_DISP: u32 = 32;
-#[allow(missing_docs)]
 pub const R_MIPS_REL16: u32 = 33;
-#[allow(missing_docs)]
 pub const R_MIPS_ADD_IMMEDIATE: u32 = 34;
-#[allow(missing_docs)]
 pub const R_MIPS_PJUMP: u32 = 35;
-#[allow(missing_docs)]
 pub const R_MIPS_RELGOT: u32 = 36;
-#[allow(missing_docs)]
 pub const R_MIPS_JALR: u32 = 37;
 
 pub const R_MIPS_TLS_DTPMOD32: u32 = 38;
@@ -2727,11 +2680,8 @@ pub const R_MIPS_TLS_TPREL64: u32 = 48;
 pub const R_MIPS_TLS_TPREL_HI16: u32 = 49;
 
 pub const R_MIPS_TLS_TPREL_LO16: u32 = 50;
-#[allow(missing_docs)]
 pub const R_MIPS_GLOB_DAT: u32 = 51;
-#[allow(missing_docs)]
 pub const R_MIPS_COPY: u32 = 126;
-#[allow(missing_docs)]
 pub const R_MIPS_JUMP_SLOT: u32 = 127;
 
 
@@ -2740,14 +2690,12 @@ pub const R_MIPS_JUMP_SLOT: u32 = 127;
 pub const PT_MIPS_REGINFO: u32 = 0x7000_0000;
 
 pub const PT_MIPS_RTPROC: u32 = 0x7000_0001;
-#[allow(missing_docs)]
 pub const PT_MIPS_OPTIONS: u32 = 0x7000_0002;
 
 pub const PT_MIPS_ABIFLAGS: u32 = 0x7000_0003;
 
 
 
-#[allow(missing_docs)]
 pub const PF_MIPS_LOCAL: u32 = 0x1000_0000;
 
 
@@ -2764,7 +2712,6 @@ pub const DT_MIPS_IVERSION: u32 = 0x7000_0004;
 pub const DT_MIPS_FLAGS: u32 = 0x7000_0005;
 
 pub const DT_MIPS_BASE_ADDRESS: u32 = 0x7000_0006;
-#[allow(missing_docs)]
 pub const DT_MIPS_MSYM: u32 = 0x7000_0007;
 
 pub const DT_MIPS_CONFLICT: u32 = 0x7000_0008;
@@ -2808,23 +2755,16 @@ pub const DT_MIPS_DELTA_CLASSSYM: u32 = 0x7000_0020;
 pub const DT_MIPS_DELTA_CLASSSYM_NO: u32 = 0x7000_0021;
 
 pub const DT_MIPS_CXX_FLAGS: u32 = 0x7000_0022;
-#[allow(missing_docs)]
 pub const DT_MIPS_PIXIE_INIT: u32 = 0x7000_0023;
-#[allow(missing_docs)]
 pub const DT_MIPS_SYMBOL_LIB: u32 = 0x7000_0024;
-#[allow(missing_docs)]
 pub const DT_MIPS_LOCALPAGE_GOTIDX: u32 = 0x7000_0025;
-#[allow(missing_docs)]
 pub const DT_MIPS_LOCAL_GOTIDX: u32 = 0x7000_0026;
-#[allow(missing_docs)]
 pub const DT_MIPS_HIDDEN_GOTIDX: u32 = 0x7000_0027;
-#[allow(missing_docs)]
 pub const DT_MIPS_PROTECTED_GOTIDX: u32 = 0x7000_0028;
 
 pub const DT_MIPS_OPTIONS: u32 = 0x7000_0029;
 
 pub const DT_MIPS_INTERFACE: u32 = 0x7000_002a;
-#[allow(missing_docs)]
 pub const DT_MIPS_DYNSTR_ALIGN: u32 = 0x7000_002b;
 
 pub const DT_MIPS_INTERFACE_SIZE: u32 = 0x7000_002c;
@@ -2855,29 +2795,17 @@ pub const RHF_QUICKSTART: u32 = 1 << 0;
 pub const RHF_NOTPOT: u32 = 1 << 1;
 
 pub const RHF_NO_LIBRARY_REPLACEMENT: u32 = 1 << 2;
-#[allow(missing_docs)]
 pub const RHF_NO_MOVE: u32 = 1 << 3;
-#[allow(missing_docs)]
 pub const RHF_SGI_ONLY: u32 = 1 << 4;
-#[allow(missing_docs)]
 pub const RHF_GUARANTEE_INIT: u32 = 1 << 5;
-#[allow(missing_docs)]
 pub const RHF_DELTA_C_PLUS_PLUS: u32 = 1 << 6;
-#[allow(missing_docs)]
 pub const RHF_GUARANTEE_START_INIT: u32 = 1 << 7;
-#[allow(missing_docs)]
 pub const RHF_PIXIE: u32 = 1 << 8;
-#[allow(missing_docs)]
 pub const RHF_DEFAULT_DELAY_LOAD: u32 = 1 << 9;
-#[allow(missing_docs)]
 pub const RHF_REQUICKSTART: u32 = 1 << 10;
-#[allow(missing_docs)]
 pub const RHF_REQUICKSTARTED: u32 = 1 << 11;
-#[allow(missing_docs)]
 pub const RHF_CORD: u32 = 1 << 12;
-#[allow(missing_docs)]
 pub const RHF_NO_UNRES_UNDEF: u32 = 1 << 13;
-#[allow(missing_docs)]
 pub const RHF_RLD_ORDER_SAFE: u32 = 1 << 14;
 
 
@@ -2886,19 +2814,14 @@ pub const RHF_RLD_ORDER_SAFE: u32 = 1 << 14;
 
 
 
-#[allow(missing_docs)]
 pub const LL_NONE: u32 = 0;
 
 pub const LL_EXACT_MATCH: u32 = 1 << 0;
 
 pub const LL_IGNORE_INT_VER: u32 = 1 << 1;
-#[allow(missing_docs)]
 pub const LL_REQUIRE_MINOR: u32 = 1 << 2;
-#[allow(missing_docs)]
 pub const LL_EXPORTS: u32 = 1 << 3;
-#[allow(missing_docs)]
 pub const LL_DELAY_LOAD: u32 = 1 << 4;
-#[allow(missing_docs)]
 pub const LL_DELTA: u32 = 1 << 5;
 
 
@@ -2961,9 +2884,7 @@ pub const SHF_PARISC_SBP: u32 = 0x8000_0000;
 
 pub const STT_PARISC_MILLICODE: u8 = 13;
 
-#[allow(missing_docs)]
 pub const STT_HP_OPAQUE: u8 = STT_LOOS + 0x1;
-#[allow(missing_docs)]
 pub const STT_HP_STUB: u8 = STT_LOOS + 0x2;
 
 
@@ -3102,7 +3023,6 @@ pub const R_PARISC_LTOFF_FPTR16F: u32 = 125;
 pub const R_PARISC_LTOFF_FPTR16WF: u32 = 126;
 
 pub const R_PARISC_LTOFF_FPTR16DF: u32 = 127;
-#[allow(missing_docs)]
 pub const R_PARISC_LORESERVE: u32 = 128;
 
 pub const R_PARISC_COPY: u32 = 128;
@@ -3146,9 +3066,7 @@ pub const R_PARISC_LTOFF_TP16F: u32 = 229;
 pub const R_PARISC_LTOFF_TP16WF: u32 = 230;
 
 pub const R_PARISC_LTOFF_TP16DF: u32 = 231;
-#[allow(missing_docs)]
 pub const R_PARISC_GNU_VTENTRY: u32 = 232;
-#[allow(missing_docs)]
 pub const R_PARISC_GNU_VTINHERIT: u32 = 233;
 
 pub const R_PARISC_TLS_GD21L: u32 = 234;
@@ -3174,77 +3092,45 @@ pub const R_PARISC_TLS_DTPMOD64: u32 = 243;
 pub const R_PARISC_TLS_DTPOFF32: u32 = 244;
 
 pub const R_PARISC_TLS_DTPOFF64: u32 = 245;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_LE21L: u32 = R_PARISC_TPREL21L;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_LE14R: u32 = R_PARISC_TPREL14R;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_IE21L: u32 = R_PARISC_LTOFF_TP21L;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_IE14R: u32 = R_PARISC_LTOFF_TP14R;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_TPREL32: u32 = R_PARISC_TPREL32;
-#[allow(missing_docs)]
 pub const R_PARISC_TLS_TPREL64: u32 = R_PARISC_TPREL64;
-#[allow(missing_docs)]
 pub const R_PARISC_HIRESERVE: u32 = 255;
 
 
 
-#[allow(missing_docs)]
 pub const PT_HP_TLS: u32 = PT_LOOS + 0x0;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_NONE: u32 = PT_LOOS + 0x1;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_VERSION: u32 = PT_LOOS + 0x2;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_KERNEL: u32 = PT_LOOS + 0x3;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_COMM: u32 = PT_LOOS + 0x4;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_PROC: u32 = PT_LOOS + 0x5;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_LOADABLE: u32 = PT_LOOS + 0x6;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_STACK: u32 = PT_LOOS + 0x7;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_SHM: u32 = PT_LOOS + 0x8;
-#[allow(missing_docs)]
 pub const PT_HP_CORE_MMF: u32 = PT_LOOS + 0x9;
-#[allow(missing_docs)]
 pub const PT_HP_PARALLEL: u32 = PT_LOOS + 0x10;
-#[allow(missing_docs)]
 pub const PT_HP_FASTBIND: u32 = PT_LOOS + 0x11;
-#[allow(missing_docs)]
 pub const PT_HP_OPT_ANNOT: u32 = PT_LOOS + 0x12;
-#[allow(missing_docs)]
 pub const PT_HP_HSL_ANNOT: u32 = PT_LOOS + 0x13;
-#[allow(missing_docs)]
 pub const PT_HP_STACK: u32 = PT_LOOS + 0x14;
 
-#[allow(missing_docs)]
 pub const PT_PARISC_ARCHEXT: u32 = 0x7000_0000;
-#[allow(missing_docs)]
 pub const PT_PARISC_UNWIND: u32 = 0x7000_0001;
 
 
 
-#[allow(missing_docs)]
 pub const PF_PARISC_SBP: u32 = 0x0800_0000;
 
-#[allow(missing_docs)]
 pub const PF_HP_PAGE_SIZE: u32 = 0x0010_0000;
-#[allow(missing_docs)]
 pub const PF_HP_FAR_SHARED: u32 = 0x0020_0000;
-#[allow(missing_docs)]
 pub const PF_HP_NEAR_SHARED: u32 = 0x0040_0000;
-#[allow(missing_docs)]
 pub const PF_HP_CODE: u32 = 0x0100_0000;
-#[allow(missing_docs)]
 pub const PF_HP_MODIFY: u32 = 0x0200_0000;
-#[allow(missing_docs)]
 pub const PF_HP_LAZYSWAP: u32 = 0x0400_0000;
-#[allow(missing_docs)]
 pub const PF_HP_SBP: u32 = 0x0800_0000;
 
 
@@ -3259,14 +3145,11 @@ pub const EF_ALPHA_CANRELAX: u32 = 2;
 
 
 
-#[allow(missing_docs)]
 pub const SHT_ALPHA_DEBUG: u32 = 0x7000_0001;
-#[allow(missing_docs)]
 pub const SHT_ALPHA_REGINFO: u32 = 0x7000_0002;
 
 
 
-#[allow(missing_docs)]
 pub const SHF_ALPHA_GPREL: u32 = 0x1000_0000;
 
 
@@ -3315,51 +3198,30 @@ pub const R_ALPHA_GLOB_DAT: u32 = 25;
 pub const R_ALPHA_JMP_SLOT: u32 = 26;
 
 pub const R_ALPHA_RELATIVE: u32 = 27;
-#[allow(missing_docs)]
 pub const R_ALPHA_TLS_GD_HI: u32 = 28;
-#[allow(missing_docs)]
 pub const R_ALPHA_TLSGD: u32 = 29;
-#[allow(missing_docs)]
 pub const R_ALPHA_TLS_LDM: u32 = 30;
-#[allow(missing_docs)]
 pub const R_ALPHA_DTPMOD64: u32 = 31;
-#[allow(missing_docs)]
 pub const R_ALPHA_GOTDTPREL: u32 = 32;
-#[allow(missing_docs)]
 pub const R_ALPHA_DTPREL64: u32 = 33;
-#[allow(missing_docs)]
 pub const R_ALPHA_DTPRELHI: u32 = 34;
-#[allow(missing_docs)]
 pub const R_ALPHA_DTPRELLO: u32 = 35;
-#[allow(missing_docs)]
 pub const R_ALPHA_DTPREL16: u32 = 36;
-#[allow(missing_docs)]
 pub const R_ALPHA_GOTTPREL: u32 = 37;
-#[allow(missing_docs)]
 pub const R_ALPHA_TPREL64: u32 = 38;
-#[allow(missing_docs)]
 pub const R_ALPHA_TPRELHI: u32 = 39;
-#[allow(missing_docs)]
 pub const R_ALPHA_TPRELLO: u32 = 40;
-#[allow(missing_docs)]
 pub const R_ALPHA_TPREL16: u32 = 41;
 
 
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_ADDR: u32 = 0;
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_BASE: u32 = 1;
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_BYTOFF: u32 = 2;
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_JSR: u32 = 3;
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_TLS_GD: u32 = 4;
-#[allow(missing_docs)]
 pub const LITUSE_ALPHA_TLS_LDM: u32 = 5;
 
 
-#[allow(missing_docs)]
 pub const DT_ALPHA_PLTRO: u32 = DT_LOPROC + 0;
 
 
@@ -3375,7 +3237,6 @@ pub const EF_PPC_RELOCATABLE: u32 = 0x0001_0000;
 pub const EF_PPC_RELOCATABLE_LIB: u32 = 0x0000_8000;
 
 
-#[allow(missing_docs)]
 pub const R_PPC_NONE: u32 = 0;
 
 pub const R_PPC_ADDR32: u32 = 1;
@@ -3391,63 +3252,36 @@ pub const R_PPC_ADDR16_HI: u32 = 5;
 pub const R_PPC_ADDR16_HA: u32 = 6;
 
 pub const R_PPC_ADDR14: u32 = 7;
-#[allow(missing_docs)]
 pub const R_PPC_ADDR14_BRTAKEN: u32 = 8;
-#[allow(missing_docs)]
 pub const R_PPC_ADDR14_BRNTAKEN: u32 = 9;
 
 pub const R_PPC_REL24: u32 = 10;
 
 pub const R_PPC_REL14: u32 = 11;
-#[allow(missing_docs)]
 pub const R_PPC_REL14_BRTAKEN: u32 = 12;
-#[allow(missing_docs)]
 pub const R_PPC_REL14_BRNTAKEN: u32 = 13;
-#[allow(missing_docs)]
 pub const R_PPC_GOT16: u32 = 14;
-#[allow(missing_docs)]
 pub const R_PPC_GOT16_LO: u32 = 15;
-#[allow(missing_docs)]
 pub const R_PPC_GOT16_HI: u32 = 16;
-#[allow(missing_docs)]
 pub const R_PPC_GOT16_HA: u32 = 17;
-#[allow(missing_docs)]
 pub const R_PPC_PLTREL24: u32 = 18;
-#[allow(missing_docs)]
 pub const R_PPC_COPY: u32 = 19;
-#[allow(missing_docs)]
 pub const R_PPC_GLOB_DAT: u32 = 20;
-#[allow(missing_docs)]
 pub const R_PPC_JMP_SLOT: u32 = 21;
-#[allow(missing_docs)]
 pub const R_PPC_RELATIVE: u32 = 22;
-#[allow(missing_docs)]
 pub const R_PPC_LOCAL24PC: u32 = 23;
-#[allow(missing_docs)]
 pub const R_PPC_UADDR32: u32 = 24;
-#[allow(missing_docs)]
 pub const R_PPC_UADDR16: u32 = 25;
-#[allow(missing_docs)]
 pub const R_PPC_REL32: u32 = 26;
-#[allow(missing_docs)]
 pub const R_PPC_PLT32: u32 = 27;
-#[allow(missing_docs)]
 pub const R_PPC_PLTREL32: u32 = 28;
-#[allow(missing_docs)]
 pub const R_PPC_PLT16_LO: u32 = 29;
-#[allow(missing_docs)]
 pub const R_PPC_PLT16_HI: u32 = 30;
-#[allow(missing_docs)]
 pub const R_PPC_PLT16_HA: u32 = 31;
-#[allow(missing_docs)]
 pub const R_PPC_SDAREL16: u32 = 32;
-#[allow(missing_docs)]
 pub const R_PPC_SECTOFF: u32 = 33;
-#[allow(missing_docs)]
 pub const R_PPC_SECTOFF_LO: u32 = 34;
-#[allow(missing_docs)]
 pub const R_PPC_SECTOFF_HI: u32 = 35;
-#[allow(missing_docs)]
 pub const R_PPC_SECTOFF_HA: u32 = 36;
 
 
@@ -3513,35 +3347,21 @@ pub const R_PPC_TLSGD: u32 = 95;
 pub const R_PPC_TLSLD: u32 = 96;
 
 
-#[allow(missing_docs)]
 pub const R_PPC_EMB_NADDR32: u32 = 101;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_NADDR16: u32 = 102;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_NADDR16_LO: u32 = 103;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_NADDR16_HI: u32 = 104;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_NADDR16_HA: u32 = 105;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_SDAI16: u32 = 106;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_SDA2I16: u32 = 107;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_SDA2REL: u32 = 108;
 
 pub const R_PPC_EMB_SDA21: u32 = 109;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_MRKREF: u32 = 110;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_RELSEC16: u32 = 111;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_RELST_LO: u32 = 112;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_RELST_HI: u32 = 113;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_RELST_HA: u32 = 114;
-#[allow(missing_docs)]
 pub const R_PPC_EMB_BIT_FLD: u32 = 115;
 
 pub const R_PPC_EMB_RELSDA: u32 = 116;
@@ -3578,17 +3398,13 @@ pub const R_PPC_REL16_HA: u32 = 252;
 pub const R_PPC_TOC16: u32 = 255;
 
 
-#[allow(missing_docs)]
 pub const DT_PPC_GOT: u32 = DT_LOPROC + 0;
-#[allow(missing_docs)]
 pub const DT_PPC_OPT: u32 = DT_LOPROC + 1;
 
 
-#[allow(missing_docs)]
 pub const PPC_OPT_TLS: u32 = 1;
 
 
-#[allow(missing_docs)]
 pub const R_PPC64_NONE: u32 = R_PPC_NONE;
 
 pub const R_PPC64_ADDR32: u32 = R_PPC_ADDR32;
@@ -3604,60 +3420,36 @@ pub const R_PPC64_ADDR16_HI: u32 = R_PPC_ADDR16_HI;
 pub const R_PPC64_ADDR16_HA: u32 = R_PPC_ADDR16_HA;
 
 pub const R_PPC64_ADDR14: u32 = R_PPC_ADDR14;
-#[allow(missing_docs)]
 pub const R_PPC64_ADDR14_BRTAKEN: u32 = R_PPC_ADDR14_BRTAKEN;
-#[allow(missing_docs)]
 pub const R_PPC64_ADDR14_BRNTAKEN: u32 = R_PPC_ADDR14_BRNTAKEN;
 
 pub const R_PPC64_REL24: u32 = R_PPC_REL24;
 
 pub const R_PPC64_REL14: u32 = R_PPC_REL14;
-#[allow(missing_docs)]
 pub const R_PPC64_REL14_BRTAKEN: u32 = R_PPC_REL14_BRTAKEN;
-#[allow(missing_docs)]
 pub const R_PPC64_REL14_BRNTAKEN: u32 = R_PPC_REL14_BRNTAKEN;
-#[allow(missing_docs)]
 pub const R_PPC64_GOT16: u32 = R_PPC_GOT16;
-#[allow(missing_docs)]
 pub const R_PPC64_GOT16_LO: u32 = R_PPC_GOT16_LO;
-#[allow(missing_docs)]
 pub const R_PPC64_GOT16_HI: u32 = R_PPC_GOT16_HI;
-#[allow(missing_docs)]
 pub const R_PPC64_GOT16_HA: u32 = R_PPC_GOT16_HA;
 
-#[allow(missing_docs)]
 pub const R_PPC64_COPY: u32 = R_PPC_COPY;
-#[allow(missing_docs)]
 pub const R_PPC64_GLOB_DAT: u32 = R_PPC_GLOB_DAT;
-#[allow(missing_docs)]
 pub const R_PPC64_JMP_SLOT: u32 = R_PPC_JMP_SLOT;
-#[allow(missing_docs)]
 pub const R_PPC64_RELATIVE: u32 = R_PPC_RELATIVE;
 
-#[allow(missing_docs)]
 pub const R_PPC64_UADDR32: u32 = R_PPC_UADDR32;
-#[allow(missing_docs)]
 pub const R_PPC64_UADDR16: u32 = R_PPC_UADDR16;
-#[allow(missing_docs)]
 pub const R_PPC64_REL32: u32 = R_PPC_REL32;
-#[allow(missing_docs)]
 pub const R_PPC64_PLT32: u32 = R_PPC_PLT32;
-#[allow(missing_docs)]
 pub const R_PPC64_PLTREL32: u32 = R_PPC_PLTREL32;
-#[allow(missing_docs)]
 pub const R_PPC64_PLT16_LO: u32 = R_PPC_PLT16_LO;
-#[allow(missing_docs)]
 pub const R_PPC64_PLT16_HI: u32 = R_PPC_PLT16_HI;
-#[allow(missing_docs)]
 pub const R_PPC64_PLT16_HA: u32 = R_PPC_PLT16_HA;
 
-#[allow(missing_docs)]
 pub const R_PPC64_SECTOFF: u32 = R_PPC_SECTOFF;
-#[allow(missing_docs)]
 pub const R_PPC64_SECTOFF_LO: u32 = R_PPC_SECTOFF_LO;
-#[allow(missing_docs)]
 pub const R_PPC64_SECTOFF_HI: u32 = R_PPC_SECTOFF_HI;
-#[allow(missing_docs)]
 pub const R_PPC64_SECTOFF_HA: u32 = R_PPC_SECTOFF_HA;
 
 pub const R_PPC64_ADDR30: u32 = 37;
@@ -3810,24 +3602,16 @@ pub const R_PPC64_TLSLD: u32 = 108;
 pub const R_PPC64_TOCSAVE: u32 = 109;
 
 
-#[allow(missing_docs)]
 pub const R_PPC64_ADDR16_HIGH: u32 = 110;
-#[allow(missing_docs)]
 pub const R_PPC64_ADDR16_HIGHA: u32 = 111;
-#[allow(missing_docs)]
 pub const R_PPC64_TPREL16_HIGH: u32 = 112;
-#[allow(missing_docs)]
 pub const R_PPC64_TPREL16_HIGHA: u32 = 113;
-#[allow(missing_docs)]
 pub const R_PPC64_DTPREL16_HIGH: u32 = 114;
-#[allow(missing_docs)]
 pub const R_PPC64_DTPREL16_HIGHA: u32 = 115;
 
 
-#[allow(missing_docs)]
 pub const R_PPC64_JMP_IREL: u32 = 247;
 
-#[allow(missing_docs)]
 pub const R_PPC64_IRELATIVE: u32 = 248;
 
 pub const R_PPC64_REL16: u32 = 249;
@@ -3847,55 +3631,35 @@ pub const R_PPC64_REL16_HA: u32 = 252;
 pub const EF_PPC64_ABI: u32 = 3;
 
 
-#[allow(missing_docs)]
 pub const DT_PPC64_GLINK: u32 = DT_LOPROC + 0;
-#[allow(missing_docs)]
 pub const DT_PPC64_OPD: u32 = DT_LOPROC + 1;
-#[allow(missing_docs)]
 pub const DT_PPC64_OPDSZ: u32 = DT_LOPROC + 2;
-#[allow(missing_docs)]
 pub const DT_PPC64_OPT: u32 = DT_LOPROC + 3;
 
 
-#[allow(missing_docs)]
 pub const PPC64_OPT_TLS: u32 = 1;
-#[allow(missing_docs)]
 pub const PPC64_OPT_MULTI_TOC: u32 = 2;
-#[allow(missing_docs)]
 pub const PPC64_OPT_LOCALENTRY: u32 = 4;
 
 
-#[allow(missing_docs)]
 pub const STO_PPC64_LOCAL_BIT: u8 = 5;
-#[allow(missing_docs)]
 pub const STO_PPC64_LOCAL_MASK: u8 = 7 << STO_PPC64_LOCAL_BIT;
 
 
 
 
-#[allow(missing_docs)]
 pub const EF_ARM_RELEXEC: u32 = 0x01;
-#[allow(missing_docs)]
 pub const EF_ARM_HASENTRY: u32 = 0x02;
-#[allow(missing_docs)]
 pub const EF_ARM_INTERWORK: u32 = 0x04;
-#[allow(missing_docs)]
 pub const EF_ARM_APCS_26: u32 = 0x08;
-#[allow(missing_docs)]
 pub const EF_ARM_APCS_FLOAT: u32 = 0x10;
-#[allow(missing_docs)]
 pub const EF_ARM_PIC: u32 = 0x20;
 
 pub const EF_ARM_ALIGN8: u32 = 0x40;
-#[allow(missing_docs)]
 pub const EF_ARM_NEW_ABI: u32 = 0x80;
-#[allow(missing_docs)]
 pub const EF_ARM_OLD_ABI: u32 = 0x100;
-#[allow(missing_docs)]
 pub const EF_ARM_SOFT_FLOAT: u32 = 0x200;
-#[allow(missing_docs)]
 pub const EF_ARM_VFP_FLOAT: u32 = 0x400;
-#[allow(missing_docs)]
 pub const EF_ARM_MAVERICK_FLOAT: u32 = 0x800;
 
 
@@ -3905,32 +3669,20 @@ pub const EF_ARM_ABI_FLOAT_HARD: u32 = 0x400;
 
 
 
-#[allow(missing_docs)]
 pub const EF_ARM_SYMSARESORTED: u32 = 0x04;
-#[allow(missing_docs)]
 pub const EF_ARM_DYNSYMSUSESEGIDX: u32 = 0x08;
-#[allow(missing_docs)]
 pub const EF_ARM_MAPSYMSFIRST: u32 = 0x10;
 
 
-#[allow(missing_docs)]
 pub const EF_ARM_BE8: u32 = 0x0080_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_LE8: u32 = 0x0040_0000;
 
-#[allow(missing_docs)]
 pub const EF_ARM_EABIMASK: u32 = 0xff00_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_UNKNOWN: u32 = 0x0000_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_VER1: u32 = 0x0100_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_VER2: u32 = 0x0200_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_VER3: u32 = 0x0300_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_VER4: u32 = 0x0400_0000;
-#[allow(missing_docs)]
 pub const EF_ARM_EABI_VER5: u32 = 0x0500_0000;
 
 
@@ -4247,118 +3999,65 @@ pub const EF_AVR_ARCH: u32 = 0x7F;
 
 pub const EF_AVR_LINKRELAX_PREPARED: u32 = 0x80;
 
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR1: u32 = 1;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR2: u32 = 2;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR25: u32 = 25;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR3: u32 = 3;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR31: u32 = 31;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR35: u32 = 35;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR4: u32 = 4;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR5: u32 = 5;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR51: u32 = 51;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVR6: u32 = 6;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_AVRTINY: u32 = 100;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA1: u32 = 101;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA2: u32 = 102;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA3: u32 = 103;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA4: u32 = 104;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA5: u32 = 105;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA6: u32 = 106;
-#[allow(missing_docs)]
 pub const EF_AVR_ARCH_XMEGA7: u32 = 107;
 
 
 
-#[allow(missing_docs)]
 pub const R_AVR_NONE: u32 = 0;
 
 pub const R_AVR_32: u32 = 1;
-#[allow(missing_docs)]
 pub const R_AVR_7_PCREL: u32 = 2;
-#[allow(missing_docs)]
 pub const R_AVR_13_PCREL: u32 = 3;
 
 pub const R_AVR_16: u32 = 4;
-#[allow(missing_docs)]
 pub const R_AVR_16_PM: u32 = 5;
-#[allow(missing_docs)]
 pub const R_AVR_LO8_LDI: u32 = 6;
-#[allow(missing_docs)]
 pub const R_AVR_HI8_LDI: u32 = 7;
-#[allow(missing_docs)]
 pub const R_AVR_HH8_LDI: u32 = 8;
-#[allow(missing_docs)]
 pub const R_AVR_LO8_LDI_NEG: u32 = 9;
-#[allow(missing_docs)]
 pub const R_AVR_HI8_LDI_NEG: u32 = 10;
-#[allow(missing_docs)]
 pub const R_AVR_HH8_LDI_NEG: u32 = 11;
-#[allow(missing_docs)]
 pub const R_AVR_LO8_LDI_PM: u32 = 12;
-#[allow(missing_docs)]
 pub const R_AVR_HI8_LDI_PM: u32 = 13;
-#[allow(missing_docs)]
 pub const R_AVR_HH8_LDI_PM: u32 = 14;
-#[allow(missing_docs)]
 pub const R_AVR_LO8_LDI_PM_NEG: u32 = 15;
-#[allow(missing_docs)]
 pub const R_AVR_HI8_LDI_PM_NEG: u32 = 16;
-#[allow(missing_docs)]
 pub const R_AVR_HH8_LDI_PM_NEG: u32 = 17;
-#[allow(missing_docs)]
 pub const R_AVR_CALL: u32 = 18;
-#[allow(missing_docs)]
 pub const R_AVR_LDI: u32 = 19;
-#[allow(missing_docs)]
 pub const R_AVR_6: u32 = 20;
-#[allow(missing_docs)]
 pub const R_AVR_6_ADIW: u32 = 21;
-#[allow(missing_docs)]
 pub const R_AVR_MS8_LDI: u32 = 22;
-#[allow(missing_docs)]
 pub const R_AVR_MS8_LDI_NEG: u32 = 23;
-#[allow(missing_docs)]
 pub const R_AVR_LO8_LDI_GS: u32 = 24;
-#[allow(missing_docs)]
 pub const R_AVR_HI8_LDI_GS: u32 = 25;
-#[allow(missing_docs)]
 pub const R_AVR_8: u32 = 26;
-#[allow(missing_docs)]
 pub const R_AVR_8_LO8: u32 = 27;
-#[allow(missing_docs)]
 pub const R_AVR_8_HI8: u32 = 28;
-#[allow(missing_docs)]
 pub const R_AVR_8_HLO8: u32 = 29;
-#[allow(missing_docs)]
 pub const R_AVR_DIFF8: u32 = 30;
-#[allow(missing_docs)]
 pub const R_AVR_DIFF16: u32 = 31;
-#[allow(missing_docs)]
 pub const R_AVR_DIFF32: u32 = 32;
-#[allow(missing_docs)]
 pub const R_AVR_LDS_STS_16: u32 = 33;
-#[allow(missing_docs)]
 pub const R_AVR_PORT6: u32 = 34;
-#[allow(missing_docs)]
 pub const R_AVR_PORT5: u32 = 35;
-#[allow(missing_docs)]
 pub const R_AVR_32_PCREL: u32 = 36;
 
 
@@ -4383,7 +4082,6 @@ pub const R_ARM_PC24: u32 = 1;
 pub const R_ARM_ABS32: u32 = 2;
 
 pub const R_ARM_REL32: u32 = 3;
-#[allow(missing_docs)]
 pub const R_ARM_PC13: u32 = 4;
 
 pub const R_ARM_ABS16: u32 = 5;
@@ -4393,13 +4091,11 @@ pub const R_ARM_ABS12: u32 = 6;
 pub const R_ARM_THM_ABS5: u32 = 7;
 
 pub const R_ARM_ABS8: u32 = 8;
-#[allow(missing_docs)]
 pub const R_ARM_SBREL32: u32 = 9;
 
 pub const R_ARM_THM_PC22: u32 = 10;
 
 pub const R_ARM_THM_PC8: u32 = 11;
-#[allow(missing_docs)]
 pub const R_ARM_AMP_VCALL9: u32 = 12;
 
 pub const R_ARM_SWI24: u32 = 13;
@@ -4453,13 +4149,10 @@ pub const R_ARM_LDR_SBREL_11_0: u32 = 35;
 pub const R_ARM_ALU_SBREL_19_12: u32 = 36;
 
 pub const R_ARM_ALU_SBREL_27_20: u32 = 37;
-#[allow(missing_docs)]
 pub const R_ARM_TARGET1: u32 = 38;
 
 pub const R_ARM_SBREL31: u32 = 39;
-#[allow(missing_docs)]
 pub const R_ARM_V4BX: u32 = 40;
-#[allow(missing_docs)]
 pub const R_ARM_TARGET2: u32 = 41;
 
 pub const R_ARM_PREL31: u32 = 42;
@@ -4557,15 +4250,11 @@ pub const R_ARM_THM_MOVW_BREL_NC: u32 = 87;
 pub const R_ARM_THM_MOVT_BREL: u32 = 88;
 
 pub const R_ARM_THM_MOVW_BREL: u32 = 89;
-#[allow(missing_docs)]
 pub const R_ARM_TLS_GOTDESC: u32 = 90;
-#[allow(missing_docs)]
 pub const R_ARM_TLS_CALL: u32 = 91;
 
 pub const R_ARM_TLS_DESCSEQ: u32 = 92;
-#[allow(missing_docs)]
 pub const R_ARM_THM_TLS_CALL: u32 = 93;
-#[allow(missing_docs)]
 pub const R_ARM_PLT32_ABS: u32 = 94;
 
 pub const R_ARM_GOT_ABS: u32 = 95;
@@ -4575,11 +4264,8 @@ pub const R_ARM_GOT_PREL: u32 = 96;
 pub const R_ARM_GOT_BREL12: u32 = 97;
 
 pub const R_ARM_GOTOFF12: u32 = 98;
-#[allow(missing_docs)]
 pub const R_ARM_GOTRELAX: u32 = 99;
-#[allow(missing_docs)]
 pub const R_ARM_GNU_VTENTRY: u32 = 100;
-#[allow(missing_docs)]
 pub const R_ARM_GNU_VTINHERIT: u32 = 101;
 
 pub const R_ARM_THM_PC11: u32 = 102;
@@ -4603,29 +4289,18 @@ pub const R_ARM_TLS_LE12: u32 = 110;
 pub const R_ARM_TLS_IE12GP: u32 = 111;
 
 pub const R_ARM_ME_TOO: u32 = 128;
-#[allow(missing_docs)]
 pub const R_ARM_THM_TLS_DESCSEQ: u32 = 129;
-#[allow(missing_docs)]
 pub const R_ARM_THM_TLS_DESCSEQ16: u32 = 129;
-#[allow(missing_docs)]
 pub const R_ARM_THM_TLS_DESCSEQ32: u32 = 130;
 
 pub const R_ARM_THM_GOT_BREL12: u32 = 131;
-#[allow(missing_docs)]
 pub const R_ARM_IRELATIVE: u32 = 160;
-#[allow(missing_docs)]
 pub const R_ARM_RXPC25: u32 = 249;
-#[allow(missing_docs)]
 pub const R_ARM_RSBREL32: u32 = 250;
-#[allow(missing_docs)]
 pub const R_ARM_THM_RPC22: u32 = 251;
-#[allow(missing_docs)]
 pub const R_ARM_RREL32: u32 = 252;
-#[allow(missing_docs)]
 pub const R_ARM_RABS22: u32 = 253;
-#[allow(missing_docs)]
 pub const R_ARM_RPC24: u32 = 254;
-#[allow(missing_docs)]
 pub const R_ARM_RBASE: u32 = 255;
 
 
@@ -4725,32 +4400,20 @@ pub const R_CKCORE_PLT_IMM18BY4: u32 = 49;
 pub const R_CKCORE_PCREL_IMM7BY4: u32 = 50;
 
 pub const R_CKCORE_TLS_LE32: u32 = 51;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_IE32: u32 = 52;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_GD32: u32 = 53;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_LDM32: u32 = 54;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_LDO32: u32 = 55;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_DTPMOD32: u32 = 56;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_DTPOFF32: u32 = 57;
-#[allow(missing_docs)]
 pub const R_CKCORE_TLS_TPOFF32: u32 = 58;
 
 
-#[allow(missing_docs)]
 pub const EF_CSKY_ABIMASK: u32 = 0xF000_0000;
-#[allow(missing_docs)]
 pub const EF_CSKY_OTHER: u32 = 0x0FFF_0000;
-#[allow(missing_docs)]
 pub const EF_CSKY_PROCESSOR: u32 = 0x0000_FFFF;
 
-#[allow(missing_docs)]
 pub const EF_CSKY_ABIV1: u32 = 0x1000_0000;
-#[allow(missing_docs)]
 pub const EF_CSKY_ABIV2: u32 = 0x2000_0000;
 
 
@@ -4772,11 +4435,8 @@ pub const EF_IA_64_ARCH: u32 = 0xff00_0000;
 pub const PT_IA_64_ARCHEXT: u32 = PT_LOPROC + 0;
 
 pub const PT_IA_64_UNWIND: u32 = PT_LOPROC + 1;
-#[allow(missing_docs)]
 pub const PT_IA_64_HP_OPT_ANOT: u32 = PT_LOOS + 0x12;
-#[allow(missing_docs)]
 pub const PT_IA_64_HP_HSL_ANOT: u32 = PT_LOOS + 0x13;
-#[allow(missing_docs)]
 pub const PT_IA_64_HP_STACK: u32 = PT_LOOS + 0x14;
 
 
@@ -4796,7 +4456,6 @@ pub const SHF_IA_64_SHORT: u32 = 0x1000_0000;
 pub const SHF_IA_64_NORECOV: u32 = 0x2000_0000;
 
 
-#[allow(missing_docs)]
 pub const DT_IA_64_PLT_RESERVE: u32 = DT_LOPROC + 0;
 
 
@@ -4966,125 +4625,66 @@ pub const R_IA64_LTOFF_DTPREL22: u32 = 0xba;
 
 
 
-#[allow(missing_docs)]
 pub const EF_SH_MACH_MASK: u32 = 0x1f;
-#[allow(missing_docs)]
 pub const EF_SH_UNKNOWN: u32 = 0x0;
-#[allow(missing_docs)]
 pub const EF_SH1: u32 = 0x1;
-#[allow(missing_docs)]
 pub const EF_SH2: u32 = 0x2;
-#[allow(missing_docs)]
 pub const EF_SH3: u32 = 0x3;
-#[allow(missing_docs)]
 pub const EF_SH_DSP: u32 = 0x4;
-#[allow(missing_docs)]
 pub const EF_SH3_DSP: u32 = 0x5;
-#[allow(missing_docs)]
 pub const EF_SH4AL_DSP: u32 = 0x6;
-#[allow(missing_docs)]
 pub const EF_SH3E: u32 = 0x8;
-#[allow(missing_docs)]
 pub const EF_SH4: u32 = 0x9;
-#[allow(missing_docs)]
 pub const EF_SH2E: u32 = 0xb;
-#[allow(missing_docs)]
 pub const EF_SH4A: u32 = 0xc;
-#[allow(missing_docs)]
 pub const EF_SH2A: u32 = 0xd;
-#[allow(missing_docs)]
 pub const EF_SH4_NOFPU: u32 = 0x10;
-#[allow(missing_docs)]
 pub const EF_SH4A_NOFPU: u32 = 0x11;
-#[allow(missing_docs)]
 pub const EF_SH4_NOMMU_NOFPU: u32 = 0x12;
-#[allow(missing_docs)]
 pub const EF_SH2A_NOFPU: u32 = 0x13;
-#[allow(missing_docs)]
 pub const EF_SH3_NOMMU: u32 = 0x14;
-#[allow(missing_docs)]
 pub const EF_SH2A_SH4_NOFPU: u32 = 0x15;
-#[allow(missing_docs)]
 pub const EF_SH2A_SH3_NOFPU: u32 = 0x16;
-#[allow(missing_docs)]
 pub const EF_SH2A_SH4: u32 = 0x17;
-#[allow(missing_docs)]
 pub const EF_SH2A_SH3E: u32 = 0x18;
 
 
-#[allow(missing_docs)]
 pub const R_SH_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_SH_DIR32: u32 = 1;
-#[allow(missing_docs)]
 pub const R_SH_REL32: u32 = 2;
-#[allow(missing_docs)]
 pub const R_SH_DIR8WPN: u32 = 3;
-#[allow(missing_docs)]
 pub const R_SH_IND12W: u32 = 4;
-#[allow(missing_docs)]
 pub const R_SH_DIR8WPL: u32 = 5;
-#[allow(missing_docs)]
 pub const R_SH_DIR8WPZ: u32 = 6;
-#[allow(missing_docs)]
 pub const R_SH_DIR8BP: u32 = 7;
-#[allow(missing_docs)]
 pub const R_SH_DIR8W: u32 = 8;
-#[allow(missing_docs)]
 pub const R_SH_DIR8L: u32 = 9;
-#[allow(missing_docs)]
 pub const R_SH_SWITCH16: u32 = 25;
-#[allow(missing_docs)]
 pub const R_SH_SWITCH32: u32 = 26;
-#[allow(missing_docs)]
 pub const R_SH_USES: u32 = 27;
-#[allow(missing_docs)]
 pub const R_SH_COUNT: u32 = 28;
-#[allow(missing_docs)]
 pub const R_SH_ALIGN: u32 = 29;
-#[allow(missing_docs)]
 pub const R_SH_CODE: u32 = 30;
-#[allow(missing_docs)]
 pub const R_SH_DATA: u32 = 31;
-#[allow(missing_docs)]
 pub const R_SH_LABEL: u32 = 32;
-#[allow(missing_docs)]
 pub const R_SH_SWITCH8: u32 = 33;
-#[allow(missing_docs)]
 pub const R_SH_GNU_VTINHERIT: u32 = 34;
-#[allow(missing_docs)]
 pub const R_SH_GNU_VTENTRY: u32 = 35;
-#[allow(missing_docs)]
 pub const R_SH_TLS_GD_32: u32 = 144;
-#[allow(missing_docs)]
 pub const R_SH_TLS_LD_32: u32 = 145;
-#[allow(missing_docs)]
 pub const R_SH_TLS_LDO_32: u32 = 146;
-#[allow(missing_docs)]
 pub const R_SH_TLS_IE_32: u32 = 147;
-#[allow(missing_docs)]
 pub const R_SH_TLS_LE_32: u32 = 148;
-#[allow(missing_docs)]
 pub const R_SH_TLS_DTPMOD32: u32 = 149;
-#[allow(missing_docs)]
 pub const R_SH_TLS_DTPOFF32: u32 = 150;
-#[allow(missing_docs)]
 pub const R_SH_TLS_TPOFF32: u32 = 151;
-#[allow(missing_docs)]
 pub const R_SH_GOT32: u32 = 160;
-#[allow(missing_docs)]
 pub const R_SH_PLT32: u32 = 161;
-#[allow(missing_docs)]
 pub const R_SH_COPY: u32 = 162;
-#[allow(missing_docs)]
 pub const R_SH_GLOB_DAT: u32 = 163;
-#[allow(missing_docs)]
 pub const R_SH_JMP_SLOT: u32 = 164;
-#[allow(missing_docs)]
 pub const R_SH_RELATIVE: u32 = 165;
-#[allow(missing_docs)]
 pub const R_SH_GOTOFF: u32 = 166;
-#[allow(missing_docs)]
 pub const R_SH_GOTPC: u32 = 167;
 
 
@@ -5222,45 +4822,25 @@ pub const R_390_TLS_GOTIE20: u32 = 60;
 pub const R_390_IRELATIVE: u32 = 61;
 
 
-#[allow(missing_docs)]
 pub const R_CRIS_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_CRIS_8: u32 = 1;
-#[allow(missing_docs)]
 pub const R_CRIS_16: u32 = 2;
-#[allow(missing_docs)]
 pub const R_CRIS_32: u32 = 3;
-#[allow(missing_docs)]
 pub const R_CRIS_8_PCREL: u32 = 4;
-#[allow(missing_docs)]
 pub const R_CRIS_16_PCREL: u32 = 5;
-#[allow(missing_docs)]
 pub const R_CRIS_32_PCREL: u32 = 6;
-#[allow(missing_docs)]
 pub const R_CRIS_GNU_VTINHERIT: u32 = 7;
-#[allow(missing_docs)]
 pub const R_CRIS_GNU_VTENTRY: u32 = 8;
-#[allow(missing_docs)]
 pub const R_CRIS_COPY: u32 = 9;
-#[allow(missing_docs)]
 pub const R_CRIS_GLOB_DAT: u32 = 10;
-#[allow(missing_docs)]
 pub const R_CRIS_JUMP_SLOT: u32 = 11;
-#[allow(missing_docs)]
 pub const R_CRIS_RELATIVE: u32 = 12;
-#[allow(missing_docs)]
 pub const R_CRIS_16_GOT: u32 = 13;
-#[allow(missing_docs)]
 pub const R_CRIS_32_GOT: u32 = 14;
-#[allow(missing_docs)]
 pub const R_CRIS_16_GOTPLT: u32 = 15;
-#[allow(missing_docs)]
 pub const R_CRIS_32_GOTPLT: u32 = 16;
-#[allow(missing_docs)]
 pub const R_CRIS_32_GOTREL: u32 = 17;
-#[allow(missing_docs)]
 pub const R_CRIS_32_PLT_GOTREL: u32 = 18;
-#[allow(missing_docs)]
 pub const R_CRIS_32_PLT_PCREL: u32 = 19;
 
 
@@ -5448,9 +5028,7 @@ pub const R_M32R_HI16_SLO: u32 = 8;
 pub const R_M32R_LO16: u32 = 9;
 
 pub const R_M32R_SDA16: u32 = 10;
-#[allow(missing_docs)]
 pub const R_M32R_GNU_VTINHERIT: u32 = 11;
-#[allow(missing_docs)]
 pub const R_M32R_GNU_VTENTRY: u32 = 12;
 
 
@@ -5473,9 +5051,7 @@ pub const R_M32R_HI16_SLO_RELA: u32 = 40;
 pub const R_M32R_LO16_RELA: u32 = 41;
 
 pub const R_M32R_SDA16_RELA: u32 = 42;
-#[allow(missing_docs)]
 pub const R_M32R_RELA_GNU_VTINHERIT: u32 = 43;
-#[allow(missing_docs)]
 pub const R_M32R_RELA_GNU_VTENTRY: u32 = 44;
 
 pub const R_M32R_REL32: u32 = 45;
@@ -6109,271 +5685,154 @@ pub const R_TILEGX_GNU_VTINHERIT: u32 = 128;
 pub const R_TILEGX_GNU_VTENTRY: u32 = 129;
 
 
-#[allow(missing_docs)]
 pub const EF_RISCV_RVC: u32 = 0x0001;
-#[allow(missing_docs)]
 pub const EF_RISCV_FLOAT_ABI: u32 = 0x0006;
-#[allow(missing_docs)]
 pub const EF_RISCV_FLOAT_ABI_SOFT: u32 = 0x0000;
-#[allow(missing_docs)]
 pub const EF_RISCV_FLOAT_ABI_SINGLE: u32 = 0x0002;
-#[allow(missing_docs)]
 pub const EF_RISCV_FLOAT_ABI_DOUBLE: u32 = 0x0004;
-#[allow(missing_docs)]
 pub const EF_RISCV_FLOAT_ABI_QUAD: u32 = 0x0006;
+pub const EF_RISCV_RVE: u32 = 0x0008;
+pub const EF_RISCV_TSO: u32 = 0x0010;
 
 
-#[allow(missing_docs)]
 pub const R_RISCV_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_RISCV_32: u32 = 1;
-#[allow(missing_docs)]
 pub const R_RISCV_64: u32 = 2;
-#[allow(missing_docs)]
 pub const R_RISCV_RELATIVE: u32 = 3;
-#[allow(missing_docs)]
 pub const R_RISCV_COPY: u32 = 4;
-#[allow(missing_docs)]
 pub const R_RISCV_JUMP_SLOT: u32 = 5;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_DTPMOD32: u32 = 6;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_DTPMOD64: u32 = 7;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_DTPREL32: u32 = 8;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_DTPREL64: u32 = 9;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_TPREL32: u32 = 10;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_TPREL64: u32 = 11;
-#[allow(missing_docs)]
 pub const R_RISCV_BRANCH: u32 = 16;
-#[allow(missing_docs)]
 pub const R_RISCV_JAL: u32 = 17;
-#[allow(missing_docs)]
 pub const R_RISCV_CALL: u32 = 18;
-#[allow(missing_docs)]
 pub const R_RISCV_CALL_PLT: u32 = 19;
-#[allow(missing_docs)]
 pub const R_RISCV_GOT_HI20: u32 = 20;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_GOT_HI20: u32 = 21;
-#[allow(missing_docs)]
 pub const R_RISCV_TLS_GD_HI20: u32 = 22;
-#[allow(missing_docs)]
 pub const R_RISCV_PCREL_HI20: u32 = 23;
-#[allow(missing_docs)]
 pub const R_RISCV_PCREL_LO12_I: u32 = 24;
-#[allow(missing_docs)]
 pub const R_RISCV_PCREL_LO12_S: u32 = 25;
-#[allow(missing_docs)]
 pub const R_RISCV_HI20: u32 = 26;
-#[allow(missing_docs)]
 pub const R_RISCV_LO12_I: u32 = 27;
-#[allow(missing_docs)]
 pub const R_RISCV_LO12_S: u32 = 28;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_HI20: u32 = 29;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_LO12_I: u32 = 30;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_LO12_S: u32 = 31;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_ADD: u32 = 32;
-#[allow(missing_docs)]
 pub const R_RISCV_ADD8: u32 = 33;
-#[allow(missing_docs)]
 pub const R_RISCV_ADD16: u32 = 34;
-#[allow(missing_docs)]
 pub const R_RISCV_ADD32: u32 = 35;
-#[allow(missing_docs)]
 pub const R_RISCV_ADD64: u32 = 36;
-#[allow(missing_docs)]
 pub const R_RISCV_SUB8: u32 = 37;
-#[allow(missing_docs)]
 pub const R_RISCV_SUB16: u32 = 38;
-#[allow(missing_docs)]
 pub const R_RISCV_SUB32: u32 = 39;
-#[allow(missing_docs)]
 pub const R_RISCV_SUB64: u32 = 40;
-#[allow(missing_docs)]
 pub const R_RISCV_GNU_VTINHERIT: u32 = 41;
-#[allow(missing_docs)]
 pub const R_RISCV_GNU_VTENTRY: u32 = 42;
-#[allow(missing_docs)]
 pub const R_RISCV_ALIGN: u32 = 43;
-#[allow(missing_docs)]
 pub const R_RISCV_RVC_BRANCH: u32 = 44;
-#[allow(missing_docs)]
 pub const R_RISCV_RVC_JUMP: u32 = 45;
-#[allow(missing_docs)]
 pub const R_RISCV_RVC_LUI: u32 = 46;
-#[allow(missing_docs)]
 pub const R_RISCV_GPREL_I: u32 = 47;
-#[allow(missing_docs)]
 pub const R_RISCV_GPREL_S: u32 = 48;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_I: u32 = 49;
-#[allow(missing_docs)]
 pub const R_RISCV_TPREL_S: u32 = 50;
-#[allow(missing_docs)]
 pub const R_RISCV_RELAX: u32 = 51;
-#[allow(missing_docs)]
 pub const R_RISCV_SUB6: u32 = 52;
-#[allow(missing_docs)]
 pub const R_RISCV_SET6: u32 = 53;
-#[allow(missing_docs)]
 pub const R_RISCV_SET8: u32 = 54;
-#[allow(missing_docs)]
 pub const R_RISCV_SET16: u32 = 55;
-#[allow(missing_docs)]
 pub const R_RISCV_SET32: u32 = 56;
-#[allow(missing_docs)]
 pub const R_RISCV_32_PCREL: u32 = 57;
 
 
 
 pub const R_BPF_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_BPF_64_64: u32 = 1;
-#[allow(missing_docs)]
 pub const R_BPF_64_32: u32 = 10;
 
 
 
 pub const R_SBF_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_SBF_64_64: u32 = 1;
-#[allow(missing_docs)]
 pub const R_SBF_64_32: u32 = 10;
 
 
 
-#[allow(missing_docs)]
 pub const R_METAG_HIADDR16: u32 = 0;
-#[allow(missing_docs)]
 pub const R_METAG_LOADDR16: u32 = 1;
 
 pub const R_METAG_ADDR32: u32 = 2;
 
 pub const R_METAG_NONE: u32 = 3;
-#[allow(missing_docs)]
 pub const R_METAG_RELBRANCH: u32 = 4;
-#[allow(missing_docs)]
 pub const R_METAG_GETSETOFF: u32 = 5;
 
 
-#[allow(missing_docs)]
 pub const R_METAG_REG32OP1: u32 = 6;
-#[allow(missing_docs)]
 pub const R_METAG_REG32OP2: u32 = 7;
-#[allow(missing_docs)]
 pub const R_METAG_REG32OP3: u32 = 8;
-#[allow(missing_docs)]
 pub const R_METAG_REG16OP1: u32 = 9;
-#[allow(missing_docs)]
 pub const R_METAG_REG16OP2: u32 = 10;
-#[allow(missing_docs)]
 pub const R_METAG_REG16OP3: u32 = 11;
-#[allow(missing_docs)]
 pub const R_METAG_REG32OP4: u32 = 12;
 
-#[allow(missing_docs)]
 pub const R_METAG_HIOG: u32 = 13;
-#[allow(missing_docs)]
 pub const R_METAG_LOOG: u32 = 14;
 
-#[allow(missing_docs)]
 pub const R_METAG_REL8: u32 = 15;
-#[allow(missing_docs)]
 pub const R_METAG_REL16: u32 = 16;
 
-#[allow(missing_docs)]
 pub const R_METAG_GNU_VTINHERIT: u32 = 30;
-#[allow(missing_docs)]
 pub const R_METAG_GNU_VTENTRY: u32 = 31;
 
 
-#[allow(missing_docs)]
 pub const R_METAG_HI16_GOTOFF: u32 = 32;
-#[allow(missing_docs)]
 pub const R_METAG_LO16_GOTOFF: u32 = 33;
-#[allow(missing_docs)]
 pub const R_METAG_GETSET_GOTOFF: u32 = 34;
-#[allow(missing_docs)]
 pub const R_METAG_GETSET_GOT: u32 = 35;
-#[allow(missing_docs)]
 pub const R_METAG_HI16_GOTPC: u32 = 36;
-#[allow(missing_docs)]
 pub const R_METAG_LO16_GOTPC: u32 = 37;
-#[allow(missing_docs)]
 pub const R_METAG_HI16_PLT: u32 = 38;
-#[allow(missing_docs)]
 pub const R_METAG_LO16_PLT: u32 = 39;
-#[allow(missing_docs)]
 pub const R_METAG_RELBRANCH_PLT: u32 = 40;
-#[allow(missing_docs)]
 pub const R_METAG_GOTOFF: u32 = 41;
-#[allow(missing_docs)]
 pub const R_METAG_PLT: u32 = 42;
-#[allow(missing_docs)]
 pub const R_METAG_COPY: u32 = 43;
-#[allow(missing_docs)]
 pub const R_METAG_JMP_SLOT: u32 = 44;
-#[allow(missing_docs)]
 pub const R_METAG_RELATIVE: u32 = 45;
-#[allow(missing_docs)]
 pub const R_METAG_GLOB_DAT: u32 = 46;
 
 
-#[allow(missing_docs)]
 pub const R_METAG_TLS_GD: u32 = 47;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LDM: u32 = 48;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LDO_HI16: u32 = 49;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LDO_LO16: u32 = 50;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LDO: u32 = 51;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_IE: u32 = 52;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_IENONPIC: u32 = 53;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_IENONPIC_HI16: u32 = 54;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_IENONPIC_LO16: u32 = 55;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_TPOFF: u32 = 56;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_DTPMOD: u32 = 57;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_DTPOFF: u32 = 58;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LE: u32 = 59;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LE_HI16: u32 = 60;
-#[allow(missing_docs)]
 pub const R_METAG_TLS_LE_LO16: u32 = 61;
 
 
-#[allow(missing_docs)]
 pub const R_NDS32_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_NDS32_32_RELA: u32 = 20;
-#[allow(missing_docs)]
 pub const R_NDS32_COPY: u32 = 39;
-#[allow(missing_docs)]
 pub const R_NDS32_GLOB_DAT: u32 = 40;
-#[allow(missing_docs)]
 pub const R_NDS32_JMP_SLOT: u32 = 41;
-#[allow(missing_docs)]
 pub const R_NDS32_RELATIVE: u32 = 42;
-#[allow(missing_docs)]
 pub const R_NDS32_TLS_TPOFF: u32 = 102;
-#[allow(missing_docs)]
 pub const R_NDS32_TLS_DESC: u32 = 119;
 
 
@@ -6597,128 +6056,74 @@ pub const R_LARCH_32_PCREL: u32 = 99;
 pub const R_LARCH_RELAX: u32 = 100;
 
 
-#[allow(missing_docs)]
 pub const R_XTENSA_NONE: u32 = 0;
-#[allow(missing_docs)]
 pub const R_XTENSA_32: u32 = 1;
-#[allow(missing_docs)]
 pub const R_XTENSA_RTLD: u32 = 2;
-#[allow(missing_docs)]
 pub const R_XTENSA_GLOB_DAT: u32 = 3;
-#[allow(missing_docs)]
 pub const R_XTENSA_JMP_SLOT: u32 = 4;
-#[allow(missing_docs)]
 pub const R_XTENSA_RELATIVE: u32 = 5;
-#[allow(missing_docs)]
 pub const R_XTENSA_PLT: u32 = 6;
-#[allow(missing_docs)]
 pub const R_XTENSA_OP0: u32 = 8;
-#[allow(missing_docs)]
 pub const R_XTENSA_OP1: u32 = 9;
-#[allow(missing_docs)]
 pub const R_XTENSA_OP2: u32 = 10;
-#[allow(missing_docs)]
 pub const R_XTENSA_ASM_EXPAND: u32 = 11;
-#[allow(missing_docs)]
 pub const R_XTENSA_ASM_SIMPLIFY: u32 = 12;
-#[allow(missing_docs)]
 pub const R_XTENSA_32_PCREL: u32 = 14;
-#[allow(missing_docs)]
 pub const R_XTENSA_GNU_VTINHERIT: u32 = 15;
-#[allow(missing_docs)]
 pub const R_XTENSA_GNU_VTENTRY: u32 = 16;
-#[allow(missing_docs)]
 pub const R_XTENSA_DIFF8: u32 = 17;
-#[allow(missing_docs)]
 pub const R_XTENSA_DIFF16: u32 = 18;
-#[allow(missing_docs)]
 pub const R_XTENSA_DIFF32: u32 = 19;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT0_OP: u32 = 20;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT1_OP: u32 = 21;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT2_OP: u32 = 22;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT3_OP: u32 = 23;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT4_OP: u32 = 24;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT5_OP: u32 = 25;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT6_OP: u32 = 26;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT7_OP: u32 = 27;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT8_OP: u32 = 28;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT9_OP: u32 = 29;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT10_OP: u32 = 30;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT11_OP: u32 = 31;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT12_OP: u32 = 32;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT13_OP: u32 = 33;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT14_OP: u32 = 34;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT0_ALT: u32 = 35;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT1_ALT: u32 = 36;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT2_ALT: u32 = 37;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT3_ALT: u32 = 38;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT4_ALT: u32 = 39;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT5_ALT: u32 = 40;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT6_ALT: u32 = 41;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT7_ALT: u32 = 42;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT8_ALT: u32 = 43;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT9_ALT: u32 = 44;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT10_ALT: u32 = 45;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT11_ALT: u32 = 46;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT12_ALT: u32 = 47;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT13_ALT: u32 = 48;
-#[allow(missing_docs)]
 pub const R_XTENSA_SLOT14_ALT: u32 = 49;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLSDESC_FN: u32 = 50;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLSDESC_ARG: u32 = 51;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLS_DTPOFF: u32 = 52;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLS_TPOFF: u32 = 53;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLS_FUNC: u32 = 54;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLS_ARG: u32 = 55;
-#[allow(missing_docs)]
 pub const R_XTENSA_TLS_CALL: u32 = 56;
-#[allow(missing_docs)]
 pub const R_XTENSA_PDIFF8: u32 = 57;
-#[allow(missing_docs)]
 pub const R_XTENSA_PDIFF16: u32 = 58;
-#[allow(missing_docs)]
 pub const R_XTENSA_PDIFF32: u32 = 59;
-#[allow(missing_docs)]
 pub const R_XTENSA_NDIFF8: u32 = 60;
-#[allow(missing_docs)]
 pub const R_XTENSA_NDIFF16: u32 = 61;
-#[allow(missing_docs)]
 pub const R_XTENSA_NDIFF32: u32 = 62;
+
+#[allow(non_upper_case_globals)]
+pub const Tag_File: u8 = 1;
+#[allow(non_upper_case_globals)]
+pub const Tag_Section: u8 = 2;
+#[allow(non_upper_case_globals)]
+pub const Tag_Symbol: u8 = 3;
 
 unsafe_impl_endian_pod!(
     FileHeader32,

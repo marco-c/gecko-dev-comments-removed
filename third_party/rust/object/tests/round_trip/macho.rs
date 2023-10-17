@@ -1,8 +1,9 @@
 use object::read::macho::MachHeader;
-use object::{macho, write, Architecture, BinaryFormat, Endianness};
+use object::read::{Object, ObjectSection};
+use object::{macho, read, write, Architecture, BinaryFormat, Endianness};
+
 
 #[test]
-
 fn issue_286_segment_file_size() {
     let mut object = write::Object::new(
         BinaryFormat::MachO,
@@ -21,4 +22,42 @@ fn issue_286_segment_file_size() {
     let (segment, _) = command.segment_64().unwrap().unwrap();
     assert_eq!(segment.vmsize.get(endian), 30);
     assert_eq!(segment.filesize.get(endian), 30);
+}
+
+
+#[test]
+fn issue_552_section_file_alignment() {
+    let mut object = write::Object::new(
+        BinaryFormat::MachO,
+        Architecture::X86_64,
+        Endianness::Little,
+    );
+
+    
+    
+    
+    let section = object.add_section(vec![], vec![], object::SectionKind::ReadOnlyDataWithRel);
+    object.append_section_data(section, &vec![0u8; 32], 1);
+
+    
+    
+    let section = object.add_section(vec![], vec![], object::SectionKind::ReadOnlyData);
+    object.append_section_data(section, &vec![0u8; 1], 32);
+
+    let section = object.add_section(vec![], vec![], object::SectionKind::Text);
+    object.append_section_data(section, &vec![0u8; 1], 1);
+
+    let bytes = &*object.write().unwrap();
+    let object = read::File::parse(bytes).unwrap();
+    let mut sections = object.sections();
+
+    let section = sections.next().unwrap();
+    assert_eq!(section.file_range(), Some((368, 32)));
+    assert_eq!(section.address(), 0);
+    assert_eq!(section.size(), 32);
+
+    let section = sections.next().unwrap();
+    assert_eq!(section.file_range(), Some((400, 1)));
+    assert_eq!(section.address(), 32);
+    assert_eq!(section.size(), 1);
 }

@@ -19,7 +19,6 @@ pub type XcoffRelocationIterator64<'data, 'file, R = &'data [u8]> =
 
 pub struct XcoffRelocationIterator<'data, 'file, Xcoff, R = &'data [u8]>
 where
-    'data: 'file,
     Xcoff: FileHeader,
     R: ReadRef<'data>,
 {

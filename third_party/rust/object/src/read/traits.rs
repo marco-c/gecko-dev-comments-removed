@@ -210,7 +210,7 @@ pub trait Object<'data: 'file, 'file>: read::private::Sealed {
 
     
     #[inline]
-    fn pdb_info(&self) -> Result<Option<CodeView>> {
+    fn pdb_info(&self) -> Result<Option<CodeView<'_>>> {
         Ok(None)
     }
 
@@ -452,7 +452,7 @@ pub trait ObjectSymbol<'data>: read::private::Sealed {
     fn is_local(&self) -> bool;
 
     
-    fn flags(&self) -> SymbolFlags<SectionIndex>;
+    fn flags(&self) -> SymbolFlags<SectionIndex, SymbolIndex>;
 }
 
 
