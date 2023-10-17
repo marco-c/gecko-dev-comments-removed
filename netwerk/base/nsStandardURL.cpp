@@ -407,10 +407,9 @@ void nsStandardURL::InvalidateCache(bool invalidateCachedFile) {
 
 
 
-
 inline int32_t ValidateIPv4Number(const nsACString& host, int32_t bases[4],
                                   int32_t dotIndex[3], bool& onlyBase10,
-                                  int32_t& length) {
+                                  int32_t length, bool trailingDot) {
   MOZ_ASSERT(length <= (int32_t)host.Length());
   if (length <= 0) {
     return -1;
@@ -426,14 +425,9 @@ inline int32_t ValidateIPv4Number(const nsACString& host, int32_t bases[4],
       
       if (!(lastWasNumber ||
             (i >= 2 && (host[i - 1] == 'X' || host[i - 1] == 'x') &&
-             host[i - 2] == '0'))) {
+             host[i - 2] == '0')) ||
+          (i == (length - 1) && trailingDot)) {
         return -1;
-      }
-
-      if (dotCount > 0 &&
-          i == (length - 1)) {  
-        length--;
-        return dotCount;
       }
 
       if (dotCount > 2) {
@@ -564,9 +558,18 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
 
   
   
-  int32_t length = static_cast<int32_t>(host.Length());
-  int32_t dotCount =
-      ValidateIPv4Number(host, bases, dotIndex, onlyBase10, length);
+  nsDependentCSubstring filteredHost;
+  bool trailingDot = false;
+  if (host.Length() > 0 && host.Last() == '.') {
+    trailingDot = true;
+    filteredHost.Rebind(host.BeginReading(), host.Length() - 1);
+  } else {
+    filteredHost.Rebind(host.BeginReading(), host.Length());
+  }
+
+  int32_t length = static_cast<int32_t>(filteredHost.Length());
+  int32_t dotCount = ValidateIPv4Number(filteredHost, bases, dotIndex,
+                                        onlyBase10, length, trailingDot);
   if (dotCount < 0 || length <= 0) {
     return NS_ERROR_FAILURE;
   }
@@ -577,6 +580,7 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
   uint32_t ipv4;
   int32_t start = (dotCount > 0 ? dotIndex[dotCount - 1] + 1 : 0);
 
+  
   nsresult res;
   
   res = (onlyBase10
@@ -588,6 +592,7 @@ nsresult nsStandardURL::NormalizeIPv4(const nsACString& host,
     return NS_ERROR_FAILURE;
   }
 
+  
   int32_t lastUsed = -1;
   for (int32_t i = 0; i < dotCount; i++) {
     uint32_t number;
@@ -735,6 +740,71 @@ uint32_t nsStandardURL::AppendToBuf(char* buf, uint32_t i, const char* str,
   return i + len;
 }
 
+static bool ContainsOnlyAsciiDigits(const nsDependentCSubstring& input) {
+  for (const auto* c = input.BeginReading(); c < input.EndReading(); c++) {
+    if (!IsAsciiDigit(*c)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static bool ContainsOnlyAsciiHexDigits(const nsDependentCSubstring& input) {
+  for (const auto* c = input.BeginReading(); c < input.EndReading(); c++) {
+    if (!IsAsciiHexDigit(*c)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+static bool EndsInANumber(const nsCString& input) {
+  
+  nsTArray<nsDependentCSubstring> parts;
+  for (const nsDependentCSubstring& part : input.Split('.')) {
+    parts.AppendElement(part);
+  }
+
+  if (parts.Length() == 0) {
+    return false;
+  }
+
+  
+  
+  
+  if (parts.LastElement().IsEmpty()) {
+    if (parts.Length() == 1) {
+      return false;
+    }
+    Unused << parts.PopLastElement();
+  }
+
+  
+  const nsDependentCSubstring& last = parts.LastElement();
+
+  
+  
+  
+  if (!last.IsEmpty()) {
+    if (ContainsOnlyAsciiDigits(last)) {
+      return true;
+    }
+  }
+
+  
+  
+  
+  if (StringBeginsWith(last, "0x"_ns) || StringBeginsWith(last, "0X"_ns)) {
+    if (ContainsOnlyAsciiHexDigits(Substring(last, 2))) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 
 
@@ -846,8 +916,14 @@ nsresult nsStandardURL::BuildNormalizedSpec(const char* spec,
           return rv;
         }
         encHost = ipString;
-      } else if (NS_SUCCEEDED(NormalizeIPv4(encHost, ipString))) {
-        encHost = ipString;
+      } else {
+        if (EndsInANumber(encHost)) {
+          rv = NormalizeIPv4(encHost, ipString);
+          if (NS_FAILED(rv)) {
+            return rv;
+          }
+          encHost = ipString;
+        }
       }
     }
 
@@ -2176,8 +2252,14 @@ nsresult nsStandardURL::SetHost(const nsACString& input) {
         return rv;
       }
       hostBuf = ipString;
-    } else if (NS_SUCCEEDED(NormalizeIPv4(hostBuf, ipString))) {
-      hostBuf = ipString;
+    } else {
+      if (EndsInANumber(hostBuf)) {
+        rv = NormalizeIPv4(hostBuf, ipString);
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+        hostBuf = ipString;
+      }
     }
   }
 
@@ -3916,7 +3998,7 @@ nsresult Test_ParseIPv4Number(const nsACString& input, int32_t base,
 
 int32_t Test_ValidateIPv4Number(const nsACString& host, int32_t bases[4],
                                 int32_t dotIndex[3], bool& onlyBase10,
-                                int32_t& length) {
+                                int32_t length) {
   return mozilla::net::ValidateIPv4Number(host, bases, dotIndex, onlyBase10,
-                                          length);
+                                          length, false);
 }
