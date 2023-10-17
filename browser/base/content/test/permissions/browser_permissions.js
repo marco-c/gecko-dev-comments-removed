@@ -60,7 +60,16 @@ add_task(async function testMainViewVisible() {
 
     PermissionTestUtils.remove(gBrowser.currentURI, "camera");
 
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      mustHaveAccessibleRule: false,
+    });
     await openPermissionPopup();
+    AccessibilityUtils.resetEnv();
 
     testPermListHasEntries(false);
 

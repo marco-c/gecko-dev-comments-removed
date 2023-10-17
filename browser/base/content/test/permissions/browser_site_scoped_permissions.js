@@ -46,7 +46,16 @@ add_task(async function testSiteScopedPermissionSubdomainAffectsBaseDomain() {
 
     Services.perms.removeFromPrincipal(subdomainPrincipal, id);
 
+    
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      mustHaveAccessibleRule: false,
+    });
     await openPermissionPopup();
+    AccessibilityUtils.resetEnv();
 
     listEntryCount = permissionsList.querySelectorAll(
       ".permission-popup-permission-item-3rdPartyStorage"
