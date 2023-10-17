@@ -86,7 +86,11 @@ class nsFrameLoaderOwner : public nsISupports {
 
   void AttachFrameLoader(nsFrameLoader* aFrameLoader);
   void DetachFrameLoader(nsFrameLoader* aFrameLoader);
-  void FrameLoaderDestroying(nsFrameLoader* aFrameLoader);
+  
+  
+  
+  void FrameLoaderDestroying(nsFrameLoader* aFrameLoader,
+                             bool aDestroyBFCached);
 
  private:
   bool UseRemoteSubframes();
