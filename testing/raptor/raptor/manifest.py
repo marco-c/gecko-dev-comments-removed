@@ -257,8 +257,7 @@ def write_test_settings_json(args, test_details, oskey):
 
     
     if test_details.get("gecko_profile", False):
-        threads = ["GeckoMain", "Compositor"]
-        threads.extend(["Renderer", "WR"])
+        threads = ["GeckoMain", "Compositor", "Renderer"]
 
         if test_details.get("gecko_profile_threads"):
             
