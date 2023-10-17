@@ -3,9 +3,9 @@
 
 
 import re
+from distutils.version import StrictVersion
 
 from looseversion import LooseVersion
-from packaging.version import Version
 
 
 class MozillaVersionCompareMixin:
@@ -36,12 +36,7 @@ class MozillaVersionCompareMixin:
             )
         else:
             
-            def cmp(a, b):
-                a, b = Version(str(a)), Version(str(b))
-                return (a > b) - (a < b)
-
-            val = cmp(self, other)
-
+            val = StrictVersion._cmp(self, other)
         if has_esr.isdisjoint(set(["other", "self"])) or has_esr.issuperset(
             set(["other", "self"])
         ):
@@ -56,8 +51,8 @@ class MozillaVersionCompareMixin:
         return 1  
 
 
-class ModernMozillaVersion(MozillaVersionCompareMixin, Version):
-    """A version class that is slightly less restrictive than Version.
+class ModernMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
+    """A version class that is slightly less restrictive than StrictVersion.
     Instead of just allowing "a" or "b" as prerelease tags, it allows any
     alpha. This allows us to support the once-shipped "3.6.3plugin1" and
     similar versions."""
@@ -69,8 +64,8 @@ class ModernMozillaVersion(MozillaVersionCompareMixin, Version):
     )
 
 
-class AncientMozillaVersion(MozillaVersionCompareMixin, Version):
-    """A version class that is slightly less restrictive than Version.
+class AncientMozillaVersion(MozillaVersionCompareMixin, StrictVersion):
+    """A version class that is slightly less restrictive than StrictVersion.
     Instead of just allowing "a" or "b" as prerelease tags, it allows any
     alpha. This allows us to support the once-shipped "3.6.3plugin1" and
     similar versions.
@@ -87,7 +82,7 @@ class AncientMozillaVersion(MozillaVersionCompareMixin, Version):
 class LooseModernMozillaVersion(MozillaVersionCompareMixin, LooseVersion):
     """A version class that is more restrictive than LooseVersion.
     This class reduces the valid strings to "esr", "a", "b" and "rc" in order
-    to support esr. Version requires a trailing number after all strings."""
+    to support esr. StrictVersion requires a trailing number after all strings."""
 
     component_re = re.compile(r"(\d+ | a | b | rc | esr | \.)", re.VERBOSE)
 
