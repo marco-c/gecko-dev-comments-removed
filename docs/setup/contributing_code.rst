@@ -116,9 +116,7 @@ for help on Matrix in the
 `#introduction:mozilla.org <https://riot.im/app/#/room/#introduction:mozilla.org>`_
 or
 `#developers:mozilla.org <https://chat.mozilla.org/#/room/#developers:mozilla.org>`_
-channels, or contact `Mike
-Hoye <mailto:mhoye@mozilla.com?subject=Code%20Review%20Request%20&body=URL%3A%20%20%5Bplease%20paste%20a%20link%20to%20your%20patch%20here.%5D>`_
-directly.
+channels.
 
 Don't hesitate to contact your mentor as well if this isn't moving.
 
@@ -159,7 +157,7 @@ stronger for it. But don't stop now.
 
 Go back to step 3, as there is plenty more to do. Your mentor might
 suggest a new bug for you to work on, or `find one that interests
-you <http://www.whatcanidoformozilla.org/>`_. Now that you've got your
+you <https://moztw.org/~petercpg/asknot/>`_. Now that you've got your
 first bug fixed you should request level 1 access to the repository to
 push to the try server and get automated feedback about your changes on
 multiple platforms. After fixing a nontrivial number of bugs you should
