@@ -109,24 +109,9 @@ add_task(async function second_screen_filtered_by_targeting() {
 
 
 
-add_task(async function test_aboutwelcome_mr_template_easy_setup() {
-  await pushPrefs([
-    "browser.migrate.content-modal.about-welcome-behavior",
-    "default",
-  ]);
-
-  if (AppConstants.platform !== "win") {
-    return;
-  }
-
-  if (
-    
-    TelemetryEnvironment.currentEnvironment.system.os.windowsBuildNumber < 15063
-  ) {
-    return;
-  }
-
-  sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+add_task(async function test_aboutwelcome_mr_template_easy_setup_default() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
   sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
 
   await clearHistoryAndBookmarks();
@@ -136,11 +121,113 @@ add_task(async function test_aboutwelcome_mr_template_easy_setup() {
   
   await test_screen_content(
     browser,
-    "doesn't render pin, import and set to default",
+    "doesn't render only pin, default, or import easy setup",
     
-    ["main.AW_EASY_SETUP"],
+    ["main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"],
     
-    ["main.AW_PIN_FIREFOX", "main.AW_SET_DEFAULT", "main.AW_IMPORT_SETTINGS"]
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+      "main.AW_EASY_SETUP_NEEDS_PIN",
+      "main.AW_ONLY_IMPORT",
+    ]
+  );
+
+  await cleanup();
+  await popPrefs();
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(async function test_aboutwelcome_mr_template_easy_setup_needs_pin() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  sandbox.stub(ShellService, "doesAppNeedPin").returns(true);
+  sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+
+  await clearHistoryAndBookmarks();
+
+  const { browser, cleanup } = await openMRAboutWelcome();
+
+  
+  await test_screen_content(
+    browser,
+    "doesn't render default and pin, only default or import easy setup",
+    
+    ["main.AW_EASY_SETUP_NEEDS_PIN"],
+    
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      "main.AW_ONLY_IMPORT",
+    ]
+  );
+
+  await cleanup();
+  await popPrefs();
+  sandbox.restore();
+});
+
+
+
+
+
+add_task(
+  async function test_aboutwelcome_mr_template_easy_setup_needs_default() {
+    await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+    sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+    sandbox.stub(ShellService, "isDefaultBrowser").returns(false);
+
+    await clearHistoryAndBookmarks();
+
+    const { browser, cleanup } = await openMRAboutWelcome();
+
+    
+    await test_screen_content(
+      browser,
+      "doesn't render pin, import and set to default",
+      
+      ["main.AW_EASY_SETUP_NEEDS_DEFAULT"],
+      
+      [
+        "main.AW_EASY_SETUP_NEEDS_PIN",
+        "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+        "main.AW_ONLY_IMPORT",
+      ]
+    );
+
+    await cleanup();
+    await popPrefs();
+    sandbox.restore();
+  }
+);
+
+
+
+
+
+add_task(async function test_aboutwelcome_mr_template_easy_setup_only_import() {
+  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
+  sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
+  sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
+
+  await clearHistoryAndBookmarks();
+
+  const { browser, cleanup } = await openMRAboutWelcome();
+
+  
+  await test_screen_content(
+    browser,
+    "doesn't render any combination of pin and default",
+    
+    ["main.AW_EASY_SETUP_ONLY_IMPORT"],
+    
+    [
+      "main.AW_EASY_SETUP_NEEDS_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+    ]
   );
 
   await cleanup();

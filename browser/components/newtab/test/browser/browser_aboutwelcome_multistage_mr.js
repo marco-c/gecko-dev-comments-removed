@@ -40,13 +40,14 @@ add_setup(async function () {
     set: [
       ["ui.prefersReducedMotion", 1],
       ["browser.aboutwelcome.transitions", false],
+      ["browser.shell.checkDefaultBrowser", true],
     ],
   });
 });
 
-function initSandbox({ pin = true, isDefault = false } = {}) {
+function initSandbox({ needsPin = true, isDefault = false } = {}) {
   const sandbox = sinon.createSandbox();
-  sandbox.stub(AboutWelcomeParent, "doesAppNeedPin").returns(pin);
+  sandbox.stub(AboutWelcomeParent, "doesAppNeedPin").returns(needsPin);
   sandbox.stub(AboutWelcomeParent, "isDefaultBrowser").returns(isDefault);
 
   return sandbox;
@@ -87,21 +88,15 @@ add_task(async function test_aboutwelcome_mr_template_telemetry() {
 
 
 
-add_task(async function test_aboutwelcome_pin_screen_impression() {
-  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
-
+add_task(async function test_aboutwelcome_easy_setup_screen_impression() {
   const sandbox = initSandbox();
   sandbox
     .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "doesAppNeedPin && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
     .resolves(true)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && !useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
     .withArgs("isDeviceMigration")
     .resolves(false);
 
@@ -140,7 +135,7 @@ add_task(async function test_aboutwelcome_pin_screen_impression() {
 
   Assert.ok(
     impressionCall.args[0].message_id.startsWith(
-      "MR_WELCOME_DEFAULT_0_AW_PIN_FIREFOX_P"
+      "MR_WELCOME_DEFAULT_0_AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"
     ),
     "Impression telemetry includes correct message id"
   );
@@ -153,21 +148,15 @@ add_task(async function test_aboutwelcome_pin_screen_impression() {
 
 
 add_task(async function test_aboutwelcome_mr_template_content() {
-  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
-
   const sandbox = initSandbox();
 
   sandbox
     .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "doesAppNeedPin && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
     .resolves(true)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && !useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
     .withArgs("isDeviceMigration")
     .resolves(false);
 
@@ -186,11 +175,15 @@ add_task(async function test_aboutwelcome_mr_template_content() {
 
   await test_screen_content(
     browser,
-    "renders pin screen",
+    "renders easy setup needing default and pin screen",
     
-    ["main.AW_PIN_FIREFOX"],
+    ["main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN"],
     
-    ["main.AW_GRATITUDE"]
+    [
+      "main.AW_EASY_SETUP_NEEDS_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+      "main.AW_EASY_SETUP_ONLY_IMPORT",
+    ]
   );
 
   await clickVisibleButton(browser, ".action-buttons button.secondary");
@@ -198,11 +191,11 @@ add_task(async function test_aboutwelcome_mr_template_content() {
   
   await test_screen_content(
     browser,
-    "renders set default screen",
+    "renders gratitude screen",
     
-    ["main.AW_SET_DEFAULT"],
+    ["main.AW_GRATITUDE"],
     
-    ["main.AW_CHOOSE_THEME"]
+    ["main.AW_IMPORT_SETTINGS_EMBEDDED"]
   );
 
   await cleanup();
@@ -213,22 +206,16 @@ add_task(async function test_aboutwelcome_mr_template_content() {
 
 
 
-add_task(async function test_aboutwelcome_mr_template_content_pin() {
-  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
-
+add_task(async function test_aboutwelcome_mr_template_content_needs_pin() {
   const sandbox = initSandbox({ isDefault: true });
 
   sandbox
     .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "doesAppNeedPin && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser)"
+    )
     .resolves(true)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && !useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
     .withArgs("isDeviceMigration")
     .resolves(false);
 
@@ -236,11 +223,15 @@ add_task(async function test_aboutwelcome_mr_template_content_pin() {
 
   await test_screen_content(
     browser,
-    "renders pin screen",
+    "renders easy setup needs pin screen",
     
-    ["main.AW_PIN_FIREFOX"],
+    ["main.AW_EASY_SETUP_NEEDS_PIN"],
     
-    ["main.AW_SET_DEFAULT"]
+    [
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      "main.AW_EASY_SETUP_ONLY_IMPORT",
+    ]
   );
 
   await clickVisibleButton(browser, ".action-buttons button.secondary");
@@ -249,9 +240,9 @@ add_task(async function test_aboutwelcome_mr_template_content_pin() {
     browser,
     "renders next screen",
     
-    ["main"],
+    ["main.AW_GRATITUDE"],
     
-    ["main.AW_SET_DEFAULT"]
+    ["main.AW_IMPORT_SETTINGS_EMBEDDED"]
   );
 
   await cleanup();
@@ -263,20 +254,14 @@ add_task(async function test_aboutwelcome_mr_template_content_pin() {
 
 
 add_task(async function test_aboutwelcome_mr_template_only_default() {
-  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
-
-  const sandbox = initSandbox({ pin: false });
+  const sandbox = initSandbox({ needsPin: false });
   sandbox
     .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "!doesAppNeedPin && 'browser.shell.checkDefaultBrowser'|preferenceValue && !isDefaultBrowser"
+    )
     .resolves(true)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && !useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
     .withArgs("isDeviceMigration")
     .resolves(false);
 
@@ -284,11 +269,15 @@ add_task(async function test_aboutwelcome_mr_template_only_default() {
   
   await test_screen_content(
     browser,
-    "renders set default screen",
+    "renders set easy setup needs default screen",
     
-    ["main.AW_ONLY_DEFAULT"],
+    ["main.AW_EASY_SETUP_NEEDS_DEFAULT"],
     
-    ["main.AW_PIN_FIREFOX"]
+    [
+      "main.AW_EASY_SETUP_NEEDS_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      "main.AW_EASY_SETUP_ONLY_IMPORT",
+    ]
   );
 
   await cleanup();
@@ -298,22 +287,15 @@ add_task(async function test_aboutwelcome_mr_template_only_default() {
 
 
 
-add_task(async function test_aboutwelcome_mr_template_get_started() {
-  await pushPrefs(["browser.shell.checkDefaultBrowser", true]);
-
-  const sandbox = initSandbox({ pin: false, isDefault: true });
-
+add_task(async function test_aboutwelcome_mr_template_only_import() {
+  const sandbox = initSandbox({ needsPin: false, isDefault: true });
   sandbox
     .stub(AWScreenUtils, "evaluateScreenTargeting")
+    .resolves(false)
+    .withArgs(
+      "!doesAppNeedPin && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser)"
+    )
     .resolves(true)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
-    .withArgs(
-      "os.windowsBuildNumber >= 15063 && !isDefaultBrowser && !doesAppNeedPin && !useEmbeddedMigrationWizard"
-    )
-    .resolves(false)
     .withArgs("isDeviceMigration")
     .resolves(false);
 
@@ -324,9 +306,13 @@ add_task(async function test_aboutwelcome_mr_template_get_started() {
     browser,
     "doesn't render pin and set default screens",
     
-    ["main.AW_GET_STARTED"],
+    ["main.AW_EASY_SETUP_ONLY_IMPORT"],
     
-    ["main.AW_PIN_FIREFOX", "main.AW_ONLY_DEFAULT"]
+    [
+      "main.AW_EASY_SETUP_NEEDS_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
+      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
+    ]
   );
 
   await cleanup();
@@ -675,7 +661,6 @@ add_task(async function test_aboutwelcome_multiselect() {
   const TEST_SCREENS = [
     {
       id: "AW_EASY_SETUP_X",
-      targeting: "true",
       content: {
         position: "split",
         split_narrow_bkg_position: "-60px",
@@ -727,7 +712,6 @@ add_task(async function test_aboutwelcome_multiselect() {
     },
     {
       id: "AW_EASY_SETUP_Y",
-      targeting: "true",
       content: {
         position: "split",
         split_narrow_bkg_position: "-60px",
@@ -787,7 +771,6 @@ add_task(async function test_aboutwelcome_multiselect() {
     },
     {
       id: "AW_EASY_SETUP_Z",
-      targeting: "true",
       content: {
         position: "split",
         split_narrow_bkg_position: "-60px",
@@ -850,6 +833,10 @@ add_task(async function test_aboutwelcome_multiselect() {
       },
     },
   ];
+
+  const sandbox = sinon.createSandbox();
+  sandbox.stub(AWScreenUtils, "addScreenImpression").resolves();
+
   await setAboutWelcomeMultiStage(JSON.stringify(TEST_SCREENS));
   let { cleanup, browser } = await openMRAboutWelcome();
 
@@ -963,4 +950,6 @@ add_task(async function test_aboutwelcome_multiselect() {
 
   await SpecialPowers.popPrefEnv();
   await cleanup();
+
+  sandbox.restore();
 });
