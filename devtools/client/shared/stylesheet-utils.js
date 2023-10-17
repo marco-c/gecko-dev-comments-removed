@@ -25,35 +25,45 @@ function stylesheetLoadPromise(styleSheet, url) {
 
 
 function appendStyleSheet(doc, url) {
-  if (doc.head) {
-    const styleSheet = doc.createElement("link");
-    styleSheet.setAttribute("rel", "stylesheet");
-    styleSheet.setAttribute("href", url);
-    const loadPromise = stylesheetLoadPromise(styleSheet);
+  const styleSheet = doc.createElementNS(
+    "http://www.w3.org/1999/xhtml",
+    "link"
+  );
+  styleSheet.setAttribute("rel", "stylesheet");
+  styleSheet.setAttribute("href", url);
+  const loadPromise = stylesheetLoadPromise(styleSheet);
 
-    
-    
-    
-    
-    
-    
-    const globalSheet = doc.head.querySelector(
-      "link[href='chrome://global/skin/global.css']"
-    );
-    if (globalSheet) {
-      globalSheet.after(styleSheet);
-    } else {
-      doc.head.prepend(styleSheet);
-    }
+  
+  
+  
+  
+  
+  
+
+  
+  const globalSheet = doc.querySelector(
+    "link[href='chrome://global/skin/global.css']"
+  );
+  if (globalSheet) {
+    globalSheet.after(styleSheet);
     return { styleSheet, loadPromise };
   }
 
-  const styleSheet = doc.createProcessingInstruction(
-    "xml-stylesheet",
-    `href="${url}" type="text/css"`
-  );
-  const loadPromise = stylesheetLoadPromise(styleSheet);
-  doc.insertBefore(styleSheet, doc.documentElement);
+  
+  const links = doc.querySelectorAll("link");
+  if (links.length) {
+    links[0].before(styleSheet);
+    return { styleSheet, loadPromise };
+  }
+
+  
+  
+  if (doc.head) {
+    doc.head.prepend(styleSheet);
+  } else {
+    doc.documentElement.prepend(styleSheet);
+  }
+
   return { styleSheet, loadPromise };
 }
 
