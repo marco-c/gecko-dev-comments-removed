@@ -495,7 +495,7 @@ FilenameTypeAndDetails nsContentSecurityUtils::FilenameToFilenameType(
   return FilenameTypeAndDetails(kOther, Nothing());
 }
 
-#ifdef NIGHTLY_BUILD
+#if defined(EARLY_BETA_OR_EARLIER)
 
 
 void PossiblyCrash(const char* aPrefSuffix, const char* aUnsafeCrashString,
@@ -1541,7 +1541,7 @@ bool nsContentSecurityUtils::ValidateScriptFilename(JSContext* cx,
           : "(None)",
       "Blocking a script load %s from file %s");
   MOZ_CRASH_UNSAFE_PRINTF("%s", crashString.get());
-#elif defined(NIGHTLY_BUILD)
+#elif defined(EARLY_BETA_OR_EARLIER)
   
   
   
