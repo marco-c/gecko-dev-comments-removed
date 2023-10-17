@@ -69,14 +69,6 @@ void Device::Cleanup() {
   if (mBridge) {
     mBridge->UnregisterDevice(mId);
   }
-
-  
-  if (mLostPromise && mLostPromise->PromiseObj() != nullptr) {
-    auto info = MakeRefPtr<DeviceLostInfo>(GetParentObject(),
-                                           dom::GPUDeviceLostReason::Destroyed,
-                                           u"Device destroyed"_ns);
-    mLostPromise->MaybeResolve(info);
-  }
 }
 
 void Device::CleanupUnregisteredInParent() {
@@ -86,13 +78,19 @@ void Device::CleanupUnregisteredInParent() {
   mValid = false;
 }
 
-bool Device::IsLost() const { return !mBridge || !mBridge->CanSend(); }
+bool Device::IsLost() const {
+  return !mBridge || !mBridge->CanSend() ||
+         (mLostPromise &&
+          (mLostPromise->State() != dom::Promise::PromiseState::Pending));
+}
+
+bool Device::IsBridgeAlive() const { return mBridge && mBridge->CanSend(); }
 
 
 
 
 void Device::GenerateValidationError(const nsCString& aMessage) {
-  if (IsLost()) {
+  if (!IsBridgeAlive()) {
     return;  
   }
   mBridge->SendGenerateError(Some(mId), dom::GPUErrorFilter::Validation,
@@ -116,8 +114,28 @@ dom::Promise* Device::GetLost(ErrorResult& aRv) {
 
 void Device::ResolveLost(Maybe<dom::GPUDeviceLostReason> aReason,
                          const nsAString& aMessage) {
-  
-  
+  ErrorResult rv;
+  dom::Promise* lostPromise = GetLost(rv);
+  if (!lostPromise) {
+    
+    return;
+  }
+  if (lostPromise->State() != dom::Promise::PromiseState::Pending) {
+    
+    return;
+  }
+  if (!lostPromise->PromiseObj()) {
+    
+    return;
+  }
+
+  RefPtr<DeviceLostInfo> info;
+  if (aReason.isSome()) {
+    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), *aReason, aMessage);
+  } else {
+    info = MakeRefPtr<DeviceLostInfo>(GetParentObject(), aMessage);
+  }
+  lostPromise->MaybeResolve(info);
 }
 
 already_AddRefed<Buffer> Device::CreateBuffer(
@@ -344,7 +362,7 @@ void Device::Destroy() {
 }
 
 void Device::PushErrorScope(const dom::GPUErrorFilter& aFilter) {
-  if (IsLost()) {
+  if (!IsBridgeAlive()) {
     return;
   }
   mBridge->SendDevicePushErrorScope(mId, aFilter);
@@ -363,7 +381,7 @@ already_AddRefed<dom::Promise> Device::PopErrorScope(ErrorResult& aRv) {
     return nullptr;
   }
 
-  if (IsLost()) {
+  if (!IsBridgeAlive()) {
     WebGPUChild::JsWarning(
         GetOwnerGlobal(),
         "popErrorScope resolving to null because device is already lost."_ns);
