@@ -322,6 +322,33 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
 
 
+  template <typename Function>
+  void QueueControlMessageWithNoShutdown(Function&& aFunction) {
+    QueueMessage(WrapUnique(
+        new ControlMessageWithNoShutdown(std::forward<Function>(aFunction))));
+  }
+
+  enum class IsInShutdown { No, Yes };
+  
+
+
+
+
+
+
+  template <typename Function>
+  void QueueControlOrShutdownMessage(Function&& aFunction) {
+    QueueMessage(WrapUnique(
+        new ControlOrShutdownMessage(std::forward<Function>(aFunction))));
+  }
+
+  
+
+
+
+
+
+
 
 
 
@@ -498,6 +525,14 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   virtual void AdvanceTimeVaryingValuesToCurrentTime(GraphTime aCurrentTime,
                                                      GraphTime aBlockedTime);
 
+ private:
+  template <typename Function>
+  class ControlMessageWithNoShutdown;
+  template <typename Function>
+  class ControlOrShutdownMessage;
+
+  void QueueMessage(UniquePtr<ControlMessageInterface> aMessage);
+
   void NotifyMainThreadListeners() {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");
 
@@ -517,6 +552,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
     return true;
   }
 
+ protected:
   
   
   void NotifyIfDisabledModeChangedFrom(DisabledTrackMode aOldMode);
@@ -1182,6 +1218,7 @@ class MediaTrackGraph {
 
 
 
+
 class MediaTrack::ControlMessageInterface {
  public:
   MOZ_COUNTED_DEFAULT_CTOR(ControlMessageInterface)
@@ -1199,6 +1236,44 @@ class MediaTrack::ControlMessageInterface {
   
   
   virtual void RunDuringShutdown() {}
+};
+
+template <typename Function>
+class MediaTrack::ControlMessageWithNoShutdown
+    : public ControlMessageInterface {
+ public:
+  explicit ControlMessageWithNoShutdown(Function&& aFunction)
+      : mFunction(std::forward<Function>(aFunction)) {}
+
+  void Run() override {
+    static_assert(std::is_void_v<decltype(mFunction())>,
+                  "The lambda must return void!");
+    mFunction();
+  }
+
+ private:
+  using StoredFunction = std::decay_t<Function>;
+  StoredFunction mFunction;
+};
+
+template <typename Function>
+class MediaTrack::ControlOrShutdownMessage : public ControlMessageInterface {
+ public:
+  explicit ControlOrShutdownMessage(Function&& aFunction)
+      : mFunction(std::forward<Function>(aFunction)) {}
+
+  void Run() override {
+    static_assert(std::is_void_v<decltype(mFunction(IsInShutdown()))>,
+                  "The lambda must return void!");
+    mFunction(IsInShutdown::No);
+  }
+  void RunDuringShutdown() override { mFunction(IsInShutdown::Yes); }
+
+ private:
+  
+  
+  using StoredFunction = std::decay_t<Function>;
+  StoredFunction mFunction;
 };
 
 }  
