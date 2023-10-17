@@ -502,6 +502,13 @@ namespace xsimd
         }
 
         
+        template <class A, class T, class = typename std::enable_if<std::is_integral<T>::value, void>::type>
+        inline batch<T, A> decr_if(batch<T, A> const& self, batch_bool<T, A> const& mask, requires_arch<sse2>) noexcept
+        {
+            return self + batch<T, A>(mask.data);
+        }
+
+        
         template <class A>
         inline batch<float, A> div(batch<float, A> const& self, batch<float, A> const& other, requires_arch<sse2>) noexcept
         {
@@ -806,6 +813,13 @@ namespace xsimd
         {
             return _mm_add_pd(_mm_unpacklo_pd(row[0], row[1]),
                               _mm_unpackhi_pd(row[0], row[1]));
+        }
+
+        
+        template <class A, class T, class = typename std::enable_if<std::is_integral<T>::value, void>::type>
+        inline batch<T, A> incr_if(batch<T, A> const& self, batch_bool<T, A> const& mask, requires_arch<sse2>) noexcept
+        {
+            return self - batch<T, A>(mask.data);
         }
 
         

@@ -82,7 +82,7 @@ namespace xsimd
 
 
     template <class T, class A>
-    inline auto add(batch<T> const& x, batch<T, A> const& y) noexcept -> decltype(x + y)
+    inline auto add(batch<T, A> const& x, batch<T, A> const& y) noexcept -> decltype(x + y)
     {
         detail::static_check_supported_config<T, A>();
         return x + y;
@@ -553,6 +553,36 @@ namespace xsimd
 
 
 
+    template <class T, class A>
+    inline batch<T, A> decr(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::decr<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A, class Mask>
+    inline batch<T, A> decr_if(batch<T, A> const& x, Mask const& mask) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::decr_if<A>(x, mask, A {});
+    }
+
+    
+
+
+
+
+
+
 
     template <class T, class A>
     inline auto div(batch<T, A> const& x, batch<T, A> const& y) noexcept -> decltype(x / y)
@@ -886,63 +916,6 @@ namespace xsimd
 
 
 
-    template <class T, class A, class F>
-    inline T reduce(F&& f, batch<T, A> const& x) noexcept
-    {
-        detail::static_check_supported_config<T, A>();
-        return kernel::detail::reduce(std::forward<F>(f), x, std::integral_constant<unsigned, batch<T, A>::size>());
-    }
-
-    
-
-
-
-
-
-
-    template <class T, class A>
-    inline T reduce_add(batch<T, A> const& x) noexcept
-    {
-        detail::static_check_supported_config<T, A>();
-        return kernel::reduce_add<A>(x, A {});
-    }
-
-    
-
-
-
-
-
-
-    template <class T, class A>
-    inline T reduce_max(batch<T, A> const& x) noexcept
-    {
-        detail::static_check_supported_config<T, A>();
-        return kernel::reduce_max<A>(x, A {});
-    }
-
-    
-
-
-
-
-
-
-    template <class T, class A>
-    inline T reduce_min(batch<T, A> const& x) noexcept
-    {
-        detail::static_check_supported_config<T, A>();
-        return kernel::reduce_min<A>(x, A {});
-    }
-
-    
-
-
-
-
-
-
-
 
     template <class T, class A>
     inline batch<T, A> haddp(batch<T, A> const* row) noexcept
@@ -979,6 +952,36 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return kernel::imag<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> incr(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::incr<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A, class Mask>
+    inline batch<T, A> incr_if(batch<T, A> const& x, Mask const& mask) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::incr_if<A>(x, mask, A {});
     }
 
     
@@ -1602,6 +1605,20 @@ namespace xsimd
 
 
 
+    template <class T, class A>
+    inline real_batch_type_t<batch<T, A>> real(batch<T, A> const& z) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::real<A>(z, A {});
+    }
+
+    
+
+
+
+
+
+
 
 
     template <class T, class A, class = typename std::enable_if<std::is_floating_point<T>::value, void>::type>
@@ -1618,11 +1635,54 @@ namespace xsimd
 
 
 
-    template <class T, class A>
-    inline real_batch_type_t<batch<T, A>> real(batch<T, A> const& z) noexcept
+
+    template <class T, class A, class F>
+    inline T reduce(F&& f, batch<T, A> const& x) noexcept
     {
         detail::static_check_supported_config<T, A>();
-        return kernel::real<A>(z, A {});
+        return kernel::detail::reduce(std::forward<F>(f), x, std::integral_constant<unsigned, batch<T, A>::size>());
+    }
+
+    
+
+
+
+
+
+
+    template <class T, class A>
+    inline T reduce_add(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::reduce_add<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+    template <class T, class A>
+    inline T reduce_max(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::reduce_max<A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+    template <class T, class A>
+    inline T reduce_min(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::reduce_min<A>(x, A {});
     }
 
     
