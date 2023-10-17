@@ -75,31 +75,17 @@ struct TrackUpdate {
 
 
 
-class ControlMessage {
+class ControlMessage : public MediaTrack::ControlMessageInterface {
  public:
-  explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {
-    MOZ_COUNT_CTOR(ControlMessage);
-  }
-  
-  MOZ_COUNTED_DTOR_VIRTUAL(ControlMessage)
-  
-  
-  
-  
-  virtual void Run() = 0;
-  
-  
-  
-  
-  
-  virtual void RunDuringShutdown() {}
+  explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {}
+
   MediaTrack* GetTrack() { return mTrack; }
 
  protected:
   
   
   
-  MediaTrack* mTrack;
+  MediaTrack* const mTrack;
 };
 
 class MessageBlock {
@@ -123,6 +109,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                             public nsITimerCallback,
                             public nsINamed {
  public:
+  using ControlMessageInterface = MediaTrack::ControlMessageInterface;
+
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
   NS_DECL_NSITHREADOBSERVER

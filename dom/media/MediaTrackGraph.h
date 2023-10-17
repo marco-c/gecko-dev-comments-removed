@@ -486,6 +486,8 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   virtual void DecrementSuspendCount();
 
+  class ControlMessageInterface;
+
  protected:
   
   
@@ -1172,6 +1174,31 @@ class MediaTrackGraph {
 
 
   const TrackRate mSampleRate;
+};
+
+
+
+
+
+
+
+class MediaTrack::ControlMessageInterface {
+ public:
+  MOZ_COUNTED_DEFAULT_CTOR(ControlMessageInterface)
+  
+  
+  MOZ_COUNTED_DTOR_VIRTUAL(ControlMessageInterface)
+  
+  
+  
+  
+  virtual void Run() = 0;
+  
+  
+  
+  
+  
+  virtual void RunDuringShutdown() {}
 };
 
 }  
