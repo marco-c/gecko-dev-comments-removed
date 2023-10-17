@@ -78,7 +78,8 @@ def _dnsname_match(dn, hostname, max_wildcards=1):
 
 def _to_unicode(obj):
     if isinstance(obj, str) and sys.version_info < (3,):
-        obj = unicode(obj, encoding="ascii", errors="strict")
+        
+        obj = unicode(obj, encoding="ascii", errors="strict")  
     return obj
 
 
@@ -111,10 +112,8 @@ def match_hostname(cert, hostname):
     try:
         
         host_ip = ipaddress.ip_address(_to_unicode(hostname))
-    except ValueError:
+    except (UnicodeError, ValueError):
         
-        host_ip = None
-    except UnicodeError:
         
         
         
@@ -123,7 +122,7 @@ def match_hostname(cert, hostname):
         
         if ipaddress is None:
             host_ip = None
-        else:
+        else:  
             raise
     dnsnames = []
     san = cert.get("subjectAltName", ())

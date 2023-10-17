@@ -14,7 +14,10 @@ SKIPPABLE_HEADERS = frozenset(["accept-encoding", "host", "user-agent"])
 
 ACCEPT_ENCODING = "gzip,deflate"
 try:
-    import brotli as _unused_module_brotli  
+    try:
+        import brotlicffi as _unused_module_brotli  
+    except ImportError:
+        import brotli as _unused_module_brotli  
 except ImportError:
     pass
 else:

@@ -44,12 +44,20 @@ _const_compare_digest = getattr(hmac, "compare_digest", _const_compare_digest_ba
 
 try:  
     import ssl
-    from ssl import HAS_SNI  
     from ssl import CERT_REQUIRED, wrap_socket
+except ImportError:
+    pass
 
+try:
+    from ssl import HAS_SNI  
+except ImportError:
+    pass
+
+try:
     from .ssltransport import SSLTransport
 except ImportError:
     pass
+
 
 try:  
     from ssl import PROTOCOL_TLS
@@ -62,6 +70,11 @@ except ImportError:
         PROTOCOL_SSLv23 = PROTOCOL_TLS
     except ImportError:
         PROTOCOL_SSLv23 = PROTOCOL_TLS = 2
+
+try:
+    from ssl import PROTOCOL_TLS_CLIENT
+except ImportError:
+    PROTOCOL_TLS_CLIENT = PROTOCOL_TLS
 
 
 try:
@@ -151,7 +164,7 @@ except ImportError:
                 "urllib3 from configuring SSL appropriately and may cause "
                 "certain SSL connections to fail. You can upgrade to a newer "
                 "version of Python to solve this. For more information, see "
-                "https://urllib3.readthedocs.io/en/latest/advanced-usage.html"
+                "https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html"
                 "#ssl-warnings",
                 InsecurePlatformWarning,
             )
@@ -270,7 +283,11 @@ def create_urllib3_context(
         Constructed SSLContext object with specified options
     :rtype: SSLContext
     """
-    context = SSLContext(ssl_version or PROTOCOL_TLS)
+    
+    if not ssl_version or ssl_version == PROTOCOL_TLS:
+        ssl_version = PROTOCOL_TLS_CLIENT
+
+    context = SSLContext(ssl_version)
 
     context.set_ciphers(ciphers or DEFAULT_CIPHERS)
 
@@ -305,13 +322,25 @@ def create_urllib3_context(
     ) is not None:
         context.post_handshake_auth = True
 
-    context.verify_mode = cert_reqs
-    if (
-        getattr(context, "check_hostname", None) is not None
-    ):  
-        
-        
-        context.check_hostname = False
+    def disable_check_hostname():
+        if (
+            getattr(context, "check_hostname", None) is not None
+        ):  
+            
+            
+            context.check_hostname = False
+
+    
+    
+    
+    
+    
+    if cert_reqs == ssl.CERT_REQUIRED:
+        context.verify_mode = cert_reqs
+        disable_check_hostname()
+    else:
+        disable_check_hostname()
+        context.verify_mode = cert_reqs
 
     
     
@@ -393,7 +422,7 @@ def ssl_wrap_socket(
     try:
         if hasattr(context, "set_alpn_protocols"):
             context.set_alpn_protocols(ALPN_PROTOCOLS)
-    except NotImplementedError:
+    except NotImplementedError:  
         pass
 
     
@@ -411,7 +440,7 @@ def ssl_wrap_socket(
             "This may cause the server to present an incorrect TLS "
             "certificate, which can cause validation failures. You can upgrade to "
             "a newer version of Python to solve this. For more information, see "
-            "https://urllib3.readthedocs.io/en/latest/advanced-usage.html"
+            "https://urllib3.readthedocs.io/en/1.26.x/advanced-usage.html"
             "#ssl-warnings",
             SNIMissingWarning,
         )

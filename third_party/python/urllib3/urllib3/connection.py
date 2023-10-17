@@ -43,6 +43,7 @@ except NameError:
         pass
 
 
+from ._collections import HTTPHeaderDict  
 from ._version import __version__
 from .exceptions import (
     ConnectTimeoutError,
@@ -50,15 +51,16 @@ from .exceptions import (
     SubjectAltNameWarning,
     SystemTimeWarning,
 )
-from .packages.ssl_match_hostname import CertificateError, match_hostname
 from .util import SKIP_HEADER, SKIPPABLE_HEADERS, connection
 from .util.ssl_ import (
     assert_fingerprint,
     create_urllib3_context,
+    is_ipaddress,
     resolve_cert_reqs,
     resolve_ssl_version,
     ssl_wrap_socket,
 )
+from .util.ssl_match_hostname import CertificateError, match_hostname
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +68,7 @@ port_by_scheme = {"http": 80, "https": 443}
 
 
 
-RECENT_DATE = datetime.date(2019, 1, 1)
+RECENT_DATE = datetime.date(2022, 1, 1)
 
 _CONTAINS_CONTROL_CHAR_RE = re.compile(r"[^-!#$%&'*+.^_`|~0-9a-zA-Z]")
 
@@ -105,6 +107,10 @@ class HTTPConnection(_HTTPConnection, object):
 
     
     is_verified = False
+
+    
+    
+    proxy_is_verified = None
 
     def __init__(self, *args, **kw):
         if not six.PY2:
@@ -200,7 +206,7 @@ class HTTPConnection(_HTTPConnection, object):
         self._prepare_conn(conn)
 
     def putrequest(self, method, url, *args, **kwargs):
-        """"""
+        """ """
         
         
         match = _CONTAINS_CONTROL_CHAR_RE.search(method)
@@ -213,8 +219,8 @@ class HTTPConnection(_HTTPConnection, object):
         return _HTTPConnection.putrequest(self, method, url, *args, **kwargs)
 
     def putheader(self, header, *values):
-        """"""
-        if SKIP_HEADER not in values:
+        """ """
+        if not any(isinstance(v, str) and v == SKIP_HEADER for v in values):
             _HTTPConnection.putheader(self, header, *values)
         elif six.ensure_str(header.lower()) not in SKIPPABLE_HEADERS:
             raise ValueError(
@@ -223,12 +229,17 @@ class HTTPConnection(_HTTPConnection, object):
             )
 
     def request(self, method, url, body=None, headers=None):
+        
+        
+        if getattr(self, "sock", None) is not None:
+            self.sock.settimeout(self.timeout)
+
         if headers is None:
             headers = {}
         else:
             
             headers = headers.copy()
-        if "user-agent" not in (k.lower() for k in headers):
+        if "user-agent" not in (six.ensure_str(k.lower()) for k in headers):
             headers["User-Agent"] = _get_default_user_agent()
         super(HTTPConnection, self).request(method, url, body=body, headers=headers)
 
@@ -248,7 +259,7 @@ class HTTPConnection(_HTTPConnection, object):
             self.putheader("User-Agent", _get_default_user_agent())
         for header, value in headers.items():
             self.putheader(header, value)
-        if "transfer-encoding" not in headers:
+        if "transfer-encoding" not in header_keys:
             self.putheader("Transfer-Encoding", "chunked")
         self.endheaders()
 
@@ -349,16 +360,14 @@ class HTTPSConnection(HTTPConnection):
 
     def connect(self):
         
-        conn = self._new_conn()
+        self.sock = conn = self._new_conn()
         hostname = self.host
         tls_in_tls = False
 
         if self._is_using_tunnel():
             if self.tls_in_tls_required:
-                conn = self._connect_tls_proxy(hostname, conn)
+                self.sock = conn = self._connect_tls_proxy(hostname, conn)
                 tls_in_tls = True
-
-            self.sock = conn
 
             
             
@@ -492,7 +501,7 @@ class HTTPSConnection(HTTPConnection):
 
         
         
-        return ssl_wrap_socket(
+        socket = ssl_wrap_socket(
             sock=conn,
             ca_certs=self.ca_certs,
             ca_cert_dir=self.ca_cert_dir,
@@ -501,8 +510,37 @@ class HTTPSConnection(HTTPConnection):
             ssl_context=ssl_context,
         )
 
+        if ssl_context.verify_mode != ssl.CERT_NONE and not getattr(
+            ssl_context, "check_hostname", False
+        ):
+            
+            
+            
+            cert = socket.getpeercert()
+            if not cert.get("subjectAltName", ()):
+                warnings.warn(
+                    (
+                        "Certificate for {0} has no `subjectAltName`, falling back to check for a "
+                        "`commonName` for now. This feature is being removed by major browsers and "
+                        "deprecated by RFC 2818. (See https://github.com/urllib3/urllib3/issues/497 "
+                        "for details.)".format(hostname)
+                    ),
+                    SubjectAltNameWarning,
+                )
+            _match_hostname(cert, hostname)
+
+        self.proxy_is_verified = ssl_context.verify_mode == ssl.CERT_REQUIRED
+        return socket
+
 
 def _match_hostname(cert, asserted_hostname):
+    
+    
+    
+    stripped_hostname = asserted_hostname.strip("u[]")
+    if is_ipaddress(stripped_hostname):
+        asserted_hostname = stripped_hostname
+
     try:
         match_hostname(cert, asserted_hostname)
     except CertificateError as e:

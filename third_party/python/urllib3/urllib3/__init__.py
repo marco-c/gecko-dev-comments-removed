@@ -19,6 +19,23 @@ from .util.retry import Retry
 from .util.timeout import Timeout
 from .util.url import get_host
 
+
+
+
+
+try:
+    import urllib3_secure_extra  
+except ImportError:
+    pass
+else:
+    warnings.warn(
+        "'urllib3[secure]' extra is deprecated and will be removed "
+        "in a future release of urllib3 2.x. Read more in this issue: "
+        "https://github.com/urllib3/urllib3/issues/2680",
+        category=DeprecationWarning,
+        stacklevel=2,
+    )
+
 __author__ = "Andrey Petrov (andrey.petrov@shazow.net)"
 __license__ = "MIT"
 __version__ = __version__

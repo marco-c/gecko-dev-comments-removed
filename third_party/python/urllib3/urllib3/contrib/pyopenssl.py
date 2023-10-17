@@ -47,10 +47,10 @@ compression in Python 2 (see `CRIME attack`_).
 """
 from __future__ import absolute_import
 
+import OpenSSL.crypto
 import OpenSSL.SSL
 from cryptography import x509
 from cryptography.hazmat.backends.openssl import backend as openssl_backend
-from cryptography.hazmat.backends.openssl.x509 import _Certificate
 
 try:
     from cryptography.x509 import UnsupportedExtension
@@ -73,9 +73,19 @@ except ImportError:
 import logging
 import ssl
 import sys
+import warnings
 
 from .. import util
 from ..packages import six
+from ..util.ssl_ import PROTOCOL_TLS_CLIENT
+
+warnings.warn(
+    "'urllib3.contrib.pyopenssl' module is deprecated and will be removed "
+    "in a future release of urllib3 2.x. Read more in this issue: "
+    "https://github.com/urllib3/urllib3/issues/2680",
+    category=DeprecationWarning,
+    stacklevel=2,
+)
 
 __all__ = ["inject_into_urllib3", "extract_from_urllib3"]
 
@@ -85,6 +95,7 @@ HAS_SNI = True
 
 _openssl_versions = {
     util.PROTOCOL_TLS: OpenSSL.SSL.SSLv23_METHOD,
+    PROTOCOL_TLS_CLIENT: OpenSSL.SSL.SSLv23_METHOD,
     ssl.PROTOCOL_TLSv1: OpenSSL.SSL.TLSv1_METHOD,
 }
 
@@ -217,9 +228,8 @@ def get_subj_alt_name(peer_cert):
     if hasattr(peer_cert, "to_cryptography"):
         cert = peer_cert.to_cryptography()
     else:
-        
-        
-        cert = _Certificate(openssl_backend, peer_cert._x509)
+        der = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_ASN1, peer_cert)
+        cert = x509.load_der_x509_certificate(der, openssl_backend)
 
     
     
@@ -403,7 +413,6 @@ if _fileobject:
     def makefile(self, mode, bufsize=-1):
         self._makefile_refs += 1
         return _fileobject(self, mode, bufsize, close=True)
-
 
 else:  
     makefile = backport_makefile
