@@ -30,27 +30,14 @@ add_heuristic_tests(
             },
           ],
         },
-        
         {
           default: {
             reason: "autocomplete",
           },
           fields: [
-            
-            
-            
-            
-            { fieldName: "cc-exp-month" },
-            { fieldName: "cc-exp-year" },
             { fieldName: "cc-number", reason: "fathom" },
-          ],
-        },
-        {
-          invalid: true,
-          fields: [
-            { fieldName: "cc-exp-month", reason: "regex-heuristic"},
-            { fieldName: "cc-exp-year", reason: "regex-heuristic"},
-            
+            { fieldName: "cc-exp-month", reason: "regex-heuristic" },
+            { fieldName: "cc-exp-year", reason: "regex-heuristic" },
           ],
         },
       ],
