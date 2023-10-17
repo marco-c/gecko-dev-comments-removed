@@ -178,6 +178,11 @@ class HTMLCanvasElement final : public nsGenericHTMLElement,
   
 
 
+  void SetSize(const nsIntSize& aSize, ErrorResult& aRv);
+
+  
+
+
   bool IsWriteOnly() const;
 
   
