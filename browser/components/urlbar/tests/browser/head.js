@@ -175,19 +175,26 @@ async function search({
 
   
   
+  let trimmedProtocolWSlashes = UrlbarTestUtils.getTrimmedProtocolWithSlashes();
+  let selectionOffset = searchString.includes(trimmedProtocolWSlashes)
+    ? trimmedProtocolWSlashes.length
+    : 0;
+
+  
+  
   Assert.equal(
     gURLBar.value,
-    valueBefore,
+    UrlbarTestUtils.trimURL(valueBefore),
     "gURLBar.value before the search completes"
   );
   Assert.equal(
     gURLBar.selectionStart,
-    searchString.length,
+    searchString.length - selectionOffset,
     "gURLBar.selectionStart before the search completes"
   );
   Assert.equal(
     gURLBar.selectionEnd,
-    valueBefore.length,
+    valueBefore.length - selectionOffset,
     "gURLBar.selectionEnd before the search completes"
   );
 
@@ -198,17 +205,17 @@ async function search({
   
   Assert.equal(
     gURLBar.value,
-    valueAfter,
+    UrlbarTestUtils.trimURL(valueAfter),
     "gURLBar.value after the search completes"
   );
   Assert.equal(
     gURLBar.selectionStart,
-    searchString.length,
+    searchString.length - selectionOffset,
     "gURLBar.selectionStart after the search completes"
   );
   Assert.equal(
     gURLBar.selectionEnd,
-    valueAfter.length,
+    valueAfter.length - selectionOffset,
     "gURLBar.selectionEnd after the search completes"
   );
 
@@ -220,7 +227,7 @@ async function search({
     );
     Assert.strictEqual(
       gURLBar._autofillPlaceholder.value,
-      placeholderAfter,
+      UrlbarTestUtils.trimURL(placeholderAfter),
       "gURLBar._autofillPlaceholder.value after the search completes"
     );
   } else {

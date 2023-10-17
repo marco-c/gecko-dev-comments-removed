@@ -12,11 +12,12 @@ const TEST_DATA = [
   },
   {
     input: "https:\n//\nexample.\ncom",
-    expected: "https://example.com",
+    expected: UrlbarTestUtils.trimURL("https://example.com"),
   },
   {
     input: "http:\n//\nexample.\ncom",
-    expected: "example.com",
+    
+    expected: UrlbarTestUtils.trimURL("http://example.com"),
   },
   {
     input: "javasc\nript:\nalert(1)",

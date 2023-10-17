@@ -11,7 +11,7 @@ add_task(async function validURL() {
   await SpecialPowers.pushPrefEnv({
     set: [["dom.security.https_first_schemeless", false]],
   });
-  let input = "i-definitely-dont-exist.example.com";
+  let input = "http://i-definitely-dont-exist.example.com";
   let tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     "http://example.com/"
@@ -29,10 +29,14 @@ add_task(async function validURL() {
   gURLBar.select();
   EventUtils.sendKey("return");
   await errorPageLoaded;
-  is(gURLBar.value, input, "Text is still in URL bar");
+  is(gURLBar.value, UrlbarTestUtils.trimURL(input), "Text is still in URL bar");
   await BrowserTestUtils.switchTab(gBrowser, tab.previousElementSibling);
   await BrowserTestUtils.switchTab(gBrowser, tab);
-  is(gURLBar.value, input, "Text is still in URL bar after tab switch");
+  is(
+    gURLBar.value,
+    UrlbarTestUtils.trimURL(input),
+    "Text is still in URL bar after tab switch"
+  );
   BrowserTestUtils.removeTab(tab);
 });
 
@@ -75,7 +79,11 @@ add_task(async function invalidURL() {
 
 add_task(async function selectAndFocus() {
   
-  const webpageTabURL = "https://example.com";
+  
+  const webpageTabURL =
+    UrlbarTestUtils.getTrimmedProtocolWithSlashes() == "https://"
+      ? "http://example.com"
+      : "https://example.com";
   const webpageTab = await BrowserTestUtils.openNewForegroundTab({
     gBrowser,
     url: webpageTabURL,
