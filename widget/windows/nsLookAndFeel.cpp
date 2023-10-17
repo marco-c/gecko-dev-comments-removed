@@ -890,15 +890,25 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
     
     
     
+    constexpr uint8_t kTextAlpha = 153;
+    
+    
+    constexpr uint8_t kBgAlpha = 208;
+    const auto BlendWithAlpha = [](nscolor aBg, nscolor aFg,
+                                   uint8_t aAlpha) -> nscolor {
+      return NS_ComposeColors(
+          aBg, NS_RGBA(NS_GET_R(aFg), NS_GET_G(aFg), NS_GET_B(aFg), aAlpha));
+    };
+
     result.mInactiveLight.mBg =
-        NS_ComposeColors(*result.mAccent, NS_RGBA(255, 255, 255, 153));
+        BlendWithAlpha(NS_RGB(255, 255, 255), *result.mAccent, kBgAlpha);
     result.mInactiveLight.mFg =
-        NS_ComposeColors(*result.mAccentText, NS_RGBA(255, 255, 255, 153));
+        BlendWithAlpha(*result.mAccent, *result.mAccentText, kTextAlpha);
 
     result.mInactiveDark.mBg =
-        NS_ComposeColors(*result.mAccent, NS_RGBA(0, 0, 0, 153));
+        BlendWithAlpha(NS_RGB(0, 0, 0), *result.mAccent, kBgAlpha);
     result.mInactiveDark.mFg =
-        NS_ComposeColors(*result.mAccentText, NS_RGBA(0, 0, 0, 153));
+        BlendWithAlpha(*result.mAccent, *result.mAccentText, kTextAlpha);
   }
   return result;
 }
