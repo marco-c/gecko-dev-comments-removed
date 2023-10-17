@@ -1049,7 +1049,7 @@ var gMainPane = {
         const supportedLanguages =
           await TranslationsParent.getSupportedLanguages();
         const languageList =
-          TranslationsState.getLanguageList(supportedLanguages);
+          TranslationsParent.getLanguageList(supportedLanguages);
         const downloadPhases = await TranslationsState.createDownloadPhases(
           languageList
         );
@@ -1065,38 +1065,6 @@ var gMainPane = {
           languageList,
           downloadPhases
         );
-      }
-
-      
-
-
-
-
-
-      static getLanguageList(supportedLanguages) {
-        const displayNames = new Map();
-        for (const languages of [
-          supportedLanguages.fromLanguages,
-          supportedLanguages.toLanguages,
-        ]) {
-          for (const { langTag, displayName } of languages) {
-            displayNames.set(langTag, displayName);
-          }
-        }
-
-        let appLangTag = new Intl.Locale(Services.locale.appLocaleAsBCP47)
-          .language;
-
-        
-        displayNames.delete(appLangTag);
-
-        
-        return [...displayNames.entries()]
-          .map(([langTag, displayName]) => ({
-            langTag,
-            displayName,
-          }))
-          .sort((a, b) => a.displayName.localeCompare(b.displayName));
       }
 
       
