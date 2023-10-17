@@ -40,9 +40,10 @@ pub struct Decompress {
     inner: Inflate,
 }
 
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-
-
+#[non_exhaustive]
 pub enum FlushCompress {
     
     
@@ -80,14 +81,12 @@ pub enum FlushCompress {
     
     
     Finish = ffi::MZ_FINISH as isize,
-
-    #[doc(hidden)]
-    _Nonexhaustive,
 }
 
+
+
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-
-
+#[non_exhaustive]
 pub enum FlushDecompress {
     
     
@@ -108,9 +107,6 @@ pub enum FlushDecompress {
     
     
     Finish = ffi::MZ_FINISH as isize,
-
-    #[doc(hidden)]
-    _Nonexhaustive,
 }
 
 
@@ -215,11 +211,6 @@ impl Compress {
     
     
     
-    
-    
-    
-    
-    
     #[cfg(feature = "any_zlib")]
     pub fn new_with_window_bits(
         level: Compression,
@@ -235,11 +226,6 @@ impl Compress {
         }
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -362,7 +348,7 @@ impl Compress {
         unsafe {
             let before = self.total_out();
             let ret = {
-                let ptr = output.as_mut_ptr().offset(len as isize);
+                let ptr = output.as_mut_ptr().add(len);
                 let out = slice::from_raw_parts_mut(ptr, cap - len);
                 self.compress(input, out, flush)
             };
@@ -393,11 +379,6 @@ impl Decompress {
     
     
     
-    
-    
-    
-    
-    
     #[cfg(feature = "any_zlib")]
     pub fn new_with_window_bits(zlib_header: bool, window_bits: u8) -> Decompress {
         assert!(
@@ -409,11 +390,6 @@ impl Decompress {
         }
     }
 
-    
-    
-    
-    
-    
     
     
     
@@ -503,7 +479,7 @@ impl Decompress {
         unsafe {
             let before = self.total_out();
             let ret = {
-                let ptr = output.as_mut_ptr().offset(len as isize);
+                let ptr = output.as_mut_ptr().add(len);
                 let out = slice::from_raw_parts_mut(ptr, cap - len);
                 self.decompress(input, out, flush)
             };

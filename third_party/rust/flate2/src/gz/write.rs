@@ -92,7 +92,7 @@ impl<W: Write> GzEncoder<W> {
         self.inner.finish()?;
 
         while self.crc_bytes_written < 8 {
-            let (sum, amt) = (self.crc.sum() as u32, self.crc.amount());
+            let (sum, amt) = (self.crc.sum(), self.crc.amount());
             let buf = [
                 (sum >> 0) as u8,
                 (sum >> 8) as u8,
@@ -296,7 +296,7 @@ impl<W: Write> GzDecoder<W> {
             | ((self.crc_bytes[5] as u32) << 8)
             | ((self.crc_bytes[6] as u32) << 16)
             | ((self.crc_bytes[7] as u32) << 24);
-        if crc != self.inner.get_ref().crc().sum() as u32 {
+        if crc != self.inner.get_ref().crc().sum() {
             return Err(corrupt());
         }
         if amt != self.inner.get_ref().crc().amount() {
@@ -373,11 +373,117 @@ impl<W: Read + Write> Read for GzDecoder<W> {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct MultiGzDecoder<W: Write> {
+    inner: GzDecoder<W>,
+}
+
+impl<W: Write> MultiGzDecoder<W> {
+    
+    
+    pub fn new(w: W) -> MultiGzDecoder<W> {
+        MultiGzDecoder {
+            inner: GzDecoder::new(w),
+        }
+    }
+
+    
+    pub fn header(&self) -> Option<&GzHeader> {
+        self.inner.header()
+    }
+
+    
+    pub fn get_ref(&self) -> &W {
+        self.inner.get_ref()
+    }
+
+    
+    
+    
+    
+    pub fn get_mut(&mut self) -> &mut W {
+        self.inner.get_mut()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_finish(&mut self) -> io::Result<()> {
+        self.inner.try_finish()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn finish(self) -> io::Result<W> {
+        self.inner.finish()
+    }
+}
+
+impl<W: Write> Write for MultiGzDecoder<W> {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        if buf.is_empty() {
+            Ok(0)
+        } else {
+            match self.inner.write(buf) {
+                Ok(0) => {
+                    
+                    
+                    self.inner.try_finish()?;
+                    let w = self.inner.inner.take_inner().into_inner();
+                    self.inner = GzDecoder::new(w);
+                    self.inner.write(buf)
+                }
+                res => res,
+            }
+        }
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    const STR: &'static str = "Hello World Hello World Hello World Hello World Hello World \
+    const STR: &str = "Hello World Hello World Hello World Hello World Hello World \
                                Hello World Hello World Hello World Hello World Hello World \
                                Hello World Hello World Hello World Hello World Hello World \
                                Hello World Hello World Hello World Hello World Hello World \
@@ -446,5 +552,27 @@ mod tests {
         writer = decoder.finish().unwrap();
         let return_string = String::from_utf8(writer).expect("String parsing error");
         assert_eq!(return_string, STR);
+    }
+
+    
+    
+    #[test]
+    fn decode_multi_writer() {
+        let mut e = GzEncoder::new(Vec::new(), Compression::default());
+        e.write(STR.as_ref()).unwrap();
+        let bytes = e.finish().unwrap().repeat(2);
+
+        let mut writer = Vec::new();
+        let mut decoder = MultiGzDecoder::new(writer);
+        let mut count = 0;
+        while count < bytes.len() {
+            let n = decoder.write(&bytes[count..]).unwrap();
+            assert!(n != 0);
+            count += n;
+        }
+        writer = decoder.finish().unwrap();
+        let return_string = String::from_utf8(writer).expect("String parsing error");
+        let expected = STR.repeat(2);
+        assert_eq!(return_string, expected);
     }
 }

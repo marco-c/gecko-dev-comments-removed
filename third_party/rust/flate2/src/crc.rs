@@ -63,7 +63,7 @@ impl Crc {
 
     
     pub fn combine(&mut self, additional_crc: &Crc) {
-        self.amt += additional_crc.amt;
+        self.amt = self.amt.wrapping_add(additional_crc.amt);
         self.hasher.combine(&additional_crc.hasher);
     }
 }

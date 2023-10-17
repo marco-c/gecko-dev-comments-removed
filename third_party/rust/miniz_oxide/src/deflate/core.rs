@@ -517,7 +517,6 @@ impl CompressorOxide {
 impl Default for CompressorOxide {
     
     
-    #[inline(always)]
     fn default() -> Self {
         CompressorOxide {
             lz: LZOxide::new(),
