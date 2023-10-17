@@ -684,7 +684,7 @@ macro_rules! bool_pref_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 62] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 63] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -1004,5 +1004,9 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 62] = [
     bool_pref_feature!(
         atom!("-moz-always-underline-links"),
         "layout.css.always_underline_links"
+    ),
+    bool_pref_feature!(
+        atom!("-moz-windows-accent-color-in-tabs"),
+        "browser.theme.windows.accent-color-in-tabs.enabled"
     ),
 ];
