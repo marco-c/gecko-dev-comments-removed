@@ -1,6 +1,9 @@
 #![allow(unreachable_pub)]
-use crate::{runtime::context, task::JoinHandle};
-use std::future::Future;
+use crate::{
+    runtime::Handle,
+    task::{JoinHandle, LocalSet},
+};
+use std::{future::Future, io};
 
 
 
@@ -75,41 +78,124 @@ impl<'a> Builder<'a> {
     
     
     
+    
+    
+    
+    
     #[track_caller]
-    pub fn spawn<Fut>(self, future: Fut) -> JoinHandle<Fut::Output>
+    pub fn spawn<Fut>(self, future: Fut) -> io::Result<JoinHandle<Fut::Output>>
     where
         Fut: Future + Send + 'static,
         Fut::Output: Send + 'static,
     {
-        super::spawn::spawn_inner(future, self.name)
+        Ok(super::spawn::spawn_inner(future, self.name))
     }
 
     
     
     
     
+    
+    
+    
     #[track_caller]
-    pub fn spawn_local<Fut>(self, future: Fut) -> JoinHandle<Fut::Output>
+    pub fn spawn_on<Fut>(self, future: Fut, handle: &Handle) -> io::Result<JoinHandle<Fut::Output>>
+    where
+        Fut: Future + Send + 'static,
+        Fut::Output: Send + 'static,
+    {
+        Ok(handle.spawn_named(future, self.name))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_local<Fut>(self, future: Fut) -> io::Result<JoinHandle<Fut::Output>>
     where
         Fut: Future + 'static,
         Fut::Output: 'static,
     {
-        super::local::spawn_local_inner(future, self.name)
+        Ok(super::local::spawn_local_inner(future, self.name))
     }
 
     
     
     
     
+    
+    
+    
     #[track_caller]
-    pub fn spawn_blocking<Function, Output>(self, function: Function) -> JoinHandle<Output>
+    pub fn spawn_local_on<Fut>(
+        self,
+        future: Fut,
+        local_set: &LocalSet,
+    ) -> io::Result<JoinHandle<Fut::Output>>
+    where
+        Fut: Future + 'static,
+        Fut::Output: 'static,
+    {
+        Ok(local_set.spawn_named(future, self.name))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking<Function, Output>(
+        self,
+        function: Function,
+    ) -> io::Result<JoinHandle<Output>>
+    where
+        Function: FnOnce() -> Output + Send + 'static,
+        Output: Send + 'static,
+    {
+        let handle = Handle::current();
+        self.spawn_blocking_on(function, &handle)
+    }
+
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking_on<Function, Output>(
+        self,
+        function: Function,
+        handle: &Handle,
+    ) -> io::Result<JoinHandle<Output>>
     where
         Function: FnOnce() -> Output + Send + 'static,
         Output: Send + 'static,
     {
         use crate::runtime::Mandatory;
-        let (join_handle, _was_spawned) =
-            context::current().spawn_blocking_inner(function, Mandatory::NonMandatory, self.name);
-        join_handle
+        let (join_handle, spawn_result) = handle.inner.blocking_spawner().spawn_blocking_inner(
+            function,
+            Mandatory::NonMandatory,
+            self.name,
+            handle,
+        );
+
+        spawn_result?;
+        Ok(join_handle)
     }
 }

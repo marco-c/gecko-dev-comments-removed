@@ -15,6 +15,16 @@ impl AtomicU32 {
         let inner = UnsafeCell::new(std::sync::atomic::AtomicU32::new(val));
         AtomicU32 { inner }
     }
+
+    
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn unsync_load(&self) -> u32 {
+        core::ptr::read(self.inner.get() as *const u32)
+    }
 }
 
 impl Deref for AtomicU32 {

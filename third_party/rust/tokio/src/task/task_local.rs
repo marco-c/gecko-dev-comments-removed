@@ -5,7 +5,7 @@ use std::future::Future;
 use std::marker::PhantomPinned;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::{fmt, thread};
+use std::{fmt, mem, thread};
 
 
 
@@ -48,9 +48,27 @@ macro_rules! task_local {
 }
 
 #[doc(hidden)]
+#[cfg(not(tokio_no_const_thread_local))]
 #[macro_export]
 macro_rules! __task_local_inner {
     ($(#[$attr:meta])* $vis:vis $name:ident, $t:ty) => {
+        $(#[$attr])*
+        $vis static $name: $crate::task::LocalKey<$t> = {
+            std::thread_local! {
+                static __KEY: std::cell::RefCell<Option<$t>> = const { std::cell::RefCell::new(None) };
+            }
+
+            $crate::task::LocalKey { inner: __KEY }
+        };
+    };
+}
+
+#[doc(hidden)]
+#[cfg(tokio_no_const_thread_local)]
+#[macro_export]
+macro_rules! __task_local_inner {
+    ($(#[$attr:meta])* $vis:vis $name:ident, $t:ty) => {
+        $(#[$attr])*
         $vis static $name: $crate::task::LocalKey<$t> = {
             std::thread_local! {
                 static __KEY: std::cell::RefCell<Option<$t>> = std::cell::RefCell::new(None);
@@ -60,6 +78,8 @@ macro_rules! __task_local_inner {
         };
     };
 }
+
+
 
 
 
@@ -116,6 +136,14 @@ impl<T: 'static> LocalKey<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn scope<F>(&'static self, value: T, f: F) -> TaskLocalFuture<T, F>
     where
         F: Future,
@@ -123,7 +151,7 @@ impl<T: 'static> LocalKey<T> {
         TaskLocalFuture {
             local: self,
             slot: Some(value),
-            future: f,
+            future: Some(f),
             _pinned: PhantomPinned,
         }
     }
@@ -145,18 +173,69 @@ impl<T: 'static> LocalKey<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn sync_scope<F, R>(&'static self, value: T, f: F) -> R
     where
         F: FnOnce() -> R,
     {
-        let scope = TaskLocalFuture {
-            local: self,
-            slot: Some(value),
-            future: (),
-            _pinned: PhantomPinned,
-        };
-        crate::pin!(scope);
-        scope.with_task(|_| f())
+        let mut value = Some(value);
+        match self.scope_inner(&mut value, f) {
+            Ok(res) => res,
+            Err(err) => err.panic(),
+        }
+    }
+
+    fn scope_inner<F, R>(&'static self, slot: &mut Option<T>, f: F) -> Result<R, ScopeInnerErr>
+    where
+        F: FnOnce() -> R,
+    {
+        struct Guard<'a, T: 'static> {
+            local: &'static LocalKey<T>,
+            slot: &'a mut Option<T>,
+        }
+
+        impl<'a, T: 'static> Drop for Guard<'a, T> {
+            fn drop(&mut self) {
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                self.local.inner.with(|inner| {
+                    let mut ref_mut = inner.borrow_mut();
+                    mem::swap(self.slot, &mut *ref_mut);
+                });
+            }
+        }
+
+        self.inner.try_with(|inner| {
+            inner
+                .try_borrow_mut()
+                .map(|mut ref_mut| mem::swap(slot, &mut *ref_mut))
+        })??;
+
+        let guard = Guard { local: self, slot };
+
+        let res = f();
+
+        drop(guard);
+
+        Ok(res)
     }
 
     
@@ -164,15 +243,15 @@ impl<T: 'static> LocalKey<T> {
     
     
     
-    
+    #[track_caller]
     pub fn with<F, R>(&'static self, f: F) -> R
     where
         F: FnOnce(&T) -> R,
     {
-        self.try_with(f).expect(
-            "cannot access a Task Local Storage value \
-             without setting it via `LocalKey::set`",
-        )
+        match self.try_with(f) {
+            Ok(res) => res,
+            Err(_) => panic!("cannot access a task-local storage value without setting it first"),
+        }
     }
 
     
@@ -184,19 +263,32 @@ impl<T: 'static> LocalKey<T> {
     where
         F: FnOnce(&T) -> R,
     {
-        self.inner.with(|v| {
-            if let Some(val) = v.borrow().as_ref() {
-                Ok(f(val))
-            } else {
-                Err(AccessError { _private: () })
-            }
-        })
+        
+        
+        
+        
+        
+        let try_with_res = self.inner.try_with(|v| {
+            
+            
+            v.borrow().as_ref().map(f)
+        });
+
+        match try_with_res {
+            Ok(Some(res)) => Ok(res),
+            Ok(None) | Err(_) => Err(AccessError { _private: () }),
+        }
     }
 }
 
 impl<T: Copy + 'static> LocalKey<T> {
     
     
+    
+    
+    
+    
+    #[track_caller]
     pub fn get(&'static self) -> T {
         self.with(|v| *v)
     }
@@ -232,52 +324,82 @@ pin_project! {
     /// ```
     pub struct TaskLocalFuture<T, F>
     where
-        T: 'static
+        T: 'static,
     {
         local: &'static LocalKey<T>,
         slot: Option<T>,
         #[pin]
-        future: F,
+        future: Option<F>,
         #[pin]
         _pinned: PhantomPinned,
     }
-}
 
-impl<T: 'static, F> TaskLocalFuture<T, F> {
-    fn with_task<F2: FnOnce(Pin<&mut F>) -> R, R>(self: Pin<&mut Self>, f: F2) -> R {
-        struct Guard<'a, T: 'static> {
-            local: &'static LocalKey<T>,
-            slot: &'a mut Option<T>,
-            prev: Option<T>,
-        }
-
-        impl<T> Drop for Guard<'_, T> {
-            fn drop(&mut self) {
-                let value = self.local.inner.with(|c| c.replace(self.prev.take()));
-                *self.slot = value;
+    impl<T: 'static, F> PinnedDrop for TaskLocalFuture<T, F> {
+        fn drop(this: Pin<&mut Self>) {
+            let this = this.project();
+            if mem::needs_drop::<F>() && this.future.is_some() {
+                // Drop the future while the task-local is set, if possible. Otherwise
+                // the future is dropped normally when the `Option<F>` field drops.
+                let mut future = this.future;
+                let _ = this.local.scope_inner(this.slot, || {
+                    future.set(None);
+                });
             }
         }
-
-        let project = self.project();
-        let val = project.slot.take();
-
-        let prev = project.local.inner.with(|c| c.replace(val));
-
-        let _guard = Guard {
-            prev,
-            slot: project.slot,
-            local: *project.local,
-        };
-
-        f(project.future)
     }
 }
 
 impl<T: 'static, F: Future> Future for TaskLocalFuture<T, F> {
     type Output = F::Output;
 
+    #[track_caller]
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        self.with_task(|f| f.poll(cx))
+        let this = self.project();
+        let mut future_opt = this.future;
+
+        let res = this
+            .local
+            .scope_inner(this.slot, || match future_opt.as_mut().as_pin_mut() {
+                Some(fut) => {
+                    let res = fut.poll(cx);
+                    if res.is_ready() {
+                        future_opt.set(None);
+                    }
+                    Some(res)
+                }
+                None => None,
+            });
+
+        match res {
+            Ok(Some(res)) => res,
+            Ok(None) => panic!("`TaskLocalFuture` polled after completion"),
+            Err(err) => err.panic(),
+        }
+    }
+}
+
+impl<T: 'static, F> fmt::Debug for TaskLocalFuture<T, F>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        
+        struct TransparentOption<'a, T> {
+            value: &'a Option<T>,
+        }
+        impl<'a, T: fmt::Debug> fmt::Debug for TransparentOption<'a, T> {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                match self.value.as_ref() {
+                    Some(value) => value.fmt(f),
+                    
+                    None => f.pad("<missing>"),
+                }
+            }
+        }
+
+        f.debug_struct("TaskLocalFuture")
+            .field("value", &TransparentOption { value: &self.slot })
+            .finish()
     }
 }
 
@@ -300,3 +422,30 @@ impl fmt::Display for AccessError {
 }
 
 impl Error for AccessError {}
+
+enum ScopeInnerErr {
+    BorrowError,
+    AccessError,
+}
+
+impl ScopeInnerErr {
+    #[track_caller]
+    fn panic(&self) -> ! {
+        match self {
+            Self::BorrowError => panic!("cannot enter a task-local scope while the task-local storage is borrowed"),
+            Self::AccessError => panic!("cannot enter a task-local scope during or after destruction of the underlying thread-local"),
+        }
+    }
+}
+
+impl From<std::cell::BorrowMutError> for ScopeInnerErr {
+    fn from(_: std::cell::BorrowMutError) -> Self {
+        Self::BorrowError
+    }
+}
+
+impl From<std::thread::AccessError> for ScopeInnerErr {
+    fn from(_: std::thread::AccessError) -> Self {
+        Self::AccessError
+    }
+}

@@ -1,9 +1,7 @@
 use crate::sync::rwlock::RwLock;
-use std::fmt;
 use std::marker::PhantomData;
-use std::mem::{self, ManuallyDrop};
-use std::ops;
 use std::sync::Arc;
+use std::{fmt, mem, ops, ptr};
 
 
 
@@ -14,17 +12,43 @@ use std::sync::Arc;
 
 
 
+#[clippy::has_significant_drop]
 pub struct OwnedRwLockMappedWriteGuard<T: ?Sized, U: ?Sized = T> {
+    
+    
     #[cfg(all(tokio_unstable, feature = "tracing"))]
     pub(super) resource_span: tracing::Span,
     pub(super) permits_acquired: u32,
-    
-    pub(super) lock: ManuallyDrop<Arc<RwLock<T>>>,
+    pub(super) lock: Arc<RwLock<T>>,
     pub(super) data: *mut U,
     pub(super) _p: PhantomData<T>,
 }
 
+#[allow(dead_code)] 
+struct Inner<T: ?Sized, U: ?Sized> {
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    resource_span: tracing::Span,
+    permits_acquired: u32,
+    lock: Arc<RwLock<T>>,
+    data: *const U,
+}
+
 impl<T: ?Sized, U: ?Sized> OwnedRwLockMappedWriteGuard<T, U> {
+    fn skip_drop(self) -> Inner<T, U> {
+        let me = mem::ManuallyDrop::new(self);
+        
+        
+        unsafe {
+            Inner {
+                #[cfg(all(tokio_unstable, feature = "tracing"))]
+                resource_span: ptr::read(&me.resource_span),
+                permits_acquired: me.permits_acquired,
+                lock: ptr::read(&me.lock),
+                data: me.data,
+            }
+        }
+    }
+
     
     
     
@@ -63,20 +87,15 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockMappedWriteGuard<T, U> {
         F: FnOnce(&mut U) -> &mut V,
     {
         let data = f(&mut *this) as *mut V;
-        let lock = unsafe { ManuallyDrop::take(&mut this.lock) };
-        let permits_acquired = this.permits_acquired;
-        #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let resource_span = this.resource_span.clone();
-        
-        mem::forget(this);
+        let this = this.skip_drop();
 
         OwnedRwLockMappedWriteGuard {
-            permits_acquired,
-            lock: ManuallyDrop::new(lock),
+            permits_acquired: this.permits_acquired,
+            lock: this.lock,
             data,
             _p: PhantomData,
             #[cfg(all(tokio_unstable, feature = "tracing"))]
-            resource_span,
+            resource_span: this.resource_span,
         }
     }
 
@@ -125,20 +144,15 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockMappedWriteGuard<T, U> {
             Some(data) => data as *mut V,
             None => return Err(this),
         };
-        let lock = unsafe { ManuallyDrop::take(&mut this.lock) };
-        let permits_acquired = this.permits_acquired;
-        #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let resource_span = this.resource_span.clone();
-        
-        mem::forget(this);
+        let this = this.skip_drop();
 
         Ok(OwnedRwLockMappedWriteGuard {
-            permits_acquired,
-            lock: ManuallyDrop::new(lock),
+            permits_acquired: this.permits_acquired,
+            lock: this.lock,
             data,
             _p: PhantomData,
             #[cfg(all(tokio_unstable, feature = "tracing"))]
-            resource_span,
+            resource_span: this.resource_span,
         })
     }
 }
@@ -178,6 +192,7 @@ where
 impl<T: ?Sized, U: ?Sized> Drop for OwnedRwLockMappedWriteGuard<T, U> {
     fn drop(&mut self) {
         self.lock.s.release(self.permits_acquired as usize);
+
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         self.resource_span.in_scope(|| {
             tracing::trace!(
@@ -186,6 +201,5 @@ impl<T: ?Sized, U: ?Sized> Drop for OwnedRwLockMappedWriteGuard<T, U> {
             write_locked.op = "override",
             )
         });
-        unsafe { ManuallyDrop::drop(&mut self.lock) };
     }
 }

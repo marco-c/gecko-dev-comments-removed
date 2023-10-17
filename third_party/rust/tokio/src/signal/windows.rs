@@ -57,14 +57,17 @@ pub fn ctrl_c() -> io::Result<CtrlC> {
 
 
 
-#[must_use = "streams do nothing unless polled"]
+
+
+
+
+#[must_use = "listeners do nothing unless polled"]
 #[derive(Debug)]
 pub struct CtrlC {
     inner: RxFuture,
 }
 
 impl CtrlC {
-    
     
     
     
@@ -131,7 +134,11 @@ impl CtrlC {
 
 
 
-#[must_use = "streams do nothing unless polled"]
+
+
+
+
+#[must_use = "listeners do nothing unless polled"]
 #[derive(Debug)]
 pub struct CtrlBreak {
     inner: RxFuture,
@@ -220,4 +227,298 @@ pub fn ctrl_break() -> io::Result<CtrlBreak> {
     Ok(CtrlBreak {
         inner: self::imp::ctrl_break()?,
     })
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn ctrl_close() -> io::Result<CtrlClose> {
+    Ok(CtrlClose {
+        inner: self::imp::ctrl_close()?,
+    })
+}
+
+
+
+
+
+
+
+
+#[must_use = "listeners do nothing unless polled"]
+#[derive(Debug)]
+pub struct CtrlClose {
+    inner: RxFuture,
+}
+
+impl CtrlClose {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv(&mut self) -> Option<()> {
+        self.inner.recv().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
+        self.inner.poll_recv(cx)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn ctrl_shutdown() -> io::Result<CtrlShutdown> {
+    Ok(CtrlShutdown {
+        inner: self::imp::ctrl_shutdown()?,
+    })
+}
+
+
+
+
+
+
+
+
+#[must_use = "listeners do nothing unless polled"]
+#[derive(Debug)]
+pub struct CtrlShutdown {
+    inner: RxFuture,
+}
+
+impl CtrlShutdown {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv(&mut self) -> Option<()> {
+        self.inner.recv().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
+        self.inner.poll_recv(cx)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub fn ctrl_logoff() -> io::Result<CtrlLogoff> {
+    Ok(CtrlLogoff {
+        inner: self::imp::ctrl_logoff()?,
+    })
+}
+
+
+
+
+
+
+
+
+#[must_use = "listeners do nothing unless polled"]
+#[derive(Debug)]
+pub struct CtrlLogoff {
+    inner: RxFuture,
+}
+
+impl CtrlLogoff {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn recv(&mut self) -> Option<()> {
+        self.inner.recv().await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_recv(&mut self, cx: &mut Context<'_>) -> Poll<Option<()>> {
+        self.inner.poll_recv(cx)
+    }
 }

@@ -1,4 +1,4 @@
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", not(tokio_wasi)))] 
 
 use tokio::test;
 
@@ -50,6 +50,7 @@ pub async fn issue_4175_test() -> std::io::Result<()> {
 }
 
 
+#[allow(clippy::let_unit_value)]
 pub mod clippy_semicolon_if_nothing_returned {
     #![deny(clippy::semicolon_if_nothing_returned)]
 
@@ -69,4 +70,19 @@ pub mod clippy_semicolon_if_nothing_returned {
     pub async fn empty() {
         
     }
+}
+
+
+pub mod issue_5243 {
+    macro_rules! mac {
+        (async fn $name:ident() $b:block) => {
+            #[::tokio::test]
+            async fn $name() {
+                $b
+            }
+        };
+    }
+    mac!(
+        async fn foo() {}
+    );
 }

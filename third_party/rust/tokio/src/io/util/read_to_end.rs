@@ -1,11 +1,11 @@
 use crate::io::util::vec_with_initialized::{into_read_buf_parts, VecU8, VecWithInitialized};
-use crate::io::AsyncRead;
+use crate::io::{AsyncRead, ReadBuf};
 
 use pin_project_lite::pin_project;
 use std::future::Future;
 use std::io;
 use std::marker::PhantomPinned;
-use std::mem;
+use std::mem::{self, MaybeUninit};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
@@ -68,15 +68,46 @@ fn poll_read_to_end<V: VecU8, R: AsyncRead + ?Sized>(
     
     
     
-    buf.reserve(32);
+    
+    
+    
+    
+
+    const NUM_BYTES: usize = 32;
+    let try_small_read = buf.try_small_read_first(NUM_BYTES);
 
     
-    let mut read_buf = buf.get_read_buf();
+    let mut read_buf;
+    let poll_result;
 
-    let filled_before = read_buf.filled().len();
-    let poll_result = read.poll_read(cx, &mut read_buf);
-    let filled_after = read_buf.filled().len();
-    let n = filled_after - filled_before;
+    let n = if try_small_read {
+        
+        let mut small_buf: [MaybeUninit<u8>; NUM_BYTES] = [MaybeUninit::uninit(); NUM_BYTES];
+        let mut small_read_buf = ReadBuf::uninit(&mut small_buf);
+        poll_result = read.poll_read(cx, &mut small_read_buf);
+        let to_write = small_read_buf.filled();
+
+        
+        read_buf = buf.get_read_buf();
+        if to_write.len() > read_buf.remaining() {
+            buf.reserve(NUM_BYTES);
+            read_buf = buf.get_read_buf();
+        }
+        read_buf.put_slice(to_write);
+
+        to_write.len()
+    } else {
+        
+        buf.reserve(NUM_BYTES);
+        read_buf = buf.get_read_buf();
+
+        
+        let filled_before = read_buf.filled().len();
+        poll_result = read.poll_read(cx, &mut read_buf);
+
+        
+        read_buf.filled().len() - filled_before
+    };
 
     
     let read_buf_parts = into_read_buf_parts(read_buf);
@@ -87,11 +118,11 @@ fn poll_read_to_end<V: VecU8, R: AsyncRead + ?Sized>(
             
             
             
-            debug_assert_eq!(filled_before, filled_after);
+            debug_assert_eq!(n, 0);
             Poll::Pending
         }
         Poll::Ready(Err(err)) => {
-            debug_assert_eq!(filled_before, filled_after);
+            debug_assert_eq!(n, 0);
             Poll::Ready(Err(err))
         }
         Poll::Ready(Ok(())) => Poll::Ready(Ok(n)),

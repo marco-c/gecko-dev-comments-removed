@@ -109,10 +109,18 @@
 
 
 
+
+
+
+
+
+
+
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicUsize;
-use crate::loom::sync::{Arc, Mutex, RwLock, RwLockReadGuard};
+use crate::loom::sync::{Arc, Mutex, MutexGuard, RwLock, RwLockReadGuard};
 use crate::util::linked_list::{self, LinkedList};
+use crate::util::WakeList;
 
 use std::fmt;
 use std::future::Future;
@@ -230,7 +238,7 @@ pub mod error {
     
     
     
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Eq, Clone)]
     pub enum RecvError {
         
         
@@ -258,7 +266,7 @@ pub mod error {
     
     
     
-    #[derive(Debug, PartialEq)]
+    #[derive(Debug, PartialEq, Eq, Clone)]
     pub enum TryRecvError {
         
         
@@ -337,9 +345,6 @@ struct Slot<T> {
     pos: u64,
 
     
-    closed: bool,
-
-    
     
     
     
@@ -359,6 +364,14 @@ struct Waiter {
 
     
     _p: PhantomPinned,
+}
+
+generate_addr_of_methods! {
+    impl<> Waiter {
+        unsafe fn addr_of_pointers(self: NonNull<Self>) -> NonNull<linked_list::Pointers<Waiter>> {
+            &self.pointers
+        }
+    }
 }
 
 struct RecvGuard<'a, T> {
@@ -425,6 +438,12 @@ const MAX_RECEIVERS: usize = usize::MAX >> 2;
 
 
 
+
+
+
+
+
+#[track_caller]
 pub fn channel<T: Clone>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
     assert!(capacity > 0, "capacity is empty");
     assert!(capacity <= usize::MAX >> 1, "requested capacity too large");
@@ -438,7 +457,6 @@ pub fn channel<T: Clone>(mut capacity: usize) -> (Sender<T>, Receiver<T>) {
         buffer.push(RwLock::new(Slot {
             rem: AtomicUsize::new(0),
             pos: (i as u64).wrapping_sub(capacity as u64),
-            closed: false,
             val: UnsafeCell::new(None),
         }));
     }
@@ -523,8 +541,41 @@ impl<T> Sender<T> {
     
     
     pub fn send(&self, value: T) -> Result<usize, SendError<T>> {
-        self.send2(Some(value))
-            .map_err(|SendError(maybe_v)| SendError(maybe_v.unwrap()))
+        let mut tail = self.shared.tail.lock();
+
+        if tail.rx_cnt == 0 {
+            return Err(SendError(value));
+        }
+
+        
+        let pos = tail.pos;
+        let rem = tail.rx_cnt;
+        let idx = (pos & self.shared.mask as u64) as usize;
+
+        
+        tail.pos = tail.pos.wrapping_add(1);
+
+        
+        let mut slot = self.shared.buffer[idx].write().unwrap();
+
+        
+        slot.pos = pos;
+
+        
+        slot.rem.with_mut(|v| *v = rem);
+
+        
+        slot.val = UnsafeCell::new(Some(value));
+
+        
+        drop(slot);
+
+        
+        
+        
+        self.shared.notify_rx(tail);
+
+        Ok(rem)
     }
 
     
@@ -591,56 +642,133 @@ impl<T> Sender<T> {
     
     
     
+    
+    pub fn len(&self) -> usize {
+        let tail = self.shared.tail.lock();
+
+        let base_idx = (tail.pos & self.shared.mask as u64) as usize;
+        let mut low = 0;
+        let mut high = self.shared.buffer.len();
+        while low < high {
+            let mid = low + (high - low) / 2;
+            let idx = base_idx.wrapping_add(mid) & self.shared.mask;
+            if self.shared.buffer[idx].read().unwrap().rem.load(SeqCst) == 0 {
+                low = mid + 1;
+            } else {
+                high = mid;
+            }
+        }
+
+        self.shared.buffer.len() - low
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_empty(&self) -> bool {
+        let tail = self.shared.tail.lock();
+
+        let idx = (tail.pos.wrapping_sub(1) & self.shared.mask as u64) as usize;
+        self.shared.buffer[idx].read().unwrap().rem.load(SeqCst) == 0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn receiver_count(&self) -> usize {
         let tail = self.shared.tail.lock();
         tail.rx_cnt
     }
 
-    fn send2(&self, value: Option<T>) -> Result<usize, SendError<Option<T>>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn same_channel(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.shared, &other.shared)
+    }
+
+    fn close_channel(&self) {
         let mut tail = self.shared.tail.lock();
+        tail.closed = true;
 
-        if tail.rx_cnt == 0 {
-            return Err(SendError(value));
-        }
-
-        
-        let pos = tail.pos;
-        let rem = tail.rx_cnt;
-        let idx = (pos & self.shared.mask as u64) as usize;
-
-        
-        tail.pos = tail.pos.wrapping_add(1);
-
-        
-        let mut slot = self.shared.buffer[idx].write().unwrap();
-
-        
-        slot.pos = pos;
-
-        
-        slot.rem.with_mut(|v| *v = rem);
-
-        
-        if value.is_none() {
-            tail.closed = true;
-            slot.closed = true;
-        } else {
-            slot.val.with_mut(|ptr| unsafe { *ptr = value });
-        }
-
-        
-        drop(slot);
-
-        tail.notify_rx();
-
-        
-        
-        
-        drop(tail);
-
-        Ok(rem)
+        self.shared.notify_rx(tail);
     }
 }
+
 
 fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
     let mut tail = shared.tail.lock();
@@ -658,18 +786,47 @@ fn new_receiver<T>(shared: Arc<Shared<T>>) -> Receiver<T> {
     Receiver { shared, next }
 }
 
-impl Tail {
-    fn notify_rx(&mut self) {
-        while let Some(mut waiter) = self.waiters.pop_back() {
+impl<T> Shared<T> {
+    fn notify_rx<'a, 'b: 'a>(&'b self, mut tail: MutexGuard<'a, Tail>) {
+        let mut wakers = WakeList::new();
+        'outer: loop {
+            while wakers.can_push() {
+                match tail.waiters.pop_back() {
+                    Some(mut waiter) => {
+                        
+                        let waiter = unsafe { waiter.as_mut() };
+
+                        assert!(waiter.queued);
+                        waiter.queued = false;
+
+                        if let Some(waker) = waiter.waker.take() {
+                            wakers.push(waker);
+                        }
+                    }
+                    None => {
+                        break 'outer;
+                    }
+                }
+            }
+
             
-            let waiter = unsafe { waiter.as_mut() };
+            drop(tail);
 
-            assert!(waiter.queued);
-            waiter.queued = false;
+            
+            
+            
+            
 
-            let waker = waiter.waker.take().unwrap();
-            waker.wake();
+            wakers.wake_all();
+
+            
+            tail = self.tail.lock();
         }
+
+        
+        drop(tail);
+
+        wakers.wake_all();
     }
 }
 
@@ -685,12 +842,102 @@ impl<T> Clone for Sender<T> {
 impl<T> Drop for Sender<T> {
     fn drop(&mut self) {
         if 1 == self.shared.num_tx.fetch_sub(1, SeqCst) {
-            let _ = self.send2(None);
+            self.close_channel();
         }
     }
 }
 
 impl<T> Receiver<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn len(&self) -> usize {
+        let next_send_pos = self.shared.tail.lock().pos;
+        (next_send_pos - self.next) as usize
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn same_channel(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.shared, &other.shared)
+    }
+
     
     fn recv_ref(
         &mut self,
@@ -702,14 +949,6 @@ impl<T> Receiver<T> {
         let mut slot = self.shared.buffer[idx].read().unwrap();
 
         if slot.pos != self.next {
-            let next_pos = slot.pos.wrapping_add(self.shared.buffer.len() as u64);
-
-            
-            
-            if waiter.is_none() && next_pos == self.next {
-                return Err(TryRecvError::Empty);
-            }
-
             
             
             
@@ -718,6 +957,8 @@ impl<T> Receiver<T> {
             
             
             drop(slot);
+
+            let mut old_waker = None;
 
             let mut tail = self.shared.tail.lock();
 
@@ -732,6 +973,13 @@ impl<T> Receiver<T> {
 
                 if next_pos == self.next {
                     
+                    
+                    
+                    if tail.closed {
+                        return Err(TryRecvError::Closed);
+                    }
+
+                    
                     if let Some((waiter, waker)) = waiter {
                         
                         unsafe {
@@ -744,7 +992,10 @@ impl<T> Receiver<T> {
                                 match (*ptr).waker {
                                     Some(ref w) if w.will_wake(waker) => {}
                                     _ => {
-                                        (*ptr).waker = Some(waker.clone());
+                                        old_waker = std::mem::replace(
+                                            &mut (*ptr).waker,
+                                            Some(waker.clone()),
+                                        );
                                     }
                                 }
 
@@ -756,6 +1007,11 @@ impl<T> Receiver<T> {
                         }
                     }
 
+                    
+                    drop(slot);
+                    drop(tail);
+                    drop(old_waker);
+
                     return Err(TryRecvError::Empty);
                 }
 
@@ -764,22 +1020,7 @@ impl<T> Receiver<T> {
                 
                 
                 
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                let mut adjust = 0;
-                if tail.closed {
-                    adjust = 1
-                }
-                let next = tail
-                    .pos
-                    .wrapping_sub(self.shared.buffer.len() as u64 + adjust);
+                let next = tail.pos.wrapping_sub(self.shared.buffer.len() as u64);
 
                 let missed = next.wrapping_sub(self.next);
 
@@ -800,15 +1041,38 @@ impl<T> Receiver<T> {
 
         self.next = self.next.wrapping_add(1);
 
-        if slot.closed {
-            return Err(TryRecvError::Closed);
-        }
-
         Ok(RecvGuard { slot })
     }
 }
 
 impl<T: Clone> Receiver<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn resubscribe(&self) -> Self {
+        let shared = self.shared.clone();
+        new_receiver(shared)
+    }
     
     
     
@@ -930,6 +1194,33 @@ impl<T: Clone> Receiver<T> {
         let guard = self.recv_ref(None)?;
         guard.clone_value().ok_or(TryRecvError::Closed)
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn blocking_recv(&mut self) -> Result<T, RecvError> {
+        crate::future::block_on(self.recv())
+    }
 }
 
 impl<T> Drop for Receiver<T> {
@@ -988,6 +1279,8 @@ where
     type Output = Result<T, RecvError>;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
+        ready!(crate::trace::trace_leaf(cx));
+
         let (receiver, waiter) = self.project();
 
         let guard = match receiver.recv_ref(Some((waiter, cx.waker()))) {
@@ -1039,8 +1332,8 @@ unsafe impl linked_list::Link for Waiter {
         ptr
     }
 
-    unsafe fn pointers(mut target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
-        NonNull::from(&mut target.as_mut().pointers)
+    unsafe fn pointers(target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
+        Waiter::addr_of_pointers(target)
     }
 }
 

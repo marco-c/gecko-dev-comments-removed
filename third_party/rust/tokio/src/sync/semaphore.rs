@@ -89,6 +89,7 @@ pub struct Semaphore {
 
 
 #[must_use]
+#[clippy::has_significant_drop]
 #[derive(Debug)]
 pub struct SemaphorePermit<'a> {
     sem: &'a Semaphore,
@@ -101,6 +102,7 @@ pub struct SemaphorePermit<'a> {
 
 
 #[must_use]
+#[clippy::has_significant_drop]
 #[derive(Debug)]
 pub struct OwnedSemaphorePermit {
     sem: Arc<Semaphore>,
@@ -123,6 +125,13 @@ fn bounds() {
 }
 
 impl Semaphore {
+    
+    
+    
+    pub const MAX_PERMITS: usize = super::batch_semaphore::Semaphore::MAX_PERMITS;
+
+    
+    
     
     #[track_caller]
     pub fn new(permits: usize) -> Self {
@@ -620,6 +629,25 @@ impl<'a> SemaphorePermit<'a> {
     pub fn forget(mut self) {
         self.permits = 0;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn merge(&mut self, mut other: Self) {
+        assert!(
+            std::ptr::eq(self.sem, other.sem),
+            "merging permits from different semaphore instances"
+        );
+        self.permits += other.permits;
+        other.permits = 0;
+    }
 }
 
 impl OwnedSemaphorePermit {
@@ -629,9 +657,33 @@ impl OwnedSemaphorePermit {
     pub fn forget(mut self) {
         self.permits = 0;
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn merge(&mut self, mut other: Self) {
+        assert!(
+            Arc::ptr_eq(&self.sem, &other.sem),
+            "merging permits from different semaphore instances"
+        );
+        self.permits += other.permits;
+        other.permits = 0;
+    }
+
+    
+    pub fn semaphore(&self) -> &Arc<Semaphore> {
+        &self.sem
+    }
 }
 
-impl<'a> Drop for SemaphorePermit<'_> {
+impl Drop for SemaphorePermit<'_> {
     fn drop(&mut self) {
         self.sem.add_permits(self.permits as usize);
     }

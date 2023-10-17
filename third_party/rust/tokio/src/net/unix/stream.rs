@@ -5,10 +5,11 @@ use crate::net::unix::split_owned::{split_owned, OwnedReadHalf, OwnedWriteHalf};
 use crate::net::unix::ucred::{self, UCred};
 use crate::net::unix::SocketAddr;
 
-use std::convert::TryFrom;
 use std::fmt;
 use std::io::{self, Read, Write};
 use std::net::Shutdown;
+#[cfg(not(tokio_no_as_fd))]
+use std::os::unix::io::{AsFd, BorrowedFd};
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::os::unix::net;
 use std::path::Path;
@@ -22,16 +23,18 @@ cfg_io_util! {
 cfg_net_unix! {
     /// A structure representing a connected Unix socket.
     ///
-    /// This socket can be connected directly with `UnixStream::connect` or accepted
-    /// from a listener with `UnixListener::incoming`. Additionally, a pair of
+    /// This socket can be connected directly with [`UnixStream::connect`] or accepted
+    /// from a listener with [`UnixListener::accept`]. Additionally, a pair of
     /// anonymous Unix sockets can be created with `UnixStream::pair`.
-    ///
-    /// To shut down the stream in the write direction, you can call the
-    /// [`shutdown()`] method. This will cause the other peer to receive a read of
-    /// length 0, indicating that no more data will be sent. This only closes
-    /// the stream in one direction.
-    ///
-    /// [`shutdown()`]: fn@crate::io::AsyncWriteExt::shutdown
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg_attr(docsrs, doc(alias = "uds"))]
     pub struct UnixStream {
         io: PollEvented<mio::net::UnixStream>,
     }
@@ -59,6 +62,12 @@ impl UnixStream {
         Ok(stream)
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -223,6 +232,10 @@ impl UnixStream {
         self.io.registration().poll_read_ready(cx).map_ok(|_| ())
     }
 
+    
+    
+    
+    
     
     
     
@@ -680,12 +693,19 @@ impl UnixStream {
     
     
     
+    
+    
+    
+    
+    
     pub fn try_io<R>(
         &self,
         interest: Interest,
         f: impl FnOnce() -> io::Result<R>,
     ) -> io::Result<R> {
-        self.io.registration().try_io(interest, f)
+        self.io
+            .registration()
+            .try_io(interest, || self.io.try_io(f))
     }
 
     
@@ -702,6 +722,66 @@ impl UnixStream {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn async_io<R>(
+        &self,
+        interest: Interest,
+        mut f: impl FnMut() -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.io
+            .registration()
+            .async_io(interest, || self.io.try_io(&mut f))
+            .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn from_std(stream: net::UnixStream) -> io::Result<UnixStream> {
         let stream = mio::net::UnixStream::from_std(stream);
         let io = PollEvented::new(stream)?;
@@ -956,5 +1036,12 @@ impl fmt::Debug for UnixStream {
 impl AsRawFd for UnixStream {
     fn as_raw_fd(&self) -> RawFd {
         self.io.as_raw_fd()
+    }
+}
+
+#[cfg(not(tokio_no_as_fd))]
+impl AsFd for UnixStream {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
     }
 }

@@ -226,7 +226,6 @@
 
 
 
-
 #[path = "unix/mod.rs"]
 #[cfg(unix)]
 mod imp;
@@ -245,21 +244,25 @@ mod kill;
 use crate::io::{AsyncRead, AsyncWrite, ReadBuf};
 use crate::process::kill::Kill;
 
-use std::convert::TryInto;
 use std::ffi::OsStr;
 use std::future::Future;
 use std::io;
-#[cfg(unix)]
-use std::os::unix::process::CommandExt;
-#[cfg(windows)]
-use std::os::windows::io::{AsRawHandle, RawHandle};
-#[cfg(windows)]
-use std::os::windows::process::CommandExt;
 use std::path::Path;
 use std::pin::Pin;
 use std::process::{Command as StdCommand, ExitStatus, Output, Stdio};
 use std::task::Context;
 use std::task::Poll;
+
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
+cfg_windows! {
+    use crate::os::windows::io::{AsRawHandle, RawHandle};
+    #[cfg(not(tokio_no_as_fd))]
+    use crate::os::windows::io::{AsHandle, BorrowedHandle};
+}
 
 
 
@@ -284,6 +287,7 @@ pub(crate) struct SpawnedChild {
 }
 
 impl Command {
+    
     
     
     
@@ -355,11 +359,22 @@ impl Command {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn arg<S: AsRef<OsStr>>(&mut self, arg: S) -> &mut Command {
         self.std.arg(arg);
         self
     }
 
+    
+    
+    
     
     
     
@@ -385,6 +400,25 @@ impl Command {
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(windows)]
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(all(windows, tokio_unstable))))]
+    pub fn raw_arg<S: AsRef<OsStr>>(&mut self, text_to_append_as_is: S) -> &mut Command {
+        self.std.raw_arg(text_to_append_as_is);
+        self
+    }
+
+    
+    
+    
     
     
     
@@ -432,6 +466,9 @@ impl Command {
     
     
     
+    
+    
+    
     pub fn envs<I, K, V>(&mut self, vars: I) -> &mut Command
     where
         I: IntoIterator<Item = (K, V)>,
@@ -442,6 +479,9 @@ impl Command {
         self
     }
 
+    
+    
+    
     
     
     
@@ -471,11 +511,17 @@ impl Command {
     
     
     
+    
+    
+    
     pub fn env_clear(&mut self) -> &mut Command {
         self.std.env_clear();
         self
     }
 
+    
+    
+    
     
     
     
@@ -522,6 +568,9 @@ impl Command {
     
     
     
+    
+    
+    
     pub fn stdin<T: Into<Stdio>>(&mut self, cfg: T) -> &mut Command {
         self.std.stdin(cfg);
         self
@@ -546,11 +595,17 @@ impl Command {
     
     
     
+    
+    
+    
     pub fn stdout<T: Into<Stdio>>(&mut self, cfg: T) -> &mut Command {
         self.std.stdout(cfg);
         self
     }
 
+    
+    
+    
     
     
     
@@ -606,16 +661,16 @@ impl Command {
         self
     }
 
-    
-    
-    
-    
-    
-    #[cfg(windows)]
-    #[cfg_attr(docsrs, doc(cfg(windows)))]
-    pub fn creation_flags(&mut self, flags: u32) -> &mut Command {
-        self.std.creation_flags(flags);
-        self
+    cfg_windows! {
+        /// Sets the [process creation flags][1] to be passed to `CreateProcess`.
+        ///
+        /// These will always be ORed with `CREATE_UNICODE_ENVIRONMENT`.
+        ///
+        /// [1]: https://msdn.microsoft.com/en-us/library/windows/desktop/ms684863(v=vs.85).aspx
+        pub fn creation_flags(&mut self, flags: u32) -> &mut Command {
+            self.std.creation_flags(flags);
+            self
+        }
     }
 
     
@@ -687,6 +742,39 @@ impl Command {
         F: FnMut() -> io::Result<()> + Send + Sync + 'static,
     {
         self.std.pre_exec(f);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(unix)]
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(all(unix, tokio_unstable))))]
+    pub fn process_group(&mut self, pgroup: i32) -> &mut Command {
+        self.std.process_group(pgroup);
         self
     }
 
@@ -923,8 +1011,9 @@ where
     type Output = Result<T, E>;
 
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        ready!(crate::trace::trace_leaf(cx));
         
-        let coop = ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
 
         let ret = Pin::new(&mut self.inner).poll(cx);
 
@@ -1013,13 +1102,14 @@ impl Child {
         }
     }
 
-    
-    
-    #[cfg(windows)]
-    pub fn raw_handle(&self) -> Option<RawHandle> {
-        match &self.child {
-            FusedChild::Child(c) => Some(c.inner.as_raw_handle()),
-            FusedChild::Done(_) => None,
+    cfg_windows! {
+        /// Extracts the raw handle of the process associated with this child while
+        /// it is still running. Returns `None` if the child has exited.
+        pub fn raw_handle(&self) -> Option<RawHandle> {
+            match &self.child {
+                FusedChild::Child(c) => Some(c.inner.as_raw_handle()),
+                FusedChild::Done(_) => None,
+            }
         }
     }
 
@@ -1285,41 +1375,51 @@ impl ChildStderr {
 
 impl AsyncWrite for ChildStdin {
     fn poll_write(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &[u8],
     ) -> Poll<io::Result<usize>> {
-        self.inner.poll_write(cx, buf)
+        Pin::new(&mut self.inner).poll_write(cx, buf)
     }
 
-    fn poll_flush(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(Ok(()))
+    fn poll_flush(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut self.inner).poll_flush(cx)
     }
 
-    fn poll_shutdown(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<io::Result<()>> {
-        Poll::Ready(Ok(()))
+    fn poll_shutdown(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<io::Result<()>> {
+        Pin::new(&mut self.inner).poll_shutdown(cx)
+    }
+
+    fn poll_write_vectored(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        bufs: &[io::IoSlice<'_>],
+    ) -> Poll<Result<usize, io::Error>> {
+        Pin::new(&mut self.inner).poll_write_vectored(cx, bufs)
+    }
+
+    fn is_write_vectored(&self) -> bool {
+        self.inner.is_write_vectored()
     }
 }
 
 impl AsyncRead for ChildStdout {
     fn poll_read(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
-        
-        unsafe { self.inner.poll_read(cx, buf) }
+        Pin::new(&mut self.inner).poll_read(cx, buf)
     }
 }
 
 impl AsyncRead for ChildStderr {
     fn poll_read(
-        self: Pin<&mut Self>,
+        mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
         buf: &mut ReadBuf<'_>,
     ) -> Poll<io::Result<()>> {
-        
-        unsafe { self.inner.poll_read(cx, buf) }
+        Pin::new(&mut self.inner).poll_read(cx, buf)
     }
 }
 
@@ -1349,6 +1449,8 @@ impl TryInto<Stdio> for ChildStderr {
 
 #[cfg(unix)]
 mod sys {
+    #[cfg(not(tokio_no_as_fd))]
+    use std::os::unix::io::{AsFd, BorrowedFd};
     use std::os::unix::io::{AsRawFd, RawFd};
 
     use super::{ChildStderr, ChildStdin, ChildStdout};
@@ -1359,9 +1461,23 @@ mod sys {
         }
     }
 
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsFd for ChildStdin {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
+        }
+    }
+
     impl AsRawFd for ChildStdout {
         fn as_raw_fd(&self) -> RawFd {
             self.inner.as_raw_fd()
+        }
+    }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsFd for ChildStdout {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
         }
     }
 
@@ -1370,17 +1486,26 @@ mod sys {
             self.inner.as_raw_fd()
         }
     }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsFd for ChildStderr {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
+        }
+    }
 }
 
-#[cfg(windows)]
-mod sys {
-    use std::os::windows::io::{AsRawHandle, RawHandle};
-
-    use super::{ChildStderr, ChildStdin, ChildStdout};
-
+cfg_windows! {
     impl AsRawHandle for ChildStdin {
         fn as_raw_handle(&self) -> RawHandle {
             self.inner.as_raw_handle()
+        }
+    }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsHandle for ChildStdin {
+        fn as_handle(&self) -> BorrowedHandle<'_> {
+            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
         }
     }
 
@@ -1390,9 +1515,23 @@ mod sys {
         }
     }
 
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsHandle for ChildStdout {
+        fn as_handle(&self) -> BorrowedHandle<'_> {
+            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
+        }
+    }
+
     impl AsRawHandle for ChildStderr {
         fn as_raw_handle(&self) -> RawHandle {
             self.inner.as_raw_handle()
+        }
+    }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsHandle for ChildStderr {
+        fn as_handle(&self) -> BorrowedHandle<'_> {
+            unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
         }
     }
 }

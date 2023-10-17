@@ -1,4 +1,4 @@
-use crate::loom::sync::atomic::AtomicUsize;
+use crate::loom::sync::{atomic::AtomicUsize, Arc};
 use crate::sync::mpsc::chan;
 use crate::sync::mpsc::error::{SendError, TryRecvError};
 
@@ -11,6 +11,40 @@ use std::task::{Context, Poll};
 
 pub struct UnboundedSender<T> {
     chan: chan::Tx<T, Semaphore>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct WeakUnboundedSender<T> {
+    chan: Arc<chan::Chan<T, Semaphore>>,
 }
 
 impl<T> Clone for UnboundedSender<T> {
@@ -61,7 +95,7 @@ impl<T> fmt::Debug for UnboundedReceiver<T> {
 
 
 pub fn unbounded_channel<T>() -> (UnboundedSender<T>, UnboundedReceiver<T>) {
-    let (tx, rx) = chan::channel(AtomicUsize::new(0));
+    let (tx, rx) = chan::channel(Semaphore(AtomicUsize::new(0)));
 
     let tx = UnboundedSender::new(tx);
     let rx = UnboundedReceiver::new(rx);
@@ -70,13 +104,22 @@ pub fn unbounded_channel<T>() -> (UnboundedSender<T>, UnboundedReceiver<T>) {
 }
 
 
-type Semaphore = AtomicUsize;
+#[derive(Debug)]
+pub(crate) struct Semaphore(pub(crate) AtomicUsize);
 
 impl<T> UnboundedReceiver<T> {
     pub(crate) fn new(chan: chan::Rx<T, Semaphore>) -> UnboundedReceiver<T> {
         UnboundedReceiver { chan }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -198,11 +241,16 @@ impl<T> UnboundedReceiver<T> {
     
     
     
+    #[track_caller]
     #[cfg(feature = "sync")]
+    #[cfg_attr(docsrs, doc(alias = "recv_blocking"))]
     pub fn blocking_recv(&mut self) -> Option<T> {
         crate::future::block_on(self.recv())
     }
 
+    
+    
+    
     
     
     
@@ -267,7 +315,7 @@ impl<T> UnboundedSender<T> {
         use std::process;
         use std::sync::atomic::Ordering::{AcqRel, Acquire};
 
-        let mut curr = self.chan.semaphore().load(Acquire);
+        let mut curr = self.chan.semaphore().0.load(Acquire);
 
         loop {
             if curr & 1 == 1 {
@@ -283,6 +331,7 @@ impl<T> UnboundedSender<T> {
             match self
                 .chan
                 .semaphore()
+                .0
                 .compare_exchange(curr, curr + 2, AcqRel, Acquire)
             {
                 Ok(_) => return true,
@@ -369,5 +418,38 @@ impl<T> UnboundedSender<T> {
     
     pub fn same_channel(&self, other: &Self) -> bool {
         self.chan.same_channel(&other.chan)
+    }
+
+    
+    
+    
+    
+    pub fn downgrade(&self) -> WeakUnboundedSender<T> {
+        WeakUnboundedSender {
+            chan: self.chan.downgrade(),
+        }
+    }
+}
+
+impl<T> Clone for WeakUnboundedSender<T> {
+    fn clone(&self) -> Self {
+        WeakUnboundedSender {
+            chan: self.chan.clone(),
+        }
+    }
+}
+
+impl<T> WeakUnboundedSender<T> {
+    
+    
+    
+    pub fn upgrade(&self) -> Option<UnboundedSender<T>> {
+        chan::Tx::upgrade(self.chan.clone()).map(UnboundedSender::new)
+    }
+}
+
+impl<T> fmt::Debug for WeakUnboundedSender<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("WeakUnboundedSender").finish()
     }
 }

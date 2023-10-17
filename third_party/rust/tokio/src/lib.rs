@@ -1,7 +1,9 @@
 #![allow(
     clippy::cognitive_complexity,
     clippy::large_enum_variant,
-    clippy::needless_doctest_main
+    clippy::module_inception,
+    clippy::needless_doctest_main,
+    clippy::declare_interior_mutable_const
 )]
 #![warn(
     missing_debug_implementations,
@@ -16,6 +18,98 @@
 ))]
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(docsrs, allow(unused_attributes))]
+#![cfg_attr(loom, allow(dead_code, unreachable_pub))]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -366,6 +460,52 @@ compile_error! {
 
 
 
+#[cfg(any(
+    all(target_arch = "wasm32", not(tokio_wasm)),
+    all(target_arch = "wasm64", not(tokio_wasm)),
+    all(target_family = "wasm", not(tokio_wasm)),
+    all(target_os = "wasi", not(tokio_wasm)),
+    all(target_os = "wasi", not(tokio_wasi)),
+    all(target_os = "wasi", tokio_wasm_not_wasi),
+    all(tokio_wasm, not(any(target_arch = "wasm32", target_arch = "wasm64"))),
+    all(tokio_wasm_not_wasi, not(tokio_wasm)),
+    all(tokio_wasi, not(tokio_wasm))
+))]
+compile_error!("Tokio's build script has incorrectly detected wasm.");
+
+#[cfg(all(
+    not(tokio_unstable),
+    tokio_wasm,
+    any(
+        feature = "fs",
+        feature = "io-std",
+        feature = "net",
+        feature = "process",
+        feature = "rt-multi-thread",
+        feature = "signal"
+    )
+))]
+compile_error!("Only features sync,macros,io-util,rt,time are supported on wasm.");
+
+#[cfg(all(not(tokio_unstable), tokio_taskdump))]
+compile_error!("The `tokio_taskdump` feature requires `--cfg tokio_unstable`.");
+
+#[cfg(all(
+    tokio_taskdump,
+    not(all(
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
+    ))
+))]
+compile_error!(
+    "The `tokio_taskdump` feature is only currently supported on \
+linux, on `aarch64`, `x86` and `x86_64`."
+);
+
+
+
+
+
 #[macro_use]
 #[doc(hidden)]
 pub mod macros;
@@ -380,20 +520,25 @@ pub mod io;
 pub mod net;
 
 mod loom;
-mod park;
 
 cfg_process! {
     pub mod process;
 }
 
-#[cfg(any(feature = "net", feature = "fs", feature = "io-std"))]
+#[cfg(any(
+    feature = "fs",
+    feature = "io-std",
+    feature = "net",
+    all(windows, feature = "process"),
+))]
 mod blocking;
 
 cfg_rt! {
     pub mod runtime;
 }
-
-pub(crate) mod coop;
+cfg_not_rt! {
+    pub(crate) mod runtime;
+}
 
 cfg_signal! {
     pub mod signal;
@@ -420,6 +565,40 @@ cfg_rt! {
 
 cfg_time! {
     pub mod time;
+}
+
+mod trace {
+    use std::future::Future;
+    use std::pin::Pin;
+    use std::task::{Context, Poll};
+
+    cfg_taskdump! {
+        pub(crate) use crate::runtime::task::trace::trace_leaf;
+    }
+
+    cfg_not_taskdump! {
+        #[inline(always)]
+        #[allow(dead_code)]
+        pub(crate) fn trace_leaf(_: &mut std::task::Context<'_>) -> std::task::Poll<()> {
+            std::task::Poll::Ready(())
+        }
+    }
+
+    #[cfg_attr(not(feature = "sync"), allow(dead_code))]
+    pub(crate) fn async_trace_leaf() -> impl Future<Output = ()> {
+        struct Trace;
+
+        impl Future for Trace {
+            type Output = ();
+
+            #[inline(always)]
+            fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+                trace_leaf(cx)
+            }
+        }
+
+        Trace
+    }
 }
 
 mod util;
@@ -477,14 +656,6 @@ pub(crate) use self::doc::os;
 #[allow(unused)]
 pub(crate) use std::os;
 
-#[cfg(docsrs)]
-#[allow(unused)]
-pub(crate) use self::doc::winapi;
-
-#[cfg(all(not(docsrs), windows, feature = "net"))]
-#[allow(unused)]
-pub(crate) use ::winapi;
-
 cfg_macros! {
     /// Implementation detail of the `select!` macro. This macro is **not**
     /// intended to be used as part of the public API and is permitted to
@@ -535,3 +706,7 @@ cfg_macros! {
 #[cfg(feature = "io-util")]
 #[cfg(test)]
 fn is_unpin<T: Unpin>() {}
+
+
+#[cfg(fuzzing)]
+pub mod fuzz;

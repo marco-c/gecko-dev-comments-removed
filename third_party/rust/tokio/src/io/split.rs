@@ -74,7 +74,11 @@ impl<T> ReadHalf<T> {
     
     
     
-    pub fn unsplit(self, wr: WriteHalf<T>) -> T {
+    #[track_caller]
+    pub fn unsplit(self, wr: WriteHalf<T>) -> T
+    where
+        T: Unpin,
+    {
         if self.is_pair_of(&wr) {
             drop(wr);
 

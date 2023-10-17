@@ -65,6 +65,17 @@ impl ReadHalf<'_> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
         self.0.ready(interest).await
     }
@@ -84,6 +95,10 @@ impl ReadHalf<'_> {
         self.0.readable().await
     }
 
+    
+    
+    
+    
     
     
     
@@ -172,6 +187,17 @@ impl ReadHalf<'_> {
 }
 
 impl WriteHalf<'_> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     

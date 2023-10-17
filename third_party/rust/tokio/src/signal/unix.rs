@@ -6,29 +6,31 @@
 #![cfg(unix)]
 #![cfg_attr(docsrs, doc(cfg(all(unix, feature = "signal"))))]
 
+use crate::runtime::scheduler;
+use crate::runtime::signal::Handle;
 use crate::signal::registry::{globals, EventId, EventInfo, Globals, Init, Storage};
 use crate::signal::RxFuture;
 use crate::sync::watch;
 
 use mio::net::UnixStream;
 use std::io::{self, Error, ErrorKind, Write};
-use std::pin::Pin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Once;
 use std::task::{Context, Poll};
 
-pub(crate) mod driver;
-use self::driver::Handle;
-
 pub(crate) type OsStorage = Vec<SignalInfo>;
-
-
-
-const SIGNUM: usize = 33;
 
 impl Init for OsStorage {
     fn init() -> Self {
-        (0..SIGNUM).map(|_| SignalInfo::default()).collect()
+        
+        #[cfg(not(target_os = "linux"))]
+        let possible = 0..=33;
+
+        
+        #[cfg(target_os = "linux")]
+        let possible = 0..=libc::SIGRTMAX();
+
+        possible.map(|_| SignalInfo::default()).collect()
     }
 }
 
@@ -48,7 +50,7 @@ impl Storage for OsStorage {
 #[derive(Debug)]
 pub(crate) struct OsExtraData {
     sender: UnixStream,
-    receiver: UnixStream,
+    pub(crate) receiver: UnixStream,
 }
 
 impl Init for OsExtraData {
@@ -60,7 +62,7 @@ impl Init for OsExtraData {
 }
 
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct SignalKind(libc::c_int);
 
 impl SignalKind {
@@ -80,7 +82,7 @@ impl SignalKind {
     
     
     
-    pub fn from_raw(signum: std::os::raw::c_int) -> Self {
+    pub const fn from_raw(signum: std::os::raw::c_int) -> Self {
         Self(signum as libc::c_int)
     }
 
@@ -88,7 +90,18 @@ impl SignalKind {
     
     
     
-    pub fn alarm() -> Self {
+    
+    
+    
+    pub const fn as_raw_value(&self) -> std::os::raw::c_int {
+        self.0
+    }
+
+    
+    
+    
+    
+    pub const fn alarm() -> Self {
         Self(libc::SIGALRM)
     }
 
@@ -96,7 +109,7 @@ impl SignalKind {
     
     
     
-    pub fn child() -> Self {
+    pub const fn child() -> Self {
         Self(libc::SIGCHLD)
     }
 
@@ -104,7 +117,7 @@ impl SignalKind {
     
     
     
-    pub fn hangup() -> Self {
+    pub const fn hangup() -> Self {
         Self(libc::SIGHUP)
     }
 
@@ -119,7 +132,7 @@ impl SignalKind {
         target_os = "netbsd",
         target_os = "openbsd"
     ))]
-    pub fn info() -> Self {
+    pub const fn info() -> Self {
         Self(libc::SIGINFO)
     }
 
@@ -127,7 +140,7 @@ impl SignalKind {
     
     
     
-    pub fn interrupt() -> Self {
+    pub const fn interrupt() -> Self {
         Self(libc::SIGINT)
     }
 
@@ -135,7 +148,7 @@ impl SignalKind {
     
     
     
-    pub fn io() -> Self {
+    pub const fn io() -> Self {
         Self(libc::SIGIO)
     }
 
@@ -144,7 +157,7 @@ impl SignalKind {
     
     
     
-    pub fn pipe() -> Self {
+    pub const fn pipe() -> Self {
         Self(libc::SIGPIPE)
     }
 
@@ -153,7 +166,7 @@ impl SignalKind {
     
     
     
-    pub fn quit() -> Self {
+    pub const fn quit() -> Self {
         Self(libc::SIGQUIT)
     }
 
@@ -161,7 +174,7 @@ impl SignalKind {
     
     
     
-    pub fn terminate() -> Self {
+    pub const fn terminate() -> Self {
         Self(libc::SIGTERM)
     }
 
@@ -169,7 +182,7 @@ impl SignalKind {
     
     
     
-    pub fn user_defined1() -> Self {
+    pub const fn user_defined1() -> Self {
         Self(libc::SIGUSR1)
     }
 
@@ -177,7 +190,7 @@ impl SignalKind {
     
     
     
-    pub fn user_defined2() -> Self {
+    pub const fn user_defined2() -> Self {
         Self(libc::SIGUSR2)
     }
 
@@ -185,8 +198,20 @@ impl SignalKind {
     
     
     
-    pub fn window_change() -> Self {
+    pub const fn window_change() -> Self {
         Self(libc::SIGWINCH)
+    }
+}
+
+impl From<std::os::raw::c_int> for SignalKind {
+    fn from(signum: std::os::raw::c_int) -> Self {
+        Self::from_raw(signum as libc::c_int)
+    }
+}
+
+impl From<SignalKind> for std::os::raw::c_int {
+    fn from(kind: SignalKind) -> Self {
+        kind.as_raw_value()
     }
 }
 
@@ -214,7 +239,7 @@ impl Default for SignalInfo {
 
 
 
-fn action(globals: Pin<&'static Globals>, signal: libc::c_int) {
+fn action(globals: &'static Globals, signal: libc::c_int) {
     globals.record_event(signal as EventId);
 
     
@@ -329,6 +354,10 @@ fn signal_enable(signal: SignalKind, handle: &Handle) -> io::Result<()> {
 
 
 
+
+
+
+
 #[must_use = "streams do nothing unless polled"]
 #[derive(Debug)]
 pub struct Signal {
@@ -357,8 +386,15 @@ pub struct Signal {
 
 
 
+
+
+
+
+
+#[track_caller]
 pub fn signal(kind: SignalKind) -> io::Result<Signal> {
-    let rx = signal_with_handle(kind, &Handle::current())?;
+    let handle = scheduler::Handle::current();
+    let rx = signal_with_handle(kind, handle.driver().signal())?;
 
     Ok(Signal {
         inner: RxFuture::new(rx),
@@ -376,6 +412,12 @@ pub(crate) fn signal_with_handle(
 }
 
 impl Signal {
+    
+    
+    
+    
+    
+    
     
     
     
@@ -473,5 +515,16 @@ mod tests {
             &Handle::default(),
         )
         .unwrap_err();
+    }
+
+    #[test]
+    fn from_c_int() {
+        assert_eq!(SignalKind::from(2), SignalKind::interrupt());
+    }
+
+    #[test]
+    fn into_c_int() {
+        let value: std::os::raw::c_int = SignalKind::interrupt().into();
+        assert_eq!(value, libc::SIGINT as _);
     }
 }

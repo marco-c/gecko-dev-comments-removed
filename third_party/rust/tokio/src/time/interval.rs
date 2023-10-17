@@ -2,10 +2,10 @@ use crate::future::poll_fn;
 use crate::time::{sleep_until, Duration, Instant, Sleep};
 use crate::util::trace;
 
+use std::future::Future;
 use std::panic::Location;
 use std::pin::Pin;
 use std::task::{Context, Poll};
-use std::{convert::TryInto, future::Future};
 
 
 
@@ -180,6 +180,9 @@ fn internal_interval_at(
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MissedTickBehavior {
+    
+    
+    
     
     
     
@@ -426,6 +429,7 @@ impl Interval {
     
     
     
+    
     pub async fn tick(&mut self) -> Instant {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         let resource_span = self.resource_span.clone();
@@ -478,7 +482,10 @@ impl Interval {
             timeout + self.period
         };
 
-        self.delay.as_mut().reset(next);
+        
+        
+        
+        self.delay.as_mut().reset_without_reregister(next);
 
         
         Poll::Ready(timeout)

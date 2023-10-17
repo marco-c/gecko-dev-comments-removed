@@ -26,12 +26,12 @@ async fn accept_read_write() -> std::io::Result<()> {
     let ((mut server, _), mut client) = try_join(accept, connect).await?;
 
     
-    let write_len = client.write(b"hello").await?;
-    assert_eq!(write_len, 5);
+    client.write_all(b"hello").await?;
     drop(client);
+
     
-    let mut buf = [0u8; 5];
-    server.read_exact(&mut buf).await?;
+    let mut buf = vec![];
+    server.read_to_end(&mut buf).await?;
     assert_eq!(&buf, b"hello");
     let len = server.read(&mut buf).await?;
     assert_eq!(len, 0);

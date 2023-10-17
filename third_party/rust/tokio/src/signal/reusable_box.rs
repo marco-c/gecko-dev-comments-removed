@@ -151,7 +151,6 @@ impl<T> fmt::Debug for ReusableBoxFuture<T> {
 }
 
 #[cfg(test)]
-#[cfg(not(miri))] 
 mod test {
     use super::ReusableBoxFuture;
     use futures::future::FutureExt;

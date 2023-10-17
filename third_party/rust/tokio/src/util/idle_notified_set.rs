@@ -88,10 +88,6 @@ enum List {
 
 
 
-
-
-
-#[repr(C)]
 struct ListEntry<T> {
     
     pointers: linked_list::Pointers<ListEntry<T>>,
@@ -103,6 +99,14 @@ struct ListEntry<T> {
     my_list: UnsafeCell<List>,
     
     _pin: PhantomPinned,
+}
+
+generate_addr_of_methods! {
+    impl<T> ListEntry<T> {
+        unsafe fn addr_of_pointers(self: NonNull<Self>) -> NonNull<linked_list::Pointers<ListEntry<T>>> {
+            &self.pointers
+        }
+    }
 }
 
 
@@ -417,7 +421,7 @@ impl<T: 'static> Wake for ListEntry<T> {
             
             let me = unsafe {
                 
-                lock.idle.remove(NonNull::from(&**me)).unwrap()
+                lock.idle.remove(ListEntry::as_raw(me)).unwrap()
             };
             lock.notified.push_front(me);
 
@@ -453,11 +457,25 @@ unsafe impl<T> linked_list::Link for ListEntry<T> {
     unsafe fn pointers(
         target: NonNull<ListEntry<T>>,
     ) -> NonNull<linked_list::Pointers<ListEntry<T>>> {
-        
-        
-        
-        
-        
-        target.cast()
+        ListEntry::addr_of_pointers(target)
+    }
+}
+
+#[cfg(all(test, not(loom)))]
+mod tests {
+    use crate::runtime::Builder;
+    use crate::task::JoinSet;
+
+    
+    
+    
+    #[test]
+    fn join_set_test() {
+        let rt = Builder::new_current_thread().build().unwrap();
+
+        let mut set = JoinSet::new();
+        set.spawn_on(futures::future::ready(()), rt.handle());
+
+        rt.block_on(set.join_next()).unwrap().unwrap();
     }
 }

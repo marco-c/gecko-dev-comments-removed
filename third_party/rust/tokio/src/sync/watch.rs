@@ -53,13 +53,18 @@
 
 
 
+
+
+
 use crate::sync::notify::Notify;
 
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::atomic::Ordering::Relaxed;
 use crate::loom::sync::{Arc, RwLock, RwLockReadGuard};
+use std::fmt;
 use std::mem;
 use std::ops;
+use std::panic;
 
 
 
@@ -108,12 +113,63 @@ pub struct Sender<T> {
 
 
 
+
+
+
 #[derive(Debug)]
 pub struct Ref<'a, T> {
     inner: RwLockReadGuard<'a, T>,
+    has_changed: bool,
 }
 
-#[derive(Debug)]
+impl<'a, T> Ref<'a, T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn has_changed(&self) -> bool {
+        self.has_changed
+    }
+}
+
 struct Shared<T> {
     
     value: RwLock<T>,
@@ -128,10 +184,22 @@ struct Shared<T> {
     ref_count_rx: AtomicUsize,
 
     
-    notify_rx: Notify,
+    notify_rx: big_notify::BigNotify,
 
     
     notify_tx: Notify,
+}
+
+impl<T: fmt::Debug> fmt::Debug for Shared<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let state = self.state.load();
+        f.debug_struct("Shared")
+            .field("value", &self.value)
+            .field("version", &state.version())
+            .field("is_closed", &state.is_closed())
+            .field("ref_count_rx", &self.ref_count_rx)
+            .finish()
+    }
 }
 
 pub mod error {
@@ -140,21 +208,27 @@ pub mod error {
     use std::fmt;
 
     
-    #[derive(Debug)]
+    #[derive(PartialEq, Eq, Clone, Copy)]
     pub struct SendError<T>(pub T);
 
     
 
-    impl<T: fmt::Debug> fmt::Display for SendError<T> {
+    impl<T> fmt::Debug for SendError<T> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.debug_struct("SendError").finish_non_exhaustive()
+        }
+    }
+
+    impl<T> fmt::Display for SendError<T> {
         fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(fmt, "channel closed")
         }
     }
 
-    impl<T: fmt::Debug> std::error::Error for SendError<T> {}
+    impl<T> std::error::Error for SendError<T> {}
 
     
-    #[derive(Debug)]
+    #[derive(Debug, Clone)]
     pub struct RecvError(pub(super) ());
 
     
@@ -166,6 +240,62 @@ pub mod error {
     }
 
     impl std::error::Error for RecvError {}
+}
+
+mod big_notify {
+    use super::*;
+    use crate::sync::notify::Notified;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    pub(super) struct BigNotify {
+        #[cfg(not(all(not(loom), feature = "sync", any(feature = "rt", feature = "macros"))))]
+        next: AtomicUsize,
+        inner: [Notify; 8],
+    }
+
+    impl BigNotify {
+        pub(super) fn new() -> Self {
+            Self {
+                #[cfg(not(all(
+                    not(loom),
+                    feature = "sync",
+                    any(feature = "rt", feature = "macros")
+                )))]
+                next: AtomicUsize::new(0),
+                inner: Default::default(),
+            }
+        }
+
+        pub(super) fn notify_waiters(&self) {
+            for notify in &self.inner {
+                notify.notify_waiters();
+            }
+        }
+
+        
+        #[cfg(not(all(not(loom), feature = "sync", any(feature = "rt", feature = "macros"))))]
+        pub(super) fn notified(&self) -> Notified<'_> {
+            let i = self.next.fetch_add(1, Relaxed) % 8;
+            self.inner[i].notified()
+        }
+
+        
+        #[cfg(all(not(loom), feature = "sync", any(feature = "rt", feature = "macros")))]
+        pub(super) fn notified(&self) -> Notified<'_> {
+            let i = crate::runtime::context::thread_rng_n(8) as usize;
+            self.inner[i].notified()
+        }
+    }
 }
 
 use self::state::{AtomicState, Version};
@@ -267,7 +397,7 @@ pub fn channel<T>(init: T) -> (Sender<T>, Receiver<T>) {
         value: RwLock::new(init),
         state: AtomicState::new(),
         ref_count_rx: AtomicUsize::new(1),
-        notify_rx: Notify::new(),
+        notify_rx: big_notify::BigNotify::new(),
         notify_tx: Notify::new(),
     });
 
@@ -329,9 +459,18 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
     pub fn borrow(&self) -> Ref<'_, T> {
         let inner = self.shared.value.read().unwrap();
-        Ref { inner }
+
+        
+        
+        let new_version = self.shared.state.load().version();
+        let has_changed = self.version != new_version;
+
+        Ref { inner, has_changed }
     }
 
     
@@ -363,10 +502,21 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
     pub fn borrow_and_update(&mut self) -> Ref<'_, T> {
         let inner = self.shared.value.read().unwrap();
-        self.version = self.shared.state.load().version();
-        Ref { inner }
+
+        
+        
+        let new_version = self.shared.state.load().version();
+        let has_changed = self.version != new_version;
+
+        
+        self.version = new_version;
+
+        Ref { inner, has_changed }
     }
 
     
@@ -451,19 +601,110 @@ impl<T> Receiver<T> {
     
     
     pub async fn changed(&mut self) -> Result<(), error::RecvError> {
-        loop {
-            
-            
-            
-            let notified = self.shared.notify_rx.notified();
+        changed_impl(&self.shared, &mut self.version).await
+    }
 
-            if let Some(ret) = maybe_changed(&self.shared, &mut self.version) {
-                return ret;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn wait_for(
+        &mut self,
+        mut f: impl FnMut(&T) -> bool,
+    ) -> Result<Ref<'_, T>, error::RecvError> {
+        let mut closed = false;
+        loop {
+            {
+                let inner = self.shared.value.read().unwrap();
+
+                let new_version = self.shared.state.load().version();
+                let has_changed = self.version != new_version;
+                self.version = new_version;
+
+                if (!closed || has_changed) && f(&inner) {
+                    return Ok(Ref { inner, has_changed });
+                }
             }
 
-            notified.await;
+            if closed {
+                return Err(error::RecvError(()));
+            }
+
             
+            closed = changed_impl(&self.shared, &mut self.version).await.is_err();
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn same_channel(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.shared, &other.shared)
     }
 
     cfg_process_driver! {
@@ -495,6 +736,27 @@ fn maybe_changed<T>(
     None
 }
 
+async fn changed_impl<T>(
+    shared: &Shared<T>,
+    version: &mut Version,
+) -> Result<(), error::RecvError> {
+    crate::trace::async_trace_leaf().await;
+
+    loop {
+        
+        
+        
+        let notified = shared.notify_rx.notified();
+
+        if let Some(ret) = maybe_changed(shared, version) {
+            return ret;
+        }
+
+        notified.await;
+        
+    }
+}
+
 impl<T> Clone for Receiver<T> {
     fn clone(&self) -> Self {
         let version = self.version;
@@ -516,6 +778,20 @@ impl<T> Drop for Receiver<T> {
 }
 
 impl<T> Sender<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -546,28 +822,28 @@ impl<T> Sender<T> {
     
     
     
-    pub fn send_replace(&self, value: T) -> T {
-        let old = {
-            
-            let mut lock = self.shared.value.write().unwrap();
-            let old = mem::replace(&mut *lock, value);
-
-            self.shared.state.increment_version();
-
-            
-            
-            
-            
-            
-            drop(lock);
-
-            old
-        };
-
-        
-        self.shared.notify_rx.notify_waiters();
-
-        old
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_modify<F>(&self, modify: F)
+    where
+        F: FnOnce(&mut T),
+    {
+        self.send_if_modified(|value| {
+            modify(value);
+            true
+        });
     }
 
     
@@ -584,9 +860,138 @@ impl<T> Sender<T> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_if_modified<F>(&self, modify: F) -> bool
+    where
+        F: FnOnce(&mut T) -> bool,
+    {
+        {
+            
+            let mut lock = self.shared.value.write().unwrap();
+
+            
+            let result = panic::catch_unwind(panic::AssertUnwindSafe(|| modify(&mut lock)));
+            match result {
+                Ok(modified) => {
+                    if !modified {
+                        
+                        return false;
+                    }
+                    
+                }
+                Err(panicked) => {
+                    
+                    drop(lock);
+                    
+                    panic::resume_unwind(panicked);
+                    
+                }
+            };
+
+            self.shared.state.increment_version();
+
+            
+            
+            
+            
+            
+            drop(lock);
+        }
+
+        self.shared.notify_rx.notify_waiters();
+
+        true
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn send_replace(&self, mut value: T) -> T {
+        
+        self.send_modify(|old| mem::swap(old, &mut value));
+
+        value
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn borrow(&self) -> Ref<'_, T> {
         let inner = self.shared.value.read().unwrap();
-        Ref { inner }
+
+        
+        let has_changed = false;
+
+        Ref { inner, has_changed }
     }
 
     
@@ -635,6 +1040,8 @@ impl<T> Sender<T> {
     
     
     pub async fn closed(&self) {
+        crate::trace::async_trace_leaf().await;
+
         while self.receiver_count() > 0 {
             let notified = self.shared.notify_tx.notified();
 

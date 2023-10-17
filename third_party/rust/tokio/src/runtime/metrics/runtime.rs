@@ -1,5 +1,6 @@
 use crate::runtime::Handle;
 
+use std::ops::Range;
 use std::sync::atomic::Ordering::Relaxed;
 use std::time::Duration;
 
@@ -39,7 +40,76 @@ impl RuntimeMetrics {
     
     
     pub fn num_workers(&self) -> usize {
-        self.handle.spawner.num_workers()
+        self.handle.inner.num_workers()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn num_blocking_threads(&self) -> usize {
+        self.handle.inner.num_blocking_threads()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn active_tasks_count(&self) -> usize {
+        self.handle.inner.active_tasks_count()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn num_idle_blocking_threads(&self) -> usize {
+        self.handle.inner.num_idle_blocking_threads()
     }
 
     
@@ -68,9 +138,24 @@ impl RuntimeMetrics {
     
     pub fn remote_schedule_count(&self) -> u64 {
         self.handle
-            .spawner
+            .inner
             .scheduler_metrics()
             .remote_schedule_count
+            .load(Relaxed)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn budget_forced_yield_count(&self) -> u64 {
+        self.handle
+            .inner
+            .scheduler_metrics()
+            .budget_forced_yield_count
             .load(Relaxed)
     }
 
@@ -111,7 +196,7 @@ impl RuntimeMetrics {
     
     pub fn worker_park_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .park_count
             .load(Relaxed)
@@ -154,7 +239,7 @@ impl RuntimeMetrics {
     
     pub fn worker_noop_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .noop_count
             .load(Relaxed)
@@ -197,9 +282,10 @@ impl RuntimeMetrics {
     
     
     
+    
     pub fn worker_steal_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .steal_count
             .load(Relaxed)
@@ -238,9 +324,55 @@ impl RuntimeMetrics {
     
     
     
+    
+    
+    
+    
+    
+    pub fn worker_steal_operations(&self, worker: usize) -> u64 {
+        self.handle
+            .inner
+            .worker_metrics(worker)
+            .steal_operations
+            .load(Relaxed)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn worker_poll_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .poll_count
             .load(Relaxed)
@@ -285,7 +417,7 @@ impl RuntimeMetrics {
     pub fn worker_total_busy_duration(&self, worker: usize) -> Duration {
         let nanos = self
             .handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .busy_duration_total
             .load(Relaxed);
@@ -331,7 +463,7 @@ impl RuntimeMetrics {
     
     pub fn worker_local_schedule_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .local_schedule_count
             .load(Relaxed)
@@ -377,7 +509,7 @@ impl RuntimeMetrics {
     
     pub fn worker_overflow_count(&self, worker: usize) -> u64 {
         self.handle
-            .spawner
+            .inner
             .worker_metrics(worker)
             .overflow_count
             .load(Relaxed)
@@ -406,7 +538,7 @@ impl RuntimeMetrics {
     
     
     pub fn injection_queue_depth(&self) -> usize {
-        self.handle.spawner.injection_queue_depth()
+        self.handle.inner.injection_queue_depth()
     }
 
     
@@ -444,6 +576,308 @@ impl RuntimeMetrics {
     
     
     pub fn worker_local_queue_depth(&self, worker: usize) -> usize {
-        self.handle.spawner.worker_local_queue_depth(worker)
+        self.handle.inner.worker_local_queue_depth(worker)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_count_histogram_enabled(&self) -> bool {
+        self.handle
+            .inner
+            .worker_metrics(0)
+            .poll_count_histogram
+            .is_some()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_count_histogram_num_buckets(&self) -> usize {
+        self.handle
+            .inner
+            .worker_metrics(0)
+            .poll_count_histogram
+            .as_ref()
+            .map(|histogram| histogram.num_buckets())
+            .unwrap_or_default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn poll_count_histogram_bucket_range(&self, bucket: usize) -> Range<Duration> {
+        self.handle
+            .inner
+            .worker_metrics(0)
+            .poll_count_histogram
+            .as_ref()
+            .map(|histogram| {
+                let range = histogram.bucket_range(bucket);
+                std::ops::Range {
+                    start: Duration::from_nanos(range.start),
+                    end: Duration::from_nanos(range.end),
+                }
+            })
+            .unwrap_or_default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn poll_count_histogram_bucket_count(&self, worker: usize, bucket: usize) -> u64 {
+        self.handle
+            .inner
+            .worker_metrics(worker)
+            .poll_count_histogram
+            .as_ref()
+            .map(|histogram| histogram.get(bucket))
+            .unwrap_or_default()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn blocking_queue_depth(&self) -> usize {
+        self.handle.inner.blocking_queue_depth()
+    }
+}
+
+cfg_net! {
+    impl RuntimeMetrics {
+        /// Returns the number of file descriptors that have been registered with the
+        /// runtime's I/O driver.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use tokio::runtime::Handle;
+        ///
+        /// #[tokio::main]
+        /// async fn main() {
+        ///     let metrics = Handle::current().metrics();
+        ///
+        ///     let registered_fds = metrics.io_driver_fd_registered_count();
+        ///     println!("{} fds have been registered with the runtime's I/O driver.", registered_fds);
+        ///
+        ///     let deregistered_fds = metrics.io_driver_fd_deregistered_count();
+        ///
+        ///     let current_fd_count = registered_fds - deregistered_fds;
+        ///     println!("{} fds are currently registered by the runtime's I/O driver.", current_fd_count);
+        /// }
+        /// ```
+        pub fn io_driver_fd_registered_count(&self) -> u64 {
+            self.with_io_driver_metrics(|m| {
+                m.fd_registered_count.load(Relaxed)
+            })
+        }
+
+        /// Returns the number of file descriptors that have been deregistered by the
+        /// runtime's I/O driver.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use tokio::runtime::Handle;
+        ///
+        /// #[tokio::main]
+        /// async fn main() {
+        ///     let metrics = Handle::current().metrics();
+        ///
+        ///     let n = metrics.io_driver_fd_deregistered_count();
+        ///     println!("{} fds have been deregistered by the runtime's I/O driver.", n);
+        /// }
+        /// ```
+        pub fn io_driver_fd_deregistered_count(&self) -> u64 {
+            self.with_io_driver_metrics(|m| {
+                m.fd_deregistered_count.load(Relaxed)
+            })
+        }
+
+        /// Returns the number of ready events processed by the runtime's
+        /// I/O driver.
+        ///
+        /// # Examples
+        ///
+        /// ```
+        /// use tokio::runtime::Handle;
+        ///
+        /// #[tokio::main]
+        /// async fn main() {
+        ///     let metrics = Handle::current().metrics();
+        ///
+        ///     let n = metrics.io_driver_ready_count();
+        ///     println!("{} ready events processed by the runtime's I/O driver.", n);
+        /// }
+        /// ```
+        pub fn io_driver_ready_count(&self) -> u64 {
+            self.with_io_driver_metrics(|m| m.ready_count.load(Relaxed))
+        }
+
+        fn with_io_driver_metrics<F>(&self, f: F) -> u64
+        where
+            F: Fn(&super::IoDriverMetrics) -> u64,
+        {
+            // TODO: Investigate if this should return 0, most of our metrics always increase
+            // thus this breaks that guarantee.
+            self.handle
+                .inner
+                .driver()
+                .io
+                .as_ref()
+                .map(|h| f(&h.metrics))
+                .unwrap_or(0)
+        }
     }
 }

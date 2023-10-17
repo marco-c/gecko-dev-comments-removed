@@ -1,7 +1,6 @@
 use crate::io::{Interest, PollEvented, ReadBuf, Ready};
 use crate::net::{to_socket_addrs, ToSocketAddrs};
 
-use std::convert::TryFrom;
 use std::fmt;
 use std::io;
 use std::net::{self, Ipv4Addr, Ipv6Addr, SocketAddr};
@@ -170,6 +169,7 @@ impl UdpSocket {
         UdpSocket::new(sys)
     }
 
+    #[track_caller]
     fn new(socket: mio::net::UdpSocket) -> io::Result<UdpSocket> {
         let io = PollEvented::new(socket)?;
         Ok(UdpSocket { io })
@@ -210,6 +210,14 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn from_std(socket: net::UdpSocket) -> io::Result<UdpSocket> {
         let io = mio::net::UdpSocket::from_std(socket);
         UdpSocket::new(io)
@@ -257,6 +265,10 @@ impl UdpSocket {
         }
     }
 
+    fn as_socket(&self) -> socket2::SockRef<'_> {
+        socket2::SockRef::from(self)
+    }
+
     
     
     
@@ -276,6 +288,28 @@ impl UdpSocket {
     
     pub fn local_addr(&self) -> io::Result<SocketAddr> {
         self.io.local_addr()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn peer_addr(&self) -> io::Result<SocketAddr> {
+        self.io.peer_addr()
     }
 
     
@@ -321,6 +355,8 @@ impl UdpSocket {
         }))
     }
 
+    
+    
     
     
     
@@ -845,9 +881,11 @@ impl UdpSocket {
         /// Tries to receive data from the stream into the provided buffer, advancing the
         /// buffer's internal cursor, returning how many bytes were read.
         ///
-        /// The function must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array buf of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
+        ///
+        /// This method can be used even if `buf` is uninitialized.
         ///
         /// When there is no pending data, `Err(io::ErrorKind::WouldBlock)` is
         /// returned. This function is usually paired with `readable()`.
@@ -895,10 +933,10 @@ impl UdpSocket {
                 let dst =
                     unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
 
+                let n = (*self.io).recv(dst)?;
+
                 // Safety: We trust `UdpSocket::recv` to have filled up `n` bytes in the
                 // buffer.
-                let n = (&*self.io).recv(dst)?;
-
                 unsafe {
                     buf.advance_mut(n);
                 }
@@ -907,15 +945,74 @@ impl UdpSocket {
             })
         }
 
-        /// Tries to receive a single datagram message on the socket. On success,
-        /// returns the number of bytes read and the origin.
+        /// Receives a single datagram message on the socket from the remote address
+        /// to which it is connected, advancing the buffer's internal cursor,
+        /// returning how many bytes were read.
         ///
-        /// The function must be called with valid byte array buf of sufficient size
+        /// This method must be called with valid byte array buf of sufficient size
         /// to hold the message bytes. If a message is too long to fit in the
         /// supplied buffer, excess bytes may be discarded.
         ///
+        /// This method can be used even if `buf` is uninitialized.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::net::UdpSocket;
+        /// use std::io;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> io::Result<()> {
+        ///     // Connect to a peer
+        ///     let socket = UdpSocket::bind("127.0.0.1:8080").await?;
+        ///     socket.connect("127.0.0.1:8081").await?;
+        ///
+        ///     let mut buf = Vec::with_capacity(512);
+        ///     let len = socket.recv_buf(&mut buf).await?;
+        ///
+        ///     println!("received {} bytes {:?}", len, &buf[..len]);
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn recv_buf<B: BufMut>(&self, buf: &mut B) -> io::Result<usize> {
+            self.io.registration().async_io(Interest::READABLE, || {
+                let dst = buf.chunk_mut();
+                let dst =
+                    unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
+
+                let n = (*self.io).recv(dst)?;
+
+                // Safety: We trust `UdpSocket::recv` to have filled up `n` bytes in the
+                // buffer.
+                unsafe {
+                    buf.advance_mut(n);
+                }
+
+                Ok(n)
+            }).await
+        }
+
+        /// Tries to receive a single datagram message on the socket. On success,
+        /// returns the number of bytes read and the origin.
+        ///
+        /// This method must be called with valid byte array buf of sufficient size
+        /// to hold the message bytes. If a message is too long to fit in the
+        /// supplied buffer, excess bytes may be discarded.
+        ///
+        /// This method can be used even if `buf` is uninitialized.
+        ///
         /// When there is no pending data, `Err(io::ErrorKind::WouldBlock)` is
         /// returned. This function is usually paired with `readable()`.
+        ///
+        /// # Notes
+        /// Note that the socket address **cannot** be implicitly trusted, because it is relatively
+        /// trivial to send a UDP datagram with a spoofed origin in a [packet injection attack].
+        /// Because UDP is stateless and does not validate the origin of a packet,
+        /// the attacker does not need to be able to intercept traffic in order to interfere.
+        /// It is important to be aware of this when designing your application-level protocol.
+        ///
+        /// [packet injection attack]: https://en.wikipedia.org/wiki/Packet_injection
         ///
         /// # Examples
         ///
@@ -959,16 +1056,72 @@ impl UdpSocket {
                 let dst =
                     unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
 
+                let (n, addr) = (*self.io).recv_from(dst)?;
+
                 // Safety: We trust `UdpSocket::recv_from` to have filled up `n` bytes in the
                 // buffer.
-                let (n, addr) = (&*self.io).recv_from(dst)?;
-
                 unsafe {
                     buf.advance_mut(n);
                 }
 
                 Ok((n, addr))
             })
+        }
+
+        /// Receives a single datagram message on the socket, advancing the
+        /// buffer's internal cursor, returning how many bytes were read and the origin.
+        ///
+        /// This method must be called with valid byte array buf of sufficient size
+        /// to hold the message bytes. If a message is too long to fit in the
+        /// supplied buffer, excess bytes may be discarded.
+        ///
+        /// This method can be used even if `buf` is uninitialized.
+        ///
+        /// # Notes
+        /// Note that the socket address **cannot** be implicitly trusted, because it is relatively
+        /// trivial to send a UDP datagram with a spoofed origin in a [packet injection attack].
+        /// Because UDP is stateless and does not validate the origin of a packet,
+        /// the attacker does not need to be able to intercept traffic in order to interfere.
+        /// It is important to be aware of this when designing your application-level protocol.
+        ///
+        /// [packet injection attack]: https://en.wikipedia.org/wiki/Packet_injection
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::net::UdpSocket;
+        /// use std::io;
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> io::Result<()> {
+        ///     // Connect to a peer
+        ///     let socket = UdpSocket::bind("127.0.0.1:8080").await?;
+        ///     socket.connect("127.0.0.1:8081").await?;
+        ///
+        ///     let mut buf = Vec::with_capacity(512);
+        ///     let (len, addr) = socket.recv_buf_from(&mut buf).await?;
+        ///
+        ///     println!("received {:?} bytes from {:?}", len, addr);
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub async fn recv_buf_from<B: BufMut>(&self, buf: &mut B) -> io::Result<(usize, SocketAddr)> {
+            self.io.registration().async_io(Interest::READABLE, || {
+                let dst = buf.chunk_mut();
+                let dst =
+                    unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
+
+                let (n, addr) = (*self.io).recv_from(dst)?;
+
+                // Safety: We trust `UdpSocket::recv_from` to have filled up `n` bytes in the
+                // buffer.
+                unsafe {
+                    buf.advance_mut(n);
+                }
+
+                Ok((n,addr))
+            }).await
         }
     }
 
@@ -1140,6 +1293,15 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub async fn recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.io
             .registration()
@@ -1147,6 +1309,15 @@ impl UdpSocket {
             .await
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1234,6 +1405,16 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_recv_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
         self.io
             .registration()
@@ -1267,14 +1448,71 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
     pub fn try_io<R>(
         &self,
         interest: Interest,
         f: impl FnOnce() -> io::Result<R>,
     ) -> io::Result<R> {
-        self.io.registration().try_io(interest, f)
+        self.io
+            .registration()
+            .try_io(interest, || self.io.try_io(f))
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn async_io<R>(
+        &self,
+        interest: Interest,
+        mut f: impl FnMut() -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.io
+            .registration()
+            .async_io(interest, || self.io.try_io(&mut f))
+            .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1338,6 +1576,20 @@ impl UdpSocket {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn poll_peek_from(
         &self,
         cx: &mut Context<'_>,
@@ -1358,6 +1610,117 @@ impl UdpSocket {
         }
         buf.advance(n);
         Poll::Ready(Ok(addr))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_peek_from(&self, buf: &mut [u8]) -> io::Result<(usize, SocketAddr)> {
+        self.io
+            .registration()
+            .try_io(Interest::READABLE, || self.io.peek_from(buf))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn peek_sender(&self) -> io::Result<SocketAddr> {
+        self.io
+            .registration()
+            .async_io(Interest::READABLE, || self.peek_sender_inner())
+            .await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn poll_peek_sender(&self, cx: &mut Context<'_>) -> Poll<io::Result<SocketAddr>> {
+        self.io
+            .registration()
+            .poll_read_io(cx, || self.peek_sender_inner())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_peek_sender(&self) -> io::Result<SocketAddr> {
+        self.io
+            .registration()
+            .try_io(Interest::READABLE, || self.peek_sender_inner())
+    }
+
+    #[inline]
+    fn peek_sender_inner(&self) -> io::Result<SocketAddr> {
+        self.io.try_io(|| {
+            self.as_socket()
+                .peek_sender()?
+                
+                
+                
+                .as_socket()
+                .ok_or_else(|| io::Error::new(io::ErrorKind::Other, "sender not available"))
+        })
     }
 
     
@@ -1491,6 +1854,89 @@ impl UdpSocket {
     
     
     
+    
+    
+    #[cfg(not(any(
+        target_os = "fuchsia",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "illumos",
+    )))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(not(any(
+            target_os = "fuchsia",
+            target_os = "redox",
+            target_os = "solaris",
+            target_os = "illumos",
+        ))))
+    )]
+    pub fn tos(&self) -> io::Result<u32> {
+        self.as_socket().tos()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(not(any(
+        target_os = "fuchsia",
+        target_os = "redox",
+        target_os = "solaris",
+        target_os = "illumos",
+    )))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(not(any(
+            target_os = "fuchsia",
+            target_os = "redox",
+            target_os = "solaris",
+            target_os = "illumos",
+        ))))
+    )]
+    pub fn set_tos(&self, tos: u32) -> io::Result<()> {
+        self.as_socket().set_tos(tos)
+    }
+
+    
+    
+    
+    #[cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux",))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(any(target_os = "android", target_os = "fuchsia", target_os = "linux",)))
+    )]
+    pub fn device(&self) -> io::Result<Option<Vec<u8>>> {
+        self.as_socket().device()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(any(target_os = "android", target_os = "fuchsia", target_os = "linux")))]
+    #[cfg_attr(
+        docsrs,
+        doc(cfg(all(any(target_os = "android", target_os = "fuchsia", target_os = "linux"))))
+    )]
+    pub fn bind_device(&self, interface: Option<&[u8]>) -> io::Result<()> {
+        self.as_socket().bind_device(interface)
+    }
+
+    
+    
+    
+    
+    
+    
+    
     pub fn join_multicast_v4(&self, multiaddr: Ipv4Addr, interface: Ipv4Addr) -> io::Result<()> {
         self.io.join_multicast_v4(&multiaddr, &interface)
     }
@@ -1564,7 +2010,7 @@ impl fmt::Debug for UdpSocket {
     }
 }
 
-#[cfg(all(unix))]
+#[cfg(unix)]
 mod sys {
     use super::UdpSocket;
     use std::os::unix::prelude::*;
@@ -1574,16 +2020,30 @@ mod sys {
             self.io.as_raw_fd()
         }
     }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsFd for UdpSocket {
+        fn as_fd(&self) -> BorrowedFd<'_> {
+            unsafe { BorrowedFd::borrow_raw(self.as_raw_fd()) }
+        }
+    }
 }
 
-#[cfg(windows)]
-mod sys {
-    use super::UdpSocket;
-    use std::os::windows::prelude::*;
+cfg_windows! {
+    use crate::os::windows::io::{AsRawSocket, RawSocket};
+    #[cfg(not(tokio_no_as_fd))]
+    use crate::os::windows::io::{AsSocket, BorrowedSocket};
 
     impl AsRawSocket for UdpSocket {
         fn as_raw_socket(&self) -> RawSocket {
             self.io.as_raw_socket()
+        }
+    }
+
+    #[cfg(not(tokio_no_as_fd))]
+    impl AsSocket for UdpSocket {
+        fn as_socket(&self) -> BorrowedSocket<'_> {
+            unsafe { BorrowedSocket::borrow_raw(self.as_raw_socket()) }
         }
     }
 }

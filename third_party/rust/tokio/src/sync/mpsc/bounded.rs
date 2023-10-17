@@ -1,3 +1,4 @@
+use crate::loom::sync::Arc;
 use crate::sync::batch_semaphore::{self as semaphore, TryAcquireError};
 use crate::sync::mpsc::chan;
 use crate::sync::mpsc::error::{SendError, TryRecvError, TrySendError};
@@ -20,6 +21,40 @@ use std::task::{Context, Poll};
 
 pub struct Sender<T> {
     chan: chan::Tx<T, Semaphore>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub struct WeakSender<T> {
+    chan: Arc<chan::Chan<T, Semaphore>>,
 }
 
 
@@ -105,9 +140,13 @@ pub struct Receiver<T> {
 
 
 
+#[track_caller]
 pub fn channel<T>(buffer: usize) -> (Sender<T>, Receiver<T>) {
     assert!(buffer > 0, "mpsc bounded channel requires buffer > 0");
-    let semaphore = (semaphore::Semaphore::new(buffer), buffer);
+    let semaphore = Semaphore {
+        semaphore: semaphore::Semaphore::new(buffer),
+        bound: buffer,
+    };
     let (tx, rx) = chan::channel(semaphore);
 
     let tx = Sender::new(tx);
@@ -118,7 +157,11 @@ pub fn channel<T>(buffer: usize) -> (Sender<T>, Receiver<T>) {
 
 
 
-type Semaphore = (semaphore::Semaphore, usize);
+#[derive(Debug)]
+pub(crate) struct Semaphore {
+    pub(crate) semaphore: semaphore::Semaphore,
+    pub(crate) bound: usize,
+}
 
 impl<T> Receiver<T> {
     pub(crate) fn new(chan: chan::Rx<T, Semaphore>) -> Receiver<T> {
@@ -281,7 +324,9 @@ impl<T> Receiver<T> {
     
     
     
+    #[track_caller]
     #[cfg(feature = "sync")]
+    #[cfg_attr(docsrs, doc(alias = "recv_blocking"))]
     pub fn blocking_recv(&mut self) -> Option<T> {
         crate::future::block_on(self.recv())
     }
@@ -535,7 +580,7 @@ impl<T> Sender<T> {
     
     
     pub fn try_send(&self, message: T) -> Result<(), TrySendError<T>> {
-        match self.chan.semaphore().0.try_acquire(1) {
+        match self.chan.semaphore().semaphore.try_acquire(1) {
             Ok(_) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(message)),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(message)),
@@ -650,7 +695,9 @@ impl<T> Sender<T> {
     
     
     
+    #[track_caller]
     #[cfg(feature = "sync")]
+    #[cfg_attr(docsrs, doc(alias = "send_blocking"))]
     pub fn blocking_send(&self, value: T) -> Result<(), SendError<T>> {
         crate::future::block_on(self.send(value))
     }
@@ -814,7 +861,9 @@ impl<T> Sender<T> {
     }
 
     async fn reserve_inner(&self) -> Result<(), SendError<()>> {
-        match self.chan.semaphore().0.acquire(1).await {
+        crate::trace::async_trace_leaf().await;
+
+        match self.chan.semaphore().semaphore.acquire(1).await {
             Ok(_) => Ok(()),
             Err(_) => Err(SendError(())),
         }
@@ -864,7 +913,7 @@ impl<T> Sender<T> {
     
     
     pub fn try_reserve(&self) -> Result<Permit<'_, T>, TrySendError<()>> {
-        match self.chan.semaphore().0.try_acquire(1) {
+        match self.chan.semaphore().semaphore.try_acquire(1) {
             Ok(_) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(())),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(())),
@@ -929,7 +978,7 @@ impl<T> Sender<T> {
     
     
     pub fn try_reserve_owned(self) -> Result<OwnedPermit<T>, TrySendError<Self>> {
-        match self.chan.semaphore().0.try_acquire(1) {
+        match self.chan.semaphore().semaphore.try_acquire(1) {
             Ok(_) => {}
             Err(TryAcquireError::Closed) => return Err(TrySendError::Closed(self)),
             Err(TryAcquireError::NoPermits) => return Err(TrySendError::Full(self)),
@@ -985,8 +1034,58 @@ impl<T> Sender<T> {
     
     
     
+    
+    
+    
+    
     pub fn capacity(&self) -> usize {
-        self.chan.semaphore().0.available_permits()
+        self.chan.semaphore().semaphore.available_permits()
+    }
+
+    
+    
+    
+    
+    pub fn downgrade(&self) -> WeakSender<T> {
+        WeakSender {
+            chan: self.chan.downgrade(),
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_capacity(&self) -> usize {
+        self.chan.semaphore().bound
     }
 }
 
@@ -1003,6 +1102,29 @@ impl<T> fmt::Debug for Sender<T> {
         fmt.debug_struct("Sender")
             .field("chan", &self.chan)
             .finish()
+    }
+}
+
+impl<T> Clone for WeakSender<T> {
+    fn clone(&self) -> Self {
+        WeakSender {
+            chan: self.chan.clone(),
+        }
+    }
+}
+
+impl<T> WeakSender<T> {
+    
+    
+    
+    pub fn upgrade(&self) -> Option<Sender<T>> {
+        chan::Tx::upgrade(self.chan.clone()).map(Sender::new)
+    }
+}
+
+impl<T> fmt::Debug for WeakSender<T> {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt.debug_struct("WeakSender").finish()
     }
 }
 

@@ -388,6 +388,14 @@
 
 
 
+
+
+
+
+
+
+
+
 #[macro_export]
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 macro_rules! select {
@@ -429,7 +437,8 @@ macro_rules! select {
         //
         // This module is defined within a scope and should not leak out of this
         // macro.
-        mod util {
+        #[doc(hidden)]
+        mod __tokio_select_util {
             // Generate an enum with one variant per select branch
             $crate::select_priv_declare_output_enum!( ( $($count)* ) );
         }
@@ -442,13 +451,13 @@ macro_rules! select {
 
         const BRANCHES: u32 = $crate::count!( $($count)* );
 
-        let mut disabled: util::Mask = Default::default();
+        let mut disabled: __tokio_select_util::Mask = Default::default();
 
         // First, invoke all the pre-conditions. For any that return true,
         // set the appropriate bit in `disabled`.
         $(
             if !$c {
-                let mask: util::Mask = 1 << $crate::count!( $($skip)* );
+                let mask: __tokio_select_util::Mask = 1 << $crate::count!( $($skip)* );
                 disabled |= mask;
             }
         )*
@@ -458,7 +467,17 @@ macro_rules! select {
         let mut output = {
             // Safety: Nothing must be moved out of `futures`. This is to
             // satisfy the requirement of `Pin::new_unchecked` called below.
+            //
+            // We can't use the `pin!` macro for this because `futures` is a
+            // tuple and the standard library provides no way to pin-project to
+            // the fields of a tuple.
             let mut futures = ( $( $fut , )+ );
+
+            // This assignment makes sure that the `poll_fn` closure only has a
+            // reference to the futures, instead of taking ownership of them.
+            // This mitigates the issue described in
+            // <https://internals.rust-lang.org/t/surprising-soundness-trouble-around-pollfn/17484>
+            let mut futures = &mut futures;
 
             $crate::macros::support::poll_fn(|cx| {
                 // Track if any branch returns pending. If no branch completes
@@ -495,7 +514,7 @@ macro_rules! select {
 
                                 // Extract the future for this branch from the
                                 // tuple
-                                let ( $($skip,)* fut, .. ) = &mut futures;
+                                let ( $($skip,)* fut, .. ) = &mut *futures;
 
                                 // Safety: future is stored on the stack above
                                 // and never moved.
@@ -525,7 +544,7 @@ macro_rules! select {
                                 }
 
                                 // The select is complete, return the value
-                                return Ready($crate::select_variant!(util::Out, ($($skip)*))(out));
+                                return Ready($crate::select_variant!(__tokio_select_util::Out, ($($skip)*))(out));
                             }
                         )*
                         _ => unreachable!("reaching this means there probably is an off by one bug"),
@@ -536,16 +555,16 @@ macro_rules! select {
                     Pending
                 } else {
                     // All branches have been disabled.
-                    Ready(util::Out::Disabled)
+                    Ready(__tokio_select_util::Out::Disabled)
                 }
             }).await
         };
 
         match output {
             $(
-                $crate::select_variant!(util::Out, ($($skip)*) ($bind)) => $handle,
+                $crate::select_variant!(__tokio_select_util::Out, ($($skip)*) ($bind)) => $handle,
             )*
-            util::Out::Disabled => $else,
+            __tokio_select_util::Out::Disabled => $else,
             _ => unreachable!("failed to match bind"),
         }
     }};
@@ -800,6 +819,9 @@ macro_rules! count {
     };
     (_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) => {
         63
+    };
+    (_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _) => {
+        64
     };
 }
 

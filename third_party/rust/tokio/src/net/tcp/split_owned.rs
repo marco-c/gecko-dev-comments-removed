@@ -208,6 +208,15 @@ impl OwnedReadHalf {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
         self.inner.ready(interest).await
     }
@@ -229,6 +238,10 @@ impl OwnedReadHalf {
         self.inner.readable().await
     }
 
+    
+    
+    
+    
     
     
     
@@ -359,6 +372,15 @@ impl OwnedWriteHalf {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
         self.inner.ready(interest).await
     }
@@ -474,12 +496,12 @@ impl AsyncWrite for OwnedWriteHalf {
 
 impl AsRef<TcpStream> for OwnedReadHalf {
     fn as_ref(&self) -> &TcpStream {
-        &*self.inner
+        &self.inner
     }
 }
 
 impl AsRef<TcpStream> for OwnedWriteHalf {
     fn as_ref(&self) -> &TcpStream {
-        &*self.inner
+        &self.inner
     }
 }

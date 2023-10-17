@@ -1,21 +1,43 @@
-use std::cell::Cell;
+cfg_rt! {
+    mod rt;
+    pub(crate) use rt::RngSeedGenerator;
 
-
-
-
-
-
-
-
-#[derive(Debug)]
-pub(crate) struct FastRand {
-    one: Cell<u32>,
-    two: Cell<u32>,
+    cfg_unstable! {
+        mod rt_unstable;
+    }
 }
 
-impl FastRand {
+
+
+
+
+#[allow(unreachable_pub)]
+#[derive(Clone, Debug)]
+pub struct RngSeed {
+    s: u32,
+    r: u32,
+}
+
+
+
+
+
+
+
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct FastRand {
+    one: u32,
+    two: u32,
+}
+
+impl RngSeed {
     
-    pub(crate) fn new(seed: u64) -> FastRand {
+    pub(crate) fn new() -> Self {
+        Self::from_u64(crate::loom::rand::seed())
+    }
+
+    fn from_u64(seed: u64) -> Self {
         let one = (seed >> 32) as u32;
         let mut two = seed as u32;
 
@@ -24,41 +46,50 @@ impl FastRand {
             two = 1;
         }
 
+        Self::from_pair(one, two)
+    }
+
+    fn from_pair(s: u32, r: u32) -> Self {
+        Self { s, r }
+    }
+}
+
+impl FastRand {
+    
+    pub(crate) fn new() -> FastRand {
+        FastRand::from_seed(RngSeed::new())
+    }
+
+    
+    pub(crate) fn from_seed(seed: RngSeed) -> FastRand {
         FastRand {
-            one: Cell::new(one),
-            two: Cell::new(two),
+            one: seed.s,
+            two: seed.r,
         }
     }
 
-    pub(crate) fn fastrand_n(&self, n: u32) -> u32 {
+    #[cfg(any(
+        feature = "macros",
+        feature = "rt-multi-thread",
+        all(feature = "sync", feature = "rt")
+    ))]
+    pub(crate) fn fastrand_n(&mut self, n: u32) -> u32 {
         
         
         let mul = (self.fastrand() as u64).wrapping_mul(n as u64);
         (mul >> 32) as u32
     }
 
-    fn fastrand(&self) -> u32 {
-        let mut s1 = self.one.get();
-        let s0 = self.two.get();
+    fn fastrand(&mut self) -> u32 {
+        let mut s1 = self.one;
+        let s0 = self.two;
 
         s1 ^= s1 << 17;
         s1 = s1 ^ s0 ^ s1 >> 7 ^ s0 >> 16;
 
-        self.one.set(s0);
-        self.two.set(s1);
+        self.one = s0;
+        self.two = s1;
 
         s0.wrapping_add(s1)
     }
-}
-
-
-#[cfg(any(feature = "macros"))]
-#[doc(hidden)]
-#[cfg_attr(not(feature = "macros"), allow(unreachable_pub))]
-pub fn thread_rng_n(n: u32) -> u32 {
-    thread_local! {
-        static THREAD_RNG: FastRand = FastRand::new(crate::loom::rand::seed());
-    }
-
-    THREAD_RNG.with(|rng| rng.fastrand_n(n))
 }

@@ -2,7 +2,6 @@
 
 
 
-
 #[doc(hidden)]
 pub mod datagram;
 
@@ -22,3 +21,17 @@ pub(crate) use stream::UnixStream;
 
 mod ucred;
 pub use ucred::UCred;
+
+pub mod pipe;
+
+
+#[allow(non_camel_case_types)]
+pub type uid_t = u32;
+
+
+#[allow(non_camel_case_types)]
+pub type gid_t = u32;
+
+
+#[allow(non_camel_case_types)]
+pub type pid_t = i32;

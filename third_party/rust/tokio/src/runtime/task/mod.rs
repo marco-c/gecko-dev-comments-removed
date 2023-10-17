@@ -137,6 +137,35 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #![cfg_attr(not(tokio_unstable), allow(dead_code))]
 
 mod core;
@@ -144,31 +173,38 @@ use self::core::Cell;
 use self::core::Header;
 
 mod error;
-#[allow(unreachable_pub)] 
 pub use self::error::JoinError;
 
 mod harness;
 use self::harness::Harness;
 
-cfg_rt_multi_thread! {
-    mod inject;
-    pub(super) use self::inject::Inject;
-}
+mod id;
+#[cfg_attr(not(tokio_unstable), allow(unreachable_pub))]
+pub use id::{id, try_id, Id};
 
+#[cfg(feature = "rt")]
+mod abort;
 mod join;
-#[allow(unreachable_pub)] 
+
+#[cfg(feature = "rt")]
+pub use self::abort::AbortHandle;
+
 pub use self::join::JoinHandle;
 
 mod list;
 pub(crate) use self::list::{LocalOwnedTasks, OwnedTasks};
 
 mod raw;
-use self::raw::RawTask;
+pub(crate) use self::raw::RawTask;
 
 mod state;
 use self::state::State;
 
 mod waker;
+
+cfg_taskdump! {
+    pub(crate) mod trace;
+}
 
 use crate::future::Future;
 use crate::util::linked_list;
@@ -234,6 +270,11 @@ pub(crate) trait Schedule: Sync + Sized + 'static {
     fn yield_now(&self, task: Notified<Self>) {
         self.schedule(task);
     }
+
+    
+    fn unhandled_panic(&self) {
+        
+    }
 }
 
 cfg_rt! {
@@ -243,14 +284,15 @@ cfg_rt! {
     /// notification.
     fn new_task<T, S>(
         task: T,
-        scheduler: S
+        scheduler: S,
+        id: Id,
     ) -> (Task<S>, Notified<S>, JoinHandle<T::Output>)
     where
         S: Schedule,
         T: Future + 'static,
         T::Output: 'static,
     {
-        let raw = RawTask::new::<T, S>(task, scheduler);
+        let raw = RawTask::new::<T, S>(task, scheduler, id);
         let task = Task {
             raw,
             _p: PhantomData,
@@ -268,13 +310,13 @@ cfg_rt! {
     /// only when the task is not going to be stored in an `OwnedTasks` list.
     ///
     /// Currently only blocking tasks use this method.
-    pub(crate) fn unowned<T, S>(task: T, scheduler: S) -> (UnownedTask<S>, JoinHandle<T::Output>)
+    pub(crate) fn unowned<T, S>(task: T, scheduler: S, id: Id) -> (UnownedTask<S>, JoinHandle<T::Output>)
     where
         S: Schedule,
         T: Send + Future + 'static,
         T::Output: Send + 'static,
     {
-        let (task, notified, join) = new_task(task, scheduler);
+        let (task, notified, join) = new_task(task, scheduler, id);
 
         // This transfers the ref-count of task and notified into an UnownedTask.
         // This is valid because an UnownedTask holds two ref-counts.
@@ -290,15 +332,34 @@ cfg_rt! {
 }
 
 impl<S: 'static> Task<S> {
-    unsafe fn from_raw(ptr: NonNull<Header>) -> Task<S> {
+    unsafe fn new(raw: RawTask) -> Task<S> {
         Task {
-            raw: RawTask::from_raw(ptr),
+            raw,
             _p: PhantomData,
         }
     }
 
+    unsafe fn from_raw(ptr: NonNull<Header>) -> Task<S> {
+        Task::new(RawTask::from_raw(ptr))
+    }
+
+    #[cfg(all(
+        tokio_unstable,
+        tokio_taskdump,
+        feature = "rt",
+        target_os = "linux",
+        any(target_arch = "aarch64", target_arch = "x86", target_arch = "x86_64")
+    ))]
+    pub(super) fn as_raw(&self) -> RawTask {
+        self.raw
+    }
+
     fn header(&self) -> &Header {
         self.raw.header()
+    }
+
+    fn header_ptr(&self) -> NonNull<Header> {
+        self.raw.header_ptr()
     }
 }
 
@@ -308,25 +369,17 @@ impl<S: 'static> Notified<S> {
     }
 }
 
-cfg_rt_multi_thread! {
-    impl<S: 'static> Notified<S> {
-        unsafe fn from_raw(ptr: NonNull<Header>) -> Notified<S> {
-            Notified(Task::from_raw(ptr))
-        }
+impl<S: 'static> Notified<S> {
+    pub(crate) unsafe fn from_raw(ptr: RawTask) -> Notified<S> {
+        Notified(Task::new(ptr))
     }
+}
 
-    impl<S: 'static> Task<S> {
-        fn into_raw(self) -> NonNull<Header> {
-            let ret = self.raw.header_ptr();
-            mem::forget(self);
-            ret
-        }
-    }
-
-    impl<S: 'static> Notified<S> {
-        fn into_raw(self) -> NonNull<Header> {
-            self.0.into_raw()
-        }
+impl<S: 'static> Notified<S> {
+    pub(crate) fn into_raw(self) -> RawTask {
+        let raw = self.0.raw;
+        mem::forget(self);
+        raw
     }
 }
 
@@ -351,7 +404,7 @@ impl<S: Schedule> LocalNotified<S> {
 impl<S: Schedule> UnownedTask<S> {
     
     #[cfg(test)]
-    #[cfg_attr(target_arch = "wasm32", allow(dead_code))]
+    #[cfg_attr(tokio_wasm, allow(dead_code))]
     pub(super) fn into_notified(self) -> Notified<S> {
         Notified(self.into_task())
     }
@@ -439,7 +492,6 @@ unsafe impl<S> linked_list::Link for Task<S> {
     }
 
     unsafe fn pointers(target: NonNull<Header>) -> NonNull<linked_list::Pointers<Header>> {
-        
-        NonNull::from(target.as_ref().owned.with_mut(|ptr| &mut *ptr))
+        self::core::Trailer::addr_of_owned(Header::get_trailer(target))
     }
 }

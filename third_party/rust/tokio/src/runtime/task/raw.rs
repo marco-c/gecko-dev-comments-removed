@@ -1,11 +1,12 @@
 use crate::future::Future;
-use crate::runtime::task::{Cell, Harness, Header, Schedule, State};
+use crate::runtime::task::core::{Core, Trailer};
+use crate::runtime::task::{Cell, Harness, Header, Id, Schedule, State};
 
 use std::ptr::NonNull;
 use std::task::{Poll, Waker};
 
 
-pub(super) struct RawTask {
+pub(crate) struct RawTask {
     ptr: NonNull<Header>,
 }
 
@@ -14,46 +15,153 @@ pub(super) struct Vtable {
     pub(super) poll: unsafe fn(NonNull<Header>),
 
     
+    pub(super) schedule: unsafe fn(NonNull<Header>),
+
+    
     pub(super) dealloc: unsafe fn(NonNull<Header>),
 
     
     pub(super) try_read_output: unsafe fn(NonNull<Header>, *mut (), &Waker),
 
     
-    
-    
-    pub(super) try_set_join_waker: unsafe fn(NonNull<Header>, &Waker) -> bool,
-
-    
     pub(super) drop_join_handle_slow: unsafe fn(NonNull<Header>),
 
     
-    pub(super) remote_abort: unsafe fn(NonNull<Header>),
+    pub(super) drop_abort_handle: unsafe fn(NonNull<Header>),
 
     
     pub(super) shutdown: unsafe fn(NonNull<Header>),
+
+    
+    pub(super) trailer_offset: usize,
+
+    
+    pub(super) scheduler_offset: usize,
+
+    
+    pub(super) id_offset: usize,
 }
 
 
 pub(super) fn vtable<T: Future, S: Schedule>() -> &'static Vtable {
     &Vtable {
         poll: poll::<T, S>,
+        schedule: schedule::<S>,
         dealloc: dealloc::<T, S>,
         try_read_output: try_read_output::<T, S>,
-        try_set_join_waker: try_set_join_waker::<T, S>,
         drop_join_handle_slow: drop_join_handle_slow::<T, S>,
-        remote_abort: remote_abort::<T, S>,
+        drop_abort_handle: drop_abort_handle::<T, S>,
         shutdown: shutdown::<T, S>,
+        trailer_offset: OffsetHelper::<T, S>::TRAILER_OFFSET,
+        scheduler_offset: OffsetHelper::<T, S>::SCHEDULER_OFFSET,
+        id_offset: OffsetHelper::<T, S>::ID_OFFSET,
     }
 }
 
+
+
+
+
+
+struct OffsetHelper<T, S>(T, S);
+impl<T: Future, S: Schedule> OffsetHelper<T, S> {
+    
+    
+    
+    const TRAILER_OFFSET: usize = get_trailer_offset(
+        std::mem::size_of::<Header>(),
+        std::mem::size_of::<Core<T, S>>(),
+        std::mem::align_of::<Core<T, S>>(),
+        std::mem::align_of::<Trailer>(),
+    );
+
+    
+    
+    const SCHEDULER_OFFSET: usize = get_core_offset(
+        std::mem::size_of::<Header>(),
+        std::mem::align_of::<Core<T, S>>(),
+    );
+
+    const ID_OFFSET: usize = get_id_offset(
+        std::mem::size_of::<Header>(),
+        std::mem::align_of::<Core<T, S>>(),
+        std::mem::size_of::<S>(),
+        std::mem::align_of::<Id>(),
+    );
+}
+
+
+
+
+
+
+const fn get_trailer_offset(
+    header_size: usize,
+    core_size: usize,
+    core_align: usize,
+    trailer_align: usize,
+) -> usize {
+    let mut offset = header_size;
+
+    let core_misalign = offset % core_align;
+    if core_misalign > 0 {
+        offset += core_align - core_misalign;
+    }
+    offset += core_size;
+
+    let trailer_misalign = offset % trailer_align;
+    if trailer_misalign > 0 {
+        offset += trailer_align - trailer_misalign;
+    }
+
+    offset
+}
+
+
+
+
+
+
+const fn get_core_offset(header_size: usize, core_align: usize) -> usize {
+    let mut offset = header_size;
+
+    let core_misalign = offset % core_align;
+    if core_misalign > 0 {
+        offset += core_align - core_misalign;
+    }
+
+    offset
+}
+
+
+
+
+
+
+const fn get_id_offset(
+    header_size: usize,
+    core_align: usize,
+    scheduler_size: usize,
+    id_align: usize,
+) -> usize {
+    let mut offset = get_core_offset(header_size, core_align);
+    offset += scheduler_size;
+
+    let id_misalign = offset % id_align;
+    if id_misalign > 0 {
+        offset += id_align - id_misalign;
+    }
+
+    offset
+}
+
 impl RawTask {
-    pub(super) fn new<T, S>(task: T, scheduler: S) -> RawTask
+    pub(super) fn new<T, S>(task: T, scheduler: S, id: Id) -> RawTask
     where
         T: Future,
         S: Schedule,
     {
-        let ptr = Box::into_raw(Cell::<_, S>::new(task, scheduler, State::new()));
+        let ptr = Box::into_raw(Cell::<_, S>::new(task, scheduler, State::new(), id));
         let ptr = unsafe { NonNull::new_unchecked(ptr as *mut Header) };
 
         RawTask { ptr }
@@ -67,17 +175,34 @@ impl RawTask {
         self.ptr
     }
 
-    
-    
+    pub(super) fn trailer_ptr(&self) -> NonNull<Trailer> {
+        unsafe { Header::get_trailer(self.ptr) }
+    }
+
     
     pub(super) fn header(&self) -> &Header {
         unsafe { self.ptr.as_ref() }
     }
 
     
-    pub(super) fn poll(self) {
+    pub(super) fn trailer(&self) -> &Trailer {
+        unsafe { &*self.trailer_ptr().as_ptr() }
+    }
+
+    
+    pub(super) fn state(&self) -> &State {
+        &self.header().state
+    }
+
+    
+    pub(crate) fn poll(self) {
         let vtable = self.header().vtable;
         unsafe { (vtable.poll)(self.ptr) }
+    }
+
+    pub(super) fn schedule(self) {
+        let vtable = self.header().vtable;
+        unsafe { (vtable.schedule)(self.ptr) }
     }
 
     pub(super) fn dealloc(self) {
@@ -94,14 +219,14 @@ impl RawTask {
         (vtable.try_read_output)(self.ptr, dst, waker);
     }
 
-    pub(super) fn try_set_join_waker(self, waker: &Waker) -> bool {
-        let vtable = self.header().vtable;
-        unsafe { (vtable.try_set_join_waker)(self.ptr, waker) }
-    }
-
     pub(super) fn drop_join_handle_slow(self) {
         let vtable = self.header().vtable;
         unsafe { (vtable.drop_join_handle_slow)(self.ptr) }
+    }
+
+    pub(super) fn drop_abort_handle(self) {
+        let vtable = self.header().vtable;
+        unsafe { (vtable.drop_abort_handle)(self.ptr) }
     }
 
     pub(super) fn shutdown(self) {
@@ -109,9 +234,32 @@ impl RawTask {
         unsafe { (vtable.shutdown)(self.ptr) }
     }
 
-    pub(super) fn remote_abort(self) {
-        let vtable = self.header().vtable;
-        unsafe { (vtable.remote_abort)(self.ptr) }
+    
+    
+    
+    pub(super) fn ref_inc(self) {
+        self.header().state.ref_inc();
+    }
+
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn get_queue_next(self) -> Option<RawTask> {
+        self.header()
+            .queue_next
+            .with(|ptr| *ptr)
+            .map(|p| RawTask::from_raw(p))
+    }
+
+    
+    
+    
+    
+    
+    pub(crate) unsafe fn set_queue_next(self, val: Option<RawTask>) {
+        self.header().set_next(val.map(|task| task.ptr));
     }
 }
 
@@ -126,6 +274,15 @@ impl Copy for RawTask {}
 unsafe fn poll<T: Future, S: Schedule>(ptr: NonNull<Header>) {
     let harness = Harness::<T, S>::from_raw(ptr);
     harness.poll();
+}
+
+unsafe fn schedule<S: Schedule>(ptr: NonNull<Header>) {
+    use crate::runtime::task::{Notified, Task};
+
+    let scheduler = Header::get_scheduler::<S>(ptr);
+    scheduler
+        .as_ref()
+        .schedule(Notified(Task::from_raw(ptr.cast())));
 }
 
 unsafe fn dealloc<T: Future, S: Schedule>(ptr: NonNull<Header>) {
@@ -144,19 +301,14 @@ unsafe fn try_read_output<T: Future, S: Schedule>(
     harness.try_read_output(out, waker);
 }
 
-unsafe fn try_set_join_waker<T: Future, S: Schedule>(ptr: NonNull<Header>, waker: &Waker) -> bool {
-    let harness = Harness::<T, S>::from_raw(ptr);
-    harness.try_set_join_waker(waker)
-}
-
 unsafe fn drop_join_handle_slow<T: Future, S: Schedule>(ptr: NonNull<Header>) {
     let harness = Harness::<T, S>::from_raw(ptr);
     harness.drop_join_handle_slow()
 }
 
-unsafe fn remote_abort<T: Future, S: Schedule>(ptr: NonNull<Header>) {
+unsafe fn drop_abort_handle<T: Future, S: Schedule>(ptr: NonNull<Header>) {
     let harness = Harness::<T, S>::from_raw(ptr);
-    harness.remote_abort()
+    harness.drop_reference();
 }
 
 unsafe fn shutdown<T: Future, S: Schedule>(ptr: NonNull<Header>) {

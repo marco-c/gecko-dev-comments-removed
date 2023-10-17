@@ -5,7 +5,7 @@
 
 
 use crate::{
-    coop,
+    runtime::coop,
     time::{error::Elapsed, sleep_until, Duration, Instant, Sleep},
     util::trace,
 };
@@ -67,10 +67,25 @@ use std::task::{self, Poll};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[track_caller]
-pub fn timeout<T>(duration: Duration, future: T) -> Timeout<T>
+pub fn timeout<F>(duration: Duration, future: F) -> Timeout<F>
 where
-    T: Future,
+    F: Future,
 {
     let location = trace::caller_location();
 
@@ -116,9 +131,20 @@ where
 
 
 
-pub fn timeout_at<T>(deadline: Instant, future: T) -> Timeout<T>
+
+
+
+
+
+
+
+
+
+
+
+pub fn timeout_at<F>(deadline: Instant, future: F) -> Timeout<F>
 where
-    T: Future,
+    F: Future,
 {
     let delay = sleep_until(deadline);
 

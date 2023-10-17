@@ -10,34 +10,36 @@ use std::ptr;
 use std::task::{Context, Poll};
 
 use crate::io::{AsyncRead, AsyncWrite, Interest, PollEvented, ReadBuf, Ready};
+#[cfg(not(tokio_no_as_fd))]
+use crate::os::windows::io::{AsHandle, BorrowedHandle};
 use crate::os::windows::io::{AsRawHandle, FromRawHandle, RawHandle};
+
+cfg_io_util! {
+    use bytes::BufMut;
+}
 
 
 #[cfg(not(docsrs))]
 mod doc {
     pub(super) use crate::os::windows::ffi::OsStrExt;
-    pub(super) use crate::winapi::shared::minwindef::{DWORD, FALSE};
-    pub(super) use crate::winapi::um::fileapi;
-    pub(super) use crate::winapi::um::handleapi;
-    pub(super) use crate::winapi::um::namedpipeapi;
-    pub(super) use crate::winapi::um::winbase;
-    pub(super) use crate::winapi::um::winnt;
-
+    pub(super) mod windows_sys {
+        pub(crate) use windows_sys::{
+            Win32::Foundation::*, Win32::Storage::FileSystem::*, Win32::System::Pipes::*,
+            Win32::System::SystemServices::*,
+        };
+    }
     pub(super) use mio::windows as mio_windows;
 }
 
 
 #[cfg(docsrs)]
 mod doc {
-    pub type DWORD = crate::doc::NotDefinedHere;
-
     pub(super) mod mio_windows {
         pub type NamedPipe = crate::doc::NotDefinedHere;
     }
 }
 
 use self::doc::*;
-
 
 
 
@@ -188,17 +190,15 @@ impl NamedPipeServer {
     
     
     pub async fn connect(&self) -> io::Result<()> {
-        loop {
-            match self.io.connect() {
-                Ok(()) => break,
-                Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
-                    self.io.registration().readiness(Interest::WRITABLE).await?;
-                }
-                Err(e) => return Err(e),
+        match self.io.connect() {
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                self.io
+                    .registration()
+                    .async_io(Interest::WRITABLE, || self.io.connect())
+                    .await
             }
+            x => x,
         }
-
-        Ok(())
     }
 
     
@@ -234,6 +234,12 @@ impl NamedPipeServer {
         self.io.disconnect()
     }
 
+    
+    
+    
+    
+    
+    
     
     
     
@@ -444,6 +450,10 @@ impl NamedPipeServer {
     
     
     
+    
+    
+    
+    
     pub fn try_read(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.io
             .registration()
@@ -526,6 +536,86 @@ impl NamedPipeServer {
         self.io
             .registration()
             .try_io(Interest::READABLE, || (&*self.io).read_vectored(bufs))
+    }
+
+    cfg_io_util! {
+        /// Tries to read data from the stream into the provided buffer, advancing the
+        /// buffer's internal cursor, returning how many bytes were read.
+        ///
+        /// Receives any pending data from the pipe but does not wait for new data
+        /// to arrive. On success, returns the number of bytes read. Because
+        /// `try_read_buf()` is non-blocking, the buffer does not have to be stored by
+        /// the async task and can exist entirely on the stack.
+        ///
+        /// Usually, [`readable()`] or [`ready()`] is used with this function.
+        ///
+        /// [`readable()`]: NamedPipeServer::readable()
+        /// [`ready()`]: NamedPipeServer::ready()
+        ///
+        /// # Return
+        ///
+        /// If data is successfully read, `Ok(n)` is returned, where `n` is the
+        /// number of bytes read. `Ok(0)` indicates the stream's read half is closed
+        /// and will no longer yield data. If the stream is not ready to read data
+        /// `Err(io::ErrorKind::WouldBlock)` is returned.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::net::windows::named_pipe;
+        /// use std::error::Error;
+        /// use std::io;
+        ///
+        /// const PIPE_NAME: &str = r"\\.\pipe\tokio-named-pipe-client-readable";
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn Error>> {
+        ///     let server = named_pipe::ServerOptions::new().create(PIPE_NAME)?;
+        ///
+        ///     loop {
+        ///         // Wait for the pipe to be readable
+        ///         server.readable().await?;
+        ///
+        ///         let mut buf = Vec::with_capacity(4096);
+        ///
+        ///         // Try to read data, this may still fail with `WouldBlock`
+        ///         // if the readiness event is a false positive.
+        ///         match server.try_read_buf(&mut buf) {
+        ///             Ok(0) => break,
+        ///             Ok(n) => {
+        ///                 println!("read {} bytes", n);
+        ///             }
+        ///             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+        ///                 continue;
+        ///             }
+        ///             Err(e) => {
+        ///                 return Err(e.into());
+        ///             }
+        ///         }
+        ///     }
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub fn try_read_buf<B: BufMut>(&self, buf: &mut B) -> io::Result<usize> {
+            self.io.registration().try_io(Interest::READABLE, || {
+                use std::io::Read;
+
+                let dst = buf.chunk_mut();
+                let dst =
+                    unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
+
+                // Safety: We trust `NamedPipeServer::read` to have filled up `n` bytes in the
+                // buffer.
+                let n = (&*self.io).read(dst)?;
+
+                unsafe {
+                    buf.advance_mut(n);
+                }
+
+                Ok(n)
+            })
+        }
     }
 
     
@@ -751,12 +841,50 @@ impl NamedPipeServer {
     
     
     
+    
+    
+    
+    
+    
     pub fn try_io<R>(
         &self,
         interest: Interest,
         f: impl FnOnce() -> io::Result<R>,
     ) -> io::Result<R> {
         self.io.registration().try_io(interest, f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn async_io<R>(
+        &self,
+        interest: Interest,
+        f: impl FnMut() -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.io.registration().async_io(interest, f).await
     }
 }
 
@@ -799,6 +927,13 @@ impl AsyncWrite for NamedPipeServer {
 impl AsRawHandle for NamedPipeServer {
     fn as_raw_handle(&self) -> RawHandle {
         self.io.as_raw_handle()
+    }
+}
+
+#[cfg(not(tokio_no_as_fd))]
+impl AsHandle for NamedPipeServer {
+    fn as_handle(&self) -> BorrowedHandle<'_> {
+        unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
     }
 }
 
@@ -957,6 +1092,12 @@ impl NamedPipeClient {
     
     
     
+    
+    
+    
+    
+    
+    
     pub async fn ready(&self, interest: Interest) -> io::Result<Ready> {
         let event = self.io.registration().readiness(interest).await?;
         Ok(event.ready)
@@ -1103,6 +1244,10 @@ impl NamedPipeClient {
     
     
     
+    
+    
+    
+    
     pub fn try_read(&self, buf: &mut [u8]) -> io::Result<usize> {
         self.io
             .registration()
@@ -1184,6 +1329,86 @@ impl NamedPipeClient {
         self.io
             .registration()
             .try_io(Interest::READABLE, || (&*self.io).read_vectored(bufs))
+    }
+
+    cfg_io_util! {
+        /// Tries to read data from the stream into the provided buffer, advancing the
+        /// buffer's internal cursor, returning how many bytes were read.
+        ///
+        /// Receives any pending data from the pipe but does not wait for new data
+        /// to arrive. On success, returns the number of bytes read. Because
+        /// `try_read_buf()` is non-blocking, the buffer does not have to be stored by
+        /// the async task and can exist entirely on the stack.
+        ///
+        /// Usually, [`readable()`] or [`ready()`] is used with this function.
+        ///
+        /// [`readable()`]: NamedPipeClient::readable()
+        /// [`ready()`]: NamedPipeClient::ready()
+        ///
+        /// # Return
+        ///
+        /// If data is successfully read, `Ok(n)` is returned, where `n` is the
+        /// number of bytes read. `Ok(0)` indicates the stream's read half is closed
+        /// and will no longer yield data. If the stream is not ready to read data
+        /// `Err(io::ErrorKind::WouldBlock)` is returned.
+        ///
+        /// # Examples
+        ///
+        /// ```no_run
+        /// use tokio::net::windows::named_pipe;
+        /// use std::error::Error;
+        /// use std::io;
+        ///
+        /// const PIPE_NAME: &str = r"\\.\pipe\tokio-named-pipe-client-readable";
+        ///
+        /// #[tokio::main]
+        /// async fn main() -> Result<(), Box<dyn Error>> {
+        ///     let client = named_pipe::ClientOptions::new().open(PIPE_NAME)?;
+        ///
+        ///     loop {
+        ///         // Wait for the pipe to be readable
+        ///         client.readable().await?;
+        ///
+        ///         let mut buf = Vec::with_capacity(4096);
+        ///
+        ///         // Try to read data, this may still fail with `WouldBlock`
+        ///         // if the readiness event is a false positive.
+        ///         match client.try_read_buf(&mut buf) {
+        ///             Ok(0) => break,
+        ///             Ok(n) => {
+        ///                 println!("read {} bytes", n);
+        ///             }
+        ///             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+        ///                 continue;
+        ///             }
+        ///             Err(e) => {
+        ///                 return Err(e.into());
+        ///             }
+        ///         }
+        ///     }
+        ///
+        ///     Ok(())
+        /// }
+        /// ```
+        pub fn try_read_buf<B: BufMut>(&self, buf: &mut B) -> io::Result<usize> {
+            self.io.registration().try_io(Interest::READABLE, || {
+                use std::io::Read;
+
+                let dst = buf.chunk_mut();
+                let dst =
+                    unsafe { &mut *(dst as *mut _ as *mut [std::mem::MaybeUninit<u8>] as *mut [u8]) };
+
+                // Safety: We trust `NamedPipeClient::read` to have filled up `n` bytes in the
+                // buffer.
+                let n = (&*self.io).read(dst)?;
+
+                unsafe {
+                    buf.advance_mut(n);
+                }
+
+                Ok(n)
+            })
+        }
     }
 
     
@@ -1406,12 +1631,50 @@ impl NamedPipeClient {
     
     
     
+    
+    
+    
+    
+    
     pub fn try_io<R>(
         &self,
         interest: Interest,
         f: impl FnOnce() -> io::Result<R>,
     ) -> io::Result<R> {
         self.io.registration().try_io(interest, f)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn async_io<R>(
+        &self,
+        interest: Interest,
+        f: impl FnMut() -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.io.registration().async_io(interest, f).await
     }
 }
 
@@ -1457,17 +1720,11 @@ impl AsRawHandle for NamedPipeClient {
     }
 }
 
-
-macro_rules! bool_flag {
-    ($f:expr, $t:expr, $flag:expr) => {{
-        let current = $f;
-
-        if $t {
-            $f = current | $flag;
-        } else {
-            $f = current & !$flag;
-        };
-    }};
+#[cfg(not(tokio_no_as_fd))]
+impl AsHandle for NamedPipeClient {
+    fn as_handle(&self) -> BorrowedHandle<'_> {
+        unsafe { BorrowedHandle::borrow_raw(self.as_raw_handle()) }
+    }
 }
 
 
@@ -1477,12 +1734,21 @@ macro_rules! bool_flag {
 
 #[derive(Debug, Clone)]
 pub struct ServerOptions {
-    open_mode: DWORD,
-    pipe_mode: DWORD,
-    max_instances: DWORD,
-    out_buffer_size: DWORD,
-    in_buffer_size: DWORD,
-    default_timeout: DWORD,
+    
+    access_inbound: bool,
+    access_outbound: bool,
+    first_pipe_instance: bool,
+    write_dac: bool,
+    write_owner: bool,
+    access_system_security: bool,
+    
+    pipe_mode: PipeMode,
+    reject_remote_clients: bool,
+    
+    max_instances: u32,
+    out_buffer_size: u32,
+    in_buffer_size: u32,
+    default_timeout: u32,
 }
 
 impl ServerOptions {
@@ -1499,9 +1765,15 @@ impl ServerOptions {
     
     pub fn new() -> ServerOptions {
         ServerOptions {
-            open_mode: winbase::PIPE_ACCESS_DUPLEX | winbase::FILE_FLAG_OVERLAPPED,
-            pipe_mode: winbase::PIPE_TYPE_BYTE | winbase::PIPE_REJECT_REMOTE_CLIENTS,
-            max_instances: winbase::PIPE_UNLIMITED_INSTANCES,
+            access_inbound: true,
+            access_outbound: true,
+            first_pipe_instance: false,
+            write_dac: false,
+            write_owner: false,
+            access_system_security: false,
+            pipe_mode: PipeMode::Byte,
+            reject_remote_clients: true,
+            max_instances: windows_sys::PIPE_UNLIMITED_INSTANCES,
             out_buffer_size: 65536,
             in_buffer_size: 65536,
             default_timeout: 0,
@@ -1517,11 +1789,7 @@ impl ServerOptions {
     
     
     pub fn pipe_mode(&mut self, pipe_mode: PipeMode) -> &mut Self {
-        self.pipe_mode = match pipe_mode {
-            PipeMode::Byte => winbase::PIPE_TYPE_BYTE,
-            PipeMode::Message => winbase::PIPE_TYPE_MESSAGE,
-        };
-
+        self.pipe_mode = pipe_mode;
         self
     }
 
@@ -1617,7 +1885,7 @@ impl ServerOptions {
     
     
     pub fn access_inbound(&mut self, allowed: bool) -> &mut Self {
-        bool_flag!(self.open_mode, allowed, winbase::PIPE_ACCESS_INBOUND);
+        self.access_inbound = allowed;
         self
     }
 
@@ -1715,7 +1983,7 @@ impl ServerOptions {
     
     
     pub fn access_outbound(&mut self, allowed: bool) -> &mut Self {
-        bool_flag!(self.open_mode, allowed, winbase::PIPE_ACCESS_OUTBOUND);
+        self.access_outbound = allowed;
         self
     }
 
@@ -1783,11 +2051,109 @@ impl ServerOptions {
     
     
     pub fn first_pipe_instance(&mut self, first: bool) -> &mut Self {
-        bool_flag!(
-            self.open_mode,
-            first,
-            winbase::FILE_FLAG_FIRST_PIPE_INSTANCE
-        );
+        self.first_pipe_instance = first;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn write_dac(&mut self, requested: bool) -> &mut Self {
+        self.write_dac = requested;
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn write_owner(&mut self, requested: bool) -> &mut Self {
+        self.write_owner = requested;
+        self
+    }
+
+    
+    
+    
+    
+    
+    pub fn access_system_security(&mut self, requested: bool) -> &mut Self {
+        self.access_system_security = requested;
         self
     }
 
@@ -1798,7 +2164,7 @@ impl ServerOptions {
     
     
     pub fn reject_remote_clients(&mut self, reject: bool) -> &mut Self {
-        bool_flag!(self.pipe_mode, reject, winbase::PIPE_REJECT_REMOTE_CLIENTS);
+        self.reject_remote_clients = reject;
         self
     }
 
@@ -1856,9 +2222,10 @@ impl ServerOptions {
     
     
     
+    #[track_caller]
     pub fn max_instances(&mut self, instances: usize) -> &mut Self {
         assert!(instances < 255, "cannot specify more than 254 instances");
-        self.max_instances = instances as DWORD;
+        self.max_instances = instances as u32;
         self
     }
 
@@ -1868,7 +2235,7 @@ impl ServerOptions {
     
     
     pub fn out_buffer_size(&mut self, buffer: u32) -> &mut Self {
-        self.out_buffer_size = buffer as DWORD;
+        self.out_buffer_size = buffer;
         self
     }
 
@@ -1878,7 +2245,7 @@ impl ServerOptions {
     
     
     pub fn in_buffer_size(&mut self, buffer: u32) -> &mut Self {
-        self.in_buffer_size = buffer as DWORD;
+        self.in_buffer_size = buffer;
         self
     }
 
@@ -1943,10 +2310,46 @@ impl ServerOptions {
     ) -> io::Result<NamedPipeServer> {
         let addr = encode_addr(addr);
 
-        let h = namedpipeapi::CreateNamedPipeW(
+        let pipe_mode = {
+            let mut mode = if matches!(self.pipe_mode, PipeMode::Message) {
+                windows_sys::PIPE_TYPE_MESSAGE | windows_sys::PIPE_READMODE_MESSAGE
+            } else {
+                windows_sys::PIPE_TYPE_BYTE | windows_sys::PIPE_READMODE_BYTE
+            };
+            if self.reject_remote_clients {
+                mode |= windows_sys::PIPE_REJECT_REMOTE_CLIENTS;
+            } else {
+                mode |= windows_sys::PIPE_ACCEPT_REMOTE_CLIENTS;
+            }
+            mode
+        };
+        let open_mode = {
+            let mut mode = windows_sys::FILE_FLAG_OVERLAPPED;
+            if self.access_inbound {
+                mode |= windows_sys::PIPE_ACCESS_INBOUND;
+            }
+            if self.access_outbound {
+                mode |= windows_sys::PIPE_ACCESS_OUTBOUND;
+            }
+            if self.first_pipe_instance {
+                mode |= windows_sys::FILE_FLAG_FIRST_PIPE_INSTANCE;
+            }
+            if self.write_dac {
+                mode |= windows_sys::WRITE_DAC;
+            }
+            if self.write_owner {
+                mode |= windows_sys::WRITE_OWNER;
+            }
+            if self.access_system_security {
+                mode |= windows_sys::ACCESS_SYSTEM_SECURITY;
+            }
+            mode
+        };
+
+        let h = windows_sys::CreateNamedPipeW(
             addr.as_ptr(),
-            self.open_mode,
-            self.pipe_mode,
+            open_mode,
+            pipe_mode,
             self.max_instances,
             self.out_buffer_size,
             self.in_buffer_size,
@@ -1954,11 +2357,11 @@ impl ServerOptions {
             attrs as *mut _,
         );
 
-        if h == handleapi::INVALID_HANDLE_VALUE {
+        if h == windows_sys::INVALID_HANDLE_VALUE {
             return Err(io::Error::last_os_error());
         }
 
-        NamedPipeServer::from_raw_handle(h)
+        NamedPipeServer::from_raw_handle(h as _)
     }
 }
 
@@ -1968,8 +2371,10 @@ impl ServerOptions {
 
 #[derive(Debug, Clone)]
 pub struct ClientOptions {
-    desired_access: DWORD,
-    security_qos_flags: DWORD,
+    generic_read: bool,
+    generic_write: bool,
+    security_qos_flags: u32,
+    pipe_mode: PipeMode,
 }
 
 impl ClientOptions {
@@ -1988,8 +2393,11 @@ impl ClientOptions {
     
     pub fn new() -> Self {
         Self {
-            desired_access: winnt::GENERIC_READ | winnt::GENERIC_WRITE,
-            security_qos_flags: winbase::SECURITY_IDENTIFICATION | winbase::SECURITY_SQOS_PRESENT,
+            generic_read: true,
+            generic_write: true,
+            security_qos_flags: windows_sys::SECURITY_IDENTIFICATION
+                | windows_sys::SECURITY_SQOS_PRESENT,
+            pipe_mode: PipeMode::Byte,
         }
     }
 
@@ -2000,7 +2408,7 @@ impl ClientOptions {
     
     
     pub fn read(&mut self, allowed: bool) -> &mut Self {
-        bool_flag!(self.desired_access, allowed, winnt::GENERIC_READ);
+        self.generic_read = allowed;
         self
     }
 
@@ -2011,7 +2419,7 @@ impl ClientOptions {
     
     
     pub fn write(&mut self, allowed: bool) -> &mut Self {
-        bool_flag!(self.desired_access, allowed, winnt::GENERIC_WRITE);
+        self.generic_write = allowed;
         self
     }
 
@@ -2038,11 +2446,19 @@ impl ClientOptions {
     
     pub fn security_qos_flags(&mut self, flags: u32) -> &mut Self {
         
-        self.security_qos_flags = flags | winbase::SECURITY_SQOS_PRESENT;
+        self.security_qos_flags = flags | windows_sys::SECURITY_SQOS_PRESENT;
         self
     }
 
     
+    
+    
+    
+    pub fn pipe_mode(&mut self, pipe_mode: PipeMode) -> &mut Self {
+        self.pipe_mode = pipe_mode;
+        self
+    }
+
     
     
     
@@ -2121,29 +2537,50 @@ impl ClientOptions {
     ) -> io::Result<NamedPipeClient> {
         let addr = encode_addr(addr);
 
+        let desired_access = {
+            let mut access = 0;
+            if self.generic_read {
+                access |= windows_sys::GENERIC_READ;
+            }
+            if self.generic_write {
+                access |= windows_sys::GENERIC_WRITE;
+            }
+            access
+        };
+
         
         
         
         
-        let h = fileapi::CreateFileW(
+        let h = windows_sys::CreateFileW(
             addr.as_ptr(),
-            self.desired_access,
+            desired_access,
             0,
             attrs as *mut _,
-            fileapi::OPEN_EXISTING,
+            windows_sys::OPEN_EXISTING,
             self.get_flags(),
-            ptr::null_mut(),
+            0,
         );
 
-        if h == handleapi::INVALID_HANDLE_VALUE {
+        if h == windows_sys::INVALID_HANDLE_VALUE {
             return Err(io::Error::last_os_error());
         }
 
-        NamedPipeClient::from_raw_handle(h)
+        if matches!(self.pipe_mode, PipeMode::Message) {
+            let mode = windows_sys::PIPE_READMODE_MESSAGE;
+            let result =
+                windows_sys::SetNamedPipeHandleState(h, &mode, ptr::null_mut(), ptr::null_mut());
+
+            if result == 0 {
+                return Err(io::Error::last_os_error());
+            }
+        }
+
+        NamedPipeClient::from_raw_handle(h as _)
     }
 
     fn get_flags(&self) -> u32 {
-        self.security_qos_flags | winbase::FILE_FLAG_OVERLAPPED
+        self.security_qos_flags | windows_sys::FILE_FLAG_OVERLAPPED
     }
 }
 
@@ -2157,7 +2594,10 @@ pub enum PipeMode {
     
     
     
+    
+    
     Byte,
+    
     
     
     
@@ -2176,7 +2616,11 @@ pub enum PipeEnd {
     
     
     
+    
+    
     Client,
+    
+    
     
     
     
@@ -2217,26 +2661,26 @@ unsafe fn named_pipe_info(handle: RawHandle) -> io::Result<PipeInfo> {
     let mut in_buffer_size = 0;
     let mut max_instances = 0;
 
-    let result = namedpipeapi::GetNamedPipeInfo(
-        handle,
+    let result = windows_sys::GetNamedPipeInfo(
+        handle as _,
         &mut flags,
         &mut out_buffer_size,
         &mut in_buffer_size,
         &mut max_instances,
     );
 
-    if result == FALSE {
+    if result == 0 {
         return Err(io::Error::last_os_error());
     }
 
     let mut end = PipeEnd::Client;
     let mut mode = PipeMode::Byte;
 
-    if flags & winbase::PIPE_SERVER_END != 0 {
+    if flags & windows_sys::PIPE_SERVER_END != 0 {
         end = PipeEnd::Server;
     }
 
-    if flags & winbase::PIPE_TYPE_MESSAGE != 0 {
+    if flags & windows_sys::PIPE_TYPE_MESSAGE != 0 {
         mode = PipeMode::Message;
     }
 

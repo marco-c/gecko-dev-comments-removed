@@ -37,7 +37,7 @@ where
         
         
         
-        crate::coop::stop();
+        crate::runtime::coop::stop();
 
         Poll::Ready(func())
     }

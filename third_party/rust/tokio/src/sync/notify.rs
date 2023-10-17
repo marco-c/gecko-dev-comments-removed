@@ -5,20 +5,106 @@
 
 #![cfg_attr(not(feature = "sync"), allow(unreachable_pub, dead_code))]
 
+use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::Mutex;
-use crate::util::linked_list::{self, LinkedList};
+use crate::util::linked_list::{self, GuardedLinkedList, LinkedList};
 use crate::util::WakeList;
 
-use std::cell::UnsafeCell;
 use std::future::Future;
 use std::marker::PhantomPinned;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 use std::pin::Pin;
 use std::ptr::NonNull;
-use std::sync::atomic::Ordering::SeqCst;
+use std::sync::atomic::Ordering::{self, Acquire, Relaxed, Release, SeqCst};
 use std::task::{Context, Poll, Waker};
 
 type WaitList = LinkedList<Waiter, <Waiter as linked_list::Link>::Target>;
+type GuardedWaitList = GuardedLinkedList<Waiter, <Waiter as linked_list::Link>::Target>;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -117,33 +203,160 @@ pub struct Notify {
     
     
     
+    
+    
+    
+    
+    
+    
     state: AtomicUsize,
     waiters: Mutex<WaitList>,
 }
 
-#[derive(Debug, Clone, Copy)]
-enum NotificationType {
-    
-    AllWaiters,
-    
-    OneWaiter,
-}
-
 #[derive(Debug)]
-#[repr(C)] 
 struct Waiter {
     
     pointers: linked_list::Pointers<Waiter>,
 
     
-    waker: Option<Waker>,
+    
+    
+    waker: UnsafeCell<Option<Waker>>,
 
     
-    notified: Option<NotificationType>,
+    
+    
+    
+    notification: AtomicNotification,
 
     
     _p: PhantomPinned,
 }
+
+impl Waiter {
+    fn new() -> Waiter {
+        Waiter {
+            pointers: linked_list::Pointers::new(),
+            waker: UnsafeCell::new(None),
+            notification: AtomicNotification::none(),
+            _p: PhantomPinned,
+        }
+    }
+}
+
+generate_addr_of_methods! {
+    impl<> Waiter {
+        unsafe fn addr_of_pointers(self: NonNull<Self>) -> NonNull<linked_list::Pointers<Waiter>> {
+            &self.pointers
+        }
+    }
+}
+
+
+const NOTIFICATION_NONE: usize = 0;
+
+
+const NOTIFICATION_ONE: usize = 1;
+
+
+const NOTIFICATION_ALL: usize = 2;
+
+
+
+
+#[derive(Debug)]
+struct AtomicNotification(AtomicUsize);
+
+impl AtomicNotification {
+    fn none() -> Self {
+        AtomicNotification(AtomicUsize::new(NOTIFICATION_NONE))
+    }
+
+    
+    
+    fn store_release(&self, notification: Notification) {
+        self.0.store(notification as usize, Release);
+    }
+
+    fn load(&self, ordering: Ordering) -> Option<Notification> {
+        match self.0.load(ordering) {
+            NOTIFICATION_NONE => None,
+            NOTIFICATION_ONE => Some(Notification::One),
+            NOTIFICATION_ALL => Some(Notification::All),
+            _ => unreachable!(),
+        }
+    }
+
+    
+    
+    
+    
+    fn clear(&self) {
+        self.0.store(NOTIFICATION_NONE, Relaxed);
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+#[repr(usize)]
+enum Notification {
+    One = NOTIFICATION_ONE,
+    All = NOTIFICATION_ALL,
+}
+
+
+
+
+struct NotifyWaitersList<'a> {
+    list: GuardedWaitList,
+    is_empty: bool,
+    notify: &'a Notify,
+}
+
+impl<'a> NotifyWaitersList<'a> {
+    fn new(
+        unguarded_list: WaitList,
+        guard: Pin<&'a Waiter>,
+        notify: &'a Notify,
+    ) -> NotifyWaitersList<'a> {
+        let guard_ptr = NonNull::from(guard.get_ref());
+        let list = unguarded_list.into_guarded(guard_ptr);
+        NotifyWaitersList {
+            list,
+            is_empty: false,
+            notify,
+        }
+    }
+
+    
+    
+    fn pop_back_locked(&mut self, _waiters: &mut WaitList) -> Option<NonNull<Waiter>> {
+        let result = self.list.pop_back();
+        if result.is_none() {
+            
+            
+            self.is_empty = true;
+        }
+        result
+    }
+}
+
+impl Drop for NotifyWaitersList<'_> {
+    fn drop(&mut self) {
+        
+        
+        if !self.is_empty {
+            let _lock_guard = self.notify.waiters.lock();
+            while let Some(waiter) = self.list.pop_back() {
+                
+                let waiter = unsafe { waiter.as_ref() };
+                waiter.notification.store_release(Notification::All);
+            }
+        }
+    }
+}
+
+
+
 
 
 #[derive(Debug)]
@@ -155,7 +368,10 @@ pub struct Notified<'a> {
     state: State,
 
     
-    waiter: UnsafeCell<Waiter>,
+    notify_waiters_calls: usize,
+
+    
+    waiter: Waiter,
 }
 
 unsafe impl<'a> Send for Notified<'a> {}
@@ -163,7 +379,7 @@ unsafe impl<'a> Sync for Notified<'a> {}
 
 #[derive(Debug)]
 enum State {
-    Init(usize),
+    Init,
     Waiting,
     Done,
 }
@@ -277,19 +493,24 @@ impl Notify {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn notified(&self) -> Notified<'_> {
         
         
         let state = self.state.load(SeqCst);
         Notified {
             notify: self,
-            state: State::Init(state >> NOTIFY_WAITERS_SHIFT),
-            waiter: UnsafeCell::new(Waiter {
-                pointers: linked_list::Pointers::new(),
-                waker: None,
-                notified: None,
-                _p: PhantomPinned,
-            }),
+            state: State::Init,
+            notify_waiters_calls: get_num_notify_waiters_calls(state),
+            waiter: Waiter::new(),
         }
     }
 
@@ -396,16 +617,13 @@ impl Notify {
     
     
     pub fn notify_waiters(&self) {
-        let mut wakers = WakeList::new();
-
-        
         let mut waiters = self.waiters.lock();
 
         
         
         let curr = self.state.load(SeqCst);
 
-        if let EMPTY | NOTIFIED = get_state(curr) {
+        if matches!(get_state(curr), EMPTY | NOTIFIED) {
             
             
             atomic_inc_num_notify_waiters_calls(&self.state);
@@ -414,21 +632,41 @@ impl Notify {
 
         
         
+        let new_state = set_state(inc_num_notify_waiters_calls(curr), EMPTY);
+        self.state.store(new_state, SeqCst);
+
         
+        
+        let guard = Waiter::new();
+        pin!(guard);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        let mut list = NotifyWaitersList::new(std::mem::take(&mut *waiters), guard.as_ref(), self);
+
+        let mut wakers = WakeList::new();
         'outer: loop {
             while wakers.can_push() {
-                match waiters.pop_back() {
-                    Some(mut waiter) => {
+                match list.pop_back_locked(&mut waiters) {
+                    Some(waiter) => {
                         
-                        let waiter = unsafe { waiter.as_mut() };
+                        let waiter = unsafe { waiter.as_ref() };
 
-                        assert!(waiter.notified.is_none());
-
-                        waiter.notified = Some(NotificationType::AllWaiters);
-
-                        if let Some(waker) = waiter.waker.take() {
+                        
+                        if let Some(waker) =
+                            unsafe { waiter.waker.with_mut(|waker| (*waker).take()) }
+                        {
                             wakers.push(waker);
                         }
+
+                        
+                        waiter.notification.store_release(Notification::All);
                     }
                     None => {
                         break 'outer;
@@ -436,19 +674,16 @@ impl Notify {
                 }
             }
 
+            
             drop(waiters);
 
+            
+            
             wakers.wake_all();
 
             
             waiters = self.waiters.lock();
         }
-
-        
-        
-        
-        let new = set_state(inc_num_notify_waiters_calls(curr), EMPTY);
-        self.state.store(new, SeqCst);
 
         
         drop(waiters);
@@ -462,6 +697,9 @@ impl Default for Notify {
         Notify::new()
     }
 }
+
+impl UnwindSafe for Notify {}
+impl RefUnwindSafe for Notify {}
 
 fn notify_locked(waiters: &mut WaitList, state: &AtomicUsize, curr: usize) -> Option<Waker> {
     loop {
@@ -485,15 +723,16 @@ fn notify_locked(waiters: &mut WaitList, state: &AtomicUsize, curr: usize) -> Op
                 
                 
                 
-                let mut waiter = waiters.pop_back().unwrap();
+                let waiter = waiters.pop_back().unwrap();
 
                 
-                let waiter = unsafe { waiter.as_mut() };
+                let waiter = unsafe { waiter.as_ref() };
 
-                assert!(waiter.notified.is_none());
+                
+                let waker = unsafe { waiter.waker.with_mut(|waker| (*waker).take()) };
 
-                waiter.notified = Some(NotificationType::OneWaiter);
-                let waker = waiter.waker.take();
+                
+                waiter.notification.store_release(Notification::One);
 
                 if waiters.is_empty() {
                     
@@ -515,30 +754,140 @@ fn notify_locked(waiters: &mut WaitList, state: &AtomicUsize, curr: usize) -> Op
 impl Notified<'_> {
     
     
-    fn project(self: Pin<&mut Self>) -> (&Notify, &mut State, &UnsafeCell<Waiter>) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn enable(self: Pin<&mut Self>) -> bool {
+        self.poll_notified(None).is_ready()
+    }
+
+    
+    
+    fn project(self: Pin<&mut Self>) -> (&Notify, &mut State, &usize, &Waiter) {
         unsafe {
             
 
             is_unpin::<&Notify>();
-            is_unpin::<AtomicUsize>();
+            is_unpin::<State>();
+            is_unpin::<usize>();
 
             let me = self.get_unchecked_mut();
-            (me.notify, &mut me.state, &me.waiter)
+            (
+                me.notify,
+                &mut me.state,
+                &me.notify_waiters_calls,
+                &me.waiter,
+            )
         }
     }
-}
 
-impl Future for Notified<'_> {
-    type Output = ();
-
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+    fn poll_notified(self: Pin<&mut Self>, waker: Option<&Waker>) -> Poll<()> {
         use State::*;
 
-        let (notify, state, waiter) = self.project();
+        let (notify, state, notify_waiters_calls, waiter) = self.project();
 
-        loop {
+        'outer_loop: loop {
             match *state {
-                Init(initial_notify_waiters_calls) => {
+                Init => {
                     let curr = notify.state.load(SeqCst);
 
                     
@@ -552,12 +901,12 @@ impl Future for Notified<'_> {
                     if res.is_ok() {
                         
                         *state = Done;
-                        return Poll::Ready(());
+                        continue 'outer_loop;
                     }
 
                     
                     
-                    let waker = cx.waker().clone();
+                    let waker = waker.cloned();
 
                     
                     
@@ -568,9 +917,9 @@ impl Future for Notified<'_> {
 
                     
                     
-                    if get_num_notify_waiters_calls(curr) != initial_notify_waiters_calls {
+                    if get_num_notify_waiters_calls(curr) != *notify_waiters_calls {
                         *state = Done;
-                        return Poll::Ready(());
+                        continue 'outer_loop;
                     }
 
                     
@@ -606,7 +955,7 @@ impl Future for Notified<'_> {
                                     Ok(_) => {
                                         
                                         *state = Done;
-                                        return Poll::Ready(());
+                                        continue 'outer_loop;
                                     }
                                     Err(actual) => {
                                         assert_eq!(get_state(actual), EMPTY);
@@ -618,43 +967,108 @@ impl Future for Notified<'_> {
                         }
                     }
 
+                    let mut old_waker = None;
+                    if waker.is_some() {
+                        
+                        
+                        
+                        
+                        unsafe {
+                            old_waker =
+                                waiter.waker.with_mut(|v| std::mem::replace(&mut *v, waker));
+                        }
+                    }
+
                     
-                    unsafe {
-                        (*waiter.get()).waker = Some(waker);
+                    waiters.push_front(NonNull::from(waiter));
+
+                    *state = Waiting;
+
+                    drop(waiters);
+                    drop(old_waker);
+
+                    return Poll::Pending;
+                }
+                Waiting => {
+                    #[cfg(tokio_taskdump)]
+                    if let Some(waker) = waker {
+                        let mut ctx = Context::from_waker(waker);
+                        ready!(crate::trace::trace_leaf(&mut ctx));
+                    }
+
+                    if waiter.notification.load(Acquire).is_some() {
+                        
+                        
+                        drop(unsafe { waiter.waker.with_mut(|waker| (*waker).take()) });
+
+                        waiter.notification.clear();
+                        *state = Done;
+                        return Poll::Ready(());
                     }
 
                     
                     
                     
-                    waiters.push_front(unsafe { NonNull::new_unchecked(waiter.get()) });
 
-                    *state = Waiting;
+                    let mut old_waker = None;
+                    let mut waiters = notify.waiters.lock();
 
-                    return Poll::Pending;
-                }
-                Waiting => {
                     
                     
                     
-                    
-
-                    let waiters = notify.waiters.lock();
-
-                    
-                    let w = unsafe { &mut *waiter.get() };
-
-                    if w.notified.is_some() {
+                    if waiter.notification.load(Relaxed).is_some() {
                         
                         
-                        w.waker = None;
-                        w.notified = None;
+                        old_waker = unsafe { waiter.waker.with_mut(|waker| (*waker).take()) };
+
+                        waiter.notification.clear();
+
+                        
+                        drop(waiters);
+                        drop(old_waker);
+
+                        *state = Done;
+                        return Poll::Ready(());
+                    }
+
+                    
+                    let curr = notify.state.load(SeqCst);
+
+                    if get_num_notify_waiters_calls(curr) != *notify_waiters_calls {
+                        
+                        
+                        
+                        
+                        
+                        
+
+                        
+                        old_waker = unsafe { waiter.waker.with_mut(|waker| (*waker).take()) };
+
+                        
+                        
+                        unsafe { waiters.remove(NonNull::from(waiter)) };
 
                         *state = Done;
                     } else {
                         
-                        if !w.waker.as_ref().unwrap().will_wake(cx.waker()) {
-                            w.waker = Some(cx.waker().clone());
+                        unsafe {
+                            waiter.waker.with_mut(|v| {
+                                if let Some(waker) = waker {
+                                    let should_update = match &*v {
+                                        Some(current_waker) => !current_waker.will_wake(waker),
+                                        None => true,
+                                    };
+                                    if should_update {
+                                        old_waker = std::mem::replace(&mut *v, Some(waker.clone()));
+                                    }
+                                }
+                            });
                         }
+
+                        
+                        drop(waiters);
+                        drop(old_waker);
 
                         return Poll::Pending;
                     }
@@ -665,12 +1079,28 @@ impl Future for Notified<'_> {
                     
                     
                     drop(waiters);
+
+                    
+                    drop(old_waker);
                 }
                 Done => {
+                    #[cfg(tokio_taskdump)]
+                    if let Some(waker) = waker {
+                        let mut ctx = Context::from_waker(waker);
+                        ready!(crate::trace::trace_leaf(&mut ctx));
+                    }
                     return Poll::Ready(());
                 }
             }
         }
+    }
+}
+
+impl Future for Notified<'_> {
+    type Output = ();
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        self.poll_notified(Some(cx.waker()))
     }
 }
 
@@ -679,35 +1109,35 @@ impl Drop for Notified<'_> {
         use State::*;
 
         
-        let (notify, state, waiter) = unsafe { Pin::new_unchecked(self).project() };
+        let (notify, state, _, waiter) = unsafe { Pin::new_unchecked(self).project() };
 
         
         
         
-        if let Waiting = *state {
+        if matches!(*state, Waiting) {
             let mut waiters = notify.waiters.lock();
             let mut notify_state = notify.state.load(SeqCst);
 
             
             
-            
-            
-            unsafe { waiters.remove(NonNull::new_unchecked(waiter.get())) };
+            let notification = waiter.notification.load(Relaxed);
 
-            if waiters.is_empty() {
-                if let WAITING = get_state(notify_state) {
-                    notify_state = set_state(notify_state, EMPTY);
-                    notify.state.store(notify_state, SeqCst);
-                }
+            
+            
+            
+            
+            
+            unsafe { waiters.remove(NonNull::from(waiter)) };
+
+            if waiters.is_empty() && get_state(notify_state) == WAITING {
+                notify_state = set_state(notify_state, EMPTY);
+                notify.state.store(notify_state, SeqCst);
             }
 
             
             
             
-            
-            
-            
-            if let Some(NotificationType::OneWaiter) = unsafe { (*waiter.get()).notified } {
+            if notification == Some(Notification::One) {
                 if let Some(waker) = notify_locked(&mut waiters, &notify.state, notify_state) {
                     drop(waiters);
                     waker.wake();
@@ -733,7 +1163,7 @@ unsafe impl linked_list::Link for Waiter {
     }
 
     unsafe fn pointers(target: NonNull<Waiter>) -> NonNull<linked_list::Pointers<Waiter>> {
-        target.cast()
+        Waiter::addr_of_pointers(target)
     }
 }
 

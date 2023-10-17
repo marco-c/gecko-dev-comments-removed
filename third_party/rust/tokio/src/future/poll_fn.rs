@@ -8,11 +8,21 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 pub struct PollFn<F> {
     f: F,
 }
-
-impl<F> Unpin for PollFn<F> {}
 
 
 pub fn poll_fn<T, F>(f: F) -> PollFn<F>
@@ -34,7 +44,17 @@ where
 {
     type Output = T;
 
-    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
-        (&mut self.f)(cx)
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let me = unsafe { Pin::into_inner_unchecked(self) };
+        (me.f)(cx)
     }
 }

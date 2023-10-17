@@ -1,8 +1,8 @@
 use crate::future::Future;
-use crate::runtime::task::core::{Cell, Core, CoreStage, Header, Trailer};
-use crate::runtime::task::state::Snapshot;
+use crate::runtime::task::core::{Cell, Core, Header, Trailer};
+use crate::runtime::task::state::{Snapshot, State};
 use crate::runtime::task::waker::waker_ref;
-use crate::runtime::task::{JoinError, Notified, Schedule, Task};
+use crate::runtime::task::{JoinError, Notified, RawTask, Schedule, Task};
 
 use std::mem;
 use std::mem::ManuallyDrop;
@@ -31,7 +31,11 @@ where
     }
 
     fn header(&self) -> &Header {
-        unsafe { &self.cell.as_ref().header }
+        unsafe { &*self.header_ptr().as_ptr() }
+    }
+
+    fn state(&self) -> &State {
+        &self.header().state
     }
 
     fn trailer(&self) -> &Trailer {
@@ -43,11 +47,102 @@ where
     }
 }
 
+
+
+
+impl RawTask {
+    pub(super) fn drop_reference(self) {
+        if self.state().ref_dec() {
+            self.dealloc();
+        }
+    }
+
+    
+    
+    
+    
+    
+    pub(super) fn wake_by_val(&self) {
+        use super::state::TransitionToNotifiedByVal;
+
+        match self.state().transition_to_notified_by_val() {
+            TransitionToNotifiedByVal::Submit => {
+                
+                
+                
+                
+                
+                
+                
+                self.schedule();
+
+                
+                
+                self.drop_reference();
+            }
+            TransitionToNotifiedByVal::Dealloc => {
+                self.dealloc();
+            }
+            TransitionToNotifiedByVal::DoNothing => {}
+        }
+    }
+
+    
+    
+    
+    pub(super) fn wake_by_ref(&self) {
+        use super::state::TransitionToNotifiedByRef;
+
+        match self.state().transition_to_notified_by_ref() {
+            TransitionToNotifiedByRef::Submit => {
+                
+                
+                
+                
+                self.schedule();
+            }
+            TransitionToNotifiedByRef::DoNothing => {}
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub(super) fn remote_abort(&self) {
+        if self.state().transition_to_notified_and_cancel() {
+            
+            
+            
+            
+            
+            
+            self.schedule();
+        }
+    }
+
+    
+    
+    
+    pub(super) fn try_set_join_waker(&self, waker: &Waker) -> bool {
+        can_read_output(self.header(), self.trailer(), waker)
+    }
+}
+
 impl<T, S> Harness<T, S>
 where
     T: Future,
     S: Schedule,
 {
+    pub(super) fn drop_reference(self) {
+        if self.state().ref_dec() {
+            self.dealloc();
+        }
+    }
+
     
     
     
@@ -95,33 +190,32 @@ where
     fn poll_inner(&self) -> PollFuture {
         use super::state::{TransitionToIdle, TransitionToRunning};
 
-        match self.header().state.transition_to_running() {
+        match self.state().transition_to_running() {
             TransitionToRunning::Success => {
                 let header_ptr = self.header_ptr();
                 let waker_ref = waker_ref::<T, S>(&header_ptr);
-                let cx = Context::from_waker(&*waker_ref);
-                let res = poll_future(&self.core().stage, cx);
+                let cx = Context::from_waker(&waker_ref);
+                let res = poll_future(self.core(), cx);
 
                 if res == Poll::Ready(()) {
                     
                     return PollFuture::Complete;
                 }
 
-                match self.header().state.transition_to_idle() {
+                match self.state().transition_to_idle() {
                     TransitionToIdle::Ok => PollFuture::Done,
                     TransitionToIdle::OkNotified => PollFuture::Notified,
                     TransitionToIdle::OkDealloc => PollFuture::Dealloc,
                     TransitionToIdle::Cancelled => {
                         
                         
-
-                        cancel_task(&self.core().stage);
+                        cancel_task(self.core());
                         PollFuture::Complete
                     }
                 }
             }
             TransitionToRunning::Cancelled => {
-                cancel_task(&self.core().stage);
+                cancel_task(self.core());
                 PollFuture::Complete
             }
             TransitionToRunning::Failed => PollFuture::Done,
@@ -136,7 +230,7 @@ where
     
     
     pub(super) fn shutdown(self) {
-        if !self.header().state.transition_to_shutdown() {
+        if !self.state().transition_to_shutdown() {
             
             self.drop_reference();
             return;
@@ -144,7 +238,7 @@ where
 
         
         
-        cancel_task(&self.core().stage);
+        cancel_task(self.core());
         self.complete();
     }
 
@@ -155,6 +249,19 @@ where
         
         self.core().stage.with_mut(drop);
 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         unsafe {
             drop(Box::from_raw(self.cell.as_ptr()));
         }
@@ -165,21 +272,14 @@ where
     
     pub(super) fn try_read_output(self, dst: &mut Poll<super::Result<T::Output>>, waker: &Waker) {
         if can_read_output(self.header(), self.trailer(), waker) {
-            *dst = Poll::Ready(self.core().stage.take_output());
+            *dst = Poll::Ready(self.core().take_output());
         }
-    }
-
-    
-    
-    
-    pub(super) fn try_set_join_waker(self, waker: &Waker) -> bool {
-        can_read_output(self.header(), self.trailer(), waker)
     }
 
     pub(super) fn drop_join_handle_slow(self) {
         
         
-        if self.header().state.unset_join_interested().is_err() {
+        if self.state().unset_join_interested().is_err() {
             
             
             
@@ -190,98 +290,12 @@ where
             
             
             let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-                self.core().stage.drop_future_or_output();
+                self.core().drop_future_or_output();
             }));
         }
 
         
         self.drop_reference();
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    pub(super) fn remote_abort(self) {
-        if self.header().state.transition_to_notified_and_cancel() {
-            
-            
-            
-            
-            
-            
-            self.core()
-                .scheduler
-                .schedule(Notified(self.get_new_task()));
-        }
-    }
-
-    
-
-    
-    
-    
-    
-    
-    pub(super) fn wake_by_val(self) {
-        use super::state::TransitionToNotifiedByVal;
-
-        match self.header().state.transition_to_notified_by_val() {
-            TransitionToNotifiedByVal::Submit => {
-                
-                
-                
-                
-                
-                
-                
-                self.core()
-                    .scheduler
-                    .schedule(Notified(self.get_new_task()));
-
-                
-                
-                self.drop_reference();
-            }
-            TransitionToNotifiedByVal::Dealloc => {
-                self.dealloc();
-            }
-            TransitionToNotifiedByVal::DoNothing => {}
-        }
-    }
-
-    
-    
-    
-    pub(super) fn wake_by_ref(&self) {
-        use super::state::TransitionToNotifiedByRef;
-
-        match self.header().state.transition_to_notified_by_ref() {
-            TransitionToNotifiedByRef::Submit => {
-                
-                
-                
-                
-                self.core()
-                    .scheduler
-                    .schedule(Notified(self.get_new_task()));
-            }
-            TransitionToNotifiedByRef::DoNothing => {}
-        }
-    }
-
-    pub(super) fn drop_reference(self) {
-        if self.header().state.ref_dec() {
-            self.dealloc();
-        }
-    }
-
-    #[cfg(all(tokio_unstable, feature = "tracing"))]
-    pub(super) fn id(&self) -> Option<&tracing::Id> {
-        self.header().id.as_ref()
     }
 
     
@@ -291,7 +305,7 @@ where
         
         
 
-        let snapshot = self.header().state.transition_to_complete();
+        let snapshot = self.state().transition_to_complete();
 
         
         
@@ -300,8 +314,9 @@ where
                 
                 
                 
-                self.core().stage.drop_future_or_output();
-            } else if snapshot.has_join_waker() {
+                self.core().drop_future_or_output();
+            } else if snapshot.is_join_waker_set() {
+                
                 
                 
                 self.trailer().wake_join();
@@ -311,7 +326,7 @@ where
         
         let num_release = self.release();
 
-        if self.header().state.transition_to_terminal(num_release) {
+        if self.state().transition_to_terminal(num_release) {
             self.dealloc();
         }
     }
@@ -354,28 +369,19 @@ fn can_read_output(header: &Header, trailer: &Trailer, waker: &Waker) -> bool {
 
     if !snapshot.is_complete() {
         
-        let res = if snapshot.has_join_waker() {
-            
-            
-            
-            let will_wake = unsafe {
-                
-                
-                trailer.will_wake(waker)
-            };
+        
 
-            if will_wake {
-                
-                
+        let res = if snapshot.is_join_waker_set() {
+            
+            
+
+            
+            
+            
+            if unsafe { trailer.will_wake(waker) } {
                 return false;
             }
 
-            
-            
-            
-            
-            
-            
             
             
             header
@@ -383,6 +389,9 @@ fn can_read_output(header: &Header, trailer: &Trailer, waker: &Waker) -> bool {
                 .unset_waker()
                 .and_then(|snapshot| set_join_waker(header, trailer, waker.clone(), snapshot))
         } else {
+            
+            
+            
             set_join_waker(header, trailer, waker.clone(), snapshot)
         };
 
@@ -403,7 +412,7 @@ fn set_join_waker(
     snapshot: Snapshot,
 ) -> Result<Snapshot, Snapshot> {
     assert!(snapshot.is_join_interested());
-    assert!(!snapshot.has_join_waker());
+    assert!(!snapshot.is_join_waker_set());
 
     
     
@@ -432,31 +441,31 @@ enum PollFuture {
 }
 
 
-fn cancel_task<T: Future>(stage: &CoreStage<T>) {
+fn cancel_task<T: Future, S: Schedule>(core: &Core<T, S>) {
     
     let res = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        stage.drop_future_or_output();
+        core.drop_future_or_output();
     }));
 
     match res {
         Ok(()) => {
-            stage.store_output(Err(JoinError::cancelled()));
+            core.store_output(Err(JoinError::cancelled(core.task_id)));
         }
         Err(panic) => {
-            stage.store_output(Err(JoinError::panic(panic)));
+            core.store_output(Err(JoinError::panic(core.task_id, panic)));
         }
     }
 }
 
 
 
-fn poll_future<T: Future>(core: &CoreStage<T>, cx: Context<'_>) -> Poll<()> {
+fn poll_future<T: Future, S: Schedule>(core: &Core<T, S>, cx: Context<'_>) -> Poll<()> {
     
     let output = panic::catch_unwind(panic::AssertUnwindSafe(|| {
-        struct Guard<'a, T: Future> {
-            core: &'a CoreStage<T>,
+        struct Guard<'a, T: Future, S: Schedule> {
+            core: &'a Core<T, S>,
         }
-        impl<'a, T: Future> Drop for Guard<'a, T> {
+        impl<'a, T: Future, S: Schedule> Drop for Guard<'a, T, S> {
             fn drop(&mut self) {
                 
                 
@@ -473,13 +482,20 @@ fn poll_future<T: Future>(core: &CoreStage<T>, cx: Context<'_>) -> Poll<()> {
     let output = match output {
         Ok(Poll::Pending) => return Poll::Pending,
         Ok(Poll::Ready(output)) => Ok(output),
-        Err(panic) => Err(JoinError::panic(panic)),
+        Err(panic) => {
+            core.scheduler.unhandled_panic();
+            Err(JoinError::panic(core.task_id, panic))
+        }
     };
 
     
-    let _ = panic::catch_unwind(panic::AssertUnwindSafe(|| {
+    let res = panic::catch_unwind(panic::AssertUnwindSafe(|| {
         core.store_output(output);
     }));
+
+    if res.is_err() {
+        core.scheduler.unhandled_panic();
+    }
 
     Poll::Ready(())
 }

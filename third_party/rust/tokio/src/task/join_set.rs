@@ -1,10 +1,18 @@
+
+
+
+
+
+
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use crate::runtime::Handle;
-use crate::task::{JoinError, JoinHandle, LocalSet};
+#[cfg(tokio_unstable)]
+use crate::task::Id;
+use crate::task::{AbortHandle, JoinError, JoinHandle, LocalSet};
 use crate::util::IdleNotifiedSet;
 
 
@@ -43,13 +51,21 @@ use crate::util::IdleNotifiedSet;
 
 
 
-
-
-
-
-
+#[cfg_attr(docsrs, doc(cfg(feature = "rt")))]
 pub struct JoinSet<T> {
     inner: IdleNotifiedSet<JoinHandle<T>>,
+}
+
+
+
+
+
+#[cfg(all(tokio_unstable, feature = "tracing"))]
+#[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
+#[must_use = "builders do nothing unless used to spawn a task"]
+pub struct Builder<'a, T> {
+    joinset: &'a mut JoinSet<T>,
+    builder: super::Builder<'a>,
 }
 
 impl<T> JoinSet<T> {
@@ -77,23 +93,69 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    pub fn spawn<F>(&mut self, task: F)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    #[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
+    pub fn build_task(&mut self) -> Builder<'_, T> {
+        Builder {
+            builder: super::Builder::new(),
+            joinset: self,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn<F>(&mut self, task: F) -> AbortHandle
     where
         F: Future<Output = T>,
         F: Send + 'static,
         T: Send,
     {
-        self.insert(crate::spawn(task));
+        self.insert(crate::spawn(task))
     }
 
     
-    pub fn spawn_on<F>(&mut self, task: F, handle: &Handle)
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_on<F>(&mut self, task: F, handle: &Handle) -> AbortHandle
     where
         F: Future<Output = T>,
         F: Send + 'static,
         T: Send,
     {
-        self.insert(handle.spawn(task));
+        self.insert(handle.spawn(task))
     }
 
     
@@ -103,30 +165,110 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    pub fn spawn_local<F>(&mut self, task: F)
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_local<F>(&mut self, task: F) -> AbortHandle
     where
         F: Future<Output = T>,
         F: 'static,
     {
-        self.insert(crate::task::spawn_local(task));
+        self.insert(crate::task::spawn_local(task))
     }
 
     
     
     
-    pub fn spawn_local_on<F>(&mut self, task: F, local_set: &LocalSet)
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_local_on<F>(&mut self, task: F, local_set: &LocalSet) -> AbortHandle
     where
         F: Future<Output = T>,
         F: 'static,
     {
-        self.insert(local_set.spawn_local(task));
+        self.insert(local_set.spawn_local(task))
     }
 
-    fn insert(&mut self, jh: JoinHandle<T>) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking<F>(&mut self, f: F) -> AbortHandle
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        self.insert(crate::runtime::spawn_blocking(f))
+    }
+
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_blocking_on<F>(&mut self, f: F, handle: &Handle) -> AbortHandle
+    where
+        F: FnOnce() -> T,
+        F: Send + 'static,
+        T: Send,
+    {
+        self.insert(handle.spawn_blocking(f))
+    }
+
+    fn insert(&mut self, jh: JoinHandle<T>) -> AbortHandle {
+        let abort = jh.abort_handle();
         let mut entry = self.inner.insert_idle(jh);
 
         
         entry.with_value_and_context(|jh, ctx| jh.set_join_waker(ctx.waker()));
+        abort
     }
 
     
@@ -138,8 +280,30 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    pub async fn join_one(&mut self) -> Result<Option<T>, JoinError> {
-        crate::future::poll_fn(|cx| self.poll_join_one(cx)).await
+    pub async fn join_next(&mut self) -> Option<Result<T, JoinError>> {
+        crate::future::poll_fn(|cx| self.poll_join_next(cx)).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+    pub async fn join_next_with_id(&mut self) -> Option<Result<(Id, T), JoinError>> {
+        crate::future::poll_fn(|cx| self.poll_join_next_with_id(cx)).await
     }
 
     
@@ -154,7 +318,7 @@ impl<T: 'static> JoinSet<T> {
     
     pub async fn shutdown(&mut self) {
         self.abort_all();
-        while self.join_one().await.transpose().is_some() {}
+        while self.join_next().await.is_some() {}
     }
 
     
@@ -198,15 +362,14 @@ impl<T: 'static> JoinSet<T> {
     
     
     
-    
-    fn poll_join_one(&mut self, cx: &mut Context<'_>) -> Poll<Result<Option<T>, JoinError>> {
+    pub fn poll_join_next(&mut self, cx: &mut Context<'_>) -> Poll<Option<Result<T, JoinError>>> {
         
         
         let mut entry = match self.inner.pop_notified(cx.waker()) {
             Some(entry) => entry,
             None => {
                 if self.is_empty() {
-                    return Poll::Ready(Ok(None));
+                    return Poll::Ready(None);
                 } else {
                     
                     return Poll::Pending;
@@ -217,8 +380,71 @@ impl<T: 'static> JoinSet<T> {
         let res = entry.with_value_and_context(|jh, ctx| Pin::new(jh).poll(ctx));
 
         if let Poll::Ready(res) = res {
-            entry.remove();
-            Poll::Ready(Some(res).transpose())
+            let _entry = entry.remove();
+            Poll::Ready(Some(res))
+        } else {
+            
+            
+            
+            cx.waker().wake_by_ref();
+            Poll::Pending
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(tokio_unstable)]
+    #[cfg_attr(docsrs, doc(cfg(tokio_unstable)))]
+    pub fn poll_join_next_with_id(
+        &mut self,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Result<(Id, T), JoinError>>> {
+        
+        
+        let mut entry = match self.inner.pop_notified(cx.waker()) {
+            Some(entry) => entry,
+            None => {
+                if self.is_empty() {
+                    return Poll::Ready(None);
+                } else {
+                    
+                    return Poll::Pending;
+                }
+            }
+        };
+
+        let res = entry.with_value_and_context(|jh, ctx| Pin::new(jh).poll(ctx));
+
+        if let Poll::Ready(res) = res {
+            let entry = entry.remove();
+            
+            
+            Poll::Ready(Some(res.map(|output| (entry.id(), output))))
         } else {
             
             
@@ -244,5 +470,115 @@ impl<T> fmt::Debug for JoinSet<T> {
 impl<T> Default for JoinSet<T> {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+
+
+#[cfg(all(tokio_unstable, feature = "tracing"))]
+#[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
+impl<'a, T: 'static> Builder<'a, T> {
+    
+    pub fn name(self, name: &'a str) -> Self {
+        let builder = self.builder.name(name);
+        Self { builder, ..self }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn<F>(self, future: F) -> std::io::Result<AbortHandle>
+    where
+        F: Future<Output = T>,
+        F: Send + 'static,
+        T: Send,
+    {
+        Ok(self.joinset.insert(self.builder.spawn(future)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_on<F>(self, future: F, handle: &Handle) -> std::io::Result<AbortHandle>
+    where
+        F: Future<Output = T>,
+        F: Send + 'static,
+        T: Send,
+    {
+        Ok(self.joinset.insert(self.builder.spawn_on(future, handle)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_local<F>(self, future: F) -> std::io::Result<AbortHandle>
+    where
+        F: Future<Output = T>,
+        F: 'static,
+    {
+        Ok(self.joinset.insert(self.builder.spawn_local(future)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
+    pub fn spawn_local_on<F>(self, future: F, local_set: &LocalSet) -> std::io::Result<AbortHandle>
+    where
+        F: Future<Output = T>,
+        F: 'static,
+    {
+        Ok(self
+            .joinset
+            .insert(self.builder.spawn_local_on(future, local_set)?))
+    }
+}
+
+
+
+#[cfg(all(tokio_unstable, feature = "tracing"))]
+#[cfg_attr(docsrs, doc(cfg(all(tokio_unstable, feature = "tracing"))))]
+impl<'a, T> fmt::Debug for Builder<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("join_set::Builder")
+            .field("joinset", &self.joinset)
+            .field("builder", &self.builder)
+            .finish()
     }
 }

@@ -119,6 +119,10 @@
 
 
 
+
+
+
+
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::AtomicUsize;
 use crate::loom::sync::Arc;
@@ -306,6 +310,14 @@ pub struct Sender<T> {
 
 
 
+
+
+
+
+
+
+
+
 #[derive(Debug)]
 pub struct Receiver<T> {
     inner: Option<Arc<Inner<T>>>,
@@ -323,11 +335,13 @@ pub mod error {
     use std::fmt;
 
     
-    #[derive(Debug, Eq, PartialEq)]
+    
+    
+    #[derive(Debug, Eq, PartialEq, Clone)]
     pub struct RecvError(pub(super) ());
 
     
-    #[derive(Debug, Eq, PartialEq)]
+    #[derive(Debug, Eq, PartialEq, Clone)]
     pub enum TryRecvError {
         
         Empty,
@@ -399,21 +413,21 @@ impl Task {
         F: FnOnce(&Waker) -> R,
     {
         self.0.with(|ptr| {
-            let waker: *const Waker = (&*ptr).as_ptr();
+            let waker: *const Waker = (*ptr).as_ptr();
             f(&*waker)
         })
     }
 
     unsafe fn drop_task(&self) {
         self.0.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
+            let ptr: *mut Waker = (*ptr).as_mut_ptr();
             ptr.drop_in_place();
         });
     }
 
     unsafe fn set_task(&self, cx: &mut Context<'_>) {
         self.0.with_mut(|ptr| {
-            let ptr: *mut Waker = (&mut *ptr).as_mut_ptr();
+            let ptr: *mut Waker = (*ptr).as_mut_ptr();
             ptr.write(cx.waker().clone());
         });
     }
@@ -526,7 +540,7 @@ pub fn channel<T>() -> (Sender<T>, Receiver<T>) {
     let rx = Receiver {
         inner: Some(inner),
         #[cfg(all(tokio_unstable, feature = "tracing"))]
-        resource_span: resource_span,
+        resource_span,
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         async_op_span,
         #[cfg(all(tokio_unstable, feature = "tracing"))]
@@ -776,8 +790,10 @@ impl<T> Sender<T> {
     
     
     pub fn poll_closed(&mut self, cx: &mut Context<'_>) -> Poll<()> {
+        ready!(crate::trace::trace_leaf(cx));
+
         
-        let coop = ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
 
         let inner = self.inner.as_ref().unwrap();
 
@@ -785,7 +801,7 @@ impl<T> Sender<T> {
 
         if state.is_closed() {
             coop.made_progress();
-            return Poll::Ready(());
+            return Ready(());
         }
 
         if state.is_tx_task_set() {
@@ -977,6 +993,10 @@ impl<T> Receiver<T> {
     
     
     
+    
+    
+    
+    
     pub fn try_recv(&mut self) -> Result<T, TryRecvError> {
         let result = if let Some(inner) = self.inner.as_ref() {
             let state = State::load(&inner.state, Acquire);
@@ -1040,7 +1060,9 @@ impl<T> Receiver<T> {
     
     
     
+    #[track_caller]
     #[cfg(feature = "sync")]
+    #[cfg_attr(docsrs, doc(alias = "recv_blocking"))]
     pub fn blocking_recv(self) -> Result<T, RecvError> {
         crate::future::block_on(self)
     }
@@ -1110,8 +1132,9 @@ impl<T> Inner<T> {
     }
 
     fn poll_recv(&self, cx: &mut Context<'_>) -> Poll<Result<T, RecvError>> {
+        ready!(crate::trace::trace_leaf(cx));
         
-        let coop = ready!(crate::coop::poll_proceed(cx));
+        let coop = ready!(crate::runtime::coop::poll_proceed(cx));
 
         
         let mut state = State::load(&self.state, Acquire);

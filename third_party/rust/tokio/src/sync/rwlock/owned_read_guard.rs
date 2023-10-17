@@ -1,10 +1,7 @@
 use crate::sync::rwlock::RwLock;
-use std::fmt;
 use std::marker::PhantomData;
-use std::mem;
-use std::mem::ManuallyDrop;
-use std::ops;
 use std::sync::Arc;
+use std::{fmt, mem, ops, ptr};
 
 
 
@@ -14,16 +11,40 @@ use std::sync::Arc;
 
 
 
+#[clippy::has_significant_drop]
 pub struct OwnedRwLockReadGuard<T: ?Sized, U: ?Sized = T> {
+    
+    
     #[cfg(all(tokio_unstable, feature = "tracing"))]
     pub(super) resource_span: tracing::Span,
-    
-    pub(super) lock: ManuallyDrop<Arc<RwLock<T>>>,
+    pub(super) lock: Arc<RwLock<T>>,
     pub(super) data: *const U,
     pub(super) _p: PhantomData<T>,
 }
 
+#[allow(dead_code)] 
+struct Inner<T: ?Sized, U: ?Sized> {
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    resource_span: tracing::Span,
+    lock: Arc<RwLock<T>>,
+    data: *const U,
+}
+
 impl<T: ?Sized, U: ?Sized> OwnedRwLockReadGuard<T, U> {
+    fn skip_drop(self) -> Inner<T, U> {
+        let me = mem::ManuallyDrop::new(self);
+        
+        
+        unsafe {
+            Inner {
+                #[cfg(all(tokio_unstable, feature = "tracing"))]
+                resource_span: ptr::read(&me.resource_span),
+                lock: ptr::read(&me.lock),
+                data: me.data,
+            }
+        }
+    }
+
     
     
     
@@ -52,23 +73,19 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockReadGuard<T, U> {
     
     
     #[inline]
-    pub fn map<F, V: ?Sized>(mut this: Self, f: F) -> OwnedRwLockReadGuard<T, V>
+    pub fn map<F, V: ?Sized>(this: Self, f: F) -> OwnedRwLockReadGuard<T, V>
     where
         F: FnOnce(&U) -> &V,
     {
         let data = f(&*this) as *const V;
-        let lock = unsafe { ManuallyDrop::take(&mut this.lock) };
-        #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let resource_span = this.resource_span.clone();
-        
-        mem::forget(this);
+        let this = this.skip_drop();
 
         OwnedRwLockReadGuard {
-            lock: ManuallyDrop::new(lock),
+            lock: this.lock,
             data,
             _p: PhantomData,
             #[cfg(all(tokio_unstable, feature = "tracing"))]
-            resource_span,
+            resource_span: this.resource_span,
         }
     }
 
@@ -103,7 +120,7 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockReadGuard<T, U> {
     
     
     #[inline]
-    pub fn try_map<F, V: ?Sized>(mut this: Self, f: F) -> Result<OwnedRwLockReadGuard<T, V>, Self>
+    pub fn try_map<F, V: ?Sized>(this: Self, f: F) -> Result<OwnedRwLockReadGuard<T, V>, Self>
     where
         F: FnOnce(&U) -> Option<&V>,
     {
@@ -111,18 +128,14 @@ impl<T: ?Sized, U: ?Sized> OwnedRwLockReadGuard<T, U> {
             Some(data) => data as *const V,
             None => return Err(this),
         };
-        let lock = unsafe { ManuallyDrop::take(&mut this.lock) };
-        #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let resource_span = this.resource_span.clone();
-        
-        mem::forget(this);
+        let this = this.skip_drop();
 
         Ok(OwnedRwLockReadGuard {
-            lock: ManuallyDrop::new(lock),
+            lock: this.lock,
             data,
             _p: PhantomData,
             #[cfg(all(tokio_unstable, feature = "tracing"))]
-            resource_span,
+            resource_span: this.resource_span,
         })
     }
 }
@@ -156,7 +169,6 @@ where
 impl<T: ?Sized, U: ?Sized> Drop for OwnedRwLockReadGuard<T, U> {
     fn drop(&mut self) {
         self.lock.s.release(1);
-        unsafe { ManuallyDrop::drop(&mut self.lock) };
 
         #[cfg(all(tokio_unstable, feature = "tracing"))]
         self.resource_span.in_scope(|| {

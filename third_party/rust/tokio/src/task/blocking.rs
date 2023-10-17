@@ -17,64 +17,65 @@ cfg_rt_multi_thread! {
     /// be suspended during the call to `block_in_place`. This can happen e.g.
     /// when using the [`join!`] macro. To avoid this issue, use
     /// [`spawn_blocking`] instead of `block_in_place`.
-    ///
-    /// Note that this function cannot be used within a [`current_thread`] runtime
-    /// because in this case there are no other worker threads to hand off tasks
-    /// to. On the other hand, calling the function outside a runtime is
-    /// allowed. In this case, `block_in_place` just calls the provided closure
-    /// normally.
-    ///
-    /// Code running behind `block_in_place` cannot be cancelled. When you shut
-    /// down the executor, it will wait indefinitely for all blocking operations
-    /// to finish. You can use [`shutdown_timeout`] to stop waiting for them
-    /// after a certain timeout. Be aware that this will still not cancel the
-    /// tasks — they are simply allowed to keep running after the method
-    /// returns.
-    ///
-    /// [blocking]: ../index.html#cpu-bound-tasks-and-blocking-code
-    /// [`spawn_blocking`]: fn@crate::task::spawn_blocking
-    /// [`join!`]: macro@join
-    /// [`thread::spawn`]: fn@std::thread::spawn
-    /// [`shutdown_timeout`]: fn@crate::runtime::Runtime::shutdown_timeout
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use tokio::task;
-    ///
-    /// # async fn docs() {
-    /// task::block_in_place(move || {
-    ///     // do some compute-heavy work or call synchronous code
-    /// });
-    /// # }
-    /// ```
-    ///
-    /// Code running inside `block_in_place` may use `block_on` to reenter the
-    /// async context.
-    ///
-    /// ```
-    /// use tokio::task;
-    /// use tokio::runtime::Handle;
-    ///
-    /// # async fn docs() {
-    /// task::block_in_place(move || {
-    ///     Handle::current().block_on(async move {
-    ///         // do something async
-    ///     });
-    /// });
-    /// # }
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// This function panics if called from a [`current_thread`] runtime.
-    ///
-    /// [`current_thread`]: fn@crate::runtime::Builder::new_current_thread
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[track_caller]
     pub fn block_in_place<F, R>(f: F) -> R
     where
         F: FnOnce() -> R,
     {
-        crate::runtime::thread_pool::block_in_place(f)
+        crate::runtime::scheduler::multi_thread::block_in_place(f)
     }
 }
 
@@ -102,14 +103,24 @@ cfg_rt! {
     /// their own. If you want to spawn an ordinary thread, you should use
     /// [`thread::spawn`] instead.
     ///
-    /// Closures spawned using `spawn_blocking` cannot be cancelled. When you shut
-    /// down the executor, it will wait indefinitely for all blocking operations to
+    /// Closures spawned using `spawn_blocking` cannot be cancelled abruptly; there
+    /// is no standard low level API to cause a thread to stop running.  However,
+    /// a useful pattern is to pass some form of "cancellation token" into
+    /// the thread.  This could be an [`AtomicBool`] that the task checks periodically.
+    /// Another approach is to have the thread primarily read or write from a channel,
+    /// and to exit when the channel closes; assuming the other side of the channel is dropped
+    /// when cancellation occurs, this will cause the blocking task thread to exit
+    /// soon after as well.
+    ///
+    /// When you shut down the executor, it will wait indefinitely for all blocking operations to
     /// finish. You can use [`shutdown_timeout`] to stop waiting for them after a
     /// certain timeout. Be aware that this will still not cancel the tasks — they
-    /// are simply allowed to keep running after the method returns.
+    /// are simply allowed to keep running after the method returns.  It is possible
+    /// for a blocking task to be cancelled if it has not yet started running, but this
+    /// is not guaranteed.
     ///
     /// Note that if you are using the single threaded runtime, this function will
-    /// still spawn additional threads for blocking operations. The basic
+    /// still spawn additional threads for blocking operations. The current-thread
     /// scheduler's single thread is only used for asynchronous code.
     ///
     /// # Related APIs and patterns for bridging asynchronous and blocking code
@@ -121,6 +132,7 @@ cfg_rt! {
     /// the synchronous context, the [`mpsc channel`] has `blocking_send` and
     /// `blocking_recv` methods for use in non-async code such as the thread created
     /// by `spawn_blocking`.
+    
     
     
     

@@ -1,9 +1,8 @@
 #![warn(rust_2018_idioms)]
-#![cfg(feature = "full")]
+#![cfg(all(feature = "full", not(tokio_wasi)))] 
 
 use tokio::net::TcpListener;
 
-use std::convert::TryFrom;
 use std::net;
 
 #[test]

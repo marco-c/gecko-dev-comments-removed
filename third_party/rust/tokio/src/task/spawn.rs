@@ -1,4 +1,4 @@
-use crate::{task::JoinHandle, util::error::CONTEXT_MISSING_ERROR};
+use crate::task::JoinHandle;
 
 use std::future::Future;
 
@@ -6,48 +6,87 @@ cfg_rt! {
     /// Spawns a new asynchronous task, returning a
     /// [`JoinHandle`](super::JoinHandle) for it.
     ///
-    /// Spawning a task enables the task to execute concurrently to other tasks. The
-    /// spawned task may execute on the current thread, or it may be sent to a
-    /// different thread to be executed. The specifics depend on the current
-    /// [`Runtime`](crate::runtime::Runtime) configuration.
-    ///
-    /// There is no guarantee that a spawned task will execute to completion.
-    /// When a runtime is shutdown, all outstanding tasks are dropped,
-    /// regardless of the lifecycle of that task.
-    ///
-    /// This function must be called from the context of a Tokio runtime. Tasks running on
-    /// the Tokio runtime are always inside its context, but you can also enter the context
-    /// using the [`Runtime::enter`](crate::runtime::Runtime::enter()) method.
-    ///
-    /// # Examples
-    ///
-    /// In this example, a server is started and `spawn` is used to start a new task
-    /// that processes each received connection.
-    ///
-    /// ```no_run
-    /// use tokio::net::{TcpListener, TcpStream};
-    ///
-    /// use std::io;
-    ///
-    /// async fn process(socket: TcpStream) {
-    ///     // ...
-    /// # drop(socket);
-    /// }
-    ///
-    /// #[tokio::main]
-    /// async fn main() -> io::Result<()> {
-    ///     let listener = TcpListener::bind("127.0.0.1:8080").await?;
-    ///
-    ///     loop {
-    ///         let (socket, _) = listener.accept().await?;
-    ///
-    ///         tokio::spawn(async move {
-    ///             // Process each socket concurrently.
-    ///             process(socket).await
-    ///         });
-    ///     }
-    /// }
-    /// ```
+    /// The provided future will start running in the background immediately
+    /// when `spawn` is called, even if you don't await the returned
+    /// `JoinHandle`.
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -127,8 +166,8 @@ cfg_rt! {
         T: Future + Send + 'static,
         T::Output: Send + 'static,
     {
-        // preventing stack overflows on debug mode, by quickly sending the
-        // task to the heap.
+        
+        
         if cfg!(debug_assertions) && std::mem::size_of::<T>() > 2048 {
             spawn_inner(Box::pin(future), None)
         } else {
@@ -142,8 +181,26 @@ cfg_rt! {
         T: Future + Send + 'static,
         T::Output: Send + 'static,
     {
-        let spawn_handle = crate::runtime::context::spawn_handle().expect(CONTEXT_MISSING_ERROR);
-        let task = crate::util::trace::task(future, "task", name);
-        spawn_handle.spawn(task)
+        use crate::runtime::{context, task};
+
+        #[cfg(all(
+            tokio_unstable,
+            tokio_taskdump,
+            feature = "rt",
+            target_os = "linux",
+            any(
+                target_arch = "aarch64",
+                target_arch = "x86",
+                target_arch = "x86_64"
+            )
+        ))]
+        let future = task::trace::Trace::root(future);
+        let id = task::Id::next();
+        let task = crate::util::trace::task(future, "task", name, id.as_u64());
+
+        match context::with_current(|handle| handle.spawn(task, id)) {
+            Ok(join_handle) => join_handle,
+            Err(e) => panic!("{}", e),
+        }
     }
 }

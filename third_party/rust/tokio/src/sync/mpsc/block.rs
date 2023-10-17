@@ -1,6 +1,7 @@
 use crate::loom::cell::UnsafeCell;
 use crate::loom::sync::atomic::{AtomicPtr, AtomicUsize};
 
+use std::alloc::Layout;
 use std::mem::MaybeUninit;
 use std::ops;
 use std::ptr::{self, NonNull};
@@ -10,6 +11,17 @@ use std::sync::atomic::Ordering::{self, AcqRel, Acquire, Release};
 
 
 pub(crate) struct Block<T> {
+    
+    header: BlockHeader<T>,
+
+    
+    
+    
+    values: Values<T>,
+}
+
+
+struct BlockHeader<T> {
     
     
     
@@ -24,11 +36,6 @@ pub(crate) struct Block<T> {
     
     
     observed_tail_position: UnsafeCell<usize>,
-
-    
-    
-    
-    values: Values<T>,
 }
 
 pub(crate) enum Read<T> {
@@ -36,6 +43,7 @@ pub(crate) enum Read<T> {
     Closed,
 }
 
+#[repr(transparent)]
 struct Values<T>([UnsafeCell<MaybeUninit<T>>; BLOCK_CAP]);
 
 use super::BLOCK_CAP;
@@ -71,28 +79,56 @@ pub(crate) fn offset(slot_index: usize) -> usize {
     SLOT_MASK & slot_index
 }
 
+generate_addr_of_methods! {
+    impl<T> Block<T> {
+        unsafe fn addr_of_header(self: NonNull<Self>) -> NonNull<BlockHeader<T>> {
+            &self.header
+        }
+
+        unsafe fn addr_of_values(self: NonNull<Self>) -> NonNull<Values<T>> {
+            &self.values
+        }
+    }
+}
+
 impl<T> Block<T> {
-    pub(crate) fn new(start_index: usize) -> Block<T> {
-        Block {
+    pub(crate) fn new(start_index: usize) -> Box<Block<T>> {
+        unsafe {
             
-            start_index,
-
             
-            next: AtomicPtr::new(ptr::null_mut()),
-
-            ready_slots: AtomicUsize::new(0),
-
-            observed_tail_position: UnsafeCell::new(0),
+            let block = std::alloc::alloc(Layout::new::<Block<T>>()) as *mut Block<T>;
+            let block = match NonNull::new(block) {
+                Some(block) => block,
+                None => std::alloc::handle_alloc_error(Layout::new::<Block<T>>()),
+            };
 
             
-            values: unsafe { Values::uninitialized() },
+            Block::addr_of_header(block).as_ptr().write(BlockHeader {
+                
+                start_index,
+
+                
+                next: AtomicPtr::new(ptr::null_mut()),
+
+                ready_slots: AtomicUsize::new(0),
+
+                observed_tail_position: UnsafeCell::new(0),
+            });
+
+            
+            Values::initialize(Block::addr_of_values(block));
+
+            
+            
+            
+            Box::from_raw(block.as_ptr())
         }
     }
 
     
     pub(crate) fn is_at_index(&self, index: usize) -> bool {
         debug_assert!(offset(index) == 0);
-        self.start_index == index
+        self.header.start_index == index
     }
 
     
@@ -101,7 +137,7 @@ impl<T> Block<T> {
     
     pub(crate) fn distance(&self, other_index: usize) -> usize {
         debug_assert!(offset(other_index) == 0);
-        other_index.wrapping_sub(self.start_index) / BLOCK_CAP
+        other_index.wrapping_sub(self.header.start_index) / BLOCK_CAP
     }
 
     
@@ -116,7 +152,7 @@ impl<T> Block<T> {
     pub(crate) unsafe fn read(&self, slot_index: usize) -> Option<Read<T>> {
         let offset = offset(slot_index);
 
-        let ready_bits = self.ready_slots.load(Acquire);
+        let ready_bits = self.header.ready_slots.load(Acquire);
 
         if !is_ready(ready_bits, offset) {
             if is_tx_closed(ready_bits) {
@@ -156,7 +192,7 @@ impl<T> Block<T> {
 
     
     pub(crate) unsafe fn tx_close(&self) {
-        self.ready_slots.fetch_or(TX_CLOSED, Release);
+        self.header.ready_slots.fetch_or(TX_CLOSED, Release);
     }
 
     
@@ -169,9 +205,9 @@ impl<T> Block<T> {
     
     
     pub(crate) unsafe fn reclaim(&mut self) {
-        self.start_index = 0;
-        self.next = AtomicPtr::new(ptr::null_mut());
-        self.ready_slots = AtomicUsize::new(0);
+        self.header.start_index = 0;
+        self.header.next = AtomicPtr::new(ptr::null_mut());
+        self.header.ready_slots = AtomicUsize::new(0);
     }
 
     
@@ -187,19 +223,20 @@ impl<T> Block<T> {
     pub(crate) unsafe fn tx_release(&self, tail_position: usize) {
         
         
-        self.observed_tail_position
+        self.header
+            .observed_tail_position
             .with_mut(|ptr| *ptr = tail_position);
 
         
         
         
-        self.ready_slots.fetch_or(RELEASED, Release);
+        self.header.ready_slots.fetch_or(RELEASED, Release);
     }
 
     
     fn set_ready(&self, slot: usize) {
         let mask = 1 << slot;
-        self.ready_slots.fetch_or(mask, Release);
+        self.header.ready_slots.fetch_or(mask, Release);
     }
 
     
@@ -214,25 +251,31 @@ impl<T> Block<T> {
     
     
     pub(crate) fn is_final(&self) -> bool {
-        self.ready_slots.load(Acquire) & READY_MASK == READY_MASK
+        self.header.ready_slots.load(Acquire) & READY_MASK == READY_MASK
     }
 
     
     pub(crate) fn observed_tail_position(&self) -> Option<usize> {
-        if 0 == RELEASED & self.ready_slots.load(Acquire) {
+        if 0 == RELEASED & self.header.ready_slots.load(Acquire) {
             None
         } else {
-            Some(self.observed_tail_position.with(|ptr| unsafe { *ptr }))
+            Some(
+                self.header
+                    .observed_tail_position
+                    .with(|ptr| unsafe { *ptr }),
+            )
         }
     }
 
     
     pub(crate) fn load_next(&self, ordering: Ordering) -> Option<NonNull<Block<T>>> {
-        let ret = NonNull::new(self.next.load(ordering));
+        let ret = NonNull::new(self.header.next.load(ordering));
 
         debug_assert!(unsafe {
-            ret.map(|block| block.as_ref().start_index == self.start_index.wrapping_add(BLOCK_CAP))
-                .unwrap_or(true)
+            ret.map(|block| {
+                block.as_ref().header.start_index == self.header.start_index.wrapping_add(BLOCK_CAP)
+            })
+            .unwrap_or(true)
         });
 
         ret
@@ -260,9 +303,10 @@ impl<T> Block<T> {
         success: Ordering,
         failure: Ordering,
     ) -> Result<(), NonNull<Block<T>>> {
-        block.as_mut().start_index = self.start_index.wrapping_add(BLOCK_CAP);
+        block.as_mut().header.start_index = self.header.start_index.wrapping_add(BLOCK_CAP);
 
         let next_ptr = self
+            .header
             .next
             .compare_exchange(ptr::null_mut(), block.as_ptr(), success, failure)
             .unwrap_or_else(|x| x);
@@ -291,7 +335,7 @@ impl<T> Block<T> {
         
         
         
-        let new_block = Box::new(Block::new(self.start_index + BLOCK_CAP));
+        let new_block = Block::new(self.header.start_index + BLOCK_CAP);
 
         let mut new_block = unsafe { NonNull::new_unchecked(Box::into_raw(new_block)) };
 
@@ -308,7 +352,8 @@ impl<T> Block<T> {
         
         
         let next = NonNull::new(
-            self.next
+            self.header
+                .next
                 .compare_exchange(ptr::null_mut(), new_block.as_ptr(), AcqRel, Acquire)
                 .unwrap_or_else(|x| x),
         );
@@ -360,19 +405,20 @@ fn is_tx_closed(bits: usize) -> bool {
 }
 
 impl<T> Values<T> {
-    unsafe fn uninitialized() -> Values<T> {
-        let mut vals = MaybeUninit::uninit();
-
+    
+    
+    
+    
+    
+    unsafe fn initialize(_value: NonNull<Values<T>>) {
         
         if_loom! {
-            let p = vals.as_mut_ptr() as *mut UnsafeCell<MaybeUninit<T>>;
+            let p = _value.as_ptr() as *mut UnsafeCell<MaybeUninit<T>>;
             for i in 0..BLOCK_CAP {
                 p.add(i)
                     .write(UnsafeCell::new(MaybeUninit::uninit()));
             }
         }
-
-        Values(vals.assume_init())
     }
 }
 
@@ -382,4 +428,21 @@ impl<T> ops::Index<usize> for Values<T> {
     fn index(&self, index: usize) -> &Self::Output {
         self.0.index(index)
     }
+}
+
+#[cfg(all(test, not(loom)))]
+#[test]
+fn assert_no_stack_overflow() {
+    
+
+    struct Foo {
+        _a: [u8; 2_000_000],
+    }
+
+    assert_eq!(
+        Layout::new::<MaybeUninit<Block<Foo>>>(),
+        Layout::new::<Block<Foo>>()
+    );
+
+    let _block = Block::<Foo>::new(0);
 }

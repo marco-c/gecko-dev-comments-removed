@@ -1,10 +1,12 @@
 #![warn(rust_2018_idioms)]
 #![cfg(feature = "full")]
 
-use tokio::time::{self, Duration, Instant, MissedTickBehavior};
-use tokio_test::{assert_pending, assert_ready_eq, task};
+use std::pin::Pin;
+use std::task::{Context, Poll};
 
-use std::task::Poll;
+use futures::{Stream, StreamExt};
+use tokio::time::{self, Duration, Instant, Interval, MissedTickBehavior};
+use tokio_test::{assert_pending, assert_ready_eq, task};
 
 
 
@@ -208,4 +210,114 @@ fn poll_next(interval: &mut task::Spawn<time::Interval>) -> Poll<Instant> {
 
 fn ms(n: u64) -> Duration {
     Duration::from_millis(n)
+}
+
+
+
+
+
+
+
+
+
+
+
+struct IntervalStreamer {
+    counter: u32,
+    timer: Interval,
+    wake_on_pending: bool,
+}
+
+impl Stream for IntervalStreamer {
+    type Item = u32;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let this = Pin::into_inner(self);
+
+        if this.counter > 12 {
+            return Poll::Ready(None);
+        }
+
+        match this.timer.poll_tick(cx) {
+            Poll::Pending => Poll::Pending,
+            Poll::Ready(_) => {
+                this.counter += 1;
+                if this.counter % 4 == 0 {
+                    Poll::Ready(Some(this.counter))
+                } else {
+                    if this.wake_on_pending {
+                        
+                        cx.waker().wake_by_ref();
+                    }
+                    Poll::Pending
+                }
+            }
+        }
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn stream_with_interval_poll_tick_self_waking() {
+    let stream = IntervalStreamer {
+        counter: 0,
+        timer: tokio::time::interval(tokio::time::Duration::from_millis(10)),
+        wake_on_pending: true,
+    };
+
+    let (res_tx, mut res_rx) = tokio::sync::mpsc::channel(12);
+
+    
+    
+    tokio::spawn(tokio::time::timeout(
+        tokio::time::Duration::from_millis(150),
+        async move {
+            tokio::pin!(stream);
+
+            while let Some(item) = stream.next().await {
+                res_tx.send(item).await.ok();
+            }
+        },
+    ));
+
+    let mut items = Vec::with_capacity(3);
+    while let Some(result) = res_rx.recv().await {
+        items.push(result);
+    }
+
+    
+    assert_eq!(items, vec![4, 8, 12]);
+}
+
+#[tokio::test(start_paused = true)]
+async fn stream_with_interval_poll_tick_no_waking() {
+    let stream = IntervalStreamer {
+        counter: 0,
+        timer: tokio::time::interval(tokio::time::Duration::from_millis(10)),
+        wake_on_pending: false,
+    };
+
+    let (res_tx, mut res_rx) = tokio::sync::mpsc::channel(12);
+
+    
+    
+    tokio::spawn(tokio::time::timeout(
+        tokio::time::Duration::from_millis(150),
+        async move {
+            tokio::pin!(stream);
+
+            while let Some(item) = stream.next().await {
+                res_tx.send(item).await.ok();
+            }
+        },
+    ));
+
+    let mut items = Vec::with_capacity(0);
+    while let Some(result) = res_rx.recv().await {
+        items.push(result);
+    }
+
+    
+    
+    
+    assert_eq!(items, vec![]);
 }

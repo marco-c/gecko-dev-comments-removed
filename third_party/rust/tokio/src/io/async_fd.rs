@@ -1,9 +1,46 @@
-use crate::io::driver::{Handle, Interest, ReadyEvent, Registration};
+use crate::io::{Interest, Ready};
+use crate::runtime::io::{ReadyEvent, Registration};
+use crate::runtime::scheduler;
 
 use mio::unix::SourceFd;
 use std::io;
 use std::os::unix::io::{AsRawFd, RawFd};
 use std::{task::Context, task::Poll};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -164,35 +201,50 @@ pub struct AsyncFdReadyMutGuard<'a, T: AsRawFd> {
     event: Option<ReadyEvent>,
 }
 
-const ALL_INTEREST: Interest = Interest::READABLE.add(Interest::WRITABLE);
-
 impl<T: AsRawFd> AsyncFd<T> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    
-    
-    
-    
-    
+    #[track_caller]
     pub fn new(inner: T) -> io::Result<Self>
     where
         T: AsRawFd,
     {
-        Self::with_interest(inner, ALL_INTEREST)
+        Self::with_interest(inner, Interest::READABLE | Interest::WRITABLE)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    
-    
+    #[track_caller]
     pub fn with_interest(inner: T, interest: Interest) -> io::Result<Self>
     where
         T: AsRawFd,
     {
-        Self::new_with_handle_and_interest(inner, Handle::current(), interest)
+        Self::new_with_handle_and_interest(inner, scheduler::Handle::current(), interest)
     }
 
+    #[track_caller]
     pub(crate) fn new_with_handle_and_interest(
         inner: T,
-        handle: Handle,
+        handle: scheduler::Handle,
         interest: Interest,
     ) -> io::Result<Self> {
         let fd = inner.as_raw_fd();
@@ -390,7 +442,96 @@ impl<T: AsRawFd> AsyncFd<T> {
         .into()
     }
 
-    async fn readiness(&self, interest: Interest) -> io::Result<AsyncFdReadyGuard<'_, T>> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn ready(&self, interest: Interest) -> io::Result<AsyncFdReadyGuard<'_, T>> {
         let event = self.registration.readiness(interest).await?;
 
         Ok(AsyncFdReadyGuard {
@@ -399,7 +540,94 @@ impl<T: AsRawFd> AsyncFd<T> {
         })
     }
 
-    async fn readiness_mut(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn ready_mut(
         &mut self,
         interest: Interest,
     ) -> io::Result<AsyncFdReadyMutGuard<'_, T>> {
@@ -421,7 +649,7 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     #[allow(clippy::needless_lifetimes)] 
     pub async fn readable<'a>(&'a self) -> io::Result<AsyncFdReadyGuard<'a, T>> {
-        self.readiness(Interest::READABLE).await
+        self.ready(Interest::READABLE).await
     }
 
     
@@ -432,7 +660,7 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     #[allow(clippy::needless_lifetimes)] 
     pub async fn readable_mut<'a>(&'a mut self) -> io::Result<AsyncFdReadyMutGuard<'a, T>> {
-        self.readiness_mut(Interest::READABLE).await
+        self.ready_mut(Interest::READABLE).await
     }
 
     
@@ -445,7 +673,7 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     #[allow(clippy::needless_lifetimes)] 
     pub async fn writable<'a>(&'a self) -> io::Result<AsyncFdReadyGuard<'a, T>> {
-        self.readiness(Interest::WRITABLE).await
+        self.ready(Interest::WRITABLE).await
     }
 
     
@@ -456,13 +684,123 @@ impl<T: AsRawFd> AsyncFd<T> {
     
     #[allow(clippy::needless_lifetimes)] 
     pub async fn writable_mut<'a>(&'a mut self) -> io::Result<AsyncFdReadyMutGuard<'a, T>> {
-        self.readiness_mut(Interest::WRITABLE).await
+        self.ready_mut(Interest::WRITABLE).await
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub async fn async_io<R>(
+        &self,
+        interest: Interest,
+        mut f: impl FnMut(&T) -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.registration
+            .async_io(interest, || f(self.get_ref()))
+            .await
+    }
+
+    
+    
+    
+    
+    
+    
+    pub async fn async_io_mut<R>(
+        &mut self,
+        interest: Interest,
+        mut f: impl FnMut(&mut T) -> io::Result<R>,
+    ) -> io::Result<R> {
+        self.registration
+            .async_io(interest, || f(self.inner.as_mut().unwrap()))
+            .await
     }
 }
 
 impl<T: AsRawFd> AsRawFd for AsyncFd<T> {
     fn as_raw_fd(&self) -> RawFd {
         self.inner.as_ref().unwrap().as_raw_fd()
+    }
+}
+
+#[cfg(not(tokio_no_as_fd))]
+impl<T: AsRawFd> std::os::unix::io::AsFd for AsyncFd<T> {
+    fn as_fd(&self) -> std::os::unix::io::BorrowedFd<'_> {
+        unsafe { std::os::unix::io::BorrowedFd::borrow_raw(self.as_raw_fd()) }
     }
 }
 
@@ -491,9 +829,104 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyGuard<'a, Inner> {
     
     
     
+    
     pub fn clear_ready(&mut self) {
         if let Some(event) = self.event.take() {
             self.async_fd.registration.clear_readiness(event);
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear_ready_matching(&mut self, ready: Ready) {
+        if let Some(mut event) = self.event.take() {
+            self.async_fd
+                .registration
+                .clear_readiness(event.with_ready(ready));
+
+            
+            event.ready = event.ready - ready;
+
+            if !event.ready.is_empty() {
+                self.event = Some(event);
+            }
         }
     }
 
@@ -506,6 +939,57 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyGuard<'a, Inner> {
         
     }
 
+    
+    
+    
+    
+    
+    
+    
+    pub fn ready(&self) -> Ready {
+        match &self.event {
+            Some(event) => event.ready,
+            None => Ready::EMPTY,
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -564,6 +1048,7 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyMutGuard<'a, Inner> {
     
     
     
+    
     pub fn clear_ready(&mut self) {
         if let Some(event) = self.event.take() {
             self.async_fd.registration.clear_readiness(event);
@@ -575,8 +1060,116 @@ impl<'a, Inner: AsRawFd> AsyncFdReadyMutGuard<'a, Inner> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn clear_ready_matching(&mut self, ready: Ready) {
+        if let Some(mut event) = self.event.take() {
+            self.async_fd
+                .registration
+                .clear_readiness(event.with_ready(ready));
+
+            
+            event.ready = event.ready - ready;
+
+            if !event.ready.is_empty() {
+                self.event = Some(event);
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
     pub fn retain_ready(&mut self) {
         
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    pub fn ready(&self) -> Ready {
+        match &self.event {
+            Some(event) => event.ready,
+            None => Ready::EMPTY,
+        }
     }
 
     

@@ -44,7 +44,7 @@ pub(crate) enum TryPopResult<T> {
 
 pub(crate) fn channel<T>() -> (Tx<T>, Rx<T>) {
     
-    let initial_block = Box::new(Block::new(0));
+    let initial_block = Block::new(0);
     let initial_block_ptr = Box::into_raw(initial_block);
 
     let tx = Tx {

@@ -136,7 +136,22 @@ impl sealed::ToSocketAddrsPriv for &[SocketAddr] {
     type Future = ReadyFuture<Self::Iter>;
 
     fn to_socket_addrs(&self, _: sealed::Internal) -> Self::Future {
-        let iter = self.to_vec().into_iter();
+        #[inline]
+        fn slice_to_vec(addrs: &[SocketAddr]) -> Vec<SocketAddr> {
+            addrs.to_vec()
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let iter = slice_to_vec(self).into_iter();
         future::ready(Ok(iter))
     }
 }
@@ -229,7 +244,7 @@ cfg_net! {
         type Future = <str as sealed::ToSocketAddrsPriv>::Future;
 
         fn to_socket_addrs(&self, _: sealed::Internal) -> Self::Future {
-            (&self[..]).to_socket_addrs(sealed::Internal)
+            self[..].to_socket_addrs(sealed::Internal)
         }
     }
 }

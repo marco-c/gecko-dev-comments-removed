@@ -11,9 +11,10 @@
 
 use crate::future::Future;
 use crate::loom::cell::UnsafeCell;
+use crate::runtime::context;
 use crate::runtime::task::raw::{self, Vtable};
 use crate::runtime::task::state::State;
-use crate::runtime::task::Schedule;
+use crate::runtime::task::{Id, Schedule};
 use crate::util::linked_list;
 
 use std::pin::Pin;
@@ -24,6 +25,97 @@ use std::task::{Context, Poll, Waker};
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+    ),
+    repr(align(128))
+)]
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    any(
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "sparc",
+        target_arch = "hexagon",
+    ),
+    repr(align(32))
+)]
+
+
+
+
+#[cfg_attr(target_arch = "m68k", repr(align(16)))]
+
+
+
+
+
+#[cfg_attr(target_arch = "s390x", repr(align(256)))]
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    not(any(
+        target_arch = "x86_64",
+        target_arch = "aarch64",
+        target_arch = "powerpc64",
+        target_arch = "arm",
+        target_arch = "mips",
+        target_arch = "mips64",
+        target_arch = "riscv32",
+        target_arch = "riscv64",
+        target_arch = "sparc",
+        target_arch = "hexagon",
+        target_arch = "m68k",
+        target_arch = "s390x",
+    )),
+    repr(align(64))
+)]
 #[repr(C)]
 pub(super) struct Cell<T: Future, S> {
     
@@ -43,9 +135,16 @@ pub(super) struct CoreStage<T: Future> {
 
 
 
+
+
+
+#[repr(C)]
 pub(super) struct Core<T: Future, S> {
     
     pub(super) scheduler: S,
+
+    
+    pub(super) task_id: Id,
 
     
     pub(super) stage: CoreStage<T>,
@@ -56,8 +155,6 @@ pub(super) struct Core<T: Future, S> {
 pub(crate) struct Header {
     
     pub(super) state: State,
-
-    pub(super) owned: UnsafeCell<linked_list::Pointers<Header>>,
 
     
     pub(super) queue_next: UnsafeCell<Option<NonNull<Header>>>,
@@ -80,16 +177,27 @@ pub(crate) struct Header {
 
     
     #[cfg(all(tokio_unstable, feature = "tracing"))]
-    pub(super) id: Option<tracing::Id>,
+    pub(super) tracing_id: Option<tracing::Id>,
 }
 
 unsafe impl Send for Header {}
 unsafe impl Sync for Header {}
 
 
+
 pub(super) struct Trailer {
     
+    pub(super) owned: linked_list::Pointers<Header>,
+    
     pub(super) waker: UnsafeCell<Option<Waker>>,
+}
+
+generate_addr_of_methods! {
+    impl<> Trailer {
+        pub(super) unsafe fn addr_of_owned(self: NonNull<Self>) -> NonNull<linked_list::Pointers<Header>> {
+            &self.owned
+        }
+    }
 }
 
 
@@ -102,29 +210,48 @@ pub(super) enum Stage<T: Future> {
 impl<T: Future, S: Schedule> Cell<T, S> {
     
     
-    pub(super) fn new(future: T, scheduler: S, state: State) -> Box<Cell<T, S>> {
+    pub(super) fn new(future: T, scheduler: S, state: State, task_id: Id) -> Box<Cell<T, S>> {
         #[cfg(all(tokio_unstable, feature = "tracing"))]
-        let id = future.id();
-        Box::new(Cell {
+        let tracing_id = future.id();
+        let result = Box::new(Cell {
             header: Header {
                 state,
-                owned: UnsafeCell::new(linked_list::Pointers::new()),
                 queue_next: UnsafeCell::new(None),
                 vtable: raw::vtable::<T, S>(),
                 owner_id: UnsafeCell::new(0),
                 #[cfg(all(tokio_unstable, feature = "tracing"))]
-                id,
+                tracing_id,
             },
             core: Core {
                 scheduler,
                 stage: CoreStage {
                     stage: UnsafeCell::new(Stage::Running(future)),
                 },
+                task_id,
             },
             trailer: Trailer {
                 waker: UnsafeCell::new(None),
+                owned: linked_list::Pointers::new(),
             },
-        })
+        });
+
+        #[cfg(debug_assertions)]
+        {
+            let trailer_addr = (&result.trailer) as *const Trailer as usize;
+            let trailer_ptr = unsafe { Header::get_trailer(NonNull::from(&result.header)) };
+            assert_eq!(trailer_addr, trailer_ptr.as_ptr() as usize);
+
+            let scheduler_addr = (&result.core.scheduler) as *const S as usize;
+            let scheduler_ptr =
+                unsafe { Header::get_scheduler::<S>(NonNull::from(&result.header)) };
+            assert_eq!(scheduler_addr, scheduler_ptr.as_ptr() as usize);
+
+            let id_addr = (&result.core.task_id) as *const Id as usize;
+            let id_ptr = unsafe { Header::get_id_ptr(NonNull::from(&result.header)) };
+            assert_eq!(id_addr, id_ptr.as_ptr() as usize);
+        }
+
+        result
     }
 }
 
@@ -132,7 +259,29 @@ impl<T: Future> CoreStage<T> {
     pub(super) fn with_mut<R>(&self, f: impl FnOnce(*mut Stage<T>) -> R) -> R {
         self.stage.with_mut(f)
     }
+}
 
+
+
+pub(crate) struct TaskIdGuard {
+    parent_task_id: Option<Id>,
+}
+
+impl TaskIdGuard {
+    fn enter(id: Id) -> Self {
+        TaskIdGuard {
+            parent_task_id: context::set_current_task_id(Some(id)),
+        }
+    }
+}
+
+impl Drop for TaskIdGuard {
+    fn drop(&mut self) {
+        context::set_current_task_id(self.parent_task_id);
+    }
+}
+
+impl<T: Future, S: Schedule> Core<T, S> {
     
     
     
@@ -148,7 +297,7 @@ impl<T: Future> CoreStage<T> {
     
     pub(super) fn poll(&self, mut cx: Context<'_>) -> Poll<T::Output> {
         let res = {
-            self.stage.with_mut(|ptr| {
+            self.stage.stage.with_mut(|ptr| {
                 
                 let future = match unsafe { &mut *ptr } {
                     Stage::Running(future) => future,
@@ -158,6 +307,7 @@ impl<T: Future> CoreStage<T> {
                 
                 let future = unsafe { Pin::new_unchecked(future) };
 
+                let _guard = TaskIdGuard::enter(self.task_id);
                 future.poll(&mut cx)
             })
         };
@@ -201,7 +351,7 @@ impl<T: Future> CoreStage<T> {
     pub(super) fn take_output(&self) -> super::Result<T::Output> {
         use std::mem;
 
-        self.stage.with_mut(|ptr| {
+        self.stage.stage.with_mut(|ptr| {
             
             match mem::replace(unsafe { &mut *ptr }, Stage::Consumed) {
                 Stage::Finished(output) => output,
@@ -211,19 +361,16 @@ impl<T: Future> CoreStage<T> {
     }
 
     unsafe fn set_stage(&self, stage: Stage<T>) {
-        self.stage.with_mut(|ptr| *ptr = stage)
-    }
-}
-
-cfg_rt_multi_thread! {
-    impl Header {
-        pub(super) unsafe fn set_next(&self, next: Option<NonNull<Header>>) {
-            self.queue_next.with_mut(|ptr| *ptr = next);
-        }
+        let _guard = TaskIdGuard::enter(self.task_id);
+        self.stage.stage.with_mut(|ptr| *ptr = stage)
     }
 }
 
 impl Header {
+    pub(super) unsafe fn set_next(&self, next: Option<NonNull<Header>>) {
+        self.queue_next.with_mut(|ptr| *ptr = next);
+    }
+
     
     
     
@@ -235,6 +382,62 @@ impl Header {
         
         
         unsafe { self.owner_id.with(|ptr| *ptr) }
+    }
+
+    
+    
+    
+    
+    
+    pub(super) unsafe fn get_trailer(me: NonNull<Header>) -> NonNull<Trailer> {
+        let offset = me.as_ref().vtable.trailer_offset;
+        let trailer = me.as_ptr().cast::<u8>().add(offset).cast::<Trailer>();
+        NonNull::new_unchecked(trailer)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(super) unsafe fn get_scheduler<S>(me: NonNull<Header>) -> NonNull<S> {
+        let offset = me.as_ref().vtable.scheduler_offset;
+        let scheduler = me.as_ptr().cast::<u8>().add(offset).cast::<S>();
+        NonNull::new_unchecked(scheduler)
+    }
+
+    
+    
+    
+    
+    
+    pub(super) unsafe fn get_id_ptr(me: NonNull<Header>) -> NonNull<Id> {
+        let offset = me.as_ref().vtable.id_offset;
+        let id = me.as_ptr().cast::<u8>().add(offset).cast::<Id>();
+        NonNull::new_unchecked(id)
+    }
+
+    
+    
+    
+    
+    
+    pub(super) unsafe fn get_id(me: NonNull<Header>) -> Id {
+        let ptr = Header::get_id_ptr(me).as_ptr();
+        *ptr
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(all(tokio_unstable, feature = "tracing"))]
+    pub(super) unsafe fn get_tracing_id(me: &NonNull<Header>) -> Option<&tracing::Id> {
+        me.as_ref().tracing_id.as_ref()
     }
 }
 
