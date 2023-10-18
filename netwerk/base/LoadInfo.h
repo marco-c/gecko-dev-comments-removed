@@ -195,6 +195,12 @@ class LoadInfo final : public nsILoadInfo {
     mIsThirdPartyContextToTopWindow.reset();
   }
 
+#ifdef DEBUG
+  void MarkOverriddenFingerprintingSettingsAsSet() {
+    mOverriddenFingerprintingSettingsIsSet = true;
+  }
+#endif
+
  private:
   
   
@@ -359,6 +365,11 @@ class LoadInfo final : public nsILoadInfo {
   nsILoadInfo::StoragePermissionState mStoragePermission =
       nsILoadInfo::NoStoragePermission;
   Maybe<RFPTarget> mOverriddenFingerprintingSettings;
+#ifdef DEBUG
+  
+  
+  bool mOverriddenFingerprintingSettingsIsSet = false;
+#endif
   bool mIsMetaRefresh = false;
 
   

@@ -1544,6 +1544,17 @@ void DocumentLoadListener::SerializeRedirectData(
 
   aArgs.registrarId() = mRedirectChannelId;
 
+#ifdef DEBUG
+  
+  
+  
+  
+  if (!baseChannel) {
+    static_cast<mozilla::net::LoadInfo*>(redirectLoadInfo.get())
+        ->MarkOverriddenFingerprintingSettingsAsSet();
+  }
+#endif
+
   MOZ_ALWAYS_SUCCEEDS(
       ipc::LoadInfoToLoadInfoArgs(redirectLoadInfo, &aArgs.loadInfo()));
 

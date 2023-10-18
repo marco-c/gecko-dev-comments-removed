@@ -976,6 +976,21 @@ void AntiTrackingUtils::UpdateAntiTrackingInfoForChannel(nsIChannel* aChannel) {
   
   
   
+  Maybe<RFPTarget> overriddenFingerprintingSettings =
+      nsRFPService::GetOverriddenFingerprintingSettingsForChannel(aChannel);
+
+  if (overriddenFingerprintingSettings) {
+    loadInfo->SetOverriddenFingerprintingSettings(
+        overriddenFingerprintingSettings.ref());
+  }
+#ifdef DEBUG
+  static_cast<mozilla::net::LoadInfo*>(loadInfo.get())
+      ->MarkOverriddenFingerprintingSettingsAsSet();
+#endif
+
+  
+  
+  
   
   
   
