@@ -606,6 +606,7 @@ function roundTo(number, digits) {
 
 
 
+
 function classifyColor(value) {
   value = value.toLowerCase();
   if (value.startsWith("rgb(") || value.startsWith("rgba(")) {
@@ -616,8 +617,10 @@ function classifyColor(value) {
     return CssColor.COLORUNIT.hwb;
   } else if (/^#[0-9a-f]+$/.exec(value)) {
     return CssColor.COLORUNIT.hex;
+  } else if (/^[a-z\-]+$/.exec(value)) {
+    return CssColor.COLORUNIT.name;
   }
-  return CssColor.COLORUNIT.name;
+  return CssColor.COLORUNIT.authored;
 }
 
 

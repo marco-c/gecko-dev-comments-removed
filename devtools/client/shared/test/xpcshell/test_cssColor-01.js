@@ -23,6 +23,24 @@ const CLASSIFY_TESTS = [
   { input: "#FE01CB80", output: "hex" },
   { input: "blue", output: "name" },
   { input: "orange", output: "name" },
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  { input: "oklch(50% 0.3 180)", output: "authored" },
+  { input: "oklch(50% 0.3 180 / 0.5)", output: "authored" },
+  { input: "oklab(50% -0.3 0.3)", output: "authored" },
+  { input: "oklab(50% -0.3 0.3 / 0.5)", output: "authored" },
+  { input: "lch(50% 0.3 180)", output: "authored" },
+  { input: "lch(50% 0.3 180 / 0.5)", output: "authored" },
+  { input: "lab(50% -0.3 0.3)", output: "authored" },
+  { input: "lab(50% -0.3 0.3 / 0.5)", output: "authored" },
 ];
 
 function run_test() {
