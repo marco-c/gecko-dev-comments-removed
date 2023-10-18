@@ -28,8 +28,7 @@
 
 
 
-class nsHtml5StreamListener : public nsIStreamListener,
-                              public nsIThreadRetargetableStreamListener {
+class nsHtml5StreamListener : public nsIThreadRetargetableStreamListener {
  public:
   explicit nsHtml5StreamListener(nsHtml5StreamParser* aDelegate);
 
