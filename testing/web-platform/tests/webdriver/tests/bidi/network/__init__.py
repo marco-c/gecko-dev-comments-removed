@@ -203,6 +203,11 @@ def assert_response_data(response_data, expected_response):
         
         del expected_response["headers"]
 
+    if response_data["status"] in [401, 407]:
+        assert isinstance(response_data["authChallenges"], list)
+    else:
+        assert "authChallenges" not in response_data
+
     recursive_compare(expected_response, response_data)
 
 
