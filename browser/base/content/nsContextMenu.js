@@ -993,8 +993,7 @@ class nsContextMenu {
         this.onLink &&
         !this.onMailtoLink &&
         !this.onTelLink &&
-        !this.onMozExtLink &&
-        this.getStrippedLink()
+        !this.onMozExtLink
     );
 
     let copyLinkSeparator = document.getElementById("context-sep-copylink");
@@ -2291,7 +2290,10 @@ class nsContextMenu {
       console.warn(`isLinkURIStrippable: ${e.message}`);
       return null;
     }
-    return strippedLinkURI;
+
+    
+    
+    return strippedLinkURI ?? this.linkURI;
   }
 
   
