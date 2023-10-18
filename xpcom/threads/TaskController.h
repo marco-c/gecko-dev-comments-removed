@@ -203,14 +203,9 @@ class Task {
 
   friend class TaskController;
 
-  enum class TaskResult {
-    Complete,
-    Incomplete,
-  };
-
   
   
-  virtual TaskResult Run() = 0;
+  virtual bool Run() = 0;
 
  private:
   Task* GetHighestPriorityDependency();
