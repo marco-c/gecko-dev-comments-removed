@@ -192,7 +192,7 @@ NS_IMETHODIMP nsBaseClipboard::SetData(nsITransferable* aTransferable,
     mIgnoreEmptyNotification = true;
     
     RejectPendingAsyncSetDataRequestIfAny(aWhichClipboard);
-    rv = SetNativeClipboardData(aTransferable, aOwner, aWhichClipboard);
+    rv = SetNativeClipboardData(aTransferable, aWhichClipboard);
     mIgnoreEmptyNotification = false;
   }
   if (NS_FAILED(rv)) {

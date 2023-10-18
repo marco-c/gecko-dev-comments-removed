@@ -30,16 +30,19 @@ class nsClipboard : public nsBaseClipboard {
   static int32_t sSelectionCacheChangeCount;
 
   
-  static NSDictionary* PasteboardDictFromTransferable(nsITransferable* aTransferable);
+  static NSDictionary* PasteboardDictFromTransferable(
+      nsITransferable* aTransferable);
   
-  static bool IsStringType(const nsCString& aMIMEType, NSString** aPasteboardType);
+  static bool IsStringType(const nsCString& aMIMEType,
+                           NSString** aPasteboardType);
   static bool IsImageType(const nsACString& aMIMEType);
   static NSString* WrapHtmlForSystemPasteboard(NSString* aString);
-  static nsresult TransferableFromPasteboard(nsITransferable* aTransferable, NSPasteboard* pboard);
+  static nsresult TransferableFromPasteboard(nsITransferable* aTransferable,
+                                             NSPasteboard* pboard);
 
  protected:
   
-  NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable, nsIClipboardOwner* aOwner,
+  NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
   NS_IMETHOD GetNativeClipboardData(nsITransferable* aTransferable,
                                     int32_t aWhichClipboard) override;
@@ -55,7 +58,8 @@ class nsClipboard : public nsBaseClipboard {
  private:
   virtual ~nsClipboard();
 
-  static mozilla::Maybe<uint32_t> FindIndexOfImageFlavor(const nsTArray<nsCString>& aMIMETypes);
+  static mozilla::Maybe<uint32_t> FindIndexOfImageFlavor(
+      const nsTArray<nsCString>& aMIMETypes);
 };
 
 #endif  
