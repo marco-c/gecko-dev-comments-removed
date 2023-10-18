@@ -26,64 +26,131 @@ add_setup(async function () {
 
 
 
-add_task(async function testStrip() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.query_stripping.strip_on_share.enabled", true]],
-  });
-  let strippedURI = "https://www.example.com/?otherParam=1234";
-  await BrowserTestUtils.withNewTab(url, async function (browser) {
-    
-    await SpecialPowers.spawn(browser, [], async function () {
-      let link = content.document.createElement("a");
-      link.href = "https://www.example.com/?stripParam=1234&otherParam=1234";
-      link.textContent = "link with query param";
-      link.id = "link";
-      content.document.body.appendChild(link);
-    });
-    let contextMenu = document.getElementById("contentAreaContextMenu");
-    
-    let awaitPopupShown = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popupshown"
-    );
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#link",
-      { type: "contextmenu", button: 2 },
-      browser
-    );
-    await awaitPopupShown;
-    let awaitPopupHidden = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popuphidden"
-    );
-    let stripOnShare = contextMenu.querySelector("#context-stripOnShareLink");
-    Assert.ok(
-      BrowserTestUtils.is_visible(stripOnShare),
-      "Menu item is visible"
-    );
-
-    
-    await SimpleTest.promiseClipboardChange(strippedURI, () => {
-      contextMenu.activateItem(stripOnShare);
-    });
-    await awaitPopupHidden;
-  });
-});
-
-
 add_task(async function testPrefDisabled() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.query_stripping.strip_on_share.enabled", false]],
+  let validUrl = "https://www.example.com/";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: false,
+    useTestList: false,
   });
+});
+
+
+add_task(async function testQueryParamIsStrippedSelectURL() {
+  let validUrl = "https://www.example.com/?stripParam=1234";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testQueryParamIsStripped() {
+  let validUrl = "https://www.example.com/?stripParam=1234&otherParam=1234";
+  let shortenedUrl = "https://www.example.com/?otherParam=1234";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testURLIsCopiedWithNoParams() {
+  let validUrl = "https://www.example.com/";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testQueryParamIsStrippedForSiteSpecific() {
+  let validUrl = "https://www.example.com/?test_2=1234";
+  let shortenedUrl = "https://www.example.com/";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+  });
+});
+
+
+add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
+  let validUrl = "https://www.example.com/?test_3=1234";
+  let shortenedUrl = "https://www.example.com/?test_3=1234";
+  await testStripOnShare({
+    originalURI: validUrl,
+    strippedURI: shortenedUrl,
+    prefEnabled: true,
+    useTestList: true,
+  });
+});
+
+
+
+
+
+
+
+
+
+
+async function testStripOnShare({
+  originalURI,
+  strippedURI,
+  prefEnabled,
+  useTestList,
+}) {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["privacy.query_stripping.strip_on_share.enabled", prefEnabled],
+      ["privacy.query_stripping.strip_on_share.enableTestMode", useTestList],
+    ],
+  });
+
+  if (useTestList) {
+    let testJson = {
+      global: {
+        queryParams: ["utm_ad"],
+        topLevelSites: ["*"],
+      },
+      example: {
+        queryParams: ["test_2", "test_1"],
+        topLevelSites: ["www.example.com"],
+      },
+      exampleNet: {
+        queryParams: ["test_3", "test_4"],
+        topLevelSites: ["www.example.net"],
+      },
+    };
+
+    await listService.testSetList(testJson);
+  }
+
   await BrowserTestUtils.withNewTab(url, async function (browser) {
     
-    await SpecialPowers.spawn(browser, [], async function () {
-      let link = content.document.createElement("a");
-      link.href = "https://www.example.com/?stripParam=1234&otherParam=1234";
-      link.textContent = "link with query param";
-      link.id = "link";
-      content.document.body.appendChild(link);
-    });
+    await SpecialPowers.spawn(
+      browser,
+      [originalURI],
+      async function (startingURI) {
+        let link = content.document.createElement("a");
+        link.href = startingURI;
+        link.textContent = "link with query param";
+        link.id = "link";
+        content.document.body.appendChild(link);
+      }
+    );
     let contextMenu = document.getElementById("contentAreaContextMenu");
     
     let awaitPopupShown = BrowserTestUtils.waitForEvent(
@@ -101,51 +168,22 @@ add_task(async function testPrefDisabled() {
       "popuphidden"
     );
     let stripOnShare = contextMenu.querySelector("#context-stripOnShareLink");
-    Assert.ok(
-      !BrowserTestUtils.is_visible(stripOnShare),
-      "Menu item is not visible"
-    );
-    contextMenu.hidePopup();
+    if (prefEnabled) {
+      Assert.ok(
+        BrowserTestUtils.is_visible(stripOnShare),
+        "Menu item is visible"
+      );
+      
+      await SimpleTest.promiseClipboardChange(strippedURI, () => {
+        contextMenu.activateItem(stripOnShare);
+      });
+    } else {
+      Assert.ok(
+        !BrowserTestUtils.is_visible(stripOnShare),
+        "Menu item is not visible"
+      );
+      contextMenu.hidePopup();
+    }
     await awaitPopupHidden;
   });
-});
-
-
-add_task(async function testUnknownQueryParam() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["privacy.query_stripping.strip_on_share.enabled", true]],
-  });
-  await BrowserTestUtils.withNewTab(url, async function (browser) {
-    
-    await SpecialPowers.spawn(browser, [], async function () {
-      let link = content.document.createElement("a");
-      link.href = "https://www.example.com/?otherParam=1234";
-      link.textContent = "link with unknown query param";
-      link.id = "link";
-      content.document.body.appendChild(link);
-    });
-    let contextMenu = document.getElementById("contentAreaContextMenu");
-    
-    let awaitPopupShown = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popupshown"
-    );
-    await BrowserTestUtils.synthesizeMouseAtCenter(
-      "#link",
-      { type: "contextmenu", button: 2 },
-      browser
-    );
-    await awaitPopupShown;
-    let awaitPopupHidden = BrowserTestUtils.waitForEvent(
-      contextMenu,
-      "popuphidden"
-    );
-    let stripOnShare = contextMenu.querySelector("#context-stripOnShareLink");
-    Assert.ok(
-      !BrowserTestUtils.is_visible(stripOnShare),
-      "Menu item is not visible"
-    );
-    contextMenu.hidePopup();
-    await awaitPopupHidden;
-  });
-});
+}
