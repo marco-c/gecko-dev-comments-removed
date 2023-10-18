@@ -80,7 +80,6 @@ function extractSymbol(path, symbols, state) {
     
     const { start, end } = path.node.loc;
     symbols.literals.push({
-      name: path.node.value,
       location: { start, end },
       expression: getSnippet(path.parentPath),
     });
@@ -352,6 +351,7 @@ export function getSymbols(sourceId) {
     
     
     
+    
 
     
     
@@ -386,9 +386,6 @@ function getUniqueIdentifiers(identifiers) {
 function getMemberExpressionSymbol(path) {
   const { start, end } = path.node.property.loc;
   return {
-    name: t.isPrivateName(path.node.property)
-      ? `#${path.node.property.id.name}`
-      : path.node.property.name,
     location: { start, end },
     expression: getSnippet(path),
     computed: path.node.computed,
