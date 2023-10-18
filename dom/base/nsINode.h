@@ -193,15 +193,21 @@ enum class NodeSelectorFlags : uint32_t {
   HasSlowSelectorLaterSiblings = 1 << 3,
 
   
+  HasSlowSelectorNth = 1 << 4,
+
   
   
   
-  HasSlowSelectorNthOf = 1 << 4,
+  
+  HasSlowSelectorNthOf = 1 << 5,
+
+  
+  HasSlowSelectorNthAll = HasSlowSelectorNthOf | HasSlowSelectorNth,
 
   
   
   AllSimpleRestyleFlagsForAppend = HasEmptySelector | HasSlowSelector |
-                                   HasEdgeChildSelector | HasSlowSelectorNthOf,
+                                   HasEdgeChildSelector | HasSlowSelectorNthAll,
 
   
   
@@ -209,17 +215,17 @@ enum class NodeSelectorFlags : uint32_t {
       AllSimpleRestyleFlagsForAppend | HasSlowSelectorLaterSiblings,
 
   
-  RelativeSelectorAnchor = 1 << 5,
+  RelativeSelectorAnchor = 1 << 6,
 
   
   
-  RelativeSelectorAnchorNonSubject = 1 << 6,
+  RelativeSelectorAnchorNonSubject = 1 << 7,
 
   
-  RelativeSelectorSearchDirectionSibling = 1 << 7,
+  RelativeSelectorSearchDirectionSibling = 1 << 8,
 
   
-  RelativeSelectorSearchDirectionAncestor = 1 << 8,
+  RelativeSelectorSearchDirectionAncestor = 1 << 9,
 
   
   
