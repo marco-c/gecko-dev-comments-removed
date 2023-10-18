@@ -1570,7 +1570,7 @@ var gBrowserInit = {
     updateBookmarkToolbarVisibility();
 
     
-    if (ChromeUtils.shouldResistFingerprinting("RoundWindowSize")) {
+    if (ChromeUtils.shouldResistFingerprinting("RoundWindowSize", null)) {
       
       
       document.documentElement.setAttribute("sizemode", "normal");

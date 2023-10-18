@@ -175,7 +175,9 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   static bool IsRFPPrefEnabled(bool aIsPrivateMode);
-  static bool IsRFPEnabledFor(RFPTarget aTarget);
+  static bool IsRFPEnabledFor(
+      RFPTarget aTarget,
+      const Maybe<RFPTarget>& aOverriddenFingerprintingSettings);
 
   
   static double TimerResolution(RTPCallerType aRTPCallerType);
