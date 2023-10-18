@@ -828,7 +828,7 @@ already_AddRefed<nsIArray> CookieStorage::PurgeCookiesWithCallbacks(
 
 
 void CookieStorage::RemoveCookieFromList(const CookieListIter& aIter) {
-  RemoveCookieFromDB(aIter);
+  RemoveCookieFromDB(*aIter.Cookie());
   RemoveCookieFromListInternal(aIter);
 }
 
