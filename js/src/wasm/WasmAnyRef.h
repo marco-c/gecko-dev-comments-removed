@@ -214,7 +214,7 @@ class AnyRef {
 #elif defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_MIPS64) || \
     defined(JS_CODEGEN_RISCV64)
     
-    uintptr_t wideValue = uintptr_t(int64_t((uint64_t(value) << 33) >> 33);
+    uintptr_t wideValue = uintptr_t(int64_t((uint64_t(value) << 33)) >> 33);
 #else
     
     uintptr_t wideValue = (uintptr_t)value;
