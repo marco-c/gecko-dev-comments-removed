@@ -11,11 +11,9 @@
 #include "MainThreadUtils.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
-#include "mozilla/Atomics.h"
 #include "mozilla/Encoding.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/NotNull.h"
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
@@ -207,14 +205,8 @@ class nsHtml5StreamParser final : public nsISupports {
 
   nsresult OnDataAvailable(nsIRequest* aRequest, nsIInputStream* aInStream,
                            uint64_t aSourceOffset, uint32_t aLength);
-  
 
-
-
-
-  nsresult OnStopRequest(
-      nsIRequest* aRequest, nsresult status,
-      const mozilla::ReentrantMonitorAutoEnter& aProofOfLock);
+  nsresult OnStopRequest(nsIRequest* aRequest, nsresult status);
 
   
   
@@ -764,13 +756,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   nsString mUUIDForDevtools;
-
-  
-
-
-
-
-  bool mOnStopCalled{false};
 };
 
 #endif  
