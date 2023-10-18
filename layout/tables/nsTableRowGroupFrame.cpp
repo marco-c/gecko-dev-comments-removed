@@ -34,18 +34,14 @@ namespace mozilla {
 struct TableRowGroupReflowInput {
   const ReflowInput& reflowInput;  
 
-  nsTableFrame* tableFrame;
-
   
   mozilla::LogicalSize availSize;
 
   
   nscoord bCoord;
 
-  TableRowGroupReflowInput(const ReflowInput& aReflowInput,
-                           nsTableFrame* aTableFrame)
+  explicit TableRowGroupReflowInput(const ReflowInput& aReflowInput)
       : reflowInput(aReflowInput),
-        tableFrame(aTableFrame),
         availSize(aReflowInput.AvailableSize()),
         bCoord(0) {}
 
@@ -401,12 +397,12 @@ void nsTableRowGroupFrame::ReflowChildren(
       aReflowInput.bCoord += cellSpacingB;
 
       if (!reflowAllKids) {
-        if (IsSimpleRowFrame(aReflowInput.tableFrame, kidFrame)) {
+        if (IsSimpleRowFrame(tableFrame, kidFrame)) {
           
           kidFrame->DidResize();
           
           const nsStylePosition* stylePos = StylePosition();
-          if (aReflowInput.tableFrame->IsAutoBSize(wm) &&
+          if (tableFrame->IsAutoBSize(wm) &&
               !stylePos->BSize(wm).ConvertsToLength()) {
             
             
@@ -1345,7 +1341,7 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
   nsTableFrame::CheckRequestSpecialBSizeReflow(aReflowInput);
 
   nsTableFrame* tableFrame = GetTableFrame();
-  TableRowGroupReflowInput state(aReflowInput, tableFrame);
+  TableRowGroupReflowInput state(aReflowInput);
   const nsStyleVisibility* groupVis = StyleVisibility();
   bool collapseGroup = StyleVisibility::Collapse == groupVis->mVisible;
   if (collapseGroup) {
