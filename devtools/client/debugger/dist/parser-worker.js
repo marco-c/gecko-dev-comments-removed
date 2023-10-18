@@ -41339,14 +41339,6 @@
       }));
     }
 
-    function getSpecifiers(specifiers) {
-      if (!specifiers) {
-        return [];
-      }
-
-      return specifiers.map(specifier => specifier.local?.name);
-    }
-
     function isComputedExpression(expression) {
       return /^\[/m.test(expression);
     }
@@ -41626,21 +41618,18 @@
       return null;
     }
 
-    function isReactComponent({ imports, classes, callExpressions, identifiers }) {
+    function isReactComponent({
+      importsReact,
+      classes,
+      callExpressions,
+      identifiers,
+    }) {
       return (
-        importsReact(imports) ||
+        importsReact ||
         requiresReact(callExpressions) ||
         extendsReactComponent(classes) ||
         isReact(identifiers) ||
         isRedux(identifiers)
-      );
-    }
-
-    function importsReact(imports) {
-      return imports.some(
-        importObj =>
-          importObj.source === "react" &&
-          importObj.specifiers.some(specifier => specifier === "React")
       );
     }
 
@@ -41723,8 +41712,8 @@
         symbols.classes.push(getClassDeclarationSymbol(path.node));
       }
 
-      if (lib$3.isImportDeclaration(path)) {
-        symbols.imports.push(getImportDeclarationSymbol(path.node));
+      if (lib$3.isImportDeclaration(path) && !symbols.importsReact) {
+        symbols.importsReact = isReactImport(path.node);
       }
 
       if (lib$3.isMemberExpression(path) || lib$3.isOptionalMemberExpression(path)) {
@@ -41764,6 +41753,7 @@
         hasJsx: false,
         hasTypes: false,
         framework: undefined,
+        importsReact: false,
       };
 
       const state = {
@@ -42030,9 +42020,6 @@
         
         
         
-        
-        
-        
 
         
         
@@ -42065,11 +42052,11 @@
       };
     }
 
-    function getImportDeclarationSymbol(node) {
-      return {
-        source: node.source.value,
-        specifiers: getSpecifiers(node.specifiers),
-      };
+    function isReactImport(node) {
+      return (
+        node.source.value == "react" &&
+        node.specifiers?.some(specifier => specifier.local?.name == "React")
+      );
     }
 
     function getCallExpressionSymbol(node) {
