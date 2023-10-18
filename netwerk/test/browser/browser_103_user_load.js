@@ -7,6 +7,10 @@
 
 
 
+ChromeUtils.defineESModuleGetters(this, {
+  UrlbarTestUtils: "resource://testing-common/UrlbarTestUtils.sys.mjs",
+});
+
 const {
   request_count_checking,
   test_hint_preload_internal,
@@ -60,7 +64,7 @@ add_task(async function user_initiated_load() {
   
   is(
     gURLBar.value,
-    START_VALUE,
+    UrlbarTestUtils.trimURL(START_VALUE),
     "Urlbar should preserve the value on return keypress"
   );
   is(gBrowser.selectedTab, tab, "New URL was loaded in the current tab");
