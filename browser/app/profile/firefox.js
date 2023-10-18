@@ -2863,3 +2863,8 @@ pref("cookiebanners.ui.desktop.cfrVariant", 0);
 
 
 pref("browser.privatebrowsing.resetPBM.showConfirmationDialog", true);
+
+
+#ifdef XP_MACOSX
+  pref("browser.attribution.macos.enabled", false);
+#endif
