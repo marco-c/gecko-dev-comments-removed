@@ -2,7 +2,7 @@
 
 
 
-import imp
+
 import os
 import re
 import sys
@@ -14,6 +14,7 @@ from unittest.case import SkipTest
 
 import six
 from marionette_driver.errors import TimeoutException, UnresponsiveInstanceException
+from mozfile import load_source
 from mozlog import get_default_logger
 
 
@@ -372,12 +373,11 @@ class MarionetteTestCase(CommonTestCase):
         
         
         
-        
-        
+
         if mod_name in sys.modules:
             del sys.modules[mod_name]
 
-        test_mod = imp.load_source(mod_name, filepath)
+        test_mod = load_source(mod_name, filepath)
 
         for name in dir(test_mod):
             obj = getattr(test_mod, name)

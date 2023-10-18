@@ -1,8 +1,8 @@
 
 
 
-import imp
 import sys
+import types
 from pathlib import Path
 from unittest.mock import patch
 
@@ -38,7 +38,7 @@ class TestEntryPoints(TestBase):
         
         
         if "mach.commands" not in sys.modules:
-            mod = imp.new_module("mach.commands")
+            mod = types.ModuleType("mach.commands")
             sys.modules["mach.commands"] = mod
 
         mock.return_value = [Entry([self.provider_dir])]
