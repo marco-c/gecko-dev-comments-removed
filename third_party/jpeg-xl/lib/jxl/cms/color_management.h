@@ -1,0 +1,34 @@
+
+
+
+
+
+#ifndef LIB_JXL_COLOR_MANAGEMENT_H_
+#define LIB_JXL_COLOR_MANAGEMENT_H_
+
+
+
+#include "lib/jxl/base/compiler_specific.h"
+#include "lib/jxl/base/status.h"
+
+
+#include "lib/jxl/color_encoding_internal.h"
+
+namespace jxl {
+
+enum class ExtraTF {
+  kNone,
+  kPQ,
+  kHLG,
+  kSRGB,
+};
+
+
+
+Status MaybeCreateProfile(const ColorEncoding& c, IccBytes* JXL_RESTRICT icc);
+
+Status CIEXYZFromWhiteCIExy(const CIExy& xy, float XYZ[3]);
+
+}  
+
+#endif  

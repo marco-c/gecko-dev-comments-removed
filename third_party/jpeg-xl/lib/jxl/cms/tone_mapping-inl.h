@@ -3,16 +3,16 @@
 
 
 
-#if defined(LIB_JXL_DEC_TONE_MAPPING_INL_H_) == defined(HWY_TARGET_TOGGLE)
-#ifdef LIB_JXL_DEC_TONE_MAPPING_INL_H_
-#undef LIB_JXL_DEC_TONE_MAPPING_INL_H_
+#if defined(LIB_JXL_CMS_TONE_MAPPING_INL_H_) == defined(HWY_TARGET_TOGGLE)
+#ifdef LIB_JXL_CMS_TONE_MAPPING_INL_H_
+#undef LIB_JXL_CMS_TONE_MAPPING_INL_H_
 #else
-#define LIB_JXL_DEC_TONE_MAPPING_INL_H_
+#define LIB_JXL_CMS_TONE_MAPPING_INL_H_
 #endif
 
 #include <hwy/highway.h>
 
-#include "lib/jxl/transfer_functions-inl.h"
+#include "lib/jxl/cms/transfer_functions-inl.h"
 
 HWY_BEFORE_NAMESPACE();
 namespace jxl {

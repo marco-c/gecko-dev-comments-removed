@@ -5,6 +5,8 @@
 
 #include "lib/jxl/render_pipeline/stage_epf.h"
 
+#include "lib/jxl/base/common.h"
+#include "lib/jxl/common.h"  
 #include "lib/jxl/epf.h"
 #include "lib/jxl/sanitizers.h"
 

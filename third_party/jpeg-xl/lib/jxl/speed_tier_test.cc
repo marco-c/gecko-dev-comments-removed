@@ -8,10 +8,10 @@
 #include "lib/extras/codec.h"
 #include "lib/jxl/base/data_parallel.h"
 #include "lib/jxl/base/padded_bytes.h"
+#include "lib/jxl/cms/jxl_cms.h"
 #include "lib/jxl/codec_in_out.h"
 #include "lib/jxl/enc_butteraugli_comparator.h"
 #include "lib/jxl/enc_cache.h"
-#include "lib/jxl/enc_color_management.h"
 #include "lib/jxl/enc_file.h"
 #include "lib/jxl/enc_params.h"
 #include "lib/jxl/image.h"
@@ -72,11 +72,11 @@ JXL_GTEST_INSTANTIATE_TEST_SUITE_P(
                     SpeedTierTestParams{SpeedTier::kSquirrel,
                                         false},
                     SpeedTierTestParams{SpeedTier::kKitten,
-                                        true},
-                    SpeedTierTestParams{SpeedTier::kKitten,
                                         false},
                     
                     SpeedTierTestParams{SpeedTier::kTortoise,
+                                        true},
+                    SpeedTierTestParams{SpeedTier::kGlacier,
                                         true}));
 
 TEST_P(SpeedTierTest, Roundtrip) {
@@ -88,22 +88,30 @@ TEST_P(SpeedTierTest, Roundtrip) {
 
   const SpeedTierTestParams& params = GetParam();
 
-  if (params.shrink8) {
+  if (params.speed_tier == SpeedTier::kGlacier) {
+    
+    io.ShrinkTo(8, 8);
+  } else if (params.shrink8) {
     io.ShrinkTo(io.xsize() / 8, io.ysize() / 8);
   }
 
   CompressParams cparams;
   cparams.speed_tier = params.speed_tier;
-  cparams.SetCms(GetJxlCms());
+  cparams.SetCms(*JxlGetDefaultCms());
 
-  CodecInOut io2;
+  CodecInOut io2, io3;
   JXL_EXPECT_OK(test::Roundtrip(&io, cparams, {}, &io2, _));
-
-  
   EXPECT_LE(ButteraugliDistance(io.frames, io2.frames, ButteraugliParams(),
-                                GetJxlCms(),
+                                *JxlGetDefaultCms(),
                                 nullptr, nullptr),
-            2.8);
+            1.6);
+
+  if (params.shrink8) {
+    cparams.SetLossless();
+    JXL_EXPECT_OK(test::Roundtrip(&io, cparams, {}, &io3, _));
+
+    JXL_EXPECT_OK(SamePixels(*io.Main().color(), *io3.Main().color(), _));
+  }
 }
 }  
 }  

@@ -18,7 +18,9 @@
 
 #include <sstream>
 
+
 #include "gtest/gtest.h"
+#include "lib/jxl/common.h"
 
 #ifdef JXL_DISABLE_SLOW_TESTS
 #define JXL_SLOW_TEST(X) DISABLED_##X

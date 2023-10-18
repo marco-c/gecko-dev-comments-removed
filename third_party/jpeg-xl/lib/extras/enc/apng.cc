@@ -120,6 +120,7 @@ class BlobsWriterPNG {
     }
     if (!blobs.xmp.empty()) {
       
+      
       JXL_RETURN_IF_ERROR(EncodeBase16("xmp", blobs.xmp, strings));
     }
     return true;

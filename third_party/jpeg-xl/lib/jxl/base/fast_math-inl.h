@@ -5,17 +5,17 @@
 
 
 
-#if defined(LIB_JXL_FAST_MATH_INL_H_) == defined(HWY_TARGET_TOGGLE)
-#ifdef LIB_JXL_FAST_MATH_INL_H_
-#undef LIB_JXL_FAST_MATH_INL_H_
+#if defined(LIB_JXL_BASE_FAST_MATH_INL_H_) == defined(HWY_TARGET_TOGGLE)
+#ifdef LIB_JXL_BASE_FAST_MATH_INL_H_
+#undef LIB_JXL_BASE_FAST_MATH_INL_H_
 #else
-#define LIB_JXL_FAST_MATH_INL_H_
+#define LIB_JXL_BASE_FAST_MATH_INL_H_
 #endif
 
 #include <hwy/highway.h>
 
-#include "lib/jxl/common.h"
-#include "lib/jxl/rational_polynomial-inl.h"
+#include "lib/jxl/base/common.h"
+#include "lib/jxl/base/rational_polynomial-inl.h"
 HWY_BEFORE_NAMESPACE();
 namespace jxl {
 namespace HWY_NAMESPACE {
@@ -219,8 +219,8 @@ HWY_AFTER_NAMESPACE();
 #endif  
 
 #if HWY_ONCE
-#ifndef FAST_MATH_ONCE
-#define FAST_MATH_ONCE
+#ifndef LIB_JXL_BASE_FAST_MATH_ONCE
+#define LIB_JXL_BASE_FAST_MATH_ONCE
 
 namespace jxl {
 inline float FastLog2f(float f) { return HWY_STATIC_DISPATCH(FastLog2f)(f); }

@@ -60,7 +60,7 @@ JXL_THREADS_EXPORT void JxlThreadParallelRunnerDestroy(void* runner_opaque);
 
 
 
-JXL_THREADS_EXPORT size_t JxlThreadParallelRunnerDefaultNumWorkerThreads();
+JXL_THREADS_EXPORT size_t JxlThreadParallelRunnerDefaultNumWorkerThreads(void);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }

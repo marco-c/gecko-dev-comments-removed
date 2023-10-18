@@ -48,9 +48,6 @@ Status RgbToYcbcr(const ImageF& r_plane, const ImageF& g_plane,
                   const ImageF& b_plane, ImageF* y_plane, ImageF* cb_plane,
                   ImageF* cr_plane, ThreadPool* pool);
 
-
-Image3F OpsinDynamicsImage(const Image3B& srgb8, const JxlCmsInterface& cms);
-
 }  
 
 #endif  

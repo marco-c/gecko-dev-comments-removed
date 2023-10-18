@@ -11,7 +11,7 @@
 
 
 #ifdef SKCMS_API
-#error "Must include enc_jxl_skcms.h and not skcms.h directly"
+#error "Must include jxl_skcms.h and not skcms.h directly"
 #endif  
 
 #if JPEGXL_BUNDLE_SKCMS

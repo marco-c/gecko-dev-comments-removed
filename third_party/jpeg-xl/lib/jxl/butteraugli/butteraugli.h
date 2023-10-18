@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "lib/jxl/base/compiler_specific.h"
-#include "lib/jxl/common.h"
 #include "lib/jxl/image.h"
 #include "lib/jxl/image_ops.h"
 
@@ -84,6 +83,13 @@ bool ButteraugliInterface(const Image3F &rgb0, const Image3F &rgb1,
 bool ButteraugliInterface(const Image3F &rgb0, const Image3F &rgb1,
                           float hf_asymmetry, float xmul, ImageF &diffmap,
                           double &diffvalue);
+
+
+
+
+bool ButteraugliInterfaceInPlace(Image3F &&rgb0, Image3F &&rgb1,
+                                 const ButteraugliParams &params,
+                                 ImageF &diffmap, double &diffvalue);
 
 
 

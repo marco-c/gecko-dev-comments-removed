@@ -33,7 +33,7 @@ typedef struct JxlEncoderStatsStruct JxlEncoderStats;
 
 
 
-JXL_EXPORT JxlEncoderStats* JxlEncoderStatsCreate();
+JXL_EXPORT JxlEncoderStats* JxlEncoderStatsCreate(void);
 
 
 

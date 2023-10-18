@@ -4,8 +4,8 @@
 
 
 #include "lib/extras/codec.h"
+#include "lib/jxl/cms/jxl_cms.h"
 #include "lib/jxl/enc_butteraugli_comparator.h"
-#include "lib/jxl/enc_color_management.h"
 #include "lib/jxl/enc_params.h"
 #include "lib/jxl/image_test_utils.h"
 #include "lib/jxl/test_utils.h"
@@ -49,7 +49,7 @@ TEST(PatchDictionaryTest, GrayscaleVarDCT) {
   EXPECT_LE(compressed_size, 14000u);
   
   EXPECT_LE(ButteraugliDistance(io.frames, io2.frames, ButteraugliParams(),
-                                GetJxlCms(),
+                                *JxlGetDefaultCms(),
                                 nullptr),
             1.1);
 }

@@ -11,6 +11,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <vector>
+
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/padded_bytes.h"
 #include "lib/jxl/base/status.h"
@@ -22,7 +24,7 @@ namespace jxl {
 struct AuxOut;
 
 
-Status WriteICC(const PaddedBytes& icc, BitWriter* JXL_RESTRICT writer,
+Status WriteICC(const std::vector<uint8_t>& icc, BitWriter* JXL_RESTRICT writer,
                 size_t layer, AuxOut* JXL_RESTRICT aux_out);
 
 

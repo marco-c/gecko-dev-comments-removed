@@ -20,6 +20,9 @@
 #include <jxl/parallel_runner.h>
 #include <jxl/stats.h>
 #include <jxl/version.h>
+#include <stdint.h>
+
+#include "jxl/types.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -790,6 +793,141 @@ JXL_EXPORT JxlEncoderStatus JxlEncoderSetOutputProcessor(
 
 
 JXL_EXPORT JxlEncoderStatus JxlEncoderFlushInput(JxlEncoder* enc);
+
+
+
+
+
+struct JxlChunkedFrameInputSource {
+  
+
+
+
+  void* opaque;
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  void (*get_color_channels_pixel_format)(void* opaque,
+                                          JxlPixelFormat* pixel_format);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const void* (*get_color_channel_data_at)(void* opaque, size_t xpos,
+                                           size_t ypos, size_t xsize,
+                                           size_t ysize, size_t* row_offset);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  void (*get_extra_channel_pixel_format)(void* opaque, size_t ec_index,
+                                         JxlPixelFormat* pixel_format);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  const void* (*get_extra_channel_data_at)(void* opaque, size_t ec_index,
+                                           size_t xpos, size_t ypos,
+                                           size_t xsize, size_t ysize,
+                                           size_t* row_offset);
+
+  
+
+
+
+
+
+
+
+
+
+  void (*release_buffer)(void* opaque, const void* buf);
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+JXL_EXPORT JxlEncoderStatus JxlEncoderAddChunkedFrame(
+    const JxlEncoderFrameSettings* frame_settings, JXL_BOOL is_last_frame,
+    struct JxlChunkedFrameInputSource chunked_frame_input);
 
 
 
