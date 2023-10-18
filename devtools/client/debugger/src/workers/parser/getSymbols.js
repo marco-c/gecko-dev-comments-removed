@@ -11,7 +11,7 @@ import {
   isObjectShorthand,
   isComputedExpression,
   getObjectExpressionValue,
-  getPatternIdentifiers,
+  addPatternIdentifiers,
   getComments,
   getCode,
   nodeLocationKey,
@@ -85,7 +85,7 @@ function extractSymbol(path, symbols, state) {
     });
   }
 
-  symbols.identifiers.push(...getIdentifierSymbols(path));
+  getIdentifierSymbols(symbols.identifiers, path);
 }
 
 function extractSymbols(sourceId) {
@@ -438,34 +438,33 @@ function getClassDeclarationSymbol(node) {
 
 
 
-function getIdentifierSymbols(path) {
+
+
+function getIdentifierSymbols(identifiers, path) {
   if (t.isStringLiteral(path) && t.isProperty(path.parentPath)) {
     const { start, end } = path.node.loc;
-    return [
-      {
-        name: path.node.value,
-        expression: getObjectExpressionValue(path.parent),
-        location: { start, end },
-      },
-    ];
+    identifiers.push({
+      name: path.node.value,
+      expression: getObjectExpressionValue(path.parent),
+      location: { start, end },
+    });
+    return;
   }
 
-  const identifiers = [];
   if (t.isIdentifier(path) && !t.isGenericTypeAnnotation(path.parent)) {
     
     if (t.isClassMethod(path.parent) && !path.inList) {
-      return [];
+      return;
     }
 
     if (t.isProperty(path.parentPath) && !isObjectShorthand(path.parent)) {
       const { start, end } = path.node.loc;
-      return [
-        {
-          name: path.node.name,
-          expression: getObjectExpressionValue(path.parent),
-          location: { start, end },
-        },
-      ];
+      identifiers.push({
+        name: path.node.name,
+        expression: getObjectExpressionValue(path.parent),
+        location: { start, end },
+      });
+      return;
     }
 
     let { start, end } = path.node.loc;
@@ -493,8 +492,6 @@ function getIdentifierSymbols(path) {
   if (t.isVariableDeclarator(path)) {
     const nodeId = path.node.id;
 
-    identifiers.push(...getPatternIdentifiers(nodeId));
+    addPatternIdentifiers(identifiers, nodeId);
   }
-
-  return identifiers;
 }
