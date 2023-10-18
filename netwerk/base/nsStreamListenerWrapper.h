@@ -17,8 +17,7 @@ namespace net {
 
 
 class nsStreamListenerWrapper final
-    : public nsIStreamListener,
-      public nsIMultiPartChannelListener,
+    : public nsIMultiPartChannelListener,
       public nsIThreadRetargetableStreamListener {
  public:
   explicit nsStreamListenerWrapper(nsIStreamListener* listener)

@@ -63,8 +63,7 @@ class nsURILoader final : public nsIURILoader {
 
 
 
-class nsDocumentOpenInfo : public nsIStreamListener,
-                           public nsIThreadRetargetableStreamListener {
+class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
  public:
   
   

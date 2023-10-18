@@ -32,7 +32,6 @@ class nsProxyInfo;
 
 
 class HttpTransactionChild final : public PHttpTransactionChild,
-                                   public nsIStreamListener,
                                    public nsITransportEventSink,
                                    public nsIThrottledInputChannel,
                                    public nsIThreadRetargetableStreamListener,

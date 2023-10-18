@@ -12,7 +12,7 @@
 
 
 
-[uuid(fb2304b8-f82f-4433-af68-d874a2ebbdc1)]
+[scriptable, uuid(fb2304b8-f82f-4433-af68-d874a2ebbdc1)]
 interface nsIThreadRetargetableStreamListener : nsIStreamListener
 {
   
