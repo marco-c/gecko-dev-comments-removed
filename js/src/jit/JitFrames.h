@@ -28,6 +28,7 @@ class Instance;
 namespace jit {
 
 enum class FrameType;
+enum class VMFunctionId;
 class IonScript;
 class JitActivation;
 class JitFrameLayout;
@@ -328,11 +329,13 @@ enum class ExitFrameType : uint8_t {
   IonOOLProxy = 0x6,
   WasmGenericJitEntry = 0x7,
   DirectWasmJitCall = 0x8,
-  UnwoundJit = 0xFB,
-  InterpreterStub = 0xFC,
-  VMFunction = 0xFD,
-  LazyLink = 0xFE,
-  Bare = 0xFF,
+  UnwoundJit = 0x9,
+  InterpreterStub = 0xA,
+  LazyLink = 0xB,
+  Bare = 0xC,
+
+  
+  VMFunction = 0xD
 };
 
 
@@ -341,23 +344,27 @@ class ExitFooterFrame {
   
   uintptr_t data_;
 
+#ifdef DEBUG
+  void assertValidVMFunctionId() const;
+#else
+  void assertValidVMFunctionId() const {}
+#endif
+
  public:
   static constexpr size_t Size() { return sizeof(ExitFooterFrame); }
   void setUnwoundJitExitFrame() {
     data_ = uintptr_t(ExitFrameType::UnwoundJit);
   }
   ExitFrameType type() const {
-    static_assert(sizeof(ExitFrameType) == sizeof(uint8_t),
-                  "Code assumes ExitFrameType fits in a byte");
-    if (data_ > UINT8_MAX) {
+    if (data_ >= uintptr_t(ExitFrameType::VMFunction)) {
       return ExitFrameType::VMFunction;
     }
-    MOZ_ASSERT(ExitFrameType(data_) != ExitFrameType::VMFunction);
     return ExitFrameType(data_);
   }
-  inline const VMFunctionData* function() const {
+  VMFunctionId functionId() const {
     MOZ_ASSERT(type() == ExitFrameType::VMFunction);
-    return reinterpret_cast<const VMFunctionData*>(data_);
+    assertValidVMFunctionId();
+    return static_cast<VMFunctionId>(data_ - size_t(ExitFrameType::VMFunction));
   }
 
 #ifdef JS_CODEGEN_MIPS32
