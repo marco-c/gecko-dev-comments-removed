@@ -3044,7 +3044,11 @@ IMEContentObserver* TextControlState::GetIMEContentObserver() const {
       mTextCtrlElement != IMEStateManager::GetFocusedElement()) {
     return nullptr;
   }
-  return IMEStateManager::GetActiveContentObserver();
+  IMEContentObserver* observer = IMEStateManager::GetActiveContentObserver();
+  
+  
+  
+  return observer && observer->EditorIsTextEditor() ? observer : nullptr;
 }
 
 }  
