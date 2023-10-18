@@ -41351,7 +41351,9 @@
 
 
 
-    function addPatternIdentifiers(identifiers, pattern) {
+
+
+    function addPatternIdentifiers(identifiers, identifiersKeys, pattern) {
       let items;
       if (lib$3.isObjectPattern(pattern)) {
         items = pattern.properties.map(({ value }) => value);
@@ -41362,21 +41364,22 @@
       }
 
       if (items) {
-        addIdentifiers(identifiers, items);
+        addIdentifiers(identifiers, identifiersKeys, items);
       }
     }
 
-    function addIdentifiers(identifiers, items) {
+    function addIdentifiers(identifiers, identifiersKeys, items) {
       for (const item of items) {
         if (lib$3.isObjectPattern(item) || lib$3.isArrayPattern(item)) {
-          addPatternIdentifiers(identifiers, item);
+          addPatternIdentifiers(identifiers, identifiersKeys, item);
         } else if (lib$3.isIdentifier(item)) {
-          const { start, end } = item.loc;
-          identifiers.push({
-            name: item.name,
-            expression: item.name,
-            location: { start, end },
-          });
+          if (!identifiersKeys.has(nodeLocationKey(item.loc))) {
+            identifiers.push({
+              name: item.name,
+              expression: item.name,
+              location: item.loc,
+            });
+          }
         }
       }
     }
@@ -41387,8 +41390,7 @@
       return ancestors.filter(ancestor => ancestor.key == "body").length == 1;
     }
 
-    function nodeLocationKey(a) {
-      const { start, end } = a.location;
+    function nodeLocationKey({ start, end }) {
       return `${start.line}:${start.column}:${end.line}:${end.column}`;
     }
 
@@ -41730,7 +41732,7 @@
         });
       }
 
-      getIdentifierSymbols(symbols.identifiers, path);
+      getIdentifierSymbols(symbols.identifiers, symbols.identifiersKeys, path);
     }
 
     function extractSymbols(sourceId) {
@@ -41739,6 +41741,9 @@
         memberExpressions: [],
         comments: [],
         identifiers: [],
+        
+        
+        identifiersKeys: new Set(),
         classes: [],
         literals: [],
         hasJsx: false,
@@ -41766,7 +41771,6 @@
 
       
       symbols.comments = getComments(ast);
-      symbols.identifiers = getUniqueIdentifiers(symbols.identifiers);
       symbols.framework = getFramework(symbols);
 
       return symbols;
@@ -42014,20 +42018,6 @@
       };
     }
 
-    function getUniqueIdentifiers(identifiers) {
-      const newIdentifiers = [];
-      const locationKeys = new Set();
-      for (const newId of identifiers) {
-        const key = nodeLocationKey(newId);
-        if (!locationKeys.has(key)) {
-          locationKeys.add(key);
-          newIdentifiers.push(newId);
-        }
-      }
-
-      return newIdentifiers;
-    }
-
     function getMemberExpressionSymbol(path) {
       const { start, end } = path.node.property.loc;
       return {
@@ -42085,14 +42075,17 @@
 
 
 
-    function getIdentifierSymbols(identifiers, path) {
+
+
+    function getIdentifierSymbols(identifiers, identifiersKeys, path) {
       if (lib$3.isStringLiteral(path) && lib$3.isProperty(path.parentPath)) {
-        const { start, end } = path.node.loc;
-        identifiers.push({
-          name: path.node.value,
-          expression: getObjectExpressionValue(path.parent),
-          location: { start, end },
-        });
+        if (!identifiersKeys.has(nodeLocationKey(path.node.loc))) {
+          identifiers.push({
+            name: path.node.value,
+            expression: getObjectExpressionValue(path.parent),
+            location: path.node.loc,
+          });
+        }
         return;
       }
 
@@ -42103,12 +42096,13 @@
         }
 
         if (lib$3.isProperty(path.parentPath) && !isObjectShorthand(path.parent)) {
-          const { start, end } = path.node.loc;
-          identifiers.push({
-            name: path.node.name,
-            expression: getObjectExpressionValue(path.parent),
-            location: { start, end },
-          });
+          if (!identifiersKeys.has(nodeLocationKey(path.node.loc))) {
+            identifiers.push({
+              name: path.node.name,
+              expression: getObjectExpressionValue(path.parent),
+              location: path.node.loc,
+            });
+          }
           return;
         }
 
@@ -42118,26 +42112,29 @@
           end = { ...end, column };
         }
 
-        identifiers.push({
-          name: path.node.name,
-          expression: path.node.name,
-          location: { start, end },
-        });
+        if (!identifiersKeys.has(nodeLocationKey({ start, end }))) {
+          identifiers.push({
+            name: path.node.name,
+            expression: path.node.name,
+            location: { start, end },
+          });
+        }
       }
 
       if (lib$3.isThisExpression(path.node)) {
-        const { start, end } = path.node.loc;
-        identifiers.push({
-          name: "this",
-          location: { start, end },
-          expression: "this",
-        });
+        if (!identifiersKeys.has(nodeLocationKey(path.node.loc))) {
+          identifiers.push({
+            name: "this",
+            location: path.node.loc,
+            expression: "this",
+          });
+        }
       }
 
       if (lib$3.isVariableDeclarator(path)) {
         const nodeId = path.node.id;
 
-        addPatternIdentifiers(identifiers, nodeId);
+        addPatternIdentifiers(identifiers, identifiersKeys, nodeId);
       }
     }
 
