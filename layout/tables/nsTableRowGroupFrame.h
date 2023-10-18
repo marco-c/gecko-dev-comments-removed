@@ -140,7 +140,7 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
 
 
 
-  nsresult InitRepeatedFrame(nsTableRowGroupFrame* aHeaderFooterFrame);
+  void InitRepeatedFrame(nsTableRowGroupFrame* aHeaderFooterFrame);
 
   
 
@@ -338,11 +338,9 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
                       nsReflowStatus& aStatus,
                       bool* aPageBreakBeforeEnd = nullptr);
 
-  nsresult SplitRowGroup(nsPresContext* aPresContext,
-                         ReflowOutput& aDesiredSize,
-                         const ReflowInput& aReflowInput,
-                         nsTableFrame* aTableFrame, nsReflowStatus& aStatus,
-                         bool aRowForcedPageBreak);
+  void SplitRowGroup(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
+                     const ReflowInput& aReflowInput, nsTableFrame* aTableFrame,
+                     nsReflowStatus& aStatus, bool aRowForcedPageBreak);
 
   void SplitSpanningCells(nsPresContext& aPresContext,
                           const ReflowInput& aReflowInput,
