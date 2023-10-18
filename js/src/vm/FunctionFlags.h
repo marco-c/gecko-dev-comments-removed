@@ -20,24 +20,64 @@ namespace js {
 
 class FunctionFlags {
  public:
+  
   enum FunctionKind : uint8_t {
+    
+    
+    
+    
+    
+    
+    
+    
     NormalFunction = 0,
-    Arrow,   
-    Method,  
+
+    
+    
+    Arrow,
+
+    
+    
+    Method,
+
+    
+    
+    
+    
     ClassConstructor,
+
+    
+    
+    
+    
+    
     Getter,
     Setter,
-    AsmJS,  
-    Wasm,   
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    AsmJS,
+
+    
+    Wasm,
+
     FunctionKindLimit
   };
 
   enum Flags : uint16_t {
     
-    
     FUNCTION_KIND_SHIFT = 0,
     FUNCTION_KIND_MASK = 0x0007,
 
+    
+    
     
     
     
@@ -58,10 +98,19 @@ class FunctionFlags {
 
     
     
+    
+    
+    
+    
+    
+    
+    
     CONSTRUCTOR = 1 << 7,
 
     
 
+    
+    
     
     
     LAMBDA = 1 << 9,
@@ -72,15 +121,23 @@ class FunctionFlags {
 
     
     
+    
+    
     HAS_INFERRED_NAME = 1 << 11,
 
+    
+    
     
     HAS_GUESSED_ATOM = 1 << 12,
 
     
+    
+    
     RESOLVED_NAME = 1 << 13,
     RESOLVED_LENGTH = 1 << 14,
 
+    
+    
     
     
     
@@ -172,6 +229,61 @@ class FunctionFlags {
     return static_cast<FunctionKind>((flags_ & FUNCTION_KIND_MASK) >>
                                      FUNCTION_KIND_SHIFT);
   }
+
+#ifdef DEBUG
+  void assertFunctionKindIntegrity() {
+    switch (kind()) {
+      case FunctionKind::NormalFunction:
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+
+      case FunctionKind::Arrow:
+        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(hasFlags(LAMBDA));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+      case FunctionKind::Method:
+        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(!hasFlags(LAMBDA));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+      case FunctionKind::ClassConstructor:
+        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(!hasFlags(LAMBDA));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+      case FunctionKind::Getter:
+        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(!hasFlags(LAMBDA));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+      case FunctionKind::Setter:
+        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(!hasFlags(LAMBDA));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+
+      case FunctionKind::AsmJS:
+        MOZ_ASSERT(!hasFlags(BASESCRIPT));
+        MOZ_ASSERT(!hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
+        break;
+      case FunctionKind::Wasm:
+        MOZ_ASSERT(!hasFlags(BASESCRIPT));
+        MOZ_ASSERT(!hasFlags(SELFHOSTLAZY));
+        MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
+        MOZ_ASSERT(!hasFlags(LAMBDA));
+        break;
+      default:
+        break;
+    }
+  }
+#endif
 
   
   bool isInterpreted() const {

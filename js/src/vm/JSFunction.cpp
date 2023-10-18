@@ -1584,6 +1584,10 @@ JSFunction* js::NewFunctionWithProto(
   }
   fun->initAtom(atom);
 
+#ifdef DEBUG
+  fun->assertFunctionKindIntegrity();
+#endif
+
   return fun;
 }
 
@@ -1681,6 +1685,10 @@ static inline JSFunction* NewFunctionClone(JSContext* cx, HandleFunction fun,
 
   
   clone->initAtom(fun->displayAtom());
+
+#ifdef DEBUG
+  clone->assertFunctionKindIntegrity();
+#endif
 
   return clone;
 }
