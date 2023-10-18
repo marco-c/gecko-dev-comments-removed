@@ -28,23 +28,10 @@ add_task(async function () {
     ":root has " + className + " class (current theme)"
   );
 
-  
-  
-  const sheetsIterator = doc.evaluate(
-    "processing-instruction('xml-stylesheet')",
-    doc,
-    null,
-    XPathResult.ANY_TYPE,
-    null
+  const sheetsInDOM = Array.from(
+    doc.querySelectorAll("link[rel='stylesheet']"),
+    l => l.href
   );
-  const sheetsInDOM = [];
-
-  
-  let sheet;
-  while ((sheet = sheetsIterator.iterateNext())) {
-    sheetsInDOM.push(sheet.data);
-  }
-  
 
   const sheetsFromTheme = gDevTools.getThemeDefinition(theme).stylesheets;
   info("Checking for existence of " + sheetsInDOM.length + " sheets");
