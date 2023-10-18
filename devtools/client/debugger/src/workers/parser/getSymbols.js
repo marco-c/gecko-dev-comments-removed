@@ -342,6 +342,18 @@ export function getSymbols(sourceId) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     
     
@@ -356,6 +368,11 @@ export function getSymbols(sourceId) {
 
     
     
+    
+    
+    
+    
+
     
     
   };
@@ -390,7 +407,6 @@ function getMemberExpressionSymbol(path) {
 function getImportDeclarationSymbol(node) {
   return {
     source: node.source.value,
-    location: node.loc,
     specifiers: getSpecifiers(node.specifiers),
   };
 }
@@ -400,19 +416,17 @@ function getCallExpressionSymbol(node) {
   const values = args.filter(arg => arg.value).map(arg => arg.value);
   if (t.isMemberExpression(callee)) {
     const {
-      property: { name, loc },
+      property: { name },
     } = callee;
     return {
       name,
       values,
-      location: loc,
     };
   }
-  const { start, end, identifierName } = callee.loc;
+  const { identifierName } = callee.loc;
   return {
     name: identifierName,
     values,
-    location: { start, end },
   };
 }
 

@@ -42003,6 +42003,18 @@
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         
         
@@ -42017,6 +42029,11 @@
 
         
         
+        
+        
+        
+        
+
         
         
       };
@@ -42051,7 +42068,6 @@
     function getImportDeclarationSymbol(node) {
       return {
         source: node.source.value,
-        location: node.loc,
         specifiers: getSpecifiers(node.specifiers),
       };
     }
@@ -42061,19 +42077,17 @@
       const values = args.filter(arg => arg.value).map(arg => arg.value);
       if (lib$3.isMemberExpression(callee)) {
         const {
-          property: { name, loc },
+          property: { name },
         } = callee;
         return {
           name,
           values,
-          location: loc,
         };
       }
-      const { start, end, identifierName } = callee.loc;
+      const { identifierName } = callee.loc;
       return {
         name: identifierName,
         values,
-        location: { start, end },
       };
     }
 
