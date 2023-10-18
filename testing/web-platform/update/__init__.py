@@ -4,15 +4,15 @@
 
 
 
+import imp
 import os
 import sys
 
-from mozfile import load_source
 from mozlog import structuredlog
 
 here = os.path.split(__file__)[0]
 
-load_source(
+imp.load_source(
     "localpaths", os.path.join(here, os.pardir, "tests", "tools", "localpaths.py")
 )
 

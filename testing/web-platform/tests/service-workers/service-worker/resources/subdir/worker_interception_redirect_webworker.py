@@ -1,8 +1,6 @@
 import os
+import imp
 
-from tools.wpt.utils import load_source
-
-
-mod = load_source("_parent", os.path.join(os.path.dirname(os.path.dirname(__file__)),
+mod = imp.load_source("_parent", os.path.join(os.path.dirname(os.path.dirname(__file__)),
                                               os.path.basename(__file__)))
 main = mod.main
