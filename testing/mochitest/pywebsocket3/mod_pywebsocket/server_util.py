@@ -28,8 +28,6 @@
 
 """Server related utilities."""
 
-from __future__ import absolute_import
-
 import logging
 import logging.handlers
 import threading
