@@ -902,25 +902,20 @@ nscoord nsTableRowGroupFrame::CollapseRowGroupIfNecessary(nscoord aBTotalOffset,
   return bGroupOffset;
 }
 
-
-
-void nsTableRowGroupFrame::CreateContinuingRowFrame(nsIFrame& aRowFrame,
-                                                    nsIFrame** aContRowFrame) {
+nsTableRowFrame* nsTableRowGroupFrame::CreateContinuingRowFrame(
+    nsIFrame* aRowFrame) {
   
-  if (!aContRowFrame) {
-    NS_ASSERTION(false, "bad call");
-    return;
-  }
-  
-  *aContRowFrame =
-      PresShell()->FrameConstructor()->CreateContinuingFrame(&aRowFrame, this);
+  auto* contRowFrame = static_cast<nsTableRowFrame*>(
+      PresShell()->FrameConstructor()->CreateContinuingFrame(aRowFrame, this));
 
   
-  mFrames.InsertFrame(nullptr, &aRowFrame, *aContRowFrame);
+  mFrames.InsertFrame(nullptr, aRowFrame, contRowFrame);
 
   
   
-  PushChildrenToOverflow(*aContRowFrame, &aRowFrame);
+  PushChildrenToOverflow(contRowFrame, aRowFrame);
+
+  return contRowFrame;
 }
 
 
@@ -992,7 +987,7 @@ void nsTableRowGroupFrame::SplitSpanningCells(
           }
         } else {
           if (!aContRow) {
-            CreateContinuingRowFrame(aLastRow, (nsIFrame**)&aContRow);
+            aContRow = CreateContinuingRowFrame(&aLastRow);
           }
           if (aContRow) {
             if (row != &aLastRow) {
@@ -1149,12 +1144,11 @@ nsresult nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
                 rowMetrics.Height() <= rowReflowInput.AvailableHeight(),
                 "data loss - incomplete row needed more height than available, "
                 "on top of page");
-            CreateContinuingRowFrame(*rowFrame, (nsIFrame**)&contRow);
-            if (contRow) {
-              aDesiredSize.Height() += rowMetrics.Height();
-              if (prevRowFrame) aDesiredSize.Height() += cellSpacingB;
-            } else
-              return NS_ERROR_NULL_POINTER;
+            contRow = CreateContinuingRowFrame(rowFrame);
+            aDesiredSize.Height() += rowMetrics.Height();
+            if (prevRowFrame) {
+              aDesiredSize.Height() += cellSpacingB;
+            }
           } else {
             
             rowIsOnPage = false;

@@ -353,7 +353,11 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
                           nsTableRowFrame*& aFirstTruncatedRow,
                           nscoord& aDesiredHeight);
 
-  void CreateContinuingRowFrame(nsIFrame& aRowFrame, nsIFrame** aContRowFrame);
+  
+
+
+
+  nsTableRowFrame* CreateContinuingRowFrame(nsIFrame* aRowFrame);
 
   bool IsSimpleRowFrame(nsTableFrame* aTableFrame, nsTableRowFrame* aRowFrame);
 
