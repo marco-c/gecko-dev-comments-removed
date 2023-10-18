@@ -7,6 +7,12 @@
 
 
 
+const NOT_SECURE_LABEL = Services.prefs.getBoolPref(
+  "security.insecure_connection_text.enabled"
+)
+  ? "notSecure notSecureText"
+  : "notSecure";
+
 
 
 
@@ -177,7 +183,11 @@ add_task(async function () {
   
   await BrowserTestUtils.withNewTab("http://example.com/", async browser => {
     let identityMode = window.document.getElementById("identity-box").className;
-    is(identityMode, "notSecure", "identity should be 'not secure'");
+    is(
+      identityMode,
+      NOT_SECURE_LABEL,
+      `identity should be '${NOT_SECURE_LABEL}'`
+    );
 
     
     await testPageInfoNotEncrypted("http://example.com");
