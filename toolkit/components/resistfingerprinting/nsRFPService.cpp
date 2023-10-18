@@ -39,12 +39,16 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
+#include "mozilla/dom/BrowsingContext.h"
+#include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/KeyboardEventBinding.h"
+#include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/fallible.h"
 #include "mozilla/XorShift128PlusRNG.h"
 
+#include "nsAboutProtocolUtils.h"
 #include "nsBaseHashtable.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCOMPtr.h"
@@ -52,6 +56,7 @@
 #include "nsCoord.h"
 #include "nsTHashMap.h"
 #include "nsDebug.h"
+#include "nsEffectiveTLDService.h"
 #include "nsError.h"
 #include "nsHashKeys.h"
 #include "nsJSUtils.h"
@@ -69,6 +74,7 @@
 #include "nsICookieJarSettings.h"
 #include "nsICryptoHash.h"
 #include "nsIGlobalObject.h"
+#include "nsILoadInfo.h"
 #include "nsIObserverService.h"
 #include "nsIRandomGenerator.h"
 #include "nsIUserIdleService.h"
@@ -1544,4 +1550,190 @@ nsRFPService::CleanAllOverrides() {
   MOZ_ASSERT(XRE_IsParentProcess());
   mFingerprintingOverrides.Clear();
   return NS_OK;
+}
+
+
+Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForChannel(
+    nsIChannel* aChannel) {
+  MOZ_ASSERT(aChannel);
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  nsCOMPtr<nsIURI> uri;
+  Unused << aChannel->GetURI(getter_AddRefs(uri));
+
+  if (uri->SchemeIs("about") && !NS_IsContentAccessibleAboutURI(uri)) {
+    return Nothing();
+  }
+
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+  MOZ_ASSERT(loadInfo);
+
+  RefPtr<dom::BrowsingContext> bc;
+  loadInfo->GetTargetBrowsingContext(getter_AddRefs(bc));
+  if (!bc || !bc->IsContent()) {
+    return Nothing();
+  }
+
+  
+  if (!loadInfo->GetIsThirdPartyContextToTopWindow()) {
+    return GetOverriddenFingerprintingSettingsForURI(uri, nullptr);
+  }
+
+  
+  
+  RefPtr<dom::WindowGlobalParent> topWGP =
+      bc->Top()->Canonical()->GetCurrentWindowGlobal();
+
+  if (NS_WARN_IF(!topWGP)) {
+    return Nothing();
+  }
+
+  nsCOMPtr<nsIPrincipal> topPrincipal = topWGP->DocumentPrincipal();
+  if (NS_WARN_IF(!topPrincipal)) {
+    return Nothing();
+  }
+
+  
+  
+  
+  if (!topPrincipal->GetIsContentPrincipal()) {
+    return Nothing();
+  }
+
+  nsCOMPtr<nsIURI> topURI = topWGP->GetDocumentURI();
+  if (NS_WARN_IF(!topURI)) {
+    return Nothing();
+  }
+
+  
+  
+  if (nsContentUtils::IsErrorPage(topURI)) {
+    return Nothing();
+  }
+
+#ifdef DEBUG
+  
+  nsCOMPtr<nsICookieJarSettings> cookieJarSettings;
+  Unused << loadInfo->GetCookieJarSettings(getter_AddRefs(cookieJarSettings));
+
+  nsAutoString partitionKey;
+  cookieJarSettings->GetPartitionKey(partitionKey);
+
+  OriginAttributes attrs;
+  attrs.SetPartitionKey(topURI);
+
+  
+  
+  MOZ_ASSERT_IF(!partitionKey.IsEmpty(),
+                attrs.mPartitionKey.Equals(partitionKey));
+#endif
+
+  return GetOverriddenFingerprintingSettingsForURI(topURI, uri);
+}
+
+
+Maybe<RFPTarget> nsRFPService::GetOverriddenFingerprintingSettingsForURI(
+    nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI) {
+  MOZ_ASSERT(aFirstPartyURI);
+  MOZ_ASSERT(XRE_IsParentProcess());
+
+  RefPtr<nsRFPService> service = GetOrCreate();
+  if (NS_WARN_IF(!service)) {
+    return Nothing();
+  }
+
+  
+  
+  
+  
+
+  
+  Maybe<RFPTarget> result = service->mFingerprintingOverrides.MaybeGet("*"_ns);
+
+  RefPtr<nsEffectiveTLDService> eTLDService =
+      nsEffectiveTLDService::GetInstance();
+  if (NS_WARN_IF(!eTLDService)) {
+    return Nothing();
+  }
+
+  nsAutoCString firstPartyDomain;
+  nsresult rv = eTLDService->GetBaseDomain(aFirstPartyURI, 0, firstPartyDomain);
+  if (NS_FAILED(rv)) {
+    return Nothing();
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  if (!aThirdPartyURI) {
+    
+    nsAutoCString key;
+    key.Assign(firstPartyDomain);
+    key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+    key.Append("*");
+
+    Maybe<RFPTarget> fpOverrides =
+        service->mFingerprintingOverrides.MaybeGet(key);
+    if (fpOverrides) {
+      result = fpOverrides;
+    }
+
+    
+    fpOverrides = service->mFingerprintingOverrides.MaybeGet(firstPartyDomain);
+    if (fpOverrides) {
+      result = fpOverrides;
+    }
+
+    return result;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  nsAutoCString thirdPartyDomain;
+  rv = eTLDService->GetBaseDomain(aThirdPartyURI, 0, thirdPartyDomain);
+  if (NS_FAILED(rv)) {
+    return Nothing();
+  }
+
+  
+  nsAutoCString key;
+  key.Assign(firstPartyDomain);
+  key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+  key.Append("*");
+  Maybe<RFPTarget> fpOverrides =
+      service->mFingerprintingOverrides.MaybeGet(key);
+  if (fpOverrides) {
+    result = fpOverrides;
+  }
+
+  
+  key.Assign("*");
+  key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+  key.Append(thirdPartyDomain);
+  fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
+  if (fpOverrides) {
+    result = fpOverrides;
+  }
+
+  
+  key.Assign(firstPartyDomain);
+  key.Append(FP_OVERRIDES_DOMAIN_KEY_DELIMITER);
+  key.Append(thirdPartyDomain);
+  fpOverrides = service->mFingerprintingOverrides.MaybeGet(key);
+  if (fpOverrides) {
+    result = fpOverrides;
+  }
+
+  return result;
 }

@@ -295,6 +295,24 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
 
   
 
+  
+  
+  
+  
+  
+  static Maybe<RFPTarget> GetOverriddenFingerprintingSettingsForChannel(
+      nsIChannel* aChannel);
+
+  
+  
+  
+  
+  
+  static Maybe<RFPTarget> GetOverriddenFingerprintingSettingsForURI(
+      nsIURI* aFirstPartyURI, nsIURI* aThirdPartyURI);
+
+  
+
  private:
   nsresult Init();
 
