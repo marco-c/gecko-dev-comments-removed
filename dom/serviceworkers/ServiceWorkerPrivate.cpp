@@ -20,6 +20,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/JSObjectHolder.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/OriginAttributes.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/RemoteLazyInputStreamStorage.h"
 #include "mozilla/Result.h"
@@ -66,6 +67,7 @@
 #include "nsNetUtil.h"
 #include "nsProxyRelease.h"
 #include "nsQueryObject.h"
+#include "nsRFPService.h"
 #include "nsStreamUtils.h"
 #include "nsStringStream.h"
 #include "nsThreadUtils.h"
@@ -529,11 +531,79 @@ nsresult ServiceWorkerPrivate::Initialize() {
   
   
   
+  Maybe<uint64_t> overriddenFingerprintingSettingsArg;
+  Maybe<RFPTarget> overriddenFingerprintingSettings;
   if (!principal->OriginAttributesRef().mPartitionKey.IsEmpty()) {
     net::CookieJarSettings::Cast(cookieJarSettings)
         ->SetPartitionKey(principal->OriginAttributesRef().mPartitionKey);
+
+    
+    
+    
+    
+    nsAutoString scheme;
+    nsAutoString pkBaseDomain;
+    int32_t unused;
+
+    if (OriginAttributes::ParsePartitionKey(
+            principal->OriginAttributesRef().mPartitionKey, scheme,
+            pkBaseDomain, unused)) {
+      nsCOMPtr<nsIURI> firstPartyURI;
+      rv = NS_NewURI(getter_AddRefs(firstPartyURI),
+                     scheme + u"://"_ns + pkBaseDomain);
+      if (NS_SUCCEEDED(rv)) {
+        overriddenFingerprintingSettings =
+            nsRFPService::GetOverriddenFingerprintingSettingsForURI(
+                firstPartyURI, uri);
+        if (overriddenFingerprintingSettings.isSome()) {
+          overriddenFingerprintingSettingsArg.emplace(
+              uint64_t(overriddenFingerprintingSettings.ref()));
+        }
+      }
+    }
+  } else if (!principal->OriginAttributesRef().mFirstPartyDomain.IsEmpty()) {
+    
+    
+    
+    nsCOMPtr<nsIURI> firstPartyURI;
+    
+    
+    
+    rv = NS_NewURI(
+        getter_AddRefs(firstPartyURI),
+        u"https://"_ns + principal->OriginAttributesRef().mFirstPartyDomain);
+    if (NS_SUCCEEDED(rv)) {
+      
+      
+      bool isThirdParty;
+      rv = principal->IsThirdPartyURI(firstPartyURI, &isThirdParty);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      overriddenFingerprintingSettings =
+          isThirdParty
+              ? nsRFPService::GetOverriddenFingerprintingSettingsForURI(
+                    firstPartyURI, uri)
+              : nsRFPService::GetOverriddenFingerprintingSettingsForURI(
+                    uri, nullptr);
+
+      if (overriddenFingerprintingSettings.isSome()) {
+        overriddenFingerprintingSettingsArg.emplace(
+            uint64_t(overriddenFingerprintingSettings.ref()));
+      }
+    }
   } else {
     net::CookieJarSettings::Cast(cookieJarSettings)->SetPartitionKey(uri);
+
+    
+    
+    
+    overriddenFingerprintingSettings =
+        nsRFPService::GetOverriddenFingerprintingSettingsForURI(uri, nullptr);
+
+    if (overriddenFingerprintingSettings.isSome()) {
+      overriddenFingerprintingSettingsArg.emplace(
+          uint64_t(overriddenFingerprintingSettings.ref()));
+    }
   }
 
   net::CookieJarSettingsArgs cjsData;
@@ -609,6 +679,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
           "ShouldResistFingerprinting function for the ServiceWorker depends "
           "on this boolean and will also consider an explicit RFPTarget.",
           RFPTarget::IsAlwaysEnabledForPrecompute),
+      overriddenFingerprintingSettingsArg,
       
       
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),

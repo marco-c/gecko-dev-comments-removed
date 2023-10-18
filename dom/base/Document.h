@@ -4094,6 +4094,10 @@ class Document : public nsINode,
 
   bool ShouldResistFingerprinting(RFPTarget aTarget) const;
 
+  const Maybe<RFPTarget>& GetOverriddenFingerprintingSettings() const {
+    return mOverriddenFingerprintingSettings;
+  }
+
   
   
   bool RecomputeResistFingerprinting();
@@ -4842,6 +4846,13 @@ class Document : public nsINode,
 
   
   bool mCloningForSVGUse : 1;
+
+  
+  
+  
+  
+  
+  Maybe<RFPTarget> mOverriddenFingerprintingSettings;
 
   uint8_t mXMLDeclarationBits;
 
