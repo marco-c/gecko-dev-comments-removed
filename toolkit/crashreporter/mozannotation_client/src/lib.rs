@@ -69,9 +69,10 @@ unsafe fn mozannotation_get() -> *const AnnotationMutex {
     &MOZANNOTATIONS as _
 }
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
 extern "C" {
-    #[cfg(any(target_os = "linux", target_os = "android"))]
     pub static MOZANNOTATION_NOTE_REFERENCE: &'static u32;
+    pub static __ehdr_start: [u8; 0];
 }
 
 #[cfg(target_os = "windows")]
@@ -84,6 +85,11 @@ const _ANNOTATION_NOTE_ALIGNMENT: u32 = 4;
 #[cfg(any(target_os = "linux", target_os = "android"))]
 pub const ANNOTATION_NOTE_NAME: &str = "mozannotation";
 pub const ANNOTATION_TYPE: u32 = u32::from_le_bytes(*b"MOZA");
+
+
+
+
+
 
 
 
@@ -123,9 +129,12 @@ global_asm!(
     "  .balign 4", // TODO: _ANNOTATION_NOTE_ALIGNMENT
     "desc:",
     "  .quad {mozannotation_symbol} - desc",
+    "ehdr:",
+    "  .quad {__ehdr_start} - ehdr",
     "desc_end:",
     "  .size MOZANNOTATION_NOTE, .-MOZANNOTATION_NOTE",
-    mozannotation_symbol = sym MOZANNOTATIONS
+    mozannotation_symbol = sym MOZANNOTATIONS,
+    __ehdr_start = sym __ehdr_start
 );
 
 
@@ -150,9 +159,12 @@ global_asm!(
     "  .balign 4",
     "desc:",
     "  .long {mozannotation_symbol} - desc",
+    "ehdr:",
+    "  .long {__ehdr_start} - ehdr",
     "desc_end:",
     "  .size MOZANNOTATION_NOTE, .-MOZANNOTATION_NOTE",
-    mozannotation_symbol = sym MOZANNOTATIONS
+    mozannotation_symbol = sym MOZANNOTATIONS,
+    __ehdr_start = sym __ehdr_start
 );
 
 #[cfg(all(
@@ -207,6 +219,7 @@ pub struct MozAnnotationNote {
     pub note_type: u32,
     pub name: [u8; 16], 
     pub desc: usize,
+    pub ehdr: isize,
 }
 
 
