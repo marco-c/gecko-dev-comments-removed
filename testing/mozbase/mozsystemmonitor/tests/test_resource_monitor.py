@@ -80,7 +80,7 @@ class TestResourceMonitor(unittest.TestCase):
         monitor.start()
         time.sleep(0.5)
 
-        t0 = time.time()
+        t0 = time.monotonic()
         monitor.record_event("t0")
         time.sleep(2)
 
