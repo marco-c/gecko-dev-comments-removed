@@ -275,8 +275,12 @@ void nsContentSink::DoProcessLinkHeader() {
   }
 
   nsAutoString value;
+
+  
+  
   mDocument->GetHeaderData(nsGkAtoms::link, value);
   auto linkHeaders = net::ParseLinkHeader(value);
+
   for (const auto& linkHeader : linkHeaders) {
     ProcessLinkFromHeader(linkHeader, 0);
   }

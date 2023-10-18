@@ -1045,6 +1045,8 @@ struct LinkHeader {
   bool operator==(const LinkHeader& rhs) const;
 };
 
+
+
 nsTArray<LinkHeader> ParseLinkHeader(const nsAString& aLinkData);
 
 enum ASDestination : uint8_t {
