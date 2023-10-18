@@ -4,6 +4,9 @@
 
 "use strict";
 
+const { UrlbarTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/UrlbarTestUtils.sys.mjs"
+);
 
 
 loadScripts(
@@ -226,7 +229,8 @@ add_task(async () => {
       let input = await getMacAccessible("urlbar-input");
       is(
         input.getAttributeValue("AXValue"),
-        "example.com",
+        
+        UrlbarTestUtils.trimURL("http://example.com"),
         "Location bar has correct value"
       );
     }
