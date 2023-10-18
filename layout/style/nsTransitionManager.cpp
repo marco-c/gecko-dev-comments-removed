@@ -36,20 +36,6 @@ using mozilla::dom::KeyframeEffect;
 using namespace mozilla;
 using namespace mozilla::css;
 
-static inline bool ExtractNonDiscreteComputedValue(
-    nsCSSPropertyID aProperty, const ComputedStyle& aComputedStyle,
-    AnimationValue& aAnimationValue) {
-  if (Servo_Property_IsDiscreteAnimatable(aProperty) &&
-      aProperty != eCSSProperty_visibility) {
-    return false;
-  }
-
-  aAnimationValue.mServo =
-      Servo_ComputedValues_ExtractAnimationValue(&aComputedStyle, aProperty)
-          .Consume();
-  return !!aAnimationValue.mServo;
-}
-
 bool nsTransitionManager::UpdateTransitions(dom::Element* aElement,
                                             PseudoStyleType aPseudoType,
                                             const ComputedStyle& aOldStyle,
@@ -168,8 +154,8 @@ bool nsTransitionManager::DoUpdateTransitions(
           
           
           
-          !ExtractNonDiscreteComputedValue(property, aNewStyle, currentValue) ||
-          currentValue != anim->ToValue()) {
+          !Servo_ComputedValues_TransitionValueMatches(
+              &aNewStyle, property, anim->ToValue().mServo.get())) {
         
         DoCancelTransition(aElement, aPseudoType, aElementTransitions, i);
       }
@@ -293,30 +279,28 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
     return false;
   }
 
-  AnimationValue startValue, endValue;
-  bool haveValues =
-      ExtractNonDiscreteComputedValue(aProperty, aOldStyle, startValue) &&
-      ExtractNonDiscreteComputedValue(aProperty, aNewStyle, endValue);
-
-  bool haveChange = startValue != endValue;
-
-  bool shouldAnimate = haveValues && haveChange &&
-                       startValue.IsInterpolableWith(aProperty, endValue);
-
-  bool haveCurrentTransition = false;
   size_t currentIndex = nsTArray<KeyframeEffect>::NoIndex;
-  const CSSTransition* oldTransition = nullptr;
-  if (aElementTransitions) {
-    OwningCSSTransitionPtrArray& animations = aElementTransitions->mAnimations;
+  const auto* oldTransition = [&]() -> const CSSTransition* {
+    if (!aElementTransitions) {
+      return nullptr;
+    }
+    const OwningCSSTransitionPtrArray& animations =
+        aElementTransitions->mAnimations;
     for (size_t i = 0, i_end = animations.Length(); i < i_end; ++i) {
       if (animations[i]->TransitionProperty() == aProperty) {
-        haveCurrentTransition = true;
         currentIndex = i;
-        oldTransition = animations[i];
-        break;
+        return animations[i];
       }
     }
-  }
+    return nullptr;
+  }();
+
+  AnimationValue startValue, endValue;
+  const StyleShouldTransitionResult result =
+      Servo_ComputedValues_ShouldTransition(
+          &aOldStyle, &aNewStyle, aProperty,
+          oldTransition ? oldTransition->ToValue().mServo.get() : nullptr,
+          &startValue.mServo, &endValue.mServo);
 
   
   
@@ -332,14 +316,13 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
   
   
   
-  if (haveCurrentTransition && haveValues &&
-      aElementTransitions->mAnimations[currentIndex]->ToValue() == endValue) {
+  if (result.old_transition_value_matches) {
     
     return false;
   }
 
-  if (!shouldAnimate) {
-    if (haveCurrentTransition) {
+  if (!result.should_animate) {
+    if (oldTransition) {
       
       
       
@@ -357,9 +340,8 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
 
   
   
-  if (haveCurrentTransition &&
-      aElementTransitions->mAnimations[currentIndex]->HasCurrentEffect() &&
-      oldTransition && oldTransition->StartForReversingTest() == endValue) {
+  if (oldTransition && oldTransition->HasCurrentEffect() &&
+      oldTransition->StartForReversingTest() == endValue) {
     
     
     double valuePortion =
@@ -422,7 +404,7 @@ bool nsTransitionManager::ConsiderInitiatingTransition(
         "duplicate transitions for property");
   }
 #endif
-  if (haveCurrentTransition) {
+  if (oldTransition) {
     
     
     

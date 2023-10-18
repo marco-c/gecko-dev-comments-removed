@@ -198,6 +198,11 @@ impl AnimationValue {
     }
 
     
+    pub fn interpolable_with(&self, other: &Self) -> bool {
+        self.animate(other, Procedure::Interpolate { progress: 0.5 }).is_ok()
+    }
+
+    
     
     pub fn uncompute(&self) -> PropertyDeclaration {
         use crate::properties::longhands;
