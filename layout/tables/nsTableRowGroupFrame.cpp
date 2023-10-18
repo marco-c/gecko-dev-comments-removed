@@ -358,7 +358,7 @@ void nsTableRowGroupFrame::ReflowChildren(
       LogicalRect oldKidRect = kidFrame->GetLogicalRect(wm, containerSize);
       nsRect oldKidInkOverflow = kidFrame->InkOverflowRect();
 
-      ReflowOutput desiredSize(aReflowInput.mReflowInput);
+      ReflowOutput kidDesiredSize(aReflowInput.mReflowInput);
 
       
       
@@ -384,13 +384,13 @@ void nsTableRowGroupFrame::ReflowChildren(
       }
 
       LogicalPoint kidPosition(wm, 0, aReflowInput.mBCoord);
-      ReflowChild(kidFrame, aPresContext, desiredSize, kidReflowInput, wm,
+      ReflowChild(kidFrame, aPresContext, kidDesiredSize, kidReflowInput, wm,
                   kidPosition, containerSize, ReflowChildFlags::Default,
                   aStatus);
 
       
       PlaceChild(aPresContext, aReflowInput, kidFrame, kidReflowInput, wm,
-                 kidPosition, containerSize, desiredSize,
+                 kidPosition, containerSize, kidDesiredSize,
                  oldKidRect.GetPhysicalRect(wm, containerSize),
                  oldKidInkOverflow);
       aReflowInput.mBCoord += cellSpacingB;
@@ -406,7 +406,7 @@ void nsTableRowGroupFrame::ReflowChildren(
             
             
             InvalidateFrame();
-          } else if (oldKidRect.BSize(wm) != desiredSize.BSize(wm)) {
+          } else if (oldKidRect.BSize(wm) != kidDesiredSize.BSize(wm)) {
             needToCalcRowBSizes = true;
           }
         } else {
