@@ -435,6 +435,7 @@ class HttpChannelChild final : public PHttpChannelChild,
   void OnAfterLastPart(const nsresult& aStatus);
   void MaybeConnectToSocketProcess();
   void OnDetachStreamFilters();
+  void SendOnDataFinished(const nsresult& aChannelStatus);
 
   
   
