@@ -763,14 +763,16 @@ bool Gecko_MatchLang(const Element* aElement, nsAtom* aOverrideLang,
   
   
   
-  nsAutoString language;
-  aElement->OwnerDoc()->GetContentLanguage(language);
-
-  NS_ConvertUTF16toUTF8 langString(aValue);
-  language.StripWhitespace();
-  for (auto const& lang : language.Split(char16_t(','))) {
-    if (nsStyleUtil::LangTagCompare(NS_ConvertUTF16toUTF8(lang), langString)) {
-      return true;
+  
+  
+  if (nsAtom* language = aElement->OwnerDoc()->GetContentLanguage()) {
+    const NS_ConvertUTF16toUTF8 langString(aValue);
+    nsAtomCString docLang(language);
+    docLang.StripWhitespace();
+    for (auto const& lang : docLang.Split(',')) {
+      if (nsStyleUtil::LangTagCompare(lang, langString)) {
+        return true;
+      }
     }
   }
   return false;

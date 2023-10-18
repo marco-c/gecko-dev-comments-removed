@@ -10,11 +10,13 @@
 
 #ifdef MOZILLA_INTERNAL_API
 
-#  include "nsString.h"
+#  include "nsStringFwd.h"
 #  include "unicode/unum.h"  
 #  include "mozilla/intl/ICUError.h"
+#  include "mozilla/AlreadyAddRefed.h"
 
 class nsIContent;
+class nsAtom;
 
 class ICUUtils {
  public:
@@ -41,7 +43,7 @@ class ICUUtils {
 
 
 
-    void GetNext(nsACString& aBCP47LangTag);
+    already_AddRefed<nsAtom> GetNext();
 
     bool IsAtStart() const { return mCurrentFallbackIndex < 0; }
 

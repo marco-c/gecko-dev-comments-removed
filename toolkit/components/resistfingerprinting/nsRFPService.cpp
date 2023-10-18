@@ -988,25 +988,25 @@ bool nsRFPService::GetSpoofedKeyCodeInfo(
   KeyboardRegions keyboardRegion = RFP_DEFAULT_SPOOFING_KEYBOARD_REGION;
   
   
-  if (aDoc != nullptr) {
-    nsAutoString language;
-    aDoc->GetContentLanguage(language);
+  if (aDoc) {
+    nsAtom* lang = aDoc->GetContentLanguage();
 
     
     
-    if (language.IsEmpty()) {
-      dom::Element* elm = aDoc->GetHtmlElement();
-
-      if (elm != nullptr) {
-        elm->GetLang(language);
+    if (!lang) {
+      if (dom::Element* elm = aDoc->GetHtmlElement()) {
+        lang = elm->GetLang();
       }
     }
 
     
     
-    if (!language.IsEmpty() && !language.Contains(char16_t(','))) {
-      language.StripWhitespace();
-      GetKeyboardLangAndRegion(language, keyboardLang, keyboardRegion);
+    if (lang) {
+      nsDependentAtomString langStr(lang);
+      if (!langStr.Contains(char16_t(','))) {
+        langStr.StripWhitespace();
+        GetKeyboardLangAndRegion(langStr, keyboardLang, keyboardRegion);
+      }
     }
   }
 

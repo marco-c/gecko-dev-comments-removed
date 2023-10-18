@@ -963,9 +963,9 @@ class Document : public nsINode,
   
 
 
-  void GetContentLanguage(nsAString& aContentLanguage) const {
-    CopyASCIItoUTF16(mContentLanguage, aContentLanguage);
-  }
+  nsAtom* GetContentLanguage() const { return mContentLanguage.get(); }
+
+  void GetContentLanguageForBindings(DOMString&) const;
 
   
   
@@ -3930,8 +3930,8 @@ class Document : public nsINode,
 
   void SetSHEntryHasUserInteraction(bool aHasInteraction);
 
-  already_AddRefed<nsAtom> GetContentLanguageAsAtomForStyle() const;
-  already_AddRefed<nsAtom> GetLanguageForStyle() const;
+  nsAtom* GetContentLanguageAsAtomForStyle() const;
+  nsAtom* GetLanguageForStyle() const;
 
   
 
@@ -4915,7 +4915,7 @@ class Document : public nsINode,
   
   Maybe<nsILoadInfo::CrossOriginEmbedderPolicy> mEmbedderPolicy;
 
-  nsCString mContentLanguage;
+  RefPtr<nsAtom> mContentLanguage;
 
   
   nsCOMPtr<nsIChannel> mChannel;
