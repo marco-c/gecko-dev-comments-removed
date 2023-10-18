@@ -41618,26 +41618,12 @@
       return null;
     }
 
-    function isReactComponent({
-      importsReact,
-      classes,
-      callExpressions,
-      identifiers,
-    }) {
+    function isReactComponent({ importsReact, classes, identifiers }) {
       return (
         importsReact ||
-        requiresReact(callExpressions) ||
         extendsReactComponent(classes) ||
         isReact(identifiers) ||
         isRedux(identifiers)
-      );
-    }
-
-    function requiresReact(callExpressions) {
-      return callExpressions.some(
-        callExpression =>
-          callExpression.name === "require" &&
-          callExpression.values.some(value => value === "react")
       );
     }
 
@@ -41712,8 +41698,12 @@
         symbols.classes.push(getClassDeclarationSymbol(path.node));
       }
 
-      if (lib$3.isImportDeclaration(path) && !symbols.importsReact) {
-        symbols.importsReact = isReactImport(path.node);
+      if (!symbols.importsReact) {
+        if (lib$3.isImportDeclaration(path)) {
+          symbols.importsReact = isReactImport(path.node);
+        } else if (lib$3.isCallExpression(path)) {
+          symbols.importsReact = isReactRequire(path.node);
+        }
       }
 
       if (lib$3.isMemberExpression(path) || lib$3.isOptionalMemberExpression(path)) {
@@ -41733,22 +41723,16 @@
         });
       }
 
-      if (lib$3.isCallExpression(path)) {
-        symbols.callExpressions.push(getCallExpressionSymbol(path.node));
-      }
-
       symbols.identifiers.push(...getIdentifierSymbols(path));
     }
 
     function extractSymbols(sourceId) {
       const symbols = {
         functions: [],
-        callExpressions: [],
         memberExpressions: [],
         comments: [],
         identifiers: [],
         classes: [],
-        imports: [],
         literals: [],
         hasJsx: false,
         hasTypes: false,
@@ -42019,10 +42003,6 @@
 
         
         
-        
-
-        
-        
       };
     }
 
@@ -42059,23 +42039,12 @@
       );
     }
 
-    function getCallExpressionSymbol(node) {
-      const { callee, arguments: args } = node;
-      const values = args.filter(arg => arg.value).map(arg => arg.value);
-      if (lib$3.isMemberExpression(callee)) {
-        const {
-          property: { name },
-        } = callee;
-        return {
-          name,
-          values,
-        };
-      }
-      const { identifierName } = callee.loc;
-      return {
-        name: identifierName,
-        values,
-      };
+    function isReactRequire(node) {
+      const { callee } = node;
+      const name = lib$3.isMemberExpression(callee)
+        ? callee.property.name
+        : callee.loc.identifierName;
+      return name == "require" && node.arguments.some(arg => arg.value == "react");
     }
 
     function getClassParentName(superClass) {
