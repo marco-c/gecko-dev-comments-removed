@@ -21,9 +21,15 @@ interface nsIRequestObserver : nsISupports
 
 
 
+
+
+
     void onStartRequest(in nsIRequest aRequest);
 
     
+
+
+
 
 
 
