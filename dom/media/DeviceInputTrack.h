@@ -270,14 +270,16 @@ class NonNativeInputTrack final : public DeviceInputTrack {
   ~NonNativeInputTrack() = default;
 
   
-  bool CheckGraphDriverChanged();
-
-  
   RefPtr<AudioInputSource> mAudioSource;
   AudioInputSource::Id mSourceIdNumber;
 
+#ifdef DEBUG
   
-  std::thread::id mGraphDriverThreadId;
+  bool HasGraphThreadChanged();
+  
+  
+  std::thread::id mGraphThreadId;
+#endif
 };
 
 class AudioInputSourceListener : public AudioInputSource::EventListener {
