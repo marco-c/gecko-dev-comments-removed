@@ -16,33 +16,6 @@ const emptyPage =
 
 
 
-
-
-
-
-
-
-
-
-
-function runFunctionInWorker(browser, fn) {
-  return SpecialPowers.spawn(browser, [fn.toString()], async callback => {
-    
-    let worker = new content.Worker("worker.js");
-
-    
-    return new content.Promise(resolve => {
-      worker.onmessage = e => {
-        resolve(e.data.result);
-      };
-
-      worker.postMessage({
-        callback,
-      });
-    });
-  });
-}
-
 var TEST_CASES = [
   {
     name: "CanvasRenderingContext2D.getImageData() with a offscreen canvas",

@@ -3,9 +3,10 @@
 
 
 
-PartitionedStorageHelper.runTest(
+runTestInFirstAndThirdPartyContexts(
   "ServiceWorkers - Check that RFP correctly is exempted and not exempted when FPI is enabled",
-  async (win3rdParty, win1stParty, allowed) => {
+  async win => {
+    
     
     
     await SpecialPowers.pushPrefEnv({
@@ -15,31 +16,19 @@ PartitionedStorageHelper.runTest(
       ],
     });
 
-    var SPOOFED_HW_CONCURRENCY = 2;
     var DEFAULT_HARDWARE_CONCURRENCY = navigator.hardwareConcurrency;
 
     await SpecialPowers.popPrefEnv();
 
     
-    if (!win1stParty.sw) {
-      win1stParty.sw = await registerServiceWorker(
-        win1stParty,
-        "serviceWorker.js"
-      );
-    }
-
-    
-    if (!win3rdParty.sw) {
-      win3rdParty.sw = await registerServiceWorker(
-        win3rdParty,
-        "serviceWorker.js"
-      );
+    if (!win.sw) {
+      win.sw = await registerServiceWorker(win, "serviceWorker.js");
     }
 
     
     let res = await sendAndWaitWorkerMessage(
-      win1stParty.sw,
-      win1stParty.navigator.serviceWorker,
+      win.sw,
+      win.navigator.serviceWorker,
       { type: "GetHWConcurrency" }
     );
     console.info(
@@ -53,11 +42,19 @@ PartitionedStorageHelper.runTest(
       DEFAULT_HARDWARE_CONCURRENCY,
       "As a first party, HW Concurrency should not be spoofed"
     );
+  },
+  async win => {
+    let SPOOFED_HW_CONCURRENCY = 2;
 
     
-    res = await sendAndWaitWorkerMessage(
-      win3rdParty.sw,
-      win3rdParty.navigator.serviceWorker,
+    if (!win.sw) {
+      win.sw = await registerServiceWorker(win, "serviceWorker.js");
+    }
+
+    
+    let res = await sendAndWaitWorkerMessage(
+      win.sw,
+      win.navigator.serviceWorker,
       { type: "GetHWConcurrency" }
     );
     console.info(
@@ -69,7 +66,6 @@ PartitionedStorageHelper.runTest(
       "As a third party, HW Concurrency should be spoofed"
     );
   },
-
   async _ => {
     await new Promise(resolve => {
       Services.clearData.deleteData(Ci.nsIClearDataService.CLEAR_ALL, value =>
@@ -77,14 +73,13 @@ PartitionedStorageHelper.runTest(
       );
     });
   },
-
   [
     ["dom.serviceWorkers.exemptFromPerDomainMax", true],
     ["dom.ipc.processCount", 1],
     ["dom.serviceWorkers.enabled", true],
     ["dom.serviceWorkers.testing.enabled", true],
-    ["privacy.firstParty.isolate", true],
+    ["privacy.firstparty.isolate", true],
     ["privacy.resistFingerprinting", true],
-    ["privacy.resistFingerprinting.exemptedDomains", "*.example.com"],
+    ["privacy.resistFingerprinting.exemptedDomains", "example.com"],
   ]
 );
