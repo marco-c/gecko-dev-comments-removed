@@ -1,6 +1,9 @@
-use alloc::{vec, vec::Vec};
+use std::fmt;
 
 use crate::ast::{self, Ast};
+
+
+
 
 
 
@@ -49,10 +52,6 @@ pub trait Visitor {
     }
 
     
-    fn visit_concat_in(&mut self) -> Result<(), Self::Err> {
-        Ok(())
-    }
-
     
     
     fn visit_class_set_item_pre(
@@ -62,6 +61,7 @@ pub trait Visitor {
         Ok(())
     }
 
+    
     
     
     fn visit_class_set_item_post(
@@ -100,6 +100,7 @@ pub trait Visitor {
         Ok(())
     }
 }
+
 
 
 
@@ -233,14 +234,8 @@ impl<'a> HeapVisitor<'a> {
                 
                 
                 if let Some(x) = self.pop(frame) {
-                    match x {
-                        Frame::Alternation { .. } => {
-                            visitor.visit_alternation_in()?;
-                        }
-                        Frame::Concat { .. } => {
-                            visitor.visit_concat_in()?;
-                        }
-                        _ => {}
+                    if let Frame::Alternation { .. } = x {
+                        visitor.visit_alternation_in()?;
                     }
                     ast = x.child();
                     self.stack.push((post_ast, x));
@@ -480,8 +475,8 @@ impl<'a> ClassInduct<'a> {
     }
 }
 
-impl<'a> core::fmt::Debug for ClassFrame<'a> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl<'a> fmt::Debug for ClassFrame<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let x = match *self {
             ClassFrame::Union { .. } => "Union",
             ClassFrame::Binary { .. } => "Binary",
@@ -492,8 +487,8 @@ impl<'a> core::fmt::Debug for ClassFrame<'a> {
     }
 }
 
-impl<'a> core::fmt::Debug for ClassInduct<'a> {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl<'a> fmt::Debug for ClassInduct<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let x = match *self {
             ClassInduct::Item(it) => match *it {
                 ast::ClassSetItem::Empty(_) => "Item(Empty)",
