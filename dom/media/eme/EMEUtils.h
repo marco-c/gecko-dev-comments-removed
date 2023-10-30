@@ -9,7 +9,6 @@
 
 #include "mozilla/Logging.h"
 #include "mozilla/dom/MediaKeyStatusMapBinding.h"
-#include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -56,8 +55,6 @@ bool IsWidevineKeySystem(const nsAString& aKeySystem);
 
 #ifdef MOZ_WMF_CDM
 bool IsPlayReadyKeySystemAndSupported(const nsAString& aKeySystem);
-
-bool IsWidevineExperimentKeySystemAndSupported(const nsAString& aKeySystem);
 #endif
 
 
@@ -73,10 +70,6 @@ enum CDMType {
 CDMType ToCDMTypeTelemetryEnum(const nsString& aKeySystem);
 
 const char* ToMediaKeyStatusStr(dom::MediaKeyStatus aStatus);
-
-
-bool IsHardwareDecryptionSupported(
-    const dom::MediaKeySystemConfiguration& aConfig);
 
 }  
 
