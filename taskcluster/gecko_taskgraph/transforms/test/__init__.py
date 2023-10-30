@@ -206,6 +206,8 @@ test_description_schema = Schema(
             {"active": [str], "skipped": [str]},
         ),
         
+        Optional("confirm-failure"): bool,
+        
         Optional("this-chunk"): int,
         
         
@@ -438,6 +440,9 @@ def make_job_description(config, tasks):
 
         if task["chunks"] > 1:
             label += "-{}".format(task["this-chunk"])
+
+        if task.get("confirm-failure", False):
+            label += "-cf"
 
         build_label = task["build-label"]
 
