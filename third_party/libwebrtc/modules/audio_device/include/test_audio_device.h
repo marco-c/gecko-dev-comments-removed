@@ -131,6 +131,21 @@ class TestAudioDeviceModule {
       int sampling_frequency_in_hz,
       int num_channels = 1);
 
+  
+  static std::unique_ptr<Capturer> CreateRawFileReader(
+      absl::string_view filename,
+      int sampling_frequency_in_hz = 48000,
+      int num_channels = 2,
+      bool repeat = true);
+
+  
+  
+  
+  static std::unique_ptr<Renderer> CreateRawFileWriter(
+      absl::string_view filename,
+      int sampling_frequency_in_hz = 48000,
+      int num_channels = 2);
+
  private:
   TestAudioDeviceModule() = default;
 };
