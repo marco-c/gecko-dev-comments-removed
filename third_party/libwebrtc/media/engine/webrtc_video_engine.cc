@@ -195,11 +195,7 @@ std::vector<VideoCodec> GetPayloadTypesAndDefaultCodecs(
 
   
   
-  
-  if ((is_decoder_factory &&
-       !IsDisabled(trials, "WebRTC-FlexFEC-03-Advertised")) ||
-      (!is_decoder_factory &&
-       IsEnabled(trials, "WebRTC-FlexFEC-03-Advertised"))) {
+  if (is_decoder_factory || IsEnabled(trials, "WebRTC-FlexFEC-03-Advertised")) {
     webrtc::SdpVideoFormat flexfec_format(kFlexfecCodecName);
     
     

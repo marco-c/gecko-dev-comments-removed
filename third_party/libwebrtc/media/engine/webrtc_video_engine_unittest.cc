@@ -1213,20 +1213,6 @@ TEST_F(WebRtcVideoEngineTest, Flexfec03SendCodecEnablesWithFieldTrial) {
 }
 
 
-
-TEST_F(WebRtcVideoEngineTest, Flexfec03ReceiveCodecDisablesWithFieldTrial) {
-  decoder_factory_->AddSupportedVideoCodecType("VP8");
-
-  auto flexfec = Field("name", &VideoCodec::name, "flexfec-03");
-
-  EXPECT_THAT(engine_.recv_codecs(), Contains(flexfec));
-
-  webrtc::test::ScopedKeyValueConfig override_field_trials(
-      field_trials_, "WebRTC-FlexFEC-03-Advertised/Disabled/");
-  EXPECT_THAT(engine_.recv_codecs(), Not(Contains(flexfec)));
-}
-
-
 TEST_F(WebRtcVideoEngineTest, Flexfec03LowerPayloadTypeRange) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
