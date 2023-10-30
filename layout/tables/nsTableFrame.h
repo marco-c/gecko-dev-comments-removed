@@ -213,10 +213,6 @@ class nsTableFrame : public nsContainerFrame {
   nsMargin GetUsedMargin() const override;
 
   
-  LogicalMargin GetChildAreaOffset(const WritingMode aWM,
-                                   const ReflowInput* aReflowInput) const;
-
-  
   static nsTableFrame* GetTableFrame(nsIFrame* aSourceFrame);
 
   
