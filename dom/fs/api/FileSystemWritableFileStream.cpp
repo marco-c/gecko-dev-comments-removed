@@ -512,14 +512,30 @@ already_AddRefed<Promise> FileSystemWritableFileStream::Write(
           return;
         }
 
-        self->BeginAbort()->Then(GetCurrentSerialEventTarget(), __func__,
-                                 [promise, rejectValue = aValue.RejectValue()](
-                                     const BoolPromise::ResolveOrRejectValue&) {
-                                   
-                                   
-                                   CopyableErrorResult err = rejectValue;
-                                   promise->MaybeReject(std::move(err));
-                                 });
+        CopyableErrorResult err = aValue.RejectValue();
+
+        if (self->IsOpen()) {
+          self->BeginAbort()->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [promise, err = std::move(err)](
+                  const BoolPromise::ResolveOrRejectValue&) mutable {
+                
+                
+                promise->MaybeReject(std::move(err));
+              });
+        } else if (self->IsFinishing()) {
+          self->OnDone()->Then(
+              GetCurrentSerialEventTarget(), __func__,
+              [promise, err = std::move(err)](
+                  const BoolPromise::ResolveOrRejectValue&) mutable {
+                
+                
+                promise->MaybeReject(std::move(err));
+              });
+
+        } else {
+          promise->MaybeReject(std::move(err));
+        }
       });
 
   return promise.forget();
