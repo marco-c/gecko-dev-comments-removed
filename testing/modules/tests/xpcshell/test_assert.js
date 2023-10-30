@@ -467,4 +467,12 @@ add_task(async function test_rejects() {
   await assert.rejects(Promise.reject("oh no"), /oh no/, "rejected");
   
   await checkRejectsFails("something else", /oh no/);
+
+  
+  try {
+    await assert.rejects(Promise.resolve(), /./, "ReSoLvEd");
+    ok(false, "should have rejected");
+  } catch (ex) {
+    deepEqual(ex.message, "Missing expected exception ReSoLvEd");
+  }
 });
