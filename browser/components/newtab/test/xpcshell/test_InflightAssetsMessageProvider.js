@@ -1,8 +1,8 @@
 
 
 
-const { InflightAssetsMessageProvider } = ChromeUtils.import(
-  "resource://testing-common/InflightAssetsMessageProvider.jsm"
+const { InflightAssetsMessageProvider } = ChromeUtils.importESModule(
+  "resource://testing-common/InflightAssetsMessageProvider.sys.mjs"
 );
 
 const MESSAGE_VALIDATORS = {};
