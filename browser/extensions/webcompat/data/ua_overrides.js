@@ -866,22 +866,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1827678-webc68379",
-    platform: "android",
-    domain: "static.slots.lv",
-    bug: "1827678",
-    config: {
-      matches: ["*://static.slots.lv/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
     id: "bug1827678-webc68520",
     platform: "android",
     domain: "mobile.onvue.com",
@@ -1268,23 +1252,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1836181",
-    platform: "all",
-    domain: "conference.amwell.com",
-    bug: "1836181",
-    config: {
-      matches: ["*://conference.amwell.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
     id: "bug1836182",
     platform: "all",
     domain: "www.flatsatshadowglen.com",
@@ -1407,6 +1374,26 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://my.southerncross.co.nz/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1858664",
+    platform: "all",
+    domain: "Sites with known breakage with rv: segment higher than 109",
+    bug: "1858664",
+    config: {
+      matches: [
+        "*://*.tesco.com/*", 
+      ],
+      uaTransformer: originalUA => {
+        return UAHelpers.capRvTo109(originalUA);
       },
     },
   },
