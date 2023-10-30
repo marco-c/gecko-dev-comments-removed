@@ -458,6 +458,12 @@ struct MediaReceiverInfo {
   absl::optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;
   std::vector<SsrcSenderInfo> remote_stats;
+  
+  absl::optional<uint64_t> fec_packets_received;
+  
+  absl::optional<uint64_t> fec_packets_discarded;
+  
+  absl::optional<uint64_t> fec_bytes_received;
 };
 
 struct VoiceSenderInfo : public MediaSenderInfo {
@@ -492,8 +498,6 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t concealment_events = 0;
   uint64_t inserted_samples_for_deceleration = 0;
   uint64_t removed_samples_for_acceleration = 0;
-  uint64_t fec_packets_received = 0;
-  uint64_t fec_packets_discarded = 0;
   
   
   uint64_t packets_discarded = 0;
