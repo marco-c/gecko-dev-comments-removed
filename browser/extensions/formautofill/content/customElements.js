@@ -290,7 +290,11 @@
         this._itemBox.setAttribute("no-warning", "true");
       }
 
-      const buttonTextBundleKey = value.categories
+      
+      
+      
+      
+      const buttonTextBundleKey = !this.getAttribute("ac-image")
         ? "autocompleteManageAddresses"
         : "autocompleteManageCreditCards";
       const buttonText =
