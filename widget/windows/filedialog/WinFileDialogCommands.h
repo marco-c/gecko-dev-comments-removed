@@ -11,8 +11,15 @@
 
 
 struct IFileDialog;
+struct IFileOpenDialog;
 
 namespace mozilla::widget::filedialog {
+
+enum class FileDialogType : uint8_t { Open, Save };
+
+
+mozilla::Result<RefPtr<IFileDialog>, HRESULT> MakeFileDialog(FileDialogType);
+
 
 
 [[nodiscard]] HRESULT ApplyCommands(::IFileDialog*,
