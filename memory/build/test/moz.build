@@ -15,3 +15,7 @@ CppUnitTests(
         "TestMozJemallocUtils",
     ]
 )
+
+
+if CONFIG["MOZ_PHC"]:
+    TEST_DIRS += ["gtest"]

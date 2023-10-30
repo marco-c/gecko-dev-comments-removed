@@ -1714,7 +1714,7 @@ class PHCBridge : public ReplaceMallocBridge {
 
 
 
-void replace_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
+void phc_init(malloc_table_t* aMallocTable, ReplaceMallocBridge** aBridge) {
   
   jemalloc_stats_t stats;
   aMallocTable->jemalloc_stats_internal(&stats, nullptr);
