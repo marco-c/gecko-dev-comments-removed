@@ -174,8 +174,6 @@ enum WidgetNodeType : int {
   
   MOZ_GTK_DROPDOWN,
   
-  MOZ_GTK_DROPDOWN_ARROW,
-  
   MOZ_GTK_DROPDOWN_ENTRY,
 
   
@@ -437,15 +435,6 @@ void moz_gtk_get_scale_metrics(GtkOrientation orient, gint* scale_width,
 
 gint moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length,
                                     gint* thumb_height);
-
-
-
-
-
-
-
-
-gint moz_gtk_get_combo_box_entry_button_size(gint* width, gint* height);
 
 
 

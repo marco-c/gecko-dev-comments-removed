@@ -57,6 +57,7 @@ class nsNativeThemeGTK final : public mozilla::widget::Theme {
   
   
   enum class NonNative { No, Always, BecauseColorMismatch };
+  static bool IsWidgetAlwaysNonNative(nsIFrame*, StyleAppearance);
   NonNative IsWidgetNonNative(nsIFrame*, StyleAppearance);
 
   mozilla::LayoutDeviceIntSize GetMinimumWidgetSize(
