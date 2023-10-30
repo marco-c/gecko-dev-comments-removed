@@ -27,8 +27,11 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+import nu.validator.htmlparser.annotation.CppInlineLength;
 import nu.validator.htmlparser.annotation.Inline;
 import nu.validator.htmlparser.annotation.Local;
+import nu.validator.htmlparser.annotation.StaticLocal;
+import nu.validator.htmlparser.annotation.WeakLocal;
 import nu.validator.htmlparser.annotation.NoLength;
 import nu.validator.htmlparser.annotation.NsUri;
 import nu.validator.htmlparser.annotation.Prefix;
@@ -181,9 +184,9 @@ public final class AttributeName
 
 
 
-    private static @NoLength @Local String[] SVG_DIFFERENT(@Local String name,
-            @Local String camel) {
-        @NoLength @Local String[] arr = new String[4];
+    private static @NoLength @StaticLocal String[] SVG_DIFFERENT(@StaticLocal String name,
+            @StaticLocal String camel) {
+        @NoLength @StaticLocal String[] arr = new String[4];
         arr[0] = name;
         arr[1] = name;
         arr[2] = camel;
@@ -203,9 +206,9 @@ public final class AttributeName
 
 
 
-    private static @NoLength @Local String[] MATH_DIFFERENT(@Local String name,
-            @Local String camel) {
-        @NoLength @Local String[] arr = new String[4];
+    private static @NoLength @StaticLocal String[] MATH_DIFFERENT(@StaticLocal String name,
+            @StaticLocal String camel) {
+        @NoLength @StaticLocal String[] arr = new String[4];
         arr[0] = name;
         arr[1] = camel;
         arr[2] = name;
@@ -225,9 +228,9 @@ public final class AttributeName
 
 
 
-    private static @NoLength @Local String[] COLONIFIED_LOCAL(
-            @Local String name, @Local String suffix) {
-        @NoLength @Local String[] arr = new String[4];
+    private static @NoLength @StaticLocal String[] COLONIFIED_LOCAL(
+            @StaticLocal String name, @StaticLocal String suffix) {
+        @NoLength @StaticLocal String[] arr = new String[4];
         arr[0] = name;
         arr[1] = suffix;
         arr[2] = suffix;
@@ -244,8 +247,8 @@ public final class AttributeName
 
 
 
-    static @NoLength @Local String[] SAME_LOCAL(@Local String name) {
-        @NoLength @Local String[] arr = new String[4];
+    static @NoLength @StaticLocal String[] SAME_LOCAL(@StaticLocal String name) {
+        @NoLength @StaticLocal String[] arr = new String[4];
         arr[0] = name;
         arr[1] = name;
         arr[2] = name;
@@ -376,17 +379,20 @@ public final class AttributeName
     
 
 
-    private final @NsUri @NoLength String[] uri;
+    private final @CppInlineLength(3) @NsUri @NoLength String[] uri;
 
     
 
 
-    private final @Local @NoLength String[] local;
+
+
+
+    private final @CppInlineLength(3) @WeakLocal @NoLength String[] local;
 
     
 
 
-    private final @Prefix @NoLength String[] prefix;
+    private final @CppInlineLength(3) @Prefix @NoLength String[] prefix;
 
     
 
@@ -416,7 +422,7 @@ public final class AttributeName
 
 
     private AttributeName(@NsUri @NoLength String[] uri,
-            @Local @NoLength String[] local, @Prefix @NoLength String[] prefix
+            @StaticLocal @NoLength String[] local, @Prefix @NoLength String[] prefix
             
             , int flags
     
@@ -429,6 +435,7 @@ public final class AttributeName
         this.flags = flags;
         
         
+        
     }
 
     
@@ -448,6 +455,8 @@ public final class AttributeName
     
     
     
+    
+    
 
     
 
@@ -458,28 +467,28 @@ public final class AttributeName
 
 
 
+    
     static AttributeName createAttributeName(@Local String name
-    
             , boolean checkNcName
-    
     ) {
-        
         int flags = NCNAME_HTML | NCNAME_FOREIGN | NCNAME_LANG;
         if (name.startsWith("xmlns:")) {
             flags = IS_XMLNS;
         } else if (checkNcName && !NCName.isNCName(name)) {
             flags = 0;
         }
-        
         return new AttributeName(AttributeName.ALL_NO_NS,
                 AttributeName.SAME_LOCAL(name), ALL_NO_PREFIX, flags);
     }
+    
 
     
 
 
     @SuppressWarnings("unused") private void destructor() {
-        Portability.deleteArray(local);
+        
+        
+        
     }
 
     
