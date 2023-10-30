@@ -83,7 +83,9 @@ bool EventQueue::PushNameOrDescriptionChange(AccEvent* aOrigEvent) {
         nsAutoString name;
         ENameValueFlag nameFlag = parent->Name(name);
         
-        if (nameFlag == eNameFromSubtree) {
+        
+        
+        if (nameFlag == eNameFromSubtree || parent->IsHTMLFileInput()) {
           RefPtr<AccEvent> nameChangeEvent =
               new AccEvent(nsIAccessibleEvent::EVENT_NAME_CHANGE, parent);
           pushed |= PushEvent(nameChangeEvent);

@@ -65,10 +65,9 @@
     testStates("f_input_disabled", STATE_UNAVAILABLE);
 
     // //////////////////////////////////////////////////////////////////////////
-    // inherited from file control
-    var fileBrowseButton = getAccessible("file").firstChild;
+    // file control
+    var fileBrowseButton = getAccessible("file");
     testStates(fileBrowseButton, STATE_UNAVAILABLE | STATE_REQUIRED);
-    // No states on the label.
 
     // //////////////////////////////////////////////////////////////////////////
     // 'invalid' state
@@ -209,22 +208,22 @@
     <textarea id="textarea_disabled" disabled></textarea>
   </form>
 
-  
+  <!-- bogus required usage -->
   <input id="submit" type="submit" required>
   <input id="button" type="button" required>
   <input id="reset" type="reset" required>
   <input id="image" type="image" required>
 
-  
+  <!-- inherited disabled -->
   <fieldset id="f" disabled>
     <input id="f_input">
     <input id="f_input_disabled" disabled>
   </fieldset>
 
-  
+  <!-- inherited from input@type="file" -->
   <input id="file" type="file" required disabled>
 
-  
+  <!-- invalid/valid -->
   <input id="maxlength" maxlength="1" value="f">
   <input id="maxlength2" maxlength="100" value="foo">
   <input id="minlength" minlength="2" value="fo">
@@ -236,7 +235,7 @@
   <input id="url" type="url" value="foo">
   <input id="url2" type="url" value="http://mozilla.org/">
 
-  
+  <!-- autocomplete -->
   <input id="autocomplete-default">
   <input id="autocomplete-off" autocomplete="off">
   <form autocomplete="off">

@@ -14,6 +14,7 @@
 #include "Relation.h"
 #include "mozilla/a11y/Role.h"
 #include "States.h"
+#include "TextLeafAccessible.h"
 
 #include "nsContentList.h"
 #include "mozilla/dom/HTMLInputElement.h"
@@ -172,22 +173,6 @@ bool HTMLButtonAccessible::HasPrimaryAction() const { return true; }
 
 void HTMLButtonAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
   if (aIndex == eAction_Click) aName.AssignLiteral("press");
-}
-
-uint64_t HTMLButtonAccessible::State() {
-  uint64_t state = HyperTextAccessible::State();
-  if (state == states::DEFUNCT) return state;
-
-  
-  
-  
-  if (mParent && mParent->IsHTMLFileInput()) {
-    uint64_t parentState = mParent->State();
-    state |= parentState & (states::BUSY | states::REQUIRED | states::HASPOPUP |
-                            states::INVALID);
-  }
-
-  return state;
 }
 
 uint64_t HTMLButtonAccessible::NativeState() const {
@@ -467,54 +452,61 @@ HTMLFileInputAccessible::HTMLFileInputAccessible(nsIContent* aContent,
                                                  DocAccessible* aDoc)
     : HyperTextAccessible(aContent, aDoc) {
   mType = eHTMLFileInputType;
+  mGenericTypes |= eButton;
 }
 
-role HTMLFileInputAccessible::NativeRole() const {
+role HTMLFileInputAccessible::NativeRole() const { return roles::PUSHBUTTON; }
+
+bool HTMLFileInputAccessible::IsAcceptableChild(nsIContent* aEl) const {
   
   
-  return roles::GROUPING;
+  
+  
+  
+  return aEl->IsText();
 }
 
-nsresult HTMLFileInputAccessible::HandleAccEvent(AccEvent* aEvent) {
-  nsresult rv = HyperTextAccessible::HandleAccEvent(aEvent);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  
-  
-  AccStateChangeEvent* event = downcast_accEvent(aEvent);
-  if (event && (event->GetState() == states::BUSY ||
-                event->GetState() == states::REQUIRED ||
-                event->GetState() == states::HASPOPUP ||
-                event->GetState() == states::INVALID)) {
-    LocalAccessible* button = LocalChildAt(0);
-    if (button && button->Role() == roles::PUSHBUTTON) {
-      RefPtr<AccStateChangeEvent> childEvent = new AccStateChangeEvent(
-          button, event->GetState(), event->IsStateEnabled(),
-          event->FromUserInput());
-      nsEventShell::FireEvent(childEvent);
+ENameValueFlag HTMLFileInputAccessible::Name(nsString& aName) const {
+  ENameValueFlag flag = HyperTextAccessible::Name(aName);
+  if (flag == eNameFromSubtree) {
+    
+    
+    aName.Truncate();
+  } else {
+    
+    
+    
+    if (aName.IsEmpty()) {
+      
+      
+      
+      aName += ' ';
+      return flag;
     }
   }
-
-  return NS_OK;
+  
+  
+  uint32_t count = ChildCount();
+  for (uint32_t c = 0; c < count; ++c) {
+    TextLeafAccessible* leaf = LocalChildAt(c)->AsTextLeaf();
+    MOZ_ASSERT(leaf);
+    if (!aName.IsEmpty()) {
+      aName += ' ';
+    }
+    aName += leaf->Text();
+  }
+  return flag;
 }
 
-LocalAccessible* HTMLFileInputAccessible::CurrentItem() const {
-  
-  if (LocalAccessible* item = HyperTextAccessible::CurrentItem()) {
-    return item;
-  }
+bool HTMLFileInputAccessible::HasPrimaryAction() const { return true; }
 
-  
-  
-  LocalAccessible* button = LocalFirstChild();
-  if (!button) {
-    MOZ_ASSERT_UNREACHABLE("File input doesn't contain a button");
-    return nullptr;
+void HTMLFileInputAccessible::ActionNameAt(uint8_t aIndex, nsAString& aName) {
+  if (aIndex == 0) {
+    aName.AssignLiteral("press");
   }
-  MOZ_ASSERT(button->IsButton());
-  return button;
 }
+
+bool HTMLFileInputAccessible::IsWidget() const { return true; }
 
 
 
