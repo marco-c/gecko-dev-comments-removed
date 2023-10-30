@@ -10812,17 +10812,7 @@
   value: true
   mirror: always
 
-- name: media.webrtc.capture.screen.allow-wgc
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
-- name: media.webrtc.capture.window.allow-wgc
-  type: RelaxedAtomicBool
-  value: false
-  mirror: always
-
-- name: media.webrtc.capture.wgc.allow-zero-hertz
+- name: media.webrtc.capture.allow-wgc
   type: RelaxedAtomicBool
   value: false
   mirror: always
@@ -13297,7 +13287,7 @@
 # when copying/sharing in-content links or from the url bar.
 - name: privacy.query_stripping.strip_on_share.enabled
   type: RelaxedAtomicBool
-  value: false
+  value: true
   mirror: always
 
 # Enables / disables the URL query string stripping in normal browsing mode
