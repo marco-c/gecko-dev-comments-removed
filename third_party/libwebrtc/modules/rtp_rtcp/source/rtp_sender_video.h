@@ -93,16 +93,6 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
   
   
   
-  [[deprecated("bugs.webrtc.org/13757")]] bool SendVideo(
-      int payload_type,
-      absl::optional<VideoCodecType> codec_type,
-      uint32_t rtp_timestamp,
-      int64_t capture_time_ms,
-      rtc::ArrayView<const uint8_t> payload,
-      RTPVideoHeader video_header,
-      absl::optional<int64_t> expected_retransmission_time_ms);
-
-  
   
   
   bool SendVideo(int payload_type,
@@ -114,14 +104,6 @@ class RTPSenderVideo : public RTPVideoFrameSenderInterface {
                  RTPVideoHeader video_header,
                  TimeDelta expected_retransmission_time,
                  std::vector<uint32_t> csrcs) override;
-
-  [[deprecated("bugs.webrtc.org/13757")]] bool SendEncodedImage(
-      int payload_type,
-      absl::optional<VideoCodecType> codec_type,
-      uint32_t rtp_timestamp,
-      const EncodedImage& encoded_image,
-      RTPVideoHeader video_header,
-      absl::optional<int64_t> expected_retransmission_time_ms);
 
   bool SendEncodedImage(int payload_type,
                         absl::optional<VideoCodecType> codec_type,
