@@ -78,13 +78,13 @@ class CellAllocator {
 
   
   
-  template <JS::TraceKind traceKind, AllowGC allowGC = CanGC>
+  template <JS::TraceKind traceKind, AllowGC allowGC>
   static void* AllocNurseryOrTenuredCell(JSContext* cx, gc::AllocKind allocKind,
                                          size_t thingSize, gc::Heap heap,
                                          AllocSite* site);
 
   
-  template <AllowGC allowGC = CanGC>
+  template <AllowGC allowGC>
   static void* AllocTenuredCell(JSContext* cx, gc::AllocKind kind, size_t size);
 
   
@@ -92,18 +92,18 @@ class CellAllocator {
   
   
   
-  template <typename T, AllowGC allowGC = CanGC, typename... Args>
+  template <typename T, AllowGC allowGC, typename... Args>
   static T* NewString(JSContext* cx, gc::Heap heap, Args&&... args);
 
-  template <typename T, AllowGC allowGC >
+  template <typename T, AllowGC allowGC>
   static T* NewBigInt(JSContext* cx, Heap heap);
 
-  template <typename T, AllowGC allowGC = CanGC>
+  template <typename T, AllowGC allowGC>
   static T* NewObject(JSContext* cx, gc::AllocKind kind, gc::Heap heap,
                       const JSClass* clasp, gc::AllocSite* site = nullptr);
 
   
-  template <typename T, AllowGC allowGC = CanGC, typename... Args>
+  template <typename T, AllowGC allowGC, typename... Args>
   static T* NewTenuredCell(JSContext* cx, Args&&... args);
 };
 
