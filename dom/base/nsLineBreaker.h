@@ -264,6 +264,8 @@ class nsLineBreaker {
   
   
   bool mWordContinuation;
+  
+  const bool mLegacyBehavior;
 };
 
 #endif 
