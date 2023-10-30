@@ -794,10 +794,13 @@ void DataChannelConnection::SetSignals(const std::string& aTransportId) {
     MutexAutoLock lock(mLock);
     mTransportId = aTransportId;
   }
-  mTransportHandler->SignalPacketReceived.connect(
-      this, &DataChannelConnection::SctpDtlsInput);
-  mTransportHandler->SignalStateChange.connect(
-      this, &DataChannelConnection::TransportStateChange);
+  if (!mConnectedToTransportHandler) {
+    mTransportHandler->SignalPacketReceived.connect(
+        this, &DataChannelConnection::SctpDtlsInput);
+    mTransportHandler->SignalStateChange.connect(
+        this, &DataChannelConnection::TransportStateChange);
+    mConnectedToTransportHandler = true;
+  }
   
   if (mTransportHandler->GetState(mTransportId, false) ==
       TransportLayer::TS_OPEN) {
