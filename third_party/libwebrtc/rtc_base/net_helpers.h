@@ -22,15 +22,14 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/system/rtc_export.h"
 
+#include "rtc_base/net_test_helpers.h"
+
 namespace rtc {
 
 
 
 const char* inet_ntop(int af, const void* src, char* dst, socklen_t size);
 int inet_pton(int af, absl::string_view src, void* dst);
-
-RTC_EXPORT bool HasIPv4Enabled();
-RTC_EXPORT bool HasIPv6Enabled();
 
 }  
 
