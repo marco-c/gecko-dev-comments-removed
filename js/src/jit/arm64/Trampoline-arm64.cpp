@@ -614,43 +614,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   masm.enterExitFrame(reg_cx, regs.getAny(), id);
 
   
-  Register outReg = InvalidReg;
-  switch (f.outParam) {
-    case Type_Value:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(Value));
-      masm.moveStackPtrTo(outReg);
-      break;
-
-    case Type_Handle:
-      outReg = regs.takeAny();
-      masm.PushEmptyRooted(f.outParamRootType);
-      masm.moveStackPtrTo(outReg);
-      break;
-
-    case Type_Int32:
-    case Type_Bool:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(int64_t));
-      masm.moveStackPtrTo(outReg);
-      break;
-
-    case Type_Double:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(double));
-      masm.moveStackPtrTo(outReg);
-      break;
-
-    case Type_Pointer:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(uintptr_t));
-      masm.moveStackPtrTo(outReg);
-      break;
-
-    default:
-      MOZ_ASSERT(f.outParam == Type_Void);
-      break;
-  }
+  masm.reserveVMFunctionOutParamSpace(f);
 
   masm.setupUnalignedABICall(regs.getAny());
   masm.passABIArg(reg_cx);
@@ -684,8 +648,12 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   
   
   
-  if (outReg != InvalidReg) {
-    masm.passABIArg(outReg);
+  const int32_t outParamOffset =
+      -int32_t(ExitFooterFrame::Size()) - f.sizeOfOutParamStackSlot();
+  if (f.outParam != Type_Void) {
+    masm.passABIArg(MoveOperand(FramePointer, outParamOffset,
+                                MoveOperand::Kind::EffectiveAddress),
+                    MoveOp::GENERAL);
   }
 
   masm.callWithABI(nativeFun, MoveOp::GENERAL,
@@ -709,45 +677,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  switch (f.outParam) {
-    case Type_Value:
-      masm.Ldr(ARMRegister(JSReturnReg, 64),
-               MemOperand(masm.GetStackPointer64()));
-      masm.freeStack(sizeof(Value));
-      break;
-
-    case Type_Handle:
-      masm.popRooted(f.outParamRootType, ReturnReg, JSReturnOperand);
-      break;
-
-    case Type_Int32:
-      masm.Ldr(ARMRegister(ReturnReg, 32),
-               MemOperand(masm.GetStackPointer64()));
-      masm.freeStack(sizeof(int64_t));
-      break;
-
-    case Type_Bool:
-      masm.Ldrb(ARMRegister(ReturnReg, 32),
-                MemOperand(masm.GetStackPointer64()));
-      masm.freeStack(sizeof(int64_t));
-      break;
-
-    case Type_Double:
-      masm.Ldr(ARMFPRegister(ReturnDoubleReg, 64),
-               MemOperand(masm.GetStackPointer64()));
-      masm.freeStack(sizeof(double));
-      break;
-
-    case Type_Pointer:
-      masm.Ldr(ARMRegister(ReturnReg, 64),
-               MemOperand(masm.GetStackPointer64()));
-      masm.freeStack(sizeof(uintptr_t));
-      break;
-
-    default:
-      MOZ_ASSERT(f.outParam == Type_Void);
-      break;
-  }
+  masm.loadVMFunctionOutParam(f, Address(FramePointer, outParamOffset));
 
   
   
