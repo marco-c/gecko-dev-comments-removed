@@ -67,6 +67,13 @@ already_AddRefed<TextureView> Texture::CreateView(
   return view.forget();
 }
 
-void Texture::Destroy() { Cleanup(); }
+void Texture::Destroy() {
+  
+  
+
+  
+}
+
+void Texture::ForceDestroy() { Cleanup(); }
 
 }  
