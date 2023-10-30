@@ -983,7 +983,7 @@ bool RemoteTextureMap::CheckRemoteTextureReady(
   auto* owner = GetTextureOwner(lock, aInfo.mOwnerId, aInfo.mForPid);
   if (!owner || owner->mIsContextLost) {
     
-    return false;
+    return true;
   }
 
   const auto key = std::pair(aInfo.mForPid, aInfo.mTextureId);
