@@ -37,8 +37,9 @@
 
 
 
-
+#ifndef RTC_OBJC_TYPE_PREFIX
 #define RTC_OBJC_TYPE_PREFIX
+#endif
 
 
 
