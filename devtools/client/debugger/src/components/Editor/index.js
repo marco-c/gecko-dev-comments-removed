@@ -186,10 +186,23 @@ class Editor extends PureComponent {
     }
 
     const { codeMirror } = editor;
-    const codeMirrorWrapper = codeMirror.getWrapperElement();
+
+    this.abortController = new window.AbortController();
+
+    
+    
+    
+    
+    
+    window.document
+      .querySelector(".editor-pane")
+      .addEventListener("resizeend", () => codeMirror.refresh(), {
+        signal: this.abortController.signal,
+      });
 
     codeMirror.on("gutterClick", this.onGutterClick);
 
+    const codeMirrorWrapper = codeMirror.getWrapperElement();
     
     codeMirrorWrapper.tabIndex = 0;
     codeMirrorWrapper.addEventListener("keydown", e => this.onKeyDown(e));
@@ -260,6 +273,11 @@ class Editor extends PureComponent {
     shortcuts.off(L10N.getStr("toggleBreakpoint.key"));
     shortcuts.off(L10N.getStr("toggleCondPanel.breakpoint.key"));
     shortcuts.off(L10N.getStr("toggleCondPanel.logPoint.key"));
+
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
+    }
   }
 
   getCurrentLine() {
