@@ -100,6 +100,9 @@ test(() => {
 test(() => {
   const error = new Error("error");
   const results = [];
+  let errorReported = null;
+
+  self.addEventListener("error", e => errorReported = e, {once: true});
 
   const source = new Observable((subscriber) => {
     subscriber.next(1);
@@ -116,10 +119,13 @@ test(() => {
     complete: () => assert_unreached("complete should not be called"),
   });
 
+  assert_equals(errorReported, null, "The global error handler should not be " +
+      "invoked when the subscribe callback throws an error and the " +
+      "subscriber has given an error handler");
   assert_array_equals(
     results,
     [1, error],
-    "should emit values and the throw error synchronously"
+    "should emit values and the thrown error synchronously"
   );
 }, "Observable should error if initializer throws");
 
@@ -215,6 +221,7 @@ test(() => {
     complete: () => assert_unreached("complete should not be called"),
   });
 
+  
   assert_true(errorReported !== null, "Exception was reported to global");
   assert_equals(errorReported.message, "Uncaught Error: custom error", "Error message matches");
   assert_greater_than(errorReported.lineno, 0, "Error lineno is greater than 0");
@@ -239,6 +246,7 @@ test(() => {
     complete: () => assert_unreached("complete should not be called"),
   });
 
+  
   assert_true(errorReported !== null, "Exception was reported to global");
   assert_equals(errorReported.message, "Uncaught Error: custom error", "Error message matches");
   assert_greater_than(errorReported.lineno, 0, "Error lineno is greater than 0");
@@ -273,6 +281,7 @@ test(() => {
     "should emit values synchronously, but not error values after complete"
   );
 
+  
   assert_true(errorReported !== null, "Exception was reported to global");
   assert_equals(errorReported.message, "Uncaught Error: custom error", "Error message matches");
   assert_greater_than(errorReported.lineno, 0, "Error lineno is greater than 0");
@@ -289,6 +298,9 @@ test(t => {
   self.addEventListener("error", e => errorReported = e, { once: true });
 
   const source = new Observable((subscriber) => {
+    subscriber.next(1);
+    subscriber.next(2);
+    subscriber.complete();
     throw error;
   });
 
@@ -298,7 +310,7 @@ test(t => {
     complete: () => results.push("complete"),
   });
 
-  assert_array_equals(results, [],
+  assert_array_equals(results, [1, 2, "complete"],
     "should emit values synchronously, but not error after complete"
   );
 
