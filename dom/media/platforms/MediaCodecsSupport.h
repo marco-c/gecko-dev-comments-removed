@@ -48,12 +48,16 @@ using MediaCodecSet = EnumSet<MediaCodec, uint64_t>;
 
 
 
+#define LACK_HW_EXTENSION(codec) codec##LackOfExtension
+
+
+
 
 
 
 
 enum class MediaCodecsSupport : int {
-#define X(name) SW_DECODE(name), HW_DECODE(name),
+#define X(name) SW_DECODE(name), HW_DECODE(name), LACK_HW_EXTENSION(name),
   CODEC_LIST
 #undef X
       SENTINEL
@@ -69,6 +73,7 @@ using MediaCodecsSupported = EnumSet<MediaCodecsSupport, uint64_t>;
 enum class DecodeSupport : int {
   SoftwareDecode,
   HardwareDecode,
+  UnsureDueToLackOfExtension,
 };
 using DecodeSupportSet = EnumSet<DecodeSupport, uint64_t>;
 
@@ -80,6 +85,7 @@ struct CodecDefinition {
   const char* mimeTypeString = "Undefined MIME type string";
   MediaCodecsSupport swDecodeSupport = MediaCodecsSupport::SENTINEL;
   MediaCodecsSupport hwDecodeSupport = MediaCodecsSupport::SENTINEL;
+  MediaCodecsSupport lackOfHWExtenstion = MediaCodecsSupport::SENTINEL;
 };
 
 
