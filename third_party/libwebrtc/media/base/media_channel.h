@@ -190,6 +190,9 @@ class MediaSendChannelInterface {
   virtual cricket::MediaType media_type() const = 0;
 
   
+  virtual absl::optional<Codec> GetSendCodec() const = 0;
+
+  
   
   virtual bool AddSendStream(const StreamParams& sp) = 0;
   
@@ -927,8 +930,6 @@ struct VideoRecvParameters : RtpParameters<VideoCodec> {};
 class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
-  
-  virtual absl::optional<VideoCodec> GetSendCodec() = 0;
   
   virtual bool SetSend(bool send) = 0;
   
