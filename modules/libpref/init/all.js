@@ -3981,6 +3981,7 @@ pref("extensions.formautofill.creditCards.heuristics.fathom.highConfidenceThresh
 
 pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0");
 
+pref("extensions.formautofill.firstTimeUse", true);
 pref("extensions.formautofill.loglevel", "Warn");
 
 
