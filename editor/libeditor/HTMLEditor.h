@@ -26,6 +26,7 @@
 #include "nsIHTMLEditor.h"
 #include "nsIHTMLInlineTableEditor.h"
 #include "nsIHTMLObjectResizer.h"
+#include "nsIPrincipal.h"
 #include "nsITableEditor.h"
 #include "nsPoint.h"
 #include "nsStubMutationObserver.h"
@@ -299,7 +300,26 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult
   OutdentAsAction(nsIPrincipal* aPrincipal = nullptr);
 
-  MOZ_CAN_RUN_SCRIPT nsresult SetParagraphFormatAsAction(
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult FormatBlockAsAction(
+      const nsAString& aParagraphFormat, nsIPrincipal* aPrincipal = nullptr);
+
+  
+
+
+
+
+
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult SetParagraphStateAsAction(
       const nsAString& aParagraphFormat, nsIPrincipal* aPrincipal = nullptr);
 
   MOZ_CAN_RUN_SCRIPT nsresult AlignAsAction(const nsAString& aAlignType,
@@ -1344,7 +1364,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   CreateAndInsertElement(
-      WithTransaction aWithTransaction, nsAtom& aTagName,
+      WithTransaction aWithTransaction, const nsAtom& aTagName,
       const EditorDOMPoint& aPointToInsert,
       const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
 
@@ -1401,7 +1421,7 @@ class HTMLEditor final : public EditorBase,
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult>
   MaybeSplitAncestorsForInsertWithTransaction(
-      nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode,
+      const nsAtom& aTag, const EditorDOMPoint& aStartOfDeepestRightNode,
       const Element& aEditingHost);
 
   
@@ -1430,7 +1450,7 @@ class HTMLEditor final : public EditorBase,
   enum class BRElementNextToSplitPoint { Keep, Delete };
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
   InsertElementWithSplittingAncestorsWithTransaction(
-      nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
+      const nsAtom& aTagName, const EditorDOMPoint& aPointToInsert,
       BRElementNextToSplitPoint aBRElementNextToSplitPoint,
       const Element& aEditingHost,
       const InitializeInsertingElement& aInitializer = DoNothingForNewElement);
@@ -1507,11 +1527,33 @@ class HTMLEditor final : public EditorBase,
 
 
 
+  enum class FormatBlockMode {
+    
+    
+    HTMLFormatBlockCommand,
+    
+    
+    XULParagraphStateCommand,
+  };
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
 
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<EditorDOMPoint, nsresult>
   RemoveBlockContainerElementsWithTransaction(
       const nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-      BlockInlineCheck aBlockInlineCheck);
+      FormatBlockMode aFormatBlockMode, BlockInlineCheck aBlockInlineCheck);
 
   
 
@@ -1532,9 +1574,14 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<CreateElementResult, nsresult>
-  CreateOrChangeBlockContainerElement(
-      nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents, nsAtom& aBlockTag,
+  CreateOrChangeFormatContainerElement(
+      nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
+      const nsStaticAtom& aNewFormatTagName, FormatBlockMode aFormatBlockMode,
       const Element& aEditingHost);
 
   
@@ -1558,9 +1605,12 @@ class HTMLEditor final : public EditorBase,
 
 
 
+
+
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT Result<RefPtr<Element>, nsresult>
   FormatBlockContainerWithTransaction(AutoRangeArray& aSelectionRanges,
-                                      nsAtom& aBlockType,
+                                      const nsStaticAtom& aNewFormatTagName,
+                                      FormatBlockMode aFormatBlockMode,
                                       const Element& aEditingHost);
 
   
@@ -1697,6 +1747,9 @@ class HTMLEditor final : public EditorBase,
                         nsAtom& aItemType);
 
   class AutoListElementCreator;
+
+  [[nodiscard]] static bool IsFormatElement(FormatBlockMode aFormatBlockMode,
+                                            const nsIContent& aContent);
 
   
 
@@ -3867,7 +3920,10 @@ class HTMLEditor final : public EditorBase,
 
 
 
-  MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerAsSubAction(nsAtom& aTagName);
+
+
+  MOZ_CAN_RUN_SCRIPT nsresult FormatBlockContainerAsSubAction(
+      const nsStaticAtom& aTagName, FormatBlockMode aFormatBlockMode);
 
   
 
@@ -4629,8 +4685,15 @@ class MOZ_STACK_CLASS AlignStateAtSelection final {
 
 class MOZ_STACK_CLASS ParagraphStateAtSelection final {
  public:
+  using FormatBlockMode = HTMLEditor::FormatBlockMode;
+
   ParagraphStateAtSelection() = delete;
-  ParagraphStateAtSelection(HTMLEditor& aHTMLEditor, ErrorResult& aRv);
+  
+
+
+
+  ParagraphStateAtSelection(HTMLEditor& aHTMLEditor,
+                            FormatBlockMode aFormatBlockMode, ErrorResult& aRv);
 
   
 
@@ -4665,9 +4728,11 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
 
 
 
+
+
   static void AppendDescendantFormatNodesAndFirstInlineNode(
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents,
-      dom::Element& aNonFormatBlockElement);
+      FormatBlockMode aFormatBlockMode, dom::Element& aNonFormatBlockElement);
 
   
 

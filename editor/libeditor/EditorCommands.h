@@ -237,6 +237,7 @@ class EditorCommand : public nsIControllerCommand {
         return EditorCommandParamType::None;
       
       case Command::FormatBlock:
+      case Command::ParagraphState:
         return EditorCommandParamType::CString |
                EditorCommandParamType::String |
                EditorCommandParamType::StateAttribute;
@@ -728,6 +729,30 @@ class MultiStateCommandBase : public EditorCommand {
       HTMLEditor* aHTMLEditor, const nsAString& aNewState,
       nsIPrincipal* aPrincipal) const = 0;
 };
+
+
+
+
+
+class FormatBlockStateCommand final : public MultiStateCommandBase {
+ public:
+  NS_INLINE_DECL_EDITOR_COMMAND_MAKE_SINGLETON(FormatBlockStateCommand)
+
+ protected:
+  FormatBlockStateCommand() = default;
+  virtual ~FormatBlockStateCommand() = default;
+
+  MOZ_CAN_RUN_SCRIPT nsresult GetCurrentState(
+      HTMLEditor* aHTMLEditor, nsCommandParams& aParams) const final;
+  MOZ_CAN_RUN_SCRIPT nsresult SetState(HTMLEditor* aHTMLEditor,
+                                       const nsAString& aNewState,
+                                       nsIPrincipal* aPrincipal) const final;
+};
+
+
+
+
+
 
 class ParagraphStateCommand final : public MultiStateCommandBase {
  public:
