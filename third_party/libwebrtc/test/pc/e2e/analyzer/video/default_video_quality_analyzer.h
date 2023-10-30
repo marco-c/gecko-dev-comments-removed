@@ -107,7 +107,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   
   std::map<StatsKey, StreamStats> GetStats() const;
   AnalyzerStats GetAnalyzerStats() const;
-  double GetCpuUsagePercent();
+  double GetCpuUsagePercent() const;
 
   
   
