@@ -59,8 +59,11 @@ def mac_attribution(config, jobs):
             
             command = job["run"]["command"]
             attribution_arg = command[-1]
-            while len(attribution_arg) < 1024:
+            
+            
+            while len(attribution_arg) < 1010:
                 attribution_arg += "\t"
-            command[-1] = attribution_arg
+            
+            command[-1] = "'" + attribution_arg + "'"
             job["run"]["command"] = " ".join(command)
         yield job
