@@ -33,6 +33,10 @@ var Profiler;
   var currentTest = "";
 
   
+  
+  var profilerSubtestStartTime;
+
+  
   var profiler_interval,
     profiler_entries,
     profiler_threadsArray,
@@ -170,27 +174,46 @@ var Profiler;
         _profiler.StopProfiler();
       }
     },
+
+    
+
+
+
+
+
     subtestStart: function Profiler__subtestStart(name, explicit) {
+      profilerSubtestStartTime = Cu.now();
       if (_profiler) {
         ChromeUtils.addProfilerMarker(
-          explicit ? name : 'Start of test "' + (name || test_name) + '"',
-          { category: "Test" }
+          "Talos",
+          { category: "Test" },
+          explicit ? name : 'Start of test "' + (name || test_name) + '"'
         );
       }
     },
+
+    
+
+
+
+
+
+
     subtestEnd: function Profiler__subtestEnd(name, explicit) {
       if (_profiler) {
         ChromeUtils.addProfilerMarker(
-          explicit ? name : 'End of test "' + (name || test_name) + '"',
-          { category: "Test" }
+          "Talos",
+          { startTime: profilerSubtestStartTime, category: "Test" },
+          explicit ? name : 'Test "' + (name || test_name) + '"'
         );
       }
     },
     mark: function Profiler__mark(marker, explicit) {
       if (_profiler) {
         ChromeUtils.addProfilerMarker(
-          explicit ? marker : 'Profiler: "' + (marker || test_name) + '"',
-          { category: "Test" }
+          "Talos",
+          { category: "Test" },
+          explicit ? marker : 'Profiler: "' + (marker || test_name) + '"'
         );
       }
     },
