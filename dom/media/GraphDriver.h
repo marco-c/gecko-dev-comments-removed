@@ -292,9 +292,6 @@ class GraphDriver {
   virtual void EnsureNextIteration() = 0;
 
   
-  void SwitchToDriver(GraphDriver* aDriver);
-
-  
   
   GraphDriver* PreviousDriver();
   void SetPreviousDriver(GraphDriver* aPreviousDriver);
