@@ -134,12 +134,11 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
                                nsISerialEventTarget* aMainThread);
   static MediaTrackGraphImpl* GetInstance(
       GraphDriverType aGraphDriverRequested, uint64_t aWindowID,
-      bool aShouldResistFingerprinting, TrackRate aSampleRate,
-      CubebUtils::AudioDeviceID aOutputDeviceID,
+      TrackRate aSampleRate, CubebUtils::AudioDeviceID aOutputDeviceID,
       nsISerialEventTarget* aMainThread);
   static MediaTrackGraphImpl* GetInstanceIfExists(
-      uint64_t aWindowID, bool aShouldResistFingerprinting,
-      TrackRate aSampleRate, CubebUtils::AudioDeviceID aOutputDeviceID);
+      uint64_t aWindowID, TrackRate aSampleRate,
+      CubebUtils::AudioDeviceID aOutputDeviceID);
 
   
   
