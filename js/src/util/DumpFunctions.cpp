@@ -15,9 +15,9 @@
 #include "jsfriendapi.h"  
 #include "jstypes.h"      
 
-#include "gc/Allocator.h"         
 #include "gc/Cell.h"              
 #include "gc/GC.h"                
+#include "gc/GCEnum.h"            
 #include "gc/Heap.h"              
 #include "gc/Tracer.h"            
 #include "gc/WeakMap.h"           

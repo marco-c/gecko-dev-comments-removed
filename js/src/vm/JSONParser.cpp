@@ -22,7 +22,7 @@
 
 #include "builtin/Array.h"            
 #include "ds/IdValuePair.h"           
-#include "gc/Allocator.h"             
+#include "gc/GCEnum.h"                
 #include "gc/Tracer.h"                
 #include "js/AllocPolicy.h"           
 #include "js/CharacterEncoding.h"     

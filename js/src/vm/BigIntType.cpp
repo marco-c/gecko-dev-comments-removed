@@ -97,7 +97,7 @@
 
 #include "jsnum.h"
 
-#include "gc/Allocator.h"
+#include "gc/GCEnum.h"
 #include "js/BigInt.h"
 #include "js/friend/ErrorMessages.h"  
 #include "js/StableStringChars.h"
