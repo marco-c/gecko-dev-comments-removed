@@ -180,8 +180,6 @@ var TalosContentProfiler;
 
 
 
-
-
     beginTest(testName) {
       if (initted) {
         currentTest = testName;
@@ -243,9 +241,9 @@ var TalosContentProfiler;
 
 
 
-    resume(marker = "", inittedInParent = false) {
+    subtestStart(marker = "", inittedInParent = false) {
       if (initted || inittedInParent) {
-        return sendEventAndWait("Profiler:Resume", { marker });
+        return sendEventAndWait("Profiler:SubtestStart", { marker });
       }
       return Promise.resolve();
     },
@@ -265,9 +263,9 @@ var TalosContentProfiler;
 
 
 
-    pause(marker = "", inittedInParent = false, startTime = undefined) {
+    subtestEnd(marker = "", inittedInParent = false, startTime = undefined) {
       if (initted || inittedInParent) {
-        return sendEventAndWait("Profiler:Pause", { marker, startTime });
+        return sendEventAndWait("Profiler:SubtestEnd", { marker, startTime });
       }
 
       return Promise.resolve();

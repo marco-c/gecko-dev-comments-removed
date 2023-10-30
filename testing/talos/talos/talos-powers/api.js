@@ -33,7 +33,7 @@ Cu.importGlobalProperties(["IOUtils", "PathUtils"]);
 const Cm = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
 let frameScriptURL;
-let profilerStartTime;
+let profilerSubtestStartTime;
 
 function TalosPowersService() {
   this.wrappedJSObject = this;
@@ -124,8 +124,6 @@ TalosPowersService.prototype = {
       data.featuresArray,
       data.threadsArray
     );
-
-    Services.profiler.PauseSampling();
   },
 
   
@@ -170,12 +168,10 @@ TalosPowersService.prototype = {
 
 
 
-
-  profilerPause(marker = null) {
+  profilerSubtestEnd(marker = null, startTime = undefined) {
     if (marker) {
-      this.addIntervalMarker(marker, profilerStartTime);
+      this.addIntervalMarker(marker, startTime ?? profilerSubtestStartTime);
     }
-    Services.profiler.PauseSampling();
   },
 
   
@@ -184,11 +180,8 @@ TalosPowersService.prototype = {
 
 
 
-
-  profilerResume(marker = null) {
-    Services.profiler.ResumeSampling();
-
-    profilerStartTime = Cu.now();
+  profilerSubtestStart(marker = null) {
+    profilerSubtestStartTime = Cu.now();
 
     if (marker) {
       this.addInstantMarker(marker);
@@ -248,14 +241,14 @@ TalosPowersService.prototype = {
         break;
       }
 
-      case "Profiler:Pause": {
-        this.profilerPause(data.marker, data.startTime);
+      case "Profiler:SubtestEnd": {
+        this.profilerSubtestEnd(data.marker, data.startTime);
         mm.sendAsyncMessage(ACK_NAME, { name });
         break;
       }
 
-      case "Profiler:Resume": {
-        this.profilerResume(data.marker);
+      case "Profiler:SubtestStart": {
+        this.profilerSubtestStart(data.marker);
         mm.sendAsyncMessage(ACK_NAME, { name });
         break;
       }

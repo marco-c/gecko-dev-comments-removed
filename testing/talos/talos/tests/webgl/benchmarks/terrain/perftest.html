@@ -1,16 +1,16 @@
 <html>
+<!--
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+ Version 1.1
+   - Added viewport rotation.
+   - Adapted for talos with with 4 runs on combinations of alpha/antialias
 
-
-
-
-
-
-
-
-
-
-
+ Version 1.0
+   - Benoit Jacob's WebGL tutorial demos: http://bjacob.github.io/webgl-tutorial/12-texture.html
+-->
 <head>
 <meta charset="utf-8"/>
 <script src="resource://talos-powers/TalosContentProfiler.js"></script>
@@ -197,7 +197,7 @@
     gCurrentTimestamp = 0;
     gResultTimestamps = new Array(WARMUP_TIMESTAMPS + MEASURED_FRAMES);
 
-    TalosContentProfiler.resume("Starting requestAnimationFrame loop", true).then(() => {
+    TalosContentProfiler.subtestStart("Starting requestAnimationFrame loop", true).then(() => {
       requestAnimationFrame(draw);
     });
   }
@@ -212,7 +212,7 @@
     gResultTimestamps[gCurrentTimestamp++] = performance.now();
     var recordedTimestamps = gCurrentTimestamp;
     if (recordedTimestamps >= WARMUP_TIMESTAMPS + MEASURED_FRAMES) {
-      TalosContentProfiler.pause("Stopping requestAnimationFrame loop", true).then(() => {
+      TalosContentProfiler.subtestEnd("Stopping requestAnimationFrame loop", true).then(() => {
         var intervals = [];
         var lastWarmupTimestampId = WARMUP_TIMESTAMPS - 1;
         for (var i = lastWarmupTimestampId + 1; i < gResultTimestamps.length; i++) {

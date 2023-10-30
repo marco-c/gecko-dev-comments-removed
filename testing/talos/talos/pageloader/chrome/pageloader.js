@@ -385,7 +385,7 @@ function startAndLoadURI(pageURL) {
     
     
     
-    TalosParentProfiler.resume("Starting to load URI " + pageURL.spec);
+    TalosParentProfiler.subtestStart("Starting to load URI " + pageURL.spec);
   }
 
   start_time = window.performance.now();
@@ -726,8 +726,7 @@ function _loadHandlerCapturing() {
 
   if (gTime !== -1) {
     plRecordTime(gTime);
-    TalosParentProfiler.mark("Talos - capturing load handler fired");
-    TalosParentProfiler.pause();
+    TalosParentProfiler.subtestEnd("Talos - capturing load handler fired");
     gTime = -1;
     recordedName = null;
     setTimeout(plNextPage, delay);
@@ -795,7 +794,7 @@ function _loadHandler(paint_time = 0) {
   } else {
     duration = end_time - start_time;
   }
-  TalosParentProfiler.pause("Bubbling load handler fired.");
+  TalosParentProfiler.subtestEnd("Bubbling load handler fired.");
 
   
   
