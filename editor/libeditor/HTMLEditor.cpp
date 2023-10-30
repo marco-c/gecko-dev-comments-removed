@@ -2537,7 +2537,13 @@ bool HTMLEditor::IsFormatElement(FormatBlockMode aFormatBlockMode,
   
   return MOZ_LIKELY(aFormatBlockMode == FormatBlockMode::HTMLFormatBlockCommand)
              ? HTMLEditUtils::IsFormatElementForFormatBlockCommand(aContent)
-             : HTMLEditUtils::IsFormatElementForParagraphStateCommand(aContent);
+             : (HTMLEditUtils::IsFormatElementForParagraphStateCommand(
+                    aContent) &&
+                
+                
+                
+                !aContent.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
+                                              nsGkAtoms::dt));
 }
 
 NS_IMETHODIMP HTMLEditor::GetParagraphState(bool* aMixed,

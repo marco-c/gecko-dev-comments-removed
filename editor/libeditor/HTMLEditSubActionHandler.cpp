@@ -9047,9 +9047,7 @@ HTMLEditor::RemoveBlockContainerElementsWithTransaction(
   EditorDOMPoint pointToPutCaret;
   for (const auto& content : aArrayOfContents) {
     
-    if (!content->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                      nsGkAtoms::dt) &&
-        HTMLEditor::IsFormatElement(aFormatBlockMode, content)) {
+    if (HTMLEditUtils::IsFormatElementForParagraphStateCommand(content)) {
       
       if (blockElement) {
         Result<SplitRangeOffFromNodeResult, nsresult> unwrapBlockElementResult =
@@ -9151,9 +9149,8 @@ HTMLEditor::RemoveBlockContainerElementsWithTransaction(
           content, HTMLEditUtils::ClosestEditableBlockElement,
           aBlockInlineCheck);
       if (!blockElement ||
-          blockElement->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                            nsGkAtoms::dt) ||
-          !HTMLEditor::IsFormatElement(aFormatBlockMode, *blockElement) ||
+          !HTMLEditUtils::IsFormatElementForParagraphStateCommand(
+              *blockElement) ||
           !HTMLEditUtils::IsRemovableNode(*blockElement)) {
         
         blockElement = nullptr;
@@ -9242,10 +9239,7 @@ HTMLEditor::CreateOrChangeFormatContainerElement(
     
     
     if (HTMLEditUtils::IsMozDiv(content) ||
-        (HTMLEditor::IsFormatElement(aFormatBlockMode, content) &&
-         (aFormatBlockMode == FormatBlockMode::HTMLFormatBlockCommand ||
-          !content->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                        nsGkAtoms::dt)))) {
+        HTMLEditor::IsFormatElement(aFormatBlockMode, content)) {
       
       curBlock = nullptr;
       pendingBRElementToMoveCurBlock = nullptr;
