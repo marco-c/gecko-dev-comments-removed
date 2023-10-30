@@ -7,7 +7,11 @@
 
 #include "charstr.h"
 #include "cmemory.h"
+#ifdef JS_HAS_INTL_API
 #include "double-conversion/string-to-double.h"
+#else
+#include "double-conversion-string-to-double.h"
+#endif
 #include "measunit_impl.h"
 #include "putilimp.h"
 #include "uassert.h"
@@ -106,7 +110,11 @@ namespace {
 
 
 
+#ifdef JS_HAS_INTL_API
 using double_conversion::StringToDoubleConverter;
+#else
+using icu::double_conversion::StringToDoubleConverter;
+#endif
 
 
 
