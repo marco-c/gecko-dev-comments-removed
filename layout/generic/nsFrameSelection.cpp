@@ -3328,6 +3328,13 @@ void AutoCopyListener::OnSelectionChange(Document* aDocument,
                                          int16_t aReason) {
   MOZ_ASSERT(IsValidClipboardID(sClipboardID));
 
+  
+  
+  
+  if (aReason & nsISelectionListener::JS_REASON) {
+    return;
+  }
+
   if (sClipboardID == nsIClipboard::kSelectionCache) {
     
     
