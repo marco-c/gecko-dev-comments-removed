@@ -4,21 +4,30 @@ var requests = [];
 
 self.addEventListener('install', e => {
   e.registerRouter([
-    {
-      condition: { requestMode: 'no-cors' },
+    {condition: {requestMode: 'no-cors'}, source: 'network'}, {
+      condition: {urlPattern: '/**/*.txt??*'},
+      
+      
+      
       source: 'network'
     },
     {
-      condition: { urlPattern: '/**/*.txt??*' },
-      
-      
-      
+      condition:
+          {urlPattern: '/**/simple-test-for-condition-main-resource.html'},
       source: 'network'
-    }, {
+    },
+    {
       condition: {
-        urlPattern: '/**/simple-test-for-condition-main-resource.html'},
+        or: [
+          {
+            or: [{urlPattern: '/**/or-test/direct1.*??*'}],
+          },
+          {urlPattern: '/**/or-test/direct2.*??*'}
+        ]
+      },
       source: 'network'
-    }]);
+    }
+  ]);
   self.skipWaiting();
 });
 
