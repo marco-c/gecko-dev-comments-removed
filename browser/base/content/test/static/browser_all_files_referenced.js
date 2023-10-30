@@ -260,6 +260,13 @@ var allowlist = [
     file: "resource://gre/localization/en-US/toolkit/updates/backgroundupdate.ftl",
   },
   
+  
+  
+  {
+    file: "resource://app/localization/en-US/browser/backgroundtasks/defaultagent.ftl",
+  },
+
+  
   {
     file: "resource://gre/localization/en-US/toolkit/about/aboutThirdParty.ftl",
     platforms: ["linux", "macosx"],

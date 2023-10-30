@@ -10,7 +10,6 @@
 #include <string.h>
 #include <vector>
 
-#include "mozilla/mscom/EnsureMTA.h"
 #include "nsAutoRef.h"
 #include "nsDebug.h"
 #include "nsWindowsHelpers.h"
@@ -349,10 +348,8 @@ DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
   
   
   
-  mozilla::mscom::EnsureMTA([&] {
-    activitiesPerformed = MaybeShowNotification(
-        browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
-  });
+  activitiesPerformed = MaybeShowNotification(
+      browserInfo, PromiseFlatString(aUniqueToken).get(), aForce);
 
   HRESULT hr = SendDefaultAgentPing(browserInfo, pdfInfo, activitiesPerformed);
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
