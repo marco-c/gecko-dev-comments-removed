@@ -199,6 +199,18 @@ bool KeySystemConfig::CreateKeySystemConfigs(
   return false;
 }
 
+bool KeySystemConfig::IsSameKeySystem(const nsAString& aKeySystem) const {
+#ifdef MOZ_WMF_CDM
+  
+  
+  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem)) {
+    return mKeySystem.Equals(aKeySystem) ||
+           aKeySystem.EqualsLiteral(kWidevineKeySystemName);
+  }
+#endif
+  return mKeySystem.Equals(aKeySystem);
+}
+
 #ifdef DEBUG
 nsString KeySystemConfig::GetDebugInfo() const {
   nsString debugInfo;
