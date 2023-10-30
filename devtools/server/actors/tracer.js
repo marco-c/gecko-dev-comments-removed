@@ -36,6 +36,11 @@ const CONSOLE_ARGS_STYLES = [
   "color: var(--theme-highlight-blue); margin-inline: 2px;",
 ];
 
+const DOM_EVENT_CONSOLE_ARGS_STYLES = [
+  "color: var(--theme-toolbarbutton-checked-hover-background)",
+  "padding-inline: 4px; margin-inline: 2px; background-color: var(--toolbarbutton-checked-background); color: var(--toolbarbutton-checked-color);",
+];
+
 const CONSOLE_THROTTLING_DELAY = 250;
 
 class TracerActor extends Actor {
@@ -73,6 +78,8 @@ class TracerActor extends Actor {
     addTracingListener(this.tracingListener);
     startTracing({
       global: this.targetActor.window || this.targetActor.workerGlobal,
+      
+      traceDOMEvents: true,
     });
   }
 
@@ -127,7 +134,17 @@ class TracerActor extends Actor {
 
 
 
-  onTracingFrame({ frame, depth, formatedDisplayName, prefix }) {
+
+
+
+
+  onTracingFrame({
+    frame,
+    depth,
+    formatedDisplayName,
+    prefix,
+    currentDOMEvent,
+  }) {
     const { script } = frame;
     const { lineNumber, columnNumber } = script.getOffsetMetadata(frame.offset);
     const url = script.source.url;
@@ -140,6 +157,21 @@ class TracerActor extends Actor {
     if (this.logMethod == LOG_METHODS.STDOUT) {
       
       return true;
+    }
+
+    
+    
+    if (currentDOMEvent && depth == 0) {
+      const DOMEventArgs = [prefix + "—", currentDOMEvent];
+
+      
+      this.throttledConsoleMessages.push({
+        arguments: DOMEventArgs,
+        styles: DOM_EVENT_CONSOLE_ARGS_STYLES,
+        level: "logTrace",
+        chromeContext: this.isChromeContext,
+        timeStamp: ChromeUtils.dateNow(),
+      });
     }
 
     const args = [

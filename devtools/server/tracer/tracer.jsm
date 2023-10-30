@@ -84,6 +84,9 @@ const customLazy = {
 
 
 
+
+
+
 class JavaScriptTracer {
   constructor(options) {
     this.onEnterFrame = this.onEnterFrame.bind(this);
@@ -91,18 +94,67 @@ class JavaScriptTracer {
     
     
     
-    const global = options.global || Cu.getGlobalForObject(options);
+    this.tracedGlobal = options.global || Cu.getGlobalForObject(options);
 
     
     
-    this.dbg = this.makeDebugger(global);
+    this.dbg = this.makeDebugger();
 
     this.depth = 0;
     this.prefix = options.prefix ? `${options.prefix}: ` : "";
 
     this.dbg.onEnterFrame = this.onEnterFrame;
 
+    this.traceDOMEvents = !!options.traceDOMEvents;
+    if (this.traceDOMEvents) {
+      this.startTracingDOMEvents();
+    }
+
     this.notifyToggle(true);
+  }
+
+  startTracingDOMEvents() {
+    this.debuggerNotificationObserver = new DebuggerNotificationObserver();
+    this.eventListener = this.eventListener.bind(this);
+    this.debuggerNotificationObserver.addListener(this.eventListener);
+    this.debuggerNotificationObserver.connect(this.tracedGlobal);
+
+    this.currentDOMEvent = null;
+  }
+
+  stopTracingDOMEvents() {
+    this.debuggerNotificationObserver.removeListener(this.eventListener);
+    this.debuggerNotificationObserver.disconnect(this.tracedGlobal);
+    this.debuggerNotificationObserver = null;
+    this.currentDOMEvent = null;
+  }
+
+  
+
+
+
+
+
+
+  eventListener(notification) {
+    
+    
+    
+    
+    
+    
+    
+    
+    if (notification.phase == "pre") {
+      
+      if (notification.type == "domEvent") {
+        this.currentDOMEvent = `DOM(${notification.event.type})`;
+      } else {
+        this.currentDOMEvent = notification.type;
+      }
+    } else {
+      this.currentDOMEvent = null;
+    }
   }
 
   stopTracing() {
@@ -117,6 +169,12 @@ class JavaScriptTracer {
     this.depth = 0;
     this.options = null;
 
+    if (this.traceDOMEvents) {
+      this.stopTracingDOMEvents();
+    }
+
+    this.tracedGlobal = null;
+
     this.notifyToggle(false);
   }
 
@@ -129,14 +187,11 @@ class JavaScriptTracer {
 
 
 
-
-
-
-  makeDebugger(global) {
+  makeDebugger() {
     
     
     const { isSystemPrincipal } =
-      typeof Cu == "object" ? Cu.getObjectPrincipal(global) : {};
+      typeof Cu == "object" ? Cu.getObjectPrincipal(this.tracedGlobal) : {};
 
     
     
@@ -145,7 +200,8 @@ class JavaScriptTracer {
       : new customLazy.Debugger();
 
     
-    dbg.addDebuggee(global);
+    
+    dbg.addDebuggee(this.tracedGlobal);
 
     return dbg;
   }
@@ -225,6 +281,7 @@ class JavaScriptTracer {
               depth: this.depth,
               formatedDisplayName,
               prefix: this.prefix,
+              currentDOMEvent: this.currentDOMEvent,
             });
           }
         }
@@ -238,6 +295,14 @@ class JavaScriptTracer {
           frame.offset
         );
         const padding = "—".repeat(this.depth + 1);
+
+        
+        
+        
+        if (this.currentDOMEvent && this.depth == 0) {
+          dump(this.prefix + padding + this.currentDOMEvent + "\n");
+        }
+
         
         
         const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
