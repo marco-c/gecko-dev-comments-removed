@@ -503,10 +503,6 @@ static constexpr struct {
     
     {"browser.theme.toolbar-theme"_ns, widget::ThemeChangeKind::AllBits},
     {"browser.theme.content-theme"_ns},
-    {"dom.element.popover.enabled"_ns},
-    {"mathml.legacy_mathvariant_attribute.disabled"_ns},
-    {"layout.css.always_underline_links"_ns},
-    {"browser.theme.windows.accent-color-in-tabs.enabled"_ns},
 };
 
 
@@ -534,7 +530,7 @@ void nsXPLookAndFeel::Init() {
   
   Preferences::RegisterCallback(OnPrefChanged, "accessibility.tabfocus");
 
-  for (auto& pref : kMediaQueryPrefs) {
+  for (const auto& pref : kMediaQueryPrefs) {
     Preferences::RegisterCallback(
         [](const char*, void* aChangeKind) {
           auto changeKind =

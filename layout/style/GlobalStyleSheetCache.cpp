@@ -519,11 +519,6 @@ RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheet(
     gCSSLoader = new Loader;
   }
 
-  
-  
-  
-  
-  
   auto result = gCSSLoader->LoadSheetSync(aURI, aParsingMode,
                                           css::Loader::UseSystemPrincipal::Yes);
   if (MOZ_UNLIKELY(result.isErr())) {

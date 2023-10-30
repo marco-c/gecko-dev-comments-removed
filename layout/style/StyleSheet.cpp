@@ -1157,32 +1157,12 @@ already_AddRefed<StyleSheet> StyleSheet::CreateEmptyChildSheet(
 
 
 
-
-
-
-
-
-
-
 static bool AllowParallelParse(css::Loader& aLoader, URLExtraData* aUrlData) {
-  
-  
   Document* doc = aLoader.GetDocument();
   if (doc && css::ErrorReporter::ShouldReportErrors(*doc)) {
     return false;
   }
-
   
-  
-  
-  
-  
-  
-  
-  if (aUrlData->ChromeRulesEnabled()) {
-    return false;
-  }
-
   return true;
 }
 
