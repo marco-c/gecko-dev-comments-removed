@@ -818,7 +818,8 @@ bool nsBlockFrame::TextIndentAppliesTo(const LineIterator& aLine) const {
       
       
       return textIndent.each_line &&
-             !prevBlock->LinesEnd().prev()->IsLineWrapped();
+             (prevBlock->Lines().empty() ||
+              !prevBlock->LinesEnd().prev()->IsLineWrapped());
     }
     return true;
   }();
