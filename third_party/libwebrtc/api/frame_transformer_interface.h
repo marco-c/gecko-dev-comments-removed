@@ -36,6 +36,8 @@ class TransformableFrameInterface {
   virtual uint8_t GetPayloadType() const = 0;
   virtual uint32_t GetSsrc() const = 0;
   virtual uint32_t GetTimestamp() const = 0;
+  virtual void SetRTPTimestamp(uint32_t timestamp) = 0;
+
   
   
   virtual absl::optional<Timestamp> GetCaptureTimeIdentifier() const {
@@ -68,8 +70,6 @@ class TransformableVideoFrameInterface : public TransformableFrameInterface {
 class TransformableAudioFrameInterface : public TransformableFrameInterface {
  public:
   virtual ~TransformableAudioFrameInterface() = default;
-
-  virtual void SetRTPTimestamp(uint32_t timestamp) = 0;
 
   
   [[deprecated("Use specific getters instead.")]] virtual const RTPHeader&
