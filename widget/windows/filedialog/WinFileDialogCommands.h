@@ -8,6 +8,7 @@
 #define widget_windows_filedialog_WinFileDialogCommands_h__
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/ipc/MessageLink.h"
 #include "mozilla/widget/filedialog/WinFileDialogCommandsDefn.h"
 
 
@@ -35,6 +36,13 @@ mozilla::Result<Results, HRESULT> GetFileResults(::IFileDialog*);
 
 
 mozilla::Result<nsString, HRESULT> GetFolderResults(::IFileDialog*);
+
+namespace detail {
+
+void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
+                        ipc::HasResultCodes::Result aCode, const char* aReason);
+}  
+
 }  
 
 namespace IPC {

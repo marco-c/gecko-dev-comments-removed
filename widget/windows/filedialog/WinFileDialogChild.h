@@ -34,6 +34,8 @@ class WinFileDialogChild : public PWinFileDialogChild {
  private:
   ~WinFileDialogChild();
 
+  void ProcessingError(Result aCode, const char* aReason) override;
+
   
   
   
