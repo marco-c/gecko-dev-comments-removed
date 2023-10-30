@@ -29,6 +29,8 @@ class ScreenCapturerFuchsia final : public DesktopCapturer {
   ScreenCapturerFuchsia();
   ~ScreenCapturerFuchsia() override;
 
+  static bool CheckRequirements();
+
   
   void Start(Callback* callback) override;
   void CaptureFrame() override;
