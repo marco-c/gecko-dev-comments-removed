@@ -2166,14 +2166,9 @@ void WebRtcVideoSendChannel::WebRtcVideoSendStream::ReconfigureEncoder(
   
   bool num_streams_changed = parameters_.encoder_config.number_of_streams !=
                              encoder_config.number_of_streams;
-  bool scalability_mode_used = !codec_settings.codec.scalability_modes.empty();
-  bool scalability_modes = absl::c_any_of(
-      rtp_parameters_.encodings,
-      [](const auto& e) { return e.scalability_mode.has_value(); });
-
   parameters_.encoder_config = std::move(encoder_config);
 
-  if (num_streams_changed && (scalability_mode_used != scalability_modes)) {
+  if (num_streams_changed) {
     
     
     RecreateWebRtcStream();
