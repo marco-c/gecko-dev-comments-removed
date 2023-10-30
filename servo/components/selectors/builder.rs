@@ -176,18 +176,43 @@ bitflags! {
         const HAS_SLOTTED = 1 << 1;
         const HAS_PART = 1 << 2;
         const HAS_PARENT = 1 << 3;
-        const HAS_NON_FEATURELESS_COMPONENT = 1 << 4;
-        const HAS_HOST = 1 << 5;
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq, ToShmem)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, ToShmem)]
 pub struct SpecificityAndFlags {
     
     
     pub(crate) specificity: u32,
     
     pub(crate) flags: SelectorFlags,
+}
+
+impl SpecificityAndFlags {
+    #[inline]
+    pub fn specificity(&self) -> u32 {
+        self.specificity
+    }
+
+    #[inline]
+    pub fn has_pseudo_element(&self) -> bool {
+        self.flags.intersects(SelectorFlags::HAS_PSEUDO)
+    }
+
+    #[inline]
+    pub fn has_parent_selector(&self) -> bool {
+        self.flags.intersects(SelectorFlags::HAS_PARENT)
+    }
+
+    #[inline]
+    pub fn is_slotted(&self) -> bool {
+        self.flags.intersects(SelectorFlags::HAS_SLOTTED)
+    }
+
+    #[inline]
+    pub fn is_part(&self) -> bool {
+        self.flags.intersects(SelectorFlags::HAS_PART)
+    }
 }
 
 const MAX_10BIT: u32 = (1u32 << 10) - 1;
@@ -251,12 +276,9 @@ where
                 flags.insert(SelectorFlags::HAS_PSEUDO);
                 specificity.element_selectors += 1
             },
-            Component::LocalName(..) => {
-                flags.insert(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
-                specificity.element_selectors += 1
-            },
+            Component::LocalName(..) => specificity.element_selectors += 1,
             Component::Slotted(ref selector) => {
-                flags.insert(SelectorFlags::HAS_SLOTTED | SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
+                flags.insert(SelectorFlags::HAS_SLOTTED);
                 specificity.element_selectors += 1;
                 
                 
@@ -265,19 +287,21 @@ where
                 
                 
                 *specificity += Specificity::from(selector.specificity());
-                flags.insert(selector.flags());
+                if selector.has_parent_selector() {
+                    flags.insert(SelectorFlags::HAS_PARENT);
+                }
             },
             Component::Host(ref selector) => {
-                flags.insert(SelectorFlags::HAS_HOST);
                 specificity.class_like_selectors += 1;
                 if let Some(ref selector) = *selector {
                     
                     *specificity += Specificity::from(selector.specificity());
-                    flags.insert(selector.flags() - SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
+                    if selector.has_parent_selector() {
+                        flags.insert(SelectorFlags::HAS_PARENT);
+                    }
                 }
             },
             Component::ID(..) => {
-                flags.insert(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
                 specificity.id_selectors += 1;
             },
             Component::Class(..) |
@@ -289,7 +313,6 @@ where
             Component::Scope |
             Component::Nth(..) |
             Component::NonTSPseudoClass(..) => {
-                flags.insert(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
                 specificity.class_like_selectors += 1;
             },
             Component::NthOf(ref nth_of_data) => {
@@ -302,7 +325,7 @@ where
                 specificity.class_like_selectors += 1;
                 let sf = selector_list_specificity_and_flags(nth_of_data.selectors().iter());
                 *specificity += Specificity::from(sf.specificity);
-                flags.insert(sf.flags | SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
+                flags.insert(sf.flags);
             },
             
             
@@ -321,7 +344,7 @@ where
             Component::Has(ref relative_selectors) => {
                 let sf = relative_selector_list_specificity_and_flags(relative_selectors);
                 *specificity += Specificity::from(sf.specificity);
-                flags.insert(sf.flags | SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
+                flags.insert(sf.flags);
             },
             Component::ExplicitUniversalType |
             Component::ExplicitAnyNamespace |
@@ -331,7 +354,6 @@ where
             Component::RelativeSelectorAnchor |
             Component::Invalid(..) => {
                 
-                flags.insert(SelectorFlags::HAS_NON_FEATURELESS_COMPONENT);
             },
         }
     }
@@ -355,7 +377,9 @@ pub(crate) fn selector_list_specificity_and_flags<'a, Impl: SelectorImpl>(
     let mut flags = SelectorFlags::empty();
     for selector in itr {
         specificity = std::cmp::max(specificity, selector.specificity());
-        flags.insert(selector.flags());
+        if selector.has_parent_selector() {
+            flags.insert(SelectorFlags::HAS_PARENT);
+        }
     }
     SpecificityAndFlags { specificity, flags }
 }
