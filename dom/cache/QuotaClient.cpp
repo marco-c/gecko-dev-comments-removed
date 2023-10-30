@@ -374,7 +374,13 @@ void CacheQuotaClient::OnRepositoryClearCompleted(
     PersistenceType aPersistenceType) {
   AssertIsOnIOThread();
 
-  
+  if (aPersistenceType == quota::PERSISTENCE_TYPE_PRIVATE) {
+    for (const auto& cipherKeyManager : mCipherKeyManagers.Values()) {
+      cipherKeyManager->Invalidate();
+    }
+
+    mCipherKeyManagers.Clear();
+  }
 }
 
 void CacheQuotaClient::ReleaseIOThreadObjects() {
