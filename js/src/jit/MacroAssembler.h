@@ -221,6 +221,8 @@
 #define PER_SHARED_ARCH DEFINED_ON(ALL_SHARED_ARCH)
 #define OOL_IN_HEADER
 
+class JSLinearString;
+
 namespace JS {
 struct ExpandoAndGeneration;
 }
@@ -5294,6 +5296,24 @@ class MacroAssembler : public MacroAssemblerSpecific {
 
   void newGCBigInt(Register result, Register temp, gc::Heap initialHeap,
                    Label* fail);
+
+ private:
+  void branchIfNotStringCharsEquals(Register stringChars,
+                                    const JSLinearString* linear, Label* label);
+
+ public:
+  
+  
+  static bool canCompareStringCharsInline(const JSLinearString* linear);
+
+  
+  void loadStringCharsForCompare(Register input, const JSLinearString* linear,
+                                 Register stringChars, Label* fail);
+
+  
+  
+  void compareStringChars(JSOp op, Register stringChars,
+                          const JSLinearString* linear, Register result);
 
   
   
