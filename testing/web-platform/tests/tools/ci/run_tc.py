@@ -140,6 +140,13 @@ def install_certificates():
     run(["sudo", "update-ca-certificates"])
 
 
+def start_dbus():
+    run(["sudo", "service", "dbus", "start"])
+    
+    
+    os.environ["DBUS_SESSION_BUS_ADDRESS"] = "autolaunch:"
+
+
 def install_chrome(channel):
     if channel in ("experimental", "dev"):
         deb_archive = "google-chrome-unstable_current_amd64.deb"
@@ -257,6 +264,8 @@ def setup_environment(args):
     if "chrome" in args.browser:
         assert args.channel is not None
         install_chrome(args.channel)
+        
+        start_dbus()
 
     if args.xvfb:
         start_xvfb()
