@@ -12,7 +12,6 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/ScrollbarPreferences.h"
-#include "mozilla/TimelineConsumers.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/WeakPtr.h"
 #include "mozilla/dom/BrowsingContext.h"
@@ -538,23 +537,6 @@ class nsDocShell final : public nsDocLoader,
   friend class mozilla::dom::BrowsingContext;
   friend class mozilla::net::DocumentLoadListener;
   friend class nsGlobalWindowOuter;
-
-  
-  
-  
-  
-  
-  friend void mozilla::TimelineConsumers::AddConsumer(nsDocShell*);
-  friend void mozilla::TimelineConsumers::RemoveConsumer(nsDocShell*);
-  friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-      nsDocShell*, const char*, MarkerTracingType, MarkerStackRequest);
-  friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-      nsDocShell*, const char*, const TimeStamp&, MarkerTracingType,
-      MarkerStackRequest);
-  friend void mozilla::TimelineConsumers::AddMarkerForDocShell(
-      nsDocShell*, UniquePtr<AbstractTimelineMarker>&&);
-  friend void mozilla::TimelineConsumers::PopMarkers(
-      nsDocShell*, JSContext*, nsTArray<dom::ProfileTimelineMarker>&);
 
   nsDocShell(mozilla::dom::BrowsingContext* aBrowsingContext,
              uint64_t aContentWindowID);
@@ -1203,9 +1185,6 @@ class nsDocShell final : public nsDocLoader,
   nsCString mContentTypeHint;
 
   
-  mozilla::UniquePtr<mozilla::ObservedDocShell> mObserved;
-
-  
   
   nsCOMPtr<nsIURI> mCurrentURI;
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
@@ -1292,10 +1271,6 @@ class nsDocShell final : public nsDocLoader,
   AppType mAppType;
   uint32_t mLoadType;
   uint32_t mFailedLoadType;
-
-  
-  
-  uint32_t mJSRunToCompletionDepth;
 
   
   

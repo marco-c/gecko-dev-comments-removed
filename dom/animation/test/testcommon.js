@@ -484,15 +484,6 @@ async function waitForAnimationReadyToRestyle(aAnimation) {
   }
 }
 
-function getDocShellForObservingRestylesForWindow(aWindow) {
-  const docShell = SpecialPowers.wrap(aWindow).docShell;
-
-  docShell.recordProfileTimelineMarkers = true;
-  docShell.popProfileTimelineMarkers();
-
-  return docShell;
-}
-
 
 
 
@@ -506,8 +497,6 @@ function observeStyling(frameCount, onFrame) {
 
 
 function observeStylingInTargetWindow(aWindow, aFrameCount, aOnFrame) {
-  const docShell = getDocShellForObservingRestylesForWindow(aWindow);
-
   let priorAnimationTriggeredRestyles =
     SpecialPowers.wrap(aWindow).windowUtils.animationTriggeredRestyles;
 
@@ -517,16 +506,7 @@ function observeStylingInTargetWindow(aWindow, aFrameCount, aOnFrame) {
         SpecialPowers.wrap(aWindow).windowUtils.animationTriggeredRestyles -
         priorAnimationTriggeredRestyles;
 
-      const markers = docShell.popProfileTimelineMarkers();
-      docShell.recordProfileTimelineMarkers = false;
-
-      const stylingMarkers = Array.prototype.filter.call(
-        markers,
-        (marker, index) => {
-          return marker.name == "Styles" && marker.isAnimationOnly;
-        }
-      );
-      resolve([stylingMarkers, restyleCount]);
+      resolve(restyleCount);
     });
   });
 }
