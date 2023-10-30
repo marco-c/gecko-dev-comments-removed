@@ -4,8 +4,6 @@
 
 
 
-
-
 const PAGE_TEMPLATE_RESOURCE_PATH =
   "resource://activity-stream/data/content/abouthomecache/page.html.template";
 const SCRIPT_TEMPLATE_RESOURCE_PATH =
