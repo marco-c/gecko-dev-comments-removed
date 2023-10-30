@@ -3,7 +3,12 @@
 
 
 use super::*;
-use authenticator::{InteractiveRequest, InteractiveUpdate};
+use authenticator::{
+    ctap2::commands::StatusCode,
+    errors::{CommandError, HIDError},
+    InteractiveRequest, InteractiveUpdate, PinError,
+};
+use serde::{Deserialize, Serialize};
 
 pub(crate) type InteractiveManagementReceiver = Option<Sender<InteractiveRequest>>;
 pub(crate) fn send_about_prompt(prompt: &BrowserPromptType) -> Result<(), nsresult> {
@@ -11,9 +16,44 @@ pub(crate) fn send_about_prompt(prompt: &BrowserPromptType) -> Result<(), nsresu
     notify_observers(PromptTarget::AboutPage, json)
 }
 
+
+
+
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum RequestWrapper {
+    Quit,
+    ChangePIN(Pin, Pin),
+    SetPIN(Pin),
+}
+
+pub(crate) fn authrs_to_prompt<'a>(e: AuthenticatorError) -> BrowserPromptType<'a> {
+    match e {
+        AuthenticatorError::PinError(PinError::PinIsTooShort) => BrowserPromptType::PinIsTooShort,
+        AuthenticatorError::PinError(PinError::PinRequired) => BrowserPromptType::PinRequired,
+        AuthenticatorError::PinError(PinError::PinIsTooLong(_)) => BrowserPromptType::PinIsTooLong,
+        AuthenticatorError::PinError(PinError::InvalidPin(r)) => {
+            BrowserPromptType::PinInvalid { retries: r }
+        }
+        AuthenticatorError::PinError(PinError::PinAuthBlocked) => BrowserPromptType::PinAuthBlocked,
+        AuthenticatorError::PinError(PinError::PinBlocked) => BrowserPromptType::DeviceBlocked,
+        AuthenticatorError::PinError(PinError::UvBlocked) => BrowserPromptType::UvBlocked,
+        AuthenticatorError::PinError(PinError::InvalidUv(r)) => {
+            BrowserPromptType::UvInvalid { retries: r }
+        }
+        AuthenticatorError::CancelledByUser
+        | AuthenticatorError::HIDError(HIDError::Command(CommandError::StatusCode(
+            StatusCode::KeepaliveCancel,
+            _,
+        ))) => BrowserPromptType::Cancel,
+        _ => BrowserPromptType::UnknownError,
+    }
+}
+
 pub(crate) fn interactive_status_callback(
     status_rx: Receiver<StatusUpdate>,
     transaction: Arc<Mutex<Option<TransactionState>>>, 
+    upcoming_error: Arc<Mutex<Option<AuthenticatorError>>>,
 ) -> Result<(), nsresult> {
     loop {
         match status_rx.recv() {
@@ -35,6 +75,54 @@ pub(crate) fn interactive_status_callback(
                 let prompt = BrowserPromptType::SelectDevice;
                 send_about_prompt(&prompt)?;
             }
+            Ok(StatusUpdate::PinUvError(e)) => {
+                let mut guard = transaction.lock().unwrap();
+                let Some(transaction) = guard.as_mut() else {
+                    warn!("STATUS: received status update after end of transaction.");
+                    break;
+                };
+                let autherr = match e {
+                    StatusPinUv::PinRequired(pin_sender) => {
+                        transaction.pin_receiver.replace((0, pin_sender));
+                        send_about_prompt(&BrowserPromptType::PinRequired)?;
+                        continue;
+                    }
+                    StatusPinUv::InvalidPin(pin_sender, r) => {
+                        transaction.pin_receiver.replace((0, pin_sender));
+                        send_about_prompt(&BrowserPromptType::PinInvalid { retries: r })?;
+                        continue;
+                    }
+                    StatusPinUv::PinIsTooShort => {
+                        AuthenticatorError::PinError(PinError::PinIsTooShort)
+                    }
+                    StatusPinUv::PinIsTooLong(s) => {
+                        AuthenticatorError::PinError(PinError::PinIsTooLong(s))
+                    }
+                    StatusPinUv::InvalidUv(r) => {
+                        send_about_prompt(&BrowserPromptType::UvInvalid { retries: r })?;
+                        continue;
+                    }
+                    StatusPinUv::PinAuthBlocked => {
+                        AuthenticatorError::PinError(PinError::PinAuthBlocked)
+                    }
+                    StatusPinUv::PinBlocked => AuthenticatorError::PinError(PinError::PinBlocked),
+                    StatusPinUv::PinNotSet => AuthenticatorError::PinError(PinError::PinNotSet),
+                    StatusPinUv::UvBlocked => AuthenticatorError::PinError(PinError::UvBlocked),
+                };
+                
+                
+                
+                
+                let guard = upcoming_error.lock();
+                if let Ok(mut entry) = guard {
+                    entry.replace(autherr);
+                } else {
+                    return Err(NS_ERROR_DOM_INVALID_STATE_ERR);
+                }
+                warn!("STATUS: Pin Error {:?}", e);
+                break;
+            }
+
             Ok(_) => {
                 
                 continue;
