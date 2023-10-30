@@ -352,18 +352,6 @@ bool IsCodecDisabledForSimulcast(bool legacy_scalability_mode,
   return false;
 }
 
-
-
-int MinPositive(int a, int b) {
-  if (a <= 0) {
-    return b;
-  }
-  if (b <= 0) {
-    return a;
-  }
-  return std::min(a, b);
-}
-
 bool IsLayerActive(const webrtc::RtpEncodingParameters& layer) {
   return layer.active &&
          (!layer.max_bitrate_bps || *layer.max_bitrate_bps > 0) &&
@@ -2050,21 +2038,12 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   
   
   
-  
-  if (rtp_parameters_.encodings[0].max_bitrate_bps &&
-      rtp_parameters_.encodings.size() == 1) {
-    stream_max_bitrate =
-        MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
-                    parameters_.max_bitrate_bps);
-  }
-
-  
-  
-  
-  
   int codec_max_bitrate_kbps;
+  bool is_single_encoding_with_max_bitrate =
+      rtp_parameters_.encodings.size() == 1 &&
+      rtp_parameters_.encodings[0].max_bitrate_bps.value_or(0) > 0;
   if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps) &&
-      stream_max_bitrate == -1) {
+      stream_max_bitrate == -1 && !is_single_encoding_with_max_bitrate) {
     stream_max_bitrate = codec_max_bitrate_kbps * 1000;
   }
   encoder_config.max_bitrate_bps = stream_max_bitrate;
