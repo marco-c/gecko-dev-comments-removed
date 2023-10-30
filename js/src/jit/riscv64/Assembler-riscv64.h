@@ -545,6 +545,10 @@ class ABIArgGenerator {
   ABIArg current_;
 };
 
+
+
+
+
 class BlockTrampolinePoolScope {
  public:
   explicit BlockTrampolinePoolScope(Assembler* assem, int margin)
@@ -559,6 +563,7 @@ class BlockTrampolinePoolScope {
   BlockTrampolinePoolScope(const BlockTrampolinePoolScope&) = delete;
   BlockTrampolinePoolScope& operator=(const BlockTrampolinePoolScope&) = delete;
 };
+
 class UseScratchRegisterScope {
  public:
   explicit UseScratchRegisterScope(Assembler* assembler);

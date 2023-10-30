@@ -1,42 +1,42 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-// Copyright (c) 1994-2006 Sun Microsystems Inc.
-// All Rights Reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
-//
-// - Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-//
-// - Redistribution in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-//
-// - Neither the name of Sun Microsystems or the names of contributors may
-// be used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
-// IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
-// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
-// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
-// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// The original source code covered by the above license above has been
-// modified significantly by Google Inc.
-// Copyright 2021 the V8 project authors. All rights reserved.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #include "jit/riscv64/Assembler-riscv64.h"
 
 #include "mozilla/DebugOnly.h"
@@ -58,13 +58,13 @@ bool Assembler::FLAG_riscv_debug = false;
 
 void Assembler::nop() { addi(ToRegister(0), ToRegister(0), 0); }
 
-// Size of the instruction stream, in bytes.
+
 size_t Assembler::size() const { return m_buffer.size(); }
 
 bool Assembler::swapBuffer(wasm::Bytes& bytes) {
-  // For now, specialize to the one use case. As long as wasm::Bytes is a
-  // Vector, not a linked-list of chunks, there's not much we can do other
-  // than copy.
+  
+  
+  
   MOZ_ASSERT(bytes.empty());
   if (!bytes.resize(bytesNeeded())) {
     return false;
@@ -73,7 +73,7 @@ bool Assembler::swapBuffer(wasm::Bytes& bytes) {
   return true;
 }
 
-// Size of the relocation table, in bytes.
+
 size_t Assembler::jumpRelocationTableBytes() const {
   return jumpRelocations_.length();
 }
@@ -81,7 +81,7 @@ size_t Assembler::jumpRelocationTableBytes() const {
 size_t Assembler::dataRelocationTableBytes() const {
   return dataRelocations_.length();
 }
-// Size of the data table, in bytes.
+
 size_t Assembler::bytesNeeded() const {
   return size() + jumpRelocationTableBytes() + dataRelocationTableBytes();
 }
@@ -107,7 +107,7 @@ uint32_t Assembler::GetPoolMaxOffset() {
   return AsmPoolMaxOffset;
 }
 
-// Pool callbacks stuff:
+
 void Assembler::InsertIndexIntoTag(uint8_t* load_, uint32_t index) {
   MOZ_CRASH("Unimplement");
 }
@@ -130,15 +130,15 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* dest,
     printf("%d\n", off);
     MOZ_CRASH("imm invalid");
   }
-  // JAL encode is
-  //   31    | 30    21  |  20     | 19     12  | 11 7 |  6   0 |
-  // imm[20] | imm[10:1] | imm[11] | imm[19:12] |  rd  |  opcode|
-  //   1           10         1           8         5       7
-  //                   offset[20:1]               dest      JAL
-  int32_t imm20 = (off & 0xff000) |          // bits 19-12
-                  ((off & 0x800) << 9) |     // bit  11
-                  ((off & 0x7fe) << 20) |    // bits 10-1
-                  ((off & 0x100000) << 11);  // bit  20
+  
+  
+  
+  
+  
+  int32_t imm20 = (off & 0xff000) |          
+                  ((off & 0x800) << 9) |     
+                  ((off & 0x7fe) << 20) |    
+                  ((off & 0x100000) << 11);  
   Instr instr = JAL | (imm20 & kImm20Mask);
   dest->SetInstructionBits(instr);
   DEBUG_PRINTF("%p(%x): ", dest, branch.getOffset());
@@ -148,7 +148,7 @@ void Assembler::WritePoolGuard(BufferOffset branch, Instruction* dest,
 void Assembler::WritePoolHeader(uint8_t* start, Pool* p, bool isNatural) {
   static_assert(sizeof(PoolHeader) == 4);
 
-  // Get the total size of the pool.
+  
   const uintptr_t totalPoolSize = sizeof(PoolHeader) + p->getPoolSize();
   const uintptr_t totalPoolInstructions = totalPoolSize / kInstrSize;
 
@@ -189,21 +189,21 @@ int Assembler::RV_li_count(int64_t imm, bool is_get_temp_reg) {
 }
 
 void Assembler::GeneralLi(Register rd, int64_t imm) {
-  // 64-bit imm is put in the register rd.
-  // In most cases the imm is 32 bit and 2 instructions are generated. If a
-  // temporary register is available, in the worst case, 6 instructions are
-  // generated for a full 64-bit immediate. If temporay register is not
-  // available the maximum will be 8 instructions. If imm is more than 32 bits
-  // and a temp register is available, imm is divided into two 32-bit parts,
-  // low_32 and up_32. Each part is built in a separate register. low_32 is
-  // built before up_32. If low_32 is negative (upper 32 bits are 1), 0xffffffff
-  // is subtracted from up_32 before up_32 is built. This compensates for 32
-  // bits of 1's in the lower when the two registers are added. If no temp is
-  // available, the upper 32 bit is built in rd, and the lower 32 bits are
-  // devided to 3 parts (11, 11, and 10 bits). The parts are shifted and added
-  // to the upper part built in rd.
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   if (is_int32(imm + 0x800)) {
-    // 32-bit case. Maximum of 2 instructions generated
+    
     int64_t high_20 = ((imm + 0x800) >> 12);
     int64_t low_12 = imm << 52 >> 52;
     if (high_20) {
@@ -217,26 +217,25 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
     return;
   } else {
     UseScratchRegisterScope temps(this);
-    // 64-bit case: divide imm into two 32-bit parts, upper and lower
+    
     int64_t up_32 = imm >> 32;
     int64_t low_32 = imm & 0xffffffffull;
     Register temp_reg = rd;
-    // Check if a temporary register is available
+    
     if (up_32 == 0 || low_32 == 0) {
-      // No temp register is needed
+      
     } else {
-      BlockTrampolinePoolScope block_trampoline_pool(this, 0);
       temp_reg = temps.hasAvailable() ? temps.Acquire() : InvalidReg;
     }
     if (temp_reg != InvalidReg) {
-      // keep track of hardware behavior for lower part in sim_low
+      
       int64_t sim_low = 0;
-      // Build lower part
+      
       if (low_32 != 0) {
         int64_t high_20 = ((low_32 + 0x800) >> 12);
         int64_t low_12 = low_32 & 0xfff;
         if (high_20) {
-          // Adjust to 20 bits for the case of overflow
+          
           high_20 &= 0xfffff;
           sim_low = ((high_20 << 12) << 32) >> 32;
           lui(rd, (int32_t)high_20);
@@ -250,28 +249,28 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
         }
       }
       if (sim_low & 0x100000000) {
-        // Bit 31 is 1. Either an overflow or a negative 64 bit
+        
         if (up_32 == 0) {
-          // Positive number, but overflow because of the add 0x800
+          
           slli(rd, rd, 32);
           srli(rd, rd, 32);
           return;
         }
-        // low_32 is a negative 64 bit after the build
+        
         up_32 = (up_32 - 0xffffffff) & 0xffffffff;
       }
       if (up_32 == 0) {
         return;
       }
-      // Build upper part in a temporary register
+      
       if (low_32 == 0) {
-        // Build upper part in rd
+        
         temp_reg = rd;
       }
       int64_t high_20 = (up_32 + 0x800) >> 12;
       int64_t low_12 = up_32 & 0xfff;
       if (high_20) {
-        // Adjust to 20 bits for the case of overflow
+        
         high_20 &= 0xfffff;
         lui(temp_reg, (int32_t)high_20);
         if (low_12) {
@@ -280,21 +279,21 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
       } else {
         ori(temp_reg, zero_reg, low_12);
       }
-      // Put it at the bgining of register
+      
       slli(temp_reg, temp_reg, 32);
       if (low_32 != 0) {
         add(rd, rd, temp_reg);
       }
       return;
     }
-    // No temp register. Build imm in rd.
-    // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-    // parts to the upper part by doing shift and add.
-    // First build upper part in rd.
+    
+    
+    
+    
     int64_t high_20 = (up_32 + 0x800) >> 12;
     int64_t low_12 = up_32 & 0xfff;
     if (high_20) {
-      // Adjust to 20 bits for the case of overflow
+      
       high_20 &= 0xfffff;
       lui(rd, (int32_t)high_20);
       if (low_12) {
@@ -303,10 +302,10 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
     } else {
       ori(rd, zero_reg, low_12);
     }
-    // upper part already in rd. Each part to be added to rd, has maximum of 11
-    // bits, and always starts with a 1. rd is shifted by the size of the part
-    // plus the number of zeros between the parts. Each part is added after the
-    // left shift.
+    
+    
+    
+    
     uint32_t mask = 0x80000000;
     int32_t shift_val = 0;
     int32_t i;
@@ -315,15 +314,15 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
         mask >>= 1;
         shift_val++;
         if (i == 31) {
-          // rest is zero
+          
           slli(rd, rd, shift_val);
         }
         continue;
       }
-      // The first 1 seen
+      
       int32_t part;
       if ((i + 11) < 32) {
-        // Pick 11 bits
+        
         part = ((uint32_t)(low_32 << i) >> i) >> (32 - (i + 11));
         slli(rd, rd, shift_val + 11);
         ori(rd, rd, part);
@@ -342,9 +341,9 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
 
 int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
   int count = 0;
-  // imitate Assembler::RV_li
+  
   if (is_int32(imm + 0x800)) {
-    // 32-bit case. Maximum of 2 instructions generated
+    
     int64_t high_20 = ((imm + 0x800) >> 12);
     int64_t low_12 = imm << 52 >> 52;
     if (high_20) {
@@ -357,19 +356,19 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
     }
     return count;
   } else {
-    // 64-bit case: divide imm into two 32-bit parts, upper and lower
+    
     int64_t up_32 = imm >> 32;
     int64_t low_32 = imm & 0xffffffffull;
-    // Check if a temporary register is available
+    
     if (is_get_temp_reg) {
-      // keep track of hardware behavior for lower part in sim_low
+      
       int64_t sim_low = 0;
-      // Build lower part
+      
       if (low_32 != 0) {
         int64_t high_20 = ((low_32 + 0x800) >> 12);
         int64_t low_12 = low_32 & 0xfff;
         if (high_20) {
-          // Adjust to 20 bits for the case of overflow
+          
           high_20 &= 0xfffff;
           sim_low = ((high_20 << 12) << 32) >> 32;
           count++;
@@ -383,14 +382,14 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
         }
       }
       if (sim_low & 0x100000000) {
-        // Bit 31 is 1. Either an overflow or a negative 64 bit
+        
         if (up_32 == 0) {
-          // Positive number, but overflow because of the add 0x800
+          
           count++;
           count++;
           return count;
         }
-        // low_32 is a negative 64 bit after the build
+        
         up_32 = (up_32 - 0xffffffff) & 0xffffffff;
       }
       if (up_32 == 0) {
@@ -399,7 +398,7 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
       int64_t high_20 = (up_32 + 0x800) >> 12;
       int64_t low_12 = up_32 & 0xfff;
       if (high_20) {
-        // Adjust to 20 bits for the case of overflow
+        
         high_20 &= 0xfffff;
         count++;
         if (low_12) {
@@ -408,21 +407,21 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
       } else {
         count++;
       }
-      // Put it at the bgining of register
+      
       count++;
       if (low_32 != 0) {
         count++;
       }
       return count;
     }
-    // No temp register. Build imm in rd.
-    // Build upper 32 bits first in rd. Divide lower 32 bits parts and add
-    // parts to the upper part by doing shift and add.
-    // First build upper part in rd.
+    
+    
+    
+    
     int64_t high_20 = (up_32 + 0x800) >> 12;
     int64_t low_12 = up_32 & 0xfff;
     if (high_20) {
-      // Adjust to 20 bits for the case of overflow
+      
       high_20 &= 0xfffff;
       count++;
       if (low_12) {
@@ -431,24 +430,24 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
     } else {
       count++;
     }
-    // upper part already in rd. Each part to be added to rd, has maximum of 11
-    // bits, and always starts with a 1. rd is shifted by the size of the part
-    // plus the number of zeros between the parts. Each part is added after the
-    // left shift.
+    
+    
+    
+    
     uint32_t mask = 0x80000000;
     int32_t i;
     for (i = 0; i < 32; i++) {
       if ((low_32 & mask) == 0) {
         mask >>= 1;
         if (i == 31) {
-          // rest is zero
+          
           count++;
         }
         continue;
       }
-      // The first 1 seen
+      
       if ((i + 11) < 32) {
-        // Pick 11 bits
+        
         count++;
         count++;
         i += 10;
@@ -466,22 +465,22 @@ int Assembler::GeneralLiCount(int64_t imm, bool is_get_temp_reg) {
 void Assembler::li_ptr(Register rd, int64_t imm) {
   m_buffer.enterNoNops();
   m_buffer.assertNoPoolAndNoNops();
-  // Initialize rd with an address
-  // Pointers are 48 bits
-  // 6 fixed instructions are generated
+  
+  
+  
   DEBUG_PRINTF("li_ptr(%d, %lx <%ld>)\n", ToNumber(rd), imm, imm);
   MOZ_ASSERT((imm & 0xfff0000000000000ll) == 0);
-  int64_t a6 = imm & 0x3f;                      // bits 0:5. 6 bits
-  int64_t b11 = (imm >> 6) & 0x7ff;             // bits 6:11. 11 bits
-  int64_t high_31 = (imm >> 17) & 0x7fffffff;   // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);  // 19 bits
-  int64_t low_12 = high_31 & 0xfff;             // 12 bits
+  int64_t a6 = imm & 0x3f;                      
+  int64_t b11 = (imm >> 6) & 0x7ff;             
+  int64_t high_31 = (imm >> 17) & 0x7fffffff;   
+  int64_t high_20 = ((high_31 + 0x800) >> 12);  
+  int64_t low_12 = high_31 & 0xfff;             
   lui(rd, (int32_t)high_20);
-  addi(rd, rd, low_12);  // 31 bits in rd.
-  slli(rd, rd, 11);      // Space for next 11 bis
-  ori(rd, rd, b11);      // 11 bits are put in. 42 bit in rd
-  slli(rd, rd, 6);       // Space for next 6 bits
-  ori(rd, rd, a6);       // 6 bits are put in. 48 bis in rd
+  addi(rd, rd, low_12);  
+  slli(rd, rd, 11);      
+  ori(rd, rd, b11);      
+  slli(rd, rd, 6);       
+  ori(rd, rd, a6);       
   m_buffer.leaveNoNops();
 }
 
@@ -490,16 +489,16 @@ void Assembler::li_constant(Register rd, int64_t imm) {
   m_buffer.assertNoPoolAndNoNops();
   DEBUG_PRINTF("li_constant(%d, %lx <%ld>)\n", ToNumber(rd), imm, imm);
   lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >>
-              48);  // Bits 63:48
+              48);  
   addiw(rd, rd,
         (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >>
-            52);  // Bits 47:36
+            52);  
   slli(rd, rd, 12);
-  addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits 35:24
+  addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  
   slli(rd, rd, 12);
-  addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52);  // Bits 23:12
+  addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52);  
   slli(rd, rd, 12);
-  addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
+  addi(rd, rd, imm << 52 >> 52);  
   m_buffer.leaveNoNops();
 }
 
@@ -572,15 +571,15 @@ uintptr_t Assembler::target_address_at(Instruction* pc) {
   Instruction* instr4 = pc + 4 * kInstrSize;
   Instruction* instr5 = pc + 5 * kInstrSize;
 
-  // Interpret instructions for address generated by li: See listing in
-  // Assembler::set_target_address_at() just below.
+  
+  
   if (IsLui(*reinterpret_cast<Instr*>(instr0)) &&
       IsAddi(*reinterpret_cast<Instr*>(instr1)) &&
       IsSlli(*reinterpret_cast<Instr*>(instr2)) &&
       IsOri(*reinterpret_cast<Instr*>(instr3)) &&
       IsSlli(*reinterpret_cast<Instr*>(instr4)) &&
       IsOri(*reinterpret_cast<Instr*>(instr5))) {
-    // Assemble the 64 bit value.
+    
     int64_t addr = (int64_t)(instr0->Imm20UValue() << kImm20Shift) +
                    (int64_t)instr1->Imm12Value();
     MOZ_ASSERT(instr2->Imm12Value() == 11);
@@ -593,7 +592,7 @@ uintptr_t Assembler::target_address_at(Instruction* pc) {
     DEBUG_PRINTF("addr: %lx\n", addr);
     return static_cast<uintptr_t>(addr);
   }
-  // We should never get here, force a bad address if we do.
+  
   MOZ_CRASH("RISC-V  UNREACHABLE");
 }
 
@@ -608,11 +607,11 @@ void Assembler::PatchDataWithValueCheck(CodeLocationLabel label,
                                         PatchedImmPtr expectedValue) {
   Instruction* inst = (Instruction*)label.raw();
 
-  // Extract old Value
+  
   DebugOnly<uint64_t> value = Assembler::ExtractLoad64Value(inst);
   MOZ_ASSERT(value == uint64_t(expectedValue.value));
 
-  // Replace with new value
+  
   Assembler::UpdateLoad64Value(inst, uint64_t(newValue.value));
 }
 
@@ -624,7 +623,7 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
   }
   Instruction* instr1 = inst0 + 1 * kInstrSize;
   if (IsAddiw(*reinterpret_cast<Instr*>(instr1))) {
-    // Li64
+    
     Instruction* instr2 = inst0 + 2 * kInstrSize;
     Instruction* instr3 = inst0 + 3 * kInstrSize;
     Instruction* instr4 = inst0 + 4 * kInstrSize;
@@ -683,7 +682,7 @@ uint64_t Assembler::ExtractLoad64Value(Instruction* inst0) {
     disassembleInstr(instr6->InstructionBits());
     disassembleInstr(instr7->InstructionBits());
     MOZ_ASSERT(IsAddi(*reinterpret_cast<Instr*>(instr1)));
-    // Li48
+    
     return target_address_at(inst0);
   }
 }
@@ -711,15 +710,15 @@ void Assembler::UpdateLoad64Value(Instruction* pc, uint64_t value) {
                IsAddi(*reinterpret_cast<Instr*>(instr5)) &&
                IsSlli(*reinterpret_cast<Instr*>(instr6)) &&
                IsAddi(*reinterpret_cast<Instr*>(instr7)));
-    // lui(rd, (imm + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >>
-    //             48);  // Bits 63:48
-    // addiw(rd, rd,
-    //       (imm + (1LL << 35) + (1LL << 23) + (1LL << 11)) << 16 >>
-    //           52);  // Bits 47:36
-    // slli(rd, rd, 12);
-    // addi(rd, rd, (imm + (1LL << 23) + (1LL << 11)) << 28 >> 52);  // Bits
-    // 35:24 slli(rd, rd, 12); addi(rd, rd, (imm + (1LL << 11)) << 40 >> 52); //
-    // Bits 23:12 slli(rd, rd, 12); addi(rd, rd, imm << 52 >> 52);  // Bits 11:0
+    
+    
+    
+    
+    
+    
+    
+    
+    
     *reinterpret_cast<Instr*>(instr0) &= 0xfff;
     *reinterpret_cast<Instr*>(instr0) |=
         (((value + (1LL << 47) + (1LL << 35) + (1LL << 23) + (1LL << 11)) >> 48)
@@ -770,7 +769,7 @@ void Assembler::set_target_value_at(Instruction* pc, uint64_t target) {
   uint32_t* p = reinterpret_cast<uint32_t*>(pc);
   MOZ_ASSERT((target & 0xffff000000000000ll) == 0);
 #ifdef DEBUG
-  // Check we have the result from a li macro-instruction.
+  
   Instruction* instr0 = pc;
   Instruction* instr1 = pc + 1 * kInstrSize;
   Instruction* instr3 = pc + 3 * kInstrSize;
@@ -780,11 +779,11 @@ void Assembler::set_target_value_at(Instruction* pc, uint64_t target) {
              IsOri(*reinterpret_cast<Instr*>(instr3)) &&
              IsOri(*reinterpret_cast<Instr*>(instr5)));
 #endif
-  int64_t a6 = target & 0x3f;                     // bits 0:6. 6 bits
-  int64_t b11 = (target >> 6) & 0x7ff;            // bits 6:11. 11 bits
-  int64_t high_31 = (target >> 17) & 0x7fffffff;  // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);    // 19 bits
-  int64_t low_12 = high_31 & 0xfff;               // 12 bits
+  int64_t a6 = target & 0x3f;                     
+  int64_t b11 = (target >> 6) & 0x7ff;            
+  int64_t high_31 = (target >> 17) & 0x7fffffff;  
+  int64_t high_20 = ((high_31 + 0x800) >> 12);    
+  int64_t low_12 = high_31 & 0xfff;               
   *p = *p & 0xfff;
   *p = *p | ((int32_t)high_20 << 12);
   *(p + 1) = *(p + 1) & 0xfffff;
@@ -803,47 +802,47 @@ void Assembler::set_target_value_at(Instruction* pc, uint64_t target) {
 void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
                                         uint64_t value) {
   DEBUG_PRINTF("\tWriteLoad64Instructions\n");
-  // Initialize rd with an address
-  // Pointers are 48 bits
-  // 6 fixed instructions are generated
+  
+  
+  
   MOZ_ASSERT((value & 0xfff0000000000000ll) == 0);
-  int64_t a6 = value & 0x3f;                     // bits 0:5. 6 bits
-  int64_t b11 = (value >> 6) & 0x7ff;            // bits 6:11. 11 bits
-  int64_t high_31 = (value >> 17) & 0x7fffffff;  // 31 bits
-  int64_t high_20 = ((high_31 + 0x800) >> 12);   // 19 bits
-  int64_t low_12 = high_31 & 0xfff;              // 12 bits
+  int64_t a6 = value & 0x3f;                     
+  int64_t b11 = (value >> 6) & 0x7ff;            
+  int64_t high_31 = (value >> 17) & 0x7fffffff;  
+  int64_t high_20 = ((high_31 + 0x800) >> 12);   
+  int64_t low_12 = high_31 & 0xfff;              
   Instr lui_ = LUI | (reg.code() << kRdShift) |
-               ((int32_t)high_20 << kImm20Shift);  // lui(rd, (int32_t)high_20);
+               ((int32_t)high_20 << kImm20Shift);  
   *reinterpret_cast<Instr*>(inst0) = lui_;
 
   Instr addi_ =
       OP_IMM | (reg.code() << kRdShift) | (0b000 << kFunct3Shift) |
       (reg.code() << kRs1Shift) |
-      (low_12 << kImm12Shift);  // addi(rd, rd, low_12);  // 31 bits in rd.
+      (low_12 << kImm12Shift);  
   *reinterpret_cast<Instr*>(inst0 + 1 * kInstrSize) = addi_;
 
   Instr slli_ =
       OP_IMM | (reg.code() << kRdShift) | (0b001 << kFunct3Shift) |
       (reg.code() << kRs1Shift) |
-      (11 << kImm12Shift);  // slli(rd, rd, 11);      // Space for next 11 bis
+      (11 << kImm12Shift);  
   *reinterpret_cast<Instr*>(inst0 + 2 * kInstrSize) = slli_;
 
   Instr ori_b11 = OP_IMM | (reg.code() << kRdShift) | (0b110 << kFunct3Shift) |
                   (reg.code() << kRs1Shift) |
-                  (b11 << kImm12Shift);  // ori(rd, rd, b11);      // 11 bits
-                                         // are put in. 42 bit in rd
+                  (b11 << kImm12Shift);  
+                                         
   *reinterpret_cast<Instr*>(inst0 + 3 * kInstrSize) = ori_b11;
 
   slli_ = OP_IMM | (reg.code() << kRdShift) | (0b001 << kFunct3Shift) |
           (reg.code() << kRs1Shift) |
-          (6 << kImm12Shift);  // slli(rd, rd, 6);      // Space for next 11 bis
+          (6 << kImm12Shift);  
   *reinterpret_cast<Instr*>(inst0 + 4 * kInstrSize) =
-      slli_;  // slli(rd, rd, 6);       // Space for next 6 bits
+      slli_;  
 
   Instr ori_a6 = OP_IMM | (reg.code() << kRdShift) | (0b110 << kFunct3Shift) |
                  (reg.code() << kRs1Shift) |
-                 (a6 << kImm12Shift);  // ori(rd, rd, a6);       // 6 bits are
-                                       // put in. 48 bis in rd
+                 (a6 << kImm12Shift);  
+                                       
   *reinterpret_cast<Instr*>(inst0 + 5 * kInstrSize) = ori_a6;
   disassembleInstr((inst0 + 0 * kInstrSize)->InstructionBits());
   disassembleInstr((inst0 + 1 * kInstrSize)->InstructionBits());
@@ -855,16 +854,16 @@ void Assembler::WriteLoad64Instructions(Instruction* inst0, Register reg,
   MOZ_ASSERT(ExtractLoad64Value(inst0) == value);
 }
 
-// This just stomps over memory with 32 bits of raw data. Its purpose is to
-// overwrite the call of JITed code with 32 bits worth of an offset. This will
-// is only meant to function on code that has been invalidated, so it should
-// be totally safe. Since that instruction will never be executed again, a
-// ICache flush should not be necessary
+
+
+
+
+
 void Assembler::PatchWrite_Imm32(CodeLocationLabel label, Imm32 imm) {
-  // Raw is going to be the return address.
+  
   uint32_t* raw = (uint32_t*)label.raw();
-  // Overwrite the 4 bytes before the return address, which will
-  // end up being the call instruction.
+  
+  
   *(raw - 1) = imm.value;
 }
 
@@ -957,7 +956,7 @@ int Assembler::target_at(Instruction* instruction, BufferOffset pos,
     case BRANCH: {
       int32_t imm13 = BranchOffset(instr);
       if (imm13 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
+        
         return kEndOfChain;
       } else {
         DEBUG_PRINTF("\t target_at: %d %d\n", imm13, pos.getOffset() + imm13);
@@ -967,7 +966,7 @@ int Assembler::target_at(Instruction* instruction, BufferOffset pos,
     case JAL: {
       int32_t imm21 = JumpOffset(instr);
       if (imm21 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
+        
         return kEndOfChain;
       } else {
         DEBUG_PRINTF("\t target_at: %d %d\n", imm21, pos.getOffset() + imm21);
@@ -977,7 +976,7 @@ int Assembler::target_at(Instruction* instruction, BufferOffset pos,
     case JALR: {
       int32_t imm12 = instr >> 20;
       if (imm12 == kEndOfJumpChain) {
-        // EndOfChain sentinel is returned directly, not relative to pc or pos.
+        
         return kEndOfChain;
       } else {
         DEBUG_PRINTF("\t target_at: %d %d\n", imm12, pos.getOffset() + imm12);
@@ -1030,17 +1029,17 @@ uint32_t Assembler::next_link(Label* L, bool is_internal) {
 void Assembler::bind(Label* label, BufferOffset boff) {
   JitSpew(JitSpew_Codegen, ".set Llabel %p %d", label, currentOffset());
   DEBUG_PRINTF(".set Llabel %p\n", label);
-  // If our caller didn't give us an explicit target to bind to
-  // then we want to bind to the location of the next instruction
+  
+  
   BufferOffset dest = boff.assigned() ? boff : nextOffset();
   if (label->used()) {
     uint32_t next;
 
-    // A used label holds a link to branch that uses it.
+    
     do {
       BufferOffset b(label);
       DEBUG_PRINTF("\tbind next:%d\n", b.getOffset());
-      // Even a 0 offset may be invalid if we're out of memory.
+      
       if (oom()) {
         return;
       }
@@ -1175,7 +1174,7 @@ int32_t Assembler::branch_offset_helper(Label* L, OffsetSize bits) {
   BufferOffset next_instr_offset = nextInstrOffset();
   DEBUG_PRINTF("\tbranch_offset_helper: %p to %d\n", L,
                next_instr_offset.getOffset());
-  // This is the last possible branch target.
+  
   if (L->bound()) {
     JitSpew(JitSpew_Codegen, ".use Llabel %p on %d", L,
             next_instr_offset.getOffset());
@@ -1291,18 +1290,18 @@ Assembler::DoubleCondition Assembler::InvertCondition(DoubleCondition cond) {
   }
 }
 
-// Break / Trap instructions.
+
 void Assembler::break_(uint32_t code, bool break_as_stop) {
-  // We need to invalidate breaks that could be stops as well because the
-  // simulator expects a char pointer after the stop instruction.
-  // See constants-mips.h for explanation.
+  
+  
+  
   MOZ_ASSERT(
       (break_as_stop && code <= kMaxStopCode && code > kMaxTracepointCode) ||
       (!break_as_stop && (code > kMaxStopCode || code <= kMaxTracepointCode)));
 
-  // since ebreak does not allow additional immediate field, we use the
-  // immediate field of lui instruction immediately following the ebreak to
-  // encode the "code" info
+  
+  
+  
   ebreak();
   MOZ_ASSERT(is_uint20(code));
   lui(zero_reg, code);
@@ -1314,30 +1313,30 @@ void Assembler::ToggleToJmp(CodeLocationLabel inst_) {
   int32_t offset = inst->Imm12Value();
   MOZ_ASSERT(is_int12(offset));
   Instr jal_ = JAL | (0b000 << kFunct3Shift) |
-               (offset & 0xff000) |          // bits 19-12
-               ((offset & 0x800) << 9) |     // bit  11
-               ((offset & 0x7fe) << 20) |    // bits 10-1
-               ((offset & 0x100000) << 11);  // bit  20
-  // jal(zero, offset);
+               (offset & 0xff000) |          
+               ((offset & 0x800) << 9) |     
+               ((offset & 0x7fe) << 20) |    
+               ((offset & 0x100000) << 11);  
+  
   *reinterpret_cast<Instr*>(inst) = jal_;
 }
 
 void Assembler::ToggleToCmp(CodeLocationLabel inst_) {
   Instruction* inst = (Instruction*)inst_.raw();
 
-  // toggledJump is allways used for short jumps.
+  
   MOZ_ASSERT(IsJal(inst->InstructionBits()));
-  // Replace "jal zero_reg, offset" with "addi $zero, $zero, offset"
+  
   int32_t offset = inst->Imm20JValue();
   MOZ_ASSERT(is_int12(offset));
   Instr addi_ = OP_IMM | (0b000 << kFunct3Shift) |
-                (offset << kImm12Shift);  // addi(zero, zero, low_12);
+                (offset << kImm12Shift);  
   *reinterpret_cast<Instr*>(inst) = addi_;
 }
 
 bool Assembler::reserve(size_t size) {
-  // This buffer uses fixed-size chunks so there's no point in reserving
-  // now vs. on-demand.
+  
+  
   return !oom();
 }
 
@@ -1361,19 +1360,19 @@ static void TraceOneDataRelocation(JSTracer* trc,
   void* ptr = (void*)Assembler::ExtractLoad64Value(inst);
   void* prior = ptr;
 
-  // Data relocations can be for Values or for raw pointers. If a Value is
-  // zero-tagged, we can trace it as if it were a raw pointer. If a Value
-  // is not zero-tagged, we have to interpret it as a Value to ensure that the
-  // tag bits are masked off to recover the actual pointer.
+  
+  
+  
+  
   uintptr_t word = reinterpret_cast<uintptr_t>(ptr);
   if (word >> JSVAL_TAG_SHIFT) {
-    // This relocation is a Value with a non-zero tag.
+    
     Value v = Value::fromRawBits(word);
     TraceManuallyBarrieredEdge(trc, &v, "jit-masm-value");
     ptr = (void*)v.bitsAsPunboxPointer();
   } else {
-    // This relocation is a raw pointer or a Value with a zero tag.
-    // No barrier needed since these are constants.
+    
+    
     TraceManuallyBarrieredGenericPointerEdge(
         trc, reinterpret_cast<gc::Cell**>(&ptr), "jit-masm-ptr");
   }
@@ -1386,7 +1385,7 @@ static void TraceOneDataRelocation(JSTracer* trc,
   }
 }
 
-/* static */
+
 void Assembler::TraceDataRelocations(JSTracer* trc, JitCode* code,
                                      CompactBufferReader& reader) {
   mozilla::Maybe<AutoWritableJitCode> awjc;
@@ -1423,25 +1422,25 @@ void Assembler::retarget(Label* label, Label* target) {
     if (target->bound()) {
       bind(label, BufferOffset(target));
     } else if (target->used()) {
-      // The target is not bound but used. Prepend label's branch list
-      // onto target's.
+      
+      
       int32_t next;
       BufferOffset labelBranchOffset(label);
 
-      // Find the head of the use chain for label.
+      
       do {
         next = next_link(label, false);
         labelBranchOffset = BufferOffset(next);
       } while (next != LabelBase::INVALID_OFFSET);
 
-      // Then patch the head of label's use chain to the tail of
-      // target's use chain, prepending the entire use chain of target.
+      
+      
       target->use(label->offset());
       target_at_put(labelBranchOffset, BufferOffset(target));
       MOZ_CRASH("check");
     } else {
-      // The target is unbound and unused.  We can just take the head of
-      // the list hanging off of label, and dump that into target.
+      
+      
       target->use(label->offset());
     }
   }
@@ -1492,7 +1491,7 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
     return;
   }
   DEBUG_PRINTF("\tPatchShortRangeBranchToVeneer\n");
-  // Reconstruct the position of the branch from (rangeIdx, deadline).
+  
   ImmBranchRangeType branchRange = static_cast<ImmBranchRangeType>(rangeIdx);
   BufferOffset branch(deadline.getOffset() -
                       ImmBranchMaxForwardOffset(branchRange));
@@ -1500,27 +1499,27 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   Instruction* veneerInst_1 = buffer->getInst(veneer);
   Instruction* veneerInst_2 =
       buffer->getInst(BufferOffset(veneer.getOffset() + 4));
-  // Verify that the branch range matches what's encoded.
+  
   DEBUG_PRINTF("\t%p(%x): ", branchInst, branch.getOffset());
   disassembleInstr(branchInst->InstructionBits(), JitSpew_Codegen);
   DEBUG_PRINTF("\t instert veneer %x, branch:%x deadline: %x\n",
                veneer.getOffset(), branch.getOffset(), deadline.getOffset());
   MOZ_ASSERT(branchRange <= UncondBranchRangeType);
   MOZ_ASSERT(branchInst->GetImmBranchRangeType() == branchRange);
-  // emit a long jump slot
+  
   Instr auipc = AUIPC | (t6.code() << kRdShift) | (0x0 << kImm20Shift);
   Instr jalr = JALR | (zero_reg.code() << kRdShift) | (0x0 << kFunct3Shift) |
                (t6.code() << kRs1Shift) | (0x0 << kImm12Shift);
 
-  // We want to insert veneer after branch in the linked list of instructions
-  // that use the same unbound label.
-  // The veneer should be an unconditional branch.
+  
+  
+  
   int32_t nextElemOffset = target_at(buffer->getInst(branch), branch, false);
   int32_t dist;
-  // If offset is 0, this is the end of the linked list.
+  
   if (nextElemOffset != kEndOfChain) {
-    // Make the offset relative to veneer so it targets the same instruction
-    // as branchInst.
+    
+    
     dist = nextElemOffset - veneer.getOffset();
   } else {
     dist = 0;
@@ -1529,10 +1528,10 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   int32_t Lo12 = (int32_t)dist << 20 >> 20;
   auipc = SetAuipcOffset(Hi20, auipc);
   jalr = SetJalrOffset(Lo12, jalr);
-  // insert veneer
+  
   veneerInst_1->SetInstructionBits(auipc);
   veneerInst_2->SetInstructionBits(jalr);
-  // Now link branchInst to veneer.
+  
   if (IsBranch(branchInst->InstructionBits())) {
     branchInst->SetInstructionBits(SetBranchOffset(
         branch.getOffset(), veneer.getOffset(), branchInst->InstructionBits()));
@@ -1544,5 +1543,5 @@ void Assembler::PatchShortRangeBranchToVeneer(Buffer* buffer, unsigned rangeIdx,
   DEBUG_PRINTF("\tfix to veneer:");
   disassembleInstr(branchInst->InstructionBits());
 }
-}  // namespace jit
-}  // namespace js
+}  
+}  
