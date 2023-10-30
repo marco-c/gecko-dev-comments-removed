@@ -807,8 +807,8 @@ struct RtcpParameters {
   bool remote_estimate = false;
 };
 
-struct RtpParameters {
-  virtual ~RtpParameters() = default;
+struct MediaChannelParameters {
+  virtual ~MediaChannelParameters() = default;
 
   std::vector<Codec> codecs;
   std::vector<webrtc::RtpExtension> extensions;
@@ -838,9 +838,7 @@ struct RtpParameters {
   }
 };
 
-
-
-struct RtpSendParameters : RtpParameters {
+struct SenderParameters : MediaChannelParameters {
   int max_bandwidth_bps = -1;
   
   
@@ -849,7 +847,7 @@ struct RtpSendParameters : RtpParameters {
 
  protected:
   std::map<std::string, std::string> ToStringMap() const override {
-    auto params = RtpParameters::ToStringMap();
+    auto params = MediaChannelParameters::ToStringMap();
     params["max_bandwidth_bps"] = rtc::ToString(max_bandwidth_bps);
     params["mid"] = (mid.empty() ? "<not set>" : mid);
     params["extmap-allow-mixed"] = extmap_allow_mixed ? "true" : "false";
@@ -857,20 +855,20 @@ struct RtpSendParameters : RtpParameters {
   }
 };
 
-struct AudioSendParameters : RtpSendParameters {
-  AudioSendParameters();
-  ~AudioSendParameters() override;
+struct AudioSenderParameter : SenderParameters {
+  AudioSenderParameter();
+  ~AudioSenderParameter() override;
   AudioOptions options;
 
  protected:
   std::map<std::string, std::string> ToStringMap() const override;
 };
 
-struct AudioRecvParameters : RtpParameters {};
+struct AudioReceiverParameters : MediaChannelParameters {};
 
 class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
+  virtual bool SetSendParameters(const AudioSenderParameter& params) = 0;
   
   virtual void SetSend(bool send) = 0;
   
@@ -892,7 +890,7 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
  public:
-  virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
+  virtual bool SetRecvParameters(const AudioReceiverParameters& params) = 0;
   
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;
@@ -916,11 +914,9 @@ class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
   virtual void SetReceiveNonSenderRttEnabled(bool enabled) = 0;
 };
 
-
-
-struct VideoSendParameters : RtpSendParameters {
-  VideoSendParameters();
-  ~VideoSendParameters() override;
+struct VideoSenderParameters : SenderParameters {
+  VideoSenderParameters();
+  ~VideoSenderParameters() override;
   
   
   
@@ -933,13 +929,11 @@ struct VideoSendParameters : RtpSendParameters {
   std::map<std::string, std::string> ToStringMap() const override;
 };
 
-
-
-struct VideoRecvParameters : RtpParameters {};
+struct VideoReceiverParameters : MediaChannelParameters {};
 
 class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
+  virtual bool SetSendParameters(const VideoSenderParameters& params) = 0;
   
   virtual bool SetSend(bool send) = 0;
   
@@ -971,7 +965,7 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
  public:
-  virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
+  virtual bool SetRecvParameters(const VideoReceiverParameters& params) = 0;
   
   virtual webrtc::RtpParameters GetRtpReceiveParameters(
       uint32_t ssrc) const = 0;

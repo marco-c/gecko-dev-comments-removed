@@ -431,10 +431,10 @@ class VoiceChannel : public BaseChannel {
 
   
   
-  AudioSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
+  AudioSenderParameter last_send_params_ RTC_GUARDED_BY(worker_thread());
   
   
-  AudioRecvParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
+  AudioReceiverParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
 };
 
 
@@ -500,10 +500,10 @@ class VideoChannel : public BaseChannel {
 
   
   
-  VideoSendParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
+  VideoSenderParameters last_send_params_ RTC_GUARDED_BY(worker_thread());
   
   
-  VideoRecvParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
+  VideoReceiverParameters last_recv_params_ RTC_GUARDED_BY(worker_thread());
 };
 
 }  
