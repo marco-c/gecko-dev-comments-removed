@@ -377,7 +377,8 @@ class SystemResourceMonitor(object):
                     virt_mem,
                     swap_mem,
                 ) = self._pipe.recv()
-            except Exception:
+            except Exception as e:
+                warnings.warn("failed to receive data: %s" % e)
                 
                 break
 
@@ -386,16 +387,35 @@ class SystemResourceMonitor(object):
             if start_time == "done":
                 break
 
-            io = self._io_type(*io_diff)
-            virt = self._virt_type(*virt_mem)
-            swap = self._swap_type(*swap_mem)
-            cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
+            try:
+                io = self._io_type(*io_diff)
+                virt = self._virt_type(*virt_mem)
+                swap = self._swap_type(*swap_mem)
+                cpu_times = [self._cpu_times_type(*v) for v in cpu_diff]
 
-            self.measurements.append(
-                SystemResourceUsage(
-                    start_time, end_time, cpu_times, cpu_percent, io, virt, swap
+                self.measurements.append(
+                    SystemResourceUsage(
+                        start_time, end_time, cpu_times, cpu_percent, io, virt, swap
+                    )
                 )
-            )
+            except Exception:
+                
+                warnings.warn(
+                    "failed to read the received data: %s"
+                    % str(
+                        (
+                            start_time,
+                            end_time,
+                            io_diff,
+                            cpu_diff,
+                            cpu_percent,
+                            virt_mem,
+                            swap_mem,
+                        )
+                    )
+                )
+
+                break
 
         
         
