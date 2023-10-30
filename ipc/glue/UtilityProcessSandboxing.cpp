@@ -27,6 +27,21 @@ std::vector<std::string> split(const std::string& str, char s) {
 }
 
 bool IsUtilitySandboxEnabled(const char* envVar, SandboxingKind aKind) {
+#ifdef XP_WIN
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aKind == SandboxingKind::WINDOWS_FILE_DIALOG) {
+    return false;
+  }
+#endif
+
   if (envVar == nullptr) {
     return true;
   }

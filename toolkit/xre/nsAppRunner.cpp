@@ -6039,9 +6039,12 @@ bool XRE_UseNativeEventProcessing() {
 #  if defined(XP_WIN)
       auto upc = mozilla::ipc::UtilityProcessChild::Get();
       MOZ_ASSERT(upc);
+
+      using SboxKind = mozilla::ipc::SandboxingKind;
       
       
-      return upc->mSandbox == mozilla::ipc::SandboxingKind::WINDOWS_UTILS;
+      return upc->mSandbox == SboxKind::WINDOWS_UTILS ||
+             upc->mSandbox == SboxKind::WINDOWS_FILE_DIALOG;
 #  else
       return false;
 #  endif  
