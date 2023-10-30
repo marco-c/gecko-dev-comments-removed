@@ -458,42 +458,6 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-  bool EnableCompatibleJoinSplitNodeDirection(bool aEnable) {
-    if (!CanChangeJoinSplitNodeDirection()) {
-      return false;
-    }
-    mUseGeckoTraditionalJoinSplitBehavior = !aEnable;
-    return true;
-  }
-
-  
-
-
-
-  [[nodiscard]] bool IsCompatibleJoinSplitNodeDirectionEnabled() const {
-    return !mUseGeckoTraditionalJoinSplitBehavior;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  [[nodiscard]] bool CanChangeJoinSplitNodeDirection() const {
-    return !mMaybeHasJoinSplitTransactions;
-  }
-
-  
-
-
-
   MOZ_CAN_RUN_SCRIPT already_AddRefed<Element>
   GetAbsolutelyPositionedSelectionContainer() const;
 
@@ -2702,12 +2666,6 @@ class HTMLEditor final : public EditorBase,
   MOZ_CAN_RUN_SCRIPT nsresult OnDocumentModified();
 
  protected:  
-  
-
-
-  [[nodiscard]] inline SplitNodeDirection GetSplitNodeDirection() const;
-  [[nodiscard]] inline JoinNodesDirection GetJoinNodesDirection() const;
-
   MOZ_CAN_RUN_SCRIPT void OnStartToHandleTopLevelEditSubAction(
       EditSubAction aTopLevelEditSubAction,
       nsIEditor::EDirection aDirectionOfTopLevelEditSubAction,
@@ -4453,10 +4411,6 @@ class HTMLEditor final : public EditorBase,
   bool mCRInParagraphCreatesParagraph;
 
   
-  
-  bool mUseGeckoTraditionalJoinSplitBehavior;
-
-  
   bool mIsObjectResizingEnabled;
   bool mIsResizing;
   bool mPreserveRatio;
@@ -4549,10 +4503,6 @@ class HTMLEditor final : public EditorBase,
 
   bool mHasBeforeInputBeenCanceled = false;
 
-  
-  
-  bool mMaybeHasJoinSplitTransactions = false;
-
   ParagraphSeparator mDefaultParagraphSeparator;
 
   friend class AlignStateAtSelection;  
@@ -4575,7 +4525,6 @@ class HTMLEditor final : public EditorBase,
                             
   friend class JoinNodesTransaction;  
                                       
-                                      
   friend class ListElementSelectionState;      
                                                
   friend class ListItemElementSelectionState;  
@@ -4590,7 +4539,6 @@ class HTMLEditor final : public EditorBase,
                                            
   friend class SlurpBlobEventListener;     
   friend class SplitNodeTransaction;       
-                                           
   friend class TransactionManager;  
                                     
   friend class

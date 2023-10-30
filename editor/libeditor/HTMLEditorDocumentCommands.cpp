@@ -6,12 +6,12 @@
 #include "EditorCommands.h"
 
 #include "EditorBase.h"  
+#include "ErrorList.h"
 #include "HTMLEditor.h"  
 
 #include "mozilla/BasePrincipal.h"  
-#include "mozilla/StaticPrefs_editor.h"
-#include "mozilla/dom/Element.h"              
-#include "mozilla/dom/Document.h"             
+#include "mozilla/dom/Element.h"    
+#include "mozilla/dom/Document.h"   
 #include "mozilla/dom/HTMLInputElement.h"     
 #include "mozilla/dom/HTMLTextAreaElement.h"  
 
@@ -50,9 +50,6 @@ bool SetDocumentStateCommand::IsCommandEnabled(Command aCommand,
   switch (aCommand) {
     case Command::SetDocumentReadOnly:
       return !!aEditorBase;
-    case Command::EnableCompatibleJoinSplitNodeDirection:
-      return aEditorBase && aEditorBase->IsHTMLEditor() &&
-             aEditorBase->AsHTMLEditor()->CanChangeJoinSplitNodeDirection();
     default:
       
       return aEditorBase && aEditorBase->IsHTMLEditor();
@@ -170,16 +167,12 @@ nsresult SetDocumentStateCommand::DoCommandParam(
       return NS_OK;
     }
     case Command::EnableCompatibleJoinSplitNodeDirection:
-      MOZ_ASSERT_IF(
-          StaticPrefs::
-                  editor_join_split_direction_compatible_with_the_other_browsers() &&
-              aPrincipal && !aPrincipal->IsSystemPrincipal(),
-          aBoolParam.value());
-      return MOZ_KnownLive(aEditorBase.AsHTMLEditor())
-                     ->EnableCompatibleJoinSplitNodeDirection(
-                         aBoolParam.value())
-                 ? NS_OK
-                 : NS_SUCCESS_DOM_NO_OPERATION;
+      
+      
+      
+      
+      
+      return NS_OK;
     default:
       return NS_ERROR_NOT_IMPLEMENTED;
   }
@@ -370,8 +363,11 @@ nsresult SetDocumentStateCommand::GetCommandStateParams(
       if (NS_WARN_IF(!htmlEditor)) {
         return NS_ERROR_INVALID_ARG;
       }
-      return aParams.SetBool(
-          STATE_ALL, htmlEditor->IsCompatibleJoinSplitNodeDirectionEnabled());
+      
+      
+      
+      
+      return aParams.SetBool(STATE_ALL, true);
     }
     default:
       return NS_ERROR_NOT_IMPLEMENTED;

@@ -44,10 +44,8 @@ enum class CollectChildrenOption;
 enum class EditAction;                         
 enum class EditorCommandParamType : uint16_t;  
 enum class EditSubAction : int32_t;            
-enum class JoinNodesDirection;                 
 enum class ParagraphSeparator;                 
 enum class SpecifiedStyle : uint8_t;           
-enum class SplitNodeDirection;                 
 enum class SuggestCaret;                       
 enum class WithTransaction;                    
 

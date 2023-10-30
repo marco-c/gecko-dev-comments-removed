@@ -115,7 +115,6 @@
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_docshell.h"
 #include "mozilla/StaticPrefs_dom.h"
-#include "mozilla/StaticPrefs_editor.h"
 #include "mozilla/StaticPrefs_fission.h"
 #include "mozilla/StaticPrefs_full_screen_api.h"
 #include "mozilla/StaticPrefs_layout.h"
@@ -5388,10 +5387,11 @@ bool Document::ExecCommand(const nsAString& aHTMLCommandName, bool aShowUI,
     case Command::EnableCompatibleJoinSplitNodeDirection:
       
       
-      if (StaticPrefs::
-              editor_join_split_direction_compatible_with_the_other_browsers() &&
-          !adjustedValue.EqualsLiteral("true") &&
-          !aSubjectPrincipal.IsSystemPrincipal()) {
+      
+      
+      
+      
+      if (!adjustedValue.EqualsLiteral("true")) {
         return false;
       }
       break;
