@@ -2881,3 +2881,20 @@ async function selectBlackBoxContextMenuItem(dbg, itemName) {
   selectContextMenuItem(dbg, `#node-menu-${itemName}`);
   return wait;
 }
+
+
+
+
+function assertOutlineItems(dbg, expectedItems) {
+  const outlineItems = Array.from(
+    findAllElementsWithSelector(
+      dbg,
+      ".outline-list h2, .outline-list .outline-list__element"
+    )
+  );
+  SimpleTest.isDeeply(
+    outlineItems.map(i => i.innerText.trim()),
+    expectedItems,
+    "The expected items are displayed in the outline panel"
+  );
+}

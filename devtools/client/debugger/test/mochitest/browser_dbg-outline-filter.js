@@ -10,6 +10,7 @@ add_task(async function () {
   const dbg = await initDebugger("doc-scripts.html", "long.js");
   await selectSource(dbg, "long.js", 1);
   findElementWithSelector(dbg, ".outline-tab").click();
+  await waitForElementWithSelector(dbg, ".outline-list");
 
   
   const alphabetizeButton = findElementWithSelector(
