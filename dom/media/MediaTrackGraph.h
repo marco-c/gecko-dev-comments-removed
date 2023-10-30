@@ -260,8 +260,8 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   MediaTrackGraphImpl* GraphImpl();
   const MediaTrackGraphImpl* GraphImpl() const;
-  MediaTrackGraph* Graph();
-  const MediaTrackGraph* Graph() const;
+  MediaTrackGraph* Graph() { return mGraph; }
+  const MediaTrackGraph* Graph() const { return mGraph; }
   
 
 
@@ -632,7 +632,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   bool mMainThreadDestroyed;
 
   
-  MediaTrackGraphImpl* mGraph;
+  MediaTrackGraph* mGraph;
 };
 
 
