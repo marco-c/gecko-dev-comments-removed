@@ -13,8 +13,8 @@ def manifest_update(test_paths):
     from manifest import manifest  
     for url_base, paths in test_paths.items():
         manifest.load_and_update(
-            paths["tests_path"],
-            paths["manifest_path"],
+            paths.tests_path,
+            paths.manifest_path,
             url_base)
 
 
