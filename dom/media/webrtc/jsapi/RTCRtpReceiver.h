@@ -90,6 +90,7 @@ class RTCRtpReceiver : public nsISupports,
 
   void Shutdown();
   void BreakCycles();
+  void Unlink();
   
   void Stop();
   bool HasTrack(const dom::MediaStreamTrack* aTrack) const;
