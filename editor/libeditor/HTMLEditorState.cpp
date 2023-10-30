@@ -442,6 +442,17 @@ AlignStateAtSelection::AlignStateAtSelection(HTMLEditor& aHTMLEditor,
 
 
 
+
+bool ParagraphStateAtSelection::IsFormatElement(
+    FormatBlockMode aFormatBlockMode, const nsIContent& aContent) {
+  if (aFormatBlockMode == FormatBlockMode::XULParagraphStateCommand &&
+      aContent.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
+                                   nsGkAtoms::dt)) {
+    return false;
+  }
+  return HTMLEditor::IsFormatElement(aFormatBlockMode, aContent);
+}
+
 ParagraphStateAtSelection::ParagraphStateAtSelection(
     HTMLEditor& aHTMLEditor, FormatBlockMode aFormatBlockMode,
     ErrorResult& aRv) {
@@ -500,9 +511,8 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(
     OwningNonNull<nsIContent>& content = arrayOfContents[index];
     if (HTMLEditUtils::IsBlockElement(content,
                                       BlockInlineCheck::UseHTMLDefaultStyle) &&
-        (content->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                      nsGkAtoms::dt) ||
-         !HTMLEditor::IsFormatElement(aFormatBlockMode, content))) {
+        !ParagraphStateAtSelection::IsFormatElement(aFormatBlockMode,
+                                                    content)) {
       
       
       
@@ -530,13 +540,11 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(
   }
 
   for (auto& content : Reversed(arrayOfContents)) {
-    nsAtom* paragraphStateOfNode = nsGkAtoms::_empty;
-    if (!content->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                      nsGkAtoms::dt) &&
-        HTMLEditor::IsFormatElement(aFormatBlockMode, content)) {
-      MOZ_ASSERT(content->NodeInfo()->NameAtom());
-      paragraphStateOfNode = content->NodeInfo()->NameAtom();
+    const Element* formatElement = nullptr;
+    if (ParagraphStateAtSelection::IsFormatElement(aFormatBlockMode, content)) {
+      formatElement = content->AsElement();
     }
+    
     
     
     else if (HTMLEditUtils::IsBlockElement(
@@ -551,23 +559,51 @@ ParagraphStateAtSelection::ParagraphStateAtSelection(
         if (parentElement == editingHostOrBodyOrDocumentElement) {
           break;
         }
-        if (!parentElement->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                                nsGkAtoms::dt) &&
-            HTMLEditor::IsFormatElement(aFormatBlockMode, *parentElement)) {
+        if (ParagraphStateAtSelection::IsFormatElement(aFormatBlockMode,
+                                                       *parentElement)) {
           MOZ_ASSERT(parentElement->NodeInfo()->NameAtom());
-          paragraphStateOfNode = parentElement->NodeInfo()->NameAtom();
+          formatElement = parentElement;
           break;
         }
       }
     }
 
+    auto FormatElementIsInclusiveDescendantOfFormatDLElement = [&]() {
+      if (aFormatBlockMode == FormatBlockMode::XULParagraphStateCommand) {
+        return false;
+      }
+      if (!formatElement) {
+        return false;
+      }
+      for (const Element* const element :
+           formatElement->InclusiveAncestorsOfType<Element>()) {
+        if (element->IsHTMLElement(nsGkAtoms::dl)) {
+          return true;
+        }
+        if (element->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt)) {
+          continue;
+        }
+        if (ParagraphStateAtSelection::IsFormatElement(aFormatBlockMode,
+                                                       *formatElement)) {
+          return false;
+        }
+      }
+      return false;
+    };
+
     
     if (!mFirstParagraphState) {
-      mFirstParagraphState = paragraphStateOfNode;
+      mFirstParagraphState = formatElement
+                                 ? formatElement->NodeInfo()->NameAtom()
+                                 : nsGkAtoms::_empty;
+      mIsInDLElement = FormatElementIsInclusiveDescendantOfFormatDLElement();
       continue;
     }
+    mIsInDLElement &= FormatElementIsInclusiveDescendantOfFormatDLElement();
     
-    if (mFirstParagraphState != paragraphStateOfNode) {
+    if ((!formatElement && mFirstParagraphState != nsGkAtoms::_empty) ||
+        (formatElement &&
+         !formatElement->IsHTMLElement(mFirstParagraphState))) {
       mIsMixed = true;
       break;
     }
@@ -580,10 +616,8 @@ void ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
     FormatBlockMode aFormatBlockMode, dom::Element& aNonFormatBlockElement) {
   MOZ_ASSERT(HTMLEditUtils::IsBlockElement(
       aNonFormatBlockElement, BlockInlineCheck::UseHTMLDefaultStyle));
-  MOZ_ASSERT(
-      aNonFormatBlockElement.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                                 nsGkAtoms::dt) ||
-      !HTMLEditor::IsFormatElement(aFormatBlockMode, aNonFormatBlockElement));
+  MOZ_ASSERT(!ParagraphStateAtSelection::IsFormatElement(
+      aFormatBlockMode, aNonFormatBlockElement));
 
   
   
@@ -594,10 +628,8 @@ void ParagraphStateAtSelection::AppendDescendantFormatNodesAndFirstInlineNode(
        childContent; childContent = childContent->GetNextSibling()) {
     const bool isBlock = HTMLEditUtils::IsBlockElement(
         *childContent, BlockInlineCheck::UseHTMLDefaultStyle);
-    const bool isFormat =
-        !childContent->IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dl,
-                                           nsGkAtoms::dt) &&
-        HTMLEditor::IsFormatElement(aFormatBlockMode, *childContent);
+    const bool isFormat = ParagraphStateAtSelection::IsFormatElement(
+        aFormatBlockMode, *childContent);
     
     
     if (isBlock && !isFormat) {
