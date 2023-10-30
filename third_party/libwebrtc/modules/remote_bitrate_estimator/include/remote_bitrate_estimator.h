@@ -13,15 +13,13 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_REMOTE_BITRATE_ESTIMATOR_H_
 
-#include <map>
-#include <memory>
+#include <cstdint>
 #include <vector>
 
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "modules/include/module_common_types.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtcp_packet.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
 namespace webrtc {
 
@@ -46,11 +44,7 @@ class RemoteBitrateEstimator : public CallStatsObserver {
   
   
   
-  
-  
-  virtual void IncomingPacket(int64_t arrival_time_ms,
-                              size_t payload_size,
-                              const RTPHeader& header) = 0;
+  virtual void IncomingPacket(const RtpPacketReceived& rtp_packet) = 0;
 
   
   virtual void RemoveStream(uint32_t ssrc) = 0;
