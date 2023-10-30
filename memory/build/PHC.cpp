@@ -223,7 +223,7 @@ void StackTrace::Fill() {
   PNT_TIB pTib = reinterpret_cast<PNT_TIB>(NtCurrentTeb());
   void* stackEnd = static_cast<void*>(pTib->StackBase);
   FramePointerStackWalk(StackWalkCallback, kMaxFrames, this, fp, stackEnd);
-#elif defined(XP_MACOSX)
+#elif defined(XP_DARWIN)
   
   
   
@@ -293,7 +293,7 @@ using Delay = uint32_t;
 
 
 static const size_t kPageSize =
-#if defined(XP_MACOSX) && defined(__aarch64__)
+#if defined(XP_DARWIN) && defined(__aarch64__)
     16384
 #else
     4096
