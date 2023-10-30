@@ -3471,25 +3471,23 @@ void nsGenericHTMLElement::FocusPopover() {
     doc->FlushPendingNotifications(FlushType::Frames);
   }
 
-  
-  
-  RefPtr<Element> control =
-      GetBoolAttr(nsGkAtoms::autofocus)
-          ? this
-          : GetFocusDelegate(false , true );
+  RefPtr<Element> control = GetBoolAttr(nsGkAtoms::autofocus)
+                                ? this
+                                : GetAutofocusDelegate(false );
+
   if (!control) {
     return;
   }
-  FocusCandidate(*control, false );
+  FocusCandidate(control, false );
 }
 
-void nsGenericHTMLElement::FocusCandidate(Element& aControl,
+void nsGenericHTMLElement::FocusCandidate(Element* aControl,
                                           bool aClearUpFocus) {
   
   IgnoredErrorResult rv;
-  nsIFrame* frame = aControl.GetPrimaryFrame();
-  if (frame && frame->IsFocusable()) {
-    aControl.Focus(FocusOptions(), CallerType::NonSystem, rv);
+  if (RefPtr<Element> elementToFocus = nsFocusManager::GetTheFocusableArea(
+          aControl, nsFocusManager::ProgrammaticFocusFlags(FocusOptions()))) {
+    elementToFocus->Focus(FocusOptions(), CallerType::NonSystem, rv);
     if (rv.Failed()) {
       return;
     }
@@ -3505,7 +3503,7 @@ void nsGenericHTMLElement::FocusCandidate(Element& aControl,
   
   
   
-  BrowsingContext* bc = aControl.OwnerDoc()->GetBrowsingContext();
+  BrowsingContext* bc = aControl->OwnerDoc()->GetBrowsingContext();
   if (bc && bc->IsInProcess() && bc->SameOriginWithTop()) {
     if (nsCOMPtr<nsIDocShell> docShell = bc->Top()->GetDocShell()) {
       if (Document* topDocument = docShell->GetExtantDocument()) {
