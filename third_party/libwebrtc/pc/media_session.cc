@@ -198,18 +198,18 @@ static bool CreateCryptoParams(int tag,
   std::string key = rtc::Base64::Encode(master_key);
 
   crypto_out->tag = tag;
-  crypto_out->cipher_suite = cipher;
+  crypto_out->crypto_suite = cipher;
   crypto_out->key_params = kInline;
   crypto_out->key_params += key;
   return true;
 }
 
-static bool AddCryptoParams(const std::string& cipher_suite,
+static bool AddCryptoParams(const std::string& crypto_suite,
                             CryptoParamsVec* cryptos_out) {
   int size = static_cast<int>(cryptos_out->size());
 
   cryptos_out->resize(size + 1);
-  return CreateCryptoParams(size, cipher_suite, &cryptos_out->at(size));
+  return CreateCryptoParams(size, crypto_suite, &cryptos_out->at(size));
 }
 
 void AddMediaCryptos(const CryptoParamsVec& cryptos,
@@ -319,11 +319,11 @@ static bool SelectCrypto(const MediaContentDescription* offer,
 
   for (const CryptoParams& crypto : cryptos) {
     if ((crypto_options.srtp.enable_gcm_crypto_suites &&
-         rtc::IsGcmCryptoSuiteName(crypto.cipher_suite)) ||
-        rtc::kCsAesCm128HmacSha1_80 == crypto.cipher_suite ||
-        (rtc::kCsAesCm128HmacSha1_32 == crypto.cipher_suite && audio &&
+         rtc::IsGcmCryptoSuiteName(crypto.crypto_suite)) ||
+        rtc::kCsAesCm128HmacSha1_80 == crypto.crypto_suite ||
+        (rtc::kCsAesCm128HmacSha1_32 == crypto.crypto_suite && audio &&
          !bundle && crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher)) {
-      return CreateCryptoParams(crypto.tag, crypto.cipher_suite, crypto_out);
+      return CreateCryptoParams(crypto.tag, crypto.crypto_suite, crypto_out);
     }
   }
   return false;
@@ -556,7 +556,7 @@ static void PruneCryptos(const CryptoParamsVec& filter,
                      
                      [&filter](const CryptoParams& crypto) {
                        for (const CryptoParams& entry : filter) {
-                         if (entry.cipher_suite == crypto.cipher_suite)
+                         if (entry.crypto_suite == crypto.crypto_suite)
                            return false;
                        }
                        return true;

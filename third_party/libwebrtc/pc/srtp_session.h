@@ -44,22 +44,22 @@ class SrtpSession {
 
   
   
-  bool SetSend(int cs,
+  bool SetSend(int crypto_suite,
                const uint8_t* key,
                size_t len,
                const std::vector<int>& extension_ids);
-  bool UpdateSend(int cs,
+  bool UpdateSend(int crypto_suite,
                   const uint8_t* key,
                   size_t len,
                   const std::vector<int>& extension_ids);
 
   
   
-  bool SetRecv(int cs,
+  bool SetRecv(int crypto_suite,
                const uint8_t* key,
                size_t len,
                const std::vector<int>& extension_ids);
-  bool UpdateRecv(int cs,
+  bool UpdateRecv(int crypto_suite,
                   const uint8_t* key,
                   size_t len,
                   const std::vector<int>& extension_ids);
@@ -99,17 +99,17 @@ class SrtpSession {
 
  private:
   bool DoSetKey(int type,
-                int cs,
+                int crypto_suite,
                 const uint8_t* key,
                 size_t len,
                 const std::vector<int>& extension_ids);
   bool SetKey(int type,
-              int cs,
+              int crypto_suite,
               const uint8_t* key,
               size_t len,
               const std::vector<int>& extension_ids);
   bool UpdateKey(int type,
-                 int cs,
+                 int crypto_suite,
                  const uint8_t* key,
                  size_t len,
                  const std::vector<int>& extension_ids);

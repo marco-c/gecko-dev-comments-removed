@@ -61,11 +61,11 @@ class SrtpTransport : public RtpTransport {
   
   
   
-  bool SetRtpParams(int send_cs,
+  bool SetRtpParams(int send_crypto_suite,
                     const uint8_t* send_key,
                     int send_key_len,
                     const std::vector<int>& send_extension_ids,
-                    int recv_cs,
+                    int recv_crypto_suite,
                     const uint8_t* recv_key,
                     int recv_key_len,
                     const std::vector<int>& recv_extension_ids);
@@ -73,11 +73,11 @@ class SrtpTransport : public RtpTransport {
   
   
   
-  bool SetRtcpParams(int send_cs,
+  bool SetRtcpParams(int send_crypto_suite,
                      const uint8_t* send_key,
                      int send_key_len,
                      const std::vector<int>& send_extension_ids,
-                     int recv_cs,
+                     int recv_crypto_suite,
                      const uint8_t* recv_key,
                      int recv_key_len,
                      const std::vector<int>& recv_extension_ids);
@@ -155,8 +155,8 @@ class SrtpTransport : public RtpTransport {
 
   absl::optional<cricket::CryptoParams> send_params_;
   absl::optional<cricket::CryptoParams> recv_params_;
-  absl::optional<int> send_cipher_suite_;
-  absl::optional<int> recv_cipher_suite_;
+  absl::optional<int> send_crypto_suite_;
+  absl::optional<int> recv_crypto_suite_;
   rtc::ZeroOnFreeBuffer<uint8_t> send_key_;
   rtc::ZeroOnFreeBuffer<uint8_t> recv_key_;
 
