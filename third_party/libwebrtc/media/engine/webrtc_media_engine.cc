@@ -179,19 +179,13 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
     result.erase(it, result.end());
 
     
-    if (absl::StartsWith(trials.Lookup("WebRTC-FilterAbsSendTimeExtension"),
-                         "Enabled")) {
-      static const char* const kBweExtensionPriorities[] = {
-          webrtc::RtpExtension::kTransportSequenceNumberUri,
-          webrtc::RtpExtension::kAbsSendTimeUri,
-          webrtc::RtpExtension::kTimestampOffsetUri};
-      DiscardRedundantExtensions(&result, kBweExtensionPriorities);
-    } else {
-      static const char* const kBweExtensionPriorities[] = {
-          webrtc::RtpExtension::kAbsSendTimeUri,
-          webrtc::RtpExtension::kTimestampOffsetUri};
-      DiscardRedundantExtensions(&result, kBweExtensionPriorities);
-    }
+    
+    
+    
+    static const char* const kBweExtensionPriorities[] = {
+        webrtc::RtpExtension::kAbsSendTimeUri,
+        webrtc::RtpExtension::kTimestampOffsetUri};
+    DiscardRedundantExtensions(&result, kBweExtensionPriorities);
   }
   return result;
 }
