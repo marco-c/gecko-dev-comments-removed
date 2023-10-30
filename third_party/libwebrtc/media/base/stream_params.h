@@ -169,6 +169,14 @@ struct StreamParams {
   
   
   
+  
+  void GetSecondarySsrcs(const std::string& semantic,
+                         const std::vector<uint32_t>& primary_ssrcs,
+                         std::vector<uint32_t>* fid_ssrcs) const;
+
+  
+  
+  
   void GetFidSsrcs(const std::vector<uint32_t>& primary_ssrcs,
                    std::vector<uint32_t>* fid_ssrcs) const;
 
