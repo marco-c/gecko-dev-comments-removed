@@ -343,18 +343,34 @@ namespace internal {
 
 
 
-inline int ArgStrLen(const wchar_t* s) {
-  int backslashes = 0;
-  int i = wcslen(s);
+
+
+
+
+
+
+
+inline size_t CopyArgImpl_(wchar_t* d, const wchar_t* s) {
+  size_t len = 0;
+
+  bool const actuallyCopy = d != nullptr;
+  auto const appendChar = [&](wchar_t c) {
+    if (actuallyCopy) {
+      *d++ = c;
+    }
+    len++;
+  };
+
   bool hasDoubleQuote = wcschr(s, L'"') != nullptr;
   
   bool addDoubleQuotes = wcspbrk(s, kCommandLineDelimiter) != nullptr;
 
   if (addDoubleQuotes) {
-    i += 2;  
+    appendChar('"');
   }
 
   if (hasDoubleQuote) {
+    size_t backslashes = 0;
     while (*s) {
       if (*s == '\\') {
         ++backslashes;
@@ -362,18 +378,39 @@ inline int ArgStrLen(const wchar_t* s) {
         if (*s == '"') {
           
           
-          i += backslashes + 1;
+          for (size_t i = 0; i <= backslashes; ++i) {
+            appendChar('\\');
+          }
         }
 
         backslashes = 0;
       }
 
+      appendChar(*s);
       ++s;
     }
+  } else {
+    
+    auto const src_len = wcslen(s);
+    if (actuallyCopy) {
+      ::wcscpy(d, s);
+      d += src_len;
+    }
+    len += src_len;
   }
 
-  return i;
+  if (addDoubleQuotes) {
+    appendChar('"');
+  }
+
+  return len;
 }
+
+
+
+
+
+inline size_t ArgStrLen(const wchar_t* s) { return CopyArgImpl_(nullptr, s); }
 
 
 
@@ -385,49 +422,7 @@ inline int ArgStrLen(const wchar_t* s) {
 
 
 inline wchar_t* ArgToString(wchar_t* d, const wchar_t* s) {
-  int backslashes = 0;
-  bool hasDoubleQuote = wcschr(s, L'"') != nullptr;
-  
-  bool addDoubleQuotes = wcspbrk(s, kCommandLineDelimiter) != nullptr;
-
-  if (addDoubleQuotes) {
-    *d = '"';  
-    ++d;
-  }
-
-  if (hasDoubleQuote) {
-    int i;
-    while (*s) {
-      if (*s == '\\') {
-        ++backslashes;
-      } else {
-        if (*s == '"') {
-          
-          
-          for (i = 0; i <= backslashes; ++i) {
-            *d = '\\';
-            ++d;
-          }
-        }
-
-        backslashes = 0;
-      }
-
-      *d = *s;
-      ++d;
-      ++s;
-    }
-  } else {
-    wcscpy(d, s);
-    d += wcslen(s);
-  }
-
-  if (addDoubleQuotes) {
-    *d = '"';  
-    ++d;
-  }
-
-  return d;
+  return d + CopyArgImpl_(d, s);
 }
 
 }  
@@ -445,7 +440,7 @@ inline UniquePtr<wchar_t[]> MakeCommandLine(
     int argc, const wchar_t* const* argv, int aArgcExtra = 0,
     const wchar_t* const* aArgvExtra = nullptr) {
   int i;
-  int len = 0;
+  size_t len = 0;
 
   
   
