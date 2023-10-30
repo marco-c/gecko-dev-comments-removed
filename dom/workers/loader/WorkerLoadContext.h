@@ -98,7 +98,8 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   };
 
   WorkerLoadContext(Kind aKind, const Maybe<ClientInfo>& aClientInfo,
-                    workerinternals::loader::WorkerScriptLoader* aScriptLoader);
+                    workerinternals::loader::WorkerScriptLoader* aScriptLoader,
+                    bool aOnlyExistingCachedResourcesAllowed);
 
   
   bool IsTopLevel() {
@@ -162,6 +163,11 @@ class WorkerLoadContext : public JS::loader::LoadContextBase {
   };
 
   CacheStatus mCacheStatus = Uncached;
+
+  
+  
+  
+  bool mOnlyExistingCachedResourcesAllowed = false;
 
   bool IsAwaitingPromise() const { return bool(mCachePromise); }
 };

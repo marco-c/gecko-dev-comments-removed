@@ -237,13 +237,14 @@ void CacheCreator::DeleteCache(nsresult aReason) {
 CacheLoadHandler::CacheLoadHandler(ThreadSafeWorkerRef* aWorkerRef,
                                    ThreadSafeRequestHandle* aRequestHandle,
                                    bool aIsWorkerScript,
+                                   bool aOnlyExistingCachedResourcesAllowed,
                                    WorkerScriptLoader* aLoader)
     : mRequestHandle(aRequestHandle),
       mLoader(aLoader),
       mWorkerRef(aWorkerRef),
       mIsWorkerScript(aIsWorkerScript),
       mFailed(false),
-      mState(aWorkerRef->Private()->GetServiceWorkerDescriptor().State()) {
+      mOnlyExistingCachedResourcesAllowed(aOnlyExistingCachedResourcesAllowed) {
   MOZ_ASSERT(aWorkerRef);
   MOZ_ASSERT(aWorkerRef->Private()->IsServiceWorker());
   mMainThreadEventTarget = aWorkerRef->Private()->MainThreadEventTarget();
@@ -373,9 +374,7 @@ void CacheLoadHandler::ResolvedCallback(JSContext* aCx,
     
     
     
-    if (NS_WARN_IF(mIsWorkerScript ||
-                   (mState != ServiceWorkerState::Parsed &&
-                    mState != ServiceWorkerState::Installing))) {
+    if (NS_WARN_IF(mIsWorkerScript || mOnlyExistingCachedResourcesAllowed)) {
       Fail(NS_ERROR_DOM_INVALID_STATE_ERR);
       return;
     }

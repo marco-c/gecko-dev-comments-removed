@@ -50,9 +50,10 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateStaticImport(
   
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
 
-  RefPtr<WorkerLoadContext> loadContext =
-      new WorkerLoadContext(WorkerLoadContext::Kind::StaticImport, clientInfo,
-                            aParent->GetWorkerLoadContext()->mScriptLoader);
+  RefPtr<WorkerLoadContext> loadContext = new WorkerLoadContext(
+      WorkerLoadContext::Kind::StaticImport, clientInfo,
+      aParent->GetWorkerLoadContext()->mScriptLoader,
+      aParent->GetWorkerLoadContext()->mOnlyExistingCachedResourcesAllowed);
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(
       aURI, aParent->ReferrerPolicy(), aParent->mFetchOptions, SRIMetadata(),
       aParent->mURI, loadContext, false, 
@@ -91,6 +92,8 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
   }
 
   
+  
+  
   if (workerPrivate->IsServiceWorker()) {
     return nullptr;
   }
@@ -123,9 +126,16 @@ already_AddRefed<ModuleLoadRequest> WorkerModuleLoader::CreateDynamicImport(
 
   Maybe<ClientInfo> clientInfo = GetGlobalObject()->GetClientInfo();
 
-  RefPtr<WorkerLoadContext> context =
-      new WorkerLoadContext(WorkerLoadContext::Kind::DynamicImport, clientInfo,
-                            GetCurrentScriptLoader());
+  RefPtr<WorkerLoadContext> context = new WorkerLoadContext(
+      WorkerLoadContext::Kind::DynamicImport, clientInfo,
+      GetCurrentScriptLoader(),
+      
+      
+      
+      
+      
+      
+      true);
 
   ReferrerPolicy referrerPolicy = workerPrivate->GetReferrerPolicy();
   RefPtr<ModuleLoadRequest> request = new ModuleLoadRequest(

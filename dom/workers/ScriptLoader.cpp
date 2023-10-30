@@ -616,8 +616,22 @@ already_AddRefed<ScriptLoadRequest> WorkerScriptLoader::CreateScriptLoadRequest(
 
   Maybe<ClientInfo> clientInfo = GetGlobal()->GetClientInfo();
 
-  RefPtr<WorkerLoadContext> loadContext =
-      new WorkerLoadContext(kind, clientInfo, this);
+  
+  
+  bool onlyExistingCachedResourcesAllowed = false;
+  if (mWorkerRef->Private()->IsServiceWorker()) {
+    
+    
+    
+    
+    
+    
+    onlyExistingCachedResourcesAllowed =
+        mWorkerRef->Private()->GetServiceWorkerDescriptor().State() >
+        ServiceWorkerState::Installing;
+  }
+  RefPtr<WorkerLoadContext> loadContext = new WorkerLoadContext(
+      kind, clientInfo, this, onlyExistingCachedResourcesAllowed);
 
   
   ReferrerPolicy referrerPolicy = mWorkerRef->Private()->GetReferrerPolicy();
@@ -1429,7 +1443,8 @@ nsresult ScriptLoaderRunnable::Run() {
     handle->mRunnable = this;
     WorkerLoadContext* loadContext = handle->GetContext();
     mCacheCreator->AddLoader(MakeNotNull<RefPtr<CacheLoadHandler>>(
-        mWorkerRef, handle, loadContext->IsTopLevel(), mScriptLoader));
+        mWorkerRef, handle, loadContext->IsTopLevel(),
+        loadContext->mOnlyExistingCachedResourcesAllowed, mScriptLoader));
   }
 
   
