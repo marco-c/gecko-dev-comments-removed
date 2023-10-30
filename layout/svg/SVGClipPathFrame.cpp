@@ -143,6 +143,9 @@ void SVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
     return;  
   }
+  if (!IsValid()) {
+    return;
+  }
 
   DrawTarget* maskDT = aMaskContext.GetDrawTarget();
   MOZ_ASSERT(maskDT->GetFormat() == SurfaceFormat::A8);
@@ -250,6 +253,9 @@ bool SVGClipPathFrame::PointIsInsideClipPath(nsIFrame* aClippedFrame,
   if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
     return false;  
   }
+  if (!IsValid()) {
+    return false;
+  }
 
   gfxMatrix matrix = GetClipPathTransform(aClippedFrame);
   if (!matrix.Invert()) {
@@ -329,17 +335,6 @@ bool SVGClipPathFrame::IsTrivial(ISVGDisplayableFrame** aSingleChild) {
 }
 
 bool SVGClipPathFrame::IsValid() {
-  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
-
-  
-  
-  
-  AutoReferenceChainGuard refChainGuard(this, &mIsBeingProcessed,
-                                        &sRefChainLengthCounter);
-  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
-    return false;  
-  }
-
   if (SVGObserverUtils::GetAndObserveClipPath(this, nullptr) ==
       SVGObserverUtils::eHasRefsSomeInvalid) {
     return false;

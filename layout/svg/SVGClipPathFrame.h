@@ -111,8 +111,6 @@ class SVGClipPathFrame final : public SVGContainerFrame {
   
   bool IsTrivial(ISVGDisplayableFrame** aSingleChild = nullptr);
 
-  bool IsValid();
-
   
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
                             int32_t aModType) override;
@@ -151,6 +149,8 @@ class SVGClipPathFrame final : public SVGContainerFrame {
 
   void PaintChildren(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
                      const gfxMatrix& aMatrix);
+
+  bool IsValid();
 
   
   

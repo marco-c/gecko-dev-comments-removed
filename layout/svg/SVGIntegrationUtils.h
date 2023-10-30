@@ -63,17 +63,6 @@ class SVGIntegrationUtils final {
   
 
 
-  static bool UsingMaskOrClipPathForFrame(const nsIFrame* aFrame);
-
-  
-
-
-
-  static bool UsingSimpleClipPathForFrame(const nsIFrame* aFrame);
-
-  
-
-
 
   static nsSize GetContinuationUnionSize(nsIFrame* aNonSVGFrame);
 

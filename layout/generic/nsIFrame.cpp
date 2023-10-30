@@ -2939,12 +2939,10 @@ static void WrapSeparatorTransform(nsDisplayListBuilder* aBuilder,
 
 
 
-static Maybe<nsRect> ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder,
-                                            nsIFrame* aMaskedFrame) {
+static Maybe<nsRect> ComputeClipForMaskItem(
+    nsDisplayListBuilder* aBuilder, nsIFrame* aMaskedFrame,
+    const SVGUtils::MaskUsage& aMaskUsage) {
   const nsStyleSVGReset* svgReset = aMaskedFrame->StyleSVGReset();
-
-  SVGUtils::MaskUsage maskUsage =
-      SVGUtils::DetermineMaskUsage(aMaskedFrame, false);
 
   nsPoint offsetToUserSpace =
       nsLayoutUtils::ComputeOffsetToUserSpace(aBuilder, aMaskedFrame);
@@ -2958,14 +2956,14 @@ static Maybe<nsRect> ComputeClipForMaskItem(nsDisplayListBuilder* aBuilder,
   aBuilder->FindReferenceFrameFor(aMaskedFrame, &toReferenceFrame);
 
   Maybe<gfxRect> combinedClip;
-  if (maskUsage.ShouldApplyBasicShapeOrPath()) {
+  if (aMaskUsage.ShouldApplyBasicShapeOrPath()) {
     Maybe<Rect> result =
         CSSClipPathInstance::GetBoundingRectForBasicShapeOrPathClip(
             aMaskedFrame, svgReset->mClipPath);
     if (result) {
       combinedClip = Some(ThebesRect(*result));
     }
-  } else if (maskUsage.ShouldApplyClipPath()) {
+  } else if (aMaskUsage.ShouldApplyClipPath()) {
     gfxRect result = SVGUtils::GetBBox(
         aMaskedFrame,
         SVGUtils::eBBoxIncludeClipped | SVGUtils::eBBoxIncludeFill |
@@ -3285,7 +3283,8 @@ void nsIFrame::BuildDisplayListForStackingContext(
   }
 
   bool usingFilter = effects->HasFilters() && !style.IsRootElementStyle();
-  bool usingMask = SVGIntegrationUtils::UsingMaskOrClipPathForFrame(this);
+  SVGUtils::MaskUsage maskUsage = SVGUtils::DetermineMaskUsage(this, false);
+  bool usingMask = maskUsage.UsingMaskOrClipPath();
   bool usingSVGEffects = usingFilter || usingMask;
 
   nsRect visibleRectOutsideSVGEffects = visibleRect;
@@ -3419,7 +3418,7 @@ void nsIFrame::BuildDisplayListForStackingContext(
     
     
     if (usingMask && !usingFilter) {
-      clipForMask = ComputeClipForMaskItem(aBuilder, this);
+      clipForMask = ComputeClipForMaskItem(aBuilder, this, maskUsage);
       if (clipForMask) {
         aBuilder->IntersectDirtyRect(*clipForMask);
         aBuilder->IntersectVisibleRect(*clipForMask);
@@ -11146,11 +11145,12 @@ CompositorHitTestInfo nsIFrame::GetCompositorHitTestInfo(
 
   
   result = CompositorHitTestFlags::eVisibleToHitTest;
-  if (SVGIntegrationUtils::UsingMaskOrClipPathForFrame(this)) {
+  SVGUtils::MaskUsage maskUsage = SVGUtils::DetermineMaskUsage(this, false);
+  if (maskUsage.UsingMaskOrClipPath()) {
     
     
     
-    if (!SVGIntegrationUtils::UsingSimpleClipPathForFrame(this)) {
+    if (!maskUsage.IsSimpleClipShape()) {
       result += CompositorHitTestFlags::eIrregularArea;
     }
   }
