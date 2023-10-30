@@ -1348,10 +1348,11 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
 
   
   
+  WritingMode wm = aReflowInput.GetWritingMode();
   if (aReflowInput.mFlags.mTableIsSplittable &&
-      NS_UNCONSTRAINEDSIZE != aReflowInput.AvailableHeight() &&
+      aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
       (aStatus.IsIncomplete() || splitDueToPageBreak ||
-       aDesiredSize.Height() > aReflowInput.AvailableHeight())) {
+       aDesiredSize.BSize(wm) > aReflowInput.AvailableBSize())) {
     
     auto& mutableRIFlags = const_cast<ReflowInput::Flags&>(aReflowInput.mFlags);
     const bool savedSpecialBSizeReflow = mutableRIFlags.mSpecialBSizeReflow;
@@ -1375,7 +1376,6 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
 
   
   
-  WritingMode wm = aReflowInput.GetWritingMode();
   aDesiredSize.ISize(wm) = aReflowInput.AvailableISize();
 
   aDesiredSize.UnionOverflowAreasWithDesiredBounds();
@@ -1383,7 +1383,7 @@ void nsTableRowGroupFrame::Reflow(nsPresContext* aPresContext,
   
   
   if (!GetParent()->HasAnyStateBits(NS_FRAME_FIRST_REFLOW) &&
-      nsSize(aDesiredSize.Width(), aDesiredSize.Height()) != mRect.Size()) {
+      aDesiredSize.Size(wm) != GetLogicalSize(wm)) {
     InvalidateFrame();
   }
 
