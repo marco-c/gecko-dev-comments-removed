@@ -7,46 +7,24 @@
 #ifndef DOM_INDEXEDDB_INDEXEDDBCIPHERKEYMANAGER_H_
 #define DOM_INDEXEDDB_INDEXEDDBCIPHERKEYMANAGER_H_
 
-#include "FlippedOnce.h"
-#include "mozilla/DataMutex.h"
+#include "mozilla/dom/quota/CipherKeyManager.h"
 #include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
-#include "nsTHashMap.h"
 
-namespace mozilla::dom::indexedDB {
+namespace mozilla::dom {
 
-using IndexedDBCipherStrategy = quota::IPCStreamCipherStrategy;
+
+
+
+
+
+
+
+
+
+using IndexedDBCipherStrategy = mozilla::dom::quota::IPCStreamCipherStrategy;
+using IndexedDBCipherKeyManager =
+    mozilla::dom::quota::CipherKeyManager<IndexedDBCipherStrategy>;
 using CipherKey = IndexedDBCipherStrategy::KeyType;
-
-class IndexedDBCipherKeyManager {
-  
-  
-  
-  
-  
-  
-  
-  
-
- public:
-  IndexedDBCipherKeyManager() : mCipherKeys("IndexedDBCipherKeyManager"){};
-
-  Maybe<CipherKey> Get(const nsACString& aKeyId = "default"_ns);
-
-  CipherKey Ensure(const nsACString& aKeyId = "default"_ns);
-
-  bool Invalidated();
-
-  
-  
-  void Invalidate();
-
- private:
-  
-  
-  DataMutex<nsTHashMap<nsCStringHashKey, CipherKey>> mCipherKeys;
-
-  FlippedOnce<false> mInvalidated;
-};
 
 }  
 

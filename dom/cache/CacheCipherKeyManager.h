@@ -1,0 +1,21 @@
+
+
+
+
+
+
+#ifndef DOM_CACHE_CACHECIPHERKEYMANAGER_H_
+#define DOM_CACHE_CACHECIPHERKEYMANAGER_H_
+
+#include "mozilla/dom/quota/CipherKeyManager.h"
+#include "mozilla/dom/quota/IPCStreamCipherStrategy.h"
+
+namespace mozilla::dom::cache {
+
+using CipherStrategy = mozilla::dom::quota::IPCStreamCipherStrategy;
+using CipherKeyManager = mozilla::dom::quota::CipherKeyManager<CipherStrategy>;
+using CipherKey = CipherStrategy::KeyType;
+
+}  
+
+#endif  

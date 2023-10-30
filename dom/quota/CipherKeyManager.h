@@ -1,0 +1,97 @@
+
+
+
+
+
+
+#ifndef DOM_QUOTA_CIPHERKEYMANAGER_H_
+#define DOM_QUOTA_CIPHERKEYMANAGER_H_
+
+#include "mozilla/DataMutex.h"
+#include "mozilla/dom/FlippedOnce.h"
+#include "mozilla/dom/quota/QuotaCommon.h"
+#include "nsTHashMap.h"
+
+namespace mozilla::dom::quota {
+
+using mozilla::FlippedOnce;
+
+template <typename CipherStrategy>
+class CipherKeyManager {
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  
+
+  
+  
+  
+  
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CipherKeyManager)
+
+  using CipherKey = typename CipherStrategy::KeyType;
+
+ public:
+  explicit CipherKeyManager(const char* aName) : mCipherKeys(aName){};
+
+  Maybe<CipherKey> Get(const nsACString& aKeyId = "default"_ns) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    MOZ_ASSERT(!mInvalidated);
+
+    return lockedCipherKeys->MaybeGet(aKeyId);
+  }
+
+  CipherKey Ensure(const nsACString& aKeyId = "default"_ns) {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    MOZ_ASSERT(!mInvalidated);
+
+    return lockedCipherKeys->LookupOrInsertWith(aKeyId, [] {
+      
+      
+
+      QM_TRY_RETURN(CipherStrategy::GenerateKey(), [](const auto&) {
+        
+        MOZ_RELEASE_ASSERT(false);
+
+        return CipherKey{};
+      });
+    });
+  }
+
+  bool Invalidated() {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    return mInvalidated;
+  }
+
+  
+  
+  void Invalidate() {
+    auto lockedCipherKeys = mCipherKeys.Lock();
+
+    mInvalidated.Flip();
+
+    lockedCipherKeys->Clear();
+  }
+
+ private:
+  ~CipherKeyManager() = default;
+  
+  
+  DataMutex<nsTHashMap<nsCStringHashKey, CipherKey>> mCipherKeys;
+
+  FlippedOnce<false> mInvalidated;
+};
+
+}  
+
+#endif  
