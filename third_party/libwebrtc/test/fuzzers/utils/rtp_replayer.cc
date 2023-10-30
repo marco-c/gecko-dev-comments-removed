@@ -187,6 +187,8 @@ void RtpReplayer::ReplayPackets(
       RTC_LOG(LS_ERROR) << "Packet error, corrupt packets or incorrect setup?";
       break;
     }
+    
+    received_packet.set_payload_type_frequency(kVideoPayloadTypeFrequency);
 
     call->Receiver()->DeliverRtpPacket(
         MediaType::VIDEO, std::move(received_packet),
