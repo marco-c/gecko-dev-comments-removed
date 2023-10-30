@@ -138,6 +138,10 @@ JSObject* SimpleGlobalObject::Create(GlobalType globalType,
     RefPtr<SimpleGlobalObject> globalObject =
         new SimpleGlobalObject(global, globalType);
 
+    JS::SetRealmReduceTimerPrecisionCallerType(
+        js::GetNonCCWObjectRealm(global),
+        RTPCallerTypeToToken(globalObject->GetRTPCallerType()));
+
     
     JS::SetObjectISupports(global, globalObject.forget().take());
 

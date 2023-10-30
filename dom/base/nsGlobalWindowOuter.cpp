@@ -2414,6 +2414,8 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
 
   MOZ_RELEASE_ASSERT(newInnerWindow->mDoc == aDocument);
 
+  newInnerWindow->RefreshReduceTimerPrecisionCallerType();
+
   if (!aState) {
     if (reUseInnerWindow) {
       
@@ -2488,7 +2490,7 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
         &nsGlobalWindowInner::FireOnNewGlobalObject));
   }
 
-  if (newInnerWindow && !newInnerWindow->mHasNotifiedGlobalCreated && mDoc) {
+  if (!newInnerWindow->mHasNotifiedGlobalCreated && mDoc) {
     
     
     
