@@ -33,6 +33,16 @@ namespace mozilla::dom {
 
 
 
+void UseEntryScriptProfiling();
+void UnuseEntryScriptProfiling();
+
+
+
+
+
+
+
+
 
 class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
  public:
@@ -58,6 +68,37 @@ class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
 
  private:
   
+  class DocshellEntryMonitor final : public JS::dbg::AutoEntryMonitor {
+   public:
+    DocshellEntryMonitor(JSContext* aCx, const char* aReason);
+
+    
+    
+    
+    
+    
+    void Entry(JSContext* aCx, JSFunction* aFunction,
+               JS::Handle<JS::Value> aAsyncStack,
+               const char* aAsyncCause) override {
+      Entry(aCx, aFunction, nullptr, aAsyncStack, aAsyncCause);
+    }
+
+    void Entry(JSContext* aCx, JSScript* aScript,
+               JS::Handle<JS::Value> aAsyncStack,
+               const char* aAsyncCause) override {
+      Entry(aCx, nullptr, aScript, aAsyncStack, aAsyncCause);
+    }
+
+    void Exit(JSContext* aCx) override;
+
+   private:
+    void Entry(JSContext* aCx, JSFunction* aFunction, JSScript* aScript,
+               JS::Handle<JS::Value> aAsyncStack, const char* aAsyncCause);
+
+    const char* mReason;
+  };
+
+  
   
   
   
@@ -67,6 +108,7 @@ class MOZ_STACK_CLASS AutoEntryScript : public AutoJSAPI {
   nsIPrincipal* MOZ_NON_OWNING_REF mWebIDLCallerPrincipal;
   friend nsIPrincipal* GetWebIDLCallerPrincipal();
 
+  Maybe<DocshellEntryMonitor> mDocShellEntryMonitor;
   Maybe<xpc::AutoScriptActivity> mScriptActivity;
   JS::AutoHideScriptedCaller mCallerOverride;
   AutoProfilerLabel mAutoProfilerLabel;

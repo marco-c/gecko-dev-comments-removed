@@ -1,0 +1,31 @@
+
+
+
+
+
+
+#ifndef mozilla_CompositeTimelineMarker_h_
+#define mozilla_CompositeTimelineMarker_h_
+
+#include "TimelineMarker.h"
+#include "mozilla/dom/ProfileTimelineMarkerBinding.h"
+
+namespace mozilla {
+
+class CompositeTimelineMarker : public TimelineMarker {
+ public:
+  CompositeTimelineMarker(const TimeStamp& aTime,
+                          MarkerTracingType aTracingType)
+      : TimelineMarker("Composite", aTime, aTracingType) {
+    
+    
+    
+    
+    
+    SetOffMainThread(true);
+  }
+};
+
+}  
+
+#endif  

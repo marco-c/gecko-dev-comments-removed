@@ -8,6 +8,7 @@
 #include "mozilla/ServoStyleSetInlines.h"
 
 #include "gfxPlatformFontList.h"
+#include "mozilla/AutoRestyleTimelineMarker.h"
 #include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/AttributeStyles.h"
 #include "mozilla/EffectCompositor.h"
@@ -102,11 +103,16 @@ class MOZ_RAII AutoSetInServoTraversal {
 class MOZ_RAII AutoPrepareTraversal {
  public:
   explicit AutoPrepareTraversal(ServoStyleSet* aSet)
-      : mSetInServoTraversal(aSet) {
+      
+      
+      
+      : mTimelineMarker(aSet->mDocument->GetDocShell(), false),
+        mSetInServoTraversal(aSet) {
     MOZ_ASSERT(!aSet->StylistNeedsUpdate());
   }
 
  private:
+  AutoRestyleTimelineMarker mTimelineMarker;
   AutoSetInServoTraversal mSetInServoTraversal;
 };
 

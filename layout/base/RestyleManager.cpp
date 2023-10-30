@@ -8,6 +8,8 @@
 
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/Assertions.h"
+#include "mozilla/AutoRestyleTimelineMarker.h"
+#include "mozilla/AutoTimelineMarker.h"
 #include "mozilla/ComputedStyle.h"
 #include "mozilla/ComputedStyleInlines.h"
 #include "mozilla/DocumentStyleRootIterator.h"
@@ -2419,6 +2421,8 @@ void RestyleManager::PostRestyleEventForAnimations(Element* aElement,
 
   mPresContext->TriggeredAnimationRestyle();
 
+  AutoRestyleTimelineMarker marker(mPresContext->GetDocShell(),
+                                   true );
   Servo_NoteExplicitHints(elementToRestyle, aRestyleHint, nsChangeHint(0));
 }
 
@@ -3209,6 +3213,8 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     nsTArray<RefPtr<Element>> anchorsToSuppress;
 
     {
+      
+      AutoRestyleTimelineMarker marker(presContext->GetDocShell(), false);
       DocumentStyleRootIterator iter(doc->GetServoRestyleRoot());
       while (Element* root = iter.GetNextStyleRoot()) {
         nsTArray<nsIFrame*> wrappersToRestyle;
@@ -3239,6 +3245,8 @@ void RestyleManager::DoProcessPendingRestyles(ServoTraversalFlags aFlags) {
     
     
     {
+      AutoTimelineMarker marker(presContext->GetDocShell(),
+                                "StylesApplyChanges");
       ReentrantChangeList newChanges;
       mReentrantChanges = &newChanges;
       while (!currentChanges.IsEmpty()) {

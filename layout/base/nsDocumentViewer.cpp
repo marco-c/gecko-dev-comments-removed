@@ -96,6 +96,8 @@
 #include "nsIXULRuntime.h"
 #include "nsSandboxFlags.h"
 
+#include "mozilla/DocLoadingTimelineMarker.h"
+
 
 
 
@@ -1019,6 +1021,12 @@ nsDocumentViewer::LoadComplete(nsresult aStatus) {
                                 ? "chrome-document-loaded"
                                 : "content-document-loaded",
                             nullptr);
+      }
+
+      
+      if (TimelineConsumers::HasConsumer(docShell)) {
+        TimelineConsumers::AddMarkerForDocShell(
+            docShell, MakeUnique<DocLoadingTimelineMarker>("document::Load"));
       }
 
       nsPIDOMWindowInner* innerWindow = window->GetCurrentInnerWindow();
