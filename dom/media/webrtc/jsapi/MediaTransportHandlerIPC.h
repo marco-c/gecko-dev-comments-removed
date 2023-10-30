@@ -78,9 +78,9 @@ class MediaTransportHandlerIPC final : public MediaTransportHandler {
  private:
   friend class MediaTransportChild;
   void Destroy() override;
+  virtual ~MediaTransportHandlerIPC();
 
-  
-  dom::PMediaTransportChild* mChild = nullptr;
+  RefPtr<MediaTransportChild> mChild;
 
   
   
