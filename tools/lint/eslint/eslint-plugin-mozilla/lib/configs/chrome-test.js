@@ -57,5 +57,9 @@ module.exports = {
     
     
     "mozilla/no-redeclare-with-import-autofix": "off",
+    
+    
+    "no-unsanitized/method": "off",
+    "no-unsanitized/property": "off",
   },
 };

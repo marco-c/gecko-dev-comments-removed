@@ -58,5 +58,9 @@ module.exports = {
     
     "mozilla/use-chromeutils-generateqi": "off",
     "no-shadow": "error",
+    
+    
+    "no-unsanitized/method": "off",
+    "no-unsanitized/property": "off",
   },
 };

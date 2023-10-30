@@ -46,5 +46,9 @@ module.exports = {
     "mozilla/no-arbitrary-setTimeout": "error",
     "mozilla/no-useless-run-test": "error",
     "no-shadow": "error",
+    
+    
+    "no-unsanitized/method": "off",
+    "no-unsanitized/property": "off",
   },
 };

@@ -87,5 +87,9 @@ module.exports = {
       "error",
       { errorForNonImports: false },
     ],
+    
+    
+    "no-unsanitized/method": "off",
+    "no-unsanitized/property": "off",
   },
 };
