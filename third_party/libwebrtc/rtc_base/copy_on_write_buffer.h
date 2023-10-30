@@ -36,7 +36,7 @@ class RTC_EXPORT CopyOnWriteBuffer {
   
   CopyOnWriteBuffer(const CopyOnWriteBuffer& buf);
   
-  CopyOnWriteBuffer(CopyOnWriteBuffer&& buf);
+  CopyOnWriteBuffer(CopyOnWriteBuffer&& buf) noexcept;
 
   
   explicit CopyOnWriteBuffer(absl::string_view s);
