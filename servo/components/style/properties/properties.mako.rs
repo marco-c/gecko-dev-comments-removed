@@ -4013,6 +4013,12 @@ impl<'a> StyleBuilder<'a> {
         &self.custom_properties
     }
 
+
+    
+    pub fn inherited_custom_properties(&self) -> &crate::custom_properties::ComputedCustomProperties {
+        &self.inherited_style.custom_properties
+    }
+
     
     
     
