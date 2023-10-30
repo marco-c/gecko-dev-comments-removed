@@ -4817,8 +4817,15 @@ void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
 void MacroAssembler::wasmBoundsCheck32(Condition cond, Register index,
                                        Address boundsCheckLimit, Label* ok) {
   ScratchRegisterScope scratch(*this);
-  ma_ldr(DTRAddr(boundsCheckLimit.base, DtrOffImm(boundsCheckLimit.offset)),
-         scratch);
+  
+  
+  
+  
+  
+  
+  ma_dataTransferN(IsLoad, 32, false,
+                   boundsCheckLimit.base, Imm32(boundsCheckLimit.offset),
+                   scratch, scratch);
   as_cmp(index, O2Reg(scratch));
   as_b(ok, cond);
   if (JitOptions.spectreIndexMasking) {
