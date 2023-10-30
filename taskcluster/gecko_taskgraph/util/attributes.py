@@ -18,6 +18,7 @@ RELEASE_PROJECTS = {
     "mozilla-esr115",
     "comm-central",
     "comm-beta",
+    "comm-release",
     "comm-esr115",
     
     
