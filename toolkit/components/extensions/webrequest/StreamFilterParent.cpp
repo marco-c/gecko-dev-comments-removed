@@ -233,6 +233,29 @@ StreamFilterParent::CheckListenerChain() {
   return NS_ERROR_FAILURE;
 }
 
+NS_IMETHODIMP
+StreamFilterParent::OnDataFinished(nsresult aStatus) {
+  AssertIsIOThread();
+
+  
+  
+  
+  
+  
+  if (!mDisconnected || !mBufferedData.isEmpty() || mSentStop) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIThreadRetargetableStreamListener> listener =
+      do_QueryInterface(mOrigListener);
+
+  if (listener) {
+    return listener->OnDataFinished(aStatus);
+  }
+
+  return NS_OK;
+}
+
 
 
 

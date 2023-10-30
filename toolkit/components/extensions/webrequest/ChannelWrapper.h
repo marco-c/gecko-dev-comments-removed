@@ -326,8 +326,7 @@ class ChannelWrapper final : public DOMEventTargetHelper,
   
   nsCString mSuspendedMarkerText = VoidCString();
 
-  class RequestListener final : public nsIStreamListener,
-                                public nsIMultiPartChannelListener,
+  class RequestListener final : public nsIMultiPartChannelListener,
                                 public nsIThreadRetargetableStreamListener {
    public:
     NS_DECL_THREADSAFE_ISUPPORTS
