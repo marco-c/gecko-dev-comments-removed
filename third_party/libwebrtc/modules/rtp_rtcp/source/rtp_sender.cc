@@ -514,15 +514,8 @@ size_t RTPSender::ExpectedPerPacketOverhead() const {
 
 std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   MutexLock lock(&send_mutex_);
-  
-  
-  
-  
-  
-  
-  static constexpr int kExtraCapacity = 16;
-  auto packet = std::make_unique<RtpPacketToSend>(
-      &rtp_header_extension_map_, max_packet_size_ + kExtraCapacity);
+  auto packet = std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_,
+                                                  max_packet_size_);
   packet->SetSsrc(ssrc_);
   packet->SetCsrcs(csrcs_);
 
@@ -729,8 +722,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
   uint8_t* rtx_payload =
       rtx_packet->AllocatePayload(packet.payload_size() + kRtxHeaderSize);
-  if (rtx_payload == nullptr)
-    return nullptr;
+  RTC_CHECK(rtx_payload);
 
   
   ByteWriter<uint16_t>::WriteBigEndian(rtx_payload, packet.SequenceNumber());

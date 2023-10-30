@@ -154,7 +154,10 @@ class RtpPacket {
   rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
 
   
+  
+  
   uint8_t* SetPayloadSize(size_t size_bytes);
+
   
   uint8_t* AllocatePayload(size_t size_bytes);
 
