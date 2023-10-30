@@ -8,6 +8,7 @@
 
 #include <windows.h>
 
+#include "mozilla/NativeNt.h"
 #include "mozilla/WindowsVersion.h"
 #include "nsWindowsDllInterceptor.h"
 
@@ -53,12 +54,21 @@ uintptr_t WINAPI patched_TF_Notify(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
 bool WindowsMsctfInitialization() {
   
-  if (!::GetModuleHandleW(L"icsak.dll")) {
+  HMODULE icsak = ::GetModuleHandleW(L"icsak.dll");
+  if (!icsak) {
     return true;
   }
 
   
   if (!IsWin1122H2OrLater()) {
+    return true;
+  }
+
+  
+  nt::PEHeaders icsakHeaders{icsak};
+  uint64_t icsakVersion{};
+  if (!icsakHeaders || !icsakHeaders.GetVersionInfo(icsakVersion) ||
+      icsakVersion > 0x0001000501890885) {
     return true;
   }
 
