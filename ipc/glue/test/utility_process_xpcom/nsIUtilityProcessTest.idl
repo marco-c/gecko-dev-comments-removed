@@ -25,6 +25,18 @@ interface nsIUtilityProcessTest : nsISupports
 
 
 
+
+
+
+
+  [implicit_jscontext]
+  Promise untilChildProcessDead(in uint32_t pid);
+
+  
+
+
+
+
   void noteIntentionalCrash(in unsigned long pid);
 
   

@@ -77,8 +77,8 @@ class HandleWatcher {
   HandleWatcher(HandleWatcher const&) = delete;
   HandleWatcher& operator=(HandleWatcher const&) = delete;
 
-  HandleWatcher(HandleWatcher&&) = default;
-  HandleWatcher& operator=(HandleWatcher&&) = default;
+  HandleWatcher(HandleWatcher&&) noexcept;
+  HandleWatcher& operator=(HandleWatcher&&) noexcept;
 
   
   
