@@ -95,7 +95,7 @@ void NotificationController::Shutdown() {
   mDocument = nullptr;
   mPresShell = nullptr;
 
-  mTextHash.Clear();
+  mTextArray.Clear();
   mContentInsertions.Clear();
   mNotifications.Clear();
   mFocusEvent = nullptr;
@@ -465,7 +465,7 @@ bool NotificationController::IsUpdatePending() {
   return mPresShell->IsLayoutFlushObserver() ||
          mObservingState == eRefreshProcessingForUpdate || WaitingForParent() ||
          mContentInsertions.Count() != 0 || mNotifications.Length() != 0 ||
-         mTextHash.Count() != 0 ||
+         !mTextArray.IsEmpty() ||
          !mDocument->HasLoadState(DocAccessible::eTreeConstructed);
 }
 
@@ -736,7 +736,13 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   mDocument->ProcessPendingUpdates();
 
   
-  for (nsIContent* textNode : mTextHash) {
+  
+  
+  nsTHashSet<nsIContent*> textHash;
+  for (nsIContent* textNode : mTextArray) {
+    if (!textHash.EnsureInserted(textNode)) {
+      continue;  
+    }
     LocalAccessible* textAcc = mDocument->GetAccessible(textNode);
 
     
@@ -825,7 +831,8 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
       }
     }
   }
-  mTextHash.Clear();
+  textHash.Clear();
+  mTextArray.Clear();
 
   
   
@@ -1008,7 +1015,7 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
   
   
   if (mContentInsertions.Count() == 0 && mNotifications.IsEmpty() &&
-      !mFocusEvent && mEvents.IsEmpty() && mTextHash.Count() == 0 &&
+      !mFocusEvent && mEvents.IsEmpty() && mTextArray.IsEmpty() &&
       mHangingChildDocuments.IsEmpty() &&
       mDocument->HasLoadState(DocAccessible::eCompletelyLoaded) &&
       mPresShell->RemoveRefreshObserver(this, FlushType::Display)) {

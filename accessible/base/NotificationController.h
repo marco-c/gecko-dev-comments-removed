@@ -142,7 +142,7 @@ class NotificationController final : public EventQueue,
     MOZ_ASSERT(aTextNode->GetPrimaryFrame()->StyleVisibility()->IsVisible(),
                "A text node is not visible");
 
-    mTextHash.Insert(aTextNode);
+    mTextArray.AppendElement(aTextNode);
 
     ScheduleProcessing();
   }
@@ -341,7 +341,10 @@ class NotificationController final : public EventQueue,
   
 
 
-  nsTHashSet<nsCOMPtrHashKey<nsIContent>> mTextHash;
+
+
+
+  nsTArray<nsCOMPtr<nsIContent>> mTextArray;
 
   
 
