@@ -3,7 +3,7 @@
 
 
 
-#include "nsIThreadRetargetableStreamListener.idl"
+#include "nsIStreamListener.idl"
 
 interface nsIRequest;
 interface nsIIncrementalStreamLoader;
@@ -77,7 +77,7 @@ interface nsIIncrementalStreamLoaderObserver : nsISupports
 
 
 [scriptable, uuid(a023b060-ba23-431a-b449-2dd63e220554)]
-interface nsIIncrementalStreamLoader : nsIThreadRetargetableStreamListener
+interface nsIIncrementalStreamLoader : nsIStreamListener
 {
     
 

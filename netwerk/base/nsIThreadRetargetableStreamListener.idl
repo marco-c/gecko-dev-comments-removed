@@ -5,15 +5,15 @@
 
 
 #include "nsISupports.idl"
-#include "nsIStreamListener.idl"
 
 
 
 
 
 
-[scriptable, uuid(fb2304b8-f82f-4433-af68-d874a2ebbdc1)]
-interface nsIThreadRetargetableStreamListener : nsIStreamListener
+
+[uuid(fb2304b8-f82f-4433-af68-d874a2ebbdc1)]
+interface nsIThreadRetargetableStreamListener : nsISupports
 {
   
 
@@ -29,11 +29,4 @@ interface nsIThreadRetargetableStreamListener : nsIStreamListener
 
 
   void checkListenerChain();
-
-
-
-
-
-
-  void onDataFinished(in nsresult aStatusCode);
 };

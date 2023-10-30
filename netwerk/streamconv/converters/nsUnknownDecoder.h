@@ -22,7 +22,9 @@
     }                                                \
   }
 
-class nsUnknownDecoder : public nsIStreamConverter, public nsIContentSniffer {
+class nsUnknownDecoder : public nsIStreamConverter,
+                         public nsIContentSniffer,
+                         public nsIThreadRetargetableStreamListener {
  public:
   
   NS_DECL_ISUPPORTS
