@@ -8,6 +8,7 @@
 
 #include "mozilla/dom/AutoEntryScript.h"
 #include "mozilla/dom/JSActorService.h"
+#include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/PWindowGlobal.h"
 #include "mozilla/ipc/ProtocolUtils.h"
 #include "mozilla/AppShutdown.h"
@@ -188,6 +189,16 @@ void JSActorManager::ReceiveRawMessage(
   JS::Rooted<JS::Value> data(cx);
   if (aData) {
     aData->Read(cx, &data, error);
+    
+    
+    
+    
+    
+    
+    nsTArray<RefPtr<MessagePort>> ports = aData->TakeTransferredPorts();
+    
+    
+    (void)ports;
     if (error.Failed()) {
       CHILD_DIAGNOSTIC_ASSERT(CycleCollectedJSRuntime::Get()->OOMReported(),
                               "Should not receive non-decodable data");
