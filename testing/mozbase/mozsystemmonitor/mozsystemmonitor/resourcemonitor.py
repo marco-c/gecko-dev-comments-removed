@@ -972,10 +972,15 @@ class SystemResourceMonitor(object):
             
             
             markers["startTime"].append(round((start - start_time) * 1000, precision))
-            markers["endTime"].append(round((end - start_time) * 1000, precision))
+            if end is None:
+                markers["endTime"].append(None)
+                
+                markers["phase"].append(0)
+            else:
+                markers["endTime"].append(round((end - start_time) * 1000, precision))
+                
+                markers["phase"].append(1)
             markers["category"].append(0)
-            
-            markers["phase"].append(1)
             markers["name"].append(name_index)
             markers["data"].append(data)
             markers["length"] = markers["length"] + 1
@@ -1106,5 +1111,16 @@ class SystemResourceMonitor(object):
             if text:
                 markerData["text"] = text
             add_marker(get_string_index(name), start, end, markerData, 3)
+        if self.events:
+            event_string_index = get_string_index("Event")
+            for event_time, text in self.events:
+                if text:
+                    add_marker(
+                        event_string_index,
+                        event_time,
+                        None,
+                        {"type": "Text", "text": text},
+                        3,
+                    )
 
         return profile
