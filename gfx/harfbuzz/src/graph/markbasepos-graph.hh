@@ -217,7 +217,7 @@ struct MarkBasePosFormat1 : public OT::Layout::GPOS_impl::MarkBasePosFormat1_2<S
 
     const unsigned base_coverage_id = c.graph.index_for_offset (this_index, &baseCoverage);
     const unsigned base_size =
-        OT::Layout::GPOS_impl::PairPosFormat1_3<SmallTypes>::min_size +
+        OT::Layout::GPOS_impl::MarkBasePosFormat1_2<SmallTypes>::min_size +
         MarkArray::min_size +
         AnchorMatrix::min_size +
         c.graph.vertices_[base_coverage_id].table_size ();
