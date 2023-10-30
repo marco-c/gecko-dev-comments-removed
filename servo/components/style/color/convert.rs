@@ -143,8 +143,14 @@ pub fn rgb_to_hwb(from: &ColorComponents) -> ColorComponents {
 pub fn orthogonal_to_polar(from: &ColorComponents) -> ColorComponents {
     let ColorComponents(lightness, a, b) = *from;
 
-    let hue = normalize_hue(b.atan2(a).to_degrees());
     let chroma = (a * a + b * b).sqrt();
+
+    
+    let hue = if chroma.abs() < 1.0e-6 {
+        f32::NAN
+    } else {
+        normalize_hue(b.atan2(a).to_degrees())
+    };
 
     ColorComponents(lightness, chroma, hue)
 }
@@ -155,6 +161,11 @@ pub fn orthogonal_to_polar(from: &ColorComponents) -> ColorComponents {
 #[inline]
 pub fn polar_to_orthogonal(from: &ColorComponents) -> ColorComponents {
     let ColorComponents(lightness, chroma, hue) = *from;
+
+    
+    if hue.is_nan() {
+        return ColorComponents(lightness, 0.0, 0.0);
+    }
 
     let hue = hue.to_radians();
     let a = chroma * hue.cos();
