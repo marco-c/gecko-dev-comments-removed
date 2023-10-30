@@ -1,5 +1,6 @@
 import {ReportingMode, Sensor, SensorClientRemote, SensorReceiver, SensorRemote, SensorType} from '/gen/services/device/public/mojom/sensor.mojom.m.js';
-import {SensorCreationResult, SensorInitParams_READ_BUFFER_SIZE_FOR_TESTS, SensorProvider, SensorProviderReceiver} from '/gen/services/device/public/mojom/sensor_provider.mojom.m.js';
+import {SensorCreationResult, SensorInitParams_READ_BUFFER_SIZE_FOR_TESTS} from '/gen/services/device/public/mojom/sensor_provider.mojom.m.js';
+import {WebSensorProvider, WebSensorProviderReceiver} from '/gen/third_party/blink/public/mojom/sensor/web_sensor_provider.mojom.m.js';
 
 
 
@@ -334,10 +335,10 @@ self.GenericSensorTest = (() => {
             SensorType.RELATIVE_ORIENTATION_EULER_ANGLES],
         ['ProximitySensor', SensorType.PROXIMITY]
       ]);
-      this.receiver_ = new SensorProviderReceiver(this);
+      this.receiver_ = new WebSensorProviderReceiver(this);
 
       this.interceptor_ =
-          new MojoInterfaceInterceptor(SensorProvider.$interfaceName);
+        new MojoInterfaceInterceptor(WebSensorProvider.$interfaceName);
       this.interceptor_.oninterfacerequest = e => {
         this.bindToPipe(e.handle);
       };
