@@ -2794,7 +2794,15 @@ nsStandardURL::Resolve(const nsACString& in, nsACString& out) {
     
     resultPath = strstr(result, "://");
     if (resultPath) {
-      resultPath = strchr(resultPath + 3, '/');
+      
+      
+      resultPath += 3;
+      if (protocol.IsEmpty() && Scheme() != "file") {
+        while (*resultPath == '/') {
+          resultPath++;
+        }
+      }
+      resultPath = strchr(resultPath, '/');
       if (resultPath) {
         net_CoalesceDirs(coalesceFlag, resultPath);
       }
