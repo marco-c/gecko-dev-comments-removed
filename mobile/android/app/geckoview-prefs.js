@@ -402,11 +402,6 @@ pref("toolkit.defaultChromeURI", "chrome://geckoview/content/geckoview.xhtml", l
 pref("toolkit.telemetry.unified", false);
 
 
-pref("ui.scrollbarFadeBeginDelay", 450);
-pref("ui.scrollbarFadeDuration", 0);
-pref("ui.useOverlayScrollbars", 1);
-
-
 pref("urlclassifier.downloadAllowTable", "");
 pref("urlclassifier.downloadBlockTable", "");
 
