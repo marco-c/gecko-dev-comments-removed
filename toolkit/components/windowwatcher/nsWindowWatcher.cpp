@@ -2021,20 +2021,8 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForSystem(
     chromeFlags |= nsIWebBrowserChrome::CHROME_MODAL |
                    nsIWebBrowserChrome::CHROME_DEPENDENT;
   }
-
-  
-
-
-  bool disableDialogFeature = false;
-  nsCOMPtr<nsIPrefBranch> branch = do_GetService(NS_PREFSERVICE_CONTRACTID);
-
-  branch->GetBoolPref("dom.disable_window_open_dialog_feature",
-                      &disableDialogFeature);
-
-  if (!disableDialogFeature) {
-    if (aFeatures.GetBoolWithDefault("dialog", false)) {
-      chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
-    }
+  if (aFeatures.GetBoolWithDefault("dialog", false)) {
+    chromeFlags |= nsIWebBrowserChrome::CHROME_OPENAS_DIALOG;
   }
 
   

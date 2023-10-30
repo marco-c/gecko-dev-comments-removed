@@ -177,9 +177,6 @@ pref("dom.disable_open_during_load", true);
 pref("dom.disable_window_move_resize", true);
 
 
-pref("dom.disable_window_open_dialog_feature", true);
-
-
 
 
 
