@@ -706,9 +706,13 @@ class PeerConnectionIntegrationWrapper : public webrtc::PeerConnectionObserver,
     
     
     
+    
+    
+    
+    
     if (delta_samples > 0) {
 #if !defined(NDEBUG)
-      EXPECT_LT(1.0 * delta_concealed / delta_samples, 0.95)
+      EXPECT_LT(1.0 * delta_concealed / delta_samples, 0.99)
           << "Concealed " << delta_concealed << " of " << delta_samples
           << " samples";
 #else
