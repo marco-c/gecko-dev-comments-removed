@@ -279,6 +279,9 @@ class GraphDriver {
   MOZ_CAN_RUN_SCRIPT virtual void Shutdown() = 0;
   
 
+  virtual void SetStreamName(const nsACString& aStreamName);
+  
+
 
 
 
@@ -315,7 +318,8 @@ class GraphDriver {
 
 
 
-  void SetState(GraphTime aIterationEnd, GraphTime aStateComputedTime);
+  void SetState(const nsACString& aStreamName, GraphTime aIterationEnd,
+                GraphTime aStateComputedTime);
 
   GraphInterface* Graph() const { return mGraphInterface; }
 
@@ -345,6 +349,8 @@ class GraphDriver {
   }
 
  protected:
+  
+  nsCString mStreamName;
   
   GraphTime mIterationEnd = 0;
   
@@ -532,7 +538,7 @@ struct TrackAndPromiseForOperation {
   MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise> mHolder;
 };
 
-enum class AsyncCubebOperation { INIT, SHUTDOWN };
+enum class AsyncCubebOperation { INIT, NAME_CHANGE, SHUTDOWN };
 enum class AudioInputType { Unknown, Voice };
 
 
@@ -573,6 +579,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   void Start() override;
   MOZ_CAN_RUN_SCRIPT void Shutdown() override;
+  void SetStreamName(const nsACString& aStreamName) override;
 
   
   static long DataCallback_s(cubeb_stream* aStream, void* aUser,
@@ -663,7 +670,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   
   bool StartStream();
   friend class AsyncCubebTask;
-  void Init();
+  void Init(const nsCString& aStreamName);
+  void SetCubebStreamName(const nsCString& aStreamName);
   void Stop();
   
 
@@ -787,7 +795,9 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
 class AsyncCubebTask : public Runnable {
  public:
-  AsyncCubebTask(AudioCallbackDriver* aDriver, AsyncCubebOperation aOperation);
+  
+  AsyncCubebTask(AudioCallbackDriver* aDriver, AsyncCubebOperation aOperation,
+                 const nsACString& aName = VoidCString());
 
   nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL) {
     return mDriver->mInitShutdownThread->Dispatch(this, aFlags);
@@ -807,6 +817,7 @@ class AsyncCubebTask : public Runnable {
 
   RefPtr<AudioCallbackDriver> mDriver;
   AsyncCubebOperation mOperation;
+  nsCString mName;
   RefPtr<GraphInterface> mShutdownGrip;
 };
 
