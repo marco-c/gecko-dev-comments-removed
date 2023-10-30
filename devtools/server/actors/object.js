@@ -170,16 +170,6 @@ class ObjectActor extends Actor {
       return g;
     }
 
-    if (unwrapped?.isProxy) {
-      
-      
-      g.class = "Proxy";
-      this.hooks.incrementGripDepth();
-      previewers.Proxy[0](this, g, null);
-      this.hooks.decrementGripDepth();
-      return g;
-    }
-
     
     if (this.thread?._parent?.customFormatters) {
       const result = customFormatterHeader(this);
@@ -192,6 +182,16 @@ class ObjectActor extends Actor {
           ...header,
         };
       }
+    }
+
+    if (unwrapped?.isProxy) {
+      
+      
+      g.class = "Proxy";
+      this.hooks.incrementGripDepth();
+      previewers.Proxy[0](this, g, null);
+      this.hooks.decrementGripDepth();
+      return g;
     }
 
     const ownPropertyLength = this._getOwnPropertyLength();
