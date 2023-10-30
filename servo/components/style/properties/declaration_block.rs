@@ -899,20 +899,16 @@ impl PropertyDeclarationBlock {
             
             
             
-            (&PropertyDeclaration::WithVariables(ref declaration), Some(ref computed_values)) => {
-                declaration
-                    .value
-                    .substitute_variables(
-                        declaration.id,
-                        computed_values.writing_mode,
-                        &context.builder.custom_properties,
-                        QuirksMode::NoQuirks,
-                        stylist,
-                        &context,
-                        &mut Default::default(),
-                    )
-                    .to_css(dest)
-            },
+            (&PropertyDeclaration::WithVariables(ref declaration), Some(_)) => declaration
+                .value
+                .substitute_variables(
+                    declaration.id,
+                    &context.builder.custom_properties,
+                    stylist,
+                    &context,
+                    &mut Default::default(),
+                )
+                .to_css(dest),
             (ref d, _) => d.to_css(dest),
         }
     }
