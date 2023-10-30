@@ -110,7 +110,6 @@
 #endif
 
 #include "mozjemalloc.h"
-#include "replace_malloc.h"
 
 #include "mozjemalloc.h"
 #include "FdPrintf.h"
@@ -1687,90 +1686,84 @@ void* MozJemallocPHC::moz_arena_memalign(arena_id_t aArenaId, size_t aAlignment,
   return PageMemalign(Some(aArenaId), aAlignment, aReqSize);
 }
 
-class PHCBridge : public ReplaceMallocBridge {
-  virtual bool IsPHCAllocation(const void* aPtr, phc::AddrInfo* aOut) override {
-    PtrKind pk = gConst->PtrKind(aPtr);
-    if (pk.IsNothing()) {
-      return false;
-    }
+namespace mozilla::phc {
 
-    bool isGuardPage = false;
-    if (pk.IsGuardPage()) {
-      if ((uintptr_t(aPtr) % kPageSize) < (kPageSize / 2)) {
-        
-        
-        
-        if (gConst->IsInFirstGuardPage(aPtr)) {
-          return false;
-        }
+bool IsPHCAllocation(const void* aPtr, AddrInfo* aOut) {
+  PtrKind pk = gConst->PtrKind(aPtr);
+  if (pk.IsNothing()) {
+    return false;
+  }
 
-        
-        pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
-
-      } else {
-        
-        
-        pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
+  bool isGuardPage = false;
+  if (pk.IsGuardPage()) {
+    if ((uintptr_t(aPtr) % kPageSize) < (kPageSize / 2)) {
+      
+      
+      
+      if (gConst->IsInFirstGuardPage(aPtr)) {
+        return false;
       }
 
       
-      isGuardPage = true;
+      pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) - kPageSize);
+
+    } else {
+      
+      
+      pk = gConst->PtrKind(static_cast<const uint8_t*>(aPtr) + kPageSize);
     }
 
     
-    uintptr_t index = pk.AllocPageIndex();
-
-    if (aOut) {
-      if (GMut::sMutex.TryLock()) {
-        gMut->FillAddrInfo(index, aPtr, isGuardPage, *aOut);
-        LOG("IsPHCAllocation: %zu, %p, %zu, %zu, %zu\n", size_t(aOut->mKind),
-            aOut->mBaseAddr, aOut->mUsableSize,
-            aOut->mAllocStack.isSome() ? aOut->mAllocStack->mLength : 0,
-            aOut->mFreeStack.isSome() ? aOut->mFreeStack->mLength : 0);
-        GMut::sMutex.Unlock();
-      } else {
-        LOG("IsPHCAllocation: PHC is locked\n");
-        aOut->mPhcWasLocked = true;
-      }
-    }
-    return true;
+    isGuardPage = true;
   }
 
-  virtual void DisablePHCOnCurrentThread() override {
-    GTls::DisableOnCurrentThread();
-    LOG("DisablePHCOnCurrentThread: %zu\n", 0ul);
-  }
+  
+  uintptr_t index = pk.AllocPageIndex();
 
-  virtual void ReenablePHCOnCurrentThread() override {
-    GTls::EnableOnCurrentThread();
-    LOG("ReenablePHCOnCurrentThread: %zu\n", 0ul);
-  }
-
-  virtual bool IsPHCEnabledOnCurrentThread() override {
-    bool enabled = !GTls::IsDisabledOnCurrentThread();
-    LOG("IsPHCEnabledOnCurrentThread: %zu\n", size_t(enabled));
-    return enabled;
-  }
-
-  virtual void PHCMemoryUsage(
-      mozilla::phc::MemoryUsage& aMemoryUsage) override {
-    aMemoryUsage.mMetadataBytes = metadata_size();
-    if (gMut) {
-      MutexAutoLock lock(GMut::sMutex);
-      aMemoryUsage.mFragmentationBytes = gMut->FragmentationBytes();
+  if (aOut) {
+    if (GMut::sMutex.TryLock()) {
+      gMut->FillAddrInfo(index, aPtr, isGuardPage, *aOut);
+      LOG("IsPHCAllocation: %zu, %p, %zu, %zu, %zu\n", size_t(aOut->mKind),
+          aOut->mBaseAddr, aOut->mUsableSize,
+          aOut->mAllocStack.isSome() ? aOut->mAllocStack->mLength : 0,
+          aOut->mFreeStack.isSome() ? aOut->mFreeStack->mLength : 0);
+      GMut::sMutex.Unlock();
     } else {
-      aMemoryUsage.mFragmentationBytes = 0;
+      LOG("IsPHCAllocation: PHC is locked\n");
+      aOut->mPhcWasLocked = true;
     }
   }
-
-  
-  
-  virtual void SetPHCState(mozilla::phc::PHCState aState) override {
-    gMut->SetState(aState);
-  }
-};
-
-ReplaceMallocBridge* GetPHCBridge() {
-  static PHCBridge bridge;
-  return &bridge;
+  return true;
 }
+
+void DisablePHCOnCurrentThread() {
+  GTls::DisableOnCurrentThread();
+  LOG("DisablePHCOnCurrentThread: %zu\n", 0ul);
+}
+
+void ReenablePHCOnCurrentThread() {
+  GTls::EnableOnCurrentThread();
+  LOG("ReenablePHCOnCurrentThread: %zu\n", 0ul);
+}
+
+bool IsPHCEnabledOnCurrentThread() {
+  bool enabled = !GTls::IsDisabledOnCurrentThread();
+  LOG("IsPHCEnabledOnCurrentThread: %zu\n", size_t(enabled));
+  return enabled;
+}
+
+void PHCMemoryUsage(MemoryUsage& aMemoryUsage) {
+  aMemoryUsage.mMetadataBytes = metadata_size();
+  if (gMut) {
+    MutexAutoLock lock(GMut::sMutex);
+    aMemoryUsage.mFragmentationBytes = gMut->FragmentationBytes();
+  } else {
+    aMemoryUsage.mFragmentationBytes = 0;
+  }
+}
+
+
+
+void SetPHCState(PHCState aState) { gMut->SetState(aState); }
+
+}  

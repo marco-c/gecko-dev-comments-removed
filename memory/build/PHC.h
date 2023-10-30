@@ -12,6 +12,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "mozmemory_wrap.h"
+
 namespace mozilla {
 namespace phc {
 
@@ -96,11 +98,50 @@ class AddrInfo {
 
 
 extern AddrInfo gAddrInfo;
+
+
+
+
+MOZ_JEMALLOC_API bool IsPHCAllocation(const void*, AddrInfo*);
+
+
+
+MOZ_JEMALLOC_API void DisablePHCOnCurrentThread();
+
+
+MOZ_JEMALLOC_API void ReenablePHCOnCurrentThread();
+
+
+
+MOZ_JEMALLOC_API bool IsPHCEnabledOnCurrentThread();
+
+
+
+
+
+
+
+
+enum PHCState {
+  OnlyFree,
+  Enabled,
+};
+
+MOZ_JEMALLOC_API void SetPHCState(PHCState aState);
+
+struct MemoryUsage {
+  
+  
+  size_t mMetadataBytes = 0;
+
+  
+  
+  size_t mFragmentationBytes = 0;
+};
+
+MOZ_JEMALLOC_API void PHCMemoryUsage(MemoryUsage& aMemoryUsage);
+
 }  
 }  
-
-struct ReplaceMallocBridge;
-
-ReplaceMallocBridge* GetPHCBridge();
 
 #endif 

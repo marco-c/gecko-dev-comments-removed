@@ -40,7 +40,7 @@
 #include "common/windows/guid_string.h"
 
 #ifdef MOZ_PHC
-#include "replace_malloc_bridge.h"
+#include "PHC.h"
 #endif
 
 namespace google_breakpad {
@@ -903,7 +903,7 @@ static void GetPHCAddrInfo(EXCEPTION_POINTERS* exinfo,
     
     
     char* crashAddr = reinterpret_cast<char*>(rec->ExceptionInformation[1]);
-    ReplaceMalloc::IsPHCAllocation(crashAddr, addr_info);
+    mozilla::phc::IsPHCAllocation(crashAddr, addr_info);
   }
 }
 #endif

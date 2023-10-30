@@ -117,29 +117,8 @@ struct DMDFuncs;
 
 namespace phc {
 
-
-
-
-
-
-
-
-enum PHCState {
-  OnlyFree,
-  Enabled,
-};
-
 class AddrInfo;
 
-struct MemoryUsage {
-  
-  
-  size_t mMetadataBytes = 0;
-
-  
-  
-  size_t mFragmentationBytes = 0;
-};
 }  
 
 
@@ -181,37 +160,6 @@ struct ReplaceMallocBridge {
       const malloc_hook_table_t* aHookTable) {
     return nullptr;
   }
-
-  
-  
-  
-  
-  virtual bool IsPHCAllocation(const void*, mozilla::phc::AddrInfo*) {
-    return false;
-  }
-
-  
-  
-  
-  virtual void DisablePHCOnCurrentThread() {}
-
-  
-  
-  virtual void ReenablePHCOnCurrentThread() {}
-
-  
-  
-  
-  virtual bool IsPHCEnabledOnCurrentThread() { return false; }
-
-  
-  
-  virtual void PHCMemoryUsage(mozilla::phc::MemoryUsage& aMemoryUsage) {}
-
-  
-  
-  
-  virtual void SetPHCState(mozilla::phc::PHCState aState) {}
 
 #  ifndef REPLACE_MALLOC_IMPL
   
@@ -255,44 +203,6 @@ struct ReplaceMalloc {
     auto singleton = ReplaceMallocBridge::Get( 3);
     return singleton ? singleton->RegisterHook(aName, aTable, aHookTable)
                      : nullptr;
-  }
-
-  static bool IsPHCAllocation(const void* aPtr, mozilla::phc::AddrInfo* aOut) {
-    auto singleton = ReplaceMallocBridge::Get( 4);
-    return singleton ? singleton->IsPHCAllocation(aPtr, aOut) : false;
-  }
-
-  static void DisablePHCOnCurrentThread() {
-    auto singleton = ReplaceMallocBridge::Get( 4);
-    if (singleton) {
-      singleton->DisablePHCOnCurrentThread();
-    }
-  }
-
-  static void ReenablePHCOnCurrentThread() {
-    auto singleton = ReplaceMallocBridge::Get( 4);
-    if (singleton) {
-      singleton->ReenablePHCOnCurrentThread();
-    }
-  }
-
-  static bool IsPHCEnabledOnCurrentThread() {
-    auto singleton = ReplaceMallocBridge::Get( 4);
-    return singleton ? singleton->IsPHCEnabledOnCurrentThread() : false;
-  }
-
-  static void PHCMemoryUsage(mozilla::phc::MemoryUsage& aMemoryUsage) {
-    auto singleton = ReplaceMallocBridge::Get( 5);
-    if (singleton) {
-      singleton->PHCMemoryUsage(aMemoryUsage);
-    }
-  }
-
-  static void SetPHCState(mozilla::phc::PHCState aPHCState) {
-    auto singleton = ReplaceMallocBridge::Get( 6);
-    if (singleton) {
-      singleton->SetPHCState(aPHCState);
-    }
   }
 };
 #  endif

@@ -5182,14 +5182,6 @@ static void init() {
   }
   gOriginalMallocTable = tempTable;
   gMallocTablePtr = &gOriginalMallocTable;
-
-#  ifdef MOZ_PHC
-  
-  
-  if (!gReplaceMallocBridge) {
-    gReplaceMallocBridge = GetPHCBridge();
-  }
-#  endif
 }
 
 
