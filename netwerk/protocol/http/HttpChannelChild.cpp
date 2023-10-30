@@ -835,7 +835,12 @@ void HttpChannelChild::ProcessOnStopRequest(
        "aFromSocketProcess=%d]\n",
        this, aFromSocketProcess));
   MOZ_ASSERT(OnSocketThread());
-
+  {  
+     
+    MutexAutoLock lock(mOnDataFinishedMutex);
+    mTransferSize = aTiming.transferSize();
+    mEncodedBodySize = aTiming.encodedBodySize();
+  }
   if (StaticPrefs::network_send_OnDataFinished()) {
     mEventQ->RunOrEnqueue(new ChannelFunctionEvent(
         [self = UnsafePtr<HttpChannelChild>(this)]() {
@@ -958,8 +963,9 @@ void HttpChannelChild::OnStopRequest(
 
   mRedirectStartTimeStamp = aTiming.redirectStart();
   mRedirectEndTimeStamp = aTiming.redirectEnd();
-  mTransferSize = aTiming.transferSize();
-  mEncodedBodySize = aTiming.encodedBodySize();
+  
+  
+  
 
   mCacheReadStart = aTiming.cacheReadStart();
   mCacheReadEnd = aTiming.cacheReadEnd();
