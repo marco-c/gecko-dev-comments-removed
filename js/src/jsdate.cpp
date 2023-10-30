@@ -1398,6 +1398,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   bool seenMonthName = false;
   bool seenFullYear = false;
   bool negativeYear = false;
+  
+  bool seenGmtAbbr = false;
 
   size_t index = 0;
 
@@ -1412,16 +1414,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday) ||
       TryParseDashedNumericDatePrefix(s, length, &index, &year, &mon, &mday);
 
-  if (isDashedDate && index < length) {
-    if (strchr("T:+", s[index])) {
-      return false;
-    }
-
-    
-    
-    if (s[index] == '-') {
-      index++;
-    }
+  if (isDashedDate && index < length && strchr("T:+", s[index])) {
+    return false;
   }
 
   while (index < length) {
@@ -1433,6 +1427,17 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     
     if (c == 0x202F) {
       c = ' ';
+    }
+
+    if ((c == '+' || c == '-') &&
+        
+        ((seenPlusMinus && year != -1) ||
+         
+         
+         
+         (year != -1 && hour == -1 && !seenGmtAbbr &&
+          !IsAsciiDigit(s[index - 2])))) {
+      return false;
     }
 
     
@@ -1515,7 +1520,10 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         year = n;
         seenFullYear = true;
         negativeYear = true;
-      } else if ((prevc == '+' || prevc == '-') ) {
+      } else if ((prevc == '+' || prevc == '-') &&
+                 
+                 
+                 (seenGmtAbbr || hour != -1)) {
         
         seenPlusMinus = true;
 
@@ -1565,7 +1573,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       } else if (index < length && c != ',' && c > ' ' && c != '-' &&
                  c != '(' &&
                  
-                 !(hour != -1 && strchr("Zz", c)) &&
+                 
+                 !(hour != -1 && strchr("Zz+", c)) &&
                  
                  
                  (c != '.' || mday != -1) &&
@@ -1634,6 +1643,10 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         
         if (action == 0) {
           break;
+        }
+
+        if (action == 10000) {
+          seenGmtAbbr = true;
         }
 
         
