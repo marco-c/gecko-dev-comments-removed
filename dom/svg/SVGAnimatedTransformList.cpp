@@ -60,7 +60,7 @@ nsresult SVGAnimatedTransformList::SetBaseValue(const SVGTransformList& aValue,
     
     domWrapper->InternalBaseValListWillChangeLengthTo(mBaseVal.Length());
   } else {
-    mIsAttrSet = true;
+    mIsBaseSet = true;
     
     
     mCreatedOrRemovedOnLastChange =
@@ -79,7 +79,7 @@ void SVGAnimatedTransformList::ClearBaseValue() {
     domWrapper->InternalBaseValListWillChangeLengthTo(0);
   }
   mBaseVal.Clear();
-  mIsAttrSet = false;
+  mIsBaseSet = false;
   
 }
 
@@ -162,7 +162,7 @@ bool SVGAnimatedTransformList::IsExplicitlySet() const {
   
   
   
-  return mIsAttrSet || !mBaseVal.IsEmpty() || mAnimVal;
+  return mIsBaseSet || !mBaseVal.IsEmpty() || mAnimVal;
 }
 
 UniquePtr<SMILAttr> SVGAnimatedTransformList::ToSMILAttr(
