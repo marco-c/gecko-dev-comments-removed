@@ -661,13 +661,14 @@ double nsRFPService::ReduceTimePrecisionAsSecsRFPOnly(
 }
 
 
-double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(double aTime,
-                                                       JSContext* aCx) {
+double nsRFPService::ReduceTimePrecisionAsUSecsWrapper(
+    double aTime, JS::RTPCallerTypeToken aCallerType, JSContext* aCx) {
   MOZ_ASSERT(aCx);
 
   nsCOMPtr<nsIGlobalObject> global = xpc::CurrentNativeGlobal(aCx);
   MOZ_ASSERT(global);
   RTPCallerType callerType = global->GetRTPCallerType();
+
   return nsRFPService::ReduceTimePrecisionImpl(
       aTime, MicroSeconds, TimerResolution(callerType),
       0, 

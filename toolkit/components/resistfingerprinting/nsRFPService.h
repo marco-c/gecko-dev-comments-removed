@@ -13,6 +13,7 @@
 #include "mozilla/BasicEvents.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/TypedEnumBits.h"
+#include "js/RealmOptions.h"
 #include "nsHashtablesFwd.h"
 #include "nsICookieJarSettings.h"
 #include "nsIFingerprintingWebCompatService.h"
@@ -197,10 +198,6 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   static double ReduceTimePrecisionAsSecsRFPOnly(double aTime,
                                                  int64_t aContextMixin,
                                                  RTPCallerType aRTPCallerType);
-
-  
-  static double ReduceTimePrecisionAsUSecsWrapper(double aTime, JSContext* aCx);
-
   
   static double ReduceTimePrecisionImpl(double aTime, TimeScale aTimeScale,
                                         double aResolutionUSec,
@@ -347,6 +344,10 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
       sSpoofingKeyboardCodes;
 
   
+
+  
+  static double ReduceTimePrecisionAsUSecsWrapper(
+      double aTime, JS::RTPCallerTypeToken aCallerType, JSContext* aCx);
 
   static TimerPrecisionType GetTimerPrecisionType(RTPCallerType aRTPCallerType);
 
