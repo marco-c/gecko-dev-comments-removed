@@ -1189,38 +1189,15 @@ void nsIFrame::DidSetComputedStyle(ComputedStyle* aOldComputedStyle) {
     
     bool needAnchorSuppression = false;
 
-    
-    
-    
-    
-    
-    nsMargin oldValue(0, 0, 0, 0);
-    nsMargin newValue(0, 0, 0, 0);
     const nsStyleMargin* oldMargin = aOldComputedStyle->StyleMargin();
-    if (oldMargin->GetMargin(oldValue)) {
-      if (!StyleMargin()->GetMargin(newValue) || oldValue != newValue) {
-        if (!HasProperty(UsedMarginProperty())) {
-          AddProperty(UsedMarginProperty(), new nsMargin(oldValue));
-        }
-        needAnchorSuppression = true;
-      }
+    if (oldMargin->mMargin != StyleMargin()->mMargin) {
+      needAnchorSuppression = true;
     }
 
     const nsStylePadding* oldPadding = aOldComputedStyle->StylePadding();
-    if (oldPadding->GetPadding(oldValue)) {
-      if (!StylePadding()->GetPadding(newValue) || oldValue != newValue) {
-        if (!HasProperty(UsedPaddingProperty())) {
-          AddProperty(UsedPaddingProperty(), new nsMargin(oldValue));
-        }
-        needAnchorSuppression = true;
-      }
-    }
-
-    const nsStyleBorder* oldBorder = aOldComputedStyle->StyleBorder();
-    oldValue = oldBorder->GetComputedBorder();
-    newValue = StyleBorder()->GetComputedBorder();
-    if (oldValue != newValue && !HasProperty(UsedBorderProperty())) {
-      AddProperty(UsedBorderProperty(), new nsMargin(oldValue));
+    if (oldPadding->mPadding != StylePadding()->mPadding) {
+      SetHasPaddingChange(true);
+      needAnchorSuppression = true;
     }
 
     const nsStyleDisplay* oldDisp = aOldComputedStyle->StyleDisplay();
@@ -1545,66 +1522,56 @@ void nsIFrame::CreateView() {
 
 
 nsMargin nsIFrame::GetUsedMargin() const {
-  nsMargin margin(0, 0, 0, 0);
+  nsMargin margin;
   if (((mState & NS_FRAME_FIRST_REFLOW) && !(mState & NS_FRAME_IN_REFLOW)) ||
-      IsInSVGTextSubtree())
+      IsInSVGTextSubtree()) {
     return margin;
+  }
 
-  nsMargin* m = GetProperty(UsedMarginProperty());
-  if (m) {
+  if (nsMargin* m = GetProperty(UsedMarginProperty())) {
     margin = *m;
-  } else {
-    if (!StyleMargin()->GetMargin(margin)) {
-      
-      NS_ERROR(
-          "Returning bogus 0-sized margin, because this margin "
-          "depends on layout & isn't cached!");
-    }
+  } else if (!StyleMargin()->GetMargin(margin)) {
+    
+    NS_ERROR(
+        "Returning bogus 0-sized margin, because this margin "
+        "depends on layout & isn't cached!");
   }
   return margin;
 }
 
 
 nsMargin nsIFrame::GetUsedBorder() const {
-  nsMargin border(0, 0, 0, 0);
   if (((mState & NS_FRAME_FIRST_REFLOW) && !(mState & NS_FRAME_IN_REFLOW)) ||
-      IsInSVGTextSubtree())
-    return border;
-
-  
-  nsIFrame* mutable_this = const_cast<nsIFrame*>(this);
+      IsInSVGTextSubtree()) {
+    return {};
+  }
 
   const nsStyleDisplay* disp = StyleDisplay();
-  if (mutable_this->IsThemed(disp)) {
+  if (IsThemed(disp)) {
+    
+    auto* mutable_this = const_cast<nsIFrame*>(this);
     nsPresContext* pc = PresContext();
     LayoutDeviceIntMargin widgetBorder = pc->Theme()->GetWidgetBorder(
         pc->DeviceContext(), mutable_this, disp->EffectiveAppearance());
-    border =
-        LayoutDevicePixel::ToAppUnits(widgetBorder, pc->AppUnitsPerDevPixel());
-    return border;
+    return LayoutDevicePixel::ToAppUnits(widgetBorder,
+                                         pc->AppUnitsPerDevPixel());
   }
 
-  nsMargin* b = GetProperty(UsedBorderProperty());
-  if (b) {
-    border = *b;
-  } else {
-    border = StyleBorder()->GetComputedBorder();
-  }
-  return border;
+  return StyleBorder()->GetComputedBorder();
 }
 
 
 nsMargin nsIFrame::GetUsedPadding() const {
-  nsMargin padding(0, 0, 0, 0);
+  nsMargin padding;
   if (((mState & NS_FRAME_FIRST_REFLOW) && !(mState & NS_FRAME_IN_REFLOW)) ||
-      IsInSVGTextSubtree())
+      IsInSVGTextSubtree()) {
     return padding;
-
-  
-  nsIFrame* mutable_this = const_cast<nsIFrame*>(this);
+  }
 
   const nsStyleDisplay* disp = StyleDisplay();
-  if (mutable_this->IsThemed(disp)) {
+  if (IsThemed(disp)) {
+    
+    nsIFrame* mutable_this = const_cast<nsIFrame*>(this);
     nsPresContext* pc = PresContext();
     LayoutDeviceIntMargin widgetPadding;
     if (pc->Theme()->GetWidgetPadding(pc->DeviceContext(), mutable_this,
@@ -1615,16 +1582,13 @@ nsMargin nsIFrame::GetUsedPadding() const {
     }
   }
 
-  nsMargin* p = GetProperty(UsedPaddingProperty());
-  if (p) {
+  if (nsMargin* p = GetProperty(UsedPaddingProperty())) {
     padding = *p;
-  } else {
-    if (!StylePadding()->GetPadding(padding)) {
-      
-      NS_ERROR(
-          "Returning bogus 0-sized padding, because this padding "
-          "depends on layout & isn't cached!");
-    }
+  } else if (!StylePadding()->GetPadding(padding)) {
+    
+    NS_ERROR(
+        "Returning bogus 0-sized padding, because this padding "
+        "depends on layout & isn't cached!");
   }
   return padding;
 }

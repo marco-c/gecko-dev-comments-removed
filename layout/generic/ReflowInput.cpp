@@ -2456,8 +2456,7 @@ static void UpdateProp(nsIFrame* aFrame,
                        const FramePropertyDescriptor<nsMargin>* aProperty,
                        bool aNeeded, const nsMargin& aNewValue) {
   if (aNeeded) {
-    nsMargin* propValue = aFrame->GetProperty(aProperty);
-    if (propValue) {
+    if (nsMargin* propValue = aFrame->GetProperty(aProperty)) {
       *propValue = aNewValue;
     } else {
       aFrame->AddProperty(aProperty, new nsMargin(aNewValue));
@@ -2474,11 +2473,7 @@ void SizeComputationInput::InitOffsets(WritingMode aCBWM, nscoord aPercentBasis,
                                        const Maybe<LogicalMargin>& aPadding,
                                        const nsStyleDisplay* aDisplay) {
   DISPLAY_INIT_OFFSETS(mFrame, this, aPercentBasis, aCBWM, aBorder, aPadding);
-
-  
-  
   nsPresContext* presContext = mFrame->PresContext();
-  mFrame->RemoveProperty(nsIFrame::UsedBorderProperty());
 
   
   
