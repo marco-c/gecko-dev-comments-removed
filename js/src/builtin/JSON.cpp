@@ -296,6 +296,7 @@ class KeyStringifier<HandleId> {
 
 
 
+
 template <typename KeyType>
 static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
                             MutableHandleValue vp, StringifyContext* scx) {
@@ -393,6 +394,7 @@ static bool PreprocessValue(JSContext* cx, HandleObject holder, KeyType key,
 
 
 
+
 static inline bool IsFilteredValue(const Value& v) {
   MOZ_ASSERT_IF(v.isMagic(), v.isMagic(JS_ELEMENTS_HOLE));
   return v.isUndefined() || v.isSymbol() || v.isMagic() || IsCallable(v);
@@ -433,6 +435,7 @@ class CycleDetector {
 enum class JOType { Record, Object };
 template <JOType type = JOType::Object>
 #endif
+
 
 static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
   
@@ -604,6 +607,7 @@ static MOZ_ALWAYS_INLINE bool GetLengthPropertyForArrayLike(JSContext* cx,
 }
 
 
+
 static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
   
 
@@ -708,6 +712,8 @@ static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
 
   return scx->sb.append(']');
 }
+
+
 
 static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
   
@@ -1210,6 +1216,8 @@ struct FastStackEntry {
     iter = AsVariant(OwnNonIndexKeysIterForJSON(nobj));
   }
 };
+
+
 
 static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
                     BailReason* whySlow) {
