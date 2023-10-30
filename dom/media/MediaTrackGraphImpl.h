@@ -142,6 +142,9 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   static MediaTrackGraphImpl* GetInstanceIfExists(
       uint64_t aWindowID, TrackRate aSampleRate,
       CubebUtils::AudioDeviceID aOutputDeviceID);
+  
+  struct Lookup;
+  operator Lookup() const;
 
   
   
