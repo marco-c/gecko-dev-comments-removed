@@ -86,6 +86,13 @@ class FFmpegDecoderModule : public PlatformDecoderModule {
       return media::DecodeSupportSet{};
     }
 
+    if (VPXDecoder::IsVP9(mimeType) &&
+        aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
+      
+      
+      return media::DecodeSupport::Unsupported;
+    }
+
     AVCodecID videoCodec = FFmpegVideoDecoder<V>::GetCodecId(mimeType);
     AVCodecID audioCodec = FFmpegAudioDecoder<V>::GetCodecId(
         mimeType,
