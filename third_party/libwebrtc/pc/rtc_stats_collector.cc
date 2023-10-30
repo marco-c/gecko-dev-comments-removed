@@ -667,7 +667,7 @@ CreateInboundRTPStreamStatsFromVideoReceiverInfo(
   }
   
   
-  if (video_receiver_info.content_type == VideoContentType::SCREENSHARE)
+  if (videocontenttypehelpers::IsScreenshare(video_receiver_info.content_type))
     inbound_video->content_type = "screenshare";
   if (video_receiver_info.decoder_implementation_name.has_value()) {
     inbound_video->decoder_implementation =
@@ -809,7 +809,7 @@ CreateOutboundRTPStreamStatsFromVideoSenderInfo(
       video_sender_info.quality_limitation_resolution_changes;
   
   
-  if (video_sender_info.content_type == VideoContentType::SCREENSHARE)
+  if (videocontenttypehelpers::IsScreenshare(video_sender_info.content_type))
     outbound_video->content_type = "screenshare";
   if (video_sender_info.encoder_implementation_name.has_value()) {
     outbound_video->encoder_implementation =
