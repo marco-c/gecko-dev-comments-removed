@@ -13,8 +13,9 @@
 
 
 
-use std::char;
-use std::u32;
+use alloc::{string::String, vec::Vec};
+use core::char;
+use core::u32;
 
 
 static BASE: u32 = 36;
@@ -168,7 +169,7 @@ impl Decoder {
 }
 
 pub(crate) struct Decode<'a> {
-    base: std::str::Chars<'a>,
+    base: core::str::Chars<'a>,
     pub(crate) insertions: &'a [(usize, char)],
     inserted: usize,
     position: usize,

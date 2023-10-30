@@ -6,11 +6,10 @@
 
 
 
-use host::Host;
-use idna::domain_to_unicode;
-use parser::default_port;
+use crate::host::Host;
+use crate::parser::default_port;
+use crate::Url;
 use std::sync::atomic::{AtomicUsize, Ordering};
-use Url;
 
 pub fn url_origin(url: &Url) -> Origin {
     let scheme = url.scheme();
@@ -22,7 +21,7 @@ pub fn url_origin(url: &Url) -> Origin {
                 Err(_) => Origin::new_opaque(),
             }
         }
-        "ftp" | "gopher" | "http" | "https" | "ws" | "wss" => Origin::Tuple(
+        "ftp" | "http" | "https" | "ws" | "wss" => Origin::Tuple(
             scheme.to_owned(),
             url.host().unwrap().to_owned(),
             url.port_or_known_default().unwrap(),
@@ -93,7 +92,7 @@ impl Origin {
             Origin::Tuple(ref scheme, ref host, port) => {
                 let host = match *host {
                     Host::Domain(ref domain) => {
-                        let (domain, _errors) = domain_to_unicode(domain);
+                        let (domain, _errors) = idna::domain_to_unicode(domain);
                         Host::Domain(domain)
                     }
                     _ => host.clone(),
