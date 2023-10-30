@@ -146,5 +146,20 @@ add_task(async function () {
     let results = diags.map(diag => [diag.passed, diag.msg]);
 
     deepEqual(results, expected, "Got expected assertions");
+    for (let { msg, stack } of diags) {
+      ok(stack, `Got stack for: ${msg}`);
+      
+      
+      
+      let expectedFilenamePart = "test_SpecialPowersSandbox.js:";
+      if (name === "SpecialPowers.loadChromeScript") {
+        
+        
+        expectedFilenamePart = "loadChromeScript anonymous function>:";
+      }
+      if (!stack.includes(expectedFilenamePart)) {
+        ok(false, `Stack does not contain ${expectedFilenamePart}: ${stack}`);
+      }
+    }
   }
 });
