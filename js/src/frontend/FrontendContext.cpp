@@ -14,7 +14,7 @@
 #endif
 
 #include "gc/GC.h"
-#include "js/AllocPolicy.h"         
+#include "js/AllocPolicy.h"  
 #include "js/friend/StackLimits.h"  
 #include "js/Modules.h"
 #include "util/DifferentialTesting.h"
@@ -286,3 +286,37 @@ FrontendContext* js::NewFrontendContext() {
 }
 
 void js::DestroyFrontendContext(FrontendContext* fc) { js_delete_poison(fc); }
+
+#ifdef DEBUG
+void FrontendContext::checkAndUpdateFrontendContextRecursionLimit(void* sp) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (previousStackPointer_ != nullptr) {
+#  if JS_STACK_GROWTH_DIRECTION > 0
+    if (sp > previousStackPointer_) {
+      size_t diff = uintptr_t(sp) - uintptr_t(previousStackPointer_);
+      MOZ_ASSERT(diff < js::MinimumStackLimitMargin);
+    }
+#  else
+    if (sp < previousStackPointer_) {
+      size_t diff = uintptr_t(previousStackPointer_) - uintptr_t(sp);
+      MOZ_ASSERT(diff < js::MinimumStackLimitMargin);
+    }
+#  endif
+  }
+  previousStackPointer_ = sp;
+}
+
+void js::CheckAndUpdateFrontendContextRecursionLimit(FrontendContext* fc,
+                                                     void* sp) {
+  fc->checkAndUpdateFrontendContextRecursionLimit(sp);
+}
+#endif

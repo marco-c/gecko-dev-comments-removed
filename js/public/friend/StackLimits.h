@@ -49,6 +49,13 @@ extern MOZ_COLD JS_PUBLIC_API bool CheckWasiRecursionLimit(FrontendContext* fc);
 
 
 
+static constexpr size_t MinimumStackLimitMargin = 32 * 1024;
+
+
+
+
+
+
 
 
 
@@ -254,8 +261,16 @@ MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithStackPointerDontReport(
   return checkLimitImpl(getStackLimitSlow(cx), sp);
 }
 
+#ifdef DEBUG
+extern void CheckAndUpdateFrontendContextRecursionLimit(FrontendContext* fc,
+                                                        void* sp);
+#endif
+
 MOZ_ALWAYS_INLINE bool AutoCheckRecursionLimit::checkWithStackPointerDontReport(
     FrontendContext* fc, void* sp) const {
+#ifdef DEBUG
+  CheckAndUpdateFrontendContextRecursionLimit(fc, sp);
+#endif
   return checkLimitImpl(getStackLimit(fc), sp);
 }
 

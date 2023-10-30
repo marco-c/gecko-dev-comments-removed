@@ -10,6 +10,7 @@
 #include "frontend/CompilationStencil.h"  
 #include "frontend/FrontendContext.h"    
 #include "frontend/ScopeBindingCache.h"  
+#include "js/friend/StackLimits.h"       
 #include "js/SourceText.h"               
 
 using namespace js;
@@ -35,6 +36,10 @@ JS_PUBLIC_API JS::NativeStackSize JS::ThreadStackQuotaForSize(
     size_t stackSize) {
   
   static constexpr double RatioWithoutMargin = 0.9;
+
+  MOZ_ASSERT(double(stackSize) * (1 - RatioWithoutMargin) >
+             js::MinimumStackLimitMargin);
+
   return JS::NativeStackSize(double(stackSize) * RatioWithoutMargin);
 }
 

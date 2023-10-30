@@ -99,6 +99,10 @@ class FrontendContext {
 #ifdef DEBUG
   
   mozilla::Maybe<size_t> stackLimitThreadId_;
+
+  
+  
+  void* previousStackPointer_ = nullptr;
 #endif
 
  protected:
@@ -215,6 +219,10 @@ class FrontendContext {
 #ifdef DEBUG
   void setNativeStackLimitThread();
   void assertNativeStackLimitThread();
+#endif
+
+#ifdef DEBUG
+  void checkAndUpdateFrontendContextRecursionLimit(void* sp);
 #endif
 
  private:
