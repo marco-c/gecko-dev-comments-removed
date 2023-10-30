@@ -12,13 +12,18 @@
 
 const OTHER_ORIGIN1 = 'https://{{hosts[alt][]}}:{{ports[https][0]}}';
 const OTHER_ORIGIN2 = 'https://{{hosts[alt][]}}:{{ports[https][1]}}';
+const OTHER_ORIGIN3 = 'https://{{hosts[][]}}:{{ports[https][1]}}';
+const OTHER_ORIGIN4 = 'https://{{hosts[][www]}}:{{ports[https][0]}}';
+const OTHER_ORIGIN5 = 'https://{{hosts[][www]}}:{{ports[https][1]}}';
+const OTHER_ORIGIN6 = 'https://{{hosts[alt][www]}}:{{ports[https][0]}}';
+const OTHER_ORIGIN7 = 'https://{{hosts[alt][www]}}:{{ports[https][1]}}';
 
 
 
 
 
 
-async function runInIframe(test, iframe, script, param) {
+async function runInFrame(test, child_window, script, param) {
   const messageUuid = generateUuid(test);
   let receivedResponse = {};
 
@@ -34,7 +39,7 @@ async function runInIframe(test, iframe, script, param) {
       }
     }
     window.addEventListener('message', WaitForMessage);
-    iframe.contentWindow.postMessage(
+    child_window.postMessage(
         {messageUuid: messageUuid, script: script, param: param}, '*');
   });
   await promise;
@@ -48,13 +53,15 @@ async function runInIframe(test, iframe, script, param) {
 
 
 
-async function createIframe(test, origin, permissions) {
-  const iframeUuid = generateUuid(test);
-  const iframeUrl = `${origin}${RESOURCE_PATH}iframe.sub.html?uuid=${iframeUuid}`;
-  let iframe = document.createElement('iframe');
-  await new Promise(function(resolve, reject) {
+
+
+async function createFrame(test, origin, is_iframe = true, permissions = null) {
+  const frameUuid = generateUuid(test);
+  const frameUrl =
+      `${origin}${RESOURCE_PATH}subordinate-frame.sub.html?uuid=${frameUuid}`;
+  let promise = new Promise(function(resolve, reject) {
     function WaitForMessage(event) {
-      if (event.data.messageUuid != iframeUuid)
+      if (event.data.messageUuid != frameUuid)
         return;
       if (event.data.result === 'load complete') {
         resolve();
@@ -63,17 +70,38 @@ async function createIframe(test, origin, permissions) {
       }
     }
     window.addEventListener('message', WaitForMessage);
+  });
+
+  if (is_iframe) {
+    let iframe = document.createElement('iframe');
     if (permissions)
       iframe.allow = permissions;
-    iframe.src = iframeUrl;
+    iframe.src = frameUrl;
     document.body.appendChild(iframe);
 
     test.add_cleanup(async () => {
-      await runInIframe(test, iframe, "await test_instance.do_cleanup();");
+      await runInFrame(test, iframe.contentWindow, "await test_instance.do_cleanup();");
       document.body.removeChild(iframe);
     });
+
+    await promise;
+    return iframe.contentWindow;
+  }
+
+  let child_window = window.open(frameUrl);
+  test.add_cleanup(async () => {
+    await runInFrame(test, child_window, "await test_instance.do_cleanup();");
+    child_window.close();
   });
-  return iframe;
+
+  await promise;
+  return child_window;
+}
+
+
+
+async function createIframe(test, origin, permissions) {
+  return createFrame(test, origin,  true, permissions);
 }
 
 
@@ -85,7 +113,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, document.location.origin);
 
   
-  await runInIframe(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
+  await runInFrame(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
 
   
   
@@ -97,7 +125,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, OTHER_ORIGIN1);
 
   
-  await runInIframe(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
+  await runInFrame(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
 
   
   
@@ -117,7 +145,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, OTHER_ORIGIN1, 'join-ad-interest-group');
 
   
-  await runInIframe(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
+  await runInFrame(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
 
   
   
@@ -136,7 +164,7 @@ subsetTest(promise_test, async test => {
   
   
   
-  await runInIframe(test, iframe,
+  await runInFrame(test, iframe,
                     `try {
                        await joinInterestGroup(test_instance, "${uuid}");
                      } catch (e) {
@@ -161,7 +189,7 @@ subsetTest(promise_test, async test => {
   
   
   let interestGroup = JSON.stringify(createInterestGroupForOrigin(uuid, window.location.origin));
-  await runInIframe(test, iframe,
+  await runInFrame(test, iframe,
                     `joinInterestGroup(test_instance, "${uuid}", ${interestGroup})`);
 
   
@@ -180,10 +208,10 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, document.location.origin);
 
   
-  await runInIframe(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
+  await runInFrame(test, iframe, `await joinInterestGroup(test_instance, "${uuid}");`);
 
   
-  await runInIframe(
+  await runInFrame(
     test, iframe,
     `await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");`);
 }, 'Run auction in same-origin iframe, default permissions.');
@@ -196,7 +224,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, OTHER_ORIGIN1);
 
   
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `await runBasicFledgeTestExpectingWinner(
            test_instance, "${uuid}",
@@ -211,7 +239,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, OTHER_ORIGIN1, "run-ad-auction");
 
   
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `await runBasicFledgeTestExpectingWinner(
            test_instance, "${uuid}",
@@ -227,7 +255,7 @@ subsetTest(promise_test, async test => {
   let iframe = await createIframe(test, OTHER_ORIGIN1, "run-ad-auction 'none'");
 
   
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `try {
          await runBasicFledgeAuction(test_instance, "${uuid}");
@@ -246,7 +274,7 @@ subsetTest(promise_test, async test => {
 
   let iframe = await createIframe(test, OTHER_ORIGIN1, `run-ad-auction ${OTHER_ORIGIN1}`);
 
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `await runBasicFledgeTestExpectingWinner(
         test_instance, "${uuid}",
@@ -271,7 +299,7 @@ subsetTest(promise_test, async test => {
   
   let iframe = await createIframe(
       test, OTHER_ORIGIN1, "join-ad-interest-group 'none'; run-ad-auction 'none'");
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `await createAndNavigateFencedFrame(test_instance, param);`,
       config);
@@ -284,7 +312,7 @@ subsetTest(promise_test, async test => {
 
   let iframe = await createIframe(
       test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
-  await runInIframe(
+  await runInFrame(
       test, iframe,
       `await joinInterestGroup(test_instance, "${uuid}");
        await runBasicFledgeAuctionAndNavigate(test_instance, "${uuid}");
@@ -298,7 +326,7 @@ subsetTest(promise_test, async test => {
   
   let iframe = await createIframe(
       test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
-  let config = await runInIframe(
+  let config = await runInFrame(
       test, iframe,
       `await joinInterestGroup(test_instance, "${uuid}");
        let config = await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");
@@ -322,7 +350,7 @@ subsetTest(promise_test, async test => {
   
   let iframe = await createIframe(
       test, OTHER_ORIGIN1, "join-ad-interest-group; run-ad-auction");
-  let config = await runInIframe(
+  let config = await runInFrame(
       test, iframe,
       `await joinInterestGroup(test_instance, "${uuid}");
        let config = await runBasicFledgeTestExpectingWinner(test_instance, "${uuid}");
@@ -336,7 +364,7 @@ subsetTest(promise_test, async test => {
   
   let iframe2 = await createIframe(
     test, OTHER_ORIGIN2, "join-ad-interest-group 'none'; run-ad-auction 'none'");
-  await runInIframe(
+  await runInFrame(
       test, iframe2,
       `await createAndNavigateFencedFrame(test_instance, param);`,
       config);
@@ -345,3 +373,131 @@ subsetTest(promise_test, async test => {
       [ createBidderReportURL(uuid, '1', OTHER_ORIGIN1),
         createSellerReportURL(uuid, '1', OTHER_ORIGIN1)]);
 }, 'Run auction in cross-origin iframe and open winning ad in a fenced frame child of another cross-origin iframe.');
+
+
+
+
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  let bidderOrigin = OTHER_ORIGIN1;
+  let sellerOrigin = OTHER_ORIGIN2;
+  let bidderSendReportToURL = createBidderReportURL(uuid, '1', OTHER_ORIGIN3);
+  let sellerSendReportToURL = createSellerReportURL(uuid, '2', OTHER_ORIGIN4);
+  let bidderBeaconURL = createBidderBeaconURL(uuid, '3', OTHER_ORIGIN5);
+  let sellerBeaconURL = createSellerBeaconURL(uuid, '4', OTHER_ORIGIN6);
+  let renderURL = createRenderURL(
+      uuid,
+      `window.fence.reportEvent({
+         eventType: "beacon",
+         eventData: window.location.href,
+         destination: ["buyer", "seller"]
+       })`,
+       null, OTHER_ORIGIN7);
+
+  let iframe = await createIframe(test, bidderOrigin, "join-ad-interest-group");
+  let interestGroup = createInterestGroupForOrigin(
+      uuid, bidderOrigin,
+      {biddingLogicURL: createBiddingScriptURL(
+        { origin: bidderOrigin,
+          generateBid: `if (browserSignals.topWindowHostname !== "${document.location.hostname}")
+                          throw "Wrong topWindowHostname: " + browserSignals.topWindowHostname;
+                        if (interestGroup.owner !== "${bidderOrigin}")
+                          throw "Wrong origin: " + interestGroup.owner;
+                        if (!interestGroup.biddingLogicURL.startsWith("${bidderOrigin}"))
+                          throw "Wrong origin: " + interestGroup.biddingLogicURL;
+                        if (interestGroup.ads[0].renderUrl != "${renderURL}")
+                          throw "Wrong renderURL: " + interestGroup.ads[0].renderUrl;
+                        if (browserSignals.seller !== "${sellerOrigin}")
+                          throw "Wrong origin: " + browserSignals.seller;`,
+          reportWin: `if (browserSignals.topWindowHostname !== "${document.location.hostname}")
+                        throw "Wrong topWindowHostname: " + browserSignals.topWindowHostname;
+                      if (browserSignals.seller !== "${sellerOrigin}")
+                        throw "Wrong seller: " + browserSignals.seller;
+                      if (browserSignals.interestGroupOwner !== "${bidderOrigin}")
+                        throw "Wrong interestGroupOwner: " + browserSignals.interestGroupOwner;
+                      if (browserSignals.renderURL !== "${renderURL}")
+                        throw "Wrong renderURL: " + browserSignals.renderURL;
+                      if (browserSignals.seller !== "${sellerOrigin}")
+                        throw "Wrong seller: " + browserSignals.seller;
+                      sendReportTo("${bidderSendReportToURL}");
+                      registerAdBeacon({beacon: "${bidderBeaconURL}"});` }),
+       ads: [{ renderURL: renderURL }]});
+  await runInFrame(
+      test, iframe,
+      `await joinInterestGroup(test_instance, "${uuid}", ${JSON.stringify(interestGroup)});`);
+
+  await runBasicFledgeAuctionAndNavigate(test, uuid,
+    { seller: sellerOrigin,
+      interestGroupBuyers: [bidderOrigin],
+      decisionLogicURL: createDecisionScriptURL(
+        uuid,
+        { origin: sellerOrigin,
+          scoreAd: `if (browserSignals.topWindowHostname !== "${document.location.hostname}")
+                      throw "Wrong topWindowHostname: " + browserSignals.topWindowHostname;
+                    if (auctionConfig.seller !== "${sellerOrigin}")
+                      throw "Wrong seller: " + auctionConfig.seller;
+                    if (auctionConfig.interestGroupBuyers[0] !== "${bidderOrigin}")
+                      throw "Wrong interestGroupBuyers: " + auctionConfig.interestGroupBuyers;
+                    if (browserSignals.interestGroupOwner !== "${bidderOrigin}")
+                      throw "Wrong interestGroupOwner: " + browserSignals.interestGroupOwner;
+                    if (browserSignals.renderURL !== "${renderURL}")
+                      throw "Wrong renderURL: " + browserSignals.renderURL;`,
+          reportResult: `if (browserSignals.topWindowHostname !== "${document.location.hostname}")
+                           throw "Wrong topWindowHostname: " + browserSignals.topWindowHostname;
+                         if (browserSignals.interestGroupOwner !== "${bidderOrigin}")
+                           throw "Wrong interestGroupOwner: " + browserSignals.interestGroupOwner;
+                         if (browserSignals.renderURL !== "${renderURL}")
+                           throw "Wrong renderURL: " + browserSignals.renderURL;
+                         sendReportTo("${sellerSendReportToURL}");
+                         registerAdBeacon({beacon: "${sellerBeaconURL}"});`})
+     });
+
+  await waitForObservedRequests(
+      uuid,
+      [ bidderSendReportToURL,
+        sellerSendReportToURL,
+        `${bidderBeaconURL}, body: ${renderURL}`,
+        `${sellerBeaconURL}, body: ${renderURL}`
+      ]);
+}, 'Single seller auction with as many distinct origins as possible (except no component ads).');
+
+subsetTest(promise_test, async test => {
+  const uuid = generateUuid(test);
+
+  
+  
+  
+  
+  await joinInterestGroup(
+      test, uuid,
+      {ads: [{renderURL: createTrackerURL(window.location.origin, uuid, 'track_get', 'renderURL')}]});
+  let config = await runBasicFledgeTestExpectingWinner(test, uuid);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  let child_window =
+      await createFrame(test, document.location.origin, false);
+  await runInFrame(
+      test, child_window,
+      `await createAndNavigateFencedFrame(test_instance, param);
+       await joinInterestGroup(
+          test_instance, "${uuid}",
+          {biddingLogicURL: createBiddingScriptURL(
+              {reportWin: "sendReportTo('${createBidderReportURL(uuid, "2")}');" })});
+       await runBasicFledgeAuctionAndNavigate(test_instance, "${uuid}");`,
+      config);
+  await waitForObservedRequests(
+      uuid, [createBidderReportURL(uuid, "2"), createSellerReportURL(uuid)]);
+}, 'Run auction in main frame, try to open winning ad in different same-origin main frame.');

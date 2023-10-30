@@ -162,8 +162,10 @@ function createDecisionScriptURL(uuid, params = {}) {
 
 
 
-function createRenderURL(uuid, script, signalsParams) {
-  let url = new URL(`${BASE_URL}resources/fenced-frame.sub.py`);
+function createRenderURL(uuid, script, signalsParams, origin) {
+  if (origin == null)
+    origin = new URL(BASE_URL).origin;
+  let url = new URL(`${origin}${RESOURCE_PATH}fenced-frame.sub.py`);
   if (script)
     url.searchParams.append('script', script);
   if (signalsParams)
