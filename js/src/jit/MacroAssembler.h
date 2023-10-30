@@ -786,6 +786,11 @@ class MacroAssembler : public MacroAssemblerSpecific {
   
   
   
+  void setupUnalignedABICallDontSaveRestoreSP();
+
+  
+  
+  
   
   
   
