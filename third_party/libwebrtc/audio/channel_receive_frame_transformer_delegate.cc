@@ -50,6 +50,18 @@ class TransformableIncomingAudioFrame
     return header_.sequenceNumber;
   }
 
+  absl::optional<uint64_t> AbsoluteCaptureTimestamp() const override {
+    
+    
+    return absl::nullopt;
+  }
+  const RTPHeader& Header() const { return header_; }
+
+  FrameType Type() const override {
+    return header_.extension.voiceActivity ? FrameType::kAudioFrameSpeech
+                                           : FrameType::kAudioFrameCN;
+  }
+
  private:
   rtc::Buffer payload_;
   RTPHeader header_;
@@ -106,6 +118,6 @@ void ChannelReceiveFrameTransformerDelegate::ReceiveFrame(
   auto* transformed_frame =
       static_cast<TransformableIncomingAudioFrame*>(frame.get());
   receive_frame_callback_(transformed_frame->GetData(),
-                          transformed_frame->GetHeader());
+                          transformed_frame->Header());
 }
 }  

@@ -84,6 +84,18 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   virtual const absl::optional<uint16_t> SequenceNumber() const {
     return absl::nullopt;
   }
+
+  
+  
+  virtual absl::optional<uint64_t> AbsoluteCaptureTimestamp() const {
+    return absl::nullopt;
+  }
+
+  enum class FrameType { kEmptyFrame, kAudioFrameSpeech, kAudioFrameCN };
+
+  
+  
+  virtual FrameType Type() const { return FrameType::kEmptyFrame; }
 };
 
 
