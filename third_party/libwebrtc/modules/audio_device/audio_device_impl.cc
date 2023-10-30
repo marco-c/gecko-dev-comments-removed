@@ -26,16 +26,7 @@
 #endif
 #elif defined(WEBRTC_ANDROID)
 #include <stdlib.h>
-#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-#include "modules/audio_device/android/aaudio_player.h"
-#include "modules/audio_device/android/aaudio_recorder.h"
-#endif
-#include "modules/audio_device/android/audio_device_template.h"
-#include "modules/audio_device/android/audio_manager.h"
-#include "modules/audio_device/android/audio_record_jni.h"
-#include "modules/audio_device/android/audio_track_jni.h"
-#include "modules/audio_device/android/opensles_player.h"
-#include "modules/audio_device/android/opensles_recorder.h"
+#include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #elif defined(WEBRTC_LINUX)
 #if defined(WEBRTC_ENABLE_LINUX_ALSA)
 #include "modules/audio_device/linux/audio_device_alsa_linux.h"
@@ -74,7 +65,11 @@ rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
     AudioLayer audio_layer,
     TaskQueueFactory* task_queue_factory) {
   RTC_DLOG(LS_INFO) << __FUNCTION__;
+#if defined(WEBRTC_ANDROID)
+  return CreateAndroidAudioDeviceModule(audio_layer);
+#else
   return AudioDeviceModule::CreateForTest(audio_layer, task_queue_factory);
+#endif
 }
 
 
@@ -87,6 +82,14 @@ rtc::scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
   
   if (audio_layer == AudioDeviceModule::kWindowsCoreAudio2) {
     RTC_LOG(LS_ERROR) << "Use the CreateWindowsCoreAudioAudioDeviceModule() "
+                         "factory method instead for this option.";
+    return nullptr;
+  } else if (audio_layer == AudioDeviceModule::kAndroidJavaAudio ||
+             audio_layer == AudioDeviceModule::kAndroidOpenSLESAudio ||
+             audio_layer == AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio ||
+             audio_layer == kAndroidAAudioAudio ||
+             audio_layer == kAndroidJavaInputAndAAudioOutputAudio) {
+    RTC_LOG(LS_ERROR) << "Use the CreateAndroidAudioDeviceModule() "
                          "factory method instead for this option.";
     return nullptr;
   }
@@ -182,70 +185,13 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
   }
 #endif  
 
-#if defined(WEBRTC_ANDROID)
-  
-  audio_manager_android_.reset(new AudioManager());
-  
-  if (audio_layer == kPlatformDefaultAudio) {
-    if (audio_manager_android_->IsAAudioSupported()) {
-      
-      audio_layer = kAndroidAAudioAudio;
-    } else if (audio_manager_android_->IsLowLatencyPlayoutSupported() &&
-               audio_manager_android_->IsLowLatencyRecordSupported()) {
-      
-      audio_layer = kAndroidOpenSLESAudio;
-    } else if (audio_manager_android_->IsLowLatencyPlayoutSupported() &&
-               !audio_manager_android_->IsLowLatencyRecordSupported()) {
-      
-      
-      audio_layer = kAndroidJavaInputAndOpenSLESOutputAudio;
-    } else {
-      
-      
-      audio_layer = kAndroidJavaAudio;
-    }
-  }
-  AudioManager* audio_manager = audio_manager_android_.get();
-  if (audio_layer == kAndroidJavaAudio) {
-    
-    audio_device_.reset(new AudioDeviceTemplate<AudioRecordJni, AudioTrackJni>(
-        audio_layer, audio_manager));
-  } else if (audio_layer == kAndroidOpenSLESAudio) {
-    
-    audio_device_.reset(
-        new AudioDeviceTemplate<OpenSLESRecorder, OpenSLESPlayer>(
-            audio_layer, audio_manager));
-  } else if (audio_layer == kAndroidJavaInputAndOpenSLESOutputAudio) {
-    
-    
-    
-    audio_device_.reset(new AudioDeviceTemplate<AudioRecordJni, OpenSLESPlayer>(
-        audio_layer, audio_manager));
-  } else if (audio_layer == kAndroidAAudioAudio) {
-#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-    
-    audio_device_.reset(new AudioDeviceTemplate<AAudioRecorder, AAudioPlayer>(
-        audio_layer, audio_manager));
-#endif
-  } else if (audio_layer == kAndroidJavaInputAndAAudioOutputAudio) {
-#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
-    
-    audio_device_.reset(new AudioDeviceTemplate<AudioRecordJni, AAudioPlayer>(
-        audio_layer, audio_manager));
-#endif
-  } else {
-    RTC_LOG(LS_ERROR) << "The requested audio layer is not supported";
-    audio_device_.reset(nullptr);
-  }
 
 
 
 
 
 
-
-
-#elif defined(WEBRTC_LINUX)
+#if !defined(WEBRTC_ANDROID) && defined(WEBRTC_LINUX)
 #if !defined(WEBRTC_ENABLE_LINUX_PULSE)
   
   

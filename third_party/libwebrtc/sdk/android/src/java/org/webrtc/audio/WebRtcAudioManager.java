@@ -55,11 +55,13 @@ class WebRtcAudioManager {
         : getMinInputFrameSize(sampleRate, numberOfInputChannels);
   }
 
-  private static boolean isLowLatencyOutputSupported(Context context) {
+  @CalledByNative
+  static boolean isLowLatencyOutputSupported(Context context) {
     return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_AUDIO_LOW_LATENCY);
   }
 
-  private static boolean isLowLatencyInputSupported(Context context) {
+  @CalledByNative
+  static boolean isLowLatencyInputSupported(Context context) {
     
     
     
