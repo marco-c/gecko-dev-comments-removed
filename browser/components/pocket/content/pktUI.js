@@ -226,6 +226,7 @@ var pktUI = (function () {
   function onShowSignup() {
     
     SaveToPocket.itemDeleted();
+    pktTelemetry.submitPocketButtonPing("click", "save_button");
     
     pktTelemetry.sendStructuredIngestionEvent(
       pktTelemetry.createPingPayload({
@@ -240,6 +241,7 @@ var pktUI = (function () {
   }
 
   async function onShowHome() {
+    pktTelemetry.submitPocketButtonPing("click", "home_button");
     
     pktTelemetry.sendStructuredIngestionEvent(
       pktTelemetry.createPingPayload({
@@ -300,6 +302,7 @@ var pktUI = (function () {
       return;
     }
 
+    pktTelemetry.submitPocketButtonPing("click", "save_button");
     
     pktTelemetry.sendStructuredIngestionEvent(
       pktTelemetry.createPingPayload({
@@ -451,6 +454,7 @@ var pktUI = (function () {
     
     if (data.source) {
       const { position, source, model } = data;
+      pktTelemetry.submitPocketButtonPing("click", source, position, model);
       const payload = pktTelemetry.createPingPayload({
         ...(model ? { model } : {}),
         events: [
@@ -485,6 +489,12 @@ var pktUI = (function () {
     const { url, position, model } = data;
     
     if (model && (position || position === 0)) {
+      pktTelemetry.submitPocketButtonPing(
+        "click",
+        "on_save_recs",
+        position,
+        model
+      );
       const payload = pktTelemetry.createPingPayload({
         model,
         events: [
