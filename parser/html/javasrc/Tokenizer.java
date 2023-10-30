@@ -1405,6 +1405,16 @@ public class Tokenizer implements Locator, Locator2 {
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         startErrorReporting();
         
     }
@@ -1465,6 +1475,8 @@ public class Tokenizer implements Locator, Locator2 {
 
 
 
+        
+        
         
         
         
@@ -6320,24 +6332,24 @@ public class Tokenizer implements Locator, Locator2 {
         forceQuirks = false;
     }
 
-    @Inline private void adjustDoubleHyphenAndAppendToStrBufCarriageReturn()
+    private void adjustDoubleHyphenAndAppendToStrBufCarriageReturn()
             throws SAXException {
         silentCarriageReturn();
         adjustDoubleHyphenAndAppendToStrBufAndErr('\n', false);
     }
 
-    @Inline private void adjustDoubleHyphenAndAppendToStrBufLineFeed()
+    private void adjustDoubleHyphenAndAppendToStrBufLineFeed()
             throws SAXException {
         silentLineFeed();
         adjustDoubleHyphenAndAppendToStrBufAndErr('\n', false);
     }
 
-    @Inline private void appendStrBufLineFeed() {
+    private void appendStrBufLineFeed() {
         silentLineFeed();
         appendStrBuf('\n');
     }
 
-    @Inline private void appendStrBufCarriageReturn() {
+    private void appendStrBufCarriageReturn() {
         silentCarriageReturn();
         appendStrBuf('\n');
     }

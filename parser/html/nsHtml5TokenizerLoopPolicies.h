@@ -9,7 +9,7 @@
 
 
 
-struct nsHtml5SilentPolicy {
+struct nsHtml5FastestPolicy {
   static const bool reportErrors = false;
   static int32_t transition(nsHtml5Highlighter* aHighlighter, int32_t aState,
                             bool aReconsume, int32_t aPos) {
@@ -17,6 +17,77 @@ struct nsHtml5SilentPolicy {
   }
   static void completedNamedCharacterReference(
       nsHtml5Highlighter* aHighlighter) {}
+
+  static char16_t checkChar(nsHtml5Tokenizer* aTokenizer, char16_t* buf,
+                            int32_t pos) {
+    return buf[pos];
+  }
+
+  static void silentCarriageReturn(nsHtml5Tokenizer* aTokenizer) {
+    aTokenizer->lastCR = true;
+  }
+
+  static void silentLineFeed(nsHtml5Tokenizer* aTokenizer) {}
+};
+
+
+
+
+
+
+struct nsHtml5LineColPolicy {
+  static const bool reportErrors = false;
+  static int32_t transition(nsHtml5Highlighter* aHighlighter, int32_t aState,
+                            bool aReconsume, int32_t aPos) {
+    return aState;
+  }
+  static void completedNamedCharacterReference(
+      nsHtml5Highlighter* aHighlighter) {}
+
+  static char16_t checkChar(nsHtml5Tokenizer* aTokenizer, char16_t* buf,
+                            int32_t pos) {
+    
+    
+    
+    
+    char16_t c = buf[pos];
+    if (MOZ_UNLIKELY(aTokenizer->nextCharOnNewLine)) {
+      
+      
+      
+      
+      aTokenizer->line++;
+      aTokenizer->col = 1;
+      aTokenizer->nextCharOnNewLine = false;
+    } else if (MOZ_LIKELY(!NS_IS_LOW_SURROGATE(c))) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      aTokenizer->col++;
+    }
+    return c;
+  }
+
+  static void silentCarriageReturn(nsHtml5Tokenizer* aTokenizer) {
+    aTokenizer->nextCharOnNewLine = true;
+    aTokenizer->lastCR = true;
+  }
+
+  static void silentLineFeed(nsHtml5Tokenizer* aTokenizer) {
+    aTokenizer->nextCharOnNewLine = true;
+  }
 };
 
 
@@ -32,6 +103,20 @@ struct nsHtml5ViewSourcePolicy {
   static void completedNamedCharacterReference(
       nsHtml5Highlighter* aHighlighter) {
     aHighlighter->CompletedNamedCharacterReference();
+  }
+
+  static char16_t checkChar(nsHtml5Tokenizer* aTokenizer, char16_t* buf,
+                            int32_t pos) {
+    return buf[pos];
+  }
+
+  static void silentCarriageReturn(nsHtml5Tokenizer* aTokenizer) {
+    aTokenizer->line++;
+    aTokenizer->lastCR = true;
+  }
+
+  static void silentLineFeed(nsHtml5Tokenizer* aTokenizer) {
+    aTokenizer->line++;
   }
 };
 

@@ -111,6 +111,15 @@ nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink, nsHtml5TreeOpStage* aStage,
 
 ~nsHtml5TreeBuilder();
 
+bool WantsLineAndColumn() {
+  
+  
+  
+  
+  
+  return !(mBuilder && mPreventScriptExecution);
+}
+
 void StartPlainTextViewSource(const nsAutoString& aTitle);
 
 void StartPlainText();
