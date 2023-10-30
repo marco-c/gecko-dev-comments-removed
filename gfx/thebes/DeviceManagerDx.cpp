@@ -1184,6 +1184,10 @@ void DeviceManagerDx::DisableD3D11AfterCrash() {
 }
 
 RefPtr<ID3D11Device> DeviceManagerDx::GetCompositorDevice() {
+  
+  
+  
+  
   MutexAutoLock lock(mDeviceLock);
   return mCompositorDevice;
 }
