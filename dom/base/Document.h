@@ -1590,9 +1590,12 @@ class Document : public nsINode,
   
   HTMLSharedElement* GetHead();
 
-  ServoStyleSet* StyleSetForPresShellOrMediaQueryEvaluation() const {
+  ServoStyleSet* StyleSetForPresShell() const {
+    MOZ_ASSERT(!!mStyleSet.get());
     return mStyleSet.get();
   }
+
+  inline ServoStyleSet& EnsureStyleSet() const;
 
   
   
