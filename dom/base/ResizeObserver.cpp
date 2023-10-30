@@ -186,10 +186,7 @@ ResizeObservation::ResizeObservation(Element& aTarget,
     : mTarget(&aTarget),
       mObserver(&aObserver),
       mObservedBox(aBox),
-      mLastReportedSize(
-          {StaticPrefs::dom_resize_observer_last_reported_size_invalid()
-               ? LogicalPixelSize(WritingMode(), gfx::Size(-1, -1))
-               : LogicalPixelSize()}) {
+      mLastReportedSize({LogicalPixelSize(WritingMode(), gfx::Size(-1, -1))}) {
   aTarget.BindObject(mObserver);
 }
 
@@ -313,20 +310,6 @@ void ResizeObserver::Observe(Element& aTarget,
   }
 
   observation = new ResizeObservation(aTarget, *this, aOptions.mBox);
-  if (!StaticPrefs::dom_resize_observer_last_reported_size_invalid() &&
-      this == mDocument->GetLastRememberedSizeObserver()) {
-    
-    
-    
-    
-    
-    
-    
-    
-    observation->UpdateLastReportedSize(
-        {LogicalPixelSize(WritingMode(), gfx::Size(-1, -1))});
-    MOZ_ASSERT(observation->IsActive());
-  }
   mObservationList.insertBack(observation);
 
   
