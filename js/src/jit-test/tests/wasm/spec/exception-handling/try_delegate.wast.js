@@ -78,7 +78,12 @@ let $0 = instantiate(`(module
       (catch_all (i32.const 1)))
   )
 
-  (func (export "delegate-to-caller")
+  (func (export "delegate-to-caller-trivial")
+    (try
+      (do (throw $$e0))
+      (delegate 0)))
+
+  (func (export "delegate-to-caller-skipping")
     (try (do (try (do (throw $$e0)) (delegate 1))) (catch_all))
   )
 
@@ -108,6 +113,24 @@ let $0 = instantiate(`(module
       (catch $$e1 (i32.const 2))
     )
   )
+
+  (func (export "delegate-correct-targets") (result i32)
+    (try (result i32)
+      (do (try $$l3
+            (do (try $$l2
+                  (do (try $$l1
+                        (do (try $$l0
+                              (do (try
+                                    (do (throw $$e0))
+                                    (delegate $$l1)))
+                              (catch_all unreachable)))
+                        (delegate $$l3)))
+                  (catch_all unreachable)))
+            (catch_all (try
+                         (do (throw $$e0))
+                         (delegate $$l3))))
+          unreachable)
+      (catch_all (i32.const 1))))
 )`);
 
 
@@ -147,7 +170,13 @@ assert_return(() => invoke($0, `delegate-to-block`, []), [value("i32", 1)]);
 assert_return(() => invoke($0, `delegate-to-catch`, []), [value("i32", 1)]);
 
 
-assert_exception(() => invoke($0, `delegate-to-caller`, []));
+assert_exception(() => invoke($0, `delegate-to-caller-trivial`, []));
+
+
+assert_exception(() => invoke($0, `delegate-to-caller-skipping`, []));
+
+
+assert_return(() => invoke($0, `delegate-correct-targets`, []), [value("i32", 1)]);
 
 
 assert_malformed(() => instantiate(`(module (func (delegate 0))) `), `unexpected token`);

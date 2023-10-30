@@ -36,6 +36,10 @@ let $0 = instantiate(`(module
 
   (func (export "throw-param-f64") (param f64) (local.get 0) (throw $$e-f64))
 
+  (func (export "throw-polymorphic") (throw $$e0) (throw $$e-i32))
+
+  (func (export "throw-polymorphic-block") (block (result i32) (throw $$e0)) (throw $$e-i32))
+
   (func $$throw-1-2 (i32.const 1) (i32.const 2) (throw $$e-i32-i32))
   (func (export "test-throw-1-2")
     (try
@@ -67,6 +71,12 @@ assert_exception(() => invoke($0, `throw-param-i64`, [5n]));
 
 
 assert_exception(() => invoke($0, `throw-param-f64`, [value("f64", 5)]));
+
+
+assert_exception(() => invoke($0, `throw-polymorphic`, []));
+
+
+assert_exception(() => invoke($0, `throw-polymorphic-block`, []));
 
 
 assert_return(() => invoke($0, `test-throw-1-2`, []), []);
