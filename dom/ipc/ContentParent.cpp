@@ -1644,7 +1644,7 @@ void ContentParent::BroadcastMediaCodecsSupportedUpdate(
 
   
   nsCString supportString;
-  media::MCSInfo::GetMediaCodecsSupportedString(supportString, support);
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, aSupported);
   gfx::gfxVars::SetCodecSupportInfo(supportString);
   supportString.ReplaceSubstring("\n"_ns, ", "_ns);
   LOGPDM("Broadcast support from '%s', support=%s",
