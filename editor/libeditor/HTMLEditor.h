@@ -4746,8 +4746,12 @@ class MOZ_STACK_CLASS ParagraphStateAtSelection final {
 
 
 
+
+
+
   static nsresult CollectEditableFormatNodesInSelection(
-      HTMLEditor& aHTMLEditor, const dom::Element& aEditingHost,
+      HTMLEditor& aHTMLEditor, FormatBlockMode aFormatBlockMode,
+      const dom::Element& aEditingHost,
       nsTArray<OwningNonNull<nsIContent>>& aArrayOfContents);
 
   RefPtr<nsAtom> mFirstParagraphState;

@@ -5,6 +5,7 @@
 
 #include "AutoRangeArray.h"
 
+#include "EditAction.h"
 #include "EditorDOMPoint.h"   
 #include "EditorForwards.h"   
 #include "HTMLEditUtils.h"    
@@ -637,13 +638,23 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
         aEditSubAction == EditSubAction::eIndent ||
         aEditSubAction == EditSubAction::eOutdent ||
         aEditSubAction == EditSubAction::eSetOrClearAlignment ||
-        aEditSubAction == EditSubAction::eCreateOrRemoveBlock;
+        aEditSubAction == EditSubAction::eCreateOrRemoveBlock ||
+        aEditSubAction == EditSubAction::eFormatBlockForHTMLCommand;
     
     
     
     if (!point.GetContainerParent()->IsInclusiveDescendantOf(&aEditingHost) &&
         (blockLevelAction ||
          !point.GetContainer()->IsInclusiveDescendantOf(&aEditingHost))) {
+      break;
+    }
+
+    
+    
+    if (aEditSubAction == EditSubAction::eFormatBlockForHTMLCommand &&
+        HTMLEditUtils::IsFormatElementForFormatBlockCommand(
+            *point.ContainerAs<Element>())) {
+      point.Set(point.GetContainer());
       break;
     }
 
@@ -665,7 +676,8 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
 
 
 static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
-    const EditorDOMPoint& aPointInLine, const Element& aEditingHost) {
+    const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
+    const Element& aEditingHost) {
   
   
 
@@ -717,6 +729,7 @@ static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     NS_WARNING_ASSERTION(point.IsSet(), "Failed to set to after the text node");
   }
 
+  
   
   
   
@@ -804,6 +817,15 @@ static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     
     if (!point.GetContainer()->IsInclusiveDescendantOf(&aEditingHost) &&
         !point.GetContainerParent()->IsInclusiveDescendantOf(&aEditingHost)) {
+      break;
+    }
+
+    
+    
+    if (aEditSubAction == EditSubAction::eFormatBlockForHTMLCommand &&
+        HTMLEditUtils::IsFormatElementForFormatBlockCommand(
+            *point.ContainerAs<Element>())) {
+      point.SetAfter(point.GetContainer());
       break;
     }
 
@@ -912,7 +934,7 @@ nsresult AutoRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
     return NS_ERROR_FAILURE;
   }
   endPoint = GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
-      endPoint, aEditingHost);
+      endPoint, aEditSubAction, aEditingHost);
   const EditorDOMPoint lastRawPoint =
       endPoint.IsStartOfContainer() ? endPoint : endPoint.PreviousPoint();
   
@@ -1077,7 +1099,8 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
   }
 
   switch (aEditSubAction) {
-    case EditSubAction::eCreateOrRemoveBlock: {
+    case EditSubAction::eCreateOrRemoveBlock:
+    case EditSubAction::eFormatBlockForHTMLCommand: {
       
       
       CollectChildrenOptions options = {
@@ -1086,13 +1109,35 @@ nsresult AutoRangeArray::CollectEditTargetNodes(
       if (aCollectNonEditableNodes == CollectNonEditableNodes::No) {
         options += CollectChildrenOption::IgnoreNonEditableChildren;
       }
-      for (const size_t index :
-           Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
-        OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
-        if (HTMLEditUtils::IsListItem(content)) {
-          aOutArrayOfContents.RemoveElementAt(index);
-          HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
-                                         options);
+      if (aEditSubAction == EditSubAction::eCreateOrRemoveBlock) {
+        for (const size_t index :
+             Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+          OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+          if (HTMLEditUtils::IsListItem(content)) {
+            aOutArrayOfContents.RemoveElementAt(index);
+            HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
+                                           options);
+          }
+        }
+      } else {
+        
+        
+        
+        MOZ_ASSERT(
+            HTMLEditUtils::IsFormatTagForFormatBlockCommand(*nsGkAtoms::dt));
+        MOZ_ASSERT(
+            HTMLEditUtils::IsFormatTagForFormatBlockCommand(*nsGkAtoms::dd));
+        for (const size_t index :
+             Reversed(IntegerRange(aOutArrayOfContents.Length()))) {
+          OwningNonNull<nsIContent> content = aOutArrayOfContents[index];
+          MOZ_ASSERT_IF(HTMLEditUtils::IsListItem(content),
+                        content->IsAnyOfHTMLElements(
+                            nsGkAtoms::dd, nsGkAtoms::dt, nsGkAtoms::li));
+          if (content->IsHTMLElement(nsGkAtoms::li)) {
+            aOutArrayOfContents.RemoveElementAt(index);
+            HTMLEditUtils::CollectChildren(*content, aOutArrayOfContents, index,
+                                           options);
+          }
         }
       }
       

@@ -452,6 +452,11 @@ enum class EditSubAction : int32_t {
   
   
   
+  eFormatBlockForHTMLCommand,
+
+  
+  
+  
   eMergeBlockContents,
 
   
