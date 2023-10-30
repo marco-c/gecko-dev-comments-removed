@@ -1249,7 +1249,7 @@ void AutoEnterOOMUnsafeRegion::crash_impl(const char* reason) {
   
   
   
-  MOZ_ReportCrash(msgbuf, __FILE__, __LINE__);
+  fprintf(stderr, "Hit MOZ_CRASH(%s) at %s:%d\n", msgbuf, __FILE__, __LINE__);
 #endif
   MOZ_CRASH_UNSAFE(msgbuf);
 }
