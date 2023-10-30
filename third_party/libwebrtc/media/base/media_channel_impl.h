@@ -272,15 +272,6 @@ class VideoMediaChannel : public MediaChannel,
                               encoder_selector) override {}
 
   
-  
-  
-  
-  
-  
-  
-  
-  void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override = 0;
-  
   virtual bool GetSendStats(VideoMediaSendInfo* info) = 0;
   virtual bool GetReceiveStats(VideoMediaReceiveInfo* info) = 0;
   bool GetStats(VideoMediaSendInfo* info) override {

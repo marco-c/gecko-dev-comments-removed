@@ -43,7 +43,7 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
         recvbuf_size_(-1),
         dscp_(rtc::DSCP_NO_CHANGE) {}
 
-  void SetDestination(MediaChannel* dest) { dest_ = dest; }
+  void SetDestination(MediaReceiveChannelInterface* dest) { dest_ = dest; }
 
   
   
@@ -207,7 +207,7 @@ class FakeNetworkInterface : public MediaChannelNetworkInterface {
   }
 
   webrtc::TaskQueueBase* thread_;
-  MediaChannel* dest_;
+  MediaReceiveChannelInterface* dest_;
   bool conf_;
   
   std::vector<uint32_t> conf_sent_ssrcs_;

@@ -944,6 +944,14 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
   
   virtual void SetVideoCodecSwitchingEnabled(bool enabled) = 0;
   virtual bool GetStats(VideoMediaSendInfo* stats) = 0;
+  
+  
+  
+  
+  
+  
+  
+  
   virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
   
   virtual webrtc::RtcpMode SendCodecRtcpMode() const = 0;
