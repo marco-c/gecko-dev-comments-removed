@@ -11,6 +11,10 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.TranslationsController
+import org.mozilla.geckoview.TranslationsController.Language
+import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.DOWNLOAD
+import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.ModelManagementOptions
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationOptions
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationState
@@ -25,9 +29,22 @@ class TranslationsTest : BaseSessionTest() {
             mapOf(
                 "browser.translations.enable" to true,
                 "browser.translations.automaticallyPopup" to true,
+                "intl.accept_languages" to "fr-CA, it, de",
             ),
         )
     }
+
+    private var expectedLanguages: List<TranslationsController.Language> = listOf(
+        Language("bg", "Bulgarian"),
+        Language("nl", "Dutch"),
+        Language("en", "English"),
+        Language("fr", "French"),
+        Language("de", "German"),
+        Language("it", "Italian"),
+        Language("pl", "Polish"),
+        Language("pt", "Portuguese"),
+        Language("es", "Spanish"),
+    )
 
     @Test
     fun onExpectedTranslateDelegateTest() {
@@ -131,5 +148,119 @@ class TranslationsTest : BaseSessionTest() {
         var options = TranslationOptions.Builder().downloadModel(true).build()
         assertTrue("TranslationOptions builder options work as expected.", options.downloadModel)
         
+    }
+
+    @Test
+    fun testIsTranslationsEngineSupported() {
+        sessionRule.setPrefsUntilTestEnd(mapOf("browser.translations.simulateUnsupportedEngine" to false))
+        val isSupportedResult = TranslationsController.RuntimeTranslation.isTranslationsEngineSupported()
+        assertTrue(
+            "The translations engine is correctly reporting as supported.",
+            sessionRule.waitForResult(isSupportedResult),
+        )
+        
+        
+    }
+
+    @Test
+    fun testGetPreferredLanguage() {
+        val preferredLanguages = TranslationsController.RuntimeTranslation.preferredLanguages()
+        sessionRule.waitForResult(preferredLanguages).let { languages ->
+            assertTrue(
+                "French is the first language preference.",
+                languages[0] == "fr",
+            )
+            assertTrue(
+                "Italian is the second language preference.",
+                languages[1] == "it",
+            )
+            assertTrue(
+                "German is the third language preference.",
+                languages[2] == "de",
+            )
+            
+            
+        }
+    }
+
+    @Test
+    fun testManageLanguageModel() {
+        
+        val options = ModelManagementOptions.Builder()
+            .languageToManage("en")
+            .operation(TranslationsController.RuntimeTranslation.DOWNLOAD)
+            .build()
+
+        assertTrue("ModelManagementOptions builder options work as expected.", options.language == "en" && options.operation == DOWNLOAD)
+    }
+
+    @Test
+    fun testListSupportedLanguages() {
+        val translationDropdowns = TranslationsController.RuntimeTranslation.listSupportedLanguages()
+        
+        try {
+            sessionRule.waitForResult(translationDropdowns)
+            assertTrue("Should not be able to list supported languages.", false)
+        } catch (e: Exception) {
+            assertTrue("Should have an exception.", true)
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+
+    @Test
+    fun testListModelDownloadStates() {
+        var modelStatesResult = TranslationsController.RuntimeTranslation.listModelDownloadStates()
+        
+        try {
+            sessionRule.waitForResult(modelStatesResult)
+            assertTrue("Should not be able to list models.", false)
+        } catch (e: Exception) {
+            assertTrue("Should have an exception.", true)
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
