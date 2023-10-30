@@ -104,7 +104,14 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
   RTC_CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
   RTC_DCHECK_EQ(primary_encoded_.size(), info.encoded_bytes);
 
-  if (info.encoded_bytes == 0 || info.encoded_bytes >= kRedMaxPacketSize) {
+  if (info.encoded_bytes == 0) {
+    return info;
+  }
+  if (info.encoded_bytes >= kRedMaxPacketSize) {
+    
+    
+    
+    encoded->AppendData(primary_encoded_);
     return info;
   }
   RTC_DCHECK_GT(max_packet_length_, info.encoded_bytes);
