@@ -41934,6 +41934,15 @@
       return functions.filter(fn => fn.name !== "anonymous");
     }
 
+    function getClassSymbols(sourceId) {
+      const symbols = getInternalSymbols(sourceId);
+      if (!symbols) {
+        return [];
+      }
+
+      return symbols.classes;
+    }
+
     
     function getSymbols(sourceId) {
       const symbols = getInternalSymbols(sourceId);
@@ -41965,7 +41974,7 @@
 
         
         
-        classes: symbols.classes,
+        
 
         
         hasJsx: symbols.hasJsx,
@@ -43886,6 +43895,7 @@
       findBestMatchExpression,
       getSymbols,
       getFunctionSymbols,
+      getClassSymbols,
       getScopes,
       clearSources: clearAllHelpersForSources,
       hasSyntaxError,

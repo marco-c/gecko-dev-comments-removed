@@ -2,7 +2,12 @@
 
 
 
-import { getSymbols, getFunctionSymbols, clearSymbols } from "./getSymbols";
+import {
+  getSymbols,
+  getFunctionSymbols,
+  getClassSymbols,
+  clearSymbols,
+} from "./getSymbols";
 import { clearASTs } from "./utils/ast";
 import getScopes, { clearScopes } from "./getScopes";
 import { setSource, clearSources } from "./sources";
@@ -25,6 +30,7 @@ self.onmessage = workerHandler({
   findBestMatchExpression,
   getSymbols,
   getFunctionSymbols,
+  getClassSymbols,
   getScopes,
   clearSources: clearAllHelpersForSources,
   hasSyntaxError,

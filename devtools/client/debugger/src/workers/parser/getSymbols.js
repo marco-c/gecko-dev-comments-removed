@@ -330,6 +330,15 @@ export function getFunctionSymbols(sourceId, maxResults) {
   return functions.filter(fn => fn.name !== "anonymous");
 }
 
+export function getClassSymbols(sourceId) {
+  const symbols = getInternalSymbols(sourceId);
+  if (!symbols) {
+    return [];
+  }
+
+  return symbols.classes;
+}
+
 
 export function getSymbols(sourceId) {
   const symbols = getInternalSymbols(sourceId);
@@ -361,7 +370,7 @@ export function getSymbols(sourceId) {
 
     
     
-    classes: symbols.classes,
+    
 
     
     hasJsx: symbols.hasJsx,

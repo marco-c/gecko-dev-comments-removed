@@ -37,8 +37,18 @@ export const setSymbols = memoizeableAction("setSymbols", {
   action: (location, thunkArgs) => doSetSymbols(location, thunkArgs),
 });
 
-export function getFunctionSymbols(sourceId, maxResults) {
-  return ({ parserWorker }) => {
-    return parserWorker.getFunctionSymbols(sourceId, maxResults);
+export function getFunctionSymbols(location, maxResults) {
+  return async ({ parserWorker, dispatch }) => {
+    
+    await dispatch(loadSourceText(location.source, location.sourceActor));
+    return parserWorker.getFunctionSymbols(location.source.id, maxResults);
+  };
+}
+
+export function getClassSymbols(location) {
+  return async ({ parserWorker, dispatch }) => {
+    
+    await dispatch(loadSourceText(location.source, location.sourceActor));
+    return parserWorker.getClassSymbols(location.source.id);
   };
 }
