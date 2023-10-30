@@ -1059,18 +1059,20 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
   MOZ_ASSERT(aPresContext->IsPaginated(),
              "SplitRowGroup currently supports only paged media");
 
+  const WritingMode wm = aReflowInput.GetWritingMode();
   nsTableRowFrame* prevRowFrame = nullptr;
-  aDesiredSize.Height() = 0;
+  aDesiredSize.BSize(wm) = 0;
   aDesiredSize.SetOverflowAreasToDesiredBounds();
 
-  const nscoord availWidth = aReflowInput.AvailableWidth();
-  const nscoord availHeight = aReflowInput.AvailableHeight();
-
+  const nscoord availISize = aReflowInput.AvailableISize();
+  const nscoord availBSize = aReflowInput.AvailableBSize();
+  const nsSize containerSize =
+      aReflowInput.ComputedSizeAsContainerIfConstrained();
   const bool borderCollapse = aTableFrame->IsBorderCollapse();
 
-  
-  nscoord pageHeight = aPresContext->GetPageSize().height;
-  NS_ASSERTION(pageHeight != NS_UNCONSTRAINEDSIZE,
+  const nscoord pageBSize =
+      LogicalSize(wm, aPresContext->GetPageSize()).BSize(wm);
+  NS_ASSERTION(pageBSize != NS_UNCONSTRAINEDSIZE,
                "The table shouldn't be split when there should be space");
 
   bool isTopOfPage = aReflowInput.mFlags.mIsTopOfPage;
@@ -1086,23 +1088,25 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
        rowFrame = rowFrame->GetNextRow()) {
     bool rowIsOnPage = true;
     nscoord cellSpacingB = aTableFrame->GetRowSpacing(rowFrame->GetRowIndex());
-    nsRect rowRect = rowFrame->GetNormalRect();
+    const LogicalRect rowRect =
+        rowFrame->GetLogicalNormalRect(wm, containerSize);
     
-    if (rowRect.YMost() > availHeight) {
+    if (rowRect.BEnd(wm) > availBSize) {
       nsTableRowFrame* contRow = nullptr;
       
       
       
       if (!prevRowFrame ||
-          (availHeight - aDesiredSize.Height() > pageHeight / 20)) {
-        nsSize availSize(availWidth, std::max(availHeight - rowRect.y, 0));
+          (availBSize - aDesiredSize.BSize(wm) > pageBSize / 20)) {
+        LogicalSize availSize(wm, availISize,
+                              std::max(availBSize - rowRect.BStart(wm), 0));
         
         
-        availSize.height = std::min(availSize.height, rowRect.height);
+        availSize.BSize(wm) = std::min(availSize.BSize(wm), rowRect.BSize(wm));
 
         ReflowInput rowReflowInput(
             aPresContext, aReflowInput, rowFrame,
-            LogicalSize(rowFrame->GetWritingMode(), availSize), Nothing(),
+            availSize.ConvertTo(rowFrame->GetWritingMode(), wm), Nothing(),
             ReflowInput::InitFlag::CallerWillInit);
 
         InitChildReflowInput(*aPresContext, borderCollapse, rowReflowInput);
@@ -1115,10 +1119,17 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
 
         
         
-        ReflowChild(rowFrame, aPresContext, rowMetrics, rowReflowInput, 0, 0,
-                    ReflowChildFlags::NoMoveFrame, aStatus);
-        rowFrame->SetSize(nsSize(rowMetrics.Width(), rowMetrics.Height()));
-        rowFrame->DidReflow(aPresContext, nullptr);
+        
+        
+        
+        const LogicalPoint dummyPos(wm);
+        const nsSize dummyContainerSize;
+        ReflowChild(rowFrame, aPresContext, rowMetrics, rowReflowInput, wm,
+                    dummyPos, dummyContainerSize, ReflowChildFlags::NoMoveFrame,
+                    aStatus);
+        FinishReflowChild(rowFrame, aPresContext, rowMetrics, &rowReflowInput,
+                          wm, dummyPos, dummyContainerSize,
+                          ReflowChildFlags::NoMoveFrame);
         rowFrame->DidResize();
 
         if (!aRowForcedPageBreak && !aStatus.IsFullyComplete() &&
@@ -1133,19 +1144,19 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         if (aStatus.IsIncomplete()) {
           
           
-          if ((rowMetrics.Height() <= rowReflowInput.AvailableHeight()) ||
+          if ((rowMetrics.BSize(wm) <= rowReflowInput.AvailableBSize()) ||
               isTopOfPage) {
             
             
             
             NS_ASSERTION(
-                rowMetrics.Height() <= rowReflowInput.AvailableHeight(),
-                "data loss - incomplete row needed more height than available, "
-                "on top of page");
+                rowMetrics.BSize(wm) <= rowReflowInput.AvailableBSize(),
+                "Data loss - incomplete row needed more block-size than "
+                "available, on top of page!");
             contRow = CreateContinuingRowFrame(rowFrame);
-            aDesiredSize.Height() += rowMetrics.Height();
+            aDesiredSize.BSize(wm) += rowMetrics.BSize(wm);
             if (prevRowFrame) {
-              aDesiredSize.Height() += cellSpacingB;
+              aDesiredSize.BSize(wm) += cellSpacingB;
             }
           } else {
             
@@ -1158,7 +1169,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
           
           
           
-          if (rowMetrics.Height() > availSize.height ||
+          if (rowMetrics.BSize(wm) > availSize.BSize(wm) ||
               (aStatus.IsInlineBreakBefore() && !aRowForcedPageBreak)) {
             
             if (isTopOfPage) {
@@ -1169,11 +1180,13 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
                 aStatus.Reset();
                 aStatus.SetIncomplete();
               }
-              aDesiredSize.Height() += rowMetrics.Height();
-              if (prevRowFrame) aDesiredSize.Height() += cellSpacingB;
+              aDesiredSize.BSize(wm) += rowMetrics.BSize(wm);
+              if (prevRowFrame) {
+                aDesiredSize.BSize(wm) += cellSpacingB;
+              }
               NS_WARNING(
-                  "data loss - complete row needed more height than available, "
-                  "on top of page");
+                  "Data loss - complete row needed more block-size than "
+                  "available, on top of page");
             } else {
               
               
@@ -1181,15 +1194,13 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
             }
           }
         }
-      }  
-         
-      else {
+      } else {
         
         rowIsOnPage = false;
       }
 
       nsTableRowFrame* lastRowThisPage = rowFrame;
-      nscoord spanningRowBottom = availHeight;
+      nscoord spanningRowBEnd = availBSize;
       if (!rowIsOnPage) {
         NS_ASSERTION(!contRow,
                      "We should not have created a continuation if none of "
@@ -1199,18 +1210,19 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
           aStatus.SetInlineLineBreakBeforeAndReset();
           break;
         }
-        spanningRowBottom = prevRowFrame->GetNormalRect().YMost();
+        spanningRowBEnd =
+            prevRowFrame->GetLogicalNormalRect(wm, containerSize).BEnd(wm);
         lastRowThisPage = prevRowFrame;
         aStatus.Reset();
         aStatus.SetIncomplete();
       }
-      
 
+      
       nsTableRowFrame* firstTruncatedRow;
       nscoord bMost;
       SplitSpanningCells(*aPresContext, aReflowInput, *aTableFrame,
                          *firstRowThisPage, *lastRowThisPage,
-                         aReflowInput.mFlags.mIsTopOfPage, spanningRowBottom,
+                         aReflowInput.mFlags.mIsTopOfPage, spanningRowBEnd,
                          contRow, firstTruncatedRow, bMost);
       if (firstTruncatedRow) {
         
@@ -1221,17 +1233,18 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
           } else {
             
             
-            aDesiredSize.Height() = rowRect.YMost();
+            aDesiredSize.BSize(wm) = rowRect.BEnd(wm);
             aStatus.Reset();
             UndoContinuedRow(aPresContext, contRow);
             contRow = nullptr;
           }
-        } else {  
+        } else {
           
           nsTableRowFrame* rowBefore =
               ::GetRowBefore(*firstRowThisPage, *firstTruncatedRow);
-          nscoord oldSpanningRowBottom = spanningRowBottom;
-          spanningRowBottom = rowBefore->GetNormalRect().YMost();
+          const nscoord oldSpanningRowBEnd = spanningRowBEnd;
+          spanningRowBEnd =
+              rowBefore->GetLogicalNormalRect(wm, containerSize).BEnd(wm);
 
           UndoContinuedRow(aPresContext, contRow);
           contRow = nullptr;
@@ -1244,8 +1257,8 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
           
           SplitSpanningCells(
               *aPresContext, aReflowInput, *aTableFrame, *firstRowThisPage,
-              *rowBefore, aReflowInput.mFlags.mIsTopOfPage, spanningRowBottom,
-              contRow, firstTruncatedRow, aDesiredSize.Height());
+              *rowBefore, aReflowInput.mFlags.mIsTopOfPage, spanningRowBEnd,
+              contRow, firstTruncatedRow, aDesiredSize.BSize(wm));
           if (firstTruncatedRow) {
             if (aReflowInput.mFlags.mIsTopOfPage) {
               
@@ -1253,25 +1266,24 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
               UndoContinuedRow(aPresContext, contRow);
               contRow = nullptr;
               lastRowThisPage = oldLastRowThisPage;
-              spanningRowBottom = oldSpanningRowBottom;
+              spanningRowBEnd = oldSpanningRowBEnd;
               SplitSpanningCells(*aPresContext, aReflowInput, *aTableFrame,
                                  *firstRowThisPage, *lastRowThisPage,
                                  aReflowInput.mFlags.mIsTopOfPage,
-                                 spanningRowBottom, contRow, firstTruncatedRow,
-                                 aDesiredSize.Height());
+                                 spanningRowBEnd, contRow, firstTruncatedRow,
+                                 aDesiredSize.BSize(wm));
               NS_WARNING("data loss in a row spanned cell");
             } else {
               
-              aDesiredSize.Height() = rowRect.YMost();
+              aDesiredSize.BSize(wm) = rowRect.BEnd(wm);
               aStatus.Reset();
               UndoContinuedRow(aPresContext, contRow);
               contRow = nullptr;
             }
           }
-        }  
-      }    
-      else {
-        aDesiredSize.Height() = std::max(aDesiredSize.Height(), bMost);
+        }
+      } else {
+        aDesiredSize.BSize(wm) = std::max(aDesiredSize.BSize(wm), bMost);
         if (contRow) {
           aStatus.Reset();
           aStatus.SetIncomplete();
@@ -1293,8 +1305,8 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
         }
       }
       break;
-    }  
-    aDesiredSize.Height() = rowRect.YMost();
+    }
+    aDesiredSize.BSize(wm) = rowRect.BEnd(wm);
     prevRowFrame = rowFrame;
     
     nsTableRowFrame* nextRow = rowFrame->GetNextRow();
@@ -1306,7 +1318,7 @@ void nsTableRowGroupFrame::SplitRowGroup(nsPresContext* aPresContext,
     }
     
     
-    isTopOfPage = isTopOfPage && rowRect.YMost() == 0;
+    isTopOfPage = isTopOfPage && rowRect.BEnd(wm) == 0;
   }
 }
 
