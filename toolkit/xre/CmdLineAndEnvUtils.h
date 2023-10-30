@@ -363,7 +363,11 @@ inline size_t CopyArgImpl_(wchar_t* d, const wchar_t* s) {
 
   bool hasDoubleQuote = wcschr(s, L'"') != nullptr;
   
-  bool addDoubleQuotes = wcspbrk(s, kCommandLineDelimiter) != nullptr;
+  bool addDoubleQuotes =
+      
+      *s == '\0' ||
+      
+      wcspbrk(s, kCommandLineDelimiter) != nullptr;
 
   if (addDoubleQuotes) {
     appendChar('"');
