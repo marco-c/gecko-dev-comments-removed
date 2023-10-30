@@ -1178,6 +1178,35 @@ class TelemetryFeed {
       case at.ABOUT_SPONSORED_TOP_SITES:
         this.handleAboutSponsoredTopSites(action);
         break;
+      case at.BLOCK_URL:
+        this.handleBlockUrl(action);
+        break;
+    }
+  }
+
+  handleBlockUrl(action) {
+    const session = this.sessions.get(au.getPortIdOfSender(action));
+    
+    if (!session) {
+      return;
+    }
+
+    
+    
+    const { data } = action;
+    for (const datum of data) {
+      if (datum.is_pocket_card) {
+        
+        continue;
+      }
+      const { position, advertiser_name, tile_id, isSponsoredTopSite } = datum;
+      Glean.topsites.dismiss.record({
+        advertiser_name,
+        tile_id: tile_id?.toString(),
+        newtab_visit_id: session.session_id,
+        is_sponsored: !!isSponsoredTopSite,
+        position,
+      });
     }
   }
 

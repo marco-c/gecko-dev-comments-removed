@@ -98,6 +98,18 @@ export const LinkMenuOptions = {
         
         isSponsoredTopSite: site.sponsored_position,
         ...(site.flight_id ? { flight_id: site.flight_id } : {}),
+        
+        
+        ...(site.sponsored_position
+          ? {
+              advertiser_name: (
+                site.label || site.hostname
+              )?.toLocaleLowerCase(),
+            }
+          : {}),
+        position: pos,
+        ...(site.sponsored_tile_id ? { tile_id: site.sponsored_tile_id } : {}),
+        is_pocket_card: site.type === "CardGrid",
       })),
     }),
     impression: ac.ImpressionStats({
