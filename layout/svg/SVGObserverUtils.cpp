@@ -958,8 +958,10 @@ void SVGFilterObserverListForCanvasContext::OnRenderingChange() {
   
   
   
+  
+  
   RefPtr<CanvasRenderingContext2D> kungFuDeathGrip(mContext);
-  kungFuDeathGrip->UpdateFilter();
+  kungFuDeathGrip->UpdateFilter( false);
 }
 
 class SVGMaskObserverList final : public nsISupports {

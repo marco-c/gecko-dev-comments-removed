@@ -569,7 +569,8 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
 
 
 
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UpdateFilter();
+
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void UpdateFilter(bool aFlushIfNeeded);
 
  protected:
   
@@ -915,7 +916,7 @@ class CanvasRenderingContext2D : public nsICanvasRenderingContextInternal,
   const gfx::FilterDescription& EnsureUpdatedFilter() {
     bool isWriteOnly = mCanvasElement && mCanvasElement->IsWriteOnly();
     if (CurrentState().filterSourceGraphicTainted != isWriteOnly) {
-      UpdateFilter();
+      UpdateFilter( true);
       EnsureTarget();
     }
     MOZ_ASSERT(CurrentState().filterSourceGraphicTainted == isWriteOnly);
