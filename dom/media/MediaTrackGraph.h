@@ -513,6 +513,9 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   virtual void DecrementSuspendCount();
 
+  void AssertOnGraphThread() const;
+  void AssertOnGraphThreadOrNotRunning() const;
+
   
 
 
@@ -1190,6 +1193,7 @@ class MediaTrackGraph {
   already_AddRefed<MediaInputPort> ConnectToCaptureTrack(
       uint64_t aWindowId, MediaTrack* aMediaTrack);
 
+  void AssertOnGraphThread() const { MOZ_ASSERT(OnGraphThread()); }
   void AssertOnGraphThreadOrNotRunning() const {
     MOZ_ASSERT(OnGraphThreadOrNotRunning());
   }
@@ -1227,6 +1231,13 @@ class MediaTrackGraph {
 
   const TrackRate mSampleRate;
 };
+
+inline void MediaTrack::AssertOnGraphThread() const {
+  Graph()->AssertOnGraphThread();
+}
+inline void MediaTrack::AssertOnGraphThreadOrNotRunning() const {
+  Graph()->AssertOnGraphThreadOrNotRunning();
+}
 
 
 
