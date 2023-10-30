@@ -171,9 +171,15 @@ var MockService = {
 };
 
 async function replaceService(service) {
-  await pushService.service.uninit();
+  
+  
+  
+  
+  
+  
+  await pushService.service?.uninit();
   pushService.service = service;
-  await pushService.service.init();
+  await pushService.service?.init();
 }
 
 addMessageListener("service-replace", function () {
