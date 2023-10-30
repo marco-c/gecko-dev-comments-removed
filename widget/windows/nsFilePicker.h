@@ -83,6 +83,20 @@ class nsFilePicker : public nsBaseWinFilePicker {
   bool ShowFilePicker(const nsString& aInitialDir);
 
  private:
+  
+  
+  static Result<Maybe<Results>> ShowFilePickerImpl(
+      HWND aParent, FileDialogType type, nsTArray<Command> const& commands);
+  static Result<Maybe<nsString>> ShowFolderPickerImpl(
+      HWND aParent, nsTArray<Command> const& commands);
+
+  
+  static Result<Maybe<Results>> ShowFilePickerRemote(
+      HWND aParent, FileDialogType type, nsTArray<Command> const& commands);
+  static Result<Maybe<nsString>> ShowFolderPickerRemote(
+      HWND aParent, nsTArray<Command> const& commands);
+
+  
   static Result<Maybe<Results>> ShowFilePickerLocal(
       HWND aParent, FileDialogType type, nsTArray<Command> const& commands);
   static Result<Maybe<nsString>> ShowFolderPickerLocal(
