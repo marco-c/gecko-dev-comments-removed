@@ -103,9 +103,6 @@ if (AppConstants.NIGHTLY_BUILD) {
 
 var allowlist = [
   
-  { file: "chrome://pdf.js/locale/viewer.properties" },
-
-  
   { file: "chrome://pippki/content/load_device.xhtml" },
 
   
