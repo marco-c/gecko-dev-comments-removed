@@ -774,16 +774,10 @@ class RecursiveMakeBackend(MakeBackend):
         
         
         
-        
-        
-        
-        
-        
-        
         compile_roots = [
             t
             for t, deps in six.iteritems(self._compile_graph)
-            if not deps or t not in all_compile_deps
+            if t in self._rust_targets or t not in all_compile_deps
         ]
 
         def add_category_rules(category, roots, graph):
