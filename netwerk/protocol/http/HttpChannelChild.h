@@ -9,6 +9,7 @@
 #define mozilla_net_HttpChannelChild_h
 
 #include "mozilla/Mutex.h"
+#include "mozilla/StaticPrefsBase.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/extensions/StreamFilterParent.h"
@@ -333,7 +334,7 @@ class HttpChannelChild final : public PHttpChannelChild,
       false};
   
   Atomic<bool, SequentiallyConsistent> mNeedToReportBytesRead{true};
-
+  Atomic<uint32_t, mozilla::Relaxed> mOnProgressEventSent{false};
   
   
   
