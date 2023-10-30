@@ -4356,18 +4356,18 @@ static bool malloc_init_hard() {
   }
 
   
-  const size_t result = GetKernelPageSize();
+  const size_t page_size = GetKernelPageSize();
   
-  MOZ_ASSERT(((result - 1) & result) == 0);
+  MOZ_ASSERT(IsPowerOfTwo(page_size));
 #ifdef MALLOC_STATIC_PAGESIZE
-  if (gPageSize % result) {
+  if (gPageSize % page_size) {
     _malloc_message(
         _getprogname(),
         "Compile-time page size does not divide the runtime one.\n");
     MOZ_CRASH();
   }
 #else
-  gRealPageSize = gPageSize = result;
+  gRealPageSize = gPageSize = page_size;
 #endif
 
   
