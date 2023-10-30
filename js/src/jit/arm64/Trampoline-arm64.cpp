@@ -660,9 +660,6 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
                    CheckUnsafeCallWithABI::DontCheckHasExitFrame);
 
   
-  masm.initPseudoStackPtr();
-
-  
   switch (f.failType()) {
     case Type_Cell:
       masm.branchTestPtr(Assembler::Zero, r0, r0, masm.failureLabel());
