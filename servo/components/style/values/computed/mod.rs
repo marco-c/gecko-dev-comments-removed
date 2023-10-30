@@ -322,6 +322,11 @@ impl<'a> Context<'a> {
     }
 
     
+    pub fn is_root_element(&self) -> bool {
+        self.builder.is_root_element
+    }
+
+    
     pub fn query_font_metrics(
         &self,
         base_size: FontBaseSize,
