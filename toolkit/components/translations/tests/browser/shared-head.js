@@ -34,6 +34,12 @@ const LANGUAGE_PAIRS = [
   { fromLang: "uk", toLang: PIVOT_LANGUAGE },
 ];
 
+const TRANSLATIONS_PERMISSION = "translations";
+const ALWAYS_TRANSLATE_LANGS_PREF =
+  "browser.translations.alwaysTranslateLanguages";
+const NEVER_TRANSLATE_LANGS_PREF =
+  "browser.translations.neverTranslateLanguages";
+
 
 
 
@@ -467,7 +473,7 @@ async function loadTestPage({
   });
   await SpecialPowers.pushPermissions(
     permissionsUrls.map(url => ({
-      type: "translations",
+      type: TRANSLATIONS_PERMISSION,
       allow: true,
       context: url,
     }))
@@ -865,6 +871,10 @@ async function createLanguageIdModelsRemoteClient(
 async function selectAboutPreferencesElements() {
   const document = gBrowser.selectedBrowser.contentDocument;
 
+  const settingsButton = document.getElementById(
+    "translations-manage-settings-button"
+  );
+
   const rows = await waitForCondition(() => {
     const elements = document.querySelectorAll(".translations-manage-language");
     if (elements.length !== 4) {
@@ -915,6 +925,7 @@ async function selectAboutPreferencesElements() {
     ukrainianLabel,
     ukrainianDownload,
     ukrainianDelete,
+    settingsButton,
     spanishLabel,
     spanishDownload,
     spanishDelete,
@@ -974,14 +985,25 @@ async function assertVisibility({ message, visible, hidden }) {
   }
 }
 
-async function setupAboutPreferences(languagePairs) {
+async function setupAboutPreferences(
+  languagePairs,
+  { prefs = [], permissionsUrls = [] } = {}
+) {
   await SpecialPowers.pushPrefEnv({
     set: [
       
       ["browser.translations.enable", true],
       ["browser.translations.logLevel", "All"],
+      ...prefs,
     ],
   });
+  await SpecialPowers.pushPermissions(
+    permissionsUrls.map(url => ({
+      type: TRANSLATIONS_PERMISSION,
+      allow: true,
+      context: url,
+    }))
+  );
   const tab = await BrowserTestUtils.openNewForegroundTab(
     gBrowser,
     BLANK_PAGE,
@@ -1231,4 +1253,128 @@ function waitForCondition(callback, message) {
   
   const maxTries = 50 * 4;
   return TestUtils.waitForCondition(callback, message, interval, maxTries);
+}
+
+
+
+
+
+
+function getAlwaysTranslateLanguagesFromPref() {
+  let langs = Services.prefs.getCharPref(ALWAYS_TRANSLATE_LANGS_PREF);
+  return langs ? langs.split(",") : [];
+}
+
+
+
+
+
+
+function getNeverTranslateLanguagesFromPref() {
+  let langs = Services.prefs.getCharPref(NEVER_TRANSLATE_LANGS_PREF);
+  return langs ? langs.split(",") : [];
+}
+
+
+
+
+
+
+function getNeverTranslateSitesFromPerms() {
+  let results = [];
+  for (let perm of Services.perms.all) {
+    if (
+      perm.type == TRANSLATIONS_PERMISSION &&
+      perm.capability == Services.perms.DENY_ACTION
+    ) {
+      results.push(perm.principal);
+    }
+  }
+
+  return results;
+}
+
+
+
+
+
+
+
+async function waitForOpenDialogWindow(dialogUrl, callback) {
+  const dialogLoaded = promiseLoadSubDialog(dialogUrl);
+  await callback();
+  const dialogWindow = await dialogLoaded;
+  return dialogWindow;
+}
+
+
+
+
+
+
+async function waitForCloseDialogWindow(dialogWindow) {
+  const closePromise = BrowserTestUtils.waitForEvent(
+    content.gSubDialog._dialogStack,
+    "dialogclose"
+  );
+  dialogWindow.close();
+  await closePromise;
+}
+
+
+function promiseLoadSubDialog(aURL) {
+  return new Promise((resolve, reject) => {
+    content.gSubDialog._dialogStack.addEventListener(
+      "dialogopen",
+      function dialogopen(aEvent) {
+        if (
+          aEvent.detail.dialog._frame.contentWindow.location == "about:blank"
+        ) {
+          return;
+        }
+        content.gSubDialog._dialogStack.removeEventListener(
+          "dialogopen",
+          dialogopen
+        );
+
+        Assert.equal(
+          aEvent.detail.dialog._frame.contentWindow.location.toString(),
+          aURL,
+          "Check the proper URL is loaded"
+        );
+
+        
+        isnot(
+          aEvent.detail.dialog._overlay,
+          null,
+          "Element should not be null, when checking visibility"
+        );
+        Assert.ok(
+          !BrowserTestUtils.is_hidden(aEvent.detail.dialog._overlay),
+          "The element is visible"
+        );
+
+        
+        let expectedStyleSheetURLs =
+          aEvent.detail.dialog._injectedStyleSheets.slice(0);
+        for (let styleSheet of aEvent.detail.dialog._frame.contentDocument
+          .styleSheets) {
+          let i = expectedStyleSheetURLs.indexOf(styleSheet.href);
+          if (i >= 0) {
+            info("found " + styleSheet.href);
+            expectedStyleSheetURLs.splice(i, 1);
+          }
+        }
+        Assert.equal(
+          expectedStyleSheetURLs.length,
+          0,
+          "All expectedStyleSheetURLs should have been found"
+        );
+
+        
+        
+        executeSoon(() => resolve(aEvent.detail.dialog._frame.contentWindow));
+      }
+    );
+  });
 }
