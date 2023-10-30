@@ -118,39 +118,18 @@ class RtpSenderReceiverTest
 
     
     
-    media_engine_->voice().CreateMediaChannel(
-        cricket::MediaChannel::Role::kSend, &fake_call_, cricket::MediaConfig(),
-        cricket::AudioOptions(), webrtc::CryptoOptions(),
-        webrtc::AudioCodecPairId::Create());
-    media_engine_->video().CreateMediaChannel(
-        cricket::MediaChannel::Role::kSend, &fake_call_, cricket::MediaConfig(),
-        cricket::VideoOptions(), webrtc::CryptoOptions(),
-        video_bitrate_allocator_factory_.get());
-    media_engine_->voice().CreateMediaChannel(
-        cricket::MediaChannel::Role::kReceive, &fake_call_,
-        cricket::MediaConfig(), cricket::AudioOptions(),
+    voice_media_send_channel_ = media_engine_->voice().CreateSendChannel(
+        &fake_call_, cricket::MediaConfig(), cricket::AudioOptions(),
         webrtc::CryptoOptions(), webrtc::AudioCodecPairId::Create());
-    media_engine_->video().CreateMediaChannel(
-        cricket::MediaChannel::Role::kReceive, &fake_call_,
-        cricket::MediaConfig(), cricket::VideoOptions(),
+    video_media_send_channel_ = media_engine_->video().CreateSendChannel(
+        &fake_call_, cricket::MediaConfig(), cricket::VideoOptions(),
         webrtc::CryptoOptions(), video_bitrate_allocator_factory_.get());
-
-    voice_media_send_channel_ =
-        absl::WrapUnique(media_engine_->GetVoiceSendChannel(0));
-    video_media_send_channel_ =
-        absl::WrapUnique(media_engine_->GetVideoSendChannel(0));
-    voice_media_receive_channel_ =
-        absl::WrapUnique(media_engine_->GetVoiceReceiveChannel(0));
-    video_media_receive_channel_ =
-        absl::WrapUnique(media_engine_->GetVideoReceiveChannel(0));
-
-    RTC_CHECK(voice_media_send_channel());
-    RTC_CHECK(video_media_send_channel());
-    RTC_CHECK(voice_media_receive_channel());
-    RTC_CHECK(video_media_receive_channel());
-    
-    voice_send_channel_ = voice_media_send_channel()->AsVoiceSendChannel();
-    video_send_channel_ = video_media_send_channel()->AsVideoSendChannel();
+    voice_media_receive_channel_ = media_engine_->voice().CreateReceiveChannel(
+        &fake_call_, cricket::MediaConfig(), cricket::AudioOptions(),
+        webrtc::CryptoOptions(), webrtc::AudioCodecPairId::Create());
+    video_media_receive_channel_ = media_engine_->video().CreateReceiveChannel(
+        &fake_call_, cricket::MediaConfig(), cricket::VideoOptions(),
+        webrtc::CryptoOptions());
 
     
     
@@ -225,7 +204,7 @@ class RtpSenderReceiverTest
     ASSERT_TRUE(audio_rtp_sender_->SetTrack(audio_track_.get()));
     EXPECT_CALL(*set_streams_observer, OnSetStreams());
     audio_rtp_sender_->SetStreams({local_stream_->id()});
-    audio_rtp_sender_->SetMediaChannel(voice_send_channel_);
+    audio_rtp_sender_->SetMediaChannel(voice_media_send_channel_.get());
     audio_rtp_sender_->SetSsrc(kAudioSsrc);
     VerifyVoiceChannelInput();
   }
@@ -233,8 +212,7 @@ class RtpSenderReceiverTest
   void CreateAudioRtpSenderWithNoTrack() {
     audio_rtp_sender_ =
         AudioRtpSender::Create(worker_thread_, "", nullptr, nullptr);
-    audio_rtp_sender_->SetMediaChannel(
-        voice_media_send_channel()->AsVoiceSendChannel());
+    audio_rtp_sender_->SetMediaChannel(voice_media_send_channel_.get());
   }
 
   void CreateVideoRtpSender(uint32_t ssrc) {
@@ -286,16 +264,14 @@ class RtpSenderReceiverTest
     ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_.get()));
     EXPECT_CALL(*set_streams_observer, OnSetStreams());
     video_rtp_sender_->SetStreams({local_stream_->id()});
-    video_rtp_sender_->SetMediaChannel(
-        video_media_send_channel()->AsVideoSendChannel());
+    video_rtp_sender_->SetMediaChannel(video_media_send_channel());
     video_rtp_sender_->SetSsrc(ssrc);
     VerifyVideoChannelInput(ssrc);
   }
   void CreateVideoRtpSenderWithNoTrack() {
     video_rtp_sender_ =
         VideoRtpSender::Create(worker_thread_, "", nullptr);
-    video_rtp_sender_->SetMediaChannel(
-        video_media_send_channel()->AsVideoSendChannel());
+    video_rtp_sender_->SetMediaChannel(video_media_send_channel());
   }
 
   void DestroyAudioRtpSender() {
@@ -313,8 +289,7 @@ class RtpSenderReceiverTest
     audio_rtp_receiver_ = rtc::make_ref_counted<AudioRtpReceiver>(
         rtc::Thread::Current(), kAudioTrackId, streams,
         true);
-    audio_rtp_receiver_->SetMediaChannel(
-        voice_media_receive_channel()->AsVoiceReceiveChannel());
+    audio_rtp_receiver_->SetMediaChannel(voice_media_receive_channel());
     audio_rtp_receiver_->SetupMediaChannel(kAudioSsrc);
     audio_track_ = audio_rtp_receiver_->audio_track();
     VerifyVoiceChannelOutput();
@@ -324,8 +299,7 @@ class RtpSenderReceiverTest
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
     video_rtp_receiver_ = rtc::make_ref_counted<VideoRtpReceiver>(
         rtc::Thread::Current(), kVideoTrackId, streams);
-    video_rtp_receiver_->SetMediaChannel(
-        video_media_receive_channel()->AsVideoReceiveChannel());
+    video_rtp_receiver_->SetMediaChannel(video_media_receive_channel());
     video_rtp_receiver_->SetupMediaChannel(kVideoSsrc);
     video_track_ = video_rtp_receiver_->video_track();
     VerifyVideoChannelOutput();
@@ -345,8 +319,7 @@ class RtpSenderReceiverTest
 
     video_rtp_receiver_ = rtc::make_ref_counted<VideoRtpReceiver>(
         rtc::Thread::Current(), kVideoTrackId, streams);
-    video_rtp_receiver_->SetMediaChannel(
-        video_media_receive_channel()->AsVideoReceiveChannel());
+    video_rtp_receiver_->SetMediaChannel(video_media_receive_channel());
     video_rtp_receiver_->SetupMediaChannel(primary_ssrc);
     video_track_ = video_rtp_receiver_->video_track();
   }
@@ -381,7 +354,7 @@ class RtpSenderReceiverTest
 
   void VerifyVideoChannelInput(uint32_t ssrc) {
     
-    EXPECT_TRUE(video_media_send_channel_->HasSource(ssrc));
+    EXPECT_TRUE(video_media_send_channel()->HasSource(ssrc));
   }
 
   void VerifyVoiceChannelNoInput() { VerifyVoiceChannelNoInput(kAudioSsrc); }
@@ -395,7 +368,7 @@ class RtpSenderReceiverTest
 
   void VerifyVideoChannelNoInput(uint32_t ssrc) {
     
-    EXPECT_FALSE(video_media_receive_channel_->HasSource(ssrc));
+    EXPECT_FALSE(video_media_receive_channel()->HasSource(ssrc));
   }
 
   void VerifyVoiceChannelOutput() {
@@ -408,7 +381,7 @@ class RtpSenderReceiverTest
 
   void VerifyVideoChannelOutput() {
     
-    EXPECT_TRUE(video_media_receive_channel_->HasSink(kVideoSsrc));
+    EXPECT_TRUE(video_media_receive_channel()->HasSink(kVideoSsrc));
   }
 
   void VerifyVoiceChannelNoOutput() {
@@ -421,7 +394,7 @@ class RtpSenderReceiverTest
 
   void VerifyVideoChannelNoOutput() {
     
-    EXPECT_FALSE(video_media_receive_channel_->HasSink(kVideoSsrc));
+    EXPECT_FALSE(video_media_receive_channel()->HasSink(kVideoSsrc));
   }
 
   
@@ -522,17 +495,21 @@ class RtpSenderReceiverTest
   }
 
  protected:
-  cricket::FakeVideoMediaChannel* video_media_send_channel() {
-    return video_media_send_channel_.get();
+  cricket::FakeVideoMediaSendChannel* video_media_send_channel() {
+    return static_cast<cricket::FakeVideoMediaSendChannel*>(
+        video_media_send_channel_.get());
   }
-  cricket::FakeVoiceMediaChannel* voice_media_send_channel() {
-    return voice_media_send_channel_.get();
+  cricket::FakeVoiceMediaSendChannel* voice_media_send_channel() {
+    return static_cast<cricket::FakeVoiceMediaSendChannel*>(
+        voice_media_send_channel_.get());
   }
-  cricket::FakeVideoMediaChannel* video_media_receive_channel() {
-    return video_media_receive_channel_.get();
+  cricket::FakeVideoMediaReceiveChannel* video_media_receive_channel() {
+    return static_cast<cricket::FakeVideoMediaReceiveChannel*>(
+        video_media_receive_channel_.get());
   }
-  cricket::FakeVoiceMediaChannel* voice_media_receive_channel() {
-    return voice_media_receive_channel_.get();
+  cricket::FakeVoiceMediaReceiveChannel* voice_media_receive_channel() {
+    return static_cast<cricket::FakeVoiceMediaReceiveChannel*>(
+        voice_media_receive_channel_.get());
   }
 
   test::RunLoop run_loop_;
@@ -548,12 +525,14 @@ class RtpSenderReceiverTest
   std::unique_ptr<cricket::FakeMediaEngine> media_engine_;
   rtc::UniqueRandomIdGenerator ssrc_generator_;
   cricket::FakeCall fake_call_;
-  std::unique_ptr<cricket::FakeVoiceMediaChannel> voice_media_send_channel_;
-  std::unique_ptr<cricket::FakeVideoMediaChannel> video_media_send_channel_;
-  std::unique_ptr<cricket::FakeVoiceMediaChannel> voice_media_receive_channel_;
-  std::unique_ptr<cricket::FakeVideoMediaChannel> video_media_receive_channel_;
-  cricket::VoiceMediaSendChannelInterface* voice_send_channel_;
-  cricket::VideoMediaSendChannelInterface* video_send_channel_;
+  std::unique_ptr<cricket::VoiceMediaSendChannelInterface>
+      voice_media_send_channel_;
+  std::unique_ptr<cricket::VideoMediaSendChannelInterface>
+      video_media_send_channel_;
+  std::unique_ptr<cricket::VoiceMediaReceiveChannelInterface>
+      voice_media_receive_channel_;
+  std::unique_ptr<cricket::VideoMediaReceiveChannelInterface>
+      video_media_receive_channel_;
   rtc::scoped_refptr<AudioRtpSender> audio_rtp_sender_;
   rtc::scoped_refptr<VideoRtpSender> video_rtp_sender_;
   rtc::scoped_refptr<AudioRtpReceiver> audio_rtp_receiver_;
