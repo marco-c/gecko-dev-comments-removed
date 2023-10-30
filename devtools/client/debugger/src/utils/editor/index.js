@@ -67,18 +67,13 @@ export function fromEditorLine(sourceId, line, sourceIsWasm) {
 }
 
 export function toEditorPosition(location) {
+  
+  
+  
   return {
     line: toEditorLine(location.source.id, location.line),
     column:
-      isWasm(location.source.id) || !location.column ? 0 : location.column,
-  };
-}
-
-export function toEditorRange(sourceId, location) {
-  const { start, end } = location;
-  return {
-    start: toEditorPosition({ ...start, sourceId }),
-    end: toEditorPosition({ ...end, sourceId }),
+      isWasm(location.source.id) || (!location.column ? 0 : location.column),
   };
 }
 

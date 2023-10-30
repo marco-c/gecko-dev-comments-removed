@@ -45,10 +45,14 @@ export function parseLineColumn(query) {
   if (isNaN(lineNumber)) {
     return null;
   }
-
+  if (isNaN(columnNumber)) {
+    return { line: lineNumber };
+  }
+  
+  
   return {
     line: lineNumber,
-    ...(!isNaN(columnNumber) ? { column: columnNumber } : null),
+    column: columnNumber - 1,
   };
 }
 

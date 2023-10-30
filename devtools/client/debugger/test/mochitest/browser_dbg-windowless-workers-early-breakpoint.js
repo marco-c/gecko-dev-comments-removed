@@ -25,7 +25,7 @@ add_task(async function () {
   
   
   
-  await removeBreakpoint(dbg, workerSource.id, 1, 12);
+  await removeBreakpoint(dbg, workerSource.id, 1, 13);
   await resume(dbg);
 
   
@@ -36,5 +36,5 @@ add_task(async function () {
 
   
   assertPausedAtSourceAndLine(dbg, workerSource.id, 10);
-  await removeBreakpoint(dbg, workerSource.id, 10, 2);
+  await removeBreakpoint(dbg, workerSource.id, 10, 3);
 });

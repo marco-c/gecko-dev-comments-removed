@@ -27,6 +27,10 @@ export function createLocation({
     sourceActor,
     sourceActorId: sourceActor?.id,
 
+    
+    
+    
+    
     line,
     column,
   };
