@@ -18,6 +18,7 @@
 #include "mozilla/ReentrantMonitor.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Span.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 #include "nsCharsetSource.h"
 #include "nsCOMPtr.h"
@@ -771,6 +772,13 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   bool mOnStopCalled{false};
+
+  
+
+
+  
+  mozilla::TimeStamp mOnStopRequestTime;
+  mozilla::TimeStamp mOnDataFinishedTime;
 };
 
 #endif  
