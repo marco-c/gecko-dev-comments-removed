@@ -1518,11 +1518,18 @@ void gfxDWriteFontList::ReadFaceNamesForFamily(
       }
 
       nsAutoCString psname, fullname;
-      if (NS_SUCCEEDED(gfxFontUtils::ReadCanonicalName(
-              data, size, gfxFontUtils::NAME_ID_POSTSCRIPT, psname))) {
-        ToLowerCase(psname);
-        mLocalNameTable.InsertOrUpdate(
-            psname, fontlist::LocalFaceRec::InitData(key, i));
+      
+      
+      
+      
+      
+      if (!StringEndsWith(key, ".tmp"_ns)) {
+        if (NS_SUCCEEDED(gfxFontUtils::ReadCanonicalName(
+                data, size, gfxFontUtils::NAME_ID_POSTSCRIPT, psname))) {
+          ToLowerCase(psname);
+          mLocalNameTable.InsertOrUpdate(
+              psname, fontlist::LocalFaceRec::InitData(key, i));
+        }
       }
       if (NS_SUCCEEDED(gfxFontUtils::ReadCanonicalName(
               data, size, gfxFontUtils::NAME_ID_FULL, fullname))) {
