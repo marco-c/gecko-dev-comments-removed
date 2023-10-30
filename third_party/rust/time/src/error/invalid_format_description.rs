@@ -37,6 +37,32 @@ pub enum InvalidFormatDescription {
         
         index: usize,
     },
+    
+    #[non_exhaustive]
+    MissingRequiredModifier {
+        
+        name: &'static str,
+        
+        index: usize,
+    },
+    
+    #[non_exhaustive]
+    Expected {
+        
+        what: &'static str,
+        
+        index: usize,
+    },
+    
+    #[non_exhaustive]
+    NotSupported {
+        
+        what: &'static str,
+        
+        context: &'static str,
+        
+        index: usize,
+    },
 }
 
 impl From<InvalidFormatDescription> for crate::Error {
@@ -71,6 +97,28 @@ impl fmt::Display for InvalidFormatDescription {
             }
             MissingComponentName { index } => {
                 write!(f, "missing component name at byte index {index}")
+            }
+            MissingRequiredModifier { name, index } => {
+                write!(
+                    f,
+                    "missing required modifier `{name}` for component at byte index {index}"
+                )
+            }
+            Expected {
+                what: expected,
+                index,
+            } => {
+                write!(f, "expected {expected} at byte index {index}")
+            }
+            NotSupported {
+                what,
+                context,
+                index,
+            } => {
+                write!(
+                    f,
+                    "{what} is not supported in {context} at byte index {index}"
+                )
             }
         }
     }

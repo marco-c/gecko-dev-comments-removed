@@ -5,6 +5,8 @@
 
 
 
+
+
 mod borrowed_format_item;
 mod component;
 pub mod modifier;
@@ -19,7 +21,7 @@ pub use owned_format_item::OwnedFormatItem;
 
 pub use self::component::Component;
 #[cfg(feature = "alloc")]
-pub use self::parse::{parse, parse_owned};
+pub use self::parse::{parse, parse_borrowed, parse_owned};
 
 
 pub mod well_known {

@@ -29,3 +29,71 @@ pub const fn days_in_year_month(year: i32, month: Month) -> u8 {
         February => 28,
     }
 }
+
+#[cfg(feature = "local-offset")]
+
+pub mod local_offset {
+    use core::sync::atomic::{AtomicBool, Ordering};
+
+    
+    static LOCAL_OFFSET_IS_SOUND: AtomicBool = AtomicBool::new(true);
+
+    
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub enum Soundness {
+        
+        
+        Sound,
+        
+        
+        
+        Unsound,
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn set_soundness(soundness: Soundness) {
+        LOCAL_OFFSET_IS_SOUND.store(soundness == Soundness::Sound, Ordering::SeqCst);
+    }
+
+    
+    
+    pub fn get_soundness() -> Soundness {
+        match LOCAL_OFFSET_IS_SOUND.load(Ordering::SeqCst) {
+            false => Soundness::Unsound,
+            true => Soundness::Sound,
+        }
+    }
+}

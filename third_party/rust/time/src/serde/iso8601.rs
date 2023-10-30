@@ -40,7 +40,7 @@ pub fn serialize<S: Serializer>(
 
 #[cfg(feature = "parsing")]
 pub fn deserialize<'a, D: Deserializer<'a>>(deserializer: D) -> Result<OffsetDateTime, D::Error> {
-    deserializer.deserialize_any(Visitor::<Iso8601<SERDE_CONFIG>>(PhantomData))
+    deserializer.deserialize_str(Visitor::<Iso8601<SERDE_CONFIG>>(PhantomData))
 }
 
 

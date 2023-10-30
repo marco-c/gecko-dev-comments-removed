@@ -21,7 +21,8 @@ impl IncrementalDecoderUint {
     }
 
     
-    #[allow(clippy::missing_panics_doc)] 
+    
+    
     pub fn consume(&mut self, dv: &mut Decoder) -> Option<u64> {
         if let Some(r) = &mut self.remaining {
             let amount = min(*r, dv.remaining());

@@ -36,6 +36,22 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 
 
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "[`Formattable`](crate::formatting::Formattable) and \
+           [`Parsable`](crate::parsing::Parsable)."
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "[`Formattable`](crate::formatting::Formattable)."
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "[`Parsable`](crate::parsing::Parsable)."
+)]
+
+
+
 
 
 
@@ -59,6 +75,106 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
     all(not(feature = "formatting"), feature = "parsing"),
     doc = "use ::serde::Deserialize;"
 )]
+
+
+
+
+
+
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "#[derive(Serialize, Deserialize)]"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "#[derive(Serialize)]"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "#[derive(Deserialize)]"
+)]
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "use ::serde::{Serialize, Deserialize};"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "use ::serde::Serialize;"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "use ::serde::Deserialize;"
+)]
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "#[derive(Serialize, Deserialize)]"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "#[derive(Serialize)]"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "#[derive(Deserialize)]"
+)]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg_attr(
+    all(feature = "formatting", feature = "parsing"),
+    doc = "use ::serde::{Serialize, Deserialize};"
+)]
+#[cfg_attr(
+    all(feature = "formatting", not(feature = "parsing")),
+    doc = "use ::serde::Serialize;"
+)]
+#[cfg_attr(
+    all(not(feature = "formatting"), feature = "parsing"),
+    doc = "use ::serde::Deserialize;"
+)]
+
+
+
+
+
+
+
+
 
 
 
@@ -108,10 +224,10 @@ impl Serialize for Date {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[cfg(feature = "serde-human-readable")]
         if serializer.is_human_readable() {
-            return serializer.serialize_str(&match self.format(&DATE_FORMAT) {
-                Ok(s) => s,
-                Err(_) => return Err(S::Error::custom("failed formatting `Date`")),
-            });
+            let Ok(s) = self.format(&DATE_FORMAT) else {
+                return Err(S::Error::custom("failed formatting `Date`"));
+            };
+            return serializer.serialize_str(&s);
         }
 
         (self.year(), self.ordinal()).serialize(serializer)
@@ -171,10 +287,10 @@ impl Serialize for OffsetDateTime {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[cfg(feature = "serde-human-readable")]
         if serializer.is_human_readable() {
-            return serializer.serialize_str(&match self.format(&OFFSET_DATE_TIME_FORMAT) {
-                Ok(s) => s,
-                Err(_) => return Err(S::Error::custom("failed formatting `OffsetDateTime`")),
-            });
+            let Ok(s) = self.format(&OFFSET_DATE_TIME_FORMAT) else {
+                return Err(S::Error::custom("failed formatting `OffsetDateTime`"));
+            };
+            return serializer.serialize_str(&s);
         }
 
         (
@@ -184,9 +300,9 @@ impl Serialize for OffsetDateTime {
             self.minute(),
             self.second(),
             self.nanosecond(),
-            self.offset.whole_hours(),
-            self.offset.minutes_past_hour(),
-            self.offset.seconds_past_minute(),
+            self.offset().whole_hours(),
+            self.offset().minutes_past_hour(),
+            self.offset().seconds_past_minute(),
         )
             .serialize(serializer)
     }
@@ -216,10 +332,10 @@ impl Serialize for PrimitiveDateTime {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[cfg(feature = "serde-human-readable")]
         if serializer.is_human_readable() {
-            return serializer.serialize_str(&match self.format(&PRIMITIVE_DATE_TIME_FORMAT) {
-                Ok(s) => s,
-                Err(_) => return Err(<S::Error>::custom("failed formatting `PrimitiveDateTime`")),
-            });
+            let Ok(s) = self.format(&PRIMITIVE_DATE_TIME_FORMAT) else {
+                return Err(S::Error::custom("failed formatting `PrimitiveDateTime`"));
+            };
+            return serializer.serialize_str(&s);
         }
 
         (
@@ -262,10 +378,10 @@ impl Serialize for Time {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[cfg(feature = "serde-human-readable")]
         if serializer.is_human_readable() {
-            return serializer.serialize_str(&match self.format(&TIME_FORMAT) {
-                Ok(s) => s,
-                Err(_) => return Err(S::Error::custom("failed formatting `Time`")),
-            });
+            let Ok(s) = self.format(&TIME_FORMAT) else {
+                return Err(S::Error::custom("failed formatting `Time`"));
+            };
+            return serializer.serialize_str(&s);
         }
 
         (self.hour(), self.minute(), self.second(), self.nanosecond()).serialize(serializer)
@@ -288,20 +404,24 @@ impl<'a> Deserialize<'a> for Time {
 #[cfg(feature = "parsing")]
 const UTC_OFFSET_FORMAT: &[FormatItem<'_>] = &[
     FormatItem::Component(Component::OffsetHour(modifier::OffsetHour::default())),
-    FormatItem::Literal(b":"),
-    FormatItem::Component(Component::OffsetMinute(modifier::OffsetMinute::default())),
-    FormatItem::Literal(b":"),
-    FormatItem::Component(Component::OffsetSecond(modifier::OffsetSecond::default())),
+    FormatItem::Optional(&FormatItem::Compound(&[
+        FormatItem::Literal(b":"),
+        FormatItem::Component(Component::OffsetMinute(modifier::OffsetMinute::default())),
+        FormatItem::Optional(&FormatItem::Compound(&[
+            FormatItem::Literal(b":"),
+            FormatItem::Component(Component::OffsetSecond(modifier::OffsetSecond::default())),
+        ])),
+    ])),
 ];
 
 impl Serialize for UtcOffset {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         #[cfg(feature = "serde-human-readable")]
         if serializer.is_human_readable() {
-            return serializer.serialize_str(&match self.format(&UTC_OFFSET_FORMAT) {
-                Ok(s) => s,
-                Err(_) => return Err(S::Error::custom("failed formatting `UtcOffset`")),
-            });
+            let Ok(s) = self.format(&UTC_OFFSET_FORMAT) else {
+                return Err(S::Error::custom("failed formatting `UtcOffset`"));
+            };
+            return serializer.serialize_str(&s);
         }
 
         (

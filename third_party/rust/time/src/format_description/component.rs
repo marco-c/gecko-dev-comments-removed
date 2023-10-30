@@ -34,4 +34,8 @@ pub enum Component {
     OffsetMinute(modifier::OffsetMinute),
     
     OffsetSecond(modifier::OffsetSecond),
+    
+    Ignore(modifier::Ignore),
+    
+    UnixTimestamp(modifier::UnixTimestamp),
 }

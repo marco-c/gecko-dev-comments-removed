@@ -1,5 +1,7 @@
 
 
+use core::num::NonZeroU16;
+
 
 
 #[non_exhaustive]
@@ -235,6 +237,49 @@ pub enum Padding {
 }
 
 
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Ignore {
+    
+    pub count: NonZeroU16,
+}
+
+
+
+impl Ignore {
+    
+    pub const fn count(count: NonZeroU16) -> Self {
+        Self { count }
+    }
+}
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UnixTimestampPrecision {
+    
+    Second,
+    
+    Millisecond,
+    
+    Microsecond,
+    
+    Nanosecond,
+}
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct UnixTimestamp {
+    
+    pub precision: UnixTimestampPrecision,
+    
+    pub sign_is_mandatory: bool,
+}
+
+
 macro_rules! if_pub {
     (pub $(#[$attr:meta])*; $($x:tt)*) => {
         $(#[$attr])*
@@ -352,4 +397,13 @@ impl_const_default! {
     @pub OffsetSecond => Self { padding: Padding::Zero };
     /// Creates a modifier that indicates the value is [padded with zeroes](Self::Zero).
     Padding => Self::Zero;
+    /// Creates a modifier that indicates the value represents the [number of seconds](Self::Second)
+    /// since the Unix epoch.
+    UnixTimestampPrecision => Self::Second;
+    /// Creates a modifier that indicates the value represents the [number of
+    /// seconds](UnixTimestampPrecision::Second) since the Unix epoch. The sign is not mandatory.
+    @pub UnixTimestamp => Self {
+        precision: UnixTimestampPrecision::Second,
+        sign_is_mandatory: false,
+    };
 }

@@ -53,6 +53,7 @@ impl Config {
     
     
     
+    
     pub const fn encode(&self) -> EncodedConfig {
         let mut bytes = [0; EncodedConfig::BITS as usize / 8];
 

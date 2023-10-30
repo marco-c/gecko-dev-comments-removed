@@ -151,7 +151,10 @@ impl<T> Timer<T> {
             return None;
         }
         let bucket = self.time_bucket(time);
-        let Ok(start_index) = self.items[bucket].binary_search_by_key(&time, TimerItem::time) else { return None };
+        let Ok(start_index) = self.items[bucket].binary_search_by_key(&time, TimerItem::time)
+        else {
+            return None;
+        };
         
         
         for i in (0..=start_index).rev() {

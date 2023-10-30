@@ -6,7 +6,7 @@
 #[cfg_attr(target_family = "unix", path = "unix.rs")]
 #[cfg_attr(
     all(
-        target_arch = "wasm32",
+        target_family = "wasm",
         not(any(target_os = "emscripten", target_os = "wasi")),
         feature = "wasm-bindgen"
     ),
@@ -19,5 +19,10 @@ use crate::{OffsetDateTime, UtcOffset};
 
 
 pub(crate) fn local_offset_at(datetime: OffsetDateTime) -> Option<UtcOffset> {
-    imp::local_offset_at(datetime)
+    
+    if cfg!(miri) {
+        None
+    } else {
+        imp::local_offset_at(datetime)
+    }
 }

@@ -1,3 +1,4 @@
+use crate::convert::*;
 use crate::{OffsetDateTime, UtcOffset};
 
 
@@ -6,7 +7,7 @@ pub(super) fn local_offset_at(datetime: OffsetDateTime) -> Option<UtcOffset> {
     
     
     
-    let timezone_offset = (js_date.get_timezone_offset() as i32) * -60;
+    let timezone_offset = (js_date.get_timezone_offset() as i32) * -(Minute.per(Hour) as i32);
 
     UtcOffset::from_whole_seconds(timezone_offset).ok()
 }

@@ -50,7 +50,7 @@ pub enum Error {
     NeedMoreData, 
     HeaderLookup,
     HuffmanDecompressionFailed,
-    ToStringFailed,
+    BadUtf8,
     ChangeCapacity,
     DynamicTableFull,
     IncrementAck,

@@ -1,11 +1,38 @@
 
 
+use alloc::boxed::Box;
 use alloc::vec::Vec;
-use core::ops::{RangeFrom, RangeTo};
+
+
+macro_rules! version {
+    ($range:expr) => {
+        $range.contains(&VERSION)
+    };
+}
+
+
+macro_rules! validate_version {
+    ($version:ident) => {
+        #[allow(clippy::let_unit_value)]
+        let _ = $crate::format_description::parse::Version::<$version>::IS_VALID;
+    };
+}
 
 mod ast;
 mod format_item;
 mod lexer;
+
+
+struct Version<const N: usize>;
+impl<const N: usize> Version<N> {
+    
+    
+    const IS_VALID: () = assert!(N >= 1 && N <= 2);
+}
+
+
+
+
 
 
 
@@ -15,12 +42,25 @@ pub fn parse(
     s: &str,
 ) -> Result<Vec<crate::format_description::FormatItem<'_>>, crate::error::InvalidFormatDescription>
 {
-    let lexed = lexer::lex(s.as_bytes());
-    let ast = ast::parse(lexed);
+    parse_borrowed::<1>(s)
+}
+
+
+
+
+
+
+pub fn parse_borrowed<const VERSION: usize>(
+    s: &str,
+) -> Result<Vec<crate::format_description::FormatItem<'_>>, crate::error::InvalidFormatDescription>
+{
+    validate_version!(VERSION);
+    let mut lexed = lexer::lex::<VERSION>(s.as_bytes());
+    let ast = ast::parse::<_, VERSION>(&mut lexed);
     let format_items = format_item::parse(ast);
     Ok(format_items
-        .map(|res| res.map(Into::into))
-        .collect::<Result<Vec<_>, _>>()?)
+        .map(|res| res.and_then(TryInto::try_into))
+        .collect::<Result<_, _>>()?)
 }
 
 
@@ -32,39 +72,39 @@ pub fn parse(
 
 
 
-pub fn parse_owned(
+
+pub fn parse_owned<const VERSION: usize>(
     s: &str,
 ) -> Result<crate::format_description::OwnedFormatItem, crate::error::InvalidFormatDescription> {
-    let lexed = lexer::lex(s.as_bytes());
-    let ast = ast::parse(lexed);
+    validate_version!(VERSION);
+    let mut lexed = lexer::lex::<VERSION>(s.as_bytes());
+    let ast = ast::parse::<_, VERSION>(&mut lexed);
     let format_items = format_item::parse(ast);
     let items = format_items
         .map(|res| res.map(Into::into))
-        .collect::<Result<Vec<_>, _>>()?
-        .into_boxed_slice();
-    Ok(crate::format_description::OwnedFormatItem::Compound(items))
+        .collect::<Result<Box<_>, _>>()?;
+    Ok(items.into())
 }
 
 
 #[derive(Clone, Copy)]
 struct Location {
     
-    line: usize,
-    
-    column: usize,
-    
-    byte: usize,
+    byte: u32,
 }
 
 impl Location {
     
+    const fn to(self, end: Self) -> Span {
+        Span { start: self, end }
+    }
+
+    
     
     
     #[must_use = "this does not modify the original value"]
-    const fn offset(&self, offset: usize) -> Self {
+    const fn offset(&self, offset: u32) -> Self {
         Self {
-            line: self.line,
-            column: self.column + offset,
             byte: self.byte + offset,
         }
     }
@@ -92,17 +132,6 @@ struct Span {
 
 impl Span {
     
-    const fn start_end(start: Location, end: Location) -> Self {
-        Self { start, end }
-    }
-
-    
-    #[must_use = "this does not modify the original value"]
-    fn subspan(&self, range: impl Subspan) -> Self {
-        range.subspan(self)
-    }
-
-    
     #[must_use = "this does not modify the original value"]
     const fn shrink_to_start(&self) -> Self {
         Self {
@@ -121,52 +150,62 @@ impl Span {
     }
 
     
+    #[must_use = "this does not modify the original value"]
+    const fn shrink_to_before(&self, pos: u32) -> Self {
+        Self {
+            start: self.start,
+            end: Location {
+                byte: self.start.byte + pos - 1,
+            },
+        }
+    }
+
+    
+    #[must_use = "this does not modify the original value"]
+    const fn shrink_to_after(&self, pos: u32) -> Self {
+        Self {
+            start: Location {
+                byte: self.start.byte + pos + 1,
+            },
+            end: self.end,
+        }
+    }
+
+    
     const fn error(self, message: &'static str) -> ErrorInner {
         ErrorInner {
             _message: message,
             _span: self,
         }
     }
+}
 
+
+#[derive(Clone, Copy)]
+struct Spanned<T> {
     
-    const fn start_byte(&self) -> usize {
-        self.start.byte
+    value: T,
+    
+    span: Span,
+}
+
+impl<T> core::ops::Deref for Spanned<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
     }
 }
 
 
-trait Subspan {
+trait SpannedValue: Sized {
     
-    fn subspan(self, span: &Span) -> Span;
+    fn spanned(self, span: Span) -> Spanned<Self>;
 }
 
-impl Subspan for RangeFrom<usize> {
-    fn subspan(self, span: &Span) -> Span {
-        assert_eq!(span.start.line, span.end.line);
-
-        Span {
-            start: Location {
-                line: span.start.line,
-                column: span.start.column + self.start,
-                byte: span.start.byte + self.start,
-            },
-            end: span.end,
-        }
-    }
-}
-
-impl Subspan for RangeTo<usize> {
-    fn subspan(self, span: &Span) -> Span {
-        assert_eq!(span.start.line, span.end.line);
-
-        Span {
-            start: span.start,
-            end: Location {
-                line: span.start.line,
-                column: span.start.column + self.end - 1,
-                byte: span.start.byte + self.end - 1,
-            },
-        }
+impl<T> SpannedValue for T {
+    fn spanned(self, span: Span) -> Spanned<Self> {
+        Spanned { value: self, span }
     }
 }
 
@@ -181,7 +220,7 @@ struct ErrorInner {
 
 struct Error {
     
-    _inner: ErrorInner,
+    _inner: Unused<ErrorInner>,
     
     public: crate::error::InvalidFormatDescription,
 }
@@ -190,4 +229,17 @@ impl From<Error> for crate::error::InvalidFormatDescription {
     fn from(error: Error) -> Self {
         error.public
     }
+}
+
+
+
+
+
+
+struct Unused<T>(core::marker::PhantomData<T>);
+
+
+#[allow(clippy::missing_const_for_fn)] 
+fn unused<T>(_: T) -> Unused<T> {
+    Unused(core::marker::PhantomData)
 }

@@ -2,7 +2,25 @@
 
 use core::mem::MaybeUninit;
 
+use crate::util::local_offset::{self, Soundness};
 use crate::{OffsetDateTime, UtcOffset};
+
+
+
+
+
+const OS_HAS_THREAD_SAFE_ENVIRONMENT: bool = match std::env::consts::OS.as_bytes() {
+    
+    b"illumos"
+    
+    
+    | b"netbsd"
+    
+    
+    | b"macos"
+    => true,
+    _ => false,
+};
 
 
 
@@ -59,38 +77,9 @@ unsafe fn timestamp_to_tm(timestamp: i64) -> Option<libc::tm> {
     target_os = "netbsd",
     target_os = "haiku",
 ))]
-fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
-    let seconds: i32 = tm.tm_gmtoff.try_into().ok()?;
-    UtcOffset::from_hms(
-        (seconds / 3_600) as _,
-        ((seconds / 60) % 60) as _,
-        (seconds % 60) as _,
-    )
-    .ok()
-}
-
-
-#[cfg(all(
-    not(unsound_local_offset),
-    not(any(
-        target_os = "redox",
-        target_os = "linux",
-        target_os = "l4re",
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "watchos",
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "openbsd",
-        target_os = "netbsd",
-        target_os = "haiku",
-    ))
-))]
-#[allow(unused_variables, clippy::missing_const_for_fn)]
-fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
-    None
+fn tm_to_offset(_unix_timestamp: i64, tm: libc::tm) -> Option<UtcOffset> {
+    let seconds = tm.tm_gmtoff.try_into().ok()?;
+    UtcOffset::from_whole_seconds(seconds).ok()
 }
 
 
@@ -99,25 +88,22 @@ fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
 
 
 
-#[cfg(all(
-    unsound_local_offset,
-    not(any(
-        target_os = "redox",
-        target_os = "linux",
-        target_os = "l4re",
-        target_os = "android",
-        target_os = "emscripten",
-        target_os = "macos",
-        target_os = "ios",
-        target_os = "watchos",
-        target_os = "freebsd",
-        target_os = "dragonfly",
-        target_os = "openbsd",
-        target_os = "netbsd",
-        target_os = "haiku",
-    ))
-))]
-fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
+#[cfg(not(any(
+    target_os = "redox",
+    target_os = "linux",
+    target_os = "l4re",
+    target_os = "android",
+    target_os = "emscripten",
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "watchos",
+    target_os = "freebsd",
+    target_os = "dragonfly",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "haiku",
+)))]
+fn tm_to_offset(unix_timestamp: i64, tm: libc::tm) -> Option<UtcOffset> {
     use crate::Date;
 
     let mut tm = tm;
@@ -138,16 +124,9 @@ fn tm_to_offset(tm: libc::tm) -> Option<UtcOffset> {
             .assume_utc()
             .unix_timestamp();
 
-    let diff_secs: i32 = (local_timestamp - datetime.unix_timestamp())
-        .try_into()
-        .ok()?;
+    let diff_secs = (local_timestamp - unix_timestamp).try_into().ok()?;
 
-    UtcOffset::from_hms(
-        (diff_secs / 3_600) as _,
-        ((diff_secs / 60) % 60) as _,
-        (diff_secs % 60) as _,
-    )
-    .ok()
+    UtcOffset::from_whole_seconds(diff_secs).ok()
 }
 
 
@@ -158,12 +137,21 @@ pub(super) fn local_offset_at(datetime: OffsetDateTime) -> Option<UtcOffset> {
     
     
     
-    if !cfg!(unsound_local_offset) && num_threads::is_single_threaded() != Some(true) {
-        return None;
-    }
+    
+    
+    
+    
 
-    
-    
-    let tm = unsafe { timestamp_to_tm(datetime.unix_timestamp()) }?;
-    tm_to_offset(tm)
+    if OS_HAS_THREAD_SAFE_ENVIRONMENT
+        || local_offset::get_soundness() == Soundness::Unsound
+        || num_threads::is_single_threaded() == Some(true)
+    {
+        let unix_timestamp = datetime.unix_timestamp();
+        
+        
+        let tm = unsafe { timestamp_to_tm(unix_timestamp) }?;
+        tm_to_offset(unix_timestamp, tm)
+    } else {
+        None
+    }
 }
