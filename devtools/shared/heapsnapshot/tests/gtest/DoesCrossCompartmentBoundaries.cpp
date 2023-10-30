@@ -10,9 +10,6 @@
 DEF_TEST(DoesCrossCompartmentBoundaries, {
   
   JS::RealmOptions options;
-  
-  options.behaviors().setReduceTimerPrecisionCallerType(
-      JS::RTPCallerTypeToken{0});
   JS::Rooted<JSObject*> newGlobal(
       cx, JS_NewGlobalObject(cx, getGlobalClass(), nullptr,
                              JS::FireOnNewGlobalHook, options));

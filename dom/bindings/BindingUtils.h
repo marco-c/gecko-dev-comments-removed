@@ -2954,15 +2954,6 @@ bool CreateGlobal(JSContext* aCx, T* aNative, nsWrapperCache* aCache,
     if (!CreateGlobalOptions<T>::PostCreateGlobal(aCx, aGlobal)) {
       return false;
     }
-
-    
-    
-    
-    if constexpr (!std::is_base_of_v<nsGlobalWindowInner, T>) {
-      JS::SetRealmReduceTimerPrecisionCallerType(
-          js::GetNonCCWObjectRealm(aGlobal),
-          RTPCallerTypeToToken(aNative->GetRTPCallerType()));
-    }
   }
 
   if (aInitStandardClasses && !JS::InitRealmStandardClasses(aCx)) {

@@ -552,10 +552,6 @@ nsresult InitClassesWithNewWrappedGlobal(JSContext* aJSContext,
   
   MOZ_RELEASE_ASSERT(aPrincipal->IsSystemPrincipal());
 
-  
-  aOptions.behaviors().setReduceTimerPrecisionCallerType(
-      RTPCallerTypeToToken(RTPCallerType::SystemPrincipal));
-
   InitGlobalObjectOptions(aOptions,  true,
                            true,
                            false,  false,
