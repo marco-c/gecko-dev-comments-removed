@@ -112,6 +112,14 @@ already_AddRefed<IAccessible> LazyInstantiator::GetRootAccessible(HWND aHwnd) {
 
 
 void LazyInstantiator::EnableBlindAggregation(HWND aHwnd) {
+  if (GetAccService()) {
+    
+    
+    
+    
+    return;
+  }
+
   LazyInstantiator* existingInstantiator = reinterpret_cast<LazyInstantiator*>(
       ::GetProp(aHwnd, kLazyInstantiatorProp));
 
