@@ -4,22 +4,40 @@
 
 
 
+
+
+
+
 function getCharAdvances(element) {
   const range = document.createRange();
-  let advances = [];
-  for (const node of element.childNodes) {
-    const nodeType = node.nodeType;
-    if (nodeType === Node.TEXT_NODE) {
-      const text = node.nodeValue;
-      for (let i = 0; i < text.length; ++i) {
-        range.setStart(node, i);
-        range.setEnd(node, i + 1);
-        const bounds = range.getBoundingClientRect();
-        advances.push(bounds.width);
+  const advances = [];
+  let origin = undefined;
+  let blockEnd = -1;
+  function walk(element) {
+    for (const node of element.childNodes) {
+      const nodeType = node.nodeType;
+      if (nodeType === Node.TEXT_NODE) {
+        const text = node.nodeValue;
+        for (let i = 0; i < text.length; ++i) {
+          range.setStart(node, i);
+          range.setEnd(node, i + 1);
+          const bounds = range.getBoundingClientRect();
+          
+          if (bounds.top >= blockEnd) {
+            origin = undefined;
+            blockEnd = bounds.bottom;
+          }
+          
+          if (origin === undefined) origin = bounds.left;
+          
+          advances.push(bounds.right - origin);
+          origin = bounds.right;
+        }
+      } else if (nodeType === Node.ELEMENT_NODE) {
+        walk(node);
       }
-    } else if (nodeType === Node.ELEMENT_NODE) {
-      advances = advances.concat(getCharAdvances(node));
     }
   }
+  walk(element);
   return advances;
 }
