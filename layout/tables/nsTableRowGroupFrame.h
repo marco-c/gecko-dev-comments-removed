@@ -346,10 +346,11 @@ class nsTableRowGroupFrame final : public nsContainerFrame,
                           const ReflowInput& aReflowInput,
                           nsTableFrame* aTableFrame, nsTableRowFrame* aFirstRow,
                           nsTableRowFrame* aLastRow, bool aFirstRowIsTopOfPage,
-                          nscoord aSpanningRowBottom,
+                          nscoord aSpanningRowBEnd,
+                          const nsSize& aContainerSize,
                           nsTableRowFrame*& aContRowFrame,
                           nsTableRowFrame*& aFirstTruncatedRow,
-                          nscoord& aDesiredHeight);
+                          nscoord& aDesiredBSize);
 
   
 
