@@ -49,8 +49,6 @@ class FunctionFlags {
     
     
     
-    
-    
     Getter,
     Setter,
 
@@ -256,13 +254,11 @@ class FunctionFlags {
         MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
         break;
       case FunctionKind::Getter:
-        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
         MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
         MOZ_ASSERT(!hasFlags(LAMBDA));
         MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));
         break;
       case FunctionKind::Setter:
-        MOZ_ASSERT(hasFlags(BASESCRIPT) || hasFlags(SELFHOSTLAZY));
         MOZ_ASSERT(!hasFlags(CONSTRUCTOR));
         MOZ_ASSERT(!hasFlags(LAMBDA));
         MOZ_ASSERT(!hasFlags(WASM_JIT_ENTRY));

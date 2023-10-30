@@ -801,12 +801,15 @@ JSString* js::FunctionToString(JSContext* cx, HandleFunction fun,
     
     if (fun->explicitName() &&
         (fun->kind() == FunctionFlags::NormalFunction ||
+         (fun->isBuiltinNative() && (fun->kind() == FunctionFlags::Getter ||
+                                     fun->kind() == FunctionFlags::Setter)) ||
          fun->kind() == FunctionFlags::Wasm ||
          fun->kind() == FunctionFlags::ClassConstructor)) {
       if (!out.append(' ')) {
         return nullptr;
       }
 
+      
       
       
       JSAtom* name = fun->explicitName();
