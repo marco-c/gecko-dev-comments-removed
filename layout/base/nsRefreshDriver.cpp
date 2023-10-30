@@ -2428,18 +2428,17 @@ bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
   
   
   if (aIdx == 1) {
-    nsAutoMicroTask mt;
-    ReduceAnimations(*mPresContext->Document());
-  }
-
-  
-  
-  if (aIdx == 1 && (!mPresContext || !mPresContext->GetPresShell())) {
-    return false;
-  }
-
-  if (aIdx == 1) {
     
+    {
+      nsAutoMicroTask mt;
+      ReduceAnimations(*mPresContext->Document());
+    }
+
+    
+    
+    if (!mPresContext || !mPresContext->GetPresShell()) {
+      return false;
+    }
 
     FlushAutoFocusDocuments();
     DispatchScrollEvents();
