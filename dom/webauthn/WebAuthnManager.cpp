@@ -25,7 +25,7 @@
 #include "mozilla/ipc/PBackgroundChild.h"
 
 #ifdef XP_WIN
-#  include "WinWebAuthnService.h"
+#  include "WinWebAuthnManager.h"
 #endif
 
 using namespace mozilla::ipc;
@@ -461,7 +461,7 @@ already_AddRefed<Promise> WebAuthnManager::MakeCredential(
   
   
 #ifdef XP_WIN
-  if (!WinWebAuthnService::AreWebAuthNApisAvailable()) {
+  if (!WinWebAuthnManager::AreWebAuthNApisAvailable()) {
     ListenForVisibilityEvents();
   }
 #else
@@ -678,7 +678,7 @@ already_AddRefed<Promise> WebAuthnManager::GetAssertion(
   
   
 #ifdef XP_WIN
-  if (!WinWebAuthnService::AreWebAuthNApisAvailable()) {
+  if (!WinWebAuthnManager::AreWebAuthNApisAvailable()) {
     ListenForVisibilityEvents();
   }
 #else
