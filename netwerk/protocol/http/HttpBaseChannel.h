@@ -829,6 +829,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
   Atomic<uint32_t, ReleaseAcquire> mFirstPartyClassificationFlags;
   Atomic<uint32_t, ReleaseAcquire> mThirdPartyClassificationFlags;
 
+  
+  
+  Mutex mOnDataFinishedMutex{"HttpChannelChild::OnDataFinishedMutex"};
+
   UniquePtr<ProfileChunkedBuffer> mSource;
 
   uint32_t mLoadFlags;
