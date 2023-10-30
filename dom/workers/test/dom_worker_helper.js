@@ -147,25 +147,10 @@ function waitForWorkerMessage(worker, message) {
 }
 
 function waitForMultiple(promises) {
-  return new Promise(function (resolve) {
-    let values = [];
-    for (let i = 0; i < promises.length; ++i) {
-      let index = i;
-      promises[i].then(function (value) {
-        is(
-          index + 1,
-          values.length + 1,
-          "Promise " +
-            (values.length + 1) +
-            " out of " +
-            promises.length +
-            " should be resolved."
-        );
-        values.push(value);
-        if (values.length === promises.length) {
-          resolve(values);
-        }
-      });
-    }
-  });
+  
+  
+  
+  
+  
+  return Promise.all(promises);
 }
