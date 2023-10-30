@@ -311,6 +311,10 @@ check_and_add_warning("-Wno-error=builtin-macro-redefined")
 
 
 
+check_and_add_warning("-Wno-vla-cxx-extension", cxx_compiler)
+
+
+
 
 check_and_add_warning("-Wno-unknown-warning-option")
 
