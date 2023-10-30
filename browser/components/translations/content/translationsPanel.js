@@ -600,6 +600,10 @@ var TranslationsPanel = new (class {
 
 
   #isShowingDefaultView() {
+    if (!this.#lazyElements) {
+      
+      return false;
+    }
     const { multiview } = this.elements;
     return (
       multiview.getAttribute("mainViewId") === "translations-panel-view-default"
@@ -1576,6 +1580,7 @@ var TranslationsPanel = new (class {
           case null:
             break;
           case "engine-load-failure":
+            await this.#ensureLangListsBuilt();
             if (!this.#isShowingDefaultView()) {
               await this.#showDefaultView().catch(e => {
                 this.console?.error(e);
