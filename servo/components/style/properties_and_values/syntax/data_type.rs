@@ -5,8 +5,7 @@
 
 
 use super::{Component, ComponentName, Multiplier};
-use std::fmt::{self, Debug};
-use std::{fmt::Write};
+use std::fmt::{self, Debug, Write};
 use style_traits::{CssWriter, ToCss};
 
 

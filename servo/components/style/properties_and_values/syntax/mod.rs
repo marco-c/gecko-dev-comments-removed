@@ -13,7 +13,6 @@ use crate::parser::{Parse, ParserContext};
 use crate::values::CustomIdent;
 use cssparser::{Parser as CSSParser, ParserInput as CSSParserInput};
 use style_traits::{
-    arc_slice::ArcSlice,
     CssWriter, ParseError as StyleParseError, PropertySyntaxParseError as ParseError,
     StyleParseErrorKind, ToCss,
 };
@@ -25,17 +24,29 @@ pub mod data_type;
 
 
 #[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
-pub struct Descriptor(#[ignore_malloc_size_of = "arc"] pub ArcSlice<Component>);
+pub struct Descriptor {
+    
+    pub components: Box<[Component]>,
+    
+    specified: Option<Box<str>>,
+}
 
 impl Descriptor {
     
+    #[inline]
     pub fn is_universal(&self) -> bool {
-        self.0.is_empty()
+        self.components.is_empty()
+    }
+
+    
+    #[inline]
+    pub fn specified_string(&self) -> Option<&str> {
+        self.specified.as_deref()
     }
 
     
     
-    pub fn from_str(css: &str) -> Result<Self, ParseError> {
+    pub fn from_str(css: &str, save_specified: bool) -> Result<Self, ParseError> {
         
         let input = ascii::trim_ascii_whitespace(css);
 
@@ -44,10 +55,15 @@ impl Descriptor {
             return Err(ParseError::EmptyInput);
         }
 
+        let specified = if save_specified { Some(Box::from(css)) } else { None };
+
         
         
         if input.len() == 1 && input.as_bytes()[0] == b'*' {
-            return Ok(Self::default());
+            return Ok(Self {
+                components: Default::default(),
+                specified,
+            });
         }
 
         
@@ -62,7 +78,10 @@ impl Descriptor {
             
             parser.parse()?;
         }
-        Ok(Self(ArcSlice::from_iter(components.into_iter())))
+        Ok(Self {
+            components: components.into_boxed_slice(),
+            specified,
+        })
     }
 }
 
@@ -71,64 +90,33 @@ impl ToCss for Descriptor {
     where
         W: Write,
     {
-        if  self.is_universal() {
+        if let Some(ref specified) = self.specified {
+            return specified.to_css(dest);
+        }
+
+        if self.is_universal() {
             return dest.write_char('*');
         }
 
-        for (i, component) in self.0.iter().enumerate() {
-            component.to_css(dest)?;
-            if i != self.0.len() - 1 {
+        let mut first = true;
+        for component in &*self.components {
+            if !first {
                 dest.write_str(" | ")?;
             }
+            component.to_css(dest)?;
+            first = false;
         }
 
         Ok(())
     }
 }
 
-
-#[derive(Debug, Clone, Default, MallocSizeOf, PartialEq)]
-pub struct ParsedDescriptor {
-    descriptor: Descriptor,
-    css: String
-}
-
-impl ParsedDescriptor {
+impl Parse for Descriptor {
     
-    pub fn descriptor(&self) -> &Descriptor {
-        &self.descriptor
-    }
-
-    
-    pub fn as_str(&self) -> &str {
-        &self.css
-    }
-}
-
-impl Parse for ParsedDescriptor {
-    
-    fn parse<'i, 't>(
-        _context: &ParserContext,
-        parser: &mut CSSParser<'i, 't>,
-    ) -> Result<Self, StyleParseError<'i>> {
-        
+    fn parse<'i>( _: &ParserContext, parser: &mut CSSParser<'i, '_>,) -> Result<Self, StyleParseError<'i>> {
         let input = parser.expect_string()?;
-        match Descriptor::from_str(input.as_ref()) {
-            Ok(descriptor) => Ok(Self {
-                descriptor,
-                css: input.as_ref().to_owned(),
-            }),
-            Err(err) => Err(parser.new_custom_error(StyleParseErrorKind::PropertySyntaxField(err))),
-        }
-    }
-}
-
-impl ToCss for ParsedDescriptor {
-    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
-    where
-        W: Write,
-    {
-        self.css.to_css(dest)
+        Descriptor::from_str(input.as_ref(),  true)
+            .map_err(|err| parser.new_custom_error(StyleParseErrorKind::PropertySyntaxField(err)))
     }
 }
 

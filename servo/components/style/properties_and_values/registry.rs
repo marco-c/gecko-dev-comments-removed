@@ -7,22 +7,35 @@
 use crate::Atom;
 use crate::selector_map::PrecomputedHashMap;
 use crate::stylesheets::UrlExtraData;
+use cssparser::SourceLocation;
 use super::syntax::Descriptor;
-use super::rule::InitialValue;
+use super::rule::{InitialValue, Inherits, PropertyRuleName};
 
 
 
 #[derive(Debug, Clone, MallocSizeOf)]
 pub struct PropertyRegistration {
     
+    pub name: PropertyRuleName,
+    
     pub syntax: Descriptor,
     
-    pub inherits: bool,
+    pub inherits: Inherits,
     
     #[ignore_malloc_size_of = "Arc"]
     pub initial_value: Option<InitialValue>,
     
     pub url_data: UrlExtraData,
+    
+    pub source_location: SourceLocation,
+}
+
+impl PropertyRegistration {
+    
+    #[inline]
+    pub fn inherits(&self) -> bool {
+        self.inherits == Inherits::True
+    }
 }
 
 
@@ -49,7 +62,8 @@ impl ScriptRegistry {
     
     
     #[inline]
-    pub fn register(&mut self, name: Atom, registration: PropertyRegistration) {
+    pub fn register(&mut self, registration: PropertyRegistration) {
+        let name = registration.name.0.clone();
         let old = self.properties.insert(name, registration);
         debug_assert!(old.is_none(), "Already registered? Should be an error");
     }
