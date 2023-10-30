@@ -714,6 +714,12 @@ nsresult nsFrameLoader::ReallyStartLoadingInternal() {
 
     loadState->SetFirstParty(false);
 
+    Document* ownerDoc = mOwnerContent->OwnerDoc();
+    if (ownerDoc) {
+      loadState->SetTriggeringStorageAccess(ownerDoc->UsingStorageAccess());
+      loadState->SetTriggeringWindowId(ownerDoc->InnerWindowID());
+    }
+
     
     
     

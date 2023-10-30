@@ -108,6 +108,9 @@ already_AddRefed<nsDocShellLoadState> LocationBase::CheckURL(
   loadState->SetHasValidUserGestureActivation(
       doc->HasValidTransientUserGestureActivation());
 
+  loadState->SetTriggeringWindowId(doc->InnerWindowID());
+  loadState->SetTriggeringStorageAccess(doc->UsingStorageAccess());
+
   return loadState.forget();
 }
 
@@ -209,40 +212,41 @@ void LocationBase::SetHrefWithBase(const nsAString& aHref, nsIURI* aBase,
     result = NS_NewURI(getter_AddRefs(newUri), aHref, nullptr, aBase);
   }
 
-  if (newUri) {
-    
-
-
-
-
-
-
-
-
-    bool inScriptTag = false;
-    nsIScriptContext* scriptContext = nullptr;
-    nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(GetEntryGlobal());
-    if (win) {
-      scriptContext = nsGlobalWindowInner::Cast(win)->GetContextInternal();
-    }
-
-    if (scriptContext) {
-      if (scriptContext->GetProcessingScriptTag()) {
-        
-        
-        
-        nsCOMPtr<nsIDocShell> docShell(GetDocShell());
-        nsCOMPtr<nsIScriptGlobalObject> ourGlobal =
-            docShell ? docShell->GetScriptGlobalObject() : nullptr;
-        inScriptTag = (ourGlobal == scriptContext->GetGlobalObject());
-      }
-    }
-
-    SetURI(newUri, aSubjectPrincipal, aRv, aReplace || inScriptTag);
+  if (NS_FAILED(result) || !newUri) {
+    aRv.ThrowSyntaxError("'"_ns + NS_ConvertUTF16toUTF8(aHref) +
+                         "' is not a valid URL."_ns);
     return;
   }
 
-  aRv.Throw(result);
+  
+
+
+
+
+
+
+
+
+  bool inScriptTag = false;
+  nsIScriptContext* scriptContext = nullptr;
+  nsCOMPtr<nsPIDOMWindowInner> win = do_QueryInterface(GetEntryGlobal());
+  if (win) {
+    scriptContext = nsGlobalWindowInner::Cast(win)->GetContextInternal();
+  }
+
+  if (scriptContext) {
+    if (scriptContext->GetProcessingScriptTag()) {
+      
+      
+      
+      nsCOMPtr<nsIDocShell> docShell(GetDocShell());
+      nsCOMPtr<nsIScriptGlobalObject> ourGlobal =
+          docShell ? docShell->GetScriptGlobalObject() : nullptr;
+      inScriptTag = (ourGlobal == scriptContext->GetGlobalObject());
+    }
+  }
+
+  SetURI(newUri, aSubjectPrincipal, aRv, aReplace || inScriptTag);
 }
 
 void LocationBase::Replace(const nsAString& aUrl,
