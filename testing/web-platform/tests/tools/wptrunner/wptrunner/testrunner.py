@@ -682,6 +682,14 @@ class TestRunnerManager(threading.Thread):
             is_unexpected = expected != result.status and result.status not in known_intermittent
             is_expected_notrun = (expected == "NOTRUN" or "NOTRUN" in known_intermittent)
 
+            if not is_unexpected and result.status in ["FAIL", "PRECONDITION_FAILED"]:
+                
+                
+                
+                expected_fail_message = test.expected_fail_message(result.name)
+                if expected_fail_message is not None and result.message != expected_fail_message:
+                    is_unexpected = True
+
             if is_unexpected:
                 subtest_unexpected = True
 
