@@ -257,12 +257,6 @@ class MediaEncoder {
   
 
 
-
-  void RunOnGraph(already_AddRefed<Runnable> aRunnable);
-
-  
-
-
   void MaybeShutdown();
 
   

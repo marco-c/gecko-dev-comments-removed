@@ -3,7 +3,7 @@
 
 
 
-#include "MediaTrackGraphImpl.h"
+#include "MediaTrackGraph.h"
 #include "MediaTrackListener.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Unused.h"
@@ -43,17 +43,8 @@ AudioCaptureTrack::~AudioCaptureTrack() {
 }
 
 void AudioCaptureTrack::Start() {
-  class Message : public ControlMessage {
-   public:
-    explicit Message(AudioCaptureTrack* aTrack)
-        : ControlMessage(aTrack), mTrack(aTrack) {}
-
-    virtual void Run() { mTrack->mStarted = true; }
-
-   protected:
-    AudioCaptureTrack* mTrack;
-  };
-  GraphImpl()->AppendMessage(MakeUnique<Message>(this));
+  QueueControlMessageWithNoShutdown(
+      [self = RefPtr{this}, this] { mStarted = true; });
 }
 
 void AudioCaptureTrack::ProcessInput(GraphTime aFrom, GraphTime aTo,
