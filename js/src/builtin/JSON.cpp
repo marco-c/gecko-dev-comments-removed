@@ -1701,6 +1701,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
 }
 
 
+
 static bool Walk(JSContext* cx, HandleObject holder, HandleId name,
                  HandleValue reviver, MutableHandleValue vp) {
   AutoCheckRecursionLimit recursion(cx);
