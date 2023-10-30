@@ -151,6 +151,12 @@ bool AppleDecoderModule::IsVideoSupported(
           CreateDecoderParams::Option::HardwareDecoderNotAllowed)) {
     return false;
   }
+  if (VPXDecoder::IsVP9(aConfig.mMimeType) &&
+      aOptions.contains(CreateDecoderParams::Option::LowLatency)) {
+    
+    
+    return false;
+  }
   if (aConfig.HasAlpha()) {
     return false;
   }
