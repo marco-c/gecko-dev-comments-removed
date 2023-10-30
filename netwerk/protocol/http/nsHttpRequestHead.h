@@ -40,7 +40,7 @@ class nsHttpRequestHead {
   
   
   
-  const nsHttpHeaderArray& Headers() const;
+  const nsHttpHeaderArray& Headers() const MOZ_REQUIRES(mRecursiveMutex);
   void Enter() const MOZ_CAPABILITY_ACQUIRE(mRecursiveMutex) {
     mRecursiveMutex.Lock();
   }
