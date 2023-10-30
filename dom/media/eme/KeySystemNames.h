@@ -23,6 +23,14 @@ inline constexpr char kClearKeyWithProtectionQueryKeySystemName[] =
 inline constexpr char kWidevineKeySystemName[] = "com.widevine.alpha";
 #ifdef MOZ_WMF_CDM
 
+inline constexpr char kWidevineExperimentKeySystemName[] =
+    "com.widevine.alpha.experiment";
+
+
+inline constexpr char kWidevineExperiment2KeySystemName[] =
+    "com.widevine.alpha.experiment2";
+
+
 inline constexpr char kPlayReadyKeySystemName[] =
     "com.microsoft.playready.recommendation";
 inline constexpr char kPlayReadyKeySystemHardware[] =
