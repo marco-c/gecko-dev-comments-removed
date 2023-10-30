@@ -5,15 +5,20 @@
 
 
 IPDL_SOURCES += [
+    "PWinFileDialog.ipdl",
     "WinFileDialogCommandsDefn.ipdlh",
 ]
 
 UNIFIED_SOURCES += [
+    "WinFileDialogChild.cpp",
     "WinFileDialogCommands.cpp",
+    "WinFileDialogParent.cpp",
 ]
 
 EXPORTS.mozilla.widget.filedialog += [
+    "WinFileDialogChild.h",
     "WinFileDialogCommands.h",
+    "WinFileDialogParent.h",
 ]
 
 

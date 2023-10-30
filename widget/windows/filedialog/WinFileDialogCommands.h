@@ -7,6 +7,7 @@
 #ifndef widget_windows_filedialog_WinFileDialogCommands_h__
 #define widget_windows_filedialog_WinFileDialogCommands_h__
 
+#include "ipc/EnumSerializer.h"
 #include "mozilla/widget/filedialog/WinFileDialogCommandsDefn.h"
 
 
@@ -34,6 +35,15 @@ mozilla::Result<Results, HRESULT> GetFileResults(::IFileDialog*);
 
 
 mozilla::Result<nsString, HRESULT> GetFolderResults(::IFileDialog*);
+}  
+
+namespace IPC {
+template <>
+struct ParamTraits<mozilla::widget::filedialog::FileDialogType>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::widget::filedialog::FileDialogType,
+          mozilla::widget::filedialog::FileDialogType::Open,
+          mozilla::widget::filedialog::FileDialogType::Save> {};
 }  
 
 #endif  
