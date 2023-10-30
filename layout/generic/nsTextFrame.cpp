@@ -5932,7 +5932,25 @@ void nsTextFrame::CombineSelectionRanges(
       AutoTArray<const SelectionDetails*, 1> selectionDetails;
       selectionDetails.SetCapacity(
           activeSelectionRangesSortedByPriority.Length());
+      
+      
+      
+      
+      
+      
+      
+      
+      nsAtom* currentHighlightName = nullptr;
       for (const auto* selectionRange : activeSelectionRangesSortedByPriority) {
+        if (selectionRange->mDetails->mSelectionType ==
+            SelectionType::eHighlight) {
+          if (selectionRange->mDetails->mHighlightData.mHighlightName ==
+              currentHighlightName) {
+            continue;
+          }
+          currentHighlightName =
+              selectionRange->mDetails->mHighlightData.mHighlightName;
+        }
         selectionDetails.AppendElement(selectionRange->mDetails);
       }
       aCombinedSelectionRanges.AppendElement(PriorityOrderedSelectionsForRange{
@@ -6011,55 +6029,41 @@ bool nsTextFrame::PaintTextWithSelectionColors(
     while (iterator.GetNextSegment(&iOffset, &range, &hyphenWidth,
                                    selectionTypes, highlightNames,
                                    rangeStyles)) {
-      nscolor foreground(0), background(0), tmpBackground(0);
-      bool backgroundColorHasBeenSet = false;
-      for (size_t index = 0; index < selectionTypes.Length(); ++index) {
-        if (selectionTypes[index] == SelectionType::eHighlight) {
-          
-          
-          
-          
-          
-          if (aParams.textPaintStyle->GetCustomHighlightBackgroundColor(
-                  highlightNames[index], &tmpBackground)) {
-            background = tmpBackground;
-            backgroundColorHasBeenSet = true;
-          }
-
-        } else {
-          GetSelectionTextColors(selectionTypes[index], highlightNames[index],
-                                 *aParams.textPaintStyle, rangeStyles[index],
-                                 &foreground, &background);
-          backgroundColorHasBeenSet = true;
-        }
-      }
-      if (!backgroundColorHasBeenSet) {
-        background = tmpBackground;
-      }
-      
+      nscolor foreground(0), background(0);
       gfxFloat advance =
           hyphenWidth + mTextRun->GetAdvanceWidth(range, aParams.provider);
-      if (NS_GET_A(background) > 0) {
-        nsRect bgRect;
-        gfxFloat offs = iOffset - (mTextRun->IsInlineReversed() ? advance : 0);
-        if (vertical) {
-          bgRect = nsRect(aParams.framePt.x, aParams.framePt.y + offs,
-                          GetSize().width, advance);
-        } else {
-          bgRect = nsRect(aParams.framePt.x + offs, aParams.framePt.y, advance,
-                          GetSize().height);
-        }
+      nsRect bgRect;
+      gfxFloat offs = iOffset - (mTextRun->IsInlineReversed() ? advance : 0);
+      if (vertical) {
+        bgRect = nsRect(nscoord(aParams.framePt.x),
+                        nscoord(aParams.framePt.y + offs), GetSize().width,
+                        nscoord(advance));
+      } else {
+        bgRect = nsRect(nscoord(aParams.framePt.x + offs),
+                        nscoord(aParams.framePt.y), nscoord(advance),
+                        GetSize().height);
+      }
 
-        LayoutDeviceRect selectionRect =
-            LayoutDeviceRect::FromAppUnits(bgRect, appUnitsPerDevPixel);
+      LayoutDeviceRect selectionRect =
+          LayoutDeviceRect::FromAppUnits(bgRect, appUnitsPerDevPixel);
+      
+      
+      
+      for (size_t index = 0; index < selectionTypes.Length(); ++index) {
+        GetSelectionTextColors(selectionTypes[index], highlightNames[index],
+                               *aParams.textPaintStyle, rangeStyles[index],
+                               &foreground, &background);
 
-        if (textDrawer) {
-          textDrawer->AppendSelectionRect(selectionRect,
-                                          ToDeviceColor(background));
-        } else {
-          PaintSelectionBackground(*aParams.context->GetDrawTarget(),
-                                   background, aParams.dirtyRect, selectionRect,
-                                   aParams.callbacks);
+        
+        if (NS_GET_A(background) > 0) {
+          if (textDrawer) {
+            textDrawer->AppendSelectionRect(selectionRect,
+                                            ToDeviceColor(background));
+          } else {
+            PaintSelectionBackground(*aParams.context->GetDrawTarget(),
+                                     background, aParams.dirtyRect,
+                                     selectionRect, aParams.callbacks);
+          }
         }
       }
       iterator.UpdateWithAdvance(advance);
