@@ -1020,9 +1020,6 @@ pref("privacy.authPromptSpoofingProtection",         true);
 
 pref("privacy.globalprivacycontrol.functionality.enabled",  true);
 
-
-pref("privacy.globalprivacycontrol.pbmode.enabled", true);
-
 pref("network.proxy.share_proxy_settings",  false); 
 
 
