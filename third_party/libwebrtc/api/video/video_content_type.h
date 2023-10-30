@@ -24,12 +24,6 @@ enum class VideoContentType : uint8_t {
 };
 
 namespace videocontenttypehelpers {
-bool SetExperimentId(VideoContentType* content_type, uint8_t experiment_id);
-bool SetSimulcastId(VideoContentType* content_type, uint8_t simulcast_id);
-
-uint8_t GetExperimentId(const VideoContentType& content_type);
-uint8_t GetSimulcastId(const VideoContentType& content_type);
-
 bool IsScreenshare(const VideoContentType& content_type);
 
 bool IsValidContentType(uint8_t value);

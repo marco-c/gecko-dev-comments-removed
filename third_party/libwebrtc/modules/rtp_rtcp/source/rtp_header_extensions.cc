@@ -505,7 +505,11 @@ bool VideoContentTypeExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                       VideoContentType* content_type) {
   if (data.size() == 1 &&
       videocontenttypehelpers::IsValidContentType(data[0])) {
-    *content_type = static_cast<VideoContentType>(data[0]);
+    
+    
+    
+    
+    *content_type = static_cast<VideoContentType>(data[0] & 0x1);
     return true;
   }
   return false;

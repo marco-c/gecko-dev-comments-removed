@@ -157,9 +157,6 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
 
   const std::string video_prefix =
       screenshare ? "WebRTC.Video.Screenshare." : "WebRTC.Video.";
-  
-  
-  const std::string video_suffix = screenshare ? ".S0" : "";
 
   
   EXPECT_METRIC_EQ(2, metrics::NumSamples("WebRTC.Call.LifetimeInSeconds"));
@@ -248,17 +245,13 @@ void HistogramTest::VerifyHistogramStats(bool use_rtx,
   EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.CurrentDelayInMs"));
   EXPECT_METRIC_EQ(1, metrics::NumSamples("WebRTC.Video.OnewayDelayInMs"));
 
-  EXPECT_METRIC_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayInMs" +
-                                          video_suffix));
+  EXPECT_METRIC_EQ(1, metrics::NumSamples(video_prefix + "EndToEndDelayInMs"));
   EXPECT_METRIC_EQ(1,
-                   metrics::NumSamples(video_prefix + "EndToEndDelayMaxInMs" +
-                                       video_suffix));
-  EXPECT_METRIC_EQ(1, metrics::NumSamples(video_prefix + "InterframeDelayInMs" +
-                                          video_suffix));
+                   metrics::NumSamples(video_prefix + "EndToEndDelayMaxInMs"));
   EXPECT_METRIC_EQ(1,
-                   metrics::NumSamples(video_prefix + "InterframeDelayMaxInMs" +
-                                       video_suffix));
-
+                   metrics::NumSamples(video_prefix + "InterframeDelayInMs"));
+  EXPECT_METRIC_EQ(
+      1, metrics::NumSamples(video_prefix + "InterframeDelayMaxInMs"));
   EXPECT_METRIC_EQ(
       1, metrics::NumSamples("WebRTC.Video.RenderSqrtPixelsPerSecond"));
 
