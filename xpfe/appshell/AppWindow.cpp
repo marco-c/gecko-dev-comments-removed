@@ -496,6 +496,14 @@ NS_IMETHODIMP AppWindow::ShowModal() {
   nsCOMPtr<nsIWidget> window = mWindow;
   nsCOMPtr<nsIAppWindow> tempRef = this;
 
+#ifdef USE_NATIVE_MENUS
+  
+  
+  
+  
+  widget::NativeMenuSupport::CreateNativeMenuBar(mWindow, nullptr);
+#endif
+
   window->SetModal(true);
   mContinueModalLoop = true;
   EnableParent(false);
