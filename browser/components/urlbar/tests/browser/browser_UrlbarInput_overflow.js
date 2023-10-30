@@ -95,6 +95,9 @@ async function testVal(aExpected, overflowSide = "") {
 }
 
 add_task(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.trimHttps", false]],
+  });
   
   
   
