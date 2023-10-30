@@ -513,6 +513,21 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
 
   virtual void DecrementSuspendCount();
 
+  
+
+
+
+
+
+
+
+
+  template <typename Function>
+  void RunAfterProcessing(Function&& aFunction) {
+    RunMessageAfterProcessing(WrapUnique(
+        new ControlMessageWithNoShutdown(std::forward<Function>(aFunction))));
+  }
+
   class ControlMessageInterface;
 
  protected:
@@ -532,6 +547,7 @@ class MediaTrack : public mozilla::LinkedListElement<MediaTrack> {
   class ControlOrShutdownMessage;
 
   void QueueMessage(UniquePtr<ControlMessageInterface> aMessage);
+  void RunMessageAfterProcessing(UniquePtr<ControlMessageInterface> aMessage);
 
   void NotifyMainThreadListeners() {
     NS_ASSERTION(NS_IsMainThread(), "Call only on main thread");

@@ -74,11 +74,11 @@ struct TrackUpdate {
 
 
 
-
 class ControlMessage : public MediaTrack::ControlMessageInterface {
  public:
   explicit ControlMessage(MediaTrack* aTrack) : mTrack(aTrack) {
-    MOZ_RELEASE_ASSERT(!aTrack || !NS_IsMainThread() || !aTrack->IsDestroyed());
+    MOZ_ASSERT(NS_IsMainThread());
+    MOZ_RELEASE_ASSERT(!aTrack || !aTrack->IsDestroyed());
   }
 
   MediaTrack* GetTrack() { return mTrack; }
