@@ -17,10 +17,7 @@ GPU_IMPL_JS_WRAP(RenderBundle)
 RenderBundle::RenderBundle(Device* const aParent, RawId aId)
     : ChildOf(aParent), mId(aId) {
   
-  
-  if (!mId) {
-    mValid = false;
-  }
+  MOZ_RELEASE_ASSERT(aId);
 }
 
 RenderBundle::~RenderBundle() { Cleanup(); }
