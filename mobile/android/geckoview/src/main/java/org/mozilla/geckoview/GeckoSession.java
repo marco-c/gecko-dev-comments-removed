@@ -6990,6 +6990,11 @@ public class GeckoSession {
           
           
           this.thirdPartyOrigin = permission.substring(16);
+        } else if (permission.startsWith("3rdPartyFrameStorage^")) {
+          
+          
+          
+          this.thirdPartyOrigin = permission.substring(21);
         } else {
           this.thirdPartyOrigin = bundle.getString("thirdPartyOrigin");
         }
@@ -7047,7 +7052,9 @@ public class GeckoSession {
           return PERMISSION_MEDIA_KEY_SYSTEM_ACCESS;
         } else if ("trackingprotection".equals(type) || "trackingprotection-pb".equals(type)) {
           return PERMISSION_TRACKING;
-        } else if ("storage-access".equals(type) || type.startsWith("3rdPartyStorage^")) {
+        } else if ("storage-access".equals(type)
+            || type.startsWith("3rdPartyStorage^")
+            || type.startsWith("3rdPartyFrameStorage^")) {
           return PERMISSION_STORAGE_ACCESS;
         } else {
           return -1;
