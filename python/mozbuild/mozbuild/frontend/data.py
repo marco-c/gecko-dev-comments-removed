@@ -563,7 +563,7 @@ def cargo_output_directory(context, target_var):
 
 
 
-class BaseRustProgram(ContextDerived):
+class BaseRustProgram(Linkable):
     __slots__ = (
         "name",
         "cargo_file",
@@ -574,7 +574,7 @@ class BaseRustProgram(ContextDerived):
     )
 
     def __init__(self, context, name, cargo_file):
-        ContextDerived.__init__(self, context)
+        Linkable.__init__(self, context)
         self.name = name
         self.cargo_file = cargo_file
         
