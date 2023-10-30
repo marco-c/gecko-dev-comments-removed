@@ -1274,7 +1274,7 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   
   
   video_send_delay_stats_->OnSentPacket(sent_packet.packet_id,
-                                        clock_->TimeInMilliseconds());
+                                        clock_->CurrentTime());
   transport_send_->OnSentPacket(sent_packet);
 }
 
