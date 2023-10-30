@@ -12,11 +12,8 @@ function wrapInputStream(input) {
   return wrapper;
 }
 
-
-function run_test() {
-  
-  
-  let file = do_get_file("data/test_crx_dummy.crx");
+function extract_crx(filepath) {
+  let file = do_get_file(filepath);
 
   let zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].createInstance(
     Ci.nsIZipReader
@@ -40,4 +37,15 @@ function run_test() {
   Cu.forceGC();
   Assert.ok(!!stream.read(1024).length);
   Assert.ok(!!dirstream.read(100).length);
+}
+
+
+function run_test() {
+  
+  
+  extract_crx("data/test_crx_dummy.crx");
+
+  
+  
+  extract_crx("data/test_crx_v3_dummy.crx");
 }

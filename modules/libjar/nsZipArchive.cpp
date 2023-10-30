@@ -290,6 +290,17 @@ nsresult nsZipHandle::Init(const uint8_t* aData, uint32_t aLen,
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 nsresult nsZipHandle::findDataStart() {
   
   
@@ -298,11 +309,21 @@ nsresult nsZipHandle::findDataStart() {
   MMAP_FAULT_HANDLER_BEGIN_HANDLE(this)
   if (mTotalLen > CRXIntSize * 4 && xtolong(mFileStart) == kCRXMagic) {
     const uint8_t* headerData = mFileStart;
-    headerData += CRXIntSize * 2;  
-    uint32_t pubKeyLength = xtolong(headerData);
-    headerData += CRXIntSize;
-    uint32_t sigLength = xtolong(headerData);
-    uint32_t headerSize = CRXIntSize * 4 + pubKeyLength + sigLength;
+    headerData += CRXIntSize;  
+    uint32_t version = xtolong(headerData);
+    headerData += CRXIntSize;  
+    uint32_t headerSize = CRXIntSize * 2;
+    if (version == 3) {
+      uint32_t subHeaderSize = xtolong(headerData);
+      headerSize += CRXIntSize + subHeaderSize;
+    } else if (version < 3) {
+      uint32_t pubKeyLength = xtolong(headerData);
+      headerData += CRXIntSize;
+      uint32_t sigLength = xtolong(headerData);
+      headerSize += CRXIntSize * 2 + pubKeyLength + sigLength;
+    } else {
+      return NS_ERROR_FILE_CORRUPTED;
+    }
     if (mTotalLen > headerSize) {
       mLen = mTotalLen - headerSize;
       mFileData = mFileStart + headerSize;
