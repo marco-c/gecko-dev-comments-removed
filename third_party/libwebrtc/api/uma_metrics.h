@@ -122,16 +122,6 @@ enum AddIceCandidateResult {
 
 
 
-enum SimulcastApiVersion {
-  kSimulcastApiVersionNone = 0,
-  kSimulcastApiVersionLegacy = 1,
-  kSimulcastApiVersionSpecCompliant = 2,
-  kSimulcastApiVersionMax
-};
-
-
-
-
 enum BundleUsage {
   
   kBundleUsageEmpty = 0,
