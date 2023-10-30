@@ -560,8 +560,8 @@ ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
   
   
   
-  if (scrollbarStyle->StyleUIReset()->ScrollbarWidth() ==
-      StyleScrollbarWidth::None) {
+  const auto scrollbarWidth = scrollbarStyle->StyleUIReset()->ScrollbarWidth();
+  if (scrollbarWidth == StyleScrollbarWidth::None) {
     mHScrollbar = ShowScrollbar::Never;
     mHScrollbarAllowedForScrollingVVInsideLV = false;
     mVScrollbar = ShowScrollbar::Never;
@@ -574,23 +574,23 @@ ScrollReflowInput::ScrollReflowInput(nsHTMLScrollFrame* aFrame,
     const auto bothEdges =
         bool(scrollbarGutterStyle & StyleScrollbarGutter::BOTH_EDGES);
 
+    const nscoord scrollbarSize = nsHTMLScrollFrame::GetNonOverlayScrollbarSize(
+        aFrame->PresContext(), scrollbarWidth);
     if (mReflowInput.GetWritingMode().IsVertical()) {
-      const nscoord h = HScrollbarPrefHeight();
       if (bothEdges) {
-        mScrollbarGutter.top = mScrollbarGutter.bottom = h;
+        mScrollbarGutter.top = mScrollbarGutter.bottom = scrollbarSize;
       } else if (stable) {
         
-        mScrollbarGutter.bottom = h;
+        mScrollbarGutter.bottom = scrollbarSize;
       }
     } else {
-      const nscoord w = VScrollbarPrefWidth();
       if (bothEdges) {
-        mScrollbarGutter.left = mScrollbarGutter.right = w;
+        mScrollbarGutter.left = mScrollbarGutter.right = scrollbarSize;
       } else if (stable) {
         if (aFrame->IsScrollbarOnRight()) {
-          mScrollbarGutter.right = w;
+          mScrollbarGutter.right = scrollbarSize;
         } else {
-          mScrollbarGutter.left = w;
+          mScrollbarGutter.left = scrollbarSize;
         }
       }
     }
