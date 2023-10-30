@@ -358,18 +358,8 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
 
   UndefineCaretBidiLevel();
 
-  if (aInsertionString.IsEmpty() &&
-      aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
-    
-    
-    
-    
-    
-    return EditActionResult::CanceledResult();
-  }
-
   nsAutoString insertionString(aInsertionString);
-  if (mMaxTextLength >= 0) {
+  if (!aInsertionString.IsEmpty() && mMaxTextLength >= 0) {
     Result<EditActionResult, nsresult> result =
         MaybeTruncateInsertionStringForMaxLength(insertionString);
     if (MOZ_UNLIKELY(result.isErr())) {
@@ -408,6 +398,16 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
           "EditorBase::DeleteSelectionAsSubAction(eNone, eNoStrip) failed");
       return Err(rv);
     }
+  }
+
+  if (aInsertionString.IsEmpty() &&
+      aEditSubAction != EditSubAction::eInsertTextComingFromIME) {
+    
+    
+    
+    
+    
+    return EditActionResult::CanceledResult();
   }
 
   
