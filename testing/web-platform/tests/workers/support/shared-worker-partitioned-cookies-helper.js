@@ -6,7 +6,7 @@
 
 
 
-function workerMessageGenerator(shared_worker) {
+function worker_message_generator(shared_worker) {
   const buffer = [];
   let resolve = null;
 
