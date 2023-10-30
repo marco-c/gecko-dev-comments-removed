@@ -18745,24 +18745,17 @@ bool Document::HasThirdPartyChannel() {
   return false;
 }
 
-bool Document::IsContentInaccessibleAboutBlank() const {
+bool Document::IsLikelyContentInaccessibleTopLevelAboutBlank() const {
   if (!mDocumentURI || !NS_IsAboutBlank(mDocumentURI)) {
     return false;
   }
-  nsIPrincipal* prin = NodePrincipal();
-  if (!prin->GetIsNullPrincipal()) {
-    return false;
-  }
-  nsCOMPtr<nsIPrincipal> prec = prin->GetPrecursorPrincipal();
-  if (prec) {
-    return false;
-  }
+  
   
   
   
   
   BrowsingContext* bc = GetBrowsingContext();
-  return bc && bc->IsTop() && bc->Group()->Toplevels().Length() == 1;
+  return bc && bc->IsTop() && !bc->HadOriginalOpener();
 }
 
 bool Document::ShouldIncludeInTelemetry(bool aAllowExtensionURIs) {
@@ -18770,7 +18763,7 @@ bool Document::ShouldIncludeInTelemetry(bool aAllowExtensionURIs) {
     return false;
   }
 
-  if (IsContentInaccessibleAboutBlank()) {
+  if (IsLikelyContentInaccessibleTopLevelAboutBlank()) {
     return false;
   }
 

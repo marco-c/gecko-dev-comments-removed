@@ -1620,7 +1620,7 @@ ColorScheme nsPresContext::DefaultBackgroundColorScheme() const {
   dom::Document* doc = Document();
   
   
-  if (doc->IsContentInaccessibleAboutBlank()) {
+  if (doc->IsLikelyContentInaccessibleTopLevelAboutBlank()) {
     return doc->PreferredColorScheme(Document::IgnoreRFP::Yes);
   }
   

@@ -4022,7 +4022,8 @@ class Document : public nsINode,
 
   
   
-  bool IsContentInaccessibleAboutBlank() const;
+  
+  bool IsLikelyContentInaccessibleTopLevelAboutBlank() const;
 
   
   enum class IgnoreRFP { No, Yes };
