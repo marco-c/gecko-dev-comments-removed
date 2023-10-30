@@ -62,7 +62,7 @@ class StunDictionaryView {
   const StunUInt16ListAttribute* GetUInt16List(int key) const;
 
   bool empty() const { return attrs_.empty(); }
-  int size() const { return attrs_.size(); }
+  size_t size() const { return attrs_.size(); }
   int bytes_stored() const { return bytes_stored_; }
   void set_max_bytes_stored(int max_bytes_stored) {
     max_bytes_stored_ = max_bytes_stored;
@@ -175,8 +175,16 @@ class StunDictionaryWriter {
   const StunDictionaryView* dictionary() { return dictionary_.get(); }
   const StunDictionaryView* operator->() { return dictionary_.get(); }
 
+  
+  
+  
+  void Disable();
+  bool disabled() const { return disabled_; }
+
  private:
   void Set(std::unique_ptr<StunAttribute> attr);
+
+  bool disabled_ = false;
 
   
   int64_t version_ = 1;
