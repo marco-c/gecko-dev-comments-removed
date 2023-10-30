@@ -1152,7 +1152,7 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
   size_t i = 0;
 
   size_t mday;
-  if (!ParseDigitsNOrLess(4, &mday, s, &i, length)) {
+  if (!ParseDigitsNOrLess(6, &mday, s, &i, length)) {
     return false;
   }
   size_t mdayDigits = i;
@@ -1196,7 +1196,7 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
 
   size_t pre = i;
   size_t year;
-  if (!ParseDigitsNOrLess(4, &year, s, &i, length)) {
+  if (!ParseDigitsNOrLess(6, &year, s, &i, length)) {
     return false;
   }
   size_t yearDigits = i - pre;
@@ -1412,11 +1412,16 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       TryParseDashedDatePrefix(s, length, &index, &year, &mon, &mday) ||
       TryParseDashedNumericDatePrefix(s, length, &index, &year, &mon, &mday);
 
-  
-  
-  
-  if (isDashedDate && s[index] == 'T') {
-    return false;
+  if (isDashedDate) {
+    if (strchr("T:+", s[index])) {
+      return false;
+    }
+
+    
+    
+    if (s[index] == '-') {
+      index++;
+    }
   }
 
   while (index < length) {
