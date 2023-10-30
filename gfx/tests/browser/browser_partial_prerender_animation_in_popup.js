@@ -74,12 +74,7 @@ add_task(async () => {
   );
 
   
-  const [markers, counter] = await observeStylingInTargetWindow(
-    panel.ownerGlobal,
-    5
-  );
-
-  Assert.equal(markers.length, counter);
+  const restyleCount = await observeStylingInTargetWindow(panel.ownerGlobal, 5);
 
   
   
@@ -90,6 +85,6 @@ add_task(async () => {
   
   
   
-  Assert.greaterOrEqual(markers.length, 1);
-  Assert.lessOrEqual(markers.length, 2);
+  Assert.greaterOrEqual(restyleCount, 1);
+  Assert.lessOrEqual(restyleCount, 2);
 });
