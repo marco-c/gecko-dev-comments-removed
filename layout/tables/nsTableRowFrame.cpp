@@ -319,70 +319,67 @@ void nsTableRowFrame::DidResize() {
 
   nsSize containerSize = mRect.Size();
 
-  for (nsIFrame* childFrame : mFrames) {
-    nsTableCellFrame* cellFrame = do_QueryFrame(childFrame);
-    if (cellFrame) {
-      nscoord cellBSize = BSize(wm) + GetBSizeOfRowsSpannedBelowFirst(
-                                          *cellFrame, *tableFrame, wm);
+  for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
+       cellFrame = cellFrame->GetNextCell()) {
+    nscoord cellBSize = BSize(wm) + GetBSizeOfRowsSpannedBelowFirst(
+                                        *cellFrame, *tableFrame, wm);
 
-      
-      
-      
-      
-      LogicalSize cellSize = cellFrame->GetLogicalSize(wm);
-      if (cellSize.BSize(wm) != cellBSize || wm.IsVerticalRL()) {
-        nsRect cellOldRect = cellFrame->GetRect();
-        nsRect cellInkOverflow = cellFrame->InkOverflowRect();
+    
+    
+    
+    
+    LogicalSize cellSize = cellFrame->GetLogicalSize(wm);
+    if (cellSize.BSize(wm) != cellBSize || wm.IsVerticalRL()) {
+      nsRect cellOldRect = cellFrame->GetRect();
+      nsRect cellInkOverflow = cellFrame->InkOverflowRect();
 
-        if (wm.IsVerticalRL()) {
-          
-          
-          LogicalPoint oldPos =
-              cellFrame->GetLogicalPosition(wm, containerSize);
+      if (wm.IsVerticalRL()) {
+        
+        
+        LogicalPoint oldPos = cellFrame->GetLogicalPosition(wm, containerSize);
 
-          
-          
-          LogicalPoint newPos(wm, oldPos.I(wm), 0);
+        
+        
+        LogicalPoint newPos(wm, oldPos.I(wm), 0);
 
+        
+        
+        if (cellFrame->IsRelativelyOrStickyPositioned()) {
           
           
-          if (cellFrame->IsRelativelyOrStickyPositioned()) {
-            
-            
-            LogicalPoint oldNormalPos =
-                cellFrame->GetLogicalNormalPosition(wm, containerSize);
-            
-            
-            
-            newPos.B(wm) = oldPos.B(wm) - oldNormalPos.B(wm);
-          }
-
-          if (oldPos != newPos) {
-            cellFrame->SetPosition(wm, newPos, containerSize);
-            nsTableFrame::RePositionViews(cellFrame);
-          }
+          LogicalPoint oldNormalPos =
+              cellFrame->GetLogicalNormalPosition(wm, containerSize);
+          
+          
+          
+          newPos.B(wm) = oldPos.B(wm) - oldNormalPos.B(wm);
         }
 
-        cellSize.BSize(wm) = cellBSize;
-        cellFrame->SetSize(wm, cellSize);
-
-        if (tableFrame->IsBorderCollapse()) {
-          nsTableFrame::InvalidateTableFrame(cellFrame, cellOldRect,
-                                             cellInkOverflow, false);
+        if (oldPos != newPos) {
+          cellFrame->SetPosition(wm, newPos, containerSize);
+          nsTableFrame::RePositionViews(cellFrame);
         }
       }
 
-      
-      
-      cellFrame->BlockDirAlignChild(wm, mMaxCellAscent);
+      cellSize.BSize(wm) = cellBSize;
+      cellFrame->SetSize(wm, cellSize);
 
-      
-      
-      ConsiderChildOverflow(desiredSize.mOverflowAreas, cellFrame);
-
-      
-      
+      if (tableFrame->IsBorderCollapse()) {
+        nsTableFrame::InvalidateTableFrame(cellFrame, cellOldRect,
+                                           cellInkOverflow, false);
+      }
     }
+
+    
+    
+    cellFrame->BlockDirAlignChild(wm, mMaxCellAscent);
+
+    
+    
+    ConsiderChildOverflow(desiredSize.mOverflowAreas, cellFrame);
+
+    
+    
   }
   FinishAndStoreOverflow(&desiredSize);
   if (HasView()) {
@@ -1128,97 +1125,92 @@ nscoord nsTableRowFrame::CollapseRowIfNecessary(nscoord aRowOffset,
     nsTableFrame* fifTable =
         static_cast<nsTableFrame*>(tableFrame->FirstInFlow());
 
-    for (nsIFrame* kidFrame : mFrames) {
-      nsTableCellFrame* cellFrame = do_QueryFrame(kidFrame);
-      if (cellFrame) {
-        uint32_t cellColIndex = cellFrame->ColIndex();
-        int32_t cellColSpan = tableFrame->GetEffectiveColSpan(*cellFrame);
+    for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
+         cellFrame = cellFrame->GetNextCell()) {
+      uint32_t cellColIndex = cellFrame->ColIndex();
+      int32_t cellColSpan = tableFrame->GetEffectiveColSpan(*cellFrame);
 
-        
-        
-        
-        if (prevColIndex != (static_cast<int32_t>(cellColIndex) - 1)) {
-          iPos += GetSpaceBetween(prevColIndex, cellColIndex, cellColSpan,
-                                  *tableFrame, true);
-        }
-        LogicalRect cRect(wm, iPos, 0, 0, rowRect.BSize(wm));
+      
+      
+      
+      if (prevColIndex != (static_cast<int32_t>(cellColIndex) - 1)) {
+        iPos += GetSpaceBetween(prevColIndex, cellColIndex, cellColSpan,
+                                *tableFrame, true);
+      }
+      LogicalRect cRect(wm, iPos, 0, 0, rowRect.BSize(wm));
 
-        
-        prevColIndex = cellColIndex + cellColSpan - 1;
-        int32_t actualColSpan = cellColSpan;
-        bool isVisible = false;
-        for (int32_t colIdx = cellColIndex; actualColSpan > 0;
-             colIdx++, actualColSpan--) {
-          nsTableColFrame* colFrame = tableFrame->GetColFrame(colIdx);
-          const nsStyleVisibility* colVis = colFrame->StyleVisibility();
-          bool collapseCol = StyleVisibility::Collapse == colVis->mVisible;
-          nsIFrame* cgFrame = colFrame->GetParent();
-          const nsStyleVisibility* groupVis = cgFrame->StyleVisibility();
-          bool collapseGroup = StyleVisibility::Collapse == groupVis->mVisible;
-          bool isCollapsed = collapseCol || collapseGroup;
-          if (!isCollapsed) {
-            cRect.ISize(wm) += fifTable->GetColumnISizeFromFirstInFlow(colIdx);
-            isVisible = true;
-            if ((actualColSpan > 1)) {
-              nsTableColFrame* nextColFrame =
-                  tableFrame->GetColFrame(colIdx + 1);
-              const nsStyleVisibility* nextColVis =
-                  nextColFrame->StyleVisibility();
-              if (StyleVisibility::Collapse != nextColVis->mVisible &&
-                  tableFrame->ColumnHasCellSpacingBefore(colIdx + 1)) {
-                cRect.ISize(wm) += tableFrame->GetColSpacing(cellColIndex);
-              }
+      
+      prevColIndex = cellColIndex + cellColSpan - 1;
+      int32_t actualColSpan = cellColSpan;
+      bool isVisible = false;
+      for (int32_t colIdx = cellColIndex; actualColSpan > 0;
+           colIdx++, actualColSpan--) {
+        nsTableColFrame* colFrame = tableFrame->GetColFrame(colIdx);
+        const nsStyleVisibility* colVis = colFrame->StyleVisibility();
+        bool collapseCol = StyleVisibility::Collapse == colVis->mVisible;
+        nsIFrame* cgFrame = colFrame->GetParent();
+        const nsStyleVisibility* groupVis = cgFrame->StyleVisibility();
+        bool collapseGroup = StyleVisibility::Collapse == groupVis->mVisible;
+        bool isCollapsed = collapseCol || collapseGroup;
+        if (!isCollapsed) {
+          cRect.ISize(wm) += fifTable->GetColumnISizeFromFirstInFlow(colIdx);
+          isVisible = true;
+          if ((actualColSpan > 1)) {
+            nsTableColFrame* nextColFrame = tableFrame->GetColFrame(colIdx + 1);
+            const nsStyleVisibility* nextColVis =
+                nextColFrame->StyleVisibility();
+            if (StyleVisibility::Collapse != nextColVis->mVisible &&
+                tableFrame->ColumnHasCellSpacingBefore(colIdx + 1)) {
+              cRect.ISize(wm) += tableFrame->GetColSpacing(cellColIndex);
             }
           }
         }
-        iPos += cRect.ISize(wm);
-        if (isVisible) {
-          iPos += tableFrame->GetColSpacing(cellColIndex);
+      }
+      iPos += cRect.ISize(wm);
+      if (isVisible) {
+        iPos += tableFrame->GetColSpacing(cellColIndex);
+      }
+      int32_t actualRowSpan = tableFrame->GetEffectiveRowSpan(*cellFrame);
+      nsTableRowFrame* rowFrame = GetNextRow();
+      for (actualRowSpan--; actualRowSpan > 0 && rowFrame; actualRowSpan--) {
+        const nsStyleVisibility* nextRowVis = rowFrame->StyleVisibility();
+        bool collapseNextRow =
+            StyleVisibility::Collapse == nextRowVis->mVisible;
+        if (!collapseNextRow) {
+          LogicalRect nextRect = rowFrame->GetLogicalRect(wm, containerSize);
+          cRect.BSize(wm) += nextRect.BSize(wm) +
+                             tableFrame->GetRowSpacing(rowFrame->GetRowIndex());
         }
-        int32_t actualRowSpan = tableFrame->GetEffectiveRowSpan(*cellFrame);
-        nsTableRowFrame* rowFrame = GetNextRow();
-        for (actualRowSpan--; actualRowSpan > 0 && rowFrame; actualRowSpan--) {
-          const nsStyleVisibility* nextRowVis = rowFrame->StyleVisibility();
-          bool collapseNextRow =
-              StyleVisibility::Collapse == nextRowVis->mVisible;
-          if (!collapseNextRow) {
-            LogicalRect nextRect = rowFrame->GetLogicalRect(wm, containerSize);
-            cRect.BSize(wm) +=
-                nextRect.BSize(wm) +
-                tableFrame->GetRowSpacing(rowFrame->GetRowIndex());
-          }
-          rowFrame = rowFrame->GetNextRow();
-        }
+        rowFrame = rowFrame->GetNextRow();
+      }
 
-        nsRect oldCellRect = cellFrame->GetRect();
-        LogicalPoint oldCellNormalPos =
-            cellFrame->GetLogicalNormalPosition(wm, containerSize);
+      nsRect oldCellRect = cellFrame->GetRect();
+      LogicalPoint oldCellNormalPos =
+          cellFrame->GetLogicalNormalPosition(wm, containerSize);
 
-        nsRect oldCellInkOverflow = cellFrame->InkOverflowRect();
+      nsRect oldCellInkOverflow = cellFrame->InkOverflowRect();
 
-        if (aRowOffset == 0 && cRect.Origin(wm) != oldCellNormalPos) {
-          
-          cellFrame->InvalidateFrameSubtree();
-        }
-
-        cellFrame->MovePositionBy(wm, cRect.Origin(wm) - oldCellNormalPos);
-        cellFrame->SetSize(wm, cRect.Size(wm));
-
+      if (aRowOffset == 0 && cRect.Origin(wm) != oldCellNormalPos) {
         
-        
-        LogicalRect cellBounds(wm, 0, 0, cRect.ISize(wm), cRect.BSize(wm));
-        nsRect cellPhysicalBounds =
-            cellBounds.GetPhysicalRect(wm, containerSize);
-        OverflowAreas cellOverflow(cellPhysicalBounds, cellPhysicalBounds);
-        cellFrame->FinishAndStoreOverflow(cellOverflow,
-                                          cRect.Size(wm).GetPhysicalSize(wm));
-        nsTableFrame::RePositionViews(cellFrame);
-        ConsiderChildOverflow(overflow, cellFrame);
+        cellFrame->InvalidateFrameSubtree();
+      }
 
-        if (aRowOffset == 0) {
-          nsTableFrame::InvalidateTableFrame(cellFrame, oldCellRect,
-                                             oldCellInkOverflow, false);
-        }
+      cellFrame->MovePositionBy(wm, cRect.Origin(wm) - oldCellNormalPos);
+      cellFrame->SetSize(wm, cRect.Size(wm));
+
+      
+      
+      LogicalRect cellBounds(wm, 0, 0, cRect.ISize(wm), cRect.BSize(wm));
+      nsRect cellPhysicalBounds = cellBounds.GetPhysicalRect(wm, containerSize);
+      OverflowAreas cellOverflow(cellPhysicalBounds, cellPhysicalBounds);
+      cellFrame->FinishAndStoreOverflow(cellOverflow,
+                                        cRect.Size(wm).GetPhysicalSize(wm));
+      nsTableFrame::RePositionViews(cellFrame);
+      ConsiderChildOverflow(overflow, cellFrame);
+
+      if (aRowOffset == 0) {
+        nsTableFrame::InvalidateTableFrame(cellFrame, oldCellRect,
+                                           oldCellInkOverflow, false);
       }
     }
   }
@@ -1241,15 +1233,15 @@ void nsTableRowFrame::InsertCellFrame(nsTableCellFrame* aFrame,
                                       int32_t aColIndex) {
   
   nsTableCellFrame* priorCell = nullptr;
-  for (nsIFrame* child : mFrames) {
-    nsTableCellFrame* cellFrame = do_QueryFrame(child);
-    if (cellFrame) {
-      uint32_t colIndex = cellFrame->ColIndex();
-      
-      if (static_cast<int32_t>(colIndex) < aColIndex) {
-        priorCell = cellFrame;
-      } else
-        break;
+
+  for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
+       cellFrame = cellFrame->GetNextCell()) {
+    uint32_t colIndex = cellFrame->ColIndex();
+    
+    if (static_cast<int32_t>(colIndex) < aColIndex) {
+      priorCell = cellFrame;
+    } else {
+      break;
     }
   }
   mFrames.InsertFrame(this, priorCell, aFrame);
@@ -1315,12 +1307,8 @@ a11y::AccType nsTableRowFrame::AccessibleType() {
 void nsTableRowFrame::InitHasCellWithStyleBSize(nsTableFrame* aTableFrame) {
   WritingMode wm = GetWritingMode();
 
-  for (nsIFrame* kidFrame : mFrames) {
-    nsTableCellFrame* cellFrame = do_QueryFrame(kidFrame);
-    if (!cellFrame) {
-      MOZ_ASSERT_UNREACHABLE("Table row has a non-cell child.");
-      continue;
-    }
+  for (nsTableCellFrame* cellFrame = GetFirstCell(); cellFrame;
+       cellFrame = cellFrame->GetNextCell()) {
     
     const auto& cellBSize = cellFrame->StylePosition()->BSize(wm);
     if (aTableFrame->GetEffectiveRowSpan(*cellFrame) == 1 &&
