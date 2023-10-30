@@ -1458,12 +1458,6 @@ static detail::ThreadLocal<arena_t*, detail::ThreadLocalKeyStorage>
 
 
 
-
-
-
-const uint8_t kAllocJunk = 0xe4;
-const uint8_t kAllocPoison = 0xe5;
-
 #ifdef MALLOC_RUNTIME_CONFIG
 #  define MALLOC_RUNTIME_VAR static
 #else

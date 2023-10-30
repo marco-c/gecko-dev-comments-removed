@@ -109,6 +109,7 @@
 #  include <unistd.h>
 #endif
 
+#include "mozjemalloc.h"
 #include "replace_malloc.h"
 #include "FdPrintf.h"
 #include "Mutex.h"
@@ -325,17 +326,6 @@ static const size_t kAllPagesJemallocSize = kAllPagesSize - kPageSize;
 
 
 #define DEFAULT_STATE mozilla::phc::OnlyFree
-
-
-
-
-
-
-
-
-#ifdef DEBUG
-const uint8_t kAllocJunk = 0xe4;
-#endif
 
 
 static const Time kMaxTime = ~(Time(0));

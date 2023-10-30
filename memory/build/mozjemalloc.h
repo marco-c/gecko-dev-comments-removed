@@ -55,6 +55,12 @@ typedef ReplaceMalloc DefaultMalloc;
 typedef MozJemalloc DefaultMalloc;
 #  endif
 
+
+constexpr uint8_t kAllocPoison = 0xe5;
+
+
+constexpr uint8_t kAllocJunk = 0xe4;
+
 #endif  
 
 
