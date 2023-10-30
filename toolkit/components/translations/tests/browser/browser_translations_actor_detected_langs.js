@@ -7,7 +7,7 @@ add_task(async function test_detected_language() {
   const detectedLangTag = "en";
   const { cleanup, tab } = await loadTestPage({
     
-    page: TRANSLATIONS_TESTER_EN,
+    page: ENGLISH_PAGE_URL,
     detectedLangTag,
     autoDownloadFromRemoteSettings: true,
     languagePairs: [
