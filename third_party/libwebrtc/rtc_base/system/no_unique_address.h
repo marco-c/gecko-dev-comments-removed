@@ -25,7 +25,7 @@
 
 
 #ifndef __has_cpp_attribute
-#define __has_cpp_attribute(__x) 0
+#define __has_cpp_attribute(x) 0
 #endif
 #if __has_cpp_attribute(no_unique_address)
 

@@ -51,21 +51,19 @@ class VadAudioProc {
   
   
   
-  static constexpr size_t kNumPastSignalSamples =
-      static_cast<size_t>(kSampleRateHz / 200);
+  static constexpr size_t kNumPastSignalSamples = size_t{kSampleRateHz / 200};
 
   
   
   static constexpr int kNoError = 0;
 
   static constexpr size_t kNum10msSubframes = 3;
-  static constexpr size_t kNumSubframeSamples =
-      static_cast<size_t>(kSampleRateHz / 100);
+  static constexpr size_t kNumSubframeSamples = size_t{kSampleRateHz / 100};
   
   static constexpr size_t kNumSamplesToProcess =
-      size_t{kNum10msSubframes} * kNumSubframeSamples;
+      kNum10msSubframes * kNumSubframeSamples;
   static constexpr size_t kBufferLength =
-      size_t{kNumPastSignalSamples} + kNumSamplesToProcess;
+      kNumPastSignalSamples + kNumSamplesToProcess;
   static constexpr size_t kIpLength = kDftSize >> 1;
   static constexpr size_t kWLength = kDftSize >> 1;
   static constexpr size_t kLpcOrder = 16;
