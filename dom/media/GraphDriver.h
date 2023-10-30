@@ -315,8 +315,7 @@ class GraphDriver {
 
 
 
-  void SetState(GraphTime aIterationStart, GraphTime aIterationEnd,
-                GraphTime aStateComputedTime);
+  void SetState(GraphTime aIterationEnd, GraphTime aStateComputedTime);
 
   GraphInterface* Graph() const { return mGraphInterface; }
 
@@ -346,8 +345,6 @@ class GraphDriver {
   }
 
  protected:
-  
-  GraphTime mIterationStart = 0;
   
   GraphTime mIterationEnd = 0;
   
@@ -677,7 +674,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
 
 
-  void FallbackDriverStopped(GraphTime aIterationStart, GraphTime aIterationEnd,
+  void FallbackDriverStopped(GraphTime aIterationEnd,
                              GraphTime aStateComputedTime,
                              FallbackDriverState aState);
 
