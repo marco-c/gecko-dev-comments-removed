@@ -103,9 +103,6 @@
 #include "mozilla/dom/AbstractRange.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
-#ifdef XP_WIN
-#  include "mozilla/dom/WinWebAuthnManager.h"
-#endif
 #include "mozilla/dom/PointerEventHandler.h"
 #include "mozilla/dom/RemoteWorkerService.h"
 #include "mozilla/dom/BlobURLProtocolHandler.h"
@@ -255,10 +252,6 @@ nsresult nsLayoutStatics::Initialize() {
 
   
   mozilla::RemoteLazyInputStreamStorage::Initialize();
-
-#ifdef XP_WIN
-  mozilla::dom::WinWebAuthnManager::Initialize();
-#endif
 
   if (XRE_IsParentProcess()) {
     

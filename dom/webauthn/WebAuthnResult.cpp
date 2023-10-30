@@ -2,8 +2,11 @@
 
 
 
-#include "nsString.h"
+#include "AuthrsBridge_ffi.h"
 #include "WebAuthnResult.h"
+#include "nsIWebAuthnAttObj.h"
+#include "nsCOMPtr.h"
+#include "nsString.h"
 
 #ifdef MOZ_WIDGET_ANDROID
 namespace mozilla::jni {
@@ -63,6 +66,15 @@ WebAuthnRegisterResult::GetTransports(nsTArray<nsString>& aTransports) {
 }
 
 NS_IMETHODIMP
+WebAuthnRegisterResult::GetHmacCreateSecret(bool* aHmacCreateSecret) {
+  if (mHmacCreateSecret.isSome()) {
+    *aHmacCreateSecret = mHmacCreateSecret.ref();
+    return NS_OK;
+  }
+  return NS_ERROR_NOT_AVAILABLE;
+}
+
+NS_IMETHODIMP
 WebAuthnRegisterResult::GetCredPropsRk(bool* aCredPropsRk) {
   if (mCredPropsRk.isSome()) {
     *aCredPropsRk = mCredPropsRk.ref();
@@ -85,6 +97,27 @@ WebAuthnRegisterResult::GetAuthenticatorAttachment(
     return NS_OK;
   }
   return NS_ERROR_NOT_AVAILABLE;
+}
+
+nsresult WebAuthnRegisterResult::Anonymize() {
+  
+  
+  
+  
+  
+  nsCOMPtr<nsIWebAuthnAttObj> anonymizedAttObj;
+  nsresult rv = authrs_webauthn_att_obj_constructor(
+      mAttestationObject,
+       true, getter_AddRefs(anonymizedAttObj));
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  mAttestationObject.Clear();
+  rv = anonymizedAttObj->GetAttestationObject(mAttestationObject);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  return NS_OK;
 }
 
 NS_IMPL_ISUPPORTS(WebAuthnSignResult, nsIWebAuthnSignResult)
@@ -127,7 +160,17 @@ WebAuthnSignResult::GetUserName(nsACString& aUserName) {
 
 NS_IMETHODIMP
 WebAuthnSignResult::GetUsedAppId(bool* aUsedAppId) {
-  return NS_ERROR_NOT_AVAILABLE;
+  if (mUsedAppId.isNothing()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  *aUsedAppId = mUsedAppId.ref();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+WebAuthnSignResult::SetUsedAppId(bool aUsedAppId) {
+  mUsedAppId = Some(aUsedAppId);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
