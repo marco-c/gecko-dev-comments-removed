@@ -7214,6 +7214,9 @@ pub extern "C" fn Servo_StyleSet_MaybeInvalidateRelativeSelectorForInsertion(
 
     let inherited =
         inherit_relative_selector_search_direction(&element, element.prev_sibling_element());
+    
+    
+    
     if inherited.is_empty() {
         return;
     }
