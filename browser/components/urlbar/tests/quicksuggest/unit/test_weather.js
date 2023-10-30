@@ -18,14 +18,13 @@ const { WEATHER_RS_DATA, WEATHER_SUGGESTION } = MerinoTestUtils;
 
 add_task(async function init() {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsResults: [
+    remoteSettingsRecords: [
       {
         type: "weather",
         weather: WEATHER_RS_DATA,
       },
     ],
   });
-  UrlbarPrefs.set("quicksuggest.enabled", true);
 
   await MerinoTestUtils.initWeather();
 
@@ -130,7 +129,7 @@ add_task(async function keywordsNotDefined() {
   });
 
   
-  await QuickSuggestTestUtils.setRemoteSettingsResults([
+  await QuickSuggestTestUtils.setRemoteSettingsRecords([
     {
       type: "weather",
       weather: {},
@@ -154,7 +153,7 @@ add_task(async function keywordsNotDefined() {
   
   info("Setting keywords");
   let fetchPromise = QuickSuggest.weather.waitForFetches();
-  await QuickSuggestTestUtils.setRemoteSettingsResults([
+  await QuickSuggestTestUtils.setRemoteSettingsRecords([
     {
       type: "weather",
       weather: MerinoTestUtils.WEATHER_RS_DATA,
@@ -1240,6 +1239,7 @@ add_task(async function nimbusOverride() {
     pendingFetchCount: 0,
   });
 
+  
   
   await check_results({
     context: createContext(MerinoTestUtils.WEATHER_KEYWORD, {

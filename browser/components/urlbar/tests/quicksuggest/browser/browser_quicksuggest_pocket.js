@@ -6,6 +6,12 @@
 
 
 
+
+
+
+
+
+
 const EXPECTED_RESULT_INDEX = 1;
 
 const REMOTE_SETTINGS_DATA = [
@@ -24,24 +30,20 @@ const REMOTE_SETTINGS_DATA = [
 ];
 
 add_setup(async function () {
-  
-  
-  
-  await QuickSuggestTestUtils.ensureQuickSuggestInit();
-
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["browser.urlbar.quicksuggest.enabled", true],
-      ["browser.urlbar.suggest.quicksuggest.nonsponsored", true],
-      ["browser.urlbar.pocket.featureGate", true],
       
       ["browser.search.suggest.enabled", false],
     ],
   });
 
-  
-  
-  await QuickSuggestTestUtils.setRemoteSettingsResults(REMOTE_SETTINGS_DATA);
+  await QuickSuggestTestUtils.ensureQuickSuggestInit({
+    remoteSettingsRecords: REMOTE_SETTINGS_DATA,
+    prefs: [
+      ["suggest.quicksuggest.nonsponsored", true],
+      ["pocket.featureGate", true],
+    ],
+  });
 });
 
 add_task(async function basic() {
@@ -91,6 +93,9 @@ add_task(async function basic() {
     Assert.equal(gBrowser.currentURI.spec, url.href, "Expected page loaded");
   });
 });
+
+
+
 
 
 add_task(async function resultMenu_showLessFrequently() {
@@ -236,11 +241,7 @@ add_task(async function resultMenu_notInterested() {
   
   
   UrlbarPrefs.set("suggest.pocket", true);
-  let feature = QuickSuggest.getFeature("PocketSuggestions");
-  await TestUtils.waitForCondition(async () => {
-    let suggestions = await feature.queryRemoteSettings("pocket suggestion");
-    return !!suggestions.length;
-  }, "Waiting for PocketSuggestions to serve remote settings suggestions");
+  await QuickSuggestTestUtils.forceSync();
 });
 
 
@@ -386,6 +387,9 @@ add_task(async function rowLabel() {
     Assert.equal(row.getAttribute("label"), expected);
   }
 });
+
+
+
 
 
 add_task(async function showLessFrequentlyMenuVisibility() {

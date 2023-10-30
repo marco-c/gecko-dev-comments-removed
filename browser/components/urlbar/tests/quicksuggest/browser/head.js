@@ -91,14 +91,8 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
-
-
-
-
-
-
 async function setUpTelemetryTest({
-  remoteSettingsResults,
+  remoteSettingsRecords,
   merinoSuggestions = null,
   config = QuickSuggestTestUtils.DEFAULT_CONFIG,
 }) {
@@ -121,7 +115,7 @@ async function setUpTelemetryTest({
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsResults,
+    remoteSettingsRecords,
     merinoSuggestions,
     config,
   });
@@ -669,19 +663,34 @@ function add_tasks_with_rust(...args) {
 
   for (let rustEnabled of [false, true]) {
     let newTaskFn = async (...taskFnArgs) => {
-      info("Setting rustEnabled: " + rustEnabled);
+      info("add_tasks_with_rust: Setting rustEnabled: " + rustEnabled);
       UrlbarPrefs.set("quicksuggest.rustEnabled", rustEnabled);
-      info("Done setting rustEnabled: " + rustEnabled);
+      info("add_tasks_with_rust: Done setting rustEnabled: " + rustEnabled);
+
+      
+      info("add_tasks_with_rust: Forcing sync");
+      await QuickSuggestTestUtils.forceSync();
+      info("add_tasks_with_rust: Done forcing sync");
 
       let rv;
       try {
-        info("Calling original task function: " + taskFn.name);
+        info(
+          "add_tasks_with_rust: Calling original task function: " + taskFn.name
+        );
         rv = await taskFn(...taskFnArgs);
       } finally {
-        info("Done calling original task function: " + taskFn.name);
-        info("Clearing rustEnabled");
+        info(
+          "add_tasks_with_rust: Done calling original task function: " +
+            taskFn.name
+        );
+        info("add_tasks_with_rust: Clearing rustEnabled");
         UrlbarPrefs.clear("quicksuggest.rustEnabled");
-        info("Done clearing rustEnabled");
+        info("add_tasks_with_rust: Done clearing rustEnabled");
+
+        
+        info("add_tasks_with_rust: Forcing sync");
+        await QuickSuggestTestUtils.forceSync();
+        info("add_tasks_with_rust: Done forcing sync");
       }
       return rv;
     };
