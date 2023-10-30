@@ -363,6 +363,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   void RefreshRealmPrincipal();
+  void RefreshReduceTimerPrecisionCallerType();
 
   
   friend class FullscreenTransitionTask;
