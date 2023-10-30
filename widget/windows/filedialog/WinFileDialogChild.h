@@ -37,6 +37,10 @@ class WinFileDialogChild : public PWinFileDialogChild {
   void ProcessingError(Result aCode, const char* aReason) override;
 
   
+  template <size_t N>
+  IPCResult MakeIpcFailure(HRESULT hr, const char (&what)[N]);
+
+  
   
   
   
