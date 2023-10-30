@@ -38,9 +38,6 @@ class Call;
 
 namespace cricket {
 
-class VideoMediaChannel;
-class VoiceMediaChannel;
-
 
 
 webrtc::RTCError CheckScalabilityModeValues(
@@ -120,42 +117,6 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
     return nullptr;
   }
 
-  
-  
-  virtual VoiceMediaChannel* CreateMediaChannel(
-      MediaChannel::Role role,
-      webrtc::Call* call,
-      const MediaConfig& config,
-      const AudioOptions& options,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::AudioCodecPairId codec_pair_id) {
-    
-    
-    
-    
-    RTC_CHECK(!recursion_guard_);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    RTC_LOG(LS_ERROR)
-        << "Override of deprecated declaration detected - please update!";
-    return CreateMediaChannel(call, config, options, crypto_options);
-#pragma clang diagnostic pop
-  }
-
-  
-  [[deprecated("Use version with role parameter")]] virtual VoiceMediaChannel*
-  CreateMediaChannel(webrtc::Call* call,
-                     const MediaConfig& config,
-                     const AudioOptions& options,
-                     const webrtc::CryptoOptions& crypto_options) {
-    recursion_guard_ = true;
-    auto new_channel =
-        CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
-                           crypto_options, webrtc::AudioCodecPairId::Create());
-    recursion_guard_ = false;
-    return new_channel;
-  }
-
   virtual const std::vector<AudioCodec>& send_codecs() const = 0;
   virtual const std::vector<AudioCodec>& recv_codecs() const = 0;
 
@@ -170,11 +131,6 @@ class VoiceEngineInterface : public RtpHeaderExtensionQueryInterface {
 
   virtual absl::optional<webrtc::AudioDeviceModule::Stats>
   GetAudioDeviceStats() = 0;
-
- private:
-  
-  
-  bool recursion_guard_ = false;
 };
 
 class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
@@ -207,47 +163,6 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
   }
 
   
-  
-  virtual VideoMediaChannel* CreateMediaChannel(
-      MediaChannel::Role role,
-      webrtc::Call* call,
-      const MediaConfig& config,
-      const VideoOptions& options,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
-    
-    
-    
-    
-    RTC_CHECK(!recursion_guard_);
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    RTC_LOG(LS_ERROR)
-        << "Override of deprecated declaration detected - please update!";
-    return CreateMediaChannel(call, config, options, crypto_options,
-                              video_bitrate_allocator_factory);
-#pragma clang diagnostic pop
-  }
-
-  
-  
-  
-  [[deprecated("Please specify the role")]] virtual VideoMediaChannel*
-  CreateMediaChannel(
-      webrtc::Call* call,
-      const MediaConfig& config,
-      const VideoOptions& options,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
-    recursion_guard_ = true;
-    auto new_channel =
-        CreateMediaChannel(MediaChannel::Role::kBoth, call, config, options,
-                           crypto_options, video_bitrate_allocator_factory);
-    recursion_guard_ = false;
-    return new_channel;
-  }
-
-  
   virtual std::vector<VideoCodec> send_codecs() const = 0;
   virtual std::vector<VideoCodec> recv_codecs() const = 0;
   
@@ -261,11 +176,6 @@ class VideoEngineInterface : public RtpHeaderExtensionQueryInterface {
     RTC_DCHECK(include_rtx);
     return recv_codecs();
   }
-
- private:
-  
-  
-  bool recursion_guard_ = false;
 };
 
 
