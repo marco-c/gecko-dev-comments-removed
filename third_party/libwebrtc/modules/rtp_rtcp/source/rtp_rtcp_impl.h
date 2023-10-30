@@ -172,7 +172,7 @@ class ABSL_DEPRECATED("") ModuleRtpRtcpImpl
   
   absl::optional<TimeDelta> LastRtt() const override;
 
-  int64_t ExpectedRetransmissionTimeMs() const override;
+  TimeDelta ExpectedRetransmissionTime() const override;
 
   
   

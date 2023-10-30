@@ -183,7 +183,7 @@ class ModuleRtpRtcpImpl2 final : public RtpRtcpInterface,
   
   absl::optional<TimeDelta> LastRtt() const override;
 
-  int64_t ExpectedRetransmissionTimeMs() const override;
+  TimeDelta ExpectedRetransmissionTime() const override;
 
   
   

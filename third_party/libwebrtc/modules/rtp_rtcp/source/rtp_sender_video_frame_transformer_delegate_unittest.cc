@@ -35,11 +35,11 @@ class MockRTPVideoFrameSenderInterface : public RTPVideoFrameSenderInterface {
               (int payload_type,
                absl::optional<VideoCodecType> codec_type,
                uint32_t rtp_timestamp,
-               int64_t capture_time_ms,
+               Timestamp capture_time,
                rtc::ArrayView<const uint8_t> payload,
                size_t encoder_output_size,
                RTPVideoHeader video_header,
-               absl::optional<int64_t> expected_retransmission_time_ms,
+               TimeDelta expected_retransmission_time,
                std::vector<uint32_t> csrcs),
               (override));
 
@@ -77,7 +77,7 @@ class RtpSenderVideoFrameTransformerDelegateTest : public ::testing::Test {
     delegate->TransformFrame(
         1, VideoCodecType::kVideoCodecVP8, 2,
         encoded_image, RTPVideoHeader(),
-        absl::nullopt);
+        TimeDelta::PlusInfinity());
     return frame;
   }
 
@@ -120,7 +120,7 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
   delegate->TransformFrame(
       1, VideoCodecType::kVideoCodecVP8, 2,
       encoded_image, RTPVideoHeader(),
-      absl::nullopt);
+      TimeDelta::PlusInfinity());
 }
 
 TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
@@ -255,11 +255,12 @@ TEST_F(RtpSenderVideoFrameTransformerDelegateTest,
   ASSERT_TRUE(callback);
 
   rtc::Event event;
-  EXPECT_CALL(test_sender_,
-              SendVideo(payload_type, absl::make_optional(kVideoCodecVP8),
-                        timestamp, 0, buffer, _, _,
-                        
-                        (absl::optional<int64_t>)absl::nullopt, frame_csrcs))
+  EXPECT_CALL(
+      test_sender_,
+      SendVideo(payload_type, absl::make_optional(kVideoCodecVP8), timestamp,
+                Timestamp::MinusInfinity(), buffer, _, _,
+                TimeDelta::PlusInfinity(),
+                frame_csrcs))
       .WillOnce(WithoutArgs([&] {
         event.Set();
         return true;
