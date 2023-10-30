@@ -532,11 +532,11 @@ where
 {
     
     
-    if selector_list.0.len() > 1 {
+    if selector_list.len() > 1 {
         return Err(());
     }
 
-    let selector = &selector_list.0[0];
+    let selector = &selector_list.slice()[0];
     let class_and_id_case_sensitivity = matching_context.classes_and_ids_case_sensitivity();
     
     if selector.len() == 1 {
@@ -782,13 +782,13 @@ pub fn query_selector<E, Q>(
     
     
     let invalidation_may_be_useful = may_use_invalidation == MayUseInvalidation::Yes &&
-        selector_list.0.iter().any(|s| s.len() > 2);
+        selector_list.slice().iter().any(|s| s.len() > 2);
 
     if root_element.is_some() || !invalidation_may_be_useful {
         query_selector_slow::<E, Q>(root, selector_list, results, &mut matching_context);
     } else {
         let dependencies = selector_list
-            .0
+            .slice()
             .iter()
             .map(|selector| Dependency::for_full_selector_invalidation(selector.clone()))
             .collect::<SmallVec<[_; 5]>>();
