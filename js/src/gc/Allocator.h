@@ -15,10 +15,6 @@
 #include "gc/GCEnum.h"
 #include "js/TypeDecls.h"
 
-namespace JS {
-class RootingContext;
-}  
-
 namespace js {
 namespace gc {
 
@@ -53,23 +49,23 @@ class CellAllocator {
   
   
   template <typename T, js::AllowGC allowGC = CanGC, typename... Args>
-  static inline T* NewCell(JS::RootingContext* rcx, Args&&... args);
+  static inline T* NewCell(JSContext* cx, Args&&... args);
 
  private:
   template <AllowGC allowGC>
-  static void* RetryNurseryAlloc(JS::RootingContext* rcx,
-                                 JS::TraceKind traceKind, AllocKind allocKind,
-                                 size_t thingSize, AllocSite* site);
+  static void* RetryNurseryAlloc(JSContext* cx, JS::TraceKind traceKind,
+                                 AllocKind allocKind, size_t thingSize,
+                                 AllocSite* site);
   template <AllowGC allowGC>
-  static void* TryNewTenuredCell(JS::RootingContext* rcx, AllocKind kind,
+  static void* TryNewTenuredCell(JSContext* cx, AllocKind kind,
                                  size_t thingSize);
 
 #if defined(DEBUG) || defined(JS_GC_ZEAL) || defined(JS_OOM_BREAKPOINT)
   template <AllowGC allowGC>
-  static bool PreAllocChecks(JS::RootingContext* rcx, AllocKind kind);
+  static bool PreAllocChecks(JSContext* cx, AllocKind kind);
 #else
   template <AllowGC allowGC>
-  static bool PreAllocChecks(JS::RootingContext* rcx, AllocKind kind) {
+  static bool PreAllocChecks(JSContext* cx, AllocKind kind) {
     return true;
   }
 #endif
@@ -83,15 +79,13 @@ class CellAllocator {
   
   
   template <JS::TraceKind traceKind, AllowGC allowGC = CanGC>
-  static void* AllocNurseryOrTenuredCell(JS::RootingContext* rcx,
-                                         gc::AllocKind allocKind,
+  static void* AllocNurseryOrTenuredCell(JSContext* cx, gc::AllocKind allocKind,
                                          size_t thingSize, gc::Heap heap,
                                          AllocSite* site);
 
   
   template <AllowGC allowGC = CanGC>
-  static void* AllocTenuredCell(JS::RootingContext* rcx, gc::AllocKind kind,
-                                size_t size);
+  static void* AllocTenuredCell(JSContext* cx, gc::AllocKind kind, size_t size);
 
   
   
@@ -99,19 +93,18 @@ class CellAllocator {
   
   
   template <typename T, AllowGC allowGC = CanGC, typename... Args>
-  static T* NewString(JS::RootingContext* rcx, gc::Heap heap, Args&&... args);
+  static T* NewString(JSContext* cx, gc::Heap heap, Args&&... args);
 
   template <typename T, AllowGC allowGC >
-  static T* NewBigInt(JS::RootingContext* rcx, Heap heap);
+  static T* NewBigInt(JSContext* cx, Heap heap);
 
   template <typename T, AllowGC allowGC = CanGC>
-  static T* NewObject(JS::RootingContext* rcx, gc::AllocKind kind,
-                      gc::Heap heap, const JSClass* clasp,
-                      gc::AllocSite* site = nullptr);
+  static T* NewObject(JSContext* cx, gc::AllocKind kind, gc::Heap heap,
+                      const JSClass* clasp, gc::AllocSite* site = nullptr);
 
   
   template <typename T, AllowGC allowGC = CanGC, typename... Args>
-  static T* NewTenuredCell(JS::RootingContext* rcx, Args&&... args);
+  static T* NewTenuredCell(JSContext* cx, Args&&... args);
 };
 
 }  
