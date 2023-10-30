@@ -731,14 +731,15 @@ TEST_P(PeerConnectionBundleTest, BundleOnFirstMidInAnswer) {
 
 
 
-TEST_P(PeerConnectionBundleTest,
-       ApplyDescriptionWithConflictedDemuxCriteriaFail) {
+TEST_P(PeerConnectionBundleTest, ApplyDescriptionWithSameSsrcsBundledFails) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
   RTCOfferAnswerOptions options;
-  options.use_rtp_mux = false;
+  options.use_rtp_mux = true;
   auto offer = caller->CreateOffer(options);
+  EXPECT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   
   ASSERT_GE(offer->description()->contents().size(), 2U);
   offer->description()
@@ -751,20 +752,42 @@ TEST_P(PeerConnectionBundleTest,
       .media_description()
       ->mutable_streams()[0]
       .ssrcs[0] = 1111222;
-  EXPECT_TRUE(
-      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
   EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
-  EXPECT_TRUE(callee->CreateAnswerAndSetAsLocal(options));
 
   
   
-  options.use_rtp_mux = true;
-  EXPECT_TRUE(
-      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(options)));
   auto answer = callee->CreateAnswer(options);
-  
-  
   EXPECT_FALSE(callee->SetLocalDescription(std::move(answer)));
+}
+
+
+TEST_P(PeerConnectionBundleTest,
+       ApplyDescriptionWithSameSsrcsUnbundledSucceeds) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  RTCOfferAnswerOptions options;
+  options.use_rtp_mux = false;
+  auto offer = caller->CreateOffer(options);
+  EXPECT_TRUE(
+      caller->SetLocalDescription(CloneSessionDescription(offer.get())));
+  
+  ASSERT_GE(offer->description()->contents().size(), 2U);
+  offer->description()
+      ->contents()[0]
+      .media_description()
+      ->mutable_streams()[0]
+      .ssrcs[0] = 1111222;
+  offer->description()
+      ->contents()[1]
+      .media_description()
+      ->mutable_streams()[0]
+      .ssrcs[0] = 1111222;
+  EXPECT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+
+  
+  auto answer = callee->CreateAnswer(options);
+  EXPECT_TRUE(callee->SetLocalDescription(std::move(answer)));
 }
 
 
