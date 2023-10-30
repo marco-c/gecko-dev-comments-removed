@@ -90,4 +90,7 @@ interface nsIWebAuthnService : nsISupports
     
     
     void setUserVerified(in uint64_t authenticatorId, in bool isUserVerified);
+
+    
+    void listen();
 };
