@@ -1698,6 +1698,12 @@ void BackgroundRequestChild::HandleResponse(
     SerializedStructuredCloneReadInfo&& aResponse) {
   AssertIsOnOwningThread();
 
+  if (!mTransaction->Database()->GetOwnerGlobal()) {
+    
+    
+    return;
+  }
+
   auto cloneReadInfo = DeserializeStructuredCloneReadInfo(
       std::move(aResponse), mTransaction->Database(),
       [this] { return std::move(*GetNextCloneData()); });
@@ -1709,6 +1715,12 @@ void BackgroundRequestChild::HandleResponse(
 void BackgroundRequestChild::HandleResponse(
     nsTArray<SerializedStructuredCloneReadInfo>&& aResponse) {
   AssertIsOnOwningThread();
+
+  if (!mTransaction->Database()->GetOwnerGlobal()) {
+    
+    
+    return;
+  }
 
   nsTArray<StructuredCloneReadInfoChild> cloneReadInfos;
 
