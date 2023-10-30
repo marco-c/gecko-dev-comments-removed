@@ -31,22 +31,9 @@
 
 
 
-#![no_std]
 
-
-#[cfg(feature = "std")]
-extern crate std;
-
-extern crate alloc;
-
-#[cfg(not(feature = "alloc"))]
-compile_error!("the `alloc` feature must be enabled");
-
-#[cfg(test)]
 #[macro_use]
-extern crate assert_matches;
-
-use alloc::string::String;
+extern crate matches;
 
 pub mod punycode;
 mod uts46;
