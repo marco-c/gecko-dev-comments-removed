@@ -129,7 +129,8 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   explicit MediaTrackGraphImpl(GraphDriverType aGraphDriverRequested,
                                GraphRunType aRunTypeRequested,
-                               TrackRate aSampleRate, uint32_t aChannelCount,
+                               uint64_t aWindowID, TrackRate aSampleRate,
+                               uint32_t aChannelCount,
                                CubebUtils::AudioDeviceID aOutputDeviceID,
                                nsISerialEventTarget* aMainThread);
   static MediaTrackGraphImpl* GetInstance(
@@ -736,9 +737,14 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
 
+  const uint64_t mWindowID;
+  
 
 
-  CubebUtils::AudioDeviceID mOutputDeviceID;
+
+
+
+  const CubebUtils::AudioDeviceID mOutputDeviceID;
 
   
 
