@@ -5234,8 +5234,7 @@ Result<SplitNodeResult, nsresult> HTMLEditor::SplitNodeDeepWithTransaction(
 }
 
 Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
-    const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode,
-    SplitNodeDirection aDirection) {
+    const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode) {
   
   Unused << aStartOfRightNode.Offset();
 
@@ -5283,11 +5282,8 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   
   nsIContent* firstChildOfRightNode = aStartOfRightNode.GetChild();
   IgnoredErrorResult error;
-  parent->InsertBefore(aNewNode,
-                       aDirection == SplitNodeDirection::LeftNodeIsNewOne
-                           ? aStartOfRightNode.GetContainer()
-                           : aStartOfRightNode.GetContainer()->GetNextSibling(),
-                       error);
+  parent->InsertBefore(
+      aNewNode, aStartOfRightNode.GetContainer()->GetNextSibling(), error);
   if (MOZ_UNLIKELY(error.Failed())) {
     NS_WARNING("nsINode::InsertBefore() failed");
     return Err(error.StealNSResult());
@@ -5300,21 +5296,13 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   
   
   if (aStartOfRightNode.IsInTextNode()) {
-    if (!(aDirection == SplitNodeDirection::LeftNodeIsNewOne &&
-          aStartOfRightNode.IsStartOfContainer()) &&
-        !(aDirection == SplitNodeDirection::RightNodeIsNewOne &&
-          aStartOfRightNode.IsEndOfContainer())) {
+    if (!aStartOfRightNode.IsEndOfContainer()) {
       Text* originalTextNode = aStartOfRightNode.ContainerAs<Text>();
       Text* newTextNode = aNewNode.AsText();
       nsAutoString movingText;
-      const uint32_t cutStartOffset =
-          aDirection == SplitNodeDirection::LeftNodeIsNewOne
-              ? 0u
-              : aStartOfRightNode.Offset();
+      const uint32_t cutStartOffset = aStartOfRightNode.Offset();
       const uint32_t cutLength =
-          aDirection == SplitNodeDirection::LeftNodeIsNewOne
-              ? aStartOfRightNode.Offset()
-              : originalTextNode->Length() - aStartOfRightNode.Offset();
+          originalTextNode->Length() - aStartOfRightNode.Offset();
       IgnoredErrorResult error;
       originalTextNode->SubstringData(cutStartOffset, cutLength, movingText,
                                       error);
@@ -5341,38 +5329,9 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
            aStartOfRightNode.GetContainer() !=
                firstChildOfRightNode->GetParentNode()) {
     NS_WARNING(
-        "The web app interupped us and touched the DOM tree, we stopped "
+        "The web app interrupted us and touched the DOM tree, we stopped "
         "splitting anything");
-  } else if (aDirection == SplitNodeDirection::LeftNodeIsNewOne) {
-    
-    
-    if (!firstChildOfRightNode) {
-      
-      
-      nsresult rv = MoveAllChildren(*aStartOfRightNode.GetContainer(),
-                                    EditorRawDOMPoint(&aNewNode, 0u));
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                           "HTMLEditor::MoveAllChildren() failed, but ignored");
-    }
-    
-    
-    else if (firstChildOfRightNode->GetPreviousSibling()) {
-      
-      
-      nsresult rv = MovePreviousSiblings(*firstChildOfRightNode,
-                                         EditorRawDOMPoint(&aNewNode, 0u));
-      if (NS_WARN_IF(rv == NS_ERROR_EDITOR_DESTROYED)) {
-        return Err(NS_ERROR_EDITOR_DESTROYED);
-      }
-      NS_WARNING_ASSERTION(
-          NS_SUCCEEDED(rv),
-          "HTMLEditor::MovePreviousSiblings() failed, but ignored");
-    }
   } else {
-    MOZ_ASSERT(aDirection == SplitNodeDirection::RightNodeIsNewOne);
     
     
     if (!firstChildOfRightNode) {
@@ -5446,28 +5405,6 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
         return;
       }
 
-      if (aDirection == SplitNodeDirection::LeftNodeIsNewOne) {
-        
-        
-        
-        if (aOffset < aStartOfRightNode.Offset()) {
-          aContainer = &aNewNode;
-          return;
-        }
-
-        
-        
-        
-        if (aOffset >= aStartOfRightNode.Offset()) {
-          aOffset -= aStartOfRightNode.Offset();
-          return;
-        }
-
-        NS_WARNING("The stored offset was smaller than the right node offset");
-        aOffset = 0u;
-        return;
-      }
-
       
       
       
@@ -5513,18 +5450,14 @@ Result<SplitNodeResult, nsresult> HTMLEditor::DoSplitNode(
   
   if (NS_WARN_IF(parent != aStartOfRightNode.GetContainer()->GetParentNode()) ||
       NS_WARN_IF(parent != aNewNode.GetParentNode()) ||
-      (aDirection == SplitNodeDirection::LeftNodeIsNewOne &&
-       NS_WARN_IF(aNewNode.GetNextSibling() !=
-                  aStartOfRightNode.GetContainer())) ||
-      (aDirection == SplitNodeDirection::RightNodeIsNewOne &&
-       NS_WARN_IF(aNewNode.GetPreviousSibling() !=
-                  aStartOfRightNode.GetContainer()))) {
+      NS_WARN_IF(aNewNode.GetPreviousSibling() !=
+                 aStartOfRightNode.GetContainer())) {
     return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
   }
 
   DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjSplitNode(
       *aStartOfRightNode.ContainerAs<nsIContent>(), aStartOfRightNode.Offset(),
-      aNewNode, aDirection);
+      aNewNode);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                        "RangeUpdater::SelAdjSplitNode() failed, but ignored");
 
@@ -5641,16 +5574,11 @@ void HTMLEditor::DidJoinNodesTransaction(
 }
 
 nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
-                                 nsIContent& aContentToRemove,
-                                 JoinNodesDirection aDirection) {
+                                 nsIContent& aContentToRemove) {
   MOZ_ASSERT(IsEditActionDataAvailable());
 
   const uint32_t keepingContentLength = aContentToKeep.Length();
-  const uint32_t removingContentLength = aContentToRemove.Length();
-  const EditorDOMPoint oldPointAtRightContent(
-      aDirection == JoinNodesDirection::LeftNodeIntoRightNode
-          ? &aContentToKeep
-          : &aContentToRemove);
+  const EditorDOMPoint oldPointAtRightContent(&aContentToRemove);
   if (MOZ_LIKELY(oldPointAtRightContent.IsSet())) {
     Unused << oldPointAtRightContent.Offset();  
   }
@@ -5695,19 +5623,6 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
           MOZ_ASSERT(savingRange.mEndContainer);
           auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
                                     uint32_t& aOffset) {
-            if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-              
-              
-              
-              
-              if (aContainer == atRemovingNode.GetContainer() &&
-                  atRemovingNode.Offset() < aOffset &&
-                  aOffset <= atNodeToKeep.Offset()) {
-                aContainer = &aContentToRemove;
-                aOffset = removingContentLength;
-              }
-              return;
-            }
             
             
             
@@ -5734,16 +5649,8 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     if (aContentToKeep.IsText() && aContentToRemove.IsText()) {
       nsAutoString rightText;
       nsAutoString leftText;
-      const nsIContent& rightTextNode =
-          aDirection == JoinNodesDirection::LeftNodeIntoRightNode
-              ? aContentToKeep
-              : aContentToRemove;
-      const nsIContent& leftTextNode =
-          aDirection == JoinNodesDirection::LeftNodeIntoRightNode
-              ? aContentToRemove
-              : aContentToKeep;
-      rightTextNode.AsText()->GetData(rightText);
-      leftTextNode.AsText()->GetData(leftText);
+      aContentToRemove.AsText()->GetData(rightText);
+      aContentToKeep.AsText()->GetData(leftText);
       leftText += rightText;
       IgnoredErrorResult ignoredError;
       DoSetText(MOZ_KnownLive(*aContentToKeep.AsText()), leftText,
@@ -5759,34 +5666,15 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
     AutoTArray<OwningNonNull<nsIContent>, 64> arrayOfChildContents;
     HTMLEditUtils::CollectAllChildren(aContentToRemove, arrayOfChildContents);
 
-    if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-      for (const OwningNonNull<nsIContent>& child :
-           Reversed(arrayOfChildContents)) {
-        
-        
-        
-        IgnoredErrorResult error;
-        aContentToKeep.InsertBefore(child, aContentToKeep.GetFirstChild(),
-                                    error);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (error.Failed()) {
-          NS_WARNING("nsINode::InsertBefore() failed");
-          return error.StealNSResult();
-        }
+    for (const OwningNonNull<nsIContent>& child : arrayOfChildContents) {
+      IgnoredErrorResult error;
+      aContentToKeep.AppendChild(child, error);
+      if (NS_WARN_IF(Destroyed())) {
+        return NS_ERROR_EDITOR_DESTROYED;
       }
-    } else {
-      for (const OwningNonNull<nsIContent>& child : arrayOfChildContents) {
-        IgnoredErrorResult error;
-        aContentToKeep.AppendChild(child, error);
-        if (NS_WARN_IF(Destroyed())) {
-          return NS_ERROR_EDITOR_DESTROYED;
-        }
-        if (error.Failed()) {
-          NS_WARNING("nsINode::AppendChild() failed");
-          return error.StealNSResult();
-        }
+      if (error.Failed()) {
+        NS_WARNING("nsINode::AppendChild() failed");
+        return error.StealNSResult();
       }
     }
     return NS_OK;
@@ -5802,12 +5690,9 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
 
   if (MOZ_LIKELY(oldPointAtRightContent.IsSet())) {
     DebugOnly<nsresult> rvIgnored = RangeUpdaterRef().SelAdjJoinNodes(
-        EditorRawDOMPoint(
-            &aContentToKeep,
-            aDirection == JoinNodesDirection::LeftNodeIntoRightNode
-                ? std::min(removingContentLength, aContentToKeep.Length())
-                : std::min(keepingContentLength, aContentToKeep.Length())),
-        aContentToRemove, oldPointAtRightContent, aDirection);
+        EditorRawDOMPoint(&aContentToKeep, std::min(keepingContentLength,
+                                                    aContentToKeep.Length())),
+        aContentToRemove, oldPointAtRightContent);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rvIgnored),
                          "RangeUpdater::SelAdjJoinNodes() failed, but ignored");
   }
@@ -5844,23 +5729,6 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
 
     auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
                               uint32_t& aOffset) {
-      if (aDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-        
-        
-        
-        
-        if (aContainer == &aContentToRemove) {
-          aContainer = &aContentToKeep;
-          return;
-        }
-        
-        
-        
-        if (aContainer == &aContentToKeep) {
-          aOffset += removingContentLength;
-        }
-        return;
-      }
       
       
       
@@ -5897,10 +5765,7 @@ nsresult HTMLEditor::DoJoinNodes(nsIContent& aContentToKeep,
 
   if (allowedTransactionsToChangeSelection) {
     
-    DebugOnly<nsresult> rvIgnored = CollapseSelectionTo(
-        aDirection == JoinNodesDirection::LeftNodeIntoRightNode
-            ? EditorRawDOMPoint(&aContentToKeep, removingContentLength)
-            : EditorRawDOMPoint(&aContentToKeep, 0u));
+    DebugOnly<nsresult> rvIgnored = CollapseSelectionToStartOf(aContentToKeep);
     if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
       NS_WARNING(
           "EditorBase::CollapseSelectionTo() caused destroying the editor");

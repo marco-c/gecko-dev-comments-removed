@@ -300,8 +300,7 @@ void RangeUpdater::SelAdjDeleteNode(nsINode& aNodeToDelete) {
 
 nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
                                        uint32_t aSplitOffset,
-                                       nsIContent& aNewContent,
-                                       SplitNodeDirection aSplitNodeDirection) {
+                                       nsIContent& aNewContent) {
   if (mLocked) {
     
     return NS_OK;
@@ -319,28 +318,15 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
   auto AdjustDOMPoint = [&](nsCOMPtr<nsINode>& aContainer,
                             uint32_t& aOffset) -> void {
     if (aContainer == atNewNode.GetContainer()) {
-      if (aSplitNodeDirection == SplitNodeDirection::LeftNodeIsNewOne) {
-        
-        
-        
-        
-        
-        
-        
-        if (aOffset > atNewNode.Offset()) {
-          aOffset++;
-        }
-      } else {
-        
-        
-        
-        
-        
-        
-        
-        if (aOffset >= atNewNode.Offset()) {
-          aOffset++;
-        }
+      
+      
+      
+      
+      
+      
+      
+      if (aOffset >= atNewNode.Offset()) {
+        aOffset++;
       }
     }
     
@@ -350,13 +336,7 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
     if (aContainer != &aOriginalContent) {
       return;
     }
-    if (aSplitNodeDirection == SplitNodeDirection::LeftNodeIsNewOne) {
-      if (aOffset > aSplitOffset) {
-        aOffset -= aSplitOffset;
-      } else {
-        aContainer = &aNewContent;
-      }
-    } else if (aOffset >= aSplitOffset) {
+    if (aOffset >= aSplitOffset) {
       aContainer = &aNewContent;
       aOffset -= aSplitOffset;
     }
@@ -375,8 +355,7 @@ nsresult RangeUpdater::SelAdjSplitNode(nsIContent& aOriginalContent,
 nsresult RangeUpdater::SelAdjJoinNodes(
     const EditorRawDOMPoint& aStartOfRightContent,
     const nsIContent& aRemovedContent,
-    const EditorDOMPoint& aOldPointAtRightContent,
-    JoinNodesDirection aJoinNodesDirection) {
+    const EditorDOMPoint& aOldPointAtRightContent) {
   MOZ_ASSERT(aStartOfRightContent.IsSetAndValid());
   MOZ_ASSERT(aOldPointAtRightContent.IsSet());  
   MOZ_ASSERT(aOldPointAtRightContent.HasOffset());
@@ -402,9 +381,7 @@ nsresult RangeUpdater::SelAdjJoinNodes(
       
       
       aContainer = aStartOfRightContent.GetContainer();
-      if (aJoinNodesDirection == JoinNodesDirection::RightNodeIntoLeftNode) {
-        aOffset += aStartOfRightContent.Offset();
-      }
+      aOffset += aStartOfRightContent.Offset();
     }
     
     
@@ -422,12 +399,6 @@ nsresult RangeUpdater::SelAdjJoinNodes(
       else if (aOffset == aOldPointAtRightContent.Offset()) {
         aContainer = aStartOfRightContent.GetContainer();
         aOffset = aStartOfRightContent.Offset();
-      }
-    } else if (aContainer == aStartOfRightContent.GetContainer()) {
-      
-      
-      if (aJoinNodesDirection == JoinNodesDirection::LeftNodeIntoRightNode) {
-        aOffset += aStartOfRightContent.Offset();
       }
     }
   };

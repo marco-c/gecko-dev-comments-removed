@@ -1025,11 +1025,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
   MOZ_CAN_RUN_SCRIPT Result<SplitNodeResult, nsresult> DoSplitNode(
-      const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode,
-      SplitNodeDirection aDirection);
+      const EditorDOMPoint& aStartOfRightNode, nsIContent& aNewNode);
 
   
 
@@ -1043,12 +1040,8 @@ class HTMLEditor final : public EditorBase,
 
 
 
-
-
-
   [[nodiscard]] MOZ_CAN_RUN_SCRIPT nsresult
-  DoJoinNodes(nsIContent& aContentToKeep, nsIContent& aContentToRemove,
-              JoinNodesDirection aDirection);
+  DoJoinNodes(nsIContent& aContentToKeep, nsIContent& aContentToRemove);
 
   
 
