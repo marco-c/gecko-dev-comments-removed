@@ -728,7 +728,7 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  masm.leaveExitFrame(0);
+  masm.moveToStackPtr(FramePointer);
   masm.pop(FramePointer);
 
   
