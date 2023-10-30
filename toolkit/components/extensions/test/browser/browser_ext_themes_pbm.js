@@ -19,6 +19,20 @@ const DARK_THEME_ID = "firefox-compact-dark@mozilla.org";
 
 requestLongerTimeout(2);
 
+async function testIsDark(win, expectDark) {
+  let mql = win.matchMedia("(prefers-color-scheme: dark)");
+  if (mql.matches != expectDark) {
+    
+    
+    await new Promise(r => mql.addEventListener("change", r, { once: true }));
+  }
+  is(
+    mql.matches,
+    expectDark,
+    `Window should${expectDark ? "" : " not"} be dark.`
+  );
+}
+
 
 
 
@@ -32,11 +46,7 @@ requestLongerTimeout(2);
 async function testWindowColorScheme({ win, expectDark, expectLWTAttributes }) {
   let docEl = win.document.documentElement;
 
-  is(
-    win.matchMedia("(prefers-color-scheme: dark)").matches,
-    expectDark,
-    `Window should${expectDark ? "" : " not"} be dark.`
-  );
+  await testIsDark(win, expectDark);
 
   if (expectLWTAttributes) {
     ok(docEl.hasAttribute("lwtheme"), "Window should have LWT attribute.");
