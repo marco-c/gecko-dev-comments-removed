@@ -17,13 +17,9 @@ const LOCK_ACCESS = {
 };
 
 
-let kPathSeparators;
-if (navigator.userAgent.includes('Windows NT')) {
-  
-  kPathSeparators = ['/', '\\'];
-} else {
-  kPathSeparators = ['/'];
-}
+
+
+let kPathSeparators = ['/', '\\'];
 
 async function getFileSize(handle) {
   const file = await handle.getFile();
