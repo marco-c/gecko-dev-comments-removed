@@ -45,7 +45,7 @@ promise_test(async t => {
        null,
       ['websocket'],
       [{
-        'preventedBackForwardCache': "no",
+        'preventedBackForwardCache': "masked",
         'url': null,
         'src': rc1_child_url,
         
