@@ -639,6 +639,9 @@ MFBT_API bool MozDescribeCodeAddress(void* aPC,
 }
 
 
+
+
+
 #elif HAVE_DLADDR &&                                           \
     (HAVE__UNWIND_BACKTRACE || MOZ_STACKWALK_SUPPORTS_LINUX || \
      MOZ_STACKWALK_SUPPORTS_MACOSX)
@@ -678,6 +681,9 @@ void DemangleSymbol(const char* aSymbol, char* aBuffer, int aBufLen) {
 }
 
 }  
+
+
+
 
 
 #  if ((defined(__i386) || defined(PPC) || defined(__ppc__)) && \

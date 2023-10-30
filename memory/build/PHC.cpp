@@ -207,6 +207,8 @@ class StackTrace : public phc::StackTrace {
 void StackTrace::Fill() {
   mLength = 0;
 
+
+
 #if defined(XP_WIN) && defined(_M_IX86)
   
   
