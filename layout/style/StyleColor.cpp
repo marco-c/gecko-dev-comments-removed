@@ -7,8 +7,7 @@
 #include "mozilla/StyleColorInlines.h"
 
 #include "mozilla/ComputedStyle.h"
-#include "mozilla/ComputedStyleInlines.h"
-#include "mozilla/dom/BindingDeclarations.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "nsIFrame.h"
 #include "nsStyleStruct.h"
 
@@ -65,16 +64,33 @@ StyleAbsoluteColor StyleAbsoluteColor::ToColorSpace(
 nscolor StyleAbsoluteColor::ToColor() const {
   auto srgb = ToColorSpace(StyleColorSpace::Srgb);
 
-  
-  
-  
-  auto red = std::clamp(srgb.components._0, 0.0f, 1.0f);
-  auto green = std::clamp(srgb.components._1, 0.0f, 1.0f);
-  auto blue = std::clamp(srgb.components._2, 0.0f, 1.0f);
+  constexpr float MIN = 0.0f;
+  constexpr float MAX = 1.0f;
 
-  return NS_RGBA(nsStyleUtil::FloatToColorComponent(red),
-                 nsStyleUtil::FloatToColorComponent(green),
-                 nsStyleUtil::FloatToColorComponent(blue),
+  
+  
+  
+  auto isColorInGamut =
+      (srgb.components._0 >= MIN && srgb.components._0 <= MAX &&
+       srgb.components._1 >= MIN && srgb.components._1 <= MAX &&
+       srgb.components._2 >= MIN && srgb.components._2 <= MAX);
+
+  if (!isColorInGamut) {
+    if (StaticPrefs::layout_css_gamut_map_for_rendering_enabled()) {
+      srgb = Servo_MapColorIntoGamutLimits(&srgb);
+    } else {
+      
+      
+      
+      srgb.components._0 = std::clamp(srgb.components._0, 0.0f, 1.0f);
+      srgb.components._1 = std::clamp(srgb.components._1, 0.0f, 1.0f);
+      srgb.components._2 = std::clamp(srgb.components._2, 0.0f, 1.0f);
+    }
+  }
+
+  return NS_RGBA(nsStyleUtil::FloatToColorComponent(srgb.components._0),
+                 nsStyleUtil::FloatToColorComponent(srgb.components._1),
+                 nsStyleUtil::FloatToColorComponent(srgb.components._2),
                  nsStyleUtil::FloatToColorComponent(srgb.alpha));
 }
 
