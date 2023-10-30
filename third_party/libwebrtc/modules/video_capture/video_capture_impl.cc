@@ -134,7 +134,7 @@ int32_t VideoCaptureImpl::DeliverCapturedFrame(VideoFrame& captureFrame) {
 
   UpdateFrameCount();  
 
-  for (auto dataCallBack : _dataCallBacks) {
+  for (auto* dataCallBack : _dataCallBacks) {
     dataCallBack->OnFrame(captureFrame);
   }
 
