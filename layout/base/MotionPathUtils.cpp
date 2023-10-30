@@ -170,6 +170,22 @@ static CSSCoord ComputeSides(const CSSPoint& aOrigin,
 
   
   
+  if (sint < std::numeric_limits<double>::epsilon()) {
+    
+    return static_cast<float>(b);
+  }
+
+  if (cost < std::numeric_limits<double>::epsilon()) {
+    
+    
+    return static_cast<float>(bPrime);
+  }
+
+  
+  
+  
+  
+  
   
   
   
@@ -223,7 +239,11 @@ static CSSCoord ComputeRayPathLength(const StyleRaySize aRaySizeType,
                                      const CSSRect& aContainingBlock) {
   if (aRaySizeType == StyleRaySize::Sides) {
     
-    if (!aContainingBlock.Contains(aOrigin)) {
+    
+    
+    
+    
+    if (!aContainingBlock.ContainsInclusively(aOrigin)) {
       return 0.0;
     }
 

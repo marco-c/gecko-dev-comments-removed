@@ -100,6 +100,14 @@ struct BaseRect {
   
   
   
+  MOZ_ALWAYS_INLINE bool ContainsInclusively(const Point& aPoint) const {
+    return x <= aPoint.x && aPoint.x <= XMost() && y <= aPoint.y &&
+           aPoint.y <= YMost();
+  }
+
+  
+  
+  
   bool Intersects(const Sub& aRect) const {
     return !IsEmpty() && !aRect.IsEmpty() && x < aRect.XMost() &&
            aRect.x < XMost() && y < aRect.YMost() && aRect.y < YMost();
