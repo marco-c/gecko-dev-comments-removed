@@ -779,21 +779,21 @@ bool DisplayPortUtils::CalculateAndSetDisplayPortMargins(
 bool DisplayPortUtils::MaybeCreateDisplayPort(
     nsDisplayListBuilder* aBuilder, nsIFrame* aScrollFrame,
     nsIScrollableFrame* aScrollFrameAsScrollable, RepaintMode aRepaintMode) {
+  MOZ_ASSERT(aBuilder->IsPaintingToWindow());
+
   nsIContent* content = aScrollFrame->GetContent();
   if (!content) {
     return false;
   }
 
-  bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
-
   
   
   
   
-  if (aBuilder->IsPaintingToWindow() &&
+  if (!aBuilder->HaveScrollableDisplayPort() &&
       nsLayoutUtils::AsyncPanZoomEnabled(aScrollFrame) &&
-      !aBuilder->HaveScrollableDisplayPort() &&
       aScrollFrameAsScrollable->WantAsyncScroll()) {
+    bool haveDisplayPort = HasNonMinimalNonZeroDisplayPort(content);
     
     if (!haveDisplayPort) {
       
