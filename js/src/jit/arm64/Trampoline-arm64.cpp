@@ -614,17 +614,6 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   masm.enterExitFrame(reg_cx, regs.getAny(), id);
 
   
-  Register argsBase = InvalidReg;
-  if (f.explicitArgs) {
-    
-    
-    argsBase = r8;
-    regs.take(argsBase);
-    masm.Add(ARMRegister(argsBase, 64), masm.GetStackPointer64(),
-             Operand(ExitFrameLayout::SizeWithFooter()));
-  }
-
-  
   Register outReg = InvalidReg;
   switch (f.outParam) {
     case Type_Value:
@@ -666,22 +655,22 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   masm.setupUnalignedABICall(regs.getAny());
   masm.passABIArg(reg_cx);
 
-  size_t argDisp = 0;
+  size_t argDisp = ExitFrameLayout::Size();
 
   
   for (uint32_t explicitArg = 0; explicitArg < f.explicitArgs; explicitArg++) {
     switch (f.argProperties(explicitArg)) {
       case VMFunctionData::WordByValue:
-        masm.passABIArg(MoveOperand(argsBase, argDisp),
+        masm.passABIArg(MoveOperand(FramePointer, argDisp),
                         (f.argPassedInFloatReg(explicitArg) ? MoveOp::DOUBLE
                                                             : MoveOp::GENERAL));
         argDisp += sizeof(void*);
         break;
 
       case VMFunctionData::WordByRef:
-        masm.passABIArg(
-            MoveOperand(argsBase, argDisp, MoveOperand::Kind::EffectiveAddress),
-            MoveOp::GENERAL);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp,
+                                    MoveOperand::Kind::EffectiveAddress),
+                        MoveOp::GENERAL);
         argDisp += sizeof(void*);
         break;
 

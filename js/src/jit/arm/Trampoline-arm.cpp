@@ -616,16 +616,6 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   masm.enterExitFrame(cxreg, regs.getAny(), id);
 
   
-  Register argsBase = InvalidReg;
-  if (f.explicitArgs) {
-    argsBase = r5;
-    regs.take(argsBase);
-    ScratchRegisterScope scratch(masm);
-    masm.ma_add(sp, Imm32(ExitFrameLayout::SizeWithFooter()), argsBase,
-                scratch);
-  }
-
-  
   Register outReg = InvalidReg;
   switch (f.outParam) {
     case Type_Value:
@@ -666,32 +656,32 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   masm.setupUnalignedABICall(regs.getAny());
   masm.passABIArg(cxreg);
 
-  size_t argDisp = 0;
+  size_t argDisp = ExitFrameLayout::Size();
 
   
   for (uint32_t explicitArg = 0; explicitArg < f.explicitArgs; explicitArg++) {
     switch (f.argProperties(explicitArg)) {
       case VMFunctionData::WordByValue:
-        masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::GENERAL);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp), MoveOp::GENERAL);
         argDisp += sizeof(void*);
         break;
       case VMFunctionData::DoubleByValue:
         
         
         MOZ_ASSERT(f.argPassedInFloatReg(explicitArg));
-        masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::DOUBLE);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp), MoveOp::DOUBLE);
         argDisp += sizeof(double);
         break;
       case VMFunctionData::WordByRef:
-        masm.passABIArg(
-            MoveOperand(argsBase, argDisp, MoveOperand::Kind::EffectiveAddress),
-            MoveOp::GENERAL);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp,
+                                    MoveOperand::Kind::EffectiveAddress),
+                        MoveOp::GENERAL);
         argDisp += sizeof(void*);
         break;
       case VMFunctionData::DoubleByRef:
-        masm.passABIArg(
-            MoveOperand(argsBase, argDisp, MoveOperand::Kind::EffectiveAddress),
-            MoveOp::GENERAL);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp,
+                                    MoveOperand::Kind::EffectiveAddress),
+                        MoveOp::GENERAL);
         argDisp += 2 * sizeof(void*);
         break;
     }
