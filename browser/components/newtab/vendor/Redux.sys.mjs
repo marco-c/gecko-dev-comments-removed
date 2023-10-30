@@ -1,13 +1,12 @@
-
-
-
-
-
-
-var EXPORTED_SYMBOLS = ["redux"];
+/**
+ * Redux v.4.0.1
+ *
+ * This file was imported from https://unpkg.com/redux@4.0.1/dist/redux.js
+ * and reformatted as a Javascript Core Module
+ */
 var self = this;
 
-this.redux = (function (global, factory) {
+export const redux = (function (global, factory) {
   var exports = {};
   factory(exports);
   return exports;
@@ -31,26 +30,28 @@ this.redux = (function (global, factory) {
     return result;
   }
 
-  
+  /* global window */
 
-  
-  
+  // This is edited to prevent Function being present in this code.
+  // See https://bugzilla.mozilla.org/show_bug.cgi?id=1486375
   var root;
 
   if (typeof self !== 'undefined') {
     root = self;
   } else if (typeof global !== 'undefined') {
     root = global;
+  } else {
+    root = { "Symbol": undefined };
   }
 
   var result = symbolObservablePonyfill(root);
 
-  
-
-
-
-
-
+  /**
+   * These are private action types reserved by Redux.
+   * For any unknown actions, you must return the current state.
+   * If the current state is undefined, you must return the initial state.
+   * Do not reference these action types directly in your code.
+   */
   var randomString = function randomString() {
     return Math.random().toString(36).substring(7).split('').join('.');
   };
@@ -63,10 +64,10 @@ this.redux = (function (global, factory) {
     }
   };
 
-  
-
-
-
+  /**
+   * @param {any} obj The object to inspect.
+   * @returns {boolean} True if the argument appears to be a plain object.
+   */
   function isPlainObject(obj) {
     if (typeof obj !== 'object' || obj === null) return false;
     var proto = obj;
@@ -78,31 +79,31 @@ this.redux = (function (global, factory) {
     return Object.getPrototypeOf(obj) === proto;
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a Redux store that holds the state tree.
+   * The only way to change the data in the store is to call `dispatch()` on it.
+   *
+   * There should only be a single store in your app. To specify how different
+   * parts of the state tree respond to actions, you may combine several reducers
+   * into a single reducer function by using `combineReducers`.
+   *
+   * @param {Function} reducer A function that returns the next state tree, given
+   * the current state tree and the action to handle.
+   *
+   * @param {any} [preloadedState] The initial state. You may optionally specify it
+   * to hydrate the state from the server in universal apps, or to restore a
+   * previously serialized user session.
+   * If you use `combineReducers` to produce the root reducer function, this must be
+   * an object with the same shape as `combineReducers` keys.
+   *
+   * @param {Function} [enhancer] The store enhancer. You may optionally specify it
+   * to enhance the store with third-party capabilities such as middleware,
+   * time travel, persistence, etc. The only store enhancer that ships with Redux
+   * is `applyMiddleware()`.
+   *
+   * @returns {Store} A Redux store that lets you read the state, dispatch actions
+   * and subscribe to changes.
+   */
 
   function createStore(reducer, preloadedState, enhancer) {
     var _ref2;
@@ -139,11 +140,11 @@ this.redux = (function (global, factory) {
         nextListeners = currentListeners.slice();
       }
     }
-    
-
-
-
-
+    /**
+     * Reads the state tree managed by the store.
+     *
+     * @returns {any} The current state tree of your application.
+     */
 
 
     function getState() {
@@ -153,29 +154,29 @@ this.redux = (function (global, factory) {
 
       return currentState;
     }
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Adds a change listener. It will be called any time an action is dispatched,
+     * and some part of the state tree may potentially have changed. You may then
+     * call `getState()` to read the current state tree inside the callback.
+     *
+     * You may call `dispatch()` from a change listener, with the following
+     * caveats:
+     *
+     * 1. The subscriptions are snapshotted just before every `dispatch()` call.
+     * If you subscribe or unsubscribe while the listeners are being invoked, this
+     * will not have any effect on the `dispatch()` that is currently in progress.
+     * However, the next `dispatch()` call, whether nested or not, will use a more
+     * recent snapshot of the subscription list.
+     *
+     * 2. The listener should not expect to see all state changes, as the state
+     * might have been updated multiple times during a nested `dispatch()` before
+     * the listener is called. It is, however, guaranteed that all subscribers
+     * registered before the `dispatch()` started will be called with the latest
+     * state by the time it exits.
+     *
+     * @param {Function} listener A callback to be invoked on every dispatch.
+     * @returns {Function} A function to remove this change listener.
+     */
 
 
     function subscribe(listener) {
@@ -205,31 +206,31 @@ this.redux = (function (global, factory) {
         nextListeners.splice(index, 1);
       };
     }
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    /**
+     * Dispatches an action. It is the only way to trigger a state change.
+     *
+     * The `reducer` function, used to create the store, will be called with the
+     * current state tree and the given `action`. Its return value will
+     * be considered the **next** state of the tree, and the change listeners
+     * will be notified.
+     *
+     * The base implementation only supports plain object actions. If you want to
+     * dispatch a Promise, an Observable, a thunk, or something else, you need to
+     * wrap your store creating function into the corresponding middleware. For
+     * example, see the documentation for the `redux-thunk` package. Even the
+     * middleware will eventually dispatch plain object actions using this method.
+     *
+     * @param {Object} action A plain object representing “what changed”. It is
+     * a good idea to keep actions serializable so you can record and replay user
+     * sessions, or use the time travelling `redux-devtools`. An action must have
+     * a `type` property which may not be `undefined`. It is a good idea to use
+     * string constants for action types.
+     *
+     * @returns {Object} For convenience, the same action object you dispatched.
+     *
+     * Note that, if you use a custom middleware, it may wrap `dispatch()` to
+     * return something else (for example, a Promise you can await).
+     */
 
 
     function dispatch(action) {
@@ -261,16 +262,16 @@ this.redux = (function (global, factory) {
 
       return action;
     }
-    
-
-
-
-
-
-
-
-
-
+    /**
+     * Replaces the reducer currently used by the store to calculate the state.
+     *
+     * You might need this if your app implements code splitting and you want to
+     * load some of the reducers dynamically. You might also need this if you
+     * implement a hot reloading mechanism for Redux.
+     *
+     * @param {Function} nextReducer The reducer for the store to use instead.
+     * @returns {void}
+     */
 
 
     function replaceReducer(nextReducer) {
@@ -283,12 +284,12 @@ this.redux = (function (global, factory) {
         type: ActionTypes.REPLACE
       });
     }
-    
-
-
-
-
-
+    /**
+     * Interoperability point for observable/reactive libraries.
+     * @returns {observable} A minimal observable of state changes.
+     * For more information, see the observable proposal:
+     * https://github.com/tc39/proposal-observable
+     */
 
 
     function observable() {
@@ -296,14 +297,14 @@ this.redux = (function (global, factory) {
 
       var outerSubscribe = subscribe;
       return _ref = {
-        
-
-
-
-
-
-
-
+        /**
+         * The minimal observable subscription method.
+         * @param {Object} observer Any object that can be used as an observer.
+         * The observer object should have a `next` method.
+         * @returns {subscription} An object with an `unsubscribe` method that can
+         * be used to unsubscribe the observable from the store, and prevent further
+         * emission of values from the observable.
+         */
         subscribe: function subscribe(observer) {
           if (typeof observer !== 'object' || observer === null) {
             throw new TypeError('Expected the observer to be an object.');
@@ -324,9 +325,9 @@ this.redux = (function (global, factory) {
       }, _ref[result] = function () {
         return this;
       }, _ref;
-    } 
-    
-    
+    } // When a store is created, an "INIT" action is dispatched so that every
+    // reducer returns their initial state. This effectively populates
+    // the initial state tree.
 
 
     dispatch({
@@ -340,26 +341,26 @@ this.redux = (function (global, factory) {
     }, _ref2[result] = observable, _ref2;
   }
 
-  
-
-
-
-
-
+  /**
+   * Prints a warning in the console if it exists.
+   *
+   * @param {String} message The warning message.
+   * @returns {void}
+   */
   function warning(message) {
-    
+    /* eslint-disable no-console */
     if (typeof console !== 'undefined' && typeof console.error === 'function') {
       console.error(message);
     }
-    
+    /* eslint-enable no-console */
 
 
     try {
-      
-      
-      
+      // This error was thrown as a convenience so that if you enable
+      // "break on all exceptions" in your console,
+      // it would pause the execution at this line.
       throw new Error(message);
-    } catch (e) {} 
+    } catch (e) {} // eslint-disable-line no-empty
 
   }
 
@@ -412,22 +413,22 @@ this.redux = (function (global, factory) {
       }
     });
   }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Turns an object whose values are different reducer functions, into a single
+   * reducer function. It will call every child reducer, and gather their results
+   * into a single state object, whose keys correspond to the keys of the passed
+   * reducer functions.
+   *
+   * @param {Object} reducers An object whose values correspond to different
+   * reducer functions that need to be combined into one. One handy way to obtain
+   * it is to use ES6 `import * as reducers` syntax. The reducers may never return
+   * undefined for any action. Instead, they should return their initial state
+   * if the state passed to them was undefined, and the current state for any
+   * unrecognized action.
+   *
+   * @returns {Function} A reducer function that invokes every reducer inside the
+   * passed object, and builds a state object with the same shape.
+   */
 
 
   function combineReducers(reducers) {
@@ -507,27 +508,27 @@ this.redux = (function (global, factory) {
       return dispatch(actionCreator.apply(this, arguments));
     };
   }
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Turns an object whose values are action creators, into an object with the
+   * same keys, but with every function wrapped into a `dispatch` call so they
+   * may be invoked directly. This is just a convenience method, as you can call
+   * `store.dispatch(MyActionCreators.doSomething())` yourself just fine.
+   *
+   * For convenience, you can also pass a single function as the first argument,
+   * and get a function in return.
+   *
+   * @param {Function|Object} actionCreators An object whose values are action
+   * creator functions. One handy way to obtain it is to use ES6 `import * as`
+   * syntax. You may also pass a single function.
+   *
+   * @param {Function} dispatch The `dispatch` function available on your Redux
+   * store.
+   *
+   * @returns {Function|Object} The object mimicking the original object, but with
+   * every action creator wrapped into the `dispatch` call. If you passed a
+   * function as `actionCreators`, the return value will also be a single
+   * function.
+   */
 
 
   function bindActionCreators(actionCreators, dispatch) {
@@ -588,16 +589,16 @@ this.redux = (function (global, factory) {
     return target;
   }
 
-  
-
-
-
-
-
-
-
-
-
+  /**
+   * Composes single-argument functions from right to left. The rightmost
+   * function can take multiple arguments as it provides the signature for
+   * the resulting composite function.
+   *
+   * @param {...Function} funcs The functions to compose.
+   * @returns {Function} A function obtained by composing the argument functions
+   * from right to left. For example, compose(f, g, h) is identical to doing
+   * (...args) => f(g(h(...args))).
+   */
   function compose() {
     for (var _len = arguments.length, funcs = new Array(_len), _key = 0; _key < _len; _key++) {
       funcs[_key] = arguments[_key];
@@ -620,22 +621,22 @@ this.redux = (function (global, factory) {
     });
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  /**
+   * Creates a store enhancer that applies middleware to the dispatch method
+   * of the Redux store. This is handy for a variety of tasks, such as expressing
+   * asynchronous actions in a concise manner, or logging every action payload.
+   *
+   * See `redux-thunk` package as an example of the Redux middleware.
+   *
+   * Because middleware is potentially asynchronous, this should be the first
+   * store enhancer in the composition chain.
+   *
+   * Note that each middleware will be given the `dispatch` and `getState` functions
+   * as named arguments.
+   *
+   * @param {...Function} middlewares The middleware chain to be applied.
+   * @returns {Function} A store enhancer applying the middleware.
+   */
 
   function applyMiddleware() {
     for (var _len = arguments.length, middlewares = new Array(_len), _key = 0; _key < _len; _key++) {
@@ -667,10 +668,10 @@ this.redux = (function (global, factory) {
     };
   }
 
-  
-
-
-
+  /*
+   * This is a dummy function to check if the function name has been altered by minification.
+   * If the function has been minified and NODE_ENV !== 'production', warn the user.
+   */
 
   function isCrushed() {}
 
