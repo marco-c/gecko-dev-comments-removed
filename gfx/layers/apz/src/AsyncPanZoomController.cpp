@@ -2760,9 +2760,9 @@ AsyncPanZoomController::GetDisplacementsForPanGesture(
 nsEventStatus AsyncPanZoomController::OnPan(
     const PanGestureInput& aEvent, FingersOnTouchpad aFingersOnTouchpad) {
   APZC_LOG_DETAIL("got a pan-pan in state %s\n", this,
-                  ToString(mState).c_str());
+                  ToString(GetState()).c_str());
 
-  if (mState == SMOOTHMSD_SCROLL) {
+  if (GetState() == SMOOTHMSD_SCROLL) {
     if (aFingersOnTouchpad == FingersOnTouchpad::No) {
       
       
@@ -2776,7 +2776,7 @@ nsEventStatus AsyncPanZoomController::OnPan(
     CancelAnimation();
   }
 
-  if (mState == NOTHING) {
+  if (GetState() == NOTHING) {
     
     
     
@@ -2791,25 +2791,31 @@ nsEventStatus AsyncPanZoomController::OnPan(
   auto [logicalPanDisplacement, physicalPanDisplacement] =
       GetDisplacementsForPanGesture(aEvent);
 
-  MOZ_ASSERT_IF(mState == OVERSCROLL_ANIMATION, mAnimation);
-  if (mState == OVERSCROLL_ANIMATION && mAnimation &&
-      aFingersOnTouchpad == FingersOnTouchpad::No) {
+  {
     
     
-    MOZ_ASSERT(mAnimation->AsOverscrollAnimation());
-    if (RefPtr<OverscrollAnimation> overscrollAnimation =
-            mAnimation->AsOverscrollAnimation()) {
-      overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
+    RecursiveMutexAutoLock lock(mRecursiveMutex);
+    MOZ_ASSERT_IF(GetState() == OVERSCROLL_ANIMATION, mAnimation);
+
+    if (GetState() == OVERSCROLL_ANIMATION && mAnimation &&
+        aFingersOnTouchpad == FingersOnTouchpad::No) {
       
       
-      
-      if (overscrollAnimation->IsManagingXAxis()) {
-        logicalPanDisplacement.x = 0;
-        physicalPanDisplacement.x = 0;
-      }
-      if (overscrollAnimation->IsManagingYAxis()) {
-        logicalPanDisplacement.y = 0;
-        physicalPanDisplacement.y = 0;
+      MOZ_ASSERT(mAnimation->AsOverscrollAnimation());
+      if (RefPtr<OverscrollAnimation> overscrollAnimation =
+              mAnimation->AsOverscrollAnimation()) {
+        overscrollAnimation->HandlePanMomentum(logicalPanDisplacement);
+        
+        
+        
+        if (overscrollAnimation->IsManagingXAxis()) {
+          logicalPanDisplacement.x = 0;
+          physicalPanDisplacement.x = 0;
+        }
+        if (overscrollAnimation->IsManagingYAxis()) {
+          logicalPanDisplacement.y = 0;
+          physicalPanDisplacement.y = 0;
+        }
       }
     }
   }
@@ -2871,7 +2877,7 @@ nsEventStatus AsyncPanZoomController::OnPan(
   }
 
   if (aFingersOnTouchpad == FingersOnTouchpad::No) {
-    if (IsOverscrolled() && mState != OVERSCROLL_ANIMATION) {
+    if (IsOverscrolled() && GetState() != OVERSCROLL_ANIMATION) {
       StartOverscrollAnimation(velocity, GetOverscrollSideBits());
     } else if (!consumed) {
       
