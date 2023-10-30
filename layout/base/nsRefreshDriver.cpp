@@ -2695,11 +2695,20 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
 
 
-  for (uint32_t i = 0; i < ArrayLength(mObservers); ++i) {
-    if (!TickObserverArray(i, aNowTime)) {
-      StopTimer();
-      return;
-    }
+  
+  
+  
+  bool keepGoing = true;
+  MOZ_ASSERT(ArrayLength(mObservers) == 4,
+             "if this changes, then we need to add or remove calls to "
+             "TickObserverArray below");
+  keepGoing = keepGoing && TickObserverArray(0, aNowTime);
+  keepGoing = keepGoing && TickObserverArray(1, aNowTime);
+  keepGoing = keepGoing && TickObserverArray(2, aNowTime);
+  keepGoing = keepGoing && TickObserverArray(3, aNowTime);
+  if (!keepGoing) {
+    StopTimer();
+    return;
   }
 
   
