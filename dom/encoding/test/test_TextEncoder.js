@@ -3,6 +3,8 @@
 
 
 
+
+
 function runTextEncoderTests() {
   test(testEncoderEncode, "testEncoderEncode");
   test(testEncoderGetEncoding, "testEncoderGetEncoding");
@@ -238,7 +240,7 @@ function testArrayOfStrings(test) {
         assert_equals(
           view[j],
           expected[j],
-          msg + " Bytes do not match expected bytes."
+          "Bytes do not match expected bytes."
         );
         return;
       }

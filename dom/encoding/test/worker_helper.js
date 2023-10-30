@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 function runTestInWorker(files) {
   function workerRun() {
     var tests = [];
@@ -41,7 +46,7 @@ function runTestInWorker(files) {
     event.data.forEach(function (t) {
       test(function () {
         t.asserts.forEach(function (a) {
-          func = a.shift();
+          let func = a.shift();
           self[func].apply(self, a);
         });
       }, "worker " + t.msg);
