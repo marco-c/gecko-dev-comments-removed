@@ -32,7 +32,13 @@ for path in paths:
     sys.path.insert(0, path)
 
 from chrome_trace import ChromeTrace
-from cmdline import FIREFOX_ANDROID_APPS, FIREFOX_APPS, GECKO_PROFILER_APPS, TRACE_APPS
+from cmdline import (
+    CHROME_ANDROID_APPS,
+    FIREFOX_ANDROID_APPS,
+    FIREFOX_APPS,
+    GECKO_PROFILER_APPS,
+    TRACE_APPS,
+)
 from condprof.client import ProfileNotFoundError, get_profile
 from condprof.util import get_current_platform
 from gecko_profile import GeckoProfile
@@ -167,7 +173,13 @@ class Perftest(object):
         
         
         
-        if self.config["app"] in ("chrome", "chrome-m", "chromium", "custom-car"):
+        if self.config["app"] in (
+            "chrome",
+            "chrome-m",
+            "chromium",
+            "custom-car",
+            "cstm-car-m",
+        ):
             LOG.set_app(self.config["app"])
 
         self.browser_name = None
@@ -646,7 +658,7 @@ class PerftestAndroid(Perftest):
                     "Failed to get android browser meta data through mozversion: %s-%s"
                     % (e.__class__.__name__, e)
                 )
-        elif self.config["app"] == "chrome-m" or browser_version is None:
+        elif self.config["app"] in CHROME_ANDROID_APPS or browser_version is None:
             
             
             
@@ -656,7 +668,7 @@ class PerftestAndroid(Perftest):
 
             
             binary = "com.android.chrome"
-            if self.config["app"] not in ("chrome-m",):
+            if self.config["app"] not in CHROME_ANDROID_APPS:
                 binary = self.config["binary"]
 
             pkg_info = device.shell_output("dumpsys package %s" % binary)
