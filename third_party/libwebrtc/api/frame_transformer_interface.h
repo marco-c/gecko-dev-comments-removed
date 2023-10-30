@@ -70,12 +70,10 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
   virtual ~TransformableAudioFrameInterface() = default;
 
   virtual void SetRTPTimestamp(uint32_t timestamp) = 0;
+
   
-  
-  
-  
-  
-  virtual const RTPHeader& GetHeader() const = 0;
+  [[deprecated("Use specific getters instead.")]] virtual const RTPHeader&
+  GetHeader() const = 0;
 
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
 
