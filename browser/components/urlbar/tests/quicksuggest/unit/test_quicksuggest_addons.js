@@ -105,7 +105,7 @@ add_task(async function telemetryType() {
 });
 
 
-add_task(async function quickSuggestPrefsDisabled() {
+add_tasks_with_rust(async function quickSuggestPrefsDisabled() {
   let prefs = ["quicksuggest.enabled", "suggest.quicksuggest.nonsponsored"];
   for (let pref of prefs) {
     
@@ -139,7 +139,7 @@ add_task(async function quickSuggestPrefsDisabled() {
 
 
 
-add_task(async function addonSuggestionsSpecificPrefDisabled() {
+add_tasks_with_rust(async function addonSuggestionsSpecificPrefDisabled() {
   const prefs = ["suggest.addons", "addons.featureGate"];
   for (const pref of prefs) {
     
@@ -174,7 +174,7 @@ add_task(async function addonSuggestionsSpecificPrefDisabled() {
 
 
 
-add_task(async function nimbus() {
+add_tasks_with_rust(async function nimbus() {
   
   UrlbarPrefs.set("addons.featureGate", false);
   await check_results({
@@ -226,7 +226,7 @@ add_task(async function nimbus() {
   await waitForRemoteSettingsSuggestions();
 });
 
-add_task(async function hideIfAlreadyInstalled() {
+add_tasks_with_rust(async function hideIfAlreadyInstalled() {
   
   await check_results({
     context: createContext("test", {
@@ -264,7 +264,7 @@ add_task(async function hideIfAlreadyInstalled() {
   xpi.remove(false);
 });
 
-add_task(async function remoteSettings() {
+add_tasks_with_rust(async function remoteSettings() {
   const testCases = [
     {
       input: "f",
@@ -310,6 +310,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two ",
@@ -317,6 +318,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two w",
@@ -324,6 +326,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two wo",
@@ -331,6 +334,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two wor",
@@ -338,6 +342,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two word",
@@ -345,6 +350,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "two words",
@@ -359,6 +365,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "a ",
@@ -366,6 +373,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "a b",
@@ -373,6 +381,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "a b ",
@@ -380,6 +389,7 @@ add_task(async function remoteSettings() {
         suggestion: REMOTE_SETTINGS_RESULTS[0].attachment[0],
         source: "remote-settings",
       }),
+      expectedRust: null,
     },
     {
       input: "a b c",
@@ -429,7 +439,13 @@ add_task(async function remoteSettings() {
   
   UrlbarPrefs.set("quicksuggest.dataCollection.enabled", false);
 
-  for (const { input, expected } of testCases) {
+  for (let { input, expected, expectedRust } of testCases) {
+    
+    
+    
+    if (UrlbarPrefs.get("quicksuggest.rustEnabled")) {
+      expected = expectedRust === undefined ? expected : expectedRust;
+    }
     await check_results({
       context: createContext(input, {
         providers: [UrlbarProviderQuickSuggest.name],
@@ -493,11 +509,24 @@ add_task(async function showLessFrequently() {
 });
 
 function makeExpectedResult({ suggestion, source, setUtmParams = true }) {
+  if (
+    source == "remote-settings" &&
+    UrlbarPrefs.get("quicksuggest.rustEnabled")
+  ) {
+    source = "rust";
+  }
+
   let provider;
-  if (source === "remote-settings") {
-    provider = "AddonSuggestions";
-  } else {
-    provider = "amo";
+  switch (source) {
+    case "remote-settings":
+      provider = "AddonSuggestions";
+      break;
+    case "rust":
+      provider = "Amo";
+      break;
+    case "merino":
+      provider = "amo";
+      break;
   }
 
   let url;
