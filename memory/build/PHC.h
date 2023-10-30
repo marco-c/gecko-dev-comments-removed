@@ -96,8 +96,11 @@ class AddrInfo {
 
 
 extern AddrInfo gAddrInfo;
+}  
+}  
 
-}  
-}  
+struct ReplaceMallocBridge;
+
+ReplaceMallocBridge* GetPHCBridge();
 
 #endif 
