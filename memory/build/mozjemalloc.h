@@ -7,6 +7,8 @@
 #ifndef mozjemalloc_h
 #define mozjemalloc_h
 
+#include <errno.h>
+
 #include "mozjemalloc_types.h"
 #include "mozilla/MacroArgs.h"
 
@@ -30,6 +32,43 @@
 #define ARGS3(t1, t2, t3) ARGS2(t1, t2), arg3
 
 #ifdef MOZ_MEMORY
+
+size_t GetKernelPageSize();
+
+
+template <void* (*memalign)(size_t, size_t)>
+struct AlignedAllocator {
+  static inline int posix_memalign(void** aMemPtr, size_t aAlignment,
+                                   size_t aSize) {
+    void* result;
+
+    
+    if (((aAlignment - 1) & aAlignment) != 0 || aAlignment < sizeof(void*)) {
+      return EINVAL;
+    }
+
+    
+    result = memalign(aAlignment, aSize);
+
+    if (!result) {
+      return ENOMEM;
+    }
+
+    *aMemPtr = result;
+    return 0;
+  }
+
+  static inline void* aligned_alloc(size_t aAlignment, size_t aSize) {
+    if (aSize % aAlignment) {
+      return nullptr;
+    }
+    return memalign(aAlignment, aSize);
+  }
+
+  static inline void* valloc(size_t aSize) {
+    return memalign(GetKernelPageSize(), aSize);
+  }
+};
 
 
 
