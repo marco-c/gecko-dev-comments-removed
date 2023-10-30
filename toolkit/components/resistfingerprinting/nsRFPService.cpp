@@ -107,13 +107,8 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 
 
 
-#ifdef NIGHTLY_BUILD
 const RFPTarget kDefaultFingerintingProtections =
     RFPTarget::CanvasRandomization | RFPTarget::FontVisibilityLangPack;
-#else
-const RFPTarget kDefaultFingerintingProtections =
-    RFPTarget::FontVisibilityLangPack;
-#endif
 
 
 
