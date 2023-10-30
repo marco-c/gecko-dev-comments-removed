@@ -46,6 +46,7 @@
 #include "js/CompileOptions.h"
 #include "js/ContextOptions.h"  
 #include "js/Conversions.h"
+#include "js/Date.h"  
 #include "js/ErrorInterceptor.h"
 #include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
@@ -1761,6 +1762,11 @@ const JS::RealmBehaviors& JS::RealmBehaviorsRef(JSContext* cx) {
 
 void JS::SetRealmNonLive(Realm* realm) { realm->setNonLive(); }
 
+void JS::SetRealmReduceTimerPrecisionCallerType(Realm* realm,
+                                                JS::RTPCallerTypeToken type) {
+  realm->setReduceTimerPrecisionCallerType(type);
+}
+
 JS_PUBLIC_API JSObject* JS_NewGlobalObject(JSContext* cx, const JSClass* clasp,
                                            JSPrincipals* principals,
                                            JS::OnNewGlobalHookOption hookOption,
@@ -1817,7 +1823,18 @@ JS_PUBLIC_API void JS_FireOnNewGlobalObject(JSContext* cx,
   
   
   cx->check(global);
+
   Rooted<js::GlobalObject*> globalObject(cx, &global->as<GlobalObject>());
+#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
+  if (JS::GetReduceMicrosecondTimePrecisionCallback()) {
+    MOZ_DIAGNOSTIC_ASSERT(globalObject->realm()
+                              ->behaviors()
+                              .reduceTimerPrecisionCallerType()
+                              .isSome(),
+                          "Trying to create a global without setting an "
+                          "explicit RTPCallerType!");
+  }
+#endif
   DebugAPI::onNewGlobalObject(cx, globalObject);
   cx->runtime()->ensureRealmIsRecordingAllocations(globalObject);
 }

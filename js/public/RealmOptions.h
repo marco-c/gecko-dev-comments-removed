@@ -14,6 +14,7 @@
 #define js_RealmOptions_h
 
 #include "mozilla/Assertions.h"  
+#include "mozilla/Maybe.h"
 
 #include "jstypes.h"  
 
@@ -221,13 +222,13 @@ class JS_PUBLIC_API RealmCreationOptions {
     return *this;
   }
 
-#ifdef NIGHTLY_BUILD
   bool getArrayGroupingEnabled() const { return arrayGrouping_; }
   RealmCreationOptions& setArrayGroupingEnabled(bool flag) {
     arrayGrouping_ = flag;
     return *this;
   }
 
+#ifdef NIGHTLY_BUILD
   bool getNewSetMethodsEnabled() const { return newSetMethods_; }
   RealmCreationOptions& setNewSetMethodsEnabled(bool flag) {
     newSetMethods_ = flag;
@@ -307,8 +308,8 @@ class JS_PUBLIC_API RealmCreationOptions {
   bool shadowRealms_ = false;
   
   bool wellFormedUnicodeStrings_ = true;
+  bool arrayGrouping_ = true;
 #ifdef NIGHTLY_BUILD
-  bool arrayGrouping_ = false;
   
   bool newSetMethods_ = false;
   
@@ -322,11 +323,28 @@ class JS_PUBLIC_API RealmCreationOptions {
 
 
 
+struct RTPCallerTypeToken {
+  uint8_t value;
+};
+
+
+
 
 
 class JS_PUBLIC_API RealmBehaviors {
  public:
   RealmBehaviors() = default;
+
+  
+  
+  
+  mozilla::Maybe<RTPCallerTypeToken> reduceTimerPrecisionCallerType() const {
+    return rtpCallerType;
+  }
+  RealmBehaviors& setReduceTimerPrecisionCallerType(RTPCallerTypeToken type) {
+    rtpCallerType = mozilla::Some(type);
+    return *this;
+  }
 
   
   
@@ -342,29 +360,6 @@ class JS_PUBLIC_API RealmBehaviors {
     return *this;
   }
 
-  class Override {
-   public:
-    Override() : mode_(Default) {}
-
-    bool get(bool defaultValue) const {
-      if (mode_ == Default) {
-        return defaultValue;
-      }
-      return mode_ == ForceTrue;
-    }
-
-    void set(bool overrideValue) {
-      mode_ = overrideValue ? ForceTrue : ForceFalse;
-    }
-
-    void reset() { mode_ = Default; }
-
-   private:
-    enum Mode { Default, ForceTrue, ForceFalse };
-
-    Mode mode_;
-  };
-
   
   
   
@@ -375,6 +370,7 @@ class JS_PUBLIC_API RealmBehaviors {
   }
 
  private:
+  mozilla::Maybe<RTPCallerTypeToken> rtpCallerType;
   bool discardSource_ = false;
   bool clampAndJitterTime_ = true;
   bool isNonLive_ = false;
@@ -422,6 +418,11 @@ extern JS_PUBLIC_API const RealmBehaviors& RealmBehaviorsRef(Realm* realm);
 extern JS_PUBLIC_API const RealmBehaviors& RealmBehaviorsRef(JSContext* cx);
 
 extern JS_PUBLIC_API void SetRealmNonLive(Realm* realm);
+
+
+
+extern JS_PUBLIC_API void SetRealmReduceTimerPrecisionCallerType(
+    Realm* realm, RTPCallerTypeToken type);
 
 }  
 

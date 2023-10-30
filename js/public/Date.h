@@ -33,6 +33,7 @@
 #include "mozilla/MathAlgorithms.h"  
 
 #include "js/Conversions.h"  
+#include "js/RealmOptions.h"  
 #include "js/TypeDecls.h"
 #include "js/Value.h"  
 
@@ -189,12 +190,23 @@ JS_PUBLIC_API double DayWithinYear(double time, double year);
 
 
 
-using ReduceMicrosecondTimePrecisionCallback = double (*)(double, JSContext*);
+
+
+using ReduceMicrosecondTimePrecisionCallback =
+    double (*)(double, JS::RTPCallerTypeToken, JSContext*);
+
+
+
 
 
 
 JS_PUBLIC_API void SetReduceMicrosecondTimePrecisionCallback(
     ReduceMicrosecondTimePrecisionCallback callback);
+
+
+
+JS_PUBLIC_API ReduceMicrosecondTimePrecisionCallback
+GetReduceMicrosecondTimePrecisionCallback();
 
 
 
