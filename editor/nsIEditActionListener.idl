@@ -51,15 +51,9 @@ interface nsIEditActionListener : nsISupports
 
 
 
-
-
-
-
-
   [noscript]
   void DidJoinContents([const] in EditorRawDOMPointRef aJoinedPoint,
-                       [const] in Node aRemovedNode,
-                       in bool aLeftNodeWasRemoved);
+                       [const] in Node aRemovedNode);
 
   
 
