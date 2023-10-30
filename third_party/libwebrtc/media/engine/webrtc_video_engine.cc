@@ -2037,13 +2037,16 @@ WebRtcVideoSendChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   
   
   
-  
+  bool encodings_has_max_bitrate = false;
+  for (const auto& encoding : rtp_parameters_.encodings) {
+    if (encoding.active && encoding.max_bitrate_bps.value_or(0) > 0) {
+      encodings_has_max_bitrate = true;
+      break;
+    }
+  }
   int codec_max_bitrate_kbps;
-  bool is_single_encoding_with_max_bitrate =
-      rtp_parameters_.encodings.size() == 1 &&
-      rtp_parameters_.encodings[0].max_bitrate_bps.value_or(0) > 0;
   if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps) &&
-      stream_max_bitrate == -1 && !is_single_encoding_with_max_bitrate) {
+      stream_max_bitrate == -1 && !encodings_has_max_bitrate) {
     stream_max_bitrate = codec_max_bitrate_kbps * 1000;
   }
   encoder_config.max_bitrate_bps = stream_max_bitrate;
