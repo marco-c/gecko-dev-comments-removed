@@ -771,13 +771,6 @@ class nsHtml5StreamParser final : public nsISupports {
 
 
   bool mOnStopCalled{false};
-
-  
-
-
-  
-  mozilla::TimeStamp mOnStopRequestTime;
-  mozilla::TimeStamp mOnDataFinishedTime;
 };
 
 #endif  
