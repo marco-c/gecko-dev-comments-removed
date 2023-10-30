@@ -15,18 +15,18 @@ struct IFileDialog;
 namespace mozilla::widget::filedialog {
 
 
-[[nodiscard]] nsresult ApplyCommands(::IFileDialog*,
-                                     nsTArray<Command> const& commands);
+[[nodiscard]] HRESULT ApplyCommands(::IFileDialog*,
+                                    nsTArray<Command> const& commands);
 
 
 
 
-mozilla::Result<Results, nsresult> GetFileResults(::IFileDialog*);
+mozilla::Result<Results, HRESULT> GetFileResults(::IFileDialog*);
 
 
 
 
-mozilla::Result<nsString, nsresult> GetFolderResults(::IFileDialog*);
+mozilla::Result<nsString, HRESULT> GetFolderResults(::IFileDialog*);
 }  
 
 #endif  
