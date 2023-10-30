@@ -1640,8 +1640,12 @@ void ContentParent::BroadcastMediaCodecsSupportedUpdate(
 
   
   nsCString supportString;
-  media::MCSInfo::GetMediaCodecsSupportedString(supportString, aSupported);
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, support);
   gfx::gfxVars::SetCodecSupportInfo(supportString);
+
+  
+  supportString.Truncate();
+  media::MCSInfo::GetMediaCodecsSupportedString(supportString, aSupported);
   supportString.ReplaceSubstring("\n"_ns, ", "_ns);
   LOGPDM("Broadcast support from '%s', support=%s",
          RemoteDecodeInToStr(aLocation), supportString.get());
