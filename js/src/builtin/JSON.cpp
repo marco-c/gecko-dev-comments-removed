@@ -436,8 +436,8 @@ enum class JOType { Record, Object };
 template <JOType type = JOType::Object>
 #endif
 
-
-static bool JO(JSContext* cx, HandleObject obj, StringifyContext* scx) {
+static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
+                                StringifyContext* scx) {
   
 
 
@@ -607,8 +607,8 @@ static MOZ_ALWAYS_INLINE bool GetLengthPropertyForArrayLike(JSContext* cx,
 }
 
 
-
-static bool JA(JSContext* cx, HandleObject obj, StringifyContext* scx) {
+static bool SerializeJSONArray(JSContext* cx, HandleObject obj,
+                               StringifyContext* scx) {
   
 
 
@@ -732,6 +732,7 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
 
 
 
+
   
   if (v.isString()) {
     return Quote(cx, scx->sb, v.toString());
@@ -788,10 +789,10 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
 #ifdef ENABLE_RECORD_TUPLE
   if (v.isExtendedPrimitive()) {
     if (obj->is<RecordType>()) {
-      return JO<JOType::Record>(cx, obj, scx);
+      return SerializeJSONObject<JOType::Record>(cx, obj, scx);
     }
     if (obj->is<TupleType>()) {
-      return JA(cx, obj, scx);
+      return SerializeJSONArray(cx, obj, scx);
     }
     MOZ_CRASH("Unexpected extended primitive - boxes cannot be stringified.");
   }
@@ -802,7 +803,8 @@ static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
     return false;
   }
 
-  return isArray ? JA(cx, obj, scx) : JO(cx, obj, scx);
+  return isArray ? SerializeJSONArray(cx, obj, scx)
+                 : SerializeJSONObject(cx, obj, scx);
 }
 
 static bool CanFastStringifyObject(NativeObject* obj) {
