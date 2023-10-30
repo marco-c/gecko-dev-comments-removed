@@ -487,12 +487,28 @@ add_task(async function feature_callout_advance_tour_on_page_click() {
       launchFeatureTourIn(browser.contentWindow);
 
       await waitForCalloutScreen(document, "FEATURE_CALLOUT_1");
-      info("Clicking page button");
+      info("Clicking page container");
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       document.querySelector(".brand-logo").click();
+      AccessibilityUtils.resetEnv();
 
       await waitForCalloutScreen(document, "FEATURE_CALLOUT_2");
-      info("Clicking page button");
+      info("Clicking page container");
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       document.querySelector(".brand-logo").click();
+      AccessibilityUtils.resetEnv();
 
       await waitForCalloutRemoved(document);
       let tourComplete = JSON.parse(
