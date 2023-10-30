@@ -3060,6 +3060,32 @@ void MacroAssembler::guardSpecificAtom(Register str, JSAtom* atom,
            Imm32(atom->length()), fail);
 
   
+  if (canCompareStringCharsInline(atom)) {
+    
+    if (atom->hasTwoByteChars()) {
+      JS::AutoCheckCannotGC nogc;
+      if (!mozilla::IsUtf16Latin1(atom->twoByteRange(nogc))) {
+        branchLatin1String(str, fail);
+      }
+    }
+
+    
+    Label vmCall;
+
+    
+    Register stringChars = scratch;
+    loadStringCharsForCompare(str, atom, stringChars, &vmCall);
+
+    
+    branchIfNotStringCharsEquals(stringChars, atom, fail);
+
+    
+    jump(&done);
+
+    bind(&vmCall);
+  }
+
+  
   
   PushRegsInMask(volatileRegs);
 
