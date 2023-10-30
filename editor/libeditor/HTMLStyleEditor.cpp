@@ -857,8 +857,7 @@ HTMLEditor::AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode(
       [&]() MOZ_CAN_RUN_SCRIPT -> Result<SplitNodeResult, nsresult> {
     EditorDOMPoint atEnd(&aText, aEndOffset);
     if (atEnd.IsEndOfContainer()) {
-      return SplitNodeResult::NotHandled(atEnd,
-                                         aHTMLEditor.GetSplitNodeDirection());
+      return SplitNodeResult::NotHandled(atEnd);
     }
     
     Result<SplitNodeResult, nsresult> splitNodeResult =
@@ -887,8 +886,7 @@ HTMLEditor::AutoInlineStyleSetter::SplitTextNodeAndApplyStyleToMiddleNode(
                                : &aText,
                            aStartOffset);
     if (atStart.IsStartOfContainer()) {
-      return SplitNodeResult::NotHandled(atStart,
-                                         aHTMLEditor.GetSplitNodeDirection());
+      return SplitNodeResult::NotHandled(atStart);
     }
     
     Result<SplitNodeResult, nsresult> splitNodeResult =
@@ -2129,7 +2127,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   
   
   if (MOZ_UNLIKELY(!aPointToSplit.IsInContentNode())) {
-    return SplitNodeResult::NotHandled(aPointToSplit, GetSplitNodeDirection());
+    return SplitNodeResult::NotHandled(aPointToSplit);
   }
 
   
@@ -2160,8 +2158,7 @@ HTMLEditor::SplitAncestorStyledInlineElementsAt(
   }
 
   
-  SplitNodeResult result =
-      SplitNodeResult::NotHandled(aPointToSplit, GetSplitNodeDirection());
+  SplitNodeResult result = SplitNodeResult::NotHandled(aPointToSplit);
   MOZ_ASSERT(!result.Handled());
   EditorDOMPoint pointToPutCaret;
   for (OwningNonNull<Element>& element : arrayOfParents) {
