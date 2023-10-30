@@ -20,7 +20,8 @@
 #include "jit/JitRuntime.h"
 #include "jit/JitScript.h"
 #include "js/CompileOptions.h"  
-#include "js/friend/StackLimits.h"  
+#include "js/experimental/CompileScript.h"  
+#include "js/friend/StackLimits.h"          
 #include "js/HelperThreadAPI.h"
 #include "js/Stack.h"
 #include "js/UniquePtr.h"
@@ -118,11 +119,6 @@ void JS::SetProfilingThreadCallbacks(
   HelperThreadState().unregisterThread = unregisterThread;
 }
 
-static size_t ThreadStackQuotaForSize(size_t size) {
-  
-  return size_t(double(size) * 0.9);
-}
-
 
 
 JS_PUBLIC_API MOZ_NEVER_INLINE void JS::SetHelperThreadTaskCallback(
@@ -142,7 +138,7 @@ void GlobalHelperThreadState::setDispatchTaskCallback(
 
   dispatchTaskCallback = callback;
   this->threadCount = threadCount;
-  this->stackQuota = ThreadStackQuotaForSize(stackSize);
+  this->stackQuota = JS::ThreadStackQuotaForSize(stackSize);
 }
 
 bool js::StartOffThreadWasmCompile(wasm::CompileTask* task,

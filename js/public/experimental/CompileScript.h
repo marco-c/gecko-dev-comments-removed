@@ -43,6 +43,12 @@ JS_PUBLIC_API void SetNativeStackQuota(JS::FrontendContext* fc,
                                        JS::NativeStackSize stackSize);
 
 
+
+
+
+JS_PUBLIC_API JS::NativeStackSize ThreadStackQuotaForSize(size_t stackSize);
+
+
 JS_PUBLIC_API bool HadFrontendErrors(JS::FrontendContext* fc);
 
 

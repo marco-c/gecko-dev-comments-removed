@@ -32,8 +32,8 @@
 #include "mozilla/scache/StartupCache.h"
 
 #include "crc32c.h"
-#include "js/CompileOptions.h"          
-#include "js/experimental/JSStencil.h"  
+#include "js/CompileOptions.h"              
+#include "js/experimental/JSStencil.h"      
 #include "js/experimental/CompileScript.h"  
 #include "js/Transcoding.h"
 #include "MainThreadUtils.h"
@@ -1202,12 +1202,6 @@ bool ScriptPreloader::StartDecodeTask(
   return NS_SUCCEEDED(rv);
 }
 
-static size_t ThreadStackQuotaForSize(size_t size) {
-  
-  
-  return size_t(double(size) * 0.9);
-}
-
 NS_IMETHODIMP ScriptPreloader::DecodeTask::Run() {
   auto failure = [&]() {
     RefPtr<JS::Stencil> stencil;
@@ -1225,7 +1219,7 @@ NS_IMETHODIMP ScriptPreloader::DecodeTask::Run() {
   auto cleanup = MakeScopeExit([&]() { JS::DestroyFrontendContext(fc); });
 
   size_t stackSize = TaskController::GetThreadStackSize();
-  JS::SetNativeStackQuota(fc, ThreadStackQuotaForSize(stackSize));
+  JS::SetNativeStackQuota(fc, JS::ThreadStackQuotaForSize(stackSize));
 
   size_t remaining = mDecodingSources.length();
   for (auto& source : mDecodingSources) {
