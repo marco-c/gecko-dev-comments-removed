@@ -25,7 +25,6 @@ const STARTUP_CACHE_EXPIRE_TIME = 7 * 24 * 60 * 60 * 1000;
 const COMPONENT_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const SPOCS_FEEDS_UPDATE_TIME = 30 * 60 * 1000; 
 const DEFAULT_RECS_EXPIRE_TIME = 60 * 60 * 1000; 
-const MIN_PERSONALIZATION_UPDATE_TIME = 12 * 60 * 60 * 1000; 
 const MAX_LIFETIME_CAP = 500; 
 const FETCH_TIMEOUT = 45 * 1000;
 const SPOCS_URL = "https://spocs.getpocket.com/spocs";
@@ -56,9 +55,6 @@ const PREF_COLLECTIONS_ENABLED =
   "discoverystream.sponsored-collections.enabled";
 const PREF_POCKET_BUTTON = "extensions.pocket.enabled";
 const PREF_COLLECTION_DISMISSIBLE = "discoverystream.isCollectionDismissible";
-const PREF_PERSONALIZATION = "discoverystream.personalization.enabled";
-const PREF_PERSONALIZATION_OVERRIDE =
-  "discoverystream.personalization.override";
 
 let getHardcodedLayout;
 
@@ -177,29 +173,7 @@ class DiscoveryStreamFeed {
   }
 
   get personalized() {
-    
-    if (!this.showStories) {
-      return false;
-    }
-    const spocsPersonalized =
-      this.store.getState().Prefs.values?.pocketConfig?.spocsPersonalized;
-    const recsPersonalized =
-      this.store.getState().Prefs.values?.pocketConfig?.recsPersonalized;
-    const personalization =
-      this.store.getState().Prefs.values[PREF_PERSONALIZATION];
-
-    
-    
-    
-    const overrideState =
-      this.store.getState().Prefs.values[PREF_PERSONALIZATION_OVERRIDE];
-
-    return (
-      personalization &&
-      !overrideState &&
-      !!this.recommendationProvider &&
-      (spocsPersonalized || recsPersonalized)
-    );
+    return this.recommendationProvider.personalized;
   }
 
   get recommendationProvider() {
@@ -901,38 +875,6 @@ class DiscoveryStreamFeed {
     };
   }
 
-  
-  
-  
-  
-  
-  personalizationOverride(overrideCommand) {
-    
-    
-    const overrideState =
-      this.store.getState().Prefs.values[PREF_PERSONALIZATION_OVERRIDE];
-
-    
-    const personalization =
-      this.store.getState().Prefs.values[PREF_PERSONALIZATION];
-
-    
-    
-    if (overrideCommand && personalization && !overrideState) {
-      this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION_OVERRIDE, true));
-    }
-
-    
-    
-    
-    if (!overrideCommand && overrideState) {
-      this.store.dispatch({
-        type: at.CLEAR_PREF,
-        data: { name: PREF_PERSONALIZATION_OVERRIDE },
-      });
-    }
-  }
-
   updateSponsoredCollectionsPref(collectionEnabled = false) {
     const currentState =
       this.store.getState().Prefs.values[PREF_COLLECTIONS_ENABLED];
@@ -1018,11 +960,13 @@ class DiscoveryStreamFeed {
           };
 
           if (spocsResponse.settings && spocsResponse.settings.feature_flags) {
-            this.personalizationOverride(
-              
-              
-              
-              !spocsResponse.settings.feature_flags.spoc_v2
+            this.store.dispatch(
+              ac.OnlyToMain({
+                type: at.DISCOVERY_STREAM_PERSONALIZATION_OVERRIDE,
+                data: {
+                  override: !spocsResponse.settings.feature_flags.spoc_v2,
+                },
+              })
             );
             this.updateSponsoredCollectionsPref(
               spocsResponse.settings.feature_flags.collections
@@ -1072,10 +1016,8 @@ class DiscoveryStreamFeed {
 
               const { data: blockedResults } = this.filterBlocked(capResult);
 
-              const { data: scoredResults } = await this.scoreItems(
-                blockedResults,
-                "spocs"
-              );
+              const { data: scoredResults, personalized } =
+                await this.scoreItems(blockedResults, "spocs");
 
               spocsState.spocs = {
                 ...spocsState.spocs,
@@ -1084,6 +1026,7 @@ class DiscoveryStreamFeed {
                   context,
                   sponsor,
                   sponsored_by_override,
+                  personalized,
                   items: scoredResults,
                 },
               };
@@ -1144,76 +1087,8 @@ class DiscoveryStreamFeed {
     });
   }
 
-  
-
-
-
-
-  async loadPersonalizationScoresCache(isStartup = false) {
-    const cachedData = (await this.cache.get()) || {};
-    const { personalization } = cachedData;
-
-    if (this.personalized && personalization && personalization.scores) {
-      this.recommendationProvider.setProvider(personalization.scores);
-
-      this.personalizationLastUpdated = personalization._timestamp;
-
-      this.store.dispatch(
-        ac.BroadcastToContent({
-          type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
-          data: {
-            lastUpdated: this.personalizationLastUpdated,
-          },
-          meta: {
-            isStartup,
-          },
-        })
-      );
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  async updatePersonalizationScores() {
-    if (
-      !this.personalized ||
-      Date.now() - this.personalizationLastUpdated <
-        MIN_PERSONALIZATION_UPDATE_TIME
-    ) {
-      return;
-    }
-
-    this.recommendationProvider.setProvider();
-
-    await this.recommendationProvider.init();
-
-    const personalization = { scores: this.recommendationProvider.getScores() };
-    this.personalizationLastUpdated = Date.now();
-
-    this.store.dispatch(
-      ac.BroadcastToContent({
-        type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
-        data: {
-          lastUpdated: this.personalizationLastUpdated,
-        },
-      })
-    );
-    personalization._timestamp = this.personalizationLastUpdated;
-    this.cache.set("personalization", personalization);
-  }
-
   observe(subject, topic, data) {
     switch (topic) {
-      case "idle-daily":
-        this.updatePersonalizationScores();
-        break;
       case "nsPref:changed":
         
         
@@ -1261,6 +1136,8 @@ class DiscoveryStreamFeed {
       this.store.getState().Prefs.values?.pocketConfig?.recsPersonalized;
     const personalizedByType =
       type === "feed" ? recsPersonalized : spocsPersonalized;
+    
+    const personalized = this.store.getState().Personalization.initialized;
 
     const data = (
       await Promise.all(
@@ -1270,7 +1147,7 @@ class DiscoveryStreamFeed {
       
       .sort(this.sortItem);
 
-    return { data };
+    return { data, personalized };
   }
 
   async scoreItem(item, personalizedByType) {
@@ -1448,7 +1325,7 @@ class DiscoveryStreamFeed {
             raw_image_src: item.imageUrl,
           }));
         }
-        const { data: scoredItems } = await this.scoreItems(
+        const { data: scoredItems, personalized } = await this.scoreItems(
           recommendations,
           "feed"
         );
@@ -1457,6 +1334,7 @@ class DiscoveryStreamFeed {
         this.componentFeedFetched = true;
         feed = {
           lastUpdated: Date.now(),
+          personalized,
           data: {
             settings,
             recommendations: rotatedItems,
@@ -1492,78 +1370,22 @@ class DiscoveryStreamFeed {
     }
   }
 
-  
-
-
-
-
-
-
-
-
-  async refreshAll(options = {}) {
-    const personalizationCacheLoadPromise = this.loadPersonalizationScoresCache(
-      options.isStartup
-    );
-
-    const spocsPersonalized =
-      this.store.getState().Prefs.values?.pocketConfig?.spocsPersonalized;
-    const recsPersonalized =
-      this.store.getState().Prefs.values?.pocketConfig?.recsPersonalized;
-
-    let expirationPerComponent = {};
-    if (this.personalized) {
-      
-      
-      
-      expirationPerComponent = await this._checkExpirationPerComponent();
-    }
-    await this.refreshContent(options);
-
-    if (this.personalized) {
-      
-      
-      personalizationCacheLoadPromise.then(() => {
-        
-        
-        
-        
-        const initPromise = this.recommendationProvider.init();
-        initPromise.then(() => {
-          
-          
-          
-          const { feeds, spocs } = this.store.getState().DiscoveryStream;
-          if (
-            recsPersonalized &&
-            feeds.loaded &&
-            expirationPerComponent.feeds
-          ) {
-            this.scoreFeeds(feeds);
-          }
-          if (
-            spocsPersonalized &&
-            spocs.loaded &&
-            expirationPerComponent.spocs
-          ) {
-            this.scoreSpocs(spocs);
-          }
-        });
-      });
-    }
-  }
-
   async scoreFeeds(feedsState) {
     if (feedsState.data) {
       const feeds = {};
       const feedsPromises = Object.keys(feedsState.data).map(url => {
         let feed = feedsState.data[url];
+        if (feed.personalized) {
+          
+          return Promise.resolve();
+        }
         const feedPromise = this.scoreItems(feed.data.recommendations, "feed");
-        feedPromise.then(({ data: scoredItems }) => {
+        feedPromise.then(({ data: scoredItems, personalized }) => {
           const { recsExpireTime } = feed.data.settings;
           const recommendations = this.rotate(scoredItems, recsExpireTime);
           feed = {
             ...feed,
+            personalized,
             data: {
               ...feed.data,
               recommendations,
@@ -1594,16 +1416,20 @@ class DiscoveryStreamFeed {
       const nextSpocs = spocsState.data[placement.name] || {};
       const { items } = nextSpocs;
 
-      if (!items || !items.length) {
+      if (nextSpocs.personalized || !items || !items.length) {
         return;
       }
 
-      const { data: scoreResult } = await this.scoreItems(items, "spocs");
+      const { data: scoreResult, personalized } = await this.scoreItems(
+        items,
+        "spocs"
+      );
 
       spocsState.data = {
         ...spocsState.data,
         [placement.name]: {
           ...nextSpocs,
+          personalized,
           items: scoreResult,
         },
       };
@@ -1627,7 +1453,16 @@ class DiscoveryStreamFeed {
     );
   }
 
-  async refreshContent(options = {}) {
+  
+
+
+
+
+
+
+
+
+  async refreshAll(options = {}) {
     const { updateOpenTabs, isStartup } = options;
 
     const dispatch = updateOpenTabs
@@ -1693,16 +1528,12 @@ class DiscoveryStreamFeed {
 
   async enable() {
     await this.refreshAll({ updateOpenTabs: true, isStartup: true });
-    Services.obs.addObserver(this, "idle-daily");
     this.loaded = true;
   }
 
   async reset() {
     this.resetDataPrefs();
     await this.resetCache();
-    if (this.loaded) {
-      Services.obs.removeObserver(this, "idle-daily");
-    }
     this.resetState();
   }
 
@@ -1718,7 +1549,6 @@ class DiscoveryStreamFeed {
 
   async resetAllCache() {
     await this.resetContentCache();
-    await this.cache.set("personalization", {});
     
     this._isBff = undefined;
     this._spocsCacheUpdateTime = undefined;
@@ -1745,7 +1575,6 @@ class DiscoveryStreamFeed {
         },
       })
     );
-    this.personalizationLastUpdated = null;
     this.loaded = false;
   }
 
@@ -1873,7 +1702,6 @@ class DiscoveryStreamFeed {
       case PREF_HARDCODED_BASIC_LAYOUT:
       case PREF_SPOCS_ENDPOINT:
       case PREF_SPOCS_ENDPOINT_QUERY:
-      case PREF_PERSONALIZATION:
         
         this.configReset();
         break;
@@ -1962,9 +1790,6 @@ class DiscoveryStreamFeed {
           await this.refreshAll({ updateOpenTabs: false });
         }
         break;
-      case at.DISCOVERY_STREAM_DEV_IDLE_DAILY:
-        Services.obs.notifyObservers(null, "idle-daily");
-        break;
       case at.DISCOVERY_STREAM_DEV_SYNC_RS:
         lazy.RemoteSettings.pollChanges();
         break;
@@ -1988,6 +1813,21 @@ class DiscoveryStreamFeed {
         break;
       case at.DISCOVERY_STREAM_POCKET_STATE_INIT:
         this.setupPocketState(action.meta.fromTarget);
+        break;
+      case at.DISCOVERY_STREAM_PERSONALIZATION_UPDATED:
+        if (this.personalized) {
+          const { feeds, spocs } = this.store.getState().DiscoveryStream;
+          const spocsPersonalized =
+            this.store.getState().Prefs.values?.pocketConfig?.spocsPersonalized;
+          const recsPersonalized =
+            this.store.getState().Prefs.values?.pocketConfig?.recsPersonalized;
+          if (recsPersonalized && feeds.loaded) {
+            this.scoreFeeds(feeds);
+          }
+          if (spocsPersonalized && spocs.loaded) {
+            this.scoreSpocs(spocs);
+          }
+        }
         break;
       case at.DISCOVERY_STREAM_CONFIG_RESET:
         

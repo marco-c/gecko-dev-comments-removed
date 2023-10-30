@@ -22,6 +22,9 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/XPCOMUtils.sys.mjs"
 );
 const lazy = {};
+ChromeUtils.defineESModuleGetters(lazy, {
+  PersistentCache: "resource://activity-stream/lib/PersistentCache.sys.mjs",
+});
 XPCOMUtils.defineLazyModuleGetters(lazy, {
   PersonalityProvider:
     "resource://activity-stream/lib/PersonalityProvider/PersonalityProvider.jsm",
@@ -30,43 +33,93 @@ XPCOMUtils.defineLazyModuleGetters(lazy, {
 const { actionTypes: at, actionCreators: ac } = ChromeUtils.importESModule(
   "resource://activity-stream/common/Actions.sys.mjs"
 );
+const CACHE_KEY = "personalization";
 const PREF_PERSONALIZATION_MODEL_KEYS =
   "discoverystream.personalization.modelKeys";
+const PREF_USER_TOPSTORIES = "feeds.section.topstories";
+const PREF_SYSTEM_TOPSTORIES = "feeds.system.topstories";
 const PREF_PERSONALIZATION = "discoverystream.personalization.enabled";
+const MIN_PERSONALIZATION_UPDATE_TIME = 12 * 60 * 60 * 1000; 
+const PREF_PERSONALIZATION_OVERRIDE =
+  "discoverystream.personalization.override";
 
 
 
 
 
 class RecommendationProvider {
-  setProvider(scores) {
+  constructor() {
     
-    
-    
-    
-    
-    
-    if (this.provider) {
-      return;
-    }
-    
-    this.provider = new lazy.PersonalityProvider(this.modelKeys);
-    this.provider.setScores(scores);
+    this.cache = new lazy.PersistentCache(CACHE_KEY, true);
   }
 
-  
+  async setProvider(isStartup = false, scores) {
+    
+    
+    
+    
+    
+    
+    if (!this.provider) {
+      this.provider = new lazy.PersonalityProvider(this.modelKeys);
+      this.provider.setScores(scores);
+    }
 
-
-
-  async init() {
     if (this.provider && this.provider.init) {
       await this.provider.init();
       this.store.dispatch(
         ac.BroadcastToContent({
           type: at.DISCOVERY_STREAM_PERSONALIZATION_INIT,
+          meta: {
+            isStartup,
+          },
         })
       );
     }
+  }
+
+  async enable(isStartup) {
+    await this.loadPersonalizationScoresCache(isStartup);
+    Services.obs.addObserver(this, "idle-daily");
+    this.loaded = true;
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.DISCOVERY_STREAM_PERSONALIZATION_UPDATED,
+      })
+    );
+  }
+
+  get showStories() {
+    
+    return (
+      this.store.getState().Prefs.values[PREF_SYSTEM_TOPSTORIES] &&
+      this.store.getState().Prefs.values[PREF_USER_TOPSTORIES]
+    );
+  }
+
+  get personalized() {
+    
+    if (!this.showStories) {
+      return false;
+    }
+    const spocsPersonalized =
+      this.store.getState().Prefs.values?.pocketConfig?.spocsPersonalized;
+    const recsPersonalized =
+      this.store.getState().Prefs.values?.pocketConfig?.recsPersonalized;
+    const personalization =
+      this.store.getState().Prefs.values[PREF_PERSONALIZATION];
+
+    
+    
+    
+    const overrideState =
+      this.store.getState().Prefs.values[PREF_PERSONALIZATION_OVERRIDE];
+
+    return (
+      personalization &&
+      !overrideState &&
+      (spocsPersonalized || recsPersonalized)
+    );
   }
 
   get modelKeys() {
@@ -78,8 +131,99 @@ class RecommendationProvider {
     return this._modelKeys;
   }
 
-  getScores() {
-    return this.provider.getScores();
+  
+
+
+
+
+
+
+
+
+  async updatePersonalizationScores() {
+    if (
+      !this.personalized ||
+      Date.now() - this.personalizationLastUpdated <
+        MIN_PERSONALIZATION_UPDATE_TIME
+    ) {
+      return;
+    }
+
+    await this.setProvider();
+
+    const personalization = { scores: this.provider.getScores() };
+    this.personalizationLastUpdated = Date.now();
+
+    this.store.dispatch(
+      ac.BroadcastToContent({
+        type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
+        data: {
+          lastUpdated: this.personalizationLastUpdated,
+        },
+      })
+    );
+    personalization._timestamp = this.personalizationLastUpdated;
+    this.cache.set("personalization", personalization);
+  }
+
+  
+
+
+
+
+  async loadPersonalizationScoresCache(isStartup = false) {
+    const cachedData = (await this.cache.get()) || {};
+    const { personalization } = cachedData;
+
+    if (this.personalized && personalization?.scores) {
+      await this.setProvider(isStartup, personalization.scores);
+
+      this.personalizationLastUpdated = personalization._timestamp;
+
+      this.store.dispatch(
+        ac.BroadcastToContent({
+          type: at.DISCOVERY_STREAM_PERSONALIZATION_LAST_UPDATED,
+          data: {
+            lastUpdated: this.personalizationLastUpdated,
+          },
+          meta: {
+            isStartup,
+          },
+        })
+      );
+    }
+  }
+
+  
+  
+  
+  
+  
+  personalizationOverride(overrideCommand) {
+    
+    
+    const overrideState =
+      this.store.getState().Prefs.values[PREF_PERSONALIZATION_OVERRIDE];
+
+    
+    const personalization =
+      this.store.getState().Prefs.values[PREF_PERSONALIZATION];
+
+    
+    
+    if (overrideCommand && personalization && !overrideState) {
+      this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION_OVERRIDE, true));
+    }
+
+    
+    
+    
+    if (!overrideCommand && overrideState) {
+      this.store.dispatch({
+        type: at.CLEAR_PREF,
+        data: { name: PREF_PERSONALIZATION_OVERRIDE },
+      });
+    }
   }
 
   async calculateItemRelevanceScore(item) {
@@ -96,18 +240,49 @@ class RecommendationProvider {
       
       this.provider.teardown();
     }
+    if (this.loaded) {
+      Services.obs.removeObserver(this, "idle-daily");
+    }
+    this.loaded = false;
   }
 
-  resetState() {
+  async resetState() {
     this._modelKeys = null;
+    this.personalizationLastUpdated = null;
     this.provider = null;
+    await this.cache.set("personalization", {});
+    this.store.dispatch(
+      ac.OnlyToMain({
+        type: at.DISCOVERY_STREAM_PERSONALIZATION_RESET,
+      })
+    );
   }
 
-  onAction(action) {
+  async observe(subject, topic, data) {
+    switch (topic) {
+      case "idle-daily":
+        await this.updatePersonalizationScores();
+        this.store.dispatch(
+          ac.BroadcastToContent({
+            type: at.DISCOVERY_STREAM_PERSONALIZATION_UPDATED,
+          })
+        );
+        break;
+    }
+  }
+
+  async onAction(action) {
     switch (action.type) {
+      case at.INIT:
+        await this.enable(true );
+        break;
       case at.DISCOVERY_STREAM_CONFIG_CHANGE:
         this.teardown();
-        this.resetState();
+        await this.resetState();
+        await this.enable();
+        break;
+      case at.DISCOVERY_STREAM_DEV_IDLE_DAILY:
+        Services.obs.notifyObservers(null, "idle-daily");
         break;
       case at.PREF_CHANGED:
         switch (action.data.name) {
@@ -122,8 +297,10 @@ class RecommendationProvider {
         break;
       case at.DISCOVERY_STREAM_PERSONALIZATION_TOGGLE:
         let enabled = this.store.getState().Prefs.values[PREF_PERSONALIZATION];
-
         this.store.dispatch(ac.SetPref(PREF_PERSONALIZATION, !enabled));
+        break;
+      case at.DISCOVERY_STREAM_PERSONALIZATION_OVERRIDE:
+        this.personalizationOverride(action.data.override);
         break;
     }
   }
