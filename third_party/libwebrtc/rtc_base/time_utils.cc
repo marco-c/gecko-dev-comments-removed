@@ -14,16 +14,26 @@
 #include <sys/time.h>
 #endif
 
-#if defined(WEBRTC_WIN)
-#include <sys/timeb.h>
-#endif
-
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/system_time.h"
 #include "rtc_base/time_utils.h"
+#if defined(WEBRTC_WIN)
+#include "rtc_base/win32.h"
+#endif
+#if defined(WEBRTC_WIN)
+#include <minwinbase.h>
+#endif
 
 namespace rtc {
+
+#if defined(WEBRTC_WIN) || defined(WINUWP)
+
+
+static constexpr uint64_t kFileTimeToUnixTimeEpochOffset =
+    116444736000000000ULL;
+static constexpr uint64_t kFileTimeToMicroSeconds = 10LL;
+#endif
 
 ClockInterface* g_clock = nullptr;
 
@@ -115,8 +125,6 @@ class TimeHelper final {
   }
 
  private:
-  static constexpr uint64_t kFileTimeToUnixTimeEpochOffset =
-      116444736000000000ULL;
   static constexpr uint64_t kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
 
   
@@ -231,13 +239,15 @@ int64_t TimeUTCMicros() {
   
   return (static_cast<int64_t>(time.tv_sec) * rtc::kNumMicrosecsPerSec +
           time.tv_usec);
-
 #elif defined(WEBRTC_WIN)
-  struct _timeb time;
-  _ftime(&time);
+  FILETIME ft;
   
-  return (static_cast<int64_t>(time.time) * rtc::kNumMicrosecsPerSec +
-          static_cast<int64_t>(time.millitm) * rtc::kNumMicrosecsPerMillisec);
+  GetSystemTimeAsFileTime(&ft);
+  LARGE_INTEGER li;
+  li.HighPart = ft.dwHighDateTime;
+  li.LowPart = ft.dwLowDateTime;
+  return (li.QuadPart - kFileTimeToUnixTimeEpochOffset) /
+         kFileTimeToMicroSeconds;
 #endif
 }
 
