@@ -1,0 +1,29 @@
+
+
+
+
+#include <iostream>
+#include <sstream>
+#include <string>
+
+
+
+
+
+
+class AtomicCout {
+ public:
+  ~AtomicCout() {
+    flush();
+  }
+
+  std::stringstream& stream() { return stream_; }
+
+  void flush() {
+    std::cout << stream_.str();
+    stream_.str(std::string());
+  }
+
+ private:
+  std::stringstream stream_;
+};
