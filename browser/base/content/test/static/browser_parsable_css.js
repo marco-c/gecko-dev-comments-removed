@@ -47,12 +47,6 @@ let ignoreList = [
     isFromDevTools: false,
   },
   
-  {
-    sourceName: /\bscrollbars\.css$/i,
-    errorMessage: /Unknown property ‘zoom’/i,
-    isFromDevTools: false,
-  },
-  
   
   
   {
@@ -69,6 +63,14 @@ let ignoreList = [
     isFromDevTools: false,
   },
 ];
+
+if (!Services.prefs.getBoolPref("layout.css.zoom.enabled")) {
+  ignoreList.push({
+    sourceName: /\bscrollbars\.css$/i,
+    errorMessage: /Unknown property ‘zoom’/i,
+    isFromDevTools: false,
+  });
+}
 
 if (!Services.prefs.getBoolPref("layout.css.color-mix.enabled")) {
   
