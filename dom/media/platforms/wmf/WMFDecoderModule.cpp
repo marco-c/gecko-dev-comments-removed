@@ -354,13 +354,6 @@ media::DecodeSupportSet WMFDecoderModule::Supports(
     return media::DecodeSupportSet{};
   }
 
-  if (videoInfo && VPXDecoder::IsVP9(aParams.MimeType()) &&
-      aParams.mOptions.contains(CreateDecoderParams::Option::LowLatency)) {
-    
-    
-    return media::DecodeSupport::Unsupported;
-  }
-
   WMFStreamType type = GetStreamTypeFromMimeType(aParams.MimeType());
   if (type == WMFStreamType::Unknown) {
     return media::DecodeSupportSet{};
