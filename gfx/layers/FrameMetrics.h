@@ -245,7 +245,9 @@ struct FrameMetrics {
   
 
 
-  bool ApplyScrollUpdateFrom(const ScrollPositionUpdate& aUpdate);
+
+  std::pair<bool, CSSPoint> ApplyAbsoluteScrollUpdateFrom(
+      const ScrollPositionUpdate& aUpdate);
 
   
 

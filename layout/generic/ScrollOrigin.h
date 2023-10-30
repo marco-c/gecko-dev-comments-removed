@@ -33,6 +33,8 @@ enum class ScrollOrigin : uint8_t {
   
   
   Clamp,
+  
+  AnchorAdjustment,
 
   
   
