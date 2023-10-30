@@ -2408,6 +2408,121 @@ static CallState ReduceAnimations(Document& aDocument) {
   return CallState::Continue;
 }
 
+bool nsRefreshDriver::TickObserverArray(uint32_t aIdx, TimeStamp aNowTime) {
+  for (RefPtr<nsARefreshObserver> obs : mObservers[aIdx].EndLimitedRange()) {
+    obs->WillRefresh(aNowTime);
+
+    if (!mPresContext || !mPresContext->GetPresShell()) {
+      return false;
+    }
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (aIdx == 1) {
+    nsAutoMicroTask mt;
+    ReduceAnimations(*mPresContext->Document());
+  }
+
+  
+  
+  if (aIdx == 1 && (!mPresContext || !mPresContext->GetPresShell())) {
+    return false;
+  }
+
+  if (aIdx == 1) {
+    
+
+    FlushAutoFocusDocuments();
+    DispatchScrollEvents();
+    DispatchVisualViewportScrollEvents();
+    EvaluateMediaQueriesAndReportChanges();
+    DispatchAnimationEvents();
+    RunFullscreenSteps();
+    RunFrameRequestCallbacks(aNowTime);
+    MaybeIncreaseMeasuredTicksSinceLoading();
+
+    if (mPresContext && mPresContext->GetPresShell()) {
+      AutoTArray<PresShell*, 16> observers;
+      observers.AppendElements(mStyleFlushObservers);
+      for (uint32_t j = observers.Length();
+           j && mPresContext && mPresContext->GetPresShell(); --j) {
+        
+        
+        PresShell* rawPresShell = observers[j - 1];
+        if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
+          continue;
+        }
+
+        LogPresShellObserver::Run run(rawPresShell, this);
+
+        RefPtr<PresShell> presShell = rawPresShell;
+        presShell->mObservingStyleFlushes = false;
+        presShell->FlushPendingNotifications(
+            ChangesToFlush(FlushType::Style, false));
+        
+        
+        
+        presShell->NotifyFontFaceSetOnRefresh();
+        mNeedToRecomputeVisibility = true;
+
+        
+        presShell->PingPerTickTelemetry(FlushType::Style);
+      }
+    }
+  } else if (aIdx == 2) {
+    
+    AutoTArray<PresShell*, 16> observers;
+    observers.AppendElements(mLayoutFlushObservers);
+    for (uint32_t j = observers.Length();
+         j && mPresContext && mPresContext->GetPresShell(); --j) {
+      
+      
+      PresShell* rawPresShell = observers[j - 1];
+      if (!mLayoutFlushObservers.RemoveElement(rawPresShell)) {
+        continue;
+      }
+
+      LogPresShellObserver::Run run(rawPresShell, this);
+
+      RefPtr<PresShell> presShell = rawPresShell;
+      presShell->mObservingLayoutFlushes = false;
+      presShell->mWasLastReflowInterrupted = false;
+      const auto flushType = HasPendingAnimations(presShell)
+                                 ? FlushType::Layout
+                                 : FlushType::InterruptibleLayout;
+      const ChangesToFlush ctf(flushType, false);
+      presShell->FlushPendingNotifications(ctf);
+      if (presShell->FixUpFocus()) {
+        presShell->FlushPendingNotifications(ctf);
+      }
+
+      
+      
+      presShell->NotifyFontFaceSetOnRefresh();
+      mNeedToRecomputeVisibility = true;
+
+      
+      presShell->PingPerTickTelemetry(FlushType::Layout);
+    }
+  }
+
+  
+  if (!mPresContext || !mPresContext->GetPresShell()) {
+    return false;
+  }
+
+  return true;
+}
+
 void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
                            IsExtraTick aIsExtraTick ) {
   MOZ_ASSERT(!nsContentUtils::GetCurrentJSContext(),
@@ -2579,117 +2694,9 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
 
 
+
   for (uint32_t i = 0; i < ArrayLength(mObservers); ++i) {
-    for (RefPtr<nsARefreshObserver> obs : mObservers[i].EndLimitedRange()) {
-      obs->WillRefresh(aNowTime);
-
-      if (!mPresContext || !mPresContext->GetPresShell()) {
-        StopTimer();
-        return;
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    if (i == 1) {
-      nsAutoMicroTask mt;
-      ReduceAnimations(*mPresContext->Document());
-    }
-
-    
-    
-    if (i == 1 && (!mPresContext || !mPresContext->GetPresShell())) {
-      StopTimer();
-      return;
-    }
-
-    if (i == 1) {
-      
-
-      FlushAutoFocusDocuments();
-      DispatchScrollEvents();
-      DispatchVisualViewportScrollEvents();
-      EvaluateMediaQueriesAndReportChanges();
-      DispatchAnimationEvents();
-      RunFullscreenSteps();
-      RunFrameRequestCallbacks(aNowTime);
-      MaybeIncreaseMeasuredTicksSinceLoading();
-
-      if (mPresContext && mPresContext->GetPresShell()) {
-        AutoTArray<PresShell*, 16> observers;
-        observers.AppendElements(mStyleFlushObservers);
-        for (uint32_t j = observers.Length();
-             j && mPresContext && mPresContext->GetPresShell(); --j) {
-          
-          
-          PresShell* rawPresShell = observers[j - 1];
-          if (!mStyleFlushObservers.RemoveElement(rawPresShell)) {
-            continue;
-          }
-
-          LogPresShellObserver::Run run(rawPresShell, this);
-
-          RefPtr<PresShell> presShell = rawPresShell;
-          presShell->mObservingStyleFlushes = false;
-          presShell->FlushPendingNotifications(
-              ChangesToFlush(FlushType::Style, false));
-          
-          
-          
-          presShell->NotifyFontFaceSetOnRefresh();
-          mNeedToRecomputeVisibility = true;
-
-          
-          presShell->PingPerTickTelemetry(FlushType::Style);
-        }
-      }
-    } else if (i == 2) {
-      
-      AutoTArray<PresShell*, 16> observers;
-      observers.AppendElements(mLayoutFlushObservers);
-      for (uint32_t j = observers.Length();
-           j && mPresContext && mPresContext->GetPresShell(); --j) {
-        
-        
-        PresShell* rawPresShell = observers[j - 1];
-        if (!mLayoutFlushObservers.RemoveElement(rawPresShell)) {
-          continue;
-        }
-
-        LogPresShellObserver::Run run(rawPresShell, this);
-
-        RefPtr<PresShell> presShell = rawPresShell;
-        presShell->mObservingLayoutFlushes = false;
-        presShell->mWasLastReflowInterrupted = false;
-        const auto flushType = HasPendingAnimations(presShell)
-                                   ? FlushType::Layout
-                                   : FlushType::InterruptibleLayout;
-        const ChangesToFlush ctf(flushType, false);
-        presShell->FlushPendingNotifications(ctf);
-        if (presShell->FixUpFocus()) {
-          presShell->FlushPendingNotifications(ctf);
-        }
-
-        
-        
-        presShell->NotifyFontFaceSetOnRefresh();
-        mNeedToRecomputeVisibility = true;
-
-        
-        presShell->PingPerTickTelemetry(FlushType::Layout);
-      }
-    }
-
-    
-    if (!mPresContext || !mPresContext->GetPresShell()) {
+    if (!TickObserverArray(i, aNowTime)) {
       StopTimer();
       return;
     }

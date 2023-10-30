@@ -507,6 +507,16 @@ class nsRefreshDriver final : public mozilla::layers::TransactionIdAllocator,
     No,
     Yes,
   };
+
+  
+  
+  
+  
+  
+  
+  MOZ_CAN_RUN_SCRIPT
+  bool TickObserverArray(uint32_t aIdx, mozilla::TimeStamp aNowTime);
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   void Tick(mozilla::VsyncId aId, mozilla::TimeStamp aNowTime,
             IsExtraTick aIsExtraTick = IsExtraTick::No);
