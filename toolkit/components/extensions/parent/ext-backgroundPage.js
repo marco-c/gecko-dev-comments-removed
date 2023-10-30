@@ -794,17 +794,11 @@ class BackgroundBuilder {
         return;
       }
 
-      if (
-        extension.backgroundState == BACKGROUND_STATE.SUSPENDING &&
-        
-        
-        resetIdleDetails?.reason !== "parentApiCall"
-      ) {
+      if (extension.backgroundState == BACKGROUND_STATE.SUSPENDING) {
         extension.backgroundState = BACKGROUND_STATE.RUNNING;
         
         extension.emit("background-script-suspend-canceled");
       }
-
       this.resetIdleTimer();
 
       if (
@@ -833,9 +827,6 @@ class BackgroundBuilder {
             break;
           case "pendingListeners":
             category = "reset_listeners";
-            break;
-          case "parentApiCall":
-            category = "reset_parentapicall";
             break;
         }
 
