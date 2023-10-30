@@ -35,15 +35,11 @@ class AudioMixerImpl : public AudioMixer {
   
   static const int kFrameDurationInMs = 10;
 
-  static const int kDefaultNumberOfMixedAudioSources = 3;
-
-  static rtc::scoped_refptr<AudioMixerImpl> Create(
-      int max_sources_to_mix = kDefaultNumberOfMixedAudioSources);
+  static rtc::scoped_refptr<AudioMixerImpl> Create();
 
   static rtc::scoped_refptr<AudioMixerImpl> Create(
       std::unique_ptr<OutputRateCalculator> output_rate_calculator,
-      bool use_limiter,
-      int max_sources_to_mix = kDefaultNumberOfMixedAudioSources);
+      bool use_limiter);
 
   ~AudioMixerImpl() override;
 
@@ -58,23 +54,15 @@ class AudioMixerImpl : public AudioMixer {
            AudioFrame* audio_frame_for_mixing) override
       RTC_LOCKS_EXCLUDED(mutex_);
 
-  
-  
-  
-  bool GetAudioSourceMixabilityStatusForTest(Source* audio_source) const;
-
  protected:
   AudioMixerImpl(std::unique_ptr<OutputRateCalculator> output_rate_calculator,
-                 bool use_limiter,
-                 int max_sources_to_mix);
+                 bool use_limiter);
 
  private:
   struct HelperContainers;
 
   void UpdateSourceCountStats() RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
-  
-  
   
   rtc::ArrayView<AudioFrame* const> GetAudioFromSources(int output_frequency)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -83,8 +71,6 @@ class AudioMixerImpl : public AudioMixer {
   
   
   mutable Mutex mutex_;
-
-  const int max_sources_to_mix_;
 
   std::unique_ptr<OutputRateCalculator> output_rate_calculator_;
 
