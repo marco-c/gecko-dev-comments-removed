@@ -24,25 +24,6 @@ add_setup(async function () {
 });
 
 
-add_task(async function testQueryParamIsStripped() {
-  await testMenuItemEnabled(false);
-});
-
-
-add_task(async function testQueryParamIsStrippedSelectURL() {
-  await testMenuItemEnabled(true);
-});
-
-
-add_task(async function testUnknownQueryParam() {
-  await testMenuItemDisabled(
-    "https://www.example.com/?noStripParam=1234",
-    true,
-    false
-  );
-});
-
-
 add_task(async function testInvalidURI() {
   await testMenuItemDisabled(
     "https://www.example.com/?stripParam=1234",
@@ -58,6 +39,66 @@ add_task(async function testPrefDisabled() {
     false,
     false
   );
+});
+
+
+add_task(async function testQueryParamIsStripped() {
+  let originalUrl = "https://www.example.com/?stripParam=1234";
+  let shortenedUrl = "https://www.example.com/";
+  await testMenuItemEnabled({
+    selectWholeUrl: false,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testQueryParamIsStrippedSelectURL() {
+  let originalUrl = "https://www.example.com/?stripParam=1234";
+  let shortenedUrl = "https://www.example.com/";
+  await testMenuItemEnabled({
+    selectWholeUrl: true,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testURLIsCopiedWithNoParams() {
+  let originalUrl = "https://www.example.com/";
+  let shortenedUrl = "https://www.example.com/";
+  await testMenuItemEnabled({
+    selectWholeUrl: true,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: false,
+  });
+});
+
+
+add_task(async function testQueryParamIsStrippedForSiteSpecific() {
+  let originalUrl = "https://www.example.com/?test_2=1234";
+  let shortenedUrl = "https://www.example.com/";
+  await testMenuItemEnabled({
+    selectWholeUrl: true,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+  });
+});
+
+
+add_task(async function testQueryParamIsNotStrippedForWrongSiteSpecific() {
+  let originalUrl = "https://www.example.com/?test_3=1234";
+  let shortenedUrl = "https://www.example.com/?test_3=1234";
+  await testMenuItemEnabled({
+    selectWholeUrl: true,
+    validUrl: originalUrl,
+    strippedUrl: shortenedUrl,
+    useTestList: true,
+  });
 });
 
 
@@ -98,16 +139,45 @@ async function testMenuItemDisabled(url, prefEnabled, selection) {
 
 
 
-async function testMenuItemEnabled(selectWholeUrl) {
+
+
+
+
+async function testMenuItemEnabled({
+  selectWholeUrl,
+  validUrl,
+  strippedUrl,
+  useTestList,
+}) {
   await SpecialPowers.pushPrefEnv({
-    set: [["privacy.query_stripping.strip_on_share.enabled", true]],
+    set: [
+      ["privacy.query_stripping.strip_on_share.enabled", true],
+      ["privacy.query_stripping.strip_on_share.enableTestMode", useTestList],
+    ],
   });
-  let validUrl = "https://www.example.com/?stripParam=1234";
-  let strippedUrl = "https://www.example.com/";
+
+  if (useTestList) {
+    let testJson = {
+      global: {
+        queryParams: ["utm_ad"],
+        topLevelSites: ["*"],
+      },
+      example: {
+        queryParams: ["test_2", "test_1"],
+        topLevelSites: ["www.example.com"],
+      },
+      exampleNet: {
+        queryParams: ["test_3", "test_4"],
+        topLevelSites: ["www.example.net"],
+      },
+    };
+
+    await listService.testSetList(testJson);
+  }
+
   await BrowserTestUtils.withNewTab(validUrl, async function (browser) {
     gURLBar.focus();
     if (selectWholeUrl) {
-      
       gURLBar.select();
     }
     let menuitem = await promiseContextualMenuitem("strip-on-share");
@@ -122,4 +192,6 @@ async function testMenuItemEnabled(selectWholeUrl) {
     });
     await hidePromise;
   });
+
+  await SpecialPowers.popPrefEnv();
 }
