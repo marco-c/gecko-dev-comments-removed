@@ -5,7 +5,7 @@
 
 
 #include "nsISupports.idl"
-
+#include "nsIStreamListener.idl"
 
 
 
@@ -13,7 +13,7 @@
 
 
 [uuid(fb2304b8-f82f-4433-af68-d874a2ebbdc1)]
-interface nsIThreadRetargetableStreamListener : nsISupports
+interface nsIThreadRetargetableStreamListener : nsIStreamListener
 {
   
 
@@ -29,4 +29,11 @@ interface nsIThreadRetargetableStreamListener : nsISupports
 
 
   void checkListenerChain();
+
+
+
+
+
+
+  void onDataFinished(in nsresult aStatusCode);
 };
