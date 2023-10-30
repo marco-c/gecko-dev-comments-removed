@@ -248,6 +248,11 @@ already_AddRefed<nsAtom> NS_Atomize(const char16_t* aUTF16String);
 already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String);
 
 
+
+already_AddRefed<nsAtom> NS_Atomize(const nsAString& aUTF16String,
+                                    uint32_t aKnownHash);
+
+
 already_AddRefed<nsAtom> NS_AtomizeMainThread(const nsAString& aUTF16String);
 
 
