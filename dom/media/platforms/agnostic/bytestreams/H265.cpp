@@ -154,8 +154,14 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
         reader.ReadBits(readBits);
         nalSize -= readBits;
       }
-      MOZ_ASSERT(nalu.mNalUnitType == nalUnitType);
-      hvcc.mNALUs.AppendElement(nalu);
+      
+      
+      if (nalu.IsSPS() || nalu.IsPPS() || nalu.IsVPS() || nalu.IsSEI()) {
+        hvcc.mNALUs.AppendElement(nalu);
+      } else {
+        LOG("Ignore NALU (%u) which is not SPS/PPS/VPS or SEI",
+            nalu.mNalUnitType);
+      }
     }
   }
   hvcc.mByteBuffer = aExtraData;
