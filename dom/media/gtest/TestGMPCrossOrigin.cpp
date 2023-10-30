@@ -191,6 +191,8 @@ void GMPTestRunner::DoTest(
   monitor.AwaitFinished();
 }
 
+
+#if !(defined(XP_WIN) && defined(MOZ_ASAN))
 TEST(GeckoMediaPlugins, GMPTestCodec)
 {
   RefPtr<GMPTestRunner> runner = new GMPTestRunner();
@@ -207,3 +209,4 @@ TEST(GeckoMediaPlugins, GMPCrossOrigin)
   runner->DoTest(&GMPTestRunner::RunTestGMPCrossOrigin3);
   runner->DoTest(&GMPTestRunner::RunTestGMPCrossOrigin4);
 }
+#endif  
