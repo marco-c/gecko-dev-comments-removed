@@ -239,6 +239,29 @@ public class ContentBlocking {
 
 
 
+      public @NonNull Builder cookieBannerGlobalRulesEnabled(final boolean enabled) {
+        getSettings().setCookieBannerGlobalRulesEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+
+      public @NonNull Builder cookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
+        getSettings().setCookieBannerGlobalRulesSubFramesEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
       public @NonNull Builder cookieBannerHandlingModePrivateBrowsing(
           final @CBCookieBannerMode int mode) {
         getSettings().setCookieBannerModePrivateBrowsing(mode);
@@ -309,7 +332,12 @@ public class ContentBlocking {
 
      final Pref<Boolean> mChbDetectOnlyMode =
         new Pref<Boolean>("cookiebanners.service.detectOnly", false);
+    
+    final Pref<Boolean> mCbhGlobalRulesEnabled =
+        new Pref<Boolean>("cookiebanners.service.enableGlobalRules", false);
 
+    final Pref<Boolean> mCbhGlobalRulesSubFramesEnabled =
+        new Pref<Boolean>("cookiebanners.service.enableGlobalRules.subFrames", false);
      final Pref<String> mSafeBrowsingMalwareTable =
         new Pref<>(
             "urlclassifier.malwareTable",
@@ -646,6 +674,48 @@ public class ContentBlocking {
     public @NonNull Settings setCookieBannerDetectOnlyMode(final boolean enabled) {
       mChbDetectOnlyMode.commit(enabled);
       return this;
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setCookieBannerGlobalRulesEnabled(final boolean enabled) {
+      mCbhGlobalRulesEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getCookieBannerGlobalRulesEnabled() {
+      return mCbhGlobalRulesEnabled.get();
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setCookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
+      mCbhGlobalRulesSubFramesEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getCookieBannerGlobalRulesSubFramesEnabled() {
+      return mCbhGlobalRulesSubFramesEnabled.get();
     }
 
     
