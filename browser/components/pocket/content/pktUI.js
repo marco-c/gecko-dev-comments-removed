@@ -227,32 +227,10 @@ var pktUI = (function () {
     
     SaveToPocket.itemDeleted();
     pktTelemetry.submitPocketButtonPing("click", "save_button");
-    
-    pktTelemetry.sendStructuredIngestionEvent(
-      pktTelemetry.createPingPayload({
-        events: [
-          {
-            action: "click",
-            source: "save_button",
-          },
-        ],
-      })
-    );
   }
 
   async function onShowHome() {
     pktTelemetry.submitPocketButtonPing("click", "home_button");
-    
-    pktTelemetry.sendStructuredIngestionEvent(
-      pktTelemetry.createPingPayload({
-        events: [
-          {
-            action: "click",
-            source: "home_button",
-          },
-        ],
-      })
-    );
 
     if (!NimbusFeatures.saveToPocket.getVariable("hideRecentSaves")) {
       let recentSaves = await pktApi.getRecentSavesCache();
@@ -303,17 +281,6 @@ var pktUI = (function () {
     }
 
     pktTelemetry.submitPocketButtonPing("click", "save_button");
-    
-    pktTelemetry.sendStructuredIngestionEvent(
-      pktTelemetry.createPingPayload({
-        events: [
-          {
-            action: "click",
-            source: "save_button",
-          },
-        ],
-      })
-    );
 
     
     var options = {
@@ -455,19 +422,6 @@ var pktUI = (function () {
     if (data.source) {
       const { position, source, model } = data;
       pktTelemetry.submitPocketButtonPing("click", source, position, model);
-      const payload = pktTelemetry.createPingPayload({
-        ...(model ? { model } : {}),
-        events: [
-          {
-            action: "click",
-            source,
-            
-            ...(position || position === 0 ? { position } : {}),
-          },
-        ],
-      });
-      
-      pktTelemetry.sendStructuredIngestionEvent(payload);
     }
 
     var url = data.url;
@@ -495,18 +449,6 @@ var pktUI = (function () {
         position,
         model
       );
-      const payload = pktTelemetry.createPingPayload({
-        model,
-        events: [
-          {
-            action: "click",
-            position,
-            source: "on_save_recs",
-          },
-        ],
-      });
-      
-      pktTelemetry.sendStructuredIngestionEvent(payload);
     }
 
     openTabWithUrl(url, contentPrincipal, csp);
