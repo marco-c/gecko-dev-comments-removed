@@ -4,7 +4,7 @@
 
 
 
-#include "wasm/WasmGcObject.h"
+#include "wasm/WasmGcObject-inl.h"
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Casting.h"
