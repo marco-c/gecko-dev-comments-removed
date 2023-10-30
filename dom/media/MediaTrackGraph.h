@@ -29,6 +29,7 @@ class AsyncLogger;
 class AudioCaptureTrack;
 class CrossGraphTransmitter;
 class CrossGraphReceiver;
+class NativeInputTrack;
 };  
 
 extern mozilla::AsyncLogger gMTGTraceLogger;
@@ -111,21 +112,21 @@ class AudioDataListenerInterface {
   
 
 
-  virtual uint32_t RequestedInputChannelCount(MediaTrackGraphImpl* aGraph) = 0;
+  virtual uint32_t RequestedInputChannelCount(MediaTrackGraph* aGraph) = 0;
 
   
 
 
-  virtual bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const = 0;
+  virtual bool IsVoiceInput(MediaTrackGraph* aGraph) const = 0;
   
 
 
-  virtual void DeviceChanged(MediaTrackGraphImpl* aGraph) = 0;
+  virtual void DeviceChanged(MediaTrackGraph* aGraph) = 0;
 
   
 
 
-  virtual void Disconnect(MediaTrackGraphImpl* aGraph) = 0;
+  virtual void Disconnect(MediaTrackGraph* aGraph) = 0;
 };
 
 class AudioDataListener : public AudioDataListenerInterface {
@@ -1179,6 +1180,10 @@ class MediaTrackGraph {
 
 
   void DispatchToMainThreadStableState(already_AddRefed<nsIRunnable> aRunnable);
+  
+
+
+  void ReevaluateInputDevice(CubebUtils::AudioDeviceID aID);
 
   
 
@@ -1209,6 +1214,21 @@ class MediaTrackGraph {
 
 
   GraphTime ProcessedTime() const;
+  
+
+
+  void* CurrentDriver() const;
+
+  
+
+
+
+  DeviceInputTrack* GetDeviceInputTrackMainThread(
+      CubebUtils::AudioDeviceID aID);
+
+  
+
+  NativeInputTrack* GetNativeInputTrackMainThread();
 
  protected:
   explicit MediaTrackGraph(TrackRate aSampleRate) : mSampleRate(aSampleRate) {

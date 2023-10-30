@@ -118,16 +118,16 @@ TEST_F(TestDeviceInputTrack, DeviceInputConsumerTrack) {
     TestAudioDataListener(uint32_t aChannelCount, bool aIsVoice)
         : mChannelCount(aChannelCount), mIsVoice(aIsVoice) {}
     
-    uint32_t RequestedInputChannelCount(MediaTrackGraphImpl* aGraph) override {
-      MOZ_ASSERT(aGraph->OnGraphThread());
+    uint32_t RequestedInputChannelCount(MediaTrackGraph* aGraph) override {
+      aGraph->AssertOnGraphThread();
       return mChannelCount;
     }
-    bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const override {
+    bool IsVoiceInput(MediaTrackGraph* aGraph) const override {
       return mIsVoice;
     };
-    void DeviceChanged(MediaTrackGraphImpl* aGraph) override { 
+    void DeviceChanged(MediaTrackGraph* aGraph) override { 
     }
-    void Disconnect(MediaTrackGraphImpl* aGraph) override{};
+    void Disconnect(MediaTrackGraph* aGraph) override{};
 
    private:
     ~TestAudioDataListener() = default;

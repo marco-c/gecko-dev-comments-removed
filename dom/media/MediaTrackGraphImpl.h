@@ -420,17 +420,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
   
 
 
-
-  DeviceInputTrack* GetDeviceInputTrackMainThread(
-      CubebUtils::AudioDeviceID aID);
-
-  
-
-  NativeInputTrack* GetNativeInputTrackMainThread();
-
-  
-
-
   void OpenAudioInputImpl(DeviceInputTrack* aTrack);
   
 
@@ -1028,11 +1017,13 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   uint32_t mMaxOutputChannelCount;
 
+ public:
   
 
 
   DeviceInputTrackManager mDeviceInputTrackManagerMainThread;
 
+ private:
   
 
 

@@ -113,50 +113,50 @@ class MediaEngineWebRTCMicrophoneSource : public MediaEngineSource {
 class AudioInputProcessing : public AudioDataListener {
  public:
   explicit AudioInputProcessing(uint32_t aMaxChannelCount);
-  void Process(MediaTrackGraphImpl* aGraph, GraphTime aFrom, GraphTime aTo,
+  void Process(MediaTrackGraph* aGraph, GraphTime aFrom, GraphTime aTo,
                AudioSegment* aInput, AudioSegment* aOutput);
 
-  void ProcessOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
+  void ProcessOutputData(MediaTrackGraph* aGraph, AudioDataValue* aBuffer,
                          size_t aFrames, TrackRate aRate, uint32_t aChannels);
-  bool IsVoiceInput(MediaTrackGraphImpl* aGraph) const override {
+  bool IsVoiceInput(MediaTrackGraph* aGraph) const override {
     
     
     
     return !PassThrough(aGraph);
   }
 
-  void Start(MediaTrackGraphImpl* aGraph);
-  void Stop(MediaTrackGraphImpl* aGraph);
+  void Start(MediaTrackGraph* aGraph);
+  void Stop(MediaTrackGraph* aGraph);
 
-  void DeviceChanged(MediaTrackGraphImpl* aGraph) override;
+  void DeviceChanged(MediaTrackGraph* aGraph) override;
 
-  uint32_t RequestedInputChannelCount(MediaTrackGraphImpl*) override {
+  uint32_t RequestedInputChannelCount(MediaTrackGraph*) override {
     return GetRequestedInputChannelCount();
   }
 
-  void Disconnect(MediaTrackGraphImpl* aGraph) override;
+  void Disconnect(MediaTrackGraph* aGraph) override;
 
-  void PacketizeAndProcess(MediaTrackGraphImpl* aGraph,
+  void PacketizeAndProcess(MediaTrackGraph* aGraph,
                            const AudioSegment& aSegment);
 
-  void SetPassThrough(MediaTrackGraphImpl* aGraph, bool aPassThrough);
+  void SetPassThrough(MediaTrackGraph* aGraph, bool aPassThrough);
   uint32_t GetRequestedInputChannelCount();
-  void SetRequestedInputChannelCount(MediaTrackGraphImpl* aGraph,
+  void SetRequestedInputChannelCount(MediaTrackGraph* aGraph,
                                      CubebUtils::AudioDeviceID aDeviceId,
                                      uint32_t aRequestedInputChannelCount);
   
   
-  bool PassThrough(MediaTrackGraphImpl* aGraphImpl) const;
+  bool PassThrough(MediaTrackGraph* aGraph) const;
 
   
   
   
-  void ApplyConfig(MediaTrackGraphImpl* aGraph,
+  void ApplyConfig(MediaTrackGraph* aGraph,
                    const webrtc::AudioProcessing::Config& aConfig);
 
   void End();
 
-  TrackTime NumBufferedFrames(MediaTrackGraphImpl* aGraph) const;
+  TrackTime NumBufferedFrames(MediaTrackGraph* aGraph) const;
 
   
   constexpr static uint32_t GetPacketSize(TrackRate aRate) {
@@ -167,8 +167,8 @@ class AudioInputProcessing : public AudioDataListener {
 
  private:
   ~AudioInputProcessing() = default;
-  void EnsureAudioProcessing(MediaTrackGraphImpl* aGraph, uint32_t aChannels);
-  void ResetAudioProcessing(MediaTrackGraphImpl* aGraph);
+  void EnsureAudioProcessing(MediaTrackGraph* aGraph, uint32_t aChannels);
+  void ResetAudioProcessing(MediaTrackGraph* aGraph);
   PrincipalHandle GetCheckedPrincipal(const AudioSegment& aSegment);
   
   
@@ -246,7 +246,7 @@ class AudioProcessingTrack : public DeviceInputConsumerTrack {
   }
   
   
-  void NotifyOutputData(MediaTrackGraphImpl* aGraph, AudioDataValue* aBuffer,
+  void NotifyOutputData(MediaTrackGraph* aGraph, AudioDataValue* aBuffer,
                         size_t aFrames, TrackRate aRate, uint32_t aChannels);
 
   

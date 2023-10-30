@@ -161,7 +161,7 @@ class DeviceInputTrack : public ProcessedMediaTrack {
   
   
   static NotNull<RefPtr<DeviceInputTrack>> OpenAudio(
-      MediaTrackGraphImpl* aGraph, CubebUtils::AudioDeviceID aDeviceId,
+      MediaTrackGraph* aGraph, CubebUtils::AudioDeviceID aDeviceId,
       const PrincipalHandle& aPrincipalHandle,
       DeviceInputConsumerTrack* aConsumer);
   
@@ -177,7 +177,7 @@ class DeviceInputTrack : public ProcessedMediaTrack {
   uint32_t MaxRequestedInputChannels() const;
   bool HasVoiceInput() const;
   
-  void DeviceChanged(MediaTrackGraphImpl* aGraph) const;
+  void DeviceChanged(MediaTrackGraph* aGraph) const;
 
   
   DeviceInputTrack* AsDeviceInputTrack() override { return this; }
@@ -220,10 +220,9 @@ class NativeInputTrack final : public DeviceInputTrack {
   uint32_t NumberOfChannels() const override;
 
   
-  void NotifyInputStopped(MediaTrackGraphImpl* aGraph);
-  void NotifyInputData(MediaTrackGraphImpl* aGraph,
-                       const AudioDataValue* aBuffer, size_t aFrames,
-                       TrackRate aRate, uint32_t aChannels,
+  void NotifyInputStopped(MediaTrackGraph* aGraph);
+  void NotifyInputData(MediaTrackGraph* aGraph, const AudioDataValue* aBuffer,
+                       size_t aFrames, TrackRate aRate, uint32_t aChannels,
                        uint32_t aAlreadyBuffered);
 
   
