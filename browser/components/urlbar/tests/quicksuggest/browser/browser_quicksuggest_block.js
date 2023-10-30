@@ -3,9 +3,6 @@
 
 
 
-
-
-
 "use strict";
 
 ChromeUtils.defineESModuleGetters(this, {
@@ -59,7 +56,7 @@ add_setup(async function () {
   Services.telemetry.clearEvents();
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsRecords: [
+    remoteSettingsResults: [
       {
         type: "data",
         attachment: REMOTE_SETTINGS_RESULTS,

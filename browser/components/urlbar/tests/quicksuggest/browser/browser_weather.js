@@ -13,7 +13,7 @@ ChromeUtils.defineESModuleGetters(this, {
 
 add_setup(async function () {
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsRecords: [
+    remoteSettingsResults: [
       {
         type: "weather",
         weather: MerinoTestUtils.WEATHER_RS_DATA,
@@ -85,7 +85,7 @@ add_task(async function test_weather_result_selection() {
 
 add_task(async function showLessFrequentlyCapReached_manySearches() {
   
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
+  await QuickSuggestTestUtils.setRemoteSettingsResults([
     {
       type: "weather",
       weather: {
@@ -172,7 +172,7 @@ add_task(async function showLessFrequentlyCapReached_manySearches() {
   gURLBar.view.resultMenu.hidePopup(true);
 
   await UrlbarTestUtils.promisePopupClose(window);
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
+  await QuickSuggestTestUtils.setRemoteSettingsResults([
     {
       type: "weather",
       weather: MerinoTestUtils.WEATHER_RS_DATA,
@@ -185,7 +185,7 @@ add_task(async function showLessFrequentlyCapReached_manySearches() {
 
 add_task(async function showLessFrequentlyCapReached_oneSearch() {
   
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
+  await QuickSuggestTestUtils.setRemoteSettingsResults([
     {
       type: "weather",
       weather: {
@@ -245,7 +245,7 @@ add_task(async function showLessFrequentlyCapReached_oneSearch() {
 
   gURLBar.view.resultMenu.hidePopup(true);
   await UrlbarTestUtils.promisePopupClose(window);
-  await QuickSuggestTestUtils.setRemoteSettingsRecords([
+  await QuickSuggestTestUtils.setRemoteSettingsResults([
     {
       type: "weather",
       weather: MerinoTestUtils.WEATHER_RS_DATA,

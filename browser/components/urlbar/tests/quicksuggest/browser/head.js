@@ -91,8 +91,14 @@ async function updateTopSites(condition, searchShortcuts = false) {
 
 
 
+
+
+
+
+
+
 async function setUpTelemetryTest({
-  remoteSettingsRecords,
+  remoteSettingsResults,
   merinoSuggestions = null,
   config = QuickSuggestTestUtils.DEFAULT_CONFIG,
 }) {
@@ -115,7 +121,7 @@ async function setUpTelemetryTest({
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsRecords,
+    remoteSettingsResults,
     merinoSuggestions,
     config,
   });
@@ -663,34 +669,19 @@ function add_tasks_with_rust(...args) {
 
   for (let rustEnabled of [false, true]) {
     let newTaskFn = async (...taskFnArgs) => {
-      info("add_tasks_with_rust: Setting rustEnabled: " + rustEnabled);
+      info("Setting rustEnabled: " + rustEnabled);
       UrlbarPrefs.set("quicksuggest.rustEnabled", rustEnabled);
-      info("add_tasks_with_rust: Done setting rustEnabled: " + rustEnabled);
-
-      
-      info("add_tasks_with_rust: Forcing sync");
-      await QuickSuggestTestUtils.forceSync();
-      info("add_tasks_with_rust: Done forcing sync");
+      info("Done setting rustEnabled: " + rustEnabled);
 
       let rv;
       try {
-        info(
-          "add_tasks_with_rust: Calling original task function: " + taskFn.name
-        );
+        info("Calling original task function: " + taskFn.name);
         rv = await taskFn(...taskFnArgs);
       } finally {
-        info(
-          "add_tasks_with_rust: Done calling original task function: " +
-            taskFn.name
-        );
-        info("add_tasks_with_rust: Clearing rustEnabled");
+        info("Done calling original task function: " + taskFn.name);
+        info("Clearing rustEnabled");
         UrlbarPrefs.clear("quicksuggest.rustEnabled");
-        info("add_tasks_with_rust: Done clearing rustEnabled");
-
-        
-        info("add_tasks_with_rust: Forcing sync");
-        await QuickSuggestTestUtils.forceSync();
-        info("add_tasks_with_rust: Done forcing sync");
+        info("Done clearing rustEnabled");
       }
       return rv;
     };

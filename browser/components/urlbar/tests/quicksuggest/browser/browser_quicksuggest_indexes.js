@@ -43,10 +43,12 @@ const REMOTE_SETTINGS_RESULTS = [
   },
 ];
 
-
-requestLongerTimeout(3);
-
 add_setup(async function () {
+  
+  if (AppConstants.platform == "macosx") {
+    requestLongerTimeout(3);
+  }
+
   await PlacesUtils.history.clear();
   await PlacesUtils.bookmarks.eraseEverything();
   await UrlbarTestUtils.formHistory.clear();
@@ -55,7 +57,7 @@ add_setup(async function () {
   await SearchTestUtils.installSearchExtension({}, { setAsDefault: true });
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsRecords: [
+    remoteSettingsResults: [
       {
         type: "data",
         attachment: REMOTE_SETTINGS_RESULTS,
