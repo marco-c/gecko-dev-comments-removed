@@ -169,16 +169,13 @@ class Nursery {
   }
 
   
-  void* allocateBuffer(JS::Zone* zone, size_t nbytes);
+  
+  void* allocateBuffer(JS::Zone* zone, gc::Cell* cell, size_t nbytes);
 
   
   
-  void* allocateBuffer(JS::Zone* zone, JSObject* obj, size_t nbytes);
-
   
-  
-  
-  void* allocateBufferSameLocation(JSObject* obj, size_t nbytes);
+  void* allocateBufferSameLocation(gc::Cell* cell, size_t nbytes);
 
   
   
@@ -189,16 +186,12 @@ class Nursery {
   
   
   
-  void* allocateZeroedBuffer(JSObject* obj, size_t nbytes,
+  void* allocateZeroedBuffer(gc::Cell* cell, size_t nbytes,
                              arena_id_t arena = js::MallocArena);
 
   
   void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
                          size_t oldBytes, size_t newBytes);
-
-  
-  
-  void* allocateBuffer(JS::BigInt* bi, size_t nbytes);
 
   
   void freeBuffer(void* buffer, size_t nbytes);
@@ -670,6 +663,9 @@ class Nursery {
   void clear();
 
   void sweepMapAndSetObjects();
+
+  
+  void* allocateBuffer(JS::Zone* zone, size_t nbytes);
 
   
   void maybeResizeNursery(JS::GCOptions options, JS::GCReason reason);

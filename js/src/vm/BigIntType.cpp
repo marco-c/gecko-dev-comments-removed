@@ -154,7 +154,7 @@ BigInt* BigInt::createUninitialized(JSContext* cx, size_t digitLength,
   MOZ_ASSERT(x->isNegative() == isNegative);
 
   if (digitLength > InlineDigitsLength) {
-    x->heapDigits_ = js::AllocateBigIntDigits(cx, x, digitLength);
+    x->heapDigits_ = js::AllocateCellBuffer<Digit>(cx, x, digitLength);
     if (!x->heapDigits_) {
       
       
@@ -1487,8 +1487,8 @@ BigInt* BigInt::destructivelyTrimHighZeroDigits(JSContext* cx, BigInt* x) {
     MOZ_ASSERT(x->hasHeapDigits());
 
     size_t oldLength = x->digitLength();
-    Digit* newdigits =
-        js::ReallocateBigIntDigits(cx, x, x->heapDigits_, oldLength, newLength);
+    Digit* newdigits = js::ReallocateCellBuffer<Digit>(cx, x, x->heapDigits_,
+                                                       oldLength, newLength);
     if (!newdigits) {
       return nullptr;
     }
