@@ -1174,10 +1174,7 @@ import org.mozilla.geckoview.SessionTextInput.EditableListener.IMEState;
     }
     
     
-    if (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL) {
-      return true;
-    }
-    return false;
+    return keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL;
   }
 
   private static KeyEvent translateSonyXperiaGamepadKeys(final int keyCode, final KeyEvent event) {
