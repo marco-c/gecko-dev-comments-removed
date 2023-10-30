@@ -107,7 +107,6 @@ class MessageBlock {
 class MediaTrackGraphImpl : public MediaTrackGraph,
                             public GraphInterface,
                             public nsIMemoryReporter,
-                            public nsIObserver,
                             public nsIThreadObserver,
                             public nsITimerCallback,
                             public nsINamed {
@@ -116,7 +115,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIMEMORYREPORTER
-  NS_DECL_NSIOBSERVER
   NS_DECL_NSITHREADOBSERVER
   NS_DECL_NSITIMERCALLBACK
   NS_DECL_NSINAMED
@@ -188,17 +186,6 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
 
 
   virtual void AppendMessage(UniquePtr<ControlMessageInterface> aMessage);
-  
-
-
-
-
-
-  template <typename Function>
-  void QueueControlMessageWithNoShutdown(Function&& aFunction) {
-    AppendMessage(WrapUnique(new MediaTrack::ControlMessageWithNoShutdown(
-        std::forward<Function>(aFunction))));
-  }
 
   
 
