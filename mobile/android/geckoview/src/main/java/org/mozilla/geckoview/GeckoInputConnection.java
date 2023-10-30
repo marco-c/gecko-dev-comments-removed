@@ -381,8 +381,13 @@ import org.mozilla.gecko.util.ThreadUtils;
         });
   }
 
+  @TargetApi(21)
   @Override 
   public void updateCompositionRects(final RectF[] rects, final RectF caretRect) {
+    if (!(Build.VERSION.SDK_INT >= 21)) {
+      return;
+    }
+
     final View view = getView();
     if (view == null) {
       return;
@@ -413,6 +418,7 @@ import org.mozilla.gecko.util.ThreadUtils;
         });
   }
 
+  @TargetApi(21)
    void updateCompositionRectsOnUi(
       final View view, final RectF[] rects, final RectF caretRect, final CharSequence composition) {
     if (mCursorAnchorInfoBuilder == null) {
@@ -716,9 +722,13 @@ import org.mozilla.gecko.util.ThreadUtils;
         
         
         
-        final Context viewContext = getView().getContext();
-        final AudioManager am = (AudioManager) viewContext.getSystemService(Context.AUDIO_SERVICE);
-        am.dispatchMediaKeyEvent(event);
+        if (Build.VERSION.SDK_INT >= 19) {
+          
+          final Context viewContext = getView().getContext();
+          final AudioManager am =
+              (AudioManager) viewContext.getSystemService(Context.AUDIO_SERVICE);
+          am.dispatchMediaKeyEvent(event);
+        }
         break;
     }
   }

@@ -101,8 +101,12 @@ public final class HardwareCodecCapabilityUtils {
   private static MediaCodecInfo[] getCodecList() {
     final MediaCodecInfo[] codecList;
     try {
-      final MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
-      codecList = list.getCodecInfos();
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        codecList = getCodecListWithOldAPI();
+      } else {
+        final MediaCodecList list = new MediaCodecList(MediaCodecList.REGULAR_CODECS);
+        codecList = list.getCodecInfos();
+      }
     } catch (final RuntimeException e) {
       Log.e(LOGTAG, "Failed to retrieve media codec support list", e);
       return new MediaCodecInfo[0];
@@ -178,7 +182,9 @@ public final class HardwareCodecCapabilityUtils {
 
   public static boolean checkSupportsAdaptivePlayback(
       final MediaCodec aCodec, final String aMimeType) {
-    if (isAdaptivePlaybackBlacklisted(aMimeType)) {
+    
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT
+        || isAdaptivePlaybackBlacklisted(aMimeType)) {
       return false;
     }
 
@@ -216,63 +222,65 @@ public final class HardwareCodecCapabilityUtils {
 
   
   public static boolean getHWCodecCapability(final String aMimeType, final boolean aIsEncoder) {
-    for (final MediaCodecInfo info : getCodecList()) {
-      if (info.isEncoder() != aIsEncoder) {
-        continue;
-      }
-      String name = null;
-      for (final String mimeType : info.getSupportedTypes()) {
-        if (mimeType.equals(aMimeType)) {
-          name = info.getName();
-          break;
+    if (Build.VERSION.SDK_INT >= 20) {
+      for (final MediaCodecInfo info : getCodecList()) {
+        if (info.isEncoder() != aIsEncoder) {
+          continue;
         }
-      }
-      if (name == null) {
-        continue; 
-      }
-      Log.d(LOGTAG, "Found candidate" + (aIsEncoder ? " encoder " : " decoder ") + name);
-
-      
-      final String[] hwList = getSupportedHWCodecPrefixes(aMimeType, aIsEncoder);
-      if (hwList == null) {
-        continue;
-      }
-      boolean supportedCodec = false;
-      for (final String codecPrefix : hwList) {
-        if (name.startsWith(codecPrefix)) {
-          supportedCodec = true;
-          break;
+        String name = null;
+        for (final String mimeType : info.getSupportedTypes()) {
+          if (mimeType.equals(aMimeType)) {
+            name = info.getName();
+            break;
+          }
         }
-      }
-      if (!supportedCodec) {
-        continue;
-      }
+        if (name == null) {
+          continue; 
+        }
+        Log.d(LOGTAG, "Found candidate" + (aIsEncoder ? " encoder " : " decoder ") + name);
 
-      
-      final CodecCapabilities capabilities = info.getCapabilitiesForType(aMimeType);
-      for (final int colorFormat : capabilities.colorFormats) {
-        Log.v(LOGTAG, "   Color: 0x" + Integer.toHexString(colorFormat));
-      }
-      if (Build.VERSION.SDK_INT >= 24) {
-        for (final MediaCodecInfo.CodecProfileLevel pl : capabilities.profileLevels) {
-          Log.v(
+        
+        final String[] hwList = getSupportedHWCodecPrefixes(aMimeType, aIsEncoder);
+        if (hwList == null) {
+          continue;
+        }
+        boolean supportedCodec = false;
+        for (final String codecPrefix : hwList) {
+          if (name.startsWith(codecPrefix)) {
+            supportedCodec = true;
+            break;
+          }
+        }
+        if (!supportedCodec) {
+          continue;
+        }
+
+        
+        final CodecCapabilities capabilities = info.getCapabilitiesForType(aMimeType);
+        for (final int colorFormat : capabilities.colorFormats) {
+          Log.v(LOGTAG, "   Color: 0x" + Integer.toHexString(colorFormat));
+        }
+        if (Build.VERSION.SDK_INT >= 24) {
+          for (final MediaCodecInfo.CodecProfileLevel pl : capabilities.profileLevels) {
+            Log.v(
+                LOGTAG,
+                "   Profile: 0x"
+                    + Integer.toHexString(pl.profile)
+                    + "/Level=0x"
+                    + Integer.toHexString(pl.level));
+          }
+        }
+        final int codecColorFormat = getSupportsYUV420orNV12(capabilities);
+        if (codecColorFormat != COLOR_FORMAT_NOT_SUPPORTED) {
+          Log.d(
               LOGTAG,
-              "   Profile: 0x"
-                  + Integer.toHexString(pl.profile)
-                  + "/Level=0x"
-                  + Integer.toHexString(pl.level));
+              "Found target"
+                  + (aIsEncoder ? " encoder " : " decoder ")
+                  + name
+                  + ". Color: 0x"
+                  + Integer.toHexString(codecColorFormat));
+          return true;
         }
-      }
-      final int codecColorFormat = getSupportsYUV420orNV12(capabilities);
-      if (codecColorFormat != COLOR_FORMAT_NOT_SUPPORTED) {
-        Log.d(
-            LOGTAG,
-            "Found target"
-                + (aIsEncoder ? " encoder " : " decoder ")
-                + name
-                + ". Color: 0x"
-                + Integer.toHexString(codecColorFormat));
-        return true;
       }
     }
     

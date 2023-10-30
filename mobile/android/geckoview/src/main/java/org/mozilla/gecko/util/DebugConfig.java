@@ -5,6 +5,7 @@
 
 package org.mozilla.gecko.util;
 
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import androidx.annotation.NonNull;
@@ -46,6 +47,11 @@ public class DebugConfig {
 
   public static @NonNull DebugConfig fromFile(final @NonNull File configFile)
       throws FileNotFoundException {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+      
+      throw new ConfigException("Config version is only supported for SDK_INT >= 21.");
+    }
+
     final LoaderOptions options = new LoaderOptions();
     final Constructor constructor = new Constructor(DebugConfig.class, options);
     final TypeDescription description = new TypeDescription(DebugConfig.class);
