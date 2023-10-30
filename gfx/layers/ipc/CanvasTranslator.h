@@ -39,6 +39,19 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
+  void DispatchToTaskQueue(already_AddRefed<nsIRunnable> aRunnable);
+
+  
+
+
+
+  bool IsInTaskQueue() const;
+
+  
+
+
+
+
 
 
 
