@@ -72,6 +72,10 @@ class ReferrerInfo : public nsIReferrerInfo {
   explicit ReferrerInfo(const Document&);
 
   
+  
+  ReferrerInfo(const Element&, ReferrerPolicyEnum);
+
+  
   already_AddRefed<ReferrerInfo> Clone() const;
 
   

@@ -4,6 +4,7 @@
 
 
 
+#include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/HTMLIFrameElement.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/Document.h"
@@ -99,6 +100,9 @@ bool HTMLIFrameElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
       aResult.ParseAtomArray(aValue);
       return true;
     }
+    if (aAttribute == nsGkAtoms::loading) {
+      return ParseLoadingAttribute(aValue, aResult);
+    }
   }
 
   return nsGenericHTMLFrameElement::ParseAttribute(
@@ -158,6 +162,22 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
   AfterMaybeChangeAttr(aNameSpaceID, aName, aNotify);
 
   if (aNameSpaceID == kNameSpaceID_None) {
+    if (aName == nsGkAtoms::loading) {
+      if (aValue && Loading(aValue->GetEnumValue()) == Loading::Lazy) {
+        SetLazyLoading();
+      } else if (aOldValue &&
+                 Loading(aOldValue->GetEnumValue()) == Loading::Lazy) {
+        StopLazyLoading();
+      }
+    }
+
+    
+    
+    if ((aName == nsGkAtoms::src || aName == nsGkAtoms::srcdoc) &&
+        LoadingState() == Loading::Lazy) {
+      SetLazyLoading();
+    }
+
     if (aName == nsGkAtoms::sandbox) {
       if (mFrameLoader) {
         
@@ -174,6 +194,7 @@ void HTMLIFrameElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
       RefreshFeaturePolicy(false );
     }
   }
+
   return nsGenericHTMLFrameElement::AfterSetAttr(
       aNameSpaceID, aName, aValue, aOldValue, aMaybeScriptedPrincipal, aNotify);
 }
@@ -286,6 +307,72 @@ void HTMLIFrameElement::RefreshFeaturePolicy(bool aParseAllowAttribute) {
 
   mFeaturePolicy->InheritPolicy(OwnerDoc()->FeaturePolicy());
   MaybeStoreCrossOriginFeaturePolicy();
+}
+
+void HTMLIFrameElement::UpdateLazyLoadState() {
+  
+  mLazyLoadState.mBaseURI = GetBaseURI();
+  mLazyLoadState.mReferrerPolicy = GetReferrerPolicyAsEnum();
+}
+
+nsresult HTMLIFrameElement::BindToTree(BindContext& aContext,
+                                       nsINode& aParent) {
+  
+  
+  if (mLazyLoading) {
+    UpdateLazyLoadState();
+  }
+
+  return nsGenericHTMLFrameElement::BindToTree(aContext, aParent);
+}
+
+void HTMLIFrameElement::SetLazyLoading() {
+  if (mLazyLoading) {
+    return;
+  }
+
+  if (!StaticPrefs::dom_iframe_lazy_loading_enabled()) {
+    return;
+  }
+
+  
+  
+  Document* doc = OwnerDoc();
+  if (!doc->IsScriptEnabled() || doc->IsStaticDocument()) {
+    return;
+  }
+
+  doc->EnsureLazyLoadObserver().Observe(*this);
+  mLazyLoading = true;
+
+  UpdateLazyLoadState();
+}
+
+void HTMLIFrameElement::StopLazyLoading() {
+  if (!mLazyLoading) {
+    return;
+  }
+
+  mLazyLoading = false;
+
+  Document* doc = OwnerDoc();
+  if (auto* obs = doc->GetLazyLoadObserver()) {
+    obs->Unobserve(*this);
+  }
+
+  LoadSrc();
+
+  mLazyLoadState.Clear();
+}
+
+void HTMLIFrameElement::NodeInfoChanged(Document* aOldDoc) {
+  nsGenericHTMLElement::NodeInfoChanged(aOldDoc);
+
+  if (mLazyLoading) {
+    aOldDoc->GetLazyLoadObserver()->Unobserve(*this);
+    mLazyLoading = false;
+    SetLazyLoading();
+  }
 }
 
 }  

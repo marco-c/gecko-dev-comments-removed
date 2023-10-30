@@ -1104,6 +1104,30 @@ already_AddRefed<DOMRectList> Element::GetClientRects() {
 }
 
 
+static constexpr nsAttrValue::EnumTable kLoadingTable[] = {
+    {"eager", Element::Loading::Eager},
+    {"lazy", Element::Loading::Lazy},
+    {nullptr, 0}};
+
+void Element::GetLoading(nsAString& aValue) const {
+  GetEnumAttr(nsGkAtoms::loading, kLoadingTable[0].tag, aValue);
+}
+
+bool Element::ParseLoadingAttribute(const nsAString& aValue,
+                                    nsAttrValue& aResult) {
+  return aResult.ParseEnumValue(aValue, kLoadingTable,
+                                 false, kLoadingTable);
+}
+
+Element::Loading Element::LoadingState() const {
+  const nsAttrValue* val = mAttrs.GetAttr(nsGkAtoms::loading);
+  if (!val) {
+    return Loading::Eager;
+  }
+  return static_cast<Loading>(val->GetEnumValue());
+}
+
+
 
 void Element::AddToIdTable(nsAtom* aId) {
   NS_ASSERTION(HasID(), "Node doesn't have an ID?");

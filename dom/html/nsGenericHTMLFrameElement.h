@@ -140,6 +140,13 @@ class nsGenericHTMLFrameElement : public nsGenericHTMLElement,
   
   bool mFullscreenFlag = false;
 
+  
+
+
+
+
+  bool mLazyLoading = false;
+
  private:
   void GetManifestURL(nsAString& aOut);
 

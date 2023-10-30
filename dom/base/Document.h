@@ -3721,13 +3721,8 @@ class Document : public nsINode,
   void ScheduleIntersectionObserverNotification();
   MOZ_CAN_RUN_SCRIPT void NotifyIntersectionObservers();
 
-  DOMIntersectionObserver* GetLazyLoadImageObserver() {
-    return mLazyLoadImageObserver;
-  }
-  DOMIntersectionObserver* GetLazyLoadImageObserverViewport() {
-    return mLazyLoadImageObserverViewport;
-  }
-  DOMIntersectionObserver& EnsureLazyLoadImageObserver();
+  DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }
+  DOMIntersectionObserver& EnsureLazyLoadObserver();
 
   DOMIntersectionObserver* GetContentVisibilityObserver() const {
     return mContentVisibilityObserver;
@@ -5136,9 +5131,7 @@ class Document : public nsINode,
   
   nsTArray<ResizeObserver*> mResizeObservers;
 
-  RefPtr<DOMIntersectionObserver> mLazyLoadImageObserver;
-  
-  RefPtr<DOMIntersectionObserver> mLazyLoadImageObserverViewport;
+  RefPtr<DOMIntersectionObserver> mLazyLoadObserver;
 
   
   
