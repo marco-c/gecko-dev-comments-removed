@@ -71,6 +71,7 @@ def test_record_and_replay(*args):
     
     try:
         os.remove(recording_file)
+        os.remove(os.path.join("distribution", "policies.json"))
     except Exception:
         pass
 
