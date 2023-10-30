@@ -78,7 +78,7 @@ impl PhysicalDeviceFeatures {
     
     
     fn from_extensions_and_requested_features(
-        effective_api_version: u32,
+        device_api_version: u32,
         enabled_extensions: &[&'static CStr],
         requested_features: wgt::Features,
         downlevel_flags: wgt::DownlevelFlags,
@@ -200,7 +200,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            imageless_framebuffer: if effective_api_version >= vk::API_VERSION_1_2
+            imageless_framebuffer: if device_api_version >= vk::API_VERSION_1_2
                 || enabled_extensions.contains(&vk::KhrImagelessFramebufferFn::name())
             {
                 Some(
@@ -211,7 +211,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            timeline_semaphore: if effective_api_version >= vk::API_VERSION_1_2
+            timeline_semaphore: if device_api_version >= vk::API_VERSION_1_2
                 || enabled_extensions.contains(&vk::KhrTimelineSemaphoreFn::name())
             {
                 Some(
@@ -222,7 +222,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            image_robustness: if effective_api_version >= vk::API_VERSION_1_3
+            image_robustness: if device_api_version >= vk::API_VERSION_1_3
                 || enabled_extensions.contains(&vk::ExtImageRobustnessFn::name())
             {
                 Some(
@@ -246,7 +246,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            multiview: if effective_api_version >= vk::API_VERSION_1_1
+            multiview: if device_api_version >= vk::API_VERSION_1_1
                 || enabled_extensions.contains(&vk::KhrMultiviewFn::name())
             {
                 Some(
@@ -279,7 +279,7 @@ impl PhysicalDeviceFeatures {
             } else {
                 None
             },
-            zero_initialize_workgroup_memory: if effective_api_version >= vk::API_VERSION_1_3
+            zero_initialize_workgroup_memory: if device_api_version >= vk::API_VERSION_1_3
                 || enabled_extensions.contains(&vk::KhrZeroInitializeWorkgroupMemoryFn::name())
             {
                 Some(
@@ -524,6 +524,11 @@ impl PhysicalDeviceFeatures {
         features.set(F::RG11B10UFLOAT_RENDERABLE, rg11b10ufloat_renderable);
         features.set(F::SHADER_UNUSED_VERTEX_OUTPUT, true);
 
+        features.set(
+            F::BGRA8UNORM_STORAGE,
+            supports_bgra8unorm_storage(instance, phd, caps.device_api_version),
+        );
+
         (features, dl_flags)
     }
 
@@ -550,15 +555,7 @@ pub struct PhysicalDeviceCapabilities {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    effective_api_version: u32,
+    device_api_version: u32,
 }
 
 
@@ -587,7 +584,7 @@ impl PhysicalDeviceCapabilities {
         
         extensions.push(vk::KhrSwapchainFn::name());
 
-        if self.effective_api_version < vk::API_VERSION_1_1 {
+        if self.device_api_version < vk::API_VERSION_1_1 {
             
             if self.supports_extension(vk::KhrMaintenance1Fn::name()) {
                 extensions.push(vk::KhrMaintenance1Fn::name());
@@ -615,7 +612,7 @@ impl PhysicalDeviceCapabilities {
             }
         }
 
-        if self.effective_api_version < vk::API_VERSION_1_2 {
+        if self.device_api_version < vk::API_VERSION_1_2 {
             
             if self.supports_extension(vk::KhrImageFormatListFn::name()) {
                 extensions.push(vk::KhrImageFormatListFn::name());
@@ -625,7 +622,7 @@ impl PhysicalDeviceCapabilities {
             if self.supports_extension(vk::KhrImagelessFramebufferFn::name()) {
                 extensions.push(vk::KhrImagelessFramebufferFn::name());
                 
-                if self.effective_api_version < vk::API_VERSION_1_1 {
+                if self.device_api_version < vk::API_VERSION_1_1 {
                     extensions.push(vk::KhrMaintenance2Fn::name());
                 }
             }
@@ -649,7 +646,7 @@ impl PhysicalDeviceCapabilities {
             if requested_features.contains(wgt::Features::SHADER_F16) {
                 extensions.push(vk::KhrShaderFloat16Int8Fn::name());
                 
-                if self.effective_api_version < vk::API_VERSION_1_1 {
+                if self.device_api_version < vk::API_VERSION_1_1 {
                     extensions.push(vk::Khr16bitStorageFn::name());
                 }
             }
@@ -658,7 +655,7 @@ impl PhysicalDeviceCapabilities {
             
         }
 
-        if self.effective_api_version < vk::API_VERSION_1_3 {
+        if self.device_api_version < vk::API_VERSION_1_3 {
             
             if self.supports_extension(vk::ExtImageRobustnessFn::name()) {
                 extensions.push(vk::ExtImageRobustnessFn::name());
@@ -783,19 +780,22 @@ impl super::InstanceShared {
             let mut capabilities = PhysicalDeviceCapabilities::default();
             capabilities.supported_extensions =
                 unsafe { self.raw.enumerate_device_extension_properties(phd).unwrap() };
-            capabilities.properties = if let Some(ref get_device_properties) =
-                self.get_physical_device_properties
-            {
+            capabilities.properties = unsafe { self.raw.get_physical_device_properties(phd) };
+            capabilities.device_api_version = capabilities.properties.api_version;
+
+            if let Some(ref get_device_properties) = self.get_physical_device_properties {
                 
-                let supports_descriptor_indexing = self.driver_api_version >= vk::API_VERSION_1_2
+                let supports_maintenance3 = capabilities.device_api_version >= vk::API_VERSION_1_1
+                    || capabilities.supports_extension(vk::KhrMaintenance3Fn::name());
+                let supports_descriptor_indexing = capabilities.device_api_version
+                    >= vk::API_VERSION_1_2
                     || capabilities.supports_extension(vk::ExtDescriptorIndexingFn::name());
-                let supports_driver_properties = self.driver_api_version >= vk::API_VERSION_1_2
+                let supports_driver_properties = capabilities.device_api_version
+                    >= vk::API_VERSION_1_2
                     || capabilities.supports_extension(vk::KhrDriverPropertiesFn::name());
 
                 let mut builder = vk::PhysicalDeviceProperties2KHR::builder();
-                if self.driver_api_version >= vk::API_VERSION_1_1
-                    || capabilities.supports_extension(vk::KhrMaintenance3Fn::name())
-                {
+                if supports_maintenance3 {
                     capabilities.maintenance_3 =
                         Some(vk::PhysicalDeviceMaintenance3Properties::default());
                     builder = builder.push_next(capabilities.maintenance_3.as_mut().unwrap());
@@ -819,15 +819,7 @@ impl super::InstanceShared {
                 unsafe {
                     get_device_properties.get_physical_device_properties2(phd, &mut properties2);
                 }
-                properties2.properties
-            } else {
-                unsafe { self.raw.get_physical_device_properties(phd) }
             };
-
-            
-            capabilities.effective_api_version = self
-                .driver_api_version
-                .min(capabilities.properties.api_version);
             capabilities
         };
 
@@ -838,7 +830,7 @@ impl super::InstanceShared {
             let mut builder = vk::PhysicalDeviceFeatures2KHR::builder().features(core);
 
             
-            if capabilities.effective_api_version >= vk::API_VERSION_1_1
+            if capabilities.device_api_version >= vk::API_VERSION_1_1
                 || capabilities.supports_extension(vk::KhrMultiviewFn::name())
             {
                 let next = features
@@ -900,7 +892,7 @@ impl super::InstanceShared {
             }
 
             
-            if capabilities.effective_api_version >= vk::API_VERSION_1_3
+            if capabilities.device_api_version >= vk::API_VERSION_1_3
                 || capabilities.supports_extension(vk::KhrZeroInitializeWorkgroupMemoryFn::name())
             {
                 let next = features
@@ -993,7 +985,7 @@ impl super::Instance {
             );
         };
 
-        if phd_capabilities.effective_api_version == vk::API_VERSION_1_0
+        if phd_capabilities.device_api_version == vk::API_VERSION_1_0
             && !phd_capabilities.supports_extension(vk::KhrStorageBufferStorageClassFn::name())
         {
             log::warn!(
@@ -1004,7 +996,7 @@ impl super::Instance {
         }
         if !phd_capabilities.supports_extension(vk::AmdNegativeViewportHeightFn::name())
             && !phd_capabilities.supports_extension(vk::KhrMaintenance1Fn::name())
-            && phd_capabilities.effective_api_version < vk::API_VERSION_1_1
+            && phd_capabilities.device_api_version < vk::API_VERSION_1_1
         {
             log::warn!(
                 "viewport Y-flip is not supported, hiding adapter: {}",
@@ -1025,7 +1017,7 @@ impl super::Instance {
         }
 
         let private_caps = super::PrivateCapabilities {
-            flip_y_requires_shift: phd_capabilities.effective_api_version >= vk::API_VERSION_1_1
+            flip_y_requires_shift: phd_capabilities.device_api_version >= vk::API_VERSION_1_1
                 || phd_capabilities.supports_extension(vk::KhrMaintenance1Fn::name()),
             imageless_framebuffers: match phd_features.imageless_framebuffer {
                 Some(features) => features.imageless_framebuffer == vk::TRUE,
@@ -1033,7 +1025,7 @@ impl super::Instance {
                     .imageless_framebuffer
                     .map_or(false, |ext| ext.imageless_framebuffer != 0),
             },
-            image_view_usage: phd_capabilities.effective_api_version >= vk::API_VERSION_1_1
+            image_view_usage: phd_capabilities.device_api_version >= vk::API_VERSION_1_1
                 || phd_capabilities.supports_extension(vk::KhrMaintenance2Fn::name()),
             timeline_semaphores: match phd_features.timeline_semaphore {
                 Some(features) => features.timeline_semaphore == vk::TRUE,
@@ -1087,6 +1079,8 @@ impl super::Instance {
                 .map_or(false, |ext| {
                     ext.shader_zero_initialize_workgroup_memory == vk::TRUE
                 }),
+            image_format_list: phd_capabilities.device_api_version >= vk::API_VERSION_1_2
+                || phd_capabilities.supports_extension(vk::KhrImageFormatListFn::name()),
         };
         let capabilities = crate::Capabilities {
             limits: phd_capabilities.to_wgpu_limits(),
@@ -1160,7 +1154,7 @@ impl super::Adapter {
         features: wgt::Features,
     ) -> PhysicalDeviceFeatures {
         PhysicalDeviceFeatures::from_extensions_and_requested_features(
-            self.phd_capabilities.effective_api_version,
+            self.phd_capabilities.device_api_version,
             enabled_extensions,
             features,
             self.downlevel_flags,
@@ -1214,7 +1208,7 @@ impl super::Adapter {
                 &self.instance.raw,
                 &raw_device,
             )))
-        } else if self.phd_capabilities.effective_api_version >= vk::API_VERSION_1_2 {
+        } else if self.phd_capabilities.device_api_version >= vk::API_VERSION_1_2 {
             Some(super::ExtensionFn::Promoted)
         } else {
             None
@@ -1262,6 +1256,9 @@ impl super::Adapter {
                     | wgt::Features::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING,
             ) {
                 capabilities.push(spv::Capability::ShaderNonUniform);
+            }
+            if features.contains(wgt::Features::BGRA8UNORM_STORAGE) {
+                capabilities.push(spv::Capability::StorageImageWriteWithoutFormat);
             }
 
             let mut flags = spv::WriterFlags::empty();
@@ -1746,5 +1743,37 @@ fn supports_format(
         vk::ImageTiling::LINEAR => properties.linear_tiling_features.contains(features),
         vk::ImageTiling::OPTIMAL => properties.optimal_tiling_features.contains(features),
         _ => false,
+    }
+}
+
+fn supports_bgra8unorm_storage(
+    instance: &ash::Instance,
+    phd: vk::PhysicalDevice,
+    device_api_version: u32,
+) -> bool {
+    
+
+    
+    
+    
+    if device_api_version < vk::API_VERSION_1_3 {
+        return false;
+    }
+
+    unsafe {
+        let mut properties3 = vk::FormatProperties3::default();
+        let mut properties2 = vk::FormatProperties2::builder().push_next(&mut properties3);
+
+        instance.get_physical_device_format_properties2(
+            phd,
+            vk::Format::B8G8R8A8_UNORM,
+            &mut properties2,
+        );
+
+        let features2 = properties2.format_properties.optimal_tiling_features;
+        let features3 = properties3.optimal_tiling_features;
+
+        features2.contains(vk::FormatFeatureFlags::STORAGE_IMAGE)
+            && features3.contains(vk::FormatFeatureFlags2::STORAGE_WRITE_WITHOUT_FORMAT)
     }
 }

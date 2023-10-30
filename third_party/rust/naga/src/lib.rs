@@ -981,6 +981,10 @@ pub struct LocalVariable {
     
     
     
+    
+    
+    
+    
     pub init: Option<Handle<Expression>>,
 }
 
@@ -991,7 +995,8 @@ pub struct LocalVariable {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum UnaryOperator {
     Negate,
-    Not,
+    LogicalNot,
+    BitwiseNot,
 }
 
 
@@ -1112,8 +1117,6 @@ pub enum RelationalFunction {
     Any,
     IsNan,
     IsInf,
-    IsFinite,
-    IsNormal,
 }
 
 

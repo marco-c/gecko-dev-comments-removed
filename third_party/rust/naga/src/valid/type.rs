@@ -168,8 +168,10 @@ fn check_member_layout(
 const fn ptr_space_argument_flag(space: crate::AddressSpace) -> TypeFlags {
     use crate::AddressSpace as As;
     match space {
-        As::Function | As::Private | As::WorkGroup => TypeFlags::ARGUMENT,
-        As::Uniform | As::Storage { .. } | As::Handle | As::PushConstant => TypeFlags::empty(),
+        As::Function | As::Private => TypeFlags::ARGUMENT,
+        As::Uniform | As::Storage { .. } | As::Handle | As::PushConstant | As::WorkGroup => {
+            TypeFlags::empty()
+        }
     }
 }
 
@@ -557,9 +559,17 @@ impl super::Validator {
 
                 ti
             }
-            Ti::Image { .. } | Ti::Sampler { .. } => {
+            Ti::Image {
+                dim,
+                arrayed,
+                class: _,
+            } => {
+                if arrayed && matches!(dim, crate::ImageDimension::Cube) {
+                    self.require_type_capability(Capabilities::CUBE_ARRAY_TEXTURES)?;
+                }
                 TypeInfo::new(TypeFlags::ARGUMENT, Alignment::ONE)
             }
+            Ti::Sampler { .. } => TypeInfo::new(TypeFlags::ARGUMENT, Alignment::ONE),
             Ti::AccelerationStructure => {
                 self.require_type_capability(Capabilities::RAY_QUERY)?;
                 TypeInfo::new(TypeFlags::ARGUMENT, Alignment::ONE)

@@ -65,7 +65,6 @@ impl FeaturesManager {
 
     
     
-    
     pub fn check_availability(&self, version: Version) -> BackendResult {
         
         let mut missing = Features::empty();

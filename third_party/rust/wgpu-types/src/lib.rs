@@ -309,7 +309,17 @@ bitflags::bitflags! {
         //
         // ? const FORMATS_TIER_1 = 1 << 14; (https://github.com/gpuweb/gpuweb/issues/3837)
         // ? const RW_STORAGE_TEXTURE_TIER_1 = 1 << 15; (https://github.com/gpuweb/gpuweb/issues/3838)
-        // TODO const BGRA8UNORM_STORAGE = 1 << 16;
+
+        /// Allows the [`wgpu::TextureUsages::STORAGE_BINDING`] usage on textures with format [`TextureFormat::Bgra8unorm`]
+        ///
+        /// Supported Platforms:
+        /// - Vulkan
+        /// - DX12
+        /// - Metal
+        ///
+        /// This is a web and native feature.
+        const BGRA8UNORM_STORAGE = 1 << 16;
+
         // ? const NORM16_FILTERABLE = 1 << 17; (https://github.com/gpuweb/gpuweb/issues/3839)
         // ? const NORM16_RESOLVE = 1 << 18; (https://github.com/gpuweb/gpuweb/issues/3839)
         // TODO const FLOAT32_FILTERABLE = 1 << 19;
@@ -831,6 +841,8 @@ bitflags::bitflags! {
         const DEBUG = 1 << 0;
         /// Enable validation, if possible.
         const VALIDATION = 1 << 1;
+        /// Don't pass labels to wgpu-hal.
+        const DISCARD_HAL_LABELS = 1 << 2;
     }
 }
 
@@ -1191,6 +1203,9 @@ impl Limits {
             max_compute_workgroup_size_y: 0,
             max_compute_workgroup_size_z: 0,
             max_compute_workgroups_per_dimension: 0,
+
+            
+            max_inter_stage_shader_components: 31,
 
             
             ..Self::downlevel_defaults()
@@ -2977,6 +2992,11 @@ impl TextureFormat {
         } else {
             basic
         };
+        let bgra8unorm = if device_features.contains(Features::BGRA8UNORM_STORAGE) {
+            attachment | TextureUsages::STORAGE_BINDING
+        } else {
+            attachment
+        };
 
         #[rustfmt::skip] 
         let (
@@ -3005,7 +3025,7 @@ impl TextureFormat {
             Self::Rgba8Snorm =>           (        noaa,    storage),
             Self::Rgba8Uint =>            (        msaa,  all_flags),
             Self::Rgba8Sint =>            (        msaa,  all_flags),
-            Self::Bgra8Unorm =>           (msaa_resolve, attachment),
+            Self::Bgra8Unorm =>           (msaa_resolve, bgra8unorm),
             Self::Bgra8UnormSrgb =>       (msaa_resolve, attachment),
             Self::Rgb10a2Uint =>          (        msaa, attachment),
             Self::Rgb10a2Unorm =>         (msaa_resolve, attachment),

@@ -828,6 +828,19 @@ impl<'a, W: Write> Writer<'a, W> {
             let fun_info = &self.info[handle];
 
             
+            
+            
+            
+            
+            
+            
+            
+            
+            if !fun_info.available_stages.contains(ep_info.available_stages) {
+                continue;
+            }
+
+            
             self.write_function(back::FunctionType::Function(handle), function, fun_info)?;
 
             writeln!(self.out)?;
@@ -1605,7 +1618,7 @@ impl<'a, W: Write> Writer<'a, W> {
 
                 
                 
-                self.write_const_expr(init)?;
+                self.write_expr(init, &ctx)?;
             } else if is_value_init_supported(self.module, local.ty) {
                 write!(self.out, " = ")?;
                 self.write_zero_init_value(local.ty)?;
@@ -1709,7 +1722,7 @@ impl<'a, W: Write> Writer<'a, W> {
         arg: Handle<crate::Expression>,
         arg1: Handle<crate::Expression>,
         size: usize,
-        ctx: &back::FunctionCtx<'_>,
+        ctx: &back::FunctionCtx,
     ) -> BackendResult {
         
         
@@ -2254,9 +2267,12 @@ impl<'a, W: Write> Writer<'a, W> {
     
     
     fn write_const_expr(&mut self, expr: Handle<crate::Expression>) -> BackendResult {
-        self.write_possibly_const_expr(expr, &self.module.const_expressions, |writer, expr| {
-            writer.write_const_expr(expr)
-        })
+        self.write_possibly_const_expr(
+            expr,
+            &self.module.const_expressions,
+            |expr| &self.info[expr],
+            |writer, expr| writer.write_const_expr(expr),
+        )
     }
 
     
@@ -2277,13 +2293,15 @@ impl<'a, W: Write> Writer<'a, W> {
     
     
     
-    fn write_possibly_const_expr<E>(
-        &mut self,
+    fn write_possibly_const_expr<'w, I, E>(
+        &'w mut self,
         expr: Handle<crate::Expression>,
         expressions: &crate::Arena<crate::Expression>,
+        info: I,
         write_expression: E,
     ) -> BackendResult
     where
+        I: Fn(Handle<crate::Expression>) -> &'w proc::TypeResolution,
         E: Fn(&mut Self, Handle<crate::Expression>) -> BackendResult,
     {
         use crate::Expression;
@@ -2331,6 +2349,14 @@ impl<'a, W: Write> Writer<'a, W> {
                 }
                 write!(self.out, ")")?
             }
+            
+            Expression::Splat { size: _, value } => {
+                let resolved = info(expr).inner_with(&self.module.types);
+                self.write_value_type(resolved)?;
+                write!(self.out, "(")?;
+                write_expression(self, value)?;
+                write!(self.out, ")")?
+            }
             _ => unreachable!(),
         }
 
@@ -2344,7 +2370,7 @@ impl<'a, W: Write> Writer<'a, W> {
     fn write_expr(
         &mut self,
         expr: Handle<crate::Expression>,
-        ctx: &back::FunctionCtx<'_>,
+        ctx: &back::FunctionCtx,
     ) -> BackendResult {
         use crate::Expression;
 
@@ -2357,10 +2383,14 @@ impl<'a, W: Write> Writer<'a, W> {
             Expression::Literal(_)
             | Expression::Constant(_)
             | Expression::ZeroValue(_)
-            | Expression::Compose { .. } => {
-                self.write_possibly_const_expr(expr, ctx.expressions, |writer, expr| {
-                    writer.write_expr(expr, ctx)
-                })?;
+            | Expression::Compose { .. }
+            | Expression::Splat { .. } => {
+                self.write_possibly_const_expr(
+                    expr,
+                    ctx.expressions,
+                    |expr| &ctx.info[expr].ty,
+                    |writer, expr| writer.write_expr(expr, ctx),
+                )?;
             }
             
             Expression::Access { base, index } => {
@@ -2406,14 +2436,6 @@ impl<'a, W: Write> Writer<'a, W> {
                     }
                     ref other => return Err(Error::Custom(format!("Cannot index {other:?}"))),
                 }
-            }
-            
-            Expression::Splat { size: _, value } => {
-                let resolved = ctx.info[expr].ty.inner_with(&self.module.types);
-                self.write_value_type(resolved)?;
-                write!(self.out, "(")?;
-                self.write_expr(value, ctx)?;
-                write!(self.out, ")")?
             }
             
             Expression::Swizzle {
@@ -2753,38 +2775,18 @@ impl<'a, W: Write> Writer<'a, W> {
 
                 write!(self.out, ")")?;
             }
-            
-            
-            
-            
-            
-            
             Expression::Unary { op, expr } => {
-                use crate::{ScalarKind as Sk, UnaryOperator as Uo};
-
-                let ty = ctx.info[expr].ty.inner_with(&self.module.types);
-
-                match *ty {
-                    TypeInner::Vector { kind: Sk::Bool, .. } => {
-                        write!(self.out, "not(")?;
+                let operator_or_fn = match op {
+                    crate::UnaryOperator::Negate => "-",
+                    crate::UnaryOperator::LogicalNot => {
+                        match *ctx.info[expr].ty.inner_with(&self.module.types) {
+                            TypeInner::Vector { .. } => "not",
+                            _ => "!",
+                        }
                     }
-                    _ => {
-                        let operator = match op {
-                            Uo::Negate => "-",
-                            Uo::Not => match ty.scalar_kind() {
-                                Some(Sk::Sint) | Some(Sk::Uint) => "~",
-                                Some(Sk::Bool) => "!",
-                                ref other => {
-                                    return Err(Error::Custom(format!(
-                                        "Cannot apply not to type {other:?}"
-                                    )))
-                                }
-                            },
-                        };
-
-                        write!(self.out, "{operator}(")?;
-                    }
-                }
+                    crate::UnaryOperator::BitwiseNot => "~",
+                };
+                write!(self.out, "{operator_or_fn}(")?;
 
                 self.write_expr(expr, ctx)?;
 
@@ -2992,12 +2994,8 @@ impl<'a, W: Write> Writer<'a, W> {
                 use crate::RelationalFunction as Rf;
 
                 let fun_name = match fun {
-                    
-                    Rf::IsFinite => "!isinf",
                     Rf::IsInf => "isinf",
                     Rf::IsNan => "isnan",
-                    
-                    Rf::IsNormal => "!isnan",
                     Rf::All => "all",
                     Rf::Any => "any",
                 };

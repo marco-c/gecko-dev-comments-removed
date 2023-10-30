@@ -177,8 +177,8 @@ impl super::InstanceShared {
         &self.raw
     }
 
-    pub fn driver_api_version(&self) -> u32 {
-        self.driver_api_version
+    pub fn instance_api_version(&self) -> u32 {
+        self.instance_api_version
     }
 
     pub fn extensions(&self) -> &[&'static CStr] {
@@ -206,7 +206,7 @@ impl super::Instance {
     
     pub fn desired_extensions(
         entry: &ash::Entry,
-        _driver_api_version: u32,
+        _instance_api_version: u32,
         flags: wgt::InstanceFlags,
     ) -> Result<Vec<&'static CStr>, crate::InstanceError> {
         let instance_extensions = entry
@@ -293,7 +293,7 @@ impl super::Instance {
     pub unsafe fn from_raw(
         entry: ash::Entry,
         raw_instance: ash::Instance,
-        driver_api_version: u32,
+        instance_api_version: u32,
         android_sdk_version: u32,
         debug_utils_user_data: Option<super::DebugUtilsMessengerUserData>,
         extensions: Vec<&'static CStr>,
@@ -301,7 +301,7 @@ impl super::Instance {
         has_nv_optimus: bool,
         drop_guard: Option<crate::DropGuard>,
     ) -> Result<Self, crate::InstanceError> {
-        log::info!("Instance version: 0x{:x}", driver_api_version);
+        log::info!("Instance version: 0x{:x}", instance_api_version);
 
         let debug_utils = if let Some(debug_callback_user_data) = debug_utils_user_data {
             if extensions.contains(&ext::DebugUtils::name()) {
@@ -373,7 +373,7 @@ impl super::Instance {
                 get_physical_device_properties,
                 entry,
                 has_nv_optimus,
-                driver_api_version,
+                instance_api_version,
                 android_sdk_version,
             }),
         })
@@ -575,7 +575,7 @@ impl crate::Instance<super::Api> for super::Instance {
         let entry = unsafe { ash::Entry::load() }.map_err(|err| {
             crate::InstanceError::with_source(String::from("missing Vulkan entry points"), err)
         })?;
-        let driver_api_version = match entry.try_enumerate_instance_version() {
+        let instance_api_version = match entry.try_enumerate_instance_version() {
             
             Ok(Some(version)) => version,
             Ok(None) => vk::API_VERSION_1_0,
@@ -595,7 +595,7 @@ impl crate::Instance<super::Api> for super::Instance {
             .engine_version(2)
             .api_version(
                 
-                if driver_api_version < vk::API_VERSION_1_1 {
+                if instance_api_version < vk::API_VERSION_1_1 {
                     vk::API_VERSION_1_0
                 } else {
                     
@@ -606,11 +606,11 @@ impl crate::Instance<super::Api> for super::Instance {
                     
                     
                     
-                    vk::HEADER_VERSION_COMPLETE
+                    vk::API_VERSION_1_3
                 },
             );
 
-        let extensions = Self::desired_extensions(&entry, driver_api_version, desc.flags)?;
+        let extensions = Self::desired_extensions(&entry, instance_api_version, desc.flags)?;
 
         let instance_layers = entry.enumerate_instance_layer_properties().map_err(|e| {
             log::info!("enumerate_instance_layer_properties: {:?}", e);
@@ -720,7 +720,7 @@ impl crate::Instance<super::Api> for super::Instance {
             Self::from_raw(
                 entry,
                 vk_instance,
-                driver_api_version,
+                instance_api_version,
                 android_sdk_version,
                 debug_callback_user_data,
                 extensions,

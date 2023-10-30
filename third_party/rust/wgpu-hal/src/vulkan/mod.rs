@@ -112,7 +112,13 @@ pub struct InstanceShared {
     entry: ash::Entry,
     has_nv_optimus: bool,
     android_sdk_version: u32,
-    driver_api_version: u32,
+    
+    
+    
+    
+    
+    
+    instance_api_version: u32,
 }
 
 pub struct Instance {
@@ -196,6 +202,7 @@ struct PrivateCapabilities {
     robust_buffer_access2: bool,
     robust_image_access2: bool,
     zero_initialize_workgroup_memory: bool,
+    image_format_list: bool,
 }
 
 bitflags::bitflags!(

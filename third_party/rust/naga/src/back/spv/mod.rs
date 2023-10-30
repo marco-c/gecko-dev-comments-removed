@@ -557,6 +557,9 @@ struct BlockContext<'w> {
 
     
     temp_list: Vec<Word>,
+
+    
+    expression_constness: crate::proc::ExpressionConstnessTracker,
 }
 
 impl BlockContext<'_> {
