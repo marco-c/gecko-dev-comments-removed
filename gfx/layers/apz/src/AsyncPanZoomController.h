@@ -1477,13 +1477,6 @@ class AsyncPanZoomController {
 
   void DispatchStateChangeNotification(PanZoomState aOldState,
                                        PanZoomState aNewState);
-
-  
-
-
-
-  void SendTransformBeginAndEnd();
-
   
 
 
@@ -1610,8 +1603,6 @@ class AsyncPanZoomController {
   void SmoothScrollTo(CSSSnapDestination&& aDestination,
                       ScrollTriggeredByScript aTriggeredByScript,
                       const ScrollOrigin& aOrigin);
-
-  ParentLayerPoint ConvertDestinationToDelta(CSSPoint& aDestination) const;
 
   
   

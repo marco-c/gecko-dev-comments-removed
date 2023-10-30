@@ -2108,12 +2108,6 @@ nsEventStatus AsyncPanZoomController::OnKeyboard(const KeyboardInput& aEvent) {
   
   if (mState != KEYBOARD_SCROLL) {
     CancelAnimation();
-    
-    
-    
-    if (ConvertDestinationToDelta(destination) == ParentLayerPoint()) {
-      return nsEventStatus_eConsumeDoDefault;
-    }
     SetState(KEYBOARD_SCROLL);
 
     nsPoint initialPosition =
@@ -3944,20 +3938,6 @@ void AsyncPanZoomController::HandleSmoothScrollOverscroll(
                         BuildOverscrollHandoffChain(), nullptr);
 }
 
-ParentLayerPoint AsyncPanZoomController::ConvertDestinationToDelta(
-    CSSPoint& aDestination) const {
-  ParentLayerPoint startPoint, endPoint;
-
-  {
-    RecursiveMutexAutoLock lock(mRecursiveMutex);
-
-    startPoint = aDestination * Metrics().GetZoom();
-    endPoint = Metrics().GetVisualScrollOffset() * Metrics().GetZoom();
-  }
-
-  return endPoint - startPoint;
-}
-
 void AsyncPanZoomController::SmoothScrollTo(
     CSSSnapDestination&& aDestination,
     ScrollTriggeredByScript aTriggeredByScript, const ScrollOrigin& aOrigin) {
@@ -3984,13 +3964,6 @@ void AsyncPanZoomController::SmoothScrollTo(
   }
 
   CancelAnimation();
-
-  
-  
-  if (ConvertDestinationToDelta(aDestination.mPosition) == ParentLayerPoint()) {
-    return;
-  }
-
   SetState(SMOOTH_SCROLL);
   nsPoint initialPosition =
       CSSPoint::ToAppUnits(Metrics().GetVisualScrollOffset());
@@ -4012,30 +3985,24 @@ void AsyncPanZoomController::SmoothMsdScrollTo(
     animation->SetDestination(aDestination.mPosition,
                               std::move(aDestination.mTargetIds),
                               aTriggeredByScript);
-    return;
-  }
+  } else {
+    CancelAnimation();
+    SetState(SMOOTHMSD_SCROLL);
+    
+    CSSPoint initialVelocity;
+    if (Metrics().GetZoom() != CSSToParentLayerScale(0)) {
+      initialVelocity = ParentLayerPoint(mX.GetVelocity() * 1000.0f,
+                                         mY.GetVelocity() * 1000.0f) /
+                        Metrics().GetZoom();
+    }
 
-  
-  
-  if (ConvertDestinationToDelta(aDestination.mPosition) == ParentLayerPoint()) {
-    return;
+    StartAnimation(do_AddRef(new SmoothMsdScrollAnimation(
+        *this, Metrics().GetVisualScrollOffset(), initialVelocity,
+        aDestination.mPosition,
+        StaticPrefs::layout_css_scroll_behavior_spring_constant(),
+        StaticPrefs::layout_css_scroll_behavior_damping_ratio(),
+        std::move(aDestination.mTargetIds), aTriggeredByScript)));
   }
-  CancelAnimation();
-  SetState(SMOOTHMSD_SCROLL);
-  
-  CSSPoint initialVelocity;
-  if (Metrics().GetZoom() != CSSToParentLayerScale(0)) {
-    initialVelocity = ParentLayerPoint(mX.GetVelocity() * 1000.0f,
-                                       mY.GetVelocity() * 1000.0f) /
-                      Metrics().GetZoom();
-  }
-
-  StartAnimation(do_AddRef(new SmoothMsdScrollAnimation(
-      *this, Metrics().GetVisualScrollOffset(), initialVelocity,
-      aDestination.mPosition,
-      StaticPrefs::layout_css_scroll_behavior_spring_constant(),
-      StaticPrefs::layout_css_scroll_behavior_damping_ratio(),
-      std::move(aDestination.mTargetIds), aTriggeredByScript)));
 }
 
 void AsyncPanZoomController::StartOverscrollAnimation(
@@ -5532,7 +5499,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     }
   }
 
-  bool instantScrollMayTriggerTransform = false;
   bool scrollOffsetUpdated = false;
   bool smoothScrollRequested = false;
   bool didCancelAnimation = false;
@@ -5609,11 +5575,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
 
     MOZ_ASSERT(scrollUpdate.GetMode() == ScrollMode::Instant ||
                scrollUpdate.GetMode() == ScrollMode::Normal);
-
-    instantScrollMayTriggerTransform =
-        scrollUpdate.GetMode() == ScrollMode::Instant &&
-        scrollUpdate.GetScrollTriggeredByScript() ==
-            ScrollTriggeredByScript::No;
 
     
     
@@ -5747,15 +5708,6 @@ void AsyncPanZoomController::NotifyLayersUpdated(
     
     
     ScheduleComposite();
-
-    
-    
-    
-    if (!IsTransformingState(mState) && instantScrollMayTriggerTransform &&
-        cumulativeRelativeDelta && *cumulativeRelativeDelta != CSSPoint() &&
-        !didCancelAnimation) {
-      SendTransformBeginAndEnd();
-    }
   }
 
   
@@ -6211,8 +6163,7 @@ bool AsyncPanZoomController::HasReadyTouchBlock() const {
 }
 
 bool AsyncPanZoomController::CanHandleScrollOffsetUpdate(PanZoomState aState) {
-  return aState == NOTHING || aState == PAN_MOMENTUM || aState == TOUCHING ||
-         IsPanningState(aState);
+  return aState == PAN_MOMENTUM || aState == TOUCHING || IsPanningState(aState);
 }
 
 bool AsyncPanZoomController::ShouldCancelAnimationForScrollUpdate(
@@ -6278,14 +6229,6 @@ void AsyncPanZoomController::DispatchStateChangeNotification(
       controller->NotifyAPZStateChange(GetGuid(),
                                        APZStateChange::eTransformEnd);
     }
-  }
-}
-void AsyncPanZoomController::SendTransformBeginAndEnd() {
-  RefPtr<GeckoContentController> controller = GetGeckoContentController();
-  if (controller) {
-    controller->NotifyAPZStateChange(GetGuid(),
-                                     APZStateChange::eTransformBegin);
-    controller->NotifyAPZStateChange(GetGuid(), APZStateChange::eTransformEnd);
   }
 }
 
