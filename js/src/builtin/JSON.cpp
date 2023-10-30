@@ -241,7 +241,8 @@ class StringifyContext {
 
 } 
 
-static bool Str(JSContext* cx, const Value& v, StringifyContext* scx);
+static bool SerializeJSONProperty(JSContext* cx, const Value& v,
+                                  StringifyContext* scx);
 
 static bool WriteIndent(StringifyContext* scx, uint32_t limit) {
   if (!scx->gap.empty()) {
@@ -556,7 +557,7 @@ static bool SerializeJSONObject(JSContext* cx, HandleObject obj,
 
     if (!Quote(cx, scx->sb, s) || !scx->sb.append(':') ||
         !(scx->gap.empty() || scx->sb.append(' ')) ||
-        !Str(cx, outputValue, scx)) {
+        !SerializeJSONProperty(cx, outputValue, scx)) {
       return false;
     }
   }
@@ -688,7 +689,7 @@ static bool SerializeJSONArray(JSContext* cx, HandleObject obj,
           return false;
         }
       } else {
-        if (!Str(cx, outputValue, scx)) {
+        if (!SerializeJSONProperty(cx, outputValue, scx)) {
           return false;
         }
       }
@@ -714,8 +715,8 @@ static bool SerializeJSONArray(JSContext* cx, HandleObject obj,
 }
 
 
-
-static bool Str(JSContext* cx, const Value& v, StringifyContext* scx) {
+static bool SerializeJSONProperty(JSContext* cx, const Value& v,
+                                  StringifyContext* scx) {
   
   MOZ_ASSERT(!IsFilteredValue(v));
 
@@ -1007,6 +1008,7 @@ class ShapePropertyForwardIterNoGC {
 
 
 
+
 class OwnNonIndexKeysIterForJSON {
   ShapePropertyForwardIterNoGC shapeIter;
   bool done_ = false;
@@ -1189,6 +1191,7 @@ static bool PreprocessFastValue(JSContext* cx, Value* vp, StringifyContext* scx,
 
 
 
+
 struct FastStackEntry {
   NativeObject* nobj;
   Variant<DenseElementsIteratorForJSON, OwnNonIndexKeysIterForJSON> iter;
@@ -1220,13 +1223,14 @@ struct FastStackEntry {
 };
 
 
-
-static bool FastStr(JSContext* cx, Handle<Value> v, StringifyContext* scx,
-                    BailReason* whySlow) {
+static bool FastSerializeJSONProperty(JSContext* cx, Handle<Value> v,
+                                      StringifyContext* scx,
+                                      BailReason* whySlow) {
   MOZ_ASSERT(*whySlow == BailReason::NO_REASON);
   MOZ_ASSERT(v.isObject());
 
   
+
 
 
 
@@ -1653,7 +1657,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
       whySlow = BailReason::PRIMITIVE;
     }
     if (whySlow == BailReason::NO_REASON) {
-      if (!FastStr(cx, vp, &scx, &whySlow)) {
+      if (!FastSerializeJSONProperty(cx, vp, &scx, &whySlow)) {
         return false;
       }
       if (whySlow == BailReason::NO_REASON) {
@@ -1688,7 +1692,7 @@ bool js::Stringify(JSContext* cx, MutableHandleValue vp, JSObject* replacer_,
     return true;
   }
 
-  if (!Str(cx, vp, &scx)) {
+  if (!SerializeJSONProperty(cx, vp, &scx)) {
     return false;
   }
 
