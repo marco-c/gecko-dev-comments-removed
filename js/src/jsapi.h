@@ -598,7 +598,21 @@ extern JS_PUBLIC_API JSObject* JS_GetFunctionObject(JSFunction* fun);
 
 
 
-extern JS_PUBLIC_API JSString* JS_GetFunctionId(JSFunction* fun);
+
+
+
+
+extern JS_PUBLIC_API bool JS_GetFunctionId(JSContext* cx,
+                                           JS::Handle<JSFunction*> fun,
+                                           JS::MutableHandle<JSString*> name);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSString* JS_GetMaybePartialFunctionId(JSFunction* fun);
 
 
 
@@ -607,7 +621,23 @@ extern JS_PUBLIC_API JSString* JS_GetFunctionId(JSFunction* fun);
 
 
 
-extern JS_PUBLIC_API JSString* JS_GetFunctionDisplayId(JSFunction* fun);
+
+
+
+
+
+
+extern JS_PUBLIC_API bool JS_GetFunctionDisplayId(
+    JSContext* cx, JS::Handle<JSFunction*> fun,
+    JS::MutableHandle<JSString*> name);
+
+
+
+
+
+
+
+extern JS_PUBLIC_API JSString* JS_GetMaybePartialFunctionDisplayId(JSFunction*);
 
 
 

@@ -129,6 +129,10 @@ class JSFunction : public js::NativeObject {
     
     
     
+    
+    
+    
+    
     AtomSlot,
 
     SlotCount
@@ -232,6 +236,10 @@ class JSFunction : public js::NativeObject {
   bool isGetter() const { return flags().isGetter(); }
   bool isSetter() const { return flags().isSetter(); }
 
+  bool isAccessorWithLazyName() const {
+    return flags().isAccessorWithLazyName();
+  }
+
   bool allowSuperProperty() const { return flags().allowSuperProperty(); }
 
   bool hasResolvedLength() const { return flags().hasResolvedLength(); }
@@ -256,7 +264,7 @@ class JSFunction : public js::NativeObject {
   bool isBuiltin() const { return isBuiltinNative() || isSelfHostedBuiltin(); }
 
   bool isNamedLambda() const {
-    return flags().isNamedLambda(displayAtom() != nullptr);
+    return flags().isNamedLambda(maybePartialDisplayAtom() != nullptr);
   }
 
   bool hasLexicalThis() const { return isArrow(); }
@@ -311,13 +319,49 @@ class JSFunction : public js::NativeObject {
   static inline bool getUnresolvedLength(JSContext* cx, js::HandleFunction fun,
                                          uint16_t* length);
 
+  
+  
+  
+  inline JSAtom* getUnresolvedName(JSContext* cx);
+
+  
+  
   inline JSAtom* infallibleGetUnresolvedName(JSContext* cx);
 
-  JSAtom* explicitName() const {
+  
+  JSAtom* getAccessorNameForLazy(JSContext* cx);
+
+  
+  
+  
+  
+  
+  
+  
+  bool getExplicitName(JSContext* cx, JS::MutableHandle<JSAtom*> name);
+
+  
+  
+  
+  
+  
+  
+  
+  JSAtom* maybePartialExplicitName() const {
     return (hasInferredName() || hasGuessedAtom()) ? nullptr : rawAtom();
   }
 
-  JSAtom* explicitOrInferredName() const {
+  
+  
+  
+  
+  JSAtom* fullExplicitName() const {
+    MOZ_ASSERT(!isAccessorWithLazyName());
+    return (hasInferredName() || hasGuessedAtom()) ? nullptr : rawAtom();
+  }
+
+  JSAtom* fullExplicitOrInferredName() const {
+    MOZ_ASSERT(!isAccessorWithLazyName());
     return hasGuessedAtom() ? nullptr : rawAtom();
   }
 
@@ -334,7 +378,30 @@ class JSFunction : public js::NativeObject {
     setFixedSlot(AtomSlot, atom ? JS::StringValue(atom) : JS::UndefinedValue());
   }
 
-  JSAtom* displayAtom() const { return rawAtom(); }
+  
+  
+  
+  
+  
+  bool getDisplayAtom(JSContext* cx, JS::MutableHandle<JSAtom*> name);
+
+  
+  
+  
+  
+  
+  
+  
+  JSAtom* maybePartialDisplayAtom() const { return rawAtom(); }
+
+  
+  
+  
+  
+  JSAtom* fullDisplayAtom() const {
+    MOZ_ASSERT(!isAccessorWithLazyName());
+    return rawAtom();
+  }
 
   JSAtom* rawAtom() const {
     JS::Value value = getFixedSlot(AtomSlot);

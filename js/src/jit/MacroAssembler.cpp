@@ -4733,8 +4733,12 @@ void MacroAssembler::loadFunctionName(Register func, Register output,
   load32(Address(func, JSFunction::offsetOfFlagsAndArgCount()), output);
 
   
-  branchTest32(Assembler::NonZero, output, Imm32(FunctionFlags::RESOLVED_NAME),
-               slowPath);
+  
+  
+  branchTest32(
+      Assembler::NonZero, output,
+      Imm32(FunctionFlags::RESOLVED_NAME | FunctionFlags::LAZY_ACCESSOR_NAME),
+      slowPath);
 
   Label noName, done;
   branchTest32(Assembler::NonZero, output,
