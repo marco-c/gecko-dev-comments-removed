@@ -31,7 +31,8 @@ namespace webrtc {
 
 
 
-class TestAudioDeviceModule : public AudioDeviceModule {
+
+class TestAudioDeviceModule {
  public:
   
   
@@ -72,8 +73,6 @@ class TestAudioDeviceModule : public AudioDeviceModule {
 
     virtual void SetMaxAmplitude(int16_t amplitude) = 0;
   };
-
-  ~TestAudioDeviceModule() override {}
 
   
   
@@ -132,19 +131,8 @@ class TestAudioDeviceModule : public AudioDeviceModule {
       int sampling_frequency_in_hz,
       int num_channels = 1);
 
-  int32_t Init() override = 0;
-  int32_t RegisterAudioCallback(AudioTransport* callback) override = 0;
-
-  int32_t StartPlayout() override = 0;
-  int32_t StopPlayout() override = 0;
-  int32_t StartRecording() override = 0;
-  int32_t StopRecording() override = 0;
-
-  bool Playing() const override = 0;
-  bool Recording() const override = 0;
-
-  
-  virtual void WaitForRecordingEnd() = 0;
+ private:
+  TestAudioDeviceModule() = default;
 };
 
 }  
