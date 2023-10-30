@@ -1263,14 +1263,8 @@ already_AddRefed<AccAttributes> LocalAccessible::NativeAttributes() {
                            Atomize(eCSSProperty_text_align));
 
   
-  
-  const LengthPercentage& textIndent = f->StyleText()->mTextIndent;
-  if (textIndent.ConvertsToLength()) {
-    attributes->SetAttribute(nsGkAtoms::textIndent,
-                             textIndent.ToLengthInCSSPixels());
-  } else if (textIndent.ConvertsToPercentage()) {
-    attributes->SetAttribute(nsGkAtoms::textIndent, textIndent.ToPercentage());
-  }
+  attributes->SetAttribute(nsGkAtoms::textIndent,
+                           Atomize(eCSSProperty_text_indent));
 
   auto GetMargin = [&](mozilla::Side aSide) -> CSSCoord {
     

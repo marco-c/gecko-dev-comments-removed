@@ -274,6 +274,9 @@ class nsBlockFrame : public nsContainerFrame {
   void MarkIntrinsicISizesDirty() override;
 
  private:
+  
+  bool TextIndentAppliesTo(const LineIterator& aLine) const;
+
   void CheckIntrinsicCacheAgainstShrinkWrapState();
 
   template <typename LineIteratorType>

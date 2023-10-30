@@ -5,6 +5,7 @@
 
 
 use crate::parser::ParserContext;
+use crate::Zero;
 use cssparser::Parser;
 use style_traits::ParseError;
 
@@ -100,4 +101,48 @@ pub enum GenericTextDecorationLength<L> {
     LengthPercentage(L),
     Auto,
     FromFont,
+}
+
+
+
+
+
+#[repr(C)]
+#[derive(
+    Animate,
+    Clone,
+    ComputeSquaredDistance,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedZero,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
+)]
+pub struct GenericTextIndent<LengthPercentage> {
+    
+    pub length: LengthPercentage,
+    
+    #[animation(constant)]
+    #[css(represents_keyword)]
+    pub hanging: bool,
+    
+    #[animation(constant)]
+    #[css(represents_keyword)]
+    pub each_line: bool,
+}
+
+impl<LengthPercentage: Zero> GenericTextIndent<LengthPercentage> {
+    
+    pub fn zero() -> Self {
+        Self {
+            length: LengthPercentage::zero(),
+            hanging: false,
+            each_line: false,
+        }
+    }
 }

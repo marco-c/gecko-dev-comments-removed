@@ -9,7 +9,7 @@ use crate::properties::StyleBuilder;
 use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::text::InitialLetter as GenericInitialLetter;
-use crate::values::generics::text::{GenericTextDecorationLength, Spacing};
+use crate::values::generics::text::{GenericTextDecorationLength, GenericTextIndent, Spacing};
 use crate::values::specified::text::{self as specified, TextOverflowSide};
 use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyword};
 use crate::values::{CSSFloat, CSSInteger};
@@ -33,6 +33,9 @@ pub type TextDecorationLength = GenericTextDecorationLength<LengthPercentage>;
 
 
 pub type TextAlign = specified::TextAlignKeyword;
+
+
+pub type TextIndent = GenericTextIndent<LengthPercentage>;
 
 
 #[repr(transparent)]

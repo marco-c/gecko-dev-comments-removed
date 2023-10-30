@@ -10,7 +10,7 @@ use crate::values::computed::text::TextEmphasisStyle as ComputedTextEmphasisStyl
 use crate::values::computed::text::TextOverflow as ComputedTextOverflow;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::generics::text::InitialLetter as GenericInitialLetter;
-use crate::values::generics::text::{GenericTextDecorationLength, Spacing};
+use crate::values::generics::text::{GenericTextDecorationLength, GenericTextIndent, Spacing};
 use crate::values::specified::length::{Length, LengthPercentage};
 use crate::values::specified::{AllowQuirks, Integer, Number};
 use cssparser::{Parser, Token};
@@ -175,7 +175,21 @@ impl ToComputedValue for TextOverflow {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Parse, Serialize, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[css(bitflags(single = "none", mixed = "underline,overline,line-through,blink"))]
 #[repr(C)]
 
@@ -359,7 +373,21 @@ pub enum TextTransformCase {
     MathAuto,
 }
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Parse, Serialize, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[css(bitflags(mixed = "full-width,full-size-kana"))]
 #[repr(C)]
 
@@ -700,9 +728,26 @@ impl Parse for TextEmphasisStyle {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, Parse, Serialize, SpecifiedValueInfo, ToCss, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    Parse,
+    Serialize,
+    SpecifiedValueInfo,
+    ToCss,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[repr(C)]
-#[css(bitflags(mixed="over,under,left,right", validate_mixed="Self::validate_and_simplify"))]
+#[css(bitflags(
+    mixed = "over,under,left,right",
+    validate_mixed = "Self::validate_and_simplify"
+))]
 
 
 pub struct TextEmphasisPosition(u8);
@@ -873,6 +918,60 @@ pub enum OverflowWrap {
 
 
 
+
+pub type TextIndent = GenericTextIndent<LengthPercentage>;
+
+impl Parse for TextIndent {
+    fn parse<'i, 't>(
+        context: &ParserContext,
+        input: &mut Parser<'i, 't>,
+    ) -> Result<Self, ParseError<'i>> {
+        let mut length = None;
+        let mut hanging = false;
+        let mut each_line = false;
+
+        
+        while !input.is_exhausted() {
+            
+            if length.is_none() {
+                if let Ok(len) = input
+                    .try_parse(|i| LengthPercentage::parse_quirky(context, i, AllowQuirks::Yes))
+                {
+                    length = Some(len);
+                    continue;
+                }
+            }
+
+            if static_prefs::pref!("layout.css.text-indent-keywords.enabled") {
+                
+                try_match_ident_ignore_ascii_case! { input,
+                    "hanging" if !hanging => hanging = true,
+                    "each-line" if !each_line => each_line = true,
+                }
+                continue;
+            }
+
+            
+            
+            break;
+        }
+
+        
+        if let Some(length) = length {
+            Ok(Self {
+                length,
+                hanging,
+                each_line,
+            })
+        } else {
+            Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError))
+        }
+    }
+}
+
+
+
+
 #[repr(u8)]
 #[cfg_attr(feature = "servo", derive(Deserialize, Serialize))]
 #[derive(
@@ -913,7 +1012,18 @@ impl TextDecorationLength {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToComputedValue, ToResolvedValue, ToShmem)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Eq,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
 #[value_info(other_values = "auto,from-font,under,left,right")]
 #[repr(C)]
 

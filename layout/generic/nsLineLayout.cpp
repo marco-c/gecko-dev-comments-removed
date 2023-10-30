@@ -206,19 +206,33 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
 
   
   
+  nsIFrame* containerFrame = LineContainerFrame();
+  bool isFirstLineOrAfterHardBreak = [&] {
+    if (mLineNumber > 0) {
+      return mStyleText->mTextIndent.each_line && GetLine() &&
+             !GetLine()->prev()->IsLineWrapped();
+    }
+    if (nsBlockFrame* prevBlock =
+            do_QueryFrame(containerFrame->GetPrevInFlow())) {
+      return mStyleText->mTextIndent.each_line &&
+             !prevBlock->LinesEnd().prev()->IsLineWrapped();
+    }
+    return true;
+  }();
 
-  if (0 == mLineNumber && !HasPrevInFlow(LineContainerFrame())) {
+  
+  
+  if (isFirstLineOrAfterHardBreak != mStyleText->mTextIndent.hanging) {
     nscoord pctBasis = mLineContainerRI.ComputedISize();
-    mTextIndent = mStyleText->mTextIndent.Resolve(pctBasis);
+    mTextIndent = mStyleText->mTextIndent.length.Resolve(pctBasis);
     psd->mICoord += mTextIndent;
   }
 
-  PerFrameData* pfd = NewPerFrameData(LineContainerFrame());
+  PerFrameData* pfd = NewPerFrameData(containerFrame);
   pfd->mAscent = 0;
   pfd->mSpan = psd;
   psd->mFrame = pfd;
-  nsIFrame* frame = LineContainerFrame();
-  if (frame->IsRubyTextContainerFrame()) {
+  if (containerFrame->IsRubyTextContainerFrame()) {
     
     
     MOZ_ASSERT(mBaseLineLayout != this);
