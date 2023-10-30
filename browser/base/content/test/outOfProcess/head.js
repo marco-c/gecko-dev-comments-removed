@@ -68,7 +68,6 @@ async function initChildFrames(browser, insertHTML) {
         root.insertBefore(pre, root.firstChild);
 
         if (insertHTMLChild) {
-          
           content.document.getElementById("insertPoint").innerHTML =
             insertHTMLChild;
         }

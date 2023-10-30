@@ -25,7 +25,6 @@ add_task(async function testStopStartingAutoScroll() {
         aExpectedActiveElement,
       }) {
         await SpecialPowers.spawn(browser, [aInnerHTML], async contentHTML => {
-          
           content.document.body.innerHTML = contentHTML;
           content.document.documentElement.scrollTop; 
           const iframe = content.document.querySelector("iframe");

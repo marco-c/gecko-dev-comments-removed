@@ -61,7 +61,6 @@ add_task(async function test_save_doorhanger_not_shown() {
 
     await BrowserTestUtils.withNewTab(EMPTY_URL, async function (browser) {
       await SpecialPowers.spawn(browser, [TEST.document], doc => {
-        
         content.document.body.innerHTML = doc;
       });
 

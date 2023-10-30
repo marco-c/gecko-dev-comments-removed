@@ -97,7 +97,6 @@ function makeFragmentTestChecker(input, expected, errors, fragment, testframe) {
         fragment
       );
     }
-    
     context.innerHTML = input;
     var domAsString = fragmentToTestOutput(context);
     is(domAsString, expected, "HTML5 expected success. " + new Date());

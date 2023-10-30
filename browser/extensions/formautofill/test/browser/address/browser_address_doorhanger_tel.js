@@ -89,7 +89,6 @@ add_task(async function test_save_doorhanger_tel_concatenated() {
     { gBrowser, url: EMPTY_URL },
     async function (browser) {
       await SpecialPowers.spawn(browser, [MARKUP], doc => {
-        
         content.document.body.innerHTML = doc;
       });
 

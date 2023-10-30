@@ -528,7 +528,6 @@ function testInlineCSS() {
     
     
     testModifyAfterInject("insertAdjacentHTML", (style, css) => {
-      
       style.insertAdjacentHTML("beforeend", css);
     });
 

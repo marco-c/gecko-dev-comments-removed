@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=566879
+-->
 <head>
   <title>Test for Bug 566879</title>
   <script type="text/javascript" src="/MochiKit/MochiKit.js"></script>
@@ -41,7 +41,6 @@ function runTest() {
 }
 
 function continuation1() {
-  // eslint-disable-next-line no-unsanitized/property
   document.getElementById("content").innerHTML = initialState;
   setTimeout(continuation2, 1);
 }

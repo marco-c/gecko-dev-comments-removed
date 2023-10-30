@@ -779,7 +779,6 @@ async function loadFormIntoWindow(origin, html, win, expectedCount = 1, task) {
     win,
     [html, task?.toString()],
     function (contentHtml, contentTask = null) {
-      
       this.content.document.documentElement.innerHTML = contentHtml;
       
       if (contentTask) {
@@ -980,7 +979,6 @@ function setFormAndWaitForFieldFilled(
   form,
   { fieldSelector, fieldValue, formId }
 ) {
-  
   document.querySelector("#content").innerHTML = form;
   return SimpleTest.promiseWaitForCondition(() => {
     let ancestor = formId
@@ -1107,14 +1105,12 @@ function setContentForTask(html) {
   const content = document.querySelector("#content");
   const innerHTMLBefore = content.innerHTML || "";
   SimpleTest.registerCurrentTaskCleanupFunction(
-    
     () => (content.innerHTML = innerHTMLBefore)
   );
   if (html.content?.cloneNode) {
     const clone = html.content.cloneNode(true);
     content.replaceChildren(clone);
   } else {
-    
     content.innerHTML = html;
   }
   return content.firstElementChild;

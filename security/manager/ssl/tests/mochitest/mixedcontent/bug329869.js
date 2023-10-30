@@ -2,7 +2,6 @@
 "use strict";
 
 document.open();
-
 document.write("This is insecure XSS script " + document.cookie);
 isSecurityState(
   "broken",

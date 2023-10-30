@@ -123,7 +123,6 @@ add_task(async function test_save_doorhanger_click_save() {
     let onChanged = waitForStorageChangedEvents("add");
     await BrowserTestUtils.withNewTab(EMPTY_URL, async function (browser) {
       await SpecialPowers.spawn(browser, [TEST.document], doc => {
-        
         content.document.body.innerHTML = doc;
       });
 

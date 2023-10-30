@@ -62,7 +62,6 @@ async function doTest(
           
           let mainDiv = content.document.createElement("div");
 
-          
           mainDiv.innerHTML =
             '<p><a id="linkToOpenInNewTab" href="' +
             childTabSpecContent +

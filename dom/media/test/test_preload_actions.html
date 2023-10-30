@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=548523
+-->
 <head>
   <title>Test for Bug 548523</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -15,7 +15,7 @@
 <div id="content" style="display: none">
 
 </div>
-
+<!-- <button onClick="SimpleTest.finish();">Finish</button> -->
 <div>Tests complete: <span id="log" style="font-size: small;"></span></div>
 <pre id="test">
 <script type="application/javascript">
@@ -41,7 +41,6 @@ addLoadEvent(function() {gotLoadEvent=true;});
 
 function log(m) {
   var l = document.getElementById("log");
-  // eslint-disable-next-line no-unsanitized/property
   l.innerHTML += m;
 }
 

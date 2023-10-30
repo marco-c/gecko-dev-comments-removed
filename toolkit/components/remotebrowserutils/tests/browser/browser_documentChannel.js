@@ -91,7 +91,6 @@ async function postFrom(start, target) {
 
       
       await SpecialPowers.spawn(browser, [{ target }], function ({ target }) {
-        
         content.document.body.innerHTML = `
         <form method="post" action="${target}">
           <input type="text" name="initialRemoteType" value="${Services.appinfo.remoteType}">
