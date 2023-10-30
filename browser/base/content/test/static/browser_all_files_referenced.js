@@ -73,11 +73,6 @@ var gExceptionPaths = [
 
   
   "chrome://browser/content/aboutlogins/components/",
-
-  
-  
-  "chrome://browser/content/migration/migration.xhtml",
-  "chrome://browser/content/migration/migration.js",
 ];
 
 
