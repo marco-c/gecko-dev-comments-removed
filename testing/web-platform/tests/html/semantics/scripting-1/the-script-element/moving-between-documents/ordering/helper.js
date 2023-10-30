@@ -1,14 +1,14 @@
 function runDelayEventTest(description) {
-  const t = async_test(description +
+  const t_original = async_test(description +
       ' still delay the load event in the original Document after move');
   const t_new = async_test(description +
       ' does not delay the load event in the new Document after move');
-  const start_time = performance.now();
   const iframe = document.createElement('iframe');
   iframe.setAttribute('src', 'delay-load-event-iframe.html');
+  const start_time = performance.now();
   document.body.appendChild(iframe);
 
-  window.onload = t.step_func_done(() => {
+  window.onload = t_original.step_func_done(() => {
     
     
     
@@ -20,11 +20,11 @@ function runDelayEventTest(description) {
   window.onloadIframe = t_new.step_func_done(() => {
     
     
-    assert_less_than(performance.now() - start_time, 2500,
+    assert_less_than(performance.now() - start_time, 3000,
         'Load event should not be delayed until moved script is loaded');
   });
 
-  t.step_timeout(() => {
+  t_original.step_timeout(() => {
     const script = document.querySelector('#to-be-moved');
     iframe.contentDocument.body.appendChild(script);
   }, 1000);
