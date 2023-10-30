@@ -315,7 +315,13 @@ static_assert((kPhcAlign % kPageSize) == 0);
 
 
 
+#ifdef EARLY_BETA_OR_EARLIER
 static const size_t kNumAllocPages = kPageSize == 4096 ? 4096 : 1024;
+#else
+
+
+static const size_t kNumAllocPages = kPageSize == 4096 ? 256 : 64;
+#endif
 static const size_t kNumAllPages = kNumAllocPages * 2 + 1;
 
 
