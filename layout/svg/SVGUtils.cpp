@@ -414,7 +414,7 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
 
   using ClipPathType = StyleClipPath::Tag;
 
-  usage.opacity = ComputeOpacity(aFrame, aHandleOpacity);
+  usage.mOpacity = ComputeOpacity(aFrame, aHandleOpacity);
 
   nsIFrame* firstFrame =
       nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
@@ -424,7 +424,7 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
   nsTArray<SVGMaskFrame*> maskFrames;
   
   SVGObserverUtils::GetAndObserveMasks(firstFrame, &maskFrames);
-  usage.shouldGenerateMaskLayer = (maskFrames.Length() > 0);
+  usage.mShouldGenerateMaskLayer = (maskFrames.Length() > 0);
 
   SVGClipPathFrame* clipPathFrame;
   
@@ -435,20 +435,20 @@ SVGUtils::MaskUsage SVGUtils::DetermineMaskUsage(const nsIFrame* aFrame,
     case ClipPathType::Url:
       if (clipPathFrame) {
         if (clipPathFrame->IsTrivial()) {
-          usage.shouldApplyClipPath = true;
+          usage.mShouldApplyClipPath = true;
         } else {
-          usage.shouldGenerateClipMaskLayer = true;
+          usage.mShouldGenerateClipMaskLayer = true;
         }
       }
       break;
     case ClipPathType::Shape:
     case ClipPathType::Box:
-      usage.shouldApplyBasicShapeOrPath = true;
+      usage.mShouldApplyBasicShapeOrPath = true;
       break;
     case ClipPathType::None:
-      MOZ_ASSERT(!usage.shouldGenerateClipMaskLayer &&
-                 !usage.shouldApplyClipPath &&
-                 !usage.shouldApplyBasicShapeOrPath);
+      MOZ_ASSERT(!usage.mShouldGenerateClipMaskLayer &&
+                 !usage.mShouldApplyClipPath &&
+                 !usage.mShouldApplyBasicShapeOrPath);
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported clip-path type.");
@@ -570,7 +570,7 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
   }
 
   MaskUsage maskUsage = DetermineMaskUsage(aFrame, true);
-  if (maskUsage.opacity == 0.0f) {
+  if (maskUsage.IsTransparent()) {
     return;
   }
 
@@ -625,12 +625,9 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
 
   
 
-  bool shouldGenerateMask =
-      (maskUsage.opacity != 1.0f || maskUsage.shouldGenerateClipMaskLayer ||
-       maskUsage.shouldGenerateMaskLayer);
   bool shouldPushMask = false;
 
-  if (shouldGenerateMask) {
+  if (maskUsage.ShouldGenerateMask()) {
     RefPtr<SourceSurface> maskSurface;
 
     
@@ -639,11 +636,11 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     
     
     
-    if (maskUsage.shouldGenerateMaskLayer && maskFrame) {
+    if (maskUsage.ShouldGenerateMaskLayer() && maskFrame) {
       StyleMaskMode maskMode =
           aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
       SVGMaskFrame::MaskParams params(aContext.GetDrawTarget(), aFrame,
-                                      aTransform, maskUsage.opacity, maskMode,
+                                      aTransform, maskUsage.Opacity(), maskMode,
                                       aImgParams);
 
       maskSurface = maskFrame->GetMaskForMaskedFrame(params);
@@ -656,7 +653,7 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
       shouldPushMask = true;
     }
 
-    if (maskUsage.shouldGenerateClipMaskLayer) {
+    if (maskUsage.ShouldGenerateClipMaskLayer()) {
       RefPtr<SourceSurface> clipMaskSurface =
           clipPathFrame->GetClipMask(aContext, aFrame, aTransform, maskSurface);
       if (clipMaskSurface) {
@@ -669,8 +666,7 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
       shouldPushMask = true;
     }
 
-    if (!maskUsage.shouldGenerateClipMaskLayer &&
-        !maskUsage.shouldGenerateMaskLayer) {
+    if (!maskUsage.ShouldGenerateLayer()) {
       shouldPushMask = true;
     }
 
@@ -682,7 +678,7 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
       Matrix maskTransform = aContext.CurrentMatrix();
       maskTransform.Invert();
       target->PushGroupForBlendBack(gfxContentType::COLOR_ALPHA,
-                                    maskFrame ? 1.0 : maskUsage.opacity,
+                                    maskFrame ? 1.0f : maskUsage.Opacity(),
                                     maskSurface, maskTransform);
     }
   }
@@ -690,8 +686,9 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
   
 
 
-  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShapeOrPath) {
-    if (maskUsage.shouldApplyClipPath) {
+  if (maskUsage.ShouldApplyClipPath() ||
+      maskUsage.ShouldApplyBasicShapeOrPath()) {
+    if (maskUsage.ShouldApplyClipPath()) {
       clipPathFrame->ApplyClipPath(aContext, aFrame, aTransform);
     } else {
       CSSClipPathInstance::ApplyBasicShapeOrPathClip(aContext, aFrame,
@@ -735,7 +732,8 @@ void SVGUtils::PaintFrameWithEffects(nsIFrame* aFrame, gfxContext& aContext,
     svgFrame->PaintSVG(*target, aTransform, aImgParams);
   }
 
-  if (maskUsage.shouldApplyClipPath || maskUsage.shouldApplyBasicShapeOrPath) {
+  if (maskUsage.ShouldApplyClipPath() ||
+      maskUsage.ShouldApplyBasicShapeOrPath()) {
     aContext.PopClip();
   }
 
