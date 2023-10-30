@@ -910,10 +910,7 @@ var gEditItemOverlay = {
 
     
     let containerGuid = this._folderMenuList.selectedItem.folderGuid;
-    if (
-      this._bookmarkState._originalState.parentGuid != containerGuid &&
-      this._bookmarkState._originalState.title != containerGuid
-    ) {
+    if (this._bookmarkState.parentGuid != containerGuid) {
       this._bookmarkState._parentGuidChanged(containerGuid);
 
       
