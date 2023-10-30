@@ -961,17 +961,22 @@ public final class GeckoBundle implements Parcelable {
         }
         jsonValue = jsonArray;
       } else if (Build.VERSION.SDK_INT >= 19) {
+        
+        
         final Object wrapped = JSONObject.wrap(value);
         jsonValue = wrapped != null ? wrapped : value.toString();
       } else if (value == null) {
+        
         jsonValue = JSONObject.NULL;
       } else if (value.getClass().isArray()) {
+        
         final JSONArray jsonArray = new JSONArray();
         for (int j = 0; j < Array.getLength(value); j++) {
           jsonArray.put(Array.get(value, j));
         }
         jsonValue = jsonArray;
       } else {
+        
         jsonValue = value;
       }
       out.put(mMap.keyAt(i), jsonValue);

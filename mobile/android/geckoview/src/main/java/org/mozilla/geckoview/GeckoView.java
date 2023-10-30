@@ -538,11 +538,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
             new Runnable() {
               @Override
               public void run() {
-                if (Build.VERSION.SDK_INT >= 16) {
-                  GeckoView.this.postInvalidateOnAnimation();
-                } else {
-                  GeckoView.this.postInvalidateDelayed(10);
-                }
+                GeckoView.this.postInvalidateOnAnimation();
               }
             });
 
@@ -643,15 +639,7 @@ public class GeckoView extends FrameLayout implements GeckoDisplay.NewSurfacePro
     if (mSession != null) {
       final GeckoRuntime runtime = mSession.getRuntime();
       if (runtime != null) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN_MR1) {
-          
-          
-          
-          
-          
-          
-          runtime.orientationChanged(newConfig.orientation);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
           
           
           
