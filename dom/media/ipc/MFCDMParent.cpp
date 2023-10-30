@@ -277,6 +277,15 @@ static HRESULT CreateContentDecryptionModule(
   return S_OK;
 }
 
+
+
+static nsString GetOriginalKeySystem(const nsString& aKeySystem) {
+  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
+    return nsString(u"com.widevine.alpha");
+  }
+  return aKeySystem;
+}
+
 void MFCDMParent::Register() {
   MOZ_ASSERT(!sRegisteredCDMs.Contains(this->mId));
   sRegisteredCDMs.InsertOrUpdate(this->mId, this);
@@ -300,7 +309,8 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
       mKeyChangeEvents(aManagerThread),
       mExpirationEvents(aManagerThread) {
   
-  MOZ_ASSERT(IsPlayReadyKeySystemAndSupported(aKeySystem));
+  MOZ_ASSERT(IsPlayReadyKeySystemAndSupported(aKeySystem) ||
+             IsWidevineExperimentKeySystemAndSupported(aKeySystem));
   MOZ_ASSERT(aManager);
   MOZ_ASSERT(aManagerThread);
   MOZ_ASSERT(XRE_IsUtilityProcess());
@@ -364,7 +374,10 @@ LPCWSTR MFCDMParent::GetCDMLibraryName() const {
   if (IsPlayReadyKeySystemAndSupported(mKeySystem)) {
     return L"";
   }
-  
+  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem)) {
+    
+    return L"";
+  }
   
   return L"Unknown";
 }
@@ -406,7 +419,16 @@ HRESULT MFCDMParent::LoadFactory() {
     return E_FAIL;
   }
 
-  ScopedHString classId(mKeySystem);
+  
+  
+  
+  nsString stringId;
+  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem)) {
+    stringId.AppendLiteral("com.widevine.alpha.ContentDecryptionModuleFactory");
+  }
+  MFCDM_PARENT_LOG("Query factory by classId '%s",
+                   NS_ConvertUTF16toUTF8(stringId).get());
+  ScopedHString classId(stringId);
   ComPtr<IActivationFactory> pFactory = NULL;
   MFCDM_RETURN_IF_FAILED(
       pDllGetActivationFactory(classId.Get(), pFactory.GetAddressOf()));
@@ -418,15 +440,28 @@ HRESULT MFCDMParent::LoadFactory() {
   return S_OK;
 }
 
+static nsString GetRobustnessStringForKeySystem(const nsString& aKeySystem,
+                                                const bool aIsHWSecure,
+                                                const bool aIsVideo = true) {
+  if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
+    
+    return aIsHWSecure && aIsVideo ? nsString(u"3000") : nsString(u"2000");
+  }
+  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
+    return aIsHWSecure ? nsString(u"HW_SECURE_ALL")
+                       : nsString(u"SW_SECURE_DECODE");
+  }
+  return nsString(u"");
+}
+
 
 
 
 
 static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
                             const nsString& aKeySystem,
-                            const KeySystemConfig::EMECodecString& aVideoCodec,
-                            const KeySystemConfig::EMECodecString& aAudioCodec =
-                                KeySystemConfig::EMECodecString(""),
+                            const nsCString& aVideoCodec,
+                            const nsCString& aAudioCodec = nsCString(""),
                             const nsString& aAdditionalFeatures = nsString(u""),
                             bool aIsHWSecure = false) {
   
@@ -453,7 +488,8 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   }
   
   contentType.AppendLiteral(u"\"");
-  bool support = aFactory->IsTypeSupported(aKeySystem.get(), contentType.get());
+  bool support = aFactory->IsTypeSupported(
+      GetOriginalKeySystem(aKeySystem).get(), contentType.get());
   MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)",
                     support, NS_ConvertUTF16toUTF8(aKeySystem).get(),
                     NS_ConvertUTF16toUTF8(contentType).get());
@@ -462,11 +498,9 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
     
     nsTArray<nsString> dummyInitDataType{nsString(u"cenc"),
                                          nsString(u"keyids")};
-    
     MFCDMMediaCapability dummyVideoCapability{
-        nsString(u""), IsPlayReadyKeySystemAndSupported(aKeySystem)
-                           ? nsString(u"3000")
-                           : nsString(u"")};
+        nsString(u""),
+        GetRobustnessStringForKeySystem(aKeySystem, true )};
     MFCDMInitParamsIPDL dummyParam{
         nsString(u"dummy"),
         dummyInitDataType,
@@ -486,17 +520,6 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   return support;
 }
 
-static nsString GetRobustnessStringForKeySystem(const nsString& aKeySystem,
-                                                const bool aIsHWSecure,
-                                                const bool aIsVideo = true) {
-  if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
-    
-    return aIsHWSecure && aIsVideo ? nsString(u"3000") : nsString(u"2000");
-  }
-  
-  return nsString(u"");
-}
-
 static bool IsKeySystemHWSecure(
     const nsAString& aKeySystem,
     const nsTArray<MFCDMMediaCapability>& aCapabilities) {
@@ -510,13 +533,48 @@ static bool IsKeySystemHWSecure(
       }
     }
   }
-  
+  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
+    
+    return true;
+  }
   return false;
 }
 
 mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
     const bool aIsHWSecure, GetCapabilitiesResolver&& aResolver) {
   MFCDM_REJECT_IF(!mFactory, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
+
+  
+  static auto convertCodecToFourCC =
+      [](const KeySystemConfig::EMECodecString& aCodec) {
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_H264)) {
+          return "avc1"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_VP8)) {
+          return "vp80"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_VP9)) {
+          return "vp09"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_HEVC)) {
+          return "hev1"_ns;
+        }
+        
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_AAC)) {
+          return "mp4a"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_OPUS)) {
+          return "Opus"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_VORBIS)) {
+          return "vrbs"_ns;
+        }
+        if (aCodec.Equals(KeySystemConfig::EME_CODEC_FLAC)) {
+          return "fLaC"_ns;
+        }
+        MOZ_ASSERT_UNREACHABLE("Unsupported codec");
+        return "none"_ns;
+      };
 
   MFCDMCapabilitiesIPDL capabilities;
   capabilities.keySystem() = mKeySystem;
@@ -541,7 +599,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
         !StaticPrefs::media_wmf_hevc_enabled()) {
       continue;
     }
-    if (FactorySupports(mFactory, mKeySystem, codec,
+    if (FactorySupports(mFactory, mKeySystem, convertCodecToFourCC(codec),
                         KeySystemConfig::EMECodecString(""), nsString(u""),
                         aIsHWSecure)) {
       MFCDMMediaCapability* c =
@@ -566,7 +624,9 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
       KeySystemConfig::EME_CODEC_VORBIS,
   });
   for (auto& codec : kAudioCodecs) {
-    if (FactorySupports(mFactory, mKeySystem, supportedVideoCodecs[0], codec)) {
+    if (FactorySupports(
+            mFactory, mKeySystem, convertCodecToFourCC(supportedVideoCodecs[0]),
+            convertCodecToFourCC(codec), nsString(u""), aIsHWSecure)) {
       MFCDMMediaCapability* c =
           capabilities.audioCapabilities().AppendElement();
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
@@ -586,7 +646,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
     bool ok = true;
     for (auto& codec : supportedVideoCodecs) {
       ok &= FactorySupports(
-          mFactory, mKeySystem, codec, KeySystemConfig::EMECodecString(""),
+          mFactory, mKeySystem, convertCodecToFourCC(codec), nsCString(""),
           scheme.second , aIsHWSecure);
       if (!ok) {
         break;
@@ -633,7 +693,8 @@ mozilla::ipc::IPCResult MFCDMParent::RecvInit(
       RequirementToStr(aParams.distinctiveID()),
       RequirementToStr(aParams.persistentState()),
       IsKeySystemHWSecure(mKeySystem, aParams.videoCapabilities()));
-  MOZ_ASSERT(mFactory->IsTypeSupported(mKeySystem.get(), nullptr));
+  MOZ_ASSERT(mFactory->IsTypeSupported(GetOriginalKeySystem(mKeySystem).get(),
+                                       nullptr));
 
   MFCDM_REJECT_IF_FAILED(
       CreateContentDecryptionModule(mFactory, mKeySystem, aParams, mCDM),
