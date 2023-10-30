@@ -538,7 +538,6 @@ struct TrackAndPromiseForOperation {
   MozPromiseHolder<MediaTrackGraph::AudioContextOperationPromise> mHolder;
 };
 
-enum class AsyncCubebOperation { INIT, NAME_CHANGE, SHUTDOWN };
 enum class AudioInputType { Unknown, Voice };
 
 
@@ -669,7 +668,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   void DeviceChangedCallback();
   
   bool StartStream();
-  friend class AsyncCubebTask;
+  friend class MediaTrackGraphInitThreadRunnable;
   void Init(const nsCString& aStreamName);
   void SetCubebStreamName(const nsCString& aStreamName);
   void Stop();
@@ -692,7 +691,7 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   
   bool OnCubebOperationThread() {
-    return mInitShutdownThread->IsOnCurrentThreadInfallible();
+    return mCubebOperationThread->IsOnCurrentThreadInfallible();
   }
 
   
@@ -731,7 +730,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   
 
-  const RefPtr<SharedThreadPool> mInitShutdownThread;
+
+  const RefPtr<SharedThreadPool> mCubebOperationThread;
   cubeb_device_pref mInputDevicePreference;
   
 
@@ -791,33 +791,6 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
 
   virtual ~AudioCallbackDriver();
   const bool mSandboxed = false;
-};
-
-class AsyncCubebTask : public Runnable {
- public:
-  
-  AsyncCubebTask(AudioCallbackDriver* aDriver, AsyncCubebOperation aOperation,
-                 const nsACString& aName = VoidCString());
-
-  nsresult Dispatch(uint32_t aFlags = NS_DISPATCH_NORMAL) {
-    return mDriver->mInitShutdownThread->Dispatch(this, aFlags);
-  }
-
-  nsresult DispatchAndSpinEventLoopUntilComplete(
-      const nsACString& aVeryGoodReasonToDoThis) {
-    return NS_DispatchAndSpinEventLoopUntilComplete(
-        aVeryGoodReasonToDoThis, mDriver->mInitShutdownThread, do_AddRef(this));
-  }
-
- protected:
-  virtual ~AsyncCubebTask();
-
- private:
-  NS_IMETHOD Run() final;
-
-  RefPtr<AudioCallbackDriver> mDriver;
-  AsyncCubebOperation mOperation;
-  nsCString mName;
 };
 
 }  
