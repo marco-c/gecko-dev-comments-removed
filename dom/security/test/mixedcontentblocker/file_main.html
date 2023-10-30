@@ -1,9 +1,9 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
-
+<!--
+Tests for Mixed Content Blocker
+https://bugzilla.mozilla.org/show_bug.cgi?id=62178
+-->
 <head>
   <meta charset="utf-8">
   <title>Tests for Bug 62178</title>
@@ -12,30 +12,30 @@
 <body>
 <div id="testContent"></div>
 
+<!-- types the Mixed Content Blocker can block
+     /*
+  switch (aContentType) {
+  case nsIContentPolicy::TYPE_OBJECT:
+  case nsIContentPolicy::TYPE_SCRIPT:
+  case nsIContentPolicy::TYPE_STYLESHEET:
+  case nsIContentPolicy::TYPE_SUBDOCUMENT:
+  case nsIContentPolicy::TYPE_XMLHTTPREQUEST:
 
+  case nsIContentPolicy::TYPE_FONT: - NO TEST:
+    Load events for external fonts are not detectable by javascript.
+  case nsIContentPolicy::TYPE_WEBSOCKET: - NO TEST:
+    websocket connections over https require an encrypted websocket protocol (wss:)
 
+  case nsIContentPolicy::TYPE_IMAGE:
+  case nsIContentPolicy::TYPE_IMAGESET:
+  case nsIContentPolicy::TYPE_MEDIA:
+  case nsIContentPolicy::TYPE_PING:
+    our ping implementation is off by default and does not comply with the current spec (bug 786347)
+  case nsIContentPolicy::TYPE_BEACON:
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  }
+     */
+-->
 
 <script>
   function ok(a, msg) {
@@ -128,15 +128,13 @@
       if(scriptLoad) {
         return;
       }
+      if (scriptCount < MAX_COUNT) {
+        scriptCount++;
+        setTimeout(scriptStatus, TIMEOUT_INTERVAL, script);
+      }
       else {
-        if(scriptCount < MAX_COUNT) {
-          scriptCount++;
-          setTimeout(scriptStatus, TIMEOUT_INTERVAL, script);
-        }
-        else {
-          //After we have called setTimeout the maximum number of times, assume script is blocked
-          report("script", "insecure script blocked");
-        }
+        //After we have called setTimeout the maximum number of times, assume script is blocked
+        report("script", "insecure script blocked");
       }
     }
 

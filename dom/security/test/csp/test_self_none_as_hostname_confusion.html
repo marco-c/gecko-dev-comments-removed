@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=587377
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 587377</title>
@@ -38,10 +38,8 @@ SpecialPowers.registerConsoleListener(function ConsoleMsgListener(aMsg) {
       startTest = false;
       ok(true, "CSP header with a hostname similar to keyword should be warned");
       SimpleTest.executeSoon(cleanup);
-    } else {
-      // don't see the warning yet? wait.
-      return;
     }
+    // Otherwise, the warning hasn't happened yet so we wait.
   }
 });
 

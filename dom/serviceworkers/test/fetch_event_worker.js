@@ -241,6 +241,7 @@ onfetch = function (ev) {
     
     
     
+    
     return;
   } else if (ev.request.url.includes("hello.gz")) {
     ev.respondWith(fetch("fetch/deliver-gzip.sjs"));

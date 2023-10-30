@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=238987
+-->
 <head>
   <title>Test for Bug 238987</title>
   <script src="/tests/SimpleTest/SimpleTest.js"></script>
@@ -67,7 +67,8 @@
   function handleBlur(e) {
     if (e.target.id == "begin" || e.target.id == "end") {
       return;
-    } else if (activateShift) {
+    }
+    if (activateShift) {
       var expected = backwardBlurArray.pop();
       ok(expected == e.target.id,
          "(blur) backward tabbing, expected [" +

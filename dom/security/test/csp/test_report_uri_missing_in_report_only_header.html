@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=847081
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 847081</title>
@@ -40,11 +40,8 @@ SpecialPowers.registerConsoleListener(function ConsoleMsgListener(aMsg) {
 
     ok(true, "report-uri not specified in Report-Only should throw a CSP warning.");
     SimpleTest.executeSoon(cleanup);
-    return;
-  } else {
-    // if some other console message is present, we wait
-    return;
   }
+  // Otherwise, if some other console message is present, we wait.
 });
 
 

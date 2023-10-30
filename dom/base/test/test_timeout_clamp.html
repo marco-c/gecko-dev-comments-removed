@@ -1,8 +1,8 @@
 <!DOCTYPE HTML>
 <html>
-
-
-
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=1378586
+-->
 <head>
   <meta charset="utf-8">
   <title>Test for Bug 1378586</title>
@@ -49,7 +49,6 @@ function delayByInterval(iterations) {
       count += 1;
       if (count >= iterations) {
         resolve();
-        return;
       }
     }
     setInterval(tick, 0);

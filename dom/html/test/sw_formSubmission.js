@@ -18,10 +18,10 @@ if (mode !== "no-fetch") {
     if (mode === "reset-fetch") {
       
       return;
-    } else if (mode === "proxy-fetch") {
+    }
+    if (mode === "proxy-fetch") {
       
       event.respondWith(fetch(event.request));
-      return;
     }
   });
 }
