@@ -179,38 +179,85 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#![no_std]
 #![deny(missing_docs)]
+#![deny(rustdoc::broken_intra_doc_links)]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
+extern crate alloc;
+#[cfg(any(test, feature = "std"))]
+extern crate std;
 
+#[cfg(doctest)]
+doc_comment::doctest!("../README.md");
 
-#[cfg(not(feature = "std"))]
-compile_error!("`std` feature is currently required to build this crate");
-
-
-
-
-
-
-
-
-pub use crate::ahocorasick::{
-    AhoCorasick, AhoCorasickBuilder, FindIter, FindOverlappingIter, MatchKind,
-    StreamFindIter,
+#[cfg(feature = "std")]
+pub use crate::ahocorasick::StreamFindIter;
+pub use crate::{
+    ahocorasick::{
+        AhoCorasick, AhoCorasickBuilder, AhoCorasickKind, FindIter,
+        FindOverlappingIter,
+    },
+    util::{
+        error::{BuildError, MatchError, MatchErrorKind},
+        primitives::{PatternID, PatternIDError},
+        search::{Anchored, Input, Match, MatchKind, Span, StartKind},
+    },
 };
-pub use crate::error::{Error, ErrorKind};
-pub use crate::state_id::StateID;
+
+#[macro_use]
+mod macros;
 
 mod ahocorasick;
-mod automaton;
-mod buffer;
-mod byte_frequencies;
-mod classes;
-mod dfa;
-mod error;
-mod nfa;
+pub mod automaton;
+pub mod dfa;
+pub mod nfa;
 pub mod packed;
-mod prefilter;
-mod state_id;
 #[cfg(test)]
 mod tests;
 
@@ -222,82 +269,58 @@ mod tests;
 
 
 
+pub(crate) mod util;
 
+#[cfg(test)]
+mod testoibits {
+    use std::panic::{RefUnwindSafe, UnwindSafe};
 
+    use super::*;
 
+    fn assert_all<T: Send + Sync + UnwindSafe + RefUnwindSafe>() {}
 
+    #[test]
+    fn oibits_main() {
+        assert_all::<AhoCorasick>();
+        assert_all::<AhoCorasickBuilder>();
+        assert_all::<AhoCorasickKind>();
+        assert_all::<FindIter>();
+        assert_all::<FindOverlappingIter>();
 
+        assert_all::<BuildError>();
+        assert_all::<MatchError>();
+        assert_all::<MatchErrorKind>();
 
-
-
-
-
-
-
-
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Match {
-    
-    pattern: usize,
-    
-    
-    
-    
-    
-    
-    
-    len: usize,
-    
-    end: usize,
-}
-
-impl Match {
-    
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn pattern(&self) -> usize {
-        self.pattern
+        assert_all::<Anchored>();
+        assert_all::<Input>();
+        assert_all::<Match>();
+        assert_all::<MatchKind>();
+        assert_all::<Span>();
+        assert_all::<StartKind>();
     }
 
-    
-    #[inline]
-    pub fn start(&self) -> usize {
-        self.end - self.len
+    #[test]
+    fn oibits_automaton() {
+        use crate::{automaton, dfa::DFA};
+
+        assert_all::<automaton::FindIter<DFA>>();
+        assert_all::<automaton::FindOverlappingIter<DFA>>();
+        #[cfg(feature = "std")]
+        assert_all::<automaton::StreamFindIter<DFA, std::io::Stdin>>();
+        assert_all::<automaton::OverlappingState>();
+
+        assert_all::<automaton::Prefilter>();
+        assert_all::<automaton::Candidate>();
     }
 
-    
-    #[inline]
-    pub fn end(&self) -> usize {
-        self.end
-    }
+    #[test]
+    fn oibits_packed() {
+        use crate::packed;
 
-    
-    #[inline]
-    pub fn len(&self) -> usize {
-        self.len
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
-    pub fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-
-    #[inline]
-    fn increment(&self, by: usize) -> Match {
-        Match { pattern: self.pattern, len: self.len, end: self.end + by }
-    }
-
-    #[inline]
-    fn from_span(id: usize, start: usize, end: usize) -> Match {
-        Match { pattern: id, len: end - start, end }
+        assert_all::<packed::Config>();
+        assert_all::<packed::Builder>();
+        assert_all::<packed::Searcher>();
+        assert_all::<packed::FindIter>();
+        assert_all::<packed::MatchKind>();
     }
 }

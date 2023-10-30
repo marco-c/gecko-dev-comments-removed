@@ -1,7 +1,6 @@
-use std::mem;
+use alloc::{sync::Arc, vec, vec::Vec};
 
-use crate::packed::pattern::{PatternID, Patterns};
-use crate::Match;
+use crate::{packed::pattern::Patterns, util::search::Match, PatternID};
 
 
 type Hash = usize;
@@ -34,7 +33,9 @@ const NUM_BUCKETS: usize = 64;
 
 
 #[derive(Clone, Debug)]
-pub struct RabinKarp {
+pub(crate) struct RabinKarp {
+    
+    patterns: Arc<Patterns>,
     
     
     
@@ -49,16 +50,6 @@ pub struct RabinKarp {
     
     
     hash_2pow: usize,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    max_pattern_id: PatternID,
 }
 
 impl RabinKarp {
@@ -66,7 +57,7 @@ impl RabinKarp {
     
     
     
-    pub fn new(patterns: &Patterns) -> RabinKarp {
+    pub(crate) fn new(patterns: &Arc<Patterns>) -> RabinKarp {
         assert!(patterns.len() >= 1);
         let hash_len = patterns.minimum_len();
         assert!(hash_len >= 1);
@@ -77,10 +68,10 @@ impl RabinKarp {
         }
 
         let mut rk = RabinKarp {
+            patterns: Arc::clone(patterns),
             buckets: vec![vec![]; NUM_BUCKETS],
             hash_len,
             hash_2pow,
-            max_pattern_id: patterns.max_pattern_id(),
         };
         for (id, pat) in patterns.iter() {
             let hash = rk.hash(&pat.bytes()[..rk.hash_len]);
@@ -92,18 +83,12 @@ impl RabinKarp {
 
     
     
-    pub fn find_at(
+    pub(crate) fn find_at(
         &self,
-        patterns: &Patterns,
         haystack: &[u8],
         mut at: usize,
     ) -> Option<Match> {
         assert_eq!(NUM_BUCKETS, self.buckets.len());
-        assert_eq!(
-            self.max_pattern_id,
-            patterns.max_pattern_id(),
-            "Rabin-Karp must be called with same patterns it was built with",
-        );
 
         if at + self.hash_len > haystack.len() {
             return None;
@@ -113,7 +98,7 @@ impl RabinKarp {
             let bucket = &self.buckets[hash % NUM_BUCKETS];
             for &(phash, pid) in bucket {
                 if phash == hash {
-                    if let Some(c) = self.verify(patterns, pid, haystack, at) {
+                    if let Some(c) = self.verify(pid, haystack, at) {
                         return Some(c);
                     }
                 }
@@ -132,10 +117,9 @@ impl RabinKarp {
 
     
     
-    pub fn heap_bytes(&self) -> usize {
-        let num_patterns = self.max_pattern_id as usize + 1;
-        self.buckets.len() * mem::size_of::<Vec<(Hash, PatternID)>>()
-            + num_patterns * mem::size_of::<(Hash, PatternID)>()
+    pub(crate) fn memory_usage(&self) -> usize {
+        self.buckets.len() * core::mem::size_of::<Vec<(Hash, PatternID)>>()
+            + self.patterns.len() * core::mem::size_of::<(Hash, PatternID)>()
     }
 
     
@@ -150,14 +134,13 @@ impl RabinKarp {
     #[cold]
     fn verify(
         &self,
-        patterns: &Patterns,
         id: PatternID,
         haystack: &[u8],
         at: usize,
     ) -> Option<Match> {
-        let pat = patterns.get(id);
+        let pat = self.patterns.get(id);
         if pat.is_prefix(&haystack[at..]) {
-            Some(Match::from_span(id as usize, at, at + pat.len()))
+            Some(Match::new(id, at..at + pat.len()))
         } else {
             None
         }

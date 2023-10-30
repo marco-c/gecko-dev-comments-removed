@@ -1,37 +1,72 @@
-use std::fmt;
-use std::iter::repeat;
+use alloc::string::{String, ToString};
+
+use regex_automata::meta;
 
 
+#[non_exhaustive]
 #[derive(Clone, PartialEq)]
 pub enum Error {
     
     Syntax(String),
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     CompiledTooBig(usize),
-    
-    
-    
-    
-    
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
-impl ::std::error::Error for Error {
+impl Error {
+    pub(crate) fn from_meta_build_error(err: meta::BuildError) -> Error {
+        if let Some(size_limit) = err.size_limit() {
+            Error::CompiledTooBig(size_limit)
+        } else if let Some(ref err) = err.syntax_error() {
+            Error::Syntax(err.to_string())
+        } else {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            Error::Syntax(err.to_string())
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for Error {
     
     #[allow(deprecated)]
     fn description(&self) -> &str {
         match *self {
             Error::Syntax(ref err) => err,
             Error::CompiledTooBig(_) => "compiled program too big",
-            Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
             Error::Syntax(ref err) => err.fmt(f),
             Error::CompiledTooBig(limit) => write!(
@@ -39,7 +74,6 @@ impl fmt::Display for Error {
                 "Compiled regex exceeds size limit of {} bytes.",
                 limit
             ),
-            Error::__Nonexhaustive => unreachable!(),
         }
     }
 }
@@ -48,11 +82,11 @@ impl fmt::Display for Error {
 
 
 
-impl fmt::Debug for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Debug for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match *self {
             Error::Syntax(ref err) => {
-                let hr: String = repeat('~').take(79).collect();
+                let hr: String = core::iter::repeat('~').take(79).collect();
                 writeln!(f, "Syntax(")?;
                 writeln!(f, "{}", hr)?;
                 writeln!(f, "{}", err)?;
@@ -62,9 +96,6 @@ impl fmt::Debug for Error {
             }
             Error::CompiledTooBig(limit) => {
                 f.debug_tuple("CompiledTooBig").field(&limit).finish()
-            }
-            Error::__Nonexhaustive => {
-                f.debug_tuple("__Nonexhaustive").finish()
             }
         }
     }
