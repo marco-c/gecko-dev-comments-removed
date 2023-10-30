@@ -359,7 +359,27 @@ void DocAccessible::QueueCacheUpdate(LocalAccessible* aAcc,
   if (!mIPCDoc) {
     return;
   }
-  uint64_t& domain = mQueuedCacheUpdates.LookupOrInsert(aAcc, 0);
+  
+  
+  
+  RefPtr<DocAccessible> self = this;
+  RefPtr<LocalAccessible> acc = aAcc;
+  size_t arrayIndex =
+      mQueuedCacheUpdatesHash.WithEntryHandle(aAcc, [self, acc](auto&& entry) {
+        if (entry.HasEntry()) {
+          
+          
+          return entry.Data();
+        }
+        
+        size_t index = self->mQueuedCacheUpdatesArray.Length();
+        self->mQueuedCacheUpdatesArray.EmplaceBack(std::make_pair(acc, 0));
+        
+        
+        return entry.Insert(index);
+      });
+  auto& [arrayAcc, domain] = mQueuedCacheUpdatesArray[arrayIndex];
+  MOZ_ASSERT(arrayAcc == aAcc);
   domain |= aNewDomain;
   Controller()->ScheduleProcessing();
 }
@@ -479,7 +499,8 @@ void DocAccessible::Shutdown() {
   
   
   
-  mQueuedCacheUpdates.Clear();
+  mQueuedCacheUpdatesArray.Clear();
+  mQueuedCacheUpdatesHash.Clear();
 
   
   if (mIPCDoc) {
@@ -1463,9 +1484,7 @@ void DocAccessible::ProcessQueuedCacheUpdates() {
   
 
   nsTArray<CacheData> data;
-  for (auto iter = mQueuedCacheUpdates.Iter(); !iter.Done(); iter.Next()) {
-    LocalAccessible* acc = iter.Key();
-    uint64_t domain = iter.UserData();
+  for (auto [acc, domain] : mQueuedCacheUpdatesArray) {
     if (acc && acc->IsInDocument() && !acc->IsDefunct()) {
       RefPtr<AccAttributes> fields =
           acc->BundleFieldsForCache(domain, CacheUpdateType::Update);
@@ -1478,7 +1497,8 @@ void DocAccessible::ProcessQueuedCacheUpdates() {
     }
   }
 
-  mQueuedCacheUpdates.Clear();
+  mQueuedCacheUpdatesArray.Clear();
+  mQueuedCacheUpdatesHash.Clear();
 
   if (mViewportCacheDirty) {
     RefPtr<AccAttributes> fields =

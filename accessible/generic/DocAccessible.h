@@ -789,7 +789,16 @@ class DocAccessible : public HyperTextAccessible,
   
   
   
-  nsTHashMap<RefPtr<LocalAccessible>, uint64_t> mQueuedCacheUpdates;
+  
+  
+  
+  
+  
+  
+  
+  nsTArray<std::pair<RefPtr<LocalAccessible>, uint64_t>>
+      mQueuedCacheUpdatesArray;
+  nsTHashMap<LocalAccessible*, size_t> mQueuedCacheUpdatesHash;
 
   
   
