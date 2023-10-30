@@ -355,8 +355,9 @@ class TestRunnerManager(threading.Thread):
         self.command_queue = None
         self.remote_queue = None
 
+        
         self.timer = None
-
+        self.test_runner_proc = None
         self.browser = None
 
         super().__init__(name=f"TestRunnerManager-{index}", target=self.run_loop, args=[test_queue], daemon=True)
