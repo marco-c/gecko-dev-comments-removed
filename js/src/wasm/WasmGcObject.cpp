@@ -31,6 +31,7 @@
 #include "vm/TypedArrayObject.h"
 #include "vm/Uint8Clamped.h"
 
+#include "gc/GCContext-inl.h"  
 #include "gc/ObjectKind-inl.h"
 
 using mozilla::AssertedCast;
@@ -41,6 +42,19 @@ using mozilla::PointerRangeSize;
 
 using namespace js;
 using namespace wasm;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -429,12 +443,20 @@ WasmArrayObject* WasmArrayObject::createArrayNonEmpty(
     
     
     
+    
+    
     if (MOZ_UNLIKELY(
             !nursery.registerTrailer(outlineData, outlineBytes.value()))) {
       nursery.mallocedBlockCache().free(outlineData);
       ReportOutOfMemory(cx);
       return nullptr;
     }
+  } else {
+    MOZ_ASSERT(arrayObj->isTenured());
+    
+    
+    AddCellMemory(arrayObj, outlineBytes.value() + TrailerBlockOverhead,
+                  MemoryUse::WasmTrailerBlock);
   }
 
   js::gc::gcprobes::CreateObject(arrayObj);
@@ -513,10 +535,27 @@ void WasmArrayObject::obj_trace(JSTracer* trc, JSObject* object) {
 
 
 void WasmArrayObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
+  
+  
+  
   WasmArrayObject& arrayObj = object->as<WasmArrayObject>();
   MOZ_ASSERT((arrayObj.data_ == nullptr) == (arrayObj.numElements_ == 0));
   if (arrayObj.data_) {
+    
+    
+    
     js_free(arrayObj.data_);
+    
+    
+    const TypeDef& typeDef = arrayObj.typeDef();
+    MOZ_ASSERT(typeDef.isArrayType());
+    size_t trailerSize = size_t(arrayObj.numElements_) *
+                         size_t(typeDef.arrayType().elementType_.size());
+    
+    MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
+    gcx->removeCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
+                          MemoryUse::WasmTrailerBlock);
+    
     arrayObj.data_ = nullptr;
   }
 }
@@ -529,8 +568,21 @@ size_t WasmArrayObject::obj_moved(JSObject* obj, JSObject* old) {
     MOZ_ASSERT(obj->isTenured());
     WasmArrayObject& arrayObj = obj->as<WasmArrayObject>();
     if (arrayObj.data_) {
+      
+      
+      
       Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
       nursery.unregisterTrailer(arrayObj.data_);
+      
+      
+      const TypeDef& typeDef = arrayObj.typeDef();
+      MOZ_ASSERT(typeDef.isArrayType());
+      size_t trailerSize = size_t(arrayObj.numElements_) *
+                           size_t(typeDef.arrayType().elementType_.size());
+      
+      MOZ_RELEASE_ASSERT(trailerSize <= size_t(MaxArrayPayloadBytes));
+      AddCellMemory(&arrayObj, trailerSize + TrailerBlockOverhead,
+                    MemoryUse::WasmTrailerBlock);
     }
   }
   return 0;
@@ -632,16 +684,26 @@ void WasmStructObject::obj_trace(JSTracer* trc, JSObject* object) {
 
 
 void WasmStructObject::obj_finalize(JS::GCContext* gcx, JSObject* object) {
+  
   WasmStructObject& structObj = object->as<WasmStructObject>();
-
   if (structObj.outlineData_) {
     js_free(structObj.outlineData_);
+    const TypeDef& typeDef = structObj.typeDef();
+    MOZ_ASSERT(typeDef.isStructType());
+    uint32_t totalBytes = typeDef.structType().size_;
+    uint32_t inlineBytes, outlineBytes;
+    WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+    MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
+    MOZ_ASSERT(outlineBytes > 0);
+    gcx->removeCellMemory(&structObj, outlineBytes + TrailerBlockOverhead,
+                          MemoryUse::WasmTrailerBlock);
     structObj.outlineData_ = nullptr;
   }
 }
 
 
 size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
+  
   MOZ_ASSERT(!IsInsideNursery(obj));
   if (IsInsideNursery(old)) {
     
@@ -652,6 +714,15 @@ size_t WasmStructObject::obj_moved(JSObject* obj, JSObject* old) {
     MOZ_ASSERT(structObj.outlineData_);
     Nursery& nursery = obj->runtimeFromMainThread()->gc.nursery();
     nursery.unregisterTrailer(structObj.outlineData_);
+    const TypeDef& typeDef = structObj.typeDef();
+    MOZ_ASSERT(typeDef.isStructType());
+    uint32_t totalBytes = typeDef.structType().size_;
+    uint32_t inlineBytes, outlineBytes;
+    WasmStructObject::getDataByteSizes(totalBytes, &inlineBytes, &outlineBytes);
+    MOZ_ASSERT(inlineBytes == WasmStructObject_MaxInlineBytes);
+    MOZ_ASSERT(outlineBytes > 0);
+    AddCellMemory(&structObj, outlineBytes + TrailerBlockOverhead,
+                  MemoryUse::WasmTrailerBlock);
   }
   return 0;
 }

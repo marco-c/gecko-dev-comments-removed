@@ -16,7 +16,7 @@ MallocedBlockCache::~MallocedBlockCache() { clear(); }
 
 
 
-PointerAndUint7 MallocedBlockCache::allowSlow(size_t size) {
+PointerAndUint7 MallocedBlockCache::allocSlow(size_t size) {
   
   MOZ_ASSERT(size > 0);
 

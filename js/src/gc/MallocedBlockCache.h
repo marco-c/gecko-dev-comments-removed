@@ -74,7 +74,7 @@ class MallocedBlockCache {
   
   
   [[nodiscard]] inline PointerAndUint7 alloc(size_t size);
-  [[nodiscard]] MOZ_NEVER_INLINE PointerAndUint7 allowSlow(size_t size);
+  [[nodiscard]] MOZ_NEVER_INLINE PointerAndUint7 allocSlow(size_t size);
 
   inline void free(PointerAndUint7 blockAndListID);
 
@@ -132,7 +132,7 @@ inline PointerAndUint7 MallocedBlockCache::alloc(size_t size) {
   }
 
   
-  return allowSlow(size);
+  return allocSlow(size);
 }
 
 inline void MallocedBlockCache::free(PointerAndUint7 blockAndListID) {

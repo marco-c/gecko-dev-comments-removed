@@ -14,6 +14,7 @@
 #include "gc/Allocator.h"
 #include "gc/GCProbes.h"
 #include "gc/Pretenuring.h"
+#include "gc/ZoneAllocator.h"  
 #include "vm/JSContext.h"
 #include "vm/JSObject.h"
 #include "vm/Probes.h"
@@ -23,6 +24,22 @@
 #include "wasm/WasmValType.h"
 
 using js::wasm::FieldType;
+
+namespace js::wasm {
+
+
+
+
+
+
+
+
+
+
+
+static const size_t TrailerBlockOverhead = (16 / 2) + (1 * sizeof(void*));
+
+}  
 
 namespace js {
 
@@ -492,6 +509,7 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
     memset(&(structObj->inlineData_[0]), 0, inlineBytes);
     memset(outlineData.pointer(), 0, outlineBytes);
   }
+
   if (MOZ_LIKELY(js::gc::IsInsideNursery(structObj))) {
     
     if (MOZ_UNLIKELY(!nursery.registerTrailer(outlineData, outlineBytes))) {
@@ -499,6 +517,11 @@ MOZ_ALWAYS_INLINE WasmStructObject* WasmStructObject::createStructOOL(
       ReportOutOfMemory(cx);
       return nullptr;
     }
+  } else {
+    
+    MOZ_ASSERT(structObj->isTenured());
+    AddCellMemory(structObj, outlineBytes + wasm::TrailerBlockOverhead,
+                  MemoryUse::WasmTrailerBlock);
   }
 
   js::gc::gcprobes::CreateObject(structObj);
