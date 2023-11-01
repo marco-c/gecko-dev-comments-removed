@@ -64,7 +64,6 @@ user_pref("services.settings.server", "data:,#remote-settings-dummy/v1");
 user_pref("media.autoplay.default", 0); 
 user_pref("media.autoplay.blocking_policy", 0);
 user_pref("media.autoplay.ask-permission", false);
-user_pref("media.autoplay.block-webaudio", false);
 user_pref("media.allowed-to-play.enabled", true);
 
 user_pref("media.block-autoplay-until-in-foreground", false);
