@@ -415,9 +415,6 @@ void nsPageContentFrame::EnsurePageName() {
 
   MOZ_ASSERT(mPageName, "Page name should never be null");
   
-  if (mPageName == nsGkAtoms::_empty) {
-    return;
-  }
   RefPtr<ComputedStyle> pageContentPseudoStyle =
       PresShell()->StyleSet()->ResolvePageContentStyle(
           mPageName, StylePagePseudoClassFlags::FIRST);
