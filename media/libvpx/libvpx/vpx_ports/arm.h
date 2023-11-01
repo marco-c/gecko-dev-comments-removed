@@ -24,6 +24,8 @@ extern "C" {
 
 #define HAS_NEON_I8MM (1 << 2)
 
+#define HAS_SVE (1 << 3)
+
 int arm_cpu_caps(void);
 
 

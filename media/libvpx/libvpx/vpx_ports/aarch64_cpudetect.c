@@ -98,6 +98,7 @@ static int arm_get_cpu_caps(void) {
 
 
 #define VPX_AARCH64_HWCAP_ASIMDDP (1 << 20)
+#define VPX_AARCH64_HWCAP_SVE (1 << 22)
 #define VPX_AARCH64_HWCAP2_I8MM (1 << 13)
 
 static int arm_get_cpu_caps(void) {
@@ -117,6 +118,11 @@ static int arm_get_cpu_caps(void) {
     flags |= HAS_NEON_I8MM;
   }
 #endif  
+#if HAVE_SVE
+  if (hwcap & VPX_AARCH64_HWCAP_SVE) {
+    flags |= HAS_SVE;
+  }
+#endif  
   return flags;
 }
 
@@ -128,6 +134,10 @@ static int arm_get_cpu_caps(void) {
 
 #ifndef ZX_ARM64_FEATURE_ISA_I8MM
 #define ZX_ARM64_FEATURE_ISA_I8MM ((uint32_t)(1u << 19))
+#endif
+
+#ifndef ZX_ARM64_FEATURE_ISA_SVE
+#define ZX_ARM64_FEATURE_ISA_SVE ((uint32_t)(1u << 20))
 #endif
 
 static int arm_get_cpu_caps(void) {
@@ -150,6 +160,11 @@ static int arm_get_cpu_caps(void) {
     flags |= HAS_NEON_I8MM;
   }
 #endif  
+#if HAVE_SVE
+  if (features & ZX_ARM64_FEATURE_ISA_SVE) {
+    flags |= HAS_SVE;
+  }
+#endif  
   return flags;
 }
 
@@ -168,6 +183,14 @@ int arm_cpu_caps(void) {
   
   if (!(flags & HAS_NEON_DOTPROD)) {
     flags &= ~HAS_NEON_I8MM;
+  }
+
+  
+  if (!(flags & HAS_NEON_DOTPROD)) {
+    flags &= ~HAS_SVE;
+  }
+  if (!(flags & HAS_NEON_I8MM)) {
+    flags &= ~HAS_SVE;
   }
 
   return flags;
