@@ -76,6 +76,11 @@ static constexpr Register WasmCallRefCallScratchReg1 = ABINonArgReg1;
 static constexpr Register WasmCallRefReg = ABINonArgReg3;
 
 
+static constexpr Register WasmTailCallInstanceScratchReg = ABINonArgReg1;
+static constexpr Register WasmTailCallRAScratchReg = ra;
+static constexpr Register WasmTailCallFPScratchReg = ABINonArgReg3;
+
+
 
 
 static constexpr Register WasmJitEntryReturnScratch = t1;
