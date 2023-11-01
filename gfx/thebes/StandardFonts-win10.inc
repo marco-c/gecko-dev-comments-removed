@@ -161,6 +161,7 @@ static const char* kLangPackFonts[] = {
   "MingLiU",  
   "MingLiU_HKSCS",  
   "Miriam",  
+  "Miriam Fixed",  
   "MoolBoran",  
   "MS Mincho",  
   "MS PMincho",  
