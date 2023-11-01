@@ -1478,6 +1478,13 @@ class AsyncPanZoomController {
 
   void DispatchStateChangeNotification(PanZoomState aOldState,
                                        PanZoomState aNewState);
+
+  
+
+
+
+  void SendTransformBeginAndEnd();
+
   
 
 
