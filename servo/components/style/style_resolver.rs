@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Style resolution for a given element or pseudo-element.
 
 use crate::applicable_declarations::ApplicableDeclarationList;
 use crate::computed_value_flags::ComputedValueFlags;
@@ -22,16 +22,16 @@ use selectors::matching::{
 };
 use servo_arc::Arc;
 
-
+/// Whether pseudo-elements should be resolved or not.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PseudoElementResolution {
-    
+    /// Only resolve pseudo-styles if possibly applicable.
     IfApplicable,
-    
+    /// Force pseudo-element resolution.
     Force,
 }
 
-
+/// A struct that takes care of resolving the style of a given element.
 pub struct StyleResolverForElement<'a, 'ctx, 'le, E>
 where
     'ctx: 'a,
@@ -50,40 +50,40 @@ struct MatchingResults {
     flags: ComputedValueFlags,
 }
 
-
+/// A style returned from the resolver machinery.
 pub struct ResolvedStyle(pub Arc<ComputedValues>);
 
-
+/// The primary style of an element or an element-backed pseudo-element.
 pub struct PrimaryStyle {
-    
+    /// The style itself.
     pub style: ResolvedStyle,
-    
-    
+    /// Whether the style was reused from another element via the rule node (see
+    /// `StyleSharingCache::lookup_by_rules`).
     pub reused_via_rule_node: bool,
 }
 
-
+/// A set of style returned from the resolver machinery.
 pub struct ResolvedElementStyles {
-    
+    /// Primary style.
     pub primary: PrimaryStyle,
-    
+    /// Pseudo styles.
     pub pseudos: EagerPseudoStyles,
 }
 
 impl ResolvedElementStyles {
-    
+    /// Convenience accessor for the primary style.
     pub fn primary_style(&self) -> &Arc<ComputedValues> {
         &self.primary.style.0
     }
 
-    
+    /// Convenience mutable accessor for the style.
     pub fn primary_style_mut(&mut self) -> &mut Arc<ComputedValues> {
         &mut self.primary.style.0
     }
 }
 
 impl PrimaryStyle {
-    
+    /// Convenience accessor for the style.
     pub fn style(&self) -> &ComputedValues {
         &*self.style.0
     }
@@ -166,7 +166,7 @@ where
     'le: 'ctx,
     E: TElement + MatchMethods + 'le,
 {
-    
+    /// Trivially construct a new StyleResolverForElement.
     pub fn new(
         element: E,
         context: &'a mut StyleContext<'ctx, E>,
@@ -182,7 +182,7 @@ where
         }
     }
 
-    
+    /// Resolve just the style of a given element.
     pub fn resolve_primary_style(
         &mut self,
         parent_style: Option<&ComputedValues>,
@@ -219,8 +219,8 @@ where
         parent_style: Option<&ComputedValues>,
         layout_parent_style: Option<&ComputedValues>,
     ) -> PrimaryStyle {
-        
-        
+        // Before doing the cascade, check the sharing cache and see if we can
+        // reuse the style via rule node identity.
         let may_reuse = self.element.matches_user_and_content_rules() &&
             parent_style.is_some() &&
             inputs.rules.is_some();
@@ -240,20 +240,20 @@ where
             }
         }
 
-        
-        
+        // No style to reuse. Cascade the style, starting with visited style
+        // if necessary.
         PrimaryStyle {
             style: self.cascade_style_and_visited(
                 inputs,
                 parent_style,
                 layout_parent_style,
-                 None,
+                /* pseudo = */ None,
             ),
             reused_via_rule_node: false,
         }
     }
 
-    
+    /// Resolve the style of a given element, and all its eager pseudo-elements.
     pub fn resolve_style(
         &mut self,
         parent_style: Option<&ComputedValues>,
@@ -290,15 +290,15 @@ where
         }
     }
 
-    
-    
+    /// Resolve an element's styles with the default inheritance parent/layout
+    /// parents.
     pub fn resolve_style_with_default_parents(&mut self) -> ResolvedElementStyles {
         with_default_parent_styles(self.element, |parent_style, layout_parent_style| {
             self.resolve_style(parent_style, layout_parent_style)
         })
     }
 
-    
+    /// Cascade a set of rules, using the default parent for inheritance.
     pub fn cascade_style_and_visited_with_default_parents(
         &mut self,
         inputs: CascadeInputs,
@@ -308,12 +308,12 @@ where
                 inputs,
                 parent_style,
                 layout_parent_style,
-                 None,
+                /* pseudo = */ None,
             )
         })
     }
 
-    
+    /// Cascade a set of rules for pseudo element, using the default parent for inheritance.
     pub fn cascade_style_and_visited_for_pseudo_with_default_parents(
         &mut self,
         inputs: CascadeInputs,
@@ -351,7 +351,6 @@ where
             pseudo,
             inputs,
             &self.context.shared.guards,
-            pseudo.and(parent_style),
             parent_style,
             layout_parent_style,
             FirstLineReparenting::No,
@@ -369,7 +368,7 @@ where
         ResolvedStyle(values)
     }
 
-    
+    /// Cascade the element and pseudo-element styles with the default parents.
     pub fn cascade_styles_with_default_parents(
         &mut self,
         inputs: ElementCascadeInputs,
@@ -478,7 +477,7 @@ where
 
         let stylist = &self.context.shared.stylist;
         let implemented_pseudo = self.element.implemented_pseudo_element();
-        
+        // Compute the primary rule node.
         stylist.push_applicable_declarations(
             self.element,
             implemented_pseudo.as_ref(),
@@ -490,7 +489,7 @@ where
             &mut matching_context,
         );
 
-        
+        // FIXME(emilio): This is a hack for animations, and should go away.
         self.element.unset_dirty_style_attribute();
 
         let rule_node = stylist
@@ -506,9 +505,9 @@ where
                 }
             }
         }
-        
-        
-        
+        // This is a bit awkward - ideally, the flag is set directly where `considered_relative_selector`
+        // is; however, in that context, the implementation detail of `extra_data` is not visible, so
+        // it's done here. A trait for manipulating the flags is an option, but not worth it for a single flag.
         match matching_context.considered_relative_selector {
             RelativeSelectorMatchingState::None => (),
             RelativeSelectorMatchingState::Considered => {
@@ -572,14 +571,14 @@ where
         );
         matching_context.extra_data.originating_element_style = Some(originating_element_style);
 
-        
-        
+        // NB: We handle animation rules for ::before and ::after when
+        // traversing them.
         stylist.push_applicable_declarations(
             self.element,
             Some(pseudo_element),
             None,
             None,
-             Default::default(),
+            /* animation_declarations = */ Default::default(),
             self.rule_inclusion,
             &mut applicable_declarations,
             &mut matching_context,
