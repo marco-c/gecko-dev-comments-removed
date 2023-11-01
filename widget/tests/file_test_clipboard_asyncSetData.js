@@ -119,13 +119,8 @@ clipboardTypes.forEach(function (type) {
 
       
       let result;
-      let request = clipboard.asyncSetData(type, {
-        QueryInterface: SpecialPowers.ChromeUtils.generateQI([
-          "nsIAsyncClipboardRequestCallback",
-        ]),
-        onComplete(rv) {
-          result = rv;
-        },
+      let request = clipboard.asyncSetData(type, rv => {
+        result = rv;
       });
 
       
