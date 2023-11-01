@@ -1,6 +1,4 @@
-var EXPORTED_SYMBOLS = ["ReftestFissionChild"];
-
-class ReftestFissionChild extends JSWindowActorChild {
+export class ReftestFissionChild extends JSWindowActorChild {
   forwardAfterPaintEventToParent(
     rects,
     originalTargetUri,
@@ -24,9 +22,9 @@ class ReftestFissionChild extends JSWindowActorChild {
           originalTargetUri,
         });
       } catch (e) {
-        
-        
-        
+        // |this| can be destroyed here and unable to send messages, which is
+        // not a problem, the reftest harness probably torn down the page and
+        // moved on to the next test.
         console.error(e);
       }
     }
@@ -35,9 +33,9 @@ class ReftestFissionChild extends JSWindowActorChild {
   handleEvent(evt) {
     switch (evt.type) {
       case "MozAfterPaint":
-        
-        
-        
+        // We want to forward any after paint events to our parent document so that
+        // that it reaches the root content document where the main reftest harness
+        // code (reftest-content.js) will process it and update the canvas.
         var rects = [];
         for (let r of evt.clientRects) {
           rects.push({
@@ -50,7 +48,7 @@ class ReftestFissionChild extends JSWindowActorChild {
         this.forwardAfterPaintEventToParent(
           rects,
           this.document.documentURI,
-           false
+          /* dispatchToSelfAsWell */ false
         );
         break;
     }
@@ -73,8 +71,8 @@ class ReftestFissionChild extends JSWindowActorChild {
       return Promise.resolve(returnStrings);
     }
 
-    
-    
+    // If we don't have the reftest-async-scroll attribute we only look at
+    // the root element for potential display ports to set.
     if (!contentRootElement.hasAttribute("reftest-async-scroll")) {
       let winUtils = this.contentWindow.windowUtils;
       this.setupDisplayportForElement(
@@ -85,8 +83,8 @@ class ReftestFissionChild extends JSWindowActorChild {
       return Promise.resolve(returnStrings);
     }
 
-    
-    
+    // Send a msg to the parent side to get the parent side to tell all
+    // process roots to do the displayport setting.
     let browsingContext = this.browsingContext;
     let promise = this.sendQuery("TellChildrenToSetupDisplayport", {
       browsingContext,
@@ -167,8 +165,8 @@ class ReftestFissionChild extends JSWindowActorChild {
     let sy = this.attrOrDefault(element, "reftest-async-scroll-y", 0);
     if (sx != 0 || sy != 0) {
       try {
-        
-        
+        // This might fail when called from RecordResult since layers
+        // may not have been constructed yet
         winUtils.setAsyncScrollOffset(element, sx, sy);
         return true;
       } catch (e) {
@@ -235,20 +233,20 @@ class ReftestFissionChild extends JSWindowActorChild {
   async receiveMessage(msg) {
     switch (msg.name) {
       case "ForwardAfterPaintEventToSelfAndParent": {
-        
-        
-        
+        // The embedderElement can be null if the child we got this from was removed.
+        // Not much we can do to transform the rects, but it doesn't matter, the rects
+        // won't reach reftest-content.js.
         if (msg.data.fromBrowsingContext.embedderElement == null) {
           this.forwardAfterPaintEventToParent(
             msg.data.rects,
             msg.data.originalTargetUri,
-             true
+            /* dispatchToSelfAsWell */ true
           );
           return undefined;
         }
 
-        
-        
+        // Transform the rects from fromBrowsingContext to us.
+        // We first translate from the content rect to the border rect of the iframe.
         let style = this.contentWindow.getComputedStyle(
           msg.data.fromBrowsingContext.embedderElement
         );
@@ -257,8 +255,8 @@ class ReftestFissionChild extends JSWindowActorChild {
           parseFloat(style.paddingTop) + parseFloat(style.borderTopWidth)
         );
 
-        
-        
+        // Then we transform from the iframe to our root frame.
+        // We are guaranteed to be the process with the embedderElement for fromBrowsingContext.
         let transform =
           msg.data.fromBrowsingContext.embedderElement.getTransformToViewport();
         let combined = translate.multiply(transform);
@@ -268,7 +266,7 @@ class ReftestFissionChild extends JSWindowActorChild {
         this.forwardAfterPaintEventToParent(
           newrects,
           msg.data.originalTargetUri,
-           true
+          /* dispatchToSelfAsWell */ true
         );
         break;
       }
@@ -339,8 +337,8 @@ class ReftestFissionChild extends JSWindowActorChild {
               }
             }
 
-            
-            
+            // `contentWindow` will be null if the inner window for this actor
+            // has been navigated away from.
             if (this.contentWindow) {
               flushWindow(this.contentWindow);
             }

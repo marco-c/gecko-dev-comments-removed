@@ -1,6 +1,4 @@
-var EXPORTED_SYMBOLS = ["ReftestFissionParent"];
-
-class ReftestFissionParent extends JSWindowActorParent {
+export class ReftestFissionParent extends JSWindowActorParent {
   tellChildrenToFlushRendering(
     browsingContext,
     ignoreThrottledAnimations,
@@ -44,7 +42,7 @@ class ReftestFissionParent extends JSWindowActorParent {
     }
   }
 
-  
+  // not including browsingContext
   getNearestProcessRootProperDescendants(browsingContext) {
     let result = [];
     for (let context of browsingContext.children) {
@@ -64,7 +62,7 @@ class ReftestFissionParent extends JSWindowActorParent {
     }
   }
 
-  
+  // tell children and itself
   async tellChildrenToUpdateLayerTree(browsingContext) {
     let errorStrings = [];
     let infoStrings = [];
@@ -84,17 +82,17 @@ class ReftestFissionParent extends JSWindowActorParent {
       return { errorStrings, infoStrings };
     }
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    // When we paint a document we also update the EffectsInfo visible rect in
+    // nsSubDocumentFrame for any remote subdocuments. This visible rect is
+    // used to limit painting for the subdocument in the subdocument's process.
+    // So we want to ensure that the IPC message that updates the visible rect
+    // to the subdocument's process arrives before we paint the subdocument
+    // (otherwise our painting might not be up to date). We do this by sending,
+    // and waiting for reply, an "EmptyMessage" to every direct descendant that
+    // is in another process. Since we send the "EmptyMessage" after the
+    // visible rect update message we know that the visible rect will be
+    // updated by the time we hear back from the "EmptyMessage". Then we can
+    // ask the subdocument process to paint.
 
     try {
       let result = await actor.sendQuery("UpdateLayerTree");
@@ -216,8 +214,8 @@ class ReftestFissionParent extends JSWindowActorParent {
                   "FlushRendering sendQuery to child promise still pending?"
                 );
               } else {
-                
-                
+                // We expect actors to go away causing sendQuery's to fail, so
+                // just note it.
                 infoStrings.push(
                   "FlushRendering sendQuery to child promise rejected: " +
                     r.reason
@@ -244,8 +242,8 @@ class ReftestFissionParent extends JSWindowActorParent {
           let infoStrings = [];
           for (let r of results) {
             if (r.status != "fulfilled") {
-              
-              
+              // We expect actors to go away causing sendQuery's to fail, so
+              // just note it.
               infoStrings.push(
                 "SetupDisplayport sendQuery to child promise rejected: " +
                   r.reason
@@ -273,8 +271,8 @@ class ReftestFissionParent extends JSWindowActorParent {
           let updatedAny = false;
           for (let r of results) {
             if (r.status != "fulfilled") {
-              
-              
+              // We expect actors to go away causing sendQuery's to fail, so
+              // just note it.
               infoStrings.push(
                 "SetupAsyncScrollOffsets sendQuery to child promise rejected: " +
                   r.reason
