@@ -53,7 +53,7 @@ function openFileDialog() {
     
     
     
-    await new Promise(res => setTimeout(res, 500));
+    await new Promise(res => setTimeout(res, 1000));
     return pid;
   })();
 
