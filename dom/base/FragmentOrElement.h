@@ -246,12 +246,6 @@ class FragmentOrElement : public nsIContent {
 
 
 
-    bool mTemporarilyVisibleForScrolledIntoViewDescendant = false;
-
-    
-
-
-
     nsTHashMap<RefPtr<nsAtom>, nsWeakPtr> mExplicitlySetAttrElements;
   };
 
