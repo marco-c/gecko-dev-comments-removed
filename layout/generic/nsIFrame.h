@@ -3224,6 +3224,14 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+  nsIFrame* GetClosestContentVisibilityAncestor(
+      const mozilla::EnumSet<IncludeContentVisibility>& =
+          IncludeAllContentVisibility()) const;
+
+  
+
+
+
 
   bool IsHiddenByContentVisibilityOnAnyAncestor(
       const mozilla::EnumSet<IncludeContentVisibility>& =
