@@ -891,22 +891,7 @@ add_tasks_with_rust(async function timestamps() {
     providers: [UrlbarProviderQuickSuggest.name],
     isPrivate: false,
   });
-  let controller = UrlbarTestUtils.newMockController({
-    input: {
-      isPrivate: context.isPrivate,
-      onFirstResult() {
-        return false;
-      },
-      getSearchSource() {
-        return "dummy-search-source";
-      },
-      window: {
-        location: {
-          href: AppConstants.BROWSER_CHROME_URL,
-        },
-      },
-    },
-  });
+  let controller = UrlbarTestUtils.newMockController();
   await controller.startQuery(context);
 
   
@@ -1011,22 +996,7 @@ add_tasks_with_rust(async function dedupeAgainstURL_timestamps() {
     expectedQuickSuggest,
   ];
 
-  let controller = UrlbarTestUtils.newMockController({
-    input: {
-      isPrivate: false,
-      onFirstResult() {
-        return false;
-      },
-      getSearchSource() {
-        return "dummy-search-source";
-      },
-      window: {
-        location: {
-          href: AppConstants.BROWSER_CHROME_URL,
-        },
-      },
-    },
-  });
+  let controller = UrlbarTestUtils.newMockController();
   await controller.startQuery(context);
   info("Actual results: " + JSON.stringify(context.results));
 
@@ -1263,21 +1233,86 @@ add_task(async function blockedSuggestionsAPI() {
 
 
 add_tasks_with_rust(async function block() {
-  for (const result of REMOTE_SETTINGS_RESULTS) {
-    await QuickSuggest.blockedSuggestions.add(result.url);
-  }
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
 
-  for (const result of REMOTE_SETTINGS_RESULTS) {
-    const context = createContext(result.keywords[0], {
+  let tests = [
+    
+    [REMOTE_SETTINGS_RESULTS[0], expectedSponsoredResult()],
+    [REMOTE_SETTINGS_RESULTS[1], expectedNonSponsoredResult()],
+    [REMOTE_SETTINGS_RESULTS[2], expectedHttpResult()],
+    [REMOTE_SETTINGS_RESULTS[3], expectedHttpsResult()],
+  ];
+
+  for (let [suggestion, expectedResult] of tests) {
+    info("Testing suggestion: " + JSON.stringify(suggestion));
+
+    
+    let context = createContext(suggestion.keywords[0], {
       providers: [UrlbarProviderQuickSuggest.name],
       isPrivate: false,
     });
     await check_results({
       context,
+      matches: [expectedResult],
+    });
+
+    
+    await QuickSuggest.blockedSuggestions.add(context.results[0].payload.url);
+
+    
+    await check_results({
+      context: createContext(suggestion.keywords[0], {
+        providers: [UrlbarProviderQuickSuggest.name],
+        isPrivate: false,
+      }),
       matches: [],
     });
-  }
 
+    await QuickSuggest.blockedSuggestions.clear();
+  }
+});
+
+
+add_tasks_with_rust(async function block_timestamp() {
+  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
+
+  
+  let context = createContext(TIMESTAMP_SEARCH_STRING, {
+    providers: [UrlbarProviderQuickSuggest.name],
+    isPrivate: false,
+  });
+  let controller = UrlbarTestUtils.newMockController();
+  await controller.startQuery(context);
+
+  
+  Assert.equal(context.results.length, 1, "One result returned");
+  let result = context.results[0];
+
+  QuickSuggestTestUtils.assertTimestampsReplaced(result, {
+    url: TIMESTAMP_SUGGESTION_URL,
+    sponsoredClickUrl: TIMESTAMP_SUGGESTION_CLICK_URL,
+  });
+
+  Assert.ok(result.payload.originalUrl, "The actual result has an originalUrl");
+  Assert.equal(
+    result.payload.originalUrl,
+    REMOTE_SETTINGS_RESULTS[4].url,
+    "The actual result's originalUrl should be the raw suggestion URL with a timestamp template"
+  );
+
+  
+  await QuickSuggest.blockedSuggestions.add(result.payload.originalUrl);
+
+  
+  await check_results({
+    context: createContext(TIMESTAMP_SEARCH_STRING, {
+      providers: [UrlbarProviderQuickSuggest.name],
+      isPrivate: false,
+    }),
+    matches: [],
+  });
   await QuickSuggest.blockedSuggestions.clear();
 });
 
@@ -1285,6 +1320,7 @@ add_tasks_with_rust(async function block() {
 
 add_task(async function remoteSettingsDataType() {
   UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
+  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", false);
 
   for (let dataType of [undefined, "test-data-type"]) {
     
