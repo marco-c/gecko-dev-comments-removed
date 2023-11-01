@@ -3148,19 +3148,6 @@ void HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   if (CheckActivationBehaviorPreconditions(aVisitor)) {
     aVisitor.mWantsActivationBehavior = true;
-
-    if ((mType == FormControlType::InputSubmit ||
-         mType == FormControlType::InputImage) &&
-        mForm) {
-      
-      aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
-      aVisitor.mItemData = static_cast<Element*>(mForm);
-      
-      
-      
-      
-      mForm->OnSubmitClickBegin(this);
-    }
   }
 
   
@@ -3282,6 +3269,9 @@ void HTMLInputElement::LegacyPreActivationBehavior(
   
   
 
+  
+  MOZ_ASSERT(NS_CONTROL_TYPE(aVisitor.mItemFlags) == uint8_t(mType));
+
   bool originalCheckedValue = false;
   mCheckedIsToggled = false;
 
@@ -3316,6 +3306,19 @@ void HTMLInputElement::LegacyPreActivationBehavior(
 
   if (originalCheckedValue) {
     aVisitor.mItemFlags |= NS_ORIGINAL_CHECKED_VALUE;
+  }
+
+  
+  if ((mType == FormControlType::InputSubmit ||
+       mType == FormControlType::InputImage) &&
+      mForm) {
+    aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
+    aVisitor.mItemData = static_cast<Element*>(mForm);
+    
+    
+    
+    
+    mForm->OnSubmitClickBegin(this);
   }
 }
 
@@ -3650,7 +3653,6 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   }
 
   nsresult rv = NS_OK;
-  bool outerActivateEvent = !!(aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT);
   auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
 
   
@@ -3991,49 +3993,16 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
 
       
-      if (outerActivateEvent) {
-        switch (mType) {
-          case FormControlType::InputReset:
-          case FormControlType::InputSubmit:
-          case FormControlType::InputImage:
-            if (mForm) {
-              
-              RefPtr<HTMLFormElement> form(mForm);
-              if (mType == FormControlType::InputReset) {
-                form->MaybeReset(this);
-              } else {
-                form->MaybeSubmit(this);
-              }
-              aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-            }
-            break;
-
-          default:
-            break;
-        }  
-        if (IsButtonControl()) {
-          HandlePopoverTargetAction();
-        }
-      }  
+      
+      if ((aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) &&
+          (mType == FormControlType::InputReset ||
+           mType == FormControlType::InputSubmit ||
+           mType == FormControlType::InputImage) &&
+          mForm) {
+        aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
+      }
     }
   }  
-  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
-      (oldType == FormControlType::InputSubmit ||
-       oldType == FormControlType::InputImage)) {
-    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
-    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
-    MOZ_ASSERT(form);
-    
-    
-    
-    
-    form->OnSubmitClickEnd();
-    
-    
-    
-    
-    form->FlushPendingSubmission();
-  }
 
   if (NS_SUCCEEDED(rv) && mType == FormControlType::InputRange) {
     PostHandleEventForRangeThumb(aVisitor);
@@ -4045,6 +4014,26 @@ nsresult HTMLInputElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
   return NS_OK;
 }
 
+void EndSubmitClick(EventChainPostVisitor& aVisitor) {
+  auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
+  if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK) &&
+      (oldType == FormControlType::InputSubmit ||
+       oldType == FormControlType::InputImage)) {
+    nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
+    RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
+    
+    
+    
+    
+    form->OnSubmitClickEnd();
+    
+    
+    
+    
+    form->FlushPendingSubmission();
+  }
+}
+
 void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
   auto oldType = FormControlType(NS_CONTROL_TYPE(aVisitor.mItemFlags));
 
@@ -4054,6 +4043,7 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     
     
     
+    EndSubmitClick(aVisitor);
     return;
   }
 
@@ -4083,6 +4073,31 @@ void HTMLInputElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
     }
 #endif
   }
+
+  switch (mType) {
+    case FormControlType::InputReset:
+    case FormControlType::InputSubmit:
+    case FormControlType::InputImage:
+      if (mForm) {
+        
+        RefPtr<HTMLFormElement> form(mForm);
+        if (mType == FormControlType::InputReset) {
+          form->MaybeReset(this);
+        } else {
+          form->MaybeSubmit(this);
+        }
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
+      break;
+
+    default:
+      break;
+  }  
+  if (IsButtonControl()) {
+    HandlePopoverTargetAction();
+  }
+
+  EndSubmitClick(aVisitor);
 }
 
 void HTMLInputElement::LegacyCanceledActivationBehavior(
@@ -4115,6 +4130,9 @@ void HTMLInputElement::LegacyCanceledActivationBehavior(
       DoSetChecked(originalCheckedValue, true, true);
     }
   }
+
+  
+  EndSubmitClick(aVisitor);
 }
 
 enum class RadioButtonMove { Back, Forward, None };
