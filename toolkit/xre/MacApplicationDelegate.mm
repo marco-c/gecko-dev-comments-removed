@@ -182,6 +182,11 @@ void ProcessPendingGetURLAppleEvents() {
 }
 
 
+- (BOOL)applicationSupportsSecureRestorableState:(NSApplication*)app {
+  return YES;
+}
+
+
 - (NSMenu*)applicationDockMenu:(NSApplication*)sender {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
