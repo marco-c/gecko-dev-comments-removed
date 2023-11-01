@@ -134,10 +134,6 @@ let TESTS = {
 };
 
 add_task(async function () {
-  UrlbarPrefs.set("quicksuggest.enabled", true);
-  UrlbarPrefs.set("suggest.quicksuggest.sponsored", true);
-  UrlbarPrefs.set("suggest.quicksuggest.nonsponsored", true);
-
   
   let qsResults = [];
   let qsSuggestions = [];
@@ -210,11 +206,15 @@ add_task(async function () {
   }
 
   await QuickSuggestTestUtils.ensureQuickSuggestInit({
-    remoteSettingsResults: [
+    remoteSettingsRecords: [
       {
         type: "data",
         attachment: qsResults,
       },
+    ],
+    prefs: [
+      ["suggest.quicksuggest.sponsored", true],
+      ["suggest.quicksuggest.nonsponsored", true],
     ],
   });
 

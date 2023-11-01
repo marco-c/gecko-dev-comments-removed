@@ -35,6 +35,11 @@ if (AppConstants.platform === "macosx") {
 let gCanTabMoveFocus;
 add_setup(async function () {
   gCanTabMoveFocus = await canTabMoveFocus();
+
+  
+  
+  
+  await QuickSuggestTestUtils.ensureQuickSuggestInit();
 });
 
 
