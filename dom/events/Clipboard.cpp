@@ -582,7 +582,7 @@ static RefPtr<NativeItemPromise> GetClipboardNativeItem(
   return NativeEntryPromise::All(GetCurrentSerialEventTarget(), promises);
 }
 
-class ClipboardWriteCallback final : public nsIAsyncSetClipboardDataCallback {
+class ClipboardWriteCallback final : public nsIAsyncClipboardRequestCallback {
  public:
   
   
@@ -625,7 +625,7 @@ class ClipboardWriteCallback final : public nsIAsyncSetClipboardDataCallback {
   RefPtr<ClipboardItem> mClipboardItem;
 };
 
-NS_IMPL_ISUPPORTS(ClipboardWriteCallback, nsIAsyncSetClipboardDataCallback)
+NS_IMPL_ISUPPORTS(ClipboardWriteCallback, nsIAsyncClipboardRequestCallback)
 
 }  
 
