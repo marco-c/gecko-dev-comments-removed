@@ -362,6 +362,28 @@ bool IPCFuzzController::ObserveIPCMessage(mozilla::ipc::NodeChannel* channel,
   return true;
 }
 
+void IPCFuzzController::OnMessageError(
+    mozilla::ipc::HasResultCodes::Result code, const IPC::Message& aMsg) {
+  if (!mozilla::fuzzing::Nyx::instance().is_enabled("IPC_Generic")) {
+    
+    return;
+  }
+
+  if (!XRE_IsParentProcess()) {
+    
+    return;
+  }
+
+  if (!aMsg.IsFuzzMsg()) {
+    
+    return;
+  }
+
+#if 0
+  Nyx::instance().release(IPCFuzzController::instance().getMessageStopCount());
+#endif
+}
+
 bool IPCFuzzController::MakeTargetDecision(
     uint8_t portIndex, uint8_t portInstanceIndex, uint8_t actorIndex,
     uint16_t typeOffset, PortName* name, int32_t* seqno, uint64_t* fseqno,
