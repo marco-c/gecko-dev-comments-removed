@@ -11,6 +11,7 @@
 #include "nsThreadUtils.h"
 
 #include "nsIObserverService.h"
+#include "nsIPropertyBag2.h"
 #include "mozilla/Services.h"
 #include "mozilla/ChaosMode.h"
 #include "mozilla/ArenaAllocator.h"
@@ -21,6 +22,44 @@
 #include "mozilla/glean/GleanMetrics.h"
 
 #include <math.h>
+
+#ifdef XP_WIN
+
+#  include <windows.h>
+#  include <mmsystem.h>
+
+static constexpr UINT kTimerPeriodHiRes = 1;
+static constexpr UINT kTimerPeriodLowRes = 16;
+
+
+static constexpr UINT GetDesiredTimerPeriod(const bool aOnBatteryPower,
+                                            const bool aLowProcessPriority) {
+  const bool useLowResTimer = aOnBatteryPower || aLowProcessPriority;
+  return useLowResTimer ? kTimerPeriodLowRes : kTimerPeriodHiRes;
+}
+
+static_assert(GetDesiredTimerPeriod(true, false) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(false, true) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(true, true) == kTimerPeriodLowRes);
+static_assert(GetDesiredTimerPeriod(false, false) == kTimerPeriodHiRes);
+
+UINT TimerThread::ComputeDesiredTimerPeriod() const {
+  const bool lowPriorityProcess =
+      mCachedPriority.load(std::memory_order_relaxed) <
+      hal::PROCESS_PRIORITY_FOREGROUND;
+
+  
+  
+  
+  
+  SYSTEM_POWER_STATUS status;
+  const bool onBatteryPower = !lowPriorityProcess &&
+                              GetSystemPowerStatus(&status) &&
+                              (status.ACLineStatus == 0);
+
+  return GetDesiredTimerPeriod(onBatteryPower, lowPriorityProcess);
+}
+#endif
 
 using namespace mozilla;
 
@@ -174,6 +213,8 @@ TimerObserverRunnable::Run() {
     observerService->AddObserver(mObserver, "suspend_process_notification",
                                  false);
     observerService->AddObserver(mObserver, "resume_process_notification",
+                                 false);
+    observerService->AddObserver(mObserver, "ipc:process-priority-changed",
                                  false);
   }
   return NS_OK;
@@ -720,6 +761,25 @@ TimerThread::Run() {
   AutoTArray<uint64_t, kMaxQueuedTimerFired> queuedTimersFiredPerWakeup;
   queuedTimersFiredPerWakeup.SetLengthAndRetainStorage(kMaxQueuedTimerFired);
 
+#ifdef XP_WIN
+  
+  
+  static constexpr float kTimerPeriodEvalIntervalSec = 2.0f;
+  const TimeDuration timerPeriodEvalInterval =
+      TimeDuration::FromSeconds(kTimerPeriodEvalIntervalSec);
+  TimeStamp nextTimerPeriodEval = TimeStamp::Now() + timerPeriodEvalInterval;
+
+  
+  
+  const bool adjustTimerPeriod =
+      StaticPrefs::timer_auto_increase_timer_resolution();
+  UINT lastTimePeriodSet = ComputeDesiredTimerPeriod();
+
+  if (adjustTimerPeriod) {
+    timeBeginPeriod(lastTimePeriodSet);
+  }
+#endif
+
   uint64_t timersFiredThisWakeup = 0;
   while (!mShutdown) {
     
@@ -741,6 +801,20 @@ TimerThread::Run() {
     } else {
       waitFor = TimeDuration::Forever();
       TimeStamp now = TimeStamp::Now();
+
+#ifdef XP_WIN
+      if (now >= nextTimerPeriodEval) {
+        const UINT newTimePeriod = ComputeDesiredTimerPeriod();
+        if (newTimePeriod != lastTimePeriodSet) {
+          if (adjustTimerPeriod) {
+            timeEndPeriod(lastTimePeriodSet);
+            timeBeginPeriod(newTimePeriod);
+          }
+          lastTimePeriodSet = newTimePeriod;
+        }
+        nextTimerPeriodEval = now + timerPeriodEvalInterval;
+      }
+#endif
 
 #if TIMER_THREAD_STATISTICS
       if (!mNotified && !mIntendedWakeupTime.IsNull() &&
@@ -914,6 +988,13 @@ TimerThread::Run() {
     glean::timer_thread::timers_fired_per_wakeup.AccumulateSamples(
         queuedTimersFiredPerWakeup);
   }
+
+#ifdef XP_WIN
+  
+  if (adjustTimerPeriod) {
+    timeEndPeriod(lastTimePeriodSet);
+  }
+#endif
 
   return NS_OK;
 }
@@ -1284,8 +1365,18 @@ void TimerThread::DoAfterSleep() {
 }
 
 NS_IMETHODIMP
-TimerThread::Observe(nsISupports* , const char* aTopic,
-                     const char16_t* ) {
+TimerThread::Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) {
+  if (strcmp(aTopic, "ipc:process-priority-changed") == 0) {
+    nsCOMPtr<nsIPropertyBag2> props = do_QueryInterface(aSubject);
+    MOZ_ASSERT(props != nullptr);
+
+    int32_t priority = static_cast<int32_t>(hal::PROCESS_PRIORITY_UNKNOWN);
+    props->GetPropertyAsInt32(u"priority"_ns, &priority);
+    mCachedPriority.store(static_cast<hal::ProcessPriority>(priority),
+                          std::memory_order_relaxed);
+  }
+
   if (StaticPrefs::timer_ignore_sleep_wake_notifications()) {
     return NS_OK;
   }
