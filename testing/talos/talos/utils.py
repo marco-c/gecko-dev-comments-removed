@@ -159,7 +159,6 @@ def GenerateBrowserCommandLine(
                 url += "&" + urllib.parse.urlencode(profiling_info)
             else:
                 url += "?" + urllib.parse.urlencode(profiling_info)
-            command_args.extend(url.split(" "))
 
     
     if url is not None:
