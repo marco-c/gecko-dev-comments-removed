@@ -18,7 +18,7 @@ module.exports = {
   
   meta: {
     docs: {
-      url: "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/import-browser-window-globals.html",
+      url: "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/rules/import-browser-window-globals.html",
     },
     schema: [],
     type: "problem",

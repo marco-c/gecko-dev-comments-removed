@@ -32,7 +32,7 @@ module.exports = {
   
   meta: {
     docs: {
-      url: "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/import-headjs-globals.html",
+      url: "https://firefox-source-docs.mozilla.org/code-quality/lint/linters/eslint-plugin-mozilla/rules/import-headjs-globals.html",
     },
     schema: [],
     type: "problem",
