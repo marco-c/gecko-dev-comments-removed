@@ -3594,7 +3594,7 @@ var gMainPane = {
         
         
         if (
-          AppConstants.platform == "mac" ||
+          AppConstants.platform == "macosx" ||
           leafName == firefoxLocalizedName
         ) {
           return { file, folderDisplayName: firefoxLocalizedName };
