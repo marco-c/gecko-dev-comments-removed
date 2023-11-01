@@ -36,7 +36,8 @@ JSObject* WebTransportBidirectionalStream::WrapObject(
 already_AddRefed<WebTransportBidirectionalStream>
 WebTransportBidirectionalStream::Create(
     WebTransport* aWebTransport, nsIGlobalObject* aGlobal, uint64_t aStreamId,
-    DataPipeReceiver* receiver, DataPipeSender* sender, ErrorResult& aRv) {
+    DataPipeReceiver* receiver, DataPipeSender* aSender,
+    Maybe<int64_t> aSendOrder, ErrorResult& aRv) {
   
   
 
@@ -49,8 +50,8 @@ WebTransportBidirectionalStream::Create(
     return nullptr;
   }
   RefPtr<WebTransportSendStream> writableStream =
-      WebTransportSendStream::Create(aWebTransport, aGlobal, aStreamId, sender,
-                                     aRv);
+      WebTransportSendStream::Create(aWebTransport, aGlobal, aStreamId, aSender,
+                                     aSendOrder, aRv);
   if (!writableStream) {
     return nullptr;
     ;
