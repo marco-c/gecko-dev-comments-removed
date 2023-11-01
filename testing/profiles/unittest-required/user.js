@@ -51,11 +51,6 @@ user_pref("browser.startup.page", 0);
 user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
 
 user_pref("browser.tabs.remote.autostart", false);
-
-user_pref("browser.translation.bing.authURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
-user_pref("browser.translation.bing.translateArrayURL", "http://{server}/browser/browser/components/translation/test/bing.sjs");
-user_pref("browser.translation.engine", "Bing");
-user_pref("browser.translation.yandex.translateURLOverride", "http://{server}/browser/browser/components/translation/test/yandex.sjs");
 user_pref("browser.ui.layout.tablet", 0); 
 
 user_pref("browser.uitour.pinnedTabUrl", "http://{server}/uitour-dummy/pinnedTab");
