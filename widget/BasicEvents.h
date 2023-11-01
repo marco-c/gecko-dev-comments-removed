@@ -100,8 +100,6 @@ struct BaseEventFlags {
   
   bool mMultipleActionsPrevented : 1;
   
-  bool mMultiplePreActionsPrevented : 1;
-  
   
   bool mIsBeingDispatched : 1;
   

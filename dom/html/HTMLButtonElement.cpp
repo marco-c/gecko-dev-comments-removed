@@ -172,19 +172,23 @@ void HTMLButtonElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
 
   if (outerActivateEvent) {
     aVisitor.mItemFlags |= NS_OUTER_ACTIVATE_EVENT;
-    if (mType == FormControlType::ButtonSubmit && mForm &&
-        !aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented) {
-      aVisitor.mEvent->mFlags.mMultiplePreActionsPrevented = true;
-      aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
-      aVisitor.mItemData = static_cast<Element*>(mForm);
-      
-      
-      
-      mForm->OnSubmitClickBegin(this);
-    }
+    aVisitor.mWantsActivationBehavior = true;
   }
 
   nsGenericHTMLElement::GetEventTargetParent(aVisitor);
+}
+
+void HTMLButtonElement::LegacyPreActivationBehavior(
+    EventChainVisitor& aVisitor) {
+  
+  if (mType == FormControlType::ButtonSubmit && mForm) {
+    aVisitor.mItemFlags |= NS_IN_SUBMIT_CLICK;
+    aVisitor.mItemData = static_cast<Element*>(mForm);
+    
+    
+    
+    mForm->OnSubmitClickBegin(this);
+  }
 }
 
 nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
@@ -223,24 +227,19 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       HandleKeyboardActivation(aVisitor);
     }
 
-    if (aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) {
-      if (mForm) {
-        
-        RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
-        if (mType == FormControlType::ButtonReset) {
-          form->MaybeReset(this);
-          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        } else if (mType == FormControlType::ButtonSubmit) {
-          form->MaybeSubmit(this);
-          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        }
-        
-        
-      }
-      HandlePopoverTargetAction();
+    
+    
+    if ((aVisitor.mItemFlags & NS_OUTER_ACTIVATE_EVENT) && mForm &&
+        (mType == FormControlType::ButtonReset ||
+         mType == FormControlType::ButtonSubmit)) {
+      aVisitor.mEvent->mFlags.mMultipleActionsPrevented = true;
     }
   }
 
+  return rv;
+}
+
+void EndSubmitClick(EventChainVisitor& aVisitor) {
   if ((aVisitor.mItemFlags & NS_IN_SUBMIT_CLICK)) {
     nsCOMPtr<nsIContent> content(do_QueryInterface(aVisitor.mItemData));
     RefPtr<HTMLFormElement> form = HTMLFormElement::FromNodeOrNull(content);
@@ -257,8 +256,40 @@ nsresult HTMLButtonElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
     
     form->FlushPendingSubmission();
   }
+}
 
-  return rv;
+void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
+  if (!aVisitor.mPresContext) {
+    
+    return;
+  }
+
+  if (!IsDisabled()) {
+    if (mForm) {
+      
+      RefPtr<mozilla::dom::HTMLFormElement> form(mForm);
+      if (mType == FormControlType::ButtonReset) {
+        form->MaybeReset(this);
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      } else if (mType == FormControlType::ButtonSubmit) {
+        form->MaybeSubmit(this);
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
+      
+      
+    }
+    HandlePopoverTargetAction();
+  }
+
+  EndSubmitClick(aVisitor);
+}
+
+void HTMLButtonElement::LegacyCanceledActivationBehavior(
+    EventChainPostVisitor& aVisitor) {
+  
+  
+  
+  EndSubmitClick(aVisitor);
 }
 
 nsresult HTMLButtonElement::BindToTree(BindContext& aContext,
