@@ -13,24 +13,20 @@
 
 #include "gfxContext.h"
 #include "nsContentCreatorFunctions.h"
-#include "nsCSSPseudoElements.h"
 #include "nsCSSRendering.h"
 #include "nsDisplayList.h"
 #include "nsIContent.h"
 #include "nsLayoutUtils.h"
 #include "mozilla/dom/Document.h"
-#include "nsNameSpaceManager.h"
 #include "nsGkAtoms.h"
 #include "mozilla/dom/HTMLDataListElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "nsPresContext.h"
-#include "nsPresContextInlines.h"
 #include "nsNodeInfoManager.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/ServoStyleSet.h"
-#include "nsStyleConsts.h"
 #include "nsTArray.h"
 
 #ifdef ACCESSIBILITY
@@ -83,41 +79,39 @@ void nsRangeFrame::Destroy(DestroyContext& aContext) {
   nsContainerFrame::Destroy(aContext);
 }
 
-nsresult nsRangeFrame::MakeAnonymousDiv(Element** aResult,
-                                        PseudoStyleType aPseudoType,
-                                        nsTArray<ContentInfo>& aElements) {
-  nsCOMPtr<Document> doc = mContent->GetComposedDoc();
-  RefPtr<Element> resultElement = doc->CreateHTMLElement(nsGkAtoms::div);
+static already_AddRefed<Element> MakeAnonymousDiv(
+    Document& aDoc, PseudoStyleType aOldPseudoType,
+    PseudoStyleType aModernPseudoType,
+    nsTArray<nsIAnonymousContentCreator::ContentInfo>& aElements) {
+  RefPtr<Element> result = aDoc.CreateHTMLElement(nsGkAtoms::div);
 
   
-  resultElement->SetPseudoElementType(aPseudoType);
+  if (StaticPrefs::layout_css_modern_range_pseudos_enabled()) {
+    result->SetPseudoElementType(aModernPseudoType);
+  } else {
+    result->SetPseudoElementType(aOldPseudoType);
+  }
 
   
   
-  aElements.AppendElement(resultElement);
+  aElements.AppendElement(result);
 
-  resultElement.forget(aResult);
-  return NS_OK;
+  return result.forget();
 }
 
 nsresult nsRangeFrame::CreateAnonymousContent(
     nsTArray<ContentInfo>& aElements) {
-  nsresult rv;
-
+  Document* doc = mContent->OwnerDoc();
   
-  rv = MakeAnonymousDiv(getter_AddRefs(mTrackDiv),
-                        PseudoStyleType::mozRangeTrack, aElements);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  mTrackDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeTrack,
+                               PseudoStyleType::sliderTrack, aElements);
   
-  rv = MakeAnonymousDiv(getter_AddRefs(mProgressDiv),
-                        PseudoStyleType::mozRangeProgress, aElements);
-  NS_ENSURE_SUCCESS(rv, rv);
-
+  mProgressDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeProgress,
+                                  PseudoStyleType::sliderFill, aElements);
   
-  rv = MakeAnonymousDiv(getter_AddRefs(mThumbDiv),
-                        PseudoStyleType::mozRangeThumb, aElements);
-  return rv;
+  mThumbDiv = MakeAnonymousDiv(*doc, PseudoStyleType::mozRangeThumb,
+                               PseudoStyleType::sliderThumb, aElements);
+  return NS_OK;
 }
 
 void nsRangeFrame::AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
@@ -146,9 +140,7 @@ void nsRangeFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     
     
     
-    
-    nsIFrame* thumb = mThumbDiv->GetPrimaryFrame();
-    if (thumb) {
+    if (nsIFrame* thumb = mThumbDiv->GetPrimaryFrame()) {
       nsDisplayListSet set(aLists, aLists.Content());
       BuildDisplayListForChild(aBuilder, thumb, set, DisplayChildFlag::Inline);
     }
@@ -713,7 +705,7 @@ LogicalSize nsRangeFrame::ComputeAutoSize(
 }
 
 nscoord nsRangeFrame::GetMinISize(gfxContext* aRenderingContext) {
-  auto pos = StylePosition();
+  const auto* pos = StylePosition();
   auto wm = GetWritingMode();
   if (pos->ISize(wm).HasPercent()) {
     

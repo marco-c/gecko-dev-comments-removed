@@ -178,9 +178,6 @@ class nsRangeFrame final : public nsContainerFrame,
   
   nscoord AutoCrossSize(mozilla::Length aEm);
 
-  nsresult MakeAnonymousDiv(Element** aResult, PseudoStyleType aPseudoType,
-                            nsTArray<ContentInfo>& aElements);
-
   
   void ReflowAnonymousContent(nsPresContext* aPresContext,
                               ReflowOutput& aDesiredSize,

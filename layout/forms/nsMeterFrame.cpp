@@ -14,12 +14,9 @@
 #include "nsLayoutUtils.h"
 #include "nsPresContext.h"
 #include "nsGkAtoms.h"
-#include "nsNameSpaceManager.h"
 #include "nsNodeInfoManager.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsFontMetrics.h"
-#include "nsCSSPseudoElements.h"
-#include "nsStyleConsts.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -55,7 +52,12 @@ nsresult nsMeterFrame::CreateAnonymousContent(
   mBarDiv = doc->CreateHTMLElement(nsGkAtoms::div);
 
   
-  mBarDiv->SetPseudoElementType(PseudoStyleType::mozMeterBar);
+  if (StaticPrefs::layout_css_modern_range_pseudos_enabled()) {
+    
+    mBarDiv->SetPseudoElementType(PseudoStyleType::sliderFill);
+  } else {
+    mBarDiv->SetPseudoElementType(PseudoStyleType::mozMeterBar);
+  }
 
   aElements.AppendElement(mBarDiv);
 
