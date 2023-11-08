@@ -1058,39 +1058,22 @@ static TimeDuration CreateTimeDurationRecord(int64_t days, int64_t hours,
 
 
 
-static bool CreateTimeDurationRecordPossiblyInfinite(
-    JSContext* cx, double days, double hours, double minutes, double seconds,
-    double milliseconds, double microseconds, double nanoseconds,
-    TimeDuration* result) {
-  MOZ_ASSERT(!std::isnan(days) && !std::isnan(hours) && !std::isnan(minutes) &&
-             !std::isnan(seconds) && !std::isnan(milliseconds) &&
-             !std::isnan(microseconds) && !std::isnan(nanoseconds));
-
-  for (double v : {days, hours, minutes, seconds, milliseconds, microseconds,
-                   nanoseconds}) {
-    if (std::isinf(v)) {
-      *result = {
-          days,         hours,        minutes,     seconds,
-          milliseconds, microseconds, nanoseconds,
-      };
-      return true;
-    }
-  }
-
+static TimeDuration CreateTimeDurationRecord(double days, double hours,
+                                             double minutes, double seconds,
+                                             double milliseconds,
+                                             double microseconds,
+                                             double nanoseconds) {
   
-  if (!ThrowIfInvalidDuration(cx, {0, 0, 0, days, hours, minutes, seconds,
-                                   milliseconds, microseconds, nanoseconds})) {
-    return false;
-  }
+  MOZ_ASSERT(IsValidDuration({0, 0, 0, days, hours, minutes, seconds,
+                              milliseconds, microseconds, nanoseconds}));
 
   
   
-  *result = {
+  return {
       days + (+0.0),        hours + (+0.0),        minutes + (+0.0),
       seconds + (+0.0),     milliseconds + (+0.0), microseconds + (+0.0),
       nanoseconds + (+0.0),
   };
-  return true;
 }
 
 
@@ -1503,12 +1486,32 @@ static bool BalancePossiblyInfiniteTimeDurationSlow(JSContext* cx,
       MOZ_CRASH("Unexpected temporal unit");
   }
 
+  double daysNumber = BigInt::numberValue(days);
+  double hoursNumber = BigInt::numberValue(hours);
+  double minutesNumber = BigInt::numberValue(minutes);
+  double secondsNumber = BigInt::numberValue(seconds);
+  double millisecondsNumber = BigInt::numberValue(milliseconds);
+  double microsecondsNumber = BigInt::numberValue(microseconds);
+  double nanosecondsNumber = BigInt::numberValue(nanoseconds);
+
   
-  return CreateTimeDurationRecordPossiblyInfinite(
-      cx, BigInt::numberValue(days), BigInt::numberValue(hours),
-      BigInt::numberValue(minutes), BigInt::numberValue(seconds),
-      BigInt::numberValue(milliseconds), BigInt::numberValue(microseconds),
-      BigInt::numberValue(nanoseconds), result);
+  for (double v : {daysNumber, hoursNumber, minutesNumber, secondsNumber,
+                   millisecondsNumber, microsecondsNumber, nanosecondsNumber}) {
+    if (std::isinf(v)) {
+      *result = {
+          daysNumber,        hoursNumber,        minutesNumber,
+          secondsNumber,     millisecondsNumber, microsecondsNumber,
+          nanosecondsNumber,
+      };
+      return true;
+    }
+  }
+
+  
+  *result = CreateTimeDurationRecord(daysNumber, hoursNumber, minutesNumber,
+                                     secondsNumber, millisecondsNumber,
+                                     microsecondsNumber, nanosecondsNumber);
+  return true;
 }
 
 
@@ -1750,6 +1753,8 @@ static bool BalancePossiblyInfiniteTimeDurationRelative(
     
     largestUnit = TemporalUnit::Hour;
   }
+
+  
 
   
   TimeDuration balanceResult;
