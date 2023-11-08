@@ -400,6 +400,13 @@ MARKUPMAP(
         
         return nullptr;
       }
+      const nsRoleMapEntry* roleMapEntry = aria::GetRoleMap(aElement);
+      if (roleMapEntry && roleMapEntry->role != roles::NOTHING &&
+          roleMapEntry->role != roles::ROW) {
+        
+        
+        return nullptr;
+      }
       
       
       

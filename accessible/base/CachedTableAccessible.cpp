@@ -248,6 +248,11 @@ CachedTableCellAccessible* CachedTableCellAccessible::GetFrom(
     if (auto cellIdx = cachedTable->mAccToCellIdx.Lookup(aAcc)) {
       return &cachedTable->mCells[*cellIdx];
     }
+    
+    
+    
+    
+    break;
   }
   return nullptr;
 }
