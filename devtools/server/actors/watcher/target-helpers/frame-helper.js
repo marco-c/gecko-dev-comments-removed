@@ -212,7 +212,15 @@ function destroyTargets(watcher, options) {
 
 
 
-async function addSessionDataEntry({ watcher, type, entries }) {
+
+
+
+async function addOrSetSessionDataEntry({
+  watcher,
+  type,
+  entries,
+  updateType,
+}) {
   const browsingContexts = getWatchingBrowsingContexts(watcher);
   const promises = [];
   for (const browsingContext of browsingContexts) {
@@ -223,11 +231,12 @@ async function addSessionDataEntry({ watcher, type, entries }) {
 
     const promise = browsingContext.currentWindowGlobal
       .getActor("DevToolsFrame")
-      .addSessionDataEntry({
+      .addOrSetSessionDataEntry({
         watcherActorID: watcher.actorID,
         sessionContext: watcher.sessionContext,
         type,
         entries,
+        updateType,
       });
     promises.push(promise);
   }
@@ -262,7 +271,7 @@ function removeSessionDataEntry({ watcher, type, entries }) {
 module.exports = {
   createTargets,
   destroyTargets,
-  addSessionDataEntry,
+  addOrSetSessionDataEntry,
   removeSessionDataEntry,
 };
 

@@ -35,10 +35,23 @@ class BaseTargetActor extends Actor {
 
 
 
-  async addSessionDataEntry(type, entries, isDocumentCreation = false) {
+
+
+
+  async addOrSetSessionDataEntry(
+    type,
+    entries,
+    isDocumentCreation = false,
+    updateType
+  ) {
     const processor = SessionDataProcessors[type];
     if (processor) {
-      await processor.addSessionDataEntry(this, entries, isDocumentCreation);
+      await processor.addOrSetSessionDataEntry(
+        this,
+        entries,
+        isDocumentCreation,
+        updateType
+      );
     }
   }
 

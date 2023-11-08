@@ -517,10 +517,11 @@ exports.WatcherActor = class WatcherActor extends Actor {
         continue;
       }
       const targetHelperModule = TARGET_HELPERS[targetType];
-      await targetHelperModule.addSessionDataEntry({
+      await targetHelperModule.addOrSetSessionDataEntry({
         watcher: this,
         type: "resources",
         entries: targetResourceTypes,
+        updateType: "add",
       });
     }
 
@@ -547,9 +548,11 @@ exports.WatcherActor = class WatcherActor extends Actor {
         resourceTypes,
         targetActor.targetType
       );
-      await targetActor.addSessionDataEntry(
+      await targetActor.addOrSetSessionDataEntry(
         "resources",
-        targetActorResourceTypes
+        targetActorResourceTypes,
+        false,
+        "add"
       );
     }
   }
@@ -713,8 +716,11 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
 
 
-  async addDataEntry(type, entries) {
-    WatcherRegistry.addSessionDataEntry(this, type, entries);
+
+
+
+  async addOrSetDataEntry(type, entries, updateType) {
+    WatcherRegistry.addOrSetSessionDataEntry(this, type, entries, updateType);
 
     await Promise.all(
       Object.values(Targets.TYPES)
@@ -730,10 +736,11 @@ exports.WatcherActor = class WatcherActor extends Actor {
         )
         .map(async targetType => {
           const targetHelperModule = TARGET_HELPERS[targetType];
-          await targetHelperModule.addSessionDataEntry({
+          await targetHelperModule.addOrSetSessionDataEntry({
             watcher: this,
             type,
             entries,
+            updateType,
           });
         })
     );
@@ -741,7 +748,12 @@ exports.WatcherActor = class WatcherActor extends Actor {
     
     const targetActor = this.getTargetActorInParentProcess();
     if (targetActor) {
-      await targetActor.addSessionDataEntry(type, entries);
+      await targetActor.addOrSetSessionDataEntry(
+        type,
+        entries,
+        false,
+        updateType
+      );
     }
   }
 

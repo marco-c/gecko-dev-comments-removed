@@ -118,6 +118,36 @@ const DATA_KEY_FUNCTION = {
   },
 };
 
+const DATA_VALIDATION_FUNCTION = {
+  [SUPPORTED_DATA.BREAKPOINTS]({ location }) {
+    lazy.validateBreakpointLocation(location);
+  },
+  [SUPPORTED_DATA.XHR_BREAKPOINTS]({ path, method }) {
+    if (typeof path != "string") {
+      throw new Error(
+        `XHR Breakpoints expect to have path string, got ${typeof path} instead.`
+      );
+    }
+    if (typeof method != "string") {
+      throw new Error(
+        `XHR Breakpoints expect to have method string, got ${typeof method} instead.`
+      );
+    }
+  },
+  [SUPPORTED_DATA.EVENT_BREAKPOINTS](id) {
+    if (typeof id != "string") {
+      throw new Error(
+        `Event Breakpoints expect the id to be a string , got ${typeof id} instead.`
+      );
+    }
+    if (!lazy.validateEventBreakpoint(id)) {
+      throw new Error(
+        `The id string should be a valid event breakpoint id, ${id} is not.`
+      );
+    }
+  },
+};
+
 function idFunction(v) {
   if (typeof v != "string") {
     throw new Error(
@@ -140,13 +170,27 @@ const SessionDataHelpers = {
 
 
 
-  addSessionDataEntry(sessionData, type, entries) {
+
+
+
+  addOrSetSessionDataEntry(sessionData, type, entries, updateType) {
+    const validationFunction = DATA_VALIDATION_FUNCTION[type];
+    if (validationFunction) {
+      entries.forEach(validationFunction);
+    }
+
+    
+    if (updateType == "set") {
+      sessionData[type] = entries;
+      return;
+    }
+
+    if (!sessionData[type]) {
+      sessionData[type] = [];
+    }
     const toBeAdded = [];
     const keyFunction = DATA_KEY_FUNCTION[type] || idFunction;
     for (const entry of entries) {
-      if (!sessionData[type]) {
-        sessionData[type] = [];
-      }
       const existingIndex = sessionData[type].findIndex(existingEntry => {
         return keyFunction(existingEntry) === keyFunction(entry);
       });

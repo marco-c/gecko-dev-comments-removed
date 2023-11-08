@@ -9,7 +9,12 @@ const {
 } = require("resource://devtools/server/actors/thread.js");
 
 module.exports = {
-  async addSessionDataEntry(targetActor, entries, isDocumentCreation) {
+  async addOrSetSessionDataEntry(
+    targetActor,
+    entries,
+    isDocumentCreation,
+    updateType
+  ) {
     const threadOptions = {};
 
     for (const { key, value } of entries) {
@@ -22,6 +27,10 @@ module.exports = {
     ) {
       await targetActor.threadActor.attach(threadOptions);
     } else {
+      
+      
+      
+      
       await targetActor.threadActor.reconfigure(threadOptions);
     }
   },

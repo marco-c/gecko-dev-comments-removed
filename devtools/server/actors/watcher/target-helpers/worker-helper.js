@@ -77,7 +77,15 @@ async function destroyTargets(watcher) {
 
 
 
-async function addSessionDataEntry({ watcher, type, entries }) {
+
+
+
+async function addOrSetSessionDataEntry({
+  watcher,
+  type,
+  entries,
+  updateType,
+}) {
   const browsingContexts = watcher.getAllBrowsingContexts({
     acceptSameProcessIframes: true,
     forceAcceptTopLevelTarget: true,
@@ -86,11 +94,12 @@ async function addSessionDataEntry({ watcher, type, entries }) {
   for (const browsingContext of browsingContexts) {
     const promise = browsingContext.currentWindowGlobal
       .getActor(DEVTOOLS_WORKER_JS_WINDOW_ACTOR_NAME)
-      .addSessionDataEntry({
+      .addOrSetSessionDataEntry({
         watcherActorID: watcher.actorID,
         sessionContext: watcher.sessionContext,
         type,
         entries,
+        updateType,
       });
     promises.push(promise);
   }
@@ -123,6 +132,6 @@ function removeSessionDataEntry({ watcher, type, entries }) {
 module.exports = {
   createTargets,
   destroyTargets,
-  addSessionDataEntry,
+  addOrSetSessionDataEntry,
   removeSessionDataEntry,
 };

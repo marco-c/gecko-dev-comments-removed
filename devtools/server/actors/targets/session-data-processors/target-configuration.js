@@ -5,7 +5,12 @@
 "use strict";
 
 module.exports = {
-  async addSessionDataEntry(targetActor, entries, isDocumentCreation) {
+  async addOrSetSessionDataEntry(
+    targetActor,
+    entries,
+    isDocumentCreation,
+    updateType
+  ) {
     
     
     if (typeof targetActor.updateTargetConfiguration == "function") {
@@ -13,6 +18,10 @@ module.exports = {
       for (const { key, value } of entries) {
         options[key] = value;
       }
+      
+      
+      
+      
       targetActor.updateTargetConfiguration(options, isDocumentCreation);
     }
   },

@@ -9,21 +9,29 @@ const {
 } = require("resource://devtools/server/actors/thread.js");
 
 module.exports = {
-  async addSessionDataEntry(targetActor, entries, isDocumentCreation) {
-    const isTargetCreation =
-      targetActor.threadActor.state == THREAD_STATES.DETACHED;
+  async addOrSetSessionDataEntry(
+    targetActor,
+    entries,
+    isDocumentCreation,
+    updateType
+  ) {
+    const { threadActor } = targetActor;
+    if (updateType == "set") {
+      threadActor.removeAllBreakpoints();
+    }
+    const isTargetCreation = threadActor.state == THREAD_STATES.DETACHED;
     if (isTargetCreation && !targetActor.targetType.endsWith("worker")) {
       
       
       
       
-      await targetActor.threadActor.attach({ breakpoints: entries });
+      await threadActor.attach({ breakpoints: entries });
     } else {
       
       
       await Promise.all(
         entries.map(({ location, options }) =>
-          targetActor.threadActor.setBreakpoint(location, options)
+          threadActor.setBreakpoint(location, options)
         )
       );
     }
