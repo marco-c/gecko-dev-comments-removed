@@ -319,14 +319,6 @@ PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx, const Instant& instant,
 
 
 
-bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
-                         JS::Handle<InstantObject*> instant,
-                         PlainDateTime* result);
-
-
-
-
-
 PlainDateTime GetPlainDateTimeFor(const Instant& instant,
                                   int64_t offsetNanoseconds);
 
