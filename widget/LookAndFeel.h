@@ -525,7 +525,6 @@ class LookAndFeel {
   }
 
  protected:
-
   static void DoHandleGlobalThemeChange();
   
   
