@@ -4,12 +4,12 @@
 
   <title>CSS Values Test: mixed units in calc() and computed border-radius shorthand value (complex)</title>
 
-  
+  <!--
 
+  Bug 137688: getPropertyValue on computed style does not do shorthand properties
+  https://bugzilla.mozilla.org/show_bug.cgi?id=137688
 
-
-
-
+  -->
 
   <link rel="author" title="Gérard Talbot" href="http://www.gtalbot.org/BrowserBugsSection/css21testsuite/">
   <link rel="help" href="https://www.w3.org/TR/css-values-4/#calc-serialize">
@@ -40,7 +40,7 @@
 
   var targetElement = document.getElementById("target");
 
-    function verifyComputedStyle(property_name, expected_value, description)
+    function verifyComputedStyle(property_name, expected_value)
     {
 
     test(function()
@@ -48,12 +48,12 @@
 
       assert_equals(getComputedStyle(targetElement)[property_name], expected_value);
 
-      }, description);
+      }, `testing ${property_name}: ${expected_value}`);
     }
 
- /* verifyComputedStyle(property_name, expected_value, description) */
+ /* verifyComputedStyle(property_name, expected_value) */
 
-    verifyComputedStyle("border-radius", "calc(1% + 1px) calc(2% + 2px) calc(3% + 3px) calc(4% + 4px) / calc(5% + 5px) calc(6% + 6px) calc(7% + 7px) calc(8% + 8px)", "testing border-radius shorthand");
+    verifyComputedStyle("border-radius", "calc(1% + 1px) calc(2% + 2px) calc(3% + 3px) calc(4% + 4px) / calc(5% + 5px) calc(6% + 6px) calc(7% + 7px) calc(8% + 8px)");
 
   /*
 

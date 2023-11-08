@@ -4,17 +4,17 @@
 
   <title>CSS Values Test: mixed units in calc() and computed border-radius longhand and shorthand values (complex)</title>
 
-  
+  <!--
+
+  Original test is:
+
+https://chromium.googlesource.com/chromium/src/+/c825d655f6aaf73484f9d56e9012793f5b9668cc/third_party/WebKit/LayoutTests/css3/calc/getComputedStyle-border-radius.html
 
 
+  Bug 137688: getPropertyValue on computed style does not do shorthand properties
+  https://bugzilla.mozilla.org/show_bug.cgi?id=137688
 
-
-
-
-
-
-
-
+  -->
 
   <link rel="author" title="Gérard Talbot" href="http://www.gtalbot.org/BrowserBugsSection/css21testsuite/">
   <link rel="help" href="https://www.w3.org/TR/css-values-4/#calc-serialize">
@@ -46,7 +46,7 @@
 
   var targetElement = document.getElementById("target");
 
-    function verifyComputedStyle(property_name, expected_value, description)
+    function verifyComputedStyle(property_name, expected_value)
     {
 
     test(function()
@@ -54,20 +54,20 @@
 
       assert_equals(getComputedStyle(targetElement)[property_name], expected_value);
 
-      }, description);
+      }, `testing ${property_name}: ${expected_value}`);
     }
 
- /* verifyComputedStyle(property_name, expected_value, description) */
+ /* verifyComputedStyle(property_name, expected_value) */
 
-    verifyComputedStyle("border-top-left-radius", "calc(25% + 10px) calc(25% + 20px)", "testing border-top-left-radius: calc(10px + 25%) calc(20px + 25%)");
+    verifyComputedStyle("border-top-left-radius", "calc(25% + 10px) calc(25% + 20px)");
 
-    verifyComputedStyle("border-top-right-radius", "calc(25% + 16px)", "testing border-top-right-radius: calc(1em + 25%)");
+    verifyComputedStyle("border-top-right-radius", "calc(25% + 16px)");
 
-    verifyComputedStyle("border-bottom-right-radius", "25%", "testing border-bottom-right-radius: calc(25%)");
+    verifyComputedStyle("border-bottom-right-radius", "25%");
 
-    verifyComputedStyle("border-bottom-left-radius", "25px", "testing border-bottom-left-radius: calc(25px);");
+    verifyComputedStyle("border-bottom-left-radius", "25px");
 
-    verifyComputedStyle("border-radius", "calc(25% + 10px) calc(25% + 16px) 25% 25px / calc(25% + 20px) calc(25% + 16px) 25% 25px", "testing border-radius shorthand");
+    verifyComputedStyle("border-radius", "calc(25% + 10px) calc(25% + 16px) 25% 25px / calc(25% + 20px) calc(25% + 16px) 25% 25px");
 
   /*
 
