@@ -44,6 +44,8 @@ async function setup() {
 
 
 
+
+
 function shouldCapture() {
   if (Services.env.get("MOZSCREENSHOTS_SETS")) {
     ok(

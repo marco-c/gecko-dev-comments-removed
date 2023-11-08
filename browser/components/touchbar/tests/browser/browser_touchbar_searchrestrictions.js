@@ -32,6 +32,7 @@ XPCOMUtils.defineLazyServiceGetter(
 
 
 
+
 async function searchAndCheckState({ input, token }) {
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
