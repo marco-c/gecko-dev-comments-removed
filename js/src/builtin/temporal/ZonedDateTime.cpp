@@ -2339,13 +2339,7 @@ static bool ZonedDateTime_offset(JSContext* cx, const CallArgs& args) {
   Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
 
   
-  Rooted<InstantObject*> instant(cx, CreateTemporalInstant(cx, epochInstant));
-  if (!instant) {
-    return false;
-  }
-
-  
-  JSString* str = GetOffsetStringFor(cx, timeZone, instant);
+  JSString* str = GetOffsetStringFor(cx, timeZone, epochInstant);
   if (!str) {
     return false;
   }
@@ -2859,17 +2853,20 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<InstantObject*> instant(cx, CreateTemporalInstant(cx, epochInstant));
-  if (!instant) {
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, timeZone, epochInstant,
+                               &offsetNanoseconds)) {
     return false;
   }
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-  PlainDateTime temporalDateTime;
-  if (!temporal::GetPlainDateTimeFor(cx, timeZone, instant,
-                                     &temporalDateTime)) {
-    return false;
-  }
+
+  
+  auto temporalDateTime =
+      temporal::GetPlainDateTimeFor(epochInstant, offsetNanoseconds);
+
+  
 
   
   Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
@@ -2906,18 +2903,6 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     return false;
   }
 
-  
-  int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
-    return false;
-  }
-  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
-
-  
-  
-  
-  
-  
   
   PlainDateTime roundResult;
   if (!RoundISODateTime(cx, temporalDateTime, roundingIncrement, smallestUnit,
@@ -3461,23 +3446,17 @@ static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
   Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
 
   
-  Rooted<InstantObject*> instant(cx, CreateTemporalInstant(cx, epochInstant));
-  if (!instant) {
-    return false;
-  }
-
-  
-  PlainDateTime temporalDateTime;
-  if (!js::temporal::GetPlainDateTimeFor(cx, timeZone, instant,
-                                         &temporalDateTime)) {
-    return false;
-  }
-
-  
   int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
+  if (!GetOffsetNanosecondsFor(cx, timeZone, epochInstant,
+                               &offsetNanoseconds)) {
     return false;
   }
+
+  
+
+  
+  auto temporalDateTime =
+      temporal::GetPlainDateTimeFor(epochInstant, offsetNanoseconds);
 
   
   Rooted<JSString*> offset(cx,

@@ -404,20 +404,18 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   
 
   
-  Rooted<TimeZoneValue> outputTimeZone(cx, timeZone);
-  if (!timeZone) {
-    auto* utcTimeZone = CreateTemporalTimeZoneUTC(cx);
-    if (!utcTimeZone) {
+  int64_t offsetNanoseconds = 0;
+  if (timeZone) {
+    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
       return nullptr;
     }
-    outputTimeZone.set(TimeZoneValue(utcTimeZone));
+    MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
   }
 
   
-  PlainDateTime dateTime;
-  if (!GetPlainDateTimeFor(cx, outputTimeZone, instant, &dateTime)) {
-    return nullptr;
-  }
+
+  
+  auto dateTime = GetPlainDateTimeFor(ToInstant(instant), offsetNanoseconds);
 
   
   FormatDateTimeString(result, dateTime, precision);
@@ -429,13 +427,7 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
     result.append('Z');
   } else {
     
-    int64_t offsetNs;
-    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNs)) {
-      return nullptr;
-    }
-
-    
-    FormatDateTimeUTCOffsetRounded(result, offsetNs);
+    FormatDateTimeUTCOffsetRounded(result, offsetNanoseconds);
   }
 
   
@@ -653,32 +645,23 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
 
   
-  Rooted<InstantObject*> instant(cx, CreateTemporalInstant(cx, ns));
-  if (!instant) {
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, timeZone, ns, &offsetNanoseconds)) {
     return nullptr;
   }
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-  PlainDateTime temporalDateTime;
-  if (!js::temporal::GetPlainDateTimeFor(cx, timeZone, instant,
-                                         &temporalDateTime)) {
-    return nullptr;
-  }
+
+  
+  auto temporalDateTime = GetPlainDateTimeFor(ns, offsetNanoseconds);
 
   
   FormatDateTimeString(result, temporalDateTime, precision);
 
   
   if (showOffset != ShowOffsetOption::Never) {
-    
-    int64_t offsetNs;
-    if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNs)) {
-      return nullptr;
-    }
-    MOZ_ASSERT(std::abs(offsetNs) < ToNanoseconds(TemporalUnit::Day));
-
-    
-    FormatDateTimeUTCOffsetRounded(result, offsetNs);
+    FormatDateTimeUTCOffsetRounded(result, offsetNanoseconds);
   }
 
   

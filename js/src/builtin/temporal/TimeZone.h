@@ -301,6 +301,7 @@ bool TimeZoneEquals(JSContext* cx, JS::Handle<TimeZoneValue> one,
 
 
 
+
 PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
                                          JS::Handle<TimeZoneValue> timeZone,
                                          const Instant& instant,
@@ -309,9 +310,18 @@ PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
 
 
 
+
 bool GetPlainDateTimeFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                          JS::Handle<InstantObject*> instant,
                          PlainDateTime* result);
+
+
+
+
+
+PlainDateTime GetPlainDateTimeFor(const Instant& instant,
+                                  int64_t offsetNanoseconds);
+
 
 
 
@@ -330,6 +340,12 @@ bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 JSString* FormatUTCOffsetNanoseconds(JSContext* cx, int64_t offsetNanoseconds);
+
+
+
+
+JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
+                             const Instant& instant);
 
 
 
