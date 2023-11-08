@@ -59,7 +59,13 @@ class txResultStringComparator : public txXPathResultComparator {
     StringValue();
     ~StringValue();
 
-    mozilla::UniquePtr<nsString> mString;
+    nsresult initCaseKey(const mozilla::intl::Collator& aCollator);
+
+    nsTArray<uint8_t> mKey;
+    
+    
+    mozilla::UniquePtr<nsString> mCaseKeyString;
+    nsTArray<uint8_t> mCaseKey;
   };
 };
 
