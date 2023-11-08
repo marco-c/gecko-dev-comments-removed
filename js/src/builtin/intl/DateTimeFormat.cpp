@@ -794,6 +794,83 @@ static bool AssignDateTimeLength(
   return true;
 }
 
+class TimeZoneOffsetString {
+  static constexpr std::u16string_view GMT = u"GMT";
+
+  
+  static constexpr size_t offsetLength = 6;
+
+  
+  char16_t timeZone_[GMT.size() + offsetLength] = {};
+
+  TimeZoneOffsetString() = default;
+
+ public:
+  TimeZoneOffsetString(const TimeZoneOffsetString& other) { *this = other; }
+
+  TimeZoneOffsetString& operator=(const TimeZoneOffsetString& other) {
+    std::copy_n(other.timeZone_, std::size(timeZone_), timeZone_);
+    return *this;
+  }
+
+  operator mozilla::Span<const char16_t>() const {
+    return mozilla::Span(timeZone_);
+  }
+
+  
+
+
+
+  static mozilla::Maybe<TimeZoneOffsetString> from(
+      const JSLinearString* timeZone) {
+    MOZ_RELEASE_ASSERT(!timeZone->empty(), "time zone is a non-empty string");
+
+    
+    
+    
+    char16_t timeZoneSign = timeZone->latin1OrTwoByteChar(0);
+    MOZ_ASSERT(timeZoneSign != 0x2212,
+               "Minus sign is normalized to Ascii minus");
+    if (timeZoneSign != '+' && timeZoneSign != '-') {
+      return mozilla::Nothing();
+    }
+
+    
+    MOZ_RELEASE_ASSERT(timeZone->length() == offsetLength);
+
+    
+    MOZ_ASSERT(mozilla::IsAsciiDigit(timeZone->latin1OrTwoByteChar(1)));
+    MOZ_ASSERT(mozilla::IsAsciiDigit(timeZone->latin1OrTwoByteChar(2)));
+    MOZ_ASSERT(timeZone->latin1OrTwoByteChar(3) == ':');
+    MOZ_ASSERT(mozilla::IsAsciiDigit(timeZone->latin1OrTwoByteChar(4)));
+    MOZ_ASSERT(mozilla::IsAsciiDigit(timeZone->latin1OrTwoByteChar(5)));
+
+    
+#ifdef DEBUG
+    auto twoDigit = [&](size_t offset) {
+      auto c1 = timeZone->latin1OrTwoByteChar(offset);
+      auto c2 = timeZone->latin1OrTwoByteChar(offset + 1);
+      return mozilla::AsciiAlphanumericToNumber(c1) * 10 +
+             mozilla::AsciiAlphanumericToNumber(c2);
+    };
+
+    int32_t hours = twoDigit(1);
+    MOZ_ASSERT(0 <= hours && hours <= 23);
+
+    int32_t minutes = twoDigit(4);
+    MOZ_ASSERT(0 <= minutes && minutes <= 59);
+#endif
+
+    TimeZoneOffsetString result{};
+
+    
+    size_t copied = GMT.copy(result.timeZone_, GMT.size());
+    CopyChars(result.timeZone_ + copied, *timeZone);
+
+    return mozilla::Some(result);
+  }
+};
+
 
 
 
@@ -816,12 +893,24 @@ static mozilla::intl::DateTimeFormat* NewDateTimeFormat(
     return nullptr;
   }
 
-  AutoStableStringChars timeZone(cx);
-  if (!timeZone.initTwoByte(cx, value.toString())) {
+  Rooted<JSLinearString*> timeZoneString(cx,
+                                         value.toString()->ensureLinear(cx));
+  if (!timeZoneString) {
     return nullptr;
   }
 
-  mozilla::Range<const char16_t> timeZoneChars = timeZone.twoByteRange();
+  AutoStableStringChars timeZone(cx);
+  mozilla::Span<const char16_t> timeZoneChars{};
+
+  auto timeZoneOffset = TimeZoneOffsetString::from(timeZoneString);
+  if (timeZoneOffset) {
+    timeZoneChars = *timeZoneOffset;
+  } else {
+    if (!timeZone.initTwoByte(cx, timeZoneString)) {
+      return nullptr;
+    }
+    timeZoneChars = timeZone.twoByteRange();
+  }
 
   if (!GetProperty(cx, internals, internals, cx->names().pattern, &value)) {
     return nullptr;
@@ -1343,11 +1432,24 @@ static mozilla::intl::DateIntervalFormat* NewDateIntervalFormat(
     return nullptr;
   }
 
-  AutoStableStringChars timeZone(cx);
-  if (!timeZone.initTwoByte(cx, value.toString())) {
+  Rooted<JSLinearString*> timeZoneString(cx,
+                                         value.toString()->ensureLinear(cx));
+  if (!timeZoneString) {
     return nullptr;
   }
-  mozilla::Span<const char16_t> timeZoneChars = timeZone.twoByteRange();
+
+  AutoStableStringChars timeZone(cx);
+  mozilla::Span<const char16_t> timeZoneChars{};
+
+  auto timeZoneOffset = TimeZoneOffsetString::from(timeZoneString);
+  if (timeZoneOffset) {
+    timeZoneChars = *timeZoneOffset;
+  } else {
+    if (!timeZone.initTwoByte(cx, timeZoneString)) {
+      return nullptr;
+    }
+    timeZoneChars = timeZone.twoByteRange();
+  }
 
   FormatBuffer<char16_t, intl::INITIAL_CHAR_BUFFER_SIZE> skeleton(cx);
   auto skelResult = mozDtf.GetOriginalSkeleton(skeleton);
