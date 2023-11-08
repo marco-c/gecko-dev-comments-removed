@@ -193,6 +193,9 @@ class nsSliderFrame final : public nsContainerFrame {
   }
   void PageScroll(bool aClickAndHold);
 
+  void SetupDrag(mozilla::WidgetGUIEvent* aEvent, nsIFrame* aThumbFrame,
+                 nscoord aPos, bool aIsHorizontal);
+
   nsPoint mDestinationPoint;
   
   
