@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "jit/mips-shared/CodeGenerator-mips-shared.h"
 
@@ -34,7 +34,7 @@ using mozilla::DebugOnly;
 using mozilla::FloorLog2;
 using mozilla::NegativeInfinity;
 
-// shared
+
 CodeGeneratorMIPSShared::CodeGeneratorMIPSShared(MIRGenerator* gen,
                                                  LIRGraph* graph,
                                                  MacroAssembler* masm)
@@ -74,7 +74,7 @@ void CodeGeneratorMIPSShared::branchToBlock(Assembler::FloatFormat fmt,
                                             FloatRegister lhs,
                                             FloatRegister rhs, MBasicBlock* mir,
                                             Assembler::DoubleCondition cond) {
-  // Skip past trivial blocks.
+  
   Label* label = skipTrivialBlocks(mir)->lir()->label();
   if (fmt == Assembler::DoubleFloat) {
     masm.branchDouble(cond, lhs, rhs, label);
@@ -175,13 +175,13 @@ bool CodeGeneratorMIPSShared::generateOutOfLineCode() {
   }
 
   if (deoptLabel_.used()) {
-    // All non-table-based bailouts will go here.
+    
     masm.bind(&deoptLabel_);
 
-    // Push the frame size, so the handler can recover the IonScript.
-    // Frame size is stored in 'ra' and pushed by GenerateBailoutThunk
-    // We have to use 'ra' because generateBailoutTable will implicitly do
-    // the same.
+    
+    
+    
+    
     masm.move32(Imm32(frameSize()), ra);
 
     TrampolinePtr handler = gen->jitRuntime()->getGenericBailoutHandler();
@@ -245,7 +245,7 @@ void CodeGenerator::visitAddI(LAddI* ins) {
 
   MOZ_ASSERT(rhs->isConstant() || rhs->isGeneralReg());
 
-  // If there is no snapshot, we don't need to check for overflow
+  
   if (!ins->snapshot()) {
     if (rhs->isConstant()) {
       masm.ma_addu(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
@@ -288,7 +288,7 @@ void CodeGenerator::visitSubI(LSubI* ins) {
 
   MOZ_ASSERT(rhs->isConstant() || rhs->isGeneralReg());
 
-  // If there is no snapshot, we don't need to check for overflow
+  
   if (!ins->snapshot()) {
     if (rhs->isConstant()) {
       masm.ma_subu(ToRegister(dest), ToRegister(lhs), Imm32(ToInt32(rhs)));
@@ -337,7 +337,7 @@ void CodeGenerator::visitMulI(LMulI* ins) {
     int32_t constant = ToInt32(rhs);
     Register src = ToRegister(lhs);
 
-    // Bailout on -0.0
+    
     if (mul->canBeNegativeZero() && constant <= 0) {
       Assembler::Condition cond =
           (constant == 0) ? Assembler::LessThan : Assembler::Equal;
@@ -373,19 +373,19 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         uint32_t shift = FloorLog2(constant);
 
         if (!mul->canOverflow() && (constant > 0)) {
-          // If it cannot overflow, we can do lots of optimizations.
+          
           uint32_t rest = constant - (1 << shift);
 
-          // See if the constant has one bit set, meaning it can be
-          // encoded as a bitshift.
+          
+          
           if ((1 << shift) == constant) {
             masm.ma_sll(dest, src, Imm32(shift));
             return;
           }
 
-          // If the constant cannot be encoded as (1<<C1), see if it can
-          // be encoded as (1<<C1) | (1<<C2), which can be computed
-          // using an add and a shift.
+          
+          
+          
           uint32_t shift_rest = FloorLog2(rest);
           if (src != dest && (1u << shift_rest) == rest) {
             masm.ma_sll(dest, src, Imm32(shift - shift_rest));
@@ -398,15 +398,15 @@ void CodeGenerator::visitMulI(LMulI* ins) {
         }
 
         if (mul->canOverflow() && (constant > 0) && (src != dest)) {
-          // To stay on the safe side, only optimize things that are a
-          // power of 2.
+          
+          
 
           if ((1 << shift) == constant) {
-            // dest = lhs * pow(2, shift)
+            
             masm.ma_sll(dest, src, Imm32(shift));
-            // At runtime, check (lhs == dest >> shift), if this does
-            // not hold, some bits were lost due to overflow, and the
-            // computation should be resumed as a double.
+            
+            
+            
             masm.ma_sra(ScratchRegister, dest, Imm32(shift));
             bailoutCmp32(Assembler::NotEqual, src, ScratchRegister,
                          ins->snapshot());
@@ -440,8 +440,8 @@ void CodeGenerator::visitMulI(LMulI* ins) {
       Label done;
       masm.ma_b(dest, dest, &done, Assembler::NonZero, ShortJump);
 
-      // Result is -0 if lhs or rhs is negative.
-      // In that case result must be double value so bailout
+      
+      
       Register scratch = SecondScratchReg;
       masm.as_or(scratch, ToRegister(lhs), ToRegister(rhs));
       bailoutCmp32(Assembler::Signed, scratch, scratch, ins->snapshot());
@@ -467,7 +467,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
         masm.xor64(ToRegister64(lhs), ToRegister64(lhs));
         return;
       case 1:
-        // nop
+        
         return;
       case 2:
         masm.add64(ToRegister64(lhs), ToRegister64(lhs));
@@ -490,7 +490,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
             masm.add64(scratch64, output);
             return;
           }
-          // Use shift if constant is power of 2.
+          
           int32_t shift = mozilla::FloorLog2(constant);
           if (int64_t(1) << shift == constant) {
             masm.lshift64(Imm32(shift), ToRegister64(lhs));
@@ -507,7 +507,7 @@ void CodeGenerator::visitMulI64(LMulI64* lir) {
 }
 
 void CodeGenerator::visitDivI(LDivI* ins) {
-  // Extract the registers from this instruction
+  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
@@ -516,7 +516,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
 
   Label done;
 
-  // Handle divide by zero.
+  
   if (mir->canBeDivideByZero()) {
     if (mir->trapOnError()) {
       Label nonZero;
@@ -524,7 +524,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
       masm.wasmTrap(wasm::Trap::IntegerDivideByZero, mir->bytecodeOffset());
       masm.bind(&nonZero);
     } else if (mir->canTruncateInfinities()) {
-      // Truncated division by zero is zero (Infinity|0 == 0)
+      
       Label notzero;
       masm.ma_b(rhs, rhs, &notzero, Assembler::NonZero, ShortJump);
       masm.move32(Imm32(0), dest);
@@ -536,7 +536,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     }
   }
 
-  // Handle an integer overflow exception from -2147483648 / -1.
+  
   if (mir->canBeNegativeOverflow()) {
     Label notMinInt;
     masm.move32(Imm32(INT32_MIN), temp);
@@ -549,7 +549,7 @@ void CodeGenerator::visitDivI(LDivI* ins) {
       masm.wasmTrap(wasm::Trap::IntegerOverflow, mir->bytecodeOffset());
       masm.bind(&ok);
     } else if (mir->canTruncateOverflow()) {
-      // (-INT32_MIN)|0 == INT32_MIN
+      
       Label skip;
       masm.ma_b(rhs, temp, &skip, Assembler::NotEqual, ShortJump);
       masm.move32(Imm32(INT32_MIN), dest);
@@ -562,17 +562,17 @@ void CodeGenerator::visitDivI(LDivI* ins) {
     masm.bind(&notMinInt);
   }
 
-  // Handle negative 0. (0/-Y)
+  
   if (!mir->canTruncateNegativeZero() && mir->canBeNegativeZero()) {
     Label nonzero;
     masm.ma_b(lhs, lhs, &nonzero, Assembler::NonZero, ShortJump);
     bailoutCmp32(Assembler::LessThan, rhs, Imm32(0), ins->snapshot());
     masm.bind(&nonzero);
   }
-  // Note: above safety checks could not be verified as Ion seems to be
-  // smarter and requires double arithmetic in such cases.
+  
+  
 
-  // All regular. Lets call div.
+  
   if (mir->canTruncateRemainder()) {
 #ifdef MIPSR6
     masm.as_div(dest, lhs, rhs);
@@ -600,21 +600,21 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
   if (shift != 0) {
     MDiv* mir = ins->mir();
     if (!mir->isTruncated()) {
-      // If the remainder is going to be != 0, bailout since this must
-      // be a double.
+      
+      
       masm.ma_sll(tmp, lhs, Imm32(32 - shift));
       bailoutCmp32(Assembler::NonZero, tmp, tmp, ins->snapshot());
     }
 
     if (!mir->canBeNegativeDividend()) {
-      // Numerator is unsigned, so needs no adjusting. Do the shift.
+      
       masm.ma_sra(dest, lhs, Imm32(shift));
       return;
     }
 
-    // Adjust the value so that shifting produces a correctly rounded result
-    // when the numerator is negative. See 10-1 "Signed Division by a Known
-    // Power of 2" in Henry S. Warren, Jr.'s Hacker's Delight.
+    
+    
+    
     if (shift > 1) {
       masm.ma_sra(tmp, lhs, Imm32(31));
       masm.ma_srl(tmp, tmp, Imm32(32 - shift));
@@ -624,7 +624,7 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
       masm.add32(lhs, tmp);
     }
 
-    // Do the shift.
+    
     masm.ma_sra(dest, tmp, Imm32(shift));
   } else {
     masm.move32(lhs, dest);
@@ -632,7 +632,7 @@ void CodeGenerator::visitDivPowTwoI(LDivPowTwoI* ins) {
 }
 
 void CodeGenerator::visitModI(LModI* ins) {
-  // Extract the registers from this instruction
+  
   Register lhs = ToRegister(ins->lhs());
   Register rhs = ToRegister(ins->rhs());
   Register dest = ToRegister(ins->output());
@@ -642,12 +642,12 @@ void CodeGenerator::visitModI(LModI* ins) {
 
   masm.move32(lhs, callTemp);
 
-  // Prevent INT_MIN % -1;
-  // The integer division will give INT_MIN, but we want -(double)INT_MIN.
+  
+  
   if (mir->canBeNegativeDividend()) {
     masm.ma_b(lhs, Imm32(INT_MIN), &prevent, Assembler::NotEqual, ShortJump);
     if (mir->isTruncated()) {
-      // (INT_MIN % -1)|0 == 0
+      
       Label skip;
       masm.ma_b(rhs, Imm32(-1), &skip, Assembler::NotEqual, ShortJump);
       masm.move32(Imm32(0), dest);
@@ -660,17 +660,17 @@ void CodeGenerator::visitModI(LModI* ins) {
     masm.bind(&prevent);
   }
 
-  // 0/X (with X < 0) is bad because both of these values *should* be
-  // doubles, and the result should be -0.0, which cannot be represented in
-  // integers. X/0 is bad because it will give garbage (or abort), when it
-  // should give either \infty, -\infty or NAN.
+  
+  
+  
+  
 
-  // Prevent 0 / X (with X < 0) and X / 0
-  // testing X / Y.  Compare Y with 0.
-  // There are three cases: (Y < 0), (Y == 0) and (Y > 0)
-  // If (Y < 0), then we compare X with 0, and bail if X == 0
-  // If (Y == 0), then we simply want to bail.
-  // if (Y > 0), we don't bail.
+  
+  
+  
+  
+  
+  
 
   if (mir->canBeDivideByZero()) {
     if (mir->isTruncated()) {
@@ -696,7 +696,7 @@ void CodeGenerator::visitModI(LModI* ins) {
     Label notNegative;
     masm.ma_b(rhs, Imm32(0), &notNegative, Assembler::GreaterThan, ShortJump);
     if (mir->isTruncated()) {
-      // NaN|0 == 0 and (0 % -X)|0 == 0
+      
       Label skip;
       masm.ma_b(lhs, Imm32(0), &skip, Assembler::NotEqual, ShortJump);
       masm.move32(Imm32(0), dest);
@@ -715,13 +715,13 @@ void CodeGenerator::visitModI(LModI* ins) {
   masm.as_mfhi(dest);
 #endif
 
-  // If X%Y == 0 and X < 0, then we *actually* wanted to return -0.0
+  
   if (mir->canBeNegativeDividend()) {
     if (mir->isTruncated()) {
-      // -0.0|0 == 0
+      
     } else {
       MOZ_ASSERT(mir->fallible());
-      // See if X < 0
+      
       masm.ma_b(dest, Imm32(0), &done, Assembler::NotEqual, ShortJump);
       bailoutCmp32(Assembler::Signed, callTemp, Imm32(0), ins->snapshot());
     }
@@ -737,15 +737,15 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
 
   masm.move32(in, out);
   masm.ma_b(in, in, &done, Assembler::Zero, ShortJump);
-  // Switch based on sign of the lhs.
-  // Positive numbers are just a bitmask
+  
+  
   masm.ma_b(in, in, &negative, Assembler::Signed, ShortJump);
   {
     masm.and32(Imm32((1 << ins->shift()) - 1), out);
     masm.ma_b(&done, ShortJump);
   }
 
-  // Negative numbers need a negate, bitmask, negate
+  
   {
     masm.bind(&negative);
     masm.neg32(out);
@@ -757,7 +757,7 @@ void CodeGenerator::visitModPowTwoI(LModPowTwoI* ins) {
       MOZ_ASSERT(mir->fallible());
       bailoutCmp32(Assembler::Equal, out, zero, ins->snapshot());
     } else {
-      // -0|0 == 0
+      
     }
   }
   masm.bind(&done);
@@ -793,7 +793,7 @@ void CodeGenerator::visitBitOpI(LBitOpI* ins) {
   const LAllocation* lhs = ins->getOperand(0);
   const LAllocation* rhs = ins->getOperand(1);
   const LDefinition* dest = ins->getDef(0);
-  // all of these bitops should be either imm32's, or integer registers.
+  
   switch (ins->bitop()) {
     case JSOp::BitOr:
       if (rhs->isConstant()) {
@@ -880,7 +880,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         if (shift) {
           masm.ma_srl(dest, lhs, Imm32(shift));
         } else {
-          // x >>> 0 can overflow.
+          
           if (ins->mir()->toUrsh()->fallible()) {
             bailoutCmp32(Assembler::LessThan, lhs, Imm32(0), ins->snapshot());
           }
@@ -891,7 +891,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
         MOZ_CRASH("Unexpected shift op");
     }
   } else {
-    // The shift amounts should be AND'ed into the 0-31 range
+    
     masm.ma_and(dest, ToRegister(rhs), Imm32(0x1F));
 
     switch (ins->bitop()) {
@@ -904,7 +904,7 @@ void CodeGenerator::visitShiftI(LShiftI* ins) {
       case JSOp::Ursh:
         masm.ma_srl(dest, lhs, dest);
         if (ins->mir()->toUrsh()->fallible()) {
-          // x >>> 0 can overflow.
+          
           bailoutCmp32(Assembler::LessThan, dest, Imm32(0), ins->snapshot());
         }
         break;
@@ -1045,7 +1045,7 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
 
   Label done, skip;
 
-  // Masm.pow(-Infinity, 0.5) == Infinity.
+  
   masm.loadConstantDouble(NegativeInfinity<double>(), ScratchDoubleReg);
   masm.ma_bc1d(input, ScratchDoubleReg, &skip,
                Assembler::DoubleNotEqualOrUnordered, ShortJump);
@@ -1053,8 +1053,8 @@ void CodeGenerator::visitPowHalfD(LPowHalfD* ins) {
   masm.ma_b(&done, ShortJump);
 
   masm.bind(&skip);
-  // Math.pow(-0, 0.5) == 0 == Math.pow(0, 0.5).
-  // Adding 0 converts any -0 to 0.
+  
+  
   masm.loadConstantDouble(0.0, ScratchDoubleReg);
   masm.as_addd(output, input, ScratchDoubleReg);
   masm.as_sqrtd(output, output);
@@ -1186,7 +1186,7 @@ void CodeGenerator::visitWasmTruncateToInt32(LWasmTruncateToInt32* lir) {
 }
 
 void CodeGeneratorMIPSShared::visitOutOfLineBailout(OutOfLineBailout* ool) {
-  // Push snapshotOffset and make sure stack is aligned.
+  
   masm.subPtr(Imm32(sizeof(Value)), StackPointer);
   masm.storePtr(ImmWord(ool->snapshot()->snapshotOffset()),
                 Address(StackPointer, 0));
@@ -1219,7 +1219,7 @@ void CodeGenerator::visitCopySignF(LCopySignF* ins) {
   masm.moveFromFloat32(lhs, lhsi);
   masm.moveFromFloat32(rhs, rhsi);
 
-  // Combine.
+  
   masm.ma_ins(rhsi, lhsi, 0, 31);
 
   masm.moveToFloat32(rhsi, output);
@@ -1233,11 +1233,11 @@ void CodeGenerator::visitCopySignD(LCopySignD* ins) {
   Register lhsi = ToRegister(ins->getTemp(0));
   Register rhsi = ToRegister(ins->getTemp(1));
 
-  // Manipulate high words of double inputs.
+  
   masm.moveFromDoubleHi(lhs, lhsi);
   masm.moveFromDoubleHi(rhs, rhsi);
 
-  // Combine.
+  
   masm.ma_ins(rhsi, lhsi, 0, 31);
 
   masm.moveToDoubleHi(rhsi, output);
@@ -1267,7 +1267,7 @@ void CodeGenerator::visitTestDAndBranch(LTestDAndBranch* test) {
   MBasicBlock* ifFalse = test->ifFalse();
 
   masm.loadConstantDouble(0.0, ScratchDoubleReg);
-  // If 0, or NaN, the result is false.
+  
 
   if (isNextBlock(ifFalse->lir())) {
     branchToBlock(Assembler::DoubleFloat, input, ScratchDoubleReg, ifTrue,
@@ -1286,7 +1286,7 @@ void CodeGenerator::visitTestFAndBranch(LTestFAndBranch* test) {
   MBasicBlock* ifFalse = test->ifFalse();
 
   masm.loadConstantFloat32(0.0f, ScratchFloat32Reg);
-  // If 0, or NaN, the result is false.
+  
 
   if (isNextBlock(ifFalse->lir())) {
     branchToBlock(Assembler::SingleFloat, input, ScratchFloat32Reg, ifTrue,
@@ -1380,8 +1380,8 @@ void CodeGenerator::visitNotI(LNotI* ins) {
 }
 
 void CodeGenerator::visitNotD(LNotD* ins) {
-  // Since this operation is not, we want to set a bit if
-  // the double is falsey, which means 0.0, -0.0 or NaN.
+  
+  
   FloatRegister in = ToFloatRegister(ins->input());
   Register dest = ToRegister(ins->output());
 
@@ -1391,8 +1391,8 @@ void CodeGenerator::visitNotD(LNotD* ins) {
 }
 
 void CodeGenerator::visitNotF(LNotF* ins) {
-  // Since this operation is not, we want to set a bit if
-  // the float32 is falsey, which means 0.0, -0.0 or NaN.
+  
+  
   FloatRegister in = ToFloatRegister(ins->input());
   Register dest = ToRegister(ins->output());
 
@@ -1406,23 +1406,23 @@ void CodeGenerator::visitMemoryBarrier(LMemoryBarrier* ins) {
 }
 
 void CodeGeneratorMIPSShared::generateInvalidateEpilogue() {
-  // Ensure that there is enough space in the buffer for the OsiPoint
-  // patching to occur. Otherwise, we could overwrite the invalidation
-  // epilogue.
+  
+  
+  
   for (size_t i = 0; i < sizeof(void*); i += Assembler::NopSize()) {
     masm.nop();
   }
 
   masm.bind(&invalidate_);
 
-  // Push the return address of the point that we bailed out at to the stack
+  
   masm.Push(ra);
 
-  // Push the Ion script onto the stack (when we determine what that
-  // pointer is).
+  
+  
   invalidateEpilogueData_ = masm.pushWithPatch(ImmWord(uintptr_t(-1)));
 
-  // Jump to the invalidator which will replace the current frame.
+  
   TrampolinePtr thunk = gen->jitRuntime()->getInvalidationThunk();
   masm.jump(thunk);
 }
@@ -1457,8 +1457,8 @@ void CodeGeneratorMIPSShared::visitOutOfLineTableSwitch(
     Label* caseheader = caseblock->label();
     uint32_t caseoffset = caseheader->offset();
 
-    // The entries of the jump table need to be absolute addresses and thus
-    // must be patched after codegen is finished.
+    
+    
     CodeLabel cl;
     masm.writeCodePointer(&cl);
     cl.target()->bind(caseoffset);
@@ -1471,27 +1471,27 @@ void CodeGeneratorMIPSShared::emitTableSwitchDispatch(MTableSwitch* mir,
                                                       Register base) {
   Label* defaultcase = skipTrivialBlocks(mir->getDefault())->lir()->label();
 
-  // Lower value with low value
+  
   if (mir->low() != 0) {
     masm.subPtr(Imm32(mir->low()), index);
   }
 
-  // Jump to default case if input is out of range
+  
   int32_t cases = mir->numCases();
   masm.branchPtr(Assembler::AboveOrEqual, index, ImmWord(cases), defaultcase);
 
-  // To fill in the CodeLabels for the case entries, we need to first
-  // generate the case entries (we don't yet know their offsets in the
-  // instruction stream).
+  
+  
+  
   OutOfLineTableSwitch* ool = new (alloc()) OutOfLineTableSwitch(mir);
   addOutOfLineCode(ool, mir);
 
-  // Compute the position where a pointer to the right case stands.
+  
   masm.ma_li(base, ool->jumpLabel());
 
   BaseIndex pointer(base, index, ScalePointer);
 
-  // Jump to the right case
+  
   masm.branchToComputedAddress(pointer);
 }
 
@@ -1500,6 +1500,7 @@ void CodeGeneratorMIPSShared::emitWasmLoad(T* lir) {
   const MWasmLoad* mir = lir->mir();
   SecondScratchRegisterScope scratch2(masm);
 
+  Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register ptrScratch = InvalidReg;
   if (!lir->ptrCopy()->isBogusTemp()) {
@@ -1514,16 +1515,16 @@ void CodeGeneratorMIPSShared::emitWasmLoad(T* lir) {
 
   if (IsUnaligned(mir->access())) {
     if (IsFloatingPointType(mir->type())) {
-      masm.wasmUnalignedLoadFP(mir->access(), HeapReg, ptr, ptrScratch,
+      masm.wasmUnalignedLoadFP(mir->access(), memoryBase, ptr, ptrScratch,
                                ToFloatRegister(lir->output()),
                                ToRegister(lir->getTemp(1)));
     } else {
-      masm.wasmUnalignedLoad(mir->access(), HeapReg, ptr, ptrScratch,
+      masm.wasmUnalignedLoad(mir->access(), memoryBase, ptr, ptrScratch,
                              ToRegister(lir->output()),
                              ToRegister(lir->getTemp(1)));
     }
   } else {
-    masm.wasmLoad(mir->access(), HeapReg, ptr, ptrScratch,
+    masm.wasmLoad(mir->access(), memoryBase, ptr, ptrScratch,
                   ToAnyRegister(lir->output()));
   }
 }
@@ -1539,6 +1540,7 @@ void CodeGeneratorMIPSShared::emitWasmStore(T* lir) {
   const MWasmStore* mir = lir->mir();
   SecondScratchRegisterScope scratch2(masm);
 
+  Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register ptrScratch = InvalidReg;
   if (!lir->ptrCopy()->isBogusTemp()) {
@@ -1555,14 +1557,15 @@ void CodeGeneratorMIPSShared::emitWasmStore(T* lir) {
     if (mir->access().type() == Scalar::Float32 ||
         mir->access().type() == Scalar::Float64) {
       masm.wasmUnalignedStoreFP(mir->access(), ToFloatRegister(lir->value()),
-                                HeapReg, ptr, ptrScratch,
+                                memoryBase, ptr, ptrScratch,
                                 ToRegister(lir->getTemp(1)));
     } else {
-      masm.wasmUnalignedStore(mir->access(), ToRegister(lir->value()), HeapReg,
-                              ptr, ptrScratch, ToRegister(lir->getTemp(1)));
+      masm.wasmUnalignedStore(mir->access(), ToRegister(lir->value()),
+                              memoryBase, ptr, ptrScratch,
+                              ToRegister(lir->getTemp(1)));
     }
   } else {
-    masm.wasmStore(mir->access(), ToAnyRegister(lir->value()), HeapReg, ptr,
+    masm.wasmStore(mir->access(), ToAnyRegister(lir->value()), memoryBase, ptr,
                    ptrScratch);
   }
 }
@@ -1659,7 +1662,7 @@ void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
   Label done, outOfRange;
   masm.wasmBoundsCheck32(Assembler::AboveOrEqual, ptrReg,
                          ToRegister(boundsCheckLimit), &outOfRange);
-  // Offset is ok, let's load value.
+  
   if (isFloat) {
     if (size == 32) {
       masm.loadFloat32(BaseIndex(HeapReg, ptrReg, TimesOne),
@@ -1675,7 +1678,7 @@ void CodeGenerator::visitAsmJSLoadHeap(LAsmJSLoadHeap* ins) {
   }
   masm.ma_b(&done, ShortJump);
   masm.bind(&outOfRange);
-  // Offset is out of range. Load default values.
+  
   if (isFloat) {
     if (size == 32) {
       masm.loadConstantFloat32(float(GenericNaN()), ToFloatRegister(out));
@@ -1779,7 +1782,7 @@ void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
   masm.wasmBoundsCheck32(Assembler::AboveOrEqual, ptrReg,
                          ToRegister(boundsCheckLimit), &outOfRange);
 
-  // Offset is ok, let's store value.
+  
   if (isFloat) {
     if (size == 32) {
       masm.storeFloat32(ToFloatRegister(value),
@@ -1799,8 +1802,9 @@ void CodeGenerator::visitAsmJSStoreHeap(LAsmJSStoreHeap* ins) {
 void CodeGenerator::visitWasmCompareExchangeHeap(
     LWasmCompareExchangeHeap* ins) {
   MWasmCompareExchangeHeap* mir = ins->mir();
+  Register memoryBase = ToRegister(ins->memoryBase());
   Register ptrReg = ToRegister(ins->ptr());
-  BaseIndex srcAddr(HeapReg, ptrReg, TimesOne, mir->access().offset());
+  BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset());
   MOZ_ASSERT(ins->addrTemp()->isBogusTemp());
 
   Register oldval = ToRegister(ins->oldValue());
@@ -1815,9 +1819,10 @@ void CodeGenerator::visitWasmCompareExchangeHeap(
 
 void CodeGenerator::visitWasmAtomicExchangeHeap(LWasmAtomicExchangeHeap* ins) {
   MWasmAtomicExchangeHeap* mir = ins->mir();
+  Register memoryBase = ToRegister(ins->memoryBase());
   Register ptrReg = ToRegister(ins->ptr());
   Register value = ToRegister(ins->value());
-  BaseIndex srcAddr(HeapReg, ptrReg, TimesOne, mir->access().offset());
+  BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset());
   MOZ_ASSERT(ins->addrTemp()->isBogusTemp());
 
   Register valueTemp = ToTempRegisterOrInvalid(ins->valueTemp());
@@ -1833,12 +1838,13 @@ void CodeGenerator::visitWasmAtomicBinopHeap(LWasmAtomicBinopHeap* ins) {
   MOZ_ASSERT(ins->addrTemp()->isBogusTemp());
 
   MWasmAtomicBinopHeap* mir = ins->mir();
+  Register memoryBase = ToRegister(ins->memoryBase());
   Register ptrReg = ToRegister(ins->ptr());
   Register valueTemp = ToTempRegisterOrInvalid(ins->valueTemp());
   Register offsetTemp = ToTempRegisterOrInvalid(ins->offsetTemp());
   Register maskTemp = ToTempRegisterOrInvalid(ins->maskTemp());
 
-  BaseIndex srcAddr(HeapReg, ptrReg, TimesOne, mir->access().offset());
+  BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset());
 
   masm.wasmAtomicFetchOp(mir->access(), mir->operation(),
                          ToRegister(ins->value()), srcAddr, valueTemp,
@@ -1851,12 +1857,13 @@ void CodeGenerator::visitWasmAtomicBinopHeapForEffect(
   MOZ_ASSERT(ins->addrTemp()->isBogusTemp());
 
   MWasmAtomicBinopHeap* mir = ins->mir();
+  Register memoryBase = ToRegister(ins->memoryBase());
   Register ptrReg = ToRegister(ins->ptr());
   Register valueTemp = ToTempRegisterOrInvalid(ins->valueTemp());
   Register offsetTemp = ToTempRegisterOrInvalid(ins->offsetTemp());
   Register maskTemp = ToTempRegisterOrInvalid(ins->maskTemp());
 
-  BaseIndex srcAddr(HeapReg, ptrReg, TimesOne, mir->access().offset());
+  BaseIndex srcAddr(memoryBase, ptrReg, TimesOne, mir->access().offset());
   masm.wasmAtomicEffectOp(mir->access(), mir->operation(),
                           ToRegister(ins->value()), srcAddr, valueTemp,
                           offsetTemp, maskTemp);
@@ -1939,8 +1946,8 @@ void CodeGenerator::visitWasmSelect(LWasmSelect* ins) {
   }
 }
 
-// We expect to handle only the case where compare is {U,}Int32 and select is
-// {U,}Int32, and the "true" input is reused for the output.
+
+
 void CodeGenerator::visitWasmCompareAndSelect(LWasmCompareAndSelect* ins) {
   bool cmpIs32bit = ins->compareType() == MCompare::Compare_Int32 ||
                     ins->compareType() == MCompare::Compare_UInt32;
@@ -1994,7 +2001,7 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
   Register output = ToRegister(ins->output());
   Label done;
 
-  // Prevent divide by zero.
+  
   if (ins->canBeDivideByZero()) {
     if (ins->mir()->isTruncated()) {
       if (ins->trapOnError()) {
@@ -2003,7 +2010,7 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
         masm.wasmTrap(wasm::Trap::IntegerDivideByZero, ins->bytecodeOffset());
         masm.bind(&nonZero);
       } else {
-        // Infinity|0 == 0
+        
         Label notzero;
         masm.ma_b(rhs, rhs, &notzero, Assembler::NonZero, ShortJump);
         masm.move32(Imm32(0), output);
@@ -2022,12 +2029,12 @@ void CodeGenerator::visitUDivOrMod(LUDivOrMod* ins) {
   masm.as_mfhi(output);
 #endif
 
-  // If the remainder is > 0, bailout since this must be a double.
+  
   if (ins->mir()->isDiv()) {
     if (!ins->mir()->toDiv()->canTruncateRemainder()) {
       bailoutCmp32(Assembler::NonZero, output, output, ins->snapshot());
     }
-    // Get quotient
+    
 #ifdef MIPSR6
     masm.as_divu(output, lhs, rhs);
 #else
@@ -2319,28 +2326,31 @@ void CodeGenerator::visitAtomicTypedArrayElementBinopForEffect64(
 }
 
 void CodeGenerator::visitWasmCompareExchangeI64(LWasmCompareExchangeI64* lir) {
+  Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register64 oldValue = ToRegister64(lir->oldValue());
   Register64 newValue = ToRegister64(lir->newValue());
   Register64 output = ToOutRegister64(lir);
   uint32_t offset = lir->mir()->access().offset();
 
-  BaseIndex addr(HeapReg, ptr, TimesOne, offset);
+  BaseIndex addr(memoryBase, ptr, TimesOne, offset);
   masm.wasmCompareExchange64(lir->mir()->access(), addr, oldValue, newValue,
                              output);
 }
 
 void CodeGenerator::visitWasmAtomicExchangeI64(LWasmAtomicExchangeI64* lir) {
+  Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register64 value = ToRegister64(lir->value());
   Register64 output = ToOutRegister64(lir);
   uint32_t offset = lir->mir()->access().offset();
 
-  BaseIndex addr(HeapReg, ptr, TimesOne, offset);
+  BaseIndex addr(memoryBase, ptr, TimesOne, offset);
   masm.wasmAtomicExchange64(lir->mir()->access(), addr, value, output);
 }
 
 void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* lir) {
+  Register memoryBase = ToRegister(lir->memoryBase());
   Register ptr = ToRegister(lir->ptr());
   Register64 value = ToRegister64(lir->value());
   Register64 output = ToOutRegister64(lir);
@@ -2351,7 +2361,7 @@ void CodeGenerator::visitWasmAtomicBinopI64(LWasmAtomicBinopI64* lir) {
 #endif
   uint32_t offset = lir->mir()->access().offset();
 
-  BaseIndex addr(HeapReg, ptr, TimesOne, offset);
+  BaseIndex addr(memoryBase, ptr, TimesOne, offset);
 
   masm.wasmAtomicFetchOp64(lir->mir()->access(), lir->mir()->operation(), value,
                            addr, temp, output);
