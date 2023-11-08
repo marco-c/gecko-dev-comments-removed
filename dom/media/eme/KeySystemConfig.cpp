@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et cindent: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "KeySystemConfig.h"
 
@@ -27,7 +27,7 @@
 
 namespace mozilla {
 
-/* static */
+
 bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
   nsCString api = nsLiteralCString(CHROMIUM_CDM_API);
   nsCString name = NS_ConvertUTF16toUTF8(aKeySystem);
@@ -36,7 +36,7 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
     return true;
   }
 #ifdef MOZ_WIDGET_ANDROID
-  // Check if we can use MediaDrm for this keysystem.
+  
   if (mozilla::java::MediaDrmProxy::IsSchemeSupported(name)) {
     return true;
   }
@@ -51,7 +51,7 @@ bool KeySystemConfig::Supports(const nsAString& aKeySystem) {
   return false;
 }
 
-/* static */
+
 bool KeySystemConfig::CreateKeySystemConfigs(
     const nsAString& aKeySystem, nsTArray<KeySystemConfig>& aOutConfigs) {
   if (!Supports(aKeySystem)) {
@@ -74,7 +74,7 @@ bool KeySystemConfig::CreateKeySystemConfigs(
       config->mSessionTypes.AppendElement(SessionType::PersistentLicense);
     }
 #if defined(XP_WIN)
-    // Clearkey CDM uses WMF's H.264 decoder on Windows.
+    
     if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::H264)) {
       config->mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
     } else {
@@ -93,8 +93,8 @@ bool KeySystemConfig::CreateKeySystemConfigs(
     config->mWebM.SetCanDecrypt(EME_CODEC_VP9);
 
     if (StaticPrefs::media_clearkey_test_key_systems_enabled()) {
-      // Add testing key systems. These offer the same capabilities as the
-      // base clearkey system, so just clone clearkey and change the name.
+      
+      
       KeySystemConfig clearkeyWithProtectionQuery{*config};
       clearkeyWithProtectionQuery.mKeySystem.AssignLiteral(
           kClearKeyWithProtectionQueryKeySystemName);
@@ -123,11 +123,11 @@ bool KeySystemConfig::CreateKeySystemConfigs(
     config->mEncryptionSchemes.AppendElement(u"cbcs-1-9"_ns);
 
 #if defined(MOZ_WIDGET_ANDROID)
-    // MediaDrm.isCryptoSchemeSupported only allows passing
-    // "video/mp4" or "video/webm" for mimetype string.
-    // See
-    // https://developer.android.com/reference/android/media/MediaDrm.html#isCryptoSchemeSupported(java.util.UUID,
-    // java.lang.String) for more detail.
+    
+    
+    
+    
+    
     typedef struct {
       const nsCString& mMimeType;
       const nsCString& mEMECodecType;
@@ -168,10 +168,10 @@ bool KeySystemConfig::CreateKeySystemConfigs(
     }
 #else
 #  if defined(XP_WIN)
-    // Widevine CDM doesn't include an AAC decoder. So if WMF can't
-    // decode AAC, and a codec wasn't specified, be conservative
-    // and reject the MediaKeys request, since we assume Widevine
-    // will be used with AAC.
+    
+    
+    
+    
     if (WMFDecoderModule::CanCreateMFTDecoder(WMFStreamType::AAC)) {
       config->mMP4.SetCanDecrypt(EME_CODEC_AAC);
     }
@@ -201,8 +201,8 @@ bool KeySystemConfig::CreateKeySystemConfigs(
 
 bool KeySystemConfig::IsSameKeySystem(const nsAString& aKeySystem) const {
 #ifdef MOZ_WMF_CDM
-  // We want to map Widevine experiment key system to normal Widevine key system
-  // as well.
+  
+  
   if (IsWidevineExperimentKeySystemAndSupported(mKeySystem)) {
     return mKeySystem.Equals(aKeySystem) ||
            aKeySystem.EqualsLiteral(kWidevineKeySystemName);
@@ -211,6 +211,7 @@ bool KeySystemConfig::IsSameKeySystem(const nsAString& aKeySystem) const {
   return mKeySystem.Equals(aKeySystem);
 }
 
+#ifdef DEBUG
 nsString KeySystemConfig::GetDebugInfo() const {
   nsString debugInfo;
   debugInfo.Append(mKeySystem);
@@ -248,6 +249,7 @@ nsString KeySystemConfig::GetDebugInfo() const {
   debugInfo.Append(NS_ConvertUTF8toUTF16(mWebM.GetDebugInfo()));
   return debugInfo;
 }
+#endif
 
 KeySystemConfig::SessionType ConvertToKeySystemConfigSessionType(
     dom::MediaKeySessionType aType) {
@@ -285,4 +287,4 @@ const char* RequirementToStr(KeySystemConfig::Requirement aRequirement) {
   }
 }
 
-}  // namespace mozilla
+}  
