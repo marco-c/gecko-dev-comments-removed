@@ -199,6 +199,17 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
   
 
   
+
+  
+  Rooted<PlainObject*> maybeResolvedOptions(cx);
+  if (maybeOptions) {
+    maybeResolvedOptions = SnapshotOwnProperties(cx, maybeOptions);
+    if (!maybeResolvedOptions) {
+      return nullptr;
+    }
+  }
+
+  
   if (item.isObject()) {
     Rooted<JSObject*> itemObj(cx, &item.toObject());
 
@@ -230,18 +241,11 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
     }
 
     
-    if (maybeOptions) {
-      return CalendarYearMonthFromFields(cx, calendar, fields, maybeOptions);
+    if (maybeResolvedOptions) {
+      return CalendarYearMonthFromFields(cx, calendar, fields,
+                                         maybeResolvedOptions);
     }
     return CalendarYearMonthFromFields(cx, calendar, fields);
-  }
-
-  
-  if (maybeOptions) {
-    TemporalOverflow ignored;
-    if (!ToTemporalOverflow(cx, maybeOptions, &ignored)) {
-      return nullptr;
-    }
   }
 
   
@@ -263,6 +267,14 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
   Rooted<CalendarValue> calendar(cx, CalendarValue(cx->names().iso8601));
   if (calendarString) {
     if (!ToBuiltinCalendar(cx, calendarString, &calendar)) {
+      return nullptr;
+    }
+  }
+
+  
+  if (maybeResolvedOptions) {
+    TemporalOverflow ignored;
+    if (!ToTemporalOverflow(cx, maybeResolvedOptions, &ignored)) {
       return nullptr;
     }
   }
@@ -1001,13 +1013,18 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<JSObject*> options(cx);
+  Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
-    options = RequireObjectArg(cx, "options", "with", args[1]);
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", "with", args[1]));
+    if (!options) {
+      return false;
+    }
+    resolvedOptions = SnapshotOwnProperties(cx, options);
   } else {
-    options = NewPlainObjectWithProto(cx, nullptr);
+    resolvedOptions = NewPlainObjectWithProto(cx, nullptr);
   }
-  if (!options) {
+  if (!resolvedOptions) {
     return false;
   }
 
@@ -1051,7 +1068,7 @@ static bool PlainYearMonth_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  auto obj = CalendarYearMonthFromFields(cx, calendar, fields, options);
+  auto obj = CalendarYearMonthFromFields(cx, calendar, fields, resolvedOptions);
   if (!obj) {
     return false;
   }
