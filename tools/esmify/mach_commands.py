@@ -63,7 +63,6 @@ excluded_from_imports_prefix = list(
             "devtools/client/shared/source-map-loader/test/browser/fixtures/bundle.js",
             "layout/style/test/property_database.js",
             "services/fxaccounts/FxAccountsPairingChannel.js",
-            "testing/talos/talos/tests/devtools/addon/content/pages/custom/debugger/app-build/static/js/main.js",  
             "testing/web-platform/",
             
             "browser/components/sessionstore/test/unit/data/",
