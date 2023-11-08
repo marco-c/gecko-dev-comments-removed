@@ -252,6 +252,7 @@ static bool EncodeBase64Web(vector<uint8_t> aBinary, string& aEncoded) {
 
     
     assert(idx < MOZ_ARRAY_LENGTH(sAlphabet));
+    out[i] = sAlphabet[idx];
   }
 
   return true;
