@@ -195,6 +195,14 @@ static bool IsOnAndroid() {
 #endif
 }
 
+static bool IsOnMacOS() {
+#if defined(XP_MACOSX)
+  return true;
+#else
+  return false;
+#endif
+}
+
 static bool IsSupportedCodec(const nsAString& aCodec) {
   
   if (!IsAV1CodecString(aCodec) && !IsVP9CodecString(aCodec) &&
@@ -222,6 +230,10 @@ static bool CanDecode(const Config& aConfig) {
     return false;
   }
   if (!IsSupportedCodec(param.mParsedCodec)) {
+    return false;
+  }
+  if (IsOnMacOS() && IsH264CodecString(param.mParsedCodec)) {
+    
     return false;
   }
   
