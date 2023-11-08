@@ -328,14 +328,8 @@ class ConsoleRunnable : public StructuredCloneHolderBase {
 
     ConsoleCommon::ClearException ce(aCx);
 
-    
-    
-    JS::CloneDataPolicy cloneDataPolicy;
-    cloneDataPolicy.allowIntraClusterClonableSharedObjects();
-    cloneDataPolicy.allowSharedMemoryObjects();
-
     JS::Rooted<JS::Value> argumentsValue(aCx);
-    if (!Read(aCx, &argumentsValue, cloneDataPolicy)) {
+    if (!Read(aCx, &argumentsValue)) {
       return;
     }
 
