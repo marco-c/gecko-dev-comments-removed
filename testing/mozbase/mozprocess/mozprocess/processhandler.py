@@ -181,7 +181,12 @@ class ProcessHandlerMixin(object):
                     _maxint = sys.maxsize
                 handle = getattr(self, "_handle", None)
                 if handle:
+                    
+                    
+                    self._handle = int(self._handle)
                     self._internal_poll(_deadstate=_maxint)
+                    
+                    self._handle = handle
                 if handle or self._job or self._io_port:
                     self._cleanup()
             else:
