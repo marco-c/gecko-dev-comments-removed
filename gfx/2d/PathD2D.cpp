@@ -188,10 +188,10 @@ void PathBuilderD2D::Arc(const Point& aOrigin, Float aRadius, Float aStartAngle,
   
   
   bool fullCircle = false;
-  if (aEndAngle - aStartAngle >= 2 * M_PI) {
+  if (aEndAngle - aStartAngle >= 1.9999 * M_PI) {
     fullCircle = true;
     aEndAngle = Float(aStartAngle + M_PI * 1.9999);
-  } else if (aStartAngle - aEndAngle >= 2 * M_PI) {
+  } else if (aStartAngle - aEndAngle >= 1.9999 * M_PI) {
     fullCircle = true;
     aStartAngle = Float(aEndAngle + M_PI * 1.9999);
   }
