@@ -1459,9 +1459,15 @@ var TranslationsPanel = new (class {
         }
         break;
       }
-      case "TranslationsParent:LanguageState":
+      case "TranslationsParent:LanguageState": {
         
         const handleEventId = ++this.handleEventId;
+        const win =
+          gBrowser.selectedBrowser.browsingContext.currentWindowGlobal;
+        const isRequestStale = () =>
+          handleEventId !== this.handleEventId ||
+          win !== gBrowser.selectedBrowser.browsingContext.currentWindowGlobal;
+
         const {
           detectedLanguages,
           requestedTranslationPair,
@@ -1501,8 +1507,7 @@ var TranslationsPanel = new (class {
           (hasSupportedLanguage &&
             (await TranslationsParent.getIsTranslationsEngineSupported()))
         ) {
-          if (handleEventId !== this.handleEventId) {
-            
+          if (isRequestStale()) {
             return;
           }
           button.hidden = false;
@@ -1569,8 +1574,7 @@ var TranslationsPanel = new (class {
             PageActions.sendPlacedInUrlbarTrigger(button);
           }
         } else {
-          if (handleEventId !== this.handleEventId) {
-            
+          if (isRequestStale()) {
             return;
           }
           this.#hideTranslationsButton();
@@ -1594,7 +1598,7 @@ var TranslationsPanel = new (class {
               ? this.elements.appMenuButton
               : button;
 
-            // Re-open the menu on an error.
+            
             await this.#openPanelPopup(targetButton, {
               autoShow: true,
               viewName: "errorView",
@@ -1605,6 +1609,7 @@ var TranslationsPanel = new (class {
             console.error("Unknown translation error", error);
         }
         break;
+      }
     }
   };
 })();
