@@ -245,9 +245,12 @@ this.runtime = class extends ExtensionAPIPersistent {
         },
 
         async internalWakeupBackground() {
+          const { background } = extension.manifest;
           if (
-            extension.manifest.background &&
-            !extension.manifest.background.service_worker &&
+            background &&
+            (background.page || background.scripts) &&
+            
+            
             !extension.persistentBackground
           ) {
             await extension.wakeupBackground();
