@@ -1287,6 +1287,10 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
 
                 let remainder = value_or_stop!(value.try_op(step, Rem::rem));
+                if remainder.is_zero_leaf() {
+                    replace_self_with!(&mut **value);
+                    return;
+                }
 
                 let (mut lower_bound, mut upper_bound) = if value.is_negative_leaf() {
                     let upper_bound = value_or_stop!(value.try_op(&remainder, Sub::sub));
