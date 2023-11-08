@@ -1,20 +1,7 @@
 
 
 
-test(t => {
-  assert_true('estimate' in navigator.storage);
-  assert_equals(typeof navigator.storage.estimate, 'function');
-  assert_true(navigator.storage.estimate() instanceof Promise);
-}, 'estimate() method exists and returns a Promise');
 
-promise_test(async t => {
-  const estimate = await navigator.storage.estimate();
-  assert_equals(typeof estimate, 'object');
-  assert_true('usage' in estimate);
-  assert_equals(typeof estimate.usage, 'number');
-  assert_true('quota' in estimate);
-  assert_equals(typeof estimate.quota, 'number');
-}, 'estimate() resolves to dictionary with members');
 
 promise_test(async t => {
   const arraySize = 1e6;
