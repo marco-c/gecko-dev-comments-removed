@@ -748,6 +748,15 @@ static bool HasLikelySubtags(LikelySubtags aLikelySubtags, const Locale& aTag) {
   
   
   
+  
+  
+  if (aTag.Language().Length() > 3) {
+    return true;
+  }
+
+  
+  
+  
   if (aLikelySubtags == LikelySubtags::Add) {
     return !aTag.Language().EqualTo("und") &&
            (aTag.Script().Present() && !aTag.Script().EqualTo("Zzzz")) &&
