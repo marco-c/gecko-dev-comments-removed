@@ -508,6 +508,8 @@ async function loadTestPage({
   permissionsUrls = [],
 }) {
   info(`Loading test page starting at url: ${page}`);
+  
+  await TranslationsParent.destroyEngineProcess();
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
     set: [
