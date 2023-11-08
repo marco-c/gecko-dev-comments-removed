@@ -1486,8 +1486,6 @@ bool js::temporal::ParseTemporalInstantString(JSContext* cx,
     MOZ_ASSERT(parsed.timeZone.isUTC());
     *offset = 0;
   }
-
-  
   return true;
 }
 

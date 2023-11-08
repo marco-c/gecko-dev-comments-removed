@@ -123,11 +123,8 @@ bool js::temporal::InterpretISODateTimeOffset(
   if (offsetBehaviour == OffsetBehaviour::Exact ||
       offsetOption == TemporalOffset::Use) {
     
-    auto epochNanoseconds = GetUTCEpochNanoseconds(dateTime);
-    auto offsetNs = InstantSpan::fromNanoseconds(offsetNanoseconds);
-
-    
-    epochNanoseconds = epochNanoseconds - offsetNs;
+    auto epochNanoseconds = GetUTCEpochNanoseconds(
+        dateTime, InstantSpan::fromNanoseconds(offsetNanoseconds));
 
     
     if (!IsValidEpochInstant(epochNanoseconds)) {
