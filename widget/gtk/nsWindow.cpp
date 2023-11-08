@@ -6144,10 +6144,6 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   mContainer = MOZ_CONTAINER(container);
 
   
-  
-  gtk_widget_realize(mShell);
-
-  
 
 
 
@@ -6158,10 +6154,8 @@ nsresult nsWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
 
 
 
-  GtkStyleContext* style = gtk_widget_get_style_context(mShell);
-  mDrawToContainer = GdkIsWaylandDisplay() ||
-                     mGtkWindowDecoration == GTK_DECORATION_CLIENT ||
-                     gtk_style_context_has_class(style, "csd");
+  mDrawToContainer =
+      GdkIsWaylandDisplay() || mGtkWindowDecoration == GTK_DECORATION_CLIENT;
   eventWidget = mDrawToContainer ? container : mShell;
 
   
@@ -8900,6 +8894,13 @@ void nsWindow::SetDrawsInTitlebar(bool aState) {
     SetWindowDecoration(aState ? BorderStyle::Border : mBorderStyle);
   } else if (mGtkWindowDecoration == GTK_DECORATION_CLIENT) {
     LOG("    Using CSD mode\n");
+
+    if (!gtk_widget_get_realized(GTK_WIDGET(mShell))) {
+      LOG("    Using CSD mode fast path\n");
+      gtk_window_set_titlebar(GTK_WINDOW(mShell),
+                              aState ? gtk_fixed_new() : nullptr);
+      return;
+    }
 
     
 
