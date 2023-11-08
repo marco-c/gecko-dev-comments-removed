@@ -43,6 +43,13 @@ function createTrackerURL(origin, uuid, dispatch, id = null) {
 
 
 
+function createCleanupURL(uuid) {
+  return createTrackerURL(window.location.origin, uuid, 'clean_up');
+}
+
+
+
+
 function createBidderReportURL(uuid, id = '1', origin = window.location.origin) {
   return createTrackerURL(origin, uuid, `track_get`, `bidder_report_${id}`);
 }
@@ -65,8 +72,8 @@ function createSellerBeaconURL(uuid, id = '1', origin = window.location.origin) 
 function generateUuid(test) {
   let uuid = token();
   test.add_cleanup(async () => {
-    let cleanupURL = createTrackerURL(window.location.origin, uuid, 'clean_up');
-    let response = await fetch(cleanupURL, {credentials: 'omit', mode: 'cors'});
+    let response = await fetch(createCleanupURL(uuid),
+                               {credentials: 'omit', mode: 'cors'});
     assert_equals(await response.text(), 'cleanup complete',
                   `Sever state cleanup failed`);
   });
@@ -479,8 +486,13 @@ async function createFrame(test, origin, is_iframe = true, permissions = null) {
 
 
 
-async function createIframe(test, origin, permissions) {
-  return createFrame(test, origin,  true, permissions);
+async function createIframe(test, origin, permissions = null) {
+  return await createFrame(test, origin, true, permissions);
+}
+
+
+async function createTopLevelWindow(test, origin) {
+  return await createFrame(test, origin, false);
 }
 
 
@@ -493,5 +505,17 @@ async function joinCrossOriginInterestGroup(test, uuid, origin, interestGroupOve
 
   let iframe = await createIframe(test, origin, 'join-ad-interest-group');
   await runInFrame(test, iframe,
+                   `await joinInterestGroup(test_instance, "${uuid}", ${interestGroup})`);
+}
+
+
+
+async function joinInterestGroupInTopLevelWindow(
+    test, uuid, origin, interestGroupOverrides = {}) {
+  let interestGroup = JSON.stringify(
+      createInterestGroupForOrigin(uuid, origin, interestGroupOverrides));
+
+  let topLeveWindow = await createTopLevelWindow(test, origin);
+  await runInFrame(test, topLeveWindow,
                    `await joinInterestGroup(test_instance, "${uuid}", ${interestGroup})`);
 }
