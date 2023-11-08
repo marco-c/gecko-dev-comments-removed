@@ -804,7 +804,15 @@ void DOMIntersectionObserver::Update(Document& aDocument,
     }
 
     
-    if (target->UpdateIntersectionObservation(this, thresholdIndex)) {
+    
+    
+    
+    const bool temporarilyVisibleForScrolledIntoView =
+        isContentVisibilityObserver == IsContentVisibilityObserver::Yes &&
+        target->TemporarilyVisibleForScrolledIntoViewDescendant();
+    
+    if (target->UpdateIntersectionObservation(this, thresholdIndex) ||
+        temporarilyVisibleForScrolledIntoView) {
       
       
       
@@ -813,6 +821,10 @@ void DOMIntersectionObserver::Update(Document& aDocument,
           output.mIsSimilarOrigin ? Some(output.mRootBounds) : Nothing(),
           output.mTargetRect, output.mIntersectionRect, thresholdIndex > 0,
           intersectionRatio);
+
+      if (temporarilyVisibleForScrolledIntoView) {
+        target->SetTemporarilyVisibleForScrolledIntoViewDescendant(false);
+      }
     }
   }
 }
