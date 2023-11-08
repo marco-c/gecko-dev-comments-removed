@@ -269,7 +269,6 @@ pref("formhelper.autozoom", true);
 pref("geckoview.console.enabled", false);
 
 #ifdef NIGHTLY_BUILD
-  pref("geckoview.shopping.enabled", true);
   
   
   pref("geckoview.shopping.test_response", false);
