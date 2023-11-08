@@ -319,15 +319,10 @@ static const struct {
     {"goog-downloadwhite-proto", CSD_DOWNLOAD_WHITELIST},  
 
     
-    {"goog-passwordwhite-proto", CSD_WHITELIST},  
-
-    
     {"moztest-phish-proto", SOCIAL_ENGINEERING_PUBLIC},  
     {"test-phish-proto", SOCIAL_ENGINEERING_PUBLIC},     
     {"moztest-unwanted-proto", UNWANTED_SOFTWARE},       
     {"test-unwanted-proto", UNWANTED_SOFTWARE},          
-    {"moztest-passwordwhite-proto", CSD_WHITELIST},      
-    {"test-passwordwhite-proto", CSD_WHITELIST},         
 };
 
 NS_IMETHODIMP

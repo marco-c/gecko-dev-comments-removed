@@ -13,7 +13,6 @@
 #include "UrlClassifierFeatureEmailTrackingProtection.h"
 #include "UrlClassifierFeatureFingerprintingAnnotation.h"
 #include "UrlClassifierFeatureFingerprintingProtection.h"
-#include "UrlClassifierFeatureLoginReputation.h"
 #include "UrlClassifierFeaturePhishingProtection.h"
 #include "UrlClassifierFeatureSocialTrackingAnnotation.h"
 #include "UrlClassifierFeatureSocialTrackingProtection.h"
@@ -40,7 +39,6 @@ void UrlClassifierFeatureFactory::Shutdown() {
   UrlClassifierFeatureEmailTrackingProtection::MaybeShutdown();
   UrlClassifierFeatureFingerprintingAnnotation::MaybeShutdown();
   UrlClassifierFeatureFingerprintingProtection::MaybeShutdown();
-  UrlClassifierFeatureLoginReputation::MaybeShutdown();
   UrlClassifierFeaturePhishingProtection::MaybeShutdown();
   UrlClassifierFeatureSocialTrackingAnnotation::MaybeShutdown();
   UrlClassifierFeatureSocialTrackingProtection::MaybeShutdown();
@@ -134,12 +132,6 @@ void UrlClassifierFeatureFactory::GetPhishingProtectionFeatures(
 }
 
 
-nsIUrlClassifierFeature*
-UrlClassifierFeatureFactory::GetFeatureLoginReputation() {
-  return UrlClassifierFeatureLoginReputation::MaybeGetOrCreate();
-}
-
-
 already_AddRefed<nsIUrlClassifierFeature>
 UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
   if (!XRE_IsParentProcess()) {
@@ -210,12 +202,6 @@ UrlClassifierFeatureFactory::GetFeatureByName(const nsACString& aName) {
 
   
   feature = UrlClassifierFeatureTrackingAnnotation::GetIfNameMatches(aName);
-  if (feature) {
-    return feature.forget();
-  }
-
-  
-  feature = UrlClassifierFeatureLoginReputation::GetIfNameMatches(aName);
   if (feature) {
     return feature.forget();
   }
@@ -293,12 +279,6 @@ void UrlClassifierFeatureFactory::GetFeatureNames(nsTArray<nsCString>& aArray) {
 
   
   name.Assign(UrlClassifierFeatureTrackingAnnotation::Name());
-  if (!name.IsEmpty()) {
-    aArray.AppendElement(name);
-  }
-
-  
-  name.Assign(UrlClassifierFeatureLoginReputation::Name());
   if (!name.IsEmpty()) {
     aArray.AppendElement(name);
   }
