@@ -3536,46 +3536,20 @@ nsresult PresShell::ScrollContentIntoView(nsIContent* aContent,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  bool reflowedForHiddenContent = false;
   if (mContentToScrollTo) {
     if (nsIFrame* frame = mContentToScrollTo->GetPrimaryFrame()) {
-      bool hasContentVisibilityAutoAncestor = false;
-      auto* ancestor = frame->GetClosestContentVisibilityAncestor(
-          nsIFrame::IncludeContentVisibility::Auto);
-      while (ancestor) {
-        if (auto* element = Element::FromNodeOrNull(ancestor->GetContent())) {
-          hasContentVisibilityAutoAncestor = true;
-          element->SetTemporarilyVisibleForScrolledIntoViewDescendant(true);
-          element->SetVisibleForContentVisibility(true);
-        }
-        ancestor = ancestor->GetClosestContentVisibilityAncestor(
-            nsIFrame::IncludeContentVisibility::Auto);
-      }
-      if (hasContentVisibilityAutoAncestor) {
-        UpdateHiddenContentInForcedLayout(frame);
-        
-        
-        UpdateContentRelevancyImmediately(ContentRelevancyReason::Visible);
-        reflowedForHiddenContent = ReflowForHiddenContentIfNeeded();
+      if (frame->IsHiddenByContentVisibilityOnAnyAncestor(
+              nsIFrame::IncludeContentVisibility::Auto)) {
+        frame->PresShell()->EnsureReflowIfFrameHasHiddenContent(frame);
       }
     }
   }
 
-  if (!reflowedForHiddenContent) {
-    
-    if (PresShell* presShell = composedDoc->GetPresShell()) {
-      presShell->SetNeedLayoutFlush();
-    }
-    composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
+  
+  if (PresShell* presShell = composedDoc->GetPresShell()) {
+    presShell->SetNeedLayoutFlush();
   }
+  composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
 
   
   
@@ -11876,21 +11850,18 @@ bool PresShell::GetZoomableByAPZ() const {
   return mZoomConstraintsClient && mZoomConstraintsClient->GetAllowZoom();
 }
 
-bool PresShell::ReflowForHiddenContentIfNeeded() {
-  if (mHiddenContentInForcedLayout.IsEmpty()) {
-    return false;
-  }
-  mDocument->FlushPendingNotifications(FlushType::Layout);
-  mHiddenContentInForcedLayout.Clear();
-  return true;
-}
-
-void PresShell::UpdateHiddenContentInForcedLayout(nsIFrame* aFrame) {
+void PresShell::EnsureReflowIfFrameHasHiddenContent(nsIFrame* aFrame) {
   if (!aFrame || !aFrame->IsSubtreeDirty() ||
       !StaticPrefs::layout_css_content_visibility_enabled()) {
     return;
   }
 
+  
+  
+  
+  nsTHashSet<nsIContent*> hiddenContentInForcedLayout;
+
+  MOZ_ASSERT(mHiddenContentInForcedLayout.IsEmpty());
   nsIFrame* topmostFrameWithContentHidden = nullptr;
   for (nsIFrame* cur = aFrame->GetInFlowParent(); cur;
        cur = cur->GetInFlowParent()) {
@@ -11908,13 +11879,9 @@ void PresShell::UpdateHiddenContentInForcedLayout(nsIFrame* aFrame) {
   MOZ_ASSERT(topmostFrameWithContentHidden);
   FrameNeedsReflow(topmostFrameWithContentHidden, IntrinsicDirty::None,
                    NS_FRAME_IS_DIRTY);
-}
+  mDocument->FlushPendingNotifications(FlushType::Layout);
 
-void PresShell::EnsureReflowIfFrameHasHiddenContent(nsIFrame* aFrame) {
-  MOZ_ASSERT(mHiddenContentInForcedLayout.IsEmpty());
-
-  UpdateHiddenContentInForcedLayout(aFrame);
-  ReflowForHiddenContentIfNeeded();
+  mHiddenContentInForcedLayout.Clear();
 }
 
 bool PresShell::IsForcingLayoutForHiddenContent(const nsIFrame* aFrame) const {
@@ -11944,16 +11911,4 @@ void PresShell::ScheduleContentRelevancyUpdate(ContentRelevancyReason aReason) {
   if (nsPresContext* presContext = GetPresContext()) {
     presContext->RefreshDriver()->EnsureContentRelevancyUpdateHappens();
   }
-}
-
-void PresShell::UpdateContentRelevancyImmediately(
-    ContentRelevancyReason aReason) {
-  if (MOZ_UNLIKELY(mIsDestroying)) {
-    return;
-  }
-
-  mContentVisibilityRelevancyToUpdate += aReason;
-
-  SetNeedLayoutFlush();
-  UpdateRelevancyOfContentVisibilityAutoFrames();
 }
