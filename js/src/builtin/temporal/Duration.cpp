@@ -5073,13 +5073,23 @@ static bool RoundDurationYear(JSContext* cx, const Duration& duration,
                               Handle<temporal::NanosecondsAndDays> nanosAndDays,
                               Increment increment,
                               TemporalRoundingMode roundingMode,
-                              Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
-                              Handle<CalendarValue> calendar,
+                              Handle<JSObject*> relativeTo,
                               ComputeRemainder computeRemainder,
                               RoundedDuration* result) {
   double years = duration.years;
   double months = duration.months;
   double weeks = duration.weeks;
+
+  auto date = ToTemporalDate(cx, relativeTo);
+  if (!date) {
+    return false;
+  }
+  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, date);
+
+  Rooted<CalendarValue> calendar(cx, date.unwrap().calendar());
+  if (!calendar.wrap(cx)) {
+    return false;
+  }
 
   
   Rooted<DurationObject*> yearsDuration(cx,
@@ -5619,13 +5629,22 @@ static bool RoundDurationMonthSlow(
 static bool RoundDurationMonth(
     JSContext* cx, const Duration& duration,
     Handle<temporal::NanosecondsAndDays> nanosAndDays, Increment increment,
-    TemporalRoundingMode roundingMode,
-    Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
-    Handle<CalendarValue> calendar, ComputeRemainder computeRemainder,
-    RoundedDuration* result) {
+    TemporalRoundingMode roundingMode, Handle<JSObject*> relativeTo,
+    ComputeRemainder computeRemainder, RoundedDuration* result) {
   double years = duration.years;
   double months = duration.months;
   double weeks = duration.weeks;
+
+  auto date = ToTemporalDate(cx, relativeTo);
+  if (!date) {
+    return false;
+  }
+  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, date);
+
+  Rooted<CalendarValue> calendar(cx, date.unwrap().calendar());
+  if (!calendar.wrap(cx)) {
+    return false;
+  }
 
   
   Rooted<DurationObject*> yearsMonths(
@@ -6135,10 +6154,20 @@ static bool RoundDurationWeek(JSContext* cx, const Duration& duration,
                               Handle<temporal::NanosecondsAndDays> nanosAndDays,
                               Increment increment,
                               TemporalRoundingMode roundingMode,
-                              Handle<Wrapped<PlainDateObject*>> dateRelativeTo,
-                              Handle<CalendarValue> calendar,
+                              Handle<JSObject*> relativeTo,
                               ComputeRemainder computeRemainder,
                               RoundedDuration* result) {
+  auto date = ToTemporalDate(cx, relativeTo);
+  if (!date) {
+    return false;
+  }
+  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx, date);
+
+  Rooted<CalendarValue> calendar(cx, date.unwrap().calendar());
+  if (!calendar.wrap(cx)) {
+    return false;
+  }
+
   
   double days = duration.days;
   double extraDays = nanosAndDays.daysNumber();
@@ -6523,49 +6552,6 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
   
   MOZ_ASSERT(relativeTo);
 
-  
-  Rooted<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo(cx);
-  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
-
-  
-  
-  
-
-  
-  Rooted<CalendarValue> calendar(cx);
-  if (auto* unwrapped = relativeTo->maybeUnwrapIf<ZonedDateTimeObject>()) {
-    
-    zonedRelativeTo = relativeTo;
-
-    
-    calendar.set(unwrapped->calendar());
-    if (!calendar.wrap(cx)) {
-      return false;
-    }
-
-    
-    dateRelativeTo = ToTemporalDate(cx, relativeTo);
-    if (!dateRelativeTo) {
-      return false;
-    }
-  } else if (auto* unwrapped = relativeTo->maybeUnwrapIf<PlainDateObject>()) {
-    
-    dateRelativeTo = relativeTo;
-
-    
-    calendar.set(unwrapped->calendar());
-    if (!calendar.wrap(cx)) {
-      return false;
-    }
-  } else if (IsDeadProxyObject(relativeTo)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_DEAD_OBJECT);
-    return false;
-  } else {
-    MOZ_CRASH("expected either PlainDateObject or ZonedDateTimeObject");
-  }
-
-  
-
   switch (unit) {
     case TemporalUnit::Year:
     case TemporalUnit::Month:
@@ -6573,7 +6559,7 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
       break;
     case TemporalUnit::Day:
       
-      if (zonedRelativeTo) {
+      if (relativeTo->canUnwrapAs<ZonedDateTimeObject>()) {
         break;
       }
       [[fallthrough]];
@@ -6595,7 +6581,9 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
 
   
   Rooted<temporal::NanosecondsAndDays> nanosAndDays(cx);
-  if (zonedRelativeTo) {
+  if (relativeTo->canUnwrapAs<ZonedDateTimeObject>()) {
+    Rooted<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo(cx, relativeTo);
+
     
     Rooted<ZonedDateTimeObject*> intermediate(
         cx, MoveRelativeZonedDateTime(cx, zonedRelativeTo, duration.date()));
@@ -6634,20 +6622,20 @@ static bool RoundDuration(JSContext* cx, const Duration& duration,
     
     case TemporalUnit::Year:
       return RoundDurationYear(cx, duration, nanosAndDays, increment,
-                               roundingMode, dateRelativeTo, calendar,
-                               computeRemainder, result);
+                               roundingMode, relativeTo, computeRemainder,
+                               result);
 
     
     case TemporalUnit::Month:
       return RoundDurationMonth(cx, duration, nanosAndDays, increment,
-                                roundingMode, dateRelativeTo, calendar,
-                                computeRemainder, result);
+                                roundingMode, relativeTo, computeRemainder,
+                                result);
 
     
     case TemporalUnit::Week:
       return RoundDurationWeek(cx, duration, nanosAndDays, increment,
-                               roundingMode, dateRelativeTo, calendar,
-                               computeRemainder, result);
+                               roundingMode, relativeTo, computeRemainder,
+                               result);
 
     
     case TemporalUnit::Day:
