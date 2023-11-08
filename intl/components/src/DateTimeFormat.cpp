@@ -881,6 +881,12 @@ DateTimeFormat::ResolveComponents() {
         }
         break;
       
+      case u'r':
+      case u'U':
+        
+        numeric = Numeric::Numeric;
+        break;
+      
       case u'M':
       case u'L':
         if (count == 1) {
@@ -915,6 +921,8 @@ DateTimeFormat::ResolveComponents() {
         bag.era = Some(text);
         break;
       case u'y':
+      case u'r':
+      case u'U':
         bag.year = Some(numeric);
         break;
       case u'M':
