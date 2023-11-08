@@ -105,6 +105,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API AutoStableStringChars final {
   AutoStableStringChars(const AutoStableStringChars& other) = delete;
   void operator=(const AutoStableStringChars& other) = delete;
 
+  bool baseIsInline(Handle<JSLinearString*> linearString);
   template <typename T>
   T* allocOwnChars(JSContext* cx, size_t count);
   bool copyLatin1Chars(JSContext* cx, Handle<JSLinearString*> linearString);

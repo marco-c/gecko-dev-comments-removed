@@ -11,8 +11,6 @@
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/TimeStamp.h"
 
-#include <tuple>
-
 #include "gc/GCEnum.h"
 #include "gc/GCProbes.h"
 #include "gc/Heap.h"
@@ -142,35 +140,28 @@ class Nursery {
 
   
   
-  
-  std::tuple<void*, bool> allocateBuffer(JS::Zone* zone, size_t nbytes,
-                                         arena_id_t arenaId);
-
-  
-  
-  void* allocateBuffer(JS::Zone* zone, gc::Cell* owner, size_t nbytes,
-                       arena_id_t arenaId);
+  void* allocateBuffer(JS::Zone* zone, gc::Cell* cell, size_t nbytes);
 
   
   
   
-  void* allocateBufferSameLocation(gc::Cell* owner, size_t nbytes,
-                                   arena_id_t arenaId);
+  void* allocateBufferSameLocation(gc::Cell* cell, size_t nbytes);
 
   
   
   
-  std::tuple<void*, bool> allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
-                                               arena_id_t arena);
+  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
+                             arena_id_t arena = js::MallocArena);
 
   
   
   
-  void* allocateZeroedBuffer(gc::Cell* owner, size_t nbytes, arena_id_t arena);
+  void* allocateZeroedBuffer(gc::Cell* cell, size_t nbytes,
+                             arena_id_t arena = js::MallocArena);
 
   
   void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
-                         size_t oldBytes, size_t newBytes, arena_id_t arena);
+                         size_t oldBytes, size_t newBytes);
 
   
   void freeBuffer(void* buffer, size_t nbytes);
