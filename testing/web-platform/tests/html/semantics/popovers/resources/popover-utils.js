@@ -46,22 +46,6 @@ async function sendEnter() {
 function isElementVisible(el) {
   return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
 }
-function isTopLayer(el) {
-  
-  
-  const properties = ['right','background'];
-  const testEl = document.createElement('div');
-  document.body.appendChild(testEl);
-  const computedStyle = getComputedStyle(testEl, '::backdrop');
-  const nonTopLayerValues = properties.map(p => computedStyle[p]);
-  testEl.remove();
-  for(let i=0;i<properties.length;++i) {
-    if (getComputedStyle(el,'::backdrop')[properties[i]] !== nonTopLayerValues[i]) {
-      return true;
-    }
-  }
-  return false;
-}
 async function finishAnimations(popover) {
   popover.getAnimations({subtree: true}).forEach(animation => animation.finish());
   await waitForRender();
@@ -95,19 +79,6 @@ async function mouseHover(element,hoverWaitTimeMs) {
   assertMouseStillOver(element);
 }
 
-async function blessTopLayer(visibleElement) {
-  
-  
-  
-  
-  const button = document.createElement('button');
-  button.innerHTML = "Click me to activate";
-  visibleElement.appendChild(button);
-  let wait_click = new Promise(resolve => button.addEventListener("click", resolve, {once: true}));
-  await test_driver.click(button);
-  await wait_click;
-  button.remove();
-}
 
 
 
