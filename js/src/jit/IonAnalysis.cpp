@@ -1862,6 +1862,7 @@ class TypeAnalyzer {
   bool markPhiProducers();
   bool specializeValidFloatOps();
   bool tryEmitFloatOperations();
+  bool propagateUnbox();
 
   bool shouldSpecializeOsrPhis() const;
   MIRType guessPhiType(MPhi* phi) const;
@@ -2670,11 +2671,235 @@ bool TypeAnalyzer::checkFloatCoherency() {
   return true;
 }
 
+static bool HappensBefore(const MDefinition* earlier,
+                          const MDefinition* later) {
+  MOZ_ASSERT(earlier->block() == later->block());
+
+  for (auto* ins : *earlier->block()) {
+    if (ins == earlier) {
+      return true;
+    }
+    if (ins == later) {
+      return false;
+    }
+  }
+  MOZ_CRASH("earlier and later are instructions in the block");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool TypeAnalyzer::propagateUnbox() {
+  
+  
+  for (PostorderIterator block(graph.poBegin()); block != graph.poEnd();
+       block++) {
+    if (mir->shouldCancel("Propagate Unbox")) {
+      return false;
+    }
+
+    
+    for (MInstructionIterator iter(block->begin()); iter != block->end();
+         iter++) {
+      if (!iter->isUnbox()) {
+        continue;
+      }
+
+      auto* unbox = iter->toUnbox();
+      auto* input = unbox->input();
+
+      
+      if (input->type() != MIRType::Value) {
+        continue;
+      }
+
+      
+      
+      for (auto uses = input->usesBegin(); uses != input->usesEnd();) {
+        auto* use = *uses++;
+
+        
+        if (!use->consumer()->isDefinition()) {
+          continue;
+        }
+        auto* def = use->consumer()->toDefinition();
+
+        
+        if (def->isUnbox()) {
+          continue;
+        }
+
+        
+        if (def->isPhi()) {
+          continue;
+        }
+
+        
+        
+        if (unbox->block() == def->block()) {
+          if (!HappensBefore(unbox, def)) {
+            continue;
+          }
+        } else {
+          if (!unbox->block()->dominates(def->block())) {
+            continue;
+          }
+        }
+
+        
+        
+        
+        
+        use->replaceProducer(unbox);
+
+        
+        
+        input->setImplicitlyUsedUnchecked();
+      }
+    }
+  }
+  return true;
+}
+
 bool TypeAnalyzer::analyze() {
   if (!tryEmitFloatOperations()) {
     return false;
   }
   if (!specializePhis()) {
+    return false;
+  }
+  if (!propagateUnbox()) {
     return false;
   }
   if (!insertConversions()) {
