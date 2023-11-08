@@ -3598,6 +3598,10 @@ class Document : public nsINode,
   void ReportDocumentUseCounters();
 
   
+  
+  void ReportLCP();
+
+  
   void ReportDocumentLazyLoadCounters();
 
   
