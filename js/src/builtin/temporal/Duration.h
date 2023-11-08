@@ -162,7 +162,7 @@ bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
 
 bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
                    TemporalUnit unit, TemporalRoundingMode roundingMode,
-                   JS::Handle<Wrapped<PlainDateObject*>> relativeTo,
+                   JS::Handle<Wrapped<PlainDateObject*>> plainRelativeTo,
                    Duration* result);
 
 
@@ -172,7 +172,7 @@ bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
 
 bool RoundDuration(JSContext* cx, const Duration& duration, Increment increment,
                    TemporalUnit unit, TemporalRoundingMode roundingMode,
-                   JS::Handle<ZonedDateTimeObject*> relativeTo,
+                   JS::Handle<ZonedDateTimeObject*> zonedRelativeTo,
                    Duration* result);
 
 } 

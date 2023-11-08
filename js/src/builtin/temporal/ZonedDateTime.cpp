@@ -734,12 +734,6 @@ bool js::temporal::NanosecondsToDays(
   }
 
   
-  PlainDateTime startDateTime;
-  if (!GetPlainDateTimeFor(cx, timeZone, startNs, &startDateTime)) {
-    return false;
-  }
-
-  
   
   
   
@@ -749,6 +743,12 @@ bool js::temporal::NanosecondsToDays(
   if (!IsValidEpochInstant(endNs)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_INSTANT_INVALID);
+    return false;
+  }
+
+  
+  PlainDateTime startDateTime;
+  if (!GetPlainDateTimeFor(cx, timeZone, startNs, &startDateTime)) {
     return false;
   }
 
