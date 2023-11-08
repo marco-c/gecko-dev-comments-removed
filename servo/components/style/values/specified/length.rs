@@ -21,7 +21,7 @@ use crate::values::specified::calc::{self, CalcNode};
 use crate::values::specified::NonNegativeNumber;
 use crate::values::CSSFloat;
 use crate::{Zero, ZeroNoPercent};
-use app_units::Au;
+use app_units::AU_PER_PX;
 use cssparser::{Parser, Token};
 use std::cmp;
 use std::fmt::{self, Write};
@@ -670,13 +670,11 @@ impl ViewportPercentageLength {
         
         
         
-        let trunc_scaled = ((length.0 as f64) * factor as f64 / 100.).trunc();
-        Au::from_f64_au(if trunc_scaled.is_nan() {
-            0.0f64
-        } else {
-            trunc_scaled
-        })
-        .into()
+        
+        
+        let trunc_scaled =
+            ((length.0 as f64 * factor as f64 / 100.).trunc() / AU_PER_PX as f64) as f32;
+        CSSPixelLength::new(crate::values::normalize(trunc_scaled))
     }
 }
 
