@@ -121,7 +121,7 @@ public class GeckoSession {
 
     private final int mRank;
 
-    private State(final int rank) {
+    State(final int rank) {
       mRank = rank;
     }
 
@@ -3442,7 +3442,7 @@ public class GeckoSession {
 
   public interface ProgressDelegate {
     
-    public class SecurityInformation {
+    class SecurityInformation {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({SECURITY_MODE_UNKNOWN, SECURITY_MODE_IDENTIFIED, SECURITY_MODE_VERIFIED})
       public @interface SecurityMode {}
@@ -4161,7 +4161,7 @@ public class GeckoSession {
     default void onProductUrl(@NonNull final GeckoSession session) {}
 
     
-    public static class ContextElement {
+    class ContextElement {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({TYPE_NONE, TYPE_IMAGE, TYPE_VIDEO, TYPE_AUDIO})
       public @interface Type {}
@@ -4431,48 +4431,48 @@ public class GeckoSession {
 
   public interface SelectionActionDelegate {
     
-    final int FLAG_IS_COLLAPSED = 1 << 0;
+    int FLAG_IS_COLLAPSED = 1 << 0;
 
     
 
 
-    final int FLAG_IS_EDITABLE = 1 << 1;
+    int FLAG_IS_EDITABLE = 1 << 1;
 
     
-    final int FLAG_IS_PASSWORD = 1 << 2;
+    int FLAG_IS_PASSWORD = 1 << 2;
 
     
-    final String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
+    String ACTION_HIDE = "org.mozilla.geckoview.HIDE";
 
     
-    final String ACTION_CUT = "org.mozilla.geckoview.CUT";
+    String ACTION_CUT = "org.mozilla.geckoview.CUT";
 
     
-    final String ACTION_COPY = "org.mozilla.geckoview.COPY";
+    String ACTION_COPY = "org.mozilla.geckoview.COPY";
 
     
-    final String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
+    String ACTION_DELETE = "org.mozilla.geckoview.DELETE";
 
     
-    final String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
+    String ACTION_PASTE = "org.mozilla.geckoview.PASTE";
 
     
 
 
 
-    final String ACTION_PASTE_AS_PLAIN_TEXT = "org.mozilla.geckoview.PASTE_AS_PLAIN_TEXT";
+    String ACTION_PASTE_AS_PLAIN_TEXT = "org.mozilla.geckoview.PASTE_AS_PLAIN_TEXT";
 
     
-    final String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
+    String ACTION_SELECT_ALL = "org.mozilla.geckoview.SELECT_ALL";
 
     
-    final String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
+    String ACTION_UNSELECT = "org.mozilla.geckoview.UNSELECT";
 
     
-    final String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
+    String ACTION_COLLAPSE_TO_START = "org.mozilla.geckoview.COLLAPSE_TO_START";
 
     
-    final String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
+    String ACTION_COLLAPSE_TO_END = "org.mozilla.geckoview.COLLAPSE_TO_END";
 
     
     class Selection {
@@ -4682,28 +4682,28 @@ public class GeckoSession {
         @NonNull final GeckoSession session, @NonNull final Selection selection) {}
 
     
-    final int HIDE_REASON_NO_SELECTION = 0;
+    int HIDE_REASON_NO_SELECTION = 0;
 
     
 
 
 
-    final int HIDE_REASON_INVISIBLE_SELECTION = 1;
-
-    
-
-
-
-
-    final int HIDE_REASON_ACTIVE_SELECTION = 2;
+    int HIDE_REASON_INVISIBLE_SELECTION = 1;
 
     
 
 
 
 
+    int HIDE_REASON_ACTIVE_SELECTION = 2;
 
-    final int HIDE_REASON_ACTIVE_SCROLL = 3;
+    
+
+
+
+
+
+    int HIDE_REASON_ACTIVE_SCROLL = 3;
 
     
 
@@ -4724,7 +4724,7 @@ public class GeckoSession {
     int PERMISSION_CLIPBOARD_READ = 1;
 
     
-    public class ClipboardPermission {
+    class ClipboardPermission {
       
       public final @NonNull String uri;
 
@@ -4848,16 +4848,16 @@ public class GeckoSession {
     @UiThread
     default void onCanGoForward(@NonNull final GeckoSession session, final boolean canGoForward) {}
 
-    public static final int TARGET_WINDOW_NONE = 0;
-    public static final int TARGET_WINDOW_CURRENT = 1;
-    public static final int TARGET_WINDOW_NEW = 2;
+    int TARGET_WINDOW_NONE = 0;
+    int TARGET_WINDOW_CURRENT = 1;
+    int TARGET_WINDOW_NEW = 2;
 
     
     
-    static final int LOAD_REQUEST_IS_REDIRECT = 0x800000;
+    int LOAD_REQUEST_IS_REDIRECT = 0x800000;
 
     
-    public static class LoadRequest {
+    class LoadRequest {
        LoadRequest(
           @NonNull final String uri,
           @Nullable final String triggerUri,
@@ -5033,7 +5033,7 @@ public class GeckoSession {
 
   public interface PromptDelegate {
     
-    public class PromptResponse {
+    class PromptResponse {
       private final BasePrompt mPrompt;
 
        PromptResponse(@NonNull final BasePrompt prompt) {
@@ -5077,7 +5077,7 @@ public class GeckoSession {
     }
 
     
-    public class BasePrompt {
+    class BasePrompt {
       private boolean mIsCompleted;
       private boolean mIsConfirmed;
       private GeckoBundle mResult;
@@ -5241,7 +5241,7 @@ public class GeckoSession {
 
 
 
-    public class AlertPrompt extends BasePrompt {
+    class AlertPrompt extends BasePrompt {
       
       public final @Nullable String message;
 
@@ -5256,7 +5256,7 @@ public class GeckoSession {
     }
 
     
-    public final class IdentityCredential {
+    final class IdentityCredential {
       
 
 
@@ -5574,7 +5574,7 @@ public class GeckoSession {
 
 
 
-    public class ButtonPrompt extends BasePrompt {
+    class ButtonPrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.POSITIVE, Type.NEGATIVE})
       public @interface ButtonType {}
@@ -5619,7 +5619,7 @@ public class GeckoSession {
 
 
 
-    public class TextPrompt extends BasePrompt {
+    class TextPrompt extends BasePrompt {
       
       public final @Nullable String message;
 
@@ -5655,7 +5655,7 @@ public class GeckoSession {
 
 
 
-    public class AuthPrompt extends BasePrompt {
+    class AuthPrompt extends BasePrompt {
       public static class AuthOptions {
         @Retention(RetentionPolicy.SOURCE)
         @IntDef(
@@ -5791,7 +5791,7 @@ public class GeckoSession {
 
 
 
-    public class ChoicePrompt extends BasePrompt {
+    class ChoicePrompt extends BasePrompt {
       public static class Choice {
         
 
@@ -5961,7 +5961,7 @@ public class GeckoSession {
 
 
 
-    public class ColorPrompt extends BasePrompt {
+    class ColorPrompt extends BasePrompt {
       
       public final @Nullable String defaultValue;
 
@@ -5997,7 +5997,7 @@ public class GeckoSession {
 
 
 
-    public class DateTimePrompt extends BasePrompt {
+    class DateTimePrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.DATE, Type.MONTH, Type.WEEK, Type.TIME, Type.DATETIME_LOCAL})
       public @interface DatetimeType {}
@@ -6082,7 +6082,7 @@ public class GeckoSession {
 
 
 
-    public class FilePrompt extends BasePrompt {
+    class FilePrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Type.SINGLE, Type.MULTIPLE})
       public @interface FileType {}
@@ -6226,7 +6226,7 @@ public class GeckoSession {
     }
 
     
-    public class PopupPrompt extends BasePrompt {
+    class PopupPrompt extends BasePrompt {
       
       public final @Nullable String targetUri;
 
@@ -6254,7 +6254,7 @@ public class GeckoSession {
     }
 
     
-    public class SharePrompt extends BasePrompt {
+    class SharePrompt extends BasePrompt {
       @Retention(RetentionPolicy.SOURCE)
       @IntDef({Result.SUCCESS, Result.FAILURE, Result.ABORT})
       public @interface ShareResult {}
@@ -6317,7 +6317,7 @@ public class GeckoSession {
     }
 
     
-    public class AutocompleteRequest<T extends Autocomplete.Option<?>> extends BasePrompt {
+    class AutocompleteRequest<T extends Autocomplete.Option<?>> extends BasePrompt {
       
 
 
@@ -7883,7 +7883,7 @@ public class GeckoSession {
   
   public interface HistoryDelegate {
     
-    public interface HistoryItem {
+    interface HistoryItem {
       
 
 
@@ -7910,7 +7910,7 @@ public class GeckoSession {
 
 
 
-    public interface HistoryList extends List<HistoryItem> {
+    interface HistoryList extends List<HistoryItem> {
       
 
 
@@ -7928,22 +7928,22 @@ public class GeckoSession {
     
 
     
-    final int VISIT_TOP_LEVEL = 1 << 0;
+    int VISIT_TOP_LEVEL = 1 << 0;
 
     
-    final int VISIT_REDIRECT_TEMPORARY = 1 << 1;
+    int VISIT_REDIRECT_TEMPORARY = 1 << 1;
 
     
-    final int VISIT_REDIRECT_PERMANENT = 1 << 2;
+    int VISIT_REDIRECT_PERMANENT = 1 << 2;
 
     
-    final int VISIT_REDIRECT_SOURCE = 1 << 3;
+    int VISIT_REDIRECT_SOURCE = 1 << 3;
 
     
-    final int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
+    int VISIT_REDIRECT_SOURCE_PERMANENT = 1 << 4;
 
     
-    final int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
+    int VISIT_UNRECOVERABLE_ERROR = 1 << 5;
 
     
 

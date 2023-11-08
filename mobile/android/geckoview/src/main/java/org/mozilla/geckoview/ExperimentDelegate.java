@@ -123,7 +123,7 @@ public interface ExperimentDelegate {
 
 
 
-  public class ExperimentException extends Exception {
+  class ExperimentException extends Exception {
 
     
 
