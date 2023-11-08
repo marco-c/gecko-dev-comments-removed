@@ -97,6 +97,9 @@ class StaticStrings {
   }
 
   
+  inline JSLinearString* getUnitString(JSContext* cx, char16_t c);
+
+  
   inline JSLinearString* getUnitStringForElement(JSContext* cx, JSString* str,
                                                  size_t index);
 
