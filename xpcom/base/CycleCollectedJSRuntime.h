@@ -302,7 +302,11 @@ class CycleCollectedJSRuntime {
 
  public:
   enum DeferredFinalizeType {
+    
+    FinalizeLater,
+    
     FinalizeIncrementally,
+    
     FinalizeNow,
   };
 

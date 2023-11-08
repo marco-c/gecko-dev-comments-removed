@@ -1723,13 +1723,19 @@ IncrementalFinalizeRunnable::Run() {
 void CycleCollectedJSRuntime::FinalizeDeferredThings(
     DeferredFinalizeType aType) {
   
-
-
-
-
-
-
+  
   if (mFinalizeRunnable) {
+    if (aType == FinalizeLater) {
+      
+      
+      
+      return;
+    }
+    MOZ_ASSERT(aType == FinalizeIncrementally || aType == FinalizeNow);
+    
+    
+    
+    
     mFinalizeRunnable->ReleaseNow(false);
     if (mFinalizeRunnable) {
       
@@ -1738,6 +1744,7 @@ void CycleCollectedJSRuntime::FinalizeDeferredThings(
     }
   }
 
+  
   if (mDeferredFinalizerTable.Count() == 0) {
     return;
   }
@@ -1748,12 +1755,13 @@ void CycleCollectedJSRuntime::FinalizeDeferredThings(
   
   MOZ_ASSERT(mDeferredFinalizerTable.Count() == 0);
 
-  if (aType == FinalizeIncrementally) {
-    NS_DispatchToCurrentThreadQueue(do_AddRef(mFinalizeRunnable), 2500,
-                                    EventQueuePriority::Idle);
-  } else {
+  if (aType == FinalizeNow) {
     mFinalizeRunnable->ReleaseNow(false);
     MOZ_ASSERT(!mFinalizeRunnable);
+  } else {
+    MOZ_ASSERT(aType == FinalizeIncrementally || aType == FinalizeLater);
+    NS_DispatchToCurrentThreadQueue(do_AddRef(mFinalizeRunnable), 2500,
+                                    EventQueuePriority::Idle);
   }
 }
 
@@ -1808,28 +1816,34 @@ void CycleCollectedJSRuntime::OnGC(JSContext* aContext, JSGCStatus aStatus,
                                   OOMState::Recovered);
       }
 
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      bool finalizeIncrementally = JS::WasIncrementalGC(mJSRuntime) ||
-                                   JS_IsExceptionPending(aContext) ||
-                                   (JS::InternalGCReason(aReason) &&
-                                    aReason != JS::GCReason::DESTROY_RUNTIME);
-
-      FinalizeDeferredThings(finalizeIncrementally ? FinalizeIncrementally
-                                                   : FinalizeNow);
+      DeferredFinalizeType finalizeType;
+      if (JS_IsExceptionPending(aContext)) {
+        
+        
+        
+        finalizeType = FinalizeLater;
+      } else if (JS::InternalGCReason(aReason)) {
+        if (aReason == JS::GCReason::DESTROY_RUNTIME) {
+          
+          finalizeType = FinalizeNow;
+        } else {
+          
+          
+          
+          
+          finalizeType = FinalizeLater;
+        }
+      } else if (JS::WasIncrementalGC(mJSRuntime)) {
+        
+        
+        finalizeType = FinalizeIncrementally;
+      } else {
+        
+        
+        
+        finalizeType = FinalizeNow;
+      }
+      FinalizeDeferredThings(finalizeType);
 
       break;
     }
