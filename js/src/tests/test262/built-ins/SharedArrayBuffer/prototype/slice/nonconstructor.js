@@ -16,7 +16,8 @@
 
 
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(SharedArrayBuffer.prototype.slice, "prototype"), false);
+
+assert(!isConstructor(SharedArrayBuffer.prototype.slice), "SharedArrayBuffer.prototype.slice is not a constructor");
 
 var arrayBuffer = new SharedArrayBuffer(8);
 assert.throws(TypeError, function() {

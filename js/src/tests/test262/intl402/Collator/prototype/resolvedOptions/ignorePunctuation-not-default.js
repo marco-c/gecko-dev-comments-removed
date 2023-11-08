@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+['en', 'th', 'ja'].forEach((locale) => {
+  [true, false].forEach((ignorePunctuation) => {
+    assert.sameValue(
+      (new Intl.Collator(locale, {ignorePunctuation}))
+          .resolvedOptions().ignorePunctuation,
+      ignorePunctuation);
+  });
+});
+
+reportCompare(0, 0);

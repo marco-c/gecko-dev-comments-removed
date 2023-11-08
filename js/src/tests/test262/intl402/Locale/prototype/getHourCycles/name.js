@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Intl.Locale.prototype.getHourCycles, "name", {
+  value: "getHourCycles",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

@@ -9,47 +9,34 @@
 
 
 
-        var desc = Object.getOwnPropertyDescriptor(Object.prototype, "constructor");
 
-            var getFunc = function () {
-                return 100;
-            };
+var desc = Object.getOwnPropertyDescriptor(Object.prototype, "constructor");
 
-            var data = "data";
-            var setFunc = function (value) {
-                data = value;
-            };
+var getFunc = function () {
+    return 100;
+};
 
-            Object.defineProperty(Object.prototype, "constructor", {
-                get: getFunc,
-                set: setFunc,
-                configurable: true
-            });
+var data = "data";
+var setFunc = function (value) {
+    data = value;
+};
 
-            var fun = function () {};
+Object.defineProperty(Object.prototype, "constructor", {
+    get: getFunc,
+    set: setFunc,
+    configurable: true
+});
 
-            var verifyValue = false;
-            verifyValue = typeof fun.prototype.constructor === "function";
+var fun = function () {};
 
-            var verifyEnumerable = false;
-            for (var p in fun.prototype) {
-                if (p === "constructor" && fun.prototype.hasOwnProperty("constructor")) {
-                    verifyEnumerable = true;
-                }
-            }
+assert.sameValue(typeof fun.prototype.constructor, "function");
 
-            var verifyWritable = false;
-            fun.prototype.constructor = 12;
-            verifyWritable = (fun.prototype.constructor === 12);
+verifyProperty(fun.prototype, "constructor", {
+    writable: true,
+    enumerable: false,
+    configurable: true,
+});
 
-            var verifyConfigurable = false;
-            delete fun.prototype.constructor;
-            verifyConfigurable = fun.hasOwnProperty("constructor");
-
-assert(verifyValue, 'verifyValue !== true');
-assert(verifyWritable, 'verifyWritable !== true');
-assert.sameValue(verifyEnumerable, false, 'verifyEnumerable');
-assert.sameValue(verifyConfigurable, false, 'verifyConfigurable');
 assert.sameValue(data, "data", 'data');
 
 reportCompare(0, 0);

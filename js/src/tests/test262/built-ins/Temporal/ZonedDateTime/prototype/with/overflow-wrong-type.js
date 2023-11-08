@@ -38,8 +38,6 @@ assert.throws(RangeError, () => datetime.with({ second: 41 }, { overflow: {} }),
 const expected = [
   "get overflow.toString",
   "call overflow.toString",
-  "get overflow.toString",
-  "call overflow.toString",
 ];
 const actual = [];
 const observer = TemporalHelpers.toPrimitiveObserver(actual, "constrain", "overflow");

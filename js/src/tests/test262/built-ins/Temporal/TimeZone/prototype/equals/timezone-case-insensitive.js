@@ -1,0 +1,16 @@
+
+
+
+
+
+
+
+
+
+
+const timeZone = 'UtC';
+const result = Temporal.TimeZone.from(timeZone);
+assert.sameValue(result.equals(timeZone), true);
+assert.sameValue(result.equals("+00:00"), false);
+
+reportCompare(0, 0);

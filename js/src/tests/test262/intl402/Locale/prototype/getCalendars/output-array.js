@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').getCalendars()));
+assert(new Intl.Locale('en').getCalendars().length > 0, 'array has at least one element');
+
+reportCompare(0, 0);

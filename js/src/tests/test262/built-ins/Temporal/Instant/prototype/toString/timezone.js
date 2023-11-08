@@ -9,13 +9,12 @@
 
 
 
+
 const actual = [];
 const expected = [
   "has timeZone.getOffsetNanosecondsFor",
   "has timeZone.getPossibleInstantsFor",
   "has timeZone.id",
-  "get timeZone.getOffsetNanosecondsFor",
-  "call timeZone.getOffsetNanosecondsFor",
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
 ];

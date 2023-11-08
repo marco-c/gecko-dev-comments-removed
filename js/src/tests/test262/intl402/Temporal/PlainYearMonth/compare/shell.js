@@ -1736,7 +1736,7 @@ var TemporalHelpers = {
       }
 
       getPossibleInstantsFor(plainDateTime) {
-        this.getPossibleInstantsForCalledWith.push(plainDateTime.toString());
+        this.getPossibleInstantsForCalledWith.push(plainDateTime.toString({ calendarName: "never" }));
         const [instant] = super.getPossibleInstantsFor(plainDateTime);
         if (this._shiftNanoseconds > 0) {
           if (this._isBeforeShift(instant)) return [instant];
@@ -1947,6 +1947,30 @@ var TemporalHelpers = {
         return Reflect.has(target, key);
       },
     });
+  },
+
+  
+
+
+
+
+  timeZoneThrowEverything() {
+    class TimeZoneThrowEverything extends Temporal.TimeZone {
+      constructor() {
+        super("UTC");
+      }
+      getOffsetNanosecondsFor() {
+        TemporalHelpers.assertUnreachable("getOffsetNanosecondsFor should not be called");
+      }
+      getPossibleInstantsFor() {
+        TemporalHelpers.assertUnreachable("getPossibleInstantsFor should not be called");
+      }
+      toString() {
+        TemporalHelpers.assertUnreachable("toString should not be called");
+      }
+    }
+
+    return new TimeZoneThrowEverything();
   },
 
   

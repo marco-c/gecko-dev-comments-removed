@@ -39,7 +39,7 @@ const fields = {
       
       
       i++;
-      yield "hour";
+      yield "day";
       i++;
   }
 }

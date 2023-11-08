@@ -1,0 +1,25 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const output = new Intl.Locale('en-US').getTimeZones();
+assert.compareArray(output, [...output].sort());
+
+reportCompare(0, 0);

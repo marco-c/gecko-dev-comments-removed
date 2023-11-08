@@ -159,8 +159,6 @@ const expectedOpsForCalendarDifference = [
   "get this.calendar.dateUntil",
   "call this.calendar.dateUntil",
   
-  "get this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
   "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
   "get this.timeZone.getPossibleInstantsFor",
@@ -174,8 +172,6 @@ const expectedOpsForCalendarDifference = [
   "get this.calendar.dateUntil",
   "call this.calendar.dateUntil",
   
-  "get this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
   "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
   "get this.timeZone.getPossibleInstantsFor",
@@ -187,6 +183,9 @@ const expectedOpsForCalendarDifference = [
   "call this.calendar.dateAdd",
   "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
+];
+
+const expectedOpsForCalendarRounding = [
   
   "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
@@ -215,7 +214,12 @@ const expectedOpsForCalendarDifference = [
 ];
 
 
-const expectedOpsForYearRounding = expected.concat(expectedOpsForCalendarDifference, [
+instance.until(otherDateTimePropertyBag, createOptionsObserver({ largestUnit: "years", smallestUnit: "nanoseconds", roundingIncrement: 1 }));
+assert.compareArray(actual, expected.concat(expectedOpsForCalendarDifference), "order of operations with largestUnit years and no rounding");
+actual.splice(0); 
+
+
+const expectedOpsForYearRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
   "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
@@ -230,7 +234,7 @@ assert.compareArray(actual, expectedOpsForYearRounding, "order of operations wit
 actual.splice(0); 
 
 
-const expectedOpsForMonthRounding = expected.concat(expectedOpsForCalendarDifference, [
+const expectedOpsForMonthRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
   "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
@@ -241,7 +245,7 @@ assert.compareArray(actual, expectedOpsForMonthRounding, "order of operations wi
 actual.splice(0); 
 
 
-const expectedOpsForWeekRounding = expected.concat(expectedOpsForCalendarDifference, [
+const expectedOpsForWeekRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
   "get this.calendar.dateAdd",   
   "call this.calendar.dateAdd",  
 ]);  

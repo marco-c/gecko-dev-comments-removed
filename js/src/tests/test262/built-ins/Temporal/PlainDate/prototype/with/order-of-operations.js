@@ -14,6 +14,12 @@ const expected = [
   "get fields.calendar",
   "get fields.timeZone",
   
+  "ownKeys options",
+  "getOwnPropertyDescriptor options.overflow",
+  "get options.overflow",
+  "getOwnPropertyDescriptor options.extra",
+  "get options.extra",
+  
   "get this.calendar.fields",
   "call this.calendar.fields",
   
@@ -45,7 +51,6 @@ const expected = [
   "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
   
-  "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
 ];
@@ -65,6 +70,7 @@ const fields = TemporalHelpers.propertyBagObserver(actual, {
 
 const options = TemporalHelpers.propertyBagObserver(actual, {
   overflow: "constrain",
+  extra: "property",
 }, "options");
 
 instance.with(fields, options);

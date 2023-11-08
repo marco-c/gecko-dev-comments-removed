@@ -10,8 +10,6 @@
 
 const instance = new Temporal.Duration(1, 0, 0, 0, 24);
 
-const relativeTo = 20191101;
-
 const numbers = [
   1,
   20191101,
@@ -23,7 +21,7 @@ for (const relativeTo of numbers) {
   assert.throws(
     TypeError,
     () => instance.round({ largestUnit: "years", relativeTo }),
-    `Number ${relativeTo} does not convert to a valid ISO string for relativeTo`
+    `A number (${relativeTo}) is not a valid ISO string for relativeTo`
   );
 }
 

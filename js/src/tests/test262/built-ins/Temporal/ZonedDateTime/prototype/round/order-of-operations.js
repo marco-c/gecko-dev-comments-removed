@@ -26,15 +26,10 @@ const expected = [
   "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
   
-  "get this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
   "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
   "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
-  
-  "get this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
   
   "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
@@ -46,7 +41,7 @@ const actual = [];
 const options = TemporalHelpers.propertyBagObserver(actual, {
   smallestUnit: "nanoseconds",
   roundingMode: "halfExpand",
-  roundingIncrement: 1,
+  roundingIncrement: 2,
 }, "options");
 
 const instance = new Temporal.ZonedDateTime(

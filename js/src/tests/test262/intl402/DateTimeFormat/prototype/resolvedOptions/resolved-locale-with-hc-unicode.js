@@ -29,7 +29,6 @@
 
 
 
-
 var defaultLocale = new Intl.DateTimeFormat().resolvedOptions().locale;
 var defaultLocaleWithHourCycle = defaultLocale + "-u-hc-h11";
 

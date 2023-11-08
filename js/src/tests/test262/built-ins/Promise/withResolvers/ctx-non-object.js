@@ -1,0 +1,35 @@
+
+
+
+
+
+
+
+
+
+
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call(undefined);
+});
+
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call(null);
+});
+
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call(86);
+});
+  
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call('string');
+});
+
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call(true);
+});
+
+assert.throws(TypeError, function() {
+  Promise.withResolvers.call(Symbol());
+});
+
+reportCompare(0, 0);

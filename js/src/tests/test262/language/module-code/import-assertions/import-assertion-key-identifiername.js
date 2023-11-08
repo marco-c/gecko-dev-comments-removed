@@ -24,11 +24,15 @@
 
 
 
+
+
+
+$DONOTEVALUATE();
+
+import "./ensure-linking-error_FIXTURE.js";
+
 import x from './import-assertion-1_FIXTURE.js' assert {if:''};
 import './import-assertion-2_FIXTURE.js' assert {if:''};
 export * from './import-assertion-3_FIXTURE.js' assert {if:''};
 
 assert.sameValue(x, 262.1);
-assert.sameValue(globalThis.test262, 262.2);
-
-reportCompare(0, 0);

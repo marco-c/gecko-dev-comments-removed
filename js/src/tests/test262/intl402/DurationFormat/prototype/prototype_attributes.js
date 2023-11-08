@@ -11,8 +11,11 @@
 
 
 
-verifyNotEnumerable(Intl.DurationFormat, "prototype");
-verifyNotWritable(Intl.DurationFormat, "prototype");
-verifyNotConfigurable(Intl.DurationFormat, "prototype");
+verifyProperty(Intl.DurationFormat, "prototype", {
+  value: Intl.DurationFormat.prototype,
+  writable: false,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

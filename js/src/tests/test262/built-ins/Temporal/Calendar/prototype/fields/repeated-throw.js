@@ -40,8 +40,7 @@ assert.throws(
 assert.sameValue(i, 2, "Should stop at 2");
 
 
-[ "nanosecond", "microsecond", "millisecond", "second",
-  "minute", "hour", "day", "monthCode", "month", "year" ].forEach((f) => {
+[ "day", "monthCode", "month", "year" ].forEach((f) => {
   i = 0;
   const fields2 = {
     *[Symbol.iterator]() {

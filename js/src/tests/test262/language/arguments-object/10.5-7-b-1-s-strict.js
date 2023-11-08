@@ -8,9 +8,8 @@
 
 
 
-
 assert.throws(SyntaxError, function() {
-            eval("(function _10_5_7_b_1_fun() { arguments = 10;} ());");
+    eval("(function _10_5_7_b_1_fun() { arguments = 10;} ());");
 });
 
 reportCompare(0, 0);

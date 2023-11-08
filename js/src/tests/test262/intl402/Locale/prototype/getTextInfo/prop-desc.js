@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.Locale.prototype.getTextInfo,
+  "function",
+  "typeof Intl.Locale.prototype.getTextInfo is function"
+);
+
+verifyProperty(Intl.Locale.prototype, "getTextInfo", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

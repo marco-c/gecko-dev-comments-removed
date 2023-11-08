@@ -27,12 +27,6 @@
 let cal = new Temporal.Calendar("iso8601")
 const fields = {
   *[Symbol.iterator]() {
-     yield "nanosecond";
-     yield "microsecond";
-     yield "millisecond";
-     yield "second";
-     yield "minute";
-     yield "hour";
      yield "day";
      yield "monthCode";
      yield "month";

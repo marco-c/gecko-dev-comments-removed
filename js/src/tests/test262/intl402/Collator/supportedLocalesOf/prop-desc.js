@@ -24,8 +24,10 @@
 
 
 
-verifyNotEnumerable(Intl.Collator, "supportedLocalesOf");
-verifyWritable(Intl.Collator, "supportedLocalesOf");
-verifyConfigurable(Intl.Collator, "supportedLocalesOf");
+verifyProperty(Intl.Collator, "supportedLocalesOf", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

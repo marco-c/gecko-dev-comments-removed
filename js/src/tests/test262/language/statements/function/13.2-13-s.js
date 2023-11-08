@@ -8,9 +8,10 @@
 
 
 
-        var foo = new Function("'use strict';");
+var foo = new Function("'use strict';");
+
 assert.throws(TypeError, function() {
-            var temp = foo.arguments;
+    var temp = foo.arguments;
 });
 
 reportCompare(0, 0);

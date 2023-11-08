@@ -1,4 +1,4 @@
 
 
 
-globalThis.test262 = 262.2;
+export default 262.2;

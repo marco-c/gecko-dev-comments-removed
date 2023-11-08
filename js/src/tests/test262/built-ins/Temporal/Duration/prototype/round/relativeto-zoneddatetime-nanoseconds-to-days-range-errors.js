@@ -44,7 +44,6 @@ let zdt = new Temporal.ZonedDateTime(
   timeZoneSubstituteValues(
     [[epochInstant]], 
     [
-      0, 
       dayNs - 1, 
       -dayNs + 1, 
     ]
@@ -65,7 +64,6 @@ zdt = new Temporal.ZonedDateTime(
   timeZoneSubstituteValues(
     [[epochInstant]], 
     [
-      0, 
       -dayNs + 1, 
       dayNs - 1, 
     ]
@@ -89,7 +87,6 @@ zdt = new Temporal.ZonedDateTime(
       [new Temporal.Instant(-4n)], 
     ],
     [
-      0, 
       dayNs - 1, 
       -dayNs + 1, 
     ]

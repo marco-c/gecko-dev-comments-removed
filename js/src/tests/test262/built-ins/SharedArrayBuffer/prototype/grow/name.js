@@ -23,7 +23,7 @@
 verifyProperty(SharedArrayBuffer.prototype.grow, 'name', {
   value: 'grow',
   enumerable: false,
-  wrtiable: false,
+  writable: false,
   configurable: true
 });
 

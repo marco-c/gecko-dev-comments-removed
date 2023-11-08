@@ -1,0 +1,23 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+verifyProperty(Intl.Locale.prototype.getNumberingSystems, "name", {
+  value: "getNumberingSystems",
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

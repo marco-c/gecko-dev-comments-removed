@@ -15,10 +15,8 @@
 
 
 
-assert.sameValue(
-  Object.prototype.hasOwnProperty.call(ArrayBuffer.prototype.transferToFixedLength, 'prototype'),
-  false
-);
+
+assert(!isConstructor(ArrayBuffer.prototype.transferToFixedLength), "ArrayBuffer.prototype.transferToFixedLength is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);
 assert.throws(TypeError, function() {

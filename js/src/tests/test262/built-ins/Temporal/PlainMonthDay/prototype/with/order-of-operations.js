@@ -14,6 +14,12 @@ const expected = [
   "get fields.calendar",
   "get fields.timeZone",
   
+  "ownKeys options",
+  "getOwnPropertyDescriptor options.overflow",
+  "get options.overflow",
+  "getOwnPropertyDescriptor options.extra",
+  "get options.extra",
+  
   "get this.calendar.fields",
   "call this.calendar.fields",
   
@@ -41,7 +47,6 @@ const expected = [
   "get this.calendar.monthDayFromFields",
   "call this.calendar.monthDayFromFields",
   
-  "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
 ];
@@ -59,7 +64,10 @@ const fields = TemporalHelpers.propertyBagObserver(actual, {
   day: 1.7,
 }, "fields");
 
-const options = TemporalHelpers.propertyBagObserver(actual, { overflow: "constrain" }, "options");
+const options = TemporalHelpers.propertyBagObserver(actual, {
+  overflow: "constrain",
+  extra: "property",
+}, "options");
 
 instance.with(fields, options);
 assert.compareArray(actual, expected, "order of operations");

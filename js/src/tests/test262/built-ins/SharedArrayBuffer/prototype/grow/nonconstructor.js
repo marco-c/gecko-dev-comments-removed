@@ -15,10 +15,8 @@
 
 
 
-assert.sameValue(
-  Object.prototype.hasOwnProperty.call(SharedArrayBuffer.prototype.grow, 'prototype'),
-  false
-);
+
+assert(!isConstructor(SharedArrayBuffer.prototype.grow), "SharedArrayBuffer.prototype.grow is not a constructor");
 
 var arrayBuffer = new SharedArrayBuffer(8);
 assert.throws(TypeError, function() {

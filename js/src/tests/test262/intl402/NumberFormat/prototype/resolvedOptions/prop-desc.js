@@ -24,8 +24,10 @@
 
 
 
-verifyNotEnumerable(Intl.NumberFormat.prototype, "resolvedOptions");
-verifyWritable(Intl.NumberFormat.prototype, "resolvedOptions");
-verifyConfigurable(Intl.NumberFormat.prototype, "resolvedOptions");
+verifyProperty(Intl.NumberFormat.prototype, "resolvedOptions", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

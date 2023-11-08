@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert(Array.isArray(new Intl.Locale('en').getNumberingSystems()));
+assert(new Intl.Locale('en').getNumberingSystems().length > 0, 'array has at least one element');
+
+reportCompare(0, 0);

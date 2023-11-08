@@ -11,8 +11,10 @@
 
 var g = function*() {};
 
-verifyNotEnumerable(g, 'prototype');
-verifyWritable(g, 'prototype');
-verifyNotConfigurable(g, 'prototype');
+verifyProperty(g, "prototype", {
+  writable: true,
+  enumerable: false,
+  configurable: false,
+});
 
 reportCompare(0, 0);

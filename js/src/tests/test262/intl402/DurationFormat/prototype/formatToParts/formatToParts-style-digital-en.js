@@ -9,6 +9,7 @@
 
 
 
+
 function* zip(a, b) {
   for (let i = 0; i < a.length; ++i) {
     yield [i, a[i], b[i]];
@@ -39,13 +40,8 @@ const duration = {
 };
 
 const style = "digital";
-const expected = [
-    { type: "integer", value: "7", unit: "hour" },
-    { type: "literal", value: ":"},
-    { type: "integer", value: "08", unit: "minute" },
-    { type: "literal", value: ":"},
-    { type: "integer", value: "09", unit: "second" },
-  ];
+
+const expected = partitionDurationFormatPattern(duration, style);
 
 let df = new Intl.DurationFormat('en', { style });
 compare(df.formatToParts(duration), expected, `Using style : ${style}`);

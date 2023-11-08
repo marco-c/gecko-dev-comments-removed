@@ -15,10 +15,8 @@
 
 
 
-assert.sameValue(
-  Object.prototype.hasOwnProperty.call(ArrayBuffer.prototype.resize, 'prototype'),
-  false
-);
+
+assert(!isConstructor(ArrayBuffer.prototype.resize), "ArrayBuffer.prototype.resize is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);
 assert.throws(TypeError, function() {

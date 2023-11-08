@@ -9,6 +9,7 @@
 
 
 
+
 const duration = {
   years: 1,
   months: 2,
@@ -22,9 +23,9 @@ const duration = {
   nanoseconds: 9,
 };
 
+const expected = formatDurationFormatPattern(duration);
 
 const df = new Intl.DurationFormat("en");
-const expected = "1 yr, 2 mths, 3 wks, 3 days, 4 hr, 5 min, 6 sec, 7 ms, 8 μs, 9 ns";
 assert.sameValue(df.format(duration), expected, `Assert DurationFormat format output using default style option`);
 
 reportCompare(0, 0);

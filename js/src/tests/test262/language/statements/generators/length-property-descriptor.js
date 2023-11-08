@@ -11,9 +11,11 @@
 
 function* g() {}
 
-assert.sameValue(g.length, 0);
-verifyNotEnumerable(g, 'length');
-verifyNotWritable(g, 'length');
-verifyConfigurable(g, 'length');
+verifyProperty(g, "length", {
+  value: 0,
+  writable: false,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

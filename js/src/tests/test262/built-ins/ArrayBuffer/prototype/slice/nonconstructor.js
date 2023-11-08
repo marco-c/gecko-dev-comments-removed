@@ -14,7 +14,9 @@
 
 
 
-assert.sameValue(Object.prototype.hasOwnProperty.call(ArrayBuffer.prototype.slice, "prototype"), false);
+
+
+assert(!isConstructor(ArrayBuffer.prototype.slice), "ArrayBuffer.prototype.slice is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);
 assert.throws(TypeError, function() {

@@ -26,8 +26,10 @@
 
 
 
-verifyNotEnumerable(Intl.DurationFormat.prototype, "constructor");
-verifyWritable(Intl.DurationFormat.prototype, "constructor");
-verifyConfigurable(Intl.DurationFormat.prototype, "constructor");
+verifyProperty(Intl.DurationFormat.prototype, "constructor", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
 
 reportCompare(0, 0);

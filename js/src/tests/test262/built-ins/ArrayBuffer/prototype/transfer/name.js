@@ -23,7 +23,7 @@
 verifyProperty(ArrayBuffer.prototype.transfer, 'name', {
   value: 'transfer',
   enumerable: false,
-  wrtiable: false,
+  writable: false,
   configurable: true
 });
 

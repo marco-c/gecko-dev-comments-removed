@@ -29,8 +29,8 @@ const testCases = [
 ];
 
 for (let id of testCases) {
-  
-  new Temporal.TimeZone(id);
+  const tz = new Temporal.TimeZone(id);
+  assert.sameValue(tz.id, id);
 }
 
 reportCompare(0, 0);

@@ -1,0 +1,19 @@
+
+
+
+
+
+
+
+
+
+
+class SubPromise extends Promise {}
+
+var instance = Promise.withResolvers.call(SubPromise);
+
+assert.sameValue(instance.promise.constructor, SubPromise);
+assert.sameValue(instance.promise instanceof SubPromise, true);
+
+
+reportCompare(0, 0);

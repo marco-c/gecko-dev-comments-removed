@@ -119,6 +119,11 @@ function createOptionsObserver({ smallestUnit = "months", largestUnit = "auto", 
 actual.splice(0);
 
 
+instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 1 }));
+assert.compareArray(actual, expected, "order of operations with no rounding");
+actual.splice(0); 
+
+
 const expectedOpsForYearRounding = expected.concat([
   "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    

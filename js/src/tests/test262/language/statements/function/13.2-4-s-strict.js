@@ -12,9 +12,9 @@
 
 
 assert.throws(TypeError, function() {
-            var foo = function () {
-            }
-            foo.arguments = 20;
+    var foo = function () {
+    }
+    foo.arguments = 20;
 });
 
 reportCompare(0, 0);

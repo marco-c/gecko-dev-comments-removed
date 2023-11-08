@@ -1,0 +1,20 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(new Intl.Locale('en').getTimeZones(), undefined);
+
+reportCompare(0, 0);

@@ -61,7 +61,8 @@ assert.throws(RangeError, () =>
   
   dayDuration.add(dayDuration, {
     relativeTo: zdt,
-  })
+  }),
+  "days < 0 and sign = 1"
 );
 
 
@@ -88,7 +89,8 @@ assert.throws(RangeError, () =>
   
   dayDuration.add(dayDuration, {
     relativeTo: zdt,
-  })
+  }),
+  "days > 0 and sign = -1"
 );
 
 
@@ -116,7 +118,8 @@ assert.throws(RangeError, () =>
   
   dayDuration.add(dayDuration, {
     relativeTo: zdt,
-  })
+  }),
+  "nanoseconds > 0 and sign = -1"
 );
 
 reportCompare(0, 0);

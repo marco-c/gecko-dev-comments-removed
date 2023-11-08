@@ -9,8 +9,8 @@
 
 
 
+
 const style = "long";
-const expected = "1 year, 2 months, 3 weeks, 3 days, 4 hours, 5 minutes, 6 seconds, 7 milliseconds, 8 microseconds, 9 nanoseconds";
 
 const duration = {
   years: 1,
@@ -24,6 +24,8 @@ const duration = {
   microseconds: 8,
   nanoseconds: 9,
 };
+
+const expected = formatDurationFormatPattern(duration, style);
 
 const df = new Intl.DurationFormat("en", {style});
 assert.sameValue(df.format(duration), expected, `Assert DurationFormat format output using ${style} style option`);

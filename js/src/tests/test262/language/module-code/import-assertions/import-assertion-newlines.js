@@ -27,26 +27,46 @@
 
 
 
+
+
+
+$DONOTEVALUATE();
+
+import "./ensure-linking-error_FIXTURE.js";
+
 import x from './import-assertion-1_FIXTURE.js' assert
-  {
-  test262
-  :
-  ''
-  };
+
+  {
+
+  test262
+
+  :
+
+  ''
+
+  };
 import './import-assertion-2_FIXTURE.js' assert
-  {
-  test262
-  :
-  ''
-  };
+
+  {
+
+  test262
+
+  :
+
+  ''
+
+  };
 export * from './import-assertion-3_FIXTURE.js' assert
-  {
-  test262
-  :
-  ''
-  };
+
+  {
+
+  test262
+
+  :
+
+  ''
+
+  };
 
 assert.sameValue(x, 262.1);
 assert.sameValue(globalThis.test262, 262.2);
-
-reportCompare(0, 0);

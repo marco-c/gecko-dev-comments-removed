@@ -9,6 +9,7 @@
 
 
 
+
 function* zip(a, b) {
   for (let i = 0; i < a.length; ++i) {
     yield [i, a[i], b[i]];
@@ -38,31 +39,7 @@ const duration = {
   nanoseconds: 789,
 };
 
-const expected = [
-    { type: "integer", value: "7", unit: "hour" },
-    { type: "literal", value: " ", unit: "hour" },
-    { type: "unit", value: "hr", unit: "hour" },
-    { type: "literal", value: ", " },
-    { type: "integer", value: "8", unit: "minute" },
-    { type: "literal", value: " ", unit: "minute" },
-    { type: "unit", value: "min", unit: "minute" },
-    { type: "literal", value: ", " },
-    { type: "integer", value: "9", unit: "second" },
-    { type: "literal", value: " ", unit: "second" },
-    { type: "unit", value: "sec", unit: "second" },
-    { type: "literal", value: ", " },
-    { type: "integer", value: "123", unit: "millisecond" },
-    { type: "literal", value: " ", unit: "millisecond" },
-    { type: "unit", value: "ms", unit: "millisecond" },
-    { type: "literal", value: ", " },
-    { type: "integer", value: "456", unit: "microsecond" },
-    { type: "literal", value: " ", unit: "microsecond" },
-    { type: "unit", value: "μs", unit: "microsecond" },
-    { type: "literal", value: ", " },
-    { type: "integer", value: "789", unit: "nanosecond" },
-    { type: "literal", value: " ", unit: "nanosecond" },
-    { type: "unit", value: "ns", unit: "nanosecond" },
-  ];
+const expected = partitionDurationFormatPattern(duration);
 
 let df = new Intl.DurationFormat('en');
 compare(df.formatToParts(duration), expected, `Using style : default`);

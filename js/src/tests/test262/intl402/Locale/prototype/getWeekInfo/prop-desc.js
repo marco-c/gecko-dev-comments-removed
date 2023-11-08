@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+assert.sameValue(
+  typeof Intl.Locale.prototype.getWeekInfo,
+  "function",
+  "typeof Intl.Locale.prototype.getWeekInfo is function"
+);
+
+verifyProperty(Intl.Locale.prototype, "getWeekInfo", {
+  writable: true,
+  enumerable: false,
+  configurable: true,
+});
+
+reportCompare(0, 0);

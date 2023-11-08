@@ -17,8 +17,6 @@
 
 
 
-
-
 class ObservedCalendar extends Temporal.Calendar {
   constructor() {
     super("iso8601");
@@ -55,24 +53,6 @@ calendar.resetCalls();
 
 assert.throws(TypeError, () => dateTime.with({ year: 2002 }), "conversion failure on sabotaged return value from mergeFields");
 assert.sameValue(calendar.mergeFieldsCalled, 1, "calendar.mergeFields was called once");
-
-calendar.resetCalls();
-
-
-
-Object.defineProperty(dateTime, "offset", { value: Symbol("can't convert to string"), configurable: true });
-
-assert.throws(TypeError, () => dateTime.with({ year: 2002 }), "conversion failure on sabotaged offset field of receiver");
-assert.sameValue(calendar.mergeFieldsCalled, 0, "calendar.mergeFields should not be called");
-
-calendar.resetCalls();
-
-
-
-Object.defineProperty(dateTime, "offset", { value: undefined });
-
-assert.throws(TypeError, () => dateTime.with({ year: 2002 }), "offset property is required on receiver");
-assert.sameValue(calendar.mergeFieldsCalled, 0, "calendar.mergeFields should not be called");
 
 calendar.resetCalls();
 

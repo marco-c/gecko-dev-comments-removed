@@ -59,9 +59,7 @@ asyncTest(async function () {
 
   actualCalls.splice(0);  
 
-  
   const expectedCallsForArrayLike = [
-    "construct MyArray",
     "construct MyArray",
     "defineProperty A[0]",
     "defineProperty A[1]",
