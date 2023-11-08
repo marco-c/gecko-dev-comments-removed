@@ -68,6 +68,24 @@ static MOZ_ALWAYS_INLINE bool WeakCollectionPutEntryInternal(
   return true;
 }
 
+
+static MOZ_ALWAYS_INLINE bool CanBeHeldWeakly(JSContext* cx,
+                                              HandleValue value) {
+  
+  if (value.isObject()) {
+    return true;
+  }
+
+  
+  if (value.isSymbol() &&
+      value.toSymbol()->code() != JS::SymbolCode::InSymbolRegistry) {
+    return true;
+  }
+
+  
+  return false;
+}
+
 }  
 
 #endif 
