@@ -28,7 +28,7 @@ static constexpr DWORD kShutdownWaitMs = 80000;
 
 static constexpr DWORD kShutdownWaitMs = 40000;
 #else
-static constexpr DWORD kShutdownWaitMs = 8000;
+static constexpr DWORD kShutdownWaitMs = 20000;
 #endif
 
 namespace {
