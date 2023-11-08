@@ -10,31 +10,7 @@
 #include "nsAtom.h"
 #include "nsISerialEventTarget.h"
 
-#define RECENTLY_USED_PARSER_ATOMS_SIZE 31
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#define RECENTLY_USED_PARSER_ATOMS_SIZE 37
 
 
 
