@@ -13,17 +13,16 @@ const { PromiseTestUtils } = ChromeUtils.importESModule(
 const searchService = Services.search.wrappedJSObject;
 
 add_setup(async function setup() {
-  searchService.willThrowErrorDuringInitInTest = true;
+  searchService.errorToThrowInTest = "Settings";
 
-  
   
   
   PromiseTestUtils.expectUncaughtRejection(
-    /Fake error during search service initialization./
+    /Fake Settings error during search service initialization./
   );
 
   registerCleanupFunction(async () => {
-    searchService.willThrowErrorDuringInitInTest = false;
+    searchService.errorToThrowInTest = null;
     await cleanupPlaces();
   });
 });
