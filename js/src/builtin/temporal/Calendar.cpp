@@ -3201,23 +3201,18 @@ bool js::temporal::CalendarDateAdd(JSContext* cx,
 
 
 
-static bool BuiltinCalendarDateUntil(JSContext* cx, const PlainDate& one,
-                                     const PlainDate& two,
-                                     TemporalUnit largestUnit,
-                                     Duration* result) {
+static Duration BuiltinCalendarDateUntil(const PlainDate& one,
+                                         const PlainDate& two,
+                                         TemporalUnit largestUnit) {
   
 
   
 
   
-  DateDuration difference;
-  if (!DifferenceISODate(cx, one, two, largestUnit, &difference)) {
-    return false;
-  }
+  auto difference = DifferenceISODate(one, two, largestUnit);
 
   
-  *result = difference.toDuration();
-  return true;
+  return difference.toDuration();
 }
 
 
@@ -3243,7 +3238,8 @@ static bool BuiltinCalendarDateUntil(JSContext* cx,
   auto dateTwo = ToPlainDate(unwrappedTwo);
 
   
-  return BuiltinCalendarDateUntil(cx, dateOne, dateTwo, largestUnit, result);
+  *result = BuiltinCalendarDateUntil(dateOne, dateTwo, largestUnit);
+  return true;
 }
 
 
@@ -3866,10 +3862,7 @@ static bool Calendar_dateUntil(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Duration duration;
-  if (!BuiltinCalendarDateUntil(cx, one, two, largestUnit, &duration)) {
-    return false;
-  }
+  auto duration = BuiltinCalendarDateUntil(one, two, largestUnit);
 
   auto* obj = CreateTemporalDuration(cx, duration);
   if (!obj) {

@@ -138,9 +138,8 @@ bool AddISODate(JSContext* cx, const PlainDate& date, const Duration& duration,
 
 
 
-bool DifferenceISODate(JSContext* cx, const PlainDate& start,
-                       const PlainDate& end, TemporalUnit largestUnit,
-                       DateDuration* result);
+DateDuration DifferenceISODate(const PlainDate& start, const PlainDate& end,
+                               TemporalUnit largestUnit);
 
 
 
