@@ -588,20 +588,19 @@ TimeDuration js::temporal::DifferenceTime(const PlainTime& time1,
 
 
 
-static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
-                                                Handle<Value> item,
-                                                TemporalOverflow overflow) {
+static bool ToTemporalTime(JSContext* cx, Handle<Value> item,
+                           TemporalOverflow overflow, PlainTime* result) {
   
 
   
-  PlainTime result;
   if (item.isObject()) {
     
     Rooted<JSObject*> itemObj(cx, &item.toObject());
 
     
-    if (itemObj->canUnwrapAs<PlainTimeObject>()) {
-      return itemObj;
+    if (auto* time = itemObj->maybeUnwrapIf<PlainTimeObject>()) {
+      *result = ToPlainTime(time);
+      return true;
     }
 
     
@@ -610,33 +609,35 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
       Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
 
       if (!timeZone.wrap(cx)) {
-        return nullptr;
+        return false;
       }
 
       
       PlainDateTime dateTime;
       if (!GetPlainDateTimeFor(cx, timeZone, epochInstant, &dateTime)) {
-        return nullptr;
+        return false;
       }
 
       
-      return CreateTemporalTime(cx, dateTime.time);
+      *result = dateTime.time;
+      return true;
     }
 
     
     if (auto* dateTime = itemObj->maybeUnwrapIf<PlainDateTimeObject>()) {
-      return CreateTemporalTime(cx, ToPlainTime(dateTime));
+      *result = ToPlainTime(dateTime);
+      return true;
     }
 
     
     TimeRecord timeResult;
     if (!ToTemporalTimeRecord(cx, itemObj, &timeResult)) {
-      return nullptr;
+      return false;
     }
 
     
-    if (!RegulateTime(cx, timeResult, overflow, &result)) {
-      return nullptr;
+    if (!RegulateTime(cx, timeResult, overflow, result)) {
+      return false;
     }
   } else {
     
@@ -645,21 +646,35 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
     if (!item.isString()) {
       ReportValueError(cx, JSMSG_UNEXPECTED_TYPE, JSDVG_IGNORE_STACK, item,
                        nullptr, "not a string");
-      return nullptr;
+      return false;
     }
     Rooted<JSString*> string(cx, item.toString());
 
     
-    if (!ParseTemporalTimeString(cx, string, &result)) {
-      return nullptr;
+    if (!ParseTemporalTimeString(cx, string, result)) {
+      return false;
     }
 
     
-    MOZ_ASSERT(IsValidTime(result));
+    MOZ_ASSERT(IsValidTime(*result));
   }
 
   
-  return CreateTemporalTime(cx, result);
+  return true;
+}
+
+
+
+
+static PlainTimeObject* ToTemporalTime(JSContext* cx, Handle<Value> item,
+                                       TemporalOverflow overflow) {
+  PlainTime time;
+  if (!ToTemporalTime(cx, item, overflow, &time)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(IsValidTime(time));
+
+  return CreateTemporalTime(cx, time);
 }
 
 
@@ -667,13 +682,7 @@ static Wrapped<PlainTimeObject*> ToTemporalTime(JSContext* cx,
 
 bool js::temporal::ToTemporalTime(JSContext* cx, Handle<Value> item,
                                   PlainTime* result) {
-  auto obj = ::ToTemporalTime(cx, item, TemporalOverflow::Constrain);
-  if (!obj) {
-    return false;
-  }
-
-  *result = ToPlainTime(&obj.unwrap());
-  return true;
+  return ToTemporalTime(cx, item, TemporalOverflow::Constrain, result);
 }
 
 
@@ -1844,20 +1853,6 @@ static bool PlainTime_from(JSContext* cx, unsigned argc, Value* vp) {
     
     if (!ToTemporalOverflow(cx, options, &overflow)) {
       return false;
-    }
-  }
-
-  
-  if (args.get(0).isObject()) {
-    JSObject* item = &args[0].toObject();
-    if (auto* time = item->maybeUnwrapIf<PlainTimeObject>()) {
-      auto* result = CreateTemporalTime(cx, ToPlainTime(time));
-      if (!result) {
-        return false;
-      }
-
-      args.rval().setObject(*result);
-      return true;
     }
   }
 
