@@ -1916,8 +1916,6 @@ static bool UnbalanceDateDurationRelativeMonthSlow(
   }
 
   
-
-  
   return CreateDateDurationRecord(cx, 0, BigInt::numberValue(months),
                                   duration.weeks, duration.days, result);
 }
@@ -1951,8 +1949,6 @@ static bool UnbalanceDateDurationRelative(
 
   
   if (!UnbalanceDateDurationRelativeHasEffect(duration, largestUnit)) {
-    
-
     
     *result = CreateDateDurationRecord(years, months, weeks, days);
     return true;
@@ -2071,8 +2067,11 @@ static bool UnbalanceDateDurationRelative(
     }
 
     
-    years = 0;
-  } else if (largestUnit == TemporalUnit::Week) {
+    return CreateDateDurationRecord(cx, 0, months, weeks, days, result);
+  }
+
+  
+  if (largestUnit == TemporalUnit::Week) {
     
     MOZ_ASSERT(years != 0 || months != 0);
 
@@ -2133,104 +2132,104 @@ static bool UnbalanceDateDurationRelative(
     
     
     
-    years = 0;
-    months = 0;
-    days += double(daysToAdd);
-  } else {
     
     
-    
-
-    
-    MOZ_ASSERT(years != 0 || months != 0 || weeks != 0);
-
-    
-
-    
-
-    
-    Rooted<Value> dateAdd(cx);
-    if (calendar.isObject()) {
-      Rooted<JSObject*> calendarObj(cx, calendar.toObject());
-      if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
-        return false;
-      }
-    }
-
-    
-    int32_t daysToAdd = 0;
-
-    
-    
-    
-    int64_t intYears = ClampToInt64(years);
-    while (intYears != 0) {
-      
-      int32_t oneYearDays;
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneYear, dateAdd,
-                            &dateRelativeTo, &oneYearDays)) {
-        return false;
-      }
-
-      
-      daysToAdd += oneYearDays;
-      MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-      
-      intYears -= sign;
-    }
-
-    
-    
-    
-    int64_t intMonths = ClampToInt64(months);
-    while (intMonths != 0) {
-      
-      int32_t oneMonthDays;
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth, dateAdd,
-                            &dateRelativeTo, &oneMonthDays)) {
-        return false;
-      }
-
-      
-      daysToAdd += oneMonthDays;
-      MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-      
-      intMonths -= sign;
-    }
-
-    
-    
-    
-    int64_t intWeeks = ClampToInt64(weeks);
-    while (intWeeks != 0) {
-      
-      int32_t oneWeekDays;
-      if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneWeek, dateAdd,
-                            &dateRelativeTo, &oneWeekDays)) {
-        return false;
-      }
-
-      
-      daysToAdd += oneWeekDays;
-      MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
-
-      
-      intWeeks -= sign;
-    }
-
-    
-    
-    
-    years = 0;
-    months = 0;
-    weeks = 0;
-    days += double(daysToAdd);
+    return CreateDateDurationRecord(cx, 0, 0, weeks, days + double(daysToAdd),
+                                    result);
   }
 
   
-  return CreateDateDurationRecord(cx, years, months, weeks, days, result);
+  
+
+  
+  
+
+  
+  MOZ_ASSERT(years != 0 || months != 0 || weeks != 0);
+
+  
+
+  
+
+  
+  Rooted<Value> dateAdd(cx);
+  if (calendar.isObject()) {
+    Rooted<JSObject*> calendarObj(cx, calendar.toObject());
+    if (!GetMethod(cx, calendarObj, cx->names().dateAdd, &dateAdd)) {
+      return false;
+    }
+  }
+
+  
+  int32_t daysToAdd = 0;
+
+  
+  
+  
+  int64_t intYears = ClampToInt64(years);
+  while (intYears != 0) {
+    
+    int32_t oneYearDays;
+    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneYear, dateAdd,
+                          &dateRelativeTo, &oneYearDays)) {
+      return false;
+    }
+
+    
+    daysToAdd += oneYearDays;
+    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
+
+    
+    intYears -= sign;
+  }
+
+  
+  
+  
+  int64_t intMonths = ClampToInt64(months);
+  while (intMonths != 0) {
+    
+    int32_t oneMonthDays;
+    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneMonth, dateAdd,
+                          &dateRelativeTo, &oneMonthDays)) {
+      return false;
+    }
+
+    
+    daysToAdd += oneMonthDays;
+    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
+
+    
+    intMonths -= sign;
+  }
+
+  
+  
+  
+  int64_t intWeeks = ClampToInt64(weeks);
+  while (intWeeks != 0) {
+    
+    int32_t oneWeekDays;
+    if (!MoveRelativeDate(cx, calendar, dateRelativeTo, oneWeek, dateAdd,
+                          &dateRelativeTo, &oneWeekDays)) {
+      return false;
+    }
+
+    
+    daysToAdd += oneWeekDays;
+    MOZ_ASSERT(std::abs(daysToAdd) <= 200'000'000);
+
+    
+    intWeeks -= sign;
+  }
+
+  
+  
+  
+  
+  
+  return CreateDateDurationRecord(cx, 0, 0, 0, days + double(daysToAdd),
+                                  result);
 }
 
 
@@ -3908,8 +3907,6 @@ static bool ToRelativeTemporalObject(
     if (!plainDate) {
       return false;
     }
-
-    
 
     plainRelativeTo.set(plainDate);
     zonedRelativeTo.set(nullptr);

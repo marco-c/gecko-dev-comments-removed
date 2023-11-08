@@ -479,8 +479,6 @@ static Wrapped<PlainDateTimeObject*> ToTemporalDateTime(
   
 
   
-
-  
   Rooted<PlainObject*> maybeResolvedOptions(cx);
   if (maybeOptions) {
     maybeResolvedOptions = SnapshotOwnProperties(cx, maybeOptions);

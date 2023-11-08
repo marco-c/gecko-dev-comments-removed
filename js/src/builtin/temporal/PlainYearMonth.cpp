@@ -199,8 +199,6 @@ static Wrapped<PlainYearMonthObject*> ToTemporalYearMonth(
   
 
   
-
-  
   Rooted<PlainObject*> maybeResolvedOptions(cx);
   if (maybeOptions) {
     maybeResolvedOptions = SnapshotOwnProperties(cx, maybeOptions);

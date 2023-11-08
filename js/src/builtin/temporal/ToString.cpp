@@ -413,8 +413,6 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   }
 
   
-
-  
   auto dateTime = GetPlainDateTimeFor(ToInstant(instant), offsetNanoseconds);
 
   
@@ -650,8 +648,6 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
     return nullptr;
   }
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
-
-  
 
   
   auto temporalDateTime = GetPlainDateTimeFor(ns, offsetNanoseconds);

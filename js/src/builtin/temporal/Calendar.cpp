@@ -2373,8 +2373,6 @@ static bool ISOResolveMonth(JSContext* cx,
   }
 
   
-
-  
   fields.month() = monthCodeInteger;
 
   

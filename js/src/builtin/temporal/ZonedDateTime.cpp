@@ -231,8 +231,6 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
   
 
   
-
-  
   Rooted<PlainObject*> maybeResolvedOptions(cx);
   if (maybeOptions) {
     maybeResolvedOptions = SnapshotOwnProperties(cx, maybeOptions);
@@ -2998,11 +2996,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
-
-  
   auto temporalDateTime = GetPlainDateTimeFor(epochInstant, offsetNanoseconds);
-
-  
 
   
   Rooted<CalendarValue> isoCalendar(cx, CalendarValue(cx->names().iso8601));
@@ -3587,8 +3581,6 @@ static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
                                &offsetNanoseconds)) {
     return false;
   }
-
-  
 
   
   auto temporalDateTime = GetPlainDateTimeFor(epochInstant, offsetNanoseconds);
