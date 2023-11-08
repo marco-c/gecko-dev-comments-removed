@@ -207,13 +207,14 @@ enum class CalendarField {
   Day,
 };
 
+using CalendarFieldNames = JS::StackGCVector<JS::PropertyKey>;
 
 
 
-bool CalendarFields(
-    JSContext* cx, JS::Handle<CalendarValue> calendar,
-    std::initializer_list<CalendarField> fieldNames,
-    JS::MutableHandle<JS::StackGCVector<JS::PropertyKey>> result);
+
+bool CalendarFields(JSContext* cx, JS::Handle<CalendarValue> calendar,
+                    std::initializer_list<CalendarField> fieldNames,
+                    JS::MutableHandle<CalendarFieldNames> result);
 
 
 

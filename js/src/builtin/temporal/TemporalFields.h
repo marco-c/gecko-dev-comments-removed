@@ -149,21 +149,22 @@ bool PrepareTemporalFields(JSContext* cx, JS::Handle<JSObject*> fields,
                            std::initializer_list<TemporalField> requiredFields,
                            JS::MutableHandle<TemporalFields> result);
 
+using TemporalFieldNames = JS::StackGCVector<JS::PropertyKey>;
+
+
+
+
+
+PlainObject* PrepareTemporalFields(JSContext* cx, JS::Handle<JSObject*> fields,
+                                   JS::Handle<TemporalFieldNames> fieldNames);
+
 
 
 
 
 PlainObject* PrepareTemporalFields(
     JSContext* cx, JS::Handle<JSObject*> fields,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> fieldNames);
-
-
-
-
-
-PlainObject* PrepareTemporalFields(
-    JSContext* cx, JS::Handle<JSObject*> fields,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> fieldNames,
+    JS::Handle<TemporalFieldNames> fieldNames,
     std::initializer_list<TemporalField> requiredFields);
 
 
@@ -172,19 +173,19 @@ PlainObject* PrepareTemporalFields(
 
 PlainObject* PreparePartialTemporalFields(
     JSContext* cx, JS::Handle<JSObject*> fields,
-    JS::Handle<JS::StackGCVector<JS::PropertyKey>> fieldNames);
+    JS::Handle<TemporalFieldNames> fieldNames);
 
 [[nodiscard]] bool ConcatTemporalFieldNames(
-    const JS::StackGCVector<JS::PropertyKey>& receiverFieldNames,
-    const JS::StackGCVector<JS::PropertyKey>& inputFieldNames,
-    JS::StackGCVector<JS::PropertyKey>& concatenatedFieldNames);
+    const TemporalFieldNames& receiverFieldNames,
+    const TemporalFieldNames& inputFieldNames,
+    TemporalFieldNames& concatenatedFieldNames);
 
 [[nodiscard]] bool AppendSorted(
-    JSContext* cx, JS::StackGCVector<JS::PropertyKey>& fieldNames,
+    JSContext* cx, TemporalFieldNames& fieldNames,
     std::initializer_list<TemporalField> additionalNames);
 
-[[nodiscard]] bool SortTemporalFieldNames(
-    JSContext* cx, JS::StackGCVector<JS::PropertyKey>& fieldNames);
+[[nodiscard]] bool SortTemporalFieldNames(JSContext* cx,
+                                          TemporalFieldNames& fieldNames);
 
 } 
 
