@@ -85,7 +85,7 @@ class WorkletImpl {
   bool IsSystemPrincipal() const { return mPrincipal->IsSystemPrincipal(); }
   bool ShouldResistFingerprinting(RFPTarget aTarget) const {
     return mShouldResistFingerprinting &&
-           nsRFPService::IsRFPEnabledFor(aTarget,
+           nsRFPService::IsRFPEnabledFor(mIsPrivateBrowsing, aTarget,
                                          mOverriddenFingerprintingSettings);
   }
 
@@ -113,16 +113,17 @@ class WorkletImpl {
 
   
   RefPtr<dom::WorkletThread> mWorkletThread;
-  bool mTerminated;
+  bool mTerminated : 1;
 
   
   RefPtr<dom::WorkletGlobalScope> mGlobalScope;
-  bool mFinishedOnExecutionThread;
+  bool mFinishedOnExecutionThread : 1;
 
   Maybe<nsID> mAgentClusterId;
 
-  bool mSharedMemoryAllowed;
-  bool mShouldResistFingerprinting;
+  bool mSharedMemoryAllowed : 1;
+  bool mShouldResistFingerprinting : 1;
+  bool mIsPrivateBrowsing : 1;
   
   
   
