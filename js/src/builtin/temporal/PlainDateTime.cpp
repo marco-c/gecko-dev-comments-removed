@@ -714,6 +714,7 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
   
   Duration dateDuration = {duration.years, duration.months, duration.weeks,
                            daysResult};
+  MOZ_ASSERT(IsValidDuration(duration));
 
   
   PlainDate addedDate;
