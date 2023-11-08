@@ -354,6 +354,9 @@ async function doDismissTest(command) {
   info("Waiting for weather fetch after re-enabling the suggestion");
   await fetchPromise;
   info("Got weather fetch");
+
+  
+  await QuickSuggestTestUtils.forceSync();
 }
 
 

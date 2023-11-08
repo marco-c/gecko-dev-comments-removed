@@ -62,6 +62,9 @@ add_task(async function () {
         let fetchPromise = QuickSuggest.weather.waitForFetches();
         UrlbarPrefs.clear("suggest.weather");
         await fetchPromise;
+
+        
+        await QuickSuggestTestUtils.forceSync();
       }
     },
     

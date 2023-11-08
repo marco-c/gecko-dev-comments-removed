@@ -110,6 +110,9 @@ async function doBasicDisableAndEnableTest(pref) {
   });
 
   
+  await QuickSuggestTestUtils.forceSync();
+
+  
   context = createContext(MerinoTestUtils.WEATHER_KEYWORD, {
     providers: [UrlbarProviderWeather.name],
     isPrivate: false,
@@ -245,6 +248,10 @@ add_task(async function disableAndEnable_immediate1() {
   fetchPromise = QuickSuggest.weather.waitForFetches();
   UrlbarPrefs.set("weather.featureGate", true);
   await fetchPromise;
+
+  
+  await QuickSuggestTestUtils.forceSync();
+
   assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
@@ -311,6 +318,9 @@ add_task(async function disableAndEnable_immediate2() {
     hasSuggestion: true,
     pendingFetchCount: 0,
   });
+
+  
+  await QuickSuggestTestUtils.forceSync();
 });
 
 
@@ -751,6 +761,10 @@ add_task(async function block() {
   let fetchPromise = QuickSuggest.weather.waitForFetches();
   UrlbarPrefs.set("suggest.weather", true);
   await fetchPromise;
+
+  
+  await QuickSuggestTestUtils.forceSync();
+
   assertEnabled({
     message: "On cleanup",
     hasSuggestion: true,
