@@ -222,6 +222,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   Mozilla.UITour.hideHighlight = function () {
     _sendEvent("hideHighlight");
   };
@@ -309,6 +310,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   Mozilla.UITour.hideInfo = function () {
     _sendEvent("hideInfo");
   };
@@ -369,11 +371,13 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   Mozilla.UITour.showNewTab = function () {
     _sendEvent("showNewTab");
   };
 
   
+
 
 
 
@@ -458,29 +462,8 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   
-
-
-
 
 
 
@@ -510,6 +493,31 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
   
 
 
@@ -521,16 +529,18 @@ if (typeof Mozilla == "undefined") {
 
 
 
-  
-
-
-
-
-
-
-
 
   
+
+
+
+
+
+
+
+
+  
+
 
 
 
@@ -661,6 +671,7 @@ if (typeof Mozilla == "undefined") {
 
 
 
+
   Mozilla.UITour.resetFirefox = function () {
     _sendEvent("resetFirefox");
   };
@@ -700,6 +711,7 @@ if (typeof Mozilla == "undefined") {
   };
 
   
+
 
 
 
