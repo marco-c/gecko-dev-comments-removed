@@ -123,10 +123,10 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   virtual ~DataChannelConnection();
 
  public:
-  enum {
-    PENDING_NONE = 0U,  
-    PENDING_DCEP = 1U,  
-    PENDING_DATA = 2U,  
+  enum class PendingType {
+    None,  
+    Dcep,  
+    Data,  
   };
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DataChannelConnection)
@@ -392,7 +392,7 @@ class DataChannelConnection final : public net::NeckoTargetHolder
   nsRefPtrDeque<DataChannel> mPending;
   
   size_t mNegotiatedIdLimit MOZ_GUARDED_BY(mLock) = 0;
-  uint8_t mPendingType MOZ_GUARDED_BY(mLock) = PENDING_NONE;
+  PendingType mPendingType MOZ_GUARDED_BY(mLock) = PendingType::None;
   
   nsTArray<UniquePtr<QueuedDataMessage>> mQueuedData MOZ_GUARDED_BY(mLock);
   
