@@ -672,14 +672,6 @@ UTS46::mapDevChars(UnicodeString &dest, int32_t labelStart, int32_t mappingStart
 
 
 
-static inline UBool
-isNonASCIIDisallowedSTD3Valid(UChar32 c) {
-    return c==0x2260 || c==0x226E || c==0x226F;
-}
-
-
-
-
 
 
 static int32_t
@@ -820,10 +812,7 @@ UTS46::processLabel(UnicodeString &dest,
             }
         } else {
             oredChars|=c;
-            if(disallowNonLDHDot && isNonASCIIDisallowedSTD3Valid(c)) {
-                info.labelErrors|=UIDNA_ERROR_DISALLOWED;
-                *s=0xfffd;
-            } else if(c==0xfffd) {
+            if(c==0xfffd) {
                 info.labelErrors|=UIDNA_ERROR_DISALLOWED;
             }
         }

@@ -64,18 +64,20 @@ enum URBNFRuleSetTag {
 
 
     URBNF_ORDINAL,
+#ifndef U_HIDE_DEPRECATED_API
     
 
 
 
     URBNF_DURATION,
+#endif 
     
 
 
 
 
 
-    URBNF_NUMBERING_SYSTEM,
+    URBNF_NUMBERING_SYSTEM = 3,
 #ifndef U_HIDE_DEPRECATED_API
     
 

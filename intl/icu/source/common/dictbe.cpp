@@ -42,7 +42,7 @@ DictionaryBreakEngine::~DictionaryBreakEngine() {
 }
 
 UBool
-DictionaryBreakEngine::handles(UChar32 c) const {
+DictionaryBreakEngine::handles(UChar32 c, const char*) const {
     return fSet.contains(c);
 }
 
@@ -54,13 +54,13 @@ DictionaryBreakEngine::findBreaks( UText *text,
                                  UBool isPhraseBreaking,
                                  UErrorCode& status) const {
     if (U_FAILURE(status)) return 0;
-    (void)startPos;            
     int32_t result = 0;
 
     
     
     
 
+    utext_setNativeIndex(text, startPos);
     int32_t start = (int32_t)utext_getNativeIndex(text);
     int32_t current;
     int32_t rangeStart;

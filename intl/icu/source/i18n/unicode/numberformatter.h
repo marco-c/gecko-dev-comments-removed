@@ -83,6 +83,9 @@
 
 
 
+
+
+
 U_NAMESPACE_BEGIN
 
 
@@ -2257,7 +2260,6 @@ class U_I18N_API NumberFormatterSettings {
 
     Derived usage(StringPiece usage) &&;
 
-#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2276,7 +2278,6 @@ class U_I18N_API NumberFormatterSettings {
 
 
     Derived displayOptions(const DisplayOptions &displayOptions) &&;
-#endif 
 
 #ifndef U_HIDE_INTERNAL_API
     

@@ -174,10 +174,20 @@ CollationLoader::CollationLoader(const CollationCacheEntry *re, const Locale &re
     defaultType[0] = 0;
     if(U_FAILURE(errorCode)) { return; }
 
+    if (locale.isBogus()) {
+        errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+        return;
+    }
     
     const char *baseName = locale.getBaseName();
     if(uprv_strcmp(locale.getName(), baseName) != 0) {
         locale = Locale(baseName);
+        
+        
+        if (locale.isBogus()) {
+            errorCode = U_ILLEGAL_ARGUMENT_ERROR;
+            return;
+        }
 
         
         int32_t typeLength = requested.getKeywordValue("collation",

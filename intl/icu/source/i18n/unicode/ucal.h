@@ -1394,6 +1394,38 @@ U_CAPI int32_t U_EXPORT2
 ucal_getCanonicalTimeZoneID(const UChar* id, int32_t len,
                             UChar* result, int32_t resultCapacity, UBool *isSystemID, UErrorCode* status);
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+U_CAPI int32_t U_EXPORT2
+ucal_getIanaTimeZoneID(const UChar* id, int32_t len,
+                        UChar* result, int32_t resultCapacity, UErrorCode* status);
+#endif 
+
+
 
 
 

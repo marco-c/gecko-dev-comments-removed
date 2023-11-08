@@ -33,6 +33,10 @@ enum Constants {
     CONSTANT_METERS_PER_AU,
     CONSTANT_SEC_PER_JULIAN_YEAR,
     CONSTANT_SPEED_OF_LIGHT_METERS_PER_SECOND,
+    CONSTANT_SHO_TO_M3,   
+    CONSTANT_TSUBO_TO_M2, 
+    CONSTANT_SHAKU_TO_M,  
+    CONSTANT_AMU,         
 
     
     CONSTANTS_COUNT
@@ -55,6 +59,10 @@ static const double constantsValues[CONSTANTS_COUNT] = {
     149597870700,              
     31557600,                  
     299792458,                 
+    2401.0 / (1331.0 * 1000.0),
+    400.0 / 121.0,
+    4.0 / 121.0,
+    1.66053878283E-27,         
 };
 
 typedef enum Signum {
@@ -214,7 +222,7 @@ class U_I18N_API UnitsConverter : public UMemory {
 
     
 
- 
+
     void init(const ConversionRates &ratesInfo, UErrorCode &status);
 };
 

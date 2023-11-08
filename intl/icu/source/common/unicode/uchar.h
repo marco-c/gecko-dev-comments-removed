@@ -60,7 +60,7 @@ U_CDECL_BEGIN
 
 
 
-#define U_UNICODE_VERSION "15.0"
+#define U_UNICODE_VERSION "15.1"
 
 
 
@@ -532,12 +532,33 @@ typedef enum UProperty {
 
 
     UCHAR_RGI_EMOJI=71,
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+    UCHAR_IDS_UNARY_OPERATOR=72,
+    
+
+
+
+
+    UCHAR_ID_COMPAT_MATH_START=73,
+    
+
+
+
+
+    UCHAR_ID_COMPAT_MATH_CONTINUE=74,
+#endif  
 #ifndef U_HIDE_DEPRECATED_API
     
 
 
 
-    UCHAR_BINARY_LIMIT=72,
+    UCHAR_BINARY_LIMIT=75,
 #endif  
 
     
@@ -1900,6 +1921,11 @@ enum UBlockCode {
     
     UBLOCK_NAG_MUNDARI = 327, 
 
+    
+
+    
+    UBLOCK_CJK_UNIFIED_IDEOGRAPHS_EXTENSION_I = 328, 
+
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -1907,7 +1933,7 @@ enum UBlockCode {
 
 
 
-    UBLOCK_COUNT = 328,
+    UBLOCK_COUNT = 329,
 #endif  
 
     
@@ -2439,6 +2465,16 @@ typedef enum ULineBreak {
     U_LB_E_MODIFIER = 41,        
     
     U_LB_ZWJ = 42,               
+    
+    U_LB_AKSARA = 43,            
+    
+    U_LB_AKSARA_PREBASE = 44,    
+    
+    U_LB_AKSARA_START = 45,      
+    
+    U_LB_VIRAMA_FINAL = 46,      
+    
+    U_LB_VIRAMA = 47,            
 #ifndef U_HIDE_DEPRECATED_API
     
 
@@ -2446,7 +2482,7 @@ typedef enum ULineBreak {
 
 
 
-    U_LB_COUNT = 43
+    U_LB_COUNT = 48
 #endif  
 } ULineBreak;
 

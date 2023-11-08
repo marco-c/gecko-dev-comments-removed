@@ -1130,14 +1130,18 @@ int32_t toUpper(uint32_t options,
             
             
             
-            if ((data & HAS_VOWEL) != 0 && (state & AFTER_VOWEL_WITH_ACCENT) != 0 &&
-                    (upper == 0x399 || upper == 0x3A5)) {
-                data |= HAS_DIALYTIKA;
+            if ((data & HAS_VOWEL) != 0 &&
+                (state & (AFTER_VOWEL_WITH_PRECOMPOSED_ACCENT | AFTER_VOWEL_WITH_COMBINING_ACCENT)) !=
+                    0 &&
+                (upper == 0x399 || upper == 0x3A5)) {
+                data |= (state & AFTER_VOWEL_WITH_PRECOMPOSED_ACCENT) ? HAS_DIALYTIKA
+                                                                      : HAS_COMBINING_DIALYTIKA;
             }
             int32_t numYpogegrammeni = 0;  
             if ((data & HAS_YPOGEGRAMMENI) != 0) {
                 numYpogegrammeni = 1;
             }
+            const UBool hasPrecomposedAccent = (data & HAS_ACCENT) != 0;
             
             while (nextIndex < srcLength) {
                 uint32_t diacriticData = getDiacriticData(src[nextIndex]);
@@ -1152,7 +1156,8 @@ int32_t toUpper(uint32_t options,
                 }
             }
             if ((data & HAS_VOWEL_AND_ACCENT_AND_DIALYTIKA) == HAS_VOWEL_AND_ACCENT) {
-                nextState |= AFTER_VOWEL_WITH_ACCENT;
+                nextState |= hasPrecomposedAccent ? AFTER_VOWEL_WITH_PRECOMPOSED_ACCENT
+                                                  : AFTER_VOWEL_WITH_COMBINING_ACCENT;
             }
             
             UBool addTonos = false;
@@ -1163,7 +1168,7 @@ int32_t toUpper(uint32_t options,
                     !isFollowedByCasedLetter(src, nextIndex, srcLength)) {
                 
                 
-                if (i == nextIndex) {
+                if (hasPrecomposedAccent) {
                     upper = 0x389;  
                 } else {
                     addTonos = true;

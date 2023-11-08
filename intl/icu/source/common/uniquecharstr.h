@@ -10,6 +10,7 @@
 #include "charstr.h"
 #include "uassert.h"
 #include "uhash.h"
+#include "cmemory.h"
 
 U_NAMESPACE_BEGIN
 
@@ -54,15 +55,13 @@ public:
 
 
 
-
-    int32_t add(const UnicodeString &s, UErrorCode &errorCode) {
-        if (U_FAILURE(errorCode)) { return 0; }
+    int32_t add(const char16_t*p, UErrorCode &errorCode) {
+        if (U_FAILURE(errorCode)) { return -1; }
         if (isFrozen) {
             errorCode = U_NO_WRITE_PERMISSION;
-            return 0;
+            return -1;
         }
         
-        const char16_t *p = s.getBuffer();
         int32_t oldIndex = uhash_geti(&map, p);
         if (oldIndex != 0) {  
             return oldIndex;
@@ -71,9 +70,31 @@ public:
         
         strings->append(0, errorCode);
         int32_t newIndex = strings->length();
-        strings->appendInvariantChars(s, errorCode);
+        strings->appendInvariantChars(p, u_strlen(p), errorCode);
         uhash_puti(&map, const_cast<char16_t *>(p), newIndex, &errorCode);
         return newIndex;
+    }
+
+    
+
+
+    int32_t addByValue(UnicodeString s, UErrorCode &errorCode) {
+        if (U_FAILURE(errorCode)) { return -1; }
+        if (isFrozen) {
+            errorCode = U_NO_WRITE_PERMISSION;
+            return -1;
+        }
+        int32_t oldIndex = uhash_geti(&map, s.getTerminatedBuffer());
+        if (oldIndex != 0) {  
+            return oldIndex;
+        }
+        
+        UnicodeString *key = keyStore.create(s);
+        if (key == nullptr) {
+            errorCode = U_MEMORY_ALLOCATION_ERROR;
+            return -1;
+        }
+        return add(key->getTerminatedBuffer(), errorCode);
     }
 
     void freeze() { isFrozen = true; }
@@ -90,6 +111,7 @@ public:
 private:
     UHashtable map;
     CharString *strings;
+    MemoryPool<UnicodeString> keyStore;
     bool isFrozen = false;
 };
 

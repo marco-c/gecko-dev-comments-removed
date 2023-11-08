@@ -18,8 +18,6 @@
 
 #include "unicode/uversion.h"
 
-#ifndef U_HIDE_DRAFT_API
-
 
 
 
@@ -317,8 +315,6 @@ typedef enum UDisplayOptionsSubstituteHandling {
 
     UDISPOPT_SUBSTITUTE_HANDLING_NO_SUBSTITUTE = 2,
 } UDisplayOptionsSubstituteHandling;
-
-#endif 
 
 #endif 
 

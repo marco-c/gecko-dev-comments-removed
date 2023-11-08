@@ -44,6 +44,69 @@ class  UnhandledEngine;
 class  UStack;
 
 
+#ifndef U_HIDE_DRAFT_API
+
+
+
+
+
+
+
+
+
+
+
+
+class ExternalBreakEngine : public UObject {
+  public:
+    
+
+
+
+    virtual ~ExternalBreakEngine() {}
+
+    
+
+
+
+
+
+
+
+
+    virtual bool isFor(UChar32 c, const char* locale) const = 0;
+
+    
+
+
+
+
+
+
+
+    virtual bool handles(UChar32 c) const = 0;
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+     virtual int32_t fillBreaks(UText* text,  int32_t start, int32_t end,
+                               int32_t* foundBreaks, int32_t foundBreaksCapacity,
+                               UErrorCode& status) const = 0;
+};
+#endif  
+
+
+
 
 
 
@@ -718,7 +781,8 @@ private:
 
 
 
-    const LanguageBreakEngine *getLanguageBreakEngine(UChar32 c);
+
+    const LanguageBreakEngine *getLanguageBreakEngine(UChar32 c, const char* locale);
 
   public:
 #ifndef U_HIDE_INTERNAL_API
@@ -734,7 +798,23 @@ private:
 
     void dumpTables();
 #endif  
+
+#ifndef U_HIDE_DRAFT_API
+    
+
+
+
+
+
+
+
+
+    static void U_EXPORT2 registerExternalBreakEngine(
+                  ExternalBreakEngine* toAdopt, UErrorCode& status);
+#endif  
+
 };
+
 
 U_NAMESPACE_END
 

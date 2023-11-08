@@ -260,7 +260,10 @@ typedef enum {
 
 
 
-     UCOL_ALTERNATE_HANDLING, 
+
+
+
+     UCOL_ALTERNATE_HANDLING,
      
 
 
@@ -269,8 +272,12 @@ typedef enum {
 
 
 
-     UCOL_CASE_FIRST, 
+
+
+
+     UCOL_CASE_FIRST,
      
+
 
 
 
@@ -281,6 +288,9 @@ typedef enum {
 
      UCOL_CASE_LEVEL,
      
+
+
+
 
 
 

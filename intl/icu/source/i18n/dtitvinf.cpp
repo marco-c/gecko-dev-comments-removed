@@ -23,6 +23,7 @@
 #include <iostream>
 #endif
 
+#include "bytesinkutil.h"
 #include "cmemory.h"
 #include "cstring.h"
 #include "unicode/msgfmt.h"
@@ -35,6 +36,7 @@
 #include "uresimp.h"
 #include "hash.h"
 #include "gregoimp.h"
+#include "ulocimp.h"
 #include "uresimp.h"
 
 
@@ -397,17 +399,19 @@ DateIntervalInfo::initializeData(const Locale& locale, UErrorCode& status)
 
     
     const char * calendarTypeToUse = gGregorianTag; 
-    char         calendarType[ULOC_KEYWORDS_CAPACITY]; 
     char         localeWithCalendarKey[ULOC_LOCALE_IDENTIFIER_CAPACITY];
     
     (void)ures_getFunctionalEquivalent(localeWithCalendarKey, ULOC_LOCALE_IDENTIFIER_CAPACITY, nullptr,
                                      "calendar", "calendar", locName, nullptr, false, &status);
     localeWithCalendarKey[ULOC_LOCALE_IDENTIFIER_CAPACITY-1] = 0; 
     
-    int32_t calendarTypeLen = uloc_getKeywordValue(localeWithCalendarKey, "calendar", calendarType,
-                                                   ULOC_KEYWORDS_CAPACITY, &status);
-    if (U_SUCCESS(status) && calendarTypeLen < ULOC_KEYWORDS_CAPACITY) {
-        calendarTypeToUse = calendarType;
+    CharString calendarType;
+    {
+        CharStringByteSink sink(&calendarType);
+        ulocimp_getKeywordValue(localeWithCalendarKey, "calendar", sink, &status);
+    }
+    if (U_SUCCESS(status)) {
+        calendarTypeToUse = calendarType.data();
     }
     status = U_ZERO_ERROR;
 
