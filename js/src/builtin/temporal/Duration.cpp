@@ -7666,9 +7666,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  
-
-  
   TimeDuration balanceResult;
   if (zonedRelativeTo) {
     
