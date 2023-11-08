@@ -2819,7 +2819,6 @@ static bool HappensBefore(const MDefinition* earlier,
 
 
 
-
 bool TypeAnalyzer::propagateUnbox() {
   
   
