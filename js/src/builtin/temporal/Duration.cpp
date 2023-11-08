@@ -7625,9 +7625,26 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (zonedRelativeTo && smallestUnit <= TemporalUnit::Week &&
-      (duration.years != 0 || duration.months != 0 || duration.weeks != 0 ||
-       duration.days != 0)) {
+  
+  
+  
+
+  
+  bool createPlainRelativeTo = false;
+  if (zonedRelativeTo) {
+    if (largestUnit <= TemporalUnit::Week) {
+      
+      createPlainRelativeTo = true;
+    } else if (smallestUnit <= TemporalUnit::Week) {
+      
+      createPlainRelativeTo = true;
+    } else if (duration.years != 0 || duration.months != 0 ||
+               duration.weeks != 0 || duration.days != 0) {
+      
+      createPlainRelativeTo = true;
+    }
+  }
+  if (createPlainRelativeTo) {
     
     plainRelativeTo = ToTemporalDate(cx, zonedRelativeTo);
     if (!plainRelativeTo) {
@@ -7791,8 +7808,12 @@ static bool Duration_total(JSContext* cx, const CallArgs& args) {
   }
 
   
-  if (zonedRelativeTo && unit <= TemporalUnit::Week &&
-      (duration.years != 0 || duration.months != 0 || duration.weeks != 0)) {
+  
+  
+
+  
+  if (zonedRelativeTo && (unit <= TemporalUnit::Week || duration.years != 0 ||
+                          duration.months != 0 || duration.weeks != 0)) {
     
     plainRelativeTo = ToTemporalDate(cx, zonedRelativeTo);
     if (!plainRelativeTo) {
