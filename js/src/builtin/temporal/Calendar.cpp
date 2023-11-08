@@ -1919,8 +1919,8 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
 
 
 
-static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
-                            double* result) {
+static bool ISOResolveMonth(JSContext* cx,
+                            MutableHandle<TemporalFields> fields) {
   
 
   
@@ -1943,7 +1943,6 @@ static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
     }
 
     
-    *result = month;
     return true;
   }
 
@@ -1982,11 +1981,11 @@ static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
   }
 
   
-  int monthCodeNumber =
+  int32_t monthCodeInteger =
       AsciiDigitToNumber(chars[1]) * 10 + AsciiDigitToNumber(chars[2]);
 
   
-  if (monthCodeNumber < 1 || monthCodeNumber > 12) {
+  if (monthCodeInteger < 1 || monthCodeInteger > 12) {
     if (auto code = QuoteString(cx, linear)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
@@ -1998,7 +1997,7 @@ static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
   
 
   
-  if (!std::isnan(month) && month != monthCodeNumber) {
+  if (!std::isnan(month) && month != monthCodeInteger) {
     if (auto code = QuoteString(cx, linear)) {
       JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
                                JSMSG_TEMPORAL_CALENDAR_INVALID_MONTHCODE,
@@ -2008,7 +2007,11 @@ static bool ISOResolveMonth(JSContext* cx, Handle<TemporalFields> fields,
   }
 
   
-  *result = monthCodeNumber;
+
+  
+  fields.month() = monthCodeInteger;
+
+  
   return true;
 }
 
@@ -2023,19 +2026,13 @@ static bool ISODateFromFields(JSContext* cx, Handle<TemporalFields> fields,
   double year = fields.year();
 
   
-  MOZ_ASSERT(!std::isnan(year));
-
-  
-  double month;
-  if (!ISOResolveMonth(cx, fields, &month)) {
-    return false;
-  }
+  double month = fields.month();
 
   
   double day = fields.day();
 
   
-  MOZ_ASSERT(!std::isnan(day));
+  MOZ_ASSERT(!std::isnan(year) && !std::isnan(month) && !std::isnan(day));
 
   
   RegulatedISODate regulated;
@@ -2081,6 +2078,11 @@ static PlainDateObject* BuiltinCalendarDateFromFields(
     if (!ToTemporalOverflow(cx, maybeOptions, &overflow)) {
       return nullptr;
     }
+  }
+
+  
+  if (!ISOResolveMonth(cx, &dateFields)) {
+    return nullptr;
   }
 
   
@@ -2223,13 +2225,10 @@ static bool ISOYearMonthFromFields(JSContext* cx, Handle<TemporalFields> fields,
   double year = fields.year();
 
   
-  MOZ_ASSERT(!std::isnan(year));
+  double month = fields.month();
 
   
-  double month;
-  if (!ISOResolveMonth(cx, fields, &month)) {
-    return false;
-  }
+  MOZ_ASSERT(!std::isnan(year) && !std::isnan(month));
 
   
   RegulatedISOYearMonth regulated;
@@ -2276,6 +2275,11 @@ static PlainYearMonthObject* BuiltinCalendarYearMonthFromFields(
     if (!ToTemporalOverflow(cx, maybeOptions, &overflow)) {
       return nullptr;
     }
+  }
+
+  
+  if (!ISOResolveMonth(cx, &dateFields)) {
+    return nullptr;
   }
 
   
@@ -2377,47 +2381,26 @@ static bool ISOMonthDayFromFields(JSContext* cx, Handle<TemporalFields> fields,
   double month = fields.month();
 
   
-  Handle<JSString*> monthCode = fields.monthCode();
+  double day = fields.day();
+
+  
+  MOZ_ASSERT(!std::isnan(month));
+  MOZ_ASSERT(!std::isnan(day));
 
   
   double year = fields.year();
 
   
-  if (!std::isnan(month) && !monthCode && std::isnan(year)) {
-    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                              JSMSG_TEMPORAL_CALENDAR_MISSING_FIELD, "year");
-    return false;
-  }
-
-  
-  if (!ISOResolveMonth(cx, fields, &month)) {
-    return false;
-  }
-
-  
-  double day = fields.day();
-
-  
-  MOZ_ASSERT(!std::isnan(day));
-
-  
   int32_t referenceISOYear = 1972;
 
   
-
-  
-  
-  
-
-  MOZ_ASSERT_IF(!monthCode, !std::isnan(year));
-
-  
-  double y = !monthCode ? year : referenceISOYear;
+  double y = std::isnan(year) ? referenceISOYear : year;
   RegulatedISODate regulated;
   if (!RegulateISODate(cx, y, month, day, overflow, &regulated)) {
     return false;
   }
 
+  
   *result = {referenceISOYear, regulated.month, regulated.day};
   return true;
 }
@@ -2444,6 +2427,11 @@ static PlainMonthDayObject* BuiltinCalendarMonthDayFromFields(
     if (!ToTemporalOverflow(cx, maybeOptions, &overflow)) {
       return nullptr;
     }
+  }
+
+  
+  if (!ISOResolveMonth(cx, &dateFields)) {
+    return nullptr;
   }
 
   
