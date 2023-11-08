@@ -1394,6 +1394,7 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   int hour = -1;
   int min = -1;
   int sec = -1;
+  double frac = 0;
   int tzOffset = -1;
 
   
@@ -1579,10 +1580,10 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
                  c != '(' &&
                  
                  
+                 (c != '.' || sec != -1) &&
+                 
+                 
                  !(hour != -1 && strchr("Zz+", c)) &&
-                 
-                 
-                 (c != '.' || mday != -1) &&
                  
                  (!IsAsciiAlpha(c) ||
                   (mon != -1 && !(strchr("AaPp", c) && index < length - 1 &&
@@ -1598,6 +1599,12 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         min =  n;
       } else if (prevc == ':' && min >= 0 && sec < 0) {
         sec =  n;
+        if (c == '.') {
+          index++;
+          if (!ParseFractional(&frac, s, &index, length)) {
+            return false;
+          }
+        }
       } else if (mon < 0) {
         mon =  n;
       } else if (mon >= 0 && mday < 0) {
@@ -1805,8 +1812,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     hour = 0;
   }
 
-  double msec = MakeDate(MakeDay(year, mon, mday), MakeTime(hour, min, sec, 0));
-
+  double msec = MakeDate(MakeDay(year, mon, mday),
+                         MakeTime(hour, min, sec, frac * 1000.0));
   if (tzOffset == -1) { 
     msec = UTC(forceUTC, msec);
   } else {
