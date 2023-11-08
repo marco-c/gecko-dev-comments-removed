@@ -635,15 +635,23 @@ RawId WebGPUChild::DeviceCreateBindGroup(
     e.binding = entry.mBinding;
     if (entry.mResource.IsGPUBufferBinding()) {
       const auto& bufBinding = entry.mResource.GetAsGPUBufferBinding();
+      if (!bufBinding.mBuffer->mId) {
+        NS_WARNING("Buffer binding has no id -- ignoring.");
+        continue;
+      }
       e.buffer = bufBinding.mBuffer->mId;
       e.offset = bufBinding.mOffset;
       e.size = bufBinding.mSize.WasPassed() ? bufBinding.mSize.Value() : 0;
-    }
-    if (entry.mResource.IsGPUTextureView()) {
+    } else if (entry.mResource.IsGPUTextureView()) {
       e.texture_view = entry.mResource.GetAsGPUTextureView()->mId;
-    }
-    if (entry.mResource.IsGPUSampler()) {
+    } else if (entry.mResource.IsGPUSampler()) {
       e.sampler = entry.mResource.GetAsGPUSampler()->mId;
+    } else {
+      
+      
+      
+      NS_WARNING("Bind group entry has unknown type.");
+      continue;
     }
     entries.AppendElement(e);
   }
