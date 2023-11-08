@@ -60,18 +60,6 @@ function getSkipProtoDialogPermissionKey(aProtocolScheme) {
   );
 }
 
-function getSystemProtocol() {
-  
-  if (AppConstants.platform == "macosx") {
-    return "itunes";
-  }
-
-  info(
-    "Skipping this test since there isn't a suitable default protocol on this platform"
-  );
-  return null;
-}
-
 
 
 
@@ -619,41 +607,11 @@ add_task(async function test_permission_application_set() {
 
 
 
-
 add_task(async function test_permission_system_principal() {
   let scheme = TEST_PROTOS[0];
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
-      permDialogOptions: {
-        hasCheckbox: false,
-        hasChangeApp: false,
-        chooserIsNext: true,
-        actionChangeApp: false,
-      },
-      triggerLoad: useTriggeringPrincipal(
-        Services.scriptSecurityManager.getSystemPrincipal()
-      ),
-    });
-  });
-});
-
-
-
-
-
-add_task(async function test_permission_system_principal() {
-  let scheme = getSystemProtocol();
-  if (!scheme) {
-    return;
-  }
-  await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
-    await testOpenProto(browser, scheme, {
-      permDialogOptions: {
-        hasCheckbox: false,
-        hasChangeApp: false,
-        chooserIsNext: false,
-        actionChangeApp: false,
-      },
+      chooserDialogOptions: { hasCheckbox: true, actionConfirm: false },
       triggerLoad: useTriggeringPrincipal(
         Services.scriptSecurityManager.getSystemPrincipal()
       ),
@@ -804,10 +762,17 @@ add_task(async function test_no_principal() {
 
 
 add_task(async function test_non_standard_protocol() {
-  let scheme = getSystemProtocol();
-  if (!scheme) {
+  let scheme = null;
+  
+  if (AppConstants.platform == "macosx") {
+    scheme = "itunes";
+  } else {
+    info(
+      "Skipping this test since there isn't a suitable default protocol on this platform"
+    );
     return;
   }
+
   await BrowserTestUtils.withNewTab(ORIGIN1, async browser => {
     await testOpenProto(browser, scheme, {
       permDialogOptions: {
