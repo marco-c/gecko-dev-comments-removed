@@ -1245,7 +1245,7 @@ public:
   template <typename T, typename Allocator = std::allocator<std::decay_t<T>>>
   void assign(std::true_type , T&& callable,
               Allocator&& allocator_ = {}) {
-    if (bool(callable)) {
+    if (!!callable) {
       assign(std::false_type{}, std::forward<T>(callable),
              std::forward<Allocator>(allocator_));
     } else {
@@ -1366,7 +1366,7 @@ public:
   }
   template <typename T>
   constexpr void assign(std::true_type , T&& callable) {
-    if (bool(callable)) {
+    if (!!callable) {
       assign(std::false_type{}, std::forward<T>(callable));
     } else {
       operator=(nullptr);
