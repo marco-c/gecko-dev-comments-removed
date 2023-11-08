@@ -28,6 +28,7 @@ UNSUPPORTED_FEATURES = set(
         "resizable-arraybuffer",  
         "regexp-duplicate-named-groups",  
         "json-parse-with-source",  
+        "promise-with-resolvers",  
     ]
 )
 FEATURE_CHECK_NEEDED = {
