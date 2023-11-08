@@ -189,7 +189,10 @@ impl<E> WithSpan<E> {
     }
 
     
-    #[cfg_attr(not(feature = "span"), allow(unused_variables, unused_mut))]
+    #[cfg_attr(
+        not(feature = "span"),
+        allow(unused_variables, unused_mut, clippy::missing_const_for_fn)
+    )]
     pub fn with_span<S>(mut self, span: Span, description: S) -> Self
     where
         S: ToString,
@@ -249,6 +252,7 @@ impl<E> WithSpan<E> {
     }
 
     #[cfg(not(feature = "span"))]
+    #[allow(clippy::missing_const_for_fn)]
     
     pub fn location(&self, _source: &str) -> Option<SourceLocation> {
         None
