@@ -582,7 +582,6 @@ class gfxContext final {
     mozilla::gfx::AntialiasMode aaMode;
     bool patternTransformChanged;
     Matrix patternTransform;
-    DeviceColor fontSmoothingBackgroundColor;
     
     Point deviceOffset;
 #ifdef DEBUG

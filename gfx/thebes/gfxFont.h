@@ -148,10 +148,6 @@ struct gfxFontStyle {
   uint32_t languageOverride;
 
   
-  
-  nscolor fontSmoothingBackgroundColor;
-
-  
 
   
   FontWeight weight;
@@ -253,8 +249,7 @@ struct gfxFontStyle {
            (variationSettings == other.variationSettings) &&
            (languageOverride == other.languageOverride) &&
            mozilla::NumbersAreBitwiseIdentical(autoOpticalSize,
-                                               other.autoOpticalSize) &&
-           (fontSmoothingBackgroundColor == other.fontSmoothingBackgroundColor);
+                                               other.autoOpticalSize);
   }
 };
 

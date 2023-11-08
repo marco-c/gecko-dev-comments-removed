@@ -925,38 +925,6 @@ impl ToComputedValue for Color {
     }
 }
 
-
-
-
-
-
-
-#[derive(Clone, Debug, MallocSizeOf, PartialEq, SpecifiedValueInfo, ToCss, ToShmem)]
-pub struct MozFontSmoothingBackgroundColor(pub Color);
-
-impl Parse for MozFontSmoothingBackgroundColor {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        Color::parse(context, input).map(MozFontSmoothingBackgroundColor)
-    }
-}
-
-impl ToComputedValue for MozFontSmoothingBackgroundColor {
-    type ComputedValue = AbsoluteColor;
-
-    fn to_computed_value(&self, context: &Context) -> Self::ComputedValue {
-        self.0
-            .to_computed_value(context)
-            .resolve_to_absolute(&AbsoluteColor::TRANSPARENT_BLACK)
-    }
-
-    fn from_computed_value(computed: &Self::ComputedValue) -> Self {
-        MozFontSmoothingBackgroundColor(Color::from_absolute_color(*computed))
-    }
-}
-
 impl SpecifiedValueInfo for Color {
     const SUPPORTED_TYPES: u8 = CssType::COLOR;
 

@@ -11,7 +11,6 @@ use std::sync::Arc;
 
 use crate::IdNamespace;
 use crate::channel::Sender;
-use crate::color::ColorU;
 use crate::units::LayoutPoint;
 
 
@@ -289,10 +288,6 @@ impl Default for SyntheticItalics {
 pub struct FontInstanceOptions {
     pub render_mode: FontRenderMode,
     pub flags: FontInstanceFlags,
-    
-    
-    
-    pub bg_color: ColorU,
     pub synthetic_italics: SyntheticItalics,
 }
 
@@ -301,7 +296,6 @@ impl Default for FontInstanceOptions {
         FontInstanceOptions {
             render_mode: FontRenderMode::Subpixel,
             flags: Default::default(),
-            bg_color: ColorU::new(0, 0, 0, 0),
             synthetic_italics: SyntheticItalics::disabled(),
         }
     }

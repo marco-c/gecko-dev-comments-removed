@@ -109,9 +109,6 @@ impl TextRunTemplate {
         
         if let Some(mut request) = frame_state.gpu_cache.request(&mut self.common.gpu_cache_handle) {
             request.push(ColorF::from(self.font.color).premultiplied());
-            
-            let bg_color = ColorF::from(self.font.bg_color);
-            request.push([bg_color.r, bg_color.g, bg_color.b, 1.0]);
 
             let mut gpu_block = [0.0; 4];
             for (i, src) in self.glyphs.iter().enumerate() {
@@ -244,7 +241,7 @@ impl TextRunPrimitive {
         surface: &SurfaceInfo,
         spatial_node_index: SpatialNodeIndex,
         transform: &LayoutToWorldTransform,
-        mut allow_subpixel: bool,
+        allow_subpixel: bool,
         raster_space: RasterSpace,
         spatial_tree: &SpatialTree,
     ) -> bool {
@@ -359,10 +356,6 @@ impl TextRunPrimitive {
             flags,
             ..specified_font.clone()
         };
-
-        
-        
-        allow_subpixel |= self.used_font.bg_color.a != 0;
 
         
         if !allow_subpixel || !use_subpixel_aa {

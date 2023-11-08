@@ -20,9 +20,6 @@ pub use crate::values::specified::color::{ColorScheme, ForcedColorAdjust, PrintC
 pub type ColorPropertyValue = AbsoluteColor;
 
 
-pub type MozFontSmoothingBackgroundColor = AbsoluteColor;
-
-
 pub type Color = GenericColor<Percentage>;
 
 

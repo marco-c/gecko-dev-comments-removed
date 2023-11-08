@@ -44,12 +44,6 @@ struct nsFont final {
   
   
   
-  mozilla::StyleAbsoluteColor fontSmoothingBackgroundColor =
-      mozilla::StyleAbsoluteColor::TRANSPARENT_BLACK;
-
-  
-  
-  
   uint32_t languageOverride = 0;
 
   
