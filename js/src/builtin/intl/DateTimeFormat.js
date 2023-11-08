@@ -7,6 +7,8 @@
 
 
 
+
+
 function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
   assert(IsObject(lazyDateTimeFormatData), "lazy data not an object?");
 
@@ -74,18 +76,19 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
   internalProps.numberingSystem = r.nu;
 
   
-  internalProps.timeZone = lazyDateTimeFormatData.timeZone;
-
-  
-  var formatOpt = lazyDateTimeFormatData.formatOpt;
+  var formatOptions = lazyDateTimeFormatData.formatOptions;
 
   
   
   
   
-  if (r.hc !== null && formatOpt.hour12 === undefined) {
-    formatOpt.hourCycle = r.hc;
+  
+  if (r.hc !== null && formatOptions.hour12 === undefined) {
+    formatOptions.hourCycle = r.hc;
   }
+
+  
+  internalProps.timeZone = lazyDateTimeFormatData.timeZone;
 
   
   if (lazyDateTimeFormatData.patternOption !== undefined) {
@@ -94,24 +97,24 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     lazyDateTimeFormatData.dateStyle !== undefined ||
     lazyDateTimeFormatData.timeStyle !== undefined
   ) {
-    internalProps.hourCycle = formatOpt.hourCycle;
-    internalProps.hour12 = formatOpt.hour12;
+    internalProps.hourCycle = formatOptions.hourCycle;
+    internalProps.hour12 = formatOptions.hour12;
     internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
     internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
   } else {
-    internalProps.hourCycle = formatOpt.hourCycle;
-    internalProps.hour12 = formatOpt.hour12;
-    internalProps.weekday = formatOpt.weekday;
-    internalProps.era = formatOpt.era;
-    internalProps.year = formatOpt.year;
-    internalProps.month = formatOpt.month;
-    internalProps.day = formatOpt.day;
-    internalProps.dayPeriod = formatOpt.dayPeriod;
-    internalProps.hour = formatOpt.hour;
-    internalProps.minute = formatOpt.minute;
-    internalProps.second = formatOpt.second;
-    internalProps.fractionalSecondDigits = formatOpt.fractionalSecondDigits;
-    internalProps.timeZoneName = formatOpt.timeZoneName;
+    internalProps.hourCycle = formatOptions.hourCycle;
+    internalProps.hour12 = formatOptions.hour12;
+    internalProps.weekday = formatOptions.weekday;
+    internalProps.era = formatOptions.era;
+    internalProps.year = formatOptions.year;
+    internalProps.month = formatOptions.month;
+    internalProps.day = formatOptions.day;
+    internalProps.dayPeriod = formatOptions.dayPeriod;
+    internalProps.hour = formatOptions.hour;
+    internalProps.minute = formatOptions.minute;
+    internalProps.second = formatOptions.second;
+    internalProps.fractionalSecondDigits = formatOptions.fractionalSecondDigits;
+    internalProps.timeZoneName = formatOptions.timeZoneName;
   }
 
   
@@ -331,6 +334,8 @@ function InitializeDateTimeFormat(
   var lazyDateTimeFormatData = std_Object_create(null);
 
   
+
+  
   var requestedLocales = CanonicalizeLocaleList(locales);
   lazyDateTimeFormatData.requestedLocales = requestedLocales;
 
@@ -356,8 +361,10 @@ function InitializeDateTimeFormat(
   );
   localeOpt.localeMatcher = localeMatcher;
 
+  
   var calendar = GetOption(options, "calendar", "string", undefined, undefined);
 
+  
   if (calendar !== undefined) {
     calendar = intl_ValidateAndCanonicalizeUnicodeExtensionType(
       calendar,
@@ -366,8 +373,10 @@ function InitializeDateTimeFormat(
     );
   }
 
+  
   localeOpt.ca = calendar;
 
+  
   var numberingSystem = GetOption(
     options,
     "numberingSystem",
@@ -376,6 +385,7 @@ function InitializeDateTimeFormat(
     undefined
   );
 
+  
   if (numberingSystem !== undefined) {
     numberingSystem = intl_ValidateAndCanonicalizeUnicodeExtensionType(
       numberingSystem,
@@ -384,13 +394,14 @@ function InitializeDateTimeFormat(
     );
   }
 
+  
   localeOpt.nu = numberingSystem;
 
   
-  var hr12 = GetOption(options, "hour12", "boolean", undefined, undefined);
+  var hour12 = GetOption(options, "hour12", "boolean", undefined, undefined);
 
   
-  var hc = GetOption(
+  var hourCycle = GetOption(
     options,
     "hourCycle",
     "string",
@@ -399,39 +410,43 @@ function InitializeDateTimeFormat(
   );
 
   
-  if (hr12 !== undefined) {
+  if (hour12 !== undefined) {
     
-    hc = null;
+    hourCycle = null;
   }
 
   
-  localeOpt.hc = hc;
+  localeOpt.hc = hourCycle;
 
   
 
   
-  var tz = options.timeZone;
-  if (tz !== undefined) {
+  var timeZone = options.timeZone;
+
+  
+  if (timeZone === undefined) {
     
-    tz = ToString(tz);
+    timeZone = DefaultTimeZone();
+  } else {
+    
+    timeZone = ToString(timeZone);
 
     
-    var timeZone = intl_IsValidTimeZoneName(tz);
-    if (timeZone === null) {
-      ThrowRangeError(JSMSG_INVALID_TIME_ZONE, tz);
+    var validTimeZone = intl_IsValidTimeZoneName(timeZone);
+    if (validTimeZone === null) {
+      ThrowRangeError(JSMSG_INVALID_TIME_ZONE, timeZone);
     }
 
     
-    tz = CanonicalizeTimeZoneName(timeZone);
-  } else {
-    
-    tz = DefaultTimeZone();
+    timeZone = CanonicalizeTimeZoneName(validTimeZone);
   }
-  lazyDateTimeFormatData.timeZone = tz;
 
   
-  var formatOpt = new_Record();
-  lazyDateTimeFormatData.formatOpt = formatOpt;
+  lazyDateTimeFormatData.timeZone = timeZone;
+
+  
+  var formatOptions = new_Record();
+  lazyDateTimeFormatData.formatOptions = formatOptions;
 
   if (mozExtensions) {
     var pattern = GetOption(options, "pattern", "string", undefined, undefined);
@@ -440,77 +455,86 @@ function InitializeDateTimeFormat(
 
   
   
-  formatOpt.weekday = GetOption(
+  
+  if (hour12 !== undefined) {
+    formatOptions.hour12 = hour12;
+  }
+
+  
+
+  
+  
+  formatOptions.weekday = GetOption(
     options,
     "weekday",
     "string",
     ["narrow", "short", "long"],
     undefined
   );
-  formatOpt.era = GetOption(
+  formatOptions.era = GetOption(
     options,
     "era",
     "string",
     ["narrow", "short", "long"],
     undefined
   );
-  formatOpt.year = GetOption(
+  formatOptions.year = GetOption(
     options,
     "year",
     "string",
     ["2-digit", "numeric"],
     undefined
   );
-  formatOpt.month = GetOption(
+  formatOptions.month = GetOption(
     options,
     "month",
     "string",
     ["2-digit", "numeric", "narrow", "short", "long"],
     undefined
   );
-  formatOpt.day = GetOption(
+  formatOptions.day = GetOption(
     options,
     "day",
     "string",
     ["2-digit", "numeric"],
     undefined
   );
-  formatOpt.dayPeriod = GetOption(
+  formatOptions.dayPeriod = GetOption(
     options,
     "dayPeriod",
     "string",
     ["narrow", "short", "long"],
     undefined
   );
-  formatOpt.hour = GetOption(
+  formatOptions.hour = GetOption(
     options,
     "hour",
     "string",
     ["2-digit", "numeric"],
     undefined
   );
-  formatOpt.minute = GetOption(
+  formatOptions.minute = GetOption(
     options,
     "minute",
     "string",
     ["2-digit", "numeric"],
     undefined
   );
-  formatOpt.second = GetOption(
+  formatOptions.second = GetOption(
     options,
     "second",
     "string",
     ["2-digit", "numeric"],
     undefined
   );
-  formatOpt.fractionalSecondDigits = GetNumberOption(
+  formatOptions.fractionalSecondDigits = GetNumberOption(
     options,
     "fractionalSecondDigits",
     1,
     3,
     undefined
   );
-  formatOpt.timeZoneName = GetOption(
+  formatOptions.timeZoneName = GetOption(
     options,
     "timeZoneName",
     "string",
@@ -524,8 +548,6 @@ function InitializeDateTimeFormat(
     ],
     undefined
   );
-
-  
 
   
   
@@ -543,7 +565,6 @@ function InitializeDateTimeFormat(
   void formatMatcher;
 
   
-  
   var dateStyle = GetOption(
     options,
     "dateStyle",
@@ -553,6 +574,7 @@ function InitializeDateTimeFormat(
   );
   lazyDateTimeFormatData.dateStyle = dateStyle;
 
+  
   var timeStyle = GetOption(
     options,
     "timeStyle",
@@ -562,34 +584,36 @@ function InitializeDateTimeFormat(
   );
   lazyDateTimeFormatData.timeStyle = timeStyle;
 
+  
   if (dateStyle !== undefined || timeStyle !== undefined) {
     
     var explicitFormatComponent =
-      formatOpt.weekday !== undefined
+      formatOptions.weekday !== undefined
         ? "weekday"
-        : formatOpt.era !== undefined
+        : formatOptions.era !== undefined
         ? "era"
-        : formatOpt.year !== undefined
+        : formatOptions.year !== undefined
         ? "year"
-        : formatOpt.month !== undefined
+        : formatOptions.month !== undefined
         ? "month"
-        : formatOpt.day !== undefined
+        : formatOptions.day !== undefined
         ? "day"
-        : formatOpt.dayPeriod !== undefined
+        : formatOptions.dayPeriod !== undefined
         ? "dayPeriod"
-        : formatOpt.hour !== undefined
+        : formatOptions.hour !== undefined
         ? "hour"
-        : formatOpt.minute !== undefined
+        : formatOptions.minute !== undefined
         ? "minute"
-        : formatOpt.second !== undefined
+        : formatOptions.second !== undefined
         ? "second"
-        : formatOpt.fractionalSecondDigits !== undefined
+        : formatOptions.fractionalSecondDigits !== undefined
         ? "fractionalSecondDigits"
-        : formatOpt.timeZoneName !== undefined
+        : formatOptions.timeZoneName !== undefined
         ? "timeZoneName"
         : undefined;
     
 
+    
     if (explicitFormatComponent !== undefined) {
       ThrowTypeError(
         JSMSG_INVALID_DATETIME_OPTION,
@@ -598,6 +622,7 @@ function InitializeDateTimeFormat(
       );
     }
 
+    
     if (required === "date" && timeStyle !== undefined) {
       ThrowTypeError(
         JSMSG_INVALID_DATETIME_STYLE,
@@ -605,6 +630,8 @@ function InitializeDateTimeFormat(
         "toLocaleDateString"
       );
     }
+
+    
     if (required === "time" && dateStyle !== undefined) {
       ThrowTypeError(
         JSMSG_INVALID_DATETIME_STYLE,
@@ -613,49 +640,48 @@ function InitializeDateTimeFormat(
       );
     }
   } else {
+    
     var needDefaults = true;
 
+    
     if (required === "date" || required === "any") {
       needDefaults =
-        formatOpt.weekday === undefined &&
-        formatOpt.year === undefined &&
-        formatOpt.month === undefined &&
-        formatOpt.day === undefined;
+        formatOptions.weekday === undefined &&
+        formatOptions.year === undefined &&
+        formatOptions.month === undefined &&
+        formatOptions.day === undefined;
     }
 
+    
     if (required === "time" || required === "any") {
       needDefaults =
         needDefaults &&
-        formatOpt.dayPeriod === undefined &&
-        formatOpt.hour === undefined &&
-        formatOpt.minute === undefined &&
-        formatOpt.second === undefined &&
-        formatOpt.fractionalSecondDigits === undefined;
+        formatOptions.dayPeriod === undefined &&
+        formatOptions.hour === undefined &&
+        formatOptions.minute === undefined &&
+        formatOptions.second === undefined &&
+        formatOptions.fractionalSecondDigits === undefined;
     }
 
+    
     if (needDefaults && (defaults === "date" || defaults === "all")) {
-      formatOpt.year = "numeric";
-      formatOpt.month = "numeric";
-      formatOpt.day = "numeric";
+      formatOptions.year = "numeric";
+      formatOptions.month = "numeric";
+      formatOptions.day = "numeric";
     }
 
+    
     if (needDefaults && (defaults === "time" || defaults === "all")) {
-      formatOpt.hour = "numeric";
-      formatOpt.minute = "numeric";
-      formatOpt.second = "numeric";
+      formatOptions.hour = "numeric";
+      formatOptions.minute = "numeric";
+      formatOptions.second = "numeric";
     }
+
+    
   }
 
   
 
-  
-  
-  if (hr12 !== undefined) {
-    formatOpt.hour12 = hr12;
-  }
-
-  
-  
   
   
   initializeIntlObject(
