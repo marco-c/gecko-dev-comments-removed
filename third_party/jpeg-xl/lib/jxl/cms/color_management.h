@@ -8,11 +8,11 @@
 
 
 
+#include <cstdint>
+#include <vector>
+
 #include "lib/jxl/base/compiler_specific.h"
 #include "lib/jxl/base/status.h"
-
-
-#include "lib/jxl/color_encoding_internal.h"
 
 namespace jxl {
 
@@ -23,11 +23,24 @@ enum class ExtraTF {
   kSRGB,
 };
 
+namespace cms {
+struct ColorEncoding;
+struct CIExy;
+}  
 
 
-Status MaybeCreateProfile(const ColorEncoding& c, IccBytes* JXL_RESTRICT icc);
 
-Status CIEXYZFromWhiteCIExy(const CIExy& xy, float XYZ[3]);
+Status MaybeCreateProfile(const jxl::cms::ColorEncoding& c,
+                          std::vector<uint8_t>* JXL_RESTRICT icc);
+
+Status CIEXYZFromWhiteCIExy(const jxl::cms::CIExy& xy, float XYZ[3]);
+
+Status PrimariesToXYZ(float rx, float ry, float gx, float gy, float bx,
+                      float by, float wx, float wy, float matrix[9]);
+
+Status AdaptToXYZD50(float wx, float wy, float matrix[9]);
+Status PrimariesToXYZD50(float rx, float ry, float gx, float gy, float bx,
+                         float by, float wx, float wy, float matrix[9]);
 
 }  
 

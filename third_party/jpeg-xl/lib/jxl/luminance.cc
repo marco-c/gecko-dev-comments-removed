@@ -10,10 +10,10 @@
 namespace jxl {
 
 void SetIntensityTarget(ImageMetadata* m) {
-  if (m->color_encoding.tf.IsPQ()) {
+  if (m->color_encoding.Tf().IsPQ()) {
     
     m->SetIntensityTarget(10000);
-  } else if (m->color_encoding.tf.IsHLG()) {
+  } else if (m->color_encoding.Tf().IsHLG()) {
     
     
     m->SetIntensityTarget(1000);
