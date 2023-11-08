@@ -2175,6 +2175,14 @@ void Document::AccumulatePageLoadTelemetry(
   }
 
   
+  
+  if (TimeStamp lcpTime =
+          GetNavigationTiming()->GetLargestContentfulRenderTimeStamp()) {
+    aEventTelemetryDataOut.lcpTime = mozilla::Some(
+        static_cast<uint32_t>((lcpTime - navigationStart).ToMilliseconds()));
+  }
+
+  
   if (TimeStamp dclEventStart =
           GetNavigationTiming()->GetDOMContentLoadedEventStartTimeStamp()) {
     Telemetry::AccumulateTimeDelta(Telemetry::PERF_DOM_CONTENT_LOADED_TIME_MS,
