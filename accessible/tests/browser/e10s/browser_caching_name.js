@@ -3,6 +3,7 @@
 
 
 "use strict";
+requestLongerTimeout(2);
 
 
 loadScripts({ name: "name.js", dir: MOCHITESTS_DIR });
