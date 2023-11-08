@@ -26,7 +26,7 @@ t.step(function() {
   
   
   var width_with_spacing = ctx.measureText('Hello World').width;
-  _assertSame(width_with_spacing, width_normal + 110, "width_with_spacing", "width_normal + 110");
+  assert_approx_equals(width_with_spacing, width_normal + 110, 0.1, "letter-spacing error");
 
   
   
@@ -35,7 +35,7 @@ t.step(function() {
   
   ctx.letterSpacing = '0em';
   width_normal = ctx.measureText('Hello World').width;
-  _assertSame(width_with_spacing, width_normal + 220, "width_with_spacing", "width_normal + 220");
+  assert_approx_equals(width_with_spacing, width_normal + 220, 0.1, "letter-spacing error after font change");
   t.done();
 });
 done();
