@@ -168,12 +168,13 @@ class LargestContentfulPaint final : public PerformanceEntry {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(LargestContentfulPaint,
                                            PerformanceEntry)
 
-  LargestContentfulPaint(
-      PerformanceMainThread* aPerformance,
-      const DOMHighResTimeStamp aRenderTime,
-      const DOMHighResTimeStamp aLoadTime, const unsigned long aSize,
-      nsIURI* aURI, Element* aElement,
-      const Maybe<const LCPImageEntryKey>& aLCPImageEntryKey);
+  LargestContentfulPaint(PerformanceMainThread* aPerformance,
+                         const DOMHighResTimeStamp aRenderTime,
+                         const DOMHighResTimeStamp aLoadTime,
+                         const unsigned long aSize, nsIURI* aURI,
+                         Element* aElement,
+                         const Maybe<const LCPImageEntryKey>& aLCPImageEntryKey,
+                         bool aShouldExposeRenderTime);
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
@@ -212,10 +213,17 @@ class LargestContentfulPaint final : public PerformanceEntry {
  private:
   ~LargestContentfulPaint() = default;
 
+  void ReportLCPToNavigationTimings();
+
   RefPtr<PerformanceMainThread> mPerformance;
 
+  
+  
   DOMHighResTimeStamp mRenderTime;
   DOMHighResTimeStamp mLoadTime;
+  
+  
+  const bool mShouldExposeRenderTime;
   unsigned long mSize;
   nsCOMPtr<nsIURI> mURI;
 

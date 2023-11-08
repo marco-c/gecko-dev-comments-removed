@@ -12,6 +12,7 @@
 #include "PerformanceMainThread.h"
 #include "LargestContentfulPaint.h"
 
+#include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/DOMIntersectionObserver.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -54,12 +55,14 @@ LargestContentfulPaint::LargestContentfulPaint(
     PerformanceMainThread* aPerformance, const DOMHighResTimeStamp aRenderTime,
     const DOMHighResTimeStamp aLoadTime, const unsigned long aSize,
     nsIURI* aURI, Element* aElement,
-    const Maybe<const LCPImageEntryKey>& aLCPImageEntryKey)
+    const Maybe<const LCPImageEntryKey>& aLCPImageEntryKey,
+    bool aShouldExposeRenderTime)
     : PerformanceEntry(aPerformance->GetParentObject(), u""_ns,
                        kLargestContentfulPaintName),
       mPerformance(aPerformance),
       mRenderTime(aRenderTime),
       mLoadTime(aLoadTime),
+      mShouldExposeRenderTime(aShouldExposeRenderTime),
       mSize(aSize),
       mURI(aURI),
       mElement(aElement),
@@ -187,24 +190,11 @@ void LargestContentfulPaint::MaybeProcessImageForElementTiming(
   DOMHighResTimeStamp nowTime =
       performance->TimeStampToDOMHighResForRendering(TimeStamp::Now());
 
-  if (!request->IsData() && !request->ShouldReportRenderTimeForLCP()) {
-    
-    LOG("  Added a pending image rendering (TAO FAILED)");
-    
-    
-    LCPHelpers::CreateLCPEntryForImage(performance, aElement, aRequest, nowTime,
-                                       0 , entryKey);
-    return;
-  }
-
   
   
   
   
-  
-  
-  
-  LOG("  Added a pending image rendering (TAO PASSED)");
+  LOG("  Added a pending image rendering");
   performance->AddImagesPendingRendering(
       ImagePendingRendering{entryKey, nowTime});
 }
@@ -270,6 +260,9 @@ void LCPHelpers::FinalizeLCPEntryForImage(
 }
 
 DOMHighResTimeStamp LargestContentfulPaint::RenderTime() const {
+  if (!mShouldExposeRenderTime) {
+    return 0;
+  }
   return nsRFPService::ReduceTimePrecisionAsMSecs(
       mRenderTime, mPerformance->GetRandomTimelineSeed(),
       mPerformance->GetRTPCallerType());
@@ -282,7 +275,8 @@ DOMHighResTimeStamp LargestContentfulPaint::LoadTime() const {
 }
 
 DOMHighResTimeStamp LargestContentfulPaint::StartTime() const {
-  DOMHighResTimeStamp startTime = !mRenderTime ? mLoadTime : mRenderTime;
+  DOMHighResTimeStamp startTime =
+      mShouldExposeRenderTime ? mRenderTime : mLoadTime;
   return nsRFPService::ReduceTimePrecisionAsMSecs(
       startTime, mPerformance->GetRandomTimelineSeed(),
       mPerformance->GetRTPCallerType());
@@ -299,6 +293,8 @@ Element* LargestContentfulPaint::GetContainingBlockForTextFrame(
 void LargestContentfulPaint::QueueEntry() {
   LOG("QueueEntry entry=%p", this);
   mPerformance->QueueLargestContentfulPaintEntry(this);
+
+  ReportLCPToNavigationTimings();
 }
 
 void LargestContentfulPaint::GetUrl(nsAString& aUrl) {
@@ -469,11 +465,20 @@ void LCPHelpers::CreateLCPEntryForImage(
   nsCOMPtr<nsIURI> requestURI;
   aRequestProxy->GetURI(getter_AddRefs(requestURI));
 
+  imgRequest* request = aRequestProxy->GetOwner();
+  
+  MOZ_ASSERT(request);
+
+  bool taoPassed = request->IsData() || request->ShouldReportRenderTimeForLCP();
   
   
-  RefPtr<LargestContentfulPaint> entry =
-      new LargestContentfulPaint(aPerformance, aRenderTime, aLoadTime, 0,
-                                 requestURI, aElement, Some(aImageEntryKey));
+  
+  
+  
+  
+  RefPtr<LargestContentfulPaint> entry = new LargestContentfulPaint(
+      aPerformance, aRenderTime, aLoadTime, 0, requestURI, aElement,
+      Some(aImageEntryKey), taoPassed);
 
   LOG("  Upsert a LargestContentfulPaint entry=%p to LCPEntryMap.",
       entry.get());
@@ -496,8 +501,9 @@ void LCPHelpers::FinalizeLCPEntryForText(
 
   aContainingBlock->SetFlags(ELEMENT_PROCESSED_BY_LCP_FOR_TEXT);
 
-  RefPtr<LargestContentfulPaint> entry = new LargestContentfulPaint(
-      aPerformance, aRenderTime, 0, 0, nullptr, aContainingBlock, Nothing());
+  RefPtr<LargestContentfulPaint> entry =
+      new LargestContentfulPaint(aPerformance, aRenderTime, 0, 0, nullptr,
+                                 aContainingBlock, Nothing(), true);
 
   entry->UpdateSize(aContainingBlock, aTargetRectRelativeToSelf, aPerformance,
                     false);
@@ -511,5 +517,32 @@ void LCPHelpers::FinalizeLCPEntryForText(
     return;
   }
   entry->QueueEntry();
+}
+
+void LargestContentfulPaint::ReportLCPToNavigationTimings() {
+  const Document* document = mElement->OwnerDoc();
+
+  MOZ_ASSERT(document);
+
+  nsDOMNavigationTiming* timing = document->GetNavigationTiming();
+
+  if (MOZ_UNLIKELY(!timing)) {
+    return;
+  }
+
+  if (document->IsResourceDoc()) {
+    return;
+  }
+
+  if (BrowsingContext* browsingContext = document->GetBrowsingContext()) {
+    if (browsingContext->GetEmbeddedInContentDocument()) {
+      return;
+    }
+  }
+
+  if (!document->IsTopLevelContentDocument()) {
+    return;
+  }
+  timing->NotifyLargestContentfulRenderForRootContentDocument(mRenderTime);
 }
 }  
