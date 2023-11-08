@@ -52,7 +52,7 @@ parallelPromiseTest(async t => {
   await rc1.executeScript(url => {
     window.addEventListener('pagehide', e => {
       if (e.persisted) {
-        fetchLater(url, {activationTimeout: 0});
+        fetchLater(url, {activateAfter: 0});
       }
     });
     
@@ -70,7 +70,7 @@ parallelPromiseTest(async t => {
   }));
 
   await expectBeacon(uuid, {count: 1});
-}, `Call fetchLater() when BFCached with activationTimeout=0 sends immediately.`);
+}, `Call fetchLater() when BFCached with activateAfter=0 sends immediately.`);
 
 parallelPromiseTest(async t => {
   const uuid = token();

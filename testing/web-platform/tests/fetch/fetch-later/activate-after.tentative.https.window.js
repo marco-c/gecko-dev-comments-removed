@@ -15,14 +15,14 @@ parallelPromiseTest(async t => {
 
   
   const iframe = await loadScriptAsIframe(`
-    fetchLater("${url}", {activationTimeout: 1000});  // 1s
+    fetchLater("${url}", {activateAfter: 1000});  // 1s
   `);
   
   document.body.removeChild(iframe);
 
   
   await expectBeacon(uuid, {count: 1});
-}, 'fetchLater() sends out based on activationTimeout.');
+}, 'fetchLater() sends out based on activateAfter.');
 
 parallelPromiseTest(async t => {
   const uuid = token();
@@ -35,9 +35,8 @@ parallelPromiseTest(async t => {
 
   
   
-  
   await rc1.executeScript(url => {
-    fetchLater(url, {activationTimeout: 1000});  
+    fetchLater(url, {activateAfter: 1000});  
     
     window.addEventListener('pageshow', e => {
       window.pageshowEvent = e;
@@ -53,4 +52,4 @@ parallelPromiseTest(async t => {
   }));
 
   await expectBeacon(uuid, {count: 1});
-}, 'fetchLater() sends out based on activationTimeout, even if document is in BFCache.');
+}, 'fetchLater() sends out based on activateAfter, even if document is in BFCache.');
