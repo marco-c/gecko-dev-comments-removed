@@ -33,9 +33,6 @@ def test(mod, path, entity=None):
         if re.match(r"toolkit/about/[^/]*Mozilla.ftl", path):
             
             return "error"
-        if re.match(r"toolkit/about/[^/]*Plugins.ftl", path):
-            
-            return "error"
         if re.match(r"toolkit/about/[^/]*Rights.ftl", path):
             
             return "error"

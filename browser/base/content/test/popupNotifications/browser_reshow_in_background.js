@@ -10,12 +10,10 @@ add_task(
     
     
     
-    
-    let tabB = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
+    let tabB = BrowserTestUtils.addTab(gBrowser, "https://example.com/");
     await BrowserTestUtils.browserLoaded(tabB.linkedBrowser);
 
-    
-    let tabC = BrowserTestUtils.addTab(gBrowser, "http://example.com/");
+    let tabC = BrowserTestUtils.addTab(gBrowser, "https://example.com/");
     await BrowserTestUtils.browserLoaded(tabC.linkedBrowser);
 
     let seenEvents = [];
@@ -31,7 +29,7 @@ add_task(
       tabC.linkedBrowser,
       "test-notification",
       "",
-      "plugins-notification-icon",
+      "geo-notification-icon",
       null,
       null,
       options
