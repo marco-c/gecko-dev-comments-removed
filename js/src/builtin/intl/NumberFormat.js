@@ -343,10 +343,10 @@ function SetNumberFormatDigitOptions(
     
     if (hasFractionDigits) {
       
-      mnfd = DefaultNumberOption(mnfd, 0, 20, undefined);
+      mnfd = DefaultNumberOption(mnfd, 0, 100, undefined);
 
       
-      mxfd = DefaultNumberOption(mxfd, 0, 20, undefined);
+      mxfd = DefaultNumberOption(mxfd, 0, 100, undefined);
 
       
       if (mnfd === undefined) {

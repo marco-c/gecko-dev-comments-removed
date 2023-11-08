@@ -316,7 +316,6 @@ bool NumberFormatterSkeleton::roundingIncrement(uint32_t increment,
   MOZ_ASSERT(increment > 1);
 
   
-  
   constexpr size_t maxFracDigits = 100;
   MOZ_RELEASE_ASSERT(mxfd <= maxFracDigits);
 
