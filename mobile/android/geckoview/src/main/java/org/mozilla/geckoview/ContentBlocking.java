@@ -262,6 +262,53 @@ public class ContentBlocking {
 
 
 
+
+      public @NonNull Builder queryParameterStrippingEnabled(final boolean enabled) {
+        getSettings().setQueryParameterStrippingEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+
+      public @NonNull Builder queryParameterStrippingPrivateBrowsingEnabled(final boolean enabled) {
+        getSettings().setQueryParameterStrippingPrivateBrowsingEnabled(enabled);
+        return this;
+      }
+
+      
+
+
+
+
+
+      public @NonNull Builder queryParameterStrippingAllowList(final @NonNull String... list) {
+        getSettings().setQueryParameterStrippingAllowList(list);
+        return this;
+      }
+
+      
+
+
+
+
+
+
+      public @NonNull Builder queryParameterStrippingStripList(final @NonNull String... list) {
+        getSettings().setQueryParameterStrippingStripList(list);
+        return this;
+      }
+
+      
+
+
+
+
+
       public @NonNull Builder cookieBannerHandlingModePrivateBrowsing(
           final @CBCookieBannerMode int mode) {
         getSettings().setCookieBannerModePrivateBrowsing(mode);
@@ -338,6 +385,19 @@ public class ContentBlocking {
 
     final Pref<Boolean> mCbhGlobalRulesSubFramesEnabled =
         new Pref<Boolean>("cookiebanners.service.enableGlobalRules.subFrames", false);
+
+     final Pref<Boolean> mQueryParameterStrippingEnabled =
+        new Pref<Boolean>("privacy.query_stripping.enabled", false);
+
+     final Pref<Boolean> mQueryParameterStrippingPrivateBrowsingEnabled =
+        new Pref<Boolean>("privacy.query_stripping.enabled.pbmode", false);
+
+     final Pref<String> mQueryParameterStrippingAllowList =
+        new Pref<>("privacy.query_stripping.allow_list", "");
+
+     final Pref<String> mQueryParameterStrippingStripList =
+        new Pref<>("privacy.query_stripping.strip_list", "");
+
      final Pref<String> mSafeBrowsingMalwareTable =
         new Pref<>(
             "urlclassifier.malwareTable",
@@ -462,6 +522,50 @@ public class ContentBlocking {
 
     public @NonNull String[] getSafeBrowsingMalwareTable() {
       return ContentBlocking.prefToLists(mSafeBrowsingMalwareTable.get());
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setQueryParameterStrippingAllowList(final @NonNull String... list) {
+      mQueryParameterStrippingAllowList.commit(ContentBlocking.listsToPref(list));
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull String[] getQueryParameterStrippingAllowList() {
+      return ContentBlocking.prefToLists(mQueryParameterStrippingAllowList.get());
+    }
+
+    
+
+
+
+
+
+
+    public @NonNull Settings setQueryParameterStrippingStripList(final @NonNull String... list) {
+      mQueryParameterStrippingStripList.commit(ContentBlocking.listsToPref(list));
+      return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull String[] getQueryParameterStrippingStripList() {
+      return ContentBlocking.prefToLists(mQueryParameterStrippingStripList.get());
     }
 
     
@@ -707,6 +811,47 @@ public class ContentBlocking {
     public @NonNull Settings setCookieBannerGlobalRulesSubFramesEnabled(final boolean enabled) {
       mCbhGlobalRulesSubFramesEnabled.commit(enabled);
       return this;
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setQueryParameterStrippingEnabled(final boolean enabled) {
+      mQueryParameterStrippingEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getQueryParameterStrippingEnabled() {
+      return mQueryParameterStrippingEnabled.get();
+    }
+
+    
+
+
+
+
+
+    public @NonNull Settings setQueryParameterStrippingPrivateBrowsingEnabled(
+        final boolean enabled) {
+      mQueryParameterStrippingPrivateBrowsingEnabled.commit(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+    public boolean getQueryParameterStrippingPrivateBrowsingEnabled() {
+      return mQueryParameterStrippingPrivateBrowsingEnabled.get();
     }
 
     
