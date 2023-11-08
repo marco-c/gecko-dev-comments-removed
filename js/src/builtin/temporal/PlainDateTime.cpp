@@ -989,6 +989,22 @@ static bool DifferenceTemporalPlainDateTime(JSContext* cx,
   }
 
   
+  if (settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1}) {
+    if (operation == TemporalDifference::Since) {
+      diff = diff.negate();
+    }
+
+    auto* obj = CreateTemporalDuration(cx, diff);
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
   Rooted<PlainDateObject*> relativeTo(
       cx, CreateTemporalDate(cx, ToPlainDate(dateTime), calendar));
   if (!relativeTo) {
@@ -2086,6 +2102,18 @@ static bool PlainDateTime_round(JSContext* cx, const CallArgs& args) {
                                            inclusive)) {
       return false;
     }
+  }
+
+  
+  if (smallestUnit == TemporalUnit::Nanosecond &&
+      roundingIncrement == Increment{1}) {
+    auto* obj = CreateTemporalDateTime(cx, dateTime, calendar);
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
   }
 
   

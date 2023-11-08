@@ -1689,13 +1689,18 @@ static bool DifferenceTemporalPlainTime(JSContext* cx,
 
   
   auto diff = DifferenceTime(temporalTime, other);
+  MOZ_ASSERT(diff.days == 0);
 
   
-  Duration roundedDuration;
-  if (!RoundDuration(cx, diff.toDuration().time(), settings.roundingIncrement,
-                     settings.smallestUnit, settings.roundingMode,
-                     &roundedDuration)) {
-    return false;
+  auto roundedDuration = diff.toDuration();
+  if (settings.smallestUnit != TemporalUnit::Nanosecond ||
+      settings.roundingIncrement != Increment{1}) {
+    
+    if (!RoundDuration(cx, roundedDuration.time(), settings.roundingIncrement,
+                       settings.smallestUnit, settings.roundingMode,
+                       &roundedDuration)) {
+      return false;
+    }
   }
 
   

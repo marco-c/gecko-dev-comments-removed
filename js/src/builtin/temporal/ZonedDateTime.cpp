@@ -1271,6 +1271,22 @@ static bool DifferenceTemporalZonedDateTime(JSContext* cx,
   }
 
   
+  if (settings.smallestUnit == TemporalUnit::Nanosecond &&
+      settings.roundingIncrement == Increment{1}) {
+    if (operation == TemporalDifference::Since) {
+      difference = difference.negate();
+    }
+
+    auto* obj = CreateTemporalDuration(cx, difference);
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
+  }
+
+  
   Duration roundResult;
   if (!RoundDuration(cx, difference, settings.roundingIncrement,
                      settings.smallestUnit, settings.roundingMode,
@@ -2929,6 +2945,20 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
                                            inclusive)) {
       return false;
     }
+  }
+
+  
+  if (smallestUnit == TemporalUnit::Nanosecond &&
+      roundingIncrement == Increment{1}) {
+    
+    auto* result =
+        CreateTemporalZonedDateTime(cx, epochInstant, timeZone, calendar);
+    if (!result) {
+      return false;
+    }
+
+    args.rval().setObject(*result);
+    return true;
   }
 
   

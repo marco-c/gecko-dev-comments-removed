@@ -7466,6 +7466,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   auto duration = ToDuration(durationObj);
 
   
+  auto existingLargestUnit = DefaultTemporalLargestUnit(duration);
+
+  
   auto smallestUnit = TemporalUnit::Auto;
   TemporalUnit largestUnit;
   auto roundingMode = TemporalRoundingMode::HalfExpand;
@@ -7486,10 +7489,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     
 
     
-    auto defaultLargestUnit = DefaultTemporalLargestUnit(duration);
 
     
-    defaultLargestUnit = std::min(defaultLargestUnit, smallestUnit);
+    auto defaultLargestUnit = std::min(existingLargestUnit, smallestUnit);
 
     
 
@@ -7567,10 +7569,9 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
     }
 
     
-    auto defaultLargestUnit = DefaultTemporalLargestUnit(duration);
 
     
-    defaultLargestUnit = std::min(defaultLargestUnit, smallestUnit);
+    auto defaultLargestUnit = std::min(existingLargestUnit, smallestUnit);
 
     
     if (largestUnitValue.isUndefined()) {
@@ -7623,6 +7624,39 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
                  "ToRelativeTemporalObject doesn't return dead wrappers");
       MOZ_CRASH("expected either PlainDateObject or ZonedDateTimeObject");
     }
+  }
+
+  
+  
+
+  
+  bool hoursToDaysConversionMayOccur = false;
+
+  
+  if (duration.days != 0 && zonedRelativeTo) {
+    hoursToDaysConversionMayOccur = true;
+  }
+
+  
+  else if (duration.hours >= 24) {
+    hoursToDaysConversionMayOccur = true;
+  }
+
+  
+  if (smallestUnit == TemporalUnit::Nanosecond &&
+      roundingIncrement == Increment{1} && largestUnit == existingLargestUnit &&
+      duration.years == 0 && duration.months == 0 && duration.weeks == 0 &&
+      !hoursToDaysConversionMayOccur && duration.minutes < 60 &&
+      duration.seconds < 60 && duration.milliseconds < 1000 &&
+      duration.microseconds < 1000 && duration.nanoseconds < 1000) {
+    
+    auto* obj = CreateTemporalDuration(cx, duration);
+    if (!obj) {
+      return false;
+    }
+
+    args.rval().setObject(*obj);
+    return true;
   }
 
   
