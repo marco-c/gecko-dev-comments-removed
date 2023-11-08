@@ -1758,6 +1758,7 @@ void nsContentSecurityManager::GetSerializedOrigin(
     entry->GetPrincipal(getter_AddRefs(currentOrigin));
 
     if (!currentOrigin->Equals(lastOrigin) && !lastOrigin->Equals(aOrigin)) {
+      aSerializedOrigin.AssignLiteral("null");
       return;
     }
     lastOrigin = currentOrigin;
@@ -1774,7 +1775,8 @@ void nsContentSecurityManager::GetSerializedOrigin(
 
   
   
-  if (lastOrigin->Equals(aResourceOrigin) && !lastOrigin->Equals(aOrigin)) {
+  if (!lastOrigin->Equals(aResourceOrigin) && !lastOrigin->Equals(aOrigin)) {
+    aSerializedOrigin.AssignLiteral("null");
     return;
   }
 
