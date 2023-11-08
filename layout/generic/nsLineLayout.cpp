@@ -207,26 +207,28 @@ void nsLineLayout::BeginLineReflow(nscoord aICoord, nscoord aBCoord,
   
   
   nsIFrame* containerFrame = LineContainerFrame();
-  bool isFirstLineOrAfterHardBreak = [&] {
-    if (mLineNumber > 0) {
-      return mStyleText->mTextIndent.each_line && GetLine() &&
-             !GetLine()->prev()->IsLineWrapped();
-    }
-    if (nsBlockFrame* prevBlock =
-            do_QueryFrame(containerFrame->GetPrevInFlow())) {
-      return mStyleText->mTextIndent.each_line &&
-             (prevBlock->Lines().empty() ||
-              !prevBlock->LinesEnd().prev()->IsLineWrapped());
-    }
-    return true;
-  }();
+  if (!containerFrame->IsRubyTextContainerFrame()) {
+    bool isFirstLineOrAfterHardBreak = [&] {
+      if (mLineNumber > 0) {
+        return mStyleText->mTextIndent.each_line && GetLine() &&
+               !GetLine()->prev()->IsLineWrapped();
+      }
+      if (nsBlockFrame* prevBlock =
+              do_QueryFrame(containerFrame->GetPrevInFlow())) {
+        return mStyleText->mTextIndent.each_line &&
+               (prevBlock->Lines().empty() ||
+                !prevBlock->LinesEnd().prev()->IsLineWrapped());
+      }
+      return true;
+    }();
 
-  
-  
-  if (isFirstLineOrAfterHardBreak != mStyleText->mTextIndent.hanging) {
-    nscoord pctBasis = mLineContainerRI.ComputedISize();
-    mTextIndent = mStyleText->mTextIndent.length.Resolve(pctBasis);
-    psd->mICoord += mTextIndent;
+    
+    
+    if (isFirstLineOrAfterHardBreak != mStyleText->mTextIndent.hanging) {
+      nscoord pctBasis = mLineContainerRI.ComputedISize();
+      mTextIndent = mStyleText->mTextIndent.length.Resolve(pctBasis);
+      psd->mICoord += mTextIndent;
+    }
   }
 
   PerFrameData* pfd = NewPerFrameData(containerFrame);
