@@ -591,7 +591,6 @@ async function clickDismissErrorButton() {
 
 
 
-
 async function clickTranslateButton({
   downloadHandler = null,
   pivotTranslation = false,
@@ -602,12 +601,11 @@ async function clickTranslateButton({
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(translateButton, "Click the translate button");
   });
-
+  await assertTranslationsButton(
+    { button: true, circleArrows: true, locale: false, icon: true },
+    "The icon presents the loading indicator."
+  );
   if (downloadHandler) {
-    await assertTranslationsButton(
-      { button: true, circleArrows: true, locale: false, icon: true },
-      "The icon presents the loading indicator."
-    );
     await downloadHandler(pivotTranslation ? 2 : 1);
   }
 }
@@ -920,11 +918,9 @@ async function addTab(url) {
 
 
 
-
-async function switchTab(tab, name) {
-  info("Switching tabs to " + name);
-  gBrowser.selectedTab = tab;
-  await new Promise(resolve => setTimeout(resolve, 0));
+async function switchTab(tab) {
+  info("Switching tabs");
+  await BrowserTestUtils.switchTab(gBrowser, tab);
 }
 
 
