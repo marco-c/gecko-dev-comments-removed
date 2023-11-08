@@ -377,7 +377,27 @@ bool RemoteAccessible::ContainsPoint(int32_t aX, int32_t aY) {
     return false;
   }
   if (!IsTextLeaf()) {
-    return true;
+    if (RefPtr{DisplayStyle()} != nsGkAtoms::inlinevalue) {
+      
+      
+      return true;
+    }
+    
+    
+    uint32_t count = ChildCount();
+    for (uint32_t c = 0; c < count; ++c) {
+      RemoteAccessible* child = RemoteChildAt(c);
+      if (child->Role() == roles::TEXT_CONTAINER && child->IsClipped()) {
+        
+        
+        return true;
+      }
+      if (child->ContainsPoint(aX, aY)) {
+        return true;
+      }
+    }
+    
+    return false;
   }
   
   
