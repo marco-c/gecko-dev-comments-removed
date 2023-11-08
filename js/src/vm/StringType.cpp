@@ -1325,7 +1325,7 @@ bool AutoStableStringChars::init(JSContext* cx, JSString* s) {
 
   
   
-  if (baseIsInline(linearString)) {
+  if (linearString->hasMovableChars()) {
     return linearString->hasTwoByteChars() ? copyTwoByteChars(cx, linearString)
                                            : copyLatin1Chars(cx, linearString);
   }
@@ -1358,7 +1358,7 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
 
   
   
-  if (baseIsInline(linearString)) {
+  if (linearString->hasMovableChars()) {
     return copyTwoByteChars(cx, linearString);
   }
 
@@ -1369,14 +1369,6 @@ bool AutoStableStringChars::initTwoByte(JSContext* cx, JSString* s) {
 
   s_ = linearString;
   return true;
-}
-
-bool AutoStableStringChars::baseIsInline(Handle<JSLinearString*> linearString) {
-  JSString* base = linearString;
-  while (base->isDependent()) {
-    base = base->asDependent().base();
-  }
-  return base->isInline();
 }
 
 template <typename T>
