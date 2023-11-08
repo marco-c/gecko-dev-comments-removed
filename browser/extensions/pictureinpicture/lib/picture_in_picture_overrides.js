@@ -14,6 +14,7 @@ class PictureInPictureOverrides {
 
 
 
+
   constructor(availableOverrides) {
     this.pref = "enable_picture_in_picture_overrides";
     this._prefEnabledOverrides = new Set();
@@ -38,6 +39,7 @@ class PictureInPictureOverrides {
   }
 
   
+
 
 
 

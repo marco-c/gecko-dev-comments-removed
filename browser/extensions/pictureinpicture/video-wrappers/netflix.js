@@ -24,10 +24,12 @@ class PictureInPictureVideoWrapper {
 
 
 
+
   getCurrentTime(video) {
     return this.player.getCurrentTime() / 1000;
   }
   
+
 
 
 
@@ -67,6 +69,7 @@ class PictureInPictureVideoWrapper {
   }
 
   
+
 
 
 

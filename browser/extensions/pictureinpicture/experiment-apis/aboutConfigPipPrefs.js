@@ -15,6 +15,7 @@ this.aboutConfigPipPrefs = class extends ExtensionAPI {
 
 
 
+
   getAPI(context) {
     const EventManager = ExtensionCommon.EventManager;
     const extensionIDBase = context.extension.id.split("@")[0];
@@ -41,6 +42,7 @@ this.aboutConfigPipPrefs = class extends ExtensionAPI {
 
 
 
+
         async getPref(name) {
           try {
             return Services.prefs.getBoolPref(
@@ -52,6 +54,7 @@ this.aboutConfigPipPrefs = class extends ExtensionAPI {
         },
 
         
+
 
 
 

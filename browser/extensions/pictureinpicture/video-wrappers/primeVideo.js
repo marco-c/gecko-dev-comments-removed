@@ -12,12 +12,14 @@ class PictureInPictureVideoWrapper {
 
 
 
+
   play(video) {
     video.play().catch(() => {
       video.play();
     });
   }
   
+
 
 
 
