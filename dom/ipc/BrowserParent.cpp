@@ -1353,9 +1353,7 @@ IPCResult BrowserParent::RecvNewWindowGlobal(
   
   EnumSet<ContentParent::ValidatePrincipalOptions> validationOptions = {};
   nsCOMPtr<nsIURI> docURI = aInit.documentURI();
-  if (docURI->SchemeIs("about") || docURI->SchemeIs("blob") ||
-      docURI->SchemeIs("chrome")) {
-    
+  if (docURI->SchemeIs("blob") || docURI->SchemeIs("chrome")) {
     
     
     
