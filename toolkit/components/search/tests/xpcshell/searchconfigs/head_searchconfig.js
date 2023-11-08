@@ -238,37 +238,12 @@ class SearchConfigTest {
 
 
 
-
-
-  _localeIncludes(locales, locale) {
-    if ("matches" in locales && locales.matches.includes(locale)) {
-      return true;
-    }
-    if ("startsWith" in locales) {
-      return !!locales.startsWith.find(element => locale.startsWith(element));
-    }
-
-    return false;
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
   _localeRegionInSection(section, region, locale) {
     for (const { regions, locales } of section) {
       
       
       const inRegions = !regions || regions.includes(region);
-      const inLocales = !locales || this._localeIncludes(locales, locale);
+      const inLocales = !locales || locales.includes(locale);
       if (inRegions && inLocales) {
         return true;
       }

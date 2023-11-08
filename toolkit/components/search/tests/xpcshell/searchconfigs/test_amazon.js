@@ -84,25 +84,19 @@ const test = new SearchConfigTest({
         
         
         
-        locales: {
-          matches: amazondotcomLocales,
-        },
+        locales: amazondotcomLocales,
       },
       {
         
         regions: ["in"],
-        locales: {
-          matches: ["bn", "gu-IN", "kn", "mr", "pa-IN", "ta", "te", "ur"],
-        },
+        locales: ["bn", "gu-IN", "kn", "mr", "pa-IN", "ta", "te", "ur"],
       },
     ],
     excluded: [
       {
         
         regions: ["in"],
-        locales: {
-          matches: amazondotcomLocales,
-        },
+        locales: amazondotcomLocales,
       },
     ],
   },
@@ -179,9 +173,7 @@ const test = new SearchConfigTest({
       aliases: ["@amazon"],
       included: [
         {
-          locales: {
-            matches: amazondotcomLocales,
-          },
+          locales: amazondotcomLocales,
         },
       ],
       excluded: [{ regions: mainShippedRegions }],
@@ -219,9 +211,7 @@ const test = new SearchConfigTest({
         },
         {
           regions: ["be"],
-          locales: {
-            matches: ["fr"],
-          },
+          locales: ["fr"],
         },
       ],
       noSuggestionsURL: true,
@@ -232,9 +222,7 @@ const test = new SearchConfigTest({
       aliases: ["@amazon"],
       included: [
         {
-          locales: {
-            matches: ["bn", "gu-IN", "kn", "mr", "pa-IN", "ta", "te", "ur"],
-          },
+          locales: ["bn", "gu-IN", "kn", "mr", "pa-IN", "ta", "te", "ur"],
           regions: ["in"],
         },
       ],
@@ -273,9 +261,7 @@ const test = new SearchConfigTest({
       ],
       excluded: [
         {
-          locales: {
-            matches: ["fr"],
-          },
+          locales: ["fr"],
         },
       ],
       noSuggestionsURL: true,
@@ -323,9 +309,7 @@ add_task(async function test_searchConfig_amazon_pre89() {
   );
   availableIn.push({
     regions: ["be"],
-    locales: {
-      matches: ["fr"],
-    },
+    locales: ["fr"],
   });
   
   
