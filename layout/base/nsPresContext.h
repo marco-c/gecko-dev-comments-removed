@@ -92,6 +92,7 @@ class LayerManager;
 namespace dom {
 class Document;
 class Element;
+class PerformanceMainThread;
 enum class PrefersColorSchemeOverride : uint8_t;
 }  
 namespace gfx {
@@ -214,6 +215,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void DocumentCharSetChanged(NotNull<const Encoding*> aCharSet);
 
+  mozilla::dom::PerformanceMainThread* GetPerformanceMainThread() const;
   
 
 
@@ -1040,6 +1042,7 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   bool HadNonBlankPaint() const { return mHadNonBlankPaint; }
   bool HadFirstContentfulPaint() const { return mHadFirstContentfulPaint; }
+  bool HasStoppedGeneratingLCP() const;
   void NotifyNonBlankPaint();
   void NotifyContentfulPaint();
   void NotifyPaintStatusReset();
@@ -1120,6 +1123,10 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
     if (mNextFrameRateMultiplier < 8) {
       ++mNextFrameRateMultiplier;
     }
+  }
+
+  mozilla::TimeStamp GetMarkPaintTimingStart() const {
+    return mMarkPaintTimingStart;
   }
 
  protected:
@@ -1244,6 +1251,9 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
   uint64_t mAnimationTriggeredRestyles;
 
   mozilla::TimeStamp mReflowStartTime;
+
+  
+  mozilla::TimeStamp mMarkPaintTimingStart;
 
   Maybe<TransactionId> mFirstContentfulPaintTransactionId;
 

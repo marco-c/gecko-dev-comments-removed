@@ -776,6 +776,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "KeyframeEffect", insecureContext: true },
   
+  { name: "LargestContentfulPaint", insecureContext: true, nightly: true },
+  
   { name: "Location", insecureContext: true },
   
   "Lock",
