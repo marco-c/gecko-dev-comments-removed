@@ -3474,7 +3474,14 @@ static bool ZonedDateTime_getISOFields(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<JSString*> offset(cx, GetOffsetStringFor(cx, timeZone, instant));
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
+    return false;
+  }
+
+  
+  Rooted<JSString*> offset(cx,
+                           FormatUTCOffsetNanoseconds(cx, offsetNanoseconds));
   if (!offset) {
     return false;
   }

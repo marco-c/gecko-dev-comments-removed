@@ -329,6 +329,11 @@ bool GetInstantFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
 
 
 
+JSString* FormatUTCOffsetNanoseconds(JSContext* cx, int64_t offsetNanoseconds);
+
+
+
+
 JSString* GetOffsetStringFor(JSContext* cx, JS::Handle<TimeZoneValue> timeZone,
                              JS::Handle<Wrapped<InstantObject*>> instant);
 

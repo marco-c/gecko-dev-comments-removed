@@ -1011,14 +1011,8 @@ bool js::temporal::GetOffsetNanosecondsFor(JSContext* cx,
 
 
 
-JSString* js::temporal::GetOffsetStringFor(
-    JSContext* cx, Handle<TimeZoneValue> timeZone,
-    Handle<Wrapped<InstantObject*>> instant) {
-  
-  int64_t offsetNanoseconds;
-  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
-    return nullptr;
-  }
+JSString* js::temporal::FormatUTCOffsetNanoseconds(JSContext* cx,
+                                                   int64_t offsetNanoseconds) {
   MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   
@@ -1077,6 +1071,23 @@ JSString* js::temporal::GetOffsetStringFor(
 
   
   return NewStringCopyN<CanGC>(cx, result, n);
+}
+
+
+
+
+JSString* js::temporal::GetOffsetStringFor(
+    JSContext* cx, Handle<TimeZoneValue> timeZone,
+    Handle<Wrapped<InstantObject*>> instant) {
+  
+  int64_t offsetNanoseconds;
+  if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(std::abs(offsetNanoseconds) < ToNanoseconds(TemporalUnit::Day));
+
+  
+  return FormatUTCOffsetNanoseconds(cx, offsetNanoseconds);
 }
 
 
@@ -1275,8 +1286,6 @@ static PlainDateTime BalanceISODateTime(const PlainDateTime& dateTime,
   MOZ_ASSERT(std::abs(nanoseconds) < ToNanoseconds(TemporalUnit::Day));
 
   auto& [date, time] = dateTime;
-
-  
 
   
   auto balancedTime = BalanceTime(time, nanoseconds);
