@@ -1,8 +1,8 @@
-
-
-
-
-
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim:set ts=2 sw=2 sts=2 et cindent: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
 #define DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
@@ -15,16 +15,16 @@ namespace mozilla {
 
 struct KeySystemConfig {
  public:
-  
-  
+  // EME MediaKeysRequirement:
+  // https://www.w3.org/TR/encrypted-media/#dom-mediakeysrequirement
   enum class Requirement {
     Required = 1,
     Optional = 2,
     NotAllowed = 3,
   };
 
-  
-  
+  // EME MediaKeySessionType:
+  // https://www.w3.org/TR/encrypted-media/#dom-mediakeysessiontype
   enum class SessionType {
     Temporary = 1,
     PersistentLicense = 2,
@@ -44,8 +44,8 @@ struct KeySystemConfig {
   static constexpr auto EME_ENCRYPTION_SCHEME_CENC = "cenc"_ns;
   static constexpr auto EME_ENCRYPTION_SCHEME_CBCS = "cbcs"_ns;
 
-  
-  
+  // A codec can be decrypted-and-decoded by the CDM, or only decrypted
+  // by the CDM and decoded by Gecko. Not both.
   struct ContainerSupport {
     ContainerSupport() = default;
     ~ContainerSupport() = default;
@@ -68,29 +68,29 @@ struct KeySystemConfig {
       return !mCodecsDecoded.IsEmpty() || !mCodecsDecrypted.IsEmpty();
     }
 
-    
-    
+    // CDM decrypts and decodes using a DRM robust decoder, and passes decoded
+    // samples back to Gecko for rendering.
     bool DecryptsAndDecodes(const EMECodecString& aCodec) const {
       return mCodecsDecoded.Contains(aCodec);
     }
 
-    
+    // CDM decrypts and passes the decrypted samples back to Gecko for decoding.
     bool Decrypts(const EMECodecString& aCodec) const {
       return mCodecsDecrypted.Contains(aCodec);
     }
 
     void SetCanDecryptAndDecode(const EMECodecString& aCodec) {
-      
+      // Can't both decrypt and decrypt-and-decode a codec.
       MOZ_ASSERT(!Decrypts(aCodec));
-      
+      // Prevent duplicates.
       MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
       mCodecsDecoded.AppendElement(aCodec);
     }
 
     void SetCanDecrypt(const EMECodecString& aCodec) {
-      
+      // Prevent duplicates.
       MOZ_ASSERT(!Decrypts(aCodec));
-      
+      // Can't both decrypt and decrypt-and-decode a codec.
       MOZ_ASSERT(!DecryptsAndDecodes(aCodec));
       mCodecsDecrypted.AppendElement(aCodec);
     }
@@ -155,12 +155,10 @@ struct KeySystemConfig {
   KeySystemConfig(KeySystemConfig&&) = default;
   KeySystemConfig& operator=(KeySystemConfig&&) = default;
 
-#ifdef DEBUG
   nsString GetDebugInfo() const;
-#endif
 
-  
-  
+  // Return true if the given key system is equal to `mKeySystem`, or it can be
+  // mapped to the same key system
   bool IsSameKeySystem(const nsAString& aKeySystem) const;
 
   nsString mKeySystem;
@@ -180,6 +178,6 @@ KeySystemConfig::SessionType ConvertToKeySystemConfigSessionType(
 const char* SessionTypeToStr(KeySystemConfig::SessionType aType);
 const char* RequirementToStr(KeySystemConfig::Requirement aRequirement);
 
-}  
+}  // namespace mozilla
 
-#endif  
+#endif  // DOM_MEDIA_EME_KEYSYSTEMCONFIG_H_
