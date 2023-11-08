@@ -408,6 +408,7 @@ const getPrefValueByScreen = screen => {
 
 
 
+
 const waitForCalloutScreen = async (doc, screenPostfix) => {
   await BrowserTestUtils.waitForCondition(() =>
     doc.querySelector(`${calloutSelector}:not(.hidden) .${screenPostfix}`)
@@ -453,6 +454,7 @@ const closeCallout = async doc => {
     return !document.querySelector(calloutSelector);
   });
 };
+
 
 
 
@@ -510,6 +512,7 @@ class TelemetrySpy {
     registerCleanupFunction(() => this.restore());
   }
   
+
 
 
 
@@ -627,6 +630,7 @@ async function clickFirefoxViewButton(win) {
     win.browsingContext
   );
 }
+
 
 
 
