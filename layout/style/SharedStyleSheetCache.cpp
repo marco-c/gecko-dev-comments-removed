@@ -145,7 +145,7 @@ void SharedStyleSheetCache::LoadCompletedInternal(
           
           return false;
         }
-        if (data->mOwningNodeBeforeLoadEvent != data->mSheet->GetOwnerNode()) {
+        if (data->mHadOwnerNode != !!data->mSheet->GetOwnerNode()) {
           
           
           return false;

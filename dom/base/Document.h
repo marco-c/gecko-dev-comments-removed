@@ -1348,24 +1348,31 @@ class Document : public nsINode,
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  long BlockedNodeByClassifierCount() const {
-    return mBlockedNodesByClassifier.Length();
+  void AddBlockedNodeByClassifier(nsINode* aNode) {
+    if (aNode) {
+      mBlockedNodesByClassifier.AppendElement(do_GetWeakReference(aNode));
+    }
   }
 
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  size_t BlockedNodeByClassifierCount() const {
+    return mBlockedNodesByClassifier.Length();
+  }
+
   
   
   
@@ -3565,23 +3572,6 @@ class Document : public nsINode,
 
   inline ImageDocument* AsImageDocument();
   inline const ImageDocument* AsImageDocument() const;
-
-  
-
-
-
-
-  void AddBlockedNodeByClassifier(nsINode* node) {
-    if (!node) {
-      return;
-    }
-
-    nsWeakPtr weakNode = do_GetWeakReference(node);
-
-    if (weakNode) {
-      mBlockedNodesByClassifier.AppendElement(weakNode);
-    }
-  }
 
   gfxUserFontSet* GetUserFontSet();
   void FlushUserFontSet();

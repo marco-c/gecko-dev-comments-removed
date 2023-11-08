@@ -8710,15 +8710,11 @@ already_AddRefed<nsSimpleContentList> Document::BlockedNodesByClassifier()
     const {
   RefPtr<nsSimpleContentList> list = new nsSimpleContentList(nullptr);
 
-  const nsTArray<nsWeakPtr> blockedNodes = mBlockedNodesByClassifier.Clone();
-
-  for (unsigned long i = 0; i < blockedNodes.Length(); i++) {
-    nsWeakPtr weakNode = blockedNodes[i];
-    nsCOMPtr<nsIContent> node = do_QueryReferent(weakNode);
-    
-    
-    
-    if (node) {
+  for (const nsWeakPtr& weakNode : mBlockedNodesByClassifier) {
+    if (nsCOMPtr<nsIContent> node = do_QueryReferent(weakNode)) {
+      
+      
+      
       list->AppendElement(node);
     }
   }

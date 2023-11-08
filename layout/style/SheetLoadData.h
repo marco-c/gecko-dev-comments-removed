@@ -13,8 +13,6 @@
 #include "mozilla/PreloaderBase.h"
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/NotNull.h"
-#include "mozilla/UniquePtr.h"
-#include "nsIThreadInternal.h"
 #include "nsProxyRelease.h"
 
 namespace mozilla {
@@ -164,6 +162,11 @@ class SheetLoadData final
   
   
   
+  const bool mHadOwnerNode : 1;
+
+  
+  
+  
   const bool mWasAlternate : 1;
 
   
@@ -202,14 +205,6 @@ class SheetLoadData final
   
   const StylePreloadKind mPreloadKind;
 
-  
-  
-  
-  
-  
-  
-  nsCOMPtr<nsINode> mOwningNodeBeforeLoadEvent;
-
   nsINode* GetRequestingNode() const;
 
   
@@ -232,6 +227,7 @@ class SheetLoadData final
 
   
   bool mSheetCompleteCalled = false;
+
   
   
   bool mIntentionallyDropped = false;
