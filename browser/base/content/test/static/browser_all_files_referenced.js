@@ -265,11 +265,6 @@ var allowlist = [
   },
   
   {
-    file: "resource://gre/localization/en-US/toolkit/about/aboutWebauthn.ftl",
-    platforms: ["win", "android"],
-  },
-  
-  {
     file: "resource://gre/localization/en-US/toolkit/about/aboutWindowsMessages.ftl",
     platforms: ["linux", "macosx"],
   },
