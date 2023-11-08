@@ -299,6 +299,8 @@ SelectorWarningKind ToWebIDLSelectorWarningKind(
       return SelectorWarningKind::UnconstrainedHas;
   }
   MOZ_ASSERT_UNREACHABLE("Unhandled selector warning kind");
+  
+  return SelectorWarningKind::UnconstrainedHas;
 }
 
 void CSSStyleRule::GetSelectorWarnings(
