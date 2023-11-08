@@ -74,6 +74,7 @@ function getPostUpdatePage() {
 
 
 
+
 function getActiveUpdateFile() {
   let updateRootDir = Services.dirsvc.get("UpdRootD", Ci.nsIFile);
   let updatesFile = updateRootDir.clone();
@@ -103,7 +104,6 @@ function reloadUpdateManagerData(skipFiles = false) {
     .QueryInterface(Ci.nsIObserver)
     .observe(null, "um-reload-update-data", skipFiles ? "skip-files" : "");
 }
-
 
 
 

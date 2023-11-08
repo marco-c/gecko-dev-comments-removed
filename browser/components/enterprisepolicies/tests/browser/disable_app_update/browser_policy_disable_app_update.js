@@ -75,6 +75,7 @@ add_task(async function test_update_about_ui() {
 
 
 
+
 function waitForAboutDialog() {
   return new Promise(resolve => {
     var listener = {
