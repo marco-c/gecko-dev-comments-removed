@@ -19,6 +19,8 @@ extern JS_PUBLIC_API JSObject* NewWeakMapObject(JSContext* cx);
 
 extern JS_PUBLIC_API bool IsWeakMapObject(JSObject* obj);
 
+
+
 extern JS_PUBLIC_API bool GetWeakMapEntry(JSContext* cx,
                                           JS::HandleObject mapObj,
                                           JS::HandleObject key,
