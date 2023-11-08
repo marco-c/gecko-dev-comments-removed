@@ -278,3 +278,15 @@ async function MaybeSetStorageAccess(origin, embedding_origin, value) {
     
   }
 }
+
+
+function StartDedicatedWorker(frame) {
+  return PostMessageAndAwaitReply(
+    { command: "start_dedicated_worker" }, frame.contentWindow);
+}
+
+
+function MessageWorker(frame, message = {}) {
+  return PostMessageAndAwaitReply(
+    { command: "message_worker", message }, frame.contentWindow);
+}
