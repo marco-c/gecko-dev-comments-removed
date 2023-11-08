@@ -2190,13 +2190,6 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
     nsDocShellLoadState* aLoadState, uint64_t* aOuterWindowId) {
   
   
-  if (!IsTopContent() || !GetContentParent() ||
-      (StaticPrefs::browser_tabs_documentchannel_parent_controlled())) {
-    return false;
-  }
-
-  
-  
   
   
   
@@ -2245,6 +2238,15 @@ bool CanonicalBrowsingContext::SupportsLoadingInParent(
 
 bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
                                             bool aSetNavigating) {
+  
+  
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      !StaticPrefs::browser_tabs_documentchannel_parent_controlled()) {
+    return false;
+  }
+
   uint64_t outerWindowId = 0;
   if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
     return false;
@@ -2264,9 +2266,17 @@ bool CanonicalBrowsingContext::LoadInParent(nsDocShellLoadState* aLoadState,
 
 bool CanonicalBrowsingContext::AttemptSpeculativeLoadInParent(
     nsDocShellLoadState* aLoadState) {
+  
+  
+  
+  
+  if (!IsTopContent() || !GetContentParent() ||
+      (StaticPrefs::browser_tabs_documentchannel_parent_controlled())) {
+    return false;
+  }
+
   uint64_t outerWindowId = 0;
-  if (!StaticPrefs::browser_tabs_documentchannel_speculative_load() ||
-      !SupportsLoadingInParent(aLoadState, &outerWindowId)) {
+  if (!SupportsLoadingInParent(aLoadState, &outerWindowId)) {
     return false;
   }
 
