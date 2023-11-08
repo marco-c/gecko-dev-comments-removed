@@ -178,11 +178,6 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   LoadColors(false);
 
   mColorSchemeChoice = [&] {
-    
-    
-    if (mUseDocumentColors) {
-      return ColorSchemeChoice::Standard;
-    }
 #ifdef XP_WIN
     
     
@@ -192,6 +187,11 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
       return ColorSchemeChoice::Light;
     }
 #endif
+    
+    
+    if (mUseDocumentColors) {
+      return ColorSchemeChoice::Standard;
+    }
     
     
     
