@@ -4,9 +4,9 @@
 
 use super::*;
 use authenticator::{
-    ctap2::commands::StatusCode,
+    ctap2::commands::{PinUvAuthResult, StatusCode},
     errors::{CommandError, HIDError},
-    InteractiveRequest, InteractiveUpdate, PinError,
+    CredManagementCmd, InteractiveRequest, InteractiveUpdate, PinError,
 };
 use serde::{Deserialize, Serialize};
 
@@ -19,12 +19,12 @@ pub(crate) fn send_about_prompt(prompt: &BrowserPromptType) -> Result<(), nsresu
 
 
 
-
 #[derive(Debug, Serialize, Deserialize)]
 pub enum RequestWrapper {
     Quit,
     ChangePIN(Pin, Pin),
     SetPIN(Pin),
+    CredentialManagement(CredManagementCmd),
 }
 
 pub(crate) fn authrs_to_prompt<'a>(e: AuthenticatorError) -> BrowserPromptType<'a> {
@@ -50,6 +50,16 @@ pub(crate) fn authrs_to_prompt<'a>(e: AuthenticatorError) -> BrowserPromptType<'
     }
 }
 
+pub(crate) fn cache_puat(
+    transaction: Arc<Mutex<Option<TransactionState>>>,
+    puat: Option<PinUvAuthResult>,
+) {
+    let mut guard = transaction.lock().unwrap();
+    if let Some(transaction) = guard.as_mut() {
+        transaction.puat_cache = puat;
+    };
+}
+
 pub(crate) fn interactive_status_callback(
     status_rx: Receiver<StatusUpdate>,
     transaction: Arc<Mutex<Option<TransactionState>>>, 
@@ -69,6 +79,14 @@ pub(crate) fn interactive_status_callback(
                 transaction.interactive_receiver.replace(tx);
                 let prompt = BrowserPromptType::SelectedDevice { auth_info };
                 send_about_prompt(&prompt)?;
+            }
+            Ok(StatusUpdate::InteractiveManagement(
+                InteractiveUpdate::CredentialManagementUpdate((cfg_result, puat_res)),
+            )) => {
+                cache_puat(transaction.clone(), puat_res); 
+                let prompt = BrowserPromptType::CredentialManagementUpdate { result: cfg_result };
+                send_about_prompt(&prompt)?;
+                continue;
             }
             Ok(StatusUpdate::SelectDeviceNotice) => {
                 info!("STATUS: Please select a device by touching one of them.");
