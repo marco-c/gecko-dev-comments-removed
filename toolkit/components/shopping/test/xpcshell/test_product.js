@@ -241,7 +241,7 @@ add_task(async function test_product_requestAnalysis() {
 
   Assert.ok(product.isProduct(), "Should recognize a valid product.");
 
-  let analysis = await product.requestAnalysis(true, undefined, {
+  let analysis = await product.requestAnalysis(undefined, {
     url: ANALYSIS_API_MOCK,
     requestSchema: ANALYSIS_REQUEST_SCHEMA,
     responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -266,7 +266,7 @@ add_task(async function test_product_requestAnalysis_OHTTP() {
 
   enableOHTTP();
 
-  let analysis = await product.requestAnalysis(true, undefined, {
+  let analysis = await product.requestAnalysis(undefined, {
     url: ANALYSIS_API_MOCK,
     requestSchema: ANALYSIS_REQUEST_SCHEMA,
     responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -286,7 +286,7 @@ add_task(async function test_product_requestAnalysis_invalid() {
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
 
   Assert.ok(product.isProduct(), "Should recognize a valid product.");
-  let analysis = await product.requestAnalysis(true, undefined, {
+  let analysis = await product.requestAnalysis(undefined, {
     url: ANALYSIS_API_MOCK_INVALID,
     requestSchema: ANALYSIS_REQUEST_SCHEMA,
     responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -308,7 +308,7 @@ add_task(async function test_product_requestAnalysis_broken_config() {
 
   enableOHTTP("http://example.com/thisdoesntexist");
 
-  let analysis = await product.requestAnalysis(true, undefined, {
+  let analysis = await product.requestAnalysis(undefined, {
     url: ANALYSIS_API_MOCK,
     requestSchema: ANALYSIS_REQUEST_SCHEMA,
     responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -334,7 +334,7 @@ add_task(async function test_product_requestAnalysis_invalid_ohttp() {
 
   enableOHTTP();
 
-  let analysis = await product.requestAnalysis(true, undefined, {
+  let analysis = await product.requestAnalysis(undefined, {
     url: ANALYSIS_API_MOCK_INVALID,
     requestSchema: ANALYSIS_REQUEST_SCHEMA,
     responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -349,15 +349,11 @@ add_task(async function test_product_requestRecommendations() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
   if (product.isProduct()) {
-    let recommendations = await product.requestRecommendations(
-      true,
-      undefined,
-      {
-        url: RECOMMENDATIONS_API_MOCK,
-        requestSchema: RECOMMENDATIONS_REQUEST_SCHEMA,
-        responseSchema: RECOMMENDATIONS_RESPONSE_SCHEMA,
-      }
-    );
+    let recommendations = await product.requestRecommendations(undefined, {
+      url: RECOMMENDATIONS_API_MOCK,
+      requestSchema: RECOMMENDATIONS_REQUEST_SCHEMA,
+      responseSchema: RECOMMENDATIONS_RESPONSE_SCHEMA,
+    });
     Assert.ok(
       Array.isArray(recommendations),
       "Recommendations array is loaded from JSON and validated"
@@ -370,12 +366,13 @@ add_task(async function test_product_requestAnalysis_retry_failure() {
   const RETRIES = 3;
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
-  let spy = sinon.spy(product, "request");
+  let sandbox = sinon.createSandbox();
+  let spy = sandbox.spy(ShoppingProduct, "request");
   let startTime = Cu.now();
   let totalTime = TEST_TIMEOUT * Math.pow(2, RETRIES - 1);
 
   if (product.isProduct()) {
-    let analysis = await product.requestAnalysis(true, undefined, {
+    let analysis = await product.requestAnalysis(undefined, {
       url: API_SERVICE_UNAVAILABLE,
       requestSchema: ANALYSIS_REQUEST_SCHEMA,
       responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -391,16 +388,18 @@ add_task(async function test_product_requestAnalysis_retry_failure() {
       `Waited for at least ${totalTime}ms`
     );
   }
+  sandbox.restore();
 });
 
 add_task(async function test_product_requestAnalysis_retry_success() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
-  let spy = sinon.spy(product, "request");
+  let sandbox = sinon.createSandbox();
+  let spy = sandbox.spy(ShoppingProduct, "request");
   
   apiErrors = 0;
   if (product.isProduct()) {
-    let analysis = await product.requestAnalysis(true, undefined, {
+    let analysis = await product.requestAnalysis(undefined, {
       url: API_ERROR_ONCE,
       requestSchema: ANALYSIS_REQUEST_SCHEMA,
       responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -411,6 +410,7 @@ add_task(async function test_product_requestAnalysis_retry_success() {
       "Analysis object is loaded from JSON and validated"
     );
   }
+  sandbox.restore();
 });
 
 add_task(async function test_product_bad_request() {
@@ -418,7 +418,7 @@ add_task(async function test_product_bad_request() {
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
 
   if (product.isProduct()) {
-    let errorResult = await product.requestAnalysis(true, undefined, {
+    let errorResult = await product.requestAnalysis(undefined, {
       url: API_ERROR_BAD_REQUEST,
       requestSchema: ANALYSIS_REQUEST_SCHEMA,
       responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -437,7 +437,7 @@ add_task(async function test_product_unprocessable_entity() {
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
 
   if (product.isProduct()) {
-    let errorResult = await product.requestAnalysis(true, undefined, {
+    let errorResult = await product.requestAnalysis(undefined, {
       url: API_ERROR_UNPROCESSABLE,
       requestSchema: ANALYSIS_REQUEST_SCHEMA,
       responseSchema: ANALYSIS_RESPONSE_SCHEMA,
@@ -469,9 +469,9 @@ add_task(async function test_ohttp_headers() {
   enableOHTTP();
 
   let configURL = Services.prefs.getCharPref("toolkit.shopping.ohttpConfigURL");
-  let config = await product.getOHTTPConfig(configURL);
+  let config = await ShoppingProduct.getOHTTPConfig(configURL);
   Assert.ok(config, "Should have gotten a config.");
-  let ohttpDetails = await product.ohttpRequest(
+  let ohttpDetails = await ShoppingProduct.ohttpRequest(
     API_OHTTP_RELAY,
     config,
     ANALYSIS_API_MOCK,
@@ -518,7 +518,7 @@ add_task(async function test_product_sendAttributionEvent_impression() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
   if (product.isProduct()) {
-    let event = await product.sendAttributionEvent(
+    let event = await ShoppingProduct.sendAttributionEvent(
       "impression",
       TEST_AID,
       "firefox_toolkit_tests",
@@ -540,7 +540,7 @@ add_task(async function test_product_sendAttributionEvent_click() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
   if (product.isProduct()) {
-    let event = await product.sendAttributionEvent(
+    let event = await ShoppingProduct.sendAttributionEvent(
       "click",
       TEST_AID,
       "firefox_toolkit_tests",
@@ -572,7 +572,7 @@ add_task(async function test_product_sendAttributionEvent_impression_OHTTP() {
 
   enableOHTTP();
 
-  let event = await product.sendAttributionEvent(
+  let event = await ShoppingProduct.sendAttributionEvent(
     "impression",
     TEST_AID,
     "firefox_toolkit_tests",
@@ -606,7 +606,7 @@ add_task(async function test_product_sendAttributionEvent_click_OHTTP() {
 
   enableOHTTP();
 
-  let event = await product.sendAttributionEvent(
+  let event = await ShoppingProduct.sendAttributionEvent(
     "click",
     TEST_AID,
     "firefox_toolkit_tests",
@@ -629,7 +629,8 @@ add_task(async function test_product_sendAttributionEvent_click_OHTTP() {
 add_task(async function test_product_requestAnalysis_poll() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
-  let spy = sinon.spy(product, "request");
+  let sandbox = sinon.createSandbox();
+  let spy = sandbox.spy(ShoppingProduct, "request");
   let startTime = Cu.now();
   const INITIAL_TIMEOUT = 100;
   const TIMEOUT = 50;
@@ -660,12 +661,15 @@ add_task(async function test_product_requestAnalysis_poll() {
     Cu.now() - startTime >= totalTime,
     `Waited for at least ${totalTime}ms`
   );
+
+  sandbox.restore();
 });
 
 add_task(async function test_product_requestAnalysis_poll_max() {
   let uri = new URL("https://www.walmart.com/ip/926485654");
   let product = new ShoppingProduct(uri, { allowValidationFailure: false });
-  let spy = sinon.spy(product, "request");
+  let sandbox = sinon.createSandbox();
+  let spy = sandbox.spy(ShoppingProduct, "request");
   let startTime = Cu.now();
 
   const INITIAL_TIMEOUT = 100;
@@ -696,6 +700,7 @@ add_task(async function test_product_requestAnalysis_poll_max() {
     Cu.now() - startTime >= totalTime,
     `Waited for at least ${totalTime}ms`
   );
+  sandbox.restore();
 });
 
 add_task(async function test_product_requestAnalysisCreationStatus() {
