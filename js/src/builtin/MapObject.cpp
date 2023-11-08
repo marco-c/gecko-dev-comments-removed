@@ -271,7 +271,8 @@ MapIteratorObject* MapIteratorObject::create(JSContext* cx, HandleObject obj,
       RoundUp(sizeof(ValueMap::Range), gc::CellAlignBytes);
 
   Nursery& nursery = cx->nursery();
-  void* buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize);
+  void* buffer =
+      nursery.allocateBufferSameLocation(iterobj, BufferSize, js::MallocArena);
   if (!buffer) {
     
     iterobj = NewTenuredObjectWithGivenProto<MapIteratorObject>(cx, proto);
@@ -281,7 +282,8 @@ MapIteratorObject* MapIteratorObject::create(JSContext* cx, HandleObject obj,
 
     iterobj->init(mapobj, kind);
 
-    buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize);
+    buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize,
+                                                js::MallocArena);
     if (!buffer) {
       ReportOutOfMemory(cx);
       return nullptr;
@@ -504,9 +506,7 @@ const JSPropertySpec MapObject::staticProperties[] = {
 };
 
 const JSFunctionSpec MapObject::staticMethods[] = {
-#ifdef NIGHTLY_BUILD
     JS_SELF_HOSTED_FN("groupBy", "MapGroupBy", 2, 0),
-#endif
     JS_FS_END,
 };
 
@@ -1137,7 +1137,8 @@ SetIteratorObject* SetIteratorObject::create(JSContext* cx, HandleObject obj,
       RoundUp(sizeof(ValueSet::Range), gc::CellAlignBytes);
 
   Nursery& nursery = cx->nursery();
-  void* buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize);
+  void* buffer =
+      nursery.allocateBufferSameLocation(iterobj, BufferSize, js::MallocArena);
   if (!buffer) {
     
     iterobj = NewTenuredObjectWithGivenProto<SetIteratorObject>(cx, proto);
@@ -1147,7 +1148,8 @@ SetIteratorObject* SetIteratorObject::create(JSContext* cx, HandleObject obj,
 
     iterobj->init(setobj, kind);
 
-    buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize);
+    buffer = nursery.allocateBufferSameLocation(iterobj, BufferSize,
+                                                js::MallocArena);
     if (!buffer) {
       ReportOutOfMemory(cx);
       return nullptr;
