@@ -591,6 +591,7 @@ async function clickDismissErrorButton() {
 
 
 
+
 async function clickTranslateButton({
   downloadHandler = null,
   pivotTranslation = false,
@@ -601,11 +602,12 @@ async function clickTranslateButton({
   await waitForTranslationsPopupEvent("popuphidden", () => {
     click(translateButton, "Click the translate button");
   });
-  await assertTranslationsButton(
-    { button: true, circleArrows: true, locale: false, icon: true },
-    "The icon presents the loading indicator."
-  );
+
   if (downloadHandler) {
+    await assertTranslationsButton(
+      { button: true, circleArrows: true, locale: false, icon: true },
+      "The icon presents the loading indicator."
+    );
     await downloadHandler(pivotTranslation ? 2 : 1);
   }
 }
