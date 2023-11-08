@@ -351,6 +351,7 @@ class SystemResourceMonitor(object):
             self._stopped = True
             return
 
+        self.stop_time = time.monotonic()
         assert not self._stopped
 
         try:
@@ -426,8 +427,8 @@ class SystemResourceMonitor(object):
                 self._process.join(10)
 
         self._running = False
-        self.end_time = time.monotonic()
         SystemResourceUsage.instance = None
+        self.end_time = time.monotonic()
 
     
 
@@ -807,6 +808,7 @@ class SystemResourceMonitor(object):
         return o
 
     def as_profile(self):
+        profile_time = time.monotonic()
         start_time = self.start_time
         profile = {
             "meta": {
@@ -819,9 +821,6 @@ class SystemResourceMonitor(object):
                 "interval": self.poll_interval * 1000,
                 "startTime": self.start_timestamp * 1000,
                 "profilingStartTime": 0,
-                "profilingEndTime": round(
-                    (self.end_time - self.start_time) * 1000 + 0.0005, 3
-                ),
                 "logicalCPUs": psutil.cpu_count(logical=True),
                 "physicalCPUs": psutil.cpu_count(logical=False),
                 "mainMemory": psutil.virtual_memory()[0],
@@ -1163,4 +1162,35 @@ class SystemResourceMonitor(object):
                         3,
                     )
 
+        
+        
+        
+        
+        
+        
+        
+        now = time.monotonic()
+        profile["meta"]["profilingEndTime"] = round(
+            (now - self.start_time) * 1000 + 0.0005, 3
+        )
+        markerData = {
+            "type": "Phase",
+            "phase": "teardown",
+        }
+        add_marker(phase_string_index, self.stop_time, now, markerData, 3)
+        teardown_string_index = get_string_index("resourcemonitor")
+        markerData = {
+            "type": "Text",
+            "text": "stop",
+        }
+        add_marker(teardown_string_index, self.stop_time, self.end_time, markerData, 3)
+        markerData = {
+            "type": "Text",
+            "text": "as_profile",
+        }
+        add_marker(teardown_string_index, profile_time, now, markerData, 3)
+
+        
+        
+        
         return profile
