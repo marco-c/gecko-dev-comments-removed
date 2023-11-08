@@ -133,11 +133,6 @@ class SVGFilterInstance {
   
 
 
-  SVGFilterFrame* GetFilterFrame(nsIFrame* aTargetFrame);
-
-  
-
-
   IntRect ComputeFilterPrimitiveSubregion(
       SVGFilterPrimitiveElement* aFilterElement,
       const nsTArray<FilterPrimitiveDescription>& aPrimitiveDescrs,

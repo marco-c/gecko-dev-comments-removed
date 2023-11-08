@@ -65,8 +65,8 @@ bool SVGFilterPrimitiveElement::OutputIsTainted(
     nsIPrincipal* aReferencePrincipal) {
   
   
-  for (uint32_t i = 0; i < aInputsAreTainted.Length(); i++) {
-    if (aInputsAreTainted[i]) {
+  for (const auto& inputIsTainted : aInputsAreTainted) {
+    if (inputIsTainted) {
       return true;
     }
   }
