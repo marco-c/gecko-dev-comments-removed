@@ -63,6 +63,12 @@ void Queue::WriteBuffer(const Buffer& aBuffer, uint64_t aBufferOffset,
                         uint64_t aDataOffset,
                         const dom::Optional<uint64_t>& aSize,
                         ErrorResult& aRv) {
+  if (!aBuffer.mId) {
+    
+    
+    return;
+  }
+
   dom::ProcessTypedArraysFixed(aData, [&](const Span<const uint8_t>& aData) {
     uint64_t length = aData.Length();
     const auto checkedSize = aSize.WasPassed()
