@@ -39,15 +39,20 @@ enum class DateTimeFormatOptions {
 
 
 
+extern bool InitializeDateTimeFormatObject(
+    JSContext* cx, JS::Handle<JSObject*> obj, JS::Handle<JS::Value> thisValue,
+    JS::Handle<JS::Value> locales, JS::Handle<JS::Value> options,
+    DateTimeFormatOptions dtfOptions, JS::MutableHandle<JS::Value> result);
 
 
-extern bool LegacyInitializeObject(JSContext* cx, JS::Handle<JSObject*> obj,
-                                   JS::Handle<PropertyName*> initializer,
-                                   JS::Handle<JS::Value> thisValue,
-                                   JS::Handle<JS::Value> locales,
-                                   JS::Handle<JS::Value> options,
-                                   DateTimeFormatOptions dtfOptions,
-                                   JS::MutableHandle<JS::Value> result);
+
+
+extern bool InitializeNumberFormatObject(JSContext* cx,
+                                         JS::Handle<JSObject*> obj,
+                                         JS::Handle<JS::Value> thisValue,
+                                         JS::Handle<JS::Value> locales,
+                                         JS::Handle<JS::Value> options,
+                                         JS::MutableHandle<JS::Value> result);
 
 
 

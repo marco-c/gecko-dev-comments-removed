@@ -61,8 +61,6 @@ class CollatorObject : public NativeObject {
 
 
 
-
-
 [[nodiscard]] extern bool intl_Collator(JSContext* cx, unsigned argc,
                                         JS::Value* vp);
 

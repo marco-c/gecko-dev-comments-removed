@@ -75,8 +75,6 @@ class DateTimeFormatObject : public NativeObject {
 
 
 
-
-
 [[nodiscard]] extern bool intl_DateTimeFormat(JSContext* cx, unsigned argc,
                                               JS::Value* vp);
 
