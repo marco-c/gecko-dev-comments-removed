@@ -289,6 +289,18 @@ JSString* ToTemporalTimeZoneIdentifier(JSContext* cx,
 
 
 
+bool TimeZoneEquals(JSContext* cx, JS::Handle<JSString*> one,
+                    JS::Handle<JSString*> two, bool* equals);
+
+
+
+
+bool TimeZoneEquals(JSContext* cx, JS::Handle<TimeZoneValue> one,
+                    JS::Handle<TimeZoneValue> two, bool* equals);
+
+
+
+
 PlainDateTimeObject* GetPlainDateTimeFor(JSContext* cx,
                                          JS::Handle<TimeZoneValue> timeZone,
                                          const Instant& instant,

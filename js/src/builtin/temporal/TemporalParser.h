@@ -61,6 +61,12 @@ bool ParseTemporalTimeZoneString(JSContext* cx, JS::Handle<JSString*> str,
 
 
 
+bool ParseTimeZoneIdentifier(JSContext* cx, JS::Handle<JSString*> str,
+                             JS::MutableHandle<ParsedTimeZone> result);
+
+
+
+
 bool ParseTimeZoneOffsetString(JSContext* cx, JS::Handle<JSString*> str,
                                int32_t* result);
 
