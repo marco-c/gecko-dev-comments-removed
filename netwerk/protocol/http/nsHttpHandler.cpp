@@ -854,14 +854,7 @@ void nsHttpHandler::InitUserAgentComponents() {
   rv = infoService->GetPropertyAsAString(u"release_version"_ns, androidVersion);
   if (NS_SUCCEEDED(rv)) {
     mPlatform += " ";
-    
-    
-    
-    if (androidVersion[1] == 46 && androidVersion[0] < 52) {
-      mPlatform += "4.4";
-    } else {
-      mPlatform += NS_LossyConvertUTF16toASCII(androidVersion);
-    }
+    mPlatform += NS_LossyConvertUTF16toASCII(androidVersion);
   }
 
   
