@@ -184,6 +184,9 @@ class nsNavHistory final : public nsSupportsWeakReference,
   static const int32_t kGetInfoIndex_VisitId;
   static const int32_t kGetInfoIndex_FromVisitId;
   static const int32_t kGetInfoIndex_VisitType;
+  static const int32_t kGetTargetFolder_Guid;
+  static const int32_t kGetTargetFolder_ItemId;
+  static const int32_t kGetTargetFolder_Title;
 
   int64_t GetTagsFolder();
 
@@ -199,8 +202,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
   nsresult RowToResult(mozIStorageValueArray* aRow,
                        nsNavHistoryQueryOptions* aOptions,
                        nsNavHistoryResultNode** aResult);
-  nsresult QueryRowToResult(int64_t aItemId, const nsACString& aBookmarkGuid,
-                            const nsACString& aURI, const nsACString& aTitle,
+
+  nsresult QueryUriToResult(const nsACString& aQueryURI, int64_t aItemId,
+                            const nsACString& aBookmarkGuid,
+                            const nsACString& aTitle,
+                            int64_t aTargetFolderItemId,
+                            const nsACString& aTargetFolderGuid,
+                            const nsACString& aTargetFolderTitle,
                             uint32_t aAccessCount, PRTime aTime,
                             nsNavHistoryResultNode** aNode);
 
@@ -302,6 +310,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
   
 
 
+
+  static mozilla::Maybe<nsCString> GetTargetFolderGuid(
+      const nsACString& aQueryURI);
+
+  
+
+
   static mozilla::Atomic<int64_t> sLastInsertedPlaceId;
   static mozilla::Atomic<int64_t> sLastInsertedVisitId;
 
@@ -325,6 +340,10 @@ class nsNavHistory final : public nsSupportsWeakReference,
       nsNavHistoryQueryOptions* aOptions);
 
   static void InvalidateDaysOfHistory();
+
+  static nsresult TokensToQuery(
+      const nsTArray<mozilla::places::QueryKeyValuePair>& aTokens,
+      nsNavHistoryQuery* aQuery, nsNavHistoryQueryOptions* aOptions);
 
  private:
   ~nsNavHistory();
@@ -426,13 +445,7 @@ class nsNavHistory final : public nsSupportsWeakReference,
   int32_t mUnvisitedTypedBonus;
   int32_t mReloadVisitBonus;
 
-  
-  nsresult TokensToQuery(
-      const nsTArray<mozilla::places::QueryKeyValuePair>& aTokens,
-      nsNavHistoryQuery* aQuery, nsNavHistoryQueryOptions* aOptions);
-
   int64_t mTagsFolder;
-
   int64_t mLastCachedStartOfDay;
   int64_t mLastCachedEndOfDay;
 };
@@ -440,7 +453,7 @@ class nsNavHistory final : public nsSupportsWeakReference,
 #define PLACES_URI_PREFIX "place:"
 
 
-inline bool IsQueryURI(const nsCString& uri) {
+inline static bool IsQueryURI(const nsACString& uri) {
   return StringBeginsWith(uri, nsLiteralCString(PLACES_URI_PREFIX));
 }
 

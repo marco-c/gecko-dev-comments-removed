@@ -657,6 +657,29 @@ class InvalidateDaysOfHistoryFunction final : public mozIStorageFunction {
   ~InvalidateDaysOfHistoryFunction() = default;
 };
 
+
+
+
+
+
+
+class TargetFolderGuidFunction final : public mozIStorageFunction {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_MOZISTORAGEFUNCTION
+
+  
+
+
+
+
+
+  static nsresult create(mozIStorageConnection* aDBConn);
+
+ private:
+  ~TargetFolderGuidFunction() = default;
+};
+
 }  
 }  
 
