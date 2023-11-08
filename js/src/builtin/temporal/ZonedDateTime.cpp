@@ -227,6 +227,17 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
   
 
   
+
+  
+  Rooted<PlainObject*> maybeResolvedOptions(cx);
+  if (maybeOptions) {
+    maybeResolvedOptions = SnapshotOwnProperties(cx, maybeOptions);
+    if (!maybeResolvedOptions) {
+      return nullptr;
+    }
+  }
+
+  
   auto offsetBehaviour = OffsetBehaviour::Option;
 
   
@@ -315,20 +326,21 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
       offsetBehaviour = OffsetBehaviour::Wall;
     }
 
-    if (maybeOptions) {
+    if (maybeResolvedOptions) {
       
-      if (!ToTemporalDisambiguation(cx, maybeOptions, &disambiguation)) {
+      if (!ToTemporalDisambiguation(cx, maybeResolvedOptions,
+                                    &disambiguation)) {
         return nullptr;
       }
 
       
-      if (!ToTemporalOffset(cx, maybeOptions, &offsetOption)) {
+      if (!ToTemporalOffset(cx, maybeResolvedOptions, &offsetOption)) {
         return nullptr;
       }
 
       
-      if (!InterpretTemporalDateTimeFields(cx, calendar, fields, maybeOptions,
-                                           &dateTime)) {
+      if (!InterpretTemporalDateTimeFields(cx, calendar, fields,
+                                           maybeResolvedOptions, &dateTime)) {
         return nullptr;
       }
     } else {
@@ -417,20 +429,21 @@ static Wrapped<ZonedDateTimeObject*> ToTemporalZonedDateTime(
     
     matchBehaviour = MatchBehaviour::MatchMinutes;
 
-    if (maybeOptions) {
+    if (maybeResolvedOptions) {
       
-      if (!ToTemporalDisambiguation(cx, maybeOptions, &disambiguation)) {
+      if (!ToTemporalDisambiguation(cx, maybeResolvedOptions,
+                                    &disambiguation)) {
         return nullptr;
       }
 
       
-      if (!ToTemporalOffset(cx, maybeOptions, &offsetOption)) {
+      if (!ToTemporalOffset(cx, maybeResolvedOptions, &offsetOption)) {
         return nullptr;
       }
 
       
       TemporalOverflow ignored;
-      if (!ToTemporalOverflow(cx, maybeOptions, &ignored)) {
+      if (!ToTemporalOverflow(cx, maybeResolvedOptions, &ignored)) {
         return nullptr;
       }
     }
@@ -2385,13 +2398,18 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<JSObject*> options(cx);
+  Rooted<PlainObject*> resolvedOptions(cx);
   if (args.hasDefined(1)) {
-    options = RequireObjectArg(cx, "options", "with", args[1]);
+    Rooted<JSObject*> options(cx,
+                              RequireObjectArg(cx, "options", "with", args[1]));
+    if (!options) {
+      return false;
+    }
+    resolvedOptions = SnapshotOwnProperties(cx, options);
   } else {
-    options = NewPlainObjectWithProto(cx, nullptr);
+    resolvedOptions = NewPlainObjectWithProto(cx, nullptr);
   }
-  if (!options) {
+  if (!resolvedOptions) {
     return false;
   }
 
@@ -2428,8 +2446,8 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
   }
 
   
-  Rooted<PlainObject*> fields(
-      cx, PrepareTemporalFields(cx, dateTime, fieldNames));
+  Rooted<PlainObject*> fields(cx,
+                              PrepareTemporalFields(cx, dateTime, fieldNames));
   if (!fields) {
     return false;
   }
@@ -2508,19 +2526,19 @@ static bool ZonedDateTime_with(JSContext* cx, const CallArgs& args) {
 
   
   auto disambiguation = TemporalDisambiguation::Compatible;
-  if (!ToTemporalDisambiguation(cx, options, &disambiguation)) {
+  if (!ToTemporalDisambiguation(cx, resolvedOptions, &disambiguation)) {
     return false;
   }
 
   
   auto offset = TemporalOffset::Prefer;
-  if (!ToTemporalOffset(cx, options, &offset)) {
+  if (!ToTemporalOffset(cx, resolvedOptions, &offset)) {
     return false;
   }
 
   
   PlainDateTime dateTimeResult;
-  if (!InterpretTemporalDateTimeFields(cx, calendar, fields, options,
+  if (!InterpretTemporalDateTimeFields(cx, calendar, fields, resolvedOptions,
                                        &dateTimeResult)) {
     return false;
   }
