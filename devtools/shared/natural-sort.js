@@ -21,7 +21,6 @@ const startsWithNullRx = /^\0/;
 const endsWithNullRx = /\0$/;
 const whitespaceRx = /\s+/g;
 const startsWithZeroRx = /^0/;
-const versionRx = /^([\w-]+-)?\d+\.\d+\.\d+$/;
 
 
 
@@ -66,9 +65,9 @@ function naturalSort(a = "", b = "", sessionString, insensitive = false) {
 
   
   const aHexOrDate =
-    parseInt(a.match(hexRx), 16) || (!versionRx.test(a) && Date.parse(a));
+    parseInt(a.match(hexRx), 16) || (aChunks.length > 3 && Date.parse(a));
   const bHexOrDate =
-    parseInt(b.match(hexRx), 16) || (!versionRx.test(b) && Date.parse(b));
+    parseInt(b.match(hexRx), 16) || (bChunks.length > 3 && Date.parse(b));
 
   if (
     (aHexOrDate || bHexOrDate) &&
