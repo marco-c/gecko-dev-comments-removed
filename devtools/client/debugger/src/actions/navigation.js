@@ -2,7 +2,6 @@
 
 
 
-import { clearDocuments } from "../utils/editor";
 import sourceQueue from "../utils/source-queue";
 
 import { clearWasmStates } from "../utils/wasm";
@@ -29,7 +28,6 @@ export function willNavigate(event) {
     sourceQueue.clear();
     sourceMapLoader.clearSourceMaps();
     clearWasmStates();
-    clearDocuments();
     const thread = getMainThread(getState());
 
     dispatch({

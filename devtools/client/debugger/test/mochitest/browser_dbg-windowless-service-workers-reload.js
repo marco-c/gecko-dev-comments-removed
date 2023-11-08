@@ -26,7 +26,32 @@ add_task(async function () {
   await waitForPaused(dbg);
   assertPausedAtSourceAndLine(dbg, workerSource.id, 13);
 
+  await assertPreviews(dbg, [
+    {
+      line: 10,
+      column: 9,
+      result: EXAMPLE_URL + "whatever",
+      expression: "url",
+    },
+  ]);
+
   await resume(dbg);
+
+  
+  await reload(dbg, "service-worker.sjs");
+
+  await waitForPaused(dbg);
+  assertPausedAtSourceAndLine(dbg, workerSource.id, 13);
+
+  await assertPreviews(dbg, [
+    {
+      line: 10,
+      column: 9,
+      result: EXAMPLE_URL + "whatever",
+      expression: "url",
+    },
+  ]);
+
   await waitForRequestsToSettle(dbg);
   await removeTab(gBrowser.selectedTab);
 });

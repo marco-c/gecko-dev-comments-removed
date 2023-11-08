@@ -4,6 +4,7 @@
 
 import { createThread } from "../client/firefox/create";
 import { getSourcesToRemoveForThread } from "../selectors";
+import { clearDocumentsForSources } from "../utils/editor/source-documents";
 
 export function addTarget(targetFront) {
   return { type: "INSERT_THREAD", newThread: createThread(targetFront) };
@@ -24,6 +25,17 @@ export function removeTarget(targetFront) {
       threadActorID
     );
 
+    
+    
+    clearDocumentsForSources(sources);
+
+    
+    
+    
+    
+    
+    
+    
     dispatch({
       type: "REMOVE_THREAD",
       threadActorID,
