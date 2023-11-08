@@ -139,29 +139,32 @@ class Nursery {
   }
 
   
+  void* allocateBuffer(JS::Zone* zone, size_t nbytes, arena_id_t arenaId);
+
   
-  void* allocateBuffer(JS::Zone* zone, gc::Cell* cell, size_t nbytes);
+  
+  void* allocateBuffer(JS::Zone* zone, gc::Cell* cell, size_t nbytes,
+                       arena_id_t arenaId);
 
   
   
   
-  void* allocateBufferSameLocation(gc::Cell* cell, size_t nbytes);
+  void* allocateBufferSameLocation(gc::Cell* cell, size_t nbytes,
+                                   arena_id_t arenaId);
 
   
   
   
-  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes,
-                             arena_id_t arena = js::MallocArena);
+  void* allocateZeroedBuffer(JS::Zone* zone, size_t nbytes, arena_id_t arena);
 
   
   
   
-  void* allocateZeroedBuffer(gc::Cell* cell, size_t nbytes,
-                             arena_id_t arena = js::MallocArena);
+  void* allocateZeroedBuffer(gc::Cell* cell, size_t nbytes, arena_id_t arena);
 
   
   void* reallocateBuffer(JS::Zone* zone, gc::Cell* cell, void* oldBuffer,
-                         size_t oldBytes, size_t newBytes);
+                         size_t oldBytes, size_t newBytes, arena_id_t arena);
 
   
   void freeBuffer(void* buffer, size_t nbytes);
