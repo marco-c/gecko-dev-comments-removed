@@ -10,6 +10,7 @@
 #include "mozilla/dom/MediaKeySystemAccessBinding.h"
 #include "mozilla/EMEUtils.h"
 #include "mozilla/WMFCDMProxyCallback.h"
+#include "mozilla/WindowsVersion.h"
 #include "WMFCDMImpl.h"
 #include "WMFCDMProxyCallback.h"
 
@@ -78,6 +79,16 @@ void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
 
   mCDM = MakeRefPtr<WMFCDMImpl>(mKeySystem);
   mProxyCallback = new WMFCDMProxyCallback(this);
+  
+  
+  
+  
+  
+  
+  Maybe<nsString> forcedRobustness =
+      IsPlayReadyKeySystemAndSupported(mKeySystem) && !IsWin11OrLater()
+          ? Some(nsString(u"3000"))
+          : Nothing();
   WMFCDMImpl::InitParams params{
       nsString(aOrigin),
       mConfig.mInitDataTypes,
@@ -85,7 +96,8 @@ void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
       mDistinctiveIdentifierRequired,
       mProxyCallback,
       GenerateMFCDMMediaCapabilities(mConfig.mAudioCapabilities),
-      GenerateMFCDMMediaCapabilities(mConfig.mVideoCapabilities)};
+      GenerateMFCDMMediaCapabilities(mConfig.mVideoCapabilities,
+                                     forcedRobustness)};
   mCDM->Init(params)->Then(
       mMainThread, __func__,
       [self = RefPtr{this}, this, aPromiseId](const bool) {
@@ -101,13 +113,21 @@ void WMFCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
 
 CopyableTArray<MFCDMMediaCapability>
 WMFCDMProxy::GenerateMFCDMMediaCapabilities(
-    const dom::Sequence<dom::MediaKeySystemMediaCapability>& aCapabilities) {
+    const dom::Sequence<dom::MediaKeySystemMediaCapability>& aCapabilities,
+    const Maybe<nsString>& forcedRobustness) {
   CopyableTArray<MFCDMMediaCapability> outCapabilites;
   for (const auto& capabilities : aCapabilities) {
-    EME_LOG("WMFCDMProxy::Init %p, robustness=%s", this,
-            NS_ConvertUTF16toUTF8(capabilities.mRobustness).get());
-    outCapabilites.AppendElement(MFCDMMediaCapability{
-        capabilities.mContentType, capabilities.mRobustness});
+    if (!forcedRobustness) {
+      EME_LOG("WMFCDMProxy::Init %p, robustness=%s", this,
+              NS_ConvertUTF16toUTF8(capabilities.mRobustness).get());
+      outCapabilites.AppendElement(MFCDMMediaCapability{
+          capabilities.mContentType, capabilities.mRobustness});
+    } else {
+      EME_LOG("WMFCDMProxy::Init %p, force to robustness=%s", this,
+              NS_ConvertUTF16toUTF8(*forcedRobustness).get());
+      outCapabilites.AppendElement(
+          MFCDMMediaCapability{capabilities.mContentType, *forcedRobustness});
+    }
   }
   return outCapabilites;
 }

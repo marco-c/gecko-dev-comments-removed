@@ -13,6 +13,7 @@
 #include "mozilla/EMEUtils.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/KeySystemConfig.h"
+#include "mozilla/WindowsVersion.h"
 #include "MFCDMProxy.h"
 #include "MFMediaEngineUtils.h"
 #include "RemoteDecodeUtils.h"       
@@ -605,6 +606,14 @@ mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
   
   
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
+
+  
+  
+  if (!IsWin11OrLater() && !aIsHWSecure) {
+    aResolver(std::move(capabilities));
+    return IPC_OK();
+  }
+
   for (auto& codec : kVideoCodecs) {
     if (codec == KeySystemConfig::EME_CODEC_HEVC &&
         !StaticPrefs::media_wmf_hevc_enabled()) {
