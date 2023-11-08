@@ -38,6 +38,14 @@ void ReportPHCTelemetry() {
   PHCMemoryUsage(usage);
 
   Accumulate(Telemetry::MEMORY_PHC_SLOP, usage.mFragmentationBytes);
+
+  PHCStats stats;
+  GetPHCStats(stats);
+
+  Accumulate(Telemetry::MEMORY_PHC_SLOTS_ALLOCATED, stats.mSlotsAllocated);
+  Accumulate(Telemetry::MEMORY_PHC_SLOTS_FREED, stats.mSlotsFreed);
+  
+  
 }
 
 };  

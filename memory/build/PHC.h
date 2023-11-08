@@ -141,6 +141,15 @@ struct MemoryUsage {
 
 MOZ_JEMALLOC_API void PHCMemoryUsage(MemoryUsage& aMemoryUsage);
 
+struct PHCStats {
+  size_t mSlotsAllocated = 0;
+  size_t mSlotsFreed = 0;
+  size_t mSlotsUnused = 0;
+};
+
+
+MOZ_JEMALLOC_API void GetPHCStats(PHCStats& aStats);
+
 }  
 }  
 
