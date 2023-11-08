@@ -1485,11 +1485,6 @@ pub enum Appearance {
     Dualbutton,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Menuitem,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Checkmenuitem,
-    
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Menupopup,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]

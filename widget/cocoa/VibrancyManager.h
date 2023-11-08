@@ -24,7 +24,6 @@ namespace mozilla {
 enum class VibrancyType {
   TOOLTIP,
   MENU,
-  HIGHLIGHTED_MENUITEM,
   SOURCE_LIST,
   SOURCE_LIST_SELECTION,
   ACTIVE_SOURCE_LIST_SELECTION
@@ -53,8 +52,10 @@ class VibrancyManager {
 
 
 
-  VibrancyManager(const nsChildView& aCoordinateConverter, NSView* aContainerView)
-      : mCoordinateConverter(aCoordinateConverter), mContainerView(aContainerView) {}
+  VibrancyManager(const nsChildView& aCoordinateConverter,
+                  NSView* aContainerView)
+      : mCoordinateConverter(aCoordinateConverter),
+        mContainerView(aContainerView) {}
 
   
 
@@ -64,7 +65,8 @@ class VibrancyManager {
 
 
 
-  bool UpdateVibrantRegion(VibrancyType aType, const LayoutDeviceIntRegion& aRegion);
+  bool UpdateVibrantRegion(VibrancyType aType,
+                           const LayoutDeviceIntRegion& aRegion);
 
   bool HasVibrantRegions() { return !mVibrantRegions.IsEmpty(); }
 
