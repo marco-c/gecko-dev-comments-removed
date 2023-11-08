@@ -37,8 +37,6 @@
 #include "mozilla/webrender/WebRenderAPI.h"
 #include "Units.h"
 
-#include "mozilla/StaticPrefs_layout.h"
-
 using namespace mozilla;
 using namespace mozilla::gfx;
 
@@ -1197,73 +1195,11 @@ void nsCSSGradientRenderer::BuildWebRenderParameters(
   aMode =
       mGradient->Repeating() ? wr::ExtendMode::Repeat : wr::ExtendMode::Clamp;
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  StyleColorInterpolationMethod styleColorInterpolationMethod =
-      mGradient->ColorInterpolationMethod();
-  if (mStops.Length() >= 2 &&
-      (styleColorInterpolationMethod.space != StyleColorSpace::Srgb ||
-       gfxPlatform::GetCMSMode() == CMSMode::All)) {
-    aStops.SetLengthAndRetainStorage(0);
-    
-    
-    
-    
-    
-    const int fullRangeExtraStops = 32;
-    
-    
-    
-    
-    aStops.SetLength(mStops.Length() * 2 + fullRangeExtraStops);
-    uint32_t outputStop = 0;
-    for (uint32_t i = 0; i < mStops.Length() - 1; i++) {
-      auto& start = mStops[i];
-      auto& end = i + 1 < mStops.Length() ? mStops[i + 1] : mStops[i];
-      StyleAbsoluteColor startColor = start.mColor;
-      StyleAbsoluteColor endColor = end.mColor;
-      int extraStops = (int)(floor(end.mPosition * fullRangeExtraStops) -
-                             floor(start.mPosition * fullRangeExtraStops));
-      extraStops = clamped(extraStops, 1, fullRangeExtraStops);
-      float step = 1.0f / (float)extraStops;
-      for (int extraStop = 0;
-           extraStop <= extraStops && outputStop < aStops.Capacity();
-           extraStop++) {
-        auto lerp = (float)extraStop * step;
-        auto position =
-            start.mPosition + lerp * (end.mPosition - start.mPosition);
-        StyleAbsoluteColor color = Servo_InterpolateColor(
-            styleColorInterpolationMethod, &endColor, &startColor, lerp);
-        aStops[outputStop].color = wr::ToColorF(ToDeviceColor(color));
-        aStops[outputStop].color.a *= aOpacity;
-        aStops[outputStop].offset = (float)position;
-        outputStop++;
-      }
-    }
-    aStops.SetLength(outputStop);
-  } else {
-    aStops.SetLength(mStops.Length());
-    for (uint32_t i = 0; i < mStops.Length(); i++) {
-      aStops[i].color = wr::ToColorF(ToDeviceColor(mStops[i].mColor));
-      aStops[i].color.a *= aOpacity;
-      aStops[i].offset = (float)mStops[i].mPosition;
-    }
+  aStops.SetLength(mStops.Length());
+  for (uint32_t i = 0; i < mStops.Length(); i++) {
+    aStops[i].color = wr::ToColorF(ToDeviceColor(mStops[i].mColor));
+    aStops[i].color.a *= aOpacity;
+    aStops[i].offset = mStops[i].mPosition;
   }
 
   aLineStart = LayoutDevicePoint(mLineStart.x, mLineStart.y);
