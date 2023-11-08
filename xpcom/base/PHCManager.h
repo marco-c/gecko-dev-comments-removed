@@ -13,6 +13,8 @@ namespace mozilla {
 
 void InitPHCState();
 
+void ReportPHCTelemetry();
+
 };  
 
 #endif  
