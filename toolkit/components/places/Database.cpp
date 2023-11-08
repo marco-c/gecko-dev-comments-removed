@@ -142,6 +142,23 @@ bool isRecentCorruptFile(const nsCOMPtr<nsIFile>& aCorruptFile) {
 
 
 
+void RemoveFileSwallowsErrors(const nsCOMPtr<nsIFile>& aFile,
+                              const nsString& aSuffix = u""_ns) {
+  nsCOMPtr<nsIFile> file;
+  MOZ_ALWAYS_SUCCEEDS(aFile->Clone(getter_AddRefs(file)));
+  if (!aSuffix.IsEmpty()) {
+    nsAutoString newFileName;
+    file->GetLeafName(newFileName);
+    newFileName.Append(aSuffix);
+    MOZ_ALWAYS_SUCCEEDS(file->SetLeafName(newFileName));
+  }
+  DebugOnly<nsresult> rv = file->Remove(false);
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "Failed to remove file.");
+}
+
+
+
+
 
 
 
@@ -799,12 +816,9 @@ nsresult Database::BackupAndReplaceDatabaseFile(
     };
     eCorruptDBReplaceStage stage = stage_closing;
     auto guard = MakeScopeExit([&]() {
-      if (stage != stage_replaced) {
-        
-        
-        
-        
-        
+      
+      
+      if (stage == stage_closing || stage == stage_removing) {
         Preferences::SetString(PREF_FORCE_DATABASE_REPLACEMENT, aDbFilename);
       }
       
@@ -890,7 +904,7 @@ nsresult Database::TryToCloneTablesFromCorruptDatabase(
     if (conn) {
       Unused << conn->Close();
     }
-    Unused << recoverFile->Remove(false);
+    RemoveFileSwallowsErrors(recoverFile);
   });
 
   rv = aStorage->OpenUnsharedDatabase(recoverFile,
@@ -965,11 +979,14 @@ nsresult Database::TryToCloneTablesFromCorruptDatabase(
   rv = transaction.Commit();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  Unused << conn->Close();
+  MOZ_ALWAYS_SUCCEEDS(conn->Close());
   conn = nullptr;
   rv = recoverFile->RenameTo(nullptr, filename);
   NS_ENSURE_SUCCESS(rv, rv);
-  Unused << corruptFile->Remove(false);
+
+  RemoveFileSwallowsErrors(corruptFile);
+  RemoveFileSwallowsErrors(corruptFile, u"-wal"_ns);
+  RemoveFileSwallowsErrors(corruptFile, u"-shm"_ns);
 
   guard.release();
   return NS_OK;
