@@ -1231,7 +1231,7 @@ impl<'a> ConstantEvaluator<'a> {
         
         
         if let Expression::Literal(literal) = expr {
-            crate::valid::validate_literal(literal)?;
+            crate::valid::check_literal_value(literal)?;
         }
 
         if let Some(FunctionLocalData {

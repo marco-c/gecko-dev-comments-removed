@@ -81,6 +81,7 @@ impl Instance {
 impl crate::Instance<Api> for Instance {
     unsafe fn init(_desc: &crate::InstanceDescriptor) -> Result<Self, crate::InstanceError> {
         
+        
         Ok(Instance {
             managed_metal_layer_delegate: surface::HalManagedMetalLayerDelegate::new(),
         })

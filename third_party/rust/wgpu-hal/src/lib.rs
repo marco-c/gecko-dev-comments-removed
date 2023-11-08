@@ -1097,6 +1097,8 @@ pub struct NagaShader {
     pub module: Cow<'static, naga::Module>,
     
     pub info: naga::valid::ModuleInfo,
+    
+    pub debug_source: Option<DebugSource>,
 }
 
 
@@ -1117,6 +1119,12 @@ pub enum ShaderInput<'a> {
 pub struct ShaderModuleDescriptor<'a> {
     pub label: Label<'a>,
     pub runtime_checks: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct DebugSource {
+    pub file_name: Cow<'static, str>,
+    pub source_code: Cow<'static, str>,
 }
 
 
