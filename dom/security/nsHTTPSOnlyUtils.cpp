@@ -737,11 +737,14 @@ void nsHTTPSOnlyUtils::LogMessage(const nsAString& aMessage, uint32_t aFlags,
   
   auto category = aUseHttpsFirst ? "HTTPSFirst"_ns : "HTTPSOnly"_ns;
 
-  uint64_t innerWindowId = aLoadInfo->GetInnerWindowID();
-  if (innerWindowId > 0) {
+  uint64_t windowId = aLoadInfo->GetInnerWindowID();
+  if (!windowId) {
+    windowId = aLoadInfo->GetTriggeringWindowId();
+  }
+  if (windowId) {
     
     nsContentUtils::ReportToConsoleByWindowID(message, aFlags, category,
-                                              innerWindowId, aURI);
+                                              windowId, aURI);
   } else {
     
     bool isPrivateWin = aLoadInfo->GetOriginAttributes().mPrivateBrowsingId > 0;
