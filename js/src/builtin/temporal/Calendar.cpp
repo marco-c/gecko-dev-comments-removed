@@ -1137,6 +1137,21 @@ bool js::temporal::CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
 
 
 
+bool js::temporal::CalendarYear(JSContext* cx, Handle<CalendarValue> calendar,
+                                const PlainDateTime& dateTime,
+                                MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarYear(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarMonth(const PlainDate& date,
                                  MutableHandle<Value> result) {
   
@@ -1206,6 +1221,21 @@ bool js::temporal::CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
                                  Handle<PlainYearMonthObject*> dateLike,
                                  MutableHandle<Value> result) {
   return CalendarMonth(cx, calendar, dateLike, ToPlainDate(dateLike), result);
+}
+
+
+
+
+bool js::temporal::CalendarMonth(JSContext* cx, Handle<CalendarValue> calendar,
+                                 const PlainDateTime& dateTime,
+                                 MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarMonth(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
@@ -1315,6 +1345,22 @@ bool js::temporal::CalendarMonthCode(JSContext* cx,
 
 
 
+bool js::temporal::CalendarMonthCode(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
+                                     const PlainDateTime& dateTime,
+                                     MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarMonthCode(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarDay(const PlainDate& date,
                                MutableHandle<Value> result) {
   
@@ -1401,6 +1447,21 @@ bool js::temporal::CalendarDayWrapped(
 
 
 
+bool js::temporal::CalendarDay(JSContext* cx, Handle<CalendarValue> calendar,
+                               const PlainDateTime& dateTime,
+                               MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDay(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarDayOfWeek(const PlainDate& date,
                                      MutableHandle<Value> result) {
   
@@ -1470,6 +1531,22 @@ bool js::temporal::CalendarDayOfWeek(JSContext* cx,
 
 
 
+bool js::temporal::CalendarDayOfWeek(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
+                                     const PlainDateTime& dateTime,
+                                     MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDayOfWeek(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarDayOfYear(const PlainDate& date,
                                      MutableHandle<Value> result) {
   
@@ -1534,6 +1611,22 @@ bool js::temporal::CalendarDayOfYear(JSContext* cx,
                                      MutableHandle<Value> result) {
   return CalendarDayOfYear(cx, calendar, dateLike, ToPlainDate(dateLike),
                            result);
+}
+
+
+
+
+bool js::temporal::CalendarDayOfYear(JSContext* cx,
+                                     Handle<CalendarValue> calendar,
+                                     const PlainDateTime& dateTime,
+                                     MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDayOfYear(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
@@ -1609,6 +1702,22 @@ bool js::temporal::CalendarWeekOfYear(JSContext* cx,
 
 
 
+bool js::temporal::CalendarWeekOfYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
+                                      const PlainDateTime& dateTime,
+                                      MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarWeekOfYear(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarYearOfWeek(const PlainDate& date,
                                       MutableHandle<Value> result) {
   
@@ -1679,6 +1788,22 @@ bool js::temporal::CalendarYearOfWeek(JSContext* cx,
 
 
 
+bool js::temporal::CalendarYearOfWeek(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
+                                      const PlainDateTime& dateTime,
+                                      MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarYearOfWeek(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarDaysInWeek(const PlainDate& date,
                                       MutableHandle<Value> result) {
   
@@ -1744,6 +1869,22 @@ bool js::temporal::CalendarDaysInWeek(JSContext* cx,
                                       MutableHandle<Value> result) {
   return CalendarDaysInWeek(cx, calendar, dateLike, ToPlainDate(dateLike),
                             result);
+}
+
+
+
+
+bool js::temporal::CalendarDaysInWeek(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
+                                      const PlainDateTime& dateTime,
+                                      MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDaysInWeek(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
@@ -1830,6 +1971,22 @@ bool js::temporal::CalendarDaysInMonth(JSContext* cx,
 
 
 
+bool js::temporal::CalendarDaysInMonth(JSContext* cx,
+                                       Handle<CalendarValue> calendar,
+                                       const PlainDateTime& dateTime,
+                                       MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDaysInMonth(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarDaysInYear(const PlainDate& date,
                                       MutableHandle<Value> result) {
   
@@ -1911,6 +2068,22 @@ bool js::temporal::CalendarDaysInYear(JSContext* cx,
 
 
 
+bool js::temporal::CalendarDaysInYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
+                                      const PlainDateTime& dateTime,
+                                      MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarDaysInYear(cx, calendar, dateLike, dateTime.date, result);
+}
+
+
+
+
 static bool BuiltinCalendarMonthsInYear(const PlainDate& date,
                                         MutableHandle<Value> result) {
   
@@ -1987,6 +2160,22 @@ bool js::temporal::CalendarMonthsInYear(JSContext* cx,
                                         MutableHandle<Value> result) {
   return ::CalendarMonthsInYear(cx, calendar, dateLike, ToPlainDate(dateLike),
                                 result);
+}
+
+
+
+
+bool js::temporal::CalendarMonthsInYear(JSContext* cx,
+                                        Handle<CalendarValue> calendar,
+                                        const PlainDateTime& dateTime,
+                                        MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarMonthsInYear(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
@@ -2076,6 +2265,22 @@ bool js::temporal::CalendarInLeapYear(JSContext* cx,
                                       MutableHandle<Value> result) {
   return ::CalendarInLeapYear(cx, calendar, dateLike, ToPlainDate(dateLike),
                               result);
+}
+
+
+
+
+bool js::temporal::CalendarInLeapYear(JSContext* cx,
+                                      Handle<CalendarValue> calendar,
+                                      const PlainDateTime& dateTime,
+                                      MutableHandle<Value> result) {
+  Rooted<PlainDateTimeObject*> dateLike(
+      cx, CreateTemporalDateTime(cx, dateTime, calendar));
+  if (!dateLike) {
+    return false;
+  }
+
+  return ::CalendarInLeapYear(cx, calendar, dateLike, dateTime.date, result);
 }
 
 
