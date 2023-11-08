@@ -143,11 +143,9 @@ async function openAboutTranslations({
     runInPage
   );
 
-  BrowserTestUtils.removeTab(tab);
-
   await removeMocks();
-  await TranslationsParent.destroyEngineProcess();
 
+  BrowserTestUtils.removeTab(tab);
   await SpecialPowers.popPrefEnv();
 }
 
@@ -227,87 +225,39 @@ function naivelyPrettify(html) {
 
 
 
-function upperCaseNode(node) {
-  if (typeof node.nodeValue === "string") {
-    node.nodeValue = node.nodeValue.toUpperCase();
-  }
-  for (const childNode of node.childNodes) {
-    upperCaseNode(childNode);
-  }
-}
 
 
 
 
 
 
-function createMockedTranslatorPort(transformNode = upperCaseNode) {
-  const parser = new DOMParser();
-  const mockedPort = {
-    async postMessage(message) {
-      
-      await TestUtils.waitForTick();
-
-      switch (message.type) {
-        case "TranslationsPort:GetEngineStatusRequest":
-          mockedPort.onmessage({
-            data: {
-              type: "TranslationsPort:GetEngineStatusResponse",
-              status: "ready",
-            },
-          });
-          break;
-        case "TranslationsPort:TranslationRequest": {
-          const { messageId, sourceText } = message;
-
-          const translatedDoc = parser.parseFromString(sourceText, "text/html");
-          transformNode(translatedDoc.body);
-          mockedPort.onmessage({
-            data: {
-              type: "TranslationsPort:TranslationResponse",
-              targetText: translatedDoc.body.innerHTML,
-              messageId,
-            },
-          });
-        }
-      }
-    },
-  };
-  return mockedPort;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function createBatchedMockedTranslatorPort() {
+function createBatchFakeTranslator() {
   let letter = "a";
-
   
 
 
-  function transformNode(node) {
-    if (typeof node.nodeValue === "string") {
-      node.nodeValue = node.nodeValue.replace(/\w/g, letter);
-    }
-    for (const childNode of node.childNodes) {
-      transformNode(childNode);
-    }
-  }
+  return async function fakeTranslator(message) {
+    
 
-  return createMockedTranslatorPort(node => {
-    transformNode(node);
+
+    function transformNode(node) {
+      if (typeof node.nodeValue === "string") {
+        node.nodeValue = node.nodeValue.replace(/\w/g, letter);
+      }
+      for (const childNode of node.childNodes) {
+        transformNode(childNode);
+      }
+    }
+
+    const parser = new DOMParser();
+    const translatedDoc = parser.parseFromString(message, "text/html");
+    transformNode(translatedDoc.body);
+
+    
     letter = String.fromCodePoint(letter.codePointAt(0) + 1);
-  });
+
+    return [translatedDoc.body.innerHTML];
+  };
 }
 
 
@@ -317,7 +267,7 @@ function createBatchedMockedTranslatorPort() {
 
 
 
-function createdReorderingMockedTranslatorPort() {
+async function reorderingTranslator(message) {
   
 
 
@@ -339,7 +289,11 @@ function createdReorderingMockedTranslatorPort() {
     }
   }
 
-  return createMockedTranslatorPort(transformNode);
+  const parser = new DOMParser();
+  const translatedDoc = parser.parseFromString(message, "text/html");
+  transformNode(translatedDoc.body);
+
+  return [translatedDoc.body.innerHTML];
 }
 
 
@@ -431,12 +385,10 @@ async function setupActorTest({
     true 
   );
 
-  const actor = getTranslationsParent();
   return {
-    actor,
+    actor: getTranslationsParent(),
     remoteClients,
     async cleanup() {
-      await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
       BrowserTestUtils.removeTab(tab);
       await removeMocks();
@@ -508,8 +460,6 @@ async function loadTestPage({
   permissionsUrls = [],
 }) {
   info(`Loading test page starting at url: ${page}`);
-  
-  await TranslationsParent.destroyEngineProcess();
   Services.fog.testResetFOG();
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -591,7 +541,6 @@ async function loadTestPage({
 
 
     async cleanup() {
-      await TranslationsParent.destroyEngineProcess();
       await closeTranslationsPanelIfOpen();
       await removeMocks();
       Services.fog.testResetFOG();
@@ -1074,7 +1023,6 @@ async function setupAboutPreferences(
   const elements = await selectAboutPreferencesElements();
 
   async function cleanup() {
-    await TranslationsParent.destroyEngineProcess();
     await closeTranslationsPanelIfOpen();
     BrowserTestUtils.removeTab(tab);
     await removeMocks();
