@@ -533,9 +533,35 @@ static Wrapped<PlainDateObject*> ToTemporalDate(JSContext* cx,
 
 
 
-Wrapped<PlainDateObject*> js::temporal::ToTemporalDate(JSContext* cx,
-                                                       Handle<JSObject*> item) {
-  return ::ToTemporalDate(cx, item, nullptr);
+PlainDateObject* js::temporal::ToTemporalDate(
+    JSContext* cx, Handle<Wrapped<ZonedDateTimeObject*>> item) {
+  
+  auto* zonedDateTime = item.unwrap(cx);
+  if (!zonedDateTime) {
+    return nullptr;
+  }
+
+  auto epochInstant = ToInstant(zonedDateTime);
+  Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
+  Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
+
+  if (!timeZone.wrap(cx)) {
+    return nullptr;
+  }
+  if (!calendar.wrap(cx)) {
+    return nullptr;
+  }
+
+  
+
+  
+  PlainDateTime dateTime;
+  if (!GetPlainDateTimeFor(cx, timeZone, epochInstant, &dateTime)) {
+    return nullptr;
+  }
+
+  
+  return CreateTemporalDate(cx, dateTime.date, calendar);
 }
 
 
