@@ -63,6 +63,5 @@ parallelPromiseTest(async t => {
   document.body.removeChild(iframe);
 
   
-  
   await expectBeacon(uuid, {count: 1});
 }, 'A discarded document does not send an already aborted fetchLater request.');
