@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
 .dropdown {
   background: var(--theme-body-background);
@@ -29,7 +29,7 @@
   height: 100%;
 }
 
-
+/* cover the reserved space at the end of .source-tabs */
 .source-tabs + .dropdown-block {
   margin-inline-start: -28px;
 }
@@ -43,6 +43,7 @@
   font-size: 14px;
   height: 100%;
   width: 28px;
+  outline-offset: -2px;
 }
 
 .dropdown-button .img {

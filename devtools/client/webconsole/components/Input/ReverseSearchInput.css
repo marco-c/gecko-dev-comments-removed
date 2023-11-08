@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .reverse-search {
   display: flex;
@@ -18,9 +18,9 @@
   border-inline-end-color: var(--theme-splitter-color);
 }
 
-
-
-
+/* Add a border radius match the borders of the window on Mac OS
+ * and hide the border radius on the right if the sidebar or editor
+ * is open. */
 :root[platform="mac"] .webconsole-app .reverse-search {
   border-end-start-radius: 5px;
 }
@@ -30,7 +30,8 @@
 }
 
 .reverse-search:focus-within {
-  border-color: var(--blue-50);
+  outline-offset: -2px;
+  outline: var(--theme-focus-outline);
 }
 
 .reverse-search {
@@ -57,9 +58,9 @@
 }
 
 .reverse-search:dir(ltr) input {
-  
-
-
+  /* Be explicit about left/right direction to prevent the text/placeholder
+   * from overlapping the background image when the user changes the text
+   * direction manually (e.g. via Ctrl+Shift). */
   padding-left: var(--console-inline-start-gutter);
 }
 
