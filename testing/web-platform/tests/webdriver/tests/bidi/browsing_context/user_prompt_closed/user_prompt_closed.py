@@ -173,7 +173,7 @@ async def test_subscribe_to_one_context(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener(

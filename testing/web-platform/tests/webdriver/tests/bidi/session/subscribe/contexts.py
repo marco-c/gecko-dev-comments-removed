@@ -16,7 +16,7 @@ async def test_subscribe_to_one_context(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -53,7 +53,7 @@ async def test_subscribe_to_one_context_twice(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -86,7 +86,7 @@ async def test_subscribe_to_one_context_and_then_to_all(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -163,7 +163,7 @@ async def test_subscribe_to_all_context_and_then_to_one_again(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -203,7 +203,7 @@ async def test_subscribe_to_top_context_with_iframes(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -251,7 +251,7 @@ async def test_subscribe_to_child_context(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)

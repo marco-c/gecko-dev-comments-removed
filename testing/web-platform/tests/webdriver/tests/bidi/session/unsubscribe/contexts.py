@@ -22,7 +22,7 @@ async def test_unsubscribe_from_one_context(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -76,7 +76,7 @@ async def test_unsubscribe_from_top_context_with_iframes(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -116,7 +116,7 @@ async def test_unsubscribe_from_child_context(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)
@@ -151,7 +151,7 @@ async def test_unsubscribe_from_one_context_after_navigation(
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener = bidi_session.add_event_listener("log.entryAdded", on_event)

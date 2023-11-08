@@ -14,7 +14,7 @@ async def test_unsubscribe_from_module(bidi_session):
     
     events = []
 
-    async def on_event(_, data):
+    async def on_event(method, data):
         events.append(data)
 
     remove_listener_contextCreated = bidi_session.add_event_listener(
