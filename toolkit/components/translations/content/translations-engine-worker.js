@@ -131,7 +131,7 @@ function handleMessages(engine) {
 
       switch (data.type) {
         case "translation-request": {
-          const { sourceText, messageId, isHTML, innerWindowId } = data;
+          const { messageBatch, messageId, isHTML, innerWindowId } = data;
           if (discardPromise) {
             
             await discardPromise;
@@ -141,8 +141,8 @@ function handleMessages(engine) {
             
             
             
-            const targetText = await engine.translate(
-              sourceText,
+            const translations = await engine.translate(
+              messageBatch,
               isHTML,
               innerWindowId
             );
@@ -151,15 +151,15 @@ function handleMessages(engine) {
             
             
             trace("Translation complete", {
-              sourceText,
-              targetText,
+              messageBatch,
+              translations,
               isHTML,
               innerWindowId,
             });
 
             postMessage({
               type: "translation-response",
-              targetText,
+              translations,
               messageId,
             });
           } catch (error) {
@@ -188,7 +188,7 @@ function handleMessages(engine) {
             "Translations discard requested"
           );
 
-          discardPromise = engine.discardTranslations(data.innerWindowId);
+          discardPromise = engine.discardTranslations();
           await discardPromise;
           discardPromise = null;
 
@@ -267,9 +267,20 @@ class Engine {
 
 
 
-  translate(sourceText, isHTML, innerWindowId) {
+
+  translate(
+    messageBatch,
+    isHTML,
+    innerWindowId,
+    withQualityEstimation = false
+  ) {
     return this.#getWorkQueue(innerWindowId).runTask(() =>
-      this.#syncTranslate(sourceText, isHTML, innerWindowId)
+      this.#syncTranslate(
+        messageBatch,
+        isHTML,
+        innerWindowId,
+        withQualityEstimation
+      )
     );
   }
 
@@ -319,14 +330,20 @@ class Engine {
 
 
 
-  #syncTranslate(sourceText, isHTML, innerWindowId) {
+
+  #syncTranslate(
+    messageBatch,
+    isHTML,
+    innerWindowId,
+    withQualityEstimation = false
+  ) {
     const startTime = performance.now();
     let response;
-    sourceText = sourceText.trim();
     const { messages, options } = BergamotUtils.getTranslationArgs(
       this.bergamot,
-      sourceText,
-      isHTML
+      messageBatch,
+      isHTML,
+      withQualityEstimation
     );
     try {
       if (messages.size() === 0) {
@@ -356,14 +373,22 @@ class Engine {
       }
 
       
+      const translations = BergamotUtils.mapVector(responses, response =>
+        response.getTranslatedText()
+      );
+
+      
+      let length = 0;
+      for (const message of messageBatch) {
+        length += message.length;
+      }
       ChromeUtils.addProfilerMarker(
         "TranslationsWorker",
         { startTime, innerWindowId },
-        `Translated ${sourceText.length} code units.`
+        `Translated ${length} code units.`
       );
 
-      const targetText = responses.get(0).getTranslatedText();
-      return targetText;
+      return translations;
     } finally {
       
       messages?.delete();
@@ -565,21 +590,38 @@ class BergamotUtils {
 
 
 
-  static getTranslationArgs(bergamot, sourceText, isHTML) {
+
+  static getTranslationArgs(
+    bergamot,
+    messageBatch,
+    isHTML,
+    withQualityEstimation
+  ) {
     const messages = new bergamot.VectorString();
     const options = new bergamot.VectorResponseOptions();
+    for (let message of messageBatch) {
+      message = message.trim();
+      
+      if (message === "") {
+        continue;
+      }
 
-    sourceText = sourceText.trim();
-    
-    if (sourceText) {
-      messages.push_back(sourceText);
+      if (withQualityEstimation && !isHTML) {
+        
+        
+        
+        throw new Error(
+          "Quality estimates on non-hTML is not curently supported."
+        );
+      }
+
+      messages.push_back(message);
       options.push_back({
-        qualityScores: false,
+        qualityScores: withQualityEstimation,
         alignment: true,
         html: isHTML,
       });
     }
-
     return { messages, options };
   }
 }
@@ -608,11 +650,14 @@ class MockedEngine {
 
 
 
-  translate(sourceText, isHTML) {
-    
-    let html = isHTML ? ", html" : "";
-    const targetText = sourceText.toUpperCase();
-    return `${targetText} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
+  translate(messageBatch, isHTML) {
+    return messageBatch.map(message => {
+      
+      let html = isHTML ? ", html" : "";
+      message = message.toUpperCase();
+
+      return `${message} [${this.fromLanguage} to ${this.toLanguage}${html}]`;
+    });
   }
 
   discardTranslations() {}
@@ -703,7 +748,7 @@ class WorkQueue {
       }
 
       
-      if (this.#isWorkCancelled || !this.#tasks.length) {
+      if (this.#isWorkCancelled) {
         break;
       }
 

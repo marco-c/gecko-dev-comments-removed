@@ -615,8 +615,7 @@ var TranslationsPanel = new (class {
 
 
 
-
-  async #showDefaultView(actor, force = false) {
+  async #showDefaultView(force = false) {
     const {
       fromMenuList,
       multiview,
@@ -643,7 +642,7 @@ var TranslationsPanel = new (class {
         message: "translations-panel-error-load-languages",
         hint: "translations-panel-error-load-languages-hint",
         actionText: "translations-panel-error-load-languages-hint-button",
-        actionCommand: () => this.#reloadLangList(actor),
+        actionCommand: () => this.#reloadLangList(),
       });
 
       translateButton.disabled = true;
@@ -677,6 +676,7 @@ var TranslationsPanel = new (class {
       this.updateUIForReTranslation(false );
       cancelButton.hidden = false;
       multiview.setAttribute("mainViewId", "translations-panel-view-default");
+      let actor = this.#getTranslationsActor();
 
       if (!this._hasShownPanel) {
         actor.firstShowUriSpec = gBrowser.currentURI.spec;
@@ -879,7 +879,7 @@ var TranslationsPanel = new (class {
   async #showRevisitView({ fromLanguage, toLanguage }) {
     const { fromMenuList, toMenuList, intro } = this.elements;
     if (!this.#isShowingDefaultView()) {
-      await this.#showDefaultView(this.#getTranslationsActor());
+      await this.#showDefaultView();
     }
     intro.hidden = true;
     fromMenuList.value = fromLanguage;
@@ -974,10 +974,7 @@ var TranslationsPanel = new (class {
     const { panel } = this.elements;
     PanelMultiView.hidePopup(panel);
 
-    await this.#showDefaultView(
-      this.#getTranslationsActor(),
-      true 
-    );
+    await this.#showDefaultView(true /* force this view to be shown */);
 
     await this.#openPanelPopup(this.elements.appMenuButton, {
       event,
@@ -986,13 +983,10 @@ var TranslationsPanel = new (class {
     });
   }
 
-  
-
-
-  async #reloadLangList(actor) {
+  async #reloadLangList() {
     try {
       await this.#ensureLangListsBuilt();
-      await this.#showDefaultView(actor);
+      await this.#showDefaultView();
     } catch (error) {
       this.elements.errorHintAction.disabled = false;
     }
@@ -1210,7 +1204,7 @@ var TranslationsPanel = new (class {
         this.console?.error(error);
       });
     } else {
-      await this.#showDefaultView(this.#getTranslationsActor()).catch(error => {
+      await this.#showDefaultView().catch(error => {
         this.console?.error(error);
       });
     }
@@ -1437,6 +1431,8 @@ var TranslationsPanel = new (class {
     this.#getTranslationsActor().restorePage(docLangTag);
   }
 
+  handleEventId = 0;
+
   
 
 
@@ -1455,47 +1451,7 @@ var TranslationsPanel = new (class {
 
 
 
-
-  handleEventChain = Promise.resolve();
-
-  
-
-
-
-
-  handleEvent = event => {
-    
-    
-    
-    
-    
-    let actor;
-    try {
-      actor =
-        event.target.browsingContext.currentWindowGlobal.getActor(
-          "Translations"
-        );
-    } catch {}
-
-    if (actor) {
-      this.handleEventChain = this.handleEventChain
-        .catch(() => {})
-        .then(() => this.handleEventImpl(event, actor));
-    } else {
-      this.console.error(
-        `Unable to get Translations actor for event "${event.type}"`,
-        event
-      );
-    }
-    return this.handleEventChain;
-  };
-
-  
-
-
-
-
-  async handleEventImpl(event, actor) {
+  handleEvent = async event => {
     switch (event.type) {
       case "TranslationsParent:OfferTranslation": {
         if (Services.wm.getMostRecentBrowserWindow()?.gBrowser === gBrowser) {
@@ -1503,7 +1459,9 @@ var TranslationsPanel = new (class {
         }
         break;
       }
-      case "TranslationsParent:LanguageState": {
+      case "TranslationsParent:LanguageState":
+        
+        const handleEventId = ++this.handleEventId;
         const {
           detectedLanguages,
           requestedTranslationPair,
@@ -1543,6 +1501,10 @@ var TranslationsPanel = new (class {
           (hasSupportedLanguage &&
             (await TranslationsParent.getIsTranslationsEngineSupported()))
         ) {
+          if (handleEventId !== this.handleEventId) {
+            
+            return;
+          }
           button.hidden = false;
           if (requestedTranslationPair) {
             
@@ -1588,7 +1550,8 @@ var TranslationsPanel = new (class {
             
             if (
               this._hasShownPanel &&
-              gBrowser.currentURI.spec !== actor.firstShowUriSpec
+              gBrowser.currentURI.spec !==
+                this.#getTranslationsActor().firstShowUriSpec
             ) {
               document.l10n.setAttributes(
                 button,
@@ -1606,6 +1569,10 @@ var TranslationsPanel = new (class {
             PageActions.sendPlacedInUrlbarTrigger(button);
           }
         } else {
+          if (handleEventId !== this.handleEventId) {
+            
+            return;
+          }
           this.#hideTranslationsButton();
         }
 
@@ -1615,7 +1582,7 @@ var TranslationsPanel = new (class {
           case "engine-load-failure":
             await this.#ensureLangListsBuilt();
             if (!this.#isShowingDefaultView()) {
-              await this.#showDefaultView(actor).catch(e => {
+              await this.#showDefaultView().catch(e => {
                 this.console?.error(e);
               });
             }
@@ -1627,7 +1594,7 @@ var TranslationsPanel = new (class {
               ? this.elements.appMenuButton
               : button;
 
-            
+            // Re-open the menu on an error.
             await this.#openPanelPopup(targetButton, {
               autoShow: true,
               viewName: "errorView",
@@ -1638,9 +1605,8 @@ var TranslationsPanel = new (class {
             console.error("Unknown translation error", error);
         }
         break;
-      }
     }
-  }
+  };
 })();
 
 XPCOMUtils.defineLazyPreferenceGetter(
