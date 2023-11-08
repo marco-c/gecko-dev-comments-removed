@@ -3639,6 +3639,13 @@ pref("browser.translations.chaos.timeoutMS", 0);
 
 
 
+pref("browser.translations.languageIdentification.useFastText", false);
+
+
+
+
+
+
 
 pref("prompts.authentication_dialog_abuse_limit", 2);
 
