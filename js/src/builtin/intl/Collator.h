@@ -97,6 +97,14 @@ class CollatorObject : public NativeObject {
 [[nodiscard]] extern bool intl_isUpperCaseFirst(JSContext* cx, unsigned argc,
                                                 JS::Value* vp);
 
+
+
+
+
+
+[[nodiscard]] extern bool intl_isIgnorePunctuation(JSContext* cx, unsigned argc,
+                                                   JS::Value* vp);
+
 }  
 
 #endif 

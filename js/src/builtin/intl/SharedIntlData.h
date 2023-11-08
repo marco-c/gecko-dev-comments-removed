@@ -303,6 +303,25 @@ class SharedIntlData {
                         bool* isUpperFirst);
 
  private:
+#if DEBUG || MOZ_SYSTEM_ICU
+  LocaleSet ignorePunctuationLocales;
+
+  bool ignorePunctuationInitialized = false;
+
+  
+
+
+  bool ensureIgnorePunctuationLocales(JSContext* cx);
+#endif
+
+ public:
+  
+
+
+  bool isIgnorePunctuation(JSContext* cx, JS::Handle<JSString*> locale,
+                           bool* ignorePunctuation);
+
+ private:
   using UniqueDateTimePatternGenerator =
       mozilla::UniquePtr<mozilla::intl::DateTimePatternGenerator,
                          DateTimePatternGeneratorDeleter>;
