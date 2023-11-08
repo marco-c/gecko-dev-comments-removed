@@ -1031,7 +1031,7 @@ auto nsNativeThemeGTK::IsWidgetNonNative(nsIFrame* aFrame,
   
   
   if (LookAndFeel::ColorSchemeForFrame(aFrame) ==
-      LookAndFeel::ColorSchemeForChrome()) {
+      PreferenceSheet::ColorSchemeForChrome()) {
     return NonNative::No;
   }
 

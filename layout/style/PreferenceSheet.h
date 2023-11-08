@@ -41,22 +41,9 @@ struct PreferenceSheet {
     bool mUsePrefColors = false;
     bool mUseStandins = false;
     bool mMustUseLightColorSet = false;
+    bool mMustUseLightSystemColors = false;
 
-    
-    
-    
-    enum class ColorSchemeChoice : uint8_t {
-      
-      
-      Standard,
-      
-      
-      UserPreferred,
-      Light,
-      Dark,
-    };
-
-    ColorSchemeChoice mColorSchemeChoice = ColorSchemeChoice::Standard;
+    ColorScheme mColorScheme = ColorScheme::Light;
 
     
     bool NonNativeThemeShouldBeHighContrast() const;
@@ -78,6 +65,20 @@ struct PreferenceSheet {
   }
 
   static bool AffectedByPref(const nsACString&);
+
+  enum class ChromeColorSchemeSetting { Light, Dark, System };
+  static ChromeColorSchemeSetting ColorSchemeSettingForChrome();
+
+  static ColorScheme ColorSchemeForChrome() {
+    MOZ_ASSERT(sInitialized);
+    return ChromePrefs().mColorScheme;
+  }
+
+  static ColorScheme PreferredColorSchemeForContent() {
+    MOZ_ASSERT(sInitialized);
+    return ContentPrefs().mColorScheme;
+  }
+  static ColorScheme ThemeDerivedColorSchemeForContent();
 
   static Prefs& ContentPrefs() {
     MOZ_ASSERT(sInitialized);

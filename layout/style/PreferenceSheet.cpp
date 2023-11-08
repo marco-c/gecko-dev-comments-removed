@@ -161,6 +161,29 @@ bool PreferenceSheet::Prefs::NonNativeThemeShouldBeHighContrast() const {
          !mUseDocumentColors;
 }
 
+auto PreferenceSheet::ColorSchemeSettingForChrome()
+    -> ChromeColorSchemeSetting {
+  switch (StaticPrefs::browser_theme_toolbar_theme()) {
+    case 0:  
+      return ChromeColorSchemeSetting::Dark;
+    case 1:  
+      return ChromeColorSchemeSetting::Light;
+    default:
+      return ChromeColorSchemeSetting::System;
+  }
+}
+
+ColorScheme PreferenceSheet::ThemeDerivedColorSchemeForContent() {
+  switch (StaticPrefs::browser_theme_content_theme()) {
+    case 0:  
+      return ColorScheme::Dark;
+    case 1:  
+      return ColorScheme::Light;
+    default:
+      return LookAndFeel::SystemColorScheme();
+  }
+}
+
 void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   *this = {};
 
@@ -177,35 +200,47 @@ void PreferenceSheet::Prefs::Load(bool aIsChrome) {
   LoadColors(true);
   LoadColors(false);
 
-  mColorSchemeChoice = [&] {
+  
+  
+  mMustUseLightColorSet = mUsePrefColors && !mUseDocumentColors;
 #ifdef XP_WIN
+  if (mUseAccessibilityTheme) {
     
     
     
-    if (mUseAccessibilityTheme) {
-      mMustUseLightColorSet = true;
-      return ColorSchemeChoice::Light;
-    }
+    
+    mMustUseLightSystemColors = mMustUseLightColorSet = true;
+  }
 #endif
-    
-    
-    if (mUseDocumentColors) {
-      return ColorSchemeChoice::Standard;
+
+  mColorScheme = [&] {
+    if (aIsChrome) {
+      switch (ColorSchemeSettingForChrome()) {
+        case ChromeColorSchemeSetting::Light:
+          return ColorScheme::Light;
+        case ChromeColorSchemeSetting::Dark:
+          return ColorScheme::Dark;
+        case ChromeColorSchemeSetting::System:
+          break;
+      }
+      return LookAndFeel::SystemColorScheme();
     }
-    
-    
-    
-    if (mUsePrefColors) {
+    if (mMustUseLightColorSet) {
       
       
-      mMustUseLightColorSet = true;
+      
       return LookAndFeel::IsDarkColor(mLightColors.mDefaultBackground)
-                 ? ColorSchemeChoice::Dark
-                 : ColorSchemeChoice::Light;
+                 ? ColorScheme::Dark
+                 : ColorScheme::Light;
     }
-    
-    
-    return ColorSchemeChoice::UserPreferred;
+    switch (StaticPrefs::layout_css_prefers_color_scheme_content_override()) {
+      case 0:
+        return ColorScheme::Dark;
+      case 1:
+        return ColorScheme::Light;
+      default:
+        return ThemeDerivedColorSchemeForContent();
+    }
   }();
 }
 
@@ -218,18 +253,21 @@ void PreferenceSheet::Initialize() {
   sContentPrefs.Load(false);
   sChromePrefs.Load(true);
   sPrintPrefs = sContentPrefs;
-  if (!sPrintPrefs.mUseDocumentColors) {
+  {
     
-    
-    
-    
-    
-    
-    
-    
-    
-    sPrintPrefs.mLightColors = Prefs().mLightColors;
-    sPrintPrefs.mUseStandins = true;
+    sPrintPrefs.mColorScheme = ColorScheme::Light;
+    if (!sPrintPrefs.mUseDocumentColors) {
+      
+      
+      
+      
+      
+      
+      
+      
+      sPrintPrefs.mLightColors = Prefs().mLightColors;
+      sPrintPrefs.mUseStandins = true;
+    }
   }
 
   nsAutoString useDocumentColorPref;
