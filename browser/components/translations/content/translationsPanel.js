@@ -1455,61 +1455,49 @@ var TranslationsPanel = new (class {
 
 
 
-
-  handleEventChain = Promise.resolve();
-
-  
-
-
-
-
-  handleEvent = event => {
-    
-    
-    
-    
-    
-    let actor;
-    try {
-      actor =
-        event.target.browsingContext.currentWindowGlobal.getActor(
-          "Translations"
-        );
-    } catch {}
-
-    if (actor) {
-      this.handleEventChain = this.handleEventChain
-        .catch(() => {})
-        .then(() => this.handleEventImpl(event, actor));
-    } else {
-      this.console.error(
-        `Unable to get Translations actor for event "${event.type}"`,
-        event
-      );
+  async #showEngineError(actor) {
+    const { button } = this.buttonElements;
+    await this.#ensureLangListsBuilt();
+    if (!this.#isShowingDefaultView()) {
+      await this.#showDefaultView(actor).catch(e => {
+        this.console?.error(e);
+      });
     }
-    return this.handleEventChain;
-  };
+    this.elements.error.hidden = false;
+    this.#showError({
+      message: "translations-panel-error-translating",
+    });
+    const targetButton = button.hidden ? this.elements.appMenuButton : button;
 
-  
+    // Re-open the menu on an error.
+    await this.#openPanelPopup(targetButton, {
+      autoShow: true,
+      viewName: "errorView",
+      maintainFlow: true,
+    });
+  }
 
-
-
-
-  async handleEventImpl(event, actor) {
+  /**
+   * Set the state of the translations button in the URL bar.
+   *
+   * @param {CustomEvent} event
+   */
+  handleEvent = event => {
     switch (event.type) {
       case "TranslationsParent:OfferTranslation": {
         if (Services.wm.getMostRecentBrowserWindow()?.gBrowser === gBrowser) {
-          this.open(event,  true);
+          this.open(event, /* reportAsAutoShow */ true);
         }
         break;
       }
       case "TranslationsParent:LanguageState": {
+        const { actor } = event.detail;
         const {
           detectedLanguages,
           requestedTranslationPair,
           error,
           isEngineReady,
-        } = event.detail;
+        } = actor.languageState;
 
         const { button, buttonLocale, buttonCircleArrows } =
           this.buttonElements;
@@ -1520,32 +1508,32 @@ var TranslationsPanel = new (class {
           detectedLanguages?.isDocLangTagSupported;
 
         if (detectedLanguages) {
-          
-          
+          // Ensure the cached detected languages are up to date, for instance whenever
+          // the user switches tabs.
           TranslationsPanel.detectedLanguages = detectedLanguages;
         }
 
         if (this.#isPopupOpen) {
-          
-          
-          
-          this.#updateViewFromTranslationStatus(event.detail);
+          // Make sure to use the language state that is passed by the event.detail, and
+          // don't read it from the actor here, as it's possible the actor isn't available
+          // via the gBrowser.selectedBrowser.
+          this.#updateViewFromTranslationStatus(actor.languageState);
         }
 
         if (
-          
+          // We've already requested to translate this page, so always show the icon.
           requestedTranslationPair ||
-          
-          
-          
+          // There was an error translating, so always show the icon. This can happen
+          // when a user manually invokes the translation and we wouldn't normally show
+          // the icon.
           error ||
-          
+          // Finally check that we can translate this language.
           (hasSupportedLanguage &&
-            (await TranslationsParent.getIsTranslationsEngineSupported()))
+            TranslationsParent.getIsTranslationsEngineSupported())
         ) {
           button.hidden = false;
           if (requestedTranslationPair) {
-            
+            // The translation is active, update the urlbar button.
             button.setAttribute("translationsactive", true);
             if (isEngineReady) {
               const displayNames = new Services.intl.DisplayNames(undefined, {
@@ -1564,7 +1552,7 @@ var TranslationsPanel = new (class {
                   ),
                 }
               );
-              
+              // Show the locale of the page in the button.
               buttonLocale.hidden = false;
               buttonCircleArrows.hidden = true;
               buttonLocale.innerText = requestedTranslationPair.toLanguage;
@@ -1573,19 +1561,19 @@ var TranslationsPanel = new (class {
                 button,
                 "urlbar-translations-button-loading"
               );
-              
-              
+              // Show the spinning circle arrows to indicate that the engine is
+              // still loading.
               buttonCircleArrows.hidden = false;
               buttonLocale.hidden = true;
             }
           } else {
-            
+            // The translation is not active, update the urlbar button.
             button.removeAttribute("translationsactive");
             buttonLocale.hidden = true;
             buttonCircleArrows.hidden = true;
 
-            
-            
+            // Follow the same rules for displaying the first-run intro text for the
+            // button's accessible tooltip label.
             if (
               this._hasShownPanel &&
               gBrowser.currentURI.spec !== actor.firstShowUriSpec
@@ -1613,26 +1601,9 @@ var TranslationsPanel = new (class {
           case null:
             break;
           case "engine-load-failure":
-            await this.#ensureLangListsBuilt();
-            if (!this.#isShowingDefaultView()) {
-              await this.#showDefaultView(actor).catch(e => {
-                this.console?.error(e);
-              });
-            }
-            this.elements.error.hidden = false;
-            this.#showError({
-              message: "translations-panel-error-translating",
-            });
-            const targetButton = button.hidden
-              ? this.elements.appMenuButton
-              : button;
-
-            
-            await this.#openPanelPopup(targetButton, {
-              autoShow: true,
-              viewName: "errorView",
-              maintainFlow: true,
-            });
+            this.#showEngineError(actor).catch(viewError =>
+              this.console.error(viewError)
+            );
             break;
           default:
             console.error("Unknown translation error", error);
@@ -1640,7 +1611,7 @@ var TranslationsPanel = new (class {
         break;
       }
     }
-  }
+  };
 })();
 
 XPCOMUtils.defineLazyPreferenceGetter(
