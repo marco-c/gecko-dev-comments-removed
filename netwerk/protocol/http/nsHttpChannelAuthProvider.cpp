@@ -271,8 +271,8 @@ nsHttpChannelAuthProvider::CheckForSuperfluousAuth() {
   if (!ConfirmAuth("SuperfluousAuth", true)) {
     
     
-    Unused << mAuthChannel->Cancel(NS_ERROR_ABORT);
-    return NS_ERROR_ABORT;
+    Unused << mAuthChannel->Cancel(NS_ERROR_SUPERFLUOS_AUTH);
+    return NS_ERROR_SUPERFLUOS_AUTH;
   }
   return NS_OK;
 }
