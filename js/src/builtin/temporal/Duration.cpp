@@ -6971,9 +6971,25 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
     }
 
     
+    if (one == two) {
+      args.rval().setInt32(0);
+      return true;
+    }
+
+    
     if (!ToRelativeTemporalObject(cx, options, &relativeTo)) {
       return false;
     }
+  } else {
+    
+
+    
+    if (one == two) {
+      args.rval().setInt32(0);
+      return true;
+    }
+
+    
   }
 
   
