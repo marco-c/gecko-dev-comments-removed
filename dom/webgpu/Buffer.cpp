@@ -59,8 +59,13 @@ already_AddRefed<Buffer> Buffer::Create(Device* aDevice, RawId aDeviceId,
                                         const dom::GPUBufferDescriptor& aDesc,
                                         ErrorResult& aRv) {
   if (aDevice->IsLost()) {
+    
+    
     RefPtr<Buffer> buffer = new Buffer(aDevice, 0, aDesc.mSize, 0,
                                        ipc::WritableSharedMemoryMapping());
+
+    
+    aDevice->TrackBuffer(buffer.get());
     return buffer.forget();
   }
 
