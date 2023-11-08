@@ -61,10 +61,9 @@ class FullParseHandler {
   
   JS_DECLARE_NEW_METHODS(new_, allocParseNode, inline)
 
-  
   using Node = ParseNode*;
 
-#define DECLARE_TYPE(typeName, _) using typeName##Type = typeName*;
+#define DECLARE_TYPE(typeName) using typeName##Type = typeName*;
   FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #undef DECLARE_TYPE
 
@@ -110,8 +109,8 @@ class FullParseHandler {
 
   static NullNode null() { return NullNode(); }
 
-#define DECLARE_AS(typeName, asMethodName)        \
-  static typeName##Type asMethodName(Node node) { \
+#define DECLARE_AS(typeName)                      \
+  static typeName##Type as##typeName(Node node) { \
     return &node->as<typeName>();                 \
   }
   FOR_EACH_PARSENODE_SUBCLASS(DECLARE_AS)
