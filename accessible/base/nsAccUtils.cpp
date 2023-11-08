@@ -321,12 +321,17 @@ LayoutDeviceIntPoint nsAccUtils::GetScreenCoordsForParent(
 
 LayoutDeviceIntPoint nsAccUtils::GetScreenCoordsForWindow(
     Accessible* aAccessible) {
+  LayoutDeviceIntPoint coords(0, 0);
   a11y::LocalAccessible* localAcc = aAccessible->AsLocal();
   if (!localAcc) {
     localAcc = aAccessible->AsRemote()->OuterDocOfRemoteBrowser();
+    if (!localAcc) {
+      
+      
+      return coords;
+    }
   }
 
-  LayoutDeviceIntPoint coords(0, 0);
   nsCOMPtr<nsIDocShellTreeItem> treeItem(
       nsCoreUtils::GetDocShellFor(localAcc->GetNode()));
   if (!treeItem) return coords;
