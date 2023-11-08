@@ -615,6 +615,12 @@ static void HexEncode(const Span<const uint8_t>& aBytes, nsACString& aEncoded) {
 
 
 static void EnsureLpacPermsissionsOnBinDir() {
+  
+  
+  if (widget::WinUtils::HasPackageIdentity()) {
+    return;
+  }
+
   BYTE sidBytes[SECURITY_MAX_SID_SIZE];
   PSID lpacFirefoxInstallFilesSid = static_cast<PSID>(sidBytes);
   if (!sBrokerService->DeriveCapabilitySidFromName(kLpacFirefoxInstallFiles,
@@ -1484,6 +1490,11 @@ struct UtilityMfMediaEngineCdmSandboxProps : public UtilitySandboxProps {
           kLpacFirefoxInstallFiles,
           L"lpacDeviceAccess",
       };
+
+      
+      if (widget::WinUtils::HasPackageIdentity()) {
+        mNamedCapabilites.AppendElement(L"packageContents");
+      }
     }
     mUseWin32kLockdown = false;
     mDelayedMitigations = sandbox::MITIGATION_DLL_SEARCH_ORDER;
