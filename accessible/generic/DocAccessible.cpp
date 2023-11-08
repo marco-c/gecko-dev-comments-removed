@@ -2644,6 +2644,7 @@ void DocAccessible::UncacheChildrenInSubtree(LocalAccessible* aRoot) {
 }
 
 void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
+  MOZ_ASSERT(!nsAccessibilityService::IsShutdown());
   
   
   
@@ -2658,7 +2659,16 @@ void DocAccessible::ShutdownChildrenInSubtree(LocalAccessible* aAccessible) {
 
     
     
-    if (!child->IsDoc()) ShutdownChildrenInSubtree(child);
+    if (!child->IsDoc()) {
+      ShutdownChildrenInSubtree(child);
+      if (nsAccessibilityService::IsShutdown()) {
+        
+        
+        
+        
+        return;
+      }
+    }
   }
 
   UnbindFromDocument(aAccessible);
