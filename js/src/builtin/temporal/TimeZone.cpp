@@ -1406,6 +1406,24 @@ PlainDateTimeObject* js::temporal::GetPlainDateTimeFor(
 
 
 
+PlainDateTimeObject* js::temporal::GetPlainDateTimeFor(
+    JSContext* cx, const Instant& instant, Handle<CalendarValue> calendar,
+    int64_t offsetNanoseconds) {
+  MOZ_ASSERT(IsValidEpochInstant(instant));
+
+  auto dateTime = ::GetPlainDateTimeFor(instant, offsetNanoseconds);
+
+  
+  
+  MOZ_ASSERT(ISODateTimeWithinLimits(dateTime));
+
+  return CreateTemporalDateTime(cx, dateTime, calendar);
+}
+
+
+
+
+
 bool js::temporal::GetPlainDateTimeFor(JSContext* cx,
                                        Handle<TimeZoneValue> timeZone,
                                        Handle<InstantObject*> instant,
