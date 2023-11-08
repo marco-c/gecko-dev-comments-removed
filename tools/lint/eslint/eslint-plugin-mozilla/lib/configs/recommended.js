@@ -107,8 +107,7 @@ module.exports = {
       rules: {
         
         
-        
-        "mozilla/reject-importGlobalProperties": "off",
+        "mozilla/reject-importGlobalProperties": ["error", "everything"],
       },
     },
     {
