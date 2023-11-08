@@ -1170,9 +1170,6 @@ class Document : public nsINode,
     if (aParent) {
       RecomputeResistFingerprinting();
       mIgnoreDocGroupMismatches = aParent->mIgnoreDocGroupMismatches;
-      if (!mIsDevToolsDocument) {
-        mIsDevToolsDocument = mParentDocument->IsDevToolsDocument();
-      }
     }
   }
 
@@ -2529,8 +2526,6 @@ class Document : public nsINode,
     }
     return root->mInChromeDocShell;
   }
-
-  bool IsDevToolsDocument() const { return mIsDevToolsDocument; }
 
   bool IsBeingUsedAsImage() const { return mIsBeingUsedAsImage; }
 
@@ -4625,13 +4620,6 @@ class Document : public nsINode,
 
   
   bool mInChromeDocShell : 1;
-
-  
-  
-  
-  
-  
-  bool mIsDevToolsDocument : 1;
 
   
   

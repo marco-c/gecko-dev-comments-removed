@@ -1326,7 +1326,6 @@ Document::Document(const char* aContentType)
       mIsBeingUsedAsImage(false),
       mChromeRulesEnabled(false),
       mInChromeDocShell(false),
-      mIsDevToolsDocument(false),
       mIsSyntheticDocument(false),
       mHasLinksToUpdateRunnable(false),
       mFlushingPendingLinkUpdates(false),
@@ -2931,14 +2930,6 @@ void Document::ResetToURI(nsIURI* aURI, nsILoadGroup* aLoadGroup,
   
   mDocumentBaseURI = nullptr;
   mChromeXHRDocBaseURI = nullptr;
-
-  
-  
-  
-  if (aURI && aURI->SchemeIs("about") &&
-      aURI->GetSpecOrDefault().EqualsLiteral("about:devtools-toolbox")) {
-    mIsDevToolsDocument = true;
-  }
 
   if (aLoadGroup) {
     mDocumentLoadGroup = do_GetWeakReference(aLoadGroup);
