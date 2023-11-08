@@ -1520,7 +1520,6 @@ TemporalParser<CharT>::parseTemporalTimeZoneString() {
   
   
   
-  
 
   
   reader_.reset();
@@ -1540,13 +1539,6 @@ TemporalParser<CharT>::parseTemporalTimeZoneString() {
   reader_.reset();
 
   if (auto dt = parseTemporalTimeString(); dt.isOk()) {
-    return dt.unwrap();
-  }
-
-  
-  reader_.reset();
-
-  if (auto dt = parseTemporalZonedDateTimeString(); dt.isOk()) {
     return dt.unwrap();
   }
 
@@ -2419,6 +2411,7 @@ mozilla::Result<ZonedDateTimeString, ParserError>
 TemporalParser<CharT>::annotatedDateTime() {
   
   
+  
 
   auto dt = dateTime();
   if (dt.isErr()) {
@@ -2767,13 +2760,6 @@ TemporalParser<CharT>::parseTemporalCalendarString() {
   reader_.reset();
 
   if (auto dt = parseTemporalTimeString(); dt.isOk()) {
-    return dt.unwrap();
-  }
-
-  
-  reader_.reset();
-
-  if (auto dt = parseTemporalZonedDateTimeString(); dt.isOk()) {
     return dt.unwrap();
   }
 
@@ -3223,6 +3209,12 @@ bool js::temporal::ParseTemporalDateString(JSContext* cx, Handle<JSString*> str,
 template <typename CharT>
 mozilla::Result<ZonedDateTimeString, ParserError>
 TemporalParser<CharT>::parseTemporalZonedDateTimeString() {
+  
+  
+  
+  
+  
+  
   
   
 
