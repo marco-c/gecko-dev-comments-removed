@@ -4906,6 +4906,65 @@ PromiseObject* PromiseObject::unforgeableResolveWithNonPromise(
 
 
 
+static bool Promise_static_withResolvers(JSContext* cx, unsigned argc,
+                                         Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+
+  
+  RootedValue cVal(cx, args.thisv());
+
+  
+  if (!cVal.isObject()) {
+    ReportValueError(cx, JSMSG_NOT_CONSTRUCTOR, JSDVG_SEARCH_STACK, cVal,
+                     nullptr);
+    return false;
+  }
+  RootedObject c(cx, &cVal.toObject());
+  Rooted<PromiseCapability> promiseCapability(cx);
+  if (!NewPromiseCapability(cx, c, &promiseCapability, false)) {
+    return false;
+  }
+
+  
+  Rooted<PlainObject*> obj(cx, NewPlainObject(cx));
+  if (!obj) {
+    return false;
+  }
+
+  
+  
+  RootedValue v(cx, ObjectValue(*promiseCapability.promise()));
+  if (!NativeDefineDataProperty(cx, obj, cx->names().promise, v,
+                                JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  
+  v.setObject(*promiseCapability.resolve());
+  if (!NativeDefineDataProperty(cx, obj, cx->names().resolve, v,
+                                JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  
+  v.setObject(*promiseCapability.reject());
+  if (!NativeDefineDataProperty(cx, obj, cx->names().reject, v,
+                                JSPROP_ENUMERATE)) {
+    return false;
+  }
+
+  
+  args.rval().setObject(*obj);
+  return true;
+}
+
+
+
+
+
+
 
 bool js::Promise_static_species(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -6633,6 +6692,7 @@ static const JSFunctionSpec promise_static_methods[] = {
     JS_FN("race", Promise_static_race, 1, 0),
     JS_FN("reject", Promise_reject, 1, 0),
     JS_FN("resolve", js::Promise_static_resolve, 1, 0),
+    JS_FN("withResolvers", Promise_static_withResolvers, 0, 0),
     JS_FS_END};
 
 static const JSPropertySpec promise_static_properties[] = {
