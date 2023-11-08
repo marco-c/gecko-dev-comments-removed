@@ -19,7 +19,6 @@
 
 #include "util/Poison.h"
 #include "vm/HelperThreads.h"
-#include "vm/JSContext.h"
 
 using namespace js;
 
@@ -128,7 +127,7 @@ extern void js::AssertJSStringBufferInCorrectArena(const void* ptr) {
 
 
 #if defined(MOZ_MEMORY) && defined(MOZ_DEBUG)
-  if (ptr && !TlsContext.get()->nursery().isInside(ptr)) {
+  if (ptr) {
     jemalloc_ptr_info_t ptrInfo{};
     jemalloc_ptr_info(ptr, &ptrInfo);
     MOZ_ASSERT(ptrInfo.tag != TagUnknown);
