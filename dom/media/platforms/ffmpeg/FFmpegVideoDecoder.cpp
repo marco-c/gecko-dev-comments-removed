@@ -800,17 +800,6 @@ int FFmpegVideoDecoder<LIBAV_VER>::GetVideoBuffer(
     return AVERROR(EINVAL);
   }
 
-#  if XP_WIN
-  
-  
-  if (VideoData::UseUseNV12ForSoftwareDecodedVideoIfPossible(mImageAllocator) &&
-      aCodecContext->width % 2 == 0 && aCodecContext->height % 2 == 0 &&
-      aCodecContext->pix_fmt == AV_PIX_FMT_YUV420P &&
-      aCodecContext->color_range != AVCOL_RANGE_JPEG) {
-    return AVERROR(EINVAL);
-  }
-#  endif
-
   if (!IsColorFormatSupportedForUsingCustomizedBuffer(aCodecContext->pix_fmt)) {
     FFMPEG_LOG("Not support color format %d", aCodecContext->pix_fmt);
     return AVERROR(EINVAL);
