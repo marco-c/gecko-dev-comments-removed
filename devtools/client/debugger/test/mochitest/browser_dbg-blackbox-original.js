@@ -7,6 +7,7 @@
 "use strict";
 
 add_task(async function () {
+  await pushPref("devtools.debugger.map-scopes-enabled", true);
   
   const dbg = await initDebugger(
     "doc-sourcemaps3.html",
@@ -14,7 +15,6 @@ add_task(async function () {
     "sorted.js",
     "test.js"
   );
-  dbg.actions.toggleMapScopes();
 
   const sortedSrc = findSource(dbg, "sorted.js");
   await selectSource(dbg, sortedSrc);
