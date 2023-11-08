@@ -69,9 +69,17 @@
 
 
   self.requestLockAndHold = (t, name, options = {}) => {
-    return navigator.locks.request(name, options, () => {
-      return new Promise(resolve => t.add_cleanup(resolve));
+    let [promise, resolve] = self.makePromiseAndResolveFunc();
+    const released = navigator.locks.request(name, options, () => promise);
+    
+    
+    
+    t.add_cleanup(() => {
+      resolve();
+      
+      return released.catch(() => undefined);
     });
+    return released;
   };
 
   self.makePromiseAndResolveFunc = () => {
