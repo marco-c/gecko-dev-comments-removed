@@ -930,51 +930,6 @@ static bool BuiltinCalendarFields(
 
 static bool Calendar_fields(JSContext* cx, unsigned argc, Value* vp);
 
-
-
-static bool BuiltinCalendarFieldsSlow(
-    JSContext* cx, Handle<CalendarValue> calendar,
-    std::initializer_list<CalendarField> fieldNames,
-    MutableHandle<JS::StackGCVector<PropertyKey>> result) {
-  MOZ_ASSERT(calendar.isString());
-
-  Rooted<JSLinearString*> calendarId(cx, calendar.toString());
-  Rooted<JSObject*> calendarObj(cx, CreateTemporalCalendar(cx, calendarId));
-  if (!calendarObj) {
-    return false;
-  }
-
-  auto* array = NewDenseFullyAllocatedArray(cx, fieldNames.size());
-  if (!array) {
-    return false;
-  }
-  array->setDenseInitializedLength(fieldNames.size());
-
-  for (size_t i = 0; i < fieldNames.size(); i++) {
-    auto* name = ToPropertyName(cx, fieldNames.begin()[i]);
-    array->initDenseElement(i, StringValue(name));
-  }
-
-  JS::RootedValueArray<3> argv(cx);
-  argv[0].setUndefined();           
-  argv[1].setObject(*calendarObj);  
-  argv[2].setObject(*array);        
-  if (!Calendar_fields(cx, 1, argv.begin())) {
-    return false;
-  }
-
-  
-  
-  
-  
-
-  if (!IterableToListOfStrings(cx, argv[0], result)) {
-    return false;
-  }
-
-  return SortTemporalFieldNames(cx, result.get());
-}
-
 #ifdef DEBUG
 static bool IsSorted(std::initializer_list<CalendarField> fieldNames) {
   return std::is_sorted(fieldNames.begin(), fieldNames.end(),
@@ -1003,20 +958,13 @@ bool js::temporal::CalendarFields(
 
   
   if (calendar.isString()) {
-    ForOfPIC::Chain* stubChain = ForOfPIC::getOrCreate(cx);
-    if (!stubChain) {
-      return false;
-    }
+    
 
-    bool arrayIterationSane;
-    if (!stubChain->tryOptimizeArray(cx, &arrayIterationSane)) {
-      return false;
-    }
+    
+    MOZ_ASSERT(IsISO8601Calendar(calendar.toString()));
+    return BuiltinCalendarFields(cx, fieldNames, result.get());
 
-    if (arrayIterationSane) {
-      return BuiltinCalendarFields(cx, fieldNames, result.get());
-    }
-    return BuiltinCalendarFieldsSlow(cx, calendar, fieldNames, result);
+    
   }
 
   
