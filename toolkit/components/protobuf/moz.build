@@ -4,6 +4,8 @@
 
 
 
+Library('protobuf')
+
 with Files('**'):
     BUG_COMPONENT = ('Core', 'General')
 
