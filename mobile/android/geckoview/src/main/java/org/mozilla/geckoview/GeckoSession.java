@@ -3048,6 +3048,32 @@ public class GeckoSession {
 
 
   @AnyThread
+  public @NonNull GeckoResult<Boolean> sendClickAttributionEvent(@NonNull final String aid) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("aid", aid);
+    return mEventDispatcher.queryBoolean("GeckoView:SendClickAttributionEvent", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<Boolean> sendImpressionAttributionEvent(@NonNull final String aid) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("aid", aid);
+    return mEventDispatcher.queryBoolean("GeckoView:SendImpressionAttributionEvent", bundle);
+  }
+
+  
+
+
+
+
+
+  @AnyThread
   public @NonNull GeckoResult<List<Recommendation>> requestRecommendations(
       @NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
