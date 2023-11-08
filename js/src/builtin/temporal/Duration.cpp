@@ -6993,10 +6993,19 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
   if (one.years != 0 || one.months != 0 || one.weeks != 0 || two.years != 0 ||
       two.months != 0 || two.weeks != 0) {
     
-    DateDuration unbalanceResult1;
+    Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
     if (relativeTo) {
-      if (!UnbalanceDateDurationRelative(cx, one, TemporalUnit::Day, relativeTo,
-                                         &unbalanceResult1)) {
+      dateRelativeTo = ToTemporalDate(cx, relativeTo);
+      if (!dateRelativeTo) {
+        return false;
+      }
+    }
+
+    
+    DateDuration unbalanceResult1;
+    if (dateRelativeTo) {
+      if (!UnbalanceDateDurationRelative(cx, one, TemporalUnit::Day,
+                                         dateRelativeTo, &unbalanceResult1)) {
         return false;
       }
     } else {
@@ -7009,9 +7018,9 @@ static bool Duration_compare(JSContext* cx, unsigned argc, Value* vp) {
 
     
     DateDuration unbalanceResult2;
-    if (relativeTo) {
-      if (!UnbalanceDateDurationRelative(cx, two, TemporalUnit::Day, relativeTo,
-                                         &unbalanceResult2)) {
+    if (dateRelativeTo) {
+      if (!UnbalanceDateDurationRelative(cx, two, TemporalUnit::Day,
+                                         dateRelativeTo, &unbalanceResult2)) {
         return false;
       }
     } else {
@@ -7474,6 +7483,8 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
   auto roundingMode = TemporalRoundingMode::HalfExpand;
   auto roundingIncrement = Increment{1};
   Rooted<JSObject*> relativeTo(cx);
+  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
+  Rooted<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo(cx);
   if (args.get(0).isString()) {
     
 
@@ -7543,6 +7554,18 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
       return false;
     }
 
+    if (relativeTo) {
+      if (relativeTo->canUnwrapAs<PlainDateObject>()) {
+        dateRelativeTo = relativeTo;
+      } else if (relativeTo->canUnwrapAs<ZonedDateTimeObject>()) {
+        zonedRelativeTo = relativeTo;
+      } else {
+        MOZ_ASSERT(!IsDeadProxyObject(relativeTo),
+                   "ToRelativeTemporalObject doesn't return dead wrappers");
+        MOZ_CRASH("expected either PlainDateObject or ZonedDateTimeObject");
+      }
+    }
+
     
     if (!ToTemporalRoundingIncrement(cx, options, &roundingIncrement)) {
       return false;
@@ -7609,20 +7632,6 @@ static bool Duration_round(JSContext* cx, const CallArgs& args) {
                                              false)) {
         return false;
       }
-    }
-  }
-
-  Rooted<Wrapped<PlainDateObject*>> dateRelativeTo(cx);
-  Rooted<Wrapped<ZonedDateTimeObject*>> zonedRelativeTo(cx);
-  if (relativeTo) {
-    if (relativeTo->canUnwrapAs<PlainDateObject>()) {
-      dateRelativeTo = relativeTo;
-    } else if (relativeTo->canUnwrapAs<ZonedDateTimeObject>()) {
-      zonedRelativeTo = relativeTo;
-    } else {
-      MOZ_ASSERT(!IsDeadProxyObject(relativeTo),
-                 "ToRelativeTemporalObject doesn't return dead wrappers");
-      MOZ_CRASH("expected either PlainDateObject or ZonedDateTimeObject");
     }
   }
 
