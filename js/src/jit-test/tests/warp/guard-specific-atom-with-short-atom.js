@@ -25,14 +25,12 @@ const twoByte = [...characters(
 )];
 
 function toRope(s) {
+  try {
+    return newRope(s[0], s.substring(1));
+  } catch {}
   
-  if (s.length < 2) {
-    return s;
-  }
-  if (s.length === 2) {
-    return newRope(s[0], s[1]);
-  }
-  return newRope(s[0], s.substring(1));
+  
+  return s;
 }
 
 function atomize(s) {
