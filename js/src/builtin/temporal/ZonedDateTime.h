@@ -94,6 +94,17 @@ bool AddZonedDateTime(JSContext* cx, const Instant& epochInstant,
 
 
 
+
+bool AddZonedDateTime(JSContext* cx, const Instant& epochInstant,
+                      JS::Handle<TimeZoneValue> timeZone,
+                      JS::Handle<CalendarValue> calendar,
+                      const Duration& duration, const PlainDateTime& dateTime,
+                      Instant* result);
+
+
+
+
+
 bool DifferenceZonedDateTime(JSContext* cx, const Instant& ns1,
                              const Instant& ns2,
                              JS::Handle<TimeZoneValue> timeZone,
