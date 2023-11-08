@@ -1637,16 +1637,18 @@ static bool AddDateTime(JSContext* cx, const PlainDateTime& dateTime,
 
 
 
-Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
+bool js::temporal::DisambiguatePossibleInstants(
     JSContext* cx, Handle<InstantVector> possibleInstants,
     Handle<TimeZoneValue> timeZone,
     Handle<Wrapped<PlainDateTimeObject*>> dateTimeObj,
-    TemporalDisambiguation disambiguation) {
+    TemporalDisambiguation disambiguation,
+    JS::MutableHandle<Wrapped<InstantObject*>> result) {
   
 
   
   if (possibleInstants.length() == 1) {
-    return possibleInstants[0];
+    result.set(possibleInstants[0]);
+    return true;
   }
 
   
@@ -1654,13 +1656,15 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
     
     if (disambiguation == TemporalDisambiguation::Earlier ||
         disambiguation == TemporalDisambiguation::Compatible) {
-      return possibleInstants[0];
+      result.set(possibleInstants[0]);
+      return true;
     }
 
     
     if (disambiguation == TemporalDisambiguation::Later) {
       size_t last = possibleInstants.length() - 1;
-      return possibleInstants[last];
+      result.set(possibleInstants[last]);
+      return true;
     }
 
     
@@ -1669,7 +1673,7 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
     
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_TIMEZONE_INSTANT_AMBIGUOUS);
-    return nullptr;
+    return false;
   }
 
   
@@ -1677,7 +1681,7 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
     
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_TIMEZONE_INSTANT_AMBIGUOUS);
-    return nullptr;
+    return false;
   }
 
   constexpr auto oneDay =
@@ -1685,13 +1689,13 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
 
   auto* unwrappedDateTime = dateTimeObj.unwrap(cx);
   if (!unwrappedDateTime) {
-    return nullptr;
+    return false;
   }
 
   auto dateTime = ToPlainDateTime(unwrappedDateTime);
   Rooted<CalendarValue> calendar(cx, unwrappedDateTime->calendar());
   if (!calendar.wrap(cx)) {
-    return nullptr;
+    return false;
   }
 
   
@@ -1704,7 +1708,7 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
   if (!IsValidEpochInstant(dayBefore)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_INSTANT_INVALID);
-    return nullptr;
+    return false;
   }
 
   
@@ -1714,20 +1718,20 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
   if (!IsValidEpochInstant(dayAfter)) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_INSTANT_INVALID);
-    return nullptr;
+    return false;
   }
 
   
   int64_t offsetBefore;
   if (!GetOffsetNanosecondsFor(cx, timeZone, dayBefore, &offsetBefore)) {
-    return nullptr;
+    return false;
   }
   MOZ_ASSERT(std::abs(offsetBefore) < ToNanoseconds(TemporalUnit::Day));
 
   
   int64_t offsetAfter;
   if (!GetOffsetNanosecondsFor(cx, timeZone, dayAfter, &offsetAfter)) {
-    return nullptr;
+    return false;
   }
   MOZ_ASSERT(std::abs(offsetAfter) < ToNanoseconds(TemporalUnit::Day));
 
@@ -1739,32 +1743,33 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
     
     PlainDateTime earlier;
     if (!AddDateTime(cx, dateTime, -nanoseconds, calendar, &earlier)) {
-      return nullptr;
+      return false;
     }
 
     
     Rooted<PlainDateTimeObject*> earlierDateTime(
         cx, CreateTemporalDateTime(cx, earlier, calendar));
     if (!earlierDateTime) {
-      return nullptr;
+      return false;
     }
 
     
     Rooted<InstantVector> earlierInstants(cx, InstantVector(cx));
     if (!GetPossibleInstantsFor(cx, timeZone, earlierDateTime,
                                 &earlierInstants)) {
-      return nullptr;
+      return false;
     }
 
     
     if (earlierInstants.empty()) {
       JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                 JSMSG_TEMPORAL_TIMEZONE_INSTANT_AMBIGUOUS);
-      return nullptr;
+      return false;
     }
 
     
-    return earlierInstants[0];
+    result.set(earlierInstants[0]);
+    return true;
   }
 
   
@@ -1774,50 +1779,51 @@ Wrapped<InstantObject*> js::temporal::DisambiguatePossibleInstants(
   
   PlainDateTime later;
   if (!AddDateTime(cx, dateTime, nanoseconds, calendar, &later)) {
-    return nullptr;
+    return false;
   }
 
   
   Rooted<PlainDateTimeObject*> laterDateTime(
       cx, CreateTemporalDateTime(cx, later, calendar));
   if (!laterDateTime) {
-    return nullptr;
+    return false;
   }
 
   
   Rooted<InstantVector> laterInstants(cx, InstantVector(cx));
   if (!GetPossibleInstantsFor(cx, timeZone, laterDateTime, &laterInstants)) {
-    return nullptr;
+    return false;
   }
 
   
   if (laterInstants.empty()) {
     JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                               JSMSG_TEMPORAL_TIMEZONE_INSTANT_AMBIGUOUS);
-    return nullptr;
+    return false;
   }
 
   
   size_t last = laterInstants.length() - 1;
-  return laterInstants[last];
+  result.set(laterInstants[last]);
+  return true;
 }
 
 
 
 
-static Wrapped<InstantObject*> GetInstantFor(
-    JSContext* cx, Handle<TimeZoneValue> timeZone,
-    Handle<Wrapped<PlainDateTimeObject*>> dateTime,
-    TemporalDisambiguation disambiguation) {
+static bool GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
+                          Handle<Wrapped<PlainDateTimeObject*>> dateTime,
+                          TemporalDisambiguation disambiguation,
+                          MutableHandle<Wrapped<InstantObject*>> result) {
   
   Rooted<InstantVector> possibleInstants(cx, InstantVector(cx));
   if (!GetPossibleInstantsFor(cx, timeZone, dateTime, &possibleInstants)) {
-    return nullptr;
+    return false;
   }
 
   
   return DisambiguatePossibleInstants(cx, possibleInstants, timeZone, dateTime,
-                                      disambiguation);
+                                      disambiguation, result);
 }
 
 
@@ -1827,11 +1833,17 @@ bool js::temporal::GetInstantFor(JSContext* cx, Handle<TimeZoneValue> timeZone,
                                  Handle<Wrapped<PlainDateTimeObject*>> dateTime,
                                  TemporalDisambiguation disambiguation,
                                  Instant* result) {
-  auto instant = ::GetInstantFor(cx, timeZone, dateTime, disambiguation);
-  if (!instant) {
+  Rooted<Wrapped<InstantObject*>> instant(cx);
+  if (!::GetInstantFor(cx, timeZone, dateTime, disambiguation, &instant)) {
     return false;
   }
-  *result = ToInstant(&instant.unwrap());
+
+  auto* unwrappedInstant = instant.unwrap(cx);
+  if (!unwrappedInstant) {
+    return false;
+  }
+
+  *result = ToInstant(unwrappedInstant);
   return true;
 }
 
@@ -2122,8 +2134,8 @@ static bool TimeZone_getInstantFor(JSContext* cx, const CallArgs& args) {
     }
   }
 
-  auto result = GetInstantFor(cx, timeZone, dateTime, disambiguation);
-  if (!result) {
+  Rooted<Wrapped<InstantObject*>> result(cx);
+  if (!::GetInstantFor(cx, timeZone, dateTime, disambiguation, &result)) {
     return false;
   }
 
