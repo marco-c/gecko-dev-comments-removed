@@ -146,14 +146,15 @@ var gSearchPane = {
     
     
     let searchBarPref = Preferences.get("browser.search.widget.inNavBar");
-    let updateCheckboxEnabled = () => {
-      checkbox.disabled = searchBarPref.value;
+    let updateCheckboxHidden = () => {
+      checkbox.hidden =
+        !UrlbarPrefs.get("showSearchTermsFeatureGate") || searchBarPref.value;
     };
-    searchBarPref.on("change", updateCheckboxEnabled);
+    searchBarPref.on("change", updateCheckboxHidden);
 
     
     onNimbus();
-    updateCheckboxEnabled();
+    updateCheckboxHidden();
 
     window.addEventListener("unload", () => {
       NimbusFeatures.urlbar.offUpdate(onNimbus);

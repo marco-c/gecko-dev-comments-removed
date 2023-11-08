@@ -158,8 +158,8 @@ add_task(async function showSearchTerms_and_searchBar_preference_load() {
 
   let checkbox = doc.getElementById(CHECKBOX_ID);
   Assert.ok(
-    checkbox.disabled,
-    "showSearchTerms checkbox should be disabled when search bar is enabled."
+    checkbox.hidden,
+    "showSearchTerms checkbox should be hidden when search bar is enabled."
   );
 
   
@@ -182,19 +182,19 @@ add_task(async function showSearchTerms_and_searchBar_preference_change() {
   let doc = gBrowser.selectedBrowser.contentDocument;
 
   let checkbox = doc.getElementById(CHECKBOX_ID);
-  Assert.ok(!checkbox.disabled, "showSearchTerms checkbox should be enabled.");
+  Assert.ok(!checkbox.hidden, "showSearchTerms checkbox should be shown.");
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.search.widget.inNavBar", true]],
   });
   Assert.ok(
-    checkbox.disabled,
-    "showSearchTerms checkbox should be disabled when search bar is enabled."
+    checkbox.hidden,
+    "showSearchTerms checkbox should be hidden when search bar is enabled."
   );
 
   
   await SpecialPowers.popPrefEnv();
-  Assert.ok(!checkbox.disabled, "showSearchTerms checkbox should be enabled.");
+  Assert.ok(!checkbox.hidden, "showSearchTerms checkbox should be shown.");
 
   gBrowser.removeCurrentTab();
   await SpecialPowers.popPrefEnv();
