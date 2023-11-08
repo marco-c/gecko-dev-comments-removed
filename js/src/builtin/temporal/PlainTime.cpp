@@ -692,13 +692,7 @@ static int64_t TotalDurationNanoseconds(const Duration& duration) {
   MOZ_ASSERT(std::abs(duration.nanoseconds) <= 1000);
 
   
-  MOZ_ASSERT(duration.days == 0);
-
-  
-  auto hours = int64_t(duration.hours);
-
-  
-  auto minutes = int64_t(duration.minutes) + hours * 60;
+  auto minutes = int64_t(duration.minutes) + int64_t(duration.hours) * 60;
 
   
   auto seconds = int64_t(duration.seconds) + minutes * 60;
