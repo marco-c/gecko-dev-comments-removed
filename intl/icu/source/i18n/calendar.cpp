@@ -654,7 +654,7 @@ static const int32_t kCalendarLimits[UCAL_FIELD_COUNT][4] = {
     {           0,            0,            59,            59  }, 
     {           0,            0,            59,            59  }, 
     {           0,            0,           999,           999  }, 
-    {-16*kOneHour, -16*kOneHour,   12*kOneHour,   30*kOneHour  }, 
+    {-24*kOneHour, -16*kOneHour,   12*kOneHour,   30*kOneHour  }, 
     { -1*kOneHour,  -1*kOneHour,    2*kOneHour,    2*kOneHour  }, 
     {-1,       -1,     -1,       -1}, 
     {           1,            1,             7,             7  }, 
