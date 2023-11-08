@@ -22,6 +22,11 @@ inTimeZone("MST", () => {
     "19999-09-12 22:00:00 GMT-0800": new Date(19999, Month.September, 12, 23),
 
     
+    "2021-09-1": new Date(2021, Month.September, 1),
+    "2021-9-01": new Date(2021, Month.September, 1),
+    "2021-9-1": new Date(2021, Month.September, 1),
+
+    
     "1-09-12": new Date(2012, Month.January, 9),
     "1-09-2012": new Date(2012, Month.January, 9),
     "12-09-12": new Date(2012, Month.December, 9),

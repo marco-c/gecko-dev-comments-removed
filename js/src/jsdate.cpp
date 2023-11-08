@@ -1014,9 +1014,9 @@ static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     NEED_NDIGITS(4, year);
   }
   DONE_DATE_UNLESS('-');
-  NEED_NDIGITS_OR_LESS(2, month);
+  NEED_NDIGITS(2, month);
   DONE_DATE_UNLESS('-');
-  NEED_NDIGITS_OR_LESS(2, day);
+  NEED_NDIGITS(2, day);
 
 done_date:
   if (PEEK('T')) {
