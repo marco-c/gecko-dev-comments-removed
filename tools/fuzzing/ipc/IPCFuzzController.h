@@ -111,6 +111,10 @@ class IPCFuzzController {
   void AddToplevelActor(mojo::core::ports::PortName name,
                         mozilla::ipc::ProtocolId protocolId);
 
+  
+  UniquePtr<IPC::Message> replaceIPCMessage(UniquePtr<IPC::Message> aMsg);
+  void syncAfterReplace();
+
  private:
   
   std::unordered_map<mojo::core::ports::PortName, SeqNoPair> portSeqNos;
@@ -189,6 +193,14 @@ class IPCFuzzController {
   
   
   uint32_t mIPCTriggerMsg;
+
+  
+  Maybe<uint32_t> mIPCDumpMsg;
+  Maybe<uint32_t> mIPCDumpAllMsgsSize;
+  uint32_t mIPCDumpCount = 0;
+
+  
+  uint32_t mIPCTriggerSingleMsgWait = 0;
 
   IPCFuzzController();
   NYX_DISALLOW_COPY_AND_ASSIGN(IPCFuzzController);
