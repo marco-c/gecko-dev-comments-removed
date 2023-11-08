@@ -16,6 +16,7 @@
 #include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElementBinding.h"
 #include "mozilla/dom/UnionTypes.h"
+#include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
 #include "nsContentCreatorFunctions.h"
@@ -162,6 +163,41 @@ NS_IMPL_ELEMENT_CLONE(HTMLSelectElement)
 void HTMLSelectElement::SetCustomValidity(const nsAString& aError) {
   ConstraintValidation::SetCustomValidity(aError);
   UpdateValidityElementStates(true);
+}
+
+void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
+  
+  
+  if (IsDisabled()) {
+    return aRv.ThrowInvalidStateError("This select is disabled.");
+  }
+
+  
+  
+  
+  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
+  WindowGlobalChild* windowGlobalChild =
+      window ? window->GetWindowGlobalChild() : nullptr;
+  if (!windowGlobalChild || !windowGlobalChild->SameOriginWithTop()) {
+    return aRv.ThrowSecurityError(
+        "Call was blocked because the current origin isn't same-origin with "
+        "top.");
+  }
+
+  
+  
+  if (!OwnerDoc()->HasValidTransientUserGestureActivation()) {
+    return aRv.ThrowNotAllowedError(
+        "Call was blocked due to lack of user activation.");
+  }
+
+  
+  if (IsCombobox() && !OpenInParentProcess()) {
+    RefPtr<Document> doc = OwnerDoc();
+    RefPtr<Element> select = this;
+    nsContentUtils::DispatchChromeEvent(doc, select, u"mozshowdropdown"_ns,
+                                        CanBubble::eYes, Cancelable::eNo);
+  }
 }
 
 void HTMLSelectElement::GetAutocomplete(DOMString& aValue) {
