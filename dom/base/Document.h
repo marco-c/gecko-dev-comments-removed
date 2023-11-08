@@ -4086,7 +4086,6 @@ class Document : public nsINode,
   class HighlightRegistry& HighlightRegistry();
 
   bool ShouldResistFingerprinting(RFPTarget aTarget) const;
-  bool IsInPrivateBrowsing() const;
 
   const Maybe<RFPTarget>& GetOverriddenFingerprintingSettings() const {
     return mOverriddenFingerprintingSettings;
@@ -4830,9 +4829,6 @@ class Document : public nsINode,
 
   
   bool mShouldResistFingerprinting : 1;
-
-  
-  bool mIsInPrivateBrowsing : 1;
 
   
   bool mCloningForSVGUse : 1;

@@ -189,9 +189,8 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
   
   
   static bool IsRFPPrefEnabled(bool aIsPrivateMode);
-
   static bool IsRFPEnabledFor(
-      bool aIsPrivateMode, RFPTarget aTarget,
+      RFPTarget aTarget,
       const Maybe<RFPTarget>& aOverriddenFingerprintingSettings);
 
   

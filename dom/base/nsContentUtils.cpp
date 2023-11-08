@@ -2133,9 +2133,8 @@ bool nsContentUtils::IsCallerChromeOrElementTransformGettersEnabled(
 
 
 
-bool nsContentUtils::ShouldResistFingerprinting(bool aIsPrivateMode,
-                                                RFPTarget aTarget) {
-  return nsRFPService::IsRFPEnabledFor(aIsPrivateMode, aTarget, Nothing());
+bool nsContentUtils::ShouldResistFingerprinting(RFPTarget aTarget) {
+  return nsRFPService::IsRFPEnabledFor(aTarget, Nothing());
 }
 
 
@@ -2188,7 +2187,6 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
   
   
 
-  bool isPBM = NS_UsePrivateBrowsing(aChannel);
   
   
   
@@ -2198,14 +2196,13 @@ bool ETPSaysShouldNotResistFingerprinting(nsIChannel* aChannel,
   if (StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly() &&
       !StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
       StaticPrefs::privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
-    if (isPBM) {
+    if (NS_UsePrivateBrowsing(aChannel)) {
       
       return false;
     }
   } else if (StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() ||
-             (isPBM &&
-              StaticPrefs::
-                  privacy_resistFingerprinting_pbmode_DoNotUseDirectly())) {
+             StaticPrefs::
+                 privacy_resistFingerprinting_pbmode_DoNotUseDirectly()) {
     
     
     
@@ -2303,20 +2300,8 @@ inline bool PartionKeyIsAlsoExempted(
 bool nsContentUtils::ShouldResistFingerprinting(const char* aJustification,
                                                 RFPTarget aTarget) {
   
-  
-  return nsContentUtils::ShouldResistFingerprinting(true, aTarget);
+  return ShouldResistFingerprinting(aTarget);
 }
-
-namespace {
-
-
-bool ShouldResistFingerprinting_(const char* aJustification,
-                                 bool aIsPrivateMode, RFPTarget aTarget) {
-  
-  return nsContentUtils::ShouldResistFingerprinting(aIsPrivateMode, aTarget);
-}
-
-}  
 
 
 bool nsContentUtils::ShouldResistFingerprinting(CallerType aCallerType,
@@ -2341,7 +2326,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIDocShell* aDocShell,
     MOZ_LOG(nsContentUtils::ResistFingerprintingLog(), LogLevel::Info,
             ("Called nsContentUtils::ShouldResistFingerprinting(nsIDocShell*) "
              "with NULL doc"));
-    return ShouldResistFingerprinting("Null Object", aTarget);
+    return ShouldResistFingerprinting(aTarget);
   }
   return doc->ShouldResistFingerprinting(aTarget);
 }
@@ -2366,8 +2351,7 @@ bool nsContentUtils::ShouldResistFingerprinting(nsIChannel* aChannel,
 
   
   
-  bool isPBM = NS_UsePrivateBrowsing(aChannel);
-  if (!ShouldResistFingerprinting_("Positive return check", isPBM, aTarget)) {
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
     return false;
   }
 
@@ -2450,11 +2434,7 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     const char* aJustification, RFPTarget aTarget) {
   
   
-  if (!ShouldResistFingerprinting_(
-          "Positive return check",
-          aOriginAttributes.mPrivateBrowsingId ==
-              nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID,
-          aTarget)) {
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
     return false;
   }
 
@@ -2511,20 +2491,26 @@ bool nsContentUtils::ShouldResistFingerprinting_dangerous(
     return ShouldResistFingerprinting("Null object", aTarget);
   }
 
-  auto originAttributes =
-      BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
   
   
-  if (!ShouldResistFingerprinting_(
-          "Positive return check",
-          originAttributes.mPrivateBrowsingId ==
-              nsIScriptSecurityManager::DEFAULT_PRIVATE_BROWSING_ID,
-          aTarget)) {
+  if (!ShouldResistFingerprinting("Positive return check", aTarget)) {
     return false;
   }
 
   if (aPrincipal->IsSystemPrincipal()) {
     return false;
+  }
+
+  auto originAttributes =
+      BasePrincipal::Cast(aPrincipal)->OriginAttributesRef();
+  if (!StaticPrefs::privacy_resistFingerprinting_DoNotUseDirectly() &&
+      !StaticPrefs::privacy_fingerprintingProtection_DoNotUseDirectly()) {
+    
+    
+    
+    if (originAttributes.mPrivateBrowsingId == 0) {
+      return false;
+    }
   }
 
   
@@ -3802,14 +3788,12 @@ bool nsContentUtils::CanLoadImage(nsIURI* aURI, nsINode* aNode,
 }
 
 
-bool nsContentUtils::IsInPrivateBrowsing(const Document* aDoc) {
+bool nsContentUtils::IsInPrivateBrowsing(Document* aDoc) {
   if (!aDoc) {
     return false;
   }
 
   nsCOMPtr<nsILoadGroup> loadGroup = aDoc->GetDocumentLoadGroup();
-  
-  
   if (loadGroup) {
     nsCOMPtr<nsIInterfaceRequestor> callbacks;
     loadGroup->GetNotificationCallbacks(getter_AddRefs(callbacks));
