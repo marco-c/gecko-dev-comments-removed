@@ -219,6 +219,8 @@ CharT* nsTextFrameUtils::TransformText(const CharT* aText, uint32_t aLength,
           
           if (ch == '\t') {
             flags |= Flags::HasTab;
+          } else if (ch == '\n') {
+            flags |= Flags::HasNewline;
           }
         }
         *aOutput++ = ch;

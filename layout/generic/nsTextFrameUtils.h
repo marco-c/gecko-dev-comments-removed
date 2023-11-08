@@ -37,7 +37,8 @@ class nsTextFrameUtils {
     HasTab = 0x01,
     
     HasShy = 0x02,
-    UnusedFlags = 0x04,
+    
+    HasNewline = 0x04,
 
     
     

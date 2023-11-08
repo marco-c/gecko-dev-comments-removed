@@ -198,12 +198,17 @@ class nsBlockFrame : public nsContainerFrame {
       ClearLineCursorForQuery();
       RemoveStateBits(NS_BLOCK_HAS_LINE_CURSOR);
     }
-    RemoveProperty(LineIteratorProperty());
+    ClearLineIterator();
   }
   void ClearLineCursorForDisplay() {
     RemoveProperty(LineCursorPropertyDisplay());
   }
   void ClearLineCursorForQuery() { RemoveProperty(LineCursorPropertyQuery()); }
+
+  
+  
+  
+  void ClearLineIterator() { RemoveProperty(LineIteratorProperty()); }
 
   
   
