@@ -100,17 +100,4 @@ mozilla::UniquePtr<wchar_t[]> FormatProgID(const wchar_t* aProgIDBase,
 
 bool CheckProgIDExists(const wchar_t* aProgID);
 
-
-
-
-
-
-
-
-
-
-
-nsresult GetMsixProgId(const wchar_t* assoc,
-                       mozilla::UniquePtr<wchar_t[]>& aProgId);
-
 #endif  

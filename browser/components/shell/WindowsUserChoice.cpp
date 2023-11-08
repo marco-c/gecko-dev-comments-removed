@@ -20,13 +20,11 @@
 
 
 #include <windows.h>
-#include <appmodel.h>  
 #include <sddl.h>      
 #include <wincrypt.h>  
 #include <bcrypt.h>    
 #include <winternl.h>  
 
-#include "ErrorList.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "nsWindowsHelpers.h"
@@ -421,54 +419,4 @@ bool CheckProgIDExists(const wchar_t* aProgID) {
   }
   ::RegCloseKey(key);
   return true;
-}
-
-nsresult GetMsixProgId(const wchar_t* assoc, UniquePtr<wchar_t[]>& aProgId) {
-  
-  
-  
-  
-
-  UINT32 pfnLen = 0;
-  LONG rv = GetCurrentPackageFullName(&pfnLen, nullptr);
-  NS_ENSURE_TRUE(rv != APPMODEL_ERROR_NO_PACKAGE, NS_ERROR_FAILURE);
-
-  auto pfn = mozilla::MakeUnique<wchar_t[]>(pfnLen);
-  rv = GetCurrentPackageFullName(&pfnLen, pfn.get());
-  NS_ENSURE_TRUE(rv == ERROR_SUCCESS, NS_ERROR_FAILURE);
-
-  const wchar_t* assocSuffix;
-  if (assoc[0] == L'.') {
-    
-    assocSuffix = LR"(App\Capabilities\FileAssociations)";
-  } else {
-    
-    assocSuffix = LR"(App\Capabilities\URLAssociations)";
-  }
-
-  const wchar_t* assocPathFmt =
-      LR"(Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages\%s\%s)";
-  int assocPathLen = _scwprintf(assocPathFmt, pfn.get(), assocSuffix);
-  assocPathLen += 1;  
-
-  auto assocPath = MakeUnique<wchar_t[]>(assocPathLen);
-  _snwprintf_s(assocPath.get(), assocPathLen, _TRUNCATE, assocPathFmt,
-               pfn.get(), assocSuffix);
-
-  LSTATUS ls;
-
-  
-  
-  const size_t appxProgIdLen = 37;
-  auto progId = MakeUnique<wchar_t[]>(appxProgIdLen);
-  DWORD progIdLen = appxProgIdLen * sizeof(wchar_t);
-  ls = ::RegGetValueW(HKEY_CLASSES_ROOT, assocPath.get(), assoc, RRF_RT_REG_SZ,
-                      nullptr, (LPBYTE)progId.get(), &progIdLen);
-  if (ls != ERROR_SUCCESS) {
-    return NS_ERROR_WDBA_NO_PROGID;
-  }
-
-  aProgId.swap(progId);
-
-  return NS_OK;
 }
