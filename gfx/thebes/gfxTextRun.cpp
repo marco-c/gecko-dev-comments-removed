@@ -3340,9 +3340,10 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   FontVisibility level =
       mPresContext ? mPresContext->GetFontVisibility() : FontVisibility::User;
-  if (gfxPlatformFontList::PlatformFontList()->SkipFontFallbackForChar(level,
-                                                                       aCh) ||
-      GetGeneralCategory(aCh) == HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED) {
+  auto* pfl = gfxPlatformFontList::PlatformFontList();
+  if (pfl->SkipFontFallbackForChar(level, aCh) ||
+      (!StaticPrefs::gfx_font_rendering_fallback_unassigned_chars() &&
+       GetGeneralCategory(aCh) == HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED)) {
     if (candidateFont) {
       *aMatchType = candidateMatchType;
     }
@@ -3352,8 +3353,7 @@ already_AddRefed<gfxFont> gfxFontGroup::FindFontForChar(
   
   RefPtr<gfxFont> font = WhichPrefFontSupportsChar(aCh, aNextCh, presentation);
   if (font) {
-    if (PrefersColor(presentation) &&
-        gfxPlatformFontList::PlatformFontList()->EmojiPrefHasUserValue()) {
+    if (PrefersColor(presentation) && pfl->EmojiPrefHasUserValue()) {
       
       
       
