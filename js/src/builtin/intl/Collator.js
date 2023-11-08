@@ -71,7 +71,12 @@ function resolveCollatorInternals(lazyCollatorData) {
   internalProps.sensitivity = s;
 
   
-  internalProps.ignorePunctuation = lazyCollatorData.ignorePunctuation;
+  var ignorePunctuation = lazyCollatorData.ignorePunctuation;
+  if (ignorePunctuation === undefined) {
+    var actualLocale = collatorActualLocale(r.dataLocale);
+    ignorePunctuation = intl_isIgnorePunctuation(actualLocale);
+  }
+  internalProps.ignorePunctuation = ignorePunctuation;
 
   
   
@@ -231,7 +236,7 @@ function InitializeCollator(collator, locales, options) {
   lazyCollatorData.rawSensitivity = s;
 
   
-  var ip = GetOption(options, "ignorePunctuation", "boolean", undefined, false);
+  var ip = GetOption(options, "ignorePunctuation", "boolean", undefined, undefined);
   lazyCollatorData.ignorePunctuation = ip;
 
   
