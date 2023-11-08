@@ -107,6 +107,9 @@ def executor_kwargs(logger, test_type, test_environment, run_info_data,
     chrome_options["args"].append("--enable-features=SecurePaymentConfirmationBrowser")
     
     chrome_options["args"].append("--webtransport-developer-mode")
+    
+    
+    chrome_options["args"].append("--enable-features=GenericSensorExtraClasses")
 
     
     
