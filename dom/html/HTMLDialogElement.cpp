@@ -96,7 +96,7 @@ void HTMLDialogElement::StorePreviouslyFocusedElement() {
     
     
     if (nsIContent* unretargetedFocus = doc->GetUnretargetedFocusedContent()) {
-      mPreviouslyFocusedElement = do_GetWeakReference(element);
+      mPreviouslyFocusedElement = do_GetWeakReference(unretargetedFocus);
     }
   }
 }
