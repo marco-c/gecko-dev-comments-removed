@@ -8,7 +8,6 @@
 
 
 
-
 var instance = Promise.withResolvers();
 
 assert.sameValue(typeof instance.resolve, 'function', 'type of resolve property');

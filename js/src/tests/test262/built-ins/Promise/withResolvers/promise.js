@@ -8,7 +8,6 @@
 
 
 
-
 var instance = Promise.withResolvers();
 
 assert.sameValue(instance.promise.constructor, Promise);

@@ -9,7 +9,6 @@
 
 
 
-
 var instance = Promise.withResolvers();
 
 assert.sameValue(typeof instance, "object");

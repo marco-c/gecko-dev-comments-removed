@@ -7,7 +7,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   Promise.withResolvers.call(eval);
 });
