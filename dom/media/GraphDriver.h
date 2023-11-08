@@ -644,7 +644,8 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
   
 
   bool ThreadRunning() const override {
-    return mAudioStreamState == AudioStreamState::Running;
+    return mAudioStreamState == AudioStreamState::Running ||
+           mFallbackDriverState == FallbackDriverState::Running;
   }
 
   
