@@ -88,10 +88,15 @@ void HTMLDialogElement::RemoveFromTopLayerIfNeeded() {
 }
 
 void HTMLDialogElement::StorePreviouslyFocusedElement() {
-  if (Document* doc = GetComposedDoc()) {
+  if (Element* element = nsFocusManager::GetFocusedElementStatic()) {
+    if (NS_SUCCEEDED(nsContentUtils::CheckSameOrigin(this, element))) {
+      mPreviouslyFocusedElement = do_GetWeakReference(element);
+    }
+  } else if (Document* doc = GetComposedDoc()) {
+    
+    
     if (nsIContent* unretargetedFocus = doc->GetUnretargetedFocusedContent()) {
-      mPreviouslyFocusedElement =
-          do_GetWeakReference(unretargetedFocus->AsElement());
+      mPreviouslyFocusedElement = do_GetWeakReference(element);
     }
   }
 }
