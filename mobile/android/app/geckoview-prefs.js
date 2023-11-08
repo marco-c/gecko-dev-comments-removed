@@ -150,6 +150,8 @@ pref("browser.tabs.remote.autostart", true);
 
 #ifdef NIGHTLY_BUILD
   pref("browser.translations.enable", true);
+  
+  pref("browser.translations.geckoview.enableAllTestMocks", false);
 #endif
 
 
