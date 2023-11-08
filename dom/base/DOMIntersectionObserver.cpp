@@ -647,7 +647,7 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
 
 IntersectionOutput DOMIntersectionObserver::Intersect(
-    const IntersectionInput& aInput, const Element& aTarget,
+    const IntersectionInput& aInput, Element& aTarget,
     IsContentVisibilityObserver aIsContentVisibilityObserver) {
   const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
                                BrowsingContextOrigin::Similar;

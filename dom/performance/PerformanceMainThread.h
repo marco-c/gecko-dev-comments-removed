@@ -9,18 +9,11 @@
 
 #include "Performance.h"
 #include "PerformanceStorage.h"
-#include "LargestContentfulPaint.h"
-#include "nsTextFrame.h"
 
 namespace mozilla::dom {
 
 class PerformanceNavigationTiming;
 class PerformanceEventTiming;
-
-using ImageLCPEntryMap =
-    nsTHashMap<LCPEntryHashEntry, RefPtr<LargestContentfulPaint>>;
-
-using TextFrameUnions = nsTHashMap<nsRefPtrHashKey<Element>, nsRect>;
 
 class PerformanceMainThread final : public Performance,
                                     public PerformanceStorage {
@@ -52,13 +45,10 @@ class PerformanceMainThread final : public Performance,
                    const nsAString& aInitiatorType,
                    const nsAString& aEntryName);
   virtual void SetFCPTimingEntry(PerformancePaintTiming* aEntry) override;
-  bool HadFCPTimingEntry() const { return mFCPTiming; }
 
   void InsertEventTimingEntry(PerformanceEventTiming*) override;
   void BufferEventTimingEntryIfNeeded(PerformanceEventTiming*) override;
   void DispatchPendingEventTimingEntries() override;
-
-  void BufferLargestContentfulPaintEntryIfNeeded(LargestContentfulPaint*);
 
   TimeStamp CreationTimeStamp() const override;
 
@@ -97,7 +87,6 @@ class PerformanceMainThread final : public Performance,
 
   void UpdateNavigationTimingEntry() override;
   void QueueNavigationTimingEntry() override;
-  void QueueLargestContentfulPaintEntry(LargestContentfulPaint* aEntry);
 
   size_t SizeOfEventEntries(mozilla::MallocSizeOf aMallocSizeOf) const override;
 
@@ -105,39 +94,9 @@ class PerformanceMainThread final : public Performance,
   static constexpr uint32_t kDefaultEventTimingDurationThreshold = 104;
   static constexpr double kDefaultEventTimingMinDuration = 16.0;
 
-  static constexpr uint32_t kMaxLargestContentfulPaintBufferSize = 150;
-
   class EventCounts* EventCounts() override;
 
   bool IsGlobalObjectWindow() const override { return true; };
-
-  bool HasDispatchedInputEvent() const { return mHasDispatchedInputEvent; }
-
-  void SetHasDispatchedScrollEvent();
-  bool HasDispatchedScrollEvent() const { return mHasDispatchedScrollEvent; }
-
-  void ProcessElementTiming();
-
-  void AddImagesPendingRendering(ImagePendingRendering aImagePendingRendering) {
-    mImagesPendingRendering.AppendElement(aImagePendingRendering);
-  }
-
-  void StoreImageLCPEntry(Element* aElement, imgRequestProxy* aImgRequestProxy,
-                          LargestContentfulPaint* aEntry);
-
-  already_AddRefed<LargestContentfulPaint> GetImageLCPEntry(
-      Element* aElement, imgRequestProxy* aImgRequestProxy);
-
-  bool UpdateLargestContentfulPaintSize(double aSize);
-  double GetLargestContentfulPaintSize() const {
-    return mLargestContentfulPaintSize;
-  }
-
-  nsTHashMap<nsRefPtrHashKey<Element>, nsRect>& GetTextFrameUnions() {
-    return mTextFrameUnions;
-  }
-
-  void FinalizeLCPEntriesForText();
 
  protected:
   ~PerformanceMainThread();
@@ -160,77 +119,22 @@ class PerformanceMainThread final : public Performance,
   JS::Heap<JSObject*> mMozMemory;
 
   nsTArray<RefPtr<PerformanceEventTiming>> mEventTimingEntries;
-  nsTArray<RefPtr<LargestContentfulPaint>> mLargestContentfulPaintEntries;
 
   AutoCleanLinkedList<RefPtr<PerformanceEventTiming>>
       mPendingEventTimingEntries;
   bool mHasDispatchedInputEvent = false;
-  bool mHasDispatchedScrollEvent = false;
 
   RefPtr<PerformanceEventTiming> mFirstInputEvent;
   RefPtr<PerformanceEventTiming> mPendingPointerDown;
 
  private:
-  void ClearTextFrameUnions();
-  void ClearGeneratedTempDataForLCP();
-
-  void SetHasDispatchedInputEvent();
-
   bool mHasQueuedRefreshdriverObserver = false;
 
   RefPtr<class EventCounts> mEventCounts;
   void IncEventCount(const nsAtom* aType);
 
   PresShell* GetPresShell();
-
-  nsTArray<ImagePendingRendering> mImagesPendingRendering;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ImageLCPEntryMap mImageLCPEntryMap;
-
-  
-  
-  double mLargestContentfulPaintSize = 0.0;
-
-  
-  
-  
-  
-  
-  TextFrameUnions mTextFrameUnions;
 };
-
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, ImageLCPEntryMap& aField,
-    const char* aName, uint32_t aFlags = 0) {
-  for (auto& entry : aField) {
-    ImplCycleCollectionTraverse(aCallback, entry.mKey, "ImageLCPEntryMap.mKey",
-                                aCallback.Flags());
-    RefPtr<LargestContentfulPaint>* lcpEntry = entry.GetModifiableData();
-    ImplCycleCollectionTraverse(aCallback, *lcpEntry, "ImageLCPEntryMap.mData",
-                                aCallback.Flags());
-  }
-}
-
-inline void ImplCycleCollectionTraverse(
-    nsCycleCollectionTraversalCallback& aCallback, TextFrameUnions& aField,
-    const char* aName, uint32_t aFlags = 0) {
-  for (auto& entry : aField) {
-    ImplCycleCollectionTraverse(
-        aCallback, entry, "TextFrameUnions's key (nsRefPtrHashKey<Element>)",
-        aFlags);
-  }
-}
 
 }  
 

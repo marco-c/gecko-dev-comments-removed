@@ -28,7 +28,6 @@
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/MutationEventBinding.h"
 #include "mozilla/dom/SVGImageElement.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
 #include "nsIReflowCallback.h"
 
 using namespace mozilla::dom;
@@ -392,12 +391,6 @@ void SVGImageFrame::PaintSVG(gfxContext& aContext, const gfxMatrix& aTransform,
       LayoutDeviceSize devPxSize(width, height);
       nsRect destRect(nsPoint(), LayoutDevicePixel::ToAppUnits(
                                      devPxSize, appUnitsPerDevPx));
-      nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
-      if (currentRequest) {
-        LCPHelpers::FinalizeLCPEntryForImage(
-            GetContent()->AsElement(),
-            static_cast<imgRequestProxy*>(currentRequest.get()), destRect);
-      }
 
       
       
@@ -474,7 +467,14 @@ bool SVGImageFrame::CreateWebRenderCommands(
 
   
   if (!mImageContainer) {
-    nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest();
+    nsCOMPtr<imgIRequest> currentRequest;
+    nsCOMPtr<nsIImageLoadingContent> imageLoader =
+        do_QueryInterface(GetContent());
+    if (imageLoader) {
+      imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
+                              getter_AddRefs(currentRequest));
+    }
+
     if (currentRequest) {
       currentRequest->GetImage(getter_AddRefs(mImageContainer));
     }
@@ -633,14 +633,6 @@ bool SVGImageFrame::CreateWebRenderCommands(
       mImageContainer, this, destRect, clipRect, aSc, flags, svgContext,
       region);
 
-  if (nsCOMPtr<imgIRequest> currentRequest = GetCurrentRequest()) {
-    LCPHelpers::FinalizeLCPEntryForImage(
-        GetContent()->AsElement(),
-        static_cast<imgRequestProxy*>(currentRequest.get()),
-        LayoutDeviceRect::ToAppUnits(destRect, appUnitsPerDevPx) -
-            toReferenceFrame);
-  }
-
   RefPtr<image::WebRenderImageProvider> provider;
   ImgDrawResult drawResult = mImageContainer->GetImageProvider(
       aManager->LayerManager(), decodeSize, svgContext, region, flags,
@@ -790,17 +782,6 @@ bool SVGImageFrame::ReflowFinished() {
 }
 
 void SVGImageFrame::ReflowCallbackCanceled() { mReflowCallbackPosted = false; }
-
-already_AddRefed<imgIRequest> SVGImageFrame::GetCurrentRequest() const {
-  nsCOMPtr<imgIRequest> request;
-  nsCOMPtr<nsIImageLoadingContent> imageLoader =
-      do_QueryInterface(GetContent());
-  if (imageLoader) {
-    imageLoader->GetRequest(nsIImageLoadingContent::CURRENT_REQUEST,
-                            getter_AddRefs(request));
-  }
-  return request.forget();
-}
 
 bool SVGImageFrame::IgnoreHitTest() const {
   switch (Style()->PointerEvents()) {

@@ -53,7 +53,6 @@
 #include "mozilla/dom/RadioGroupContainer.h"
 #include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/dom/ViewportMetaData.h"
-#include "mozilla/dom/LargestContentfulPaint.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "nsAtom.h"
 #include "nsCOMArray.h"
@@ -2428,10 +2427,6 @@ class Document : public nsINode,
                                               CallerType aCallerType);
 
   LinkedList<MediaQueryList>& MediaQueryLists() { return mDOMMediaQueryLists; }
-
-  nsTHashtable<LCPEntryHashEntry>& ContentIdentifiersForLCP() {
-    return mContentIdentifiersForLCP;
-  }
 
   
 
@@ -5047,11 +5042,6 @@ class Document : public nsINode,
 
   
   LinkedList<MediaQueryList> mDOMMediaQueryLists;
-
-  
-  
-  
-  nsTHashtable<LCPEntryHashEntry> mContentIdentifiersForLCP;
 
   
   nsTObserverArray<nsIDocumentObserver*> mObservers;
