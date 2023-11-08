@@ -2518,19 +2518,6 @@ class nsDisplayTreeBody final : public nsPaintedDisplayItem {
 
 }  
 
-#ifdef XP_MACOSX
-static bool IsInSourceList(nsIFrame* aFrame) {
-  for (nsIFrame* frame = aFrame; frame;
-       frame = nsLayoutUtils::GetCrossDocParentFrameInProcess(frame)) {
-    if (frame->StyleDisplay()->EffectiveAppearance() ==
-        StyleAppearance::MozMacSourceList) {
-      return true;
-    }
-  }
-  return false;
-}
-#endif
-
 
 void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
                                        const nsDisplayListSet& aLists) {
@@ -2546,53 +2533,6 @@ void nsTreeBodyFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
 
   nsDisplayItem* item = MakeDisplayItem<nsDisplayTreeBody>(aBuilder, this);
   aLists.Content()->AppendToTop(item);
-
-#ifdef XP_MACOSX
-  XULTreeElement* tree = GetBaseElement();
-  nsIFrame* treeFrame = tree ? tree->GetPrimaryFrame() : nullptr;
-  nsCOMPtr<nsITreeView> view = GetExistingView();
-  nsCOMPtr<nsITreeSelection> selection = GetSelection();
-  nsITheme* theme = PresContext()->Theme();
-  
-  
-  
-  
-  if (selection && theme && IsInSourceList(treeFrame)) {
-    
-    
-    const auto end = std::min(mRowCount, LastVisibleRow() + 1);
-    for (auto i = FirstVisibleRow(); i < end; i++) {
-      bool isSelected;
-      selection->IsSelected(i, &isSelected);
-      if (isSelected) {
-        PrefillPropertyArray(i, nullptr);
-        nsAutoString properties;
-        view->GetRowProperties(i, properties);
-        nsTreeUtils::TokenizeProperties(properties, mScratchArray);
-        ComputedStyle* rowContext =
-            GetPseudoComputedStyle(nsCSSAnonBoxes::mozTreeRow());
-        auto appearance = rowContext->StyleDisplay()->EffectiveAppearance();
-        if (appearance != StyleAppearance::None) {
-          if (theme->ThemeSupportsWidget(PresContext(), this, appearance)) {
-            nsITheme::ThemeGeometryType type =
-                theme->ThemeGeometryTypeForWidget(this, appearance);
-            if (type != nsITheme::eThemeGeometryTypeUnknown) {
-              nsRect rowRect(mInnerBox.x,
-                             mInnerBox.y + mRowHeight * (i - FirstVisibleRow()),
-                             mInnerBox.width, mRowHeight);
-              aBuilder->RegisterThemeGeometry(
-                  type, item,
-                  LayoutDeviceIntRect::FromUnknownRect(
-                      (rowRect + aBuilder->ToReferenceFrame(this))
-                          .ToNearestPixels(
-                              PresContext()->AppUnitsPerDevPixel())));
-            }
-          }
-        }
-      }
-    }
-  }
-#endif
 }
 
 ImgDrawResult nsTreeBodyFrame::PaintTreeBody(gfxContext& aRenderingContext,
