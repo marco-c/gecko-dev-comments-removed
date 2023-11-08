@@ -128,7 +128,8 @@ mozilla::dom::Nullable<uint16_t> nsDOMDataChannel::GetId() const {
 
 
 bool nsDOMDataChannel::Reliable() const {
-  return mDataChannel->GetType() == mozilla::DataChannelConnection::RELIABLE;
+  return mDataChannel->GetType() ==
+         mozilla::DataChannelReliabilityPolicy::Reliable;
 }
 
 mozilla::dom::Nullable<uint16_t> nsDOMDataChannel::GetMaxPacketLifeTime()
