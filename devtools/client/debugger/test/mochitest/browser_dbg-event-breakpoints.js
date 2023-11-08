@@ -237,7 +237,7 @@ async function getEventBreakpointCheckbox(
     
     findElementWithSelector(
       dbg,
-      `.event-listeners-pane ._header .arrow`
+      `.event-listeners-pane ._header .header-label`
     ).click();
     await waitFor(() => getEventListenersPanel(dbg));
   }
