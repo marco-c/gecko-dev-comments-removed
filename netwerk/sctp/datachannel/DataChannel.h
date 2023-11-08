@@ -598,16 +598,17 @@ class DataChannel {
 
 class DataChannelOnMessageAvailable : public Runnable {
  public:
-  enum {
-    ON_CONNECTION,
-    ON_DISCONNECTED,
-    ON_CHANNEL_CREATED,
-    ON_DATA_STRING,
-    ON_DATA_BINARY,
-  }; 
+  enum class EventType {
+    OnConnection,
+    OnDisconnected,
+    OnChannelCreated,
+    OnDataString,
+    OnDataBinary,
+  };
 
   DataChannelOnMessageAvailable(
-      int32_t aType, DataChannelConnection* aConnection, DataChannel* aChannel,
+      EventType aType, DataChannelConnection* aConnection,
+      DataChannel* aChannel,
       nsCString& aData)  
       : Runnable("DataChannelOnMessageAvailable"),
         mType(aType),
@@ -615,7 +616,7 @@ class DataChannelOnMessageAvailable : public Runnable {
         mConnection(aConnection),
         mData(aData) {}
 
-  DataChannelOnMessageAvailable(int32_t aType, DataChannel* aChannel)
+  DataChannelOnMessageAvailable(EventType aType, DataChannel* aChannel)
       : Runnable("DataChannelOnMessageAvailable"),
         mType(aType),
         mChannel(aChannel) {}
@@ -623,7 +624,7 @@ class DataChannelOnMessageAvailable : public Runnable {
   
   
 
-  DataChannelOnMessageAvailable(int32_t aType,
+  DataChannelOnMessageAvailable(EventType aType,
                                 DataChannelConnection* aConnection,
                                 DataChannel* aChannel)
       : Runnable("DataChannelOnMessageAvailable"),
@@ -632,72 +633,18 @@ class DataChannelOnMessageAvailable : public Runnable {
         mConnection(aConnection) {}
 
   
-  DataChannelOnMessageAvailable(int32_t aType,
+  DataChannelOnMessageAvailable(EventType aType,
                                 DataChannelConnection* aConnection)
       : Runnable("DataChannelOnMessageAvailable"),
         mType(aType),
         mConnection(aConnection) {}
 
-  NS_IMETHOD Run() override {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    
-    
-    
-    
-    switch (mType) {
-      case ON_DATA_STRING:
-      case ON_DATA_BINARY:
-        if (!mChannel->mListener) {
-          DC_ERROR(("DataChannelOnMessageAvailable (%d) with null Listener!",
-                    mType));
-          return NS_OK;
-        }
-
-        if (mChannel->GetReadyState() == DataChannelState::Closed ||
-            mChannel->GetReadyState() == DataChannelState::Closing) {
-          
-          return NS_OK;
-        }
-
-        if (mType == ON_DATA_STRING) {
-          mChannel->mListener->OnMessageAvailable(mChannel->mContext, mData);
-        } else {
-          mChannel->mListener->OnBinaryMessageAvailable(mChannel->mContext,
-                                                        mData);
-        }
-        break;
-      case ON_DISCONNECTED:
-        
-        
-        if (mConnection->mListener) {
-          mConnection->mListener->NotifySctpClosed();
-        }
-        mConnection->CloseAll();
-        break;
-      case ON_CHANNEL_CREATED:
-        if (!mConnection->mListener) {
-          DC_ERROR(("DataChannelOnMessageAvailable (%d) with null Listener!",
-                    mType));
-          return NS_OK;
-        }
-
-        
-        mConnection->mListener->NotifyDataChannel(mChannel.forget());
-        break;
-      case ON_CONNECTION:
-        if (mConnection->mListener) {
-          mConnection->mListener->NotifySctpConnected();
-        }
-        break;
-    }
-    return NS_OK;
-  }
+  NS_IMETHOD Run() override;
 
  private:
   ~DataChannelOnMessageAvailable() = default;
 
-  int32_t mType;
+  EventType mType;
   
   RefPtr<DataChannel> mChannel;
   RefPtr<DataChannelConnection> mConnection;
