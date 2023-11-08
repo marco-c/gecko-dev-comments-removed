@@ -41,7 +41,6 @@ var dateTimeFormatCache = new_Record();
 
 
 
-
 function GetCachedFormat(format, required, defaults) {
   assert(
     format === "dateTimeFormat" ||
@@ -64,8 +63,7 @@ function GetCachedFormat(format, required, defaults) {
 
   var fmt = formatters[format];
   if (fmt === undefined) {
-    var options = ToDateTimeOptions(undefined, required, defaults);
-    fmt = formatters[format] = intl_DateTimeFormat(undefined, options);
+    fmt = formatters[format] = intl_CreateDateTimeFormat(undefined, undefined, required, defaults);
   }
 
   return fmt;
@@ -96,8 +94,7 @@ function Date_toLocaleString() {
     
     dateTimeFormat = GetCachedFormat("dateTimeFormat", "any", "all");
   } else {
-    options = ToDateTimeOptions(options, "any", "all");
-    dateTimeFormat = intl_DateTimeFormat(locales, options);
+    dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "any", "all");
   }
 
   
@@ -129,8 +126,7 @@ function Date_toLocaleDateString() {
     
     dateTimeFormat = GetCachedFormat("dateFormat", "date", "date");
   } else {
-    options = ToDateTimeOptions(options, "date", "date");
-    dateTimeFormat = intl_DateTimeFormat(locales, options);
+    dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "date", "date");
   }
 
   
@@ -162,8 +158,7 @@ function Date_toLocaleTimeString() {
     
     dateTimeFormat = GetCachedFormat("timeFormat", "time", "time");
   } else {
-    options = ToDateTimeOptions(options, "time", "time");
-    dateTimeFormat = intl_DateTimeFormat(locales, options);
+    dateTimeFormat = intl_CreateDateTimeFormat(locales, options, "time", "time");
   }
 
   

@@ -18,11 +18,6 @@ var proxy = new Proxy({
 
 var constructorAccesses = [
     
-    "weekday", "year", "month", "day",
-    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
-    "dateStyle", "timeStyle",
-
-    
     "localeMatcher", "calendar", "numberingSystem", "hour12", "hourCycle", "timeZone",
 
     
@@ -42,36 +37,17 @@ assertEqArray(log, constructorAccesses);
 log = [];
 new Date().toLocaleString(undefined, proxy);
 
-assertEqArray(log, [
-    
-    "weekday", "year", "month", "day",
-    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
-    "dateStyle", "timeStyle",
-
-    ...constructorAccesses
-]);
+assertEqArray(log, constructorAccesses);
 
 log = [];
 new Date().toLocaleDateString(undefined, proxy);
 
-assertEqArray(log, [
-    
-    "weekday", "year", "month", "day",
-    "dateStyle", "timeStyle",
-
-    ...constructorAccesses
-]);
+assertEqArray(log, constructorAccesses);
 
 log = [];
 new Date().toLocaleTimeString(undefined, proxy);
 
-assertEqArray(log, [
-    
-    "dayPeriod", "hour", "minute", "second", "fractionalSecondDigits",
-    "dateStyle", "timeStyle",
-
-    ...constructorAccesses
-]);
+assertEqArray(log, constructorAccesses);
 
 if (typeof reportCompare === "function")
     reportCompare(0, 0);

@@ -269,11 +269,14 @@ function DefaultTimeZone() {
 
 
 
+
 function InitializeDateTimeFormat(
   dateTimeFormat,
   thisValue,
   locales,
   options,
+  required,
+  defaults,
   mozExtensions
 ) {
   assert(
@@ -283,6 +286,14 @@ function InitializeDateTimeFormat(
   assert(
     intl_GuardToDateTimeFormat(dateTimeFormat) !== null,
     "InitializeDateTimeFormat called with non-DateTimeFormat"
+  );
+  assert(
+    required === "date" || required === "time" || required === "any",
+    `InitializeDateTimeFormat called with invalid required value: ${required}`
+  );
+  assert(
+    defaults === "date" || defaults === "time" || defaults === "all",
+    `InitializeDateTimeFormat called with invalid defaults value: ${defaults}`
   );
 
   
@@ -324,7 +335,11 @@ function InitializeDateTimeFormat(
   lazyDateTimeFormatData.requestedLocales = requestedLocales;
 
   
-  options = ToDateTimeOptions(options, "any", "date");
+  if (options === undefined) {
+    options = std_Object_create(null);
+  } else {
+    options = ToObject(options);
+  }
 
   
   
@@ -548,29 +563,86 @@ function InitializeDateTimeFormat(
   lazyDateTimeFormatData.timeStyle = timeStyle;
 
   if (dateStyle !== undefined || timeStyle !== undefined) {
-    var optionsList = [
-      "weekday",
-      "era",
-      "year",
-      "month",
-      "day",
-      "dayPeriod",
-      "hour",
-      "minute",
-      "second",
-      "fractionalSecondDigits",
-      "timeZoneName",
-    ];
+    
+    var explicitFormatComponent =
+      formatOpt.weekday !== undefined
+        ? "weekday"
+        : formatOpt.era !== undefined
+        ? "era"
+        : formatOpt.year !== undefined
+        ? "year"
+        : formatOpt.month !== undefined
+        ? "month"
+        : formatOpt.day !== undefined
+        ? "day"
+        : formatOpt.dayPeriod !== undefined
+        ? "dayPeriod"
+        : formatOpt.hour !== undefined
+        ? "hour"
+        : formatOpt.minute !== undefined
+        ? "minute"
+        : formatOpt.second !== undefined
+        ? "second"
+        : formatOpt.fractionalSecondDigits !== undefined
+        ? "fractionalSecondDigits"
+        : formatOpt.timeZoneName !== undefined
+        ? "timeZoneName"
+        : undefined;
+    
 
-    for (var i = 0; i < optionsList.length; i++) {
-      var option = optionsList[i];
-      if (formatOpt[option] !== undefined) {
-        ThrowTypeError(
-          JSMSG_INVALID_DATETIME_OPTION,
-          option,
-          dateStyle !== undefined ? "dateStyle" : "timeStyle"
-        );
-      }
+    if (explicitFormatComponent !== undefined) {
+      ThrowTypeError(
+        JSMSG_INVALID_DATETIME_OPTION,
+        explicitFormatComponent,
+        dateStyle !== undefined ? "dateStyle" : "timeStyle"
+      );
+    }
+
+    if (required === "date" && timeStyle !== undefined) {
+      ThrowTypeError(
+        JSMSG_INVALID_DATETIME_STYLE,
+        "timeStyle",
+        "toLocaleDateString"
+      );
+    }
+    if (required === "time" && dateStyle !== undefined) {
+      ThrowTypeError(
+        JSMSG_INVALID_DATETIME_STYLE,
+        "dateStyle",
+        "toLocaleTimeString"
+      );
+    }
+  } else {
+    var needDefaults = true;
+
+    if (required === "date" || required === "any") {
+      needDefaults =
+        formatOpt.weekday === undefined &&
+        formatOpt.year === undefined &&
+        formatOpt.month === undefined &&
+        formatOpt.day === undefined;
+    }
+
+    if (required === "time" || required === "any") {
+      needDefaults =
+        needDefaults &&
+        formatOpt.dayPeriod === undefined &&
+        formatOpt.hour === undefined &&
+        formatOpt.minute === undefined &&
+        formatOpt.second === undefined &&
+        formatOpt.fractionalSecondDigits === undefined;
+    }
+
+    if (needDefaults && (defaults === "date" || defaults === "all")) {
+      formatOpt.year = "numeric";
+      formatOpt.month = "numeric";
+      formatOpt.day = "numeric";
+    }
+
+    if (needDefaults && (defaults === "time" || defaults === "all")) {
+      formatOpt.hour = "numeric";
+      formatOpt.minute = "numeric";
+      formatOpt.second = "numeric";
     }
   }
 
@@ -615,111 +687,6 @@ function InitializeDateTimeFormat(
   return dateTimeFormat;
 }
 
-
-
-
-
-
-
-
-
-function ToDateTimeOptions(options, required, defaults) {
-  assert(typeof required === "string", "ToDateTimeOptions");
-  assert(typeof defaults === "string", "ToDateTimeOptions");
-
-  
-  if (options === undefined) {
-    options = null;
-  } else {
-    options = ToObject(options);
-  }
-  options = std_Object_create(options);
-
-  
-  var needDefaults = true;
-
-  
-  if (required === "date" || required === "any") {
-    if (options.weekday !== undefined) {
-      needDefaults = false;
-    }
-    if (options.year !== undefined) {
-      needDefaults = false;
-    }
-    if (options.month !== undefined) {
-      needDefaults = false;
-    }
-    if (options.day !== undefined) {
-      needDefaults = false;
-    }
-  }
-
-  
-  if (required === "time" || required === "any") {
-    if (options.dayPeriod !== undefined) {
-      needDefaults = false;
-    }
-    if (options.hour !== undefined) {
-      needDefaults = false;
-    }
-    if (options.minute !== undefined) {
-      needDefaults = false;
-    }
-    if (options.second !== undefined) {
-      needDefaults = false;
-    }
-    if (options.fractionalSecondDigits !== undefined) {
-      needDefaults = false;
-    }
-  }
-
-  
-  
-  var dateStyle = options.dateStyle;
-  var timeStyle = options.timeStyle;
-
-  if (dateStyle !== undefined || timeStyle !== undefined) {
-    needDefaults = false;
-  }
-
-  if (required === "date" && timeStyle !== undefined) {
-    ThrowTypeError(
-      JSMSG_INVALID_DATETIME_STYLE,
-      "timeStyle",
-      "toLocaleDateString"
-    );
-  }
-
-  if (required === "time" && dateStyle !== undefined) {
-    ThrowTypeError(
-      JSMSG_INVALID_DATETIME_STYLE,
-      "dateStyle",
-      "toLocaleTimeString"
-    );
-  }
-
-  
-  if (needDefaults && (defaults === "date" || defaults === "all")) {
-    
-    
-    
-    
-    DefineDataProperty(options, "year", "numeric");
-    DefineDataProperty(options, "month", "numeric");
-    DefineDataProperty(options, "day", "numeric");
-  }
-
-  
-  if (needDefaults && (defaults === "time" || defaults === "all")) {
-    
-    DefineDataProperty(options, "hour", "numeric");
-    DefineDataProperty(options, "minute", "numeric");
-    DefineDataProperty(options, "second", "numeric");
-  }
-
-  
-  return options;
-}
 
 
 
