@@ -918,8 +918,9 @@ async function addTab(url) {
 
 
 
-async function switchTab(tab) {
-  info("Switching tabs");
+
+async function switchTab(tab, name) {
+  info("Switching tabs to " + name);
   await BrowserTestUtils.switchTab(gBrowser, tab);
 }
 
