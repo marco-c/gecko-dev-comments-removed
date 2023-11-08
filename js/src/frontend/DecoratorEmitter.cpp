@@ -21,6 +21,21 @@ using namespace js::frontend;
 
 DecoratorEmitter::DecoratorEmitter(BytecodeEmitter* bce) : bce_(bce) {}
 
+
+
+bool DecoratorEmitter::reverseDecoratorsToApplicationOrder(
+    const ListNode* decorators, DecoratorsVector& vec) {
+  if (!vec.resize(decorators->count())) {
+    ReportOutOfMemory(bce_->fc);
+    return false;
+  }
+  int end = decorators->count() - 1;
+  for (ParseNode* decorator : decorators->contents()) {
+    vec[end--] = decorator;
+  }
+  return true;
+}
+
 bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
     DecoratorEmitter::Kind kind, ParseNode* key, ListNode* decorators,
     bool isStatic) {
@@ -38,10 +53,16 @@ bool DecoratorEmitter::emitApplyDecoratorsToElementDefinition(
   
   MOZ_ASSERT(!decorators->empty());
 
+  DecoratorsVector dec_vecs;
+  if (!reverseDecoratorsToApplicationOrder(decorators, dec_vecs)) {
+    return false;
+  }
+
   
   
   
-  for (ParseNode* decorator : decorators->contents()) {
+  for (auto it = dec_vecs.begin(); it != dec_vecs.end(); it++) {
+    ParseNode* decorator = *it;
     
     if (!emitDecorationState()) {
       return false;
@@ -166,10 +187,16 @@ bool DecoratorEmitter::emitApplyDecoratorsToFieldDefinition(
     return false;
   }
 
+  DecoratorsVector dec_vecs;
+  if (!reverseDecoratorsToApplicationOrder(decorators, dec_vecs)) {
+    return false;
+  }
+
   
   
   
-  for (ParseNode* decorator : decorators->contents()) {
+  for (auto it = dec_vecs.begin(); it != dec_vecs.end(); it++) {
+    ParseNode* decorator = *it;
     
     if (!emitDecorationState()) {
       return false;
@@ -295,10 +322,16 @@ bool DecoratorEmitter::emitApplyDecoratorsToAccessorDefinition(
     return false;
   }
 
+  DecoratorsVector dec_vecs;
+  if (!reverseDecoratorsToApplicationOrder(decorators, dec_vecs)) {
+    return false;
+  }
+
   
   
   
-  for (ParseNode* decorator : decorators->contents()) {
+  for (auto it = dec_vecs.begin(); it != dec_vecs.end(); it++) {
+    ParseNode* decorator = *it;
     
     if (!emitDecorationState()) {
       return false;
@@ -449,9 +482,15 @@ bool DecoratorEmitter::emitApplyDecoratorsToClassDefinition(
   
   
 
+  DecoratorsVector dec_vecs;
+  if (!reverseDecoratorsToApplicationOrder(decorators, dec_vecs)) {
+    return false;
+  }
+
   
   
-  for (ParseNode* decorator : decorators->contents()) {
+  for (auto it = dec_vecs.begin(); it != dec_vecs.end(); it++) {
+    ParseNode* decorator = *it;
     
     
     
