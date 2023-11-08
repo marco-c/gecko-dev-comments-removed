@@ -332,6 +332,8 @@ class ComputedStyle {
 
   StyleWritingMode WritingMode() const { return {mSource.WritingMode().mBits}; }
 
+  const StyleZoom& EffectiveZoom() const { return mSource.effective_zoom; }
+
  protected:
   
   
