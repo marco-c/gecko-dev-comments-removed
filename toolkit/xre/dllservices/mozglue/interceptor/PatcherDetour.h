@@ -1737,12 +1737,14 @@ class WindowsDllDetourPatcher final
       PrimitiveT::ApplyDefaultPatch(target, aDest);
     } while (false);
 
-    if (!target.Commit()) {
-      return;
-    }
-
+    
+    
     
     *aOutTramp = trampPtr;
+
+    if (!target.Commit()) {
+      *aOutTramp = nullptr;
+    }
   }
 };
 
