@@ -3,6 +3,3 @@
 
 
 
-Services.prefs.setBoolPref("browser.tabs.remote.autostart", true);
-
-ExtensionTestUtils.remoteContentScripts = true;

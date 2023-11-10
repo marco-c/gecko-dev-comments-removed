@@ -2012,6 +2012,9 @@ toolbar#nav-bar {
         if options.headless:
             browserEnv["MOZ_HEADLESS"] = "1"
 
+        if not options.e10s:
+            browserEnv["MOZ_FORCE_DISABLE_E10S"] = "1"
+
         if options.dmd:
             browserEnv["DMD"] = os.environ.get("DMD", "1")
 
@@ -2470,7 +2473,6 @@ toolbar#nav-bar {
 
         
         prefs = {
-            "browser.tabs.remote.autostart": options.e10s,
             
             
             "remote.log.level": "Trace",
