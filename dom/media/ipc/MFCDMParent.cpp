@@ -554,30 +554,6 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)",
                     support, NS_ConvertUTF16toUTF8(aKeySystem).get(),
                     NS_ConvertUTF16toUTF8(contentType).get());
-  if (aIsHWSecure && support) {
-    
-    
-    nsTArray<nsString> dummyInitDataType{nsString(u"cenc"),
-                                         nsString(u"keyids")};
-    MFCDMMediaCapability dummyVideoCapability{
-        nsString(u""),
-        GetRobustnessStringForKeySystem(aKeySystem, true )};
-    MFCDMInitParamsIPDL dummyParam{
-        nsString(u"dummy"),
-        dummyInitDataType,
-        KeySystemConfig::Requirement::Required ,
-        KeySystemConfig::Requirement::Required ,
-        {} ,
-        {dummyVideoCapability} ,
-    };
-    ComPtr<IMFContentDecryptionModule> dummyCDM;
-    if (FAILED(CreateContentDecryptionModule(aFactory, aKeySystem, dummyParam,
-                                             dummyCDM))) {
-      MFCDM_PARENT_SLOG("HWDRM actually not supported for %s",
-                        NS_ConvertUTF16toUTF8(aKeySystem).get());
-      support = false;
-    }
-  }
   return support;
 }
 
