@@ -134,76 +134,68 @@ struct ColumnNumberUnsignedOffset {
   uint32_t* addressOfValueForTranscode() { return &value_; }
 };
 
+struct TaggedColumnNumberOneOrigin;
+
 namespace detail {
 
-template <typename T>
-struct TaggedColumnNumberWithOrigin;
 
 
 
-
-
-template <uint32_t Origin, uint32_t LimitValue = 0>
-struct ColumnNumberWithOrigin {
-  static_assert(Origin == 0 || Origin == 1);
+template <uint32_t LimitValue = 0>
+struct MaybeLimitedColumnNumber {
+ public:
+  static constexpr uint32_t OriginValue = 1;
 
  protected:
-  uint32_t value_ = Origin;
+  uint32_t value_ = OriginValue;
 
-  template <typename T>
-  friend struct TaggedColumnNumberWithOrigin;
+  friend struct ::JS::TaggedColumnNumberOneOrigin;
 
  public:
-  static constexpr uint32_t OriginValue = Origin;
-
-  constexpr ColumnNumberWithOrigin() = default;
-  ColumnNumberWithOrigin(const ColumnNumberWithOrigin& other) = default;
-  ColumnNumberWithOrigin& operator=(const ColumnNumberWithOrigin& other) =
+  constexpr MaybeLimitedColumnNumber() = default;
+  MaybeLimitedColumnNumber(const MaybeLimitedColumnNumber& other) = default;
+  MaybeLimitedColumnNumber& operator=(const MaybeLimitedColumnNumber& other) =
       default;
 
-  explicit ColumnNumberWithOrigin(uint32_t value) : value_(value) {
+  explicit MaybeLimitedColumnNumber(uint32_t value) : value_(value) {
     MOZ_ASSERT(valid());
   }
 
-  static constexpr ColumnNumberWithOrigin<Origin, LimitValue> zero() {
-    return ColumnNumberWithOrigin<Origin, LimitValue>();
-  }
-
-  bool operator==(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator==(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     return value_ == rhs.value_;
   }
 
-  bool operator!=(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator!=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     return !(*this == rhs);
   }
 
-  ColumnNumberWithOrigin<Origin, LimitValue> operator+(
+  MaybeLimitedColumnNumber<LimitValue> operator+(
       const ColumnNumberOffset& offset) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(ptrdiff_t(value_) + offset.value() >= 0);
-    return ColumnNumberWithOrigin<Origin, LimitValue>(value_ + offset.value());
+    return MaybeLimitedColumnNumber<LimitValue>(value_ + offset.value());
   }
 
-  ColumnNumberWithOrigin<Origin, LimitValue> operator+(
+  MaybeLimitedColumnNumber<LimitValue> operator+(
       const ColumnNumberUnsignedOffset& offset) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(ptrdiff_t(value_) + offset.value() >= 0);
-    return ColumnNumberWithOrigin<Origin, LimitValue>(value_ + offset.value());
+    return MaybeLimitedColumnNumber<LimitValue>(value_ + offset.value());
   }
 
-  ColumnNumberWithOrigin<Origin, LimitValue> operator-(
+  MaybeLimitedColumnNumber<LimitValue> operator-(
       const ColumnNumberOffset& offset) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(ptrdiff_t(value_) - offset.value() >= 0);
-    return ColumnNumberWithOrigin<Origin, LimitValue>(value_ - offset.value());
+    return MaybeLimitedColumnNumber<LimitValue>(value_ - offset.value());
   }
   ColumnNumberOffset operator-(
-      const ColumnNumberWithOrigin<Origin, LimitValue>& other) const {
+      const MaybeLimitedColumnNumber<LimitValue>& other) const {
     MOZ_ASSERT(valid());
     return ColumnNumberOffset(int32_t(value_) - int32_t(other.value_));
   }
 
-  ColumnNumberWithOrigin<Origin, LimitValue>& operator+=(
+  MaybeLimitedColumnNumber<LimitValue>& operator+=(
       const ColumnNumberOffset& offset) {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(ptrdiff_t(value_) + offset.value() >= 0);
@@ -211,7 +203,7 @@ struct ColumnNumberWithOrigin {
     MOZ_ASSERT(valid());
     return *this;
   }
-  ColumnNumberWithOrigin<Origin, LimitValue>& operator-=(
+  MaybeLimitedColumnNumber<LimitValue>& operator-=(
       const ColumnNumberOffset& offset) {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(ptrdiff_t(value_) - offset.value() >= 0);
@@ -220,22 +212,22 @@ struct ColumnNumberWithOrigin {
     return *this;
   }
 
-  bool operator<(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator<(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(rhs.valid());
     return value_ < rhs.value_;
   }
-  bool operator<=(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator<=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(rhs.valid());
     return value_ <= rhs.value_;
   }
-  bool operator>(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator>(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(rhs.valid());
     return value_ > rhs.value_;
   }
-  bool operator>=(const ColumnNumberWithOrigin<Origin, LimitValue>& rhs) const {
+  bool operator>=(const MaybeLimitedColumnNumber<LimitValue>& rhs) const {
     MOZ_ASSERT(valid());
     MOZ_ASSERT(rhs.valid());
     return value_ >= rhs.value_;
@@ -245,22 +237,10 @@ struct ColumnNumberWithOrigin {
   uint32_t zeroOriginValue() const {
     MOZ_ASSERT(valid());
 
-    if constexpr (Origin == 0) {
-      return value_;
-    }
-
-    if (value_ == 0) {
-      
-      return 0;
-    }
     return value_ - 1;
   }
   uint32_t oneOriginValue() const {
     MOZ_ASSERT(valid());
-
-    if constexpr (Origin == 0) {
-      return value_ + 1;
-    }
 
     return value_;
   }
@@ -272,15 +252,13 @@ struct ColumnNumberWithOrigin {
       return true;
     }
 
-    MOZ_ASSERT_IF(Origin == 1, value_ != 0);
+    MOZ_ASSERT(value_ != 0);
 
     return value_ <= LimitValue;
   }
 };
 
 
-static constexpr uint32_t ColumnNumberZeroOriginLimit =
-    std::numeric_limits<int32_t>::max() / 2 - 1;
 static constexpr uint32_t ColumnNumberOneOriginLimit =
     std::numeric_limits<int32_t>::max() / 2;
 
@@ -296,56 +274,11 @@ static constexpr uint32_t ColumnNumberOneOriginLimit =
 
 
 
-struct LimitedColumnNumberZeroOrigin
-    : public detail::ColumnNumberWithOrigin<
-          0, detail::ColumnNumberZeroOriginLimit> {
+struct LimitedColumnNumberOneOrigin : public detail::MaybeLimitedColumnNumber<
+                                          detail::ColumnNumberOneOriginLimit> {
  private:
   using Base =
-      detail::ColumnNumberWithOrigin<0, detail::ColumnNumberZeroOriginLimit>;
-
- public:
-  static constexpr uint32_t Limit = detail::ColumnNumberZeroOriginLimit;
-
-  static_assert(uint32_t(Limit + Limit) > Limit,
-                "Adding Limit should not overflow");
-
-  using Base::Base;
-
-  LimitedColumnNumberZeroOrigin() = default;
-  LimitedColumnNumberZeroOrigin(const LimitedColumnNumberZeroOrigin& other) =
-      default;
-  MOZ_IMPLICIT LimitedColumnNumberZeroOrigin(const Base& other) : Base(other) {}
-
-  explicit LimitedColumnNumberZeroOrigin(
-      const detail::ColumnNumberWithOrigin<
-          1, detail::ColumnNumberOneOriginLimit>& other)
-      : Base(other.zeroOriginValue()) {}
-
-  static LimitedColumnNumberZeroOrigin limit() {
-    return LimitedColumnNumberZeroOrigin(Limit);
-  }
-
-  
-  
-  static LimitedColumnNumberZeroOrigin fromUnlimited(uint32_t value) {
-    if (value > Limit) {
-      return LimitedColumnNumberZeroOrigin(Limit);
-    }
-    return LimitedColumnNumberZeroOrigin(value);
-  }
-  static LimitedColumnNumberZeroOrigin fromUnlimited(
-      const ColumnNumberWithOrigin<0, 0>& value) {
-    return fromUnlimited(value.zeroOriginValue());
-  }
-};
-
-
-struct LimitedColumnNumberOneOrigin
-    : public detail::ColumnNumberWithOrigin<
-          1, detail::ColumnNumberOneOriginLimit> {
- private:
-  using Base =
-      detail::ColumnNumberWithOrigin<1, detail::ColumnNumberOneOriginLimit>;
+      detail::MaybeLimitedColumnNumber<detail::ColumnNumberOneOriginLimit>;
 
  public:
   static constexpr uint32_t Limit = detail::ColumnNumberOneOriginLimit;
@@ -360,11 +293,6 @@ struct LimitedColumnNumberOneOrigin
       default;
   MOZ_IMPLICIT LimitedColumnNumberOneOrigin(const Base& other) : Base(other) {}
 
-  explicit LimitedColumnNumberOneOrigin(
-      const detail::ColumnNumberWithOrigin<
-          0, detail::ColumnNumberZeroOriginLimit>& other)
-      : Base(other.oneOriginValue()) {}
-
   static LimitedColumnNumberOneOrigin limit() {
     return LimitedColumnNumberOneOrigin(Limit);
   }
@@ -376,7 +304,7 @@ struct LimitedColumnNumberOneOrigin
     return LimitedColumnNumberOneOrigin(value);
   }
   static LimitedColumnNumberOneOrigin fromUnlimited(
-      const ColumnNumberWithOrigin<1, 0>& value) {
+      const MaybeLimitedColumnNumber<0>& value) {
     return fromUnlimited(value.oneOriginValue());
   }
 
@@ -386,34 +314,9 @@ struct LimitedColumnNumberOneOrigin
 };
 
 
-struct ColumnNumberZeroOrigin : public detail::ColumnNumberWithOrigin<0> {
+struct ColumnNumberOneOrigin : public detail::MaybeLimitedColumnNumber<0> {
  private:
-  using Base = detail::ColumnNumberWithOrigin<0>;
-
- public:
-  using Base::Base;
-  using Base::operator=;
-
-  ColumnNumberZeroOrigin() = default;
-  ColumnNumberZeroOrigin(const ColumnNumberZeroOrigin& other) = default;
-  ColumnNumberZeroOrigin& operator=(ColumnNumberZeroOrigin&) = default;
-
-  MOZ_IMPLICIT ColumnNumberZeroOrigin(const Base& other) : Base(other) {}
-
-  explicit ColumnNumberZeroOrigin(
-      const detail::ColumnNumberWithOrigin<1>& other)
-      : Base(other.zeroOriginValue()) {}
-
-  explicit ColumnNumberZeroOrigin(const LimitedColumnNumberZeroOrigin& other)
-      : Base(other.zeroOriginValue()) {}
-  explicit ColumnNumberZeroOrigin(const LimitedColumnNumberOneOrigin& other)
-      : Base(other.zeroOriginValue()) {}
-};
-
-
-struct ColumnNumberOneOrigin : public detail::ColumnNumberWithOrigin<1> {
- private:
-  using Base = detail::ColumnNumberWithOrigin<1>;
+  using Base = detail::MaybeLimitedColumnNumber<0>;
 
  public:
   using Base::Base;
@@ -425,11 +328,6 @@ struct ColumnNumberOneOrigin : public detail::ColumnNumberWithOrigin<1> {
 
   MOZ_IMPLICIT ColumnNumberOneOrigin(const Base& other) : Base(other) {}
 
-  explicit ColumnNumberOneOrigin(const detail::ColumnNumberWithOrigin<0>& other)
-      : Base(other.oneOriginValue()) {}
-
-  explicit ColumnNumberOneOrigin(const LimitedColumnNumberZeroOrigin& other)
-      : Base(other.oneOriginValue()) {}
   explicit ColumnNumberOneOrigin(const LimitedColumnNumberOneOrigin& other)
       : Base(other.oneOriginValue()) {}
 
@@ -438,7 +336,6 @@ struct ColumnNumberOneOrigin : public detail::ColumnNumberWithOrigin<1> {
   }
 };
 
-namespace detail {
 
 
 
@@ -459,46 +356,45 @@ namespace detail {
 
 
 
-
-template <typename LimitedColumnNumberT>
-struct TaggedColumnNumberWithOrigin {
+struct TaggedColumnNumberOneOrigin {
   static constexpr uint32_t WasmFunctionTag = 1u << 31;
 
   static_assert((WasmFunctionIndex::Limit & WasmFunctionTag) == 0);
-  static_assert((LimitedColumnNumberT::Limit & WasmFunctionTag) == 0);
+  static_assert((LimitedColumnNumberOneOrigin::Limit & WasmFunctionTag) == 0);
 
  protected:
-  uint32_t value_ = LimitedColumnNumberT::OriginValue;
+  uint32_t value_ = LimitedColumnNumberOneOrigin::OriginValue;
 
-  explicit TaggedColumnNumberWithOrigin(uint32_t value) : value_(value) {}
+  explicit TaggedColumnNumberOneOrigin(uint32_t value) : value_(value) {}
 
  public:
-  constexpr TaggedColumnNumberWithOrigin() = default;
-  TaggedColumnNumberWithOrigin(
-      const TaggedColumnNumberWithOrigin<LimitedColumnNumberT>& other) =
+  constexpr TaggedColumnNumberOneOrigin() = default;
+  TaggedColumnNumberOneOrigin(const TaggedColumnNumberOneOrigin& other) =
       default;
 
-  explicit TaggedColumnNumberWithOrigin(const LimitedColumnNumberT& other)
+  explicit TaggedColumnNumberOneOrigin(
+      const LimitedColumnNumberOneOrigin& other)
       : value_(other.value_) {
     MOZ_ASSERT(isLimitedColumnNumber());
   }
-  explicit TaggedColumnNumberWithOrigin(const WasmFunctionIndex& other)
+  explicit TaggedColumnNumberOneOrigin(const WasmFunctionIndex& other)
       : value_(other.value() | WasmFunctionTag) {
     MOZ_ASSERT(isWasmFunctionIndex());
   }
 
-  static TaggedColumnNumberWithOrigin<LimitedColumnNumberT> fromRaw(
-      uint32_t value) {
-    return TaggedColumnNumberWithOrigin<LimitedColumnNumberT>(value);
+  static TaggedColumnNumberOneOrigin fromRaw(uint32_t value) {
+    return TaggedColumnNumberOneOrigin(value);
   }
 
-  bool operator==(
-      const TaggedColumnNumberWithOrigin<LimitedColumnNumberT>& rhs) const {
+  static TaggedColumnNumberOneOrigin forDifferentialTesting() {
+    return TaggedColumnNumberOneOrigin(LimitedColumnNumberOneOrigin());
+  }
+
+  bool operator==(const TaggedColumnNumberOneOrigin& rhs) const {
     return value_ == rhs.value_;
   }
 
-  bool operator!=(
-      const TaggedColumnNumberWithOrigin<LimitedColumnNumberT>& rhs) const {
+  bool operator!=(const TaggedColumnNumberOneOrigin& rhs) const {
     return !(*this == rhs);
   }
 
@@ -506,9 +402,9 @@ struct TaggedColumnNumberWithOrigin {
 
   bool isWasmFunctionIndex() const { return !!(value_ & WasmFunctionTag); }
 
-  LimitedColumnNumberT toLimitedColumnNumber() const {
+  LimitedColumnNumberOneOrigin toLimitedColumnNumber() const {
     MOZ_ASSERT(isLimitedColumnNumber());
-    return LimitedColumnNumberT(value_);
+    return LimitedColumnNumberOneOrigin(value_);
   }
 
   WasmFunctionIndex toWasmFunctionIndex() const {
@@ -530,57 +426,6 @@ struct TaggedColumnNumberWithOrigin {
   uint32_t rawValue() const { return value_; }
 
   uint32_t* addressOfValueForTranscode() { return &value_; }
-};
-
-}  
-
-class TaggedColumnNumberZeroOrigin
-    : public detail::TaggedColumnNumberWithOrigin<
-          LimitedColumnNumberZeroOrigin> {
- private:
-  using Base =
-      detail::TaggedColumnNumberWithOrigin<LimitedColumnNumberZeroOrigin>;
-
- public:
-  using Base::Base;
-  using Base::WasmFunctionTag;
-
-  TaggedColumnNumberZeroOrigin() = default;
-  TaggedColumnNumberZeroOrigin(const TaggedColumnNumberZeroOrigin& other) =
-      default;
-  MOZ_IMPLICIT TaggedColumnNumberZeroOrigin(const Base& other) : Base(other) {}
-
-  explicit TaggedColumnNumberZeroOrigin(
-      const detail::TaggedColumnNumberWithOrigin<LimitedColumnNumberOneOrigin>&
-          other)
-      : Base(other.isWasmFunctionIndex() ? other.rawValue()
-                                         : other.zeroOriginValue()) {}
-};
-
-class TaggedColumnNumberOneOrigin : public detail::TaggedColumnNumberWithOrigin<
-                                        LimitedColumnNumberOneOrigin> {
- private:
-  using Base =
-      detail::TaggedColumnNumberWithOrigin<LimitedColumnNumberOneOrigin>;
-
- public:
-  using Base::Base;
-  using Base::WasmFunctionTag;
-
-  TaggedColumnNumberOneOrigin() = default;
-  TaggedColumnNumberOneOrigin(const TaggedColumnNumberOneOrigin& other) =
-      default;
-  MOZ_IMPLICIT TaggedColumnNumberOneOrigin(const Base& other) : Base(other) {}
-
-  explicit TaggedColumnNumberOneOrigin(
-      const detail::TaggedColumnNumberWithOrigin<LimitedColumnNumberZeroOrigin>&
-          other)
-      : Base(other.isWasmFunctionIndex() ? other.rawValue()
-                                         : other.oneOriginValue()) {}
-
-  static TaggedColumnNumberOneOrigin forDifferentialTesting() {
-    return TaggedColumnNumberOneOrigin(LimitedColumnNumberOneOrigin());
-  }
 };
 
 }  
