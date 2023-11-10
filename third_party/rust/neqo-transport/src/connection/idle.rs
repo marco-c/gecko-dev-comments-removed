@@ -5,11 +5,8 @@
 
 
 use crate::recovery::RecoveryToken;
-use neqo_common::qtrace;
-use std::{
-    cmp::{max, min},
-    time::{Duration, Instant},
-};
+use std::cmp::{max, min};
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone)]
 
@@ -56,10 +53,6 @@ impl IdleTimeout {
         } else {
             max(self.timeout, pto * 3)
         };
-        qtrace!(
-            "IdleTimeout::expiry@{now:?} pto={pto:?}, ka={keep_alive} => {t:?}",
-            t = start + delay
-        );
         start + delay
     }
 

@@ -117,11 +117,6 @@ fn ack_rate_client_one_rtt() {
 
     
     
-    
-    let d = send_something(&mut client, now);
-    now += RTT / 2;
-    let ack = server.process(Some(d), now).dgram();
-    assert!(ack.is_some());
     let d = send_something(&mut client, now);
     now += RTT / 2;
     let delay = server.process(Some(d), now).callback();
@@ -138,13 +133,6 @@ fn ack_rate_server_half_rtt() {
     let mut server = new_server(ConnectionParameters::default().ack_ratio(ACK_RATIO_SCALE * 2));
     let mut now = connect_rtt_idle(&mut client, &mut server, RTT);
 
-    
-    let d = send_something(&mut server, now);
-    now += RTT / 2;
-    
-    
-    let ack = client.process(Some(d), now);
-    assert!(ack.as_dgram_ref().is_some());
     let d = send_something(&mut server, now);
     now += RTT / 2;
     let delay = client.process(Some(d), now).callback();
