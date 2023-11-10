@@ -11,8 +11,7 @@ var non_enumerable = { 'Array': [ 'length' ],
 
 
 
-var non_configurable = { 'String': [ 0 ],
-                         '(typed array)': [ 0 ] };
+var non_configurable = { 'String': [ 0 ] };
 
 
 
