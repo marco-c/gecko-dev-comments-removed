@@ -4863,8 +4863,7 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
       return true;
     }
 
-    MOZ_ASSERT_IF(aStatus == Killing,
-                  mStatus == Canceling && mParentStatus == Canceling);
+    MOZ_ASSERT_IF(aStatus == Killing, mStatus == Canceling);
 
     if (aStatus >= Canceling) {
       MutexAutoUnlock unlock(mMutex);
@@ -4883,12 +4882,6 @@ bool WorkerPrivate::NotifyInternal(WorkerStatus aStatus) {
     
     if (aStatus == Closing) {
       Close();
-    }
-
-    
-    
-    if (aStatus == Killing) {
-      mParentStatus = Killing;
     }
   }
 
