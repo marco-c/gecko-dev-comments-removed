@@ -5,6 +5,7 @@
 #include "MFCDMParent.h"
 
 #include <mfmediaengine.h>
+#include <wtypes.h>
 #define INITGUID
 #include <propkeydef.h>   
 #include <propvarutil.h>  
@@ -45,6 +46,15 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
     if (MOZ_UNLIKELY(FAILED(rv))) {                     \
       MFCDM_PARENT_SLOG("(" #x ") failed, rv=%lx", rv); \
       return rv;                                        \
+    }                                                   \
+  } while (false)
+
+#define MFCDM_RETURN_BOOL_IF_FAILED(x)                  \
+  do {                                                  \
+    HRESULT rv = x;                                     \
+    if (MOZ_UNLIKELY(FAILED(rv))) {                     \
+      MFCDM_PARENT_SLOG("(" #x ") failed, rv=%lx", rv); \
+      return false;                                     \
     }                                                   \
   } while (false)
 
@@ -477,6 +487,7 @@ static nsString GetRobustnessStringForKeySystem(const nsString& aKeySystem,
 
 
 
+
 static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
                             const nsString& aKeySystem,
                             const nsCString& aVideoCodec,
@@ -500,13 +511,44 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
   if (!aAdditionalFeatures.IsEmpty()) {
     contentType.Append(aAdditionalFeatures);
   }
-  if (aIsHWSecure) {
-    contentType.AppendLiteral(u"encryption-robustness=HW_SECURE_ALL");
-  } else {
-    contentType.AppendLiteral(u"encryption-robustness=SW_SECURE_DECODE");
-  }
   
+  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem) ||
+      IsWidevineKeySystem(aKeySystem)) {
+    if (aIsHWSecure) {
+      contentType.AppendLiteral(u"encryption-robustness=HW_SECURE_ALL");
+    } else {
+      contentType.AppendLiteral(u"encryption-robustness=SW_SECURE_DECODE");
+    }
+  }
   contentType.AppendLiteral(u"\"");
+  
+
+  
+  
+  if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
+    ComPtr<IMFMediaEngineClassFactory> spFactory;
+    ComPtr<IMFExtendedDRMTypeSupport> spDrmTypeSupport;
+    MFCDM_RETURN_BOOL_IF_FAILED(
+        CoCreateInstance(CLSID_MFMediaEngineClassFactory, NULL,
+                         CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&spFactory)));
+    MFCDM_RETURN_BOOL_IF_FAILED(spFactory.As(&spDrmTypeSupport));
+    BSTR keySystem = aIsHWSecure
+                         ? CreateBSTRFromConstChar(kPlayReadyKeySystemHardware)
+                         : CreateBSTRFromConstChar(kPlayReadyKeySystemName);
+    MF_MEDIA_ENGINE_CANPLAY canPlay;
+    spDrmTypeSupport->IsTypeSupportedEx(SysAllocString(contentType.get()),
+                                        keySystem, &canPlay);
+    const bool support =
+        canPlay !=
+        MF_MEDIA_ENGINE_CANPLAY::MF_MEDIA_ENGINE_CANPLAY_NOT_SUPPORTED;
+    MFCDM_PARENT_SLOG("IsTypeSupportedEx=%d (key-system=%ls, content-type=%s)",
+                      support, keySystem,
+                      NS_ConvertUTF16toUTF8(contentType).get());
+    return support;
+  }
+
+  
+  
   bool support = aFactory->IsTypeSupported(
       GetOriginalKeySystem(aKeySystem).get(), contentType.get());
   MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)",
@@ -901,6 +943,7 @@ already_AddRefed<MFCDMProxy> MFCDMParent::GetMFCDMProxy() {
 #undef MFCDM_REJECT_IF_FAILED
 #undef MFCDM_REJECT_IF
 #undef MFCDM_RETURN_IF_FAILED
+#undef MFCDM_RETURN_BOOL_IF_FAILED
 #undef MFCDM_PARENT_SLOG
 #undef MFCDM_PARENT_LOG
 
