@@ -583,6 +583,8 @@ class MOZ_STACK_CLASS nsFrameConstructorSaveState {
   AbsoluteFrameList* mList = nullptr;
 
   
+  AbsoluteFrameList* mSavedFixedList = nullptr;
+
   
   
   AbsoluteFrameList mSavedList;
@@ -590,10 +592,6 @@ class MOZ_STACK_CLASS nsFrameConstructorSaveState {
   
   mozilla::FrameChildListID mChildListID = FrameChildListID::Principal;
   nsFrameConstructorState* mState = nullptr;
-
-  
-  
-  bool mSavedFixedPosIsAbsPos = false;
 
   friend class nsFrameConstructorState;
 };
@@ -607,35 +605,54 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
   nsCSSFrameConstructor* mFrameConstructor;
 
   
-  AbsoluteFrameList mFixedList;
-  AbsoluteFrameList mAbsoluteList;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   AbsoluteFrameList mFloatedList;
-  
-  
-  
-  
-  
-  AbsoluteFrameList mTopLayerFixedList;
+  AbsoluteFrameList mAbsoluteList;
   AbsoluteFrameList mTopLayerAbsoluteList;
+  AbsoluteFrameList mAncestorFixedList;
+  AbsoluteFrameList mRealFixedList;
+
+  
+  AbsoluteFrameList* mFixedList;
 
   
   
-  const nsAtom* mAutoPageNameValue;
+  const nsAtom* mAutoPageNameValue = nullptr;
 
   nsCOMPtr<nsILayoutHistoryState> mFrameState;
   
   
-  nsFrameState mAdditionalStateBits;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool mFixedPosIsAbsPos;
+  nsFrameState mAdditionalStateBits{0};
 
   
   
@@ -753,12 +770,8 @@ class MOZ_STACK_CLASS nsFrameConstructorState {
 
 
 
-  AbsoluteFrameList& GetFixedList() {
-    return mFixedPosIsAbsPos ? mAbsoluteList : mFixedList;
-  }
-  const AbsoluteFrameList& GetFixedList() const {
-    return mFixedPosIsAbsPos ? mAbsoluteList : mFixedList;
-  }
+  AbsoluteFrameList& GetFixedList() { return *mFixedList; }
+  const AbsoluteFrameList& GetFixedList() const { return *mFixedList; }
 
  protected:
   friend class nsFrameConstructorSaveState;
@@ -794,24 +807,26 @@ nsFrameConstructorState::nsFrameConstructorState(
     : mPresContext(aPresShell->GetPresContext()),
       mPresShell(aPresShell),
       mFrameConstructor(aPresShell->FrameConstructor()),
-      mFixedList(aFixedContainingBlock),
-      mAbsoluteList(aAbsoluteContainingBlock),
       mFloatedList(aFloatContainingBlock),
-      mTopLayerFixedList(
-          static_cast<nsContainerFrame*>(mFrameConstructor->GetRootFrame())),
+      mAbsoluteList(aAbsoluteContainingBlock),
       mTopLayerAbsoluteList(mFrameConstructor->GetCanvasFrame()),
-      
-      mAutoPageNameValue(nullptr),
+      mAncestorFixedList(aFixedContainingBlock),
+      mRealFixedList(
+          static_cast<nsContainerFrame*>(mFrameConstructor->GetRootFrame())),
       
       mFrameState(aHistoryState),
-      mAdditionalStateBits(nsFrameState(0)),
-      
-      
-      
-      mFixedPosIsAbsPos(aFixedContainingBlock == aAbsoluteContainingBlock),
       mCreatingExtraFrames(false),
       mHasRenderedLegend(false) {
   MOZ_COUNT_CTOR(nsFrameConstructorState);
+  mFixedList = [&] {
+    if (aFixedContainingBlock == aAbsoluteContainingBlock) {
+      return &mAbsoluteList;
+    }
+    if (aAbsoluteContainingBlock == mRealFixedList.mContainingBlock) {
+      return &mRealFixedList;
+    }
+    return &mAncestorFixedList;
+  }();
 }
 
 nsFrameConstructorState::nsFrameConstructorState(
@@ -832,11 +847,11 @@ nsFrameConstructorState::~nsFrameConstructorState() {
 }
 
 void nsFrameConstructorState::ProcessFrameInsertionsForAllLists() {
-  ProcessFrameInsertions(mTopLayerFixedList, FrameChildListID::Fixed);
-  ProcessFrameInsertions(mTopLayerAbsoluteList, FrameChildListID::Absolute);
   ProcessFrameInsertions(mFloatedList, FrameChildListID::Float);
   ProcessFrameInsertions(mAbsoluteList, FrameChildListID::Absolute);
-  ProcessFrameInsertions(mFixedList, FrameChildListID::Fixed);
+  ProcessFrameInsertions(mTopLayerAbsoluteList, FrameChildListID::Absolute);
+  ProcessFrameInsertions(*mFixedList, FrameChildListID::Fixed);
+  ProcessFrameInsertions(mRealFixedList, FrameChildListID::Fixed);
 }
 
 void nsFrameConstructorState::PushAbsoluteContainingBlock(
@@ -847,26 +862,29 @@ void nsFrameConstructorState::PushAbsoluteContainingBlock(
   aSaveState.mList = &mAbsoluteList;
   aSaveState.mChildListID = FrameChildListID::Absolute;
   aSaveState.mState = this;
-  aSaveState.mSavedFixedPosIsAbsPos = mFixedPosIsAbsPos;
-
-  if (mFixedPosIsAbsPos) {
-    
-    
-    aSaveState.mSavedList = std::move(mFixedList);
-    mFixedList = std::move(mAbsoluteList);
-  } else {
-    
-    aSaveState.mSavedList = std::move(mAbsoluteList);
-  }
-
+  aSaveState.mSavedList = std::move(mAbsoluteList);
+  aSaveState.mSavedFixedList = mFixedList;
   mAbsoluteList = AbsoluteFrameList(aNewAbsoluteContainingBlock);
-
-  
-
-
-
-  mFixedPosIsAbsPos =
-      !aPositionedFrame || aPositionedFrame->IsFixedPosContainingBlock();
+  mFixedList = [&] {
+    if (!aPositionedFrame || aPositionedFrame->IsFixedPosContainingBlock()) {
+      
+      
+      
+      return &mAbsoluteList;
+    }
+    if (aPositionedFrame->StyleDisplay()->mTopLayer == StyleTopLayer::Top) {
+      
+      
+      return &mRealFixedList;
+    }
+    if (mFixedList == &mAbsoluteList) {
+      
+      return &aSaveState.mSavedList;
+    }
+    
+    
+    return mFixedList;
+  }();
 
   if (aNewAbsoluteContainingBlock) {
     aNewAbsoluteContainingBlock->MarkAsAbsoluteContainingBlock();
@@ -947,8 +965,8 @@ nsContainerFrame* nsFrameConstructorState::GetGeometricParent(
     MOZ_ASSERT(aStyleDisplay.IsAbsolutelyPositionedStyle(),
                "Top layer items should always be absolutely positioned");
     if (aStyleDisplay.mPosition == StylePositionProperty::Fixed) {
-      MOZ_ASSERT(mTopLayerFixedList.mContainingBlock, "No root frame?");
-      return mTopLayerFixedList.mContainingBlock;
+      MOZ_ASSERT(mRealFixedList.mContainingBlock, "No root frame?");
+      return mRealFixedList.mContainingBlock;
     }
     MOZ_ASSERT(aStyleDisplay.mPosition == StylePositionProperty::Absolute);
     MOZ_ASSERT(mTopLayerAbsoluteList.mContainingBlock);
@@ -961,8 +979,8 @@ nsContainerFrame* nsFrameConstructorState::GetGeometricParent(
   }
 
   if (aStyleDisplay.mPosition == StylePositionProperty::Fixed &&
-      GetFixedList().mContainingBlock) {
-    return GetFixedList().mContainingBlock;
+      mFixedList->mContainingBlock) {
+    return mFixedList->mContainingBlock;
   }
 
   return aContentParentFrame;
@@ -1047,7 +1065,7 @@ AbsoluteFrameList* nsFrameConstructorState::GetOutOfFlowFrameList(
       *aPlaceholderType = PLACEHOLDER_FOR_TOPLAYER;
       if (disp->mPosition == StylePositionProperty::Fixed) {
         *aPlaceholderType |= PLACEHOLDER_FOR_FIXEDPOS;
-        return &mTopLayerFixedList;
+        return &mRealFixedList;
       }
       *aPlaceholderType |= PLACEHOLDER_FOR_ABSPOS;
       return &mTopLayerAbsoluteList;
@@ -1058,7 +1076,7 @@ AbsoluteFrameList* nsFrameConstructorState::GetOutOfFlowFrameList(
     }
     if (disp->mPosition == StylePositionProperty::Fixed) {
       *aPlaceholderType = PLACEHOLDER_FOR_FIXEDPOS;
-      return &GetFixedList();
+      return mFixedList;
     }
   }
   return nullptr;
@@ -1157,15 +1175,23 @@ void nsFrameConstructorState::AddChild(
 
 MOZ_NEVER_INLINE void nsFrameConstructorState::ProcessFrameInsertions(
     AbsoluteFrameList& aFrameList, FrameChildListID aChildListID) {
-#define NS_NONXUL_LIST_TEST                                                    \
-  (&aFrameList == &mFloatedList && aChildListID == FrameChildListID::Float) || \
-      ((&aFrameList == &mAbsoluteList ||                                       \
-        &aFrameList == &mTopLayerAbsoluteList) &&                              \
-       aChildListID == FrameChildListID::Absolute) ||                          \
-      ((&aFrameList == &mFixedList || &aFrameList == &mTopLayerFixedList) &&   \
-       aChildListID == FrameChildListID::Fixed)
-  MOZ_ASSERT(NS_NONXUL_LIST_TEST,
-             "Unexpected aFrameList/aChildListID combination");
+  MOZ_ASSERT(&aFrameList == &mFloatedList || &aFrameList == &mAbsoluteList ||
+             &aFrameList == &mTopLayerAbsoluteList ||
+             &aFrameList == &mAncestorFixedList || &aFrameList == mFixedList ||
+             &aFrameList == &mRealFixedList);
+  MOZ_ASSERT_IF(&aFrameList == &mFloatedList,
+                aChildListID == FrameChildListID::Float);
+  MOZ_ASSERT_IF(&aFrameList == &mAbsoluteList || &aFrameList == mFixedList,
+                aChildListID == FrameChildListID::Absolute ||
+                    aChildListID == FrameChildListID::Fixed);
+  MOZ_ASSERT_IF(&aFrameList == &mTopLayerAbsoluteList,
+                aChildListID == FrameChildListID::Absolute);
+  MOZ_ASSERT_IF(&aFrameList == mFixedList && &aFrameList != &mAbsoluteList,
+                aChildListID == FrameChildListID::Fixed);
+  MOZ_ASSERT_IF(&aFrameList == &mAncestorFixedList,
+                aChildListID == FrameChildListID::Fixed);
+  MOZ_ASSERT_IF(&aFrameList == &mRealFixedList,
+                aChildListID == FrameChildListID::Fixed);
 
   if (aFrameList.IsEmpty()) {
     return;
@@ -1290,15 +1316,8 @@ nsFrameConstructorSaveState::~nsFrameConstructorSaveState() {
     mState->ProcessFrameInsertions(*mList, mChildListID);
 
     if (mList == &mState->mAbsoluteList) {
-      mState->mFixedPosIsAbsPos = mSavedFixedPosIsAbsPos;
-      
-      
-      if (mSavedFixedPosIsAbsPos) {
-        mState->mAbsoluteList = std::move(mState->mFixedList);
-        mState->mFixedList = std::move(mSavedList);
-      } else {
-        mState->mAbsoluteList = std::move(mSavedList);
-      }
+      mState->mAbsoluteList = std::move(mSavedList);
+      mState->mFixedList = mSavedFixedList;
     } else {
       mState->mFloatedList = std::move(mSavedList);
     }
@@ -5578,8 +5597,10 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     
     
     
-    if (!frame->IsAbsPosContainingBlock() ||
-        (aType == FIXED_POS && !frame->IsFixedPosContainingBlock())) {
+    if (!frame->IsAbsPosContainingBlock()) {
+      continue;
+    }
+    if (aType == FIXED_POS && !frame->IsFixedPosContainingBlock()) {
       continue;
     }
     nsIFrame* absPosCBCandidate = frame;
