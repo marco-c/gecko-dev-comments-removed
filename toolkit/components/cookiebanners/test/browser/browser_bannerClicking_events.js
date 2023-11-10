@@ -41,9 +41,6 @@ async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
     });
   };
 
-  
-  Services.cookieBanners.removeAllExecutedRecords(false);
-
   await runEventTest({ mode, detectOnly, initFn, triggerFn, testURL });
 
   

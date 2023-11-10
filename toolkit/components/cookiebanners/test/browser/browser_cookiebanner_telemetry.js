@@ -201,9 +201,6 @@ add_task(async function test_rule_lookup_telemetry_no_rule() {
     let isTop = context === "top";
 
     
-    Services.cookieBanners.removeAllExecutedRecords(false);
-
-    
     
     info("Open a test domain.");
     await openLookUpTelemetryTestPage(
@@ -229,8 +226,6 @@ add_task(async function test_rule_lookup_telemetry_no_rule() {
     ];
     verifyLookUpTelemetry("ruleLookupByLoad", expectedTelemetryOnce);
     verifyLookUpTelemetry("ruleLookupByDomain", expectedTelemetryOnce);
-
-    Services.cookieBanners.removeAllExecutedRecords(false);
 
     info("Open the same domain again.");
     
@@ -275,9 +270,6 @@ add_task(async function test_rule_lookup_telemetry() {
     ],
   });
   insertTestClickRules();
-
-  
-  Services.cookieBanners.removeAllExecutedRecords(false);
 
   
   let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser);
@@ -349,9 +341,6 @@ add_task(async function test_rule_lookup_telemetry() {
     }
 
     for (let context of ["top", "iframe"]) {
-      
-      Services.cookieBanners.removeAllExecutedRecords(false);
-
       info(`Test in a ${context} context.`);
       let isTop = context === "top";
 
@@ -392,8 +381,6 @@ add_task(async function test_rule_lookup_telemetry() {
       verifyLookUpTelemetry("ruleLookupByLoad", expectedTelemetry);
       verifyLookUpTelemetry("ruleLookupByDomain", expectedTelemetry);
 
-      Services.cookieBanners.removeAllExecutedRecords(false);
-
       info("Load a domain with only opt-in clicking rules");
       await openLookUpTelemetryTestPage(
         tab.linkedBrowser,
@@ -431,8 +418,6 @@ add_task(async function test_rule_lookup_telemetry() {
 
       verifyLookUpTelemetry("ruleLookupByLoad", expectedTelemetry);
       verifyLookUpTelemetry("ruleLookupByDomain", expectedTelemetry);
-
-      Services.cookieBanners.removeAllExecutedRecords(false);
 
       info(
         "Load a domain again to verify that we don't collect domain telemetry for this time."

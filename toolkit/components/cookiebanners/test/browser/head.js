@@ -50,10 +50,6 @@ async function testSetup() {
       
       Services.cookieBanners.resetRules(true);
     }
-
-    
-    Services.cookieBanners.removeAllExecutedRecords(false);
-    Services.cookieBanners.removeAllExecutedRecords(true);
   });
 }
 
