@@ -6231,9 +6231,10 @@ static already_AddRefed<ImageData> CreateImageData(
   }
 
   
-  JSObject* darray =
-      Uint8ClampedArray::Create(aCx, aContext, len.value(), aError);
-  if (aError.Failed()) {
+  JSObject* darray = Uint8ClampedArray::Create(aCx, aContext, len.value());
+  if (!darray) {
+    
+    aError.Throw(NS_ERROR_OUT_OF_MEMORY);
     return nullptr;
   }
 

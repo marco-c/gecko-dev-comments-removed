@@ -201,11 +201,9 @@ void StreamFilter::FireDataEvent(const nsTArray<uint8_t>& aData) {
   init.mBubbles = false;
   init.mCancelable = false;
 
-  ErrorResult error;
-  auto buffer = ArrayBuffer::Create(cx, aData, error);
-  if (error.Failed()) {
+  auto buffer = ArrayBuffer::Create(cx, aData.Length(), aData.Elements());
+  if (!buffer) {
     
-    error.SuppressException();
     FireErrorEvent(u"Out of memory"_ns);
     return;
   }
