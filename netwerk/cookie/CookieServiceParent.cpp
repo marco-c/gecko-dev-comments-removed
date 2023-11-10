@@ -90,9 +90,10 @@ void CookieServiceParent::AddCookie(const Cookie& cookie) {
 
 bool CookieServiceParent::ContentProcessHasCookie(const Cookie& cookie) {
   nsCString baseDomain;
-  
-  MOZ_ALWAYS_SUCCEEDS(CookieCommons::GetBaseDomainFromHost(
-      mTLDService, cookie.Host(), baseDomain));
+  if (NS_WARN_IF(NS_FAILED(CookieCommons::GetBaseDomainFromHost(
+          mTLDService, cookie.Host(), baseDomain)))) {
+    return false;
+  }
 
   CookieKey cookieKey(baseDomain, cookie.OriginAttributesRef());
   return mCookieKeysInContent.MaybeGet(cookieKey).isSome();
