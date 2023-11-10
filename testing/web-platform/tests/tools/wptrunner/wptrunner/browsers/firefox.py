@@ -567,6 +567,7 @@ class FirefoxOutputHandler(OutputHandler):
         if self.lsan_handler:
             self.lsan_handler.process()
         if self.leak_report_file is not None:
+            processed_files = None
             if not clean_shutdown:
                 
                 self.logger.warning("Firefox didn't exit cleanly, not processing leak logs")
@@ -575,7 +576,7 @@ class FirefoxOutputHandler(OutputHandler):
                 
                 
                 self.logger.info("PROCESS LEAKS %s" % self.leak_report_file)
-                mozleak.process_leak_log(
+                processed_files = mozleak.process_leak_log(
                     self.leak_report_file,
                     leak_thresholds=self.mozleak_thresholds,
                     ignore_missing_leaks=["tab", "gmplugin"],
@@ -583,6 +584,11 @@ class FirefoxOutputHandler(OutputHandler):
                     stack_fixer=self.stack_fixer,
                     scope=self.group_metadata.get("scope"),
                     allowed=self.mozleak_allowed)
+            if processed_files:
+                for path in processed_files:
+                    if os.path.exists(path):
+                        os.unlink(path)
+            
             if os.path.exists(self.leak_report_file):
                 os.unlink(self.leak_report_file)
 
