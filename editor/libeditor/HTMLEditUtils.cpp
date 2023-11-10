@@ -1667,6 +1667,10 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
                "HTMLEditUtils::GetPreviousEditablePoint() may return a point "
                "between table structure elements");
 
+  if (&aContent == aAncestorLimiter) {
+    return EditorDOMPointType();
+  }
+
   
   nsIContent* previousContent = aContent.GetPreviousSibling();
   if (!previousContent) {
@@ -1675,12 +1679,10 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
     }
     nsIContent* inclusiveAncestor = &aContent;
     for (Element* parentElement : aContent.AncestorsOfType<Element>()) {
-      previousContent = parentElement->GetPreviousSibling();
-      if (!previousContent &&
-          (parentElement == aAncestorLimiter ||
-           !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
-           !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
-                                                   aHowToTreatTableBoundary))) {
+      if (parentElement == aAncestorLimiter ||
+          !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
+          !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
+                                                  aHowToTreatTableBoundary)) {
         
         
         return EditorDOMPointType(inclusiveAncestor);
@@ -1693,6 +1695,7 @@ EditorDOMPointType HTMLEditUtils::GetPreviousEditablePoint(
         inclusiveAncestor = parentElement;
       }
 
+      previousContent = parentElement->GetPreviousSibling();
       if (!previousContent) {
         continue;  
       }
@@ -1777,6 +1780,10 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
                "HTMLEditUtils::GetPreviousEditablePoint() may return a point "
                "between table structure elements");
 
+  if (&aContent == aAncestorLimiter) {
+    return EditorDOMPointType();
+  }
+
   
   nsIContent* nextContent = aContent.GetNextSibling();
   if (!nextContent) {
@@ -1785,19 +1792,10 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
     }
     nsIContent* inclusiveAncestor = &aContent;
     for (Element* parentElement : aContent.AncestorsOfType<Element>()) {
-      
-      
-      if (!HTMLEditUtils::IsAnyTableElement(parentElement) ||
-          HTMLEditUtils::IsTableCellOrCaption(*parentElement)) {
-        inclusiveAncestor = parentElement;
-      }
-
-      nextContent = parentElement->GetNextSibling();
-      if (!nextContent &&
-          (parentElement == aAncestorLimiter ||
-           !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
-           !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
-                                                   aHowToTreatTableBoundary))) {
+      if (parentElement == aAncestorLimiter ||
+          !HTMLEditUtils::IsSimplyEditableNode(*parentElement) ||
+          !HTMLEditUtils::CanCrossContentBoundary(*parentElement,
+                                                  aHowToTreatTableBoundary)) {
         
         
         return EditorDOMPointType(inclusiveAncestor);
@@ -1810,6 +1808,7 @@ EditorDOMPointType HTMLEditUtils::GetNextEditablePoint(
         inclusiveAncestor = parentElement;
       }
 
+      nextContent = parentElement->GetNextSibling();
       if (!nextContent) {
         continue;  
       }
