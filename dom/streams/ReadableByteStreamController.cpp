@@ -66,8 +66,6 @@ struct ReadableByteStreamQueueEntry
   size_t ByteLength() const { return mByteLength; }
   void SetByteLength(size_t aByteLength) { mByteLength = aByteLength; }
 
-  void ClearBuffer() { mBuffer = nullptr; }
-
  private:
   
   
@@ -162,8 +160,6 @@ struct PullIntoDescriptor final
     mReaderType = aReaderType;
   }
 
-  void ClearBuffer() { mBuffer = nullptr; }
-
  private:
   JS::Heap<JSObject*> mBuffer;
   uint64_t mBufferByteLength = 0;
@@ -207,28 +203,11 @@ ReadableByteStreamController::ReadableByteStreamController(
     nsIGlobalObject* aGlobal)
     : ReadableStreamController(aGlobal) {}
 
-ReadableByteStreamController::~ReadableByteStreamController() {
-  ClearPendingPullIntos();
-  ClearQueue();
-}
+ReadableByteStreamController::~ReadableByteStreamController() = default;
 
-void ReadableByteStreamController::ClearQueue() {
-  
-  
-  
-  for (auto* queueEntry : mQueue) {
-    queueEntry->ClearBuffer();
-  }
-  mQueue.clear();
-}
+void ReadableByteStreamController::ClearQueue() { mQueue.clear(); }
 
 void ReadableByteStreamController::ClearPendingPullIntos() {
-  
-  
-  
-  for (auto* pullInto : mPendingPullIntos) {
-    pullInto->ClearBuffer();
-  }
   mPendingPullIntos.clear();
 }
 
