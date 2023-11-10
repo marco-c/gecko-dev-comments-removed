@@ -196,6 +196,10 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
 
   
   
+  virtual void DoNotResetIPFamilyPreference() {}
+
+  
+  
   
   [[nodiscard]] virtual bool Do0RTT() { return false; }
   
