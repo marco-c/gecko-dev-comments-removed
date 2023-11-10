@@ -2024,8 +2024,12 @@ void ContentParent::MarkAsDead() {
   PreallocatedProcessManager::Erase(this);
   StopRecyclingE10SOnly(false);
 
-#ifdef MOZ_WIDGET_ANDROID
+#if defined(MOZ_WIDGET_ANDROID) && !defined(MOZ_PROFILE_GENERATE)
   if (IsAlive()) {
+    
+    
+    
+    
     
     
     
