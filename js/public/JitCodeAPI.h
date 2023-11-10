@@ -41,7 +41,7 @@ struct JitCodeSourceInfo {
   
   uint32_t lineno = 0;
   
-  JS::LimitedColumnNumberZeroOrigin colno;
+  JS::LimitedColumnNumberOneOrigin colno;
 };
 
 struct JitCodeIRInfo {
