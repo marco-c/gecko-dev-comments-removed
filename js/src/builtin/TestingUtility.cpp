@@ -10,8 +10,8 @@
 
 #include "jsapi.h"                 
 #include "js/CharacterEncoding.h"  
-#include "js/ColumnNumber.h"  
-#include "js/CompileOptions.h"  
+#include "js/ColumnNumber.h"       
+#include "js/CompileOptions.h"     
 #include "js/Conversions.h"  
 #include "js/PropertyAndElement.h"  
 #include "js/PropertyDescriptor.h"  
@@ -86,7 +86,7 @@ bool js::ParseCompileOptions(JSContext* cx, JS::CompileOptions& options,
     if (!JS::ToInt32(cx, v, &c)) {
       return false;
     }
-    options.setColumn(JS::ColumnNumberOneOrigin(JS::ColumnNumberZeroOrigin(c)));
+    options.setColumn(JS::ColumnNumberOneOrigin::fromZeroOrigin(c));
   }
 
   if (!JS_GetProperty(cx, opts, "sourceIsLazy", &v)) {

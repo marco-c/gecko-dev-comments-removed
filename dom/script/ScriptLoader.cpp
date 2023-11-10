@@ -2331,8 +2331,8 @@ nsresult ScriptLoader::FillCompileOptionsForRequest(
   if (aRequest->GetScriptLoadContext()->mIsInline &&
       aRequest->GetScriptLoadContext()->GetParserCreated() ==
           FROM_PARSER_NETWORK) {
-    aOptions->setColumn(JS::ColumnNumberOneOrigin(JS::ColumnNumberZeroOrigin(
-        aRequest->GetScriptLoadContext()->mColumnNo)));
+    aOptions->setColumn(JS::ColumnNumberOneOrigin::fromZeroOrigin(
+        aRequest->GetScriptLoadContext()->mColumnNo));
   }
   aOptions->setIsRunOnce(true);
   aOptions->setNoScriptRval(true);

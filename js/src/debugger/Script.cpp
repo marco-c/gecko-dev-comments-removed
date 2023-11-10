@@ -731,8 +731,7 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
     if (!parseIntValueImpl(value, &tmp)) {
       return false;
     }
-    *result = JS::LimitedColumnNumberOneOrigin(
-        JS::LimitedColumnNumberZeroOrigin(tmp));
+    *result = JS::LimitedColumnNumberOneOrigin::fromZeroOrigin(tmp);
     return true;
   }
   bool parseSizeTValue(HandleValue value, size_t* result) {
@@ -952,8 +951,7 @@ class DebuggerScript::GetPossibleBreakpointsMatcher {
       
       
       JS::LimitedColumnNumberOneOrigin column =
-          JS::LimitedColumnNumberOneOrigin(
-              JS::LimitedColumnNumberZeroOrigin(offsets[i].column));
+          JS::LimitedColumnNumberOneOrigin::fromZeroOrigin(offsets[i].column);
       size_t offset = offsets[i].offset;
       if (!maybeAppendEntry(offset, lineno, column, true)) {
         return false;
@@ -1910,8 +1908,7 @@ class DebuggerScript::GetAllColumnOffsetsMatcher {
       uint32_t lineno = offsets[i].lineno;
       
       JS::LimitedColumnNumberOneOrigin column =
-          JS::LimitedColumnNumberOneOrigin(
-              JS::LimitedColumnNumberZeroOrigin(offsets[i].column));
+          JS::LimitedColumnNumberOneOrigin::fromZeroOrigin(offsets[i].column);
       size_t offset = offsets[i].offset;
       if (!appendColumnOffsetEntry(lineno, column, offset)) {
         return false;

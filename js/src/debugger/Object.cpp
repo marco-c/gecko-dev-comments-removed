@@ -1268,7 +1268,7 @@ bool DebuggerObject::CallData::createSource() {
   JS::CompileOptions compileOptions(cx);
   compileOptions.lineno = startLine;
   compileOptions.column =
-      JS::ColumnNumberOneOrigin(JS::ColumnNumberZeroOrigin(startColumn));
+      JS::ColumnNumberOneOrigin::fromZeroOrigin(startColumn);
 
   if (!JS::StringHasLatin1Chars(url)) {
     JS_ReportErrorASCII(cx, "URL must be a narrow string");
