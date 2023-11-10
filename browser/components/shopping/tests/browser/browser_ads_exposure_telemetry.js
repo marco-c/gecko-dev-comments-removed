@@ -21,6 +21,9 @@ const ADS_JSON = `[{
 
 
 add_task(async function test_ads_exposure_disabled_not_recorded() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.shopping.experience2023.ads.enabled", false],
@@ -78,6 +81,9 @@ add_task(async function test_ads_exposure_disabled_not_recorded() {
 
 
 add_task(async function test_ads_exposure_enabled_no_ad_not_recorded() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.shopping.experience2023.ads.enabled", true],
@@ -135,6 +141,9 @@ add_task(async function test_ads_exposure_enabled_no_ad_not_recorded() {
 
 
 add_task(async function test_ads_exposure_enabled_with_ad_recorded() {
+  await Services.fog.testFlushAllChildren();
+  Services.fog.testResetFOG();
+
   await SpecialPowers.pushPrefEnv({
     set: [
       ["browser.shopping.experience2023.ads.enabled", false],
