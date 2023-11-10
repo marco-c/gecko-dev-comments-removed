@@ -1043,6 +1043,11 @@ class Window extends WindowBase {
         if (window.windowState !== window.STATE_NORMAL) {
           window.restore();
         }
+        if (window.windowState !== window.STATE_NORMAL) {
+          
+          
+          window.sizeToContent();
+        }
         break;
 
       case window.STATE_FULLSCREEN:
