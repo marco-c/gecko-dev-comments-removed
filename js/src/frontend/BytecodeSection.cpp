@@ -161,7 +161,7 @@ void CGScopeNoteList::recordEndImpl(uint32_t index, uint32_t offset) {
 }
 
 BytecodeSection::BytecodeSection(FrontendContext* fc, uint32_t lineNum,
-                                 JS::LimitedColumnNumberZeroOrigin column)
+                                 JS::LimitedColumnNumberOneOrigin column)
     : code_(fc),
       notes_(fc),
       lastNoteOffset_(0),

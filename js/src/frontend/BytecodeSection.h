@@ -180,7 +180,7 @@ typedef Vector<js::SrcNote, 64> SrcNotesVector;
 class BytecodeSection {
  public:
   BytecodeSection(FrontendContext* fc, uint32_t lineNum,
-                  JS::LimitedColumnNumberZeroOrigin column);
+                  JS::LimitedColumnNumberOneOrigin column);
 
   
 
@@ -241,15 +241,14 @@ class BytecodeSection {
   
 
   uint32_t currentLine() const { return currentLine_; }
-  JS::LimitedColumnNumberZeroOrigin lastColumn() const { return lastColumn_; }
+  JS::LimitedColumnNumberOneOrigin lastColumn() const { return lastColumn_; }
   void setCurrentLine(uint32_t line, uint32_t sourceOffset) {
     currentLine_ = line;
-    lastColumn_ = JS::LimitedColumnNumberZeroOrigin::zero();
+    lastColumn_ = JS::LimitedColumnNumberOneOrigin();
     lastSourceOffset_ = sourceOffset;
   }
 
-  void setLastColumn(JS::LimitedColumnNumberZeroOrigin column,
-                     uint32_t offset) {
+  void setLastColumn(JS::LimitedColumnNumberOneOrigin column, uint32_t offset) {
     lastColumn_ = column;
     lastSourceOffset_ = offset;
   }
@@ -348,7 +347,7 @@ class BytecodeSection {
   
   
   
-  JS::LimitedColumnNumberZeroOrigin lastColumn_;
+  JS::LimitedColumnNumberOneOrigin lastColumn_;
 
   
   uint32_t lastSourceOffset_ = 0;
@@ -358,7 +357,7 @@ class BytecodeSection {
   uint32_t lastSeparatorCodeOffset_ = 0;
   uint32_t lastSeparatorSourceOffset_ = 0;
   uint32_t lastSeparatorLine_ = 0;
-  JS::LimitedColumnNumberZeroOrigin lastSeparatorColumn_;
+  JS::LimitedColumnNumberOneOrigin lastSeparatorColumn_;
 
   
 
