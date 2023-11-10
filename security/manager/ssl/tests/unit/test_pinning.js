@@ -24,6 +24,13 @@
 
 "use strict";
 
+
+
+Services.prefs.setBoolPref(
+  "toolkit.telemetry.testing.overrideProductsCheck",
+  true
+);
+
 do_get_profile(); 
 const certdb = Cc["@mozilla.org/security/x509certdb;1"].getService(
   Ci.nsIX509CertDB
@@ -258,11 +265,6 @@ function test_enforce_test_mode() {
 }
 
 function check_pinning_telemetry() {
-  
-  if (AppConstants.platform == "android") {
-    run_next_test();
-    return;
-  }
   let prod_histogram = Services.telemetry
     .getHistogramById("CERT_PINNING_RESULTS")
     .snapshot();
