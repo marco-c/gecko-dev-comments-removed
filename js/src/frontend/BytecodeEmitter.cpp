@@ -610,9 +610,9 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
       errorReporter().columnAt(offset);
 
   
-  static_assert((0 - ptrdiff_t(JS::LimitedColumnNumberZeroOrigin::Limit)) >=
+  static_assert((0 - ptrdiff_t(JS::LimitedColumnNumberOneOrigin::Limit)) >=
                 SrcNote::ColSpan::MinColSpan);
-  static_assert((ptrdiff_t(JS::LimitedColumnNumberZeroOrigin::Limit) - 0) <=
+  static_assert((ptrdiff_t(JS::LimitedColumnNumberOneOrigin::Limit) - 0) <=
                 SrcNote::ColSpan::MaxColSpan);
 
   JS::ColumnNumberOffset colspan = columnIndex - bytecodeSection().lastColumn();
@@ -625,14 +625,12 @@ bool BytecodeEmitter::updateSourceCoordNotes(uint32_t offset) {
       const SrcNotesVector& notes = bytecodeSection().notes();
       SrcNoteType type = notes[lastLineOnlySrcNoteIndex].type();
       if (type == SrcNoteType::NewLine) {
-        if (!convertLastNewLineToNewLineColumn(
-                JS::LimitedColumnNumberZeroOrigin(columnIndex))) {
+        if (!convertLastNewLineToNewLineColumn(columnIndex)) {
           return false;
         }
       } else {
         MOZ_ASSERT(type == SrcNoteType::SetLine);
-        if (!convertLastSetLineToSetLineColumn(
-                JS::LimitedColumnNumberZeroOrigin(columnIndex))) {
+        if (!convertLastSetLineToSetLineColumn(columnIndex)) {
           return false;
         }
       }
@@ -12653,7 +12651,7 @@ bool BytecodeEmitter::newSrcNote2(SrcNoteType type, ptrdiff_t offset,
 }
 
 bool BytecodeEmitter::convertLastNewLineToNewLineColumn(
-    JS::LimitedColumnNumberZeroOrigin column) {
+    JS::LimitedColumnNumberOneOrigin column) {
   SrcNotesVector& notes = bytecodeSection().notes();
   MOZ_ASSERT(lastLineOnlySrcNoteIndex == notes.length() - 1);
   SrcNote* sn = &notes[lastLineOnlySrcNoteIndex];
@@ -12669,7 +12667,7 @@ bool BytecodeEmitter::convertLastNewLineToNewLineColumn(
 }
 
 bool BytecodeEmitter::convertLastSetLineToSetLineColumn(
-    JS::LimitedColumnNumberZeroOrigin column) {
+    JS::LimitedColumnNumberOneOrigin column) {
   SrcNotesVector& notes = bytecodeSection().notes();
   
   MOZ_ASSERT(lastLineOnlySrcNoteIndex == notes.length() - 1 - 1 ||

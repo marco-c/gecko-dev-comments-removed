@@ -495,9 +495,9 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool newSrcNote2(SrcNoteType type, ptrdiff_t operand,
                                  unsigned* indexp = nullptr);
   [[nodiscard]] bool convertLastNewLineToNewLineColumn(
-      JS::LimitedColumnNumberZeroOrigin column);
+      JS::LimitedColumnNumberOneOrigin column);
   [[nodiscard]] bool convertLastSetLineToSetLineColumn(
-      JS::LimitedColumnNumberZeroOrigin column);
+      JS::LimitedColumnNumberOneOrigin column);
 
   [[nodiscard]] bool newSrcNoteOperand(ptrdiff_t operand);
 
