@@ -195,6 +195,12 @@ add_task(async function test_invalid_httpRealm_formActionOrigin() {
   );
 
   
+  await checkLoginInvalid(
+    TestData.authLogin({ httpRealm: "" }),
+    /without a httpRealm or formActionOrigin/
+  );
+
+  
   
   
   
