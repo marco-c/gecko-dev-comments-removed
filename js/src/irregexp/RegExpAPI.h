@@ -57,7 +57,7 @@ bool CheckPatternSyntax(
     frontend::TokenStreamAnyChars& ts,
     const mozilla::Range<const char16_t> chars, JS::RegExpFlags flags,
     mozilla::Maybe<uint32_t> line = mozilla::Nothing(),
-    mozilla::Maybe<JS::ColumnNumberZeroOrigin> column = mozilla::Nothing());
+    mozilla::Maybe<JS::ColumnNumberOneOrigin> column = mozilla::Nothing());
 bool CheckPatternSyntax(JSContext* cx, JS::NativeStackLimit stackLimit,
                         frontend::TokenStreamAnyChars& ts,
                         Handle<JSAtom*> pattern, JS::RegExpFlags flags);
