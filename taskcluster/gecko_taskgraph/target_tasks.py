@@ -846,6 +846,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     return "browsertime" in try_name
             
             if "browsertime" in try_name:
+                
+                if "m-car" in try_name:
+                    return False
                 if "speedometer" in try_name:
                     return True
         return False
