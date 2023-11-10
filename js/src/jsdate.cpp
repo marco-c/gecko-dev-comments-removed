@@ -922,26 +922,10 @@ static int DaysInMonth(int year, int month) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename CharT>
 static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
                               size_t length, ClippedTime* result) {
   size_t i = 0;
-  size_t pre = 0;
   int tzMul = 1;
   int dateMul = 1;
   size_t year = 1970;
@@ -954,8 +938,6 @@ static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   bool isLocalTime = false;
   size_t tzHour = 0;
   size_t tzMin = 0;
-  bool isPermissive = false;
-  bool isStrict = false;
 
 #define PEEK(ch) (i < length && s[i] == ch)
 
@@ -985,19 +967,6 @@ static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     return false;                                \
   }
 
-#define NEED_NDIGITS_OR_LESS(n, field)                 \
-  pre = i;                                             \
-  if (!ParseDigitsNOrLess(n, &field, s, &i, length)) { \
-    return false;                                      \
-  }                                                    \
-  if (i < pre + (n)) {                                 \
-    if (isStrict) {                                    \
-      return false;                                    \
-    } else {                                           \
-      isPermissive = true;                             \
-    }                                                  \
-  }
-
   if (PEEK('+') || PEEK('-')) {
     if (PEEK('-')) {
       dateMul = -1;
@@ -1020,26 +989,18 @@ static bool ParseISOStyleDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
 done_date:
   if (PEEK('T')) {
-    if (isPermissive) {
-      
-      
-      return false;
-    }
-    isStrict = true;
-    i++;
-  } else if (PEEK(' ')) {
-    i++;
+    ++i;
   } else {
     goto done;
   }
 
-  NEED_NDIGITS_OR_LESS(2, hour);
+  NEED_NDIGITS(2, hour);
   NEED(':');
-  NEED_NDIGITS_OR_LESS(2, min);
+  NEED_NDIGITS(2, min);
 
   if (PEEK(':')) {
     ++i;
-    NEED_NDIGITS_OR_LESS(2, sec);
+    NEED_NDIGITS(2, sec);
     if (PEEK('.')) {
       ++i;
       if (!ParseFractional(&frac, s, &i, length)) {
@@ -1056,13 +1017,6 @@ done_date:
     }
     ++i;
     NEED_NDIGITS(2, tzHour);
-    
-
-
-
-    if (i >= length && !isStrict) {
-      goto done;
-    }
     
 
 
@@ -1106,7 +1060,6 @@ done:
 #undef NEED
 #undef DONE_UNLESS
 #undef NEED_NDIGITS
-#undef NEED_NDIGITS_OR_LESS
 }
 
 int FixupNonFullYear(int year) {
