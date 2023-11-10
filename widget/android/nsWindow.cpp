@@ -306,11 +306,7 @@ class NPZCSupport final
     MOZ_ASSERT(!!win);
 #endif  
 
-    
-    
-    if (jni::GetAPIVersion() >= 19) {
-      mAndroidVsync = AndroidVsync::GetInstance();
-    }
+    mAndroidVsync = AndroidVsync::GetInstance();
   }
 
   ~NPZCSupport() {

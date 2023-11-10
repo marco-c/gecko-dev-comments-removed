@@ -195,9 +195,6 @@ void GfxInfo::EnsureInitialized() {
       ", Manufacturer: %s", NS_LossyConvertUTF16toASCII(mManufacturer).get());
 
   mSDKVersion = java::sdk::Build::VERSION::SDK_INT();
-  
-  
-  MOZ_ASSERT(mSDKVersion >= 8);
   jni::String::LocalRef hardware = java::sdk::Build::HARDWARE();
   mHardware = hardware->ToString();
   mAdapterDescription.AppendPrintf(
@@ -405,11 +402,7 @@ nsresult GfxInfo::GetFeatureStatusImpl(
   
   if (aDriverInfo.IsEmpty()) {
     if (aFeature == nsIGfxInfo::FEATURE_CANVAS2D_ACCELERATION) {
-      if (mSDKVersion < 11) {
-        
-        *aStatus = nsIGfxInfo::FEATURE_BLOCKED_OS_VERSION;
-        aFailureId = "FEATURE_FAILURE_CANVAS_2D_SDK";
-      } else if (mGLStrings->Renderer().Find("Vivante GC1000") != -1) {
+      if (mGLStrings->Renderer().Find("Vivante GC1000") != -1) {
         
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILED_CANVAS_2D_HW";
@@ -424,14 +417,6 @@ nsresult GfxInfo::GetFeatureStatusImpl(
           mGLStrings->Renderer().Find("Adreno 205") != -1) {
         *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_ADRENO_20x";
-        return NS_OK;
-      }
-
-      if (mSDKVersion <= 17) {
-        if (mGLStrings->Renderer().Find("Adreno (TM) 3") != -1) {
-          *aStatus = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
-          aFailureId = "FEATURE_FAILURE_ADRENO_3xx";
-        }
         return NS_OK;
       }
 

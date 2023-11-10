@@ -175,16 +175,6 @@ UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
     return nullptr;
   }
 
-#if __ANDROID_API__ < __ANDROID_API_L__
-  
-  
-  
-  
-  
-  
-  return nullptr;
-#else
-
   const auto* api = PerformanceHintManagerApi::Get();
 
   nsTArray<pid_t> tids(aThreads.Length());
@@ -199,7 +189,6 @@ UniquePtr<hal::PerformanceHintSession> CreatePerformanceHintSession(
   }
 
   return MakeUnique<AndroidPerformanceHintSession>(session);
-#endif
 }
 
 }  

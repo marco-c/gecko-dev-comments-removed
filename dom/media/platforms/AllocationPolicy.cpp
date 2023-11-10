@@ -75,17 +75,7 @@ void AllocPolicyImpl::RejectAll() {
   }
 }
 
-static int32_t MediaDecoderLimitDefault() {
-#ifdef MOZ_WIDGET_ANDROID
-  if (jni::GetAPIVersion() < 18) {
-    
-    
-    return 1;
-  }
-#endif
-  
-  return -1;
-}
+static int32_t MediaDecoderLimitDefault() { return -1; }
 
 StaticMutex GlobalAllocPolicy::sMutex;
 

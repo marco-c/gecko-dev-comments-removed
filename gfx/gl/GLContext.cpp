@@ -902,25 +902,6 @@ bool GLContext::InitImpl() {
       
       mNeedsFlushBeforeDeleteFB = true;
     }
-#ifdef MOZ_WIDGET_ANDROID
-    if ((Renderer() == GLRenderer::AdrenoTM305 ||
-         Renderer() == GLRenderer::AdrenoTM320 ||
-         Renderer() == GLRenderer::AdrenoTM330) &&
-        jni::GetAPIVersion() < 21) {
-      
-      
-      mTextureAllocCrashesOnMapFailure = true;
-    }
-#endif
-#if MOZ_WIDGET_ANDROID
-    if (Renderer() == GLRenderer::SGX540 && jni::GetAPIVersion() <= 15) {
-      
-      
-      
-      
-      mNeedsCheckAfterAttachTextureToFb = true;
-    }
-#endif
 
     
 
@@ -1655,15 +1636,6 @@ void GLContext::InitExtensions() {
       
       MarkExtensionUnsupported(OES_EGL_sync);
     }
-
-#ifdef MOZ_WIDGET_ANDROID
-    if (Vendor() == GLVendor::Imagination &&
-        Renderer() == GLRenderer::SGX544MP && jni::GetAPIVersion() < 21) {
-      
-      MarkExtensionUnsupported(OES_EGL_image);
-      MarkExtensionUnsupported(OES_EGL_image_external);
-    }
-#endif
 
     if (Vendor() == GLVendor::ARM && (Renderer() == GLRenderer::Mali400MP ||
                                       Renderer() == GLRenderer::Mali450MP)) {
