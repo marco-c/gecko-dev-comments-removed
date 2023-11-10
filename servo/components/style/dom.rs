@@ -14,7 +14,7 @@ use crate::context::{PostAnimationTasks, UpdateAnimationsTasks};
 use crate::data::ElementData;
 use crate::media_queries::Device;
 use crate::properties::{AnimationDeclarations, ComputedValues, PropertyDeclarationBlock};
-use crate::selector_parser::{AttrValue, Lang, PseudoElement, SelectorImpl};
+use crate::selector_parser::{AttrValue, CustomState, Lang, PseudoElement, SelectorImpl};
 use crate::shared_lock::{Locked, SharedRwLock};
 use crate::stylist::CascadeData;
 use crate::values::computed::Display;
@@ -511,6 +511,11 @@ pub trait TElement:
 
     
     fn state(&self) -> ElementState;
+
+    
+    fn has_custom_state(&self, _state: &CustomState) -> bool {
+        false
+    }
 
     
     fn has_part_attr(&self) -> bool;

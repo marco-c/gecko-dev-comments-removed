@@ -220,6 +220,11 @@ class FragmentOrElement : public nsIContent {
     
 
 
+    nsTArray<RefPtr<nsAtom>> mCustomStates;
+
+    
+
+
 
     UniquePtr<RadioGroupContainer> mRadioGroupContainer;
 
