@@ -32,6 +32,7 @@ const expected = [
   "has other.calendar.year",
   "has other.calendar.yearMonthFromFields",
   "has other.calendar.yearOfWeek",
+  "get other.calendar.dateFromFields",
   "get other.calendar.fields",
   "call other.calendar.fields",
   
@@ -73,7 +74,6 @@ const expected = [
   "has other.timeZone.getPossibleInstantsFor",
   "has other.timeZone.id",
   
-  "get other.calendar.dateFromFields",
   "call other.calendar.dateFromFields",
   
   "get other.timeZone.getPossibleInstantsFor",
