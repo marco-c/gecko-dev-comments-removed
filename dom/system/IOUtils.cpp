@@ -293,7 +293,7 @@ static bool AssertParentProcessWithCallerLocationImpl(GlobalObject& aGlobal,
 
   JS::AutoFilename scriptFilename;
   uint32_t lineNo = 0;
-  JS::ColumnNumberZeroOrigin colNo;
+  JS::ColumnNumberOneOrigin colNo;
 
   NS_ENSURE_TRUE(
       JS::DescribeScriptedCaller(cx, &scriptFilename, &lineNo, &colNo), false);

@@ -219,7 +219,7 @@ bool ReportWrapperDenial(JSContext* cx, HandleId id, WrapperDenialType type,
   }
   AutoFilename filename;
   uint32_t line = 0;
-  JS::ColumnNumberZeroOrigin column;
+  JS::ColumnNumberOneOrigin column;
   DescribeScriptedCaller(cx, &filename, &line, &column);
 
   

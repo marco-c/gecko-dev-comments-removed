@@ -1030,7 +1030,7 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
     
     nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
     uint32_t lineNum = 0;
-    JS::ColumnNumberZeroOrigin columnNum;
+    JS::ColumnNumberOneOrigin columnNum;
 
     JSContext* cx = nsContentUtils::GetCurrentJSContext();
     if (cx && !JS::DescribeScriptedCaller(cx, nullptr, &lineNum, &columnNum)) {

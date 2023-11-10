@@ -519,7 +519,7 @@ bool ContentSecurityPolicyAllows(JSContext* aCx, JS::RuntimeCode aKind,
   if (reportViolation) {
     nsString fileName;
     uint32_t lineNum = 0;
-    JS::ColumnNumberZeroOrigin columnNum;
+    JS::ColumnNumberOneOrigin columnNum;
 
     JS::AutoFilename file;
     if (JS::DescribeScriptedCaller(aCx, &file, &lineNum, &columnNum) &&
