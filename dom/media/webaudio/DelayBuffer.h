@@ -87,7 +87,7 @@ class DelayBuffer final {
   
   FallibleTArray<AudioChunk> mChunks;
   
-  AutoTArray<const float*, GUESS_AUDIO_CHANNELS> mUpmixChannels;
+  CopyableAutoTArray<const float*, GUESS_AUDIO_CHANNELS> mUpmixChannels;
   
   int mMaxDelayTicks;
   
