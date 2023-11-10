@@ -157,7 +157,7 @@ class SearchConfigTest {
 
 
   async run() {
-    const locales = await this._getLocales();
+    const locales = await this.getLocales();
     const regions = this._regions;
 
     
@@ -207,7 +207,7 @@ class SearchConfigTest {
   
 
 
-  async _getLocales() {
+  async getLocales() {
     if (TEST_DEBUG) {
       return ["be", "en-US", "kk", "tr", "ru", "zh-CN", "ach", "unknown"];
     }
