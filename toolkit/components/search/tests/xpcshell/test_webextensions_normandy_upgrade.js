@@ -34,60 +34,73 @@ async function getEngineNames() {
   return engines.map(engine => engine._name);
 }
 
-add_setup(async function () {
-  await SearchTestUtils.useTestEngines("test-extensions", null, CONFIG_DEFAULT);
-  await AddonTestUtils.promiseStartupManager();
-  registerCleanupFunction(AddonTestUtils.promiseShutdownManager);
-  SearchTestUtils.useMockIdleService();
-  await Services.search.init();
-});
+add_setup(
+  { skip_if: () => SearchUtils.newSearchConfigEnabled },
+  async function () {
+    await SearchTestUtils.useTestEngines(
+      "test-extensions",
+      null,
+      CONFIG_DEFAULT
+    );
+    await AddonTestUtils.promiseStartupManager();
+    registerCleanupFunction(AddonTestUtils.promiseShutdownManager);
+    SearchTestUtils.useMockIdleService();
+    await Services.search.init();
+  }
+);
 
 
 
 
-add_task(async function test_config_before_normandy() {
-  
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_DEFAULT);
-  await restart();
-  Assert.deepEqual(await getEngineNames(), ["Plain"]);
-  
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_UPDATED);
-  Assert.deepEqual(
-    await getEngineNames(),
-    ["Plain"],
-    "Updated engine hasnt been installed yet"
-  );
-  
-  let addon = await SearchTestUtils.installSystemSearchExtension();
-  Assert.deepEqual(
-    await getEngineNames(),
-    ["Plain", "Example"],
-    "Both engines are now enabled"
-  );
-  await addon.unload();
-});
+add_task(
+  { skip_if: () => SearchUtils.newSearchConfigEnabled },
+  async function test_config_before_normandy() {
+    
+    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_DEFAULT);
+    await restart();
+    Assert.deepEqual(await getEngineNames(), ["Plain"]);
+    
+    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_UPDATED);
+    Assert.deepEqual(
+      await getEngineNames(),
+      ["Plain"],
+      "Updated engine hasnt been installed yet"
+    );
+    
+    let addon = await SearchTestUtils.installSystemSearchExtension();
+    Assert.deepEqual(
+      await getEngineNames(),
+      ["Plain", "Example"],
+      "Both engines are now enabled"
+    );
+    await addon.unload();
+  }
+);
 
 
 
 
-add_task(async function test_normandy_before_config() {
-  
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_DEFAULT);
-  await restart();
-  Assert.deepEqual(await getEngineNames(), ["Plain"]);
-  
-  let addon = await SearchTestUtils.installSystemSearchExtension();
-  Assert.deepEqual(
-    await getEngineNames(),
-    ["Plain"],
-    "Normandy engine ignored as not in config yet"
-  );
-  
-  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_UPDATED);
-  Assert.deepEqual(
-    await getEngineNames(),
-    ["Plain", "Example"],
-    "Both engines are now enabled"
-  );
-  await addon.unload();
-});
+add_task(
+  { skip_if: () => SearchUtils.newSearchConfigEnabled },
+  async function test_normandy_before_config() {
+    
+    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_DEFAULT);
+    await restart();
+    Assert.deepEqual(await getEngineNames(), ["Plain"]);
+    
+    let addon = await SearchTestUtils.installSystemSearchExtension();
+    Assert.deepEqual(
+      await getEngineNames(),
+      ["Plain"],
+      "Normandy engine ignored as not in config yet"
+    );
+    
+    await SearchTestUtils.updateRemoteSettingsConfig(CONFIG_UPDATED);
+    Assert.deepEqual(
+      await getEngineNames(),
+      ["Plain", "Example"],
+      "Both engines are now enabled"
+    );
+    await addon.unload();
+  }
+);

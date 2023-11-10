@@ -8,6 +8,28 @@ const CONFIG = [
     
     webExtension: {
       id: "engine@search.mozilla.org",
+      name: "Test search engine",
+      search_url: "https://www.google.com/search",
+      params: [
+        {
+          name: "q",
+          value: "{searchTerms}",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "contextmenu",
+          value: "rcs",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "keyword",
+          value: "fflb",
+        },
+      ],
+      suggest_url:
+        "https://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl={moz:locale}&q={searchTerms}",
     },
     appliesTo: [
       {
@@ -26,6 +48,24 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-pref@search.mozilla.org",
+      name: "engine-pref",
+      search_url: "https://www.google.com/search",
+      params: [
+        {
+          name: "q",
+          value: "{searchTerms}",
+        },
+        {
+          name: "code",
+          condition: "pref",
+          pref: "code",
+        },
+        {
+          name: "test",
+          condition: "pref",
+          pref: "test",
+        },
+      ],
     },
     appliesTo: [
       {
@@ -42,6 +82,14 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-chromeicon@search.mozilla.org",
+      name: "engine-chromeicon",
+      search_url: "https://www.google.com/search",
+      params: [
+        {
+          name: "q",
+          value: "{searchTerms}",
+        },
+      ],
     },
     appliesTo: [
       {
@@ -60,6 +108,32 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-rel-searchform-purpose@search.mozilla.org",
+      name: "engine-rel-searchform-purpose",
+      search_url: "https://www.google.com/search",
+      params: [
+        {
+          name: "q",
+          value: "{searchTerms}",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "contextmenu",
+          value: "rcs",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "keyword",
+          value: "fflb",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "searchbar",
+          value: "sb",
+        },
+      ],
     },
     appliesTo: [
       {
@@ -72,6 +146,28 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-reordered@search.mozilla.org",
+      name: "Test search engine (Reordered)",
+      search_url: "https://www.google.com/search",
+      params: [
+        {
+          name: "q",
+          value: "{searchTerms}",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "contextmenu",
+          value: "rcs",
+        },
+        {
+          name: "channel",
+          condition: "purpose",
+          purpose: "keyword",
+          value: "fflb",
+        },
+      ],
+      suggest_url:
+        "https://suggestqueries.google.com/complete/search?output=firefox&client=firefox&hl={moz:locale}&q={searchTerms}",
     },
     appliesTo: [
       {
@@ -83,6 +179,18 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-resourceicon@search.mozilla.org",
+      name: "engine-resourceicon",
+      search_url: "https://www.google.com/search",
+      searchProvider: {
+        en: {
+          name: "engine-resourceicon",
+          search_url: "https://www.google.com/search",
+        },
+        gd: {
+          name: "engine-resourceicon-gd",
+          search_url: "https://www.google.com/search",
+        },
+      },
     },
     appliesTo: [
       {
@@ -102,6 +210,18 @@ const CONFIG = [
     
     webExtension: {
       id: "engine-same-name@search.mozilla.org",
+      name: "engine-same-name",
+      search_url: "https://www.google.com/search?q={searchTerms}",
+      searchProvider: {
+        en: {
+          name: "engine-same-name",
+          search_url: "https://www.google.com/search?q={searchTerms}",
+        },
+        gd: {
+          name: "engine-same-name",
+          search_url: "https://www.example.com/search?q={searchTerms}",
+        },
+      },
     },
     appliesTo: [
       {
