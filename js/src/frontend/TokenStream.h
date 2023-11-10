@@ -508,19 +508,20 @@ class ChunkInfo {
  private:
   
   
-  unsigned char column_[sizeof(uint32_t)];
+  unsigned char columnOffset_[sizeof(uint32_t)];
   unsigned char unitsType_;
 
  public:
-  ChunkInfo(JS::ColumnNumberZeroOrigin col, UnitsType type)
+  ChunkInfo(JS::ColumnNumberUnsignedOffset offset, UnitsType type)
       : unitsType_(static_cast<unsigned char>(type)) {
-    memcpy(column_, col.addressOfValueForTranscode(), sizeof(col));
+    memcpy(columnOffset_, offset.addressOfValueForTranscode(), sizeof(offset));
   }
 
-  JS::ColumnNumberZeroOrigin column() const {
-    JS::ColumnNumberZeroOrigin col;
-    memcpy(col.addressOfValueForTranscode(), column_, sizeof(uint32_t));
-    return col;
+  JS::ColumnNumberUnsignedOffset columnOffset() const {
+    JS::ColumnNumberUnsignedOffset offset;
+    memcpy(offset.addressOfValueForTranscode(), columnOffset_,
+           sizeof(uint32_t));
+    return offset;
   }
 
   UnitsType unitsType() const {
@@ -625,7 +626,7 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
-  mutable JS::ColumnNumberZeroOrigin lastComputedColumn_;
+  mutable JS::ColumnNumberUnsignedOffset lastComputedColumnOffset_;
 
   
 
@@ -949,13 +950,14 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
+
   template <typename Unit>
-  JS::ColumnNumberZeroOrigin computePartialColumn(
+  JS::ColumnNumberUnsignedOffset computeColumnOffset(
       const LineToken lineToken, const uint32_t offset,
       const SourceUnits<Unit>& sourceUnits) const;
 
   template <typename Unit>
-  JS::ColumnNumberZeroOrigin computePartialColumnForUTF8(
+  JS::ColumnNumberUnsignedOffset computeColumnOffsetForUTF8(
       const LineToken lineToken, const uint32_t offset, const uint32_t start,
       const uint32_t offsetInLine, const SourceUnits<Unit>& sourceUnits) const;
 
