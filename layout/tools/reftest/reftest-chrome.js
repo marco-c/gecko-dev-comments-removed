@@ -1,0 +1,17 @@
+
+
+
+
+"use strict";
+
+const { OnRefTestLoad, OnRefTestUnload } = ChromeUtils.import(
+  "resource://reftest/reftest.jsm"
+);
+
+function OnLoad() {
+  OnRefTestLoad(window);
+}
+
+function OnUnload() {
+  OnRefTestUnload();
+}
