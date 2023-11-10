@@ -1,13 +1,11 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+import { FileUtils } from "resource://gre/modules/FileUtils.sys.mjs";
 
+import { globals } from "resource://reftest/globals.sys.mjs";
 
-"use strict";
-
-var EXPORTED_SYMBOLS = ["OnRefTestLoad", "OnRefTestUnload"];
-
-const { FileUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/FileUtils.sys.mjs"
-);
 const {
   XHTML_NS,
   XUL_NS,
@@ -35,26 +33,18 @@ const {
   FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS,
 
   g,
-} = ChromeUtils.import("resource://reftest/globals.jsm");
-const { HttpServer } = ChromeUtils.importESModule(
-  "resource://reftest/httpd.sys.mjs"
-);
-const { ReadTopManifest, CreateUrls } = ChromeUtils.import(
-  "resource://reftest/manifest.jsm"
-);
-const { StructuredLogger } = ChromeUtils.importESModule(
-  "resource://reftest/StructuredLog.sys.mjs"
-);
-const { PerTestCoverageUtils } = ChromeUtils.importESModule(
-  "resource://reftest/PerTestCoverageUtils.sys.mjs"
-);
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
+} = globals;
 
-const { E10SUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/E10SUtils.sys.mjs"
-);
+import { HttpServer } from "resource://reftest/httpd.sys.mjs";
+
+import {
+  ReadTopManifest,
+  CreateUrls,
+} from "resource://reftest/manifest.sys.mjs";
+import { StructuredLogger } from "resource://reftest/StructuredLog.sys.mjs";
+import { PerTestCoverageUtils } from "resource://reftest/PerTestCoverageUtils.sys.mjs";
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { E10SUtils } from "resource://gre/modules/E10SUtils.sys.mjs";
 
 const lazy = {};
 
@@ -76,7 +66,7 @@ function HasUnexpectedResult() {
   );
 }
 
-
+// By default we just log to stdout
 var gDumpFn = function (line) {
   dump(line);
   if (g.logFile) {
@@ -84,7 +74,7 @@ var gDumpFn = function (line) {
   }
 };
 var gDumpRawLog = function (record) {
-  
+  // Dump JSON representation of data on a single line
   var line = "\n" + JSON.stringify(record) + "\n";
   dump(line);
 
@@ -101,13 +91,13 @@ function TestBuffer(str) {
 }
 
 function isAndroidDevice() {
-  
-  
+  // This is the best we can do for now; maybe in the future we'll have
+  // more correct detection of this case.
   return Services.appinfo.OS == "Android" && g.browserIsRemote;
 }
 
 function FlushTestBuffer() {
-  
+  // In debug mode, we've dumped all these messages already.
   if (g.logLevel !== "debug") {
     for (var i = 0; i < g.testLog.length; ++i) {
       logger.info("Saved log: " + g.testLog[i]);
@@ -148,13 +138,13 @@ function AllocateCanvas() {
 }
 
 function ReleaseCanvas(canvas) {
-  
+  // store a maximum of 2 canvases, if we're not caching
   if (!g.noCanvasCache || g.recycledCanvases.length < 2) {
     g.recycledCanvases.push(canvas);
   }
 }
 
-function OnRefTestLoad(win) {
+export function OnRefTestLoad(win) {
   g.crashDumpDir = Services.dirsvc.get("ProfD", Ci.nsIFile);
   g.crashDumpDir.append("minidumps");
 
@@ -193,8 +183,8 @@ function OnRefTestLoad(win) {
   g.browser.setAttribute("type", "content");
   g.browser.setAttribute("primary", "true");
   g.browser.setAttribute("remote", g.browserIsRemote ? "true" : "false");
-  
-  
+  // Make sure the browser element is exactly 800x1000, no matter
+  // what size our window is
   g.browser.setAttribute(
     "style",
     "padding: 0px; margin: 0px; border:none; min-width: 800px; min-height: 1000px; max-width: 800px; max-height: 1000px; color-scheme: env(-moz-content-preferred-color-scheme)"
@@ -206,16 +196,16 @@ function OnRefTestLoad(win) {
       doc.firstChild.remove();
     }
     doc.appendChild(g.browser);
-    
-    
+    // TODO Bug 1156817: reftests don't have most of GeckoView infra so we
+    // can't register this actor
     ChromeUtils.unregisterWindowActor("LoadURIDelegate");
   } else {
     win.document.getElementById("reftest-window").appendChild(g.browser);
   }
 
   g.browserMessageManager = g.browser.frameLoader.messageManager;
-  
-  
+  // The content script waits for the initial onload, then notifies
+  // us.
   RegisterMessageListenersAndLoadContentScript(false);
 }
 
@@ -224,9 +214,9 @@ function InitAndStartRefTests() {
     Services.prefs.setBoolPref("android.widget_paints_background", false);
   } catch (e) {}
 
-  
-  
-  
+  // If fission is enabled, then also put data: URIs in the default web process,
+  // since most reftests run in the file process, and this will make data:
+  // <iframe>s OOP.
   if (g.browserIsFission) {
     Services.prefs.setBoolPref(
       "browser.tabs.remote.dataUriInDefaultWebProcess",
@@ -234,10 +224,10 @@ function InitAndStartRefTests() {
     );
   }
 
-  
+  /* set the g.loadTimeout */
   g.loadTimeout = Services.prefs.getIntPref("reftest.timeout", 5 * 60 * 1000);
 
-  
+  /* Get the logfile for android tests */
   try {
     var logFile = Services.prefs.getStringPref("reftest.logFile");
     if (logFile) {
@@ -260,7 +250,7 @@ function InitAndStartRefTests() {
     false
   );
 
-  
+  /* Support for running a chunk (subset) of tests.  In separate try as this is optional */
   try {
     g.totalChunks = Services.prefs.getIntPref("reftest.totalChunks");
     g.thisChunk = Services.prefs.getIntPref("reftest.thisChunk");
@@ -285,11 +275,11 @@ function InitAndStartRefTests() {
   );
 
   try {
-    
-    
+    // We have to set print.always_print_silent or a print dialog would
+    // appear for each print operation, which would interrupt the test run.
     Services.prefs.setBoolPref("print.always_print_silent", true);
   } catch (e) {
-    
+    /* uh oh, print reftests may not work... */
     logger.warning("Failed to set silent printing pref, EXCEPTION: " + e);
   }
 
@@ -313,13 +303,13 @@ function InitAndStartRefTests() {
       StartHTTPServer();
     }
   } catch (ex) {
-    
+    //g.browser.loadURI('data:text/plain,' + ex);
     ++g.testResults.Exception;
     logger.error("EXCEPTION: " + ex);
     DoneTests();
   }
 
-  
+  // Focus the content browser.
   if (g.focusFilterMode != FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS) {
     if (Services.focus.activeWindow != g.containingWindow) {
       Focus();
@@ -340,14 +330,14 @@ function StartHTTPServer() {
 
   const proxyFilter = {
     proxyInfo: lazy.proxyService.newProxyInfo(
-      "http", 
-      "localhost", 
-      g.server.identity.primaryPort, 
-      "", 
-      "", 
-      0, 
-      4096, 
-      null 
+      "http", // type of proxy
+      "localhost", //proxy host
+      g.server.identity.primaryPort, // proxy host port
+      "", // auth header
+      "", // isolation key
+      0, // flags
+      4096, // timeout
+      null // failover proxy
     ),
 
     applyFilter(channel, defaultProxyInfo, callback) {
@@ -364,7 +354,7 @@ function StartHTTPServer() {
   g.httpServerPort = g.server.identity.primaryPort;
 }
 
-
+// Perform a Fisher-Yates shuffle of the array.
 function Shuffle(array) {
   for (var i = array.length - 1; i > 0; i--) {
     var j = Math.floor(Math.random() * (i + 1));
@@ -382,19 +372,19 @@ function ReadTests() {
 
     g.urls = [];
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
+    /* There are three modes implemented here:
+     * 1) reftest.manifests
+     * 2) reftest.manifests and reftest.manifests.dumpTests
+     * 3) reftest.tests
+     *
+     * The first will parse the specified manifests, then immediately
+     * run the tests. The second will parse the manifests, save the test
+     * objects to a file and exit. The third will load a file of test
+     * objects and run them.
+     *
+     * The latter two modes are used to pass test data back and forth
+     * with python harness.
+     */
     let manifests = Services.prefs.getStringPref("reftest.manifests", null);
     let dumpTests = Services.prefs.getStringPref(
       "reftest.manifests.dumpTests",
@@ -423,7 +413,7 @@ function ReadTests() {
           DoneTests();
         });
     } else if (manifests) {
-      
+      // Parse reftest manifests
       logger.debug("Reading " + manifests.length + " manifests");
       manifests = JSON.parse(manifests);
       g.urlsFilterRegex = manifests.null;
@@ -452,8 +442,8 @@ function ReadTests() {
 
       var manifestURLs = Object.keys(manifests);
 
-      
-      
+      // Ensure we read manifests from higher up the directory tree first so that we
+      // process includes before reading the included manifest again
       manifestURLs.sort(function (a, b) {
         return a.length - b.length;
       });
@@ -507,13 +497,13 @@ function StartTests() {
     false
   );
 
-  
-  
-  
+  // Check if there are any crash dump files from the startup procedure, before
+  // we start running the first test. Otherwise the first test might get
+  // blamed for producing a crash dump file when that was not the case.
   CleanUpCrashDumpFiles();
 
-  
-  
+  // When we repeat this function is called again, so really only want to set
+  // g.repeat once.
   if (g.repeat == null) {
     g.repeat = Services.prefs.getIntPref("reftest.repeat", 0);
   }
@@ -527,8 +517,8 @@ function StartTests() {
   try {
     BuildUseCounts();
 
-    
-    
+    // Filter tests which will be skipped to get a more even distribution when chunking
+    // tURLs is a temporary array containing all active tests
     var tURLs = [];
     for (var i = 0; i < g.urls.length; ++i) {
       if (g.urls[i].skip) {
@@ -549,15 +539,15 @@ function StartTests() {
     var numActiveTests = tURLs.length;
 
     if (g.totalChunks > 0 && g.thisChunk > 0) {
-      
-      
+      // Calculate start and end indices of this chunk if tURLs array were
+      // divided evenly
       var testsPerChunk = tURLs.length / g.totalChunks;
       var start = Math.round((g.thisChunk - 1) * testsPerChunk);
       var end = Math.round(g.thisChunk * testsPerChunk);
       numActiveTests = end - start;
 
-      
-      
+      // Map these indices onto the g.urls array. This avoids modifying the
+      // g.urls array which prevents skipped tests from showing up in the log
       start = g.thisChunk == 1 ? 0 : g.urls.indexOf(tURLs[start]);
       end =
         g.thisChunk == g.totalChunks
@@ -614,14 +604,14 @@ function StartTests() {
         DoneTests();
       });
   } catch (ex) {
-    
+    //g.browser.loadURI('data:text/plain,' + ex);
     ++g.testResults.Exception;
     logger.error("EXCEPTION: " + ex);
     DoneTests();
   }
 }
 
-function OnRefTestUnload() {}
+export function OnRefTestUnload() {}
 
 function AddURIUseCount(uri) {
   if (uri == null) {
@@ -658,7 +648,7 @@ function BuildUseCounts() {
   }
 }
 
-
+// Return true iff this window is focused when this function returns.
 function Focus() {
   Services.focus.focusedWindow = g.containingWindow;
 
@@ -673,17 +663,17 @@ function Focus() {
 }
 
 function Blur() {
-  
-  
-  
-  
+  // On non-remote reftests, this will transfer focus to the dummy window
+  // we created to hold focus for non-needs-focus tests.  Buggy tests
+  // (ones which require focus but don't request needs-focus) will then
+  // fail.
   g.containingWindow.blur();
 }
 
 async function StartCurrentTest() {
   g.testLog = [];
 
-  
+  // make sure we don't run tests that are expected to kill the browser
   while (g.urls.length) {
     var test = g.urls[0];
     logger.testStart(test.identifier);
@@ -692,8 +682,8 @@ async function StartCurrentTest() {
       logger.testEnd(test.identifier, "SKIP");
       g.urls.shift();
     } else if (test.needsFocus && !Focus()) {
-      
-      
+      // FIXME: Marking this as a known fail is dangerous!  What
+      // if it starts failing all the time?
       ++g.testResults.Skip;
       logger.testEnd(test.identifier, "SKIP", null, "(COULDN'T GET FOCUS)");
       g.urls.shift();
@@ -713,7 +703,7 @@ async function StartCurrentTest() {
     await RestoreChangedPreferences();
     DoneTests();
   } else if (!g.urls.length && g.repeat > 0) {
-    
+    // Repeat
     g.repeat--;
     ReadTests();
   } else {
@@ -736,7 +726,7 @@ async function StartCurrentTest() {
   }
 }
 
-
+// A simplified version of the function with the same name in tabbrowser.js.
 function updateBrowserRemotenessByURL(aBrowser, aURL) {
   var oa = E10SUtils.predictOriginAttributes({ browser: aBrowser });
   let remoteType = E10SUtils.getRemoteTypeForURI(
@@ -747,8 +737,8 @@ function updateBrowserRemotenessByURL(aBrowser, aURL) {
     aBrowser.currentURI,
     oa
   );
-  
-  
+  // Things get confused if we switch to not-remote
+  // for chrome:// URIs, so lets not for now.
   if (remoteType == E10SUtils.NOT_REMOTE && g.browserIsRemote) {
     remoteType = aBrowser.remoteType;
   }
@@ -773,7 +763,7 @@ function updateBrowserRemotenessByURL(aBrowser, aURL) {
   return Promise.resolve();
 }
 
-
+// This logic should match SpecialPowersParent._applyPrefs.
 function PrefRequiresRefresh(name) {
   return (
     name == "layout.css.prefers-color-scheme.content-override" ||
@@ -812,7 +802,7 @@ async function StartCurrentURI(aURLTargetType) {
         let oldVal = undefined;
         if (prefExists) {
           if (ps.type == PREF_BOOLEAN) {
-            
+            // eslint-disable-next-line mozilla/use-default-preference-values
             try {
               oldVal = Services.prefs.getBoolPref(ps.name);
             } catch (e) {
@@ -827,7 +817,7 @@ async function StartCurrentURI(aURLTargetType) {
               throw new Error("bad pref");
             }
           } else if (ps.type == PREF_INTEGER) {
-            
+            // eslint-disable-next-line mozilla/use-default-preference-values
             try {
               oldVal = Services.prefs.getIntPref(ps.name);
             } catch (e) {
@@ -881,7 +871,7 @@ async function StartCurrentURI(aURLTargetType) {
           ++g.testResults.UnexpectedFail;
         }
 
-        
+        // skip the test that had a bad preference
         g.urls.shift();
         await StartCurrentTest();
         return;
@@ -897,13 +887,13 @@ async function StartCurrentURI(aURLTargetType) {
       g.urls[0].type == TYPE_REFTEST_NOTEQUAL) &&
     g.urls[0].maxAsserts == 0
   ) {
-    
-    
+    // Pretend the document loaded --- RecordResult will notice
+    // there's already a canvas for this URL
     g.containingWindow.setTimeout(RecordResult, 0);
   } else {
     var currentTest = g.totalTests - g.urls.length;
-    
-    
+    // Log this to preserve the same overall log format,
+    // should be removed if the format is updated
     gDumpFn(
       "REFTEST TEST-LOAD | " +
         g.currentURL +
@@ -987,11 +977,11 @@ function UpdateCanvasCache(url, canvas) {
   }
 }
 
-
-
-
-
-
+// Recompute drawWindow flags for every drawWindow operation.
+// We have to do this every time since our window can be
+// asynchronously resized (e.g. by the window manager, to make
+// it fit on screen) at unpredictable times.
+// Fortunately this is pretty cheap.
 async function DoDrawWindow(ctx, x, y, w, h) {
   if (g.useDrawSnapshot) {
     try {
@@ -1013,9 +1003,9 @@ async function DoDrawWindow(ctx, x, y, w, h) {
       g.containingWindow.innerWidth >= testRect.right &&
       g.containingWindow.innerHeight >= testRect.bottom)
   ) {
-    
-    
-    
+    // We can use the window's retained layer manager
+    // because the window is big enough to display the entire
+    // browser element
     flags |= ctx.DRAWWINDOW_USE_WIDGET_LAYERS;
   } else if (g.browserIsRemote) {
     logger.error(g.currentURL + " | can't drawWindow remote content");
@@ -1023,14 +1013,14 @@ async function DoDrawWindow(ctx, x, y, w, h) {
   }
 
   if (g.drawWindowFlags != flags) {
-    
+    // Every time the flags change, dump the new state.
     g.drawWindowFlags = flags;
     var flagsStr = "DRAWWINDOW_DRAW_CARET | DRAWWINDOW_DRAW_VIEW";
     if (flags & ctx.DRAWWINDOW_USE_WIDGET_LAYERS) {
       flagsStr += " | DRAWWINDOW_USE_WIDGET_LAYERS";
     } else {
-      
-      
+      // Output a special warning because we need to be able to detect
+      // this whenever it happens.
       LogWidgetLayersFailure();
       g.failedUseWidgetLayers = true;
     }
@@ -1071,7 +1061,7 @@ async function InitCurrentCanvasWithSnapshot() {
     g.urls[0].type == TYPE_SCRIPT ||
     g.urls[0].type == TYPE_PRINT
   ) {
-    
+    // We don't want to snapshot this kind of test
     return false;
   }
 
@@ -1094,13 +1084,13 @@ async function UpdateCurrentCanvasForInvalidation(rects) {
   var ctx = g.currentCanvas.getContext("2d");
   for (var i = 0; i < rects.length; ++i) {
     var r = rects[i];
-    
+    // Set left/top/right/bottom to pixel boundaries
     var left = Math.floor(r.left);
     var top = Math.floor(r.top);
     var right = Math.ceil(r.right);
     var bottom = Math.ceil(r.bottom);
 
-    
+    // Clamp the values to the canvas size
     left = Math.max(0, Math.min(left, g.currentCanvas.width));
     top = Math.max(0, Math.min(top, g.currentCanvas.height));
     right = Math.max(0, Math.min(right, g.currentCanvas.width));
@@ -1121,17 +1111,17 @@ async function UpdateWholeCurrentCanvasForInvalidation() {
   await DoDrawWindow(ctx, 0, 0, g.currentCanvas.width, g.currentCanvas.height);
 }
 
-
+// eslint-disable-next-line complexity
 function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
   TestBuffer("RecordResult fired");
 
-  
+  // Keep track of which test was slowest, and how long it took.
   if (testRunTime > g.slowestTestTime) {
     g.slowestTestTime = testRunTime;
     g.slowestTestURL = g.currentURL;
   }
 
-  
+  // Not 'const ...' because of 'EXPECTED_*' value dependency.
   var outputs = {};
   outputs[EXPECTED_PASS] = {
     true: { s: ["PASS", "PASS"], n: "Pass" },
@@ -1145,8 +1135,8 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     true: { s: ["PASS", "PASS"], n: "Random" },
     false: { s: ["FAIL", "FAIL"], n: "Random" },
   };
-  
-  
+  // for EXPECTED_FUZZY we need special handling because we can have
+  // Pass, UnexpectedPass, or UnexpectedFail
 
   if (
     (g.currentURLTargetType == URL_TARGET_TYPE_TEST &&
@@ -1171,9 +1161,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
   if (g.urls[0].type == TYPE_PRINT) {
     switch (g.currentURLTargetType) {
       case URL_TARGET_TYPE_TEST:
-        
+        // First document has been loaded.
         g.testPrintOutput = typeSpecificResults;
-        
+        // Proceed to load the second document.
         CleanUpCrashDumpFiles();
         StartCurrentURI(URL_TARGET_TYPE_REFERENCE);
         break;
@@ -1182,9 +1172,9 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         let pathToRefPdf = typeSpecificResults;
         comparePdfs(pathToTestPdf, pathToRefPdf, function (error, results) {
           let expected = g.urls[0].expected;
-          
-          
-          
+          // TODO: We should complain here if results is empty!
+          // (If it's empty, we'll spuriously succeed, regardless of
+          // our expectations)
           if (error) {
             output = outputs[expected].false;
             extra = { status_msg: output.n };
@@ -1204,13 +1194,13 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
                 return !result.passed;
               });
               if (failureResults.length) {
-                
-                
-                
+                // We got an expected failure. Let's get rid of the
+                // passes from the results so we don't trigger
+                // TEST_UNEXPECTED_PASS logging for those.
                 results = failureResults;
               }
-              
-              
+              // (else, we expected a failure but got none!
+              // Leave results untouched so we can log them.)
             }
             results.forEach(function (result) {
               output = outputPair[result.passed];
@@ -1238,12 +1228,12 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     let expected = g.urls[0].expected;
 
     if (errorMsg) {
-      
+      // Force an unexpected failure to alert the test author to fix the test.
       expected = EXPECTED_PASS;
     } else if (!typeSpecificResults.length) {
-      
-      
-      
+      // This failure may be due to a JavaScript Engine bug causing
+      // early termination of the test. If we do not allow silent
+      // failure, report an error.
       if (!g.urls[0].allowSilentFail) {
         errorMsg = "No test results reported. (SCRIPT)\n";
       } else {
@@ -1273,10 +1263,10 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
     });
     var outputPair;
     if (anyFailed && expected == EXPECTED_FAIL) {
-      
-      
-      
-      
+      // If we're marked as expected to fail, and some (but not all) tests
+      // passed, treat those tests as though they were marked random
+      // (since we can't tell whether they were really intended to be
+      // marked failing or not).
       outputPair = {
         true: outputs[EXPECTED_RANDOM].true,
         false: outputs[expected].false,
@@ -1327,27 +1317,27 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
 
   switch (g.currentURLTargetType) {
     case URL_TARGET_TYPE_TEST:
-      
-      
+      // First document has been loaded.
+      // Proceed to load the second document.
 
       CleanUpCrashDumpFiles();
       StartCurrentURI(URL_TARGET_TYPE_REFERENCE);
       break;
     case URL_TARGET_TYPE_REFERENCE:
-      
-      
-      
+      // Both documents have been loaded. Compare the renderings and see
+      // if the comparison result matches the expected result specified
+      // in the manifest.
 
-      
+      // number of different pixels
       var differences;
-      
+      // whether the two renderings match:
       var equal;
       var maxDifference = {};
-      
-      
+      // whether the allowed fuzziness from the annotations is exceeded
+      // by the actual comparison results
       var fuzz_exceeded = false;
 
-      
+      // what is expected on this platform (PASS, FAIL, RANDOM, or FUZZY)
       let expected = g.urls[0].expected;
 
       differences = g.windowUtils.compareCanvases(
@@ -1357,20 +1347,20 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
       );
 
       if (g.urls[0].noAutoFuzz) {
-        
+        // Autofuzzing is disabled
       } else if (
         isAndroidDevice() &&
         maxDifference.value <= 2 &&
         differences > 0
       ) {
-        
-        
-        
-        
-        
-        
-        
-        
+        // Autofuzz for WR on Android physical devices: Reduce any
+        // maxDifference of 2 to 0, because we get a lot of off-by-ones
+        // and off-by-twos that are very random and hard to annotate.
+        // In cases where the difference on any pixel component is more
+        // than 2 we require manual annotation. Note that this applies
+        // to both == tests and != tests, so != tests don't
+        // inadvertently pass due to a random off-by-one pixel
+        // difference.
         logger.info(
           `REFTEST wr-on-android dropping fuzz of (${maxDifference.value}, ${differences}) to (0, 0)`
         );
@@ -1407,7 +1397,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         g.failedOpaqueLayer ||
         g.failedAssignedLayer;
 
-      
+      // whether the comparison result matches what is in the manifest
       var test_passed =
         equal == (g.urls[0].type == TYPE_REFTEST_EQUAL) && !failedExtraCheck;
 
@@ -1420,26 +1410,26 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         !failedExtraCheck &&
         !fuzz_exceeded
       ) {
-        
-        
-        
-        
-        
-        
+        // If we get here, that means we had an '==' type test where
+        // at least one of the actual difference values was below the
+        // allowed range, but nothing else was wrong. So let's produce
+        // UNEXPECTED-PASS in this scenario. Also, if we enter this
+        // branch, 'equal' must be false so let's assert that to guard
+        // against logic errors.
         if (equal) {
           throw new Error("Logic error in reftest.jsm fuzzy test handling!");
         }
         output = { s: ["PASS", "FAIL"], n: "UnexpectedPass" };
       } else {
-        
+        // In all other cases we fail the test
         output = { s: ["FAIL", "PASS"], n: "UnexpectedFail" };
       }
       extra = { status_msg: output.n };
 
       ++g.testResults[output.n];
 
-      
-      
+      // It's possible that we failed both an "extra check" and the normal comparison, but we don't
+      // have a way to annotate these separately, so just print an error for the extra check failures.
       if (failedExtraCheck) {
         var failures = [];
         if (g.failedNoPaint) {
@@ -1451,7 +1441,7 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
         if (g.failedDisplayList) {
           failures.push("failed reftest-display-list");
         }
-        
+        // The g.failed*Messages arrays will contain messages from both the test and the reference.
         if (g.failedOpaqueLayer) {
           failures.push(
             "failed reftest-opaque-layer: " +
@@ -1555,12 +1545,12 @@ function RecordResult(testRunTime, errorMsg, typeSpecificResults) {
 function LoadFailed(why) {
   ++g.testResults.FailedLoad;
   if (!why) {
-    
-    
-    
-    
-    
-    
+    // reftest-content.js sets an initial reason before it sets the
+    // timeout that will call us with the currently set reason, so we
+    // should never get here.  If we do then there's a logic error
+    // somewhere.  Perhaps tests are somehow running overlapped and the
+    // timeout for one test is not being cleared before the timeout for
+    // another is set?  Maybe there's some sort of race?
     logger.error(
       "load failed with unknown reason (we should always have a reason!)"
     );
@@ -1653,11 +1643,11 @@ function CleanUpCrashDumpFiles() {
 function FinishTestItem() {
   logger.testEnd(g.urls[0].identifier, "OK");
 
-  
-  
+  // Replace document with BLANK_URL_FOR_CLEARING in case there are
+  // assertions when unloading.
   logger.debug("Loading a blank page");
-  
-  
+  // After clearing, content will notify us of the assertion count
+  // and tests will continue.
   SendClear();
   g.failedNoPaint = false;
   g.failedNoDisplayList = false;
@@ -1671,8 +1661,8 @@ function FinishTestItem() {
 async function DoAssertionCheck(numAsserts) {
   if (g.debug.isDebugBuild) {
     if (g.browserIsRemote) {
-      
-      
+      // Count chrome-process asserts too when content is out of
+      // process.
       var newAssertionCount = g.debug.assertionCount;
       var numLocalAsserts = newAssertionCount - g.assertionCount;
       g.assertionCount = newAssertionCount;
@@ -1702,14 +1692,14 @@ async function DoAssertionCheck(numAsserts) {
     g.windowUtils.leaveChaosMode();
   }
 
-  
+  // And start the next test.
   g.urls.shift();
   await StartCurrentTest();
 }
 
 function ResetRenderingState() {
   SendResetRenderingState();
-  
+  // We would want to clear any viewconfig here, if we add support for it
 }
 
 async function RestoreChangedPreferences() {
@@ -2147,9 +2137,9 @@ function comparePdfs(pathToTestPdf, pathToRefPdf, callback) {
         [pathToTestPdf, pathToRefPdf].map(function (path) {
           return new Promise(function (resolve, reject) {
             readPdf(path, function (error, pdf) {
-              
-              
-              
+              // Resolve or reject outer promise. reject and resolve are
+              // passed to the callback function given as first arguments
+              // to the Promise constructor.
               if (error) {
                 reject(error);
               } else {

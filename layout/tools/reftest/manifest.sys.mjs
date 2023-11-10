@@ -1,9 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-"use strict";
-
-var EXPORTED_SYMBOLS = ["ReadTopManifest", "CreateUrls"];
+import { globals } from "resource://reftest/globals.sys.mjs";
 
 const {
   NS_GFXINFO_CONTRACTID,
@@ -27,13 +26,10 @@ const {
   FOCUS_FILTER_NON_NEEDS_FOCUS_TESTS,
 
   g,
-} = ChromeUtils.import("resource://reftest/globals.jsm");
-const { NetUtil } = ChromeUtils.importESModule(
-  "resource://gre/modules/NetUtil.sys.mjs"
-);
-const { AppConstants } = ChromeUtils.importESModule(
-  "resource://gre/modules/AppConstants.sys.mjs"
-);
+} = globals;
+
+import { NetUtil } from "resource://gre/modules/NetUtil.sys.mjs";
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
 
 const NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX =
   "@mozilla.org/network/protocol;1?name=";
@@ -41,7 +37,7 @@ const NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX =
 const RE_PROTOCOL = /^\w+:/;
 const RE_PREF_ITEM = /^(|test-|ref-)pref\((.+?),(.*)\)$/;
 
-function ReadTopManifest(aFileURL, aFilter, aManifestID) {
+export function ReadTopManifest(aFileURL, aFilter, aManifestID) {
   var url = g.ioService.newURI(aFileURL);
   if (!url) {
     throw new Error("Expected a file or http URL for the manifest.");
@@ -51,13 +47,13 @@ function ReadTopManifest(aFileURL, aFilter, aManifestID) {
   ReadManifest(url, aFilter, aManifestID);
 }
 
-
-
-
+// Note: If you materially change the reftest manifest parsing,
+// please keep the parser in layout/tools/reftest/__init__.py in sync.
+// eslint-disable-next-line complexity
 function ReadManifest(aURL, aFilter, aManifestID) {
-  
-  
-  
+  // Ensure each manifest is only read once. This assumes that manifests that
+  // are included with filters will be read via their include before they are
+  // read directly in the case of a duplicate
   if (g.manifestsLoaded.hasOwnProperty(aURL.spec)) {
     if (g.manifestsLoaded[aURL.spec] === null) {
       return;
@@ -84,8 +80,8 @@ function ReadManifest(aURL, aFilter, aManifestID) {
   inputStream.close();
   var lines = streamBuf.split(/\n|\r|\r\n/);
 
-  
-  
+  // The sandbox for fails-if(), etc., condition evaluation. This is not
+  // always required and so is created on demand.
   var sandbox;
   function GetOrCreateSandbox() {
     if (!sandbox) {
@@ -110,17 +106,17 @@ function ReadManifest(aURL, aFilter, aManifestID) {
     ++lineNo;
     if (str.charAt(0) == "#") {
       continue;
-    } 
+    } // entire line was a comment
     var i = str.search(/\s+#/);
     if (i >= 0) {
       str = str.substring(0, i);
     }
-    
+    // strip leading and trailing whitespace
     str = str.replace(/^\s*/, "").replace(/\s*$/, "");
     if (!str || str == "") {
       continue;
     }
-    var items = str.split(/\s+/); 
+    var items = str.split(/\s+/); // split on whitespace
 
     if (items[0] == "url-prefix") {
       if (items.length != 2) {
@@ -170,7 +166,7 @@ function ReadManifest(aURL, aFilter, aManifestID) {
       var m = item.match(/^(fails|random|skip|silentfail)-if(\(.*\))$/);
       if (m) {
         stat = m[1];
-        
+        // Note: m[2] contains the parentheses, and we want them.
         cond = Cu.evalInSandbox(m[2], GetOrCreateSandbox());
       } else if (item.match(/^(fails|random|skip)$/)) {
         stat = item;
@@ -208,15 +204,15 @@ function ReadManifest(aURL, aFilter, aManifestID) {
         cond = false;
         for (var precondition of preconditions) {
           if (precondition === "debugMode") {
-            
-            
+            // Currently unimplemented. Requires asynchronous
+            // JSD call + getting an event while no JS is running
             stat = fallback_action;
             cond = true;
             break;
           } else if (precondition === "true") {
-            
+            // For testing
           } else {
-            
+            // Unknown precondition. Assume it is unimplemented.
             stat = fallback_action;
             cond = true;
             break;
@@ -304,8 +300,8 @@ function ReadManifest(aURL, aFilter, aManifestID) {
     }
 
     if (items.length > origLength) {
-      
-      
+      // Implies we broke out of the loop before we finished processing
+      // defaults. This means defaults contained an invalid token.
       throw new Error(
         "Error in manifest file " +
           aURL.spec +
@@ -326,20 +322,20 @@ function ReadManifest(aURL, aFilter, aManifestID) {
     var runHttp = false;
     var httpDepth;
     if (items[0] == "HTTP") {
-      runHttp = aURL.scheme == "file"; 
-      
+      runHttp = aURL.scheme == "file"; // We can't yet run the local HTTP server
+      // for non-local reftests.
       httpDepth = 0;
       items.shift();
     } else if (items[0].match(/HTTP\(\.\.(\/\.\.)*\)/)) {
-      
-      runHttp = aURL.scheme == "file"; 
-      
+      // Accept HTTP(..), HTTP(../..), HTTP(../../..), etc.
+      runHttp = aURL.scheme == "file"; // We can't yet run the local HTTP server
+      // for non-local reftests.
       httpDepth = (items[0].length - 5) / 3;
       items.shift();
     }
 
-    
-    
+    // do not prefix the url for include commands or urls specifying
+    // a protocol
     if (urlprefix && items[0] != "include") {
       if (items.length > 1 && !items[1].match(RE_PROTOCOL)) {
         items[1] = urlprefix + items[1];
@@ -374,12 +370,12 @@ function ReadManifest(aURL, aFilter, aManifestID) {
         );
       }
 
-      
-      
-      
-      
-      
-      
+      // If the expected_status is EXPECTED_PASS (the default) then allow
+      // the include. If 'skip' is true, that means there was a skip
+      // or skip-if annotation (with a true condition) on this include
+      // statement, so we should skip the include. Any other expected_status
+      // is disallowed since it's nonintuitive as to what the intended
+      // effect is.
       if (nonSkipUsed) {
         throw new Error(
           "Error in manifest file " +
@@ -397,7 +393,7 @@ function ReadManifest(aURL, aFilter, aManifestID) {
             " due to matching skip condition"
         );
       } else {
-        
+        // poor man's assertion
         if (expected_status != EXPECTED_PASS) {
           throw new Error(
             "Error in manifest file parsing code: we should never get expected_status=" +
@@ -417,20 +413,20 @@ function ReadManifest(aURL, aFilter, aManifestID) {
           Ci.nsIScriptSecurityManager.DISALLOW_SCRIPT
         );
 
-        
-        
+        // Cannot use nsIFile or similar to manipulate the manifest ID; although it appears
+        // path-like, it does not refer to an actual path in the filesystem.
         var newManifestID = aManifestID;
         var included = items[1];
-        
-        
+        // Remove included manifest file name.
+        // eg. dir1/dir2/reftest.list -> dir1/dir2
         var pos = included.lastIndexOf("/");
         if (pos <= 0) {
           included = "";
         } else {
           included = included.substring(0, pos);
         }
-        
-        
+        // Simplify references to parent directories.
+        // eg. dir1/dir2/../dir3 -> dir1/dir3
         while (included.startsWith("../")) {
           pos = newManifestID.lastIndexOf("/");
           if (pos < 0) {
@@ -439,12 +435,12 @@ function ReadManifest(aURL, aFilter, aManifestID) {
           newManifestID = newManifestID.substring(0, pos);
           included = included.substring(3);
         }
-        
+        // Use a new manifest ID if the included manifest is in a different directory.
         if (included.length) {
           if (newManifestID.length) {
             newManifestID = newManifestID + "/" + included;
           } else {
-            
+            // parent directory includes may refer to the topsrcdir
             newManifestID = included;
           }
         }
@@ -535,14 +531,14 @@ function ReadManifest(aURL, aFilter, aManifestID) {
       if (g.compareRetainedDisplayLists) {
         type = TYPE_REFTEST_EQUAL;
 
-        
-        
+        // We expect twice as many assertion failures when comparing
+        // tests because we run each test twice.
         minAsserts *= 2;
         maxAsserts *= 2;
 
-        
-        
-        
+        // Skip the test if it is expected to fail in both modes.
+        // It would unexpectedly "pass" in comparison mode mode when
+        // comparing the two failures, which is not a useful result.
         if (
           expected_status === EXPECTED_FAIL ||
           expected_status === EXPECTED_RANDOM
@@ -593,8 +589,8 @@ function ReadManifest(aURL, aFilter, aManifestID) {
   }
 }
 
-
-
+// Read all available data from an input stream and return it
+// as a string.
 function getStreamContent(inputStream) {
   var streamBuf = "";
   var sis = Cc["@mozilla.org/scriptableinputstream;1"].createInstance(
@@ -610,7 +606,7 @@ function getStreamContent(inputStream) {
   return streamBuf;
 }
 
-
+// Build the sandbox for fails-if(), etc., condition evaluation.
 function BuildConditionSandbox(aURL) {
   var sandbox = new Cu.Sandbox(aURL.spec);
   sandbox.isDebugBuild = g.debug.isDebugBuild;
@@ -664,7 +660,7 @@ function BuildConditionSandbox(aURL) {
   sandbox.azureSkia = canvasBackend == "skia";
   sandbox.skiaContent = contentBackend == "skia";
   sandbox.azureSkiaGL = false;
-  
+  // true if we are using the same Azure backend for rendering canvas and content
   sandbox.contentSameGfxBackendAsCanvas =
     contentBackend == canvasBackend ||
     (contentBackend == "none" && canvasBackend == "cairo");
@@ -690,7 +686,7 @@ function BuildConditionSandbox(aURL) {
   );
   sandbox.layersOMTC = !!g.windowUtils.layerManagerRemote;
 
-  
+  // Shortcuts for widget toolkits.
   sandbox.Android = Services.appinfo.OS == "Android";
   sandbox.cocoaWidget = Services.appinfo.widgetToolkit == "cocoa";
   sandbox.gtkWidget = Services.appinfo.widgetToolkit == "gtk";
@@ -699,33 +695,33 @@ function BuildConditionSandbox(aURL) {
 
   sandbox.is64Bit = Services.appinfo.is64Bit;
 
-  
-  
+  // Use this to annotate reftests that fail in drawSnapshot, but
+  // the reason hasn't been investigated (or fixed) yet.
   sandbox.useDrawSnapshot = g.useDrawSnapshot;
-  
-  
-  
+  // Use this to annotate reftests that use functionality
+  // that isn't available to drawSnapshot (like any sort of
+  // compositor feature such as async scrolling).
   sandbox.unsupportedWithDrawSnapshot = g.useDrawSnapshot;
 
   sandbox.retainedDisplayList =
     Services.prefs.getBoolPref("layout.display-list.retain") &&
     !sandbox.useDrawSnapshot;
 
-  
+  // Needed to specifically test the new and old behavior. This will eventually be removed.
   sandbox.retainedDisplayListNew =
     sandbox.retainedDisplayList &&
     Services.prefs.getBoolPref("layout.display-list.retain.sc");
 
-  
-  
+  // GeckoView is currently uniquely identified by "android + e10s" but
+  // we might want to make this condition more precise in the future.
   sandbox.geckoview = sandbox.Android && g.browserIsRemote;
 
-  
+  // Scrollbars that are semi-transparent. See bug 1169666.
   sandbox.transparentScrollbars = Services.appinfo.widgetToolkit == "gtk";
 
   if (sandbox.Android) {
-    
-    
+    // This is currently used to distinguish Android 4.0.3 (SDK version 15)
+    // and later from Android 2.x
     sandbox.AndroidVersion = Services.sysinfo.getPropertyAsInt32("version");
 
     sandbox.emulator = readGfxInfo(gfxInfo, "adapterDeviceID").includes(
@@ -765,19 +761,19 @@ function BuildConditionSandbox(aURL) {
   sandbox.http = new sandbox.Object();
   httpProps.forEach(x => (sandbox.http[x] = hh[x]));
 
-  
+  // set to specific Android13 version (Pixel 5 in CI)
   sandbox.Android13 = sandbox.Android && sandbox.http.platform == "Android 13";
 
-  
-  
-  
-  
+  // Set OSX to be the Mac OS X version, as an integer, or undefined
+  // for other platforms.  The integer is formed by 100 times the
+  // major version plus the minor version, so 1006 for 10.6, 1010 for
+  // 10.10, etc.
   var osxmatch = /Mac OS X (\d+).(\d+)$/.exec(hh.oscpu);
   sandbox.OSX = osxmatch
     ? parseInt(osxmatch[1]) * 100 + parseInt(osxmatch[2])
     : undefined;
 
-  
+  // config specific prefs
   sandbox.appleSilicon = Services.prefs.getBoolPref(
     "sandbox.apple_silicon",
     false
@@ -801,8 +797,8 @@ function BuildConditionSandbox(aURL) {
     { cloneFunctions: true }
   );
 
-  
-  
+  // Tests shouldn't care about this except for when they need to
+  // crash the content process
   sandbox.browserIsRemote = g.browserIsRemote;
   sandbox.browserIsFission = g.browserIsFission;
 
@@ -814,13 +810,13 @@ function BuildConditionSandbox(aURL) {
     sandbox.asyncPan = false;
   }
 
-  
+  // Graphics features
   sandbox.usesRepeatResampling = sandbox.d2d;
 
-  
+  // Running in a test-verify session?
   sandbox.verify = Services.prefs.getBoolPref("reftest.verify", false);
 
-  
+  // Running with a variant enabled?
   sandbox.fission = Services.appinfo.fissionAutostart;
   sandbox.serviceWorkerE10s = true;
 
@@ -890,7 +886,7 @@ function AddPrefSettings(
     g.compareRetainedDisplayLists &&
     aPrefName != "layout.display-list.retain"
   ) {
-    
+    // ref-pref() is ignored, test-pref() and pref() are added to both
     if (aWhere != "ref-") {
       aTestPrefSettings.push(setting);
       aRefPrefSettings.push(setting);
@@ -917,8 +913,8 @@ function ServeTestBase(aURL, depth) {
   var listURL = aURL.QueryInterface(Ci.nsIFileURL);
   var directory = listURL.file.parent;
 
-  
-  
+  // Allow serving a tree that's an ancestor of the directory containing
+  // the files so that they can use resources in ../ (etc.).
   var dirPath = "/";
   while (depth > 0) {
     dirPath = "/" + directory.leafName + dirPath;
@@ -929,7 +925,7 @@ function ServeTestBase(aURL, depth) {
   g.count++;
   var path = "/" + Date.now() + "/" + g.count;
   g.server.registerDirectory(path + "/", directory);
-  
+  // this one is needed so tests can use example.org urls for cross origin testing
   g.server.registerDirectory("/", directory);
 
   return g.ioService.newURI(
@@ -937,7 +933,7 @@ function ServeTestBase(aURL, depth) {
   );
 }
 
-function CreateUrls(test) {
+export function CreateUrls(test) {
   let manifestURL = g.ioService.newURI(test.manifest);
 
   let testbase = manifestURL;
@@ -981,10 +977,10 @@ function CreateUrls(test) {
 }
 
 function TestIdentifier(aUrl, aManifestID) {
-  
-  
-  
-  
+  // Construct a platform-independent and location-independent test identifier for
+  // a url; normally the identifier looks like a posix-compliant relative file
+  // path.
+  // Test urls may be simple file names, chrome: urls with full paths, about:blank, etc.
   if (aUrl.startsWith("about:") || aUrl.startsWith("data:")) {
     return aUrl;
   }
@@ -1043,10 +1039,10 @@ function AddTestItem(aTest, aFilter, aManifestID) {
 
   aTest.identifier = identifier;
   g.urls.push(aTest);
-  
-  
-  
-  
+  // Periodically log progress to avoid no-output timeout on slow platforms.
+  // No-output timeouts during manifest parsing have been a problem for
+  // jsreftests on Android/debug. Any logging resets the no-output timer,
+  // even debug logging which is normally not displayed.
   if (g.urls.length % 5000 == 0) {
     g.logger.debug(g.urls.length + " tests found...");
   }
