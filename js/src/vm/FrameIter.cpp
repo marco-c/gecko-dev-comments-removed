@@ -17,10 +17,10 @@
 #include "jit/JitFrames.h"       
 #include "jit/JSJitFrameIter.h"  
 #include "js/ColumnNumber.h"  
-#include "js/GCAPI.h"         
-#include "js/Principals.h"    
-#include "js/RootingAPI.h"    
-#include "vm/Activation.h"    
+#include "js/GCAPI.h"              
+#include "js/Principals.h"         
+#include "js/RootingAPI.h"         
+#include "vm/Activation.h"         
 #include "vm/EnvironmentObject.h"  
 #include "vm/JitActivation.h"      
 #include "vm/JSContext.h"          
@@ -628,11 +628,10 @@ unsigned FrameIter::computeLine(JS::TaggedColumnNumberOneOrigin* column) const {
       if (isWasm()) {
         return wasmFrame().computeLine(column);
       }
-      JS::LimitedColumnNumberZeroOrigin columnNumber;
+      JS::LimitedColumnNumberOneOrigin columnNumber;
       unsigned lineNumber = PCToLineNumber(script(), pc(), &columnNumber);
       if (column) {
-        *column = JS::TaggedColumnNumberOneOrigin(
-            JS::LimitedColumnNumberOneOrigin(columnNumber));
+        *column = JS::TaggedColumnNumberOneOrigin(columnNumber);
       }
       return lineNumber;
   }

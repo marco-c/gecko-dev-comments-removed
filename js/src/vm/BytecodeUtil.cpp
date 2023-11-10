@@ -110,7 +110,7 @@ static bool DecompileArgumentFromStack(JSContext* cx, int formalIndex,
   for (size_t i = 0; i < ionCounts->numBlocks(); i++) {
     const jit::IonBlockCounts& block = ionCounts->block(i);
     unsigned lineNumber = 0;
-    JS::LimitedColumnNumberZeroOrigin columnNumber;
+    JS::LimitedColumnNumberOneOrigin columnNumber;
     lineNumber = PCToLineNumber(script, script->offsetToPC(block.offset()),
                                 &columnNumber);
     sp->printf("BB #%" PRIu32 " [%05u,%u,%u]", block.id(), block.offset(),

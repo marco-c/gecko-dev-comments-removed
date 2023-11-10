@@ -7302,7 +7302,7 @@ bool CodeGenerator::generateBody() {
 #ifdef JS_JITSPEW
     const char* filename = nullptr;
     size_t lineNumber = 0;
-    JS::LimitedColumnNumberZeroOrigin columnNumber;
+    JS::LimitedColumnNumberOneOrigin columnNumber;
     if (current->mir()->info().script()) {
       filename = current->mir()->info().script()->filename();
       if (current->mir()->pc()) {

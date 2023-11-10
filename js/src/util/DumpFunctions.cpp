@@ -263,7 +263,7 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
   JSAutoRealm ar(cx, envChain);
 
   const char* filename = script->filename();
-  JS::LimitedColumnNumberZeroOrigin column;
+  JS::LimitedColumnNumberOneOrigin column;
   unsigned lineno = PCToLineNumber(script, pc, &column);
   Rooted<JSFunction*> fun(cx, iter.maybeCallee(cx));
   Rooted<JSString*> funname(cx);

@@ -272,7 +272,7 @@ bool CacheIRHealth::spewICEntryHealth(AutoStructuredSpewer& spew, JSContext* cx,
 
   
   
-  JS::LimitedColumnNumberZeroOrigin column;
+  JS::LimitedColumnNumberOneOrigin column;
   spew->property("lineno", PCToLineNumber(script, pc, &column));
   spew->property("column", column.zeroOriginValue());
 

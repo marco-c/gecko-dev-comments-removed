@@ -481,7 +481,7 @@ void js::SetPreserveWrapperCallbacks(
 
 JS_PUBLIC_API unsigned JS_PCToLineNumber(
     JSScript* script, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp) {
+    JS::LimitedColumnNumberOneOrigin* columnp) {
   return PCToLineNumber(script, pc, columnp);
 }
 

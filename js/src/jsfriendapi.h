@@ -58,7 +58,7 @@ extern JS_PUBLIC_API bool JS_NondeterministicGetWeakSetKeys(
 
 extern JS_PUBLIC_API unsigned JS_PCToLineNumber(
     JSScript* script, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp = nullptr);
+    JS::LimitedColumnNumberOneOrigin* columnp = nullptr);
 
 
 

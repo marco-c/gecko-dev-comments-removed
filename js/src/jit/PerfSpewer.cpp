@@ -862,7 +862,9 @@ void PerfSpewer::saveJitCodeSourceInfo(JSScript* script, JitCode* code,
     }
     
     
-    lineno = PCToLineNumber(script, pc, &colno);
+    JS::LimitedColumnNumberOneOrigin oneOriginColumn;
+    lineno = PCToLineNumber(script, pc, &oneOriginColumn);
+    colno = JS::LimitedColumnNumberZeroOrigin(oneOriginColumn);
 
     if (JS::JitCodeSourceInfo* srcInfo =
             CreateProfilerSourceEntry(profilerRecord, lock)) {
@@ -966,10 +968,11 @@ void IonICPerfSpewer::saveJitCodeSourceInfo(JSScript* script, JitCode* code,
   WriteToJitDumpFile(&debug_record, sizeof(debug_record), lock);
 
   uint32_t lineno;
-  JS::LimitedColumnNumberZeroOrigin colno;
+  JS::LimitedColumnNumberOneOrigin colno;
   lineno = PCToLineNumber(script, pc, &colno);
 
-  WriteJitDumpDebugEntry(uint64_t(code->raw()), filename, lineno, colno, lock);
+  WriteJitDumpDebugEntry(uint64_t(code->raw()), filename, lineno,
+                         JS::LimitedColumnNumberZeroOrigin(colno), lock);
 #endif
 }
 

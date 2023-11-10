@@ -2231,12 +2231,12 @@ namespace js {
 
 extern unsigned PCToLineNumber(
     JSScript* script, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp = nullptr);
+    JS::LimitedColumnNumberOneOrigin* columnp = nullptr);
 
 extern unsigned PCToLineNumber(
-    unsigned startLine, JS::LimitedColumnNumberZeroOrigin startCol,
+    unsigned startLine, JS::LimitedColumnNumberOneOrigin startCol,
     SrcNote* notes, SrcNote* notesEnd, jsbytecode* code, jsbytecode* pc,
-    JS::LimitedColumnNumberZeroOrigin* columnp = nullptr);
+    JS::LimitedColumnNumberOneOrigin* columnp = nullptr);
 
 
 
