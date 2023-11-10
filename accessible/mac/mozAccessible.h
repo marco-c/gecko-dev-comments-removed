@@ -207,6 +207,12 @@ enum CheckedState {
 - (NSString*)moxARIALive;
 
 
+- (NSNumber*)moxARIAPosInSet;
+
+
+- (NSNumber*)moxARIASetSize;
+
+
 - (NSString*)moxARIARelevant;
 
 

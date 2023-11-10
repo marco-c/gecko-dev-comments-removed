@@ -262,6 +262,12 @@
 - (NSArray* _Nullable)moxSelectedRows;
 
 
+- (NSNumber* _Nullable)moxARIAPosInSet;
+
+
+- (NSNumber* _Nullable)moxARIASetSize;
+
+
 
 
 - (id _Nullable)moxMathRootRadicand;
