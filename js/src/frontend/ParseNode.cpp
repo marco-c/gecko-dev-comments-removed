@@ -7,6 +7,7 @@
 #include "frontend/ParseNode.h"
 
 #include "mozilla/FloatingPoint.h"
+#include "mozilla/Try.h"  
 
 #include "jsnum.h"
 
@@ -56,10 +57,10 @@ void* ParseNodeAllocator::allocNode(size_t size) {
   return p;
 }
 
-ParseNode* ParseNode::appendOrCreateList(ParseNodeKind kind, ParseNode* left,
-                                         ParseNode* right,
-                                         FullParseHandler* handler,
-                                         ParseContext* pc) {
+ParseNodeResult ParseNode::appendOrCreateList(ParseNodeKind kind,
+                                              ParseNode* left, ParseNode* right,
+                                              FullParseHandler* handler,
+                                              ParseContext* pc) {
   
   
   
@@ -90,10 +91,8 @@ ParseNode* ParseNode::appendOrCreateList(ParseNodeKind kind, ParseNode* left,
     }
   }
 
-  ListNode* list = handler->new_<ListNode>(kind, left);
-  if (!list) {
-    return nullptr;
-  }
+  ListNode* list;
+  MOZ_TRY_VAR(list, handler->newResult<ListNode>(kind, left));
 
   list->append(right);
   return list;

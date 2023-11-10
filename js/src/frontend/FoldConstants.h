@@ -32,9 +32,6 @@ class ParserAtomsTable;
 
 
 
-
-
-
 [[nodiscard]] extern bool FoldConstants(FrontendContext* fc,
                                         ParserAtomsTable& parserAtoms,
                                         ParseNode** pnp,
