@@ -2826,6 +2826,8 @@ pref("browser.firefox-view.view-count", 0);
 
 pref("browser.firefox-view.max-history-rows", 300);
 
+pref("browser.firefox-view.search.enabled", false);
+
 
 
 pref("browser.pdfjs.feature-tour", "{\"screen\":\"\",\"complete\":false}");
