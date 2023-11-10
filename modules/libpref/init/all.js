@@ -3603,7 +3603,6 @@ pref("browser.translations.enable", false);
 
 
 
-
 pref("browser.translations.logLevel", "Error");
 
 
@@ -3616,10 +3615,6 @@ pref("browser.translations.neverTranslateLanguages", "");
 
 
 pref("browser.translations.useHTML", false);
-
-
-
-pref("browser.translations.autoTranslate", false);
 
 pref("browser.translations.automaticallyPopup", true);
 
