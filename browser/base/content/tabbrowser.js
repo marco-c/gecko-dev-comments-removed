@@ -3569,18 +3569,31 @@
 
 
 
-    removeAllTabsBut(aTab, aParams, skipWarnAboutClosingTabs = false) {
-      let tabsToRemove = [];
-      if (aTab && aTab.multiselected) {
-        tabsToRemove = this.visibleTabs.filter(
-          tab => !tab.multiselected && !tab.pinned
-        );
+
+
+    removeAllTabsBut(aTab, aParams = {}) {
+      let {
+        skipWarnAboutClosingTabs = false,
+        skipPinnedOrSelectedTabs = true,
+      } = aParams;
+
+      let filterFn;
+
+      
+      if (skipPinnedOrSelectedTabs) {
+        if (aTab?.multiselected) {
+          filterFn = tab => !tab.multiselected && !tab.pinned;
+        } else {
+          filterFn = tab => tab != aTab && !tab.pinned;
+        }
       } else {
-        tabsToRemove = this.visibleTabs.filter(
-          tab => tab != aTab && !tab.pinned
-        );
+        
+        filterFn = tab => tab != aTab;
       }
 
+      let tabsToRemove = this.visibleTabs.filter(filterFn);
+
+      
       if (
         !skipWarnAboutClosingTabs &&
         !this.warnAboutClosingTabs(
