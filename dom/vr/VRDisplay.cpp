@@ -146,8 +146,7 @@ void VREyeParameters::GetOffset(JSContext* aCx,
                                 ErrorResult& aRv) {
   if (!mOffset) {
     
-    mOffset =
-        dom::Float32Array::Create(aCx, this, 3, mEyeTranslation.components);
+    mOffset = dom::Float32Array::Create(aCx, this, mEyeTranslation.components);
     if (!mOffset) {
       aRv.NoteJSContextException(aCx);
       return;
@@ -201,7 +200,7 @@ void VRStageParameters::GetSittingToStandingTransform(
   if (!mSittingToStandingTransformArray) {
     
     mSittingToStandingTransformArray = dom::Float32Array::Create(
-        aCx, this, 16, mSittingToStandingTransform.components);
+        aCx, this, mSittingToStandingTransform.components);
     if (!mSittingToStandingTransformArray) {
       aRv.NoteJSContextException(aCx);
       return;
