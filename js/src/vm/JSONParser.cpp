@@ -1095,7 +1095,7 @@ void JSONSyntaxParseHandler<CharT>::reportError(const char* msg,
   metadata.isMuted = false;
   metadata.filename = JS::ConstUTF8CharsZ("");
   metadata.lineNumber = 0;
-  metadata.columnNumber = JS::ColumnNumberZeroOrigin::zero();
+  metadata.columnNumber = JS::ColumnNumberOneOrigin();
 
   ReportJSONSyntaxError(fc, std::move(metadata), JSMSG_JSON_BAD_PARSE, msg,
                         lineString, columnString);

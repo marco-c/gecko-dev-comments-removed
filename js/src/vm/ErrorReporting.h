@@ -43,7 +43,7 @@ struct ErrorMetadata {
   uint32_t lineNumber;
 
   
-  JS::ColumnNumberZeroOrigin columnNumber;
+  JS::ColumnNumberOneOrigin columnNumber;
 
   
   

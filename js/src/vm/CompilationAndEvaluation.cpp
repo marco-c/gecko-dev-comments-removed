@@ -65,7 +65,7 @@ static void ReportSourceTooLongImpl(JS::FrontendContext* fc, ...) {
   js::ErrorMetadata metadata;
   metadata.filename = JS::ConstUTF8CharsZ("<unknown>");
   metadata.lineNumber = 0;
-  metadata.columnNumber = JS::ColumnNumberZeroOrigin::zero();
+  metadata.columnNumber = JS::ColumnNumberOneOrigin();
   metadata.lineLength = 0;
   metadata.tokenOffset = 0;
   metadata.isMuted = false;
