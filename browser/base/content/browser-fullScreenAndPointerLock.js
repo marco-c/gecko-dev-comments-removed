@@ -427,9 +427,6 @@ var FullScreen = {
     } else {
       toolbox.style.removeProperty("transform");
       toolbox.style.removeProperty("z-index");
-
-      
-      this.hideNavToolbox(false);
     }
   },
 
