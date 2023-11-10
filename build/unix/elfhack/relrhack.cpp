@@ -339,10 +339,10 @@ bool RelR<bits>::hack(std::fstream& f) {
         s.sh_addr = dyn_info[DT_RELR];
       }
       write_one_at(f, shdr_offset, s);
-    }
-    
-    
-    if (jmprel && (s.sh_addr == jmprel) && (s.sh_addr != dyn_info[DT_JMPREL])) {
+    } else if (jmprel && (s.sh_addr == jmprel) &&
+               (s.sh_addr != dyn_info[DT_JMPREL])) {
+      
+      
       s.sh_offset -= s.sh_addr - dyn_info[DT_JMPREL];
       s.sh_addr = dyn_info[DT_JMPREL];
       write_one_at(f, shdr_offset, s);
