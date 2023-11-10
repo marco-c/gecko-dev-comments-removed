@@ -34,10 +34,7 @@ class gfxMacPlatformFontList final : public CoreTextFontList {
   friend class gfxPlatformMac;
 
   gfxMacPlatformFontList();
-  virtual ~gfxMacPlatformFontList() {
-    
-    sSystemFontName.~nsCString();
-  }
+  virtual ~gfxMacPlatformFontList() = default;
 
   
   void InitSingleFaceList() MOZ_REQUIRES(mLock) override;
@@ -45,11 +42,6 @@ class gfxMacPlatformFontList final : public CoreTextFontList {
 
   
   void InitSystemFontNames() override MOZ_REQUIRES(mLock);
-
-  
-  
-  static const nsCString& GetSystemFontName();
-  static nsCString sSystemFontName;
 
   nsTArray<nsCString> mSingleFaceFonts;
 };
