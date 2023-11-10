@@ -109,9 +109,34 @@ PerformanceMainThread::PerformanceMainThread(nsPIDOMWindowInner* aWindow,
     mEventCounts = new class EventCounts(GetParentObject());
   }
   CreateNavigationTimingEntry();
+
+  if (StaticPrefs::dom_enable_largest_contentful_paint()) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    uintptr_t self = reinterpret_cast<uintptr_t>(this);
+    profiler_add_state_change_callback(
+        
+        
+        ProfilingState::Pausing,
+        [self](ProfilingState aProfilingState) {
+          const PerformanceMainThread* selfPtr =
+              reinterpret_cast<const PerformanceMainThread*>(self);
+
+          selfPtr->GetDOMTiming()->MaybeAddLCPProfilerMarker();
+        },
+        self);
+  }
 }
 
 PerformanceMainThread::~PerformanceMainThread() {
+  profiler_remove_state_change_callback(reinterpret_cast<uintptr_t>(this));
   mozilla::DropJSObjects(this);
 }
 

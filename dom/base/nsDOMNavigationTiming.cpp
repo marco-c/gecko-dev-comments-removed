@@ -526,6 +526,33 @@ void nsDOMNavigationTiming::NotifyDocShellStateChanged(
       (aDocShellState == DocShellState::eActive);
 }
 
+void nsDOMNavigationTiming::MaybeAddLCPProfilerMarker() {
+  
+  
+  if (!profiler_is_active_and_unpaused()) {
+    return;
+  }
+
+  TimeStamp navStartTime = GetNavigationStartTimeStamp();
+  TimeStamp lcpTime = GetLargestContentfulRenderTimeStamp();
+
+  if (!navStartTime || !lcpTime) {
+    return;
+  }
+
+  TimeDuration elapsed = lcpTime - navStartTime;
+  nsPrintfCString marker("Largest contentful paint after %dms",
+                         int(elapsed.ToMilliseconds()));
+  PROFILER_MARKER_TEXT(
+      "LargestContentfulPaint", DOM,
+      
+      
+      MarkerOptions(MarkerThreadId::MainThread(),
+                    MarkerTiming::Interval(navStartTime, lcpTime),
+                    MarkerInnerWindowIdFromDocShell(mDocShell)),
+      marker);
+}
+
 mozilla::TimeStamp nsDOMNavigationTiming::GetUnloadEventStartTimeStamp() const {
   nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
   
