@@ -449,7 +449,7 @@ class JS_PUBLIC_API ReadOnlyCompileOptions : public TransitiveCompileOptions {
   
   uint32_t lineno = 1;
   
-  JS::ColumnNumberZeroOrigin column;
+  JS::ColumnNumberOneOrigin column;
 
   
   
@@ -615,7 +615,7 @@ class MOZ_STACK_CLASS JS_PUBLIC_API CompileOptions final
     return *this;
   }
 
-  CompileOptions& setColumn(JS::ColumnNumberZeroOrigin c) {
+  CompileOptions& setColumn(JS::ColumnNumberOneOrigin c) {
     column = c;
     return *this;
   }

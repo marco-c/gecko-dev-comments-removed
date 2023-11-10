@@ -27,8 +27,8 @@
 #include "frontend/UsedNameTracker.h"  
 #include "js/AllocPolicy.h"        
 #include "js/CharacterEncoding.h"  
-#include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"  
+#include "js/ColumnNumber.h"       
+#include "js/ErrorReport.h"        
 #include "js/experimental/JSStencil.h"
 #include "js/GCVector.h"    
 #include "js/Id.h"          
@@ -1581,7 +1581,7 @@ static bool DelazifyCanonicalScriptedFunctionImpl(JSContext* cx,
   JS::CompileOptions options(cx);
   options.setMutedErrors(lazy->mutedErrors())
       .setFileAndLine(lazy->filename(), lazy->lineno())
-      .setColumn(JS::ColumnNumberZeroOrigin(lazy->column()))
+      .setColumn(JS::ColumnNumberOneOrigin(lazy->column()))
       .setScriptSourceOffset(lazy->sourceStart())
       .setNoScriptRval(false)
       .setSelfHostingMode(false)
@@ -1657,7 +1657,7 @@ DelazifyCanonicalScriptedFunctionImpl(
   JS::CompileOptions options(prefableOptions);
   options.setMutedErrors(ss->mutedErrors())
       .setFileAndLine(ss->filename(), extra.extent.lineno)
-      .setColumn(JS::ColumnNumberZeroOrigin(extra.extent.column))
+      .setColumn(JS::ColumnNumberOneOrigin(extra.extent.column))
       .setScriptSourceOffset(sourceStart)
       .setNoScriptRval(false)
       .setSelfHostingMode(false);
