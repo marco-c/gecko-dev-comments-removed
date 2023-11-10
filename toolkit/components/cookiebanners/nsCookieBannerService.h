@@ -134,6 +134,25 @@ class nsCookieBannerService final : public nsIObserver,
 
   void ReportRuleLookupTelemetry(const nsACString& aDomain,
                                  nsICookieBannerRule* aRule, bool aIsTopLevel);
+
+  
+  
+  typedef struct ExecutedData {
+    ExecutedData()
+        : hasExecutedInTop(false),
+          hasExecutedInFrame(false),
+          hasExecutedInTopPrivate(false),
+          hasExecutedInFramePrivate(false) {}
+
+    bool hasExecutedInTop;
+    bool hasExecutedInFrame;
+    bool hasExecutedInTopPrivate;
+    bool hasExecutedInFramePrivate;
+  } ExecutedData;
+
+  
+  
+  nsTHashMap<nsCStringHashKey, ExecutedData> mExecutedDataForSites;
 };
 
 }  
