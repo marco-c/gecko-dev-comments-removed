@@ -61,6 +61,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -751,6 +752,11 @@ public class GeckoSession {
                     url -> {
                       if (url == null) {
                         throw new IllegalArgumentException("abort");
+                      }
+                      final String lowerCasedUri = url.toLowerCase(Locale.ROOT);
+                      if (lowerCasedUri.startsWith("http") || lowerCasedUri.startsWith("https")) {
+                        throw new IllegalArgumentException(
+                            "Unsupported URI scheme for an error page");
                       }
                       return url;
                     }));
