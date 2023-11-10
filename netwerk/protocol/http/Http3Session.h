@@ -375,6 +375,10 @@ class Http3Session final : public nsAHttpTransaction, public nsAHttpConnection {
   bool mHasWebTransportSession = false;
   
   bool mDontExclude = false;
+  
+  
+  
+  nsIUDPSocket* mSocket;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Http3Session, NS_HTTP3SESSION_IID);
