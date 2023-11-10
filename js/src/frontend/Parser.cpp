@@ -46,7 +46,7 @@
 #include "frontend/TokenStream.h"  
 #include "irregexp/RegExpAPI.h"
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"   
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/HashTable.h"
 #include "js/RegExpFlags.h"     
@@ -379,7 +379,8 @@ GeneralParser<ParseHandler, Unit>::parse() {
 
   SourceExtent extent = SourceExtent::makeGlobalExtent(
        0, options().lineno,
-      JS::LimitedColumnNumberZeroOrigin::fromUnlimited(options().column));
+      JS::LimitedColumnNumberOneOrigin::fromUnlimited(
+          JS::ColumnNumberOneOrigin(options().column)));
   Directives directives(options().forceStrictMode());
   GlobalSharedContext globalsc(this->fc_, ScopeKind::Global, options(),
                                directives, extent);

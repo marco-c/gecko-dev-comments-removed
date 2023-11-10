@@ -1545,7 +1545,9 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   uint32_t lineno() const { return extent_.lineno; }
   
-  JS::LimitedColumnNumberZeroOrigin column() const { return extent_.column; }
+  JS::LimitedColumnNumberZeroOrigin column() const {
+    return JS::LimitedColumnNumberZeroOrigin(extent_.column);
+  }
 
   JS::DelazificationOption delazificationMode() const {
     return scriptSource()->delazificationMode();

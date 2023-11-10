@@ -494,7 +494,7 @@ bool ConvertScriptStencil(JSContext* cx, FrontendContext* fc,
   scriptExtra.extent.toStringEnd = smooshScript.extent.to_string_end;
   scriptExtra.extent.lineno = smooshScript.extent.lineno;
   scriptExtra.extent.column =
-      JS::LimitedColumnNumberZeroOrigin(smooshScript.extent.column);
+      JS::LimitedColumnNumberOneOrigin(1 + smooshScript.extent.column);
 
   if (isFunction) {
     if (smooshScript.fun_name.IsSome()) {
