@@ -365,6 +365,16 @@ void APZEventState::ProcessTouchEvent(
 
       if (mPendingTouchPreventedResponse) {
         MOZ_ASSERT(aGuid == mPendingTouchPreventedGuid);
+        if (aEvent.mMessage == eTouchCancel) {
+          
+          
+          
+          
+          
+          
+          
+          isTouchPrevented = true;
+        }
         mContentReceivedInputBlockCallback(aInputBlockId, isTouchPrevented);
         mPendingTouchPreventedResponse = false;
       }
