@@ -43,7 +43,7 @@ class WakeLockListener final : public nsIDOMMozWakeLockListener {
 
   
   
-  nsRefPtrHashtable<nsStringHashKey, WakeLockTopic> mTopics;
+  nsClassHashtable<nsStringHashKey, RefPtr<WakeLockTopic>> mTopics;
 };
 
 #endif  
