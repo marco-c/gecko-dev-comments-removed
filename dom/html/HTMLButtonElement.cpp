@@ -278,7 +278,11 @@ void HTMLButtonElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
       
       
     }
-    HandlePopoverTargetAction();
+    if (!GetInvokeTargetElement()) {
+      HandlePopoverTargetAction();
+    } else {
+      HandleInvokeTargetAction();
+    }
   }
 
   EndSubmitClick(aVisitor);

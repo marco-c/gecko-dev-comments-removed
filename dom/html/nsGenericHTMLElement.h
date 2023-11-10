@@ -1242,9 +1242,20 @@ class nsGenericHTMLFormControlElementWithState
   }
 
   
+  mozilla::dom::Element* GetInvokeTargetElement() const;
+  void SetInvokeTargetElement(mozilla::dom::Element*);
+  void GetInvokeAction(nsAString& aValue) const;
+  nsAtom* GetInvokeAction() const;
+  void SetInvokeAction(const nsAString& aValue) {
+    SetHTMLAttr(nsGkAtoms::invokeaction, aValue);
+  }
+
+  
 
 
   MOZ_CAN_RUN_SCRIPT void HandlePopoverTargetAction();
+
+  MOZ_CAN_RUN_SCRIPT void HandleInvokeTargetAction();
 
   
 
