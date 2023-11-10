@@ -1423,6 +1423,9 @@ nsresult nsHtml5StreamParser::OnStopRequest(
         
         
         
+        mOnStopCalled = false;
+        
+        return NS_OK;
       }
     }
   }
