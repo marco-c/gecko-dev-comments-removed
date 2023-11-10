@@ -27,25 +27,6 @@ export interface Attachment {
 
 
 
-export interface LanguageIdModelRecord {
-  
-  id: string;
-  
-  name: string;
-  
-  version: string;
-  
-  attachment: Attachment;
-  
-  last_modified: string;
-  
-  
-  filter_expression: string;
-}
-
-
-
-
 export interface TranslationModelRecord {
   
   id: string;
@@ -259,18 +240,6 @@ interface TranslationsEnginePayload {
   bergamotWasmArrayBuffer: ArrayBuffer,
   languageModelFiles: LanguageTranslationModelFiles[]
   isMocked: boolean,
-}
-
-
-
-
-
-
-interface LanguageIdEnginePayload {
-  wasmBuffer: ArrayBuffer,
-  modelBuffer: ArrayBuffer,
-  mockedConfidence: null | number,
-  mockedLangTag: null | string,
 }
 
 
