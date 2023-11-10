@@ -10,6 +10,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/Telemetry.h"
+#include "prsystem.h"
 
 namespace mozilla {
 
@@ -28,9 +29,16 @@ static void PrefChangeCallback(const char* aPrefName, void* aNull) {
 }
 
 void InitPHCState() {
-  SetPHCState(GetPHCStateFromPref());
+  size_t memSize = PR_GetPhysicalMemorySize();
+  
+  
+  
+  
+  if (memSize >= size_t(8'000'000'000llu)) {
+    SetPHCState(GetPHCStateFromPref());
 
-  Preferences::RegisterCallback(PrefChangeCallback, kPHCPref);
+    Preferences::RegisterCallback(PrefChangeCallback, kPHCPref);
+  }
 }
 
 void ReportPHCTelemetry() {
