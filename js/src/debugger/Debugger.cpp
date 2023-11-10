@@ -6152,7 +6152,7 @@ bool Debugger::isCompilableUnit(JSContext* cx, unsigned argc, Value* vp) {
       &fc, options, chars.twoByteChars(), length,
        true, compilationState,
        nullptr);
-  if (!parser.checkOptions() || !parser.parse()) {
+  if (!parser.checkOptions() || parser.parse().isErr()) {
     
     
     if (fc.hadOutOfMemory()) {

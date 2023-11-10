@@ -212,7 +212,7 @@ JS_PUBLIC_API bool JS_Utf8BufferIsCompilableUnit(JSContext* cx,
                                              true,
                                             compilationState,
                                              nullptr);
-  if (!parser.checkOptions() || !parser.parse()) {
+  if (!parser.checkOptions() || parser.parse().isErr()) {
     
     
     
