@@ -52,6 +52,9 @@ add_task(async function test_clicking_with_delayed_banner() {
   });
 
   for (let skipPresenceVisibilityCheck of [false, true]) {
+    
+    Services.cookieBanners.removeAllExecutedRecords(false);
+
     insertVisibilityTestRules(skipPresenceVisibilityCheck);
 
     await testClickResultTelemetry({});

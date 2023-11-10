@@ -110,6 +110,8 @@ add_task(async function test_click_query_selector_telemetry() {
     hasTopLevelData: true,
   });
 
+  Services.cookieBanners.removeAllExecutedRecords(false);
+
   info("Top level cookie banner with matching rule.");
   await openPageAndVerify({
     win: window,
@@ -123,6 +125,8 @@ add_task(async function test_click_query_selector_telemetry() {
     hasTopLevelData: true,
   });
 
+  Services.cookieBanners.removeAllExecutedRecords(false);
+
   info("Iframe cookie banner with matching rule.");
   await openIframeAndVerify({
     win: window,
@@ -135,6 +139,8 @@ add_task(async function test_click_query_selector_telemetry() {
     hasFrameData: true,
     hasTopLevelData: true,
   });
+
+  Services.cookieBanners.removeAllExecutedRecords(false);
 
   
   
