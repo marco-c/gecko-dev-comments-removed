@@ -3,8 +3,6 @@
 
 
 
-
-
 function assertObjectKeysEq(a, b) {
   let a_keys = new Set(Object.keys(a));
   let b_keys = new Set(Object.keys(b));
