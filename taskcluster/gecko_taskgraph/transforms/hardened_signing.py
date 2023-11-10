@@ -13,6 +13,12 @@ from gecko_taskgraph.util.attributes import release_level
 
 transforms = TransformSequence()
 
+PROVISIONING_PROFILE_FILENAMES = {
+    "firefox": "orgmozillafirefox.provisionprofile",
+    "devedition": "orgmozillafirefoxdeveloperedition.provisionprofile",
+    "nightly": "orgmozillanightly.provisionprofile",
+}
+
 
 @transforms.add
 def add_hardened_sign_config(config, jobs):
@@ -52,4 +58,40 @@ def add_hardened_sign_config(config, jobs):
 
         job["worker"]["hardened-sign-config"] = evaluated
         job["worker"]["mac-behavior"] = "mac_sign_and_pkg_hardened"
+        yield job
+
+
+@transforms.add
+def add_provisioning_profile_config(config, jobs):
+    for job in jobs:
+        dep_job = get_primary_dependency(config, job)
+        assert dep_job
+        if (
+            
+            "signing" in config.kind
+            
+            and "macosx" in job["attributes"]["build_platform"]
+            
+            and release_level(config.params["project"]) == "production"
+            
+            and dep_job.attributes.get("shippable", False)
+        ):
+            
+            if "devedition" in dep_job.attributes.get("build_platform", ""):
+                
+                filename = PROVISIONING_PROFILE_FILENAMES["devedition"]
+            elif config.params["project"] == "mozilla-central":
+                
+                filename = PROVISIONING_PROFILE_FILENAMES["nightly"]
+            else:
+                
+                
+                filename = PROVISIONING_PROFILE_FILENAMES["firefox"]
+
+            job["worker"]["provisioning-profile-config"] = [
+                {
+                    "profile_name": filename,
+                    "target_path": "/Contents/embedded.provisionprofile",
+                },
+            ]
         yield job
