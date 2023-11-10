@@ -24,6 +24,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/Sprintf.h"  
+#include "mozilla/Try.h"      
 #include "mozilla/Utf8.h"     
 #include "mozilla/Variant.h"
 
@@ -36,6 +37,7 @@
 #include "frontend/FrontendContext.h"     
 #include "frontend/FunctionSyntaxKind.h"  
 #include "frontend/ParseNode.h"
+#include "frontend/Parser-macros.h"  
 #include "frontend/Parser.h"
 #include "frontend/ParserAtom.h"     
 #include "frontend/SharedContext.h"  
@@ -6067,11 +6069,11 @@ static bool ParseFunction(ModuleValidator<Unit>& m, FunctionNode** funNodeOut,
     return false;
   }
 
-  FunctionNode* funNode = m.parser().handler_.newFunction(
-      FunctionSyntaxKind::Statement, m.parser().pos());
-  if (!funNode) {
-    return false;
-  }
+  FunctionNode* funNode;
+  MOZ_TRY_VAR_OR_RETURN(funNode,
+                        m.parser().handler_.newFunction(
+                            FunctionSyntaxKind::Statement, m.parser().pos()),
+                        false);
 
   ParseContext* outerpc = m.parser().pc_;
   Directives directives(outerpc);
