@@ -165,7 +165,7 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   }
 
   uint32_t frontLineNumber() const { return lineno; }
-  JS::LimitedColumnNumberZeroOrigin frontColumnNumber() const { return column; }
+  JS::LimitedColumnNumberOneOrigin frontColumnNumber() const { return column; }
 
   
   
@@ -205,16 +205,18 @@ class BytecodeRangeWithPosition : private BytecodeRange {
         column += SrcNote::ColSpan::getSpan(sn);
       } else if (type == SrcNoteType::SetLine) {
         lineno = SrcNote::SetLine::getLine(sn, initialLine);
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = JS::LimitedColumnNumberOneOrigin();
       } else if (type == SrcNoteType::SetLineColumn) {
         lineno = SrcNote::SetLineColumn::getLine(sn, initialLine);
-        column = SrcNote::SetLineColumn::getColumn(sn);
+        column = JS::LimitedColumnNumberOneOrigin(
+            SrcNote::SetLineColumn::getColumn(sn));
       } else if (type == SrcNoteType::NewLine) {
         lineno++;
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = JS::LimitedColumnNumberOneOrigin();
       } else if (type == SrcNoteType::NewLineColumn) {
         lineno++;
-        column = SrcNote::NewLineColumn::getColumn(sn);
+        column = JS::LimitedColumnNumberOneOrigin(
+            SrcNote::NewLineColumn::getColumn(sn));
       } else if (type == SrcNoteType::Breakpoint) {
         isBreakpoint = true;
       } else if (type == SrcNoteType::BreakpointStepSep) {
@@ -238,7 +240,7 @@ class BytecodeRangeWithPosition : private BytecodeRange {
   uint32_t lineno;
 
   
-  JS::LimitedColumnNumberZeroOrigin column;
+  JS::LimitedColumnNumberOneOrigin column;
 
   const SrcNote* sn;
   const SrcNote* snEnd;
