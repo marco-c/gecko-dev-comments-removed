@@ -14,6 +14,7 @@
 
 #include "mozilla/Assertions.h"  
 #include "mozilla/Casting.h"     
+#include "mozilla/Span.h"
 
 #include <stddef.h>  
 #include <stdint.h>  
@@ -407,13 +408,8 @@ class JS_PUBLIC_API ArrayBuffer : public ArrayBufferOrView {
   bool isDetached() const;
   bool isSharedMemory() const;
 
-  uint8_t* getLengthAndData(size_t* length, bool* isSharedMemory,
-                            const JS::AutoRequireNoGC&);
-
-  uint8_t* getData(bool* isSharedMemory, const JS::AutoRequireNoGC& nogc) {
-    size_t length;
-    return getLengthAndData(&length, isSharedMemory, nogc);
-  }
+  mozilla::Span<uint8_t> getData(bool* isSharedMemory,
+                                 const JS::AutoRequireNoGC&);
 };
 
 
@@ -438,12 +434,8 @@ class JS_PUBLIC_API ArrayBufferView : public ArrayBufferOrView {
   bool isDetached() const;
   bool isSharedMemory() const;
 
-  uint8_t* getLengthAndData(size_t* length, bool* isSharedMemory,
-                            const JS::AutoRequireNoGC&);
-  uint8_t* getData(bool* isSharedMemory, const JS::AutoRequireNoGC& nogc) {
-    size_t length;
-    return getLengthAndData(&length, isSharedMemory, nogc);
-  }
+  mozilla::Span<uint8_t> getData(bool* isSharedMemory,
+                                 const JS::AutoRequireNoGC&);
 
   
   size_t getByteLength(const JS::AutoRequireNoGC&);
@@ -556,13 +548,8 @@ class JS_PUBLIC_API TypedArray : public TypedArray_base {
   
   
   
-  DataType* getLengthAndData(size_t* length, bool* isSharedMemory,
-                             const JS::AutoRequireNoGC& nogc);
-
-  DataType* getData(bool* isSharedMemory, const JS::AutoRequireNoGC& nogc) {
-    size_t length;
-    return getLengthAndData(&length, isSharedMemory, nogc);
-  }
+  mozilla::Span<DataType> getData(bool* isSharedMemory,
+                                  const JS::AutoRequireNoGC& nogc);
 };
 
 ArrayBufferOrView ArrayBufferOrView::fromObject(JSObject* unwrapped) {
@@ -685,13 +672,8 @@ class WrappedPtrOperations<T, Wrapper, EnableIfABOVType<T>> {
   bool isDetached() const { return get().isDetached(); }
   bool isSharedMemory() const { return get().isSharedMemory(); }
 
-  typename T::DataType* getLengthAndData(size_t* length, bool* isSharedMemory,
-                                         const JS::AutoRequireNoGC& nogc) {
-    return get().getLengthAndData(length, isSharedMemory, nogc);
-  }
-
-  typename T::DataType* getData(bool* isSharedMemory,
-                                const JS::AutoRequireNoGC& nogc) {
+  mozilla::Span<typename T::DataType> getData(bool* isSharedMemory,
+                                              const JS::AutoRequireNoGC& nogc) {
     return get().getData(isSharedMemory, nogc);
   }
 };
