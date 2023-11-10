@@ -1036,7 +1036,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   
   
-  [[nodiscard]] FunctionNodeType innerFunctionForFunctionBox(
+  [[nodiscard]] FunctionNodeResult innerFunctionForFunctionBox(
       FunctionNodeType funNode, ParseContext* outerpc, FunctionBox* funbox,
       InHandling inHandling, YieldHandling yieldHandling,
       FunctionSyntaxKind kind, Directives* newDirectives);
@@ -1058,13 +1058,13 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
 
 
-  FunctionNodeType functionStmt(
+  FunctionNodeResult functionStmt(
       uint32_t toStringStart, YieldHandling yieldHandling,
       DefaultHandling defaultHandling,
       FunctionAsyncKind asyncKind = FunctionAsyncKind::SyncFunction);
-  FunctionNodeType functionExpr(uint32_t toStringStart,
-                                InvokedPrediction invoked,
-                                FunctionAsyncKind asyncKind);
+  FunctionNodeResult functionExpr(uint32_t toStringStart,
+                                  InvokedPrediction invoked,
+                                  FunctionAsyncKind asyncKind);
 
   Node statement(YieldHandling yieldHandling);
   bool maybeParseDirective(ListNodeType list, Node pn, bool* cont);
@@ -1237,9 +1237,9 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   BinaryNodeType importExpr(YieldHandling yieldHandling, bool allowCallSyntax);
 
-  FunctionNodeType methodDefinition(uint32_t toStringStart,
-                                    PropertyType propType,
-                                    TaggedParserAtomIndex funName);
+  FunctionNodeResult methodDefinition(uint32_t toStringStart,
+                                      PropertyType propType,
+                                      TaggedParserAtomIndex funName);
 
   
 
@@ -1247,7 +1247,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   bool functionArguments(YieldHandling yieldHandling, FunctionSyntaxKind kind,
                          FunctionNodeType funNode);
 
-  FunctionNodeType functionDefinition(
+  FunctionNodeResult functionDefinition(
       FunctionNodeType funNode, uint32_t toStringStart, InHandling inHandling,
       YieldHandling yieldHandling, TaggedParserAtomIndex name,
       FunctionSyntaxKind kind, GeneratorKind generatorKind,
@@ -1258,10 +1258,10 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
   
   
   enum FunctionBodyType { StatementListBody, ExpressionBody };
-  LexicalScopeNodeType functionBody(InHandling inHandling,
-                                    YieldHandling yieldHandling,
-                                    FunctionSyntaxKind kind,
-                                    FunctionBodyType type);
+  LexicalScopeNodeResult functionBody(InHandling inHandling,
+                                      YieldHandling yieldHandling,
+                                      FunctionSyntaxKind kind,
+                                      FunctionBodyType type);
 
   UnaryNodeType unaryOpExpr(YieldHandling yieldHandling, ParseNodeKind kind,
                             uint32_t begin);
@@ -1509,7 +1509,7 @@ class MOZ_STACK_CLASS GeneralParser : public PerHandlerParser<ParseHandler> {
 
   ListNodeType statementList(YieldHandling yieldHandling);
 
-  [[nodiscard]] FunctionNodeType innerFunction(
+  [[nodiscard]] FunctionNodeResult innerFunction(
       FunctionNodeType funNode, ParseContext* outerpc,
       TaggedParserAtomIndex explicitName, FunctionFlags flags,
       uint32_t toStringStart, InHandling inHandling,
@@ -1836,14 +1836,14 @@ class MOZ_STACK_CLASS Parser<FullParseHandler, Unit> final
 
   
   
-  FunctionNodeType standaloneLazyFunction(CompilationInput& input,
-                                          uint32_t toStringStart, bool strict,
-                                          GeneratorKind generatorKind,
-                                          FunctionAsyncKind asyncKind);
+  FunctionNodeResult standaloneLazyFunction(CompilationInput& input,
+                                            uint32_t toStringStart, bool strict,
+                                            GeneratorKind generatorKind,
+                                            FunctionAsyncKind asyncKind);
 
   
   
-  FunctionNodeType standaloneFunction(
+  FunctionNodeResult standaloneFunction(
       const mozilla::Maybe<uint32_t>& parameterListEnd,
       FunctionSyntaxKind syntaxKind, GeneratorKind generatorKind,
       FunctionAsyncKind asyncKind, Directives inheritedDirectives,
