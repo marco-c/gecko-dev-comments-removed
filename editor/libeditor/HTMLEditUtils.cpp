@@ -15,8 +15,9 @@
 #include "HTMLEditHelpers.h"  
 #include "WSRunObject.h"      
 
-#include "mozilla/ArrayUtils.h"           
-#include "mozilla/Assertions.h"           
+#include "mozilla/ArrayUtils.h"  
+#include "mozilla/Assertions.h"  
+#include "mozilla/Attributes.h"
 #include "mozilla/StaticPrefs_editor.h"   
 #include "mozilla/RangeUtils.h"           
 #include "mozilla/dom/DocumentInlines.h"  
@@ -44,6 +45,7 @@
 #include "nsPrintfCString.h"     
 #include "nsString.h"            
 #include "nsStyledElement.h"
+#include "nsStyleStruct.h"   
 #include "nsStyleUtil.h"     
 #include "nsTextFragment.h"  
 #include "nsTextFrame.h"     
@@ -923,9 +925,11 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
                : !IsVisibleTextNode(*text);
   }
 
-  
-  
-  if (!aNode.IsContent() ||
+  if (!aNode.IsElement()) {
+    return false;
+  }
+
+  if (
       
       
       !IsContainerNode(*aNode.AsContent()) ||
@@ -934,18 +938,65 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
       IsNamedAnchor(&aNode) ||
       
       
-      IsFormWidget(&aNode) ||
-      
-      (aOptions.contains(EmptyCheckOption::TreatListItemAsVisible) &&
-       IsListItem(&aNode)) ||
-      
-      (aOptions.contains(EmptyCheckOption::TreatTableCellAsVisible) &&
-       IsTableCell(&aNode))) {
+      IsFormWidget(&aNode)) {
     return false;
   }
 
-  const bool isListItem = IsListItem(&aNode);
-  const bool isTableCell = IsTableCell(&aNode);
+  const auto [isListItem, isTableCell, hasAppearance] =
+      [&]() MOZ_NEVER_INLINE_DEBUG -> std::tuple<bool, bool, bool> {
+    if (!StaticPrefs::editor_block_inline_check_use_computed_style()) {
+      return {IsListItem(&aNode), IsTableCell(&aNode), false};
+    }
+    
+    
+    if (aNode.OwnerDoc()->GetDocumentElement() == &aNode ||
+        (aNode.IsHTMLElement(nsGkAtoms::body) &&
+         aNode.OwnerDoc()->GetBodyElement() == &aNode)) {
+      return {false, false, false};
+    }
+
+    RefPtr<const ComputedStyle> elementStyle =
+        nsComputedDOMStyle::GetComputedStyleNoFlush(aNode.AsElement());
+    
+    
+    if (MOZ_UNLIKELY(!elementStyle)) {
+      return {IsListItem(&aNode), IsTableCell(&aNode), false};
+    }
+    const nsStyleDisplay* styleDisplay = elementStyle->StyleDisplay();
+    if (NS_WARN_IF(!styleDisplay)) {
+      return {IsListItem(&aNode), IsTableCell(&aNode), false};
+    }
+    if (styleDisplay->mDisplay != StyleDisplay::None &&
+        styleDisplay->HasAppearance()) {
+      return {false, false, true};
+    }
+    if (styleDisplay->IsListItem()) {
+      return {true, false, false};
+    }
+    if (styleDisplay->mDisplay == StyleDisplay::TableCell) {
+      return {false, true, false};
+    }
+    
+    
+    return {styleDisplay->mDisplay == StyleDisplay::Block &&
+                aNode.IsAnyOfHTMLElements(nsGkAtoms::dd, nsGkAtoms::dt),
+            false, false};
+  }();
+
+  
+  
+  if (hasAppearance) {
+    return false;
+  }
+
+  if (isListItem &&
+      aOptions.contains(EmptyCheckOption::TreatListItemAsVisible)) {
+    return false;
+  }
+  if (isTableCell &&
+      aOptions.contains(EmptyCheckOption::TreatTableCellAsVisible)) {
+    return false;
+  }
 
   bool seenBR = aSeenBR && *aSeenBR;
   for (nsIContent* childContent = aNode.GetFirstChild(); childContent;
@@ -966,11 +1017,7 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
       continue;
     }
 
-    
-    
-    if (childContent == &aNode) {
-      break;
-    }
+    MOZ_ASSERT(childContent != &aNode);
 
     if (!aOptions.contains(EmptyCheckOption::TreatSingleBRElementAsVisible) &&
         !seenBR && childContent->IsHTMLElement(nsGkAtoms::br)) {
@@ -985,22 +1032,12 @@ bool HTMLEditUtils::IsEmptyNode(nsPresContext* aPresContext,
 
     
     
-    
-    if (childContent->IsElement()) {
-      if (isListItem || isTableCell) {
-        if (IsAnyListElement(childContent) ||
-            childContent->IsHTMLElement(nsGkAtoms::table)) {
-          
-          return false;
-        }
-      } else if (IsFormWidget(childContent)) {
-        
-        
-        return false;
-      }
+    EmptyCheckOptions options(aOptions);
+    if (childContent->IsElement() && (isListItem || isTableCell)) {
+      options += {EmptyCheckOption::TreatListItemAsVisible,
+                  EmptyCheckOption::TreatTableCellAsVisible};
     }
-
-    if (!IsEmptyNode(aPresContext, *childContent, aOptions, &seenBR)) {
+    if (!IsEmptyNode(aPresContext, *childContent, options, &seenBR)) {
       if (aSeenBR) {
         *aSeenBR = seenBR;
       }
