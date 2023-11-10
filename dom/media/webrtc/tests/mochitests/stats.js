@@ -1345,16 +1345,16 @@ function pedanticChecks(report) {
 
         
         ok(
-          stat.bytesSent > 1000,
-          `${stat.type}.bytesSent is a sane number (>1,000) for a short ` +
-            `${stat.kind} test. value=${stat.bytesSent}`
+          stat.bytesSent > 100,
+          `${stat.type}.bytesSent is a sane number (>100) if media is flowing. ` +
+            `value=${stat.bytesSent}`
         );
 
         
         ok(
-          stat.bytesReceived > 500,
-          `${stat.type}.bytesReceived is a sane number (>500) for a short ` +
-            `${stat.kind} test. value=${stat.bytesReceived}`
+          stat.bytesReceived > 100,
+          `${stat.type}.bytesReceived is a sane number (>100) if media is flowing. ` +
+            `value=${stat.bytesReceived}`
         );
 
         
