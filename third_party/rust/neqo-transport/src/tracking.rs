@@ -367,6 +367,8 @@ pub struct RecvdPackets {
     
     ack_time: Option<Instant>,
     
+    last_ack_time: Option<Instant>,
+    
     ack_frequency_seqno: u64,
     
     
@@ -391,6 +393,7 @@ impl RecvdPackets {
             min_tracked: 0,
             largest_pn_time: None,
             ack_time: None,
+            last_ack_time: None,
             ack_frequency_seqno: 0,
             ack_delay: DEFAULT_ACK_DELAY,
             unacknowledged_count: 0,
@@ -424,11 +427,13 @@ impl RecvdPackets {
     }
 
     
-    fn ack_now(&self, now: Instant) -> bool {
-        match self.ack_time {
-            Some(t) => t <= now,
-            None => false,
-        }
+    fn ack_now(&self, now: Instant, rtt: Duration) -> bool {
+        
+        
+        
+        self.ack_time.map_or(false, |next| {
+            next <= now || self.last_ack_time.map_or(false, |last| last + rtt <= now)
+        })
     }
 
     
@@ -558,6 +563,7 @@ impl RecvdPackets {
     fn write_frame(
         &mut self,
         now: Instant,
+        rtt: Duration,
         builder: &mut PacketBuilder,
         tokens: &mut Vec<RecoveryToken>,
         stats: &mut FrameStats,
@@ -567,7 +573,7 @@ impl RecvdPackets {
         const LONGEST_ACK_HEADER: usize = 1 + 8 + 8 + 1 + 8;
 
         
-        if !self.ack_now(now) {
+        if !self.ack_now(now, rtt) {
             return;
         }
 
@@ -618,6 +624,7 @@ impl RecvdPackets {
 
         
         self.ack_time = None;
+        self.last_ack_time = Some(now);
         self.unacknowledged_count = 0;
 
         tokens.push(RecoveryToken::Ack(AckToken {
@@ -714,12 +721,13 @@ impl AckTracker {
         &mut self,
         pn_space: PacketNumberSpace,
         now: Instant,
+        rtt: Duration,
         builder: &mut PacketBuilder,
         tokens: &mut Vec<RecoveryToken>,
         stats: &mut FrameStats,
     ) -> Res<()> {
         if let Some(space) = self.get_mut(pn_space) {
-            space.write_frame(now, builder, tokens, stats);
+            space.write_frame(now, rtt, builder, tokens, stats);
             if builder.len() > builder.limit() {
                 return Err(Error::InternalError(24));
             }
@@ -755,6 +763,7 @@ mod tests {
     use neqo_common::Encoder;
     use std::collections::HashSet;
 
+    const RTT: Duration = Duration::from_millis(100);
     lazy_static! {
         static ref NOW: Instant = Instant::now();
     }
@@ -838,7 +847,7 @@ mod tests {
         
         let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
         assert!(rp.ack_time().is_none());
-        assert!(!rp.ack_now(*NOW));
+        assert!(!rp.ack_now(*NOW, RTT));
 
         rp.ack_freq(0, COUNT, DELAY, false);
 
@@ -846,14 +855,14 @@ mod tests {
         for i in 0..COUNT {
             rp.set_received(*NOW, i, true);
             assert_eq!(Some(*NOW + DELAY), rp.ack_time());
-            assert!(!rp.ack_now(*NOW));
-            assert!(rp.ack_now(*NOW + DELAY));
+            assert!(!rp.ack_now(*NOW, RTT));
+            assert!(rp.ack_now(*NOW + DELAY, RTT));
         }
 
         
         rp.set_received(*NOW, COUNT, true);
         assert_eq!(Some(*NOW), rp.ack_time());
-        assert!(rp.ack_now(*NOW));
+        assert!(rp.ack_now(*NOW, RTT));
     }
 
     #[test]
@@ -861,12 +870,12 @@ mod tests {
         for space in &[PacketNumberSpace::Initial, PacketNumberSpace::Handshake] {
             let mut rp = RecvdPackets::new(*space);
             assert!(rp.ack_time().is_none());
-            assert!(!rp.ack_now(*NOW));
+            assert!(!rp.ack_now(*NOW, RTT));
 
             
             rp.set_received(*NOW, 0, true);
             assert_eq!(Some(*NOW), rp.ack_time());
-            assert!(rp.ack_now(*NOW));
+            assert!(rp.ack_now(*NOW, RTT));
         }
     }
 
@@ -874,21 +883,25 @@ mod tests {
     fn ooo_no_ack_delay_new() {
         let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
         assert!(rp.ack_time().is_none());
-        assert!(!rp.ack_now(*NOW));
+        assert!(!rp.ack_now(*NOW, RTT));
 
         
         rp.set_received(*NOW, 1, true);
         assert_eq!(Some(*NOW), rp.ack_time());
-        assert!(rp.ack_now(*NOW));
+        assert!(rp.ack_now(*NOW, RTT));
     }
 
-    fn write_frame(rp: &mut RecvdPackets) {
+    fn write_frame_at(rp: &mut RecvdPackets, now: Instant) {
         let mut builder = PacketBuilder::short(Encoder::new(), false, []);
         let mut stats = FrameStats::default();
         let mut tokens = Vec::new();
-        rp.write_frame(*NOW, &mut builder, &mut tokens, &mut stats);
+        rp.write_frame(now, RTT, &mut builder, &mut tokens, &mut stats);
         assert!(!tokens.is_empty());
         assert_eq!(stats.ack, 1);
+    }
+
+    fn write_frame(rp: &mut RecvdPackets) {
+        write_frame_at(rp, *NOW);
     }
 
     #[test]
@@ -899,8 +912,26 @@ mod tests {
 
         
         rp.set_received(*NOW, 0, true);
-        assert_eq!(Some(*NOW), rp.ack_time());
-        assert!(rp.ack_now(*NOW));
+        write_frame(&mut rp);
+
+        
+        rp.set_received(*NOW, 2, true);
+        assert!(!rp.ack_now(*NOW, RTT));
+    }
+
+    #[test]
+    fn immediate_ack_after_rtt() {
+        let mut rp = RecvdPackets::new(PacketNumberSpace::ApplicationData);
+        rp.set_received(*NOW, 1, true);
+        write_frame(&mut rp);
+
+        
+        rp.set_received(*NOW, 0, true);
+        write_frame(&mut rp);
+
+        
+        rp.set_received(*NOW + RTT, 2, true);
+        write_frame_at(&mut rp, *NOW + RTT);
     }
 
     #[test]
@@ -1032,6 +1063,7 @@ mod tests {
             .write_frame(
                 PacketNumberSpace::Initial,
                 *NOW,
+                RTT,
                 &mut builder,
                 &mut tokens,
                 &mut stats,
@@ -1059,6 +1091,7 @@ mod tests {
             .write_frame(
                 PacketNumberSpace::Initial,
                 *NOW,
+                RTT,
                 &mut builder,
                 &mut tokens,
                 &mut stats,
@@ -1091,6 +1124,7 @@ mod tests {
             .write_frame(
                 PacketNumberSpace::Initial,
                 *NOW,
+                RTT,
                 &mut builder,
                 &mut Vec::new(),
                 &mut stats,
@@ -1123,6 +1157,7 @@ mod tests {
             .write_frame(
                 PacketNumberSpace::Initial,
                 *NOW,
+                RTT,
                 &mut builder,
                 &mut Vec::new(),
                 &mut stats,
