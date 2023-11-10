@@ -19,7 +19,7 @@
 #include "frontend/ModuleSharedContext.h"
 #include "frontend/ParseNode.h"
 #include "frontend/Parser.h"
-#include "js/ColumnNumber.h"          
+#include "js/ColumnNumber.h"  
 #include "js/friend/ErrorMessages.h"  
 #include "js/friend/StackLimits.h"    
 #include "js/PropertyAndElement.h"    
@@ -727,7 +727,7 @@ bool NodeBuilder::newNodeLoc(TokenPos* pos, MutableHandleValue dst) {
   dst.setObject(*loc);
 
   uint32_t startLineNum, endLineNum;
-  JS::LimitedColumnNumberZeroOrigin startColumnIndex, endColumnIndex;
+  JS::LimitedColumnNumberOneOrigin startColumnIndex, endColumnIndex;
   parser->tokenStream.computeLineAndColumn(pos->begin, &startLineNum,
                                            &startColumnIndex);
   parser->tokenStream.computeLineAndColumn(pos->end, &endLineNum,
