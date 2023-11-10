@@ -882,11 +882,12 @@ function countTabs(dbg) {
 
 
 
-async function stepOver(dbg) {
+
+async function stepOver(dbg, pauseOptions) {
   const pauseLine = getVisibleSelectedFrameLine(dbg);
   info(`Stepping over from ${pauseLine}`);
   await dbg.actions.stepOver();
-  return waitForPaused(dbg);
+  return waitForPaused(dbg, null, pauseOptions);
 }
 
 
@@ -2429,6 +2430,16 @@ function getTokenElAtLine(dbg, expression, line, column = 0) {
     }
     return childText === expression;
   });
+}
+
+
+
+
+
+async function assertNoTooltip(dbg) {
+  await wait(200);
+  const el = findElement(dbg, "previewPopup");
+  is(el, null, "Tooltip should not exist");
 }
 
 
