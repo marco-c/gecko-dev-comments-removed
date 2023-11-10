@@ -3,6 +3,7 @@
 
 
 import argparse
+import os
 import sys
 
 import buildconfig
@@ -28,6 +29,18 @@ def main(argv):
         if not entry_abspath.startswith(objdir_abspath):
             print(
                 "Warning: omitting generated source [%s] from archive" % entry_abspath,
+                file=sys.stderr,
+            )
+            return False
+        
+        
+        if (
+            "LINK_GTEST_DURING_COMPILE" not in buildconfig.substs
+            and "/gtest/" in entry_abspath
+            and not os.path.exists(entry_abspath)
+        ):
+            print(
+                "Warning: omitting non-existing file [%s] from archive" % entry_abspath,
                 file=sys.stderr,
             )
             return False
