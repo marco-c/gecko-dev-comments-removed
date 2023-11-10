@@ -19,7 +19,6 @@
 #include "ds/LifoAlloc.h"                 
 #include "frontend/CompilationStencil.h"  
 #include "frontend/ScriptIndex.h"  
-#include "js/ColumnNumber.h"       
 #include "vm/Scope.h"              
 #include "vm/StencilEnums.h"       
 
