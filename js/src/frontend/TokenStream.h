@@ -951,6 +951,12 @@ class TokenStreamAnyChars : public TokenStreamShared {
 
 
 
+
+
+
+
+
+
   template <typename Unit>
   JS::ColumnNumberUnsignedOffset computeColumnOffset(
       const LineToken lineToken, const uint32_t offset,
@@ -1986,8 +1992,8 @@ class GeneralTokenStreamChars : public SpecializedTokenStreamCharsBase<Unit> {
 
 
 
-  JS::LimitedColumnNumberZeroOrigin computeColumn(LineToken lineToken,
-                                                  uint32_t offset) const;
+  JS::LimitedColumnNumberOneOrigin computeColumn(LineToken lineToken,
+                                                 uint32_t offset) const;
   void computeLineAndColumn(uint32_t offset, uint32_t* line,
                             JS::LimitedColumnNumberOneOrigin* column) const;
 
@@ -2539,7 +2545,7 @@ class MOZ_STACK_CLASS TokenStreamSpecific
     return anyChars.lineNumber(lineToken);
   }
 
-  JS::LimitedColumnNumberZeroOrigin columnAt(size_t offset) const final {
+  JS::LimitedColumnNumberOneOrigin columnAt(size_t offset) const final {
     return computeColumn(anyCharsAccess().lineToken(offset), offset);
   }
 

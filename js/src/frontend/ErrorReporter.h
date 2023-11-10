@@ -335,7 +335,7 @@ class ErrorReporter : public ErrorReportMixin {
   virtual uint32_t lineAt(size_t offset) const = 0;
 
   
-  virtual JS::LimitedColumnNumberZeroOrigin columnAt(size_t offset) const = 0;
+  virtual JS::LimitedColumnNumberOneOrigin columnAt(size_t offset) const = 0;
 };
 
 }  
