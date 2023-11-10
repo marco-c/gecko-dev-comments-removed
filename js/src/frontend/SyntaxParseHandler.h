@@ -8,7 +8,8 @@
 #define frontend_SyntaxParseHandler_h
 
 #include "mozilla/Assertions.h"
-#include "mozilla/Maybe.h"  
+#include "mozilla/Maybe.h"   
+#include "mozilla/Result.h"  
 
 #include <string.h>
 
@@ -22,7 +23,108 @@
 #include "frontend/TokenStream.h"
 
 namespace js {
+namespace frontend {
+enum SyntaxParseHandlerNode {
+  NodeFailure = 0,
+  NodeGeneric,
+  NodeGetProp,
+  NodeStringExprStatement,
+  NodeReturn,
+  NodeBreak,
+  NodeThrow,
+  NodeEmptyStatement,
 
+  NodeVarDeclaration,
+  NodeLexicalDeclaration,
+
+  
+  
+  NodeFunctionExpression,
+
+  NodeFunctionArrow,
+  NodeFunctionStatement,
+
+  
+  
+  
+  
+  
+  NodeFunctionCall,
+
+  NodeOptionalFunctionCall,
+
+  
+  
+  NodeName,
+
+  
+  NodeArgumentsName,
+  NodeEvalName,
+
+  
+  
+  NodePotentialAsyncKeyword,
+
+  
+  NodePrivateName,
+
+  NodeDottedProperty,
+  NodeOptionalDottedProperty,
+  NodeElement,
+  NodeOptionalElement,
+  
+  
+  NodePrivateMemberAccess,
+  NodeOptionalPrivateMemberAccess,
+
+  
+  
+  
+  
+  NodeParenthesizedArray,
+  NodeParenthesizedObject,
+
+  
+  
+  
+  
+  
+
+  
+  NodeUnparenthesizedArray,
+  NodeUnparenthesizedObject,
+
+  
+  
+  
+  
+  
+  NodeUnparenthesizedString,
+
+  
+  
+  
+  NodeUnparenthesizedAssignment,
+
+  
+  
+  
+  NodeUnparenthesizedUnary,
+
+  
+  
+  NodeSuperBase
+};
+
+}  
+}  
+
+template <>
+struct mozilla::detail::UnusedZero<js::frontend::SyntaxParseHandlerNode> {
+  static const bool value = true;
+};
+
+namespace js {
 namespace frontend {
 
 
@@ -41,99 +143,16 @@ class SyntaxParseHandler {
   TokenPos lastStringPos;
 
  public:
-  enum Node {
-    NodeFailure = 0,
-    NodeGeneric,
-    NodeGetProp,
-    NodeStringExprStatement,
-    NodeReturn,
-    NodeBreak,
-    NodeThrow,
-    NodeEmptyStatement,
+  struct NodeError {};
 
-    NodeVarDeclaration,
-    NodeLexicalDeclaration,
+  using Node = SyntaxParseHandlerNode;
 
-    
-    
-    NodeFunctionExpression,
+  using NodeResult = mozilla::Result<Node, NodeError>;
+  using NodeErrorResult = mozilla::GenericErrorResult<NodeError>;
 
-    NodeFunctionArrow,
-    NodeFunctionStatement,
-
-    
-    
-    
-    
-    
-    NodeFunctionCall,
-
-    NodeOptionalFunctionCall,
-
-    
-    
-    NodeName,
-
-    
-    NodeArgumentsName,
-    NodeEvalName,
-
-    
-    
-    NodePotentialAsyncKeyword,
-
-    
-    NodePrivateName,
-
-    NodeDottedProperty,
-    NodeOptionalDottedProperty,
-    NodeElement,
-    NodeOptionalElement,
-    
-    
-    NodePrivateMemberAccess,
-    NodeOptionalPrivateMemberAccess,
-
-    
-    
-    
-    
-    NodeParenthesizedArray,
-    NodeParenthesizedObject,
-
-    
-    
-    
-    
-    
-
-    
-    NodeUnparenthesizedArray,
-    NodeUnparenthesizedObject,
-
-    
-    
-    
-    
-    
-    NodeUnparenthesizedString,
-
-    
-    
-    
-    NodeUnparenthesizedAssignment,
-
-    
-    
-    
-    NodeUnparenthesizedUnary,
-
-    
-    
-    NodeSuperBase
-  };
-
-#define DECLARE_TYPE(typeName) using typeName##Type = Node;
+#define DECLARE_TYPE(typeName) \
+  using typeName##Type = Node; \
+  using typeName##Result = mozilla::Result<Node, NodeError>;
   FOR_EACH_PARSENODE_SUBCLASS(DECLARE_TYPE)
 #undef DECLARE_TYPE
 
@@ -177,6 +196,9 @@ class SyntaxParseHandler {
   }
 
   static NullNode null() { return NodeFailure; }
+  static constexpr NodeErrorResult errorResult() {
+    return NodeErrorResult(NodeError());
+  }
 
 #define DECLARE_AS(typeName) \
   static typeName##Type as##typeName(Node node) { return node; }
