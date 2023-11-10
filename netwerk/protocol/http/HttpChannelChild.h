@@ -448,6 +448,9 @@ class HttpChannelChild final : public PHttpChannelChild,
   
   void CollectOMTTelemetry();
 
+  
+  void CollectMixedContentTelemetry();
+
   void RecordChannelCompletionDurationForEarlyHint();
 
   friend class HttpAsyncAborter<HttpChannelChild>;
