@@ -19,17 +19,17 @@
 #include "ds/Sort.h"
 #include "frontend/BytecodeCompiler.h"  
 #include "frontend/FrontendContext.h"   
-#include "js/ColumnNumber.h"  
-#include "js/Context.h"            
-#include "js/ErrorReport.h"        
-#include "js/RootingAPI.h"         
-#include "js/Value.h"              
-#include "vm/EnvironmentObject.h"  
-#include "vm/JSAtomUtils.h"        
-#include "vm/JSContext.h"          
-#include "vm/JSObject.h"           
-#include "vm/List.h"               
-#include "vm/Runtime.h"            
+#include "js/ColumnNumber.h"            
+#include "js/Context.h"                 
+#include "js/ErrorReport.h"             
+#include "js/RootingAPI.h"              
+#include "js/Value.h"                   
+#include "vm/EnvironmentObject.h"       
+#include "vm/JSAtomUtils.h"             
+#include "vm/JSContext.h"               
+#include "vm/JSObject.h"                
+#include "vm/List.h"                    
+#include "vm/Runtime.h"                 
 
 #include "vm/JSAtomUtils-inl.h"  
 #include "vm/JSContext-inl.h"    
@@ -206,8 +206,7 @@ JS_PUBLIC_API void JS::GetRequestedModuleSourcePos(
 
   auto& module = moduleRecord->as<ModuleObject>();
   *lineNumber = module.requestedModules()[index].lineNumber();
-  *columnNumber = JS::ColumnNumberOneOrigin(
-      module.requestedModules()[index].columnNumber());
+  *columnNumber = module.requestedModules()[index].columnNumber();
 }
 
 JS_PUBLIC_API JSScript* JS::GetModuleScript(JS::HandleObject moduleRecord) {
@@ -860,7 +859,7 @@ static ModuleNamespaceObject* ModuleNamespaceCreate(
 static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
                                  Handle<Value> resolution, bool isDirectImport,
                                  Handle<JSAtom*> name, uint32_t line,
-                                 JS::ColumnNumberZeroOrigin column) {
+                                 JS::ColumnNumberOneOrigin column) {
   MOZ_ASSERT(line != 0);
 
   bool isAmbiguous = resolution == StringValue(cx->names().ambiguous);
@@ -907,9 +906,8 @@ static void ThrowResolutionError(JSContext* cx, Handle<ModuleObject*> module,
   }
 
   RootedValue error(cx);
-  if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename, line,
-                       JS::ColumnNumberOneOrigin(column), nullptr, message,
-                       JS::NothingHandleValue, &error)) {
+  if (!JS::CreateError(cx, JSEXN_SYNTAXERR, nullptr, filename, line, column,
+                       nullptr, message, JS::NothingHandleValue, &error)) {
     return;
   }
 
