@@ -109,7 +109,7 @@ class DebugState {
   [[nodiscard]] bool getAllColumnOffsets(Vector<ExprLoc>* offsets);
   [[nodiscard]] bool getOffsetLocation(
       uint32_t offset, uint32_t* lineno,
-      JS::LimitedColumnNumberZeroOrigin* column);
+      JS::LimitedColumnNumberOneOrigin* column);
 
   
   
