@@ -518,19 +518,6 @@ impl VariableValue {
     }
 
     
-    fn int_ms(number: i32, url_data: &UrlExtraData) -> Self {
-        Self::from_token(
-            Token::Dimension {
-                has_sign: false,
-                value: number as f32,
-                int_value: Some(number),
-                unit: CowRcStr::from("ms"),
-            },
-            url_data,
-        )
-    }
-
-    
     fn int_pixels(number: i32, url_data: &UrlExtraData) -> Self {
         Self::from_token(
             Token::Dimension {
