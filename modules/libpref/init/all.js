@@ -1847,6 +1847,9 @@ pref("extensions.abuseReport.amWebAPI.enabled", true);
 pref("extensions.abuseReport.url", "https://services.addons.mozilla.org/api/v4/abuse/report/addon/");
 pref("extensions.abuseReport.amoDetailsURL", "https://services.addons.mozilla.org/api/v4/addons/addon/");
 
+pref("extensions.abuseReport.amoFormEnabled", false);
+pref("extensions.abuseReport.amoFormURL", "https://addons.mozilla.org/%LOCALE%/%APP%/feedback/addon/%addonID%/");
+
 
 pref("extensions.blocklist.enabled", true);
 pref("extensions.blocklist.detailsURL", "https://blocked.cdn.mozilla.net/");

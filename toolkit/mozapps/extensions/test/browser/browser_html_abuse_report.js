@@ -6,6 +6,13 @@
 loadTestSubscript("head_abuse_report.js");
 
 add_setup(async function () {
+  
+  
+  
+  
+  await SpecialPowers.pushPrefEnv({
+    set: [["extensions.abuseReport.amoFormEnabled", false]],
+  });
   await AbuseReportTestUtils.setup();
 });
 

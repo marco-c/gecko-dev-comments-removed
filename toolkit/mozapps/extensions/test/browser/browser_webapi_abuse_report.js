@@ -67,6 +67,11 @@ add_setup(async function () {
     set: [
       ["extensions.webapi.testing", true],
       ["extensions.abuseReport.amWebAPI.enabled", true],
+      
+      
+      
+      
+      ["extensions.abuseReport.amoFormEnabled", false],
     ],
   });
 });

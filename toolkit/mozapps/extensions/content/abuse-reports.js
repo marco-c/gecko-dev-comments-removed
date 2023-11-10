@@ -11,8 +11,19 @@
 
 
 
+
 const { AbuseReporter } = ChromeUtils.importESModule(
   "resource://gre/modules/AbuseReporter.sys.mjs"
+);
+
+
+
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  this,
+  "ABUSE_REPORT_AMO_FORM_ENABLED",
+  "extensions.abuseReport.amoFormEnabled",
+  true
 );
 
 
@@ -180,7 +191,24 @@ async function openAbuseReport({ addonId, reportEntryPoint }) {
   }
 }
 
-window.openAbuseReport = openAbuseReport;
+
+
+
+
+async function openAbuseReportAMOForm({ addonId, reportEntryPoint }) {
+  const amoUrl = Services.urlFormatter
+    .formatURLPref("extensions.abuseReport.amoFormURL")
+    .replace(/%addonID%/g, addonId);
+  windowRoot.ownerGlobal.openTrustedLinkIn(amoUrl, "tab", {
+    
+    
+    forceForeground: true,
+  });
+}
+
+window.openAbuseReport = ABUSE_REPORT_AMO_FORM_ENABLED
+  ? openAbuseReportAMOForm
+  : openAbuseReport;
 
 
 
