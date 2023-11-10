@@ -162,25 +162,30 @@ static void BuildCapabilitiesArray(
 }
 
 static HRESULT BuildCDMAccessConfig(const MFCDMInitParamsIPDL& aParams,
-                                    ComPtr<IPropertyStore>& aConfig) {
+                                    ComPtr<IPropertyStore>& aConfig,
+                                    const bool aIsWidevine) {
   ComPtr<IPropertyStore> mksc;  
   MFCDM_RETURN_IF_FAILED(PSCreateMemoryPropertyStore(IID_PPV_ARGS(&mksc)));
 
-  
-  
-  BSTR* initDataTypeArray =
-      (BSTR*)CoTaskMemAlloc(sizeof(BSTR) * aParams.initDataTypes().Length());
-  for (size_t i = 0; i < aParams.initDataTypes().Length(); i++) {
-    initDataTypeArray[i] =
-        SysAllocString(InitDataTypeToString(aParams.initDataTypes()[i]));
+  if (!IsWin11OrLater() || aIsWidevine) {
+    
+    
+    
+    
+    BSTR* initDataTypeArray =
+        (BSTR*)CoTaskMemAlloc(sizeof(BSTR) * aParams.initDataTypes().Length());
+    for (size_t i = 0; i < aParams.initDataTypes().Length(); i++) {
+      initDataTypeArray[i] =
+          SysAllocString(InitDataTypeToString(aParams.initDataTypes()[i]));
+    }
+    AutoPropVar initDataTypes;
+    PROPVARIANT* var = initDataTypes.Receive();
+    var->vt = VT_VECTOR | VT_BSTR;
+    var->cabstr.cElems = static_cast<ULONG>(aParams.initDataTypes().Length());
+    var->cabstr.pElems = initDataTypeArray;
+    MFCDM_RETURN_IF_FAILED(
+        mksc->SetValue(MF_EME_INITDATATYPES, initDataTypes.get()));
   }
-  AutoPropVar initDataTypes;
-  PROPVARIANT* var = initDataTypes.Receive();
-  var->vt = VT_VECTOR | VT_BSTR;
-  var->cabstr.cElems = static_cast<ULONG>(aParams.initDataTypes().Length());
-  var->cabstr.pElems = initDataTypeArray;
-  MFCDM_RETURN_IF_FAILED(
-      mksc->SetValue(MF_EME_INITDATATYPES, initDataTypes.get()));
 
   
   AutoPropVar audioCapabilities;
@@ -261,7 +266,10 @@ static HRESULT CreateContentDecryptionModule(
     ComPtr<IMFContentDecryptionModule>& aCDMOut) {
   
   ComPtr<IPropertyStore> accessConfig;
-  RETURN_IF_FAILED(BuildCDMAccessConfig(aParams, accessConfig));
+  const bool isWidevine =
+      IsWidevineExperimentKeySystemAndSupported(aKeySystem) ||
+      IsWidevineKeySystem(aKeySystem);
+  RETURN_IF_FAILED(BuildCDMAccessConfig(aParams, accessConfig, isWidevine));
 
   AutoTArray<IPropertyStore*, 1> configs = {accessConfig.Get()};
   ComPtr<IMFContentDecryptionModuleAccess> cdmAccess;
