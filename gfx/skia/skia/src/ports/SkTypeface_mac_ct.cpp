@@ -64,6 +64,10 @@
 #include <string.h>
 #include <memory>
 
+#ifdef MOZ_SKIA
+#include "nsCocoaFeatures.h"
+#endif
+
 using namespace skia_private;
 
 
@@ -235,6 +239,7 @@ SkUniqueCFRef<CTFontRef> SkCTFontCreateExactCopy(CTFontRef baseFont, CGFloat tex
 
     
     
+    CFDictionaryRef variations = nullptr;
     if (IsInstalledFont(baseFont)) {
         baseCGFont.reset(CTFontCopyGraphicsFont(baseFont, nullptr));
 
@@ -273,18 +278,40 @@ SkUniqueCFRef<CTFontRef> SkCTFontCreateExactCopy(CTFontRef baseFont, CGFloat tex
         
 
         
-        CFDictionaryRef variations = CGFontCopyVariations(baseCGFont.get());
+        variations = CGFontCopyVariations(baseCGFont.get());
         if (variations) {
             CFDictionarySetValue(attr.get(), kCTFontVariationAttribute, variations);
-            CFRelease(variations);
         }
     }
 
     SkUniqueCFRef<CTFontDescriptorRef> desc(CTFontDescriptorCreateWithAttributes(attr.get()));
 
     if (baseCGFont.get()) {
-        return SkUniqueCFRef<CTFontRef>(
-          CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, nullptr, desc.get()));
+        auto ctFont = SkUniqueCFRef<CTFontRef>(
+            CTFontCreateWithGraphicsFont(baseCGFont.get(), textSize, nullptr, desc.get()));
+        if (variations) {
+#ifdef MOZ_SKIA
+            if (nsCocoaFeatures::OnVenturaOrLater()) {
+                
+                
+                
+                
+                
+                SkUniqueCFRef<CFDictionaryRef> attrs(CFDictionaryCreate(
+                    nullptr, (const void**)&kCTFontVariationAttribute,
+                    (const void**)&variations, 1, &kCFTypeDictionaryKeyCallBacks,
+                    &kCFTypeDictionaryValueCallBacks));
+                
+                
+                SkUniqueCFRef<CTFontDescriptorRef> desc(CTFontCopyFontDescriptor(ctFont.get()));
+                desc.reset(CTFontDescriptorCreateCopyWithAttributes(desc.get(), attrs.get()));
+                
+                ctFont.reset(CTFontCreateCopyWithAttributes(ctFont.get(), 0.0, nullptr, desc.get()));
+            }
+#endif
+            CFRelease(variations);
+        }
+        return ctFont;
     }
 
     return SkUniqueCFRef<CTFontRef>(
