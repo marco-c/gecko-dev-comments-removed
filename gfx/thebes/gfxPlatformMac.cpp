@@ -74,12 +74,21 @@ PRThread* gfxPlatformMac::sFontRegistrationThread = nullptr;
 
 
 void gfxPlatformMac::RegisterSupplementalFonts() {
-  
-  
-  if (XRE_IsParentProcess()) {
-    sFontRegistrationThread = PR_CreateThread(
-        PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
-        PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+  switch (XRE_GetProcessType()) {
+    case GeckoProcessType_Default:
+    case GeckoProcessType_Content:
+      
+      
+      
+      
+      sFontRegistrationThread = PR_CreateThread(
+          PR_USER_THREAD, FontRegistrationCallback, nullptr, PR_PRIORITY_NORMAL,
+          PR_GLOBAL_THREAD, PR_JOINABLE_THREAD, 0);
+      break;
+
+    default:
+      
+      break;
   }
 }
 
