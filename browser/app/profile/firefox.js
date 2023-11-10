@@ -22,6 +22,11 @@
 pref("browser.hiddenWindowChromeURL", "chrome://browser/content/hiddenWindowMac.xhtml");
 
 
+pref("extensions.abuseReport.enabled", true);
+pref("extensions.abuseReport.amWebAPI.enabled", true);
+pref("extensions.abuseReport.amoFormEnabled", false);
+
+
 pref("extensions.logging.enabled", false);
 
 
