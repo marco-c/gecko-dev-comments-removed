@@ -338,6 +338,9 @@ class nsGridContainerFrame final : public nsContainerFrame,
   using LineNameList =
       const mozilla::StyleOwnedSlice<mozilla::StyleCustomIdent>;
   void AddImplicitNamedAreas(mozilla::Span<LineNameList>);
+  using StyleLineNameListValue =
+      const mozilla::StyleGenericLineNameListValue<mozilla::StyleInteger>;
+  void AddImplicitNamedAreas(mozilla::Span<StyleLineNameListValue>);
 
   
 
@@ -511,6 +514,10 @@ class nsGridContainerFrame final : public nsContainerFrame,
   
   void StoreUsedTrackSizes(LogicalAxis aAxis,
                            const nsTArray<TrackSize>& aSizes);
+
+  
+  void AddImplicitNamedAreasInternal(LineNameList& aNameList,
+                                     ImplicitNamedAreas* aAreas);
 
   
 

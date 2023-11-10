@@ -7,7 +7,6 @@
 
 use crate::parser::{Parse, ParserContext};
 use crate::values::specified;
-use crate::values::specified::grid::parse_line_names;
 use crate::values::{CSSFloat, CustomIdent};
 use crate::{Atom, Zero};
 use cssparser::Parser;
@@ -415,7 +414,16 @@ where
 
 
 #[derive(
-    Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue, ToCss, ToResolvedValue, ToShmem,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToCss,
+    ToResolvedValue,
+    ToShmem,
 )]
 #[repr(C, u8)]
 pub enum RepeatCount<Integer> {
@@ -444,9 +452,6 @@ impl Parse for RepeatCount<specified::Integer> {
         }
     }
 }
-
-
-
 
 
 #[derive(
@@ -643,6 +648,109 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
 #[derive(
     Clone,
     Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct GenericNameRepeat<I> {
+    
+    
+    pub count: RepeatCount<I>,
+    
+    pub line_names: crate::OwnedSlice<crate::OwnedSlice<CustomIdent>>,
+}
+
+pub use self::GenericNameRepeat as NameRepeat;
+
+impl<I: ToCss> ToCss for NameRepeat<I> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        dest.write_str("repeat(")?;
+        self.count.to_css(dest)?;
+        dest.write_char(',')?;
+
+        for ref names in self.line_names.iter() {
+            if names.is_empty() {
+                
+                
+                dest.write_str(" []")?;
+            } else {
+                concat_serialize_idents(" [", "]", names, " ", dest)?;
+            }
+        }
+
+        dest.write_char(')')
+    }
+}
+
+impl<I> NameRepeat<I> {
+    
+    #[inline]
+    pub fn is_auto_fill(&self) -> bool {
+        matches!(self.count, RepeatCount::AutoFill)
+    }
+}
+
+
+#[derive(
+    Clone,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C, u8)]
+pub enum GenericLineNameListValue<I> {
+    
+    LineNames(crate::OwnedSlice<CustomIdent>),
+    
+    Repeat(GenericNameRepeat<I>),
+}
+
+pub use self::GenericLineNameListValue as LineNameListValue;
+
+impl<I: ToCss> ToCss for LineNameListValue<I> {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        match *self {
+            Self::Repeat(ref r) => r.to_css(dest),
+            Self::LineNames(ref names) => {
+                dest.write_char('[')?;
+
+                if let Some((ref first, rest)) = names.split_first() {
+                    first.to_css(dest)?;
+                    for name in rest {
+                        dest.write_char(' ')?;
+                        name.to_css(dest)?;
+                    }
+                }
+
+                dest.write_char(']')
+            },
+        }
+    }
+}
+
+
+
+
+
+
+
+#[derive(
+    Clone,
+    Debug,
     Default,
     MallocSizeOf,
     PartialEq,
@@ -652,114 +760,27 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
     ToShmem,
 )]
 #[repr(C)]
-pub struct LineNameList {
+pub struct GenericLineNameList<I>{
     
-    pub names: crate::OwnedSlice<crate::OwnedSlice<CustomIdent>>,
     
-    pub fill_start: usize,
     
-    pub fill_len: usize,
+    pub expanded_line_names_length: usize,
+    
+    pub line_names: crate::OwnedSlice<GenericLineNameListValue<I>>,
 }
 
-impl Parse for LineNameList {
-    fn parse<'i, 't>(
-        context: &ParserContext,
-        input: &mut Parser<'i, 't>,
-    ) -> Result<Self, ParseError<'i>> {
-        input.expect_ident_matching("subgrid")?;
-        let mut line_names = vec![];
-        let mut fill_data = None;
-        
-        
-        
-        
-        let mut max_remaining = MAX_GRID_LINE as usize;
+pub use self::GenericLineNameList as LineNameList;
 
-        loop {
-            let repeat_parse_result = input.try_parse(|input| {
-                input.expect_function_matching("repeat")?;
-                input.parse_nested_block(|input| {
-                    let count = RepeatCount::parse(context, input)?;
-                    input.expect_comma()?;
-                    let mut names_list = vec![];
-                    names_list.push(parse_line_names(input)?); 
-                    while let Ok(names) = input.try_parse(parse_line_names) {
-                        names_list.push(names);
-                    }
-                    Ok((names_list, count))
-                })
-            });
-            if let Ok((names_list, count)) = repeat_parse_result {
-                let mut handle_size = |n| {
-                    let n = cmp::min(n, max_remaining);
-                    max_remaining -= n;
-                    n
-                };
-                match count {
-                    
-                    
-                    RepeatCount::Number(num) => {
-                        let n = handle_size(num.value() as usize * names_list.len());
-                        line_names.extend(names_list.iter().cloned().cycle().take(n));
-                    },
-                    RepeatCount::AutoFill if fill_data.is_none() => {
-                        let fill_idx = line_names.len();
-                        let fill_len = names_list.len();
-                        fill_data = Some((fill_idx, fill_len));
-                        let n = handle_size(fill_len);
-                        line_names.extend(names_list.into_iter().take(n));
-                    },
-                    _ => return Err(input.new_custom_error(StyleParseErrorKind::UnspecifiedError)),
-                }
-            } else if let Ok(names) = input.try_parse(parse_line_names) {
-                if max_remaining > 0 {
-                    line_names.push(names);
-                    max_remaining -= 1;
-                }
-            } else {
-                break;
-            }
-        }
-
-        debug_assert!(line_names.len() <= MAX_GRID_LINE as usize);
-
-        let (fill_start, fill_len) = fill_data.unwrap_or((0, 0));
-
-        Ok(LineNameList {
-            names: line_names.into(),
-            fill_start: fill_start,
-            fill_len: fill_len,
-        })
-    }
-}
-
-impl ToCss for LineNameList {
+impl<I: ToCss> ToCss for LineNameList<I> {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
         dest.write_str("subgrid")?;
-        let fill_start = self.fill_start;
-        let fill_len = self.fill_len;
-        for (i, names) in self.names.iter().enumerate() {
-            if fill_len > 0 && i == fill_start {
-                dest.write_str(" repeat(auto-fill,")?;
-            }
 
-            dest.write_str(" [")?;
-
-            if let Some((ref first, rest)) = names.split_first() {
-                first.to_css(dest)?;
-                for name in rest {
-                    dest.write_char(' ')?;
-                    name.to_css(dest)?;
-                }
-            }
-
-            dest.write_char(']')?;
-            if fill_len > 0 && i == fill_start + fill_len - 1 {
-                dest.write_char(')')?;
-            }
+        for value in self.line_names.iter() {
+            dest.write_char(' ')?;
+            value.to_css(dest)?;
         }
 
         Ok(())
@@ -795,7 +816,7 @@ pub enum GenericGridTemplateComponent<L, I> {
     
     
     #[animation(error)]
-    Subgrid(Box<LineNameList>),
+    Subgrid(Box<GenericLineNameList<I>>),
     
     
     Masonry,
