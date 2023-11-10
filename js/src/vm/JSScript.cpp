@@ -1908,8 +1908,8 @@ bool ScriptSource::initFromOptions(FrontendContext* fc,
   delazificationMode_ = options.eagerDelazificationStrategy();
 
   startLine_ = options.lineno;
-  startColumn_ =
-      JS::LimitedColumnNumberZeroOrigin::fromUnlimited(options.column);
+  startColumn_ = JS::LimitedColumnNumberOneOrigin::fromUnlimited(
+      JS::ColumnNumberOneOrigin(options.column));
   introductionType_ = options.introductionType;
   setIntroductionOffset(options.introductionOffset);
   
@@ -3477,7 +3477,7 @@ bool JSScript::dumpSrcNotes(JSContext* cx, JS::Handle<JSScript*> script,
   sp->put("---- ---- ------ ----- ------ ---------------- ------\n");
   unsigned offset = 0;
   unsigned lineno = script->lineno();
-  JS::LimitedColumnNumberZeroOrigin column = script->column();
+  JS::LimitedColumnNumberOneOrigin column = script->column();
   SrcNote* notes = script->notes();
   SrcNote* notesEnd = script->notesEnd();
   for (SrcNoteIterator iter(notes, notesEnd); !iter.atEnd(); ++iter) {
@@ -3506,24 +3506,22 @@ bool JSScript::dumpSrcNotes(JSContext* cx, JS::Handle<JSScript*> script,
       case SrcNoteType::SetLine:
         lineno = SrcNote::SetLine::getLine(sn, script->lineno());
         sp->printf(" lineno %u", lineno);
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = JS::LimitedColumnNumberOneOrigin();
         break;
 
       case SrcNoteType::SetLineColumn:
         lineno = SrcNote::SetLineColumn::getLine(sn, script->lineno());
-        column = JS::LimitedColumnNumberZeroOrigin(
-            SrcNote::SetLineColumn::getColumn(sn));
+        column = SrcNote::SetLineColumn::getColumn(sn);
         sp->printf(" lineno %u column %u", lineno, column.zeroOriginValue());
         break;
 
       case SrcNoteType::NewLine:
         ++lineno;
-        column = JS::LimitedColumnNumberZeroOrigin::zero();
+        column = JS::LimitedColumnNumberOneOrigin();
         break;
 
       case SrcNoteType::NewLineColumn:
-        column = JS::LimitedColumnNumberZeroOrigin(
-            SrcNote::NewLineColumn::getColumn(sn));
+        column = SrcNote::NewLineColumn::getColumn(sn);
         sp->printf(" column %u", column.zeroOriginValue());
         ++lineno;
         break;

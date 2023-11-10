@@ -623,7 +623,7 @@ class ScriptSource {
   uint32_t startLine_ = 0;
   
   
-  JS::LimitedColumnNumberZeroOrigin startColumn_;
+  JS::LimitedColumnNumberOneOrigin startColumn_;
 
   
   bool mutedErrors_ = false;
@@ -1063,7 +1063,7 @@ class ScriptSource {
   bool mutedErrors() const { return mutedErrors_; }
 
   uint32_t startLine() const { return startLine_; }
-  JS::LimitedColumnNumberZeroOrigin startColumn() const { return startColumn_; }
+  JS::LimitedColumnNumberOneOrigin startColumn() const { return startColumn_; }
 
   JS::DelazificationOption delazificationMode() const {
     return delazificationMode_;
@@ -1545,9 +1545,7 @@ class BaseScript : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   
   uint32_t lineno() const { return extent_.lineno; }
   
-  JS::LimitedColumnNumberZeroOrigin column() const {
-    return JS::LimitedColumnNumberZeroOrigin(extent_.column);
-  }
+  JS::LimitedColumnNumberOneOrigin column() const { return extent_.column; }
 
   JS::DelazificationOption delazificationMode() const {
     return scriptSource()->delazificationMode();
