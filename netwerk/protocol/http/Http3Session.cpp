@@ -264,13 +264,17 @@ void Http3Session::Shutdown() {
           mNetAddr->GetNetAddr(&addr);
           gHttpHandler->ConnMgr()->SetRetryDifferentIPFamilyForHttp3(
               mConnInfo, addr.raw.family);
-          
-          
-          stream->Transaction()->DoNotRemoveAltSvc();
-          
-          
-          stream->Transaction()->DoNotResetIPFamilyPreference();
-          stream->Close(NS_ERROR_NET_RESET);
+          nsHttpTransaction* trans =
+              stream->Transaction()->QueryHttpTransaction();
+          if (trans) {
+            
+            
+            trans->RemoveConnection();
+            Unused << gHttpHandler->InitiateTransaction(trans,
+                                                        trans->Priority());
+          } else {
+            stream->Close(NS_ERROR_NET_RESET);
+          }
           
           
           mDontExclude = true;

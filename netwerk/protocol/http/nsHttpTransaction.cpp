@@ -1415,13 +1415,8 @@ void nsHttpTransaction::Close(nsresult reason) {
   }
   mConnected = false;
 
-  
-  
-  
-  
   bool shouldRestartTransactionForHTTPSRR =
-      mOrigConnInfo && AllowedErrorForHTTPSRRFallback(reason) &&
-      !mDoNotRemoveAltSvc;
+      mOrigConnInfo && AllowedErrorForHTTPSRRFallback(reason);
 
   
   
@@ -1855,11 +1850,9 @@ nsresult nsHttpTransaction::Restart() {
   
   SetRestartReason(TRANSACTION_RESTART_OTHERS);
 
-  if (!mDoNotResetIPFamilyPreference) {
-    
-    
-    gHttpHandler->ConnMgr()->ResetIPFamilyPreference(mConnInfo);
-  }
+  
+  
+  gHttpHandler->ConnMgr()->ResetIPFamilyPreference(mConnInfo);
 
   return gHttpHandler->InitiateTransaction(this, mPriority);
 }
