@@ -442,6 +442,18 @@ impl<'a> ConstantEvaluator<'a> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     fn splat(
         &mut self,
         value: Handle<Expression>,
@@ -833,6 +845,11 @@ impl<'a> ConstantEvaluator<'a> {
     }
 
     
+    
+    
+    
+    
+    
     fn eval_zero_value_and_splat(
         &mut self,
         expr: Handle<Expression>,
@@ -845,6 +862,11 @@ impl<'a> ConstantEvaluator<'a> {
         }
     }
 
+    
+    
+    
+    
+    
     fn eval_zero_value_impl(
         &mut self,
         ty: Handle<Type>,
@@ -921,7 +943,10 @@ impl<'a> ConstantEvaluator<'a> {
         }
     }
 
-    fn cast(
+    
+    
+    
+    pub fn cast(
         &mut self,
         expr: Handle<Expression>,
         kind: ScalarKind,

@@ -1,4 +1,5 @@
 use crate::front::wgsl::parse::number::Number;
+use crate::front::wgsl::Scalar;
 use crate::{Arena, FastIndexSet, Handle, Span};
 use std::hash::Hash;
 
@@ -212,24 +213,17 @@ pub enum ArraySize<'a> {
 
 #[derive(Debug)]
 pub enum Type<'a> {
-    Scalar {
-        kind: crate::ScalarKind,
-        width: crate::Bytes,
-    },
+    Scalar(Scalar),
     Vector {
         size: crate::VectorSize,
-        kind: crate::ScalarKind,
-        width: crate::Bytes,
+        scalar: Scalar,
     },
     Matrix {
         columns: crate::VectorSize,
         rows: crate::VectorSize,
         width: crate::Bytes,
     },
-    Atomic {
-        kind: crate::ScalarKind,
-        width: crate::Bytes,
-    },
+    Atomic(Scalar),
     Pointer {
         base: Handle<Type<'a>>,
         space: crate::AddressSpace,
@@ -344,10 +338,7 @@ pub struct SwitchCase<'a> {
 #[derive(Debug)]
 pub enum ConstructorType<'a> {
     
-    Scalar {
-        kind: crate::ScalarKind,
-        width: crate::Bytes,
-    },
+    Scalar(Scalar),
 
     
     
@@ -357,8 +348,7 @@ pub enum ConstructorType<'a> {
     
     Vector {
         size: crate::VectorSize,
-        kind: crate::ScalarKind,
-        width: crate::Bytes,
+        scalar: Scalar,
     },
 
     

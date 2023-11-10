@@ -1,71 +1,91 @@
 use core::ffi::c_void;
-use core::ptr;
-
-
-
-
-
-
-
+use core::num::NonZeroIsize;
+use core::ptr::NonNull;
 
 
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WindowsDisplayHandle;
+pub struct WindowsDisplayHandle {}
 
 impl WindowsDisplayHandle {
-    pub fn empty() -> Self {
-        Self
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new() -> Self {
+        Self {}
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Win32WindowHandle {
     
-    pub hwnd: *mut c_void,
+    pub hwnd: NonZeroIsize,
     
-    pub hinstance: *mut c_void,
+    pub hinstance: Option<NonZeroIsize>,
 }
 
 impl Win32WindowHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(hwnd: NonZeroIsize) -> Self {
         Self {
-            hwnd: ptr::null_mut(),
-            hinstance: ptr::null_mut(),
+            hwnd,
+            hinstance: None,
         }
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WinRtWindowHandle {
     
-    pub core_window: *mut c_void,
+    pub core_window: NonNull<c_void>,
 }
 
 impl WinRtWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            core_window: ptr::null_mut(),
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(core_window: NonNull<c_void>) -> Self {
+        Self { core_window }
     }
 }

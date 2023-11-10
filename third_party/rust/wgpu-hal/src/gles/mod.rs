@@ -109,6 +109,8 @@ const MAX_VERTEX_ATTRIBUTES: usize = 16;
 const ZERO_BUFFER_SIZE: usize = 256 << 10;
 const MAX_PUSH_CONSTANTS: usize = 64;
 
+const MAX_PUSH_CONSTANT_COMMANDS: usize = MAX_PUSH_CONSTANTS * crate::MAX_CONCURRENT_SHADER_STAGES;
+
 impl crate::Api for Api {
     type Instance = Instance;
     type Surface = Surface;
@@ -163,6 +165,12 @@ bitflags::bitflags! {
         const TEXTURE_FLOAT_LINEAR = 1 << 10;
         /// Supports query buffer objects.
         const QUERY_BUFFERS = 1 << 11;
+        /// Supports `glTexStorage2D`, etc.
+        const TEXTURE_STORAGE = 1 << 12;
+        /// Supports `push_debug_group`, `pop_debug_group` and `debug_message_insert`.
+        const DEBUG_FNS = 1 << 13;
+        /// Supports framebuffer invalidation.
+        const INVALIDATE_FRAMEBUFFER = 1 << 14;
     }
 }
 
@@ -420,6 +428,7 @@ enum RawBinding {
         raw: glow::Texture,
         target: BindTarget,
         aspects: crate::FormatAspects,
+        mip_levels: Range<u32>,
         
     },
     Image(ImageBinding),
@@ -476,11 +485,12 @@ struct VertexBufferDesc {
     stride: u32,
 }
 
-#[derive(Clone, Debug, Default)]
-struct UniformDesc {
-    location: Option<glow::UniformLocation>,
-    size: u32,
-    utype: u32,
+#[derive(Clone, Debug)]
+struct PushConstantDesc {
+    location: glow::UniformLocation,
+    ty: naga::TypeInner,
+    offset: u32,
+    size_bytes: u32,
 }
 
 #[cfg(all(
@@ -488,13 +498,13 @@ struct UniformDesc {
     feature = "fragile-send-sync-non-atomic-wasm",
     not(target_feature = "atomics")
 ))]
-unsafe impl Sync for UniformDesc {}
+unsafe impl Sync for PushConstantDesc {}
 #[cfg(all(
     target_arch = "wasm32",
     feature = "fragile-send-sync-non-atomic-wasm",
     not(target_feature = "atomics")
 ))]
-unsafe impl Send for UniformDesc {}
+unsafe impl Send for PushConstantDesc {}
 
 
 
@@ -503,7 +513,7 @@ type SamplerBindMap = [Option<u8>; MAX_TEXTURE_SLOTS];
 struct PipelineInner {
     program: glow::Program,
     sampler_map: SamplerBindMap,
-    uniforms: [UniformDesc; MAX_PUSH_CONSTANTS],
+    push_constant_descs: ArrayVec<PushConstantDesc, MAX_PUSH_CONSTANT_COMMANDS>,
 }
 
 #[derive(Clone, Debug)]
@@ -865,6 +875,7 @@ enum Command {
         texture: glow::Texture,
         target: BindTarget,
         aspects: crate::FormatAspects,
+        mip_levels: Range<u32>,
     },
     BindImage {
         slot: u32,
@@ -874,7 +885,7 @@ enum Command {
     PushDebugGroup(Range<u32>),
     PopDebugGroup,
     SetPushConstants {
-        uniform: UniformDesc,
+        uniform: PushConstantDesc,
         
         offset: u32,
     },

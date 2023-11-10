@@ -1,8 +1,8 @@
 
 
-use lib::*;
+use crate::lib::*;
 
-use ser::{
+use crate::ser::{
     self, Serialize, SerializeMap, SerializeSeq, SerializeStruct, SerializeStructVariant,
     SerializeTuple, SerializeTupleStruct, SerializeTupleVariant,
 };

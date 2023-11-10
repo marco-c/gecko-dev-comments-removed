@@ -112,26 +112,28 @@
 
 
 
-use lib::*;
+use crate::lib::*;
 
 
 
 pub mod value;
 
-#[cfg(not(no_integer128))]
 mod format;
 mod ignored_any;
 mod impls;
-mod utf8;
+pub(crate) mod size_hint;
 
 pub use self::ignored_any::IgnoredAny;
 
+#[cfg(not(any(feature = "std", feature = "unstable")))]
+#[doc(no_inline)]
+pub use crate::std_error::Error as StdError;
+#[cfg(all(feature = "unstable", not(feature = "std")))]
+#[doc(no_inline)]
+pub use core::error::Error as StdError;
 #[cfg(feature = "std")]
 #[doc(no_inline)]
 pub use std::error::Error as StdError;
-#[cfg(not(feature = "std"))]
-#[doc(no_inline)]
-pub use std_error::Error as StdError;
 
 
 
@@ -162,7 +164,7 @@ macro_rules! declare_error_trait {
             ///
             /// The message should not be capitalized and should not end with a period.
             ///
-            /// ```edition2018
+            /// ```edition2021
             /// # use std::str::FromStr;
             /// #
             /// # struct IpAddr;
@@ -468,6 +470,8 @@ impl<'a> fmt::Display for Unexpected<'a> {
 
 
 
+
+
 pub trait Expected {
     
     
@@ -564,7 +568,7 @@ pub trait Deserialize<'de>: Sized {
         D: Deserializer<'de>,
     {
         
-        *place = try!(Deserialize::deserialize(deserializer));
+        *place = tri!(Deserialize::deserialize(deserializer));
         Ok(())
     }
 }
@@ -602,7 +606,6 @@ pub trait Deserialize<'de>: Sized {
 
 pub trait DeserializeOwned: for<'de> Deserialize<'de> {}
 impl<T> DeserializeOwned for T where T: for<'de> Deserialize<'de> {}
-
 
 
 
@@ -945,18 +948,15 @@ pub trait Deserializer<'de>: Sized {
     where
         V: Visitor<'de>;
 
-    serde_if_integer128! {
-        /// Hint that the `Deserialize` type is expecting an `i128` value.
-        ///
-        /// This method is available only on Rust compiler versions >=1.26. The
-        /// default behavior unconditionally returns an error.
-        fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where
-            V: Visitor<'de>
-        {
-            let _ = visitor;
-            Err(Error::custom("i128 is not supported"))
-        }
+    
+    
+    
+    fn deserialize_i128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        let _ = visitor;
+        Err(Error::custom("i128 is not supported"))
     }
 
     
@@ -979,18 +979,15 @@ pub trait Deserializer<'de>: Sized {
     where
         V: Visitor<'de>;
 
-    serde_if_integer128! {
-        /// Hint that the `Deserialize` type is expecting an `u128` value.
-        ///
-        /// This method is available only on Rust compiler versions >=1.26. The
-        /// default behavior unconditionally returns an error.
-        fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where
-            V: Visitor<'de>
-        {
-            let _ = visitor;
-            Err(Error::custom("u128 is not supported"))
-        }
+    
+    
+    
+    fn deserialize_u128<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        let _ = visitor;
+        Err(Error::custom("u128 is not supported"))
     }
 
     
@@ -1225,16 +1222,15 @@ pub trait Deserializer<'de>: Sized {
     #[doc(hidden)]
     fn __deserialize_content<V>(
         self,
-        _: ::actually_private::T,
+        _: crate::actually_private::T,
         visitor: V,
-    ) -> Result<::private::de::Content<'de>, Self::Error>
+    ) -> Result<crate::__private::de::Content<'de>, Self::Error>
     where
-        V: Visitor<'de, Value = ::private::de::Content<'de>>,
+        V: Visitor<'de, Value = crate::__private::de::Content<'de>>,
     {
         self.deserialize_any(visitor)
     }
 }
-
 
 
 
@@ -1363,20 +1359,20 @@ pub trait Visitor<'de>: Sized {
         Err(Error::invalid_type(Unexpected::Signed(v), &self))
     }
 
-    serde_if_integer128! {
-        /// The input contains a `i128`.
-        ///
-        /// This method is available only on Rust compiler versions >=1.26. The
-        /// default implementation fails with a type error.
-        fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
-        where
-            E: Error,
-        {
-            let mut buf = [0u8; 58];
-            let mut writer = format::Buf::new(&mut buf);
-            fmt::Write::write_fmt(&mut writer, format_args!("integer `{}` as i128", v)).unwrap();
-            Err(Error::invalid_type(Unexpected::Other(writer.as_str()), &self))
-        }
+    
+    
+    
+    fn visit_i128<E>(self, v: i128) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        let mut buf = [0u8; 58];
+        let mut writer = format::Buf::new(&mut buf);
+        fmt::Write::write_fmt(&mut writer, format_args!("integer `{}` as i128", v)).unwrap();
+        Err(Error::invalid_type(
+            Unexpected::Other(writer.as_str()),
+            &self,
+        ))
     }
 
     
@@ -1425,20 +1421,20 @@ pub trait Visitor<'de>: Sized {
         Err(Error::invalid_type(Unexpected::Unsigned(v), &self))
     }
 
-    serde_if_integer128! {
-        /// The input contains a `u128`.
-        ///
-        /// This method is available only on Rust compiler versions >=1.26. The
-        /// default implementation fails with a type error.
-        fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
-        where
-            E: Error,
-        {
-            let mut buf = [0u8; 57];
-            let mut writer = format::Buf::new(&mut buf);
-            fmt::Write::write_fmt(&mut writer, format_args!("integer `{}` as u128", v)).unwrap();
-            Err(Error::invalid_type(Unexpected::Other(writer.as_str()), &self))
-        }
+    
+    
+    
+    fn visit_u128<E>(self, v: u128) -> Result<Self::Value, E>
+    where
+        E: Error,
+    {
+        let mut buf = [0u8; 57];
+        let mut writer = format::Buf::new(&mut buf);
+        fmt::Write::write_fmt(&mut writer, format_args!("integer `{}` as u128", v)).unwrap();
+        Err(Error::invalid_type(
+            Unexpected::Other(writer.as_str()),
+            &self,
+        ))
     }
 
     
@@ -1474,7 +1470,7 @@ pub trait Visitor<'de>: Sized {
     where
         E: Error,
     {
-        self.visit_str(utf8::encode(v).as_str())
+        self.visit_str(v.encode_utf8(&mut [0u8; 4]))
     }
 
     
@@ -1529,6 +1525,7 @@ pub trait Visitor<'de>: Sized {
     
     #[inline]
     #[cfg(any(feature = "std", feature = "alloc"))]
+    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "alloc"))))]
     fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
     where
         E: Error,
@@ -1551,7 +1548,6 @@ pub trait Visitor<'de>: Sized {
     where
         E: Error,
     {
-        let _ = v;
         Err(Error::invalid_type(Unexpected::Bytes(v), &self))
     }
 
@@ -1588,6 +1584,7 @@ pub trait Visitor<'de>: Sized {
     
     
     #[cfg(any(feature = "std", feature = "alloc"))]
+    #[cfg_attr(doc_cfg, doc(cfg(any(feature = "std", feature = "alloc"))))]
     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
     where
         E: Error,
@@ -1831,9 +1828,9 @@ pub trait MapAccess<'de> {
         K: DeserializeSeed<'de>,
         V: DeserializeSeed<'de>,
     {
-        match try!(self.next_key_seed(kseed)) {
+        match tri!(self.next_key_seed(kseed)) {
             Some(key) => {
-                let value = try!(self.next_value_seed(vseed));
+                let value = tri!(self.next_value_seed(vseed));
                 Ok(Some((key, value)))
             }
             None => Ok(None),
@@ -2163,10 +2160,6 @@ pub trait VariantAccess<'de>: Sized {
     
     
     
-    
-    
-    
-    
     fn tuple_variant<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>;
@@ -2285,12 +2278,12 @@ impl Display for OneOf {
             1 => write!(formatter, "`{}`", self.names[0]),
             2 => write!(formatter, "`{}` or `{}`", self.names[0], self.names[1]),
             _ => {
-                try!(write!(formatter, "one of "));
+                tri!(write!(formatter, "one of "));
                 for (i, alt) in self.names.iter().enumerate() {
                     if i > 0 {
-                        try!(write!(formatter, ", "));
+                        tri!(write!(formatter, ", "));
                     }
-                    try!(write!(formatter, "`{}`", alt));
+                    tri!(write!(formatter, "`{}`", alt));
                 }
                 Ok(())
             }

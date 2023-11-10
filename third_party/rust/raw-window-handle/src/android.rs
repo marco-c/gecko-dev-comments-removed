@@ -1,43 +1,50 @@
 use core::ffi::c_void;
-use core::ptr;
-
-
-
-
-
-
-
+use core::ptr::NonNull;
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct AndroidDisplayHandle;
+pub struct AndroidDisplayHandle {}
 
 impl AndroidDisplayHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new() -> Self {
         Self {}
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct AndroidNdkWindowHandle {
     
-    pub a_native_window: *mut c_void,
+    pub a_native_window: NonNull<c_void>,
 }
 
 impl AndroidNdkWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            a_native_window: ptr::null_mut(),
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(a_native_window: NonNull<c_void>) -> Self {
+        Self { a_native_window }
     }
 }

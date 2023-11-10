@@ -1,6 +1,6 @@
-use lib::*;
+use crate::lib::*;
 
-use de::{
+use crate::de::{
     Deserialize, Deserializer, EnumAccess, Error, MapAccess, SeqAccess, VariantAccess, Visitor,
 };
 
@@ -107,8 +107,7 @@ use de::{
 
 
 
-
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct IgnoredAny;
 
 impl<'de> Visitor<'de> for IgnoredAny {
@@ -130,12 +129,10 @@ impl<'de> Visitor<'de> for IgnoredAny {
         Ok(IgnoredAny)
     }
 
-    serde_if_integer128! {
-        #[inline]
-        fn visit_i128<E>(self, x: i128) -> Result<Self::Value, E> {
-            let _ = x;
-            Ok(IgnoredAny)
-        }
+    #[inline]
+    fn visit_i128<E>(self, x: i128) -> Result<Self::Value, E> {
+        let _ = x;
+        Ok(IgnoredAny)
     }
 
     #[inline]
@@ -144,12 +141,10 @@ impl<'de> Visitor<'de> for IgnoredAny {
         Ok(IgnoredAny)
     }
 
-    serde_if_integer128! {
-        #[inline]
-        fn visit_u128<E>(self, x: u128) -> Result<Self::Value, E> {
-            let _ = x;
-            Ok(IgnoredAny)
-        }
+    #[inline]
+    fn visit_u128<E>(self, x: u128) -> Result<Self::Value, E> {
+        let _ = x;
+        Ok(IgnoredAny)
     }
 
     #[inline]
@@ -198,7 +193,7 @@ impl<'de> Visitor<'de> for IgnoredAny {
     where
         A: SeqAccess<'de>,
     {
-        while let Some(IgnoredAny) = try!(seq.next_element()) {
+        while let Some(IgnoredAny) = tri!(seq.next_element()) {
             
         }
         Ok(IgnoredAny)
@@ -209,7 +204,7 @@ impl<'de> Visitor<'de> for IgnoredAny {
     where
         A: MapAccess<'de>,
     {
-        while let Some((IgnoredAny, IgnoredAny)) = try!(map.next_entry()) {
+        while let Some((IgnoredAny, IgnoredAny)) = tri!(map.next_entry()) {
             
         }
         Ok(IgnoredAny)
@@ -228,7 +223,7 @@ impl<'de> Visitor<'de> for IgnoredAny {
     where
         A: EnumAccess<'de>,
     {
-        try!(data.variant::<IgnoredAny>()).1.newtype_variant()
+        tri!(data.variant::<IgnoredAny>()).1.newtype_variant()
     }
 }
 

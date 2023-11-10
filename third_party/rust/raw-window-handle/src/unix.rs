@@ -1,19 +1,16 @@
 use core::ffi::{c_int, c_ulong, c_void};
-use core::ptr;
-
-
-
-
-
-
-
+use core::num::NonZeroU32;
+use core::ptr::NonNull;
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XlibDisplayHandle {
     
-    pub display: *mut c_void,
+    
+    
+    
+    pub display: Option<NonNull<c_void>>,
 
     
     
@@ -23,12 +20,27 @@ pub struct XlibDisplayHandle {
     pub screen: c_int,
 }
 
-
-
-
-
-
-
+impl XlibDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(display: Option<NonNull<c_void>>, screen: c_int) -> Self {
+        Self { display, screen }
+    }
+}
 
 
 #[non_exhaustive]
@@ -40,19 +52,39 @@ pub struct XlibWindowHandle {
     pub visual_id: c_ulong,
 }
 
-
-
-
-
-
-
+impl XlibWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(window: c_ulong) -> Self {
+        Self {
+            window,
+            visual_id: 0,
+        }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XcbDisplayHandle {
     
-    pub connection: *mut c_void,
+    
+    
+    
+    pub connection: Option<NonNull<c_void>>,
 
     
     
@@ -62,74 +94,144 @@ pub struct XcbDisplayHandle {
     pub screen: c_int,
 }
 
-
-
-
-
-
-
+impl XcbDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(connection: Option<NonNull<c_void>>, screen: c_int) -> Self {
+        Self { connection, screen }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct XcbWindowHandle {
     
-    pub window: u32, 
+    pub window: NonZeroU32, 
     
-    pub visual_id: u32,
+    pub visual_id: Option<NonZeroU32>,
 }
 
-
-
-
-
-
-
+impl XcbWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(window: NonZeroU32) -> Self {
+        Self {
+            window,
+            visual_id: None,
+        }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WaylandDisplayHandle {
     
-    pub display: *mut c_void,
+    pub display: NonNull<c_void>,
 }
 
-
-
-
-
-
-
+impl WaylandDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(display: NonNull<c_void>) -> Self {
+        Self { display }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct WaylandWindowHandle {
     
-    pub surface: *mut c_void,
+    pub surface: NonNull<c_void>,
 }
 
-
-
-
-
-
-
+impl WaylandWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(surface: NonNull<c_void>) -> Self {
+        Self { surface }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct DrmDisplayHandle {
     
+    
     pub fd: i32,
 }
 
-
-
-
-
-
-
+impl DrmDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(fd: i32) -> Self {
+        Self { fd }
+    }
+}
 
 
 #[non_exhaustive]
@@ -139,112 +241,76 @@ pub struct DrmWindowHandle {
     pub plane: u32,
 }
 
-
-
-
-
-
-
+impl DrmWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(plane: u32) -> Self {
+        Self { plane }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GbmDisplayHandle {
     
-    pub gbm_device: *mut c_void,
+    pub gbm_device: NonNull<c_void>,
 }
 
-
-
-
-
-
-
+impl GbmDisplayHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(gbm_device: NonNull<c_void>) -> Self {
+        Self { gbm_device }
+    }
+}
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GbmWindowHandle {
     
-    pub gbm_surface: *mut c_void,
-}
-
-impl XlibDisplayHandle {
-    pub fn empty() -> Self {
-        Self {
-            display: ptr::null_mut(),
-            screen: 0,
-        }
-    }
-}
-
-impl XlibWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            window: 0,
-            visual_id: 0,
-        }
-    }
-}
-
-impl XcbDisplayHandle {
-    pub fn empty() -> Self {
-        Self {
-            connection: ptr::null_mut(),
-            screen: 0,
-        }
-    }
-}
-
-impl XcbWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            window: 0,
-            visual_id: 0,
-        }
-    }
-}
-
-impl WaylandDisplayHandle {
-    pub fn empty() -> Self {
-        Self {
-            display: ptr::null_mut(),
-        }
-    }
-}
-
-impl WaylandWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            surface: ptr::null_mut(),
-        }
-    }
-}
-
-impl DrmDisplayHandle {
-    pub fn empty() -> Self {
-        Self { fd: 0 }
-    }
-}
-
-impl DrmWindowHandle {
-    pub fn empty() -> Self {
-        Self { plane: 0 }
-    }
-}
-
-impl GbmDisplayHandle {
-    pub fn empty() -> Self {
-        Self {
-            gbm_device: ptr::null_mut(),
-        }
-    }
+    pub gbm_surface: NonNull<c_void>,
 }
 
 impl GbmWindowHandle {
-    pub fn empty() -> Self {
-        Self {
-            gbm_surface: ptr::null_mut(),
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(gbm_surface: NonNull<c_void>) -> Self {
+        Self { gbm_surface }
     }
 }

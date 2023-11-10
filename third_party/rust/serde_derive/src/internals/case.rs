@@ -1,13 +1,8 @@
 
 
 
-
-#[allow(deprecated, unused_imports)]
-use std::ascii::AsciiExt;
-
-use std::fmt::{self, Debug, Display};
-
 use self::RenameRule::*;
+use std::fmt::{self, Debug, Display};
 
 
 #[derive(Copy, Clone, PartialEq)]
@@ -59,8 +54,8 @@ impl RenameRule {
     }
 
     
-    pub fn apply_to_variant(&self, variant: &str) -> String {
-        match *self {
+    pub fn apply_to_variant(self, variant: &str) -> String {
+        match self {
             None | PascalCase => variant.to_owned(),
             LowerCase => variant.to_ascii_lowercase(),
             UpperCase => variant.to_ascii_uppercase(),
@@ -84,8 +79,8 @@ impl RenameRule {
     }
 
     
-    pub fn apply_to_field(&self, field: &str) -> String {
-        match *self {
+    pub fn apply_to_field(self, field: &str) -> String {
+        match self {
             None | LowerCase | SnakeCase => field.to_owned(),
             UpperCase => field.to_ascii_uppercase(),
             PascalCase => {
@@ -110,6 +105,14 @@ impl RenameRule {
             ScreamingSnakeCase => field.to_ascii_uppercase(),
             KebabCase => field.replace('_', "-"),
             ScreamingKebabCase => ScreamingSnakeCase.apply_to_field(field).replace('_', "-"),
+        }
+    }
+
+    
+    pub fn or(self, rule_b: Self) -> Self {
+        match self {
+            None => rule_b,
+            _ => self,
         }
     }
 }

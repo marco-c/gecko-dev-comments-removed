@@ -1,6 +1,7 @@
 
 
 
+#![allow(repr_transparent_external_private_fields)]
 #![allow(clippy::match_wildcard_for_single_variants)]
 use super::{Lite, Present};
 use ref_cast::RefCast;

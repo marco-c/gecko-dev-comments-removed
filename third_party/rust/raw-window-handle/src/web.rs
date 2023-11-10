@@ -1,27 +1,25 @@
-
-
-
-
-
-
+use core::ffi::c_void;
+use core::ptr::NonNull;
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct WebDisplayHandle;
+pub struct WebDisplayHandle {}
 
 impl WebDisplayHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new() -> Self {
         Self {}
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
@@ -34,12 +32,166 @@ pub struct WebWindowHandle {
     
     
     
-    
     pub id: u32,
 }
 
 impl WebWindowHandle {
-    pub fn empty() -> Self {
-        Self { id: 0 }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(id: u32) -> Self {
+        Self { id }
+    }
+}
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WebCanvasWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub obj: NonNull<c_void>,
+}
+
+impl WebCanvasWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(obj: NonNull<c_void>) -> Self {
+        Self { obj }
+    }
+}
+
+#[cfg(all(target_family = "wasm", feature = "wasm-bindgen-0-2"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(target_family = "wasm", feature = "wasm-bindgen-0-2")))
+)]
+
+impl WebCanvasWindowHandle {
+    
+    
+    
+    
+    pub fn from_wasm_bindgen_0_2(js_value: &wasm_bindgen::JsValue) -> Self {
+        Self::new(NonNull::from(js_value).cast())
+    }
+
+    
+    
+    
+    
+    
+    
+    pub unsafe fn as_wasm_bindgen_0_2(&self) -> &wasm_bindgen::JsValue {
+        unsafe { self.obj.cast().as_ref() }
+    }
+}
+
+
+
+
+
+#[non_exhaustive]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct WebOffscreenCanvasWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub obj: NonNull<c_void>,
+}
+
+impl WebOffscreenCanvasWindowHandle {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(obj: NonNull<c_void>) -> Self {
+        Self { obj }
+    }
+}
+
+#[cfg(all(target_family = "wasm", feature = "wasm-bindgen-0-2"))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(target_family = "wasm", feature = "wasm-bindgen-0-2")))
+)]
+
+impl WebOffscreenCanvasWindowHandle {
+    
+    
+    
+    
+    
+    pub fn from_wasm_bindgen_0_2(js_value: &wasm_bindgen::JsValue) -> Self {
+        Self::new(NonNull::from(js_value).cast())
+    }
+
+    
+    
+    
+    
+    
+    
+    pub unsafe fn as_wasm_bindgen_0_2(&self) -> &wasm_bindgen::JsValue {
+        unsafe { self.obj.cast().as_ref() }
     }
 }

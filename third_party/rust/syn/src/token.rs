@@ -88,6 +88,8 @@
 
 
 
+#[cfg(feature = "parsing")]
+pub(crate) use self::private::CustomToken;
 use self::private::WithSpan;
 #[cfg(feature = "parsing")]
 use crate::buffer::Cursor;
@@ -134,7 +136,9 @@ pub trait Token: private::Sealed {
     fn display() -> &'static str;
 }
 
-mod private {
+pub(crate) mod private {
+    #[cfg(feature = "parsing")]
+    use crate::buffer::Cursor;
     use proc_macro2::Span;
 
     #[cfg(feature = "parsing")]
@@ -143,8 +147,17 @@ mod private {
     
     
     #[repr(transparent)]
+    #[allow(unknown_lints, repr_transparent_external_private_fields)] 
     pub struct WithSpan {
         pub span: Span,
+    }
+
+    
+    #[doc(hidden)]
+    #[cfg(feature = "parsing")]
+    pub trait CustomToken {
+        fn peek(cursor: Cursor) -> bool;
+        fn display() -> &'static str;
     }
 }
 
@@ -216,14 +229,6 @@ macro_rules! impl_low_level_token {
 impl_low_level_token!("punctuation token" Punct punct);
 impl_low_level_token!("literal" Literal literal);
 impl_low_level_token!("token" TokenTree token_tree);
-
-
-#[doc(hidden)]
-#[cfg(feature = "parsing")]
-pub trait CustomToken {
-    fn peek(cursor: Cursor) -> bool;
-    fn display() -> &'static str;
-}
 
 #[cfg(feature = "parsing")]
 impl<T: CustomToken> private::Sealed for T {}
@@ -365,6 +370,7 @@ macro_rules! define_punctuation_structs {
     ($($token:literal pub struct $name:ident/$len:tt #[doc = $usage:literal])*) => {
         $(
             #[cfg_attr(not(doc), repr(transparent))]
+            #[allow(unknown_lints, repr_transparent_external_private_fields)] 
             #[doc = concat!('`', $token, '`')]
             ///
             /// Usage:
@@ -843,6 +849,67 @@ define_delimiters! {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[macro_export]
 macro_rules! Token {
     [abstract]    => { $crate::token::Abstract };
@@ -974,6 +1041,7 @@ pub(crate) mod parsing {
         }
     }
 
+    #[doc(hidden)]
     pub fn punct<const N: usize>(input: ParseStream, token: &str) -> Result<[Span; N]> {
         let mut spans = [input.span(); N];
         punct_helper(input, token, &mut spans)?;
@@ -1006,6 +1074,7 @@ pub(crate) mod parsing {
         })
     }
 
+    #[doc(hidden)]
     pub fn peek_punct(mut cursor: Cursor, token: &str) -> bool {
         for (i, ch) in token.chars().enumerate() {
             match cursor.punct() {
@@ -1033,6 +1102,7 @@ pub(crate) mod printing {
     use proc_macro2::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream};
     use quote::TokenStreamExt;
 
+    #[doc(hidden)]
     pub fn punct(s: &str, spans: &[Span], tokens: &mut TokenStream) {
         assert_eq!(s.len(), spans.len());
 

@@ -97,6 +97,9 @@ use bitflags::bitflags;
 use thiserror::Error;
 use wgt::{WasmNotSend, WasmNotSync};
 
+
+
+pub const MAX_CONCURRENT_SHADER_STAGES: usize = 2;
 pub const MAX_ANISOTROPY: u8 = 16;
 pub const MAX_BIND_GROUPS: usize = 8;
 pub const MAX_VERTEX_BUFFERS: usize = 16;
@@ -500,11 +503,19 @@ pub trait CommandEncoder<A: Api>: WasmNotSend + WasmNotSync + fmt::Debug {
         dynamic_offsets: &[wgt::DynamicOffset],
     );
 
+    
+    
+    
+    
+    
+    
+    
+    
     unsafe fn set_push_constants(
         &mut self,
         layout: &A::PipelineLayout,
         stages: wgt::ShaderStages,
-        offset: u32,
+        offset_bytes: u32,
         data: &[u32],
     );
 

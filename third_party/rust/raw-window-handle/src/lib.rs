@@ -1,5 +1,7 @@
 #![no_std]
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![allow(clippy::new_without_default)]
+#![deny(unsafe_op_in_unsafe_fn)]
 
 
 
@@ -33,8 +35,6 @@ extern crate std;
 
 mod android;
 mod appkit;
-#[cfg(any(feature = "std", not(target_os = "android")))]
-#[cfg_attr(docsrs, doc(cfg(any(feature = "std", not(target_os = "android")))))]
 mod borrowed;
 mod haiku;
 mod redox;
@@ -45,11 +45,7 @@ mod windows;
 
 pub use android::{AndroidDisplayHandle, AndroidNdkWindowHandle};
 pub use appkit::{AppKitDisplayHandle, AppKitWindowHandle};
-#[cfg(any(feature = "std", not(target_os = "android")))]
-pub use borrowed::{
-    Active, ActiveHandle, DisplayHandle, HandleError, HasDisplayHandle, HasWindowHandle,
-    WindowHandle,
-};
+pub use borrowed::{DisplayHandle, HasDisplayHandle, HasWindowHandle, WindowHandle};
 pub use haiku::{HaikuDisplayHandle, HaikuWindowHandle};
 pub use redox::{OrbitalDisplayHandle, OrbitalWindowHandle};
 pub use uikit::{UiKitDisplayHandle, UiKitWindowHandle};
@@ -57,9 +53,12 @@ pub use unix::{
     DrmDisplayHandle, DrmWindowHandle, GbmDisplayHandle, GbmWindowHandle, WaylandDisplayHandle,
     WaylandWindowHandle, XcbDisplayHandle, XcbWindowHandle, XlibDisplayHandle, XlibWindowHandle,
 };
-pub use web::{WebDisplayHandle, WebWindowHandle};
+pub use web::{
+    WebCanvasWindowHandle, WebDisplayHandle, WebOffscreenCanvasWindowHandle, WebWindowHandle,
+};
 pub use windows::{Win32WindowHandle, WinRtWindowHandle, WindowsDisplayHandle};
 
+use core::fmt;
 
 
 
@@ -74,27 +73,16 @@ pub use windows::{Win32WindowHandle, WinRtWindowHandle, WindowsDisplayHandle};
 
 
 
+
+#[deprecated = "Use `HasWindowHandle` instead"]
 pub unsafe trait HasRawWindowHandle {
-    fn raw_window_handle(&self) -> RawWindowHandle;
+    fn raw_window_handle(&self) -> Result<RawWindowHandle, HandleError>;
 }
 
-unsafe impl<'a, T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for &'a T {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        (*self).raw_window_handle()
-    }
-}
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-unsafe impl<T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for alloc::rc::Rc<T> {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        (**self).raw_window_handle()
-    }
-}
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-unsafe impl<T: HasRawWindowHandle + ?Sized> HasRawWindowHandle for alloc::sync::Arc<T> {
-    fn raw_window_handle(&self) -> RawWindowHandle {
-        (**self).raw_window_handle()
+#[allow(deprecated)]
+unsafe impl<T: HasWindowHandle + ?Sized> HasRawWindowHandle for T {
+    fn raw_window_handle(&self) -> Result<RawWindowHandle, HandleError> {
+        self.window_handle().map(Into::into)
     }
 }
 
@@ -192,6 +180,20 @@ pub enum RawWindowHandle {
     
     
     
+    
+    
+    WebCanvas(WebCanvasWindowHandle),
+    
+    
+    
+    
+    
+    
+    WebOffscreenCanvas(WebOffscreenCanvasWindowHandle),
+    
+    
+    
+    
     AndroidNdk(AndroidNdkWindowHandle),
     
     
@@ -214,29 +216,15 @@ pub enum RawWindowHandle {
 
 
 
+#[deprecated = "Use `HasDisplayHandle` instead"]
 pub unsafe trait HasRawDisplayHandle {
-    fn raw_display_handle(&self) -> RawDisplayHandle;
+    fn raw_display_handle(&self) -> Result<RawDisplayHandle, HandleError>;
 }
 
-unsafe impl<'a, T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for &'a T {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        (*self).raw_display_handle()
-    }
-}
-
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-unsafe impl<T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for alloc::rc::Rc<T> {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        (**self).raw_display_handle()
-    }
-}
-
-#[cfg(feature = "alloc")]
-#[cfg_attr(docsrs, doc(cfg(feature = "alloc")))]
-unsafe impl<T: HasRawDisplayHandle + ?Sized> HasRawDisplayHandle for alloc::sync::Arc<T> {
-    fn raw_display_handle(&self) -> RawDisplayHandle {
-        (**self).raw_display_handle()
+#[allow(deprecated)]
+unsafe impl<T: HasDisplayHandle + ?Sized> HasRawDisplayHandle for T {
+    fn raw_display_handle(&self) -> Result<RawDisplayHandle, HandleError> {
+        self.display_handle().map(Into::into)
     }
 }
 
@@ -343,6 +331,53 @@ pub enum RawDisplayHandle {
     Haiku(HaikuDisplayHandle),
 }
 
+
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub enum HandleError {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    NotSupported,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Unavailable,
+}
+
+impl fmt::Display for HandleError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NotSupported => write!(
+                f,
+                "the underlying handle cannot be represented using the types in this crate"
+            ),
+            Self::Unavailable => write!(f, "the underlying handle is not available"),
+        }
+    }
+}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HandleError {}
+
 macro_rules! from_impl {
     ($($to:ident, $enum:ident, $from:ty)*) => ($(
         impl From<$from> for $to {
@@ -377,5 +412,11 @@ from_impl!(RawWindowHandle, Gbm, GbmWindowHandle);
 from_impl!(RawWindowHandle, Win32, Win32WindowHandle);
 from_impl!(RawWindowHandle, WinRt, WinRtWindowHandle);
 from_impl!(RawWindowHandle, Web, WebWindowHandle);
+from_impl!(RawWindowHandle, WebCanvas, WebCanvasWindowHandle);
+from_impl!(
+    RawWindowHandle,
+    WebOffscreenCanvas,
+    WebOffscreenCanvasWindowHandle
+);
 from_impl!(RawWindowHandle, AndroidNdk, AndroidNdkWindowHandle);
 from_impl!(RawWindowHandle, Haiku, HaikuWindowHandle);

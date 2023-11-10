@@ -459,8 +459,13 @@ pub enum RequestAdapterError {
 }
 
 impl<G: GlobalIdentityHandlerFactory> Global<G> {
+    
+    
+    
+    
+    
     #[cfg(feature = "raw-window-handle")]
-    pub fn instance_create_surface(
+    pub unsafe fn instance_create_surface(
         &self,
         display_handle: raw_window_handle::RawDisplayHandle,
         window_handle: raw_window_handle::RawWindowHandle,

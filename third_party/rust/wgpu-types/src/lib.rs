@@ -177,6 +177,12 @@ bitflags::bitflags! {
     }
 }
 
+impl Default for Backends {
+    fn default() -> Self {
+        Self::all()
+    }
+}
+
 impl_bitflags!(Backends);
 
 impl From<Backend> for Backends {
@@ -2096,6 +2102,15 @@ impl TextureFormatFeatureFlags {
             16 => self.contains(tfsc::MULTISAMPLE_X16),
             _ => false,
         }
+    }
+
+    
+    pub fn supported_sample_counts(&self) -> Vec<u32> {
+        let all_possible_sample_counts: [u32; 5] = [1, 2, 4, 8, 16];
+        all_possible_sample_counts
+            .into_iter()
+            .filter(|&sc| self.sample_count_supported(sc))
+            .collect()
     }
 }
 

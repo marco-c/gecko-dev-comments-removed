@@ -1,46 +1,57 @@
 use core::ffi::c_void;
-use core::ptr;
-
-
-
-
-
-
-
+use core::ptr::NonNull;
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct HaikuDisplayHandle;
+pub struct HaikuDisplayHandle {}
 
 impl HaikuDisplayHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new() -> Self {
         Self {}
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct HaikuWindowHandle {
     
-    pub b_window: *mut c_void,
+    pub b_window: NonNull<c_void>,
     
-    pub b_direct_window: *mut c_void,
+    pub b_direct_window: Option<NonNull<c_void>>,
 }
 
 impl HaikuWindowHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(b_window: NonNull<c_void>) -> Self {
         Self {
-            b_window: ptr::null_mut(),
-            b_direct_window: ptr::null_mut(),
+            b_window,
+            b_direct_window: None,
         }
     }
 }

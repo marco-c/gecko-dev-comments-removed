@@ -12,6 +12,9 @@ pub(crate) struct ThreadBound<T> {
 unsafe impl<T> Sync for ThreadBound<T> {}
 
 
+
+
+
 unsafe impl<T: Copy> Send for ThreadBound<T> {}
 
 impl<T> ThreadBound<T> {
@@ -40,11 +43,18 @@ impl<T: Debug> Debug for ThreadBound<T> {
     }
 }
 
-impl<T: Clone> Clone for ThreadBound<T> {
+
+
+
+
+
+
+
+
+impl<T: Copy> Copy for ThreadBound<T> {}
+
+impl<T: Copy> Clone for ThreadBound<T> {
     fn clone(&self) -> Self {
-        ThreadBound {
-            value: self.value.clone(),
-            thread_id: self.thread_id,
-        }
+        *self
     }
 }

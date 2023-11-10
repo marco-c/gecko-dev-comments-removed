@@ -1,49 +1,57 @@
 use core::ffi::c_void;
-use core::ptr;
-
-
-
-
-
-
-
+use core::ptr::NonNull;
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct UiKitDisplayHandle;
+pub struct UiKitDisplayHandle {}
 
 impl UiKitDisplayHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new() -> Self {
         Self {}
     }
 }
-
-
-
-
-
-
-
 
 
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct UiKitWindowHandle {
     
-    pub ui_window: *mut c_void,
+    pub ui_view: NonNull<c_void>,
     
-    pub ui_view: *mut c_void,
-    
-    pub ui_view_controller: *mut c_void,
+    pub ui_view_controller: Option<NonNull<c_void>>,
 }
 
 impl UiKitWindowHandle {
-    pub fn empty() -> Self {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new(ui_view: NonNull<c_void>) -> Self {
         Self {
-            ui_window: ptr::null_mut(),
-            ui_view: ptr::null_mut(),
-            ui_view_controller: ptr::null_mut(),
+            ui_view,
+            ui_view_controller: None,
         }
     }
 }

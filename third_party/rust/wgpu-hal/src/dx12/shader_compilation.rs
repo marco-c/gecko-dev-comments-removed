@@ -99,7 +99,7 @@ mod dxc {
         let dxil = match hassle_rs::Dxil::new(dxil_path) {
             Ok(dxil) => dxil,
             Err(e) => {
-                log::warn!("Failed to load dxil.dll. Defaulting to Fxc instead: {}", e);
+                log::warn!("Failed to load dxil.dll. Defaulting to DXC instead: {}", e);
                 return Ok(None);
             }
         };
@@ -111,7 +111,7 @@ mod dxc {
             Ok(dxc) => dxc,
             Err(e) => {
                 log::warn!(
-                    "Failed to load dxcompiler.dll. Defaulting to Fxc instead: {}",
+                    "Failed to load dxcompiler.dll. Defaulting to FXC instead: {}",
                     e
                 );
                 return Ok(None);
@@ -142,9 +142,12 @@ mod dxc {
         log::Level,
     ) {
         profiling::scope!("compile_dxc");
-        let mut compile_flags = arrayvec::ArrayVec::<&str, 4>::new_const();
+        let mut compile_flags = arrayvec::ArrayVec::<&str, 6>::new_const();
         compile_flags.push("-Ges"); 
         compile_flags.push("-Vd"); 
+        compile_flags.push("-HV"); 
+        compile_flags.push("2018");
+
         if device
             .private_caps
             .instance_flags

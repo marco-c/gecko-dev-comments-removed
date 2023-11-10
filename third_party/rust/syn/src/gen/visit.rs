@@ -2,6 +2,7 @@
 
 
 #![allow(unused_variables)]
+#![allow(clippy::needless_pass_by_ref_mut)]
 #[cfg(any(feature = "full", feature = "derive"))]
 use crate::punctuated::Punctuated;
 use crate::*;

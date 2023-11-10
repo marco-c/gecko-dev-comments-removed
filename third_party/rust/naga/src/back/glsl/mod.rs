@@ -309,6 +309,8 @@ pub struct ReflectionInfo {
     pub uniforms: crate::FastHashMap<Handle<crate::GlobalVariable>, String>,
     
     pub varying: crate::FastHashMap<String, VaryingLocation>,
+    
+    pub push_constant_items: Vec<PushConstantItem>,
 }
 
 
@@ -326,6 +328,50 @@ pub struct TextureMapping {
     pub texture: Handle<crate::GlobalVariable>,
     
     pub sampler: Option<Handle<crate::GlobalVariable>>,
+}
+
+
+
+
+
+
+
+
+
+#[derive(Debug, Clone)]
+pub struct PushConstantItem {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub access_path: String,
+    
+    pub ty: Handle<crate::Type>,
+    
+    
+    
+    pub offset: u32,
 }
 
 
@@ -1264,8 +1310,8 @@ impl<'a, W: Write> Writer<'a, W> {
         handle: Handle<crate::GlobalVariable>,
         global: &crate::GlobalVariable,
     ) -> String {
-        match global.binding {
-            Some(ref br) => {
+        match (&global.binding, global.space) {
+            (&Some(ref br), _) => {
                 format!(
                     "_group_{}_binding_{}_{}",
                     br.group,
@@ -1273,7 +1319,10 @@ impl<'a, W: Write> Writer<'a, W> {
                     self.entry_point.stage.to_str()
                 )
             }
-            None => self.names[&NameKey::GlobalVariable(handle)].clone(),
+            (&None, crate::AddressSpace::PushConstant) => {
+                format!("_push_constant_binding_{}", self.entry_point.stage.to_str())
+            }
+            (&None, _) => self.names[&NameKey::GlobalVariable(handle)].clone(),
         }
     }
 
@@ -1283,15 +1332,20 @@ impl<'a, W: Write> Writer<'a, W> {
         handle: Handle<crate::GlobalVariable>,
         global: &crate::GlobalVariable,
     ) -> BackendResult {
-        match global.binding {
-            Some(ref br) => write!(
+        match (&global.binding, global.space) {
+            (&Some(ref br), _) => write!(
                 self.out,
                 "_group_{}_binding_{}_{}",
                 br.group,
                 br.binding,
                 self.entry_point.stage.to_str()
             )?,
-            None => write!(
+            (&None, crate::AddressSpace::PushConstant) => write!(
+                self.out,
+                "_push_constant_binding_{}",
+                self.entry_point.stage.to_str()
+            )?,
+            (&None, _) => write!(
                 self.out,
                 "{}",
                 &self.names[&NameKey::GlobalVariable(handle)]
@@ -4069,6 +4123,7 @@ impl<'a, W: Write> Writer<'a, W> {
             }
         }
 
+        let mut push_constant_info = None;
         for (handle, var) in self.module.global_variables.iter() {
             if info[handle].is_empty() {
                 continue;
@@ -4093,16 +4148,104 @@ impl<'a, W: Write> Writer<'a, W> {
                         let name = self.reflection_names_globals[&handle].clone();
                         uniforms.insert(handle, name);
                     }
+                    crate::AddressSpace::PushConstant => {
+                        let name = self.reflection_names_globals[&handle].clone();
+                        push_constant_info = Some((name, var.ty));
+                    }
                     _ => (),
                 },
             }
+        }
+
+        let mut push_constant_segments = Vec::new();
+        let mut push_constant_items = vec![];
+
+        if let Some((name, ty)) = push_constant_info {
+            
+            
+            
+            
+            let mut layouter = crate::proc::Layouter::default();
+            layouter.update(self.module.to_ctx()).unwrap();
+
+            
+            push_constant_segments.push(name);
+
+            
+            self.collect_push_constant_items(
+                ty,
+                &mut push_constant_segments,
+                &layouter,
+                &mut 0,
+                &mut push_constant_items,
+            );
         }
 
         Ok(ReflectionInfo {
             texture_mapping,
             uniforms,
             varying: mem::take(&mut self.varying),
+            push_constant_items,
         })
+    }
+
+    fn collect_push_constant_items(
+        &mut self,
+        ty: Handle<crate::Type>,
+        segments: &mut Vec<String>,
+        layouter: &crate::proc::Layouter,
+        offset: &mut u32,
+        items: &mut Vec<PushConstantItem>,
+    ) {
+        
+        
+
+        let layout = &layouter[ty];
+        *offset = layout.alignment.round_up(*offset);
+        match self.module.types[ty].inner {
+            
+            TypeInner::Scalar { .. } | TypeInner::Vector { .. } | TypeInner::Matrix { .. } => {
+                
+                let name: String = segments.iter().map(String::as_str).collect();
+                items.push(PushConstantItem {
+                    access_path: name,
+                    offset: *offset,
+                    ty,
+                });
+                *offset += layout.size;
+            }
+            
+            TypeInner::Array { base, size, .. } => {
+                let crate::ArraySize::Constant(count) = size else {
+                    unreachable!("Cannot have dynamic arrays in push constants");
+                };
+
+                for i in 0..count.get() {
+                    
+                    segments.push(format!("[{}]", i));
+                    self.collect_push_constant_items(base, segments, layouter, offset, items);
+                    segments.pop();
+                }
+
+                
+                *offset = layout.alignment.round_up(*offset)
+            }
+            TypeInner::Struct { ref members, .. } => {
+                for (index, member) in members.iter().enumerate() {
+                    
+                    segments.push(format!(
+                        ".{}",
+                        self.names[&NameKey::StructMember(ty, index as u32)]
+                    ));
+                    self.collect_push_constant_items(member.ty, segments, layouter, offset, items);
+                    segments.pop();
+                }
+
+                
+                *offset = layout.alignment.round_up(*offset)
+            }
+            _ => unreachable!(),
+        }
     }
 }
 
