@@ -4658,13 +4658,13 @@ JS_PUBLIC_API bool DescribeScriptedCaller(JSContext* cx, AutoFilename* filename,
   }
 
   if (lineno) {
-    JS::TaggedColumnNumberZeroOrigin columnNumber;
+    JS::TaggedColumnNumberOneOrigin columnNumber;
     *lineno = i.computeLine(&columnNumber);
     if (column) {
       *column = JS::ColumnNumberZeroOrigin(columnNumber.zeroOriginValue());
     }
   } else if (column) {
-    JS::TaggedColumnNumberZeroOrigin columnNumber;
+    JS::TaggedColumnNumberOneOrigin columnNumber;
     i.computeLine(&columnNumber);
     *column = JS::ColumnNumberZeroOrigin(columnNumber.zeroOriginValue());
   }

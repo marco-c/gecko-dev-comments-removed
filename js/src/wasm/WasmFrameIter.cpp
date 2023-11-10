@@ -284,21 +284,20 @@ uint32_t WasmFrameIter::funcIndex() const {
 }
 
 unsigned WasmFrameIter::computeLine(
-    JS::TaggedColumnNumberZeroOrigin* column) const {
+    JS::TaggedColumnNumberOneOrigin* column) const {
   if (instance()->isAsmJS()) {
     if (column) {
       *column =
-          JS::TaggedColumnNumberZeroOrigin(JS::LimitedColumnNumberZeroOrigin(
-              JS::WasmFunctionIndex::
-                  DefaultBinarySourceColumnNumberZeroOrigin));
+          JS::TaggedColumnNumberOneOrigin(JS::LimitedColumnNumberOneOrigin(
+              JS::WasmFunctionIndex::DefaultBinarySourceColumnNumberOneOrigin));
     }
     return lineOrBytecode_;
   }
 
   MOZ_ASSERT(!(codeRange_->funcIndex() &
-               JS::TaggedColumnNumberZeroOrigin::WasmFunctionTag));
+               JS::TaggedColumnNumberOneOrigin::WasmFunctionTag));
   if (column) {
-    *column = JS::TaggedColumnNumberZeroOrigin(
+    *column = JS::TaggedColumnNumberOneOrigin(
         JS::WasmFunctionIndex(codeRange_->funcIndex()));
   }
   return lineOrBytecode_;

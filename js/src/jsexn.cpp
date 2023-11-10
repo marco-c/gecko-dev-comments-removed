@@ -684,7 +684,7 @@ bool JS::ErrorReportBuilder::populateUncaughtExceptionReportUTF8VA(
     NonBuiltinFrameIter iter(cx, cx->realm()->principals());
     if (!iter.done()) {
       ownedReport.filename = JS::ConstUTF8CharsZ(iter.filename());
-      JS::TaggedColumnNumberZeroOrigin column;
+      JS::TaggedColumnNumberOneOrigin column;
       ownedReport.sourceId =
           iter.hasScript() ? iter.script()->scriptSource()->id() : 0;
       ownedReport.lineno = iter.computeLine(&column);

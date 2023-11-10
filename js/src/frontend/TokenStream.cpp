@@ -1479,11 +1479,12 @@ bool TokenStreamAnyChars::fillExceptingContext(ErrorMetadata* err,
                                maybeCx->realm()->principals());
       if (!iter.done() && iter.filename()) {
         err->filename = JS::ConstUTF8CharsZ(iter.filename());
-        JS::TaggedColumnNumberZeroOrigin columnNumber;
+        JS::TaggedColumnNumberOneOrigin columnNumber;
         err->lineNumber = iter.computeLine(&columnNumber);
         
         err->columnNumber =
-            JS::ColumnNumberZeroOrigin(columnNumber.toLimitedColumnNumber());
+            JS::ColumnNumberZeroOrigin(JS::LimitedColumnNumberZeroOrigin(
+                columnNumber.toLimitedColumnNumber()));
         return false;
       }
     }

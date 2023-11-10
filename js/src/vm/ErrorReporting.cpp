@@ -15,7 +15,7 @@
 #include "frontend/FrontendContext.h"  
 #include "js/CharacterEncoding.h"      
 #include "js/ColumnNumber.h"  
-#include "js/ErrorReport.h"   
+#include "js/ErrorReport.h"           
 #include "js/friend/ErrorMessages.h"  
 #include "js/Printf.h"                
 #include "js/Warnings.h"              
@@ -196,7 +196,7 @@ static void PopulateReportBlame(JSContext* cx, JSErrorReport* report) {
   if (iter.hasScript()) {
     report->sourceId = iter.script()->scriptSource()->id();
   }
-  JS::TaggedColumnNumberZeroOrigin column;
+  JS::TaggedColumnNumberOneOrigin column;
   report->lineno = iter.computeLine(&column);
   report->column = JS::ColumnNumberOneOrigin(column.oneOriginValue());
   report->isMuted = iter.mutedErrors();

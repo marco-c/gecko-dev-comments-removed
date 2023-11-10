@@ -87,7 +87,7 @@ class WasmFrameIter {
   JSAtom* functionDisplayAtom() const;
   unsigned lineOrBytecode() const;
   uint32_t funcIndex() const;
-  unsigned computeLine(JS::TaggedColumnNumberZeroOrigin* column) const;
+  unsigned computeLine(JS::TaggedColumnNumberOneOrigin* column) const;
   const CodeRange* codeRange() const { return codeRange_; }
   void** unwoundAddressOfReturnAddress() const;
   bool debugEnabled() const;

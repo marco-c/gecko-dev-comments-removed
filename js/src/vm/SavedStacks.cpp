@@ -1851,9 +1851,9 @@ bool SavedStacks::getLocation(JSContext* cx, const FrameIter& iter,
       return false;
     }
 
-    JS::TaggedColumnNumberZeroOrigin column;
+    JS::TaggedColumnNumberOneOrigin column;
     locationp.setLine(iter.computeLine(&column));
-    locationp.setColumn(JS::TaggedColumnNumberOneOrigin(column));
+    locationp.setColumn(column);
     return true;
   }
 

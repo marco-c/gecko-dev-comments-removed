@@ -284,8 +284,7 @@ class FrameIter {
   ScriptSource* scriptSource() const;
   const char* filename() const;
   const char16_t* displayURL() const;
-  unsigned computeLine(
-      JS::TaggedColumnNumberZeroOrigin* column = nullptr) const;
+  unsigned computeLine(JS::TaggedColumnNumberOneOrigin* column = nullptr) const;
   JSAtom* maybeFunctionDisplayAtom() const;
   bool mutedErrors() const;
 
