@@ -3637,9 +3637,17 @@
 
 
 
+
+
     _startRemoveTabs(
       tabs,
-      { animate, suppressWarnAboutClosingWindow, skipPermitUnload, skipRemoves }
+      {
+        animate,
+        suppressWarnAboutClosingWindow,
+        skipPermitUnload,
+        skipRemoves,
+        skipSessionStore,
+      }
     ) {
       
       
@@ -3685,6 +3693,7 @@
                       animate,
                       prewarmed: true,
                       skipPermitUnload: true,
+                      skipSessionStore,
                     });
                   }
                 } else {
@@ -3717,6 +3726,7 @@
             animate,
             prewarmed: true,
             skipPermitUnload,
+            skipSessionStore,
           });
         }
       }
@@ -3787,12 +3797,15 @@
 
 
 
+
+
     removeTabs(
       tabs,
       {
         animate = true,
         suppressWarnAboutClosingWindow = false,
         skipPermitUnload = false,
+        skipSessionStore = false,
       } = {}
     ) {
       
@@ -3820,6 +3833,7 @@
             suppressWarnAboutClosingWindow,
             skipPermitUnload,
             skipRemoves: false,
+            skipSessionStore,
           });
 
         
@@ -3842,6 +3856,7 @@
           animate,
           prewarmed: true,
           skipPermitUnload,
+          skipSessionStore,
         };
 
         
@@ -3886,6 +3901,7 @@
         skipPermitUnload,
         closeWindowWithLastTab,
         prewarmed,
+        skipSessionStore,
       } = {}
     ) {
       if (UserInteraction.running("browser.tabs.opening", window)) {
@@ -3924,6 +3940,7 @@
           skipPermitUnload,
           closeWindowWithLastTab,
           prewarmed,
+          skipSessionStore,
         })
       ) {
         TelemetryStopwatch.cancel("FX_TAB_CLOSE_TIME_ANIM_MS", aTab);
@@ -4004,6 +4021,7 @@
         closeWindowFastpath,
         skipPermitUnload,
         prewarmed,
+        skipSessionStore = false,
       } = {}
     ) {
       if (aTab.closing || this._windowIsClosing) {
@@ -4149,7 +4167,7 @@
       
       let evt = new CustomEvent("TabClose", {
         bubbles: true,
-        detail: { adoptedBy: adoptedByTab },
+        detail: { adoptedBy: adoptedByTab, skipSessionStore },
       });
       aTab.dispatchEvent(evt);
 
