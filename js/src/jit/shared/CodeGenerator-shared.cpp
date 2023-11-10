@@ -93,6 +93,13 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 #endif
 
     if (gen->needsStaticStackAlignment()) {
+#ifdef ENABLE_WASM_TAIL_CALLS
+      
+      
+      
+      frameDepth_ = AlignBytes(frameDepth_, WasmStackAlignment);
+#endif
+
       
       
       
