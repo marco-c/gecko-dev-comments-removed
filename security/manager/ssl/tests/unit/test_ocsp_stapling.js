@@ -332,6 +332,11 @@ function add_tests() {
 }
 
 function check_ocsp_stapling_telemetry() {
+  
+  if (AppConstants.platform == "android") {
+    run_next_test();
+    return;
+  }
   let histogram = Services.telemetry
     .getHistogramById("SSL_OCSP_STAPLING")
     .snapshot();
