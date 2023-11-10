@@ -23,15 +23,9 @@ const relativeTo = new Temporal.ZonedDateTime(0n, timeZone, calendar);
 
 
 
-
-
-
-
 const instance1 = new Temporal.Duration(1, 1, 1, 1, 1);
 instance1.total({ unit: "days", relativeTo });
-assert.sameValue(calendar.dateAddCallCount, 8, "converting larger calendar units down");
-
-
+assert.sameValue(calendar.dateAddCallCount, 3, "converting larger calendar units down");
 
 
 
@@ -47,6 +41,6 @@ calendar.dateAddCallCount = 0;
 
 const instance2 = new Temporal.Duration(0, 0, 1, 1);
 instance2.total({ unit: "weeks", relativeTo });
-assert.sameValue(calendar.dateAddCallCount, 6, "converting smaller calendar units up");
+assert.sameValue(calendar.dateAddCallCount, 3, "converting smaller calendar units up");
 
 reportCompare(0, 0);

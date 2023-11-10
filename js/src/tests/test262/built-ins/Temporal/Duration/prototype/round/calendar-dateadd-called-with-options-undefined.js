@@ -25,12 +25,9 @@ const relativeTo = new Temporal.ZonedDateTime(0n, timeZone, calendar);
 
 
 
-
-
-
 const instance1 = new Temporal.Duration(1, 1, 1, 1, 1);
-instance1.round({ smallestUnit: "days", relativeTo });
-assert.sameValue(calendar.dateAddCallCount, 8, "rounding with calendar smallestUnit");
+instance1.round({ smallestUnit: "weeks", relativeTo });
+assert.sameValue(calendar.dateAddCallCount, 5, "rounding with calendar smallestUnit");
 
 
 
@@ -60,15 +57,10 @@ assert.sameValue(calendar.dateAddCallCount, 8, "rounding with non-default larges
 
 
 
-
-
-
-
-
 calendar.dateAddCallCount = 0;
 
-const instance3 = new Temporal.Duration(0, 0, 0, 0, 23, 59, 59, 999, 999, 999);
-instance3.round({ largestUnit: "days", smallestUnit: "hours", roundingMode: "ceil", relativeTo });
-assert.sameValue(calendar.dateAddCallCount, 7, "rounding with time difference exceeding calendar day");
+const instance3 = new Temporal.Duration(1, 1, 1, 1, 1);
+instance3.round({ smallestUnit: "days", relativeTo });
+assert.sameValue(calendar.dateAddCallCount, 4, "rounding with days smallestUnit");
 
 reportCompare(0, 0);

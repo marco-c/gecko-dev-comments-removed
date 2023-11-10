@@ -102,9 +102,21 @@ assert.compareArray(actual, expectedOpsForPlainRelativeTo, "order of operations 
 actual.splice(0); 
 
 
+const expectedOpsForMinimalYearRounding = expectedOpsForPlainRelativeTo.concat([
+  "get options.relativeTo.calendar.dateAdd",     
+  
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
+  
+  "call options.relativeTo.calendar.dateAdd",    
+]);
+instance.total(createOptionsObserver({ unit: "years", relativeTo: plainRelativeTo }));
+assert.compareArray(actual, expectedOpsForMinimalYearRounding, "order of operations with years = 0 and unit = years");
+actual.splice(0); 
+
+
 const expectedOpsForYearRounding = expectedOpsForPlainRelativeTo.concat([
   "get options.relativeTo.calendar.dateAdd",     
-  "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "get options.relativeTo.calendar.dateUntil",   
@@ -112,7 +124,8 @@ const expectedOpsForYearRounding = expectedOpsForPlainRelativeTo.concat([
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
 ]);
-instance.total(createOptionsObserver({ unit: "years", relativeTo: plainRelativeTo }));
+const instanceYears = new Temporal.Duration(1, 12, 0, 0,  2400);
+instanceYears.total(createOptionsObserver({ unit: "years", relativeTo: plainRelativeTo }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with unit = years");
 actual.splice(0); 
 
@@ -259,7 +272,8 @@ instance.total(createOptionsObserver({ unit: "nanoseconds", relativeTo: zonedRel
 assert.compareArray(actual, expectedOpsForZonedRelativeTo, "order of operations for ZonedDateTime relativeTo");
 actual.splice(0); 
 
-const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
+
+const expectedOpsForMinimalYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
   
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
@@ -268,31 +282,60 @@ const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateUntil",                
-  "call options.relativeTo.calendar.dateUntil",
   
-  "get options.relativeTo.calendar.dateAdd",                  
-  "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",                  
-  "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
 ], [
   
   
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",                  
-  "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   "get options.relativeTo.calendar.dateAdd",     
+  
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
+  
   "call options.relativeTo.calendar.dateAdd",    
+]);
+instance.total(createOptionsObserver({ unit: "years", relativeTo: zonedRelativeTo }));
+assert.compareArray(
+  actual,
+  expectedOpsForMinimalYearRoundingZoned,
+  "order of operations with years = 0, unit = years and ZonedDateTime relativeTo"
+);
+actual.splice(0); 
+
+
+const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",
+  "call options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",
+  "call options.relativeTo.calendar.dateAdd",
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",     
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "get options.relativeTo.calendar.dateUntil",   
@@ -300,7 +343,7 @@ const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
 ]);
-instance.total(createOptionsObserver({ unit: "years", relativeTo: zonedRelativeTo }));
+instanceYears.total(createOptionsObserver({ unit: "years", relativeTo: zonedRelativeTo }));
 assert.compareArray(
   actual,
   expectedOpsForYearRoundingZoned,
@@ -315,15 +358,11 @@ const expectedOpsForUnbalanceRound = expectedOpsForZonedRelativeTo.concat([
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   
   
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.calendar.dateAdd",                  
   "call options.relativeTo.calendar.dateAdd",
   "get options.relativeTo.timeZone.getPossibleInstantsFor",   
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.calendar.dateAdd",                  
   "call options.relativeTo.calendar.dateAdd",
   "get options.relativeTo.timeZone.getPossibleInstantsFor",   
@@ -341,5 +380,39 @@ assert.compareArray(
   "order of operations with unit = months and ZonedDateTime relativeTo"
 );
 actual.splice(0); 
+
+
+const expectedOpsForBalanceRound = expectedOpsForZonedRelativeTo.concat([
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",   
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",   
+  "call options.relativeTo.calendar.dateAdd",  
+  "call options.relativeTo.calendar.dateAdd",  
+]);
+new Temporal.Duration(0, 0, 0, 1, 240).total(createOptionsObserver({ unit: "weeks", relativeTo: zonedRelativeTo }));
+assert.compareArray(
+  actual,
+  expectedOpsForBalanceRound,
+  "order of operations with unit = weeks and no calendar units"
+);
+actual.splice(0);  
 
 reportCompare(0, 0);

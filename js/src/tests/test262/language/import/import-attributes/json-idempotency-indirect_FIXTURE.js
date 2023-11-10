@@ -1,0 +1,7 @@
+
+
+
+
+import value from './json-idempotency_FIXTURE.json' with { type: 'json' };
+
+globalThis.viaSecondModule = value;

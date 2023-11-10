@@ -9,7 +9,7 @@
 
 
 
-const expected = [
+const expectedMinimal = [
   
   "get other.calendar",
   "has other.calendar.dateAdd",
@@ -73,10 +73,13 @@ const expected = [
   "call options.roundingMode.toString",
   "get options.smallestUnit.toString",
   "call options.smallestUnit.toString",
+];
+
+const expected = expectedMinimal.concat([
   
   "get this.calendar.dateUntil",
   "call this.calendar.dateUntil",
-];
+]);
 const actual = [];
 
 const ownCalendar = TemporalHelpers.calendarObserver(actual, "this.calendar");
@@ -84,8 +87,8 @@ const instance = new Temporal.PlainDate(2000, 5, 2, ownCalendar);
 
 const otherDatePropertyBag = TemporalHelpers.propertyBagObserver(actual, {
   year: 2001,
-  month: 5,
-  monthCode: 'M05',
+  month: 6,
+  monthCode: "M06",
   day: 2,
   calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
 }, "other");
@@ -106,8 +109,21 @@ function createOptionsObserver({ smallestUnit = "days", largestUnit = "auto", ro
 actual.splice(0);
 
 
-instance.since(otherDatePropertyBag, createOptionsObserver());
+instance.since(otherDatePropertyBag, createOptionsObserver({ largestUnit: "years" }));
 assert.compareArray(actual, expected, "order of operations");
+actual.splice(0); 
+
+
+const identicalPropertyBag = TemporalHelpers.propertyBagObserver(actual, {
+  year: 2000,
+  month: 5,
+  monthCode: "M05",
+  day: 2,
+  calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
+}, "other");
+
+instance.since(identicalPropertyBag, createOptionsObserver());
+assert.compareArray(actual, expectedMinimal, "order of operations with identical dates");
 actual.splice(0); 
 
 
@@ -115,14 +131,30 @@ const expectedOpsForYearRounding = expected.concat([
   "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
   "get this.calendar.dateUntil",   
   "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
-  "call this.calendar.dateAdd",    
-]);
+]);  
 instance.since(otherDatePropertyBag, createOptionsObserver({ smallestUnit: "years" }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
+actual.splice(0); 
+
+
+const otherDatePropertyBagSameMonth = TemporalHelpers.propertyBagObserver(actual, {
+  year: 2001,
+  month: 5,
+  monthCode: "M05",
+  day: 2,
+  calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
+}, "other");
+const expectedOpsForYearRoundingSameMonth = expected.concat([
+  "get this.calendar.dateAdd",     
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateAdd",    
+  "call this.calendar.dateAdd",    
+]);  
+instance.since(otherDatePropertyBagSameMonth, createOptionsObserver({ smallestUnit: "years" }));
+assert.compareArray(actual, expectedOpsForYearRoundingSameMonth, "order of operations with smallestUnit = years and no excess months/weeks");
 actual.splice(0); 
 
 

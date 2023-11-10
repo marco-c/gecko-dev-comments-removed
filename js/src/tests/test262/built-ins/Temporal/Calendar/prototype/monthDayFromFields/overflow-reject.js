@@ -16,6 +16,10 @@
 
 
 
+
+
+
+
 const cal = new Temporal.Calendar("iso8601");
 
 [-1, 0, 13, 9995].forEach((month) => {
@@ -39,29 +43,23 @@ const cal = new Temporal.Calendar("iso8601");
   );
 });
 
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M01", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M01");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M02", day: 30 }, { overflow: "reject" }), "Day 30 is out of range for monthCode M02");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M03", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M03");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M04", day: 31 }, { overflow: "reject" }), "Day 31 is out of range for monthCode M04");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M05", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M05");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M06", day: 31 }, { overflow: "reject" }), "Day 31 is out of range for monthCode M06");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M07", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M07");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M08", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M08");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M09", day: 31 }, { overflow: "reject" }), "Day 31 is out of range for monthCode M09");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M10", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M10");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M11", day: 31 }, { overflow: "reject" }), "Day 31 is out of range for monthCode M11");
-assert.throws(RangeError, () => cal.monthDayFromFields(
-    { monthCode: "M12", day: 32 }, { overflow: "reject" }), "Day 32 is out of range for monthCode M12");
+TemporalHelpers.ISOMonths.forEach(({ month, monthCode, daysInMonth }) => {
+  const day = daysInMonth + 1;
+  assert.throws(RangeError,
+    () => cal.monthDayFromFields({ month, day }, { overflow: "reject" }),
+    `Day ${day} is out of range for month ${month} with overflow: reject`);
+  assert.throws(RangeError,
+    () => cal.monthDayFromFields({ monthCode, day }, { overflow: "reject" }),
+    `Day ${day} is out of range for monthCode ${monthCode} with overflow: reject`);
+});
+
+[ ["month", 2], ["monthCode", "M02"] ].forEach(([ name, value ]) => {
+  assert.throws(RangeError,
+    () => cal.monthDayFromFields({ year: 2020, [name]: value, day: 30 }, { overflow: "reject" }),
+    `Day 30 is out of range for ${name} ${value} in leap year 2020 with overflow: reject`);
+  assert.throws(RangeError,
+    () => cal.monthDayFromFields({ year: 2021, [name]: value, day: 29 }, { overflow: "reject" }),
+    `Day 29 is out of range for ${name} ${value} in common year 2021 with overflow: reject`);
+});
 
 reportCompare(0, 0);

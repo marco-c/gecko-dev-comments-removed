@@ -119,17 +119,37 @@ assert.compareArray(actual, expectedOpsForPlainRelativeTo, "order of operations 
 actual.splice(0); 
 
 
+const expectedMinimalOpsForYearRounding = expectedOpsForPlainRelativeTo.concat([
+  "get options.relativeTo.calendar.dateAdd",     
+  
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
+  
+  "call options.relativeTo.calendar.dateAdd",    
+]);
+instance.round(createOptionsObserver({ smallestUnit: "years", relativeTo: plainRelativeTo }));
+assert.compareArray(actual, expectedMinimalOpsForYearRounding, "order of operations with years = 0 and smallestUnit = years");
+actual.splice(0); 
+
+
 const expectedOpsForYearRounding = expectedOpsForPlainRelativeTo.concat([
   "get options.relativeTo.calendar.dateAdd",     
-  "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "get options.relativeTo.calendar.dateUntil",   
   "call options.relativeTo.calendar.dateUntil",  
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
+  
+  "get options.relativeTo.calendar.dateAdd",     
+  "call options.relativeTo.calendar.dateAdd",    
+  "call options.relativeTo.calendar.dateAdd",    
+  "call options.relativeTo.calendar.dateAdd",    
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
 ]);
-instance.round(createOptionsObserver({ smallestUnit: "years", relativeTo: plainRelativeTo }));
+const instanceYears = new Temporal.Duration(1, 12, 0, 0,  2400);
+instanceYears.round(createOptionsObserver({ smallestUnit: "years", relativeTo: plainRelativeTo }));
 assert.compareArray(actual, expectedOpsForYearRounding, "order of operations with smallestUnit = years");
 actual.splice(0); 
 
@@ -352,7 +372,7 @@ assert.compareArray(actual, expectedOpsForZonedRelativeTo, "order of operations 
 actual.splice(0); 
 
 
-const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
+const expectedOpsForMinimalYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
   
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
@@ -361,30 +381,65 @@ const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateUntil",                
-  "call options.relativeTo.calendar.dateUntil",
   
-  "get options.relativeTo.calendar.dateAdd",                  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",     
+  
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
+  
+  "call options.relativeTo.calendar.dateAdd",    
+]);
+instance.round(createOptionsObserver({ smallestUnit: "years", relativeTo: zonedRelativeTo }));
+assert.compareArray(
+  actual,
+  expectedOpsForMinimalYearRoundingZoned,
+  "order of operations with years = 0, smallestUnit = years and ZonedDateTime relativeTo"
+);
+actual.splice(0); 
+
+
+const expectedOpsForYearRoundingZoned = expectedOpsForZonedRelativeTo.concat([
+  
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.calendar.dateAdd",
   "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   
   "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
-  "get options.relativeTo.calendar.dateAdd",                  
-  "call options.relativeTo.calendar.dateAdd",
-  "get options.relativeTo.timeZone.getPossibleInstantsFor",   
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
+  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
+  "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  
+  "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
   "get options.relativeTo.calendar.dateAdd",     
-  "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
   "get options.relativeTo.calendar.dateUntil",   
   "call options.relativeTo.calendar.dateUntil",  
   "call options.relativeTo.calendar.dateAdd",    
   "call options.relativeTo.calendar.dateAdd",    
+  
+  "get options.relativeTo.calendar.dateAdd",     
+  "call options.relativeTo.calendar.dateAdd",    
+  "call options.relativeTo.calendar.dateAdd",    
+  "call options.relativeTo.calendar.dateAdd",    
+  "get options.relativeTo.calendar.dateUntil",   
+  "call options.relativeTo.calendar.dateUntil",  
 ]);
-instance.round(createOptionsObserver({ smallestUnit: "years", relativeTo: zonedRelativeTo }));
+instanceYears.round(createOptionsObserver({ smallestUnit: "years", relativeTo: zonedRelativeTo }));
 assert.compareArray(
   actual,
   expectedOpsForYearRoundingZoned,
@@ -400,8 +455,6 @@ const expectedOpsForUnbalanceRoundBalance = expectedOpsForZonedRelativeTo.concat
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   
   
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",  
-  "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.calendar.dateAdd",                  
   "call options.relativeTo.calendar.dateAdd",
   "get options.relativeTo.timeZone.getPossibleInstantsFor",   
