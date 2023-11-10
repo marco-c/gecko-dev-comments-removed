@@ -528,6 +528,12 @@ HTMLTooltip.prototype = {
       this._pendingEventListenerPromise = null;
     }
 
+    
+    
+    
+    
+    this.container.classList.add("tooltip-shown");
+
     this.emit("shown");
   },
 
@@ -803,7 +809,7 @@ HTMLTooltip.prototype = {
       this.removeEventListeners();
     }
 
-    this.container.classList.remove("tooltip-visible");
+    this.container.classList.remove("tooltip-visible", "tooltip-shown");
     if (this.useXulWrapper) {
       await this._hideXulWrapper();
     }
