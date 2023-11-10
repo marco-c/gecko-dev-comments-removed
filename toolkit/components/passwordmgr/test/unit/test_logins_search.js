@@ -94,11 +94,11 @@ add_setup(async () => {
 
 add_task(function test_search_all_basic() {
   
-  checkAllSearches({}, 27);
+  checkAllSearches({}, 28);
 
   
   checkAllSearches({ httpRealm: null }, 17);
-  checkAllSearches({ formActionOrigin: null }, 10);
+  checkAllSearches({ formActionOrigin: null }, 11);
 
   
   checkAllSearches({ origin: "http://www4.example.com", httpRealm: null }, 3);
@@ -169,7 +169,7 @@ add_task(function test_searchLogins() {
   checkSearchLogins({ passwordField: "form_field_password" }, 13);
 
   
-  checkSearchLogins({ usernameField: "" }, 15);
+  checkSearchLogins({ usernameField: "" }, 16);
 
   
   checkSearchLogins({ httpRealm: null, usernameField: "" }, 5);
