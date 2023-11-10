@@ -271,7 +271,11 @@ bool WebGLContext::CreateAndInitGL(
 
   auto flags = gl::CreateContextFlags::PREFER_ROBUSTNESS;
 
-  if (StaticPrefs::webgl_gl_khr_no_error()) {
+  
+  
+  
+  
+  if (!gl->IsMesa() && StaticPrefs::webgl_gl_khr_no_error()) {
     flags |= gl::CreateContextFlags::NO_VALIDATION;
   }
 
