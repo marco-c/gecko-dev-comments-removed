@@ -1163,6 +1163,15 @@ Result<Completion> js::DebuggerGenericEval(
     env = envArg;
   }
 
+  if (iter && iter->hasScript() && iter->script()->allowRelazify()) {
+    
+    
+    
+    
+    
+    iter->script()->clearAllowRelazify();
+  }
+
   
   
   AutoNoteDebuggerEvaluationWithOnNativeCallHook noteEvaluation(
