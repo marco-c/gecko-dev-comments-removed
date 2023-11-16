@@ -50,6 +50,7 @@ class TabPriorityWatcher {
     
     
     
+    
     this.noChangeChildIDs = new Map();
 
     Services.obs.addObserver(this, PRIORITY_SET_TOPIC);
@@ -106,14 +107,14 @@ class TabPriorityWatcher {
 
 
   async ensureNoPriorityChange(childID) {
-    this.noChangeChildIDs.set(childID, null);
+    this.noChangeChildIDs.set(childID, []);
     
     await new Promise(resolve => setTimeout(resolve, WAIT_FOR_CHANGE_TIME_MS));
-    let priority = this.noChangeChildIDs.get(childID);
-    Assert.equal(
-      priority,
-      null,
-      `Should have seen no process priority change for child ID ${childID}`
+    let priorities = this.noChangeChildIDs.get(childID);
+    Assert.deepEqual(
+      priorities,
+      [],
+      `Should have seen no process priority changes for child ID ${childID}`
     );
     this.noChangeChildIDs.delete(childID);
   }
@@ -199,7 +200,7 @@ class TabPriorityWatcher {
 
     let { childID, priority } = this.parsePPMData(data);
     if (this.noChangeChildIDs.has(childID)) {
-      this.noChangeChildIDs.set(childID, priority);
+      this.noChangeChildIDs.get(childID).push(priority);
     }
     this.priorityMap.set(childID, priority);
   }
