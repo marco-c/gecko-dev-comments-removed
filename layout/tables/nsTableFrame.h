@@ -660,18 +660,17 @@ class nsTableFrame : public nsContainerFrame {
   void PlaceRepeatedFooter(TableReflowInput& aReflowInput,
                            nsTableRowGroupFrame* aTfoot, nscoord aFooterHeight);
 
-  nsIFrame* GetFirstBodyRowGroupFrame();
-
  public:
   using RowGroupArray = AutoTArray<nsTableRowGroupFrame*, 8>;
 
  protected:
   
-
-
-
-
-  void PushChildren(const RowGroupArray& aRowGroups, int32_t aPushFrom);
+  
+  
+  
+  
+  void PushChildrenToOverflow(const RowGroupArray& aRowGroups,
+                              size_t aPushFrom);
 
  public:
   

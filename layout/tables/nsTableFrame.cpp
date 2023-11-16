@@ -1935,50 +1935,13 @@ void nsTableFrame::ReflowTable(ReflowOutput& aDesiredSize,
   ReflowColGroups(aReflowInput.mRenderingContext);
 }
 
-nsIFrame* nsTableFrame::GetFirstBodyRowGroupFrame() {
-  nsIFrame* headerFrame = nullptr;
-  nsIFrame* footerFrame = nullptr;
-
-  for (nsIFrame* kidFrame : mFrames) {
-    const nsStyleDisplay* childDisplay = kidFrame->StyleDisplay();
-
-    
-    
-    if (mozilla::StyleDisplay::TableHeaderGroup == childDisplay->mDisplay) {
-      if (headerFrame) {
-        
-        
-        return kidFrame;
-      }
-      headerFrame = kidFrame;
-
-    } else if (mozilla::StyleDisplay::TableFooterGroup ==
-               childDisplay->mDisplay) {
-      if (footerFrame) {
-        
-        
-        return kidFrame;
-      }
-      footerFrame = kidFrame;
-
-    } else if (mozilla::StyleDisplay::TableRowGroup == childDisplay->mDisplay) {
-      return kidFrame;
-    }
-  }
-
-  return nullptr;
-}
-
-
-
-void nsTableFrame::PushChildren(const RowGroupArray& aRowGroups,
-                                int32_t aPushFrom) {
+void nsTableFrame::PushChildrenToOverflow(const RowGroupArray& aRowGroups,
+                                          size_t aPushFrom) {
   MOZ_ASSERT(aPushFrom > 0, "pushing first child");
 
   
   nsFrameList frames;
-  uint32_t childX;
-  for (childX = aPushFrom; childX < aRowGroups.Length(); ++childX) {
+  for (size_t childX = aPushFrom; childX < aRowGroups.Length(); ++childX) {
     nsTableRowGroupFrame* rgFrame = aRowGroups[childX];
     if (!rgFrame->IsRepeatable()) {
       mFrames.RemoveFrame(rgFrame);
@@ -1990,23 +1953,8 @@ void nsTableFrame::PushChildren(const RowGroupArray& aRowGroups,
     return;
   }
 
-  nsTableFrame* nextInFlow = static_cast<nsTableFrame*>(GetNextInFlow());
-  if (nextInFlow) {
-    
-    nsIFrame* firstBodyFrame = nextInFlow->GetFirstBodyRowGroupFrame();
-    nsIFrame* prevSibling = nullptr;
-    if (firstBodyFrame) {
-      prevSibling = firstBodyFrame->GetPrevSibling();
-    }
-    
-    
-    ReparentFrameViewList(frames, this, nextInFlow);
-    nextInFlow->mFrames.InsertFrames(nextInFlow, prevSibling,
-                                     std::move(frames));
-  } else {
-    
-    SetOverflowFrames(std::move(frames));
-  }
+  
+  SetOverflowFrames(std::move(frames));
 }
 
 
@@ -2804,7 +2752,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
         } else if (tfoot && tfoot->IsRepeatable()) {
           tfoot->SetRepeatable(false);
         }
-        PushChildren(rowGroups, childX);
+        PushChildrenToOverflow(rowGroups, childX);
         aStatus.Reset();
         aStatus.SetIncomplete();
         break;
@@ -2896,7 +2844,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
               }
               aStatus.Reset();
               aStatus.SetIncomplete();
-              PushChildren(rowGroups, childX + 1);
+              PushChildrenToOverflow(rowGroups, childX + 1);
               aLastChildReflowed = kidFrame;
               break;
             }
@@ -2910,7 +2858,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
             }
             aStatus.Reset();
             aStatus.SetIncomplete();
-            PushChildren(rowGroups, childX);
+            PushChildrenToOverflow(rowGroups, childX);
             aLastChildReflowed = prevKidFrame;
             break;
           } else {  
@@ -2983,7 +2931,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
 
         nsIFrame* nextSibling = kidFrame->GetNextSibling();
         if (nextSibling) {
-          PushChildren(rowGroups, childX + 1);
+          PushChildrenToOverflow(rowGroups, childX + 1);
         }
         break;
       }
