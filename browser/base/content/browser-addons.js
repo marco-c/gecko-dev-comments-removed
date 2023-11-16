@@ -756,12 +756,7 @@ var gXPInstallObserver = {
           
           declineActions.push(
             buildNotificationAction(neverAllowAndReportMsg, () => {
-              AMTelemetry.recordEvent({
-                method: "reportSuspiciousSite",
-                object: "suspiciousSite",
-                value: displayURI?.displayHost ?? "(unknown)",
-                extra: {},
-              });
+              AMTelemetry.recordSuspiciousSiteEvent({ displayURI });
               neverAllowCallback();
             })
           );

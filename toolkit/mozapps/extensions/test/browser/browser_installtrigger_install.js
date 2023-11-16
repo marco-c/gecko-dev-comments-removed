@@ -50,6 +50,11 @@ async function testInstallTrigger(
   expectedTelemetryInfo,
   expectBlockedOrigin
 ) {
+  
+  
+  
+  Services.fog.testResetFOG();
+
   await BrowserTestUtils.withNewTab(tabURL, async browser => {
     if (expectBlockedOrigin) {
       const promiseOriginBlocked = TestUtils.topicObserved(
@@ -58,6 +63,17 @@ async function testInstallTrigger(
       await SpecialPowers.spawn(browser, contentFnArgs, contentFn);
       const [subject] = await promiseOriginBlocked;
       const installId = subject.wrappedJSObject.installs[0].installId;
+
+      let gleanEvents = AddonTestUtils.getAMGleanEvents("install", {
+        install_id: `${installId}`,
+        step: "site_blocked",
+      });
+      ok(!!gleanEvents.length, "Found Glean events for the blocked install.");
+      Assert.deepEqual(
+        { source: gleanEvents[0].source },
+        expectedTelemetryInfo,
+        `Got expected Glean telemetry on test case "${msg}"`
+      );
 
       
       const telemetryEvents = AddonTestUtils.getAMTelemetryEvents().filter(
@@ -74,16 +90,12 @@ async function testInstallTrigger(
         "Found telemetry events for the blocked install"
       );
 
-      if (typeof expectedTelemetryInfo === "function") {
-        expectedTelemetryInfo(telemetryEvents);
-      } else {
-        const source = telemetryEvents[0]?.extra.source;
-        Assert.deepEqual(
-          { source },
-          expectedTelemetryInfo,
-          `Got expected telemetry on test case "${msg}"`
-        );
-      }
+      const source = telemetryEvents[0]?.extra.source;
+      Assert.deepEqual(
+        { source },
+        expectedTelemetryInfo,
+        `Got expected telemetry on test case "${msg}"`
+      );
       return;
     }
 

@@ -78,6 +78,8 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
     ],
   });
 
+  Services.fog.testResetFOG();
+
   
   let addon = await promiseInstallAddon(url, {
     source: FAKE_INSTALL_TELEMETRY_SOURCE,
@@ -204,6 +206,8 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
   await addon.uninstall();
   await SpecialPowers.popPrefEnv();
 
+  let gleanUpdates = AddonTestUtils.getAMGleanEvents("update");
+
   
   
   const amEvents = AddonTestUtils.getAMTelemetryEvents();
@@ -214,23 +218,31 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
       return evt;
     });
 
+  const expectedSteps = [
+    
+    "started",
+    "download_started",
+    "download_completed",
+    "permissions_prompt",
+    "cancelled",
+    
+    "started",
+    "download_started",
+    "download_completed",
+    "permissions_prompt",
+    "completed",
+  ];
+
   Assert.deepEqual(
+    expectedSteps,
     updateEvents.map(evt => evt.extra && evt.extra.step),
-    [
-      
-      "started",
-      "download_started",
-      "download_completed",
-      "permissions_prompt",
-      "cancelled",
-      
-      "started",
-      "download_started",
-      "download_completed",
-      "permissions_prompt",
-      "completed",
-    ],
     "Got the steps from the collected telemetry events"
+  );
+
+  Assert.deepEqual(
+    expectedSteps,
+    gleanUpdates.map(evt => evt.step),
+    "Got the steps from the collected Glean events."
   );
 
   const method = "update";
@@ -253,6 +265,15 @@ async function backgroundUpdateTest(url, id, checkIconFn) {
       { method, object, extra: { ...baseExtra, num_strings: "1" } },
     ],
     "Got the expected permission_prompts events"
+  );
+
+  Assert.deepEqual(
+    gleanUpdates.filter(e => e.step === "permissions_prompt"),
+    [
+      { ...baseExtra, addon_type: object, num_strings: "1" },
+      { ...baseExtra, addon_type: object, num_strings: "1" },
+    ],
+    "Got the expected permission_prompt events from Glean."
   );
 }
 
