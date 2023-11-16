@@ -804,15 +804,10 @@ enum class MarkInfo : int {
   GRAY = 1,
   UNMARKED = -1,
   NURSERY = -2,
-  UNKNOWN = -3,
 };
 
 
-
-
-
-
-MOZ_NEVER_INLINE MarkInfo GetMarkInfo(void* vp);
+MOZ_NEVER_INLINE MarkInfo GetMarkInfo(js::gc::Cell* cell);
 
 
 
