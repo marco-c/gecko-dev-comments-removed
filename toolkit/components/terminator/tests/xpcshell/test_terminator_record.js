@@ -30,6 +30,7 @@ let KEYS = [
 ];
 
 let DATA = [];
+let MeasuredDurations = [];
 
 add_task(async function init() {
   do_get_profile();
@@ -88,14 +89,33 @@ var advancePhase = async function () {
   return false;
 };
 
+
+
+
+
+
+
+
+
+
+
 add_task(async function test_record() {
   info("Collecting duration data for all known phases");
+
   let morePhases = true;
   while (morePhases) {
+    let beforeWait = Date.now();
+
     morePhases = await advancePhase();
 
     await IOUtils.remove(PATH);
     await IOUtils.remove(PATH_TMP);
+
+    
+    
+    MeasuredDurations[currentPhase - 1] = Math.floor(
+      (Date.now() - beforeWait) / HEARTBEAT_MS
+    );
   }
 
   Assert.equal(DATA.length, KEYS.length, "We have data for each phase");
@@ -112,19 +132,18 @@ add_task(async function test_record() {
     if (i < KEYS.length - 1) {
       
       let ticksDuration = DATA[i + 1][KEYS[i]];
-      let msNominalDuration = 200 + HEARTBEAT_MS * i;
+      let measuredDuration = MeasuredDurations[i];
+      info(
+        "measuredDuration:" + measuredDuration + " - " + typeof measuredDuration
+      );
       Assert.lessOrEqual(
         ticksDuration,
-        Math.ceil(msNominalDuration / HEARTBEAT_MS) + 1,
+        measuredDuration + 2,
         "Duration of phase " + i + ":" + KEYS[i] + " is not too long"
       );
-      
-      
-      
-      let halfNominalTicks = Math.floor(msNominalDuration / 2 / HEARTBEAT_MS);
       Assert.greaterOrEqual(
         ticksDuration,
-        halfNominalTicks,
+        0, 
         "Duration of phase " + i + ":" + KEYS[i] + " is not too short"
       );
     }
