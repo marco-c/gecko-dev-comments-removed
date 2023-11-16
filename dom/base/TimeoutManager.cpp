@@ -1125,6 +1125,20 @@ void TimeoutManager::Resume() {
 void TimeoutManager::Freeze() {
   MOZ_LOG(gTimeoutLog, LogLevel::Debug, ("Freeze(TimeoutManager=%p)\n", this));
 
+  
+  
+  
+  
+  size_t num = 0;
+  while (RefPtr<Timeout> timeout = mIdleTimeouts.GetLast()) {
+    num++;
+    timeout->remove();
+    mTimeouts.InsertFront(timeout);
+  }
+
+  MOZ_LOG(gTimeoutLog, LogLevel::Debug,
+          ("%p: Moved %zu (frozen) timeouts from Idle to active", this, num));
+
   TimeStamp now = TimeStamp::Now();
   ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
