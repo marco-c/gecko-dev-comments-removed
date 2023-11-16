@@ -378,19 +378,110 @@ impl_tocss_for_float!(f32);
 impl_tocss_for_float!(f64);
 
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub struct TokenSerializationType(TokenSerializationTypeVariants);
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default)]
+pub enum TokenSerializationType {
+    
+    #[default]
+    Nothing,
+
+    
+    
+    WhiteSpace,
+
+    
+    
+    
+    
+    
+    AtKeywordOrHash,
+
+    
+    Number,
+
+    
+    
+    Dimension,
+
+    
+    
+    Percentage,
+
+    
+    
+    UrlOrBadUrl,
+
+    
+    Function,
+
+    
+    Ident,
+
+    
+    CDC,
+
+    
+    
+    DashMatch,
+
+    
+    
+    
+    SubstringMatch,
+
+    
+    OpenParen,
+
+    
+    DelimHash,
+
+    
+    DelimAt,
+
+    
+    DelimDotOrPlus,
+
+    
+    DelimMinus,
+
+    
+    DelimQuestion,
+
+    
+    DelimAssorted,
+
+    
+    DelimEquals,
+
+    
+    DelimBar,
+
+    
+    DelimSlash,
+
+    
+    DelimAsterisk,
+
+    
+    DelimPercent,
+
+    
+    Other,
+}
 
 impl TokenSerializationType {
     
+    #[deprecated(
+        since = "0.32.1",
+        note = "use TokenSerializationType::Nothing or TokenSerializationType::default() instead"
+    )]
     pub fn nothing() -> TokenSerializationType {
-        TokenSerializationType(TokenSerializationTypeVariants::Nothing)
+        Default::default()
     }
 
     
     pub fn set_if_nothing(&mut self, new_value: TokenSerializationType) {
-        if self.0 == TokenSerializationTypeVariants::Nothing {
-            self.0 = new_value.0
+        if matches!(self, TokenSerializationType::Nothing) {
+            *self = new_value
         }
     }
 
@@ -404,10 +495,10 @@ impl TokenSerializationType {
     
     
     pub fn needs_separator_when_before(self, other: TokenSerializationType) -> bool {
-        use self::TokenSerializationTypeVariants::*;
-        match self.0 {
+        use self::TokenSerializationType::*;
+        match self {
             Ident => matches!(
-                other.0,
+                other,
                 Ident
                     | Function
                     | UrlOrBadUrl
@@ -419,15 +510,15 @@ impl TokenSerializationType {
                     | OpenParen
             ),
             AtKeywordOrHash | Dimension => matches!(
-                other.0,
+                other,
                 Ident | Function | UrlOrBadUrl | DelimMinus | Number | Percentage | Dimension | CDC
             ),
             DelimHash | DelimMinus => matches!(
-                other.0,
+                other,
                 Ident | Function | UrlOrBadUrl | DelimMinus | Number | Percentage | Dimension
             ),
             Number => matches!(
-                other.0,
+                other,
                 Ident
                     | Function
                     | UrlOrBadUrl
@@ -437,11 +528,11 @@ impl TokenSerializationType {
                     | DelimPercent
                     | Dimension
             ),
-            DelimAt => matches!(other.0, Ident | Function | UrlOrBadUrl | DelimMinus),
-            DelimDotOrPlus => matches!(other.0, Number | Percentage | Dimension),
-            DelimAssorted | DelimAsterisk => matches!(other.0, DelimEquals),
-            DelimBar => matches!(other.0, DelimEquals | DelimBar | DashMatch),
-            DelimSlash => matches!(other.0, DelimAsterisk | SubstringMatch),
+            DelimAt => matches!(other, Ident | Function | UrlOrBadUrl | DelimMinus),
+            DelimDotOrPlus => matches!(other, Number | Percentage | Dimension),
+            DelimAssorted | DelimAsterisk => matches!(other, DelimEquals),
+            DelimBar => matches!(other, DelimEquals | DelimBar | DashMatch),
+            DelimSlash => matches!(other, DelimAsterisk | SubstringMatch),
             Nothing | WhiteSpace | Percentage | UrlOrBadUrl | Function | CDC | OpenParen
             | DashMatch | SubstringMatch | DelimQuestion | DelimEquals | DelimPercent | Other => {
                 false
@@ -450,43 +541,14 @@ impl TokenSerializationType {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
-enum TokenSerializationTypeVariants {
-    Nothing,
-    WhiteSpace,
-    AtKeywordOrHash,
-    Number,
-    Dimension,
-    Percentage,
-    UrlOrBadUrl,
-    Function,
-    Ident,
-    CDC,
-    DashMatch,
-    SubstringMatch,
-    OpenParen,      
-    DelimHash,      
-    DelimAt,        
-    DelimDotOrPlus, 
-    DelimMinus,     
-    DelimQuestion,  
-    DelimAssorted,  
-    DelimEquals,    
-    DelimBar,       
-    DelimSlash,     
-    DelimAsterisk,  
-    DelimPercent,   
-    Other,          
-}
-
 impl<'a> Token<'a> {
     
     
     
     
     pub fn serialization_type(&self) -> TokenSerializationType {
-        use self::TokenSerializationTypeVariants::*;
-        TokenSerializationType(match *self {
+        use self::TokenSerializationType::*;
+        match self {
             Token::Ident(_) => Ident,
             Token::AtKeyword(_) | Token::Hash(_) | Token::IDHash(_) => AtKeywordOrHash,
             Token::UnquotedUrl(_) | Token::BadUrl(_) => UrlOrBadUrl,
@@ -526,6 +588,6 @@ impl<'a> Token<'a> {
             | Token::IncludeMatch
             | Token::PrefixMatch
             | Token::SuffixMatch => Other,
-        })
+        }
     }
 }
