@@ -15,17 +15,13 @@
 #include "BufferReader.h"
 #include "VideoUtils.h"
 #include "TimeUnits.h"
-#include "mozilla/Logging.h"
 
 using mozilla::media::TimeIntervals;
 using mozilla::media::TimeUnit;
 
-extern mozilla::LazyLogModule gMediaDemuxerLog;
-
 namespace mozilla {
 
-#define LOG(msg, ...) \
-  MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+
 
 WAVDemuxer::WAVDemuxer(MediaResource* aSource) : mSource(aSource) {
   DDLINKCHILD("source", aSource);
@@ -165,8 +161,6 @@ bool WAVTrackDemuxer::Init() {
   mInfo->mMimeType.AppendInt(mFmtChunk.WaveFormat());
   mInfo->mDuration = Duration();
   mInfo->mChannelMap = mFmtChunk.ChannelMap();
-
-  LOG(("WavDemuxer initialized: %s", mInfo->ToString().get()));
 
   return mInfo->mDuration.IsPositive();
 }
@@ -710,25 +704,21 @@ AudioConfig::ChannelLayout::ChannelMap FormatChunk::ChannelMap() const {
   
   
   
-  constexpr size_t SIZE_WAVEFORMATEX = 18;
-  constexpr size_t MIN_SIZE_WAVEFORMATEXTENSIBLE = 22;
-  constexpr size_t OFFSET_CHANNEL_MAP = 20;
-  if (WaveFormat() != 0xFFFE || mRaw.Length() <= SIZE_WAVEFORMATEX) {
+  if (WaveFormat() != 0xFFFE || mRaw.Length() < 18) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
   
   
-  if (ExtraFormatInfoSize() < MIN_SIZE_WAVEFORMATEXTENSIBLE ||
-      mRaw.Length() < SIZE_WAVEFORMATEX + MIN_SIZE_WAVEFORMATEXTENSIBLE) {
+  if (ExtraFormatInfoSize() < 22 || mRaw.Length() < 22) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
-  BufferReader reader(mRaw.Elements() + OFFSET_CHANNEL_MAP, sizeof(uint32_t));
-  auto channelMap = reader.ReadLEU32();
-  return channelMap.unwrapOr(AudioConfig::ChannelLayout::UNKNOWN_MAP);
+  auto channelMap = static_cast<AudioConfig::ChannelLayout::ChannelMap>(
+      mRaw[21] | mRaw[20] | mRaw[19] | mRaw[18]);
+  return channelMap;
 }
 
 
