@@ -45,10 +45,6 @@ updateConfigFromFakeAndLoopbackPrefs();
 
 
 
-let DISABLE_LOOPBACK_TONE = false;
-
-
-
 class LoopbackTone {
   constructor(audioContext, frequency) {
     if (!audioContext) {
@@ -370,22 +366,7 @@ function createMediaElementForTrack(track, idPrefix) {
 
 
 function getUserMedia(constraints) {
-  
-  updateConfigFromFakeAndLoopbackPrefs();
-  if (
-    !WANT_FAKE_AUDIO &&
-    !constraints.fake &&
-    constraints.audio &&
-    !DISABLE_LOOPBACK_TONE
-  ) {
-    
-    if (!DefaultLoopbackTone) {
-      DefaultLoopbackTone = new LoopbackTone(
-        new AudioContext(),
-        TEST_AUDIO_FREQ
-      );
-      DefaultLoopbackTone.start();
-    }
+  if (!constraints.fake && constraints.audio) {
     
     
     constraints.audio = Object.assign(
@@ -1231,11 +1212,20 @@ CommandChain.prototype = {
   },
 };
 
-function AudioStreamHelper() {
+function AudioStreamFlowingHelper() {
   this._context = new AudioContext();
+  
+  updateConfigFromFakeAndLoopbackPrefs();
+  if (!WANT_FAKE_AUDIO) {
+    
+    if (!DefaultLoopbackTone) {
+      DefaultLoopbackTone = new LoopbackTone(this._context, TEST_AUDIO_FREQ);
+      DefaultLoopbackTone.start();
+    }
+  }
 }
 
-AudioStreamHelper.prototype = {
+AudioStreamFlowingHelper.prototype = {
   checkAudio(stream, analyser, fun) {
     
 
@@ -1251,6 +1241,10 @@ AudioStreamHelper.prototype = {
     return this.checkAudio(stream, analyser, array => array[freq] > 200);
   },
 
+  
+  
+  
+  
   checkAudioNotFlowing(stream) {
     var analyser = new AudioStreamAnalyser(this._context, stream);
     var freq = analyser.binIndexForFrequency(TEST_AUDIO_FREQ);
