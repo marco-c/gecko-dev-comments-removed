@@ -90,6 +90,7 @@ class GeckoAppShellTest : BaseSessionTest() {
                     session: GeckoSession,
                     url: String?,
                     perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                    hasUserGesture: Boolean,
                 ) {
                     
                     if (onLoadRequestCount == 0) {
