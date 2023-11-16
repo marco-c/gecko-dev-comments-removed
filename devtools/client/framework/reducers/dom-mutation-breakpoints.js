@@ -30,6 +30,7 @@ function domMutationBreakpointReducer(state = initialReducerState, action) {
           {
             id: `${state.counter}`,
             nodeFront: action.nodeFront,
+            targetFront: action.nodeFront.targetFront,
             mutationType: action.mutationType,
             enabled: true,
           },
@@ -59,6 +60,24 @@ function domMutationBreakpointReducer(state = initialReducerState, action) {
 
       const breakpoints = state.breakpoints.filter(
         bp => !nodeFrontSet.has(bp.nodeFront)
+      );
+
+      
+      
+      if (state.breakpoints.length !== breakpoints.length) {
+        state = {
+          ...state,
+          breakpoints,
+        };
+      }
+      break;
+    }
+
+    case "REMOVE_TARGET": {
+      const { targetFront } = action;
+      
+      const breakpoints = state.breakpoints.filter(
+        bp => bp.targetFront !== targetFront
       );
 
       

@@ -14,6 +14,21 @@ function registerWalkerListeners(store, walker) {
   walker.on("mutations", mutations => handleWalkerMutations(mutations, store));
 }
 
+
+
+
+
+
+
+
+function removeTarget(store, targetFront) {
+  store.dispatch({
+    type: "REMOVE_TARGET",
+    targetFront,
+  });
+}
+exports.removeTarget = removeTarget;
+
 function handleWalkerMutations(mutations, store) {
   
   
