@@ -400,20 +400,18 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     return;
   }
 
-  if (options.discardJitScripts && options.discardBaselineCode) {
+  if (options.discardJitScripts) {
     lastDiscardedCodeTime_ = mozilla::TimeStamp::Now();
   }
 
-  if (options.discardBaselineCode || options.discardJitScripts) {
 #ifdef DEBUG
-    
-    jitZone()->forEachJitScript(
-        [](jit::JitScript* jitScript) { MOZ_ASSERT(!jitScript->active()); });
+  
+  jitZone()->forEachJitScript(
+      [](jit::JitScript* jitScript) { MOZ_ASSERT(!jitScript->active()); });
 #endif
 
-    
-    jit::MarkActiveJitScripts(this);
-  }
+  
+  jit::MarkActiveJitScripts(this);
 
   
   jit::InvalidateAll(gcx, this);
@@ -424,10 +422,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         jit::FinishInvalidation(gcx, script);
 
         
-        if (options.discardBaselineCode) {
-          if (jitScript->hasBaselineScript() && !jitScript->active()) {
-            jit::FinishDiscardBaselineScript(gcx, script);
-          }
+        if (jitScript->hasBaselineScript() && !jitScript->active()) {
+          jit::FinishDiscardBaselineScript(gcx, script);
         }
 
 #ifdef JS_CACHEIR_SPEW
@@ -457,9 +453,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
         
         
-        if (options.discardBaselineCode) {
-          jitScript->purgeOptimizedStubs(script);
-        }
+        jitScript->purgeOptimizedStubs(script);
 
         if (options.resetNurseryAllocSites ||
             options.resetPretenuredAllocSites) {
@@ -491,15 +485,13 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 
 
-  if (options.discardBaselineCode) {
-    jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
-    jitZone()->purgeIonCacheIRStubInfo();
-  }
+  jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
+  jitZone()->purgeIonCacheIRStubInfo();
 
   
   if (gcx->runtime()->geckoProfiler().enabled()) {
     char discardingJitScript = options.discardJitScripts ? 'Y' : 'N';
-    char discardingBaseline = options.discardBaselineCode ? 'Y' : 'N';
+    char discardingBaseline = 'Y';
     char discardingIon = 'Y';
 
     char discardingRegExp = 'Y';
