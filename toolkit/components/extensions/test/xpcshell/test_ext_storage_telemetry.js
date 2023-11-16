@@ -43,6 +43,14 @@ const EXTENSION_ID1 = "@test-extension1";
 const EXTENSION_ID2 = "@test-extension2";
 
 async function test_telemetry_background() {
+  const { GleanTimingDistribution } = globalThis;
+  const expectedEmptyGleanMetrics = ExtensionStorageIDB.isBackendEnabled
+    ? ["storageLocalGetJson", "storageLocalSetJson"]
+    : ["storageLocalGetIdb", "storageLocalSetIdb"];
+  const expectedNonEmptyGleanMetrics = ExtensionStorageIDB.isBackendEnabled
+    ? ["storageLocalGetIdb", "storageLocalSetIdb"]
+    : ["storageLocalGetJson", "storageLocalSetJson"];
+
   const expectedEmptyHistograms = ExtensionStorageIDB.isBackendEnabled
     ? HISTOGRAM_JSON_IDS
     : HISTOGRAM_IDB_IDS;
@@ -108,8 +116,23 @@ async function test_telemetry_background() {
     },
   });
 
-  clearHistograms();
+  
+  
+  await Services.fog.testFlushAllChildren();
+  resetTelemetryData();
 
+  
+
+  
+  for (let metricId of expectedNonEmptyGleanMetrics) {
+    assertGleanMetricsNoSamples({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+    });
+  }
+
+  
   let process = IS_OOP ? "extension" : "parent";
   let snapshots = getSnapshots(process);
   let keyedSnapshots = getKeyedSnapshots(process);
@@ -128,6 +151,19 @@ async function test_telemetry_background() {
 
   await extension1.startup();
   await extension1.awaitMessage("backgroundDone");
+
+  
+  await Services.fog.testFlushAllChildren();
+  for (let metricId of expectedNonEmptyGleanMetrics) {
+    assertGleanMetricsSamplesCount({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+      expectedSamplesCount: 1,
+    });
+  }
+
+  
   for (let id of expectedNonEmptyHistograms) {
     await promiseTelemetryRecorded(id, process, 1);
   }
@@ -163,6 +199,18 @@ async function test_telemetry_background() {
   await extension2.startup();
   await extension2.awaitMessage("backgroundDone");
 
+  
+  await Services.fog.testFlushAllChildren();
+  for (let metricId of expectedNonEmptyGleanMetrics) {
+    assertGleanMetricsSamplesCount({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+      expectedSamplesCount: 2,
+    });
+  }
+
+  
   for (let id of expectedNonEmptyHistograms) {
     await promiseTelemetryRecorded(id, process, 2);
   }
@@ -207,6 +255,18 @@ async function test_telemetry_background() {
   );
   await extension1.awaitMessage("contentDone");
 
+  
+  await Services.fog.testFlushAllChildren();
+  for (let metricId of expectedNonEmptyGleanMetrics) {
+    assertGleanMetricsSamplesCount({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+      expectedSamplesCount: 3,
+    });
+  }
+
+  
   for (let id of expectedNonEmptyHistograms) {
     await promiseTelemetryRecorded(id, process, expectedCount);
   }
@@ -245,6 +305,18 @@ async function test_telemetry_background() {
   }
 
   await extension1.unload();
+
+  
+
+  
+  await Services.fog.testFlushAllChildren();
+  for (let metricId of expectedEmptyGleanMetrics) {
+    assertGleanMetricsNoSamples({
+      metricId,
+      gleanMetric: Glean.extensionsTiming[metricId],
+      gleanMetricConstructor: GleanTimingDistribution,
+    });
+  }
 
   
   for (let id of expectedEmptyHistograms) {
