@@ -21,6 +21,9 @@ async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
     
     if (Services.cookieBanners.isEnabled) {
       insertTestClickRules();
+
+      
+      Services.cookieBanners.removeAllExecutedRecords(false);
     }
   };
 
@@ -40,9 +43,6 @@ async function runTest({ mode, detectOnly = false, openPageOptions = {} }) {
       ...openPageOptions, 
     });
   };
-
-  
-  Services.cookieBanners.removeAllExecutedRecords(false);
 
   await runEventTest({ mode, detectOnly, initFn, triggerFn, testURL });
 
