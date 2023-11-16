@@ -31,8 +31,16 @@ public class GeckoServiceChildProcess extends Service {
   private static String sOwnerProcessId;
   private final MemoryController mMemoryController = new MemoryController();
 
+  private enum ProcessState {
+    NEW,
+    CREATED,
+    BOUND,
+    STARTED,
+    DESTROYED,
+  }
+
   
-  private static boolean sCreateCalled;
+  private static ProcessState sState = ProcessState.NEW;
 
   @WrapForJNI(calledFrom = "gecko")
   private static void getEditableParent(
@@ -49,12 +57,13 @@ public class GeckoServiceChildProcess extends Service {
     super.onCreate();
     Log.i(LOGTAG, "onCreate");
 
-    if (sCreateCalled) {
+    if (sState != ProcessState.NEW) {
       
       
-      throw new RuntimeException("Cannot reuse process.");
+      throw new RuntimeException(
+          String.format("Cannot reuse process %s: %s", getClass().getSimpleName(), sState));
     }
-    sCreateCalled = true;
+    sState = ProcessState.CREATED;
 
     GeckoAppShell.setApplicationContext(getApplicationContext());
     GeckoThread.launch(); 
@@ -144,6 +153,7 @@ public class GeckoServiceChildProcess extends Service {
               }
             }
           });
+      sState = ProcessState.STARTED;
       return IChildProcess.STARTED_OK;
     }
 
@@ -177,6 +187,7 @@ public class GeckoServiceChildProcess extends Service {
   @Override
   public void onDestroy() {
     Log.i(LOGTAG, "Destroying GeckoServiceChildProcess");
+    sState = ProcessState.DESTROYED;
     System.exit(0);
   }
 
@@ -184,6 +195,7 @@ public class GeckoServiceChildProcess extends Service {
   public IBinder onBind(final Intent intent) {
     
     stopSelf();
+    sState = ProcessState.BOUND;
     return mBinder;
   }
 
