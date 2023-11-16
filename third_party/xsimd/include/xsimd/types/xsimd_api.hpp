@@ -329,6 +329,27 @@ namespace xsimd
 
 
 
+
+    template <class T, class A>
+    inline batch<T, A> bitwise_lshift(batch<T, A> const& x, int shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::bitwise_lshift<A>(x, shift, A {});
+    }
+    template <class T, class A>
+    inline batch<T, A> bitwise_lshift(batch<T, A> const& x, batch<T, A> const& shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::bitwise_lshift<A>(x, shift, A {});
+    }
+
+    
+
+
+
+
+
+
     template <class T, class A>
     inline batch<T, A> bitwise_not(batch<T, A> const& x) noexcept
     {
@@ -378,6 +399,27 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return x | y;
+    }
+
+    
+
+
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> bitwise_rshift(batch<T, A> const& x, int shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::bitwise_rshift<A>(x, shift, A {});
+    }
+    template <class T, class A>
+    inline batch<T, A> bitwise_rshift(batch<T, A> const& x, batch<T, A> const& shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::bitwise_rshift<A>(x, shift, A {});
     }
 
     
@@ -601,6 +643,21 @@ namespace xsimd
 
     template <class T, class A>
     inline auto eq(batch<T, A> const& x, batch<T, A> const& y) noexcept -> decltype(x == y)
+    {
+        detail::static_check_supported_config<T, A>();
+        return x == y;
+    }
+
+    
+
+
+
+
+
+
+
+    template <class T, class A>
+    inline auto eq(batch_bool<T, A> const& x, batch_bool<T, A> const& y) noexcept -> decltype(x == y)
     {
         detail::static_check_supported_config<T, A>();
         return x == y;
@@ -991,7 +1048,7 @@ namespace xsimd
 
 
     template <class B>
-    B infinity()
+    inline B infinity()
     {
         using T = typename B::value_type;
         using A = typename B::arch_type;
@@ -1065,7 +1122,7 @@ namespace xsimd
 
 
     template <class T, class A>
-    inline batch_bool<T, A> isinf(batch<T, A> const& x) noexcept
+    inline typename batch<T, A>::batch_bool_type isinf(batch<T, A> const& x) noexcept
     {
         detail::static_check_supported_config<T, A>();
         return kernel::isinf<A>(x, A {});
@@ -1079,7 +1136,7 @@ namespace xsimd
 
 
     template <class T, class A>
-    inline batch_bool<T, A> isfinite(batch<T, A> const& x) noexcept
+    inline typename batch<T, A>::batch_bool_type isfinite(batch<T, A> const& x) noexcept
     {
         detail::static_check_supported_config<T, A>();
         return kernel::isfinite<A>(x, A {});
@@ -1486,6 +1543,21 @@ namespace xsimd
 
 
 
+
+    template <class T, class A>
+    inline auto neq(batch_bool<T, A> const& x, batch_bool<T, A> const& y) noexcept -> decltype(x != y)
+    {
+        detail::static_check_supported_config<T, A>();
+        return x != y;
+    }
+
+    
+
+
+
+
+
+
     template <class T, class A>
     inline batch<T, A> neg(batch<T, A> const& x) noexcept
     {
@@ -1724,6 +1796,86 @@ namespace xsimd
 
 
 
+
+
+    template <size_t N, class T, class A>
+    inline batch<T, A> rotate_left(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotate_left<N, A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    template <size_t N, class T, class A>
+    inline batch<T, A> rotate_right(batch<T, A> const& x) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotate_right<N, A>(x, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> rotl(batch<T, A> const& x, int shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotl<A>(x, shift, A {});
+    }
+    template <class T, class A>
+    inline batch<T, A> rotl(batch<T, A> const& x, batch<T, A> const& shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotl<A>(x, shift, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A>
+    inline batch<T, A> rotr(batch<T, A> const& x, int shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotr<A>(x, shift, A {});
+    }
+    template <class T, class A>
+    inline batch<T, A> rotr(batch<T, A> const& x, batch<T, A> const& shift) noexcept
+    {
+        detail::static_check_supported_config<T, A>();
+        return kernel::rotr<A>(x, shift, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
     template <class T, class A>
     inline batch<T, A> round(batch<T, A> const& x) noexcept
     {
@@ -1827,6 +1979,31 @@ namespace xsimd
     {
         detail::static_check_supported_config<T, A>();
         return kernel::select<A>(cond, true_br, false_br, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    template <class T, class A, class Vt, Vt... Values>
+    inline typename std::enable_if<std::is_arithmetic<T>::value, batch<T, A>>::type
+    shuffle(batch<T, A> const& x, batch<T, A> const& y, batch_constant<batch<Vt, A>, Values...> mask) noexcept
+    {
+        static_assert(sizeof(T) == sizeof(Vt), "consistent mask");
+        detail::static_check_supported_config<T, A>();
+        return kernel::shuffle<A>(x, y, mask, A {});
     }
 
     
@@ -2125,6 +2302,32 @@ namespace xsimd
     }
     template <class T, class A, class Vt, Vt... Values>
     inline batch<std::complex<T>, A> swizzle(batch<std::complex<T>, A> const& x, batch_constant<batch<Vt, A>, Values...> mask) noexcept
+    {
+        static_assert(sizeof(T) == sizeof(Vt), "consistent mask");
+        detail::static_check_supported_config<T, A>();
+        return kernel::swizzle<A>(x, mask, A {});
+    }
+
+    
+
+
+
+
+
+
+
+
+    template <class T, class A, class Vt>
+    inline typename std::enable_if<std::is_arithmetic<T>::value, batch<T, A>>::type
+    swizzle(batch<T, A> const& x, batch<Vt, A> mask) noexcept
+    {
+        static_assert(sizeof(T) == sizeof(Vt), "consistent mask");
+        detail::static_check_supported_config<T, A>();
+        return kernel::swizzle<A>(x, mask, A {});
+    }
+
+    template <class T, class A, class Vt>
+    inline batch<std::complex<T>, A> swizzle(batch<std::complex<T>, A> const& x, batch<Vt, A> mask) noexcept
     {
         static_assert(sizeof(T) == sizeof(Vt), "consistent mask");
         detail::static_check_supported_config<T, A>();
