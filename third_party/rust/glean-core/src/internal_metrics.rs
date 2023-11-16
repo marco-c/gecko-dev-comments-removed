@@ -27,6 +27,10 @@ pub struct AdditionalMetrics {
 
     
     pub shutdown_dispatcher_wait: TimingDistributionMetric,
+
+    
+    
+    pub experimentation_id: StringMetric,
 }
 
 impl CoreMetrics {
@@ -112,6 +116,23 @@ impl AdditionalMetrics {
                 },
                 TimeUnit::Millisecond,
             ),
+
+            
+            
+            
+            
+            
+            
+            
+            
+            experimentation_id: StringMetric::new(CommonMetricData {
+                name: "experimentation_id".into(),
+                category: "glean.client.annotation".into(),
+                send_in_pings: vec!["all-pings".into()],
+                lifetime: Lifetime::Application,
+                disabled: false,
+                dynamic_label: None,
+            }),
         }
     }
 }

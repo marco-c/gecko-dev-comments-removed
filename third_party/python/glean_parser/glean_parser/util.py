@@ -4,7 +4,6 @@
 
 
 
-from collections import OrderedDict
 import datetime
 import functools
 import json
@@ -21,28 +20,13 @@ import jsonschema
 from jsonschema import _utils  
 import yaml
 
-if sys.version_info < (3, 7):
-    import iso8601  
 
-    def date_fromisoformat(datestr: str) -> datetime.date:
-        try:
-            return iso8601.parse_date(datestr).date()
-        except iso8601.ParseError:
-            raise ValueError()
+def date_fromisoformat(datestr: str) -> datetime.date:
+    return datetime.date.fromisoformat(datestr)
 
-    def datetime_fromisoformat(datestr: str) -> datetime.datetime:
-        try:
-            return iso8601.parse_date(datestr)
-        except iso8601.ParseError:
-            raise ValueError()
 
-else:
-
-    def date_fromisoformat(datestr: str) -> datetime.date:
-        return datetime.date.fromisoformat(datestr)
-
-    def datetime_fromisoformat(datestr: str) -> datetime.datetime:
-        return datetime.datetime.fromisoformat(datestr)
+def datetime_fromisoformat(datestr: str) -> datetime.datetime:
+    return datetime.datetime.fromisoformat(datestr)
 
 
 TESTING_MODE = "pytest" in sys.modules
@@ -56,20 +40,8 @@ This is only an approximation -- this should really be a recursive type.
 """
 
 
-
-
-
-
-
-if sys.version_info < (3, 7):
-
-    class DictWrapper(OrderedDict):
-        pass
-
-else:
-
-    class DictWrapper(dict):
-        pass
+class DictWrapper(dict):
+    pass
 
 
 class _NoDatesSafeLoader(yaml.SafeLoader):
@@ -552,6 +524,7 @@ ping_args = [
     "name",
     "include_client_id",
     "send_if_empty",
+    "precise_timestamps",
     "reason_codes",
 ]
 

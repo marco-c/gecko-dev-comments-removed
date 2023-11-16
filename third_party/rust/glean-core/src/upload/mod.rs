@@ -248,18 +248,37 @@ impl PingUploadManager {
     
     
     
-    pub fn scan_pending_pings_directories(&self) -> std::thread::JoinHandle<()> {
+    pub fn scan_pending_pings_directories(
+        &self,
+        trigger_upload: bool,
+    ) -> std::thread::JoinHandle<()> {
         let local_manager = self.directory_manager.clone();
         let local_cached_pings = self.cached_pings.clone();
         let local_flag = self.processed_pending_pings.clone();
         thread::Builder::new()
             .name("glean.ping_directory_manager.process_dir".to_string())
             .spawn(move || {
-                let mut local_cached_pings = local_cached_pings
-                    .write()
-                    .expect("Can't write to pending pings cache.");
-                local_cached_pings.extend(local_manager.process_dirs());
-                local_flag.store(true, Ordering::SeqCst);
+                {
+                    
+                    let mut local_cached_pings = local_cached_pings
+                        .write()
+                        .expect("Can't write to pending pings cache.");
+                    local_cached_pings.extend(local_manager.process_dirs());
+                    local_flag.store(true, Ordering::SeqCst);
+                }
+                if trigger_upload {
+                    crate::dispatcher::launch(|| {
+                        if let Some(state) = crate::maybe_global_state().and_then(|s| s.lock().ok())
+                        {
+                            if let Err(e) = state.callbacks.trigger_upload() {
+                                log::error!(
+                                    "Triggering upload after pending ping scan failed. Error: {}",
+                                    e
+                                );
+                            }
+                        }
+                    });
+                }
             })
             .expect("Unable to spawn thread to process pings directories.")
     }
@@ -280,7 +299,7 @@ impl PingUploadManager {
 
         
         upload_manager
-            .scan_pending_pings_directories()
+            .scan_pending_pings_directories(false)
             .join()
             .unwrap();
 
@@ -960,7 +979,7 @@ mod test {
         let (mut glean, _t) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -992,7 +1011,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1022,7 +1041,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1052,7 +1071,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1082,7 +1101,7 @@ mod test {
         let (mut glean, _t) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1114,7 +1133,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1202,7 +1221,7 @@ mod test {
         glean.set_debug_view_tag("valid-tag");
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1248,7 +1267,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1298,7 +1317,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1366,7 +1385,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         
@@ -1438,7 +1457,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         let expected_number_of_pings = 3;
@@ -1468,7 +1487,7 @@ mod test {
         
         upload_manager
             .policy
-            .set_max_pending_pings_directory_size(Some(1000));
+            .set_max_pending_pings_directory_size(Some(1300));
         upload_manager.policy.set_max_pending_pings_count(Some(5));
 
         
@@ -1512,7 +1531,7 @@ mod test {
         let (mut glean, dir) = new_glean(None);
 
         
-        let ping_type = PingType::new("test", true,  true, vec![]);
+        let ping_type = PingType::new("test", true,  true, true, vec![]);
         glean.register_ping_type(&ping_type);
 
         let expected_number_of_pings = 2;

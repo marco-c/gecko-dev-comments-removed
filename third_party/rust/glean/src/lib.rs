@@ -121,6 +121,7 @@ fn initialize_internal(cfg: Configuration, client_info: ClientInfoMetrics) -> Op
         log_level: cfg.log_level,
         rate_limit: cfg.rate_limit,
         enable_event_timestamps: cfg.enable_event_timestamps,
+        experimentation_id: cfg.experimentation_id,
     };
 
     glean_core::glean_initialize(core_cfg, client_info.into(), callbacks);
@@ -169,6 +170,12 @@ pub fn set_experiment_active(
 
 pub fn set_experiment_inactive(experiment_id: String) {
     glean_core::glean_set_experiment_inactive(experiment_id)
+}
+
+
+
+pub fn test_get_experimentation_id() -> Option<String> {
+    glean_core::glean_test_get_experimentation_id()
 }
 
 

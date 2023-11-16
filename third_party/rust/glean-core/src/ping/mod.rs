@@ -89,9 +89,12 @@ impl PingMaker {
     }
 
     
-    fn get_start_end_times(&self, glean: &Glean, storage_name: &str) -> (String, String) {
-        let time_unit = TimeUnit::Minute;
-
+    fn get_start_end_times(
+        &self,
+        glean: &Glean,
+        storage_name: &str,
+        time_unit: TimeUnit,
+    ) -> (String, String) {
         let start_time = DatetimeMetric::new(
             CommonMetricData {
                 name: format!("{}#start", storage_name),
@@ -119,8 +122,14 @@ impl PingMaker {
         (start_time_data, end_time_data)
     }
 
-    fn get_ping_info(&self, glean: &Glean, storage_name: &str, reason: Option<&str>) -> JsonValue {
-        let (start_time, end_time) = self.get_start_end_times(glean, storage_name);
+    fn get_ping_info(
+        &self,
+        glean: &Glean,
+        storage_name: &str,
+        reason: Option<&str>,
+        precision: TimeUnit,
+    ) -> JsonValue {
+        let (start_time, end_time) = self.get_start_end_times(glean, storage_name, precision);
         let mut map = json!({
             "seq": self.get_ping_seq(glean, storage_name),
             "start_time": start_time,
@@ -222,10 +231,39 @@ impl PingMaker {
     ) -> Option<Ping<'a>> {
         info!("Collecting {}", ping.name());
 
-        let metrics_data = StorageManager.snapshot_as_json(glean.storage(), ping.name(), true);
+        let mut metrics_data = StorageManager.snapshot_as_json(glean.storage(), ping.name(), true);
         let events_data = glean
             .event_storage()
             .snapshot_as_json(glean, ping.name(), true);
+
+        
+        
+        
+        if (!ping.include_client_id() || !ping.send_if_empty())
+            && glean.test_get_experimentation_id().is_some()
+            && metrics_data.is_some()
+        {
+            
+            
+            let metrics = metrics_data.as_mut().unwrap().as_object_mut().unwrap();
+            let metrics_count = metrics.len();
+            let strings = metrics.get_mut("string").unwrap().as_object_mut().unwrap();
+            let string_count = strings.len();
+
+            
+            let empty_payload = events_data.is_none() && metrics_count == 1 && string_count == 1;
+            if !ping.include_client_id() || (!ping.send_if_empty() && empty_payload) {
+                strings.remove("glean.client.annotation.experimentation_id");
+            }
+
+            if strings.is_empty() {
+                metrics.remove("string");
+            }
+
+            if metrics.is_empty() {
+                metrics_data = None;
+            }
+        }
 
         let is_empty = metrics_data.is_none() && events_data.is_none();
         if !ping.send_if_empty() && is_empty {
@@ -241,7 +279,13 @@ impl PingMaker {
             );
         }
 
-        let ping_info = self.get_ping_info(glean, ping.name(), reason);
+        let precision = if ping.precise_timestamps() {
+            TimeUnit::Millisecond
+        } else {
+            TimeUnit::Minute
+        };
+
+        let ping_info = self.get_ping_info(glean, ping.name(), reason, precision);
         let client_info = self.get_client_info(glean, ping.include_client_id());
 
         let mut json = json!({

@@ -1,3 +1,7 @@
+
+
+
+
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -136,6 +140,7 @@ where
 
 
 
+
 #[derive(Debug)]
 pub struct Glean {
     upload_enabled: bool,
@@ -190,7 +195,7 @@ impl Glean {
         
         
         if scan_directories {
-            let _scanning_thread = upload_manager.scan_pending_pings_directories();
+            let _scanning_thread = upload_manager.scan_pending_pings_directories(false);
         }
 
         let start_time = local_now_with_offset();
@@ -244,6 +249,14 @@ impl Glean {
         glean.data_store = Some(Database::new(data_path, cfg.delay_ping_lifetime_io)?);
 
         
+        if let Some(experimentation_id) = &cfg.experimentation_id {
+            glean
+                .additional_metrics
+                .experimentation_id
+                .set_sync(&glean, experimentation_id.to_string());
+        }
+
+        
         
         if cfg.upload_enabled {
             
@@ -281,7 +294,7 @@ impl Glean {
         
         
         
-        let _scanning_thread = glean.upload_manager.scan_pending_pings_directories();
+        let _scanning_thread = glean.upload_manager.scan_pending_pings_directories(true);
 
         Ok(glean)
     }
@@ -306,6 +319,7 @@ impl Glean {
             log_level: None,
             rate_limit: None,
             enable_event_timestamps: false,
+            experimentation_id: None,
         };
 
         let mut glean = Self::new(cfg).unwrap();
@@ -718,6 +732,15 @@ impl Glean {
     pub fn test_get_experiment_data(&self, experiment_id: String) -> Option<RecordedExperiment> {
         let metric = ExperimentMetric::new(self, experiment_id);
         metric.test_get_value(self)
+    }
+
+    
+    
+    
+    pub fn test_get_experimentation_id(&self) -> Option<String> {
+        self.additional_metrics
+            .experimentation_id
+            .get_value(self, None)
     }
 
     

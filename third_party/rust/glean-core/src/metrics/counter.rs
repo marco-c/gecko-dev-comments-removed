@@ -2,6 +2,7 @@
 
 
 
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 use crate::common_metric_data::CommonMetricDataInternal;
@@ -62,16 +63,23 @@ impl CounterMetric {
             return;
         }
 
-        if amount <= 0 {
-            record_error(
-                glean,
-                &self.meta,
-                ErrorType::InvalidValue,
-                format!("Added negative or zero value {}", amount),
-                None,
-            );
-            return;
-        }
+        match amount.cmp(&0) {
+            Ordering::Less => {
+                record_error(
+                    glean,
+                    &self.meta,
+                    ErrorType::InvalidValue,
+                    format!("Added negative value {}", amount),
+                    None,
+                );
+                return;
+            }
+            Ordering::Equal => {
+                
+                return;
+            }
+            Ordering::Greater => (),
+        };
 
         
         

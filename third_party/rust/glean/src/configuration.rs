@@ -42,6 +42,10 @@ pub struct Configuration {
     pub rate_limit: Option<crate::PingRateLimit>,
     
     pub enable_event_timestamps: bool,
+    
+    
+    
+    pub experimentation_id: Option<String>,
 }
 
 
@@ -84,6 +88,10 @@ pub struct Builder {
     pub rate_limit: Option<crate::PingRateLimit>,
     
     pub enable_event_timestamps: bool,
+    
+    
+    
+    pub experimentation_id: Option<String>,
 }
 
 impl Builder {
@@ -106,6 +114,7 @@ impl Builder {
             log_level: None,
             rate_limit: None,
             enable_event_timestamps: false,
+            experimentation_id: None,
         }
     }
 
@@ -124,6 +133,7 @@ impl Builder {
             log_level: self.log_level,
             rate_limit: self.rate_limit,
             enable_event_timestamps: self.enable_event_timestamps,
+            experimentation_id: self.experimentation_id,
         }
     }
 
@@ -166,6 +176,12 @@ impl Builder {
     
     pub fn with_event_timestamps(mut self, value: bool) -> Self {
         self.enable_event_timestamps = value;
+        self
+    }
+
+    
+    pub fn with_experimentation_id(mut self, value: String) -> Self {
+        self.experimentation_id = Some(value);
         self
     }
 }

@@ -132,6 +132,10 @@ pub struct InternalConfiguration {
     pub rate_limit: Option<PingRateLimit>,
     
     pub enable_event_timestamps: bool,
+    
+    
+    
+    pub experimentation_id: Option<String>,
 }
 
 
@@ -189,6 +193,14 @@ static STATE: OnceCell<Mutex<State>> = OnceCell::new();
 #[track_caller] 
 fn global_state() -> &'static Mutex<State> {
     STATE.get().unwrap()
+}
+
+
+
+
+#[track_caller] 
+fn maybe_global_state() -> Option<&'static Mutex<State>> {
+    STATE.get()
 }
 
 
@@ -857,9 +869,22 @@ pub fn glean_test_get_experiment_data(experiment_id: String) -> Option<RecordedE
 
 
 
+pub fn glean_test_get_experimentation_id() -> Option<String> {
+    block_on_dispatcher();
+    core::with_glean(|glean| glean.test_get_experimentation_id())
+}
+
+
+
 
 
 pub fn glean_set_metrics_enabled_config(json: String) {
+    
+    
+    if json.is_empty() {
+        return;
+    }
+
     match MetricsEnabledConfig::try_from(json) {
         Ok(cfg) => launch_with_glean(|glean| {
             glean.set_metrics_enabled_config(cfg);
