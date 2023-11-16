@@ -43,6 +43,13 @@ already_AddRefed<SourceSurface> MacIOSurfaceImage::GetAsSourceSurface() {
   return CreateSourceSurfaceFromMacIOSurface(mSurface);
 }
 
+nsresult MacIOSurfaceImage::BuildSurfaceDescriptorBuffer(
+    SurfaceDescriptorBuffer& aSdBuffer, BuildSdbFlags aFlags,
+    const std::function<MemoryOrShmem(uint32_t)>& aAllocate) {
+  return CreateSurfaceDescriptorBufferFromMacIOSurface(mSurface, aSdBuffer,
+                                                       aFlags, aAllocate);
+}
+
 static inline uint16_t safeShift10BitBy6(const uint16_t& a10BitLSB) {
   
   
