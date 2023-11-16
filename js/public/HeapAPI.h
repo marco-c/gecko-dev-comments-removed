@@ -29,6 +29,10 @@ class NurseryDecommitTask;
 
 JS_PUBLIC_API bool CurrentThreadCanAccessZone(JS::Zone* zone);
 
+
+
+static constexpr size_t TypicalCacheLineSize = 64;
+
 namespace gc {
 
 class Arena;
@@ -183,7 +187,7 @@ enum class ColorBit : uint32_t { BlackBit = 0, GrayOrBlackBit = 1 };
 enum class MarkColor : uint8_t { Gray = 1, Black = 2 };
 
 
-struct MarkBitmap {
+struct alignas(TypicalCacheLineSize) MarkBitmap {
   static constexpr size_t WordCount = ArenaBitmapWords * ArenasPerChunk;
   MarkBitmapWord bitmap[WordCount];
 
