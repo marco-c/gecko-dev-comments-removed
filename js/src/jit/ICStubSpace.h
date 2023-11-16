@@ -14,19 +14,9 @@ namespace jit {
 
 
 
-
-
-
-
-
-
-
-
 class ICStubSpace {
- protected:
-  LifoAlloc allocator_;
-
-  explicit ICStubSpace(size_t chunkSize) : allocator_(chunkSize) {}
+  static constexpr size_t DefaultChunkSize = 4096;
+  LifoAlloc allocator_{DefaultChunkSize};
 
  public:
   inline void* alloc(size_t size) { return allocator_.alloc(size); }
@@ -39,29 +29,9 @@ class ICStubSpace {
     allocator_.transferFrom(&other.allocator_);
   }
 
-#ifdef DEBUG
-  bool isEmpty() const { return allocator_.isEmpty(); }
-#endif
-
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const {
     return allocator_.sizeOfExcludingThis(mallocSizeOf);
   }
-};
-
-
-struct OptimizedICStubSpace : public ICStubSpace {
-  static const size_t STUB_DEFAULT_CHUNK_SIZE = 4096;
-
- public:
-  OptimizedICStubSpace() : ICStubSpace(STUB_DEFAULT_CHUNK_SIZE) {}
-};
-
-
-struct JitScriptICStubSpace : public ICStubSpace {
-  static const size_t STUB_DEFAULT_CHUNK_SIZE = 4096;
-
- public:
-  JitScriptICStubSpace() : ICStubSpace(STUB_DEFAULT_CHUNK_SIZE) {}
 };
 
 }  

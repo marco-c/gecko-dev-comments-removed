@@ -90,7 +90,7 @@ enum JitScriptFilter : bool { SkipDyingScripts, IncludeDyingScripts };
 
 class JitZone {
   
-  OptimizedICStubSpace optimizedStubSpace_;
+  ICStubSpace stubSpace_;
 
   
   using IonCacheIRStubInfoSet =
@@ -175,9 +175,9 @@ class JitZone {
 
   void addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
                               JS::CodeSizes* code, size_t* jitZone,
-                              size_t* baselineStubsOptimized) const;
+                              size_t* cacheIRStubs) const;
 
-  OptimizedICStubSpace* optimizedStubSpace() { return &optimizedStubSpace_; }
+  ICStubSpace* stubSpace() { return &stubSpace_; }
 
   JitCode* getBaselineCacheIRStubCode(const CacheIRStubKey::Lookup& key,
                                       CacheIRStubInfo** stubInfo) {

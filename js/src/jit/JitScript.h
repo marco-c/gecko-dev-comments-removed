@@ -49,11 +49,11 @@ class AllocSite;
 namespace jit {
 
 class BaselineScript;
+class ICStubSpace;
 class InliningRoot;
 class IonScript;
 class JitScript;
 class JitZone;
-struct OptimizedICStubSpace;
 
 
 static constexpr uintptr_t BaselineDisabledScript = 0x1;
@@ -169,7 +169,7 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   void removeInlinedChild(uint32_t pcOffset);
   bool hasInlinedChild(uint32_t pcOffset);
 
-  void purgeOptimizedStubs(Zone* zone);
+  void purgeStubs(Zone* zone);
 
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
@@ -225,11 +225,6 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   friend class JitScript;
 };
-
-
-
-
-
 
 
 
@@ -418,7 +413,7 @@ class alignas(uintptr_t) JitScript final
 
   void trace(JSTracer* trc);
   void traceWeak(JSTracer* trc);
-  void purgeOptimizedStubs(JSScript* script);
+  void purgeStubs(JSScript* script);
 
   ICEntry& icEntryFromPCOffset(uint32_t pcOffset) {
     return icScript_.icEntryFromPCOffset(pcOffset);
@@ -548,8 +543,7 @@ class MOZ_RAII AutoKeepJitScripts {
 
 
 
-void MarkActiveJitScriptsAndCopyStubs(Zone* zone,
-                                      OptimizedICStubSpace& newStubSpace);
+void MarkActiveJitScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);

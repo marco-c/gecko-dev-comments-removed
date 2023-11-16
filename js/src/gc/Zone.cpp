@@ -407,7 +407,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
   
   
   
-  jit::OptimizedICStubSpace newStubSpace;
+  jit::ICStubSpace newStubSpace;
 
 #ifdef DEBUG
   
@@ -458,7 +458,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
         
         
-        jitScript->purgeOptimizedStubs(script);
+        jitScript->purgeStubs(script);
 
         if (options.resetNurseryAllocSites ||
             options.resetPretenuredAllocSites) {
@@ -490,8 +490,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 
 
-  jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
-  jitZone()->optimizedStubSpace()->transferFrom(newStubSpace);
+  jitZone()->stubSpace()->freeAllAfterMinorGC(this);
+  jitZone()->stubSpace()->transferFrom(newStubSpace);
   jitZone()->purgeIonCacheIRStubInfo();
 
   
@@ -636,14 +636,13 @@ void Zone::purgeAtomCache() {
 
 void Zone::addSizeOfIncludingThis(
     mozilla::MallocSizeOf mallocSizeOf, JS::CodeSizes* code, size_t* regexpZone,
-    size_t* jitZone, size_t* baselineStubsOptimized, size_t* uniqueIdMap,
+    size_t* jitZone, size_t* cacheIRStubs, size_t* uniqueIdMap,
     size_t* initialPropMapTable, size_t* shapeTables, size_t* atomsMarkBitmaps,
     size_t* compartmentObjects, size_t* crossCompartmentWrappersTables,
     size_t* compartmentsPrivateData, size_t* scriptCountsMapArg) {
   *regexpZone += regExps().sizeOfIncludingThis(mallocSizeOf);
   if (jitZone_) {
-    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone,
-                                     baselineStubsOptimized);
+    jitZone_->addSizeOfIncludingThis(mallocSizeOf, code, jitZone, cacheIRStubs);
   }
   *uniqueIdMap += uniqueIds().shallowSizeOfExcludingThis(mallocSizeOf);
   shapeZone().addSizeOfExcludingThis(mallocSizeOf, initialPropMapTable,
