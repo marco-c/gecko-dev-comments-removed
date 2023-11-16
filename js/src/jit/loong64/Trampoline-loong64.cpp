@@ -624,78 +624,33 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
 
   
   masm.Push(FramePointer);
+  masm.moveStackPtrTo(FramePointer);
   masm.loadJSContext(cxreg);
   masm.enterExitFrame(cxreg, regs.getAny(), id);
 
   
-  Register argsBase = InvalidReg;
-  if (f.explicitArgs) {
-    argsBase = t1;  
-    regs.take(argsBase);
-    masm.ma_add_d(argsBase, StackPointer,
-                  Imm32(ExitFrameLayout::SizeWithFooter()));
-  }
+  masm.reserveVMFunctionOutParamSpace(f);
 
-  
-  Register outReg = InvalidReg;
-  switch (f.outParam) {
-    case Type_Value:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(Value));
-      masm.movePtr(StackPointer, outReg);
-      break;
-
-    case Type_Handle:
-      outReg = regs.takeAny();
-      masm.PushEmptyRooted(f.outParamRootType);
-      masm.movePtr(StackPointer, outReg);
-      break;
-
-    case Type_Bool:
-    case Type_Int32:
-      outReg = regs.takeAny();
-      
-      masm.reserveStack(2 * sizeof(int32_t));
-      masm.movePtr(StackPointer, outReg);
-      break;
-
-    case Type_Pointer:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(uintptr_t));
-      masm.movePtr(StackPointer, outReg);
-      break;
-
-    case Type_Double:
-      outReg = regs.takeAny();
-      masm.reserveStack(sizeof(double));
-      masm.movePtr(StackPointer, outReg);
-      break;
-
-    default:
-      MOZ_ASSERT(f.outParam == Type_Void);
-      break;
-  }
-
-  masm.setupUnalignedABICall(regs.getAny());
+  masm.setupUnalignedABICallDontSaveRestoreSP();
   masm.passABIArg(cxreg);
 
-  size_t argDisp = 0;
+  size_t argDisp = ExitFrameLayout::Size();
 
   
   for (uint32_t explicitArg = 0; explicitArg < f.explicitArgs; explicitArg++) {
     switch (f.argProperties(explicitArg)) {
       case VMFunctionData::WordByValue:
         if (f.argPassedInFloatReg(explicitArg)) {
-          masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::DOUBLE);
+          masm.passABIArg(MoveOperand(FramePointer, argDisp), MoveOp::DOUBLE);
         } else {
-          masm.passABIArg(MoveOperand(argsBase, argDisp), MoveOp::GENERAL);
+          masm.passABIArg(MoveOperand(FramePointer, argDisp), MoveOp::GENERAL);
         }
         argDisp += sizeof(void*);
         break;
       case VMFunctionData::WordByRef:
-        masm.passABIArg(
-            MoveOperand(argsBase, argDisp, MoveOperand::Kind::EffectiveAddress),
-            MoveOp::GENERAL);
+        masm.passABIArg(MoveOperand(FramePointer, argDisp,
+                                    MoveOperand::Kind::EffectiveAddress),
+                        MoveOp::GENERAL);
         argDisp += sizeof(void*);
         break;
       case VMFunctionData::DoubleByValue:
@@ -707,8 +662,12 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  if (InvalidReg != outReg) {
-    masm.passABIArg(outReg);
+  const int32_t outParamOffset =
+      -int32_t(ExitFooterFrame::Size()) - f.sizeOfOutParamStackSlot();
+  if (f.outParam != Type_Void) {
+    masm.passABIArg(MoveOperand(FramePointer, outParamOffset,
+                                MoveOperand::Kind::EffectiveAddress),
+                    MoveOp::GENERAL);
   }
 
   masm.callWithABI(nativeFun, MoveOp::GENERAL,
@@ -730,43 +689,11 @@ bool JitRuntime::generateVMWrapper(JSContext* cx, MacroAssembler& masm,
   }
 
   
-  switch (f.outParam) {
-    case Type_Handle:
-      masm.popRooted(f.outParamRootType, ReturnReg, JSReturnOperand);
-      break;
-
-    case Type_Value:
-      masm.loadValue(Address(StackPointer, 0), JSReturnOperand);
-      masm.freeStack(sizeof(Value));
-      break;
-
-    case Type_Int32:
-      masm.load32(Address(StackPointer, 0), ReturnReg);
-      masm.freeStack(2 * sizeof(int32_t));
-      break;
-
-    case Type_Pointer:
-      masm.loadPtr(Address(StackPointer, 0), ReturnReg);
-      masm.freeStack(sizeof(uintptr_t));
-      break;
-
-    case Type_Bool:
-      masm.load8ZeroExtend(Address(StackPointer, 0), ReturnReg);
-      masm.freeStack(2 * sizeof(int32_t));
-      break;
-
-    case Type_Double:
-      masm.as_fld_d(ReturnDoubleReg, StackPointer, 0);
-      masm.freeStack(sizeof(double));
-      break;
-
-    default:
-      MOZ_ASSERT(f.outParam == Type_Void);
-      break;
-  }
+  masm.loadVMFunctionOutParam(f, Address(FramePointer, outParamOffset));
 
   
-  masm.leaveExitFrame(sizeof(void*));
+  masm.moveToStackPtr(FramePointer);
+  masm.pop(FramePointer);
 
   
   masm.retn(Imm32(sizeof(ExitFrameLayout) - sizeof(void*) +
