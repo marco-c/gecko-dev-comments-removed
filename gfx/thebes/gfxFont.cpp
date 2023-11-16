@@ -840,10 +840,11 @@ bool gfxShapedText::FilterIfIgnorable(uint32_t aIndex, uint32_t aCh) {
   return false;
 }
 
-void gfxShapedText::ApplyTrackingToClusters(float aTrackingAdjustment,
+void gfxShapedText::ApplyTrackingToClusters(gfxFloat aTrackingAdjustment,
                                             uint32_t aOffset,
                                             uint32_t aLength) {
-  int32_t appUnitAdjustment = aTrackingAdjustment * mAppUnitsPerDevUnit;
+  int32_t appUnitAdjustment =
+      NS_round(aTrackingAdjustment * gfxFloat(mAppUnitsPerDevUnit));
   CompressedGlyph* charGlyphs = GetCharacterGlyphs();
   for (uint32_t i = aOffset; i < aOffset + aLength; ++i) {
     CompressedGlyph* glyphData = charGlyphs + i;
@@ -3328,16 +3329,30 @@ bool gfxFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
     if (GetFontEntry()->HasTrackingTable()) {
       
       
-      float trackSize = GetAdjustedSize() *
-                        aShapedText->GetAppUnitsPerDevUnit() /
-                        AppUnitsPerCSSPixel();
-      float tracking =
-          GetFontEntry()->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
+      gfxFloat trackSize = GetAdjustedSize() *
+                           aShapedText->GetAppUnitsPerDevUnit() /
+                           AppUnitsPerCSSPixel();
       
       
+      {
+        AutoReadLock lock(mLock);
+        if (trackSize == mCachedTrackingSize) {
+          
+          
+          
+          
+          aShapedText->ApplyTrackingToClusters(mTracking, aOffset, aLength);
+          return true;
+        }
+      }
       
-      
-      aShapedText->ApplyTrackingToClusters(tracking, aOffset, aLength);
+      AutoWriteLock lock(mLock);
+      if (trackSize != mCachedTrackingSize) {
+        mCachedTrackingSize = trackSize;
+        mTracking =
+            GetFontEntry()->TrackingForCSSPx(trackSize) * mFUnitsConvFactor;
+      }
+      aShapedText->ApplyTrackingToClusters(mTracking, aOffset, aLength);
     }
     return true;
   }
