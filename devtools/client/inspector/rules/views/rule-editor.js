@@ -265,10 +265,18 @@ RuleEditor.prototype = {
               });
             }
 
-            createChild(selectorContainer, "span", {
+            const selectorEl = createChild(selectorContainer, "span", {
               class: "ruleview-selector",
               textContent: selector,
             });
+
+            const warningsContainer = this._createWarningsElementForSelector(
+              i,
+              ancestorData.selectorWarnings
+            );
+            if (warningsContainer) {
+              selectorEl.append(warningsContainer);
+            }
           });
         } else {
           
@@ -415,6 +423,52 @@ RuleEditor.prototype = {
         this.newProperty();
       });
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  _createWarningsElementForSelector(selectorIndex, selectorWarnings) {
+    if (!selectorWarnings) {
+      return null;
+    }
+
+    const warningKinds = [];
+    for (const { index, kind } of selectorWarnings) {
+      if (index !== selectorIndex) {
+        continue;
+      }
+      warningKinds.push(kind);
+    }
+
+    if (!warningKinds.length) {
+      return null;
+    }
+
+    const warningsContainer = this.doc.createElement("div");
+    warningsContainer.classList.add(
+      "ruleview-selector-warnings",
+      "has-tooltip"
+    );
+
+    warningsContainer.setAttribute(
+      "data-selector-warning-kind",
+      warningKinds.join(",")
+    );
+
+    if (warningKinds.includes("UnconstrainedHas")) {
+      warningsContainer.classList.add("slow");
+    }
+
+    return warningsContainer;
   },
 
   
@@ -616,6 +670,14 @@ RuleEditor.prototype = {
             textContent: selectorText.value,
             class: selectorClass,
           });
+        }
+
+        const warningsContainer = this._createWarningsElementForSelector(
+          i,
+          this.rule.domRule.selectorWarnings
+        );
+        if (warningsContainer) {
+          selectorContainer.append(warningsContainer);
         }
       });
     }

@@ -352,6 +352,12 @@ class StyleRuleActor extends Actor {
     switch (this.type) {
       case CSSRule.STYLE_RULE:
         form.selectors = CssLogic.getSelectors(this.rawRule);
+
+        
+        const selectorWarnings = this.rawRule.getSelectorWarnings();
+        if (selectorWarnings.length) {
+          form.selectorWarnings = selectorWarnings;
+        }
         if (computeDesugaredSelector) {
           form.desugaredSelectors = this.getDesugaredSelectors();
         }
@@ -511,10 +517,18 @@ class StyleRuleActor extends Actor {
         
         
         
-        ancestorData.push({
+        const ancestor = {
           type,
           selectors: CssLogic.getSelectors(rawRule),
-        });
+        };
+
+        
+        const selectorWarnings = rawRule.getSelectorWarnings();
+        if (selectorWarnings.length) {
+          ancestor.selectorWarnings = selectorWarnings;
+        }
+
+        ancestorData.push(ancestor);
         computeDesugaredSelector = true;
       }
     }
