@@ -477,6 +477,14 @@ pref("browser.urlbar.suggest.quicksuggest.sponsored", false, sticky);
 pref("browser.urlbar.quicksuggest.dataCollection.enabled", false, sticky);
 
 
+
+pref("browser.urlbar.quicksuggest.contextualOptIn", false);
+
+
+
+pref("browser.urlbar.quicksuggest.contextualOptIn.sayHello", false);
+
+
 pref("browser.urlbar.quicksuggest.enabled", false);
 
 
