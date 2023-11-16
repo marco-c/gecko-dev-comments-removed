@@ -5217,7 +5217,13 @@ bool nsDisplayOwnLayer::HasDynamicToolbar() const {
 
 bool nsDisplayOwnLayer::ShouldFixedAndStickyContentGetAnimationIds() const {
 #if defined(MOZ_WIDGET_ANDROID)
-  return mFrame->PresContext()->IsRootContentDocumentCrossProcess();
+  
+  
+  
+  return mFrame->PresContext()->IsRootContentDocumentCrossProcess() &&
+         GetActiveScrolledRoot() &&
+         nsLayoutUtils::ScrollIdForRootScrollFrame(mFrame->PresContext()) ==
+             GetActiveScrolledRoot()->GetViewId();
 #else
   return false;
 #endif
