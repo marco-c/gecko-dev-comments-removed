@@ -383,7 +383,6 @@ function getUserMedia(constraints) {
   ) {
     
     if (!DefaultLoopbackTone) {
-      TEST_AUDIO_FREQ = 440;
       DefaultLoopbackTone = new LoopbackTone(
         new AudioContext(),
         TEST_AUDIO_FREQ
@@ -399,9 +398,6 @@ function getUserMedia(constraints) {
       { noiseSuppression: false },
       constraints.audio
     );
-  } else {
-    
-    TEST_AUDIO_FREQ = 1000;
   }
   info("Call getUserMedia for " + JSON.stringify(constraints));
   return navigator.mediaDevices
