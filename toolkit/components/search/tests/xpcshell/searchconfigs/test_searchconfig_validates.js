@@ -32,30 +32,44 @@ function isObject(value) {
 
 
 function disallowAdditionalProperties(section) {
-  if (section.type == "object") {
-    section.additionalProperties = false;
+  
+  
+  
+  if (isObject(section)) {
+    if (section.properties && !("recordType" in section.properties)) {
+      section.additionalProperties = false;
+    }
+    if ("then" in section) {
+      section.then.additionalProperties = false;
+    }
   }
+
   for (let value of Object.values(section)) {
     if (isObject(value)) {
       disallowAdditionalProperties(value);
+    } else if (Array.isArray(value)) {
+      for (let item of value) {
+        disallowAdditionalProperties(item);
+      }
     }
   }
 }
 
+let searchConfigSchemaV1;
 let searchConfigSchema;
 
 add_setup(async function () {
-  searchConfigSchema = await IOUtils.readJSON(
+  searchConfigSchemaV1 = await IOUtils.readJSON(
     PathUtils.join(do_get_cwd().path, "search-engine-config-schema.json")
+  );
+  searchConfigSchema = await IOUtils.readJSON(
+    PathUtils.join(do_get_cwd().path, "search-engine-config-v2-schema.json")
   );
 });
 
-add_task(async function test_search_config_validates_to_schema() {
-  disallowAdditionalProperties(searchConfigSchema);
-
-  let selector = new SearchEngineSelectorOld(() => {});
-  let searchConfig = await selector.getEngineConfiguration();
-  let validator = new JsonSchema.Validator(searchConfigSchema);
+async function checkSearchConfigValidates(schema, searchConfig) {
+  disallowAdditionalProperties(schema);
+  let validator = new JsonSchema.Validator(schema);
 
   for (let entry of searchConfig) {
     
@@ -65,23 +79,68 @@ add_task(async function test_search_config_validates_to_schema() {
     delete entry.last_modified;
 
     let result = validator.validate(entry);
-    let message = `Should validate ${entry.webExtension?.id}`;
+    
+    let message = `Should validate ${
+      entry.identifier ?? entry.recordType ?? entry.webExtension.id
+    }`;
     if (!result.valid) {
       message += `:\n${JSON.stringify(result.errors, null, 2)}`;
     }
     Assert.ok(result.valid, message);
+
+    
+    
+    
+    
+    if (entry.recordType == "engine") {
+      for (let urlEntry of Object.values(entry.base.urls)) {
+        Assert.ok(
+          urlEntry.base,
+          "Should have a base url for every URL defined on the top-level base object."
+        );
+      }
+    }
   }
-});
+}
 
-add_task(async function test_ui_schema_valid() {
-  let uiSchema = await IOUtils.readJSON(
-    PathUtils.join(do_get_cwd().path, "search-engine-config-ui-schema.json")
-  );
-
-  for (let key of Object.keys(searchConfigSchema.properties)) {
+async function checkUISchemaValid(configSchema, uiSchema) {
+  for (let key of Object.keys(configSchema.properties)) {
     Assert.ok(
       uiSchema["ui:order"].includes(key),
       `Should have ${key} listed at the top-level of the ui schema`
     );
   }
+}
+
+add_task(async function test_search_config_validates_to_schema_v1() {
+  let selector = new SearchEngineSelectorOld(() => {});
+  let searchConfig = await selector.getEngineConfiguration();
+
+  await checkSearchConfigValidates(searchConfigSchemaV1, searchConfig);
+});
+
+add_task(async function test_ui_schema_valid_v1() {
+  let uiSchema = await IOUtils.readJSON(
+    PathUtils.join(do_get_cwd().path, "search-engine-config-ui-schema.json")
+  );
+
+  await checkUISchemaValid(searchConfigSchemaV1, uiSchema);
+});
+
+add_task(async function test_search_config_validates_to_schema() {
+  delete SearchUtils.newSearchConfigEnabled;
+  SearchUtils.newSearchConfigEnabled = true;
+
+  let selector = new SearchEngineSelector(() => {});
+  let searchConfig = await selector.getEngineConfiguration();
+
+  await checkSearchConfigValidates(searchConfigSchema, searchConfig);
+});
+
+add_task(async function test_ui_schema_valid() {
+  let uiSchema = await IOUtils.readJSON(
+    PathUtils.join(do_get_cwd().path, "search-engine-config-v2-ui-schema.json")
+  );
+
+  await checkUISchemaValid(searchConfigSchema, uiSchema);
 });

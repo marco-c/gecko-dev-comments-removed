@@ -6,7 +6,6 @@
 ChromeUtils.defineESModuleGetters(this, {
   RemoteSettingsWorker:
     "resource://services-settings/RemoteSettingsWorker.sys.mjs",
-  SearchEngineSelector: "resource://gre/modules/SearchEngineSelector.sys.mjs",
 });
 
 do_get_profile();
@@ -40,7 +39,10 @@ add_task(async function test_selector_db_out_of_date() {
   ]);
 
   
-  let engineSelector = new SearchEngineSelector();
+  let engineSelector = SearchUtils.newSearchConfigEnabled
+    ? new SearchEngineSelector()
+    : new SearchEngineSelectorOld();
+
   let result = await engineSelector.fetchEngineConfiguration({
     
     locale: "default",
