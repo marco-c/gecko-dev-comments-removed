@@ -2139,6 +2139,12 @@ pref("privacy.webrtc.deviceGracePeriodTimeoutMs", 3600000);
 pref("privacy.fingerprintingProtection.pbmode", true);
 
 
+
+
+pref("privacy.exposeContentTitleInWindow", true);
+pref("privacy.exposeContentTitleInWindow.pbm", true);
+
+
 pref("browser.tabs.remote.autostart", true);
 
 

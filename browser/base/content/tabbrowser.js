@@ -98,6 +98,18 @@
           true
         );
       });
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_shouldExposeContentTitle",
+        "privacy.exposeContentTitleInWindow",
+        true
+      );
+      XPCOMUtils.defineLazyPreferenceGetter(
+        this,
+        "_shouldExposeContentTitlePbm",
+        "privacy.exposeContentTitleInWindow.pbm",
+        true
+      );
 
       if (AppConstants.MOZ_CRASHREPORTER) {
         ChromeUtils.defineESModuleGetters(this, {
@@ -1028,6 +1040,19 @@
     getWindowTitleForBrowser(aBrowser) {
       let docElement = document.documentElement;
       let title = "";
+      let dataSuffix =
+        docElement.getAttribute("privatebrowsingmode") == "temporary"
+          ? "Private"
+          : "Default";
+      let defaultTitle = docElement.dataset["title" + dataSuffix];
+
+      if (
+        !this._shouldExposeContentTitle ||
+        (PrivateBrowsingUtils.isWindowPrivate(window) &&
+          !this._shouldExposeContentTitlePbm)
+      ) {
+        return defaultTitle;
+      }
 
       
       
@@ -1065,10 +1090,6 @@
         title += tab.getAttribute("label").replace(/\0/g, "");
       }
 
-      let dataSuffix =
-        docElement.getAttribute("privatebrowsingmode") == "temporary"
-          ? "Private"
-          : "Default";
       if (title) {
         
         
@@ -1081,7 +1102,7 @@
         );
       }
 
-      return docElement.dataset["title" + dataSuffix];
+      return defaultTitle;
     },
 
     updateTitlebar() {
