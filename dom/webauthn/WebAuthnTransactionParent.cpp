@@ -386,12 +386,16 @@ void WebAuthnTransactionParent::ActorDestroy(ActorDestroyReason aWhy) {
     mRegisterPromiseRequest.DisconnectIfExists();
     mSignPromiseRequest.DisconnectIfExists();
     mTransactionId.reset();
+  }
 
-    nsCOMPtr<nsIWebAuthnService> webauthnService(
-        do_GetService("@mozilla.org/webauthn/service;1"));
-    if (webauthnService) {
-      webauthnService->Reset();
-    }
+  
+  
+  
+  
+  nsCOMPtr<nsIWebAuthnService> webauthnService(
+      do_GetService("@mozilla.org/webauthn/service;1"));
+  if (webauthnService) {
+    webauthnService->Reset();
   }
 }
 
