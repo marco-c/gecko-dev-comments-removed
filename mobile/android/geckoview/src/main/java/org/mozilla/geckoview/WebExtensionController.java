@@ -399,6 +399,16 @@ public class WebExtensionController {
     @UiThread
     default void onInstallationFailed(
         final @Nullable WebExtension extension, final @NonNull InstallException installException) {}
+
+    
+
+
+
+
+
+
+    @UiThread
+    default void onReady(final @NonNull WebExtension extension) {}
   }
 
   
@@ -486,7 +496,8 @@ public class WebExtensionController {
               "GeckoView:WebExtension:OnUninstalled",
               "GeckoView:WebExtension:OnInstalling",
               "GeckoView:WebExtension:OnInstallationFailed",
-              "GeckoView:WebExtension:OnInstalled");
+              "GeckoView:WebExtension:OnInstalled",
+              "GeckoView:WebExtension:OnReady");
     } else if (delegate != null && mAddonManagerDelegate == null) {
       EventDispatcher.getInstance()
           .registerUiThreadListener(
@@ -499,7 +510,8 @@ public class WebExtensionController {
               "GeckoView:WebExtension:OnUninstalled",
               "GeckoView:WebExtension:OnInstalling",
               "GeckoView:WebExtension:OnInstallationFailed",
-              "GeckoView:WebExtension:OnInstalled");
+              "GeckoView:WebExtension:OnInstalled",
+              "GeckoView:WebExtension:OnReady");
     }
 
     mAddonManagerDelegate = delegate;
@@ -934,6 +946,9 @@ public class WebExtensionController {
     } else if ("GeckoView:WebExtension:OnInstallationFailed".equals(event)) {
       onInstallationFailed(bundle);
       return;
+    } else if ("GeckoView:WebExtension:OnReady".equals(event)) {
+      onReady(bundle);
+      return;
     }
 
     extensionFromBundle(bundle)
@@ -1223,6 +1238,17 @@ public class WebExtensionController {
     final GeckoBundle extensionBundle = bundle.getBundle("extension");
     final WebExtension extension = new WebExtension(mDelegateControllerProvider, extensionBundle);
     mAddonManagerDelegate.onInstalled(extension);
+  }
+
+  private void onReady(final GeckoBundle bundle) {
+    if (mAddonManagerDelegate == null) {
+      Log.e(LOGTAG, "no AddonManager delegate registered");
+      return;
+    }
+
+    final GeckoBundle extensionBundle = bundle.getBundle("extension");
+    final WebExtension extension = new WebExtension(mDelegateControllerProvider, extensionBundle);
+    mAddonManagerDelegate.onReady(extension);
   }
 
   private void onDisabledProcessSpawning() {
