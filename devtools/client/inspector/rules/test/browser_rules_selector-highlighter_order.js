@@ -36,7 +36,7 @@ function checkRuleViewRuleMarkupOrder(view, selectorText, index = 0) {
   const rule = getRuleViewRule(view, selectorText, index);
 
   
-  const selectorContainer = rule.querySelector(".ruleview-selectorcontainer");
+  const selectorContainer = rule.querySelector(".ruleview-selectors-container");
   const highlighterIcon = rule.querySelector(".js-toggle-selector-highlighter");
   const ruleOpenBrace = rule.querySelector(".ruleview-ruleopen");
 
