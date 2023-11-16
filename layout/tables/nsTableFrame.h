@@ -489,8 +489,6 @@ class nsTableFrame : public nsContainerFrame {
                                 bool aAddToTable);
 
   void MatchCellMapToColCache(nsTableCellMap* aCellMap);
-  
-  void ClearColCache();
 
   void DidResizeColumns();
 
