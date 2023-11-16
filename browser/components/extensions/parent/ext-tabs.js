@@ -397,7 +397,10 @@ this.tabs = class extends ExtensionAPIPersistent {
       let listener = event => {
         
         
-        if (event.originalTarget.initializingTab) {
+        if (
+          event.originalTarget.initializingTab ||
+          event.originalTarget.ownerGlobal.gBrowserInit?.isAdoptingTab()
+        ) {
           return;
         }
         if (!extension.canAccessWindow(event.originalTarget.ownerGlobal)) {
