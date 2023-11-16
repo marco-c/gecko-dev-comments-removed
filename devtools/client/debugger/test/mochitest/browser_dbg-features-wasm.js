@@ -75,7 +75,8 @@ add_task(async function () {
   await addBreakpoint(dbg, "fib.c", breakpointLine);
   invokeInTab("runWasm");
 
-  await waitForPaused(dbg);
+  await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
+
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
   await assertBreakpoint(dbg, breakpointLine);
   
@@ -131,7 +132,8 @@ add_task(async function () {
 
   
   
-  await waitForPaused(dbg);
+  await waitForPausedInOriginalFileAndToggleMapScopes(dbg);
+
   assertPausedAtSourceAndLine(dbg, findSource(dbg, "fib.c").id, breakpointLine);
 
   info("Reselect the binary source");

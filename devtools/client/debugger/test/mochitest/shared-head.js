@@ -554,7 +554,15 @@ function assertPaused(dbg, msg = "client is paused") {
 
 
 
-async function waitForPaused(dbg, url) {
+
+
+
+
+async function waitForPaused(
+  dbg,
+  url,
+  options = { shouldWaitForLoadedScopes: true }
+) {
   info("Waiting for the debugger to pause");
   const { getSelectedScope, getCurrentThread, getCurrentThreadFrames } =
     dbg.selectors;
@@ -566,7 +574,10 @@ async function waitForPaused(dbg, url) {
   );
 
   await waitForState(dbg, getCurrentThreadFrames, "fetched frames");
-  await waitForLoadedScopes(dbg);
+
+  if (options.shouldWaitForLoadedScopes) {
+    await waitForLoadedScopes(dbg);
+  }
   await waitForSelectedSource(dbg, url);
 }
 
@@ -657,7 +668,6 @@ async function clearDebuggerPreferences(prefs = []) {
   Services.prefs.clearUserPref("devtools.debugger.call-stack-visible");
   Services.prefs.clearUserPref("devtools.debugger.scopes-visible");
   Services.prefs.clearUserPref("devtools.debugger.skip-pausing");
-  Services.prefs.clearUserPref("devtools.debugger.map-scopes-enabled");
 
   for (const pref of prefs) {
     await pushPref(...pref);
@@ -1141,14 +1151,15 @@ async function invokeWithBreakpoint(
   fnName,
   filename,
   { line, column },
-  handler
+  handler,
+  pauseOptions
 ) {
   const source = await loadAndAddBreakpoint(dbg, filename, line, column);
 
   const invokeResult = invokeInTab(fnName);
 
   const invokeFailed = await Promise.race([
-    waitForPaused(dbg),
+    waitForPaused(dbg, null, pauseOptions),
     invokeResult.then(
       () => new Promise(() => {}),
       () => true
@@ -2028,6 +2039,25 @@ async function typeInPanel(dbg, text) {
   pressKey(dbg, "End");
   type(dbg, text);
   pressKey(dbg, "Enter");
+}
+
+async function toggleMapScopes(dbg) {
+  info("Turn on original variable mapping");
+  const scopesLoaded = waitForLoadedScopes(dbg);
+  const onDispatch = waitForDispatch(dbg.store, "TOGGLE_MAP_SCOPES");
+  clickElement(dbg, "mapScopesCheckbox");
+  return Promise.all([onDispatch, scopesLoaded]);
+}
+
+async function waitForPausedInOriginalFileAndToggleMapScopes(
+  dbg,
+  expectedSelectedSource = null
+) {
+  
+  await waitForPaused(dbg, expectedSelectedSource, {
+    shouldWaitForLoadedScopes: false,
+  });
+  await toggleMapScopes(dbg);
 }
 
 function toggleScopes(dbg) {
