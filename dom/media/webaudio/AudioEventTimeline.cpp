@@ -454,7 +454,7 @@ void AudioEventTimeline::GetValuesAtTimeHelperInternal(
       
       
       MOZ_ASSERT(!aNext ||
-                 aStartTime + static_cast<TimeType>(count) <= TimeOf(aNext));
+                 aStartTime + static_cast<TimeType>(count - 1) < TimeOf(aNext));
       aPrevious->FillFromValueCurve(aStartTime,
                                     Span(aBuffer.Elements(), count));
       aBuffer = aBuffer.From(count);
