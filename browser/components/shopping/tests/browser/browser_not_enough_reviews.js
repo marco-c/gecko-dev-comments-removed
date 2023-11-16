@@ -14,7 +14,7 @@ add_task(async function test_show_unanalyzed_on_initial_load() {
     async browser => {
       let shoppingContainer = await getAnalysisDetails(
         browser,
-        MOCK_NOT_ENOUGH_REVIEWS_PRODUCT_RESPONSE
+        MOCK_UNANALYZED_PRODUCT_RESPONSE
       );
       ok(
         shoppingContainer.unanalyzedProductEl,
@@ -27,7 +27,9 @@ add_task(async function test_show_unanalyzed_on_initial_load() {
   );
 });
 
-add_task(async function test_show_not_enough_reviews_after_analysis() {
+
+
+add_task(async function test_show_not_enough_reviews() {
   await BrowserTestUtils.withNewTab(
     {
       url: "about:shoppingsidebar",
@@ -45,8 +47,6 @@ add_task(async function test_show_not_enough_reviews_after_analysis() {
             ).wrappedJSObject;
 
           shoppingContainer.data = Cu.cloneInto(mockData, content);
-          
-          shoppingContainer.firstAnalysis = false;
 
           let messageBarVisiblePromise = ContentTaskUtils.waitForCondition(
             () => {
