@@ -442,11 +442,6 @@ bool IsWaylandEnabled() {
         return true;
       }
     }
-#  ifdef EARLY_BETA_OR_EARLIER
-    
-    
-    
-    
     
     
     
@@ -454,9 +449,6 @@ bool IsWaylandEnabled() {
     
     
     return !gtk_check_version(3, 24, 30);
-#  else
-    return false;
-#  endif
   }();
   return isWaylandEnabled;
 }
