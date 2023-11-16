@@ -190,8 +190,8 @@ void AudioSegment::Mix(AudioMixer& aMixer, uint32_t aOutputChannels,
               buf.Elements(), outBufferLength, aOutputChannels, channel,
               offsetSamples);
         }
-        AudioChannelsDownMix<AudioDataValue>(channelData, outChannelPtrs,
-                                             frames);
+        AudioChannelsDownMix<AudioDataValue, AudioDataValue>(
+            channelData, outChannelPtrs, frames);
       } else {
         
         for (uint32_t channel = 0; channel < aOutputChannels; channel++) {

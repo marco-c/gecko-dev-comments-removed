@@ -120,9 +120,10 @@ static const DownMixMatrix gDownMixMatrices[CUSTOM_CHANNEL_LAYOUTS *
 
 
 
-template <typename T>
-void AudioChannelsDownMix(Span<const T* const> aInputChannels,
-                          Span<T* const> aOutputChannels, uint32_t aDuration) {
+template <typename SrcT, typename DstT>
+void AudioChannelsDownMix(Span<const SrcT* const> aInputChannels,
+                          Span<DstT* const> aOutputChannels,
+                          uint32_t aDuration) {
   uint32_t inputChannelCount = aInputChannels.Length();
   uint32_t outputChannelCount = aOutputChannels.Length();
   NS_ASSERTION(inputChannelCount > outputChannelCount, "Nothing to do");
@@ -130,7 +131,7 @@ void AudioChannelsDownMix(Span<const T* const> aInputChannels,
   if (inputChannelCount > 6) {
     
     for (uint32_t o = 0; o < outputChannelCount; ++o) {
-      PodCopy(aOutputChannels[o], aInputChannels[o], aDuration);
+      ConvertAudioSamples(aInputChannels[o], aOutputChannels[o], aDuration);
     }
     return;
   }
@@ -144,23 +145,24 @@ void AudioChannelsDownMix(Span<const T* const> aInputChannels,
 
   
   
-  for (uint32_t s = 0; s < aDuration; ++s) {
-    
-    
-    T outputChannels[CUSTOM_CHANNEL_LAYOUTS + 1] = {0};
-    for (uint32_t c = 0; c < inputChannelCount; ++c) {
-      outputChannels[m.mInputDestination[c]] +=
-          m.mInputCoefficient[c] * aInputChannels[c][s];
+  for (DstT* outChannel : aOutputChannels) {
+    std::fill_n(outChannel, aDuration, static_cast<DstT>(0));
+  }
+  for (uint32_t c = 0; c < inputChannelCount; ++c) {
+    uint32_t dstIndex = m.mInputDestination[c];
+    if (dstIndex == IGNORE) {
+      continue;
     }
-    
-    if (m.mCExtraDestination != IGNORE) {
-      outputChannels[m.mCExtraDestination] +=
-          m.mInputCoefficient[SURROUND_C] * aInputChannels[SURROUND_C][s];
-    }
-
-    for (uint32_t c = 0; c < outputChannelCount; ++c) {
-      aOutputChannels[c][s] = outputChannels[c];
-    }
+    AddAudioSamplesWithScale(aInputChannels[c], aOutputChannels[dstIndex],
+                             aDuration, m.mInputCoefficient[c]);
+  }
+  
+  
+  uint32_t dstIndex = m.mCExtraDestination;
+  if (dstIndex != IGNORE) {
+    AddAudioSamplesWithScale(aInputChannels[SURROUND_C],
+                             aOutputChannels[dstIndex], aDuration,
+                             m.mInputCoefficient[SURROUND_C]);
   }
 }
 
