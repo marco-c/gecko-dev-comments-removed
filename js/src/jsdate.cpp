@@ -1110,11 +1110,22 @@ static constexpr size_t ShortestMonthNameLength = 3;
 
 
 
+
+
 template <typename CharT>
 static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
                                      size_t* indexOut, int* yearOut,
                                      int* monOut, int* mdayOut) {
   size_t i = *indexOut;
+
+  if (*monOut != -1) {
+    
+    
+    if (i >= length || s[i] != '-') {
+      return false;
+    }
+    ++i;
+  }
 
   size_t pre = i;
   size_t mday;
@@ -1128,35 +1139,39 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
   }
   ++i;
 
-  size_t start = i;
-  for (; i < length; i++) {
-    if (!IsAsciiAlpha(s[i])) {
-      break;
-    }
-  }
-
-  if (i - start < ShortestMonthNameLength) {
-    return false;
-  }
-
   size_t mon = 0;
-  for (size_t m = 0; m < std::size(months_names); ++m) {
+  if (*monOut == -1) {
     
     
-    if (IsPrefixOfKeyword(s + start, i - start, months_names[m])) {
-      
-      mon = m + 1;
-      break;
+    size_t start = i;
+    for (; i < length; i++) {
+      if (!IsAsciiAlpha(s[i])) {
+        break;
+      }
     }
-  }
-  if (mon == 0) {
-    return false;
-  }
 
-  if (i >= length || s[i] != '-') {
-    return false;
+    if (i - start < ShortestMonthNameLength) {
+      return false;
+    }
+
+    for (size_t m = 0; m < std::size(months_names); ++m) {
+      
+      
+      if (IsPrefixOfKeyword(s + start, i - start, months_names[m])) {
+        
+        mon = m + 1;
+        break;
+      }
+    }
+    if (mon == 0) {
+      return false;
+    }
+
+    if (i >= length || s[i] != '-') {
+      return false;
+    }
+    ++i;
   }
-  ++i;
 
   pre = i;
   size_t year;
@@ -1185,7 +1200,9 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
 
   *indexOut = i;
   *yearOut = year;
-  *monOut = mon;
+  if (*monOut == -1) {
+    *monOut = mon;
+  }
   *mdayOut = mday;
   return true;
 }
