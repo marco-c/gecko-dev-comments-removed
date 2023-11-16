@@ -119,8 +119,7 @@ class gfxContext final {
 
 
 
-  static mozilla::UniquePtr<gfxContext> CreateOrNull(
-      DrawTarget* aTarget, const Point& aDeviceOffset = Point());
+  static mozilla::UniquePtr<gfxContext> CreateOrNull(DrawTarget* aTarget);
 
   DrawTarget* GetDrawTarget() const { return mDT; }
 
