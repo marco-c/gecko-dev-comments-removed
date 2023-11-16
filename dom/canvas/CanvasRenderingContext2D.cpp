@@ -2976,6 +2976,8 @@ void CanvasRenderingContext2D::ClearRect(double aX, double aY, double aW,
 
 void CanvasRenderingContext2D::FillRect(double aX, double aY, double aW,
                                         double aH) {
+  mFeatureUsage |= CanvasFeatureUsage::FillRect;
+
   if (!ValidateRect(aX, aY, aW, aH, true)) {
     return;
   }
@@ -3252,6 +3254,8 @@ void CanvasRenderingContext2D::StrokeImpl(const gfx::Path& aPath) {
 }
 
 void CanvasRenderingContext2D::Stroke() {
+  mFeatureUsage |= CanvasFeatureUsage::Stroke;
+
   EnsureUserSpacePath();
   if (!IsTargetValid()) {
     return;
@@ -3749,6 +3753,8 @@ void CanvasRenderingContext2D::TransformCurrentPath(const Matrix& aTransform) {
 
 void CanvasRenderingContext2D::SetFont(const nsACString& aFont,
                                        ErrorResult& aError) {
+  mFeatureUsage |= CanvasFeatureUsage::SetFont;
+
   SetFontInternal(aFont, aError);
   if (aError.Failed()) {
     return;
@@ -4152,6 +4158,27 @@ void CanvasRenderingContext2D::FillText(const nsAString& aText, double aX,
                                         double aY,
                                         const Optional<double>& aMaxWidth,
                                         ErrorResult& aError) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mFillTextCalls <= 5) {
+    if (StringBeginsWith(aText, u"Cwm fjord"_ns) ||
+        StringBeginsWith(aText, u"Hel$&?6%"_ns) ||
+        StringBeginsWith(aText, u"<@nv45. "_ns)) {
+      mFeatureUsage |= CanvasFeatureUsage::KnownFingerprintText;
+    }
+    mFillTextCalls++;
+  }
+
   DebugOnly<TextMetrics*> metrics = DrawOrMeasureText(
       aText, aX, aY, aMaxWidth, TextDrawOperation::FILL, aError);
   MOZ_ASSERT(!metrics);  

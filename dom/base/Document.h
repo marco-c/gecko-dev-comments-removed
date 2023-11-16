@@ -186,6 +186,7 @@ struct nsFont;
 namespace mozilla {
 class AbstractThread;
 class AttributeStyles;
+class CanvasUsage;
 class StyleSheet;
 class EditorBase;
 class EditorCommand;
@@ -4095,6 +4096,8 @@ class Document : public nsINode,
   
   bool RecomputeResistFingerprinting();
 
+  void RecordCanvasUsage(CanvasUsage& aUsage);
+
   bool MayHaveDOMActivateListeners() const;
 
  protected:
@@ -5326,6 +5329,11 @@ class Document : public nsINode,
 
   
   RefPtr<class HighlightRegistry> mHighlightRegistry;
+
+  
+  
+  nsTArray<CanvasUsage> mCanvasUsage;
+  uint64_t mLastCanvasUsage = 0;
 
   UniquePtr<RadioGroupContainer> mRadioGroupContainer;
 
