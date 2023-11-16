@@ -663,13 +663,14 @@ class nsTableFrame : public nsContainerFrame {
   nsIFrame* GetFirstBodyRowGroupFrame();
 
  public:
-  typedef AutoTArray<nsTableRowGroupFrame*, 8> RowGroupArray;
+  using RowGroupArray = AutoTArray<nsTableRowGroupFrame*, 8>;
+
+ protected:
   
 
 
 
 
- protected:
   void PushChildren(const RowGroupArray& aRowGroups, int32_t aPushFrom);
 
  public:
@@ -678,10 +679,9 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-
-  void OrderRowGroups(RowGroupArray& aChildren,
-                      nsTableRowGroupFrame** aHead = nullptr,
-                      nsTableRowGroupFrame** aFoot = nullptr) const;
+  
+  RowGroupArray OrderedRowGroups(nsTableRowGroupFrame** aHead = nullptr,
+                                 nsTableRowGroupFrame** aFoot = nullptr) const;
 
   
   
