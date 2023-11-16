@@ -269,6 +269,13 @@ const PreflightBehavior = {
     "preflight-headers": "cors+pna",
     "expect-single-preflight": true,
   }),
+
+  
+  
+  navigation: (uuid) => ({
+    "preflight-uuid": uuid,
+    "preflight-headers": "navigation",
+  }),
 };
 
 
