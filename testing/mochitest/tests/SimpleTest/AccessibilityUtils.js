@@ -106,6 +106,9 @@ this.AccessibilityUtils = (function () {
     
     labelRule: true,
     
+    
+    mustBeEnabled: true,
+    
     mustHaveAccessibleRule: true,
     
     
@@ -362,9 +365,9 @@ this.AccessibilityUtils = (function () {
 
 
   function assertEnabled(accessible) {
-    if (matchState(accessible, STATE_UNAVAILABLE)) {
+    if (gEnv.mustBeEnabled && matchState(accessible, STATE_UNAVAILABLE)) {
       a11yFail(
-        "Node is enabled but disabled via the accessibility API",
+        "Node expected to be enabled but is disabled via the accessibility API",
         accessible
       );
     }
