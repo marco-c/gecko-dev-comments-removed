@@ -158,6 +158,26 @@ void IPCFuzzController::OnActorConnected(IProtocol* protocol) {
     return;
   }
 
+  MOZ_FUZZING_NYX_DEBUG(
+      "DEBUG: IPCFuzzController::OnActorConnected() Mutex try\n");
+
+  
+  MutexAutoLock lock(mMutex);
+
+  MOZ_FUZZING_NYX_DEBUG(
+      "DEBUG: IPCFuzzController::OnActorConnected() Mutex locked\n");
+
+  static bool protoIdFilterInitialized = false;
+  static bool allowNewActors = false;
+  static std::string protoIdFilter;
+  if (!protoIdFilterInitialized) {
+    const char* protoIdFilterStr = getenv("MOZ_FUZZ_PROTOID_FILTER");
+    if (protoIdFilterStr) {
+      protoIdFilter = std::string(protoIdFilterStr);
+    }
+    protoIdFilterInitialized = true;
+  }
+
 #ifdef FUZZ_DEBUG
   MOZ_FUZZING_NYX_PRINTF("INFO: [OnActorConnected] ActorID %d Protocol: %s\n",
                          protocol->Id(), protocol->GetProtocolName());
@@ -167,20 +187,37 @@ void IPCFuzzController::OnActorConnected(IProtocol* protocol) {
 
   Maybe<PortName> portName = channel->GetPortName();
   if (portName) {
-    MOZ_FUZZING_NYX_DEBUG(
-        "DEBUG: IPCFuzzController::OnActorConnected() Mutex try\n");
-    
-    MutexAutoLock lock(mMutex);
-    MOZ_FUZZING_NYX_DEBUG(
-        "DEBUG: IPCFuzzController::OnActorConnected() Mutex locked\n");
+    if (!protoIdFilter.empty() &&
+        (!Nyx::instance().started() || !allowNewActors) &&
+        strcmp(protocol->GetProtocolName(), protoIdFilter.c_str()) &&
+        !actorIds[*portName].empty()) {
+      MOZ_FUZZING_NYX_PRINTF(
+          "INFO: [OnActorConnected] ActorID %d Protocol: %s ignored due to "
+          "filter.\n",
+          protocol->Id(), protocol->GetProtocolName());
+      return;
+    } else if (!protoIdFilter.empty() &&
+               !strcmp(protocol->GetProtocolName(), protoIdFilter.c_str())) {
+      MOZ_FUZZING_NYX_PRINTF(
+          "INFO: [OnActorConnected] ActorID %d Protocol: %s matches target.\n",
+          protocol->Id(), protocol->GetProtocolName());
+    } else if (!protoIdFilter.empty() && actorIds[*portName].empty()) {
+      MOZ_FUZZING_NYX_PRINTF(
+          "INFO: [OnActorConnected] ActorID %d Protocol: %s is toplevel "
+          "actor.\n",
+          protocol->Id(), protocol->GetProtocolName());
+    }
+
     actorIds[*portName].emplace_back(protocol->Id(), protocol->GetProtocolId());
 
-    
-    useLastPortName = true;
-    lastActorPortName = *portName;
+    if (Nyx::instance().started() && protoIdFilter.empty()) {
+      
+      useLastPortName = true;
+      lastActorPortName = *portName;
 
-    
-    useLastActor = 5;
+      
+      useLastActor = 5;
+    }
   } else {
     MOZ_FUZZING_NYX_DEBUG("WARNING: No port name on actor?!\n");
   }
@@ -260,6 +297,31 @@ bool IPCFuzzController::ObserveIPCMessage(mozilla::ipc::NodeChannel* channel,
     return true;
   } else if (aMessage.type() == mIPCTriggerMsg) {
     MOZ_FUZZING_NYX_PRINT("DEBUG: Ready message detected.\n");
+
+    if (!haveTargetNodeName && !!getenv("MOZ_FUZZ_PROTOID_FILTER")) {
+      
+      
+      
+      
+
+      
+      Vector<char, 256, InfallibleAllocPolicy> footer;
+      if (!footer.initLengthUninitialized(aMessage.event_footer_size()) ||
+          !aMessage.ReadFooter(footer.begin(), footer.length(), false)) {
+        MOZ_FUZZING_NYX_ABORT("ERROR: Failed to read message footer.\n");
+      }
+
+      UniquePtr<Event> event =
+          Event::Deserialize(footer.begin(), footer.length());
+
+      if (!event || event->type() != Event::kUserMessage) {
+        MOZ_FUZZING_NYX_ABORT("ERROR: Trigger message is not kUserMessage?!\n");
+      }
+
+      lastActorPortName = event->port_name();
+      useLastPortName = true;
+      useLastActor = 1024;
+    }
 
     
     
