@@ -1036,8 +1036,8 @@ class gfxShapedText {
     return mDetailedGlyphs->Get(aCharIndex);
   }
 
-  void ApplyTrackingToClusters(gfxFloat aTrackingAdjustment, uint32_t aOffset,
-                               uint32_t aLength);
+  void AdjustAdvancesForSyntheticBold(float aSynBoldOffset, uint32_t aOffset,
+                                      uint32_t aLength);
 
   
   
@@ -2211,10 +2211,6 @@ class gfxFont {
 
   gfxFontStyle mStyle;
   mutable gfxFloat mAdjustedSize;
-
-  
-  gfxFloat mTracking = 0.0;
-  gfxFloat mCachedTrackingSize = -1.0;
 
   
   

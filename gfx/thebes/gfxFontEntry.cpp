@@ -1131,7 +1131,7 @@ bool gfxFontEntry::ParseTrakTable() {
   return true;
 }
 
-gfxFloat gfxFontEntry::TrackingForCSSPx(gfxFloat aSize) const {
+float gfxFontEntry::TrackingForCSSPx(float aSize) const {
   
   
   MOZ_ASSERT(TrakTableInitialized() && mTrakTable && mTrakValues &&
