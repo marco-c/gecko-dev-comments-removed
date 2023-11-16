@@ -1,8 +1,6 @@
 
 "use strict";
 
-Cu.importGlobalProperties(["crypto"]);
-
 const { PushCrypto } = ChromeUtils.importESModule(
   "resource://gre/modules/PushCrypto.sys.mjs"
 );

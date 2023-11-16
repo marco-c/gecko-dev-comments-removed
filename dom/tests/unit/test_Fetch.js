@@ -1,7 +1,6 @@
 
 
 
-Cu.importGlobalProperties(["fetch"]);
 const { HttpServer } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
 );

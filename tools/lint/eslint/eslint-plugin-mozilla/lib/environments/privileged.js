@@ -810,5 +810,11 @@ module.exports = {
     XULScrollElement: false,
     XULTextElement: false,
     console: false,
+    
+    
+    fetch: false,
+    crypto: false,
+    indexedDB: false,
+    structuredClone: false,
   },
 };

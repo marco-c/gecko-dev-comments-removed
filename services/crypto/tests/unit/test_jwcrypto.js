@@ -7,8 +7,6 @@ ChromeUtils.defineESModuleGetters(this, {
   jwcrypto: "resource://services-crypto/jwcrypto.sys.mjs",
 });
 
-Cu.importGlobalProperties(["crypto"]);
-
 
 Services.prefs.setCharPref("services.crypto.jwcrypto.log.level", "Debug");
 

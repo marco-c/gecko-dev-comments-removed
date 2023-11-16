@@ -804,7 +804,6 @@ add_task(async function test_encryptedPing() {
     
     return;
   }
-  Cu.importGlobalProperties(["crypto"]);
 
   const ECDH_PARAMS = {
     name: "ECDH",
@@ -1050,7 +1049,6 @@ add_task(async function test_encryptedPing_overrideId() {
     
     return;
   }
-  Cu.importGlobalProperties(["crypto"]);
 
   const publicKey = {
     crv: "P-256",

@@ -4,8 +4,6 @@
 "use strict";
 
 
-Cu.importGlobalProperties(["fetch"]);
-
 const { AddonTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/AddonTestUtils.sys.mjs"
 );

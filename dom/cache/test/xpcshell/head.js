@@ -47,8 +47,7 @@ add_setup(function () {
 
   enableTesting();
 
-  
-  Cu.importGlobalProperties(["caches", "fetch"]);
+  Cu.importGlobalProperties(["caches"]);
 
   registerCleanupFunction(resetTesting);
 });

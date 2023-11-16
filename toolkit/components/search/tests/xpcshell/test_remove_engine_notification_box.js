@@ -3,8 +3,6 @@
 
 "use strict";
 
-Cu.importGlobalProperties(["structuredClone"]);
-
 const CONFIG = [
   {
     

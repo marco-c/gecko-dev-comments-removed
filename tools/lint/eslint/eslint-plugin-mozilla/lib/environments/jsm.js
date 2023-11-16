@@ -21,11 +21,5 @@ module.exports = {
     
     
     WebAssembly: false,
-    
-    
-    fetch: false,
-    crypto: false,
-    indexedDB: false,
-    structuredClone: false,
   },
 };

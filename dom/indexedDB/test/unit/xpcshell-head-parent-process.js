@@ -46,8 +46,6 @@ if (!this.runTest) {
       enableExperimental();
     }
 
-    Cu.importGlobalProperties(["indexedDB"]);
-
     
     
     
