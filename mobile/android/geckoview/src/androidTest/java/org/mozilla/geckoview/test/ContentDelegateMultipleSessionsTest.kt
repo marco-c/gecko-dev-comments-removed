@@ -8,7 +8,6 @@ import androidx.annotation.AnyThread
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.MediumTest
 import org.hamcrest.Matchers.* 
-import org.junit.Assume.assumeThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,8 +93,7 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
     @Test
     fun crashContentMultipleSessions() {
         
-        assumeThat(sessionRule.env.isFission, equalTo(false))
-
+        
         val newSession = getSecondGeckoSession()
 
         
@@ -125,9 +123,6 @@ class ContentDelegateMultipleSessionsTest : BaseSessionTest() {
                 reportCrash(session)
             }
         })
-
-        newSession.loadTestPath(HELLO_HTML_PATH)
-        newSession.waitForPageStop()
 
         mainSession.loadUri(CONTENT_CRASH_URL)
 
