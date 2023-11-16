@@ -32,6 +32,7 @@ namespace jit {
 class BaselineFrame;
 class CacheIRStubInfo;
 class ICScript;
+struct OptimizedICStubSpace;
 
 enum class VMFunctionId;
 
@@ -290,12 +291,10 @@ class ICCacheIRStub final : public ICStub {
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
 
-  
-  
-  
+  ICCacheIRStub* clone(JSContext* cx, OptimizedICStubSpace& newSpace);
+
   
   bool makesGCCalls() const;
-  bool allocatedInFallbackSpace() const { return makesGCCalls(); }
 
   static constexpr size_t offsetOfNext() {
     return offsetof(ICCacheIRStub, next_);

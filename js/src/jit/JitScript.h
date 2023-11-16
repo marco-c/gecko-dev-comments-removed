@@ -168,7 +168,6 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   void removeInlinedChild(uint32_t pcOffset);
   bool hasInlinedChild(uint32_t pcOffset);
 
-  JitScriptICStubSpace* jitScriptStubSpace();
   void purgeOptimizedStubs(Zone* zone);
 
   void trace(JSTracer* trc);
@@ -550,7 +549,8 @@ class MOZ_RAII AutoKeepJitScripts {
 
 
 
-void MarkActiveJitScripts(Zone* zone);
+void MarkActiveJitScriptsAndCopyStubs(Zone* zone,
+                                      OptimizedICStubSpace& newStubSpace);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);

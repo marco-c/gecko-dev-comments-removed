@@ -404,6 +404,11 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
     lastDiscardedCodeTime_ = mozilla::TimeStamp::Now();
   }
 
+  
+  
+  
+  jit::OptimizedICStubSpace newStubSpace;
+
 #ifdef DEBUG
   
   jitZone()->forEachJitScript(
@@ -411,7 +416,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 #endif
 
   
-  jit::MarkActiveJitScripts(this);
+  jit::MarkActiveJitScriptsAndCopyStubs(this, newStubSpace);
 
   
   jit::InvalidateAll(gcx, this);
@@ -486,6 +491,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 
   jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(this);
+  jitZone()->optimizedStubSpace()->transferFrom(newStubSpace);
   jitZone()->purgeIonCacheIRStubInfo();
 
   
