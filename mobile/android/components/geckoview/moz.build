@@ -5,13 +5,19 @@
 
 
 SOURCES += [
+    "GeckoViewContentChannel.cpp",
+    "GeckoViewContentProtocolHandler.cpp",
     "GeckoViewExternalAppService.cpp",
+    "GeckoViewInputStream.cpp",
     "GeckoViewOutputStream.cpp",
     "GeckoViewStreamListener.cpp",
 ]
 
 EXPORTS += [
+    "GeckoViewContentChannel.h",
+    "GeckoViewContentProtocolHandler.h",
     "GeckoViewExternalAppService.h",
+    "GeckoViewInputStream.h",
     "GeckoViewOutputStream.h",
     "GeckoViewStreamListener.h",
 ]
