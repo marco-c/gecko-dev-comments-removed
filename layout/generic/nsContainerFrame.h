@@ -745,16 +745,6 @@ class nsContainerFrame : public nsSplittableFrame {
 
 
 
-  void PushChildren(nsIFrame* aFromChild, nsIFrame* aPrevSibling);
-
-  
-
-
-
-
-
-
-
 
 
 

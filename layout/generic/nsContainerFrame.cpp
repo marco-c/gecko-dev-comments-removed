@@ -1412,33 +1412,6 @@ void nsContainerFrame::PushChildrenToOverflow(nsIFrame* aFromChild,
   SetOverflowFrames(mFrames.TakeFramesAfter(aPrevSibling));
 }
 
-void nsContainerFrame::PushChildren(nsIFrame* aFromChild,
-                                    nsIFrame* aPrevSibling) {
-  MOZ_ASSERT(aFromChild, "null pointer");
-  MOZ_ASSERT(aPrevSibling, "pushing first child");
-  MOZ_ASSERT(aPrevSibling->GetNextSibling() == aFromChild, "bad prev sibling");
-
-  
-  nsFrameList tail = mFrames.TakeFramesAfter(aPrevSibling);
-
-  nsContainerFrame* nextInFlow =
-      static_cast<nsContainerFrame*>(GetNextInFlow());
-  if (nextInFlow) {
-    
-    
-    
-    
-    
-    for (nsIFrame* f = aFromChild; f; f = f->GetNextSibling()) {
-      nsContainerFrame::ReparentFrameView(f, this, nextInFlow);
-    }
-    nextInFlow->mFrames.InsertFrames(nextInFlow, nullptr, std::move(tail));
-  } else {
-    
-    SetOverflowFrames(std::move(tail));
-  }
-}
-
 bool nsContainerFrame::PushIncompleteChildren(
     const FrameHashtable& aPushedItems, const FrameHashtable& aIncompleteItems,
     const FrameHashtable& aOverflowIncompleteItems) {
