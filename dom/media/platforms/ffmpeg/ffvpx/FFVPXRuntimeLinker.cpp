@@ -36,6 +36,17 @@ static PRLibrary* MozAVLink(nsIFile* aFile) {
   lspec.type = PR_LibSpec_PathnameU;
   lspec.value.pathname_u = path.get();
 #else
+#  if defined(XP_OPENBSD)
+  
+
+
+
+  nsAutoCString leaf;
+  nsresult rv = aFile->GetNativeLeafName(leaf);
+  if (NS_SUCCEEDED(rv)) {
+    path = PathString(leaf);
+  }
+#  endif  
   lspec.type = PR_LibSpec_Pathname;
   lspec.value.pathname = path.get();
 #endif
