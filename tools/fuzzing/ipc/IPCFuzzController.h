@@ -124,6 +124,10 @@ class IPCFuzzController {
       portNodeName;
 
   
+  std::unordered_map<mojo::core::ports::PortName, std::string>
+      portNameToProtocolName;
+
+  
   
   std::unordered_map<mozilla::ipc::ProtocolId, uint32_t> validMsgTypes;
 
