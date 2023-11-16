@@ -14,25 +14,13 @@ const clipboardTypes = [
   clipboard.kSelectionCache,
 ];
 
-function emptyClipboardData(aType) {
-  
-  
-  
-  
-  if (navigator.platform.includes("Linux")) {
-    writeStringToClipboard("foo", "text/plain", aType);
-  }
-
-  clipboard.emptyClipboard(aType);
-}
-
 function cleanupAllClipboard() {
-  for (const type of clipboardTypes) {
+  clipboardTypes.forEach(function (type) {
     if (clipboard.isClipboardTypeSupported(type)) {
       info(`cleanup clipboard ${type}`);
-      emptyClipboardData(type);
+      clipboard.emptyClipboard(type);
     }
-  }
+  });
 }
 
 function generateRandomString() {
@@ -58,14 +46,6 @@ function generateNewTransferable(aFlavor, aStr) {
 function addStringToTransferable(aFlavor, aStr, aTrans) {
   aTrans.addDataFlavor(aFlavor);
 
-  let supportsStr = Cc["@mozilla.org/supports-string;1"].createInstance(
-    Ci.nsISupportsString
-  );
-  supportsStr.data = aStr;
-  aTrans.setTransferData(aFlavor, supportsStr);
-}
-
-function updateStringToTransferable(aFlavor, aStr, aTrans) {
   let supportsStr = Cc["@mozilla.org/supports-string;1"].createInstance(
     Ci.nsISupportsString
   );
@@ -134,74 +114,4 @@ function getClipboardData(aFlavor, aClipboardType) {
     
     return null;
   }
-}
-
-function asyncGetClipboardData(aClipboardType) {
-  return new Promise((resolve, reject) => {
-    try {
-      clipboard.asyncGetData(
-        ["text/plain", "text/html", "image/png"],
-        aClipboardType,
-        {
-          QueryInterface: SpecialPowers.ChromeUtils.generateQI([
-            "nsIAsyncClipboardGetCallback",
-          ]),
-          
-          onSuccess: SpecialPowers.wrapCallback(function (
-            aAsyncGetClipboardData
-          ) {
-            resolve(aAsyncGetClipboardData);
-          }),
-          onError: SpecialPowers.wrapCallback(function (aResult) {
-            reject(aResult);
-          }),
-        }
-      );
-    } catch (e) {
-      ok(false, `asyncGetData should not throw`);
-      reject(e);
-    }
-  });
-}
-
-function asyncClipboardRequestGetData(aRequest, aFlavor, aThrows = false) {
-  return new Promise((resolve, reject) => {
-    var trans = Cc["@mozilla.org/widget/transferable;1"].createInstance(
-      Ci.nsITransferable
-    );
-    trans.init(null);
-    trans.addDataFlavor(aFlavor);
-    try {
-      aRequest.getData(trans, aResult => {
-        if (aResult != Cr.NS_OK) {
-          reject(aResult);
-          return;
-        }
-
-        try {
-          var data = SpecialPowers.createBlankObject();
-          trans.getTransferData(aFlavor, data);
-          resolve(data.value.QueryInterface(Ci.nsISupportsString).data);
-        } catch (ex) {
-          
-          
-          resolve("");
-        }
-      });
-      ok(
-        !aThrows,
-        `nsIAsyncGetClipboardData.getData should ${
-          aThrows ? "throw" : "success"
-        }`
-      );
-    } catch (e) {
-      ok(
-        aThrows,
-        `nsIAsyncGetClipboardData.getData should ${
-          aThrows ? "throw" : "success"
-        }`
-      );
-      reject(e);
-    }
-  });
 }
