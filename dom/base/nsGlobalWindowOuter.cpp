@@ -3037,7 +3037,7 @@ Navigator* nsGlobalWindowOuter::GetNavigator() {
 }
 
 nsScreen* nsGlobalWindowOuter::GetScreen() {
-  FORWARD_TO_INNER(GetScreen, (IgnoreErrors()), nullptr);
+  FORWARD_TO_INNER(Screen, (), nullptr);
 }
 
 void nsPIDOMWindowOuter::ActivateMediaComponents() {
@@ -3763,9 +3763,9 @@ void nsGlobalWindowOuter::CheckSecurityLeftAndTop(int32_t* aLeft, int32_t* aTop,
 
       
       
-      int32_t screenLeft = screen->GetAvailLeft(IgnoreErrors());
-      int32_t screenWidth = screen->GetAvailWidth(IgnoreErrors());
-      int32_t screenHeight = screen->GetAvailHeight(IgnoreErrors());
+      int32_t screenLeft = screen->AvailLeft();
+      int32_t screenWidth = screen->AvailWidth();
+      int32_t screenHeight = screen->AvailHeight();
 #if defined(XP_MACOSX)
       
 
@@ -3774,9 +3774,9 @@ void nsGlobalWindowOuter::CheckSecurityLeftAndTop(int32_t* aLeft, int32_t* aTop,
 
 
 
-      int32_t screenTop = screen->GetTop(IgnoreErrors());
+      int32_t screenTop = screen->Top();
 #else
-      int32_t screenTop = screen->GetAvailTop(IgnoreErrors());
+      int32_t screenTop = screen->AvailTop();
 #endif
 
       if (aLeft) {
