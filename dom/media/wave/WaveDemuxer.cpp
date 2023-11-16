@@ -21,6 +21,7 @@ using mozilla::media::TimeIntervals;
 using mozilla::media::TimeUnit;
 
 extern mozilla::LazyLogModule gMediaDemuxerLog;
+
 namespace mozilla {
 
 #define LOG(msg, ...) \
@@ -709,21 +710,25 @@ AudioConfig::ChannelLayout::ChannelMap FormatChunk::ChannelMap() const {
   
   
   
-  if (WaveFormat() != 0xFFFE || mRaw.Length() < 18) {
+  constexpr size_t SIZE_WAVEFORMATEX = 18;
+  constexpr size_t MIN_SIZE_WAVEFORMATEXTENSIBLE = 22;
+  constexpr size_t OFFSET_CHANNEL_MAP = 20;
+  if (WaveFormat() != 0xFFFE || mRaw.Length() <= SIZE_WAVEFORMATEX) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
   
   
-  if (ExtraFormatInfoSize() < 22 || mRaw.Length() < 22) {
+  if (ExtraFormatInfoSize() < MIN_SIZE_WAVEFORMATEXTENSIBLE ||
+      mRaw.Length() < SIZE_WAVEFORMATEX + MIN_SIZE_WAVEFORMATEXTENSIBLE) {
     return AudioConfig::ChannelLayout(Channels()).Map();
   }
   
   
-  auto channelMap = static_cast<AudioConfig::ChannelLayout::ChannelMap>(
-      mRaw[21] | mRaw[20] | mRaw[19] | mRaw[18]);
-  return channelMap;
+  BufferReader reader(mRaw.Elements() + OFFSET_CHANNEL_MAP, sizeof(uint32_t));
+  auto channelMap = reader.ReadLEU32();
+  return channelMap.unwrapOr(AudioConfig::ChannelLayout::UNKNOWN_MAP);
 }
 
 
