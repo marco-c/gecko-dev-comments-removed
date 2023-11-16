@@ -299,6 +299,17 @@
     };
   }
 
+  function iframeSrcdocExecutorCreator(remoteContextWrapper, attributes) {
+    return async (url) => {
+      
+      
+      
+      attributes['srcdoc'] = await fetch(url).then(r => r.text());
+      elementExecutorCreator(
+          remoteContextWrapper, 'iframe', attributes)(undefined);
+    };
+  }
+
   function workerExecutorCreator() {
     return url => {
       new Worker(url);
@@ -380,6 +391,21 @@
     addIframe(extraConfig, attributes = {}) {
       return this.helper.createContext({
         executorCreator: elementExecutorCreator(this, 'iframe', attributes),
+        extraConfig,
+      });
+    }
+
+    
+
+
+
+
+
+
+
+    addIframeSrcdoc(extraConfig, attributes = {}) {
+      return this.helper.createContext({
+        executorCreator: iframeSrcdocExecutorCreator(this, attributes),
         extraConfig,
       });
     }
