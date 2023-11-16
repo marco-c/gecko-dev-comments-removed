@@ -86,12 +86,8 @@ add_task(async function engagement_before_showing_results() {
   });
 
   
-  let originalHeuristicTimeout =
-    UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS;
-  UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS = 1000000;
-  let originalOtherTimeout =
-    UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS;
-  UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS = 1000000;
+  let originalChunkTimeout = UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS;
+  UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = 1000000;
 
   
   
@@ -103,9 +99,7 @@ add_task(async function engagement_before_showing_results() {
   const cleanup = () => {
     UrlbarProvidersManager.unregisterProvider(noResponseProvider);
     UrlbarProvidersManager.unregisterProvider(anotherHeuristicProvider);
-    UrlbarProvidersManager.CHUNK_HEURISTIC_RESULTS_DELAY_MS =
-      originalHeuristicTimeout;
-    UrlbarProvidersManager.CHUNK_OTHER_RESULTS_DELAY_MS = originalOtherTimeout;
+    UrlbarProvidersManager.CHUNK_RESULTS_DELAY_MS = originalChunkTimeout;
   };
   registerCleanupFunction(cleanup);
 
