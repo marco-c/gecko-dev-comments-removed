@@ -20,6 +20,7 @@ async def test_other_context(
     add_intercept,
     fetch,
     setup_network_test,
+    phase,
 ):
     
     await setup_network_test(
@@ -40,7 +41,7 @@ async def test_other_context(
     
     text_url = url(PAGE_EMPTY_TEXT)
     await add_intercept(
-        phases=["beforeRequestSent"],
+        phases=[phase],
         url_patterns=[{"type": "string", "pattern": text_url}],
     )
 
