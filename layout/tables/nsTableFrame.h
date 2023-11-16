@@ -630,24 +630,21 @@ class nsTableFrame : public nsContainerFrame {
 
   void ProcessRowInserted(nscoord aNewHeight);
 
-  
-
- public:
+ protected:
   
   
   nscoord CalcBorderBoxBSize(const ReflowInput& aReflowInput,
                              const LogicalMargin& aBorderPadding,
                              nscoord aIntrinsicBorderBoxBSize);
 
- protected:
   
   
   
-  void CalcDesiredBSize(const ReflowInput& aReflowInput,
-                        ReflowOutput& aDesiredSize);
+  
+  
+  nscoord CalcDesiredBSize(const ReflowInput& aReflowInput);
 
   
-
   void DistributeBSizeToRows(const ReflowInput& aReflowInput, nscoord aAmount);
 
   void PlaceChild(TableReflowInput& aReflowInput, nsIFrame* aKidFrame,
