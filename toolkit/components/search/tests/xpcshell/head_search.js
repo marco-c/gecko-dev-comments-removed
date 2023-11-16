@@ -476,11 +476,6 @@ let consoleAllowList = [
   
   'property "localProfileDir" is non-configurable and can\'t be deleted',
   'property "profileDir" is non-configurable and can\'t be deleted',
-  
-  
-  "NetworkError: Network request failed",
-  
-  "Unexpected content-type",
 ];
 
 let endConsoleListening = TestUtils.listenForConsoleMessages();
