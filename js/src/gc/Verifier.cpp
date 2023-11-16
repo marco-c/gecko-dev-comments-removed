@@ -1115,7 +1115,6 @@ bool js::gc::CheckWeakMapEntryMarking(const WeakMapBase* map, Cell* key,
 
 #endif  
 
-#ifdef DEBUG
 
 
 bool GCRuntime::isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind) {
@@ -1128,10 +1127,10 @@ bool GCRuntime::isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind) {
         return false;
       }
 
-      return MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
+      return traceKind == JS::TraceKind::Null ||
+             MapAllocToTraceKind(arena->getAllocKind()) == traceKind;
     }
   }
 
   return false;
 }
-#endif  

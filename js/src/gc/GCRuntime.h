@@ -587,11 +587,12 @@ class GCRuntime {
   void checkHashTablesAfterMovingGC();
 #endif
 
-#ifdef DEBUG
   
   
-  bool isPointerWithinTenuredCell(void* ptr, JS::TraceKind traceKind);
+  bool isPointerWithinTenuredCell(
+      void* ptr, JS::TraceKind traceKind = JS::TraceKind::Null);
 
+#ifdef DEBUG
   bool hasZone(Zone* target);
 #endif
 
