@@ -39,6 +39,26 @@ class ContentBlockingNotifier final {
   
   
   
+  enum CanvasFingerprinter {
+    
+    eFingerprintJS,
+    
+    eAkamai,
+    
+    eVariant1,
+    eVariant2,
+    eVariant3,
+    eVariant4,
+    
+    
+    eMaybe
+  };
+
+  
+  
+  
+  
+  
   
   
   
@@ -62,7 +82,10 @@ class ContentBlockingNotifier final {
   static void OnEvent(
       nsIChannel* aChannel, bool aBlocked, uint32_t aRejectedReason,
       const nsACString& aTrackingOrigin,
-      const Maybe<StorageAccessPermissionGrantedReason>& aReason = Nothing());
+      const ::mozilla::Maybe<StorageAccessPermissionGrantedReason>& aReason =
+          Nothing(),
+      const Maybe<CanvasFingerprinter>& aCanvasFingerprinter = Nothing(),
+      const Maybe<bool> aCanvasFingerprinterKnownText = Nothing());
 
   static void ReportUnblockingToConsole(
       dom::BrowsingContext* aBrowsingContext, const nsAString& aTrackingOrigin,
