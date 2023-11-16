@@ -30,6 +30,30 @@ async function joinTwoCurrencyGroups(test, uuid) {
       test, uuid, OTHER_ORIGIN1, {biddingLogicURL: otherBiddingURL});
 }
 
+function createBiddingScriptURLWithCurrency(
+    uuid, currency, currencyInReporting) {
+  return createBiddingScriptURL({
+    bidCurrency: currency,
+    reportWin: `
+        if (browserSignals.bidCurrency !== '${currencyInReporting}')
+          throw 'Wrong currency';
+        sendReportTo('${createBidderReportURL(uuid)}');`
+  });
+}
+
+function createDecisionURLExpectCurrency(
+    uuid, currencyInScore, currencyInReporting) {
+  return createDecisionScriptURL(uuid, {
+    scoreAd: `
+            if (browserSignals.bidCurrency !== '${currencyInScore}')
+              throw 'Wrong currency';`,
+    reportResult: `
+            if (browserSignals.bidCurrency !== '${currencyInReporting}')
+              throw 'Wrong currency';
+            sendReportTo('${createSellerReportURL(uuid)}');`,
+  });
+}
+
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
   await joinInterestGroup(
@@ -40,26 +64,40 @@ subsetTest(promise_test, async test => {
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  await joinInterestGroup(
+  await joinInterestGroup(test, uuid, {
+    biddingLogicURL: createBiddingScriptURLWithCurrency(uuid, 'USD', '???')
+  });
+  await runBasicFledgeAuctionAndNavigate(
       test, uuid,
-      {biddingLogicURL: createBiddingScriptURL({bidCurrency: 'USD'})});
-  await runBasicFledgeTestExpectingWinner(test, uuid);
+      {decisionLogicURL: createDecisionURLExpectCurrency(uuid, 'USD', '???')});
+  await waitForObservedRequests(
+      uuid, [createSellerReportURL(uuid), createBidderReportURL(uuid)]);
 }, 'Returning bid with currency, configuration w/o currency.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  await joinInterestGroup(test, uuid);
-  await runBasicFledgeTestExpectingWinner(
-      test, uuid, {perBuyerCurrencies: {'*': 'USD'}});
+  await joinInterestGroup(test, uuid, {
+    biddingLogicURL: createBiddingScriptURLWithCurrency(uuid, undefined, 'USD')
+  });
+  await runBasicFledgeAuctionAndNavigate(test, uuid, {
+    perBuyerCurrencies: {'*': 'USD'},
+    decisionLogicURL: createDecisionURLExpectCurrency(uuid, '???', 'USD')
+  });
+  await waitForObservedRequests(
+      uuid, [createSellerReportURL(uuid), createBidderReportURL(uuid)]);
 }, 'Returning bid w/o currency, configuration w/currency.');
 
 subsetTest(promise_test, async test => {
   const uuid = generateUuid(test);
-  await joinInterestGroup(
-      test, uuid,
-      {biddingLogicURL: createBiddingScriptURL({bidCurrency: 'USD'})});
-  await runBasicFledgeTestExpectingWinner(
-      test, uuid, {perBuyerCurrencies: {'*': 'USD'}});
+  await joinInterestGroup(test, uuid, {
+    biddingLogicURL: createBiddingScriptURLWithCurrency(uuid, 'USD', 'USD')
+  });
+  await runBasicFledgeAuctionAndNavigate(test, uuid, {
+    perBuyerCurrencies: {'*': 'USD'},
+    decisionLogicURL: createDecisionURLExpectCurrency(uuid, 'USD', 'USD')
+  });
+  await waitForObservedRequests(
+      uuid, [createSellerReportURL(uuid), createBidderReportURL(uuid)]);
 }, 'Returning bid w/currency, configuration w/matching currency.');
 
 subsetTest(promise_test, async test => {
@@ -116,6 +154,7 @@ subsetTest(promise_test, async test => {
   };
   auctionConfigOverrides.perBuyerCurrencies['*'] = 'EUR';
 }, 'Different currencies for different origins, none match.');
+
 
 
 
