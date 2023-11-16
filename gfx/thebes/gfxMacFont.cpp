@@ -178,7 +178,7 @@ bool gfxMacFont::ShapeText(DrawTarget* aDrawTarget, const char16_t* aText,
         
         
         
-        aShapedText->AdjustAdvancesForSyntheticBold(tracking, aOffset, aLength);
+        aShapedText->ApplyTrackingToClusters(tracking, aOffset, aLength);
       }
       return true;
     }
