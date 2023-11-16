@@ -513,7 +513,7 @@ class StyleRuleActor extends Actor {
         
         ancestorData.push({
           type,
-          selectorText: rawRule.selectorText,
+          selectors: CssLogic.getSelectors(rawRule),
         });
         computeDesugaredSelector = true;
       }
