@@ -2,13 +2,8 @@ import mimetypes
 import os
 import json
 import wptserve.stash
-from fledge.tentative.resources.fledge_http_server_util import headersToAscii
 
 from wptserve.utils import isomorphic_decode, isomorphic_encode
-
-
-
-
 
 
 
@@ -43,7 +38,7 @@ def main(request, response):
     with stash.lock:
         
         
-        server_state = stash.take(uuid) or {"trackedRequests": [], "errors": [], "trackedHeaders": None}
+        server_state = stash.take(uuid) or {"trackedRequests": [], "errors": []}
 
         
         
@@ -53,7 +48,7 @@ def main(request, response):
 
         
         
-        if dispatch == b"tracked_data":
+        if dispatch == b"request_list":
             stash.put(uuid, server_state)
             return simple_response(request, response, 200, b"OK",
                                    json.dumps(server_state))
@@ -84,16 +79,6 @@ def main(request, response):
             else:
                 server_state["trackedRequests"].append(
                     request.url + ", body: " + request.body.decode("utf-8"))
-            stash.put(uuid, server_state)
-            return simple_response(request, response, 200, b"OK", b"")
-
-        
-        if dispatch == b"track_headers":
-            if server_state["trackedHeaders"] != None:
-                server_state["errors"].append("Second track_headers request received.")
-            else:
-                server_state["trackedHeaders"] = headersToAscii(request.headers)
-
             stash.put(uuid, server_state)
             return simple_response(request, response, 200, b"OK", b"")
 

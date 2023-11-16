@@ -87,13 +87,9 @@ class WebSocketServer(socketserver.ThreadingMixIn, BaseHTTPServer.HTTPServer):
 
         
         
-        handler_encoding = getattr(options, "handler_encoding", None)
-
-        
-        
         options.dispatcher = dispatch.Dispatcher(
             options.websock_handlers, options.scan_dir,
-            options.allow_handlers_outside_root_dir, handler_encoding)
+            options.allow_handlers_outside_root_dir)
         if options.websock_handlers_map_file:
             _alias_handlers(options.dispatcher,
                             options.websock_handlers_map_file)

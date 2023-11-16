@@ -401,10 +401,6 @@ function moveToDocument(pointerType) {
   var pointerId = pointerType + "Pointer1";
   return new test_driver.Actions()
     .addPointer(pointerId, pointerType)
-    
-    
-    
-    .pointerMove(1, 1)
     .pointerMove(0, 0)
     .send();
 }

@@ -123,7 +123,7 @@ def test_chrome_webdriver_supports_browser():
     assert chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome', 'dev')
     
     chrome.webdriver_version = mock.MagicMock(return_value='70.9.1')
-    assert chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome', 'dev')
+    assert not chrome.webdriver_supports_browser('/usr/bin/chromedriver', '/usr/bin/chrome', 'dev')
 
 
 def test_chromium_webdriver_supports_browser():

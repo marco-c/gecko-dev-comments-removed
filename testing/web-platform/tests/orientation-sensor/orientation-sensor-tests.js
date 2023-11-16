@@ -1,104 +1,89 @@
 'use strict';
 
-async function checkQuaternion(
-    t, sensorType, testDriverName, permissionName, readings) {
-  await test_driver.set_permission({name: permissionName}, 'granted');
-  await test_driver.create_virtual_sensor(testDriverName);
-  const sensor = new sensorType();
-  t.add_cleanup(async () => {
-    sensor.stop();
-    await test_driver.remove_virtual_sensor(testDriverName);
-  });
-  const sensorWatcher =
-      new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
-  sensor.start();
-
-  await sensorWatcher.wait_for('activate');
-  await Promise.all([
-    test_driver.update_virtual_sensor(testDriverName, readings.next().value),
-    sensorWatcher.wait_for('reading')
-  ]);
-  assert_equals(sensor.quaternion.length, 4, 'Quaternion length must be 4');
-  assert_true(
-      sensor.quaternion instanceof Array, 'Quaternion is must be array');
+const kDefaultReading = [
+    [ 1, 0, 0, 0 ]  
+];
+const kRotationMatrix = [1,  0,  0,  0,
+                         0, -1,  0,  0,
+                         0,  0, -1,  0,
+                         0,  0,  0,  1];
+const kReadings = {
+    readings: kDefaultReading,
+    expectedReadings: kDefaultReading,
+    expectedRemappedReadings: [
+        
+        
+        [-0.707107, 0.707107, 0, 0]
+    ]
 };
 
-async function checkPopulateMatrix(
-    t, sensorProvider, sensorType, testDriverName, permissionName, readings) {
-  await test_driver.set_permission({name: permissionName}, 'granted');
-  await test_driver.create_virtual_sensor(testDriverName);
+async function checkQuaternion(t, sensorType) {
   const sensor = new sensorType();
-  t.add_cleanup(async () => {
-    sensor.stop();
-    await test_driver.remove_virtual_sensor(testDriverName);
-  });
-  const sensorWatcher =
-      new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
+  const eventWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+  sensor.start();
+
+  await eventWatcher.wait_for("reading");
+  assert_equals(sensor.quaternion.length, 4);
+  assert_true(sensor.quaternion instanceof Array);
+  sensor.stop();
+};
+
+async function checkPopulateMatrix(t, sensorProvider, sensorType) {
+  const sensor = new sensorType();
+  const eventWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
 
   
-  assert_throws_js(
-      TypeError, () => sensor.populateMatrix(new Float32Array(15)));
+  assert_throws_js(TypeError,
+      () => sensor.populateMatrix(new Float32Array(15)));
 
   
-  assert_throws_dom(
-      'NotReadableError', () => sensor.populateMatrix(new Float32Array(16)));
+  assert_throws_dom('NotReadableError',
+      () => sensor.populateMatrix(new Float32Array(16)));
 
   
-  assert_throws_js(
-      TypeError,
+  assert_throws_js(TypeError,
       
       
-      () => sensor.populateMatrix(new Float32Array(
-          new WebAssembly.Memory({shared: true, initial: 1, maximum: 1})
-              .buffer)));
+      () => sensor.populateMatrix(new Float32Array(new WebAssembly.Memory({ shared:true, initial:1, maximum:1 }).buffer)));
 
   sensor.start();
-  await sensorWatcher.wait_for('activate');
 
-  await Promise.all([
-    test_driver.update_virtual_sensor(testDriverName, readings.next().value),
-    sensorWatcher.wait_for('reading')
-  ]);
+  const mockSensor = await sensorProvider.getCreatedSensor(sensorType.name);
+  await mockSensor.setSensorReading(kDefaultReading);
+
+  await eventWatcher.wait_for("reading");
 
   
   const rotationMatrix32 = new Float32Array(16);
   sensor.populateMatrix(rotationMatrix32);
-  assert_array_approx_equals(rotationMatrix32, kRotationMatrix, kEpsilon);
+  assert_array_equals(rotationMatrix32, kRotationMatrix);
 
   let rotationMatrix64 = new Float64Array(16);
   sensor.populateMatrix(rotationMatrix64);
-  assert_array_approx_equals(rotationMatrix64, kRotationMatrix, kEpsilon);
+  assert_array_equals(rotationMatrix64, kRotationMatrix);
 
   let rotationDOMMatrix = new DOMMatrix();
   sensor.populateMatrix(rotationDOMMatrix);
-  assert_array_approx_equals(
-      rotationDOMMatrix.toFloat64Array(), kRotationMatrix, kEpsilon);
+  assert_array_equals(rotationDOMMatrix.toFloat64Array(), kRotationMatrix);
 
   
   rotationMatrix64.fill(123);
   sensor.populateMatrix(rotationMatrix64);
-  assert_array_approx_equals(rotationMatrix64, kRotationMatrix, kEpsilon);
+  assert_array_equals(rotationMatrix64, kRotationMatrix);
+
+  sensor.stop();
 }
 
-function runOrientationSensorTests(sensorData, readingData) {
-  validate_sensor_data(sensorData);
-  validate_reading_data(readingData);
-
-  const {sensorName, permissionName, testDriverName} = sensorData;
+function runOrientationSensorTests(sensorName) {
   const sensorType = self[sensorName];
 
-  const readings = new RingBuffer(readingData.readings);
-
-  promise_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    return checkQuaternion(
-        t, sensorType, testDriverName, permissionName, readings);
+  sensor_test(async t => {
+    assert_true(sensorName in self);
+    return checkQuaternion(t, sensorType);
   }, `${sensorName}.quaternion return a four-element FrozenArray.`);
 
-  promise_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    return checkPopulateMatrix(
-        t, sensorProvider, sensorType, testDriverName, permissionName,
-        readings);
+  sensor_test(async (t, sensorProvider) => {
+    assert_true(sensorName in self);
+    return checkPopulateMatrix(t, sensorProvider, sensorType);
   }, `${sensorName}.populateMatrix() method works correctly.`);
 }

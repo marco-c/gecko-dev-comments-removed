@@ -31,7 +31,6 @@ const OTHER_ORIGIN7 = 'https://{{hosts[alt][www]}}:{{ports[https][1]}}';
 
 
 
-
 function createTrackerURL(origin, uuid, dispatch, id = null) {
   let url = new URL(`${origin}${BASE_PATH}resources/request-tracker.py`);
   url.searchParams.append('uuid', uuid);
@@ -47,7 +46,6 @@ function createTrackerURL(origin, uuid, dispatch, id = null) {
 function createCleanupURL(uuid) {
   return createTrackerURL(window.location.origin, uuid, 'clean_up');
 }
-
 
 
 
@@ -85,30 +83,6 @@ function generateUuid(test) {
 
 
 
-async function fetchTrackedData(uuid) {
-  let trackedRequestsURL = createTrackerURL(window.location.origin, uuid,
-                                            'tracked_data');
-  let response = await fetch(trackedRequestsURL,
-                             {credentials: 'omit', mode: 'cors'});
-  let trackedData = await response.json();
-
-  
-  if (trackedData.error) {
-    throw trackedRequestsURL + ' fetch failed:' + JSON.stringify(trackedData);
-  }
-
-  
-  if (trackedData.errors.length > 0) {
-    throw 'Errors reported by request-tracker.py:' +
-        JSON.stringify(trackedData.errors);
-  }
-
-  return trackedData;
-}
-
-
-
-
 
 
 
@@ -116,21 +90,36 @@ async function fetchTrackedData(uuid) {
 
 
 async function waitForObservedRequests(uuid, expectedRequests) {
+  let trackedRequestsURL = createTrackerURL(window.location.origin, uuid,
+                                            'request_list');
   
-  
-  expectedRequests = expectedRequests.sort().map((url) => url.replace(uuid, '<uuid>'));
-
+  expectedRequests.sort();
   while (true) {
-    let trackedData = await fetchTrackedData(uuid);
+    let response = await fetch(trackedRequestsURL,
+                               {credentials: 'omit', mode: 'cors'});
+    let trackerData = await response.json();
 
     
-    let trackedRequests = trackedData.trackedRequests.sort().map(
-                              (url) => url.replace(uuid, '<uuid>'));
+    if (trackerData.error) {
+      throw trackedRequestsURL + ' fetch failed:' +
+          JSON.stringify(trackerData);
+    }
+
+    
+    if (trackerData.errors.length > 0) {
+      throw 'Errors reported by request-tracker.py:' +
+          JSON.stringify(trackerData.errors);
+    }
 
     
     
+    let trackedRequests = trackerData.trackedRequests;
     if (trackedRequests.length == expectedRequests.length) {
-      assert_array_equals(trackedRequests, expectedRequests);
+      
+      assert_array_equals(trackedRequests.sort().map((url) =>
+                            url.replace(uuid, '<uuid>')),
+                            expectedRequests.map((url) =>
+                            url.replace(uuid, '<uuid>')));
       break;
     }
 
@@ -138,7 +127,9 @@ async function waitForObservedRequests(uuid, expectedRequests) {
     
     
     for (const trackedRequest of trackedRequests) {
-      assert_in_array(trackedRequest, expectedRequests);
+      assert_in_array(trackedRequest.replace(uuid, '<uuid>'),
+                      expectedRequests.sort().map((url) =>
+                      url.replace(uuid, '<uuid>')));
     }
   }
 }
@@ -160,17 +151,9 @@ function createBiddingScriptURL(params = {}) {
     url.searchParams.append('error', params.error);
   if (params.bid)
     url.searchParams.append('bid', params.bid);
-  if (params.bidCurrency)
-    url.searchParams.append('bidCurrency', params.bidCurrency);
   if (params.allowComponentAuction !== undefined)
     url.searchParams.append('allowComponentAuction', JSON.stringify(params.allowComponentAuction))
   return url.toString();
-}
-
-
-function createBiddingWasmHelperURL(params = {}) {
-  let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
-  return `${origin}${RESOURCE_PATH}bidding-wasmlogic.wasm`;
 }
 
 
@@ -282,25 +265,12 @@ async function runBasicFledgeAuction(test, uuid, auctionConfigOverrides = {}) {
 
 
 
-function expectSuccess(config) {
-  assert_true(config !== null, `Auction unexpectedly had no winner`);
-  assert_true(
-      config instanceof FencedFrameConfig,
-      `Wrong value type returned from auction: ${config.constructor.type}`);
-}
-
-
-
-function expectNoWinner(result) {
-  assert_true(result === null, 'Auction unexpectedly had a winner');
-}
-
-
-
 
 async function runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides = {}) {
   let config = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
-  expectSuccess(config);
+  assert_true(config !== null, `Auction unexpectedly had no winner`);
+  assert_true(config instanceof FencedFrameConfig,
+      `Wrong value type returned from auction: ${config.constructor.type}`);
   return config;
 }
 
@@ -309,7 +279,7 @@ async function runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverri
 async function runBasicFledgeTestExpectingNoWinner(
     test, uuid, auctionConfigOverrides = {}) {
   let result = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
-  expectNoWinner(result);
+  assert_true(result === null, 'Auction unexpectedly had a winner');
 }
 
 
@@ -408,7 +378,7 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
 
   if (reportWinSuccessCondition) {
     reportWin = `if (!(${reportWinSuccessCondition})) {
-                   sendReportTo('${createBidderReportURL(uuid, 'error')}');
+                   sendReportTo('${createSellerReportURL(uuid, 'error')}');
                    return false;
                  }
                  ${reportWin}`;

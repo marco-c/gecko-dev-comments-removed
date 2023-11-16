@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 
 
 
@@ -10,27 +11,17 @@
 
 
 
-import os
+
 import sys
-import re
+import os
+
+
+
 
 sys.path.insert(0, os.path.abspath('../..'))
 
-PROJECT_ROOT = os.path.dirname(__file__)
-
-version_regex = r'__version__ = ["\']([^"\']*)["\']'
-with open(os.path.join(PROJECT_ROOT, '../../', 'src/h2/__init__.py')) as file_:
-    text = file_.read()
-    match = re.search(version_regex, text)
-    version = match.group(1)
 
 
-
-
-project = 'hyper-h2'
-copyright = '2020, Cory Benfield'
-author = 'Cory Benfield'
-release = version
 
 
 
@@ -47,18 +38,63 @@ extensions = [
 templates_path = ['_templates']
 
 
+source_suffix = '.rst'
+
+
+
+
+
+master_doc = 'index'
+
+
+project = u'hyper-h2'
+copyright = u'2015, Cory Benfield'
+
+
+
+
+
+
+version = '3.2.0'
+
+release = '3.2.0'
+
+
+
+
+
+
+
+
+
+
+
 
 
 exclude_patterns = []
 
 
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/', None),
-    'hpack': ('https://hpack.readthedocs.io/en/stable/', None),
-    'pyopenssl': ('https://pyopenssl.readthedocs.org/en/latest/', None),
-}
 
-master_doc = 'index'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pygments_style = 'sphinx'
+
+
+
+
+
 
 
 
@@ -71,4 +107,164 @@ html_theme = 'default'
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 html_static_path = ['_static']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+htmlhelp_basename = 'hyper-h2doc'
+
+
+
+
+latex_elements = {
+
+
+
+
+
+
+
+
+}
+
+
+
+
+latex_documents = [
+  ('index', 'hyper-h2.tex', u'hyper-h2 Documentation',
+   u'Cory Benfield', 'manual'),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+man_pages = [
+    ('index', 'hyper-h2', u'hyper-h2 Documentation',
+     [u'Cory Benfield'], 1)
+]
+
+
+
+
+
+
+
+
+
+
+texinfo_documents = [
+  ('index', 'hyper-h2', u'hyper-h2 Documentation',
+   u'Cory Benfield', 'hyper-h2', 'One line description of project.',
+   'Miscellaneous'),
+]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3.5/', None),
+    'hpack': ('https://python-hyper.org/hpack/en/stable/', None),
+    'pyopenssl': ('https://pyopenssl.readthedocs.org/en/latest/', None),
+}

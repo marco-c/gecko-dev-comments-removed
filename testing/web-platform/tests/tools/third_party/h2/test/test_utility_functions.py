@@ -15,6 +15,12 @@ import h2.exceptions
 from h2.utilities import SizeLimitDict, extract_method_header
 
 
+try:
+    range = xrange
+except NameError:
+    range = range
+
+
 class TestGetNextAvailableStreamID(object):
     """
     Tests for the ``H2Connection.get_next_available_stream_id`` method.
