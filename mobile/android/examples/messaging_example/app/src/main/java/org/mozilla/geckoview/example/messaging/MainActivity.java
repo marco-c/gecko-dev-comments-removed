@@ -11,12 +11,26 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoRuntimeSettings;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 public class MainActivity extends AppCompatActivity {
   private static GeckoRuntime sRuntime;
@@ -70,9 +84,15 @@ public class MainActivity extends AppCompatActivity {
         .accept(
             
             extension ->
-                session
-                    .getWebExtensionController()
-                    .setMessageDelegate(extension, messageDelegate, "browser"),
+                ThreadUtils.runOnUiThread(
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        session
+                            .getWebExtensionController()
+                            .setMessageDelegate(extension, messageDelegate, "browser");
+                      }
+                    }),
             
             e -> Log.e("MessageDelegate", "Error registering extension", e));
 

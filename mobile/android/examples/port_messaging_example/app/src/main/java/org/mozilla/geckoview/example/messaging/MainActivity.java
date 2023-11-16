@@ -12,11 +12,26 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.mozilla.gecko.util.ThreadUtils;
 import org.mozilla.geckoview.GeckoRuntime;
 import org.mozilla.geckoview.GeckoRuntimeSettings;
 import org.mozilla.geckoview.GeckoSession;
 import org.mozilla.geckoview.GeckoView;
 import org.mozilla.geckoview.WebExtension;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 public class MainActivity extends AppCompatActivity {
   private static GeckoRuntime sRuntime;
@@ -69,7 +84,14 @@ public class MainActivity extends AppCompatActivity {
         .ensureBuiltIn("resource://android/assets/messaging/", "messaging@example.com")
         .accept(
             
-            extension -> extension.setMessageDelegate(messageDelegate, "browser"),
+            extension ->
+                ThreadUtils.runOnUiThread(
+                    new Runnable() {
+                      @Override
+                      public void run() {
+                        extension.setMessageDelegate(messageDelegate, "browser");
+                      }
+                    }),
             e -> Log.e("MessageDelegate", "Error registering WebExtension", e));
 
     session.open(sRuntime);
