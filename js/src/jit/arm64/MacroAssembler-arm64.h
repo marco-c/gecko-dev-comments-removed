@@ -578,8 +578,7 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
     
     
-    
-#if defined(JS_SIMULATOR_ARM64) && (defined(__aarch64__) || defined(_M_ARM64))
+#if defined(JS_SIMULATOR_ARM64)
     const bool fjscvt = false;
 #else
     const bool fjscvt =

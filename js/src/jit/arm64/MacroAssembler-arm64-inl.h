@@ -1390,8 +1390,7 @@ void MacroAssembler::branchTruncateDoubleMaybeModUint32(FloatRegister src,
                                                         Label* fail) {
   
   
-  
-#if defined(JS_SIMULATOR_ARM64) && (defined(__aarch64__) || defined(_M_ARM64))
+#if defined(JS_SIMULATOR_ARM64)
   const bool fjscvt = false;
 #else
   const bool fjscvt = CPUHas(vixl::CPUFeatures::kFP, vixl::CPUFeatures::kJSCVT);
