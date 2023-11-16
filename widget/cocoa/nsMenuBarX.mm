@@ -414,6 +414,46 @@ void nsMenuBarX::SetSystemHelpMenu() {
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+static bool RemoveProblematicMenuItems(NSMenu* aMenu) {
+  uint8_t problematicSelectorCount = 2;
+  NSMutableArray* itemsToRemove =
+      [NSMutableArray arrayWithCapacity:problematicSelectorCount];
+
+  for (NSInteger i = 0; i < aMenu.numberOfItems; i++) {
+    NSMenuItem* item = [aMenu itemAtIndex:i];
+
+    if (item.action == @selector(startDictation:) ||
+        item.action == @selector(orderFrontCharacterPalette:)) {
+      [itemsToRemove addObject:@(i)];
+    }
+
+    if (item.hasSubmenu && RemoveProblematicMenuItems(item.submenu)) {
+      return true;
+    }
+  }
+
+  for (NSNumber* index in [itemsToRemove reverseObjectEnumerator]) {
+    [aMenu removeItemAtIndex:index.integerValue];
+  }
+
+  if (itemsToRemove.count >= problematicSelectorCount) {
+    return true;
+  }
+
+  return false;
+}
+
 nsresult nsMenuBarX::Paint() {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
@@ -432,6 +472,8 @@ nsresult nsMenuBarX::Paint() {
   [outgoingMenu removeItemAtIndex:0];
   [mNativeMenu insertItem:appMenuItem atIndex:0];
   [appMenuItem release];
+
+  RemoveProblematicMenuItems(mNativeMenu);
 
   
   NSApp.mainMenu = mNativeMenu;
