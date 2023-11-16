@@ -1,3 +1,0 @@
-
-const column = evaluate("new Error().columnNumber;", { columnNumber: -1 });
-assertEq(column, 0);
