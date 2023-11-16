@@ -1,14 +1,7 @@
 # -*- coding: utf-8 -*-
-from hypothesis import settings, HealthCheck
-
 import pytest
-import helpers
 
-
-settings.register_profile(
-    "travis",
-    settings(suppress_health_check=[HealthCheck.too_slow])
-)
+from . import helpers
 
 
 @pytest.fixture
