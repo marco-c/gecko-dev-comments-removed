@@ -59,7 +59,7 @@ JitScript::JitScript(JSScript* script, Offset fallbackStubsOffset,
 JitScript::~JitScript() {
   
   
-  MOZ_ASSERT(jitScriptStubSpace_.isEmpty());
+  MOZ_ASSERT(allocSitesSpace_.isEmpty());
 
   
   MOZ_ASSERT(!hasBaselineScript());
@@ -320,11 +320,8 @@ void JitScript::Destroy(Zone* zone, JitScript* script) {
 void JitScript::prepareForDestruction(Zone* zone) {
   
   
-  
-  
-  
-  
-  jitScriptStubSpace_.freeAllAfterMinorGC(zone);
+  JSRuntime* rt = zone->runtimeFromMainThread();
+  rt->gc.queueAllLifoBlocksForFreeAfterMinorGC(&allocSitesSpace_);
 
   
   owningScript_ = nullptr;
@@ -670,14 +667,11 @@ gc::AllocSite* JitScript::createAllocSite(JSScript* script) {
     return nullptr;
   }
 
-  ICStubSpace* stubSpace = jitScriptStubSpace();
-  auto* site =
-      static_cast<gc::AllocSite*>(stubSpace->alloc(sizeof(gc::AllocSite)));
+  auto* site = allocSitesSpace_.new_<gc::AllocSite>(script->zone(), script,
+                                                    JS::TraceKind::Object);
   if (!site) {
     return nullptr;
   }
-
-  new (site) gc::AllocSite(script->zone(), script, JS::TraceKind::Object);
 
   allocSites_.infallibleAppend(site);
 
