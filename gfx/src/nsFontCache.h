@@ -15,6 +15,7 @@
 #include "nsISupports.h"
 #include "nsTArray.h"
 #include "nsThreadUtils.h"
+#include "prtime.h"
 
 class gfxUserFontSet;
 class nsAtom;
@@ -48,7 +49,18 @@ class nsFontCache final : public nsIObserver {
   
   
   
-  static const int32_t kMaxCacheEntries = 128;
+  static constexpr int32_t kMaxCacheEntries = 128;
+
+  
+  
+  
+  static constexpr int32_t kFingerprintingCacheMissThreshold = 3 * 20;
+  
+  
+  static constexpr PRTime kFingerprintingTimeout =
+      PRTime(PR_USEC_PER_SEC) * 3;  
+
+  static_assert(kFingerprintingCacheMissThreshold < kMaxCacheEntries);
 
   ~nsFontCache() = default;
 
@@ -80,6 +92,10 @@ class nsFontCache final : public nsIObserver {
    private:
     RefPtr<nsFontCache> mCache;
   };
+
+  PRTime mLastCacheMiss = 0;
+  uint64_t mCacheMisses = 0;
+  bool mReportedProbableFingerprinting = false;
 };
 
 #endif 

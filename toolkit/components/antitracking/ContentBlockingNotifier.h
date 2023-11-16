@@ -39,6 +39,7 @@ class ContentBlockingNotifier final {
   
   
   
+  
   enum CanvasFingerprinter {
     
     eFingerprintJS,
