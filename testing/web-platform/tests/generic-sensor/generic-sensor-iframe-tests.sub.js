@@ -1,152 +1,295 @@
-function send_message_to_iframe(iframe, message, reply) {
-  if (reply === undefined) {
-    reply = 'success';
-  }
-
+function send_message_to_iframe(iframe, message) {
   return new Promise((resolve, reject) => {
     window.addEventListener('message', (e) => {
-      if (e.data.command !== message.command) {
-        reject(`Expected reply with command '${message.command}', got '${e.data.command}' instead`);
+      
+      
+      
+      if (!e.data.command) {
         return;
       }
-      if (e.data.result === reply) {
-        resolve();
-      } else {
-        reject(`Got unexpected reply '${e.data.result}' to command '${message.command}', expected '${reply}'`);
+
+      if (e.data.command !== message.command) {
+        reject(`Expected reply with command '${message.command}', got '${
+            e.data.command}' instead`);
+        return;
       }
-    }, { once: true });
+      if (e.data.error) {
+        reject(e.data.error);
+        return;
+      }
+      resolve(e.data.result);
+    });
     iframe.contentWindow.postMessage(message, '*');
   });
 }
 
-function run_generic_sensor_iframe_tests(sensorName) {
+function run_generic_sensor_iframe_tests(sensorData, readingData) {
+  validate_sensor_data(sensorData);
+  validate_reading_data(readingData);
+
+  const {sensorName, permissionName, testDriverName} = sensorData;
   const sensorType = self[sensorName];
   const featurePolicies = get_feature_policies_for_sensor(sensorName);
 
-  sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const iframe = document.createElement('iframe');
-    iframe.allow = featurePolicies.join(';') + ';';
-    iframe.src = 'https://{{domains[www1]}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
+  
+  
+  
+  
+  
+  
+  
+  const ALLOWED_JITTER_IN_MS = 0.5;
+
+  function sensor_test(func, name, properties) {
+    promise_test(async t => {
+      assert_implements(sensorName in self, `${sensorName} is not supported.`);
+      const readings = new RingBuffer(readingData.readings);
+      return func(t, readings);
+    }, name, properties);
+  }
+
+  sensor_test(async (t, readings) => {
+    
+    
+    
+    
+    
+    
+    class IframeSensorReadingEventWatcher {
+      constructor(test_obj) {
+        this.resolve_ = null;
+
+        window.onmessage = test_obj.step_func((ev) => {
+          
+          if (!ev.data.eventName) {
+            return;
+          }
+
+          assert_equals(
+              ev.data.eventName, 'reading', 'Expecting a "reading" event');
+          assert_true(
+              !!this.resolve_,
+              'Received "reading" event from iframe but was not expecting one');
+          const resolveFunc = this.resolve_;
+          this.resolve_ = null;
+          resolveFunc(ev.data.serializedSensor);
+        });
+      }
+
+      wait_for_reading() {
+        return new Promise(resolve => {
+          this.resolve_ = resolve;
+        });
+      }
+    };
 
     
-    const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
-    document.body.appendChild(iframe);
-    t.add_cleanup(async () => {
-      await send_message_to_iframe(iframe, { command: 'reset_sensor_backend' });
-      iframe.parentNode.removeChild(iframe);
-    });
-    await iframeLoadWatcher.wait_for('load');
-    await send_message_to_iframe(iframe, {command: 'create_sensor',
-                                          type: sensorName});
-
-    
-    window.focus();
+    await test_driver.set_permission({name: permissionName}, 'granted');
+    await test_driver.create_virtual_sensor(testDriverName);
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
-    sensor.start();
-
-    await sensorWatcher.wait_for('reading');
-    const cachedTimeStamp = sensor.timestamp;
-
-    
-    
-    iframe.contentWindow.focus();
-    await send_message_to_iframe(iframe, {command: 'start_sensor'});
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
 
     
-    window.focus();
-    await sensorWatcher.wait_for('reading');
-    assert_greater_than(sensor.timestamp, cachedTimeStamp);
-    sensor.stop();
-
-    
-    await send_message_to_iframe(iframe, {command: 'is_sensor_suspended'}, true);
-  }, `${sensorName}: sensor is suspended and resumed when focus traverses from\
- to cross-origin frame`);
-
-  sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
     const iframe = document.createElement('iframe');
     iframe.allow = featurePolicies.join(';') + ';';
-    iframe.src = 'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
-
-    
+    iframe.src =
+        'https://{{domains[www1]}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
     const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
     t.add_cleanup(async () => {
-      await send_message_to_iframe(iframe, { command: 'reset_sensor_backend' });
+      await send_message_to_iframe(iframe, {command: 'stop_sensor'});
       iframe.parentNode.removeChild(iframe);
     });
     await iframeLoadWatcher.wait_for('load');
-    await send_message_to_iframe(iframe, {command: 'create_sensor',
-                                          type: sensorName});
+    const iframeSensorWatcher = new IframeSensorReadingEventWatcher(t);
+    await send_message_to_iframe(
+        iframe, {command: 'create_sensor', sensorData});
 
+    
+    
+    
+    
     
     window.focus();
-    const sensor = new sensorType({
-      
-      
-      
-      
-      
-      
-      frequency: 15
-    });
-    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
-    sensor.start();
-    await sensorWatcher.wait_for('reading');
-    let cachedTimeStamp = sensor.timestamp;
 
     
     
-    
-    
-    
-    
-    sensor.stop();
-
-    iframe.contentWindow.focus();
     await send_message_to_iframe(iframe, {command: 'start_sensor'});
-
-    
-    window.focus();
     sensor.start();
-    await sensorWatcher.wait_for('reading');
-    assert_greater_than(sensor.timestamp, cachedTimeStamp);
-    cachedTimeStamp = sensor.timestamp;
-    sensor.stop();
+    await sensorWatcher.wait_for('activate');
+    assert_false(
+        await send_message_to_iframe(iframe, {command: 'has_reading'}));
+    assert_false(sensor.hasReading);
 
     
-    await send_message_to_iframe(iframe, {command: 'is_sensor_suspended'}, false);
+    
+    const reading = readings.next().value;
+    await Promise.all([
+      sensorWatcher.wait_for('reading'),
+      test_driver.update_virtual_sensor(testDriverName, reading),
+      
+      
+      
+      
+    ]);
+    assert_true(sensor.hasReading);
+    assert_false(
+        await send_message_to_iframe(iframe, {command: 'has_reading'}));
 
+    
+    const savedMainFrameSensorReadings = serialize_sensor_data(sensor);
+
+    sensor.stop();
+    await send_message_to_iframe(iframe, {command: 'stop_sensor'});
+
+    
+    
     
     iframe.contentWindow.focus();
-    sensor.start();
-    await sensorWatcher.wait_for('reading');
-    assert_greater_than(sensor.timestamp, cachedTimeStamp);
-    sensor.stop();
-  }, `${sensorName}: sensor is not suspended when focus traverses from\
- to same-origin frame`);
 
-  sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    
+    
+    await send_message_to_iframe(iframe, {command: 'start_sensor'});
+    sensor.start();
+    await sensorWatcher.wait_for('activate');
+    assert_false(
+        await send_message_to_iframe(iframe, {command: 'has_reading'}));
+    assert_false(sensor.hasReading);
+
+    const [serializedIframeSensor] = await Promise.all([
+      iframeSensorWatcher.wait_for_reading(),
+      test_driver.update_virtual_sensor(testDriverName, reading),
+    ]);
+    assert_true(await send_message_to_iframe(iframe, {command: 'has_reading'}));
+    assert_false(sensor.hasReading);
+
+    assert_sensor_reading_is_null(sensor);
+
+    assert_sensor_reading_equals(
+        savedMainFrameSensorReadings, serializedIframeSensor,
+        {ignoreTimestamps: true});
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+  }, `${sensorName}: unfocused sensors in cross-origin frames are not updated`);
+
+  sensor_test(async (t, readings) => {
+    
+    await test_driver.set_permission({name: permissionName}, 'granted');
+    await test_driver.create_virtual_sensor(testDriverName);
+    const sensor = new sensorType();
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
+
+    
     const iframe = document.createElement('iframe');
     iframe.allow = featurePolicies.join(';') + ';';
-    iframe.src = 'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
-
+    iframe.src = 'https://{{host}}:{{ports[https][0]}}/resources/blank.html';
     
     const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
+    t.add_cleanup(() => {
+      if (iframeSensor) {
+        iframeSensor.stop();
+      }
+      iframe.parentNode.removeChild(iframe);
+    });
     await iframeLoadWatcher.wait_for('load');
     
     
-    await send_message_to_iframe(iframe, {command: 'create_sensor',
-                                          type: sensorName});
+    
+    
+    const iframeSensor = new iframe.contentWindow[sensorName]();
+    const iframeSensorWatcher =
+        new EventWatcher(t, iframeSensor, ['activate', 'error', 'reading']);
+
+    
+    
+    for (const windowObject of [window, iframe.contentWindow]) {
+      windowObject.focus();
+
+      iframeSensor.start();
+      sensor.start();
+      await Promise.all([
+        iframeSensorWatcher.wait_for('activate'),
+        sensorWatcher.wait_for('activate')
+      ]);
+
+      assert_false(sensor.hasReading);
+      assert_false(iframeSensor.hasReading);
+
+      
+      
+      const reading = readings.next().value;
+      await Promise.all([
+        test_driver.update_virtual_sensor(testDriverName, reading),
+        iframeSensorWatcher.wait_for('reading'),
+        sensorWatcher.wait_for('reading')
+      ]);
+
+      assert_greater_than(
+          iframe.contentWindow.performance.timeOrigin, performance.timeOrigin,
+          'iframe\'s time origin must be higher than the main window\'s');
+
+      
+      
+      
+      
+      const translatedIframeSensorTimestamp = iframeSensor.timestamp +
+          iframe.contentWindow.performance.timeOrigin - performance.timeOrigin;
+      assert_approx_equals(
+          translatedIframeSensorTimestamp, sensor.timestamp,
+          ALLOWED_JITTER_IN_MS);
+
+      
+      assert_sensor_reading_equals(
+          sensor, iframeSensor, {ignoreTimestamps: true});
+
+      
+      
+      iframeSensor.stop();
+      sensor.stop();
+    }
+  }, `${sensorName}: sensors in same-origin frames are updated if one of the frames is focused`);
+
+  promise_test(async t => {
+    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    const iframe = document.createElement('iframe');
+    iframe.allow = featurePolicies.join(';') + ';';
+    iframe.src =
+        'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
+
+    const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
+    document.body.appendChild(iframe);
+    await iframeLoadWatcher.wait_for('load');
+
+    
+    await test_driver.set_permission({name: permissionName}, 'granted');
+    await test_driver.create_virtual_sensor(testDriverName);
     iframe.contentWindow.focus();
     const iframeSensor = new iframe.contentWindow[sensorName]();
-    t.add_cleanup(() => {
+    t.add_cleanup(async () => {
       iframeSensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
     });
     const sensorWatcher = new EventWatcher(t, iframeSensor, ['activate']);
     iframeSensor.start();
@@ -161,24 +304,25 @@ function run_generic_sensor_iframe_tests(sensorName) {
     window.focus();
   }, `${sensorName}: losing a document's frame with an active sensor does not crash`);
 
-  sensor_test(async t => {
+  promise_test(async t => {
     assert_implements(sensorName in self, `${sensorName} is not supported.`);
     const iframe = document.createElement('iframe');
     iframe.allow = featurePolicies.join(';') + ';';
-    iframe.src = 'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
+    iframe.src =
+        'https://{{host}}:{{ports[https][0]}}/generic-sensor/resources/iframe_sensor_handler.html';
 
-    
-    
     const iframeLoadWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
     await iframeLoadWatcher.wait_for('load');
 
     
-    
-    await send_message_to_iframe(iframe, {command: 'create_sensor',
-                                          type: sensorName});
-
+    await test_driver.set_permission({name: permissionName}, 'granted');
+    await test_driver.create_virtual_sensor(testDriverName);
     const iframeSensor = new iframe.contentWindow[sensorName]();
+    t.add_cleanup(async () => {
+      iframeSensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
     assert_not_equals(iframeSensor, null);
 
     
