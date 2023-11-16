@@ -31,6 +31,7 @@ const OTHER_ORIGIN7 = 'https://{{hosts[alt][www]}}:{{ports[https][1]}}';
 
 
 
+
 function createTrackerURL(origin, uuid, dispatch, id = null) {
   let url = new URL(`${origin}${BASE_PATH}resources/request-tracker.py`);
   url.searchParams.append('uuid', uuid);
@@ -46,6 +47,7 @@ function createTrackerURL(origin, uuid, dispatch, id = null) {
 function createCleanupURL(uuid) {
   return createTrackerURL(window.location.origin, uuid, 'clean_up');
 }
+
 
 
 
@@ -280,12 +282,25 @@ async function runBasicFledgeAuction(test, uuid, auctionConfigOverrides = {}) {
 
 
 
+function expectSuccess(config) {
+  assert_true(config !== null, `Auction unexpectedly had no winner`);
+  assert_true(
+      config instanceof FencedFrameConfig,
+      `Wrong value type returned from auction: ${config.constructor.type}`);
+}
+
+
+
+function expectNoWinner(result) {
+  assert_true(result === null, 'Auction unexpectedly had a winner');
+}
+
+
+
 
 async function runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverrides = {}) {
   let config = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
-  assert_true(config !== null, `Auction unexpectedly had no winner`);
-  assert_true(config instanceof FencedFrameConfig,
-      `Wrong value type returned from auction: ${config.constructor.type}`);
+  expectSuccess(config);
   return config;
 }
 
@@ -294,7 +309,7 @@ async function runBasicFledgeTestExpectingWinner(test, uuid, auctionConfigOverri
 async function runBasicFledgeTestExpectingNoWinner(
     test, uuid, auctionConfigOverrides = {}) {
   let result = await runBasicFledgeAuction(test, uuid, auctionConfigOverrides);
-  assert_true(result === null, 'Auction unexpectedly had a winner');
+  expectNoWinner(result);
 }
 
 
