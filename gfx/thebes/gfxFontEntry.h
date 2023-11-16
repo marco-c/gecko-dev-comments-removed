@@ -534,7 +534,7 @@ class gfxFontEntry {
 
   
   
-  float TrackingForCSSPx(float aSize) const;
+  gfxFloat TrackingForCSSPx(gfxFloat aSize) const;
 
   mozilla::gfx::Rect GetFontExtents(float aFUnitScaleFactor) const {
     
