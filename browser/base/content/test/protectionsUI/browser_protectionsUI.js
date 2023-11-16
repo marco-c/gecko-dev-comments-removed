@@ -431,7 +431,14 @@ add_task(async function testToggleSwitchFlow() {
     gProtectionsHandler._protectionsPopup,
     "popuphidden"
   );
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
   document.getElementById("protections-popup-mainView-panel-header").click();
+  AccessibilityUtils.resetEnv();
   await popuphiddenPromise;
   await popupShownPromise;
 
