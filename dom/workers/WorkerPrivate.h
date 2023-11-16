@@ -365,8 +365,6 @@ class WorkerPrivate final
 
   void UnlinkTimeouts();
 
-  bool ModifyBusyCountFromWorker(bool aIncrease);
-
   bool AddChildWorker(WorkerPrivate& aChildWorker);
 
   void RemoveChildWorker(WorkerPrivate& aChildWorker);
@@ -646,12 +644,6 @@ class WorkerPrivate final
     MOZ_DIAGNOSTIC_ASSERT(!mParentEventTargetRef);
     mParentEventTargetRef = aParentEventTargetRef;
   }
-
-  bool ModifyBusyCount(bool aIncrease);
-
-  
-  
-  uint32_t BusyCount() { return mBusyCount; }
 
   
   
@@ -1141,6 +1133,35 @@ class WorkerPrivate final
     return data->mCancelBeforeWorkerScopeConstructed;
   }
 
+  enum class CCFlag : uint8_t {
+    EligibleForWorkerRef,
+    IneligibleForWorkerRef,
+    EligibleForChildWorker,
+    IneligibleForChildWorker,
+    EligibleForTimeout,
+    IneligibleForTimeout,
+    CheckBackgroundActors,
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  void UpdateCCFlag(const CCFlag);
+
+  
+  
+  
+  bool IsEligibleForCC();
+
+  
+  
+  
+  void AdjustNonblockingCCBackgroundActorCount(int32_t aCount);
+
  private:
   WorkerPrivate(
       WorkerPrivate* aParent, const nsAString& aScriptURL, bool aIsChromeWorker,
@@ -1400,10 +1421,6 @@ class WorkerPrivate final
   WorkerStatus mParentStatus MOZ_GUARDED_BY(mMutex);
   WorkerStatus mStatus MOZ_GUARDED_BY(mMutex);
 
-  
-  
-  Atomic<uint64_t> mBusyCount;
-
   TimeStamp mCreationTimeStamp;
   DOMHighResTimeStamp mCreationTimeHighRes;
 
@@ -1463,6 +1480,11 @@ class WorkerPrivate final
 
     uint32_t mNumWorkerRefsPreventingShutdownStart;
     uint32_t mDebuggerEventLoopLevel;
+
+    
+    
+    
+    uint32_t mNonblockingCCBackgroundActorCount;
 
     uint32_t mErrorHandlerRecursionCount;
     int32_t mNextTimeoutId;
@@ -1584,6 +1606,8 @@ class WorkerPrivate final
   nsTArray<nsCOMPtr<nsITargetShutdownTask>> mShutdownTasks
       MOZ_GUARDED_BY(mMutex);
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
+
+  bool mCCFlagSaysEligible MOZ_GUARDED_BY(mMutex){true};
 };
 
 class AutoSyncLoopHolder {

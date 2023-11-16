@@ -69,6 +69,10 @@ void CacheWorkerRef::AddActor(ActorChild& aActor) {
   MOZ_ASSERT(!mActorList.Contains(&aActor));
 
   mActorList.AppendElement(WrapNotNullUnchecked(&aActor));
+  if (mBehavior == eIPCWorkerRef) {
+    MOZ_ASSERT(mIPCWorkerRef);
+    mIPCWorkerRef->SetActorCount(mActorList.Length());
+  }
 
   
   
@@ -89,6 +93,11 @@ void CacheWorkerRef::RemoveActor(ActorChild& aActor) {
 #endif
 
   MOZ_ASSERT(!mActorList.Contains(&aActor));
+
+  if (mBehavior == eIPCWorkerRef) {
+    MOZ_ASSERT(mIPCWorkerRef);
+    mIPCWorkerRef->SetActorCount(mActorList.Length());
+  }
 
   if (mActorList.IsEmpty()) {
     mStrongWorkerRef = nullptr;

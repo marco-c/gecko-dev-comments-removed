@@ -209,9 +209,14 @@ class IPCWorkerRef final : public WorkerRef {
 
   WorkerPrivate* Private() const;
 
+  void SetActorCount(uint32_t aCount);
+
  private:
   IPCWorkerRef(WorkerPrivate* aWorkerPrivate, const char* aName);
   ~IPCWorkerRef();
+
+  
+  uint32_t mActorCount;
 };
 
 

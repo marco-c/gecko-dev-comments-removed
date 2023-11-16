@@ -277,7 +277,7 @@ class ServiceWorkerOp::ServiceWorkerOpRunnable : public WorkerDebuggeeRunnable {
 
   ServiceWorkerOpRunnable(RefPtr<ServiceWorkerOp> aOwner,
                           WorkerPrivate* aWorkerPrivate)
-      : WorkerDebuggeeRunnable(aWorkerPrivate, WorkerThreadModifyBusyCount),
+      : WorkerDebuggeeRunnable(aWorkerPrivate, WorkerThread),
         mOwner(std::move(aOwner)) {
     AssertIsOnMainThread();
     MOZ_ASSERT(mOwner);
@@ -855,9 +855,6 @@ class NotificationEventOp : public ExtendableEventOp,
     aWorkerPrivate->GlobalScope()->AllowWindowInteraction();
     timer.swap(mTimer);
 
-    
-    
-    
     
     
     uint32_t delay = mArgs.get_ServiceWorkerNotificationEventOpArgs()

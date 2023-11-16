@@ -34,24 +34,15 @@ namespace dom {
 class WorkerPrivate;
 
 
-
-
 class WorkerRunnable : public nsIRunnable {
  public:
-  enum TargetAndBusyBehavior {
+  enum Target {
     
     
-    ParentThreadUnchangedBusyCount,
+    ParentThread,
 
     
-    
-    
-    WorkerThreadModifyBusyCount,
-
-    
-    
-    
-    WorkerThreadUnchangedBusyCount
+    WorkerThread,
   };
 
  protected:
@@ -59,7 +50,7 @@ class WorkerRunnable : public nsIRunnable {
   WorkerPrivate* mWorkerPrivate;
 
   
-  TargetAndBusyBehavior mBehavior;
+  Target mTarget;
 
  private:
   
@@ -90,13 +81,12 @@ class WorkerRunnable : public nsIRunnable {
   static WorkerRunnable* FromRunnable(nsIRunnable* aRunnable);
 
  protected:
-  WorkerRunnable(WorkerPrivate* aWorkerPrivate,
-                 TargetAndBusyBehavior aBehavior = WorkerThreadModifyBusyCount)
+  WorkerRunnable(WorkerPrivate* aWorkerPrivate, Target aTarget = WorkerThread)
 #ifdef DEBUG
       ;
 #else
       : mWorkerPrivate(aWorkerPrivate),
-        mBehavior(aBehavior),
+        mTarget(aTarget),
         mCallingCancelWithinRun(false) {
   }
 #endif
@@ -110,8 +100,6 @@ class WorkerRunnable : public nsIRunnable {
 
   nsIGlobalObject* DefaultGlobalObject() const;
 
-  
-  
   
   
   virtual bool PreDispatch(WorkerPrivate* aWorkerPrivate);
@@ -160,7 +148,6 @@ class WorkerRunnable : public nsIRunnable {
   
   
   
-  
   virtual void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
                        bool aRunResult);
 
@@ -175,7 +162,7 @@ class WorkerRunnable : public nsIRunnable {
 class WorkerDebuggerRunnable : public WorkerRunnable {
  protected:
   explicit WorkerDebuggerRunnable(WorkerPrivate* aWorkerPrivate)
-      : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount) {}
+      : WorkerRunnable(aWorkerPrivate, WorkerThread) {}
 
   virtual ~WorkerDebuggerRunnable() = default;
 
@@ -245,17 +232,15 @@ class MainThreadWorkerSyncRunnable : public WorkerSyncRunnable {
 
 
 
-
 class WorkerControlRunnable : public WorkerRunnable {
   friend class WorkerPrivate;
 
  protected:
-  WorkerControlRunnable(WorkerPrivate* aWorkerPrivate,
-                        TargetAndBusyBehavior aBehavior)
+  WorkerControlRunnable(WorkerPrivate* aWorkerPrivate, Target aTarget)
 #ifdef DEBUG
       ;
 #else
-      : WorkerRunnable(aWorkerPrivate, aBehavior) {
+      : WorkerRunnable(aWorkerPrivate, aTarget) {
   }
 #endif
 
@@ -278,7 +263,7 @@ class WorkerControlRunnable : public WorkerRunnable {
 class MainThreadWorkerRunnable : public WorkerRunnable {
  protected:
   explicit MainThreadWorkerRunnable(WorkerPrivate* aWorkerPrivate)
-      : WorkerRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount) {
+      : WorkerRunnable(aWorkerPrivate, WorkerThread) {
     AssertIsOnMainThread();
   }
 
@@ -300,7 +285,7 @@ class MainThreadWorkerRunnable : public WorkerRunnable {
 class MainThreadWorkerControlRunnable : public WorkerControlRunnable {
  protected:
   explicit MainThreadWorkerControlRunnable(WorkerPrivate* aWorkerPrivate)
-      : WorkerControlRunnable(aWorkerPrivate, WorkerThreadUnchangedBusyCount) {}
+      : WorkerControlRunnable(aWorkerPrivate, WorkerThread) {}
 
   virtual ~MainThreadWorkerControlRunnable() = default;
 
@@ -320,11 +305,10 @@ class MainThreadWorkerControlRunnable : public WorkerControlRunnable {
 
 
 
-
 class WorkerSameThreadRunnable : public WorkerRunnable {
  protected:
   explicit WorkerSameThreadRunnable(WorkerPrivate* aWorkerPrivate)
-      : WorkerRunnable(aWorkerPrivate, WorkerThreadModifyBusyCount) {}
+      : WorkerRunnable(aWorkerPrivate, WorkerThread) {}
 
   virtual ~WorkerSameThreadRunnable() = default;
 
@@ -405,8 +389,6 @@ class WorkerProxyToMainThreadRunnable : public Runnable {
 
 
 
-
-
 class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable {
   nsresult mResult;
 
@@ -460,10 +442,9 @@ class MainThreadStopSyncLoopRunnable : public WorkerSyncRunnable {
 
 class WorkerDebuggeeRunnable : public WorkerRunnable {
  protected:
-  WorkerDebuggeeRunnable(
-      WorkerPrivate* aWorkerPrivate,
-      TargetAndBusyBehavior aBehavior = ParentThreadUnchangedBusyCount)
-      : WorkerRunnable(aWorkerPrivate, aBehavior) {}
+  WorkerDebuggeeRunnable(WorkerPrivate* aWorkerPrivate,
+                         Target aTarget = ParentThread)
+      : WorkerRunnable(aWorkerPrivate, aTarget) {}
 
   bool PreDispatch(WorkerPrivate* aWorkerPrivate) override;
 

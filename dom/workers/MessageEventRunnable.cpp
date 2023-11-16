@@ -15,8 +15,8 @@
 namespace mozilla::dom {
 
 MessageEventRunnable::MessageEventRunnable(WorkerPrivate* aWorkerPrivate,
-                                           TargetAndBusyBehavior aBehavior)
-    : WorkerDebuggeeRunnable(aWorkerPrivate, aBehavior),
+                                           Target aTarget)
+    : WorkerDebuggeeRunnable(aWorkerPrivate, aTarget),
       StructuredCloneHolder(CloningSupported, TransferringSupported,
                             StructuredCloneScope::SameProcess) {}
 
@@ -84,7 +84,7 @@ bool MessageEventRunnable::DispatchDOMEvent(JSContext* aCx,
 
 bool MessageEventRunnable::WorkerRun(JSContext* aCx,
                                      WorkerPrivate* aWorkerPrivate) {
-  if (mBehavior == ParentThreadUnchangedBusyCount) {
+  if (mTarget == ParentThread) {
     
     
     if (!aWorkerPrivate->IsAcceptingEvents()) {

@@ -312,7 +312,6 @@ class NotificationWorkerRunnable : public MainThreadWorkerRunnable {
 
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->AssertIsOnWorkerThread();
-    aWorkerPrivate->ModifyBusyCountFromWorker(true);
     
     
     
@@ -322,11 +321,6 @@ class NotificationWorkerRunnable : public MainThreadWorkerRunnable {
       WorkerRunInternal(aWorkerPrivate);
     }
     return true;
-  }
-
-  void PostRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate,
-               bool aRunResult) override {
-    aWorkerPrivate->ModifyBusyCountFromWorker(false);
   }
 
   virtual void WorkerRunInternal(WorkerPrivate* aWorkerPrivate) = 0;
@@ -361,7 +355,6 @@ class ReleaseNotificationRunnable final : public NotificationWorkerRunnable {
 
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->AssertIsOnWorkerThread();
-    aWorkerPrivate->ModifyBusyCountFromWorker(true);
     
     
     
