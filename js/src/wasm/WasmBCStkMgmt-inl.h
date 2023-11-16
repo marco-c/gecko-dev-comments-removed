@@ -1,23 +1,23 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: set ts=8 sts=2 et sw=2 tw=80:
- *
- * Copyright 2016 Mozilla Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-// This is an INTERNAL header for Wasm baseline compiler: inline methods in the
-// compiler for Stk values and value stack management.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #ifndef wasm_wasm_baseline_stk_mgmt_inl_h
 #define wasm_wasm_baseline_stk_mgmt_inl_h
@@ -39,8 +39,8 @@ size_t BaseCompiler::countMemRefsOnStk() {
 
 template <typename T>
 void BaseCompiler::push(T item) {
-  // None of the single-arg Stk constructors create a Stk::MemRef, so
-  // there's no need to increment stackMapGenerator_.memRefsOnStk here.
+  
+  
   stk_.infallibleEmplaceBack(Stk(item));
 }
 
@@ -314,35 +314,35 @@ void BaseCompiler::peekRefAt(uint32_t depth, RegRef dest) {
   loadRef(src, dest);
 }
 
-// Flush all local and register value stack elements to memory.
-//
-// TODO / OPTIMIZE: As this is fairly expensive and causes worse
-// code to be emitted subsequently, it is useful to avoid calling
-// it.  (Bug 1316802)
-//
-// Some optimization has been done already.  Remaining
-// opportunities:
-//
-//  - It would be interesting to see if we can specialize it
-//    before calls with particularly simple signatures, or where
-//    we can do parallel assignment of register arguments, or
-//    similar.  See notes in emitCall().
-//
-//  - Operations that need specific registers: multiply, quotient,
-//    remainder, will tend to sync because the registers we need
-//    will tend to be allocated.  We may be able to avoid that by
-//    prioritizing registers differently (takeLast instead of
-//    takeFirst) but we may also be able to allocate an unused
-//    register on demand to free up one we need, thus avoiding the
-//    sync.  That type of fix would go into needI32().
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void BaseCompiler::sync() {
   size_t start = 0;
   size_t lim = stk_.length();
 
   for (size_t i = lim; i > 0; i--) {
-    // Memory opcodes are first in the enum, single check against MemLast is
-    // fine.
+    
+    
     if (stk_[i - 1].kind() <= Stk::MemLast) {
       start = i;
       break;
@@ -454,21 +454,21 @@ void BaseCompiler::sync() {
   }
 }
 
-// This is an optimization used to avoid calling sync() for
-// setLocal(): if the local does not exist unresolved on the stack
-// then we can skip the sync.
+
+
+
 
 bool BaseCompiler::hasLocal(uint32_t slot) {
   for (size_t i = stk_.length(); i > 0; i--) {
-    // Memory opcodes are first in the enum, single check against MemLast is
-    // fine.
+    
+    
     Stk::Kind kind = stk_[i - 1].kind();
     if (kind <= Stk::MemLast) {
       return false;
     }
 
-    // Local opcodes follow memory opcodes in the enum, single check against
-    // LocalLast is sufficient.
+    
+    
     if (kind <= Stk::LocalLast && stk_[i - 1].slot() == slot) {
       return true;
     }
@@ -478,11 +478,11 @@ bool BaseCompiler::hasLocal(uint32_t slot) {
 
 void BaseCompiler::syncLocal(uint32_t slot) {
   if (hasLocal(slot)) {
-    sync();  // TODO / OPTIMIZE: Improve this?  (Bug 1316817)
+    sync();  
   }
 }
 
-// Push the register r onto the stack.
+
 
 void BaseCompiler::pushAny(AnyReg r) {
   switch (r.tag) {
@@ -556,10 +556,10 @@ void BaseCompiler::pushV128(RegV128 r) {
 }
 #endif
 
-// Push the value onto the stack.  PushI32 can also take uint32_t, and PushI64
-// can take uint64_t; the semantics are the same.  Appropriate sign extension
-// for a 32-bit value on a 64-bit architecture happens when the value is
-// popped, see the definition of moveImm32 below.
+
+
+
+
 
 void BaseCompiler::pushI32(int32_t v) { push(Stk(v)); }
 
@@ -583,9 +583,9 @@ void BaseCompiler::pushF32(float v) { push(Stk(v)); }
 void BaseCompiler::pushV128(V128 v) { push(Stk(v)); }
 #endif
 
-// Push the local slot onto the stack.  The slot will not be read
-// here; it will be read when it is consumed, or when a side
-// effect to the slot forces its value to be saved.
+
+
+
 
 void BaseCompiler::pushLocalI32(uint32_t slot) {
   stk_.infallibleEmplaceBack(Stk(Stk::LocalI32, slot));
@@ -715,8 +715,8 @@ AnyReg BaseCompiler::popAny() {
   }
 }
 
-// Call only from other popI32() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popI32(const Stk& v, RegI32 dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -766,8 +766,8 @@ RegI32 BaseCompiler::popI32(RegI32 specific) {
 }
 
 #ifdef ENABLE_WASM_SIMD
-// Call only from other popV128() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popV128(const Stk& v, RegV128 dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -817,8 +817,8 @@ RegV128 BaseCompiler::popV128(RegV128 specific) {
 }
 #endif
 
-// Call only from other popI64() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popI64(const Stk& v, RegI64 dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -857,10 +857,10 @@ RegI64 BaseCompiler::popI64() {
   return r;
 }
 
-// Note, the stack top can be in one half of "specific" on 32-bit
-// systems.  We can optimize, but for simplicity, if the register
-// does not match exactly, then just force the stack top to memory
-// and then read it back in.
+
+
+
+
 
 RegI64 BaseCompiler::popI64(RegI64 specific) {
   Stk& v = stk_.back();
@@ -877,8 +877,8 @@ RegI64 BaseCompiler::popI64(RegI64 specific) {
   return specific;
 }
 
-// Call only from other popRef() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popRef(const Stk& v, RegRef dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -933,8 +933,8 @@ RegRef BaseCompiler::popRef() {
   return r;
 }
 
-// Call only from other popPtr() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popPtr(const Stk& v, RegPtr dest) {
 #ifdef JS_64BIT
@@ -960,8 +960,8 @@ RegPtr BaseCompiler::popPtr() {
 #endif
 }
 
-// Call only from other popF64() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popF64(const Stk& v, RegF64 dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -1010,8 +1010,8 @@ RegF64 BaseCompiler::popF64(RegF64 specific) {
   return specific;
 }
 
-// Call only from other popF32() variants.
-// v must be the stack top.  May pop the CPU stack.
+
+
 
 void BaseCompiler::popF32(const Stk& v, RegF32 dest) {
   MOZ_ASSERT(&v == &stk_.back());
@@ -1189,7 +1189,7 @@ void BaseCompiler::pop2xRef(RegRef* r0, RegRef* r1) {
   *r0 = popRef();
 }
 
-// Pop to a specific register
+
 RegI32 BaseCompiler::popI32ToSpecific(RegI32 specific) {
   freeI32(specific);
   return popI32(specific);
@@ -1212,12 +1212,12 @@ RegI64 BaseCompiler::popIndexToInt64(IndexType indexType) {
   RegI32 lowPart = popI32();
   RegI32 highPart = needI32();
   masm.xor32(highPart, highPart);
-  return RegI64(Register64(lowPart, highPart));
+  return RegI64(Register64(highPart, lowPart));
 #endif
 }
 
 #ifdef JS_CODEGEN_ARM
-// Pop an I64 as a valid register pair.
+
 RegI64 BaseCompiler::popI64Pair() {
   RegI64 r = needI64Pair();
   popI64ToSpecific(r);
@@ -1225,7 +1225,7 @@ RegI64 BaseCompiler::popI64Pair() {
 }
 #endif
 
-// Pop an I64 but narrow it and return the narrowed part.
+
 RegI32 BaseCompiler::popI64ToI32() {
   RegI64 r = popI64();
   return narrowI64(r);
@@ -1239,7 +1239,7 @@ RegI32 BaseCompiler::popI64ToSpecificI32(RegI32 specific) {
 
 bool BaseCompiler::peekLocal(uint32_t* local) {
   Stk& v = stk_.back();
-  // See hasLocal() for documentation of this logic.
+  
   if (v.kind() <= Stk::MemLast || v.kind() > Stk::LocalLast) {
     return false;
   }
@@ -1325,12 +1325,12 @@ void BaseCompiler::dropValue() {
   popValueStackBy(1);
 }
 
-// Peek at the stack, for calls.
+
 
 Stk& BaseCompiler::peek(uint32_t relativeDepth) {
   return stk_[stk_.length() - 1 - relativeDepth];
 }
-}  // namespace wasm
-}  // namespace js
+}  
+}  
 
-#endif  // wasm_wasm_baseline_stk_mgmt_inl_h
+#endif  
