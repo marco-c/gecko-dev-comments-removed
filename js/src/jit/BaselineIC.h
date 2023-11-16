@@ -235,7 +235,7 @@ class ICFallbackStub final : public ICStub {
   
   inline void addNewStub(ICEntry* icEntry, ICCacheIRStub* stub);
 
-  void discardStubs(JSContext* cx, ICEntry* icEntry);
+  void discardStubs(Zone* zone, ICEntry* icEntry);
 
   void clearUsedByTranspiler() { state_.clearUsedByTranspiler(); }
   void setUsedByTranspiler() { state_.setUsedByTranspiler(); }

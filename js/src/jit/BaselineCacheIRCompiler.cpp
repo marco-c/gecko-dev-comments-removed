@@ -2343,7 +2343,7 @@ bool js::jit::TryFoldingStubs(JSContext* cx, ICFallbackStub* fallback,
   }
 
   
-  fallback->discardStubs(cx, icEntry);
+  fallback->discardStubs(cx->zone(), icEntry);
 
   ICAttachResult result = AttachBaselineCacheIRStub(
       cx, writer, cacheKind, script, icScript, fallback, "StubFold");
