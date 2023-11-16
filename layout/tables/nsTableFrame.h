@@ -576,7 +576,6 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  
   nscoord SetupHeaderFooterChild(const TableReflowInput& aReflowInput,
                                  nsTableRowGroupFrame* aFrame);
 
@@ -658,7 +657,7 @@ class nsTableFrame : public nsContainerFrame {
                   const nsRect& aOriginalKidRect,
                   const nsRect& aOriginalKidInkOverflow);
   void PlaceRepeatedFooter(TableReflowInput& aReflowInput,
-                           nsTableRowGroupFrame* aTfoot, nscoord aFooterHeight);
+                           nsTableRowGroupFrame* aTfoot, nscoord aFooterBSize);
 
  public:
   using RowGroupArray = AutoTArray<nsTableRowGroupFrame*, 8>;
