@@ -3648,6 +3648,9 @@ public class GeckoSession {
     public final boolean pageNotSupported;
 
     
+    public final boolean notEnoughReviews;
+
+    
     @Nullable public final Highlight highlights;
 
     
@@ -3666,6 +3669,7 @@ public class GeckoSession {
       adjustedRating = message.getDoubleObject("adjusted_rating");
       needsAnalysis = message.getBoolean("needs_analysis");
       pageNotSupported = message.getBoolean("page_not_supported");
+      notEnoughReviews = message.getBoolean("not_enough_reviews");
       if (message.getBundle("highlights") == null) {
         highlights = null;
       } else {
@@ -3688,6 +3692,7 @@ public class GeckoSession {
       grade = builder.mGrade;
       needsAnalysis = builder.mNeedsAnalysis;
       pageNotSupported = builder.mPageNotSupported;
+      notEnoughReviews = builder.mNotEnoughReviews;
       highlights = builder.mHighlights;
       lastAnalysisTime = builder.mLastAnalysisTime;
       deletedProduct = builder.mDeletedProduct;
@@ -3702,6 +3707,7 @@ public class GeckoSession {
        Double mAdjustedRating = 0.0;
        Boolean mNeedsAnalysis = false;
        Boolean mPageNotSupported = false;
+       Boolean mNotEnoughReviews = false;
        Highlight mHighlights = new Highlight();
        long mLastAnalysisTime = 0;
        Boolean mDeletedProductReported = false;
@@ -3786,6 +3792,19 @@ public class GeckoSession {
       public @NonNull ReviewAnalysis.Builder pageNotSupported(
           final @NonNull Boolean pageNotSupported) {
         mPageNotSupported = pageNotSupported;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull ReviewAnalysis.Builder notEnoughReviews(
+          final @NonNull Boolean notEnoughReviews) {
+        mNotEnoughReviews = notEnoughReviews;
         return this;
       }
 
