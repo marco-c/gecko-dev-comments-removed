@@ -65,65 +65,76 @@ using mozilla::gfx::DrawTarget;
 using mozilla::gfx::Float;
 using mozilla::gfx::ToDeviceColor;
 
-
-
-
-
 namespace mozilla {
 
-struct TableReflowInput {
-  
-  const ReflowInput& mReflowInput;
-
-  
-  LogicalSize mAvailSize;
-
-  
-  nscoord mICoord;
-
-  
-  nscoord mBCoord;
-
+struct TableReflowInput final {
   TableReflowInput(const ReflowInput& aReflowInput,
                    const LogicalSize& aAvailSize)
-      : mReflowInput(aReflowInput), mAvailSize(aAvailSize) {
+      : mReflowInput(aReflowInput),
+        mWM(aReflowInput.GetWritingMode()),
+        mAvailSize(aAvailSize) {
     MOZ_ASSERT(mReflowInput.mFrame->IsTableFrame(),
                "TableReflowInput should only be created for nsTableFrame");
     nsTableFrame* table =
         static_cast<nsTableFrame*>(mReflowInput.mFrame->FirstInFlow());
-    WritingMode wm = aReflowInput.GetWritingMode();
 
     
     
-    LogicalMargin borderPadding = mReflowInput.ComputedLogicalBorderPadding(wm);
+    LogicalMargin borderPadding =
+        mReflowInput.ComputedLogicalBorderPadding(mWM);
 
-    mICoord = borderPadding.IStart(wm) + table->GetColSpacing(-1);
-    mBCoord = borderPadding.BStart(wm);  
+    mICoord = borderPadding.IStart(mWM) + table->GetColSpacing(-1);
+    mBCoord = borderPadding.BStart(mWM);  
 
     
-    if (NS_UNCONSTRAINEDSIZE != mAvailSize.ISize(wm)) {
+    if (NS_UNCONSTRAINEDSIZE != mAvailSize.ISize(mWM)) {
       int32_t colCount = table->GetColCount();
-      mAvailSize.ISize(wm) -= borderPadding.IStartEnd(wm) +
-                              table->GetColSpacing(-1) +
-                              table->GetColSpacing(colCount);
-      mAvailSize.ISize(wm) = std::max(0, mAvailSize.ISize(wm));
+      mAvailSize.ISize(mWM) -= borderPadding.IStartEnd(mWM) +
+                               table->GetColSpacing(-1) +
+                               table->GetColSpacing(colCount);
+      mAvailSize.ISize(mWM) = std::max(0, mAvailSize.ISize(mWM));
     }
 
-    if (NS_UNCONSTRAINEDSIZE != mAvailSize.BSize(wm)) {
-      mAvailSize.BSize(wm) -= borderPadding.BStartEnd(wm) +
-                              table->GetRowSpacing(-1) +
-                              table->GetRowSpacing(table->GetRowCount());
-      mAvailSize.BSize(wm) = std::max(0, mAvailSize.BSize(wm));
+    if (NS_UNCONSTRAINEDSIZE != mAvailSize.BSize(mWM)) {
+      mAvailSize.BSize(mWM) -= borderPadding.BStartEnd(mWM) +
+                               table->GetRowSpacing(-1) +
+                               table->GetRowSpacing(table->GetRowCount());
+      mAvailSize.BSize(mWM) = std::max(0, mAvailSize.BSize(mWM));
     }
   }
 
-  void ReduceAvailableBSizeBy(WritingMode aWM, nscoord aAmount) {
-    if (mAvailSize.BSize(aWM) == NS_UNCONSTRAINEDSIZE) {
+  
+  void AdvanceBCoord(nscoord aAmount) {
+    mBCoord += aAmount;
+    ReduceAvailableBSizeBy(aAmount);
+  }
+
+  const LogicalSize& AvailableSize() const { return mAvailSize; }
+
+  
+  const ReflowInput& mReflowInput;
+
+  
+  nscoord mICoord = 0;
+
+  
+  nscoord mBCoord = 0;
+
+ private:
+  void ReduceAvailableBSizeBy(nscoord aAmount) {
+    if (mAvailSize.BSize(mWM) == NS_UNCONSTRAINEDSIZE) {
       return;
     }
-    mAvailSize.BSize(aWM) -= aAmount;
-    mAvailSize.BSize(aWM) = std::max(0, mAvailSize.BSize(aWM));
+    mAvailSize.BSize(mWM) -= aAmount;
+    mAvailSize.BSize(mWM) = std::max(0, mAvailSize.BSize(mWM));
   }
+
+  
+  WritingMode mWM;
+
+  
+  
+  LogicalSize mAvailSize;
 };
 
 struct TableBCData final {
@@ -2522,11 +2533,7 @@ void nsTableFrame::PlaceChild(TableReflowInput& aReflowInput,
   InvalidateTableFrame(aKidFrame, aOriginalKidRect, aOriginalKidInkOverflow,
                        isFirstReflow);
 
-  
-  aReflowInput.mBCoord += aKidDesiredSize.BSize(wm);
-
-  
-  aReflowInput.ReduceAvailableBSizeBy(wm, aKidDesiredSize.BSize(wm));
+  aReflowInput.AdvanceBCoord(aKidDesiredSize.BSize(wm));
 }
 
 nsTableFrame::RowGroupArray nsTableFrame::OrderedRowGroups(
@@ -2604,7 +2611,7 @@ nscoord nsTableFrame::SetupHeaderFooterChild(
       LogicalSize(wm, presContext->GetPageSize()).BSize(wm);
 
   
-  LogicalSize availSize = aReflowInput.mAvailSize;
+  LogicalSize availSize = aReflowInput.AvailableSize();
   availSize.BSize(wm) = NS_UNCONSTRAINEDSIZE;
 
   const nsSize containerSize =
@@ -2630,7 +2637,7 @@ void nsTableFrame::PlaceRepeatedFooter(TableReflowInput& aReflowInput,
                                        nscoord aFooterBSize) {
   nsPresContext* presContext = PresContext();
   const WritingMode wm = GetWritingMode();
-  LogicalSize kidAvailSize = aReflowInput.mAvailSize;
+  LogicalSize kidAvailSize = aReflowInput.AvailableSize();
   kidAvailSize.BSize(wm) = aFooterBSize;
 
   const nsSize containerSize =
@@ -2639,7 +2646,7 @@ void nsTableFrame::PlaceRepeatedFooter(TableReflowInput& aReflowInput,
                                 kidAvailSize, Nothing(),
                                 ReflowInput::InitFlag::CallerWillInit);
   InitChildReflowInput(footerReflowInput);
-  aReflowInput.mBCoord += GetRowSpacing(GetRowCount());
+  aReflowInput.AdvanceBCoord(GetRowSpacing(GetRowCount()));
 
   nsRect origTfootRect = aTfoot->GetRect();
   nsRect origTfootInkOverflow = aTfoot->InkOverflowRect();
@@ -2679,7 +2686,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
   
   bool isPaginated =
       presContext->IsPaginated() &&
-      NS_UNCONSTRAINEDSIZE != aReflowInput.mAvailSize.BSize(wm) &&
+      aReflowInput.mReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
       aReflowInput.mReflowInput.mFlags.mTableIsSplittable;
 
   
@@ -2757,7 +2764,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
         break;
       }
 
-      LogicalSize kidAvailSize(aReflowInput.mAvailSize);
+      LogicalSize kidAvailSize = aReflowInput.AvailableSize();
       allowRepeatedFooter = false;
       if (isPaginated && (NS_UNCONSTRAINEDSIZE != kidAvailSize.BSize(wm))) {
         if (kidFrame != thead && kidFrame != tfoot && tfoot &&
@@ -2793,8 +2800,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
                .BEnd(wm) > 0)) {
         kidReflowInput.mFlags.mIsTopOfPage = false;
       }
-      aReflowInput.mBCoord += rowSpacing;
-      aReflowInput.ReduceAvailableBSizeBy(wm, rowSpacing);
+      aReflowInput.AdvanceBCoord(rowSpacing);
       
       
       const bool reorder = kidFrame->GetNextInFlow();
@@ -2932,7 +2938,7 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
         break;
       }
     } else {  
-      aReflowInput.mBCoord += rowSpacing;
+      aReflowInput.AdvanceBCoord(rowSpacing);
       const LogicalRect kidRect =
           kidFrame->GetLogicalNormalRect(wm, containerSize);
       if (kidRect.BStart(wm) != aReflowInput.mBCoord) {
@@ -2945,9 +2951,8 @@ void nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
         
         kidFrame->InvalidateFrameSubtree();
       }
-      aReflowInput.mBCoord += kidRect.BSize(wm);
 
-      aReflowInput.ReduceAvailableBSizeBy(wm, rowSpacing + kidRect.BSize(wm));
+      aReflowInput.AdvanceBCoord(kidRect.BSize(wm));
     }
   }
 
