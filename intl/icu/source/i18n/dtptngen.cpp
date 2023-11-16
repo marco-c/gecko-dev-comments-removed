@@ -29,7 +29,6 @@
 #include "unicode/ustring.h"
 #include "unicode/rep.h"
 #include "unicode/region.h"
-#include "bytesinkutil.h"
 #include "cpputils.h"
 #include "mutex.h"
 #include "umutex.h"
@@ -38,9 +37,7 @@
 #include "locbased.h"
 #include "hash.h"
 #include "uhash.h"
-#include "ulocimp.h"
 #include "uresimp.h"
-#include "ulocimp.h"
 #include "dtptngen_impl.h"
 #include "ucln_in.h"
 #include "charstr.h"
@@ -658,9 +655,17 @@ void DateTimePatternGenerator::getAllowedHourFormats(const Locale &locale, UErro
     if (U_FAILURE(status)) { return; }
 
     const char *language = locale.getLanguage();
-    char baseCountry[8];
-    ulocimp_getRegionForSupplementalData(locale.getName(), false, baseCountry, 8, &status);
-    const char* country = baseCountry;
+    const char *country = locale.getCountry();
+    
+    char regionOverride[8];
+    int32_t regionOverrideLength = locale.getKeywordValue("rg", regionOverride, sizeof(regionOverride), status);
+    if (U_SUCCESS(status) && regionOverrideLength > 0) {
+        country = regionOverride;
+        if (regionOverrideLength > 2) {
+            
+            regionOverride[2] = '\0';
+        }
+    }
     
     Locale maxLocale;  
     if (*language == '\0' || *country == '\0') {
@@ -905,19 +910,22 @@ DateTimePatternGenerator::getCalendarTypeToUse(const Locale& locale, CharString&
             &localStatus);
         localeWithCalendarKey[ULOC_LOCALE_IDENTIFIER_CAPACITY-1] = 0; 
         
-        destination.clear();
-        {
-            CharStringByteSink sink(&destination);
-            ulocimp_getKeywordValue(
-                localeWithCalendarKey,
-                "calendar",
-                sink,
-                &localStatus);
-        }
+        char calendarType[ULOC_KEYWORDS_CAPACITY];
+        int32_t calendarTypeLen = uloc_getKeywordValue(
+            localeWithCalendarKey,
+            "calendar",
+            calendarType,
+            ULOC_KEYWORDS_CAPACITY,
+            &localStatus);
         
         
         if (U_FAILURE(localStatus) && localStatus != U_MISSING_RESOURCE_ERROR) {
             err = localStatus;
+            return;
+        }
+        if (calendarTypeLen > 0 && calendarTypeLen < ULOC_KEYWORDS_CAPACITY) {
+            destination.clear().append(calendarType, -1, err);
+            if (U_FAILURE(err)) { return; }
         }
     }
 }

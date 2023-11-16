@@ -103,25 +103,7 @@ public:
     }
 
     virtual double transformNumber(double number) const override {
-        bool doFloor = getRuleSet() != nullptr;
-        if (!doFloor) {
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            const DecimalFormat* decimalFormat = getNumberFormat();
-            if (decimalFormat == nullptr || decimalFormat->getMaximumFractionDigits() == 0) {
-                doFloor = true;
-            }
-        }
-        
-        if (doFloor) {
+        if (getRuleSet()) {
             return uprv_floor(number / divisor);
         } else {
             return number / divisor;

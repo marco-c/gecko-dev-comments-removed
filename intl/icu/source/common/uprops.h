@@ -379,8 +379,6 @@ enum UPropertySource {
     UPROPS_SRC_INSC,
     UPROPS_SRC_VO,
     UPROPS_SRC_EMOJI,
-    UPROPS_SRC_IDSU,
-    UPROPS_SRC_ID_COMPAT_MATH,
     
     UPROPS_SRC_COUNT
 };

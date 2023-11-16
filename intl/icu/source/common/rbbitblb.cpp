@@ -460,6 +460,21 @@ void RBBITableBuilder::calcChainedFollowPos(RBBINode *tree, RBBINode *endMarkNod
 
         
         
+        
+        
+        if (fRB->fLBCMNoChain) {
+            UChar32 c = this->fRB->fSetBuilder->getFirstChar(endNode->fVal);
+            if (c != -1) {
+                
+                ULineBreak cLBProp = (ULineBreak)u_getIntPropertyValue(c, UCHAR_LINE_BREAK);
+                if (cLBProp == U_LB_COMBINING_MARK) {
+                    continue;
+                }
+            }
+        }
+
+        
+        
         RBBINode *startNode;
         for (startNodeIx = 0; startNodeIx<matchStartNodes.size(); startNodeIx++) {
             startNode = (RBBINode *)matchStartNodes.elementAt(startNodeIx);

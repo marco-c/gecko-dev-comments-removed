@@ -21,9 +21,6 @@ const expected = [
   "get options.extra",
   
   "get this.calendar.fields",
-  "get this.calendar.mergeFields",
-  "get this.calendar.monthDayFromFields",
-  
   "call this.calendar.fields",
   
   "get this.calendar.day",
@@ -44,8 +41,10 @@ const expected = [
   "get fields.year.valueOf",
   "call fields.year.valueOf",
   
+  "get this.calendar.mergeFields",
   "call this.calendar.mergeFields",
   
+  "get this.calendar.monthDayFromFields",
   "call this.calendar.monthDayFromFields",
   
   "get options.overflow.toString",

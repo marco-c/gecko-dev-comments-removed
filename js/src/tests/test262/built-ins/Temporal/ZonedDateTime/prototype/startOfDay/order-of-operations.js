@@ -12,10 +12,9 @@
 const expected = [
   
   "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  
   "call this.timeZone.getOffsetNanosecondsFor",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ];
 const actual = [];
@@ -60,8 +59,10 @@ actual.splice(0);
 springForwardInstance.startOfDay();
 assert.compareArray(actual, expected.concat([
   
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ]), "order of operations with preceding midnight at skipped wall-clock time");
 actual.splice(0); 

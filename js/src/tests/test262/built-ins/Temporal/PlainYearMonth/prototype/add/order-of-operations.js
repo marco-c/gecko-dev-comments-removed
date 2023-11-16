@@ -42,11 +42,7 @@ const expected = [
   "get fields.years.valueOf",
   "call fields.years.valueOf",
   
-  "get this.calendar.dateAdd",
-  "get this.calendar.dateFromFields",
   "get this.calendar.fields",
-  "get this.calendar.yearMonthFromFields",
-  
   "call this.calendar.fields",
   
   "get this.calendar.monthCode",
@@ -54,7 +50,9 @@ const expected = [
   "get this.calendar.year",
   "call this.calendar.year",
   
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
+  "get this.calendar.dateAdd",
   
   "ownKeys options",
   "getOwnPropertyDescriptor options.overflow",
@@ -71,6 +69,7 @@ const expected = [
   "get this.calendar.year",
   "call this.calendar.year",
   
+  "get this.calendar.yearMonthFromFields",
   "call this.calendar.yearMonthFromFields",
   
   "get options.overflow.toString",
@@ -130,10 +129,7 @@ const noCalendarExpected = [
   "get fields.weeks",
   "get fields.years",
   
-  "get this.calendar.dateFromFields",
   "get this.calendar.fields",
-  "get this.calendar.yearMonthFromFields",
-  
   "call this.calendar.fields",
   
   "get this.calendar.monthCode",
@@ -141,7 +137,9 @@ const noCalendarExpected = [
   "get this.calendar.year",
   "call this.calendar.year",
   
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
+  "get this.calendar.dateAdd",
   
   "ownKeys options",
   "getOwnPropertyDescriptor options.overflow",
@@ -156,6 +154,7 @@ const noCalendarExpected = [
   "get this.calendar.year",
   "call this.calendar.year",
   
+  "get this.calendar.yearMonthFromFields",
   "call this.calendar.yearMonthFromFields",
   
   "get options.overflow.toString",

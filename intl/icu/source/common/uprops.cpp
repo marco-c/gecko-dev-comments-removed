@@ -328,53 +328,6 @@ static UBool hasEmojiProperty(const BinaryProperty &, UChar32 c, UProperty which
     return EmojiProps::hasBinaryProperty(c, which);
 }
 
-static UBool isIDSUnaryOperator(const BinaryProperty &, UChar32 c, UProperty ) {
-    
-    return 0x2FFE<=c && c<=0x2FFF;
-}
-
-
-static constexpr UChar32 ID_COMPAT_MATH_CONTINUE[] = {
-    0x00B2, 0x00B3 + 1,
-    0x00B9, 0x00B9 + 1,
-    0x2070, 0x2070 + 1,
-    0x2074, 0x207E + 1,
-    0x2080, 0x208E + 1
-};
-
-
-static constexpr UChar32 ID_COMPAT_MATH_START[] = {
-    0x2202,
-    0x2207,
-    0x221E,
-    0x1D6C1,
-    0x1D6DB,
-    0x1D6FB,
-    0x1D715,
-    0x1D735,
-    0x1D74F,
-    0x1D76F,
-    0x1D789,
-    0x1D7A9,
-    0x1D7C3
-};
-
-static UBool isIDCompatMathStart(const BinaryProperty &, UChar32 c, UProperty ) {
-    if (c < ID_COMPAT_MATH_START[0]) { return false; }  
-    for (UChar32 startChar : ID_COMPAT_MATH_START) {
-        if (c == startChar) { return true; }
-    }
-    return false;
-}
-
-static UBool isIDCompatMathContinue(const BinaryProperty &prop, UChar32 c, UProperty ) {
-    for (int32_t i = 0; i < UPRV_LENGTHOF(ID_COMPAT_MATH_CONTINUE); i += 2) {
-        if (c < ID_COMPAT_MATH_CONTINUE[i]) { return false; }  
-        if (c < ID_COMPAT_MATH_CONTINUE[i + 1]) { return true; }  
-    }
-    return isIDCompatMathStart(prop, c, UCHAR_ID_COMPAT_MATH_START);
-}
-
 static const BinaryProperty binProps[UCHAR_BINARY_LIMIT]={
     
 
@@ -456,9 +409,6 @@ static const BinaryProperty binProps[UCHAR_BINARY_LIMIT]={
     { UPROPS_SRC_EMOJI, 0, hasEmojiProperty },  
     { UPROPS_SRC_EMOJI, 0, hasEmojiProperty },  
     { UPROPS_SRC_EMOJI, 0, hasEmojiProperty },  
-    { UPROPS_SRC_IDSU, 0, isIDSUnaryOperator }, 
-    { UPROPS_SRC_ID_COMPAT_MATH, 0, isIDCompatMathStart }, 
-    { UPROPS_SRC_ID_COMPAT_MATH, 0, isIDCompatMathContinue }, 
 };
 
 U_CAPI UBool U_EXPORT2
@@ -809,19 +759,6 @@ uprops_getSource(UProperty which) {
 
 U_CFUNC void U_EXPORT2
 uprops_addPropertyStarts(UPropertySource src, const USetAdder *sa, UErrorCode *pErrorCode) {
-    if (U_FAILURE(*pErrorCode)) { return; }
-    if (src == UPROPS_SRC_ID_COMPAT_MATH) {
-        
-        for (UChar32 c : ID_COMPAT_MATH_CONTINUE) {
-            sa->add(sa->set, c);
-        }
-        
-        for (UChar32 c : ID_COMPAT_MATH_START) {
-            sa->add(sa->set, c);
-            sa->add(sa->set, c + 1);
-        }
-        return;
-    }
     if (!ulayout_ensureData(*pErrorCode)) { return; }
     const UCPTrie *trie;
     switch (src) {

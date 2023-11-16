@@ -140,6 +140,8 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
     MeasureUnit getOutputUnit(UErrorCode& status) const;
 
+#ifndef U_HIDE_DRAFT_API
+
     
 
 
@@ -148,6 +150,8 @@ class U_I18N_API FormattedNumber : public UMemory, public FormattedValue {
 
 
     UDisplayOptionsNounClass getNounClass(UErrorCode &status) const;
+
+#endif 
 
 #ifndef U_HIDE_INTERNAL_API
 

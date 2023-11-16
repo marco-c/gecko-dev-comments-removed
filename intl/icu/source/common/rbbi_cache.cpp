@@ -158,13 +158,12 @@ void RuleBasedBreakIterator::DictionaryCache::populateDictionary(int32_t startPo
 
         
         
-        const LanguageBreakEngine *lbe = fBI->getLanguageBreakEngine(
-            c, fBI->getLocaleID(ULOC_REQUESTED_LOCALE, status));
+        const LanguageBreakEngine *lbe = fBI->getLanguageBreakEngine(c);
 
         
         
         if (lbe != nullptr) {
-            foundBreakCount += lbe->findBreaks(text, current, rangeEnd, fBreaks, fBI->fIsPhraseBreaking, status);
+            foundBreakCount += lbe->findBreaks(text, rangeStart, rangeEnd, fBreaks, fBI->fIsPhraseBreaking, status);
         }
 
         

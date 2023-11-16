@@ -991,9 +991,6 @@ public:
 
 
 
-
-
-
     static const char* const* U_EXPORT2 getISOLanguages();
 
     
@@ -1113,15 +1110,6 @@ protected:
 
 
     void setFromPOSIXID(const char *posixID);
-    
-
-
-
-
-
-
-
-    void minimizeSubtags(bool favorScript, UErrorCode& status);
 #endif  
 
 private:

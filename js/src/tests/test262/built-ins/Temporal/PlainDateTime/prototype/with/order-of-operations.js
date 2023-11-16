@@ -20,10 +20,7 @@ const expected = [
   "getOwnPropertyDescriptor options.extra",
   "get options.extra",
   
-  "get this.calendar.dateFromFields",
   "get this.calendar.fields",
-  "get this.calendar.mergeFields",
-  
   "call this.calendar.fields",
   
   "get this.calendar.day",
@@ -66,10 +63,12 @@ const expected = [
   "get fields.year.valueOf",
   "call fields.year.valueOf",
   
+  "get this.calendar.mergeFields",
   "call this.calendar.mergeFields",
   
   "get options.overflow.toString",
   "call options.overflow.toString",
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
 ];
 const actual = [];

@@ -32,10 +32,9 @@ const expected = [
   "call plainTimeLike.second.valueOf",
   
   "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  
   "call this.timeZone.getOffsetNanosecondsFor",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ];
 
@@ -79,8 +78,10 @@ actual.splice(0);
 
 springForwardInstance.withPlainTime(plainTimeLike);
 assert.compareArray(actual, expected.concat([
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ]), "order of operations at skipped wall-clock time");
 actual.splice(0); 

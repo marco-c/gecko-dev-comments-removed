@@ -43,16 +43,15 @@ const expected = [
   "call duration.years.valueOf",
   
   "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  "get this.calendar.dateAdd",
-  
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
   
   "get options.overflow",
   "get options.overflow.toString",
   "call options.overflow.toString",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ];
 const actual = [];

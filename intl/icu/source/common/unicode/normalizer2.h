@@ -157,30 +157,8 @@ public:
 
 
 
-
-
-
     static const Normalizer2 *
     getNFKCCasefoldInstance(UErrorCode &errorCode);
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    static const Normalizer2 *
-    getNFKCSimpleCasefoldInstance(UErrorCode &errorCode);
-#endif  
 
     
 

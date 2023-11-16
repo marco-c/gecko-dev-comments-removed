@@ -191,30 +191,8 @@ unorm2_getNFKDInstance(UErrorCode *pErrorCode);
 
 
 
-
-
-
 U_CAPI const UNormalizer2 * U_EXPORT2
 unorm2_getNFKCCasefoldInstance(UErrorCode *pErrorCode);
-
-#ifndef U_HIDE_DRAFT_API
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-U_CAPI const UNormalizer2 * U_EXPORT2
-unorm2_getNFKCSimpleCasefoldInstance(UErrorCode *pErrorCode);
-#endif  
 
 
 

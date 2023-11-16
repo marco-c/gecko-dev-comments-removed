@@ -31,9 +31,81 @@
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
-#include "loclikelysubtags.h"
 #include "ulocimp.h"
 #include "ustr_imp.h"
+
+
+
+
+static const char* const unknownLanguage = "und";
+static const char* const unknownScript = "Zzzz";
+static const char* const unknownRegion = "ZZ";
+
+
+
+
+
+
+
+
+
+static const char*  U_CALLCONV
+findLikelySubtags(const char* localeID,
+                  char* buffer,
+                  int32_t bufferLength,
+                  UErrorCode* err) {
+    const char* result = nullptr;
+
+    if (!U_FAILURE(*err)) {
+        int32_t resLen = 0;
+        const char16_t* s = nullptr;
+        UErrorCode tmpErr = U_ZERO_ERROR;
+        icu::LocalUResourceBundlePointer subtags(ures_openDirect(nullptr, "likelySubtags", &tmpErr));
+        if (U_SUCCESS(tmpErr)) {
+            icu::CharString und;
+            if (localeID != nullptr) {
+                if (*localeID == '\0') {
+                    localeID = unknownLanguage;
+                } else if (*localeID == '_') {
+                    und.append(unknownLanguage, *err);
+                    und.append(localeID, *err);
+                    if (U_FAILURE(*err)) {
+                        return nullptr;
+                    }
+                    localeID = und.data();
+                }
+            }
+            s = ures_getStringByKey(subtags.getAlias(), localeID, &resLen, &tmpErr);
+
+            if (U_FAILURE(tmpErr)) {
+                
+
+
+
+                if (tmpErr != U_MISSING_RESOURCE_ERROR) {
+                    *err = tmpErr;
+                }
+            }
+            else if (resLen >= bufferLength) {
+                
+                *err = U_INTERNAL_PROGRAM_ERROR;
+            }
+            else {
+                u_UCharsToChars(s, buffer, resLen + 1);
+                if (resLen >= 3 &&
+                    uprv_strnicmp(buffer, unknownLanguage, 3) == 0 &&
+                    (resLen == 3 || buffer[3] == '_')) {
+                    uprv_memmove(buffer, buffer + 3, resLen - 3 + 1);
+                }
+                result = buffer;
+            }
+        } else {
+            *err = tmpErr;
+        }
+    }
+
+    return result;
+}
 
 
 
@@ -312,6 +384,57 @@ error:
 
 
 
+static void U_CALLCONV
+createTagString(
+    const char* lang,
+    int32_t langLength,
+    const char* script,
+    int32_t scriptLength,
+    const char* region,
+    int32_t regionLength,
+    const char* trailing,
+    int32_t trailingLength,
+    icu::ByteSink& sink,
+    UErrorCode* err)
+{
+    createTagStringWithAlternates(
+                lang,
+                langLength,
+                script,
+                scriptLength,
+                region,
+                regionLength,
+                trailing,
+                trailingLength,
+                nullptr,
+                sink,
+                err);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -371,6 +494,13 @@ parseTagString(
     *scriptLength = subtagLength;
 
     if (*scriptLength > 0) {
+        if (uprv_strnicmp(script, unknownScript, *scriptLength) == 0) {
+            
+
+
+            *scriptLength = 0;
+        }
+
         
 
 
@@ -387,7 +517,14 @@ parseTagString(
 
     *regionLength = subtagLength;
 
-    if (*regionLength <= 0 && *position != 0 && *position != '@') {
+    if (*regionLength > 0) {
+        if (uprv_strnicmp(region, unknownRegion, *regionLength) == 0) {
+            
+
+
+            *regionLength = 0;
+        }
+    } else if (*position != 0 && *position != '@') {
         
         --position;
     }
@@ -407,6 +544,264 @@ error:
     }
 
     goto exit;
+}
+
+static UBool U_CALLCONV
+createLikelySubtagsString(
+    const char* lang,
+    int32_t langLength,
+    const char* script,
+    int32_t scriptLength,
+    const char* region,
+    int32_t regionLength,
+    const char* variants,
+    int32_t variantsLength,
+    icu::ByteSink& sink,
+    UErrorCode* err) {
+    
+
+
+
+
+
+    char likelySubtagsBuffer[ULOC_FULLNAME_CAPACITY];
+
+    if(U_FAILURE(*err)) {
+        goto error;
+    }
+
+    
+
+
+    if (scriptLength > 0 && regionLength > 0) {
+
+        const char* likelySubtags = nullptr;
+
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink sink(&tagBuffer);
+            createTagString(
+                lang,
+                langLength,
+                script,
+                scriptLength,
+                region,
+                regionLength,
+                nullptr,
+                0,
+                sink,
+                err);
+        }
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        likelySubtags =
+            findLikelySubtags(
+                tagBuffer.data(),
+                likelySubtagsBuffer,
+                sizeof(likelySubtagsBuffer),
+                err);
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        if (likelySubtags != nullptr) {
+            
+
+
+            createTagStringWithAlternates(
+                        nullptr,
+                        0,
+                        nullptr,
+                        0,
+                        nullptr,
+                        0,
+                        variants,
+                        variantsLength,
+                        likelySubtags,
+                        sink,
+                        err);
+            return true;
+        }
+    }
+
+    
+
+
+    if (scriptLength > 0) {
+
+        const char* likelySubtags = nullptr;
+
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink sink(&tagBuffer);
+            createTagString(
+                lang,
+                langLength,
+                script,
+                scriptLength,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                sink,
+                err);
+        }
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        likelySubtags =
+            findLikelySubtags(
+                tagBuffer.data(),
+                likelySubtagsBuffer,
+                sizeof(likelySubtagsBuffer),
+                err);
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        if (likelySubtags != nullptr) {
+            
+
+
+            createTagStringWithAlternates(
+                        nullptr,
+                        0,
+                        nullptr,
+                        0,
+                        region,
+                        regionLength,
+                        variants,
+                        variantsLength,
+                        likelySubtags,
+                        sink,
+                        err);
+            return true;
+        }
+    }
+
+    
+
+
+    if (regionLength > 0) {
+
+        const char* likelySubtags = nullptr;
+
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink sink(&tagBuffer);
+            createTagString(
+                lang,
+                langLength,
+                nullptr,
+                0,
+                region,
+                regionLength,
+                nullptr,
+                0,
+                sink,
+                err);
+        }
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        likelySubtags =
+            findLikelySubtags(
+                tagBuffer.data(),
+                likelySubtagsBuffer,
+                sizeof(likelySubtagsBuffer),
+                err);
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        if (likelySubtags != nullptr) {
+            
+
+
+            createTagStringWithAlternates(
+                        nullptr,
+                        0,
+                        script,
+                        scriptLength,
+                        nullptr,
+                        0,
+                        variants,
+                        variantsLength,
+                        likelySubtags,
+                        sink,
+                        err);
+            return true;
+        }
+    }
+
+    
+
+
+    {
+        const char* likelySubtags = nullptr;
+
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink sink(&tagBuffer);
+            createTagString(
+                lang,
+                langLength,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                sink,
+                err);
+        }
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        likelySubtags =
+            findLikelySubtags(
+                tagBuffer.data(),
+                likelySubtagsBuffer,
+                sizeof(likelySubtagsBuffer),
+                err);
+        if(U_FAILURE(*err)) {
+            goto error;
+        }
+
+        if (likelySubtags != nullptr) {
+            
+
+
+            createTagStringWithAlternates(
+                        nullptr,
+                        0,
+                        script,
+                        scriptLength,
+                        region,
+                        regionLength,
+                        variants,
+                        variantsLength,
+                        likelySubtags,
+                        sink,
+                        err);
+            return true;
+        }
+    }
+
+    return false;
+
+error:
+
+    if (!U_FAILURE(*err)) {
+        *err = U_ILLEGAL_ARGUMENT_ERROR;
+    }
+
+    return false;
 }
 
 #define CHECK_TRAILING_VARIANT_SIZE(trailing, trailingLength) UPRV_BLOCK_MACRO_BEGIN { \
@@ -441,6 +836,7 @@ _uloc_addLikelySubtags(const char* localeID,
     const char* trailing = "";
     int32_t trailingLength = 0;
     int32_t trailingIndex = 0;
+    UBool success = false;
 
     if(U_FAILURE(*err)) {
         goto error;
@@ -466,16 +862,6 @@ _uloc_addLikelySubtags(const char* localeID,
 
         goto error;
     }
-    if (langLength > 3) {
-        if (langLength == 4 && scriptLength == 0) {
-            langLength = 0;
-            scriptLength = 4;
-            uprv_memcpy(script, lang, 4);
-            lang[0] = '\0';
-        } else {
-            goto error;
-        }
-    }
 
     
     while (_isIDSeparator(localeID[trailingIndex])) {
@@ -485,42 +871,30 @@ _uloc_addLikelySubtags(const char* localeID,
     trailingLength = (int32_t)uprv_strlen(trailing);
 
     CHECK_TRAILING_VARIANT_SIZE(trailing, trailingLength);
-    {
-        const icu::XLikelySubtags* likelySubtags = icu::XLikelySubtags::getSingleton(*err);
-        if(U_FAILURE(*err)) {
-            goto error;
-        }
-        
-        
-        icu::Locale l = icu::Locale::createFromName(localeID);
-        if (l.isBogus()) {
-            goto error;
-        }
-        icu::LSR lsr = likelySubtags->makeMaximizedLsrFrom(l, true, *err);
-        if(U_FAILURE(*err)) {
-            goto error;
-        }
-        const char* language = lsr.language;
-        if (uprv_strcmp(language, "und") == 0) {
-            language = "";
-        }
-        createTagStringWithAlternates(
-            language,
-            (int32_t)uprv_strlen(language),
-            lsr.script,
-            (int32_t)uprv_strlen(lsr.script),
-            lsr.region,
-            (int32_t)uprv_strlen(lsr.region),
+
+    success =
+        createLikelySubtagsString(
+            lang,
+            langLength,
+            script,
+            scriptLength,
+            region,
+            regionLength,
             trailing,
             trailingLength,
-            nullptr,
             sink,
             err);
-        if(U_FAILURE(*err)) {
-            goto error;
-        }
+
+    if (!success) {
+        const int32_t localIDLength = (int32_t)uprv_strlen(localeID);
+
+        
+
+
+        sink.Append(localeID, localIDLength);
     }
-    return true;
+
+    return success;
 
 error:
 
@@ -539,7 +913,6 @@ static UBool _ulocimp_addLikelySubtags(const char*, icu::ByteSink&, UErrorCode*)
 static void
 _uloc_minimizeSubtags(const char* localeID,
                       icu::ByteSink& sink,
-                      bool favorScript,
                       UErrorCode* err) {
     icu::CharString maximizedTagBuffer;
 
@@ -552,6 +925,7 @@ _uloc_minimizeSubtags(const char* localeID,
     const char* trailing = "";
     int32_t trailingLength = 0;
     int32_t trailingIndex = 0;
+    UBool successGetMax = false;
 
     if(U_FAILURE(*err)) {
         goto error;
@@ -590,38 +964,213 @@ _uloc_minimizeSubtags(const char* localeID,
     CHECK_TRAILING_VARIANT_SIZE(trailing, trailingLength);
 
     {
-        const icu::XLikelySubtags* likelySubtags = icu::XLikelySubtags::getSingleton(*err);
+        icu::CharString base;
+        {
+            icu::CharStringByteSink baseSink(&base);
+            createTagString(
+                lang,
+                langLength,
+                script,
+                scriptLength,
+                region,
+                regionLength,
+                nullptr,
+                0,
+                baseSink,
+                err);
+        }
+
+        
+
+
+
+        {
+            icu::CharStringByteSink maxSink(&maximizedTagBuffer);
+            successGetMax = _ulocimp_addLikelySubtags(base.data(), maxSink, err);
+        }
+    }
+
+    if(U_FAILURE(*err)) {
+        goto error;
+    }
+
+    if (!successGetMax) {
+        
+
+
+        const int32_t localeIDLength = (int32_t)uprv_strlen(localeID);
+        sink.Append(localeID, localeIDLength);
+        return;
+    }
+
+    
+    
+    langLength = sizeof(lang);
+    scriptLength = sizeof(script);
+    regionLength = sizeof(region);
+    parseTagString(
+        maximizedTagBuffer.data(),
+        lang,
+        &langLength,
+        script,
+        &scriptLength,
+        region,
+        &regionLength,
+        err);
+    if(U_FAILURE(*err)) {
+        goto error;
+    }
+
+    
+
+
+    {
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink tagSink(&tagBuffer);
+            createLikelySubtagsString(
+                lang,
+                langLength,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                tagSink,
+                err);
+        }
+
         if(U_FAILURE(*err)) {
             goto error;
         }
-        icu::LSR lsr = likelySubtags->minimizeSubtags(
-            {lang, langLength},
-            {script, scriptLength},
-            {region, regionLength},
-            favorScript,
-            *err);
+        else if (!tagBuffer.isEmpty() &&
+                 uprv_strnicmp(
+                    maximizedTagBuffer.data(),
+                    tagBuffer.data(),
+                    tagBuffer.length()) == 0) {
+
+            createTagString(
+                        lang,
+                        langLength,
+                        nullptr,
+                        0,
+                        nullptr,
+                        0,
+                        trailing,
+                        trailingLength,
+                        sink,
+                        err);
+            return;
+        }
+    }
+
+    
+
+
+    if (regionLength > 0) {
+
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink tagSink(&tagBuffer);
+            createLikelySubtagsString(
+                lang,
+                langLength,
+                nullptr,
+                0,
+                region,
+                regionLength,
+                nullptr,
+                0,
+                tagSink,
+                err);
+        }
+
         if(U_FAILURE(*err)) {
             goto error;
         }
-        const char* language = lsr.language;
-        if (uprv_strcmp(language, "und") == 0) {
-            language = "";
+        else if (!tagBuffer.isEmpty() &&
+                 uprv_strnicmp(
+                    maximizedTagBuffer.data(),
+                    tagBuffer.data(),
+                    tagBuffer.length()) == 0) {
+
+            createTagString(
+                        lang,
+                        langLength,
+                        nullptr,
+                        0,
+                        region,
+                        regionLength,
+                        trailing,
+                        trailingLength,
+                        sink,
+                        err);
+            return;
         }
-        createTagStringWithAlternates(
-            language,
-            (int32_t)uprv_strlen(language),
-            lsr.script,
-            (int32_t)uprv_strlen(lsr.script),
-            lsr.region,
-            (int32_t)uprv_strlen(lsr.region),
-            trailing,
-            trailingLength,
-            nullptr,
-            sink,
-            err);
+    }
+
+    
+
+
+
+
+    if (scriptLength > 0) {
+        icu::CharString tagBuffer;
+        {
+            icu::CharStringByteSink tagSink(&tagBuffer);
+            createLikelySubtagsString(
+                lang,
+                langLength,
+                script,
+                scriptLength,
+                nullptr,
+                0,
+                nullptr,
+                0,
+                tagSink,
+                err);
+        }
+
         if(U_FAILURE(*err)) {
             goto error;
         }
+        else if (!tagBuffer.isEmpty() &&
+                 uprv_strnicmp(
+                    maximizedTagBuffer.data(),
+                    tagBuffer.data(),
+                    tagBuffer.length()) == 0) {
+
+            createTagString(
+                        lang,
+                        langLength,
+                        script,
+                        scriptLength,
+                        nullptr,
+                        0,
+                        trailing,
+                        trailingLength,
+                        sink,
+                        err);
+            return;
+        }
+    }
+
+    {
+        
+
+
+        createTagString(
+                    lang,
+                    langLength,
+                    script,
+                    scriptLength,
+                    region,
+                    regionLength,
+                    trailing,
+                    trailingLength,
+                    sink,
+                    err);
         return;
     }
 
@@ -629,6 +1178,31 @@ error:
 
     if (!U_FAILURE(*err)) {
         *err = U_ILLEGAL_ARGUMENT_ERROR;
+    }
+}
+
+static int32_t
+do_canonicalize(const char*    localeID,
+         char* buffer,
+         int32_t bufferCapacity,
+         UErrorCode* err)
+{
+    int32_t canonicalizedSize = uloc_canonicalize(
+        localeID,
+        buffer,
+        bufferCapacity,
+        err);
+
+    if (*err == U_STRING_NOT_TERMINATED_WARNING ||
+        *err == U_BUFFER_OVERFLOW_ERROR) {
+        return canonicalizedSize;
+    }
+    else if (U_FAILURE(*err)) {
+
+        return -1;
+    }
+    else {
+        return canonicalizedSize;
     }
 }
 
@@ -665,13 +1239,14 @@ static UBool
 _ulocimp_addLikelySubtags(const char* localeID,
                           icu::ByteSink& sink,
                           UErrorCode* status) {
-    icu::CharString localeBuffer;
-    {
-        icu::CharStringByteSink localeSink(&localeBuffer);
-        ulocimp_canonicalize(localeID, localeSink, status);
-    }
+    PreflightingLocaleIDBuffer localeBuffer;
+    do {
+        localeBuffer.requestedCapacity = do_canonicalize(localeID, localeBuffer.getBuffer(),
+            localeBuffer.getCapacity(), status);
+    } while (localeBuffer.needToTryAgain(status));
+    
     if (U_SUCCESS(*status)) {
-        return _uloc_addLikelySubtags(localeBuffer.data(), sink, status);
+        return _uloc_addLikelySubtags(localeBuffer.getBuffer(), sink, status);
     } else {
         return false;
     }
@@ -696,7 +1271,7 @@ uloc_minimizeSubtags(const char* localeID,
     icu::CheckedArrayByteSink sink(
             minimizedLocaleID, minimizedLocaleIDCapacity);
 
-    ulocimp_minimizeSubtags(localeID, sink, false, status);
+    ulocimp_minimizeSubtags(localeID, sink, status);
     int32_t reslen = sink.NumberOfBytesAppended();
 
     if (U_FAILURE(*status)) {
@@ -716,14 +1291,14 @@ uloc_minimizeSubtags(const char* localeID,
 U_CAPI void U_EXPORT2
 ulocimp_minimizeSubtags(const char* localeID,
                         icu::ByteSink& sink,
-                        bool favorScript,
                         UErrorCode* status) {
-    icu::CharString localeBuffer;
-    {
-        icu::CharStringByteSink localeSink(&localeBuffer);
-        ulocimp_canonicalize(localeID, localeSink, status);
-    }
-    _uloc_minimizeSubtags(localeBuffer.data(), sink, favorScript, status);
+    PreflightingLocaleIDBuffer localeBuffer;
+    do {
+        localeBuffer.requestedCapacity = do_canonicalize(localeID, localeBuffer.getBuffer(),
+            localeBuffer.getCapacity(), status);
+    } while (localeBuffer.needToTryAgain(status));
+    
+    _uloc_minimizeSubtags(localeBuffer.getBuffer(), sink, status);
 }
 
 
@@ -799,26 +1374,16 @@ ulocimp_getRegionForSupplementalData(const char *localeID, UBool inferRegion,
     UErrorCode rgStatus = U_ZERO_ERROR;
 
     
-    icu::CharString rg;
-    {
-        icu::CharStringByteSink sink(&rg);
-        ulocimp_getKeywordValue(localeID, "rg", sink, &rgStatus);
-    }
-    int32_t rgLen = rg.length();
-    if (U_FAILURE(rgStatus) || rgLen < 3 || rgLen > 7) {
+    int32_t rgLen = uloc_getKeywordValue(localeID, "rg", rgBuf, ULOC_RG_BUFLEN, &rgStatus);
+    if (U_FAILURE(rgStatus) || rgLen != 6) {
         rgLen = 0;
     } else {
         
-        const char* const data = rg.data();
-        if (uprv_isASCIILetter(data[0])) {
-            rgLen = 2;
-            rgBuf[0] = uprv_toupper(data[0]);
-            rgBuf[1] = uprv_toupper(data[1]);
-        } else {
-            
-            rgLen = 3;
-            uprv_memcpy(rgBuf, data, rgLen);
+        char *rgPtr = rgBuf;
+        for (; *rgPtr!= 0; rgPtr++) {
+            *rgPtr = uprv_toupper(*rgPtr);
         }
+        rgLen = (uprv_strcmp(rgBuf+2, "ZZZZ") == 0)? 2: 0;
     }
 
     if (rgLen == 0) {

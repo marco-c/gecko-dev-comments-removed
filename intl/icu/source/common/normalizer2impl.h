@@ -983,6 +983,5 @@ unorm_getFCD16(UChar32 c);
 
 
 
-
 #endif  
 #endif  

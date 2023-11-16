@@ -34,9 +34,7 @@ const expected = [
   "has date.calendar.yearMonthFromFields",
   "has date.calendar.yearOfWeek",
   
-  "get date.calendar.dateFromFields",
   "get date.calendar.fields",
-  
   "call date.calendar.fields",
   
   "get date.day",
@@ -52,6 +50,7 @@ const expected = [
   "get date.year.valueOf",
   "call date.year.valueOf",
   
+  "get date.calendar.dateFromFields",
   "call date.calendar.dateFromFields",
   
   "get duration.days",

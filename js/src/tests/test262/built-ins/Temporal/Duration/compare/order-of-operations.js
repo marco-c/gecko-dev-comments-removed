@@ -110,8 +110,6 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  
-  "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
   "get options.relativeTo.day",
@@ -134,6 +132,7 @@ const expectedOpsForPlainRelativeTo = expected.concat([
   "get options.relativeTo.year",
   "get options.relativeTo.year.valueOf",
   "call options.relativeTo.year.valueOf",
+  "get options.relativeTo.calendar.dateFromFields",
   "call options.relativeTo.calendar.dateFromFields",
 ]);
 
@@ -177,12 +176,13 @@ actual.splice(0);
 
 const expectedOpsForPlainDayBalancing = expectedOpsForPlainRelativeTo.concat(
   [
-    "get options.relativeTo.calendar.dateAdd",
     
+    "get options.relativeTo.calendar.dateAdd",   
     "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
     
+    "get options.relativeTo.calendar.dateAdd",   
     "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
     "call options.relativeTo.calendar.dateAdd",  
@@ -220,7 +220,6 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "has options.relativeTo.calendar.year",
   "has options.relativeTo.calendar.yearMonthFromFields",
   "has options.relativeTo.calendar.yearOfWeek",
-  "get options.relativeTo.calendar.dateFromFields",
   "get options.relativeTo.calendar.fields",
   "call options.relativeTo.calendar.fields",
   "get options.relativeTo.day",
@@ -257,13 +256,14 @@ const expectedOpsForZonedRelativeTo = expected.concat([
   "get options.relativeTo.year",
   "get options.relativeTo.year.valueOf",
   "call options.relativeTo.year.valueOf",
+  "get options.relativeTo.calendar.dateFromFields",
   "call options.relativeTo.calendar.dateFromFields",
   "has options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "has options.relativeTo.timeZone.getPossibleInstantsFor",
   "has options.relativeTo.timeZone.id",
-  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "get options.relativeTo.timeZone.getPossibleInstantsFor",
   "call options.relativeTo.timeZone.getPossibleInstantsFor",
+  "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
   "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
 ]);
 
@@ -292,10 +292,13 @@ Temporal.Duration.compare(
 assert.compareArray(
   actual,
   expectedOpsForZonedRelativeTo.concat([
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
     "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
     
+    "get options.relativeTo.timeZone.getPossibleInstantsFor",
     "call options.relativeTo.timeZone.getPossibleInstantsFor",
     
+    "get options.relativeTo.timeZone.getPossibleInstantsFor",
     "call options.relativeTo.timeZone.getPossibleInstantsFor",
   ]),
   "order of operations with ZonedDateTime relativeTo and no calendar units except days"
@@ -324,13 +327,17 @@ Temporal.Duration.compare(
 assert.compareArray(
   actual,
   expectedOpsForZonedRelativeTo.concat([
-    "get options.relativeTo.calendar.dateAdd",
+    "get options.relativeTo.timeZone.getOffsetNanosecondsFor",
     "call options.relativeTo.timeZone.getOffsetNanosecondsFor",
     
+    "get options.relativeTo.calendar.dateAdd",
     "call options.relativeTo.calendar.dateAdd",
+    "get options.relativeTo.timeZone.getPossibleInstantsFor",
     "call options.relativeTo.timeZone.getPossibleInstantsFor",
     
+    "get options.relativeTo.calendar.dateAdd",
     "call options.relativeTo.calendar.dateAdd",
+    "get options.relativeTo.timeZone.getPossibleInstantsFor",
     "call options.relativeTo.timeZone.getPossibleInstantsFor",
   ]),
   "order of operations with ZonedDateTime relativeTo and calendar units"

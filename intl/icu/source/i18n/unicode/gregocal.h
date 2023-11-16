@@ -541,8 +541,24 @@ public:
 
 
 
+
+    int32_t yearLength(int32_t year) const;
+    
+    
+
+
+
+
     int32_t yearLength(void) const;
 
+    
+
+
+
+
+
+
+    void pinDayOfMonth(void);
 #endif  
 
     

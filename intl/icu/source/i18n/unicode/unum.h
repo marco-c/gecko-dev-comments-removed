@@ -1107,6 +1107,7 @@ typedef enum UNumberFormatAttribute {
 
 } UNumberFormatAttribute;
 
+#ifndef U_HIDE_DRAFT_API
 
 
 
@@ -1124,6 +1125,7 @@ typedef enum UNumberFormatAttribute {
 U_CAPI bool U_EXPORT2
 unum_hasAttribute(const UNumberFormat*          fmt,
           UNumberFormatAttribute  attr);
+#endif 
 
 
 

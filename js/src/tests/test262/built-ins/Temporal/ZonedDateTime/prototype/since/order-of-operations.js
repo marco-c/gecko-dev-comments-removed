@@ -33,7 +33,6 @@ const expected = [
   "has other.calendar.year",
   "has other.calendar.yearMonthFromFields",
   "has other.calendar.yearOfWeek",
-  "get other.calendar.dateFromFields",
   "get other.calendar.fields",
   "call other.calendar.fields",
   "get other.day",
@@ -73,6 +72,7 @@ const expected = [
   "has other.timeZone.getOffsetNanosecondsFor",
   "has other.timeZone.getPossibleInstantsFor",
   "has other.timeZone.id",
+  "get other.calendar.dateFromFields",
   "call other.calendar.dateFromFields",
   "get other.timeZone.getPossibleInstantsFor",
   "call other.timeZone.getPossibleInstantsFor",
@@ -224,7 +224,6 @@ assert.compareArray(actual, [
   "has other.calendar.year",
   "has other.calendar.yearMonthFromFields",
   "has other.calendar.yearOfWeek",
-  "get other.calendar.dateFromFields",
   "get other.calendar.fields",
   "call other.calendar.fields",
   "get other.day",
@@ -264,6 +263,7 @@ assert.compareArray(actual, [
   "has other.timeZone.getOffsetNanosecondsFor",
   "has other.timeZone.getPossibleInstantsFor",
   "has other.timeZone.id",
+  "get other.calendar.dateFromFields",
   "call other.calendar.dateFromFields",
   "get other.timeZone.getPossibleInstantsFor",
   "call other.timeZone.getPossibleInstantsFor",
@@ -300,16 +300,16 @@ assert.compareArray(actual, [
   "get other.timeZone.id",
   
   "get this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
+  "get this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
   "get this.timeZone.getPossibleInstantsFor",
-  "get this.calendar.dateAdd",
-  "get this.calendar.dateUntil",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
   "call this.timeZone.getPossibleInstantsFor",
 ], "order of operations with identical wall-clock times and largestUnit a calendar unit");
 actual.splice(0); 
@@ -321,34 +321,43 @@ const expectedOpsForCalendarDifference = [
   "get other.timeZone.id",
   
   "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  "get this.calendar.dateAdd",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
+  "get this.timeZone.getOffsetNanosecondsFor",
+  "call this.timeZone.getOffsetNanosecondsFor",
+  
   "get this.calendar.dateUntil",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
-  "call this.timeZone.getOffsetNanosecondsFor",
-  
   "call this.calendar.dateUntil",
   
+  "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
   
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ];
 
 const expectedOpsForCalendarRounding = [
   
+  "get this.calendar.dateAdd",
   "call this.calendar.dateAdd",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
   
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ];
 
@@ -359,8 +368,10 @@ actual.splice(0);
 
 
 const expectedOpsForYearRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
+  "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
+  "get this.calendar.dateUntil",   
   "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
 ]);  
@@ -370,6 +381,7 @@ actual.splice(0);
 
 
 const expectedOpsForMonthRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
+  "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
@@ -380,6 +392,7 @@ actual.splice(0);
 
 
 const expectedOpsForWeekRounding = expected.concat(expectedOpsForCalendarDifference, expectedOpsForCalendarRounding, [
+  "get this.calendar.dateAdd",   
   "call this.calendar.dateAdd",  
 ]);  
 instance.since(otherDateTimePropertyBag, createOptionsObserver({ smallestUnit: "weeks" }));

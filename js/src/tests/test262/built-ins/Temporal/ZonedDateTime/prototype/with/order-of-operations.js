@@ -24,15 +24,10 @@ const expected = [
   "getOwnPropertyDescriptor options.extra",
   "get options.extra",
   
-  "get this.calendar.dateFromFields",
-  "get this.calendar.fields",
-  "get this.calendar.mergeFields",
-  
   "get this.timeZone.getOffsetNanosecondsFor",
-  "get this.timeZone.getPossibleInstantsFor",
-  
   "call this.timeZone.getOffsetNanosecondsFor",
   
+  "get this.calendar.fields",
   "call this.calendar.fields",
   
   "get this.calendar.day",
@@ -78,6 +73,7 @@ const expected = [
   "get fields.year.valueOf",
   "call fields.year.valueOf",
   
+  "get this.calendar.mergeFields",
   "call this.calendar.mergeFields",
   
   "get options.disambiguation.toString",
@@ -86,9 +82,12 @@ const expected = [
   "call options.offset.toString",
   "get options.overflow.toString",
   "call options.overflow.toString",
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
   
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
+  "get this.timeZone.getOffsetNanosecondsFor",
   "call this.timeZone.getOffsetNanosecondsFor",
 ];
 const actual = [];
@@ -170,6 +169,7 @@ dstInstance.with(springForwardFields, options);
 assert.compareArray(actual, expected.concat([
   
   "call this.timeZone.getOffsetNanosecondsFor",
+  "get this.timeZone.getPossibleInstantsFor",
   "call this.timeZone.getPossibleInstantsFor",
 ]), "order of operations at skipped wall-clock time");
 actual.splice(0); 

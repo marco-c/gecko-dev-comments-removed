@@ -50,27 +50,26 @@ const expected = [
   "has calendar.yearMonthFromFields",
   "has calendar.yearOfWeek",
   
-  "get calendar.dateFromFields",
   "get calendar.fields",
-  
   "call calendar.fields",
   
   "has timeZone.getOffsetNanosecondsFor",
   "has timeZone.getPossibleInstantsFor",
   "has timeZone.id",
   
+  "get calendar.dateFromFields",
   "call calendar.dateFromFields",
-  
-  "get timeZone.getPossibleInstantsFor",
-  
-  "call timeZone.getPossibleInstantsFor",
 ];
 
 const expectedSpringForward = expected.concat([
   
+  "get timeZone.getPossibleInstantsFor",
+  "call timeZone.getPossibleInstantsFor",
+  
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
+  "get timeZone.getPossibleInstantsFor",
   "call timeZone.getPossibleInstantsFor",
 ]);
 assert.compareArray(
@@ -83,9 +82,14 @@ actual.splice(0);
 arg = { year: 2000, month: 10, day: 29, hour: 1, minute: 30, timeZone: dstTimeZoneObserver, calendar };
 instance.equals(arg);
 
+const expectedFallBack = expected.concat([
+  
+  "get timeZone.getPossibleInstantsFor",
+  "call timeZone.getPossibleInstantsFor",
+]);
 assert.compareArray(
-  actual.slice(0, expected.length), 
-  expected,
+  actual.slice(0, expectedFallBack.length), 
+  expectedFallBack,
   "order of operations converting property bag at repeated wall-clock time"
 );
 actual.splice(0); 

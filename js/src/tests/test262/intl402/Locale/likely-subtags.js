@@ -35,13 +35,12 @@ const testDataMaximal = {
     "und": "en-Latn-US",
     "und-Thai": "th-Thai-TH",
     "und-419": "es-Latn-419",
-    "und-150": "en-Latn-150",
+    "und-150": "ru-Cyrl-RU",
     "und-AT": "de-Latn-AT",
     "und-Cyrl-RO": "bg-Cyrl-RO",
 
     
-    
-    "und-AQ": "en-Latn-AQ",
+    "und-AQ": "und-Latn-AQ",
 };
 
 const testDataMinimal = {
@@ -68,7 +67,7 @@ const testDataMinimal = {
     "ru-Cyrl-RU": "ru",
     "de-Latn-AT": "de-AT",
     "bg-Cyrl-RO": "bg-RO",
-    "und-Latn-AQ": "en-AQ",
+    "und-Latn-AQ": "und-AQ",
 };
 
 

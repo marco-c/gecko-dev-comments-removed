@@ -34,9 +34,7 @@ const expected = [
   "has one.calendar.yearMonthFromFields",
   "has one.calendar.yearOfWeek",
   
-  "get one.calendar.dateFromFields",
   "get one.calendar.fields",
-  
   "call one.calendar.fields",
   
   "get one.day",
@@ -52,6 +50,7 @@ const expected = [
   "get one.year.valueOf",
   "call one.year.valueOf",
   
+  "get one.calendar.dateFromFields",
   "call one.calendar.dateFromFields",
   
   "get two.calendar",
@@ -77,9 +76,7 @@ const expected = [
   "has two.calendar.yearMonthFromFields",
   "has two.calendar.yearOfWeek",
   
-  "get two.calendar.dateFromFields",
   "get two.calendar.fields",
-  
   "call two.calendar.fields",
   
   "get two.day",
@@ -95,6 +92,7 @@ const expected = [
   "get two.year.valueOf",
   "call two.year.valueOf",
   
+  "get two.calendar.dateFromFields",
   "call two.calendar.dateFromFields",
   
   "get options.largestUnit",

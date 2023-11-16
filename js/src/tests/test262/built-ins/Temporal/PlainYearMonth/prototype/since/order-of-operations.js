@@ -34,7 +34,6 @@ const expectedMinimal = [
   "has other.calendar.yearMonthFromFields",
   "has other.calendar.yearOfWeek",
   "get other.calendar.fields",
-  "get other.calendar.yearMonthFromFields",
   "call other.calendar.fields",
   "get other.month",
   "get other.month.valueOf",
@@ -45,6 +44,7 @@ const expectedMinimal = [
   "get other.year",
   "get other.year.valueOf",
   "call other.year.valueOf",
+  "get other.calendar.yearMonthFromFields",
   "call other.calendar.yearMonthFromFields",
   
   "get this.calendar.id",
@@ -74,25 +74,24 @@ const expectedMinimal = [
 
 const expected = expectedMinimal.concat([
   
-  "get this.calendar.dateAdd",
-  "get this.calendar.dateFromFields",
-  "get this.calendar.dateUntil",
   "get this.calendar.fields",
-  
   "call this.calendar.fields",
   
   "get this.calendar.monthCode",
   "call this.calendar.monthCode",
   "get this.calendar.year",
   "call this.calendar.year",
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
   
   "get other.calendar.monthCode",
   "call other.calendar.monthCode",
   "get other.calendar.year",
   "call other.calendar.year",
+  "get this.calendar.dateFromFields",
   "call this.calendar.dateFromFields",
   
+  "get this.calendar.dateUntil",
   "call this.calendar.dateUntil",
 ]);
 const actual = [];
@@ -124,28 +123,7 @@ actual.splice(0);
 
 
 instance.since(otherYearMonthPropertyBag, createOptionsObserver({ smallestUnit: "months", roundingIncrement: 1 }));
-assert.compareArray(actual, expectedMinimal.concat([
-  
-  "get this.calendar.dateFromFields",
-  "get this.calendar.dateUntil",
-  "get this.calendar.fields",
-  
-  "call this.calendar.fields",
-  
-  "get this.calendar.monthCode",
-  "call this.calendar.monthCode",
-  "get this.calendar.year",
-  "call this.calendar.year",
-  "call this.calendar.dateFromFields",
-  
-  "get other.calendar.monthCode",
-  "call other.calendar.monthCode",
-  "get other.calendar.year",
-  "call other.calendar.year",
-  "call this.calendar.dateFromFields",
-  
-  "call this.calendar.dateUntil",
-]), "order of operations with no rounding");
+assert.compareArray(actual, expected, "order of operations with no rounding");
 actual.splice(0); 
 
 
@@ -162,8 +140,10 @@ actual.splice(0);
 
 
 const expectedOpsForYearRounding = expected.concat([
+  "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
+  "get this.calendar.dateUntil",   
   "call this.calendar.dateUntil",  
   "call this.calendar.dateAdd",    
 ]);  
@@ -179,6 +159,7 @@ const otherYearMonthPropertyBagSameMonth = TemporalHelpers.propertyBagObserver(a
   calendar: TemporalHelpers.calendarObserver(actual, "other.calendar"),
 }, "other");
 const expectedOpsForYearRoundingSameMonth = expected.concat([
+  "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
@@ -189,6 +170,7 @@ actual.splice(0);
 
 
 const expectedOpsForMonthRounding = expected.concat([
+  "get this.calendar.dateAdd",     
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    
   "call this.calendar.dateAdd",    

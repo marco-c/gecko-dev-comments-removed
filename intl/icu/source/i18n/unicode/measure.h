@@ -89,16 +89,6 @@ class U_I18N_API Measure: public UObject {
 
     bool operator==(const UObject& other) const;
 
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-    inline bool operator!=(const UObject& other) const { return !operator==(other); }
-#endif  
-
     
 
 

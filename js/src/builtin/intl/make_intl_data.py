@@ -3035,10 +3035,7 @@ def updateTzdata(topsrcdir, args):
     if not os.path.isdir(icuDir):
         raise RuntimeError("not a directory: %s" % icuDir)
 
-    
-    
-    
-    icuTzDir = os.path.join(topsrcdir, "intl/icu/source/data/misc")
+    icuTzDir = os.path.join(topsrcdir, "intl/tzdata/source")
     if not os.path.isdir(icuTzDir):
         raise RuntimeError("not a directory: %s" % icuTzDir)
 

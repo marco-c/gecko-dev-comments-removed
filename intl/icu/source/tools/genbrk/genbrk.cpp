@@ -27,6 +27,7 @@
 
 
 
+
 #include "unicode/utypes.h"
 #include "unicode/ucnv.h"
 #include "unicode/unistr.h"
@@ -62,9 +63,7 @@ static UOption options[]={
 
 void usageAndDie(int retCode) {
         printf("Usage: %s [-v] [-options] -r rule-file -o output-file\n", progName);
-        printf("\tRead in break iteration rules text and write out the binary data.\n"
-            "\tIf the rule file does not have a Unicode signature byte sequence, it is assumed\n"
-            "\tto be UTF-8.\n"
+        printf("\tRead in break iteration rules text and write out the binary data\n"
             "options:\n"
             "\t-h or -? or --help  this usage text\n"
             "\t-V or --version     show a version message\n"
@@ -235,10 +234,7 @@ int  main(int argc, char **argv) {
     if (U_FAILURE(status)) {
         exit(status);
     }
-    if (encoding == nullptr) {
-        
-        encoding = "UTF-8";
-    } else {
+    if(encoding!=nullptr ){
         ruleSourceC  += signatureLength;
         ruleFileSize -= signatureLength;
     }

@@ -721,25 +721,16 @@ void SimpleDateFormat::construct(EStyle timeStyle,
 
     UnicodeString timePattern;
     if (timeStyle >= kFull && timeStyle <= kShort) {
-        bool hasRgOrHcSubtag = false;
-        
-        
-        UErrorCode dummyErr1 = U_ZERO_ERROR, dummyErr2 = U_ZERO_ERROR;
-        if (locale.getKeywordValue("rg", nullptr, 0, dummyErr1) > 0 || locale.getKeywordValue("hours", nullptr, 0, dummyErr2) > 0) {
-            hasRgOrHcSubtag = true;
-        }
-            
         const char* baseLocID = locale.getBaseName();
         if (baseLocID[0]!=0 && uprv_strcmp(baseLocID,"und")!=0) {
             UErrorCode useStatus = U_ZERO_ERROR;
             Locale baseLoc(baseLocID);
             Locale validLoc(getLocale(ULOC_VALID_LOCALE, useStatus));
-            if (hasRgOrHcSubtag || (U_SUCCESS(useStatus) && validLoc!=baseLoc)) {
-                bool useDTPG = hasRgOrHcSubtag;
+            if (U_SUCCESS(useStatus) && validLoc!=baseLoc) {
+                bool useDTPG = false;
                 const char* baseReg = baseLoc.getCountry(); 
                 if ((baseReg[0]!=0 && uprv_strncmp(baseReg,validLoc.getCountry(),ULOC_COUNTRY_CAPACITY)!=0)
                         || uprv_strncmp(baseLoc.getLanguage(),validLoc.getLanguage(),ULOC_LANG_CAPACITY)!=0) {
-                    
                     
                     
                     

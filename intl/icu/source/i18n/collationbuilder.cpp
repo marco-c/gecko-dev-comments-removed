@@ -1113,23 +1113,12 @@ CollationBuilder::addWithClosure(const UnicodeString &nfdPrefix, const UnicodeSt
     return ce32;
 }
 
-
-
-
-
-
-
-
-
-static constexpr int32_t kClosureLoopLimit = 6560;
-
 uint32_t
 CollationBuilder::addOnlyClosure(const UnicodeString &nfdPrefix, const UnicodeString &nfdString,
                                  const int64_t newCEs[], int32_t newCEsLength, uint32_t ce32,
                                  UErrorCode &errorCode) {
     if(U_FAILURE(errorCode)) { return ce32; }
 
-    int32_t loop = 0;
     
     if(nfdPrefix.isEmpty()) {
         CanonicalIterator stringIter(nfdString, errorCode);
@@ -1139,11 +1128,6 @@ CollationBuilder::addOnlyClosure(const UnicodeString &nfdPrefix, const UnicodeSt
             UnicodeString str = stringIter.next();
             if(str.isBogus()) { break; }
             if(ignoreString(str, errorCode) || str == nfdString) { continue; }
-            if (loop++ > kClosureLoopLimit) {
-                
-                errorCode = U_INPUT_TOO_LONG_ERROR;
-                return ce32;
-            }
             ce32 = addIfDifferent(prefix, str, newCEs, newCEsLength, ce32, errorCode);
             if(U_FAILURE(errorCode)) { return ce32; }
         }
@@ -1160,11 +1144,6 @@ CollationBuilder::addOnlyClosure(const UnicodeString &nfdPrefix, const UnicodeSt
                 UnicodeString str = stringIter.next();
                 if(str.isBogus()) { break; }
                 if(ignoreString(str, errorCode) || (samePrefix && str == nfdString)) { continue; }
-                if (loop++ > kClosureLoopLimit) {
-                    
-                    errorCode = U_INPUT_TOO_LONG_ERROR;
-                    return ce32;
-                }
                 ce32 = addIfDifferent(prefix, str, newCEs, newCEsLength, ce32, errorCode);
                 if(U_FAILURE(errorCode)) { return ce32; }
             }

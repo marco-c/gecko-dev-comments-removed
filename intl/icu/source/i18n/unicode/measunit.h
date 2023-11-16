@@ -374,7 +374,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
 
-
     MeasureUnit();
 
     
@@ -1528,6 +1527,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getNanosecond();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -1543,6 +1543,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getQuarter();
+#endif 
 
     
 
@@ -2736,6 +2737,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
     static MeasureUnit getTon();
 
+#ifndef U_HIDE_DRAFT_API
     
 
 
@@ -2751,6 +2753,7 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getTonne();
+#endif 
 
     
 
@@ -2879,24 +2882,6 @@ class U_I18N_API MeasureUnit: public UObject {
 
 
     static MeasureUnit getBar();
-
-#ifndef U_HIDE_DRAFT_API
-    
-
-
-
-
-
-
-    static MeasureUnit *createGasolineEnergyDensity(UErrorCode &status);
-
-    
-
-
-
-
-    static MeasureUnit getGasolineEnergyDensity();
-#endif 
 
     
 
