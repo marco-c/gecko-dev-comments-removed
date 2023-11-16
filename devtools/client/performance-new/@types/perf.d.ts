@@ -474,12 +474,18 @@ export type RequestFromFrontend =
   | StatusQueryRequest
   | EnableMenuButtonRequest
   | GetProfileRequest
+  | GetExternalPowerTracksRequest
   | GetSymbolTableRequest
   | QuerySymbolicationApiRequest;
 
 type StatusQueryRequest = { type: "STATUS_QUERY" };
 type EnableMenuButtonRequest = { type: "ENABLE_MENU_BUTTON" };
 type GetProfileRequest = { type: "GET_PROFILE" };
+type GetExternalPowerTracksRequest = {
+  type: "GET_EXTERNAL_POWER_TRACKS",
+  startTime: number,
+  endTime: number,
+};
 type GetSymbolTableRequest = {
   type: "GET_SYMBOL_TABLE";
   debugName: string;
@@ -517,6 +523,7 @@ export type ResponseToFrontend =
   | StatusQueryResponse
   | EnableMenuButtonResponse
   | GetProfileResponse
+  | GetExternalPowerTracksResponse
   | GetSymbolTableResponse
   | QuerySymbolicationApiResponse;
 
@@ -534,10 +541,15 @@ type StatusQueryResponse = {
   
   
   
+  
+  
+  
+  
   version: number;
 };
 type EnableMenuButtonResponse = void;
 type GetProfileResponse = ArrayBuffer | MinimallyTypedGeckoProfile;
+type GetExternalPowerTracksResponse = Array<object>;
 type GetSymbolTableResponse = SymbolTableAsTuple;
 type QuerySymbolicationApiResponse = string;
 

@@ -712,6 +712,7 @@ pref("devtools.performance.recording.threads.remote", "[\"GeckoMain\",\"Composit
 
 
 pref("devtools.performance.recording.objdirs", "[]");
+pref("devtools.performance.recording.power.external-url", "");
 
 pref("devtools.performance.popup.intro-displayed", false);
 
