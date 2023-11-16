@@ -428,10 +428,6 @@ this.VideoControlsImplWidget = class {
 
         
         
-        this.updateOrientationState(this.isVideoInFullScreen);
-
-        
-        
         
         if (this.document.fullscreenElement) {
           this.videocontrols.setAttribute("inDOMFullscreen", true);
@@ -1754,43 +1750,11 @@ this.VideoControlsImplWidget = class {
           this.videocontrols.removeAttribute("inDOMFullscreen");
         }
 
-        this.updateOrientationState(this.isVideoInFullScreen);
-
         if (this.isVideoInFullScreen) {
           this.startFadeOut(this.controlBar, true);
         }
 
         this.setFullscreenButtonState();
-      },
-
-      updateOrientationState(lock) {
-        if (!this.video.mozOrientationLockEnabled) {
-          return;
-        }
-        if (lock) {
-          if (this.video.mozIsOrientationLocked) {
-            return;
-          }
-          let dimenDiff = this.video.videoWidth - this.video.videoHeight;
-          if (dimenDiff > 0) {
-            this.video.mozIsOrientationLocked =
-              this.window.screen.mozLockOrientation("landscape");
-          } else if (dimenDiff < 0) {
-            this.video.mozIsOrientationLocked =
-              this.window.screen.mozLockOrientation("portrait");
-          } else {
-            this.video.mozIsOrientationLocked =
-              this.window.screen.mozLockOrientation(
-                this.window.screen.orientation
-              );
-          }
-        } else {
-          if (!this.video.mozIsOrientationLocked) {
-            return;
-          }
-          this.window.screen.mozUnlockOrientation();
-          this.video.mozIsOrientationLocked = false;
-        }
       },
 
       clickToPlayClickHandler(e) {
@@ -2964,7 +2928,6 @@ this.VideoControlsImplWidget = class {
   teardown() {
     this.Utils.terminate();
     this.TouchUtils.terminate();
-    this.Utils.updateOrientationState(false);
     this.l10n.disconnectRoot(this.shadowRoot);
     this.l10n = null;
   }
