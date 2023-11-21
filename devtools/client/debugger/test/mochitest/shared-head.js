@@ -3070,6 +3070,7 @@ async function selectBlackBoxContextMenuItem(dbg, itemName) {
 
 
 
+
 function assertOutlineItems(dbg, expectedItems) {
   const outlineItems = Array.from(
     findAllElementsWithSelector(
@@ -3082,15 +3083,4 @@ function assertOutlineItems(dbg, expectedItems) {
     expectedItems,
     "The expected items are displayed in the outline panel"
   );
-}
-
-async function checkAdditionalThreadCount(dbg, count) {
-  await waitForState(
-    dbg,
-    state => {
-      return dbg.selectors.getThreads().length == count;
-    },
-    "Have the expected number of additional threads"
-  );
-  ok(true, `Have ${count} threads`);
 }

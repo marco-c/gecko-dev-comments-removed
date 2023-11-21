@@ -32,14 +32,25 @@ const ORG_WORKER_URL = URL_ROOT_ORG_SSL + "test_sw_page_worker.js";
 
 
 
+
+
+
+
+
+
+
+
+
+
 add_task(async function test_NavigationBetweenTwoDomains_NoDestroy() {
   await setupServiceWorkerNavigationTest();
 
   const tab = await addTab(COM_PAGE_URL);
 
-  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets(
-    tab
-  );
+  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets({
+    tab,
+    destroyServiceWorkersOnNavigation: false,
+  });
 
   
   
@@ -69,7 +80,7 @@ add_task(async function test_NavigationBetweenTwoDomains_NoDestroy() {
   });
 
   info("Unregister .org service worker and wait until onDestroyed is called.");
-  await unregisterServiceWorker(ORG_WORKER_URL);
+  await unregisterServiceWorker(tab, ORG_PAGE_URL);
   await checkHooks(hooks, {
     available: 2,
     destroyed: 1,
@@ -92,12 +103,8 @@ add_task(async function test_NavigationBetweenTwoDomains_NoDestroy() {
   });
 
   info("Unregister .com service worker and wait until onDestroyed is called.");
-  await unregisterServiceWorker(COM_WORKER_URL);
-  await checkHooks(hooks, {
-    available: 2,
-    destroyed: 2,
-    targets: [],
-  });
+  await unregisterServiceWorker(tab, COM_PAGE_URL);
+  await checkHooks(hooks, { available: 2, destroyed: 2, targets: [] });
 
   
   targetCommand.destroy();
@@ -125,7 +132,116 @@ add_task(async function test_NavigationBetweenTwoDomains_NoDestroy() {
 
 
 
-add_task(async function test_NavigationToPageWithExistingWorker() {
+
+
+add_task(async function test_NavigationBetweenTwoDomains_WithDestroy() {
+  await setupServiceWorkerNavigationTest();
+
+  const tab = await addTab(COM_PAGE_URL);
+
+  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets({
+    tab,
+    destroyServiceWorkersOnNavigation: true,
+  });
+
+  
+  
+  await checkHooks(hooks, {
+    available: 1,
+    destroyed: 0,
+    targets: [COM_WORKER_URL],
+  });
+
+  info("Go to .org page, wait for onAvailable to be called");
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    ORG_PAGE_URL
+  );
+  await checkHooks(hooks, {
+    available: 2,
+    destroyed: 1,
+    targets: [ORG_WORKER_URL],
+  });
+
+  info("Reload .org page, onAvailable and onDestroyed should be called");
+  gBrowser.reloadTab(gBrowser.selectedTab);
+  await checkHooks(hooks, {
+    available: 3,
+    destroyed: 2,
+    targets: [ORG_WORKER_URL],
+  });
+
+  info("Unregister .org service worker and wait until onDestroyed is called.");
+  await unregisterServiceWorker(tab, ORG_PAGE_URL);
+  await checkHooks(hooks, { available: 3, destroyed: 3, targets: [] });
+
+  info("Go back to page 1, wait for onDestroyed and onAvailable to be called");
+  BrowserTestUtils.startLoadingURIString(
+    gBrowser.selectedBrowser,
+    COM_PAGE_URL
+  );
+  await checkHooks(hooks, {
+    available: 4,
+    destroyed: 3,
+    targets: [COM_WORKER_URL],
+  });
+
+  info("Unregister .com service worker and wait until onDestroyed is called.");
+  await unregisterServiceWorker(tab, COM_PAGE_URL);
+  await checkHooks(hooks, { available: 4, destroyed: 4, targets: [] });
+
+  
+  targetCommand.destroy();
+
+  await commands.waitForRequestsToSettle();
+  await commands.destroy();
+  await removeTab(tab);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+add_task(async function test_NavigationToPageWithExistingWorker_NoDestroy() {
+  await testNavigationToPageWithExistingWorker({
+    destroyServiceWorkersOnNavigation: false,
+  });
+});
+
+add_task(async function test_NavigationToPageWithExistingWorker_WithDestroy() {
+  await testNavigationToPageWithExistingWorker({
+    destroyServiceWorkersOnNavigation: true,
+  });
+});
+
+async function testNavigationToPageWithExistingWorker({
+  destroyServiceWorkersOnNavigation,
+}) {
   await setupServiceWorkerNavigationTest();
 
   const tab = await addTab(COM_PAGE_URL);
@@ -150,9 +266,10 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   await onBrowserLoaded;
   await waitForRegistrationReady(tab, ORG_PAGE_URL);
 
-  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets(
-    tab
-  );
+  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets({
+    tab,
+    destroyServiceWorkersOnNavigation,
+  });
 
   
   
@@ -163,12 +280,8 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   });
 
   info("Unregister .org service worker and wait until onDestroyed is called.");
-  await unregisterServiceWorker(ORG_WORKER_URL);
-  await checkHooks(hooks, {
-    available: 1,
-    destroyed: 1,
-    targets: [],
-  });
+  await unregisterServiceWorker(tab, ORG_PAGE_URL);
+  await checkHooks(hooks, { available: 1, destroyed: 1, targets: [] });
 
   info("Go back .com page, wait for onAvailable to be called");
   onBrowserLoaded = BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
@@ -185,12 +298,8 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   });
 
   info("Unregister .com service worker and wait until onDestroyed is called.");
-  await unregisterServiceWorker(COM_WORKER_URL);
-  await checkHooks(hooks, {
-    available: 2,
-    destroyed: 2,
-    targets: [],
-  });
+  await unregisterServiceWorker(tab, COM_PAGE_URL);
+  await checkHooks(hooks, { available: 2, destroyed: 2, targets: [] });
 
   
   targetCommand.destroy();
@@ -198,7 +307,7 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   await commands.waitForRequestsToSettle();
   await commands.destroy();
   await removeTab(tab);
-});
+}
 
 async function setupServiceWorkerNavigationTest() {
   
@@ -206,13 +315,22 @@ async function setupServiceWorkerNavigationTest() {
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
 }
 
-async function watchServiceWorkerTargets(tab) {
+async function watchServiceWorkerTargets({
+  destroyServiceWorkersOnNavigation,
+  tab,
+}) {
   info("Create a target list for a tab target");
   const commands = await CommandsFactory.forTab(tab);
   const targetCommand = commands.targetCommand;
 
   
   targetCommand.listenForServiceWorkers = true;
+  info(
+    "Set targetCommand.destroyServiceWorkersOnNavigation to " +
+      destroyServiceWorkersOnNavigation
+  );
+  targetCommand.destroyServiceWorkersOnNavigation =
+    destroyServiceWorkersOnNavigation;
   await targetCommand.startListening();
 
   
@@ -224,13 +342,11 @@ async function watchServiceWorkerTargets(tab) {
   };
 
   const onAvailable = async ({ targetFront }) => {
-    info(` + Service worker target available for ${targetFront.url}\n`);
     hooks.availableCount++;
     hooks.targets.push(targetFront);
   };
 
   const onDestroyed = ({ targetFront }) => {
-    info(` - Service worker target destroy for ${targetFront.url}\n`);
     hooks.destroyedCount++;
     hooks.targets.splice(hooks.targets.indexOf(targetFront), 1);
   };
@@ -242,6 +358,15 @@ async function watchServiceWorkerTargets(tab) {
   });
 
   return { hooks, commands, targetCommand };
+}
+
+async function unregisterServiceWorker(tab, expectedPageUrl) {
+  await waitForRegistrationReady(tab, expectedPageUrl);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async () => {
+    
+    const registration = await content.wrappedJSObject.registrationPromise;
+    registration.unregister();
+  });
 }
 
 
@@ -268,6 +393,7 @@ async function waitForRegistrationReady(tab, expectedPageUrl) {
 
 
 async function checkHooks(hooks, { available, destroyed, targets }) {
+  info(`Wait for availableCount=${available} and destroyedCount=${destroyed}`);
   await waitUntil(
     () => hooks.availableCount == available && hooks.destroyedCount == destroyed
   );

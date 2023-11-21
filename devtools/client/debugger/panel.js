@@ -314,19 +314,9 @@ class DebuggerPanel {
     return true;
   }
 
-  async selectServiceWorker(workerDescriptorFront) {
-    
-    
-    
-    const targets = this.commands.targetCommand.getAllTargets([
-      this.commands.targetCommand.TYPES.SERVICE_WORKER,
-    ]);
-    const workerTarget = targets.find(
-      target => target.id == workerDescriptorFront.id
-    );
+  async selectWorker(workerDescriptorFront) {
+    const threadActorID = workerDescriptorFront.threadFront?.actorID;
 
-    const threadFront = await workerTarget.getFront("thread");
-    const threadActorID = threadFront?.actorID;
     const isThreadAvailable = this._selectors
       .getThreads(this._getState())
       .find(x => x.actor === threadActorID);
