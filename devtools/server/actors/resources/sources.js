@@ -56,10 +56,13 @@ class SourceWatcher {
     
     
     
-    
-    
     const isTargetCreation = threadActor.state == THREAD_STATES.DETACHED;
-    if (isTargetCreation && !targetActor.targetType.endsWith("worker")) {
+    const { targetType } = targetActor;
+    if (
+      isTargetCreation &&
+      targetType != Targets.TYPES.WORKER &&
+      targetType != Targets.TYPES.SHARED_WORKER
+    ) {
       await threadActor.attach({});
     }
 

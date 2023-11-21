@@ -47,6 +47,15 @@ class WorkerTargetActor extends BaseTargetActor {
     this.workerGlobal = workerGlobal;
     this.sessionContext = sessionContext;
 
+    
+    
+    
+    if (workerDebuggerData.type == 2) {
+      this.targetType = Targets.TYPES.SERVICE_WORKER;
+    } else if (workerDebuggerData.type == 1) {
+      this.targetType = Targets.TYPES.SHARED_WORKER;
+    }
+
     this._workerDebuggerData = workerDebuggerData;
     this._sourcesManager = null;
     this.workerConsoleApiMessagesDispatchedToMainThread =
