@@ -14,289 +14,344 @@
 
 
 
+function runGenericSensorTests(sensorData, readingData) {
+  validate_sensor_data(sensorData);
+  validate_reading_data(readingData);
 
-function runGenericSensorTests(sensorName,
-                               readingData,
-                               verificationFunction,
-                               featurePolicies) {
+  const {sensorName, permissionName, testDriverName, featurePolicyNames} =
+      sensorData;
   const sensorType = self[sensorName];
 
-  function validateReadingFormat(data) {
-    return Array.isArray(data) && data.every(element => Array.isArray(element));
+  function sensor_test(func, name, properties) {
+    promise_test(async t => {
+      assert_implements(sensorName in self, `${sensorName} is not supported.`);
+
+      const readings = new RingBuffer(readingData.readings);
+      const expectedReadings = new RingBuffer(readingData.expectedReadings);
+      const expectedRemappedReadings = readingData.expectedRemappedReadings ?
+          new RingBuffer(readingData.expectedRemappedReadings) :
+          undefined;
+
+      return func(t, readings, expectedReadings, expectedRemappedReadings);
+    }, name, properties);
   }
 
-  const { readings, expectedReadings, expectedRemappedReadings } = readingData;
-  if (!validateReadingFormat(readings)) {
-    throw new TypeError('readingData.readings must be an array of arrays.');
-  }
-  if (!validateReadingFormat(expectedReadings)) {
-    throw new TypeError('readingData.expectedReadings must be an array of ' +
-                        'arrays.');
-  }
-  if (readings.length < expectedReadings.length) {
-    throw new TypeError('readingData.readings\' length must be bigger than ' +
-                        'or equal to readingData.expectedReadings\' length.');
-  }
-  if (expectedRemappedReadings &&
-      !validateReadingFormat(expectedRemappedReadings)) {
-    throw new TypeError('readingData.expectedRemappedReadings must be an ' +
-                        'array of arrays.');
-  }
-  if (expectedRemappedReadings &&
-      expectedReadings.length != expectedRemappedReadings.length) {
-    throw new TypeError('readingData.expectedReadings and ' +
-      'readingData.expectedRemappedReadings must have the same ' +
-      'length.');
-  }
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'denied');
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    sensorProvider.setGetSensorShouldFail(sensorName, true);
+    await test_driver.create_virtual_sensor(testDriverName);
     const sensor = new sensorType;
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
     sensor.start();
 
-    const event = await sensorWatcher.wait_for("error");
-
-    assert_false(sensor.activated);
-    assert_equals(event.error.name, 'NotReadableError');
-  }, `${sensorName}: Test that onerror is sent when sensor is not supported.`);
-
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    sensorProvider.setPermissionsDenied(sensorName, true);
-    const sensor = new sensorType;
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
-    sensor.start();
-
-    const event = await sensorWatcher.wait_for("error");
+    const event = await sensorWatcher.wait_for('error');
 
     assert_false(sensor.activated);
     assert_equals(event.error.name, 'NotAllowedError');
   }, `${sensorName}: Test that onerror is sent when permissions are not\
  granted.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const sensor = new sensorType({frequency: 560});
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName, {connected: false});
+    const sensor = new sensorType;
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
+
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setStartShouldFail(true);
-
-    const event = await sensorWatcher.wait_for("error");
+    const event = await sensorWatcher.wait_for('error');
 
     assert_false(sensor.activated);
     assert_equals(event.error.name, 'NotReadableError');
   }, `${sensorName}: Test that onerror is send when start() call has failed.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType({frequency: 560});
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
+    await sensorWatcher.wait_for('activate');
+    const mockSensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
 
-    await sensorWatcher.wait_for("activate");
-
-    assert_less_than_equal(mockSensor.getSamplingFrequency(), 60);
-    sensor.stop();
-    assert_false(sensor.activated);
+    assert_less_than_equal(mockSensorInfo.requestedSamplingFrequency, 60);
   }, `${sensorName}: Test that frequency is capped to allowed maximum.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
     const maxSupportedFrequency = 5;
-    sensorProvider.setMaximumSupportedFrequency(maxSupportedFrequency);
+    await test_driver.create_virtual_sensor(
+        testDriverName, {maxSamplingFrequency: maxSupportedFrequency});
+
     const sensor = new sensorType({frequency: 50});
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
+    await sensorWatcher.wait_for('activate');
+    const mockSensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
 
-    await sensorWatcher.wait_for("activate");
-
-    assert_equals(mockSensor.getSamplingFrequency(), maxSupportedFrequency);
-    sensor.stop();
-    assert_false(sensor.activated);
+    assert_equals(
+        mockSensorInfo.requestedSamplingFrequency, maxSupportedFrequency);
   }, `${sensorName}: Test that frequency is capped to the maximum supported\
  frequency.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
     const minSupportedFrequency = 2;
-    sensorProvider.setMinimumSupportedFrequency(minSupportedFrequency);
+    await test_driver.create_virtual_sensor(
+        testDriverName, {minSamplingFrequency: minSupportedFrequency});
+
     const sensor = new sensorType({frequency: -1});
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
+    await sensorWatcher.wait_for('activate');
+    const mockSensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
 
-    await sensorWatcher.wait_for("activate");
-
-    assert_equals(mockSensor.getSamplingFrequency(), minSupportedFrequency);
-    sensor.stop();
-    assert_false(sensor.activated);
+    assert_equals(
+        mockSensorInfo.requestedSamplingFrequency, minSupportedFrequency);
   }, `${sensorName}: Test that frequency is limited to the minimum supported\
  frequency.`);
 
-  promise_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async t => {
     const iframe = document.createElement('iframe');
-    iframe.allow = featurePolicies.join(' \'none\'; ') + ' \'none\';';
+    iframe.allow = featurePolicyNames.join(' \'none\'; ') + ' \'none\';';
     iframe.srcdoc = '<script>' +
-                    '  window.onmessage = message => {' +
-                    '    if (message.data === "LOADED") {' +
-                    '      try {' +
-                    '        new ' + sensorName + '();' +
-                    '        parent.postMessage("FAIL", "*");' +
-                    '      } catch (e) {' +
-                    '        parent.postMessage("PASS", "*");' +
-                    '      }' +
-                    '    }' +
-                    '   };' +
-                    '<\/script>';
-    const iframeWatcher = new EventWatcher(t, iframe, "load");
+        '  window.onmessage = message => {' +
+        '    if (message.data === "LOADED") {' +
+        '      try {' +
+        '        new ' + sensorName + '();' +
+        '        parent.postMessage("FAIL", "*");' +
+        '      } catch (e) {' +
+        '        parent.postMessage(`PASS: got ${e.name}`, "*");' +
+        '      }' +
+        '    }' +
+        '   };' +
+        '<\/script>';
+    const iframeWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
-    await iframeWatcher.wait_for("load");
+    await iframeWatcher.wait_for('load');
     iframe.contentWindow.postMessage('LOADED', '*');
 
-    const windowWatcher = new EventWatcher(t, window, "message");
-    const message = await windowWatcher.wait_for("message");
-    assert_equals(message.data, 'PASS');
+    const windowWatcher = new EventWatcher(t, window, 'message');
+    const message = await windowWatcher.wait_for('message');
+    assert_equals(message.data, 'PASS: got SecurityError');
   }, `${sensorName}: Test that sensor cannot be constructed within iframe\
  disallowed to use feature policy.`);
 
-  promise_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async t => {
     const iframe = document.createElement('iframe');
-    iframe.allow = featurePolicies.join(';') + ';';
+    iframe.allow = featurePolicyNames.join(';') + ';';
     iframe.srcdoc = '<script>' +
-                    '  window.onmessage = message => {' +
-                    '    if (message.data === "LOADED") {' +
-                    '      try {' +
-                    '        new ' + sensorName + '();' +
-                    '        parent.postMessage("PASS", "*");' +
-                    '      } catch (e) {' +
-                    '        parent.postMessage("FAIL", "*");' +
-                    '      }' +
-                    '    }' +
-                    '   };' +
-                    '<\/script>';
-    const iframeWatcher = new EventWatcher(t, iframe, "load");
+        '  window.onmessage = message => {' +
+        '    if (message.data === "LOADED") {' +
+        '      try {' +
+        '        new ' + sensorName + '();' +
+        '        parent.postMessage("PASS", "*");' +
+        '      } catch (e) {' +
+        '        parent.postMessage("FAIL", "*");' +
+        '      }' +
+        '    }' +
+        '   };' +
+        '<\/script>';
+    const iframeWatcher = new EventWatcher(t, iframe, 'load');
     document.body.appendChild(iframe);
-    await iframeWatcher.wait_for("load");
+    await iframeWatcher.wait_for('load');
     iframe.contentWindow.postMessage('LOADED', '*');
 
-    const windowWatcher = new EventWatcher(t, window, "message");
-    const message = await windowWatcher.wait_for("message");
+    const windowWatcher = new EventWatcher(t, window, 'message');
+    const message = await windowWatcher.wait_for('message');
     assert_equals(message.data, 'PASS');
   }, `${sensorName}: Test that sensor can be constructed within an iframe\
  allowed to use feature policy.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
+    const sensor = new sensorType;
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
+
     sensor.start();
     assert_false(sensor.hasReading);
+    await sensorWatcher.wait_for('activate');
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+    await Promise.all([
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value),
+      sensorWatcher.wait_for('reading')
+    ]);
 
-    await sensorWatcher.wait_for("reading");
-    const expected = new RingBuffer(expectedReadings).next().value;
-    assert_true(verificationFunction(expected, sensor));
+    assert_sensor_reading_equals(sensor, expectedReadings.next().value);
+
     assert_true(sensor.hasReading);
 
     sensor.stop();
-    assert_true(verificationFunction(expected, sensor, true));
+
+    assert_sensor_reading_is_null(sensor);
     assert_false(sensor.hasReading);
   }, `${sensorName}: Test that 'onreading' is called and sensor reading is\
  valid.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const sensor1 = new sensorType();
-    const sensorWatcher1 = new EventWatcher(t, sensor1, ["reading", "error"]);
-    sensor1.start();
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
 
+    await test_driver.create_virtual_sensor(testDriverName);
+
+    const sensor1 = new sensorType();
     const sensor2 = new sensorType();
-    const sensorWatcher2 = new EventWatcher(t, sensor2, ["reading", "error"]);
+    t.add_cleanup(async () => {
+      sensor1.stop();
+      sensor2.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher1 =
+        new EventWatcher(t, sensor1, ['activate', 'reading', 'error']);
+    const sensorWatcher2 =
+        new EventWatcher(t, sensor2, ['activate', 'reading', 'error']);
+    sensor1.start();
     sensor2.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+    await Promise.all([
+      sensorWatcher1.wait_for('activate'), sensorWatcher2.wait_for('activate')
+    ]);
 
-    await Promise.all([sensorWatcher1.wait_for("reading"),
-                       sensorWatcher2.wait_for("reading")]);
-    const expected = new RingBuffer(expectedReadings).next().value;
+    await Promise.all([
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value),
+      sensorWatcher1.wait_for('reading'), sensorWatcher2.wait_for('reading')
+    ]);
+
     
-    assert_true(verificationFunction(expected, sensor1));
-    assert_true(verificationFunction(expected, sensor2));
+    const expected = expectedReadings.next().value;
+    assert_sensor_reading_equals(sensor1, expected);
+    assert_sensor_reading_equals(sensor2, expected);
 
     
     
     sensor1.stop();
-    assert_true(verificationFunction(expected, sensor1, true));
-    assert_true(verificationFunction(expected, sensor2));
+    assert_sensor_reading_is_null(sensor1);
+    assert_sensor_reading_equals(sensor2, expected);
 
     sensor2.stop();
-    assert_true(verificationFunction(expected, sensor2, true));
+    assert_sensor_reading_is_null(sensor2);
   }, `${sensorName}: sensor reading is correct.`);
 
   
   
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    await mockSensor.setSensorReading(readings);
+    await sensorWatcher.wait_for('activate');
 
-    for (let expectedReading of expectedReadings) {
-      await sensorWatcher.wait_for("reading");
-      assert_true(sensor.hasReading, "hasReading");
-      assert_true(verificationFunction(expectedReading, sensor),
-                                       "verification");
+    const sensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
+    const sensorPeriodInMs = (1 / sensorInfo.requestedSamplingFrequency) * 1000;
+
+    for (let expectedReading of expectedReadings.data) {
+      await update_virtual_sensor_until_reading(
+          t, readings, sensorWatcher.wait_for('reading'), testDriverName,
+          sensorPeriodInMs * 3);
+      assert_true(sensor.hasReading, 'hasReading');
+      assert_sensor_reading_equals(sensor, expectedReading);
     }
-
-    sensor.stop();
   }, `${sensorName}: Test that readings are all mapped to expectedReadings\
  correctly.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async (t, readings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+    await sensorWatcher.wait_for('activate');
 
-    await sensorWatcher.wait_for("reading");
+    const sensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
+    const sensorPeriodInMs = (1 / sensorInfo.requestedSamplingFrequency) * 1000;
+
+    await Promise.all([
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value),
+      sensorWatcher.wait_for('reading')
+    ]);
     const cachedTimeStamp1 = sensor.timestamp;
 
-    await sensorWatcher.wait_for("reading");
+    await update_virtual_sensor_until_reading(
+        t, readings, sensorWatcher.wait_for('reading'), testDriverName,
+        sensorPeriodInMs * 3);
     const cachedTimeStamp2 = sensor.timestamp;
 
     assert_greater_than(cachedTimeStamp2, cachedTimeStamp1);
-    sensor.stop();
   }, `${sensorName}: sensor timestamp is updated when time passes.`);
 
   sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     assert_false(sensor.activated);
     sensor.start();
     assert_false(sensor.activated);
 
-    await sensorWatcher.wait_for("activate");
+    await sensorWatcher.wait_for('activate');
     assert_true(sensor.activated);
 
     sensor.stop();
@@ -305,245 +360,331 @@ function runGenericSensorTests(sensorName,
  states are correct.`);
 
   sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     sensor.start();
     sensor.start();
 
-    await sensorWatcher.wait_for("activate");
+    await sensorWatcher.wait_for('activate');
     assert_true(sensor.activated);
-    sensor.stop();
   }, `${sensorName}: no exception is thrown when calling start() on already\
  started sensor.`);
 
   sensor_test(async t => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["activate", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher = new EventWatcher(t, sensor, ['activate', 'error']);
     sensor.start();
 
-    await sensorWatcher.wait_for("activate");
+    await sensorWatcher.wait_for('activate');
     sensor.stop();
     sensor.stop();
     assert_false(sensor.activated);
   }, `${sensorName}: no exception is thrown when calling stop() on already\
  stopped sensor.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    const sensorWatcher = new EventWatcher(t, sensor, ["reading", "error"]);
+    t.add_cleanup(async () => {
+      sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
     sensor.start();
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+    await sensorWatcher.wait_for('activate');
 
-    const expectedBuffer = new RingBuffer(expectedReadings);
-    await sensorWatcher.wait_for("reading");
-    const expected1 = expectedBuffer.next().value;
+    await Promise.all([
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value),
+      sensorWatcher.wait_for('reading')
+    ]);
+
     assert_true(sensor.hasReading);
-    assert_true(verificationFunction(expected1, sensor));
+
+    const expected = expectedReadings.next().value;
+    assert_sensor_reading_equals(sensor, expected);
+
     const timestamp = sensor.timestamp;
     sensor.stop();
     assert_false(sensor.hasReading);
+    assert_false(sensor.activated);
 
     sensor.start();
-    await sensorWatcher.wait_for("reading");
+
+    await sensorWatcher.wait_for('activate');
+    assert_false(sensor.hasReading);
+    readings.reset();
+    await Promise.all([
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value),
+      sensorWatcher.wait_for('reading')
+    ]);
     assert_true(sensor.hasReading);
-    
-    
-    
-    
-    const expected2 = expectedBuffer.next().value;
-    assert_true(verificationFunction(expected2, sensor));
+
+    assert_sensor_reading_equals(sensor, expected);
     
     assert_greater_than(timestamp, 0);
     
     assert_greater_than(sensor.timestamp, timestamp);
-    sensor.stop();
   }, `${sensorName}: Test that fresh reading is fetched on start().`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
     const sensor = new sensorType();
-    t.add_cleanup(() => {
+    t.add_cleanup(async () => {
       sensor.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
     });
-    const sensorWatcher = new EventWatcher(t, sensor, ['reading', 'error']);
+    const sensorWatcher =
+        new EventWatcher(t, sensor, ['activate', 'reading', 'error']);
+
     sensor.start();
+    await sensorWatcher.wait_for('activate');
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
-
-    const expectedBuffer = new RingBuffer(expectedReadings);
-    await sensorWatcher.wait_for('reading');
-    const expected1 = expectedBuffer.next().value;
-    assert_true(verificationFunction(expected1, sensor));
-    assert_true(mockSensor.isReadingData());
-    const cachedTimestamp1 = sensor.timestamp;
+    assert_false(sensor.hasReading);
+    assert_sensor_reading_is_null(sensor);
 
     const {minimize, restore} = window_state_context(t);
 
     await minimize();
     assert_true(document.hidden);
-    await t.step_wait(
-        () => !mockSensor.isReadingData(), 'readings must be suspended');
-    const cachedTimestamp2 = sensor.timestamp;
-    assert_equals(cachedTimestamp1, cachedTimestamp2);
+    assert_true(sensor.activated);
+    assert_false(sensor.hasReading);
+    assert_sensor_reading_is_null(sensor);
+
+    const reading = readings.next().value;
+    await test_driver.update_virtual_sensor(testDriverName, reading);
 
     await restore();
     assert_false(document.hidden);
-    await t.step_wait(
-        () => mockSensor.isReadingData(), 'readings must be restored');
-    await sensorWatcher.wait_for('reading');
-    const expected2 = expectedBuffer.next().value;
-    assert_true(verificationFunction(expected2, sensor));
-    assert_greater_than(sensor.timestamp, cachedTimestamp2);
-  }, `${sensorName}: Losing visibility must cause readings to be suspended.`);
+    assert_true(sensor.activated);
+    assert_false(sensor.hasReading);
+    assert_sensor_reading_is_null(sensor);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+    const visiblePageTimestamp = performance.now();
 
-    const fastSensor = new sensorType({ frequency: 60 });
-    t.add_cleanup(() => { fastSensor.stop(); });
-    let eventWatcher = new EventWatcher(t, fastSensor, "activate");
+    const [readingEvent] = await Promise.all([
+      sensorWatcher.wait_for('reading'),
+      test_driver.update_virtual_sensor(testDriverName, reading),
+    ]);
+
+    const postReadingTimestamp = performance.now();
+
+    assert_sensor_reading_equals(sensor, expectedReadings.next().value);
+
+    
+    
+    
+    assert_greater_than_equal(sensor.timestamp, visiblePageTimestamp);
+    assert_greater_than(readingEvent.timeStamp, sensor.timestamp);
+    assert_greater_than_equal(
+        postReadingTimestamp, readingEvent.timeStamp,
+        'No new reading events have been delivered');
+  }, `${sensorName}: Readings are not delivered when the page has no visibility`);
+
+  sensor_test(async t => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
+
+    const fastSensor = new sensorType({frequency: 60});
+    t.add_cleanup(() => {
+      fastSensor.stop();
+    });
+    let eventWatcher = new EventWatcher(t, fastSensor, ['activate']);
     fastSensor.start();
 
     
     
-    await eventWatcher.wait_for("activate");
+    await eventWatcher.wait_for('activate');
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+    let mockSensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
 
     
     
-    const fastSensorFrequency = mockSensor.getSamplingFrequency();
+    const fastSensorFrequency = mockSensorInfo.requestedSamplingFrequency;
     const slowSensorFrequency = fastSensorFrequency * 0.25;
 
-    const slowSensor = new sensorType({ frequency: slowSensorFrequency });
-    t.add_cleanup(() => { slowSensor.stop(); });
-    eventWatcher = new EventWatcher(t, slowSensor, "activate");
+    const slowSensor = new sensorType({frequency: slowSensorFrequency});
+    t.add_cleanup(() => {
+      slowSensor.stop();
+    });
+    t.add_cleanup(async () => {
+      
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+    eventWatcher = new EventWatcher(t, slowSensor, 'activate');
     slowSensor.start();
 
     
     
-    await eventWatcher.wait_for("activate");
-    assert_equals(mockSensor.getSamplingFrequency(), fastSensorFrequency);
+    await eventWatcher.wait_for('activate');
+    mockSensorInfo =
+        await test_driver.get_virtual_sensor_information(testDriverName);
+    assert_equals(
+        mockSensorInfo.requestedSamplingFrequency, fastSensorFrequency);
 
     
     
     fastSensor.stop();
-    return t.step_wait(() => {
-      return mockSensor.getSamplingFrequency() === slowSensorFrequency;
-    }, "Sampling frequency has dropped to slowSensor's requested frequency");
+    await wait_for_virtual_sensor_state(testDriverName, (info) => {
+      return info.requestedSamplingFrequency === slowSensorFrequency;
+    });
   }, `${sensorName}: frequency hint works.`);
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
+  sensor_test(async (t, readings, expectedReadings) => {
+    await test_driver.set_permission({name: permissionName}, 'granted');
+
+    await test_driver.create_virtual_sensor(testDriverName);
 
     const sensor1 = new sensorType();
     const sensor2 = new sensorType();
 
-    return new Promise((resolve, reject) => {
+    t.add_cleanup(async () => {
+      sensor1.stop();
+      sensor2.stop();
+      await test_driver.remove_virtual_sensor(testDriverName);
+    });
+
+    return new Promise(async (resolve, reject) => {
       sensor1.addEventListener('reading', () => {
         sensor2.addEventListener('activate', () => {
           try {
             assert_true(sensor1.activated);
             assert_true(sensor1.hasReading);
-            assert_false(verificationFunction(null, sensor1, true));
-            assert_not_equals(sensor1.timestamp, null);
+
+            const expected = expectedReadings.next().value;
+            assert_sensor_reading_equals(sensor1, expected);
 
             assert_true(sensor2.activated);
-            assert_false(verificationFunction(null, sensor2, true));
-            assert_not_equals(sensor2.timestamp, null);
+            assert_sensor_reading_equals(sensor2, expected);
           } catch (e) {
             reject(e);
           }
-        }, { once: true });
+        }, {once: true});
         sensor2.addEventListener('reading', () => {
           try {
             assert_true(sensor2.activated);
             assert_true(sensor2.hasReading);
-            assert_sensor_equals(sensor1, sensor2);
+            assert_sensor_reading_equals(sensor1, sensor2);
+            assert_equals(sensor1.timestamp, sensor2.timestamp);
             resolve();
           } catch (e) {
             reject(e);
           }
-        }, { once: true });
+        }, {once: true});
         sensor2.start();
-      }, { once: true });
+      }, {once: true});
+
+      const eventWatcher = new EventWatcher(t, sensor1, ['activate']);
       sensor1.start();
+      await eventWatcher.wait_for('activate');
+      test_driver.update_virtual_sensor(testDriverName, readings.next().value);
     });
   }, `${sensorName}: Readings delivered by shared platform sensor are\
  immediately accessible to all sensors.`);
 
-
-
-
-
-
-
-
-
-
-
-
-
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   test(() => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const invalidFreqs = [
-      "invalid",
-      NaN,
-      Infinity,
-      -Infinity,
-      {}
-    ];
+    const invalidFreqs = ['invalid', NaN, Infinity, -Infinity, {}];
     invalidFreqs.map(freq => {
-      assert_throws_js(TypeError,
-                       () => { new sensorType({frequency: freq}) },
-                       `when freq is ${freq}`);
+      assert_throws_js(
+          TypeError, () => {new sensorType({frequency: freq})},
+          `when freq is ${freq}`);
     });
   }, `${sensorName}: throw 'TypeError' if frequency is invalid.`);
 
-  if (!expectedRemappedReadings) {
+  if (!readingData.expectedRemappedReadings) {
     
     return;
   }
 
-  sensor_test(async (t, sensorProvider) => {
-    assert_implements(sensorName in self, `${sensorName} is not supported.`);
-    const sensor1 = new sensorType({frequency: 60});
-    const sensor2 = new sensorType({frequency: 60, referenceFrame: "screen"});
-    const sensorWatcher1 = new EventWatcher(t, sensor1, ["reading", "error"]);
-    const sensorWatcher2 = new EventWatcher(t, sensor1, ["reading", "error"]);
+  
+  
+  
+  
+  
+  
+  
 
-    sensor1.start();
-    sensor2.start();
+  
 
-    const mockSensor = await sensorProvider.getCreatedSensor(sensorName);
-    mockSensor.setSensorReading(readings);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
-    await Promise.all([sensorWatcher1.wait_for("reading"),
-                       sensorWatcher2.wait_for("reading")]);
+  
+  
 
-    const expected = new RingBuffer(expectedReadings).next().value;
-    const expectedRemapped =
-        new RingBuffer(expectedRemappedReadings).next().value;
-    assert_true(verificationFunction(expected, sensor1));
-    assert_true(verificationFunction(expectedRemapped, sensor2));
+  
+  
+  
+  
 
-    sensor1.stop();
-    assert_true(verificationFunction(expected, sensor1, true));
-    assert_true(verificationFunction(expectedRemapped, sensor2));
+  
+  
+  
+  
+  
 
-    sensor2.stop();
-    assert_true(verificationFunction(expectedRemapped, sensor2,
-                                     true));
-  }, `${sensorName}: sensor reading is correct when options.referenceFrame\
- is 'screen'.`);
+  
+  
+  
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+  
 }
 
 function runGenericSensorInsecureContext(sensorName) {
