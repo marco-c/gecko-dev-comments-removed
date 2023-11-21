@@ -1640,4 +1640,38 @@ JSObject* HTMLSelectElement::WrapNode(JSContext* aCx,
   return HTMLSelectElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
+void HTMLSelectElement::HandleInvokeInternal(nsAtom* aAction,
+                                             ErrorResult& aRv) {
+  
+  
+  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
+  WindowGlobalChild* windowGlobalChild =
+      window ? window->GetWindowGlobalChild() : nullptr;
+  if (!windowGlobalChild || !windowGlobalChild->SameOriginWithTop()) {
+    return;
+  }
+
+  
+  if (IsDisabled()) {
+    return;
+  }
+
+  
+  
+  if (!OwnerDoc()->HasValidTransientUserGestureActivation()) {
+    return;
+  }
+
+  
+  
+  if (nsContentUtils::EqualsIgnoreASCIICase(aAction, nsGkAtoms::showPicker)) {
+    if (IsCombobox() && !OpenInParentProcess()) {
+      RefPtr<Document> doc = OwnerDoc();
+      RefPtr<Element> select = this;
+      nsContentUtils::DispatchChromeEvent(doc, select, u"mozshowdropdown"_ns,
+                                          CanBubble::eYes, Cancelable::eNo);
+    }
+  }
+}
+
 }  
