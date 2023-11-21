@@ -392,7 +392,8 @@ class APZCSmoothScrollTester : public APZCBasicTester {
  public:
   
   
-  void TestSmoothScrollDestinationUpdate() {
+  
+  void TestContentShift() {
     
     ScrollMetadata metadata;
     FrameMetrics& metrics = metadata.GetMetrics();
@@ -448,18 +449,95 @@ class APZCSmoothScrollTester : public APZCBasicTester {
     float y4 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
     ASSERT_EQ(y4, 600);  
   }
+
+  
+  
+  void TestContentShiftThenUpdateDelta() {
+    
+    ScrollMetadata metadata;
+    FrameMetrics& metrics = metadata.GetMetrics();
+    metrics.SetScrollableRect(CSSRect(0, 0, 1000, 10000));
+    metrics.SetLayoutViewport(CSSRect(0, 0, 1000, 1000));
+    metrics.SetZoom(CSSToParentLayerScale(1.0));
+    metrics.SetCompositionBounds(ParentLayerRect(0, 0, 1000, 1000));
+    metrics.SetVisualScrollOffset(CSSPoint(0, 0));
+    metrics.SetIsRootContent(true);
+    
+    
+    metadata.SetLineScrollAmount({100, 100});
+    
+    
+    
+    metadata.SetPageScrollAmount({1000, 1000});
+    apzc->SetScrollMetadata(metadata);
+
+    
+    SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
+    apzc->AssertStateIsWheelScroll();
+
+    
+    float y = 0;
+    while (y < 200) {
+      SampleAnimationOneFrame();
+      y = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+    }
+
+    
+    nsTArray<ScrollPositionUpdate> scrollUpdates;
+    scrollUpdates.AppendElement(ScrollPositionUpdate::NewRelativeScroll(
+        CSSPoint::ToAppUnits(CSSPoint(0, 200)),
+        CSSPoint::ToAppUnits(CSSPoint(0, 300))));
+    metadata.SetScrollUpdates(scrollUpdates);
+    metrics.SetScrollGeneration(scrollUpdates.LastElement().GetGeneration());
+    apzc->NotifyLayersUpdated(metadata, false, true);
+
+    
+    
+    
+    float y2 = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+    ASSERT_EQ(y2, y + 100);
+    apzc->AssertStateIsWheelScroll();
+
+    
+    while (y < 400) {
+      SampleAnimationOneFrame();
+      y = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+    }
+
+    
+    
+    
+    SmoothWheel(apzc, ScreenIntPoint(50, 50), ScreenPoint(0, 5), mcc->Time());
+
+    
+    apzc->AdvanceAnimationsUntilEnd();
+    float yEnd = apzc->GetFrameMetrics().GetVisualScrollOffset().y;
+    ASSERT_EQ(yEnd, 1100);
+  }
 };
 
-TEST_F(APZCSmoothScrollTester, SmoothScrollDestinationUpdateBezier) {
+TEST_F(APZCSmoothScrollTester, ContentShiftBezier) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
-  TestSmoothScrollDestinationUpdate();
+  TestContentShift();
 }
 
-TEST_F(APZCSmoothScrollTester, SmoothScrollDestinationUpdateMsd) {
+TEST_F(APZCSmoothScrollTester, ContentShiftMsd) {
   SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
   SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
-  TestSmoothScrollDestinationUpdate();
+  TestContentShift();
+}
+
+TEST_F(APZCSmoothScrollTester, ContentShiftThenUpdateDeltaBezier) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", false);
+  TestContentShiftThenUpdateDelta();
+}
+
+TEST_F(APZCSmoothScrollTester, ContentShiftThenUpdateDeltaMsd) {
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll", true);
+  SCOPED_GFX_PREF_BOOL("general.smoothScroll.msdPhysics.enabled", true);
+  TestContentShiftThenUpdateDelta();
 }
 
 TEST_F(APZCBasicTester, ZoomAndScrollableRectChangeAfterZoomChange) {
