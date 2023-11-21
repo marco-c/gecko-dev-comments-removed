@@ -9,15 +9,15 @@ use fixed::{FixedI16, FixedI32, FixedI64};
 
 
 
-pub trait CompatibleFloat<F: FieldElementWithInteger> {
+pub trait CompatibleFloat {
     
-    fn to_float(t: F, c: u128) -> f64;
+    fn to_float(t: Field128, c: u128) -> f64;
 
     
-    fn to_field_integer(&self) -> <F as FieldElementWithInteger>::Integer;
+    fn to_field_integer(&self) -> <Field128 as FieldElementWithInteger>::Integer;
 }
 
-impl CompatibleFloat<Field128> for FixedI16<U15> {
+impl CompatibleFloat for FixedI16<U15> {
     fn to_float(d: Field128, c: u128) -> f64 {
         to_float_bits(d, c, 16)
     }
@@ -32,7 +32,7 @@ impl CompatibleFloat<Field128> for FixedI16<U15> {
     }
 }
 
-impl CompatibleFloat<Field128> for FixedI32<U31> {
+impl CompatibleFloat for FixedI32<U31> {
     fn to_float(d: Field128, c: u128) -> f64 {
         to_float_bits(d, c, 32)
     }
@@ -47,7 +47,7 @@ impl CompatibleFloat<Field128> for FixedI32<U31> {
     }
 }
 
-impl CompatibleFloat<Field128> for FixedI64<U63> {
+impl CompatibleFloat for FixedI64<U63> {
     fn to_float(d: Field128, c: u128) -> f64 {
         to_float_bits(d, c, 64)
     }

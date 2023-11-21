@@ -46,6 +46,8 @@
 
 
 
+#[cfg(feature = "experimental")]
+use crate::dp::DifferentialPrivacyStrategy;
 use crate::fft::{discrete_fourier_transform, discrete_fourier_transform_inv_finish, FftError};
 use crate::field::{FftFriendlyFieldElement, FieldElement, FieldElementWithInteger, FieldError};
 use crate::fp::log2;
@@ -103,6 +105,11 @@ pub enum FlpError {
     
     #[error("Field error: {0}")]
     Field(#[from] FieldError),
+
+    #[cfg(feature = "experimental")]
+    
+    #[error("differential privacy error: {0}")]
+    DifferentialPrivacy(#[from] crate::dp::DpError),
 
     
     #[cfg(test)]
@@ -220,7 +227,6 @@ pub trait Type: Sized + Eq + Clone + Debug {
     
     
     
-    #[allow(clippy::needless_range_loop)]
     fn prove(
         &self,
         input: &[Self::Field],
@@ -252,7 +258,7 @@ pub trait Type: Sized + Eq + Clone + Debug {
         }
 
         let mut prove_rand_len = 0;
-        let mut shim = self
+        let mut shims = self
             .gadget()
             .into_iter()
             .map(|inner| {
@@ -278,10 +284,10 @@ pub trait Type: Sized + Eq + Clone + Debug {
 
         
         
-        let data_len = (0..shim.len())
-            .map(|idx| {
-                let gadget_poly_len =
-                    gadget_poly_len(shim[idx].degree(), wire_poly_len(shim[idx].calls()));
+        let data_len = shims
+            .iter()
+            .map(|shim| {
+                let gadget_poly_len = gadget_poly_len(shim.degree(), wire_poly_len(shim.calls()));
 
                 
                 
@@ -289,7 +295,7 @@ pub trait Type: Sized + Eq + Clone + Debug {
                 
                 
                 
-                shim[idx].arity() + gadget_poly_len.next_power_of_two()
+                shim.arity() + gadget_poly_len.next_power_of_two()
             })
             .sum();
         let mut proof = vec![Self::Field::zero(); data_len];
@@ -297,12 +303,12 @@ pub trait Type: Sized + Eq + Clone + Debug {
         
         
         
-        let _ = self.valid(&mut shim, input, joint_rand, 1)?;
+        let _ = self.valid(&mut shims, input, joint_rand, 1)?;
 
         
         let mut proof_len = 0;
-        for idx in 0..shim.len() {
-            let gadget = shim[idx]
+        for shim in shims.iter_mut() {
+            let gadget = shim
                 .as_any()
                 .downcast_mut::<ProveShimGadget<Self::Field>>()
                 .unwrap();
@@ -315,14 +321,18 @@ pub trait Type: Sized + Eq + Clone + Debug {
             )
             .inv();
             let mut f = vec![vec![Self::Field::zero(); m]; gadget.arity()];
-            for wire in 0..gadget.arity() {
-                discrete_fourier_transform(&mut f[wire], &gadget.f_vals[wire], m)?;
-                discrete_fourier_transform_inv_finish(&mut f[wire], m, m_inv);
+            for ((coefficients, values), proof_val) in f[..gadget.arity()]
+                .iter_mut()
+                .zip(gadget.f_vals[..gadget.arity()].iter())
+                .zip(proof[proof_len..proof_len + gadget.arity()].iter_mut())
+            {
+                discrete_fourier_transform(coefficients, values, m)?;
+                discrete_fourier_transform_inv_finish(coefficients, m, m_inv);
 
                 
                 
                 
-                proof[proof_len + wire] = gadget.f_vals[wire][0];
+                *proof_val = values[0];
             }
 
             
@@ -390,7 +400,7 @@ pub trait Type: Sized + Eq + Clone + Debug {
         }
 
         let mut proof_len = 0;
-        let mut shim = self
+        let mut shims = self
             .gadget()
             .into_iter()
             .enumerate()
@@ -424,10 +434,7 @@ pub trait Type: Sized + Eq + Clone + Debug {
         
         
         
-        let data_len = 1
-            + (0..shim.len())
-                .map(|idx| shim[idx].arity() + 1)
-                .sum::<usize>();
+        let data_len = 1 + shims.iter().map(|shim| shim.arity() + 1).sum::<usize>();
         let mut verifier = Vec::with_capacity(data_len);
 
         
@@ -438,13 +445,12 @@ pub trait Type: Sized + Eq + Clone + Debug {
         
         
         
-        let validity = self.valid(&mut shim, input, joint_rand, num_shares)?;
+        let validity = self.valid(&mut shims, input, joint_rand, num_shares)?;
         verifier.push(validity);
 
         
-        for idx in 0..shim.len() {
-            let r = query_rand[idx];
-            let gadget = shim[idx]
+        for (query_rand_val, shim) in query_rand[..shims.len()].iter().zip(shims.iter_mut()) {
+            let gadget = shim
                 .as_any()
                 .downcast_ref::<QueryShimGadget<Self::Field>>()
                 .unwrap();
@@ -460,7 +466,7 @@ pub trait Type: Sized + Eq + Clone + Debug {
             for wire in 0..gadget.arity() {
                 discrete_fourier_transform(&mut f, &gadget.f_vals[wire], m)?;
                 discrete_fourier_transform_inv_finish(&mut f, m, m_inv);
-                verifier.push(poly_eval(&f, r));
+                verifier.push(poly_eval(&f, *query_rand_val));
             }
 
             
@@ -472,7 +478,6 @@ pub trait Type: Sized + Eq + Clone + Debug {
     }
 
     
-    #[allow(clippy::needless_range_loop)]
     fn decide(&self, verifier: &[Self::Field]) -> Result<bool, FlpError> {
         if verifier.len() != self.verifier_len() {
             return Err(FlpError::Decide(format!(
@@ -490,10 +495,10 @@ pub trait Type: Sized + Eq + Clone + Debug {
         
         let mut gadgets = self.gadget();
         let mut verifier_len = 1;
-        for idx in 0..gadgets.len() {
-            let next_len = 1 + gadgets[idx].arity();
+        for gadget in gadgets.iter_mut() {
+            let next_len = 1 + gadget.arity();
 
-            let e = gadgets[idx].call(&verifier[verifier_len..verifier_len + next_len - 1])?;
+            let e = gadget.call(&verifier[verifier_len..verifier_len + next_len - 1])?;
             if e != verifier[verifier_len + next_len - 1] {
                 return Ok(false);
             }
@@ -546,6 +551,21 @@ pub trait Type: Sized + Eq + Clone + Debug {
 }
 
 
+#[cfg(feature = "experimental")]
+pub trait TypeWithNoise<S>: Type
+where
+    S: DifferentialPrivacyStrategy,
+{
+    
+    fn add_noise_to_result(
+        &self,
+        dp_strategy: &S,
+        agg_result: &mut [Self::Field],
+        num_measurements: usize,
+    ) -> Result<(), FlpError>;
+}
+
+
 pub trait Gadget<F: FftFriendlyFieldElement>: Debug {
     
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError>;
@@ -585,10 +605,11 @@ impl<F: FftFriendlyFieldElement> ProveShimGadget<F> {
     fn new(inner: Box<dyn Gadget<F>>, prove_rand: &[F]) -> Result<Self, FlpError> {
         let mut f_vals = vec![vec![F::zero(); 1 + inner.calls()]; inner.arity()];
 
-        #[allow(clippy::needless_range_loop)]
-        for wire in 0..f_vals.len() {
+        for (prove_rand_val, wire_poly_vals) in
+            prove_rand[..f_vals.len()].iter().zip(f_vals.iter_mut())
+        {
             
-            f_vals[wire][0] = prove_rand[wire];
+            wire_poly_vals[0] = *prove_rand_val;
         }
 
         Ok(Self {
@@ -601,9 +622,8 @@ impl<F: FftFriendlyFieldElement> ProveShimGadget<F> {
 
 impl<F: FftFriendlyFieldElement> Gadget<F> for ProveShimGadget<F> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
-        #[allow(clippy::needless_range_loop)]
-        for wire in 0..inp.len() {
-            self.f_vals[wire][self.ct] = inp[wire];
+        for (wire_poly_vals, inp_val) in self.f_vals[..inp.len()].iter_mut().zip(inp.iter()) {
+            wire_poly_vals[self.ct] = *inp_val;
         }
         self.ct += 1;
         self.inner.call(inp)
@@ -692,9 +712,8 @@ impl<F: FftFriendlyFieldElement> QueryShimGadget<F> {
 
 impl<F: FftFriendlyFieldElement> Gadget<F> for QueryShimGadget<F> {
     fn call(&mut self, inp: &[F]) -> Result<F, FlpError> {
-        #[allow(clippy::needless_range_loop)]
-        for wire in 0..inp.len() {
-            self.f_vals[wire][self.ct] = inp[wire];
+        for (wire_poly_vals, inp_val) in self.f_vals[..inp.len()].iter_mut().zip(inp.iter()) {
+            wire_poly_vals[self.ct] = *inp_val;
         }
         let outp = self.p_vals[self.ct * self.step];
         self.ct += 1;

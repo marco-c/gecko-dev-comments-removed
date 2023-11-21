@@ -14,22 +14,10 @@
 
 
 
-
-
-
-
 pub mod benchmarked;
-#[cfg(feature = "prio2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "prio2")))]
-pub mod client;
-#[cfg(feature = "prio2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "prio2")))]
-pub mod encrypt;
-#[cfg(feature = "prio2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "prio2")))]
-pub mod server;
-
 pub mod codec;
+#[cfg(feature = "experimental")]
+pub mod dp;
 mod fft;
 pub mod field;
 pub mod flp;
@@ -42,12 +30,5 @@ mod fp;
 pub mod idpf;
 mod polynomial;
 mod prng;
-
-
-#[cfg(all(any(feature = "test-util", test), feature = "prio2"))]
-#[doc(hidden)]
-pub mod test_vector;
-#[cfg(feature = "prio2")]
-#[cfg_attr(docsrs, doc(cfg(feature = "prio2")))]
-pub mod util;
+pub mod topology;
 pub mod vdaf;

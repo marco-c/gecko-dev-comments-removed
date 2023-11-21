@@ -12,7 +12,6 @@ use crate::prng::{Prng, PrngError};
 use crate::{
     codec::{CodecError, Decode, Encode},
     fp::{FP128, FP32, FP64},
-    vdaf::prg::{CoinToss, SeedStream},
 };
 use serde::{
     de::{DeserializeOwned, Visitor},
@@ -25,7 +24,10 @@ use std::{
     hash::{Hash, Hasher},
     io::{Cursor, Read},
     marker::PhantomData,
-    ops::{Add, AddAssign, BitAnd, Div, DivAssign, Mul, MulAssign, Neg, Shl, Shr, Sub, SubAssign},
+    ops::{
+        Add, AddAssign, BitAnd, ControlFlow, Div, DivAssign, Mul, MulAssign, Neg, Shl, Shr, Sub,
+        SubAssign,
+    },
 };
 use subtle::{Choice, ConditionallyNegatable, ConditionallySelectable, ConstantTimeEq};
 
@@ -195,7 +197,7 @@ pub trait FieldElementWithInteger: FieldElement + From<Self::Integer> {
 }
 
 
-pub(crate) trait FieldElementExt: FieldElementWithInteger {
+pub(crate) trait FieldElementWithIntegerExt: FieldElementWithInteger {
     
     
     
@@ -290,7 +292,28 @@ pub(crate) trait FieldElementExt: FieldElementWithInteger {
     }
 }
 
-impl<F: FieldElementWithInteger> FieldElementExt for F {}
+impl<F: FieldElementWithInteger> FieldElementWithIntegerExt for F {}
+
+
+pub(crate) trait FieldElementExt: FieldElement {
+    
+    
+    
+    
+    
+    
+    
+    
+    fn from_random_rejection(bytes: &[u8]) -> ControlFlow<Self, ()> {
+        match Self::try_from_random(bytes) {
+            Ok(x) => ControlFlow::Break(x),
+            Err(FieldError::ModulusOverflow) => ControlFlow::Continue(()),
+            Err(err) => panic!("unexpected error: {err}"),
+        }
+    }
+}
+
+impl<F: FieldElement> FieldElementExt for F {}
 
 
 
@@ -376,9 +399,7 @@ macro_rules! make_field {
             ///
             /// We cannot use `u128::from_le_bytes` or `u128::from_be_bytes` because those functions
             /// expect inputs to be exactly 16 bytes long. Our encoding of most field elements is
-            /// more compact, and does not have to correspond to the size of an integer type. For
-            /// instance,`Field96`'s encoding is 12 bytes, even though it is a 16 byte `u128` in
-            /// memory.
+            /// more compact.
             fn try_from_bytes(bytes: &[u8], mask: u128) -> Result<Self, FieldError> {
                 if Self::ENCODED_SIZE > bytes.len() {
                     return Err(FieldError::ShortRead);
@@ -712,47 +733,6 @@ make_field!(
     8,
 );
 
-
-
-
-
-mod field96 {
-    #![allow(deprecated)]
-
-    use super::{
-        FftFriendlyFieldElement, FieldElement, FieldElementVisitor, FieldElementWithInteger,
-        FieldError,
-    };
-    use crate::{
-        codec::{CodecError, Decode, Encode},
-        fp::FP96,
-    };
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
-    use std::{
-        cmp::min,
-        fmt::{Debug, Display, Formatter},
-        hash::{Hash, Hasher},
-        io::{Cursor, Read},
-        marker::PhantomData,
-        ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-    };
-    use subtle::{Choice, ConditionallySelectable, ConstantTimeEq};
-
-    make_field!(
-        #[deprecated]
-        /// `GF(79228148845226978974766202881)`, a 96-bit field.
-        ///
-        /// This is deprecated because it is not currently used by either Prio v2 or any VDAF.
-        Field96,
-        u128,
-        FP96,
-        12,
-    );
-}
-
-#[allow(deprecated)]
-pub use field96::Field96;
-
 make_field!(
     /// `GF(340282366920938462946865773367900766209)`, a 128-bit field.
     Field128,
@@ -815,7 +795,7 @@ pub fn random_vector<F: FieldElement>(len: usize) -> Result<Vec<F>, PrngError> {
 #[inline(always)]
 pub(crate) fn encode_fieldvec<F: FieldElement, T: AsRef<[F]>>(val: T, bytes: &mut Vec<u8>) {
     for elem in val.as_ref() {
-        bytes.append(&mut (*elem).into());
+        elem.encode(bytes);
     }
 }
 
@@ -838,32 +818,6 @@ pub(crate) fn decode_fieldvec<F: FieldElement>(
         );
     }
     Ok(vec)
-}
-
-impl<F> CoinToss for F
-where
-    F: FieldElement,
-{
-    fn sample<S>(seed_stream: &mut S) -> Self
-    where
-        S: SeedStream,
-    {
-        
-        
-        let mut buffer = [0u8; 64];
-        assert!(
-            buffer.len() >= F::ENCODED_SIZE,
-            "field is too big for buffer"
-        );
-        loop {
-            seed_stream.fill(&mut buffer[..F::ENCODED_SIZE]);
-            match Self::try_from_random(&buffer[..F::ENCODED_SIZE]) {
-                Ok(x) => return x,
-                Err(FieldError::ModulusOverflow) => continue,
-                Err(err) => panic!("unexpected error: {err}"),
-            }
-        }
-    }
 }
 
 #[cfg(test)]
@@ -1204,12 +1158,6 @@ mod tests {
     #[test]
     fn test_field64() {
         field_element_test::<Field64>();
-    }
-
-    #[test]
-    fn test_field96() {
-        #[allow(deprecated)]
-        field_element_test::<Field96>();
     }
 
     #[test]

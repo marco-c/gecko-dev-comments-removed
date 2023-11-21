@@ -181,10 +181,13 @@
 
 
 
+
+
+
 #![doc(
     html_logo_url = "https://www.rust-lang.org/logos/rust-logo-128x128-blk.png",
     html_favicon_url = "https://www.rust-lang.org/favicon.ico",
-    html_root_url = "https://docs.rs/getrandom/0.2.9"
+    html_root_url = "https://docs.rs/getrandom/0.2.11"
 )]
 #![no_std]
 #![warn(rust_2018_idioms, unused_lifetimes, missing_docs)]
@@ -262,6 +265,9 @@ cfg_if! {
         // uses Horizon OS (it is aarch64).
         mod util_libc;
         #[path = "3ds.rs"] mod imp;
+    } else if #[cfg(target_os = "vita")] {
+        mod util_libc;
+        #[path = "vita.rs"] mod imp;
     } else if #[cfg(target_os = "emscripten")] {
         mod util_libc;
         #[path = "emscripten.rs"] mod imp;
@@ -274,6 +280,9 @@ cfg_if! {
                         any(target_arch = "wasm32", target_arch = "wasm64"),
                         target_os = "unknown"))] {
         #[path = "js.rs"] mod imp;
+    } else if #[cfg(target_os = "hurd")] {
+        mod util_libc;
+        #[path = "hurd.rs"] mod imp;
     } else if #[cfg(feature = "custom")] {
         use custom as imp;
     } else if #[cfg(all(any(target_arch = "wasm32", target_arch = "wasm64"),

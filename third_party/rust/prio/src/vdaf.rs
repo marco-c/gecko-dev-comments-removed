@@ -5,6 +5,8 @@
 
 
 
+#[cfg(feature = "experimental")]
+use crate::dp::DifferentialPrivacyStrategy;
 #[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
 use crate::idpf::IdpfError;
 use crate::{
@@ -12,14 +14,15 @@ use crate::{
     field::{encode_fieldvec, merge_vector, FieldElement, FieldError},
     flp::FlpError,
     prng::PrngError,
-    vdaf::prg::Seed,
+    vdaf::xof::Seed,
 };
 use serde::{Deserialize, Serialize};
 use std::{fmt::Debug, io::Cursor};
+use subtle::{Choice, ConstantTimeEq};
 
 
 
-pub(crate) const VERSION: u8 = 5;
+pub(crate) const VERSION: u8 = 7;
 
 
 #[derive(Debug, thiserror::Error)]
@@ -55,7 +58,7 @@ pub enum VdafError {
 }
 
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum Share<F, const SEED_SIZE: usize> {
     
     Leader(Vec<F>),
@@ -72,6 +75,26 @@ impl<F: Clone, const SEED_SIZE: usize> Share<F, SEED_SIZE> {
         match self {
             Self::Leader(ref data) => Self::Leader(data[..len].to_vec()),
             Self::Helper(ref seed) => Self::Helper(seed.clone()),
+        }
+    }
+}
+
+impl<F: ConstantTimeEq, const SEED_SIZE: usize> PartialEq for Share<F, SEED_SIZE> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl<F: ConstantTimeEq, const SEED_SIZE: usize> Eq for Share<F, SEED_SIZE> {}
+
+impl<F: ConstantTimeEq, const SEED_SIZE: usize> ConstantTimeEq for Share<F, SEED_SIZE> {
+    fn ct_eq(&self, other: &Self) -> subtle::Choice {
+        
+        
+        match (self, other) {
+            (Share::Leader(self_val), Share::Leader(other_val)) => self_val.ct_eq(other_val),
+            (Share::Helper(self_val), Share::Helper(other_val)) => self_val.ct_eq(other_val),
+            _ => Choice::from(0),
         }
     }
 }
@@ -171,18 +194,22 @@ pub trait Vdaf: Clone + Debug {
 
     
     
-    fn custom(usage: u16) -> [u8; 8] {
-        let mut custom = [0_u8; 8];
-        custom[0] = VERSION;
-        custom[1] = 0; 
-        custom[2..6].copy_from_slice(&(Self::ID).to_be_bytes());
-        custom[6..8].copy_from_slice(&usage.to_be_bytes());
-        custom
+    fn domain_separation_tag(usage: u16) -> [u8; 8] {
+        let mut dst = [0_u8; 8];
+        dst[0] = VERSION;
+        dst[1] = 0; 
+        dst[2..6].copy_from_slice(&(Self::ID).to_be_bytes());
+        dst[6..8].copy_from_slice(&usage.to_be_bytes());
+        dst
     }
 }
 
 
 pub trait Client<const NONCE_SIZE: usize>: Vdaf {
+    
+    
+    
+    
     
     
     fn shard(
@@ -195,7 +222,7 @@ pub trait Client<const NONCE_SIZE: usize>: Vdaf {
 
 pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vdaf {
     
-    type PrepareState: Clone + Debug;
+    type PrepareState: Clone + Debug + PartialEq + Eq;
 
     
     
@@ -208,8 +235,16 @@ pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vda
     
     
     
-    type PrepareMessage: Clone + Debug + ParameterizedDecode<Self::PrepareState> + Encode;
+    type PrepareMessage: Clone
+        + Debug
+        + PartialEq
+        + Eq
+        + ParameterizedDecode<Self::PrepareState>
+        + Encode;
 
+    
+    
+    
     
     
     
@@ -224,8 +259,35 @@ pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vda
     ) -> Result<(Self::PrepareState, Self::PrepareShare), VdafError>;
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(
+        since = "0.15.0",
+        note = "Use Vdaf::prepare_shares_to_prepare_message instead"
+    )]
     fn prepare_preprocess<M: IntoIterator<Item = Self::PrepareShare>>(
         &self,
+        agg_param: &Self::AggregationParam,
+        inputs: M,
+    ) -> Result<Self::PrepareMessage, VdafError> {
+        self.prepare_shares_to_prepare_message(agg_param, inputs)
+    }
+
+    
+    
+    
+    
+    
+    fn prepare_shares_to_prepare_message<M: IntoIterator<Item = Self::PrepareShare>>(
+        &self,
+        agg_param: &Self::AggregationParam,
         inputs: M,
     ) -> Result<Self::PrepareMessage, VdafError>;
 
@@ -236,7 +298,35 @@ pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vda
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    #[deprecated(since = "0.15.0", note = "Use Vdaf::prepare_next")]
     fn prepare_step(
+        &self,
+        state: Self::PrepareState,
+        input: Self::PrepareMessage,
+    ) -> Result<PrepareTransition<Self, VERIFY_KEY_SIZE, NONCE_SIZE>, VdafError> {
+        self.prepare_next(state, input)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn prepare_next(
         &self,
         state: Self::PrepareState,
         input: Self::PrepareMessage,
@@ -248,6 +338,25 @@ pub trait Aggregator<const VERIFY_KEY_SIZE: usize, const NONCE_SIZE: usize>: Vda
         agg_param: &Self::AggregationParam,
         output_shares: M,
     ) -> Result<Self::AggregateShare, VdafError>;
+}
+
+
+#[cfg(feature = "experimental")]
+pub trait AggregatorWithNoise<
+    const VERIFY_KEY_SIZE: usize,
+    const NONCE_SIZE: usize,
+    DPStrategy: DifferentialPrivacyStrategy,
+>: Aggregator<VERIFY_KEY_SIZE, NONCE_SIZE>
+{
+    
+    
+    fn add_noise_to_agg_share(
+        &self,
+        dp_strategy: &DPStrategy,
+        agg_param: &Self::AggregationParam,
+        agg_share: &mut Self::AggregateShare,
+        num_measurements: usize,
+    ) -> Result<(), VdafError>;
 }
 
 
@@ -289,8 +398,22 @@ pub trait Aggregatable: Clone + Debug + From<Self::OutputShare> {
 }
 
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone)]
 pub struct OutputShare<F>(Vec<F>);
+
+impl<F: ConstantTimeEq> PartialEq for OutputShare<F> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl<F: ConstantTimeEq> Eq for OutputShare<F> {}
+
+impl<F: ConstantTimeEq> ConstantTimeEq for OutputShare<F> {
+    fn ct_eq(&self, other: &Self) -> Choice {
+        self.0.ct_eq(&other.0)
+    }
+}
 
 impl<F> AsRef<[F]> for OutputShare<F> {
     fn as_ref(&self) -> &[F] {
@@ -314,12 +437,33 @@ impl<F: FieldElement> Encode for OutputShare<F> {
     }
 }
 
+impl<F> Debug for OutputShare<F> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("OutputShare").finish()
+    }
+}
 
 
 
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+
 pub struct AggregateShare<F>(Vec<F>);
+
+impl<F: ConstantTimeEq> PartialEq for AggregateShare<F> {
+    fn eq(&self, other: &Self) -> bool {
+        self.ct_eq(other).into()
+    }
+}
+
+impl<F: ConstantTimeEq> Eq for AggregateShare<F> {}
+
+impl<F: ConstantTimeEq> ConstantTimeEq for AggregateShare<F> {
+    fn ct_eq(&self, other: &Self) -> subtle::Choice {
+        self.0.ct_eq(&other.0)
+    }
+}
 
 impl<F: FieldElement> AsRef<[F]> for AggregateShare<F> {
     fn as_ref(&self) -> &[F] {
@@ -460,17 +604,20 @@ where
     }
 
     let mut inbound = vdaf
-        .prepare_preprocess(outbound.iter().map(|encoded| {
-            V::PrepareShare::get_decoded_with_param(&states[0], encoded)
-                .expect("failed to decode prep share")
-        }))?
+        .prepare_shares_to_prepare_message(
+            agg_param,
+            outbound.iter().map(|encoded| {
+                V::PrepareShare::get_decoded_with_param(&states[0], encoded)
+                    .expect("failed to decode prep share")
+            }),
+        )?
         .get_encoded();
 
     let mut out_shares = Vec::new();
     loop {
         let mut outbound = Vec::new();
         for state in states.iter_mut() {
-            match vdaf.prepare_step(
+            match vdaf.prepare_next(
                 state.clone(),
                 V::PrepareMessage::get_decoded_with_param(state, &inbound)
                     .expect("failed to decode prep message"),
@@ -488,10 +635,13 @@ where
         if outbound.len() == vdaf.num_aggregators() {
             
             inbound = vdaf
-                .prepare_preprocess(outbound.iter().map(|encoded| {
-                    V::PrepareShare::get_decoded_with_param(&states[0], encoded)
-                        .expect("failed to decode prep share")
-                }))?
+                .prepare_shares_to_prepare_message(
+                    agg_param,
+                    outbound.iter().map(|encoded| {
+                        V::PrepareShare::get_decoded_with_param(&states[0], encoded)
+                            .expect("failed to decode prep share")
+                    }),
+                )?
                 .get_encoded();
         } else if outbound.is_empty() {
             
@@ -531,16 +681,77 @@ where
     assert_eq!(encoded, bytes);
 }
 
+#[cfg(test)]
+fn equality_comparison_test<T>(values: &[T])
+where
+    T: Debug + PartialEq,
+{
+    use std::ptr;
+
+    
+    
+    
+    for (i, i_val) in values.iter().enumerate() {
+        for (j, j_val) in values.iter().enumerate() {
+            if i == j {
+                assert!(ptr::eq(i_val, j_val)); 
+                assert_eq!(
+                    i_val, j_val,
+                    "Expected element at index {i} to be equal to itself, but it was not"
+                );
+            } else {
+                assert_ne!(
+                    i_val, j_val,
+                    "Expected elements at indices {i} & {j} to not be equal, but they were"
+                )
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::vdaf::{equality_comparison_test, xof::Seed, AggregateShare, OutputShare, Share};
+
+    #[test]
+    fn share_equality_test() {
+        equality_comparison_test(&[
+            Share::Leader(Vec::from([1, 2, 3])),
+            Share::Leader(Vec::from([3, 2, 1])),
+            Share::Helper(Seed([1, 2, 3])),
+            Share::Helper(Seed([3, 2, 1])),
+        ])
+    }
+
+    #[test]
+    fn output_share_equality_test() {
+        equality_comparison_test(&[
+            OutputShare(Vec::from([1, 2, 3])),
+            OutputShare(Vec::from([3, 2, 1])),
+        ])
+    }
+
+    #[test]
+    fn aggregate_share_equality_test() {
+        equality_comparison_test(&[
+            AggregateShare(Vec::from([1, 2, 3])),
+            AggregateShare(Vec::from([3, 2, 1])),
+        ])
+    }
+}
+
+#[cfg(feature = "test-util")]
+pub mod dummy;
 #[cfg(all(feature = "crypto-dependencies", feature = "experimental"))]
 #[cfg_attr(
     docsrs,
     doc(cfg(all(feature = "crypto-dependencies", feature = "experimental")))
 )]
 pub mod poplar1;
-pub mod prg;
 #[cfg(feature = "prio2")]
 #[cfg_attr(docsrs, doc(cfg(feature = "prio2")))]
 pub mod prio2;
 pub mod prio3;
 #[cfg(test)]
 mod prio3_test;
+pub mod xof;

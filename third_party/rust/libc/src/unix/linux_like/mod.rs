@@ -1786,7 +1786,7 @@ extern "C" {
 
 
 cfg_if! {
-    if #[cfg(not(target_env = "musl"))] {
+    if #[cfg(not(any(target_env = "musl", target_os = "emscripten")))] {
         extern "C" {
             pub fn fstatfs64(fd: ::c_int, buf: *mut statfs64) -> ::c_int;
             pub fn statvfs64(path: *const ::c_char, buf: *mut statvfs64) -> ::c_int;
@@ -1844,7 +1844,7 @@ cfg_if! {
 }
 
 cfg_if! {
-    if #[cfg(not(any(target_env = "uclibc", target_env = "musl")))] {
+    if #[cfg(not(any(target_env = "uclibc", target_env = "musl", target_os = "emscripten")))] {
         extern "C" {
             pub fn preadv64(
                 fd: ::c_int,

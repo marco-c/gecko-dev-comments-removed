@@ -1,3 +1,4 @@
+
 #[cfg(not(feature = "no_unroll"))]
 #[macro_export]
 macro_rules! unroll5 {
@@ -10,6 +11,7 @@ macro_rules! unroll5 {
     };
 }
 
+
 #[cfg(feature = "no_unroll")]
 #[macro_export]
 macro_rules! unroll5 {
@@ -17,6 +19,7 @@ macro_rules! unroll5 {
         for $var in 0..5 $body
     }
 }
+
 
 #[cfg(not(feature = "no_unroll"))]
 #[macro_export]
@@ -48,6 +51,7 @@ macro_rules! unroll24 {
         { const $var: usize = 23; $body; }
     };
 }
+
 
 #[cfg(feature = "no_unroll")]
 #[macro_export]
