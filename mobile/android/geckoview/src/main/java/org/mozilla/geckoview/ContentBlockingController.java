@@ -103,6 +103,15 @@ public class ContentBlockingController {
     public static final int LOADED_SOCIALTRACKING_CONTENT = 0x00020000;
 
     
+    public static final int BLOCKED_EMAILTRACKING_CONTENT = 0x00400000;
+
+    
+    public static final int LOADED_EMAILTRACKING_LEVEL_1_CONTENT = 0x00800000;
+
+    
+    public static final int LOADED_EMAILTRACKING_LEVEL_2_CONTENT = 0x00000100;
+
+    
 
 
     public static final int REPLACED_TRACKING_CONTENT = 0x00000010;
@@ -129,7 +138,9 @@ public class ContentBlockingController {
         Event.COOKIES_BLOCKED_TRACKER, Event.COOKIES_BLOCKED_SOCIALTRACKER,
         Event.COOKIES_BLOCKED_ALL, Event.COOKIES_PARTITIONED_FOREIGN,
         Event.COOKIES_BLOCKED_FOREIGN, Event.BLOCKED_SOCIALTRACKING_CONTENT,
-        Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT
+        Event.LOADED_SOCIALTRACKING_CONTENT, Event.REPLACED_TRACKING_CONTENT,
+        Event.LOADED_EMAILTRACKING_LEVEL_1_CONTENT, Event.LOADED_EMAILTRACKING_LEVEL_2_CONTENT,
+        Event.BLOCKED_EMAILTRACKING_CONTENT
       })
       public @interface LogEvent {}
 
