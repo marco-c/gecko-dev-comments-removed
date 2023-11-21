@@ -599,28 +599,35 @@ class GridInspector {
       (await asyncStorage.getItem("gridInspectorHostColors")) || {};
 
     for (const grid of grids) {
-      if (grid.nodeFront === node) {
-        if (!customGridColors[hostname]) {
-          customGridColors[hostname] = [];
-        }
-        
-        customGridColors[hostname][grid.id] = color;
-        await asyncStorage.setItem("gridInspectorHostColors", customGridColors);
+      if (grid.nodeFront !== node) {
+        continue;
+      }
 
-        if (!this.isPanelVisible()) {
-          
-          
-          return;
-        }
+      if (!customGridColors[hostname]) {
+        customGridColors[hostname] = [];
+      }
+      
+      customGridColors[hostname][grid.id] = color;
+      await asyncStorage.setItem("gridInspectorHostColors", customGridColors);
 
+      if (!this.isPanelVisible()) {
         
         
-        
-        if (this.highlighters.gridHighlighters.has(node)) {
-          this.highlighters.showGridHighlighter(node);
-        } else {
-          this.highlighters.showParentGridHighlighter(node);
-        }
+        return;
+      }
+
+      
+      
+      if (this.highlighters.gridHighlighters.has(node)) {
+        this.highlighters.showGridHighlighter(node);
+        continue;
+      }
+
+      
+      
+      const subGrid = grids.find(({ id }) => grid.subgrids.includes(id));
+      if (subGrid?.highlighted) {
+        this.highlighters.showParentGridHighlighter(node);
       }
     }
   }

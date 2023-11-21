@@ -1118,11 +1118,18 @@ class HighlightersOverlay {
     if (!highlighter) {
       highlighter = await this._getHighlighterTypeForNode(TYPES.GRID, node);
     }
-
-    await highlighter.show(node, {
+    const options = {
       ...this.getGridHighlighterSettings(node),
       
       globalAlpha: SUBGRID_PARENT_ALPHA,
+    };
+    await highlighter.show(node, options);
+
+    this.emitForTests("highlighter-shown", {
+      type: TYPES.GRID,
+      nodeFront: node,
+      highlighter,
+      options,
     });
 
     return highlighter;
