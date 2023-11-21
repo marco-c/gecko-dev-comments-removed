@@ -760,8 +760,11 @@ class CallbackHandler:
                 except AttributeError as e:
                     
                     
-                    if getattr(e, "obj") == self.protocol:
-                        raise NotImplementedError from e
+                    
+                    
+                    if ((hasattr(e, "obj") and getattr(e, "obj") == self.protocol) or
+                        "'{self.protocol.__class__.__name__}' has no attribute" in str(e)):
+                            raise NotImplementedError from e
         except self.unimplemented_exc:
             self.logger.warning("Action %s not implemented" % action)
             self._send_message(cmd_id, "complete", "error", f"Action {action} not implemented")
