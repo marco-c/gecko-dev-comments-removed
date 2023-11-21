@@ -37,41 +37,90 @@ pub extern "C" fn lang_tag_destroy(lang: *mut LangTag) {
 
 
 
-
 #[no_mangle]
-pub extern "C" fn lang_tag_matches(attribute: *const LangTag, selector: *const LangTag) -> bool {
+pub extern "C" fn lang_tag_matches(attribute: *const LangTag, selector: &nsACString) -> bool {
+    
     let lang = unsafe { *(attribute as *const LanguageTag<&str>) };
-    let range = unsafe { *(selector as *const LanguageTag<&str>) };
 
-    fn matches_option(a: Option<&str>, b: Option<&str>) -> bool {
-        match (a, b) {
-            (Some(a), Some(b)) => a.eq_ignore_ascii_case(b),
-            (_, None) => true,
-            (None, _) => false,
-        }
+    
+    let range_str = unsafe { selector.as_str_unchecked() };
+
+    if lang.is_empty() || range_str.is_empty() {
+        return false;
     }
 
-    fn matches_iter<'a>(
-        a: impl Iterator<Item = &'a str>,
-        b: impl Iterator<Item = &'a str>,
-    ) -> bool {
-        a.zip(b).all(|(x, y)| x.eq_ignore_ascii_case(y))
-    }
+    
+    
 
-    if !(lang
-        .primary_language()
-        .eq_ignore_ascii_case(range.primary_language())
-        || range.primary_language().eq_ignore_ascii_case("und"))
+    
+    
+    
+    
+    
+
+    let mut range_subtags = range_str.split('-');
+    let mut lang_subtags = lang.as_str().split('-');
+
+    
+    
+    
+    
+
+    let mut range_subtag = range_subtags.next();
+    let mut lang_subtag = lang_subtags.next();
+    
+    assert!(range_subtag.is_some() && lang_subtag.is_some());
+    if !(range_subtag.unwrap() == "*"
+        || range_subtag
+            .unwrap()
+            .eq_ignore_ascii_case(lang_subtag.unwrap()))
     {
         return false;
     }
 
-    matches_option(lang.script(), range.script())
-        && matches_option(lang.region(), range.region())
-        && matches_iter(lang.variant_subtags(), range.variant_subtags())
-        && matches_iter(
-            lang.extended_language_subtags(),
-            range.extended_language_subtags(),
-        )
-        && matches_option(lang.private_use(), range.private_use())
+    range_subtag = range_subtags.next();
+    lang_subtag = lang_subtags.next();
+
+    
+    loop {
+        
+        
+        let Some(range_subtag_str) = range_subtag else {
+            return true;
+        };
+
+        
+        
+        
+        if range_subtag_str == "*" {
+            range_subtag = range_subtags.next();
+            continue;
+        }
+
+        
+        
+        let Some(lang_subtag_str) = lang_subtag else {
+            return false;
+        };
+
+        
+        
+        
+        if range_subtag_str.eq_ignore_ascii_case(lang_subtag_str) {
+            range_subtag = range_subtags.next();
+            lang_subtag = lang_subtags.next();
+            continue;
+        }
+
+        
+        
+        
+        if lang_subtag_str.len() == 1 {
+            return false;
+        }
+
+        
+        
+        lang_subtag = lang_subtags.next();
+    }
 }

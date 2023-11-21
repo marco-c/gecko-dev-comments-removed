@@ -104,25 +104,7 @@ bool nsStyleUtil::LangTagCompare(const nsACString& aAttributeValue,
     return false;
   }
 
-  AutoLangTag selector(aSelectorValue);
-
-  
-  
-  
-  nsAutoCString selectorTemp;
-  if (!selector.IsValid()) {
-    bool wildcard = aSelectorValue[0] == '*';
-    if (wildcard || aSelectorValue.Contains('_')) {
-      selectorTemp = aSelectorValue;
-      selectorTemp.ReplaceChar('_', '-');
-      if (wildcard) {
-        selectorTemp.Replace(0, 1, "und");
-      }
-      selector.Reset(selectorTemp);
-    }
-  }
-
-  return selector.IsValid() && intl::ffi::lang_tag_matches(langAttr, selector);
+  return intl::ffi::lang_tag_matches(langAttr, &aSelectorValue);
 }
 
 bool nsStyleUtil::ValueIncludes(const nsAString& aValueList,
