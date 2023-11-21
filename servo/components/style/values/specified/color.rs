@@ -308,14 +308,6 @@ pub enum SystemColor {
     
     MozMacDisabledtoolbartext,
 
-    MozMacMenupopup,
-    MozMacMenuitem,
-    MozMacActiveMenuitem,
-    MozMacSourceList,
-    MozMacSourceListSelection,
-    MozMacActiveSourceListSelection,
-    MozMacTooltip,
-
     
     
     Accentcolor,
