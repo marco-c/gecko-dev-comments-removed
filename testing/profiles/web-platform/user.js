@@ -62,6 +62,10 @@ user_pref("widget.disable-dark-scrollbar", true);
 
 
 
+user_pref("ui.scrollbarFadeDuration", 0);
+
+
+
 user_pref("nglayout.initialpaint.unsuppress_with_no_background", true);
 user_pref("media.block-autoplay-until-in-foreground", false);
 
