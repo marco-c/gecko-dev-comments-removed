@@ -8,7 +8,7 @@
 use crate::parser::{Parse, ParserContext};
 use crate::values::specified;
 use crate::values::{CSSFloat, CustomIdent};
-use crate::{Atom, Zero};
+use crate::{Atom, One, Zero};
 use cssparser::Parser;
 use std::fmt::{self, Write};
 use std::{cmp, usize};
@@ -92,34 +92,51 @@ where
 
 impl<Integer> ToCss for GridLine<Integer>
 where
-    Integer: ToCss + PartialEq + Zero,
+    Integer: ToCss + PartialEq + Zero + One,
 {
     fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
     where
         W: Write,
     {
+        
         if self.is_auto() {
             return dest.write_str("auto");
         }
 
+        
+        if self.is_ident_only() {
+            return CustomIdent(self.ident.clone()).to_css(dest);
+        }
+
+        
+        let has_ident = self.ident != atom!("");
         if self.is_span {
             dest.write_str("span")?;
+            debug_assert!(!self.line_num.is_zero() || has_ident);
+
+            
+            
+            
+            
+            if !self.line_num.is_zero() && !(self.line_num.is_one() && has_ident) {
+                dest.write_char(' ')?;
+                self.line_num.to_css(dest)?;
+            }
+
+            if has_ident {
+                dest.write_char(' ')?;
+                CustomIdent(self.ident.clone()).to_css(dest)?;
+            }
+            return Ok(());
         }
 
-        if !self.line_num.is_zero() {
-            if self.is_span {
-                dest.write_char(' ')?;
-            }
-            self.line_num.to_css(dest)?;
-        }
-
-        if self.ident != atom!("") {
-            if self.is_span || !self.line_num.is_zero() {
-                dest.write_char(' ')?;
-            }
+        
+        debug_assert!(!self.line_num.is_zero());
+        self.line_num.to_css(dest)?;
+        if has_ident {
+            dest.write_char(' ')?;
             CustomIdent(self.ident.clone()).to_css(dest)?;
         }
-
         Ok(())
     }
 }
