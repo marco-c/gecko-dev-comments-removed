@@ -59,12 +59,12 @@ class JS_PUBLIC_API SliceBudget {
   bool extended = false;
 
  private:
-  static const intptr_t UnlimitedCounter = INTPTR_MAX;
+  static constexpr int64_t UnlimitedCounter = INT64_MAX;
 
   
   
   
-  static constexpr intptr_t StepsPerExpensiveCheck = 1000;
+  static constexpr int64_t StepsPerExpensiveCheck = 1000;
 
   
 
@@ -115,8 +115,10 @@ class JS_PUBLIC_API SliceBudget {
   
   
   void stepAndForceCheck() {
-    if (!isUnlimited()) {
+    if (isTimeBudget()) {
       counter = 0;
+    } else {
+      counter--;
     }
   }
 
