@@ -381,7 +381,11 @@ this.AccessibilityUtils = (function () {
 
 
   function assertFocusable(accessible) {
-    if (gEnv.focusableRule && !isKeyboardFocusable(accessible)) {
+    if (
+      gEnv.mustBeEnabled &&
+      gEnv.focusableRule &&
+      !isKeyboardFocusable(accessible)
+    ) {
       const ariaRoles = getAriaRoles(accessible);
       
       if (!ariaRoles.includes("combobox") && !ariaRoles.includes("listbox")) {
@@ -418,13 +422,21 @@ this.AccessibilityUtils = (function () {
 
 
   function assertInteractive(accessible) {
-    if (gEnv.actionCountRule && accessible.actionCount === 0) {
+    if (
+      gEnv.mustBeEnabled &&
+      gEnv.actionCountRule &&
+      accessible.actionCount === 0
+    ) {
       a11yFail("Node does not support any accessible actions", accessible);
 
       return;
     }
 
-    if (gEnv.interactiveRule && !INTERACTIVE_ROLES.has(accessible.role)) {
+    if (
+      gEnv.mustBeEnabled &&
+      gEnv.interactiveRule &&
+      !INTERACTIVE_ROLES.has(accessible.role)
+    ) {
       if (
         
         (accessible.role !== Ci.nsIAccessibleRole.ROLE_LABEL ||
