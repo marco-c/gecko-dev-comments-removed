@@ -1,18 +1,8 @@
-use crate::{ast, hir, Error};
+use crate::ast;
+use crate::hir;
 
+use crate::Result;
 
-
-
-
-
-
-
-
-
-
-pub fn parse(pattern: &str) -> Result<hir::Hir, Error> {
-    Parser::new().parse(pattern)
-}
 
 
 
@@ -99,12 +89,8 @@ impl ParserBuilder {
     
     
     
-    
-    
-    
-    
-    pub fn utf8(&mut self, yes: bool) -> &mut ParserBuilder {
-        self.hir.utf8(yes);
+    pub fn allow_invalid_utf8(&mut self, yes: bool) -> &mut ParserBuilder {
+        self.hir.allow_invalid_utf8(yes);
         self
     }
 
@@ -152,48 +138,6 @@ impl ParserBuilder {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn crlf(&mut self, yes: bool) -> &mut ParserBuilder {
-        self.hir.crlf(yes);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn line_terminator(&mut self, byte: u8) -> &mut ParserBuilder {
-        self.hir.line_terminator(byte);
-        self
-    }
-
-    
-    
-    
-    
     pub fn swap_greed(&mut self, yes: bool) -> &mut ParserBuilder {
         self.hir.swap_greed(yes);
         self
@@ -226,6 +170,7 @@ impl ParserBuilder {
 
 
 
+
 #[derive(Clone, Debug)]
 pub struct Parser {
     ast: ast::parse::Parser,
@@ -240,13 +185,14 @@ impl Parser {
     
     
     
+    
     pub fn new() -> Parser {
         ParserBuilder::new().build()
     }
 
     
     
-    pub fn parse(&mut self, pattern: &str) -> Result<hir::Hir, Error> {
+    pub fn parse(&mut self, pattern: &str) -> Result<hir::Hir> {
         let ast = self.ast.parse(pattern)?;
         let hir = self.hir.translate(pattern, &ast)?;
         Ok(hir)

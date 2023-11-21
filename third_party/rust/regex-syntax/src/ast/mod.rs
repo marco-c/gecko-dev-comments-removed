@@ -2,9 +2,9 @@
 
 
 
-use core::cmp::Ordering;
-
-use alloc::{boxed::Box, string::String, vec, vec::Vec};
+use std::cmp::Ordering;
+use std::error;
+use std::fmt;
 
 pub use crate::ast::visitor::{visit, Visitor};
 
@@ -20,7 +20,6 @@ mod visitor;
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Error {
     
     kind: ErrorKind,
@@ -66,12 +65,7 @@ impl Error {
 }
 
 
-
-
-
-#[non_exhaustive]
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ErrorKind {
     
     
@@ -175,26 +169,71 @@ pub enum ErrorKind {
     
     
     UnsupportedLookAround,
+    
+    
+    
+    
+    
+    #[doc(hidden)]
+    __Nonexhaustive,
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for Error {}
+impl error::Error for Error {
+    
+    #[allow(deprecated)]
+    fn description(&self) -> &str {
+        use self::ErrorKind::*;
+        match self.kind {
+            CaptureLimitExceeded => "capture group limit exceeded",
+            ClassEscapeInvalid => "invalid escape sequence in character class",
+            ClassRangeInvalid => "invalid character class range",
+            ClassRangeLiteral => "invalid range boundary, must be a literal",
+            ClassUnclosed => "unclosed character class",
+            DecimalEmpty => "empty decimal literal",
+            DecimalInvalid => "invalid decimal literal",
+            EscapeHexEmpty => "empty hexadecimal literal",
+            EscapeHexInvalid => "invalid hexadecimal literal",
+            EscapeHexInvalidDigit => "invalid hexadecimal digit",
+            EscapeUnexpectedEof => "unexpected eof (escape sequence)",
+            EscapeUnrecognized => "unrecognized escape sequence",
+            FlagDanglingNegation => "dangling flag negation operator",
+            FlagDuplicate { .. } => "duplicate flag",
+            FlagRepeatedNegation { .. } => "repeated negation",
+            FlagUnexpectedEof => "unexpected eof (flag)",
+            FlagUnrecognized => "unrecognized flag",
+            GroupNameDuplicate { .. } => "duplicate capture group name",
+            GroupNameEmpty => "empty capture group name",
+            GroupNameInvalid => "invalid capture group name",
+            GroupNameUnexpectedEof => "unclosed capture group name",
+            GroupUnclosed => "unclosed group",
+            GroupUnopened => "unopened group",
+            NestLimitExceeded(_) => "nest limit exceeded",
+            RepetitionCountInvalid => "invalid repetition count range",
+            RepetitionCountUnclosed => "unclosed counted repetition",
+            RepetitionMissing => "repetition operator missing expression",
+            UnicodeClassInvalid => "invalid Unicode character class",
+            UnsupportedBackreference => "backreferences are not supported",
+            UnsupportedLookAround => "look-around is not supported",
+            _ => unreachable!(),
+        }
+    }
+}
 
-impl core::fmt::Display for Error {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         crate::error::Formatter::from(self).fmt(f)
     }
 }
 
-impl core::fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use self::ErrorKind::*;
         match *self {
             CaptureLimitExceeded => write!(
                 f,
                 "exceeded the maximum number of \
                  capturing groups ({})",
-                u32::MAX
+                ::std::u32::MAX
             ),
             ClassEscapeInvalid => {
                 write!(f, "invalid escape sequence found in character class")
@@ -271,6 +310,7 @@ impl core::fmt::Display for ErrorKind {
                 "look-around, including look-ahead and look-behind, \
                  is not supported"
             ),
+            _ => unreachable!(),
         }
     }
 }
@@ -280,7 +320,6 @@ impl core::fmt::Display for ErrorKind {
 
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Span {
     
     pub start: Position,
@@ -288,8 +327,8 @@ pub struct Span {
     pub end: Position,
 }
 
-impl core::fmt::Debug for Span {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Debug for Span {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Span({:?}, {:?})", self.start, self.end)
     }
 }
@@ -311,7 +350,6 @@ impl PartialOrd for Span {
 
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Position {
     
     
@@ -322,8 +360,8 @@ pub struct Position {
     pub column: usize,
 }
 
-impl core::fmt::Debug for Position {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Debug for Position {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "Position(o: {:?}, l: {:?}, c: {:?})",
@@ -400,7 +438,6 @@ impl Position {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct WithComments {
     
     pub ast: Ast,
@@ -413,7 +450,6 @@ pub struct WithComments {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Comment {
     
     pub span: Span,
@@ -430,7 +466,6 @@ pub struct Comment {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum Ast {
     
     Empty(Span),
@@ -506,8 +541,8 @@ impl Ast {
 
 
 
-impl core::fmt::Display for Ast {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Display for Ast {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use crate::ast::print::Printer;
         Printer::new().print(self, f)
     }
@@ -515,7 +550,6 @@ impl core::fmt::Display for Ast {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Alternation {
     
     pub span: Span,
@@ -540,7 +574,6 @@ impl Alternation {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Concat {
     
     pub span: Span,
@@ -569,7 +602,6 @@ impl Concat {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Literal {
     
     pub span: Span,
@@ -583,27 +615,23 @@ impl Literal {
     
     
     pub fn byte(&self) -> Option<u8> {
-        match self.kind {
-            LiteralKind::HexFixed(HexLiteralKind::X) => {
-                u8::try_from(self.c).ok()
-            }
-            _ => None,
+        let short_hex = LiteralKind::HexFixed(HexLiteralKind::X);
+        if self.c as u32 <= 255 && self.kind == short_hex {
+            Some(self.c as u8)
+        } else {
+            None
         }
     }
 }
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum LiteralKind {
     
     Verbatim,
     
     
-    Meta,
-    
-    
-    Superfluous,
+    Punctuation,
     
     Octal,
     
@@ -624,7 +652,6 @@ pub enum LiteralKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum SpecialLiteralKind {
     
     Bell,
@@ -649,7 +676,6 @@ pub enum SpecialLiteralKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum HexLiteralKind {
     
     
@@ -677,7 +703,6 @@ impl HexLiteralKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum Class {
     
     Unicode(ClassUnicode),
@@ -702,7 +727,6 @@ impl Class {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassPerl {
     
     pub span: Span,
@@ -715,7 +739,6 @@ pub struct ClassPerl {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassPerlKind {
     
     Digit,
@@ -727,7 +750,6 @@ pub enum ClassPerlKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassAscii {
     
     pub span: Span,
@@ -740,7 +762,6 @@ pub struct ClassAscii {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassAsciiKind {
     
     Alnum,
@@ -804,7 +825,6 @@ impl ClassAsciiKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassUnicode {
     
     pub span: Span,
@@ -857,156 +877,8 @@ pub enum ClassUnicodeKind {
     },
 }
 
-#[cfg(feature = "arbitrary")]
-impl arbitrary::Arbitrary<'_> for ClassUnicodeKind {
-    fn arbitrary(
-        u: &mut arbitrary::Unstructured,
-    ) -> arbitrary::Result<ClassUnicodeKind> {
-        #[cfg(any(
-            feature = "unicode-age",
-            feature = "unicode-bool",
-            feature = "unicode-gencat",
-            feature = "unicode-perl",
-            feature = "unicode-script",
-            feature = "unicode-segment",
-        ))]
-        {
-            use alloc::string::ToString;
-
-            use super::unicode_tables::{
-                property_names::PROPERTY_NAMES,
-                property_values::PROPERTY_VALUES,
-            };
-
-            match u.choose_index(3)? {
-                0 => {
-                    let all = PROPERTY_VALUES
-                        .iter()
-                        .flat_map(|e| e.1.iter())
-                        .filter(|(name, _)| name.len() == 1)
-                        .count();
-                    let idx = u.choose_index(all)?;
-                    let value = PROPERTY_VALUES
-                        .iter()
-                        .flat_map(|e| e.1.iter())
-                        .take(idx + 1)
-                        .last()
-                        .unwrap()
-                        .0
-                        .chars()
-                        .next()
-                        .unwrap();
-                    Ok(ClassUnicodeKind::OneLetter(value))
-                }
-                1 => {
-                    let all = PROPERTY_VALUES
-                        .iter()
-                        .map(|e| e.1.len())
-                        .sum::<usize>()
-                        + PROPERTY_NAMES.len();
-                    let idx = u.choose_index(all)?;
-                    let name = PROPERTY_VALUES
-                        .iter()
-                        .flat_map(|e| e.1.iter())
-                        .chain(PROPERTY_NAMES)
-                        .map(|(_, e)| e)
-                        .take(idx + 1)
-                        .last()
-                        .unwrap();
-                    Ok(ClassUnicodeKind::Named(name.to_string()))
-                }
-                2 => {
-                    let all = PROPERTY_VALUES
-                        .iter()
-                        .map(|e| e.1.len())
-                        .sum::<usize>();
-                    let idx = u.choose_index(all)?;
-                    let (prop, value) = PROPERTY_VALUES
-                        .iter()
-                        .flat_map(|e| {
-                            e.1.iter().map(|(_, value)| (e.0, value))
-                        })
-                        .take(idx + 1)
-                        .last()
-                        .unwrap();
-                    Ok(ClassUnicodeKind::NamedValue {
-                        op: u.arbitrary()?,
-                        name: prop.to_string(),
-                        value: value.to_string(),
-                    })
-                }
-                _ => unreachable!("index chosen is impossible"),
-            }
-        }
-        #[cfg(not(any(
-            feature = "unicode-age",
-            feature = "unicode-bool",
-            feature = "unicode-gencat",
-            feature = "unicode-perl",
-            feature = "unicode-script",
-            feature = "unicode-segment",
-        )))]
-        {
-            match u.choose_index(3)? {
-                0 => Ok(ClassUnicodeKind::OneLetter(u.arbitrary()?)),
-                1 => Ok(ClassUnicodeKind::Named(u.arbitrary()?)),
-                2 => Ok(ClassUnicodeKind::NamedValue {
-                    op: u.arbitrary()?,
-                    name: u.arbitrary()?,
-                    value: u.arbitrary()?,
-                }),
-                _ => unreachable!("index chosen is impossible"),
-            }
-        }
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        #[cfg(any(
-            feature = "unicode-age",
-            feature = "unicode-bool",
-            feature = "unicode-gencat",
-            feature = "unicode-perl",
-            feature = "unicode-script",
-            feature = "unicode-segment",
-        ))]
-        {
-            arbitrary::size_hint::and_all(&[
-                usize::size_hint(depth),
-                usize::size_hint(depth),
-                arbitrary::size_hint::or(
-                    (0, Some(0)),
-                    ClassUnicodeOpKind::size_hint(depth),
-                ),
-            ])
-        }
-        #[cfg(not(any(
-            feature = "unicode-age",
-            feature = "unicode-bool",
-            feature = "unicode-gencat",
-            feature = "unicode-perl",
-            feature = "unicode-script",
-            feature = "unicode-segment",
-        )))]
-        {
-            arbitrary::size_hint::and(
-                usize::size_hint(depth),
-                arbitrary::size_hint::or_all(&[
-                    char::size_hint(depth),
-                    String::size_hint(depth),
-                    arbitrary::size_hint::and_all(&[
-                        String::size_hint(depth),
-                        String::size_hint(depth),
-                        ClassUnicodeOpKind::size_hint(depth),
-                    ]),
-                ]),
-            )
-        }
-    }
-}
-
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassUnicodeOpKind {
     
     Equal,
@@ -1029,7 +901,6 @@ impl ClassUnicodeOpKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassBracketed {
     
     pub span: Span,
@@ -1048,7 +919,6 @@ pub struct ClassBracketed {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassSet {
     
     
@@ -1082,7 +952,6 @@ impl ClassSet {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassSetItem {
     
     
@@ -1126,7 +995,6 @@ impl ClassSetItem {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassSetRange {
     
     pub span: Span,
@@ -1148,7 +1016,6 @@ impl ClassSetRange {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassSetUnion {
     
     
@@ -1193,7 +1060,6 @@ impl ClassSetUnion {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct ClassSetBinaryOp {
     
     pub span: Span,
@@ -1211,7 +1077,6 @@ pub struct ClassSetBinaryOp {
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum ClassSetBinaryOpKind {
     
     Intersection,
@@ -1225,7 +1090,6 @@ pub enum ClassSetBinaryOpKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Assertion {
     
     pub span: Span,
@@ -1235,7 +1099,6 @@ pub struct Assertion {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum AssertionKind {
     
     StartLine,
@@ -1253,7 +1116,6 @@ pub enum AssertionKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Repetition {
     
     pub span: Span,
@@ -1267,7 +1129,6 @@ pub struct Repetition {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct RepetitionOp {
     
     
@@ -1278,7 +1139,6 @@ pub struct RepetitionOp {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum RepetitionKind {
     
     ZeroOrOne,
@@ -1292,7 +1152,6 @@ pub enum RepetitionKind {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum RepetitionRange {
     
     Exactly(u32),
@@ -1322,7 +1181,6 @@ impl RepetitionRange {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Group {
     
     pub span: Span,
@@ -1345,7 +1203,7 @@ impl Group {
     
     pub fn is_capturing(&self) -> bool {
         match self.kind {
-            GroupKind::CaptureIndex(_) | GroupKind::CaptureName { .. } => true,
+            GroupKind::CaptureIndex(_) | GroupKind::CaptureName(_) => true,
             GroupKind::NonCapturing(_) => false,
         }
     }
@@ -1356,7 +1214,7 @@ impl Group {
     pub fn capture_index(&self) -> Option<u32> {
         match self.kind {
             GroupKind::CaptureIndex(i) => Some(i),
-            GroupKind::CaptureName { ref name, .. } => Some(name.index),
+            GroupKind::CaptureName(ref x) => Some(x.index),
             GroupKind::NonCapturing(_) => None,
         }
     }
@@ -1364,17 +1222,11 @@ impl Group {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum GroupKind {
     
     CaptureIndex(u32),
     
-    CaptureName {
-        
-        starts_with_p: bool,
-        
-        name: CaptureName,
-    },
+    CaptureName(CaptureName),
     
     NonCapturing(Flags),
 }
@@ -1393,38 +1245,8 @@ pub struct CaptureName {
     pub index: u32,
 }
 
-#[cfg(feature = "arbitrary")]
-impl arbitrary::Arbitrary<'_> for CaptureName {
-    fn arbitrary(
-        u: &mut arbitrary::Unstructured,
-    ) -> arbitrary::Result<CaptureName> {
-        let len = u.arbitrary_len::<char>()?;
-        if len == 0 {
-            return Err(arbitrary::Error::NotEnoughData);
-        }
-        let mut name: String = String::new();
-        for _ in 0..len {
-            let ch: char = u.arbitrary()?;
-            let cp = u32::from(ch);
-            let ascii_letter_offset = u8::try_from(cp % 26).unwrap();
-            let ascii_letter = b'a' + ascii_letter_offset;
-            name.push(char::from(ascii_letter));
-        }
-        Ok(CaptureName { span: u.arbitrary()?, name, index: u.arbitrary()? })
-    }
-
-    fn size_hint(depth: usize) -> (usize, Option<usize>) {
-        arbitrary::size_hint::and_all(&[
-            Span::size_hint(depth),
-            usize::size_hint(depth),
-            u32::size_hint(depth),
-        ])
-    }
-}
-
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct SetFlags {
     
     pub span: Span,
@@ -1436,7 +1258,6 @@ pub struct SetFlags {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct Flags {
     
     pub span: Span,
@@ -1489,7 +1310,6 @@ impl Flags {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub struct FlagsItem {
     
     pub span: Span,
@@ -1499,7 +1319,6 @@ pub struct FlagsItem {
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum FlagsItemKind {
     
     
@@ -1520,7 +1339,6 @@ impl FlagsItemKind {
 
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 pub enum Flag {
     
     CaseInsensitive,
@@ -1533,8 +1351,6 @@ pub enum Flag {
     
     Unicode,
     
-    CRLF,
-    
     IgnoreWhitespace,
 }
 
@@ -1542,7 +1358,7 @@ pub enum Flag {
 
 impl Drop for Ast {
     fn drop(&mut self) {
-        use core::mem;
+        use std::mem;
 
         match *self {
             Ast::Empty(_)
@@ -1592,7 +1408,7 @@ impl Drop for Ast {
 
 impl Drop for ClassSet {
     fn drop(&mut self) {
-        use core::mem;
+        use std::mem;
 
         match *self {
             ClassSet::Item(ref item) => match *item {
@@ -1676,19 +1492,8 @@ mod tests {
 
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         thread::Builder::new()
-            .stack_size(16 << 10)
+            .stack_size(1 << 10)
             .spawn(run)
             .unwrap()
             .join()

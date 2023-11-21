@@ -154,54 +154,19 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-#![no_std]
-#![forbid(unsafe_code)]
-#![deny(missing_docs, rustdoc::broken_intra_doc_links)]
+#![deny(missing_docs)]
 #![warn(missing_debug_implementations)]
+#![forbid(unsafe_code)]
 
-
-
-
-#![allow(renamed_and_removed_lints)]
-
-
-
-
-
-
-#![allow(mutable_borrow_reservation_conflict)]
-#![cfg_attr(docsrs, feature(doc_auto_cfg))]
-
-#[cfg(any(test, feature = "std"))]
-extern crate std;
-
-extern crate alloc;
-
-pub use crate::{
-    error::Error,
-    parser::{parse, Parser, ParserBuilder},
-    unicode::UnicodeWordError,
-};
-
-use alloc::string::String;
+pub use crate::error::{Error, Result};
+pub use crate::parser::{Parser, ParserBuilder};
+pub use crate::unicode::UnicodeWordError;
 
 pub mod ast;
-mod debug;
 mod either;
 mod error;
 pub mod hir;
 mod parser;
-mod rank;
 mod unicode;
 mod unicode_tables;
 pub mod utf8;
@@ -239,36 +204,6 @@ pub fn escape_into(text: &str, buf: &mut String) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 pub fn is_meta_character(c: char) -> bool {
     match c {
         '\\' | '.' | '+' | '*' | '?' | '(' | ')' | '|' | '[' | ']' | '{'
@@ -277,67 +212,6 @@ pub fn is_meta_character(c: char) -> bool {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub fn is_escapeable_character(c: char) -> bool {
-    
-    if is_meta_character(c) {
-        return true;
-    }
-    
-    
-    if !c.is_ascii() {
-        return false;
-    }
-    
-    
-    
-    
-    match c {
-        '0'..='9' | 'A'..='Z' | 'a'..='z' => false,
-        
-        
-        
-        
-        
-        
-        '<' | '>' => false,
-        _ => true,
-    }
-}
 
 
 
@@ -374,7 +248,7 @@ pub fn is_word_character(c: char) -> bool {
 
 pub fn try_is_word_character(
     c: char,
-) -> core::result::Result<bool, UnicodeWordError> {
+) -> std::result::Result<bool, UnicodeWordError> {
     unicode::is_word_character(c)
 }
 
@@ -391,8 +265,6 @@ pub fn is_word_byte(c: u8) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use alloc::string::ToString;
-
     use super::*;
 
     #[test]

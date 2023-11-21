@@ -1,5 +1,3 @@
-use alloc::{vec, vec::Vec};
-
 use crate::hir::{self, Hir, HirKind};
 
 
@@ -41,12 +39,8 @@ pub trait Visitor {
     fn visit_alternation_in(&mut self) -> Result<(), Self::Err> {
         Ok(())
     }
-
-    
-    fn visit_concat_in(&mut self) -> Result<(), Self::Err> {
-        Ok(())
-    }
 }
+
 
 
 
@@ -82,7 +76,7 @@ enum Frame<'a> {
     Repetition(&'a hir::Repetition),
     
     
-    Capture(&'a hir::Capture),
+    Group(&'a hir::Group),
     
     
     Concat {
@@ -136,14 +130,8 @@ impl<'a> HeapVisitor<'a> {
                 
                 
                 if let Some(x) = self.pop(frame) {
-                    match x {
-                        Frame::Alternation { .. } => {
-                            visitor.visit_alternation_in()?;
-                        }
-                        Frame::Concat { .. } => {
-                            visitor.visit_concat_in()?;
-                        }
-                        _ => {}
+                    if let Frame::Alternation { .. } = x {
+                        visitor.visit_alternation_in()?;
                     }
                     hir = x.child();
                     self.stack.push((post_hir, x));
@@ -161,7 +149,7 @@ impl<'a> HeapVisitor<'a> {
     fn induct(&mut self, hir: &'a Hir) -> Option<Frame<'a>> {
         match *hir.kind() {
             HirKind::Repetition(ref x) => Some(Frame::Repetition(x)),
-            HirKind::Capture(ref x) => Some(Frame::Capture(x)),
+            HirKind::Group(ref x) => Some(Frame::Group(x)),
             HirKind::Concat(ref x) if x.is_empty() => None,
             HirKind::Concat(ref x) => {
                 Some(Frame::Concat { head: &x[0], tail: &x[1..] })
@@ -179,7 +167,7 @@ impl<'a> HeapVisitor<'a> {
     fn pop(&self, induct: Frame<'a>) -> Option<Frame<'a>> {
         match induct {
             Frame::Repetition(_) => None,
-            Frame::Capture(_) => None,
+            Frame::Group(_) => None,
             Frame::Concat { tail, .. } => {
                 if tail.is_empty() {
                     None
@@ -206,8 +194,8 @@ impl<'a> Frame<'a> {
     
     fn child(&self) -> &'a Hir {
         match *self {
-            Frame::Repetition(rep) => &rep.sub,
-            Frame::Capture(capture) => &capture.sub,
+            Frame::Repetition(rep) => &rep.hir,
+            Frame::Group(group) => &group.hir,
             Frame::Concat { head, .. } => head,
             Frame::Alternation { head, .. } => head,
         }

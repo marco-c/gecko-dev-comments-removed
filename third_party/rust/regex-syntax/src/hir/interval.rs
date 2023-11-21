@@ -1,6 +1,8 @@
-use core::{char, cmp, fmt::Debug, slice};
-
-use alloc::vec::Vec;
+use std::char;
+use std::cmp;
+use std::fmt::Debug;
+use std::slice;
+use std::u8;
 
 use crate::unicode;
 
@@ -30,38 +32,9 @@ use crate::unicode;
 
 
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct IntervalSet<I> {
-    
     ranges: Vec<I>,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    folded: bool,
-}
-
-impl<I: Interval> Eq for IntervalSet<I> {}
-
-
-
-
-impl<I: Interval> PartialEq for IntervalSet<I> {
-    fn eq(&self, other: &IntervalSet<I>) -> bool {
-        self.ranges.eq(&other.ranges)
-    }
 }
 
 impl<I: Interval> IntervalSet<I> {
@@ -71,10 +44,7 @@ impl<I: Interval> IntervalSet<I> {
     
     
     pub fn new<T: IntoIterator<Item = I>>(intervals: T) -> IntervalSet<I> {
-        let ranges: Vec<I> = intervals.into_iter().collect();
-        
-        let folded = ranges.is_empty();
-        let mut set = IntervalSet { ranges, folded };
+        let mut set = IntervalSet { ranges: intervals.into_iter().collect() };
         set.canonicalize();
         set
     }
@@ -85,10 +55,6 @@ impl<I: Interval> IntervalSet<I> {
         
         self.ranges.push(interval);
         self.canonicalize();
-        
-        
-        
-        self.folded = false;
     }
 
     
@@ -113,9 +79,6 @@ impl<I: Interval> IntervalSet<I> {
     
     
     pub fn case_fold_simple(&mut self) -> Result<(), unicode::CaseFoldError> {
-        if self.folded {
-            return Ok(());
-        }
         let len = self.ranges.len();
         for i in 0..len {
             let range = self.ranges[i];
@@ -125,19 +88,14 @@ impl<I: Interval> IntervalSet<I> {
             }
         }
         self.canonicalize();
-        self.folded = true;
         Ok(())
     }
 
     
     pub fn union(&mut self, other: &IntervalSet<I>) {
-        if other.ranges.is_empty() || self.ranges == other.ranges {
-            return;
-        }
         
         self.ranges.extend(&other.ranges);
         self.canonicalize();
-        self.folded = self.folded && other.folded;
     }
 
     
@@ -147,8 +105,6 @@ impl<I: Interval> IntervalSet<I> {
         }
         if other.ranges.is_empty() {
             self.ranges.clear();
-            
-            self.folded = true;
             return;
         }
 
@@ -178,7 +134,6 @@ impl<I: Interval> IntervalSet<I> {
             }
         }
         self.ranges.drain(..drain_end);
-        self.folded = self.folded && other.folded;
     }
 
     
@@ -271,7 +226,6 @@ impl<I: Interval> IntervalSet<I> {
             a += 1;
         }
         self.ranges.drain(..drain_end);
-        self.folded = self.folded && other.folded;
     }
 
     
@@ -297,8 +251,6 @@ impl<I: Interval> IntervalSet<I> {
         if self.ranges.is_empty() {
             let (min, max) = (I::Bound::min_value(), I::Bound::max_value());
             self.ranges.push(I::create(min, max));
-            
-            self.folded = true;
             return;
         }
 
@@ -324,19 +276,6 @@ impl<I: Interval> IntervalSet<I> {
             self.ranges.push(I::create(lower, I::Bound::max_value()));
         }
         self.ranges.drain(..drain_end);
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
     }
 
     
@@ -542,7 +481,7 @@ impl Bound for u8 {
         u8::MAX
     }
     fn as_u32(self) -> u32 {
-        u32::from(self)
+        self as u32
     }
     fn increment(self) -> Self {
         self.checked_add(1).unwrap()
@@ -560,20 +499,20 @@ impl Bound for char {
         '\u{10FFFF}'
     }
     fn as_u32(self) -> u32 {
-        u32::from(self)
+        self as u32
     }
 
     fn increment(self) -> Self {
         match self {
             '\u{D7FF}' => '\u{E000}',
-            c => char::from_u32(u32::from(c).checked_add(1).unwrap()).unwrap(),
+            c => char::from_u32((c as u32).checked_add(1).unwrap()).unwrap(),
         }
     }
 
     fn decrement(self) -> Self {
         match self {
             '\u{E000}' => '\u{D7FF}',
-            c => char::from_u32(u32::from(c).checked_sub(1).unwrap()).unwrap(),
+            c => char::from_u32((c as u32).checked_sub(1).unwrap()).unwrap(),
         }
     }
 }
