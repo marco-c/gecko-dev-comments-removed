@@ -14,9 +14,7 @@
 #ifndef nsPlainTextSerializer_h__
 #define nsPlainTextSerializer_h__
 
-#include "mozilla/Attributes.h"
 #include "mozilla/Maybe.h"
-#include "nsCOMPtr.h"
 #include "nsAtom.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsIContentSerializer.h"
@@ -244,13 +242,17 @@ class nsPlainTextSerializer final : public nsIContentSerializer {
     uint32_t DeterminePrefixWidth() const {
       
       return (mCiteQuoteLevel > 0 ? mCiteQuoteLevel + 1 : 0) +
-             mIndentation.mLength;
+             mIndentation.mLength + uint32_t(mSpaceStuffed);
     }
 
     Indentation mIndentation;
 
     
     int32_t mCiteQuoteLevel = 0;
+
+    
+    
+    bool mSpaceStuffed = false;
 
     
     nsString mContent;

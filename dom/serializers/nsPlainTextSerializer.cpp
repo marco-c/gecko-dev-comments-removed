@@ -1227,16 +1227,14 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
     return;
   }
 
-  const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
-
   
   
   
   
   const uint32_t wrapColumn = mSettings.GetWrapColumn();
   uint32_t bonuswidth = (wrapColumn > 20) ? 4 : 0;
-
   while (!mCurrentLine.mContent.IsEmpty()) {
+    const uint32_t prefixwidth = mCurrentLine.DeterminePrefixWidth();
     
     const uint32_t currentLineContentWidth =
         GetUnicharStringWidth(mCurrentLine.mContent);
@@ -1248,41 +1246,34 @@ void nsPlainTextSerializer::MaybeWrapAndOutputCompleteLines() {
         mCurrentLine.FindWrapIndexForContent(wrapColumn, mUseLineBreaker);
 
     const int32_t contentLength = mCurrentLine.mContent.Length();
-    if ((goodSpace < contentLength) && (goodSpace > 0)) {
-      
-
-      
-      
-      nsAutoString restOfContent;
-      if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.CharAt(goodSpace))) {
-        mCurrentLine.mContent.Right(restOfContent,
-                                    contentLength - goodSpace - 1);
-      } else {
-        mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace);
-      }
-      
-      const bool breakBySpace = mCurrentLine.mContent.CharAt(goodSpace) == ' ';
-      mCurrentLine.mContent.Truncate(goodSpace);
-      EndLine(true, breakBySpace);
-      mCurrentLine.mContent.Truncate();
-      
-      if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-        if (!restOfContent.IsEmpty() && IsSpaceStuffable(restOfContent.get()) &&
-            mCurrentLine.mCiteQuoteLevel ==
-                0  
-        ) {
-          
-          mCurrentLine.mContent.Append(char16_t(' '));
-          
-        }
-      }
-      mCurrentLine.mContent.Append(restOfContent);
-      mEmptyLines = -1;
-    } else {
+    if (goodSpace <= 0 || goodSpace >= contentLength) {
       
       
       break;
     }
+    
+    
+    
+    nsAutoString restOfContent;
+    if (nsCRT::IsAsciiSpace(mCurrentLine.mContent.CharAt(goodSpace))) {
+      mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace - 1);
+    } else {
+      mCurrentLine.mContent.Right(restOfContent, contentLength - goodSpace);
+    }
+    
+    const bool breakBySpace = mCurrentLine.mContent.CharAt(goodSpace) == ' ';
+    mCurrentLine.mContent.Truncate(goodSpace);
+    EndLine(true, breakBySpace);
+    mCurrentLine.mContent.Truncate();
+    
+    if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
+      mCurrentLine.mSpaceStuffed = !restOfContent.IsEmpty() &&
+                                   IsSpaceStuffable(restOfContent.get()) &&
+                                   
+                                   mCurrentLine.mCiteQuoteLevel == 0;
+    }
+    mCurrentLine.mContent.Append(restOfContent);
+    mEmptyLines = -1;
   }
 }
 
@@ -1302,13 +1293,10 @@ void nsPlainTextSerializer::AddToLine(const char16_t* aLineFragment,
     }
 
     if (mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed)) {
-      if (IsSpaceStuffable(aLineFragment) &&
-          mCurrentLine.mCiteQuoteLevel ==
-              0  
-      ) {
-        
-        mCurrentLine.mContent.Append(char16_t(' '));
-      }
+      
+      
+      mCurrentLine.mSpaceStuffed =
+          IsSpaceStuffable(aLineFragment) && mCurrentLine.mCiteQuoteLevel == 0;
     }
     mEmptyLines = -1;
   }
@@ -1354,7 +1342,7 @@ void nsPlainTextSerializer::EndLine(bool aSoftLineBreak, bool aBreakBySpace) {
 
   if (aSoftLineBreak &&
       mSettings.HasFlag(nsIDocumentEncoder::OutputFormatFlowed) &&
-      (mCurrentLine.mIndentation.mLength == 0)) {
+      !mCurrentLine.mIndentation.mLength) {
     
     
     
@@ -1420,11 +1408,16 @@ void nsPlainTextSerializer::CurrentLine::CreateQuotesAndIndent(
 
   
   int32_t indentwidth = mIndentation.mLength - mIndentation.mHeader.Length();
-  if (indentwidth > 0 && HasContentOrIndentationHeader()
-      
-  ) {
+  if (mSpaceStuffed) {
+    indentwidth += 1;
+  }
+
+  
+  if (indentwidth > 0 && HasContentOrIndentationHeader()) {
     nsAutoString spaces;
-    for (int i = 0; i < indentwidth; ++i) spaces.Append(char16_t(' '));
+    for (int i = 0; i < indentwidth; ++i) {
+      spaces.Append(char16_t(' '));
+    }
     aResult += spaces;
   }
 
@@ -1515,9 +1508,8 @@ void nsPlainTextSerializer::ConvertToLinesAndOutput(const nsAString& aString) {
           !IsQuotedLine(stringpart) && !IsSignatureSeparator(stringpart)) {
         stringpart.Trim(" ", false, true, true);
       }
-      if (IsSpaceStuffable(stringpart.get()) && !IsQuotedLine(stringpart)) {
-        mCurrentLine.mContent.Append(char16_t(' '));
-      }
+      mCurrentLine.mSpaceStuffed =
+          IsSpaceStuffable(stringpart.get()) && !IsQuotedLine(stringpart);
     }
     mCurrentLine.mContent.Append(stringpart);
 
