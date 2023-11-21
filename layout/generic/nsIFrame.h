@@ -2136,10 +2136,13 @@ class nsIFrame : public nsQueryFrame {
 
 
 
+
+
   [[nodiscard]] bool MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
       const nsFrameSelection& aFrameSelection,
       mozilla::WidgetMouseEvent& aSecondaryButtonEvent,
-      const nsIContent& aContentAtEventPoint) const;
+      const nsIContent& aContentAtEventPoint,
+      int32_t aOffsetAtEventPoint) const;
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHOD HandleMultiplePress(
       nsPresContext* aPresContext, mozilla::WidgetGUIEvent* aEvent,

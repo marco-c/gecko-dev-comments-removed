@@ -4569,7 +4569,7 @@ nsresult EditorBase::HandleDropEvent(DragEvent* aDropEvent) {
   
   
   if (sourceNode && sourceNode->IsEditable() && srcdoc == document) {
-    bool isPointInSelection = EditorUtils::IsPointInSelection(
+    bool isPointInSelection = nsContentUtils::IsPointInSelection(
         SelectionRef(), *droppedAt.GetContainer(), droppedAt.Offset());
     if (isPointInSelection) {
       

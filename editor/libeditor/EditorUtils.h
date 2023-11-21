@@ -467,12 +467,6 @@ class EditorUtils final {
   
 
 
-  static bool IsPointInSelection(const Selection& aSelection,
-                                 const nsINode& aParentNode, uint32_t aOffset);
-
-  
-
-
 
   static Result<nsCOMPtr<nsITransferable>, nsresult>
   CreateTransferableForPlainText(const dom::Document& aDocument);

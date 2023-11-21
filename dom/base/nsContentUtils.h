@@ -2668,6 +2668,23 @@ class nsContentUtils {
 
 
 
+
+
+
+  static bool IsPointInSelection(const mozilla::dom::Selection& aSelection,
+                                 const nsINode& aNode, const uint32_t aOffset);
+
+  
+
+
+
+
+
+
+
+
+
+
   static void GetSelectionInTextControl(mozilla::dom::Selection* aSelection,
                                         Element* aRoot,
                                         uint32_t& aOutStartOffset,

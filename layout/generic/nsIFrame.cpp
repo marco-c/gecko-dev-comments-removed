@@ -4727,7 +4727,13 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 
   if (aMouseEvent->mButton == MouseButton::eSecondary &&
       !MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
-          *frameselection, *aMouseEvent, *offsets.content)) {
+          *frameselection, *aMouseEvent, *offsets.content,
+          
+          
+          
+          
+          
+          offsets.StartOffset())) {
     return NS_OK;
   }
 
@@ -4865,30 +4871,40 @@ nsresult nsIFrame::MoveCaretToEventPoint(nsPresContext* aPresContext,
 bool nsIFrame::MovingCaretToEventPointAllowedIfSecondaryButtonEvent(
     const nsFrameSelection& aFrameSelection,
     WidgetMouseEvent& aSecondaryButtonEvent,
-    const nsIContent& aContentAtEventPoint) const {
+    const nsIContent& aContentAtEventPoint, int32_t aOffsetAtEventPoint) const {
   MOZ_ASSERT(aSecondaryButtonEvent.mButton == MouseButton::eSecondary);
 
-  if (StaticPrefs::
-          ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection()) {
-    if (Selection* selection =
-            aFrameSelection.GetSelection(SelectionType::eNormal)) {
-      if (selection->IsCollapsed()) {
-        
-        
-      } else if (nsIContent* ancestorLimiter =
-                     selection->GetAncestorLimiter()) {
-        
-        
-        
-        
-        
-        
+  if (NS_WARN_IF(aOffsetAtEventPoint < 0)) {
+    return false;
+  }
+
+  Selection* selection = aFrameSelection.GetSelection(SelectionType::eNormal);
+  if (selection && !selection->IsCollapsed()) {
+    
+    if (nsContentUtils::IsPointInSelection(
+            *selection, aContentAtEventPoint,
+            static_cast<uint32_t>(aOffsetAtEventPoint))) {
+      return false;
+    }
+
+    if (StaticPrefs::
+            ui_mouse_right_click_collapse_selection_stop_if_non_collapsed_selection()) {
+      
+      
+      
+      
+      
+      
+      
+      
+      if (nsIContent* ancestorLimiter = selection->GetAncestorLimiter()) {
+        MOZ_ASSERT(ancestorLimiter->IsEditable());
         return !aContentAtEventPoint.IsInclusiveDescendantOf(ancestorLimiter);
       }
       
       
       
-      else if (!aContentAtEventPoint.IsEditable()) {
+      if (!aContentAtEventPoint.IsEditable()) {
         return false;
       }
     }
