@@ -70,9 +70,12 @@ class WebAuthnTransaction {
   
   
   static uint64_t NextId() {
-    static uint64_t id = 0;
+    static uint64_t counter = 0;
     Maybe<uint64_t> rand = mozilla::RandomUint64();
-    return rand.valueOr(++id) & UINT64_C(0x1fffffffffffff);  
+    uint64_t id =
+        rand.valueOr(++counter) & UINT64_C(0x1fffffffffffff);  
+    
+    return id ? id : 1;
   }
 };
 
