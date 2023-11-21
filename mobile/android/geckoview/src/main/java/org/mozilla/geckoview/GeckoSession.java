@@ -3686,10 +3686,10 @@ public class GeckoSession {
 
 
     protected ReviewAnalysis(final @NonNull Builder builder) {
-      adjustedRating = builder.mAdjustedRating;
       analysisURL = builder.mAnalysisUrl;
       productId = builder.mProductId;
       grade = builder.mGrade;
+      adjustedRating = builder.mAdjustedRating;
       needsAnalysis = builder.mNeedsAnalysis;
       pageNotSupported = builder.mPageNotSupported;
       notEnoughReviews = builder.mNotEnoughReviews;
