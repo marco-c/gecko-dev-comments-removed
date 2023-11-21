@@ -9,13 +9,10 @@
 #include "mozilla/StaticPtr.h"
 
 #include "nsCOMPtr.h"
-#include "prlink.h"
 #include "nsIPluginTag.h"
 #include "nsWeakReference.h"
 #include "nsTArray.h"
 #include "nsPluginTags.h"
-
-class nsIFile;
 
 class nsPluginHost final : public nsSupportsWeakReference {
   friend class nsFakePluginTag;
@@ -34,22 +31,10 @@ class nsPluginHost final : public nsSupportsWeakReference {
   NS_IMETHOD GetPluginTagForType(const nsACString& aMimeType,
                                  uint32_t aExcludeFlags,
                                  nsIPluginTag** aResult);
-  NS_IMETHOD GetPermissionStringForTag(nsIPluginTag* aTag,
-                                       uint32_t aExcludeFlags,
-                                       nsACString& aPermissionString);
 
   
   bool HavePluginForType(const nsACString& aMimeType,
                          PluginFilter aFilter = eExcludeDisabled);
-
-  void GetPlugins(nsTArray<nsCOMPtr<nsIInternalPluginTag>>& aPluginArray,
-                  bool aIncludeDisabled = false);
-
-  
-
-
-
-  static bool CanUsePluginForMIMEType(const nsACString& aMIMEType);
 
   
   enum SpecialType {
@@ -74,34 +59,7 @@ class nsPluginHost final : public nsSupportsWeakReference {
   nsFakePluginTag* FindFakePluginForType(const nsACString& aMimeType,
                                          bool aCheckEnabled);
 
-  
-  
-  
-  nsFakePluginTag* FindFakePluginForExtension(const nsACString& aExtension,
-                                               nsACString& aMimeType,
-                                              bool aCheckEnabled);
-
-  
-  bool IsLiveTag(nsIPluginTag* tag);
-
-  
-  void IncrementChromeEpoch();
-
-  
-  uint32_t ChromeEpoch();
-
-  
-  
-  uint32_t ChromeEpochForContent();
-  void SetChromeEpochForContent(uint32_t aEpoch);
-
   nsTArray<RefPtr<nsFakePluginTag>> mFakePlugins;
-
-  
-  
-  
-  
-  uint32_t mPluginEpoch;
 
   
   
