@@ -186,7 +186,10 @@ class ICState {
     
     
     
-    if (state != TrialInliningState::Failure) {
+    
+    
+    if (state != TrialInliningState::Failure &&
+        state != TrialInliningState::MonomorphicInlined) {
       switch (trialInliningState()) {
         case TrialInliningState::Initial:
           MOZ_ASSERT(state == TrialInliningState::Candidate);
