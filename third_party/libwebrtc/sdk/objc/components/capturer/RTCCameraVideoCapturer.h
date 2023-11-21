@@ -26,7 +26,10 @@ NS_EXTENSION_UNAVAILABLE_IOS("Camera not available in app extensions.")
 @property(readonly, nonatomic) AVCaptureSession *captureSession;
 
 
-+ (NSArray<AVCaptureDevice *> *)captureDevices;
++ (NSArray<AVCaptureDevice *> *)captureDevicesWithDeviceTypes:
+    (NSArray<AVCaptureDeviceType> *)deviceTypes;
+
++ (NSArray<AVCaptureDeviceType> *)defaultCaptureDeviceTypes;
 
 + (NSArray<AVCaptureDeviceFormat *> *)supportedFormatsForDevice:(AVCaptureDevice *)device;
 
