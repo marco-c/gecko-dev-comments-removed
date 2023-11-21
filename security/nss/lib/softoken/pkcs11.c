@@ -60,6 +60,11 @@ PRBool usePthread_atfork;
 
 #endif
 
+#ifdef XP_UNIX
+#define LIB_PARAM_DEFAULT_FILE_LOCATION "/etc/nss/params.config"
+#endif
+
+#define LIB_PARAM_DEFAULT " configdir='' certPrefix='' keyPrefix='' secmod='' flags=noCertDB,noModDB "
 
 
 
@@ -1920,8 +1925,8 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
                 
 
 
-                if (pubKey->u.ec.publicValue.len == keyLen &&
-                    (pubKey->u.ec.ecParams.fieldID.type == ec_field_plain ||
+                if (pubKey->u.ec.ecParams.type != ec_params_named ||
+                    (pubKey->u.ec.publicValue.len == keyLen &&
                      pubKey->u.ec.publicValue.data[0] == EC_POINT_FORM_UNCOMPRESSED)) {
                     break; 
                 }
@@ -1941,8 +1946,7 @@ sftk_GetPubKey(SFTKObject *object, CK_KEY_TYPE key_type,
                         break;
                     }
                     
-                    if ((pubKey->u.ec.ecParams.fieldID.type != ec_field_plain) &&
-                        (publicValue.data[0] != EC_POINT_FORM_UNCOMPRESSED)) {
+                    if (publicValue.data[0] != EC_POINT_FORM_UNCOMPRESSED) {
                         crv = CKR_ATTRIBUTE_VALUE_INVALID;
                         break;
                     }
@@ -3302,6 +3306,81 @@ extern void sftk_PBELockInit(void);
 extern void sftk_PBELockShutdown(void);
 
 
+
+
+
+
+
+
+
+static CK_RV
+sftk_getParameters(CK_C_INITIALIZE_ARGS *init_args, PRBool isFIPS,
+                   sftk_parameters *paramStrings)
+{
+    CK_RV crv;
+    char *libParams;
+    const char *filename;
+    PRFileDesc *file_dc;
+    PRBool free_mem = PR_FALSE;
+
+    if (!init_args || !init_args->LibraryParameters) {
+        
+
+        
+        libParams = PR_GetEnvSecure("NSS_LIB_PARAMS");
+
+        if (!libParams) {
+            
+            filename = PR_GetEnvSecure("NSS_LIB_PARAMS_FILE");
+#ifdef XP_UNIX
+            
+            if (!filename)
+                filename = LIB_PARAM_DEFAULT_FILE_LOCATION;
+#endif
+            if (filename) {
+                file_dc = PR_OpenFile(filename, PR_RDONLY, 444);
+                if (file_dc) {
+                    
+                    PRInt32 len = PR_Available(file_dc);
+                    libParams = PORT_NewArray(char, len + 1);
+                    if (libParams) {
+                        
+                        if (PR_Read(file_dc, libParams, len) == -1) {
+                            PR_Free(libParams);
+                        } else {
+                            free_mem = PR_TRUE;
+                            libParams[len] = '\0';
+                        }
+                    }
+
+                    PR_Close(file_dc);
+                }
+            }
+        }
+
+        if (!libParams)
+            libParams = LIB_PARAM_DEFAULT;
+
+    } else {
+        
+        libParams = (char *)init_args->LibraryParameters;
+    }
+
+    crv = sftk_parseParameters(libParams, paramStrings, isFIPS);
+    if (crv != CKR_OK) {
+        crv = CKR_ARGUMENTS_BAD;
+        goto loser;
+    }
+
+    crv = CKR_OK;
+loser:
+    if (free_mem)
+        PR_Free(libParams);
+
+    return crv;
+}
+
+
 CK_RV
 nsc_CommonInitialize(CK_VOID_PTR pReserved, PRBool isFIPS)
 {
@@ -3362,53 +3441,56 @@ nsc_CommonInitialize(CK_VOID_PTR pReserved, PRBool isFIPS)
             return crv;
         }
     }
-    crv = CKR_ARGUMENTS_BAD;
-    if ((init_args && init_args->LibraryParameters)) {
-        sftk_parameters paramStrings;
 
-        crv = sftk_parseParameters((char *)init_args->LibraryParameters, &paramStrings, isFIPS);
-        if (crv != CKR_OK) {
-            return crv;
-        }
-        crv = sftk_configure(paramStrings.man, paramStrings.libdes);
-        if (crv != CKR_OK) {
-            goto loser;
-        }
+    sftk_parameters paramStrings;
 
-        
-
-        if ((isFIPS && nsc_init) || (!isFIPS && nsf_init)) {
-            sftk_closePeer(isFIPS);
-            if (sftk_audit_enabled) {
-                if (isFIPS && nsc_init) {
-                    sftk_LogAuditMessage(NSS_AUDIT_INFO, NSS_AUDIT_FIPS_STATE,
-                                         "enabled FIPS mode");
-                } else {
-                    sftk_LogAuditMessage(NSS_AUDIT_INFO, NSS_AUDIT_FIPS_STATE,
-                                         "disabled FIPS mode");
-                }
-            }
-            
-
-
-
-            destroy_freelist_on_error = PR_FALSE;
-        }
-        
-        sftk_InitFreeLists();
-
-        for (i = 0; i < paramStrings.token_count; i++) {
-            crv = SFTK_SlotInit(paramStrings.configdir,
-                                paramStrings.updatedir, paramStrings.updateID,
-                                &paramStrings.tokens[i], moduleIndex);
-            if (crv != CKR_OK) {
-                nscFreeAllSlots(moduleIndex);
-                break;
-            }
-        }
-    loser:
-        sftk_freeParams(&paramStrings);
+    
+    crv = sftk_getParameters(init_args, isFIPS, &paramStrings);
+    if (crv != CKR_OK) {
+        goto loser;
     }
+
+    crv = sftk_configure(paramStrings.man, paramStrings.libdes);
+    if (crv != CKR_OK) {
+        goto loser;
+    }
+
+    
+
+    if ((isFIPS && nsc_init) || (!isFIPS && nsf_init)) {
+        sftk_closePeer(isFIPS);
+        if (sftk_audit_enabled) {
+            if (isFIPS && nsc_init) {
+                sftk_LogAuditMessage(NSS_AUDIT_INFO, NSS_AUDIT_FIPS_STATE,
+                                     "enabled FIPS mode");
+            } else {
+                sftk_LogAuditMessage(NSS_AUDIT_INFO, NSS_AUDIT_FIPS_STATE,
+                                     "disabled FIPS mode");
+            }
+        }
+        
+
+
+
+        destroy_freelist_on_error = PR_FALSE;
+    }
+    
+    sftk_InitFreeLists();
+
+    for (i = 0; i < paramStrings.token_count; i++) {
+        crv = SFTK_SlotInit(paramStrings.configdir,
+                            paramStrings.updatedir, paramStrings.updateID,
+                            &paramStrings.tokens[i], moduleIndex);
+        if (crv != CKR_OK) {
+            nscFreeAllSlots(moduleIndex);
+            break;
+        }
+    }
+
+loser:
+
+    sftk_freeParams(&paramStrings);
+
     if (destroy_freelist_on_error && (CKR_OK != crv)) {
         
         sftk_CleanupFreeLists();
