@@ -1,0 +1,12 @@
+
+
+
+
+
+
+with Files("**"):
+    BUG_COMPONENT = ("Toolkit", "General")
+
+EXTRA_JS_MODULES += [
+    "content/ContentAnalysis.sys.mjs",
+]
