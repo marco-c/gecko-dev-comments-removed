@@ -55,6 +55,9 @@ function renderInfo({
   }
 
   if (feltPrivacyEnabled) {
+    
+    window.FeltPrivacyExposureTelemetry();
+
     infoTitleEnabled = true;
     infoTitle = "fluent:about-private-browsing-felt-privacy-v1-info-header";
     infoBody = "fluent:about-private-browsing-felt-privacy-v1-info-body";
@@ -204,7 +207,7 @@ function recordOnceVisible(message) {
         data: message,
       });
       
-      window.PrivateBrowsingExposureTelemetry();
+      window.PrivateBrowsingPromoExposureTelemetry();
       document.removeEventListener("visibilitychange", recordImpression);
     }
   };
@@ -215,7 +218,7 @@ function recordOnceVisible(message) {
       data: message,
     });
     
-    window.PrivateBrowsingExposureTelemetry();
+    window.PrivateBrowsingPromoExposureTelemetry();
   } else {
     document.addEventListener("visibilitychange", recordImpression);
   }
