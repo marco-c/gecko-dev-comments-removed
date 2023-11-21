@@ -5,14 +5,16 @@
 import re
 from counted_unknown_properties import COUNTED_UNKNOWN_PROPERTIES
 
+
+
 PHYSICAL_SIDES = ["top", "right", "bottom", "left"]
-LOGICAL_SIDES = ["block-start", "block-end", "inline-start", "inline-end"]
-PHYSICAL_SIZES = ["width", "height"]
-LOGICAL_SIZES = ["block-size", "inline-size"]
 PHYSICAL_CORNERS = ["top-left", "top-right", "bottom-right", "bottom-left"]
+PHYSICAL_AXES = ["y", "x"]
+PHYSICAL_SIZES = ["height", "width"]
+LOGICAL_SIDES = ["block-start", "block-end", "inline-start", "inline-end"]
 LOGICAL_CORNERS = ["start-start", "start-end", "end-start", "end-end"]
-PHYSICAL_AXES = ["x", "y"]
-LOGICAL_AXES = ["inline", "block"]
+LOGICAL_SIZES = ["block-size", "inline-size"]
+LOGICAL_AXES = ["block", "inline"]
 
 
 ALL_SIDES = [(side, False) for side in PHYSICAL_SIDES] + [
@@ -410,28 +412,40 @@ class Longhand(Property):
 
     
     
+    def logical_mapping_data(self, data):
+        if not self.logical:
+            return []
+        
+        
+        
+        for [ty, logical_items, physical_items] in [
+            ["Side", LOGICAL_SIDES, PHYSICAL_SIDES],
+            ["Corner", LOGICAL_CORNERS, PHYSICAL_CORNERS],
+            ["Axis", LOGICAL_SIZES, PHYSICAL_SIZES],
+            ["Axis", LOGICAL_AXES, PHYSICAL_AXES],
+        ]:
+            candidate = [s for s in logical_items if s in self.name]
+            if candidate:
+                assert len(candidate) == 1
+                return [ty, candidate[0], logical_items, physical_items]
+        assert False, "Don't know how to deal with " + self.name
+
+    def logical_mapping_kind(self, data):
+        assert self.logical
+        [kind, item, _, _] = self.logical_mapping_data(data)
+        return "LogicalMappingKind::{}(Logical{}::{})".format(
+            kind, kind, to_camel_case(item.replace("-size", ""))
+        )
+
+    
+    
     def all_physical_mapped_properties(self, data):
         if not self.logical:
             return []
-
-        candidates = [
-            s for s in LOGICAL_SIDES + LOGICAL_SIZES + LOGICAL_CORNERS if s in self.name
-        ] + [s for s in LOGICAL_AXES if self.name.endswith(s)]
-        assert len(candidates) == 1
-        logical_side = candidates[0]
-
-        physical = (
-            PHYSICAL_SIDES
-            if logical_side in LOGICAL_SIDES
-            else PHYSICAL_SIZES
-            if logical_side in LOGICAL_SIZES
-            else PHYSICAL_AXES
-            if logical_side in LOGICAL_AXES
-            else LOGICAL_CORNERS
-        )
+        [_, logical_side, _, physical_items] = self.logical_mapping_data(data)
         return [
             data.longhands_by_name[to_phys(self.name, logical_side, physical_side)]
-            for physical_side in physical
+            for physical_side in physical_items
         ]
 
     def may_be_disabled_in(self, shorthand, engine):

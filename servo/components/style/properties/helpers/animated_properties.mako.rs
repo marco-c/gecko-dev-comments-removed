@@ -304,11 +304,11 @@ impl AnimationValue {
             }
             % endfor
             PropertyDeclaration::CSSWideKeyword(ref declaration) => {
-                match declaration.id {
+                match declaration.id.to_physical(context.builder.writing_mode) {
                     
                     
                     % for prop in data.longhands:
-                    % if prop.animatable:
+                    % if prop.animatable and not prop.logical:
                     LonghandId::${prop.camel_case} => {
                         
                         
@@ -346,22 +346,12 @@ impl AnimationValue {
                         % if not prop.is_animatable_with_computed_value:
                         let computed = computed.to_animated_value();
                         % endif
-
-                        % if prop.logical:
-                        let wm = context.builder.writing_mode;
-                        <%helpers:logical_setter_helper name="${prop.name}">
-                        <%def name="inner(physical_ident)">
-                            AnimationValue::${to_camel_case(physical_ident)}(computed)
-                        </%def>
-                        </%helpers:logical_setter_helper>
-                        % else:
-                            AnimationValue::${prop.camel_case}(computed)
-                        % endif
+                        AnimationValue::${prop.camel_case}(computed)
                     },
                     % endif
                     % endfor
                     % for prop in data.longhands:
-                    % if not prop.animatable:
+                    % if not prop.animatable or prop.logical:
                     LonghandId::${prop.camel_case} => return None,
                     % endif
                     % endfor
