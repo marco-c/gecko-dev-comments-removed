@@ -661,11 +661,14 @@ class nsFocusManager final : public nsIFocusManager,
 
 
 
+
+
+
   MOZ_CAN_RUN_SCRIPT nsresult GetNextTabbableContent(
       mozilla::PresShell* aPresShell, nsIContent* aRootContent,
       nsIContent* aOriginalStartContent, nsIContent* aStartContent,
       bool aForward, int32_t aCurrentTabIndex, bool aIgnoreTabIndex,
-      bool aForDocumentNavigation, bool aNavigateByKey,
+      bool aForDocumentNavigation, bool aNavigateByKey, bool aSkipPopover,
       nsIContent** aResultContent);
 
   
