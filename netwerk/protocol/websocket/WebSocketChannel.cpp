@@ -124,8 +124,8 @@ const uint32_t kWSReconnectMaxDelay = 60 * 1000;
 
 class FailDelay {
  public:
-  FailDelay(nsCString address, int32_t port)
-      : mAddress(std::move(address)), mPort(port) {
+  FailDelay(nsCString address, nsCString path, int32_t port)
+      : mAddress(std::move(address)), mPath(std::move(path)), mPort(port) {
     mLastFailure = TimeStamp::Now();
     mNextDelay = kWSReconnectInitialBaseDelay +
                  (rand() % kWSReconnectInitialRandomDelay);
@@ -139,9 +139,10 @@ class FailDelay {
     mNextDelay = static_cast<uint32_t>(
         std::min<double>(kWSReconnectMaxDelay, mNextDelay * 1.5));
     LOG(
-        ("WebSocket: FailedAgain: host=%s, port=%d: incremented delay to "
+        ("WebSocket: FailedAgain: host=%s, path=%s, port=%d: incremented delay "
+         "to "
          "%" PRIu32,
-         mAddress.get(), mPort, mNextDelay));
+         mAddress.get(), mPath.get(), mPort, mNextDelay));
   }
 
   
@@ -160,6 +161,7 @@ class FailDelay {
   }
 
   nsCString mAddress;  
+  nsCString mPath;
   int32_t mPort;
 
  private:
@@ -191,16 +193,16 @@ class FailDelayManager {
 
   ~FailDelayManager() { MOZ_COUNT_DTOR(FailDelayManager); }
 
-  void Add(nsCString& address, int32_t port) {
+  void Add(nsCString& address, nsCString& path, int32_t port) {
     if (mDelaysDisabled) return;
 
-    UniquePtr<FailDelay> record(new FailDelay(address, port));
+    UniquePtr<FailDelay> record(new FailDelay(address, path, port));
     mEntries.AppendElement(std::move(record));
   }
 
   
   
-  FailDelay* Lookup(nsCString& address, int32_t port,
+  FailDelay* Lookup(nsCString& address, nsCString& path, int32_t port,
                     uint32_t* outIndex = nullptr) {
     if (mDelaysDisabled) return nullptr;
 
@@ -211,7 +213,8 @@ class FailDelayManager {
     
     for (int32_t i = mEntries.Length() - 1; i >= 0; --i) {
       FailDelay* fail = mEntries[i].get();
-      if (fail->mAddress.Equals(address) && fail->mPort == port) {
+      if (fail->mAddress.Equals(address) && fail->mPath.Equals(path) &&
+          fail->mPort == port) {
         if (outIndex) *outIndex = i;
         result = fail;
         
@@ -230,7 +233,7 @@ class FailDelayManager {
   void DelayOrBegin(WebSocketChannel* ws) {
     if (!mDelaysDisabled) {
       uint32_t failIndex = 0;
-      FailDelay* fail = Lookup(ws->mAddress, ws->mPort, &failIndex);
+      FailDelay* fail = Lookup(ws->mAddress, ws->mPath, ws->mPort, &failIndex);
 
       if (fail) {
         TimeStamp rightNow = TimeStamp::Now();
@@ -266,13 +269,14 @@ class FailDelayManager {
 
   
   
-  void Remove(nsCString& address, int32_t port) {
+  void Remove(nsCString& address, nsCString& path, int32_t port) {
     TimeStamp rightNow = TimeStamp::Now();
 
     
     for (int32_t i = mEntries.Length() - 1; i >= 0; --i) {
       FailDelay* entry = mEntries[i].get();
-      if ((entry->mAddress.Equals(address) && entry->mPort == port) ||
+      if ((entry->mAddress.Equals(address) && entry->mPath.Equals(path) &&
+           entry->mPort == port) ||
           entry->IsExpired(rightNow)) {
         mEntries.RemoveElementAt(i);
       }
@@ -321,14 +325,24 @@ class nsWSAdmissionManager {
 
     
     
-    bool found = (sManager->IndexOf(ws->mAddress, ws->mOriginSuffix) >= 0);
+    bool hostFound = (sManager->IndexOf(ws->mAddress, ws->mOriginSuffix) >= 0);
 
     
     UniquePtr<nsOpenConn> newdata(
         new nsOpenConn(ws->mAddress, ws->mOriginSuffix, ws));
-    sManager->mQueue.AppendElement(std::move(newdata));
 
-    if (found) {
+    
+    
+    uint32_t failIndex = 0;
+    FailDelay* fail = sManager->mFailures.Lookup(ws->mAddress, ws->mPath,
+                                                 ws->mPort, &failIndex);
+    if (!fail) {
+      sManager->mQueue.InsertElementAt(0, std::move(newdata));
+    } else {
+      sManager->mQueue.AppendElement(std::move(newdata));
+    }
+
+    if (hostFound) {
       LOG(
           ("Websocket: some other channel is connecting, changing state to "
            "CONNECTING_QUEUED"));
@@ -357,7 +371,8 @@ class nsWSAdmissionManager {
     sManager->RemoveFromQueue(aChannel);
 
     
-    sManager->mFailures.Remove(aChannel->mAddress, aChannel->mPort);
+    sManager->mFailures.Remove(aChannel->mAddress, aChannel->mPath,
+                               aChannel->mPort);
 
     
     
@@ -378,24 +393,27 @@ class nsWSAdmissionManager {
 
     if (NS_FAILED(aReason)) {
       
-      FailDelay* knownFailure =
-          sManager->mFailures.Lookup(aChannel->mAddress, aChannel->mPort);
+      FailDelay* knownFailure = sManager->mFailures.Lookup(
+          aChannel->mAddress, aChannel->mPath, aChannel->mPort);
       if (knownFailure) {
         if (aReason == NS_ERROR_NOT_CONNECTED) {
           
           LOG(
-              ("Websocket close() before connection to %s, %d completed"
+              ("Websocket close() before connection to %s, %s,  %d completed"
                " [this=%p]",
-               aChannel->mAddress.get(), (int)aChannel->mPort, aChannel));
+               aChannel->mAddress.get(), aChannel->mPath.get(),
+               (int)aChannel->mPort, aChannel));
         } else {
           
           knownFailure->FailedAgain();
         }
       } else {
         
-        LOG(("WebSocket: connection to %s, %d failed: [this=%p]",
-             aChannel->mAddress.get(), (int)aChannel->mPort, aChannel));
-        sManager->mFailures.Add(aChannel->mAddress, aChannel->mPort);
+        LOG(("WebSocket: connection to %s, %s, %d failed: [this=%p]",
+             aChannel->mAddress.get(), aChannel->mPath.get(),
+             (int)aChannel->mPort, aChannel));
+        sManager->mFailures.Add(aChannel->mAddress, aChannel->mPath,
+                                aChannel->mPort);
       }
     }
 
@@ -2853,6 +2871,10 @@ nsresult WebSocketChannel::DoAdmissionDNS() {
   rv = mURI->GetHost(hostName);
   NS_ENSURE_SUCCESS(rv, rv);
   mAddress = hostName;
+  nsCString path;
+  rv = mURI->GetFilePath(path);
+  NS_ENSURE_SUCCESS(rv, rv);
+  mPath = path;
   rv = mURI->GetPort(&mPort);
   NS_ENSURE_SUCCESS(rv, rv);
   if (mPort == -1) mPort = (mEncrypted ? kDefaultWSSPort : kDefaultWSPort);
