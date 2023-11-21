@@ -18,8 +18,8 @@ ChromeUtils.defineLazyGetter(this, "QuickSuggestTestUtils", () => {
 });
 
 const CONTAINER_ID = "firefoxSuggestContainer";
-const NONSPONSORED_TOGGLE_ID = "firefoxSuggestNonsponsoredToggle";
-const SPONSORED_TOGGLE_ID = "firefoxSuggestSponsoredToggle";
+const NONSPONSORED_CHECKBOX_ID = "firefoxSuggestNonsponsored";
+const SPONSORED_CHECKBOX_ID = "firefoxSuggestSponsored";
 const DATA_COLLECTION_TOGGLE_ID = "firefoxSuggestDataCollectionToggle";
 const INFO_BOX_ID = "firefoxSuggestInfoBox";
 const INFO_TEXT_ID = "firefoxSuggestInfoText";
@@ -197,7 +197,7 @@ async function doVisibilityTest({
 }
 
 
-add_task(async function togglesAndInfoBox() {
+add_task(async function checkboxesAndInfoBox() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   
@@ -211,8 +211,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: true,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-all");
@@ -229,8 +229,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: true,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: false,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored-sponsored");
@@ -247,8 +247,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: true,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored-data");
@@ -265,8 +265,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: true,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: false,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-nonsponsored");
@@ -283,8 +283,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-sponsored-data");
@@ -301,8 +301,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: false,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-sponsored");
@@ -319,8 +319,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-data");
@@ -337,8 +337,8 @@ add_task(async function togglesAndInfoBox() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: false,
   });
   await assertInfoBox(null);
@@ -348,19 +348,23 @@ add_task(async function togglesAndInfoBox() {
 });
 
 
-add_task(async function clickToggles() {
+add_task(async function clickCheckboxesOrToggle() {
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
 
   let doc = gBrowser.selectedBrowser.contentDocument;
   let addressBarSection = doc.getElementById("locationBarGroup");
   addressBarSection.scrollIntoView();
 
-  async function clickToggle(id) {
-    let toggle = doc.getElementById(id);
-    let changed = BrowserTestUtils.waitForEvent(toggle, "toggle");
-    let button = toggle.buttonEl;
-    await EventUtils.synthesizeMouseAtCenter(
-      button,
+  async function clickElement(id, eventName) {
+    let element = doc.getElementById(id);
+    let changed = BrowserTestUtils.waitForEvent(element, eventName);
+
+    if (eventName == "toggle") {
+      element = element.buttonEl;
+    }
+
+    EventUtils.synthesizeMouseAtCenter(
+      element,
       {},
       gBrowser.selectedBrowser.contentWindow
     );
@@ -376,55 +380,55 @@ add_task(async function clickToggles() {
     ],
   });
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: true,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: true,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-all");
 
   
-  await clickToggle(NONSPONSORED_TOGGLE_ID);
+  await clickElement(NONSPONSORED_CHECKBOX_ID, "command");
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.nonsponsored"
     ),
-    "suggest.quicksuggest.nonsponsored is false after clicking non-sponsored toggle"
+    "suggest.quicksuggest.nonsponsored is false after clicking non-sponsored checkbox"
   );
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: true,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: true,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-sponsored-data");
 
   
-  await clickToggle(SPONSORED_TOGGLE_ID);
+  await clickElement(SPONSORED_CHECKBOX_ID, "command");
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.nonsponsored"
     ),
-    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored toggle"
+    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored checkbox"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.sponsored"
     ),
-    "suggest.quicksuggest.sponsored is false after clicking sponsored toggle"
+    "suggest.quicksuggest.sponsored is false after clicking sponsored checkbox"
   );
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: true,
   });
   await assertInfoBox("addressbar-firefox-suggest-info-data");
 
   
-  await clickToggle(DATA_COLLECTION_TOGGLE_ID);
+  await clickElement(DATA_COLLECTION_TOGGLE_ID, "toggle");
   Assert.ok(
     !Services.prefs.getBoolPref(
       "browser.urlbar.suggest.quicksuggest.nonsponsored"
     ),
-    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored toggle"
+    "suggest.quicksuggest.nonsponsored remains false after clicking sponsored checkbox"
   );
   Assert.ok(
     !Services.prefs.getBoolPref(
@@ -439,8 +443,8 @@ add_task(async function clickToggles() {
     "quicksuggest.dataCollection.enabled is false after clicking data collection toggle"
   );
   assertPrefUIState({
-    [NONSPONSORED_TOGGLE_ID]: false,
-    [SPONSORED_TOGGLE_ID]: false,
+    [NONSPONSORED_CHECKBOX_ID]: false,
+    [SPONSORED_CHECKBOX_ID]: false,
     [DATA_COLLECTION_TOGGLE_ID]: false,
   });
   await assertInfoBox(null);
@@ -564,16 +568,18 @@ add_task(async function restoreDismissedSuggestions() {
 
 
 
-
-
-
-
-function assertPrefUIState(stateByElementID, attr = "pressed") {
+function assertPrefUIState(stateByElementID) {
   let doc = gBrowser.selectedBrowser.contentDocument;
   let container = doc.getElementById(CONTAINER_ID);
+  let attr;
   Assert.ok(BrowserTestUtils.is_visible(container), "The container is visible");
   for (let [id, state] of Object.entries(stateByElementID)) {
     let element = doc.getElementById(id);
+    if (element.tagName === "checkbox") {
+      attr = "checked";
+    } else if (element.tagName === "html:moz-toggle") {
+      attr = "pressed";
+    }
     Assert.equal(element[attr], state, "Expected state for ID: " + id);
   }
 }
