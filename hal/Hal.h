@@ -189,18 +189,8 @@ MOZ_DEFINE_HAL_OBSERVER(WakeLock);
 
 
 
-
-
-
-
-
-
-
-
-
 void ModifyWakeLock(const nsAString& aTopic, hal::WakeLockControl aLockAdjust,
-                    hal::WakeLockControl aHiddenAdjust,
-                    uint64_t aProcessID = hal::CONTENT_PROCESS_ID_UNKNOWN);
+                    hal::WakeLockControl aHiddenAdjust);
 
 
 
