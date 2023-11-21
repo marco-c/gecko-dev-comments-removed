@@ -116,7 +116,8 @@ fn key_update_client() {
     assert_eq!(client.get_epochs(), (Some(4), Some(3)));
 
     
-    assert!(send_and_receive(&mut client, &mut server, now).is_none());
+    
+    assert!(send_and_receive(&mut client, &mut server, now).is_some());
 
     
     assert_eq!(server.get_epochs(), (Some(4), Some(3)));
