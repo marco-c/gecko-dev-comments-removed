@@ -194,11 +194,10 @@ class SVGPathData {
 
 
 
-  static already_AddRefed<Path> BuildPath(Span<const StylePathCommand> aPath,
-                                          PathBuilder* aBuilder,
-                                          StyleStrokeLinecap aStrokeLineCap,
-                                          Float aStrokeWidth,
-                                          float aZoomFactor = 1.0);
+  static already_AddRefed<Path> BuildPath(
+      Span<const StylePathCommand> aPath, PathBuilder* aBuilder,
+      StyleStrokeLinecap aStrokeLineCap, Float aStrokeWidth,
+      const gfx::Point& aOffset = gfx::Point(), float aZoomFactor = 1.0);
 
   const_iterator begin() const { return mData.Elements(); }
   const_iterator end() const { return mData.Elements() + mData.Length(); }

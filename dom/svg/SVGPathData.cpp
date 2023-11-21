@@ -582,7 +582,8 @@ already_AddRefed<Path> SVGPathData::BuildPathForMeasuring(
 
 already_AddRefed<Path> SVGPathData::BuildPath(
     Span<const StylePathCommand> aPath, PathBuilder* aBuilder,
-    StyleStrokeLinecap aStrokeLineCap, Float aStrokeWidth, float aZoomFactor) {
+    StyleStrokeLinecap aStrokeLineCap, Float aStrokeWidth, const Point& aOffset,
+    float aZoomFactor) {
   if (aPath.IsEmpty() || !aPath[0].IsMoveTo()) {
     return nullptr;  
   }
@@ -599,8 +600,8 @@ already_AddRefed<Path> SVGPathData::BuildPath(
   Point cp1, cp2;    
   Point tcp1, tcp2;  
 
-  auto scale = [aZoomFactor](const Point& p) {
-    return Point(p.x * aZoomFactor, p.y * aZoomFactor);
+  auto scale = [aOffset, aZoomFactor](const Point& p) {
+    return Point(p.x * aZoomFactor, p.y * aZoomFactor) + aOffset;
   };
 
   
