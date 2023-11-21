@@ -15,7 +15,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import org.mozilla.gecko.EventDispatcher;
 import org.mozilla.gecko.util.EventCallback;
@@ -50,6 +52,15 @@ public class TranslationsController {
     private static final String TRANSLATION_INFORMATION_EVENT =
         "GeckoView:Translations:TranslationInformation";
     private static final String MODEL_INFORMATION_EVENT = "GeckoView:Translations:ModelInformation";
+
+    private static final String GET_LANGUAGE_SETTING_EVENT =
+        "GeckoView:Translations:GetLanguageSetting";
+
+    private static final String GET_LANGUAGE_SETTINGS_EVENT =
+        "GeckoView:Translations:GetLanguageSettings";
+
+    private static final String SET_LANGUAGE_SETTINGS_EVENT =
+        "GeckoView:Translations:SetLanguageSettings";
 
     
 
@@ -198,6 +209,83 @@ public class TranslationsController {
                 }
                 return null;
               });
+    }
+
+    
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull GeckoResult<String> getLanguageSetting(
+        @NonNull final String languageCode) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "Requesting language setting for " + languageCode + ".");
+      }
+      final GeckoBundle bundle = new GeckoBundle(1);
+      bundle.putString("language", languageCode);
+      return EventDispatcher.getInstance().queryString(GET_LANGUAGE_SETTING_EVENT, bundle);
+    }
+
+    
+
+
+
+
+
+    @AnyThread
+    public static @NonNull GeckoResult<Map<String, String>> getLanguageSettings() {
+      if (DEBUG) {
+        Log.d(LOGTAG, "Requesting language settings.");
+      }
+      return EventDispatcher.getInstance()
+          .queryBundle(GET_LANGUAGE_SETTINGS_EVENT)
+          .map(
+              bundle -> {
+                final Map<String, String> languageSettings = new HashMap<>();
+                try {
+                  final GeckoBundle[] fromBundle = bundle.getBundleArray("settings");
+                  for (final var item : fromBundle) {
+                    final var languageCode = item.getString("langTag");
+                    final @LanguageSetting String setting = item.getString("setting", "offer");
+                    if (languageCode != null) {
+                      languageSettings.put(languageCode, setting);
+                    }
+                  }
+                  return languageSettings;
+
+                } catch (final Exception e) {
+                  Log.w(
+                      LOGTAG,
+                      "An issue occurred while deserializing translation language settings: " + e);
+                }
+                return null;
+              });
+    }
+
+    
+
+
+
+
+
+
+
+
+    @AnyThread
+    public static @NonNull GeckoResult<Void> setLanguageSettings(
+        final @NonNull String languageCode,
+        final @NonNull @LanguageSetting String languageSetting) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "Requesting setting language setting.");
+      }
+
+      final GeckoBundle bundle = new GeckoBundle(2);
+      bundle.putString("language", languageCode);
+      bundle.putString("languageSetting", String.valueOf(languageSetting));
+      return EventDispatcher.getInstance().queryVoid(SET_LANGUAGE_SETTINGS_EVENT, bundle);
     }
 
     
@@ -454,6 +542,29 @@ public class TranslationsController {
         }
       }
     }
+
+    
+
+
+
+    @Retention(RetentionPolicy.SOURCE)
+    @StringDef(value = {ALWAYS, OFFER, NEVER})
+    public @interface LanguageSetting {}
+
+    
+
+
+
+    public static final String ALWAYS = "always";
+
+    
+
+
+
+    public static final String OFFER = "offer";
+
+    
+    public static final String NEVER = "never";
   }
 
   
@@ -467,6 +578,12 @@ public class TranslationsController {
     
     private static final String TRANSLATE_EVENT = "GeckoView:Translations:Translate";
     private static final String RESTORE_PAGE_EVENT = "GeckoView:Translations:RestorePage";
+
+    private static final String GET_NEVER_TRANSLATE_SITE =
+        "GeckoView:Translations:GetNeverTranslateSite";
+
+    private static final String SET_NEVER_TRANSLATE_SITE =
+        "GeckoView:Translations:SetNeverTranslateSite";
 
     
     private static final String ON_OFFER_EVENT = "GeckoView:Translations:Offer";
@@ -559,6 +676,38 @@ public class TranslationsController {
         Log.d(LOGTAG, "Restore translated page requested");
       }
       return mSession.getEventDispatcher().queryVoid(RESTORE_PAGE_EVENT);
+    }
+
+    
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<Boolean> getNeverTranslateSiteSetting() {
+      if (DEBUG) {
+        Log.d(LOGTAG, "Retrieving never translate site setting.");
+      }
+      return mSession.getEventDispatcher().queryBoolean(GET_NEVER_TRANSLATE_SITE);
+    }
+
+    
+
+
+
+
+
+
+
+    @AnyThread
+    public @NonNull GeckoResult<Void> setNeverTranslateSiteSetting(
+        final @NonNull Boolean neverTranslate) {
+      if (DEBUG) {
+        Log.d(LOGTAG, "Setting never translate site.");
+      }
+      final GeckoBundle bundle = new GeckoBundle(2);
+      bundle.putBoolean("neverTranslate", neverTranslate);
+      return mSession.getEventDispatcher().queryVoid(SET_NEVER_TRANSLATE_SITE, bundle);
     }
 
     

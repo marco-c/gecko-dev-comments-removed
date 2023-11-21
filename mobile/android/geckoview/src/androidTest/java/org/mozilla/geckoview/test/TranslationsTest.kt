@@ -16,8 +16,11 @@ import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.TranslationsController
 import org.mozilla.geckoview.TranslationsController.Language
+import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.ALWAYS
 import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.DOWNLOAD
 import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.ModelManagementOptions
+import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.NEVER
+import org.mozilla.geckoview.TranslationsController.RuntimeTranslation.OFFER
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationOptions
 import org.mozilla.geckoview.TranslationsController.SessionTranslation.TranslationState
@@ -102,14 +105,26 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun onTranslationStateChangeDelegateTest() {
-        sessionRule.delegateDuringNextWait(object : Delegate {
-            @AssertCalled(count = 1)
-            override fun onTranslationStateChange(
-                session: GeckoSession,
-                translationState: TranslationState?,
-            ) {
-            }
-        })
+        if (sessionRule.env.isAutomation) {
+            sessionRule.delegateDuringNextWait(object : Delegate {
+                @AssertCalled(count = 1)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                }
+            })
+        } else {
+            
+            sessionRule.delegateDuringNextWait(object : Delegate {
+                @AssertCalled(count = 2)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                }
+            })
+        }
         mainSession.loadTestPath(TRANSLATIONS_ES)
         mainSession.waitForPageStop()
     }
@@ -244,6 +259,7 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun testListSupportedLanguages() {
+        
         val translationDropdowns = TranslationsController.RuntimeTranslation.listSupportedLanguages()
         try {
             sessionRule.waitForResult(translationDropdowns)
@@ -278,6 +294,7 @@ class TranslationsTest : BaseSessionTest() {
 
     @Test
     fun testListModelDownloadStates() {
+        
         var modelStatesResult = TranslationsController.RuntimeTranslation.listModelDownloadStates()
         try {
             sessionRule.waitForResult(modelStatesResult)
@@ -302,6 +319,139 @@ class TranslationsTest : BaseSessionTest() {
             assertTrue(
                 "Received information on the download state of the first returned model",
                 !models[0].isDownloaded,
+            )
+        }
+    }
+
+    @Test
+    fun testSetLanguageSettings() {
+        
+        try {
+            sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("EN_US", NEVER))
+        } catch (e: Exception) {
+            assertTrue("Should have an exception, this isn't a valid tag.", true)
+        }
+
+        
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("BG", ALWAYS))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("fr", OFFER))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("de", NEVER))
+
+        
+        val alwaysTranslate = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
+        val neverTranslate = (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
+
+        
+        assertTrue("BG was correctly set to ALWAYS", alwaysTranslate.contains("bg"))
+        assertTrue("FR was correctly set to OFFER", !alwaysTranslate.contains("fr") && !neverTranslate.contains("fr"))
+        assertTrue("DE was correctly set to NEVER", neverTranslate.contains("de"))
+
+        
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("BG", OFFER))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("fr", OFFER))
+        sessionRule.waitForResult(TranslationsController.RuntimeTranslation.setLanguageSettings("de", OFFER))
+
+        
+        val alwaysTranslateReset = (sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages").get(0) as String).split(",")
+        val neverTranslateReset = (sessionRule.getPrefs("browser.translations.neverTranslateLanguages").get(0) as String).split(",")
+
+        
+        assertTrue("BG was correctly set back to OFFER", !alwaysTranslateReset.contains("bg") && !neverTranslateReset.contains("bg"))
+        assertTrue("FR was correctly set back to OFFER", !alwaysTranslateReset.contains("fr") && !neverTranslateReset.contains("fr"))
+        assertTrue("DE was correctly set back to OFFER", !alwaysTranslateReset.contains("de") && !neverTranslateReset.contains("de"))
+    }
+
+    @Test
+    fun testGetLanguageSettings() {
+        
+        var languageSettings: Map<String, String> =
+            sessionRule.waitForResult(TranslationsController.RuntimeTranslation.getLanguageSettings())
+
+        var frLanguageSetting = sessionRule.waitForResult(TranslationsController.RuntimeTranslation.getLanguageSetting("fr"))
+
+        if (sessionRule.env.isAutomation) {
+            assertTrue("FR was correctly set to ALWAYS via full query.", languageSettings["fr"] == ALWAYS)
+            assertTrue("FR was correctly set to ALWAYS via individual query.", frLanguageSetting == ALWAYS)
+            assertTrue("DE was correctly set to OFFER via full query.", languageSettings["de"] == OFFER)
+            assertTrue("ES was correctly set to NEVER via full query.", languageSettings["es"] == NEVER)
+        } else {
+            
+            assertTrue("Correctly queried language settings.", languageSettings.isNotEmpty())
+            assertTrue("Correctly queried FR language setting.", frLanguageSetting.isNotEmpty())
+        }
+    }
+
+    @Test
+    fun testOfferPopup() {
+        assertTrue("Translation offer popups are enabled, as expected.", sessionRule.runtime.settings.translationsOfferPopup)
+        sessionRule.runtime.settings.translationsOfferPopup = false
+        assertTrue("Translation offer popups are disabled, as expected.", !sessionRule.runtime.settings.translationsOfferPopup)
+        val finalPrefCheck = (sessionRule.getPrefs("browser.translations.automaticallyPopup").get(0)) as Boolean
+        assertTrue("Translation offer popups are disabled, as expected and match test harness reported value.", finalPrefCheck == sessionRule.runtime.settings.translationsOfferPopup)
+    }
+
+    @Test
+    fun testNeverTranslateSite() {
+        mainSession.loadTestPath(TRANSLATIONS_ES)
+        mainSession.waitForPageStop()
+
+        var neverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        assertTrue("Expect never translate to be false on a new page.", !neverTranslateSetting)
+
+        sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(true))
+        neverTranslateSetting = sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.neverTranslateSiteSetting)
+        assertTrue("Expect never translate to be true after setting.", neverTranslateSetting)
+
+        sessionRule.waitForResult(sessionRule.session.sessionTranslation!!.setNeverTranslateSiteSetting(false))
+    }
+
+    @Test
+    fun testBCP47PrefSetting() {
+        
+        
+        if (!sessionRule.env.isAutomation) {
+            
+            val activeTranslationPrefs = (
+                sessionRule.getPrefs("browser.translations.alwaysTranslateLanguages")
+                    .get(0) as String
+                )
+            assertTrue(
+                "There should be no active preferences for always translate set. Preferences: $activeTranslationPrefs",
+                activeTranslationPrefs == "",
+            )
+
+            
+            sessionRule.waitForResult(
+                TranslationsController.RuntimeTranslation.setLanguageSettings(
+                    "ES",
+                    ALWAYS,
+                ),
+            )
+
+            var translateCompleted = GeckoResult<Void>()
+            sessionRule.delegateUntilTestEnd(object : Delegate {
+                @AssertCalled(count = 4)
+                override fun onTranslationStateChange(
+                    session: GeckoSession,
+                    translationState: TranslationState?,
+                ) {
+                    if (translationState?.isEngineReady == true) {
+                        assertTrue("Auto requested the from language as Spanish on the page.", translationState.requestedTranslationPair?.fromLanguage == "es")
+                        translateCompleted.complete(null)
+                    }
+                }
+            })
+
+            mainSession.loadTestPath(TRANSLATIONS_ES)
+            mainSession.waitForPageStop()
+            sessionRule.waitForResult(translateCompleted)
+
+            
+            sessionRule.waitForResult(
+                TranslationsController.RuntimeTranslation.setLanguageSettings(
+                    "ES",
+                    OFFER,
+                ),
             )
         }
     }

@@ -334,6 +334,17 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
+    public @NonNull Builder translationsOfferPopup(final boolean enabled) {
+      getSettings().setTranslationsOfferPopup(enabled);
+      return this;
+    }
+
+    
+
+
+
+
+
 
 
 
@@ -560,6 +571,8 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new Pref<>("browser.ui.zoom.force-user-scalable", false);
    final Pref<Boolean> mAutofillLogins =
       new Pref<Boolean>("signon.autofillForms", true);
+   final Pref<Boolean> mAutomaticallyOfferPopup =
+      new Pref<Boolean>("browser.translations.automaticallyPopup", true);
    final Pref<Boolean> mHttpsOnly =
       new Pref<Boolean>("dom.security.https_only_mode", false);
    final Pref<Boolean> mHttpsOnlyPrivateMode =
@@ -1334,6 +1347,27 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getLoginAutofillEnabled() {
     return mAutofillLogins.get();
+  }
+
+  
+
+
+
+
+
+
+  public @NonNull GeckoRuntimeSettings setTranslationsOfferPopup(final boolean enabled) {
+    mAutomaticallyOfferPopup.commit(enabled);
+    return this;
+  }
+
+  
+
+
+
+
+  public boolean getTranslationsOfferPopup() {
+    return mAutomaticallyOfferPopup.get();
   }
 
   
