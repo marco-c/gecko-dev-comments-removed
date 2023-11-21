@@ -52,6 +52,7 @@ static PRBool ppc_crypto_support_ = PR_FALSE;
 
 
 
+
 static PRBool
 check_xcr0_ymm()
 {
@@ -117,11 +118,18 @@ CheckX86CPUSupport()
     sha_support_ = (PRBool)((ebx7 & EBX_SHA) != 0 && disable_hw_sha == NULL);
     
 
+
+
     avx_support_ = (PRBool)((ecx & AVX_BITS) == AVX_BITS) && check_xcr0_ymm() &&
                    disable_avx == NULL;
     
 
-    avx2_support_ = (PRBool)((ebx7 & AVX2_EBX_BITS) == AVX2_EBX_BITS &&
+
+
+
+
+    avx2_support_ = (PRBool)(avx_support_ == PR_TRUE &&
+                             (ebx7 & AVX2_EBX_BITS) == AVX2_EBX_BITS &&
                              (ecx & AVX2_ECX_BITS) == AVX2_ECX_BITS &&
                              disable_avx2 == NULL);
     
