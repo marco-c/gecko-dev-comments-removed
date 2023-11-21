@@ -20,6 +20,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ExtensionSettingsStore:
     "resource://gre/modules/ExtensionSettingsStore.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+  ReportBrokenSite: "resource:///modules/ReportBrokenSite.sys.mjs",
   ShellService: "resource:///modules/ShellService.sys.mjs",
   URILoadingHelper: "resource:///modules/URILoadingHelper.sys.mjs",
 });
@@ -538,30 +539,6 @@ function buildHelpMenu() {
   
   if (typeof gSafeBrowsing != "undefined") {
     gSafeBrowsing.setReportPhishingMenu();
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  let reportSiteIssueEnabled = Services.prefs.getBoolPref(
-    "extensions.webcompat-reporter.enabled",
-    false
-  );
-  let reportSiteIssue = document.getElementById("help_reportSiteIssue");
-  reportSiteIssue.hidden = !reportSiteIssueEnabled;
-  if (reportSiteIssueEnabled) {
-    let uri = gBrowser.currentURI;
-    let isReportablePage =
-      uri && (uri.schemeIs("http") || uri.schemeIs("https"));
-    reportSiteIssue.disabled = !isReportablePage;
   }
 
   if (NimbusFeatures.deviceMigration.getVariable("helpMenuHidden")) {
