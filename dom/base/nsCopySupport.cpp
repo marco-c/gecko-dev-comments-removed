@@ -24,7 +24,7 @@
 #include "mozilla/dom/DataTransfer.h"
 
 #include "nsIDocShell.h"
-#include "nsIContentViewerEdit.h"
+#include "nsIDocumentViewerEdit.h"
 #include "nsISelectionController.h"
 
 #include "nsPIDOMWindow.h"
@@ -463,7 +463,7 @@ nsresult nsCopySupport::ImageCopy(nsIImageLoadingContent* aImageElement,
   NS_ENSURE_SUCCESS(rv, rv);
   trans->Init(aLoadContext);
 
-  if (aCopyFlags & nsIContentViewerEdit::COPY_IMAGE_TEXT) {
+  if (aCopyFlags & nsIDocumentViewerEdit::COPY_IMAGE_TEXT) {
     
     nsCOMPtr<nsIURI> uri;
     rv = aImageElement->GetCurrentURI(getter_AddRefs(uri));
@@ -479,7 +479,7 @@ nsresult nsCopySupport::ImageCopy(nsIImageLoadingContent* aImageElement,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (aCopyFlags & nsIContentViewerEdit::COPY_IMAGE_HTML) {
+  if (aCopyFlags & nsIDocumentViewerEdit::COPY_IMAGE_HTML) {
     
     nsCOMPtr<nsINode> node(do_QueryInterface(aImageElement, &rv));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -488,7 +488,7 @@ nsresult nsCopySupport::ImageCopy(nsIImageLoadingContent* aImageElement,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (aCopyFlags & nsIContentViewerEdit::COPY_IMAGE_DATA) {
+  if (aCopyFlags & nsIDocumentViewerEdit::COPY_IMAGE_DATA) {
     
     nsCOMPtr<imgIRequest> imgRequest;
     nsCOMPtr<imgIContainer> image = nsContentUtils::GetImageFromContent(

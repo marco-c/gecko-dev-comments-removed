@@ -649,7 +649,7 @@ export class ContextMenuChild extends JSWindowActorChild {
     
     
     this.docShell.contentViewer
-      .QueryInterface(Ci.nsIContentViewerEdit)
+      .QueryInterface(Ci.nsIDocumentViewerEdit)
       .setCommandNode(aEvent.composedTarget);
     aEvent.composedTarget.ownerGlobal.updateCommands("contentcontextmenu");
 
