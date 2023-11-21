@@ -3,7 +3,7 @@
 
 
 
-var minimalVideoConfiguration = {
+const minimalVideoConfiguration = {
   contentType: 'video/webm; codecs="vp09.00.10.08"',
   width: 800,
   height: 600,
@@ -13,28 +13,29 @@ var minimalVideoConfiguration = {
 
 
 
-var minimalAudioConfiguration = {
+const minimalAudioConfiguration = {
   contentType: 'audio/webm; codecs="opus"',
 };
 
 
-var audioConfigurationWithSpatialRendering = {
+const audioConfigurationWithSpatialRendering = {
   contentType: 'audio/webm; codecs="opus"',
   spatialRendering: true,
 };
 
 
 
-var videoConfigurationWithDynamicRange = {
-  contentType: 'video/webm; codecs="vp09.00.10.08"',
+const videoConfigurationWithDynamicRange = {
+  contentType: 'video/webm; codecs="vp09.00.10.08.00.09.16.09.00"',
   width: 800,
   height: 600,
   bitrate: 3000,
   framerate: 24,
-  hdrMetadataType: "smpteSt2086",
-  colorGamut: "srgb",
-  transferFunction: "srgb",
-}
+  hdrMetadataType: 'smpteSt2086',
+  colorGamut: 'rec2020',
+  transferFunction: 'pq',
+};
+
 
 promise_test(t => {
   return promise_rejects_js(t, TypeError, navigator.mediaCapabilities.decodingInfo());
@@ -362,6 +363,25 @@ promise_test(t => {
     assert_equals(typeof ability.keySystemAccess, "object");
   });
 }, "Test that decodingInfo with hdrMetadataType, colorGamut, and transferFunction set returns a valid MediaCapabilitiesInfo objects");
+
+promise_test(t => {
+  
+  
+  let bt709Config = videoConfigurationWithDynamicRange;
+  bt709Config.contentType = 'video/webm; codecs="vp09.00.10.08"';
+  return navigator.mediaCapabilities
+      .decodingInfo({
+        type: 'file',
+        video: bt709Config,
+      })
+      .then(ability => {
+        assert_equals(typeof ability.supported, 'boolean');
+        assert_equals(typeof ability.smooth, 'boolean');
+        assert_equals(typeof ability.powerEfficient, 'boolean');
+        assert_equals(typeof ability.keySystemAccess, 'object');
+        assert_false(ability.supported);
+      });
+}, 'Test that decodingInfo with mismatched codec color space is unsupported');
 
 promise_test(t => {
   return promise_rejects_js(t, TypeError, navigator.mediaCapabilities.decodingInfo({
