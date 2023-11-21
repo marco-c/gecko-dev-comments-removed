@@ -63,11 +63,7 @@ class RemoteWorkerChild;
 
 
 
-enum WorkerKind : uint8_t {
-  WorkerKindDedicated,
-  WorkerKindShared,
-  WorkerKindService
-};
+enum WorkerKind { WorkerKindDedicated, WorkerKindShared, WorkerKindService };
 
 class ClientInfo;
 class ClientSource;
