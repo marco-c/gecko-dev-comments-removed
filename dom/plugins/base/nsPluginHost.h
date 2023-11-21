@@ -33,10 +33,6 @@ class nsPluginHost final : public nsSupportsWeakReference {
                                  nsIPluginTag** aResult);
 
   
-  bool HavePluginForType(const nsACString& aMimeType,
-                         PluginFilter aFilter = eExcludeDisabled);
-
-  
   enum SpecialType {
     eSpecialType_None,
     

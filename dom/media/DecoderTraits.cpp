@@ -33,8 +33,6 @@
 #include "FlacDecoder.h"
 #include "FlacDemuxer.h"
 
-#include "nsPluginHost.h"
-
 namespace mozilla {
 
 
@@ -198,17 +196,6 @@ bool DecoderTraits::ShouldHandleMediaType(
     
     
     return false;
-  }
-
-  
-  
-  
-  if (containerType->Type() == MEDIAMIMETYPE("video/quicktime")) {
-    RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-    if (pluginHost &&
-        pluginHost->HavePluginForType(containerType->Type().AsString())) {
-      return false;
-    }
   }
 
   return CanHandleMediaType(*containerType, aDiagnostics) != CANPLAY_NO;
