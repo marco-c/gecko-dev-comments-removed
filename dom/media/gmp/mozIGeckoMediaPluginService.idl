@@ -6,8 +6,6 @@
 #include "nsISupports.idl"
 #include "nsIThread.idl"
 
-interface nsIFile;
-
 %{C++
 #include "mozilla/UniquePtr.h"
 #include "nsTArray.h"
@@ -78,13 +76,6 @@ interface mozIGeckoMediaPluginService : nsISupports
 
   [noscript]
   boolean hasPluginForAPI(in ACString api, in ConstTagArrayRef tags);
-
-  
-
-
-
-  [noscript]
-  nsIFile findPluginDirectoryForAPI(in ACString api, in ConstTagArrayRef tags);
 
   
 

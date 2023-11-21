@@ -30,8 +30,6 @@ inline constexpr char kWidevineExperimentKeySystemName[] =
 inline constexpr char kWidevineExperiment2KeySystemName[] =
     "com.widevine.alpha.experiment2";
 
-inline constexpr char kWidevineExperimentAPIName[] = "windows-mf-cdm";
-
 
 inline constexpr char kPlayReadyKeySystemName[] =
     "com.microsoft.playready.recommendation";

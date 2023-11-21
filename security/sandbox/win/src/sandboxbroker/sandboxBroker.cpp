@@ -622,8 +622,7 @@ static void HexEncode(const Span<const uint8_t>& aBytes, nsACString& aEncoded) {
 
 
 
-
-void SandboxBroker::EnsureLpacPermsissionsOnDir(const nsString& aDir) {
+static void EnsureLpacPermsissionsOnBinDir() {
   
   
   if (widget::WinUtils::HasPackageIdentity()) {
@@ -639,28 +638,28 @@ void SandboxBroker::EnsureLpacPermsissionsOnDir(const nsString& aDir) {
     return;
   }
 
-  HANDLE hDir = ::CreateFileW(aDir.get(), WRITE_DAC | READ_CONTROL, 0, NULL,
-                              OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-  if (hDir == INVALID_HANDLE_VALUE) {
-    LOG_W("Unable to get directory handle for %s",
-          NS_ConvertUTF16toUTF8(aDir).get());
+  HANDLE hBinDir =
+      ::CreateFileW(sBinDir->get(), WRITE_DAC | READ_CONTROL, 0, NULL,
+                    OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
+  if (hBinDir == INVALID_HANDLE_VALUE) {
+    LOG_W("Unable to get binary directory handle.");
     return;
   }
 
-  UniquePtr<HANDLE, CloseHandleDeleter> autoHandleCloser(hDir);
+  UniquePtr<HANDLE, CloseHandleDeleter> autoHandleCloser(hBinDir);
   PACL pBinDirAcl = nullptr;
   PSECURITY_DESCRIPTOR pSD = nullptr;
   DWORD result =
-      ::GetSecurityInfo(hDir, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
+      ::GetSecurityInfo(hBinDir, SE_FILE_OBJECT, DACL_SECURITY_INFORMATION,
                         nullptr, nullptr, &pBinDirAcl, nullptr, &pSD);
   if (result != ERROR_SUCCESS) {
-    LOG_E("Failed to get DACL for %s", NS_ConvertUTF16toUTF8(aDir).get());
+    LOG_E("Failed to get DACL for binary directory.");
     return;
   }
 
   UniquePtr<VOID, LocalFreeDeleter> autoFreeSecDesc(pSD);
   if (!pBinDirAcl) {
-    LOG_E("DACL was null for %s", NS_ConvertUTF16toUTF8(aDir).get());
+    LOG_E("DACL for binary directory was null.");
     return;
   }
 
@@ -679,8 +678,7 @@ void SandboxBroker::EnsureLpacPermsissionsOnDir(const nsString& aDir) {
 
     PSID aceSID = reinterpret_cast<PSID>(&(pAllowedAce->SidStart));
     if (::EqualSid(aceSID, lpacFirefoxInstallFilesSid)) {
-      LOG_D("Firefox install files permission found on %s",
-            NS_ConvertUTF16toUTF8(aDir).get());
+      LOG_D("Firefox install files permission found on binary directory.");
       return;
     }
   }
@@ -698,14 +696,13 @@ void SandboxBroker::EnsureLpacPermsissionsOnDir(const nsString& aDir) {
   }
 
   UniquePtr<ACL, LocalFreeDeleter> autoFreeAcl(newDacl);
-  if (ERROR_SUCCESS != ::SetSecurityInfo(hDir, SE_FILE_OBJECT,
+  if (ERROR_SUCCESS != ::SetSecurityInfo(hBinDir, SE_FILE_OBJECT,
                                          DACL_SECURITY_INFORMATION, nullptr,
                                          nullptr, newDacl, nullptr)) {
-    LOG_E("Failed to set new DACL on %s", NS_ConvertUTF16toUTF8(aDir).get());
+    LOG_E("Failed to set new DACL on binary directory.");
   }
 
-  LOG_D("Firefox install files permission granted on %s",
-        NS_ConvertUTF16toUTF8(aDir).get());
+  LOG_D("Firefox install files permission granted on binary directory.");
 }
 
 static bool IsLowPrivilegedAppContainerSupported() {
@@ -740,7 +737,7 @@ static sandbox::ResultCode AddAndConfigureAppContainerProfile(
     ::LoadLibraryW(L"userenv.dll");
 
     
-    SandboxBroker::EnsureLpacPermsissionsOnDir(*sBinDir.get());
+    EnsureLpacPermsissionsOnBinDir();
 
     
     
@@ -1437,7 +1434,6 @@ struct UtilityMfMediaEngineCdmSandboxProps : public UtilitySandboxProps {
     mUseAlternateWindowStation = false;
     mLockdownDefaultDacl = false;
     mAddRestrictingRandomSid = false;
-    mUseCig = false;
 
     
     
