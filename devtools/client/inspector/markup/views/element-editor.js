@@ -14,6 +14,7 @@ const {
 } = require("resource://devtools/client/shared/inplace-editor.js");
 const {
   parseAttribute,
+  ATTRIBUTE_TYPES,
 } = require("resource://devtools/client/shared/node-attribute-parser.js");
 
 loader.lazyRequireGetter(
@@ -876,7 +877,6 @@ ElementEditor.prototype = {
     attributeValueEl.innerHTML = "";
 
     
-    
     for (const token of parsedLinksData) {
       if (token.type === "string") {
         attributeValueEl.appendChild(
@@ -888,7 +888,24 @@ ElementEditor.prototype = {
         link.setAttribute("data-type", token.type);
         link.setAttribute("data-link", token.value);
         link.textContent = this._truncateAttributeValue(token.value);
-        attributeValueEl.appendChild(link);
+        attributeValueEl.append(link);
+
+        
+        if (
+          token.type === ATTRIBUTE_TYPES.TYPE_IDREF ||
+          token.type === ATTRIBUTE_TYPES.TYPE_IDREF_LIST
+        ) {
+          const button = this.doc.createElement("button");
+          button.classList.add("select-node");
+          button.setAttribute(
+            "title",
+            INSPECTOR_L10N.getFormatStr(
+              "inspector.menu.selectElement.label",
+              token.value
+            )
+          );
+          link.append(button);
+        }
       }
     }
   },
