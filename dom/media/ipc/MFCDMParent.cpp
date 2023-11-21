@@ -304,6 +304,14 @@ static nsString MapKeySystem(const nsString& aKeySystem) {
   return aKeySystem;
 }
 
+
+void MFCDMParent::SetWidevineL1Path(const char* aPath) {
+  nsAutoCString path(aPath);
+  path.AppendLiteral("\\Google.Widevine.CDM.dll");
+  sWidevineL1Path = CreateBSTRFromConstChar(path.get());
+  MFCDM_PARENT_SLOG("Set Widevine L1 dll path=%ls\n", sWidevineL1Path);
+}
+
 void MFCDMParent::Register() {
   MOZ_ASSERT(!sRegisteredCDMs.Contains(this->mId));
   sRegisteredCDMs.InsertOrUpdate(this->mId, this);
@@ -395,8 +403,7 @@ LPCWSTR MFCDMParent::GetCDMLibraryName() const {
   }
   if (IsWidevineExperimentKeySystemAndSupported(mKeySystem) ||
       IsWidevineKeySystem(mKeySystem)) {
-    
-    return L"";
+    return sWidevineL1Path;
   }
   
   return L"Unknown";
