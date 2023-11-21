@@ -332,6 +332,10 @@ class alignas(uintptr_t) JitScript final
   LifoAlloc allocSitesSpace_{AllocSiteChunkSize};
   Vector<gc::AllocSite*, 0, SystemAllocPolicy> allocSites_;
 
+  
+  
+  uint32_t warmUpCountAtLastICStub_ = 0;
+
   ICScript icScript_;
   
 
@@ -428,6 +432,9 @@ class alignas(uintptr_t) JitScript final
   gc::AllocSite* createAllocSite(JSScript* script);
 
   bool resetAllocSites(bool resetNurserySites, bool resetPretenuredSites);
+
+  void updateLastICStubCounter() { warmUpCountAtLastICStub_ = warmUpCount(); }
+  uint32_t warmUpCountAtLastICStub() const { return warmUpCountAtLastICStub_; }
 
  private:
   
