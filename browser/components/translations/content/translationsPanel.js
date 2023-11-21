@@ -1247,17 +1247,6 @@ var TranslationsPanel = new (class {
   
 
 
-  #hideTranslationsButton() {
-    const { button, buttonLocale, buttonCircleArrows } = this.buttonElements;
-    button.hidden = true;
-    buttonLocale.hidden = true;
-    buttonCircleArrows.hidden = true;
-    button.removeAttribute("translationsactive");
-  }
-
-  
-
-
 
 
   #isTranslationsActive() {
@@ -1446,7 +1435,7 @@ var TranslationsPanel = new (class {
   onLocationChange(browser) {
     if (browser.currentURI.spec.startsWith("about:reader")) {
       
-      TranslationsPanel.#hideTranslationsButton();
+      this.buttonElements.button.hidden = true;
     }
   }
 
@@ -1543,6 +1532,9 @@ var TranslationsPanel = new (class {
           (hasSupportedLanguage &&
             (await TranslationsParent.getIsTranslationsEngineSupported()))
         ) {
+          
+          const wasButtonHidden = button.hidden;
+
           button.hidden = false;
           if (requestedTranslationPair) {
             
@@ -1602,11 +1594,13 @@ var TranslationsPanel = new (class {
             }
           }
 
-          if (!button.hidden) {
+          
+          if (wasButtonHidden) {
             PageActions.sendPlacedInUrlbarTrigger(button);
           }
-        } else {
-          this.#hideTranslationsButton();
+        } else if (!button.hidden) {
+          
+          button.hidden = true;
         }
 
         switch (error) {
