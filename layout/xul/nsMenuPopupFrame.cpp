@@ -993,8 +993,8 @@ void nsMenuPopupFrame::ShowPopup(bool aIsContextMenu) {
 
     
     
-    PresShell()->FrameNeedsReflow(this, IntrinsicDirty::FrameAndAncestors,
-                                  NS_FRAME_IS_DIRTY);
+    PresShell()->FrameNeedsReflow(
+        this, IntrinsicDirty::FrameAncestorsAndDescendants, NS_FRAME_IS_DIRTY);
 
     if (mPopupType == PopupType::Menu) {
       nsCOMPtr<nsISound> sound(do_GetService("@mozilla.org/sound;1"));
