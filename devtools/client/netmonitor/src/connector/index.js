@@ -520,14 +520,15 @@ class Connector {
       
       
       if (typeof profile === "string") {
-        profile = throttlingProfiles.find(({ id }) => id == profile);
+        profile = throttlingProfiles.profiles.find(({ id }) => id == profile);
       }
-      const { download, upload, latency } = profile;
-      if (!download && !upload) {
-        await this.commands.targetConfigurationCommand.updateConfiguration({
-          setTabOffline: !download,
-        });
-      }
+      const { download, upload, latency, id } = profile;
+
+      
+      await this.commands.targetConfigurationCommand.updateConfiguration({
+        setTabOffline: id === throttlingProfiles.PROFILE_CONSTANTS.OFFLINE,
+      });
+
       await this.networkFront.setNetworkThrottling({
         downloadThroughput: download,
         uploadThroughput: upload,
