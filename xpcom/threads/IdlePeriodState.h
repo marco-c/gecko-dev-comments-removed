@@ -188,11 +188,6 @@ class IdlePeriodState {
 
   
   
-  
-  bool mIdleSchedulerInitialized = false;
-
-  
-  
   bool mActive = true;
 };
 
