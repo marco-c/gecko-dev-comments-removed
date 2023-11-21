@@ -147,10 +147,6 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
     return super._onProcessAvailable({ targetFront });
   }
 
-  _shouldDestroyTargetsOnNavigation() {
-    return !!this.targetCommand.destroyServiceWorkersOnNavigation;
-  }
-
   _onProcessDestroyed({ targetFront }) {
     this._processTargets.delete(targetFront);
     return super._onProcessDestroyed({ targetFront });
@@ -183,18 +179,8 @@ class LegacyServiceWorkersWatcher extends LegacyWorkersWatcher {
       
       if (resource.name === "dom-loading") {
         const allServiceWorkerTargets = this._getAllServiceWorkerTargets();
-        const shouldDestroy = this._shouldDestroyTargetsOnNavigation();
 
         for (const target of allServiceWorkerTargets) {
-          const isRegisteredBefore =
-            this.targetCommand.isTargetRegistered(target);
-          if (shouldDestroy && isRegisteredBefore) {
-            
-            
-            
-            this.onTargetDestroyed(target, { shouldDestroyTargetFront: false });
-          }
-
           
           
           const isRegisteredAfter =
