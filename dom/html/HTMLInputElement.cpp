@@ -5755,22 +5755,10 @@ void HTMLInputElement::ShowPicker(ErrorResult& aRv) {
   
   
   
-  ShowThePickerIfApplicable();
-}
-
-void HTMLInputElement::ShowThePickerIfApplicable() {
-  
-  
 
   
-  if (!OwnerDoc()->HasValidTransientUserGestureActivation()) {
-    return;
-  }
-
   
-  if (!IsMutable()) {
-    return;
-  }
+  
 
   
   
@@ -7334,23 +7322,6 @@ void HTMLInputElement::MaybeFireInputPasswordRemoved() {
   AsyncEventDispatcher::RunDOMEventWhenSafe(
       *this, u"DOMInputPasswordRemoved"_ns, CanBubble::eNo,
       ChromeOnlyDispatch::eYes);
-}
-
-void HTMLInputElement::HandleInvokeInternal(nsAtom* aAction, ErrorResult& aRv) {
-  
-  
-  nsPIDOMWindowInner* window = OwnerDoc()->GetInnerWindow();
-  WindowGlobalChild* windowGlobalChild =
-      window ? window->GetWindowGlobalChild() : nullptr;
-  if (!windowGlobalChild || !windowGlobalChild->SameOriginWithTop()) {
-    return;
-  }
-
-  
-  
-  if (nsContentUtils::EqualsIgnoreASCIICase(aAction, nsGkAtoms::showPicker)) {
-    ShowThePickerIfApplicable();
-  }
 }
 
 }  

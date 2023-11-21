@@ -869,8 +869,6 @@ class HTMLInputElement final : public TextControlElement,
   
   static mozilla::Maybe<nscolor> ParseSimpleColor(const nsAString& aColor);
 
-  void HandleInvokeInternal(nsAtom* aAction, ErrorResult& aRv) override;
-
  protected:
   MOZ_CAN_RUN_SCRIPT_BOUNDARY virtual ~HTMLInputElement();
 
@@ -1642,8 +1640,6 @@ class HTMLInputElement final : public TextControlElement,
 
 
   RadioGroupContainer* mRadioGroupContainer;
-
-  void ShowThePickerIfApplicable();
 
   struct nsFilePickerFilter {
     nsFilePickerFilter() : mFilterMask(0) {}
