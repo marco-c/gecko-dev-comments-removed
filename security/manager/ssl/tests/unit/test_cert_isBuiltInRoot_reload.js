@@ -111,16 +111,12 @@ function run_test() {
   
   
   
-  
-  const veriSignCertDBKey = `AAAAAAAAAAAAAAARAAAAzQCLW3VWhFSFCwDPrzhI
-    zrGkMIHKMQswCQYDVQQGEwJVUzEXMBUGA1UEChMOVmVyaVNpZ24sIEluYy4xHzAdB
-    gNVBAsTFlZlcmlTaWduIFRydXN0IE5ldHdvcmsxOjA4BgNVBAsTMShjKSAxOTk5IF
-    ZlcmlTaWduLCBJbmMuIC0gRm9yIGF1dGhvcml6ZWQgdXNlIG9ubHkxRTBDBgNVBAM
-    TPFZlcmlTaWduIENsYXNzIDEgUHVibGljIFByaW1hcnkgQ2VydGlmaWNhdGlvbiBB
-    dXRob3JpdHkgLSBHMw==`;
-  let veriSignCert = certdb.findCertByDBKey(veriSignCertDBKey);
-  ok(veriSignCert, "Should be able to find VeriSign root");
-  ok(veriSignCert.isBuiltInRoot, "VeriSign root is a built-in");
+  const sectigoDBKey = `AAAAAAAAAAAAAAAQAAAAYULyzNobaTdEXxX+dSgQuPQwXzELMAk
+    GA1UEBhMCR0IxGDAWBgNVBAoTD1NlY3RpZ28gTGltaXRlZDE2MDQGA1UEAxMtU2VjdGlnbyBQd
+    WJsaWMgU2VydmVyIEF1dGhlbnRpY2F0aW9uIFJvb3QgRTQ2`;
+  let sectigoCert = certdb.findCertByDBKey(sectigoDBKey);
+  ok(sectigoCert, "Should be able to find Sectigo root");
+  ok(sectigoCert.isBuiltInRoot, "Sectigo root is a built-in");
 
   
   
