@@ -11,6 +11,7 @@
 #include "ErrorList.h"
 #include "PLDHashTable.h"
 #include "mozilla/BasicEvents.h"
+#include "mozilla/ContentBlockingLog.h"
 #include "mozilla/gfx/Types.h"
 #include "mozilla/TypedEnumBits.h"
 #include "js/RealmOptions.h"
@@ -355,6 +356,14 @@ class nsRFPService final : public nsIObserver, public nsIRFPService {
 
   static void MaybeReportFontFingerprinter(nsIChannel* aChannel,
                                            nsACString& aOriginNoSuffix);
+
+  
+
+  
+  
+  
+  static bool CheckSuspiciousFingerprintingActivity(
+      nsTArray<ContentBlockingLog::LogEntry>& aLogs);
 
  private:
   nsresult Init();
