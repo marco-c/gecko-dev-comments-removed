@@ -54,8 +54,8 @@ user_pref("image.decode-sync.enabled", true);
 user_pref("layout.interruptible-reflow.enabled", false);
 
 
+
 user_pref("layout.testing.overlay-scrollbars.always-visible", true);
-user_pref("ui.scrollbarFadeDuration", 0);
 
 
 user_pref("layout.image.eager_broken_image_icon", true);
