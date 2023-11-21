@@ -184,21 +184,17 @@ nsRect HTMLAreaAccessible::RelativeBounds(nsIFrame** aBoundingFrame) const {
 nsRect HTMLAreaAccessible::ParentRelativeBounds() {
   nsIFrame* boundingFrame = nullptr;
   nsRect relativeBoundsRect = RelativeBounds(&boundingFrame);
-
-  nsIFrame* parentBoundingFrame = nullptr;
-  if (mParent) {
-    parentBoundingFrame = mParent->GetFrame();
+  if (MOZ_UNLIKELY(!boundingFrame)) {
+    
+    return nsRect();
   }
 
-  if (!parentBoundingFrame) {
-    
-    
-    parentBoundingFrame =
-        nsLayoutUtils::GetContainingBlockForClientRect(boundingFrame);
-  }
-
-  nsLayoutUtils::TransformRect(boundingFrame, parentBoundingFrame,
-                               relativeBoundsRect);
-
+  
+  
+  
+  
+  
+  
+  
   return relativeBoundsRect;
 }
