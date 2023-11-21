@@ -6683,6 +6683,14 @@ void nsWindow::ResumeCompositorFlickering() {
 
   MozClearHandleID(mCompositorPauseTimeoutID, g_source_remove);
 
+  
+  
+  
+  if (!mCompositorWidgetDelegate) {
+    mCompositorState = COMPOSITOR_ENABLED;
+    return;
+  }
+
   ResumeCompositorImpl();
 }
 
