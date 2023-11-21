@@ -35,14 +35,6 @@ nsresult FontPreloader::CreateChannel(
                       nullptr, aDocument, aLoadGroup, aCallbacks, true);
 }
 
-
-void FontPreloader::PrioritizeAsPreload(nsIChannel* aChannel) {
-  nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(aChannel));
-  if (cos) {
-    cos->AddClassFlags(nsIClassOfService::Unblocked);
-  }
-}
-
  void FontPreloader::BuildChannelFlags(
     nsIURI* aURI, bool aIsPreload,
     nsContentSecurityManager::CORSSecurityMapping& aCorsMapping,
