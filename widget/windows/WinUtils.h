@@ -309,34 +309,6 @@ class WinUtils {
 
 
 
-  static bool GetRegistryKey(HKEY aRoot, char16ptr_t aKeyName,
-                             char16ptr_t aValueName, wchar_t* aBuffer,
-                             DWORD aBufferLength);
-
-  
-
-
-
-
-
-
-
-  static bool HasRegistryKey(HKEY aRoot, char16ptr_t aKeyName);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

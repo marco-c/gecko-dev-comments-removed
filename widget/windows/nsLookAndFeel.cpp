@@ -18,6 +18,7 @@
 #include "gfxFontConstants.h"
 #include "gfxWindowsPlatform.h"
 #include "mozilla/StaticPrefs_widget.h"
+#include "mozilla/widget/WinRegistry.h"
 
 using namespace mozilla;
 using namespace mozilla::widget;
@@ -45,65 +46,30 @@ static bool SystemWantsDarkTheme() {
                            LookAndFeel::UseStandins::No));
   }
 
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIWindowsRegKey> personalizeKey =
-      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
+  WinRegistry::Key key(
+      HKEY_CURRENT_USER,
+      u"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"_ns,
+      WinRegistry::KeyMode::QueryValue);
+  if (NS_WARN_IF(!key)) {
     return false;
   }
-
-  rv = personalizeKey->Open(
-      nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
-      nsLiteralString(
-          u"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize"),
-      nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-
-  uint32_t lightThemeEnabled;
-  rv =
-      personalizeKey->ReadIntValue(u"AppsUseLightTheme"_ns, &lightThemeEnabled);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-  return !lightThemeEnabled;
+  uint32_t light = key.GetValueAsDword(u"AppsUseLightTheme"_ns).valueOr(1);
+  return !light;
 }
 
-static int32_t SystemColorFilter() {
-  nsresult rv = NS_OK;
-  nsCOMPtr<nsIWindowsRegKey> colorFilteringKey =
-      do_CreateInstance("@mozilla.org/windows-registry-key;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return 0;
-  }
-
-  rv = colorFilteringKey->Open(
-      nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
+static uint32_t SystemColorFilter() {
+  WinRegistry::Key key(
+      HKEY_CURRENT_USER,
       u"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Accessibility\\ATConfig\\colorfiltering"_ns,
-      nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  if (NS_FAILED(rv)) {
+      WinRegistry::KeyMode::QueryValue);
+  if (NS_WARN_IF(!key)) {
     return 0;
   }
 
-  
-  
-  
-  
-  uint32_t active;
-  rv = colorFilteringKey->ReadIntValue(u"Active"_ns, &active);
-  if (NS_FAILED(rv) || active == 0) {
+  if (!key.GetValueAsDword(u"Active"_ns).valueOr(0)) {
     return 0;
   }
-
-  
-  uint32_t filterType;
-  rv = colorFilteringKey->ReadIntValue(u"FilterType"_ns, &filterType);
-  if (NS_SUCCEEDED(rv)) {
-    return filterType;
-  }
-
-  return 0;
+  return key.GetValueAsDword(u"FilterType"_ns).valueOr(0);
 }
 
 nsLookAndFeel::nsLookAndFeel() {
@@ -579,8 +545,7 @@ nsresult nsLookAndFeel::NativeGetInt(IntID aID, int32_t& aResult) {
       break;
     }
     case IntID::InvertedColors: {
-      int32_t colorFilter = SystemColorFilter();
-
+      uint32_t colorFilter = SystemColorFilter();
       
       
       
@@ -825,48 +790,33 @@ auto nsLookAndFeel::ComputeTitlebarColors() -> TitlebarColors {
                           *GenericDarkColor(ColorID::Inactivecaptiontext),
                           *GenericDarkColor(ColorID::Inactiveborder)};
 
-  nsCOMPtr<nsIWindowsRegKey> dwmKey =
-      do_CreateInstance("@mozilla.org/windows-registry-key;1");
-  if (!dwmKey) {
+  
+  
+  WinRegistry::Key dwmKey(HKEY_CURRENT_USER,
+                          u"SOFTWARE\\Microsoft\\Windows\\DWM"_ns,
+                          WinRegistry::KeyMode::QueryValue);
+  if (NS_WARN_IF(!dwmKey)) {
     return result;
   }
+
   
   
-  nsresult rv = dwmKey->Open(nsIWindowsRegKey::ROOT_KEY_CURRENT_USER,
-                             u"SOFTWARE\\Microsoft\\Windows\\DWM"_ns,
-                             nsIWindowsRegKey::ACCESS_QUERY_VALUE);
-  NS_ENSURE_SUCCESS(rv, result);
-
-  auto close = mozilla::MakeScopeExit([&] { dwmKey->Close(); });
-
-  auto ReadColor = [&](const nsAString& aName) -> Maybe<nscolor> {
-    uint32_t color;
-    if (NS_SUCCEEDED(dwmKey->ReadIntValue(aName, &color))) {
-      
-      
-      
-      return Some(color);
-    }
-    return Nothing();
-  };
-
-  result.mAccent = ReadColor(u"AccentColor"_ns);
+  
+  result.mAccent = dwmKey.GetValueAsDword(u"AccentColor"_ns);
   result.mAccentText = GetAccentColorText(result.mAccent);
 
   if (!result.mAccent) {
     return result;
   }
 
-  result.mAccentInactive = ReadColor(u"AccentColorInactive"_ns);
+  result.mAccentInactive = dwmKey.GetValueAsDword(u"AccentColorInactive"_ns);
   result.mAccentInactiveText = GetAccentColorText(result.mAccentInactive);
 
   
   
   
-  uint32_t prevalence = 0;
   result.mUseAccent =
-      NS_SUCCEEDED(dwmKey->ReadIntValue(u"ColorPrevalence"_ns, &prevalence)) &&
-      prevalence == 1;
+      dwmKey.GetValueAsDword(u"ColorPrevalence"_ns).valueOr(0) == 1;
   if (!result.mUseAccent) {
     return result;
   }
