@@ -377,11 +377,13 @@ bool RemoteAccessible::ContainsPoint(int32_t aX, int32_t aY) {
     return false;
   }
   if (!IsTextLeaf()) {
-    if (RefPtr{DisplayStyle()} != nsGkAtoms::inlinevalue) {
+    if (IsImage() || IsImageMap() || !HasChildren() ||
+        RefPtr{DisplayStyle()} != nsGkAtoms::inlinevalue) {
       
       
       return true;
     }
+    
     
     
     uint32_t count = ChildCount();
