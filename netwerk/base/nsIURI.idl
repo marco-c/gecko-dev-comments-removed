@@ -253,6 +253,11 @@ interface nsIURI : nsISupports
     
 
 
+    readonly attribute boolean hasUserPass;
+
+    
+
+
 
     
 
