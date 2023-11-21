@@ -1,9 +1,9 @@
-use std::u16;
+use alloc::sync::Arc;
 
-use crate::packed::pattern::Patterns;
-use crate::packed::rabinkarp::RabinKarp;
-use crate::packed::teddy::{self, Teddy};
-use crate::Match;
+use crate::{
+    packed::{pattern::Patterns, rabinkarp::RabinKarp, teddy},
+    util::search::{Match, Span},
+};
 
 
 
@@ -23,9 +23,8 @@ const PATTERN_LIMIT: usize = 128;
 
 
 
-
-
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[non_exhaustive]
 pub enum MatchKind {
     
     
@@ -38,13 +37,6 @@ pub enum MatchKind {
     
     
     LeftmostLongest,
-    
-    
-    
-    
-    
-    #[doc(hidden)]
-    __Nonexhaustive,
 }
 
 impl Default for MatchKind {
@@ -90,12 +82,14 @@ impl Default for MatchKind {
 
 
 
+
 #[derive(Clone, Debug)]
 pub struct Config {
     kind: MatchKind,
     force: Option<ForceAlgorithm>,
-    force_teddy_fat: Option<bool>,
-    force_avx: Option<bool>,
+    only_teddy_fat: Option<bool>,
+    only_teddy_256bit: Option<bool>,
+    heuristic_pattern_limits: bool,
 }
 
 
@@ -122,13 +116,12 @@ impl Config {
         Config {
             kind: MatchKind::LeftmostFirst,
             force: None,
-            force_teddy_fat: None,
-            force_avx: None,
+            only_teddy_fat: None,
+            only_teddy_256bit: None,
+            heuristic_pattern_limits: true,
         }
     }
 
-    
-    
     
     
     pub fn builder(&self) -> Builder {
@@ -147,7 +140,7 @@ impl Config {
     
     
     #[doc(hidden)]
-    pub fn force_teddy(&mut self, yes: bool) -> &mut Config {
+    pub fn only_teddy(&mut self, yes: bool) -> &mut Config {
         if yes {
             self.force = Some(ForceAlgorithm::Teddy);
         } else {
@@ -162,8 +155,8 @@ impl Config {
     
     
     #[doc(hidden)]
-    pub fn force_teddy_fat(&mut self, yes: Option<bool>) -> &mut Config {
-        self.force_teddy_fat = yes;
+    pub fn only_teddy_fat(&mut self, yes: Option<bool>) -> &mut Config {
+        self.only_teddy_fat = yes;
         self
     }
 
@@ -174,8 +167,8 @@ impl Config {
     
     
     #[doc(hidden)]
-    pub fn force_avx(&mut self, yes: Option<bool>) -> &mut Config {
-        self.force_avx = yes;
+    pub fn only_teddy_256bit(&mut self, yes: Option<bool>) -> &mut Config {
+        self.only_teddy_256bit = yes;
         self
     }
 
@@ -185,7 +178,7 @@ impl Config {
     
     
     #[doc(hidden)]
-    pub fn force_rabin_karp(&mut self, yes: bool) -> &mut Config {
+    pub fn only_rabin_karp(&mut self, yes: bool) -> &mut Config {
         if yes {
             self.force = Some(ForceAlgorithm::RabinKarp);
         } else {
@@ -193,7 +186,20 @@ impl Config {
         }
         self
     }
+
+    
+    
+    
+    
+    
+    
+    pub fn heuristic_pattern_limits(&mut self, yes: bool) -> &mut Config {
+        self.heuristic_pattern_limits = yes;
+        self
+    }
 }
+
+
 
 
 
@@ -250,6 +256,7 @@ impl Builder {
         }
         let mut patterns = self.patterns.clone();
         patterns.set_match_kind(self.config.kind);
+        let patterns = Arc::new(patterns);
         let rabinkarp = RabinKarp::new(&patterns);
         
         
@@ -258,23 +265,28 @@ impl Builder {
         
         let (search_kind, minimum_len) = match self.config.force {
             None | Some(ForceAlgorithm::Teddy) => {
-                let teddy = match self.build_teddy(&patterns) {
+                debug!("trying to build Teddy packed matcher");
+                let teddy = match self.build_teddy(Arc::clone(&patterns)) {
                     None => return None,
                     Some(teddy) => teddy,
                 };
                 let minimum_len = teddy.minimum_len();
                 (SearchKind::Teddy(teddy), minimum_len)
             }
-            Some(ForceAlgorithm::RabinKarp) => (SearchKind::RabinKarp, 0),
+            Some(ForceAlgorithm::RabinKarp) => {
+                debug!("using Rabin-Karp packed matcher");
+                (SearchKind::RabinKarp, 0)
+            }
         };
         Some(Searcher { patterns, rabinkarp, search_kind, minimum_len })
     }
 
-    fn build_teddy(&self, patterns: &Patterns) -> Option<Teddy> {
+    fn build_teddy(&self, patterns: Arc<Patterns>) -> Option<teddy::Searcher> {
         teddy::Builder::new()
-            .avx(self.config.force_avx)
-            .fat(self.config.force_teddy_fat)
-            .build(&patterns)
+            .only_256bit(self.config.only_teddy_256bit)
+            .only_fat(self.config.only_teddy_fat)
+            .heuristic_pattern_limits(self.config.heuristic_pattern_limits)
+            .build(patterns)
     }
 
     
@@ -297,7 +309,7 @@ impl Builder {
             return self;
         }
         
-        assert!(self.patterns.len() <= u16::MAX as usize);
+        assert!(self.patterns.len() <= core::u16::MAX as usize);
 
         let pattern = pattern.as_ref();
         if pattern.is_empty() {
@@ -331,6 +343,16 @@ impl Builder {
             self.add(p);
         }
         self
+    }
+
+    
+    pub fn len(&self) -> usize {
+        self.patterns.len()
+    }
+
+    
+    pub fn minimum_len(&self) -> usize {
+        self.patterns.minimum_len()
     }
 }
 
@@ -369,9 +391,10 @@ impl Default for Builder {
 
 
 
+
 #[derive(Clone, Debug)]
 pub struct Searcher {
-    patterns: Patterns,
+    patterns: Arc<Patterns>,
     rabinkarp: RabinKarp,
     search_kind: SearchKind,
     minimum_len: usize,
@@ -379,11 +402,13 @@ pub struct Searcher {
 
 #[derive(Clone, Debug)]
 enum SearchKind {
-    Teddy(Teddy),
+    Teddy(teddy::Searcher),
     RabinKarp,
 }
 
 impl Searcher {
+    
+    
     
     
     
@@ -423,6 +448,17 @@ impl Searcher {
     
     
     
+    pub fn config() -> Config {
+        Config::new()
+    }
+
+    
+    
+    
+    pub fn builder() -> Builder {
+        Builder::new()
+    }
+
     
     
     
@@ -446,8 +482,15 @@ impl Searcher {
     
     
     
+    
+    
+    
+    
+    
+    #[inline]
     pub fn find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
-        self.find_at(haystack, 0)
+        let haystack = haystack.as_ref();
+        self.find_in(haystack, Span::from(0..haystack.len()))
     }
 
     
@@ -479,21 +522,25 @@ impl Searcher {
     
     
     
-    pub fn find_at<B: AsRef<[u8]>>(
+    
+    
+    
+    #[inline]
+    pub fn find_in<B: AsRef<[u8]>>(
         &self,
         haystack: B,
-        at: usize,
+        span: Span,
     ) -> Option<Match> {
         let haystack = haystack.as_ref();
         match self.search_kind {
             SearchKind::Teddy(ref teddy) => {
-                if haystack[at..].len() < teddy.minimum_len() {
-                    return self.slow_at(haystack, at);
+                if haystack[span].len() < teddy.minimum_len() {
+                    return self.find_in_slow(haystack, span);
                 }
-                teddy.find_at(&self.patterns, haystack, at)
+                teddy.find(&haystack[..span.end], span.start)
             }
             SearchKind::RabinKarp => {
-                self.rabinkarp.find_at(&self.patterns, haystack, at)
+                self.rabinkarp.find_at(&haystack[..span.end], span.start)
             }
         }
     }
@@ -522,11 +569,21 @@ impl Searcher {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
     pub fn find_iter<'a, 'b, B: ?Sized + AsRef<[u8]>>(
         &'a self,
         haystack: &'b B,
     ) -> FindIter<'a, 'b> {
-        FindIter { searcher: self, haystack: haystack.as_ref(), at: 0 }
+        let haystack = haystack.as_ref();
+        let span = Span::from(0..haystack.len());
+        FindIter { searcher: self, haystack, span }
     }
 
     
@@ -549,6 +606,9 @@ impl Searcher {
     
     
     
+    
+    
+    #[inline]
     pub fn match_kind(&self) -> &MatchKind {
         self.patterns.match_kind()
     }
@@ -563,16 +623,18 @@ impl Searcher {
     
     
     
+    #[inline]
     pub fn minimum_len(&self) -> usize {
         self.minimum_len
     }
 
     
     
-    pub fn heap_bytes(&self) -> usize {
-        self.patterns.heap_bytes()
-            + self.rabinkarp.heap_bytes()
-            + self.search_kind.heap_bytes()
+    #[inline]
+    pub fn memory_usage(&self) -> usize {
+        self.patterns.memory_usage()
+            + self.rabinkarp.memory_usage()
+            + self.search_kind.memory_usage()
     }
 
     
@@ -581,15 +643,15 @@ impl Searcher {
     
     
     
-    fn slow_at(&self, haystack: &[u8], at: usize) -> Option<Match> {
-        self.rabinkarp.find_at(&self.patterns, haystack, at)
+    fn find_in_slow(&self, haystack: &[u8], span: Span) -> Option<Match> {
+        self.rabinkarp.find_at(&haystack[..span.end], span.start)
     }
 }
 
 impl SearchKind {
-    fn heap_bytes(&self) -> usize {
+    fn memory_usage(&self) -> usize {
         match *self {
-            SearchKind::Teddy(ref ted) => ted.heap_bytes(),
+            SearchKind::Teddy(ref ted) => ted.memory_usage(),
             SearchKind::RabinKarp => 0,
         }
     }
@@ -604,21 +666,21 @@ impl SearchKind {
 pub struct FindIter<'s, 'h> {
     searcher: &'s Searcher,
     haystack: &'h [u8],
-    at: usize,
+    span: Span,
 }
 
 impl<'s, 'h> Iterator for FindIter<'s, 'h> {
     type Item = Match;
 
     fn next(&mut self) -> Option<Match> {
-        if self.at > self.haystack.len() {
+        if self.span.start > self.span.end {
             return None;
         }
-        match self.searcher.find_at(&self.haystack, self.at) {
+        match self.searcher.find_in(&self.haystack, self.span) {
             None => None,
-            Some(c) => {
-                self.at = c.end;
-                Some(c)
+            Some(m) => {
+                self.span.start = m.end();
+                Some(m)
             }
         }
     }

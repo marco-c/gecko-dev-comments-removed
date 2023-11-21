@@ -2,6 +2,14 @@
 
 
 
+use regex::Regex;
+
+macro_rules! regex {
+    ($pattern:expr) => {
+        regex::Regex::new($pattern).unwrap()
+    };
+}
+
 
 
 
@@ -14,8 +22,9 @@ fn fuzz1() {
 
 
 #[test]
+#[cfg(feature = "unicode")]
 fn empty_any_errors_no_panic() {
-    assert!(regex_new!(r"\P{any}").is_err());
+    assert!(Regex::new(r"\P{any}").is_ok());
 }
 
 
@@ -27,5 +36,26 @@ fn empty_any_errors_no_panic() {
 #[test]
 fn big_regex_fails_to_compile() {
     let pat = "[\u{0}\u{e}\u{2}\\w~~>[l\t\u{0}]p?<]{971158}";
-    assert!(regex_new!(pat).is_err());
+    assert!(Regex::new(pat).is_err());
+}
+
+
+
+
+#[test]
+fn todo() {
+    let pat = "(?:z|xx)@|xx";
+    assert!(Regex::new(pat).is_ok());
+}
+
+
+
+
+
+#[test]
+fn fail_branch_prevents_match() {
+    let pat = r".*[a&&b]A|B";
+    let hay = "B";
+    let re = Regex::new(pat).unwrap();
+    assert!(re.is_match(hay));
 }

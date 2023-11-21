@@ -105,13 +105,16 @@
 
 
 
+
+
+
 pub use crate::packed::api::{Builder, Config, FindIter, MatchKind, Searcher};
 
 mod api;
+mod ext;
 mod pattern;
 mod rabinkarp;
 mod teddy;
-#[cfg(test)]
+#[cfg(all(feature = "std", test))]
 mod tests;
-#[cfg(target_arch = "x86_64")]
 mod vector;
