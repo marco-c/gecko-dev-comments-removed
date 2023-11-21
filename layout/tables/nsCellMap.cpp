@@ -207,7 +207,16 @@ nsCellMap* nsTableCellMap::GetMapFor(const nsTableRowGroupFrame* aRowGroup,
 
   
   
-  if (aRowGroup->IsRepeatable()) {
+  
+  
+  
+  auto isTableHeaderFooterGroup = [](const nsTableRowGroupFrame* aRG) -> bool {
+    const auto display = aRG->StyleDisplay()->mDisplay;
+    return display == StyleDisplay::TableHeaderGroup ||
+           display == StyleDisplay::TableFooterGroup;
+  };
+  if (aRowGroup->IsRepeatable() ||
+      (aRowGroup->GetNextInFlow() && isTableHeaderFooterGroup(aRowGroup))) {
     auto findOtherRowGroupOfType =
         [aRowGroup](nsTableFrame* aTable) -> nsTableRowGroupFrame* {
       const auto display = aRowGroup->StyleDisplay()->mDisplay;
