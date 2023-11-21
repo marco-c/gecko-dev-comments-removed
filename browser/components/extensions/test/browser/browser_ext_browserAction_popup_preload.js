@@ -70,11 +70,19 @@ add_task(async function testBrowserActionClickCanceled() {
     "Active tab was granted permission"
   );
 
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
   EventUtils.synthesizeMouseAtCenter(
     document.documentElement,
     { type: "mouseup", button: 0 },
     window
   );
+  AccessibilityUtils.resetEnv();
 
   is(browserAction.pendingPopup, null, "Pending popup was cleared");
   is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
@@ -207,11 +215,19 @@ add_task(async function testBrowserActionDisabled() {
   is(browserAction.pendingPopup, null, "Have no pending popup");
   is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");
 
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustHaveAccessibleRule: false,
+  });
   EventUtils.synthesizeMouseAtCenter(
     document.documentElement,
     { type: "mouseup", button: 0 },
     window
   );
+  AccessibilityUtils.resetEnv();
 
   is(browserAction.pendingPopup, null, "Have no pending popup");
   is(browserAction.pendingPopupTimeout, null, "Have no pending popup timeout");

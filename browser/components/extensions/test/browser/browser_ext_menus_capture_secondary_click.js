@@ -73,7 +73,12 @@ add_task(async function test_submenu() {
     const submenu = await openSubmenu(parentItem);
     const childItem = submenu.firstElementChild;
     
+    
+    AccessibilityUtils.setEnv({
+      mustHaveAccessibleRule: false,
+    });
     await EventUtils.synthesizeMouseAtCenter(parentItem, { button });
+    AccessibilityUtils.resetEnv();
     await closeExtensionContextMenu(childItem, { button });
     is(
       await extension.awaitMessage("clicked_button"),
