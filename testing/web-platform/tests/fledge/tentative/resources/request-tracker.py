@@ -22,6 +22,7 @@ from wptserve.utils import isomorphic_decode, isomorphic_encode
 
 
 
+
 def main(request, response):
     
     
@@ -48,7 +49,7 @@ def main(request, response):
 
         
         
-        if dispatch == b"request_list":
+        if dispatch == b"tracked_data":
             stash.put(uuid, server_state)
             return simple_response(request, response, 200, b"OK",
                                    json.dumps(server_state))

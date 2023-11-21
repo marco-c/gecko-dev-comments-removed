@@ -83,6 +83,30 @@ function generateUuid(test) {
 
 
 
+async function fetchTrackedData(uuid) {
+  let trackedRequestsURL = createTrackerURL(window.location.origin, uuid,
+                                            'tracked_data');
+  let response = await fetch(trackedRequestsURL,
+                             {credentials: 'omit', mode: 'cors'});
+  let trackedData = await response.json();
+
+  
+  if (trackedData.error) {
+    throw trackedRequestsURL + ' fetch failed:' + JSON.stringify(trackedData);
+  }
+
+  
+  if (trackedData.errors.length > 0) {
+    throw 'Errors reported by request-tracker.py:' +
+        JSON.stringify(trackedData.errors);
+  }
+
+  return trackedData;
+}
+
+
+
+
 
 
 
@@ -90,36 +114,21 @@ function generateUuid(test) {
 
 
 async function waitForObservedRequests(uuid, expectedRequests) {
-  let trackedRequestsURL = createTrackerURL(window.location.origin, uuid,
-                                            'request_list');
   
-  expectedRequests.sort();
+  
+  expectedRequests = expectedRequests.sort().map((url) => url.replace(uuid, '<uuid>'));
+
   while (true) {
-    let response = await fetch(trackedRequestsURL,
-                               {credentials: 'omit', mode: 'cors'});
-    let trackerData = await response.json();
+    let trackedData = await fetchTrackedData(uuid);
 
     
-    if (trackerData.error) {
-      throw trackedRequestsURL + ' fetch failed:' +
-          JSON.stringify(trackerData);
-    }
-
-    
-    if (trackerData.errors.length > 0) {
-      throw 'Errors reported by request-tracker.py:' +
-          JSON.stringify(trackerData.errors);
-    }
+    let trackedRequests = trackedData.trackedRequests.sort().map(
+                              (url) => url.replace(uuid, '<uuid>'));
 
     
     
-    let trackedRequests = trackerData.trackedRequests;
     if (trackedRequests.length == expectedRequests.length) {
-      
-      assert_array_equals(trackedRequests.sort().map((url) =>
-                            url.replace(uuid, '<uuid>')),
-                            expectedRequests.map((url) =>
-                            url.replace(uuid, '<uuid>')));
+      assert_array_equals(trackedRequests, expectedRequests);
       break;
     }
 
@@ -127,9 +136,7 @@ async function waitForObservedRequests(uuid, expectedRequests) {
     
     
     for (const trackedRequest of trackedRequests) {
-      assert_in_array(trackedRequest.replace(uuid, '<uuid>'),
-                      expectedRequests.sort().map((url) =>
-                      url.replace(uuid, '<uuid>')));
+      assert_in_array(trackedRequest, expectedRequests);
     }
   }
 }
