@@ -658,6 +658,8 @@ class nsWindow final : public nsBaseWidget {
   bool mRetryPointerGrab : 1;
   bool mPanInProgress : 1;
   
+  bool mDrawToContainer : 1;
+  
   bool mTitlebarBackdropState : 1;
   
   
