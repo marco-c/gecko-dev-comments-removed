@@ -1,7 +1,26 @@
 
 
 const dispatcher_path = "/common/dispatcher/dispatcher.py";
-const dispatcher_url = new URL(dispatcher_path, location.href).href;
+
+
+
+function findLocationFromAncestors(w) {
+  if (w.location.href == 'about:srcdoc') {
+    return findLocationFromAncestors(w.parent);
+  }
+  return w.location;
+}
+
+
+function findLocation() {
+  if (location.href == 'about:srcdoc') {
+    return findLocationFromAncestors(window.parent);
+  }
+  return location;
+}
+
+const dispatcherLocation = findLocation();
+const dispatcher_url = new URL(dispatcher_path, dispatcherLocation).href;
 
 
 
@@ -138,7 +157,7 @@ const cacheableShowRequestHeaders = function(origin, uuid) {
 
 
 function remoteExecutorUrl(uuid, options) {
-  const url = new URL("/common/dispatcher/remote-executor.html", location);
+  const url = new URL("/common/dispatcher/remote-executor.html", dispatcherLocation);
   url.searchParams.set("uuid", uuid);
 
   if (options?.host) {
