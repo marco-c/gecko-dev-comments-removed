@@ -35,7 +35,6 @@ pub mod does_not_impl_malloc_size_of {
 
     pub fn servo_arc() {}
 
-
     
 
 
@@ -48,7 +47,6 @@ pub mod does_not_impl_malloc_size_of {
 
 
     pub fn std_arc() {}
-
 
     
 
@@ -79,7 +77,6 @@ pub mod does_not_impl_malloc_shallow_size_of {
 
     pub fn servo_arc() {}
 
-
     
 
 
@@ -92,7 +89,6 @@ pub mod does_not_impl_malloc_shallow_size_of {
 
 
     pub fn std_arc() {}
-
 
     
 

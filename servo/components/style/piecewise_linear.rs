@@ -208,10 +208,12 @@ impl PiecewiseLinearFunctionBuilder {
         if self.entries.len() == 1 {
             
             return PiecewiseLinearFunction {
-                entries: crate::ArcSlice::from_iter(std::iter::once(PiecewiseLinearFunctionEntry {
-                    x: 0.,
-                    y: self.entries[0].y,
-                })),
+                entries: crate::ArcSlice::from_iter(std::iter::once(
+                    PiecewiseLinearFunctionEntry {
+                        x: 0.,
+                        y: self.entries[0].y,
+                    },
+                )),
             };
         }
         

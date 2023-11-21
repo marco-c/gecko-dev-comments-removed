@@ -352,7 +352,11 @@ impl Quaternion {
         
         
         
-        let half_angle = angle.abs().rem_euclid(std::f64::consts::TAU).copysign(angle) / 2.;
+        let half_angle = angle
+            .abs()
+            .rem_euclid(std::f64::consts::TAU)
+            .copysign(angle) /
+            2.;
 
         
         
@@ -393,7 +397,12 @@ impl Add for Quaternion {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
-        Self(self.0 + other.0, self.1 + other.1, self.2 + other.2, self.3 + other.3)
+        Self(
+            self.0 + other.0,
+            self.1 + other.1,
+            self.2 + other.2,
+            self.3 + other.3,
+        )
     }
 }
 

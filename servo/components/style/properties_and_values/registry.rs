@@ -4,12 +4,12 @@
 
 
 
-use crate::Atom;
+use super::rule::{Inherits, InitialValue, PropertyRuleName};
+use super::syntax::Descriptor;
 use crate::selector_map::PrecomputedHashMap;
 use crate::stylesheets::UrlExtraData;
+use crate::Atom;
 use cssparser::SourceLocation;
-use super::syntax::Descriptor;
-use super::rule::{InitialValue, Inherits, PropertyRuleName};
 
 
 

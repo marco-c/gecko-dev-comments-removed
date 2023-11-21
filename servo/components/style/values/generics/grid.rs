@@ -777,7 +777,7 @@ impl<I: ToCss> ToCss for LineNameListValue<I> {
     ToShmem,
 )]
 #[repr(C)]
-pub struct GenericLineNameList<I>{
+pub struct GenericLineNameList<I> {
     
     
     

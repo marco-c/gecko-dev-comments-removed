@@ -19,11 +19,7 @@ use style_traits::ParseError;
 #[derive(Debug)]
 pub enum ContextualParseError<'a> {
     
-    UnsupportedPropertyDeclaration(
-        &'a str,
-        ParseError<'a>,
-        &'a [SelectorList<SelectorImpl>],
-    ),
+    UnsupportedPropertyDeclaration(&'a str, ParseError<'a>, &'a [SelectorList<SelectorImpl>]),
     
     UnsupportedPropertyDescriptor(&'a str, ParseError<'a>),
     

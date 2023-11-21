@@ -2,12 +2,16 @@
 
 
 
-use style::str::{split_html_space_chars, str_join, starts_with_ignore_ascii_case};
+use style::str::{split_html_space_chars, starts_with_ignore_ascii_case, str_join};
 
 #[test]
 pub fn split_html_space_chars_whitespace() {
     assert!(split_html_space_chars("").collect::<Vec<_>>().is_empty());
-    assert!(split_html_space_chars("\u{0020}\u{0009}\u{000a}\u{000c}\u{000d}").collect::<Vec<_>>().is_empty());
+    assert!(
+        split_html_space_chars("\u{0020}\u{0009}\u{000a}\u{000c}\u{000d}")
+            .collect::<Vec<_>>()
+            .is_empty()
+    );
 }
 
 #[test]

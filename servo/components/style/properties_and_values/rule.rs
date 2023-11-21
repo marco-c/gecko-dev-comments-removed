@@ -7,8 +7,8 @@
 
 
 use super::{
-    syntax::Descriptor,
     registry::PropertyRegistration,
+    syntax::Descriptor,
     value::{AllowComputationallyDependent, SpecifiedValue as SpecifiedRegisteredValue},
 };
 use crate::custom_properties::{Name as CustomPropertyName, SpecifiedValue};
@@ -71,15 +71,21 @@ pub fn parse_property_block<'i, 't>(
     
     
     
-    let Some(syntax) = descriptors.syntax else { return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid)) };
+    let Some(syntax) = descriptors.syntax else {
+        return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid));
+    };
 
     
     
     
     
-    let Some(inherits) = descriptors.inherits else { return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid)) };
+    let Some(inherits) = descriptors.inherits else {
+        return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid));
+    };
 
-    if PropertyRegistration::validate_initial_value(&syntax, descriptors.initial_value.as_ref()).is_err() {
+    if PropertyRegistration::validate_initial_value(&syntax, descriptors.initial_value.as_ref())
+        .is_err()
+    {
         return Err(input.new_error(BasicParseErrorKind::AtRuleBodyInvalid));
     }
 
@@ -239,7 +245,7 @@ impl PropertyRegistration {
         
         
         if syntax.is_universal() && initial_value.is_none() {
-            return Ok(())
+            return Ok(());
         }
 
         
@@ -247,7 +253,7 @@ impl PropertyRegistration {
 
         
         let Some(initial) = initial_value else {
-            return Err(PropertyRegistrationError::NoInitialValue)
+            return Err(PropertyRegistrationError::NoInitialValue);
         };
 
         

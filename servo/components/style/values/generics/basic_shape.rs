@@ -60,8 +60,8 @@ impl Default for ShapeGeometryBox {
 fn is_default_box_for_clip_path(b: &ShapeGeometryBox) -> bool {
     
     
-    matches!(b, ShapeGeometryBox::ElementDependent)
-        || matches!(b, ShapeGeometryBox::ShapeBox(ShapeBox::BorderBox))
+    matches!(b, ShapeGeometryBox::ElementDependent) ||
+        matches!(b, ShapeGeometryBox::ShapeBox(ShapeBox::BorderBox))
 }
 
 

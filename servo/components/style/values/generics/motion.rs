@@ -120,7 +120,9 @@ where
 {
     use crate::serde::de::Error;
     
-    Err(<D as Deserializer>::Error::custom("we don't support the deserializing for url"))
+    Err(<D as Deserializer>::Error::custom(
+        "we don't support the deserializing for url",
+    ))
 }
 
 

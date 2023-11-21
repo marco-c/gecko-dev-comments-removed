@@ -1478,10 +1478,10 @@ impl LogicalSide {
     pub fn to_physical(self, wm: WritingMode) -> PhysicalSide {
         
         static BLOCK_MAPPING: [[PhysicalSide; 2]; 4] = [
-            [PhysicalSide::Top, PhysicalSide::Bottom],  
-            [PhysicalSide::Right, PhysicalSide::Left],  
-            [PhysicalSide::Bottom, PhysicalSide::Top],  
-            [PhysicalSide::Left, PhysicalSide::Right],  
+            [PhysicalSide::Top, PhysicalSide::Bottom], 
+            [PhysicalSide::Right, PhysicalSide::Left], 
+            [PhysicalSide::Bottom, PhysicalSide::Top], 
+            [PhysicalSide::Left, PhysicalSide::Right], 
         ];
 
         if self.is_block() {
@@ -1506,33 +1506,34 @@ impl LogicalSide {
         
         
         static INLINE_MAPPING: [[PhysicalSide; 2]; 16] = [
-            [PhysicalSide::Left, PhysicalSide::Right],  
-            [PhysicalSide::Top, PhysicalSide::Bottom],  
-            [PhysicalSide::Right, PhysicalSide::Left],  
-            [PhysicalSide::Bottom, PhysicalSide::Top],  
-            [PhysicalSide::Right, PhysicalSide::Left],  
-            [PhysicalSide::Top, PhysicalSide::Bottom],  
-            [PhysicalSide::Left, PhysicalSide::Right],  
-            [PhysicalSide::Bottom, PhysicalSide::Top],  
-            [PhysicalSide::Left, PhysicalSide::Right],  
-            [PhysicalSide::Top, PhysicalSide::Bottom],  
-            [PhysicalSide::Right, PhysicalSide::Left],  
-            [PhysicalSide::Bottom, PhysicalSide::Top],  
-            [PhysicalSide::Left, PhysicalSide::Right],  
-            [PhysicalSide::Top, PhysicalSide::Bottom],  
-            [PhysicalSide::Right, PhysicalSide::Left],  
-            [PhysicalSide::Bottom, PhysicalSide::Top],  
+            [PhysicalSide::Left, PhysicalSide::Right], 
+            [PhysicalSide::Top, PhysicalSide::Bottom], 
+            [PhysicalSide::Right, PhysicalSide::Left], 
+            [PhysicalSide::Bottom, PhysicalSide::Top], 
+            [PhysicalSide::Right, PhysicalSide::Left], 
+            [PhysicalSide::Top, PhysicalSide::Bottom], 
+            [PhysicalSide::Left, PhysicalSide::Right], 
+            [PhysicalSide::Bottom, PhysicalSide::Top], 
+            [PhysicalSide::Left, PhysicalSide::Right], 
+            [PhysicalSide::Top, PhysicalSide::Bottom], 
+            [PhysicalSide::Right, PhysicalSide::Left], 
+            [PhysicalSide::Bottom, PhysicalSide::Top], 
+            [PhysicalSide::Left, PhysicalSide::Right], 
+            [PhysicalSide::Top, PhysicalSide::Bottom], 
+            [PhysicalSide::Right, PhysicalSide::Left], 
+            [PhysicalSide::Bottom, PhysicalSide::Top], 
         ];
 
-        debug_assert!(WritingMode::VERTICAL.bits() == 0x01 &&
-                       WritingMode::INLINE_REVERSED.bits() == 0x02 &&
-                       WritingMode::VERTICAL_LR.bits() == 0x04 &&
-                       WritingMode::LINE_INVERTED.bits() == 0x08);
+        debug_assert!(
+            WritingMode::VERTICAL.bits() == 0x01 &&
+                WritingMode::INLINE_REVERSED.bits() == 0x02 &&
+                WritingMode::VERTICAL_LR.bits() == 0x04 &&
+                WritingMode::LINE_INVERTED.bits() == 0x08
+        );
         let index = (wm.bits() & 0xF) as usize;
         INLINE_MAPPING[index][edge]
     }
 }
-
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[repr(u8)]
@@ -1598,10 +1599,30 @@ impl PhysicalCorner {
         
         const IMPOSSIBLE: PhysicalCorner = PhysicalCorner::TopLeft;
         static SIDES_TO_CORNER: [[PhysicalCorner; 4]; 4] = [
-            [IMPOSSIBLE, PhysicalCorner::TopRight, IMPOSSIBLE, PhysicalCorner::TopLeft ],
-            [PhysicalCorner::TopRight, IMPOSSIBLE, PhysicalCorner::BottomRight, IMPOSSIBLE ],
-            [IMPOSSIBLE, PhysicalCorner::BottomRight, IMPOSSIBLE, PhysicalCorner::BottomLeft ],
-            [PhysicalCorner::TopLeft, IMPOSSIBLE, PhysicalCorner::BottomLeft, IMPOSSIBLE ],
+            [
+                IMPOSSIBLE,
+                PhysicalCorner::TopRight,
+                IMPOSSIBLE,
+                PhysicalCorner::TopLeft,
+            ],
+            [
+                PhysicalCorner::TopRight,
+                IMPOSSIBLE,
+                PhysicalCorner::BottomRight,
+                IMPOSSIBLE,
+            ],
+            [
+                IMPOSSIBLE,
+                PhysicalCorner::BottomRight,
+                IMPOSSIBLE,
+                PhysicalCorner::BottomLeft,
+            ],
+            [
+                PhysicalCorner::TopLeft,
+                IMPOSSIBLE,
+                PhysicalCorner::BottomLeft,
+                IMPOSSIBLE,
+            ],
         ];
         SIDES_TO_CORNER[a as usize][b as usize]
     }

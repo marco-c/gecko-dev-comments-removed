@@ -42,8 +42,7 @@ fn gradient_color_interpolation_method_enabled() -> bool {
 
 
 
-pub type Image =
-    generic::Image<Gradient, SpecifiedImageUrl, Color, Percentage, Resolution>;
+pub type Image = generic::Image<Gradient, SpecifiedImageUrl, Color, Percentage, Resolution>;
 
 
 size_of_test!(Image, 16);

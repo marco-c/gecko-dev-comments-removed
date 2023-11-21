@@ -635,7 +635,8 @@ impl<E: TElement> StyleSharingCache<E> {
             .style
             .0
             .flags
-            .intersects(ComputedValueFlags::ANCHORS_RELATIVE_SELECTOR) {
+            .intersects(ComputedValueFlags::ANCHORS_RELATIVE_SELECTOR)
+        {
             debug!("Failing to insert to the cache: may anchor relative selector");
             return;
         }
@@ -898,7 +899,11 @@ impl<E: TElement> StyleSharingCache<E> {
             
             
             
-            debug_assert_eq!(target.is_link(), candidate.element.is_link(), "Linkness mismatch");
+            debug_assert_eq!(
+                target.is_link(),
+                candidate.element.is_link(),
+                "Linkness mismatch"
+            );
             if target.is_link() {
                 return None;
             }
