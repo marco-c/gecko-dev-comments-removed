@@ -118,7 +118,14 @@ add_task(async function test_disabled_item() {
   for (let button of [0, 1, 2]) {
     const menu = await openContextMenu();
     const items = menu.getElementsByAttribute("label", "disabled_item");
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      mustBeEnabled: false,
+    });
     await EventUtils.synthesizeMouseAtCenter(items[0], { button });
+    AccessibilityUtils.resetEnv();
     await closeContextMenu();
     await extension.awaitMessage("onHidden");
   }

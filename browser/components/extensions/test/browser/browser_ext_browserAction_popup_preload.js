@@ -244,11 +244,18 @@ add_task(async function testBrowserActionDisabled() {
     }
   );
 
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustBeEnabled: false,
+  });
   EventUtils.synthesizeMouseAtCenter(
     widget.node,
     { type: "mouseup", button: 0 },
     window
   );
+  AccessibilityUtils.resetEnv();
 
   await mouseUpPromise;
 

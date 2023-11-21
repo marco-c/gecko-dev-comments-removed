@@ -57,8 +57,15 @@ add_task(async function testDisabled() {
   extension.sendMessage("check-clicked", false);
   await extension.awaitMessage("next-test");
 
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustBeEnabled: false,
+  });
   await clickBrowserAction(extension, window, { button: 1 });
   await new Promise(resolve => setTimeout(resolve, 0));
+  AccessibilityUtils.resetEnv();
 
   extension.sendMessage("check-clicked", false);
   await extension.awaitMessage("next-test");
@@ -66,8 +73,15 @@ add_task(async function testDisabled() {
   let widget = getBrowserActionWidget(extension);
   CustomizableUI.addWidgetToArea(widget.id, getCustomizableUIPanelID());
 
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    mustBeEnabled: false,
+  });
   await clickBrowserAction(extension, window, { button: 1 });
   await new Promise(resolve => setTimeout(resolve, 0));
+  AccessibilityUtils.resetEnv();
 
   extension.sendMessage("check-clicked", false);
   await extension.awaitMessage("next-test");
