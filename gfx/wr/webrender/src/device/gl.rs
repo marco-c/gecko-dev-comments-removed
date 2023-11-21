@@ -1413,6 +1413,28 @@ fn parse_mali_version(version_string: &str) -> Option<(u32, u32, u32)> {
     Some((v, r, p))
 }
 
+
+fn is_mali_midgard(renderer_name: &str) -> bool {
+    renderer_name.starts_with("Mali-T")
+}
+
+
+fn is_mali_bifrost(renderer_name: &str) -> bool {
+    renderer_name == "Mali-G31"
+        || renderer_name == "Mali-G51"
+        || renderer_name == "Mali-G71"
+        || renderer_name == "Mali-G52"
+        || renderer_name == "Mali-G72"
+        || renderer_name == "Mali-G76"
+}
+
+
+fn is_mali_valhall(renderer_name: &str) -> bool {
+    
+    
+    renderer_name.starts_with("Mali-G") && !is_mali_bifrost(renderer_name)
+}
+
 impl Device {
     pub fn new(
         mut gl: Rc<dyn gl::Gl>,
@@ -1732,13 +1754,8 @@ impl Device {
         
         
         
-        let supports_render_target_partial_update = !(renderer_name.starts_with("Mali-T")
-            || renderer_name == "Mali-G31"
-            || renderer_name == "Mali-G51"
-            || renderer_name == "Mali-G71"
-            || renderer_name == "Mali-G52"
-            || renderer_name == "Mali-G72"
-            || renderer_name == "Mali-G76");
+        let supports_render_target_partial_update =
+            !is_mali_midgard(&renderer_name) && !is_mali_bifrost(&renderer_name);
 
         let supports_shader_storage_object = match gl.get_type() {
             
@@ -1791,7 +1808,7 @@ impl Device {
         
         
         
-        let supports_alpha_target_clears = !renderer_name.starts_with("Mali-T");
+        let supports_alpha_target_clears = !is_mali_midgard(&renderer_name);
 
         
         
@@ -1818,10 +1835,7 @@ impl Device {
         
         
         
-        if renderer_name.starts_with("Mali-G77")
-            || renderer_name.starts_with("Mali-G78")
-            || renderer_name.starts_with("Mali-G710")
-        {
+        if is_mali_valhall(&renderer_name) {
             match parse_mali_version(&version_string) {
                 Some(version) if version >= (1, 36, 0) => supports_render_target_invalidate = false,
                 _ => {}
