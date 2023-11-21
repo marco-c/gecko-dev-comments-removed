@@ -50,9 +50,7 @@ def generate(output, idlFilename, dataFile):
             
             if p.method == "BackdropFilter":
                 extendedAttrs.append('Func="nsCSSProps::IsBackdropFilterAvailable"')
-            
-            
-            elif p.method != "MozTransform":
+            else:
                 extendedAttrs.append('Pref="%s"' % p.pref)
 
         def add_extra_accessors(p):
