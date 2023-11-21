@@ -110,270 +110,39 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use crate::{
     binding_model::{BindGroup, BindGroupLayout, PipelineLayout},
     command::{CommandBuffer, RenderBundle},
-    device::Device,
+    device::{queue::Queue, Device},
     hal_api::HalApi,
     id,
     identity::GlobalIdentityHandlerFactory,
-    instance::{Adapter, HalSurface, Instance, Surface},
+    instance::{Adapter, HalSurface, Surface},
     pipeline::{ComputePipeline, RenderPipeline, ShaderModule},
-    registry::Registry,
-    resource::{Buffer, QuerySet, Sampler, StagingBuffer, Texture, TextureClearMode, TextureView},
-    storage::{Element, Storage, StorageReport},
+    registry::{Registry, RegistryReport},
+    resource::{Buffer, QuerySet, Sampler, StagingBuffer, Texture, TextureView},
+    storage::{Element, Storage},
 };
+use std::fmt::Debug;
 
-use wgt::{strict_assert_eq, strict_assert_ne};
-
-#[cfg(any(debug_assertions, feature = "strict_asserts"))]
-use std::cell::Cell;
-use std::{fmt::Debug, marker::PhantomData};
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub trait Access<A> {}
-
-pub enum Root {}
-
-
-
-
-
-impl Access<Instance> for Root {}
-impl Access<Surface> for Root {}
-impl Access<Surface> for Instance {}
-impl<A: HalApi> Access<Adapter<A>> for Root {}
-impl<A: HalApi> Access<Adapter<A>> for Surface {}
-impl<A: HalApi> Access<Device<A>> for Root {}
-impl<A: HalApi> Access<Device<A>> for Surface {}
-impl<A: HalApi> Access<Device<A>> for Adapter<A> {}
-impl<A: HalApi> Access<CommandBuffer<A>> for Root {}
-impl<A: HalApi> Access<CommandBuffer<A>> for Device<A> {}
-impl<A: HalApi> Access<RenderBundle<A>> for Device<A> {}
-impl<A: HalApi> Access<RenderBundle<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<PipelineLayout<A>> for Root {}
-impl<A: HalApi> Access<PipelineLayout<A>> for Device<A> {}
-impl<A: HalApi> Access<PipelineLayout<A>> for RenderBundle<A> {}
-impl<A: HalApi> Access<BindGroupLayout<A>> for Root {}
-impl<A: HalApi> Access<BindGroupLayout<A>> for Device<A> {}
-impl<A: HalApi> Access<BindGroupLayout<A>> for PipelineLayout<A> {}
-impl<A: HalApi> Access<BindGroupLayout<A>> for QuerySet<A> {}
-impl<A: HalApi> Access<BindGroup<A>> for Root {}
-impl<A: HalApi> Access<BindGroup<A>> for Device<A> {}
-impl<A: HalApi> Access<BindGroup<A>> for BindGroupLayout<A> {}
-impl<A: HalApi> Access<BindGroup<A>> for PipelineLayout<A> {}
-impl<A: HalApi> Access<BindGroup<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<ComputePipeline<A>> for Device<A> {}
-impl<A: HalApi> Access<ComputePipeline<A>> for BindGroup<A> {}
-impl<A: HalApi> Access<RenderPipeline<A>> for Device<A> {}
-impl<A: HalApi> Access<RenderPipeline<A>> for BindGroup<A> {}
-impl<A: HalApi> Access<RenderPipeline<A>> for ComputePipeline<A> {}
-impl<A: HalApi> Access<ShaderModule<A>> for Device<A> {}
-impl<A: HalApi> Access<ShaderModule<A>> for BindGroupLayout<A> {}
-impl<A: HalApi> Access<Buffer<A>> for Root {}
-impl<A: HalApi> Access<Buffer<A>> for Device<A> {}
-impl<A: HalApi> Access<Buffer<A>> for BindGroupLayout<A> {}
-impl<A: HalApi> Access<Buffer<A>> for BindGroup<A> {}
-impl<A: HalApi> Access<Buffer<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<Buffer<A>> for ComputePipeline<A> {}
-impl<A: HalApi> Access<Buffer<A>> for RenderPipeline<A> {}
-impl<A: HalApi> Access<Buffer<A>> for QuerySet<A> {}
-impl<A: HalApi> Access<StagingBuffer<A>> for Device<A> {}
-impl<A: HalApi> Access<Texture<A>> for Root {}
-impl<A: HalApi> Access<Texture<A>> for Device<A> {}
-impl<A: HalApi> Access<Texture<A>> for Buffer<A> {}
-impl<A: HalApi> Access<TextureView<A>> for Root {}
-impl<A: HalApi> Access<TextureView<A>> for Device<A> {}
-impl<A: HalApi> Access<TextureView<A>> for Texture<A> {}
-impl<A: HalApi> Access<Sampler<A>> for Root {}
-impl<A: HalApi> Access<Sampler<A>> for Device<A> {}
-impl<A: HalApi> Access<Sampler<A>> for TextureView<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for Root {}
-impl<A: HalApi> Access<QuerySet<A>> for Device<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for CommandBuffer<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for RenderPipeline<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for ComputePipeline<A> {}
-impl<A: HalApi> Access<QuerySet<A>> for Sampler<A> {}
-
-#[cfg(any(debug_assertions, feature = "strict_asserts"))]
-thread_local! {
-    /// Per-thread state checking `Token<Root>` creation in debug builds.
-    ///
-    /// This is the number of `Token` values alive on the current
-    /// thread. Since `Token` creation respects the [`Access`] graph,
-    /// there can never be more tokens alive than there are fields of
-    /// [`Hub`], so a `u8` is plenty.
-    static ACTIVE_TOKEN: Cell<u8> = Cell::new(0);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub(crate) struct Token<'a, T: 'a> {
-    
-    level: PhantomData<&'a *const T>,
-}
-
-impl<'a, T> Token<'a, T> {
-    
-    
-    
-    pub(crate) fn new() -> Self {
-        #[cfg(any(debug_assertions, feature = "strict_asserts"))]
-        ACTIVE_TOKEN.with(|active| {
-            let old = active.get();
-            strict_assert_ne!(old, 0, "Root token was dropped");
-            active.set(old + 1);
-        });
-        Self { level: PhantomData }
-    }
-}
-
-impl Token<'static, Root> {
-    
-    
-    
-    
-    pub fn root() -> Self {
-        #[cfg(any(debug_assertions, feature = "strict_asserts"))]
-        ACTIVE_TOKEN.with(|active| {
-            strict_assert_eq!(0, active.replace(1), "Root token is already active");
-        });
-
-        Self { level: PhantomData }
-    }
-}
-
-impl<'a, T> Drop for Token<'a, T> {
-    fn drop(&mut self) {
-        #[cfg(any(debug_assertions, feature = "strict_asserts"))]
-        ACTIVE_TOKEN.with(|active| {
-            let old = active.get();
-            active.set(old - 1);
-        });
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct HubReport {
-    pub adapters: StorageReport,
-    pub devices: StorageReport,
-    pub pipeline_layouts: StorageReport,
-    pub shader_modules: StorageReport,
-    pub bind_group_layouts: StorageReport,
-    pub bind_groups: StorageReport,
-    pub command_buffers: StorageReport,
-    pub render_bundles: StorageReport,
-    pub render_pipelines: StorageReport,
-    pub compute_pipelines: StorageReport,
-    pub query_sets: StorageReport,
-    pub buffers: StorageReport,
-    pub textures: StorageReport,
-    pub texture_views: StorageReport,
-    pub samplers: StorageReport,
+    pub adapters: RegistryReport,
+    pub devices: RegistryReport,
+    pub queues: RegistryReport,
+    pub pipeline_layouts: RegistryReport,
+    pub shader_modules: RegistryReport,
+    pub bind_group_layouts: RegistryReport,
+    pub bind_groups: RegistryReport,
+    pub command_buffers: RegistryReport,
+    pub render_bundles: RegistryReport,
+    pub render_pipelines: RegistryReport,
+    pub compute_pipelines: RegistryReport,
+    pub query_sets: RegistryReport,
+    pub buffers: RegistryReport,
+    pub textures: RegistryReport,
+    pub texture_views: RegistryReport,
+    pub samplers: RegistryReport,
 }
 
 impl HubReport {
@@ -407,71 +176,32 @@ impl HubReport {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-pub struct Hub<A: HalApi, F: GlobalIdentityHandlerFactory> {
-    pub adapters: Registry<Adapter<A>, id::AdapterId, F>,
-    pub devices: Registry<Device<A>, id::DeviceId, F>,
-    pub pipeline_layouts: Registry<PipelineLayout<A>, id::PipelineLayoutId, F>,
-    pub shader_modules: Registry<ShaderModule<A>, id::ShaderModuleId, F>,
-    pub bind_group_layouts: Registry<BindGroupLayout<A>, id::BindGroupLayoutId, F>,
-    pub bind_groups: Registry<BindGroup<A>, id::BindGroupId, F>,
-    pub command_buffers: Registry<CommandBuffer<A>, id::CommandBufferId, F>,
-    pub render_bundles: Registry<RenderBundle<A>, id::RenderBundleId, F>,
-    pub render_pipelines: Registry<RenderPipeline<A>, id::RenderPipelineId, F>,
-    pub compute_pipelines: Registry<ComputePipeline<A>, id::ComputePipelineId, F>,
-    pub query_sets: Registry<QuerySet<A>, id::QuerySetId, F>,
-    pub buffers: Registry<Buffer<A>, id::BufferId, F>,
-    pub staging_buffers: Registry<StagingBuffer<A>, id::StagingBufferId, F>,
-    pub textures: Registry<Texture<A>, id::TextureId, F>,
-    pub texture_views: Registry<TextureView<A>, id::TextureViewId, F>,
-    pub samplers: Registry<Sampler<A>, id::SamplerId, F>,
+pub struct Hub<A: HalApi> {
+    pub adapters: Registry<id::AdapterId, Adapter<A>>,
+    pub devices: Registry<id::DeviceId, Device<A>>,
+    pub queues: Registry<id::QueueId, Queue<A>>,
+    pub pipeline_layouts: Registry<id::PipelineLayoutId, PipelineLayout<A>>,
+    pub shader_modules: Registry<id::ShaderModuleId, ShaderModule<A>>,
+    pub bind_group_layouts: Registry<id::BindGroupLayoutId, BindGroupLayout<A>>,
+    pub bind_groups: Registry<id::BindGroupId, BindGroup<A>>,
+    pub command_buffers: Registry<id::CommandBufferId, CommandBuffer<A>>,
+    pub render_bundles: Registry<id::RenderBundleId, RenderBundle<A>>,
+    pub render_pipelines: Registry<id::RenderPipelineId, RenderPipeline<A>>,
+    pub compute_pipelines: Registry<id::ComputePipelineId, ComputePipeline<A>>,
+    pub query_sets: Registry<id::QuerySetId, QuerySet<A>>,
+    pub buffers: Registry<id::BufferId, Buffer<A>>,
+    pub staging_buffers: Registry<id::StagingBufferId, StagingBuffer<A>>,
+    pub textures: Registry<id::TextureId, Texture<A>>,
+    pub texture_views: Registry<id::TextureViewId, TextureView<A>>,
+    pub samplers: Registry<id::SamplerId, Sampler<A>>,
 }
 
-impl<A: HalApi, F: GlobalIdentityHandlerFactory> Hub<A, F> {
-    fn new(factory: &F) -> Self {
+impl<A: HalApi> Hub<A> {
+    fn new<F: GlobalIdentityHandlerFactory>(factory: &F) -> Self {
         Self {
             adapters: Registry::new(A::VARIANT, factory),
             devices: Registry::new(A::VARIANT, factory),
+            queues: Registry::new(A::VARIANT, factory),
             pipeline_layouts: Registry::new(A::VARIANT, factory),
             shader_modules: Registry::new(A::VARIANT, factory),
             bind_group_layouts: Registry::new(A::VARIANT, factory),
@@ -494,209 +224,94 @@ impl<A: HalApi, F: GlobalIdentityHandlerFactory> Hub<A, F> {
     
     pub(crate) fn clear(
         &self,
-        surface_guard: &mut Storage<Surface, id::SurfaceId>,
+        surface_guard: &Storage<Surface, id::SurfaceId>,
         with_adapters: bool,
     ) {
-        use crate::resource::TextureInner;
-        use hal::{Device as _, Surface as _};
+        use hal::Surface;
 
-        let mut devices = self.devices.data.write();
-        for element in devices.map.iter_mut() {
-            if let Element::Occupied(ref mut device, _) = *element {
+        let mut devices = self.devices.write();
+        for element in devices.map.iter() {
+            if let Element::Occupied(ref device, _) = *element {
                 device.prepare_to_die();
             }
         }
 
-        
-        for element in self.command_buffers.data.write().map.drain(..) {
-            if let Element::Occupied(command_buffer, _) = element {
-                let device = &devices[command_buffer.device_id.value];
-                device.destroy_command_buffer(command_buffer);
-            }
-        }
+        self.command_buffers.write().map.clear();
+        self.samplers.write().map.clear();
+        self.texture_views.write().map.clear();
+        self.textures.write().map.clear();
+        self.buffers.write().map.clear();
+        self.bind_groups.write().map.clear();
+        self.shader_modules.write().map.clear();
+        self.bind_group_layouts.write().map.clear();
+        self.pipeline_layouts.write().map.clear();
+        self.compute_pipelines.write().map.clear();
+        self.render_pipelines.write().map.clear();
+        self.query_sets.write().map.clear();
 
-        for element in self.samplers.data.write().map.drain(..) {
-            if let Element::Occupied(sampler, _) = element {
-                unsafe {
-                    devices[sampler.device_id.value]
-                        .raw
-                        .destroy_sampler(sampler.raw);
-                }
-            }
-        }
-
-        for element in self.texture_views.data.write().map.drain(..) {
-            if let Element::Occupied(texture_view, _) = element {
-                let device = &devices[texture_view.device_id.value];
-                unsafe {
-                    device.raw.destroy_texture_view(texture_view.raw);
-                }
-            }
-        }
-
-        for element in self.textures.data.write().map.drain(..) {
-            if let Element::Occupied(texture, _) = element {
-                let device = &devices[texture.device_id.value];
-                if let TextureInner::Native { raw: Some(raw) } = texture.inner {
-                    unsafe {
-                        device.raw.destroy_texture(raw);
-                    }
-                }
-                if let TextureClearMode::RenderPass { clear_views, .. } = texture.clear_mode {
-                    for view in clear_views {
+        for element in surface_guard.map.iter() {
+            if let Element::Occupied(ref surface, _epoch) = *element {
+                if let Some(ref mut present) = surface.presentation.lock().take() {
+                    if let Some(device) = present.device.downcast_ref::<A>() {
+                        let suf = A::get_surface(surface);
                         unsafe {
-                            device.raw.destroy_texture_view(view);
+                            suf.unwrap().raw.unconfigure(device.raw());
+                            
                         }
                     }
                 }
             }
         }
-        for element in self.buffers.data.write().map.drain(..) {
-            if let Element::Occupied(buffer, _) = element {
-                
-                devices[buffer.device_id.value].destroy_buffer(buffer);
-            }
-        }
-        for element in self.bind_groups.data.write().map.drain(..) {
-            if let Element::Occupied(bind_group, _) = element {
-                let device = &devices[bind_group.device_id.value];
-                unsafe {
-                    device.raw.destroy_bind_group(bind_group.raw);
-                }
-            }
-        }
 
-        for element in self.shader_modules.data.write().map.drain(..) {
-            if let Element::Occupied(module, _) = element {
-                let device = &devices[module.device_id.value];
-                unsafe {
-                    device.raw.destroy_shader_module(module.raw);
-                }
-            }
-        }
-        for element in self.bind_group_layouts.data.write().map.drain(..) {
-            if let Element::Occupied(bgl, _) = element {
-                let device = &devices[bgl.device_id.value];
-                if let Some(inner) = bgl.into_inner() {
-                    unsafe {
-                        device.raw.destroy_bind_group_layout(inner.raw);
-                    }
-                }
-            }
-        }
-        for element in self.pipeline_layouts.data.write().map.drain(..) {
-            if let Element::Occupied(pipeline_layout, _) = element {
-                let device = &devices[pipeline_layout.device_id.value];
-                unsafe {
-                    device.raw.destroy_pipeline_layout(pipeline_layout.raw);
-                }
-            }
-        }
-        for element in self.compute_pipelines.data.write().map.drain(..) {
-            if let Element::Occupied(pipeline, _) = element {
-                let device = &devices[pipeline.device_id.value];
-                unsafe {
-                    device.raw.destroy_compute_pipeline(pipeline.raw);
-                }
-            }
-        }
-        for element in self.render_pipelines.data.write().map.drain(..) {
-            if let Element::Occupied(pipeline, _) = element {
-                let device = &devices[pipeline.device_id.value];
-                unsafe {
-                    device.raw.destroy_render_pipeline(pipeline.raw);
-                }
-            }
-        }
-
-        for element in surface_guard.map.iter_mut() {
-            if let Element::Occupied(ref mut surface, _epoch) = *element {
-                if surface
-                    .presentation
-                    .as_ref()
-                    .map_or(wgt::Backend::Empty, |p| p.backend())
-                    != A::VARIANT
-                {
-                    continue;
-                }
-                if let Some(present) = surface.presentation.take() {
-                    let device = &devices[present.device_id.value];
-                    let suf = A::get_surface_mut(surface);
-                    unsafe {
-                        suf.unwrap().raw.unconfigure(&device.raw);
-                        
-                    }
-                }
-            }
-        }
-
-        for element in self.query_sets.data.write().map.drain(..) {
-            if let Element::Occupied(query_set, _) = element {
-                let device = &devices[query_set.device_id.value];
-                unsafe {
-                    device.raw.destroy_query_set(query_set.raw);
-                }
-            }
-        }
-
-        for element in devices.map.drain(..) {
-            if let Element::Occupied(device, _) = element {
-                device.dispose();
-            }
-        }
+        self.queues.write().map.clear();
+        devices.map.clear();
 
         if with_adapters {
             drop(devices);
-            self.adapters.data.write().map.clear();
+            self.adapters.write().map.clear();
         }
     }
 
-    pub(crate) fn surface_unconfigure(
-        &self,
-        device_id: id::Valid<id::DeviceId>,
-        surface: &mut HalSurface<A>,
-    ) {
-        use hal::Surface as _;
-
-        let devices = self.devices.data.read();
-        let device = &devices[device_id];
+    pub(crate) fn surface_unconfigure(&self, device: &Device<A>, surface: &HalSurface<A>) {
         unsafe {
-            surface.raw.unconfigure(&device.raw);
+            use hal::Surface;
+            surface.raw.unconfigure(device.raw());
         }
     }
 
     pub fn generate_report(&self) -> HubReport {
         HubReport {
-            adapters: self.adapters.data.read().generate_report(),
-            devices: self.devices.data.read().generate_report(),
-            pipeline_layouts: self.pipeline_layouts.data.read().generate_report(),
-            shader_modules: self.shader_modules.data.read().generate_report(),
-            bind_group_layouts: self.bind_group_layouts.data.read().generate_report(),
-            bind_groups: self.bind_groups.data.read().generate_report(),
-            command_buffers: self.command_buffers.data.read().generate_report(),
-            render_bundles: self.render_bundles.data.read().generate_report(),
-            render_pipelines: self.render_pipelines.data.read().generate_report(),
-            compute_pipelines: self.compute_pipelines.data.read().generate_report(),
-            query_sets: self.query_sets.data.read().generate_report(),
-            buffers: self.buffers.data.read().generate_report(),
-            textures: self.textures.data.read().generate_report(),
-            texture_views: self.texture_views.data.read().generate_report(),
-            samplers: self.samplers.data.read().generate_report(),
+            adapters: self.adapters.generate_report(),
+            devices: self.devices.generate_report(),
+            queues: self.queues.generate_report(),
+            pipeline_layouts: self.pipeline_layouts.generate_report(),
+            shader_modules: self.shader_modules.generate_report(),
+            bind_group_layouts: self.bind_group_layouts.generate_report(),
+            bind_groups: self.bind_groups.generate_report(),
+            command_buffers: self.command_buffers.generate_report(),
+            render_bundles: self.render_bundles.generate_report(),
+            render_pipelines: self.render_pipelines.generate_report(),
+            compute_pipelines: self.compute_pipelines.generate_report(),
+            query_sets: self.query_sets.generate_report(),
+            buffers: self.buffers.generate_report(),
+            textures: self.textures.generate_report(),
+            texture_views: self.texture_views.generate_report(),
+            samplers: self.samplers.generate_report(),
         }
     }
 }
 
-pub struct Hubs<F: GlobalIdentityHandlerFactory> {
+pub struct Hubs {
     #[cfg(all(feature = "vulkan", not(target_arch = "wasm32")))]
-    pub(crate) vulkan: Hub<hal::api::Vulkan, F>,
+    pub(crate) vulkan: Hub<hal::api::Vulkan>,
     #[cfg(all(feature = "metal", any(target_os = "macos", target_os = "ios")))]
-    pub(crate) metal: Hub<hal::api::Metal, F>,
+    pub(crate) metal: Hub<hal::api::Metal>,
     #[cfg(all(feature = "dx12", windows))]
-    pub(crate) dx12: Hub<hal::api::Dx12, F>,
+    pub(crate) dx12: Hub<hal::api::Dx12>,
     #[cfg(all(feature = "dx11", windows))]
-    pub(crate) dx11: Hub<hal::api::Dx11, F>,
+    pub(crate) dx11: Hub<hal::api::Dx11>,
     #[cfg(feature = "gles")]
-    pub(crate) gl: Hub<hal::api::Gles, F>,
+    pub(crate) gl: Hub<hal::api::Gles>,
     #[cfg(all(
         not(all(feature = "vulkan", not(target_arch = "wasm32"))),
         not(all(feature = "metal", any(target_os = "macos", target_os = "ios"))),
@@ -704,11 +319,11 @@ pub struct Hubs<F: GlobalIdentityHandlerFactory> {
         not(all(feature = "dx11", windows)),
         not(feature = "gles"),
     ))]
-    pub(crate) empty: Hub<hal::api::Empty, F>,
+    pub(crate) empty: Hub<hal::api::Empty>,
 }
 
-impl<F: GlobalIdentityHandlerFactory> Hubs<F> {
-    pub(crate) fn new(factory: &F) -> Self {
+impl Hubs {
+    pub(crate) fn new<F: GlobalIdentityHandlerFactory>(factory: &F) -> Self {
         Self {
             #[cfg(all(feature = "vulkan", not(target_arch = "wasm32")))]
             vulkan: Hub::new(factory),

@@ -23,6 +23,26 @@ fn should_keep_adapter(adapter: &dxgi::IDXGIAdapter1) -> bool {
     
     
     
+    
+    
+    
+    let haswell_device_ids = [
+        0x0422, 0x0426, 0x042A, 0x042B, 0x042E, 0x0C22, 0x0C26, 0x0C2A, 0x0C2B, 0x0C2E, 0x0A22,
+        0x0A2A, 0x0A2B, 0x0D2A, 0x0D2B, 0x0D2E, 0x0A26, 0x0A2E, 0x0D22, 0x0D26, 0x0412, 0x0416,
+        0x0D12, 0x041A, 0x041B, 0x0C12, 0x0C16, 0x0C1A, 0x0C1B, 0x0C1E, 0x0A12, 0x0A1A, 0x0A1B,
+        0x0D16, 0x0D1A, 0x0D1B, 0x0D1E, 0x041E, 0x0A16, 0x0A1E, 0x0402, 0x0406, 0x040A, 0x040B,
+        0x040E, 0x0C02, 0x0C06, 0x0C0A, 0x0C0B, 0x0C0E, 0x0A02, 0x0A06, 0x0A0A, 0x0A0B, 0x0A0E,
+        0x0D02, 0x0D06, 0x0D0A, 0x0D0B, 0x0D0E,
+    ];
+    if desc.VendorId == 0x8086 && haswell_device_ids.contains(&desc.DeviceId) {
+        return false;
+    }
+
+    
+    
+    
+    
+    
     if desc.VendorId == 5140 && (desc.Flags & dxgi::DXGI_ADAPTER_FLAG_SOFTWARE) == 0 {
         let adapter_name = super::conv::map_adapter_name(desc.Description);
         if adapter_name.contains("Microsoft Basic Render Driver") {
@@ -92,7 +112,7 @@ pub fn enumerate_adapters(factory: d3d12::DxgiFactory) -> Vec<d3d12::DxgiAdapter
                     continue;
                 }
                 Err(err) => {
-                    log::info!("Failed casting Adapter1 to Adapter3: {}", err);
+                    log::warn!("Failed casting Adapter1 to Adapter3: {}", err);
                 }
             }
         }
@@ -105,7 +125,7 @@ pub fn enumerate_adapters(factory: d3d12::DxgiFactory) -> Vec<d3d12::DxgiAdapter
                     continue;
                 }
                 Err(err) => {
-                    log::info!("Failed casting Adapter1 to Adapter2: {}", err);
+                    log::warn!("Failed casting Adapter1 to Adapter2: {}", err);
                 }
             }
         }
@@ -172,7 +192,7 @@ pub fn create_factory(
         }
         
         Err(err) => {
-            log::info!("IDXGIFactory1 creation function not found: {err:?}");
+            log::warn!("IDXGIFactory1 creation function not found: {err:?}");
             None
         }
     };
@@ -193,7 +213,7 @@ pub fn create_factory(
             }
             
             Err(err) => {
-                log::info!("Failed to cast IDXGIFactory4 to IDXGIFactory6: {:?}", err);
+                log::warn!("Failed to cast IDXGIFactory4 to IDXGIFactory6: {:?}", err);
                 return Ok((lib_dxgi, d3d12::DxgiFactory::Factory4(factory4)));
             }
         }
@@ -234,7 +254,7 @@ pub fn create_factory(
         }
         
         Err(err) => {
-            log::info!("Failed to cast IDXGIFactory1 to IDXGIFactory2: {:?}", err);
+            log::warn!("Failed to cast IDXGIFactory1 to IDXGIFactory2: {:?}", err);
         }
     }
 

@@ -95,7 +95,7 @@ use std::{
 
 use bitflags::bitflags;
 use thiserror::Error;
-use wgt::{WasmNotSend, WasmNotSync};
+use wgt::WasmNotSendSync;
 
 
 
@@ -200,25 +200,25 @@ pub trait Api: Clone + fmt::Debug + Sized {
 
     type Queue: Queue<Self>;
     type CommandEncoder: CommandEncoder<Self>;
-    type CommandBuffer: WasmNotSend + WasmNotSync + fmt::Debug;
+    type CommandBuffer: WasmNotSendSync + fmt::Debug;
 
-    type Buffer: fmt::Debug + WasmNotSend + WasmNotSync + 'static;
-    type Texture: fmt::Debug + WasmNotSend + WasmNotSync + 'static;
-    type SurfaceTexture: fmt::Debug + WasmNotSend + WasmNotSync + Borrow<Self::Texture>;
-    type TextureView: fmt::Debug + WasmNotSend + WasmNotSync;
-    type Sampler: fmt::Debug + WasmNotSend + WasmNotSync;
-    type QuerySet: fmt::Debug + WasmNotSend + WasmNotSync;
-    type Fence: fmt::Debug + WasmNotSend + WasmNotSync;
+    type Buffer: fmt::Debug + WasmNotSendSync + 'static;
+    type Texture: fmt::Debug + WasmNotSendSync + 'static;
+    type SurfaceTexture: fmt::Debug + WasmNotSendSync + Borrow<Self::Texture>;
+    type TextureView: fmt::Debug + WasmNotSendSync;
+    type Sampler: fmt::Debug + WasmNotSendSync;
+    type QuerySet: fmt::Debug + WasmNotSendSync;
+    type Fence: fmt::Debug + WasmNotSendSync;
 
-    type BindGroupLayout: fmt::Debug + WasmNotSend + WasmNotSync;
-    type BindGroup: fmt::Debug + WasmNotSend + WasmNotSync;
-    type PipelineLayout: WasmNotSend + WasmNotSync;
-    type ShaderModule: fmt::Debug + WasmNotSend + WasmNotSync;
-    type RenderPipeline: WasmNotSend + WasmNotSync;
-    type ComputePipeline: WasmNotSend + WasmNotSync;
+    type BindGroupLayout: fmt::Debug + WasmNotSendSync;
+    type BindGroup: fmt::Debug + WasmNotSendSync;
+    type PipelineLayout: fmt::Debug + WasmNotSendSync;
+    type ShaderModule: fmt::Debug + WasmNotSendSync;
+    type RenderPipeline: fmt::Debug + WasmNotSendSync;
+    type ComputePipeline: fmt::Debug + WasmNotSendSync;
 }
 
-pub trait Instance<A: Api>: Sized + WasmNotSend + WasmNotSync {
+pub trait Instance<A: Api>: Sized + WasmNotSendSync {
     unsafe fn init(desc: &InstanceDescriptor) -> Result<Self, InstanceError>;
     unsafe fn create_surface(
         &self,
@@ -229,7 +229,7 @@ pub trait Instance<A: Api>: Sized + WasmNotSend + WasmNotSync {
     unsafe fn enumerate_adapters(&self) -> Vec<ExposedAdapter<A>>;
 }
 
-pub trait Surface<A: Api>: WasmNotSend + WasmNotSync {
+pub trait Surface<A: Api>: WasmNotSendSync {
     
     
     
@@ -239,7 +239,7 @@ pub trait Surface<A: Api>: WasmNotSend + WasmNotSync {
     
     
     unsafe fn configure(
-        &mut self,
+        &self,
         device: &A::Device,
         config: &SurfaceConfiguration,
     ) -> Result<(), SurfaceError>;
@@ -252,7 +252,7 @@ pub trait Surface<A: Api>: WasmNotSend + WasmNotSync {
     
     
     
-    unsafe fn unconfigure(&mut self, device: &A::Device);
+    unsafe fn unconfigure(&self, device: &A::Device);
 
     
     
@@ -265,13 +265,13 @@ pub trait Surface<A: Api>: WasmNotSend + WasmNotSync {
     
     
     unsafe fn acquire_texture(
-        &mut self,
+        &self,
         timeout: Option<std::time::Duration>,
     ) -> Result<Option<AcquiredSurfaceTexture<A>>, SurfaceError>;
-    unsafe fn discard_texture(&mut self, texture: A::SurfaceTexture);
+    unsafe fn discard_texture(&self, texture: A::SurfaceTexture);
 }
 
-pub trait Adapter<A: Api>: WasmNotSend + WasmNotSync {
+pub trait Adapter<A: Api>: WasmNotSendSync {
     unsafe fn open(
         &self,
         features: wgt::Features,
@@ -295,7 +295,7 @@ pub trait Adapter<A: Api>: WasmNotSend + WasmNotSync {
     unsafe fn get_presentation_timestamp(&self) -> wgt::PresentationTimestamp;
 }
 
-pub trait Device<A: Api>: WasmNotSend + WasmNotSync {
+pub trait Device<A: Api>: WasmNotSendSync {
     
     unsafe fn exit(self, queue: A::Queue);
     
@@ -391,7 +391,7 @@ pub trait Device<A: Api>: WasmNotSend + WasmNotSync {
     unsafe fn stop_capture(&self);
 }
 
-pub trait Queue<A: Api>: WasmNotSend + WasmNotSync {
+pub trait Queue<A: Api>: WasmNotSendSync {
     
     
     
@@ -399,13 +399,13 @@ pub trait Queue<A: Api>: WasmNotSend + WasmNotSync {
     
     
     unsafe fn submit(
-        &mut self,
+        &self,
         command_buffers: &[&A::CommandBuffer],
         signal_fence: Option<(&mut A::Fence, FenceValue)>,
     ) -> Result<(), DeviceError>;
     unsafe fn present(
-        &mut self,
-        surface: &mut A::Surface,
+        &self,
+        surface: &A::Surface,
         texture: A::SurfaceTexture,
     ) -> Result<(), SurfaceError>;
     unsafe fn get_timestamp_period(&self) -> f32;
@@ -415,7 +415,7 @@ pub trait Queue<A: Api>: WasmNotSend + WasmNotSync {
 
 
 
-pub trait CommandEncoder<A: Api>: WasmNotSend + WasmNotSync + fmt::Debug {
+pub trait CommandEncoder<A: Api>: WasmNotSendSync + fmt::Debug {
     
     unsafe fn begin_encoding(&mut self, label: Label) -> Result<(), DeviceError>;
     

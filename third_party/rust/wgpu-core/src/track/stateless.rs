@@ -4,29 +4,26 @@
 
 
 
-use std::marker::PhantomData;
+use std::{marker::PhantomData, sync::Arc};
+
+use parking_lot::Mutex;
 
 use crate::{
-    hal_api::HalApi,
-    id::{TypedId, Valid},
-    resource, storage,
-    track::ResourceMetadata,
-    RefCount,
+    hal_api::HalApi, id::TypedId, resource::Resource, storage::Storage, track::ResourceMetadata,
 };
 
+use super::ResourceTracker;
 
-pub(crate) struct StatelessBindGroupSate<T, Id: TypedId> {
-    resources: Vec<(Valid<Id>, RefCount)>,
 
-    _phantom: PhantomData<T>,
+#[derive(Debug)]
+pub(crate) struct StatelessBindGroupSate<Id: TypedId, T: Resource<Id>> {
+    resources: Mutex<Vec<(Id, Arc<T>)>>,
 }
 
-impl<T: resource::Resource, Id: TypedId> StatelessBindGroupSate<T, Id> {
+impl<Id: TypedId, T: Resource<Id>> StatelessBindGroupSate<Id, T> {
     pub fn new() -> Self {
         Self {
-            resources: Vec::new(),
-
-            _phantom: PhantomData,
+            resources: Mutex::new(Vec::new()),
         }
     }
 
@@ -34,43 +31,97 @@ impl<T: resource::Resource, Id: TypedId> StatelessBindGroupSate<T, Id> {
     
     
     
-    pub(crate) fn optimize(&mut self) {
-        self.resources
-            .sort_unstable_by_key(|&(id, _)| id.0.unzip().0);
+    pub(crate) fn optimize(&self) {
+        let mut resources = self.resources.lock();
+        resources.sort_unstable_by_key(|&(id, _)| id.unzip().0);
     }
 
     
-    pub fn used(&self) -> impl Iterator<Item = Valid<Id>> + '_ {
-        self.resources.iter().map(|&(id, _)| id)
+    pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
+        let resources = self.resources.lock();
+        resources
+            .iter()
+            .map(|&(_, ref resource)| resource.clone())
+            .collect::<Vec<_>>()
+            .into_iter()
     }
 
     
-    pub fn add_single<'a>(
-        &mut self,
-        storage: &'a storage::Storage<T, Id>,
-        id: Id,
-    ) -> Option<&'a T> {
+    pub fn drain_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
+        let mut resources = self.resources.lock();
+        resources
+            .drain(..)
+            .map(|(_, r)| r)
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    
+    pub fn add_single<'a>(&self, storage: &'a Storage<T, Id>, id: Id) -> Option<&'a T> {
         let resource = storage.get(id).ok()?;
 
-        self.resources
-            .push((Valid(id), resource.life_guard().add_ref()));
+        let mut resources = self.resources.lock();
+        resources.push((id, resource.clone()));
 
         Some(resource)
     }
 }
 
 
-pub(crate) struct StatelessTracker<A: HalApi, T, Id: TypedId> {
-    metadata: ResourceMetadata<A>,
-
-    _phantom: PhantomData<(T, Id)>,
+#[derive(Debug)]
+pub(crate) struct StatelessTracker<A: HalApi, Id: TypedId, T: Resource<Id>> {
+    metadata: ResourceMetadata<A, Id, T>,
+    _phantom: PhantomData<Id>,
 }
 
-impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
+impl<A: HalApi, Id: TypedId, T: Resource<Id>> ResourceTracker<Id, T>
+    for StatelessTracker<A, Id, T>
+{
+    
+    
+    
+    
+    
+    
+    
+    fn remove_abandoned(&mut self, id: Id, external_count: usize) -> bool {
+        let index = id.unzip().0 as usize;
+
+        if index > self.metadata.size() {
+            return false;
+        }
+
+        self.tracker_assert_in_bounds(index);
+
+        unsafe {
+            if self.metadata.contains_unchecked(index) {
+                let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
+                
+                
+                let min_ref_count = 1 + external_count;
+                if existing_ref_count <= min_ref_count {
+                    self.metadata.remove(index);
+                    log::info!("{} {:?} is not tracked anymore", T::TYPE, id,);
+                    return true;
+                } else {
+                    log::info!(
+                        "{} {:?} is still referenced from {}",
+                        T::TYPE,
+                        id,
+                        existing_ref_count
+                    );
+                }
+            }
+        }
+
+        false
+    }
+}
+
+impl<A: HalApi, Id: TypedId, T: Resource<Id>> StatelessTracker<A, Id, T> {
     pub fn new() -> Self {
         Self {
             metadata: ResourceMetadata::new(),
-
             _phantom: PhantomData,
         }
     }
@@ -95,8 +146,14 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
     }
 
     
-    pub fn used(&self) -> impl Iterator<Item = Valid<Id>> + '_ {
-        self.metadata.owned_ids()
+    pub fn used_resources(&self) -> impl Iterator<Item = Arc<T>> + '_ {
+        self.metadata.owned_resources()
+    }
+
+    
+    pub fn drain_resources(&mut self) -> impl Iterator<Item = Arc<T>> + '_ {
+        let resources = self.metadata.drain_resources();
+        resources.into_iter()
     }
 
     
@@ -105,8 +162,8 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
     
     
     
-    pub fn insert_single(&mut self, id: Valid<Id>, ref_count: RefCount) {
-        let (index32, epoch, _) = id.0.unzip();
+    pub fn insert_single(&mut self, id: Id, resource: Arc<T>) {
+        let (index32, _epoch, _) = id.unzip();
         let index = index32 as usize;
 
         self.allow_index(index);
@@ -114,7 +171,7 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
         self.tracker_assert_in_bounds(index);
 
         unsafe {
-            self.metadata.insert(index, epoch, ref_count);
+            self.metadata.insert(index, resource);
         }
     }
 
@@ -122,14 +179,10 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
     
     
     
-    pub fn add_single<'a>(
-        &mut self,
-        storage: &'a storage::Storage<T, Id>,
-        id: Id,
-    ) -> Option<&'a T> {
-        let item = storage.get(id).ok()?;
+    pub fn add_single<'a>(&mut self, storage: &'a Storage<T, Id>, id: Id) -> Option<&'a Arc<T>> {
+        let resource = storage.get(id).ok()?;
 
-        let (index32, epoch, _) = id.unzip();
+        let (index32, _epoch, _) = id.unzip();
         let index = index32 as usize;
 
         self.allow_index(index);
@@ -137,11 +190,10 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
         self.tracker_assert_in_bounds(index);
 
         unsafe {
-            self.metadata
-                .insert(index, epoch, item.life_guard().add_ref());
+            self.metadata.insert(index, resource.clone());
         }
 
-        Some(item)
+        Some(resource)
     }
 
     
@@ -161,43 +213,24 @@ impl<A: HalApi, T: resource::Resource, Id: TypedId> StatelessTracker<A, T, Id> {
                 let previously_owned = self.metadata.contains_unchecked(index);
 
                 if !previously_owned {
-                    let epoch = other.metadata.get_epoch_unchecked(index);
-                    let other_ref_count = other.metadata.get_ref_count_unchecked(index);
-                    self.metadata.insert(index, epoch, other_ref_count.clone());
+                    let other_resource = other.metadata.get_resource_unchecked(index);
+                    self.metadata.insert(index, other_resource.clone());
                 }
             }
         }
     }
 
-    
-    
-    
-    
-    
-    
-    
-    pub fn remove_abandoned(&mut self, id: Valid<Id>) -> bool {
-        let (index32, epoch, _) = id.0.unzip();
-        let index = index32 as usize;
-
+    pub fn get(&self, id: Id) -> Option<&Arc<T>> {
+        let index = id.unzip().0 as usize;
         if index > self.metadata.size() {
-            return false;
+            return None;
         }
-
         self.tracker_assert_in_bounds(index);
-
         unsafe {
             if self.metadata.contains_unchecked(index) {
-                let existing_epoch = self.metadata.get_epoch_unchecked(index);
-                let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
-
-                if existing_epoch == epoch && existing_ref_count.load() == 1 {
-                    self.metadata.remove(index);
-                    return true;
-                }
+                return Some(self.metadata.get_resource_unchecked(index));
             }
         }
-
-        false
+        None
     }
 }
