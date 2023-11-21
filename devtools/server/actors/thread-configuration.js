@@ -19,6 +19,9 @@ const {
 
 const SUPPORTED_OPTIONS = {
   
+  
+  shouldPauseOnDebuggerStatement: true,
+  
   pauseOnExceptions: true,
   
   ignoreCaughtExceptions: true,

@@ -823,6 +823,12 @@ class ThreadActor extends Actor {
       this.setActiveEventBreakpoints(options.eventBreakpoints);
     }
 
+    
+    if (typeof this._options.shouldPauseOnDebuggerStatement == "boolean") {
+      this.setPauseOnDebuggerStatement(
+        this._options.shouldPauseOnDebuggerStatement
+      );
+    }
     this.setPauseOnExceptions(this._options.pauseOnExceptions);
   }
 
@@ -1361,6 +1367,21 @@ class ThreadActor extends Actor {
     } else {
       this.dbg.onExceptionUnwind = undefined;
     }
+  }
+
+  
+
+
+
+
+
+
+
+
+  setPauseOnDebuggerStatement(doPause) {
+    this.dbg.onDebuggerStatement = doPause
+      ? this.onDebuggerStatement
+      : undefined;
   }
 
   isPauseOnExceptionsEnabled() {
