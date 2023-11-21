@@ -148,17 +148,6 @@ bool WMFVideoMFTManager::InitializeDXVA() {
     }
   }
 
-  
-  
-  nsAutoCString d3d9Failure;
-  mDXVA2Manager.reset(
-      DXVA2Manager::CreateD3D9DXVA(mKnowsCompositor, d3d9Failure));
-  
-  if (!d3d9Failure.IsEmpty()) {
-    mDXVAFailureReason.AppendLiteral("; D3D9: ");
-    mDXVAFailureReason.Append(d3d9Failure);
-  }
-
   return mDXVA2Manager != nullptr;
 }
 
@@ -206,11 +195,7 @@ MediaResult WMFVideoMFTManager::Init() {
   if (NS_SUCCEEDED(result) && mDXVA2Manager) {
     
     
-    if (mDXVA2Manager->IsD3D11()) {
-      mDXVAFailureReason.AppendLiteral("Using D3D11 API");
-    } else {
-      mDXVAFailureReason.AppendLiteral("Using D3D9 API");
-    }
+    mDXVAFailureReason.AppendLiteral("Using D3D11 API");
   }
 
   return result;
@@ -1000,10 +985,7 @@ nsCString WMFVideoMFTManager::GetDescriptionName() const {
     if (!mDXVA2Manager) {
       return "no DXVA";
     }
-    if (mDXVA2Manager->IsD3D11()) {
-      return "D3D11";
-    }
-    return "D3D9";
+    return "D3D11";
   }();
 
   return nsPrintfCString("wmf %s codec %s video decoder - %s, %s",

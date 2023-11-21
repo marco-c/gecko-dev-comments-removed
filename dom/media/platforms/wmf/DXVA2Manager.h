@@ -23,14 +23,10 @@ class KnowsCompositor;
 class DXVA2Manager {
  public:
   
-  
-  static DXVA2Manager* CreateD3D9DXVA(layers::KnowsCompositor* aKnowsCompositor,
-                                      nsACString& aFailureReason);
   static DXVA2Manager* CreateD3D11DXVA(
       layers::KnowsCompositor* aKnowsCompositor, nsACString& aFailureReason,
       ID3D11Device* aDevice = nullptr);
 
-  
   
   
   
