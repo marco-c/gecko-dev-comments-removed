@@ -16,7 +16,7 @@ use super::{
     error::{Error, ErrorKind},
     Span,
 };
-use crate::{proc::Alignment, Handle, Type, TypeInner, UniqueArena};
+use crate::{proc::Alignment, Handle, Scalar, Type, TypeInner, UniqueArena};
 
 
 
@@ -53,12 +53,15 @@ pub fn calculate_offset(
     let (align, span) = match types[ty].inner {
         
         
-        TypeInner::Scalar { width, .. } => (Alignment::from_width(width), width as u32),
+        TypeInner::Scalar(Scalar { width, .. }) => (Alignment::from_width(width), width as u32),
         
         
         
         
-        TypeInner::Vector { size, width, .. } => (
+        TypeInner::Vector {
+            size,
+            scalar: Scalar { width, .. },
+        } => (
             Alignment::from(size) * Alignment::from_width(width),
             size as u32 * width as u32,
         ),

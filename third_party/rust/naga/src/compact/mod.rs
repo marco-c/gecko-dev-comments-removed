@@ -36,9 +36,9 @@ pub fn compact(module: &mut crate::Module) {
     {
         for (_, global) in module.global_variables.iter() {
             log::trace!("tracing global {:?}", global.name);
-            module_tracer.as_type().trace_type(global.ty);
+            module_tracer.types_used.insert(global.ty);
             if let Some(init) = global.init {
-                module_tracer.as_const_expression().trace_expression(init);
+                module_tracer.const_expressions_used.insert(init);
             }
         }
     }
@@ -50,13 +50,11 @@ pub fn compact(module: &mut crate::Module) {
     for (handle, constant) in module.constants.iter() {
         if constant.name.is_some() {
             module_tracer.constants_used.insert(handle);
-            module_tracer.as_type().trace_type(constant.ty);
-            module_tracer
-                .as_const_expression()
-                .trace_expression(constant.init);
+            module_tracer.const_expressions_used.insert(constant.init);
         }
     }
 
+    
     
     
     
@@ -68,7 +66,7 @@ pub fn compact(module: &mut crate::Module) {
         .iter()
         .map(|(_, f)| {
             log::trace!("tracing function {:?}", f.name);
-            let mut function_tracer = module_tracer.enter_function(f);
+            let mut function_tracer = module_tracer.as_function(f);
             function_tracer.trace();
             FunctionMap::from(function_tracer)
         })
@@ -81,11 +79,29 @@ pub fn compact(module: &mut crate::Module) {
         .iter()
         .map(|e| {
             log::trace!("tracing entry point {:?}", e.function.name);
-            let mut used = module_tracer.enter_function(&e.function);
+            let mut used = module_tracer.as_function(&e.function);
             used.trace();
             FunctionMap::from(used)
         })
         .collect();
+
+    
+    
+    
+    
+    module_tracer.as_const_expression().trace_expressions();
+
+    
+    
+    
+    for (handle, constant) in module.constants.iter() {
+        if module_tracer.constants_used.contains(handle) {
+            module_tracer.types_used.insert(constant.ty);
+        }
+    }
+
+    
+    module_tracer.as_type().trace_types();
 
     
     
@@ -189,15 +205,14 @@ impl<'module> ModuleTracer<'module> {
             ref predeclared_types,
         } = *special_types;
 
-        let mut type_tracer = self.as_type();
         if let Some(ray_desc) = *ray_desc {
-            type_tracer.trace_type(ray_desc);
+            self.types_used.insert(ray_desc);
         }
         if let Some(ray_intersection) = *ray_intersection {
-            type_tracer.trace_type(ray_intersection);
+            self.types_used.insert(ray_intersection);
         }
         for (_, &handle) in predeclared_types {
-            type_tracer.trace_type(handle);
+            self.types_used.insert(handle);
         }
     }
 
@@ -210,24 +225,22 @@ impl<'module> ModuleTracer<'module> {
 
     fn as_const_expression(&mut self) -> expressions::ExpressionTracer {
         expressions::ExpressionTracer {
-            types: &self.module.types,
-            constants: &self.module.constants,
             expressions: &self.module.const_expressions,
+            constants: &self.module.constants,
             types_used: &mut self.types_used,
             constants_used: &mut self.constants_used,
             expressions_used: &mut self.const_expressions_used,
-            const_expressions: None,
+            const_expressions_used: None,
         }
     }
 
-    pub fn enter_function<'tracer>(
+    pub fn as_function<'tracer>(
         &'tracer mut self,
         function: &'tracer crate::Function,
     ) -> FunctionTracer<'tracer> {
         FunctionTracer {
-            module: self.module,
             function,
-
+            constants: &self.module.constants,
             types_used: &mut self.types_used,
             constants_used: &mut self.constants_used,
             const_expressions_used: &mut self.const_expressions_used,

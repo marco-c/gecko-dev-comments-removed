@@ -7,16 +7,25 @@ pub struct TypeTracer<'a> {
 }
 
 impl<'a> TypeTracer<'a> {
-    pub fn trace_type(&mut self, ty: Handle<crate::Type>) {
-        let mut work_list = vec![ty];
-        while let Some(ty) = work_list.pop() {
+    
+    
+    
+    
+    
+    pub fn trace_types(&mut self) {
+        
+        
+        
+        
+        
+        for (handle, ty) in self.types.iter().rev() {
             
-            if !self.types_used.insert(ty) {
+            if !self.types_used.contains(handle) {
                 continue;
             }
 
             use crate::TypeInner as Ti;
-            match self.types[ty].inner {
+            match ty.inner {
                 
                 Ti::Scalar { .. }
                 | Ti::Vector { .. }
@@ -29,19 +38,19 @@ impl<'a> TypeTracer<'a> {
                 | Ti::RayQuery => {}
 
                 
-                Ti::Pointer { base, space: _ } => work_list.push(base),
-                Ti::Array {
+                Ti::Pointer { base, space: _ }
+                | Ti::Array {
                     base,
                     size: _,
                     stride: _,
-                } => work_list.push(base),
+                }
+                | Ti::BindingArray { base, size: _ } => self.types_used.insert(base),
                 Ti::Struct {
                     ref members,
                     span: _,
                 } => {
-                    work_list.extend(members.iter().map(|m| m.ty));
+                    self.types_used.insert_iter(members.iter().map(|m| m.ty));
                 }
-                Ti::BindingArray { base, size: _ } => work_list.push(base),
             }
         }
     }
@@ -54,10 +63,10 @@ impl ModuleMap {
         use crate::TypeInner as Ti;
         match ty.inner {
             
-            Ti::Scalar { .. }
+            Ti::Scalar(_)
             | Ti::Vector { .. }
             | Ti::Matrix { .. }
-            | Ti::Atomic { .. }
+            | Ti::Atomic(_)
             | Ti::ValuePointer { .. }
             | Ti::Image { .. }
             | Ti::Sampler { .. }

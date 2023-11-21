@@ -2814,6 +2814,8 @@ impl TextureFormat {
     }
 
     
+    
+    
     pub fn block_dimensions(&self) -> (u32, u32) {
         match *self {
             Self::R8Unorm
@@ -3232,7 +3234,27 @@ impl TextureFormat {
     
     
     
+    
+    
+    
+    
+    #[deprecated(since = "0.19.0", note = "Use `block_copy_size` instead.")]
     pub fn block_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
+        self.block_copy_size(aspect)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn block_copy_size(&self, aspect: Option<TextureAspect>) -> Option<u32> {
         match *self {
             Self::R8Unorm | Self::R8Snorm | Self::R8Uint | Self::R8Sint => Some(1),
 
@@ -6706,4 +6728,16 @@ mod send_sync {
         )
     )))]
     impl<T> WasmNotSync for T {}
+}
+
+
+
+
+#[repr(u8)]
+#[derive(Debug, Copy, Clone)]
+pub enum DeviceLostReason {
+    
+    Unknown = 0,
+    
+    Destroyed = 1,
 }

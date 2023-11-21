@@ -8,8 +8,8 @@ use crate::{
     command, conv,
     device::life::WaitIdleError,
     device::{
-        AttachmentData, CommandAllocator, MissingDownlevelFlags, MissingFeatures,
-        RenderPassContext, CLEANUP_WAIT_MS,
+        AttachmentData, CommandAllocator, DeviceLostInvocation, MissingDownlevelFlags,
+        MissingFeatures, RenderPassContext, CLEANUP_WAIT_MS,
     },
     hal_api::HalApi,
     hal_label,
@@ -34,7 +34,7 @@ use hal::{CommandEncoder as _, Device as _};
 use parking_lot::{Mutex, MutexGuard};
 use smallvec::SmallVec;
 use thiserror::Error;
-use wgt::{TextureFormat, TextureSampleType, TextureViewDimension};
+use wgt::{DeviceLostReason, TextureFormat, TextureSampleType, TextureViewDimension};
 
 use std::{borrow::Cow, iter, num::NonZeroU32};
 
@@ -315,9 +315,24 @@ impl<A: HalApi> Device<A> {
         let mapping_closures = life_tracker.handle_mapping(hub, &self.raw, &self.trackers, token);
         life_tracker.cleanup(&self.raw);
 
+        
+        
+        
+        
+        
+        let mut device_lost_invocations = SmallVec::new();
+        if !self.valid && life_tracker.queue_empty() && life_tracker.device_lost_closure.is_some() {
+            device_lost_invocations.push(DeviceLostInvocation {
+                closure: life_tracker.device_lost_closure.take().unwrap(),
+                reason: DeviceLostReason::Destroyed,
+                message: String::new(),
+            });
+        }
+
         let closures = UserClosures {
             mappings: mapping_closures,
             submissions: submission_closures,
+            device_lost_invocations,
         };
         Ok((closures, life_tracker.queue_empty()))
     }
@@ -342,42 +357,90 @@ impl<A: HalApi> Device<A> {
             let (sampler_guard, _) = hub.samplers.read(&mut token);
 
             for id in trackers.buffers.used() {
-                if buffer_guard[id].life_guard.ref_count.is_none() {
+                if buffer_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.buffers.push(id);
                 }
             }
             for id in trackers.textures.used() {
-                if texture_guard[id].life_guard.ref_count.is_none() {
+                if texture_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.textures.push(id);
                 }
             }
             for id in trackers.views.used() {
-                if texture_view_guard[id].life_guard.ref_count.is_none() {
+                if texture_view_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.texture_views.push(id);
                 }
             }
             for id in trackers.bind_groups.used() {
-                if bind_group_guard[id].life_guard.ref_count.is_none() {
+                if bind_group_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.bind_groups.push(id);
                 }
             }
             for id in trackers.samplers.used() {
-                if sampler_guard[id].life_guard.ref_count.is_none() {
+                if sampler_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.samplers.push(id);
                 }
             }
             for id in trackers.compute_pipelines.used() {
-                if compute_pipe_guard[id].life_guard.ref_count.is_none() {
+                if compute_pipe_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.compute_pipelines.push(id);
                 }
             }
             for id in trackers.render_pipelines.used() {
-                if render_pipe_guard[id].life_guard.ref_count.is_none() {
+                if render_pipe_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.render_pipelines.push(id);
                 }
             }
             for id in trackers.query_sets.used() {
-                if query_set_guard[id].life_guard.ref_count.is_none() {
+                if query_set_guard
+                    .get_occupied_or_destroyed(id.0)
+                    .unwrap()
+                    .life_guard
+                    .ref_count
+                    .is_none()
+                {
                     self.temp_suspected.query_sets.push(id);
                 }
             }
@@ -3304,7 +3367,11 @@ impl<A: HalApi> Device<A> {
         })
     }
 
-    pub(crate) fn lose(&mut self, _reason: Option<&str>) {
+    pub(crate) fn lose<'this, 'token: 'this>(
+        &'this mut self,
+        token: &mut Token<'token, Self>,
+        message: &str,
+    ) {
         
 
         
@@ -3312,9 +3379,11 @@ impl<A: HalApi> Device<A> {
         self.valid = false;
 
         
-        
-
-        
+        let mut life_tracker = self.lock_life(token);
+        if life_tracker.device_lost_closure.is_some() {
+            let device_lost_closure = life_tracker.device_lost_closure.take().unwrap();
+            device_lost_closure.call(DeviceLostReason::Unknown, message.to_string());
+        }
 
         
         

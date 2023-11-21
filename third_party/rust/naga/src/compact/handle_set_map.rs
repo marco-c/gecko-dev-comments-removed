@@ -26,13 +26,23 @@ impl<T> HandleSet<T> {
     }
 
     
-    
-    
-    
-    pub fn insert(&mut self, handle: Handle<T>) -> bool {
+    pub fn insert(&mut self, handle: Handle<T>) {
         
         
-        self.members.insert(handle.index())
+        self.members.insert(handle.index());
+    }
+
+    
+    pub fn insert_iter(&mut self, iter: impl IntoIterator<Item = Handle<T>>) {
+        for handle in iter {
+            self.insert(handle);
+        }
+    }
+
+    pub fn contains(&self, handle: Handle<T>) -> bool {
+        
+        
+        self.members.contains(handle.index())
     }
 }
 
@@ -148,6 +158,8 @@ impl<T: 'static> HandleMap<T> {
                 
                 compacted = first1.get() - 1..last1.get();
             } else {
+                
+                
                 compacted = first1.get() - 1..first1.get();
             }
         } else {

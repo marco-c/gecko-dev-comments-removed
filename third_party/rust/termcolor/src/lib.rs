@@ -109,6 +109,8 @@
 
 
 
+
+
 #![deny(missing_debug_implementations, missing_docs)]
 
 
@@ -146,6 +148,10 @@ pub trait WriteColor: io::Write {
     
     
     
+    
+    
+    
+    
     fn reset(&mut self) -> io::Result<()>;
 
     
@@ -162,14 +168,48 @@ pub trait WriteColor: io::Write {
     fn is_synchronous(&self) -> bool {
         false
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn set_hyperlink(&mut self, _link: &HyperlinkSpec) -> io::Result<()> {
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    fn supports_hyperlinks(&self) -> bool {
+        false
+    }
 }
 
 impl<'a, T: ?Sized + WriteColor> WriteColor for &'a mut T {
     fn supports_color(&self) -> bool {
         (&**self).supports_color()
     }
+    fn supports_hyperlinks(&self) -> bool {
+        (&**self).supports_hyperlinks()
+    }
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         (&mut **self).set_color(spec)
+    }
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        (&mut **self).set_hyperlink(link)
     }
     fn reset(&mut self) -> io::Result<()> {
         (&mut **self).reset()
@@ -183,8 +223,14 @@ impl<T: ?Sized + WriteColor> WriteColor for Box<T> {
     fn supports_color(&self) -> bool {
         (&**self).supports_color()
     }
+    fn supports_hyperlinks(&self) -> bool {
+        (&**self).supports_hyperlinks()
+    }
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         (&mut **self).set_color(spec)
+    }
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        (&mut **self).set_hyperlink(link)
     }
     fn reset(&mut self) -> io::Result<()> {
         (&mut **self).reset()
@@ -669,8 +715,18 @@ impl WriteColor for StandardStream {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        self.wtr.supports_hyperlinks()
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         self.wtr.set_color(spec)
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        self.wtr.set_hyperlink(link)
     }
 
     #[inline]
@@ -703,8 +759,18 @@ impl<'a> WriteColor for StandardStreamLock<'a> {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        self.wtr.supports_hyperlinks()
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         self.wtr.set_color(spec)
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        self.wtr.set_hyperlink(link)
     }
 
     #[inline]
@@ -737,11 +803,24 @@ impl WriteColor for BufferedStandardStream {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        self.wtr.supports_hyperlinks()
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         if self.is_synchronous() {
             self.wtr.flush()?;
         }
         self.wtr.set_color(spec)
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        if self.is_synchronous() {
+            self.wtr.flush()?;
+        }
+        self.wtr.set_hyperlink(link)
     }
 
     #[inline]
@@ -787,6 +866,15 @@ impl<W: io::Write> WriteColor for WriterInner<W> {
         }
     }
 
+    fn supports_hyperlinks(&self) -> bool {
+        match *self {
+            WriterInner::NoColor(_) => false,
+            WriterInner::Ansi(_) => true,
+            #[cfg(windows)]
+            WriterInner::Windows { .. } => false,
+        }
+    }
+
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         match *self {
             WriterInner::NoColor(ref mut wtr) => wtr.set_color(spec),
@@ -797,6 +885,15 @@ impl<W: io::Write> WriteColor for WriterInner<W> {
                 let mut console = console.lock().unwrap();
                 spec.write_console(&mut *console)
             }
+        }
+    }
+
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        match *self {
+            WriterInner::NoColor(ref mut wtr) => wtr.set_hyperlink(link),
+            WriterInner::Ansi(ref mut wtr) => wtr.set_hyperlink(link),
+            #[cfg(windows)]
+            WriterInner::Windows { .. } => Ok(()),
         }
     }
 
@@ -856,6 +953,16 @@ impl<'a, W: io::Write> WriteColor for WriterInnerLock<'a, W> {
         }
     }
 
+    fn supports_hyperlinks(&self) -> bool {
+        match *self {
+            WriterInnerLock::Unreachable(_) => unreachable!(),
+            WriterInnerLock::NoColor(_) => false,
+            WriterInnerLock::Ansi(_) => true,
+            #[cfg(windows)]
+            WriterInnerLock::Windows { .. } => false,
+        }
+    }
+
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         match *self {
             WriterInnerLock::Unreachable(_) => unreachable!(),
@@ -866,6 +973,16 @@ impl<'a, W: io::Write> WriteColor for WriterInnerLock<'a, W> {
                 wtr.flush()?;
                 spec.write_console(console)
             }
+        }
+    }
+
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        match *self {
+            WriterInnerLock::Unreachable(_) => unreachable!(),
+            WriterInnerLock::NoColor(ref mut wtr) => wtr.set_hyperlink(link),
+            WriterInnerLock::Ansi(ref mut wtr) => wtr.set_hyperlink(link),
+            #[cfg(windows)]
+            WriterInnerLock::Windows { .. } => Ok(()),
         }
     }
 
@@ -1062,11 +1179,11 @@ impl BufferWriter {
 
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Buffer(BufferInner);
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum BufferInner {
     
     
@@ -1220,12 +1337,32 @@ impl WriteColor for Buffer {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        match self.0 {
+            BufferInner::NoColor(_) => false,
+            BufferInner::Ansi(_) => true,
+            #[cfg(windows)]
+            BufferInner::Windows(_) => false,
+        }
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         match self.0 {
             BufferInner::NoColor(ref mut w) => w.set_color(spec),
             BufferInner::Ansi(ref mut w) => w.set_color(spec),
             #[cfg(windows)]
             BufferInner::Windows(ref mut w) => w.set_color(spec),
+        }
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        match self.0 {
+            BufferInner::NoColor(ref mut w) => w.set_hyperlink(link),
+            BufferInner::Ansi(ref mut w) => w.set_hyperlink(link),
+            #[cfg(windows)]
+            BufferInner::Windows(ref mut w) => w.set_hyperlink(link),
         }
     }
 
@@ -1246,7 +1383,7 @@ impl WriteColor for Buffer {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct NoColor<W>(W);
 
 impl<W: Write> NoColor<W> {
@@ -1291,7 +1428,17 @@ impl<W: io::Write> WriteColor for NoColor<W> {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        false
+    }
+
+    #[inline]
     fn set_color(&mut self, _: &ColorSpec) -> io::Result<()> {
+        Ok(())
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, _: &HyperlinkSpec) -> io::Result<()> {
         Ok(())
     }
 
@@ -1307,7 +1454,7 @@ impl<W: io::Write> WriteColor for NoColor<W> {
 }
 
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Ansi<W>(W);
 
 impl<W: Write> Ansi<W> {
@@ -1363,6 +1510,11 @@ impl<W: io::Write> WriteColor for Ansi<W> {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        true
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         if spec.reset {
             self.reset()?;
@@ -1389,6 +1541,15 @@ impl<W: io::Write> WriteColor for Ansi<W> {
             self.write_color(false, c, spec.intense)?;
         }
         Ok(())
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        self.write_str("\x1B]8;;")?;
+        if let Some(uri) = link.uri() {
+            self.write_all(uri)?;
+        }
+        self.write_str("\x1B\\")
     }
 
     #[inline]
@@ -1522,7 +1683,15 @@ impl WriteColor for io::Sink {
         false
     }
 
+    fn supports_hyperlinks(&self) -> bool {
+        false
+    }
+
     fn set_color(&mut self, _: &ColorSpec) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn set_hyperlink(&mut self, _: &HyperlinkSpec) -> io::Result<()> {
         Ok(())
     }
 
@@ -1625,8 +1794,18 @@ impl WriteColor for WindowsBuffer {
     }
 
     #[inline]
+    fn supports_hyperlinks(&self) -> bool {
+        false
+    }
+
+    #[inline]
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         self.push(Some(spec.clone()));
+        Ok(())
+    }
+
+    #[inline]
+    fn set_hyperlink(&mut self, _: &HyperlinkSpec) -> io::Result<()> {
         Ok(())
     }
 
@@ -2085,6 +2264,29 @@ impl FromStr for Color {
     }
 }
 
+
+#[derive(Clone, Debug)]
+pub struct HyperlinkSpec<'a> {
+    uri: Option<&'a [u8]>,
+}
+
+impl<'a> HyperlinkSpec<'a> {
+    
+    pub fn open(uri: &'a [u8]) -> HyperlinkSpec<'a> {
+        HyperlinkSpec { uri: Some(uri) }
+    }
+
+    
+    pub fn close() -> HyperlinkSpec<'a> {
+        HyperlinkSpec { uri: None }
+    }
+
+    
+    pub fn uri(&self) -> Option<&'a [u8]> {
+        self.uri
+    }
+}
+
 #[derive(Debug)]
 struct LossyStandardStream<W> {
     wtr: W,
@@ -2124,8 +2326,14 @@ impl<W: WriteColor> WriteColor for LossyStandardStream<W> {
     fn supports_color(&self) -> bool {
         self.wtr.supports_color()
     }
+    fn supports_hyperlinks(&self) -> bool {
+        self.wtr.supports_hyperlinks()
+    }
     fn set_color(&mut self, spec: &ColorSpec) -> io::Result<()> {
         self.wtr.set_color(spec)
+    }
+    fn set_hyperlink(&mut self, link: &HyperlinkSpec) -> io::Result<()> {
+        self.wtr.set_hyperlink(link)
     }
     fn reset(&mut self) -> io::Result<()> {
         self.wtr.reset()
@@ -2170,8 +2378,8 @@ fn write_lossy_utf8<W: io::Write>(mut w: W, buf: &[u8]) -> io::Result<usize> {
 #[cfg(test)]
 mod tests {
     use super::{
-        Ansi, Color, ColorSpec, ParseColorError, ParseColorErrorKind,
-        StandardStream, WriteColor,
+        Ansi, Color, ColorSpec, HyperlinkSpec, ParseColorError,
+        ParseColorErrorKind, StandardStream, WriteColor,
     };
 
     fn assert_is_send<T: Send>() {}
@@ -2346,5 +2554,19 @@ mod tests {
             color1.clear();
             assert!(color1.is_none(), "{:?} => {:?}", color, color1);
         }
+    }
+
+    #[test]
+    fn test_ansi_hyperlink() {
+        let mut buf = Ansi::new(vec![]);
+        buf.set_hyperlink(&HyperlinkSpec::open(b"https://example.com"))
+            .unwrap();
+        buf.write_str("label").unwrap();
+        buf.set_hyperlink(&HyperlinkSpec::close()).unwrap();
+
+        assert_eq!(
+            buf.0,
+            b"\x1B]8;;https://example.com\x1B\\label\x1B]8;;\x1B\\".to_vec()
+        );
     }
 }

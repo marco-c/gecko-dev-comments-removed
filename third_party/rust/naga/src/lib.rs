@@ -473,6 +473,19 @@ pub enum ScalarKind {
 }
 
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(Serialize))]
+#[cfg_attr(feature = "deserialize", derive(Deserialize))]
+#[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
+pub struct Scalar {
+    
+    pub kind: ScalarKind,
+
+    
+    pub width: Bytes,
+}
+
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 #[cfg_attr(feature = "serialize", derive(Serialize))]
@@ -677,13 +690,9 @@ pub struct Type {
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum TypeInner {
     
-    Scalar { kind: ScalarKind, width: Bytes },
+    Scalar(Scalar),
     
-    Vector {
-        size: VectorSize,
-        kind: ScalarKind,
-        width: Bytes,
-    },
+    Vector { size: VectorSize, scalar: Scalar },
     
     Matrix {
         columns: VectorSize,
@@ -691,7 +700,7 @@ pub enum TypeInner {
         width: Bytes,
     },
     
-    Atomic { kind: ScalarKind, width: Bytes },
+    Atomic(Scalar),
     
     
     
@@ -737,8 +746,7 @@ pub enum TypeInner {
     
     ValuePointer {
         size: Option<VectorSize>,
-        kind: ScalarKind,
-        width: Bytes,
+        scalar: Scalar,
         space: AddressSpace,
     },
 
@@ -1966,10 +1974,7 @@ pub struct EntryPoint {
 #[cfg_attr(feature = "deserialize", derive(Deserialize))]
 #[cfg_attr(feature = "arbitrary", derive(Arbitrary))]
 pub enum PredeclaredType {
-    AtomicCompareExchangeWeakResult {
-        kind: ScalarKind,
-        width: Bytes,
-    },
+    AtomicCompareExchangeWeakResult(Scalar),
     ModfResult {
         size: Option<VectorSize>,
         width: Bytes,
