@@ -83,7 +83,8 @@ int likeCompare(nsAString::const_iterator aPatternItr,
 
       
       return 0;
-    } else if (!lastWasEscape && *aPatternItr == MATCH_ONE) {
+    }
+    if (!lastWasEscape && *aPatternItr == MATCH_ONE) {
       
       if (aStringItr == aStringEnd) {
         
