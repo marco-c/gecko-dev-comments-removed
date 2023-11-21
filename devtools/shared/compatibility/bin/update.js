@@ -146,28 +146,33 @@ function removeUnusedData(compatNode) {
 
     
     
-    delete compatTable.source_file;
-    
-    delete compatTable.description;
+    if (compatTable) {
+      
+      
+      delete compatTable.source_file;
 
-    if (compatTable?.support) {
-      for (const [browserId, supportItem] of Object.entries(
-        compatTable.support
-      )) {
-        
-        if (!TARGET_BROWSER_ID.includes(browserId)) {
-          delete compatTable.support[browserId];
-          continue;
-        }
+      
+      delete compatTable.description;
 
-        
-        
-        for (const item of supportItem) {
-          delete item.version_added;
-          delete item.version_removed;
+      if (compatTable?.support) {
+        for (const [browserId, supportItem] of Object.entries(
+          compatTable.support
+        )) {
+          
+          if (!TARGET_BROWSER_ID.includes(browserId)) {
+            delete compatTable.support[browserId];
+            continue;
+          }
+
           
           
-          delete item.notes;
+          for (const item of supportItem) {
+            delete item.version_added;
+            delete item.version_removed;
+            
+            
+            delete item.notes;
+          }
         }
       }
     }
