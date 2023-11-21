@@ -221,7 +221,7 @@ bool ParallelMarkTask::requestWork(AutoLockGC& lock) {
     return false;  
   }
 
-  budget.stepAndForceCheck();
+  budget.forceCheck();
   if (budget.isOverBudget()) {
     return false;  
   }

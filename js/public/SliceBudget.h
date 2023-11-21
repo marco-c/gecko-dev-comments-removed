@@ -115,11 +115,9 @@ class JS_PUBLIC_API SliceBudget {
   
   
   
-  void stepAndForceCheck() {
+  void forceCheck() {
     if (isTimeBudget()) {
       counter = 0;
-    } else {
-      counter--;
     }
   }
 
