@@ -165,8 +165,9 @@ class ScrollTimeline : public AnimationTimeline {
     
     
     
-
-    Tick();
+    TickState state;
+    Tick(state);
+    
   }
 
   

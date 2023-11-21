@@ -197,7 +197,6 @@ class FullscreenExit;
 class FullscreenRequest;
 class HTMLEditor;
 struct LangGroupFontPrefs;
-class PendingAnimationTracker;
 class PermissionDelegateHandler;
 class PresShell;
 class ScrollTimelineAnimationTracker;
@@ -2688,19 +2687,6 @@ class Document : public nsINode,
   
   
   
-  PendingAnimationTracker* GetPendingAnimationTracker() {
-    return mPendingAnimationTracker;
-  }
-
-  
-  
-  
-  PendingAnimationTracker* GetOrCreatePendingAnimationTracker();
-
-  
-  
-  
-  
   ScrollTimelineAnimationTracker* GetScrollTimelineAnimationTracker() {
     return mScrollTimelineAnimationTracker;
   }
@@ -5159,10 +5145,6 @@ class Document : public nsINode,
   LinkedList<DocumentTimeline> mTimelines;
 
   RefPtr<dom::ScriptLoader> mScriptLoader;
-
-  
-  
-  RefPtr<PendingAnimationTracker> mPendingAnimationTracker;
 
   
   

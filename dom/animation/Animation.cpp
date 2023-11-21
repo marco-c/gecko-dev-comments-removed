@@ -6,6 +6,7 @@
 
 #include "Animation.h"
 
+#include "nsIFrame.h"
 #include "AnimationUtils.h"
 #include "mozAutoDocUpdate.h"
 #include "mozilla/dom/AnimationBinding.h"
@@ -27,8 +28,7 @@
 #include "nsDOMMutationObserver.h"    
 #include "nsDOMCSSAttrDeclaration.h"  
 #include "nsThreadUtils.h"  
-#include "nsTransitionManager.h"      
-#include "PendingAnimationTracker.h"  
+#include "nsTransitionManager.h"  
 #include "ScrollTimelineAnimationTracker.h"
 
 namespace mozilla::dom {
@@ -137,12 +137,6 @@ already_AddRefed<Animation> Animation::ClonePausedAnimation(
   animation->mEffect->SetAnimation(animation);
 
   animation->mPendingState = PendingState::PausePending;
-
-  Document* doc = animation->GetRenderedDocument();
-  MOZ_ASSERT(doc,
-             "Cloning animation should already have the rendered document");
-  PendingAnimationTracker* tracker = doc->GetOrCreatePendingAnimationTracker();
-  tracker->AddPausePending(*animation);
 
   
   animation->mIsRelevant = aOther.mIsRelevant;
@@ -254,8 +248,6 @@ void Animation::SetEffectNoUpdate(AnimationEffect* aEffect) {
     if (wasRelevant && mIsRelevant) {
       MutationObservers::NotifyAnimationChanged(this);
     }
-
-    ReschedulePendingTasks();
   }
 
   MaybeScheduleReplacementCheck();
@@ -347,7 +339,7 @@ void Animation::SetTimelineNoUpdate(AnimationTimeline* aTimeline) {
     MaybeQueueCancelEvent(activeTime);
   }
 
-  UpdatePendingAnimationTracker(oldTimeline, aTimeline);
+  UpdateScrollTimelineAnimationTracker(oldTimeline, aTimeline);
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 
@@ -932,28 +924,28 @@ void Animation::SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
 
 
 
-void Animation::Tick() {
-  
-  
-  if (mPendingState != PendingState::NotPending &&
-      !mPendingReadyTime.IsNull() && mTimeline &&
-      !mTimeline->GetCurrentTimeAsDuration().IsNull()) {
+void Animation::Tick(AnimationTimeline::TickState& aTickState) {
+  if (Pending()) {
     
     
-    
-    
-    TimeDuration currentTime = mTimeline->GetCurrentTimeAsDuration().Value();
-    if (currentTime < mPendingReadyTime.Value()) {
-      mPendingReadyTime.SetValue(currentTime);
+    if (mSawTickWhilePending) {
+      if (TryTriggerNow() &&
+          StaticPrefs::
+              dom_animations_mainthread_synchronization_with_geometric_animations()) {
+        auto* transition = AsCSSTransition();
+        const bool isTransition = transition && transition->IsTiedToMarkup();
+        auto* array = isTransition ? &aTickState.mStartedTransitions
+                                   : &aTickState.mStartedAnimations;
+        array->AppendElement(this);
+        bool* startedAnyGeometric =
+            isTransition ? &aTickState.mStartedAnyGeometricTransition
+                         : &aTickState.mStartedAnyGeometricAnimation;
+        if (!*startedAnyGeometric) {
+          *startedAnyGeometric = mEffect && mEffect->AffectsGeometry();
+        }
+      }
     }
-    FinishPendingAt(mPendingReadyTime.Value());
-    mPendingReadyTime.SetNull();
-  }
-
-  if (IsPossiblyOrphanedPendingAnimation()) {
-    MOZ_ASSERT(mTimeline && !mTimeline->GetCurrentTimeAsDuration().IsNull(),
-               "Orphaned pending animations should have an active timeline");
-    FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
+    mSawTickWhilePending = true;
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Sync);
@@ -978,104 +970,20 @@ void Animation::Tick() {
   }
 }
 
-void Animation::TriggerOnNextTick(const Nullable<TimeDuration>& aReadyTime) {
-  
-  
-  
-  
-  if (!Pending()) {
-    return;
-  }
-
-  
-  
-  mPendingReadyTime = aReadyTime;
-}
-
-void Animation::TriggerNow() {
-  
-  
-  
-  
-  if (!Pending()) {
-    return;
-  }
-
-  
-  
-  
-  
-  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
-    NS_WARNING("Failed to trigger an animation with an active timeline");
-    return;
-  }
-
-  FinishPendingAt(mTimeline->GetCurrentTimeAsDuration().Value());
-}
-
-bool Animation::TryTriggerNowForFiniteTimeline() {
-  
-  
-  
-  
+bool Animation::TryTriggerNow() {
   if (!Pending()) {
     return true;
   }
-
-  MOZ_ASSERT(mTimeline && !mTimeline->IsMonotonicallyIncreasing());
-
   
-  
-  
-  
-  
-  const auto currentTime = mTimeline->GetCurrentTimeAsDuration();
-  if (currentTime.IsNull()) {
+  if (NS_WARN_IF(!mTimeline)) {
     return false;
   }
-
+  auto currentTime = mTimeline->GetCurrentTimeAsDuration();
+  if (NS_WARN_IF(currentTime.IsNull())) {
+    return false;
+  }
   FinishPendingAt(currentTime.Value());
   return true;
-}
-
-Nullable<TimeDuration> Animation::GetCurrentOrPendingStartTime() const {
-  Nullable<TimeDuration> result;
-
-  
-  
-  
-  
-  
-  
-  
-  if (mPendingPlaybackRate && !mPendingReadyTime.IsNull() &&
-      !mStartTime.IsNull()) {
-    
-    TimeDuration currentTimeToMatch =
-        !mHoldTime.IsNull()
-            ? mHoldTime.Value()
-            : CurrentTimeFromTimelineTime(mPendingReadyTime.Value(),
-                                          mStartTime.Value(), mPlaybackRate);
-
-    result = StartTimeFromTimelineTime(
-        mPendingReadyTime.Value(), currentTimeToMatch, *mPendingPlaybackRate);
-    return result;
-  }
-
-  if (!mStartTime.IsNull()) {
-    result = mStartTime;
-    return result;
-  }
-
-  if (mPendingReadyTime.IsNull() || mHoldTime.IsNull()) {
-    return result;
-  }
-
-  
-  result = StartTimeFromTimelineTime(mPendingReadyTime.Value(),
-                                     mHoldTime.Value(), mPlaybackRate);
-
-  return result;
 }
 
 TimeStamp Animation::AnimationTimeToTimeStamp(
@@ -1169,9 +1077,7 @@ bool Animation::ShouldBeSynchronizedWithMainThread(
   
   
   
-  if (StaticPrefs::
-          dom_animations_mainthread_synchronization_with_geometric_animations() &&
-      mSyncWithGeometricAnimations &&
+  if (mSyncWithGeometricAnimations &&
       keyframeEffect->HasAnimationOfPropertySet(
           nsCSSPropertyIDSet::TransformLikeProperties())) {
     aPerformanceWarning =
@@ -1421,14 +1327,12 @@ void Animation::ComposeStyle(StyleAnimationValueMap& aComposeResult,
   
   
   
-  
-  bool pending = Pending();
+  const bool pending = Pending();
   {
     AutoRestore<Nullable<TimeDuration>> restoreHoldTime(mHoldTime);
-
     if (pending && mHoldTime.IsNull() && !mStartTime.IsNull()) {
-      Nullable<TimeDuration> timeToUse = mPendingReadyTime;
-      if (timeToUse.IsNull() && mTimeline && mTimeline->TracksWallclockTime()) {
+      Nullable<TimeDuration> timeToUse;
+      if (mTimeline && mTimeline->TracksWallclockTime()) {
         timeToUse = mTimeline->ToTimelineTime(TimeStamp::Now());
       }
       if (!timeToUse.IsNull()) {
@@ -1471,12 +1375,17 @@ void Animation::NotifyEffectTargetUpdated() {
   MaybeScheduleReplacementCheck();
 }
 
-void Animation::NotifyGeometricAnimationsStartingThisFrame() {
-  if (!IsNewlyStarted() || !mEffect) {
-    return;
+static bool EnsurePaintIsScheduled(Document& aDoc) {
+  PresShell* presShell = aDoc.GetPresShell();
+  if (!presShell) {
+    return false;
   }
-
-  mSyncWithGeometricAnimations = true;
+  nsIFrame* rootFrame = presShell->GetRootFrame();
+  if (!rootFrame) {
+    return false;
+  }
+  rootFrame->SchedulePaintWithoutInvalidatingObservers();
+  return rootFrame->PresContext()->RefreshDriver()->IsInRefresh();
 }
 
 
@@ -1572,23 +1481,18 @@ void Animation::PlayNoUpdate(ErrorResult& aRv, LimitBehavior aLimitBehavior) {
   
   
   mSyncWithGeometricAnimations = false;
-
-  if (HasFiniteTimeline()) {
-    
-    
-    
-    if (Document* doc = GetRenderedDocument()) {
+  mSawTickWhilePending = false;
+  if (Document* doc = GetRenderedDocument()) {
+    if (HasFiniteTimeline()) {
+      
+      
+      
+      
+      
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }  
-       
-  } else {
-    if (Document* doc = GetRenderedDocument()) {
-      PendingAnimationTracker* tracker =
-          doc->GetOrCreatePendingAnimationTracker();
-      tracker->AddPlayPending(*this);
-    } else {
-      TriggerOnNextTick(Nullable<TimeDuration>());
     }
+    
+    mSawTickWhilePending = EnsurePaintIsScheduled(*doc);
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1638,23 +1542,14 @@ void Animation::Pause(ErrorResult& aRv) {
   }
 
   mPendingState = PendingState::PausePending;
+  mSawTickWhilePending = false;
 
-  if (HasFiniteTimeline()) {
-    
-    
-    
-    if (Document* doc = GetRenderedDocument()) {
+  
+  if (Document* doc = GetRenderedDocument()) {
+    if (HasFiniteTimeline()) {
       doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
-    }  
-       
-  } else {
-    if (Document* doc = GetRenderedDocument()) {
-      PendingAnimationTracker* tracker =
-          doc->GetOrCreatePendingAnimationTracker();
-      tracker->AddPausePending(*this);
-    } else {
-      TriggerOnNextTick(Nullable<TimeDuration>());
     }
+    mSawTickWhilePending = EnsurePaintIsScheduled(*doc);
   }
 
   UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
@@ -1828,28 +1723,12 @@ void Animation::PostUpdate() {
 }
 
 void Animation::CancelPendingTasks() {
-  if (mPendingState == PendingState::NotPending) {
-    return;
-  }
-
-  if (Document* doc = GetRenderedDocument()) {
-    PendingAnimationTracker* tracker = doc->GetPendingAnimationTracker();
-    if (tracker) {
-      if (mPendingState == PendingState::PlayPending) {
-        tracker->RemovePlayPending(*this);
-      } else {
-        tracker->RemovePausePending(*this);
-      }
-    }
-  }
-
   mPendingState = PendingState::NotPending;
-  mPendingReadyTime.SetNull();
 }
 
 
 void Animation::ResetPendingTasks() {
-  if (mPendingState == PendingState::NotPending) {
+  if (!Pending()) {
     return;
   }
 
@@ -1860,26 +1739,6 @@ void Animation::ResetPendingTasks() {
     mReady->MaybeReject(NS_ERROR_DOM_ABORT_ERR);
     MOZ_ALWAYS_TRUE(mReady->SetAnyPromiseIsHandled());
     mReady = nullptr;
-  }
-}
-
-void Animation::ReschedulePendingTasks() {
-  if (mPendingState == PendingState::NotPending) {
-    return;
-  }
-
-  mPendingReadyTime.SetNull();
-
-  if (Document* doc = GetRenderedDocument()) {
-    PendingAnimationTracker* tracker =
-        doc->GetOrCreatePendingAnimationTracker();
-    if (mPendingState == PendingState::PlayPending &&
-        !tracker->IsWaitingToPlay(*this)) {
-      tracker->AddPlayPending(*this);
-    } else if (mPendingState == PendingState::PausePending &&
-               !tracker->IsWaitingToPause(*this)) {
-      tracker->AddPausePending(*this);
-    }
   }
 }
 
@@ -1930,60 +1789,6 @@ Animation::AtProgressTimelineBoundary(
              : ProgressTimelinePosition::NotBoundary;
 }
 
-bool Animation::IsPossiblyOrphanedPendingAnimation() const {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
-  
-  if (mPendingState == PendingState::NotPending) {
-    return false;
-  }
-
-  
-  
-  if (!mPendingReadyTime.IsNull()) {
-    return false;
-  }
-
-  
-  
-  if (!mTimeline || mTimeline->GetCurrentTimeAsDuration().IsNull()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  Document* doc = GetRenderedDocument();
-  if (!doc) {
-    return true;
-  }
-
-  PendingAnimationTracker* tracker = doc->GetPendingAnimationTracker();
-  return !tracker || (!tracker->IsWaitingToPlay(*this) &&
-                      !tracker->IsWaitingToPause(*this));
-}
-
 StickyTimeDuration Animation::EffectEnd() const {
   if (!mEffect) {
     return StickyTimeDuration(0);
@@ -2004,8 +1809,8 @@ Document* Animation::GetTimelineDocument() const {
   return mTimeline ? mTimeline->GetDocument() : nullptr;
 }
 
-void Animation::UpdatePendingAnimationTracker(AnimationTimeline* aOldTimeline,
-                                              AnimationTimeline* aNewTimeline) {
+void Animation::UpdateScrollTimelineAnimationTracker(
+    AnimationTimeline* aOldTimeline, AnimationTimeline* aNewTimeline) {
   
   
   Document* doc = GetRenderedDocument();
@@ -2021,30 +1826,14 @@ void Animation::UpdatePendingAnimationTracker(AnimationTimeline* aOldTimeline,
     return;
   }
 
-  const bool isPlayPending = mPendingState == PendingState::PlayPending;
   if (toFiniteTimeline) {
-    
-    if (auto* tracker = doc->GetPendingAnimationTracker()) {
-      if (isPlayPending) {
-        tracker->RemovePlayPending(*this);
-      } else {
-        tracker->RemovePausePending(*this);
-      }
-    }
-
     doc->GetOrCreateScrollTimelineAnimationTracker()->AddPending(*this);
   } else {
     
     if (auto* tracker = doc->GetScrollTimelineAnimationTracker()) {
       tracker->RemovePending(*this);
     }
-
-    auto* tracker = doc->GetOrCreatePendingAnimationTracker();
-    if (isPlayPending) {
-      tracker->AddPlayPending(*this);
-    } else {
-      tracker->AddPausePending(*this);
-    }
+    EnsurePaintIsScheduled(*doc);
   }
 }
 

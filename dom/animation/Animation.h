@@ -164,7 +164,8 @@ class Animation : public DOMEventTargetHelper,
 
   bool IsRunningOnCompositor() const;
 
-  virtual void Tick();
+  using TickState = AnimationTimeline::TickState;
+  virtual void Tick(TickState&);
   bool NeedsTicks() const {
     return Pending() ||
            (PlayState() == AnimationPlayState::Running &&
@@ -184,7 +185,6 @@ class Animation : public DOMEventTargetHelper,
            (mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
             PlayState() != AnimationPlayState::Idle);
   }
-
   
 
 
@@ -192,91 +192,7 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  void TriggerOnNextTick(const Nullable<TimeDuration>& aReadyTime);
-  
-
-
-
-
-
-
-
-
-
-
-  void TriggerNow();
-  
-
-
-
-
-
-  bool TryTriggerNowForFiniteTimeline();
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  Nullable<TimeDuration> GetCurrentOrPendingStartTime() const;
-
+  bool TryTriggerNow();
   
 
 
@@ -424,21 +340,6 @@ class Animation : public DOMEventTargetHelper,
 
 
 
-
-
-
-
-
-  void ReschedulePendingTasks();
-
-  
-
-
-
-
-
-
-
   virtual void MaybeQueueCancelEvent(const StickyTimeDuration& aActiveTime){};
 
   Maybe<uint32_t>& CachedChildIndexRef() { return mCachedChildIndex; }
@@ -500,6 +401,7 @@ class Animation : public DOMEventTargetHelper,
   }
 
   DocGroup* GetDocGroup();
+  void SetSyncWithGeometricAnimations() { mSyncWithGeometricAnimations = true; }
 
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -519,8 +421,7 @@ class Animation : public DOMEventTargetHelper,
   }
   void ApplyPendingPlaybackRate() {
     if (mPendingPlaybackRate) {
-      mPlaybackRate = *mPendingPlaybackRate;
-      mPendingPlaybackRate.reset();
+      mPlaybackRate = mPendingPlaybackRate.extract();
     }
   }
 
@@ -561,24 +462,6 @@ class Animation : public DOMEventTargetHelper,
 
 
   void ResetPendingTasks();
-
-  
-
-
-
-
-
-
-
-
-
-
-
-  bool IsNewlyStarted() const {
-    return mPendingState == PendingState::PlayPending &&
-           mPendingReadyTime.IsNull() && mStartTime.IsNull();
-  }
-  bool IsPossiblyOrphanedPendingAnimation() const;
   StickyTimeDuration EffectEnd() const;
 
   Nullable<TimeDuration> GetCurrentTimeForHoldTime(
@@ -617,15 +500,14 @@ class Animation : public DOMEventTargetHelper,
     return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
   }
 
-  void UpdatePendingAnimationTracker(AnimationTimeline* aOldTimeline,
-                                     AnimationTimeline* aNewTimeline);
+  void UpdateScrollTimelineAnimationTracker(AnimationTimeline* aOldTimeline,
+                                            AnimationTimeline* aNewTimeline);
 
   RefPtr<AnimationTimeline> mTimeline;
   RefPtr<AnimationEffect> mEffect;
   
   Nullable<TimeDuration> mStartTime;            
   Nullable<TimeDuration> mHoldTime;             
-  Nullable<TimeDuration> mPendingReadyTime;     
   Nullable<TimeDuration> mPreviousCurrentTime;  
   double mPlaybackRate = 1.0;
   Maybe<double> mPendingPlaybackRate;
@@ -658,10 +540,6 @@ class Animation : public DOMEventTargetHelper,
 
   
   
-  
-  
-  
-  
   enum class PendingState : uint8_t { NotPending, PlayPending, PausePending };
   PendingState mPendingState = PendingState::NotPending;
 
@@ -670,6 +548,11 @@ class Animation : public DOMEventTargetHelper,
 
   bool mFinishedAtLastComposeStyle = false;
   bool mWasReplaceableAtLastTick = false;
+  
+  
+  
+  
+  bool mSawTickWhilePending = false;
 
   bool mHiddenByContentVisibility = false;
 

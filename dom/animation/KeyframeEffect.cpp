@@ -939,7 +939,6 @@ void KeyframeEffect::UpdateTarget(Element* aElement,
     nsAutoAnimationMutationBatch mb(mTarget.mElement->OwnerDoc());
     if (mAnimation) {
       MutationObservers::NotifyAnimationAdded(mAnimation);
-      mAnimation->ReschedulePendingTasks();
     }
   }
 

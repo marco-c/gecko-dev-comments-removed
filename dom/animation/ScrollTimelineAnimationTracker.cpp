@@ -29,7 +29,7 @@ void ScrollTimelineAnimationTracker::TriggerPendingAnimations() {
     
     
     
-    if (!animation->TryTriggerNowForFiniteTimeline()) {
+    if (!animation->TryTriggerNow()) {
       
       
       

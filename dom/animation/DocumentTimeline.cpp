@@ -105,34 +105,35 @@ TimeStamp DocumentTimeline::GetCurrentTimeStamp() const {
                        : mLastRefreshDriverTime;
 }
 
-void DocumentTimeline::UpdateLastRefreshDriverTime() {
-  nsRefreshDriver* refreshDriver = GetRefreshDriver();
-  TimeStamp refreshTime =
-      refreshDriver ? refreshDriver->MostRecentRefresh() : TimeStamp();
+void DocumentTimeline::UpdateLastRefreshDriverTime(TimeStamp aKnownTime) {
+  TimeStamp result = [&] {
+    if (!aKnownTime.IsNull()) {
+      return aKnownTime;
+    }
+    if (auto* rd = GetRefreshDriver()) {
+      return rd->MostRecentRefresh();
+    };
+    return mLastRefreshDriverTime;
+  }();
 
-  
-  TimeStamp result =
-      !refreshTime.IsNull() ? refreshTime : mLastRefreshDriverTime;
-
-  nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming();
-  
-  
-  
-  
-  
-  
-  
-  if (timing &&
-      (result.IsNull() || result < timing->GetNavigationStartTimeStamp())) {
-    result = timing->GetNavigationStartTimeStamp();
+  if (nsDOMNavigationTiming* timing = mDocument->GetNavigationTiming()) {
     
     
     
-    refreshTime = result;
+    
+    
+    
+    
+    
+    
+    
+    if (result.IsNull() || result < timing->GetNavigationStartTimeStamp()) {
+      result = timing->GetNavigationStartTimeStamp();
+    }
   }
 
-  if (!refreshTime.IsNull()) {
-    mLastRefreshDriverTime = refreshTime;
+  if (!result.IsNull()) {
+    mLastRefreshDriverTime = result;
   }
 }
 
@@ -175,7 +176,18 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
 
   nsAutoAnimationMutationBatch mb(mDocument);
 
-  bool ticked = Tick();
+  TickState state;
+  bool ticked = Tick(state);
+  if (state.mStartedAnyGeometricTransition) {
+    for (auto* transition : state.mStartedTransitions) {
+      transition->SetSyncWithGeometricAnimations();
+    }
+  }
+  if (state.mStartedAnyGeometricAnimation) {
+    for (auto* animation : state.mStartedAnimations) {
+      animation->SetSyncWithGeometricAnimations();
+    }
+  }
   if (!ticked) {
     
     
@@ -188,7 +200,13 @@ void DocumentTimeline::MostRecentRefreshTimeUpdated() {
   }
 }
 
-void DocumentTimeline::WillRefresh(mozilla::TimeStamp aTime) {
+void DocumentTimeline::TriggerAllPendingAnimationsNow() {
+  for (Animation* animation : mAnimationOrder) {
+    animation->TryTriggerNow();
+  }
+}
+
+void DocumentTimeline::WillRefresh(TimeStamp aTime) {
   UpdateLastRefreshDriverTime();
   MostRecentRefreshTimeUpdated();
 }

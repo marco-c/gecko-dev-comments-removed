@@ -220,8 +220,6 @@ class WindowRenderer : public FrameRecorder {
   void UpdatePartialPrerenderedAnimations(
       const nsTArray<uint64_t>& aJankedAnimations);
 
-  const TimeStamp& GetAnimationReadyTime() const { return mAnimationReadyTime; }
-
  protected:
   virtual ~WindowRenderer() = default;
 
@@ -231,10 +229,6 @@ class WindowRenderer : public FrameRecorder {
   
   nsRefPtrHashtable<nsUint64HashKey, dom::Animation>
       mPartialPrerenderedAnimations;
-
-  
-  
-  TimeStamp mAnimationReadyTime;
 };
 
 

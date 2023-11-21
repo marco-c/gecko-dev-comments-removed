@@ -5,7 +5,6 @@
 
 
 #include "AnimationTimeline.h"
-#include "mozilla/AnimationComparator.h"
 #include "mozilla/dom/Animation.h"
 
 namespace mozilla::dom {
@@ -38,7 +37,7 @@ AnimationTimeline::AnimationTimeline(nsIGlobalObject* aWindow,
 
 AnimationTimeline::~AnimationTimeline() { mAnimationOrder.clear(); }
 
-bool AnimationTimeline::Tick() {
+bool AnimationTimeline::Tick(TickState& aState) {
   bool needsTicks = false;
 
   nsTArray<Animation*> animationsToRemove;
@@ -65,7 +64,7 @@ bool AnimationTimeline::Tick() {
     
     
     
-    animation->Tick();
+    animation->Tick(aState);
 
     if (!animation->NeedsTicks()) {
       animationsToRemove.AppendElement(animation);

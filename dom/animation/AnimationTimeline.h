@@ -10,9 +10,7 @@
 #include "nsISupports.h"
 #include "nsWrapperCache.h"
 #include "nsCycleCollectionParticipant.h"
-#include "js/TypeDecls.h"
 #include "mozilla/AnimationUtils.h"
-#include "mozilla/Attributes.h"
 #include "nsHashKeys.h"
 #include "nsIGlobalObject.h"
 #include "nsTHashSet.h"
@@ -28,12 +26,27 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   explicit AnimationTimeline(nsIGlobalObject* aWindow,
                              RTPCallerType aRTPCallerType);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  struct TickState {
+    AutoTArray<Animation*, 8> mStartedAnimations;
+    AutoTArray<Animation*, 8> mStartedTransitions;
+    bool mStartedAnyGeometricTransition = false;
+    bool mStartedAnyGeometricAnimation = false;
+  };
+
  protected:
   virtual ~AnimationTimeline();
 
   
   
-  bool Tick();
+  bool Tick(TickState&);
 
  public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -130,7 +143,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   
   
   
-  typedef nsTHashSet<nsRefPtrHashKey<dom::Animation>> AnimationSet;
+  using AnimationSet = nsTHashSet<nsRefPtrHashKey<dom::Animation>>;
   AnimationSet mAnimations;
   LinkedList<dom::Animation> mAnimationOrder;
 

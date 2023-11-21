@@ -260,9 +260,6 @@ bool WebRenderLayerManager::EndEmptyTransaction(EndTransactionFlags aFlags) {
   mDisplayItemCache.SkipWaitingForPartialDisplayList();
 
   
-  mAnimationReadyTime = TimeStamp::Now();
-
-  
   const bool throttle = mWidget->IsMapped();
   mLatestTransactionId = mTransactionIdAllocator->GetTransactionId(throttle);
 
@@ -337,9 +334,6 @@ void WebRenderLayerManager::EndTransactionWithoutLayer(
   AUTO_PROFILER_TRACING_MARKER("Paint", "WrDisplayList", GRAPHICS);
 
   auto clearTarget = MakeScopeExit([&] { mTarget = nullptr; });
-
-  
-  mAnimationReadyTime = TimeStamp::Now();
 
   WrBridge()->BeginTransaction();
 
