@@ -166,6 +166,12 @@ function createBiddingScriptURL(params = {}) {
 }
 
 
+function createBiddingWasmHelperURL(params = {}) {
+  let origin = params.origin ? params.origin : new URL(BASE_URL).origin;
+  return `${origin}${RESOURCE_PATH}bidding-wasmlogic.wasm`;
+}
+
+
 
 
 
