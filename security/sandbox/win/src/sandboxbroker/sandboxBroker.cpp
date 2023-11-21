@@ -46,6 +46,12 @@
 #include "sandbox/win/src/security_level.h"
 #include "WinUtils.h"
 
+#define SANDBOX_SUCCEED_OR_CRASH(x)                                   \
+  do {                                                                \
+    sandbox::ResultCode result = (x);                                 \
+    MOZ_RELEASE_ASSERT(result == sandbox::SBOX_ALL_OK, #x " failed"); \
+  } while (0)
+
 namespace mozilla {
 
 constexpr wchar_t kLpacFirefoxInstallFiles[] = L"lpacFirefoxInstallFiles";
@@ -1076,92 +1082,61 @@ void SandboxBroker::SetSecurityLevelForContentProcess(int32_t aSandboxLevel,
 
 void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
   MOZ_RELEASE_ASSERT(mPolicy, "mPolicy must be set before this call.");
+  MOZ_RELEASE_ASSERT(aSandboxLevel >= 1);
 
-  sandbox::TokenLevel accessTokenLevel;
-  sandbox::IntegrityLevel initialIntegrityLevel;
-  sandbox::IntegrityLevel delayedIntegrityLevel;
+  sandbox::TokenLevel initialTokenLevel = sandbox::USER_RESTRICTED_SAME_ACCESS;
+  sandbox::TokenLevel lockdownTokenLevel =
+      (aSandboxLevel >= 2) ? sandbox::USER_LIMITED
+                           : sandbox::USER_RESTRICTED_NON_ADMIN;
 
-  
-  
-  
-  if (aSandboxLevel >= 2) {
-    accessTokenLevel = sandbox::USER_LIMITED;
-    initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
-    delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
-  } else {
-    MOZ_RELEASE_ASSERT(aSandboxLevel >= 1,
-                       "Should not be called with aSandboxLevel < 1");
-    accessTokenLevel = sandbox::USER_RESTRICTED_NON_ADMIN;
-    initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
-    delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
-  }
+  sandbox::IntegrityLevel initialIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
+  sandbox::IntegrityLevel delayedIntegrityLevel = sandbox::INTEGRITY_LEVEL_LOW;
 
-  
-  
-  
-  sandbox::ResultCode result = mPolicy->SetJobLevel(
-      sandbox::JOB_LIMITED_USER,
+  sandbox::JobLevel jobLevel = sandbox::JOB_LIMITED_USER;
+
+  uint32_t uiExceptions =
       JOB_OBJECT_UILIMIT_SYSTEMPARAMETERS | JOB_OBJECT_UILIMIT_DESKTOP |
-          JOB_OBJECT_UILIMIT_EXITWINDOWS | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "Setting job level failed, have you set memory limit when "
-                     "jobLevel == JOB_NONE?");
+      JOB_OBJECT_UILIMIT_EXITWINDOWS | JOB_OBJECT_UILIMIT_DISPLAYSETTINGS;
 
-  result = mPolicy->SetTokenLevel(sandbox::USER_RESTRICTED_SAME_ACCESS,
-                                  accessTokenLevel);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "Lockdown level cannot be USER_UNPROTECTED or USER_LAST "
-                     "if initial level was USER_RESTRICTED_SAME_ACCESS");
-
-  result = mPolicy->SetIntegrityLevel(initialIntegrityLevel);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "SetIntegrityLevel should never fail, what happened?");
-  result = mPolicy->SetDelayedIntegrityLevel(delayedIntegrityLevel);
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "SetDelayedIntegrityLevel should never fail, what happened?");
-
-  mPolicy->SetLockdownDefaultDacl();
-  mPolicy->AddRestrictingRandomSid();
-
-  sandbox::MitigationFlags mitigations =
+  sandbox::MitigationFlags initialMitigations =
       sandbox::MITIGATION_BOTTOM_UP_ASLR | sandbox::MITIGATION_HEAP_TERMINATE |
       sandbox::MITIGATION_SEHOP | sandbox::MITIGATION_DEP_NO_ATL_THUNK |
       sandbox::MITIGATION_IMAGE_LOAD_NO_REMOTE |
       sandbox::MITIGATION_IMAGE_LOAD_NO_LOW_LABEL | sandbox::MITIGATION_DEP;
 
   if (StaticPrefs::security_sandbox_gpu_shadow_stack_enabled()) {
-    mitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
+    initialMitigations |= sandbox::MITIGATION_CET_COMPAT_MODE;
   }
 
-  result = mPolicy->SetProcessMitigations(mitigations);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "Invalid flags for SetProcessMitigations.");
+  sandbox::MitigationFlags delayedMitigations =
+      sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
+      sandbox::MITIGATION_DLL_SEARCH_ORDER;
 
-  mitigations = sandbox::MITIGATION_STRICT_HANDLE_CHECKS |
-                sandbox::MITIGATION_DLL_SEARCH_ORDER;
+  SANDBOX_SUCCEED_OR_CRASH(mPolicy->SetJobLevel(jobLevel, uiExceptions));
+  SANDBOX_SUCCEED_OR_CRASH(
+      mPolicy->SetTokenLevel(initialTokenLevel, lockdownTokenLevel));
+  SANDBOX_SUCCEED_OR_CRASH(mPolicy->SetIntegrityLevel(initialIntegrityLevel));
+  SANDBOX_SUCCEED_OR_CRASH(
+      mPolicy->SetDelayedIntegrityLevel(delayedIntegrityLevel));
+  SANDBOX_SUCCEED_OR_CRASH(mPolicy->SetProcessMitigations(initialMitigations));
+  SANDBOX_SUCCEED_OR_CRASH(
+      mPolicy->SetDelayedProcessMitigations(delayedMitigations));
 
-  result = mPolicy->SetDelayedProcessMitigations(mitigations);
-  MOZ_RELEASE_ASSERT(sandbox::SBOX_ALL_OK == result,
-                     "Invalid flags for SetDelayedProcessMitigations.");
-
-  
-  
-  
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
-                            sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                            L"\\??\\pipe\\chrome.*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+  mPolicy->SetLockdownDefaultDacl();
+  mPolicy->AddRestrictingRandomSid();
 
   
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
-                            sandbox::TargetPolicy::FILES_ALLOW_ANY,
-                            L"\\??\\pipe\\gecko-crash-server-pipe.*");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+  
+  
+  SANDBOX_SUCCEED_OR_CRASH(mPolicy->AddRule(
+      sandbox::TargetPolicy::SUBSYS_FILES,
+      sandbox::TargetPolicy::FILES_ALLOW_ANY, L"\\??\\pipe\\chrome.*"));
+
+  
+  SANDBOX_SUCCEED_OR_CRASH(
+      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_FILES,
+                       sandbox::TargetPolicy::FILES_ALLOW_ANY,
+                       L"\\??\\pipe\\gecko-crash-server-pipe.*"));
 
   
   if (sProfileDir) {
@@ -1174,17 +1149,13 @@ void SandboxBroker::SetSecurityLevelForGPUProcess(int32_t aSandboxLevel) {
 
   
   
-  result =
+  SANDBOX_SUCCEED_OR_CRASH(
       mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
-  result = mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
-                            sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Section");
-  MOZ_RELEASE_ASSERT(
-      sandbox::SBOX_ALL_OK == result,
-      "With these static arguments AddRule should never fail, what happened?");
+                       sandbox::TargetPolicy::HANDLES_DUP_BROKER, L"Section"));
+
+  SANDBOX_SUCCEED_OR_CRASH(
+      mPolicy->AddRule(sandbox::TargetPolicy::SUBSYS_HANDLES,
+                       sandbox::TargetPolicy::HANDLES_DUP_ANY, L"Section"));
 }
 
 #define SANDBOX_ENSURE_SUCCESS(result, message)          \
