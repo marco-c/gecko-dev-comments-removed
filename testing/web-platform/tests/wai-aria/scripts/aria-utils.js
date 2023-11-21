@@ -138,8 +138,19 @@ const AriaUtils = {
       promise_test(async t => {
         const expectedLabel = el.getAttribute("data-expectedlabel");
         let computedLabel = await test_driver.get_computed_label(el);
+
         
-        computedLabel = computedLabel.trim()
+        
+        
+        
+        
+        
+        
+        
+        
+        const asciiWhitespace = /[\t\n\f\r\u0020]+/g;
+        computedLabel = computedLabel.replace(asciiWhitespace, '\u0020').replace(/^\u0020|\u0020$/g, '');
+
         assert_equals(computedLabel, expectedLabel, el.outerHTML);
       }, `${testName}`);
     }
