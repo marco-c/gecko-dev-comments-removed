@@ -65,6 +65,7 @@ ChromeUtils.defineESModuleGetters(this, {
   PromptUtils: "resource://gre/modules/PromptUtils.sys.mjs",
   ReaderMode: "resource://gre/modules/ReaderMode.sys.mjs",
   ResetPBMPanel: "resource:///modules/ResetPBMPanel.sys.mjs",
+  ReportBrokenSite: "resource:///modules/ReportBrokenSite.sys.mjs",
   SafeBrowsing: "resource://gre/modules/SafeBrowsing.sys.mjs",
   Sanitizer: "resource:///modules/Sanitizer.sys.mjs",
   SaveToPocket: "chrome://pocket/content/SaveToPocket.sys.mjs",
@@ -1879,6 +1880,7 @@ var gBrowserInit = {
     
     FullZoom.init();
     PanelUI.init(shouldSuppressPopupNotifications);
+    ReportBrokenSite.init(gBrowser);
 
     UpdateUrlbarSearchSplitterState();
 
