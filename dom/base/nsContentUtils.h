@@ -94,7 +94,6 @@ class nsIInterfaceRequestor;
 class nsILoadGroup;
 class nsILoadInfo;
 class nsIObserver;
-class nsIPluginTag;
 class nsIPrincipal;
 class nsIReferrerInfo;
 class nsIRequest;
@@ -3170,16 +3169,6 @@ class nsContentUtils {
 
 
   static bool ShouldBlockReservedKeys(mozilla::WidgetKeyboardEvent* aKeyEvent);
-
-  
-
-
-
-
-
-
-  static already_AddRefed<nsIPluginTag> PluginTagForType(
-      const nsCString& aMIMEType, bool aNoFakePlugin);
 
   
 

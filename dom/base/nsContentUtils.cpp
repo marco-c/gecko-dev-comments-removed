@@ -10430,22 +10430,6 @@ static bool HtmlObjectContentSupportsDocument(const nsCString& aMimeType) {
 }
 
 
-already_AddRefed<nsIPluginTag> nsContentUtils::PluginTagForType(
-    const nsCString& aMIMEType, bool aNoFakePlugin) {
-  RefPtr<nsPluginHost> pluginHost = nsPluginHost::GetInst();
-  nsCOMPtr<nsIPluginTag> tag;
-  NS_ENSURE_TRUE(pluginHost, nullptr);
-
-  
-  pluginHost->GetPluginTagForType(
-      aMIMEType,
-      aNoFakePlugin ? nsPluginHost::eExcludeFake : nsPluginHost::eExcludeNone,
-      getter_AddRefs(tag));
-
-  return tag.forget();
-}
-
-
 uint32_t nsContentUtils::HtmlObjectContentTypeForMIMEType(
     const nsCString& aMIMEType, bool aNoFakePlugin) {
   if (aMIMEType.IsEmpty()) {

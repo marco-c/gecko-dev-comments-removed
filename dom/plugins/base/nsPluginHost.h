@@ -6,31 +6,16 @@
 #ifndef nsPluginHost_h_
 #define nsPluginHost_h_
 
-#include "mozilla/StaticPtr.h"
-
-#include "nsCOMPtr.h"
-#include "nsIPluginTag.h"
+#include "nsStringFwd.h"
 #include "nsWeakReference.h"
-#include "nsTArray.h"
-#include "nsPluginTags.h"
 
 class nsPluginHost final : public nsSupportsWeakReference {
-  friend class nsFakePluginTag;
   virtual ~nsPluginHost() = default;
 
  public:
   nsPluginHost() = default;
 
-  static already_AddRefed<nsPluginHost> GetInst();
-
   NS_DECL_ISUPPORTS
-
-  
-  enum PluginFilter { eExcludeNone, eExcludeDisabled, eExcludeFake };
-
-  NS_IMETHOD GetPluginTagForType(const nsACString& aMimeType,
-                                 uint32_t aExcludeFlags,
-                                 nsIPluginTag** aResult);
 
   
   enum SpecialType {
@@ -41,25 +26,6 @@ class nsPluginHost final : public nsSupportsWeakReference {
     eSpecialType_Flash
   };
   static SpecialType GetSpecialType(const nsACString& aMIMEType);
-
- private:
-  
-  
-  
-  nsIInternalPluginTag* FindPluginForType(const nsACString& aMimeType,
-                                          bool aIncludeFake,
-                                          bool aCheckEnabled);
-
-  
-  
-  nsFakePluginTag* FindFakePluginForType(const nsACString& aMimeType,
-                                         bool aCheckEnabled);
-
-  nsTArray<RefPtr<nsFakePluginTag>> mFakePlugins;
-
-  
-  
-  static mozilla::StaticRefPtr<nsPluginHost> sInst;
 };
 
 #endif  
