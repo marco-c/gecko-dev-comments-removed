@@ -7,10 +7,14 @@
 #define mozilla_widget_WinRegistry_h__
 
 #include <windows.h>
+#include <functional>
+#include "nsCOMPtr.h"
 #include "nsString.h"
 #include "nsTArray.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/Span.h"
+
+class nsISerialEventTarget;
 
 namespace mozilla::widget::WinRegistry {
 
@@ -192,6 +196,38 @@ inline Maybe<nsString> GetString(HKEY aRootKey, const nsString& aKeyName,
   }
   return k.GetValueAsString(aValueName, aFlags);
 }
+
+class KeyWatcher final {
+ public:
+  using Callback = std::function<void()>;
+
+  KeyWatcher(const KeyWatcher&) = delete;
+
+  const Key& GetKey() const { return mKey; }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  KeyWatcher(Key&& aKey, nsISerialEventTarget* aTargetSerialEventTarget,
+             Callback&& aCallback);
+
+  ~KeyWatcher();
+
+ private:
+  bool Register();
+
+  Key mKey;
+  nsCOMPtr<nsISerialEventTarget> mEventTarget;
+  Callback mCallback;
+  HANDLE mEvent = nullptr;
+  HANDLE mWaitObject = nullptr;
+};
 
 }  
 
