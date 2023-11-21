@@ -442,7 +442,11 @@ pref("browser.urlbar.suggest.recentsearches",       true);
 pref("browser.urlbar.weather.featureGate", false);
 
 
+#ifdef NIGHTLY_BUILD
+pref("browser.urlbar.clipboard.featureGate", true);
+#else
 pref("browser.urlbar.clipboard.featureGate", false);
+#endif
 
 
 

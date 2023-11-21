@@ -725,6 +725,10 @@ Tester.prototype = {
 
       Services.obs.notifyObservers(null, "test-complete");
 
+      
+      
+      window.SpecialPowers.clipboardCopyString("");
+
       if (
         this.currentTest.passCount === 0 &&
         this.currentTest.failCount === 0 &&
