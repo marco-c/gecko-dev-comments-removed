@@ -101,6 +101,8 @@ void CanvasContext::Configure(const dom::GPUCanvasConfiguration& aConfig) {
   Unconfigure();
 
   
+
+  
   switch (aConfig.mFormat) {
     case dom::GPUTextureFormat::Rgba8unorm:
     case dom::GPUTextureFormat::Rgba8unorm_srgb:
