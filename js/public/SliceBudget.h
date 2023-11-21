@@ -50,14 +50,6 @@ class JS_PUBLIC_API SliceBudget {
  public:
   using InterruptRequestFlag = mozilla::Atomic<bool, mozilla::Relaxed>;
 
-  
-  
-  bool idle = false;
-
-  
-  
-  bool extended = false;
-
  private:
   static constexpr int64_t UnlimitedCounter = INT64_MAX;
 
@@ -67,25 +59,34 @@ class JS_PUBLIC_API SliceBudget {
   static constexpr int64_t StepsPerExpensiveCheck = 1000;
 
   
-
-  mozilla::Variant<TimeBudget, WorkBudget, UnlimitedBudget> budget;
+  
+  int64_t counter = StepsPerExpensiveCheck;
 
   
   
   InterruptRequestFlag* interruptRequested = nullptr;
 
   
-  
-  int64_t counter = StepsPerExpensiveCheck;
+  mozilla::Variant<TimeBudget, WorkBudget, UnlimitedBudget> budget;
 
   
   
   bool interrupted = false;
 
+ public:
+  
+  
+  bool idle = false;
+
+  
+  
+  bool extended = false;
+
+ private:
   explicit SliceBudget(InterruptRequestFlag* irqPtr)
-      : budget(UnlimitedBudget()),
+      : counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter),
         interruptRequested(irqPtr),
-        counter(irqPtr ? StepsPerExpensiveCheck : UnlimitedCounter) {}
+        budget(UnlimitedBudget()) {}
 
   bool checkOverBudget();
 
