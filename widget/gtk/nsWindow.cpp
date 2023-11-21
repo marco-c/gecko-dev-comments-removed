@@ -3180,20 +3180,20 @@ void nsWindow::SetFocus(Raise aRaise, mozilla::dom::CallerType aCallerType) {
 
 LayoutDeviceIntRect nsWindow::GetScreenBounds() {
   const LayoutDeviceIntPoint origin = [&] {
-    
-    
-    
-    
-    
-    
-    
-    if (mContainer && mWindowType != WindowType::Popup) {
-      gint x, y;
-      gdk_window_get_root_origin(gtk_widget_get_window(GTK_WIDGET(mContainer)),
-                                 &x, &y);
-      return GdkPointToDevicePixels({x, y});
+    if (mIsDestroyed || !mGdkWindow) {
+      return LayoutDeviceIntPoint(0, 0);
     }
-    return WidgetToScreenOffset();
+    gint x, y;
+    gdk_window_get_root_origin(mGdkWindow, &x, &y);
+
+    
+    
+    
+    if (gtk_check_version(3, 24, 35) != nullptr && GdkIsX11Display() &&
+        gdk_window_get_window_type(mGdkWindow) == GDK_WINDOW_TEMP) {
+      return LayoutDeviceIntPoint(x, y);
+    }
+    return GdkPointToDevicePixels({x, y});
   }();
 
   
