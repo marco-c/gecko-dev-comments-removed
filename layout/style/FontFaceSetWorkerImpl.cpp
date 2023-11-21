@@ -5,7 +5,7 @@
 
 
 #include "FontFaceSetWorkerImpl.h"
-#include "FontPreloader.h"
+#include "mozilla/FontLoaderUtils.h"
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
@@ -255,7 +255,7 @@ nsresult FontFaceSetWorkerImpl::StartLoad(gfxUserFontEntry* aUserFontEntry,
 
   nsCOMPtr<nsILoadGroup> loadGroup(mWorkerRef->Private()->GetLoadGroup());
   nsCOMPtr<nsIChannel> channel;
-  rv = FontPreloader::BuildChannel(
+  rv = FontLoaderUtils::BuildChannel(
       getter_AddRefs(channel), src.mURI->get(), CORS_ANONYMOUS,
       dom::ReferrerPolicy::_empty , aUserFontEntry, &src,
       mWorkerRef->Private(), loadGroup, nullptr, false);
