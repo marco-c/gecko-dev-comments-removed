@@ -83,14 +83,11 @@ void nsPagePrintTimer::StopWatchDogTimer() {
 NS_IMETHODIMP
 nsPagePrintTimer::Run() {
   bool initNewTimer = true;
-  
-  
-  bool inRange;
   bool donePrinting;
 
   
   
-  donePrinting = !mPrintJob || mPrintJob->PrintSheet(mPrintObj, inRange);
+  donePrinting = !mPrintJob || mPrintJob->PrintSheet(mPrintObj);
   if (donePrinting) {
     if (mWaitingForRemotePrint ||
         
@@ -107,7 +104,7 @@ nsPagePrintTimer::Run() {
   Stop();
   if (initNewTimer) {
     ++mFiringCount;
-    nsresult result = StartTimer(inRange);
+    nsresult result = StartTimer( true);
     if (NS_FAILED(result)) {
       mDone = true;  
       if (mPrintJob) {

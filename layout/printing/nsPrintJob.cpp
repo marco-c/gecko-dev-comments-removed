@@ -1788,17 +1788,10 @@ bool nsPrintJob::PrePrintSheet() {
   return done;
 }
 
-bool nsPrintJob::PrintSheet(nsPrintObject* aPO, bool& aInRange) {
+bool nsPrintJob::PrintSheet(nsPrintObject* aPO) {
   NS_ASSERTION(aPO, "aPO is null!");
   NS_ASSERTION(mPageSeqFrame.IsAlive(), "mPageSeqFrame is not alive!");
   NS_ASSERTION(mPrt, "mPrt is null!");
-
-  
-  
-  
-  
-  
-  aInRange = true;
 
   
   
