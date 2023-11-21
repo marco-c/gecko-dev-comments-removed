@@ -738,6 +738,7 @@ class Talos(
         
         extract_dirs = [
             "tools/wptserve/*",
+            "tools/wpt_third_party/h2/*",
             "tools/wpt_third_party/pywebsocket3/*",
         ]
         return super(Talos, self).download_and_extract(
