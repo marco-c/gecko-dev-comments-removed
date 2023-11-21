@@ -5019,7 +5019,7 @@ void nsGridContainerFrame::Grid::PlaceGridItems(
       
       
       StyleGridLine lineStartAndEnd;
-      lineStartAndEnd.ident = areaInfo.name;
+      lineStartAndEnd.ident._0 = areaInfo.name;
 
       LineRange columnLines =
           ResolveLineRange(lineStartAndEnd, lineStartAndEnd, colLineNameMap,
