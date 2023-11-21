@@ -268,7 +268,7 @@ nsSize PrintedSheetFrame::ComputeSheetSize(const nsPresContext* aPresContext) {
   }
 
   if (!StaticPrefs::layout_css_page_orientation_enabled()) {
-    if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+    if (mPD->mPrintSettings->HasOrthogonalPagesPerSheet()) {
       std::swap(sheetSize.width, sheetSize.height);
     }
     return sheetSize;
@@ -314,7 +314,7 @@ nsSize PrintedSheetFrame::ComputeSheetSize(const nsPresContext* aPresContext) {
   
   
   if ((sheetIsPortrait != pageIsPortrait) !=
-      mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+      mPD->mPrintSettings->HasOrthogonalPagesPerSheet()) {
     std::swap(sheetSize.width, sheetSize.height);
   }
 
@@ -337,7 +337,7 @@ void PrintedSheetFrame::ComputePagesPerSheetGridMetrics(
 
   
   
-  if (mPD->mPrintSettings->HasOrthogonalSheetsAndPages()) {
+  if (mPD->mPrintSettings->HasOrthogonalPagesPerSheet()) {
     
     
     

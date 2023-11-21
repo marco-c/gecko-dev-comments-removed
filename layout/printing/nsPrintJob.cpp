@@ -1307,7 +1307,7 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
   
   
   nsSize pageSize = adjSize;
-  if (mPrintSettings->HasOrthogonalSheetsAndPages()) {
+  if (mPrintSettings->HasOrthogonalPagesPerSheet()) {
     std::swap(pageSize.width, pageSize.height);
   }
   

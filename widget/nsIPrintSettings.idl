@@ -202,7 +202,8 @@ interface nsIPrintSettings : nsISupports
 
 
 
-  [noscript, notxpcom, nostdcall] bool HasOrthogonalSheetsAndPages();
+
+  [noscript, notxpcom, nostdcall] bool HasOrthogonalPagesPerSheet();
 
   
 
