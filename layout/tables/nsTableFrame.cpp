@@ -6169,6 +6169,13 @@ void BCPaintBorderIterator::SetNewData(int32_t aY, int32_t aX) {
     mCellData = nullptr;
     mBCData = &mTableCellMap->mBCInfo->mBEndBorders.ElementAt(aX);
   } else {
+    
+    
+    
+    
+    if (MOZ_UNLIKELY(!mCellMap)) {
+      ABORT0();
+    }
     if (uint32_t(mRowIndex - mFifRgFirstRowIndex) < mCellMap->mRows.Length()) {
       mBCData = nullptr;
       mCellData = (BCCellData*)mCellMap->mRows[mRowIndex - mFifRgFirstRowIndex]
