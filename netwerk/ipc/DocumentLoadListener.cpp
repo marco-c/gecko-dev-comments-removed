@@ -453,9 +453,25 @@ void DocumentLoadListener::AddURIVisit(nsIChannel* aChannel,
   nsCOMPtr<nsIWidget> widget =
       browsingContext->GetParentProcessWidgetContaining();
 
+  nsCOMPtr<nsILoadInfo> loadInfo = aChannel->LoadInfo();
+
+  
+  
+  
+  
+  
+  
+  bool wasUpgraded =
+      uri->SchemeIs("http") &&
+      (loadInfo->GetHstsStatus() ||
+       (loadInfo->GetHttpsOnlyStatus() &
+        (nsILoadInfo::HTTPS_ONLY_UPGRADED_HTTPS_FIRST |
+         nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_NOT_REGISTERED |
+         nsILoadInfo::HTTPS_ONLY_UPGRADED_LISTENER_REGISTERED)));
+
   nsDocShell::InternalAddURIVisit(uri, previousURI, previousFlags,
                                   responseStatus, browsingContext, widget,
-                                  mLoadStateLoadType);
+                                  mLoadStateLoadType, wasUpgraded);
 }
 
 CanonicalBrowsingContext* DocumentLoadListener::GetLoadingBrowsingContext()
