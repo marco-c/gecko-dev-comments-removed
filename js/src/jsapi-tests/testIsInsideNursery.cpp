@@ -14,6 +14,11 @@ BEGIN_TEST(testIsInsideNursery) {
   CHECK(!cx->nursery().isInside(cx));
   CHECK(!cx->nursery().isInside((void*)nullptr));
 
+  
+  if (!cx->nursery().isEnabled()) {
+    return true;
+  }
+
   JS_GC(cx);
 
   JS::RootedObject object(cx, JS_NewPlainObject(cx));
