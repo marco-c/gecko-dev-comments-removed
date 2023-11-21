@@ -40,7 +40,9 @@ const expected = [
   "has fields.calendar.yearMonthFromFields",
   "has fields.calendar.yearOfWeek",
   
+  "get fields.calendar.dateFromFields",
   "get fields.calendar.fields",
+  
   "call fields.calendar.fields",
   
   "get fields.day",
@@ -76,7 +78,6 @@ const expected = [
   
   "get options.overflow.toString",
   "call options.overflow.toString",
-  "get fields.calendar.dateFromFields",
   "call fields.calendar.dateFromFields",
 ];
 const actual = [];

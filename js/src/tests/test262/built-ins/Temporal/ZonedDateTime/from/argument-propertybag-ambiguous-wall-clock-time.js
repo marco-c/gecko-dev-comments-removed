@@ -44,14 +44,15 @@ const expected = [
   "has calendar.yearMonthFromFields",
   "has calendar.yearOfWeek",
   
+  "get calendar.dateFromFields",
   "get calendar.fields",
+  
   "call calendar.fields",
   
   "has timeZone.getOffsetNanosecondsFor",
   "has timeZone.getPossibleInstantsFor",
   "has timeZone.id",
   
-  "get calendar.dateFromFields",
   "call calendar.dateFromFields",
 ];
 
@@ -69,12 +70,12 @@ Temporal.ZonedDateTime.from(
 assert.compareArray(actual, expected.concat([
   
   "get timeZone.getPossibleInstantsFor",
+  
   "call timeZone.getPossibleInstantsFor",
   
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
-  "get timeZone.getPossibleInstantsFor",
   "call timeZone.getPossibleInstantsFor",
 ]), "order of operations converting property bag at skipped wall-clock time with offset: ignore");
 actual.splice(0); 
@@ -86,12 +87,12 @@ Temporal.ZonedDateTime.from(
 assert.compareArray(actual, expected.concat([
   
   "get timeZone.getPossibleInstantsFor",
+  
   "call timeZone.getPossibleInstantsFor",
   
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
-  "get timeZone.getPossibleInstantsFor",
   "call timeZone.getPossibleInstantsFor",
 ]), "order of operations converting property bag at skipped wall-clock time with offset: prefer");
 actual.splice(0); 
@@ -110,6 +111,7 @@ Temporal.ZonedDateTime.from(
 assert.compareArray(actual, expected.concat([
   
   "get timeZone.getPossibleInstantsFor",
+  
   "call timeZone.getPossibleInstantsFor",
 ]), "order of operations converting property bag at repeated wall-clock time with offset: ignore");
 actual.splice(0); 
@@ -121,6 +123,7 @@ Temporal.ZonedDateTime.from(
 assert.compareArray(actual, expected.concat([
   
   "get timeZone.getPossibleInstantsFor",
+  
   "call timeZone.getPossibleInstantsFor",
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
@@ -135,6 +138,7 @@ Temporal.ZonedDateTime.from(
 assert.compareArray(actual, expected.concat([
   
   "get timeZone.getPossibleInstantsFor",
+  
   "call timeZone.getPossibleInstantsFor",
   "get timeZone.getOffsetNanosecondsFor",
   "call timeZone.getOffsetNanosecondsFor",
