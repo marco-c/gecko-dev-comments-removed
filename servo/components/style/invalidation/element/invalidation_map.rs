@@ -1118,7 +1118,8 @@ impl<'a> SelectorVisitor for RelativeSelectorDependencyCollector<'a> {
         &mut self,
         _list: &[selectors::parser::RelativeSelector<Self::Impl>],
     ) -> bool {
-        unreachable!("Nested relative selector?");
+        
+        true
     }
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
@@ -1343,7 +1344,8 @@ impl<'a, 'b> SelectorVisitor for RelativeSelectorInnerDependencyCollector<'a, 'b
         &mut self,
         _list: &[selectors::parser::RelativeSelector<Self::Impl>],
     ) -> bool {
-        unreachable!("Nested relative selector?");
+        
+        true
     }
 
     fn visit_simple_selector(&mut self, s: &Component<SelectorImpl>) -> bool {
