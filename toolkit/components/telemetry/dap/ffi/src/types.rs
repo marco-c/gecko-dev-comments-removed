@@ -17,7 +17,7 @@ use prio::codec::{
 use std::io::{Cursor, Read};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rand::Rng;
+use rand::{Rng, RngCore};
 
 
 
@@ -124,6 +124,7 @@ impl ExtensionType {
 
 
 
+#[derive(Debug)]
 pub struct PlaintextInputShare {
     pub extensions: Vec<Extension>,
     pub payload: Vec<u8>,
@@ -166,7 +167,7 @@ impl Encode for HpkeConfigId {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct HpkeConfig {
     pub id: HpkeConfigId,
     pub kem_id: u16,
@@ -297,23 +298,31 @@ impl Encode for ReportMetadata {
 
 
 
+
 #[derive(Debug, PartialEq)]
 pub struct Report {
     pub metadata: ReportMetadata,
     pub public_share: Vec<u8>,
-    pub encrypted_input_shares: Vec<HpkeCiphertext>,
+    pub leader_encrypted_input_share: HpkeCiphertext,
+    pub helper_encrypted_input_share: HpkeCiphertext,
 }
+
 
 impl Report {
     
     pub fn new_dummy() -> Self {
+        let mut enc = [0u8; 32];
+        rand::thread_rng().fill_bytes(&mut enc);
+        let mut payload = [0u8; 200];
+        rand::thread_rng().fill_bytes(&mut payload);
         Report {
             metadata: ReportMetadata {
                 report_id: ReportID::generate(),
                 time: Time::generate(1),
             },
             public_share: vec![],
-            encrypted_input_shares: vec![],
+            leader_encrypted_input_share: HpkeCiphertext { config_id: HpkeConfigId(5), enc: vec![1, 2, 3, 4, 5], payload: vec![6, 7, 8, 9, 10] },
+            helper_encrypted_input_share: HpkeCiphertext { config_id: HpkeConfigId(100), enc: enc.into(), payload: payload.into() },
         }
     }
 }
@@ -322,14 +331,16 @@ impl Decode for Report {
     fn decode(bytes: &mut Cursor<&[u8]>) -> Result<Self, CodecError> {
         let metadata = ReportMetadata::decode(bytes)?;
         let public_share: Vec<u8> = decode_u32_items(&(), bytes)?;
-        let encrypted_input_shares: Vec<HpkeCiphertext> = decode_u32_items(&(), bytes)?;
+        let leader_encrypted_input_share: HpkeCiphertext = HpkeCiphertext::decode(bytes)?;
+        let helper_encrypted_input_share: HpkeCiphertext = HpkeCiphertext::decode(bytes)?;
 
         let remaining_bytes = bytes.get_ref().len() - (bytes.position() as usize);
         if remaining_bytes == 0 {
             Ok(Report {
                 metadata,
                 public_share,
-                encrypted_input_shares,
+                leader_encrypted_input_share,
+                helper_encrypted_input_share,
             })
         } else {
             Err(CodecError::BytesLeftOver(remaining_bytes))
@@ -341,6 +352,7 @@ impl Encode for Report {
     fn encode(&self, bytes: &mut Vec<u8>) {
         self.metadata.encode(bytes);
         encode_u32_items(bytes, &(), &self.public_share);
-        encode_u32_items(bytes, &(), &self.encrypted_input_shares);
+        self.leader_encrypted_input_share.encode(bytes);
+        self.helper_encrypted_input_share.encode(bytes);
     }
 }
