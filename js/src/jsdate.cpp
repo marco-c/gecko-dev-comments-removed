@@ -1118,15 +1118,6 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
                                      int* monOut, int* mdayOut) {
   size_t i = *indexOut;
 
-  if (*monOut != -1) {
-    
-    
-    if (i >= length || s[i] != '-') {
-      return false;
-    }
-    ++i;
-  }
-
   size_t pre = i;
   size_t mday;
   if (!ParseDigitsNOrLess(6, &mday, s, &i, length)) {
@@ -1355,7 +1346,8 @@ constexpr size_t MinKeywordLength(const CharsAndAction (&keywords)[N]) {
 
 template <typename CharT>
 static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
-                      size_t length, ClippedTime* result) {
+                      size_t length, ClippedTime* result,
+                      bool* countLateWeekday) {
   if (length == 0) {
     return false;
   }
@@ -1403,11 +1395,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         break;
       }
     }
-    if (seenMonthName) {
-      
-      
-      break;
-    }
   }
 
   if (index >= length) {
@@ -1430,6 +1417,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
   bool negativeYear = false;
   
   bool seenGmtAbbr = false;
+  
+  bool seenLateWeekday = false;
 
   
   
@@ -1676,6 +1665,7 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
         
         
         if (action == 0) {
+          seenLateWeekday = true;
           break;
         }
 
@@ -1845,16 +1835,38 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
     date += tzOffset * msPerMinute;
   }
 
+  
+  
+  if (seenLateWeekday) {
+    *countLateWeekday = true;
+  }
+
   *result = TimeClip(date);
   return true;
 }
 
 static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, JSLinearString* s,
-                      ClippedTime* result) {
-  AutoCheckCannotGC nogc;
-  return s->hasLatin1Chars()
-             ? ParseDate(forceUTC, s->latin1Chars(nogc), s->length(), result)
-             : ParseDate(forceUTC, s->twoByteChars(nogc), s->length(), result);
+                      ClippedTime* result, JSContext* cx) {
+  bool countLateWeekday = false;
+  bool success;
+
+  {
+    AutoCheckCannotGC nogc;
+    success = s->hasLatin1Chars()
+                  ? ParseDate(forceUTC, s->latin1Chars(nogc), s->length(),
+                              result, &countLateWeekday)
+                  : ParseDate(forceUTC, s->twoByteChars(nogc), s->length(),
+                              result, &countLateWeekday);
+  }
+
+  
+  
+  
+  if (countLateWeekday) {
+    cx->runtime()->setUseCounter(cx->global(), JSUseCounter::LATE_WEEKDAY);
+  }
+
+  return success;
 }
 
 static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
@@ -1876,7 +1888,7 @@ static bool date_parse(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   ClippedTime result;
-  if (!ParseDate(ForceUTC(cx->realm()), linearStr, &result)) {
+  if (!ParseDate(ForceUTC(cx->realm()), linearStr, &result, cx)) {
     args.rval().setNaN();
     return true;
   }
@@ -3704,7 +3716,7 @@ static bool DateOneArgument(JSContext* cx, const CallArgs& args) {
         return false;
       }
 
-      if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t)) {
+      if (!ParseDate(ForceUTC(cx->realm()), linearStr, &t, cx)) {
         t = ClippedTime::invalid();
       }
     } else {
