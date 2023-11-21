@@ -75,14 +75,18 @@ MarkupContainer.prototype = {
     this.elt.container = this;
 
     this._onMouseDown = this._onMouseDown.bind(this);
+    this._onClick = this._onClick.bind(this);
     this._onToggle = this._onToggle.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
+    this._eventListenersAbortController = new this.win.AbortController();
 
     
-    this.elt.addEventListener("mousedown", this._onMouseDown);
-    this.elt.addEventListener("dblclick", this._onToggle);
+    const eventConfig = { signal: this._eventListenersAbortController.signal };
+    this.elt.addEventListener("mousedown", this._onMouseDown, eventConfig);
+    this.elt.addEventListener("click", this._onClick, eventConfig);
+    this.elt.addEventListener("dblclick", this._onToggle, eventConfig);
     if (this.expander) {
-      this.expander.addEventListener("click", this._onToggle);
+      this.expander.addEventListener("click", this._onToggle, eventConfig);
     }
 
     
@@ -578,11 +582,7 @@ MarkupContainer.prototype = {
 
     
     if (isMiddleClick || isMetaClick) {
-      const link = target.dataset.link;
-      const type = target.dataset.type;
-      
-      this.canFocus = false;
-      this.markup.followAttributeLink(type, link);
+      this._openAttributeLink(target.dataset.type, target.dataset.link);
       return;
     }
 
@@ -592,6 +592,40 @@ MarkupContainer.prototype = {
       this._dragStartY = event.pageY;
       this.markup._draggedContainer = this;
     }
+  },
+
+  _onClick(event) {
+    const { target } = event;
+    if (!target.nodeName === "button") {
+      return;
+    }
+
+    
+    
+    const closestLinkEl = target.closest("[data-link]");
+    if (!closestLinkEl) {
+      return;
+    }
+
+    this._openAttributeLink(
+      closestLinkEl.dataset.type,
+      closestLinkEl.dataset.link
+    );
+    event.stopPropagation();
+  },
+
+  
+
+
+
+
+
+
+
+  _openAttributeLink(type, link) {
+    
+    this.canFocus = false;
+    this.markup.followAttributeLink(type, link);
   },
 
   
@@ -834,8 +868,9 @@ MarkupContainer.prototype = {
 
   destroy() {
     
-    this.elt.removeEventListener("mousedown", this._onMouseDown);
-    this.elt.removeEventListener("dblclick", this._onToggle);
+    if (this._eventListenersAbortController) {
+      this._eventListenersAbortController.abort();
+    }
     this.tagLine.removeEventListener("keydown", this._onKeyDown, true);
 
     if (this.markup._draggedContainer === this) {
@@ -844,10 +879,7 @@ MarkupContainer.prototype = {
 
     this.win = null;
     this.htmlElt = null;
-
-    if (this.expander) {
-      this.expander.removeEventListener("click", this._onToggle);
-    }
+    this._eventListenersAbortController = null;
 
     
     let firstChild = this.children.firstChild;
