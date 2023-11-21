@@ -335,26 +335,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1697324",
-    platform: "android",
-    domain: "mobile2.bmo.com",
-    bug: "1697324",
-    config: {
-      matches: ["*://mobile2.bmo.com/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " Chrome";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-
 
 
     id: "bug1646791",
@@ -481,25 +461,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1722954",
-    platform: "android",
-    domain: "granbluefantasy.jp",
-    bug: "1722954",
-    config: {
-      matches: ["*://*.granbluefantasy.jp/*", "*://*.gbf.game.mbga.jp/*"],
-      uaTransformer: originalUA => {
-        return originalUA + " iPhone OS 12_0 like Mac OS X";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
     id: "bug1738317",
     platform: "android",
     domain: "vmos.cn",
@@ -607,25 +568,6 @@ const AVAILABLE_UA_OVERRIDES = [
       matches: ["*://serieson.naver.com/*"],
       uaTransformer: originalUA => {
         return "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.99 Safari/537.36";
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1756872",
-    platform: "android",
-    domain: "www.dolcegabbana.com",
-    bug: "1756872",
-    config: {
-      matches: ["*://www.dolcegabbana.com/*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
@@ -1270,27 +1212,6 @@ const AVAILABLE_UA_OVERRIDES = [
 
 
 
-    id: "bug1843234",
-    platform: "desktop",
-    domain: "fdj.fr",
-    bug: "1843234",
-    config: {
-      matches: ["*://*.fdj.fr/*"],
-      uaTransformer: originalUA => {
-        if (originalUA.includes("Linux")) {
-          return UAHelpers.getWindowsUA(originalUA);
-        }
-        return originalUA;
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
 
     id: "bug1849018",
     platform: "all",
@@ -1298,25 +1219,6 @@ const AVAILABLE_UA_OVERRIDES = [
     bug: "1849018",
     config: {
       matches: ["*://*.carefirst.com/myaccount*"],
-      uaTransformer: originalUA => {
-        return UAHelpers.getDeviceAppropriateChromeUA();
-      },
-    },
-  },
-  {
-    
-
-
-
-
-
-
-    id: "bug1849029",
-    platform: "android",
-    domain: "publi24.ro",
-    bug: "1849029",
-    config: {
-      matches: ["*://*.publi24.ro/*"],
       uaTransformer: originalUA => {
         return UAHelpers.getDeviceAppropriateChromeUA();
       },
@@ -1393,6 +1295,122 @@ const AVAILABLE_UA_OVERRIDES = [
       uaTransformer: originalUA => {
         const cappedRv = UAHelpers.capRvTo109(originalUA);
         return UAHelpers.capVersionToNumber(cappedRv);
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+
+    id: "bug1864903",
+    platform: "all",
+    domain: "Publitas catalogs",
+    bug: "1864903",
+    config: {
+      matches: [
+        "*://aktionen.metro.at/*",
+        "*://cataloagele.metro.ro/*",
+        "*://catalogs.metro-cc.ru/*",
+        "*://catalogues.metro.bg/*",
+        "*://catalogues.metro-cc.hr/*",
+        "*://catalogues.metro.ua/*",
+        "*://folders.makro.nl/*",
+        "*://katalog.metro.rs/*",
+        "*://katalogi.metro-kz.com/*",
+        "*://kataloglar.metro-tr.com/*",
+        "*://katalogus.metro.hu/*",
+        "*://letaky.makro.cz/*",
+        "*://letaky.metro.sk/*",
+        "*://ofertas.makro.es/*",
+        "*://oferte.metro.md/*",
+        "*://promotions-deals.metro.pk/*",
+        "*://promocoes.makro.pt/*",
+        "*://prospekt.aldi-sued.de/*",
+        "*://prospekte.metro.de/*",
+        "*://thematiques.metro.fr/*",
+        "*://volantino.metro.it/*",
+        "*://view.publitas.com/*",
+      ],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1864999",
+    platform: "android",
+    domain: "autotrader.ca",
+    bug: "1864999",
+    config: {
+      matches: ["*://*.autotrader.ca/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+
+    id: "bug1865000",
+    platform: "all",
+    domain: "bmo.com",
+    bug: "1865000",
+    config: {
+      matches: ["*://*.bmo.com/main/personal/*/getting-started/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1865004",
+    platform: "android",
+    domain: "digimart.net",
+    bug: "1865004",
+    config: {
+      matches: ["*://*.digimart.net/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
+      },
+    },
+  },
+  {
+    
+
+
+
+
+
+    id: "bug1865007",
+    platform: "android",
+    domain: "portal.circle.ms",
+    bug: "1865007",
+    config: {
+      matches: ["*://*.circle.ms/*"],
+      uaTransformer: originalUA => {
+        return UAHelpers.getDeviceAppropriateChromeUA();
       },
     },
   },
