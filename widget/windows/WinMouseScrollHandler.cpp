@@ -1407,7 +1407,7 @@ bool MouseScrollHandler::Device::TrackPoint::IsDriverInstalled() {
     MOZ_LOG(gMouseScrollLog, LogLevel::Info,
             ("MouseScroll::Device::TrackPoint::IsDriverInstalled(): "
              "Alps's TrackPoint driver is found"));
-    
+    return true;
   }
 
   return false;
