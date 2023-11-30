@@ -15,21 +15,43 @@ BEGIN_TEST(testIsInsideNursery) {
   CHECK(!cx->nursery().isInside((void*)nullptr));
 
   
-  if (!cx->nursery().isEnabled()) {
+  
+  if (!cx->zone()->allocNurseryObjects() ||
+      !cx->zone()->allocNurseryStrings()) {
     return true;
   }
 
   JS_GC(cx);
 
-  JS::RootedObject object(cx, JS_NewPlainObject(cx));
+  JS::Rooted<JSObject*> object(cx, JS_NewPlainObject(cx));
+  const char oolstr[] =
+      "my hands are floppy dark red pieces of liver, large "
+      "enough to exceed the space of an inline string";
+  JS::Rooted<JSString*> string(cx, JS_NewStringCopyZ(cx, oolstr));
 
   
   CHECK(js::gc::IsInsideNursery(object));
+  
+  CHECK(js::gc::IsInsideNursery(string));
+  
+  {
+    JS::AutoCheckCannotGC nogc;
+    const JS::Latin1Char* strdata =
+        string->asLinear().nonInlineLatin1Chars(nogc);
+    CHECK(cx->nursery().isInside(strdata));
+  }
 
   JS_GC(cx);
 
   
   CHECK(!js::gc::IsInsideNursery(object));
+  CHECK(!js::gc::IsInsideNursery(string));
+  {
+    JS::AutoCheckCannotGC nogc;
+    const JS::Latin1Char* strdata =
+        string->asLinear().nonInlineLatin1Chars(nogc);
+    CHECK(!cx->nursery().isInside(strdata));
+  }
 
   return true;
 }

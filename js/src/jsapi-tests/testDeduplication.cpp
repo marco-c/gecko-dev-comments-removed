@@ -48,7 +48,7 @@ BEGIN_TEST(testDeduplication_ASSC) {
   JS::RootedString dep2(cx);
   JS::RootedString depdep2(cx);
 
-  if (!cx->nursery().canAllocateStrings()) {
+  if (!cx->zone()->allocNurseryStrings()) {
     
     
     return true;
@@ -66,23 +66,23 @@ BEGIN_TEST(testDeduplication_ASSC) {
     
     
     str = JS_NewStringCopyZ(cx, text);
-    CHECK(str);
+    CHECK(str && !str->isTenured());
 
     dep = JS_NewDependentString(cx, str, 10, 100);
-    CHECK(dep);
+    CHECK(dep && !dep->isTenured());
 
     depdep = JS_NewDependentString(cx, dep, 10, 80);
-    CHECK(depdep);
+    CHECK(depdep && !depdep->isTenured());
 
     
     str2 = JS_NewStringCopyZ(cx, text);
-    CHECK(str2);
+    CHECK(str2 && !str2->isTenured());
 
     dep2 = JS_NewDependentString(cx, str2, 10, 100);
-    CHECK(dep2);
+    CHECK(dep2 && !dep2->isTenured());
 
     depdep2 = JS_NewDependentString(cx, dep2, 10, 80);
-    CHECK(depdep2);
+    CHECK(depdep2 && !depdep2->isTenured());
   }
 
   
@@ -115,8 +115,11 @@ BEGIN_TEST(testDeduplication_ASSC) {
   CHECK(!SameChars(cx, depdep, original, 20));
 
   
-  CHECK(SameChars(cx, depdep2, str2, 20));
-  CHECK(SameChars(cx, depdep2, original, 20));
+  
+  
+  CHECK(SameChars(cx, depdep2, str2, 20) || SameChars(cx, depdep2, str, 20));
+  CHECK(SameChars(cx, depdep2, original, 20) ||
+        SameChars(cx, depdep2, str, 20));
 
   return true;
 }

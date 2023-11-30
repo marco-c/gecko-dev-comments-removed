@@ -199,6 +199,53 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   MOZ_ALWAYS_INLINE
   uint32_t flags() const { return headerFlagsField(); }
 
+  
+  
+  
+  
+  
+  
+  
+  template <typename CharT>
+  class OwnedChars {
+    mozilla::Span<CharT> chars_;
+    bool needsFree_;
+    bool isMalloced_;
+
+   public:
+    
+    
+    
+    
+    
+    
+    
+    OwnedChars(CharT* chars, size_t length, bool isMalloced, bool needsFree);
+    OwnedChars(js::UniquePtr<CharT[], JS::FreePolicy>&& chars, size_t length,
+               bool isMalloced);
+    OwnedChars(OwnedChars&&);
+    OwnedChars(const OwnedChars&) = delete;
+    ~OwnedChars() { reset(); }
+
+    explicit operator bool() const { return !chars_.empty(); }
+    mozilla::Span<CharT> span() const { return chars_; }
+    CharT* data() const { return chars_.data(); }
+    size_t length() const { return chars_.Length(); }
+    size_t size() const { return length() * sizeof(CharT); }
+    bool isMalloced() const { return isMalloced_; }
+
+    
+    inline CharT* release();
+    
+    inline void reset();
+    
+    inline void ensureNonNursery();
+
+    
+    
+    void trace(JSTracer* trc) { ensureNonNursery(); }
+  };
+
  protected:
   
   struct Data {
@@ -710,6 +757,38 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   JSString() = default;
 };
 
+namespace js {
+
+template <typename Wrapper, typename CharT>
+class WrappedPtrOperations<JSString::OwnedChars<CharT>, Wrapper> {
+  const JSString::OwnedChars<CharT>& get() const {
+    return static_cast<const Wrapper*>(this)->get();
+  }
+
+ public:
+  explicit operator bool() const { return !!get(); }
+  mozilla::Span<CharT> span() const { return get().span(); }
+  CharT* data() const { return get().data(); }
+  size_t length() const { return get().length(); }
+  size_t size() const { return get().size(); }
+  bool isMalloced() const { return get().isMalloced(); }
+};
+
+template <typename Wrapper, typename CharT>
+class MutableWrappedPtrOperations<JSString::OwnedChars<CharT>, Wrapper>
+    : public WrappedPtrOperations<JSString::OwnedChars<CharT>, Wrapper> {
+  JSString::OwnedChars<CharT>& get() {
+    return static_cast<Wrapper*>(this)->get();
+  }
+
+ public:
+  CharT* release() { return get().release(); }
+  void reset() { get().reset(); }
+  void ensureNonNursery() { get().ensureNonNursery(); }
+};
+
+} 
+
 class JSRope : public JSString {
   friend class js::gc::CellAllocator;
 
@@ -814,6 +893,8 @@ class JSLinearString : public JSString {
 
   JSLinearString(const char16_t* chars, size_t length);
   JSLinearString(const JS::Latin1Char* chars, size_t length);
+  template <typename CharT>
+  explicit inline JSLinearString(JS::MutableHandle<OwnedChars<CharT>> chars);
 
  protected:
   
@@ -835,14 +916,14 @@ class JSLinearString : public JSString {
 
  public:
   template <js::AllowGC allowGC, typename CharT>
-  static inline JSLinearString* new_(
-      JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
-      size_t length, js::gc::Heap heap);
+  static inline JSLinearString* new_(JSContext* cx,
+                                     JS::MutableHandle<OwnedChars<CharT>> chars,
+                                     js::gc::Heap heap);
 
   template <js::AllowGC allowGC, typename CharT>
   static inline JSLinearString* newValidLength(
-      JSContext* cx, js::UniquePtr<CharT[], JS::FreePolicy> chars,
-      size_t length, js::gc::Heap heap);
+      JSContext* cx, JS::MutableHandle<OwnedChars<CharT>> chars,
+      js::gc::Heap heap);
 
   
   
