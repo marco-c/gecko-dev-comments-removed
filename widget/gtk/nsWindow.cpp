@@ -889,9 +889,17 @@ bool nsWindow::DrawsToCSDTitlebar() const {
 }
 
 void nsWindow::AddCSDDecorationSize(int* aWidth, int* aHeight) {
-  if (!DrawsToCSDTitlebar()) {
+  if (mSizeMode != nsSizeMode_Normal ||
+      mGtkWindowDecoration != GTK_DECORATION_CLIENT) {
     return;
   }
+
+  
+  
+  if (!mDrawInTitlebar && !GdkIsWaylandDisplay()) {
+    return;
+  }
+
   GtkBorder decorationSize = GetCSDDecorationSize(IsPopup());
   *aWidth += decorationSize.left + decorationSize.right;
   *aHeight += decorationSize.top + decorationSize.bottom;
