@@ -1377,7 +1377,7 @@ nsresult nsRFPService::RandomizePixels(nsICookieJarSettings* aCookieJarSettings,
 #  pragma clang diagnostic pop
 #endif
 
-  for (uint8_t i = 0; i <= numNoises; i++) {
+  while (numNoises--) {
     
     
     
