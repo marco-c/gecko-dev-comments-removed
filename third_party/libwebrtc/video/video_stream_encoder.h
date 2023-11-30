@@ -394,11 +394,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   FrameEncodeMetadataWriter frame_encode_metadata_writer_;
 
-  
-  
-  
-  const std::array<uint8_t, 2> experiment_groups_;
-
   struct AutomaticAnimationDetectionExperiment {
     bool enabled = false;
     int min_duration_ms = 2000;
