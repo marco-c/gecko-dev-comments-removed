@@ -4046,7 +4046,7 @@ static SamplerThread* NewSamplerThread(PSLockRef aLock, uint32_t aGeneration,
 
 
 void SamplerThread::Run() {
-  PR_SetCurrentThreadName("SamplerThread");
+  NS_SetCurrentThreadName("SamplerThread");
 
   
   
