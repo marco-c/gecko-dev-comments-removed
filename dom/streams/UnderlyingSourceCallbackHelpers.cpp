@@ -159,9 +159,10 @@ already_AddRefed<Promise> UnderlyingSourceAlgorithmsWrapper::CancelCallback(
 
 NS_IMPL_ISUPPORTS(InputStreamHolder, nsIInputStreamCallback)
 
-InputStreamHolder::InputStreamHolder(InputToReadableStreamAlgorithms* aCallback,
+InputStreamHolder::InputStreamHolder(nsIGlobalObject* aGlobal,
+                                     InputToReadableStreamAlgorithms* aCallback,
                                      nsIAsyncInputStream* aInput)
-    : mCallback(aCallback), mInput(aInput) {}
+    : GlobalTeardownObserver(aGlobal), mCallback(aCallback), mInput(aInput) {}
 
 void InputStreamHolder::Init(JSContext* aCx) {
   if (!NS_IsMainThread()) {
@@ -174,9 +175,8 @@ void InputStreamHolder::Init(JSContext* aCx) {
     
     
     
-    mWorkerRef =
-        StrongWorkerRef::Create(workerPrivate, "InputStreamHolder",
-                                [self = RefPtr{this}]() { self->Shutdown(); });
+    mWorkerRef = StrongWorkerRef::Create(workerPrivate, "InputStreamHolder",
+                                         [self = RefPtr{this}]() {});
     if (NS_WARN_IF(!mWorkerRef)) {
       return;
     }
@@ -185,13 +185,26 @@ void InputStreamHolder::Init(JSContext* aCx) {
 
 InputStreamHolder::~InputStreamHolder() = default;
 
+void InputStreamHolder::DisconnectFromOwner() {
+  Shutdown();
+  GlobalTeardownObserver::DisconnectFromOwner();
+}
+
 void InputStreamHolder::Shutdown() {
-  if (mWorkerRef) {
-    mInput->CloseWithStatus(NS_BASE_STREAM_CLOSED);
-    mWorkerRef = nullptr;
-    
-    
+  if (mInput) {
+    mInput->Close();
   }
+  
+  
+  
+  
+  
+  
+  
+  mAsyncWaitAlgorithms = nullptr;
+  
+  
+  mWorkerRef = nullptr;
 }
 
 nsresult InputStreamHolder::AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
@@ -199,6 +212,7 @@ nsresult InputStreamHolder::AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
   nsresult rv = mInput->AsyncWait(this, aFlags, aRequestedCount, aEventTarget);
   if (NS_SUCCEEDED(rv)) {
     mAsyncWaitWorkerRef = mWorkerRef;
+    mAsyncWaitAlgorithms = mCallback;
   }
   return rv;
 }
@@ -206,6 +220,7 @@ nsresult InputStreamHolder::AsyncWait(uint32_t aFlags, uint32_t aRequestedCount,
 NS_IMETHODIMP InputStreamHolder::OnInputStreamReady(
     nsIAsyncInputStream* aStream) {
   mAsyncWaitWorkerRef = nullptr;
+  mAsyncWaitAlgorithms = nullptr;
   
   if (mCallback) {
     return mCallback->OnInputStreamReady(aStream);
@@ -219,6 +234,14 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(InputToReadableStreamAlgorithms,
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(InputToReadableStreamAlgorithms,
                                             UnderlyingSourceAlgorithmsWrapper,
                                             mPullPromise, mStream)
+
+InputToReadableStreamAlgorithms::InputToReadableStreamAlgorithms(
+    JSContext* aCx, nsIAsyncInputStream* aInput, ReadableStream* aStream)
+    : mOwningEventTarget(GetCurrentSerialEventTarget()),
+      mInput(new InputStreamHolder(aStream->GetParentObject(), this, aInput)),
+      mStream(aStream) {
+  mInput->Init(aCx);
+}
 
 already_AddRefed<Promise> InputToReadableStreamAlgorithms::PullCallbackImpl(
     JSContext* aCx, ReadableStreamController& aController, ErrorResult& aRv) {

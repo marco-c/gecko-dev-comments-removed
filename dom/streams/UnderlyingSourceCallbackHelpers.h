@@ -170,15 +170,19 @@ class InputToReadableStreamAlgorithms;
 
 
 
-class InputStreamHolder final : public nsIInputStreamCallback {
+class InputStreamHolder final : public nsIInputStreamCallback,
+                                public GlobalTeardownObserver {
  public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIINPUTSTREAMCALLBACK
 
-  InputStreamHolder(InputToReadableStreamAlgorithms* aCallback,
+  InputStreamHolder(nsIGlobalObject* aGlobal,
+                    InputToReadableStreamAlgorithms* aCallback,
                     nsIAsyncInputStream* aInput);
 
   void Init(JSContext* aCx);
+
+  void DisconnectFromOwner() override;
 
   
   void Shutdown();
@@ -203,7 +207,19 @@ class InputStreamHolder final : public nsIInputStreamCallback {
   RefPtr<StrongWorkerRef> mAsyncWaitWorkerRef;
   RefPtr<StrongWorkerRef> mWorkerRef;
   nsCOMPtr<nsIAsyncInputStream> mInput;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  RefPtr<InputToReadableStreamAlgorithms> mAsyncWaitAlgorithms;
 };
+
+
 
 class InputToReadableStreamAlgorithms final
     : public UnderlyingSourceAlgorithmsWrapper,
@@ -215,12 +231,7 @@ class InputToReadableStreamAlgorithms final
                                            UnderlyingSourceAlgorithmsWrapper)
 
   InputToReadableStreamAlgorithms(JSContext* aCx, nsIAsyncInputStream* aInput,
-                                  ReadableStream* aStream)
-      : mOwningEventTarget(GetCurrentSerialEventTarget()),
-        mInput(new InputStreamHolder(this, aInput)),
-        mStream(aStream) {
-    mInput->Init(aCx);
-  }
+                                  ReadableStream* aStream);
 
   
 
