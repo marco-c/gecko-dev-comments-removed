@@ -509,7 +509,10 @@ class CssLogic {
           rule.getPropertyValue(property) &&
           (status == STATUS.MATCHED ||
             (status == STATUS.PARENT_MATCH &&
-              InspectorUtils.isInheritedProperty(property)))
+              InspectorUtils.isInheritedProperty(
+                this.viewedDocument,
+                property
+              )))
         ) {
           result[property] = true;
           return false;
@@ -1294,6 +1297,7 @@ class CssPropertyInfo {
 
 
 
+
   _processMatchedSelector(selector, status, distance) {
     const cssRule = selector.cssRule;
     const value = cssRule.getPropertyValue(this.property);
@@ -1301,7 +1305,10 @@ class CssPropertyInfo {
       value &&
       (status == STATUS.MATCHED ||
         (status == STATUS.PARENT_MATCH &&
-          InspectorUtils.isInheritedProperty(this.property)))
+          InspectorUtils.isInheritedProperty(
+            this._cssLogic.viewedDocument,
+            this.property
+          )))
     ) {
       const selectorInfo = new CssSelectorInfo(
         selector,

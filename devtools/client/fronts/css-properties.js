@@ -24,17 +24,12 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/css/constants.js",
   true
 );
-
-
-
-
-
-
-
-var NON_ASCII = "[^\\x00-\\x7F]";
-var ESCAPE = "\\\\[^\n\r]";
-var VALID_CHAR = ["[_a-z0-9-]", NON_ASCII, ESCAPE].join("|");
-var IS_VARIABLE_TOKEN = new RegExp(`^--(${VALID_CHAR})*$`, "i");
+loader.lazyRequireGetter(
+  this,
+  "isCssVariable",
+  "resource://devtools/shared/inspector/css-logic.js",
+  true
+);
 
 
 
@@ -102,10 +97,7 @@ CssProperties.prototype = {
 
 
   isInherited(property) {
-    return (
-      (this.properties[property] && this.properties[property].isInherited) ||
-      isCssVariable(property)
-    );
+    return this.properties[property]?.isInherited;
   },
 
   
@@ -171,16 +163,6 @@ CssProperties.prototype = {
 
 
 
-function isCssVariable(input) {
-  return !!input.match(IS_VARIABLE_TOKEN);
-}
-
-
-
-
-
-
-
 
 function normalizeCssData(db) {
   
@@ -215,7 +197,6 @@ function reattachCssColorValues(db) {
 
 module.exports = {
   CssPropertiesFront,
-  isCssVariable,
   CssProperties,
   normalizeCssData,
 };

@@ -451,6 +451,24 @@ class StyleRuleActor extends Actor {
           `${decl.name}:initial`,
           supportsOptions
         );
+
+        if (SharedCssLogic.isCssVariable(decl.name)) {
+          decl.isCustomProperty = true;
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          decl.inherits = InspectorUtils.isInheritedProperty(
+            this.pageStyle.inspector.window.document,
+            decl.name
+          );
+        }
+
         return decl;
       });
 

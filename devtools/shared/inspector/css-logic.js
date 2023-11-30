@@ -812,3 +812,25 @@ function getXPath(ele) {
   return parts.length ? "/" + parts.reverse().join("/") : "";
 }
 exports.getXPath = getXPath;
+
+
+
+
+
+
+
+var NON_ASCII = "[^\\x00-\\x7F]";
+var ESCAPE = "\\\\[^\n\r]";
+var VALID_CHAR = ["[_a-z0-9-]", NON_ASCII, ESCAPE].join("|");
+var IS_VARIABLE_TOKEN = new RegExp(`^--(${VALID_CHAR})*$`, "i");
+
+
+
+
+
+
+
+function isCssVariable(input) {
+  return !!input.match(IS_VARIABLE_TOKEN);
+}
+exports.isCssVariable = isCssVariable;
