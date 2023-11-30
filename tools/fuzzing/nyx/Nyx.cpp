@@ -19,12 +19,7 @@
 namespace mozilla {
 namespace fuzzing {
 
-Nyx::Nyx() {
-  char* testFilePtr = getenv("MOZ_FUZZ_TESTFILE");
-  if (testFilePtr) {
-    mReplayMode = true;
-  }
-}
+Nyx::Nyx() {}
 
 
 Nyx& Nyx::instance() {
@@ -68,6 +63,8 @@ void Nyx::start(void) {
   
   char* testFilePtr = getenv("MOZ_FUZZ_TESTFILE");
   if (testFilePtr) {
+    mReplayMode = true;
+
     MOZ_FUZZING_NYX_PRINT("[Replay Mode] Reading data file...\n");
 
     std::string testFile(testFilePtr);
