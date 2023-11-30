@@ -4,10 +4,6 @@ const params = new URLSearchParams(location.search);
 const key = params.get('key');
 
 
-const target_hint = params.get('target_hint');
-const rule_extras = {target_hint};
-
-
 const block = location.pathname.endsWith('csp-script-src-self.html');
 
 
@@ -41,7 +37,7 @@ if (!run_test) {
     });
   }
 
-  startPrerendering(url.toString(), rule_extras);
+  startPrerendering(url.toString());
 
   
   nextValueFromServer(done_key).then(() => {
