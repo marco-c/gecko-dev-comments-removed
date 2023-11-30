@@ -13,15 +13,23 @@
 #include <string.h>
 
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "api/rtp_headers.h"
+#include "api/video/color_space.h"
+#include "api/video/hdr_metadata.h"
+#include "api/video/video_content_type.h"
+#include "api/video/video_rotation.h"
+#include "api/video/video_timing.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
-
-#include "modules/video_coding/codecs/interface/common_constants.h"
-#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -39,9 +47,6 @@ namespace webrtc {
 
 
 
-
-constexpr RTPExtensionType AbsoluteSendTime::kId;
-constexpr uint8_t AbsoluteSendTime::kValueSizeBytes;
 
 bool AbsoluteSendTime::Parse(rtc::ArrayView<const uint8_t> data,
                              uint32_t* time_24bits) {
@@ -93,11 +98,6 @@ bool AbsoluteSendTime::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-constexpr RTPExtensionType AbsoluteCaptureTimeExtension::kId;
-constexpr uint8_t AbsoluteCaptureTimeExtension::kValueSizeBytes;
-constexpr uint8_t AbsoluteCaptureTimeExtension::
-    kValueSizeBytesWithoutEstimatedCaptureClockOffset;
 
 bool AbsoluteCaptureTimeExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                          AbsoluteCaptureTime* extension) {
@@ -160,10 +160,6 @@ bool AbsoluteCaptureTimeExtension::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-constexpr RTPExtensionType AudioLevel::kId;
-constexpr uint8_t AudioLevel::kValueSizeBytes;
-
 bool AudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                        bool* voice_activity,
                        uint8_t* audio_level) {
@@ -206,9 +202,6 @@ bool AudioLevel::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-constexpr RTPExtensionType CsrcAudioLevel::kId;
-constexpr uint8_t CsrcAudioLevel::kMaxValueSizeBytes;
 
 bool CsrcAudioLevel::Parse(rtc::ArrayView<const uint8_t> data,
                            std::vector<uint8_t>* csrc_audio_levels) {
@@ -256,9 +249,6 @@ bool CsrcAudioLevel::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-constexpr RTPExtensionType TransmissionOffset::kId;
-constexpr uint8_t TransmissionOffset::kValueSizeBytes;
-
 bool TransmissionOffset::Parse(rtc::ArrayView<const uint8_t> data,
                                int32_t* rtp_time) {
   if (data.size() != 3)
@@ -280,9 +270,6 @@ bool TransmissionOffset::Write(rtc::ArrayView<uint8_t> data, int32_t rtp_time) {
 
 
 
-
-constexpr RTPExtensionType TransportSequenceNumber::kId;
-constexpr uint8_t TransportSequenceNumber::kValueSizeBytes;
 
 bool TransportSequenceNumber::Parse(rtc::ArrayView<const uint8_t> data,
                                     uint16_t* transport_sequence_number) {
@@ -315,12 +302,6 @@ bool TransportSequenceNumber::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-constexpr RTPExtensionType TransportSequenceNumberV2::kId;
-constexpr uint8_t TransportSequenceNumberV2::kValueSizeBytes;
-constexpr uint8_t
-    TransportSequenceNumberV2::kValueSizeBytesWithoutFeedbackRequest;
-constexpr uint16_t TransportSequenceNumberV2::kIncludeTimestampsBit;
 
 bool TransportSequenceNumberV2::Parse(
     rtc::ArrayView<const uint8_t> data,
@@ -379,9 +360,6 @@ bool TransportSequenceNumberV2::Write(
 
 
 
-constexpr RTPExtensionType VideoOrientation::kId;
-constexpr uint8_t VideoOrientation::kValueSizeBytes;
-
 bool VideoOrientation::Parse(rtc::ArrayView<const uint8_t> data,
                              VideoRotation* rotation) {
   if (data.size() != 1)
@@ -415,9 +393,6 @@ bool VideoOrientation::Write(rtc::ArrayView<uint8_t> data, uint8_t value) {
 
 
 
-
-constexpr RTPExtensionType PlayoutDelayLimits::kId;
-constexpr uint8_t PlayoutDelayLimits::kValueSizeBytes;
 
 bool PlayoutDelayLimits::Parse(rtc::ArrayView<const uint8_t> data,
                                VideoPlayoutDelay* playout_delay) {
@@ -498,9 +473,6 @@ bool CsrcAudioLevel::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-constexpr RTPExtensionType VideoContentTypeExtension::kId;
-constexpr uint8_t VideoContentTypeExtension::kValueSizeBytes;
-
 bool VideoContentTypeExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                       VideoContentType* content_type) {
   if (data.size() == 1 &&
@@ -542,17 +514,6 @@ bool VideoContentTypeExtension::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-
-constexpr RTPExtensionType VideoTimingExtension::kId;
-constexpr uint8_t VideoTimingExtension::kValueSizeBytes;
-constexpr uint8_t VideoTimingExtension::kFlagsOffset;
-constexpr uint8_t VideoTimingExtension::kEncodeStartDeltaOffset;
-constexpr uint8_t VideoTimingExtension::kEncodeFinishDeltaOffset;
-constexpr uint8_t VideoTimingExtension::kPacketizationFinishDeltaOffset;
-constexpr uint8_t VideoTimingExtension::kPacerExitDeltaOffset;
-constexpr uint8_t VideoTimingExtension::kNetworkTimestampDeltaOffset;
-constexpr uint8_t VideoTimingExtension::kNetwork2TimestampDeltaOffset;
 
 bool VideoTimingExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                  VideoSendTiming* timing) {
@@ -651,10 +612,6 @@ bool VideoTimingExtension::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-
-constexpr RTPExtensionType ColorSpaceExtension::kId;
-constexpr uint8_t ColorSpaceExtension::kValueSizeBytes;
 
 bool ColorSpaceExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                 ColorSpace* color_space) {
@@ -859,9 +816,6 @@ bool BaseRtpStringExtension::Write(rtc::ArrayView<uint8_t> data,
 }
 
 
-constexpr RTPExtensionType RtpStreamId::kId;
-constexpr RTPExtensionType RepairedRtpStreamId::kId;
-constexpr RTPExtensionType RtpMid::kId;
 
 
 
@@ -877,13 +831,6 @@ constexpr RTPExtensionType RtpMid::kId;
 
 
 
-
-
-
-
-constexpr RTPExtensionType InbandComfortNoiseExtension::kId;
-constexpr uint8_t InbandComfortNoiseExtension::kValueSizeBytes;
-constexpr const char InbandComfortNoiseExtension::kUri[];
 
 bool InbandComfortNoiseExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                         absl::optional<uint8_t>* level) {
@@ -914,10 +861,6 @@ bool InbandComfortNoiseExtension::Write(rtc::ArrayView<uint8_t> data,
 
 
 
-
-
-constexpr RTPExtensionType VideoFrameTrackingIdExtension::kId;
-constexpr uint8_t VideoFrameTrackingIdExtension::kValueSizeBytes;
 
 bool VideoFrameTrackingIdExtension::Parse(rtc::ArrayView<const uint8_t> data,
                                           uint16_t* video_frame_tracking_id) {
