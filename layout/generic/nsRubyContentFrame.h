@@ -16,9 +16,6 @@ class nsRubyContentFrame : public nsInlineFrame {
   NS_DECL_ABSTRACT_FRAME(nsRubyContentFrame)
 
   
-  virtual bool IsFrameOfType(uint32_t aFlags) const override;
-
-  
   
   
   

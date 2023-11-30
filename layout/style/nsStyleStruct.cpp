@@ -3496,8 +3496,7 @@ bool nsStyleDisplay::PrecludesSizeContainmentOrContentVisibilityWithFrame(
     const nsIFrame& aFrame) const {
   
   
-  bool isNonReplacedInline = aFrame.IsFrameOfType(nsIFrame::eLineParticipant) &&
-                             !aFrame.IsFrameOfType(nsIFrame::eReplaced);
+  bool isNonReplacedInline = aFrame.IsLineParticipant() && !aFrame.IsReplaced();
   return isNonReplacedInline || IsInternalRubyDisplayType() ||
          DisplayInside() == mozilla::StyleDisplayInside::Table ||
          IsInnerTableStyle();

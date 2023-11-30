@@ -124,7 +124,7 @@ static FontUsageKind FrameFontUsage(nsIFrame* aFrame,
 
 static void ScheduleReflow(PresShell* aPresShell, nsIFrame* aFrame) {
   nsIFrame* f = aFrame;
-  if (f->IsFrameOfType(nsIFrame::eSVG) || f->IsInSVGTextSubtree()) {
+  if (f->IsSVGFrame() || f->IsInSVGTextSubtree()) {
     
     
     

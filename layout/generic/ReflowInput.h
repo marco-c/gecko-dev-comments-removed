@@ -449,7 +449,6 @@ struct ReflowInput : public SizeComputationInput {
     Flags() { memset(this, 0, sizeof(*this)); }
 
     
-    
     bool mIsReplaced : 1;
 
     

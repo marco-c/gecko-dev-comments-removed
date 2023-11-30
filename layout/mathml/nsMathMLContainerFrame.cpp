@@ -80,7 +80,7 @@ void nsDisplayMathMLError::Paint(nsDisplayListBuilder* aBuilder,
 static bool IsForeignChild(const nsIFrame* aFrame) {
   
   
-  return !(aFrame->IsFrameOfType(nsIFrame::eMathML)) || aFrame->IsBlockFrame();
+  return !aFrame->IsMathMLFrame() || aFrame->IsBlockFrame();
 }
 
 NS_DECLARE_FRAME_PROPERTY_DELETABLE(HTMLReflowOutputProperty, ReflowOutput)

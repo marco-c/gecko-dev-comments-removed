@@ -52,13 +52,6 @@ class nsLeafFrame : public nsIFrame {
                       const ReflowInput& aReflowInput,
                       nsReflowStatus& aStatus) override = 0;
 
-  virtual bool IsFrameOfType(uint32_t aFlags) const override {
-    
-    
-    return nsIFrame::IsFrameOfType(aFlags &
-                                   ~(nsIFrame::eReplacedContainsBlock));
-  }
-
  protected:
   nsLeafFrame(ComputedStyle* aStyle, nsPresContext* aPresContext, ClassID aID)
       : nsIFrame(aStyle, aPresContext, aID) {}

@@ -47,15 +47,6 @@ nsresult nsRubyTextContainerFrame::GetFrameName(nsAString& aResult) const {
 #endif
 
 
-bool nsRubyTextContainerFrame::IsFrameOfType(uint32_t aFlags) const {
-  if (aFlags & (eSupportsCSSTransforms | eSupportsContainLayoutAndPaint |
-                eSupportsAspectRatio)) {
-    return false;
-  }
-  return nsContainerFrame::IsFrameOfType(aFlags);
-}
-
-
 void nsRubyTextContainerFrame::SetInitialChildList(ChildListID aListID,
                                                    nsFrameList&& aChildList) {
   nsContainerFrame::SetInitialChildList(aListID, std::move(aChildList));

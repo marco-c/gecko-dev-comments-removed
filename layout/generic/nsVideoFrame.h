@@ -19,16 +19,18 @@
 class nsPresContext;
 class nsDisplayItem;
 
-class nsVideoFrame final : public nsContainerFrame,
-                           public nsIReflowCallback,
-                           public nsIAnonymousContentCreator {
+class nsVideoFrame : public nsContainerFrame,
+                     public nsIReflowCallback,
+                     public nsIAnonymousContentCreator {
  public:
   template <typename T>
   using Maybe = mozilla::Maybe<T>;
   using Nothing = mozilla::Nothing;
   using Visibility = mozilla::Visibility;
 
-  explicit nsVideoFrame(ComputedStyle*, nsPresContext*);
+  nsVideoFrame(ComputedStyle* aStyle, nsPresContext* aPc)
+      : nsVideoFrame(aStyle, aPc, kClassID) {}
+  nsVideoFrame(ComputedStyle*, nsPresContext*, ClassID);
 
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS(nsVideoFrame)
@@ -37,51 +39,39 @@ class nsVideoFrame final : public nsContainerFrame,
   bool ReflowFinished() final;
 
   void BuildDisplayList(nsDisplayListBuilder* aBuilder,
-                        const nsDisplayListSet& aLists) override;
+                        const nsDisplayListSet& aLists) final;
 
   nsresult AttributeChanged(int32_t aNameSpaceID, nsAtom* aAttribute,
-                            int32_t aModType) override;
+                            int32_t aModType) final;
 
   void OnVisibilityChange(
       Visibility aNewVisibility,
-      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) override;
+      const Maybe<OnNonvisible>& aNonvisibleAction = Nothing()) final;
 
   
-  mozilla::IntrinsicSize GetIntrinsicSize() override;
-  mozilla::AspectRatio GetIntrinsicRatio() const override;
+  mozilla::IntrinsicSize GetIntrinsicSize() final;
+  mozilla::AspectRatio GetIntrinsicRatio() const final;
   SizeComputationResult ComputeSize(
       gfxContext* aRenderingContext, mozilla::WritingMode aWM,
       const mozilla::LogicalSize& aCBSize, nscoord aAvailableISize,
       const mozilla::LogicalSize& aMargin,
       const mozilla::LogicalSize& aBorderPadding,
       const mozilla::StyleSizeOverrides& aSizeOverrides,
-      mozilla::ComputeSizeFlags aFlags) override;
-  nscoord GetMinISize(gfxContext* aRenderingContext) override;
-  nscoord GetPrefISize(gfxContext* aRenderingContext) override;
-  void Destroy(DestroyContext&) override;
+      mozilla::ComputeSizeFlags aFlags) final;
+  nscoord GetMinISize(gfxContext* aRenderingContext) final;
+  nscoord GetPrefISize(gfxContext* aRenderingContext) final;
+  void Destroy(DestroyContext&) final;
 
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
-              const ReflowInput& aReflowInput,
-              nsReflowStatus& aStatus) override;
+              const ReflowInput& aReflowInput, nsReflowStatus& aStatus) final;
 
 #ifdef ACCESSIBILITY
-  mozilla::a11y::AccType AccessibleType() override;
+  mozilla::a11y::AccType AccessibleType() final;
 #endif
 
-  bool IsFrameOfType(uint32_t aFlags) const override {
-    
-    
-    if ((aFlags & nsIFrame::eSupportsAspectRatio) && !HasVideoElement()) {
-      return false;
-    }
-
-    return nsSplittableFrame::IsFrameOfType(
-        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eReplacedSizing));
-  }
-
-  nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) override;
+  nsresult CreateAnonymousContent(nsTArray<ContentInfo>& aElements) final;
   void AppendAnonymousContentTo(nsTArray<nsIContent*>& aElements,
-                                uint32_t aFilters) override;
+                                uint32_t aFilters) final;
 
   mozilla::dom::Element* GetPosterImage() const { return mPosterImage; }
 
@@ -99,7 +89,8 @@ class nsVideoFrame final : public nsContainerFrame,
  protected:
   
   
-  bool HasVideoElement() const;
+  
+  bool HasVideoElement() const { return !mIsAudio; }
 
   
   
@@ -131,6 +122,21 @@ class nsVideoFrame final : public nsContainerFrame,
   nsSize mControlsTrackedSize{-1, -1};
   nsSize mCaptionTrackedSize{-1, -1};
   bool mReflowCallbackPosted = false;
+  const bool mIsAudio;
+};
+
+
+
+
+
+
+class nsAudioFrame final : public nsVideoFrame {
+ public:
+  NS_DECL_QUERYFRAME
+  NS_DECL_FRAMEARENA_HELPERS(nsAudioFrame)
+
+  nsAudioFrame(ComputedStyle*, nsPresContext*);
+  virtual ~nsAudioFrame();
 };
 
 #endif 

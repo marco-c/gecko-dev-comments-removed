@@ -5050,7 +5050,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
             
             
             
-            aFrame->IsFrameOfType(nsIFrame::eReplaced)) {
+            aFrame->IsReplaced()) {
           
           
           
@@ -5079,8 +5079,7 @@ nscoord nsLayoutUtils::IntrinsicForAxis(
   
   const AspectRatio ar = stylePos->mAspectRatio.ToLayoutRatio();
   if (isInlineAxis && ar && nsIFrame::ToExtremumLength(styleISize) &&
-      aFrame->IsFrameOfType(nsIFrame::eSupportsAspectRatio) &&
-      !inlineSizeFromAspectRatio) {
+      aFrame->SupportsAspectRatio() && !inlineSizeFromAspectRatio) {
     
     
     const StyleSize& styleBSize =
@@ -8211,8 +8210,7 @@ static bool ShouldInflateFontsForContainer(const nsIFrame* aFrame) {
          
          
          
-         (styleText->WhiteSpaceCanWrap(aFrame) ||
-          aFrame->IsFrameOfType(nsIFrame::eMathML));
+         (styleText->WhiteSpaceCanWrap(aFrame) || aFrame->IsMathMLFrame());
 }
 
 nscoord nsLayoutUtils::InflationMinFontSizeFor(const nsIFrame* aFrame) {
@@ -8668,8 +8666,7 @@ AutoMaybeDisableFontInflation::AutoMaybeDisableFontInflation(nsIFrame* aFrame) {
   
   
   
-  if (aFrame->IsContainerForFontSizeInflation() &&
-      !aFrame->IsFrameOfType(nsIFrame::eMathML)) {
+  if (aFrame->IsContainerForFontSizeInflation() && !aFrame->IsMathMLFrame()) {
     mPresContext = aFrame->PresContext();
     mOldValue = mPresContext->mInflationDisabledForShrinkWrap;
     mPresContext->mInflationDisabledForShrinkWrap = true;
@@ -9538,7 +9535,7 @@ bool nsLayoutUtils::IsInvisibleBreak(nsINode* aNode,
   }
 
   nsContainerFrame* f = frame->GetParent();
-  while (f && f->IsFrameOfType(nsIFrame::eLineParticipant)) {
+  while (f && f->IsLineParticipant()) {
     f = f->GetParent();
   }
   nsBlockFrame* blockAncestor = do_QueryFrame(f);
@@ -9763,7 +9760,7 @@ nsPoint nsLayoutUtils::ComputeOffsetToUserSpace(nsDisplayListBuilder* aBuilder,
   nsPoint offsetToBoundingBox =
       aBuilder->ToReferenceFrame(aFrame) -
       SVGIntegrationUtils::GetOffsetToBoundingBox(aFrame);
-  if (!aFrame->IsFrameOfType(nsIFrame::eSVG)) {
+  if (!aFrame->IsSVGFrame()) {
     
     
     offsetToBoundingBox =

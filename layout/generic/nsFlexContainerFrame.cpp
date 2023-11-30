@@ -1306,9 +1306,8 @@ StyleAlignFlags nsFlexContainerFrame::CSSAlignmentForAbsPosChild(
       
       
       
-      alignment = aChildRI.mFrame->IsFrameOfType(nsIFrame::eReplaced)
-                      ? StyleAlignFlags::START
-                      : StyleAlignFlags::STRETCH;
+      alignment = aChildRI.mFrame->IsReplaced() ? StyleAlignFlags::START
+                                                : StyleAlignFlags::STRETCH;
     }
   }
 
@@ -1573,7 +1572,7 @@ static nscoord PartiallyResolveAutoMinSize(
   
   
   if (const auto& aspectRatio = aFlexItem.GetAspectRatio();
-      aFlexItem.Frame()->IsFrameOfType(nsIFrame::eReplaced) && aspectRatio &&
+      aFlexItem.Frame()->IsReplaced() && aspectRatio &&
       aFlexItem.IsCrossSizeDefinite(aItemReflowInput)) {
     
     nscoord transferredSizeSuggestion = aspectRatio.ComputeRatioDependentSize(

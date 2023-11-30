@@ -273,13 +273,6 @@ class nsTextFrame : public nsIFrame {
   nsTextFrame* LastInFlow() const final;
   nsTextFrame* LastContinuation() const final;
 
-  bool IsFrameOfType(uint32_t aFlags) const final {
-    
-    
-    return nsIFrame::IsFrameOfType(
-        aFlags & ~(nsIFrame::eReplaced | nsIFrame::eLineParticipant));
-  }
-
   bool ShouldSuppressLineBreak() const;
 
   void InvalidateFrame(uint32_t aDisplayItemKey = 0,

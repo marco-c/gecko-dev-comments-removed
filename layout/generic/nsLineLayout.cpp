@@ -1377,7 +1377,7 @@ void nsLineLayout::PlaceFrame(PerFrameData* pfd, ReflowOutput& aMetrics) {
     
     const auto baselineSource = pfd->mFrame->StyleDisplay()->mBaselineSource;
     if (baselineSource == StyleBaselineSource::Auto ||
-        pfd->mFrame->IsFrameOfType(nsIFrame::eLineParticipant)) {
+        pfd->mFrame->IsLineParticipant()) {
       if (aMetrics.BlockStartAscent() == ReflowOutput::ASK_FOR_BASELINE) {
         pfd->mAscent = pfd->mFrame->GetLogicalBaseline(lineWM);
       } else {

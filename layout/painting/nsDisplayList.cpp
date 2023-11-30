@@ -2910,8 +2910,7 @@ nsDisplayBackgroundImage::nsDisplayBackgroundImage(
   if (mBackgroundStyle && mBackgroundStyle != mFrame->Style()) {
     
     
-    MOZ_ASSERT(mFrame->IsCanvasFrame() ||
-               mFrame->IsFrameOfType(nsIFrame::eTablePart));
+    MOZ_ASSERT(mFrame->IsCanvasFrame() || mFrame->IsTablePart());
   }
 #endif
 

@@ -237,16 +237,6 @@ void nsRubyBaseContainerFrame::AddInlinePrefISize(
 }
 
 
-bool nsRubyBaseContainerFrame::IsFrameOfType(uint32_t aFlags) const {
-  if (aFlags & (eSupportsCSSTransforms | eSupportsContainLayoutAndPaint |
-                eSupportsAspectRatio)) {
-    return false;
-  }
-  return nsContainerFrame::IsFrameOfType(aFlags &
-                                         ~(nsIFrame::eLineParticipant));
-}
-
-
 bool nsRubyBaseContainerFrame::CanContinueTextRun() const { return true; }
 
 

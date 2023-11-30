@@ -49,7 +49,7 @@ EffectSet* EffectSet::GetForFrame(const nsIFrame* aFrame,
   if (aProperties.IsSubsetOf(nsCSSPropertyIDSet::TransformLikeProperties())) {
     
     
-    if (!aFrame->IsFrameOfType(nsIFrame::eSupportsCSSTransforms)) {
+    if (!aFrame->SupportsCSSTransforms()) {
       return nullptr;
     }
     frameToQuery = nsLayoutUtils::GetStyleFrame(aFrame);

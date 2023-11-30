@@ -1036,8 +1036,7 @@ nsRect Element::GetClientAreaRect() {
       
       
       
-      (!frame->StyleDisplay()->IsInlineFlow() ||
-       frame->IsFrameOfType(nsIFrame::eReplaced))) {
+      (!frame->StyleDisplay()->IsInlineFlow() || frame->IsReplaced())) {
     
     
     return frame->GetPaddingRect() - frame->GetPositionIgnoringScrolling();

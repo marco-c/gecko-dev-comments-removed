@@ -881,8 +881,7 @@ bool nsComputedDOMStyle::NeedsToFlushStyle(nsCSSPropertyID aPropID) const {
 static bool IsNonReplacedInline(nsIFrame* aFrame) {
   
   
-  return aFrame->StyleDisplay()->IsInlineFlow() &&
-         !aFrame->IsFrameOfType(nsIFrame::eReplaced) &&
+  return aFrame->StyleDisplay()->IsInlineFlow() && !aFrame->IsReplaced() &&
          !aFrame->IsFieldSetFrame() && !aFrame->IsBlockFrame() &&
          !aFrame->IsScrollFrame() && !aFrame->IsColumnSetWrapperFrame();
 }

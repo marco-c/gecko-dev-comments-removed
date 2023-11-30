@@ -28,7 +28,6 @@ class nsRubyTextContainerFrame final : public nsContainerFrame {
   NS_DECL_QUERYFRAME
 
   
-  bool IsFrameOfType(uint32_t aFlags) const override;
   void Reflow(nsPresContext* aPresContext, ReflowOutput& aDesiredSize,
               const ReflowInput& aReflowInput,
               nsReflowStatus& aStatus) override;

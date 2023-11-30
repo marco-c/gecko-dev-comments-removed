@@ -520,7 +520,7 @@ static void InvalidateImages(nsIFrame* aFrame, imgIRequest* aRequest,
     return;
   }
 
-  if (aFrame->IsFrameOfType(nsIFrame::eTablePart)) {
+  if (aFrame->IsTablePart()) {
     
     
     

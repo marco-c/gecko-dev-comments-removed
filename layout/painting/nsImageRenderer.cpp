@@ -171,12 +171,11 @@ bool nsImageRenderer::PrepareImage() {
           paintElement ? paintElement->GetPrimaryFrame() : nullptr;
       
       
-      if (!paintServerFrame ||
-          (paintServerFrame->IsFrameOfType(nsIFrame::eSVG) &&
-           !static_cast<SVGPaintServerFrame*>(
-               do_QueryFrame(paintServerFrame)) &&
-           !static_cast<ISVGDisplayableFrame*>(
-               do_QueryFrame(paintServerFrame)))) {
+      if (!paintServerFrame || (paintServerFrame->IsSVGFrame() &&
+                                !static_cast<SVGPaintServerFrame*>(
+                                    do_QueryFrame(paintServerFrame)) &&
+                                !static_cast<ISVGDisplayableFrame*>(
+                                    do_QueryFrame(paintServerFrame)))) {
         mPrepareResult = ImgDrawResult::BAD_IMAGE;
         return false;
       }
@@ -238,7 +237,7 @@ CSSSizeOrRatio nsImageRenderer::ComputeIntrinsicSize() {
       
       if (mPaintServerFrame) {
         
-        if (!mPaintServerFrame->IsFrameOfType(nsIFrame::eSVG)) {
+        if (!mPaintServerFrame->IsSVGFrame()) {
           
           
           

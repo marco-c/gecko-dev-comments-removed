@@ -3,22 +3,16 @@
 
 
 
-
-LEAF = "Leaf"
-NOT_LEAF = "NotLeaf"
-DYNAMIC_LEAF = "DynamicLeaf"
-
-
 class FrameClass:
     def __init__(self, cls):
         self.cls = cls
 
 
 class Frame(FrameClass):
-    def __init__(self, cls, ty, leafness):
+    def __init__(self, cls, ty, flags):
         FrameClass.__init__(self, cls)
         self.ty = ty
-        self.leafness = leafness
+        self.flags = flags
         self.is_concrete = True
 
 
