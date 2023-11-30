@@ -19,7 +19,7 @@ SVGViewBoxSMILType SVGViewBoxSMILType::sSingleton;
 void SVGViewBoxSMILType::Init(SMILValue& aValue) const {
   MOZ_ASSERT(aValue.IsNull(), "Unexpected value type");
 
-  aValue.mU.mPtr = new SVGViewBox();
+  aValue.mU.mPtr = new SVGViewBox(0.0f, 0.0f, 0.0f, 0.0f);
   aValue.mType = this;
 }
 
@@ -56,11 +56,19 @@ nsresult SVGViewBoxSMILType::Add(SMILValue& aDest, const SMILValue& aValueToAdd,
   MOZ_ASSERT(aValueToAdd.mType == aDest.mType, "Trying to add invalid types");
   MOZ_ASSERT(aValueToAdd.mType == this, "Unexpected source type");
 
-  
-  
-  
+  auto* dest = static_cast<SVGViewBox*>(aDest.mU.mPtr);
+  const auto* valueToAdd = static_cast<const SVGViewBox*>(aValueToAdd.mU.mPtr);
 
-  return NS_ERROR_FAILURE;
+  if (dest->none || valueToAdd->none) {
+    return NS_ERROR_FAILURE;
+  }
+
+  dest->x += valueToAdd->x * aCount;
+  dest->y += valueToAdd->y * aCount;
+  dest->width += valueToAdd->width * aCount;
+  dest->height += valueToAdd->height * aCount;
+
+  return NS_OK;
 }
 
 nsresult SVGViewBoxSMILType::ComputeDistance(const SMILValue& aFrom,
