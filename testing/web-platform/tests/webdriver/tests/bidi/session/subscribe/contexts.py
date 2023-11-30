@@ -8,7 +8,7 @@ from ... import create_console_api_message, recursive_compare
 
 @pytest.mark.asyncio
 async def test_subscribe_to_one_context(
-    bidi_session, subscribe_events, top_context, new_tab, wait_for_event
+    bidi_session, subscribe_events, top_context, new_tab, wait_for_event, wait_for_future_safe
 ):
     
     await subscribe_events(events=["log.entryAdded"], contexts=[top_context["context"]])
@@ -29,7 +29,7 @@ async def test_subscribe_to_one_context(
     
     on_entry_added = wait_for_event("log.entryAdded")
     expected_text = await create_console_api_message(bidi_session, top_context, "text2")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     assert len(events) == 1
     recursive_compare(
@@ -44,7 +44,7 @@ async def test_subscribe_to_one_context(
 
 @pytest.mark.asyncio
 async def test_subscribe_to_one_context_twice(
-    bidi_session, subscribe_events, top_context, wait_for_event
+    bidi_session, subscribe_events, top_context, wait_for_event, wait_for_future_safe
 ):
     
     await subscribe_events(events=["log.entryAdded"], contexts=[top_context["context"]])
@@ -61,7 +61,7 @@ async def test_subscribe_to_one_context_twice(
     
     on_entry_added = wait_for_event("log.entryAdded")
     expected_text = await create_console_api_message(bidi_session, top_context, "text2")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     assert len(events) == 1
     recursive_compare(
@@ -78,7 +78,7 @@ async def test_subscribe_to_one_context_twice(
 
 @pytest.mark.asyncio
 async def test_subscribe_to_one_context_and_then_to_all(
-    bidi_session, subscribe_events, top_context, new_tab, wait_for_event
+    bidi_session, subscribe_events, top_context, new_tab, wait_for_event, wait_for_future_safe
 ):
     
     await subscribe_events(events=["log.entryAdded"], contexts=[top_context["context"]])
@@ -101,7 +101,7 @@ async def test_subscribe_to_one_context_and_then_to_all(
     
     on_entry_added = wait_for_event("log.entryAdded")
     expected_text = await create_console_api_message(bidi_session, top_context, "text2")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     assert len(events) == 1
     recursive_compare(
@@ -127,7 +127,7 @@ async def test_subscribe_to_one_context_and_then_to_all(
 
     
     expected_text = await create_console_api_message(bidi_session, new_tab, "text3")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     assert len(events) == 2
     recursive_compare(
@@ -138,7 +138,7 @@ async def test_subscribe_to_one_context_and_then_to_all(
     )
 
     expected_text = await create_console_api_message(bidi_session, top_context, "text4")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     assert len(events) == 3
     recursive_compare(
@@ -153,7 +153,7 @@ async def test_subscribe_to_one_context_and_then_to_all(
 
 @pytest.mark.asyncio
 async def test_subscribe_to_all_context_and_then_to_one_again(
-    bidi_session, subscribe_events, top_context, new_tab, wait_for_event
+    bidi_session, subscribe_events, top_context, new_tab, wait_for_event, wait_for_future_safe
 ):
     
     await subscribe_events(events=["log.entryAdded"])
@@ -171,7 +171,7 @@ async def test_subscribe_to_all_context_and_then_to_one_again(
     
     on_entry_added = wait_for_event("log.entryAdded")
     await create_console_api_message(bidi_session, top_context, "text1")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     
     assert len(events) == 1
@@ -183,7 +183,7 @@ async def test_subscribe_to_all_context_and_then_to_one_again(
 async def test_subscribe_to_top_context_with_iframes(
     bidi_session,
     subscribe_events,
-    wait_for_event,
+    wait_for_event, wait_for_future_safe,
     top_context,
     test_page_multiple_frames,
 ):
@@ -211,7 +211,7 @@ async def test_subscribe_to_top_context_with_iframes(
     
     on_entry_added = wait_for_event("log.entryAdded")
     await create_console_api_message(bidi_session, frame_1, "text1")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     
     assert len(events) == 1
@@ -219,7 +219,7 @@ async def test_subscribe_to_top_context_with_iframes(
     
     on_entry_added = wait_for_event("log.entryAdded")
     await create_console_api_message(bidi_session, frame_2, "text2")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     
     assert len(events) == 2
@@ -231,7 +231,7 @@ async def test_subscribe_to_top_context_with_iframes(
 async def test_subscribe_to_child_context(
     bidi_session,
     subscribe_events,
-    wait_for_event,
+    wait_for_event, wait_for_future_safe,
     top_context,
     test_page_multiple_frames,
 ):
@@ -259,7 +259,7 @@ async def test_subscribe_to_child_context(
     
     on_entry_added = wait_for_event("log.entryAdded")
     await create_console_api_message(bidi_session, top_context, "text1")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     
     assert len(events) == 1
@@ -267,7 +267,7 @@ async def test_subscribe_to_child_context(
     
     on_entry_added = wait_for_event("log.entryAdded")
     await create_console_api_message(bidi_session, frame_2, "text2")
-    await on_entry_added
+    await wait_for_future_safe(on_entry_added)
 
     
     assert len(events) == 2
