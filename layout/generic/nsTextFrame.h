@@ -198,12 +198,7 @@ class nsTextFrame : public nsIFrame {
 
   explicit nsTextFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                        ClassID aID = kClassID)
-      : nsIFrame(aStyle, aPresContext, aID),
-        mNextContinuation(nullptr),
-        mContentOffset(0),
-        mContentLengthHint(0),
-        mAscent(0),
-        mIsSelected(SelectionState::Unknown) {}
+      : nsIFrame(aStyle, aPresContext, aID) {}
 
   NS_DECL_FRAMEARENA_HELPERS(nsTextFrame)
 
@@ -786,7 +781,7 @@ class nsTextFrame : public nsIFrame {
 
   mutable RefPtr<nsFontMetrics> mFontMetrics;
   RefPtr<gfxTextRun> mTextRun;
-  nsTextFrame* mNextContinuation;
+  nsTextFrame* mNextContinuation = nullptr;
   
   
   
@@ -796,13 +791,13 @@ class nsTextFrame : public nsIFrame {
   
   
   
-  int32_t mContentOffset;
+  int32_t mContentOffset = 0;
   
   
   
   
-  int32_t mContentLengthHint;
-  nscoord mAscent;
+  int32_t mContentLengthHint = 0;
+  nscoord mAscent = 0;
 
   
   enum class SelectionState : uint8_t {
@@ -810,7 +805,7 @@ class nsTextFrame : public nsIFrame {
     Selected,
     NotSelected,
   };
-  mutable SelectionState mIsSelected;
+  mutable SelectionState mIsSelected = SelectionState::Unknown;
 
   
   
