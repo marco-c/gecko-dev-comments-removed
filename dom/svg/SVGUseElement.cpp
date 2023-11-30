@@ -544,11 +544,8 @@ void SVGUseElement::LookupHref() {
   }
 
   if (nsContentUtils::IsLocalRefURL(href)) {
-    
-    
-    RefPtr<SVGUseElement> elem = mOriginal ? mOriginal.get() : this;
     RefPtr<nsAtom> idAtom = NS_AtomizeMainThread(Substring(href, 1));
-    mReferencedElementTracker.ResetWithID(*elem, idAtom);
+    mReferencedElementTracker.ResetWithID(*this, idAtom);
     return;
   }
 
