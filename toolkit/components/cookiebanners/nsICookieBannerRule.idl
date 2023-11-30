@@ -31,6 +31,12 @@ interface nsICookieBannerRule : nsISupports {
 
 
 
+    [infallible] readonly attribute boolean isGlobalRule;
+
+    
+
+
+
 
 
 
