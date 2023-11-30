@@ -127,7 +127,7 @@ struct CharacterDataChangeInfo;
 
 namespace mozilla {
 
-enum class PeekOffsetOption : uint8_t;
+enum class PeekOffsetOption : uint16_t;
 enum class PseudoStyleType : uint8_t;
 enum class TableSelectionMode : uint32_t;
 
@@ -3907,6 +3907,8 @@ class nsIFrame : public nsQueryFrame {
     bool mJumpedLine = false;
     
     bool mJumpedHardBreak = false;
+    
+    bool mFoundPlaceholder = false;
     
     bool mMovedOverNonSelectableText = false;
     

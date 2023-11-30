@@ -55,6 +55,13 @@ class nsILineIterator {
     nsRect mLineBounds;
     
     bool mIsWrapped = false;
+
+    
+
+
+
+
+    nsIFrame* GetLastFrameOnLine() const;
   };
 
   

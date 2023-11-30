@@ -73,7 +73,7 @@ class PresShell;
 
 namespace mozilla {
 
-enum class PeekOffsetOption : uint8_t {
+enum class PeekOffsetOption : uint16_t {
   
   
   
@@ -86,6 +86,9 @@ enum class PeekOffsetOption : uint8_t {
   
   
   ScrollViewStop,
+
+  
+  StopAtPlaceholder,
 
   
   
