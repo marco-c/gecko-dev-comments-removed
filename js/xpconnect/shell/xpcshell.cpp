@@ -44,9 +44,6 @@ int main(int argc, char** argv, char** envp) {
   
   
   gtk_parse_args(&argc, &argv);
-
-  
-  setenv("MOZ_DISABLE_TERM_SIG_HANDLER", "1", true);
 #endif
 
 #ifdef XP_MACOSX
