@@ -1187,7 +1187,7 @@ class nsContentUtils {
       const nsAString& aErrorText, uint32_t aErrorFlags,
       const nsACString& aCategory, uint64_t aInnerWindowID,
       nsIURI* aURI = nullptr, const nsString& aSourceLine = u""_ns,
-      uint32_t aLineNumber = 0, uint32_t aColumnNumber = 0,
+      uint32_t aLineNumber = 0, uint32_t aColumnNumber = 1,
       MissingErrorLocationMode aLocationMode = eUSE_CALLING_LOCATION);
 
   
