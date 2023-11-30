@@ -11,11 +11,11 @@ use crate::platform::ini_path;
 use ini::Ini;
 use regex::Regex;
 use std::default::Default;
-use std::error;
 use std::fmt::{self, Display, Formatter};
 use std::path::Path;
 use std::process::{Command, Stdio};
 use std::str::{self, FromStr};
+use thiserror::Error;
 
 
 #[derive(Clone, Default)]
@@ -267,44 +267,22 @@ fn parse_binary_version(version_str: &str) -> VersionResult<Version> {
     Version::from_str(version_match.as_str())
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Error)]
 pub enum Error {
     
+    #[error("VersionError: {0}")]
     VersionError(String),
     
+    #[error("MetadataError: {0}")]
     MetadataError(String),
     
+    #[error("SemVerError: {0}")]
     SemVerError(String),
-}
-
-impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Error::VersionError(ref x) => {
-                "VersionError: ".fmt(f)?;
-                x.fmt(f)
-            }
-            Error::MetadataError(ref x) => {
-                "MetadataError: ".fmt(f)?;
-                x.fmt(f)
-            }
-            Error::SemVerError(ref e) => {
-                "SemVerError: ".fmt(f)?;
-                e.fmt(f)
-            }
-        }
-    }
 }
 
 impl From<semver::Error> for Error {
     fn from(err: semver::Error) -> Error {
         Error::SemVerError(err.to_string())
-    }
-}
-
-impl error::Error for Error {
-    fn cause(&self) -> Option<&dyn error::Error> {
-        None
     }
 }
 
