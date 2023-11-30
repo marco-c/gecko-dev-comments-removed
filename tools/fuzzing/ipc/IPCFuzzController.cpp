@@ -1197,10 +1197,6 @@ UniquePtr<IPC::Message> IPCFuzzController::replaceIPCMessage(
   char* ipcMsgData = buffer.begin();
 
   
-  memcpy(ipcMsgData, aMsg->header(), sizeof(IPC::Message::Header));
-  IPC::Message::Header* ipchdr = (IPC::Message::Header*)ipcMsgData;
-
-  
   
   
   MOZ_FUZZING_NYX_PRINT("INFO: Performing snapshot...\n");
@@ -1234,6 +1230,10 @@ UniquePtr<IPC::Message> IPCFuzzController::replaceIPCMessage(
   }
 
   buffer.shrinkTo(bufsize);
+
+  
+  memcpy(ipcMsgData, aMsg->header(), sizeof(IPC::Message::Header));
+  IPC::Message::Header* ipchdr = (IPC::Message::Header*)ipcMsgData;
 
   size_t ipcMsgLen = buffer.length();
   ipchdr->payload_size = ipcMsgLen - sizeof(IPC::Message::Header);
