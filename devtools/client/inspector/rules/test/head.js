@@ -255,7 +255,7 @@ var addProperty = async function (
   ruleIndex,
   name,
   value,
-  { commitValueWith = "VK_RETURN", blurNewProperty = true } = {}
+  { commitValueWith = "VK_TAB", blurNewProperty = true } = {}
 ) {
   info("Adding new property " + name + ":" + value + " to rule " + ruleIndex);
 
@@ -300,7 +300,7 @@ var addProperty = async function (
   info("Adding name " + name);
   editor.input.value = name;
   const onNameAdded = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  EventUtils.synthesizeKey("VK_TAB", {}, view.styleWindow);
   await onNameAdded;
 
   
@@ -362,13 +362,6 @@ var renameProperty = async function (view, textProp, name) {
   EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
   info("Wait for property name.");
   await onNameDone;
-  
-  
-  
-  const onValueDone = view.once("ruleview-changed");
-  EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
-  info("Wait for property value.");
-  await onValueDone;
 };
 
 
@@ -389,7 +382,7 @@ var removeProperty = async function (view, textProp, blurNewProperty = true) {
   const onModifications = view.once("ruleview-changed");
   info("Deleting the property name now");
   EventUtils.synthesizeKey("VK_DELETE", {}, view.styleWindow);
-  EventUtils.synthesizeKey("VK_RETURN", {}, view.styleWindow);
+  EventUtils.synthesizeKey("VK_TAB", {}, view.styleWindow);
   await onModifications;
 
   if (blurNewProperty) {

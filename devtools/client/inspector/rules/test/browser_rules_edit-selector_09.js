@@ -61,11 +61,6 @@ async function testEditSelector(view, name) {
     getRuleViewRuleEditor(view, 1).element.getAttribute("unmatched"),
     "Rule with " + name + " does not match the current element."
   );
-
-  
-  const onBlur = once(view.styleDocument.activeElement, "blur");
-  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
-  await onBlur;
 }
 
 async function testAddImportantProperty(view) {
@@ -112,9 +107,4 @@ async function testAddMatchedRule(view, name) {
     "false",
     "Rule with " + name + " does match the current element."
   );
-
-  
-  const onBlur = once(view.styleDocument.activeElement, "blur");
-  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
-  await onBlur;
 }

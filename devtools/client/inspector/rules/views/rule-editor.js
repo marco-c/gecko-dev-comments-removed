@@ -326,6 +326,14 @@ RuleEditor.prototype = {
         element: this.selectorText,
         done: this._onSelectorDone,
         cssProperties: this.rule.cssProperties,
+        
+        
+        focusEditableFieldAfterApply: true,
+        focusEditableFieldContainerSelector: ".ruleview-rule",
+        
+        
+        
+        stopOnReturn: true,
       });
     }
 
@@ -682,7 +690,15 @@ RuleEditor.prototype = {
       });
     }
 
+    let focusedElSelector;
     if (reset) {
+      
+      
+      
+      if (this.element.contains(this.doc.activeElement)) {
+        focusedElSelector = CssLogic.findCssSelector(this.doc.activeElement);
+      }
+
       while (this.propertyList.hasChildNodes()) {
         this.propertyList.removeChild(this.propertyList.lastChild);
       }
@@ -696,6 +712,17 @@ RuleEditor.prototype = {
         
         
         this.propertyList.appendChild(prop.editor.element);
+      }
+    }
+
+    if (focusedElSelector) {
+      const elementToFocus = this.doc.querySelector(focusedElSelector);
+      if (elementToFocus && this.element.contains(elementToFocus)) {
+        
+        setTimeout(() => {
+          elementToFocus.focus();
+          this.ruleView.emitForTests("rule-editor-focus-reset");
+        }, 0);
       }
     }
   },
@@ -957,6 +984,11 @@ RuleEditor.prototype = {
       
       this.element.parentNode.replaceChild(editor.element, this.element);
 
+      
+      
+      
+      
+      
       editor._moveSelectorFocus(direction);
     } catch (err) {
       this.isEditing = false;
@@ -965,7 +997,6 @@ RuleEditor.prototype = {
   },
 
   
-
 
 
 

@@ -42,11 +42,6 @@ async function testEditSelector(view) {
   await onRuleViewChanged;
 
   
-  const onBlur = once(view.styleDocument.activeElement, "blur");
-  EventUtils.synthesizeKey("KEY_Escape", {}, view.styleWindow);
-  await onBlur;
-
-  
   ruleEditor = getRuleViewRuleEditor(view, 1);
 
   info("Check that the correct rules are visible");

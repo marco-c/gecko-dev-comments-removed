@@ -61,11 +61,6 @@ async function testEditSelector(view, name) {
     getRuleViewRuleEditor(view, 1).element.getAttribute("unmatched"),
     "Rule with " + name + " does not match the current element."
   );
-
-  
-  const onBlur = once(view.styleDocument.activeElement, "blur");
-  EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
-  await onBlur;
 }
 
 function checkModifiedElement(view, name) {

@@ -317,6 +317,14 @@ TextPropertyEditor.prototype = {
         contentType: InplaceEditor.CONTENT_TYPES.CSS_PROPERTY,
         popup: this.popup,
         cssProperties: this.cssProperties,
+        
+        
+        focusEditableFieldAfterApply: true,
+        focusEditableFieldContainerSelector: ".ruleview-rule",
+        
+        
+        
+        stopOnReturn: true,
       });
 
       
@@ -410,6 +418,14 @@ TextPropertyEditor.prototype = {
           [],
         getGridLineNames: this.getGridlineNames,
         showSuggestCompletionOnEmpty: true,
+        
+        
+        focusEditableFieldAfterApply: true,
+        focusEditableFieldContainerSelector: ".ruleview-rule",
+        
+        
+        
+        stopOnReturn: true,
       });
     }
   },
