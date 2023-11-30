@@ -1177,9 +1177,9 @@ nsSHistory::NotifyOnHistoryReload(bool* aCanReload) {
 }
 
 NS_IMETHODIMP
-nsSHistory::EvictOutOfRangeContentViewers(int32_t aIndex) {
+nsSHistory::EvictOutOfRangeDocumentViewers(int32_t aIndex) {
   MOZ_LOG(gSHIPBFCacheLog, LogLevel::Debug,
-          ("nsSHistory::EvictOutOfRangeContentViewers %i", aIndex));
+          ("nsSHistory::EvictOutOfRangeDocumentViewers %i", aIndex));
 
   
   EvictOutOfRangeWindowDocumentViewers(aIndex);
@@ -1195,7 +1195,7 @@ nsSHistory::EvictContentViewersOrReplaceEntry(nsISHEntry* aNewSHEntry,
     int32_t curIndex;
     GetIndex(&curIndex);
     if (curIndex > -1) {
-      EvictOutOfRangeContentViewers(curIndex);
+      EvictOutOfRangeDocumentViewers(curIndex);
     }
   } else {
     nsCOMPtr<nsISHEntry> rootSHEntry = nsSHistory::GetRootSHEntry(aNewSHEntry);
@@ -1310,7 +1310,7 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     
     
     
-    shistory->EvictOutOfRangeContentViewers(indexOfHistoryLoad);
+    shistory->EvictOutOfRangeDocumentViewers(indexOfHistoryLoad);
 
     
     
