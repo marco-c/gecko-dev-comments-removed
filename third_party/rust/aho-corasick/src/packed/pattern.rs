@@ -1,16 +1,11 @@
-use std::cmp;
-use std::fmt;
-use std::mem;
-use std::u16;
-use std::usize;
+use core::{cmp, fmt, mem, u16, usize};
 
-use crate::packed::api::MatchKind;
+use alloc::{boxed::Box, string::String, vec, vec::Vec};
 
-
-
-
-
-pub type PatternID = u16;
+use crate::{
+    packed::{api::MatchKind, ext::Pointer},
+    PatternID,
+};
 
 
 
@@ -22,7 +17,7 @@ pub type PatternID = u16;
 
 
 #[derive(Clone, Debug)]
-pub struct Patterns {
+pub(crate) struct Patterns {
     
     
     
@@ -42,11 +37,14 @@ pub struct Patterns {
     minimum_len: usize,
     
     
-    max_pattern_id: PatternID,
-    
-    
     total_pattern_bytes: usize,
 }
+
+
+
+
+
+
 
 impl Patterns {
     
@@ -56,13 +54,12 @@ impl Patterns {
     
     
     
-    pub fn new() -> Patterns {
+    pub(crate) fn new() -> Patterns {
         Patterns {
             kind: MatchKind::default(),
             by_id: vec![],
             order: vec![],
             minimum_len: usize::MAX,
-            max_pattern_id: 0,
             total_pattern_bytes: 0,
         }
     }
@@ -70,12 +67,11 @@ impl Patterns {
     
     
     
-    pub fn add(&mut self, bytes: &[u8]) {
+    pub(crate) fn add(&mut self, bytes: &[u8]) {
         assert!(!bytes.is_empty());
         assert!(self.by_id.len() <= u16::MAX as usize);
 
-        let id = self.by_id.len() as u16;
-        self.max_pattern_id = id;
+        let id = PatternID::new(self.by_id.len()).unwrap();
         self.order.push(id);
         self.by_id.push(bytes.to_vec());
         self.minimum_len = cmp::min(self.minimum_len, bytes.len());
@@ -85,39 +81,36 @@ impl Patterns {
     
     
     
-    pub fn set_match_kind(&mut self, kind: MatchKind) {
-        match kind {
+    pub(crate) fn set_match_kind(&mut self, kind: MatchKind) {
+        self.kind = kind;
+        match self.kind {
             MatchKind::LeftmostFirst => {
                 self.order.sort();
             }
             MatchKind::LeftmostLongest => {
                 let (order, by_id) = (&mut self.order, &mut self.by_id);
                 order.sort_by(|&id1, &id2| {
-                    by_id[id1 as usize]
-                        .len()
-                        .cmp(&by_id[id2 as usize].len())
-                        .reverse()
+                    by_id[id1].len().cmp(&by_id[id2].len()).reverse()
                 });
             }
-            MatchKind::__Nonexhaustive => unreachable!(),
         }
     }
 
     
     
     
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.by_id.len()
     }
 
     
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
     
     
-    pub fn heap_bytes(&self) -> usize {
+    pub(crate) fn memory_usage(&self) -> usize {
         self.order.len() * mem::size_of::<PatternID>()
             + self.by_id.len() * mem::size_of::<Vec<u8>>()
             + self.total_pattern_bytes
@@ -125,38 +118,29 @@ impl Patterns {
 
     
     
-    pub fn reset(&mut self) {
+    pub(crate) fn reset(&mut self) {
         self.kind = MatchKind::default();
         self.by_id.clear();
         self.order.clear();
         self.minimum_len = usize::MAX;
-        self.max_pattern_id = 0;
     }
 
     
     
     
-    pub fn max_pattern_id(&self) -> PatternID {
-        assert_eq!((self.max_pattern_id + 1) as usize, self.len());
-        self.max_pattern_id
-    }
-
-    
-    
-    
-    pub fn minimum_len(&self) -> usize {
+    pub(crate) fn minimum_len(&self) -> usize {
         self.minimum_len
     }
 
     
-    pub fn match_kind(&self) -> &MatchKind {
+    pub(crate) fn match_kind(&self) -> &MatchKind {
         &self.kind
     }
 
     
     
-    pub fn get(&self, id: PatternID) -> Pattern<'_> {
-        Pattern(&self.by_id[id as usize])
+    pub(crate) fn get(&self, id: PatternID) -> Pattern<'_> {
+        Pattern(&self.by_id[id])
     }
 
     
@@ -166,9 +150,8 @@ impl Patterns {
     
     
     
-    #[cfg(target_arch = "x86_64")]
-    pub unsafe fn get_unchecked(&self, id: PatternID) -> Pattern<'_> {
-        Pattern(self.by_id.get_unchecked(id as usize))
+    pub(crate) unsafe fn get_unchecked(&self, id: PatternID) -> Pattern<'_> {
+        Pattern(self.by_id.get_unchecked(id.as_usize()))
     }
 
     
@@ -189,7 +172,7 @@ impl Patterns {
     
     
     
-    pub fn iter(&self) -> PatternIter<'_> {
+    pub(crate) fn iter(&self) -> PatternIter<'_> {
         PatternIter { patterns: self, i: 0 }
     }
 }
@@ -202,7 +185,7 @@ impl Patterns {
 
 
 #[derive(Debug)]
-pub struct PatternIter<'p> {
+pub(crate) struct PatternIter<'p> {
     patterns: &'p Patterns,
     i: usize,
 }
@@ -223,7 +206,7 @@ impl<'p> Iterator for PatternIter<'p> {
 
 
 #[derive(Clone)]
-pub struct Pattern<'a>(&'a [u8]);
+pub(crate) struct Pattern<'a>(&'a [u8]);
 
 impl<'a> fmt::Debug for Pattern<'a> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -235,84 +218,263 @@ impl<'a> fmt::Debug for Pattern<'a> {
 
 impl<'p> Pattern<'p> {
     
-    pub fn len(&self) -> usize {
+    pub(crate) fn len(&self) -> usize {
         self.0.len()
     }
 
     
-    pub fn bytes(&self) -> &[u8] {
+    pub(crate) fn bytes(&self) -> &[u8] {
         &self.0
     }
 
     
     
-    #[cfg(target_arch = "x86_64")]
-    pub fn low_nybbles(&self, len: usize) -> Vec<u8> {
-        let mut nybs = vec![];
-        for &b in self.bytes().iter().take(len) {
-            nybs.push(b & 0xF);
+    pub(crate) fn low_nybbles(&self, len: usize) -> Box<[u8]> {
+        let mut nybs = vec![0; len].into_boxed_slice();
+        for (i, byte) in self.bytes().iter().take(len).enumerate() {
+            nybs[i] = byte & 0xF;
         }
         nybs
     }
 
     
     #[inline(always)]
-    pub fn is_prefix(&self, bytes: &[u8]) -> bool {
-        self.len() <= bytes.len() && self.equals(&bytes[..self.len()])
+    pub(crate) fn is_prefix(&self, bytes: &[u8]) -> bool {
+        is_prefix(bytes, self.bytes())
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline(always)]
-    pub fn equals(&self, bytes: &[u8]) -> bool {
-        
-        
-        
-        
-        
-        
-        
-        
-
-        if self.len() != bytes.len() {
+    pub(crate) unsafe fn is_prefix_raw(
+        &self,
+        start: *const u8,
+        end: *const u8,
+    ) -> bool {
+        let patlen = self.bytes().len();
+        let haylen = end.distance(start);
+        if patlen > haylen {
             return false;
         }
-        if self.len() < 8 {
-            for (&b1, &b2) in self.bytes().iter().zip(bytes) {
-                if b1 != b2 {
-                    return false;
-                }
+        
+        
+        
+        is_equal_raw(start, self.bytes().as_ptr(), patlen)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+#[inline(always)]
+fn is_prefix(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.len() > haystack.len() {
+        return false;
+    }
+    
+    
+    
+    unsafe { is_equal_raw(haystack.as_ptr(), needle.as_ptr(), needle.len()) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[cfg(test)]
+#[inline(always)]
+fn is_equal(x: &[u8], y: &[u8]) -> bool {
+    if x.len() != y.len() {
+        return false;
+    }
+    
+    
+    
+    unsafe { is_equal_raw(x.as_ptr(), y.as_ptr(), x.len()) }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[inline(always)]
+unsafe fn is_equal_raw(mut x: *const u8, mut y: *const u8, n: usize) -> bool {
+    
+    
+    
+    
+    if n < 4 {
+        return match n {
+            0 => true,
+            1 => x.read() == y.read(),
+            2 => {
+                x.cast::<u16>().read_unaligned()
+                    == y.cast::<u16>().read_unaligned()
             }
-            return true;
+            
+            
+            3 => x.cast::<[u8; 3]>().read() == y.cast::<[u8; 3]>().read(),
+            _ => unreachable!(),
+        };
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+    
+    
+    let xend = x.add(n.wrapping_sub(4));
+    let yend = y.add(n.wrapping_sub(4));
+    while x < xend {
+        let vx = x.cast::<u32>().read_unaligned();
+        let vy = y.cast::<u32>().read_unaligned();
+        if vx != vy {
+            return false;
         }
-        
-        
-        let mut p1 = self.bytes().as_ptr();
-        let mut p2 = bytes.as_ptr();
-        let p1end = self.bytes()[self.len() - 8..].as_ptr();
-        let p2end = bytes[bytes.len() - 8..].as_ptr();
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        unsafe {
-            while p1 < p1end {
-                let v1 = (p1 as *const u64).read_unaligned();
-                let v2 = (p2 as *const u64).read_unaligned();
-                if v1 != v2 {
-                    return false;
-                }
-                p1 = p1.add(8);
-                p2 = p2.add(8);
-            }
-            let v1 = (p1end as *const u64).read_unaligned();
-            let v2 = (p2end as *const u64).read_unaligned();
-            v1 == v2
+        x = x.add(4);
+        y = y.add(4);
+    }
+    let vx = xend.cast::<u32>().read_unaligned();
+    let vy = yend.cast::<u32>().read_unaligned();
+    vx == vy
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn equals_different_lengths() {
+        assert!(!is_equal(b"", b"a"));
+        assert!(!is_equal(b"a", b""));
+        assert!(!is_equal(b"ab", b"a"));
+        assert!(!is_equal(b"a", b"ab"));
+    }
+
+    #[test]
+    fn equals_mismatch() {
+        let one_mismatch = [
+            (&b"a"[..], &b"x"[..]),
+            (&b"ab"[..], &b"ax"[..]),
+            (&b"abc"[..], &b"abx"[..]),
+            (&b"abcd"[..], &b"abcx"[..]),
+            (&b"abcde"[..], &b"abcdx"[..]),
+            (&b"abcdef"[..], &b"abcdex"[..]),
+            (&b"abcdefg"[..], &b"abcdefx"[..]),
+            (&b"abcdefgh"[..], &b"abcdefgx"[..]),
+            (&b"abcdefghi"[..], &b"abcdefghx"[..]),
+            (&b"abcdefghij"[..], &b"abcdefghix"[..]),
+            (&b"abcdefghijk"[..], &b"abcdefghijx"[..]),
+            (&b"abcdefghijkl"[..], &b"abcdefghijkx"[..]),
+            (&b"abcdefghijklm"[..], &b"abcdefghijklx"[..]),
+            (&b"abcdefghijklmn"[..], &b"abcdefghijklmx"[..]),
+        ];
+        for (x, y) in one_mismatch {
+            assert_eq!(x.len(), y.len(), "lengths should match");
+            assert!(!is_equal(x, y));
+            assert!(!is_equal(y, x));
         }
+    }
+
+    #[test]
+    fn equals_yes() {
+        assert!(is_equal(b"", b""));
+        assert!(is_equal(b"a", b"a"));
+        assert!(is_equal(b"ab", b"ab"));
+        assert!(is_equal(b"abc", b"abc"));
+        assert!(is_equal(b"abcd", b"abcd"));
+        assert!(is_equal(b"abcde", b"abcde"));
+        assert!(is_equal(b"abcdef", b"abcdef"));
+        assert!(is_equal(b"abcdefg", b"abcdefg"));
+        assert!(is_equal(b"abcdefgh", b"abcdefgh"));
+        assert!(is_equal(b"abcdefghi", b"abcdefghi"));
+    }
+
+    #[test]
+    fn prefix() {
+        assert!(is_prefix(b"", b""));
+        assert!(is_prefix(b"a", b""));
+        assert!(is_prefix(b"ab", b""));
+        assert!(is_prefix(b"foo", b"foo"));
+        assert!(is_prefix(b"foobar", b"foo"));
+
+        assert!(!is_prefix(b"foo", b"fob"));
+        assert!(!is_prefix(b"foobar", b"fob"));
     }
 }

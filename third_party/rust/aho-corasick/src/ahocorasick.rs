@@ -1,15 +1,21 @@
-use std::io;
+use core::{
+    fmt::Debug,
+    panic::{RefUnwindSafe, UnwindSafe},
+};
 
-use crate::automaton::Automaton;
-use crate::buffer::Buffer;
-use crate::dfa::{self, DFA};
-use crate::error::Result;
-use crate::nfa::{self, NFA};
-use crate::packed;
-use crate::prefilter::{Prefilter, PrefilterState};
-use crate::state_id::StateID;
-use crate::Match;
+use alloc::{string::String, sync::Arc, vec::Vec};
 
+use crate::{
+    automaton::{self, Automaton, OverlappingState},
+    dfa,
+    nfa::{contiguous, noncontiguous},
+    util::{
+        error::{BuildError, MatchError},
+        prefilter::Prefilter,
+        primitives::{PatternID, StateID},
+        search::{Anchored, Input, Match, MatchKind, StartKind},
+    },
+};
 
 
 
@@ -82,11 +88,194 @@ use crate::Match;
 
 
 
-#[derive(Clone, Debug)]
-pub struct AhoCorasick<S: StateID = usize> {
-    imp: Imp<S>,
-    match_kind: MatchKind,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone)]
+pub struct AhoCorasick {
+    
+    
+    aut: Arc<dyn AcAutomaton>,
+    
+    
+    
+    kind: AhoCorasickKind,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    start_kind: StartKind,
 }
+
+
+
+impl AhoCorasick {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new<I, P>(patterns: I) -> Result<AhoCorasick, BuildError>
+    where
+        I: IntoIterator<Item = P>,
+        P: AsRef<[u8]>,
+    {
+        AhoCorasickBuilder::new().build(patterns)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn builder() -> AhoCorasickBuilder {
+        AhoCorasickBuilder::new()
+    }
+}
+
+
+
+
+
+
+
 
 impl AhoCorasick {
     
@@ -116,12 +305,14 @@ impl AhoCorasick {
     
     
     
-    pub fn new<I, P>(patterns: I) -> AhoCorasick
-    where
-        I: IntoIterator<Item = P>,
-        P: AsRef<[u8]>,
-    {
-        AhoCorasickBuilder::new().build(patterns)
+    
+    
+    
+    pub fn is_match<'h, I: Into<Input<'h>>>(&self, input: I) -> bool {
+        self.aut
+            .try_find(&input.into().earliest(true))
+            .expect("AhoCorasick::try_find is not expected to fail")
+            .is_some()
     }
 
     
@@ -151,38 +342,69 @@ impl AhoCorasick {
     
     
     
-    pub fn new_auto_configured<B>(patterns: &[B]) -> AhoCorasick
-    where
-        B: AsRef<[u8]>,
-    {
-        AhoCorasickBuilder::new().auto_configure(patterns).build(patterns)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn find<'h, I: Into<Input<'h>>>(&self, input: I) -> Option<Match> {
+        self.try_find(input)
+            .expect("AhoCorasick::try_find is not expected to fail")
     }
-}
-
-impl<S: StateID> AhoCorasick<S> {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn is_match<B: AsRef<[u8]>>(&self, haystack: B) -> bool {
-        self.earliest_find(haystack).is_some()
-    }
 
     
     
@@ -208,14 +430,50 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn earliest_find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
-        let mut prestate = PrefilterState::new(self.max_pattern_len());
-        let mut start = self.imp.start_state();
-        self.imp.earliest_find_at(
-            &mut prestate,
-            haystack.as_ref(),
-            0,
-            &mut start,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn find_overlapping<'h, I: Into<Input<'h>>>(
+        &self,
+        input: I,
+        state: &mut OverlappingState,
+    ) {
+        self.try_find_overlapping(input, state).expect(
+            "AhoCorasick::try_find_overlapping is not expected to fail",
         )
     }
 
@@ -280,11 +538,6 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn find<B: AsRef<[u8]>>(&self, haystack: B) -> Option<Match> {
-        let mut prestate = PrefilterState::new(self.max_pattern_len());
-        self.imp.find_at_no_state(&mut prestate, haystack.as_ref(), 0)
-    }
-
     
     
     
@@ -306,52 +559,12 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn find_iter<'a, 'b, B: ?Sized + AsRef<[u8]>>(
+    pub fn find_iter<'a, 'h, I: Into<Input<'h>>>(
         &'a self,
-        haystack: &'b B,
-    ) -> FindIter<'a, 'b, S> {
-        FindIter::new(self, haystack.as_ref())
+        input: I,
+    ) -> FindIter<'a, 'h> {
+        self.try_find_iter(input)
+            .expect("AhoCorasick::try_find_iter is not expected to fail")
     }
 
     
@@ -390,13 +603,22 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn find_overlapping_iter<'a, 'b, B: ?Sized + AsRef<[u8]>>(
+    
+    
+    
+    pub fn find_overlapping_iter<'a, 'h, I: Into<Input<'h>>>(
         &'a self,
-        haystack: &'b B,
-    ) -> FindOverlappingIter<'a, 'b, S> {
-        FindOverlappingIter::new(self, haystack.as_ref())
+        input: I,
+    ) -> FindOverlappingIter<'a, 'h> {
+        self.try_find_overlapping_iter(input).expect(
+            "AhoCorasick::try_find_overlapping_iter is not expected to fail",
+        )
     }
 
+    
+    
+    
+    
     
     
     
@@ -430,20 +652,15 @@ impl<S: StateID> AhoCorasick<S> {
     where
         B: AsRef<str>,
     {
-        assert_eq!(
-            replace_with.len(),
-            self.pattern_count(),
-            "replace_all requires a replacement for every pattern \
-             in the automaton"
-        );
-        let mut dst = String::with_capacity(haystack.len());
-        self.replace_all_with(haystack, &mut dst, |mat, _, dst| {
-            dst.push_str(replace_with[mat.pattern()].as_ref());
-            true
-        });
-        dst
+        self.try_replace_all(haystack, replace_with)
+            .expect("AhoCorasick::try_replace_all is not expected to fail")
     }
 
+    
+    
+    
+    
+    
     
     
     
@@ -481,20 +698,23 @@ impl<S: StateID> AhoCorasick<S> {
     where
         B: AsRef<[u8]>,
     {
-        assert_eq!(
-            replace_with.len(),
-            self.pattern_count(),
-            "replace_all_bytes requires a replacement for every pattern \
-             in the automaton"
-        );
-        let mut dst = Vec::with_capacity(haystack.len());
-        self.replace_all_with_bytes(haystack, &mut dst, |mat, _, dst| {
-            dst.extend(replace_with[mat.pattern()].as_ref());
-            true
-        });
-        dst
+        self.try_replace_all_bytes(haystack, replace_with)
+            .expect("AhoCorasick::try_replace_all_bytes should not fail")
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -546,21 +766,24 @@ impl<S: StateID> AhoCorasick<S> {
         &self,
         haystack: &str,
         dst: &mut String,
-        mut replace_with: F,
+        replace_with: F,
     ) where
         F: FnMut(&Match, &str, &mut String) -> bool,
     {
-        let mut last_match = 0;
-        for mat in self.find_iter(haystack) {
-            dst.push_str(&haystack[last_match..mat.start()]);
-            last_match = mat.end();
-            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
-                break;
-            };
-        }
-        dst.push_str(&haystack[last_match..]);
+        self.try_replace_all_with(haystack, dst, replace_with)
+            .expect("AhoCorasick::try_replace_all_with should not fail")
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -612,19 +835,12 @@ impl<S: StateID> AhoCorasick<S> {
         &self,
         haystack: &[u8],
         dst: &mut Vec<u8>,
-        mut replace_with: F,
+        replace_with: F,
     ) where
         F: FnMut(&Match, &[u8], &mut Vec<u8>) -> bool,
     {
-        let mut last_match = 0;
-        for mat in self.find_iter(haystack) {
-            dst.extend(&haystack[last_match..mat.start()]);
-            last_match = mat.end();
-            if !replace_with(&mat, &haystack[mat.start()..mat.end()], dst) {
-                break;
-            };
-        }
-        dst.extend(&haystack[last_match..]);
+        self.try_replace_all_with_bytes(haystack, dst, replace_with)
+            .expect("AhoCorasick::try_replace_all_with_bytes should not fail")
     }
 
     
@@ -682,11 +898,133 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn stream_find_iter<'a, R: io::Read>(
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    pub fn stream_find_iter<'a, R: std::io::Read>(
         &'a self,
         rdr: R,
-    ) -> StreamFindIter<'a, R, S> {
-        StreamFindIter::new(self, rdr)
+    ) -> StreamFindIter<'a, R> {
+        self.try_stream_find_iter(rdr)
+            .expect("AhoCorasick::try_stream_find_iter should not fail")
+    }
+}
+
+
+
+impl AhoCorasick {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_find<'h, I: Into<Input<'h>>>(
+        &self,
+        input: I,
+    ) -> Result<Option<Match>, MatchError> {
+        let input = input.into();
+        enforce_anchored_consistency(self.start_kind, input.get_anchored())?;
+        self.aut.try_find(&input)
     }
 
     
@@ -747,26 +1085,683 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn stream_replace_all<R, W, B>(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_find_overlapping<'h, I: Into<Input<'h>>>(
+        &self,
+        input: I,
+        state: &mut OverlappingState,
+    ) -> Result<(), MatchError> {
+        let input = input.into();
+        enforce_anchored_consistency(self.start_kind, input.get_anchored())?;
+        self.aut.try_find_overlapping(&input, state)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_find_iter<'a, 'h, I: Into<Input<'h>>>(
+        &'a self,
+        input: I,
+    ) -> Result<FindIter<'a, 'h>, MatchError> {
+        let input = input.into();
+        enforce_anchored_consistency(self.start_kind, input.get_anchored())?;
+        Ok(FindIter(self.aut.try_find_iter(input)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_find_overlapping_iter<'a, 'h, I: Into<Input<'h>>>(
+        &'a self,
+        input: I,
+    ) -> Result<FindOverlappingIter<'a, 'h>, MatchError> {
+        let input = input.into();
+        enforce_anchored_consistency(self.start_kind, input.get_anchored())?;
+        Ok(FindOverlappingIter(self.aut.try_find_overlapping_iter(input)?))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_replace_all<B>(
+        &self,
+        haystack: &str,
+        replace_with: &[B],
+    ) -> Result<String, MatchError>
+    where
+        B: AsRef<str>,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)?;
+        self.aut.try_replace_all(haystack, replace_with)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_replace_all_bytes<B>(
+        &self,
+        haystack: &[u8],
+        replace_with: &[B],
+    ) -> Result<Vec<u8>, MatchError>
+    where
+        B: AsRef<[u8]>,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)?;
+        self.aut.try_replace_all_bytes(haystack, replace_with)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_replace_all_with<F>(
+        &self,
+        haystack: &str,
+        dst: &mut String,
+        replace_with: F,
+    ) -> Result<(), MatchError>
+    where
+        F: FnMut(&Match, &str, &mut String) -> bool,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)?;
+        self.aut.try_replace_all_with(haystack, dst, replace_with)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_replace_all_with_bytes<F>(
+        &self,
+        haystack: &[u8],
+        dst: &mut Vec<u8>,
+        replace_with: F,
+    ) -> Result<(), MatchError>
+    where
+        F: FnMut(&Match, &[u8], &mut Vec<u8>) -> bool,
+    {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)?;
+        self.aut.try_replace_all_with_bytes(haystack, dst, replace_with)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    pub fn try_stream_find_iter<'a, R: std::io::Read>(
+        &'a self,
+        rdr: R,
+    ) -> Result<StreamFindIter<'a, R>, MatchError> {
+        enforce_anchored_consistency(self.start_kind, Anchored::No)?;
+        self.aut.try_stream_find_iter(rdr).map(StreamFindIter)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "std")]
+    pub fn try_stream_replace_all<R, W, B>(
         &self,
         rdr: R,
         wtr: W,
         replace_with: &[B],
-    ) -> io::Result<()>
+    ) -> Result<(), std::io::Error>
     where
-        R: io::Read,
-        W: io::Write,
+        R: std::io::Read,
+        W: std::io::Write,
         B: AsRef<[u8]>,
     {
-        assert_eq!(
-            replace_with.len(),
-            self.pattern_count(),
-            "stream_replace_all requires a replacement for every pattern \
-             in the automaton"
-        );
-        self.stream_replace_all_with(rdr, wtr, |mat, _, wtr| {
-            wtr.write_all(replace_with[mat.pattern()].as_ref())
-        })
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        self.aut.try_stream_replace_all(rdr, wtr, replace_with)
     }
 
     
@@ -830,32 +1825,62 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    
-    
-    pub fn stream_replace_all_with<R, W, F>(
+    #[cfg(feature = "std")]
+    pub fn try_stream_replace_all_with<R, W, F>(
         &self,
         rdr: R,
-        mut wtr: W,
-        mut replace_with: F,
-    ) -> io::Result<()>
+        wtr: W,
+        replace_with: F,
+    ) -> Result<(), std::io::Error>
     where
-        R: io::Read,
-        W: io::Write,
-        F: FnMut(&Match, &[u8], &mut W) -> io::Result<()>,
+        R: std::io::Read,
+        W: std::io::Write,
+        F: FnMut(&Match, &[u8], &mut W) -> Result<(), std::io::Error>,
     {
-        let mut it = StreamChunkIter::new(self, rdr);
-        while let Some(result) = it.next() {
-            let chunk = result?;
-            match chunk {
-                StreamChunk::NonMatch { bytes, .. } => {
-                    wtr.write_all(bytes)?;
-                }
-                StreamChunk::Match { bytes, mat } => {
-                    replace_with(&mat, bytes, &mut wtr)?;
-                }
-            }
-        }
-        Ok(())
+        enforce_anchored_consistency(self.start_kind, Anchored::No)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        self.aut.try_stream_replace_all_with(rdr, wtr, replace_with)
+    }
+}
+
+
+impl AhoCorasick {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn kind(&self) -> AhoCorasickKind {
+        self.kind
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn start_kind(&self) -> StartKind {
+        self.start_kind
     }
 
     
@@ -872,12 +1897,37 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn match_kind(&self) -> &MatchKind {
-        self.imp.match_kind()
+    
+    pub fn match_kind(&self) -> MatchKind {
+        self.aut.match_kind()
     }
 
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn min_pattern_len(&self) -> usize {
+        self.aut.min_pattern_len()
+    }
+
     
     
     
@@ -891,7 +1941,7 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     pub fn max_pattern_len(&self) -> usize {
-        self.imp.max_pattern_len()
+        self.aut.max_pattern_len()
     }
 
     
@@ -912,73 +1962,8 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    
-    
-    
-    pub fn pattern_count(&self) -> usize {
-        self.imp.pattern_count()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn supports_overlapping(&self) -> bool {
-        self.match_kind.supports_overlapping()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn supports_stream(&self) -> bool {
-        self.match_kind.supports_stream()
+    pub fn patterns_len(&self) -> usize {
+        self.aut.patterns_len()
     }
 
     
@@ -1009,141 +1994,43 @@ impl<S: StateID> AhoCorasick<S> {
     
     
     
-    pub fn heap_bytes(&self) -> usize {
-        match self.imp {
-            Imp::NFA(ref nfa) => nfa.heap_bytes(),
-            Imp::DFA(ref dfa) => dfa.heap_bytes(),
-        }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn memory_usage(&self) -> usize {
+        self.aut.memory_usage()
     }
 }
 
 
 
 
-#[derive(Clone, Debug)]
-enum Imp<S: StateID> {
-    NFA(NFA<S>),
-    DFA(DFA<S>),
-}
-
-impl<S: StateID> Imp<S> {
-    
-    fn match_kind(&self) -> &MatchKind {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.match_kind(),
-            Imp::DFA(ref dfa) => dfa.match_kind(),
-        }
-    }
-
-    
-    fn start_state(&self) -> S {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.start_state(),
-            Imp::DFA(ref dfa) => dfa.start_state(),
-        }
-    }
-
-    
-    
-    
-    fn max_pattern_len(&self) -> usize {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.max_pattern_len(),
-            Imp::DFA(ref dfa) => dfa.max_pattern_len(),
-        }
-    }
-
-    
-    
-    
-    fn pattern_count(&self) -> usize {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.pattern_count(),
-            Imp::DFA(ref dfa) => dfa.pattern_count(),
-        }
-    }
-
-    
-    
-    fn prefilter(&self) -> Option<&dyn Prefilter> {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.prefilter(),
-            Imp::DFA(ref dfa) => dfa.prefilter(),
-        }
-    }
-
-    
-    fn use_prefilter(&self) -> bool {
-        let p = match self.prefilter() {
-            None => return false,
-            Some(p) => p,
-        };
-        !p.looks_for_non_start_of_match()
-    }
-
-    #[inline(always)]
-    fn overlapping_find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut S,
-        match_index: &mut usize,
-    ) -> Option<Match> {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.overlapping_find_at(
-                prestate,
-                haystack,
-                at,
-                state_id,
-                match_index,
-            ),
-            Imp::DFA(ref dfa) => dfa.overlapping_find_at(
-                prestate,
-                haystack,
-                at,
-                state_id,
-                match_index,
-            ),
-        }
-    }
-
-    #[inline(always)]
-    fn earliest_find_at(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-        state_id: &mut S,
-    ) -> Option<Match> {
-        match *self {
-            Imp::NFA(ref nfa) => {
-                nfa.earliest_find_at(prestate, haystack, at, state_id)
-            }
-            Imp::DFA(ref dfa) => {
-                dfa.earliest_find_at(prestate, haystack, at, state_id)
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn find_at_no_state(
-        &self,
-        prestate: &mut PrefilterState,
-        haystack: &[u8],
-        at: usize,
-    ) -> Option<Match> {
-        match *self {
-            Imp::NFA(ref nfa) => nfa.find_at_no_state(prestate, haystack, at),
-            Imp::DFA(ref dfa) => dfa.find_at_no_state(prestate, haystack, at),
-        }
+impl core::fmt::Debug for AhoCorasick {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+        f.debug_tuple("AhoCorasick").field(&self.aut).finish()
     }
 }
-
-
-
-
-
 
 
 
@@ -1157,50 +2044,16 @@ impl<S: StateID> Imp<S> {
 
 
 #[derive(Debug)]
-pub struct FindIter<'a, 'b, S: StateID> {
-    fsm: &'a Imp<S>,
-    prestate: PrefilterState,
-    haystack: &'b [u8],
-    pos: usize,
-}
+pub struct FindIter<'a, 'h>(automaton::FindIter<'a, 'h, Arc<dyn AcAutomaton>>);
 
-impl<'a, 'b, S: StateID> FindIter<'a, 'b, S> {
-    fn new(ac: &'a AhoCorasick<S>, haystack: &'b [u8]) -> FindIter<'a, 'b, S> {
-        let prestate = PrefilterState::new(ac.max_pattern_len());
-        FindIter { fsm: &ac.imp, prestate, haystack, pos: 0 }
-    }
-}
-
-impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
+impl<'a, 'h> Iterator for FindIter<'a, 'h> {
     type Item = Match;
 
+    #[inline]
     fn next(&mut self) -> Option<Match> {
-        if self.pos > self.haystack.len() {
-            return None;
-        }
-        let result = self.fsm.find_at_no_state(
-            &mut self.prestate,
-            self.haystack,
-            self.pos,
-        );
-        let mat = match result {
-            None => return None,
-            Some(mat) => mat,
-        };
-        if mat.end() == self.pos {
-            
-            
-            self.pos += 1;
-        } else {
-            self.pos = mat.end();
-        }
-        Some(mat)
+        self.0.next()
     }
 }
-
-
-
-
 
 
 
@@ -1214,54 +2067,16 @@ impl<'a, 'b, S: StateID> Iterator for FindIter<'a, 'b, S> {
 
 
 #[derive(Debug)]
-pub struct FindOverlappingIter<'a, 'b, S: StateID> {
-    fsm: &'a Imp<S>,
-    prestate: PrefilterState,
-    haystack: &'b [u8],
-    pos: usize,
-    state_id: S,
-    match_index: usize,
-}
+pub struct FindOverlappingIter<'a, 'h>(
+    automaton::FindOverlappingIter<'a, 'h, Arc<dyn AcAutomaton>>,
+);
 
-impl<'a, 'b, S: StateID> FindOverlappingIter<'a, 'b, S> {
-    fn new(
-        ac: &'a AhoCorasick<S>,
-        haystack: &'b [u8],
-    ) -> FindOverlappingIter<'a, 'b, S> {
-        assert!(
-            ac.supports_overlapping(),
-            "automaton does not support overlapping searches"
-        );
-        let prestate = PrefilterState::new(ac.max_pattern_len());
-        FindOverlappingIter {
-            fsm: &ac.imp,
-            prestate,
-            haystack,
-            pos: 0,
-            state_id: ac.imp.start_state(),
-            match_index: 0,
-        }
-    }
-}
-
-impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
+impl<'a, 'h> Iterator for FindOverlappingIter<'a, 'h> {
     type Item = Match;
 
+    #[inline]
     fn next(&mut self) -> Option<Match> {
-        let result = self.fsm.overlapping_find_at(
-            &mut self.prestate,
-            self.haystack,
-            self.pos,
-            &mut self.state_id,
-            &mut self.match_index,
-        );
-        match result {
-            None => return None,
-            Some(m) => {
-                self.pos = m.end();
-                Some(m)
-            }
-        }
+        self.0.next()
     }
 }
 
@@ -1280,33 +2095,18 @@ impl<'a, 'b, S: StateID> Iterator for FindOverlappingIter<'a, 'b, S> {
 
 
 
-
-
+#[cfg(feature = "std")]
 #[derive(Debug)]
-pub struct StreamFindIter<'a, R, S: StateID> {
-    it: StreamChunkIter<'a, R, S>,
-}
+pub struct StreamFindIter<'a, R>(
+    automaton::StreamFindIter<'a, Arc<dyn AcAutomaton>, R>,
+);
 
-impl<'a, R: io::Read, S: StateID> StreamFindIter<'a, R, S> {
-    fn new(ac: &'a AhoCorasick<S>, rdr: R) -> StreamFindIter<'a, R, S> {
-        StreamFindIter { it: StreamChunkIter::new(ac, rdr) }
-    }
-}
+#[cfg(feature = "std")]
+impl<'a, R: std::io::Read> Iterator for StreamFindIter<'a, R> {
+    type Item = Result<Match, std::io::Error>;
 
-impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
-    type Item = io::Result<Match>;
-
-    fn next(&mut self) -> Option<io::Result<Match>> {
-        loop {
-            match self.it.next() {
-                None => return None,
-                Some(Err(err)) => return Some(Err(err)),
-                Some(Ok(StreamChunk::NonMatch { .. })) => {}
-                Some(Ok(StreamChunk::Match { mat, .. })) => {
-                    return Some(Ok(mat));
-                }
-            }
-        }
+    fn next(&mut self) -> Option<Result<Match, std::io::Error>> {
+        self.0.next()
     }
 }
 
@@ -1317,186 +2117,27 @@ impl<'a, R: io::Read, S: StateID> Iterator for StreamFindIter<'a, R, S> {
 
 
 
-#[derive(Debug)]
-struct StreamChunkIter<'a, R, S: StateID> {
-    
-    fsm: &'a Imp<S>,
-    
-    
-    prestate: PrefilterState,
-    
-    rdr: R,
-    
-    
-    
-    buf: Buffer,
-    
-    state_id: S,
-    
-    search_pos: usize,
-    
-    
-    absolute_pos: usize,
-    
-    
-    
-    report_pos: usize,
-    
-    pending_match: Option<Match>,
-    
-    
-    
-    has_empty_match_at_end: bool,
-}
 
 
 
 
-#[derive(Debug)]
-enum StreamChunk<'r> {
-    
-    NonMatch { bytes: &'r [u8] },
-    
-    Match { bytes: &'r [u8], mat: Match },
-}
-
-impl<'a, R: io::Read, S: StateID> StreamChunkIter<'a, R, S> {
-    fn new(ac: &'a AhoCorasick<S>, rdr: R) -> StreamChunkIter<'a, R, S> {
-        assert!(
-            ac.supports_stream(),
-            "stream searching is only supported for Standard match semantics"
-        );
-
-        let prestate = if ac.imp.use_prefilter() {
-            PrefilterState::new(ac.max_pattern_len())
-        } else {
-            PrefilterState::disabled()
-        };
-        let buf = Buffer::new(ac.imp.max_pattern_len());
-        let state_id = ac.imp.start_state();
-        StreamChunkIter {
-            fsm: &ac.imp,
-            prestate,
-            rdr,
-            buf,
-            state_id,
-            absolute_pos: 0,
-            report_pos: 0,
-            search_pos: 0,
-            pending_match: None,
-            has_empty_match_at_end: ac.is_match(""),
-        }
-    }
-
-    fn next(&mut self) -> Option<io::Result<StreamChunk>> {
-        loop {
-            if let Some(mut mat) = self.pending_match.take() {
-                let bytes = &self.buf.buffer()[mat.start()..mat.end()];
-                self.report_pos = mat.end();
-                mat = mat.increment(self.absolute_pos);
-                return Some(Ok(StreamChunk::Match { bytes, mat }));
-            }
-            if self.search_pos >= self.buf.len() {
-                if let Some(end) = self.unreported() {
-                    let bytes = &self.buf.buffer()[self.report_pos..end];
-                    self.report_pos = end;
-                    return Some(Ok(StreamChunk::NonMatch { bytes }));
-                }
-                if self.buf.len() >= self.buf.min_buffer_len() {
-                    
-                    
-                    
-                    
-                    
-
-                    self.report_pos -=
-                        self.buf.len() - self.buf.min_buffer_len();
-                    self.absolute_pos +=
-                        self.search_pos - self.buf.min_buffer_len();
-                    self.search_pos = self.buf.min_buffer_len();
-                    self.buf.roll();
-                }
-                match self.buf.fill(&mut self.rdr) {
-                    Err(err) => return Some(Err(err)),
-                    Ok(false) => {
-                        
-                        
-                        if self.report_pos < self.buf.len() {
-                            let bytes = &self.buf.buffer()[self.report_pos..];
-                            self.report_pos = self.buf.len();
-
-                            let chunk = StreamChunk::NonMatch { bytes };
-                            return Some(Ok(chunk));
-                        } else {
-                            
-                            
-                            if !self.has_empty_match_at_end {
-                                return None;
-                            }
-                            
-                            
-                            self.has_empty_match_at_end = false;
-                        }
-                    }
-                    Ok(true) => {}
-                }
-            }
-            let result = self.fsm.earliest_find_at(
-                &mut self.prestate,
-                self.buf.buffer(),
-                self.search_pos,
-                &mut self.state_id,
-            );
-            match result {
-                None => {
-                    self.search_pos = self.buf.len();
-                }
-                Some(mat) => {
-                    self.state_id = self.fsm.start_state();
-                    if mat.end() == self.search_pos {
-                        
-                        
-                        
-                        self.search_pos += 1;
-                    } else {
-                        self.search_pos = mat.end();
-                    }
-                    self.pending_match = Some(mat.clone());
-                    if self.report_pos < mat.start() {
-                        let bytes =
-                            &self.buf.buffer()[self.report_pos..mat.start()];
-                        self.report_pos = mat.start();
-
-                        let chunk = StreamChunk::NonMatch { bytes };
-                        return Some(Ok(chunk));
-                    }
-                }
-            }
-        }
-    }
-
-    fn unreported(&self) -> Option<usize> {
-        let end = self.search_pos.saturating_sub(self.buf.min_buffer_len());
-        if self.report_pos < end {
-            Some(end)
-        } else {
-            None
-        }
-    }
-}
 
 
-#[derive(Clone, Debug)]
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug, Default)]
 pub struct AhoCorasickBuilder {
-    nfa_builder: nfa::Builder,
-    dfa_builder: dfa::Builder,
-    dfa: bool,
-}
-
-impl Default for AhoCorasickBuilder {
-    fn default() -> AhoCorasickBuilder {
-        AhoCorasickBuilder::new()
-    }
+    nfa_noncontiguous: noncontiguous::Builder,
+    nfa_contiguous: contiguous::Builder,
+    dfa: dfa::Builder,
+    kind: Option<AhoCorasickKind>,
+    start_kind: StartKind,
 }
 
 impl AhoCorasickBuilder {
@@ -1504,14 +2145,8 @@ impl AhoCorasickBuilder {
     
     
     
-    
-    
     pub fn new() -> AhoCorasickBuilder {
-        AhoCorasickBuilder {
-            nfa_builder: nfa::Builder::new(),
-            dfa_builder: dfa::Builder::new(),
-            dfa: false,
-        }
+        AhoCorasickBuilder::default()
     }
 
     
@@ -1533,144 +2168,107 @@ impl AhoCorasickBuilder {
     
     
     
-    
-    
-    
-    
-    pub fn build<I, P>(&self, patterns: I) -> AhoCorasick
+    pub fn build<I, P>(&self, patterns: I) -> Result<AhoCorasick, BuildError>
     where
         I: IntoIterator<Item = P>,
         P: AsRef<[u8]>,
     {
-        
-        
-        
-        
-        
-        self.build_with_size::<usize, I, P>(patterns)
-            .expect("usize state ID type should always work")
+        let nfa = self.nfa_noncontiguous.build(patterns)?;
+        let (aut, kind): (Arc<dyn AcAutomaton>, AhoCorasickKind) =
+            match self.kind {
+                None => {
+                    debug!(
+                        "asked for automatic Aho-Corasick implementation, \
+                     criteria: <patterns: {:?}, max pattern len: {:?}, \
+                     start kind: {:?}>",
+                        nfa.patterns_len(),
+                        nfa.max_pattern_len(),
+                        self.start_kind,
+                    );
+                    self.build_auto(nfa)
+                }
+                Some(AhoCorasickKind::NoncontiguousNFA) => {
+                    debug!("forcefully chose noncontiguous NFA");
+                    (Arc::new(nfa), AhoCorasickKind::NoncontiguousNFA)
+                }
+                Some(AhoCorasickKind::ContiguousNFA) => {
+                    debug!("forcefully chose contiguous NFA");
+                    let cnfa =
+                        self.nfa_contiguous.build_from_noncontiguous(&nfa)?;
+                    (Arc::new(cnfa), AhoCorasickKind::ContiguousNFA)
+                }
+                Some(AhoCorasickKind::DFA) => {
+                    debug!("forcefully chose DFA");
+                    let dfa = self.dfa.build_from_noncontiguous(&nfa)?;
+                    (Arc::new(dfa), AhoCorasickKind::DFA)
+                }
+            };
+        Ok(AhoCorasick { aut, kind, start_kind: self.start_kind })
     }
 
     
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn build_with_size<S, I, P>(
+    fn build_auto(
         &self,
-        patterns: I,
-    ) -> Result<AhoCorasick<S>>
-    where
-        S: StateID,
-        I: IntoIterator<Item = P>,
-        P: AsRef<[u8]>,
-    {
-        let nfa = self.nfa_builder.build(patterns)?;
-        let match_kind = nfa.match_kind().clone();
-        let imp = if self.dfa {
-            let dfa = self.dfa_builder.build(&nfa)?;
-            Imp::DFA(dfa)
-        } else {
-            Imp::NFA(nfa)
-        };
-        Ok(AhoCorasick { imp, match_kind })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn auto_configure<B: AsRef<[u8]>>(
-        &mut self,
-        patterns: &[B],
-    ) -> &mut AhoCorasickBuilder {
+        nfa: noncontiguous::NFA,
+    ) -> (Arc<dyn AcAutomaton>, AhoCorasickKind) {
         
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
-        if patterns.len() <= 100 {
-            
-            
-            
-            self.dfa(true);
-        } else if patterns.len() <= 5000 {
-            self.dfa(true);
+        let try_dfa = !matches!(self.start_kind, StartKind::Both)
+            && nfa.patterns_len() <= 100;
+        if try_dfa {
+            match self.dfa.build_from_noncontiguous(&nfa) {
+                Ok(dfa) => {
+                    debug!("chose a DFA");
+                    return (Arc::new(dfa), AhoCorasickKind::DFA);
+                }
+                Err(_err) => {
+                    debug!(
+                        "failed to build DFA, trying something else: {}",
+                        _err
+                    );
+                }
+            }
         }
-        self
+        
+        
+        
+        
+        
+        
+        
+        
+        match self.nfa_contiguous.build_from_noncontiguous(&nfa) {
+            Ok(nfa) => {
+                debug!("chose contiguous NFA");
+                return (Arc::new(nfa), AhoCorasickKind::ContiguousNFA);
+            }
+            #[allow(unused_variables)] 
+            Err(_err) => {
+                debug!(
+                    "failed to build contiguous NFA, \
+                     trying something else: {}",
+                    _err
+                );
+            }
+        }
+        debug!("chose non-contiguous NFA");
+        (Arc::new(nfa), AhoCorasickKind::NoncontiguousNFA)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1742,7 +2340,9 @@ impl AhoCorasickBuilder {
     
     
     pub fn match_kind(&mut self, kind: MatchKind) -> &mut AhoCorasickBuilder {
-        self.nfa_builder.match_kind(kind);
+        self.nfa_noncontiguous.match_kind(kind);
+        self.nfa_contiguous.match_kind(kind);
+        self.dfa.match_kind(kind);
         self
     }
 
@@ -1782,11 +2382,65 @@ impl AhoCorasickBuilder {
     
     
     
-    pub fn anchored(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.nfa_builder.anchored(yes);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn start_kind(&mut self, kind: StartKind) -> &mut AhoCorasickBuilder {
+        self.dfa.start_kind(kind);
+        self.start_kind = kind;
         self
     }
 
+    
     
     
     
@@ -1821,10 +2475,91 @@ impl AhoCorasickBuilder {
         &mut self,
         yes: bool,
     ) -> &mut AhoCorasickBuilder {
-        self.nfa_builder.ascii_case_insensitive(yes);
+        self.nfa_noncontiguous.ascii_case_insensitive(yes);
+        self.nfa_contiguous.ascii_case_insensitive(yes);
+        self.dfa.ascii_case_insensitive(yes);
         self
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn kind(
+        &mut self,
+        kind: Option<AhoCorasickKind>,
+    ) -> &mut AhoCorasickBuilder {
+        self.kind = kind;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn prefilter(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
+        self.nfa_noncontiguous.prefilter(yes);
+        self.nfa_contiguous.prefilter(yes);
+        self.dfa.prefilter(yes);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -1844,47 +2579,8 @@ impl AhoCorasickBuilder {
     
     
     pub fn dense_depth(&mut self, depth: usize) -> &mut AhoCorasickBuilder {
-        self.nfa_builder.dense_depth(depth);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn dfa(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.dfa = yes;
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn prefilter(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.nfa_builder.prefilter(yes);
+        self.nfa_noncontiguous.dense_depth(depth);
+        self.nfa_contiguous.dense_depth(depth);
         self
     }
 
@@ -1913,45 +2609,9 @@ impl AhoCorasickBuilder {
     
     
     
-    
-    #[deprecated(
-        since = "0.7.16",
-        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
-    )]
     pub fn byte_classes(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.dfa_builder.byte_classes(yes);
-        self
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    #[deprecated(
-        since = "0.7.16",
-        note = "not carrying its weight, will be always enabled, see: https://github.com/BurntSushi/aho-corasick/issues/57"
-    )]
-    pub fn premultiply(&mut self, yes: bool) -> &mut AhoCorasickBuilder {
-        self.dfa_builder.premultiply(yes);
+        self.nfa_contiguous.byte_classes(yes);
+        self.dfa.byte_classes(yes);
         self
     }
 }
@@ -1962,180 +2622,168 @@ impl AhoCorasickBuilder {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MatchKind {
+pub enum AhoCorasickKind {
     
+    NoncontiguousNFA,
     
+    ContiguousNFA,
     
-    Standard,
-    
-    
-    
-    
-    
-    
-    
-    
-    LeftmostFirst,
-    
-    
-    
-    
-    
-    
-    
-    LeftmostLongest,
-    
-    
-    
-    
-    
-    #[doc(hidden)]
-    __Nonexhaustive,
+    DFA,
 }
 
 
-impl Default for MatchKind {
-    fn default() -> MatchKind {
-        MatchKind::Standard
+
+
+
+
+
+
+trait AcAutomaton:
+    Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
+{
+}
+
+impl<A> AcAutomaton for A where
+    A: Automaton + Debug + Send + Sync + UnwindSafe + RefUnwindSafe + 'static
+{
+}
+
+impl crate::automaton::private::Sealed for Arc<dyn AcAutomaton> {}
+
+
+
+
+
+
+#[doc(hidden)]
+unsafe impl Automaton for Arc<dyn AcAutomaton> {
+    #[inline(always)]
+    fn start_state(&self, anchored: Anchored) -> Result<StateID, MatchError> {
+        (**self).start_state(anchored)
+    }
+
+    #[inline(always)]
+    fn next_state(
+        &self,
+        anchored: Anchored,
+        sid: StateID,
+        byte: u8,
+    ) -> StateID {
+        (**self).next_state(anchored, sid, byte)
+    }
+
+    #[inline(always)]
+    fn is_special(&self, sid: StateID) -> bool {
+        (**self).is_special(sid)
+    }
+
+    #[inline(always)]
+    fn is_dead(&self, sid: StateID) -> bool {
+        (**self).is_dead(sid)
+    }
+
+    #[inline(always)]
+    fn is_match(&self, sid: StateID) -> bool {
+        (**self).is_match(sid)
+    }
+
+    #[inline(always)]
+    fn is_start(&self, sid: StateID) -> bool {
+        (**self).is_start(sid)
+    }
+
+    #[inline(always)]
+    fn match_kind(&self) -> MatchKind {
+        (**self).match_kind()
+    }
+
+    #[inline(always)]
+    fn match_len(&self, sid: StateID) -> usize {
+        (**self).match_len(sid)
+    }
+
+    #[inline(always)]
+    fn match_pattern(&self, sid: StateID, index: usize) -> PatternID {
+        (**self).match_pattern(sid, index)
+    }
+
+    #[inline(always)]
+    fn patterns_len(&self) -> usize {
+        (**self).patterns_len()
+    }
+
+    #[inline(always)]
+    fn pattern_len(&self, pid: PatternID) -> usize {
+        (**self).pattern_len(pid)
+    }
+
+    #[inline(always)]
+    fn min_pattern_len(&self) -> usize {
+        (**self).min_pattern_len()
+    }
+
+    #[inline(always)]
+    fn max_pattern_len(&self) -> usize {
+        (**self).max_pattern_len()
+    }
+
+    #[inline(always)]
+    fn memory_usage(&self) -> usize {
+        (**self).memory_usage()
+    }
+
+    #[inline(always)]
+    fn prefilter(&self) -> Option<&Prefilter> {
+        (**self).prefilter()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    #[inline(always)]
+    fn try_find(
+        &self,
+        input: &Input<'_>,
+    ) -> Result<Option<Match>, MatchError> {
+        (**self).try_find(input)
+    }
+
+    #[inline(always)]
+    fn try_find_overlapping(
+        &self,
+        input: &Input<'_>,
+        state: &mut OverlappingState,
+    ) -> Result<(), MatchError> {
+        (**self).try_find_overlapping(input, state)
     }
 }
 
-impl MatchKind {
-    fn supports_overlapping(&self) -> bool {
-        self.is_standard()
-    }
 
-    fn supports_stream(&self) -> bool {
-        
-        
-        
-        self.is_standard()
-    }
 
-    pub(crate) fn is_standard(&self) -> bool {
-        *self == MatchKind::Standard
-    }
 
-    pub(crate) fn is_leftmost(&self) -> bool {
-        *self == MatchKind::LeftmostFirst
-            || *self == MatchKind::LeftmostLongest
-    }
-
-    pub(crate) fn is_leftmost_first(&self) -> bool {
-        *self == MatchKind::LeftmostFirst
-    }
-
-    
-    
-    
-    pub(crate) fn as_packed(&self) -> Option<packed::MatchKind> {
-        match *self {
-            MatchKind::Standard => None,
-            MatchKind::LeftmostFirst => Some(packed::MatchKind::LeftmostFirst),
-            MatchKind::LeftmostLongest => {
-                Some(packed::MatchKind::LeftmostLongest)
-            }
-            MatchKind::__Nonexhaustive => unreachable!(),
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn oibits() {
-        use std::panic::{RefUnwindSafe, UnwindSafe};
-
-        fn assert_send<T: Send>() {}
-        fn assert_sync<T: Sync>() {}
-        fn assert_unwind_safe<T: RefUnwindSafe + UnwindSafe>() {}
-
-        assert_send::<AhoCorasick>();
-        assert_sync::<AhoCorasick>();
-        assert_unwind_safe::<AhoCorasick>();
-        assert_send::<AhoCorasickBuilder>();
-        assert_sync::<AhoCorasickBuilder>();
-        assert_unwind_safe::<AhoCorasickBuilder>();
+fn enforce_anchored_consistency(
+    have: StartKind,
+    want: Anchored,
+) -> Result<(), MatchError> {
+    match have {
+        StartKind::Both => Ok(()),
+        StartKind::Unanchored if !want.is_anchored() => Ok(()),
+        StartKind::Unanchored => Err(MatchError::invalid_input_anchored()),
+        StartKind::Anchored if want.is_anchored() => Ok(()),
+        StartKind::Anchored => Err(MatchError::invalid_input_unanchored()),
     }
 }
