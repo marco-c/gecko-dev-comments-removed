@@ -496,7 +496,7 @@ class BergamotUtils {
 
 
 
-  static initializeWasm(wasm) {
+  static initializeWasm(wasmBinary) {
     return new Promise((resolve, reject) => {
       
       let start = performance.now();
@@ -519,7 +519,7 @@ class BergamotUtils {
           await Promise.resolve();
           resolve(bergamot);
         },
-        wasm,
+        wasmBinary,
       });
     });
   }
