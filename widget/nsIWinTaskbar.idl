@@ -9,13 +9,12 @@
 #include "nsIBaseWindow.idl"
 
 interface nsIDocShell;
-interface nsIJumpListBuilder;
 interface nsITaskbarTabPreview;
 interface nsITaskbarWindowPreview;
 interface nsITaskbarPreviewController;
 interface nsITaskbarProgress;
 interface nsITaskbarOverlayIconController;
-interface nsILegacyJumpListBuilder;
+interface nsIJumpListBuilder;
 interface mozIDOMWindow;
 
 
@@ -125,15 +124,6 @@ interface nsIWinTaskbar : nsISupports
 
 
 
-
-
-
-
-
-
-  nsILegacyJumpListBuilder createLegacyJumpListBuilder(in boolean aPrivateBrowsing);
-
-  
 
 
 

@@ -6,46 +6,30 @@
 #ifndef __JumpListBuilder_h__
 #define __JumpListBuilder_h__
 
-#include "nsIJumpListBuilder.h"
+#include <windows.h>
 
+
+#include <shobjidl.h>
+#undef LogSeverity  // SetupAPI.h #defines this as DWORD
+
+#include "nsString.h"
+
+#include "nsIJumpListBuilder.h"
+#include "nsIJumpListItem.h"
+#include "JumpListItem.h"
 #include "nsIObserver.h"
+#include "nsTArray.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/LazyIdleThread.h"
+#include "mozilla/mscom/AgileReference.h"
+#include "mozilla/ReentrantMonitor.h"
 
 namespace mozilla {
-
-namespace dom {
-struct WindowsJumpListShortcutDescription;
-}  
-
 namespace widget {
 
-
-
-
-
-
-
-class JumpListBackend {
-  NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
-
-  virtual bool IsAvailable() = 0;
-
-  virtual HRESULT SetAppID(LPCWSTR pszAppID) = 0;
-  virtual HRESULT BeginList(UINT* pcMinSlots, REFIID riid, void** ppv) = 0;
-  virtual HRESULT AddUserTasks(IObjectArray* poa) = 0;
-  virtual HRESULT AppendCategory(LPCWSTR pszCategory, IObjectArray* poa) = 0;
-  virtual HRESULT CommitList() = 0;
-  virtual HRESULT AbortList() = 0;
-  virtual HRESULT DeleteList(LPCWSTR pszAppID) = 0;
-  virtual HRESULT AppendKnownCategory(KNOWNDESTCATEGORY category) = 0;
-
- protected:
-  virtual ~JumpListBackend() {}
-};
-
-
-
-
+namespace detail {
+class DoneCommitListBuildCallback;
+}  
 
 class JumpListBuilder : public nsIJumpListBuilder, public nsIObserver {
   virtual ~JumpListBuilder();
@@ -55,44 +39,28 @@ class JumpListBuilder : public nsIJumpListBuilder, public nsIObserver {
   NS_DECL_NSIJUMPLISTBUILDER
   NS_DECL_NSIOBSERVER
 
-  explicit JumpListBuilder(const nsAString& aAppUserModelId,
-                           RefPtr<JumpListBackend> aTestingBackend = nullptr);
+  JumpListBuilder();
+
+ protected:
+  static Atomic<bool> sBuildingList;
 
  private:
-  
-  void DoSetupBackend();
-  void DoSetupTestingBackend(RefPtr<JumpListBackend> aTestingBackend);
-  void DoShutdownBackend();
-  void DoSetAppID(nsString aAppUserModelID);
-  void DoIsAvailable(const nsMainThreadPtrHandle<dom::Promise>& aPromiseHolder);
-  void DoCheckForRemovals(
-      const nsMainThreadPtrHandle<dom::Promise>& aPromiseHolder);
-  void DoPopulateJumpList(
-      const nsTArray<dom::WindowsJumpListShortcutDescription>&&
-          aTaskDescriptions,
-      const nsAString& aCustomTitle,
-      const nsTArray<dom::WindowsJumpListShortcutDescription>&&
-          aCustomDescriptions,
-      const nsMainThreadPtrHandle<dom::Promise>& aPromiseHolder);
-  void DoClearJumpList(
-      const nsMainThreadPtrHandle<dom::Promise>& aPromiseHolder);
+  mscom::AgileReference mJumpListMgr MOZ_GUARDED_BY(mMonitor);
+  uint32_t mMaxItems MOZ_GUARDED_BY(mMonitor);
+  bool mHasCommit;
+  RefPtr<LazyIdleThread> mIOThread;
+  ReentrantMonitor mMonitor;
+  nsString mAppUserModelId;
+
+  bool IsSeparator(nsCOMPtr<nsIJumpListItem>& item);
   void RemoveIconCacheAndGetJumplistShortcutURIs(IObjectArray* aObjArray,
                                                  nsTArray<nsString>& aURISpecs);
   void DeleteIconFromDisk(const nsAString& aPath);
-  nsresult GetShellLinkFromDescription(
-      const dom::WindowsJumpListShortcutDescription& aDesc,
-      RefPtr<IShellLinkW>& aShellLink);
+  nsresult RemoveIconCacheForAllItems();
+  void DoCommitListBuild(RefPtr<detail::DoneCommitListBuildCallback> aCallback);
+  void DoInitListBuild(RefPtr<dom::Promise>&& aPromise);
 
-  
-  
-  
-  nsString mAppUserModelId;
-
-  
-  RefPtr<JumpListBackend> mJumpListBackend;
-
-  
-  RefPtr<LazyIdleThread> mIOThread;
+  friend class WinTaskbar;
 };
 
 }  
