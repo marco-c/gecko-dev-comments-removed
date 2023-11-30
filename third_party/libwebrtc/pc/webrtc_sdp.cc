@@ -706,7 +706,7 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
                                absl::string_view msid_track_id,
                                StreamParamsVec* tracks,
                                int msid_signaling) {
-  RTC_DCHECK(tracks != NULL);
+  RTC_DCHECK(tracks);
   for (const SsrcInfo& ssrc_info : ssrc_infos) {
     
     
@@ -729,13 +729,6 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
       
       stream_ids.push_back(kDefaultMsid);
     }
-    
-    
-    if (track_id.empty()) {
-      
-      
-      track_id = rtc::CreateRandomString(8);
-    }
 
     auto track_it = absl::c_find_if(
         *tracks,
@@ -750,6 +743,14 @@ void CreateTracksFromSsrcInfos(const SsrcInfoVec& ssrc_infos,
     track.cname = ssrc_info.cname;
     track.set_stream_ids(stream_ids);
     track.id = track_id;
+  }
+  for (StreamParams& stream : *tracks) {
+    
+    
+    
+    if (stream.id.empty()) {
+      stream.id = rtc::CreateRandomString(8);
+    }
   }
 }
 
