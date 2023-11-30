@@ -1,6 +1,8 @@
 
 
 import os
+import subprocess
+import re
 
 from mozrunner import FennecEmulatorRunner, get_app_context
 
@@ -14,6 +16,7 @@ from ..executors.executormarionette import (MarionetteTestharnessExecutor,
 from .base import (Browser,
                    ExecutorBrowser)
 from .firefox import (get_timeout_multiplier,  
+                      run_info_browser_version,
                       run_info_extras as fx_run_info_extras,
                       update_properties,  
                       executor_kwargs as fx_executor_kwargs,  
@@ -87,12 +90,43 @@ def env_extras(**kwargs):
     return []
 
 
-def run_info_extras(**kwargs):
-    rv = fx_run_info_extras(**kwargs)
+def run_info_extras(logger, **kwargs):
+    rv = fx_run_info_extras(logger, **kwargs)
     package = kwargs["package_name"]
     rv.update({"e10s": True if package is not None and "geckoview" in package else False,
                "headless": False})
+
+    if kwargs["browser_version"] is None:
+        rv.update(run_info_browser_version(**kwargs))
+
+        if rv.get("browser_version") is None:
+            
+            rv["browser_version"] = get_package_browser_version(logger,
+                                                                kwargs["adb_binary"],
+                                                                kwargs["package_name"])
+
     return rv
+
+
+def get_package_browser_version(logger, adb_binary, package_name):
+    if adb_binary is None:
+        logger.warning("Couldn't run adb to get Firefox Android version number")
+        return None
+    try:
+        completed = subprocess.run([adb_binary, "shell", "dumpsys", "package", package_name],
+                                   check=True,
+                                   capture_output=True,
+                                   encoding="utf8")
+    except subprocess.CalledProcessError as e:
+        logger.warning(f"adb failed with return code {e.returncode}\nCaptured stderr:\n{e.stderr}")
+        return None
+
+    version_name_re = re.compile(r"^\s+versionName=(.*)")
+    for line in completed.stdout.splitlines():
+        m = version_name_re.match(line)
+        if m is not None:
+            return m.group(1)
+    logger.warning("Failed to find versionName property in dumpsys output")
 
 
 def env_options():
