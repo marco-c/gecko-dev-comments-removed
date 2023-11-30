@@ -43,6 +43,7 @@
 #include "mozilla/UniquePtr.h"
 
 #include "DNSLogging.h"
+#include "mozilla/glean/GleanMetrics.h"
 
 namespace mozilla {
 namespace net {
@@ -1006,6 +1007,13 @@ TRR::OnStopRequest(nsIRequest* aRequest, nsresult aStatusCode) {
   channel.swap(mChannel);
 
   mChannelStatus = aStatusCode;
+  if (NS_SUCCEEDED(aStatusCode)) {
+    nsCString label = "regular"_ns;
+    if (mPB) {
+      label = "private"_ns;
+    }
+    mozilla::glean::networking::trr_request_count.Get(label).Add(1);
+  }
 
   {
     
