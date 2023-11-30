@@ -4524,7 +4524,9 @@ void nsWindow::OnMotionNotifyEvent(GdkEventMotion* aEvent) {
     
     
     
-    mWidgetCursorLocked = true;
+    if (mIsPIPWindow) {
+      mWidgetCursorLocked = true;
+    }
     return;
   }
 
