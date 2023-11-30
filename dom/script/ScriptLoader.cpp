@@ -1713,6 +1713,14 @@ class OffThreadCompilationCompleteTask : public Task {
 
 } 
 
+
+
+
+
+
+static constexpr size_t OffThreadMinimumTextLength = 5 * 1000;
+static constexpr size_t OffThreadMinimumBytecodeLength = 5 * 1000;
+
 nsresult ScriptLoader::AttemptOffThreadScriptCompile(
     ScriptLoadRequest* aRequest, bool* aCouldCompileOut) {
   
@@ -1748,14 +1756,6 @@ nsresult ScriptLoader::AttemptOffThreadScriptCompile(
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
-
-  
-  
-  
-  
-  
-  static constexpr size_t OffThreadMinimumTextLength = 5 * 1000;
-  static constexpr size_t OffThreadMinimumBytecodeLength = 5 * 1000;
 
   if (aRequest->IsTextSource()) {
     if (!StaticPrefs::javascript_options_parallel_parsing() ||
@@ -2048,8 +2048,8 @@ nsresult ScriptLoader::CreateOffThreadTask(
             : 0;
 
     LOG(
-        ("ScriptLoadRequest (%p): non-on-demand-only Parsing Enabled for "
-         "url=%s mTotalFullParseSize=%u",
+        ("ScriptLoadRequest (%p): non-on-demand-only (omt) Parsing Enabled "
+         "for url=%s mTotalFullParseSize=%u",
          aRequest, aRequest->mURI->GetSpecOrDefault().get(),
          mTotalFullParseSize));
   }
@@ -2761,6 +2761,23 @@ nsresult ScriptLoader::EvaluateScript(nsIGlobalObject* aGlobalObject,
 
   if (NS_FAILED(rv)) {
     return rv;
+  }
+
+  
+  if (aRequest->IsTextSource() &&
+      aRequest->ScriptTextLength() < OffThreadMinimumTextLength &&
+      ShouldApplyDelazifyStrategy(aRequest)) {
+    ApplyDelazifyStrategy(&options);
+    mTotalFullParseSize +=
+        aRequest->ScriptTextLength() > 0
+            ? static_cast<uint32_t>(aRequest->ScriptTextLength())
+            : 0;
+
+    LOG(
+        ("ScriptLoadRequest (%p): non-on-demand-only (non-omt) Parsing Enabled "
+         "for url=%s mTotalFullParseSize=%u",
+         aRequest, aRequest->mURI->GetSpecOrDefault().get(),
+         mTotalFullParseSize));
   }
 
   TRACE_FOR_TEST(aRequest->GetScriptLoadContext()->GetScriptElement(),
