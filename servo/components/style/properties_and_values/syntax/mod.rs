@@ -128,7 +128,7 @@ impl Parse for Descriptor {
 }
 
 
-#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq)]
+#[derive(Clone, Copy, Debug, MallocSizeOf, PartialEq, ToComputedValue)]
 pub enum Multiplier {
     
     Space,

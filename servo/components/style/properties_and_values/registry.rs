@@ -25,6 +25,8 @@ pub struct PropertyRegistration {
     #[ignore_malloc_size_of = "Arc"]
     pub initial_value: Option<InitialValue>,
     
+    
+    
     pub url_data: UrlExtraData,
     
     pub source_location: SourceLocation,
