@@ -45,8 +45,8 @@ for (var i = 0; i < NumInitializers; ++i) {
 
     
     assertEq(script.startLine, START + 1 + i);
-    assertEq(script.startColumn, 20);
+    assertEq(script.startColumn, 21);
 
     
-    assertEq(script.startColumn + script.sourceLength + ';'.length, lineText.length);
+    assertEq(script.startColumn + script.sourceLength + ';'.length, lineText.length + 1);
 }

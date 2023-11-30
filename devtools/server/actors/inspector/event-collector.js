@@ -968,8 +968,13 @@ class EventCollector {
       if (script) {
         const scriptSource = script.source.text;
 
+        
+        
+        
+        const columnBase = script.format === "wasm" ? 0 : 1;
+
         line = script.startLine;
-        column = script.startColumn;
+        column = script.startColumn - columnBase;
         url = script.url;
         const actor = this.targetActor.sourcesManager.getOrCreateSourceActor(
           script.source

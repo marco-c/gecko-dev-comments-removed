@@ -2254,7 +2254,11 @@ class ThreadActor extends Actor {
           ...content.substring(0, scriptStartOffset).matchAll("\n"),
         ];
         const startLine = 1 + allLineBreaks.length;
+        
+        
+        
         const startColumn =
+          1 +
           scriptStartOffset -
           (allLineBreaks.length ? allLineBreaks.at(-1).index - 1 : 0);
 
@@ -2270,6 +2274,7 @@ class ThreadActor extends Actor {
 
         try {
           const global = this.dbg.getDebuggees()[0];
+          
           this._addSource(
             global.createSource({
               text,
