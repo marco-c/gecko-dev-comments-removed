@@ -515,6 +515,7 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   
   std::string rid;
+  bool request_key_frame = false;
 
   
   
