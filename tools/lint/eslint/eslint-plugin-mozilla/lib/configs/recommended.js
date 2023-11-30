@@ -115,12 +115,7 @@ module.exports = {
         browser: false,
         worker: true,
       },
-      files: [
-        
-        
-        
-        "**/?(*.)worker.?(m)js",
-      ],
+      files: ["**/*.worker.js", "**/*.worker.mjs"],
     },
   ],
 

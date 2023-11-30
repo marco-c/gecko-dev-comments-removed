@@ -6,6 +6,8 @@
 
 
 
+
+
 importScripts(
   "resource://devtools/client/netmonitor/src/workers/search/search.js",
   "resource://devtools/client/shared/worker-utils.js"
