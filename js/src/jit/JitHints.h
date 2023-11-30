@@ -11,6 +11,7 @@
 #include "mozilla/HashTable.h"
 #include "mozilla/LinkedList.h"
 #include "jit/JitOptions.h"
+#include "vm/BytecodeLocation.h"
 #include "vm/JSScript.h"
 
 namespace js::jit {
@@ -47,14 +48,27 @@ class JitHintsMap {
 
 
 
+
+
+
+
   class IonHint : public mozilla::LinkedListElement<IonHint> {
     ScriptKey key_ = 0;
+
+    
+    
+    
     uint32_t threshold_ = 0;
 
+    
+    
+    Vector<uint32_t, 0, SystemAllocPolicy> monomorphicInlineOffsets;
+
    public:
-    explicit IonHint(ScriptKey key) {
-      key_ = key;
-      threshold_ = IonHintEagerThresholdValue();
+    explicit IonHint(ScriptKey key) { key_ = key; }
+
+    void initThreshold(uint32_t lastStubCounter) {
+      threshold_ = IonHintEagerThresholdValue(lastStubCounter);
     }
 
     uint32_t threshold() { return threshold_; }
@@ -64,6 +78,28 @@ class JitHintsMap {
       threshold_ = (newThreshold > JitOptions.normalIonWarmUpThreshold)
                        ? JitOptions.normalIonWarmUpThreshold
                        : newThreshold;
+    }
+
+    bool hasSpaceForMonomorphicInlineEntry() {
+      return monomorphicInlineOffsets.length() < MonomorphicInlineMaxEntries;
+    }
+
+    bool hasMonomorphicInlineOffset(uint32_t offset) {
+      for (uint32_t iterOffset : monomorphicInlineOffsets) {
+        if (iterOffset == offset) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    bool addMonomorphicInlineOffset(uint32_t newOffset) {
+      MOZ_ASSERT(hasSpaceForMonomorphicInlineEntry());
+
+      if (hasMonomorphicInlineOffset(newOffset)) {
+        return true;
+      }
+      return monomorphicInlineOffsets.append(newOffset);
     }
 
     ScriptKey key() {
@@ -79,17 +115,16 @@ class JitHintsMap {
 
   static constexpr uint32_t InvalidationThresholdIncrement = 500;
   static constexpr uint32_t IonHintMaxEntries = 5000;
-  static constexpr uint32_t InitialIonHintThresholdModifier = 50;
+  static constexpr uint32_t MonomorphicInlineMaxEntries = 16;
 
-  static uint32_t IonHintEagerThresholdValue() {
-    uint32_t eagerThreshold = JitOptions.trialInliningWarmUpThreshold +
-                              InitialIonHintThresholdModifier;
-
+  static uint32_t IonHintEagerThresholdValue(uint32_t lastStubCounter) {
     
     
-    return (eagerThreshold > JitOptions.normalIonWarmUpThreshold)
-               ? JitOptions.normalIonWarmUpThreshold
-               : eagerThreshold;
+    
+    uint32_t eagerThreshold = lastStubCounter + 10;
+
+    
+    return std::min(eagerThreshold, JitOptions.normalIonWarmUpThreshold);
   }
 
   ScriptToHintMap ionHintMap_;
@@ -136,6 +171,9 @@ class JitHintsMap {
 
   bool recordIonCompilation(JSScript* script);
   bool getIonThresholdHint(JSScript* script, uint32_t& thresholdOut);
+
+  bool addMonomorphicInlineLocation(JSScript* script, BytecodeLocation loc);
+  bool hasMonomorphicInlineHintAtOffset(JSScript* script, uint32_t offset);
 
   void recordInvalidation(JSScript* script);
 };

@@ -16,6 +16,8 @@
 #include "jit/CacheIRReader.h"
 #include "jit/CompileInfo.h"
 #include "jit/InlineScriptTree.h"
+#include "jit/JitHints.h"
+#include "jit/JitRuntime.h"
 #include "jit/JitScript.h"
 #include "jit/JitSpewer.h"
 #include "jit/JitZone.h"
@@ -777,6 +779,17 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   
+  if (cx_->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx_->runtime()->jitRuntime()->getJitHintsMap();
+    if (fallbackStub->trialInliningState() == TrialInliningState::Candidate &&
+        jitHints->hasMonomorphicInlineHintAtOffset(script_, offset)) {
+      fallbackStub->setTrialInliningState(
+          TrialInliningState::MonomorphicInlined);
+    }
+  }
+
+  
+  
   
   fallbackStub->clearUsedByTranspiler();
 
@@ -1088,6 +1101,16 @@ AbortReasonOr<bool> WarpScriptOracle::maybeInlineCall(
     return abort(AbortReason::Alloc);
   }
   fallbackStub->setUsedByTranspiler();
+
+  
+  
+  if (!isTrialInlined && cx_->runtime()->jitRuntime()->hasJitHintsMap()) {
+    JitHintsMap* jitHints = cx_->runtime()->jitRuntime()->getJitHintsMap();
+    if (!jitHints->addMonomorphicInlineLocation(script_, loc)) {
+      return abort(AbortReason::Alloc);
+    }
+  }
+
   return true;
 }
 
