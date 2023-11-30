@@ -12,6 +12,7 @@ add_task(async function () {
   await pushPref("devtools.debugger.threads-visible", true);
   await pushPref("dom.serviceWorkers.enabled", true);
   await pushPref("dom.serviceWorkers.testing.enabled", true);
+
   const dbg = await initDebugger("doc-service-workers.html");
 
   invokeInTab("registerWorker");
@@ -51,6 +52,39 @@ add_task(async function () {
       expression: "url",
     },
   ]);
+
+  await resume(dbg);
+
+  
+  
+  
+  await pushPref("dom.serviceWorkers.idle_timeout", 500);
+  await pushPref("dom.serviceWorkers.idle_extended_timeout", 500);
+
+  const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+    Ci.nsIServiceWorkerManager
+  );
+  
+  
+  
+  
+  
+  const registrations = swm.getAllRegistrations();
+  for (let i = 0; i < registrations.length; i++) {
+    const info = registrations.queryElementAt(
+      i,
+      Ci.nsIServiceWorkerRegistrationInfo
+    );
+    if (info.scriptSpec.endsWith("service-worker.sjs")) {
+      info.activeWorker.attachDebugger();
+      info.activeWorker.detachDebugger();
+    }
+  }
+
+  
+  invokeInTab("unregisterWorker");
+
+  await checkAdditionalThreadCount(dbg, 0);
 
   await waitForRequestsToSettle(dbg);
   await removeTab(gBrowser.selectedTab);
