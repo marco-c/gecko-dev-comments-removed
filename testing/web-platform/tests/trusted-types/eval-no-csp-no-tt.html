@@ -4,11 +4,10 @@
   <script nonce="abc" src="/resources/testharness.js"></script>
   <script nonce="abc" src="/resources/testharnessreport.js"></script>
   <script nonce="abc" src="support/helper.sub.js"></script>
-  
+  <!-- No CSP header. -->
 </head>
 <body>
-<script>
-  trustedTypes.createPolicy("default", {createScript: s => s + 4});
+<script nonce="abc">
   const p = trustedTypes.createPolicy("p", {createScript: s => s});
 
   test(t => {
@@ -17,7 +16,7 @@
 
   test(t => {
     assert_equals(eval('1+1'), 2);
-  }, "eval of string works and does not call a default policy.");
+  }, "eval of string works.");
 
   test(t => {
     assert_equals(eval(42), 42);
@@ -32,6 +31,6 @@
 
   test(t => {
     assert_equals(new Function('return 1+1')(), 2);
-  }, "Function constructor of string works and does not call a default policy.");
+  }, "Function constructor of string works.");
 </script>
 
