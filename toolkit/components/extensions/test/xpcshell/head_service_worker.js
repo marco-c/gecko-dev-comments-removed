@@ -113,10 +113,10 @@ class TestWorkerWatcher extends ExtensionCommon.EventEmitter {
     const { JS_ACTOR_NAME } = this;
     ChromeUtils.registerProcessActor(JS_ACTOR_NAME, {
       parent: {
-        moduleURI: `resource://testing-common/${JS_ACTOR_NAME}Parent.jsm`,
+        esModuleURI: `resource://testing-common/${JS_ACTOR_NAME}Parent.sys.mjs`,
       },
       child: {
-        moduleURI: `resource://testing-common/${JS_ACTOR_NAME}Child.jsm`,
+        esModuleURI: `resource://testing-common/${JS_ACTOR_NAME}Child.sys.mjs`,
       },
     });
   }
