@@ -64,26 +64,6 @@ class RTPSenderAudio {
   };
   bool SendAudio(const RtpAudioFrame& frame);
 
-  [[deprecated]] bool SendAudio(AudioFrameType frame_type,
-                                int8_t payload_type,
-                                uint32_t rtp_timestamp,
-                                const uint8_t* payload_data,
-                                size_t payload_size);
-
-  
-  
-  [[deprecated]] bool SendAudio(AudioFrameType frame_type,
-                                int8_t payload_type,
-                                uint32_t rtp_timestamp,
-                                const uint8_t* payload_data,
-                                size_t payload_size,
-                                int64_t absolute_capture_timestamp_ms);
-
-  
-  
-  
-  [[deprecated]] int32_t SetAudioLevel(uint8_t level_dbov);
-
   
   int32_t SendTelephoneEvent(uint8_t key, uint16_t time_ms, uint8_t level);
 
@@ -122,9 +102,6 @@ class RTPSenderAudio {
   int8_t cngfb_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
   int8_t last_payload_type_ RTC_GUARDED_BY(send_audio_mutex_) = -1;
 
-  
-  
-  uint8_t audio_level_dbov_ RTC_GUARDED_BY(send_audio_mutex_) = 127;
   OneTimeEvent first_packet_sent_;
 
   absl::optional<uint32_t> encoder_rtp_timestamp_frequency_

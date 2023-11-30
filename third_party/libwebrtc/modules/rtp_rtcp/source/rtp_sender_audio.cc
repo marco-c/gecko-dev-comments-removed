@@ -141,35 +141,6 @@ bool RTPSenderAudio::MarkerBit(AudioFrameType frame_type, int8_t payload_type) {
   return marker_bit;
 }
 
-bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
-                               int8_t payload_type,
-                               uint32_t rtp_timestamp,
-                               const uint8_t* payload_data,
-                               size_t payload_size) {
-  return SendAudio({.type = frame_type,
-                    .payload{payload_data, payload_size},
-                    .payload_id = payload_type,
-                    .rtp_timestamp = rtp_timestamp});
-}
-
-bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
-                               int8_t payload_type,
-                               uint32_t rtp_timestamp,
-                               const uint8_t* payload_data,
-                               size_t payload_size,
-                               int64_t absolute_capture_timestamp_ms) {
-  RtpAudioFrame frame = {
-      .type = frame_type,
-      .payload{payload_data, payload_size},
-      .payload_id = payload_type,
-      .rtp_timestamp = rtp_timestamp,
-  };
-  if (absolute_capture_timestamp_ms > 0) {
-    frame.capture_time = Timestamp::Millis(absolute_capture_timestamp_ms);
-  }
-  return SendAudio(frame);
-}
-
 bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
   RTC_DCHECK_GE(frame.payload_id, 0);
   RTC_DCHECK_LE(frame.payload_id, 127);
@@ -182,12 +153,10 @@ bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
   
   
   constexpr int kDtmfIntervalTimeMs = 50;
-  uint8_t audio_level_dbov = 0;
   uint32_t dtmf_payload_freq = 0;
   absl::optional<uint32_t> encoder_rtp_timestamp_frequency;
   {
     MutexLock lock(&send_audio_mutex_);
-    audio_level_dbov = audio_level_dbov_;
     dtmf_payload_freq = dtmf_payload_freq_;
     encoder_rtp_timestamp_frequency = encoder_rtp_timestamp_frequency_;
   }
@@ -281,7 +250,7 @@ bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
   
   packet->SetExtension<AudioLevel>(
       frame.type == AudioFrameType::kAudioFrameSpeech,
-      frame.audio_level_dbov.value_or(audio_level_dbov));
+      frame.audio_level_dbov.value_or(127));
 
   if (frame.capture_time.has_value()) {
     
@@ -324,16 +293,6 @@ bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
     RTC_LOG(LS_INFO) << "First audio RTP packet sent to pacer";
   }
   return true;
-}
-
-
-int32_t RTPSenderAudio::SetAudioLevel(uint8_t level_dbov) {
-  if (level_dbov > 127) {
-    return -1;
-  }
-  MutexLock lock(&send_audio_mutex_);
-  audio_level_dbov_ = level_dbov;
-  return 0;
 }
 
 
