@@ -1214,8 +1214,8 @@ bool EditorEventListener::ShouldHandleNativeKeyBindings(
   
   
 
-  nsCOMPtr<nsIContent> targetContent =
-      do_QueryInterface(aKeyboardEvent->GetDOMEventTarget());
+  nsCOMPtr<nsIContent> targetContent = nsIContent::FromEventTargetOrNull(
+      aKeyboardEvent->GetOriginalDOMEventTarget());
   if (NS_WARN_IF(!targetContent)) {
     return false;
   }

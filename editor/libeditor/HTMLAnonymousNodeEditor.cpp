@@ -357,7 +357,7 @@ nsresult HTMLEditor::RefreshEditingUI() {
   }
 
   
-  if (!selectionContainerElement->IsInUncomposedDoc()) {
+  if (!selectionContainerElement->IsInComposedDoc()) {
     return NS_OK;
   }
 
