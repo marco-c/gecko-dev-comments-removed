@@ -30,12 +30,10 @@ use style_traits::{
 
 
 pub type ComputedValueComponent = GenericValueComponent<
-    
-    specified::Length,
+    computed::Length,
     computed::Number,
     computed::Percentage,
-    
-    specified::LengthPercentage,
+    computed::LengthPercentage,
     computed::Color,
     computed::Image,
     computed::url::ComputedUrl,
@@ -143,11 +141,9 @@ impl ToComputedValue for SpecifiedValueComponent {
 
     fn to_computed_value(&self, context: &computed::Context) -> Self::ComputedValue {
         match self {
-            SpecifiedValueComponent::Length(length) => ComputedValueComponent::Length(
-                
-                
-                length.clone(),
-            ),
+            SpecifiedValueComponent::Length(length) => {
+                ComputedValueComponent::Length(length.to_computed_value(context))
+            },
             SpecifiedValueComponent::Number(number) => {
                 ComputedValueComponent::Number(number.to_computed_value(context))
             },
@@ -155,9 +151,9 @@ impl ToComputedValue for SpecifiedValueComponent {
                 ComputedValueComponent::Percentage(percentage.to_computed_value(context))
             },
             SpecifiedValueComponent::LengthPercentage(length_percentage) => {
-                
-                
-                ComputedValueComponent::LengthPercentage(length_percentage.clone())
+                ComputedValueComponent::LengthPercentage(
+                    length_percentage.to_computed_value(context),
+                )
             },
             SpecifiedValueComponent::Color(color) => {
                 ComputedValueComponent::Color(color.to_computed_value(context))
@@ -200,10 +196,9 @@ impl ToComputedValue for SpecifiedValueComponent {
 
     fn from_computed_value(computed: &Self::ComputedValue) -> Self {
         match computed {
-            ComputedValueComponent::Length(length) => SpecifiedValueComponent::Length(
-                
-                length.clone(),
-            ),
+            ComputedValueComponent::Length(length) => {
+                SpecifiedValueComponent::Length(ToComputedValue::from_computed_value(length))
+            },
             ComputedValueComponent::Number(number) => {
                 SpecifiedValueComponent::Number(ToComputedValue::from_computed_value(number))
             },
@@ -211,8 +206,9 @@ impl ToComputedValue for SpecifiedValueComponent {
                 ToComputedValue::from_computed_value(percentage),
             ),
             ComputedValueComponent::LengthPercentage(length_percentage) => {
-                
-                SpecifiedValueComponent::LengthPercentage(length_percentage.clone())
+                SpecifiedValueComponent::LengthPercentage(ToComputedValue::from_computed_value(
+                    length_percentage,
+                ))
             },
             ComputedValueComponent::Color(color) => {
                 SpecifiedValueComponent::Color(ToComputedValue::from_computed_value(color))
