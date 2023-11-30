@@ -288,19 +288,6 @@ function addPopupEventHandlers(state, elements, view) {
     view.updatePresets();
   });
 
-  addHandler(elements.presetsMenuList, "popuphidden", event => {
-    
-    
-    
-    event.stopPropagation();
-  });
-
-  addHandler(elements.presetsMenuList, "click", event => {
-    
-    
-    event.preventDefault();
-  });
-
   addHandler(elements.presetsEditSettings, "click", () => {
     elements.window.openTrustedLinkIn("about:profiling", "tab");
     view.hidePopup();
