@@ -7,6 +7,7 @@
 #ifndef nsXMLContentSink_h__
 #define nsXMLContentSink_h__
 
+#include "js/ColumnNumber.h"  
 #include "mozilla/Attributes.h"
 #include "nsContentSink.h"
 #include "nsIXMLContentSink.h"
