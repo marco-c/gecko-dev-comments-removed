@@ -1001,7 +1001,49 @@ NS_IMETHODIMP IPCFuzzController::IPCFuzzLoop::Run() {
         [msg = std::move(msg),
          nodeChannel =
              RefPtr{IPCFuzzController::instance().nodeChannel}]() mutable {
+          int32_t msgType = msg->header()->type;
+
+          
+          bool syncOnIOThread = false;
+
+          switch (msgType) {
+            case DATA_PIPE_CLOSED_MESSAGE_TYPE:
+            case DATA_PIPE_BYTES_CONSUMED_MESSAGE_TYPE:
+            case ACCEPT_INVITE_MESSAGE_TYPE:
+            case REQUEST_INTRODUCTION_MESSAGE_TYPE:
+            case INTRODUCE_MESSAGE_TYPE:
+            case BROADCAST_MESSAGE_TYPE:
+              
+              
+              
+              
+              
+              
+              
+              syncOnIOThread = true;
+              break;
+            default:
+              
+              
+              
+              break;
+          }
+
+          if (syncOnIOThread) {
+            mozilla::fuzzing::IPCFuzzController::instance()
+                .OnMessageTaskStart();
+          }
+
           nodeChannel->OnMessageReceived(std::move(msg));
+
+          if (syncOnIOThread) {
+            mozilla::fuzzing::IPCFuzzController::instance().OnMessageTaskStop();
+
+            
+            
+            Nyx::instance().release(
+                IPCFuzzController::instance().getMessageStopCount());
+          }
         }));
 #endif
 
