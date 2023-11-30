@@ -227,7 +227,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           }
           opSetScriptLineAndColumnNumberAndFreeze operation(
               content, tokenizer->getLineNumber(),
-              tokenizer->getColumnNumber());
+              
+              tokenizer->getColumnNumber() + 1);
           treeOp->Init(mozilla::AsVariant(operation));
 
           nsHtml5String type =
@@ -555,7 +556,8 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
           }
           opSetScriptLineAndColumnNumberAndFreeze operation(
               content, tokenizer->getLineNumber(),
-              tokenizer->getColumnNumber());
+              
+              tokenizer->getColumnNumber() + 1);
           treeOp->Init(mozilla::AsVariant(operation));
 
           nsHtml5String url =
@@ -619,7 +621,9 @@ nsIContentHandle* nsHtml5TreeBuilder::createElement(
         return nullptr;
       }
       opSetScriptLineAndColumnNumberAndFreeze operation(
-          content, tokenizer->getLineNumber(), tokenizer->getColumnNumber());
+          content, tokenizer->getLineNumber(),
+          
+          tokenizer->getColumnNumber() + 1);
       treeOp->Init(mozilla::AsVariant(operation));
       if (aNamespace == kNameSpaceID_XHTML) {
         
