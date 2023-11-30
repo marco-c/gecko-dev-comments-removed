@@ -3380,19 +3380,6 @@ int32_t ContentParent::Pid() const {
   return ReleaseAssertedCast<int32_t>(pid);
 }
 
-mozilla::ipc::IPCResult ContentParent::RecvGetGfxVars(
-    nsTArray<GfxVarUpdate>* aVars) {
-  
-  gfxVars::Initialize();
-
-  *aVars = gfxVars::FetchNonDefaultVars();
-
-  
-  
-  gfxVars::AddReceiver(this);
-  return IPC_OK();
-}
-
 void ContentParent::OnCompositorUnexpectedShutdown() {
   GPUProcessManager* gpm = GPUProcessManager::Get();
 
