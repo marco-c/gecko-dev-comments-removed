@@ -1262,11 +1262,11 @@ bool WebRtcVoiceSendChannel::SetOptions(const AudioOptions& options) {
   return true;
 }
 
-bool WebRtcVoiceSendChannel::SetSendParameters(
+bool WebRtcVoiceSendChannel::SetSenderParameters(
     const AudioSenderParameter& params) {
-  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetSendParameters");
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetSenderParameters");
   RTC_DCHECK_RUN_ON(worker_thread_);
-  RTC_LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSendParameters: "
+  RTC_LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetSenderParameters: "
                    << params.ToString();
   
   
@@ -2042,11 +2042,11 @@ WebRtcVoiceReceiveChannel::~WebRtcVoiceReceiveChannel() {
   }
 }
 
-bool WebRtcVoiceReceiveChannel::SetRecvParameters(
+bool WebRtcVoiceReceiveChannel::SetReceiverParameters(
     const AudioReceiverParameters& params) {
-  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetRecvParameters");
+  TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetReceiverParameters");
   RTC_DCHECK_RUN_ON(worker_thread_);
-  RTC_LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetRecvParameters: "
+  RTC_LOG(LS_INFO) << "WebRtcVoiceMediaChannel::SetReceiverParameters: "
                    << params.ToString();
   
   
@@ -2069,7 +2069,7 @@ bool WebRtcVoiceReceiveChannel::SetRecvParameters(
   return true;
 }
 
-webrtc::RtpParameters WebRtcVoiceReceiveChannel::GetRtpReceiveParameters(
+webrtc::RtpParameters WebRtcVoiceReceiveChannel::GetRtpReceiverParameters(
     uint32_t ssrc) const {
   RTC_DCHECK_RUN_ON(worker_thread_);
   webrtc::RtpParameters rtp_params;

@@ -868,7 +868,7 @@ struct AudioReceiverParameters : MediaChannelParameters {};
 
 class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  virtual bool SetSendParameters(const AudioSenderParameter& params) = 0;
+  virtual bool SetSenderParameters(const AudioSenderParameter& params) = 0;
   
   virtual void SetSend(bool send) = 0;
   
@@ -890,9 +890,9 @@ class VoiceMediaSendChannelInterface : public MediaSendChannelInterface {
 
 class VoiceMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
  public:
-  virtual bool SetRecvParameters(const AudioReceiverParameters& params) = 0;
+  virtual bool SetReceiverParameters(const AudioReceiverParameters& params) = 0;
   
-  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+  virtual webrtc::RtpParameters GetRtpReceiverParameters(
       uint32_t ssrc) const = 0;
   virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
   
@@ -933,7 +933,7 @@ struct VideoReceiverParameters : MediaChannelParameters {};
 
 class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
  public:
-  virtual bool SetSendParameters(const VideoSenderParameters& params) = 0;
+  virtual bool SetSenderParameters(const VideoSenderParameters& params) = 0;
   
   virtual bool SetSend(bool send) = 0;
   
@@ -965,9 +965,9 @@ class VideoMediaSendChannelInterface : public MediaSendChannelInterface {
 
 class VideoMediaReceiveChannelInterface : public MediaReceiveChannelInterface {
  public:
-  virtual bool SetRecvParameters(const VideoReceiverParameters& params) = 0;
+  virtual bool SetReceiverParameters(const VideoReceiverParameters& params) = 0;
   
-  virtual webrtc::RtpParameters GetRtpReceiveParameters(
+  virtual webrtc::RtpParameters GetRtpReceiverParameters(
       uint32_t ssrc) const = 0;
   
   virtual void SetReceive(bool receive) = 0;
