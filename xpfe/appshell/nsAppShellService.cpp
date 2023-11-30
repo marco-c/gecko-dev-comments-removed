@@ -713,7 +713,7 @@ nsresult nsAppShellService::JustCreateTopWindow(
           "hardcoding the system principal");
       
       
-      rv = docShell->CreateAboutBlankContentViewer(
+      rv = docShell->CreateAboutBlankDocumentViewer(
           nsContentUtils::GetSystemPrincipal(),
           nsContentUtils::GetSystemPrincipal(),
            nullptr,  nullptr,

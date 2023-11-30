@@ -572,7 +572,7 @@ class nsDocShell final : public nsDocLoader,
   
   
   
-  nsresult CreateAboutBlankContentViewer(
+  nsresult CreateAboutBlankDocumentViewer(
       nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
       nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI, bool aIsInitialDocument,
       const mozilla::Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP =

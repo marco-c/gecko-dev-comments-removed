@@ -1789,9 +1789,9 @@ void nsGlobalWindowOuter::SetInitialPrincipal(
   
   
   nsDocShell::Cast(GetDocShell())
-      ->CreateAboutBlankContentViewer(aNewWindowPrincipal, aNewWindowPrincipal,
-                                      aCSP, nullptr,
-                                       true, aCOEP);
+      ->CreateAboutBlankDocumentViewer(aNewWindowPrincipal, aNewWindowPrincipal,
+                                       aCSP, nullptr,
+                                        true, aCOEP);
 
   if (mDoc) {
     MOZ_ASSERT(mDoc->IsInitialDocument(),

@@ -625,7 +625,7 @@ var SidebarUI = {
     
     
     this.browser.setAttribute("src", "about:blank");
-    this.browser.docShell.createAboutBlankContentViewer(null, null);
+    this.browser.docShell.createAboutBlankDocumentViewer(null, null);
 
     this._box.removeAttribute("checked");
     this._box.hidden = this._splitter.hidden = true;

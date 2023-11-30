@@ -6485,7 +6485,7 @@ nsresult nsDocShell::EnsureDocumentViewer() {
     }
   }
 
-  nsresult rv = CreateAboutBlankContentViewer(
+  nsresult rv = CreateAboutBlankDocumentViewer(
       principal, partitionedPrincipal, cspToInheritForAboutBlank, baseURI,
        true);
 
@@ -6494,7 +6494,7 @@ nsresult nsDocShell::EnsureDocumentViewer() {
   if (NS_SUCCEEDED(rv)) {
     RefPtr<Document> doc(GetDocument());
     MOZ_ASSERT(doc,
-               "Should have doc if CreateAboutBlankContentViewer "
+               "Should have doc if CreateAboutBlankDocumentViewer "
                "succeeded!");
     MOZ_ASSERT(doc->IsInitialDocument(), "Document should be initial document");
 
@@ -6511,7 +6511,7 @@ nsresult nsDocShell::EnsureDocumentViewer() {
   return rv;
 }
 
-nsresult nsDocShell::CreateAboutBlankContentViewer(
+nsresult nsDocShell::CreateAboutBlankDocumentViewer(
     nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal,
     nsIContentSecurityPolicy* aCSP, nsIURI* aBaseURI, bool aIsInitialDocument,
     const Maybe<nsILoadInfo::CrossOriginEmbedderPolicy>& aCOEP,
@@ -6708,11 +6708,12 @@ nsresult nsDocShell::CreateAboutBlankContentViewer(
 }
 
 NS_IMETHODIMP
-nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
-                                          nsIPrincipal* aPartitionedPrincipal,
-                                          nsIContentSecurityPolicy* aCSP) {
-  return CreateAboutBlankContentViewer(aPrincipal, aPartitionedPrincipal, aCSP,
-                                       nullptr,  false);
+nsDocShell::CreateAboutBlankDocumentViewer(nsIPrincipal* aPrincipal,
+                                           nsIPrincipal* aPartitionedPrincipal,
+                                           nsIContentSecurityPolicy* aCSP) {
+  return CreateAboutBlankDocumentViewer(aPrincipal, aPartitionedPrincipal, aCSP,
+                                        nullptr,
+                                         false);
 }
 
 nsresult nsDocShell::CreateDocumentViewerForActor(
@@ -6721,7 +6722,7 @@ nsresult nsDocShell::CreateDocumentViewerForActor(
 
   
   
-  nsresult rv = CreateAboutBlankContentViewer(
+  nsresult rv = CreateAboutBlankDocumentViewer(
       aWindowActor->DocumentPrincipal(), aWindowActor->DocumentPrincipal(),
        nullptr,
        nullptr,
@@ -6734,7 +6735,7 @@ nsresult nsDocShell::CreateDocumentViewerForActor(
     RefPtr<Document> doc(GetDocument());
     MOZ_ASSERT(
         doc,
-        "Should have a document if CreateAboutBlankContentViewer succeeded");
+        "Should have a document if CreateAboutBlankDocumentViewer succeeded");
     MOZ_ASSERT(doc->GetOwnerGlobal() == aWindowActor->GetWindowGlobal(),
                "New document should be in the same global as our actor");
     MOZ_ASSERT(doc->IsInitialDocument(),
@@ -9382,8 +9383,8 @@ nsresult nsDocShell::InternalLoad(nsDocShellLoadState* aLoadState,
     }
 
     
-    rv = CreateAboutBlankContentViewer(nullptr, nullptr, nullptr, nullptr,
-                                        false);
+    rv = CreateAboutBlankDocumentViewer(nullptr, nullptr, nullptr, nullptr,
+                                         false);
     if (NS_FAILED(rv)) {
       return NS_ERROR_FAILURE;
     }
@@ -12064,7 +12065,7 @@ nsresult nsDocShell::LoadHistoryEntry(nsDocShellLoadState* aLoadState,
     
     
     
-    rv = CreateAboutBlankContentViewer(
+    rv = CreateAboutBlankDocumentViewer(
         aLoadState->PrincipalToInherit(),
         aLoadState->PartitionedPrincipalToInherit(), nullptr, nullptr,
          false, Nothing(), !aLoadingCurrentEntry);

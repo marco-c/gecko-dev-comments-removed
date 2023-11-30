@@ -247,7 +247,7 @@ BrowserHost::TransmitPermissionsForPrincipal(nsIPrincipal* aPrincipal) {
 
 
 NS_IMETHODIMP
-BrowserHost::CreateAboutBlankContentViewer(
+BrowserHost::CreateAboutBlankDocumentViewer(
     nsIPrincipal* aPrincipal, nsIPrincipal* aPartitionedPrincipal) {
   if (!mRoot) {
     return NS_OK;
@@ -260,8 +260,8 @@ BrowserHost::CreateAboutBlankContentViewer(
     return rv;
   }
 
-  Unused << mRoot->SendCreateAboutBlankContentViewer(aPrincipal,
-                                                     aPartitionedPrincipal);
+  Unused << mRoot->SendCreateAboutBlankDocumentViewer(aPrincipal,
+                                                      aPartitionedPrincipal);
   return NS_OK;
 }
 

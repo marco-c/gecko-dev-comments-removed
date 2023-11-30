@@ -3056,7 +3056,7 @@
         
         
         if (!uri || doGetProtocolFlags(uri) & URI_INHERITS_SECURITY_CONTEXT) {
-          browser.createAboutBlankContentViewer(
+          browser.createAboutBlankDocumentViewer(
             originPrincipal,
             originStoragePrincipal
           );
