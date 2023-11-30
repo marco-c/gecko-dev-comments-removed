@@ -3350,27 +3350,30 @@ void nsWindow::SetCursor(const Cursor& aCursor) {
   mUpdateCursor = false;
   mCursor = aCursor;
 
-  
-  bool fromImage = true;
-  GdkCursor* newCursor = GetCursorForImage(aCursor, GdkCeiledScaleFactor());
-  if (!newCursor) {
-    fromImage = false;
-    newCursor = get_gtk_cursor(aCursor.mDefaultCursor);
-  }
-
-  auto CleanupCursor = mozilla::MakeScopeExit([&]() {
-    
-    if (fromImage) {
-      g_object_unref(newCursor);
-    }
-  });
-
-  if (!newCursor || !mContainer) {
+  if (!mContainer) {
     return;
   }
 
+  
+  GdkCursor* imageCursor = GetCursorForImage(aCursor, GdkCeiledScaleFactor());
+
+  
+  
+  GdkCursor* nonImageCursor =
+      get_gtk_cursor(imageCursor ? eCursor_none : aCursor.mDefaultCursor);
+  auto CleanupCursor = mozilla::MakeScopeExit([&]() {
+    
+    if (imageCursor) {
+      g_object_unref(imageCursor);
+    }
+  });
+
   gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(mContainer)),
-                        newCursor);
+                        nonImageCursor);
+  if (imageCursor) {
+    gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(mContainer)),
+                          imageCursor);
+  }
 }
 
 void nsWindow::Invalidate(const LayoutDeviceIntRect& aRect) {
