@@ -14,8 +14,12 @@ namespace js::jit {
 
 inline JitHintsMap::ScriptKey JitHintsMap::getScriptKey(
     JSScript* script) const {
-  if (ScriptKey key = script->filenameHash()) {
-    return mozilla::AddToHash(key, script->sourceStart());
+  ScriptKey filenameHash = script->filenameHash();
+  
+  
+  
+  if (filenameHash && !script->scriptSource()->hasIntroducerFilename()) {
+    return mozilla::AddToHash(filenameHash, script->sourceStart());
   }
   return 0;
 }
