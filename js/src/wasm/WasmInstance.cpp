@@ -241,14 +241,44 @@ bool Instance::callImport(JSContext* cx, uint32_t funcImportIndex,
 
   MOZ_ASSERT(argTypes.lengthWithStackResults() == argc);
   Maybe<char*> stackResultPointer;
-  for (size_t i = 0; i < argc; i++) {
-    const void* rawArgLoc = &argv[i];
+  size_t lastBoxIndexPlusOne = 0;
+  {
+    JS::AutoAssertNoGC nogc;
+    for (size_t i = 0; i < argc; i++) {
+      const void* rawArgLoc = &argv[i];
+      if (argTypes.isSyntheticStackResultPointerArg(i)) {
+        stackResultPointer = Some(*(char**)rawArgLoc);
+        continue;
+      }
+      size_t naturalIndex = argTypes.naturalIndex(i);
+      ValType type = funcType.args()[naturalIndex];
+      
+      if (ToJSValueMayGC(type)) {
+        lastBoxIndexPlusOne = i + 1;
+        continue;
+      }
+      MutableHandleValue argValue = args[naturalIndex];
+      if (!ToJSValue(cx, rawArgLoc, type, argValue)) {
+        return false;
+      }
+    }
+  }
+
+  
+  
+  for (size_t i = 0; i < lastBoxIndexPlusOne; i++) {
     if (argTypes.isSyntheticStackResultPointerArg(i)) {
-      stackResultPointer = Some(*(char**)rawArgLoc);
       continue;
     }
+    const void* rawArgLoc = &argv[i];
     size_t naturalIndex = argTypes.naturalIndex(i);
     ValType type = funcType.args()[naturalIndex];
+    if (!ToJSValueMayGC(type)) {
+      continue;
+    }
+    MOZ_ASSERT(!type.isRefRepr());
+    
+    
     MutableHandleValue argValue = args[naturalIndex];
     if (!ToJSValue(cx, rawArgLoc, type, argValue)) {
       return false;
