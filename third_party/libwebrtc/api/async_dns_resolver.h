@@ -14,6 +14,7 @@
 #include <functional>
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
@@ -63,11 +64,11 @@ class RTC_EXPORT AsyncDnsResolverInterface {
 
   
   virtual void Start(const rtc::SocketAddress& addr,
-                     std::function<void()> callback) = 0;
+                     absl::AnyInvocable<void()> callback) = 0;
   
   virtual void Start(const rtc::SocketAddress& addr,
                      int family,
-                     std::function<void()> callback) = 0;
+                     absl::AnyInvocable<void()> callback) = 0;
   virtual const AsyncDnsResolverResult& result() const = 0;
 };
 
@@ -83,7 +84,7 @@ class AsyncDnsResolverFactoryInterface {
   
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
       const rtc::SocketAddress& addr,
-      std::function<void()> callback) = 0;
+      absl::AnyInvocable<void()> callback) = 0;
   
   
   
@@ -91,7 +92,7 @@ class AsyncDnsResolverFactoryInterface {
   virtual std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAndResolve(
       const rtc::SocketAddress& addr,
       int family,
-      std::function<void()> callback) = 0;
+      absl::AnyInvocable<void()> callback) = 0;
   
   
   
