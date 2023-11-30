@@ -17202,12 +17202,6 @@ void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
       break;
     }
 
-    
-    
-    
-    if (PresShell* presShell = GetPresShell()) {
-      presShell->UpdateRelevancyOfContentVisibilityAutoFrames();
-    }
     DebugOnly<uint32_t> oldShallowestTargetDepth = shallowestTargetDepth;
     shallowestTargetDepth = BroadcastAllActiveResizeObservations();
     NS_ASSERTION(oldShallowestTargetDepth < shallowestTargetDepth,
