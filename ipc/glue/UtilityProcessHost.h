@@ -133,6 +133,10 @@ class UtilityProcessHost final : public mozilla::ipc::GeckoChildProcessHost {
   void RejectPromise();
   void ResolvePromise();
 
+#if defined(MOZ_WMF_CDM) && defined(MOZ_SANDBOX) && !defined(MOZ_ASAN)
+  void EnsureWidevineL1PathForSandbox();
+#endif
+
   
   
   
