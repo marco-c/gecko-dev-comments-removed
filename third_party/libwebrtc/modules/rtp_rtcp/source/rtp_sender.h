@@ -150,11 +150,6 @@ class RTPSender {
 
   
   
-  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet)
-      RTC_LOCKS_EXCLUDED(send_mutex_);
-
-  
-  
   void EnqueuePackets(std::vector<std::unique_ptr<RtpPacketToSend>> packets)
       RTC_LOCKS_EXCLUDED(send_mutex_);
 
