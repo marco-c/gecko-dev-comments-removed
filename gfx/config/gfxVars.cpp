@@ -49,10 +49,15 @@ void gfxVars::Initialize() {
 
   
   
-  MOZ_ASSERT_IF(XRE_IsContentProcess(), gGfxVarInitUpdates);
-
-  if (gGfxVarInitUpdates) {
-    
+  if (XRE_IsContentProcess()) {
+    MOZ_ASSERT(gGfxVarInitUpdates,
+               "Initial updates should be provided in content process");
+    if (!gGfxVarInitUpdates) {
+      
+      nsTArray<GfxVarUpdate> initUpdates;
+      dom::ContentChild::GetSingleton()->SendGetGfxVars(&initUpdates);
+      gGfxVarInitUpdates = new nsTArray<GfxVarUpdate>(std::move(initUpdates));
+    }
     for (const auto& varUpdate : *gGfxVarInitUpdates) {
       ApplyUpdate(varUpdate);
     }

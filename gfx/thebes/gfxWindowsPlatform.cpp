@@ -373,9 +373,6 @@ void gfxWindowsPlatform::InitAcceleration() {
 
   DeviceManagerDx::Init();
 
-  
-  MOZ_ASSERT_IF(XRE_IsContentProcess(), GetInitContentDeviceData());
-
   InitializeConfig();
   InitGPUProcessSupport();
   
@@ -986,21 +983,20 @@ void gfxWindowsPlatform::CheckForContentOnlyDeviceReset() {
 
 nsTArray<uint8_t> gfxWindowsPlatform::GetPlatformCMSOutputProfileData() {
   if (XRE_IsContentProcess()) {
-    auto& cmsOutputProfileData = GetCMSOutputProfileData();
     
     
-    MOZ_ASSERT(cmsOutputProfileData.isSome(),
-               "Should have created output profile data when we received "
-               "initial content device data.");
-
-    
-    MOZ_ASSERT_IF(cmsOutputProfileData.isSome(),
-                  !cmsOutputProfileData->IsEmpty());
-
-    if (cmsOutputProfileData.isSome()) {
-      return cmsOutputProfileData.ref().Clone();
+    const mozilla::gfx::ContentDeviceData* contentDeviceData =
+        GetInitContentDeviceData();
+    if (contentDeviceData) {
+      MOZ_ASSERT(!contentDeviceData->cmsOutputProfileData().IsEmpty());
+      return contentDeviceData->cmsOutputProfileData().Clone();
     }
-    return nsTArray<uint8_t>();
+
+    
+    mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
+    nsTArray<uint8_t> result;
+    Unused << cc->SendGetOutputColorProfileData(&result);
+    return result;
   }
 
   return GetPlatformCMSOutputProfileData_Impl();
@@ -1202,7 +1198,7 @@ void gfxWindowsPlatform::InitializeConfig() {
     InitializeANGLEConfig();
     InitializeD2DConfig();
   } else {
-    ImportCachedContentDeviceData();
+    FetchAndImportContentDeviceData();
     InitializeANGLEConfig();
   }
 }
@@ -1785,6 +1781,9 @@ void gfxWindowsPlatform::ImportContentDeviceData(
     DeviceManagerDx* dm = DeviceManagerDx::Get();
     dm->ImportDeviceInfo(aData.d3d11());
   }
+
+  
+  
 }
 
 void gfxWindowsPlatform::BuildContentDeviceData(ContentDeviceData* aOut) {

@@ -865,7 +865,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  void ImportCachedContentDeviceData();
+  void FetchAndImportContentDeviceData();
   virtual void ImportContentDeviceData(
       const mozilla::gfx::ContentDeviceData& aData);
 
@@ -887,13 +887,6 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
   const mozilla::gfx::ContentDeviceData* GetInitContentDeviceData();
-
-  
-
-
-
-
-  mozilla::Maybe<nsTArray<uint8_t>>& GetCMSOutputProfileData();
 
   
 
