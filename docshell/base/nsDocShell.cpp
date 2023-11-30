@@ -7711,9 +7711,9 @@ nsresult nsDocShell::RestoreFromHistory() {
   return privWin->FireDelayedDOMEvents(true);
 }
 
-nsresult nsDocShell::CreateContentViewer(const nsACString& aContentType,
-                                         nsIRequest* aRequest,
-                                         nsIStreamListener** aContentHandler) {
+nsresult nsDocShell::CreateDocumentViewer(const nsACString& aContentType,
+                                          nsIRequest* aRequest,
+                                          nsIStreamListener** aContentHandler) {
   if (DocGroup::TryToLoadIframesInBackground()) {
     ResetToFirstLoad();
   }

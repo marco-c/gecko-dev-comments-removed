@@ -580,9 +580,9 @@ class nsDocShell final : public nsDocLoader,
       bool aTryToSaveOldPresentation = true, bool aCheckPermitUnload = true,
       mozilla::dom::WindowGlobalChild* aActor = nullptr);
 
-  nsresult CreateContentViewer(const nsACString& aContentType,
-                               nsIRequest* aRequest,
-                               nsIStreamListener** aContentHandler);
+  nsresult CreateDocumentViewer(const nsACString& aContentType,
+                                nsIRequest* aRequest,
+                                nsIStreamListener** aContentHandler);
 
   nsresult NewContentViewerObj(const nsACString& aContentType,
                                nsIRequest* aRequest, nsILoadGroup* aLoadGroup,
