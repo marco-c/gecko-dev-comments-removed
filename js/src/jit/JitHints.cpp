@@ -5,7 +5,6 @@
 
 
 #include "jit/JitHints-inl.h"
-#include "vm/BytecodeLocation-inl.h"
 #include "vm/JSScript-inl.h"
 
 using namespace js;
@@ -52,11 +51,6 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
     return true;
   }
 
-  
-  if (!baselineHintMap_.mightContain(key)) {
-    return true;
-  }
-
   auto p = ionHintMap_.lookupForAdd(key);
   IonHint* hint = nullptr;
   if (p) {
@@ -70,7 +64,6 @@ bool JitHintsMap::recordIonCompilation(JSScript* script) {
     }
   }
 
-  hint->initThreshold(script->warmUpCountAtLastICStub());
   return true;
 }
 
@@ -81,16 +74,12 @@ bool JitHintsMap::getIonThresholdHint(JSScript* script,
     auto p = ionHintMap_.lookup(key);
     if (p) {
       IonHint* hint = p->value();
-      
-      
-      
-      if (hint->threshold() != 0) {
-        updateAsRecentlyUsed(hint);
-        thresholdOut = hint->threshold();
-        return true;
-      }
+      updateAsRecentlyUsed(hint);
+      thresholdOut = hint->threshold();
+      return true;
     }
   }
+
   return false;
 }
 
@@ -102,50 +91,4 @@ void JitHintsMap::recordInvalidation(JSScript* script) {
       p->value()->incThreshold(InvalidationThresholdIncrement);
     }
   }
-}
-
-bool JitHintsMap::addMonomorphicInlineLocation(JSScript* script,
-                                               BytecodeLocation loc) {
-  ScriptKey key = getScriptKey(script);
-  if (!key) {
-    return true;
-  }
-
-  
-  if (!baselineHintMap_.mightContain(key)) {
-    return true;
-  }
-
-  auto p = ionHintMap_.lookupForAdd(key);
-  IonHint* hint = nullptr;
-  if (p) {
-    hint = p->value();
-  } else {
-    hint = addIonHint(key, p);
-    if (!hint) {
-      return false;
-    }
-  }
-
-  if (!hint->hasSpaceForMonomorphicInlineEntry()) {
-    return true;
-  }
-
-  uint32_t offset = loc.bytecodeToOffset(script);
-  return hint->addMonomorphicInlineOffset(offset);
-}
-
-bool JitHintsMap::hasMonomorphicInlineHintAtOffset(JSScript* script,
-                                                   uint32_t offset) {
-  ScriptKey key = getScriptKey(script);
-  if (!key) {
-    return false;
-  }
-
-  auto p = ionHintMap_.lookup(key);
-  if (p) {
-    return p->value()->hasMonomorphicInlineOffset(offset);
-  }
-
-  return false;
 }
