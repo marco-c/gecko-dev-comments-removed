@@ -1,9 +1,9 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
+/******************************************************************************/
+/* Toolbar */
 
 .toolbar {
   display: flex;
@@ -28,6 +28,7 @@
   user-select: none;
   padding: 0 3px;
   border-radius: 2px;
+  outline-offset: -1px;
 }
 
 .toolbar .btn:hover {
