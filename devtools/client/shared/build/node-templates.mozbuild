@@ -16,12 +16,11 @@ def CompiledModules(*modules):
   # logic for computing FINAL_TARGET from scratch. Here we emulate the
   # DIST_SUBDIR export in devtools/moz.build.
   if CONFIG['MOZ_BUILD_APP'] == 'browser':
-    final_target = 'dist/bin/browser'
+    final_target = '/dist/bin/browser'
   else:
-    final_target = 'dist/bin'
+    final_target = '/dist/bin'
 
-  final = '/'.join([TOPOBJDIR, final_target, 'chrome/devtools/modules',
-                    RELATIVEDIR])
+  final = '/'.join([final_target, 'chrome/devtools/modules', RELATIVEDIR])
   # For the same reason as https://searchfox.org/mozilla-central/source/mobile/android/base/moz.build#180-184
   # we have to insert a first entry as recursivemake overrides the first entry and we end up with empty files
   # for the first file only.
@@ -29,7 +28,6 @@ def CompiledModules(*modules):
       "node.stub", *[final + '/' + module for module in modules],
       script='/python/mozbuild/mozbuild/action/node.py',
       entry_point='generate',
-      py2=True,
       inputs=['/devtools/client/shared/build/build.js'] +
              [module for module in modules],
-      flags=[final])
+      flags=['/'.join([TOPOBJDIR, final])])
