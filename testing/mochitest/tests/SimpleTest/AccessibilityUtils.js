@@ -697,13 +697,17 @@ this.AccessibilityUtils = (function () {
       gEnv = { ...DEFAULT_ENV };
     },
 
-    reset(a11yChecks = false) {
+    reset(a11yChecks = false, testPath = "") {
       gA11YChecks = a11yChecks;
 
       const { Services } = SpecialPowers;
       
       
-      if (!gA11YChecks && Services.appinfo.accessibilityEnabled) {
+      if (
+        !gA11YChecks &&
+        Services.appinfo.accessibilityEnabled &&
+        !testPath.startsWith("chrome://mochitests/content/browser/accessible/")
+      ) {
         Services.prefs.setIntPref(FORCE_DISABLE_ACCESSIBILITY_PREF, 1);
         Services.prefs.clearUserPref(FORCE_DISABLE_ACCESSIBILITY_PREF);
       }

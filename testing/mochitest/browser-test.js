@@ -1217,7 +1217,7 @@ Tester.prototype = {
 
     this.SimpleTest.reset();
     
-    this.AccessibilityUtils.reset(this.a11y_checks);
+    this.AccessibilityUtils.reset(this.a11y_checks, this.currentTest.path);
 
     
     let currentScope = (this.currentTest.scope = new testScope(
