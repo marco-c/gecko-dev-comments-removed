@@ -560,23 +560,16 @@ nsTArray<uint8_t> gfxPlatformGtk::GetPlatformCMSOutputProfileData() {
   }
 
   if (XRE_IsContentProcess()) {
-    MOZ_ASSERT(NS_IsMainThread());
+    auto& cmsOutputProfileData = GetCMSOutputProfileData();
     
     
-    const mozilla::gfx::ContentDeviceData* contentDeviceData =
-        GetInitContentDeviceData();
-    if (contentDeviceData) {
-      
-      
-      
-      return contentDeviceData->cmsOutputProfileData().Clone();
+    MOZ_ASSERT(cmsOutputProfileData.isSome(),
+               "Should have created output profile data when we received "
+               "initial content device data.");
+    if (cmsOutputProfileData.isSome()) {
+      return cmsOutputProfileData.ref().Clone();
     }
-
-    
-    mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
-    nsTArray<uint8_t> result;
-    Unused << cc->SendGetOutputColorProfileData(&result);
-    return result;
+    return nsTArray<uint8_t>();
   }
 
   if (!mIsX11Display) {

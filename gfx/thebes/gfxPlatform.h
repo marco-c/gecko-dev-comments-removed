@@ -891,6 +891,13 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   
 
 
+
+
+  mozilla::Maybe<nsTArray<uint8_t>>& GetCMSOutputProfileData();
+
+  
+
+
   void BumpDeviceCounter();
 
   
