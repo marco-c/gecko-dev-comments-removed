@@ -56,10 +56,14 @@ class DirectTransport : public Transport {
   
   virtual void SetReceiver(PacketReceiver* receiver);
 
-  bool SendRtp(const uint8_t* data,
-               size_t length,
+  
+  
+  using Transport::SendRtcp;
+  using Transport::SendRtp;
+
+  bool SendRtp(rtc::ArrayView<const uint8_t> data,
                const PacketOptions& options) override;
-  bool SendRtcp(const uint8_t* data, size_t length) override;
+  bool SendRtcp(rtc::ArrayView<const uint8_t> data) override;
 
   int GetAverageDelayMs();
 

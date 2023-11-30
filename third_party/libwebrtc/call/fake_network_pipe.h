@@ -138,19 +138,17 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   
   
-  bool SendRtp(const uint8_t* packet,
-               size_t length,
+  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
                const PacketOptions& options);
-  bool SendRtcp(const uint8_t* packet, size_t length);
+  bool SendRtcp(rtc::ArrayView<const uint8_t> packet);
 
   
   
   
-  bool SendRtp(const uint8_t* packet,
-               size_t length,
+  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
                const PacketOptions& options,
                Transport* transport);
-  bool SendRtcp(const uint8_t* packet, size_t length, Transport* transport);
+  bool SendRtcp(rtc::ArrayView<const uint8_t> packet, Transport* transport);
 
   
   

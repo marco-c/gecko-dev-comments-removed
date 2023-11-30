@@ -157,7 +157,7 @@ class ScalingObserver : public test::SendTest {
                        test_params_.size());
   }
 
-  Action OnSendRtp(const uint8_t* packet, size_t length) override {
+  Action OnSendRtp(rtc::ArrayView<const uint8_t> packet) override {
     
     
     
