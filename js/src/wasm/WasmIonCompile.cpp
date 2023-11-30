@@ -7646,7 +7646,7 @@ static bool EmitBrOnCast(FunctionCompiler& f, bool onSuccess) {
                           labelType, values);
 }
 
-static bool EmitExternInternalize(FunctionCompiler& f) {
+static bool EmitAnyConvertExtern(FunctionCompiler& f) {
   
   
   MDefinition* ref;
@@ -7658,7 +7658,7 @@ static bool EmitExternInternalize(FunctionCompiler& f) {
   return true;
 }
 
-static bool EmitExternExternalize(FunctionCompiler& f) {
+static bool EmitExternConvertAny(FunctionCompiler& f) {
   
   
   MDefinition* ref;
@@ -8322,10 +8322,10 @@ static bool EmitBodyExprs(FunctionCompiler& f) {
             CHECK(EmitRefCast(f, false));
           case uint32_t(GcOp::RefCastNull):
             CHECK(EmitRefCast(f, true));
-          case uint16_t(GcOp::ExternInternalize):
-            CHECK(EmitExternInternalize(f));
-          case uint16_t(GcOp::ExternExternalize):
-            CHECK(EmitExternExternalize(f));
+          case uint16_t(GcOp::AnyConvertExtern):
+            CHECK(EmitAnyConvertExtern(f));
+          case uint16_t(GcOp::ExternConvertAny):
+            CHECK(EmitExternConvertAny(f));
           default:
             return f.iter().unrecognizedOpcode(&op);
         }  
