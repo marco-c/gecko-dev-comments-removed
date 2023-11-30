@@ -23,21 +23,21 @@ using namespace mozilla;
 using namespace mozilla::dom;
 
 
-already_AddRefed<ClonedErrorHolder> ClonedErrorHolder::Constructor(
+UniquePtr<ClonedErrorHolder> ClonedErrorHolder::Constructor(
     const GlobalObject& aGlobal, JS::Handle<JSObject*> aError,
     ErrorResult& aRv) {
   return Create(aGlobal.Context(), aError, aRv);
 }
 
 
-already_AddRefed<ClonedErrorHolder> ClonedErrorHolder::Create(
+UniquePtr<ClonedErrorHolder> ClonedErrorHolder::Create(
     JSContext* aCx, JS::Handle<JSObject*> aError, ErrorResult& aRv) {
-  RefPtr<ClonedErrorHolder> ceh = new ClonedErrorHolder();
+  UniquePtr<ClonedErrorHolder> ceh(new ClonedErrorHolder());
   ceh->Init(aCx, aError, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
-  return ceh.forget();
+  return ceh;
 }
 
 ClonedErrorHolder::ClonedErrorHolder()
@@ -224,7 +224,7 @@ JSObject* ClonedErrorHolder::ReadStructuredClone(
   
   JS::Rooted<JS::Value> errorVal(aCx);
   {
-    RefPtr<ClonedErrorHolder> ceh = new ClonedErrorHolder();
+    UniquePtr<ClonedErrorHolder> ceh(new ClonedErrorHolder());
     if (!ceh->Init(aCx, aReader) || !ceh->ToErrorValue(aCx, &errorVal)) {
       return nullptr;
     }
