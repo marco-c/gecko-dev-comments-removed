@@ -113,11 +113,6 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
                   PacketReceiver* receiver,
                   uint64_t seed);
 
-  
-  FakeNetworkPipe(Clock* clock,
-                  std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-                  Transport* transport);
-
   ~FakeNetworkPipe() override;
 
   FakeNetworkPipe(const FakeNetworkPipe&) = delete;
@@ -133,14 +128,6 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   
   void AddActiveTransport(Transport* transport);
   void RemoveActiveTransport(Transport* transport);
-
-  
-  
-  
-  
-  bool SendRtp(rtc::ArrayView<const uint8_t> packet,
-               const PacketOptions& options);
-  bool SendRtcp(rtc::ArrayView<const uint8_t> packet);
 
   
   
@@ -216,7 +203,6 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   mutable Mutex config_lock_;
   const std::unique_ptr<NetworkBehaviorInterface> network_behavior_;
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
-  Transport* const global_transport_;
 
   
   
