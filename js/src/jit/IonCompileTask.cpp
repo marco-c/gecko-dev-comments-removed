@@ -207,7 +207,7 @@ void jit::FinishOffThreadTask(JSRuntime* runtime,
 
   
   
-  if (!freeTask.appendCompileTask(task)) {
+  if (!freeTask.addIonCompileToFreeTaskBatch(task)) {
     FreeIonCompileTask(task);
   }
 }

@@ -128,6 +128,10 @@ class JitRuntime {
   MainThreadData<js::UniquePtr<uint8_t>> ionOsrTempData_{nullptr};
 
   
+  
+  MainThreadData<IonFreeCompileTasks> ionFreeTaskBatch_;
+
+  
   WriteOnceData<uint32_t> exceptionTailOffset_{0};
 
   
@@ -311,6 +315,11 @@ class JitRuntime {
   IonCompilationId nextCompilationId() {
     return IonCompilationId(nextCompilationId_++);
   }
+
+  [[nodiscard]] bool addIonCompileToFreeTaskBatch(IonCompileTask* task) {
+    return ionFreeTaskBatch_.ref().append(task);
+  }
+  void maybeStartIonFreeTask(bool force);
 
 #ifdef DEBUG
   bool disallowArbitraryCode() const { return disallowArbitraryCode_; }

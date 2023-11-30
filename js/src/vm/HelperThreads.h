@@ -51,6 +51,7 @@ class GCRuntime;
 namespace jit {
 class IonCompileTask;
 class IonFreeTask;
+class JitRuntime;
 using IonFreeCompileTasks = Vector<IonCompileTask*, 8, SystemAllocPolicy>;
 }  
 
@@ -148,14 +149,17 @@ void FinishOffThreadIonCompile(jit::IonCompileTask* task,
 
 
 class MOZ_RAII AutoStartIonFreeTask {
-  jit::IonFreeCompileTasks tasks_;
+  jit::JitRuntime* jitRuntime_;
+
+  
+  bool force_;
 
  public:
+  explicit AutoStartIonFreeTask(jit::JitRuntime* jitRuntime, bool force = false)
+      : jitRuntime_(jitRuntime), force_(force) {}
   ~AutoStartIonFreeTask();
 
-  [[nodiscard]] bool appendCompileTask(jit::IonCompileTask* task) {
-    return tasks_.append(task);
-  }
+  [[nodiscard]] bool addIonCompileToFreeTaskBatch(jit::IonCompileTask* task);
 };
 
 struct ZonesInState {
