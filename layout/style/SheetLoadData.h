@@ -16,6 +16,9 @@
 #include "nsProxyRelease.h"
 
 namespace mozilla {
+namespace dom {
+enum class FetchPriority : uint8_t;
+}  
 class AsyncEventDispatcher;
 class StyleSheet;
 }  
@@ -59,13 +62,15 @@ class SheetLoadData final
                 SyncLoad, nsINode* aOwningNode, IsAlternate, MediaMatched,
                 StylePreloadKind, nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*,
-                const nsAString& aNonce);
+                const nsAString& aNonce, dom::FetchPriority aFetchPriority);
 
   
   SheetLoadData(css::Loader*, nsIURI*, StyleSheet*, SheetLoadData* aParentData,
                 nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*);
 
+  
+  
   
   SheetLoadData(css::Loader*, nsIURI*, StyleSheet*, SyncLoad,
                 UseSystemPrincipal, StylePreloadKind,
@@ -218,6 +223,8 @@ class SheetLoadData final
 
   
   const nsString mNonce;
+
+  const dom::FetchPriority mFetchPriority;
 
   
   const NotNull<const Encoding*> mGuessedEncoding;

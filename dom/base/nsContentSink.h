@@ -128,10 +128,14 @@ class nsContentSink : public nsICSSLoaderObserver,
   nsresult ProcessLinkFromHeader(const mozilla::net::LinkHeader& aHeader,
                                  uint64_t aEarlyHintPreloaderId);
 
+  
+  
+  
   virtual nsresult ProcessStyleLinkFromHeader(
       const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
       const nsAString& aIntegrity, const nsAString& aType,
-      const nsAString& aMedia, const nsAString& aReferrerPolicy);
+      const nsAString& aMedia, const nsAString& aReferrerPolicy,
+      const nsAString& aFetchPriority);
 
   void PrefetchHref(const nsAString& aHref, const nsAString& aAs,
                     const nsAString& aType, const nsAString& aMedia);

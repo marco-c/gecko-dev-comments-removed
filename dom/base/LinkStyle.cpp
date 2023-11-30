@@ -1,14 +1,14 @@
+/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
+/* vim: set ts=8 sts=2 et sw=2 tw=80: */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
-
-
-
-
-
-
+/*
+ * A base class which implements nsIStyleSheetLinkingElement and can
+ * be subclassed by various content nodes that want to load
+ * stylesheets (<style>, <link>, processing instructions, etc).
+ */
 
 #include "mozilla/dom/LinkStyle.h"
 
@@ -44,7 +44,8 @@ LinkStyle::SheetInfo::SheetInfo(
     mozilla::CORSMode aCORSMode, const nsAString& aTitle,
     const nsAString& aMedia, const nsAString& aIntegrity,
     const nsAString& aNonce, HasAlternateRel aHasAlternateRel,
-    IsInline aIsInline, IsExplicitlyEnabled aIsExplicitlyEnabled)
+    IsInline aIsInline, IsExplicitlyEnabled aIsExplicitlyEnabled,
+    FetchPriority aFetchPriority)
     : mContent(aContent),
       mURI(aURI),
       mTriggeringPrincipal(aTriggeringPrincipal),
@@ -54,6 +55,7 @@ LinkStyle::SheetInfo::SheetInfo(
       mMedia(aMedia),
       mIntegrity(aIntegrity),
       mNonce(aNonce),
+      mFetchPriority(aFetchPriority),
       mHasAlternateRel(aHasAlternateRel == HasAlternateRel::Yes),
       mIsInline(aIsInline == IsInline::Yes),
       mIsExplicitlyEnabled(aIsExplicitlyEnabled) {
@@ -78,31 +80,31 @@ StyleSheet* LinkStyle::GetSheetForBindings() const {
 
 void LinkStyle::GetTitleAndMediaForElement(const Element& aSelf,
                                            nsString& aTitle, nsString& aMedia) {
-  
-  
-  
-  
-  
-  
+  // Only honor title as stylesheet name for elements in the document (that is,
+  // ignore for Shadow DOM), per [1] and [2]. See [3].
+  //
+  // [1]: https://html.spec.whatwg.org/#attr-link-title
+  // [2]: https://html.spec.whatwg.org/#attr-style-title
+  // [3]: https://github.com/w3c/webcomponents/issues/535
   if (aSelf.IsInUncomposedDoc()) {
     aSelf.GetAttr(nsGkAtoms::title, aTitle);
     aTitle.CompressWhitespace();
   }
 
   aSelf.GetAttr(nsGkAtoms::media, aMedia);
-  
-  
-  
-  
-  
+  // The HTML5 spec is formulated in terms of the CSSOM spec, which specifies
+  // that media queries should be ASCII lowercased during serialization.
+  //
+  // FIXME(emilio): How does it matter? This is going to be parsed anyway, CSS
+  // should take care of serializing it properly.
   nsContentUtils::ASCIIToLower(aMedia);
 }
 
 bool LinkStyle::IsCSSMimeTypeAttributeForStyleElement(const Element& aSelf) {
-  
-  
-  
-  
+  // Per
+  // https://html.spec.whatwg.org/multipage/semantics.html#the-style-element:update-a-style-block
+  // step 4, for style elements we should only accept empty and "text/css" type
+  // attribute values.
   nsAutoString type;
   aSelf.GetAttr(nsGkAtoms::type, type);
   return type.IsEmpty() || type.LowerCaseEqualsLiteral("text/css");
@@ -129,7 +131,7 @@ void LinkStyle::SetStyleSheet(StyleSheet* aStyleSheet) {
 void LinkStyle::GetCharset(nsAString& aCharset) { aCharset.Truncate(); }
 
 static uint32_t ToLinkMask(const nsAString& aLink) {
-  
+  // Keep this in sync with sSupportedRelValues in HTMLLinkElement.cpp
   uint32_t mask = 0;
   if (aLink.EqualsLiteral("prefetch")) {
     mask = LinkStyle::ePREFETCH;
@@ -226,8 +228,8 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     nsICSSLoaderObserver* aObserver, ForceUpdate aForceUpdate) {
   nsIContent& thisContent = AsContent();
   if (thisContent.IsInSVGUseShadowTree()) {
-    
-    
+    // Stylesheets in <use>-cloned subtrees are disabled until we figure out
+    // how they should behave.
     return Update{};
   }
 
@@ -237,11 +239,11 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
                "there should not be a old document and old "
                "ShadowRoot simultaneously.");
 
-    
-    
-    
-    
-    
+    // We're removing the link element from the document or shadow tree, unload
+    // the stylesheet.
+    //
+    // We want to do this even if updates are disabled, since otherwise a sheet
+    // with a stale linking element pointer will be hanging around -- not good!
     if (mStyleSheet->IsComplete()) {
       if (aOldShadowRoot) {
         aOldShadowRoot->RemoveStyleSheet(*mStyleSheet);
@@ -255,12 +257,12 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
 
   Document* doc = thisContent.GetComposedDoc();
 
-  
+  // Loader could be null during unlink, see bug 1425866.
   if (!doc || !doc->CSSLoader() || !doc->CSSLoader()->GetEnabled()) {
     return Update{};
   }
 
-  
+  // When static documents are created, stylesheets are cloned manually.
   if (!mUpdatesEnabled || doc->IsStaticDocument()) {
     return Update{};
   }
@@ -281,7 +283,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
     if (mStyleSheet->IsComplete()) {
       if (thisContent.IsInShadowTree()) {
         ShadowRoot* containingShadow = thisContent.GetContainingShadow();
-        
+        // Could be null only during unlink.
         if (MOZ_LIKELY(containingShadow)) {
           containingShadow->RemoveStyleSheet(*mStyleSheet);
         }
@@ -298,7 +300,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   }
 
   if (!info->mURI && !info->mIsInline) {
-    
+    // If href is empty and this is not inline style then just bail
     return Update{};
   }
 
@@ -322,7 +324,7 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
       return Update{};
     }
 
-    
+    // Parse the style sheet.
     return doc->CSSLoader()->LoadInlineStyle(*info, text, aObserver);
   }
   if (thisContent.IsElement()) {
@@ -336,12 +338,12 @@ Result<LinkStyle::Update, nsresult> LinkStyle::DoUpdateStyleSheet(
   }
   auto resultOrError = doc->CSSLoader()->LoadStyleLink(*info, aObserver);
   if (resultOrError.isErr()) {
-    
-    
-    
+    // Don't propagate LoadStyleLink() errors further than this, since some
+    // consumers (e.g. nsXMLContentSink) will completely abort on innocuous
+    // things like a stylesheet load being blocked by the security system.
     return Update{};
   }
   return resultOrError;
 }
 
-}  
+}  // namespace mozilla::dom

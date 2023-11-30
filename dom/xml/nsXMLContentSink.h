@@ -151,7 +151,8 @@ class nsXMLContentSink : public nsContentSink,
   virtual nsresult ProcessStyleLinkFromHeader(
       const nsAString& aHref, bool aAlternate, const nsAString& aTitle,
       const nsAString& aIntegrity, const nsAString& aType,
-      const nsAString& aMedia, const nsAString& aReferrerPolicy) override;
+      const nsAString& aMedia, const nsAString& aReferrerPolicy,
+      const nsAString& aFetchPriority) override;
 
   
   

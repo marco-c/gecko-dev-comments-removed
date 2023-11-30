@@ -218,6 +218,17 @@ static const nsAttrValue::EnumTable*
     kFetchPriorityEnumTableInvalidValueDefault = &kFetchPriorityEnumTable[2];
 }  
 
+FetchPriority nsGenericHTMLElement::GetFetchPriority() const {
+  const nsAttrValue* fetchpriorityAttribute =
+      GetParsedAttr(nsGkAtoms::fetchpriority);
+  if (fetchpriorityAttribute) {
+    MOZ_ASSERT(fetchpriorityAttribute->Type() == nsAttrValue::eEnum);
+    return FetchPriority(fetchpriorityAttribute->GetEnumValue());
+  }
+
+  return FetchPriority::Auto;
+}
+
 
 void nsGenericHTMLElement::ParseFetchPriority(const nsAString& aValue,
                                               nsAttrValue& aResult) {
