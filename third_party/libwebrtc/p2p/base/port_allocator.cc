@@ -340,9 +340,12 @@ Candidate PortAllocator::SanitizeCandidate(const Candidate& c) const {
   
   
   bool filter_turn_related_address = !(candidate_filter_ & CF_REFLEXIVE);
+  
+  bool filter_prflx_related_address = MdnsObfuscationEnabled();
   bool filter_related_address =
       ((c.type() == STUN_PORT_TYPE && filter_stun_related_address) ||
-       (c.type() == RELAY_PORT_TYPE && filter_turn_related_address));
+       (c.type() == RELAY_PORT_TYPE && filter_turn_related_address) ||
+       (c.type() == PRFLX_PORT_TYPE && filter_prflx_related_address));
   return c.ToSanitizedCopy(use_hostname_address, filter_related_address);
 }
 
