@@ -84,8 +84,8 @@ const columnsAreCodePoints = (function()
   assertEq(script.type, "Program");
   assertEq(script.loc.start.line, 1);
   assertEq(script.loc.end.line, 1);
-  assertEq(script.loc.start.column, 0);
-  checkColumn(script.loc.end.column, 7, 11);
+  assertEq(script.loc.start.column, 1);
+  checkColumn(script.loc.end.column, 8, 12);
 
   var body = script.body;
   assertEq(body.length, 1);
@@ -94,16 +94,16 @@ const columnsAreCodePoints = (function()
   assertEq(stmt.type, "ExpressionStatement");
   assertEq(stmt.loc.start.line, 1);
   assertEq(stmt.loc.end.line, 1);
-  assertEq(stmt.loc.start.column, 0);
-  checkColumn(stmt.loc.end.column, 7, 11);
+  assertEq(stmt.loc.start.column, 1);
+  checkColumn(stmt.loc.end.column, 8, 12);
 
   var expr = stmt.expression;
   assertEq(expr.type, "Literal");
   assertEq(expr.value, "😱😱😱😱");
   assertEq(expr.loc.start.line, 1);
   assertEq(expr.loc.end.line, 1);
-  assertEq(expr.loc.start.column, 0);
-  checkColumn(expr.loc.end.column, 6, 10);
+  assertEq(expr.loc.start.column, 1);
+  checkColumn(expr.loc.end.column, 7, 11);
 
   var checkResult = columnTypes.join(",");
 
