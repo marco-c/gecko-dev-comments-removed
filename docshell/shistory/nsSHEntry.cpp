@@ -993,7 +993,7 @@ nsSHEntry::SyncTreesForSubframeNavigation(
 void nsSHEntry::EvictDocumentViewer() {
   nsCOMPtr<nsIDocumentViewer> viewer = GetContentViewer();
   if (viewer) {
-    mShared->NotifyListenersContentViewerEvicted();
+    mShared->NotifyListenersDocumentViewerEvicted();
     
     
     SetContentViewer(nullptr);
