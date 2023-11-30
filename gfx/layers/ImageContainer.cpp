@@ -9,6 +9,7 @@
 #include <string.h>  
 
 #include "GLImages.h"    
+#include "MediaInfo.h"   
 #include "YCbCrUtils.h"  
 #include "gfx2DGlue.h"
 #include "gfxPlatform.h"  
@@ -181,6 +182,7 @@ ImageContainer::ImageContainer(Mode flag)
       mPaintCount(0),
       mDroppedImageCount(0),
       mImageFactory(new ImageFactory()),
+      mRotation(VideoRotation::kDegree_0),
       mRecycleBin(new BufferRecycleBin()),
       mIsAsync(flag == ASYNCHRONOUS),
       mCurrentProducerID(-1) {
@@ -196,6 +198,7 @@ ImageContainer::ImageContainer(const CompositableHandle& aHandle)
       mPaintCount(0),
       mDroppedImageCount(0),
       mImageFactory(nullptr),
+      mRotation(VideoRotation::kDegree_0),
       mRecycleBin(nullptr),
       mIsAsync(true),
       mAsyncContainerHandle(aHandle),
