@@ -48,36 +48,23 @@ void Zone::traceWeakMaps(JSTracer* trc) {
 
 bool WeakMapBase::addImplicitEdges(Cell* key, Cell* delegate,
                                    TenuredCell* value) {
-  MarkColor mapColor = AsMarkColor(this->mapColor);
-
   if (delegate) {
-    auto& edgeTable = delegate->zone()->gcEphemeronEdges(delegate);
-    auto* ptr = edgeTable.getOrAdd(delegate);
-    if (!ptr) {
-      return false;
-    }
-
-    
-    
-    EphemeronEdgeVector& edges = ptr->value;
-    if (!edges.emplaceBack(mapColor, key)) {
-      return false;
-    }
-
-    if (value) {
-      if (!edges.emplaceBack(mapColor, value)) {
-        return false;
-      }
-    }
-
-    return true;
+    return addEphemeronTableEntries(delegate, key, value);
   }
 
+  if (value) {
+    return addEphemeronTableEntries(key, value, nullptr);
+  }
+
+  return true;
+}
+
+bool WeakMapBase::addEphemeronTableEntries(gc::Cell* key, gc::Cell* value1,
+                                           gc::Cell* maybeValue2) {
   
-
-  if (!value) {
-    return true;
-  }
+  
+  
+  
 
   auto& edgeTable = key->zone()->gcEphemeronEdges(key);
   auto* ptr = edgeTable.getOrAdd(key);
@@ -85,7 +72,16 @@ bool WeakMapBase::addImplicitEdges(Cell* key, Cell* delegate,
     return false;
   }
 
-  return ptr->value.emplaceBack(mapColor, value);
+  MarkColor mapColor = AsMarkColor(this->mapColor);
+  if (!ptr->value.emplaceBack(mapColor, value1)) {
+    return false;
+  }
+
+  if (maybeValue2 && !ptr->value.emplaceBack(mapColor, maybeValue2)) {
+    return false;
+  }
+
+  return true;
 }
 
 #if defined(JS_GC_ZEAL) || defined(DEBUG)
