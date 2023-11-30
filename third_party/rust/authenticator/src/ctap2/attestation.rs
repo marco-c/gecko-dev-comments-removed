@@ -289,8 +289,6 @@ impl Serialize for AuthenticatorData {
         data.extend([self.flags.bits()]); 
         data.extend(self.counter.to_be_bytes()); 
 
-        
-        
         if let Some(cred) = &self.credential_data {
             
             
@@ -310,7 +308,10 @@ impl Serialize for AuthenticatorData {
         }
         
         
-        if self.extensions.has_some() {
+        
+        
+        if self.extensions.has_some() || self.flags.contains(AuthenticatorDataFlags::EXTENSION_DATA)
+        {
             data.extend(
                 
                 &serde_cbor::to_vec(&self.extensions)
@@ -1076,6 +1077,29 @@ pub mod test {
                 0x87, 0xD6, 0x29, 0x0F, 0xD4, 0x7A, 0x40, 0xC4,
             ]))
         );
+    }
+
+    #[test]
+    fn test_empty_extension_data() {
+        let mut parsed_auth_data: AuthenticatorData =
+            from_slice(&SAMPLE_AUTH_DATA_MAKE_CREDENTIAL).unwrap();
+        assert!(parsed_auth_data
+            .flags
+            .contains(AuthenticatorDataFlags::EXTENSION_DATA));
+
+        
+        parsed_auth_data.extensions = Default::default();
+        let with_flag = to_vec(&parsed_auth_data).expect("could not serialize auth data");
+        
+        assert_eq!(with_flag[with_flag.len() - 1], 0xA0);
+
+        
+        parsed_auth_data
+            .flags
+            .remove(AuthenticatorDataFlags::EXTENSION_DATA);
+        let without_flag = to_vec(&parsed_auth_data).expect("could not serialize auth data");
+        
+        assert!(with_flag.len() == without_flag.len() + 1);
     }
 
     
