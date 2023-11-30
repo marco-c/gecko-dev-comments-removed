@@ -1,34 +1,56 @@
-function checkSnapchangedSupport() {
-  assert_true(window.onsnapchanged !== undefined, "snapchanged not supported");
+function checkSnapEventSupport(event_type) {
+  if (event_type == "snapchanged") {
+    assert_true(window.onsnapchanged !== undefined, "snapchanged not supported");
+  } else if (event_type == "snapchanging") {
+    assert_true(window.onsnapchanging !== undefined, "snapchanging not supported");
+  } else {
+    assert_unreached(`Unknown snap event type selected: ${event_type}`);
+  }
 }
 
-function assertSnapchangedEvent(evt, expected_ids) {
-  assert_equals(evt.bubbles, false, "snapchanged event doesn't bubble");
-  assert_false(evt.cancelable, "snapchanged event is not cancelable.");
+function assertSnapEvent(evt, expected_ids) {
+  assert_equals(evt.bubbles, false, "snap events don't bubble");
+  assert_false(evt.cancelable, "snap events are not cancelable.");
   const actual = Array.from(evt.snapTargets, el => el.id).join(",");
   const expected = expected_ids.join(",");
-  assert_equals(actual, expected, "snapped to expected targets");
+  assert_equals(actual, expected, "snap event supplied expected targets");
 }
 
-async function test_snapchanged(test, test_data) {
-  checkSnapchangedSupport();
+
+
+
+
+
+
+
+
+
+
+
+
+
+async function test_snap_event(test, test_data, event_type) {
+  checkSnapEventSupport(event_type);
   await waitForScrollReset(test, test_data.scroller);
 
   let listener = test_data.scroller ==
-      document.scrollingElement ? document : test_data.scroller;
+    document.scrollingElement ? document : test_data.scroller;
 
-  const snapchanged_promise = waitForSnapChangedEvent(listener);
+  const event_promise = waitForSnapEvent(listener, event_type);
   await test_data.scrolling_function();
-  let evt = await snapchanged_promise;
+  let evt = await event_promise;
 
-  assertSnapchangedEvent(evt,
-      test_data.expected_snap_targets);
+  assertSnapEvent(evt, test_data.expected_snap_targets);
   assert_approx_equals(test_data.scroller.scrollTop,
     test_data.expected_scroll_offsets.y, 1,
     "vertical scroll offset mismatch.");
   assert_approx_equals(test_data.scroller.scrollLeft,
     test_data.expected_scroll_offsets.x, 1,
     "horizontal scroll offset mismatch.");
+}
+
+async function test_snapchanged(test, test_data) {
+  await test_snap_event(test, test_data, "snapchanged");
 }
 
 function waitForEventUntil(event_target, event_type, wait_until) {
@@ -50,11 +72,15 @@ function waitForEventUntil(event_target, event_type, wait_until) {
 
 
 
-function waitForSnapChangedEvent(event_target, scroll_happens = true) {
-  return scroll_happens ? waitForEventUntil(event_target, "snapchanged",
+function waitForSnapEvent(event_target, event_type, scroll_happens = true) {
+  return scroll_happens ? waitForEventUntil(event_target, event_type,
                                    waitForScrollendEventNoTimeout(event_target))
-                        : waitForEventUntil(event_target, "snapchanged",
+                        : waitForEventUntil(event_target, event_type,
                                    waitForAnimationFrames(2));
+}
+
+function waitForSnapChangedEvent(event_target, scroll_happens = true) {
+  return waitForSnapEvent(event_target, "snapchanged", scroll_happens);
 }
 
 function getScrollbarToScrollerRatio(scroller) {
