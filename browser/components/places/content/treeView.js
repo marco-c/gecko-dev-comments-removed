@@ -86,6 +86,10 @@ PlacesTreeView.prototype = {
       }
       delete this._editingObservers;
     }
+    
+    if (this._result) {
+      this._result.removeObserver(this);
+    }
   },
 
   
@@ -1636,7 +1640,6 @@ PlacesTreeView.prototype = {
         
         if (!aTree) {
           
-          this._result.removeObserver(this);
           this._rootNode.containerOpen = false;
         }
       }

@@ -145,6 +145,8 @@
         
         this.place = this.place;
       }
+
+      window.addEventListener("unload", this.disconnectedCallback);
     }
 
     get controller() {
@@ -840,7 +842,9 @@
     }
 
     destroyContextMenu(aPopup) {}
+
     disconnectedCallback() {
+      window.removeEventListener("unload", this.disconnectedCallback);
       
       
       if (this._controller) {
@@ -850,11 +854,8 @@
 
       if (this.view) {
         this.view.uninit();
+        this.view = null;
       }
-      
-      
-      
-      this.view = null;
     }
   }
 
