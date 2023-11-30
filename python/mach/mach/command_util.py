@@ -4,6 +4,7 @@
 
 import argparse
 import ast
+import difflib
 import errno
 import shlex
 import sys
@@ -15,7 +16,7 @@ from typing import Dict, Optional, Union
 
 from mozfile import load_source
 
-from .base import MissingFileError
+from .base import MissingFileError, UnknownCommandError
 
 INVALID_ENTRY_POINT = r"""
 Entry points should return a list of command providers or directories
@@ -351,8 +352,6 @@ class DetermineCommandVenvAction(argparse.Action):
             arg_string = shlex.split(alias)
             command = arg_string.pop(0)
 
-        setattr(namespace, "command_name", command)
-
         
         
         if command == "help":
@@ -362,9 +361,16 @@ class DetermineCommandVenvAction(argparse.Action):
 
         if not command_reference:
             
-            
-            
-            return
+            suggested_command = suggest_command(command)
+
+            sys.stderr.write(
+                f"We're assuming the '{command}' command is '{suggested_command}' and we're executing it for you.\n\n"
+            )
+
+            command = suggested_command
+            command_reference = MACH_COMMANDS.get(command)
+
+        setattr(namespace, "command_name", command)
 
         if len(values) > 1:
             potential_sub_command_name = values[1]
@@ -394,6 +400,25 @@ class DetermineCommandVenvAction(argparse.Action):
                     site = sub_command_dict.get("virtualenv_name", "common")
 
         setattr(namespace, "site_name", site)
+
+
+def suggest_command(command):
+    names = MACH_COMMANDS.keys()
+    
+    suggested_commands = difflib.get_close_matches(command, names, cutoff=0.8)
+    
+    
+    
+    
+    
+    if len(suggested_commands) != 1:
+        suggested_commands = set(
+            difflib.get_close_matches(command, names, cutoff=0.5)
+        )
+        suggested_commands |= {cmd for cmd in names if cmd.startswith(command)}
+        raise UnknownCommandError(command, "run", suggested_commands)
+
+    return suggested_commands[0]
 
 
 def load_commands_from_directory(path: Path):
