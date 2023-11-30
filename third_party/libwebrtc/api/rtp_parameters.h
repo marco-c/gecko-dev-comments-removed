@@ -520,6 +520,9 @@ struct RTC_EXPORT RtpEncodingParameters {
   
   bool adaptive_ptime = false;
 
+  
+  absl::optional<RtpCodec> codec;
+
   bool operator==(const RtpEncodingParameters& o) const {
     return ssrc == o.ssrc && bitrate_priority == o.bitrate_priority &&
            network_priority == o.network_priority &&
@@ -530,7 +533,7 @@ struct RTC_EXPORT RtpEncodingParameters {
            scale_resolution_down_by == o.scale_resolution_down_by &&
            active == o.active && rid == o.rid &&
            adaptive_ptime == o.adaptive_ptime &&
-           requested_resolution == o.requested_resolution;
+           requested_resolution == o.requested_resolution && codec == o.codec;
   }
   bool operator!=(const RtpEncodingParameters& o) const {
     return !(*this == o);

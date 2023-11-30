@@ -114,7 +114,7 @@ struct RTC_EXPORT Codec {
   
   bool Matches(const Codec& codec,
                const webrtc::FieldTrialsView* field_trials = nullptr) const;
-  bool MatchesCapability(const webrtc::RtpCodecCapability& capability) const;
+  bool MatchesRtpCodec(const webrtc::RtpCodec& capability) const;
 
   
   bool GetParam(const std::string& name, std::string* out) const;
