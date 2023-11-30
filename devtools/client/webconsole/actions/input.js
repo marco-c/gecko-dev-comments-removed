@@ -346,6 +346,22 @@ function handleHelperResult(response) {
           );
           
           return;
+
+        
+        
+        
+        
+        
+        case "usage":
+          dispatch(
+            messagesActions.messagesAdd([
+              {
+                resourceType: ResourceCommand.TYPES.PLATFORM_MESSAGE,
+                message: helperResult.message,
+              },
+            ])
+          );
+          break;
       }
     }
 

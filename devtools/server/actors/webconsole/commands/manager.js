@@ -4,6 +4,21 @@
 
 "use strict";
 
+loader.lazyRequireGetter(
+  this,
+  ["getCommandAndArgs"],
+  "resource://devtools/server/actors/webconsole/commands/parser.js",
+  true
+);
+
+loader.lazyGetter(this, "l10n", () => {
+  return new Localization(["devtools/shared/webconsole-commands.ftl"], true);
+});
+const USAGE_STRING_MAPPING = {
+  block: "webconsole-commands-usage-block",
+  unblock: "webconsole-commands-usage-unblock",
+};
+
 
 
 
@@ -12,7 +27,10 @@
 
 
 const WebConsoleCommandsManager = {
+  
   _registeredCommands: new Map(),
+  
+  _validArguments: new Map(),
 
   
 
@@ -38,7 +56,23 @@ const WebConsoleCommandsManager = {
 
 
 
-  register(name, command) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  register({ name, command, validArguments, usage }) {
     if (
       typeof command != "function" &&
       !(typeof command == "object" && typeof command.get == "function")
@@ -48,6 +82,9 @@ const WebConsoleCommandsManager = {
       );
     }
     this._registeredCommands.set(name, command);
+    if (validArguments) {
+      this._validArguments.set(name, validArguments);
+    }
   },
 
   
@@ -284,34 +321,58 @@ const WebConsoleCommandsManager = {
 
 
 
+  executeCommand(consoleActor, debuggerGlobal, selectedNodeActorID, evalInput) {
+    const { command, args } = getCommandAndArgs(evalInput);
+    const commands = this._getCommandsForCurrentEnvironment();
+    if (!commands.has(command)) {
+      throw new Error(`Unsupported command '${command}'`);
+    }
 
+    if (args.help || args.usage) {
+      const l10nKey = USAGE_STRING_MAPPING[command];
+      if (l10nKey) {
+        const message = l10n.formatValueSync(l10nKey);
+        if (message && message !== l10nKey) {
+          return {
+            result: null,
+            helperResult: {
+              type: "usage",
+              message,
+            },
+          };
+        }
+      }
+    }
 
-  getColonCommandFunction(
-    consoleActor,
-    debuggerGlobal,
-    evalInput,
-    selectedNodeActorID,
-    commandName
-  ) {
+    const validArguments = this._validArguments.get(command);
+    if (validArguments) {
+      for (const key of Object.keys(args)) {
+        if (!validArguments.includes(key)) {
+          throw new Error(
+            `:${command} command doesn't support '${key}' argument.`
+          );
+        }
+      }
+    }
+
     const owner = this._createOwnerObject(
       consoleActor,
       debuggerGlobal,
       evalInput,
       selectedNodeActorID
     );
-    const commands = this._getCommandsForCurrentEnvironment();
-    if (!commands.has(commandName)) {
-      return null;
-    }
 
-    const commandFunc = commands.get(commandName).bind(undefined, owner);
+    const commandFunction = commands.get(command);
+
+    
+    const result = commandFunction(owner, args);
 
     return {
-      commandFunc,
+      result,
+
       
-      getHelperResult() {
-        return owner.helperResult;
-      },
+      
+      helperResult: owner.helperResult,
     };
   },
 };
@@ -335,22 +396,25 @@ exports.WebConsoleCommandsManager = WebConsoleCommandsManager;
 
 
 
-WebConsoleCommandsManager.register("$", function (owner, selector, element) {
-  try {
-    if (
-      element &&
-      element.querySelector &&
-      (element.nodeType == Node.ELEMENT_NODE ||
-        element.nodeType == Node.DOCUMENT_NODE ||
-        element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
-    ) {
-      return element.querySelector(selector);
+WebConsoleCommandsManager.register({
+  name: "$",
+  command(owner, selector, element) {
+    try {
+      if (
+        element &&
+        element.querySelector &&
+        (element.nodeType == Node.ELEMENT_NODE ||
+          element.nodeType == Node.DOCUMENT_NODE ||
+          element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
+      ) {
+        return element.querySelector(selector);
+      }
+      return owner.window.document.querySelector(selector);
+    } catch (err) {
+      
+      throw new owner.window.DOMException(err.message, err.name);
     }
-    return owner.window.document.querySelector(selector);
-  } catch (err) {
-    
-    throw new owner.window.DOMException(err.message, err.name);
-  }
+  },
 });
 
 
@@ -363,30 +427,33 @@ WebConsoleCommandsManager.register("$", function (owner, selector, element) {
 
 
 
-WebConsoleCommandsManager.register("$$", function (owner, selector, element) {
-  let scope = owner.window.document;
-  try {
-    if (
-      element &&
-      element.querySelectorAll &&
-      (element.nodeType == Node.ELEMENT_NODE ||
-        element.nodeType == Node.DOCUMENT_NODE ||
-        element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
-    ) {
-      scope = element;
+WebConsoleCommandsManager.register({
+  name: "$$",
+  command(owner, selector, element) {
+    let scope = owner.window.document;
+    try {
+      if (
+        element &&
+        element.querySelectorAll &&
+        (element.nodeType == Node.ELEMENT_NODE ||
+          element.nodeType == Node.DOCUMENT_NODE ||
+          element.nodeType == Node.DOCUMENT_FRAGMENT_NODE)
+      ) {
+        scope = element;
+      }
+      const nodes = scope.querySelectorAll(selector);
+      const result = new owner.window.Array();
+      
+      
+      for (let i = 0; i < nodes.length; i++) {
+        result.push(nodes[i]);
+      }
+      return result;
+    } catch (err) {
+      
+      throw new owner.window.DOMException(err.message, err.name);
     }
-    const nodes = scope.querySelectorAll(selector);
-    const result = new owner.window.Array();
-    
-    
-    for (let i = 0; i < nodes.length; i++) {
-      result.push(nodes[i]);
-    }
-    return result;
-  } catch (err) {
-    
-    throw new owner.window.DOMException(err.message, err.name);
-  }
+  },
 });
 
 
@@ -395,9 +462,12 @@ WebConsoleCommandsManager.register("$$", function (owner, selector, element) {
 
 
 
-WebConsoleCommandsManager.register("$_", {
-  get(owner) {
-    return owner.consoleActor.getLastConsoleInputEvaluation();
+WebConsoleCommandsManager.register({
+  name: "$_",
+  command: {
+    get(owner) {
+      return owner.consoleActor.getLastConsoleInputEvaluation();
+    },
   },
 });
 
@@ -412,9 +482,9 @@ WebConsoleCommandsManager.register("$_", {
 
 
 
-WebConsoleCommandsManager.register(
-  "$x",
-  function (
+WebConsoleCommandsManager.register({
+  name: "$x",
+  command(
     owner,
     xPath,
     context,
@@ -479,76 +549,46 @@ WebConsoleCommandsManager.register(
     }
 
     return nodes;
-  }
-);
-
-
-
-
-
-
-
-WebConsoleCommandsManager.register("$0", {
-  get(owner) {
-    return owner.makeDebuggeeValue(owner.selectedNode);
   },
 });
 
 
 
 
-WebConsoleCommandsManager.register("clear", function (owner) {
-  owner.helperResult = {
-    type: "clearOutput",
-  };
+
+
+
+WebConsoleCommandsManager.register({
+  name: "$0",
+  command: {
+    get(owner) {
+      return owner.makeDebuggeeValue(owner.selectedNode);
+    },
+  },
 });
 
 
 
 
-WebConsoleCommandsManager.register("clearHistory", function (owner) {
-  owner.helperResult = {
-    type: "clearHistory",
-  };
+WebConsoleCommandsManager.register({
+  name: "clear",
+  command(owner) {
+    owner.helperResult = {
+      type: "clearOutput",
+    };
+  },
 });
 
 
 
 
-
-
-
-
-WebConsoleCommandsManager.register("keys", function (owner, object) {
-  
-  return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
-});
-
-
-
-
-
-
-
-
-WebConsoleCommandsManager.register("values", function (owner, object) {
-  const values = [];
-  
-  const waived = Cu.waiveXrays(object);
-  const names = Object.getOwnPropertyNames(waived);
-
-  for (const name of names) {
-    values.push(waived[name]);
-  }
-
-  return Cu.cloneInto(values, owner.window);
-});
-
-
-
-
-WebConsoleCommandsManager.register("help", function (owner) {
-  owner.helperResult = { type: "help" };
+WebConsoleCommandsManager.register({
+  name: "clearHistory",
+  command(owner) {
+    owner.helperResult = {
+      type: "clearHistory",
+    };
+  },
 });
 
 
@@ -557,9 +597,57 @@ WebConsoleCommandsManager.register("help", function (owner) {
 
 
 
-WebConsoleCommandsManager.register(
-  "inspect",
-  function (owner, object, forceExpandInConsole = false) {
+
+WebConsoleCommandsManager.register({
+  name: "keys",
+  command(owner, object) {
+    
+    return Cu.cloneInto(Object.keys(Cu.waiveXrays(object)), owner.window);
+  },
+});
+
+
+
+
+
+
+
+
+WebConsoleCommandsManager.register({
+  name: "values",
+  command(owner, object) {
+    const values = [];
+    
+    const waived = Cu.waiveXrays(object);
+    const names = Object.getOwnPropertyNames(waived);
+
+    for (const name of names) {
+      values.push(waived[name]);
+    }
+
+    return Cu.cloneInto(values, owner.window);
+  },
+});
+
+
+
+
+WebConsoleCommandsManager.register({
+  name: "help",
+  command(owner, args) {
+    owner.helperResult = { type: "help" };
+  },
+});
+
+
+
+
+
+
+
+WebConsoleCommandsManager.register({
+  name: "inspect",
+  command(owner, object, forceExpandInConsole = false) {
     const dbgObj = owner.preprocessDebuggerObject(
       owner.makeDebuggeeValue(object)
     );
@@ -571,8 +659,8 @@ WebConsoleCommandsManager.register(
       object: grip,
       forceExpandInConsole,
     };
-  }
-);
+  },
+});
 
 
 
@@ -581,28 +669,31 @@ WebConsoleCommandsManager.register(
 
 
 
-WebConsoleCommandsManager.register("copy", function (owner, value) {
-  let payload;
-  try {
-    if (Element.isInstance(value)) {
-      payload = value.outerHTML;
-    } else if (typeof value == "string") {
-      payload = value;
-    } else {
-      payload = JSON.stringify(value, null, "  ");
+WebConsoleCommandsManager.register({
+  name: "copy",
+  command(owner, value) {
+    let payload;
+    try {
+      if (Element.isInstance(value)) {
+        payload = value.outerHTML;
+      } else if (typeof value == "string") {
+        payload = value;
+      } else {
+        payload = JSON.stringify(value, null, "  ");
+      }
+    } catch (ex) {
+      owner.helperResult = {
+        type: "error",
+        message: "webconsole.error.commands.copyError",
+        messageArgs: [ex.toString()],
+      };
+      return;
     }
-  } catch (ex) {
     owner.helperResult = {
-      type: "error",
-      message: "webconsole.error.commands.copyError",
-      messageArgs: [ex.toString()],
+      type: "copyValueToClipboard",
+      value: payload,
     };
-    return;
-  }
-  owner.helperResult = {
-    type: "copyValueToClipboard",
-    value: payload,
-  };
+  },
 });
 
 
@@ -612,48 +703,31 @@ WebConsoleCommandsManager.register("copy", function (owner, value) {
 
 
 
-WebConsoleCommandsManager.register("screenshot", function (owner, args = {}) {
-  owner.helperResult = {
-    type: "screenshotOutput",
-    args,
-  };
-});
-
-
-
-
-
-
-
-
-WebConsoleCommandsManager.register("history", function (owner, args = {}) {
-  owner.helperResult = {
-    type: "historyOutput",
-    args,
-  };
-});
-
-
-
-
-
-
-
-
-
-WebConsoleCommandsManager.register("block", function (owner, args = {}) {
-  if (!args.url) {
+WebConsoleCommandsManager.register({
+  name: "screenshot",
+  command(owner, args = {}) {
     owner.helperResult = {
-      type: "error",
-      message: "webconsole.messages.commands.blockArgMissing",
+      type: "screenshotOutput",
+      args,
     };
-    return;
-  }
+  },
+});
 
-  owner.helperResult = {
-    type: "blockURL",
-    args,
-  };
+
+
+
+
+
+
+
+WebConsoleCommandsManager.register({
+  name: "history",
+  command(owner, args = {}) {
+    owner.helperResult = {
+      type: "historyOutput",
+      args,
+    };
+  },
 });
 
 
@@ -664,17 +738,52 @@ WebConsoleCommandsManager.register("block", function (owner, args = {}) {
 
 
 
-WebConsoleCommandsManager.register("unblock", function (owner, args = {}) {
-  if (!args.url) {
-    owner.helperResult = {
-      type: "error",
-      message: "webconsole.messages.commands.blockArgMissing",
-    };
-    return;
-  }
+WebConsoleCommandsManager.register({
+  name: "block",
+  command(owner, args = {}) {
+    
+    
+    if (!args.url) {
+      owner.helperResult = {
+        type: "error",
+        message: "webconsole.messages.commands.blockArgMissing",
+      };
+      return;
+    }
 
-  owner.helperResult = {
-    type: "unblockURL",
-    args,
-  };
+    owner.helperResult = {
+      type: "blockURL",
+      args,
+    };
+  },
+  validArguments: ["url"],
+});
+
+
+
+
+
+
+
+
+
+WebConsoleCommandsManager.register({
+  name: "unblock",
+  command(owner, args = {}) {
+    
+    
+    if (!args.url) {
+      owner.helperResult = {
+        type: "error",
+        message: "webconsole.messages.commands.blockArgMissing",
+      };
+      return;
+    }
+
+    owner.helperResult = {
+      type: "unblockURL",
+      args,
+    };
+  },
+  validArguments: ["url"],
 });
