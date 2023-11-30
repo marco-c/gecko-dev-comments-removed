@@ -19,6 +19,26 @@ InlineTranslator::InlineTranslator(DrawTarget* aDT, void* aFontContext)
     : mBaseDT(aDT), mFontContext(aFontContext) {}
 
 bool InlineTranslator::TranslateRecording(char* aData, size_t aLen) {
+  
+  struct MemReader {
+    MemReader(char* aData, size_t aLen) : mData(aData), mEnd(aData + aLen) {}
+    void read(char* s, std::streamsize n) {
+      if (n <= (mEnd - mData)) {
+        memcpy(s, mData, n);
+        mData += n;
+      } else {
+        
+        
+        SetIsBad();
+      }
+    }
+    bool eof() { return mData > mEnd; }
+    bool good() { return !eof(); }
+    void SetIsBad() { mData = mEnd + 1; }
+
+    char* mData;
+    char* mEnd;
+  };
   MemReader reader(aData, aLen);
 
   uint32_t magicInt;
