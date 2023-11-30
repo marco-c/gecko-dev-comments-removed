@@ -1,7 +1,8 @@
 
 
+import asyncio
+
 import pytest
-from webdriver.bidi.modules.script import ScriptEvaluateResultException
 
 from .. import (
     assert_before_request_sent_event,
@@ -19,7 +20,7 @@ PAGE_OTHER_TEXT = "/webdriver/tests/bidi/network/support/other.txt"
     "responseStarted",
 ])
 async def test_remove_intercept(
-    bidi_session, wait_for_event, url, setup_network_test, add_intercept, fetch, top_context, wait_for_future_safe, phase
+    bidi_session, wait_for_event, url, setup_network_test, add_intercept, top_context, wait_for_future_safe, phase
 ):
     network_events = await setup_network_test(
         events=[
@@ -42,8 +43,11 @@ async def test_remove_intercept(
 
     
     
-    with pytest.raises(ScriptEvaluateResultException):
-        await fetch(text_url)
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(
+            asyncio.shield(bidi_session.browsing_context.navigate(context=top_context["context"], url=text_url, wait="complete")),
+            timeout=2.0,
+        )
 
     await wait_for_future_safe(on_network_event)
 
