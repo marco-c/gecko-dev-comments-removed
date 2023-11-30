@@ -525,16 +525,31 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
           return;
         }
 
+        Maybe<ASAuthorizationPublicKeyCredentialUserVerificationPreference>
+            userVerificationPreference = Nothing();
         nsAutoString userVerification;
         Unused << aArgs->GetUserVerification(userVerification);
-        NSString* userVerificationPreference =
-            nsCocoaUtils::ToNSString(userVerification);
+        if (userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferenceRequired);
+        } else if (userVerification.EqualsLiteral(
+                       MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferencePreferred);
+        } else if (
+            userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferenceDiscouraged);
+        }
 
-        nsAutoString attestationConveyancePreference;
-        Unused << aArgs->GetAttestationConveyancePreference(
-            attestationConveyancePreference);
-        NSString* attestationPreference =
-            nsCocoaUtils::ToNSString(attestationConveyancePreference);
+        
+        
+        
+        ASAuthorizationPublicKeyCredentialAttestationKind
+            attestationPreference =
+                ASAuthorizationPublicKeyCredentialAttestationKindNone;
 
         
         ASAuthorizationPlatformPublicKeyCredentialProvider* platformProvider =
@@ -550,8 +565,10 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
         [platformProvider release];
         platformRegistrationRequest.attestationPreference =
             attestationPreference;
-        platformRegistrationRequest.userVerificationPreference =
-            userVerificationPreference;
+        if (userVerificationPreference.isSome()) {
+          platformRegistrationRequest.userVerificationPreference =
+              *userVerificationPreference;
+        }
 
         
         ASAuthorizationSecurityKeyPublicKeyCredentialProvider*
@@ -572,8 +589,10 @@ MacOSWebAuthnService::MakeCredential(uint64_t aTransactionId,
             attestationPreference;
         crossPlatformRegistrationRequest.credentialParameters =
             credentialParameters;
-        crossPlatformRegistrationRequest.userVerificationPreference =
-            userVerificationPreference;
+        if (userVerificationPreference.isSome()) {
+          crossPlatformRegistrationRequest.userVerificationPreference =
+              *userVerificationPreference;
+        }
         nsTArray<uint8_t> clientDataHash;
         nsresult rv = aArgs->GetClientDataHash(clientDataHash);
         if (NS_FAILED(rv)) {
@@ -710,10 +729,24 @@ MacOSWebAuthnService::GetAssertion(uint64_t aTransactionId,
                     allowList, allowListTransports,
                     securityKeyPublicKeyCredentialDescriptorClass);
 
+        Maybe<ASAuthorizationPublicKeyCredentialUserVerificationPreference>
+            userVerificationPreference = Nothing();
         nsAutoString userVerification;
         Unused << aArgs->GetUserVerification(userVerification);
-        NSString* userVerificationPreference =
-            nsCocoaUtils::ToNSString(userVerification);
+        if (userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_REQUIRED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferenceRequired);
+        } else if (userVerification.EqualsLiteral(
+                       MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_PREFERRED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferencePreferred);
+        } else if (
+            userVerification.EqualsLiteral(
+                MOZ_WEBAUTHN_USER_VERIFICATION_REQUIREMENT_DISCOURAGED)) {
+          userVerificationPreference.emplace(
+              ASAuthorizationPublicKeyCredentialUserVerificationPreferenceDiscouraged);
+        }
 
         
         ASAuthorizationPlatformPublicKeyCredentialProvider* platformProvider =
@@ -726,8 +759,10 @@ MacOSWebAuthnService::GetAssertion(uint64_t aTransactionId,
         [platformProvider release];
         platformAssertionRequest.allowedCredentials =
             platformAllowedCredentials;
-        platformAssertionRequest.userVerificationPreference =
-            userVerificationPreference;
+        if (userVerificationPreference.isSome()) {
+          platformAssertionRequest.userVerificationPreference =
+              *userVerificationPreference;
+        }
 
         
         ASAuthorizationSecurityKeyPublicKeyCredentialProvider*
@@ -741,8 +776,10 @@ MacOSWebAuthnService::GetAssertion(uint64_t aTransactionId,
         [crossPlatformProvider release];
         crossPlatformAssertionRequest.allowedCredentials =
             crossPlatformAllowedCredentials;
-        crossPlatformAssertionRequest.userVerificationPreference =
-            userVerificationPreference;
+        if (userVerificationPreference.isSome()) {
+          crossPlatformAssertionRequest.userVerificationPreference =
+              *userVerificationPreference;
+        }
         nsTArray<uint8_t> clientDataHash;
         nsresult rv = aArgs->GetClientDataHash(clientDataHash);
         if (NS_FAILED(rv)) {
