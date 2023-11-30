@@ -46,12 +46,8 @@ class HTMLLabelElement final : public nsGenericHTMLElement {
                      ErrorResult& aError) override;
 
   
-  void GetEventTargetParent(EventChainPreVisitor& aVisitor) override;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   virtual nsresult PostHandleEvent(EventChainPostVisitor& aVisitor) override;
-  MOZ_CAN_RUN_SCRIPT
-  void ActivationBehavior(EventChainPostVisitor& aVisitor) override;
-
-  
   MOZ_CAN_RUN_SCRIPT
   virtual Result<bool, nsresult> PerformAccesskey(
       bool aKeyCausesActivation, bool aIsTrustedEvent) override;
@@ -69,9 +65,6 @@ class HTMLLabelElement final : public nsGenericHTMLElement {
 
   
   bool mHandlingEvent;
-
- private:
-  inline bool CheckHandleEventPreconditions(EventChainVisitor& aVisitor);
 };
 
 }  

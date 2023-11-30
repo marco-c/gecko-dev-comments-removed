@@ -9,9 +9,7 @@
 
 #include "HTMLLabelElement.h"
 #include "mozilla/EventDispatcher.h"
-#include "mozilla/EventForwards.h"
 #include "mozilla/MouseEvents.h"
-#include "mozilla/dom/EventTarget.h"
 #include "mozilla/dom/HTMLLabelElementBinding.h"
 #include "mozilla/dom/MouseEventBinding.h"
 #include "nsFocusManager.h"
@@ -67,34 +65,17 @@ void HTMLLabelElement::Focus(const FocusOptions& aOptions,
   }
 }
 
-bool HTMLLabelElement::CheckHandleEventPreconditions(
-    EventChainVisitor& aVisitor) {
-  return !mHandlingEvent &&
-         aVisitor.mEventStatus != nsEventStatus_eConsumeDoDefault &&
-         aVisitor.mPresContext &&
-         !aVisitor.mEvent->mFlags.mMultipleActionsPrevented;
-}
-
-void HTMLLabelElement::GetEventTargetParent(EventChainPreVisitor& aVisitor) {
-  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-
-  if (CheckHandleEventPreconditions(aVisitor) && mouseEvent &&
-      mouseEvent->IsLeftClickEvent()) {
-    aVisitor.mWantsActivationBehavior = true;
-  }
-
-  nsGenericHTMLElement::GetEventTargetParent(aVisitor);
-}
-
 nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
-  if (!CheckHandleEventPreconditions(aVisitor)) {
-    return NS_OK;
-  }
-  if (aVisitor.mEvent->mMessage != eMouseDown) {
-    return NS_OK;
-  }
   WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-  MOZ_ASSERT(mouseEvent);
+  if (mHandlingEvent ||
+      (!(mouseEvent && mouseEvent->IsLeftClickEvent()) &&
+       aVisitor.mEvent->mMessage != eMouseDown) ||
+      aVisitor.mEventStatus == nsEventStatus_eConsumeNoDefault ||
+      !aVisitor.mPresContext ||
+      
+      aVisitor.mEvent->mFlags.mMultipleActionsPrevented) {
+    return NS_OK;
+  }
 
   nsCOMPtr<Element> target =
       do_QueryInterface(aVisitor.mEvent->GetOriginalDOMEventTarget());
@@ -123,95 +104,77 @@ nsresult HTMLLabelElement::PostHandleEvent(EventChainPostVisitor& aVisitor) {
       }
       break;
 
+    case eMouseClick:
+      if (mouseEvent->IsLeftClickEvent()) {
+        LayoutDeviceIntPoint* mouseDownPoint =
+            static_cast<LayoutDeviceIntPoint*>(
+                GetProperty(nsGkAtoms::labelMouseDownPtProperty));
+
+        bool dragSelect = false;
+        if (mouseDownPoint) {
+          LayoutDeviceIntPoint dragDistance = *mouseDownPoint;
+          RemoveProperty(nsGkAtoms::labelMouseDownPtProperty);
+
+          dragDistance -= mouseEvent->mRefPoint;
+          const int CLICK_DISTANCE = 2;
+          dragSelect = dragDistance.x > CLICK_DISTANCE ||
+                       dragDistance.x < -CLICK_DISTANCE ||
+                       dragDistance.y > CLICK_DISTANCE ||
+                       dragDistance.y < -CLICK_DISTANCE;
+        }
+        
+        
+        if (dragSelect || mouseEvent->IsShift() || mouseEvent->IsControl() ||
+            mouseEvent->IsAlt() || mouseEvent->IsMeta()) {
+          break;
+        }
+        
+        
+        if (mouseEvent->mClickCount <= 1) {
+          if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            bool byMouse = (mouseEvent->mInputSource !=
+                            MouseEvent_Binding::MOZ_SOURCE_KEYBOARD);
+            bool byTouch = (mouseEvent->mInputSource ==
+                            MouseEvent_Binding::MOZ_SOURCE_TOUCH);
+            fm->SetFocus(content,
+                         nsIFocusManager::FLAG_BYMOVEFOCUS |
+                             (byMouse ? nsIFocusManager::FLAG_BYMOUSE : 0) |
+                             (byTouch ? nsIFocusManager::FLAG_BYTOUCH : 0));
+          }
+        }
+        
+        
+        
+        
+        
+        
+        nsEventStatus status = aVisitor.mEventStatus;
+        
+        
+        EventFlags eventFlags;
+        eventFlags.mMultipleActionsPrevented = true;
+        DispatchClickEvent(aVisitor.mPresContext, mouseEvent, content, false,
+                           &eventFlags, &status);
+        
+        
+        mouseEvent->mFlags.mMultipleActionsPrevented = true;
+      }
+      break;
+
     default:
       break;
   }
   mHandlingEvent = false;
   return NS_OK;
-}
-
-void HTMLLabelElement::ActivationBehavior(EventChainPostVisitor& aVisitor) {
-  if (!CheckHandleEventPreconditions(aVisitor)) {
-    return;
-  }
-  WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-  MOZ_ASSERT(mouseEvent && mouseEvent->IsLeftClickEvent());
-
-  nsCOMPtr<Element> target =
-      do_QueryInterface(aVisitor.mEvent->GetOriginalDOMEventTarget());
-  if (nsContentUtils::IsInInteractiveHTMLContent(target, this)) {
-    return;
-  }
-
-  
-  RefPtr<Element> content = GetLabeledElement();
-
-  if (!content || content->IsDisabled()) {
-    return;
-  }
-
-  mHandlingEvent = true;
-
-  LayoutDeviceIntPoint* mouseDownPoint = static_cast<LayoutDeviceIntPoint*>(
-      GetProperty(nsGkAtoms::labelMouseDownPtProperty));
-
-  bool dragSelect = false;
-  if (mouseDownPoint) {
-    LayoutDeviceIntPoint dragDistance = *mouseDownPoint;
-    RemoveProperty(nsGkAtoms::labelMouseDownPtProperty);
-
-    dragDistance -= mouseEvent->mRefPoint;
-    const int CLICK_DISTANCE = 2;
-    dragSelect =
-        dragDistance.x > CLICK_DISTANCE || dragDistance.x < -CLICK_DISTANCE ||
-        dragDistance.y > CLICK_DISTANCE || dragDistance.y < -CLICK_DISTANCE;
-  }
-  
-  
-  if (dragSelect || mouseEvent->IsShift() || mouseEvent->IsControl() ||
-      mouseEvent->IsAlt() || mouseEvent->IsMeta()) {
-    mHandlingEvent = false;
-    return;
-  }
-  
-  
-  if (mouseEvent->mClickCount <= 1) {
-    if (RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager()) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      bool byMouse =
-          (mouseEvent->mInputSource != MouseEvent_Binding::MOZ_SOURCE_KEYBOARD);
-      bool byTouch =
-          (mouseEvent->mInputSource == MouseEvent_Binding::MOZ_SOURCE_TOUCH);
-      fm->SetFocus(content, nsIFocusManager::FLAG_BYMOVEFOCUS |
-                                (byMouse ? nsIFocusManager::FLAG_BYMOUSE : 0) |
-                                (byTouch ? nsIFocusManager::FLAG_BYTOUCH : 0));
-    }
-  }
-  
-  
-  
-  
-  
-  
-  nsEventStatus status = aVisitor.mEventStatus;
-  
-  
-  EventFlags eventFlags;
-  eventFlags.mMultipleActionsPrevented = true;
-  DispatchClickEvent(aVisitor.mPresContext, mouseEvent, content, false,
-                     &eventFlags, &status);
-  
-  mouseEvent->mFlags.mMultipleActionsPrevented = true;
-
-  mHandlingEvent = false;
 }
 
 Result<bool, nsresult> HTMLLabelElement::PerformAccesskey(

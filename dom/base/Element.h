@@ -2035,12 +2035,6 @@ class Element : public FragmentOrElement {
   MOZ_CAN_RUN_SCRIPT
   nsresult PostHandleEventForLinks(EventChainPostVisitor& aVisitor);
 
-  
-
-
-  MOZ_CAN_RUN_SCRIPT
-  void ActivationBehaviorForLinks(EventChainPostVisitor& aVisitor);
-
  public:
   
 
