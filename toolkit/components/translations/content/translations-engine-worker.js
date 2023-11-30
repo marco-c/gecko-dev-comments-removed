@@ -496,7 +496,7 @@ class BergamotUtils {
 
 
 
-  static initializeWasm(wasmBinary) {
+  static initializeWasm(wasm) {
     return new Promise((resolve, reject) => {
       
       let start = performance.now();
@@ -504,8 +504,8 @@ class BergamotUtils {
       
       const bergamot = loadBergamot({
         
-        INITIAL_MEMORY: 459_276_288,
-        preRun: [],
+        INITIAL_MEMORY: 234_291_200,
+        print: log,
         onAbort() {
           reject(new Error("Error loading Bergamot wasm module."));
         },
@@ -519,7 +519,7 @@ class BergamotUtils {
           await Promise.resolve();
           resolve(bergamot);
         },
-        wasmBinary,
+        wasm,
       });
     });
   }
