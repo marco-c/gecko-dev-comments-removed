@@ -26,7 +26,6 @@ class Runnable;
 
 namespace layers {
 
-struct DoubleTapToZoomMetrics;
 struct RepaintRequest;
 
 class GeckoContentController {
@@ -59,10 +58,9 @@ class GeckoContentController {
 
 
   MOZ_CAN_RUN_SCRIPT
-  virtual void HandleTap(
-      TapType aType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
-      const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
-      const Maybe<DoubleTapToZoomMetrics>& aDoubleTapTooZoomMetrics) = 0;
+  virtual void HandleTap(TapType aType, const LayoutDevicePoint& aPoint,
+                         Modifiers aModifiers, const ScrollableLayerGuid& aGuid,
+                         uint64_t aInputBlockId) = 0;
 
   
 

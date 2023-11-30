@@ -585,7 +585,7 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
 
-  CSSToCSSMatrix4x4 GetOopifToRootContentTransform(
+  ParentLayerToParentLayerMatrix4x4 GetOopifApzcToRootContentApzcTransform(
       AsyncPanZoomController* aApzc) const;
 
   
@@ -612,8 +612,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   already_AddRefed<AsyncPanZoomController> FindZoomableApzc(
       AsyncPanZoomController* aStart) const;
-
-  AsyncPanZoomController* FindRootApzcFor(LayersId aLayersId) const;
 
   ScreenMargin GetCompositorFixedLayerMargins() const;
 
@@ -654,13 +652,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   TargetApzcForNodeResult GetTargetApzcForNode(const HitTestingTreeNode* aNode);
   TargetApzcForNodeResult FindHandoffParent(
       const AsyncPanZoomController* aApzc);
-  
-
-
-
-
-
-
   HitTestingTreeNode* FindRootNodeForLayersId(LayersId aLayersId) const;
   AsyncPanZoomController* FindRootContentApzcForLayersId(
       LayersId aLayersId) const;

@@ -1256,8 +1256,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvSuppressDisplayport(
 
 void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
                                    const Modifiers& aModifiers,
-                                   const ScrollableLayerGuid& aGuid,
-                                   const DoubleTapToZoomMetrics& aMetrics) {
+                                   const ScrollableLayerGuid& aGuid) {
   MOZ_LOG(
       sApzChildLog, LogLevel::Debug,
       ("Handling double tap at %s with %p %p\n", ToString(aPoint).c_str(),
@@ -1272,7 +1271,7 @@ void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
   
   
   RefPtr<Document> document = GetTopLevelDocument();
-  ZoomTarget zoomTarget = CalculateRectToZoomTo(document, aPoint, aMetrics);
+  ZoomTarget zoomTarget = CalculateRectToZoomTo(document, aPoint);
   
   
   
@@ -1292,8 +1291,7 @@ void BrowserChild::HandleDoubleTap(const CSSPoint& aPoint,
 mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
     const GeckoContentController::TapType& aType,
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
-    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
+    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId) {
   
   
   
@@ -1321,7 +1319,7 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
       }
       break;
     case GeckoContentController::TapType::eDoubleTap:
-      HandleDoubleTap(point, aModifiers, aGuid, *aDoubleTapToZoomMetrics);
+      HandleDoubleTap(point, aModifiers, aGuid);
       break;
     case GeckoContentController::TapType::eSecondTap:
       if (mBrowserChildMessageManager) {
@@ -1350,14 +1348,12 @@ mozilla::ipc::IPCResult BrowserChild::RecvHandleTap(
 mozilla::ipc::IPCResult BrowserChild::RecvNormalPriorityHandleTap(
     const GeckoContentController::TapType& aType,
     const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
-    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
+    const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId) {
   
   
   
   RefPtr<BrowserChild> kungFuDeathGrip(this);
-  return RecvHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId,
-                       aDoubleTapToZoomMetrics);
+  return RecvHandleTap(aType, aPoint, aModifiers, aGuid, aInputBlockId);
 }
 
 void BrowserChild::NotifyAPZStateChange(

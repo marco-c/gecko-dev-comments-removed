@@ -11,8 +11,6 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/dom/Element.h"
-#include "mozilla/dom/EffectsInfo.h"
-#include "mozilla/dom/BrowserChild.h"
 #include "nsCOMPtr.h"
 #include "nsIContent.h"
 #include "mozilla/dom/Document.h"
@@ -24,7 +22,6 @@
 #include "nsStyleConsts.h"
 #include "mozilla/ViewportUtils.h"
 #include "mozilla/EventListenerManager.h"
-#include "mozilla/layers/APZUtils.h"
 
 namespace mozilla {
 namespace layers {
@@ -98,56 +95,10 @@ static dom::Element* GetNearbyTableCell(
   return nullptr;
 }
 
-
-
-static CSSRect GetBoundingContentRect(
-    const dom::Element* aElement,
-    const RefPtr<dom::Document>& aInProcessRootContentDocument,
-    const nsIScrollableFrame* aRootScrollFrame,
-    const DoubleTapToZoomMetrics& aMetrics,
-    mozilla::Maybe<CSSRect>* aOutNearestScrollClip = nullptr) {
-  CSSRect result = nsLayoutUtils::GetBoundingContentRect(
-      aElement, aRootScrollFrame, aOutNearestScrollClip);
-  if (aInProcessRootContentDocument->IsTopLevelContentDocument()) {
-    return result;
-  }
-
-  nsIFrame* frame = aElement->GetPrimaryFrame();
-  if (!frame) {
-    return CSSRect();
-  }
-
-  
-  
-  
-  
-  if (aOutNearestScrollClip && aOutNearestScrollClip->isNothing()) {
-    if (dom::BrowserChild* browserChild =
-            dom::BrowserChild::GetFrom(frame->PresShell())) {
-      const dom::EffectsInfo& effectsInfo = browserChild->GetEffectsInfo();
-      if (effectsInfo.IsVisible()) {
-        *aOutNearestScrollClip =
-            effectsInfo.mVisibleRect.map([&aMetrics](const nsRect& aRect) {
-              return aMetrics.mTransformMatrix.TransformBounds(
-                  CSSRect::FromAppUnits(aRect));
-            });
-      }
-    }
-  }
-
-  
-  
-  
-  
-  return aMetrics.mTransformMatrix.TransformBounds(
-      CSSRect::FromAppUnits(frame->GetBoundingClientRect()));
-}
-
 static bool ShouldZoomToElement(
     const nsCOMPtr<dom::Element>& aElement,
-    const RefPtr<dom::Document>& aInProcessRootContentDocument,
-    nsIScrollableFrame* aRootScrollFrame,
-    const DoubleTapToZoomMetrics& aMetrics) {
+    const RefPtr<dom::Document>& aRootContentDocument,
+    nsIScrollableFrame* aRootScrollFrame, const FrameMetrics& aMetrics) {
   if (nsIFrame* frame = aElement->GetPrimaryFrame()) {
     if (frame->StyleDisplay()->IsInlineFlow() &&
         
@@ -160,7 +111,7 @@ static bool ShouldZoomToElement(
   
   
   
-  if (aElement->OwnerDoc() == aInProcessRootContentDocument &&
+  if (aElement->OwnerDoc() == aRootContentDocument &&
       aElement->IsHTMLElement(nsGkAtoms::html)) {
     return false;
   }
@@ -174,9 +125,9 @@ static bool ShouldZoomToElement(
   
   
   if (dom::Element* tableCell = GetNearbyTableCell(aElement)) {
-    CSSRect rect = GetBoundingContentRect(
-        tableCell, aInProcessRootContentDocument, aRootScrollFrame, aMetrics);
-    if (rect.width < 0.3 * aMetrics.mRootScrollableRect.width) {
+    CSSRect rect =
+        nsLayoutUtils::GetBoundingContentRect(tableCell, aRootScrollFrame);
+    if (rect.width < 0.3 * aMetrics.GetScrollableRect().width) {
       return false;
     }
   }
@@ -215,23 +166,25 @@ static bool RectHasAlmostSameZoomLevel(const CSSRect& aRect,
 }  
 
 static CSSRect AddHMargin(const CSSRect& aRect, const CSSCoord& aMargin,
-                          const CSSRect& aRootScrollableRect) {
+                          const FrameMetrics& aMetrics) {
   CSSRect rect =
-      CSSRect(std::max(aRootScrollableRect.X(), aRect.X() - aMargin), aRect.Y(),
-              aRect.Width() + 2 * aMargin, aRect.Height());
+      CSSRect(std::max(aMetrics.GetScrollableRect().X(), aRect.X() - aMargin),
+              aRect.Y(), aRect.Width() + 2 * aMargin, aRect.Height());
   
-  rect.SetWidth(std::min(rect.Width(), aRootScrollableRect.XMost() - rect.X()));
+  rect.SetWidth(
+      std::min(rect.Width(), aMetrics.GetScrollableRect().XMost() - rect.X()));
   return rect;
 }
 
 static CSSRect AddVMargin(const CSSRect& aRect, const CSSCoord& aMargin,
-                          const CSSRect& aRootScrollableRect) {
+                          const FrameMetrics& aMetrics) {
   CSSRect rect =
-      CSSRect(aRect.X(), std::max(aRootScrollableRect.Y(), aRect.Y() - aMargin),
+      CSSRect(aRect.X(),
+              std::max(aMetrics.GetScrollableRect().Y(), aRect.Y() - aMargin),
               aRect.Width(), aRect.Height() + 2 * aMargin);
   
   rect.SetHeight(
-      std::min(rect.Height(), aRootScrollableRect.YMost() - rect.Y()));
+      std::min(rect.Height(), aMetrics.GetScrollableRect().YMost() - rect.Y()));
   return rect;
 }
 
@@ -256,15 +209,14 @@ static bool HasNonPassiveWheelListenerOnAncestor(nsIContent* aContent) {
 }
 
 ZoomTarget CalculateRectToZoomTo(
-    const RefPtr<dom::Document>& aInProcessRootContentDocument,
-    const CSSPoint& aPoint, const DoubleTapToZoomMetrics& aMetrics) {
+    const RefPtr<dom::Document>& aRootContentDocument, const CSSPoint& aPoint) {
   
-  aInProcessRootContentDocument->FlushPendingNotifications(FlushType::Layout);
+  aRootContentDocument->FlushPendingNotifications(FlushType::Layout);
 
   
   const CSSRect zoomOut;
 
-  RefPtr<PresShell> presShell = aInProcessRootContentDocument->GetPresShell();
+  RefPtr<PresShell> presShell = aRootContentDocument->GetPresShell();
   if (!presShell) {
     return ZoomTarget{zoomOut, CantZoomOutBehavior::ZoomIn};
   }
@@ -276,11 +228,9 @@ ZoomTarget CalculateRectToZoomTo(
   }
 
   CSSPoint documentRelativePoint =
-      aInProcessRootContentDocument->IsTopLevelContentDocument()
-          ? CSSPoint::FromAppUnits(ViewportUtils::VisualToLayout(
-                CSSPoint::ToAppUnits(aPoint), presShell)) +
-                CSSPoint::FromAppUnits(rootScrollFrame->GetScrollPosition())
-          : aMetrics.mTransformMatrix.TransformPoint(aPoint);
+      CSSPoint::FromAppUnits(ViewportUtils::VisualToLayout(
+          CSSPoint::ToAppUnits(aPoint), presShell)) +
+      CSSPoint::FromAppUnits(rootScrollFrame->GetScrollPosition());
 
   nsCOMPtr<dom::Element> element = ElementFromPoint(presShell, aPoint);
   if (!element) {
@@ -293,8 +243,11 @@ ZoomTarget CalculateRectToZoomTo(
           ? CantZoomOutBehavior::Nothing
           : CantZoomOutBehavior::ZoomIn;
 
-  while (element && !ShouldZoomToElement(element, aInProcessRootContentDocument,
-                                         rootScrollFrame, aMetrics)) {
+  FrameMetrics metrics =
+      nsLayoutUtils::CalculateBasicFrameMetrics(rootScrollFrame);
+
+  while (element && !ShouldZoomToElement(element, aRootContentDocument,
+                                         rootScrollFrame, metrics)) {
     element = element->GetFlattenedTreeParentElement();
   }
 
@@ -303,10 +256,12 @@ ZoomTarget CalculateRectToZoomTo(
                       Some(documentRelativePoint)};
   }
 
+  CSSPoint visualScrollOffset = metrics.GetVisualScrollOffset();
+  CSSRect compositedArea(visualScrollOffset,
+                         metrics.CalculateCompositedSizeInCssPixels());
   Maybe<CSSRect> nearestScrollClip;
-  CSSRect rect =
-      GetBoundingContentRect(element, aInProcessRootContentDocument,
-                             rootScrollFrame, aMetrics, &nearestScrollClip);
+  CSSRect rect = nsLayoutUtils::GetBoundingContentRect(element, rootScrollFrame,
+                                                       &nearestScrollClip);
 
   
   
@@ -322,15 +277,6 @@ ZoomTarget CalculateRectToZoomTo(
                    res == nsLayoutUtils::NONINVERTIBLE_TRANSFORM);
         if (res == nsLayoutUtils::TRANSFORM_SUCCEEDED) {
           CSSRect overflowRectCSS = CSSRect::FromAppUnits(overflowRect);
-
-          
-          
-          if (!aInProcessRootContentDocument->IsTopLevelContentDocument()) {
-            overflowRectCSS.MoveBy(
-                CSSPoint::FromAppUnits(-rootScrollFrame->GetScrollPosition()));
-            overflowRectCSS =
-                aMetrics.mTransformMatrix.TransformBounds(overflowRectCSS);
-          }
           if (nearestScrollClip.isSome()) {
             overflowRectCSS = nearestScrollClip->Intersect(overflowRectCSS);
           }
@@ -353,12 +299,12 @@ ZoomTarget CalculateRectToZoomTo(
   
   
   
-  if (!rect.IsEmpty() && aMetrics.mVisualViewport.Width() > 0.0f &&
-      aMetrics.mVisualViewport.Height() > 0.0f) {
+  if (!rect.IsEmpty() && compositedArea.Width() > 0.0f &&
+      compositedArea.Height() > 0.0f) {
     
     
-    const float widthRatio = rect.Width() / aMetrics.mVisualViewport.Width();
-    float targetHeight = aMetrics.mVisualViewport.Height() * widthRatio;
+    const float widthRatio = rect.Width() / compositedArea.Width();
+    float targetHeight = compositedArea.Height() * widthRatio;
 
     
     
@@ -369,15 +315,15 @@ ZoomTarget CalculateRectToZoomTo(
         
         rect.Height() < 1.1 * rect.Width() &&
         
-        aMetrics.mVisualViewport.Width() >= aMetrics.mVisualViewport.Height()) {
+        compositedArea.Width() >= compositedArea.Height()) {
       heightConstrained = true;
       
       
       
       
       
-      float targetWidth = rect.Height() * aMetrics.mVisualViewport.Width() /
-                          aMetrics.mVisualViewport.Height();
+      float targetWidth =
+          rect.Height() * compositedArea.Width() / compositedArea.Height();
       MOZ_ASSERT(targetWidth > rect.Width());
       if (targetWidth > rect.Width()) {
         rect.x -= (targetWidth - rect.Width()) / 2;
@@ -400,41 +346,30 @@ ZoomTarget CalculateRectToZoomTo(
   }
 
   const CSSCoord margin = 15;
-  rect = AddHMargin(rect, margin, aMetrics.mRootScrollableRect);
+  rect = AddHMargin(rect, margin, metrics);
 
   if (heightConstrained) {
-    rect = AddVMargin(rect, margin, aMetrics.mRootScrollableRect);
+    rect = AddVMargin(rect, margin, metrics);
   }
 
   
   
-  if (RectHasAlmostSameZoomLevel(rect, aMetrics.mVisualViewport)) {
+  if (RectHasAlmostSameZoomLevel(rect, compositedArea)) {
     return ZoomTarget{zoomOut, cantZoomOutBehavior, Nothing(),
                       Some(documentRelativePoint)};
   }
 
-  elementBoundingRect =
-      AddHMargin(elementBoundingRect, margin, aMetrics.mRootScrollableRect);
+  elementBoundingRect = AddHMargin(elementBoundingRect, margin, metrics);
 
   
   
   
-  elementBoundingRect =
-      AddVMargin(elementBoundingRect, margin, aMetrics.mRootScrollableRect);
+  elementBoundingRect = AddVMargin(elementBoundingRect, margin, metrics);
 
   rect.Round();
   elementBoundingRect.Round();
-
   return ZoomTarget{rect, cantZoomOutBehavior, Some(elementBoundingRect),
                     Some(documentRelativePoint)};
-}
-
-std::ostream& operator<<(std::ostream& aStream,
-                         const DoubleTapToZoomMetrics& aMetrics) {
-  aStream << "{ vv=" << aMetrics.mVisualViewport
-          << ", rscr=" << aMetrics.mRootScrollableRect
-          << ", transform=" << aMetrics.mTransformMatrix << " }";
-  return aStream;
 }
 
 }  

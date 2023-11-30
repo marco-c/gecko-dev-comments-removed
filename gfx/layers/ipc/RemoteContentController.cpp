@@ -12,7 +12,6 @@
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZCTreeManagerParent.h"  
 #include "mozilla/layers/APZThreadUtils.h"
-#include "mozilla/layers/DoubleTapToZoom.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/MatrixMessage.h"
 #include "mozilla/gfx/GPUProcessManager.h"
@@ -62,10 +61,11 @@ void RemoteContentController::RequestContentRepaint(
   }
 }
 
-void RemoteContentController::HandleTapOnMainThread(
-    TapType aTapType, LayoutDevicePoint aPoint, Modifiers aModifiers,
-    ScrollableLayerGuid aGuid, uint64_t aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
+void RemoteContentController::HandleTapOnMainThread(TapType aTapType,
+                                                    LayoutDevicePoint aPoint,
+                                                    Modifiers aModifiers,
+                                                    ScrollableLayerGuid aGuid,
+                                                    uint64_t aInputBlockId) {
   MOZ_LOG(sApzRemoteLog, LogLevel::Debug,
           ("HandleTapOnMainThread(%d)", (int)aTapType));
   MOZ_ASSERT(NS_IsMainThread());
@@ -73,15 +73,13 @@ void RemoteContentController::HandleTapOnMainThread(
   dom::BrowserParent* tab =
       dom::BrowserParent::GetBrowserParentFromLayersId(aGuid.mLayersId);
   if (tab) {
-    tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId,
-                       aDoubleTapToZoomMetrics);
+    tab->SendHandleTap(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
   }
 }
 
 void RemoteContentController::HandleTapOnCompositorThread(
     TapType aTapType, LayoutDevicePoint aPoint, Modifiers aModifiers,
-    ScrollableLayerGuid aGuid, uint64_t aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
+    ScrollableLayerGuid aGuid, uint64_t aInputBlockId) {
   MOZ_ASSERT(XRE_IsGPUProcess());
   MOZ_ASSERT(mCompositorThread->IsOnCurrentThread());
 
@@ -91,31 +89,30 @@ void RemoteContentController::HandleTapOnCompositorThread(
       CompositorBridgeParent::GetApzcTreeManagerParentForRoot(aGuid.mLayersId);
   if (apzctmp) {
     Unused << apzctmp->SendHandleTap(aTapType, aPoint, aModifiers, aGuid,
-                                     aInputBlockId, aDoubleTapToZoomMetrics);
+                                     aInputBlockId);
   }
 }
 
-void RemoteContentController::HandleTap(
-    TapType aTapType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
-    const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
-    const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics) {
+void RemoteContentController::HandleTap(TapType aTapType,
+                                        const LayoutDevicePoint& aPoint,
+                                        Modifiers aModifiers,
+                                        const ScrollableLayerGuid& aGuid,
+                                        uint64_t aInputBlockId) {
   MOZ_LOG(sApzRemoteLog, LogLevel::Debug, ("HandleTap(%d)", (int)aTapType));
   APZThreadUtils::AssertOnControllerThread();
 
   if (XRE_GetProcessType() == GeckoProcessType_GPU) {
     if (mCompositorThread->IsOnCurrentThread()) {
       HandleTapOnCompositorThread(aTapType, aPoint, aModifiers, aGuid,
-                                  aInputBlockId, aDoubleTapToZoomMetrics);
+                                  aInputBlockId);
     } else {
       
       mCompositorThread->Dispatch(
           NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
-                            ScrollableLayerGuid, uint64_t,
-                            Maybe<DoubleTapToZoomMetrics>>(
+                            ScrollableLayerGuid, uint64_t>(
               "layers::RemoteContentController::HandleTapOnCompositorThread",
               this, &RemoteContentController::HandleTapOnCompositorThread,
-              aTapType, aPoint, aModifiers, aGuid, aInputBlockId,
-              aDoubleTapToZoomMetrics));
+              aTapType, aPoint, aModifiers, aGuid, aInputBlockId));
     }
     return;
   }
@@ -123,8 +120,7 @@ void RemoteContentController::HandleTap(
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (NS_IsMainThread()) {
-    HandleTapOnMainThread(aTapType, aPoint, aModifiers, aGuid, aInputBlockId,
-                          aDoubleTapToZoomMetrics);
+    HandleTapOnMainThread(aTapType, aPoint, aModifiers, aGuid, aInputBlockId);
   } else {
     
 #ifndef MOZ_WIDGET_ANDROID
@@ -140,11 +136,10 @@ void RemoteContentController::HandleTap(
     
     mozilla::jni::DispatchToGeckoPriorityQueue(
         NewRunnableMethod<TapType, LayoutDevicePoint, Modifiers,
-                          ScrollableLayerGuid, uint64_t,
-                          Maybe<DoubleTapToZoomMetrics>>(
+                          ScrollableLayerGuid, uint64_t>(
             "layers::RemoteContentController::HandleTapOnMainThread", this,
             &RemoteContentController::HandleTapOnMainThread, aTapType, aPoint,
-            aModifiers, aGuid, aInputBlockId, aDoubleTapToZoomMetrics));
+            aModifiers, aGuid, aInputBlockId));
 #endif
   }
 }
@@ -356,13 +351,12 @@ void RemoteContentController::NotifyAsyncScrollbarDragInitiated(
     ScrollDirection aDirection) {
   if (!mCompositorThread->IsOnCurrentThread()) {
     
-    mCompositorThread->Dispatch(
-        NewRunnableMethod<uint64_t, ScrollableLayerGuid::ViewID,
-                          ScrollDirection>(
-            "layers::RemoteContentController::"
-            "NotifyAsyncScrollbarDragInitiated",
-            this, &RemoteContentController::NotifyAsyncScrollbarDragInitiated,
-            aDragBlockId, aScrollId, aDirection));
+    mCompositorThread->Dispatch(NewRunnableMethod<uint64_t,
+                                                  ScrollableLayerGuid::ViewID,
+                                                  ScrollDirection>(
+        "layers::RemoteContentController::NotifyAsyncScrollbarDragInitiated",
+        this, &RemoteContentController::NotifyAsyncScrollbarDragInitiated,
+        aDragBlockId, aScrollId, aDirection));
     return;
   }
 
@@ -461,8 +455,7 @@ void RemoteContentController::NotifyScaleGestureCompleteInProcess(
 
   if (!NS_IsMainThread()) {
     NS_DispatchToMainThread(NewRunnableMethod<ScrollableLayerGuid, float>(
-        "layers::RemoteContentController::"
-        "NotifyScaleGestureCompleteInProcess",
+        "layers::RemoteContentController::NotifyScaleGestureCompleteInProcess",
         this, &RemoteContentController::NotifyScaleGestureCompleteInProcess,
         aGuid, aScale));
     return;

@@ -548,15 +548,13 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   mozilla::ipc::IPCResult RecvHandleTap(
       const layers::GeckoContentController_TapType& aType,
       const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
-      const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
-      const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
+      const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvNormalPriorityHandleTap(
       const layers::GeckoContentController_TapType& aType,
       const LayoutDevicePoint& aPoint, const Modifiers& aModifiers,
-      const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId,
-      const Maybe<DoubleTapToZoomMetrics>& aDoubleTapToZoomMetrics);
+      const ScrollableLayerGuid& aGuid, const uint64_t& aInputBlockId);
 
   bool UpdateFrame(const layers::RepaintRequest& aRequest);
   void NotifyAPZStateChange(
@@ -682,8 +680,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
 
  private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
-                       const ScrollableLayerGuid& aGuid,
-                       const DoubleTapToZoomMetrics& aMetrics);
+                       const ScrollableLayerGuid& aGuid);
 
   void ActorDestroy(ActorDestroyReason why) override;
 
@@ -813,7 +810,6 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   
   mozilla::TimeStamp mRepeatedKeyEventTime;
 
-  
   
   
   

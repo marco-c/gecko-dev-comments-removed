@@ -8,7 +8,6 @@
 #define mozilla_layers_DoubleTapToZoom_h
 
 #include "Units.h"
-#include "mozilla/gfx/Matrix.h"
 
 template <class T>
 class RefPtr;
@@ -47,28 +46,6 @@ struct ZoomTarget {
   Maybe<CSSPoint> documentRelativePointerPosition;
 };
 
-struct DoubleTapToZoomMetrics {
-  
-  CSSRect mVisualViewport;
-  
-  
-  CSSRect mRootScrollableRect;
-  
-  
-  
-  
-  CSSToCSSMatrix4x4 mTransformMatrix;
-
-  bool operator==(const DoubleTapToZoomMetrics& aOther) const {
-    return mVisualViewport == aOther.mVisualViewport &&
-           mRootScrollableRect == aOther.mRootScrollableRect &&
-           mTransformMatrix == aOther.mTransformMatrix;
-  }
-  friend std::ostream& operator<<(std::ostream& aStream,
-                                  const DoubleTapToZoomMetrics& aUpdate);
-};
-
-
 
 
 
@@ -76,8 +53,8 @@ struct DoubleTapToZoomMetrics {
 
 
 ZoomTarget CalculateRectToZoomTo(
-    const RefPtr<mozilla::dom::Document>& aInProcessRootContentDocument,
-    const CSSPoint& aPoint, const DoubleTapToZoomMetrics& aMetrics);
+    const RefPtr<mozilla::dom::Document>& aRootContentDocument,
+    const CSSPoint& aPoint);
 
 }  
 }  
