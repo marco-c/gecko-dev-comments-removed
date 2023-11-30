@@ -113,7 +113,7 @@ interface nsISHEntry : nsISupports
     [infallible] attribute nsIReferrerInfo referrerInfo;
 
     
-    [infallible] attribute nsIDocumentViewer contentViewer;
+    [infallible] attribute nsIDocumentViewer documentViewer;
 
     [infallible] readonly attribute boolean isInBFCache;
 
