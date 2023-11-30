@@ -27,7 +27,6 @@ class nsAvailableMemoryWatcherBase;
 
 @interface GeckoNSApplication : NSApplication {
 }
-@property(readonly) BOOL didLaunch;
 @end
 
 @class AppShellDelegate;
