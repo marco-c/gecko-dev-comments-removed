@@ -7307,6 +7307,8 @@ nsHttpChannel::OnStartRequest(nsIRequest* request) {
     mTransaction->GetNetworkAddresses(mSelfAddr, mPeerAddr, isTrr,
                                       mEffectiveTRRMode, mTRRSkipReason,
                                       echConfigUsed);
+    StoreResolvedByTRR(isTrr);
+    StoreEchConfigUsed(echConfigUsed);
   }
 
   
