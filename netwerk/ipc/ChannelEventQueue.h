@@ -103,6 +103,8 @@ class NeckoTargetChannelFunctionEvent : public ChannelFunctionEvent {
 
 
 
+
+
 class ChannelEventQueue final {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ChannelEventQueue)
 
@@ -220,7 +222,12 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
     bool enqueue = !!mForcedCount || mSuspended || mFlushing ||
                    !mEventQueue.IsEmpty() ||
                    MaybeSuspendIfEventsAreSuppressed();
-
+    
+    
+    
+    
+    
+    
     if (enqueue) {
       mEventQueue.AppendElement(std::move(event));
       return;
@@ -236,6 +243,14 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
     if (!isCurrentThread) {
       
       
+      
+      
+      
+      
+      
+      
+      
+      
       SuspendInternal();
       mEventQueue.AppendElement(std::move(event));
       ResumeInternal();
@@ -244,6 +259,8 @@ inline void ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   }
 
   MOZ_RELEASE_ASSERT(!aAssertionWhenNotQueued);
+  
+  
   event->Run();
 }
 

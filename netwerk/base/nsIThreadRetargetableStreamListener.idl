@@ -30,6 +30,14 @@ interface nsIThreadRetargetableStreamListener : nsIStreamListener
 
   void checkListenerChain();
 
+   
+
+
+
+
+
+
+
 
 
 
