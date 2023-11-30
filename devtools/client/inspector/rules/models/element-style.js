@@ -374,7 +374,15 @@ class ElementStyle {
       if (!computedProp.overridden && computedProp.textProp.enabled) {
         taken.set(computedProp.name, computedProp);
 
-        if (isCssVariable(computedProp.name)) {
+        
+        
+        
+        
+        
+        if (
+          isCssVariable(computedProp.name) &&
+          !computedProp.textProp.invisible
+        ) {
           variables.set(computedProp.name, computedProp.value);
         }
       }
