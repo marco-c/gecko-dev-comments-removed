@@ -732,7 +732,27 @@ nsresult JumpListBuilder::GetShellLinkFromDescription(
 
   
   hr = psl->SetPath(aDesc.mPath.get());
-  hr = psl->SetDescription(aDesc.mDescription.get());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsAutoString descriptionCopy(aDesc.mDescription.get());
+  if (descriptionCopy.Length() >= MAX_PATH) {
+    descriptionCopy.Truncate(MAX_PATH - 1);
+  }
+
+  hr = psl->SetDescription(descriptionCopy.get());
+
   if (aDesc.mArguments.WasPassed() && !aDesc.mArguments.Value().IsEmpty()) {
     hr = psl->SetArguments(aDesc.mArguments.Value().get());
   } else {
