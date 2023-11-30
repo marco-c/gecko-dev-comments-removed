@@ -140,20 +140,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
 
 
-
-
-
-    public @NonNull Builder globalPrivacyControlEnabled(final boolean enabled) {
-      getSettings().setGlobalPrivacyControl(enabled);
-      return this;
-    }
-
-    
-
-
-
-
-
     public @NonNull Builder remoteDebuggingEnabled(final boolean enabled) {
       getSettings().mRemoteDebugging.set(enabled);
       return this;
@@ -600,12 +586,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
       new PrefWithoutDefault<Long>("extensions.webextensions.crash.timeframe");
    final PrefWithoutDefault<Integer> mExtensionsProcessCrashThreshold =
       new PrefWithoutDefault<Integer>("extensions.webextensions.crash.threshold");
-   final Pref<Boolean> mGlobalPrivacyControlEnabled =
-      new Pref<Boolean>("privacy.globalprivacycontrol.enabled", false);
-   final Pref<Boolean> mGlobalPrivacyControlEnabledPrivateMode =
-      new Pref<Boolean>("privacy.globalprivacycontrol.pbmode.enabled", true);
-   final Pref<Boolean> mGlobalPrivacyControlFunctionalityEnabled =
-      new Pref<Boolean>("privacy.globalprivacycontrol.functionality.enabled", true);
 
    int mPreferredColorScheme = COLOR_SCHEME_SYSTEM;
 
@@ -732,22 +712,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public @NonNull GeckoRuntimeSettings setJavaScriptEnabled(final boolean flag) {
     mJavaScript.commit(flag);
-    return this;
-  }
-
-  
-
-
-
-
-
-
-
-  public @NonNull GeckoRuntimeSettings setGlobalPrivacyControl(final boolean enabled) {
-    mGlobalPrivacyControlEnabled.commit(enabled);
-    
-    mGlobalPrivacyControlEnabledPrivateMode.commit(true);
-    mGlobalPrivacyControlFunctionalityEnabled.commit(true);
     return this;
   }
 
@@ -964,24 +928,6 @@ public final class GeckoRuntimeSettings extends RuntimeSettings {
 
   public boolean getExtensionsWebAPIEnabled() {
     return mExtensionsWebAPIEnabled.get();
-  }
-
-  
-
-
-
-
-  public boolean getGlobalPrivacyControl() {
-    return mGlobalPrivacyControlEnabled.get();
-  }
-
-  
-
-
-
-
-  public boolean getGlobalPrivacyControlPrivateMode() {
-    return mGlobalPrivacyControlEnabledPrivateMode.get();
   }
 
   
