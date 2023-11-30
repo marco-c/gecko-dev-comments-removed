@@ -3,9 +3,9 @@
 load(libdir + 'asserts.js');
 
 assertEq(evaluate("saveStack().column"), 1);
-assertEq(evaluate("saveStack().column", { columnNumber: 1729 }), 1730);
+assertEq(evaluate("saveStack().column", { columnNumber: 1729 }), 1729);
 assertEq(evaluate("\nsaveStack().column", { columnNumber: 1729 }), 1);
-assertEq(evaluate("saveStack().column", { columnNumber: "42" }), 43);
+assertEq(evaluate("saveStack().column", { columnNumber: "42" }), 42);
 
 assertEq(evaluate("saveStack().column", { columnNumber: -10 }), 1);
 assertThrowsInstanceOf(() => evaluate("saveStack().column", { columnNumber: Math.pow(2,30) }),
@@ -27,7 +27,7 @@ if (helperThreadCount() > 0) {
   print("offThreadCompileToStencil 3");
   offThreadCompileToStencil("saveStack().column", { columnNumber: 10000 });
   stencil = finishOffThreadStencil();
-  assertEq(evalStencil(stencil), 10001);
+  assertEq(evalStencil(stencil), 10000);
 }
 
 
@@ -35,7 +35,7 @@ if (helperThreadCount() > 0) {
 
 const maxColumn = Math.pow(2, 30) - 2;
 assertEq(evaluate("saveStack().column", { columnNumber: maxColumn }),
-         maxColumn + 1);
+         maxColumn);
 
 
 
