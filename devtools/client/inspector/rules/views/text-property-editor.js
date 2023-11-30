@@ -272,7 +272,7 @@ TextPropertyEditor.prototype = {
 
     
     
-    this.filterProperty = createChild(this.container, "div", {
+    this.filterProperty = createChild(this.container, "button", {
       class: "ruleview-overridden-rule-filter",
       hidden: "",
       title: l10n("rule.filterProperty.title"),
