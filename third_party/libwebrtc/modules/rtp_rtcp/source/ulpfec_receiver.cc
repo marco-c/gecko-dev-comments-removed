@@ -192,6 +192,7 @@ void UlpfecReceiver::ProcessReceivedFec() {
       received_packets;
   received_packets.swap(received_packets_);
   RtpHeaderExtensionMap* last_recovered_extension_map = nullptr;
+  size_t num_recovered_packets = 0;
 
   for (const auto& received_packet : received_packets) {
     
@@ -217,9 +218,15 @@ void UlpfecReceiver::ProcessReceivedFec() {
       
       
       
-      fec_->DecodeFec(*received_packet, &recovered_packets_);
+      ForwardErrorCorrection::DecodeFecResult decode_result =
+          fec_->DecodeFec(*received_packet, &recovered_packets_);
       last_recovered_extension_map = &received_packet->extensions;
+      num_recovered_packets += decode_result.num_recovered_packets;
     }
+  }
+
+  if (num_recovered_packets == 0) {
+    return;
   }
 
   

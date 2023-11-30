@@ -229,8 +229,13 @@ class ForwardErrorCorrection {
   
   
   
-  void DecodeFec(const ReceivedPacket& received_packet,
-                 RecoveredPacketList* recovered_packets);
+  struct DecodeFecResult {
+    
+    size_t num_recovered_packets = 0;
+  };
+
+  DecodeFecResult DecodeFec(const ReceivedPacket& received_packet,
+                            RecoveredPacketList* recovered_packets);
 
   
   
@@ -302,7 +307,7 @@ class ForwardErrorCorrection {
 
   
   
-  void AttemptRecovery(RecoveredPacketList* recovered_packets);
+  size_t AttemptRecovery(RecoveredPacketList* recovered_packets);
 
   
   
