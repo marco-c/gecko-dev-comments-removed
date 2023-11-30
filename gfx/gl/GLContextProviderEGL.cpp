@@ -1129,6 +1129,28 @@ RefPtr<GLContextEGL> GLContextEGL::CreateWithoutSurface(
     const std::shared_ptr<EglDisplay> egl, const GLContextCreateDesc& desc,
     nsACString* const out_failureId) {
   const auto WithUseGles = [&](const bool useGles) -> RefPtr<GLContextEGL> {
+#ifdef MOZ_WIDGET_GTK
+    
+    
+    
+    if (egl->IsExtensionSupported(EGLExtension::KHR_no_config_context) &&
+        egl->IsExtensionSupported(EGLExtension::KHR_surfaceless_context)) {
+      
+      
+      auto fullDesc = GLContextDesc{desc};
+      fullDesc.isOffscreen = true;
+      RefPtr<GLContextEGL> gl = GLContextEGL::CreateGLContext(
+          egl, fullDesc, EGL_NO_CONFIG, EGL_NO_SURFACE, useGles, EGL_NO_CONFIG,
+          out_failureId);
+      if (gl) {
+        return gl;
+      }
+      NS_WARNING(
+          "Failed to create GLContext with no config and no surface, will try "
+          "ChooseConfig");
+    }
+#endif
+
     const EGLConfig surfaceConfig = ChooseConfig(*egl, desc, useGles);
     if (surfaceConfig == EGL_NO_CONFIG) {
       *out_failureId = "FEATURE_FAILURE_EGL_NO_CONFIG"_ns;
