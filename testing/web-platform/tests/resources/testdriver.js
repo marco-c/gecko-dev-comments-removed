@@ -712,8 +712,9 @@
 
 
 
-        confirm_idp_login: function(context=null) {
-          return window.test_driver_internal.confirm_idp_login(context);
+
+        click_fedcm_dialog_button: function(dialog_button, context=null) {
+          return window.test_driver_internal.click_fedcm_dialog_button(dialog_button, context);
         },
 
         
@@ -1097,8 +1098,8 @@
             throw new Error("cancel_fedcm_dialog() is not implemented by testdriver-vendor.js");
         },
 
-        async confirm_idp_login(context=null) {
-            throw new Error("confirm_idp_login() is not implemented by testdriver-vendor.js");
+        async click_fedcm_dialog_button(dialog_button, context=null) {
+            throw new Error("click_fedcm_dialog_button() is not implemented by testdriver-vendor.js");
         },
 
         async select_fedcm_account(account_index, context=null) {
