@@ -493,7 +493,7 @@ class PuppeteerRunner(MozbuildObject):
         ]
 
         output_handler = MochaOutputHandler(logger, expectations)
-        return_code = run_npm(
+        run_npm(
             *command,
             cwd=self.puppeteer_dir,
             env=env,
@@ -501,19 +501,14 @@ class PuppeteerRunner(MozbuildObject):
             
             
             output_timeout=60,
-            exit_on_fail=False,
+            exit_on_fail=True,
         )
 
         output_handler.after_end()
 
-        
-        
-        
-        if return_code != 0:
-            logger.warning("npm exited with code %s" % return_code)
-
         if output_handler.has_unexpected:
-            exit(1, "Got unexpected results")
+            logger.error("Got unexpected results")
+            exit(1)
 
 
 def create_parser_puppeteer():
