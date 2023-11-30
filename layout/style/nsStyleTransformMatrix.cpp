@@ -49,10 +49,24 @@ static nsRect GetSVGBox(const nsIFrame* aFrame) {
     return nsRect(-aFrame->GetPosition(), CSSPixel::ToAppUnits(size));
   };
 
+  auto transformBox = aFrame->StyleDisplay()->mTransformBox;
+  if ((transformBox == StyleTransformBox::StrokeBox ||
+       transformBox == StyleTransformBox::BorderBox) &&
+      aFrame->StyleSVGReset()->HasNonScalingStroke()) {
+    
+    
+    
+    
+    
+    
+    
+    transformBox = StyleTransformBox::FillBox;
+  }
+
   
   
   
-  switch (aFrame->StyleDisplay()->mTransformBox) {
+  switch (transformBox) {
     case StyleTransformBox::ContentBox:
     case StyleTransformBox::FillBox: {
       
