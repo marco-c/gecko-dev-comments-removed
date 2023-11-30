@@ -479,13 +479,7 @@ PlacesTreeView.prototype = {
 
 
 
-
-
-
-  _getNewRowForRemovedNode: function PTV__getNewRowForRemovedNode(
-    aUpdatedContainer,
-    aOldNode
-  ) {
+  _getNewRowForRemovedNode: function PTV__getNewRowForRemovedNode(aOldNode) {
     let parent = aOldNode.parent;
     if (parent) {
       
@@ -524,12 +518,7 @@ PlacesTreeView.prototype = {
 
 
 
-
-
-  _restoreSelection: function PTV__restoreSelection(
-    aNodesInfo,
-    aUpdatedContainer
-  ) {
+  _restoreSelection: function PTV__restoreSelection(aNodesInfo) {
     if (!aNodesInfo.length) {
       return;
     }
@@ -541,7 +530,7 @@ PlacesTreeView.prototype = {
     let scrollToRow = -1;
     for (let i = 0; i < aNodesInfo.length; i++) {
       let nodeInfo = aNodesInfo[i];
-      let row = this._getNewRowForRemovedNode(aUpdatedContainer, nodeInfo.node);
+      let row = this._getNewRowForRemovedNode(nodeInfo.node);
       
       if (row != -1) {
         selection.rangedSelect(row, row, true);
@@ -894,7 +883,7 @@ PlacesTreeView.prototype = {
 
     
     if (nodesToReselect.length) {
-      this._restoreSelection(nodesToReselect, aNewParent);
+      this._restoreSelection(nodesToReselect);
       this.selection.selectEventsSuppressed = false;
     }
   },
@@ -1131,7 +1120,7 @@ PlacesTreeView.prototype = {
     this._tree.endUpdateBatch();
 
     
-    this._restoreSelection(nodesToReselect, aContainer);
+    this._restoreSelection(nodesToReselect);
     this.selection.selectEventsSuppressed = false;
   },
 
