@@ -675,6 +675,7 @@ class nsWindow final : public nsBaseWidget {
   
   bool mHasReceivedSizeAllocate : 1;
   bool mWidgetCursorLocked : 1;
+  bool mUndecorated : 1;
 
   
 
