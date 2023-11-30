@@ -543,30 +543,16 @@ void SVGUseElement::LookupHref() {
     return;
   }
 
-  if (nsContentUtils::IsLocalRefURL(href)) {
-    
-    
-    RefPtr<SVGUseElement> elem = mOriginal ? mOriginal.get() : this;
-    RefPtr<nsAtom> idAtom = NS_AtomizeMainThread(Substring(href, 1));
-    mReferencedElementTracker.ResetWithID(*elem, idAtom);
-    return;
-  }
+  nsCOMPtr<nsIURI> originURI =
+      mOriginal ? mOriginal->GetBaseURI() : GetBaseURI();
+  nsCOMPtr<nsIURI> baseURI =
+      nsContentUtils::IsLocalRefURL(href)
+          ? SVGObserverUtils::GetBaseURLForLocalRef(this, originURI)
+          : originURI;
 
-  nsCOMPtr<nsIURI> baseURI = mOriginal ? mOriginal->GetBaseURI() : GetBaseURI();
   nsCOMPtr<nsIURI> targetURI;
   nsContentUtils::NewURIWithDocumentCharset(getter_AddRefs(targetURI), href,
                                             GetComposedDoc(), baseURI);
-  if (!targetURI) {
-    return;
-  }
-
-  
-  
-  if (targetURI->SchemeIs("data") &&
-      !StaticPrefs::svg_use_element_data_url_href_allowed()) {
-    return;
-  }
-
   nsIReferrerInfo* referrer =
       OwnerDoc()->ReferrerInfoForInternalCSSAndSVGResources();
   mReferencedElementTracker.ResetToURIFragmentID(this, targetURI, referrer);
