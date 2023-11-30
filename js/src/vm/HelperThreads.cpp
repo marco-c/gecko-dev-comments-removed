@@ -258,19 +258,30 @@ bool GlobalHelperThreadState::submitTask(
   return true;
 }
 
-bool js::StartOffThreadIonFree(jit::IonCompileTask* task,
-                               const AutoLockHelperThreadState& lock) {
-  js::UniquePtr<jit::IonFreeTask> freeTask =
-      js::MakeUnique<jit::IonFreeTask>(task);
-  if (!freeTask) {
-    return false;
+js::AutoStartIonFreeTask::~AutoStartIonFreeTask() {
+  if (tasks_.empty()) {
+    return;
   }
 
-  return HelperThreadState().submitTask(std::move(freeTask), lock);
+  auto freeTask = js::MakeUnique<jit::IonFreeTask>(std::move(tasks_));
+  if (!freeTask) {
+    
+    MOZ_ASSERT(!tasks_.empty(), "shouldn't have moved tasks_ on OOM");
+    jit::FreeIonCompileTasks(tasks_);
+    return;
+  }
+
+  AutoLockHelperThreadState lock;
+  if (!HelperThreadState().submitTask(std::move(freeTask), lock)) {
+    
+    
+    jit::FreeIonCompileTasks(freeTask->compileTasks());
+  }
 }
 
 bool GlobalHelperThreadState::submitTask(
-    UniquePtr<jit::IonFreeTask> task, const AutoLockHelperThreadState& locked) {
+    UniquePtr<jit::IonFreeTask>&& task,
+    const AutoLockHelperThreadState& locked) {
   MOZ_ASSERT(isInitialized(locked));
 
   if (!ionFreeList(locked).append(std::move(task))) {
@@ -343,64 +354,72 @@ static bool IonCompileTaskMatches(const CompilationSelector& selector,
   return selector.match(TaskMatches{task});
 }
 
-static void CancelOffThreadIonCompileLocked(const CompilationSelector& selector,
-                                            AutoLockHelperThreadState& lock) {
-  if (jit::IsPortableBaselineInterpreterEnabled()) {
+void js::CancelOffThreadIonCompile(const CompilationSelector& selector) {
+  if (!JitDataStructuresExist(selector)) {
     return;
   }
 
-  if (!HelperThreadState().isInitialized(lock)) {
+  if (jit::IsPortableBaselineInterpreterEnabled()) {
     return;
   }
 
   MOZ_ASSERT(GetSelectorRuntime(selector)->jitRuntime() != nullptr);
 
-  
-  GlobalHelperThreadState::IonCompileTaskVector& worklist =
-      HelperThreadState().ionWorklist(lock);
-  for (size_t i = 0; i < worklist.length(); i++) {
-    jit::IonCompileTask* task = worklist[i];
-    if (IonCompileTaskMatches(selector, task)) {
-      
-      
-      
-      worklist[i]->alloc().lifoAlloc()->setReadWrite();
+  AutoStartIonFreeTask freeTask;
 
-      FinishOffThreadIonCompile(task, lock);
-      HelperThreadState().remove(worklist, &i);
+  {
+    AutoLockHelperThreadState lock;
+    if (!HelperThreadState().isInitialized(lock)) {
+      return;
     }
-  }
 
-  
-  bool cancelled;
-  do {
-    cancelled = false;
-    for (auto* helper : HelperThreadState().helperTasks(lock)) {
-      if (!helper->is<jit::IonCompileTask>()) {
-        continue;
-      }
+    
+    GlobalHelperThreadState::IonCompileTaskVector& worklist =
+        HelperThreadState().ionWorklist(lock);
+    for (size_t i = 0; i < worklist.length(); i++) {
+      jit::IonCompileTask* task = worklist[i];
+      if (IonCompileTaskMatches(selector, task)) {
+        
+        
+        
+        worklist[i]->alloc().lifoAlloc()->setReadWrite();
 
-      jit::IonCompileTask* ionCompileTask = helper->as<jit::IonCompileTask>();
-      if (IonCompileTaskMatches(selector, ionCompileTask)) {
-        ionCompileTask->mirGen().cancel();
-        cancelled = true;
+        FinishOffThreadIonCompile(task, lock);
+        HelperThreadState().remove(worklist, &i);
       }
     }
-    if (cancelled) {
-      HelperThreadState().wait(lock);
-    }
-  } while (cancelled);
 
-  
-  GlobalHelperThreadState::IonCompileTaskVector& finished =
-      HelperThreadState().ionFinishedList(lock);
-  for (size_t i = 0; i < finished.length(); i++) {
-    jit::IonCompileTask* task = finished[i];
-    if (IonCompileTaskMatches(selector, task)) {
-      JSRuntime* rt = task->script()->runtimeFromAnyThread();
-      rt->jitRuntime()->numFinishedOffThreadTasksRef(lock)--;
-      jit::FinishOffThreadTask(rt, task, lock);
-      HelperThreadState().remove(finished, &i);
+    
+    bool cancelled;
+    do {
+      cancelled = false;
+      for (auto* helper : HelperThreadState().helperTasks(lock)) {
+        if (!helper->is<jit::IonCompileTask>()) {
+          continue;
+        }
+
+        jit::IonCompileTask* ionCompileTask = helper->as<jit::IonCompileTask>();
+        if (IonCompileTaskMatches(selector, ionCompileTask)) {
+          ionCompileTask->mirGen().cancel();
+          cancelled = true;
+        }
+      }
+      if (cancelled) {
+        HelperThreadState().wait(lock);
+      }
+    } while (cancelled);
+
+    
+    GlobalHelperThreadState::IonCompileTaskVector& finished =
+        HelperThreadState().ionFinishedList(lock);
+    for (size_t i = 0; i < finished.length(); i++) {
+      jit::IonCompileTask* task = finished[i];
+      if (IonCompileTaskMatches(selector, task)) {
+        JSRuntime* rt = task->script()->runtimeFromAnyThread();
+        rt->jitRuntime()->numFinishedOffThreadTasksRef(lock)--;
+        jit::FinishOffThreadTask(rt, freeTask, task);
+        HelperThreadState().remove(finished, &i);
+      }
     }
   }
 
@@ -411,19 +430,10 @@ static void CancelOffThreadIonCompileLocked(const CompilationSelector& selector,
   while (task) {
     jit::IonCompileTask* next = task->getNext();
     if (IonCompileTaskMatches(selector, task)) {
-      jit::FinishOffThreadTask(runtime, task, lock);
+      jit::FinishOffThreadTask(runtime, freeTask, task);
     }
     task = next;
   }
-}
-
-void js::CancelOffThreadIonCompile(const CompilationSelector& selector) {
-  if (!JitDataStructuresExist(selector)) {
-    return;
-  }
-
-  AutoLockHelperThreadState lock;
-  CancelOffThreadIonCompileLocked(selector, lock);
 }
 
 #ifdef DEBUG
@@ -817,7 +827,7 @@ void GlobalHelperThreadState::finish(AutoLockHelperThreadState& lock) {
   while (!freeList.empty()) {
     UniquePtr<jit::IonFreeTask> task = std::move(freeList.back());
     freeList.popBack();
-    jit::FreeIonCompileTask(task->compileTask());
+    jit::FreeIonCompileTasks(task->compileTasks());
   }
 }
 
@@ -998,8 +1008,9 @@ void GlobalHelperThreadState::addSizeOfIncludingThis(
     htStats.ionCompileTask += task->sizeOfExcludingThis(mallocSizeOf);
   }
   for (const auto& task : ionFreeList_) {
-    htStats.ionCompileTask +=
-        task->compileTask()->sizeOfExcludingThis(mallocSizeOf);
+    for (auto* compileTask : task->compileTasks()) {
+      htStats.ionCompileTask += compileTask->sizeOfExcludingThis(mallocSizeOf);
+    }
   }
 
   
