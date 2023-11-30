@@ -1466,6 +1466,7 @@ struct UtilityMfMediaEngineCdmSandboxProps : public UtilitySandboxProps {
     mUseAlternateWindowStation = false;
     mLockdownDefaultDacl = false;
     mAddRestrictingRandomSid = false;
+    mUseCig = false;
 
     
     
