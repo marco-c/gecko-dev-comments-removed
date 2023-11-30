@@ -743,7 +743,7 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
   for (auto& edge : edges) {
     CellColor targetColor = std::min(srcColor, edge.color);
     MOZ_ASSERT(CellColor(markColor()) >= targetColor);
-    if (targetColor == markColor()) {
+    if (AsMarkColor(targetColor) == markColor()) {
       ApplyGCThingTyped(edge.target, edge.target->getTraceKind(),
                         [this](auto t) {
                           markAndTraverse<MarkingOptions::MarkImplicitEdges>(t);
@@ -761,7 +761,7 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
   
   
   if (srcColor == CellColor::Black && markColor() == MarkColor::Black) {
-    edges.eraseIf([](auto& edge) { return edge.color == MarkColor::Black; });
+    edges.eraseIf([](auto& edge) { return edge.color == CellColor::Black; });
   }
 }
 
@@ -804,7 +804,7 @@ void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
 
   EphemeronEdgeVector& edges = p->value;
   MOZ_ASSERT(markColor() == MarkColor::Black);
-  markEphemeronEdges(edges, MarkColor::Black);
+  markEphemeronEdges(edges, CellColor::Black);
 }
 
 
@@ -840,7 +840,7 @@ void GCMarker::restoreWeakDelegate(JSObject* key, JSObject* delegate) {
   
   EphemeronEdgeVector& edges = p->value;
   MOZ_ASSERT(markColor() == MarkColor::Black);
-  markEphemeronEdges(edges, MarkColor::Black);
+  markEphemeronEdges(edges, CellColor::Black);
 }
 
 template <typename T>
@@ -2164,7 +2164,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
 
   if (!marker->incrementalWeakMapMarkingEnabled) {
     for (WeakMapBase* m : gcWeakMapList()) {
-      if (m->mapColor) {
+      if (IsMarked(m->mapColor)) {
         (void)m->markEntries(marker);
       }
     }
@@ -2195,7 +2195,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
     auto& edges = r.front().value;
     r.popFront();  
 
-    if (edges.length() > 0) {
+    if (IsMarked(srcColor) && edges.length() > 0) {
       uint32_t steps = edges.length();
       marker->markEphemeronEdges(edges, srcColor);
       budget.step(steps);

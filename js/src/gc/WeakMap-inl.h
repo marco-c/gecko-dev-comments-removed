@@ -125,14 +125,14 @@ template <class K, class V>
 bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value,
                               bool populateWeakKeysTable) {
 #ifdef DEBUG
-  MOZ_ASSERT(mapColor);
+  MOZ_ASSERT(IsMarked(mapColor));
   if (marker->isParallelMarking()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif
 
   bool marked = false;
-  CellColor markColor = marker->markColor();
+  CellColor markColor = AsCellColor(marker->markColor());
   CellColor keyColor = gc::detail::GetEffectiveColor(marker, key);
   JSObject* delegate = gc::detail::GetDelegate(key);
   JSTracer* trc = marker->tracer();
@@ -157,7 +157,7 @@ bool WeakMap<K, V>::markEntry(GCMarker* marker, K& key, V& value,
   }
 
   gc::Cell* cellValue = gc::ToMarkable(value);
-  if (keyColor) {
+  if (IsMarked(keyColor)) {
     if (cellValue) {
       CellColor targetColor = std::min(mapColor, keyColor);
       CellColor valueColor = gc::detail::GetEffectiveColor(marker, cellValue);
@@ -218,8 +218,8 @@ void WeakMap<K, V>::trace(JSTracer* trc) {
     
     
     
-    if (mapColor < marker->markColor()) {
-      mapColor = marker->markColor();
+    if (mapColor < AsCellColor(marker->markColor())) {
+      mapColor = AsCellColor(marker->markColor());
       (void)markEntries(marker);
     }
     return;
@@ -303,7 +303,7 @@ bool WeakMap<K, V>::markEntries(GCMarker* marker) {
   }
 #endif
 
-  MOZ_ASSERT(mapColor);
+  MOZ_ASSERT(IsMarked(mapColor));
   bool markedAny = false;
 
   

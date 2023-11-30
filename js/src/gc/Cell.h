@@ -53,52 +53,17 @@ extern void PerformIncrementalBarrierDuringFlattening(JSString* str);
 extern void UnmarkGrayGCThingRecursively(TenuredCell* cell);
 
 
+enum class CellColor : uint8_t { White = 0, Gray = 1, Black = 2 };
+static_assert(uint8_t(CellColor::Gray) == uint8_t(MarkColor::Gray));
+static_assert(uint8_t(CellColor::Black) == uint8_t(MarkColor::Black));
 
-
-class CellColor {
- public:
-  enum Color { White = 0, Gray = 1, Black = 2 };
-
-  CellColor() : color(White) {}
-
-  MOZ_IMPLICIT CellColor(MarkColor markColor)
-      : color(markColor == MarkColor::Black ? Black : Gray) {}
-
-  MOZ_IMPLICIT constexpr CellColor(Color c) : color(c) {}
-
-  MarkColor asMarkColor() const {
-    MOZ_ASSERT(color != White);
-    return color == Black ? MarkColor::Black : MarkColor::Gray;
-  }
-
-  
-  
-  bool operator<(const CellColor other) const { return color < other.color; }
-  bool operator>(const CellColor other) const { return color > other.color; }
-  bool operator<=(const CellColor other) const { return color <= other.color; }
-  bool operator>=(const CellColor other) const { return color >= other.color; }
-  bool operator!=(const CellColor other) const { return color != other.color; }
-  bool operator==(const CellColor other) const { return color == other.color; }
-  explicit operator bool() const { return color != White; }
-
-#if defined(JS_GC_ZEAL) || defined(DEBUG)
-  const char* name() const {
-    switch (color) {
-      case CellColor::White:
-        return "white";
-      case CellColor::Black:
-        return "black";
-      case CellColor::Gray:
-        return "gray";
-      default:
-        MOZ_CRASH("Unexpected cell color");
-    }
-  }
-#endif
-
- private:
-  Color color;
-};
+inline bool IsMarked(CellColor color) { return color != CellColor::White; }
+inline MarkColor AsMarkColor(CellColor color) {
+  MOZ_ASSERT(IsMarked(color));
+  return MarkColor(color);
+}
+inline CellColor AsCellColor(MarkColor color) { return CellColor(color); }
+extern const char* CellColorName(CellColor color);
 
 
 
