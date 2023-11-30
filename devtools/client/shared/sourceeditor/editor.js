@@ -339,12 +339,16 @@ Editor.prototype = {
       }
 
       const onLoad = () => {
+        
+        
+        env.style.visibility = "";
         const win = env.contentWindow.wrappedJSObject;
         this.container = env;
         this._setup(win.document.body, el.ownerDocument);
         resolve();
       };
 
+      env.style.visibility = "hidden";
       env.addEventListener("load", onLoad, { capture: true, once: true });
       env.src = CM_IFRAME;
       el.appendChild(env);
