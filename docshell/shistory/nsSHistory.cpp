@@ -1182,7 +1182,7 @@ nsSHistory::EvictOutOfRangeContentViewers(int32_t aIndex) {
           ("nsSHistory::EvictOutOfRangeContentViewers %i", aIndex));
 
   
-  EvictOutOfRangeWindowContentViewers(aIndex);
+  EvictOutOfRangeWindowDocumentViewers(aIndex);
   
   GloballyEvictContentViewers();
   return NS_OK;
@@ -1484,7 +1484,7 @@ nsresult nsSHistory::ReloadCurrentEntry(
                     false);
 }
 
-void nsSHistory::EvictOutOfRangeWindowContentViewers(int32_t aIndex) {
+void nsSHistory::EvictOutOfRangeWindowDocumentViewers(int32_t aIndex) {
   
 
   
@@ -1530,7 +1530,7 @@ void nsSHistory::EvictOutOfRangeWindowContentViewers(int32_t aIndex) {
   WindowIndices(aIndex, &startSafeIndex, &endSafeIndex);
 
   LOG(
-      ("EvictOutOfRangeWindowContentViewers(index=%d), "
+      ("EvictOutOfRangeWindowDocumentViewers(index=%d), "
        "Length()=%d. Safe range [%d, %d]",
        aIndex, Length(), startSafeIndex, endSafeIndex));
 
