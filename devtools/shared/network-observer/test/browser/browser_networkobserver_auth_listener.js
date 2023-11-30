@@ -235,6 +235,9 @@ add_task(async function testAuthRequestWithWrongCredentialsListener() {
   is(events.length, 1, "Received the expected number of network events");
 
   
+  await BrowserTestUtils.waitForCondition(() => events[0].hasAuthPrompt);
+
+  
   
   ok(
     !getTabAuthPrompts(tab).length,
