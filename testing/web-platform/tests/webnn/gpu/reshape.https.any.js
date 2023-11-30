@@ -1,0 +1,11 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('reshape', buildReshape, 'gpu');
+

@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('pad', buildPad, 'gpu');

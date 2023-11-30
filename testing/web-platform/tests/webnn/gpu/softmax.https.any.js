@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('softmax', buildOperationWithSingleInput, 'gpu');

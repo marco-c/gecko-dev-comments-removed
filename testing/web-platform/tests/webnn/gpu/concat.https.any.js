@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('concat', buildConcat, 'gpu');

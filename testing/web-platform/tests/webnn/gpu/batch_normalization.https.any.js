@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('batchNormalization', buildBatchNorm, 'gpu');

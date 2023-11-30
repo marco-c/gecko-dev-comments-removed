@@ -7,13 +7,4 @@
 
 
 
-const buildPad = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.beginningPadding, resources.endingPadding, resources.options);
-  return namedOutputOperand;
-};
-
 testWebNNOperation('pad', buildPad);

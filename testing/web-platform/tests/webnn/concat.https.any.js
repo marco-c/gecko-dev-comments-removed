@@ -7,16 +7,4 @@
 
 
 
-const buildConcat = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperands = [];
-  for (let input of resources.inputs) {
-    inputOperands.push(builder.input(input.name, {type: input.type, dimensions: input.shape}));
-  }
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperands, resources.axis);
-  return namedOutputOperand;
-};
-
 testWebNNOperation('concat', buildConcat);

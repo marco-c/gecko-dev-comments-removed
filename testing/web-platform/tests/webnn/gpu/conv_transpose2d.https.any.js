@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('convTranspose2d', buildConvTranspose2d, 'gpu');
