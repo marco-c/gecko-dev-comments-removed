@@ -4,7 +4,7 @@
 
 
 
-XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.ini"]
+XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 EXPORTS += [
     "nsMediaSniffer.h",

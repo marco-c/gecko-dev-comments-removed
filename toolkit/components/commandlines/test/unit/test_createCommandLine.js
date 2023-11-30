@@ -4,7 +4,7 @@
 "use strict";
 
 add_task(async function test_createCommandLine() {
-  const EXISTING_FILE = do_get_file("xpcshell.ini");
+  const EXISTING_FILE = do_get_file("xpcshell.toml");
 
   
   let cmdLine = Cu.createCommandLine(

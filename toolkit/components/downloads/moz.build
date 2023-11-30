@@ -4,7 +4,7 @@
 
 
 
-XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.ini"]
+XPCSHELL_TESTS_MANIFESTS += ["test/unit/xpcshell.toml"]
 
 TEST_HARNESS_FILES.xpcshell.toolkit.components.downloads.test.data += [
     "test/data/empty.txt",
