@@ -38,9 +38,9 @@ struct TimeStampInitialization {
     
     
     mozilla::InitializeUptime();
-  };
+  }
 
-  ~TimeStampInitialization() { TimeStamp::Shutdown(); };
+  ~TimeStampInitialization() { TimeStamp::Shutdown(); }
 };
 
 static TimeStampInitialization sInitOnce;
