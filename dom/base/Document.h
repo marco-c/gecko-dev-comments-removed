@@ -3708,13 +3708,6 @@ class Document : public nsINode,
   DOMIntersectionObserver* GetLazyLoadObserver() { return mLazyLoadObserver; }
   DOMIntersectionObserver& EnsureLazyLoadObserver();
 
-  DOMIntersectionObserver* GetContentVisibilityObserver() const {
-    return mContentVisibilityObserver;
-  }
-  DOMIntersectionObserver& EnsureContentVisibilityObserver();
-  void ObserveForContentVisibility(Element&);
-  void UnobserveForContentVisibility(Element&);
-
   ResizeObserver* GetLastRememberedSizeObserver() {
     return mLastRememberedSizeObserver;
   }
@@ -3761,7 +3754,16 @@ class Document : public nsINode,
 
 
   bool HasAnySkippedResizeObservations() const;
-  MOZ_CAN_RUN_SCRIPT void NotifyResizeObservers();
+  
+
+
+  bool HasContentVisibilityAutoElements() const;
+  
+
+
+
+  MOZ_CAN_RUN_SCRIPT void
+  DetermineProximityToViewportAndNotifyResizeObservers();
 
   
   PermissionDelegateHandler* GetPermissionDelegateHandler();
@@ -5118,10 +5120,6 @@ class Document : public nsINode,
   nsTArray<ResizeObserver*> mResizeObservers;
 
   RefPtr<DOMIntersectionObserver> mLazyLoadObserver;
-
-  
-  
-  RefPtr<DOMIntersectionObserver> mContentVisibilityObserver;
 
   
   

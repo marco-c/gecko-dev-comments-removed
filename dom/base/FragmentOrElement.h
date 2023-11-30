@@ -239,9 +239,13 @@ class FragmentOrElement : public nsIContent {
 
 
 
+
+
     Maybe<ContentRelevancy> mContentRelevancy;
 
     
+
+
 
 
 
