@@ -595,20 +595,6 @@ async function browseraction_contextmenu_report_extension_helper() {
 
     ok(!reportExtension.hidden, "Report extension should be visibile");
 
-    
-    
-    const onceAboutAddonsTab = customizing
-      ? BrowserTestUtils.waitForNewTab(gBrowser, "about:addons")
-      : BrowserTestUtils.waitForCondition(() => {
-          if (AbuseReporter.amoFormEnabled) {
-            
-            
-            
-            return true;
-          }
-          return gBrowser.currentURI.spec === "about:addons";
-        }, "Wait an about:addons tab to be opened");
-
     let aboutAddonsBrowser;
 
     if (AbuseReporter.amoFormEnabled) {
@@ -621,28 +607,33 @@ async function browseraction_contextmenu_report_extension_helper() {
         reportURL,
          false,
         
-         true
+         false
       );
       await closeChromeContextMenu(menuId, reportExtension);
-      await onceAboutAddonsTab;
       const reportTab = await promiseReportTab;
       
       
       BrowserTestUtils.removeTab(reportTab);
       is(
         gBrowser.selectedBrowser.currentURI.spec,
-        "about:addons",
-        "Got about:addons tab selected"
+        "about:blank",
+        "Expect about:addons tab to not have been opened (amoFormEnabled=true)"
       );
-      aboutAddonsBrowser = gBrowser.selectedBrowser;
     } else {
+      
+      
+      const onceAboutAddonsTab = customizing
+        ? BrowserTestUtils.waitForNewTab(gBrowser, "about:addons")
+        : BrowserTestUtils.waitForCondition(() => {
+            return gBrowser.currentURI.spec === "about:addons";
+          }, "Wait an about:addons tab to be opened");
       await closeChromeContextMenu(menuId, reportExtension);
       await onceAboutAddonsTab;
       const browser = gBrowser.selectedBrowser;
       is(
         browser.currentURI.spec,
         "about:addons",
-        "Got about:addons tab selected"
+        "Got about:addons tab selected (amoFormEnabled=false)"
       );
       
       
@@ -666,7 +657,7 @@ async function browseraction_contextmenu_report_extension_helper() {
       );
       gBrowser.removeTab(gBrowser.selectedTab);
       await customizationReady;
-    } else {
+    } else if (aboutAddonsBrowser) {
       info("Navigate the about:addons tab to about:blank");
       BrowserTestUtils.startLoadingURIString(aboutAddonsBrowser, "about:blank");
       await BrowserTestUtils.browserLoaded(aboutAddonsBrowser);
