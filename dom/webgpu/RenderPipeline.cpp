@@ -33,14 +33,8 @@ void RenderPipeline::Cleanup() {
     if (bridge && bridge->IsOpen()) {
       bridge->SendRenderPipelineDrop(mId);
       if (mImplicitPipelineLayoutId) {
-        
-        
-        
-        
-        
-
-
-
+        bridge->SendImplicitLayoutDrop(mImplicitPipelineLayoutId,
+                                       mImplicitBindGroupLayoutIds);
       }
     }
   }
