@@ -25,6 +25,9 @@ const Targets = require("resource://devtools/server/actors/targets/index.js");
 const { getAllBrowsingContextsForContext } = ChromeUtils.importESModule(
   "resource://devtools/server/actors/watcher/browsing-context-helpers.sys.mjs"
 );
+const {
+  SESSION_TYPES,
+} = require("resource://devtools/server/actors/watcher/session-context.js");
 
 const TARGET_HELPERS = {};
 loader.lazyRequireGetter(
@@ -106,7 +109,7 @@ exports.WatcherActor = class WatcherActor extends Actor {
   constructor(conn, sessionContext) {
     super(conn, watcherSpec);
     this._sessionContext = sessionContext;
-    if (sessionContext.type == "browser-element") {
+    if (sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
       
       const browsingContext = BrowsingContext.getCurrentTopByBrowserId(
         sessionContext.browserId
@@ -299,6 +302,10 @@ exports.WatcherActor = class WatcherActor extends Actor {
       this.emit("target-available-form", actor);
       
       this._flushIframeTargets(actor.innerWindowId);
+
+      if (this.sessionContext.type == SESSION_TYPES.BROWSER_ELEMENT) {
+        this.updateDomainSessionDataForServiceWorkers(actor.url);
+      }
     } else if (this._currentWindowGlobalTargets.has(actor.topInnerWindowId)) {
       
       this.emit("target-available-form", actor);
@@ -806,5 +813,52 @@ exports.WatcherActor = class WatcherActor extends Actor {
 
   getSessionDataForType(type) {
     return this.sessionData?.[type];
+  }
+
+  
+
+
+
+
+
+
+  async updateDomainSessionDataForServiceWorkers(newTargetUrl) {
+    let host = "";
+    
+    
+    try {
+      host = new URL(newTargetUrl).host;
+    } catch (e) {}
+
+    WatcherRegistry.addOrSetSessionDataEntry(
+      this,
+      "browser-element-host",
+      [host],
+      "set"
+    );
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (
+      !WatcherRegistry.isWatchingTargets(this, Targets.TYPES.SERVICE_WORKER)
+    ) {
+      return;
+    }
+
+    const targetHelperModule = TARGET_HELPERS[Targets.TYPES.SERVICE_WORKER];
+    await targetHelperModule.addOrSetSessionDataEntry({
+      watcher: this,
+      type: "browser-element-host",
+      entries: [host],
+      updateType: "set",
+    });
   }
 };
