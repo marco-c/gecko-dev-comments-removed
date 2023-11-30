@@ -1093,12 +1093,50 @@ bool IsPrefixOfKeyword(const CharT* s, size_t len, const char* keyword) {
   return len == 0;
 }
 
-static constexpr const char* const months_names[] = {
-    "january", "february", "march",     "april",   "may",      "june",
-    "july",    "august",   "september", "october", "november", "december",
+static constexpr const char* const month_prefixes[] = {
+    "jan", "feb", "mar", "apr", "may", "jun",
+    "jul", "aug", "sep", "oct", "nov", "dec",
 };
 
-static constexpr size_t ShortestMonthNameLength = 3;
+
+
+
+
+template <typename CharT>
+bool StartsWithMonthPrefix(const CharT* s, const char* prefix) {
+  MOZ_ASSERT(strlen(prefix) == 3);
+
+  for (size_t i = 0; i < 3; ++i) {
+    MOZ_ASSERT(IsAsciiAlpha(*s));
+    MOZ_ASSERT(IsAsciiLowercaseAlpha(*prefix));
+
+    if (unicode::ToLowerCase(static_cast<Latin1Char>(*s)) != *prefix) {
+      return false;
+    }
+
+    ++s, ++prefix;
+  }
+
+  return true;
+}
+
+template <typename CharT>
+bool IsMonthName(const CharT* s, size_t len, int* mon) {
+  
+  if (len < 3) {
+    return false;
+  }
+
+  for (size_t m = 0; m < std::size(month_prefixes); ++m) {
+    if (StartsWithMonthPrefix(s, month_prefixes[m])) {
+      
+      *mon = m + 1;
+      return true;
+    }
+  }
+
+  return false;
+}
 
 
 
@@ -1130,7 +1168,7 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
   }
   ++i;
 
-  size_t mon = 0;
+  int mon = 0;
   if (*monOut == -1) {
     
     
@@ -1141,20 +1179,7 @@ static bool TryParseDashedDatePrefix(const CharT* s, size_t length,
       }
     }
 
-    if (i - start < ShortestMonthNameLength) {
-      return false;
-    }
-
-    for (size_t m = 0; m < std::size(months_names); ++m) {
-      
-      
-      if (IsPrefixOfKeyword(s + start, i - start, months_names[m])) {
-        
-        mon = m + 1;
-        break;
-      }
-    }
-    if (mon == 0) {
+    if (!IsMonthName(s + start, i - start, &mon)) {
       return false;
     }
 
@@ -1307,19 +1332,6 @@ static constexpr CharsAndAction keywords[] = {
   { "saturday", 0 },
   { "sunday", 0 },
   
-  { "january", 1 },
-  { "february", 2 },
-  { "march", 3 },
-  { "april", 4, },
-  { "may", 5 },
-  { "june", 6 },
-  { "july", 7 },
-  { "august", 8 },
-  { "september", 9 },
-  { "october", 10 },
-  { "november", 11 },
-  { "december", 12 },
-  
   { "gmt", 10000 + 0 },
   { "z", 10000 + 0 },
   { "ut", 10000 + 0 },
@@ -1380,20 +1392,8 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
       }
     }
 
-    if (index - start < ShortestMonthNameLength) {
-      
-      continue;
-    }
-
-    for (size_t m = 0; m < std::size(months_names); m++) {
-      
-      
-      if (IsPrefixOfKeyword(s + start, index - start, months_names[m])) {
-        
-        mon = m + 1;
-        seenMonthName = true;
-        break;
-      }
+    if (IsMonthName(s + start, index - start, &mon)) {
+      seenMonthName = true;
     }
   }
 
@@ -1652,6 +1652,44 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
 
       size_t k = std::size(keywords);
       while (k-- > 0) {
+        
+        
+        
+        
+        int tryMonth;
+        if (IsMonthName(s + start, index - start, &tryMonth)) {
+          if (seenMonthName) {
+            
+            mon = tryMonth;
+            break;
+          }
+
+          seenMonthName = true;
+
+          if (mon < 0) {
+            mon = tryMonth;
+          } else if (mday < 0) {
+            mday = mon;
+            mon = tryMonth;
+          } else if (year < 0) {
+            if (mday > 0) {
+              
+              
+              
+              
+              year = mday;
+              mday = mon;
+            } else {
+              year = mon;
+            }
+            mon = tryMonth;
+          } else {
+            return false;
+          }
+
+          break;
+        }
+
         const CharsAndAction& keyword = keywords[k];
 
         
@@ -1687,43 +1725,6 @@ static bool ParseDate(DateTimeInfo::ForceUTC forceUTC, const CharT* s,
             hour = 0;
           } else if (action == -2 && hour != 12) {
             hour += 12;
-          }
-
-          break;
-        }
-
-        
-        
-        
-        
-        if (action <= 12) {
-          if (seenMonthName) {
-            
-            mon = action;
-            break;
-          }
-
-          seenMonthName = true;
-
-          if (mon < 0) {
-            mon = action;
-          } else if (mday < 0) {
-            mday = mon;
-            mon = action;
-          } else if (year < 0) {
-            if (mday > 0) {
-              
-              
-              
-              
-              year = mday;
-              mday = mon;
-            } else {
-              year = mon;
-            }
-            mon = action;
-          } else {
-            return false;
           }
 
           break;
