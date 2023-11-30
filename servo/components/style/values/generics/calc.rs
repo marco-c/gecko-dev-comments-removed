@@ -503,8 +503,10 @@ impl<L: CalcNodeLeaf> CalcNode<L> {
                 }
                 dividend_unit | divisor_unit
             },
-            CalcNode::Sign(_) => {
+            CalcNode::Sign(ref child) => {
                 
+                
+                let _ = child.unit()?;
                 CalcUnits::empty()
             },
         })

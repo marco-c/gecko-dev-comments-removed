@@ -678,9 +678,7 @@ impl CalcNode {
                 },
                 MathFunction::Exp => {
                     let a = Self::parse_number_argument(context, input)?;
-
                     let number = a.exp();
-
                     Ok(Self::Leaf(Leaf::Number(number)))
                 },
                 MathFunction::Abs => {
@@ -688,7 +686,11 @@ impl CalcNode {
                     Ok(Self::Abs(Box::new(node)))
                 },
                 MathFunction::Sign => {
-                    let node = Self::parse_argument(context, input, CalcUnits::all())?;
+                    
+                    
+                    
+                    let sign_units = allowed_units | (CalcUnits::ALL - CalcUnits::PERCENTAGE);
+                    let node = Self::parse_argument(context, input, sign_units)?;
                     Ok(Self::Sign(Box::new(node)))
                 },
             }
