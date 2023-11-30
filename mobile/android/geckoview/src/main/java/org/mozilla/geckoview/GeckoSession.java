@@ -3036,6 +3036,22 @@ public class GeckoSession {
 
 
   @AnyThread
+  public @NonNull GeckoResult<AnalysisStatusResponse> requestAnalysisStatus(
+      @NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher
+        .queryBundle("GeckoView:RequestAnalysisStatus", bundle)
+        .map(statusBundle -> new AnalysisStatusResponse(statusBundle.getBundle("status")));
+  }
+
+  
+
+
+
+
+
+  @AnyThread
   public @NonNull GeckoResult<String> pollForAnalysisCompleted(@NonNull final String url) {
     final GeckoBundle bundle = new GeckoBundle(1);
     bundle.putString("url", url);
@@ -4123,6 +4139,79 @@ public class GeckoSession {
       @AnyThread
       public @NonNull Recommendation build() {
         return new Recommendation(this);
+      }
+    }
+  }
+
+  
+  @AnyThread
+  public static class AnalysisStatusResponse {
+    
+    @NonNull public final String status;
+
+    
+    @NonNull public final Double progress;
+
+     AnalysisStatusResponse(@NonNull final GeckoBundle message) {
+      status = message.getString("status");
+      progress = message.getDoubleObject("progress", 0.0);
+    }
+
+    
+
+
+
+
+    protected AnalysisStatusResponse(final @NonNull Builder builder) {
+      status = builder.mStatus;
+      progress = builder.mProgress;
+    }
+
+    
+    public static class Builder {
+       String mStatus = "";
+       Double mProgress = 0.0;
+
+      
+
+
+
+
+      public Builder(final @NonNull String status) {
+        status(status);
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull AnalysisStatusResponse.Builder status(final @NonNull String status) {
+        mStatus = status;
+        return this;
+      }
+
+      
+
+
+
+
+
+      @AnyThread
+      public @NonNull AnalysisStatusResponse.Builder progress(final @NonNull Double progress) {
+        mProgress = progress;
+        return this;
+      }
+
+      
+
+
+
+      @AnyThread
+      public @NonNull AnalysisStatusResponse build() {
+        return new AnalysisStatusResponse(this);
       }
     }
   }
