@@ -8,7 +8,7 @@ from ... import create_console_api_message, recursive_compare
 
 @pytest.mark.asyncio
 async def test_unsubscribe_from_one_context(
-    bidi_session, top_context, new_tab, wait_for_event, wait_for_future_safe
+    bidi_session, top_context, new_tab, wait_for_event
 ):
     
     await bidi_session.session.subscribe(
@@ -34,7 +34,7 @@ async def test_unsubscribe_from_one_context(
     
     on_entry_added = wait_for_event("log.entryAdded")
     expected_text = await create_console_api_message(bidi_session, new_tab, "text2")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     assert len(events) == 1
     recursive_compare(

@@ -173,8 +173,8 @@ async def test_margin_minimum_page_size(
 
     
     await assert_pdf_dimensions(value, {
-        "width": expected_width,
-        "height": expected_height,
+       "width": expected_width,
+       "height": expected_height,
     })
 
 

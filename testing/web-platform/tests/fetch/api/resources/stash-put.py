@@ -1,20 +1,5 @@
 from wptserve.utils import isomorphic_decode
 
-def should_be_treated_as_same_origin_request(request):
-  """Tells whether request should be treated as same-origin request."""
-  
-  
-  if request.GET.first(b'mode') == b'no-cors':
-    return True
-
-  
-  
-  
-  assert 'frame_origin ' in request.GET
-  frame_origin = request.GET.first(b'frame_origin').decode('utf-8')
-  host_origin = request.url_parts.scheme + '://' + request.url_parts.netloc
-  return frame_origin == host_origin
-
 def main(request, response):
   if request.method == u'OPTIONS':
     
@@ -23,19 +8,12 @@ def main(request, response):
     response.headers.set(b'Access-Control-Allow-Headers', b'*')
     return 'done'
 
-  if b'disallow_cross_origin' not in request.GET:
-    response.headers.set(b'Access-Control-Allow-Origin', b'*')
-  elif not should_be_treated_as_same_origin_request(request):
-    
-    
-    
-    
-    return 'not stashing for cors request'
-
   url_dir = u'/'.join(request.url_parts.path.split(u'/')[:-1]) + u'/'
   key = request.GET.first(b'key')
   value = request.GET.first(b'value')
   
   request.server.stash.put(key, isomorphic_decode(value), url_dir)
 
+  if b'disallow_origin' not in request.GET:
+    response.headers.set(b'Access-Control-Allow-Origin', b'*')
   return 'done'

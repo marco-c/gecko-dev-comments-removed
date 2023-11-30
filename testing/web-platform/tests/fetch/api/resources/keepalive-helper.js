@@ -18,7 +18,7 @@ function getKeepAliveIframeUrl(token, method, {
   requestOrigin = '',
   sendOn = 'load',
   mode = 'cors',
-  disallowCrossOrigin = false
+  disallowOrigin = false
 } = {}) {
   const https = location.protocol.startsWith('https');
   frameOrigin = frameOrigin === 'DEFAULT' ?
@@ -28,7 +28,7 @@ function getKeepAliveIframeUrl(token, method, {
       `token=${token}&` +
       `method=${method}&` +
       `sendOn=${sendOn}&` +
-      `mode=${mode}&` + (disallowCrossOrigin ? `disallowCrossOrigin=1&` : ``) +
+      `mode=${mode}&` + (disallowOrigin ? `disallowOrigin=1&` : ``) +
       `origin=${requestOrigin}`;
 }
 
@@ -76,101 +76,24 @@ async function queryToken(token) {
 
 
 
-
-
-
-
-
-
-
-
-function assertStashedTokenAsync(
-    testName, token, {expectTokenExist = true} = {}) {
-  async_test(test => {
-    new Promise(resolve => test.step_timeout(resolve, 3000 ))
-        .then(test.step_func(() => {
+function assertStashedTokenAsync(testName, token, {shouldPass = true} = {}) {
+  async_test((test) => {
+    new Promise((resolve) => test.step_timeout(resolve, 3000))
+        .then(() => {
           return queryToken(token);
-        }))
-        .then(test.step_func(result => {
-          if (expectTokenExist) {
-            assert_equals(result, 'on', `token should be on (stashed).`);
-            test.done();
-          } else {
-            assert_not_equals(
-                result, 'on', `token should not be on (stashed).`);
-            return Promise.reject(`Failed to retrieve token from server`);
-          }
-        }))
-        .catch(test.step_func(e => {
-          if (expectTokenExist) {
-            test.unreached_func(e);
+        })
+        .then((result) => {
+          assert_equals(result, 'on');
+        })
+        .then(() => {
+          test.done();
+        })
+        .catch(test.step_func((e) => {
+          if (shouldPass) {
+            assert_unreached(e);
           } else {
             test.done();
           }
         }));
   }, testName);
-}
-
-
-
-
-
-
-
-
-
-
-
-function keepaliveRedirectTest(desc, {
-  origin1 = '',
-  origin2 = '',
-  withPreflight = false,
-  unloadIframe = false,
-  expectFetchSucceed = true,
-} = {}) {
-  desc = `[keepalive][iframe][load] ${desc}` +
-      (unloadIframe ? ' [unload at end]' : '');
-  promise_test(async (test) => {
-    const tokenToStash = token();
-    const iframe = document.createElement('iframe');
-    iframe.src = getKeepAliveAndRedirectIframeUrl(
-        tokenToStash, origin1, origin2, withPreflight);
-    document.body.appendChild(iframe);
-    await iframeLoaded(iframe);
-    assert_equals(await getTokenFromMessage(), tokenToStash);
-    if (unloadIframe) {
-      iframe.remove();
-    }
-
-    assertStashedTokenAsync(
-        desc, tokenToStash, {expectTokenExist: expectFetchSucceed});
-  }, `${desc}; setting up`);
-}
-
-
-
-
-
-function keepaliveRedirectInUnloadTest(desc, {
-  origin1 = '',
-  origin2 = '',
-  url2 = '',
-  withPreflight = false,
-  expectFetchSucceed = true
-} = {}) {
-  desc = `[keepalive][new window][unload] ${desc}`;
-
-  promise_test(async (test) => {
-    const targetUrl =
-        `${HTTP_NOTSAMESITE_ORIGIN}/fetch/api/resources/keepalive-redirect-window.html?` +
-        `origin1=${origin1}&` +
-        `origin2=${origin2}&` +
-        `url2=${url2}&` + (withPreflight ? `with-headers` : ``);
-    const w = window.open(targetUrl);
-    const token = await getTokenFromMessage();
-    w.close();
-
-    assertStashedTokenAsync(
-        desc, token, {expectTokenExist: expectFetchSucceed});
-  }, `${desc}; setting up`);
 }

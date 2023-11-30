@@ -5,7 +5,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_event, wait_for_future_safe):
+async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_event):
     
     await subscribe_events(events=["browsingContext"])
 
@@ -28,7 +28,7 @@ async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_even
     
     on_entry_added = wait_for_event("browsingContext.load")
     await bidi_session.browsing_context.create(type_hint="tab")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     assert len(events) == 3
 
@@ -39,7 +39,7 @@ async def test_subscribe_to_module(bidi_session, subscribe_events, wait_for_even
 
 @pytest.mark.asyncio
 async def test_subscribe_to_one_event_and_then_to_module(
-    bidi_session, subscribe_events, wait_for_event, wait_for_future_safe
+    bidi_session, subscribe_events, wait_for_event
 ):
     
     await subscribe_events(events=["browsingContext.contextCreated"])
@@ -56,7 +56,7 @@ async def test_subscribe_to_one_event_and_then_to_module(
 
     on_entry_added = wait_for_event("browsingContext.contextCreated")
     await bidi_session.browsing_context.create(type_hint="tab")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     assert len(events) == 1
     assert "browsingContext.contextCreated" in events
@@ -77,7 +77,7 @@ async def test_subscribe_to_one_event_and_then_to_module(
     
     on_entry_added = wait_for_event("browsingContext.load")
     await bidi_session.browsing_context.create(type_hint="tab")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     
     assert len(events) == 3
@@ -89,7 +89,7 @@ async def test_subscribe_to_one_event_and_then_to_module(
 
 @pytest.mark.asyncio
 async def test_subscribe_to_module_and_then_to_one_event_again(
-    bidi_session, subscribe_events, wait_for_event, wait_for_future_safe
+    bidi_session, subscribe_events, wait_for_event
 ):
     
     await subscribe_events(events=["browsingContext"])
@@ -113,7 +113,7 @@ async def test_subscribe_to_module_and_then_to_one_event_again(
     
     on_entry_added = wait_for_event("browsingContext.load")
     await bidi_session.browsing_context.create(type_hint="tab")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     assert len(events) == 3
 
@@ -126,7 +126,7 @@ async def test_subscribe_to_module_and_then_to_one_event_again(
     
     on_entry_added = wait_for_event("browsingContext.load")
     await bidi_session.browsing_context.create(type_hint="tab")
-    await wait_for_future_safe(on_entry_added)
+    await on_entry_added
 
     
     assert len(events) == 3

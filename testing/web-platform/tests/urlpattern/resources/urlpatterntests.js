@@ -46,22 +46,6 @@ function runTests(data) {
             baseURL = new URL(entry.pattern[1]);
           }
 
-          const EARLIER_COMPONENTS = {
-            protocol: [],
-            hostname: ["protocol"],
-            port: ["protocol", "hostname"],
-            username: [],
-            password: [],
-            pathname: ["protocol", "hostname", "port"],
-            search: ["protocol", "hostname", "port", "pathname"],
-            hash: ["protocol", "hostname", "port", "pathname", "search"],
-          };
-
-          
-          
-          
-          
-          
           
           
           
@@ -77,10 +61,7 @@ function runTests(data) {
           } else if (typeof entry.pattern[0] === 'object' &&
               entry.pattern[0][component]) {
             expected = entry.pattern[0][component];
-          } else if (typeof entry.pattern[0] === 'object' &&
-              EARLIER_COMPONENTS[component].some(c => c in entry.pattern[0])) {
-            expected = '*';
-          } else if (baseURL && component !== 'username' && component !== 'password') {
+          } else if (baseURL) {
             let base_value = baseURL[component];
             
             

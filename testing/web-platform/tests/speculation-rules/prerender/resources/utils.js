@@ -1,10 +1,7 @@
 const STORE_URL = '/speculation-rules/prerender/resources/key-value-store.py';
 
 
-
-
-
-function startPrerendering(url, rule_extras = {}) {
+function startPrerendering(url) {
   
   
   
@@ -12,8 +9,7 @@ function startPrerendering(url, rule_extras = {}) {
   
   const script = document.createElement('script');
   script.type = 'speculationrules';
-  script.text = JSON.stringify(
-      {prerender: [{source: 'list', urls: [url], ...rule_extras}]});
+  script.text = `{"prerender": [{"source": "list", "urls": ["${url}"] }] }`;
   document.head.appendChild(script);
 }
 
@@ -102,10 +98,7 @@ async function writeValueToServer(key, value) {
 
 
 
-
-
-
-function loadInitiatorPage(rule_extras = {}) {
+function loadInitiatorPage() {
   
   const prerenderChannel = new PrerenderChannel('prerender-channel');
   window.addEventListener('unload', () => {
@@ -128,15 +121,11 @@ function loadInitiatorPage(rule_extras = {}) {
   url.searchParams.append('prerendering', '');
   
   
-  startPrerendering(url.toString(), rule_extras);
+  startPrerendering(url.toString());
 
   
   readyToActivate.then(() => {
-    if (rule_extras['target_hint'] === '_blank') {
-      window.open(url.toString(), '_blank', 'noopener');
-    } else {
-      window.location = url.toString();
-    }
+    window.location = url.toString();
   }).catch(e => {
     const testChannel = new PrerenderChannel('test-channel');
     testChannel.postMessage(

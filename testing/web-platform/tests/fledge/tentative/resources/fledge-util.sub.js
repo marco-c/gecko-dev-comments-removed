@@ -34,10 +34,10 @@ const OTHER_ORIGIN7 = 'https://{{hosts[alt][www]}}:{{ports[https][1]}}';
 
 function createTrackerURL(origin, uuid, dispatch, id = null) {
   let url = new URL(`${origin}${BASE_PATH}resources/request-tracker.py`);
-  let search = `uuid=${uuid}&dispatch=${dispatch}`;
+  url.searchParams.append('uuid', uuid);
+  url.searchParams.append('dispatch', dispatch);
   if (id)
-    search += `&id=${id}`;
-  url.search = search;
+    url.searchParams.append('id', id);
   return url.toString();
 }
 
@@ -66,11 +66,6 @@ function createBidderBeaconURL(uuid, id = '1', origin = window.location.origin) 
 }
 function createSellerBeaconURL(uuid, id = '1', origin = window.location.origin) {
   return createTrackerURL(origin, uuid, `track_post`, `seller_beacon_${id}`);
-}
-
-function createDirectFromSellerSignalsURL(origin = window.location.origin) {
-  let url = new URL(`${origin}${BASE_PATH}resources/direct-from-seller-signals.py`);
-  return url.toString();
 }
 
 
@@ -384,21 +379,14 @@ async function joinGroupAndRunBasicFledgeTestExpectingNoWinner(test, testConfig 
 
 
 
-
-
-
-
-
-
 async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
-    renderURLOverride, auctionConfigOverrides) {
+                             renderURLOverride) {
   let scoreAd = codeToInsert.scoreAd;
   let reportResultSuccessCondition = codeToInsert.reportResultSuccessCondition;
   let reportResult = codeToInsert.reportResult;
   let generateBid = codeToInsert.generateBid;
   let reportWinSuccessCondition = codeToInsert.reportWinSuccessCondition;
   let reportWin = codeToInsert.reportWin;
-  let decisionScriptURLOrigin = codeToInsert.decisionScriptURLOrigin;
 
   if (reportResultSuccessCondition) {
     reportResult = `if (!(${reportResultSuccessCondition})) {
@@ -417,10 +405,6 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
     decisionScriptURLParams.reportResult = reportResult;
   else
     decisionScriptURLParams.error = 'no-reportResult';
-
-  if (decisionScriptURLOrigin !== undefined) {
-    decisionScriptURLParams.origin = decisionScriptURLOrigin;
-  }
 
   if (reportWinSuccessCondition) {
     reportWin = `if (!(${reportWinSuccessCondition})) {
@@ -446,16 +430,9 @@ async function runReportTest(test, uuid, codeToInsert, expectedReportURLs,
     interestGroupOverrides.ads = [{ renderURL: renderURLOverride }]
 
   await joinInterestGroup(test, uuid, interestGroupOverrides);
-
-  if (auctionConfigOverrides === undefined) {
-    auctionConfigOverrides =
-        { decisionLogicURL: createDecisionScriptURL(uuid, decisionScriptURLParams) };
-  } else if (auctionConfigOverrides.decisionLogicURL === undefined) {
-    auctionConfigOverrides.decisionLogicURL =
-        createDecisionScriptURL(uuid, decisionScriptURLParams);
-  }
-
-  await runBasicFledgeAuctionAndNavigate(test, uuid, auctionConfigOverrides);
+  await runBasicFledgeAuctionAndNavigate(
+      test, uuid,
+      { decisionLogicURL: createDecisionScriptURL(uuid, decisionScriptURLParams) });
   await waitForObservedRequests(uuid, expectedReportURLs);
 }
 
@@ -573,67 +550,4 @@ async function joinInterestGroupInTopLevelWindow(
   let topLeveWindow = await createTopLevelWindow(test, origin);
   await runInFrame(test, topLeveWindow,
                    `await joinInterestGroup(test_instance, "${uuid}", ${interestGroup})`);
-}
-
-
-
-async function fetchDirectFromSellerSignals(headers_content, origin) {
-  const response = await fetch(
-      createDirectFromSellerSignalsURL(origin),
-      { adAuctionHeaders: true, headers: headers_content });
-
-  if (!('Negative-Test-Option' in headers_content)) {
-    assert_equals(
-        response.status,
-        200,
-        'Failed to fetch directFromSellerSignals: ' + await response.text());
-  }
-  assert_false(
-      response.headers.has('Ad-Auction-Signals'),
-      'Header "Ad-Auction-Signals" should be hidden from documents.');
-}
-
-
-
-function directFromSellerSignalsValidatorCode(uuid, expectedSellerSignals,
-    expectedAuctionSignals, expectedPerBuyerSignals) {
-  expectedSellerSignals = JSON.stringify(expectedSellerSignals);
-  expectedAuctionSignals = JSON.stringify(expectedAuctionSignals);
-  expectedPerBuyerSignals = JSON.stringify(expectedPerBuyerSignals);
-
-  return {
-    
-    scoreAd:
-      `if (directFromSellerSignals === null ||
-           directFromSellerSignals.sellerSignals !== ${expectedSellerSignals} ||
-           directFromSellerSignals.auctionSignals !== ${expectedAuctionSignals} ||
-           Object.keys(directFromSellerSignals).length != 2) {
-              throw 'Failed to get expected directFromSellerSignals in scoreAd(): ' +
-                JSON.stringify(directFromSellerSignals);
-          }`,
-    reportResultSuccessCondition:
-      `directFromSellerSignals !== null &&
-           directFromSellerSignals.sellerSignals === ${expectedSellerSignals} &&
-           directFromSellerSignals.auctionSignals === ${expectedAuctionSignals} &&
-           Object.keys(directFromSellerSignals).length == 2`,
-    reportResult:
-      `sendReportTo("${createSellerReportURL(uuid)}");`,
-
-    
-    generateBid:
-      `if (directFromSellerSignals === null ||
-           directFromSellerSignals.perBuyerSignals !== ${expectedPerBuyerSignals} ||
-           directFromSellerSignals.auctionSignals !== ${expectedAuctionSignals} ||
-           Object.keys(directFromSellerSignals).length != 2) {
-              throw 'Failed to get expected directFromSellerSignals in generateBid(): ' +
-                JSON.stringify(directFromSellerSignals);
-        }`,
-    reportWinSuccessCondition:
-      `directFromSellerSignals !== null &&
-           directFromSellerSignals.perBuyerSignals === ${expectedPerBuyerSignals} &&
-           directFromSellerSignals.auctionSignals === ${expectedAuctionSignals} &&
-           Object.keys(directFromSellerSignals).length == 2`,
-    reportWin:
-      `sendReportTo("${createBidderReportURL(uuid)}");`,
-  };
 }

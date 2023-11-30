@@ -16,22 +16,14 @@
 async_test(t => {
   
   window.addEventListener("message", t.step_func(e => {
+    
     assert_equals(e.data, "HasAccess for sessionStorage", "Storage Access API should be accessible and return first-party data");
-    window.sessionStorage.setItem("window_event", id);
+    t.done();
   }));
 
   
-  const id = String(Date.now());
+  const id = Date.now();
   window.sessionStorage.setItem("test", id);
-  window.addEventListener("storage", t.step_func(e => {
-    if (e.key == "handle_event") {
-      
-      assert_equals(e.newValue, id);
-      assert_equals(e.storageArea, window.sessionStorage);
-      window.sessionStorage.clear();
-      t.done();
-    }
-  }));
 
   
   let iframe = document.createElement("iframe");

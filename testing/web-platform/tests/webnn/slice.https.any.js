@@ -7,4 +7,13 @@
 
 
 
+const buildSlice = (operationName, builder, resources) => {
+  
+  const namedOutputOperand = {};
+  const inputOperand = createSingleInputOperand(builder, resources);
+  
+  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.starts, resources.sizes);
+  return namedOutputOperand;
+};
+
 testWebNNOperation('slice', buildSlice);

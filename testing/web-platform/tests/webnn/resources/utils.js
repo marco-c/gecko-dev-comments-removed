@@ -465,7 +465,7 @@ const checkResults = (operationName, namedOutputOperands, outputs, resources) =>
 
 const createConstantOperand = (builder, resources) => {
   const bufferView = new TypedArrayDict[resources.type](resources.data);
-  return builder.constant({dataType: resources.type, type: resources.type, dimensions: resources.shape}, bufferView);
+  return builder.constant({type: resources.type, dimensions: resources.shape}, bufferView);
 };
 
 
@@ -478,7 +478,7 @@ const createConstantOperand = (builder, resources) => {
 const createSingleInputOperand = (builder, resources, inputOperandName) => {
   inputOperandName = inputOperandName ? inputOperandName : Object.keys(resources.inputs)[0];
   const inputResources = resources.inputs[inputOperandName];
-  return builder.input(inputOperandName, {dataType: inputResources.type, type: inputResources.type, dimensions: inputResources.shape});
+  return builder.input(inputOperandName, {type: inputResources.type, dimensions: inputResources.shape});
 };
 
 
@@ -525,135 +525,13 @@ const buildOperationWithSingleInput = (operationName, builder, resources) => {
 
 
 
-const buildOperationWithTwoInputs = (operationName, builder, resources) => {
+const buildOperationWithTwoInputs= (operationName, builder, resources) => {
   
   const namedOutputOperand = {};
   const [inputOperandA, inputOperandB] = createMultiInputOperands(builder, resources);
   const outputOperand = resources.options ?
       builder[operationName](inputOperandA, inputOperandB, resources.options) : builder[operationName](inputOperandA, inputOperandB);
   namedOutputOperand[resources.expected.name] = outputOperand;
-  return namedOutputOperand;
-};
-
-const buildBatchNorm = (operationName, builder, resources) => {
-  
-  
-  const namedOutputOperand = {};
-  const [inputOperand, meanOperand, varianceOperand] = createMultiInputOperands(builder, resources);
-  const batchNormOptions = {...resources.options};
-  if (batchNormOptions.scale) {
-    batchNormOptions.scale = createConstantOperand(builder, batchNormOptions.scale);
-  }
-  if (batchNormOptions.bias) {
-    batchNormOptions.bias = createConstantOperand(builder, batchNormOptions.bias);
-  }
-  if (batchNormOptions.activation) {
-    batchNormOptions.activation = builder[batchNormOptions.activation]();
-  }
-  
-  namedOutputOperand[resources.expected.name] =
-      builder[operationName](inputOperand, meanOperand, varianceOperand, batchNormOptions);
-  return namedOutputOperand;
-};
-
-const buildConcat = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperands = [];
-  for (let input of resources.inputs) {
-    inputOperands.push(builder.input(input.name, {dataType: input.type, type: input.type, dimensions: input.shape}));
-  }
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperands, resources.axis);
-  return namedOutputOperand;
-};
-
-const buildConvTranspose2d = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const [inputOperand, filterOperand] = createMultiInputOperands(builder, resources);
-  let convTranspose2dOptions = {...resources.options};
-  if (convTranspose2dOptions.bias) {
-    convTranspose2dOptions.bias = createConstantOperand(builder, convTranspose2dOptions.bias);
-  }
-  if (convTranspose2dOptions.activation) {
-    convTranspose2dOptions.activation = builder[convTranspose2dOptions.activation]();
-  }
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, filterOperand, convTranspose2dOptions);
-  return namedOutputOperand;
-};
-
-const buildConv2d = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const [inputOperand, filterOperand] = createMultiInputOperands(builder, resources);
-  let conv2dOptions = {...resources.options};
-  if (conv2dOptions.bias) {
-    conv2dOptions.bias = createConstantOperand(builder, conv2dOptions.bias);
-  }
-  if (conv2dOptions.activation) {
-    conv2dOptions.activation = builder[conv2dOptions.activation]();
-  }
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, filterOperand, conv2dOptions);
-  return namedOutputOperand;
-};
-
-const buildGemm = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const [inputOperandA, inputOperandB] = createMultiInputOperands(builder, resources);
-  let gemmOptions = {...resources.options};
-  if (gemmOptions.c) {
-    if (gemmOptions.c.shape) {
-      gemmOptions.c = createConstantOperand(builder, gemmOptions.c);
-    } else {
-      
-      
-      gemmOptions.c = builder.constant(gemmOptions.c);
-    }
-  }
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperandA, inputOperandB, gemmOptions);
-  return namedOutputOperand;
-};
-
-const buildPad = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.beginningPadding, resources.endingPadding, resources.options);
-  return namedOutputOperand;
-};
-
-const buildReshape = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.newShape);
-  return namedOutputOperand;
-};
-
-const buildSlice = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.starts, resources.sizes);
-  return namedOutputOperand;
-};
-
-const buildSplit = (operationName, builder, resources) => {
-  
-  
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  const outputOperands = builder[operationName](inputOperand, resources.splits, resources.options);
-  resources.expected.forEach((resourceDict, index) => {
-    namedOutputOperand[resourceDict.name] = outputOperands[index];
-  });
   return namedOutputOperand;
 };
 
@@ -739,8 +617,7 @@ const run = async (operationName, context, builder, resources, buildFunc) => {
 
 
 
-
-const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
+const testWebNNOperation = (operationName, buildFunc) => {
   let operationNameArray;
   if (typeof operationName === 'string') {
     operationNameArray = [operationName];
@@ -760,7 +637,7 @@ const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
       operationNameArray.forEach((subOperationName) => {
         const tests = loadTests(subOperationName);
         setup(() => {
-          context = navigator.ml.createContextSync({deviceType});
+          context = navigator.ml.createContextSync();
           builder = new MLGraphBuilder(context);
         });
         for (const subTest of tests) {
@@ -774,7 +651,7 @@ const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
       operationNameArray.forEach((subOperationName) => {
         const tests = loadTests(subOperationName);
         promise_setup(async () => {
-          context = await navigator.ml.createContext({deviceType});
+          context = await navigator.ml.createContext();
           builder = new MLGraphBuilder(context);
         });
         for (const subTest of tests) {

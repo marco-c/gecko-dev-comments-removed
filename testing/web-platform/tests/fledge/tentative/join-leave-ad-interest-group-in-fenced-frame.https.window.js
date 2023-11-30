@@ -365,5 +365,6 @@ subsetTest(promise_test, async test => {
       [createSellerReportURL(uuid), createSuccessURL(uuid)]);
 
   
-  await runBasicFledgeTestExpectingNoWinner(test, uuid);
+  
+  await runBasicFledgeTestExpectingWinner(test, uuid);
 }, 'leaveAdInterestGroup() in component ad fenced frame, no parameters.');
