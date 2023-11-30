@@ -492,7 +492,7 @@ class GCMarker {
   
   
   void markEphemeronEdges(gc::EphemeronEdgeVector& edges,
-                          gc::CellColor srcColor);
+                          gc::MarkColor srcColor);
   friend class JS::Zone;
 
 #ifdef DEBUG

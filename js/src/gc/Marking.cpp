@@ -733,7 +733,7 @@ struct ImplicitEdgeHolderType<BaseScript*> {
 };
 
 void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
-                                  gc::CellColor srcColor) {
+                                  gc::MarkColor srcColor) {
   
   MOZ_ASSERT_IF(CurrentThreadIsPerformingGC(),
                 state == MarkingState::WeakMarking);
@@ -741,9 +741,9 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
   DebugOnly<size_t> initialLength = edges.length();
 
   for (auto& edge : edges) {
-    CellColor targetColor = std::min(srcColor, edge.color);
-    MOZ_ASSERT(CellColor(markColor()) >= targetColor);
-    if (AsMarkColor(targetColor) == markColor()) {
+    MarkColor targetColor = std::min(srcColor, MarkColor(edge.color));
+    MOZ_ASSERT(markColor() >= targetColor);
+    if (targetColor == markColor()) {
       ApplyGCThingTyped(edge.target, edge.target->getTraceKind(),
                         [this](auto t) {
                           markAndTraverse<MarkingOptions::MarkImplicitEdges>(t);
@@ -760,7 +760,7 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
   
   
   
-  if (srcColor == CellColor::Black && markColor() == MarkColor::Black) {
+  if (srcColor == MarkColor::Black && markColor() == MarkColor::Black) {
     edges.eraseIf([](auto& edge) { return edge.color == CellColor::Black; });
   }
 }
@@ -804,7 +804,7 @@ void GCMarker::severWeakDelegate(JSObject* key, JSObject* delegate) {
 
   EphemeronEdgeVector& edges = p->value;
   MOZ_ASSERT(markColor() == MarkColor::Black);
-  markEphemeronEdges(edges, CellColor::Black);
+  markEphemeronEdges(edges, MarkColor::Black);
 }
 
 
@@ -840,7 +840,7 @@ void GCMarker::restoreWeakDelegate(JSObject* key, JSObject* delegate) {
   
   EphemeronEdgeVector& edges = p->value;
   MOZ_ASSERT(markColor() == MarkColor::Black);
-  markEphemeronEdges(edges, CellColor::Black);
+  markEphemeronEdges(edges, MarkColor::Black);
 }
 
 template <typename T>
@@ -864,7 +864,7 @@ void GCMarker::markImplicitEdgesHelper(T markedThing) {
   AutoClearTracingSource acts(tracer());
 
   CellColor thingColor = gc::detail::GetEffectiveColor(this, markedThing);
-  markEphemeronEdges(edges, thingColor);
+  markEphemeronEdges(edges, AsMarkColor(thingColor));
 }
 
 template <>
@@ -2197,7 +2197,7 @@ IncrementalProgress JS::Zone::enterWeakMarkingMode(GCMarker* marker,
 
     if (IsMarked(srcColor) && edges.length() > 0) {
       uint32_t steps = edges.length();
-      marker->markEphemeronEdges(edges, srcColor);
+      marker->markEphemeronEdges(edges, AsMarkColor(srcColor));
       budget.step(steps);
       if (budget.isOverBudget()) {
         return NotFinished;
