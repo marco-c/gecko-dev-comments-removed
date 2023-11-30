@@ -88,41 +88,29 @@ bool ParallelMarker::markOneColor(MarkColor color, SliceBudget& sliceBudget) {
     }
   }
 
-  {
-    AutoLockGC lock(gc);
+  AutoLockHelperThreadState lock;
 
-    activeTasks = 0;
-    for (size_t i = 0; i < workerCount(); i++) {
-      ParallelMarkTask& task = *tasks[i];
-      if (task.hasWork()) {
-        incActiveTasks(&task, lock);
-      }
+  
+  MOZ_RELEASE_ASSERT(HelperThreadState().getGCParallelThreadCount(lock) >=
+                     workerCount());
+
+  MOZ_ASSERT(activeTasks == 0);
+  for (size_t i = 0; i < workerCount(); i++) {
+    ParallelMarkTask& task = *tasks[i];
+    if (task.hasWork()) {
+      incActiveTasks(&task, lock);
     }
+    gc->startTask(task, lock);
   }
 
-  {
-    AutoLockHelperThreadState lock;
-
-    
-    MOZ_RELEASE_ASSERT(HelperThreadState().getGCParallelThreadCount(lock) >=
-                       workerCount());
-
-    for (size_t i = 0; i < workerCount(); i++) {
-      gc->startTask(*tasks[i], lock);
-    }
-
-    for (size_t i = 0; i < workerCount(); i++) {
-      gc->joinTask(*tasks[i], lock);
-    }
+  for (size_t i = 0; i < workerCount(); i++) {
+    gc->joinTask(*tasks[i], lock);
   }
 
 #ifdef DEBUG
-  {
-    AutoLockGC lock(gc);
-    MOZ_ASSERT(waitingTasks.ref().isEmpty());
-    MOZ_ASSERT(waitingTaskCount == 0);
-    MOZ_ASSERT(activeTasks == 0);
-  }
+  MOZ_ASSERT(waitingTasks.ref().isEmpty());
+  MOZ_ASSERT(waitingTaskCount == 0);
+  MOZ_ASSERT(activeTasks == 0);
 #endif
 
   return !hasWork(color);
@@ -172,16 +160,6 @@ void ParallelMarkTask::recordDuration() {
 }
 
 void ParallelMarkTask::run(AutoLockHelperThreadState& lock) {
-  AutoUnlockHelperThreadState unlock(lock);
-
-  AutoLockGC gcLock(pm->gc);
-
-  markOrRequestWork(gcLock);
-
-  MOZ_ASSERT(!isWaiting);
-}
-
-void ParallelMarkTask::markOrRequestWork(AutoLockGC& lock) {
   for (;;) {
     if (hasWork()) {
       if (!tryMarking(lock)) {
@@ -193,16 +171,18 @@ void ParallelMarkTask::markOrRequestWork(AutoLockGC& lock) {
       }
     }
   }
+
+  MOZ_ASSERT(!isWaiting);
 }
 
-bool ParallelMarkTask::tryMarking(AutoLockGC& lock) {
+bool ParallelMarkTask::tryMarking(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(hasWork());
   MOZ_ASSERT(marker->isParallelMarking());
 
   
   bool finished;
   {
-    AutoUnlockGC unlock(lock);
+    AutoUnlockHelperThreadState unlock(lock);
 
     AutoAddTimeDuration time(markTime.ref());
     finished = marker->markCurrentColorInParallel(budget);
@@ -214,7 +194,7 @@ bool ParallelMarkTask::tryMarking(AutoLockGC& lock) {
   return finished;
 }
 
-bool ParallelMarkTask::requestWork(AutoLockGC& lock) {
+bool ParallelMarkTask::requestWork(AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(!hasWork());
 
   if (!pm->hasActiveTasks(lock)) {
@@ -233,7 +213,7 @@ bool ParallelMarkTask::requestWork(AutoLockGC& lock) {
   return true;
 }
 
-void ParallelMarkTask::waitUntilResumed(AutoLockGC& lock) {
+void ParallelMarkTask::waitUntilResumed(AutoLockHelperThreadState& lock) {
   GeckoProfilerRuntime& profiler = gc->rt->geckoProfiler();
   if (profiler.enabled()) {
     profiler.markEvent("Parallel marking wait start", "");
@@ -249,7 +229,7 @@ void ParallelMarkTask::waitUntilResumed(AutoLockGC& lock) {
 
   do {
     MOZ_ASSERT(pm->hasActiveTasks(lock));
-    resumed.wait(lock.guard());
+    resumed.wait(lock);
   } while (isWaiting);
 
   MOZ_ASSERT(!pm->isTaskInWaitingList(this, lock));
@@ -261,7 +241,7 @@ void ParallelMarkTask::waitUntilResumed(AutoLockGC& lock) {
 
 void ParallelMarkTask::resume() {
   {
-    AutoLockGC lock(gc);
+    AutoLockHelperThreadState lock;
     MOZ_ASSERT(isWaiting);
 
     isWaiting = false;
@@ -276,7 +256,7 @@ void ParallelMarkTask::resume() {
   resumed.notify_all();
 }
 
-void ParallelMarkTask::resumeOnFinish(const AutoLockGC& lock) {
+void ParallelMarkTask::resumeOnFinish(const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(isWaiting);
   MOZ_ASSERT(!hasWork());
 
@@ -284,8 +264,8 @@ void ParallelMarkTask::resumeOnFinish(const AutoLockGC& lock) {
   resumed.notify_all();
 }
 
-void ParallelMarker::addTaskToWaitingList(ParallelMarkTask* task,
-                                          const AutoLockGC& lock) {
+void ParallelMarker::addTaskToWaitingList(
+    ParallelMarkTask* task, const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(!task->hasWork());
   MOZ_ASSERT(hasActiveTasks(lock));
   MOZ_ASSERT(!isTaskInWaitingList(task, lock));
@@ -296,8 +276,8 @@ void ParallelMarker::addTaskToWaitingList(ParallelMarkTask* task,
 }
 
 #ifdef DEBUG
-bool ParallelMarker::isTaskInWaitingList(const ParallelMarkTask* task,
-                                         const AutoLockGC& lock) const {
+bool ParallelMarker::isTaskInWaitingList(
+    const ParallelMarkTask* task, const AutoLockHelperThreadState& lock) const {
   
   return const_cast<ParallelMarkTaskList&>(waitingTasks.ref())
       .ElementProbablyInList(const_cast<ParallelMarkTask*>(task));
@@ -305,7 +285,7 @@ bool ParallelMarker::isTaskInWaitingList(const ParallelMarkTask* task,
 #endif
 
 void ParallelMarker::incActiveTasks(ParallelMarkTask* task,
-                                    const AutoLockGC& lock) {
+                                    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(task->hasWork());
   MOZ_ASSERT(activeTasks < workerCount());
 
@@ -313,7 +293,7 @@ void ParallelMarker::incActiveTasks(ParallelMarkTask* task,
 }
 
 void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
-                                    const AutoLockGC& lock) {
+                                    const AutoLockHelperThreadState& lock) {
   MOZ_ASSERT(activeTasks != 0);
 
   activeTasks--;
@@ -329,13 +309,13 @@ void ParallelMarker::decActiveTasks(ParallelMarkTask* task,
 }
 
 void ParallelMarker::donateWorkFrom(GCMarker* src) {
-  if (!gc->tryLockGC()) {
+  if (!gHelperThreadLock.tryLock()) {
     return;
   }
 
   
   if (waitingTaskCount == 0) {
-    gc->unlockGC();
+    gHelperThreadLock.unlock();
     return;
   }
 
@@ -346,7 +326,7 @@ void ParallelMarker::donateWorkFrom(GCMarker* src) {
   
   MOZ_ASSERT(waitingTask->isWaiting);
 
-  gc->unlockGC();
+  gHelperThreadLock.unlock();
 
   
   MOZ_ASSERT(!waitingTask->hasWork());
