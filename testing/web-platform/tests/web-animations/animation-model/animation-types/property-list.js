@@ -1435,6 +1435,12 @@ const gCSSProperties2 = {
     types: [
     ]
   },
+  'view-transition-name': {
+    
+    types: [
+      { type: 'discrete', options: [ [ 'none', 'header' ] ] },
+    ]
+  },
   'visibility': {
     
     types: [ 'visibility' ]
