@@ -21,6 +21,7 @@ use self::aggregate_device::*;
 use self::auto_release::*;
 use self::buffer_manager::*;
 use self::coreaudio_sys_utils::aggregate_device::*;
+use self::coreaudio_sys_utils::audio_device_extensions::*;
 use self::coreaudio_sys_utils::audio_object::*;
 use self::coreaudio_sys_utils::audio_unit::*;
 use self::coreaudio_sys_utils::cf_mutable_dict::*;
@@ -3245,6 +3246,24 @@ impl<'ctx> CoreStreamData<'ctx> {
                 stream.output_device_latency_frames.fetch_add(
                     (unit_s * self.output_dev_desc.mSampleRate) as u32,
                     Ordering::SeqCst,
+                );
+            }
+        }
+
+        if using_voice_processing_unit {
+            
+            
+            
+            
+            
+            
+            let r = audio_device_duck(self.output_device.id, 1.0, ptr::null_mut(), 0.5);
+            if r != NO_ERR {
+                cubeb_log!(
+                    "({:p}) Failed to undo ducking of voiceprocessing on output device {}. Proceeding... Error: {}",
+                    self.stm_ptr,
+                    self.output_device.id,
+                    r
                 );
             }
         }
