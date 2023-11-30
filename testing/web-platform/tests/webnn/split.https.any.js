@@ -7,18 +7,4 @@
 
 
 
-const buildSplit = (operationName, builder, resources) => {
-  
-  
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  const outputOperands = builder[operationName](inputOperand, resources.splits, resources.options);
-  resources.expected.forEach((resourceDict, index) => {
-    namedOutputOperand[resourceDict.name] = outputOperands[index];
-  });
-  return namedOutputOperand;
-};
-
 testWebNNOperation('split', buildSplit);

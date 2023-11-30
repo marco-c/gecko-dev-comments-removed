@@ -1,0 +1,24 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(
+  [
+    'reduceL1',
+    'reduceL2',
+    'reduceLogSum',
+    'reduceLogSumExp',
+    'reduceMax',
+    'reduceMean',
+    'reduceMin',
+    'reduceProduct',
+    'reduceSum',
+    'reduceSumSquare',
+  ],
+  buildOperationWithSingleInput, 'gpu'
+);

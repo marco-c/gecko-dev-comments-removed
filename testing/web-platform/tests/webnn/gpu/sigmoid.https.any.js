@@ -1,0 +1,10 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation('sigmoid', buildOperationWithSingleInput, 'gpu');

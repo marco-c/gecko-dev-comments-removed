@@ -7,14 +7,5 @@
 
 
 
-const buildReshape = (operationName, builder, resources) => {
-  
-  const namedOutputOperand = {};
-  const inputOperand = createSingleInputOperand(builder, resources);
-  
-  namedOutputOperand[resources.expected.name] = builder[operationName](inputOperand, resources.newShape);
-  return namedOutputOperand;
-};
-
 testWebNNOperation('reshape', buildReshape);
 
