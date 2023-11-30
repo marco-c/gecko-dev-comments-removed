@@ -16,7 +16,6 @@
 
 
 
-
 let nextId = 0;
 this.rpc = function (method, ...params) {
   return new Promise((resolve, reject) => {
