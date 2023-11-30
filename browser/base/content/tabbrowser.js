@@ -5143,8 +5143,6 @@
       if (!createLazyBrowser) {
         
         newBrowser.stop();
-        
-        newBrowser.docShell;
       }
 
       if (!this.swapBrowsersAndCloseOther(newTab, aTab)) {

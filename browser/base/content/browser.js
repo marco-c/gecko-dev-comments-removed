@@ -1757,8 +1757,6 @@ var gBrowserInit = {
 
       
       gBrowser.stop();
-      
-      gBrowser.docShell;
 
       
       gURLBar.removeAttribute("focused");
