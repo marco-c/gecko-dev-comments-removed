@@ -2554,13 +2554,6 @@ bool DebugAPI::onTrap(JSContext* cx) {
 
       
       
-      
-      
-      
-      
-      
-      
-      
       Debugger* dbg = bp->debugger;
       if (dbg->debuggees.has(global)) {
         EnterDebuggeeNoExecute nx(cx, *dbg, adjqi);
