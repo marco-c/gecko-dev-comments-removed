@@ -111,11 +111,33 @@ struct TimingFrameInfo {
 
 
 
-
-
 struct VideoPlayoutDelay {
+  
+  static constexpr TimeDelta kMax = TimeDelta::Millis(10) * 0xFFF;
+
+  
+  
+  static VideoPlayoutDelay Minimal() {
+    return VideoPlayoutDelay(TimeDelta::Zero(), TimeDelta::Zero());
+  }
+
   VideoPlayoutDelay() = default;
   VideoPlayoutDelay(int min_ms, int max_ms) : min_ms(min_ms), max_ms(max_ms) {}
+  VideoPlayoutDelay(TimeDelta min, TimeDelta max);
+
+  bool Set(TimeDelta min, TimeDelta max);
+
+  TimeDelta min() const { return TimeDelta::Millis(min_ms); }
+  TimeDelta max() const { return TimeDelta::Millis(max_ms); }
+
+  
+  
+  bool Valid() const {
+    return TimeDelta::Zero() <= min() && min() <= max() && max() <= kMax;
+  }
+
+  
+  
   int min_ms = -1;
   int max_ms = -1;
 

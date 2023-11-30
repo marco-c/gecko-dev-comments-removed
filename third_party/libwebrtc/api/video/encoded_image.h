@@ -138,6 +138,22 @@ class RTC_EXPORT EncodedImage {
     color_space_ = color_space;
   }
 
+  absl::optional<VideoPlayoutDelay> PlayoutDelay() const {
+    if (playout_delay_.Valid()) {
+      return playout_delay_;
+    }
+    return absl::nullopt;
+  }
+
+  void SetPlayoutDelay(absl::optional<VideoPlayoutDelay> playout_delay) {
+    if (playout_delay.has_value()) {
+      playout_delay_ = *playout_delay;
+    } else {
+      playout_delay_.min_ms = -1;
+      playout_delay_.max_ms = -1;
+    }
+  }
+
   
   
   absl::optional<uint16_t> VideoFrameTrackingId() const {
@@ -204,6 +220,8 @@ class RTC_EXPORT EncodedImage {
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   int qp_ = -1;  
 
+  
+  
   
   
   
