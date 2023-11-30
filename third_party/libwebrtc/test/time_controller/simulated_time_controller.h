@@ -141,6 +141,11 @@ class GlobalSimulatedTimeController : public TimeController {
   
   
   
+  void SkipForwardBy(TimeDelta duration);
+
+  
+  
+  
   
   void Register(sim_time_impl::SimulatedSequenceRunner* runner);
   
