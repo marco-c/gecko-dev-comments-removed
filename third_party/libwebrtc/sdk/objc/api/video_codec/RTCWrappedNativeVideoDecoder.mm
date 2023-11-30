@@ -46,6 +46,7 @@
   return 0;
 }
 
+
 - (NSInteger)decode:(RTC_OBJC_TYPE(RTCEncodedImage) *)encodedImage
         missingFrames:(BOOL)missingFrames
     codecSpecificInfo:(nullable id<RTC_OBJC_TYPE(RTCCodecSpecificInfo)>)info

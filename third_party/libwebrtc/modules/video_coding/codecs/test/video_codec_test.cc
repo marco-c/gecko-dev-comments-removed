@@ -355,8 +355,7 @@ class TestDecoder : public VideoCodecTester::Decoder,
       callbacks_[frame.Timestamp()] = std::move(callback);
     }
 
-    decoder_->Decode(frame, false,
-                     0);
+    decoder_->Decode(frame, 0);
   }
 
   void Flush() override {

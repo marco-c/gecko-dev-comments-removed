@@ -37,7 +37,6 @@
 
 namespace webrtc {
 namespace {
-constexpr int kVp8ErrorPropagationTh = 30;
 
 
 
@@ -122,7 +121,6 @@ LibvpxVp8Decoder::LibvpxVp8Decoder()
       decode_complete_callback_(NULL),
       inited_(false),
       decoder_(NULL),
-      propagation_cnt_(-1),
       last_frame_width_(0),
       last_frame_height_(0),
       key_frame_required_(true),
@@ -156,7 +154,6 @@ bool LibvpxVp8Decoder::Configure(const Settings& settings) {
     return false;
   }
 
-  propagation_cnt_ = -1;
   inited_ = true;
 
   
@@ -170,7 +167,12 @@ bool LibvpxVp8Decoder::Configure(const Settings& settings) {
 }
 
 int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
-                             bool missing_frames,
+                             int64_t render_time_ms) {
+  return Decode(input_image, false, render_time_ms);
+}
+
+int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
+                             bool ,
                              int64_t ) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -179,9 +181,6 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (input_image.data() == NULL && input_image.size() > 0) {
-    
-    if (propagation_cnt_ > 0)
-      propagation_cnt_ = 0;
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -234,34 +233,6 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
       return WEBRTC_VIDEO_CODEC_ERROR;
     key_frame_required_ = false;
   }
-  
-  
-  if (input_image._frameType == VideoFrameType::kVideoFrameKey) {
-    propagation_cnt_ = -1;
-    
-  } else if (missing_frames && propagation_cnt_ == -1) {
-    propagation_cnt_ = 0;
-  }
-  if (propagation_cnt_ >= 0) {
-    propagation_cnt_++;
-  }
-
-  vpx_codec_iter_t iter = NULL;
-  vpx_image_t* img;
-  int ret;
-
-  
-  if (missing_frames) {
-    
-    if (vpx_codec_decode(decoder_, NULL, 0, 0, kDecodeDeadlineRealtime)) {
-      
-      if (propagation_cnt_ > 0)
-        propagation_cnt_ = 0;
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-    img = vpx_codec_get_frame(decoder_, &iter);
-    iter = NULL;
-  }
 
   const uint8_t* buffer = input_image.data();
   if (input_image.size() == 0) {
@@ -269,30 +240,19 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   }
   if (vpx_codec_decode(decoder_, buffer, input_image.size(), 0,
                        kDecodeDeadlineRealtime)) {
-    
-    if (propagation_cnt_ > 0) {
-      propagation_cnt_ = 0;
-    }
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
-  img = vpx_codec_get_frame(decoder_, &iter);
+  vpx_codec_iter_t iter = NULL;
+  vpx_image_t* img = vpx_codec_get_frame(decoder_, &iter);
   int qp;
   vpx_codec_err_t vpx_ret =
       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
-  ret = ReturnFrame(img, input_image.Timestamp(), qp, input_image.ColorSpace());
+  int ret =
+      ReturnFrame(img, input_image.Timestamp(), qp, input_image.ColorSpace());
   if (ret != 0) {
-    
-    if (ret < 0 && propagation_cnt_ > 0)
-      propagation_cnt_ = 0;
     return ret;
-  }
-  
-  if (propagation_cnt_ > kVp8ErrorPropagationTh) {
-    
-    propagation_cnt_ = 0;
-    return WEBRTC_VIDEO_CODEC_ERROR;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
