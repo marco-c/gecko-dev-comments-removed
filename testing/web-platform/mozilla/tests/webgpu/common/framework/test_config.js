@@ -2,10 +2,31 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export const globalTestConfig = {
   maxSubcasesInFlight: 500,
   testHeartbeatCallback: () => {},
   noRaceWithRejectOnTimeout: false,
   unrollConstEvalLoops: false,
-  compatibility: false,
+  compatibility: false
 };

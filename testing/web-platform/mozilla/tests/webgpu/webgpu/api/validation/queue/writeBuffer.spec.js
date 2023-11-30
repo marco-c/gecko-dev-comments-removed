@@ -1,12 +1,15 @@
 
 
- export const description = `
+export const description = `
 Tests writeBuffer validation.
 
 Note: buffer map state is tested in ./buffer_mapped.spec.ts.
-`;
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
-import { kTypedArrayBufferViewConstructors } from '../../../../common/util/util.js';
+`;import { makeTestGroup } from '../../../../common/framework/test_group.js';
+import {
+  kTypedArrayBufferViewConstructors } from
+
+
+'../../../../common/util/util.js';
 import { Float16Array } from '../../../../external/petamoriken/float16/float16.js';
 import { GPUConst } from '../../../constants.js';
 import { kResourceStates } from '../../../gpu_test.js';
@@ -14,31 +17,31 @@ import { ValidationTest } from '../validation_test.js';
 
 export const g = makeTestGroup(ValidationTest);
 
-g.test('buffer_state')
-  .desc(
-    `
+g.test('buffer_state').
+desc(
+  `
   Test that the buffer used for GPUQueue.writeBuffer() must be valid. Tests calling writeBuffer
   with {valid, invalid, destroyed} buffer.
   `
-  )
-  .params(u => u.combine('bufferState', kResourceStates))
-  .fn(t => {
-    const { bufferState } = t.params;
-    const buffer = t.createBufferWithState(bufferState, {
-      size: 16,
-      usage: GPUBufferUsage.COPY_DST,
-    });
-    const data = new Uint8Array(16);
-    const _valid = bufferState === 'valid';
-
-    t.expectValidationError(() => {
-      t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
-    }, !_valid);
+).
+params((u) => u.combine('bufferState', kResourceStates)).
+fn((t) => {
+  const { bufferState } = t.params;
+  const buffer = t.createBufferWithState(bufferState, {
+    size: 16,
+    usage: GPUBufferUsage.COPY_DST
   });
+  const data = new Uint8Array(16);
+  const _valid = bufferState === 'valid';
 
-g.test('ranges')
-  .desc(
-    `
+  t.expectValidationError(() => {
+    t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
+  }, !_valid);
+});
+
+g.test('ranges').
+desc(
+  `
   Tests that the data ranges given to GPUQueue.writeBuffer() are properly validated. Tests calling
   writeBuffer with both TypedArrays and ArrayBuffers and checks that the data offset and size is
   interpreted correctly for both.
@@ -50,140 +53,148 @@ g.test('ranges')
     - Fits fully within the destination buffer.
     - Has a byte size which is a multiple of 4.
   `
-  )
-  .fn(t => {
-    const queue = t.device.queue;
+).
+fn((t) => {
+  const queue = t.device.queue;
 
-    function runTest(arrayType, testBuffer) {
-      const elementSize = arrayType.BYTES_PER_ELEMENT;
-      const bufferSize = 16 * elementSize;
-      const buffer = t.device.createBuffer({
-        size: bufferSize,
-        usage: GPUBufferUsage.COPY_DST,
-      });
-      const arraySm = testBuffer ? new arrayType(8).buffer : new arrayType(8);
-      const arrayMd = testBuffer ? new arrayType(16).buffer : new arrayType(16);
-      const arrayLg = testBuffer ? new arrayType(32).buffer : new arrayType(32);
+  function runTest(arrayType, testBuffer) {
+    const elementSize = arrayType.BYTES_PER_ELEMENT;
+    const bufferSize = 16 * elementSize;
+    const buffer = t.device.createBuffer({
+      size: bufferSize,
+      usage: GPUBufferUsage.COPY_DST
+    });
+    const arraySm = testBuffer ?
+    new arrayType(8).buffer :
+    new arrayType(8);
+    const arrayMd = testBuffer ?
+    new arrayType(16).buffer :
+    new arrayType(16);
+    const arrayLg = testBuffer ?
+    new arrayType(32).buffer :
+    new arrayType(32);
 
-      if (elementSize < 4) {
-        const array15 = testBuffer ? new arrayType(15).buffer : new arrayType(15);
-
-        
-        t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, array15));
-
-        
-        queue.writeBuffer(buffer, 0, array15, 3);
-
-        
-        t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arrayMd, 3));
-
-        
-        t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 0, 7));
-      }
+    if (elementSize < 4) {
+      const array15 = testBuffer ?
+      new arrayType(15).buffer :
+      new arrayType(15);
 
       
-      queue.writeBuffer(buffer, 0, arraySm);
-      queue.writeBuffer(buffer, 0, arrayMd);
-      t.expectValidationError(() => queue.writeBuffer(buffer, 0, arrayLg));
+      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, array15));
 
       
-      queue.writeBuffer(buffer, 8, arraySm);
-      t.expectValidationError(() => queue.writeBuffer(buffer, 8, arrayMd));
+      queue.writeBuffer(buffer, 0, array15, 3);
 
       
-      t.expectValidationError(() => queue.writeBuffer(buffer, 3, arraySm));
+      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arrayMd, 3));
 
       
-      queue.writeBuffer(buffer, 0, arraySm, 4);
-      queue.writeBuffer(buffer, 0, arrayMd, 4);
-      t.expectValidationError(() => queue.writeBuffer(buffer, 0, arrayLg, 4));
-
-      
-      queue.writeBuffer(buffer, 0, arrayLg, 16);
-
-      
-      queue.writeBuffer(buffer, 0, arraySm, 4, 4);
-
-      
-      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 0, 16));
-      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 4, 8));
-
-      
-      queue.writeBuffer(buffer, 0, arraySm, 3, 4);
-
-      
-      queue.writeBuffer(buffer, bufferSize, arraySm, 0, 0);
-
-      
-      t.expectValidationError(() => queue.writeBuffer(buffer, bufferSize + 4, arraySm, 0, 0));
-
-      
-      queue.writeBuffer(buffer, 0, arraySm, 8, 0);
-
-      
-      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 9, 0));
-
-      
-      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 9, undefined));
-
-      
-      queue.writeBuffer(buffer, 0, arraySm, undefined, 8);
-      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, undefined, 12));
+      t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 0, 7));
     }
 
-    runTest(Uint8Array, true);
+    
+    queue.writeBuffer(buffer, 0, arraySm);
+    queue.writeBuffer(buffer, 0, arrayMd);
+    t.expectValidationError(() => queue.writeBuffer(buffer, 0, arrayLg));
 
-    for (const arrayType of kTypedArrayBufferViewConstructors) {
-      if (arrayType === Float16Array) {
-        
-        continue;
-      }
-      runTest(arrayType, false);
+    
+    queue.writeBuffer(buffer, 8, arraySm);
+    t.expectValidationError(() => queue.writeBuffer(buffer, 8, arrayMd));
+
+    
+    t.expectValidationError(() => queue.writeBuffer(buffer, 3, arraySm));
+
+    
+    queue.writeBuffer(buffer, 0, arraySm, 4);
+    queue.writeBuffer(buffer, 0, arrayMd, 4);
+    t.expectValidationError(() => queue.writeBuffer(buffer, 0, arrayLg, 4));
+
+    
+    queue.writeBuffer(buffer, 0, arrayLg, 16);
+
+    
+    queue.writeBuffer(buffer, 0, arraySm, 4, 4);
+
+    
+    t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 0, 16));
+    t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 4, 8));
+
+    
+    queue.writeBuffer(buffer, 0, arraySm, 3, 4);
+
+    
+    queue.writeBuffer(buffer, bufferSize, arraySm, 0, 0);
+
+    
+    t.expectValidationError(() => queue.writeBuffer(buffer, bufferSize + 4, arraySm, 0, 0));
+
+    
+    queue.writeBuffer(buffer, 0, arraySm, 8, 0);
+
+    
+    t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 9, 0));
+
+    
+    t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, 9, undefined));
+
+    
+    queue.writeBuffer(buffer, 0, arraySm, undefined, 8);
+    t.shouldThrow('OperationError', () => queue.writeBuffer(buffer, 0, arraySm, undefined, 12));
+  }
+
+  runTest(Uint8Array, true);
+
+  for (const arrayType of kTypedArrayBufferViewConstructors) {
+    if (arrayType === Float16Array) {
+      
+      continue;
     }
-  });
+    runTest(arrayType, false);
+  }
+});
 
-g.test('usages')
-  .desc(
-    `
+g.test('usages').
+desc(
+  `
   Tests calling writeBuffer with the buffer missed COPY_DST usage.
     - buffer {with, without} COPY DST usage
   `
-  )
-  .paramsSubcasesOnly([
-    { usage: GPUConst.BufferUsage.COPY_DST, _valid: true }, 
-    { usage: GPUConst.BufferUsage.STORAGE, _valid: false }, 
-    { usage: GPUConst.BufferUsage.STORAGE | GPUConst.BufferUsage.COPY_SRC, _valid: false }, 
-    { usage: GPUConst.BufferUsage.STORAGE | GPUConst.BufferUsage.COPY_DST, _valid: true }, 
-  ])
-  .fn(t => {
-    const { usage, _valid } = t.params;
-    const buffer = t.device.createBuffer({ size: 16, usage });
-    const data = new Uint8Array(16);
+).
+paramsSubcasesOnly([
+{ usage: GPUConst.BufferUsage.COPY_DST, _valid: true }, 
+{ usage: GPUConst.BufferUsage.STORAGE, _valid: false }, 
+{ usage: GPUConst.BufferUsage.STORAGE | GPUConst.BufferUsage.COPY_SRC, _valid: false }, 
+{ usage: GPUConst.BufferUsage.STORAGE | GPUConst.BufferUsage.COPY_DST, _valid: true } 
+]).
+fn((t) => {
+  const { usage, _valid } = t.params;
+  const buffer = t.device.createBuffer({ size: 16, usage });
+  const data = new Uint8Array(16);
 
-    t.expectValidationError(() => {
-      t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
-    }, !_valid);
+  t.expectValidationError(() => {
+    t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
+  }, !_valid);
+});
+
+g.test('buffer,device_mismatch').
+desc('Tests writeBuffer cannot be called with a buffer created from another device.').
+paramsSubcasesOnly((u) => u.combine('mismatched', [true, false])).
+beforeAllSubcases((t) => {
+  t.selectMismatchedDeviceOrSkipTestCase(undefined);
+}).
+fn((t) => {
+  const { mismatched } = t.params;
+  const sourceDevice = mismatched ? t.mismatchedDevice : t.device;
+
+  const buffer = sourceDevice.createBuffer({
+    size: 16,
+    usage: GPUBufferUsage.COPY_DST
   });
+  t.trackForCleanup(buffer);
 
-g.test('buffer,device_mismatch')
-  .desc('Tests writeBuffer cannot be called with a buffer created from another device.')
-  .paramsSubcasesOnly(u => u.combine('mismatched', [true, false]))
-  .beforeAllSubcases(t => {
-    t.selectMismatchedDeviceOrSkipTestCase(undefined);
-  })
-  .fn(t => {
-    const { mismatched } = t.params;
-    const sourceDevice = mismatched ? t.mismatchedDevice : t.device;
+  const data = new Uint8Array(16);
 
-    const buffer = sourceDevice.createBuffer({
-      size: 16,
-      usage: GPUBufferUsage.COPY_DST,
-    });
-    t.trackForCleanup(buffer);
-
-    const data = new Uint8Array(16);
-
-    t.expectValidationError(() => {
-      t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
-    }, mismatched);
-  });
+  t.expectValidationError(() => {
+    t.device.queue.writeBuffer(buffer, 0, data, 0, data.length);
+  }, mismatched);
+});

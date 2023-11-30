@@ -4,6 +4,18 @@ import { checkElementsPassPredicate } from '../../../util/check_contents.js';
 
 
 
+
+
+
+
+
+
+
+
+export type AccessValueType = 'f16' | 'u32';
+export const kAccessValueTypes = ['f16', 'u32'] as const;
+
+
 export type MemoryModelTestParams = {
   
   workgroupSize: number;
@@ -116,6 +128,45 @@ const bytesPerWord = 4;
 
 
 
+function shaderPreamble(accessValueType: AccessValueType): string {
+  if (accessValueType === 'f16') {
+    return 'enable f16;\nalias AccessValueTy = f16;\n';
+  }
+  return `alias AccessValueTy = ${accessValueType};\n`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -130,9 +181,18 @@ export class MemoryModelTester {
   protected resultBindGroup: GPUBindGroup;
 
   
-  constructor(t: GPUTest, params: MemoryModelTestParams, testShader: string, resultShader: string) {
+  constructor(
+    t: GPUTest,
+    params: MemoryModelTestParams,
+    testShader: string,
+    resultShader: string,
+    accessValueType: AccessValueType = 'u32'
+  ) {
     this.test = t;
     this.params = params;
+
+    testShader = shaderPreamble(accessValueType) + testShader;
+    resultShader = shaderPreamble(accessValueType) + resultShader;
 
     
     const testingThreads = this.params.workgroupSize * this.params.testingWorkgroups;
@@ -143,10 +203,10 @@ export class MemoryModelTester {
         size: testLocationsSize,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(testLocationsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
+      srcBuf: this.test.device.createBuffer({
+        size: testLocationsSize,
+        usage: GPUBufferUsage.COPY_SRC,
+      }),
       size: testLocationsSize,
     };
 
@@ -156,10 +216,10 @@ export class MemoryModelTester {
         size: readResultsSize,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(readResultsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
+      srcBuf: this.test.device.createBuffer({
+        size: readResultsSize,
+        usage: GPUBufferUsage.COPY_SRC,
+      }),
       size: readResultsSize,
     };
 
@@ -169,10 +229,10 @@ export class MemoryModelTester {
         size: testResultsSize,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(testResultsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
+      srcBuf: this.test.device.createBuffer({
+        size: testResultsSize,
+        usage: GPUBufferUsage.COPY_SRC,
+      }),
       size: testResultsSize,
     };
 
@@ -195,10 +255,10 @@ export class MemoryModelTester {
         size: barrierSize,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(barrierSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
+      srcBuf: this.test.device.createBuffer({
+        size: barrierSize,
+        usage: GPUBufferUsage.COPY_SRC,
+      }),
       size: barrierSize,
     };
 
@@ -208,10 +268,10 @@ export class MemoryModelTester {
         size: scratchpadSize,
         usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(scratchpadSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
+      srcBuf: this.test.device.createBuffer({
+        size: scratchpadSize,
+        usage: GPUBufferUsage.COPY_SRC,
+      }),
       size: scratchpadSize,
     };
 
@@ -558,11 +618,15 @@ export class MemoryModelTester {
 
 const shaderMemStructures = `
   struct Memory {
-    value: array<u32>
+    value: array<AccessValueTy>
   };
 
   struct AtomicMemory {
     value: array<atomic<u32>>
+  };
+
+  struct IndexMemory {
+    value: array<u32>
   };
 
   struct ReadResult {
@@ -622,10 +686,10 @@ const twoBehaviorTestResultStructure = `
 
 const commonTestShaderBindings = `
   @group(0) @binding(1) var<storage, read_write> results : ReadResults;
-  @group(0) @binding(2) var<storage, read> shuffled_workgroups : Memory;
+  @group(0) @binding(2) var<storage, read> shuffled_workgroups : IndexMemory;
   @group(0) @binding(3) var<storage, read_write> barrier : AtomicMemory;
-  @group(0) @binding(4) var<storage, read_write> scratchpad : Memory;
-  @group(0) @binding(5) var<storage, read_write> scratch_locations : Memory;
+  @group(0) @binding(4) var<storage, read_write> scratchpad : IndexMemory;
+  @group(0) @binding(5) var<storage, read_write> scratch_locations : IndexMemory;
   @group(0) @binding(6) var<uniform> stress_params : StressParamsMemory;
 `;
 
@@ -647,7 +711,7 @@ const nonAtomicTestShaderBindings = [
 
 
 const resultShaderBindings = `
-  @group(0) @binding(0) var<storage, read_write> test_locations : AtomicMemory;
+  @group(0) @binding(0) var<storage, read_write> test_locations : Memory;
   @group(0) @binding(1) var<storage, read_write> read_results : ReadResults;
   @group(0) @binding(2) var<storage, read_write> test_results : TestResults;
   @group(0) @binding(3) var<uniform> stress_params : StressParamsMemory;
@@ -668,7 +732,7 @@ const atomicWorkgroupMemory = `
 
 
 const nonAtomicWorkgroupMemory = `
-  var<workgroup> wg_test_locations: array<u32, 3584>;
+  var<workgroup> wg_test_locations: array<AccessValueTy, 3584>;
 `;
 
 
@@ -858,10 +922,15 @@ const testShaderCommonFooter = `
 
 
 
+
+
+
+
+
 const resultShaderCommonCalculations = `
   let id_0 = workgroup_id[0] * workgroupXSize + local_invocation_id[0];
   let x_0 = id_0 * stress_params.mem_stride * 2u;
-  let mem_x_0 = atomicLoad(&test_locations.value[x_0]);
+  let mem_x_0 = u32(test_locations.value[x_0]);
   let r0 = atomicLoad(&read_results.value[id_0].r0);
   let r1 = atomicLoad(&read_results.value[id_0].r1);
 `;
@@ -872,7 +941,7 @@ const interWorkgroupResultShaderCode = [
   `
   let total_ids = workgroupXSize * stress_params.testing_workgroups;
   let y_0 = permute_id(id_0, stress_params.permute_second, total_ids) * stress_params.mem_stride * 2u + stress_params.location_offset;
-  let mem_y_0 = atomicLoad(&test_locations.value[y_0]);
+  let mem_y_0 = u32(test_locations.value[y_0]);
 `,
 ].join('\n');
 
@@ -882,7 +951,7 @@ const intraWorkgroupResultShaderCode = [
   `
   let total_ids = workgroupXSize;
   let y_0 = (workgroup_id[0] * workgroupXSize + permute_id(local_invocation_id[0], stress_params.permute_second, total_ids)) * stress_params.mem_stride * 2u + stress_params.location_offset;
-  let mem_y_0 = atomicLoad(&test_locations.value[y_0]);
+  let mem_y_0 = u32(test_locations.value[y_0]);
 `,
 ].join('\n');
 

@@ -1,6 +1,6 @@
 
 
- export const description = `API Operation Tests for RenderPass StoreOp.
+export const description = `API Operation Tests for RenderPass StoreOp.
 Tests a render pass with a resolveTarget resolves correctly for many combinations of:
   - number of color attachments, some with and some without a resolveTarget
   - renderPass storeOp set to {'store', 'discard'}
@@ -13,47 +13,46 @@ Tests a render pass with a resolveTarget resolves correctly for many combination
   - TODO?: resolveTarget mip level {0, >0} (TODO?: different mip level from colorAttachment)
   - TODO?: resolveTarget {2d array layer, TODO: 3d slice} {0, >0} with {2d, TODO: 3d} resolveTarget
     (different z from colorAttachment)
-`;
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { GPUTest, TextureTestMixin } from '../../../gpu_test.js';
 
 const kSlotsToResolve = [
-  [0, 2],
-  [1, 3],
-  [0, 1, 2, 3],
-];
+[0, 2],
+[1, 3],
+[0, 1, 2, 3]];
+
 
 const kSize = 4;
 const kFormat = 'rgba8unorm';
 
 export const g = makeTestGroup(TextureTestMixin(GPUTest));
 
-g.test('render_pass_resolve')
-  .params(u =>
-    u
-      .combine('storeOperation', ['discard', 'store'])
-      .beginSubcases()
-      .combine('numColorAttachments', [2, 4])
-      .combine('slotsToResolve', kSlotsToResolve)
-      .combine('resolveTargetBaseMipLevel', [0, 1])
-      .combine('resolveTargetBaseArrayLayer', [0, 1])
-  )
-  .fn(t => {
-    const targets = [];
-    for (let i = 0; i < t.params.numColorAttachments; i++) {
-      targets.push({ format: kFormat });
-    }
+g.test('render_pass_resolve').
+params((u) =>
+u.
+combine('storeOperation', ['discard', 'store']).
+beginSubcases().
+combine('numColorAttachments', [2, 4]).
+combine('slotsToResolve', kSlotsToResolve).
+combine('resolveTargetBaseMipLevel', [0, 1]).
+combine('resolveTargetBaseArrayLayer', [0, 1])
+).
+fn((t) => {
+  const targets = [];
+  for (let i = 0; i < t.params.numColorAttachments; i++) {
+    targets.push({ format: kFormat });
+  }
 
-    
-    
-    
-    
-    
-    const pipeline = t.device.createRenderPipeline({
-      layout: 'auto',
-      vertex: {
-        module: t.device.createShaderModule({
-          code: `
+  
+  
+  
+  
+  
+  const pipeline = t.device.createRenderPipeline({
+    layout: 'auto',
+    vertex: {
+      module: t.device.createShaderModule({
+        code: `
             @vertex fn main(
               @builtin(vertex_index) VertexIndex : u32
               ) -> @builtin(position) vec4<f32> {
@@ -62,13 +61,13 @@ g.test('render_pass_resolve')
                   vec2<f32>(-1.0,  1.0),
                   vec2<f32>( 1.0,  1.0));
               return vec4<f32>(pos[VertexIndex], 0.0, 1.0);
-            }`,
-        }),
-        entryPoint: 'main',
-      },
-      fragment: {
-        module: t.device.createShaderModule({
-          code: `
+            }`
+      }),
+      entryPoint: 'main'
+    },
+    fragment: {
+      module: t.device.createShaderModule({
+        code: `
             struct Output {
               @location(0) fragColor0 : vec4<f32>,
               @location(1) fragColor1 : vec4<f32>,
@@ -83,102 +82,102 @@ g.test('render_pass_resolve')
                 vec4<f32>(1.0, 1.0, 1.0, 1.0),
                 vec4<f32>(1.0, 1.0, 1.0, 1.0)
               );
-            }`,
-        }),
-        entryPoint: 'main',
-        targets,
-      },
-      primitive: { topology: 'triangle-list' },
-      multisample: { count: 4 },
+            }`
+      }),
+      entryPoint: 'main',
+      targets
+    },
+    primitive: { topology: 'triangle-list' },
+    multisample: { count: 4 }
+  });
+
+  const resolveTargets = [];
+  const renderPassColorAttachments = [];
+
+  
+  
+  const kResolveTargetSize = kSize << t.params.resolveTargetBaseMipLevel;
+
+  for (let i = 0; i < t.params.numColorAttachments; i++) {
+    const colorAttachment = t.device.createTexture({
+      format: kFormat,
+      size: { width: kSize, height: kSize, depthOrArrayLayers: 1 },
+      sampleCount: 4,
+      mipLevelCount: 1,
+      usage:
+      GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
     });
 
-    const resolveTargets = [];
-    const renderPassColorAttachments = [];
-
-    
-    
-    const kResolveTargetSize = kSize << t.params.resolveTargetBaseMipLevel;
-
-    for (let i = 0; i < t.params.numColorAttachments; i++) {
+    if (t.params.slotsToResolve.includes(i)) {
       const colorAttachment = t.device.createTexture({
         format: kFormat,
         size: { width: kSize, height: kSize, depthOrArrayLayers: 1 },
         sampleCount: 4,
         mipLevelCount: 1,
         usage:
-          GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+        GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
       });
 
-      if (t.params.slotsToResolve.includes(i)) {
-        const colorAttachment = t.device.createTexture({
-          format: kFormat,
-          size: { width: kSize, height: kSize, depthOrArrayLayers: 1 },
-          sampleCount: 4,
-          mipLevelCount: 1,
-          usage:
-            GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-        });
+      const resolveTarget = t.device.createTexture({
+        format: kFormat,
+        size: {
+          width: kResolveTargetSize,
+          height: kResolveTargetSize,
+          depthOrArrayLayers: t.params.resolveTargetBaseArrayLayer + 1
+        },
+        sampleCount: 1,
+        mipLevelCount: t.params.resolveTargetBaseMipLevel + 1,
+        usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
+      });
 
-        const resolveTarget = t.device.createTexture({
-          format: kFormat,
-          size: {
-            width: kResolveTargetSize,
-            height: kResolveTargetSize,
-            depthOrArrayLayers: t.params.resolveTargetBaseArrayLayer + 1,
-          },
-          sampleCount: 1,
-          mipLevelCount: t.params.resolveTargetBaseMipLevel + 1,
-          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-        });
+      
+      
+      renderPassColorAttachments.push({
+        view: colorAttachment.createView(),
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 },
+        loadOp: 'clear',
+        storeOp: t.params.storeOperation,
+        resolveTarget: resolveTarget.createView({
+          baseMipLevel: t.params.resolveTargetBaseMipLevel,
+          baseArrayLayer: t.params.resolveTargetBaseArrayLayer
+        })
+      });
 
-        
-        
-        renderPassColorAttachments.push({
-          view: colorAttachment.createView(),
-          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 },
-          loadOp: 'clear',
-          storeOp: t.params.storeOperation,
-          resolveTarget: resolveTarget.createView({
-            baseMipLevel: t.params.resolveTargetBaseMipLevel,
-            baseArrayLayer: t.params.resolveTargetBaseArrayLayer,
-          }),
-        });
-
-        resolveTargets.push(resolveTarget);
-      } else {
-        renderPassColorAttachments.push({
-          view: colorAttachment.createView(),
-          clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 },
-          loadOp: 'clear',
-          storeOp: t.params.storeOperation,
-        });
-      }
+      resolveTargets.push(resolveTarget);
+    } else {
+      renderPassColorAttachments.push({
+        view: colorAttachment.createView(),
+        clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 0.0 },
+        loadOp: 'clear',
+        storeOp: t.params.storeOperation
+      });
     }
+  }
 
-    const encoder = t.device.createCommandEncoder();
+  const encoder = t.device.createCommandEncoder();
 
-    const pass = encoder.beginRenderPass({
-      colorAttachments: renderPassColorAttachments,
-    });
-    pass.setPipeline(pipeline);
-    pass.draw(3);
-    pass.end();
-    t.device.queue.submit([encoder.finish()]);
-
-    
-    
-    const z = t.params.resolveTargetBaseArrayLayer;
-    for (const resolveTarget of resolveTargets) {
-      t.expectSinglePixelComparisonsAreOkInTexture(
-        { texture: resolveTarget, mipLevel: t.params.resolveTargetBaseMipLevel },
-        [
-          
-          { coord: { x: 0, y: 0, z }, exp: { R: 1.0, G: 1.0, B: 1.0, A: 1.0 } },
-          
-          { coord: { x: kSize - 1, y: kSize - 1, z }, exp: { R: 0, G: 0, B: 0, A: 0 } },
-          
-          { coord: { x: kSize - 1, y: 0, z }, exp: { R: 0.5, G: 0.5, B: 0.5, A: 0.5 } },
-        ]
-      );
-    }
+  const pass = encoder.beginRenderPass({
+    colorAttachments: renderPassColorAttachments
   });
+  pass.setPipeline(pipeline);
+  pass.draw(3);
+  pass.end();
+  t.device.queue.submit([encoder.finish()]);
+
+  
+  
+  const z = t.params.resolveTargetBaseArrayLayer;
+  for (const resolveTarget of resolveTargets) {
+    t.expectSinglePixelComparisonsAreOkInTexture(
+      { texture: resolveTarget, mipLevel: t.params.resolveTargetBaseMipLevel },
+      [
+      
+      { coord: { x: 0, y: 0, z }, exp: { R: 1.0, G: 1.0, B: 1.0, A: 1.0 } },
+      
+      { coord: { x: kSize - 1, y: kSize - 1, z }, exp: { R: 0, G: 0, B: 0, A: 0 } },
+      
+      { coord: { x: kSize - 1, y: 0, z }, exp: { R: 0.5, G: 0.5, B: 0.5, A: 0.5 } }]
+
+    );
+  }
+});

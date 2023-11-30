@@ -1,29 +1,21 @@
 
 
- export const description = `
+export const description = `
 Basic command buffer compute tests.
-`;
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
-import { kLimitInfo } from '../../../capability_info.js';
+`;import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { GPUTest } from '../../../gpu_test.js';
 import { checkElementsEqualGenerated } from '../../../util/check_contents.js';
 
 export const g = makeTestGroup(GPUTest);
 
-const kMaxComputeWorkgroupSize = [
-  kLimitInfo.maxComputeWorkgroupSizeX.default,
-  kLimitInfo.maxComputeWorkgroupSizeY.default,
-  kLimitInfo.maxComputeWorkgroupSizeZ.default,
-];
-
-g.test('memcpy').fn(t => {
+g.test('memcpy').fn((t) => {
   const data = new Uint32Array([0x01020304]);
 
   const src = t.makeBufferWithContents(data, GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE);
 
   const dst = t.device.createBuffer({
     size: 4,
-    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
   });
 
   const pipeline = t.device.createComputePipeline({
@@ -42,19 +34,18 @@ g.test('memcpy').fn(t => {
             dst.value = src.value;
             return;
           }
-        `,
+        `
       }),
-      entryPoint: 'main',
-    },
+      entryPoint: 'main'
+    }
   });
 
   const bg = t.device.createBindGroup({
     entries: [
-      { binding: 0, resource: { buffer: src, offset: 0, size: 4 } },
-      { binding: 1, resource: { buffer: dst, offset: 0, size: 4 } },
-    ],
+    { binding: 0, resource: { buffer: src, offset: 0, size: 4 } },
+    { binding: 1, resource: { buffer: dst, offset: 0, size: 4 } }],
 
-    layout: pipeline.getBindGroupLayout(0),
+    layout: pipeline.getBindGroupLayout(0)
   });
 
   const encoder = t.device.createCommandEncoder();
@@ -68,50 +59,55 @@ g.test('memcpy').fn(t => {
   t.expectGPUBufferValuesEqual(dst, data);
 });
 
-g.test('large_dispatch')
-  .desc(`Test reasonably-sized large dispatches (see also: stress tests).`)
-  .params(u =>
-    u
-      
-      .combine('dispatchSize', [
-        256,
-        2048,
-        315,
-        628,
-        2179,
-        kLimitInfo.maxComputeWorkgroupsPerDimension.default,
-      ])
+g.test('large_dispatch').
+desc(`Test reasonably-sized large dispatches (see also: stress tests).`).
+params((u) =>
+u
 
-      
-      .beginSubcases()
-      
-      .combine('largeDimension', [0, 1, 2])
-      .expand('workgroupSize', p => [1, 2, 8, 32, kMaxComputeWorkgroupSize[p.largeDimension]])
-  )
-  .fn(t => {
-    
-    const val = 0x01020304;
-    const badVal = 0xbaadf00d;
+.combine('dispatchSize', [256, 2048, 315, 628, 2179, 'maximum'])
 
-    const wgSize = t.params.workgroupSize;
-    const bufferLength = t.params.dispatchSize * wgSize;
-    const bufferByteSize = Uint32Array.BYTES_PER_ELEMENT * bufferLength;
-    const dst = t.device.createBuffer({
-      size: bufferByteSize,
-      usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
-    });
+.beginSubcases()
 
-    
-    
-    const dims = [1, 1, 1];
-    dims[t.params.largeDimension] = t.params.dispatchSize;
-    const wgSizes = [1, 1, 1];
-    wgSizes[t.params.largeDimension] = t.params.workgroupSize;
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({
-          code: `
+.combine('largeDimension', [0, 1, 2]).
+expand('workgroupSize', () => [1, 2, 8, 32, 'maximum'])
+).
+fn((t) => {
+  
+  const val = 0x01020304;
+  const badVal = 0xbaadf00d;
+
+  const kMaxComputeWorkgroupSize = [
+  t.device.limits.maxComputeWorkgroupSizeX,
+  t.device.limits.maxComputeWorkgroupSizeY,
+  t.device.limits.maxComputeWorkgroupSizeZ];
+
+
+  const wgSize =
+  t.params.workgroupSize === 'maximum' ?
+  kMaxComputeWorkgroupSize[t.params.largeDimension] :
+  t.params.workgroupSize;
+  const dispatchSize =
+  t.params.dispatchSize === 'maximum' ?
+  t.device.limits.maxComputeWorkgroupsPerDimension :
+  t.params.dispatchSize;
+  const bufferLength = dispatchSize * wgSize;
+  const bufferByteSize = Uint32Array.BYTES_PER_ELEMENT * bufferLength;
+  const dst = t.device.createBuffer({
+    size: bufferByteSize,
+    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
+  });
+
+  
+  
+  const dims = [1, 1, 1];
+  dims[t.params.largeDimension] = dispatchSize;
+  const wgSizes = [1, 1, 1];
+  wgSizes[t.params.largeDimension] = wgSize;
+  const pipeline = t.device.createComputePipeline({
+    layout: 'auto',
+    compute: {
+      module: t.device.createShaderModule({
+        code: `
             struct OutputBuffer {
               value : array<u32>
             };
@@ -138,29 +134,29 @@ g.test('large_dispatch')
               }
               dst.value[index] = val;
             }
-          `,
-        }),
-        entryPoint: 'main',
-      },
-    });
-
-    const bg = t.device.createBindGroup({
-      entries: [{ binding: 0, resource: { buffer: dst, offset: 0, size: bufferByteSize } }],
-      layout: pipeline.getBindGroupLayout(0),
-    });
-
-    const encoder = t.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bg);
-    pass.dispatchWorkgroups(dims[0], dims[1], dims[2]);
-    pass.end();
-    t.device.queue.submit([encoder.finish()]);
-
-    t.expectGPUBufferValuesPassCheck(dst, a => checkElementsEqualGenerated(a, i => val), {
-      type: Uint32Array,
-      typedLength: bufferLength,
-    });
-
-    dst.destroy();
+          `
+      }),
+      entryPoint: 'main'
+    }
   });
+
+  const bg = t.device.createBindGroup({
+    entries: [{ binding: 0, resource: { buffer: dst, offset: 0, size: bufferByteSize } }],
+    layout: pipeline.getBindGroupLayout(0)
+  });
+
+  const encoder = t.device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bg);
+  pass.dispatchWorkgroups(dims[0], dims[1], dims[2]);
+  pass.end();
+  t.device.queue.submit([encoder.finish()]);
+
+  t.expectGPUBufferValuesPassCheck(dst, (a) => checkElementsEqualGenerated(a, (_i) => val), {
+    type: Uint32Array,
+    typedLength: bufferLength
+  });
+
+  dst.destroy();
+});

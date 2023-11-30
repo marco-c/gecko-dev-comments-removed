@@ -3,8 +3,7 @@
  
 
 
- export async function exhaustVramUntilUnder64MB(device) {
-  const allocateUntilOom = async (device, size) => {
+export async function exhaustVramUntilUnder64MB(device) {const allocateUntilOom = async (device, size) => {
     const buffers = [];
     for (;;) {
       device.pushErrorScope('out-of-memory');
@@ -21,6 +20,6 @@
   const buffers = await allocateUntilOom(device, kLargeChunkSize);
   buffers.push(...(await allocateUntilOom(device, kSmallChunkSize)));
   return () => {
-    buffers.forEach(buffer => buffer.destroy());
+    buffers.forEach((buffer) => buffer.destroy());
   };
 }

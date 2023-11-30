@@ -1,34 +1,49 @@
 
 
- import { globalTestConfig } from '../../../../common/framework/test_config.js';
-import { assert, objectEquals, unreachable } from '../../../../common/util/util.js';
+import { globalTestConfig } from '../../../../common/framework/test_config.js';import { assert, objectEquals, unreachable } from '../../../../common/util/util.js';
+
 import { compare } from '../../../util/compare.js';
 import { kValue } from '../../../util/constants.js';
 import {
   ScalarType,
   Scalar,
+
   TypeVec,
   TypeU32,
+
   Vector,
   VectorType,
   u32,
   i32,
   Matrix,
   MatrixType,
-  scalarTypeOf,
-} from '../../../util/conversion.js';
+
+  scalarTypeOf } from
+'../../../util/conversion.js';
 import { FPInterval } from '../../../util/floating_point.js';
-import { cartesianProduct, quantizeToI32, quantizeToU32 } from '../../../util/math.js';
+import {
+  cartesianProduct,
+
+  quantizeToI32,
+  quantizeToU32 } from
+'../../../util/math.js';
+
+
+
+
+
+
+
 
 
 export function isComparator(e) {
   return !(
-    e instanceof FPInterval ||
-    e instanceof Scalar ||
-    e instanceof Vector ||
-    e instanceof Matrix ||
-    e instanceof Array
-  );
+  e instanceof FPInterval ||
+  e instanceof Scalar ||
+  e instanceof Vector ||
+  e instanceof Matrix ||
+  e instanceof Array);
+
 }
 
 
@@ -37,8 +52,22 @@ export function toComparator(input) {
     return input;
   }
 
-  return { compare: got => compare(got, input), kind: 'value' };
+  return { compare: (got) => compare(got, input), kind: 'value' };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -49,6 +78,17 @@ export const allInputSources = ['const', 'uniform', 'storage_r', 'storage_rw'];
 
 
 export const onlyConstInputSource = ['const'];
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -78,7 +118,6 @@ function valueStride(ty) {
             case 4:
               return 64;
           }
-
           break;
         case 3:
           switch (ty.rows) {
@@ -89,7 +128,6 @@ function valueStride(ty) {
             case 4:
               return 96;
           }
-
           break;
         case 4:
           switch (ty.rows) {
@@ -100,7 +138,6 @@ function valueStride(ty) {
             case 4:
               return 128;
           }
-
           break;
       }
     }
@@ -118,7 +155,6 @@ function valueStride(ty) {
           case 4:
             return 32;
         }
-
         break;
       case 3:
         switch (ty.rows) {
@@ -129,7 +165,6 @@ function valueStride(ty) {
           case 4:
             return 64;
         }
-
         break;
       case 4:
         switch (ty.rows) {
@@ -140,10 +175,8 @@ function valueStride(ty) {
           case 4:
             return 64;
         }
-
         break;
     }
-
     unreachable(
       `Attempted to get stride length for a matrix with dimensions (${ty.cols}x${ty.rows}), which isn't currently handled`
     );
@@ -166,7 +199,6 @@ function storageType(ty) {
       ty.kind !== 'abstract-float',
       `Custom handling is implemented for 'abstract-float' values`
     );
-
     if (ty.kind === 'bool') {
       return TypeU32;
     }
@@ -191,7 +223,6 @@ function fromStorage(ty, expr) {
       ty.elementType.kind !== 'abstract-float',
       `AbstractFloat values cannot appear in input storage`
     );
-
     assert(ty.elementType.kind !== 'f64', `'No storage type defined for 'f64' values`);
     if (ty.elementType.kind === 'bool') {
       return `${expr} != vec${ty.width}<u32>(0u)`;
@@ -207,7 +238,6 @@ function toStorage(ty, expr) {
       ty.kind !== 'abstract-float',
       `AbstractFloat values have custom code for writing to storage`
     );
-
     assert(ty.kind !== 'f64', `No storage type defined for 'f64' values`);
     if (ty.kind === 'bool') {
       return `select(0u, 1u, ${expr})`;
@@ -218,7 +248,6 @@ function toStorage(ty, expr) {
       ty.elementType.kind !== 'abstract-float',
       `AbstractFloat values have custom code for writing to storage`
     );
-
     assert(ty.elementType.kind !== 'f64', `'No storage type defined for 'f64' values`);
     if (ty.elementType.kind === 'bool') {
       return `select(vec${ty.width}<u32>(0u), vec${ty.width}<u32>(1u), ${expr})`;
@@ -226,6 +255,7 @@ function toStorage(ty, expr) {
   }
   return expr;
 }
+
 
 
 
@@ -261,14 +291,14 @@ function getOrCreate(map, key, create) {
 
 
 export async function run(
-  t,
-  shaderBuilder,
-  parameterTypes,
-  resultType,
-  cfg = { inputSource: 'storage_r' },
-  cases,
-  batch_size
-) {
+t,
+shaderBuilder,
+parameterTypes,
+resultType,
+cfg = { inputSource: 'storage_r' },
+cases,
+batch_size)
+{
   
   if (cfg.vectorize !== undefined) {
     const packed = packScalarsToVector(parameterTypes, resultType, cases, cfg.vectorize);
@@ -280,7 +310,7 @@ export async function run(
   
   
   
-  const casesPerBatch = (function () {
+  const casesPerBatch = function () {
     if (batch_size) {
       return batch_size;
     }
@@ -295,16 +325,15 @@ export async function run(
         
         return Math.floor(
           Math.min(1024 * 2, t.device.limits.maxUniformBufferBindingSize) /
-            valueStrides(parameterTypes)
+          valueStrides(parameterTypes)
         );
-
       case 'storage_r':
       case 'storage_rw':
         return Math.floor(
           t.device.limits.maxStorageBufferBindingSize / valueStrides(parameterTypes)
         );
     }
-  })();
+  }();
 
   
   const pipelineCache = new Map();
@@ -324,19 +353,8 @@ export async function run(
     }
   };
 
-  for (let i = 0; i < cases.length; i += casesPerBatch) {
-    const batchCases = cases.slice(i, Math.min(i + casesPerBatch, cases.length));
-
-    if (batchesInFlight > maxBatchesInFlight) {
-      await new Promise(resolve => {
-        
-        assert(resolvePromiseBlockingBatch === undefined);
-        resolvePromiseBlockingBatch = resolve;
-      });
-    }
-    batchesInFlight += 1;
-
-    const checkBatch = submitBatch(
+  const processBatch = async (batchCases) => {
+    const checkBatch = await submitBatch(
       t,
       shaderBuilder,
       parameterTypes,
@@ -345,10 +363,28 @@ export async function run(
       cfg.inputSource,
       pipelineCache
     );
-
     checkBatch();
-    t.queue.onSubmittedWorkDone().finally(batchFinishedCallback);
+    void t.queue.onSubmittedWorkDone().finally(batchFinishedCallback);
+  };
+
+  const pendingBatches = [];
+
+  for (let i = 0; i < cases.length; i += casesPerBatch) {
+    const batchCases = cases.slice(i, Math.min(i + casesPerBatch, cases.length));
+
+    if (batchesInFlight > maxBatchesInFlight) {
+      await new Promise((resolve) => {
+        
+        assert(resolvePromiseBlockingBatch === undefined);
+        resolvePromiseBlockingBatch = resolve;
+      });
+    }
+    batchesInFlight += 1;
+
+    pendingBatches.push(processBatch(batchCases));
   }
+
+  await Promise.all(pendingBatches);
 }
 
 
@@ -363,23 +399,23 @@ export async function run(
 
 
 
-function submitBatch(
-  t,
-  shaderBuilder,
-  parameterTypes,
-  resultType,
-  cases,
-  inputSource,
-  pipelineCache
-) {
+async function submitBatch(
+t,
+shaderBuilder,
+parameterTypes,
+resultType,
+cases,
+inputSource,
+pipelineCache)
+{
   
   const outputBufferSize = cases.length * valueStride(resultType);
   const outputBuffer = t.device.createBuffer({
     size: outputBufferSize,
-    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
   });
 
-  const [pipeline, group] = buildPipeline(
+  const [pipeline, group] = await buildPipeline(
     t,
     shaderBuilder,
     parameterTypes,
@@ -404,7 +440,7 @@ function submitBatch(
 
   
   return () => {
-    const checkExpectation = outputData => {
+    const checkExpectation = (outputData) => {
       
       const outputs = new Array(cases.length);
       for (let i = 0; i < cases.length; i++) {
@@ -434,7 +470,7 @@ function submitBatch(
 
     t.expectGPUBufferValuesPassCheck(outputBuffer, checkExpectation, {
       type: Uint8Array,
-      typedLength: outputBufferSize,
+      typedLength: outputBufferSize
     });
   };
 }
@@ -450,6 +486,12 @@ function map(v, fn) {
   }
   return [fn(v, 0)];
 }
+
+
+
+
+
+
 
 
 
@@ -517,10 +559,15 @@ struct Output {
 
 
 
-function wgslValuesArray(parameterTypes, resultType, cases, expressionBuilder) {
+function wgslValuesArray(
+parameterTypes,
+resultType,
+cases,
+expressionBuilder)
+{
   return `
 const values = array(
-  ${cases.map(c => expressionBuilder(map(c.input, v => v.wgsl()))).join(',\n  ')}
+  ${cases.map((c) => expressionBuilder(map(c.input, (v) => v.wgsl()))).join(',\n  ')}
 );`;
 }
 
@@ -536,7 +583,6 @@ function wgslInputVar(inputSource, count) {
     case 'uniform':
       return `@group(0) @binding(1) var<uniform> inputs : array<Input, ${count}>;`;
   }
-
   throw new Error(`InputSource ${inputSource} does not use an input var`);
 }
 
@@ -546,8 +592,8 @@ function wgslInputVar(inputSource, count) {
 
 function wgslHeader(parameterTypes, resultType) {
   const usedF16 =
-    scalarTypeOf(resultType).kind === 'f16' ||
-    parameterTypes.some(ty => scalarTypeOf(ty).kind === 'f16');
+  scalarTypeOf(resultType).kind === 'f16' ||
+  parameterTypes.some((ty) => scalarTypeOf(ty).kind === 'f16');
   const header = usedF16 ? 'enable f16;\n' : '';
   return header;
 }
@@ -561,42 +607,42 @@ function wgslHeader(parameterTypes, resultType) {
 
 
 
+
 function basicExpressionShaderBody(
-  expressionBuilder,
-  parameterTypes,
-  resultType,
-  cases,
-  inputSource
-) {
+expressionBuilder,
+parameterTypes,
+resultType,
+cases,
+inputSource)
+{
   assert(
     scalarTypeOf(resultType).kind !== 'abstract-float',
     `abstractFloatShaderBuilder should be used when result type is 'abstract-float`
   );
-
   if (inputSource === 'const') {
     
     
     
     let body = '';
-    if (parameterTypes.some(ty => scalarTypeOf(ty).kind === 'abstract-float')) {
+    if (parameterTypes.some((ty) => scalarTypeOf(ty).kind === 'abstract-float')) {
       
       
-      body = cases
-        .map(
-          (c, i) =>
-            `  outputs[${i}].value = ${toStorage(
-              resultType,
-              expressionBuilder(map(c.input, v => v.wgsl()))
-            )};`
-        )
-        .join('\n  ');
+      body = cases.
+      map(
+        (c, i) =>
+        `  outputs[${i}].value = ${toStorage(
+          resultType,
+          expressionBuilder(map(c.input, (v) => v.wgsl()))
+        )};`
+      ).
+      join('\n  ');
     } else if (globalTestConfig.unrollConstEvalLoops) {
-      body = cases
-        .map((_, i) => {
-          const value = `values[${i}]`;
-          return `  outputs[${i}].value = ${toStorage(resultType, value)};`;
-        })
-        .join('\n  ');
+      body = cases.
+      map((_, i) => {
+        const value = `values[${i}]`;
+        return `  outputs[${i}].value = ${toStorage(resultType, value)};`;
+      }).
+      join('\n  ');
     } else {
       body = `
   for (var i = 0u; i < ${cases.length}; i++) {
@@ -626,9 +672,9 @@ ${body}
 
     return `
 struct Input {
-${parameterTypes
-  .map((ty, i) => `  @size(${valueStride(ty)}) param${i} : ${storageType(ty)},`)
-  .join('\n')}
+${parameterTypes.
+    map((ty, i) => `  @size(${valueStride(ty)}) param${i} : ${storageType(ty)},`).
+    join('\n')}
 };
 
 ${wgslOutputs(resultType, cases.length)}
@@ -650,7 +696,12 @@ fn main() {
 
 
 export function basicExpressionBuilder(expressionBuilder) {
-  return (parameterTypes, resultType, cases, inputSource) => {
+  return (
+  parameterTypes,
+  resultType,
+  cases,
+  inputSource) =>
+  {
     return `\
 ${wgslHeader(parameterTypes, resultType)}
 
@@ -664,8 +715,16 @@ ${basicExpressionShaderBody(expressionBuilder, parameterTypes, resultType, cases
 
 
 
-export function basicExpressionWithPredeclarationBuilder(expressionBuilder, predeclaration) {
-  return (parameterTypes, resultType, cases, inputSource) => {
+export function basicExpressionWithPredeclarationBuilder(
+expressionBuilder,
+predeclaration)
+{
+  return (
+  parameterTypes,
+  resultType,
+  cases,
+  inputSource) =>
+  {
     return `\
 ${wgslHeader(parameterTypes, resultType)}
 
@@ -680,7 +739,12 @@ ${basicExpressionShaderBody(expressionBuilder, parameterTypes, resultType, cases
 
 
 export function compoundAssignmentBuilder(op) {
-  return (parameterTypes, resultType, cases, inputSource) => {
+  return (
+  parameterTypes,
+  resultType,
+  cases,
+  inputSource) =>
+  {
     
     
     
@@ -700,14 +764,14 @@ export function compoundAssignmentBuilder(op) {
       
       let body = '';
       if (globalTestConfig.unrollConstEvalLoops) {
-        body = cases
-          .map((_, i) => {
-            return `
+        body = cases.
+        map((_, i) => {
+          return `
   var ret_${i} = lhs[${i}];
   ret_${i} ${op} rhs[${i}];
   outputs[${i}].value = ${storageType(resultType)}(ret_${i});`;
-          })
-          .join('\n  ');
+        }).
+        join('\n  ');
       } else {
         body = `
   for (var i = 0u; i < ${cases.length}; i++) {
@@ -717,17 +781,17 @@ export function compoundAssignmentBuilder(op) {
   }`;
       }
 
-      const values = cases.map(c => c.input.map(v => v.wgsl()));
+      const values = cases.map((c) => c.input.map((v) => v.wgsl()));
 
       return `
 ${wgslHeader(parameterTypes, resultType)}
 ${wgslOutputs(resultType, cases.length)}
 
 const lhs = array(
-${values.map(c => `${c[0]}`).join(',\n  ')}
+${values.map((c) => `${c[0]}`).join(',\n  ')}
       );
 const rhs = array(
-${values.map(c => `${c[1]}`).join(',\n  ')}
+${values.map((c) => `${c[1]}`).join(',\n  ')}
 );
 
 @compute @workgroup_size(1)
@@ -853,7 +917,7 @@ function abstractFloatSnippet(expr, case_idx, accessor = '') {
 
   return `  {
     const kExponentBias = 1022;
-    const subnormal_or_zero : bool = (${expr}${accessor} <= ${kValue.f64.subnormal.positive.max}) && (${expr}${accessor} >= ${kValue.f64.subnormal.negative.min});
+    const subnormal_or_zero : bool = (${expr}${accessor} <= ${kValue.f64.positive.subnormal.max}) && (${expr}${accessor} >= ${kValue.f64.negative.subnormal.min});
     const sign_bit : u32 = select(0, 0x80000000, ${expr}${accessor} < 0);
     const f = frexp(abs(${expr}${accessor}));
     const f_fract = select(f.fract, 0, subnormal_or_zero);
@@ -875,9 +939,9 @@ function abstractFloatCaseBody(expr, resultType, i) {
   }
 
   if (resultType instanceof VectorType) {
-    return [...Array(resultType.width).keys()]
-      .map(idx => abstractFloatSnippet(expr, i, `[${idx}]`))
-      .join('  \n');
+    return [...Array(resultType.width).keys()].
+    map((idx) => abstractFloatSnippet(expr, i, `[${idx}]`)).
+    join('  \n');
   }
 
   if (resultType instanceof MatrixType) {
@@ -902,19 +966,24 @@ function abstractFloatCaseBody(expr, resultType, i) {
 
 
 export function abstractFloatShaderBuilder(expressionBuilder) {
-  return (parameterTypes, resultType, cases, inputSource) => {
+  return (
+  parameterTypes,
+  resultType,
+  cases,
+  inputSource) =>
+  {
     assert(inputSource === 'const', 'AbstractFloat results are only defined for const-eval');
     assert(
       scalarTypeOf(resultType).kind === 'abstract-float',
       `Expected resultType of 'abstract-float', received '${scalarTypeOf(resultType).kind}' instead`
     );
 
-    const body = cases
-      .map((c, i) => {
-        const expr = `${expressionBuilder(map(c.input, v => v.wgsl()))}`;
-        return abstractFloatCaseBody(expr, resultType, i);
-      })
-      .join('\n  ');
+    const body = cases.
+    map((c, i) => {
+      const expr = `${expressionBuilder(map(c.input, (v) => v.wgsl()))}`;
+      return abstractFloatCaseBody(expr, resultType, i);
+    }).
+    join('\n  ');
 
     return `
 ${wgslHeader(parameterTypes, resultType)}
@@ -942,18 +1011,18 @@ ${body}
 
 
 
-function buildPipeline(
-  t,
-  shaderBuilder,
-  parameterTypes,
-  resultType,
-  cases,
-  inputSource,
-  outputBuffer,
-  pipelineCache
-) {
-  cases.forEach(c => {
-    const inputTypes = c.input instanceof Array ? c.input.map(i => i.type) : [c.input.type];
+async function buildPipeline(
+t,
+shaderBuilder,
+parameterTypes,
+resultType,
+cases,
+inputSource,
+outputBuffer,
+pipelineCache)
+{
+  cases.forEach((c) => {
+    const inputTypes = c.input instanceof Array ? c.input.map((i) => i.type) : [c.input.type];
     if (!objectEquals(inputTypes, parameterTypes)) {
       const input_str = `[${inputTypes.join(',')}]`;
       const param_str = `[${parameterTypes.join(',')}]`;
@@ -966,84 +1035,84 @@ function buildPipeline(
   const source = shaderBuilder(parameterTypes, resultType, cases, inputSource);
 
   switch (inputSource) {
-    case 'const': {
-      
-      const module = t.device.createShaderModule({ code: source });
-
-      
-      const pipeline = t.device.createComputePipeline({
-        layout: 'auto',
-        compute: { module, entryPoint: 'main' },
-      });
-
-      
-      const group = t.device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: { buffer: outputBuffer } }],
-      });
-
-      return [pipeline, group];
-    }
-
-    case 'uniform':
-    case 'storage_r':
-    case 'storage_rw': {
-      
-
-      
-      const inputSize = cases.length * valueStrides(parameterTypes);
-
-      
-      const inputData = new Uint8Array(inputSize);
-
-      
-      {
-        const caseStride = valueStrides(parameterTypes);
-        for (let caseIdx = 0; caseIdx < cases.length; caseIdx++) {
-          const caseBase = caseIdx * caseStride;
-          let offset = caseBase;
-          for (let paramIdx = 0; paramIdx < parameterTypes.length; paramIdx++) {
-            const params = cases[caseIdx].input;
-            if (params instanceof Array) {
-              params[paramIdx].copyTo(inputData, offset);
-            } else {
-              params.copyTo(inputData, offset);
-            }
-            offset += valueStride(parameterTypes[paramIdx]);
-          }
-        }
-      }
-
-      
-      const pipeline = getOrCreate(pipelineCache, source, () => {
+    case 'const':{
         
         const module = t.device.createShaderModule({ code: source });
 
         
-        return t.device.createComputePipeline({
+        const pipeline = await t.device.createComputePipelineAsync({
           layout: 'auto',
-          compute: { module, entryPoint: 'main' },
+          compute: { module, entryPoint: 'main' }
         });
-      });
 
-      
-      const inputBuffer = t.makeBufferWithContents(
-        inputData,
-        GPUBufferUsage.COPY_SRC |
-          (inputSource === 'uniform' ? GPUBufferUsage.UNIFORM : GPUBufferUsage.STORAGE)
-      );
+        
+        const group = t.device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [{ binding: 0, resource: { buffer: outputBuffer } }]
+        });
 
-      
-      const group = t.device.createBindGroup({
-        layout: pipeline.getBindGroupLayout(0),
-        entries: [
+        return [pipeline, group];
+      }
+
+    case 'uniform':
+    case 'storage_r':
+    case 'storage_rw':{
+        
+
+        
+        const inputSize = cases.length * valueStrides(parameterTypes);
+
+        
+        const inputData = new Uint8Array(inputSize);
+
+        
+        {
+          const caseStride = valueStrides(parameterTypes);
+          for (let caseIdx = 0; caseIdx < cases.length; caseIdx++) {
+            const caseBase = caseIdx * caseStride;
+            let offset = caseBase;
+            for (let paramIdx = 0; paramIdx < parameterTypes.length; paramIdx++) {
+              const params = cases[caseIdx].input;
+              if (params instanceof Array) {
+                params[paramIdx].copyTo(inputData, offset);
+              } else {
+                params.copyTo(inputData, offset);
+              }
+              offset += valueStride(parameterTypes[paramIdx]);
+            }
+          }
+        }
+
+        
+        const pipeline = getOrCreate(pipelineCache, source, () => {
+          
+          const module = t.device.createShaderModule({ code: source });
+
+          
+          return t.device.createComputePipeline({
+            layout: 'auto',
+            compute: { module, entryPoint: 'main' }
+          });
+        });
+
+        
+        const inputBuffer = t.makeBufferWithContents(
+          inputData,
+          GPUBufferUsage.COPY_SRC | (
+          inputSource === 'uniform' ? GPUBufferUsage.UNIFORM : GPUBufferUsage.STORAGE)
+        );
+
+        
+        const group = t.device.createBindGroup({
+          layout: pipeline.getBindGroupLayout(0),
+          entries: [
           { binding: 0, resource: { buffer: outputBuffer } },
-          { binding: 1, resource: { buffer: inputBuffer } },
-        ],
-      });
+          { binding: 1, resource: { buffer: inputBuffer } }]
 
-      return [pipeline, group];
-    }
+        });
+
+        return [pipeline, group];
+      }
   }
 }
 
@@ -1054,7 +1123,12 @@ function buildPipeline(
 
 
 
-function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
+function packScalarsToVector(
+parameterTypes,
+resultType,
+cases,
+vectorWidth)
+{
   
   for (let i = 0; i < parameterTypes.length; i++) {
     const ty = parameterTypes[i];
@@ -1071,10 +1145,10 @@ function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
   }
 
   const packedCases = [];
-  const packedParameterTypes = parameterTypes.map(p => TypeVec(vectorWidth, p));
+  const packedParameterTypes = parameterTypes.map((p) => TypeVec(vectorWidth, p));
   const packedResultType = new VectorType(vectorWidth, resultType);
 
-  const clampCaseIdx = idx => Math.min(idx, cases.length - 1);
+  const clampCaseIdx = (idx) => Math.min(idx, cases.length - 1);
 
   let caseIdx = 0;
   while (caseIdx < cases.length) {
@@ -1095,7 +1169,7 @@ function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
       cmp_impls[i] = toComparator(cases[clampCaseIdx(caseIdx + i)].expected).compare;
     }
     const comparators = {
-      compare: got => {
+      compare: (got) => {
         let matched = true;
         const gElements = new Array(vectorWidth);
         const eElements = new Array(vectorWidth);
@@ -1108,10 +1182,10 @@ function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
         return {
           matched,
           got: `${packedResultType}(${gElements.join(', ')})`,
-          expected: `${packedResultType}(${eElements.join(', ')})`,
+          expected: `${packedResultType}(${eElements.join(', ')})`
         };
       },
-      kind: 'packed',
+      kind: 'packed'
     };
 
     
@@ -1122,7 +1196,7 @@ function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
   return {
     cases: packedCases,
     parameterTypes: packedParameterTypes,
-    resultType: packedResultType,
+    resultType: packedResultType
   };
 }
 
@@ -1140,7 +1214,24 @@ function packScalarsToVector(parameterTypes, resultType, cases, vectorWidth) {
 
 
 
-function generateScalarBinaryToScalarCases(param0s, param1s, op, quantize, scalarize) {
+
+
+
+
+
+
+
+
+
+
+
+function generateScalarBinaryToScalarCases(
+param0s,
+param1s,
+op,
+quantize,
+scalarize)
+{
   param0s = param0s.map(quantize);
   param1s = param1s.map(quantize);
   return cartesianProduct(param0s, param1s).reduce((cases, e) => {
@@ -1158,7 +1249,11 @@ function generateScalarBinaryToScalarCases(param0s, param1s, op, quantize, scala
 
 
 
-export function generateBinaryToI32Cases(param0s, param1s, op) {
+export function generateBinaryToI32Cases(
+param0s,
+param1s,
+op)
+{
   return generateScalarBinaryToScalarCases(param0s, param1s, op, quantizeToI32, i32);
 }
 
@@ -1168,7 +1263,11 @@ export function generateBinaryToI32Cases(param0s, param1s, op) {
 
 
 
-export function generateBinaryToU32Cases(param0s, param1s, op) {
+export function generateBinaryToU32Cases(
+param0s,
+param1s,
+op)
+{
   return generateScalarBinaryToScalarCases(param0s, param1s, op, quantizeToU32, u32);
 }
 
@@ -1180,16 +1279,22 @@ export function generateBinaryToU32Cases(param0s, param1s, op) {
 
 
 
-function makeScalarVectorBinaryToVectorCase(scalar, vector, op, quantize, scalarize) {
+function makeScalarVectorBinaryToVectorCase(
+scalar,
+vector,
+op,
+quantize,
+scalarize)
+{
   scalar = quantize(scalar);
   vector = vector.map(quantize);
-  const result = vector.map(v => op(scalar, v));
+  const result = vector.map((v) => op(scalar, v));
   if (result.includes(undefined)) {
     return undefined;
   }
   return {
     input: [scalarize(scalar), new Vector(vector.map(scalarize))],
-    expected: new Vector(result.map(scalarize)),
+    expected: new Vector(result.map(scalarize))
   };
 }
 
@@ -1201,10 +1306,16 @@ function makeScalarVectorBinaryToVectorCase(scalar, vector, op, quantize, scalar
 
 
 
-function generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantize, scalarize) {
+function generateScalarVectorBinaryToVectorCases(
+scalars,
+vectors,
+op,
+quantize,
+scalarize)
+{
   const cases = new Array();
-  scalars.forEach(s => {
-    vectors.forEach(v => {
+  scalars.forEach((s) => {
+    vectors.forEach((v) => {
       const c = makeScalarVectorBinaryToVectorCase(s, v, op, quantize, scalarize);
       if (c !== undefined) {
         cases.push(c);
@@ -1222,16 +1333,22 @@ function generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantize,
 
 
 
-function makeVectorScalarBinaryToVectorCase(vector, scalar, op, quantize, scalarize) {
+function makeVectorScalarBinaryToVectorCase(
+vector,
+scalar,
+op,
+quantize,
+scalarize)
+{
   vector = vector.map(quantize);
   scalar = quantize(scalar);
-  const result = vector.map(v => op(v, scalar));
+  const result = vector.map((v) => op(v, scalar));
   if (result.includes(undefined)) {
     return undefined;
   }
   return {
     input: [new Vector(vector.map(scalarize)), scalarize(scalar)],
-    expected: new Vector(result.map(scalarize)),
+    expected: new Vector(result.map(scalarize))
   };
 }
 
@@ -1243,10 +1360,16 @@ function makeVectorScalarBinaryToVectorCase(vector, scalar, op, quantize, scalar
 
 
 
-function generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantize, scalarize) {
+function generateVectorScalarBinaryToVectorCases(
+vectors,
+scalars,
+op,
+quantize,
+scalarize)
+{
   const cases = new Array();
-  scalars.forEach(s => {
-    vectors.forEach(v => {
+  scalars.forEach((s) => {
+    vectors.forEach((v) => {
       const c = makeVectorScalarBinaryToVectorCase(v, s, op, quantize, scalarize);
       if (c !== undefined) {
         cases.push(c);
@@ -1262,7 +1385,11 @@ function generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantize,
 
 
 
-export function generateU32VectorBinaryToVectorCases(scalars, vectors, op) {
+export function generateU32VectorBinaryToVectorCases(
+scalars,
+vectors,
+op)
+{
   return generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantizeToU32, u32);
 }
 
@@ -1272,7 +1399,11 @@ export function generateU32VectorBinaryToVectorCases(scalars, vectors, op) {
 
 
 
-export function generateVectorU32BinaryToVectorCases(vectors, scalars, op) {
+export function generateVectorU32BinaryToVectorCases(
+vectors,
+scalars,
+op)
+{
   return generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantizeToU32, u32);
 }
 
@@ -1282,7 +1413,11 @@ export function generateVectorU32BinaryToVectorCases(vectors, scalars, op) {
 
 
 
-export function generateI32VectorBinaryToVectorCases(scalars, vectors, op) {
+export function generateI32VectorBinaryToVectorCases(
+scalars,
+vectors,
+op)
+{
   return generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantizeToI32, i32);
 }
 
@@ -1292,6 +1427,10 @@ export function generateI32VectorBinaryToVectorCases(scalars, vectors, op) {
 
 
 
-export function generateVectorI32BinaryToVectorCases(vectors, scalars, op) {
+export function generateVectorI32BinaryToVectorCases(
+vectors,
+scalars,
+op)
+{
   return generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantizeToI32, i32);
 }

@@ -4,8 +4,7 @@
 
 
 
- let baseResourcePath = './resources';
-let crossOriginHost = '';
+let baseResourcePath = './resources';let crossOriginHost = '';
 
 function getAbsoluteBaseResourcePath(path) {
   
@@ -57,8 +56,8 @@ export function getCrossOriginResourcePath(pathRelativeToResourcesDir, onlineUrl
       crossOriginHost +
       getAbsoluteBaseResourcePath(baseResourcePath) +
       '/' +
-      pathRelativeToResourcesDir
-    );
+      pathRelativeToResourcesDir);
+
   }
 
   
@@ -78,8 +77,8 @@ export function getCrossOriginResourcePath(pathRelativeToResourcesDir, onlineUrl
       location.port +
       getAbsoluteBaseResourcePath(baseResourcePath) +
       '/' +
-      pathRelativeToResourcesDir
-    );
+      pathRelativeToResourcesDir);
+
   }
 
   return onlineUrl;

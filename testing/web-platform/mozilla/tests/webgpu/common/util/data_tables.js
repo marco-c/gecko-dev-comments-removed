@@ -7,7 +7,7 @@ export function keysOf(obj) {
 }
 
 export function numericKeysOf(obj) {
-  return Object.keys(obj).map(n => Number(n));
+  return Object.keys(obj).map((n) => Number(n));
 }
 
 
@@ -19,7 +19,7 @@ export function objectsToRecord(objects) {
   return objects.reduce((obj, type) => {
     return {
       ...obj,
-      [type.toString()]: type,
+      [type.toString()]: type
     };
   }, record);
 }
@@ -29,12 +29,98 @@ export function objectsToRecord(objects) {
 
 
 
-export function makeTable(members, defaults, table) {
+export function makeTable(
+
+
+
+
+members,
+defaults,
+table)
+
+
+{
   const result = {};
   for (const [k, v] of Object.entries(table)) {
     const item = {};
     for (let i = 0; i < members.length; ++i) {
       item[members[i]] = v[i] ?? defaults[i];
+    }
+    result[k] = item;
+  }
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function makeTableRenameAndFilter(
+
+
+
+
+
+columnRenames,
+columnsKept,
+columns,
+defaults,
+table)
+
+
+{
+  const result = {};
+  const keyToIndex = new Map(
+    columnsKept.map((name) => {
+      const remappedName = columnRenames[name] === undefined ? name : columnRenames[name];
+      return [name, columns.indexOf(remappedName)];
+    })
+  );
+  for (const [k, v] of Object.entries(table)) {
+    const item = {};
+    for (const member of columnsKept) {
+      const ndx = keyToIndex.get(member);
+      item[member] = v[ndx] ?? defaults[ndx];
     }
     result[k] = item;
   }

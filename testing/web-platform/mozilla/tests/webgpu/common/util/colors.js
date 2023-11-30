@@ -1,5 +1,68 @@
 
 
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -13,9 +76,10 @@
 export let Colors;
 
 try {
+
   Colors = require('ansi-colors');
 } catch {
-  const passthrough = s => s;
+  const passthrough = (s) => s;
   passthrough.enabled = false;
   passthrough.reset = passthrough;
   passthrough.bold = passthrough;

@@ -1,7 +1,8 @@
 
 
- import { assert } from '../util/util.js';
+import { assert } from '../util/util.js';
 import { parseQuery } from './query/parseQuery.js';
+
 
 import { loadTreeForQuery } from './tree.js';
 
@@ -10,25 +11,78 @@ import { loadTreeForQuery } from './tree.js';
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 export class TestFileLoader extends EventTarget {
+
+
+
   async importSpecFile(suite, path) {
     const url = `${suite}/${path.join('/')}.spec.js`;
     this.dispatchEvent(new MessageEvent('import', { data: { url } }));
-
     const ret = await this.import(url);
     this.dispatchEvent(new MessageEvent('imported', { data: { url } }));
-
     return ret;
   }
 
-  async loadTree(query, { subqueriesToExpand = [], maxChunkTime = Infinity } = {}) {
+  async loadTree(
+  query,
+  {
+    subqueriesToExpand = [],
+    maxChunkTime = Infinity
+  } = {})
+  {
     const tree = await loadTreeForQuery(this, query, {
-      subqueriesToExpand: subqueriesToExpand.map(s => {
+      subqueriesToExpand: subqueriesToExpand.map((s) => {
         const q = parseQuery(s);
         assert(q.level >= 2, () => `subqueriesToExpand entries should not be multi-file:\n  ${q}`);
         return q;
       }),
-      maxChunkTime,
+      maxChunkTime
     });
     this.dispatchEvent(new MessageEvent('finish'));
     return tree;

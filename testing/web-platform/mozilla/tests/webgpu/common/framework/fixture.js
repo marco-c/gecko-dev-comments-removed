@@ -1,6 +1,6 @@
 
 
- import { assert, unreachable } from '../util/util.js';
+import { assert, unreachable } from '../util/util.js';
 
 export class SkipTestCase extends Error {}
 export class UnexpectedPassError extends Error {}
@@ -9,15 +9,20 @@ export { TestCaseRecorder } from '../internal/logging/test_case_recorder.js';
 
 
 
+
+
+
+
+
+
+
+
 export class SubcaseBatchState {
   constructor(
-    recorder,
-    
-    params
-  ) {
-    this.recorder = recorder;
-    this.params = params;
-  }
+  recorder,
+  
+  params)
+  {this.recorder = recorder;this.params = params;}
 
   
 
@@ -42,6 +47,8 @@ export class SubcaseBatchState {
 
 
 export class Fixture {
+
+
   
 
 
@@ -138,11 +145,11 @@ export class Fixture {
   tryTrackForCleanup(o) {
     if (typeof o === 'object' && o !== null) {
       if (
-        'destroy' in o ||
-        'close' in o ||
-        o instanceof WebGLRenderingContext ||
-        o instanceof WebGL2RenderingContext
-      ) {
+      'destroy' in o ||
+      'close' in o ||
+      o instanceof WebGLRenderingContext ||
+      o instanceof WebGL2RenderingContext)
+      {
         this.objectsToCleanUp.push(o);
       }
     }
@@ -157,6 +164,13 @@ export class Fixture {
   
   skip(msg) {
     throw new SkipTestCase(msg);
+  }
+
+  
+  skipIf(cond, msg = '') {
+    if (cond) {
+      this.skip(typeof msg === 'function' ? msg() : msg);
+    }
   }
 
   
@@ -207,7 +221,7 @@ export class Fixture {
 
   
   shouldResolve(p, msg) {
-    this.eventualAsyncExpectation(async niceStack => {
+    this.eventualAsyncExpectation(async (niceStack) => {
       const m = msg ? ': ' + msg : '';
       try {
         await p;
@@ -223,16 +237,26 @@ export class Fixture {
   }
 
   
-  shouldReject(expectedName, p, msg) {
-    this.eventualAsyncExpectation(async niceStack => {
-      const m = msg ? ': ' + msg : '';
+  shouldReject(
+  expectedName,
+  p,
+  { allowMissingStack = false, message } = {})
+  {
+    this.eventualAsyncExpectation(async (niceStack) => {
+      const m = message ? ': ' + message : '';
       try {
         await p;
         niceStack.message = 'DID NOT REJECT' + m;
         this.rec.expectationFailed(niceStack);
       } catch (ex) {
-        niceStack.message = 'rejected as expected' + m;
         this.expectErrorValue(expectedName, ex, niceStack);
+        if (!allowMissingStack) {
+          if (!(ex instanceof Error && typeof ex.stack === 'string')) {
+            const exMessage = ex instanceof Error ? ex.message : '?';
+            niceStack.message = `rejected as expected, but missing stack (${exMessage})${m}`;
+            this.rec.expectationFailed(niceStack);
+          }
+        }
       }
     });
   }
@@ -243,8 +267,12 @@ export class Fixture {
 
 
 
-  shouldThrow(expectedError, fn, msg) {
-    const m = msg ? ': ' + msg : '';
+  shouldThrow(
+  expectedError,
+  fn,
+  { allowMissingStack = false, message } = {})
+  {
+    const m = message ? ': ' + message : '';
     try {
       fn();
       if (expectedError === false) {
@@ -257,6 +285,11 @@ export class Fixture {
         this.rec.expectationFailed(new Error('threw unexpectedly' + m));
       } else {
         this.expectErrorValue(expectedError, ex, new Error(m));
+        if (!allowMissingStack) {
+          if (!(ex instanceof Error && typeof ex.stack === 'string')) {
+            this.rec.expectationFailed(new Error('threw as expected, but missing stack' + m));
+          }
+        }
       }
     }
   }
@@ -276,8 +309,11 @@ export class Fixture {
 
 
 
-  expectOK(error, { mode = 'fail', niceStack } = {}) {
-    const handleError = error => {
+  expectOK(
+  error,
+  { mode = 'fail', niceStack } = {})
+  {
+    const handleError = (error) => {
       if (error instanceof Error) {
         if (niceStack) {
           error.stack = niceStack.stack;
@@ -301,9 +337,21 @@ export class Fixture {
     }
   }
 
-  eventualExpectOK(error, { mode = 'fail' } = {}) {
-    this.eventualAsyncExpectation(async niceStack => {
+  eventualExpectOK(
+  error,
+  { mode = 'fail' } = {})
+  {
+    this.eventualAsyncExpectation(async (niceStack) => {
       this.expectOK(await error, { mode, niceStack });
     });
   }
 }
+
+
+
+
+
+
+
+
+

@@ -4,6 +4,7 @@ Validation negative tests for bitcast builtins.
 
 import { makeTestGroup } from '../../../../../../common/framework/test_group.js';
 import { keysOf } from '../../../../../../common/util/data_tables.js';
+import { assert } from '../../../../../../common/util/util.js';
 import { kBit } from '../../../../../util/constants.js';
 import { linearRange } from '../../../../../util/math.js';
 import { ShaderValidationTest } from '../../../shader_validation_test.js';
@@ -33,13 +34,13 @@ const f32InfAndNaNInU32: number[] = [
   
   
   
-  ...linearRange(kBit.f32.infinity.positive + 1, kBit.i32.positive.max, numNaNs),
+  ...linearRange(kBit.f32.positive.infinity + 1, kBit.i32.positive.max, numNaNs),
   
   
   
-  ...linearRange(kBit.f32.infinity.negative + 1, kBit.u32.max, numNaNs),
-  kBit.f32.infinity.positive,
-  kBit.f32.infinity.negative,
+  ...linearRange(kBit.f32.negative.infinity + 1, kBit.u32.max, numNaNs),
+  kBit.f32.positive.infinity,
+  kBit.f32.negative.infinity,
 ];
 
 g.test('bad_const_to_f32')
@@ -54,7 +55,11 @@ It is a shader-creation error if any const-expression of floating-point type eva
       .combine('fromScalarType', ['i32', 'u32'] as const)
       .combine('vectorize', keysOf(kVectorCases))
       .beginSubcases()
-      .combine('bitBadValue', [...f32InfAndNaNInU32] as const)
+      
+      .combine('useBadValue', [true, false])
+      .expand('bitBadValue', p =>
+        p.useBadValue ? ([...f32InfAndNaNInU32] as const) : [0 as const]
+      )
   )
   .fn(t => {
     
@@ -73,11 +78,95 @@ It is a shader-creation error if any const-expression of floating-point type eva
       .map(i => (i === badIndex ? badScalar : '0'))
       .join(',');
     const code = `const f = bitcast<${destType}>(${srcType}(${components}));`;
-    t.expectCompileResult(false, code);
+    t.expectCompileResult(!t.params.useBadValue, code);
+  });
+
+const f16InfAndNaNInU16: number[] = [
+  
+  
+  
+  
+  ...linearRange(kBit.f16.positive.infinity + 1, 32767, numNaNs),
+  
+  
+  
+  ...linearRange(kBit.f16.negative.infinity + 1, 65535, numNaNs),
+  kBit.f16.positive.infinity,
+  kBit.f16.negative.infinity,
+];
+
+
+
+
+
+function u16x2ToU32(u16x2: number[]): number {
+  assert(u16x2.length === 2);
+  
+  const buffer = new ArrayBuffer(4);
+  const view = new DataView(buffer);
+  
+  view.setUint16(0, u16x2[0], true);
+  view.setUint16(2, u16x2[1], true);
+  return view.getUint32(0, true);
+}
+
+g.test('bad_const_to_f16')
+  .specURL('https://www.w3.org/TR/WGSL/#floating-point-evaluation')
+  .desc(
+    `
+It is a shader-creation error if any const-expression of floating-point type evaluates to NaN or infinity.
+`
+  )
+  .params(u =>
+    u
+      .combine('fromScalarType', ['i32', 'u32'] as const)
+      .combine('vectorize', keysOf(kVectorCases))
+      
+      .filter(p => kVectorCases[p.vectorize].width % 2 === 0)
+      .beginSubcases()
+      
+      .combine('useBadValue', [true, false])
+      .expand('bitBadValue', p =>
+        p.useBadValue ? ([...f16InfAndNaNInU16] as const) : [0 as const]
+      )
+  )
+  .beforeAllSubcases(t => {
+    t.selectDeviceOrSkipTestCase('shader-f16');
+  })
+  .fn(t => {
+    
+    
+    
+    
+    const vectorize = kVectorCases[t.params.vectorize];
+    const width = vectorize.width;
+    const badIndex = vectorize.badIndex;
+
+    
+    assert(width === 2 || width === 4);
+
+    
+    const badSrcElemBitsInU32 = u16x2ToU32(
+      badIndex % 2 === 0 ? [t.params.bitBadValue, 0] : [0, t.params.bitBadValue]
+    );
+    const badScalar = `${t.params.fromScalarType}(u32(${badSrcElemBitsInU32}))`;
+
+    const destType = `vec${width}<f16>`;
+    const srcType = width === 2 ? t.params.fromScalarType : `vec2<${t.params.fromScalarType}>`;
+    const components = [...Array(width / 2).keys()]
+      .map(i => (i === badIndex >> 1 ? badScalar : '0'))
+      .join(',');
+    const code = `
+    enable f16;
+    const f = bitcast<${destType}>(${srcType}(${components}));`;
+    t.expectCompileResult(!t.params.useBadValue, code);
   });
 
 const f32_matrix_types = [2, 3, 4]
   .map(i => [2, 3, 4].map(j => `mat${i}x${j}f`))
+  .reduce((a, c) => a.concat(c), []);
+const f16_matrix_types = [2, 3, 4]
+  .map(i => [2, 3, 4].map(j => `mat${i}x${j}<f16>`))
   .reduce((a, c) => a.concat(c), []);
 const bool_types = ['bool', ...[2, 3, 4].map(i => `vec${i}<bool>`)];
 
@@ -91,16 +180,28 @@ Test constructible types.
   )
   .params(u =>
     u
-      .combine('type', [...f32_matrix_types, ...bool_types, 'array<i32,2>', 'S'])
+      .combine('type', [
+        ...f32_matrix_types,
+        ...f16_matrix_types,
+        ...bool_types,
+        'array<i32,2>',
+        'S',
+      ])
       .combine('direction', ['to', 'from'])
   )
+  .beforeAllSubcases(t => {
+    if (t.params.type.includes('f16')) {
+      t.selectDeviceOrSkipTestCase('shader-f16');
+    }
+  })
   .fn(t => {
     const T = t.params.type;
+    const enable_directives = t.params.type.includes('f16') ? 'enable f16;\n' : '';
     const preamble = T === 'S' ? 'struct S { a:i32 } ' : '';
     
     const srcVal = t.params.direction === 'to' ? '0' : `${T}()`;
     const destType = t.params.direction === 'to' ? T : 'i32';
-    const code = preamble + `const x = bitcast<${destType}>(${srcVal});`;
+    const code = enable_directives + preamble + `const x = bitcast<${destType}>(${srcVal});`;
     t.expectCompileResult(false, code);
   });
 

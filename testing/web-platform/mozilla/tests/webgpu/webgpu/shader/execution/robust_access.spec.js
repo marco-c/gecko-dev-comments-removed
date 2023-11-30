@@ -1,12 +1,11 @@
 
 
- export const description = `
+export const description = `
 Tests to check datatype clamping in shaders is correctly implemented for all indexable types
 (vectors, matrices, sized/unsized arrays) visible to shaders in various ways.
 
 TODO: add tests to check that textureLoad operations stay in-bounds.
-`;
-import { makeTestGroup } from '../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../common/framework/test_group.js';
 import { assert } from '../../../common/util/util.js';
 import { GPUTest } from '../../gpu_test.js';
 import { align } from '../../util/math.js';
@@ -24,7 +23,14 @@ const kMinI32 = -0x8000_0000;
 
 
 
-function runShaderTest(t, stage, testSource, layout, testBindings, dynamicOffsets) {
+async function runShaderTest(
+t,
+stage,
+testSource,
+layout,
+testBindings,
+dynamicOffsets)
+{
   assert(stage === GPUShaderStage.COMPUTE, 'Only know how to deal with compute for now');
 
   
@@ -32,7 +38,7 @@ function runShaderTest(t, stage, testSource, layout, testBindings, dynamicOffset
 
   const resultBuffer = t.device.createBuffer({
     size: 4,
-    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE,
+    usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
   });
 
   const source = `
@@ -56,22 +62,22 @@ fn main() {
 
   t.debug(source);
   const module = t.device.createShaderModule({ code: source });
-  const pipeline = t.device.createComputePipeline({
+  const pipeline = await t.device.createComputePipelineAsync({
     layout,
-    compute: { module, entryPoint: 'main' },
+    compute: { module, entryPoint: 'main' }
   });
 
   const group = t.device.createBindGroup({
     layout: pipeline.getBindGroupLayout(1),
     entries: [
-      { binding: 0, resource: { buffer: constantsBuffer } },
-      { binding: 1, resource: { buffer: resultBuffer } },
-    ],
+    { binding: 0, resource: { buffer: constantsBuffer } },
+    { binding: 1, resource: { buffer: resultBuffer } }]
+
   });
 
   const testGroup = t.device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
-    entries: testBindings,
+    entries: testBindings
   });
 
   const encoder = t.device.createCommandEncoder();
@@ -88,7 +94,11 @@ fn main() {
 }
 
 
-function testFillArrayBuffer(array, type, { zeroByteStart, zeroByteCount }) {
+function testFillArrayBuffer(
+array,
+type,
+{ zeroByteStart, zeroByteCount })
+{
   const constructor = { u32: Uint32Array, i32: Int32Array, f32: Float32Array }[type];
   assert(zeroByteCount % constructor.BYTES_PER_ELEMENT === 0);
   new constructor(array).fill(42);
@@ -99,9 +109,9 @@ function testFillArrayBuffer(array, type, { zeroByteStart, zeroByteCount }) {
 
 
 
-g.test('linear_memory')
-  .desc(
-    `For each indexable data type (vec, mat, sized/unsized array, of various scalar types), attempts
+g.test('linear_memory').
+desc(
+  `For each indexable data type (vec, mat, sized/unsized array, of various scalar types), attempts
     to access (read, write, atomic load/store) a region of memory (buffer or internal) at various
     (signed/unsigned) indices. Checks that the accesses conform to robust access (OOB reads only
     return bound memory, OOB writes don't write OOB).
@@ -113,234 +123,233 @@ g.test('linear_memory')
     TODO: Test exprIndexAddon as constexpr.
     TODO: Test exprIndexAddon as pipeline-overridable constant expression.
   `
-  )
-  .params(u =>
-    u
-      .combineWithParams([
-        { addressSpace: 'storage', storageMode: 'read', access: 'read', dynamicOffset: false },
-        {
-          addressSpace: 'storage',
-          storageMode: 'read_write',
-          access: 'read',
-          dynamicOffset: false,
-        },
-        {
-          addressSpace: 'storage',
-          storageMode: 'read_write',
-          access: 'write',
-          dynamicOffset: false,
-        },
-        { addressSpace: 'storage', storageMode: 'read', access: 'read', dynamicOffset: true },
-        { addressSpace: 'storage', storageMode: 'read_write', access: 'read', dynamicOffset: true },
-        {
-          addressSpace: 'storage',
-          storageMode: 'read_write',
-          access: 'write',
-          dynamicOffset: true,
-        },
-        { addressSpace: 'uniform', access: 'read', dynamicOffset: false },
-        { addressSpace: 'uniform', access: 'read', dynamicOffset: true },
-        { addressSpace: 'private', access: 'read' },
-        { addressSpace: 'private', access: 'write' },
-        { addressSpace: 'function', access: 'read' },
-        { addressSpace: 'function', access: 'write' },
-        { addressSpace: 'workgroup', access: 'read' },
-        { addressSpace: 'workgroup', access: 'write' },
-      ])
-      .combineWithParams([
-        { containerType: 'array' },
-        { containerType: 'matrix' },
-        { containerType: 'vector' },
-      ])
-      .combineWithParams([
-        { shadowingMode: 'none' },
-        { shadowingMode: 'module-scope' },
-        { shadowingMode: 'function-scope' },
-      ])
-      .expand('isAtomic', p => (supportsAtomics(p) ? [false, true] : [false]))
-      .beginSubcases()
-      .expand('baseType', supportedScalarTypes)
-      .expandWithParams(generateTypes)
-  )
-  .fn(t => {
-    const {
-      addressSpace,
-      storageMode,
-      access,
-      dynamicOffset,
-      isAtomic,
-      containerType,
-      baseType,
-      type,
-      shadowingMode,
-      _kTypeInfo,
-    } = t.params;
+).
+params((u) =>
+u.
+combineWithParams([
+{ addressSpace: 'storage', storageMode: 'read', access: 'read', dynamicOffset: false },
+{
+  addressSpace: 'storage',
+  storageMode: 'read_write',
+  access: 'read',
+  dynamicOffset: false
+},
+{
+  addressSpace: 'storage',
+  storageMode: 'read_write',
+  access: 'write',
+  dynamicOffset: false
+},
+{ addressSpace: 'storage', storageMode: 'read', access: 'read', dynamicOffset: true },
+{ addressSpace: 'storage', storageMode: 'read_write', access: 'read', dynamicOffset: true },
+{
+  addressSpace: 'storage',
+  storageMode: 'read_write',
+  access: 'write',
+  dynamicOffset: true
+},
+{ addressSpace: 'uniform', access: 'read', dynamicOffset: false },
+{ addressSpace: 'uniform', access: 'read', dynamicOffset: true },
+{ addressSpace: 'private', access: 'read' },
+{ addressSpace: 'private', access: 'write' },
+{ addressSpace: 'function', access: 'read' },
+{ addressSpace: 'function', access: 'write' },
+{ addressSpace: 'workgroup', access: 'read' },
+{ addressSpace: 'workgroup', access: 'write' }]
+).
+combineWithParams([
+{ containerType: 'array' },
+{ containerType: 'matrix' },
+{ containerType: 'vector' }]
+).
+combineWithParams([
+{ shadowingMode: 'none' },
+{ shadowingMode: 'module-scope' },
+{ shadowingMode: 'function-scope' }]
+).
+expand('isAtomic', (p) => supportsAtomics(p) ? [false, true] : [false]).
+beginSubcases().
+expand('baseType', supportedScalarTypes).
+expandWithParams(generateTypes)
+).
+fn(async (t) => {
+  const {
+    addressSpace,
+    storageMode,
+    access,
+    dynamicOffset,
+    isAtomic,
+    containerType,
+    baseType,
+    type,
+    shadowingMode,
+    _kTypeInfo
+  } = t.params;
 
-    assert(_kTypeInfo !== undefined, 'not an indexable type');
-    assert('arrayLength' in _kTypeInfo);
+  assert(_kTypeInfo !== undefined, 'not an indexable type');
+  assert('arrayLength' in _kTypeInfo);
 
-    let usesCanary = false;
-    let globalSource = '';
-    let testFunctionSource = '';
-    const testBufferSize = 512;
-    const bufferBindingOffset = 256;
-    
-    let bufferBindingSize = undefined;
+  let usesCanary = false;
+  let globalSource = '';
+  let testFunctionSource = '';
+  const testBufferSize = 512;
+  const bufferBindingOffset = 256;
+  
+  let bufferBindingSize = undefined;
 
-    
-    
-    const structDecl = `
+  
+  
+  const structDecl = `
 struct S {
   startCanary: array<u32, 10>,
   data: ${type},
   endCanary: array<u32, 10>,
 };`;
 
-    const testGroupBGLEntires = [];
-    switch (addressSpace) {
-      case 'uniform':
-      case 'storage':
-        {
-          assert(_kTypeInfo.layout !== undefined);
-          const layout = _kTypeInfo.layout;
-          bufferBindingSize = align(layout.size, layout.alignment);
-          const qualifiers = addressSpace === 'storage' ? `storage, ${storageMode}` : addressSpace;
-          globalSource += `
+  const testGroupBGLEntires = [];
+  switch (addressSpace) {
+    case 'uniform':
+    case 'storage':
+      {
+        assert(_kTypeInfo.layout !== undefined);
+        const layout = _kTypeInfo.layout;
+        bufferBindingSize = align(layout.size, layout.alignment);
+        const qualifiers = addressSpace === 'storage' ? `storage, ${storageMode}` : addressSpace;
+        globalSource += `
 struct TestData {
   data: ${type},
 };
 @group(0) @binding(0) var<${qualifiers}> s: TestData;`;
 
-          testGroupBGLEntires.push({
-            binding: 0,
-            visibility: GPUShaderStage.COMPUTE,
-            buffer: {
-              type:
-                addressSpace === 'uniform'
-                  ? 'uniform'
-                  : storageMode === 'read'
-                  ? 'read-only-storage'
-                  : 'storage',
-              hasDynamicOffset: dynamicOffset,
-            },
-          });
-        }
-        break;
+        testGroupBGLEntires.push({
+          binding: 0,
+          visibility: GPUShaderStage.COMPUTE,
+          buffer: {
+            type:
+            addressSpace === 'uniform' ?
+            'uniform' :
+            storageMode === 'read' ?
+            'read-only-storage' :
+            'storage',
+            hasDynamicOffset: dynamicOffset
+          }
+        });
+      }
+      break;
 
-      case 'private':
-      case 'workgroup':
-        usesCanary = true;
-        globalSource += structDecl;
-        globalSource += `var<${addressSpace}> s: S;`;
-        break;
+    case 'private':
+    case 'workgroup':
+      usesCanary = true;
+      globalSource += structDecl;
+      globalSource += `var<${addressSpace}> s: S;`;
+      break;
 
-      case 'function':
-        usesCanary = true;
-        globalSource += structDecl;
-        testFunctionSource += 'var s: S;';
-        break;
-    }
+    case 'function':
+      usesCanary = true;
+      globalSource += structDecl;
+      testFunctionSource += 'var s: S;';
+      break;
+  }
 
-    
+  
 
-    
-    if (usesCanary) {
-      testFunctionSource += `
+  
+  if (usesCanary) {
+    testFunctionSource += `
   for (var i = 0u; i < 10u; i = i + 1u) {
     s.startCanary[i] = 0xFFFFFFFFu;
     s.endCanary[i] = 0xFFFFFFFFu;
   }`;
-    }
+  }
 
+  
+  const nextErrorReturnValue = (() => {
+    let errorReturnValue = 0x1000;
+    return () => {
+      ++errorReturnValue;
+      return `0x${errorReturnValue.toString(16)}u`;
+    };
+  })();
+
+  
+  for (const indexSigned of [false, true]) {
+    const indicesToTest = indexSigned ?
+    [
     
-    const nextErrorReturnValue = (() => {
-      let errorReturnValue = 0x1000;
-      return () => {
-        ++errorReturnValue;
-        return `0x${errorReturnValue.toString(16)}u`;
-      };
-    })();
-
+    '0',
+    `${_kTypeInfo.arrayLength} - 1`,
     
-    for (const indexSigned of [false, true]) {
-      const indicesToTest = indexSigned
-        ? [
-            
-            '0',
-            `${_kTypeInfo.arrayLength} - 1`,
-            
-            '-1',
-            `${_kTypeInfo.arrayLength}`,
-            
-            '-1000000',
-            '1000000',
-            `${kMinI32}`,
-            `${kMaxI32}`,
-          ]
-        : [
-            
-            '0u',
-            `${_kTypeInfo.arrayLength}u - 1u`,
-            
-            `${_kTypeInfo.arrayLength}u`,
-            
-            '1000000u',
-            `${kMaxU32}u`,
-            `${kMaxI32}u`,
-          ];
+    '-1',
+    `${_kTypeInfo.arrayLength}`,
+    
+    '-1000000',
+    '1000000',
+    `${kMinI32}`,
+    `${kMaxI32}`] :
 
-      const indexTypeLiteral = indexSigned ? '0' : '0u';
-      const indexTypeCast = indexSigned ? 'i32' : 'u32';
-      for (const exprIndexAddon of [
-        '', 
-        ` + ${indexTypeLiteral}`, 
-        ` + ${indexTypeCast}(constants.zero)`, 
-      ]) {
-        
-        for (const indexToTest of indicesToTest) {
-          testFunctionSource += `
+    [
+    
+    '0u',
+    `${_kTypeInfo.arrayLength}u - 1u`,
+    
+    `${_kTypeInfo.arrayLength}u`,
+    
+    '1000000u',
+    `${kMaxU32}u`,
+    `${kMaxI32}u`];
+
+
+    const indexTypeLiteral = indexSigned ? '0' : '0u';
+    const indexTypeCast = indexSigned ? 'i32' : 'u32';
+    for (const exprIndexAddon of [
+    '', 
+    ` + ${indexTypeLiteral}`, 
+    ` + ${indexTypeCast}(constants.zero)` 
+    ]) {
+      
+      for (const indexToTest of indicesToTest) {
+        testFunctionSource += `
   {
     let index = (${indexToTest})${exprIndexAddon};`;
-          const exprZeroElement = `${_kTypeInfo.elementBaseType}()`;
-          const exprElement = `s.data[index]`;
+        const exprZeroElement = `${_kTypeInfo.elementBaseType}()`;
+        const exprElement = `s.data[index]`;
 
-          switch (access) {
-            case 'read':
-              {
-                let exprLoadElement = isAtomic ? `atomicLoad(&${exprElement})` : exprElement;
-                if (addressSpace === 'uniform' && containerType === 'array') {
-                  
-                  
-                  
-                  exprLoadElement += '[0]';
-                }
-                let condition = `${exprLoadElement} != ${exprZeroElement}`;
-                if (containerType === 'matrix') condition = `any(${condition})`;
-                testFunctionSource += `
+        switch (access) {
+          case 'read':
+            {
+              let exprLoadElement = isAtomic ? `atomicLoad(&${exprElement})` : exprElement;
+              if (addressSpace === 'uniform' && containerType === 'array') {
+                
+                
+                
+                exprLoadElement += '[0]';
+              }
+              let condition = `${exprLoadElement} != ${exprZeroElement}`;
+              if (containerType === 'matrix') condition = `any(${condition})`;
+              testFunctionSource += `
     if (${condition}) { return ${nextErrorReturnValue()}; }`;
-              }
-              break;
+            }
+            break;
 
-            case 'write':
-              if (isAtomic) {
-                testFunctionSource += `
+          case 'write':
+            if (isAtomic) {
+              testFunctionSource += `
     atomicStore(&s.data[index], ${exprZeroElement});`;
-              } else {
-                testFunctionSource += `
+            } else {
+              testFunctionSource += `
     s.data[index] = ${exprZeroElement};`;
-              }
-              break;
-          }
-
-          testFunctionSource += `
-  }`;
+            }
+            break;
         }
+        testFunctionSource += `
+  }`;
       }
     }
+  }
 
-    
-    if (usesCanary) {
-      testFunctionSource += `
+  
+  if (usesCanary) {
+    testFunctionSource += `
   for (var i = 0u; i < 10u; i = i + 1u) {
     if (s.startCanary[i] != 0xFFFFFFFFu) {
       return ${nextErrorReturnValue()};
@@ -349,42 +358,42 @@ struct TestData {
       return ${nextErrorReturnValue()};
     }
   }`;
-    }
+  }
 
-    
-    let moduleScopeShadowDecls = '';
-    let functionScopeShadowDecls = '';
+  
+  let moduleScopeShadowDecls = '';
+  let functionScopeShadowDecls = '';
 
-    switch (shadowingMode) {
-      case 'module-scope':
-        
-        moduleScopeShadowDecls = `
+  switch (shadowingMode) {
+    case 'module-scope':
+      
+      moduleScopeShadowDecls = `
 var<private> min = 0;
 var<private> max = 0;
 var<private> arrayLength = 0;
 `;
-        
-        
-        functionScopeShadowDecls = `
+      
+      
+      functionScopeShadowDecls = `
   _ = min;
   _ = max;
   _ = arrayLength;
 `;
-        break;
-      case 'function-scope':
-        
-        functionScopeShadowDecls = `
+      break;
+    case 'function-scope':
+      
+      functionScopeShadowDecls = `
   let min = 0;
   let max = 0;
   let arrayLength = 0;
 `;
-        break;
-    }
+      break;
+  }
 
-    
+  
 
-    
-    const testSource = `
+  
+  const testSource = `
 ${globalSource}
 ${moduleScopeShadowDecls}
 
@@ -394,79 +403,78 @@ fn runTest() -> u32 {
   return 0u;
 }`;
 
-    const layout = t.device.createPipelineLayout({
-      bindGroupLayouts: [
-        t.device.createBindGroupLayout({
-          entries: testGroupBGLEntires,
-        }),
-        t.device.createBindGroupLayout({
-          entries: [
-            {
-              binding: 0,
-              visibility: GPUShaderStage.COMPUTE,
-              buffer: {
-                type: 'uniform',
-              },
-            },
-            {
-              binding: 1,
-              visibility: GPUShaderStage.COMPUTE,
-              buffer: {
-                type: 'storage',
-              },
-            },
-          ],
-        }),
-      ],
+  const layout = t.device.createPipelineLayout({
+    bindGroupLayouts: [
+    t.device.createBindGroupLayout({
+      entries: testGroupBGLEntires
+    }),
+    t.device.createBindGroupLayout({
+      entries: [
+      {
+        binding: 0,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'uniform'
+        }
+      },
+      {
+        binding: 1,
+        visibility: GPUShaderStage.COMPUTE,
+        buffer: {
+          type: 'storage'
+        }
+      }]
+
+    })]
+
+  });
+
+  
+  if (bufferBindingSize !== undefined && baseType !== 'bool') {
+    const expectedData = new ArrayBuffer(testBufferSize);
+    const bufferBindingEnd = bufferBindingOffset + bufferBindingSize;
+    testFillArrayBuffer(expectedData, baseType, {
+      zeroByteStart: bufferBindingOffset,
+      zeroByteCount: bufferBindingSize
     });
 
     
-    if (bufferBindingSize !== undefined && baseType !== 'bool') {
-      const expectedData = new ArrayBuffer(testBufferSize);
-      const bufferBindingEnd = bufferBindingOffset + bufferBindingSize;
-      testFillArrayBuffer(expectedData, baseType, {
-        zeroByteStart: bufferBindingOffset,
-        zeroByteCount: bufferBindingSize,
-      });
+    const testBuffer = t.makeBufferWithContents(
+      new Uint8Array(expectedData),
+      GPUBufferUsage.COPY_SRC |
+      GPUBufferUsage.UNIFORM |
+      GPUBufferUsage.STORAGE |
+      GPUBufferUsage.COPY_DST
+    );
 
-      
-      const testBuffer = t.makeBufferWithContents(
-        new Uint8Array(expectedData),
-        GPUBufferUsage.COPY_SRC |
-          GPUBufferUsage.UNIFORM |
-          GPUBufferUsage.STORAGE |
-          GPUBufferUsage.COPY_DST
-      );
+    
+    await runShaderTest(
+      t,
+      GPUShaderStage.COMPUTE,
+      testSource,
+      layout,
+      [
+      {
+        binding: 0,
+        resource: {
+          buffer: testBuffer,
+          offset: dynamicOffset ? 0 : bufferBindingOffset,
+          size: bufferBindingSize
+        }
+      }],
 
-      
-      runShaderTest(
-        t,
-        GPUShaderStage.COMPUTE,
-        testSource,
-        layout,
-        [
-          {
-            binding: 0,
-            resource: {
-              buffer: testBuffer,
-              offset: dynamicOffset ? 0 : bufferBindingOffset,
-              size: bufferBindingSize,
-            },
-          },
-        ],
+      dynamicOffset ? [bufferBindingOffset] : undefined
+    );
 
-        dynamicOffset ? [bufferBindingOffset] : undefined
-      );
-
-      
-      const expectedBytes = new Uint8Array(expectedData);
-      t.expectGPUBufferValuesEqual(testBuffer, expectedBytes.subarray(0, bufferBindingOffset), 0);
-      t.expectGPUBufferValuesEqual(
-        testBuffer,
-        expectedBytes.subarray(bufferBindingEnd, testBufferSize),
-        bufferBindingEnd
-      );
-    } else {
-      runShaderTest(t, GPUShaderStage.COMPUTE, testSource, layout, []);
-    }
-  });
+    
+    const expectedBytes = new Uint8Array(expectedData);
+    t.expectGPUBufferValuesEqual(testBuffer, expectedBytes.subarray(0, bufferBindingOffset), 0);
+    t.expectGPUBufferValuesEqual(
+      testBuffer,
+      expectedBytes.subarray(bufferBindingEnd, testBufferSize),
+      bufferBindingEnd
+    );
+  } else {
+    await runShaderTest(t, GPUShaderStage.COMPUTE, testSource, layout, []);
+  }
+});

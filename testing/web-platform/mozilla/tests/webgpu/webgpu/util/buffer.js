@@ -1,18 +1,21 @@
 
 
- import { memcpy } from '../../common/util/util.js';
-import { align } from './math.js';
+import { memcpy } from '../../common/util/util.js';import { align } from './math.js';
 
 
 
 
 
 
-export function makeBufferWithContents(device, dataArray, usage) {
+export function makeBufferWithContents(
+device,
+dataArray,
+usage)
+{
   const buffer = device.createBuffer({
     mappedAtCreation: true,
     size: align(dataArray.byteLength, 4),
-    usage,
+    usage
   });
   memcpy({ src: dataArray }, { dst: buffer.getMappedRange() });
   buffer.unmap();

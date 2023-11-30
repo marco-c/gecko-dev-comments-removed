@@ -11,7 +11,46 @@ export type TypeEqual<X, Y> = (<T>() => T extends X ? 1 : 2) extends <T>() => T 
   : false;
 
 
-export function assertTypeTrue<T extends true>() {}
+export function assertTypeTrue<_ extends true>() {}
+
+
+export type ROArrayArray<T> = ReadonlyArray<ReadonlyArray<T>>;
+
+export type ROArrayArrayArray<T> = ReadonlyArray<ReadonlyArray<ReadonlyArray<T>>>;
+
+
+
+
+
+export type DeepReadonly<T> = T extends [infer A]
+  ? DeepReadonlyObject<[A]>
+  : T extends [infer A, infer B]
+  ? DeepReadonlyObject<[A, B]>
+  : T extends [infer A, infer B, infer C]
+  ? DeepReadonlyObject<[A, B, C]>
+  : T extends [infer A, infer B, infer C, infer D]
+  ? DeepReadonlyObject<[A, B, C, D]>
+  : T extends [infer A, infer B, infer C, infer D, infer E]
+  ? DeepReadonlyObject<[A, B, C, D, E]>
+  : T extends [infer A, infer B, infer C, infer D, infer E, infer F]
+  ? DeepReadonlyObject<[A, B, C, D, E, F]>
+  : T extends [infer A, infer B, infer C, infer D, infer E, infer F, infer G]
+  ? DeepReadonlyObject<[A, B, C, D, E, F, G]>
+  : T extends Map<infer U, infer V>
+  ? ReadonlyMap<DeepReadonlyObject<U>, DeepReadonlyObject<V>>
+  : T extends Set<infer U>
+  ? ReadonlySet<DeepReadonlyObject<U>>
+  : T extends Promise<infer U>
+  ? Promise<DeepReadonlyObject<U>>
+  : T extends Primitive
+  ? T
+  : T extends (infer A)[]
+  ? DeepReadonlyArray<A>
+  : DeepReadonlyObject<T>;
+
+type Primitive = string | number | boolean | undefined | null | Function | symbol;
+type DeepReadonlyArray<T> = ReadonlyArray<DeepReadonly<T>>;
+type DeepReadonlyObject<T> = { readonly [P in keyof T]: DeepReadonly<T[P]> };
 
 
 
@@ -41,7 +80,7 @@ type TypeOr<T, Default> = T extends undefined ? Default : T;
 export type ZipKeysWithValues<
   Keys extends readonly string[],
   Values extends readonly unknown[],
-  Defaults extends readonly unknown[]
+  Defaults extends readonly unknown[],
 > =
   
   Keys extends readonly [infer KHead, ...infer KTail]
@@ -50,10 +89,9 @@ export type ZipKeysWithValues<
           TupleHeadOr<Values, undefined>,
           TupleHeadOr<Defaults, undefined>
         >;
-      } &
-        ZipKeysWithValues<
-          EnsureSubtype<KTail, readonly string[]>,
-          TupleTailOr<Values, []>,
-          TupleTailOr<Defaults, []>
-        >
+      } & ZipKeysWithValues<
+        EnsureSubtype<KTail, readonly string[]>,
+        TupleTailOr<Values, []>,
+        TupleTailOr<Defaults, []>
+      >
     : {}; 

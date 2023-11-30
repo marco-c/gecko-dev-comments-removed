@@ -1,7 +1,6 @@
 
 
- import { ValidationTest } from '../api/validation/validation_test.js';
-export class CompatibilityTest extends ValidationTest {
+import { ValidationTest } from '../api/validation/validation_test.js';export class CompatibilityTest extends ValidationTest {
   async init() {
     await super.init();
     if (!this.isCompatibility) {

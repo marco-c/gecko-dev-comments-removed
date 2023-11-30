@@ -5,8 +5,7 @@
 
 
 
- export function generateCoordBoundaries(numDimensions) {
-  const ret = ['in-bounds'];
+export function generateCoordBoundaries(numDimensions) {const ret = ['in-bounds'];
 
   if (numDimensions < 1 || numDimensions > 3) {
     throw new Error(`invalid numDimensions: ${numDimensions}`);

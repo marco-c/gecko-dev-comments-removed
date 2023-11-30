@@ -1,9 +1,8 @@
 
 
- export const description = `
+export const description = `
 Execution Tests for shadowing
-`;
-import { makeTestGroup } from '../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../common/framework/test_group.js';
 import { iterRange } from '../../../common/util/util.js';
 import { GPUTest } from '../../gpu_test.js';
 
@@ -21,19 +20,18 @@ function runShaderTest(t, wgsl, expected) {
     layout: 'auto',
     compute: {
       module: t.device.createShaderModule({ code: wgsl }),
-      entryPoint: 'main',
-    },
+      entryPoint: 'main'
+    }
   });
 
   
   const outputBuffer = t.makeBufferWithContents(
-    new Uint32Array([...iterRange(expected.length, x => 0xdeadbeef)]),
+    new Uint32Array([...iterRange(expected.length, (_i) => 0xdeadbeef)]),
     GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   );
-
   const bindGroup = t.device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
-    entries: [{ binding: 0, resource: { buffer: outputBuffer } }],
+    entries: [{ binding: 0, resource: { buffer: outputBuffer } }]
   });
 
   
@@ -49,10 +47,10 @@ function runShaderTest(t, wgsl, expected) {
   t.expectGPUBufferValuesEqual(outputBuffer, expected);
 }
 
-g.test('declaration')
-  .desc(`Test that shadowing is handled correctly`)
-  .fn(t => {
-    const wgsl = `
+g.test('declaration').
+desc(`Test that shadowing is handled correctly`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_var_start: u32,
         my_var_block_shadow: u32,
@@ -131,39 +129,39 @@ g.test('declaration')
         }
       }
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        
-        1, 
-        10, 
-        1, 
-        20, 
-        30, 
-        1, 
-        
-        100, 
-        110, 
-        100, 
-        120, 
-        130, 
-        100, 
-        
-        210, 
-        220, 
-        200, 
-        
-        300, 
-        310, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    
+    1, 
+    10, 
+    1, 
+    20, 
+    30, 
+    1, 
+    
+    100, 
+    110, 
+    100, 
+    120, 
+    130, 
+    100, 
+    
+    210, 
+    220, 
+    200, 
+    
+    300, 
+    310 
+    ])
+  );
+});
 
-g.test('builtin')
-  .desc(`Test that shadowing a builtin name is handled correctly`)
-  .fn(t => {
-    const wgsl = `
+g.test('builtin').
+desc(`Test that shadowing a builtin name is handled correctly`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_max_shadow: u32,
         max_call: u32,
@@ -182,21 +180,21 @@ g.test('builtin')
         buffer.max_call = max(310u, 410u);
       }
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        
-        400, 
-        410, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    
+    400, 
+    410 
+    ])
+  );
+});
 
-g.test('for_loop')
-  .desc(`Test that shadowing is handled correctly with for loops`)
-  .fn(t => {
-    const wgsl = `
+g.test('for_loop').
+desc(`Test that shadowing is handled correctly with for loops`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_idx_before: u32,
         my_idx_loop: array<u32, 2>,
@@ -216,22 +214,22 @@ g.test('for_loop')
         buffer.my_idx_after = my_idx; // 500;
       };
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        500, 
-        501, 
-        502, 
-        500, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    500, 
+    501, 
+    502, 
+    500 
+    ])
+  );
+});
 
-g.test('while')
-  .desc(`Test that shadowing is handled correctly with while loops`)
-  .fn(t => {
-    const wgsl = `
+g.test('while').
+desc(`Test that shadowing is handled correctly with while loops`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_idx_before: u32,
         my_idx_loop: array<u32, 2>,
@@ -255,22 +253,22 @@ g.test('while')
         buffer.my_idx_after = my_idx; // 1;
       };
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        0, 
-        500, 
-        501, 
-        0, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    0, 
+    500, 
+    501, 
+    0 
+    ])
+  );
+});
 
-g.test('loop')
-  .desc(`Test that shadowing is handled correctly with loops`)
-  .fn(t => {
-    const wgsl = `
+g.test('loop').
+desc(`Test that shadowing is handled correctly with loops`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_idx_before: u32,
         my_idx_loop: array<u32, 2>,
@@ -301,24 +299,24 @@ g.test('loop')
         buffer.my_idx_after = my_idx; // 1;
       };
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        0, 
-        500, 
-        501, 
-        600, 
-        601, 
-        0, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    0, 
+    500, 
+    501, 
+    600, 
+    601, 
+    0 
+    ])
+  );
+});
 
-g.test('switch')
-  .desc(`Test that shadowing is handled correctly with a switch`)
-  .fn(t => {
-    const wgsl = `
+g.test('switch').
+desc(`Test that shadowing is handled correctly with a switch`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_idx_before: u32,
         my_idx_case: u32,
@@ -348,22 +346,22 @@ g.test('switch')
         buffer.my_idx_after = my_idx; // 1;
       };
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        0, 
-        10, 
-        20, 
-        0, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    0, 
+    10, 
+    20, 
+    0 
+    ])
+  );
+});
 
-g.test('if')
-  .desc(`Test that shadowing is handled correctly with a switch`)
-  .fn(t => {
-    const wgsl = `
+g.test('if').
+desc(`Test that shadowing is handled correctly with a switch`).
+fn((t) => {
+  const wgsl = `
       struct S {
         my_idx_before: u32,
         my_idx_if: u32,
@@ -394,15 +392,15 @@ g.test('if')
         buffer.my_idx_after = my_idx; // 1;
       };
     `;
-    runShaderTest(
-      t,
-      wgsl,
-      new Uint32Array([
-        0, 
-        10, 
-        20, 
-        30, 
-        0, 
-      ])
-    );
-  });
+  runShaderTest(
+    t,
+    wgsl,
+    new Uint32Array([
+    0, 
+    10, 
+    20, 
+    30, 
+    0 
+    ])
+  );
+});

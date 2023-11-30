@@ -26,7 +26,7 @@ function runShaderTest(t: GPUTest, wgsl: string, expected: Uint32Array): void {
 
   
   const outputBuffer = t.makeBufferWithContents(
-    new Uint32Array([...iterRange(expected.length, x => 0xdeadbeef)]),
+    new Uint32Array([...iterRange(expected.length, _i => 0xdeadbeef)]),
     GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   );
   const bindGroup = t.device.createBindGroup({
@@ -78,20 +78,11 @@ g.test('struct_implicit')
       wgsl,
       new Uint32Array([
         
-        0x12345678,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x12345678, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0xabcdef01,
-        0xabcdef01,
-        0xabcdef01,
-        0xdeadbeef,
+        0xabcdef01, 0xabcdef01, 0xabcdef01, 0xdeadbeef,
         
-        0x98765432,
-        0x98765432,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x98765432, 0x98765432, 0xdeadbeef, 0xdeadbeef,
       ])
     );
   });
@@ -127,20 +118,11 @@ g.test('struct_explicit')
       wgsl,
       new Uint32Array([
         
-        0x12345678,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x12345678, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0xabcdef01,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0xabcdef01, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x98765432,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x98765432, 0xdeadbeef, 0xdeadbeef,
       ])
     );
   });
@@ -197,98 +179,47 @@ g.test('struct_nested')
       new Uint32Array([
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0x00000000, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0xdeadbeef, 0xdeadbeef,
 
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0x00000000, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0xdeadbeef, 0xdeadbeef,
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0x00000000, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0xdeadbeef, 0xdeadbeef,
 
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0x00000000, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0xdeadbeef, 0xdeadbeef,
         
         
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0x00000000, 0xdeadbeef,
         
-        0x00000000,
-        0x00000000,
-        0xdeadbeef,
-        0xdeadbeef,
+        0x00000000, 0x00000000, 0xdeadbeef, 0xdeadbeef,
       ])
     );
   });
@@ -321,25 +252,13 @@ g.test('array_of_vec3')
       wgsl,
       new Uint32Array([
         
-        0x12345678,
-        0x12345678,
-        0x12345678,
-        0xdeadbeef,
+        0x12345678, 0x12345678, 0x12345678, 0xdeadbeef,
         
-        0xabcdef01,
-        0xabcdef01,
-        0xabcdef01,
-        0xdeadbeef,
+        0xabcdef01, 0xabcdef01, 0xabcdef01, 0xdeadbeef,
         
-        0x98765432,
-        0x98765432,
-        0x98765432,
-        0xdeadbeef,
+        0x98765432, 0x98765432, 0x98765432, 0xdeadbeef,
         
-        0x0f0f0f0f,
-        0x0f0f0f0f,
-        0x0f0f0f0f,
-        0xdeadbeef,
+        0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f, 0xdeadbeef,
       ])
     );
   });
@@ -375,31 +294,13 @@ g.test('array_of_struct')
       wgsl,
       new Uint32Array([
         
-        0x12345678,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
-        0x0f0f0f0f,
-        0x0f0f0f0f,
-        0x0f0f0f0f,
+        0x12345678, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0x0f0f0f0f, 0x0f0f0f0f, 0x0f0f0f0f,
         0xdeadbeef,
         
-        0xabcdef01,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
-        0x7c7c7c7c,
-        0x7c7c7c7c,
-        0x7c7c7c7c,
+        0xabcdef01, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0x7c7c7c7c, 0x7c7c7c7c, 0x7c7c7c7c,
         0xdeadbeef,
         
-        0x98765432,
-        0xdeadbeef,
-        0xdeadbeef,
-        0xdeadbeef,
-        0x18181818,
-        0x18181818,
-        0x18181818,
+        0x98765432, 0xdeadbeef, 0xdeadbeef, 0xdeadbeef, 0x18181818, 0x18181818, 0x18181818,
         0xdeadbeef,
       ])
     );

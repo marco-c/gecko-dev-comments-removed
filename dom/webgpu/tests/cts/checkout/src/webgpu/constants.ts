@@ -1,7 +1,7 @@
 
 
 
-function checkType<T>(x: T) {}
+function checkType<T>(_: T) {}
 
 const BufferUsage = {
   MAP_READ: 0x0001,

@@ -33,7 +33,7 @@ const fromStringMagicValue = new Map<string, unknown>([
   [jsNegativeZeroMagicValue, -0],
 ]);
 
-function stringifyFilter(k: string, v: unknown): unknown {
+function stringifyFilter(_k: string, v: unknown): unknown {
   
   if (typeof v === 'string') {
     assert(
@@ -93,7 +93,7 @@ export function stringifyParamValueUniquely(value: JSONWithUndefined): string {
 
 
 
-function parseParamValueReviver(k: string, v: any): any {
+function parseParamValueReviver(_k: string, v: any): any {
   if (fromStringMagicValue.has(v)) {
     return fromStringMagicValue.get(v);
   }

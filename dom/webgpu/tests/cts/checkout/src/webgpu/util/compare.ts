@@ -3,11 +3,11 @@ import { Colors } from '../../common/util/colors.js';
 import { assert, unreachable } from '../../common/util/util.js';
 import {
   deserializeExpectation,
-  SerializedExpectation,
   serializeExpectation,
 } from '../shader/execution/expression/case_cache.js';
 import { Expectation, toComparator } from '../shader/execution/expression/expression.js';
 
+import BinaryStream from './binary_stream.js';
 import { isFloatValue, Matrix, Scalar, Value, Vector } from './conversion.js';
 import { FPInterval } from './floating_point.js';
 
@@ -38,6 +38,40 @@ export interface Comparator {
   compare: ComparatorImpl;
   kind: ComparatorKind;
   data?: Expectation | Expectation[] | string;
+}
+
+
+enum SerializedComparatorKind {
+  AnyOf,
+  SkipUndefined,
+  AlwaysPass,
+}
+
+
+function serializeComparatorKind(s: BinaryStream, value: ComparatorKind) {
+  switch (value) {
+    case 'anyOf':
+      return s.writeU8(SerializedComparatorKind.AnyOf);
+    case 'skipUndefined':
+      return s.writeU8(SerializedComparatorKind.SkipUndefined);
+    case 'alwaysPass':
+      return s.writeU8(SerializedComparatorKind.AlwaysPass);
+  }
+}
+
+
+function deserializeComparatorKind(s: BinaryStream): ComparatorKind {
+  const kind = s.readU8();
+  switch (kind) {
+    case SerializedComparatorKind.AnyOf:
+      return 'anyOf';
+    case SerializedComparatorKind.SkipUndefined:
+      return 'skipUndefined';
+    case SerializedComparatorKind.AlwaysPass:
+      return 'alwaysPass';
+    default:
+      unreachable(`invalid serialized ComparatorKind: ${kind}`);
+  }
 }
 
 
@@ -384,53 +418,26 @@ export function alwaysPass(msg: string = 'always pass'): Comparator {
 }
 
 
-type SerializedComparatorAnyOf = {
-  kind: 'anyOf';
-  data: SerializedExpectation[];
-};
-
-
-type SerializedComparatorSkipUndefined = {
-  kind: 'skipUndefined';
-  data?: SerializedExpectation;
-};
-
-
-type SerializedComparatorAlwaysPass = {
-  kind: 'alwaysPass';
-  reason: string;
-};
-
-
-
-
-
-export type SerializedComparator =
-  | SerializedComparatorAnyOf
-  | SerializedComparatorSkipUndefined
-  | SerializedComparatorAlwaysPass;
-
-
-
-
-
-
-export function serializeComparator(c: Comparator): SerializedComparator {
+export function serializeComparator(s: BinaryStream, c: Comparator) {
+  serializeComparatorKind(s, c.kind);
   switch (c.kind) {
-    case 'anyOf': {
-      const d = c.data as Expectation[];
-      return { kind: 'anyOf', data: d.map(serializeExpectation) };
-    }
-    case 'skipUndefined': {
-      if (c.data !== undefined) {
-        const d = c.data as Expectation;
-        return { kind: 'skipUndefined', data: serializeExpectation(d) };
-      }
-      return { kind: 'skipUndefined', data: undefined };
-    }
+    case 'anyOf':
+      s.writeArray(c.data as Expectation[], serializeExpectation);
+      return;
+    case 'skipUndefined':
+      s.writeCond(c.data !== undefined, {
+        if_true: () => {
+          
+          serializeExpectation(s, c.data as Expectation);
+        },
+        if_false: () => {
+          
+        },
+      });
+      return;
     case 'alwaysPass': {
-      const d = c.data as string;
-      return { kind: 'alwaysPass', reason: d };
+      s.writeString(c.data as string);
+      return;
     }
     case 'value':
     case 'packed': {
@@ -442,21 +449,24 @@ export function serializeComparator(c: Comparator): SerializedComparator {
 }
 
 
-
-
-
-
-export function deserializeComparator(s: SerializedComparator): Comparator {
-  switch (s.kind) {
-    case 'anyOf': {
-      return anyOf(...s.data.map(e => deserializeExpectation(e)));
-    }
-    case 'skipUndefined': {
-      return skipUndefined(s.data !== undefined ? deserializeExpectation(s.data) : undefined);
-    }
-    case 'alwaysPass': {
-      return alwaysPass(s.reason);
-    }
+export function deserializeComparator(s: BinaryStream): Comparator {
+  const kind = deserializeComparatorKind(s);
+  switch (kind) {
+    case 'anyOf':
+      return anyOf(...s.readArray(deserializeExpectation));
+    case 'skipUndefined':
+      return s.readCond({
+        if_true: () => {
+          
+          return skipUndefined(deserializeExpectation(s));
+        },
+        if_false: () => {
+          
+          return skipUndefined(undefined);
+        },
+      });
+    case 'alwaysPass':
+      return alwaysPass(s.readString());
   }
   unreachable(`Unable deserialize comparator '${s}'`);
 }

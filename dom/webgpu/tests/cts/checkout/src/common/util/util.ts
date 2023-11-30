@@ -48,14 +48,28 @@ export function assertOK<T>(value: Error | T): T {
 }
 
 
+export type ExceptionCheckOptions = { allowMissingStack?: boolean; message?: string };
 
 
-export async function assertReject(p: Promise<unknown>, msg?: string): Promise<void> {
+
+
+export async function assertReject(
+  expectedName: string,
+  p: Promise<unknown>,
+  { allowMissingStack = false, message }: ExceptionCheckOptions = {}
+): Promise<void> {
   try {
     await p;
-    unreachable(msg);
+    unreachable(message);
   } catch (ex) {
     
+    if (!allowMissingStack) {
+      const m = message ? ` (${message})` : '';
+      assert(
+        ex instanceof Error && typeof ex.stack === 'string',
+        'threw as expected, but missing stack' + m
+      );
+    }
   }
 }
 
@@ -146,7 +160,7 @@ export function assertNotSettledWithinTime(
     const handle = timeout(() => {
       resolve(undefined);
     }, ms);
-    p.finally(() => clearTimeout(handle));
+    void p.finally(() => clearTimeout(handle));
   });
   return Promise.race([rejectWhenSettled, timeoutPromise]);
 }
@@ -184,12 +198,22 @@ export function sortObjectByKey(v: { [k: string]: unknown }): { [k: string]: unk
 
 
 
-export function objectEquals(x: unknown, y: unknown): boolean {
+
+
+
+
+export function objectEquals(
+  x: unknown,
+  y: unknown,
+  distinguishSignedZero: boolean = false
+): boolean {
   if (typeof x !== 'object' || typeof y !== 'object') {
     if (typeof x === 'number' && typeof y === 'number' && Number.isNaN(x) && Number.isNaN(y)) {
       return true;
     }
-    return x === y;
+    
+    
+    return distinguishSignedZero ? Object.is(x, y) : x === y;
   }
   if (x === null || y === null) return x === y;
   if (x.constructor !== y.constructor) return false;
@@ -282,28 +306,27 @@ const TypedArrayBufferViewInstances = [
   new Float64Array(),
 ] as const;
 
-export type TypedArrayBufferView = typeof TypedArrayBufferViewInstances[number];
+export type TypedArrayBufferView = (typeof TypedArrayBufferViewInstances)[number];
 
-export type TypedArrayBufferViewConstructor<
-  A extends TypedArrayBufferView = TypedArrayBufferView
-> = {
-  
-  readonly prototype: A;
-  readonly BYTES_PER_ELEMENT: number;
+export type TypedArrayBufferViewConstructor<A extends TypedArrayBufferView = TypedArrayBufferView> =
+  {
+    
+    readonly prototype: A;
+    readonly BYTES_PER_ELEMENT: number;
 
-  new (): A;
-  new (elements: Iterable<number>): A;
-  new (array: ArrayLike<number> | ArrayBufferLike): A;
-  new (buffer: ArrayBufferLike, byteOffset?: number, length?: number): A;
-  new (length: number): A;
+    new (): A;
+    new (elements: Iterable<number>): A;
+    new (array: ArrayLike<number> | ArrayBufferLike): A;
+    new (buffer: ArrayBufferLike, byteOffset?: number, length?: number): A;
+    new (length: number): A;
 
-  from(arrayLike: ArrayLike<number>): A;
-  
-  from(arrayLike: Iterable<number>, mapfn?: (v: number, k: number) => number, thisArg?: any): A;
-  
-  from<T>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => number, thisArg?: any): A;
-  of(...items: number[]): A;
-};
+    from(arrayLike: ArrayLike<number>): A;
+    
+    from(arrayLike: Iterable<number>, mapfn?: (v: number, k: number) => number, thisArg?: any): A;
+    
+    from<T>(arrayLike: ArrayLike<T>, mapfn: (v: T, k: number) => number, thisArg?: any): A;
+    of(...items: number[]): A;
+  };
 
 export const kTypedArrayBufferViews: {
   readonly [k: string]: TypedArrayBufferViewConstructor;
@@ -336,7 +359,7 @@ interface TypedArrayMap {
 
 type TypedArrayParam<K extends keyof TypedArrayMap> = {
   type: K;
-  data: number[];
+  data: readonly number[];
 };
 
 
@@ -377,7 +400,7 @@ export function typedArrayParam<K extends keyof TypedArrayMap>(
 
 export function createTypedArray<K extends keyof TypedArrayMap>(
   type: K,
-  data: number[]
+  data: readonly number[]
 ): TypedArrayMap[K] {
   return new kTypedArrayBufferViews[type](data) as TypedArrayMap[K];
 }
@@ -422,4 +445,32 @@ export function memcpy(
   dst: { dst: ArrayBuffer | TypedArrayBufferView; start?: number }
 ): void {
   subarrayAsU8(dst.dst, dst).set(subarrayAsU8(src.src, src));
+}
+
+
+
+
+
+export interface ValueTestVariant {
+  mult: number;
+  add: number;
+}
+
+
+
+
+export function filterUniqueValueTestVariants(valueTestVariants: ValueTestVariant[]) {
+  return new Map<string, ValueTestVariant>(
+    valueTestVariants.map(v => [`m:${v.mult},a:${v.add}`, v])
+  ).values();
+}
+
+
+
+
+
+
+
+export function makeValueTestVariant(base: number, variant: ValueTestVariant) {
+  return base * variant.mult + variant.add;
 }

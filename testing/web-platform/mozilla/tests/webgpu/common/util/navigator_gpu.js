@@ -1,6 +1,6 @@
 
 
-
+ 
 
 import { ErrorWithExtra, assert, objectEquals } from './util.js';
 
@@ -13,9 +13,9 @@ function defaultGPUProvider() {
     typeof navigator !== 'undefined' && navigator.gpu !== undefined,
     'No WebGPU implementation found'
   );
-
   return navigator.gpu;
 }
+
 
 
 
@@ -63,11 +63,14 @@ export function getGPU(recorder) {
   impl = gpuProvider();
 
   if (defaultRequestAdapterOptions) {
+
     const oldFn = impl.requestAdapter;
-    impl.requestAdapter = function (options) {
+    impl.requestAdapter = function (
+    options)
+    {
       const promise = oldFn.call(this, { ...defaultRequestAdapterOptions, ...options });
       if (recorder) {
-        void promise.then(async adapter => {
+        void promise.then(async (adapter) => {
           if (adapter) {
             const info = await adapter.requestAdapterInfo();
             const infoString = `Adapter: ${info.vendor} / ${info.architecture} / ${info.device}`;

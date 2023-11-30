@@ -1,7 +1,6 @@
 
 
- import { assert } from '../../common/util/util.js';
-import { kValue } from './constants.js';
+import { assert } from '../../common/util/util.js';import { kValue } from './constants.js';
 
 
 
@@ -25,10 +24,13 @@ export class PRNG {
   
   
 
+
   
   
 
+
   
+
 
   
   
@@ -64,16 +66,16 @@ export class PRNG {
     this.state = new Uint32Array([Math.round(seed), PRNG.kMat1, PRNG.kMat2, PRNG.kTMat]);
     for (let i = 1; i < PRNG.kMinLoop; i++) {
       this.state[i & 3] ^=
-        i + Math.imul(1812433253, this.state[(i - 1) & 3] ^ (this.state[(i - 1) & 3] >>> 30));
+      i + Math.imul(1812433253, this.state[i - 1 & 3] ^ this.state[i - 1 & 3] >>> 30);
     }
 
     
     
     assert(
       (this.state[0] & PRNG.kMask) !== 0 ||
-        this.state[1] !== 0 ||
-        this.state[2] !== 0 ||
-        this.state[2] !== 0,
+      this.state[1] !== 0 ||
+      this.state[2] !== 0 ||
+      this.state[2] !== 0,
       'Initialization of PRNG unexpectedly generated all 0s initial state, this means the tuning parameters are bad'
     );
 
@@ -84,13 +86,13 @@ export class PRNG {
 
   
   next() {
-    this.n_vars[0] = (this.state[0] & PRNG.kMask) ^ this.state[1] ^ this.state[2];
+    this.n_vars[0] = this.state[0] & PRNG.kMask ^ this.state[1] ^ this.state[2];
     this.n_vars[1] = this.state[3];
     this.n_vars[0] ^= this.n_vars[0] << PRNG.kSH0;
-    this.n_vars[1] ^= (this.n_vars[1] >>> PRNG.kSH0) ^ this.n_vars[0];
+    this.n_vars[1] ^= this.n_vars[1] >>> PRNG.kSH0 ^ this.n_vars[0];
     this.state[0] = this.state[1];
     this.state[1] = this.state[2];
-    this.state[2] = this.n_vars[0] ^ (this.n_vars[1] << PRNG.kSH1);
+    this.state[2] = this.n_vars[0] ^ this.n_vars[1] << PRNG.kSH1;
     this.state[3] = this.n_vars[1];
     if ((this.n_vars[1] & 1) !== 0) {
       this.state[1] ^= PRNG.kMat1;

@@ -1,6 +1,67 @@
 
 
- import { checkElementsPassPredicate } from '../../../util/check_contents.js';
+import { checkElementsPassPredicate } from '../../../util/check_contents.js';
+
+
+
+
+
+
+
+
+
+
+
+
+export const kAccessValueTypes = ['f16', 'u32'];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -10,6 +71,34 @@ const numMemLocations = 2;
 
 
 const numReadOutputs = 2;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -39,126 +128,177 @@ const bytesPerWord = 4;
 
 
 
+function shaderPreamble(accessValueType) {
+  if (accessValueType === 'f16') {
+    return 'enable f16;\nalias AccessValueTy = f16;\n';
+  }
+  return `alias AccessValueTy = ${accessValueType};\n`;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 export class MemoryModelTester {
+
+
+
+
+
+
+
+
   
-  constructor(t, params, testShader, resultShader) {
+  constructor(
+  t,
+  params,
+  testShader,
+  resultShader,
+  accessValueType = 'u32')
+  {
     this.test = t;
     this.params = params;
+
+    testShader = shaderPreamble(accessValueType) + testShader;
+    resultShader = shaderPreamble(accessValueType) + resultShader;
 
     
     const testingThreads = this.params.workgroupSize * this.params.testingWorkgroups;
     const testLocationsSize =
-      testingThreads * numMemLocations * this.params.memStride * bytesPerWord;
+    testingThreads * numMemLocations * this.params.memStride * bytesPerWord;
     const testLocationsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: testLocationsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(testLocationsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
-
-      size: testLocationsSize,
+      srcBuf: this.test.device.createBuffer({
+        size: testLocationsSize,
+        usage: GPUBufferUsage.COPY_SRC
+      }),
+      size: testLocationsSize
     };
 
     const readResultsSize = testingThreads * numReadOutputs * bytesPerWord;
     const readResultsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: readResultsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(readResultsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
-
-      size: readResultsSize,
+      srcBuf: this.test.device.createBuffer({
+        size: readResultsSize,
+        usage: GPUBufferUsage.COPY_SRC
+      }),
+      size: readResultsSize
     };
 
     const testResultsSize = this.params.numBehaviors * bytesPerWord;
     const testResultsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: testResultsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(testResultsSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
-
-      size: testResultsSize,
+      srcBuf: this.test.device.createBuffer({
+        size: testResultsSize,
+        usage: GPUBufferUsage.COPY_SRC
+      }),
+      size: testResultsSize
     };
 
     const shuffledWorkgroupsSize = this.params.maxWorkgroups * bytesPerWord;
     const shuffledWorkgroupsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: shuffledWorkgroupsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
       srcBuf: this.test.device.createBuffer({
         size: shuffledWorkgroupsSize,
-        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE,
+        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE
       }),
-      size: shuffledWorkgroupsSize,
+      size: shuffledWorkgroupsSize
     };
 
     const barrierSize = bytesPerWord;
     const barrierBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: barrierSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(barrierSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
-
-      size: barrierSize,
+      srcBuf: this.test.device.createBuffer({
+        size: barrierSize,
+        usage: GPUBufferUsage.COPY_SRC
+      }),
+      size: barrierSize
     };
 
     const scratchpadSize = this.params.scratchMemorySize * bytesPerWord;
     const scratchpadBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: scratchpadSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
-      srcBuf: this.test.makeBufferWithContents(
-        new Uint32Array(scratchpadSize).fill(0),
-        GPUBufferUsage.COPY_SRC
-      ),
-
-      size: scratchpadSize,
+      srcBuf: this.test.device.createBuffer({
+        size: scratchpadSize,
+        usage: GPUBufferUsage.COPY_SRC
+      }),
+      size: scratchpadSize
     };
 
     const scratchMemoryLocationsSize = this.params.maxWorkgroups * bytesPerWord;
     const scratchMemoryLocationsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: scratchMemoryLocationsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE
       }),
       srcBuf: this.test.device.createBuffer({
         size: scratchMemoryLocationsSize,
-        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE,
+        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE
       }),
-      size: scratchMemoryLocationsSize,
+      size: scratchMemoryLocationsSize
     };
 
     const stressParamsSize = numStressParams * bytesPerWord;
     const stressParamsBuffer = {
       deviceBuf: this.test.device.createBuffer({
         size: stressParamsSize,
-        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM,
+        usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM
       }),
       srcBuf: this.test.device.createBuffer({
         size: stressParamsSize,
-        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE,
+        usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.MAP_WRITE
       }),
-      size: stressParamsSize,
+      size: stressParamsSize
     };
 
     this.buffers = {
@@ -169,74 +309,72 @@ export class MemoryModelTester {
       barrier: barrierBuffer,
       scratchpad: scratchpadBuffer,
       scratchMemoryLocations: scratchMemoryLocationsBuffer,
-      stressParams: stressParamsBuffer,
+      stressParams: stressParamsBuffer
     };
 
     
     const testLayout = this.test.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-        { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
-      ],
+      { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+      { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } }]
+
     });
     this.testPipeline = this.test.device.createComputePipeline({
       layout: this.test.device.createPipelineLayout({
-        bindGroupLayouts: [testLayout],
+        bindGroupLayouts: [testLayout]
       }),
       compute: {
         module: this.test.device.createShaderModule({
-          code: testShader,
+          code: testShader
         }),
-        entryPoint: 'main',
-      },
+        entryPoint: 'main'
+      }
     });
     this.testBindGroup = this.test.device.createBindGroup({
       entries: [
-        { binding: 0, resource: { buffer: this.buffers.testLocations.deviceBuf } },
-        { binding: 1, resource: { buffer: this.buffers.readResults.deviceBuf } },
-        { binding: 2, resource: { buffer: this.buffers.shuffledWorkgroups.deviceBuf } },
-        { binding: 3, resource: { buffer: this.buffers.barrier.deviceBuf } },
-        { binding: 4, resource: { buffer: this.buffers.scratchpad.deviceBuf } },
-        { binding: 5, resource: { buffer: this.buffers.scratchMemoryLocations.deviceBuf } },
-        { binding: 6, resource: { buffer: this.buffers.stressParams.deviceBuf } },
-      ],
+      { binding: 0, resource: { buffer: this.buffers.testLocations.deviceBuf } },
+      { binding: 1, resource: { buffer: this.buffers.readResults.deviceBuf } },
+      { binding: 2, resource: { buffer: this.buffers.shuffledWorkgroups.deviceBuf } },
+      { binding: 3, resource: { buffer: this.buffers.barrier.deviceBuf } },
+      { binding: 4, resource: { buffer: this.buffers.scratchpad.deviceBuf } },
+      { binding: 5, resource: { buffer: this.buffers.scratchMemoryLocations.deviceBuf } },
+      { binding: 6, resource: { buffer: this.buffers.stressParams.deviceBuf } }],
 
-      layout: testLayout,
+      layout: testLayout
     });
 
     const resultLayout = this.test.device.createBindGroupLayout({
       entries: [
-        { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
-        { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
-      ],
+      { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 1, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 2, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'storage' } },
+      { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } }]
+
     });
     this.resultPipeline = this.test.device.createComputePipeline({
       layout: this.test.device.createPipelineLayout({
-        bindGroupLayouts: [resultLayout],
+        bindGroupLayouts: [resultLayout]
       }),
       compute: {
         module: this.test.device.createShaderModule({
-          code: resultShader,
+          code: resultShader
         }),
-        entryPoint: 'main',
-      },
+        entryPoint: 'main'
+      }
     });
     this.resultBindGroup = this.test.device.createBindGroup({
       entries: [
-        { binding: 0, resource: { buffer: this.buffers.testLocations.deviceBuf } },
-        { binding: 1, resource: { buffer: this.buffers.readResults.deviceBuf } },
-        { binding: 2, resource: { buffer: this.buffers.testResults.deviceBuf } },
-        { binding: 3, resource: { buffer: this.buffers.stressParams.deviceBuf } },
-      ],
+      { binding: 0, resource: { buffer: this.buffers.testLocations.deviceBuf } },
+      { binding: 1, resource: { buffer: this.buffers.readResults.deviceBuf } },
+      { binding: 2, resource: { buffer: this.buffers.testResults.deviceBuf } },
+      { binding: 3, resource: { buffer: this.buffers.stressParams.deviceBuf } }],
 
-      layout: resultLayout,
+      layout: resultLayout
     });
   }
 
@@ -252,7 +390,6 @@ export class MemoryModelTester {
         this.params.testingWorkgroups,
         this.params.maxWorkgroups
       );
-
       await this.setShuffledWorkgroups(numWorkgroups);
       await this.setScratchLocations(numWorkgroups);
       await this.setStressParams();
@@ -284,7 +421,7 @@ export class MemoryModelTester {
         this.checkWeakIndex(weakIndex),
         {
           type: Uint32Array,
-          typedLength: this.params.numBehaviors,
+          typedLength: this.params.numBehaviors
         }
       );
     }
@@ -296,7 +433,7 @@ export class MemoryModelTester {
     const resultPrinter = this.resultPrinter(weakIndex);
     return function (a) {
       return checkElementsPassPredicate(a, checkResult, {
-        predicatePrinter: [{ leftHeader: 'expected ==', getValueForCell: resultPrinter }],
+        predicatePrinter: [{ leftHeader: 'expected ==', getValueForCell: resultPrinter }]
       });
     };
   }
@@ -401,15 +538,15 @@ export class MemoryModelTester {
         const workgroupsPerLocation = numWorkgroups / this.params.stressTargetLines;
         for (let j = 0; j < workgroupsPerLocation; j++) {
           scratchLocationsArray[i * workgroupsPerLocation + j] =
-            region * this.params.stressLineSize + locInRegion;
+          region * this.params.stressLineSize + locInRegion;
         }
         if (
-          i === this.params.stressTargetLines - 1 &&
-          numWorkgroups % this.params.stressTargetLines !== 0
-        ) {
+        i === this.params.stressTargetLines - 1 &&
+        numWorkgroups % this.params.stressTargetLines !== 0)
+        {
           for (let j = 0; j < numWorkgroups % this.params.stressTargetLines; j++) {
             scratchLocationsArray[numWorkgroups - j - 1] =
-              region * this.params.stressLineSize + locInRegion;
+            region * this.params.stressLineSize + locInRegion;
           }
         }
       }
@@ -481,11 +618,15 @@ export class MemoryModelTester {
 
 const shaderMemStructures = `
   struct Memory {
-    value: array<u32>
+    value: array<AccessValueTy>
   };
 
   struct AtomicMemory {
     value: array<atomic<u32>>
+  };
+
+  struct IndexMemory {
+    value: array<u32>
   };
 
   struct ReadResult {
@@ -545,32 +686,32 @@ const twoBehaviorTestResultStructure = `
 
 const commonTestShaderBindings = `
   @group(0) @binding(1) var<storage, read_write> results : ReadResults;
-  @group(0) @binding(2) var<storage, read> shuffled_workgroups : Memory;
+  @group(0) @binding(2) var<storage, read> shuffled_workgroups : IndexMemory;
   @group(0) @binding(3) var<storage, read_write> barrier : AtomicMemory;
-  @group(0) @binding(4) var<storage, read_write> scratchpad : Memory;
-  @group(0) @binding(5) var<storage, read_write> scratch_locations : Memory;
+  @group(0) @binding(4) var<storage, read_write> scratchpad : IndexMemory;
+  @group(0) @binding(5) var<storage, read_write> scratch_locations : IndexMemory;
   @group(0) @binding(6) var<uniform> stress_params : StressParamsMemory;
 `;
 
 
 const atomicTestShaderBindings = [
-  `
+`
   @group(0) @binding(0) var<storage, read_write> test_locations : AtomicMemory;
 `,
-  commonTestShaderBindings,
-].join('\n');
+commonTestShaderBindings].
+join('\n');
 
 
 const nonAtomicTestShaderBindings = [
-  `
+`
   @group(0) @binding(0) var<storage, read_write> test_locations : Memory;
 `,
-  commonTestShaderBindings,
-].join('\n');
+commonTestShaderBindings].
+join('\n');
 
 
 const resultShaderBindings = `
-  @group(0) @binding(0) var<storage, read_write> test_locations : AtomicMemory;
+  @group(0) @binding(0) var<storage, read_write> test_locations : Memory;
   @group(0) @binding(1) var<storage, read_write> read_results : ReadResults;
   @group(0) @binding(2) var<storage, read_write> test_results : TestResults;
   @group(0) @binding(3) var<uniform> stress_params : StressParamsMemory;
@@ -591,7 +732,7 @@ const atomicWorkgroupMemory = `
 
 
 const nonAtomicWorkgroupMemory = `
-  var<workgroup> wg_test_locations: array<u32, 3584>;
+  var<workgroup> wg_test_locations: array<AccessValueTy, 3584>;
 `;
 
 
@@ -717,37 +858,37 @@ const testShaderCommonCalculations = `
 
 
 const interWorkgroupTestShaderCode = [
-  `
+`
   let total_ids = workgroupXSize * stress_params.testing_workgroups;
   let id_0 = shuffled_workgroup * workgroupXSize + local_invocation_id[0];
   let new_workgroup = stripe_workgroup(shuffled_workgroup, local_invocation_id[0]);
   let id_1 = new_workgroup * workgroupXSize + permute_id(local_invocation_id[0], stress_params.permute_first, workgroupXSize);
 `,
-  testShaderCommonCalculations,
-  `
+testShaderCommonCalculations,
+`
   if (stress_params.do_barrier == 1u) {
     spin(workgroupXSize * stress_params.testing_workgroups);
   }
-`,
-].join('\n');
+`].
+join('\n');
 
 
 
 
 
 const intraWorkgroupTestShaderCode = [
-  `
+`
   let total_ids = workgroupXSize;
   let id_0 = local_invocation_id[0];
   let id_1 = permute_id(local_invocation_id[0], stress_params.permute_first, workgroupXSize);
 `,
-  testShaderCommonCalculations,
-  `
+testShaderCommonCalculations,
+`
   if (stress_params.do_barrier == 1u) {
     spin(workgroupXSize);
   }
-`,
-].join('\n');
+`].
+join('\n');
 
 
 
@@ -781,33 +922,38 @@ const testShaderCommonFooter = `
 
 
 
+
+
+
+
+
 const resultShaderCommonCalculations = `
   let id_0 = workgroup_id[0] * workgroupXSize + local_invocation_id[0];
   let x_0 = id_0 * stress_params.mem_stride * 2u;
-  let mem_x_0 = atomicLoad(&test_locations.value[x_0]);
+  let mem_x_0 = u32(test_locations.value[x_0]);
   let r0 = atomicLoad(&read_results.value[id_0].r0);
   let r1 = atomicLoad(&read_results.value[id_0].r1);
 `;
 
 
 const interWorkgroupResultShaderCode = [
-  resultShaderCommonCalculations,
-  `
+resultShaderCommonCalculations,
+`
   let total_ids = workgroupXSize * stress_params.testing_workgroups;
   let y_0 = permute_id(id_0, stress_params.permute_second, total_ids) * stress_params.mem_stride * 2u + stress_params.location_offset;
-  let mem_y_0 = atomicLoad(&test_locations.value[y_0]);
-`,
-].join('\n');
+  let mem_y_0 = u32(test_locations.value[y_0]);
+`].
+join('\n');
 
 
 const intraWorkgroupResultShaderCode = [
-  resultShaderCommonCalculations,
-  `
+resultShaderCommonCalculations,
+`
   let total_ids = workgroupXSize;
   let y_0 = (workgroup_id[0] * workgroupXSize + permute_id(local_invocation_id[0], stress_params.permute_second, total_ids)) * stress_params.mem_stride * 2u + stress_params.location_offset;
-  let mem_y_0 = atomicLoad(&test_locations.value[y_0]);
-`,
-].join('\n');
+  let mem_y_0 = u32(test_locations.value[y_0]);
+`].
+join('\n');
 
 
 const resultShaderCommonFooter = `
@@ -816,85 +962,95 @@ const resultShaderCommonFooter = `
 
 
 const storageMemoryAtomicTestShaderCode = [
-  shaderMemStructures,
-  atomicTestShaderBindings,
-  memoryLocationFunctions,
-  testShaderFunctions,
-  shaderEntryPoint,
-  testShaderCommonHeader,
-].join('\n');
+shaderMemStructures,
+atomicTestShaderBindings,
+memoryLocationFunctions,
+testShaderFunctions,
+shaderEntryPoint,
+testShaderCommonHeader].
+join('\n');
 
 
 const storageMemoryNonAtomicTestShaderCode = [
-  shaderMemStructures,
-  nonAtomicTestShaderBindings,
-  memoryLocationFunctions,
-  testShaderFunctions,
-  shaderEntryPoint,
-  testShaderCommonHeader,
-].join('\n');
+shaderMemStructures,
+nonAtomicTestShaderBindings,
+memoryLocationFunctions,
+testShaderFunctions,
+shaderEntryPoint,
+testShaderCommonHeader].
+join('\n');
 
 
 const workgroupMemoryAtomicTestShaderCode = [
-  shaderMemStructures,
-  atomicTestShaderBindings,
-  atomicWorkgroupMemory,
-  memoryLocationFunctions,
-  testShaderFunctions,
-  shaderEntryPoint,
-  testShaderCommonHeader,
-].join('\n');
+shaderMemStructures,
+atomicTestShaderBindings,
+atomicWorkgroupMemory,
+memoryLocationFunctions,
+testShaderFunctions,
+shaderEntryPoint,
+testShaderCommonHeader].
+join('\n');
 
 
 const workgroupMemoryNonAtomicTestShaderCode = [
-  shaderMemStructures,
-  nonAtomicTestShaderBindings,
-  nonAtomicWorkgroupMemory,
-  memoryLocationFunctions,
-  testShaderFunctions,
-  shaderEntryPoint,
-  testShaderCommonHeader,
-].join('\n');
+shaderMemStructures,
+nonAtomicTestShaderBindings,
+nonAtomicWorkgroupMemory,
+memoryLocationFunctions,
+testShaderFunctions,
+shaderEntryPoint,
+testShaderCommonHeader].
+join('\n');
 
 
 const resultShaderCommonCode = [
-  shaderMemStructures,
-  resultShaderBindings,
-  memoryLocationFunctions,
-  shaderEntryPoint,
-].join('\n');
+shaderMemStructures,
+resultShaderBindings,
+memoryLocationFunctions,
+shaderEntryPoint].
+join('\n');
 
 
 
 
 
-export let MemoryType;
+export let MemoryType = function (MemoryType) {MemoryType["AtomicStorageClass"] = "atomic_storage";MemoryType["NonAtomicStorageClass"] = "non_atomic_storage";MemoryType["AtomicWorkgroupClass"] = "atomic_workgroup";MemoryType["NonAtomicWorkgroupClass"] = "non_atomic_workgroup";return MemoryType;}({});
 
 
 
 
- (function (MemoryType) {
-  MemoryType['AtomicStorageClass'] = 'atomic_storage';
-  MemoryType['NonAtomicStorageClass'] = 'non_atomic_storage';
-  MemoryType['AtomicWorkgroupClass'] = 'atomic_workgroup';
-  MemoryType['NonAtomicWorkgroupClass'] = 'non_atomic_workgroup';
-})(MemoryType || (MemoryType = {}));
-export let TestType;
-
- (function (TestType) {
-  TestType['InterWorkgroup'] = 'inter_workgroup';
-  TestType['IntraWorkgroup'] = 'intra_workgroup';
-})(TestType || (TestType = {}));
-export let ResultType;
 
 
 
 
- (function (ResultType) {
-  ResultType[(ResultType['TwoBehavior'] = 0)] = 'TwoBehavior';
-  ResultType[(ResultType['FourBehavior'] = 1)] = 'FourBehavior';
-})(ResultType || (ResultType = {}));
-export function buildTestShader(testCode, memoryType, testType) {
+
+
+
+
+
+
+export let TestType = function (TestType) {TestType["InterWorkgroup"] = "inter_workgroup";TestType["IntraWorkgroup"] = "intra_workgroup";return TestType;}({});
+
+
+
+
+
+
+
+export let ResultType = function (ResultType) {ResultType[ResultType["TwoBehavior"] = 0] = "TwoBehavior";ResultType[ResultType["FourBehavior"] = 1] = "FourBehavior";return ResultType;}({});
+
+
+
+
+
+
+
+
+export function buildTestShader(
+testCode,
+memoryType,
+testType)
+{
   let memoryTypeCode;
   let isStorageAS = false;
   switch (memoryType) {
@@ -912,7 +1068,6 @@ export function buildTestShader(testCode, memoryType, testType) {
     case MemoryType.NonAtomicWorkgroupClass:
       memoryTypeCode = workgroupMemoryNonAtomicTestShaderCode;
   }
-
   let testTypeCode;
   switch (testType) {
     case TestType.InterWorkgroup:
@@ -925,7 +1080,6 @@ export function buildTestShader(testCode, memoryType, testType) {
         testTypeCode = intraWorkgroupTestShaderCode;
       }
   }
-
   return [memoryTypeCode, testTypeCode, testCode, testShaderCommonFooter].join('\n');
 }
 
@@ -933,7 +1087,11 @@ export function buildTestShader(testCode, memoryType, testType) {
 
 
 
-export function buildResultShader(resultCode, testType, resultType) {
+export function buildResultShader(
+resultCode,
+testType,
+resultType)
+{
   let resultStructure;
   switch (resultType) {
     case ResultType.TwoBehavior:
@@ -942,7 +1100,6 @@ export function buildResultShader(resultCode, testType, resultType) {
     case ResultType.FourBehavior:
       resultStructure = fourBehaviorTestResultStructure;
   }
-
   let testTypeCode;
   switch (testType) {
     case TestType.InterWorkgroup:
@@ -951,12 +1108,11 @@ export function buildResultShader(resultCode, testType, resultType) {
     case TestType.IntraWorkgroup:
       testTypeCode = intraWorkgroupResultShaderCode;
   }
-
   return [
-    resultStructure,
-    resultShaderCommonCode,
-    testTypeCode,
-    resultCode,
-    resultShaderCommonFooter,
-  ].join('\n');
+  resultStructure,
+  resultShaderCommonCode,
+  testTypeCode,
+  resultCode,
+  resultShaderCommonFooter].
+  join('\n');
 }

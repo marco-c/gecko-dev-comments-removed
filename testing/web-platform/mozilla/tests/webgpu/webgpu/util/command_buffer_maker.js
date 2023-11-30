@@ -1,6 +1,6 @@
 
 
- export const kRenderEncodeTypes = ['render pass', 'render bundle'];
+export const kRenderEncodeTypes = ['render pass', 'render bundle'];
 
 export const kProgrammableEncoderTypes = ['compute pass', ...kRenderEncodeTypes];
 
@@ -8,21 +8,22 @@ export const kEncoderTypes = ['non-pass', ...kProgrammableEncoderTypes];
 
 
 
+
+
+
+
+
+
+
+
+
 export class CommandBufferMaker {
   
   
 
-  
-
-
-
 
   
 
-
-
-
-  
 
 
 
@@ -33,7 +34,27 @@ export class CommandBufferMaker {
 
 
 
-  constructor(t, encoder, finish) {
+  
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+  constructor(
+  t,
+  encoder,
+  finish)
+  {
     
     this.encoder = encoder;
     this.finish = finish;
@@ -43,18 +64,21 @@ export class CommandBufferMaker {
     
     
     
-    this.validateFinish = shouldSucceed => {
+    this.validateFinish = (shouldSucceed) => {
       return t.expectGPUError('validation', this.finish, !shouldSucceed);
     };
 
-    this.validateFinishAndSubmit = (shouldBeValid, submitShouldSucceedIfValid) => {
+    this.validateFinishAndSubmit = (
+    shouldBeValid,
+    submitShouldSucceedIfValid) =>
+    {
       const commandBuffer = this.validateFinish(shouldBeValid);
       if (shouldBeValid) {
         t.expectValidationError(() => t.queue.submit([commandBuffer]), !submitShouldSucceedIfValid);
       }
     };
 
-    this.validateFinishAndSubmitGivenState = resourceState => {
+    this.validateFinishAndSubmitGivenState = (resourceState) => {
       this.validateFinishAndSubmit(resourceState !== 'invalid', resourceState !== 'destroyed');
     };
   }

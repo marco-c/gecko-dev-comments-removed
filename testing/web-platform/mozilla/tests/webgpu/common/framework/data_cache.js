@@ -1,9 +1,66 @@
 
 
+ 
 
+
+import { assert } from '../util/util.js';
+
+
+
+
+
+
+
+
+
+
+
+
+
+class DataCacheNode {
+  constructor(path, data) {
+    this.path = path;
+    this.data = data;
+  }
+
+  
+  insertAfter(prev) {
+    this.unlink();
+    this.next = prev.next;
+    this.prev = prev;
+    prev.next = this;
+    if (this.next) {
+      this.next.prev = this;
+    }
+  }
+
+  
+  unlink() {
+    const prev = this.prev;
+    const next = this.next;
+    if (prev) {
+      prev.next = next;
+    }
+    if (next) {
+      next.prev = prev;
+    }
+    this.prev = null;
+    this.next = null;
+  }
+
+  
+  
+  prev = null; 
+  next = null; 
+}
 
 
 export class DataCache {
+  constructor() {
+    this.lruHeadNode.next = this.lruTailNode;
+    this.lruTailNode.prev = this.lruHeadNode;
+  }
+
   
   setStore(dataStore) {
     this.dataStore = dataStore;
@@ -20,11 +77,14 @@ export class DataCache {
 
 
   async fetch(cacheable) {
-    
-    let data = this.cache.get(cacheable.path);
-    if (data !== undefined) {
-      this.log('in-memory cache hit');
-      return Promise.resolve(data);
+    {
+      
+      const node = this.cache.get(cacheable.path);
+      if (node !== undefined) {
+        this.log('in-memory cache hit');
+        node.insertAfter(this.lruHeadNode);
+        return Promise.resolve(node.data);
+      }
     }
     this.log('in-memory cache miss');
     
@@ -41,16 +101,37 @@ export class DataCache {
       }
       if (serialized !== undefined) {
         this.log(`deserializing`);
-        data = cacheable.deserialize(serialized);
-        this.cache.set(cacheable.path, data);
+        const data = cacheable.deserialize(serialized);
+        this.addToCache(cacheable.path, data);
         return data;
       }
     }
     
     this.log(`cache: building (${cacheable.path})`);
-    data = await cacheable.build();
-    this.cache.set(cacheable.path, data);
+    const data = await cacheable.build();
+    this.addToCache(cacheable.path, data);
     return data;
+  }
+
+  
+
+
+
+
+
+
+  addToCache(path, data) {
+    if (this.cache.size >= this.maxCount) {
+      const toEvict = this.lruTailNode.prev;
+      assert(toEvict !== null);
+      toEvict.unlink();
+      this.cache.delete(toEvict.path);
+      this.log(`evicting ${toEvict.path}`);
+    }
+    const node = new DataCacheNode(path, data);
+    node.insertAfter(this.lruHeadNode);
+    this.cache.set(path, node);
+    this.log(`added ${path}. new count: ${this.cache.size}`);
   }
 
   log(msg) {
@@ -59,7 +140,12 @@ export class DataCache {
     }
   }
 
+  
+  maxCount = 4;
+
   cache = new Map();
+  lruHeadNode = new DataCacheNode('', null); 
+  lruTailNode = new DataCacheNode('', null); 
   unavailableFiles = new Set();
   dataStore = null;
   debugLogger = null;
@@ -80,7 +166,6 @@ export function getIsBuildingDataCache() {
 export function setIsBuildingDataCache(value = true) {
   isBuildingDataCache = value;
 }
-
 
 
 

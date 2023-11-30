@@ -1,19 +1,20 @@
 
 
- import { assert, unreachable } from '../../../../common/util/util.js';
+import { assert, unreachable } from '../../../../common/util/util.js';
 
 
 
 
 export const kOperationBoundaries = [
-  'queue-op', 
-  'command-buffer', 
-  'pass', 
-  'execute-bundles', 
-  'render-bundle', 
-  'dispatch', 
-  'draw', 
+'queue-op', 
+'command-buffer', 
+'pass', 
+'execute-bundles', 
+'render-bundle', 
+'dispatch', 
+'draw' 
 ];
+
 
 
 
@@ -21,14 +22,23 @@ export const kOperationBoundaries = [
 
 
 export const kOperationContexts = [
-  'queue', 
-  'command-encoder', 
-  'compute-pass-encoder', 
-  'render-pass-encoder', 
-  'render-bundle-encoder', 
+'queue', 
+'command-encoder', 
+'compute-pass-encoder', 
+'render-pass-encoder', 
+'render-bundle-encoder' 
 ];
 
-function combineContexts(as, bs) {
+
+
+
+
+
+
+function combineContexts(
+as,
+bs)
+{
   const result = [];
   for (const a of as) {
     for (const b of bs) {
@@ -40,52 +50,54 @@ function combineContexts(as, bs) {
 
 const queueContexts = combineContexts(kOperationContexts, kOperationContexts);
 const commandBufferContexts = combineContexts(
-  kOperationContexts.filter(c => c !== 'queue'),
-  kOperationContexts.filter(c => c !== 'queue')
+  kOperationContexts.filter((c) => c !== 'queue'),
+  kOperationContexts.filter((c) => c !== 'queue')
 );
 
 
 
 
 
-export const kBoundaryInfo = {
+export const kBoundaryInfo =
+
+{
   'queue-op': {
-    contexts: queueContexts,
+    contexts: queueContexts
   },
   'command-buffer': {
-    contexts: commandBufferContexts,
+    contexts: commandBufferContexts
   },
   pass: {
     contexts: [
-      ['compute-pass-encoder', 'compute-pass-encoder'],
-      ['compute-pass-encoder', 'render-pass-encoder'],
-      ['render-pass-encoder', 'compute-pass-encoder'],
-      ['render-pass-encoder', 'render-pass-encoder'],
-      ['render-bundle-encoder', 'render-pass-encoder'],
-      ['render-pass-encoder', 'render-bundle-encoder'],
-      ['render-bundle-encoder', 'render-bundle-encoder'],
-    ],
+    ['compute-pass-encoder', 'compute-pass-encoder'],
+    ['compute-pass-encoder', 'render-pass-encoder'],
+    ['render-pass-encoder', 'compute-pass-encoder'],
+    ['render-pass-encoder', 'render-pass-encoder'],
+    ['render-bundle-encoder', 'render-pass-encoder'],
+    ['render-pass-encoder', 'render-bundle-encoder'],
+    ['render-bundle-encoder', 'render-bundle-encoder']]
+
   },
   'execute-bundles': {
-    contexts: [['render-bundle-encoder', 'render-bundle-encoder']],
+    contexts: [['render-bundle-encoder', 'render-bundle-encoder']]
   },
   'render-bundle': {
     contexts: [
-      ['render-bundle-encoder', 'render-pass-encoder'],
-      ['render-pass-encoder', 'render-bundle-encoder'],
-      ['render-bundle-encoder', 'render-bundle-encoder'],
-    ],
+    ['render-bundle-encoder', 'render-pass-encoder'],
+    ['render-pass-encoder', 'render-bundle-encoder'],
+    ['render-bundle-encoder', 'render-bundle-encoder']]
+
   },
   dispatch: {
-    contexts: [['compute-pass-encoder', 'compute-pass-encoder']],
+    contexts: [['compute-pass-encoder', 'compute-pass-encoder']]
   },
   draw: {
     contexts: [
-      ['render-pass-encoder', 'render-pass-encoder'],
-      ['render-bundle-encoder', 'render-pass-encoder'],
-      ['render-pass-encoder', 'render-bundle-encoder'],
-    ],
-  },
+    ['render-pass-encoder', 'render-pass-encoder'],
+    ['render-bundle-encoder', 'render-pass-encoder'],
+    ['render-pass-encoder', 'render-bundle-encoder']]
+
+  }
 };
 
 export class OperationContextHelper {
@@ -93,6 +105,14 @@ export class OperationContextHelper {
   currentContext = 'queue';
 
   
+
+
+
+
+
+
+
+
 
   commandBuffers = [];
   renderBundles = [];
@@ -117,13 +137,13 @@ export class OperationContextHelper {
       case 'queue':
         unreachable();
         break;
-      case 'command-encoder': {
-        assert(this.commandEncoder !== undefined);
-        const commandBuffer = this.commandEncoder.finish();
-        this.commandEncoder = undefined;
-        this.currentContext = 'queue';
-        return commandBuffer;
-      }
+      case 'command-encoder':{
+          assert(this.commandEncoder !== undefined);
+          const commandBuffer = this.commandEncoder.finish();
+          this.commandEncoder = undefined;
+          this.currentContext = 'queue';
+          return commandBuffer;
+        }
       case 'compute-pass-encoder':
         assert(this.computePassEncoder !== undefined);
         this.computePassEncoder.end();
@@ -136,15 +156,14 @@ export class OperationContextHelper {
         this.renderPassEncoder = undefined;
         this.currentContext = 'command-encoder';
         break;
-      case 'render-bundle-encoder': {
-        assert(this.renderBundleEncoder !== undefined);
-        const renderBundle = this.renderBundleEncoder.finish();
-        this.renderBundleEncoder = undefined;
-        this.currentContext = 'render-pass-encoder';
-        return renderBundle;
-      }
+      case 'render-bundle-encoder':{
+          assert(this.renderBundleEncoder !== undefined);
+          const renderBundle = this.renderBundleEncoder.finish();
+          this.renderBundleEncoder = undefined;
+          this.currentContext = 'render-pass-encoder';
+          return renderBundle;
+        }
     }
-
     return null;
   }
 
@@ -153,26 +172,25 @@ export class OperationContextHelper {
       this.device.createTexture({
         format: this.kTextureFormat,
         size: this.kTextureSize,
-        usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        usage: GPUTextureUsage.RENDER_ATTACHMENT
       })
     );
-
     return {
       view: texture.createView(),
       loadOp: 'load',
-      storeOp: 'store',
+      storeOp: 'store'
     };
   }
 
   ensureContext(context) {
     
     const ancestorContext =
-      kOperationContexts[
-        Math.min(
-          kOperationContexts.indexOf(context),
-          kOperationContexts.indexOf(this.currentContext)
-        )
-      ];
+    kOperationContexts[
+    Math.min(
+      kOperationContexts.indexOf(context),
+      kOperationContexts.indexOf(this.currentContext)
+    )];
+
 
     
     while (this.currentContext !== ancestorContext) {
@@ -217,7 +235,6 @@ export class OperationContextHelper {
           case 'render-pass-encoder':
             unreachable();
         }
-
         break;
       case 'render-pass-encoder':
         switch (this.currentContext) {
@@ -227,7 +244,7 @@ export class OperationContextHelper {
           case 'command-encoder':
             assert(this.commandEncoder !== undefined);
             this.renderPassEncoder = this.commandEncoder.beginRenderPass({
-              colorAttachments: [this.makeDummyAttachment()],
+              colorAttachments: [this.makeDummyAttachment()]
             });
             break;
           case 'render-pass-encoder':
@@ -235,7 +252,6 @@ export class OperationContextHelper {
           case 'compute-pass-encoder':
             unreachable();
         }
-
         break;
       case 'render-bundle-encoder':
         switch (this.currentContext) {
@@ -245,22 +261,20 @@ export class OperationContextHelper {
           case 'command-encoder':
             assert(this.commandEncoder !== undefined);
             this.renderPassEncoder = this.commandEncoder.beginRenderPass({
-              colorAttachments: [this.makeDummyAttachment()],
+              colorAttachments: [this.makeDummyAttachment()]
             });
           
           case 'render-pass-encoder':
             this.renderBundleEncoder = this.device.createRenderBundleEncoder({
-              colorFormats: [this.kTextureFormat],
+              colorFormats: [this.kTextureFormat]
             });
             break;
           case 'render-bundle-encoder':
           case 'compute-pass-encoder':
             unreachable();
         }
-
         break;
     }
-
     this.currentContext = context;
   }
 
@@ -297,9 +311,8 @@ export class OperationContextHelper {
         
         assert(
           this.currentContext === 'render-pass-encoder' ||
-            this.currentContext === 'render-bundle-encoder'
+          this.currentContext === 'render-bundle-encoder'
         );
-
         break;
       case 'pass':
         this.ensureContext('command-encoder');

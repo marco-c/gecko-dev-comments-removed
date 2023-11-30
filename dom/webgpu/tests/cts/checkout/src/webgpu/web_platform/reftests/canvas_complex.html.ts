@@ -55,6 +55,7 @@ export function run(
         size: rows * bytesPerRow,
         usage: GPUBufferUsage.COPY_SRC,
       });
+      
       let red: Uint8Array | Uint16Array;
       let green: Uint8Array | Uint16Array;
       let blue: Uint8Array | Uint16Array;

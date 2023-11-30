@@ -8,15 +8,24 @@ import { kValue } from '../../../../util/constants.js';
 import {
   bool,
   f32,
+  f16,
   i32,
-  reinterpretU32AsI32,
   TypeBool,
   TypeF32,
+  TypeF16,
   TypeI32,
   TypeU32,
   u32,
 } from '../../../../util/conversion.js';
-import { fullF32Range, fullI32Range, fullU32Range, quantizeToF32 } from '../../../../util/math.js';
+import {
+  fullF32Range,
+  fullF16Range,
+  fullI32Range,
+  fullU32Range,
+  quantizeToF32,
+  quantizeToF16,
+} from '../../../../util/math.js';
+import { reinterpretU32AsI32 } from '../../../../util/reinterpret.js';
 import { makeCaseCache } from '../case_cache.js';
 import { allInputSources, run, ShaderBuilder } from '../expression.js';
 
@@ -68,6 +77,27 @@ export const d = makeCaseCache('unary/i32_conversion', {
       
       
       return { input: f32(f), expected: i32(quantizeToF32(f)) };
+    });
+  },
+  f16: () => {
+    
+    return fullF16Range().map(f => {
+      
+      if (Math.abs(f) < 1.0) {
+        return { input: f16(f), expected: i32(0) };
+      }
+
+      
+      
+      if (Math.abs(f) <= 2 ** 12) {
+        return { input: f16(f), expected: i32(Math.trunc(f)) };
+      }
+
+      
+      
+      
+      
+      return { input: f16(f), expected: i32(quantizeToF16(f)) };
     });
   },
 });
@@ -157,4 +187,10 @@ e is converted to u32, rounding towards zero
   .params(u =>
     u.combine('inputSource', allInputSources).combine('vectorize', [undefined, 2, 3, 4] as const)
   )
-  .unimplemented();
+  .beforeAllSubcases(t => {
+    t.selectDeviceOrSkipTestCase('shader-f16');
+  })
+  .fn(async t => {
+    const cases = await d.get('f16');
+    await run(t, vectorizeToExpression(t.params.vectorize), [TypeF16], TypeI32, t.params, cases);
+  });

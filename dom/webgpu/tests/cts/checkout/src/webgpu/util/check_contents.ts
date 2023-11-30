@@ -44,7 +44,28 @@ export function checkElementsEqual(
 ): ErrorWithExtra | undefined {
   assert(actual.constructor === expected.constructor, 'TypedArray type mismatch');
   assert(actual.length === expected.length, 'size mismatch');
-  return checkElementsEqualGenerated(actual, i => expected[i]);
+
+  let failedElementsFirstMaybe: number | undefined = undefined;
+  
+  const failedElements: (true | undefined)[] = [];
+  for (let i = 0; i < actual.length; ++i) {
+    if (actual[i] !== expected[i]) {
+      failedElementsFirstMaybe ??= i;
+      failedElements[i] = true;
+    }
+  }
+
+  if (failedElementsFirstMaybe === undefined) {
+    return undefined;
+  }
+
+  const failedElementsFirst = failedElementsFirstMaybe;
+  return failCheckElements({
+    actual,
+    failedElements,
+    failedElementsFirst,
+    predicatePrinter: [{ leftHeader: 'expected ==', getValueForCell: index => expected[index] }],
+  });
 }
 
 
@@ -117,11 +138,29 @@ export function checkElementsEqualGenerated(
   actual: TypedArrayBufferView,
   generator: CheckElementsGenerator
 ): ErrorWithExtra | undefined {
-  const error = checkElementsPassPredicate(actual, (index, value) => value === generator(index), {
+  let failedElementsFirstMaybe: number | undefined = undefined;
+  
+  const failedElements: (true | undefined)[] = [];
+  for (let i = 0; i < actual.length; ++i) {
+    if (actual[i] !== generator(i)) {
+      failedElementsFirstMaybe ??= i;
+      failedElements[i] = true;
+    }
+  }
+
+  if (failedElementsFirstMaybe === undefined) {
+    return undefined;
+  }
+
+  const failedElementsFirst = failedElementsFirstMaybe;
+  const error = failCheckElements({
+    actual,
+    failedElements,
+    failedElementsFirst,
     predicatePrinter: [{ leftHeader: 'expected ==', getValueForCell: index => generator(index) }],
   });
   
-  return error ? new ErrorWithExtra(error, () => ({ generator })) : undefined;
+  return new ErrorWithExtra(error, () => ({ generator }));
 }
 
 
@@ -133,14 +172,10 @@ export function checkElementsPassPredicate(
   predicate: CheckElementsPredicate,
   { predicatePrinter }: { predicatePrinter?: CheckElementsSupplementalTableRows }
 ): ErrorWithExtra | undefined {
-  const size = actual.length;
-  const ctor = actual.constructor as TypedArrayBufferViewConstructor;
-  const printAsFloat = ctor === Float16Array || ctor === Float32Array || ctor === Float64Array;
-
   let failedElementsFirstMaybe: number | undefined = undefined;
   
   const failedElements: (true | undefined)[] = [];
-  for (let i = 0; i < size; ++i) {
+  for (let i = 0; i < actual.length; ++i) {
     if (!predicate(i, actual[i])) {
       failedElementsFirstMaybe ??= i;
       failedElements[i] = true;
@@ -150,7 +185,35 @@ export function checkElementsPassPredicate(
   if (failedElementsFirstMaybe === undefined) {
     return undefined;
   }
+
   const failedElementsFirst = failedElementsFirstMaybe;
+  return failCheckElements({ actual, failedElements, failedElementsFirst, predicatePrinter });
+}
+
+interface CheckElementsFailOpts {
+  actual: TypedArrayBufferView;
+  failedElements: (true | undefined)[];
+  failedElementsFirst: number;
+  predicatePrinter?: CheckElementsSupplementalTableRows;
+}
+
+
+
+
+
+
+
+
+function failCheckElements({
+  actual,
+  failedElements,
+  failedElementsFirst,
+  predicatePrinter,
+}: CheckElementsFailOpts): ErrorWithExtra {
+  const size = actual.length;
+  const ctor = actual.constructor as TypedArrayBufferViewConstructor;
+  const printAsFloat = ctor === Float16Array || ctor === Float32Array || ctor === Float64Array;
+
   const failedElementsLast = failedElements.length - 1;
 
   

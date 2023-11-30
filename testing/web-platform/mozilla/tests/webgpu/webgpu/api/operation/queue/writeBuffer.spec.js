@@ -1,21 +1,29 @@
 
 
- export const description = 'Operation tests for GPUQueue.writeBuffer()';
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
+export const description = 'Operation tests for GPUQueue.writeBuffer()';import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { memcpy, range } from '../../../../common/util/util.js';
 import { GPUTest } from '../../../gpu_test.js';
 import { align } from '../../../util/math.js';
 
 const kTypedArrays = [
-  'Uint8Array',
-  'Uint16Array',
-  'Uint32Array',
-  'Int8Array',
-  'Int16Array',
-  'Int32Array',
-  'Float32Array',
-  'Float64Array',
-];
+'Uint8Array',
+'Uint16Array',
+'Uint32Array',
+'Int8Array',
+'Int16Array',
+'Int32Array',
+'Float32Array',
+'Float64Array'];
+
+
+
+
+
+
+
+
+
+
 
 class F extends GPUTest {
   calculateRequiredBufferSize(writes) {
@@ -31,7 +39,7 @@ class F extends GPUTest {
 
       
       let bytesWritten =
-        data.length * TypedArrayConstructor.BYTES_PER_ELEMENT - (dataOffset || 0) * bytesPerElement;
+      data.length * TypedArrayConstructor.BYTES_PER_ELEMENT - (dataOffset || 0) * bytesPerElement;
 
       if (dataSize) {
         
@@ -78,32 +86,32 @@ class F extends GPUTest {
 
 export const g = makeTestGroup(F);
 
-const kTestData = range(16, i => i);
+const kTestData = range(16, (i) => i);
 
-g.test('array_types')
-  .desc('Tests that writeBuffer correctly handles different TypedArrays and ArrayBuffer.')
-  .params(u =>
-    u 
-      .combine('arrayType', kTypedArrays)
-      .combine('useArrayBuffer', [false, true])
-  )
-  .fn(t => {
-    const { arrayType, useArrayBuffer } = t.params;
-    const dataOffset = 1;
-    const dataSize = 8;
-    t.testWriteBuffer({
-      bufferOffset: 0,
-      arrayType,
-      data: kTestData,
-      dataOffset,
-      dataSize,
-      useArrayBuffer,
-    });
+g.test('array_types').
+desc('Tests that writeBuffer correctly handles different TypedArrays and ArrayBuffer.').
+params((u) =>
+u 
+.combine('arrayType', kTypedArrays).
+combine('useArrayBuffer', [false, true])
+).
+fn((t) => {
+  const { arrayType, useArrayBuffer } = t.params;
+  const dataOffset = 1;
+  const dataSize = 8;
+  t.testWriteBuffer({
+    bufferOffset: 0,
+    arrayType,
+    data: kTestData,
+    dataOffset,
+    dataSize,
+    useArrayBuffer
   });
+});
 
-g.test('multiple_writes_at_different_offsets_and_sizes')
-  .desc(
-    `
+g.test('multiple_writes_at_different_offsets_and_sizes').
+desc(
+  `
 Tests that writeBuffer currently handles different offsets and writes. This includes:
 - Non-overlapping TypedArrays and ArrayLists
 - Overlapping TypedArrays and ArrayLists
@@ -112,122 +120,116 @@ Tests that writeBuffer currently handles different offsets and writes. This incl
 - Unaligned source
 - Multiple overlapping writes with decreasing sizes
     `
-  )
-  .paramsSubcasesOnly([
-    {
-      
-      writes: [
-        {
-          bufferOffset: 0,
-          data: kTestData,
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-          dataOffset: 2,
-          dataSize: 2,
-        }, 
-        {
-          bufferOffset: 2 * Uint32Array.BYTES_PER_ELEMENT,
-          data: kTestData,
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-          dataOffset: 0,
-          dataSize: 2,
-        }, 
-      ], 
-    },
-    {
-      
-      writes: [
-        { bufferOffset: 0, data: [0, 1, 2, 3], arrayType: 'Uint8Array', useArrayBuffer: false },
-        { bufferOffset: 4, data: [4, 5, 6, 7], arrayType: 'Uint8Array', useArrayBuffer: false },
-      ],
-      
-    },
-    {
-      
-      writes: [
-        { bufferOffset: 0, data: kTestData, arrayType: 'Uint8Array', useArrayBuffer: false },
-        { bufferOffset: 4, data: [0], arrayType: 'Uint32Array', useArrayBuffer: false },
-      ],
-      
-    },
-    {
-      
-      writes: [
-        {
-          bufferOffset: 0,
-          data: kTestData,
-          arrayType: 'Uint32Array',
-          useArrayBuffer: true,
-          dataOffset: 2,
-          dataSize: 4 * Uint32Array.BYTES_PER_ELEMENT,
-        },
-        { bufferOffset: 4, data: [0x04030201], arrayType: 'Uint32Array', useArrayBuffer: true },
-      ],
-      
-    },
-    {
-      
-      writes: [
-        { bufferOffset: 0, data: kTestData, arrayType: 'Uint8Array', useArrayBuffer: false },
-        { bufferOffset: 0, data: [], arrayType: 'Uint8Array', useArrayBuffer: false },
-      ],
-      
-    },
-    {
-      
-      writes: [{ bufferOffset: 0, data: [], arrayType: 'Uint8Array', useArrayBuffer: false }],
-    }, 
-    {
-      
-      writes: [
-        {
-          bufferOffset: 0,
-          data: [0x77, ...kTestData],
-          arrayType: 'Uint8Array',
-          useArrayBuffer: false,
-          dataOffset: 1,
-        },
-      ],
-      
-    },
-    {
-      
-      writes: [
-        {
-          bufferOffset: 0,
-          data: [0x05050505, 0x05050505, 0x05050505, 0x05050505, 0x05050505],
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-        },
-        {
-          bufferOffset: 0,
-          data: [0x04040404, 0x04040404, 0x04040404, 0x04040404],
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-        },
-        {
-          bufferOffset: 0,
-          data: [0x03030303, 0x03030303, 0x03030303],
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-        },
-        {
-          bufferOffset: 0,
-          data: [0x02020202, 0x02020202],
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-        },
-        {
-          bufferOffset: 0,
-          data: [0x01010101],
-          arrayType: 'Uint32Array',
-          useArrayBuffer: false,
-        },
-      ],
-      
-    },
-  ])
-  .fn(t => {
-    t.testWriteBuffer(...t.params.writes);
-  });
+).
+paramsSubcasesOnly([
+{
+  
+  writes: [
+  {
+    bufferOffset: 0,
+    data: kTestData,
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false,
+    dataOffset: 2,
+    dataSize: 2
+  }, 
+  {
+    bufferOffset: 2 * Uint32Array.BYTES_PER_ELEMENT,
+    data: kTestData,
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false,
+    dataOffset: 0,
+    dataSize: 2
+  } 
+  ] 
+},
+{
+  
+  writes: [
+  { bufferOffset: 0, data: [0, 1, 2, 3], arrayType: 'Uint8Array', useArrayBuffer: false },
+  { bufferOffset: 4, data: [4, 5, 6, 7], arrayType: 'Uint8Array', useArrayBuffer: false }]
+  
+},
+{
+  
+  writes: [
+  { bufferOffset: 0, data: kTestData, arrayType: 'Uint8Array', useArrayBuffer: false },
+  { bufferOffset: 4, data: [0], arrayType: 'Uint32Array', useArrayBuffer: false }]
+  
+},
+{
+  
+  writes: [
+  {
+    bufferOffset: 0,
+    data: kTestData,
+    arrayType: 'Uint32Array',
+    useArrayBuffer: true,
+    dataOffset: 2,
+    dataSize: 4 * Uint32Array.BYTES_PER_ELEMENT
+  },
+  { bufferOffset: 4, data: [0x04030201], arrayType: 'Uint32Array', useArrayBuffer: true }]
+  
+},
+{
+  
+  writes: [
+  { bufferOffset: 0, data: kTestData, arrayType: 'Uint8Array', useArrayBuffer: false },
+  { bufferOffset: 0, data: [], arrayType: 'Uint8Array', useArrayBuffer: false }]
+  
+},
+{
+  
+  writes: [{ bufferOffset: 0, data: [], arrayType: 'Uint8Array', useArrayBuffer: false }]
+}, 
+{
+  
+  writes: [
+  {
+    bufferOffset: 0,
+    data: [0x77, ...kTestData],
+    arrayType: 'Uint8Array',
+    useArrayBuffer: false,
+    dataOffset: 1
+  }]
+  
+},
+{
+  
+  writes: [
+  {
+    bufferOffset: 0,
+    data: [0x05050505, 0x05050505, 0x05050505, 0x05050505, 0x05050505],
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false
+  },
+  {
+    bufferOffset: 0,
+    data: [0x04040404, 0x04040404, 0x04040404, 0x04040404],
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false
+  },
+  {
+    bufferOffset: 0,
+    data: [0x03030303, 0x03030303, 0x03030303],
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false
+  },
+  {
+    bufferOffset: 0,
+    data: [0x02020202, 0x02020202],
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false
+  },
+  {
+    bufferOffset: 0,
+    data: [0x01010101],
+    arrayType: 'Uint32Array',
+    useArrayBuffer: false
+  }]
+  
+}]
+).
+fn((t) => {
+  t.testWriteBuffer(...t.params.writes);
+});

@@ -1,4 +1,5 @@
 import { globalTestConfig } from '../../../../common/framework/test_config.js';
+import { ROArrayArray } from '../../../../common/util/types.js';
 import { assert, objectEquals, unreachable } from '../../../../common/util/util.js';
 import { GPUTest } from '../../../gpu_test.js';
 import { compare, Comparator, ComparatorImpl } from '../../../util/compare.js';
@@ -27,7 +28,12 @@ import {
   quantizeToU32,
 } from '../../../util/math.js';
 
-export type Expectation = Value | FPInterval | FPInterval[] | FPInterval[][] | Comparator;
+export type Expectation =
+  | Value
+  | FPInterval
+  | readonly FPInterval[]
+  | ROArrayArray<FPInterval>
+  | Comparator;
 
 
 export function isComparator(e: Expectation): e is Comparator {
@@ -52,7 +58,7 @@ export function toComparator(input: Expectation): Comparator {
 
 export type Case = {
   
-  input: Value | Array<Value>;
+  input: Value | ReadonlyArray<Value>;
   
   expected: Expectation;
 };
@@ -347,6 +353,22 @@ export async function run(
     }
   };
 
+  const processBatch = async (batchCases: CaseList) => {
+    const checkBatch = await submitBatch(
+      t,
+      shaderBuilder,
+      parameterTypes,
+      resultType,
+      batchCases,
+      cfg.inputSource,
+      pipelineCache
+    );
+    checkBatch();
+    void t.queue.onSubmittedWorkDone().finally(batchFinishedCallback);
+  };
+
+  const pendingBatches = [];
+
   for (let i = 0; i < cases.length; i += casesPerBatch) {
     const batchCases = cases.slice(i, Math.min(i + casesPerBatch, cases.length));
 
@@ -359,18 +381,10 @@ export async function run(
     }
     batchesInFlight += 1;
 
-    const checkBatch = submitBatch(
-      t,
-      shaderBuilder,
-      parameterTypes,
-      resultType,
-      batchCases,
-      cfg.inputSource,
-      pipelineCache
-    );
-    checkBatch();
-    t.queue.onSubmittedWorkDone().finally(batchFinishedCallback);
+    pendingBatches.push(processBatch(batchCases));
   }
+
+  await Promise.all(pendingBatches);
 }
 
 
@@ -385,7 +399,7 @@ export async function run(
 
 
 
-function submitBatch(
+async function submitBatch(
   t: GPUTest,
   shaderBuilder: ShaderBuilder,
   parameterTypes: Array<Type>,
@@ -393,7 +407,7 @@ function submitBatch(
   cases: CaseList,
   inputSource: InputSource,
   pipelineCache: PipelineCache
-): () => void {
+): Promise<() => void> {
   
   const outputBufferSize = cases.length * valueStride(resultType);
   const outputBuffer = t.device.createBuffer({
@@ -401,7 +415,7 @@ function submitBatch(
     usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE,
   });
 
-  const [pipeline, group] = buildPipeline(
+  const [pipeline, group] = await buildPipeline(
     t,
     shaderBuilder,
     parameterTypes,
@@ -466,7 +480,7 @@ function submitBatch(
 
 
 
-function map<T, U>(v: T | T[], fn: (value: T, index?: number) => U): U[] {
+function map<T, U>(v: T | readonly T[], fn: (value: T, index?: number) => U): U[] {
   if (v instanceof Array) {
     return v.map(fn);
   }
@@ -588,7 +602,7 @@ function wgslHeader(parameterTypes: Array<Type>, resultType: Type) {
 
 
 
-export type ExpressionBuilder = (values: Array<string>) => string;
+export type ExpressionBuilder = (values: ReadonlyArray<string>) => string;
 
 
 
@@ -903,7 +917,7 @@ function abstractFloatSnippet(expr: string, case_idx: number, accessor: string =
   
   return `  {
     const kExponentBias = 1022;
-    const subnormal_or_zero : bool = (${expr}${accessor} <= ${kValue.f64.subnormal.positive.max}) && (${expr}${accessor} >= ${kValue.f64.subnormal.negative.min});
+    const subnormal_or_zero : bool = (${expr}${accessor} <= ${kValue.f64.positive.subnormal.max}) && (${expr}${accessor} >= ${kValue.f64.negative.subnormal.min});
     const sign_bit : u32 = select(0, 0x80000000, ${expr}${accessor} < 0);
     const f = frexp(abs(${expr}${accessor}));
     const f_fract = select(f.fract, 0, subnormal_or_zero);
@@ -997,7 +1011,7 @@ ${body}
 
 
 
-function buildPipeline(
+async function buildPipeline(
   t: GPUTest,
   shaderBuilder: ShaderBuilder,
   parameterTypes: Array<Type>,
@@ -1006,7 +1020,7 @@ function buildPipeline(
   inputSource: InputSource,
   outputBuffer: GPUBuffer,
   pipelineCache: PipelineCache
-): [GPUComputePipeline, GPUBindGroup] {
+): Promise<[GPUComputePipeline, GPUBindGroup]> {
   cases.forEach(c => {
     const inputTypes = c.input instanceof Array ? c.input.map(i => i.type) : [c.input.type];
     if (!objectEquals(inputTypes, parameterTypes)) {
@@ -1026,7 +1040,7 @@ function buildPipeline(
       const module = t.device.createShaderModule({ code: source });
 
       
-      const pipeline = t.device.createComputePipeline({
+      const pipeline = await t.device.createComputePipelineAsync({
         layout: 'auto',
         compute: { module, entryPoint: 'main' },
       });
@@ -1212,8 +1226,8 @@ export interface BinaryOp {
 
 
 function generateScalarBinaryToScalarCases(
-  param0s: number[],
-  param1s: number[],
+  param0s: readonly number[],
+  param1s: readonly number[],
   op: BinaryOp,
   quantize: QuantizeFunc,
   scalarize: ScalarBuilder
@@ -1235,7 +1249,11 @@ function generateScalarBinaryToScalarCases(
 
 
 
-export function generateBinaryToI32Cases(param0s: number[], param1s: number[], op: BinaryOp) {
+export function generateBinaryToI32Cases(
+  param0s: readonly number[],
+  param1s: readonly number[],
+  op: BinaryOp
+) {
   return generateScalarBinaryToScalarCases(param0s, param1s, op, quantizeToI32, i32);
 }
 
@@ -1245,7 +1263,11 @@ export function generateBinaryToI32Cases(param0s: number[], param1s: number[], o
 
 
 
-export function generateBinaryToU32Cases(param0s: number[], param1s: number[], op: BinaryOp) {
+export function generateBinaryToU32Cases(
+  param0s: readonly number[],
+  param1s: readonly number[],
+  op: BinaryOp
+) {
   return generateScalarBinaryToScalarCases(param0s, param1s, op, quantizeToU32, u32);
 }
 
@@ -1259,7 +1281,7 @@ export function generateBinaryToU32Cases(param0s: number[], param1s: number[], o
 
 function makeScalarVectorBinaryToVectorCase(
   scalar: number,
-  vector: number[],
+  vector: readonly number[],
   op: BinaryOp,
   quantize: QuantizeFunc,
   scalarize: ScalarBuilder
@@ -1272,7 +1294,7 @@ function makeScalarVectorBinaryToVectorCase(
   }
   return {
     input: [scalarize(scalar), new Vector(vector.map(scalarize))],
-    expected: new Vector((result as number[]).map(scalarize)),
+    expected: new Vector((result as readonly number[]).map(scalarize)),
   };
 }
 
@@ -1285,8 +1307,8 @@ function makeScalarVectorBinaryToVectorCase(
 
 
 function generateScalarVectorBinaryToVectorCases(
-  scalars: number[],
-  vectors: number[][],
+  scalars: readonly number[],
+  vectors: ROArrayArray<number>,
   op: BinaryOp,
   quantize: QuantizeFunc,
   scalarize: ScalarBuilder
@@ -1312,7 +1334,7 @@ function generateScalarVectorBinaryToVectorCases(
 
 
 function makeVectorScalarBinaryToVectorCase(
-  vector: number[],
+  vector: readonly number[],
   scalar: number,
   op: BinaryOp,
   quantize: QuantizeFunc,
@@ -1326,7 +1348,7 @@ function makeVectorScalarBinaryToVectorCase(
   }
   return {
     input: [new Vector(vector.map(scalarize)), scalarize(scalar)],
-    expected: new Vector((result as number[]).map(scalarize)),
+    expected: new Vector((result as readonly number[]).map(scalarize)),
   };
 }
 
@@ -1339,8 +1361,8 @@ function makeVectorScalarBinaryToVectorCase(
 
 
 function generateVectorScalarBinaryToVectorCases(
-  vectors: number[][],
-  scalars: number[],
+  vectors: ROArrayArray<number>,
+  scalars: readonly number[],
   op: BinaryOp,
   quantize: QuantizeFunc,
   scalarize: ScalarBuilder
@@ -1364,8 +1386,8 @@ function generateVectorScalarBinaryToVectorCases(
 
 
 export function generateU32VectorBinaryToVectorCases(
-  scalars: number[],
-  vectors: number[][],
+  scalars: readonly number[],
+  vectors: ROArrayArray<number>,
   op: BinaryOp
 ): Case[] {
   return generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantizeToU32, u32);
@@ -1378,8 +1400,8 @@ export function generateU32VectorBinaryToVectorCases(
 
 
 export function generateVectorU32BinaryToVectorCases(
-  vectors: number[][],
-  scalars: number[],
+  vectors: ROArrayArray<number>,
+  scalars: readonly number[],
   op: BinaryOp
 ): Case[] {
   return generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantizeToU32, u32);
@@ -1392,8 +1414,8 @@ export function generateVectorU32BinaryToVectorCases(
 
 
 export function generateI32VectorBinaryToVectorCases(
-  scalars: number[],
-  vectors: number[][],
+  scalars: readonly number[],
+  vectors: ROArrayArray<number>,
   op: BinaryOp
 ): Case[] {
   return generateScalarVectorBinaryToVectorCases(scalars, vectors, op, quantizeToI32, i32);
@@ -1406,8 +1428,8 @@ export function generateI32VectorBinaryToVectorCases(
 
 
 export function generateVectorI32BinaryToVectorCases(
-  vectors: number[][],
-  scalars: number[],
+  vectors: ROArrayArray<number>,
+  scalars: readonly number[],
   op: BinaryOp
 ): Case[] {
   return generateVectorScalarBinaryToVectorCases(vectors, scalars, op, quantizeToI32, i32);

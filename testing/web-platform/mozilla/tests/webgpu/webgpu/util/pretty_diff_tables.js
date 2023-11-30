@@ -1,6 +1,6 @@
 
 
- import { range } from '../../common/util/util.js';
+import { range } from '../../common/util/util.js'; 
 
 
 
@@ -11,23 +11,25 @@
 
 
 
-
-export function generatePrettyTable({ fillToWidth, numberToString }, rows) {
+export function generatePrettyTable(
+{ fillToWidth, numberToString },
+rows)
+{
   const rowStrings = range(rows.length, () => '');
   let totalTableWidth = 0;
-  const iters = rows.map(row => row[Symbol.iterator]());
+  const iters = rows.map((row) => row[Symbol.iterator]());
 
   
   for (;;) {
-    const cellsForColumn = iters.map(iter => {
+    const cellsForColumn = iters.map((iter) => {
       const r = iter.next(); 
       return r.done ? undefined : typeof r.value === 'number' ? numberToString(r.value) : r.value;
     });
-    if (cellsForColumn.every(cell => cell === undefined)) break;
+    if (cellsForColumn.every((cell) => cell === undefined)) break;
 
     
     
-    const colWidth = Math.max(...cellsForColumn.map(c => (c === undefined ? 0 : c.length))) + 1;
+    const colWidth = Math.max(...cellsForColumn.map((c) => c === undefined ? 0 : c.length)) + 1;
     for (let row = 0; row < rowStrings.length; ++row) {
       const cell = cellsForColumn[row];
       if (cell !== undefined) {

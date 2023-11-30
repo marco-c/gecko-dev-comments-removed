@@ -1,7 +1,10 @@
 
 
- import { assert } from '../../../common/util/util.js';
-import { takeScreenshotDelayed } from '../../../common/util/wpt_reftest_wait.js';
+import { assert } from '../../../common/util/util.js';import { takeScreenshotDelayed } from '../../../common/util/wpt_reftest_wait.js';
+
+
+
+
 
 export function runRefTest(fn) {
   void (async () => {

@@ -1,164 +1,125 @@
 import { Cacheable, dataCache } from '../../../../common/framework/data_cache.js';
 import { unreachable } from '../../../../common/util/util.js';
-import {
-  SerializedComparator,
-  deserializeComparator,
-  serializeComparator,
-} from '../../../util/compare.js';
+import BinaryStream from '../../../util/binary_stream.js';
+import { deserializeComparator, serializeComparator } from '../../../util/compare.js';
 import {
   Scalar,
   Vector,
   serializeValue,
-  SerializedValue,
   deserializeValue,
   Matrix,
+  Value,
 } from '../../../util/conversion.js';
 import {
   deserializeFPInterval,
   FPInterval,
-  SerializedFPInterval,
   serializeFPInterval,
 } from '../../../util/floating_point.js';
 import { flatten2DArray, unflatten2DArray } from '../../../util/math.js';
 
 import { Case, CaseList, Expectation, isComparator } from './expression.js';
 
+enum SerializedExpectationKind {
+  Value,
+  Interval,
+  Interval1DArray,
+  Interval2DArray,
+  Array,
+  Comparator,
+}
 
 
-
-
-
-type SerializedExpectationValue = {
-  kind: 'value';
-  value: SerializedValue;
-};
-
-
-
-
-
-
-type SerializedExpectationInterval = {
-  kind: 'interval';
-  value: SerializedFPInterval;
-};
-
-
-
-
-
-
-type SerializedExpectationIntervals = {
-  kind: 'intervals';
-  value: SerializedFPInterval[];
-};
-
-
-
-
-
-
-
-type SerializedExpectation2DIntervalArray = {
-  kind: '2d-interval-array';
-  cols: number;
-  rows: number;
-  value: SerializedFPInterval[];
-};
-
-
-
-
-
-
-type SerializedExpectationComparator = {
-  kind: 'comparator';
-  value: SerializedComparator;
-};
-
-
-
-
-
-export type SerializedExpectation =
-  | SerializedExpectationValue
-  | SerializedExpectationInterval
-  | SerializedExpectationIntervals
-  | SerializedExpectation2DIntervalArray
-  | SerializedExpectationComparator;
-
-
-export function serializeExpectation(e: Expectation): SerializedExpectation {
+export function serializeExpectation(s: BinaryStream, e: Expectation) {
   if (e instanceof Scalar || e instanceof Vector || e instanceof Matrix) {
-    return { kind: 'value', value: serializeValue(e) };
+    s.writeU8(SerializedExpectationKind.Value);
+    serializeValue(s, e);
+    return;
   }
   if (e instanceof FPInterval) {
-    return { kind: 'interval', value: serializeFPInterval(e) };
+    s.writeU8(SerializedExpectationKind.Interval);
+    serializeFPInterval(s, e);
+    return;
   }
   if (e instanceof Array) {
     if (e[0] instanceof Array) {
       e = e as FPInterval[][];
       const cols = e.length;
       const rows = e[0].length;
-      return {
-        kind: '2d-interval-array',
-        cols,
-        rows,
-        value: flatten2DArray(e).map(serializeFPInterval),
-      };
+      s.writeU8(SerializedExpectationKind.Interval2DArray);
+      s.writeU16(cols);
+      s.writeU16(rows);
+      s.writeArray(flatten2DArray(e), serializeFPInterval);
     } else {
       e = e as FPInterval[];
-      return { kind: 'intervals', value: e.map(serializeFPInterval) };
+      s.writeU8(SerializedExpectationKind.Interval1DArray);
+      s.writeArray(e, serializeFPInterval);
     }
+    return;
   }
   if (isComparator(e)) {
-    return { kind: 'comparator', value: serializeComparator(e) };
+    s.writeU8(SerializedExpectationKind.Comparator);
+    serializeComparator(s, e);
+    return;
   }
   unreachable(`cannot serialize Expectation ${e}`);
 }
 
 
-export function deserializeExpectation(data: SerializedExpectation): Expectation {
-  switch (data.kind) {
-    case 'value':
-      return deserializeValue(data.value);
-    case 'interval':
-      return deserializeFPInterval(data.value);
-    case 'intervals':
-      return data.value.map(deserializeFPInterval);
-    case '2d-interval-array':
-      return unflatten2DArray(data.value.map(deserializeFPInterval), data.cols, data.rows);
-    case 'comparator':
-      return deserializeComparator(data.value);
+export function deserializeExpectation(s: BinaryStream): Expectation {
+  const kind = s.readU8();
+  switch (kind) {
+    case SerializedExpectationKind.Value: {
+      return deserializeValue(s);
+    }
+    case SerializedExpectationKind.Interval: {
+      return deserializeFPInterval(s);
+    }
+    case SerializedExpectationKind.Interval1DArray: {
+      return s.readArray(deserializeFPInterval);
+    }
+    case SerializedExpectationKind.Interval2DArray: {
+      const cols = s.readU16();
+      const rows = s.readU16();
+      return unflatten2DArray(s.readArray(deserializeFPInterval), cols, rows);
+    }
+    case SerializedExpectationKind.Comparator: {
+      return deserializeComparator(s);
+    }
+    default: {
+      unreachable(`invalid serialized expectation kind: ${kind}`);
+    }
   }
 }
 
 
-
-
-
-export type SerializedCase = {
-  input: SerializedValue | SerializedValue[];
-  expected: SerializedExpectation;
-};
-
-
-export function serializeCase(c: Case): SerializedCase {
-  return {
-    input: c.input instanceof Array ? c.input.map(v => serializeValue(v)) : serializeValue(c.input),
-    expected: serializeExpectation(c.expected),
-  };
+export function serializeCase(s: BinaryStream, c: Case) {
+  s.writeCond(c.input instanceof Array, {
+    if_true: () => {
+      
+      s.writeArray(c.input as Value[], serializeValue);
+    },
+    if_false: () => {
+      
+      serializeValue(s, c.input as Value);
+    },
+  });
+  serializeExpectation(s, c.expected);
 }
 
 
-export function deserializeCase(data: SerializedCase): Case {
-  return {
-    input:
-      data.input instanceof Array
-        ? data.input.map(v => deserializeValue(v))
-        : deserializeValue(data.input),
-    expected: deserializeExpectation(data.expected),
-  };
+export function deserializeCase(s: BinaryStream): Case {
+  const input = s.readCond({
+    if_true: () => {
+      
+      return s.readArray(deserializeValue);
+    },
+    if_false: () => {
+      
+      return deserializeValue(s);
+    },
+  });
+  const expected = deserializeExpectation(s);
+  return { input, expected };
 }
 
 
@@ -176,7 +137,7 @@ export class CaseCache implements Cacheable<Record<string, CaseList>> {
 
 
   constructor(name: string, builders: Record<string, CaseListBuilder>) {
-    this.path = `webgpu/shader/execution/case-cache/${name}.json`;
+    this.path = `webgpu/shader/execution/case-cache/${name}.bin`;
     this.builders = builders;
   }
 
@@ -203,23 +164,28 @@ export class CaseCache implements Cacheable<Record<string, CaseList>> {
 
 
 
-  serialize(data: Record<string, CaseList>): string {
-    const serialized: Record<string, SerializedCase[]> = {};
+  serialize(data: Record<string, CaseList>): Uint8Array {
+    const maxSize = 32 << 20; 
+    const stream = new BinaryStream(new ArrayBuffer(maxSize));
+    stream.writeU32(Object.keys(data).length);
     for (const name in data) {
-      serialized[name] = data[name].map(c => serializeCase(c));
+      stream.writeString(name);
+      stream.writeArray(data[name], serializeCase);
     }
-    return JSON.stringify(serialized);
+    return stream.buffer();
   }
 
   
 
 
 
-  deserialize(serialized: string): Record<string, CaseList> {
-    const data = JSON.parse(serialized) as Record<string, SerializedCase[]>;
+  deserialize(array: Uint8Array): Record<string, CaseList> {
+    const s = new BinaryStream(array.buffer);
     const casesByName: Record<string, CaseList> = {};
-    for (const name in data) {
-      const cases = data[name].map(caseData => deserializeCase(caseData));
+    const numRecords = s.readU32();
+    for (let i = 0; i < numRecords; i++) {
+      const name = s.readString();
+      const cases = s.readArray(deserializeCase);
       casesByName[name] = cases;
     }
     return casesByName;

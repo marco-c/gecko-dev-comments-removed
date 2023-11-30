@@ -1,6 +1,11 @@
 
 
- import { kAccessModeInfo, kAddressSpaceInfo } from '../../types.js';
+import {
+
+  kAccessModeInfo,
+  kAddressSpaceInfo } from
+'../../types.js';
+
 
 
 
@@ -16,7 +21,11 @@ export const kShaderStages = ['vertex', 'fragment', 'compute'];
 
 
 
-export function declareEntryPoint(arg) {
+export function declareEntryPoint(arg)
+
+
+
+{
   if (arg.name === undefined) {
     arg.name = 'main';
   }
@@ -71,7 +80,10 @@ export function explicitSpaceExpander(p) {
 
 
 
-export function accessModeExpander(p) {
+export function accessModeExpander(p)
+
+
+{
   const info = kAddressSpaceInfo[p.addressSpace];
   return p.explicitAccess && info.spellAccessMode !== 'never' ? info.accessModes : [''];
 }
@@ -81,10 +93,15 @@ export function accessModeExpander(p) {
 
 
 export function getVarDeclShader(
-  p,
+p,
 
-  additionalBody
-) {
+
+
+
+
+
+additionalBody)
+{
   const info = kAddressSpaceInfo[p.addressSpace];
   const decl = declareVarX(
     p.explicitSpace ? p.addressSpace : '',
@@ -106,26 +123,40 @@ export function getVarDeclShader(
 
 
 
-export function pointerType(p) {
+export function pointerType(p)
+
+
+
+
+{
   const space = p.explicitSpace ? p.addressSpace : 'function';
   const modePart = p.accessMode ? ',' + p.accessMode : '';
   return `ptr<${space},${p.ptrStoreType}${modePart}>`;
 }
 
 
-export function effectiveAccessMode(info, accessMode) {
+export function effectiveAccessMode(
+info,
+accessMode)
+{
   return accessMode || info.accessModes[0]; 
 }
 
 
-export function supportsRead(p) {
+export function supportsRead(p)
+
+
+{
   const info = kAddressSpaceInfo[p.addressSpace];
   const mode = effectiveAccessMode(info, p.accessMode);
   return info.accessModes.includes(mode) && kAccessModeInfo[mode].read;
 }
 
 
-export function supportsWrite(p) {
+export function supportsWrite(p)
+
+
+{
   const info = kAddressSpaceInfo[p.addressSpace];
   const mode = effectiveAccessMode(info, p.accessMode);
   return info.accessModes.includes(mode) && kAccessModeInfo[mode].write;

@@ -1,6 +1,6 @@
 
 
- import { unreachable } from '../../common/util/util.js';
+import { unreachable } from '../../common/util/util.js';
 
 
 
@@ -12,10 +12,28 @@ export const kAllCanvasTypes = ['onscreen', 'offscreen'];
 
 
 
-export const kValidCanvasContextIds = ['2d', 'bitmaprenderer', 'webgl', 'webgl2', 'webgpu'];
 
 
-export function createCanvas(test, canvasType, width, height) {
+
+
+
+
+export const kValidCanvasContextIds = [
+'2d',
+'bitmaprenderer',
+'webgl',
+'webgl2',
+'webgpu'];
+
+
+
+
+export function createCanvas(
+test,
+canvasType,
+width,
+height)
+{
   if (canvasType === 'onscreen') {
     if (typeof document !== 'undefined') {
       return createOnscreenCanvas(test, width, height);
@@ -34,7 +52,11 @@ export function createCanvas(test, canvasType, width, height) {
 }
 
 
-export function createOnscreenCanvas(test, width, height) {
+export function createOnscreenCanvas(
+test,
+width,
+height)
+{
   let canvas;
   if (typeof document !== 'undefined') {
     canvas = document.createElement('canvas');
@@ -47,7 +69,11 @@ export function createOnscreenCanvas(test, width, height) {
 }
 
 
-export function createOffscreenCanvas(test, width, height) {
+export function createOffscreenCanvas(
+test,
+width,
+height)
+{
   if (typeof OffscreenCanvas === 'undefined') {
     test.skip('OffscreenCanvas is not supported');
   }

@@ -54,7 +54,8 @@ class DrawTest extends TextureTestMixin(GPUTest) {
     
     
     
-    const triangleVertices =  [
+    
+    const triangleVertices = [
       0.0, 0.0,
       0.0, 1.0,
       1.0, 1.0,

@@ -1,9 +1,13 @@
 
 
- import { assert } from '../../../../common/util/util.js';
-import { GPUTest } from '../../../gpu_test.js';
+import { assert } from '../../../../common/util/util.js';import { GPUTest } from '../../../gpu_test.js';
 export class MappingTest extends GPUTest {
-  checkMapWrite(buffer, offset, mappedContents, size) {
+  checkMapWrite(
+  buffer,
+  offset,
+  mappedContents,
+  size)
+  {
     this.checkMapWriteZeroed(mappedContents, size);
 
     const mappedView = new Uint32Array(mappedContents);

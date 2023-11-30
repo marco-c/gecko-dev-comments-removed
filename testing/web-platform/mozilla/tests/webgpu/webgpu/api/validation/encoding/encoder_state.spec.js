@@ -1,6 +1,6 @@
 
 
- export const description = `
+export const description = `
 TODO:
 - createCommandEncoder
 - non-pass command, or beginPass, during {render, compute} pass
@@ -16,8 +16,7 @@ TODO:
         - }
     - should make whole encoder invalid
 - ?
-`;
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { objectEquals } from '../../../../common/util/util.js';
 import { ValidationTest } from '../validation_test.js';
 
@@ -25,13 +24,13 @@ class F extends ValidationTest {
   beginRenderPass(commandEncoder, view) {
     return commandEncoder.beginRenderPass({
       colorAttachments: [
-        {
-          view,
-          clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
-          loadOp: 'clear',
-          storeOp: 'store',
-        },
-      ],
+      {
+        view,
+        clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
+        loadOp: 'clear',
+        storeOp: 'store'
+      }]
+
     });
   }
 
@@ -39,7 +38,7 @@ class F extends ValidationTest {
     const texture = this.device.createTexture({
       format: 'rgba8unorm',
       size: { width: 1, height: 1, depthOrArrayLayers: 1 },
-      usage: GPUTextureUsage.RENDER_ATTACHMENT,
+      usage: GPUTextureUsage.RENDER_ATTACHMENT
     });
     this.trackForCleanup(texture);
     return texture.createView();
@@ -48,204 +47,204 @@ class F extends ValidationTest {
 
 export const g = makeTestGroup(F);
 
-g.test('pass_end_invalid_order')
-  .desc(
-    `
+g.test('pass_end_invalid_order').
+desc(
+  `
   Test that beginning a {compute,render} pass before ending the previous {compute,render} pass
   causes an error.
   `
-  )
-  .params(u =>
-    u
-      .combine('pass0Type', ['compute', 'render'])
-      .combine('pass1Type', ['compute', 'render'])
-      .beginSubcases()
-      .combine('firstPassEnd', [true, false])
-      .combine('endPasses', [[], [0], [1], [0, 1], [1, 0]])
-      
-      .unless(p => p.firstPassEnd && p.endPasses.includes(0))
-  )
-  .fn(t => {
-    const { pass0Type, pass1Type, firstPassEnd, endPasses } = t.params;
+).
+params((u) =>
+u.
+combine('pass0Type', ['compute', 'render']).
+combine('pass1Type', ['compute', 'render']).
+beginSubcases().
+combine('firstPassEnd', [true, false]).
+combine('endPasses', [[], [0], [1], [0, 1], [1, 0]])
 
-    const view = t.createAttachmentTextureView();
-    const encoder = t.device.createCommandEncoder();
+.unless((p) => p.firstPassEnd && p.endPasses.includes(0))
+).
+fn((t) => {
+  const { pass0Type, pass1Type, firstPassEnd, endPasses } = t.params;
 
-    const firstPass =
-      pass0Type === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
+  const view = t.createAttachmentTextureView();
+  const encoder = t.device.createCommandEncoder();
 
-    if (firstPassEnd) firstPass.end();
+  const firstPass =
+  pass0Type === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
 
-    
-    const secondPass =
-      pass1Type === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
+  if (firstPassEnd) firstPass.end();
 
-    const passes = [firstPass, secondPass];
-    for (const index of endPasses) {
-      passes[index].end();
-    }
+  
+  const secondPass =
+  pass1Type === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
 
-    
-    const valid = firstPassEnd && objectEquals(endPasses, [1]);
+  const passes = [firstPass, secondPass];
+  for (const index of endPasses) {
+    passes[index].end();
+  }
 
-    t.expectValidationError(() => {
-      encoder.finish();
-    }, !valid);
-  });
+  
+  const valid = firstPassEnd && objectEquals(endPasses, [1]);
 
-g.test('call_after_successful_finish')
-  .desc(`Test that encoding command after a successful finish generates a validation error.`)
-  .params(u =>
-    u
-      .combine('callCmd', ['beginComputePass', 'beginRenderPass', 'insertDebugMarker'])
-      .beginSubcases()
-      .combine('prePassType', ['compute', 'render', 'no-op'])
-      .combine('IsEncoderFinished', [false, true])
-  )
-  .fn(t => {
-    const { prePassType, IsEncoderFinished, callCmd } = t.params;
+  t.expectValidationError(() => {
+    encoder.finish();
+  }, !valid);
+});
 
-    const view = t.createAttachmentTextureView();
-    const encoder = t.device.createCommandEncoder();
+g.test('call_after_successful_finish').
+desc(`Test that encoding command after a successful finish generates a validation error.`).
+params((u) =>
+u.
+combine('callCmd', ['beginComputePass', 'beginRenderPass', 'insertDebugMarker']).
+beginSubcases().
+combine('prePassType', ['compute', 'render', 'no-op']).
+combine('IsEncoderFinished', [false, true])
+).
+fn((t) => {
+  const { prePassType, IsEncoderFinished, callCmd } = t.params;
 
-    if (prePassType !== 'no-op') {
-      const pass =
-        prePassType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
-      pass.end();
-    }
+  const view = t.createAttachmentTextureView();
+  const encoder = t.device.createCommandEncoder();
 
-    if (IsEncoderFinished) {
-      encoder.finish();
-    }
-
-    switch (callCmd) {
-      case 'beginComputePass':
-        {
-          let pass;
-          t.expectValidationError(() => {
-            pass = encoder.beginComputePass();
-          }, IsEncoderFinished);
-          t.expectValidationError(() => {
-            pass.end();
-          }, IsEncoderFinished);
-        }
-        break;
-      case 'beginRenderPass':
-        {
-          let pass;
-          t.expectValidationError(() => {
-            pass = t.beginRenderPass(encoder, view);
-          }, IsEncoderFinished);
-          t.expectValidationError(() => {
-            pass.end();
-          }, IsEncoderFinished);
-        }
-        break;
-      case 'insertDebugMarker':
-        t.expectValidationError(() => {
-          encoder.insertDebugMarker('');
-        }, IsEncoderFinished);
-        break;
-    }
-
-    if (!IsEncoderFinished) {
-      encoder.finish();
-    }
-  });
-
-g.test('pass_end_none')
-  .desc(
-    `
-  Test that ending a {compute,render} pass without ending the passes generates a validation error.
-  `
-  )
-  .paramsSubcasesOnly(u => u.combine('passType', ['compute', 'render']).combine('endCount', [0, 1]))
-  .fn(t => {
-    const { passType, endCount } = t.params;
-
-    const view = t.createAttachmentTextureView();
-    const encoder = t.device.createCommandEncoder();
-
+  if (prePassType !== 'no-op') {
     const pass =
-      passType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
-
-    for (let i = 0; i < endCount; ++i) {
-      pass.end();
-    }
-
-    t.expectValidationError(() => {
-      encoder.finish();
-    }, endCount === 0);
-  });
-
-g.test('pass_end_twice,basic')
-  .desc(
-    'Test that ending a {compute,render} pass twice generates a validation error. The parent encoder (command encoder) can be either locked or open.'
-  )
-  .paramsSubcasesOnly(u =>
-    u 
-      .combine('passType', ['compute', 'render'])
-      
-      .combine('endTwice', [false, true])
-      .combine('secondEndInAnotherPass', [false, 'compute', 'render'])
-      .filter(p => p.endTwice || !p.secondEndInAnotherPass)
-  )
-  .fn(t => {
-    const { passType, endTwice, secondEndInAnotherPass } = t.params;
-
-    const view = t.createAttachmentTextureView();
-    const encoder = t.device.createCommandEncoder();
-
-    const pass =
-      passType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
-
+    prePassType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
     pass.end();
+  }
 
-    if (secondEndInAnotherPass) {
-      const pass1 =
-        secondEndInAnotherPass === 'compute'
-          ? encoder.beginComputePass()
-          : t.beginRenderPass(encoder, view);
+  if (IsEncoderFinished) {
+    encoder.finish();
+  }
 
-      t.expectValidationError(() => {
-        pass.end();
-      });
-
-      pass1.end();
-    } else {
-      if (endTwice) {
+  switch (callCmd) {
+    case 'beginComputePass':
+      {
+        let pass;
+        t.expectValidationError(() => {
+          pass = encoder.beginComputePass();
+        }, IsEncoderFinished);
         t.expectValidationError(() => {
           pass.end();
-        });
+        }, IsEncoderFinished);
       }
-    }
+      break;
+    case 'beginRenderPass':
+      {
+        let pass;
+        t.expectValidationError(() => {
+          pass = t.beginRenderPass(encoder, view);
+        }, IsEncoderFinished);
+        t.expectValidationError(() => {
+          pass.end();
+        }, IsEncoderFinished);
+      }
+      break;
+    case 'insertDebugMarker':
+      t.expectValidationError(() => {
+        encoder.insertDebugMarker('');
+      }, IsEncoderFinished);
+      break;
+  }
 
+  if (!IsEncoderFinished) {
     encoder.finish();
-  });
+  }
+});
 
-g.test('pass_end_twice,render_pass_invalid')
-  .desc(
-    'Test that ending a render pass twice generates a validation error even if the pass is invalid.'
-  )
-  .paramsSubcasesOnly(u => u.combine('endTwice', [false, true]))
-  .fn(t => {
-    const { endTwice } = t.params;
+g.test('pass_end_none').
+desc(
+  `
+  Test that ending a {compute,render} pass without ending the passes generates a validation error.
+  `
+).
+paramsSubcasesOnly((u) => u.combine('passType', ['compute', 'render']).combine('endCount', [0, 1])).
+fn((t) => {
+  const { passType, endCount } = t.params;
 
-    const encoder = t.device.createCommandEncoder();
-    
-    const pass = encoder.beginRenderPass({
-      colorAttachments: [],
+  const view = t.createAttachmentTextureView();
+  const encoder = t.device.createCommandEncoder();
+
+  const pass =
+  passType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
+
+  for (let i = 0; i < endCount; ++i) {
+    pass.end();
+  }
+
+  t.expectValidationError(() => {
+    encoder.finish();
+  }, endCount === 0);
+});
+
+g.test('pass_end_twice,basic').
+desc(
+  'Test that ending a {compute,render} pass twice generates a validation error. The parent encoder (command encoder) can be either locked or open.'
+).
+paramsSubcasesOnly((u) =>
+u 
+.combine('passType', ['compute', 'render'])
+
+.combine('endTwice', [false, true]).
+combine('secondEndInAnotherPass', [false, 'compute', 'render']).
+filter((p) => p.endTwice || !p.secondEndInAnotherPass)
+).
+fn((t) => {
+  const { passType, endTwice, secondEndInAnotherPass } = t.params;
+
+  const view = t.createAttachmentTextureView();
+  const encoder = t.device.createCommandEncoder();
+
+  const pass =
+  passType === 'compute' ? encoder.beginComputePass() : t.beginRenderPass(encoder, view);
+
+  pass.end();
+
+  if (secondEndInAnotherPass) {
+    const pass1 =
+    secondEndInAnotherPass === 'compute' ?
+    encoder.beginComputePass() :
+    t.beginRenderPass(encoder, view);
+
+    t.expectValidationError(() => {
+      pass.end();
     });
 
-    pass.end();
-
+    pass1.end();
+  } else {
     if (endTwice) {
       t.expectValidationError(() => {
         pass.end();
       });
     }
+  }
 
-    t.expectValidationError(() => {
-      encoder.finish();
-    });
+  encoder.finish();
+});
+
+g.test('pass_end_twice,render_pass_invalid').
+desc(
+  'Test that ending a render pass twice generates a validation error even if the pass is invalid.'
+).
+paramsSubcasesOnly((u) => u.combine('endTwice', [false, true])).
+fn((t) => {
+  const { endTwice } = t.params;
+
+  const encoder = t.device.createCommandEncoder();
+  
+  const pass = encoder.beginRenderPass({
+    colorAttachments: []
   });
+
+  pass.end();
+
+  if (endTwice) {
+    t.expectValidationError(() => {
+      pass.end();
+    });
+  }
+
+  t.expectValidationError(() => {
+    encoder.finish();
+  });
+});

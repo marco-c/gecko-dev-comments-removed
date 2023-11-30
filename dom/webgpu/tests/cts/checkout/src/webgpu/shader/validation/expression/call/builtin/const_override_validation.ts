@@ -68,6 +68,25 @@ export const kMinus3PiTo3Pi = [
 ] as const;
 
 
+
+
+export const kSparseMinus3PiTo3Pi = [
+  -3 * Math.PI,
+  -2.5 * Math.PI,
+  -2.0 * Math.PI,
+  -1.5 * Math.PI,
+  -1.0 * Math.PI,
+  -0.5 * Math.PI,
+  0,
+  0.5 * Math.PI,
+  Math.PI,
+  1.5 * Math.PI,
+  2.0 * Math.PI,
+  2.5 * Math.PI,
+  3 * Math.PI,
+] as const;
+
+
 export const kConstantAndOverrideStages = ['constant', 'override'] as const;
 
 export type ConstantOrOverrideStage = 'constant' | 'override';

@@ -1,20 +1,19 @@
+import { ROArrayArray, ROArrayArrayArray } from '../../common/util/types.js';
 import { assert } from '../../common/util/util.js';
 import {
   Float16Array,
   getFloat16,
+  hfround,
   setFloat16,
 } from '../../external/petamoriken/float16/float16.js';
 
 import { kBit, kValue } from './constants.js';
 import {
-  f32,
-  f16,
-  floatBitsToNumber,
-  i32,
-  kFloat16Format,
-  kFloat32Format,
-  u32,
-} from './conversion.js';
+  reinterpretF64AsU64,
+  reinterpretU64AsF64,
+  reinterpretU32AsF32,
+  reinterpretU16AsF16,
+} from './reinterpret.js';
 
 
 
@@ -122,11 +121,11 @@ export function nextAfterF64(val: number, dir: NextDirection, mode: FlushMode): 
   }
 
   if (val === Number.POSITIVE_INFINITY) {
-    return kValue.f64.infinity.positive;
+    return kValue.f64.positive.infinity;
   }
 
   if (val === Number.NEGATIVE_INFINITY) {
-    return kValue.f64.infinity.negative;
+    return kValue.f64.negative.infinity;
   }
 
   assert(
@@ -139,9 +138,9 @@ export function nextAfterF64(val: number, dir: NextDirection, mode: FlushMode): 
   
   if (val === 0) {
     if (dir === 'positive') {
-      return mode === 'flush' ? kValue.f64.positive.min : kValue.f64.subnormal.positive.min;
+      return mode === 'flush' ? kValue.f64.positive.min : kValue.f64.positive.subnormal.min;
     } else {
-      return mode === 'flush' ? kValue.f64.negative.max : kValue.f64.subnormal.negative.max;
+      return mode === 'flush' ? kValue.f64.negative.max : kValue.f64.negative.subnormal.max;
     }
   }
 
@@ -156,9 +155,9 @@ export function nextAfterF64(val: number, dir: NextDirection, mode: FlushMode): 
   
   if ((nextAfterF64Int[0] & 0x7ff0_0000_0000_0000n) === 0x7ff0_0000_0000_0000n) {
     if (dir === 'positive') {
-      return kValue.f64.infinity.positive;
+      return kValue.f64.positive.infinity;
     } else {
-      return kValue.f64.infinity.negative;
+      return kValue.f64.negative.infinity;
     }
   }
 
@@ -195,11 +194,11 @@ export function nextAfterF32(val: number, dir: NextDirection, mode: FlushMode): 
   }
 
   if (val === Number.POSITIVE_INFINITY) {
-    return kValue.f32.infinity.positive;
+    return kValue.f32.positive.infinity;
   }
 
   if (val === Number.NEGATIVE_INFINITY) {
-    return kValue.f32.infinity.negative;
+    return kValue.f32.negative.infinity;
   }
 
   assert(
@@ -212,9 +211,9 @@ export function nextAfterF32(val: number, dir: NextDirection, mode: FlushMode): 
   
   if (val === 0) {
     if (dir === 'positive') {
-      return mode === 'flush' ? kValue.f32.positive.min : kValue.f32.subnormal.positive.min;
+      return mode === 'flush' ? kValue.f32.positive.min : kValue.f32.positive.subnormal.min;
     } else {
-      return mode === 'flush' ? kValue.f32.negative.max : kValue.f32.subnormal.negative.max;
+      return mode === 'flush' ? kValue.f32.negative.max : kValue.f32.negative.subnormal.max;
     }
   }
 
@@ -237,9 +236,9 @@ export function nextAfterF32(val: number, dir: NextDirection, mode: FlushMode): 
   
   if ((nextAfterF32Int[0] & 0x7f800000) === 0x7f800000) {
     if (dir === 'positive') {
-      return kValue.f32.infinity.positive;
+      return kValue.f32.positive.infinity;
     } else {
-      return kValue.f32.infinity.negative;
+      return kValue.f32.negative.infinity;
     }
   }
 
@@ -276,11 +275,11 @@ export function nextAfterF16(val: number, dir: NextDirection, mode: FlushMode): 
   }
 
   if (val === Number.POSITIVE_INFINITY) {
-    return kValue.f16.infinity.positive;
+    return kValue.f16.positive.infinity;
   }
 
   if (val === Number.NEGATIVE_INFINITY) {
-    return kValue.f16.infinity.negative;
+    return kValue.f16.negative.infinity;
   }
 
   assert(
@@ -293,9 +292,9 @@ export function nextAfterF16(val: number, dir: NextDirection, mode: FlushMode): 
   
   if (val === 0) {
     if (dir === 'positive') {
-      return mode === 'flush' ? kValue.f16.positive.min : kValue.f16.subnormal.positive.min;
+      return mode === 'flush' ? kValue.f16.positive.min : kValue.f16.positive.subnormal.min;
     } else {
-      return mode === 'flush' ? kValue.f16.negative.max : kValue.f16.subnormal.negative.max;
+      return mode === 'flush' ? kValue.f16.negative.max : kValue.f16.negative.subnormal.max;
     }
   }
 
@@ -318,9 +317,9 @@ export function nextAfterF16(val: number, dir: NextDirection, mode: FlushMode): 
   
   if ((nextAfterF16Hex[0] & 0x7c00) === 0x7c00) {
     if (dir === 'positive') {
-      return kValue.f16.infinity.positive;
+      return kValue.f16.positive.infinity;
     } else {
-      return kValue.f16.infinity.negative;
+      return kValue.f16.negative.infinity;
     }
   }
 
@@ -472,7 +471,7 @@ export function oneULPF16(target: number, mode: FlushMode = 'flush'): number {
 
 
 
-export function correctlyRoundedF64(n: number): number[] {
+export function correctlyRoundedF64(n: number): readonly number[] {
   assert(!Number.isNaN(n), `correctlyRoundedF32 not defined for NaN`);
   
   if (n === Number.POSITIVE_INFINITY) {
@@ -512,7 +511,7 @@ export function correctlyRoundedF64(n: number): number[] {
 
 
 
-export function correctlyRoundedF32(n: number): number[] {
+export function correctlyRoundedF32(n: number): readonly number[] {
   if (Number.isNaN(n)) {
     return [n];
   }
@@ -529,21 +528,20 @@ export function correctlyRoundedF32(n: number): number[] {
 
   
   if (n <= kValue.f32.positive.max && n >= kValue.f32.negative.min) {
-    const n_32 = new Float32Array([n])[0];
-    const converted: number = n_32;
-    if (n === converted) {
+    const n_32 = quantizeToF32(n);
+    if (n === n_32) {
       
       return [n];
     }
 
-    if (converted > n) {
+    if (n_32 > n) {
       
       const other = nextAfterF32(n_32, 'negative', 'no-flush');
-      return [other, converted];
+      return [other, n_32];
     } else {
       
       const other = nextAfterF32(n_32, 'positive', 'no-flush');
-      return [converted, other];
+      return [n_32, other];
     }
   }
 
@@ -581,7 +579,7 @@ export function correctlyRoundedF32(n: number): number[] {
 
 
 
-export function correctlyRoundedF16(n: number): number[] {
+export function correctlyRoundedF16(n: number): readonly number[] {
   if (Number.isNaN(n)) {
     return [n];
   }
@@ -598,21 +596,20 @@ export function correctlyRoundedF16(n: number): number[] {
 
   
   if (n <= kValue.f16.positive.max && n >= kValue.f16.negative.min) {
-    const n_16 = new Float16Array([n])[0];
-    const converted: number = n_16;
-    if (n === converted) {
+    const n_16 = quantizeToF16(n);
+    if (n === n_16) {
       
       return [n];
     }
 
-    if (converted > n) {
+    if (n_16 > n) {
       
       const other = nextAfterF16(n_16, 'negative', 'no-flush');
-      return [other, converted];
+      return [other, n_16];
     } else {
       
       const other = nextAfterF16(n_16, 'positive', 'no-flush');
-      return [converted, other];
+      return [n_16, other];
     }
   }
 
@@ -828,7 +825,7 @@ export function lerpBigInt(a: bigint, b: bigint, idx: number, steps: number): bi
 }
 
 
-export function linearRange(a: number, b: number, num_steps: number): number[] {
+export function linearRange(a: number, b: number, num_steps: number): readonly number[] {
   if (num_steps <= 0) {
     return [];
   }
@@ -869,7 +866,7 @@ export function linearRangeBigInt(a: bigint, b: bigint, num_steps: number): Arra
 
 
 
-export function biasedRange(a: number, b: number, num_steps: number): number[] {
+export function biasedRange(a: number, b: number, num_steps: number): readonly number[] {
   const c = 2;
   if (num_steps <= 0) {
     return [];
@@ -916,14 +913,17 @@ export function fullF32Range(
   const bit_fields = [
     ...linearRange(kBit.f32.negative.min, kBit.f32.negative.max, counts.neg_norm),
     ...linearRange(
-      kBit.f32.subnormal.negative.min,
-      kBit.f32.subnormal.negative.max,
+      kBit.f32.negative.subnormal.min,
+      kBit.f32.negative.subnormal.max,
       counts.neg_sub
     ),
+    
+    0x80000000,
+    
     0,
     ...linearRange(
-      kBit.f32.subnormal.positive.min,
-      kBit.f32.subnormal.positive.max,
+      kBit.f32.positive.subnormal.min,
+      kBit.f32.positive.subnormal.max,
       counts.pos_sub
     ),
     ...linearRange(kBit.f32.positive.min, kBit.f32.positive.max, counts.pos_norm),
@@ -980,14 +980,17 @@ export function fullF16Range(
   const bit_fields = [
     ...linearRange(kBit.f16.negative.min, kBit.f16.negative.max, counts.neg_norm),
     ...linearRange(
-      kBit.f16.subnormal.negative.min,
-      kBit.f16.subnormal.negative.max,
+      kBit.f16.negative.subnormal.min,
+      kBit.f16.negative.subnormal.max,
       counts.neg_sub
     ),
+    
+    0x8000,
+    
     0,
     ...linearRange(
-      kBit.f16.subnormal.positive.min,
-      kBit.f16.subnormal.positive.max,
+      kBit.f16.positive.subnormal.min,
+      kBit.f16.positive.subnormal.max,
       counts.pos_sub
     ),
     ...linearRange(kBit.f16.positive.min, kBit.f16.positive.max, counts.pos_norm),
@@ -1028,14 +1031,17 @@ export function fullF64Range(
   const bit_fields = [
     ...linearRangeBigInt(kBit.f64.negative.min, kBit.f64.negative.max, counts.neg_norm),
     ...linearRangeBigInt(
-      kBit.f64.subnormal.negative.min,
-      kBit.f64.subnormal.negative.max,
+      kBit.f64.negative.subnormal.min,
+      kBit.f64.negative.subnormal.max,
       counts.neg_sub
     ),
+    
+    0x8000_0000_0000_0000n,
+    
     0n,
     ...linearRangeBigInt(
-      kBit.f64.subnormal.positive.min,
-      kBit.f64.subnormal.positive.max,
+      kBit.f64.positive.subnormal.min,
+      kBit.f64.positive.subnormal.max,
       counts.pos_sub
     ),
     ...linearRangeBigInt(kBit.f64.positive.min, kBit.f64.positive.max, counts.pos_norm),
@@ -1084,14 +1090,17 @@ export function filteredF64Range(
   const bit_fields = [
     ...linearRangeBigInt(u64_begin, kBit.f64.negative.max, counts.neg_norm),
     ...linearRangeBigInt(
-      kBit.f64.subnormal.negative.min,
-      kBit.f64.subnormal.negative.max,
+      kBit.f64.negative.subnormal.min,
+      kBit.f64.negative.subnormal.max,
       counts.neg_sub
     ),
+    
+    0x8000_0000_0000_0000n,
+    
     0n,
     ...linearRangeBigInt(
-      kBit.f64.subnormal.positive.min,
-      kBit.f64.subnormal.positive.max,
+      kBit.f64.positive.subnormal.min,
+      kBit.f64.positive.subnormal.max,
       counts.pos_sub
     ),
     ...linearRangeBigInt(kBit.f64.positive.min, u64_end, counts.pos_norm),
@@ -1100,7 +1109,7 @@ export function filteredF64Range(
 }
 
 
-const kInterestingI32Values: number[] = [
+const kInterestingI32Values: readonly number[] = [
   kValue.i32.negative.max,
   Math.trunc(kValue.i32.negative.max / 2),
   -256,
@@ -1120,7 +1129,7 @@ const kInterestingI32Values: number[] = [
 
 
 
-export function sparseI32Range(): number[] {
+export function sparseI32Range(): readonly number[] {
   return kInterestingI32Values;
 }
 
@@ -1164,7 +1173,7 @@ const kVectorI32Values = {
 
 
 
-export function vectorI32Range(dim: number): number[][] {
+export function vectorI32Range(dim: number): ROArrayArray<number> {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorI32Range only accepts dimensions 2, 3, and 4');
   return kVectorI32Values[dim];
 }
@@ -1192,7 +1201,7 @@ export function fullI32Range(
 }
 
 
-const kInterestingU32Values: number[] = [
+const kInterestingU32Values: readonly number[] = [
   0,
   1,
   10,
@@ -1207,7 +1216,7 @@ const kInterestingU32Values: number[] = [
 
 
 
-export function sparseU32Range(): number[] {
+export function sparseU32Range(): readonly number[] {
   return kInterestingU32Values;
 }
 
@@ -1242,7 +1251,7 @@ const kVectorU32Values = {
 
 
 
-export function vectorU32Range(dim: number): number[][] {
+export function vectorU32Range(dim: number): ROArrayArray<number> {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorU32Range only accepts dimensions 2, 3, and 4');
   return kVectorU32Values[dim];
 }
@@ -1259,18 +1268,18 @@ export function fullU32Range(count: number = 50): Array<number> {
 }
 
 
-const kInterestingF32Values: number[] = [
+const kInterestingF32Values: readonly number[] = [
   kValue.f32.negative.min,
   -10.0,
   -1.0,
   -0.125,
   kValue.f32.negative.max,
-  kValue.f32.subnormal.negative.min,
-  kValue.f32.subnormal.negative.max,
+  kValue.f32.negative.subnormal.min,
+  kValue.f32.negative.subnormal.max,
   -0.0,
   0.0,
-  kValue.f32.subnormal.positive.min,
-  kValue.f32.subnormal.positive.max,
+  kValue.f32.positive.subnormal.min,
+  kValue.f32.positive.subnormal.max,
   kValue.f32.positive.min,
   0.125,
   1.0,
@@ -1290,7 +1299,7 @@ const kInterestingF32Values: number[] = [
 
 
 
-export function sparseF32Range(): number[] {
+export function sparseF32Range(): readonly number[] {
   return kInterestingF32Values;
 }
 
@@ -1334,7 +1343,7 @@ const kVectorF32Values = {
 
 
 
-export function vectorF32Range(dim: number): number[][] {
+export function vectorF32Range(dim: number): ROArrayArray<number> {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorF32Range only accepts dimensions 2, 3, and 4');
   return kVectorF32Values[dim];
 }
@@ -1363,7 +1372,7 @@ const kSparseVectorF32Values = {
 
 
 
-export function sparseVectorF32Range(dim: number): number[][] {
+export function sparseVectorF32Range(dim: number): ROArrayArray<number> {
   assert(
     dim === 2 || dim === 3 || dim === 4,
     'sparseVectorF32Range only accepts dimensions 2, 3, and 4'
@@ -1482,7 +1491,7 @@ const kSparseMatrixF32Values = {
 
 
 
-export function sparseMatrixF32Range(c: number, r: number): number[][][] {
+export function sparseMatrixF32Range(c: number, r: number): ROArrayArrayArray<number> {
   assert(
     c === 2 || c === 3 || c === 4,
     'sparseMatrixF32Range only accepts column counts of 2, 3, and 4'
@@ -1495,18 +1504,18 @@ export function sparseMatrixF32Range(c: number, r: number): number[][][] {
 }
 
 
-const kInterestingF16Values: number[] = [
+const kInterestingF16Values: readonly number[] = [
   kValue.f16.negative.min,
   -10.0,
   -1.0,
   -0.125,
   kValue.f16.negative.max,
-  kValue.f16.subnormal.negative.min,
-  kValue.f16.subnormal.negative.max,
+  kValue.f16.negative.subnormal.min,
+  kValue.f16.negative.subnormal.max,
   -0.0,
   0.0,
-  kValue.f16.subnormal.positive.min,
-  kValue.f16.subnormal.positive.max,
+  kValue.f16.positive.subnormal.min,
+  kValue.f16.positive.subnormal.max,
   kValue.f16.positive.min,
   0.125,
   1.0,
@@ -1526,7 +1535,7 @@ const kInterestingF16Values: number[] = [
 
 
 
-export function sparseF16Range(): number[] {
+export function sparseF16Range(): readonly number[] {
   return kInterestingF16Values;
 }
 
@@ -1570,7 +1579,7 @@ const kVectorF16Values = {
 
 
 
-export function vectorF16Range(dim: number): number[][] {
+export function vectorF16Range(dim: number): ROArrayArray<number> {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorF16Range only accepts dimensions 2, 3, and 4');
   return kVectorF16Values[dim];
 }
@@ -1599,7 +1608,7 @@ const kSparseVectorF16Values = {
 
 
 
-export function sparseVectorF16Range(dim: number): number[][] {
+export function sparseVectorF16Range(dim: number): ROArrayArray<number> {
   assert(
     dim === 2 || dim === 3 || dim === 4,
     'sparseVectorF16Range only accepts dimensions 2, 3, and 4'
@@ -1718,7 +1727,7 @@ const kSparseMatrixF16Values = {
 
 
 
-export function sparseMatrixF16Range(c: number, r: number): number[][][] {
+export function sparseMatrixF16Range(c: number, r: number): ROArrayArray<number>[] {
   assert(
     c === 2 || c === 3 || c === 4,
     'sparseMatrixF16Range only accepts column counts of 2, 3, and 4'
@@ -1731,18 +1740,18 @@ export function sparseMatrixF16Range(c: number, r: number): number[][][] {
 }
 
 
-const kInterestingF64Values: number[] = [
+const kInterestingF64Values: readonly number[] = [
   kValue.f64.negative.min,
   -10.0,
   -1.0,
   -0.125,
   kValue.f64.negative.max,
-  kValue.f64.subnormal.negative.min,
-  kValue.f64.subnormal.negative.max,
+  kValue.f64.negative.subnormal.min,
+  kValue.f64.negative.subnormal.max,
   -0.0,
   0.0,
-  kValue.f64.subnormal.positive.min,
-  kValue.f64.subnormal.positive.max,
+  kValue.f64.positive.subnormal.min,
+  kValue.f64.positive.subnormal.max,
   kValue.f64.positive.min,
   0.125,
   1.0,
@@ -1762,7 +1771,7 @@ const kInterestingF64Values: number[] = [
 
 
 
-export function sparseF64Range(): number[] {
+export function sparseF64Range(): readonly number[] {
   return kInterestingF64Values;
 }
 
@@ -1806,7 +1815,7 @@ const kVectorF64Values = {
 
 
 
-export function vectorF64Range(dim: number): number[][] {
+export function vectorF64Range(dim: number): ROArrayArray<number> {
   assert(dim === 2 || dim === 3 || dim === 4, 'vectorF64Range only accepts dimensions 2, 3, and 4');
   return kVectorF64Values[dim];
 }
@@ -1835,7 +1844,7 @@ const kSparseVectorF64Values = {
 
 
 
-export function sparseVectorF64Range(dim: number): number[][] {
+export function sparseVectorF64Range(dim: number): ROArrayArray<number> {
   assert(
     dim === 2 || dim === 3 || dim === 4,
     'sparseVectorF64Range only accepts dimensions 2, 3, and 4'
@@ -1954,7 +1963,7 @@ const kSparseMatrixF64Values = {
 
 
 
-export function sparseMatrixF64Range(c: number, r: number): number[][][] {
+export function sparseMatrixF64Range(c: number, r: number): ROArrayArray<number>[] {
   assert(
     c === 2 || c === 3 || c === 4,
     'sparseMatrixF64Range only accepts column counts of 2, 3, and 4'
@@ -2006,22 +2015,40 @@ export interface QuantizeFunc {
 
 
 export function quantizeToF32(num: number): number {
-  return f32(num).value as number;
+  return Math.fround(num);
 }
 
 
 export function quantizeToF16(num: number): number {
-  return f16(num).value as number;
+  return hfround(num);
 }
+
+
+
 
 
 export function quantizeToI32(num: number): number {
-  return i32(num).value as number;
+  if (num >= kValue.i32.positive.max) {
+    return kValue.i32.positive.max;
+  }
+  if (num <= kValue.i32.negative.min) {
+    return kValue.i32.negative.min;
+  }
+  return Math.trunc(num);
 }
 
 
+
+
+
 export function quantizeToU32(num: number): number {
-  return u32(num).value as number;
+  if (num >= kValue.u32.max) {
+    return kValue.u32.max;
+  }
+  if (num <= 0) {
+    return 0;
+  }
+  return Math.trunc(num);
 }
 
 
@@ -2055,46 +2082,17 @@ export function lcm(a: number, b: number): number {
 
 
 
-export function reinterpretF64AsU64(input: number): bigint {
-  return new BigUint64Array(new Float64Array([input]).buffer)[0];
-}
 
 
 
-
-
-export function reinterpretU64AsF64(input: bigint): number {
-  return new Float64Array(new BigUint64Array([input]).buffer)[0];
-}
-
-
-
-
-
-export function reinterpretU32AsF32(input: number): number {
-  return floatBitsToNumber(input, kFloat32Format);
-}
-
-
-
-
-
-export function reinterpretU16AsF16(hex: number): number {
-  return floatBitsToNumber(hex, kFloat16Format);
-}
-
-
-
-
-
-
-
-
-function cartesianProductImpl<T>(elements: T[], intermediate: T[][]): T[][] {
+function cartesianProductImpl<T>(
+  elements: readonly T[],
+  intermediate: ROArrayArray<T>
+): ROArrayArray<T> {
   const result: T[][] = [];
   elements.forEach((e: T) => {
     if (intermediate.length > 0) {
-      intermediate.forEach((i: T[]) => {
+      intermediate.forEach((i: readonly T[]) => {
         result.push([...i, e]);
       });
     } else {
@@ -2114,9 +2112,9 @@ function cartesianProductImpl<T>(elements: T[], intermediate: T[][]): T[][] {
 
 
 
-export function cartesianProduct<T>(...inputs: T[][]): T[][] {
-  let result: T[][] = [];
-  inputs.forEach((i: T[]) => {
+export function cartesianProduct<T>(...inputs: ROArrayArray<T>): ROArrayArray<T> {
+  let result: ROArrayArray<T> = [];
+  inputs.forEach((i: readonly T[]) => {
     result = cartesianProductImpl<T>(i, result);
   });
 
@@ -2138,7 +2136,7 @@ export function cartesianProduct<T>(...inputs: T[][]): T[][] {
 
 
 
-export function calculatePermutations<T>(input: T[]): T[][] {
+export function calculatePermutations<T>(input: readonly T[]): ROArrayArray<T> {
   if (input.length === 0) {
     return [];
   }
@@ -2171,7 +2169,7 @@ export function calculatePermutations<T>(input: T[]): T[][] {
 
 
 
-export function flatten2DArray<T>(m: T[][]): T[] {
+export function flatten2DArray<T>(m: ROArrayArray<T>): T[] {
   const c = m.length;
   const r = m[0].length;
   assert(
@@ -2193,7 +2191,7 @@ export function flatten2DArray<T>(m: T[][]): T[] {
 
 
 
-export function unflatten2DArray<T>(n: T[], c: number, r: number): T[][] {
+export function unflatten2DArray<T>(n: readonly T[], c: number, r: number): ROArrayArray<T> {
   assert(
     c > 0 && Number.isInteger(c) && r > 0 && Number.isInteger(r),
     `columns (${c}) and rows (${r}) need to be positive integers`
@@ -2216,7 +2214,7 @@ export function unflatten2DArray<T>(n: T[], c: number, r: number): T[][] {
 
 
 
-export function map2DArray<T, S>(m: T[][], op: (input: T) => S): S[][] {
+export function map2DArray<T, S>(m: ROArrayArray<T>, op: (input: T) => S): ROArrayArray<S> {
   const c = m.length;
   const r = m[0].length;
   assert(
@@ -2230,4 +2228,20 @@ export function map2DArray<T, S>(m: T[][], op: (input: T) => S): S[][] {
     }
   }
   return result;
+}
+
+
+
+
+
+
+
+
+export function every2DArray<T>(m: ROArrayArray<T>, op: (input: T) => boolean): boolean {
+  const r = m[0].length;
+  assert(
+    m.every(c => c.length === r),
+    `Unexpectedly received jagged array to map`
+  );
+  return m.every(col => col.every(el => op(el)));
 }

@@ -17,10 +17,9 @@ const kRenderTargetFormat = 'rgba8unorm';
 class F extends GPUTest {
   MakeIndexBuffer(): GPUBuffer {
     return this.makeBufferWithContents(
-      
-      new Uint32Array([
-        0,  1,  2, 
-        1,  2,  3, 
+       new Uint32Array([
+        0, 1, 2, 
+        1, 2, 3, 
       ]),
       GPUBufferUsage.INDEX
     );

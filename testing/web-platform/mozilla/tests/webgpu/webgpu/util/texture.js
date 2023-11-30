@@ -1,7 +1,6 @@
 
 
- import { assert } from '../../common/util/util.js';
-import { getTextureCopyLayout } from './texture/layout.js';
+import { assert } from '../../common/util/util.js';import { getTextureCopyLayout } from './texture/layout.js';
 
 import { reifyExtent3D } from './unions.js';
 
@@ -9,9 +8,13 @@ import { reifyExtent3D } from './unions.js';
 
 
 
-export function createTextureFromTexelViews(device, texelViews, desc) {
+export function createTextureFromTexelViews(
+device,
+texelViews,
+desc)
+{
   
-  assert(texelViews.length > 0 && texelViews.every(e => e.format === texelViews[0].format));
+  assert(texelViews.length > 0 && texelViews.every((e) => e.format === texelViews[0].format));
   const format = texelViews[0].format;
   const { width, height, depthOrArrayLayers } = reifyExtent3D(desc.size);
 
@@ -20,7 +23,7 @@ export function createTextureFromTexelViews(device, texelViews, desc) {
     ...desc,
     format: texelViews[0].format,
     usage: desc.usage | GPUTextureUsage.COPY_DST,
-    mipLevelCount: texelViews.length,
+    mipLevelCount: texelViews.length
   });
 
   
@@ -29,16 +32,16 @@ export function createTextureFromTexelViews(device, texelViews, desc) {
   for (let mipLevel = 0; mipLevel < texelViews.length; mipLevel++) {
     const {
       bytesPerRow,
-      mipSize: [mipWidth, mipHeight, mipDepthOrArray],
+      mipSize: [mipWidth, mipHeight, mipDepthOrArray]
     } = getTextureCopyLayout(format, desc.dimension ?? '2d', [width, height, depthOrArrayLayers], {
-      mipLevel,
+      mipLevel
     });
 
     
     const stagingBuffer = device.createBuffer({
       mappedAtCreation: true,
       size: bytesPerRow * mipHeight * mipDepthOrArray,
-      usage: GPUBufferUsage.COPY_SRC,
+      usage: GPUBufferUsage.COPY_SRC
     });
     stagingBuffers.push(stagingBuffer);
 
@@ -47,7 +50,7 @@ export function createTextureFromTexelViews(device, texelViews, desc) {
       bytesPerRow,
       rowsPerImage: mipHeight,
       subrectOrigin: [0, 0, 0],
-      subrectSize: [mipWidth, mipHeight, mipDepthOrArray],
+      subrectSize: [mipWidth, mipHeight, mipDepthOrArray]
     });
     stagingBuffer.unmap();
 
@@ -61,7 +64,7 @@ export function createTextureFromTexelViews(device, texelViews, desc) {
   device.queue.submit([commandEncoder.finish()]);
 
   
-  stagingBuffers.forEach(value => value.destroy());
+  stagingBuffers.forEach((value) => value.destroy());
 
   return texture;
 }
@@ -69,6 +72,10 @@ export function createTextureFromTexelViews(device, texelViews, desc) {
 
 
 
-export function createTextureFromTexelView(device, texelView, desc) {
+export function createTextureFromTexelView(
+device,
+texelView,
+desc)
+{
   return createTextureFromTexelViews(device, [texelView], desc);
 }

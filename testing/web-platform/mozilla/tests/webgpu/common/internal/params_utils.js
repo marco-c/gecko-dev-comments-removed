@@ -1,9 +1,23 @@
 
 
- import { assert } from '../util/util.js';
+import { assert } from '../util/util.js';
 
 import { comparePublicParamsPaths, Ordering } from './query/compare.js';
 import { kWildcard, kParamSeparator, kParamKVSeparator } from './query/separators.js';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 export function paramKeyIsPublic(key) {
   return !key.startsWith('_');
@@ -30,8 +44,55 @@ export function publicParamsEquals(x, y) {
   return comparePublicParamsPaths(x, y) === Ordering.Equal;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function typeAssert() {}
 {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   {
     typeAssert();
     typeAssert();
@@ -54,6 +115,11 @@ function typeAssert() {}
 }
 
 
+
+
+
+
+
 export function mergeParams(a, b) {
   return { ...a, ...b };
 }
@@ -68,6 +134,5 @@ export function mergeParamsChecked(a, b) {
     Object.keys(merged).length === Object.keys(a).length + Object.keys(b).length,
     () => `Duplicate key between ${JSON.stringify(a)} and ${JSON.stringify(b)}`
   );
-
   return merged;
 }

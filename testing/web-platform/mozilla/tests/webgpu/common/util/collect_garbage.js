@@ -1,6 +1,7 @@
 
 
- import { resolveOnTimeout } from './util.js';
+import { resolveOnTimeout } from './util.js';
+
 
 
 
@@ -8,6 +9,7 @@
 
 
 export async function attemptGarbageCollection() {
+
   const w = globalThis;
   if (w.GCController) {
     w.GCController.collect();
@@ -20,11 +22,12 @@ export async function attemptGarbageCollection() {
   }
 
   try {
-    w.QueryInterface(Components.interfaces.nsIInterfaceRequestor)
-      .getInterface(Components.interfaces.nsIDOMWindowUtils)
-      .garbageCollect();
+    w.QueryInterface(Components.interfaces.nsIInterfaceRequestor).
+    getInterface(Components.interfaces.nsIDOMWindowUtils).
+    garbageCollect();
     return;
   } catch (e) {
+
     
   }
   if (w.gc) {

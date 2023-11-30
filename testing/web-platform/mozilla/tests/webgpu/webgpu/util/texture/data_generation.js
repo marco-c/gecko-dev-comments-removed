@@ -3,8 +3,7 @@
  
 
 
- export class DataArrayGenerator {
-  dataBuffer = new Uint8Array(256);
+export class DataArrayGenerator {dataBuffer = new Uint8Array(256);
 
   lastOffset = 0;
   lastStart = 0;
@@ -12,7 +11,7 @@
 
   
   nextPowerOfTwo(value) {
-    return 1 << (32 - Math.clz32(value - 1));
+    return 1 << 32 - Math.clz32(value - 1);
   }
 
   generateData(byteSize, start = 0, offset = 0) {
@@ -42,7 +41,7 @@
     
     if (this.lastByteSize < byteSize) {
       for (let i = this.lastByteSize; i < byteSize - offset; ++i) {
-        this.dataBuffer[i + offset] = ((i ** 3 + i + start) % 251) + 1; 
+        this.dataBuffer[i + offset] = (i ** 3 + i + start) % 251 + 1; 
       }
 
       this.lastOffset = offset;

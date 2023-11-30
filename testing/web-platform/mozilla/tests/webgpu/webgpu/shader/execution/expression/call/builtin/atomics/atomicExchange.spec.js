@@ -1,9 +1,8 @@
 
 
- export const description = `
+export const description = `
 Atomically stores the value v in the atomic object pointed to atomic_ptr and returns the original value stored in the atomic object.
-`;
-import { makeTestGroup } from '../../../../../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../../../../../common/framework/test_group.js';
 import { keysOf } from '../../../../../../../common/util/data_tables.js';
 import { GPUTest } from '../../../../../../gpu_test.js';
 import { checkElementsEqual } from '../../../../../../util/check_contents.js';
@@ -12,32 +11,32 @@ import { dispatchSizes, workgroupSizes, typedArrayCtor, kMapId } from './harness
 
 export const g = makeTestGroup(GPUTest);
 
-g.test('exchange_storage_basic')
-  .specURL('https://www.w3.org/TR/WGSL/#atomic-rmw')
-  .desc(
-    `
+g.test('exchange_storage_basic').
+specURL('https://www.w3.org/TR/WGSL/#atomic-rmw').
+desc(
+  `
 AS is storage or workgroup
 T is i32 or u32
 
 fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
 `
-  )
-  .params(u =>
-    u
-      .combine('workgroupSize', workgroupSizes)
-      .combine('dispatchSize', dispatchSizes)
-      .combine('mapId', keysOf(kMapId))
-      .combine('scalarType', ['u32', 'i32'])
-  )
-  .fn(t => {
-    const numInvocations = t.params.workgroupSize * t.params.dispatchSize;
-    const bufferNumElements = numInvocations;
-    const scalarType = t.params.scalarType;
-    const mapId = kMapId[t.params.mapId];
-    const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
+).
+params((u) =>
+u.
+combine('workgroupSize', workgroupSizes).
+combine('dispatchSize', dispatchSizes).
+combine('mapId', keysOf(kMapId)).
+combine('scalarType', ['u32', 'i32'])
+).
+fn((t) => {
+  const numInvocations = t.params.workgroupSize * t.params.dispatchSize;
+  const bufferNumElements = numInvocations;
+  const scalarType = t.params.scalarType;
+  const mapId = kMapId[t.params.mapId];
+  const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
 
-    const wgsl =
-      `
+  const wgsl =
+  `
       @group(0) @binding(0)
       var<storage, read_write> input : array<atomic<${scalarType}>>;
 
@@ -54,90 +53,90 @@ fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
       }
     ` + extra;
 
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({ code: wgsl }),
-        entryPoint: 'main',
-      },
-    });
-
-    const arrayType = typedArrayCtor(scalarType);
-
-    
-    const inputBuffer = t.device.createBuffer({
-      size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-      mappedAtCreation: true,
-    });
-    t.trackForCleanup(inputBuffer);
-    const data = new arrayType(inputBuffer.getMappedRange());
-    data.forEach((_, i) => (data[i] = i));
-    inputBuffer.unmap();
-
-    const outputBuffer = t.device.createBuffer({
-      size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: inputBuffer } },
-        { binding: 1, resource: { buffer: outputBuffer } },
-      ],
-    });
-
-    
-    const encoder = t.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(t.params.dispatchSize);
-    pass.end();
-    t.queue.submit([encoder.finish()]);
-
-    
-    
-    const outputExpected = new (typedArrayCtor(t.params.scalarType))(bufferNumElements);
-    outputExpected.forEach((_, i) => (outputExpected[i] = i));
-    t.expectGPUBufferValuesEqual(outputBuffer, outputExpected);
-
-    
-    const inputExpected = new (typedArrayCtor(t.params.scalarType))(bufferNumElements);
-    inputExpected.forEach((_, i) => (inputExpected[i] = mapId.f(i * 2, numInvocations)));
-    t.expectGPUBufferValuesEqual(inputBuffer, inputExpected);
+  const pipeline = t.device.createComputePipeline({
+    layout: 'auto',
+    compute: {
+      module: t.device.createShaderModule({ code: wgsl }),
+      entryPoint: 'main'
+    }
   });
 
-g.test('exchange_workgroup_basic')
-  .specURL('https://www.w3.org/TR/WGSL/#atomic-load')
-  .desc(
-    `
+  const arrayType = typedArrayCtor(scalarType);
+
+  
+  const inputBuffer = t.device.createBuffer({
+    size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    mappedAtCreation: true
+  });
+  t.trackForCleanup(inputBuffer);
+  const data = new arrayType(inputBuffer.getMappedRange());
+  data.forEach((_, i) => data[i] = i);
+  inputBuffer.unmap();
+
+  const outputBuffer = t.device.createBuffer({
+    size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const bindGroup = t.device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+    { binding: 0, resource: { buffer: inputBuffer } },
+    { binding: 1, resource: { buffer: outputBuffer } }]
+
+  });
+
+  
+  const encoder = t.device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.dispatchWorkgroups(t.params.dispatchSize);
+  pass.end();
+  t.queue.submit([encoder.finish()]);
+
+  
+  
+  const outputExpected = new (typedArrayCtor(t.params.scalarType))(bufferNumElements);
+  outputExpected.forEach((_, i) => outputExpected[i] = i);
+  t.expectGPUBufferValuesEqual(outputBuffer, outputExpected);
+
+  
+  const inputExpected = new (typedArrayCtor(t.params.scalarType))(bufferNumElements);
+  inputExpected.forEach((_, i) => inputExpected[i] = mapId.f(i * 2, numInvocations));
+  t.expectGPUBufferValuesEqual(inputBuffer, inputExpected);
+});
+
+g.test('exchange_workgroup_basic').
+specURL('https://www.w3.org/TR/WGSL/#atomic-load').
+desc(
+  `
 AS is storage or workgroup
 T is i32 or u32
 
 fn atomicLoad(atomic_ptr: ptr<AS, atomic<T>, read_write>) -> T
 
 `
-  )
-  .params(u =>
-    u
-      .combine('workgroupSize', workgroupSizes)
-      .combine('dispatchSize', dispatchSizes)
-      .combine('mapId', keysOf(kMapId))
-      .combine('scalarType', ['u32', 'i32'])
-  )
-  .fn(t => {
-    const numInvocations = t.params.workgroupSize;
-    const wgNumElements = numInvocations;
-    const scalarType = t.params.scalarType;
-    const dispatchSize = t.params.dispatchSize;
-    const mapId = kMapId[t.params.mapId];
-    const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
+).
+params((u) =>
+u.
+combine('workgroupSize', workgroupSizes).
+combine('dispatchSize', dispatchSizes).
+combine('mapId', keysOf(kMapId)).
+combine('scalarType', ['u32', 'i32'])
+).
+fn((t) => {
+  const numInvocations = t.params.workgroupSize;
+  const wgNumElements = numInvocations;
+  const scalarType = t.params.scalarType;
+  const dispatchSize = t.params.dispatchSize;
+  const mapId = kMapId[t.params.mapId];
+  const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
 
-    const wgsl =
-      `
+  const wgsl =
+  `
       var<workgroup> wg: array<atomic<${scalarType}>, ${wgNumElements}>;
 
       // Result of each workgroup is written to output[workgroup_id.x]
@@ -167,89 +166,87 @@ fn atomicLoad(atomic_ptr: ptr<AS, atomic<T>, read_write>) -> T
       }
       ` + extra;
 
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({ code: wgsl }),
-        entryPoint: 'main',
-      },
-    });
-
-    const arrayType = typedArrayCtor(scalarType);
-
-    const outputBuffer = t.device.createBuffer({
-      size: wgNumElements * dispatchSize * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const wgCopyBuffer = t.device.createBuffer({
-      size: wgNumElements * dispatchSize * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: wgCopyBuffer } },
-      ],
-    });
-
-    
-    const encoder = t.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(dispatchSize);
-    pass.end();
-    t.queue.submit([encoder.finish()]);
-
-    
-    
-    const outputExpected = new (typedArrayCtor(t.params.scalarType))(wgNumElements * dispatchSize);
-    outputExpected.forEach((_, i) => (outputExpected[i] = i));
-    t.expectGPUBufferValuesEqual(outputBuffer, outputExpected);
-
-    
-    const wgCopyBufferExpected = new (typedArrayCtor(t.params.scalarType))(
-      wgNumElements * dispatchSize
-    );
-
-    wgCopyBufferExpected.forEach(
-      (_, i) => (wgCopyBufferExpected[i] = mapId.f(i * 2, numInvocations))
-    );
-
-    t.expectGPUBufferValuesEqual(wgCopyBuffer, wgCopyBufferExpected);
+  const pipeline = t.device.createComputePipeline({
+    layout: 'auto',
+    compute: {
+      module: t.device.createShaderModule({ code: wgsl }),
+      entryPoint: 'main'
+    }
   });
 
-g.test('exchange_storage_advanced')
-  .specURL('https://www.w3.org/TR/WGSL/#atomic-rmw')
-  .desc(
-    `
+  const arrayType = typedArrayCtor(scalarType);
+
+  const outputBuffer = t.device.createBuffer({
+    size: wgNumElements * dispatchSize * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const wgCopyBuffer = t.device.createBuffer({
+    size: wgNumElements * dispatchSize * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const bindGroup = t.device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+    { binding: 0, resource: { buffer: outputBuffer } },
+    { binding: 1, resource: { buffer: wgCopyBuffer } }]
+
+  });
+
+  
+  const encoder = t.device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.dispatchWorkgroups(dispatchSize);
+  pass.end();
+  t.queue.submit([encoder.finish()]);
+
+  
+  
+  const outputExpected = new (typedArrayCtor(t.params.scalarType))(wgNumElements * dispatchSize);
+  outputExpected.forEach((_, i) => outputExpected[i] = i);
+  t.expectGPUBufferValuesEqual(outputBuffer, outputExpected);
+
+  
+  const wgCopyBufferExpected = new (typedArrayCtor(t.params.scalarType))(
+    wgNumElements * dispatchSize
+  );
+  wgCopyBufferExpected.forEach(
+    (_, i) => wgCopyBufferExpected[i] = mapId.f(i * 2, numInvocations)
+  );
+  t.expectGPUBufferValuesEqual(wgCopyBuffer, wgCopyBufferExpected);
+});
+
+g.test('exchange_storage_advanced').
+specURL('https://www.w3.org/TR/WGSL/#atomic-rmw').
+desc(
+  `
 AS is storage or workgroup
 T is i32 or u32
 
 fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
 `
-  )
-  .params(u =>
-    u
-      .combine('workgroupSize', workgroupSizes)
-      .combine('dispatchSize', dispatchSizes)
-      .combine('mapId', keysOf(kMapId))
-      .combine('scalarType', ['u32', 'i32'])
-  )
-  .fn(async t => {
-    const numInvocations = t.params.workgroupSize * t.params.dispatchSize;
-    const bufferNumElements = numInvocations;
-    const scalarType = t.params.scalarType;
-    const mapId = kMapId[t.params.mapId];
-    const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
+).
+params((u) =>
+u.
+combine('workgroupSize', workgroupSizes).
+combine('dispatchSize', dispatchSizes).
+combine('mapId', keysOf(kMapId)).
+combine('scalarType', ['u32', 'i32'])
+).
+fn(async (t) => {
+  const numInvocations = t.params.workgroupSize * t.params.dispatchSize;
+  const bufferNumElements = numInvocations;
+  const scalarType = t.params.scalarType;
+  const mapId = kMapId[t.params.mapId];
+  const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
 
-    const wgsl =
-      `
+  const wgsl =
+  `
       @group(0) @binding(0)
       var<storage, read_write> input : atomic<${scalarType}>;
 
@@ -268,102 +265,102 @@ fn atomicExchange(atomic_ptr: ptr<AS, atomic<T>, read_write>, v: T) -> T
       }
     ` + extra;
 
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({ code: wgsl }),
-        entryPoint: 'main',
-      },
-    });
-
-    const arrayType = typedArrayCtor(scalarType);
-
-    
-    const inputBuffer = t.device.createBuffer({
-      size: 1 * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(inputBuffer);
-
-    const outputBuffer = t.device.createBuffer({
-      size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: inputBuffer } },
-        { binding: 1, resource: { buffer: outputBuffer } },
-      ],
-    });
-
-    
-    const encoder = t.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(t.params.dispatchSize);
-    pass.end();
-    t.queue.submit([encoder.finish()]);
-
-    
-    const inputBufferResult = await t.readGPUBufferRangeTyped(inputBuffer, {
-      type: arrayType,
-      typedLength: inputBuffer.size / arrayType.BYTES_PER_ELEMENT,
-    });
-    const outputBufferResult = await t.readGPUBufferRangeTyped(outputBuffer, {
-      type: arrayType,
-      typedLength: outputBuffer.size / arrayType.BYTES_PER_ELEMENT,
-    });
-
-    
-    
-    const values = new arrayType([...inputBufferResult.data, ...outputBufferResult.data]);
-
-    const expected = new arrayType(values.length);
-    expected.forEach((_, i) => {
-      if (i === 0) {
-        expected[0] = 0;
-      } else {
-        expected[i] = mapId.f(i - 1, numInvocations);
-      }
-    });
-
-    
-    values.sort();
-    expected.sort(); 
-    t.expectOK(checkElementsEqual(values, expected));
+  const pipeline = t.device.createComputePipeline({
+    layout: 'auto',
+    compute: {
+      module: t.device.createShaderModule({ code: wgsl }),
+      entryPoint: 'main'
+    }
   });
 
-g.test('exchange_workgroup_advanced')
-  .specURL('https://www.w3.org/TR/WGSL/#atomic-load')
-  .desc(
-    `
+  const arrayType = typedArrayCtor(scalarType);
+
+  
+  const inputBuffer = t.device.createBuffer({
+    size: 1 * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(inputBuffer);
+
+  const outputBuffer = t.device.createBuffer({
+    size: bufferNumElements * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const bindGroup = t.device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+    { binding: 0, resource: { buffer: inputBuffer } },
+    { binding: 1, resource: { buffer: outputBuffer } }]
+
+  });
+
+  
+  const encoder = t.device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.dispatchWorkgroups(t.params.dispatchSize);
+  pass.end();
+  t.queue.submit([encoder.finish()]);
+
+  
+  const inputBufferResult = await t.readGPUBufferRangeTyped(inputBuffer, {
+    type: arrayType,
+    typedLength: inputBuffer.size / arrayType.BYTES_PER_ELEMENT
+  });
+  const outputBufferResult = await t.readGPUBufferRangeTyped(outputBuffer, {
+    type: arrayType,
+    typedLength: outputBuffer.size / arrayType.BYTES_PER_ELEMENT
+  });
+
+  
+  
+  const values = new arrayType([...inputBufferResult.data, ...outputBufferResult.data]);
+
+  const expected = new arrayType(values.length);
+  expected.forEach((_, i) => {
+    if (i === 0) {
+      expected[0] = 0;
+    } else {
+      expected[i] = mapId.f(i - 1, numInvocations);
+    }
+  });
+
+  
+  values.sort();
+  expected.sort(); 
+  t.expectOK(checkElementsEqual(values, expected));
+});
+
+g.test('exchange_workgroup_advanced').
+specURL('https://www.w3.org/TR/WGSL/#atomic-load').
+desc(
+  `
 AS is storage or workgroup
 T is i32 or u32
 
 fn atomicLoad(atomic_ptr: ptr<AS, atomic<T>, read_write>) -> T
 
 `
-  )
-  .params(u =>
-    u
-      .combine('workgroupSize', workgroupSizes)
-      .combine('dispatchSize', dispatchSizes)
-      .combine('mapId', keysOf(kMapId))
-      .combine('scalarType', ['u32', 'i32'])
-  )
-  .fn(async t => {
-    const numInvocations = t.params.workgroupSize;
-    const scalarType = t.params.scalarType;
-    const dispatchSize = t.params.dispatchSize;
-    const mapId = kMapId[t.params.mapId];
-    const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
+).
+params((u) =>
+u.
+combine('workgroupSize', workgroupSizes).
+combine('dispatchSize', dispatchSizes).
+combine('mapId', keysOf(kMapId)).
+combine('scalarType', ['u32', 'i32'])
+).
+fn(async (t) => {
+  const numInvocations = t.params.workgroupSize;
+  const scalarType = t.params.scalarType;
+  const dispatchSize = t.params.dispatchSize;
+  const mapId = kMapId[t.params.mapId];
+  const extra = mapId.wgsl(numInvocations, t.params.scalarType); 
 
-    const wgsl =
-      `
+  const wgsl =
+  `
       var<workgroup> wg: atomic<${scalarType}>;
 
       // Will contain the atomicExchange result for each invocation at global index
@@ -395,79 +392,79 @@ fn atomicLoad(atomic_ptr: ptr<AS, atomic<T>, read_write>) -> T
       }
       ` + extra;
 
-    const pipeline = t.device.createComputePipeline({
-      layout: 'auto',
-      compute: {
-        module: t.device.createShaderModule({ code: wgsl }),
-        entryPoint: 'main',
-      },
-    });
-
-    const arrayType = typedArrayCtor(scalarType);
-
-    const outputBuffer = t.device.createBuffer({
-      size: numInvocations * dispatchSize * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const wgCopyBuffer = t.device.createBuffer({
-      size: dispatchSize * arrayType.BYTES_PER_ELEMENT,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
-    });
-    t.trackForCleanup(outputBuffer);
-
-    const bindGroup = t.device.createBindGroup({
-      layout: pipeline.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: { buffer: outputBuffer } },
-        { binding: 1, resource: { buffer: wgCopyBuffer } },
-      ],
-    });
-
-    
-    const encoder = t.device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    pass.setPipeline(pipeline);
-    pass.setBindGroup(0, bindGroup);
-    pass.dispatchWorkgroups(dispatchSize);
-    pass.end();
-    t.queue.submit([encoder.finish()]);
-
-    
-    const outputBufferResult = await t.readGPUBufferRangeTyped(outputBuffer, {
-      type: arrayType,
-      typedLength: outputBuffer.size / arrayType.BYTES_PER_ELEMENT,
-    });
-    const wgCopyBufferResult = await t.readGPUBufferRangeTyped(wgCopyBuffer, {
-      type: arrayType,
-      typedLength: wgCopyBuffer.size / arrayType.BYTES_PER_ELEMENT,
-    });
-
-    
-    
-
-    
-    const expected = new arrayType(numInvocations + 1);
-    expected.forEach((_, i) => {
-      if (i === 0) {
-        expected[0] = 0;
-      } else {
-        expected[i] = mapId.f(i - 1, numInvocations);
-      }
-    });
-    expected.sort(); 
-
-    
-    for (let d = 0; d < dispatchSize; ++d) {
-      
-      const dispatchOffset = d * numInvocations;
-      const values = new arrayType([
-        wgCopyBufferResult.data[d], 
-        ...outputBufferResult.data.subarray(dispatchOffset, dispatchOffset + numInvocations), 
-      ]);
-
-      values.sort();
-      t.expectOK(checkElementsEqual(values, expected));
+  const pipeline = t.device.createComputePipeline({
+    layout: 'auto',
+    compute: {
+      module: t.device.createShaderModule({ code: wgsl }),
+      entryPoint: 'main'
     }
   });
+
+  const arrayType = typedArrayCtor(scalarType);
+
+  const outputBuffer = t.device.createBuffer({
+    size: numInvocations * dispatchSize * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const wgCopyBuffer = t.device.createBuffer({
+    size: dispatchSize * arrayType.BYTES_PER_ELEMENT,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+  });
+  t.trackForCleanup(outputBuffer);
+
+  const bindGroup = t.device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: [
+    { binding: 0, resource: { buffer: outputBuffer } },
+    { binding: 1, resource: { buffer: wgCopyBuffer } }]
+
+  });
+
+  
+  const encoder = t.device.createCommandEncoder();
+  const pass = encoder.beginComputePass();
+  pass.setPipeline(pipeline);
+  pass.setBindGroup(0, bindGroup);
+  pass.dispatchWorkgroups(dispatchSize);
+  pass.end();
+  t.queue.submit([encoder.finish()]);
+
+  
+  const outputBufferResult = await t.readGPUBufferRangeTyped(outputBuffer, {
+    type: arrayType,
+    typedLength: outputBuffer.size / arrayType.BYTES_PER_ELEMENT
+  });
+  const wgCopyBufferResult = await t.readGPUBufferRangeTyped(wgCopyBuffer, {
+    type: arrayType,
+    typedLength: wgCopyBuffer.size / arrayType.BYTES_PER_ELEMENT
+  });
+
+  
+  
+
+  
+  const expected = new arrayType(numInvocations + 1);
+  expected.forEach((_, i) => {
+    if (i === 0) {
+      expected[0] = 0;
+    } else {
+      expected[i] = mapId.f(i - 1, numInvocations);
+    }
+  });
+  expected.sort(); 
+
+  
+  for (let d = 0; d < dispatchSize; ++d) {
+    
+    const dispatchOffset = d * numInvocations;
+    const values = new arrayType([
+    wgCopyBufferResult.data[d], 
+    ...outputBufferResult.data.subarray(dispatchOffset, dispatchOffset + numInvocations) 
+    ]);
+
+    values.sort();
+    t.expectOK(checkElementsEqual(values, expected));
+  }
+});

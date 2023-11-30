@@ -1,15 +1,18 @@
 
 
- import { SkipTestCase } from '../../common/framework/fixture.js';
-import { attemptGarbageCollection } from '../../common/util/collect_garbage.js';
-import { getGPU } from '../../common/util/navigator_gpu.js';
+import { SkipTestCase } from '../../common/framework/fixture.js';import { attemptGarbageCollection } from '../../common/util/collect_garbage.js';import { getGPU, getDefaultRequestAdapterOptions } from '../../common/util/navigator_gpu.js';
 import {
   assert,
   raceWithRejectOnTimeout,
   assertReject,
-  unreachable,
-} from '../../common/util/util.js';
-import { kLimitInfo, kLimits } from '../capability_info.js';
+  unreachable } from
+'../../common/util/util.js';
+import { getDefaultLimits, kLimits } from '../capability_info.js';
+
+
+
+
+
 
 class TestFailedButDeviceReusable extends Error {}
 class FeaturesNotSupported extends Error {}
@@ -19,7 +22,10 @@ export class DevicePool {
   holders = 'uninitialized';
 
   
-  async acquire(recorder, descriptor) {
+  async acquire(
+  recorder,
+  descriptor)
+  {
     let errorMessage = '';
     if (this.holders === 'uninitialized') {
       this.holders = new DescriptorToHolderMap();
@@ -87,9 +93,9 @@ export class DevicePool {
       
       
       const expectedDeviceLost =
-        holder.expectedLostReason !== undefined &&
-        holder.lostInfo !== undefined &&
-        holder.expectedLostReason === holder.lostInfo.reason;
+      holder.expectedLostReason !== undefined &&
+      holder.lostInfo !== undefined &&
+      holder.expectedLostReason === holder.lostInfo.reason;
       if (!expectedDeviceLost) {
         throw ex;
       }
@@ -128,7 +134,10 @@ class DescriptorToHolderMap {
 
 
 
-  async getOrCreate(recorder, uncanonicalizedDescriptor) {
+  async getOrCreate(
+  recorder,
+  uncanonicalizedDescriptor)
+  {
     const [descriptor, key] = canonicalizeDescriptor(uncanonicalizedDescriptor);
     
     if (this.unsupported.has(key)) {
@@ -190,22 +199,46 @@ class DescriptorToHolderMap {
 
 
 
-function canonicalizeDescriptor(desc) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function canonicalizeDescriptor(
+desc)
+{
   if (desc === undefined) {
     return [undefined, ''];
   }
 
-  const featuresCanonicalized = desc.requiredFeatures
-    ? Array.from(new Set(desc.requiredFeatures)).sort()
-    : [];
+  const featuresCanonicalized = desc.requiredFeatures ?
+  Array.from(new Set(desc.requiredFeatures)).sort() :
+  [];
 
   
 
   const limitsCanonicalized = {};
+  
+  const adapterOptions = getDefaultRequestAdapterOptions();
+
+
+  const featureLevel = adapterOptions?.compatibilityMode ? 'compatibility' : 'core';
+  const defaultLimits = getDefaultLimits(featureLevel);
   if (desc.requiredLimits) {
     for (const limit of kLimits) {
       const requestedValue = desc.requiredLimits[limit];
-      const defaultValue = kLimitInfo[limit].default;
+      const defaultValue = defaultLimits[limit].default;
       
       if (requestedValue !== undefined && requestedValue !== defaultValue) {
         limitsCanonicalized[limit] = requestedValue;
@@ -217,12 +250,15 @@ function canonicalizeDescriptor(desc) {
   const descriptorCanonicalized = {
     requiredFeatures: featuresCanonicalized,
     requiredLimits: limitsCanonicalized,
-    defaultQueue: {},
+    defaultQueue: {}
   };
   return [descriptorCanonicalized, JSON.stringify(descriptorCanonicalized)];
 }
 
-function supportsFeature(adapter, descriptor) {
+function supportsFeature(
+adapter,
+descriptor)
+{
   if (descriptor === undefined) {
     return true;
   }
@@ -245,6 +281,7 @@ function supportsFeature(adapter, descriptor) {
 
 
 
+
 class DeviceHolder {
   
 
@@ -253,8 +290,14 @@ class DeviceHolder {
   
 
   
+
+
   
-  static async create(recorder, descriptor) {
+  
+  static async create(
+  recorder,
+  descriptor)
+  {
     const gpu = getGPU(recorder);
     const adapter = await gpu.requestAdapter();
     assert(adapter !== null, 'requestAdapter returned null');
@@ -269,7 +312,7 @@ class DeviceHolder {
 
   constructor(device) {
     this._device = device;
-    void this._device.lost.then(ev => {
+    void this._device.lost.then((ev) => {
       this.lostInfo = ev;
     });
   }
@@ -321,10 +364,10 @@ class DeviceHolder {
     try {
       
       [gpuOutOfMemoryError, gpuInternalError, gpuValidationError] = await Promise.all([
-        this.device.popErrorScope(),
-        this.device.popErrorScope(),
-        this.device.popErrorScope(),
-      ]);
+      this.device.popErrorScope(),
+      this.device.popErrorScope(),
+      this.device.popErrorScope()]
+      );
     } catch (ex) {
       assert(this.lostInfo !== undefined, 'popErrorScope failed; did beginTestScope get missed?');
       throw ex;
@@ -335,10 +378,10 @@ class DeviceHolder {
       await this.device.queue.onSubmittedWorkDone();
     }
 
-    await assertReject(
-      this.device.popErrorScope(),
-      'There was an extra error scope on the stack after a test'
-    );
+    await assertReject('OperationError', this.device.popErrorScope(), {
+      allowMissingStack: true,
+      message: 'There was an extra error scope on the stack after a test'
+    });
 
     if (gpuOutOfMemoryError !== null) {
       assert(gpuOutOfMemoryError instanceof GPUOutOfMemoryError);

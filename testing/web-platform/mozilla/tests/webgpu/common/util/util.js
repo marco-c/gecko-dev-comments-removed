@@ -1,8 +1,6 @@
 
 
- import { Float16Array } from '../../external/petamoriken/float16/float16.js';
-import { SkipTestCase } from '../framework/fixture.js';
-import { globalTestConfig } from '../framework/test_config.js';
+import { Float16Array } from '../../external/petamoriken/float16/float16.js';import { SkipTestCase } from '../framework/fixture.js';import { globalTestConfig } from '../framework/test_config.js';
 import { Logger } from '../internal/logging/logger.js';
 
 import { keysOf } from './data_tables.js';
@@ -13,7 +11,10 @@ import { timeout } from './timeout.js';
 
 
 export class ErrorWithExtra extends Error {
+
+
   
+
 
 
 
@@ -23,9 +24,9 @@ export class ErrorWithExtra extends Error {
     super(message);
 
     const oldExtras = baseOrMessage instanceof ErrorWithExtra ? baseOrMessage.extra : {};
-    this.extra = Logger.globalDebugMode
-      ? { ...oldExtras, ...newExtra() }
-      : { omitted: 'pass ?debug=1' };
+    this.extra = Logger.globalDebugMode ?
+    { ...oldExtras, ...newExtra() } :
+    { omitted: 'pass ?debug=1' };
   }
 }
 
@@ -49,12 +50,26 @@ export function assertOK(value) {
 
 
 
-export async function assertReject(p, msg) {
+
+
+
+export async function assertReject(
+expectedName,
+p,
+{ allowMissingStack = false, message } = {})
+{
   try {
     await p;
-    unreachable(msg);
+    unreachable(message);
   } catch (ex) {
     
+    if (!allowMissingStack) {
+      const m = message ? ` (${message})` : '';
+      assert(
+        ex instanceof Error && typeof ex.stack === 'string',
+        'threw as expected, but missing stack' + m
+      );
+    }
   }
 }
 
@@ -89,7 +104,7 @@ export function now() {
 
 
 export function resolveOnTimeout(ms) {
-  return new Promise(resolve => {
+  return new Promise((resolve) => {
     timeout(() => {
       resolve();
     }, ms);
@@ -133,15 +148,19 @@ export function raceWithRejectOnTimeout(p, ms, msg) {
 
 
 
-export function assertNotSettledWithinTime(p, ms, msg) {
+export function assertNotSettledWithinTime(
+p,
+ms,
+msg)
+{
   
   const rejectWhenSettled = p.then(() => Promise.reject(new Error(msg)));
   
-  const timeoutPromise = new Promise(resolve => {
+  const timeoutPromise = new Promise((resolve) => {
     const handle = timeout(() => {
       resolve(undefined);
     }, ms);
-    p.finally(() => clearTimeout(handle));
+    void p.finally(() => clearTimeout(handle));
   });
   return Promise.race([rejectWhenSettled, timeoutPromise]);
 }
@@ -179,12 +198,22 @@ export function sortObjectByKey(v) {
 
 
 
-export function objectEquals(x, y) {
+
+
+
+
+export function objectEquals(
+x,
+y,
+distinguishSignedZero = false)
+{
   if (typeof x !== 'object' || typeof y !== 'object') {
     if (typeof x === 'number' && typeof y === 'number' && Number.isNaN(x) && Number.isNaN(y)) {
       return true;
     }
-    return x === y;
+    
+    
+    return distinguishSignedZero ? Object.is(x, y) : x === y;
   }
   if (x === null || y === null) return x === y;
   if (x.constructor !== y.constructor) return false;
@@ -199,7 +228,7 @@ export function objectEquals(x, y) {
   const x1 = x;
   const y1 = y;
   const p = Object.keys(x);
-  return Object.keys(y).every(i => p.indexOf(i) !== -1) && p.every(i => objectEquals(x1[i], y1[i]));
+  return Object.keys(y).every((i) => p.indexOf(i) !== -1) && p.every((i) => objectEquals(x1[i], y1[i]));
 }
 
 
@@ -225,14 +254,14 @@ export function mapLazy(xs, f) {
       for (const x of xs) {
         yield f(x);
       }
-    },
+    }
   };
 }
 
 const ReorderOrders = {
   forward: true,
   backward: true,
-  shiftByHalf: true,
+  shiftByHalf: true
 };
 
 export const kReorderOrderKeys = keysOf(ReorderOrders);
@@ -243,7 +272,7 @@ export const kReorderOrderKeys = keysOf(ReorderOrders);
 
 export function shiftByHalf(arr) {
   const len = arr.length;
-  const half = (len / 2) | 0;
+  const half = len / 2 | 0;
   const firstHalf = arr.splice(0, half);
   return [...arr, ...firstHalf];
 }
@@ -257,34 +286,59 @@ export function reorder(order, arr) {
       return arr.slice();
     case 'backward':
       return arr.slice().reverse();
-    case 'shiftByHalf': {
-      
-      return shiftByHalf(arr);
-    }
+    case 'shiftByHalf':{
+        
+        return shiftByHalf(arr);
+      }
   }
 }
 
 const TypedArrayBufferViewInstances = [
-  new Uint8Array(),
-  new Uint8ClampedArray(),
-  new Uint16Array(),
-  new Uint32Array(),
-  new Int8Array(),
-  new Int16Array(),
-  new Int32Array(),
-  new Float16Array(),
-  new Float32Array(),
-  new Float64Array(),
-];
+new Uint8Array(),
+new Uint8ClampedArray(),
+new Uint16Array(),
+new Uint32Array(),
+new Int8Array(),
+new Int16Array(),
+new Int32Array(),
+new Float16Array(),
+new Float32Array(),
+new Float64Array()];
 
-export const kTypedArrayBufferViews = {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export const kTypedArrayBufferViews =
+
+{
   ...(() => {
+
     const result = {};
     for (const v of TypedArrayBufferViewInstances) {
       result[v.constructor.name] = v.constructor;
     }
     return result;
-  })(),
+  })()
 };
 export const kTypedArrayBufferViewKeys = keysOf(kTypedArrayBufferViews);
 export const kTypedArrayBufferViewConstructors = Object.values(kTypedArrayBufferViews);
@@ -318,23 +372,53 @@ export const kTypedArrayBufferViewConstructors = Object.values(kTypedArrayBuffer
 
 
 
-export function typedArrayParam(type, data) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function typedArrayParam(
+type,
+data)
+{
   return { type, data };
 }
 
-export function createTypedArray(type, data) {
+export function createTypedArray(
+type,
+data)
+{
   return new kTypedArrayBufferViews[type](data);
 }
 
 
 
 
-export function typedArrayFromParam(param) {
+export function typedArrayFromParam(
+param)
+{
   const { type, data } = param;
   return createTypedArray(type, data);
 }
 
-function subarrayAsU8(buf, { start = 0, length }) {
+function subarrayAsU8(
+buf,
+{ start = 0, length })
+{
   if (buf instanceof ArrayBuffer) {
     return new Uint8Array(buf, start, length);
   } else if (buf instanceof Uint8Array || buf instanceof Uint8ClampedArray) {
@@ -345,9 +429,9 @@ function subarrayAsU8(buf, { start = 0, length }) {
   }
   const byteOffset = buf.byteOffset + start * buf.BYTES_PER_ELEMENT;
   const byteLength =
-    length !== undefined
-      ? length * buf.BYTES_PER_ELEMENT
-      : buf.byteLength - (byteOffset - buf.byteOffset);
+  length !== undefined ?
+  length * buf.BYTES_PER_ELEMENT :
+  buf.byteLength - (byteOffset - buf.byteOffset);
   return new Uint8Array(buf.buffer, byteOffset, byteLength);
 }
 
@@ -356,6 +440,37 @@ function subarrayAsU8(buf, { start = 0, length }) {
 
 
 
-export function memcpy(src, dst) {
+export function memcpy(
+src,
+dst)
+{
   subarrayAsU8(dst.dst, dst).set(subarrayAsU8(src.src, src));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function filterUniqueValueTestVariants(valueTestVariants) {
+  return new Map(
+    valueTestVariants.map((v) => [`m:${v.mult},a:${v.add}`, v])
+  ).values();
+}
+
+
+
+
+
+
+
+export function makeValueTestVariant(base, variant) {
+  return base * variant.mult + variant.add;
 }

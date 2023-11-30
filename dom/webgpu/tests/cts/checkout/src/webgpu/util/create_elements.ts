@@ -8,7 +8,7 @@ import { unreachable } from '../../common/util/util.js';
 
 
 export const kAllCanvasTypes = ['onscreen', 'offscreen'] as const;
-export type CanvasType = typeof kAllCanvasTypes[number];
+export type CanvasType = (typeof kAllCanvasTypes)[number];
 
 type CanvasForCanvasType<T extends CanvasType> = {
   onscreen: HTMLCanvasElement;
@@ -25,7 +25,7 @@ export const kValidCanvasContextIds = [
   'webgl2',
   'webgpu',
 ] as const;
-export type CanvasContext = typeof kValidCanvasContextIds[number];
+export type CanvasContext = (typeof kValidCanvasContextIds)[number];
 
 
 export function createCanvas<T extends CanvasType>(

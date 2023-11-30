@@ -1,8 +1,7 @@
 
 
  
-import { globalTestConfig } from '../framework/test_config.js';
-import { DefaultTestFileLoader } from '../internal/file_loader.js';
+import { globalTestConfig } from '../framework/test_config.js';import { DefaultTestFileLoader } from '../internal/file_loader.js';
 import { prettyPrintLog } from '../internal/logging/log_message.js';
 import { Logger } from '../internal/logging/logger.js';
 import { parseQuery } from '../internal/query/parseQuery.js';
@@ -14,10 +13,21 @@ import { TestWorker } from './helper/test_worker.js';
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 setup({
   
   
-  explicit_done: true,
+  explicit_done: true
 });
 
 void (async () => {
@@ -27,7 +37,7 @@ void (async () => {
   globalTestConfig.unrollConstEvalLoops = optionEnabled('unroll_const_eval_loops');
 
   const failOnWarnings =
-    typeof shouldWebGPUCTSFailOnWarnings !== 'undefined' && (await shouldWebGPUCTSFailOnWarnings);
+  typeof shouldWebGPUCTSFailOnWarnings !== 'undefined' && (await shouldWebGPUCTSFailOnWarnings);
 
   const loader = new DefaultTestFileLoader();
   const qs = new URLSearchParams(window.location.search).getAll('q');
@@ -36,13 +46,13 @@ void (async () => {
   const testcases = await loader.loadCases(filterQuery);
 
   const expectations =
-    typeof loadWebGPUExpectations !== 'undefined'
-      ? parseExpectationsForTestQuery(
-          await loadWebGPUExpectations,
-          filterQuery,
-          new URL(window.location.href)
-        )
-      : [];
+  typeof loadWebGPUExpectations !== 'undefined' ?
+  parseExpectationsForTestQuery(
+    await loadWebGPUExpectations,
+    filterQuery,
+    new URL(window.location.href)
+  ) :
+  [];
 
   const log = new Logger();
 
@@ -60,7 +70,7 @@ void (async () => {
       }
 
       
-      if (res.status === 'fail' || (res.status === 'warn' && failOnWarnings)) {
+      if (res.status === 'fail' || res.status === 'warn' && failOnWarnings) {
         const logs = (res.logs ?? []).map(prettyPrintLog);
         assert_unreached('\n' + logs.join('\n') + '\n');
       }

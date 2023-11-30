@@ -3,15 +3,64 @@
 
 
 
+import { assert } from '../util/util.js';
+
 interface DataStore {
-  load(path: string): Promise<string>;
+  load(path: string): Promise<Uint8Array>;
 }
 
 
 export type Logger = (s: string) => void;
 
 
+
+
+
+
+class DataCacheNode {
+  public constructor(path: string, data: unknown) {
+    this.path = path;
+    this.data = data;
+  }
+
+  
+  public insertAfter(prev: DataCacheNode) {
+    this.unlink();
+    this.next = prev.next;
+    this.prev = prev;
+    prev.next = this;
+    if (this.next) {
+      this.next.prev = this;
+    }
+  }
+
+  
+  public unlink() {
+    const prev = this.prev;
+    const next = this.next;
+    if (prev) {
+      prev.next = next;
+    }
+    if (next) {
+      next.prev = prev;
+    }
+    this.prev = null;
+    this.next = null;
+  }
+
+  public readonly path: string; 
+  public readonly data: unknown; 
+  public prev: DataCacheNode | null = null; 
+  public next: DataCacheNode | null = null; 
+}
+
+
 export class DataCache {
+  public constructor() {
+    this.lruHeadNode.next = this.lruTailNode;
+    this.lruTailNode.prev = this.lruHeadNode;
+  }
+
   
   public setStore(dataStore: DataStore) {
     this.dataStore = dataStore;
@@ -28,17 +77,20 @@ export class DataCache {
 
 
   public async fetch<Data>(cacheable: Cacheable<Data>): Promise<Data> {
-    
-    let data = this.cache.get(cacheable.path);
-    if (data !== undefined) {
-      this.log('in-memory cache hit');
-      return Promise.resolve(data as Data);
+    {
+      
+      const node = this.cache.get(cacheable.path);
+      if (node !== undefined) {
+        this.log('in-memory cache hit');
+        node.insertAfter(this.lruHeadNode);
+        return Promise.resolve(node.data as Data);
+      }
     }
     this.log('in-memory cache miss');
     
     
     if (this.dataStore !== null && !this.unavailableFiles.has(cacheable.path)) {
-      let serialized: string | undefined;
+      let serialized: Uint8Array | undefined;
       try {
         serialized = await this.dataStore.load(cacheable.path);
         this.log('loaded serialized');
@@ -49,16 +101,37 @@ export class DataCache {
       }
       if (serialized !== undefined) {
         this.log(`deserializing`);
-        data = cacheable.deserialize(serialized);
-        this.cache.set(cacheable.path, data);
-        return data as Data;
+        const data = cacheable.deserialize(serialized);
+        this.addToCache(cacheable.path, data);
+        return data;
       }
     }
     
     this.log(`cache: building (${cacheable.path})`);
-    data = await cacheable.build();
-    this.cache.set(cacheable.path, data);
-    return data as Data;
+    const data = await cacheable.build();
+    this.addToCache(cacheable.path, data);
+    return data;
+  }
+
+  
+
+
+
+
+
+
+  private addToCache(path: string, data: unknown) {
+    if (this.cache.size >= this.maxCount) {
+      const toEvict = this.lruTailNode.prev;
+      assert(toEvict !== null);
+      toEvict.unlink();
+      this.cache.delete(toEvict.path);
+      this.log(`evicting ${toEvict.path}`);
+    }
+    const node = new DataCacheNode(path, data);
+    node.insertAfter(this.lruHeadNode);
+    this.cache.set(path, node);
+    this.log(`added ${path}. new count: ${this.cache.size}`);
   }
 
   private log(msg: string) {
@@ -67,7 +140,12 @@ export class DataCache {
     }
   }
 
-  private cache = new Map<string, unknown>();
+  
+  private readonly maxCount = 4;
+
+  private cache = new Map<string, DataCacheNode>();
+  private lruHeadNode = new DataCacheNode('', null); 
+  private lruTailNode = new DataCacheNode('', null); 
   private unavailableFiles = new Set<string>();
   private dataStore: DataStore | null = null;
   private debugLogger: Logger | null = null;
@@ -109,12 +187,11 @@ export interface Cacheable<Data> {
   
 
 
-
-  serialize(data: Data): string;
+  serialize(data: Data): Uint8Array;
 
   
 
 
 
-  deserialize(serialized: string): Data;
+  deserialize(binary: Uint8Array): Data;
 }

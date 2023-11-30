@@ -1,6 +1,6 @@
 
 
- import { Colors } from '../../../../common/util/colors.js';
+import { Colors } from '../../../../common/util/colors.js';
 
 
 
@@ -36,13 +36,71 @@
 
 
 
-export function runFlowControlTest(t, build_wgsl) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+export function runFlowControlTest(
+t,
+build_wgsl)
+{
   const inputData = new Array();
+
+
+
+
+
+
+
+
+
+
+
 
   const expectations = new Array();
 
   const build_wgsl_result = build_wgsl({
-    value: v => {
+    value: (v) => {
       if (t.params.preventValueOptimizations) {
         if (typeof v === 'boolean') {
           inputData.push(v ? 1 : 0);
@@ -59,23 +117,25 @@ export function runFlowControlTest(t, build_wgsl) {
         kind: 'events',
         stack: Error().stack,
         values: expected,
-        counter: 0,
+        counter: 0
       });
-      return `push_output(${expectations.length - 1});`;
+      
+      return `push_output(${expectations.length}); // expect_order(${expected.join(', ')})`;
     },
     expect_not_reached: () => {
       expectations.push({
         kind: 'not-reached',
-        stack: Error().stack,
+        stack: Error().stack
       });
-      return `push_output(${expectations.length - 1});`;
-    },
+      
+      return `push_output(${expectations.length}); // expect_not_reached()`;
+    }
   });
 
   const built_wgsl =
-    typeof build_wgsl_result === 'string'
-      ? { entrypoint: build_wgsl_result, extra: '' }
-      : build_wgsl_result;
+  typeof build_wgsl_result === 'string' ?
+  { entrypoint: build_wgsl_result, extra: '' } :
+  build_wgsl_result;
 
   const main_wgsl = built_wgsl.entrypoint !== undefined ? built_wgsl : built_wgsl.entrypoint;
 
@@ -105,8 +165,8 @@ ${main_wgsl.extra}
     layout: 'auto',
     compute: {
       module: t.device.createShaderModule({ code: wgsl }),
-      entryPoint: 'main',
-    },
+      entryPoint: 'main'
+    }
   });
 
   
@@ -120,15 +180,15 @@ ${main_wgsl.extra}
   const maxOutputValues = 1000;
   const outputBuffer = t.device.createBuffer({
     size: 4 * (1 + maxOutputValues),
-    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC,
+    usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   });
 
   const bindGroup = t.device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
-      { binding: 0, resource: { buffer: inputBuffer } },
-      { binding: 1, resource: { buffer: outputBuffer } },
-    ],
+    { binding: 0, resource: { buffer: inputBuffer } },
+    { binding: 1, resource: { buffer: outputBuffer } }]
+
   });
 
   
@@ -141,91 +201,112 @@ ${main_wgsl.extra}
   t.queue.submit([encoder.finish()]);
 
   t.eventualExpectOK(
-    t
-      .readGPUBufferRangeTyped(outputBuffer, {
-        type: Uint32Array,
-        typedLength: outputBuffer.size / 4,
-      })
-      .then(outputs => {
+    t.
+    readGPUBufferRangeTyped(outputBuffer, {
+      type: Uint32Array,
+      typedLength: outputBuffer.size / 4
+    }).
+    then((outputs) => {
+      
+      
+      const outputCount = outputs.data[0];
+      if (outputCount > maxOutputValues) {
+        return new Error(
+          `output data count (${outputCount}) exceeds limit of ${maxOutputValues}`
+        );
+      }
+
+      
+      const fail = (err) => Error(`${err}\nWGSL:\n${Colors.dim(Colors.blue(wgsl))}`);
+
+      
+      const print_output_value = () => {
+        const subarray = outputs.data.subarray(1, outputCount + 1);
+        return `Output values (length: ${outputCount}): ${subarray.join(', ')}`;
+      };
+
+      
+      
+      const expect_order_err = (expectation, err_idx) => {
+        let out = 'expect_order(';
+        for (let i = 0; i < expectation.values.length; i++) {
+          if (i > 0) {
+            out += ', ';
+          }
+          if (i < err_idx) {
+            out += Colors.green(`${expectation.values[i]}`);
+          } else if (i > err_idx) {
+            out += Colors.dim(`${expectation.values[i]}`);
+          } else {
+            out += Colors.red(`${expectation.values[i]}`);
+          }
+        }
+        out += ')';
+        return out;
+      };
+
+      
+      
+      for (let event = 0; event < outputCount; event++) {
+        const eventValue = outputs.data[1 + event]; 
         
-        
-        const outputCount = outputs.data[0];
-        if (outputCount > maxOutputValues) {
-          return new Error(
-            `output data count (${outputCount}) exceeds limit of ${maxOutputValues}`
+        if (eventValue === 0) {
+          return fail(
+            `outputs.data[${event}] is initial value 0, doesn't refer to any valid expectations)\n${print_output_value()}`
           );
         }
-
-        
-        const fail = err => Error(`${err}\nWGSL:\n${Colors.dim(Colors.blue(wgsl))}`);
-
-        
-        
-        const expect_order_err = (expectation, err_idx) => {
-          let out = 'expect_order(';
-          for (let i = 0; i < expectation.values.length; i++) {
-            if (i > 0) {
-              out += ', ';
-            }
-            if (i < err_idx) {
-              out += Colors.green(`${expectation.values[i]}`);
-            } else if (i > err_idx) {
-              out += Colors.dim(`${expectation.values[i]}`);
-            } else {
-              out += Colors.red(`${expectation.values[i]}`);
-            }
-          }
-          out += ')';
-          return out;
-        };
-
-        
-        
-        for (let event = 0; event < outputCount; event++) {
-          const expectationIndex = outputs.data[1 + event]; 
-          if (expectationIndex >= expectations.length) {
-            return fail(
-              `outputs.data[${event}] value (${expectationIndex}) exceeds number of expectations (${expectations.length})`
-            );
-          }
-          const expectation = expectations[expectationIndex];
-          switch (expectation.kind) {
-            case 'not-reached':
-              return fail(`expect_not_reached() reached at event ${event}\n${expectation.stack}`);
-            case 'events':
-              if (expectation.counter >= expectation.values.length) {
-                return fail(
-                  `${expect_order_err(
-                    expectation,
-                    expectation.counter
-                  )}) unexpectedly reached at event ${Colors.red(`${event}`)}\n${expectation.stack}`
-                );
-              }
-              if (event !== expectation.values[expectation.counter]) {
-                return fail(
-                  `${expect_order_err(expectation, expectation.counter)} expected event ${
-                    expectation.values[expectation.counter]
-                  }, got ${event}\n${expectation.stack}`
-                );
-              }
-
-              expectation.counter++;
-              break;
-          }
+        const expectationIndex = eventValue - 1;
+        if (expectationIndex >= expectations.length) {
+          return fail(
+            `outputs.data[${event}] value (${expectationIndex}) exceeds number of expectations (${
+            expectations.length
+            })\n${print_output_value()}`
+          );
         }
-
-        
-        for (const expectation of expectations) {
-          if (expectation.kind === 'events' && expectation.counter !== expectation.values.length) {
+        const expectation = expectations[expectationIndex];
+        switch (expectation.kind) {
+          case 'not-reached':
             return fail(
-              `${expect_order_err(expectation, expectation.counter)} event ${
+              `expect_not_reached() reached at event ${event}\n${print_output_value()}\n${
+              expectation.stack
+              }`
+            );
+          case 'events':
+            if (expectation.counter >= expectation.values.length) {
+              return fail(
+                `${expect_order_err(
+                  expectation,
+                  expectation.counter
+                )}) unexpectedly reached at event ${Colors.red(
+                  `${event}`
+                )}\n${print_output_value()}\n${expectation.stack}`
+              );
+            }
+            if (event !== expectation.values[expectation.counter]) {
+              return fail(
+                `${expect_order_err(expectation, expectation.counter)} expected event ${
                 expectation.values[expectation.counter]
-              } was not reached\n${expectation.stack}`
-            );
-          }
+                }, got ${event}\n${print_output_value()}\n${expectation.stack}`
+              );
+            }
+
+            expectation.counter++;
+            break;
         }
-        outputs.cleanup();
-        return undefined;
-      })
+      }
+
+      
+      for (const expectation of expectations) {
+        if (expectation.kind === 'events' && expectation.counter !== expectation.values.length) {
+          return fail(
+            `${expect_order_err(expectation, expectation.counter)} event ${
+            expectation.values[expectation.counter]
+            } was not reached\n${expectation.stack}\n${print_output_value()}`
+          );
+        }
+      }
+      outputs.cleanup();
+      return undefined;
+    })
   );
 }

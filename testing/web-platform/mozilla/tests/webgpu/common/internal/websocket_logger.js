@@ -5,7 +5,7 @@
 
 
 
- let connection = 'uninitialized';
+let connection = 'uninitialized';
 
 
 
@@ -18,7 +18,7 @@ export function logToWebsocket(msg) {
   }
 
   if (connection === 'uninitialized') {
-    connection = new Promise(resolve => {
+    connection = new Promise((resolve) => {
       if (typeof WebSocket === 'undefined') {
         resolve('failed');
         return;
@@ -37,7 +37,7 @@ export function logToWebsocket(msg) {
         resolve('failed');
       };
     });
-    void connection.then(resolved => {
+    void connection.then((resolved) => {
       connection = resolved;
     });
   }

@@ -22,7 +22,7 @@ import { GPUTest } from './gpu_test.js';
 export const g = makeTestGroup(GPUTest);
 
 
-g.test('test_name').fn(t => {});
+g.test('test_name').fn(_t => {});
 
 g.test('not_implemented_yet,without_plan').unimplemented();
 g.test('not_implemented_yet,with_plan')
@@ -47,7 +47,7 @@ g.test('basic').fn(t => {
       throw new TypeError();
     },
     
-    'function should throw Error'
+    { message: 'function should throw Error' }
   );
 });
 
@@ -59,7 +59,7 @@ g.test('basic,async').fn(t => {
     
     Promise.reject(new TypeError()),
     
-    'Promise.reject should reject'
+    { message: 'Promise.reject should reject' }
   );
 
   
@@ -69,7 +69,7 @@ g.test('basic,async').fn(t => {
     (async () => {
       throw new TypeError();
     })(),
-    'Promise.reject should reject'
+    { message: 'Promise.reject should reject' }
   );
 });
 

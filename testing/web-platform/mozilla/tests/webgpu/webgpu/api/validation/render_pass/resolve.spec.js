@@ -1,9 +1,8 @@
 
 
- export const description = `
+export const description = `
 Validation tests for render pass resolve.
-`;
-import { makeTestGroup } from '../../../../common/framework/test_group.js';
+`;import { makeTestGroup } from '../../../../common/framework/test_group.js';
 import { GPUConst } from '../../../constants.js';
 import { ValidationTest } from '../validation_test.js';
 
@@ -11,9 +10,9 @@ const kNumColorAttachments = 4;
 
 export const g = makeTestGroup(ValidationTest);
 
-g.test('resolve_attachment')
-  .desc(
-    `
+g.test('resolve_attachment').
+desc(
+  `
 Test various validation behaviors when a resolveTarget is provided.
 
 - base case (valid).
@@ -30,164 +29,164 @@ Test various validation behaviors when a resolveTarget is provided.
     - test with other color attachments having a different format
 - resolve source and target have different sizes.
 `
-  )
-  .paramsSimple([
-    
-    { _valid: true },
-    
-    { colorAttachmentSamples: 1, _valid: false },
-    
-    { resolveTargetSamples: 4, _valid: false },
-    
-    { resolveTargetUsage: GPUConst.TextureUsage.COPY_SRC, _valid: false },
-    
-    {
-      resolveTargetViewBaseMipLevel: 1,
-      resolveTargetHeight: 4,
-      resolveTargetWidth: 4,
-      _valid: true,
-    },
-    
-    { resolveTargetInvalid: true, _valid: false },
-    
-    { resolveTargetViewMipCount: 2, _valid: false },
-    {
-      resolveTargetViewBaseMipLevel: 1,
-      resolveTargetViewMipCount: 2,
-      resolveTargetHeight: 4,
-      resolveTargetWidth: 4,
-      _valid: false,
-    },
-    
-    { resolveTargetViewBaseArrayLayer: 1, _valid: true },
-    
-    { resolveTargetViewArrayLayerCount: 2, _valid: false },
-    { resolveTargetViewBaseArrayLayer: 1, resolveTargetViewArrayLayerCount: 2, _valid: false },
-    
-    { otherAttachmentFormat: 'bgra8unorm', _valid: true },
-    
-    { colorAttachmentFormat: 'bgra8unorm', _valid: false },
-    { colorAttachmentFormat: 'rgba8unorm-srgb', _valid: false },
-    { resolveTargetFormat: 'bgra8unorm', _valid: false },
-    { resolveTargetFormat: 'rgba8unorm-srgb', _valid: false },
-    
-    { colorAttachmentHeight: 4, _valid: false },
-    { colorAttachmentWidth: 4, _valid: false },
-    { resolveTargetHeight: 4, _valid: false },
-    { resolveTargetWidth: 4, _valid: false },
-  ])
-  .fn(t => {
-    const {
-      colorAttachmentFormat = 'rgba8unorm',
-      resolveTargetFormat = 'rgba8unorm',
-      otherAttachmentFormat = 'rgba8unorm',
-      colorAttachmentSamples = 4,
-      resolveTargetSamples = 1,
-      resolveTargetUsage = GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-      resolveTargetInvalid = false,
-      resolveTargetViewMipCount = 1,
-      resolveTargetViewBaseMipLevel = 0,
-      resolveTargetViewArrayLayerCount = 1,
-      resolveTargetViewBaseArrayLayer = 0,
-      colorAttachmentHeight = 2,
-      colorAttachmentWidth = 2,
-      resolveTargetHeight = 2,
-      resolveTargetWidth = 2,
-      _valid,
-    } = t.params;
+).
+paramsSimple([
 
-    
-    
-    for (let resolveSlot = 0; resolveSlot < kNumColorAttachments; resolveSlot++) {
-      const renderPassColorAttachmentDescriptors = [];
-      for (
-        let colorAttachmentSlot = 0;
-        colorAttachmentSlot < kNumColorAttachments;
-        colorAttachmentSlot++
-      ) {
+{ _valid: true },
+
+{ colorAttachmentSamples: 1, _valid: false },
+
+{ resolveTargetSamples: 4, _valid: false },
+
+{ resolveTargetUsage: GPUConst.TextureUsage.COPY_SRC, _valid: false },
+
+{
+  resolveTargetViewBaseMipLevel: 1,
+  resolveTargetHeight: 4,
+  resolveTargetWidth: 4,
+  _valid: true
+},
+
+{ resolveTargetInvalid: true, _valid: false },
+
+{ resolveTargetViewMipCount: 2, _valid: false },
+{
+  resolveTargetViewBaseMipLevel: 1,
+  resolveTargetViewMipCount: 2,
+  resolveTargetHeight: 4,
+  resolveTargetWidth: 4,
+  _valid: false
+},
+
+{ resolveTargetViewBaseArrayLayer: 1, _valid: true },
+
+{ resolveTargetViewArrayLayerCount: 2, _valid: false },
+{ resolveTargetViewBaseArrayLayer: 1, resolveTargetViewArrayLayerCount: 2, _valid: false },
+
+{ otherAttachmentFormat: 'bgra8unorm', _valid: true },
+
+{ colorAttachmentFormat: 'bgra8unorm', _valid: false },
+{ colorAttachmentFormat: 'rgba8unorm-srgb', _valid: false },
+{ resolveTargetFormat: 'bgra8unorm', _valid: false },
+{ resolveTargetFormat: 'rgba8unorm-srgb', _valid: false },
+
+{ colorAttachmentHeight: 4, _valid: false },
+{ colorAttachmentWidth: 4, _valid: false },
+{ resolveTargetHeight: 4, _valid: false },
+{ resolveTargetWidth: 4, _valid: false }]
+).
+fn((t) => {
+  const {
+    colorAttachmentFormat = 'rgba8unorm',
+    resolveTargetFormat = 'rgba8unorm',
+    otherAttachmentFormat = 'rgba8unorm',
+    colorAttachmentSamples = 4,
+    resolveTargetSamples = 1,
+    resolveTargetUsage = GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
+    resolveTargetInvalid = false,
+    resolveTargetViewMipCount = 1,
+    resolveTargetViewBaseMipLevel = 0,
+    resolveTargetViewArrayLayerCount = 1,
+    resolveTargetViewBaseArrayLayer = 0,
+    colorAttachmentHeight = 2,
+    colorAttachmentWidth = 2,
+    resolveTargetHeight = 2,
+    resolveTargetWidth = 2,
+    _valid
+  } = t.params;
+
+  
+  
+  for (let resolveSlot = 0; resolveSlot < kNumColorAttachments; resolveSlot++) {
+    const renderPassColorAttachmentDescriptors = [];
+    for (
+    let colorAttachmentSlot = 0;
+    colorAttachmentSlot < kNumColorAttachments;
+    colorAttachmentSlot++)
+    {
+      
+      
+      if (resolveSlot === colorAttachmentSlot) {
+        
+        const resolveSourceColorAttachment = t.device.createTexture({
+          format: colorAttachmentFormat,
+          size: {
+            width: colorAttachmentWidth,
+            height: colorAttachmentHeight,
+            depthOrArrayLayers: 1
+          },
+          sampleCount: colorAttachmentSamples,
+          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
+        });
+
+        const resolveTarget = t.device.createTexture({
+          format: resolveTargetFormat,
+          size: {
+            width: resolveTargetWidth,
+            height: resolveTargetHeight,
+            depthOrArrayLayers:
+            resolveTargetViewBaseArrayLayer + resolveTargetViewArrayLayerCount
+          },
+          sampleCount: resolveTargetSamples,
+          mipLevelCount: resolveTargetViewBaseMipLevel + resolveTargetViewMipCount,
+          usage: resolveTargetUsage
+        });
+
+        renderPassColorAttachmentDescriptors.push({
+          view: resolveSourceColorAttachment.createView(),
+          loadOp: 'load',
+          storeOp: 'discard',
+          resolveTarget: resolveTargetInvalid ?
+          t.getErrorTextureView() :
+          resolveTarget.createView({
+            dimension: resolveTargetViewArrayLayerCount === 1 ? '2d' : '2d-array',
+            mipLevelCount: resolveTargetViewMipCount,
+            arrayLayerCount: resolveTargetViewArrayLayerCount,
+            baseMipLevel: resolveTargetViewBaseMipLevel,
+            baseArrayLayer: resolveTargetViewBaseArrayLayer
+          })
+        });
+      } else {
         
         
-        if (resolveSlot === colorAttachmentSlot) {
-          
-          const resolveSourceColorAttachment = t.device.createTexture({
-            format: colorAttachmentFormat,
-            size: {
-              width: colorAttachmentWidth,
-              height: colorAttachmentHeight,
-              depthOrArrayLayers: 1,
-            },
-            sampleCount: colorAttachmentSamples,
-            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-          });
+        const colorAttachment = t.device.createTexture({
+          format: otherAttachmentFormat,
+          size: {
+            width: colorAttachmentWidth,
+            height: colorAttachmentHeight,
+            depthOrArrayLayers: 1
+          },
+          sampleCount: colorAttachmentSamples,
+          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
+        });
 
-          const resolveTarget = t.device.createTexture({
-            format: resolveTargetFormat,
-            size: {
-              width: resolveTargetWidth,
-              height: resolveTargetHeight,
-              depthOrArrayLayers:
-                resolveTargetViewBaseArrayLayer + resolveTargetViewArrayLayerCount,
-            },
-            sampleCount: resolveTargetSamples,
-            mipLevelCount: resolveTargetViewBaseMipLevel + resolveTargetViewMipCount,
-            usage: resolveTargetUsage,
-          });
+        const resolveTarget = t.device.createTexture({
+          format: otherAttachmentFormat,
+          size: {
+            width: colorAttachmentWidth,
+            height: colorAttachmentHeight,
+            depthOrArrayLayers: 1
+          },
+          sampleCount: 1,
+          usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT
+        });
 
-          renderPassColorAttachmentDescriptors.push({
-            view: resolveSourceColorAttachment.createView(),
-            loadOp: 'load',
-            storeOp: 'discard',
-            resolveTarget: resolveTargetInvalid
-              ? t.getErrorTextureView()
-              : resolveTarget.createView({
-                  dimension: resolveTargetViewArrayLayerCount === 1 ? '2d' : '2d-array',
-                  mipLevelCount: resolveTargetViewMipCount,
-                  arrayLayerCount: resolveTargetViewArrayLayerCount,
-                  baseMipLevel: resolveTargetViewBaseMipLevel,
-                  baseArrayLayer: resolveTargetViewBaseArrayLayer,
-                }),
-          });
-        } else {
-          
-          
-          const colorAttachment = t.device.createTexture({
-            format: otherAttachmentFormat,
-            size: {
-              width: colorAttachmentWidth,
-              height: colorAttachmentHeight,
-              depthOrArrayLayers: 1,
-            },
-            sampleCount: colorAttachmentSamples,
-            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-          });
-
-          const resolveTarget = t.device.createTexture({
-            format: otherAttachmentFormat,
-            size: {
-              width: colorAttachmentWidth,
-              height: colorAttachmentHeight,
-              depthOrArrayLayers: 1,
-            },
-            sampleCount: 1,
-            usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
-          });
-
-          renderPassColorAttachmentDescriptors.push({
-            view: colorAttachment.createView(),
-            loadOp: 'load',
-            storeOp: 'discard',
-            resolveTarget: resolveTarget.createView(),
-          });
-        }
+        renderPassColorAttachmentDescriptors.push({
+          view: colorAttachment.createView(),
+          loadOp: 'load',
+          storeOp: 'discard',
+          resolveTarget: resolveTarget.createView()
+        });
       }
-      const encoder = t.device.createCommandEncoder();
-      const pass = encoder.beginRenderPass({
-        colorAttachments: renderPassColorAttachmentDescriptors,
-      });
-      pass.end();
-
-      t.expectValidationError(() => {
-        encoder.finish();
-      }, !_valid);
     }
-  });
+    const encoder = t.device.createCommandEncoder();
+    const pass = encoder.beginRenderPass({
+      colorAttachments: renderPassColorAttachmentDescriptors
+    });
+    pass.end();
+
+    t.expectValidationError(() => {
+      encoder.finish();
+    }, !_valid);
+  }
+});

@@ -1,7 +1,9 @@
 
 
- import { extractImportantStackTrace } from '../stack.js';
+import { extractImportantStackTrace } from '../stack.js';
 export class LogMessageWithStack extends Error {
+
+
   stackHiddenMessage = undefined;
 
   constructor(name, ex) {

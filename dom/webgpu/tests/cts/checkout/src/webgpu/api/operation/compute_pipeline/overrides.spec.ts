@@ -153,7 +153,7 @@ g.test('precision')
   .params(u => u.combine('isAsync', [true, false]))
   .fn(async t => {
     const c1 = 3.14159;
-    const c2 = 3.141592653589793238;
+    const c2 = 3.141592653589793;
     await t.ExpectShaderOutputWithConstants(
       t.params.isAsync,
       

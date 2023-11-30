@@ -1,21 +1,32 @@
 
 
- let windowURL = undefined;
-function getWindowURL() {
-  if (windowURL === undefined) {
+let windowURL = undefined;function getWindowURL() {if (windowURL === undefined) {
     windowURL = new URL(window.location.toString());
   }
   return windowURL;
 }
 
-export function optionEnabled(opt, searchParams = getWindowURL().searchParams) {
+export function optionEnabled(
+opt,
+searchParams = getWindowURL().searchParams)
+{
   const val = searchParams.get(opt);
   return val !== null && val !== '0';
 }
 
-export function optionString(opt, searchParams = getWindowURL().searchParams) {
+export function optionString(
+opt,
+searchParams = getWindowURL().searchParams)
+{
   return searchParams.get(opt) || '';
 }
+
+
+
+
+
+
+
 
 
 
@@ -26,8 +37,19 @@ export const kDefaultCTSOptions = {
   debug: true,
   compatibility: false,
   unrollConstEvalLoops: false,
-  powerPreference: '',
+  powerPreference: ''
 };
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -45,11 +67,11 @@ export const kCTSOptionsInfo = {
     description: 'set default powerPreference for some tests',
     parser: optionString,
     selectValueDescriptions: [
-      { value: '', description: 'default' },
-      { value: 'low-power', description: 'low-power' },
-      { value: 'high-performance', description: 'high-performance' },
-    ],
-  },
+    { value: '', description: 'default' },
+    { value: 'low-power', description: 'low-power' },
+    { value: 'high-performance', description: 'high-performance' }]
+
+  }
 };
 
 
@@ -59,16 +81,19 @@ export const kCTSOptionsInfo = {
 
 
 export function camelCaseToSnakeCase(id) {
-  return id
-    .replace(/(.)([A-Z][a-z]+)/g, '$1_$2')
-    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
-    .toLowerCase();
+  return id.
+  replace(/(.)([A-Z][a-z]+)/g, '$1_$2').
+  replace(/([a-z0-9])([A-Z])/g, '$1_$2').
+  toLowerCase();
 }
 
 
 
 
-function getOptionsInfoFromSearchString(optionsInfos, searchString) {
+function getOptionsInfoFromSearchString(
+optionsInfos,
+searchString)
+{
   const searchParams = new URLSearchParams(searchString);
   const optionValues = {};
   for (const [optionName, info] of Object.entries(optionsInfos)) {
@@ -82,7 +107,13 @@ function getOptionsInfoFromSearchString(optionsInfos, searchString) {
 
 
 
-export function parseSearchParamLikeWithOptions(optionsInfos, query) {
+export function parseSearchParamLikeWithOptions(
+optionsInfos,
+query)
+
+
+
+{
   const searchString = query.includes('q=') || query.startsWith('?') ? query : `q=${query}`;
   const queries = new URLSearchParams(searchString).getAll('q');
   const options = getOptionsInfoFromSearchString(optionsInfos, searchString);

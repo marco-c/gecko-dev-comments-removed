@@ -1,20 +1,21 @@
 
 
- import { assert, objectEquals } from '../../util/util.js';
-import { paramKeyIsPublic } from '../params_utils.js';
-
-export let Ordering;
+import { assert, objectEquals } from '../../util/util.js';import { paramKeyIsPublic } from '../params_utils.js';
 
 
 
+export let Ordering = function (Ordering) {Ordering[Ordering["Unordered"] = 0] = "Unordered";Ordering[Ordering["StrictSuperset"] = 1] = "StrictSuperset";Ordering[Ordering["Equal"] = 2] = "Equal";Ordering[Ordering["StrictSubset"] = 3] = "StrictSubset";return Ordering;}({});
 
 
- (function (Ordering) {
-  Ordering[(Ordering['Unordered'] = 0)] = 'Unordered';
-  Ordering[(Ordering['StrictSuperset'] = 1)] = 'StrictSuperset';
-  Ordering[(Ordering['Equal'] = 2)] = 'Equal';
-  Ordering[(Ordering['StrictSubset'] = 3)] = 'StrictSubset';
-})(Ordering || (Ordering = {}));
+
+
+
+
+
+
+
+
+
 export function compareQueries(a, b) {
   if (a.suite !== b.suite) {
     return Ordering.Unordered;
@@ -75,15 +76,16 @@ function comparePaths(a, b) {
 }
 
 export function comparePublicParamsPaths(a, b) {
-  const aKeys = Object.keys(a).filter(k => paramKeyIsPublic(k));
-  const commonKeys = new Set(aKeys.filter(k => k in b));
+  const aKeys = Object.keys(a).filter((k) => paramKeyIsPublic(k));
+  const commonKeys = new Set(aKeys.filter((k) => k in b));
 
   for (const k of commonKeys) {
-    if (!objectEquals(a[k], b[k])) {
+    
+    if (!objectEquals(a[k], b[k], true)) {
       return Ordering.Unordered;
     }
   }
-  const bKeys = Object.keys(b).filter(k => paramKeyIsPublic(k));
+  const bKeys = Object.keys(b).filter((k) => paramKeyIsPublic(k));
   const aRemainingKeys = aKeys.length - commonKeys.size;
   const bRemainingKeys = bKeys.length - commonKeys.size;
   if (aRemainingKeys === 0 && bRemainingKeys === 0) return Ordering.Equal;
