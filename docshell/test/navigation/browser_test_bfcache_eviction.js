@@ -27,7 +27,7 @@ add_task(async function () {
             let { legacySHistory } = webNavigation.sessionHistory;
             
             let historyListener = {
-              OnContentViewerEvicted() {
+              OnDocumentViewerEvicted() {
                 ok(
                   true,
                   "History listener got called after a content viewer was evicted"
@@ -54,7 +54,7 @@ add_task(async function () {
         let shistory = browser.browsingContext.sessionHistory;
         
         let historyListener = {
-          OnContentViewerEvicted() {
+          OnDocumentViewerEvicted() {
             ok(
               true,
               "History listener got called after a content viewer was evicted"
