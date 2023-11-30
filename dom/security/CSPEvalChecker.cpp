@@ -131,7 +131,7 @@ nsresult CSPEvalChecker::CheckForWindow(JSContext* aCx,
 
   
   uint32_t lineNum = 0;
-  uint32_t columnNum = 1;
+  uint32_t columnNum = 0;
   nsAutoString fileNameString;
   if (!nsJSUtils::GetCallingLocation(aCx, fileNameString, &lineNum,
                                      &columnNum)) {
@@ -164,7 +164,7 @@ nsresult CSPEvalChecker::CheckForWorker(JSContext* aCx,
 
   
   uint32_t lineNum = 0;
-  uint32_t columnNum = 1;
+  uint32_t columnNum = 0;
   nsAutoString fileNameString;
   if (!nsJSUtils::GetCallingLocation(aCx, fileNameString, &lineNum,
                                      &columnNum)) {

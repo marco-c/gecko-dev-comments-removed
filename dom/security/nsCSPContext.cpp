@@ -210,7 +210,7 @@ bool nsCSPContext::permitsInternal(
       
       if (aSendViolationReports) {
         uint32_t lineNumber = 0;
-        uint32_t columnNumber = 1;
+        uint32_t columnNumber = 0;
         nsAutoString spec;
         JSContext* cx = nsContentUtils::GetCurrentJSContext();
         if (cx) {
@@ -732,7 +732,7 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
 
       
       uint32_t lineNumber = 0;
-      uint32_t columnNumber = 1;
+      uint32_t columnNumber = 0;
       nsAutoCString spec;
       JSContext* cx = nsContentUtils::GetCurrentJSContext();
       if (cx) {
@@ -1848,7 +1848,7 @@ nsCSPContext::GetCSPSandboxFlags(uint32_t* aOutSandboxFlags) {
            NS_ConvertUTF16toUTF8(policy).get()));
 
       AutoTArray<nsString, 1> params = {policy};
-      logToConsole("ignoringReportOnlyDirective", params, u""_ns, u""_ns, 0, 1,
+      logToConsole("ignoringReportOnlyDirective", params, u""_ns, u""_ns, 0, 0,
                    nsIScriptError::warningFlag);
     }
   }

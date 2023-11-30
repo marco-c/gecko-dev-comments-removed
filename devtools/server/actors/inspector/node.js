@@ -506,15 +506,10 @@ class NodeActor extends Actor {
       return undefined;
     }
 
-    
-    
-    
-    const columnBase = customElementDO.script.format === "wasm" ? 0 : 1;
-
     return {
       url: customElementDO.script.url,
       line: customElementDO.script.startLine,
-      column: customElementDO.script.startColumn - columnBase,
+      column: customElementDO.script.startColumn,
     };
   }
 

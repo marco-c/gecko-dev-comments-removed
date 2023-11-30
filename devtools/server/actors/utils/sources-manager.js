@@ -228,14 +228,10 @@ class SourcesManager extends EventEmitter {
 
   getScriptOffsetLocation(script, offset) {
     const { lineNumber, columnNumber } = script.getOffsetMetadata(offset);
-    
-    
-    
-    const columnBase = script.format === "wasm" ? 0 : 1;
     return new SourceLocation(
       this.createSourceActor(script.source),
       lineNumber,
-      columnNumber - columnBase
+      columnNumber
     );
   }
 

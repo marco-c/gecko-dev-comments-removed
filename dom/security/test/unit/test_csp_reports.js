@@ -140,8 +140,8 @@ function run_test() {
         null, 
         "", 
         0, 
-        1 
-      );
+        0
+      ); 
 
       
       Assert.ok(!inlineOK);
@@ -181,8 +181,8 @@ function run_test() {
           
           "\u00a3\u00a5\u00b5\u5317\ud841\udf79",
           1, 
-          2 
-        );
+          2
+        ); 
       }
     }
   );
@@ -220,8 +220,8 @@ function run_test() {
         null, 
         "", 
         0, 
-        1 
-      );
+        0
+      ); 
 
       
       Assert.ok(inlineOK);
@@ -248,8 +248,8 @@ function run_test() {
         selfuri.asciiSpec,
         "script sample",
         4, 
-        5 
-      );
+        5
+      ); 
     }
   });
 

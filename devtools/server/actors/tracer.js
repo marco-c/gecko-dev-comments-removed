@@ -150,19 +150,7 @@ class TracerActor extends Actor {
     const url = script.source.url;
 
     
-    
-    
-    
-    const columnBase = script.format === "wasm" ? 0 : 1;
-
-    
-    if (
-      this.sourcesManager.isBlackBoxed(
-        url,
-        lineNumber,
-        columnNumber - columnBase
-      )
-    ) {
+    if (this.sourcesManager.isBlackBoxed(url, lineNumber, columnNumber)) {
       return false;
     }
 
@@ -197,7 +185,7 @@ class TracerActor extends Actor {
     this.throttledConsoleMessages.push({
       filename: url,
       lineNumber,
-      columnNumber: columnNumber - columnBase,
+      columnNumber,
       arguments: args,
       styles: CONSOLE_ARGS_STYLES,
       level: "logTrace",

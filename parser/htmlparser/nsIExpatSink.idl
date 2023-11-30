@@ -30,7 +30,6 @@ interface nsIExpatSink : nsISupports
 
 
 
-
   void HandleStartElement(in wstring aName,
                           [array, size_is(aAttsCount)] in wstring aAtts,
                           in unsigned long aAttsCount,

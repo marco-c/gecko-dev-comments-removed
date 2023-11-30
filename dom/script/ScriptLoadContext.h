@@ -8,7 +8,6 @@
 #define mozilla_dom_ScriptLoadContext_h
 
 #include "js/AllocPolicy.h"
-#include "js/ColumnNumber.h"    
 #include "js/CompileOptions.h"  
 #include "js/experimental/JSStencil.h"  
 #include "js/RootingAPI.h"
@@ -235,7 +234,7 @@ class ScriptLoadContext : public JS::loader::LoadContextBase,
   RefPtr<CompileOrDecodeTask> mCompileOrDecodeTask;
 
   uint32_t mLineNo;
-  JS::ColumnNumberOneOrigin mColumnNo;
+  uint32_t mColumnNo;
 
   
   bool mIsPreload;

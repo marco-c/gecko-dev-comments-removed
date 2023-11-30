@@ -1694,7 +1694,7 @@ nsresult HTMLFormElement::GetActionURL(nsIURI** aActionURL,
         u""_ns,  
         u""_ns,  
         0,       
-        1,       
+        0,       
         nsIScriptError::warningFlag, "upgradeInsecureRequest"_ns,
         document->InnerWindowID(),
         !!document->NodePrincipal()->OriginAttributesRef().mPrivateBrowsingId);

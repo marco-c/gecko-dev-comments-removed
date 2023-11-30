@@ -1046,7 +1046,7 @@ nsresult EventListenerManager::SetEventHandler(nsAtom* aName,
           true,    
           aElement,
           nullptr,  
-          aBody, lineNum, columnNum.oneOriginValue(), &allowsInlineScript);
+          aBody, lineNum, columnNum.zeroOriginValue(), &allowsInlineScript);
       NS_ENSURE_SUCCESS(rv, rv);
 
       

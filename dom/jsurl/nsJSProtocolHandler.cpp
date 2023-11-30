@@ -161,7 +161,7 @@ static bool AllowedByCSP(nsIContentSecurityPolicy* aCSP,
                             nullptr,  
                             NS_ConvertASCIItoUTF16(aJavaScriptURL),  
                             0,  
-                            1,  
+                            0,  
                             &allowsInlineScript);
 
   return (NS_SUCCEEDED(rv) && allowsInlineScript);

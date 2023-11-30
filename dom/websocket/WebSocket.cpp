@@ -134,7 +134,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
         mCloseEventCode(nsIWebSocketChannel::CLOSE_ABNORMAL),
         mPort(0),
         mScriptLine(0),
-        mScriptColumn(1),
+        mScriptColumn(0),
         mInnerWindowID(0),
         mPrivateBrowsing(false),
         mIsChromeContext(false),
@@ -1382,7 +1382,7 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
         workerPrivate, webSocketImpl,
         workerPrivate->GlobalScope()->GetClientInfo(), !!aTransportProvider,
         aUrl, protocolArray, nsDependentCString(file.get()), lineno,
-        column.oneOriginValue());
+        column.zeroOriginValue());
     runnable->Dispatch(Canceling, aRv);
     if (NS_WARN_IF(aRv.Failed())) {
       return nullptr;
@@ -1615,7 +1615,7 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
     if (JS::DescribeScriptedCaller(aCx, &file, &lineno, &column)) {
       mScriptFile = file.get();
       mScriptLine = lineno;
-      mScriptColumn = column.oneOriginValue();
+      mScriptColumn = column.zeroOriginValue();
     }
   }
 
@@ -1728,7 +1728,7 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
                         u""_ns,  
                         u""_ns,  
                         0,       
-                        1,       
+                        0,       
                         nsIScriptError::warningFlag,
                         "upgradeInsecureRequest"_ns, mInnerWindowID,
                         mPrivateBrowsing);

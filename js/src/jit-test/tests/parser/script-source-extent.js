@@ -38,7 +38,7 @@ function getScriptSourceExtent(source) {
     
     for (let script of scripts) {
         assertEq(script.startLine, 1);
-        assertEq(script.startColumn, script.sourceStart + 1);
+        assertEq(script.startColumn, script.sourceStart);
     }
 
     
