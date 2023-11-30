@@ -7,6 +7,7 @@
 use crate::applicable_declarations::{
     ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority,
 };
+use crate::computed_value_flags::ComputedValueFlags;
 use crate::context::{CascadeInputs, QuirksMode};
 use crate::custom_properties::{ComputedCustomProperties, CustomPropertiesMap};
 use crate::dom::TElement;
@@ -554,6 +555,9 @@ pub struct Stylist {
     initial_values_for_custom_properties: ComputedCustomProperties,
 
     
+    initial_values_for_custom_properties_flags: ComputedValueFlags,
+
+    
     num_rebuilds: usize,
 }
 
@@ -642,6 +646,7 @@ impl Stylist {
             rule_tree: RuleTree::new(),
             script_custom_properties: Default::default(),
             initial_values_for_custom_properties: Default::default(),
+            initial_values_for_custom_properties_flags: Default::default(),
             num_rebuilds: 0,
         }
     }
@@ -690,10 +695,16 @@ impl Stylist {
     }
 
     
+    pub fn get_custom_property_initial_values_flags(&self) -> ComputedValueFlags {
+        self.initial_values_for_custom_properties_flags
+    }
+
+    
     
     pub fn rebuild_initial_values_for_custom_properties(&mut self) {
         let mut inherited_map = CustomPropertiesMap::default();
         let mut non_inherited_map = CustomPropertiesMap::default();
+        let initial_values_flags;
         {
             let mut seen_names = PrecomputedHashSet::default();
             let mut rule_cache_conditions = RuleCacheConditions::default();
@@ -730,7 +741,9 @@ impl Stylist {
                     }
                 }
             }
+            initial_values_flags = context.builder.flags();
         }
+        self.initial_values_for_custom_properties_flags = initial_values_flags;
         self.initial_values_for_custom_properties = ComputedCustomProperties {
             inherited: if inherited_map.is_empty() {
                 None
