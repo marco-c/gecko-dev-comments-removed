@@ -35,6 +35,18 @@ namespace layers {
 class StackingContextHelper;
 }
 
+
+enum class TableReflowMode : uint8_t {
+  
+  
+  
+  Measuring,
+
+  
+  
+  Final,
+};
+
 class nsDisplayTableItem : public nsPaintedDisplayItem {
  public:
   nsDisplayTableItem(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame)
@@ -334,8 +346,8 @@ class nsTableFrame : public nsContainerFrame {
               nsReflowStatus& aStatus) override;
 
   void ReflowTable(ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
-                   nscoord aAvailBSize, nsIFrame*& aLastChildReflowed,
-                   nsReflowStatus& aStatus);
+                   mozilla::TableReflowMode aReflowMode,
+                   nsIFrame*& aLastChildReflowed, nsReflowStatus& aStatus);
 
   nsFrameList& GetColGroups();
 
