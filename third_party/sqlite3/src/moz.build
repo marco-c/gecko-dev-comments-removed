@@ -19,6 +19,10 @@ else:
     
     FINAL_LIBRARY = 'sqlite'
 
+DIRS += [
+    '../ext'
+]
+
 SOURCES += [
     'sqlite3.c',
 ]
@@ -32,8 +36,7 @@ SOURCES += [
 
 
 
-
-for var in ('SQLITE_SECURE_DELETE', 'SQLITE_THREADSAFE', 'SQLITE_CORE',
+for var in ('SQLITE_SECURE_DELETE', 'SQLITE_THREADSAFE',
             'SQLITE_ENABLE_UNLOCK_NOTIFY', 'SQLITE_ENABLE_DBSTAT_VTAB'):
     DEFINES[var] = 1
 
