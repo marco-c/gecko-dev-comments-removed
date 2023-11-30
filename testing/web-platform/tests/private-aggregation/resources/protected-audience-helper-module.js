@@ -179,22 +179,29 @@ async function runBasicFledgeTestExpectingNoWinner(test, testConfig) {
 
 
 
-async function runReportTest(test, uuid, codeToInsert, expectedNumReports = 0) {
+
+async function runReportTest(test, uuid, codeToInsert,
+                             expectedNumReports = 0, overrides = {}) {
   let generateBid = codeToInsert.generateBid;
   let scoreAd = codeToInsert.scoreAd;
   let reportWin = codeToInsert.reportWin;
   let reportResult = codeToInsert.reportResult;
 
-  let interestGroupOverrides =
-    { biddingLogicURL: createBiddingScriptURL({ generateBid, reportWin }) };
+  let extraInterestGroupOverrides = overrides.joinAdInterestGroup || {}
+  let extraAuctionConfigOverrides = overrides.runAdAuction || {}
+
+  let interestGroupOverrides = {
+    biddingLogicURL: createBiddingScriptURL({ generateBid, reportWin }),
+    ...extraInterestGroupOverrides
+  };
+  let auctionConfigOverrides = {
+    decisionLogicURL: createDecisionScriptURL(
+      uuid, { scoreAd, reportResult }),
+    ...extraAuctionConfigOverrides
+  }
 
   await joinInterestGroup(test, uuid, interestGroupOverrides);
-  await runBasicFledgeAuctionAndNavigate(
-      test, uuid,
-    {
-      decisionLogicURL: createDecisionScriptURL(
-        uuid, { scoreAd, reportResult })
-    });
+  await runBasicFledgeAuctionAndNavigate(test, uuid, auctionConfigOverrides);
 
   if (expectedNumReports) {
     await waitForObservedReports(uuid, expectedNumReports);
