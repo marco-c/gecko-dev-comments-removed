@@ -20,8 +20,6 @@ add_task(async () => {
 
 
 add_task(async function testValidAttrCodes() {
-  let msixCampaignIdStub = sinon.stub(AttributionCode, "msixCampaignId");
-
   let currentCode = null;
   for (let entry of validAttrCodes) {
     currentCode = entry.code;
@@ -38,13 +36,14 @@ add_task(async function testValidAttrCodes() {
       
       
       
-      msixCampaignIdStub.callsFake(async () => decodeURIComponent(currentCode));
+      sinon
+        .stub(AttributionCode, "msixCampaignId")
+        .get(() => decodeURIComponent(currentCode));
     } else {
       await AttributionCode.writeAttributionFile(currentCode);
     }
     AttributionCode._clearCache();
     let result = await AttributionCode.getAttrDataAsync();
-
     Assert.deepEqual(
       result,
       entry.parsed,
@@ -52,18 +51,13 @@ add_task(async function testValidAttrCodes() {
     );
   }
   AttributionCode._clearCache();
-
-  
-  msixCampaignIdStub.restore();
 });
 
 
 
 
 add_task(async function testInvalidAttrCodes() {
-  let msixCampaignIdStub = sinon.stub(AttributionCode, "msixCampaignId");
   let currentCode = null;
-
   for (let code of invalidAttrCodes) {
     currentCode = code;
 
@@ -79,7 +73,9 @@ add_task(async function testInvalidAttrCodes() {
         continue;
       }
 
-      msixCampaignIdStub.callsFake(async () => decodeURIComponent(currentCode));
+      sinon
+        .stub(AttributionCode, "msixCampaignId")
+        .get(() => decodeURIComponent(currentCode));
     } else {
       await AttributionCode.writeAttributionFile(currentCode);
     }
@@ -92,9 +88,6 @@ add_task(async function testInvalidAttrCodes() {
     );
   }
   AttributionCode._clearCache();
-
-  
-  msixCampaignIdStub.restore();
 });
 
 
