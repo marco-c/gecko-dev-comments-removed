@@ -146,6 +146,22 @@ public class VideoFrame implements RefCounted {
         Matrix transformMatrix, int newWidth, int newHeight) {
       throw new UnsupportedOperationException("Not implemented");
     }
+
+    
+
+
+
+    default public int getUnscaledWidth() {
+      return getWidth();
+    }
+
+    
+
+
+
+    default public int getUnscaledHeight() {
+      return getHeight();
+    }
   }
 
   private final Buffer buffer;

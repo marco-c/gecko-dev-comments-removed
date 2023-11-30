@@ -140,18 +140,12 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
         Math.round(unscaledHeight * cropHeight / (float) height), scaleWidth, scaleHeight);
   }
 
-  
-
-
-
+  @Override
   public int getUnscaledWidth() {
     return unscaledWidth;
   }
 
-  
-
-
-
+  @Override
   public int getUnscaledHeight() {
     return unscaledHeight;
   }
