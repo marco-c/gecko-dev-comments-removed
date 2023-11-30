@@ -47,6 +47,7 @@
 #include "nsILoadInfo.h"
 #include "nsRFPService.h"
 #include "nsTObserverArray.h"
+#include "stdint.h"
 
 class nsIThreadInternal;
 
@@ -63,7 +64,11 @@ class RemoteWorkerChild;
 
 
 
-enum WorkerKind { WorkerKindDedicated, WorkerKindShared, WorkerKindService };
+enum WorkerKind : uint8_t {
+  WorkerKindDedicated,
+  WorkerKindShared,
+  WorkerKindService
+};
 
 class ClientInfo;
 class ClientSource;
