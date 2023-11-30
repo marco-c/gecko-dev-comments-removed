@@ -373,6 +373,9 @@ void gfxWindowsPlatform::InitAcceleration() {
 
   DeviceManagerDx::Init();
 
+  
+  MOZ_ASSERT_IF(XRE_IsContentProcess(), GetInitContentDeviceData());
+
   InitializeConfig();
   InitGPUProcessSupport();
   
@@ -1198,7 +1201,7 @@ void gfxWindowsPlatform::InitializeConfig() {
     InitializeANGLEConfig();
     InitializeD2DConfig();
   } else {
-    FetchAndImportContentDeviceData();
+    ImportCachedContentDeviceData();
     InitializeANGLEConfig();
   }
 }

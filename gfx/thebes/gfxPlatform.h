@@ -865,7 +865,7 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
 
 
 
-  void FetchAndImportContentDeviceData();
+  void ImportCachedContentDeviceData();
   virtual void ImportContentDeviceData(
       const mozilla::gfx::ContentDeviceData& aData);
 

@@ -467,8 +467,8 @@ bool gfxPlatform::Initialized() { return !!gPlatform; }
 
 void gfxPlatform::InitChild(const ContentDeviceData& aData) {
   MOZ_ASSERT(XRE_IsContentProcess());
-  MOZ_RELEASE_ASSERT(!gPlatform,
-                     "InitChild() should be called before first GetPlatform()");
+  MOZ_ASSERT(!gPlatform,
+             "InitChild() should be called before first GetPlatform()");
   
   
   gContentDeviceInitData = &aData;
@@ -3869,20 +3869,16 @@ void gfxPlatform::DisableGPUProcess() {
   gfxVars::SetRemoteCanvasEnabled(false);
 }
 
-void gfxPlatform::FetchAndImportContentDeviceData() {
+void gfxPlatform::ImportCachedContentDeviceData() {
   MOZ_ASSERT(XRE_IsContentProcess());
 
-  if (gContentDeviceInitData) {
-    ImportContentDeviceData(*gContentDeviceInitData);
+  
+  if (!gContentDeviceInitData) {
     return;
   }
 
-  mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
-
-  mozilla::gfx::ContentDeviceData data;
-  cc->SendGetGraphicsDeviceInitData(&data);
-
-  ImportContentDeviceData(data);
+  ImportContentDeviceData(*gContentDeviceInitData);
+  gContentDeviceInitData = nullptr;
 }
 
 void gfxPlatform::ImportContentDeviceData(
