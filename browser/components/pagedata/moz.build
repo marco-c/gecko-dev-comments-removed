@@ -5,7 +5,7 @@
 
 
 XPCSHELL_TESTS_MANIFESTS += [
-    "tests/unit/xpcshell.ini",
+    "tests/unit/xpcshell.toml",
 ]
 BROWSER_CHROME_MANIFESTS += [
     "tests/browser/browser.toml",
