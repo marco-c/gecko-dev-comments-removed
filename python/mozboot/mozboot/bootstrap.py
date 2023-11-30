@@ -636,7 +636,18 @@ def update_git_tools(git: Optional[Path], root_state_dir: Path):
     
     
     
-    if (cinnabar_dir / ".git").exists():
+    
+    
+    start_over = cinnabar_dir.exists() and not cinnabar_exe.exists()
+    if cinnabar_exe.exists():
+        try:
+            with cinnabar_exe.open("rb") as fh:
+                start_over = fh.read(2) == b"#!"
+        except Exception:
+            
+            start_over = True
+
+    if start_over:
         
         
         
