@@ -313,6 +313,11 @@ async function setupServiceWorkerNavigationTest() {
   
   
   await pushPref("dom.ipc.processPrelaunch.enabled", false);
+
+  
+  
+  
+  await pushPref("dom.serviceWorkers.idle_timeout", 3000);
 }
 
 async function watchServiceWorkerTargets({

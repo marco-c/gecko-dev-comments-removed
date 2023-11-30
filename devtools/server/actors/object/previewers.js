@@ -415,6 +415,10 @@ const previewers = {
 
   Headers: [
     function(objectActor, grip) {
+      
+      if (isWorker) {
+        return false;
+      }
       const enumEntries = PropertyIterators.enumHeadersEntries(objectActor);
 
       grip.preview = {

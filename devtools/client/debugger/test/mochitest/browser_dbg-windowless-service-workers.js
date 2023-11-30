@@ -13,6 +13,12 @@ add_task(async function () {
   await pushPref("devtools.debugger.threads-visible", true);
   await pushPref("dom.serviceWorkers.enabled", true);
   await pushPref("dom.serviceWorkers.testing.enabled", true);
+
+  
+  
+  
+  await pushPref("dom.serviceWorkers.idle_timeout", 3000);
+
   const dbg = await initDebugger("doc-service-workers.html");
 
   invokeInTab("registerWorker");
