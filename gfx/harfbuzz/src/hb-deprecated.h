@@ -301,6 +301,15 @@ hb_font_get_glyph_shape (hb_font_t *font,
 			 hb_draw_funcs_t *dfuncs, void *draw_data);
 
 
+
+
+
+
+
+
+
+#define HB_AAT_LAYOUT_FEATURE_TYPE_CURISVE_CONNECTION HB_AAT_LAYOUT_FEATURE_TYPE_CURSIVE_CONNECTION
+
 #endif
 
 

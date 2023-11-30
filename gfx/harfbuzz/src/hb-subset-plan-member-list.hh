@@ -71,6 +71,9 @@ HB_SUBSET_PLAN_MEMBER (hb_map_t, gsub_lookups)
 HB_SUBSET_PLAN_MEMBER (hb_map_t, gpos_lookups)
 
 
+HB_SUBSET_PLAN_MEMBER (hb_map_t, used_mark_sets_map)
+
+
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb::unique_ptr<hb_set_t>>), gsub_langsys)
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb::unique_ptr<hb_set_t>>), gpos_langsys)
 
@@ -86,6 +89,15 @@ HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb::shared_ptr<hb_set_t>>), gpo
 
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, const OT::Feature*>), gsub_feature_substitutes_map)
 HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, const OT::Feature*>), gpos_feature_substitutes_map)
+
+
+HB_SUBSET_PLAN_MEMBER (hb_set_t, gsub_old_features)
+HB_SUBSET_PLAN_MEMBER (hb_set_t, gpos_old_features)
+
+
+
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb_pair_t E(<const void*, const void*>)>), gsub_old_feature_idx_tag_map)
+HB_SUBSET_PLAN_MEMBER (hb_hashmap_t E(<unsigned, hb_pair_t E(<const void*, const void*>)>), gpos_old_feature_idx_tag_map)
 
 
 HB_SUBSET_PLAN_MEMBER (hb_map_t, colrv1_layers)

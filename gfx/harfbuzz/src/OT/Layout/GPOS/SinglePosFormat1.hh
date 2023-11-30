@@ -8,7 +8,7 @@ namespace OT {
 namespace Layout {
 namespace GPOS_impl {
 
-struct SinglePosFormat1
+struct SinglePosFormat1 : ValueBase
 {
   protected:
   HBUINT16      format;                 
@@ -28,6 +28,7 @@ struct SinglePosFormat1
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
                   coverage.sanitize (c, this) &&
+		  hb_barrier () &&
                   
 
 
@@ -146,6 +147,30 @@ struct SinglePosFormat1
     hb_set_t intersection;
     (this+coverage).intersect_set (glyphset, intersection);
 
+    unsigned new_format = valueFormat;
+
+    if (c->plan->normalized_coords)
+    {
+      new_format = valueFormat.get_effective_format (values.arrayZ, false, false, this, &c->plan->layout_variation_idx_delta_map);
+    }
+    
+    else if (c->plan->flags & HB_SUBSET_FLAGS_NO_HINTING)
+    {
+      hb_blob_t* blob = hb_face_reference_table (c->plan->source, HB_TAG ('f','v','a','r'));
+      bool has_fvar = (blob != hb_blob_get_empty ());
+      hb_blob_destroy (blob);
+
+      bool strip = !has_fvar;
+      
+
+      if (has_fvar && !c->plan->has_gdef_varstore)
+        strip = true;
+      new_format = valueFormat.get_effective_format (values.arrayZ,
+                                                     strip, 
+                                                     true, 
+                                                     this, nullptr);
+    }
+
     auto it =
     + hb_iter (intersection)
     | hb_map_retains_sorting (glyph_map)
@@ -153,7 +178,7 @@ struct SinglePosFormat1
     ;
 
     bool ret = bool (it);
-    SinglePos_serialize (c->serializer, this, it, &c->plan->layout_variation_idx_delta_map, c->plan->all_axes_pinned);
+    SinglePos_serialize (c->serializer, this, it, &c->plan->layout_variation_idx_delta_map, new_format);
     return_trace (ret);
   }
 };

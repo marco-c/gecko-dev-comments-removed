@@ -168,12 +168,14 @@ _solve (Triple tent, Triple axisLimit, bool negative = false)
 
 
 
-  if (gain > outGain)
+  if (gain >= outGain)
   {
+    
+
     
     float crossing = peak + (1 - gain) * (upper - peak);
 
-    Triple loc{axisDef, peak, crossing};
+    Triple loc{hb_max (lower, axisDef), peak, crossing};
     float scalar = 1.f;
 
     

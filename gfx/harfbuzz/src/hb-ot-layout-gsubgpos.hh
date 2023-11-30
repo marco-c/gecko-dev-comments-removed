@@ -2051,6 +2051,7 @@ struct Rule
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
+		  hb_barrier () &&
 		  c->check_range (inputZ.arrayZ,
 				  inputZ.item_size * (inputCount ? inputCount - 1 : 0) +
 				  LookupRecord::static_size * lookupCount));
@@ -2826,6 +2827,7 @@ struct ContextFormat3
   {
     TRACE_SANITIZE (this);
     if (unlikely (!c->check_struct (this))) return_trace (false);
+    hb_barrier ();
     unsigned int count = glyphCount;
     if (unlikely (!count)) return_trace (false); 
     if (unlikely (!c->check_array (coverageZ.arrayZ, count))) return_trace (false);
@@ -3219,10 +3221,13 @@ struct ChainRule
     TRACE_SANITIZE (this);
     
     if (unlikely (!backtrack.len.sanitize (c))) return_trace (false);
+    hb_barrier ();
     const auto &input = StructAfter<decltype (inputX)> (backtrack);
     if (unlikely (!input.lenP1.sanitize (c))) return_trace (false);
+    hb_barrier ();
     const auto &lookahead = StructAfter<decltype (lookaheadX)> (input);
     if (unlikely (!lookahead.len.sanitize (c))) return_trace (false);
+    hb_barrier ();
     const auto &lookup = StructAfter<decltype (lookupX)> (lookahead);
     return_trace (likely (lookup.sanitize (c)));
   }
@@ -4121,11 +4126,14 @@ struct ChainContextFormat3
   {
     TRACE_SANITIZE (this);
     if (unlikely (!backtrack.sanitize (c, this))) return_trace (false);
+    hb_barrier ();
     const auto &input = StructAfter<decltype (inputX)> (backtrack);
     if (unlikely (!input.sanitize (c, this))) return_trace (false);
+    hb_barrier ();
     if (unlikely (!input.len)) return_trace (false); 
     const auto &lookahead = StructAfter<decltype (lookaheadX)> (input);
     if (unlikely (!lookahead.sanitize (c, this))) return_trace (false);
+    hb_barrier ();
     const auto &lookup = StructAfter<decltype (lookupX)> (lookahead);
     return_trace (likely (lookup.sanitize (c)));
   }
@@ -4209,6 +4217,7 @@ struct ExtensionFormat1
   {
     TRACE_SANITIZE (this);
     return_trace (c->check_struct (this) &&
+		  hb_barrier () &&
 		  extensionLookupType != T::SubTable::Extension);
   }
 
@@ -4473,13 +4482,6 @@ struct GSUBGPOSVersion1_2
         return_trace (false);
 
       
-      
-      
-      
-
-
-
-      
       bool ret = !c->subset_context->plan->all_axes_pinned
                  && out->featureVars.serialize_subset (c->subset_context, featureVars, this, c);
       if (!ret && version.major == 1)
@@ -4513,6 +4515,7 @@ struct GSUBGPOS
   {
     TRACE_SANITIZE (this);
     if (unlikely (!u.version.sanitize (c))) return_trace (false);
+    hb_barrier ();
     switch (u.version.major) {
     case 1: return_trace (u.version1.sanitize<TLookup> (c));
 #ifndef HB_NO_BEYOND_64K
@@ -4638,11 +4641,11 @@ struct GSUBGPOS
   }
 
   void feature_variation_collect_lookups (const hb_set_t *feature_indexes,
-					  const hb_hashmap_t<unsigned, const Feature*> *feature_substitutes_map,
+					  const hb_hashmap_t<unsigned, hb::shared_ptr<hb_set_t>> *feature_record_cond_idx_map,
 					  hb_set_t       *lookup_indexes ) const
   {
 #ifndef HB_NO_VAR
-    get_feature_variations ().collect_lookups (feature_indexes, feature_substitutes_map, lookup_indexes);
+    get_feature_variations ().collect_lookups (feature_indexes, feature_record_cond_idx_map, lookup_indexes);
 #endif
   }
 

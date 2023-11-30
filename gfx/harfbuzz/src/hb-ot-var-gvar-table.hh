@@ -296,7 +296,9 @@ struct gvar
   bool sanitize_shallow (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
-    return_trace (c->check_struct (this) && (version.major == 1) &&
+    return_trace (c->check_struct (this) &&
+		  hb_barrier () &&
+		  (version.major == 1) &&
 		  sharedTuples.sanitize (c, this, axisCount * sharedTupleCount) &&
 		  (is_long_offset () ?
 		     c->check_array (get_long_offset_array (), c->get_num_glyphs () + 1) :
@@ -426,7 +428,10 @@ struct gvar
       subset_data_size += get_glyph_var_data_bytes (c->source_blob, glyph_count, old_gid).length;
     }
 
-    bool long_offset = subset_data_size & ~0xFFFFu;
+    bool long_offset = (subset_data_size & ~0xFFFFu);
+ #ifdef HB_EXPERIMENTAL_API
+    long_offset = long_offset || (c->plan->flags & HB_SUBSET_FLAGS_IFTB_REQUIREMENTS);
+#endif
     out->flags = long_offset ? 1 : 0;
 
     HBUINT8 *subset_offsets = c->serializer->allocate_size<HBUINT8> ((long_offset ? 4 : 2) * (num_glyphs + 1), false);
@@ -443,6 +448,8 @@ struct gvar
       out->sharedTuples = (char *) tuples - (char *) out;
       hb_memcpy (tuples, this+sharedTuples, shared_tuple_size);
     }
+
+    
 
     char *subset_data = c->serializer->allocate_size<char> (subset_data_size, false);
     if (!subset_data) return_trace (false);
