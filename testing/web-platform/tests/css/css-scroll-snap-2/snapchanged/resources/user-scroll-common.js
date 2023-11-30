@@ -4,7 +4,7 @@
 
 
 
-function snapchanged_touch_scroll_helper(start_pos, end_pos) {
+function snap_event_touch_scroll_helper(start_pos, end_pos) {
   return new test_driver.Actions()
     .addPointer("TestPointer", "touch")
     .pointerMove(start_pos.x, start_pos.y)
@@ -21,7 +21,7 @@ function snapchanged_touch_scroll_helper(start_pos, end_pos) {
 
 
 const vertical_offset_into_scrollbar = 30;
-function snapchanged_scrollbar_drag_helper(scroller, scrollbar_width, drag_amt) {
+function snap_event_scrollbar_drag_helper(scroller, scrollbar_width, drag_amt) {
   let x, y, bounds;
   if (scroller == document.scrollingElement) {
     bounds = document.documentElement.getBoundingClientRect();
@@ -45,18 +45,22 @@ function snapchanged_scrollbar_drag_helper(scroller, scrollbar_width, drag_amt) 
 
 
 
-async function test_no_snapchanged(test, scroller, delta) {
+async function test_no_snap_event(test, scroller, delta, event_type) {
   const listening_element = scroller == document.scrollingElement
       ? document : scroller;
-  checkSnapchangedSupport(test);
+  checkSnapEventSupport(event_type);
   await waitForScrollReset(test, scroller);
   await waitForCompositorCommit();
-  let snapchanged_promise = waitForSnapChangedEvent(listening_element);
+  let snap_event_promise = waitForSnapEvent(listening_element, event_type);
   
   
   await new test_driver.Actions().scroll(0, 0, delta, delta).send();
-  let evt = await snapchanged_promise;
-  assert_equals(evt, null, "no snapchanged since scroller is back to top");
+  let evt = await snap_event_promise;
+  assert_equals(evt, null, "no snap event since scroller is back to top");
   assert_equals(scroller.scrollTop, 0, "scroller snaps back to the top");
   assert_equals(scroller.scrollLeft, 0, "scroller snaps back to the left");
+}
+
+async function test_no_snapchanged(t, scroller, delta) {
+  await test_no_snap_event(t, scroller, delta, "snapchanged");
 }
