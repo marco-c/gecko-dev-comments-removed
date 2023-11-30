@@ -4,17 +4,18 @@
 
 const path = require("path");
 const webpack = require("webpack");
-const { ResourceUriPlugin } = require("./tools/resourceUriPlugin");
+const { ResourceUriPlugin } = require("../newtab/tools/resourceUriPlugin");
 
 const PATHS = {
   
-  testEntryFile: path.resolve(__dirname, "test/unit/unit-entry.js"),
+  testEntryFile: path.resolve(__dirname, "./tests/unit/unit-entry.js"),
 
   
-  testFilesPattern: "test/unit/**/*.js",
+  testFilesPattern: "./tests/unit/unit-entry.js",
 
   
   moduleResolveDirectory: __dirname,
+  newtabResolveDirectory: "../newtab",
 
   
   resourcePathRegEx: /^resource:\/\/activity-stream\//,
@@ -76,141 +77,45 @@ module.exports = function (config) {
           functions: 100,
           branches: 66,
           overrides: {
-            "lib/AboutPreferences.jsm": {
-              statements: 98,
-              lines: 98,
-              functions: 94,
-              branches: 66,
-            },
-            "lib/ASRouter.jsm": {
-              statements: 75,
-              lines: 75,
-              functions: 64,
-              branches: 66,
-            },
-            "lib/ASRouterDefaultConfig.jsm": {
+            "modules/*.jsm": {
               statements: 0,
               lines: 0,
               functions: 0,
               branches: 0,
             },
-            "content-src/asrouter/asrouter-utils.js": {
-              statements: 66,
-              lines: 66,
-              functions: 78,
-              branches: 63,
-            },
-            "lib/TelemetryFeed.jsm": {
-              statements: 99,
-              lines: 99,
-              functions: 100,
-              branches: 95,
-            },
-            "lib/ASRouterParentProcessMessageHandler.jsm": {
-              statements: 98,
-              lines: 98,
-              functions: 100,
-              branches: 88,
-            },
-            "content-src/lib/init-store.js": {
-              statements: 98,
-              lines: 98,
-              functions: 100,
-              branches: 100,
-            },
-            "lib/ActivityStreamStorage.jsm": {
-              statements: 100,
-              lines: 100,
-              functions: 100,
-              branches: 83,
-            },
-            "lib/PlacesFeed.jsm": {
-              statements: 98,
-              lines: 98,
-              functions: 100,
-              branches: 84,
-            },
-            "lib/UTEventReporting.sys.mjs": {
-              statements: 100,
-              lines: 100,
-              functions: 100,
-              branches: 75,
-            },
-            "lib/Screenshots.jsm": {
-              statements: 94,
-              lines: 94,
-              functions: 75,
-              branches: 84,
-            },
-            
-
-
-            "lib/Store.jsm": {
-              statements: 8,
-              lines: 8,
-              functions: 0,
+            "content-src/lib/aboutwelcome-utils.js": {
+              statements: 50,
+              lines: 50,
+              functions: 50,
               branches: 0,
             },
-            
-
-
-            "lib/TopSitesFeed.jsm": {
-              statements: 9,
-              lines: 9,
-              functions: 5,
-              branches: 0,
-            },
-            
-
-
-
-            "lib/TopStoriesFeed.jsm": {
+            "content-src/components/LanguageSwitcher.jsx": {
+              
               statements: 0,
               lines: 0,
               functions: 0,
               branches: 0,
             },
-            "lib/*.jsm": {
-              statements: 100,
-              lines: 100,
-              functions: 99,
-              branches: 84,
+            "content-src/components/EmbeddedMigrationWizard.jsx": {
+              
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
             },
-            "content-src/components/DiscoveryStreamComponents/**/*.jsx": {
-              statements: 90.48,
-              lines: 90.48,
-              functions: 85.71,
-              branches: 68.75,
+            "content-src/components/AddonsPicker.jsx": {
+              
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
             },
-            "content-src/asrouter/**/*.jsx": {
-              statements: 57,
-              lines: 58,
-              functions: 60,
+            "content-src/**/*.jsx": {
+              statements: 62,
+              lines: 60,
+              functions: 50,
               branches: 50,
-            },
-            "content-src/components/ASRouterAdmin/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            "content-src/components/CustomizeMenu/**/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            "content-src/components/CustomizeMenu/*.jsx": {
-              statements: 0,
-              lines: 0,
-              functions: 0,
-              branches: 0,
-            },
-            "content-src/lib/link-menu-options.js": {
-              statements: 96,
-              lines: 96,
-              functions: 96,
-              branches: 70,
             },
             "content-src/components/**/*.jsx": {
               statements: 51.1,
@@ -229,15 +134,24 @@ module.exports = function (config) {
       devtool: "inline-source-map",
       
       resolveLoader: {
-        alias: { inject: path.join(__dirname, "loaders/inject-loader") },
+        alias: {
+          inject: path.join(__dirname, "../newtab/loaders/inject-loader"),
+        },
       },
       
       resolve: {
         extensions: [".js", ".jsx"],
-        modules: [PATHS.moduleResolveDirectory, "node_modules"],
+        modules: [
+          PATHS.moduleResolveDirectory,
+          "node_modules",
+          PATHS.newtabResolveDirectory,
+        ],
         fallback: {
           stream: require.resolve("stream-browserify"),
           buffer: require.resolve("buffer"),
+        },
+        alias: {
+          newtab: path.join(__dirname, "../newtab"),
         },
       },
       plugins: [
@@ -271,7 +185,7 @@ module.exports = function (config) {
                   plugins: [
                     
                     [
-                      "./tools/babel-jsm-to-commonjs.js",
+                      "../newtab/tools/babel-jsm-to-commonjs.js",
                       {
                         basePath: PATHS.resourcePathRegEx,
                         removeOtherImports: true,
@@ -288,7 +202,7 @@ module.exports = function (config) {
           },
           {
             test: /\.js$/,
-            exclude: [/node_modules\/(?!@fluent\/).*/, /test/],
+            exclude: [/node_modules\/(?!@fluent\/).*/, /tests/],
             loader: "babel-loader",
             options: {
               
@@ -317,20 +231,8 @@ module.exports = function (config) {
             test: /\.js[mx]?$/,
             loader: "@jsdevtools/coverage-istanbul-loader",
             options: { esModules: true },
-            include: [
-              path.resolve("content-src"),
-              path.resolve("lib"),
-              path.resolve("common"),
-            ],
-            exclude: [
-              path.resolve("test"),
-              path.resolve("vendor"),
-              path.resolve("lib/ASRouterTargeting.jsm"),
-              path.resolve("lib/ASRouterTriggerListeners.jsm"),
-              path.resolve("lib/OnboardingMessageProvider.jsm"),
-              path.resolve("lib/CFRMessageProvider.sys.mjs"),
-              path.resolve("lib/CFRPageActions.jsm"),
-            ],
+            include: [path.resolve("content-src"), path.resolve("modules")],
+            exclude: [path.resolve("tests"), path.resolve("../newtab")],
           },
         ],
       },
