@@ -1617,6 +1617,9 @@ class WorkerPrivate final
   bool mShutdownTasksRun MOZ_GUARDED_BY(mMutex) = false;
 
   bool mCCFlagSaysEligible MOZ_GUARDED_BY(mMutex){true};
+
+  
+  bool mWorkerLoopIsIdle MOZ_GUARDED_BY(mMutex){false};
 };
 
 class AutoSyncLoopHolder {
