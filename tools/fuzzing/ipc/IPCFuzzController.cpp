@@ -587,7 +587,12 @@ bool IPCFuzzController::MakeTargetDecision(
   } else if (isPreserveHeader) {
     
     
-    ProtocolId wantedProtocolId = static_cast<ProtocolId>(*type >> 16);
+    uint16_t maybeProtocolId = *type >> 16;
+    if (maybeProtocolId >= IPCMessageStart::LastMsgIndex) {
+      
+      return false;
+    }
+    ProtocolId wantedProtocolId = static_cast<ProtocolId>(maybeProtocolId);
     std::vector<uint32_t> allowedIndices;
     for (uint32_t i = 0; i < actors.size(); ++i) {
       if (actors[i].second == wantedProtocolId) {
