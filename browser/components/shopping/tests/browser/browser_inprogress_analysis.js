@@ -65,6 +65,7 @@ add_task(async function test_in_progress_analysis_unanalyzed() {
 
 
 
+
 add_task(async function test_in_progress_analysis_stale() {
   await BrowserTestUtils.withNewTab(
     {
@@ -106,16 +107,42 @@ add_task(async function test_in_progress_analysis_stale() {
           
           shoppingContainer.isAnalysisInProgress = true;
           
+          shoppingContainer.analysisProgress = 50;
+          
           
           shoppingContainer.data = Cu.cloneInto(mockData, content);
 
           await messageBarVisiblePromise;
           await shoppingContainer.updateComplete;
 
+          let shoppingMessageBarEl = shoppingContainer.shoppingMessageBarEl;
           is(
-            shoppingContainer.shoppingMessageBarEl?.getAttribute("type"),
+            shoppingMessageBarEl?.getAttribute("type"),
             "reanalysis-in-progress",
             "shopping-message-bar type should be correct"
+          );
+          is(
+            shoppingMessageBarEl?.getAttribute("progress"),
+            "50",
+            "shopping-message-bar should have progress"
+          );
+
+          let messageBarEl =
+            shoppingMessageBarEl?.shadowRoot.querySelector("message-bar");
+          is(
+            messageBarEl?.getAttribute("style"),
+            "--analysis-progress-pcent: 50%;",
+            "message-bar should have progress set as a CSS variable"
+          );
+
+          let messageBarContainerEl =
+            shoppingMessageBarEl?.shadowRoot.querySelector(
+              "#message-bar-container"
+            );
+          is(
+            messageBarContainerEl.querySelector("#header")?.dataset.l10nArgs,
+            `{"percentage":50}`,
+            "message-bar-container header should have progress set as a l10n arg"
           );
         }
       );
