@@ -463,7 +463,8 @@ class StyleSheetsManager extends EventEmitter {
     const importedStyleSheets = [];
 
     for (const rule of await this._getCSSRules(styleSheet)) {
-      if (rule.type == CSSRule.IMPORT_RULE) {
+      const ruleClassName = ChromeUtils.getClassName(rule);
+      if (ruleClassName == "CSSImportRule") {
         
         
         
@@ -485,7 +486,7 @@ class StyleSheetsManager extends EventEmitter {
           rule.styleSheet
         );
         importedStyleSheets.push(...children);
-      } else if (rule.type != CSSRule.CHARSET_RULE) {
+      } else if (ruleClassName != "CSSCharsetRule") {
         
         break;
       }
