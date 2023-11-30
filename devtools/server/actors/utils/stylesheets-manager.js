@@ -509,7 +509,6 @@ class StyleSheetsManager extends EventEmitter {
 
 
 
-
   getStyleSheetRuleCountAndAtRules(styleSheet) {
     const resourceId = this._findStyleSheetResourceId(styleSheet);
     if (!resourceId) {
@@ -555,7 +554,6 @@ class StyleSheetsManager extends EventEmitter {
 
         atRules.push({
           type: "media",
-          mediaText: rule.media.mediaText,
           conditionText: rule.conditionText,
           matches,
           line: InspectorUtils.getRelativeRuleLine(rule),
