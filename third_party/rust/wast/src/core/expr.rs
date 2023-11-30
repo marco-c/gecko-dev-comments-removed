@@ -102,14 +102,14 @@ enum Level<'a> {
 enum If<'a> {
     
     
+    
+    
     Clause(Instruction<'a>),
     
-    Then(Instruction<'a>),
+    
+    Then,
     
     Else,
-    
-    
-    End,
 }
 
 
@@ -216,9 +216,6 @@ impl<'a> ExpressionParser<'a> {
                     
                     
                     Level::If(If::Clause(_)) => {
-                        return Err(parser.error("previous `if` had no clause"));
-                    }
-                    Level::If(If::Then(_)) => {
                         return Err(parser.error("previous `if` had no `then`"));
                     }
                     Level::If(_) => {
@@ -295,13 +292,6 @@ impl<'a> ExpressionParser<'a> {
     
     
     
-    
-    
-    
-    
-    
-    
-    
     fn handle_if_lparen(&mut self, parser: Parser<'a>) -> Result<bool> {
         
         let i = match self.stack.last_mut() {
@@ -309,53 +299,37 @@ impl<'a> ExpressionParser<'a> {
             _ => return Ok(false),
         };
 
-        
-        
-        
-        if let If::Clause(if_instr) = i {
-            let instr = mem::replace(if_instr, Instruction::End(None));
-            *i = If::Then(instr);
-            if !parser.peek::<kw::then>()? {
-                return Ok(false);
-            }
-        }
-
-        
-        
-        
-        
-        
-        
-        
-        if let If::Then(if_instr) = i {
-            let instr = mem::replace(if_instr, Instruction::End(None));
-            self.instrs.push(instr);
-            *i = If::Else;
-            if parser.parse::<Option<kw::then>>()?.is_some() {
-                self.stack.push(Level::IfArm);
-                return Ok(true);
-            }
-            return Ok(false);
-        }
-
-        
-        if let If::Else = i {
-            self.instrs.push(Instruction::Else(None));
-            if parser.parse::<Option<kw::r#else>>()?.is_some() {
-                if parser.is_empty() {
-                    self.instrs.pop();
+        match i {
+            
+            
+            
+            
+            If::Clause(if_instr) => {
+                if !parser.peek::<kw::then>()? {
+                    return Ok(false);
                 }
+                parser.parse::<kw::then>()?;
+                let instr = mem::replace(if_instr, Instruction::End(None));
+                self.instrs.push(instr);
+                *i = If::Then;
                 self.stack.push(Level::IfArm);
-                return Ok(true);
+                Ok(true)
             }
-            *i = If::End;
-            return Ok(false);
-        }
 
-        
-        
-        
-        Err(parser.error("unexpected token: too many payloads inside of `(if)`"))
+            
+            
+            If::Then => {
+                parser.parse::<kw::r#else>()?;
+                self.instrs.push(Instruction::Else(None));
+                *i = If::Else;
+                self.stack.push(Level::IfArm);
+                Ok(true)
+            }
+
+            
+            
+            If::Else => Err(parser.error("unexpected token: too many payloads inside of `(if)`")),
+        }
     }
 
     
@@ -675,8 +649,8 @@ instructions! {
         BrOnCastFail(Box<BrOnCastFail<'a>>) : [] : "br_on_cast_fail",
 
         // gc proposal extern/any coercion operations
-        ExternInternalize : [0xfb, 0x1a] : "extern.internalize",
-        ExternExternalize : [0xfb, 0x1b] : "extern.externalize",
+        AnyConvertExtern : [0xfb, 0x1a] : "any.convert_extern",
+        ExternConvertAny : [0xfb, 0x1b] : "extern.convert_any",
 
         I32Const(i32) : [0x41] : "i32.const",
         I64Const(i64) : [0x42] : "i64.const",
@@ -1175,6 +1149,10 @@ instructions! {
         Delegate(Index<'a>) : [0x18] : "delegate",
         CatchAll : [0x19] : "catch_all",
 
+        // Exception handling proposal extension for 'exnref'
+        ThrowRef : [0x0a] : "throw_ref",
+        TryTable(TryTable<'a>) : [0x1f] : "try_table",
+
         // Relaxed SIMD proposal
         I8x16RelaxedSwizzle : [0xfd, 0x100]: "i8x16.relaxed_swizzle",
         I32x4RelaxedTruncF32x4S : [0xfd, 0x101]: "i32x4.relaxed_trunc_f32x4_s",
@@ -1243,6 +1221,79 @@ impl<'a> Parse<'a> for BlockType<'a> {
                 .into(),
         })
     }
+}
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub struct TryTable<'a> {
+    pub block: Box<BlockType<'a>>,
+    pub catches: Vec<TryTableCatch<'a>>,
+}
+
+impl<'a> Parse<'a> for TryTable<'a> {
+    fn parse(parser: Parser<'a>) -> Result<Self> {
+        let block = parser.parse()?;
+
+        let mut catches = Vec::new();
+        while parser.peek2::<kw::catch>()?
+            || parser.peek2::<kw::catch_ref>()?
+            || parser.peek2::<kw::catch_all>()?
+            || parser.peek2::<kw::catch_all_ref>()?
+        {
+            catches.push(parser.parens(|p| {
+                let kind = if parser.peek::<kw::catch_ref>()? {
+                    p.parse::<kw::catch_ref>()?;
+                    TryTableCatchKind::CatchRef(p.parse()?)
+                } else if parser.peek::<kw::catch>()? {
+                    p.parse::<kw::catch>()?;
+                    TryTableCatchKind::Catch(p.parse()?)
+                } else if parser.peek::<kw::catch_all>()? {
+                    p.parse::<kw::catch_all>()?;
+                    TryTableCatchKind::CatchAll
+                } else {
+                    p.parse::<kw::catch_all_ref>()?;
+                    TryTableCatchKind::CatchAllRef
+                };
+
+                Ok(TryTableCatch {
+                    kind,
+                    label: p.parse()?,
+                })
+            })?);
+        }
+
+        Ok(TryTable { block, catches })
+    }
+}
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub enum TryTableCatchKind<'a> {
+    
+    Catch(Index<'a>),
+    
+    CatchRef(Index<'a>),
+    
+    CatchAll,
+    
+    CatchAllRef,
+}
+
+impl<'a> TryTableCatchKind<'a> {
+    #[allow(missing_docs)]
+    pub fn tag_index_mut(&mut self) -> Option<&mut Index<'a>> {
+        match self {
+            TryTableCatchKind::Catch(tag) | TryTableCatchKind::CatchRef(tag) => Some(tag),
+            TryTableCatchKind::CatchAll | TryTableCatchKind::CatchAllRef => None,
+        }
+    }
+}
+
+#[derive(Debug)]
+#[allow(missing_docs)]
+pub struct TryTableCatch<'a> {
+    pub kind: TryTableCatchKind<'a>,
+    pub label: Index<'a>,
 }
 
 

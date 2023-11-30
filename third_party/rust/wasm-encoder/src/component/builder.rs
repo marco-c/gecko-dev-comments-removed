@@ -373,6 +373,12 @@ impl ComponentBuilder {
     }
 
     
+    pub fn custom_section(&mut self, section: &CustomSection<'_>) {
+        self.flush();
+        self.component.section(section);
+    }
+
+    
     pub fn raw_custom_section(&mut self, section: &[u8]) {
         self.flush();
         self.component.section(&RawCustomSection(section));
