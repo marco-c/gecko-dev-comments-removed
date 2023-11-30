@@ -18,6 +18,7 @@
 
 #include "api/field_trials_view.h"
 #include "api/sequence_checker.h"
+#include "api/video/encoded_frame.h"
 #include "api/video_codecs/video_decoder.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/timing/timing.h"
@@ -102,7 +103,10 @@ class VCMGenericDecoder {
 
 
 
+  
+  
   int32_t Decode(const VCMEncodedFrame& inputFrame, Timestamp now);
+  int32_t Decode(const EncodedFrame& inputFrame, Timestamp now);
 
   
 
@@ -114,6 +118,10 @@ class VCMGenericDecoder {
   }
 
  private:
+  int32_t Decode(const EncodedImage& frame,
+                 Timestamp now,
+                 int64_t render_time_ms,
+                 int64_t missing_frame);
   VCMDecodedFrameCallback* _callback = nullptr;
   VideoDecoder* const decoder_;
   VideoContentType _last_keyframe_content_type;
