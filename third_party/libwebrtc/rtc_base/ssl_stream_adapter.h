@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/ssl_certificate.h"
@@ -118,7 +119,8 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   
   static std::unique_ptr<SSLStreamAdapter> Create(
-      std::unique_ptr<StreamInterface> stream);
+      std::unique_ptr<StreamInterface> stream,
+      absl::AnyInvocable<void(SSLHandshakeError)> handshake_error = nullptr);
 
   SSLStreamAdapter() = default;
   ~SSLStreamAdapter() override = default;
@@ -261,6 +263,7 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   bool GetClientAuthEnabled() const { return client_auth_enabled_; }
 
+  
   sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
