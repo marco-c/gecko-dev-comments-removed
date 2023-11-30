@@ -2,9 +2,7 @@
 
 
 
-const CopyWebpackPlugin = require("copy-webpack-plugin");
 const webpack = require("webpack");
-const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 const mozillaCentralMappings = require("./configs/mozilla-central-mappings");
 const path = require("path");
@@ -44,7 +42,6 @@ module.exports = {
       raw: true,
     }),
     new ObjectRestSpreadPlugin(),
-    new ExtractTextPlugin("[name].css"),
     new webpack.DefinePlugin({
       "process.env": {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV || "production"),
@@ -64,7 +61,7 @@ module.exports = {
           const excludedPaths = ["fs", "node_modules"];
           const excludedRe = new RegExp(`(${excludedPaths.join("|")})`);
           const excluded = !!request.match(excludedRe);
-          const included = ["devtools-", "react-aria-components"];
+          const included = ["devtools-"];
 
           const reincludeRe = new RegExp(
             `node_modules(\\/|\\\\)${included.join("|")}`
@@ -79,22 +76,6 @@ module.exports = {
       {
         test: /\.properties$/,
         loader: "raw-loader",
-      },
-      
-      {
-        test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          filename: "*.css",
-          use: [
-            {
-              loader: "css-loader",
-              options: {
-                importLoaders: 1,
-                url: false,
-              },
-            },
-          ],
-        }),
       },
     ],
   },

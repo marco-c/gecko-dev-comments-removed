@@ -15,7 +15,6 @@
 
 
 import * as fuzzaldrinPlus from "fuzzaldrin-plus";
-import * as reactAriaComponentsTabs from "react-aria-components/src/tabs";
 
 
 
@@ -23,5 +22,4 @@ import * as reactAriaComponentsTabs from "react-aria-components/src/tabs";
 
 export const vendored = {
   "fuzzaldrin-plus": fuzzaldrinPlus,
-  "react-aria-components/src/tabs": reactAriaComponentsTabs,
 };
