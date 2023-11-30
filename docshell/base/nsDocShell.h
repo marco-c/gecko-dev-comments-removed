@@ -567,7 +567,7 @@ class nsDocShell final : public nsDocLoader,
   
   
 
-  nsresult EnsureContentViewer();
+  nsresult EnsureDocumentViewer();
 
   
   
