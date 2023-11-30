@@ -101,6 +101,8 @@ exports.getCSSAtRuleTypeName = function (cssRule) {
 
 
 exports.l10n = name => styleInspectorL10N.getStr(name);
+exports.l10nFormatStr = (name, ...args) =>
+  styleInspectorL10N.getFormatStr(name, ...args);
 
 
 
