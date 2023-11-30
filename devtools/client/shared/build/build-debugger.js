@@ -32,19 +32,8 @@ function isRequire(t, node) {
   return node && t.isCallExpression(node) && node.callee.name == "require";
 }
 
-
-
-const VENDORS = [
-  "classnames",
-  "devtools-environment",
-  "fuzzaldrin-plus",
-  "react-aria-components/src/tabs",
-  "Svg",
-];
-
 function shouldLazyLoad(value) {
   return (
-    !value.includes("vendors") &&
     !value.includes("codemirror/") &&
     !value.endsWith(".properties") &&
     !value.startsWith("devtools/") &&
@@ -83,33 +72,6 @@ function transformMC({ types: t }) {
         
         if (Object.keys(mappings).includes(value)) {
           path.replaceWith(t.stringLiteral(mappings[value]));
-          return;
-        }
-
-        
-        
-        
-        const isVendored = VENDORS.some(vendored => value.endsWith(vendored));
-        if (isVendored) {
-          
-          
-          if (value.endsWith("/Svg")) {
-            value = "Svg";
-          }
-
-          
-          path.replaceWith(
-            t.stringLiteral("devtools/client/debugger/dist/vendors")
-          );
-
-          
-          path.parentPath.replaceWith(
-            t.memberExpression(
-              t.memberExpression(path.parent, t.identifier("vendored")),
-              t.stringLiteral(value),
-              true
-            )
-          );
           return;
         }
 
@@ -189,6 +151,6 @@ module.exports = function (filePath) {
     "proposal-optional-chaining",
     "proposal-class-properties",
     "transform-modules-commonjs",
-    ["transform-mc", { mappings, vendors: VENDORS, filePath }],
+    ["transform-mc", { mappings, filePath }],
   ];
 };
