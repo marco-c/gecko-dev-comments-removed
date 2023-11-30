@@ -84,6 +84,11 @@ class WorkerThread final : public nsThread {
 
   uint32_t RecursionDepth(const WorkerThreadFriendKey& aKey) const;
 
+  
+  
+  
+  NS_IMETHOD HasPendingEvents(bool* aHasPendingEvents) override;
+
   NS_INLINE_DECL_REFCOUNTING_INHERITED(WorkerThread, nsThread)
 
  private:
