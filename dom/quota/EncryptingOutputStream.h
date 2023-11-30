@@ -24,6 +24,7 @@
 #include "nscore.h"
 
 class nsIInputStream;
+class nsIRandomGenerator;
 
 namespace mozilla::dom::quota {
 class EncryptingOutputStreamBase : public nsIOutputStream {
@@ -82,6 +83,8 @@ class EncryptingOutputStream final : public EncryptingOutputStreamBase {
   
   
   nsTArray<uint8_t> mBuffer;
+
+  nsCOMPtr<nsIRandomGenerator> mRandomGenerator;
 
   
   size_t mNextByte = 0;
