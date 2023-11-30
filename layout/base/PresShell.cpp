@@ -3316,6 +3316,13 @@ static bool ComputeNeedToScroll(WhenToScroll aWhenToScroll, nscoord aLineSize,
       
       return true;
     case WhenToScroll::IfNotVisible:
+      if (aLineSize > (aRectMax - aRectMin)) {
+        
+        
+        
+        aLineSize = 0;
+      }
+
       
       return aRectMax - aLineSize <= aViewMin ||
              aRectMin + aLineSize >= aViewMax;
