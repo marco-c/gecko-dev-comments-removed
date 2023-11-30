@@ -3087,6 +3087,20 @@ public class GeckoSession {
   }
 
   
+
+
+
+
+
+
+  @AnyThread
+  public @NonNull GeckoResult<String> reportBackInStock(@NonNull final String url) {
+    final GeckoBundle bundle = new GeckoBundle(1);
+    bundle.putString("url", url);
+    return mEventDispatcher.queryString("GeckoView:ReportBackInStock", bundle);
+  }
+
+  
   private GeckoDisplay mDisplay;
 
    interface Owner {
