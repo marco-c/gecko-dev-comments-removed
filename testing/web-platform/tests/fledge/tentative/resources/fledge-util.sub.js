@@ -265,9 +265,6 @@ async function leaveInterestGroup(interestGroupOverrides = {}) {
 }
 
 
-function runAdAuctionRejected() { }
-
-
 
 
 
