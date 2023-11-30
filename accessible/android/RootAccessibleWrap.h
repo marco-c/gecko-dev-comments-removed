@@ -14,22 +14,7 @@ class PresShell;
 
 namespace a11y {
 
-
-
-
-
-class RootAccessibleWrap : public RootAccessible {
- public:
-  RootAccessibleWrap(dom::Document* aDocument, PresShell* aPresShell);
-  virtual ~RootAccessibleWrap();
-
-  
-  NS_DECL_NSIDOMEVENTLISTENER
-
- protected:
-  virtual nsresult AddEventListeners() override;
-  virtual nsresult RemoveEventListeners() override;
-};
+using RootAccessibleWrap = RootAccessible;
 
 }  
 }  
