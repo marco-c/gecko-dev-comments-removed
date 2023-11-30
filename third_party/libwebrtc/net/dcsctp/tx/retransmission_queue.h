@@ -113,6 +113,9 @@ class RetransmissionQueue {
   
   size_t rwnd() const { return rwnd_; }
 
+  size_t rtx_packets_count() const { return rtx_packets_count_; }
+  uint64_t rtx_bytes_count() const { return rtx_bytes_count_; }
+
   
   size_t outstanding_bytes() const {
     return outstanding_data_.outstanding_bytes();
@@ -241,6 +244,11 @@ class RetransmissionQueue {
   size_t ssthresh_;
   
   size_t partial_bytes_acked_;
+
+  
+  size_t rtx_packets_count_ = 0;
+  uint64_t rtx_bytes_count_ = 0;
+
   
   
   absl::optional<UnwrappedTSN> fast_recovery_exit_tsn_ = absl::nullopt;

@@ -213,6 +213,16 @@ struct Metrics {
 
   
   
+  
+  
+  size_t rtx_packets_count = 0;
+
+  
+  
+  uint64_t rtx_bytes_count = 0;
+
+  
+  
   size_t cwnd_bytes = 0;
 
   
@@ -582,6 +592,8 @@ class DcSctpSocketInterface {
   virtual void SetBufferedAmountLowThreshold(StreamID stream_id,
                                              size_t bytes) = 0;
 
+  
+  
   
   
   virtual absl::optional<Metrics> GetMetrics() const = 0;
