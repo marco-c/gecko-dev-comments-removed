@@ -4,9 +4,16 @@
 
 
 #include "nsISupports.idl"
-interface nsIURI;
 
-[scriptable, uuid(5769F08D-0303-4E38-8FE6-86B5473022F6)]
+interface nsIArray;
+
+[scriptable, function, uuid(5131a62a-e99f-4631-9138-751f8aad1ae4)]
+interface nsIJumpListCommittedCallback : nsISupports
+{
+  void done(in boolean result);
+};
+
+[scriptable, uuid(1FE6A9CD-2B18-4dd5-A176-C2B32FA4F683)]
 interface nsIJumpListBuilder : nsISupports
 {
   
@@ -25,7 +32,20 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
-  AString obtainAndCacheFavicon(in nsIURI faviconURL);
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
 
   
 
@@ -37,8 +57,61 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
+  const short JUMPLIST_CATEGORY_TASKS = 0;
+
+  
+
+
+
+
+
+
+
+  const short JUMPLIST_CATEGORY_RECENT       = 1;
+  const short JUMPLIST_CATEGORY_FREQUENT     = 2;
+
+  
+
+
+
+
+
+  const short JUMPLIST_CATEGORY_CUSTOMLIST   = 3;
+
+  
+
+
+
+  readonly attribute short available;
+
+  
+
+
+
+
+
+
+  
+
+
+  readonly attribute boolean isListCommitted;
+
+  
+
+
+  readonly attribute short maxListItems;
+
+  
+
+
+
+
+
+
+
+
   [implicit_jscontext]
-  Promise isAvailable();
+  Promise initListBuild();
 
   
 
@@ -58,11 +131,21 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
+  boolean addListToBuild(in short aCatType, [optional] in nsIArray items, [optional] in AString catName);
+
+  
+
+
+  void abortListBuild();
+
+  
 
 
 
-  [implicit_jscontext]
-  Promise checkForRemovals();
+
+
+
+  void commitListBuild([optional] in nsIJumpListCommittedCallback callback);
 
   
 
@@ -72,48 +155,7 @@ interface nsIJumpListBuilder : nsISupports
 
 
 
+  boolean deleteActiveList();
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise populateJumpList(
-    in Array<jsval> aTaskDescriptions,
-    in AString aCustomTitle,
-    in Array<jsval> aCustomDescriptions
-  );
-
-  
-
-
-
-
-
-
-
-
-  [implicit_jscontext]
-  Promise clearJumpList();
+  void setAppUserModelID(in AString aAppUserModelId);
 };
