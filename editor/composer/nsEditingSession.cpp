@@ -23,7 +23,7 @@
 #include "nsEditingSession.h"
 #include "nsError.h"                      
 #include "nsIChannel.h"                   
-#include "nsIContentViewer.h"             
+#include "nsIDocumentViewer.h"            
 #include "nsIControllers.h"               
 #include "nsID.h"                         
 #include "nsHTMLDocument.h"               
@@ -369,7 +369,7 @@ nsresult nsEditingSession::SetupEditorOnWindow(nsPIDOMWindowOuter& aWindow) {
   NS_ENSURE_TRUE(fs, NS_ERROR_FAILURE);
   AutoHideSelectionChanges hideSelectionChanges(fs);
 
-  nsCOMPtr<nsIContentViewer> contentViewer;
+  nsCOMPtr<nsIDocumentViewer> contentViewer;
   nsresult rv = docShell->GetContentViewer(getter_AddRefs(contentViewer));
   if (NS_FAILED(rv) || NS_WARN_IF(!contentViewer)) {
     NS_WARNING("nsDocShell::GetContentViewer() failed");

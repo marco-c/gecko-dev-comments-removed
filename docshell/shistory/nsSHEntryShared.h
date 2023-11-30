@@ -23,8 +23,8 @@ class nsSHEntry;
 class nsISHEntry;
 class nsISHistory;
 class nsIContentSecurityPolicy;
-class nsIContentViewer;
 class nsIDocShellTreeItem;
+class nsIDocumentViewer;
 class nsILayoutHistoryState;
 class nsIPrincipal;
 class nsDocShellEditorData;
@@ -164,7 +164,7 @@ class SHEntrySharedChildState {
 
   
   
-  nsCOMPtr<nsIContentViewer> mContentViewer;
+  nsCOMPtr<nsIDocumentViewer> mContentViewer;
   RefPtr<mozilla::dom::Document> mDocument;
   nsCOMPtr<nsISupports> mWindowState;
   
@@ -213,7 +213,7 @@ class nsSHEntryShared final : public nsIBFCacheEntry,
   void SyncPresentationState();
   void DropPresentationState();
 
-  nsresult SetContentViewer(nsIContentViewer* aViewer);
+  nsresult SetContentViewer(nsIDocumentViewer* aViewer);
 };
 
 #endif

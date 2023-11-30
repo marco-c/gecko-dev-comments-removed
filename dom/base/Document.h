@@ -68,8 +68,8 @@
 #include "nsHashKeys.h"
 #include "nsIChannel.h"
 #include "nsIChannelEventSink.h"
-#include "nsIContentViewer.h"
 #include "nsID.h"
+#include "nsIDocumentViewer.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
 #include "nsILoadGroup.h"
@@ -413,7 +413,7 @@ class ExternalResourceMap {
   struct ExternalResource {
     ~ExternalResource();
     RefPtr<Document> mDocument;
-    nsCOMPtr<nsIContentViewer> mViewer;
+    nsCOMPtr<nsIDocumentViewer> mViewer;
     nsCOMPtr<nsILoadGroup> mLoadGroup;
   };
 
@@ -445,7 +445,7 @@ class ExternalResourceMap {
 
 
 
-    nsresult SetupViewer(nsIRequest* aRequest, nsIContentViewer** aViewer,
+    nsresult SetupViewer(nsIRequest* aRequest, nsIDocumentViewer** aViewer,
                          nsILoadGroup** aLoadGroup);
 
    private:
@@ -504,7 +504,7 @@ class ExternalResourceMap {
 
 
 
-  nsresult AddExternalResource(nsIURI* aURI, nsIContentViewer* aViewer,
+  nsresult AddExternalResource(nsIURI* aURI, nsIDocumentViewer* aViewer,
                                nsILoadGroup* aLoadGroup,
                                Document* aDisplayDocument);
 
@@ -2861,7 +2861,7 @@ class Document : public nsINode,
 
 
   already_AddRefed<Document> CreateStaticClone(
-      nsIDocShell* aCloneContainer, nsIContentViewer* aContentViewer,
+      nsIDocShell* aCloneContainer, nsIDocumentViewer* aDocumentViewer,
       nsIPrintSettings* aPrintSettings, bool* aOutHasInProcessPrintCallbacks);
 
   

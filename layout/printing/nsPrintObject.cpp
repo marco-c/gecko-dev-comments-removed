@@ -6,7 +6,7 @@
 
 #include "nsPrintObject.h"
 
-#include "nsIContentViewer.h"
+#include "nsIDocumentViewer.h"
 #include "nsContentUtils.h"  
 #include "nsIInterfaceRequestorUtils.h"
 #include "nsPIDOMWindow.h"

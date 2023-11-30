@@ -44,7 +44,7 @@
 
 #ifdef NS_PRINTING
 #  include "nsIWebBrowserPrint.h"
-#  include "nsIContentViewer.h"
+#  include "nsIDocumentViewer.h"
 #endif
 
 
@@ -213,7 +213,7 @@ nsWebBrowser::GetInterface(const nsIID& aIID, void** aSink) {
   if (mDocShell) {
 #ifdef NS_PRINTING
     if (aIID.Equals(NS_GET_IID(nsIWebBrowserPrint))) {
-      nsCOMPtr<nsIContentViewer> viewer;
+      nsCOMPtr<nsIDocumentViewer> viewer;
       mDocShell->GetContentViewer(getter_AddRefs(viewer));
       if (!viewer) {
         return NS_NOINTERFACE;
