@@ -40,5 +40,19 @@ TEST(AsyncDnsResolver, ResolvingLocalhostWorks) {
   }
 }
 
+TEST(AsyncDnsResolver, ResolveAfterDeleteDoesNotReturn) {
+  test::RunLoop loop;
+  std::unique_ptr<AsyncDnsResolver> resolver =
+      std::make_unique<AsyncDnsResolver>();
+  rtc::SocketAddress address("localhost",
+                             kPortNumber);  
+  rtc::SocketAddress resolved_address;
+  bool done = false;
+  resolver->Start(address, [&done] { done = true; });
+  resolver.reset();                    
+  rtc::Thread::Current()->SleepMs(1);  
+  EXPECT_FALSE(done);                  
+}
+
 }  
 }  
