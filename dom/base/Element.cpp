@@ -3132,6 +3132,8 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
     case eFocus:
     case eMouseOut:
     case eBlur:
+    case eMouseClick:
+    case eLegacyDOMActivate:
       break;
     default:
       return;
@@ -3180,6 +3182,15 @@ void Element::GetEventTargetParentForLinks(EventChainPreVisitor& aVisitor) {
       }
       break;
     }
+
+    case eLegacyDOMActivate:
+      aVisitor.mWantsActivationBehavior = true;
+      break;
+    case eMouseClick:
+      if (WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent()) {
+        aVisitor.mWantsActivationBehavior = mouseEvent->IsLeftClickEvent();
+      }
+      break;
 
     default:
       
@@ -3231,9 +3242,7 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
   
   switch (aVisitor.mEvent->mMessage) {
     case eMouseDown:
-    case eMouseClick:
     case eMouseAuxClick:
-    case eLegacyDOMActivate:
     case eKeyPress:
       break;
     default:
@@ -3298,64 +3307,10 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
       }
     } break;
 
-    case eMouseClick: {
-      WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
-      if (mouseEvent->IsLeftClickEvent()) {
-        if (!mouseEvent->IsControl() && !mouseEvent->IsMeta() &&
-            !mouseEvent->IsAlt() && !mouseEvent->IsShift()) {
-          if (OwnerDoc()->MayHaveDOMActivateListeners()) {
-            
-            
-            nsEventStatus status = nsEventStatus_eIgnore;
-            
-            
-            InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
-            actEvent.mDetail = 1;
-            rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext,
-                                           &actEvent, nullptr, &status);
-            if (NS_SUCCEEDED(rv)) {
-              aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-            }
-          } else {
-            if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
-              
-              
-              nsAutoString target;
-              GetLinkTarget(target);
-              nsContentUtils::TriggerLink(this, absURI, target,
-                                           true,
-                                          mouseEvent->IsTrusted());
-            }
-            
-            
-            
-            aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-          }
-        }
-
-        DispatchChromeOnlyLinkClickEvent(aVisitor);
-      }
-      break;
-    }
     case eMouseAuxClick: {
       DispatchChromeOnlyLinkClickEvent(aVisitor);
       break;
     }
-    case eLegacyDOMActivate: {
-      
-      
-      if (aVisitor.mEvent->mOriginalTarget == this) {
-        if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
-          nsAutoString target;
-          GetLinkTarget(target);
-          const InternalUIEvent* activeEvent = aVisitor.mEvent->AsUIEvent();
-          MOZ_ASSERT(activeEvent);
-          nsContentUtils::TriggerLink(this, absURI, target,  true,
-                                      activeEvent->IsTrustable());
-          aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
-        }
-      }
-    } break;
 
     case eKeyPress: {
       WidgetKeyboardEvent* keyEvent = aVisitor.mEvent->AsKeyboardEvent();
@@ -3377,6 +3332,61 @@ nsresult Element::PostHandleEventForLinks(EventChainPostVisitor& aVisitor) {
   }
 
   return rv;
+}
+
+void Element::ActivationBehaviorForLinks(EventChainPostVisitor& aVisitor) {
+  
+  if (!IsLink()) {
+    return;
+  }
+
+  if (aVisitor.mEvent->mMessage == eLegacyDOMActivate) {
+    if (aVisitor.mEvent->mOriginalTarget != this) {
+      return;
+    }
+  } else {
+    WidgetMouseEvent* mouseEvent = aVisitor.mEvent->AsMouseEvent();
+    MOZ_ASSERT(mouseEvent && mouseEvent->IsLeftClickEvent());
+    DispatchChromeOnlyLinkClickEvent(aVisitor);
+
+    if (mouseEvent->IsControl() || mouseEvent->IsMeta() ||
+        mouseEvent->IsAlt() || mouseEvent->IsShift()) {
+      return;
+    }
+
+    if (OwnerDoc()->MayHaveDOMActivateListeners()) {
+      
+      
+      nsEventStatus status = nsEventStatus_eIgnore;
+      
+      
+      InternalUIEvent actEvent(true, eLegacyDOMActivate, mouseEvent);
+      actEvent.mDetail = 1;
+      nsresult rv = EventDispatcher::Dispatch(this, aVisitor.mPresContext,
+                                              &actEvent, nullptr, &status);
+      if (NS_SUCCEEDED(rv)) {
+        aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+      }
+      return;
+    }
+  }
+
+  bool trusted;
+  if (aVisitor.mEvent->mMessage == eLegacyDOMActivate) {
+    const InternalUIEvent* activeEvent = aVisitor.mEvent->AsUIEvent();
+    MOZ_ASSERT(activeEvent);
+    trusted = activeEvent->IsTrustable();
+  } else {
+    trusted = aVisitor.mEvent->IsTrusted();
+  }
+
+  if (nsCOMPtr<nsIURI> absURI = GetHrefURI()) {
+    nsAutoString target;
+    GetLinkTarget(target);
+    nsContentUtils::TriggerLink(this, absURI, target,  true,
+                                trusted);
+    aVisitor.mEventStatus = nsEventStatus_eConsumeNoDefault;
+  }
 }
 
 void Element::GetLinkTarget(nsAString& aTarget) { aTarget.Truncate(); }
