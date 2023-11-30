@@ -60,6 +60,8 @@ class FetchStreamReader final : public nsIOutputStreamCallback {
   explicit FetchStreamReader(nsIGlobalObject* aGlobal);
   ~FetchStreamReader();
 
+  nsresult MaybeGrabStrongWorkerRef(JSContext* aCx);
+
   nsresult WriteBuffer();
 
   
