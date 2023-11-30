@@ -229,6 +229,7 @@ class WebSocketChannel : public BaseWebSocketChannel,
   
   
   nsCString mAddress;
+  nsCString mPath;
   int32_t mPort;  
   
   nsCString mOriginSuffix;  
