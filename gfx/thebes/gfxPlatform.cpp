@@ -3892,7 +3892,10 @@ void gfxPlatform::ImportContentDeviceData(
 
   const DevicePrefs& prefs = aData.prefs();
   gfxConfig::Inherit(Feature::HW_COMPOSITING, prefs.hwCompositing());
-  gfxConfig::Inherit(Feature::OPENGL_COMPOSITING, prefs.oglCompositing());
+
+  
+  
+  
 
   gCMSOutputProfileData = Some(aData.cmsOutputProfileData().Clone());
 }
