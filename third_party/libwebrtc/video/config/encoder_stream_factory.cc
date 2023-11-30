@@ -313,9 +313,7 @@ EncoderStreamFactory::CreateSimulcastOrConferenceModeScreenshareStreams(
     const absl::optional<webrtc::DataRate>& experimental_min_bitrate) const {
   std::vector<webrtc::VideoStream> layers;
 
-  const bool temporal_layers_supported =
-      absl::EqualsIgnoreCase(codec_name_, kVp8CodecName) ||
-      absl::EqualsIgnoreCase(codec_name_, kH264CodecName);
+  const bool temporal_layers_supported = IsTemporalLayersSupported(codec_name_);
   
   
   layers = GetSimulcastConfig(FindRequiredActiveLayers(encoder_config),
