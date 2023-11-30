@@ -246,6 +246,25 @@ this.AccessibilityUtils = (function () {
 
 
 
+
+  function isKeyboardFocusableOption(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const urlbarListbox = node.closest(".urlbarView-results");
+    if (!urlbarListbox || urlbarListbox.getAttribute("role") != "listbox") {
+      return false;
+    }
+    return node.getAttribute("role") == "option";
+  }
+
+  
+
+
+
+
+
   function isKeyboardFocusablePanelMultiViewControl(accessible) {
     const node = accessible.DOMNode;
     if (!node || !node.ownerGlobal) {
@@ -259,6 +278,28 @@ this.AccessibilityUtils = (function () {
       node.ownerGlobal.PanelView.forNode(panelview)._tabNavigableWalker.filter(
         node
       ) == NodeFilter.FILTER_ACCEPT
+    );
+  }
+
+  
+
+
+
+
+
+  function isKeyboardFocusableUrlbarButton(accessible) {
+    const node = accessible.DOMNode;
+    if (!node || !node.ownerGlobal) {
+      return false;
+    }
+    const hbox = node.closest(".urlbarView > .search-one-offs");
+    if (!hbox || hbox.getAttribute("disabletab") != "true") {
+      return false;
+    }
+    return (
+      node.getAttribute("tabindex") == "-1" &&
+      node.tagName == "button" &&
+      node.classList.contains("searchbar-engine-one-off-item")
     );
   }
 
@@ -296,7 +337,9 @@ this.AccessibilityUtils = (function () {
   function isKeyboardFocusable(accessible) {
     if (
       isKeyboardFocusableBrowserToolbarButton(accessible) ||
+      isKeyboardFocusableOption(accessible) ||
       isKeyboardFocusablePanelMultiViewControl(accessible) ||
+      isKeyboardFocusableUrlbarButton(accessible) ||
       isKeyboardFocusableXULTab(accessible)
     ) {
       return true;
