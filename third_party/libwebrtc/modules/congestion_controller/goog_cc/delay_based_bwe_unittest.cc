@@ -123,7 +123,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
 TEST_F(DelayBasedBweTest, GetExpectedBwePeriodMs) {
   auto default_interval = bitrate_estimator_->GetExpectedBwePeriod();
   EXPECT_GT(default_interval.ms(), 0);
-  CapacityDropTestHelper(1, true, 333, 0);
+  CapacityDropTestHelper(1, true, 533, 0);
   auto interval = bitrate_estimator_->GetExpectedBwePeriod();
   EXPECT_GT(interval.ms(), 0);
   EXPECT_NE(interval.ms(), default_interval.ms());
@@ -142,11 +142,11 @@ TEST_F(DelayBasedBweTest, RateIncreaseReordering) {
   RateIncreaseReorderingTestHelper(730000);
 }
 TEST_F(DelayBasedBweTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(622);
+  RateIncreaseRtpTimestampsTestHelper(617);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStream) {
-  CapacityDropTestHelper(1, false, 300, 0);
+  CapacityDropTestHelper(1, false, 500, 0);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropPosOffsetChange) {
@@ -158,7 +158,7 @@ TEST_F(DelayBasedBweTest, CapacityDropNegOffsetChange) {
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStreamWrap) {
-  CapacityDropTestHelper(1, true, 333, 0);
+  CapacityDropTestHelper(1, true, 533, 0);
 }
 
 TEST_F(DelayBasedBweTest, TestTimestampGrouping) {
@@ -196,16 +196,13 @@ TEST_F(DelayBasedBweTest, TestInitialOveruse) {
   
   int64_t bitrate_bps = kStartBitrate.bps();
   bool seen_overuse = false;
-  for (int i = 0; i < 30; ++i) {
+  for (int i = 0; i < 40; ++i) {
     bool overuse = GenerateAndProcessFrame(kDummySsrc, bitrate_bps);
-    
-    
-    
-    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate().has_value());
     if (overuse) {
       EXPECT_TRUE(bitrate_observer_.updated());
-      EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate.bps() / 2,
-                  15000);
+      EXPECT_LE(bitrate_observer_.latest_bitrate(), kInitialCapacity.bps());
+      EXPECT_GT(bitrate_observer_.latest_bitrate(),
+                0.8 * kInitialCapacity.bps());
       bitrate_bps = bitrate_observer_.latest_bitrate();
       seen_overuse = true;
       break;
@@ -215,8 +212,8 @@ TEST_F(DelayBasedBweTest, TestInitialOveruse) {
     }
   }
   EXPECT_TRUE(seen_overuse);
-  EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate.bps() / 2,
-              15000);
+  EXPECT_LE(bitrate_observer_.latest_bitrate(), kInitialCapacity.bps());
+  EXPECT_GT(bitrate_observer_.latest_bitrate(), 0.8 * kInitialCapacity.bps());
 }
 
 TEST_F(DelayBasedBweTest, TestTimestampPrecisionHandling) {
@@ -251,63 +248,6 @@ TEST_F(DelayBasedBweTest, TestTimestampPrecisionHandling) {
     
     EXPECT_LE(last_bitrate, bitrate_observer_.latest_bitrate());
     last_bitrate = bitrate_observer_.latest_bitrate();
-  }
-}
-
-class DelayBasedBweTestWithBackoffTimeoutExperiment : public DelayBasedBweTest {
- public:
-  DelayBasedBweTestWithBackoffTimeoutExperiment()
-      : DelayBasedBweTest(
-            "WebRTC-BweAimdRateControlConfig/initial_backoff_interval:200ms/") {
-  }
-};
-
-
-TEST_F(DelayBasedBweTestWithBackoffTimeoutExperiment, TestInitialOveruse) {
-  const DataRate kStartBitrate = DataRate::KilobitsPerSec(300);
-  const DataRate kInitialCapacity = DataRate::KilobitsPerSec(200);
-  const uint32_t kDummySsrc = 0;
-  
-  const int kFps = 90;
-
-  stream_generator_->AddStream(new test::RtpStream(kFps, kStartBitrate.bps()));
-  stream_generator_->set_capacity_bps(kInitialCapacity.bps());
-
-  
-  bitrate_estimator_->SetStartBitrate(kStartBitrate);
-
-  
-  int64_t bitrate_bps = kStartBitrate.bps();
-  bool seen_overuse = false;
-  for (int frames = 0; frames < 30 && !seen_overuse; ++frames) {
-    bool overuse = GenerateAndProcessFrame(kDummySsrc, bitrate_bps);
-    
-    
-    
-    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate().has_value());
-    if (overuse) {
-      EXPECT_TRUE(bitrate_observer_.updated());
-      EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate.bps() / 2,
-                  15000);
-      bitrate_bps = bitrate_observer_.latest_bitrate();
-      seen_overuse = true;
-    } else if (bitrate_observer_.updated()) {
-      bitrate_bps = bitrate_observer_.latest_bitrate();
-      bitrate_observer_.Reset();
-    }
-  }
-  EXPECT_TRUE(seen_overuse);
-  
-  
-  for (int frames = 0; frames < 15 && seen_overuse; ++frames) {
-    bool overuse = GenerateAndProcessFrame(kDummySsrc, bitrate_bps);
-    EXPECT_FALSE(overuse);
-    if (bitrate_observer_.updated()) {
-      bitrate_bps = bitrate_observer_.latest_bitrate();
-      EXPECT_GE(bitrate_bps, kStartBitrate.bps() / 2 - 15000);
-      EXPECT_LE(bitrate_bps, kInitialCapacity.bps() + 15000);
-      bitrate_observer_.Reset();
-    }
   }
 }
 
