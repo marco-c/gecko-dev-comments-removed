@@ -919,7 +919,7 @@ static bool CSPAllowsInlineScript(nsIScriptElement* aElement,
       nsIContentSecurityPolicy::SCRIPT_SRC_ELEM_DIRECTIVE,
       false , aNonce, parserCreated, element,
       nullptr , u""_ns,
-      aElement->GetScriptLineNumber(), aElement->GetScriptColumnNumber(),
+      aElement->GetScriptLineNumber(), aElement->GetScriptColumnNumber() + 1,
       &allowInlineScript);
   return NS_SUCCEEDED(rv) && allowInlineScript;
 }

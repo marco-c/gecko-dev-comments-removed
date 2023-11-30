@@ -1728,7 +1728,7 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
                         u""_ns,  
                         u""_ns,  
                         0,       
-                        0,       
+                        1,       
                         nsIScriptError::warningFlag,
                         "upgradeInsecureRequest"_ns, mInnerWindowID,
                         mPrivateBrowsing);

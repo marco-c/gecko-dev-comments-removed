@@ -36,28 +36,28 @@
             .then(t.step_func(e => {
                 assert_equals(e.blockedURI, "inline");
                 assert_equals(e.lineNumber, 118);
-                assert_in_array(e.columnNumber, [4, 6]);
+                assert_in_array(e.columnNumber, [5, 7]);
                 assert_equals(e.target, document, "Elements created in this document, but pushed into a same-origin frame trigger on that frame's document, not on this frame's document.");
                 return watcher.wait_for('securitypolicyviolation');
             }))
             .then(t.step_func(e => {
                 assert_equals(e.blockedURI, "inline");
                 assert_equals(e.lineNumber, 131);
-                assert_in_array(e.columnNumber, [4, 59]);
+                assert_in_array(e.columnNumber, [5, 60]);
                 assert_equals(e.target, document, "Elements created in this document, but pushed into a same-origin frame trigger on that frame's document, not on this frame's document.");
                 return watcher.wait_for('securitypolicyviolation');
             }))
             .then(t.step_func(e => {
                 assert_equals(e.blockedURI, "inline");
                 assert_equals(e.lineNumber, 139);
-                assert_in_array(e.columnNumber, [4, 6]);
+                assert_in_array(e.columnNumber, [5, 7]);
                 assert_equals(e.target, document, "Inline event handlers for disconnected elements target the document.");
                 return watcher.wait_for('securitypolicyviolation');
             }))
             .then(t.step_func(e => {
                 assert_equals(e.blockedURI, "inline");
                 assert_equals(e.lineNumber, 0);
-                assert_equals(e.columnNumber, 0);
+                assert_equals(e.columnNumber, 1);
                 assert_equals(e.target, document, "Inline event handlers for elements disconnected after triggering target the document.");
             }))
             .then(t.step_func_done(_ => {
@@ -66,21 +66,21 @@
     }, "Inline violations target the right element.");
 
 </script>
-
+<!-- Inline block with no nonce. -->
 <script id="block1">
     unexecuted_test.assert_unreached("This code block should not execute.");
 </script>
 
-
+<!-- Inline event handler. -->
 <a id="block2" onclick="void(0)">Click me!</a>
 <script nonce='abc'>document.querySelector('#block2').click();</script>
 
-
+<!-- Style block. -->
 <style id="block3">
   p { color: red !important; }
 </style>
 
-
+<!-- Inline event handler inside Shadow DOM -->
 <div id="block4"></div>
 <script nonce='abc'>
   async_test(t => {
@@ -95,7 +95,7 @@
   }, "Correct targeting inside shadow tree (inline handler).");
 </script>
 
-
+<!-- Inline event handler inside Shadow DOM -->
 <div id="block5"></div>
 <script nonce='abc'>
   async_test(t => {
@@ -110,7 +110,7 @@
   }, "Correct targeting inside shadow tree (style).");
 </script>
 
-
+<!-- Pushed into a same-origin Document that isn't this Document -->
 <iframe id="block6"></iframe>
 <script nonce="abc">
   async_test(t => {
@@ -132,7 +132,7 @@
   }, "Elements created in this document, but pushed into a same-origin frame trigger on that frame's document, not on this frame's document.");
 </script>
 
-
+<!-- Disconnected inline event handler -->
 <script nonce="abc">
   async_test(t => {
     var d = document.createElement("div");
@@ -143,7 +143,7 @@
   }, "Inline event handlers for disconnected elements target the document.");
 </script>
 
-
+<!-- Inline event handler, disconnected after click. -->
 <a id="block8" onclick="void(0)">Click me also!</a>
 <script nonce="abc">
   async_test(t => {
@@ -155,7 +155,7 @@
   }, "Inline event handlers for elements disconnected after triggering target the document.");
 </script>
 
-
+<!-- Disconnected in a DocumentFragment -->
 <script nonce="abc">
   async_test(t => {
     var f = new DocumentFragment();
