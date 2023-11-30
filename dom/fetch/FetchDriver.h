@@ -151,6 +151,9 @@ class FetchDriver final : public nsIChannelEventSink,
   SafeRefPtr<InternalRequest> mRequest;
   SafeRefPtr<InternalResponse> mResponse;
   nsCOMPtr<nsIOutputStream> mPipeOutputStream;
+  
+  
+  
   RefPtr<FetchDriverObserver> mObserver;
   RefPtr<Document> mDocument;
   nsCOMPtr<nsICSPEventListener> mCSPEventListener;
