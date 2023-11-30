@@ -20,7 +20,15 @@ function urlClick(url) {
   gURLBar.focus();
   gURLBar.value = "";
   EventUtils.sendString(url);
+  
+  
+  
+  
+  AccessibilityUtils.setEnv({
+    focusableRule: false,
+  });
   EventUtils.synthesizeMouseAtCenter(gURLBar.goButton, {});
+  AccessibilityUtils.resetEnv();
 }
 
 function promiseNewTabSwitched() {
