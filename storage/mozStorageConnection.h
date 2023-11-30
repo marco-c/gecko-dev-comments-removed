@@ -15,6 +15,7 @@
 #include "nsIInterfaceRequestor.h"
 
 #include "nsTHashMap.h"
+#include "nsTHashSet.h"
 #include "mozIStorageProgressHandler.h"
 #include "SQLiteMutex.h"
 #include "mozIStorageConnection.h"
@@ -159,6 +160,7 @@ class Connection final : public mozIStorageConnection,
   nsIEventTarget* getAsyncExecutionTarget();
 
   
+
 
 
 
@@ -506,6 +508,14 @@ class Connection final : public mozIStorageConnection,
 
 
   Atomic<int32_t> mGrowthChunkSize;
+
+  
+
+
+
+
+  nsTHashSet<nsCString> mLoadedExtensions
+      MOZ_GUARDED_BY(sharedAsyncExecutionMutex);
 };
 
 
