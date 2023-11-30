@@ -1230,19 +1230,11 @@ nsEventStatus AsyncPanZoomController::HandleGestureEvent(
           rv = OnSingleTapConfirmed(tapGestureInput);
           break;
         case TapGestureInput::TAPGESTURE_DOUBLE:
-          
-          
-          
-          
-          
-          
-          
-          
           if (!IsRootContent()) {
             if (APZCTreeManager* treeManagerLocal = GetApzcTreeManager()) {
-              if (RefPtr<AsyncPanZoomController> root =
-                      treeManagerLocal->FindZoomableApzc(this)) {
-                rv = root->OnDoubleTap(tapGestureInput);
+              if (AsyncPanZoomController* apzc =
+                      treeManagerLocal->FindRootApzcFor(GetLayersId())) {
+                rv = apzc->OnDoubleTap(tapGestureInput);
               }
             }
             break;
@@ -3193,7 +3185,7 @@ nsEventStatus AsyncPanZoomController::OnDoubleTap(
 
   RefPtr<GeckoContentController> controller = GetGeckoContentController();
   if (controller) {
-    if (ZoomConstraintsAllowDoubleTapZoom() &&
+    if (rootContentApzc->ZoomConstraintsAllowDoubleTapZoom() &&
         (!GetCurrentTouchBlock() ||
          GetCurrentTouchBlock()->TouchActionAllowsDoubleTapZoom())) {
       if (Maybe<LayoutDevicePoint> geckoScreenPoint =
