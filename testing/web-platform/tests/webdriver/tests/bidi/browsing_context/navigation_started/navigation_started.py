@@ -1,4 +1,3 @@
-
 import pytest
 from tests.support.sync import AsyncPoll
 
@@ -376,7 +375,7 @@ async def test_redirect_http_equiv(
     http_equiv_url = url(PAGE_REDIRECT_HTTP_EQUIV)
     redirected_url = url(PAGE_REDIRECTED_HTML)
 
-    result = await bidi_session.browsing_context.navigate(
+    await bidi_session.browsing_context.navigate(
         context=top_context["context"],
         url=http_equiv_url,
         wait="complete",
@@ -403,6 +402,8 @@ async def test_redirect_http_equiv(
         },
     )
 
+    remove_listener()
+
 
 async def test_redirect_navigation(
     bidi_session, subscribe_events, top_context, url
@@ -424,7 +425,7 @@ async def test_redirect_navigation(
         f"/webdriver/tests/support/http_handlers/redirect.py?location={html_url}"
     )
 
-    result = await bidi_session.browsing_context.navigate(
+    await bidi_session.browsing_context.navigate(
         context=top_context["context"],
         url=redirect_url,
         wait="complete",
@@ -438,6 +439,8 @@ async def test_redirect_navigation(
             "url": redirect_url,
         },
     )
+
+    remove_listener()
 
 
 async def test_navigate_history_pushstate(
