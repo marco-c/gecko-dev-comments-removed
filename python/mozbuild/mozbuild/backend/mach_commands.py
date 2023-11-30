@@ -161,7 +161,7 @@ def setup_vscode(command_context, interactive):
         },
         
         
-        "[javascript][javascriptreact][typescript][typescriptreact][json][html]": {
+        "[javascript][javascriptreact][typescript][typescriptreact][json][jsonc][html]": {
             "editor.defaultFormatter": "esbenp.prettier-vscode",
             "editor.formatOnSave": True,
         },
@@ -206,17 +206,14 @@ def setup_vscode(command_context, interactive):
         
         
         
-        if "[javascript][javascriptreact][typescript][typescriptreact]" in old_settings:
-            old_settings.pop(
-                "[javascript][javascriptreact][typescript][typescriptreact]"
-            )
-        if (
-            "[javascript][javascriptreact][typescript][typescriptreact][json]"
-            in old_settings
-        ):
-            old_settings.pop(
-                "[javascript][javascriptreact][typescript][typescriptreact][json]"
-            )
+        deprecated = [
+            "[javascript][javascriptreact][typescript][typescriptreact]",
+            "[javascript][javascriptreact][typescript][typescriptreact][json]",
+            "[javascript][javascriptreact][typescript][typescriptreact][json][html]",
+        ]
+        for entry in deprecated:
+            if entry in old_settings:
+                old_settings.pop(entry)
 
         settings = {**old_settings, **new_settings}
 
