@@ -85,7 +85,7 @@ enum class PeekOffsetOption : uint16_t {
   
   
   
-  ScrollViewStop,
+  StopAtScroller,
 
   
   StopAtPlaceholder,
@@ -1077,8 +1077,10 @@ class nsFrameSelection final {
     
 
 
+
+    enum class StopAtScroller : bool { No, Yes };
     void AdjustContentOffsets(nsIFrame::ContentOffsets& aOffsets,
-                              bool aScrollViewStop) const;
+                              StopAtScroller aStopAtScroller) const;
 
     void MaintainAnchorFocusRange(
         const mozilla::dom::Selection& aNormalSelection,

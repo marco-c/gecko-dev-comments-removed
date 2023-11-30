@@ -916,7 +916,7 @@ Result<PeekOffsetStruct, nsresult> nsFrameSelection::PeekOffsetForCaretMove(
   PeekOffsetOptions options{PeekOffsetOption::JumpLines,
                             PeekOffsetOption::IsKeyboardSelect};
   if (mLimiters.mLimiter) {
-    options += PeekOffsetOption::ScrollViewStop;
+    options += PeekOffsetOption::StopAtScroller;
   }
   if (visualMovement) {
     options += PeekOffsetOption::Visual;
@@ -977,7 +977,7 @@ nsPrevNextBidiLevels nsFrameSelection::GetPrevNextBidiLevels(
     return levels;
   }
 
-  PeekOffsetOptions peekOffsetOptions{PeekOffsetOption::ScrollViewStop};
+  PeekOffsetOptions peekOffsetOptions{PeekOffsetOption::StopAtScroller};
   if (aJumpLines) {
     peekOffsetOptions += PeekOffsetOption::JumpLines;
   }
@@ -1156,7 +1156,7 @@ void nsFrameSelection::MaintainedRange::AdjustNormalSelection(
 }
 
 void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
-    nsIFrame::ContentOffsets& aOffsets, const bool aScrollViewStop) const {
+    nsIFrame::ContentOffsets& aOffsets, StopAtScroller aStopAtScroller) const {
   
   if (mRange && mAmount != eSelectNoAmount) {
     nsINode* rangenode = mRange->GetStartContainer();
@@ -1181,8 +1181,8 @@ void nsFrameSelection::MaintainedRange::AdjustContentOffsets(
                                             CARET_ASSOCIATE_AFTER, &offset);
 
     PeekOffsetOptions peekOffsetOptions{};
-    if (aScrollViewStop) {
-      peekOffsetOptions += PeekOffsetOption::ScrollViewStop;
+    if (aStopAtScroller == StopAtScroller::Yes) {
+      peekOffsetOptions += PeekOffsetOption::StopAtScroller;
     }
     if (frame && amount == eSelectWord && direction == eDirPrevious) {
       
@@ -1296,8 +1296,9 @@ void nsFrameSelection::HandleDrag(nsIFrame* aFrame, const nsPoint& aPoint) {
                                            offsets.offset, *selection);
   }
 
-  const bool scrollViewStop = mLimiters.mLimiter != nullptr;
-  mMaintainedRange.AdjustContentOffsets(offsets, scrollViewStop);
+  mMaintainedRange.AdjustContentOffsets(
+      offsets, mLimiters.mLimiter ? MaintainedRange::StopAtScroller::Yes
+                                  : MaintainedRange::StopAtScroller::No);
 
   
   HandleClick(MOZ_KnownLive(offsets.content) , offsets.offset,
