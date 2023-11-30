@@ -1,7 +1,6 @@
 use super::CORE_INSTANCE_SORT;
 use crate::{
-    encode_section, ComponentExportKind, ComponentExternName, ComponentSection, ComponentSectionId,
-    Encode, ExportKind,
+    encode_section, ComponentExportKind, ComponentSection, ComponentSectionId, Encode, ExportKind,
 };
 
 
@@ -171,13 +170,14 @@ impl ComponentInstanceSection {
     
     pub fn export_items<'a, E>(&mut self, exports: E) -> &mut Self
     where
-        E: IntoIterator<Item = (ComponentExternName<'a>, ComponentExportKind, u32)>,
+        E: IntoIterator<Item = (&'a str, ComponentExportKind, u32)>,
         E::IntoIter: ExactSizeIterator,
     {
         let exports = exports.into_iter();
         self.bytes.push(0x01);
         exports.len().encode(&mut self.bytes);
         for (name, kind, index) in exports {
+            crate::push_extern_name_byte(&mut self.bytes, name);
             name.encode(&mut self.bytes);
             kind.encode(&mut self.bytes);
             index.encode(&mut self.bytes);
