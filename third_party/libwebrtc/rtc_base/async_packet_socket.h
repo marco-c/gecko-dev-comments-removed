@@ -110,9 +110,10 @@ class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
   virtual void SetError(int error) = 0;
 
   
-  void SubscribeClose(const void* removal_tag,
-                      std::function<void(AsyncPacketSocket*, int)> callback);
-  void UnsubscribeClose(const void* removal_tag);
+  void SubscribeCloseEvent(
+      const void* removal_tag,
+      std::function<void(AsyncPacketSocket*, int)> callback);
+  void UnsubscribeCloseEvent(const void* removal_tag);
 
   
   
