@@ -441,22 +441,13 @@ RawId WebGPUChild::DeviceCreateCommandEncoder(
 RawId WebGPUChild::CommandEncoderFinish(
     RawId aSelfId, RawId aDeviceId,
     const dom::GPUCommandBufferDescriptor& aDesc) {
-  
-  
-  
-  
-
-  if (!IsOpen()) {
-    
-    
-    
-    
-    return aSelfId;
-  }
-
   if (!SendCommandEncoderFinish(aSelfId, aDeviceId, aDesc)) {
     MOZ_CRASH("IPC failure");
   }
+  
+  
+  
+  
   return aSelfId;
 }
 

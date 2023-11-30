@@ -22,23 +22,17 @@ class CommandBuffer final : public ObjectBase, public ChildOf<Device> {
   GPU_DECL_JS_WRAP(CommandBuffer)
 
   CommandBuffer(Device* const aParent, RawId aId,
-                nsTArray<WeakPtr<CanvasContext>>&& aTargetContexts,
-                RefPtr<CommandEncoder>&& aEncoder);
+                nsTArray<WeakPtr<CanvasContext>>&& aTargetContexts);
 
   Maybe<RawId> Commit();
 
  private:
   CommandBuffer() = delete;
-  ~CommandBuffer() = default;
+  ~CommandBuffer();
   void Cleanup();
 
   const RawId mId;
   const nsTArray<WeakPtr<CanvasContext>> mTargetContexts;
-  
-  
-  
-  
-  RefPtr<CommandEncoder> mEncoder;
 };
 
 }  
