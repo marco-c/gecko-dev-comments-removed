@@ -146,10 +146,10 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
                                size_t payload_size) {
-  return SendAudio(frame_type, payload_type, rtp_timestamp, payload_data,
-                   payload_size,
-                   
-                   -1);
+  return SendAudio({.type = frame_type,
+                    .payload{payload_data, payload_size},
+                    .payload_id = payload_type,
+                    .rtp_timestamp = rtp_timestamp});
 }
 
 bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
@@ -158,8 +158,23 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                const uint8_t* payload_data,
                                size_t payload_size,
                                int64_t absolute_capture_timestamp_ms) {
-  TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
-                          FrameTypeToString(frame_type));
+  RtpAudioFrame frame = {
+      .type = frame_type,
+      .payload{payload_data, payload_size},
+      .payload_id = payload_type,
+      .rtp_timestamp = rtp_timestamp,
+  };
+  if (absolute_capture_timestamp_ms > 0) {
+    frame.capture_time = Timestamp::Millis(absolute_capture_timestamp_ms);
+  }
+  return SendAudio(frame);
+}
+
+bool RTPSenderAudio::SendAudio(const RtpAudioFrame& frame) {
+  RTC_DCHECK_GE(frame.payload_id, 0);
+  RTC_DCHECK_LE(frame.payload_id, 127);
+  TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", frame.rtp_timestamp, "Send",
+                          "type", FrameTypeToString(frame.type));
 
   
   
@@ -182,7 +197,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
     if ((clock_->TimeInMilliseconds() - dtmf_time_last_sent_) >
         kDtmfIntervalTimeMs) {
       
-      dtmf_timestamp_ = rtp_timestamp;
+      dtmf_timestamp_ = frame.rtp_timestamp;
       if (dtmf_queue_.NextDtmf(&dtmf_current_event_)) {
         dtmf_event_first_packet_sent_ = false;
         dtmf_length_samples_ =
@@ -195,20 +210,20 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   
   
   if (dtmf_event_is_on_) {
-    if (frame_type == AudioFrameType::kEmptyFrame) {
+    if (frame.type == AudioFrameType::kEmptyFrame) {
       
       
       
       const unsigned int dtmf_interval_time_rtp =
           dtmf_payload_freq * kDtmfIntervalTimeMs / 1000;
-      if ((rtp_timestamp - dtmf_timestamp_last_sent_) <
+      if ((frame.rtp_timestamp - dtmf_timestamp_last_sent_) <
           dtmf_interval_time_rtp) {
         
         return true;
       }
     }
-    dtmf_timestamp_last_sent_ = rtp_timestamp;
-    uint32_t dtmf_duration_samples = rtp_timestamp - dtmf_timestamp_;
+    dtmf_timestamp_last_sent_ = frame.rtp_timestamp;
+    uint32_t dtmf_duration_samples = frame.rtp_timestamp - dtmf_timestamp_;
     bool ended = false;
     bool send = true;
 
@@ -229,7 +244,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                  static_cast<uint16_t>(0xffff), false);
 
         
-        dtmf_timestamp_ = rtp_timestamp;
+        dtmf_timestamp_ = frame.rtp_timestamp;
         dtmf_duration_samples -= 0xffff;
         dtmf_length_samples_ -= 0xffff;
 
@@ -248,8 +263,8 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
     }
     return true;
   }
-  if (payload_size == 0 || payload_data == NULL) {
-    if (frame_type == AudioFrameType::kEmptyFrame) {
+  if (frame.payload.empty()) {
+    if (frame.type == AudioFrameType::kEmptyFrame) {
       
       
       
@@ -259,15 +274,16 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   }
 
   std::unique_ptr<RtpPacketToSend> packet = rtp_sender_->AllocatePacket();
-  packet->SetMarker(MarkerBit(frame_type, payload_type));
-  packet->SetPayloadType(payload_type);
-  packet->SetTimestamp(rtp_timestamp);
+  packet->SetMarker(MarkerBit(frame.type, frame.payload_id));
+  packet->SetPayloadType(frame.payload_id);
+  packet->SetTimestamp(frame.rtp_timestamp);
   packet->set_capture_time(clock_->CurrentTime());
   
   packet->SetExtension<AudioLevel>(
-      frame_type == AudioFrameType::kAudioFrameSpeech, audio_level_dbov);
+      frame.type == AudioFrameType::kAudioFrameSpeech,
+      frame.audio_level_dbov.value_or(audio_level_dbov));
 
-  if (absolute_capture_timestamp_ms > 0) {
+  if (frame.capture_time.has_value()) {
     
     
     
@@ -277,8 +293,8 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
         
         
         encoder_rtp_timestamp_frequency.value_or(0),
-        Int64MsToUQ32x32(clock_->ConvertTimestampToNtpTimeInMilliseconds(
-            absolute_capture_timestamp_ms)),
+        static_cast<uint64_t>(
+            clock_->ConvertTimestampToNtpTime(*frame.capture_time)),
         0);
     if (absolute_capture_time) {
       
@@ -288,15 +304,15 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
     }
   }
 
-  uint8_t* payload = packet->AllocatePayload(payload_size);
+  uint8_t* payload = packet->AllocatePayload(frame.payload.size());
   RTC_CHECK(payload);
-  memcpy(payload, payload_data, payload_size);
+  memcpy(payload, frame.payload.data(), frame.payload.size());
 
   {
     MutexLock lock(&send_audio_mutex_);
-    last_payload_type_ = payload_type;
+    last_payload_type_ = frame.payload_id;
   }
-  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", rtp_timestamp, "timestamp",
+  TRACE_EVENT_ASYNC_END2("webrtc", "Audio", frame.rtp_timestamp, "timestamp",
                          packet->Timestamp(), "seqnum",
                          packet->SequenceNumber());
   packet->set_packet_type(RtpPacketMediaType::kAudio);

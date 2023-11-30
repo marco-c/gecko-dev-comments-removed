@@ -44,25 +44,45 @@ class RTPSenderAudio {
                                size_t channels,
                                uint32_t rate);
 
-  bool SendAudio(AudioFrameType frame_type,
-                 int8_t payload_type,
-                 uint32_t rtp_timestamp,
-                 const uint8_t* payload_data,
-                 size_t payload_size);
+  struct RtpAudioFrame {
+    AudioFrameType type = AudioFrameType::kAudioFrameSpeech;
+    rtc::ArrayView<const uint8_t> payload;
+
+    
+    int payload_id = -1;
+
+    
+    uint32_t rtp_timestamp = 0;
+
+    
+    absl::optional<Timestamp> capture_time;
+
+    
+    
+    
+    absl::optional<int> audio_level_dbov;
+  };
+  bool SendAudio(const RtpAudioFrame& frame);
+
+  [[deprecated]] bool SendAudio(AudioFrameType frame_type,
+                                int8_t payload_type,
+                                uint32_t rtp_timestamp,
+                                const uint8_t* payload_data,
+                                size_t payload_size);
 
   
   
-  bool SendAudio(AudioFrameType frame_type,
-                 int8_t payload_type,
-                 uint32_t rtp_timestamp,
-                 const uint8_t* payload_data,
-                 size_t payload_size,
-                 int64_t absolute_capture_timestamp_ms);
+  [[deprecated]] bool SendAudio(AudioFrameType frame_type,
+                                int8_t payload_type,
+                                uint32_t rtp_timestamp,
+                                const uint8_t* payload_data,
+                                size_t payload_size,
+                                int64_t absolute_capture_timestamp_ms);
 
   
   
   
-  int32_t SetAudioLevel(uint8_t level_dbov);
+  [[deprecated]] int32_t SetAudioLevel(uint8_t level_dbov);
 
   
   int32_t SendTelephoneEvent(uint8_t key, uint16_t time_ms, uint8_t level);
