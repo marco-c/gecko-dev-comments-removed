@@ -8079,14 +8079,14 @@ bool BaseCompiler::emitBrOnCast(bool onSuccess) {
                             sourceType, destType);
 }
 
-bool BaseCompiler::emitAnyConvertExtern() {
+bool BaseCompiler::emitExternInternalize() {
   
   
   Nothing nothing;
   return iter_.readRefConversion(RefType::extern_(), RefType::any(), &nothing);
 }
 
-bool BaseCompiler::emitExternConvertAny() {
+bool BaseCompiler::emitExternExternalize() {
   
   
   Nothing nothing;
@@ -10275,10 +10275,10 @@ bool BaseCompiler::emitBody() {
             CHECK_NEXT(emitBrOnCast(true));
           case uint32_t(GcOp::BrOnCastFail):
             CHECK_NEXT(emitBrOnCast(false));
-          case uint16_t(GcOp::AnyConvertExtern):
-            CHECK_NEXT(emitAnyConvertExtern());
-          case uint16_t(GcOp::ExternConvertAny):
-            CHECK_NEXT(emitExternConvertAny());
+          case uint16_t(GcOp::ExternInternalize):
+            CHECK_NEXT(emitExternInternalize());
+          case uint16_t(GcOp::ExternExternalize):
+            CHECK_NEXT(emitExternExternalize());
           default:
             break;
         }  

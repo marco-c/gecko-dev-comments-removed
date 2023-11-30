@@ -140,8 +140,7 @@ impl<'a> Expander<'a> {
             | Instruction::If(bt)
             | Instruction::Loop(bt)
             | Instruction::Let(LetType { block: bt, .. })
-            | Instruction::Try(bt)
-            | Instruction::TryTable(TryTable { block: bt, .. }) => {
+            | Instruction::Try(bt) => {
                 
                 
                 

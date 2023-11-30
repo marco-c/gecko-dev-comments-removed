@@ -107,6 +107,7 @@ impl Encode for ComponentTypeRef {
 
 
 
+
 #[derive(Clone, Debug, Default)]
 pub struct ComponentImportSection {
     bytes: Vec<u8>,
@@ -130,9 +131,8 @@ impl ComponentImportSection {
     }
 
     
-    pub fn import(&mut self, name: &str, ty: ComponentTypeRef) -> &mut Self {
-        push_extern_name_byte(&mut self.bytes, name);
-        name.encode(&mut self.bytes);
+    pub fn import(&mut self, name: impl AsComponentExternName, ty: ComponentTypeRef) -> &mut Self {
+        name.as_component_extern_name().encode(&mut self.bytes);
         ty.encode(&mut self.bytes);
         self.num_added += 1;
         self
@@ -152,24 +152,49 @@ impl ComponentSection for ComponentImportSection {
 }
 
 
+#[derive(Debug, Copy, Clone)]
+pub enum ComponentExternName<'a> {
+    
+    Kebab(&'a str),
+    
+    Interface(&'a str),
+}
+
+impl Encode for ComponentExternName<'_> {
+    fn encode(&self, sink: &mut Vec<u8>) {
+        match self {
+            ComponentExternName::Kebab(name) => {
+                sink.push(0x00);
+                name.encode(sink);
+            }
+            ComponentExternName::Interface(name) => {
+                sink.push(0x01);
+                name.encode(sink);
+            }
+        }
+    }
+}
 
 
 
+pub trait AsComponentExternName {
+    
+    fn as_component_extern_name(&self) -> ComponentExternName<'_>;
+}
 
+impl AsComponentExternName for ComponentExternName<'_> {
+    fn as_component_extern_name(&self) -> ComponentExternName<'_> {
+        *self
+    }
+}
 
-
-
-
-
-
-
-
-
-
-pub(crate) fn push_extern_name_byte(bytes: &mut Vec<u8>, name: &str) {
-    if name.contains(':') {
-        bytes.push(0x01);
-    } else {
-        bytes.push(0x00);
+impl<S: AsRef<str>> AsComponentExternName for S {
+    fn as_component_extern_name(&self) -> ComponentExternName<'_> {
+        let s = self.as_ref();
+        if s.contains("/") {
+            ComponentExternName::Interface(s)
+        } else {
+            ComponentExternName::Kebab(s)
+        }
     }
 }

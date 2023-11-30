@@ -1692,8 +1692,8 @@ struct BaseCompiler final {
                                         const ResultType& labelType,
                                         RefType sourceType, RefType destType);
   [[nodiscard]] bool emitBrOnCast(bool onSuccess);
-  [[nodiscard]] bool emitAnyConvertExtern();
-  [[nodiscard]] bool emitExternConvertAny();
+  [[nodiscard]] bool emitExternInternalize();
+  [[nodiscard]] bool emitExternExternalize();
 
   
   

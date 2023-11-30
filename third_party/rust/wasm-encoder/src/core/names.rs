@@ -44,12 +44,6 @@ enum Subsection {
     Global = 7,
     Element = 8,
     Data = 9,
-
-    
-    Field = 10,
-
-    
-    Tag = 11,
 }
 
 impl NameSection {
@@ -148,27 +142,8 @@ impl NameSection {
     
     
     
-    
     pub fn data(&mut self, names: &NameMap) {
         self.subsection_header(Subsection::Data, names.size());
-        names.encode(&mut self.bytes);
-    }
-
-    
-    
-    
-    
-    
-    pub fn fields(&mut self, names: &IndirectNameMap) {
-        self.subsection_header(Subsection::Field, names.size());
-        names.encode(&mut self.bytes);
-    }
-
-    
-    
-    
-    pub fn tags(&mut self, names: &NameMap) {
-        self.subsection_header(Subsection::Tag, names.size());
         names.encode(&mut self.bytes);
     }
 

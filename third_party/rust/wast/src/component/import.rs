@@ -25,25 +25,23 @@ impl<'a> Parse<'a> for ComponentImport<'a> {
 
 
 #[derive(Debug, Copy, Clone)]
-pub struct ComponentExternName<'a>(pub &'a str);
+pub enum ComponentExternName<'a> {
+    
+    Kebab(&'a str),
+    
+    Interface(&'a str),
+}
 
 impl<'a> Parse<'a> for ComponentExternName<'a> {
     fn parse(parser: Parser<'a>) -> Result<Self> {
-        
-        
-        
-        
-        
-        
-        let name = if parser.peek::<LParen>()? {
-            parser.parens(|p| {
+        if parser.peek::<LParen>()? {
+            Ok(ComponentExternName::Interface(parser.parens(|p| {
                 p.parse::<kw::interface>()?;
                 p.parse()
-            })?
+            })?))
         } else {
-            parser.parse()?
-        };
-        Ok(ComponentExternName(name))
+            Ok(ComponentExternName::Kebab(parser.parse()?))
+        }
     }
 }
 

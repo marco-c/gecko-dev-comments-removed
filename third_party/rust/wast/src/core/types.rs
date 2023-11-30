@@ -67,8 +67,6 @@ pub enum HeapType<'a> {
     
     Extern,
     
-    Exn,
-    
     
     Any,
     
@@ -88,7 +86,7 @@ pub enum HeapType<'a> {
     None,
     
     
-    Concrete(Index<'a>),
+    Index(Index<'a>),
 }
 
 impl<'a> Parse<'a> for HeapType<'a> {
@@ -100,9 +98,6 @@ impl<'a> Parse<'a> for HeapType<'a> {
         } else if l.peek::<kw::r#extern>()? {
             parser.parse::<kw::r#extern>()?;
             Ok(HeapType::Extern)
-        } else if l.peek::<kw::exn>()? {
-            parser.parse::<kw::exn>()?;
-            Ok(HeapType::Exn)
         } else if l.peek::<kw::r#any>()? {
             parser.parse::<kw::r#any>()?;
             Ok(HeapType::Any)
@@ -128,7 +123,7 @@ impl<'a> Parse<'a> for HeapType<'a> {
             parser.parse::<kw::none>()?;
             Ok(HeapType::None)
         } else if l.peek::<Index>()? {
-            Ok(HeapType::Concrete(parser.parse()?))
+            Ok(HeapType::Index(parser.parse()?))
         } else {
             Err(l.error())
         }
@@ -139,7 +134,6 @@ impl<'a> Peek for HeapType<'a> {
     fn peek(cursor: Cursor<'_>) -> Result<bool> {
         Ok(kw::func::peek(cursor)?
             || kw::r#extern::peek(cursor)?
-            || kw::exn::peek(cursor)?
             || kw::any::peek(cursor)?
             || kw::eq::peek(cursor)?
             || kw::r#struct::peek(cursor)?
@@ -177,14 +171,6 @@ impl<'a> RefType<'a> {
         RefType {
             nullable: true,
             heap: HeapType::Extern,
-        }
-    }
-
-    
-    pub fn exn() -> Self {
-        RefType {
-            nullable: true,
-            heap: HeapType::Exn,
         }
     }
 
@@ -265,9 +251,6 @@ impl<'a> Parse<'a> for RefType<'a> {
         } else if l.peek::<kw::externref>()? {
             parser.parse::<kw::externref>()?;
             Ok(RefType::r#extern())
-        } else if l.peek::<kw::exnref>()? {
-            parser.parse::<kw::exnref>()?;
-            Ok(RefType::exn())
         } else if l.peek::<kw::anyref>()? {
             parser.parse::<kw::anyref>()?;
             Ok(RefType::any())
@@ -323,7 +306,6 @@ impl<'a> Peek for RefType<'a> {
         Ok(kw::funcref::peek(cursor)?
             ||  kw::anyfunc::peek(cursor)?
             || kw::externref::peek(cursor)?
-            || kw::exnref::peek(cursor)?
             || kw::anyref::peek(cursor)?
             || kw::eqref::peek(cursor)?
             || kw::structref::peek(cursor)?
