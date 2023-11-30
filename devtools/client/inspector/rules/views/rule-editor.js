@@ -558,25 +558,9 @@ RuleEditor.prototype = {
       const sourceLabel = this.element.querySelector(
         ".ruleview-rule-source-label"
       );
-      const title = this.rule.title;
-      const sourceHref = this.rule.sheet?.href || title;
-
       const uaLabel = STYLE_INSPECTOR_L10N.getStr("rule.userAgentStyles");
-      sourceLabel.textContent = uaLabel + " " + title;
+      sourceLabel.textContent = uaLabel + " " + this.rule.title;
       sourceLabel.setAttribute("data-url", this.rule.sheet?.href);
-
-      
-      
-      
-      
-      
-      
-      
-      if (sourceHref === "about:PreferenceStyleSheet") {
-        this.source.setAttribute("unselectable", "permanent");
-        sourceLabel.textContent = uaLabel;
-        sourceLabel.removeAttribute("title");
-      }
     } else {
       this._updateLocation(null);
     }
