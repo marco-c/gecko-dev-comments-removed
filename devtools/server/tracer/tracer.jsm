@@ -291,11 +291,6 @@ class JavaScriptTracer {
       
       if (shouldLogToStdout) {
         const { script } = frame;
-        
-        
-        
-        
-        const columnBase = script.format === "wasm" ? 0 : 1;
         const { lineNumber, columnNumber } = script.getOffsetMetadata(
           frame.offset
         );
@@ -310,9 +305,7 @@ class JavaScriptTracer {
 
         
         
-        const href = `${script.source.url}:${lineNumber}:${
-          columnNumber - columnBase
-        }`;
+        const href = `${script.source.url}:${lineNumber}:${columnNumber}`;
 
         
         
