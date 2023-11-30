@@ -164,7 +164,7 @@ class SHEntrySharedChildState {
 
   
   
-  nsCOMPtr<nsIDocumentViewer> mContentViewer;
+  nsCOMPtr<nsIDocumentViewer> mDocumentViewer;
   RefPtr<mozilla::dom::Document> mDocument;
   nsCOMPtr<nsISupports> mWindowState;
   

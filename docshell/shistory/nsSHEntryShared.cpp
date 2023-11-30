@@ -161,7 +161,7 @@ nsSHEntryShared::~nsSHEntryShared() {
   
   
   mSHistory = nullptr;
-  if (mContentViewer) {
+  if (mDocumentViewer) {
     RemoveFromBFCacheSync();
   }
 }
@@ -187,7 +187,7 @@ void nsSHEntryShared::RemoveFromExpirationTracker() {
 }
 
 void nsSHEntryShared::SyncPresentationState() {
-  if (mContentViewer && mWindowState) {
+  if (mDocumentViewer && mWindowState) {
     
     return;
   }
@@ -203,12 +203,12 @@ void nsSHEntryShared::DropPresentationState() {
     mDocument->RemoveMutationObserver(this);
     mDocument = nullptr;
   }
-  if (mContentViewer) {
-    mContentViewer->ClearHistoryEntry();
+  if (mDocumentViewer) {
+    mDocumentViewer->ClearHistoryEntry();
   }
 
   RemoveFromExpirationTracker();
-  mContentViewer = nullptr;
+  mDocumentViewer = nullptr;
   mSticky = true;
   mWindowState = nullptr;
   mViewerBounds.SetRect(0, 0, 0, 0);
@@ -218,10 +218,10 @@ void nsSHEntryShared::DropPresentationState() {
 }
 
 nsresult nsSHEntryShared::SetContentViewer(nsIDocumentViewer* aViewer) {
-  MOZ_ASSERT(!aViewer || !mContentViewer,
+  MOZ_ASSERT(!aViewer || !mDocumentViewer,
              "SHEntryShared already contains viewer");
 
-  if (mContentViewer || !aViewer) {
+  if (mDocumentViewer || !aViewer) {
     DropPresentationState();
   }
 
@@ -229,9 +229,9 @@ nsresult nsSHEntryShared::SetContentViewer(nsIDocumentViewer* aViewer) {
   
   
   MOZ_ASSERT(!GetExpirationState()->IsTracked());
-  mContentViewer = aViewer;
+  mDocumentViewer = aViewer;
 
-  if (mContentViewer) {
+  if (mDocumentViewer) {
     
     
     
@@ -241,7 +241,7 @@ nsresult nsSHEntryShared::SetContentViewer(nsIDocumentViewer* aViewer) {
 
     
     
-    mDocument = mContentViewer->GetDocument();
+    mDocument = mDocumentViewer->GetDocument();
     if (mDocument) {
       mDocument->SetBFCacheEntry(this);
       mDocument->AddMutationObserver(this);
@@ -252,14 +252,14 @@ nsresult nsSHEntryShared::SetContentViewer(nsIDocumentViewer* aViewer) {
 }
 
 nsresult nsSHEntryShared::RemoveFromBFCacheSync() {
-  MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
+  MOZ_ASSERT(mDocumentViewer && mDocument, "we're not in the bfcache!");
 
   
   
   RefPtr<nsSHEntryShared> kungFuDeathGrip = this;
 
   
-  nsCOMPtr<nsIDocumentViewer> viewer = mContentViewer;
+  nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
   DropPresentationState();
 
   if (viewer) {
@@ -277,7 +277,7 @@ nsresult nsSHEntryShared::RemoveFromBFCacheSync() {
 }
 
 nsresult nsSHEntryShared::RemoveFromBFCacheAsync() {
-  MOZ_ASSERT(mContentViewer && mDocument, "we're not in the bfcache!");
+  MOZ_ASSERT(mDocumentViewer && mDocument, "we're not in the bfcache!");
 
   
   if (!mDocument) {
@@ -287,7 +287,7 @@ nsresult nsSHEntryShared::RemoveFromBFCacheAsync() {
   
   
   
-  nsCOMPtr<nsIDocumentViewer> viewer = mContentViewer;
+  nsCOMPtr<nsIDocumentViewer> viewer = mDocumentViewer;
   RefPtr<dom::Document> document = mDocument;
   RefPtr<nsSHEntryShared> self = this;
   nsresult rv = mDocument->Dispatch(NS_NewRunnableFunction(
