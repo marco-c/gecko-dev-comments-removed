@@ -16,14 +16,22 @@
 async_test(t => {
   
   window.addEventListener("message", t.step_func(e => {
-    
     assert_equals(e.data, "HasAccess for localStorage", "Storage Access API should be accessible and return first-party data");
-    t.done();
+    window.localStorage.setItem("window_event", id);
   }));
 
   
-  const id = Date.now();
+  const id = String(Date.now());
   window.localStorage.setItem("test", id);
+  window.addEventListener("storage", t.step_func(e => {
+    if (e.key == "handle_event") {
+      
+      assert_equals(e.newValue, id);
+      assert_equals(e.storageArea, window.localStorage);
+      window.localStorage.clear();
+      t.done();
+    }
+  }));
 
   
   let iframe = document.createElement("iframe");
