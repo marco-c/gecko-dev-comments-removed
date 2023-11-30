@@ -1015,6 +1015,19 @@ const TargetingGetters = {
   get archBits() {
     return AppConstants.archBits;
   },
+
+  get memoryMB() {
+    let memory = null;
+    try {
+      memory = Services.sysinfo.getProperty("memsize", null);
+    } catch (_e) {
+      
+    }
+    if (memory) {
+      memory = Number(memory) / 1024 / 1024;
+    }
+    return memory;
+  },
 };
 
 const ASRouterTargeting = {
