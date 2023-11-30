@@ -100,9 +100,6 @@ pub trait ParseCallbacks: fmt::Debug {
     }
 
     
-    fn header_file(&self, _filename: &str) {}
-
-    
     fn include_file(&self, _filename: &str) {}
 
     
