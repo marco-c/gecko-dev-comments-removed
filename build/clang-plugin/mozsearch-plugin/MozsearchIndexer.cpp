@@ -1064,7 +1064,6 @@ public:
 
         J.objectBegin();
 
-        J.attribute("pretty", getQualifiedName(BaseDecl));
         J.attribute("sym", getMangledName(CurMangleContext, BaseDecl));
 
         J.attributeBegin("props");
@@ -1219,7 +1218,6 @@ public:
         
         
 
-        J.attribute("pretty", getQualifiedName(MethodDecl));
         J.attribute("sym", getMangledName(CurMangleContext, MethodDecl));
 
         J.objectEnd();
