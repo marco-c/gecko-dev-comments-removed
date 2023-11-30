@@ -199,6 +199,13 @@ class alignas(16) Instance {
 
   
   
+  const void* addressOfNurseryPosition_;
+#ifdef JS_GC_ZEAL
+  const void* addressOfGCZealModeBits_;
+#endif
+
+  
+  
   
   MOZ_ALIGNED_DECL(16, char data_);
 
@@ -303,6 +310,14 @@ class alignas(16) Instance {
   static constexpr size_t offsetInData(size_t offset) {
     return offsetOfData() + offset;
   }
+  static constexpr size_t offsetOfAddressOfNurseryPosition() {
+    return offsetof(Instance, addressOfNurseryPosition_);
+  }
+#ifdef JS_GC_ZEAL
+  static constexpr size_t offsetOfAddressOfGCZealModeBits() {
+    return offsetof(Instance, addressOfGCZealModeBits_);
+  }
+#endif
 
   JSContext* cx() const { return cx_; }
   void* debugTrapHandler() const { return debugTrapHandler_; }

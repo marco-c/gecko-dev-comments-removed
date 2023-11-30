@@ -3852,6 +3852,31 @@ class FunctionCompiler {
 
   
 
+  [[nodiscard]] MDefinition* createStructObject(uint32_t typeIndex,
+                                                bool zeroFields) {
+    const TypeDef& typeDef = (*moduleEnv().types)[typeIndex];
+    gc::AllocKind allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
+    bool isOutline =
+        WasmStructObject::requiresOutlineBytes(typeDef.structType().size_);
+
+    
+    
+    MDefinition* typeDefData = loadTypeDefInstanceData(typeIndex);
+    if (!typeDefData) {
+      return nullptr;
+    }
+
+    auto* structObject =
+        MWasmNewStructObject::New(alloc(), instancePointer_, typeDefData,
+                                  isOutline, zeroFields, allocKind);
+    if (!structObject) {
+      return nullptr;
+    }
+    curBlock_->add(structObject);
+
+    return structObject;
+  }
+
   
   
   
@@ -6977,27 +7002,12 @@ static bool EmitStructNew(FunctionCompiler& f) {
     return true;
   }
 
-  const StructType& structType = (*f.moduleEnv().types)[typeIndex].structType();
+  const TypeDef& typeDef = (*f.moduleEnv().types)[typeIndex];
+  const StructType& structType = typeDef.structType();
   MOZ_ASSERT(args.length() == structType.fields_.length());
 
-  
-  
-  MDefinition* typeDefData = f.loadTypeDefInstanceData(typeIndex);
-  if (!typeDefData) {
-    return false;
-  }
-
-  
-  
-  SymbolicAddressSignature calleeSASig =
-      WasmStructObject::requiresOutlineBytes(structType.size_)
-          ? SASigStructNewOOL_false
-          : SASigStructNewIL_false;
-
-  
-  MDefinition* structObject;
-  if (!f.emitInstanceCall1(lineOrBytecode, calleeSASig, typeDefData,
-                           &structObject)) {
+  MDefinition* structObject = f.createStructObject(typeIndex, false);
+  if (!structObject) {
     return false;
   }
 

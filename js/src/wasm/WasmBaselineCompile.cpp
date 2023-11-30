@@ -6964,6 +6964,83 @@ bool BaseCompiler::emitGcArraySet(RegRef object, RegPtr data, RegI32 index,
   return true;
 }
 
+
+
+
+template <bool ZeroFields>
+bool BaseCompiler::emitStructAlloc(uint32_t typeIndex, RegRef* object,
+                                   bool* isOutlineStruct, RegPtr* outlineBase) {
+  const TypeDef& typeDef = (*moduleEnv_.types)[typeIndex];
+  const StructType& structType = typeDef.structType();
+  gc::AllocKind allocKind = WasmStructObject::allocKindForTypeDef(&typeDef);
+
+  *isOutlineStruct = WasmStructObject::requiresOutlineBytes(structType.size_);
+
+  
+  
+  needPtr(RegPtr(PreBarrierReg));
+
+  *object = RegRef();
+
+  
+  
+  if (*isOutlineStruct) {
+    pushPtr(loadTypeDefInstanceData(typeIndex));
+    if (!emitInstanceCall(ZeroFields ? SASigStructNewOOL_true
+                                     : SASigStructNewOOL_false)) {
+      return false;
+    }
+    *object = popRef();
+  } else {
+    
+    
+    sync();
+
+    RegPtr instance;
+    *object = RegRef(ReturnReg);
+    needRef(*object);
+#  ifndef RABALDR_PIN_INSTANCE
+    
+    instance = RegPtr(ReturnReg);
+    fr.loadInstancePtr(instance);
+#  else
+    
+    instance = RegPtr(InstanceReg);
+#  endif
+
+    RegPtr typeDefData = loadTypeDefInstanceData(typeIndex);
+    RegPtr temp1 = needPtr();
+    RegPtr temp2 = needPtr();
+
+    Label success;
+    Label fail;
+    masm.wasmNewStructObject(instance, *object, typeDefData, temp1, temp2,
+                             &fail, allocKind, ZeroFields);
+    freePtr(temp1);
+    freePtr(temp2);
+    masm.jump(&success);
+
+    masm.bind(&fail);
+    freeRef(*object);
+    pushPtr(typeDefData);
+    if (!emitInstanceCall(ZeroFields ? SASigStructNewIL_true
+                                     : SASigStructNewIL_false)) {
+      return false;
+    }
+    *object = popRef();
+    MOZ_ASSERT(*object == RegRef(ReturnReg));
+
+    masm.bind(&success);
+  }
+
+  *outlineBase = *isOutlineStruct ? needPtr() : RegPtr();
+
+  
+  freePtr(RegPtr(PreBarrierReg));
+
+  return true;
+}
+
 bool BaseCompiler::emitStructNew() {
   uint32_t typeIndex;
   BaseNothingVector args{};
@@ -6975,19 +7052,14 @@ bool BaseCompiler::emitStructNew() {
     return true;
   }
 
-  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
+  const TypeDef& typeDef = (*moduleEnv_.types)[typeIndex];
+  const StructType& structType = typeDef.structType();
 
-  
-  
-  SymbolicAddressSignature calleeSASig =
-      WasmStructObject::requiresOutlineBytes(structType.size_)
-          ? SASigStructNewOOL_false
-          : SASigStructNewIL_false;
-
-  
-  
-  pushPtr(loadTypeDefInstanceData(typeIndex));
-  if (!emitInstanceCall(calleeSASig)) {
+  RegRef object;
+  RegPtr outlineBase;
+  bool isOutlineStruct;
+  if (!emitStructAlloc<false>(typeIndex, &object, &isOutlineStruct,
+                              &outlineBase)) {
     return false;
   }
 
@@ -6996,18 +7068,6 @@ bool BaseCompiler::emitStructNew() {
   
   
   
-
-  bool isOutlineStruct = structType.size_ > WasmStructObject_MaxInlineBytes;
-
-  
-  
-  needPtr(RegPtr(PreBarrierReg));
-
-  RegRef object = popRef();
-  RegPtr outlineBase = isOutlineStruct ? needPtr() : RegPtr();
-
-  
-  freePtr(RegPtr(PreBarrierReg));
 
   
   
@@ -7080,19 +7140,20 @@ bool BaseCompiler::emitStructNewDefault() {
     return true;
   }
 
-  const StructType& structType = (*moduleEnv_.types)[typeIndex].structType();
+  RegRef object;
+  bool isOutlineStruct;
+  RegPtr outlineBase;
+  if (!emitStructAlloc<true>(typeIndex, &object, &isOutlineStruct,
+                             &outlineBase)) {
+    return false;
+  }
 
-  
-  
-  SymbolicAddressSignature calleeSASig =
-      WasmStructObject::requiresOutlineBytes(structType.size_)
-          ? SASigStructNewOOL_true
-          : SASigStructNewIL_true;
+  if (isOutlineStruct) {
+    freePtr(outlineBase);
+  }
+  pushRef(object);
 
-  
-  
-  pushPtr(loadTypeDefInstanceData(typeIndex));
-  return emitInstanceCall(calleeSASig);
+  return true;
 }
 
 bool BaseCompiler::emitStructGet(FieldWideningOp wideningOp) {
