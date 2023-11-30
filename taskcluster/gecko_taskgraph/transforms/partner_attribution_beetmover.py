@@ -32,6 +32,12 @@ from gecko_taskgraph.util.scriptworker import (
 beetmover_description_schema = Schema(
     {
         
+        Optional("job-from"): str,
+        Optional("name"): str,
+        
+        Optional("attributes"): task_description_schema["attributes"],
+        Optional("dependencies"): task_description_schema["dependencies"],
+        
         Required("depname", default="build"): str,
         
         Optional("label"): str,
