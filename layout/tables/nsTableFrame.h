@@ -346,6 +346,7 @@ class nsTableFrame : public nsContainerFrame {
               nsReflowStatus& aStatus) override;
 
   void ReflowTable(ReflowOutput& aDesiredSize, const ReflowInput& aReflowInput,
+                   const LogicalMargin& aBorderPadding,
                    mozilla::TableReflowMode aReflowMode,
                    nsIFrame*& aLastChildReflowed, nsReflowStatus& aStatus);
 
@@ -645,7 +646,8 @@ class nsTableFrame : public nsContainerFrame {
   
   
   
-  nscoord CalcDesiredBSize(const ReflowInput& aReflowInput);
+  nscoord CalcDesiredBSize(const ReflowInput& aReflowInput,
+                           const LogicalMargin& aBorderPadding);
 
   
   void DistributeBSizeToRows(const ReflowInput& aReflowInput, nscoord aAmount);
