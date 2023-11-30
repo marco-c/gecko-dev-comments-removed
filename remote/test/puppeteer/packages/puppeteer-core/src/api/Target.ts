@@ -16,9 +16,10 @@
 
 import type {Browser} from '../api/Browser.js';
 import type {BrowserContext} from '../api/BrowserContext.js';
-import {Page} from '../api/Page.js';
-import {CDPSession} from '../common/Connection.js';
-import {WebWorker} from '../common/WebWorker.js';
+import type {Page} from '../api/Page.js';
+import type {WebWorker} from '../cdp/WebWorker.js';
+
+import type {CDPSession} from './CDPSession.js';
 
 
 
@@ -44,7 +45,7 @@ export enum TargetType {
 
 
 
-export class Target {
+export abstract class Target {
   
 
 
@@ -65,16 +66,12 @@ export class Target {
     return null;
   }
 
-  url(): string {
-    throw new Error('not implemented');
-  }
+  abstract url(): string;
 
   
 
 
-  createCDPSession(): Promise<CDPSession> {
-    throw new Error('not implemented');
-  }
+  abstract createCDPSession(): Promise<CDPSession>;
 
   
 
@@ -83,28 +80,20 @@ export class Target {
 
 
 
-  type(): TargetType {
-    throw new Error('not implemented');
-  }
+  abstract type(): TargetType;
 
   
 
 
-  browser(): Browser {
-    throw new Error('not implemented');
-  }
+  abstract browser(): Browser;
 
   
 
 
-  browserContext(): BrowserContext {
-    throw new Error('not implemented');
-  }
+  abstract browserContext(): BrowserContext;
 
   
 
 
-  opener(): Target | undefined {
-    throw new Error('not implemented');
-  }
+  abstract opener(): Target | undefined;
 }

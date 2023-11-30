@@ -16,32 +16,46 @@
 
 import assert from 'assert';
 import {readdir} from 'fs/promises';
+import {platform} from 'os';
 import {join} from 'path';
 
 import {configureSandbox} from './sandbox.js';
 import {readAsset} from './util.js';
 
-describe('`puppeteer` with Firefox', () => {
-  configureSandbox({
-    dependencies: ['@puppeteer/browsers', 'puppeteer-core', 'puppeteer'],
-    env: cwd => {
-      return {
-        PUPPETEER_CACHE_DIR: join(cwd, '.cache', 'puppeteer'),
-        PUPPETEER_PRODUCT: 'firefox',
-      };
-    },
-  });
 
-  it('evaluates CommonJS', async function () {
-    const files = await readdir(join(this.sandbox, '.cache', 'puppeteer'));
-    assert.equal(files.length, 1);
-    assert.equal(files[0], 'firefox');
-    const script = await readAsset('puppeteer-core', 'requires.cjs');
-    await this.runScript(script, 'cjs');
-  });
+(platform() === 'win32' ? describe.skip : describe)(
+  '`puppeteer` with Firefox',
+  () => {
+    configureSandbox({
+      dependencies: ['@puppeteer/browsers', 'puppeteer-core', 'puppeteer'],
+      env: cwd => {
+        return {
+          PUPPETEER_CACHE_DIR: join(cwd, '.cache', 'puppeteer'),
+          PUPPETEER_PRODUCT: 'firefox',
+        };
+      },
+    });
 
-  it('evaluates ES modules', async function () {
-    const script = await readAsset('puppeteer-core', 'imports.js');
-    await this.runScript(script, 'mjs');
-  });
-});
+    describe('with CDP', () => {
+      it('evaluates CommonJS', async function () {
+        const files = await readdir(join(this.sandbox, '.cache', 'puppeteer'));
+        assert.equal(files.length, 1);
+        assert.equal(files[0], 'firefox');
+        const script = await readAsset('puppeteer-core', 'requires.cjs');
+        await this.runScript(script, 'cjs');
+      });
+
+      it('evaluates ES modules', async function () {
+        const script = await readAsset('puppeteer-core', 'imports.js');
+        await this.runScript(script, 'mjs');
+      });
+    });
+
+    describe('with WebDriverBiDi', () => {
+      it('evaluates ES modules', async function () {
+        const script = await readAsset('puppeteer', 'bidi.js');
+        await this.runScript(script, 'mjs');
+      });
+    });
+  }
+);

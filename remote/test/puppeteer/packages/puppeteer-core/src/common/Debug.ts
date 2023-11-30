@@ -14,6 +14,8 @@
 
 
 
+import type Debug from 'debug';
+
 import {isNode} from '../environment.js';
 
 declare global {
@@ -24,11 +26,11 @@ declare global {
 
 
 
-let debugModule: typeof import('debug') | null = null;
+let debugModule: typeof Debug | null = null;
 
 
 
-export async function importDebug(): Promise<typeof import('debug')> {
+export async function importDebug(): Promise<typeof Debug> {
   if (!debugModule) {
     debugModule = (await import('debug')).default;
   }

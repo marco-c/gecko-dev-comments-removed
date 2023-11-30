@@ -14,7 +14,7 @@
 
 
 
-import {Viewport} from './PuppeteerViewport.js';
+import type {Viewport} from './Viewport.js';
 
 
 

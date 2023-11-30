@@ -170,6 +170,12 @@ export interface PDFOptions {
 
 
 
+
+  tagged?: boolean;
+  
+
+
+
   timeout?: number;
 }
 

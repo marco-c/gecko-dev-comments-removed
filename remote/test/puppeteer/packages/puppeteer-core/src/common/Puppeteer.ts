@@ -14,14 +14,17 @@
 
 
 
-import {Browser} from '../api/Browser.js';
-
+import type {Browser} from '../api/Browser.js';
 import {
-  BrowserConnectOptions,
-  _connectToCDPBrowser,
-} from './BrowserConnector.js';
-import {ConnectionTransport} from './ConnectionTransport.js';
-import {CustomQueryHandler, customQueryHandlers} from './CustomQueryHandler.js';
+  _connectToBiDiOverCdpBrowser,
+  _connectToCdpBrowser,
+} from '../cdp/BrowserConnector.js';
+
+import type {ConnectOptions} from './ConnectOptions.js';
+import {
+  type CustomQueryHandler,
+  customQueryHandlers,
+} from './CustomQueryHandler.js';
 
 
 
@@ -30,20 +33,6 @@ import {CustomQueryHandler, customQueryHandlers} from './CustomQueryHandler.js';
 
 export interface CommonPuppeteerSettings {
   isPuppeteerCore: boolean;
-}
-
-
-
-export interface ConnectOptions extends BrowserConnectOptions {
-  browserWSEndpoint?: string;
-  browserURL?: string;
-  transport?: ConnectionTransport;
-  
-
-
-
-
-  headers?: Record<string, string>;
 }
 
 
@@ -142,6 +131,10 @@ export class Puppeteer {
 
 
   connect(options: ConnectOptions): Promise<Browser> {
-    return _connectToCDPBrowser(options);
+    if (options.protocol === 'webDriverBiDi') {
+      return _connectToBiDiOverCdpBrowser(options);
+    } else {
+      return _connectToCdpBrowser(options);
+    }
   }
 }

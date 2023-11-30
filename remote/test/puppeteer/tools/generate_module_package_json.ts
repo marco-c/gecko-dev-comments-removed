@@ -21,6 +21,5 @@ import {dirname} from 'path';
 
 
 
-
 mkdirSync(dirname(process.argv[2]), {recursive: true});
 writeFileSync(process.argv[2], `{"type": "module"}`);

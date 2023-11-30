@@ -14,10 +14,15 @@
 
 
 
-import {chain, Rule, SchematicContext, Tree} from '@angular-devkit/schematics';
+import {
+  chain,
+  type Rule,
+  type SchematicContext,
+  type Tree,
+} from '@angular-devkit/schematics';
 
 import {addFilesSingle} from '../utils/files.js';
-import {TestRunner, AngularProject} from '../utils/types.js';
+import {TestRunner, type AngularProject} from '../utils/types.js';
 
 
 

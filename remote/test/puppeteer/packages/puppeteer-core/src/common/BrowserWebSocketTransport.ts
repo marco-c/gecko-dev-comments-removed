@@ -13,7 +13,7 @@
 
 
 
-import {ConnectionTransport} from './ConnectionTransport.js';
+import type {ConnectionTransport} from './ConnectionTransport.js';
 
 
 

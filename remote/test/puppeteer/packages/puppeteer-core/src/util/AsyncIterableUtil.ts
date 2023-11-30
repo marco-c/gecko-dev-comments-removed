@@ -13,7 +13,7 @@
 
 
 
-import {AwaitableIterable} from '../common/types.js';
+import type {AwaitableIterable} from '../common/types.js';
 
 
 

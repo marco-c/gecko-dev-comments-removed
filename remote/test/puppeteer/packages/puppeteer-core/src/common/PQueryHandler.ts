@@ -14,7 +14,11 @@
 
 
 
-import {QueryHandler, QuerySelector, QuerySelectorAll} from './QueryHandler.js';
+import {
+  QueryHandler,
+  type QuerySelector,
+  type QuerySelectorAll,
+} from './QueryHandler.js';
 
 
 

@@ -14,7 +14,11 @@
 
 
 
-import mitt, {Emitter, EventHandlerMap} from '../../third_party/mitt/index.js';
+import mitt, {
+  type Emitter,
+  type EventHandlerMap,
+} from '../../third_party/mitt/mitt.js';
+import {disposeSymbol} from '../util/disposable.js';
 
 
 
@@ -23,30 +27,47 @@ export type EventType = string | symbol;
 
 
 
+
 export type Handler<T = unknown> = (event: T) => void;
 
 
 
 
-export interface CommonEventEmitter {
-  on(event: EventType, handler: Handler): this;
-  off(event: EventType, handler: Handler): this;
+export interface CommonEventEmitter<Events extends Record<EventType, unknown>> {
+  on<Key extends keyof Events>(type: Key, handler: Handler<Events[Key]>): this;
+  off<Key extends keyof Events>(
+    type: Key,
+    handler?: Handler<Events[Key]>
+  ): this;
+  emit<Key extends keyof Events>(type: Key, event: Events[Key]): boolean;
   
 
 
 
-  addListener(event: EventType, handler: Handler): this;
-  removeListener(event: EventType, handler: Handler): this;
-  emit(event: EventType, eventData?: unknown): boolean;
-  once(event: EventType, handler: Handler): this;
-  listenerCount(event: string): number;
+  addListener<Key extends keyof Events>(
+    type: Key,
+    handler: Handler<Events[Key]>
+  ): this;
+  removeListener<Key extends keyof Events>(
+    type: Key,
+    handler: Handler<Events[Key]>
+  ): this;
+  once<Key extends keyof Events>(
+    type: Key,
+    handler: Handler<Events[Key]>
+  ): this;
+  listenerCount(event: keyof Events): number;
 
-  removeAllListeners(event?: EventType): this;
+  removeAllListeners(event?: keyof Events): this;
 }
 
 
 
 
+export type EventsWithWildcard<Events extends Record<EventType, unknown>> =
+  Events & {
+    '*': Events[keyof Events];
+  };
 
 
 
@@ -56,15 +77,21 @@ export interface CommonEventEmitter {
 
 
 
-export class EventEmitter implements CommonEventEmitter {
-  private emitter: Emitter<Record<string | symbol, any>>;
-  private eventsMap: EventHandlerMap<Record<string | symbol, any>> = new Map();
+
+
+
+
+export class EventEmitter<Events extends Record<EventType, unknown>>
+  implements CommonEventEmitter<EventsWithWildcard<Events>>
+{
+  #emitter: Emitter<Events & {'*': Events[keyof Events]}>;
+  #handlers: EventHandlerMap<Events & {'*': Events[keyof Events]}> = new Map();
 
   
 
 
   constructor() {
-    this.emitter = mitt(this.eventsMap);
+    this.#emitter = mitt(this.#handlers);
   }
 
   
@@ -73,8 +100,11 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  on(event: EventType, handler: Handler<any>): this {
-    this.emitter.on(event, handler);
+  on<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    handler: Handler<EventsWithWildcard<Events>[Key]>
+  ): this {
+    this.#emitter.on(type, handler);
     return this;
   }
 
@@ -84,26 +114,11 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  off(event: EventType, handler: Handler<any>): this {
-    this.emitter.off(event, handler);
-    return this;
-  }
-
-  
-
-
-
-  removeListener(event: EventType, handler: Handler<any>): this {
-    this.off(event, handler);
-    return this;
-  }
-
-  
-
-
-
-  addListener(event: EventType, handler: Handler<any>): this {
-    this.on(event, handler);
+  off<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    handler?: Handler<EventsWithWildcard<Events>[Key]>
+  ): this {
+    this.#emitter.off(type, handler);
     return this;
   }
 
@@ -112,11 +127,25 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
+  removeListener<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    handler: Handler<EventsWithWildcard<Events>[Key]>
+  ): this {
+    this.off(type, handler);
+    return this;
+  }
+
+  
 
 
-  emit(event: EventType, eventData?: unknown): boolean {
-    this.emitter.emit(event, eventData);
-    return this.eventListenersCount(event) > 0;
+
+
+  addListener<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    handler: Handler<EventsWithWildcard<Events>[Key]>
+  ): this {
+    this.on(type, handler);
+    return this;
   }
 
   
@@ -125,13 +154,31 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  once(event: EventType, handler: Handler<any>): this {
-    const onceHandler: Handler<any> = eventData => {
+
+  emit<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    event: EventsWithWildcard<Events>[Key]
+  ): boolean {
+    this.#emitter.emit(type, event);
+    return this.listenerCount(type) > 0;
+  }
+
+  
+
+
+
+
+
+  once<Key extends keyof EventsWithWildcard<Events>>(
+    type: Key,
+    handler: Handler<EventsWithWildcard<Events>[Key]>
+  ): this {
+    const onceHandler: Handler<EventsWithWildcard<Events>[Key]> = eventData => {
       handler(eventData);
-      this.off(event, onceHandler);
+      this.off(type, onceHandler);
     };
 
-    return this.on(event, onceHandler);
+    return this.on(type, onceHandler);
   }
 
   
@@ -140,8 +187,8 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  listenerCount(event: EventType): number {
-    return this.eventListenersCount(event);
+  listenerCount(type: keyof EventsWithWildcard<Events>): number {
+    return this.#handlers.get(type)?.length || 0;
   }
 
   
@@ -150,16 +197,37 @@ export class EventEmitter implements CommonEventEmitter {
 
 
 
-  removeAllListeners(event?: EventType): this {
-    if (event) {
-      this.eventsMap.delete(event);
+
+  removeAllListeners(type?: keyof EventsWithWildcard<Events>): this {
+    if (type === undefined || type === '*') {
+      this.#handlers.clear();
     } else {
-      this.eventsMap.clear();
+      this.#handlers.delete(type);
     }
     return this;
   }
+}
 
-  private eventListenersCount(event: EventType): number {
-    return this.eventsMap.get(event)?.length || 0;
+
+
+
+export class EventSubscription<
+  Target extends CommonEventEmitter<Record<Type, Event>>,
+  Type extends EventType = EventType,
+  Event = unknown,
+> {
+  #target: Target;
+  #type: Type;
+  #handler: Handler<Event>;
+
+  constructor(target: Target, type: Type, handler: Handler<Event>) {
+    this.#target = target;
+    this.#type = type;
+    this.#handler = handler;
+    this.#target.on(this.#type, this.#handler);
+  }
+
+  [disposeSymbol](): void {
+    this.#target.off(this.#type, this.#handler);
   }
 }

@@ -14,7 +14,7 @@
 
 
 
-import {JSHandle} from '../api/JSHandle.js';
+import type {JSHandle} from '../api/JSHandle.js';
 
 
 

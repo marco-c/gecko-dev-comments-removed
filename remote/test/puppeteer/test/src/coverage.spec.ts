@@ -165,6 +165,8 @@ describe('Coverage specs', function () {
 
         await page.coverage.startJSCoverage({resetOnNavigation: false});
         await page.goto(server.PREFIX + '/jscoverage/multiple.html');
+        
+        await page.waitForNetworkIdle();
         await page.goto(server.EMPTY_PAGE);
         const coverage = await page.coverage.stopJSCoverage();
         expect(coverage).toHaveLength(2);

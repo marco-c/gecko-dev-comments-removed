@@ -18,18 +18,14 @@ import fs from 'fs';
 import path from 'path';
 
 import {TestServer} from '@pptr/testserver';
-import {Protocol} from 'devtools-protocol';
+import type {Protocol} from 'devtools-protocol';
 import expect from 'expect';
-import * as Mocha from 'mocha';
+import type * as MochaBase from 'mocha';
 import puppeteer from 'puppeteer/lib/cjs/puppeteer/puppeteer.js';
-import {Browser} from 'puppeteer-core/internal/api/Browser.js';
-import {BrowserContext} from 'puppeteer-core/internal/api/BrowserContext.js';
-import {Page} from 'puppeteer-core/internal/api/Page.js';
-import {
-  setLogCapture,
-  getCapturedLogs,
-} from 'puppeteer-core/internal/common/Debug.js';
-import {
+import type {Browser} from 'puppeteer-core/internal/api/Browser.js';
+import type {BrowserContext} from 'puppeteer-core/internal/api/BrowserContext.js';
+import type {Page} from 'puppeteer-core/internal/api/Page.js';
+import type {
   PuppeteerLaunchOptions,
   PuppeteerNode,
 } from 'puppeteer-core/internal/node/PuppeteerNode.js';
@@ -40,10 +36,44 @@ import sinon from 'sinon';
 
 import {extendExpectWithToBeGolden} from './utils.js';
 
+declare global {
+  
+  namespace Mocha {
+    export interface SuiteFunction {
+      
+
+
+
+
+      withDebugLogs: (
+        description: string,
+        body: (this: MochaBase.Suite) => void
+      ) => void;
+    }
+    export interface TestFunction {
+      
+
+
+
+      deflake: (
+        repeats: number,
+        title: string,
+        fn: MochaBase.AsyncFunc
+      ) => void;
+      
+
+
+      deflakeOnly: (
+        repeats: number,
+        title: string,
+        fn: MochaBase.AsyncFunc
+      ) => void;
+    }
+  }
+}
+
 const product =
   process.env['PRODUCT'] || process.env['PUPPETEER_PRODUCT'] || 'chrome';
-
-const alternativeInstall = process.env['PUPPETEER_ALT_INSTALL'] || false;
 
 const headless = (process.env['HEADLESS'] || 'true').trim().toLowerCase() as
   | 'true'
@@ -95,7 +125,6 @@ if (defaultBrowserOptions.executablePath) {
 
 const processVariables: {
   product: string;
-  alternativeInstall: string | boolean;
   headless: 'true' | 'false' | 'new';
   isHeadless: boolean;
   isFirefox: boolean;
@@ -104,7 +133,6 @@ const processVariables: {
   defaultBrowserOptions: PuppeteerLaunchOptions;
 } = {
   product,
-  alternativeInstall,
   headless,
   isHeadless,
   isFirefox,
@@ -217,17 +245,6 @@ export interface PuppeteerTestState {
 }
 const state: Partial<PuppeteerTestState> = {};
 
-export const itOnlyRegularInstall = (
-  description: string,
-  body: Mocha.AsyncFunc
-): Mocha.Test => {
-  if (processVariables.alternativeInstall || process.env['BINARY']) {
-    return it.skip(description, body);
-  } else {
-    return it(description, body);
-  }
-};
-
 if (
   process.env['MOCHA_WORKER_ID'] === undefined ||
   process.env['MOCHA_WORKER_ID'] === '0'
@@ -248,10 +265,6 @@ if (
   }`
   );
 }
-
-process.on('unhandledRejection', reason => {
-  throw reason;
-});
 
 const browserNotClosedError = new Error(
   'A manually launched browser was not closed!'
@@ -378,34 +391,6 @@ export const expectCookieEquals = async (
   for (let i = 0; i < cookies.length; i++) {
     expect(cookies[i]).toMatchObject(expectedCookies[i]!);
   }
-};
-
-
-
-
-
-
-export const describeWithDebugLogs = (
-  description: string,
-  body: (this: Mocha.Suite) => void
-): Mocha.Suite | void => {
-  describe(description + '-debug', () => {
-    beforeEach(() => {
-      setLogCapture(true);
-    });
-
-    afterEach(function () {
-      if (this.currentTest?.state === 'failed') {
-        console.log(
-          `\n"${this.currentTest.fullTitle()}" failed. Here is a debug log:`
-        );
-        console.log(getCapturedLogs().join('\n') + '\n');
-      }
-      setLogCapture(false);
-    });
-
-    describe(description, body);
-  });
 };
 
 export const shortWaitForArrayToHaveAtLeastNElements = async (

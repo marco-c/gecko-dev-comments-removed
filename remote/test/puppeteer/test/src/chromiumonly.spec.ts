@@ -13,7 +13,7 @@
 
 
 
-import {IncomingMessage} from 'http';
+import type {IncomingMessage} from 'http';
 
 import expect from 'expect';
 import {Deferred} from 'puppeteer-core/internal/util/Deferred.js';

@@ -14,21 +14,23 @@
 
 
 
-import {ClickOptions, ElementHandle} from '../api/ElementHandle.js';
-import {HTTPResponse} from '../api/HTTPResponse.js';
-import {Page, WaitTimeoutOptions} from '../api/Page.js';
-import {CDPSession} from '../common/Connection.js';
-import {DeviceRequestPrompt} from '../common/DeviceRequestPrompt.js';
-import {EventEmitter} from '../common/EventEmitter.js';
+import type Protocol from 'devtools-protocol';
+
+import type {ClickOptions, ElementHandle} from '../api/ElementHandle.js';
+import type {HTTPResponse} from '../api/HTTPResponse.js';
+import type {
+  Page,
+  WaitForSelectorOptions,
+  WaitTimeoutOptions,
+} from '../api/Page.js';
+import type {DeviceRequestPrompt} from '../cdp/DeviceRequestPrompt.js';
+import type {IsolatedWorldChart} from '../cdp/IsolatedWorld.js';
+import type {PuppeteerLifeCycleEvent} from '../cdp/LifecycleWatcher.js';
+import {EventEmitter, type EventType} from '../common/EventEmitter.js';
 import {getQueryHandlerAndSelector} from '../common/GetQueryHandler.js';
 import {transposeIterableHandle} from '../common/HandleIterator.js';
-import {
-  IsolatedWorldChart,
-  WaitForSelectorOptions,
-} from '../common/IsolatedWorld.js';
 import {LazyArg} from '../common/LazyArg.js';
-import {PuppeteerLifeCycleEvent} from '../common/LifecycleWatcher.js';
-import {
+import type {
   Awaitable,
   EvaluateFunc,
   EvaluateFuncWith,
@@ -43,9 +45,53 @@ import {
 import {assert} from '../util/assert.js';
 import {throwIfDisposed} from '../util/decorators.js';
 
-import {KeyboardTypeOptions} from './Input.js';
-import {FunctionLocator, Locator, NodeLocator} from './locators/locators.js';
-import {Realm} from './Realm.js';
+import type {CDPSession} from './CDPSession.js';
+import type {KeyboardTypeOptions} from './Input.js';
+import {
+  FunctionLocator,
+  type Locator,
+  NodeLocator,
+} from './locators/locators.js';
+import type {Realm} from './Realm.js';
+
+
+
+
+export interface WaitForOptions {
+  
+
+
+
+
+
+
+
+
+  timeout?: number;
+  
+
+
+
+
+
+  waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
+}
+
+
+
+
+export interface GoToOptions extends WaitForOptions {
+  
+
+
+
+  referer?: string;
+  
+
+
+
+  referrerPolicy?: string;
+}
 
 
 
@@ -130,6 +176,44 @@ export interface FrameAddStyleTagOptions {
 
 
 
+export interface FrameEvents extends Record<EventType, unknown> {
+  
+  [FrameEvent.FrameNavigated]: Protocol.Page.NavigationType;
+  
+  [FrameEvent.FrameSwapped]: undefined;
+  
+  [FrameEvent.LifecycleEvent]: undefined;
+  
+  [FrameEvent.FrameNavigatedWithinDocument]: undefined;
+  
+  [FrameEvent.FrameDetached]: Frame;
+  
+  [FrameEvent.FrameSwappedByActivation]: undefined;
+}
+
+
+
+
+
+
+
+
+export namespace FrameEvent {
+  export const FrameNavigated = Symbol('Frame.FrameNavigated');
+  export const FrameSwapped = Symbol('Frame.FrameSwapped');
+  export const LifecycleEvent = Symbol('Frame.LifecycleEvent');
+  export const FrameNavigatedWithinDocument = Symbol(
+    'Frame.FrameNavigatedWithinDocument'
+  );
+  export const FrameDetached = Symbol('Frame.FrameDetached');
+  export const FrameSwappedByActivation = Symbol(
+    'Frame.FrameSwappedByActivation'
+  );
+}
+
+
+
+
 export const throwIfDetached = throwIfDisposed<Frame>(frame => {
   return `Attempted to use detached Frame '${frame._id}'.`;
 });
@@ -187,7 +271,7 @@ export const throwIfDetached = throwIfDisposed<Frame>(frame => {
 
 
 
-export abstract class Frame extends EventEmitter {
+export abstract class Frame extends EventEmitter<FrameEvents> {
   
 
 
@@ -228,14 +312,9 @@ export abstract class Frame extends EventEmitter {
 
 
 
-  isOOPFrame(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract isOOPFrame(): boolean;
 
   
-
-
-
 
 
 
@@ -301,11 +380,9 @@ export abstract class Frame extends EventEmitter {
 
 
 
-
-  abstract waitForNavigation(options?: {
-    timeout?: number;
-    waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
-  }): Promise<HTTPResponse | null>;
+  abstract waitForNavigation(
+    options?: WaitForOptions
+  ): Promise<HTTPResponse | null>;
 
   
 
@@ -1119,25 +1196,9 @@ export abstract class Frame extends EventEmitter {
 
 
 
-  waitForDevicePrompt(
+
+
+  abstract waitForDevicePrompt(
     options?: WaitTimeoutOptions
   ): Promise<DeviceRequestPrompt>;
-
-  
-
-
-  waitForDevicePrompt(): Promise<DeviceRequestPrompt> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  exposeFunction<Args extends unknown[], Ret>(
-    name: string,
-    fn: (...args: Args) => Awaitable<Ret>
-  ): Promise<void>;
-  exposeFunction(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 }

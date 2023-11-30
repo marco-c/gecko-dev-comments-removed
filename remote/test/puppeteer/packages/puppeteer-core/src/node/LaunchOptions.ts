@@ -14,8 +14,8 @@
 
 
 
-import {BrowserConnectOptions} from '../common/BrowserConnector.js';
-import {Product} from '../common/Product.js';
+import type {BrowserConnectOptions} from '../common/ConnectOptions.js';
+import type {Product} from '../common/Product.js';
 
 
 

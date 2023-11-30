@@ -2,6 +2,23 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+import type {ProtocolError} from '../common/Errors.js';
+
+
+
+
 export interface ErrorLike extends Error {
   name: string;
   message: string;
@@ -24,4 +41,36 @@ export function isErrnoException(obj: unknown): obj is NodeJS.ErrnoException {
     isErrorLike(obj) &&
     ('errno' in obj || 'code' in obj || 'path' in obj || 'syscall' in obj)
   );
+}
+
+
+
+
+export function rewriteError(
+  error: ProtocolError,
+  message: string,
+  originalMessage?: string
+): Error {
+  error.message = message;
+  error.originalMessage = originalMessage ?? error.originalMessage;
+  return error;
+}
+
+
+
+
+export function createProtocolErrorMessage(object: {
+  error: {message: string; data: any; code: number};
+}): string {
+  let message = `${object.error.message}`;
+  
+  
+  if (
+    object.error &&
+    typeof object.error === 'object' &&
+    'data' in object.error
+  ) {
+    message += ` ${object.error.data}`;
+  }
+  return message;
 }

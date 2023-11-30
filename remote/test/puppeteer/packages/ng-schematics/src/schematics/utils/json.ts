@@ -14,7 +14,7 @@
 
 
 
-import {SchematicsException, Tree} from '@angular-devkit/schematics';
+import {SchematicsException, type Tree} from '@angular-devkit/schematics';
 
 import type {AngularJson, AngularProject} from './types.js';
 

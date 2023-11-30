@@ -14,7 +14,7 @@
 
 
 
-import {Product} from './Product.js';
+import type {Product} from './Product.js';
 
 
 

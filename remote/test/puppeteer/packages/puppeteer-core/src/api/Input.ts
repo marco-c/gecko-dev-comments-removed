@@ -14,11 +14,11 @@
 
 
 
-import {Protocol} from 'devtools-protocol';
+import type {Protocol} from 'devtools-protocol';
 
-import {KeyInput} from '../common/USKeyboardLayout.js';
+import type {KeyInput} from '../common/USKeyboardLayout.js';
 
-import {Point} from './ElementHandle.js';
+import type {Point} from './ElementHandle.js';
 
 
 
@@ -87,7 +87,7 @@ export type KeyPressOptions = KeyDownOptions & KeyboardTypeOptions;
 
 
 
-export class Keyboard {
+export abstract class Keyboard {
   
 
 
@@ -120,10 +120,10 @@ export class Keyboard {
 
 
 
-  async down(key: KeyInput, options?: Readonly<KeyDownOptions>): Promise<void>;
-  async down(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract down(
+    key: KeyInput,
+    options?: Readonly<KeyDownOptions>
+  ): Promise<void>;
 
   
 
@@ -132,31 +132,7 @@ export class Keyboard {
 
 
 
-  async up(key: KeyInput): Promise<void>;
-  async up(): Promise<void> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async sendCharacter(char: string): Promise<void>;
-  async sendCharacter(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract up(key: KeyInput): Promise<void>;
 
   
 
@@ -174,6 +150,9 @@ export class Keyboard {
 
 
 
+  abstract sendCharacter(char: string): Promise<void>;
+
+  
 
 
 
@@ -181,13 +160,25 @@ export class Keyboard {
 
 
 
-  async type(
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  abstract type(
     text: string,
     options?: Readonly<KeyboardTypeOptions>
   ): Promise<void>;
-  async type(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -211,13 +202,10 @@ export class Keyboard {
 
 
 
-  async press(
+  abstract press(
     key: KeyInput,
     options?: Readonly<KeyPressOptions>
   ): Promise<void>;
-  async press(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 }
 
 
@@ -367,7 +355,7 @@ export type MouseButton = (typeof MouseButton)[keyof typeof MouseButton];
 
 
 
-export class Mouse {
+export abstract class Mouse {
   
 
 
@@ -377,9 +365,7 @@ export class Mouse {
 
 
 
-  async reset(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract reset(): Promise<void>;
 
   
 
@@ -388,34 +374,25 @@ export class Mouse {
 
 
 
-  async move(
+  abstract move(
     x: number,
     y: number,
     options?: Readonly<MouseMoveOptions>
   ): Promise<void>;
-  async move(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
 
 
 
-  async down(options?: Readonly<MouseOptions>): Promise<void>;
-  async down(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract down(options?: Readonly<MouseOptions>): Promise<void>;
 
   
 
 
 
 
-  async up(options?: Readonly<MouseOptions>): Promise<void>;
-  async up(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract up(options?: Readonly<MouseOptions>): Promise<void>;
 
   
 
@@ -424,14 +401,11 @@ export class Mouse {
 
 
 
-  async click(
+  abstract click(
     x: number,
     y: number,
     options?: Readonly<MouseClickOptions>
   ): Promise<void>;
-  async click(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -455,50 +429,41 @@ export class Mouse {
 
 
 
-  async wheel(options?: Readonly<MouseWheelOptions>): Promise<void>;
-  async wheel(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract wheel(options?: Readonly<MouseWheelOptions>): Promise<void>;
 
   
 
 
 
 
-  async drag(start: Point, target: Point): Promise<Protocol.Input.DragData>;
-  async drag(): Promise<Protocol.Input.DragData> {
-    throw new Error('Not implemented');
-  }
+  abstract drag(start: Point, target: Point): Promise<Protocol.Input.DragData>;
 
   
 
 
 
 
-  async dragEnter(target: Point, data: Protocol.Input.DragData): Promise<void>;
-  async dragEnter(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract dragEnter(
+    target: Point,
+    data: Protocol.Input.DragData
+  ): Promise<void>;
 
   
 
 
 
 
-  async dragOver(target: Point, data: Protocol.Input.DragData): Promise<void>;
-  async dragOver(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract dragOver(
+    target: Point,
+    data: Protocol.Input.DragData
+  ): Promise<void>;
 
   
 
 
 
 
-  async drop(target: Point, data: Protocol.Input.DragData): Promise<void>;
-  async drop(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract drop(target: Point, data: Protocol.Input.DragData): Promise<void>;
 
   
 
@@ -508,21 +473,18 @@ export class Mouse {
 
 
 
-  async dragAndDrop(
+  abstract dragAndDrop(
     start: Point,
     target: Point,
     options?: {delay?: number}
   ): Promise<void>;
-  async dragAndDrop(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 }
 
 
 
 
 
-export class Touchscreen {
+export abstract class Touchscreen {
   
 
 
@@ -533,9 +495,9 @@ export class Touchscreen {
 
 
 
-  async tap(x: number, y: number): Promise<void>;
-  async tap(): Promise<void> {
-    throw new Error('Not implemented');
+  async tap(x: number, y: number): Promise<void> {
+    await this.touchStart(x, y);
+    await this.touchEnd();
   }
 
   
@@ -543,10 +505,7 @@ export class Touchscreen {
 
 
 
-  async touchStart(x: number, y: number): Promise<void>;
-  async touchStart(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract touchStart(x: number, y: number): Promise<void>;
 
   
 
@@ -560,16 +519,10 @@ export class Touchscreen {
 
 
 
-  async touchMove(x: number, y: number): Promise<void>;
-  async touchMove(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract touchMove(x: number, y: number): Promise<void>;
 
   
 
 
-  async touchEnd(): Promise<void>;
-  async touchEnd(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract touchEnd(): Promise<void>;
 }

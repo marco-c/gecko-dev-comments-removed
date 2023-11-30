@@ -14,7 +14,11 @@
 
 
 
-import {QueryHandler, QuerySelectorAll} from './QueryHandler.js';
+import {
+  QueryHandler,
+  type QuerySelectorAll,
+  type QuerySelector,
+} from './QueryHandler.js';
 
 
 
@@ -26,5 +30,16 @@ export class XPathQueryHandler extends QueryHandler {
     {xpathQuerySelectorAll}
   ) => {
     return xpathQuerySelectorAll(element, selector);
+  };
+
+  static override querySelector: QuerySelector = (
+    element: Node,
+    selector: string,
+    {xpathQuerySelectorAll}
+  ) => {
+    for (const result of xpathQuerySelectorAll(element, selector, 1)) {
+      return result;
+    }
+    return null;
   };
 }

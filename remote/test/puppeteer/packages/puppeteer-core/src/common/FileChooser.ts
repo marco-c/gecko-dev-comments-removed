@@ -14,9 +14,9 @@
 
 
 
-import {Protocol} from 'devtools-protocol';
+import type {Protocol} from 'devtools-protocol';
 
-import {ElementHandle} from '../api/ElementHandle.js';
+import type {ElementHandle} from '../api/ElementHandle.js';
 import {assert} from '../util/assert.js';
 
 
@@ -87,11 +87,16 @@ export class FileChooser {
   
 
 
-  cancel(): void {
+  async cancel(): Promise<void> {
     assert(
       !this.#handled,
       'Cannot cancel FileChooser which is already handled!'
     );
     this.#handled = true;
+    
+    
+    await this.#element.evaluate(element => {
+      element.dispatchEvent(new Event('cancel', {bubbles: true}));
+    });
   }
 }

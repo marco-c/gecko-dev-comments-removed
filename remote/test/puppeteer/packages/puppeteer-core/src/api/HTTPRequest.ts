@@ -13,12 +13,11 @@
 
 
 
-import {Protocol} from 'devtools-protocol';
+import type {Protocol} from 'devtools-protocol';
 
-import {CDPSession} from '../common/Connection.js';
-
-import {Frame} from './Frame.js';
-import {HTTPResponse} from './HTTPResponse.js';
+import type {CDPSession} from './CDPSession.js';
+import type {Frame} from './Frame.js';
+import type {HTTPResponse} from './HTTPResponse.js';
 
 
 
@@ -101,7 +100,7 @@ export const DEFAULT_INTERCEPT_RESOLUTION_PRIORITY = 0;
 
 
 
-export class HTTPRequest {
+export abstract class HTTPRequest {
   
 
 
@@ -132,9 +131,7 @@ export class HTTPRequest {
 
 
 
-  get client(): CDPSession {
-    throw new Error('Not implemented');
-  }
+  abstract get client(): CDPSession;
 
   
 
@@ -144,33 +141,25 @@ export class HTTPRequest {
   
 
 
-  url(): string {
-    throw new Error('Not implemented');
-  }
+  abstract url(): string;
 
   
 
 
 
 
-  continueRequestOverrides(): ContinueRequestOverrides {
-    throw new Error('Not implemented');
-  }
+  abstract continueRequestOverrides(): ContinueRequestOverrides;
 
   
 
 
 
-  responseForRequest(): Partial<ResponseForRequest> | null {
-    throw new Error('Not implemented');
-  }
+  abstract responseForRequest(): Partial<ResponseForRequest> | null;
 
   
 
 
-  abortErrorReason(): Protocol.Network.ErrorReason | null {
-    throw new Error('Not implemented');
-  }
+  abstract abortErrorReason(): Protocol.Network.ErrorReason | null;
 
   
 
@@ -183,17 +172,13 @@ export class HTTPRequest {
 
 
 
-  interceptResolutionState(): InterceptResolutionState {
-    throw new Error('Not implemented');
-  }
+  abstract interceptResolutionState(): InterceptResolutionState;
 
   
 
 
 
-  isInterceptResolutionHandled(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract isInterceptResolutionHandled(): boolean;
 
   
 
@@ -201,80 +186,59 @@ export class HTTPRequest {
 
 
 
-  enqueueInterceptAction(
+  abstract enqueueInterceptAction(
     pendingHandler: () => void | PromiseLike<unknown>
   ): void;
-  enqueueInterceptAction(): void {
-    throw new Error('Not implemented');
-  }
 
   
 
 
 
-  async finalizeInterceptions(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract finalizeInterceptions(): Promise<void>;
 
   
 
 
 
-  resourceType(): ResourceType {
-    throw new Error('Not implemented');
-  }
+  abstract resourceType(): ResourceType;
 
   
 
 
-  method(): string {
-    throw new Error('Not implemented');
-  }
+  abstract method(): string;
 
   
 
 
-  postData(): string | undefined {
-    throw new Error('Not implemented');
-  }
+  abstract postData(): string | undefined;
 
   
 
 
 
-  headers(): Record<string, string> {
-    throw new Error('Not implemented');
-  }
+  abstract headers(): Record<string, string>;
 
   
 
 
 
-  response(): HTTPResponse | null {
-    throw new Error('Not implemented');
-  }
+  abstract response(): HTTPResponse | null;
 
   
 
 
 
-  frame(): Frame | null {
-    throw new Error('Not implemented');
-  }
+  abstract frame(): Frame | null;
 
   
 
 
-  isNavigationRequest(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract isNavigationRequest(): boolean;
 
   
 
 
-  initiator(): Protocol.Network.Initiator | undefined {
-    throw new Error('Not implemented');
-  }
+  abstract initiator(): Protocol.Network.Initiator | undefined;
 
   
 
@@ -303,9 +267,7 @@ export class HTTPRequest {
 
 
 
-  redirectChain(): HTTPRequest[] {
-    throw new Error('Not implemented');
-  }
+  abstract redirectChain(): HTTPRequest[];
 
   
 
@@ -327,9 +289,7 @@ export class HTTPRequest {
 
 
 
-  failure(): {errorText: string} | null {
-    throw new Error('Not implemented');
-  }
+  abstract failure(): {errorText: string} | null;
 
   
 
@@ -360,13 +320,10 @@ export class HTTPRequest {
 
 
 
-  async continue(
+  abstract continue(
     overrides?: ContinueRequestOverrides,
     priority?: number
   ): Promise<void>;
-  async continue(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -400,13 +357,10 @@ export class HTTPRequest {
 
 
 
-  async respond(
+  abstract respond(
     response: Partial<ResponseForRequest>,
     priority?: number
   ): Promise<void>;
-  async respond(): Promise<void> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -421,10 +375,7 @@ export class HTTPRequest {
 
 
 
-  async abort(errorCode?: ErrorCode, priority?: number): Promise<void>;
-  async abort(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+  abstract abort(errorCode?: ErrorCode, priority?: number): Promise<void>;
 }
 
 
@@ -500,7 +451,7 @@ export function headersArray(
 
 
 
-export const STATUS_TEXTS: Record<string, string | undefined> = {
+export const STATUS_TEXTS: Record<string, string> = {
   '100': 'Continue',
   '101': 'Switching Protocols',
   '102': 'Processing',

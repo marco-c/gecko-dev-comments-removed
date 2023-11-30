@@ -14,9 +14,10 @@
 
 
 
-export {Protocol} from 'devtools-protocol';
+export type {Protocol} from 'devtools-protocol';
 
 export * from './api/api.js';
+export * from './cdp/cdp.js';
 export * from './common/common.js';
 export * from './node/node.js';
 export * from './revisions.js';

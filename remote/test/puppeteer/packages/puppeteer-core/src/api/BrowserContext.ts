@@ -14,15 +14,55 @@
 
 
 
-import {EventEmitter} from '../common/EventEmitter.js';
+import {EventEmitter, type EventType} from '../common/EventEmitter.js';
+import {debugError} from '../common/util.js';
+import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
 
-import type {Permission, Browser} from './Browser.js';
-import {Page} from './Page.js';
+import type {Browser, Permission, WaitForTargetOptions} from './Browser.js';
+import type {Page} from './Page.js';
 import type {Target} from './Target.js';
 
 
 
 
+export const enum BrowserContextEvent {
+  
+
+
+
+  TargetChanged = 'targetchanged',
+
+  
+
+
+
+
+
+
+
+  TargetCreated = 'targetcreated',
+  
+
+
+
+  TargetDestroyed = 'targetdestroyed',
+}
+
+export {
+  
+
+
+  BrowserContextEvent as BrowserContextEmittedEvents,
+};
+
+
+
+
+export interface BrowserContextEvents extends Record<EventType, unknown> {
+  [BrowserContextEvent.TargetChanged]: Target;
+  [BrowserContextEvent.TargetCreated]: Target;
+  [BrowserContextEvent.TargetDestroyed]: Target;
+}
 
 
 
@@ -55,7 +95,7 @@ import type {Target} from './Target.js';
 
 
 
-export class BrowserContext extends EventEmitter {
+export abstract class BrowserContext extends EventEmitter<BrowserContextEvents> {
   
 
 
@@ -66,9 +106,8 @@ export class BrowserContext extends EventEmitter {
   
 
 
-  targets(): Target[] {
-    throw new Error('Not implemented');
-  }
+
+  abstract targets(): Target[];
 
   
 
@@ -85,18 +124,10 @@ export class BrowserContext extends EventEmitter {
 
 
 
-
-
-
-
-
-  waitForTarget(
+  abstract waitForTarget(
     predicate: (x: Target) => boolean | Promise<boolean>,
-    options?: {timeout?: number}
+    options?: WaitForTargetOptions
   ): Promise<Target>;
-  waitForTarget(): Promise<Target> {
-    throw new Error('Not implemented');
-  }
 
   
 
@@ -105,9 +136,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  pages(): Promise<Page[]> {
-    throw new Error('Not implemented');
-  }
+  abstract pages(): Promise<Page[]>;
 
   
 
@@ -115,10 +144,7 @@ export class BrowserContext extends EventEmitter {
 
 
 
-
-  isIncognito(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract isIncognito(): boolean;
 
   
 
@@ -134,10 +160,15 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  overridePermissions(origin: string, permissions: Permission[]): Promise<void>;
-  overridePermissions(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+
+
+
+
+
+  abstract overridePermissions(
+    origin: string,
+    permissions: Permission[]
+  ): Promise<void>;
 
   
 
@@ -151,36 +182,53 @@ export class BrowserContext extends EventEmitter {
 
 
 
-  clearPermissionOverrides(): Promise<void> {
-    throw new Error('Not implemented');
-  }
-
-  
 
 
-  newPage(): Promise<Page> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  browser(): Browser {
-    throw new Error('Not implemented');
-  }
+  abstract clearPermissionOverrides(): Promise<void>;
 
   
 
 
 
+  abstract newPage(): Promise<Page>;
+
+  
 
 
 
-  close(): Promise<void> {
-    throw new Error('Not implemented');
+  abstract browser(): Browser;
+
+  
+
+
+
+
+
+
+
+  abstract close(): Promise<void>;
+
+  
+
+
+  get closed(): boolean {
+    return !this.browser().browserContexts().includes(this);
   }
+
+  
+
 
   get id(): string | undefined {
     return undefined;
+  }
+
+  
+  [disposeSymbol](): void {
+    return void this.close().catch(debugError);
+  }
+
+  
+  [asyncDisposeSymbol](): Promise<void> {
+    return this.close();
   }
 }

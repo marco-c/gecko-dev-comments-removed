@@ -14,12 +14,12 @@
 
 
 
-import Protocol from 'devtools-protocol';
+import type Protocol from 'devtools-protocol';
 
-import {SecurityDetails} from '../common/SecurityDetails.js';
+import type {SecurityDetails} from '../common/SecurityDetails.js';
 
-import {Frame} from './Frame.js';
-import {HTTPRequest} from './HTTPRequest.js';
+import type {Frame} from './Frame.js';
+import type {HTTPRequest} from './HTTPRequest.js';
 
 
 
@@ -35,7 +35,7 @@ export interface RemoteAddress {
 
 
 
-export class HTTPResponse {
+export abstract class HTTPResponse {
   
 
 
@@ -44,24 +44,13 @@ export class HTTPResponse {
   
 
 
-  _resolveBody(_err: Error | null): void {
-    throw new Error('Not implemented');
-  }
+
+  abstract remoteAddress(): RemoteAddress;
 
   
 
 
-
-  remoteAddress(): RemoteAddress {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  url(): string {
-    throw new Error('Not implemented');
-  }
+  abstract url(): string;
 
   
 
@@ -75,47 +64,35 @@ export class HTTPResponse {
   
 
 
-  status(): number {
-    throw new Error('Not implemented');
-  }
+  abstract status(): number;
 
   
 
 
 
-  statusText(): string {
-    throw new Error('Not implemented');
-  }
+  abstract statusText(): string;
 
   
 
 
 
-  headers(): Record<string, string> {
-    throw new Error('Not implemented');
-  }
+  abstract headers(): Record<string, string>;
 
   
 
 
 
-  securityDetails(): SecurityDetails | null {
-    throw new Error('Not implemented');
-  }
+  abstract securityDetails(): SecurityDetails | null;
 
   
 
 
-  timing(): Protocol.Network.ResourceTiming | null {
-    throw new Error('Not implemented');
-  }
+  abstract timing(): Protocol.Network.ResourceTiming | null;
 
   
 
 
-  buffer(): Promise<Buffer> {
-    throw new Error('Not implemented');
-  }
+  abstract buffer(): Promise<Buffer>;
 
   
 
@@ -141,30 +118,22 @@ export class HTTPResponse {
   
 
 
-  request(): HTTPRequest {
-    throw new Error('Not implemented');
-  }
+  abstract request(): HTTPRequest;
 
   
 
 
 
-  fromCache(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract fromCache(): boolean;
 
   
 
 
-  fromServiceWorker(): boolean {
-    throw new Error('Not implemented');
-  }
+  abstract fromServiceWorker(): boolean;
 
   
 
 
 
-  frame(): Frame | null {
-    throw new Error('Not implemented');
-  }
+  abstract frame(): Frame | null;
 }

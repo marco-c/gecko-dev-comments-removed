@@ -14,23 +14,27 @@
 
 
 
+import type {ChildProcess} from 'child_process';
 
+import type {Protocol} from 'devtools-protocol';
 
-import {ChildProcess} from 'child_process';
-
-import {Protocol} from 'devtools-protocol';
-
-import {Symbol} from '../../third_party/disposablestack/disposablestack.js';
-import {EventEmitter} from '../common/EventEmitter.js';
-import {debugError, waitWithTimeout} from '../common/util.js';
-import {Deferred} from '../util/Deferred.js';
+import {
+  firstValueFrom,
+  from,
+  merge,
+  raceWith,
+  filterAsync,
+  fromEvent,
+  type Observable,
+} from '../../third_party/rxjs/rxjs.js';
+import {EventEmitter, type EventType} from '../common/EventEmitter.js';
+import {debugError} from '../common/util.js';
+import {timeout} from '../common/util.js';
+import {asyncDisposeSymbol, disposeSymbol} from '../util/disposable.js';
 
 import type {BrowserContext} from './BrowserContext.js';
 import type {Page} from './Page.js';
 import type {Target} from './Target.js';
-
-
-
 
 
 
@@ -122,6 +126,7 @@ export interface WaitForTargetOptions {
 
 
 
+
   timeout?: number;
 }
 
@@ -130,7 +135,7 @@ export interface WaitForTargetOptions {
 
 
 
-export const enum BrowserEmittedEvents {
+export const enum BrowserEvent {
   
 
 
@@ -138,9 +143,7 @@ export const enum BrowserEmittedEvents {
 
 
 
-
   Disconnected = 'disconnected',
-
   
 
 
@@ -149,9 +152,7 @@ export const enum BrowserEmittedEvents {
 
 
   TargetChanged = 'targetchanged',
-
   
-
 
 
 
@@ -169,8 +170,32 @@ export const enum BrowserEmittedEvents {
 
 
 
-
   TargetDestroyed = 'targetdestroyed',
+  
+
+
+  TargetDiscovered = 'targetdiscovered',
+}
+
+export {
+  
+
+
+  BrowserEvent as BrowserEmittedEvents,
+};
+
+
+
+
+export interface BrowserEvents extends Record<EventType, unknown> {
+  [BrowserEvent.Disconnected]: undefined;
+  [BrowserEvent.TargetCreated]: Target;
+  [BrowserEvent.TargetDestroyed]: Target;
+  [BrowserEvent.TargetChanged]: Target;
+  
+
+
+  [BrowserEvent.TargetDiscovered]: Protocol.Target.TargetInfo;
 }
 
 
@@ -212,16 +237,7 @@ export const enum BrowserEmittedEvents {
 
 
 
-
-
-
-
-
-
-export class Browser
-  extends EventEmitter
-  implements AsyncDisposable, Disposable
-{
+export abstract class Browser extends EventEmitter<BrowserEvents> {
   
 
 
@@ -232,38 +248,11 @@ export class Browser
   
 
 
-  _attach(): Promise<void> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  _detach(): void {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  get _targets(): Map<string, Target> {
-    throw new Error('Not implemented');
-  }
-
-  
 
 
 
-  process(): ChildProcess | null {
-    throw new Error('Not implemented');
-  }
 
-  
-
-
-  _getIsPageTargetCallback(): IsPageTargetCallback | undefined {
-    throw new Error('Not implemented');
-  }
+  abstract process(): ChildProcess | null;
 
   
 
@@ -283,35 +272,26 @@ export class Browser
 
 
 
-  createIncognitoBrowserContext(
+
+  abstract createIncognitoBrowserContext(
     options?: BrowserContextOptions
   ): Promise<BrowserContext>;
-  createIncognitoBrowserContext(): Promise<BrowserContext> {
-    throw new Error('Not implemented');
-  }
 
   
 
 
 
-  browserContexts(): BrowserContext[] {
-    throw new Error('Not implemented');
-  }
+
+
+  abstract browserContexts(): BrowserContext[];
 
   
 
 
-  defaultBrowserContext(): BrowserContext {
-    throw new Error('Not implemented');
-  }
-
-  
 
 
-  _disposeContext(contextId?: string): Promise<void>;
-  _disposeContext(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+
+  abstract defaultBrowserContext(): BrowserContext;
 
   
 
@@ -327,47 +307,30 @@ export class Browser
 
 
 
-
-
-
-  wsEndpoint(): string {
-    throw new Error('Not implemented');
-  }
+  abstract wsEndpoint(): string;
 
   
 
 
 
-  newPage(): Promise<Page> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-  _createPageInContext(contextId?: string): Promise<Page>;
-  _createPageInContext(): Promise<Page> {
-    throw new Error('Not implemented');
-  }
+  abstract newPage(): Promise<Page>;
 
   
 
 
 
-  targets(): Target[] {
-    throw new Error('Not implemented');
-  }
+
+
+
+  abstract targets(): Target[];
 
   
 
 
-  target(): Target {
-    throw new Error('Not implemented');
-  }
+
+  abstract target(): Target;
 
   
-
-
 
 
 
@@ -386,34 +349,18 @@ export class Browser
     predicate: (x: Target) => boolean | Promise<boolean>,
     options: WaitForTargetOptions = {}
   ): Promise<Target> {
-    const {timeout = 30000} = options;
-    const targetDeferred = Deferred.create<Target | PromiseLike<Target>>();
-
-    this.on(BrowserEmittedEvents.TargetCreated, check);
-    this.on(BrowserEmittedEvents.TargetChanged, check);
-    try {
-      this.targets().forEach(check);
-      if (!timeout) {
-        return await targetDeferred.valueOrThrow();
-      }
-      return await waitWithTimeout(
-        targetDeferred.valueOrThrow(),
-        'target',
-        timeout
-      );
-    } finally {
-      this.off(BrowserEmittedEvents.TargetCreated, check);
-      this.off(BrowserEmittedEvents.TargetChanged, check);
-    }
-
-    async function check(target: Target): Promise<void> {
-      if ((await predicate(target)) && !targetDeferred.resolved()) {
-        targetDeferred.resolve(target);
-      }
-    }
+    const {timeout: ms = 30000} = options;
+    return await firstValueFrom(
+      merge(
+        fromEvent(this, BrowserEvent.TargetCreated) as Observable<Target>,
+        fromEvent(this, BrowserEvent.TargetChanged) as Observable<Target>,
+        from(this.targets())
+      ).pipe(filterAsync(predicate), raceWith(timeout(ms)))
+    );
   }
 
   
+
 
 
 
@@ -445,74 +392,54 @@ export class Browser
 
 
 
-
-  version(): Promise<string> {
-    throw new Error('Not implemented');
-  }
-
-  
-
-
-
-  userAgent(): Promise<string> {
-    throw new Error('Not implemented');
-  }
+  abstract version(): Promise<string>;
 
   
 
 
 
 
-  close(): Promise<void> {
-    throw new Error('Not implemented');
-  }
+
+  abstract userAgent(): Promise<string>;
 
   
 
 
 
-
-  disconnect(): void {
-    throw new Error('Not implemented');
-  }
+  abstract close(): Promise<void>;
 
   
+
+
+
+  abstract disconnect(): void;
+
+  
+
+
 
 
   isConnected(): boolean {
-    throw new Error('Not implemented');
+    return this.connected;
   }
 
-  [Symbol.dispose](): void {
+  
+
+
+  abstract get connected(): boolean;
+
+  
+  [disposeSymbol](): void {
     return void this.close().catch(debugError);
   }
 
-  [Symbol.asyncDispose](): Promise<void> {
+  
+  [asyncDisposeSymbol](): Promise<void> {
     return this.close();
   }
-}
-
-
-
-export const enum BrowserContextEmittedEvents {
-  
-
-
-
-  TargetChanged = 'targetchanged',
 
   
 
 
-
-
-
-
-
-  TargetCreated = 'targetcreated',
-  
-
-
-
-  TargetDestroyed = 'targetdestroyed',
+  abstract get protocol(): 'cdp' | 'webDriverBiDi';
 }

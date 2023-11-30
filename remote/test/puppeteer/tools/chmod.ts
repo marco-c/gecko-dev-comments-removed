@@ -19,7 +19,6 @@ import fs from 'fs';
 
 
 
-
 const mode = process.argv[2];
 
 for (let i = 3; i < process.argv.length; i++) {

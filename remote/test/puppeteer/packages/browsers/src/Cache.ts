@@ -15,10 +15,15 @@
 
 
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
-import {Browser, BrowserPlatform} from './browser-data/browser-data.js';
-import {computeExecutablePath} from './launch.js';
+import {
+  Browser,
+  type BrowserPlatform,
+  executablePathByBrowser,
+} from './browser-data/browser-data.js';
+import {detectBrowserPlatform} from './detectPlatform.js';
 
 
 
@@ -27,6 +32,7 @@ export class InstalledBrowser {
   browser: Browser;
   buildId: string;
   platform: BrowserPlatform;
+  readonly executablePath: string;
 
   #cache: Cache;
 
@@ -43,6 +49,11 @@ export class InstalledBrowser {
     this.browser = browser;
     this.buildId = buildId;
     this.platform = platform;
+    this.executablePath = cache.computeExecutablePath({
+      browser,
+      buildId,
+      platform,
+    });
   }
 
   
@@ -56,15 +67,27 @@ export class InstalledBrowser {
       this.buildId
     );
   }
+}
 
-  get executablePath(): string {
-    return computeExecutablePath({
-      cacheDir: this.#cache.rootDir,
-      platform: this.platform,
-      browser: this.browser,
-      buildId: this.buildId,
-    });
-  }
+
+
+
+export interface ComputeExecutablePathOptions {
+  
+
+
+
+
+  platform?: BrowserPlatform;
+  
+
+
+  browser: Browser;
+  
+
+
+
+  buildId: string;
 }
 
 
@@ -158,6 +181,27 @@ export class Cache {
           return item !== null;
         });
     });
+  }
+
+  computeExecutablePath(options: ComputeExecutablePathOptions): string {
+    options.platform ??= detectBrowserPlatform();
+    if (!options.platform) {
+      throw new Error(
+        `Cannot download a binary for the provided platform: ${os.platform()} (${os.arch()})`
+      );
+    }
+    const installationDir = this.installationDir(
+      options.browser,
+      options.platform,
+      options.buildId
+    );
+    return path.join(
+      installationDir,
+      executablePathByBrowser[options.browser](
+        options.platform,
+        options.buildId
+      )
+    );
   }
 }
 
