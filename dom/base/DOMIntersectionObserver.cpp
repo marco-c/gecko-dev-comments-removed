@@ -160,6 +160,20 @@ static void LazyLoadCallback(
   }
 }
 
+static void ContentVisibilityCallback(
+    const Sequence<OwningNonNull<DOMIntersectionObserverEntry>>& aEntries) {
+  for (const auto& entry : aEntries) {
+    entry->Target()->SetVisibleForContentVisibility(entry->IsIntersecting());
+
+    if (RefPtr<Document> doc = entry->Target()->GetComposedDoc()) {
+      if (RefPtr<PresShell> presShell = doc->GetPresShell()) {
+        presShell->ScheduleContentRelevancyUpdate(
+            ContentRelevancyReason::Visible);
+      }
+    }
+  }
+}
+
 static LengthPercentage PrefMargin(float aValue, bool aIsPercentage) {
   return aIsPercentage ? LengthPercentage::FromPercentage(aValue / 100.0f)
                        : LengthPercentage::FromPixels(aValue);
@@ -187,6 +201,25 @@ DOMIntersectionObserver::CreateLazyLoadObserver(Document& aDocument) {
   SET_MARGIN(Bottom, bottom);
   SET_MARGIN(Left, left);
 #undef SET_MARGIN
+
+  return observer.forget();
+}
+
+already_AddRefed<DOMIntersectionObserver>
+DOMIntersectionObserver::CreateContentVisibilityObserver(Document& aDocument) {
+  RefPtr<DOMIntersectionObserver> observer =
+      new DOMIntersectionObserver(aDocument, ContentVisibilityCallback);
+
+  observer->mThresholds.AppendElement(0.0f);
+
+  auto margin = LengthPercentage::FromPercentage(
+      StaticPrefs::layout_css_content_visibility_relevant_content_margin() /
+      100.0f);
+
+  observer->mRootMargin.Get(eSideTop) = margin;
+  observer->mRootMargin.Get(eSideRight) = margin;
+  observer->mRootMargin.Get(eSideBottom) = margin;
+  observer->mRootMargin.Get(eSideLeft) = margin;
 
   return observer.forget();
 }
@@ -315,8 +348,8 @@ static const Document* GetTopLevelContentDocumentInThisProcess(
 static Maybe<nsRect> ComputeTheIntersection(
     nsIFrame* aTarget, nsIFrame* aRoot, const nsRect& aRootBounds,
     const Maybe<nsRect>& aRemoteDocumentVisibleRect,
-    DOMIntersectionObserver::IsForProximityToViewport
-        aIsForProximityToViewport) {
+    DOMIntersectionObserver::IsContentVisibilityObserver
+        aIsContentVisibilityObserver) {
   nsIFrame* target = aTarget;
   
   
@@ -326,8 +359,8 @@ static Maybe<nsRect> ComputeTheIntersection(
       target, target, nsLayoutUtils::RECTS_ACCOUNT_FOR_TRANSFORMS);
   
   
-  if (aIsForProximityToViewport ==
-      DOMIntersectionObserver::IsForProximityToViewport::Yes) {
+  if (aIsContentVisibilityObserver ==
+      DOMIntersectionObserver::IsContentVisibilityObserver::Yes) {
     const auto& disp = *target->StyleDisplay();
     auto clipAxes = target->ShouldApplyOverflowClipping(&disp);
     if (clipAxes != PhysicalAxes::None) {
@@ -615,7 +648,7 @@ IntersectionInput DOMIntersectionObserver::ComputeInput(
 
 IntersectionOutput DOMIntersectionObserver::Intersect(
     const IntersectionInput& aInput, const Element& aTarget,
-    IsForProximityToViewport aIsForProximityToViewport) {
+    IsContentVisibilityObserver aIsContentVisibilityObserver) {
   const bool isSimilarOrigin = SimilarOrigin(aTarget, aInput.mRootNode) ==
                                BrowsingContextOrigin::Similar;
   nsIFrame* targetFrame = aTarget.GetPrimaryFrame();
@@ -632,7 +665,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   
   
-  if (aIsForProximityToViewport == IsForProximityToViewport::No &&
+  if (aIsContentVisibilityObserver == IsContentVisibilityObserver::No &&
       targetFrame->IsHiddenByContentVisibilityOnAnyAncestor()) {
     return {isSimilarOrigin};
   }
@@ -666,7 +699,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   nsRect targetRect = targetFrame->GetBoundingClientRect();
   
   
-  if (aIsForProximityToViewport == IsForProximityToViewport::Yes) {
+  if (aIsContentVisibilityObserver == IsContentVisibilityObserver::Yes) {
     const auto& disp = *targetFrame->StyleDisplay();
     auto clipAxes = targetFrame->ShouldApplyOverflowClipping(&disp);
     if (clipAxes != PhysicalAxes::None) {
@@ -680,7 +713,7 @@ IntersectionOutput DOMIntersectionObserver::Intersect(
   
   Maybe<nsRect> intersectionRect = ComputeTheIntersection(
       targetFrame, aInput.mRootFrame, rootBounds,
-      aInput.mRemoteDocumentVisibleRect, aIsForProximityToViewport);
+      aInput.mRemoteDocumentVisibleRect, aIsContentVisibilityObserver);
 
   return {isSimilarOrigin, rootBounds, targetRect, intersectionRect};
 }
@@ -706,9 +739,18 @@ void DOMIntersectionObserver::Update(Document& aDocument,
 
   
   
+  
+  IsContentVisibilityObserver isContentVisibilityObserver =
+      aDocument.GetContentVisibilityObserver() == this
+          ? IsContentVisibilityObserver::Yes
+          : IsContentVisibilityObserver::No;
+
+  
+  
   for (Element* target : mObservationTargets) {
     
-    IntersectionOutput output = Intersect(input, *target);
+    IntersectionOutput output =
+        Intersect(input, *target, isContentVisibilityObserver);
 
     
     int64_t targetArea = (int64_t)output.mTargetRect.Width() *
@@ -762,7 +804,15 @@ void DOMIntersectionObserver::Update(Document& aDocument,
     }
 
     
-    if (target->UpdateIntersectionObservation(this, thresholdIndex)) {
+    
+    
+    
+    const bool temporarilyVisibleForScrolledIntoView =
+        isContentVisibilityObserver == IsContentVisibilityObserver::Yes &&
+        target->TemporarilyVisibleForScrolledIntoViewDescendant();
+    
+    if (target->UpdateIntersectionObservation(this, thresholdIndex) ||
+        temporarilyVisibleForScrolledIntoView) {
       
       
       
@@ -771,6 +821,10 @@ void DOMIntersectionObserver::Update(Document& aDocument,
           output.mIsSimilarOrigin ? Some(output.mRootBounds) : Nothing(),
           output.mTargetRect, output.mIntersectionRect, thresholdIndex > 0,
           intersectionRatio);
+
+      if (temporarilyVisibleForScrolledIntoView) {
+        target->SetTemporarilyVisibleForScrolledIntoViewDescendant(false);
+      }
     }
   }
 }

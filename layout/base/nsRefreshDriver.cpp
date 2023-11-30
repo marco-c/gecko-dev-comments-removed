@@ -2242,8 +2242,11 @@ void nsRefreshDriver::UpdateRelevancyOfContentVisibilityAutoFrames() {
   mNeedToUpdateContentRelevancy = false;
 }
 
-void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
-  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Update the rendering: step 14", LAYOUT);
+void nsRefreshDriver::NotifyResizeObservers() {
+  AUTO_PROFILER_LABEL_RELEVANT_FOR_JS("Notify ResizeObserver", LAYOUT);
+  if (!mNeedToUpdateResizeObservers) {
+    return;
+  }
   
   mNeedToUpdateResizeObservers = false;
 
@@ -2252,19 +2255,17 @@ void nsRefreshDriver::DetermineProximityToViewportAndNotifyResizeObservers() {
   }
 
   AutoTArray<RefPtr<Document>, 32> documents;
-  if (mPresContext->Document()->HasResizeObservers() ||
-      mPresContext->Document()->HasContentVisibilityAutoElements()) {
+  if (mPresContext->Document()->HasResizeObservers()) {
     documents.AppendElement(mPresContext->Document());
   }
 
   mPresContext->Document()->CollectDescendantDocuments(
       documents, [](const Document* document) -> bool {
-        return document->HasResizeObservers() ||
-               document->HasContentVisibilityAutoElements();
+        return document->HasResizeObservers();
       });
 
   for (const RefPtr<Document>& doc : documents) {
-    MOZ_KnownLive(doc)->DetermineProximityToViewportAndNotifyResizeObservers();
+    MOZ_KnownLive(doc)->NotifyResizeObservers();
   }
 }
 
@@ -2749,21 +2750,20 @@ void nsRefreshDriver::Tick(VsyncId aId, TimeStamp aNowTime,
 
   
   
-  
-  
-  
-  
-  UpdateRelevancyOfContentVisibilityAutoFrames();
-
-  
-  
-  
-  DetermineProximityToViewportAndNotifyResizeObservers();
+  NotifyResizeObservers();
   if (MOZ_UNLIKELY(!mPresContext || !mPresContext->GetPresShell())) {
     
     StopTimer();
     return;
   }
+
+  
+  
+  
+  
+  
+  
+  UpdateRelevancyOfContentVisibilityAutoFrames();
 
   UpdateIntersectionObservations(aNowTime);
 
