@@ -26,7 +26,6 @@ f();
 `, {
   fileName: "foobar.js",
   lineNumber: 3,
-  
   columnNumber: 42,
 });
 
@@ -39,8 +38,7 @@ assertEq(onNewScriptCalls, 0);
 
 assertEq(reparsedScript.url, "foobar.js");
 assertEq(reparsedScript.startLine, 3);
-
-assertEq(reparsedScript.startColumn, 43);
+assertEq(reparsedScript.startColumn, 42);
 
 
 function getBreakpointPositions(script) {
