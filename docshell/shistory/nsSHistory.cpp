@@ -1208,7 +1208,7 @@ nsSHistory::EvictContentViewersOrReplaceEntry(nsISHEntry* aNewSHEntry,
 }
 
 NS_IMETHODIMP
-nsSHistory::EvictAllContentViewers() {
+nsSHistory::EvictAllDocumentViewers() {
   
   
   for (int32_t i = 0; i < Length(); i++) {
