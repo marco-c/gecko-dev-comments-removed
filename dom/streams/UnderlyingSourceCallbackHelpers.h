@@ -60,6 +60,8 @@ class UnderlyingSourceAlgorithmsBase : public nsISupports {
   virtual void ReleaseObjects() {}
 
   
+  
+  
   virtual nsIInputStream* MaybeGetInputStreamIfUnread() { return nullptr; }
 
   
@@ -198,6 +200,8 @@ class InputStreamHolder final : public nsIInputStreamCallback,
     return mInput->CloseWithStatus(aStatus);
   }
 
+  nsIAsyncInputStream* GetInputStream() { return mInput; }
+
  private:
   ~InputStreamHolder();
 
@@ -240,6 +244,8 @@ class InputToReadableStreamAlgorithms final
       ErrorResult& aRv) override;
 
   void ReleaseObjects() override;
+
+  nsIInputStream* MaybeGetInputStreamIfUnread() override;
 
  private:
   ~InputToReadableStreamAlgorithms() {
