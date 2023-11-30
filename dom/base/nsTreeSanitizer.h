@@ -28,8 +28,10 @@ enum class StyleSanitizationKind : uint8_t;
 namespace mozilla::dom {
 class DocumentFragment;
 class Element;
-class OwningStringOrSanitizerElementNameNamespace;
-struct SanitizerAttribute;
+
+class OwningStringOrSanitizerAttributeNamespace;
+class OwningStringOrSanitizerElementNamespace;
+class OwningStringOrSanitizerElementNamespaceWithAttributes;
 }  
 
 
@@ -173,9 +175,16 @@ class nsTreeSanitizer {
   using AttributeName = NamespaceAtom;
 
   using ElementNameSet = nsTHashSet<ElementName>;
-  
-  using AttributesToElementsMap =
-      nsTHashMap<AttributeName, mozilla::UniquePtr<ElementNameSet>>;
+  using AttributeNameSet = nsTHashSet<AttributeName>;
+
+  class ElementWithAttributes {
+   public:
+    mozilla::UniquePtr<AttributeNameSet> mAttributes;
+    mozilla::UniquePtr<AttributeNameSet> mRemoveAttributes;
+  };
+
+  using ElementsToAttributesMap =
+      nsTHashMap<ElementName, ElementWithAttributes>;
 
   void SanitizeChildren(nsINode* aRoot);
 
@@ -287,23 +296,24 @@ class nsTreeSanitizer {
 
   static bool MatchesElementName(ElementNameSet& aNames, int32_t aNamespace,
                                  nsAtom* aLocalName);
-  static bool MatchesAttributeMatchList(AttributesToElementsMap& aMatchList,
-                                        mozilla::dom::Element& aElement,
-                                        int32_t aAttrNamespace,
-                                        nsAtom* aAttrLocalName);
+  static bool MatchesAttributeName(AttributeNameSet& aNames, int32_t aNamespace,
+                                   nsAtom* aLocalName);
 
   static mozilla::UniquePtr<ElementNameSet> ConvertElements(
       const nsTArray<mozilla::dom::OwningStringOrSanitizerElementNamespace>&
           aElements,
       mozilla::ErrorResult& aRv);
 
-  static mozilla::UniquePtr<ElementNameSet> ConvertElements(
-      const mozilla::dom::OwningStarOrStringOrSanitizerElementNamespaceSequence&
+  static mozilla::UniquePtr<ElementsToAttributesMap>
+  ConvertElementsWithAttributes(
+      const nsTArray<
+          mozilla::dom::OwningStringOrSanitizerElementNamespaceWithAttributes>&
           aElements,
       mozilla::ErrorResult& aRv);
 
-  static mozilla::UniquePtr<AttributesToElementsMap> ConvertAttributes(
-      const nsTArray<mozilla::dom::SanitizerAttribute>& aAttributes,
+  static mozilla::UniquePtr<AttributeNameSet> ConvertAttributes(
+      const nsTArray<mozilla::dom::OwningStringOrSanitizerAttributeNamespace>&
+          aAttributes,
       mozilla::ErrorResult& aRv);
 
   
@@ -390,19 +400,20 @@ class nsTreeSanitizer {
   bool mAllowUnknownMarkup = false;
 
   
-  mozilla::UniquePtr<ElementNameSet> mAllowElements;
+  
+  mozilla::UniquePtr<ElementsToAttributesMap> mElements;
 
   
-  mozilla::UniquePtr<ElementNameSet> mBlockElements;
+  mozilla::UniquePtr<ElementNameSet> mRemoveElements;
 
   
-  mozilla::UniquePtr<ElementNameSet> mDropElements;
+  mozilla::UniquePtr<ElementNameSet> mReplaceWithChildrenElements;
 
   
-  mozilla::UniquePtr<AttributesToElementsMap> mAllowAttributes;
+  mozilla::UniquePtr<AttributeNameSet> mAttributes;
 
   
-  mozilla::UniquePtr<AttributesToElementsMap> mDropAttributes;
+  mozilla::UniquePtr<AttributeNameSet> mRemoveAttributes;
 };
 
 #endif  
