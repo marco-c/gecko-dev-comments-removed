@@ -217,6 +217,7 @@ void Assembler::GeneralLi(Register rd, int64_t imm) {
     return;
   } else {
     UseScratchRegisterScope temps(this);
+    BlockTrampolinePoolScope block_trampoline_pool(this, 8);
     
     int64_t up_32 = imm >> 32;
     int64_t low_32 = imm & 0xffffffffull;
