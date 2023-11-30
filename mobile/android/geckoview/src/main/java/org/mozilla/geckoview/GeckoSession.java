@@ -618,19 +618,6 @@ public class GeckoSession {
                     callback.sendError("Failed to create response");
                   }
                 });
-          } else if ("GeckoView:GetNimbusFeature".equals(event) && callback != null) {
-            final String featureId = message.getString("featureId");
-            final JSONObject res = delegate.onGetNimbusFeature(GeckoSession.this, featureId);
-            if (res == null) {
-              callback.sendError("No Nimbus data for the feature " + featureId);
-              return;
-            }
-            try {
-              callback.sendSuccess(GeckoBundle.fromJSONObject(res));
-            } catch (final JSONException e) {
-              callback.sendError(
-                  "No Nimbus data for the feature " + featureId + ": conversion failed.");
-            }
           } else if ("GeckoView:OnProductUrl".equals(event)) {
             delegate.onProductUrl(GeckoSession.this);
           }
@@ -4433,25 +4420,6 @@ public class GeckoSession {
 
     @AnyThread
     default void onCookieBannerHandled(@NonNull final GeckoSession session) {}
-
-    
-
-
-
-
-
-
-
-
-
-
-    @Deprecated
-    @DeprecationSchedule(version = 122, id = "session-nimbus")
-    @AnyThread
-    default @Nullable JSONObject onGetNimbusFeature(
-        @NonNull final GeckoSession session, @NonNull final String featureId) {
-      return null;
-    }
   }
 
   public interface SelectionActionDelegate {
