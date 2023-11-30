@@ -8,6 +8,7 @@
 #define mozilla_layers_DoubleTapToZoom_h
 
 #include "Units.h"
+#include "mozilla/gfx/Matrix.h"
 
 template <class T>
 class RefPtr;
@@ -52,10 +53,16 @@ struct DoubleTapToZoomMetrics {
   
   
   CSSRect mRootScrollableRect;
+  
+  
+  
+  
+  CSSToCSSMatrix4x4 mTransformMatrix;
 
   bool operator==(const DoubleTapToZoomMetrics& aOther) const {
     return mVisualViewport == aOther.mVisualViewport &&
-           mRootScrollableRect == aOther.mRootScrollableRect;
+           mRootScrollableRect == aOther.mRootScrollableRect &&
+           mTransformMatrix == aOther.mTransformMatrix;
   }
   friend std::ostream& operator<<(std::ostream& aStream,
                                   const DoubleTapToZoomMetrics& aUpdate);
