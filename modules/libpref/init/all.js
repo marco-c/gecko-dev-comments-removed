@@ -1670,9 +1670,11 @@ pref("intl.hyphenation-alias.nb-*", "nb");
 pref("intl.hyphenation-alias.nn-*", "nn");
 
 
+
 pref("intl.hyphenate-capitalized.de-1996", true);
 pref("intl.hyphenate-capitalized.de-1901", true);
 pref("intl.hyphenate-capitalized.de-CH", true);
+pref("intl.hyphenate-capitalized.fi", true);
 
 
 pref("font.name.serif.ar", "");
