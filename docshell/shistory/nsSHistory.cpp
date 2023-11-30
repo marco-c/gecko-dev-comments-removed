@@ -197,7 +197,7 @@ void nsSHistoryObserver::PrefChanged(const char* aPref, void* aSelf) {
 
 void nsSHistoryObserver::PrefChanged(const char* aPref) {
   nsSHistory::UpdatePrefs();
-  nsSHistory::GloballyEvictContentViewers();
+  nsSHistory::GloballyEvictDocumentViewers();
 }
 
 NS_IMETHODIMP
@@ -1184,7 +1184,7 @@ nsSHistory::EvictOutOfRangeDocumentViewers(int32_t aIndex) {
   
   EvictOutOfRangeWindowDocumentViewers(aIndex);
   
-  GloballyEvictContentViewers();
+  GloballyEvictDocumentViewers();
   return NS_OK;
 }
 
@@ -1620,7 +1620,7 @@ class EntryAndDistance {
 }  
 
 
-void nsSHistory::GloballyEvictContentViewers() {
+void nsSHistory::GloballyEvictDocumentViewers() {
   
   
   
@@ -1785,7 +1785,7 @@ nsSHistory::RemoveFromExpirationTracker(SHEntrySharedParentState* aEntry) {
 void nsSHistory::GloballyEvictAllDocumentViewers() {
   int32_t maxViewers = sHistoryMaxTotalViewers;
   sHistoryMaxTotalViewers = 0;
-  GloballyEvictContentViewers();
+  GloballyEvictDocumentViewers();
   sHistoryMaxTotalViewers = maxViewers;
 }
 
