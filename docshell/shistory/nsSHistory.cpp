@@ -1653,9 +1653,9 @@ void nsSHistory::GloballyEvictDocumentViewers() {
       nsCOMPtr<nsIDocumentViewer> contentViewer = entry->GetContentViewer();
 
       bool found = false;
-      bool hasContentViewerOrFrameLoader = false;
+      bool hasDocumentViewerOrFrameLoader = false;
       if (contentViewer) {
-        hasContentViewerOrFrameLoader = true;
+        hasDocumentViewerOrFrameLoader = true;
         
         
         
@@ -1671,7 +1671,7 @@ void nsSHistory::GloballyEvictDocumentViewers() {
         }
       } else if (nsCOMPtr<SessionHistoryEntry> she = do_QueryInterface(entry)) {
         if (RefPtr<nsFrameLoader> frameLoader = she->GetFrameLoader()) {
-          hasContentViewerOrFrameLoader = true;
+          hasDocumentViewerOrFrameLoader = true;
           
           for (uint32_t j = 0; j < shEntries.Length(); j++) {
             EntryAndDistance& container = shEntries[j];
@@ -1687,7 +1687,7 @@ void nsSHistory::GloballyEvictDocumentViewers() {
 
       
       
-      if (hasContentViewerOrFrameLoader && !found) {
+      if (hasDocumentViewerOrFrameLoader && !found) {
         EntryAndDistance container(shist, entry,
                                    DeprecatedAbs(i - shist->mIndex));
         shEntries.AppendElement(container);
