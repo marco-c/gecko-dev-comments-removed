@@ -638,8 +638,15 @@ function _assertGleanPing(ping) {
     
     iab_category: Glean.quickSuggest.iabCategory,
   };
-  for (const [key, value] of Object.entries(ping.payload)) {
+  for (let [key, value] of Object.entries(ping.payload)) {
     Assert.ok(key in keymap, `A Glean metric exists for field ${key}`);
+
+    
+    
+    if (value === "") {
+      value = null;
+    }
+
     Assert.equal(
       keymap[key].testGetValue(),
       value ?? null,
