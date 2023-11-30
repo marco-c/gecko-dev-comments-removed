@@ -9,6 +9,7 @@
 #define CUBEB_RING_ARRAY_H
 
 #include "cubeb_utils.h"
+#include <CoreAudio/CoreAudioTypes.h>
 
 
 
