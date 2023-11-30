@@ -2127,7 +2127,7 @@ bool nsPresContext::EnsureVisible() {
     return false;
   }
   nsCOMPtr<nsIDocumentViewer> viewer;
-  docShell->GetContentViewer(getter_AddRefs(viewer));
+  docShell->GetDocViewer(getter_AddRefs(viewer));
   
   if (!viewer || viewer->GetPresContext() != this) {
     return false;

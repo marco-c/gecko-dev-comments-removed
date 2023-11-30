@@ -400,18 +400,18 @@ nsresult nsHTMLDocument::StartDocumentLoad(
   }
 
   nsCOMPtr<nsIDocShell> parent(do_QueryInterface(parentAsItem));
-  nsCOMPtr<nsIDocumentViewer> parentContentViewer;
+  nsCOMPtr<nsIDocumentViewer> parentViewer;
   if (parent) {
-    rv = parent->GetContentViewer(getter_AddRefs(parentContentViewer));
+    rv = parent->GetDocViewer(getter_AddRefs(parentViewer));
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
   nsCOMPtr<nsIDocumentViewer> viewer;
   if (docShell) {
-    docShell->GetContentViewer(getter_AddRefs(viewer));
+    docShell->GetDocViewer(getter_AddRefs(viewer));
   }
   if (!viewer) {
-    viewer = std::move(parentContentViewer);
+    viewer = std::move(parentViewer);
   }
 
   nsAutoCString urlSpec;

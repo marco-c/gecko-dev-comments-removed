@@ -233,7 +233,7 @@ function setupPrintMode(contentRootElement) {
   ps.printBGColors = printBackgrounds;
   ps.printBGImages = printBackgrounds;
 
-  docShell.contentViewer.setPageModeForTesting( true, ps);
+  docShell.docViewer.setPageModeForTesting( true, ps);
 }
 
 

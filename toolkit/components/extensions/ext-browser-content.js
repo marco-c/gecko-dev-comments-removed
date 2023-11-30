@@ -250,7 +250,7 @@ const BrowserListener = {
       
       let w = {},
         h = {};
-      docShell.contentViewer.getContentSize(
+      docShell.docViewer.getContentSize(
         this.maxWidth,
         this.maxHeight,
          0,
