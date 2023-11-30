@@ -48,6 +48,12 @@ BEGIN_TEST(testDeduplication_ASSC) {
   JS::RootedString dep2(cx);
   JS::RootedString depdep2(cx);
 
+  if (!cx->nursery().canAllocateStrings()) {
+    
+    
+    return true;
+  }
+
   {
     
     
@@ -81,6 +87,10 @@ BEGIN_TEST(testDeduplication_ASSC) {
 
   
   
+  
+  
+  
+  str->setNonDeduplicatable();
   JS::AutoStableStringChars stable(cx);
   CHECK(stable.init(cx, depdep));
 
