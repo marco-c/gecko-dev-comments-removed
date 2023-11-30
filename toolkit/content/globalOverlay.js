@@ -7,8 +7,6 @@ function closeWindow(aClose, aPromptFunction, aSource) {
     "resource://gre/modules/AppConstants.sys.mjs"
   );
 
-  console.error("Hello from closeWindow");
-
   
   if (AppConstants.platform != "macosx") {
     var windowCount = 0;
