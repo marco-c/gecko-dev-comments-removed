@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtp_headers.h"
+#include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
@@ -91,7 +92,7 @@ class RTCPSender::PacketSender {
 RTCPSender::FeedbackState::FeedbackState()
     : packets_sent(0),
       media_bytes_sent(0),
-      send_bitrate(0),
+      send_bitrate(DataRate::Zero()),
       remote_sr(0),
       receiver(nullptr) {}
 
@@ -360,65 +361,7 @@ int32_t RTCPSender::SetCNAME(absl::string_view c_name) {
   return 0;
 }
 
-bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+bool RTCPSender::TimeToSendRTCPReport(bool send_keyframe_before_rtp) const {
   Timestamp now = clock_->CurrentTime();
 
   MutexLock lock(&mutex_rtcp_sender_);
@@ -428,10 +371,10 @@ bool RTCPSender::TimeToSendRTCPReport(bool sendKeyframeBeforeRTP) const {
   if (method_ == RtcpMode::kOff)
     return false;
 
-  if (!audio_ && sendKeyframeBeforeRTP) {
+  if (!audio_ && send_keyframe_before_rtp) {
     
     
-    now += RTCP_SEND_BEFORE_KEY_FRAME;
+    now += TimeDelta::Millis(100);
   }
 
   return now >= *next_time_to_send_rtcp_;
@@ -759,6 +702,44 @@ absl::optional<int32_t> RTCPSender::ComputeCompoundRTCPPacket(
   return absl::nullopt;
 }
 
+TimeDelta RTCPSender::ComputeTimeUntilNextReport(DataRate send_bitrate) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  TimeDelta min_interval = report_interval_;
+
+  if (!audio_ && sending_ && send_bitrate > DataRate::BitsPerSec(72'000)) {
+    
+    
+    min_interval = std::min(TimeDelta::Seconds(360) / send_bitrate.kbps(),
+                            report_interval_);
+  }
+
+  
+  
+  int min_interval_int = rtc::dchecked_cast<int>(min_interval.ms());
+  TimeDelta time_to_next = TimeDelta::Millis(
+      random_.Rand(min_interval_int * 1 / 2, min_interval_int * 3 / 2));
+
+  
+  return std::max(time_to_next, TimeDelta::Millis(1));
+}
+
 void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
   bool generate_report;
   if (IsFlagPresent(kRtcpSr) || IsFlagPresent(kRtcpRr)) {
@@ -783,26 +764,8 @@ void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
       SetFlag(kRtcpAnyExtendedReports, true);
     }
 
-    
-    TimeDelta min_interval = report_interval_;
-
-    if (!audio_ && sending_) {
-      
-      int send_bitrate_kbit = feedback_state.send_bitrate / 1000;
-      if (send_bitrate_kbit != 0) {
-        min_interval = std::min(TimeDelta::Millis(360000 / send_bitrate_kbit),
-                                report_interval_);
-      }
-    }
-
-    
-    
-    int min_interval_int = rtc::dchecked_cast<int>(min_interval.ms());
-    TimeDelta time_to_next = TimeDelta::Millis(
-        random_.Rand(min_interval_int * 1 / 2, min_interval_int * 3 / 2));
-
-    RTC_DCHECK(!time_to_next.IsZero());
-    SetNextRtcpSendEvaluationDuration(time_to_next);
+    SetNextRtcpSendEvaluationDuration(
+        ComputeTimeUntilNextReport(feedback_state.send_bitrate));
 
     
     

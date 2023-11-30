@@ -20,7 +20,6 @@ constexpr int kRtcpMaxNackFields = 253;
 
 constexpr TimeDelta RTCP_INTERVAL_RAPID_SYNC_MS =
     TimeDelta::Millis(100); 
-constexpr TimeDelta RTCP_SEND_BEFORE_KEY_FRAME = TimeDelta::Millis(100);
 constexpr int RTCP_MAX_REPORT_BLOCKS = 31;  
 }  
 
