@@ -80,7 +80,7 @@ class ChildSHistory : public nsISupports, public nsWrapperCache {
   
 
 
-  void EvictLocalContentViewers();
+  void EvictLocalDocumentViewers();
 
   
   
