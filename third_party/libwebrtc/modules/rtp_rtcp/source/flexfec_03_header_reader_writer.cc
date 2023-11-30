@@ -56,7 +56,6 @@ constexpr uint8_t kSsrcCount = 1;
 
 constexpr uint32_t kReservedBits = 0;
 
-
 constexpr size_t kPacketMaskOffset =
     kBaseHeaderSize + kStreamSpecificHeaderSize;
 
@@ -83,6 +82,7 @@ Flexfec03HeaderReader::~Flexfec03HeaderReader() = default;
 
 
 
+
 bool Flexfec03HeaderReader::ReadFecHeader(
     ForwardErrorCorrection::ReceivedFecPacket* fec_packet) const {
   if (fec_packet->pkt->data.size() <=
@@ -94,22 +94,22 @@ bool Flexfec03HeaderReader::ReadFecHeader(
   bool r_bit = (data[0] & 0x80) != 0;
   if (r_bit) {
     RTC_LOG(LS_INFO)
-        << "FlexFEC packet with retransmission bit set. We do not yet "
+        << "FlexFEC03 packet with retransmission bit set. We do not "
            "support this, thus discarding the packet.";
     return false;
   }
   bool f_bit = (data[0] & 0x40) != 0;
   if (f_bit) {
     RTC_LOG(LS_INFO)
-        << "FlexFEC packet with inflexible generator matrix. We do "
-           "not yet support this, thus discarding packet.";
+        << "FlexFEC03 packet with inflexible generator matrix. We do "
+           "not support this, thus discarding packet.";
     return false;
   }
   uint8_t ssrc_count = ByteReader<uint8_t>::ReadBigEndian(&data[8]);
   if (ssrc_count != 1) {
     RTC_LOG(LS_INFO)
-        << "FlexFEC packet protecting multiple media SSRCs. We do not "
-           "yet support this, thus discarding packet.";
+        << "FlexFEC03 packet protecting multiple media SSRCs. We do not "
+           "support this, thus discarding packet.";
     return false;
   }
   uint32_t protected_ssrc = ByteReader<uint32_t>::ReadBigEndian(&data[12]);
@@ -126,7 +126,7 @@ bool Flexfec03HeaderReader::ReadFecHeader(
   
   
   if (fec_packet->pkt->data.size() < kHeaderSizes[0]) {
-    RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
+    RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC03 packet.";
     return false;
   }
   uint8_t* const packet_mask = data + kPacketMaskOffset;
@@ -163,7 +163,7 @@ bool Flexfec03HeaderReader::ReadFecHeader(
       packet_mask_size = kFlexfecPacketMaskSizes[1];
     } else {
       if (fec_packet->pkt->data.size() < kHeaderSizes[2]) {
-        RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
+        RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC03 packet.";
         return false;
       }
       bool k_bit2 = (packet_mask[6] & 0x80) != 0;
@@ -174,7 +174,7 @@ bool Flexfec03HeaderReader::ReadFecHeader(
         packet_mask_size = kFlexfecPacketMaskSizes[2];
       } else {
         RTC_LOG(LS_WARNING)
-            << "Discarding FlexFEC packet with malformed header.";
+            << "Discarding FlexFEC03 packet with malformed header.";
         return false;
       }
       
