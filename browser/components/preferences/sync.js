@@ -218,7 +218,9 @@ var gSyncPane = {
       
       gSyncPane.unlinkFirefoxAccount(false);
     });
-    setEventListener("rejectReSignIn", "command", gSyncPane.reSignIn);
+    setEventListener("rejectReSignIn", "command", function () {
+      gSyncPane.reSignIn(this._getEntryPoint());
+    });
     setEventListener("rejectUnlinkFxaAccount", "command", function () {
       gSyncPane.unlinkFirefoxAccount(true);
     });
@@ -440,7 +442,13 @@ var gSyncPane = {
     this.replaceTabWithUrl(url);
   },
 
-  async reSignIn() {
+  
+
+
+
+
+
+  async reSignIn(entrypoint) {
     
     
     
@@ -449,10 +457,9 @@ var gSyncPane = {
       return;
     }
 
-    let entryPoint = this._getEntryPoint();
     const url =
-      (await FxAccounts.config.promiseForceSigninURI(entryPoint)) ||
-      (await FxAccounts.config.promiseConnectAccountURI(entryPoint));
+      (await FxAccounts.config.promiseForceSigninURI(entrypoint)) ||
+      (await FxAccounts.config.promiseConnectAccountURI(entrypoint));
     this.replaceTabWithUrl(url);
   },
 
@@ -484,21 +491,7 @@ var gSyncPane = {
   },
 
   async verifyFirefoxAccount() {
-    let titleL10nid, bodyL10nId;
-    try {
-      await fxAccounts.resendVerificationEmail();
-      const { email } = await fxAccounts.getSignedInUser();
-      titleL10nid = "sync-verification-sent-title";
-      bodyL10nId = { id: "sync-verification-sent-body", args: { email } };
-    } catch {
-      titleL10nid = "sync-verification-not-sent-title";
-      bodyL10nId = "sync-verification-not-sent-body";
-    }
-    const [title, body] = await document.l10n.formatValues([
-      titleL10nid,
-      bodyL10nId,
-    ]);
-    new Notification(title, { body });
+    return this.reSignIn("preferences-reverify");
   },
 
   
