@@ -41,21 +41,9 @@ interface nsIDirIndex : nsISupports
 
 
 
-    attribute ACString contentType;
-
-    
-
-
-
 
 
     attribute ACString location;
-
-    
-
-
-
-    attribute AString description;
 
     
 
