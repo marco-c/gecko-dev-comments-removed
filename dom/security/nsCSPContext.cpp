@@ -210,7 +210,7 @@ bool nsCSPContext::permitsInternal(
       
       if (aSendViolationReports) {
         uint32_t lineNumber = 0;
-        uint32_t columnNumber = 0;
+        uint32_t columnNumber = 1;
         nsAutoString spec;
         JSContext* cx = nsContentUtils::GetCurrentJSContext();
         if (cx) {
@@ -218,8 +218,6 @@ bool nsCSPContext::permitsInternal(
           
           
         }
-        
-        columnNumber += 1;
         AsyncReportViolation(
             aTriggeringElement, aCSPEventListener,
             (aSendContentLocationInViolationReports ? aContentLocation
@@ -561,9 +559,6 @@ void nsCSPContext::reportInlineViolation(
     }
     lineNumber = aLineNumber;
     columnNumber = aColumnNumber;
-  } else {
-    
-    columnNumber += 1;
   }
 
   AsyncReportViolation(aTriggeringElement, aCSPEventListener,
@@ -737,7 +732,7 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
 
       
       uint32_t lineNumber = 0;
-      uint32_t columnNumber = 0;
+      uint32_t columnNumber = 1;
       nsAutoCString spec;
       JSContext* cx = nsContentUtils::GetCurrentJSContext();
       if (cx) {
@@ -745,8 +740,6 @@ nsCSPContext::GetAllowsNavigateTo(nsIURI* aURI, bool aIsFormSubmission,
         
         
       }
-      
-      columnNumber += 1;
 
       
       nsresult rv = AsyncReportViolation(

@@ -687,13 +687,11 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   
   
   nsAutoCString fileName;
-  uint32_t lineNumber = 0, columnNumber = 0;
+  uint32_t lineNumber = 0, columnNumber = 1;
   nsJSUtils::GetCallingLocation(cx, fileName, &lineNumber, &columnNumber);
   if (fileName.IsEmpty()) {
     fileName = "unknown-file"_ns;
   }
-  
-  columnNumber += 1;
 
   NS_ConvertUTF8toUTF16 fileNameA(fileName);
   for (const nsLiteralCString& allowlistEntry : evalAllowlist) {
