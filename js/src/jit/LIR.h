@@ -1410,6 +1410,18 @@ struct SafepointNunboxEntry {
       : typeVreg(typeVreg), type(type), payload(payload) {}
 };
 
+enum class WasmSafepointKind : uint8_t {
+  
+  
+  LirCall,
+  
+  
+  CodegenCall,
+  
+  
+  Trap,
+};
+
 class LSafepoint : public TempObject {
   using SlotEntry = SafepointSlotEntry;
   using NunboxEntry = SafepointNunboxEntry;
@@ -1476,8 +1488,7 @@ class LSafepoint : public TempObject {
   SlotList wasmAnyRefSlots_;
 
   
-  
-  bool isWasmTrap_;
+  WasmSafepointKind wasmSafepointKind_;
 
   
   
@@ -1515,7 +1526,7 @@ class LSafepoint : public TempObject {
 #endif
         slotsOrElementsSlots_(alloc),
         wasmAnyRefSlots_(alloc),
-        isWasmTrap_(false),
+        wasmSafepointKind_(WasmSafepointKind::LirCall),
         framePushedAtStackMapBase_(0) {
     assertInvariants();
   }
@@ -1805,9 +1816,12 @@ class LSafepoint : public TempObject {
     osiCallPointOffset_ = osiCallPointOffset;
   }
 
-  bool isWasmTrap() const { return isWasmTrap_; }
-  void setIsWasmTrap() { isWasmTrap_ = true; }
+  WasmSafepointKind wasmSafepointKind() const { return wasmSafepointKind_; }
+  void setWasmSafepointKind(WasmSafepointKind kind) {
+    wasmSafepointKind_ = kind;
+  }
 
+  
   uint32_t framePushedAtStackMapBase() const {
     return framePushedAtStackMapBase_;
   }

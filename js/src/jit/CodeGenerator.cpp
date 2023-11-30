@@ -8220,7 +8220,8 @@ void CodeGenerator::visitCreateInlinedArgumentsObject(
 
     
     masm.addToStackPtr(
-        Imm32(masm.PushRegsInMaskSizeInBytes(liveRegs) + argc * sizeof(Value)));
+        Imm32(MacroAssembler::PushRegsInMaskSizeInBytes(liveRegs) +
+              argc * sizeof(Value)));
     masm.jump(&done);
 
     masm.bind(&failure);
@@ -9011,7 +9012,8 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
   uint32_t framePushedAtStackMapBase =
       masm.framePushed() - callBase->stackArgAreaSizeUnaligned();
   lir->safepoint()->setFramePushedAtStackMapBase(framePushedAtStackMapBase);
-  MOZ_ASSERT(!lir->safepoint()->isWasmTrap());
+  MOZ_ASSERT(lir->safepoint()->wasmSafepointKind() ==
+             WasmSafepointKind::LirCall);
 
   
   
@@ -13878,6 +13880,18 @@ void CodeGenerator::visitRest(LRest* lir) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
                                          const RegisterOffsets& trapExitLayout,
                                          size_t trapExitLayoutNumWords,
@@ -13890,17 +13904,35 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   const size_t nFrameBytes = sizeof(wasm::Frame);
 
   
+  
+  const size_t nRegisterDumpBytes =
+      MacroAssembler::PushRegsInMaskSizeInBytes(safepoint.liveRegs());
+
+  
+  
+  
+  MOZ_ASSERT_IF(safepoint.wasmSafepointKind() == WasmSafepointKind::LirCall,
+                nRegisterDumpBytes == 0);
+  MOZ_ASSERT(nRegisterDumpBytes % sizeof(void*) == 0);
+
+  
   const size_t nBodyBytes = safepoint.framePushedAtStackMapBase();
 
   
   
-  const size_t nNonTrapBytes = nBodyBytes + nFrameBytes + nInboundStackArgBytes;
-  MOZ_ASSERT(nNonTrapBytes % sizeof(void*) == 0);
+  const size_t nNonRegisterBytes =
+      nBodyBytes + nFrameBytes + nInboundStackArgBytes;
+  MOZ_ASSERT(nNonRegisterBytes % sizeof(void*) == 0);
 
   
-  const DebugOnly<size_t> nTotalBytes =
-      nNonTrapBytes +
-      (safepoint.isWasmTrap() ? (trapExitLayoutNumWords * sizeof(void*)) : 0);
+  
+  const size_t nRegisterBytes =
+      (safepoint.wasmSafepointKind() == WasmSafepointKind::Trap)
+          ? (trapExitLayoutNumWords * sizeof(void*))
+          : nRegisterDumpBytes;
+
+  
+  const DebugOnly<size_t> nTotalBytes = nNonRegisterBytes + nRegisterBytes;
 
   
   
@@ -13914,41 +13946,62 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   
   const LiveGeneralRegisterSet wasmAnyRefRegs = safepoint.wasmAnyRefRegs();
   GeneralRegisterForwardIterator wasmAnyRefRegsIter(wasmAnyRefRegs);
-  if (safepoint.isWasmTrap()) {
-    
-    
-    
-    
-    if (!vec.appendN(false, trapExitLayoutNumWords)) {
-      return false;
-    }
-    for (; wasmAnyRefRegsIter.more(); ++wasmAnyRefRegsIter) {
-      Register reg = *wasmAnyRefRegsIter;
-      size_t offsetFromTop = trapExitLayout.getOffset(reg);
+  switch (safepoint.wasmSafepointKind()) {
+    case WasmSafepointKind::LirCall:
+    case WasmSafepointKind::CodegenCall: {
+      size_t spilledNumWords = nRegisterDumpBytes / sizeof(void*);
+      if (!vec.appendN(false, spilledNumWords)) {
+        return false;
+      }
+
+      for (; wasmAnyRefRegsIter.more(); ++wasmAnyRefRegsIter) {
+        Register reg = *wasmAnyRefRegsIter;
+        size_t offsetFromSpillBase =
+            safepoint.liveRegs().gprs().offsetOfPushedRegister(reg) /
+            sizeof(void*);
+        MOZ_ASSERT(0 < offsetFromSpillBase &&
+                   offsetFromSpillBase <= spilledNumWords);
+        size_t offsetInVector = spilledNumWords - offsetFromSpillBase;
+
+        vec[offsetInVector] = true;
+        hasRefs = true;
+      }
 
       
       
       
-      MOZ_RELEASE_ASSERT(offsetFromTop < trapExitLayoutNumWords);
+      
+    } break;
+    case WasmSafepointKind::Trap: {
+      if (!vec.appendN(false, trapExitLayoutNumWords)) {
+        return false;
+      }
+      for (; wasmAnyRefRegsIter.more(); ++wasmAnyRefRegsIter) {
+        Register reg = *wasmAnyRefRegsIter;
+        size_t offsetFromTop = trapExitLayout.getOffset(reg);
 
-      
-      
-      
-      size_t offsetFromBottom = trapExitLayoutNumWords - 1 - offsetFromTop;
+        
+        
+        
+        MOZ_RELEASE_ASSERT(offsetFromTop < trapExitLayoutNumWords);
 
-      vec[offsetFromBottom] = true;
-      hasRefs = true;
-    }
-  } else {
-    
-    
-    MOZ_RELEASE_ASSERT(!wasmAnyRefRegsIter.more());
+        
+        
+        
+        size_t offsetFromBottom = trapExitLayoutNumWords - 1 - offsetFromTop;
+
+        vec[offsetFromBottom] = true;
+        hasRefs = true;
+      }
+    } break;
+    default:
+      MOZ_CRASH("unreachable");
   }
 
   
   
   size_t wordsSoFar = vec.length();
-  if (!vec.appendN(false, nNonTrapBytes / sizeof(void*))) {
+  if (!vec.appendN(false, nNonRegisterBytes / sizeof(void*))) {
     return false;
   }
   const LSafepoint::SlotList& wasmAnyRefSlots = safepoint.wasmAnyRefSlots();
@@ -13987,7 +14040,7 @@ static bool CreateStackMapFromLSafepoint(LSafepoint& safepoint,
   if (!stackMap) {
     return false;
   }
-  if (safepoint.isWasmTrap()) {
+  if (safepoint.wasmSafepointKind() == WasmSafepointKind::Trap) {
     stackMap->setExitStubWords(trapExitLayoutNumWords);
   }
 
@@ -17416,7 +17469,7 @@ void CodeGenerator::visitOutOfLineResumableWasmTrap(
   
   
   lir->safepoint()->setFramePushedAtStackMapBase(ool->framePushed());
-  lir->safepoint()->setIsWasmTrap();
+  lir->safepoint()->setWasmSafepointKind(WasmSafepointKind::Trap);
 
   masm.jump(ool->rejoin());
 }

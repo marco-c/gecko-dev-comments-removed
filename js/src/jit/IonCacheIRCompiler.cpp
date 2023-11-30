@@ -120,7 +120,8 @@ void CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm,
   
   
   
-  size_t sizeOfLiveRegsInBytes = masm.PushRegsInMaskSizeInBytes(liveRegs);
+  size_t sizeOfLiveRegsInBytes =
+      MacroAssembler::PushRegsInMaskSizeInBytes(liveRegs);
 
   MOZ_ASSERT(sizeOfLiveRegsInBytes > 0);
 
