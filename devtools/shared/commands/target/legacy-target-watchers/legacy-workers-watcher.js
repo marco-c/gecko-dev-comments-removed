@@ -217,11 +217,7 @@ class LegacyWorkersWatcher {
 
         
         
-        if (
-          !isTargetSwitching ||
-          !this._isServiceWorkerWatcher ||
-          this.targetCommand.destroyServiceWorkersOnNavigation
-        ) {
+        if (!isTargetSwitching || !this._isServiceWorkerWatcher) {
           this.targetsByProcess.delete(targetFront);
         }
         this.targetsListeners.delete(targetFront);

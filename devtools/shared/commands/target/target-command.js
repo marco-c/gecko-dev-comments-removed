@@ -115,7 +115,6 @@ class TargetCommand extends EventEmitter {
       this.rootFront.traits.workerConsoleApiMessagesDispatchedToMainThread ===
       false;
     this.listenForServiceWorkers = false;
-    this.destroyServiceWorkersOnNavigation = false;
 
     
     
@@ -272,11 +271,7 @@ class TargetCommand extends EventEmitter {
       
       
       
-      
-      if (
-        !isPopup &&
-        (!isServiceWorker || this.destroyServiceWorkersOnNavigation)
-      ) {
+      if (!isPopup && !isServiceWorker) {
         this._onTargetDestroyed(target, {
           isTargetSwitching: isDestroyedTargetSwitching,
           
@@ -290,7 +285,6 @@ class TargetCommand extends EventEmitter {
     
     this.stopListening({ isTargetSwitching: true });
 
-    
     
     
     for (const target of destroyedTargets) {
