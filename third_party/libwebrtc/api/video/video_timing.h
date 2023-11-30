@@ -17,12 +17,13 @@
 #include <string>
 
 #include "api/units/time_delta.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 
 
-struct VideoSendTiming {
+struct RTC_EXPORT VideoSendTiming {
   enum TimingFrameFlags : uint8_t {
     kNotTriggered = 0,  
                         
@@ -51,7 +52,7 @@ struct VideoSendTiming {
 
 
 
-struct TimingFrameInfo {
+struct RTC_EXPORT TimingFrameInfo {
   TimingFrameInfo();
 
   
@@ -111,7 +112,7 @@ struct TimingFrameInfo {
 
 
 
-struct VideoPlayoutDelay {
+struct RTC_EXPORT VideoPlayoutDelay {
   
   static constexpr TimeDelta kMax = TimeDelta::Millis(10) * 0xFFF;
 
