@@ -392,7 +392,7 @@ const AbuseReportTestUtils = {
 
   
   
-  async assertReportActionHidden(gManagerWindow, extId) {
+  async assertReportActionVisibility(gManagerWindow, extId, expectShown) {
     let addonCard = gManagerWindow.document.querySelector(
       `addon-list addon-card[addon-id="${extId}"]`
     );
@@ -400,7 +400,23 @@ const AbuseReportTestUtils = {
 
     let reportButton = addonCard.querySelector("[action=report]");
     ok(reportButton, `Got the report action for ${extId}`);
-    ok(reportButton.hidden, `${extId} report action should be hidden`);
+    Assert.equal(
+      reportButton.hidden,
+      !expectShown,
+      `${extId} report action should be ${expectShown ? "shown" : "hidden"}`
+    );
+  },
+
+  
+  
+  assertReportActionHidden(gManagerWindow, extId) {
+    return this.assertReportActionVisibility(gManagerWindow, extId, false);
+  },
+
+  
+  
+  assertReportActionShown(gManagerWindow, extId) {
+    return this.assertReportActionVisibility(gManagerWindow, extId, true);
   },
 
   

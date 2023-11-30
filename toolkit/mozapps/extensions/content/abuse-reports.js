@@ -17,16 +17,6 @@ const { AbuseReporter } = ChromeUtils.importESModule(
 );
 
 
-
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  this,
-  "ABUSE_REPORT_AMO_FORM_ENABLED",
-  "extensions.abuseReport.amoFormEnabled",
-  true
-);
-
-
 const ABUSE_REPORT_MESSAGE_BARS = {
   
   submitting: {
@@ -206,7 +196,7 @@ async function openAbuseReportAMOForm({ addonId, reportEntryPoint }) {
   });
 }
 
-window.openAbuseReport = ABUSE_REPORT_AMO_FORM_ENABLED
+window.openAbuseReport = AbuseReporter.amoFormEnabled
   ? openAbuseReportAMOForm
   : openAbuseReport;
 
