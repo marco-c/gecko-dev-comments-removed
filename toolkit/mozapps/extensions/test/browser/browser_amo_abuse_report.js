@@ -8,13 +8,20 @@ loadTestSubscript("head_abuse_report.js");
 add_setup(async () => {
   await SpecialPowers.pushPrefEnv({
     set: [
-      ["extensions.abuseReport.amoFormEnabled", true],
       [
         "extensions.abuseReport.amoFormURL",
         "https://example.org/%LOCALE%/%APP%/feedback/addon/%addonID%/",
       ],
     ],
   });
+
+  
+  
+  if (AppConstants.MOZ_APP_NAME != "firefox") {
+    await SpecialPowers.pushPrefEnv({
+      set: [["extensions.abuseReport.amoFormEnabled", true]],
+    });
+  }
 
   const { AbuseReporter } = ChromeUtils.importESModule(
     "resource://gre/modules/AbuseReporter.sys.mjs"
