@@ -6410,6 +6410,15 @@ bool GeneralParser<ParseHandler, Unit>::forHeadStart(
 
     parsingLexicalDeclaration = nextTokenContinuesLetDeclaration(next);
     if (!parsingLexicalDeclaration) {
+      
+      
+      if (next != TokenKind::In && next != TokenKind::Of &&
+          TokenKindIsReservedWord(next)) {
+        tokenStream.consumeKnownToken(next);
+        error(JSMSG_UNEXPECTED_TOKEN_NO_EXPECT, TokenKindToDesc(next));
+        return false;
+      }
+
       anyChars.ungetToken();
       letIsIdentifier = true;
     }
