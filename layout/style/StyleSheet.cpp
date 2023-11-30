@@ -13,6 +13,7 @@
 #include "mozilla/dom/CSSImportRule.h"
 #include "mozilla/dom/CSSRuleList.h"
 #include "mozilla/dom/Element.h"
+#include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/MediaList.h"
 #include "mozilla/dom/Promise.h"
 #include "mozilla/dom/ReferrerInfo.h"
@@ -725,7 +726,7 @@ already_AddRefed<dom::Promise> StyleSheet::Replace(const nsACString& aText,
       css::Loader::UseSystemPrincipal::No, css::StylePreloadKind::None,
        nullptr,  nullptr,
       mConstructorDocument->NodePrincipal(), GetReferrerInfo(),
-       u""_ns);
+       u""_ns, FetchPriority::Auto);
 
   
   

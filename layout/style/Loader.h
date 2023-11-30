@@ -41,6 +41,7 @@ class StyleSheet;
 namespace dom {
 class DocGroup;
 class Element;
+enum class FetchPriority : uint8_t;
 }  
 
 
@@ -373,9 +374,11 @@ class Loader final {
       nsIURI* aURI, StylePreloadKind, const Encoding* aPreloadEncoding,
       nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
       uint64_t aEarlyHintPreloaderId, CORSMode aCORSMode,
-      const nsAString& aNonce, const nsAString& aIntegrity);
+      const nsAString& aNonce, const nsAString& aIntegrity,
+      dom::FetchPriority aFetchPriority);
 
   
+
 
 
   Result<RefPtr<StyleSheet>, nsresult> LoadSheet(nsIURI*, SheetParsingMode,
@@ -560,7 +563,7 @@ class Loader final {
       UseSystemPrincipal, const Encoding* aPreloadEncoding,
       nsIReferrerInfo* aReferrerInfo, nsICSSLoaderObserver* aObserver,
       CORSMode aCORSMode, const nsAString& aNonce, const nsAString& aIntegrity,
-      uint64_t aEarlyHintPreloaderId);
+      uint64_t aEarlyHintPreloaderId, dom::FetchPriority aFetchPriority);
 
   RefPtr<StyleSheet> LookupInlineSheetInCache(const nsAString&, nsIPrincipal*);
 

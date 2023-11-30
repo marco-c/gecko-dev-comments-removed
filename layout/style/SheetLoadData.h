@@ -70,14 +70,12 @@ class SheetLoadData final
                 nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*);
 
   
-  
-  
   SheetLoadData(css::Loader*, nsIURI*, StyleSheet*, SyncLoad,
                 UseSystemPrincipal, StylePreloadKind,
                 const Encoding* aPreloadEncoding,
                 nsICSSLoaderObserver* aObserver,
                 nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo*,
-                const nsAString& aNonce);
+                const nsAString& aNonce, dom::FetchPriority aFetchPriority);
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 
