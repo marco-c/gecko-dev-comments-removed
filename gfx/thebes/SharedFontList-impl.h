@@ -348,9 +348,7 @@ class FontList {
 
 
 
-
-
-  [[nodiscard]] bool UpdateShmBlocks(bool aMustLock);
+  [[nodiscard]] bool UpdateShmBlocks();
 
   
 

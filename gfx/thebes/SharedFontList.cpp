@@ -41,12 +41,8 @@ static double WSSDistance(const Face* aFace, const gfxFontStyle& aStyle) {
 
 void* Pointer::ToPtr(FontList* aFontList,
                      size_t aSize) const MOZ_NO_THREAD_SAFETY_ANALYSIS {
-  
-  
-  void* result = nullptr;
-
   if (IsNull()) {
-    return result;
+    return nullptr;
   }
 
   
@@ -57,6 +53,9 @@ void* Pointer::ToPtr(FontList* aFontList,
     gfxPlatformFontList::PlatformFontList()->Lock();
   }
 
+  
+  
+  void* result = nullptr;
   uint32_t blockIndex = Block();
 
   
@@ -64,23 +63,19 @@ void* Pointer::ToPtr(FontList* aFontList,
   
   auto& blocks = aFontList->mBlocks;
   if (blockIndex >= blocks.Length()) {
-    if (MOZ_UNLIKELY(XRE_IsParentProcess())) {
+    if (XRE_IsParentProcess()) {
       
       goto cleanup;
     }
     
     
-    if (!isMainThread) {
-      goto cleanup;
-    }
     
     
     
     
     
     
-    
-    if (MOZ_UNLIKELY(!aFontList->UpdateShmBlocks(true))) {
+    if (!isMainThread || !aFontList->UpdateShmBlocks()) {
       goto cleanup;
     }
     MOZ_ASSERT(blockIndex < blocks.Length(), "failure in UpdateShmBlocks?");
@@ -90,7 +85,7 @@ void* Pointer::ToPtr(FontList* aFontList,
     
     
     
-    if (MOZ_UNLIKELY(blockIndex >= blocks.Length())) {
+    if (blockIndex >= blocks.Length()) {
       goto cleanup;
     }
   }
@@ -98,7 +93,7 @@ void* Pointer::ToPtr(FontList* aFontList,
   {
     
     const auto& block = blocks[blockIndex];
-    if (MOZ_LIKELY(Offset() + aSize <= block->Allocated())) {
+    if (Offset() + aSize <= block->Allocated()) {
       result = static_cast<char*>(block->Memory()) + Offset();
     }
   }
@@ -713,7 +708,7 @@ FontList::FontList(uint32_t aGeneration) {
     blocks.Clear();
     
     for (unsigned retryCount = 0; retryCount < 3; ++retryCount) {
-      if (UpdateShmBlocks(false)) {
+      if (UpdateShmBlocks()) {
         return;
       }
       
@@ -869,24 +864,16 @@ FontList::ShmBlock* FontList::GetBlockFromParent(uint32_t aIndex) {
   return new ShmBlock(std::move(newShm));
 }
 
-bool FontList::UpdateShmBlocks(bool aMustLock) {
+bool FontList::UpdateShmBlocks() {
   MOZ_ASSERT(!XRE_IsParentProcess());
-  if (aMustLock) {
-    gfxPlatformFontList::PlatformFontList()->Lock();
-  }
-  bool result = true;
   while (!mBlocks.Length() || mBlocks.Length() < GetHeader().mBlockCount) {
     ShmBlock* newBlock = GetBlockFromParent(mBlocks.Length());
     if (!newBlock) {
-      result = false;
-      break;
+      return false;
     }
     mBlocks.AppendElement(newBlock);
   }
-  if (aMustLock) {
-    gfxPlatformFontList::PlatformFontList()->Unlock();
-  }
-  return result;
+  return true;
 }
 
 void FontList::ShareBlocksToProcess(nsTArray<base::SharedMemoryHandle>* aBlocks,
