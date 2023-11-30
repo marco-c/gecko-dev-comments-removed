@@ -380,16 +380,49 @@ function insertTestCookieRules() {
 
 
 
-async function testClickResultTelemetry(expected, resetFOG = true) {
+
+function testClickResultTelemetry(expected, resetFOG = true) {
+  return testClickResultTelemetryInternal(
+    Glean.cookieBannersClick.result,
+    expected,
+    resetFOG
+  );
+}
+
+
+
+
+
+
+
+
+
+function testCMPResultTelemetry(expected, resetFOG = true) {
+  return testClickResultTelemetryInternal(
+    Glean.cookieBannersCmp.result,
+    expected,
+    resetFOG
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+async function testClickResultTelemetryInternal(
+  targetTelemetry,
+  expected,
+  resetFOG
+) {
   
   if (AppConstants.platform == "linux") {
     ok(true, "Skip click telemetry tests on linux.");
-    return;
-  }
-
-  
-  if (Services.prefs.getBoolPref("cookiebanners.service.enableGlobalRules")) {
-    ok(true, "Skip click telemetry when global rules are enabled.");
     return;
   }
 
@@ -415,13 +448,11 @@ async function testClickResultTelemetry(expected, resetFOG = true) {
       let expectedValue = expected[label] ?? null;
       if (doAssert) {
         is(
-          Glean.cookieBannersClick.result[label].testGetValue(),
+          targetTelemetry[label].testGetValue(),
           expectedValue,
           `Counter for label '${label}' has correct state.`
         );
-      } else if (
-        Glean.cookieBannersClick.result[label].testGetValue() !== expectedValue
-      ) {
+      } else if (targetTelemetry[label].testGetValue() !== expectedValue) {
         return false;
       }
     }
