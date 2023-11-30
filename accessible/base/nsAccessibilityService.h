@@ -481,7 +481,6 @@ static const char kEventTypeNames[][40] = {
     "window minimize",           
     "window restore",            
     "object attribute changed",  
-    "virtual cursor changed",    
     "text value change",         
     "scrolling",                 
     "announcement",              
