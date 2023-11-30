@@ -46,7 +46,13 @@ function declTest(name, cfg) {
 }
 
 function declTestWithOptions(name, cfg, fileExt) {
-  let { url = "about:blank", includeParent = false, remoteTypes, test } = cfg;
+  let {
+    url = "about:blank",
+    includeParent = false,
+    remoteTypes,
+    loadInDevToolsLoader = false,
+    test,
+  } = cfg;
 
   
   
@@ -57,6 +63,9 @@ function declTestWithOptions(name, cfg, fileExt) {
   actorOptions.includeParent = includeParent;
   if (remoteTypes !== undefined) {
     actorOptions.remoteTypes = remoteTypes;
+  }
+  if (loadInDevToolsLoader) {
+    actorOptions.loadInDevToolsLoader = true;
   }
 
   

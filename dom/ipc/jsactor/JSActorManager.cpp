@@ -61,11 +61,15 @@ already_AddRefed<JSActor> JSActorManager::GetActor(JSContext* aCx,
 
   
   
-  JSAutoRealm ar(aCx, xpc::PrivilegedJunkScope());
+  
+  RefPtr loader = protocol->mLoadInDevToolsLoader
+                      ? mozJSModuleLoader::GetOrCreateDevToolsLoader()
+                      : mozJSModuleLoader::Get();
+  MOZ_ASSERT(loader);
 
   
-  RefPtr loader = mozJSModuleLoader::Get();
-  MOZ_ASSERT(loader);
+  
+  JSAutoRealm ar(aCx, loader->GetSharedGlobal(aCx));
 
   
   JS::Rooted<JSObject*> actorObj(aCx);

@@ -55,6 +55,13 @@ dictionary ProcessActorOptions {
   boolean includeParent = false;
 
   
+
+
+
+
+  boolean loadInDevToolsLoader = false;
+
+  
   ProcessActorSidedOptions parent;
   ProcessActorChildOptions child;
 };
