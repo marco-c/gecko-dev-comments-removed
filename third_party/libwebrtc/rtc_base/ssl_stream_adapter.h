@@ -24,7 +24,6 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 
@@ -113,7 +112,7 @@ enum { SSE_MSG_TRUNC = 0xff0001 };
 
 enum class SSLHandshakeError { UNKNOWN, INCOMPATIBLE_CIPHERSUITE, MAX_VALUE };
 
-class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
+class SSLStreamAdapter : public StreamInterface {
  public:
   
   
@@ -262,9 +261,6 @@ class SSLStreamAdapter : public StreamInterface, public sigslot::has_slots<> {
   
   
   bool GetClientAuthEnabled() const { return client_auth_enabled_; }
-
-  
-  sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
   
