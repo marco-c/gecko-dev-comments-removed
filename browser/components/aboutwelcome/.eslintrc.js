@@ -19,7 +19,7 @@ module.exports = {
   overrides: [
     {
       
-      files: ["content-src/**"],
+      files: ["content-src/**", "tests/unit/**"],
       parserOptions: {
         sourceType: "module",
       },
@@ -42,7 +42,7 @@ module.exports = {
       },
     },
     {
-      files: ["./*.js", "content-src/**"],
+      files: ["./*.js", "content-src/**", "tests/unit/**"],
       env: {
         node: true,
       },
@@ -50,18 +50,31 @@ module.exports = {
     {
       
       
-      files: ["tests/**"],
+      files: ["modules/*.jsm", "tests/**"],
       rules: {
         "no-implicit-globals": "off",
       },
     },
     {
-      files: ["content-src/**"],
+      files: ["content-src/**", "tests/unit/**"],
       rules: {
         
         "import/no-commonjs": 2,
         
         "react/jsx-no-bind": 0,
+      },
+    },
+    {
+      
+      files: "tests/unit/**",
+      env: {
+        browser: true,
+        mocha: true,
+      },
+      globals: {
+        assert: true,
+        chai: true,
+        sinon: true,
       },
     },
     {
