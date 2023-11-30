@@ -589,23 +589,37 @@ void AudioCallbackDriver::Init(const nsCString& aStreamName) {
 
   uint32_t latencyFrames = CubebUtils::GetCubebMTGLatencyInFrames(&output);
 
+  LOG(LogLevel::Debug, ("Minimum latency in frames: %d", latencyFrames));
+
   
   
   if (IsMacbookOrMacbookAir()) {
     latencyFrames = std::max((uint32_t)512, latencyFrames);
+    LOG(LogLevel::Debug,
+        ("Macbook or macbook air, new latency: %d", latencyFrames));
   }
 
   
   
   
   
-#if defined(XP_MACOSX)
+  
   if (mInputDevicePreference == CUBEB_DEVICE_PREF_VOICE) {
     if (latencyFrames < mSampleRate / 100) {
       latencyFrames = mozilla::RoundUpPow2(mSampleRate / 100);
+      LOG(LogLevel::Debug,
+          ("AudioProcessing enabled, new latency %d", latencyFrames));
     }
   }
-#endif
+
+  
+  
+  
+  if (latencyFrames < WEBAUDIO_BLOCK_SIZE) {
+    LOG(LogLevel::Debug,
+        ("Latency clamped to %d from %d", WEBAUDIO_BLOCK_SIZE, latencyFrames));
+    latencyFrames = WEBAUDIO_BLOCK_SIZE;
+  }
   LOG(LogLevel::Debug, ("Effective latency in frames: %d", latencyFrames));
 
   input = output;
