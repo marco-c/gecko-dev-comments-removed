@@ -97,10 +97,12 @@ function createNetworkEventOwner(event) {
 
 
 
-async function waitForNetworkEvents(expectedUrl, expectedRequestsCount) {
+
+async function waitForNetworkEvents(expectedUrl = null, expectedRequestsCount) {
   const events = [];
   const networkObserver = new NetworkObserver({
-    ignoreChannelFunction: channel => channel.URI.spec !== expectedUrl,
+    ignoreChannelFunction: channel =>
+      expectedUrl ? channel.URI.spec !== expectedUrl : false,
     onNetworkEvent: () => {
       info("waitForNetworkEvents received a new event");
       const owner = createNetworkEventOwner();
