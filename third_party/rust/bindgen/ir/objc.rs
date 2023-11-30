@@ -253,22 +253,9 @@ impl ObjCMethod {
         let split_name: Vec<Option<Ident>> = self
             .name
             .split(':')
-            .enumerate()
-            .map(|(idx, name)| {
+            .map(|name| {
                 if name.is_empty() {
                     None
-                } else if idx == 0 {
-                    
-                    
-                    
-                    if ["crate", "self", "super", "Self"].contains(&name) {
-                        Some(Ident::new(
-                            &format!("{}_", name),
-                            Span::call_site(),
-                        ))
-                    } else {
-                        Some(Ident::new(name, Span::call_site()))
-                    }
                 } else {
                     
                     
