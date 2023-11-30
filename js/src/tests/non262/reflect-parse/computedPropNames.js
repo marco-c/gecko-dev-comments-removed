@@ -21,7 +21,7 @@ assertExpr('a= {[1]: 1, 2 : 2}',
 
 var node = Reflect.parse("a = {[field1]: 5}");
 Pattern({ body: [ { expression: { right: { properties: [ {key: { loc:
-    { start: { line: 1, column: 5 }, end: { line: 1, column: 13 }}}}]}}}]}).match(node);
+    { start: { line: 1, column: 6 }, end: { line: 1, column: 14 }}}}]}}}]}).match(node);
 
 
 assertExpr("b = { get [meth]() { } }", aExpr("=", ident("b"),
