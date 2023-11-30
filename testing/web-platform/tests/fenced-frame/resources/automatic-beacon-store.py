@@ -31,8 +31,7 @@ def main(request, response):
         
         if request.method == "POST":
             request_body = request.body or NO_DATA_STRING
-            request_headers = request.headers.get("Origin") or NO_DATA_STRING
-            stash.put(string_to_uuid(request_body), request_headers)
+            stash.put(string_to_uuid(request_body), request_body)
             return (200, [], b"")
 
         
