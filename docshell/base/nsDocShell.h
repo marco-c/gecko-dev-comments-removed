@@ -410,7 +410,7 @@ class nsDocShell final : public nsDocLoader,
 
   
   
-  nsresult CreateContentViewerForActor(
+  nsresult CreateDocumentViewerForActor(
       mozilla::dom::WindowGlobalChild* aWindowActor);
 
   

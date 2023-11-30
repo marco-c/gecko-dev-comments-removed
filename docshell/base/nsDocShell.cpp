@@ -6715,7 +6715,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
                                        nullptr,  false);
 }
 
-nsresult nsDocShell::CreateContentViewerForActor(
+nsresult nsDocShell::CreateDocumentViewerForActor(
     WindowGlobalChild* aWindowActor) {
   MOZ_ASSERT(aWindowActor);
 
