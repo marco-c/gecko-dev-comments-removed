@@ -215,6 +215,9 @@ impl<'a> ExactSizeIterator for Decode<'a> {
 
 #[inline]
 pub fn encode_str(input: &str) -> Option<String> {
+    if input.len() > u32::MAX as usize {
+        return None;
+    }
     let mut buf = String::with_capacity(input.len());
     encode_into(input.chars(), &mut buf).ok().map(|()| buf)
 }
@@ -224,6 +227,9 @@ pub fn encode_str(input: &str) -> Option<String> {
 
 
 pub fn encode(input: &[char]) -> Option<String> {
+    if input.len() > u32::MAX as usize {
+        return None;
+    }
     let mut buf = String::with_capacity(input.len());
     encode_into(input.iter().copied(), &mut buf)
         .ok()
@@ -235,9 +241,9 @@ where
     I: Iterator<Item = char> + Clone,
 {
     
-    let (mut input_length, mut basic_length) = (0, 0);
+    let (mut input_length, mut basic_length) = (0u32, 0);
     for c in input.clone() {
-        input_length += 1;
+        input_length = input_length.checked_add(1).ok_or(())?;
         if c.is_ascii() {
             output.push(c);
             basic_length += 1;
@@ -269,10 +275,7 @@ where
         for c in input.clone() {
             let c = c as u32;
             if c < code_point {
-                delta += 1;
-                if delta == 0 {
-                    return Err(()); 
-                }
+                delta = delta.checked_add(1).ok_or(())?;
             }
             if c == code_point {
                 
@@ -313,4 +316,13 @@ fn value_to_digit(value: u32) -> char {
         26..=35 => (value as u8 - 26 + b'0') as char, 
         _ => panic!(),
     }
+}
+
+#[test]
+#[ignore = "slow"]
+#[cfg(target_pointer_width = "64")]
+fn huge_encode() {
+    let mut buf = String::new();
+    assert!(encode_into(std::iter::repeat('ß').take(u32::MAX as usize + 1), &mut buf).is_err());
+    assert_eq!(buf.len(), 0);
 }
