@@ -100,7 +100,10 @@ class ConnectionContext final
   
   
   
-  bool use_rtx() { return true; }
+  bool use_rtx() { return use_rtx_; }
+
+  
+  void set_use_rtx(bool use_rtx) { use_rtx_ = use_rtx; }
 
  protected:
   explicit ConnectionContext(PeerConnectionFactoryDependencies* dependencies);
@@ -139,6 +142,10 @@ class ConnectionContext final
   std::unique_ptr<rtc::PacketSocketFactory> default_socket_factory_
       RTC_GUARDED_BY(signaling_thread_);
   std::unique_ptr<SctpTransportFactoryInterface> const sctp_factory_;
+
+  
+  
+  bool use_rtx_;
 };
 
 }  
