@@ -87,7 +87,8 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
         kNameSpaceID_None, nsGkAtoms::checked, nsGkAtoms::_true, eCaseMatters);
 
     mNativeMenuItem.enabled = isEnabled;
-    mNativeMenuItem.state = mIsChecked ? NSOnState : NSOffState;
+    mNativeMenuItem.state =
+        mIsChecked ? NSControlStateValueOn : NSControlStateValueOff;
 
     SetKeyEquiv();
   }
@@ -98,8 +99,20 @@ nsMenuItemX::nsMenuItemX(nsMenuX* aParent, const nsString& aLabel,
 
   
   
-  mNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
-  mNativeMenuItem.action = @selector(menuItemHit:);
+  
+  
+  
+  
+  
+  
+  if (mContent->AsElement()->AttrValueIs(kNameSpaceID_None, nsGkAtoms::id,
+                                         u"menu_copy"_ns, eCaseMatters)) {
+    mNativeMenuItem.action = @selector(copy:);
+  } else {
+    mNativeMenuItem.action = @selector(menuItemHit:);
+    mNativeMenuItem.target = nsMenuBarX::sNativeEventTarget;
+  }
+
   mNativeMenuItem.representedObject = mMenuGroupOwner->GetRepresentedObject();
   mNativeMenuItem.tag = mMenuGroupOwner->RegisterForCommand(this);
 
@@ -155,7 +168,8 @@ nsresult nsMenuItemX::SetChecked(bool aIsChecked) {
   }
 
   
-  mNativeMenuItem.state = mIsChecked ? NSOnState : NSOffState;
+  mNativeMenuItem.state =
+      mIsChecked ? NSControlStateValueOn : NSControlStateValueOff;
 
   return NS_OK;
 

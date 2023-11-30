@@ -40,6 +40,7 @@
 #include "nsCommandLine.h"
 #include "nsStandaloneNativeMenu.h"
 #include "nsCocoaUtils.h"
+#include "nsMenuBarX.h"
 
 class AutoAutoreleasePool {
  public:
@@ -52,6 +53,11 @@ class AutoAutoreleasePool {
 
 @interface MacApplicationDelegate : NSObject <NSApplicationDelegate> {
 }
+
+
+
+
+- (IBAction)copy:(id)aSender;
 
 @end
 
@@ -139,6 +145,10 @@ void ProcessPendingGetURLAppleEvents() {
 }
 
 @implementation MacApplicationDelegate
+
+- (IBAction)copy:(id)aSender {
+  [nsMenuBarX::sNativeEventTarget menuItemHit:aSender];
+}
 
 - (id)init {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
