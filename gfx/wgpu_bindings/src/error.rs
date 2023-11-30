@@ -151,7 +151,7 @@ mod foreign {
         },
         resource::{
             BufferAccessError, CreateBufferError, CreateSamplerError, CreateTextureError,
-            CreateTextureViewError, DestroyError,
+            CreateTextureViewError,
         },
     };
 
@@ -650,12 +650,6 @@ mod foreign {
             
             
             
-            ErrorBufferType::Validation
-        }
-    }
-
-    impl HasErrorBufferType for DestroyError {
-        fn error_type(&self) -> ErrorBufferType {
             ErrorBufferType::Validation
         }
     }

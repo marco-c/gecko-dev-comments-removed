@@ -45,25 +45,17 @@ Texture::Texture(Device* const aParent, RawId aId,
   MOZ_RELEASE_ASSERT(aId);
 }
 
-void Texture::Cleanup() {
-  if (!mParent) {
-    return;
-  }
-
-  auto bridge = mParent->GetBridge();
-  if (bridge && bridge->IsOpen()) {
-    bridge->SendTextureDrop(mId);
-  }
-
-  
-  
-  
-  
-  
-  mParent = nullptr;
-}
-
 Texture::~Texture() { Cleanup(); }
+
+void Texture::Cleanup() {
+  if (mValid && mParent) {
+    mValid = false;
+    auto bridge = mParent->GetBridge();
+    if (bridge && bridge->IsOpen()) {
+      bridge->SendTextureDrop(mId);
+    }
+  }
+}
 
 already_AddRefed<TextureView> Texture::CreateView(
     const dom::GPUTextureViewDescriptor& aDesc) {
@@ -78,10 +70,12 @@ already_AddRefed<TextureView> Texture::CreateView(
 }
 
 void Texture::Destroy() {
-  auto bridge = mParent->GetBridge();
-  if (bridge && bridge->IsOpen()) {
-    bridge->SendTextureDestroy(mId, mParent->GetId());
-  }
+  
+  
+
+  
 }
+
+void Texture::ForceDestroy() { Cleanup(); }
 
 }  
