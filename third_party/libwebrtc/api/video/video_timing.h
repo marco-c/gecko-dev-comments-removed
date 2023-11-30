@@ -112,7 +112,9 @@ struct RTC_EXPORT TimingFrameInfo {
 
 
 
-struct RTC_EXPORT VideoPlayoutDelay {
+
+class RTC_EXPORT VideoPlayoutDelay {
+ public:
   
   static constexpr TimeDelta kMax = TimeDelta::Millis(10) * 0xFFF;
 
@@ -122,29 +124,25 @@ struct RTC_EXPORT VideoPlayoutDelay {
     return VideoPlayoutDelay(TimeDelta::Zero(), TimeDelta::Zero());
   }
 
+  
   VideoPlayoutDelay() = default;
-  VideoPlayoutDelay(int min_ms, int max_ms) : min_ms(min_ms), max_ms(max_ms) {}
+  VideoPlayoutDelay(const VideoPlayoutDelay&) = default;
+  VideoPlayoutDelay& operator=(const VideoPlayoutDelay&) = default;
   VideoPlayoutDelay(TimeDelta min, TimeDelta max);
 
   bool Set(TimeDelta min, TimeDelta max);
 
-  TimeDelta min() const { return TimeDelta::Millis(min_ms); }
-  TimeDelta max() const { return TimeDelta::Millis(max_ms); }
+  TimeDelta min() const { return min_; }
+  TimeDelta max() const { return max_; }
 
-  
-  
-  bool Valid() const {
-    return TimeDelta::Zero() <= min() && min() <= max() && max() <= kMax;
+  friend bool operator==(const VideoPlayoutDelay& lhs,
+                         const VideoPlayoutDelay& rhs) {
+    return lhs.min_ == rhs.min_ && lhs.max_ == rhs.max_;
   }
 
-  
-  
-  int min_ms = -1;
-  int max_ms = -1;
-
-  bool operator==(const VideoPlayoutDelay& rhs) const {
-    return min_ms == rhs.min_ms && max_ms == rhs.max_ms;
-  }
+ private:
+  TimeDelta min_ = TimeDelta::Zero();
+  TimeDelta max_ = kMax;
 };
 
 }  

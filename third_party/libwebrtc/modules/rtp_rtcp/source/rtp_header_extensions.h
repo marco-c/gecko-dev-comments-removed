@@ -199,9 +199,9 @@ class PlayoutDelayLimits {
   
   
   
-  static constexpr int kGranularityMs = 10;
+  static constexpr TimeDelta kGranularity = TimeDelta::Millis(10);
   
-  static constexpr int kMaxMs = 0xfff * kGranularityMs;  
+  static constexpr TimeDelta kMax = 0xfff * kGranularity;  
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     VideoPlayoutDelay* playout_delay);
