@@ -7,6 +7,7 @@
 #include "nsIGlobalObject.h"
 #include "mozilla/BasePrincipal.h"
 #include "mozilla/CycleCollectedJSContext.h"
+#include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/Result.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/dom/BindingDeclarations.h"
@@ -28,6 +29,7 @@ using mozilla::AutoSlowOperation;
 using mozilla::CycleCollectedJSContext;
 using mozilla::DOMEventTargetHelper;
 using mozilla::ErrorResult;
+using mozilla::GlobalTeardownObserver;
 using mozilla::IgnoredErrorResult;
 using mozilla::MallocSizeOf;
 using mozilla::Maybe;
@@ -67,8 +69,8 @@ bool nsIGlobalObject::IsScriptForbidden(JSObject* aCallback,
 
 nsIGlobalObject::~nsIGlobalObject() {
   UnlinkObjectsInGlobal();
-  DisconnectEventTargetObjects();
-  MOZ_DIAGNOSTIC_ASSERT(mEventTargetObjects.isEmpty());
+  DisconnectGlobalTeardownObservers();
+  MOZ_DIAGNOSTIC_ASSERT(mGlobalTeardownObservers.isEmpty());
 }
 
 nsIPrincipal* nsIGlobalObject::PrincipalOrNull() const {
@@ -157,29 +159,31 @@ void nsIGlobalObject::TraverseObjectsInGlobal(
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mByteLengthQueuingStrategySizeFunction)
 }
 
-void nsIGlobalObject::AddEventTargetObject(DOMEventTargetHelper* aObject) {
+void nsIGlobalObject::AddGlobalTeardownObserver(
+    GlobalTeardownObserver* aObject) {
   MOZ_DIAGNOSTIC_ASSERT(aObject);
   MOZ_ASSERT(!aObject->isInList());
-  mEventTargetObjects.insertBack(aObject);
+  mGlobalTeardownObservers.insertBack(aObject);
 }
 
-void nsIGlobalObject::RemoveEventTargetObject(DOMEventTargetHelper* aObject) {
+void nsIGlobalObject::RemoveGlobalTeardownObserver(
+    GlobalTeardownObserver* aObject) {
   MOZ_DIAGNOSTIC_ASSERT(aObject);
   MOZ_ASSERT(aObject->isInList());
   MOZ_ASSERT(aObject->GetOwnerGlobal() == this);
   aObject->remove();
 }
 
-void nsIGlobalObject::ForEachEventTargetObject(
-    const std::function<void(DOMEventTargetHelper*, bool* aDoneOut)>& aFunc)
+void nsIGlobalObject::ForEachGlobalTeardownObserver(
+    const std::function<void(GlobalTeardownObserver*, bool* aDoneOut)>& aFunc)
     const {
   
   
   
-  AutoTArray<RefPtr<DOMEventTargetHelper>, 64> targetList;
-  for (const DOMEventTargetHelper* deth = mEventTargetObjects.getFirst(); deth;
-       deth = deth->getNext()) {
-    targetList.AppendElement(const_cast<DOMEventTargetHelper*>(deth));
+  AutoTArray<RefPtr<GlobalTeardownObserver>, 64> targetList;
+  for (const GlobalTeardownObserver* deth = mGlobalTeardownObservers.getFirst();
+       deth; deth = deth->getNext()) {
+    targetList.AppendElement(const_cast<GlobalTeardownObserver*>(deth));
   }
 
   
@@ -197,14 +201,15 @@ void nsIGlobalObject::ForEachEventTargetObject(
   }
 }
 
-void nsIGlobalObject::DisconnectEventTargetObjects() {
-  ForEachEventTargetObject([&](DOMEventTargetHelper* aTarget, bool* aDoneOut) {
-    aTarget->DisconnectFromOwner();
+void nsIGlobalObject::DisconnectGlobalTeardownObservers() {
+  ForEachGlobalTeardownObserver(
+      [&](GlobalTeardownObserver* aTarget, bool* aDoneOut) {
+        aTarget->DisconnectFromOwner();
 
-    
-    
-    MOZ_DIAGNOSTIC_ASSERT(aTarget->GetOwnerGlobal() != this);
-  });
+        
+        
+        MOZ_DIAGNOSTIC_ASSERT(aTarget->GetOwnerGlobal() != this);
+      });
 }
 
 Maybe<ClientInfo> nsIGlobalObject::GetClientInfo() const {

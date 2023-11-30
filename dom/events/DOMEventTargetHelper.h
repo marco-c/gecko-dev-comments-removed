@@ -9,6 +9,7 @@
 
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/EventTarget.h"
+#include "mozilla/GlobalTeardownObserver.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/RefPtr.h"
 #include "nsAtom.h"
@@ -48,7 +49,7 @@ enum class CallerType : uint32_t;
   }
 
 class DOMEventTargetHelper : public dom::EventTarget,
-                             public LinkedListElement<DOMEventTargetHelper> {
+                             public GlobalTeardownObserver {
  public:
   DOMEventTargetHelper();
   explicit DOMEventTargetHelper(nsPIDOMWindowInner* aWindow);
@@ -57,7 +58,8 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_IMETHOD_(void) DeleteCycleCollectable() override;
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_WRAPPERCACHE_CLASS(DOMEventTargetHelper)
+  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_WRAPPERCACHE_CLASS_AMBIGUOUS(
+      DOMEventTargetHelper, dom::EventTarget)
 
   virtual EventListenerManager* GetExistingListenerManager() const override;
   virtual EventListenerManager* GetOrCreateListenerManager() override;
@@ -76,12 +78,8 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_DOMEVENTTARGETHELPER_IID)
 
-  void GetParentObject(nsIScriptGlobalObject** aParentObject) {
-    if (mParentObject) {
-      CallQueryInterface(mParentObject, aParentObject);
-    } else {
-      *aParentObject = nullptr;
-    }
+  nsIGlobalObject* GetOwnerGlobal() const override {
+    return GlobalTeardownObserver::GetOwnerGlobal();
   }
 
   static DOMEventTargetHelper* FromSupports(nsISupports* aSupports) {
@@ -110,28 +108,13 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  nsresult CheckCurrentGlobalCorrectness() const;
-
-  nsPIDOMWindowInner* GetOwner() const { return mOwnerWindow; }
-  
-  
   nsPIDOMWindowInner* GetWindowIfCurrent() const;
   
   
   mozilla::dom::Document* GetDocumentIfCurrent() const;
 
-  virtual void DisconnectFromOwner();
+  void DisconnectFromOwner() override;
   using EventTarget::GetParentObject;
-  nsIGlobalObject* GetOwnerGlobal() const final { return mParentObject; }
-  bool HasOrHasHadOwner() { return mHasOrHasHadOwnerWindow; }
 
   virtual void EventListenerAdded(nsAtom* aType) override;
 
@@ -163,21 +146,10 @@ class DOMEventTargetHelper : public dom::EventTarget,
 
   void IgnoreKeepAliveIfHasListenersFor(nsAtom* aType);
 
-  void BindToOwner(nsIGlobalObject* aOwner);
-
  private:
-  
-  
-  nsIGlobalObject* MOZ_NON_OWNING_REF mParentObject;
-  
-  
-  
-  nsPIDOMWindowInner* MOZ_NON_OWNING_REF mOwnerWindow;
-  bool mHasOrHasHadOwnerWindow;
-
   nsTArray<RefPtr<nsAtom>> mKeepingAliveTypes;
 
-  bool mIsKeptAlive;
+  bool mIsKeptAlive = false;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(DOMEventTargetHelper, NS_DOMEVENTTARGETHELPER_IID)

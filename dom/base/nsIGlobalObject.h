@@ -35,6 +35,7 @@ class nsPIDOMWindowInner;
 
 namespace mozilla {
 class DOMEventTargetHelper;
+class GlobalTeardownObserver;
 template <typename V, typename E>
 class Result;
 enum class StorageAccess;
@@ -70,7 +71,7 @@ class nsIGlobalObject : public nsISupports {
 
   
   
-  mozilla::LinkedList<mozilla::DOMEventTargetHelper> mEventTargetObjects;
+  mozilla::LinkedList<mozilla::GlobalTeardownObserver> mGlobalTeardownObservers;
 
   bool mIsDying;
   bool mIsScriptForbidden;
@@ -157,14 +158,14 @@ class nsIGlobalObject : public nsISupports {
   
   
   
-  void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
-  void RemoveEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
+  void AddGlobalTeardownObserver(mozilla::GlobalTeardownObserver* aObject);
+  void RemoveGlobalTeardownObserver(mozilla::GlobalTeardownObserver* aObject);
 
   
   
-  void ForEachEventTargetObject(
-      const std::function<void(mozilla::DOMEventTargetHelper*, bool* aDoneOut)>&
-          aFunc) const;
+  void ForEachGlobalTeardownObserver(
+      const std::function<void(mozilla::GlobalTeardownObserver*,
+                               bool* aDoneOut)>& aFunc) const;
 
   virtual bool IsInSyncOperation() { return false; }
 
@@ -291,7 +292,7 @@ class nsIGlobalObject : public nsISupports {
   void StartForbiddingScript() { mIsScriptForbidden = true; }
   void StopForbiddingScript() { mIsScriptForbidden = false; }
 
-  void DisconnectEventTargetObjects();
+  void DisconnectGlobalTeardownObservers();
 
   size_t ShallowSizeOfExcludingThis(mozilla::MallocSizeOf aSizeOf) const;
 
