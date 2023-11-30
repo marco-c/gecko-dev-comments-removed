@@ -2520,7 +2520,6 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(Document)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOnloadBlocker)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLazyLoadObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLastRememberedSizeObserver)
-  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mContentVisibilityObserver)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDOMImplementation)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mImageMaps)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOrientationPendingPromise)
@@ -2637,7 +2636,6 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(Document)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mSecurityInfo)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDisplayDocument)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLazyLoadObserver)
-  NS_IMPL_CYCLE_COLLECTION_UNLINK(mContentVisibilityObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mLastRememberedSizeObserver)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mFontFaceSet)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mReadyForIdle)
@@ -16451,24 +16449,6 @@ DOMIntersectionObserver& Document::EnsureLazyLoadObserver() {
   return *mLazyLoadObserver;
 }
 
-DOMIntersectionObserver& Document::EnsureContentVisibilityObserver() {
-  if (!mContentVisibilityObserver) {
-    mContentVisibilityObserver =
-        DOMIntersectionObserver::CreateContentVisibilityObserver(*this);
-  }
-  return *mContentVisibilityObserver;
-}
-
-void Document::ObserveForContentVisibility(Element& aElement) {
-  EnsureContentVisibilityObserver().Observe(aElement);
-}
-
-void Document::UnobserveForContentVisibility(Element& aElement) {
-  if (mContentVisibilityObserver) {
-    mContentVisibilityObserver->Unobserve(aElement);
-  }
-}
-
 ResizeObserver& Document::EnsureLastRememberedSizeObserver() {
   if (!mLastRememberedSizeObserver) {
     mLastRememberedSizeObserver =
@@ -17181,18 +17161,42 @@ static void FlushLayoutForWholeBrowsingContextTree(Document& aDoc) {
   }
 }
 
-void Document::NotifyResizeObservers() {
-  if (mResizeObservers.IsEmpty()) {
-    return;
+bool Document::HasContentVisibilityAutoElements() const {
+  if (PresShell* presShell = GetPresShell()) {
+    return presShell->HasContentVisibilityAutoFrames();
   }
+  return false;
+}
 
+void Document::DetermineProximityToViewportAndNotifyResizeObservers() {
   uint32_t shallowestTargetDepth = 0;
+  bool initialResetOfScrolledIntoViewFlagsDone = false;
   while (true) {
     
     
     
     
     FlushLayoutForWholeBrowsingContextTree(*this);
+    if (PresShell* presShell = GetPresShell()) {
+      auto result = presShell->DetermineProximityToViewport();
+      if (result.mHadInitialDetermination) {
+        continue;
+      }
+      if (result.mAnyScrollIntoViewFlag) {
+        
+        
+        
+        
+        
+        presShell->ClearTemporarilyVisibleForScrolledIntoViewDescendantFlags();
+        presShell->ScheduleContentRelevancyUpdate(
+            ContentRelevancyReason::Visible);
+        if (!initialResetOfScrolledIntoViewFlagsDone) {
+          initialResetOfScrolledIntoViewFlagsDone = true;
+          continue;
+        }
+      }
+    }
 
     
     
@@ -17203,6 +17207,12 @@ void Document::NotifyResizeObservers() {
       break;
     }
 
+    
+    
+    
+    if (PresShell* presShell = GetPresShell()) {
+      presShell->UpdateRelevancyOfContentVisibilityAutoFrames();
+    }
     DebugOnly<uint32_t> oldShallowestTargetDepth = shallowestTargetDepth;
     shallowestTargetDepth = BroadcastAllActiveResizeObservations();
     NS_ASSERTION(oldShallowestTargetDepth < shallowestTargetDepth,
