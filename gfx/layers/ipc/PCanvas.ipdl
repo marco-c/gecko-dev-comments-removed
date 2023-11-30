@@ -29,7 +29,12 @@ parent:
 
 
 
-  async InitTranslator(TextureType aTextureType, Handle aReadHandle,
+
+
+
+
+  async InitTranslator(TextureType aTextureType, Handle aHeaderHandle,
+                       Handle[] aBufferHandles, uint64_t aBufferSize,
                        CrossProcessSemaphoreHandle aReaderSem,
                        CrossProcessSemaphoreHandle aWriterSem,
                        bool aUseIPDLThread);
@@ -37,13 +42,18 @@ parent:
   
 
 
-  async NewBuffer(Handle aReadHandle);
+  async RestartTranslation();
 
   
 
 
 
-  async ResumeTranslation();
+  async AddBuffer(Handle aBufferHandle, uint64_t aBufferSize);
+
+  
+
+
+  async SetDataSurfaceBuffer(Handle aBufferHandle, uint64_t aBufferSize);
 
   async __delete__();
 
