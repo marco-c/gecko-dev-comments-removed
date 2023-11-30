@@ -45,7 +45,6 @@
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/unique_id_generator.h"
@@ -69,8 +68,6 @@ class VideoChannel;
 class VoiceChannel;
 
 class BaseChannel : public ChannelInterface,
-                    
-                    public sigslot::has_slots<>,
                     
                     
                     public MediaChannelNetworkInterface,
