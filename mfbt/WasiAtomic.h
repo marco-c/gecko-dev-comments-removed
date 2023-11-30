@@ -12,6 +12,7 @@
 #  include <atomic>
 #else
 
+#  include <cstddef>  
 #  include <cstdint>
 
 
