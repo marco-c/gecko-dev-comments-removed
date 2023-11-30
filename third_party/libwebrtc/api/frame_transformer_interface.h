@@ -71,10 +71,6 @@ class TransformableAudioFrameInterface : public TransformableFrameInterface {
  public:
   virtual ~TransformableAudioFrameInterface() = default;
 
-  
-  [[deprecated("Use specific getters instead.")]] virtual const RTPHeader&
-  GetHeader() const = 0;
-
   virtual rtc::ArrayView<const uint32_t> GetContributingSources() const = 0;
 
   

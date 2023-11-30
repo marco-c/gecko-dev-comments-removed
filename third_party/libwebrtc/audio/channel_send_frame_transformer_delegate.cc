@@ -81,10 +81,6 @@ class TransformableOutgoingAudioFrame
   uint8_t GetPayloadType() const override { return payload_type_; }
   Direction GetDirection() const override { return Direction::kSender; }
 
-  
-  
-  const RTPHeader& GetHeader() const override { return empty_header_; }
-
   rtc::ArrayView<const uint32_t> GetContributingSources() const override {
     return {};
   }
@@ -109,10 +105,6 @@ class TransformableOutgoingAudioFrame
   rtc::Buffer payload_;
   int64_t absolute_capture_timestamp_ms_;
   uint32_t ssrc_;
-
-  
-  
-  RTPHeader empty_header_;
 };
 }  
 
