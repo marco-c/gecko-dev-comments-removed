@@ -1710,6 +1710,11 @@ class CreateImageBitmapFromBlobRunnable : public WorkerRunnable {
         mImage(aImage),
         mStatus(aStatus) {}
 
+  
+  
+  virtual bool PreDispatch(WorkerPrivate*) override { return true; }
+  virtual void PostDispatch(WorkerPrivate*, bool) override {}
+
   bool WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override {
     mTask->MimeTypeAndDecodeAndCropBlobCompletedOwningThread(mImage, mStatus);
     return true;
