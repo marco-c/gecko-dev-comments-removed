@@ -228,12 +228,6 @@ absl::optional<H265PpsParser::PpsState> H265PpsParser::ParseInternal(
   }
   
   pps.lists_modification_present_flag = reader.Read<bool>();
-  
-  uint32_t log2_parallel_merge_level_minus2 = reader.ReadExponentialGolomb();
-  IN_RANGE_OR_RETURN_NULL(log2_parallel_merge_level_minus2, 0,
-                          sps->ctb_log2_size_y - 2);
-  
-  reader.ConsumeBits(1);
 
   if (!reader.Ok()) {
     return absl::nullopt;
