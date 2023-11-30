@@ -761,7 +761,7 @@ void GCMarker::markEphemeronEdges(EphemeronEdgeVector& edges,
   
   
   if (srcColor == MarkColor::Black && markColor() == MarkColor::Black) {
-    edges.eraseIf([](auto& edge) { return edge.color == CellColor::Black; });
+    edges.eraseIf([](auto& edge) { return edge.color == MarkColor::Black; });
   }
 }
 

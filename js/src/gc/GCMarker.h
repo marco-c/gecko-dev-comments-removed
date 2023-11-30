@@ -59,10 +59,10 @@ struct EphemeronEdgeTableHashPolicy {
 
 
 struct EphemeronEdge {
-  CellColor color;
+  MarkColor color;
   Cell* target;
 
-  EphemeronEdge(CellColor color_, Cell* cell) : color(color_), target(cell) {}
+  EphemeronEdge(MarkColor color_, Cell* cell) : color(color_), target(cell) {}
 };
 
 using EphemeronEdgeVector = Vector<EphemeronEdge, 2, js::SystemAllocPolicy>;
