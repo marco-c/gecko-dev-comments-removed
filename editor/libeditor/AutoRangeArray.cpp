@@ -552,7 +552,7 @@ void AutoRangeArray::
 static EditorDOMPoint
 GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
     const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
-    const Element& aEditingHost) {
+    BlockInlineCheck aBlockInlineCheck, const Element& aEditingHost) {
   
   
 
@@ -589,14 +589,14 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
           HTMLEditUtils::WalkTreeOption::StopAtBlockBoundary};
   for (nsIContent* previousEditableContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+           aBlockInlineCheck, &aEditingHost);
        previousEditableContent && previousEditableContent->GetParentNode() &&
        !HTMLEditUtils::IsVisibleBRElement(*previousEditableContent) &&
        !HTMLEditUtils::IsBlockElement(*previousEditableContent,
-                                      BlockInlineCheck::UseHTMLDefaultStyle);
+                                      aBlockInlineCheck);
        previousEditableContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+           aBlockInlineCheck, &aEditingHost)) {
     EditorDOMPoint atLastPreformattedNewLine =
         HTMLEditUtils::GetPreviousPreformattedNewLineInTextNode<EditorDOMPoint>(
             EditorRawDOMPoint::AtEndOf(*previousEditableContent));
@@ -612,12 +612,12 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
   
   for (nsIContent* nearContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+           aBlockInlineCheck, &aEditingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainerParent();
        nearContent = HTMLEditUtils::GetPreviousContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+           aBlockInlineCheck, &aEditingHost)) {
     
     
     
@@ -677,7 +677,7 @@ GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
 
 static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
     const EditorDOMPoint& aPointInLine, EditSubAction aEditSubAction,
-    const Element& aEditingHost) {
+    BlockInlineCheck aBlockInlineCheck, const Element& aEditingHost) {
   
   
 
@@ -750,14 +750,14 @@ static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
           HTMLEditUtils::WalkTreeOption::StopAtBlockBoundary};
   for (nsIContent* nextEditableContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+           aBlockInlineCheck, &aEditingHost);
        nextEditableContent &&
        !HTMLEditUtils::IsBlockElement(*nextEditableContent,
-                                      BlockInlineCheck::UseHTMLDefaultStyle) &&
+                                      aBlockInlineCheck) &&
        nextEditableContent->GetParent();
        nextEditableContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+           aBlockInlineCheck, &aEditingHost)) {
     EditorDOMPoint atFirstPreformattedNewLine =
         HTMLEditUtils::GetInclusiveNextPreformattedNewLineInTextNode<
             EditorDOMPoint>(EditorRawDOMPoint(nextEditableContent, 0));
@@ -803,12 +803,12 @@ static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
   
   for (nsIContent* nearContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost);
+           aBlockInlineCheck, &aEditingHost);
        !nearContent && !point.IsContainerHTMLElement(nsGkAtoms::body) &&
        point.GetContainerParent();
        nearContent = HTMLEditUtils::GetNextContent(
            point, ignoreNonEditableNodeAndStopAtBlockBoundary,
-           BlockInlineCheck::UseHTMLDefaultStyle, &aEditingHost)) {
+           aBlockInlineCheck, &aEditingHost)) {
     
     
     
@@ -837,8 +837,9 @@ static EditorDOMPoint GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
   return point;
 }
 
-void AutoRangeArray::ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
-    EditSubAction aEditSubAction, const Element& aEditingHost) {
+void AutoRangeArray::ExtendRangesToWrapLines(EditSubAction aEditSubAction,
+                                             BlockInlineCheck aBlockInlineCheck,
+                                             const Element& aEditingHost) {
   
   
 
@@ -870,7 +871,7 @@ void AutoRangeArray::ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
     }
     
     if (NS_FAILED(ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
-            range, aEditSubAction, aEditingHost))) {
+            range, aEditSubAction, aBlockInlineCheck, aEditingHost))) {
       
       
       if (NS_WARN_IF(!range->IsPositioned())) {
@@ -897,7 +898,7 @@ void AutoRangeArray::ExtendRangesToWrapLinesToHandleBlockLevelEditAction(
 
 nsresult AutoRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
     nsRange& aRange, EditSubAction aEditSubAction,
-    const Element& aEditingHost) {
+    BlockInlineCheck aBlockInlineCheck, const Element& aEditingHost) {
   MOZ_DIAGNOSTIC_ASSERT(
       !EditorRawDOMPoint(aRange.StartRef()).IsInNativeAnonymousSubtree());
   MOZ_DIAGNOSTIC_ASSERT(
@@ -922,7 +923,7 @@ nsresult AutoRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
 
   startPoint =
       GetPointAtFirstContentOfLineOrParentHTMLBlockIfFirstContentOfBlock(
-          startPoint, aEditSubAction, aEditingHost);
+          startPoint, aEditSubAction, aBlockInlineCheck, aEditingHost);
   
   
   
@@ -934,7 +935,7 @@ nsresult AutoRangeArray::ExtendRangeToWrapStartAndEndLinesContainingBoundaries(
     return NS_ERROR_FAILURE;
   }
   endPoint = GetPointAfterFollowingLineBreakOrAtFollowingHTMLBlock(
-      endPoint, aEditSubAction, aEditingHost);
+      endPoint, aEditSubAction, aBlockInlineCheck, aEditingHost);
   const EditorDOMPoint lastRawPoint =
       endPoint.IsStartOfContainer() ? endPoint : endPoint.PreviousPoint();
   
