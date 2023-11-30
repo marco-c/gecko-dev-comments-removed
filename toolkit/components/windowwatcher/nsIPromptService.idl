@@ -12,6 +12,7 @@ interface nsICancelable;
 interface nsIChannel;
 
 webidl BrowsingContext;
+webidl WindowGlobalParent;
 
 
 
@@ -612,4 +613,17 @@ interface nsIPromptService : nsISupports
                       in nsIChannel aChannel,
                       in uint32_t level,
                       in nsIAuthInformation authInfo);
+
+  
+
+
+
+
+
+
+
+
+
+
+  Promise confirmUserPaste(in WindowGlobalParent aWindow);
 };

@@ -41,9 +41,6 @@ class Clipboard : public DOMEventTargetHelper {
                                       nsIPrincipal& aSubjectPrincipal,
                                       ErrorResult& aRv);
 
-  
-  void OnUserReactedToPasteMenuPopup(bool aAllowed);
-
   static LogModule* GetClipboardLog();
 
   
@@ -71,62 +68,13 @@ class Clipboard : public DOMEventTargetHelper {
   static bool IsTestingPrefEnabledOrHasReadPermission(
       nsIPrincipal& aSubjectPrincipal);
 
-  void CheckReadPermissionAndHandleRequest(Promise& aPromise,
-                                           nsIPrincipal& aSubjectPrincipal,
-                                           ReadRequestType aType);
-
-  void HandleReadRequestWhichRequiresPasteButton(Promise& aPromise,
-                                                 ReadRequestType aType);
-
   already_AddRefed<Promise> ReadHelper(nsIPrincipal& aSubjectPrincipal,
                                        ReadRequestType aType, ErrorResult& aRv);
 
   ~Clipboard();
 
-  class ReadRequest final {
-   public:
-    ReadRequest(Promise& aPromise, ReadRequestType aType,
-                nsPIDOMWindowInner& aOwner)
-        : mType(aType), mPromise(&aPromise), mOwner(&aOwner) {}
-
-    
-    void Answer();
-
-    void MaybeRejectWithNotAllowedError(const nsACString& aMessage);
-
-   private:
-    ReadRequestType mType;
-    
-    
-    RefPtr<Promise> mPromise;
-    RefPtr<nsPIDOMWindowInner> mOwner;
-  };
-
-  AutoTArray<UniquePtr<ReadRequest>, 1> mReadRequests;
-
-  class TransientUserPasteState final {
-   public:
-    enum class Value {
-      Initial,
-      WaitingForUserReactionToPasteMenuPopup,
-      TransientlyForbiddenByUser,
-      TransientlyAllowedByUser,
-    };
-
-    
-    Value RefreshAndGet(WindowContext& aWindowContext);
-
-    void OnStartWaitingForUserReactionToPasteMenuPopup(
-        const TimeStamp& aUserGestureStart);
-    void OnUserReactedToPasteMenuPopup(bool aAllowed);
-
-   private:
-    TimeStamp mUserGestureStart;
-
-    Value mValue = Value::Initial;
-  };
-
-  TransientUserPasteState mTransientUserPasteState;
+  void RequestRead(Promise* aPromise, ReadRequestType aType,
+                   nsPIDOMWindowInner* aOwner, nsIPrincipal& aPrincipal);
 };
 
 }  
