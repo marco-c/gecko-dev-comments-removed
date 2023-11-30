@@ -1,7 +1,10 @@
 const STORE_URL = '/speculation-rules/prerender/resources/key-value-store.py';
 
 
-function startPrerendering(url) {
+
+
+
+function startPrerendering(url, rule_extras = {}) {
   
   
   
@@ -9,7 +12,8 @@ function startPrerendering(url) {
   
   const script = document.createElement('script');
   script.type = 'speculationrules';
-  script.text = `{"prerender": [{"source": "list", "urls": ["${url}"] }] }`;
+  script.text = JSON.stringify(
+      {prerender: [{source: 'list', urls: [url], ...rule_extras}]});
   document.head.appendChild(script);
 }
 
