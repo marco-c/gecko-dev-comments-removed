@@ -692,6 +692,8 @@ bool nsContentSecurityUtils::IsEvalAllowed(JSContext* cx,
   if (fileName.IsEmpty()) {
     fileName = "unknown-file"_ns;
   }
+  
+  columnNumber += 1;
 
   NS_ConvertUTF8toUTF16 fileNameA(fileName);
   for (const nsLiteralCString& allowlistEntry : evalAllowlist) {
@@ -1152,7 +1154,7 @@ void EnforceXFrameOptionsCheck(nsIChannel* aChannel,
                         u""_ns,  
                         u""_ns,  
                         0,       
-                        0,       
+                        1,       
                         nsIScriptError::warningFlag,
                         "IgnoringSrcBecauseOfDirective"_ns, innerWindowID,
                         privateWindow);

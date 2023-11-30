@@ -137,6 +137,8 @@ nsresult CSPEvalChecker::CheckForWindow(JSContext* aCx,
                                      &columnNum)) {
     fileNameString.AssignLiteral("unknown");
   }
+  
+  columnNum += 1;
 
   nsCOMPtr<nsIContentSecurityPolicy> csp = doc->GetCsp();
   rv = CheckInternal(csp, nullptr ,
@@ -170,6 +172,8 @@ nsresult CSPEvalChecker::CheckForWorker(JSContext* aCx,
                                      &columnNum)) {
     fileNameString.AssignLiteral("unknown");
   }
+  
+  columnNum += 1;
 
   RefPtr<WorkerCSPCheckRunnable> r = new WorkerCSPCheckRunnable(
       aWorkerPrivate, aExpression, fileNameString, lineNum, columnNum);
