@@ -21,9 +21,9 @@ const runTest = (description) => {
       <body></body>
       `;
 
-      const popup_unloaded = new Promise(r => window.popup.onunload = e => r());
+      const popup_navigated = new Promise(r => window.popup.onpagehide = e => r());
       document.body.append(iframe);
-      await popup_unloaded;  
+      await popup_navigated;  
                              
 
       
