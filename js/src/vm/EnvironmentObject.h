@@ -906,9 +906,6 @@ class NonSyntacticLexicalEnvironmentObject
 
 
 
-
-
-
 class NonSyntacticVariablesObject : public EnvironmentObject {
  public:
   static const JSClass class_;
