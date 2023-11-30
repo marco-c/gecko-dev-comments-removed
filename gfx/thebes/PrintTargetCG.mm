@@ -227,18 +227,42 @@ nsresult PrintTargetCG::AbortPrinting() {
 nsresult PrintTargetCG::BeginPage(const IntSize& aSizeInPoints) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
+  unsigned int width;
+  unsigned int height;
+  if (StaticPrefs::layout_css_page_orientation_enabled()) {
+    width = static_cast<unsigned int>(aSizeInPoints.width);
+    height = static_cast<unsigned int>(aSizeInPoints.height);
+  } else {
+    width = static_cast<unsigned int>(mSize.width);
+    height = static_cast<unsigned int>(mSize.height);
+  }
+
   CGContextRef context;
   if (mPrintToStreamContext) {
-    CGContextBeginPage(mPrintToStreamContext, nullptr);
+    CGRect bounds = CGRectMake(0, 0, width, height);
+    CGContextBeginPage(mPrintToStreamContext, &bounds);
     context = mPrintToStreamContext;
   } else {
     
     PMSessionError(mPrintSession);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     if (StaticPrefs::layout_css_page_orientation_enabled()) {
       ::PMOrientation pageOrientation =
-          aSizeInPoints.width < aSizeInPoints.height ? kPMPortrait
-                                                     : kPMLandscape;
+          width < height ? kPMPortrait : kPMLandscape;
       ::PMSetOrientation(mPageFormat, pageOrientation, kPMUnlocked);
       
     }
@@ -255,16 +279,6 @@ nsresult PrintTargetCG::BeginPage(const IntSize& aSizeInPoints) {
     if (!context) {
       return NS_ERROR_FAILURE;
     }
-  }
-
-  unsigned int width;
-  unsigned int height;
-  if (StaticPrefs::layout_css_page_orientation_enabled()) {
-    width = static_cast<unsigned int>(aSizeInPoints.width);
-    height = static_cast<unsigned int>(aSizeInPoints.height);
-  } else {
-    width = static_cast<unsigned int>(mSize.width);
-    height = static_cast<unsigned int>(mSize.height);
   }
 
   
