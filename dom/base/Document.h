@@ -4684,8 +4684,6 @@ class Document : public nsINode,
   
   bool mIsGoingAway : 1;
 
-  bool mInXBLUpdate : 1;
-
   
   bool mStyleSetFilled : 1;
 
