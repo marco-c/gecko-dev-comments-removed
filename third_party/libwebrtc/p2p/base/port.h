@@ -255,7 +255,7 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   uint32_t generation() const { return generation_; }
   void set_generation(uint32_t generation) { generation_ = generation; }
 
-  const std::string username_fragment() const;
+  const std::string& username_fragment() const;
   const std::string& password() const { return password_; }
 
   
@@ -496,12 +496,8 @@ class RTC_EXPORT Port : public PortInterface, public sigslot::has_slots<> {
   
   
   
-  
-  
-  
-  
-  std::string ice_username_fragment_;
-  std::string password_;
+  std::string ice_username_fragment_ RTC_GUARDED_BY(thread_);
+  std::string password_ RTC_GUARDED_BY(thread_);
   std::vector<Candidate> candidates_ RTC_GUARDED_BY(thread_);
   AddressMap connections_;
   int timeout_delay_;
