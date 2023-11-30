@@ -101,27 +101,38 @@ test(() => {
   const error = new Error("error");
   const results = [];
   let errorReported = null;
+  let innerSubscriber = null;
+  let subscriptionActivityInFinallyAfterThrow;
+  let subscriptionActivityInErrorHandlerAfterThrow;
 
   self.addEventListener("error", e => errorReported = e, {once: true});
 
   const source = new Observable((subscriber) => {
+    innerSubscriber = subscriber;
     subscriber.next(1);
-    throw error;
-    
-    
-    
-    
+    try {
+      throw error;
+    } finally {
+      subscriptionActivityInFinallyAfterThrow = subscriber.active;
+    }
   });
 
   source.subscribe({
     next: (x) => results.push(x),
-    error: (e) => results.push(e),
+    error: (e) => {
+      subscriptionActivityInErrorHandlerAfterThrow = innerSubscriber.active;
+      results.push(e);
+    },
     complete: () => assert_unreached("complete should not be called"),
   });
 
   assert_equals(errorReported, null, "The global error handler should not be " +
       "invoked when the subscribe callback throws an error and the " +
       "subscriber has given an error handler");
+  assert_true(subscriptionActivityInFinallyAfterThrow, "Subscriber is " +
+      "considered active in finally block before error handler is invoked");
+  assert_false(subscriptionActivityInErrorHandlerAfterThrow, "Subscriber is " +
+      "considered inactive in error handler block after thrown error");
   assert_array_equals(
     results,
     [1, error],
@@ -129,14 +140,64 @@ test(() => {
   );
 }, "Observable should error if initializer throws");
 
+test(t => {
+  let innerSubscriber = null;
+  let activeAfterComplete = false;
+  let activeDuringComplete = false;
 
+  const source = new Observable((subscriber) => {
+    innerSubscriber = subscriber;
 
+    subscriber.complete();
+    activeAfterComplete = subscriber.active;
+  });
 
+  source.subscribe({complete: () => activeDuringComplete = innerSubscriber.active});
+  assert_false(activeDuringComplete, "Subscription is not active during complete");
+  assert_false(activeAfterComplete, "Subscription is not active after complete");
+}, "Subscription is inactive after complete()");
 
+test(t => {
+  let innerSubscriber = null;
+  let activeAfterError = false;
+  let activeDuringError = false;
 
+  const error = new Error("error");
+  const source = new Observable((subscriber) => {
+    innerSubscriber = subscriber;
 
+    subscriber.error(error);
+    activeAfterError = subscriber.active;
+  });
 
+  source.subscribe({error: () => activeDuringError = innerSubscriber.active});
+  assert_false(activeDuringError, "Subscription is not active during error");
+  assert_false(activeAfterError, "Subscription is not active after error");
+}, "Subscription is inactive after error()");
 
+test(t => {
+  let initialActivity;
+
+  const source = new Observable((subscriber) => {
+    initialActivity = subscriber.active;
+  });
+
+  const ac = new AbortController();
+  ac.abort();
+  source.subscribe({signal: ac.signal});
+  assert_false(initialActivity);
+}, "Subscription is inactive when aborted signal is passed in");
+
+test(() => {
+  let outerSubscriber = null;
+
+  const source = new Observable(subscriber => outerSubscriber = subscriber);
+
+  const controller = new AbortController();
+  source.subscribe({signal: controller.signal});
+
+  assert_not_equals(controller.signal, outerSubscriber.signal);
+}, "Subscriber#signal is not the same AbortSignal as the one passed into `subscribe()`");
 
 test(() => {
   const results = [];
@@ -395,6 +456,112 @@ test(() => {
   assert_equals(errorReported.error, error2, "Error object is equivalent");
 }, "Errors pushed by initializer function after subscriber is closed by " +
    "error are reported");
+
+test(() => {
+  const results = [];
+  const target = new EventTarget();
+
+  const source = new Observable((subscriber) => {
+    target.addEventListener('custom event', e => {
+      subscriber.next(1);
+      subscriber.complete();
+      subscriber.error('not a real error');
+    });
+  });
+
+  source.subscribe({
+    next: (x) => results.push(x),
+    error: (error) => results.push(error),
+    complete: () => {
+      results.push('complete'),
+      
+      
+      target.dispatchEvent(new Event('custom event'));
+    },
+  });
+
+  target.dispatchEvent(new Event('custom event'));
+
+  assert_array_equals(
+    results,
+    [1, 'complete'],
+    "complete() can only be called once, and cannot invoke other Observer methods"
+  );
+}, "Subscriber#complete() cannot re-entrantly invoke itself");
+
+test(() => {
+  const results = [];
+  const target = new EventTarget();
+
+  const source = new Observable((subscriber) => {
+    target.addEventListener('custom event', e => {
+      subscriber.next(1);
+      subscriber.error('not a real error');
+      subscriber.complete();
+    });
+  });
+
+  source.subscribe({
+    next: (x) => results.push(x),
+    error: (error) => {
+      results.push('error'),
+      
+      
+      target.dispatchEvent(new Event('custom event'));
+    },
+    complete: () => results.push('complete'),
+  });
+
+  target.dispatchEvent(new Event('custom event'));
+
+  assert_array_equals(
+    results,
+    [1, 'error'],
+    "error() can only be called once, and cannot invoke other Observer methods"
+  );
+}, "Subscriber#error() cannot re-entrantly invoke itself");
+
+
+
+
+
+
+
+
+
+
+
+test(() => {
+  const results = [];
+  let innerSubscriber = null;
+
+  const source = new Observable((subscriber) => {
+    results.push('subscribe() callback');
+    innerSubscriber = subscriber;
+
+    subscriber.signal.addEventListener('abort', () => {
+      assert_true(subscriber.signal.aborted);
+      subscriber.next('inner abort handler');
+    });
+  });
+
+  const ac = new AbortController();
+  source.subscribe({
+    next: (x) => results.push(x),
+    signal: ac.signal,
+  });
+
+  ac.signal.addEventListener('abort', () => {
+    results.push('outer abort handler');
+    assert_true(ac.signal.aborted);
+    assert_false(innerSubscriber.signal.aborted);
+  });
+
+  assert_array_equals(results, ['subscribe() callback']);
+  ac.abort();
+  assert_array_equals(results, ['subscribe() callback',
+      'outer abort handler', 'inner abort handler']);
+}, "Unsubscription lifecycle");
 
 
 
