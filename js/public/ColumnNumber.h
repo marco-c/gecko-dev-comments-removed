@@ -24,9 +24,6 @@
 
 
 
-
-
-
 #ifndef js_ColumnNumber_h
 #define js_ColumnNumber_h
 
@@ -51,7 +48,6 @@ struct WasmFunctionIndex {
   
   
   
-  static constexpr uint32_t DefaultBinarySourceColumnNumberZeroOrigin = 0;
   static constexpr uint32_t DefaultBinarySourceColumnNumberOneOrigin = 1;
 
  private:
@@ -233,12 +229,6 @@ struct MaybeLimitedColumnNumber {
     return value_ >= rhs.value_;
   }
 
-  
-  uint32_t zeroOriginValue() const {
-    MOZ_ASSERT(valid());
-
-    return value_ - 1;
-  }
   uint32_t oneOriginValue() const {
     MOZ_ASSERT(valid());
 
@@ -412,11 +402,6 @@ struct TaggedColumnNumberOneOrigin {
     return WasmFunctionIndex(value_ & ~WasmFunctionTag);
   }
 
-  uint32_t zeroOriginValue() const {
-    return isWasmFunctionIndex()
-               ? WasmFunctionIndex::DefaultBinarySourceColumnNumberZeroOrigin
-               : toLimitedColumnNumber().zeroOriginValue();
-  }
   uint32_t oneOriginValue() const {
     return isWasmFunctionIndex()
                ? WasmFunctionIndex::DefaultBinarySourceColumnNumberOneOrigin
