@@ -81,6 +81,7 @@ using ::testing::AtLeast;
 using ::testing::Contains;
 using ::testing::Each;
 using ::testing::ElementsAre;
+using ::testing::ElementsAreArray;
 using ::testing::Eq;
 using ::testing::Field;
 using ::testing::Gt;
@@ -269,17 +270,15 @@ class RtpSenderTest : public ::testing::Test {
   }
 };
 
-TEST_F(RtpSenderTest, AllocatePacketSetCsrc) {
+TEST_F(RtpSenderTest, AllocatePacketSetCsrcs) {
   
-  std::vector<uint32_t> csrcs;
-  csrcs.push_back(0x23456789);
-  rtp_sender_->SetCsrcs(csrcs);
+  uint32_t csrcs[] = {0x23456789};
 
-  auto packet = rtp_sender_->AllocatePacket();
+  auto packet = rtp_sender_->AllocatePacket(csrcs);
 
   ASSERT_TRUE(packet);
   EXPECT_EQ(rtp_sender_->SSRC(), packet->Ssrc());
-  EXPECT_EQ(csrcs, packet->Csrcs());
+  EXPECT_THAT(packet->Csrcs(), ElementsAreArray(csrcs));
 }
 
 TEST_F(RtpSenderTest, AllocatePacketReserveExtensions) {
@@ -877,7 +876,8 @@ TEST_F(RtpSenderTest, UpdatingCsrcsUpdatedOverhead) {
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 12u);
 
   
-  rtp_sender_->SetCsrcs({1, 2});
+  uint32_t csrcs[] = {1, 2};
+  rtp_sender_->AllocatePacket(csrcs);
   EXPECT_EQ(rtp_sender_->ExpectedPerPacketOverhead(), 20u);
 }
 
