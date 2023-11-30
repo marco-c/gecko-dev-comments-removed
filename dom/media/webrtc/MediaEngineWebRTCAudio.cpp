@@ -323,15 +323,8 @@ void MediaEngineWebRTCMicrophoneSource::SetTrack(
   mTrack = aTrack->AsAudioProcessingTrack();
   mPrincipal = aPrincipal;
 
-#if defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
-  
-  
-  
-  mInputProcessing = MakeAndAddRef<AudioInputProcessing>(1);
-#else
   mInputProcessing =
       MakeAndAddRef<AudioInputProcessing>(mDeviceMaxChannelCount);
-#endif
 
   NS_DispatchToMainThread(NS_NewRunnableFunction(
       __func__, [track = mTrack, processing = mInputProcessing]() mutable {
