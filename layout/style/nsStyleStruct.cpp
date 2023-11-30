@@ -2354,7 +2354,10 @@ nsChangeHint nsStyleDisplay::CalcDifference(
     if (isScrollable != aNewData.IsScrollableOverflow()) {
       
       
-      hint |= nsChangeHint_ScrollbarChange;
+      
+      
+      hint |= nsChangeHint_ScrollbarChange | nsChangeHint_UpdateOverflow |
+              nsChangeHint_RepaintFrame;
     } else if (isScrollable) {
       if (ScrollbarGenerationChanged(*this, aNewData)) {
         
