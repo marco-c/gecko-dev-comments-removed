@@ -103,7 +103,17 @@ add_task(async function basic() {
         "Mousedown element should be selected after mousedown"
       );
 
+      if (upElement.tagName === "html:body") {
+        
+        
+        
+        
+        AccessibilityUtils.setEnv({
+          mustHaveAccessibleRule: false,
+        });
+      }
       EventUtils.synthesizeMouseAtCenter(upElement, { type: "mouseup" });
+      AccessibilityUtils.resetEnv();
       Assert.ok(
         !downElement.hasAttribute("selected"),
         "Mousedown element should not be selected after mouseup"
@@ -269,9 +279,19 @@ add_task(async function withSelectionByKeyboard() {
         );
       }
 
+      if (upElement.tagName === "html:body") {
+        
+        
+        
+        
+        AccessibilityUtils.setEnv({
+          mustHaveAccessibleRule: false,
+        });
+      }
       EventUtils.synthesizeMouseAtCenter(upElement, {
         type: "mouseup",
       });
+      AccessibilityUtils.resetEnv();
 
       if (expected.actionedPage) {
         Assert.ok(

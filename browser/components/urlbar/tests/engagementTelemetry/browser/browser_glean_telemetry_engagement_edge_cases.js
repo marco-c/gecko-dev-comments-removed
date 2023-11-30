@@ -144,11 +144,20 @@ add_task(async function engagement_before_showing_results() {
 add_task(async function engagement_after_closing_results() {
   const TRIGGERS = [
     () => EventUtils.synthesizeKey("KEY_Escape"),
-    () =>
+    () => {
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       EventUtils.synthesizeMouseAtCenter(
         document.getElementById("customizableui-special-spring2"),
         {}
-      ),
+      );
+      AccessibilityUtils.resetEnv();
+    },
   ];
 
   for (const trigger of TRIGGERS) {

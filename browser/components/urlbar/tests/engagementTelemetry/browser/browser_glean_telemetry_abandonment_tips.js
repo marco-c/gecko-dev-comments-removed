@@ -58,7 +58,15 @@ add_task(async function mouse_down_with_tip() {
   await doTest(async browser => {
     await showPersistSearchTip("test");
     await UrlbarTestUtils.promisePopupClose(window, () => {
+      
+      
+      
+      
+      AccessibilityUtils.setEnv({
+        mustHaveAccessibleRule: false,
+      });
       EventUtils.synthesizeMouseAtCenter(browser, {});
+      AccessibilityUtils.resetEnv();
     });
 
     assertAbandonmentTelemetry([{ results: "tip_persist" }]);
@@ -67,7 +75,15 @@ add_task(async function mouse_down_with_tip() {
 
 add_task(async function mouse_down_without_tip() {
   await doTest(async browser => {
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      mustHaveAccessibleRule: false,
+    });
     EventUtils.synthesizeMouseAtCenter(browser, {});
+    AccessibilityUtils.resetEnv();
 
     assertAbandonmentTelemetry([]);
   });
