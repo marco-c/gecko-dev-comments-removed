@@ -296,17 +296,13 @@ void Zone::sweepEphemeronTablesAfterMinorGC() {
 
     
     EphemeronEdgeTable& tenuredEdges = gcEphemeronEdges();
-    auto* entry = tenuredEdges.get(key);
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    auto* entry = tenuredEdges.getOrAdd(key);
     if (!entry) {
-      if (!tenuredEdges.put(key, gc::EphemeronEdgeVector())) {
-        AutoEnterOOMUnsafeRegion oomUnsafe;
-        oomUnsafe.crash("Failed to tenure weak keys entry");
-      }
-      entry = tenuredEdges.get(key);
+      oomUnsafe.crash("Failed to tenure weak keys entry");
     }
 
     if (!entry->value.appendAll(entries)) {
-      AutoEnterOOMUnsafeRegion oomUnsafe;
       oomUnsafe.crash("Failed to tenure weak keys entry");
     }
 
