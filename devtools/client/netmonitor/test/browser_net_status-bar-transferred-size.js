@@ -4,7 +4,7 @@
 
 
 
-add_task(async () => {
+add_task(async function testTotalTransferredSize() {
   
   Services.cache2.clear();
   
@@ -30,7 +30,12 @@ add_task(async () => {
   store.dispatch(Actions.batchEnable(false));
 
   info("Performing requests...");
-  await performRequestsAndWait();
+  const onNetworkEvents = waitForNetworkEvents(monitor, 2);
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    content.wrappedJSObject.performOneCachedRequest();
+  });
+  info("Wait until we get network events for cached request ");
+  await onNetworkEvents;
 
   let cachedItemsInUI = 0;
   for (const requestItem of document.querySelectorAll(".request-list-item")) {
@@ -66,12 +71,83 @@ add_task(async () => {
   );
 
   await teardown(monitor);
+});
 
-  async function performRequestsAndWait() {
-    const wait = waitForNetworkEvents(monitor, 2);
-    await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
-      content.wrappedJSObject.performOneCachedRequest();
-    });
-    await wait;
+
+
+add_task(async function testTotalTransferredSizeWithServiceWorkerRequests() {
+  
+  const TEST_URL = HTTPS_EXAMPLE_URL + "service-workers/status-codes.html";
+  const { tab, monitor } = await initNetMonitor(TEST_URL, {
+    enableCache: true,
+    requestCount: 1,
+  });
+  info("Starting test... ");
+
+  const { store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+  const { getDisplayedRequestsSummary, getDisplayedRequests } = windowRequire(
+    "devtools/client/netmonitor/src/selectors/index"
+  );
+
+  store.dispatch(Actions.batchEnable(false));
+
+  info("Performing requests before service worker...");
+  await performRequests(monitor, tab, 1);
+
+  info("Registering the service worker...");
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    await content.wrappedJSObject.registerServiceWorker();
+  });
+
+  info("Performing requests which are intercepted by service worker...");
+  await performRequests(monitor, tab, 1);
+
+  let displayedServiceWorkerRequests = 0;
+  
+  let totalRequestsTransferredSizeWithoutServiceWorkers = 0;
+
+  const displayedRequests = getDisplayedRequests(store.getState());
+
+  for (const request of displayedRequests) {
+    if (request.fromServiceWorker === true) {
+      displayedServiceWorkerRequests++;
+    } else {
+      totalRequestsTransferredSizeWithoutServiceWorkers +=
+        request.transferredSize;
+    }
+    
   }
+
+  is(
+    displayedServiceWorkerRequests,
+    4,
+    "Number of service worker requests displayed is correct"
+  );
+
+  
+
+
+
+
+
+
+
+
+
+
+  const requestsSummary = getDisplayedRequestsSummary(store.getState());
+
+  is(
+    totalRequestsTransferredSizeWithoutServiceWorkers,
+    requestsSummary.transferredSize,
+    "The current total transferred size is correct."
+  );
+
+  info("Unregistering the service worker...");
+  await SpecialPowers.spawn(tab.linkedBrowser, [], async function () {
+    await content.wrappedJSObject.unregisterServiceWorker();
+  });
+
+  await teardown(monitor);
 });
