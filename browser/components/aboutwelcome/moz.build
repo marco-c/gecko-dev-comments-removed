@@ -1,0 +1,12 @@
+
+
+
+
+
+
+with Files("**"):
+    BUG_COMPONENT = ("Firefox", "Messaging System")
+
+BROWSER_CHROME_MANIFESTS += [
+    "tests/browser/browser.toml",
+]

@@ -23,6 +23,7 @@ add_task(function initSandbox() {
 
 
 
+
 async function spyOnTelemetryButtonClicks(browser) {
   let aboutWelcomeActor = await getAboutWelcomeParent(browser);
   sandbox.spy(aboutWelcomeActor, "onContentMessage");
