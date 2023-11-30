@@ -2130,8 +2130,6 @@ pref("privacy.userContext.newTabContainerOnLeftClick.enabled", false);
 
 
 pref("privacy.webrtc.allowSilencingNotifications", true);
-
-pref("privacy.webrtc.legacyGlobalIndicator", false);
 pref("privacy.webrtc.hideGlobalIndicator", false);
 
 
