@@ -25,6 +25,7 @@ from mozharness.mozilla.testing.testbase import TestingMixin, testing_config_opt
 
 PAGES = [
     "js-input/webkit/PerformanceTests/Speedometer/index.html",
+    "js-input/webkit/PerformanceTests/Speedometer3/index.html?startAutomatically=true",
     "blueprint/sample.html",
     "blueprint/forms.html",
     "blueprint/grid.html",
@@ -255,7 +256,7 @@ class AndroidProfileRun(TestingMixin, BaseScript, MozbaseMixin, AndroidMixin):
             for page in PAGES:
                 driver.navigate("http://%s:%d/%s" % (IP, PORT, page))
                 timeout = 2
-                if "Speedometer/index.html" in page:
+                if "Speedometer" in page:
                     
                     
                     
