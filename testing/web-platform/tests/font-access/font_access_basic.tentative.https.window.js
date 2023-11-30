@@ -4,6 +4,7 @@
 
 
 
+
 'use strict';
 
 font_access_test(async t => {
@@ -23,8 +24,7 @@ font_access_test(async t => {
     assert_equals(typeof font.postscriptName, 'string');
     assert_true(
         font.postscriptName.split('').every(c => (' ' <= c && c < '\x7f')),
-        `postscriptName should be printable ASCII: "${font.postscriptName}"`
-    );
+        `postscriptName should be printable ASCII: "${font.postscriptName}"`);
     assert_equals(typeof font.fullName, 'string', 'fullName attribute type');
     assert_equals(typeof font.family, 'string', 'family attribute type');
     assert_equals(typeof font.style, 'string', 'style attribute type');
