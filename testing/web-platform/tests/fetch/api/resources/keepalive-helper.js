@@ -18,7 +18,7 @@ function getKeepAliveIframeUrl(token, method, {
   requestOrigin = '',
   sendOn = 'load',
   mode = 'cors',
-  disallowOrigin = false
+  disallowCrossOrigin = false
 } = {}) {
   const https = location.protocol.startsWith('https');
   frameOrigin = frameOrigin === 'DEFAULT' ?
@@ -28,7 +28,7 @@ function getKeepAliveIframeUrl(token, method, {
       `token=${token}&` +
       `method=${method}&` +
       `sendOn=${sendOn}&` +
-      `mode=${mode}&` + (disallowOrigin ? `disallowOrigin=1&` : ``) +
+      `mode=${mode}&` + (disallowCrossOrigin ? `disallowCrossOrigin=1&` : ``) +
       `origin=${requestOrigin}`;
 }
 
@@ -76,21 +76,36 @@ async function queryToken(token) {
 
 
 
-function assertStashedTokenAsync(testName, token, {shouldPass = true} = {}) {
-  async_test((test) => {
-    new Promise((resolve) => test.step_timeout(resolve, 3000))
-        .then(() => {
+
+
+
+
+
+
+
+
+function assertStashedTokenAsync(
+    testName, token, {expectTokenExist = true} = {}) {
+  async_test(test => {
+    new Promise(resolve => test.step_timeout(resolve, 3000 ))
+        .then(test.step_func(() => {
           return queryToken(token);
-        })
-        .then((result) => {
-          assert_equals(result, 'on');
-        })
-        .then(() => {
-          test.done();
-        })
-        .catch(test.step_func((e) => {
-          if (shouldPass) {
-            assert_unreached(e);
+        }))
+        .then(test.step_func(result => {
+          if (expectTokenExist) {
+            assert_equals(
+                result, 'on', `token [${token}] should be on (stashed).`);
+            test.done();
+          } else {
+            assert_not_equals(
+                result, 'on', `token [${token}] should not be on (stashed).`);
+            return Promise.reject(
+                `Failed to retrieve token [${token}] from server`);
+          }
+        }))
+        .catch(test.step_func(e => {
+          if (expectTokenExist) {
+            test.unreached_func(e);
           } else {
             test.done();
           }
