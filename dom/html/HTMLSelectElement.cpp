@@ -19,6 +19,7 @@
 #include "mozilla/dom/WindowGlobalChild.h"
 #include "mozilla/MappedDeclarationsBuilder.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/Unused.h"
 #include "nsContentCreatorFunctions.h"
 #include "nsContentList.h"
 #include "nsContentUtils.h"
@@ -165,6 +166,7 @@ void HTMLSelectElement::SetCustomValidity(const nsAString& aError) {
   UpdateValidityElementStates(true);
 }
 
+
 void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
   
   
@@ -192,10 +194,18 @@ void HTMLSelectElement::ShowPicker(ErrorResult& aRv) {
   }
 
   
+  
+
+  
+  Unused << GetPrimaryFrame(FlushType::Frames);
+  if (!IsRendered()) {
+    return aRv.ThrowNotSupportedError("This select isn't being rendered.");
+  }
+
+  
   if (IsCombobox() && !OpenInParentProcess()) {
     RefPtr<Document> doc = OwnerDoc();
-    RefPtr<Element> select = this;
-    nsContentUtils::DispatchChromeEvent(doc, select, u"mozshowdropdown"_ns,
+    nsContentUtils::DispatchChromeEvent(doc, this, u"mozshowdropdown"_ns,
                                         CanBubble::eYes, Cancelable::eNo);
   }
 }
