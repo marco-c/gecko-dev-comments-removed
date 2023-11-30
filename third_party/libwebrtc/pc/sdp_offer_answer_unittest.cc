@@ -165,10 +165,22 @@ TEST_F(SdpOfferAnswerTest, BundleRejectsCodecCollisionsAudioVideo) {
   ASSERT_NE(desc, nullptr);
   RTCError error;
   pc->SetRemoteDescription(std::move(desc), &error);
+  
   EXPECT_TRUE(error.ok());
   EXPECT_METRIC_EQ(
       1, webrtc::metrics::NumEvents(
              "WebRTC.PeerConnection.ValidBundledPayloadTypes", false));
+
+  
+  pc = CreatePeerConnection();
+  auto rejected_offer = CreateSessionDescription(
+      SdpType::kOffer,
+      absl::StrReplaceAll(sdp, {{"m=video 9 ", "m=video 0 "}}));
+  pc->SetRemoteDescription(std::move(rejected_offer), &error);
+  EXPECT_TRUE(error.ok());
+  EXPECT_METRIC_EQ(1,
+                   webrtc::metrics::NumEvents(
+                       "WebRTC.PeerConnection.ValidBundledPayloadTypes", true));
 }
 
 TEST_F(SdpOfferAnswerTest, BundleRejectsCodecCollisionsVideoFmtp) {
@@ -598,6 +610,13 @@ TEST_F(SdpOfferAnswerTest, SimulcastAnswerWithNoRidsIsRejected) {
   auto answer_with_extensions =
       CreateSessionDescription(SdpType::kAnswer, sdp + extensions);
   EXPECT_TRUE(pc->SetRemoteDescription(std::move(answer_with_extensions)));
+
+  
+  EXPECT_TRUE(pc->CreateOfferAndSetAsLocal());
+  auto rejected_answer = CreateSessionDescription(
+      SdpType::kAnswer,
+      absl::StrReplaceAll(sdp, {{"m=video 9 ", "m=video 0 "}}));
+  EXPECT_TRUE(pc->SetRemoteDescription(std::move(rejected_answer)));
 }
 
 TEST_F(SdpOfferAnswerTest, ExpectAllSsrcsSpecifiedInSsrcGroupFid) {
