@@ -464,7 +464,6 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
   
   
   
-  
   if (dependencies.async_dns_resolver_factory &&
       dependencies.async_resolver_factory) {
     RTC_LOG(LS_ERROR)
@@ -478,8 +477,7 @@ RTCErrorOr<rtc::scoped_refptr<PeerConnection>> PeerConnection::Create(
             std::move(dependencies.async_resolver_factory));
   } else {
     dependencies.async_dns_resolver_factory =
-        std::make_unique<WrappingAsyncDnsResolverFactory>(
-            std::make_unique<BasicAsyncResolverFactory>());
+        std::make_unique<BasicAsyncDnsResolverFactory>();
   }
 
   
