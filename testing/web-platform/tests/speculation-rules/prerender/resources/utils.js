@@ -102,7 +102,10 @@ async function writeValueToServer(key, value) {
 
 
 
-function loadInitiatorPage() {
+
+
+
+function loadInitiatorPage(rule_extras = {}) {
   
   const prerenderChannel = new PrerenderChannel('prerender-channel');
   window.addEventListener('unload', () => {
@@ -125,11 +128,15 @@ function loadInitiatorPage() {
   url.searchParams.append('prerendering', '');
   
   
-  startPrerendering(url.toString());
+  startPrerendering(url.toString(), rule_extras);
 
   
   readyToActivate.then(() => {
-    window.location = url.toString();
+    if (rule_extras['target_hint'] === '_blank') {
+      window.open(url.toString(), '_blank', 'noopener');
+    } else {
+      window.location = url.toString();
+    }
   }).catch(e => {
     const testChannel = new PrerenderChannel('test-channel');
     testChannel.postMessage(
