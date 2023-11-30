@@ -40,6 +40,9 @@ else
 
 
 
+
+
+
 function copyString(str) {
   if (str.length == 0)
     return str; 
@@ -248,3 +251,9 @@ if (getBuildConfiguration("windows")) {
 assertEq(byteSize(newString("12345", {external: true})),                     s(EN+16, EN+16));
 assertEq(byteSize(newString("123456789.123456789.1234", {external: true})),  s(EN+48, EN+48));
 assertEq(byteSize(newString("123456789.123456789.12345", {external: true})), s(EN+64, EN+64));
+
+
+
+
+assertEq(byteSize(newString("123456789.123456789.12345")), s(Nursery(XN)+0,Nursery(XN)+0));
+assertEq(byteSize(newString("123456789.123456789.123456789.123")), s(Nursery(XN)+0,Nursery(XN)+0));

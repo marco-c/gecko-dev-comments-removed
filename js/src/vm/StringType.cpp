@@ -105,8 +105,12 @@ size_t JSString::sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) {
   }
 
   
+  if (!ownsMallocedChars()) {
+    return 0;
+  }
+
+  
   JSLinearString& linear = asLinear();
-  MOZ_ASSERT(linear.ownsMallocedChars());
   return linear.hasLatin1Chars() ? mallocSizeOf(linear.rawLatin1Chars())
                                  : mallocSizeOf(linear.rawTwoByteChars());
 }
