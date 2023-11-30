@@ -82,7 +82,7 @@ class InspectorUtils {
   
   
   
-  static bool IsInheritedProperty(GlobalObject& aGlobal,
+  static bool IsInheritedProperty(GlobalObject& aGlobal, Document& aDocument,
                                   const nsACString& aPropertyName);
 
   
