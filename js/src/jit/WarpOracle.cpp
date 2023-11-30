@@ -749,6 +749,32 @@ static void LineNumberAndColumn(HandleScript script, BytecodeLocation loc,
 #endif
 }
 
+static void MaybeSetInliningStateFromJitHints(JSContext* cx,
+                                              ICFallbackStub* fallbackStub,
+                                              JSScript* script,
+                                              BytecodeLocation loc) {
+  
+  if (fallbackStub->trialInliningState() != TrialInliningState::Candidate) {
+    return;
+  }
+
+  
+  if (!TrialInliner::IsValidInliningOp(loc.getOp())) {
+    return;
+  }
+
+  if (!cx->runtime()->jitRuntime()->hasJitHintsMap()) {
+    return;
+  }
+
+  JitHintsMap* jitHints = cx->runtime()->jitRuntime()->getJitHintsMap();
+  uint32_t offset = loc.bytecodeToOffset(script);
+
+  if (jitHints->hasMonomorphicInlineHintAtOffset(script, offset)) {
+    fallbackStub->setTrialInliningState(TrialInliningState::MonomorphicInlined);
+  }
+}
+
 AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
                                                   BytecodeLocation loc) {
   
@@ -779,14 +805,7 @@ AbortReasonOr<Ok> WarpScriptOracle::maybeInlineIC(WarpOpSnapshotList& snapshots,
 
   
   
-  if (cx_->runtime()->jitRuntime()->hasJitHintsMap()) {
-    JitHintsMap* jitHints = cx_->runtime()->jitRuntime()->getJitHintsMap();
-    if (fallbackStub->trialInliningState() == TrialInliningState::Candidate &&
-        jitHints->hasMonomorphicInlineHintAtOffset(script_, offset)) {
-      fallbackStub->setTrialInliningState(
-          TrialInliningState::MonomorphicInlined);
-    }
-  }
+  MaybeSetInliningStateFromJitHints(cx_, fallbackStub, script_, loc);
 
   
   
