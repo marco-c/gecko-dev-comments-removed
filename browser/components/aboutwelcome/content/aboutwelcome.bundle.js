@@ -36,8 +36,8 @@
         
       });
       let _document$querySelect;
-
       
+
 
 
       
@@ -53,25 +53,24 @@
         handleUserAction(action) {
           return window.AWSendToParent("SPECIAL_ACTION", action);
         },
-
         sendImpressionTelemetry(messageId, context) {
           let _window;
           let _window$AWSendEventTe;
-
           (_window$AWSendEventTe = (_window = window).AWSendEventTelemetry) ===
             null || _window$AWSendEventTe === void 0
             ? void 0
             : _window$AWSendEventTe.call(_window, {
                 event: "IMPRESSION",
-                event_context: { ...context, page },
+                event_context: {
+                  ...context,
+                  page,
+                },
                 message_id: messageId,
               });
         },
-
         sendActionTelemetry(messageId, elementId, eventName = "CLICK_BUTTON") {
           let _window$AWSendEventTe2;
           let _window2;
-
           const ping = {
             event: eventName,
             event_context: {
@@ -85,7 +84,6 @@
             ? void 0
             : _window$AWSendEventTe2.call(_window2, ping);
         },
-
         sendDismissTelemetry(messageId, elementId) {
           
           
@@ -93,15 +91,12 @@
             this.sendActionTelemetry(messageId, elementId, "DISMISS");
           }
         },
-
         async fetchFlowParams(metricsFlowUri) {
           let flowParams;
-
           try {
             const response = await fetch(metricsFlowUri, {
               credentials: "omit",
             });
-
             if (response.status === 200) {
               const { deviceId, flowId, flowBeginTime } = await response.json();
               flowParams = {
@@ -115,10 +110,8 @@
           } catch (e) {
             flowParams = null;
           }
-
           return flowParams;
         },
-
         sendEvent(type, detail) {
           document.dispatchEvent(
             new CustomEvent(`AWPage:${type}`, {
@@ -127,7 +120,6 @@
             })
           );
         },
-
         getLoadingStrategyFor(url) {
           return url !== null && url !== void 0 && url.startsWith("http")
             ? "lazy"
@@ -219,15 +211,14 @@
        let _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_3__ =
         __webpack_require__(6);
        let _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_4__ =
-        __webpack_require__(11);
-       let _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ =
-        __webpack_require__(19);
+        __webpack_require__(10);
+       let _newtab_content_src_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__ =
+        __webpack_require__(18);
       
 
 
 
       
-
       const TRANSITION_OUT_TIME = 1000;
       const LANGUAGE_MISMATCH_SCREEN_ID = "AW_LANGUAGE_MISMATCH";
       const MultiStageAboutWelcome = props => {
@@ -246,13 +237,14 @@
             
             if (!didMount) {
               return;
-            } 
-
+            }
+            
             let screensVisited = didFilter.current
               ? screens.slice(0, index)
               : [];
             let upcomingScreens = defaultScreens
-              .filter(s => !screensVisited.find(v => v.id === s.id)) 
+              .filter(s => !screensVisited.find(v => v.id === s.id))
+              
               
               
               .filter(
@@ -265,9 +257,10 @@
             let filteredScreens = screensVisited.concat(
               (await window.AWEvaluateScreenTargeting(upcomingScreens)) ??
                 upcomingScreens
-            ); 
-            
+            );
 
+            
+            
             setScreens(
               filteredScreens.map(
                 filtered => screens.find(s => s.id === filtered.id) ?? filtered
@@ -277,7 +270,6 @@
             const screenInitials = filteredScreens
               .map(({ id }) => {
                 let _id$split$;
-
                 return id === null || id === void 0
                   ? void 0
                   : (_id$split$ = id.split("_")[1]) === null ||
@@ -285,13 +277,12 @@
                   ? void 0
                   : _id$split$[0];
               })
-              .join(""); 
-
+              .join("");
+            
             filteredScreens.forEach((screen, order) => {
               if (index === order) {
                 let _window;
                 let _window$AWAddScreenIm;
-
                 _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendImpressionTelemetry(
                   `${props.message_id}_${order}_${screen.id}_${screenInitials}`
                 );
@@ -301,12 +292,14 @@
                   ? void 0
                   : _window$AWAddScreenIm.call(_window, screen);
               }
-            }); 
+            });
 
+            
             if (props.updateHistory && index > window.history.state) {
               window.history.pushState(index, "");
-            } 
+            }
 
+            
             setPreviousOrder(index);
           })();
         }, [index, didMount]); 
@@ -324,9 +317,10 @@
               );
             }
           })();
-        }, [metricsFlowUri]); 
-        
+        }, [metricsFlowUri]);
 
+        
+        
         const [transition, setTransition] = (0,
         react__WEBPACK_IMPORTED_MODULE_0__.useState)(
           props.transitions ? "in" : ""
@@ -337,16 +331,19 @@
               requestAnimationFrame(() => setTransition(""))
             );
           }
-        }, [transition]); 
+        }, [transition]);
 
+        
         const handleTransition = () => {
           
           if (transition === "out") {
             return;
-          } 
+          }
 
-          setTransition(props.transitions ? "out" : ""); 
+          
+          setTransition(props.transitions ? "out" : "");
 
+          
           setTimeout(
             () => {
               if (index < screens.length - 1) {
@@ -359,13 +356,11 @@
             props.transitions ? TRANSITION_OUT_TIME : 0
           );
         };
-
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           
           
           
           setDidMount(true);
-
           if (props.updateHistory) {
             
             
@@ -374,7 +369,6 @@
               if (transition === "out") {
                 return;
               }
-
               setTransition(props.transitions ? "out" : "");
               setTimeout(
                 () => {
@@ -383,32 +377,33 @@
                 },
                 props.transitions ? TRANSITION_OUT_TIME : 0
               );
-            }; 
+            };
 
+            
             const { state } = window.history;
-
             if (state) {
               setScreenIndex(Math.min(state, screens.length - 1));
               setPreviousOrder(Math.min(state, screens.length - 1));
-            } 
+            }
 
+            
             window.addEventListener("popstate", handler);
             return () => window.removeEventListener("popstate", handler);
           }
-
           return false;
         }, []); 
-        
-        
-        
-        
-        
-        
 
+        
+        
+        
+        
+        
+        
         const [activeMultiSelects, setActiveMultiSelects] = (0,
-        react__WEBPACK_IMPORTED_MODULE_0__.useState)({}); 
-        
+        react__WEBPACK_IMPORTED_MODULE_0__.useState)({});
 
+        
+        
         const [activeTheme, setActiveTheme] = (0,
         react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
         const [initialTheme, setInitialTheme] = (0,
@@ -452,7 +447,6 @@
               const isLastScreen = screen === screens[screens.length - 1];
               const totalNumberOfScreens = screens.length;
               const isSingleScreen = totalNumberOfScreens === 1;
-
               const setActiveMultiSelect = valueOrFn =>
                 setActiveMultiSelects(prevState => ({
                   ...prevState,
@@ -461,7 +455,6 @@
                       ? valueOrFn(prevState[screen.id])
                       : valueOrFn,
                 }));
-
               return index === order
                 ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
                     WelcomeScreen,
@@ -504,7 +497,6 @@
         let _props$content$second;
         let _props$content$second2;
         let _props$content$tiles;
-
         const targetElement = props.position
           ? `secondary_button_${props.position}`
           : `secondary_button`;
@@ -525,14 +517,11 @@
           _props$content$second2 === void 0
             ? void 0
             : _props$content$second2.style) === "primary";
-
         if (isTextLink) {
           buttonStyling += " text-link";
         }
-
         if (isPrimary) {
           let _props$content$second3;
-
           buttonStyling =
             (_props$content$second3 = props.content.secondary_button) !==
               null &&
@@ -541,7 +530,6 @@
               ? `primary arrow-icon`
               : `primary`;
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -577,7 +565,6 @@
       };
       const StepsIndicator = props => {
         let steps = [];
-
         for (let i = 0; i < props.totalNumberOfScreens; i++) {
           let className = `${i === props.order ? "current" : ""} ${
             i < props.order ? "complete" : ""
@@ -593,7 +580,6 @@
             )
           );
         }
-
         return steps;
       };
       const ProgressBar = ({ step, previousStep, totalNumberOfScreens }) => {
@@ -606,7 +592,6 @@
           
           setProgress(step / totalNumberOfScreens);
         }, []); 
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -627,26 +612,28 @@
 
         handleOpenURL(action, flowParams, UTMTerm) {
           let { type, data } = action;
-
           if (type === "SHOW_FIREFOX_ACCOUNTS") {
             let params = {
-              ..._asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__.BASE_PARAMS,
+              ..._newtab_content_src_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__.BASE_PARAMS,
               utm_term: `${UTMTerm}-screen`,
             };
-
             if (action.addFlowParams && flowParams) {
-              params = { ...params, ...flowParams };
+              params = {
+                ...params,
+                ...flowParams,
+              };
             }
-
-            data = { ...data, extraParams: params };
+            data = {
+              ...data,
+              extraParams: params,
+            };
           } else if (type === "OPEN_URL") {
             let url = new URL(data.args);
             (0,
-            _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__.addUtmParams)(
+            _newtab_content_src_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_5__.addUtmParams)(
               url,
               `${UTMTerm}-screen`
             );
-
             if (action.addFlowParams && flowParams) {
               url.searchParams.append("device_id", flowParams.deviceId);
               url.searchParams.append("flow_id", flowParams.flowId);
@@ -655,10 +642,11 @@
                 flowParams.flowBeginTime
               );
             }
-
-            data = { ...data, args: url.toString() };
+            data = {
+              ...data,
+              args: url.toString(),
+            };
           }
-
           return _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(
             {
               type,
@@ -677,32 +665,29 @@
             props.content[value] ||
             props.content.tiles ||
             props.content.languageSwitcher;
-
           if (!(targetContent && targetContent.action)) {
             return;
-          } 
-
+          }
+          
           _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(
             props.messageId,
             source,
             event.name
-          ); 
-          
-          
+          );
 
+          
+          
+          
           if (value === "dismiss_button" && !event.name) {
             _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendDismissTelemetry(
               props.messageId,
               source
             );
           }
-
           let { action } = targetContent;
           action = JSON.parse(JSON.stringify(action));
-
           if (action.collectSelect) {
             let _action$data;
-
             
             
             if (action.type !== "MULTI_ACTION") {
@@ -711,7 +696,6 @@
               );
               action.type = "MULTI_ACTION";
             }
-
             if (
               !Array.isArray(
                 (_action$data = action.data) === null || _action$data === void 0
@@ -725,16 +709,16 @@
               action.data = {
                 actions: [],
               };
-            } 
-            
-            
-            
-            
-            
-            
+            }
 
+            
+            
+            
+            
+            
+            
+            
             let multiSelectActions = [];
-
             for (const checkbox of ((_props$content = props.content) === null ||
             _props$content === void 0
               ? void 0
@@ -745,9 +729,7 @@
               var _props$content;
               var _props$content$tiles2;
               var _this$props$activeMul;
-
               let checkboxAction;
-
               if (
                 (_this$props$activeMul = this.props.activeMultiSelect) !==
                   null &&
@@ -758,23 +740,20 @@
               } else {
                 checkboxAction = checkbox.uncheckedAction;
               }
-
               if (checkboxAction) {
                 multiSelectActions.push(checkboxAction);
               }
             }
+            action.data.actions.unshift(...multiSelectActions);
 
-            action.data.actions.unshift(...multiSelectActions); 
-
+            
             _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(
               props.messageId,
               props.activeMultiSelect,
               "SELECT_CHECKBOX"
             );
           }
-
           let actionResult;
-
           if (["OPEN_URL", "SHOW_FIREFOX_ACCOUNTS"].includes(action.type)) {
             actionResult = await this.handleOpenURL(
               action,
@@ -786,19 +765,17 @@
               await _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.handleUserAction(
                 action
               );
-
             if (action.type === "FXA_SIGNIN_FLOW") {
               _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(
                 props.messageId,
                 actionResult ? "sign_in" : "sign_in_cancel",
                 "FXA_SIGNIN_FLOW"
               );
-            } 
-
+            }
+            
             const hasMigrate = a => {
               let _a$data;
               let _a$data$actions;
-
               return (
                 a.type === "SHOW_MIGRATION_WIZARD" ||
                 (a.type === "MULTI_ACTION" &&
@@ -810,7 +787,6 @@
                     : _a$data$actions.some(hasMigrate)))
               );
             };
-
             if (hasMigrate(action)) {
               await window.AWWaitForMigrationClose();
               _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__.AboutWelcomeUtils.sendActionTelemetry(
@@ -818,8 +794,9 @@
                 "migrate_close"
               );
             }
-          } 
+          }
 
+          
           if (action.theme) {
             let themeToUse =
               action.theme === "<event>"
@@ -827,22 +804,22 @@
                 : this.props.initialTheme || action.theme;
             this.props.setActiveTheme(themeToUse);
             window.AWSelectTheme(themeToUse);
-          } 
-          
+          }
 
+          
+          
           if (action.persistActiveTheme) {
             this.props.setInitialTheme(this.props.activeTheme);
-          } 
-          
-          
+          }
 
+          
+          
+          
           const shouldDoBehavior = behavior =>
             behavior === "actionResult" ? actionResult : behavior;
-
           if (shouldDoBehavior(action.navigate)) {
             props.navigate();
           }
-
           if (shouldDoBehavior(action.dismiss)) {
             window.AWFinish();
           }
@@ -914,6 +891,7 @@
         "whiteSpace",
       ];
       const ZAP_SIZE_THRESHOLD = 160;
+
       
 
 
@@ -943,7 +921,6 @@
            react__WEBPACK_IMPORTED_MODULE_0___default().createRef();
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           const { current } = zapRef;
-
           if (current) {
             requestAnimationFrame(() =>
               current === null || current === void 0
@@ -956,12 +933,14 @@
                   )
             );
           }
-        }); 
+        });
 
+        
         if (!text) {
           return null;
-        } 
+        }
 
+        
         const props = {
           children: [],
           className: "",
@@ -969,17 +948,17 @@
           ...(children === null || children === void 0
             ? void 0
             : children.props),
-        }; 
-
+        };
+        
         const textNodes = Array.isArray(props.children)
           ? props.children
-          : [props.children]; 
+          : [props.children];
 
+        
         if (text.string_id) {
           
           props.key = text.string_id;
           props["data-l10n-id"] = text.string_id;
-
           if (text.args) {
             props["data-l10n-args"] = JSON.stringify(text.args);
           }
@@ -987,8 +966,9 @@
           textNodes.push(text.raw);
         } else if (typeof text === "string") {
           textNodes.push(text);
-        } 
+        }
 
+        
         if (text.zap) {
           props.className += " welcomeZap";
           textNodes.push(
@@ -1003,11 +983,11 @@
             )
           );
         }
-
         if (text.aria_label) {
           props["aria-label"] = text.aria_label;
-        } 
+        }
 
+        
         CONFIGURABLE_STYLES.forEach(style => {
           if (text[style] !== undefined) {
             props.style[style] = text[style];
@@ -1020,7 +1000,8 @@
               "span",
               null
             ),
-          props, 
+          props,
+          
           textNodes.length ? textNodes : null
         );
       };
@@ -1050,32 +1031,30 @@
         __webpack_require__(5);
        let _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_2__ =
         __webpack_require__(3);
-       let _MRColorways__WEBPACK_IMPORTED_MODULE_3__ =
+       let _MobileDownloads__WEBPACK_IMPORTED_MODULE_3__ =
         __webpack_require__(7);
-       let _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__ =
+       let _MultiSelect__WEBPACK_IMPORTED_MODULE_4__ =
         __webpack_require__(8);
-       let _MultiSelect__WEBPACK_IMPORTED_MODULE_5__ =
+       let _Themes__WEBPACK_IMPORTED_MODULE_5__ =
         __webpack_require__(9);
-       let _Themes__WEBPACK_IMPORTED_MODULE_6__ =
-        __webpack_require__(10);
-       let _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_7__ =
+       let _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__ =
         __webpack_require__(4);
-       let _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_8__ =
+       let _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_7__ =
+        __webpack_require__(10);
+       let _CTAParagraph__WEBPACK_IMPORTED_MODULE_8__ =
         __webpack_require__(11);
-       let _CTAParagraph__WEBPACK_IMPORTED_MODULE_9__ =
+       let _HeroImage__WEBPACK_IMPORTED_MODULE_9__ =
         __webpack_require__(12);
-       let _HeroImage__WEBPACK_IMPORTED_MODULE_10__ =
+       let _OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__ =
         __webpack_require__(13);
-       let _OnboardingVideo__WEBPACK_IMPORTED_MODULE_11__ =
+       let _AdditionalCTA__WEBPACK_IMPORTED_MODULE_11__ =
         __webpack_require__(14);
-       let _AdditionalCTA__WEBPACK_IMPORTED_MODULE_12__ =
+       let _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_12__ =
         __webpack_require__(15);
-       let _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_13__ =
+       let _AddonsPicker__WEBPACK_IMPORTED_MODULE_13__ =
         __webpack_require__(16);
-       let _AddonsPicker__WEBPACK_IMPORTED_MODULE_14__ =
+       let _LinkParagraph__WEBPACK_IMPORTED_MODULE_14__ =
         __webpack_require__(17);
-       let _LinkParagraph__WEBPACK_IMPORTED_MODULE_15__ =
-        __webpack_require__(18);
       
 
 
@@ -1094,7 +1073,6 @@
             }, 20000);
             return () => clearTimeout(timer);
           }
-
           return () => {};
         }, [autoAdvance, handleAction, order]);
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
@@ -1134,7 +1112,6 @@
         let _content$primary_butt3;
         let _content$primary_butt4;
         let _content$primary_butt5;
-
         const { content, addonName, activeMultiSelect } = props;
         const defaultValue =
           (_content$checkbox = content.checkbox) === null ||
@@ -1155,23 +1132,22 @@
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           if (shouldFocusButton) {
             let _buttonRef$current;
-
             (_buttonRef$current = buttonRef.current) === null ||
             _buttonRef$current === void 0
               ? void 0
               : _buttonRef$current.focus();
           }
         }, [shouldFocusButton]);
-
         if (
           !content.primary_button &&
           !content.secondary_button &&
           !content.additional_button
         ) {
           return null;
-        } 
-        
+        }
 
+        
+        
         const isPrimaryDisabled = primaryDisabledValue =>
           primaryDisabledValue === "hasActiveMultiSelect"
             ? !(
@@ -1180,7 +1156,6 @@
                   : activeMultiSelect.length) > 0
               )
             : primaryDisabledValue;
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -1217,7 +1192,8 @@
                   _content$primary_butt4.has_arrow_icon
                     ? " arrow-icon"
                     : ""
-                }`, 
+                }`,
+                
                 
                 
                 
@@ -1239,7 +1215,7 @@
           ),
           content.additional_button
             ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                _AdditionalCTA__WEBPACK_IMPORTED_MODULE_12__.AdditionalCTA,
+                _AdditionalCTA__WEBPACK_IMPORTED_MODULE_11__.AdditionalCTA,
                 {
                   content,
                   handleAction: props.handleAction,
@@ -1279,7 +1255,7 @@
             : null,
           content.secondary_button
             ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_7__.SecondaryCTA,
+                _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.SecondaryCTA,
                 {
                   content,
                   handleAction: props.handleAction,
@@ -1302,15 +1278,12 @@
           isAddonsPicker
         ) {
           const screenClass = `screen-${this.props.order % 2 !== 0 ? 1 : 2}`;
-
           if (isVideoOnboarding) {
             return "with-video";
           }
-
           if (isAddonsPicker) {
             return "addons-picker";
           }
-
           return `${isFirstScreen ? `dialog-initial` : ``} ${
             isLastScreen ? `dialog-last` : ``
           } ${includeNoodles ? `with-noodles` : ``} ${screenClass}`;
@@ -1325,7 +1298,9 @@
                 className: "inline-icon-container",
                 alignment: alignment ?? "center",
               },
-              this.renderPicture({ ...rest }),
+              this.renderPicture({
+                ...rest,
+              }),
                react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
                 _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
                 {
@@ -1340,7 +1315,6 @@
               )
             );
           }
-
           return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
             _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
             {
@@ -1382,10 +1356,8 @@
                 return "lazy";
               }
             }
-
             return "eager";
           }
-
           return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
             "picture",
             {
@@ -1461,7 +1433,7 @@
               content.tiles.type === "addons-picker" &&
               content.tiles.data
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _AddonsPicker__WEBPACK_IMPORTED_MODULE_14__.AddonsPicker,
+                  _AddonsPicker__WEBPACK_IMPORTED_MODULE_13__.AddonsPicker,
                   {
                     content,
                     message_id: this.props.messageId,
@@ -1470,22 +1442,10 @@
                 )
               : null,
             content.tiles &&
-              content.tiles.type === "colorway" &&
-              content.tiles.colorways
-              ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MRColorways__WEBPACK_IMPORTED_MODULE_3__.Colorways,
-                  {
-                    content,
-                    activeTheme: this.props.activeTheme,
-                    handleAction: this.props.handleAction,
-                  }
-                )
-              : null,
-            content.tiles &&
               content.tiles.type === "theme" &&
               content.tiles.data
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _Themes__WEBPACK_IMPORTED_MODULE_6__.Themes,
+                  _Themes__WEBPACK_IMPORTED_MODULE_5__.Themes,
                   {
                     content,
                     activeTheme: this.props.activeTheme,
@@ -1497,7 +1457,7 @@
               content.tiles.type === "mobile_downloads" &&
               content.tiles.data
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MobileDownloads__WEBPACK_IMPORTED_MODULE_4__.MobileDownloads,
+                  _MobileDownloads__WEBPACK_IMPORTED_MODULE_3__.MobileDownloads,
                   {
                     data: content.tiles.data,
                     handleAction: this.props.handleAction,
@@ -1508,7 +1468,7 @@
               content.tiles.type === "multiselect" &&
               content.tiles.data
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MultiSelect__WEBPACK_IMPORTED_MODULE_5__.MultiSelect,
+                  _MultiSelect__WEBPACK_IMPORTED_MODULE_4__.MultiSelect,
                   {
                     content,
                     activeMultiSelect: this.props.activeMultiSelect,
@@ -1519,7 +1479,7 @@
               : null,
             content.tiles && content.tiles.type === "migration-wizard"
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_13__.EmbeddedMigrationWizard,
+                  _EmbeddedMigrationWizard__WEBPACK_IMPORTED_MODULE_12__.EmbeddedMigrationWizard,
                   {
                     handleAction: this.props.handleAction,
                   }
@@ -1568,7 +1528,7 @@
         renderLanguageSwitcher() {
           return this.props.content.languageSwitcher
             ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_8__.LanguageSwitcher,
+                _LanguageSwitcher__WEBPACK_IMPORTED_MODULE_7__.LanguageSwitcher,
                 {
                   content: this.props.content,
                   handleAction: this.props.handleAction,
@@ -1604,7 +1564,6 @@
 
         renderStepsIndicator() {
           let _content$steps_indica;
-
           const currentStep = (this.props.order ?? 0) + 1;
           const previousStep = (this.props.previousOrder ?? -1) + 1;
           const { content, totalNumberOfScreens: total } = this.props;
@@ -1631,7 +1590,7 @@
             },
             content.progress_bar
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_7__.ProgressBar,
+                  _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.ProgressBar,
                   {
                     step: currentStep,
                     previousStep,
@@ -1639,7 +1598,7 @@
                   }
                 )
               :  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_7__.StepsIndicator,
+                  _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.StepsIndicator,
                   {
                     order: this.props.order,
                     totalNumberOfScreens: total,
@@ -1680,7 +1639,7 @@
             ),
             content.hero_image
               ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _HeroImage__WEBPACK_IMPORTED_MODULE_10__.HeroImage,
+                  _HeroImage__WEBPACK_IMPORTED_MODULE_9__.HeroImage,
                   {
                     url: content.hero_image.url,
                   }
@@ -1722,13 +1681,12 @@
 
         renderOrderedContent(content) {
           const elements = [];
-
           for (const item of content) {
             switch (item.type) {
               case "text":
                 elements.push(
                    react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                    _LinkParagraph__WEBPACK_IMPORTED_MODULE_15__.LinkParagraph,
+                    _LinkParagraph__WEBPACK_IMPORTED_MODULE_14__.LinkParagraph,
                     {
                       text_content: item,
                       handleAction: this.props.handleAction,
@@ -1736,7 +1694,6 @@
                   )
                 );
                 break;
-
               case "image":
                 elements.push(
                   this.renderPicture({
@@ -1751,7 +1708,6 @@
                 );
             }
           }
-
           return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
             react__WEBPACK_IMPORTED_MODULE_0___default().Fragment,
             null,
@@ -1764,7 +1720,6 @@
           let _content$tiles2;
           let _this$props$appAndSys;
           let _this$props$messageId;
-
           const {
             autoAdvance,
             content,
@@ -1777,8 +1732,8 @@
             ariaRole,
             aboveButtonStepsIndicator,
           } = this.props;
-          const includeNoodles = content.has_noodles; 
-
+          const includeNoodles = content.has_noodles;
+          
           const isCenterPosition =
             content.position === "center" || !content.position;
           const hideStepsIndicator =
@@ -1790,9 +1745,9 @@
             forceHideStepsIndicator;
           const textColorClass = content.text_color
             ? `${content.text_color}-text`
-            : ""; 
+            : "";
           
-
+          
           const screenClassName = isCenterPosition
             ? this.getScreenClassName(
                 isFirstScreen,
@@ -1840,7 +1795,7 @@
               },
               content.secondary_button_top
                 ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                    _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_7__.SecondaryCTA,
+                    _MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_6__.SecondaryCTA,
                     {
                       content,
                       handleAction: this.props.handleAction,
@@ -1931,7 +1886,7 @@
                       : null,
                     content.cta_paragraph
                       ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                          _CTAParagraph__WEBPACK_IMPORTED_MODULE_9__.CTAParagraph,
+                          _CTAParagraph__WEBPACK_IMPORTED_MODULE_8__.CTAParagraph,
                           {
                             content: content.cta_paragraph,
                             handleAction: this.props.handleAction,
@@ -1941,7 +1896,7 @@
                   ),
                   content.video_container
                     ?  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                        _OnboardingVideo__WEBPACK_IMPORTED_MODULE_11__.OnboardingVideo,
+                        _OnboardingVideo__WEBPACK_IMPORTED_MODULE_10__.OnboardingVideo,
                         {
                           content: content.video_container,
                           handleAction: this.props.handleAction,
@@ -1986,277 +1941,6 @@
             )
           );
         }
-      }
-
-      
-    },
-    
-     (
-      __unused_webpack_module,
-      __webpack_exports__,
-      __webpack_require__
-    ) => {
-      __webpack_require__.r(__webpack_exports__);
-       __webpack_require__.d(__webpack_exports__, {
-         ColorwayDescription: () =>
-           ColorwayDescription,
-         computeColorWay: () =>
-           computeColorWay,
-         computeVariationIndex: () =>
-           computeVariationIndex,
-         Colorways: () =>  Colorways,
-        
-      });
-       let react__WEBPACK_IMPORTED_MODULE_0__ =
-        __webpack_require__(1);
-       let react__WEBPACK_IMPORTED_MODULE_0___default =
-         __webpack_require__.n(react__WEBPACK_IMPORTED_MODULE_0__);
-       let _MSLocalized__WEBPACK_IMPORTED_MODULE_1__ =
-        __webpack_require__(5);
-      
-
-
-
-      const ColorwayDescription = props => {
-        const { colorway } = props;
-
-        if (!colorway) {
-          return null;
-        }
-
-        const { label, description } = colorway;
-        return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-          _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
-          {
-            text: description,
-          },
-           react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-            "div",
-            {
-              className: "colorway-text",
-              "data-l10n-args": JSON.stringify({
-                colorwayName: label,
-              }),
-            }
-          )
-        );
-      }; 
-      
-      
-      
-
-      function computeColorWay(themeName, systemVariations) {
-        return !themeName ||
-          themeName === "alpenglow" ||
-          systemVariations.includes(themeName)
-          ? "default"
-          : themeName.split("-")[0];
-      } 
-
-      function computeVariationIndex(
-        themeName,
-        systemVariations,
-        variations,
-        defaultVariationIndex
-      ) {
-        
-        let index = systemVariations.findIndex(theme => theme === themeName);
-
-        if (index >= 0) {
-          return index;
-        } 
-
-        let variation =
-          themeName === null || themeName === void 0
-            ? void 0
-            : themeName.split("-")[1];
-        index = variations.findIndex(element => element === variation);
-
-        if (index >= 0) {
-          return index;
-        }
-
-        return defaultVariationIndex;
-      }
-      function Colorways(props) {
-        let {
-          colorways,
-          darkVariation,
-          defaultVariationIndex,
-          systemVariations,
-          variations,
-        } = props.content.tiles;
-        let hasReverted = false; 
-
-        const activeId = computeColorWay(props.activeTheme, systemVariations);
-        const [colorwayId, setState] = (0,
-        react__WEBPACK_IMPORTED_MODULE_0__.useState)(activeId);
-        const [variationIndex, setVariationIndex] = (0,
-        react__WEBPACK_IMPORTED_MODULE_0__.useState)(defaultVariationIndex);
-
-        function revertToDefaultTheme() {
-          if (hasReverted) {
-            return;
-          } 
-          
-          
-          
-          
-
-          const event = {
-            currentTarget: {
-              value: "navigate_away",
-            },
-          };
-          props.handleAction(event);
-          hasReverted = true;
-        } 
-        
-
-        (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-          addEventListener("beforeunload", revertToDefaultTheme);
-          addEventListener("pagehide", revertToDefaultTheme);
-          return () => {
-            removeEventListener("beforeunload", revertToDefaultTheme);
-            removeEventListener("pagehide", revertToDefaultTheme);
-          };
-        }); 
-
-        (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-          setState(computeColorWay(props.activeTheme, systemVariations));
-          setVariationIndex(
-            computeVariationIndex(
-              props.activeTheme,
-              systemVariations,
-              variations,
-              defaultVariationIndex
-            )
-          ); 
-        }, [props.activeTheme]); 
-
-        (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
-          
-          const randomIndex =
-            Math.floor(Math.random() * (colorways.length - 1)) + 1;
-          const randomColorwayId = colorways[randomIndex].id; 
-          
-
-          if (
-            darkVariation !== undefined &&
-            window.matchMedia("(prefers-color-scheme: dark)").matches
-          ) {
-            variations[variationIndex] = variations[darkVariation];
-          }
-
-          const value = `${randomColorwayId}-${variations[variationIndex]}`;
-          props.handleAction({
-            currentTarget: {
-              value,
-            },
-          }); 
-        }, []);
-        return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-          "div",
-          {
-            className: "tiles-theme-container",
-          },
-           react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-            "div",
-            null,
-             react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-              "fieldset",
-              {
-                className: "tiles-theme-section",
-              },
-               react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
-                {
-                  text: props.content.subtitle,
-                },
-                 react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  "legend",
-                  {
-                    className: "sr-only",
-                  }
-                )
-              ),
-              colorways.map(({ id, label, tooltip }) =>
-                 react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                  _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
-                  {
-                    key: id + label,
-                    text: typeof tooltip === "object" ? tooltip : {},
-                  },
-                   react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                    "label",
-                    {
-                      className: "theme",
-                      title: label,
-                      "data-l10n-args": JSON.stringify({
-                        colorwayName: label,
-                      }),
-                    },
-                     react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                      _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
-                      {
-                        text: typeof tooltip === "object" ? tooltip : {},
-                      },
-                       react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                        "span",
-                        {
-                          className: "sr-only colorway label",
-                          id: `${id}-label`,
-                          "data-l10n-args": JSON.stringify({
-                            colorwayName: tooltip,
-                          }),
-                        }
-                      )
-                    ),
-                     react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                      _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
-                      {
-                        text: typeof label === "object" ? label : {},
-                      },
-                       react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                        "input",
-                        {
-                          type: "radio",
-                          "data-colorway": id,
-                          name: "theme",
-                          value:
-                            id === "default"
-                              ? systemVariations[variationIndex]
-                              : `${id}-${variations[variationIndex]}`,
-                          checked: colorwayId === id,
-                          className: "sr-only input",
-                          onClick: props.handleAction,
-                          "data-l10n-args": JSON.stringify({
-                            colorwayName: label,
-                          }),
-                          "aria-labelledby": `${id}-label`,
-                        }
-                      )
-                    ),
-                     react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-                      "div",
-                      {
-                        className: `icon colorway ${
-                          colorwayId === id ? "selected" : ""
-                        } ${id}`,
-                      }
-                    )
-                  )
-                )
-              )
-            )
-          ),
-           react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
-            ColorwayDescription,
-            {
-              colorway: colorways.find(colorway => colorway.id === activeId),
-            }
-          )
-        );
       }
 
       
@@ -2441,12 +2125,10 @@
         "outlineOffset",
         "boxShadow",
       ];
-
       function getValidStyle(style, validStyles, allowVars) {
         if (!style) {
           return null;
         }
-
         return Object.keys(style)
           .filter(
             key =>
@@ -2457,7 +2139,6 @@
             return obj;
           }, {});
       }
-
       const MultiSelect = ({
         content,
         activeMultiSelect,
@@ -2470,7 +2151,6 @@
           const newActiveMultiSelect = [];
           Object.keys(refs.current).forEach(key => {
             let _refs$current$key;
-
             if (
               (_refs$current$key = refs.current[key]) !== null &&
               _refs$current$key !== void 0 &&
@@ -2484,9 +2164,10 @@
         const containerStyle = (0, react__WEBPACK_IMPORTED_MODULE_0__.useMemo)(
           () => getValidStyle(content.tiles.style, MULTI_SELECT_STYLES, true),
           [content.tiles.style]
-        ); 
-        
+        );
 
+        
+        
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           if (!activeMultiSelect) {
             let newActiveMultiSelect = [];
@@ -2693,7 +2374,6 @@
 
 
 
-
       function useLanguageSwitcher(
         appAndSystemLocaleInfo,
         screens,
@@ -2703,13 +2383,13 @@
         const languageMismatchScreenIndex = screens.findIndex(
           ({ id }) => id === "AW_LANGUAGE_MISMATCH"
         );
-        const screen = screens[languageMismatchScreenIndex]; 
-        
-        
+        const screen = screens[languageMismatchScreenIndex];
 
+        
+        
+        
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           let _screen$content;
-
           if (
             screen !== null &&
             screen !== void 0 &&
@@ -2728,9 +2408,10 @@
               }
             }
           }
-        }, [screen]); 
-        
+        }, [screen]);
 
+        
+        
         const [negotiatedLanguage, setNegotiatedLanguage] = (0,
         react__WEBPACK_IMPORTED_MODULE_0__.useState)(null);
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(
@@ -2738,18 +2419,15 @@
             if (!appAndSystemLocaleInfo) {
               return;
             }
-
             if (appAndSystemLocaleInfo.matchType !== "language-mismatch") {
               
               return;
             }
-
             (async () => {
               const { langPack, langPackDisplayName } =
                 await window.AWNegotiateLangPackForLanguageMismatch(
                   appAndSystemLocaleInfo
                 );
-
               if (langPack) {
                 setNegotiatedLanguage({
                   langPackDisplayName,
@@ -2774,8 +2452,8 @@
           },
           [appAndSystemLocaleInfo]
         );
-        
 
+        
 
 
 
@@ -2792,7 +2470,6 @@
               
               return;
             }
-
             setLangPackInstallPhase("installing");
             window
               .AWEnsureLangPackInstalled(
@@ -2832,7 +2509,6 @@
               if (screenIndex > languageMismatchScreenIndex) {
                 setScreenIndex(screenIndex - 1);
               }
-
               setLanguageFilteredScreens(
                 screens.filter(s => s.id !== "AW_LANGUAGE_MISMATCH")
               );
@@ -2858,8 +2534,8 @@
           languageFilteredScreens,
         };
       }
-      
 
+      
 
 
 
@@ -2874,8 +2550,9 @@
           messageId,
         } = props;
         const [isAwaitingLangpack, setIsAwaitingLangpack] = (0,
-        react__WEBPACK_IMPORTED_MODULE_0__.useState)(false); 
+        react__WEBPACK_IMPORTED_MODULE_0__.useState)(false);
 
+        
         (0, react__WEBPACK_IMPORTED_MODULE_0__.useEffect)(() => {
           if (isAwaitingLangpack && langPackInstallPhase !== "installing") {
             window.AWSetRequestedLocales(
@@ -2903,16 +2580,16 @@
         let showWaitingScreen = false;
         let showPreloadingScreen = false;
         let showReadyScreen = false;
-
         if (isAwaitingLangpack && langPackInstallPhase !== "installed") {
           showWaitingScreen = true;
         } else if (langPackInstallPhase === "before-installation") {
           showPreloadingScreen = true;
         } else {
           showReadyScreen = true;
-        } 
-        
+        }
 
+        
+        
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -3120,11 +2797,9 @@
 
       const CTAParagraph = props => {
         const { content, handleAction } = props;
-
         if (!(content !== null && content !== void 0 && content.text)) {
           return null;
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "h2",
           {
@@ -3190,11 +2865,9 @@
 
       const HeroImage = props => {
         const { height, url, alt } = props;
-
         if (!url) {
           return null;
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -3245,7 +2918,6 @@
       const OnboardingVideo = props => {
         const vidUrl = props.content.video_url;
         const autoplay = props.content.autoPlay;
-
         const handleVideoAction = event => {
           props.handleAction({
             currentTarget: {
@@ -3253,7 +2925,6 @@
             },
           });
         };
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           null,
@@ -3306,9 +2977,7 @@
         let _content$additional_b;
         let _content$additional_b4;
         let _content$additional_b5;
-
         let buttonStyle = "";
-
         if (
           !(
             (_content$additional_b = content.additional_button) !== null &&
@@ -3320,7 +2989,6 @@
         } else {
           let _content$additional_b2;
           let _content$additional_b3;
-
           buttonStyle =
             ((_content$additional_b2 = content.additional_button) === null ||
             _content$additional_b2 === void 0
@@ -3332,7 +3000,6 @@
               ? void 0
               : _content$additional_b3.style;
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           _MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized,
           {
@@ -3391,7 +3058,6 @@
               source: "primary_button",
             });
           };
-
           const handleClose = () => {
             handleAction({
               currentTarget: {
@@ -3399,7 +3065,6 @@
               },
             });
           };
-
           const { current } = ref;
           current === null || current === void 0
             ? void 0
@@ -3425,7 +3090,6 @@
                 );
           };
         }, []); 
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "migration-wizard",
           {
@@ -3463,23 +3127,19 @@
 
       const AddonsPicker = props => {
         const { content } = props;
-
         if (!content) {
           return null;
         }
-
         function handleAction(event) {
           const { message_id } = props;
           let { action, source_id } =
             content.tiles.data[event.currentTarget.value];
           let { type, data } = action;
-
           if (type === "INSTALL_ADDON_FROM_URL") {
             if (!data) {
               return;
             }
           }
-
           _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.handleUserAction(
             {
               type,
@@ -3491,7 +3151,6 @@
             source_id
           );
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           "div",
           {
@@ -3599,13 +3258,15 @@
 
       const LinkParagraph = props => {
         let _text_content$link_ke;
-
         const { text_content, handleAction } = props;
         const handleParagraphAction = (0,
         react__WEBPACK_IMPORTED_MODULE_0__.useCallback)(
           event => {
             if (event.target.closest("a")) {
-              handleAction({ ...event, currentTarget: event.target });
+              handleAction({
+                ...event,
+                currentTarget: event.target,
+              });
             }
           },
           [handleAction]
@@ -3645,7 +3306,8 @@
                       value: link,
                       role: "link",
                       className: "text-link",
-                      "data-l10n-name": link, 
+                      "data-l10n-name": link,
+                      
                       tabIndex: "0",
                     },
                     " "
@@ -3681,8 +3343,8 @@
         utm_campaign: "firstrun",
         utm_medium: "referral",
       };
-      
 
+      
 
 
 
@@ -3690,17 +3352,14 @@
 
       function addUtmParams(url, utmTerm) {
         let returnUrl = url;
-
         if (typeof returnUrl === "string") {
           returnUrl = new URL(url);
         }
-
         for (let [key, value] of Object.entries(BASE_PARAMS)) {
           if (!returnUrl.searchParams.has(key)) {
             returnUrl.searchParams.append(key, value);
           }
         }
-
         returnUrl.searchParams.append("utm_term", utmTerm);
         return returnUrl;
       }
@@ -3726,8 +3385,8 @@
         __webpack_require__(3);
        let _MultiStageProtonScreen__WEBPACK_IMPORTED_MODULE_2__ =
         __webpack_require__(6);
-       let _asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ =
-        __webpack_require__(19);
+       let _newtab_content_src_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__ =
+        __webpack_require__(18);
       
 
 
@@ -3759,26 +3418,31 @@
           const { content, message_id, url, utm_term } = this.props;
           let { action, source_id } = content[event.currentTarget.value];
           let { type, data } = action;
-
           if (type === "INSTALL_ADDON_FROM_URL") {
             if (!data) {
               return;
-            } 
-
-            data = { ...data, url };
+            }
+            
+            data = {
+              ...data,
+              url,
+            };
           } else if (type === "SHOW_FIREFOX_ACCOUNTS") {
             let params = {
-              ..._asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__.BASE_PARAMS,
+              ..._newtab_content_src_asrouter_templates_FirstRun_addUtmParams__WEBPACK_IMPORTED_MODULE_3__.BASE_PARAMS,
               utm_term: `aboutwelcome-${utm_term}-screen`,
             };
-
             if (action.addFlowParams && this.state.flowParams) {
-              params = { ...params, ...this.state.flowParams };
+              params = {
+                ...params,
+                ...this.state.flowParams,
+              };
             }
-
-            data = { ...data, extraParams: params };
+            data = {
+              ...data,
+              extraParams: params,
+            };
           }
-
           _lib_aboutwelcome_utils__WEBPACK_IMPORTED_MODULE_1__.AboutWelcomeUtils.handleUserAction(
             {
               type,
@@ -3793,13 +3457,10 @@
 
         render() {
           let _this$props$themeScre;
-
           const { content, type } = this.props;
-
           if (!content) {
             return null;
           }
-
           if (
             content !== null &&
             content !== void 0 &&
@@ -3808,9 +3469,10 @@
             content.primary_button.label.string_id = type.includes("theme")
               ? "return-to-amo-add-theme-label"
               : "mr1-return-to-amo-add-extension-label";
-          } 
-          
+          }
 
+          
+          
           return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
             "div",
             {
@@ -3965,24 +3627,23 @@
      let _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__ =
       __webpack_require__(4);
      let _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__ =
-      __webpack_require__(20);
+      __webpack_require__(19);
     function _extends() {
-      _extends =
-        Object.assign ||
-        function (target) {
-          for (let i = 1; i < arguments.length; i++) {
-            let source = arguments[i];
-            for (let key in source) {
-              if (Object.prototype.hasOwnProperty.call(source, key)) {
-                target[key] = source[key];
+      _extends = Object.assign
+        ? Object.assign.bind()
+        : function (target) {
+            for (let i = 1; i < arguments.length; i++) {
+              let source = arguments[i];
+              for (let key in source) {
+                if (Object.prototype.hasOwnProperty.call(source, key)) {
+                  target[key] = source[key];
+                }
               }
             }
-          }
-          return target;
-        };
+            return target;
+          };
       return _extends.apply(this, arguments);
     }
-
     
 
 
@@ -4000,7 +3661,6 @@
       async fetchFxAFlowUri() {
         let _window;
         let _window$AWGetFxAMetri;
-
         this.setState({
           metricsFlowUri: await ((_window$AWGetFxAMetri = (_window = window)
             .AWGetFxAMetricsFlowURI) === null ||
@@ -4014,7 +3674,6 @@
         if (!this.props.skipFxA) {
           this.fetchFxAFlowUri();
         }
-
         if (document.location.href === "about:welcome") {
           
           const recordImpression = domState => {
@@ -4033,7 +3692,6 @@
               }
             );
           };
-
           if (document.readyState === "complete") {
             
             
@@ -4043,9 +3701,10 @@
             window.addEventListener("load", () => recordImpression("load"), {
               once: true,
             });
-          } 
-          
+          }
 
+          
+          
           window.AWSendToParent(
             "SET_WELCOME_MESSAGE_SEEN",
             this.props.messageId
@@ -4055,7 +3714,6 @@
 
       render() {
         const { props } = this;
-
         if (props.template === "return_to_amo") {
           return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
             _components_ReturnToAMO__WEBPACK_IMPORTED_MODULE_4__.ReturnToAMO,
@@ -4070,7 +3728,6 @@
             }
           );
         }
-
         return  react__WEBPACK_IMPORTED_MODULE_0___default().createElement(
           _components_MultiStageAboutWelcome__WEBPACK_IMPORTED_MODULE_3__.MultiStageAboutWelcome,
           {
@@ -4087,29 +3744,26 @@
           }
         );
       }
-    } 
+    }
 
+    
     function ComputeTelemetryInfo(welcomeContent, experimentId, branchId) {
       let messageId =
         welcomeContent.template === "return_to_amo"
           ? `RTAMO_DEFAULT_WELCOME_${welcomeContent.type.toUpperCase()}`
           : "DEFAULT_ID";
       let UTMTerm = "aboutwelcome-default";
-
       if (welcomeContent.id) {
         messageId = welcomeContent.id.toUpperCase();
       }
-
       if (experimentId && branchId) {
         UTMTerm = `aboutwelcome-${experimentId}-${branchId}`.toLowerCase();
       }
-
       return {
         messageId,
         UTMTerm,
       };
     }
-
     async function retrieveRenderContent() {
       
       
@@ -4128,7 +3782,6 @@
         UTMTerm,
       };
     }
-
     async function mount() {
       let {
         featureConfig: aboutWelcomeProps,
@@ -4149,7 +3802,6 @@
         document.getElementById("multi-stage-message-root")
       );
     }
-
     performance.mark("mount");
     mount();
   })();
