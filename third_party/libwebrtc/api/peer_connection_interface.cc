@@ -45,8 +45,13 @@ PeerConnectionDependencies::PeerConnectionDependencies(
     PeerConnectionObserver* observer_in)
     : observer(observer_in) {}
 
+
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 PeerConnectionDependencies::PeerConnectionDependencies(
     PeerConnectionDependencies&&) = default;
+#pragma clang diagnostic pop
 
 PeerConnectionDependencies::~PeerConnectionDependencies() = default;
 
