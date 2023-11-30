@@ -104,6 +104,19 @@ class WebRtcAudioEffects {
     return true;
   }
 
+  
+  
+  
+  public boolean toggleNS(boolean enable) {
+    if (ns == null) {
+      Logging.e(TAG, "Attempting to enable or disable nonexistent NoiseSuppressor.");
+      return false;
+    }
+    Logging.d(TAG, "toggleNS(" + enable + ")");
+    boolean toggling_succeeded = ns.setEnabled(enable) == AudioEffect.SUCCESS;
+    return toggling_succeeded;
+  }
+
   public void enable(int audioSession) {
     Logging.d(TAG, "enable(audioSession=" + audioSession + ")");
     assertTrue(aec == null);

@@ -418,6 +418,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     audioInput.setMicrophoneMute(mute);
   }
 
+  @Override
+  public boolean setNoiseSuppressorEnabled(boolean enabled) {
+    Logging.d(TAG, "setNoiseSuppressorEnabled: " + enabled);
+    return audioInput.setNoiseSuppressorEnabled(enabled);
+  }
+
   
 
 

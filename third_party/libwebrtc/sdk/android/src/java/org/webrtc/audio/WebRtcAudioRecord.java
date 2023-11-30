@@ -512,6 +512,18 @@ class WebRtcAudioRecord {
   }
 
   
+  
+  
+  public boolean setNoiseSuppressorEnabled(boolean enabled) {
+    if (!WebRtcAudioEffects.isNoiseSuppressorSupported()) {
+      Logging.e(TAG, "Noise suppressor is not supported.");
+      return false;
+    }
+    Logging.w(TAG, "SetNoiseSuppressorEnabled(" + enabled + ")");
+    return effects.toggleNS(enabled);
+  }
+
+  
   private void releaseAudioResources() {
     Logging.d(TAG, "releaseAudioResources");
     if (audioRecord != null) {

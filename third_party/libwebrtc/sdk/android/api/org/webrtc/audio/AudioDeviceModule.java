@@ -35,4 +35,12 @@ public interface AudioDeviceModule {
 
   
   void setMicrophoneMute(boolean mute);
+
+  
+
+
+
+  default boolean setNoiseSuppressorEnabled(boolean enabled) {
+    return false;
+  }
 }
