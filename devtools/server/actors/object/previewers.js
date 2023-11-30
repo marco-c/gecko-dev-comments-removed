@@ -156,10 +156,14 @@ const previewers = {
       grip.isGenerator = obj.isGeneratorFunction;
 
       if (obj.script) {
+        
+        
+        
+        const columnBase = obj.script.format === "wasm" ? 0 : 1;
         grip.location = {
           url: obj.script.url,
           line: obj.script.startLine,
-          column: obj.script.startColumn,
+          column: obj.script.startColumn - columnBase,
         };
       }
 

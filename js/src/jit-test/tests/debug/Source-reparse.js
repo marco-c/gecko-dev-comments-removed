@@ -23,7 +23,12 @@ function g() {
 }
 
 f();
-`, { fileName: "foobar.js", lineNumber: 3, columnNumber: 42 });
+`, {
+  fileName: "foobar.js",
+  lineNumber: 3,
+  
+  columnNumber: 42,
+});
 
 let onNewScriptCalls = 0;
 dbg.onNewScript = script => { onNewScriptCalls++; };
@@ -34,7 +39,8 @@ assertEq(onNewScriptCalls, 0);
 
 assertEq(reparsedScript.url, "foobar.js");
 assertEq(reparsedScript.startLine, 3);
-assertEq(reparsedScript.startColumn, 42);
+
+assertEq(reparsedScript.startColumn, 43);
 
 
 function getBreakpointPositions(script) {

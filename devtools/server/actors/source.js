@@ -193,6 +193,11 @@ class SourceActor extends Actor {
       introductionType = "scriptElement";
     }
 
+    
+    
+    
+    const columnBase = source.introductionType === "wasm" ? 0 : 1;
+
     return {
       actor: this.actorID,
       extensionName: this.extensionName,
@@ -206,7 +211,7 @@ class SourceActor extends Actor {
       introductionType,
       isInlineSource: this._isInlineSource,
       sourceStartLine: source.startLine,
-      sourceStartColumn: source.startColumn,
+      sourceStartColumn: source.startColumn - columnBase,
       sourceLength: source.text?.length,
     };
   }
@@ -411,10 +416,15 @@ class SourceActor extends Actor {
         return false;
       }
 
+      
+      
+      
+      const columnBase = script.format === "wasm" ? 0 : 1;
       if (
         script.startLine > endLine ||
         script.startLine + lineCount <= startLine ||
-        (script.startLine == endLine && script.startColumn > endColumn)
+        (script.startLine == endLine &&
+          script.startColumn - columnBase > endColumn)
       ) {
         return false;
       }
@@ -422,7 +432,7 @@ class SourceActor extends Actor {
       if (
         lineCount == 1 &&
         script.startLine == startLine &&
-        script.startColumn + script.sourceLength <= startColumn
+        script.startColumn - columnBase + script.sourceLength <= startColumn
       ) {
         return false;
       }
@@ -469,20 +479,25 @@ class SourceActor extends Actor {
       end: { line: endLine = Infinity, column: endColumn = Infinity } = {},
     } = query || {};
 
+    
+    
+    
+    const columnBase = script.format === "wasm" ? 0 : 1;
+
     const offsets = script.getPossibleBreakpoints();
     for (const { lineNumber, columnNumber } of offsets) {
       if (
         lineNumber < startLine ||
-        (lineNumber === startLine && columnNumber < startColumn) ||
+        (lineNumber === startLine && columnNumber - columnBase < startColumn) ||
         lineNumber > endLine ||
-        (lineNumber === endLine && columnNumber >= endColumn)
+        (lineNumber === endLine && columnNumber - columnBase >= endColumn)
       ) {
         continue;
       }
 
       positions.push({
         line: lineNumber,
-        column: columnNumber,
+        column: columnNumber - columnBase,
       });
     }
   }
@@ -612,6 +627,11 @@ class SourceActor extends Actor {
 
       
       
+      
+      
+
+      
+      
       const lineMatches = [];
       for (const script of scripts) {
         const possibleBreakpoints = script.getPossibleBreakpoints({ line });
@@ -646,11 +666,17 @@ class SourceActor extends Actor {
       for (const script of scripts) {
         
         
+        
+        
+        const columnBase = script.format === "wasm" ? 0 : 1;
+
+        
+        
         const possibleBreakpoint = script
           .getPossibleBreakpoints({
             line,
-            minColumn: column,
-            maxColumn: column + 1,
+            minColumn: column + columnBase,
+            maxColumn: column + columnBase + 1,
           })
           .pop();
 
