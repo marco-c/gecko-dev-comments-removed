@@ -49,15 +49,40 @@ async function addTab(url) {
 
 
 
+class NetworkEventOwner {
+  hasEventTimings = false;
+  hasResponseCache = false;
+  hasResponseContent = false;
+  hasResponseStart = false;
+  hasSecurityInfo = false;
+  hasServerTimings = false;
+
+  addEventTimings() {
+    this.hasEventTimings = true;
+  }
+  addResponseCache() {
+    this.hasResponseCache = true;
+  }
+  addResponseContent() {
+    this.hasResponseContent = true;
+  }
+  addResponseStart() {
+    this.hasResponseStart = true;
+  }
+  addSecurityInfo() {
+    this.hasSecurityInfo = true;
+  }
+  addServerTimings() {
+    this.hasServerTimings = true;
+  }
+}
+
+
+
+
+
 function createNetworkEventOwner(event) {
-  return {
-    addEventTimings: () => {},
-    addResponseCache: () => {},
-    addResponseContent: () => {},
-    addResponseStart: () => {},
-    addSecurityInfo: () => {},
-    addServerTimings: () => {},
-  };
+  return new NetworkEventOwner();
 }
 
 
@@ -73,20 +98,21 @@ function createNetworkEventOwner(event) {
 
 
 async function waitForNetworkEvents(expectedUrl, expectedRequestsCount) {
-  let eventsCount = 0;
+  const events = [];
   const networkObserver = new NetworkObserver({
     ignoreChannelFunction: channel => channel.URI.spec !== expectedUrl,
-    onNetworkEvent: event => {
+    onNetworkEvent: () => {
       info("waitForNetworkEvents received a new event");
-      eventsCount++;
-      return createNetworkEventOwner(event);
+      const owner = createNetworkEventOwner();
+      events.push(owner);
+      return owner;
     },
   });
   registerCleanupFunction(() => networkObserver.destroy());
 
   info("Wait until the events count reaches " + expectedRequestsCount);
   await BrowserTestUtils.waitForCondition(
-    () => eventsCount >= expectedRequestsCount
+    () => events.length >= expectedRequestsCount
   );
-  return eventsCount;
+  return events;
 }
