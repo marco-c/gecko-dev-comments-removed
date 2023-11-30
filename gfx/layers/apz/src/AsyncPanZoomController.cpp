@@ -5301,11 +5301,10 @@ void AsyncPanZoomController::NotifyLayersUpdated(
   
   
   CSSPoint lastScrollOffset = mLastContentPaintMetrics.GetLayoutScrollOffset();
-  bool userScrolled =
-      !FuzzyEqualsCoordinate(Metrics().GetVisualScrollOffset().x,
-                             lastScrollOffset.x) ||
-      !FuzzyEqualsCoordinate(Metrics().GetVisualScrollOffset().y,
-                             lastScrollOffset.y);
+  bool userScrolled = !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().x,
+                                           lastScrollOffset.x) ||
+                      !FuzzyEqualsAdditive(Metrics().GetVisualScrollOffset().y,
+                                           lastScrollOffset.y);
 
   if (aScrollMetadata.DidContentGetPainted()) {
     mLastContentPaintMetadata = aScrollMetadata;
