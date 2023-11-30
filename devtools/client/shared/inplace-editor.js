@@ -162,6 +162,7 @@ function isKeyIn(key, ...keys) {
 
 
 
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -295,6 +296,19 @@ function InplaceEditor(options, event) {
       ? false
       : !!options.preserveTextStyles;
   this.showSuggestCompletionOnEmpty = !!options.showSuggestCompletionOnEmpty;
+  this.focusEditableFieldAfterApply =
+    options.focusEditableFieldAfterApply === true;
+  this.focusEditableFieldContainerSelector =
+    options.focusEditableFieldContainerSelector;
+
+  if (
+    this.focusEditableFieldAfterApply &&
+    !this.focusEditableFieldContainerSelector
+  ) {
+    throw new Error(
+      "focusEditableFieldContainerSelector is mandatory when focusEditableFieldAfterApply is true"
+    );
+  }
 
   this._onBlur = this._onBlur.bind(this);
   this._onWindowBlur = this._onWindowBlur.bind(this);
@@ -1292,7 +1306,12 @@ InplaceEditor.prototype = {
       if (direction !== null && focusManager.focusedElement === input) {
         
         
-        const next = moveFocus(this.doc.defaultView, direction);
+        const next = moveFocus(
+          this.doc.defaultView,
+          direction,
+          this.focusEditableFieldAfterApply,
+          this.focusEditableFieldContainerSelector
+        );
 
         
         
@@ -1855,6 +1874,48 @@ function copyBoxModelStyles(from, to) {
 
 
 
-function moveFocus(win, direction) {
-  return focusManager.moveFocus(win, null, direction, 0);
+
+
+
+
+
+
+
+
+
+
+
+
+function moveFocus(
+  win,
+  direction,
+  focusEditableField,
+  focusEditableFieldContainerSelector
+) {
+  if (!focusEditableField) {
+    return focusManager.moveFocus(win, null, direction, 0);
+  }
+
+  if (!win.document.querySelector(focusEditableFieldContainerSelector)) {
+    console.error(
+      focusEditableFieldContainerSelector,
+      "can't be found in document.",
+      `focusEditableFieldContainerSelector should match an existing element`
+    );
+    return focusManager.moveFocus(win, null, direction, 0);
+  }
+
+  
+  while (true) {
+    const focusedElement = focusManager.moveFocus(win, null, direction, 0);
+    
+    if (focusedElement._editable) {
+      return focusedElement;
+    }
+
+    
+    if (!focusedElement.closest(focusEditableFieldContainerSelector)) {
+      return focusedElement;
+    }
+  }
 }
