@@ -9,6 +9,7 @@
 #include "nsIBaseWindow.idl"
 
 interface nsIDocShell;
+interface nsIJumpListBuilder;
 interface nsITaskbarTabPreview;
 interface nsITaskbarWindowPreview;
 interface nsITaskbarPreviewController;
@@ -131,6 +132,14 @@ interface nsIWinTaskbar : nsISupports
 
 
   nsILegacyJumpListBuilder createLegacyJumpListBuilder(in boolean aPrivateBrowsing);
+
+  
+
+
+
+
+
+  nsIJumpListBuilder createJumpListBuilder(in boolean aPrivateBrowsing);
 
   
 
