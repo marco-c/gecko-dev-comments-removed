@@ -355,8 +355,7 @@ static bool FormatFrame(JSContext* cx, const FrameIter& iter, Sprinter& sp,
 
   
   sp.printf("%s [\"%s\":%u:%u]\n", fun ? ")" : "",
-            filename ? filename : "<unknown>", lineno,
-            column.zeroOriginValue());
+            filename ? filename : "<unknown>", lineno, column.oneOriginValue());
 
   
   
