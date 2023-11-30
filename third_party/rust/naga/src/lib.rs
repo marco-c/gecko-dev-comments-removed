@@ -697,7 +697,7 @@ pub enum TypeInner {
     Matrix {
         columns: VectorSize,
         rows: VectorSize,
-        width: Bytes,
+        scalar: Scalar,
     },
     
     Atomic(Scalar),
@@ -869,6 +869,7 @@ pub enum Literal {
     F32(f32),
     U32(u32),
     I32(i32),
+    I64(i64),
     Bool(bool),
 }
 

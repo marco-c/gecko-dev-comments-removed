@@ -109,9 +109,9 @@ pub fn calculate_offset(
         TypeInner::Matrix {
             columns,
             rows,
-            width,
+            scalar,
         } => {
-            let mut align = Alignment::from(rows) * Alignment::from_width(width);
+            let mut align = Alignment::from(rows) * Alignment::from_width(scalar.width);
 
             
             if StructLayout::Std430 != layout {

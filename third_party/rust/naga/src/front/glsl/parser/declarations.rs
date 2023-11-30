@@ -43,13 +43,10 @@ fn element_or_member_type(
         ),
         
         
-        TypeInner::Matrix { rows, width, .. } => types.insert(
+        TypeInner::Matrix { rows, scalar, .. } => types.insert(
             Type {
                 name: None,
-                inner: TypeInner::Vector {
-                    size: rows,
-                    scalar: Scalar::float(width),
-                },
+                inner: TypeInner::Vector { size: rows, scalar },
             },
             Default::default(),
         ),
