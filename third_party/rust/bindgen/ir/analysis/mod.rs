@@ -334,20 +334,13 @@ mod tests {
             
             
 
-            let original_size = self
-                .reachable
-                .entry(node)
-                .or_insert_with(HashSet::default)
-                .len();
+            let original_size = self.reachable.entry(node).or_default().len();
 
             for sub_node in self.graph.0[&node].iter() {
                 self.reachable.get_mut(&node).unwrap().insert(*sub_node);
 
-                let sub_reachable = self
-                    .reachable
-                    .entry(*sub_node)
-                    .or_insert_with(HashSet::default)
-                    .clone();
+                let sub_reachable =
+                    self.reachable.entry(*sub_node).or_default().clone();
 
                 for transitive in sub_reachable {
                     self.reachable.get_mut(&node).unwrap().insert(transitive);
