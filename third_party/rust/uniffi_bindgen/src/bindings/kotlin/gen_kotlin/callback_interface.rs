@@ -2,8 +2,7 @@
 
 
 
-use super::CodeType;
-use crate::ComponentInterface;
+use crate::backend::{CodeType, Literal};
 
 #[derive(Debug)]
 pub struct CallbackInterfaceCodeType {
@@ -17,12 +16,16 @@ impl CallbackInterfaceCodeType {
 }
 
 impl CodeType for CallbackInterfaceCodeType {
-    fn type_label(&self, ci: &ComponentInterface) -> String {
-        super::KotlinCodeOracle.class_name(ci, &self.id)
+    fn type_label(&self) -> String {
+        super::KotlinCodeOracle.class_name(&self.id)
     }
 
     fn canonical_name(&self) -> String {
         format!("Type{}", self.id)
+    }
+
+    fn literal(&self, _literal: &Literal) -> String {
+        unreachable!();
     }
 
     fn initialization_fn(&self) -> Option<String> {

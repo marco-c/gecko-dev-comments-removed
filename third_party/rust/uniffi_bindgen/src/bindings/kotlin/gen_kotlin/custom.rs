@@ -2,8 +2,7 @@
 
 
 
-use super::CodeType;
-use crate::ComponentInterface;
+use crate::backend::{CodeType, Literal};
 
 #[derive(Debug)]
 pub struct CustomCodeType {
@@ -17,11 +16,15 @@ impl CustomCodeType {
 }
 
 impl CodeType for CustomCodeType {
-    fn type_label(&self, _ci: &ComponentInterface) -> String {
+    fn type_label(&self) -> String {
         self.name.clone()
     }
 
     fn canonical_name(&self) -> String {
         format!("Type{}", self.name)
+    }
+
+    fn literal(&self, _literal: &Literal) -> String {
+        unreachable!("Can't have a literal of a custom type");
     }
 }

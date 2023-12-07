@@ -4,7 +4,7 @@
 
 {{ name }} = {{ builtin|type_name }}
 
-class _UniffiConverterType{{ name }}:
+class FfiConverterType{{ name }}:
     @staticmethod
     def write(value, buf):
         {{ builtin|ffi_converter_name }}.write(value, buf)
@@ -35,7 +35,7 @@ class _UniffiConverterType{{ name }}:
 {{ name }} = {{ builtin|type_name }}
 
 {
-class _UniffiConverterType{{ name }}:
+class FfiConverterType{{ name }}:
     @staticmethod
     def write(value, buf):
         builtin_value = {{ config.from_custom.render("value") }}

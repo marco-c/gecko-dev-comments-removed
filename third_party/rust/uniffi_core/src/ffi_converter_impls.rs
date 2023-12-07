@@ -22,18 +22,16 @@
 
 
 use crate::{
-    check_remaining, derive_ffi_traits, ffi_converter_rust_buffer_lift_and_lower, metadata,
-    ConvertError, FfiConverter, ForeignExecutor, Lift, LiftReturn, Lower, LowerReturn,
-    MetadataBuffer, Result, RustBuffer, UnexpectedUniFFICallbackError,
+    check_remaining, ffi_converter_default_return, ffi_converter_rust_buffer_lift_and_lower,
+    lower_into_rust_buffer, metadata, try_lift_from_rust_buffer, FfiConverter, FutureCallback,
+    Interface, MetadataBuffer, Result, RustBuffer, RustCallStatus, UnexpectedUniFFICallbackError,
 };
 use anyhow::bail;
 use bytes::buf::{Buf, BufMut};
 use paste::paste;
 use std::{
     collections::HashMap,
-    convert::TryFrom,
-    error::Error,
-    sync::Arc,
+    convert::{Infallible, TryFrom},
     time::{Duration, SystemTime},
 };
 
@@ -45,6 +43,8 @@ macro_rules! impl_ffi_converter_for_num_primitive {
     ($T:ty, $type_code:expr) => {
         paste! {
             unsafe impl<UT> FfiConverter<UT> for $T {
+                ffi_converter_default_return!(UT);
+
                 type FfiType = $T;
 
                 fn lower(obj: $T) -> Self::FfiType {
@@ -86,6 +86,8 @@ impl_ffi_converter_for_num_primitive!(f64, metadata::codes::TYPE_F64);
 
 
 unsafe impl<UT> FfiConverter<UT> for bool {
+    ffi_converter_default_return!(UT);
+
     type FfiType = i8;
 
     fn lower(obj: bool) -> Self::FfiType {
@@ -113,6 +115,68 @@ unsafe impl<UT> FfiConverter<UT> for bool {
 }
 
 
+unsafe impl<UT> FfiConverter<UT> for () {
+    
+    type FfiType = ();
+    
+    type ReturnType = ();
+    
+    
+    type FutureCallback = FutureCallback<u8>;
+
+    fn try_lift(_: Self::FfiType) -> Result<()> {
+        Ok(())
+    }
+
+    fn lower(_: ()) -> Self::FfiType {}
+
+    fn write(_: (), _: &mut Vec<u8>) {}
+
+    fn try_read(_: &mut &[u8]) -> Result<()> {
+        Ok(())
+    }
+
+    fn lower_return(_: ()) -> Result<Self::ReturnType, RustBuffer> {
+        Ok(())
+    }
+
+    fn invoke_future_callback(
+        callback: Self::FutureCallback,
+        callback_data: *const (),
+        _return_value: (),
+        call_status: RustCallStatus,
+    ) {
+        callback(callback_data, 0, call_status)
+    }
+
+    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_UNIT);
+}
+
+unsafe impl<UT> FfiConverter<UT> for Infallible {
+    ffi_converter_default_return!(UT);
+
+    type FfiType = RustBuffer;
+
+    fn try_lift(_: Self::FfiType) -> Result<Infallible> {
+        unreachable!()
+    }
+
+    fn lower(_: Infallible) -> Self::FfiType {
+        unreachable!()
+    }
+
+    fn write(_: Infallible, _: &mut Vec<u8>) {
+        unreachable!()
+    }
+
+    fn try_read(_: &mut &[u8]) -> Result<Infallible> {
+        unreachable!()
+    }
+
+    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::new();
+}
+
+
 
 
 
@@ -124,6 +188,8 @@ unsafe impl<UT> FfiConverter<UT> for bool {
 
 
 unsafe impl<UT> FfiConverter<UT> for String {
+    ffi_converter_default_return!(UT);
+
     type FfiType = RustBuffer;
 
     
@@ -185,6 +251,7 @@ unsafe impl<UT> FfiConverter<UT> for String {
 
 unsafe impl<UT> FfiConverter<UT> for SystemTime {
     ffi_converter_rust_buffer_lift_and_lower!(UT);
+    ffi_converter_default_return!(UT);
 
     fn write(obj: SystemTime, buf: &mut Vec<u8>) {
         let mut sign = 1;
@@ -230,6 +297,7 @@ unsafe impl<UT> FfiConverter<UT> for SystemTime {
 
 unsafe impl<UT> FfiConverter<UT> for Duration {
     ffi_converter_rust_buffer_lift_and_lower!(UT);
+    ffi_converter_default_return!(UT);
 
     fn write(obj: Duration, buf: &mut Vec<u8>) {
         buf.put_u64(obj.as_secs());
@@ -253,9 +321,9 @@ unsafe impl<UT> FfiConverter<UT> for Duration {
 
 
 
-
-unsafe impl<UT, T: Lower<UT>> Lower<UT> for Option<T> {
-    type FfiType = RustBuffer;
+unsafe impl<UT, T: FfiConverter<UT>> FfiConverter<UT> for Option<T> {
+    ffi_converter_rust_buffer_lift_and_lower!(UT);
+    ffi_converter_default_return!(UT);
 
     fn write(obj: Option<T>, buf: &mut Vec<u8>) {
         match obj {
@@ -267,17 +335,6 @@ unsafe impl<UT, T: Lower<UT>> Lower<UT> for Option<T> {
         }
     }
 
-    fn lower(obj: Option<T>) -> RustBuffer {
-        Self::lower_into_rust_buffer(obj)
-    }
-
-    const TYPE_ID_META: MetadataBuffer =
-        MetadataBuffer::from_code(metadata::codes::TYPE_OPTION).concat(T::TYPE_ID_META);
-}
-
-unsafe impl<UT, T: Lift<UT>> Lift<UT> for Option<T> {
-    type FfiType = RustBuffer;
-
     fn try_read(buf: &mut &[u8]) -> Result<Option<T>> {
         check_remaining(buf, 1)?;
         Ok(match buf.get_i8() {
@@ -287,10 +344,6 @@ unsafe impl<UT, T: Lift<UT>> Lift<UT> for Option<T> {
         })
     }
 
-    fn try_lift(buf: RustBuffer) -> Result<Option<T>> {
-        Self::try_lift_from_rust_buffer(buf)
-    }
-
     const TYPE_ID_META: MetadataBuffer =
         MetadataBuffer::from_code(metadata::codes::TYPE_OPTION).concat(T::TYPE_ID_META);
 }
@@ -304,100 +357,69 @@ unsafe impl<UT, T: Lift<UT>> Lift<UT> for Option<T> {
 
 
 
-
-unsafe impl<UT, T: Lower<UT>> Lower<UT> for Vec<T> {
-    type FfiType = RustBuffer;
+unsafe impl<UT, T: FfiConverter<UT>> FfiConverter<UT> for Vec<T> {
+    ffi_converter_rust_buffer_lift_and_lower!(UT);
+    ffi_converter_default_return!(UT);
 
     fn write(obj: Vec<T>, buf: &mut Vec<u8>) {
         
         let len = i32::try_from(obj.len()).unwrap();
         buf.put_i32(len); 
         for item in obj {
-            <T as Lower<UT>>::write(item, buf);
+            <T as FfiConverter<UT>>::write(item, buf);
         }
     }
-
-    fn lower(obj: Vec<T>) -> RustBuffer {
-        Self::lower_into_rust_buffer(obj)
-    }
-
-    const TYPE_ID_META: MetadataBuffer =
-        MetadataBuffer::from_code(metadata::codes::TYPE_VEC).concat(T::TYPE_ID_META);
-}
-
-
-
-
-
-
-unsafe impl<UT, T: Lift<UT>> Lift<UT> for Vec<T> {
-    type FfiType = RustBuffer;
 
     fn try_read(buf: &mut &[u8]) -> Result<Vec<T>> {
         check_remaining(buf, 4)?;
         let len = usize::try_from(buf.get_i32())?;
         let mut vec = Vec::with_capacity(len);
         for _ in 0..len {
-            vec.push(<T as Lift<UT>>::try_read(buf)?)
+            vec.push(<T as FfiConverter<UT>>::try_read(buf)?)
         }
         Ok(vec)
-    }
-
-    fn try_lift(buf: RustBuffer) -> Result<Vec<T>> {
-        Self::try_lift_from_rust_buffer(buf)
     }
 
     const TYPE_ID_META: MetadataBuffer =
         MetadataBuffer::from_code(metadata::codes::TYPE_VEC).concat(T::TYPE_ID_META);
 }
 
-unsafe impl<K, V, UT> Lower<UT> for HashMap<K, V>
+
+
+
+
+
+
+
+
+unsafe impl<K, V, UT> FfiConverter<UT> for HashMap<K, V>
 where
-    K: Lower<UT> + std::hash::Hash + Eq,
-    V: Lower<UT>,
+    K: FfiConverter<UT> + std::hash::Hash + Eq,
+    V: FfiConverter<UT>,
 {
-    type FfiType = RustBuffer;
+    ffi_converter_rust_buffer_lift_and_lower!(UT);
+    ffi_converter_default_return!(UT);
 
     fn write(obj: HashMap<K, V>, buf: &mut Vec<u8>) {
         
         let len = i32::try_from(obj.len()).unwrap();
         buf.put_i32(len); 
         for (key, value) in obj {
-            <K as Lower<UT>>::write(key, buf);
-            <V as Lower<UT>>::write(value, buf);
+            <K as FfiConverter<UT>>::write(key, buf);
+            <V as FfiConverter<UT>>::write(value, buf);
         }
     }
-
-    fn lower(obj: HashMap<K, V>) -> RustBuffer {
-        Self::lower_into_rust_buffer(obj)
-    }
-
-    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_HASH_MAP)
-        .concat(K::TYPE_ID_META)
-        .concat(V::TYPE_ID_META);
-}
-
-unsafe impl<K, V, UT> Lift<UT> for HashMap<K, V>
-where
-    K: Lift<UT> + std::hash::Hash + Eq,
-    V: Lift<UT>,
-{
-    type FfiType = RustBuffer;
 
     fn try_read(buf: &mut &[u8]) -> Result<HashMap<K, V>> {
         check_remaining(buf, 4)?;
         let len = usize::try_from(buf.get_i32())?;
         let mut map = HashMap::with_capacity(len);
         for _ in 0..len {
-            let key = <K as Lift<UT>>::try_read(buf)?;
-            let value = <V as Lift<UT>>::try_read(buf)?;
+            let key = <K as FfiConverter<UT>>::try_read(buf)?;
+            let value = <V as FfiConverter<UT>>::try_read(buf)?;
             map.insert(key, value);
         }
         Ok(map)
-    }
-
-    fn try_lift(buf: RustBuffer) -> Result<HashMap<K, V>> {
-        Self::try_lift_from_rust_buffer(buf)
     }
 
     const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_HASH_MAP)
@@ -410,7 +432,73 @@ where
 
 
 
-unsafe impl<UT> FfiConverter<UT> for ForeignExecutor {
+unsafe impl<UT, T: Interface<UT>> FfiConverter<UT> for std::sync::Arc<T> {
+    
+    type FfiType = *const std::os::raw::c_void;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn lower(obj: std::sync::Arc<T>) -> Self::FfiType {
+        std::sync::Arc::into_raw(obj) as Self::FfiType
+    }
+
+    
+    
+    
+    
+    
+    fn try_lift(v: Self::FfiType) -> Result<std::sync::Arc<T>> {
+        let v = v as *const T;
+        
+        let foreign_arc = std::mem::ManuallyDrop::new(unsafe { std::sync::Arc::<T>::from_raw(v) });
+        
+        Ok(std::sync::Arc::clone(&*foreign_arc))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn write(obj: std::sync::Arc<T>, buf: &mut Vec<u8>) {
+        static_assertions::const_assert!(std::mem::size_of::<*const std::ffi::c_void>() <= 8);
+        buf.put_u64(<Self as FfiConverter<UT>>::lower(obj) as u64);
+    }
+
+    
+    
+    
+    
+    
+    fn try_read(buf: &mut &[u8]) -> Result<std::sync::Arc<T>> {
+        static_assertions::const_assert!(std::mem::size_of::<*const std::ffi::c_void>() <= 8);
+        check_remaining(buf, 8)?;
+        <Self as FfiConverter<UT>>::try_lift(buf.get_u64() as Self::FfiType)
+    }
+
+    ffi_converter_default_return!(UT);
+
+    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_INTERFACE)
+        .concat_str(T::NAME)
+        .concat_bool(false);
+}
+
+
+
+
+
+
+unsafe impl<UT> FfiConverter<UT> for crate::ForeignExecutor {
     type FfiType = crate::ForeignExecutorHandle;
 
     
@@ -429,7 +517,7 @@ unsafe impl<UT> FfiConverter<UT> for ForeignExecutor {
     }
 
     fn try_lift(executor: Self::FfiType) -> Result<Self> {
-        Ok(ForeignExecutor::new(executor))
+        Ok(crate::ForeignExecutor::new(executor))
     }
 
     fn try_read(buf: &mut &[u8]) -> Result<Self> {
@@ -442,118 +530,69 @@ unsafe impl<UT> FfiConverter<UT> for ForeignExecutor {
         <Self as FfiConverter<UT>>::try_lift(crate::ForeignExecutorHandle(usize_val as *const ()))
     }
 
+    ffi_converter_default_return!(UT);
+
     const TYPE_ID_META: MetadataBuffer =
         MetadataBuffer::from_code(metadata::codes::TYPE_FOREIGN_EXECUTOR);
 }
 
-derive_ffi_traits!(blanket u8);
-derive_ffi_traits!(blanket i8);
-derive_ffi_traits!(blanket u16);
-derive_ffi_traits!(blanket i16);
-derive_ffi_traits!(blanket u32);
-derive_ffi_traits!(blanket i32);
-derive_ffi_traits!(blanket u64);
-derive_ffi_traits!(blanket i64);
-derive_ffi_traits!(blanket f32);
-derive_ffi_traits!(blanket f64);
-derive_ffi_traits!(blanket bool);
-derive_ffi_traits!(blanket String);
-derive_ffi_traits!(blanket Duration);
-derive_ffi_traits!(blanket SystemTime);
-derive_ffi_traits!(blanket ForeignExecutor);
 
 
 
 
+unsafe impl<UT, R, E> FfiConverter<UT> for Result<R, E>
+where
+    R: FfiConverter<UT>,
+    E: FfiConverter<UT>,
+{
+    type FfiType = (); 
+    type ReturnType = R::ReturnType;
+    type FutureCallback = R::FutureCallback;
 
-derive_ffi_traits!(impl<T, UT> LowerReturn<UT> for Option<T> where Option<T>: Lower<UT>);
-derive_ffi_traits!(impl<T, UT> LiftReturn<UT> for Option<T> where Option<T>: Lift<UT>);
-derive_ffi_traits!(impl<T, UT> LiftRef<UT> for Option<T> where Option<T>: Lift<UT>);
-
-derive_ffi_traits!(impl<T, UT> LowerReturn<UT> for Vec<T> where Vec<T>: Lower<UT>);
-derive_ffi_traits!(impl<T, UT> LiftReturn<UT> for Vec<T> where Vec<T>: Lift<UT>);
-derive_ffi_traits!(impl<T, UT> LiftRef<UT> for Vec<T> where Vec<T>: Lift<UT>);
-
-derive_ffi_traits!(impl<K, V, UT> LowerReturn<UT> for HashMap<K, V> where HashMap<K, V>: Lower<UT>);
-derive_ffi_traits!(impl<K, V, UT> LiftReturn<UT> for HashMap<K, V> where HashMap<K, V>: Lift<UT>);
-derive_ffi_traits!(impl<K, V, UT> LiftRef<UT> for HashMap<K, V> where HashMap<K, V>: Lift<UT>);
-
-
-derive_ffi_traits!(impl<T, UT> Lower<UT> for Arc<T> where Arc<T>: FfiConverter<UT>, T: ?Sized);
-derive_ffi_traits!(impl<T, UT> Lift<UT> for Arc<T> where Arc<T>: FfiConverter<UT>, T: ?Sized);
-derive_ffi_traits!(impl<T, UT> LowerReturn<UT> for Arc<T> where Arc<T>: Lower<UT>, T: ?Sized);
-derive_ffi_traits!(impl<T, UT> LiftReturn<UT> for Arc<T> where Arc<T>: Lift<UT>, T: ?Sized);
-derive_ffi_traits!(impl<T, UT> LiftRef<UT> for Arc<T> where Arc<T>: Lift<UT>, T: ?Sized);
-
-
-
-unsafe impl<UT> LowerReturn<UT> for () {
-    type ReturnType = ();
-
-    fn lower_return(_: ()) -> Result<Self::ReturnType, RustBuffer> {
-        Ok(())
+    fn try_lift(_: Self::FfiType) -> Result<Self> {
+        unimplemented!("try_lift");
     }
 
-    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_UNIT);
-}
+    fn lower(_: Self) -> Self::FfiType {
+        unimplemented!("lower");
+    }
 
-unsafe impl<UT> LiftReturn<UT> for () {
-    fn lift_callback_return(_buf: RustBuffer) -> Self {}
+    fn write(_: Self, _: &mut Vec<u8>) {
+        unimplemented!("write");
+    }
 
-    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_UNIT);
-}
-
-
-
-
-unsafe impl<UT, R, E> LowerReturn<UT> for Result<R, E>
-where
-    R: LowerReturn<UT>,
-    E: Lower<UT> + Error + Send + Sync + 'static,
-{
-    type ReturnType = R::ReturnType;
+    fn try_read(_: &mut &[u8]) -> Result<Self> {
+        unimplemented!("try_read");
+    }
 
     fn lower_return(v: Self) -> Result<Self::ReturnType, RustBuffer> {
         match v {
             Ok(r) => R::lower_return(r),
-            Err(e) => Err(E::lower_into_rust_buffer(e)),
+            Err(e) => Err(lower_into_rust_buffer(e)),
         }
     }
 
-    fn handle_failed_lift(arg_name: &str, err: anyhow::Error) -> Self {
-        match err.downcast::<E>() {
-            Ok(actual_error) => Err(actual_error),
-            Err(ohno) => panic!("Failed to convert arg '{arg_name}': {ohno}"),
-        }
-    }
-
-    const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_RESULT)
-        .concat(R::TYPE_ID_META)
-        .concat(E::TYPE_ID_META);
-}
-
-unsafe impl<UT, R, E> LiftReturn<UT> for Result<R, E>
-where
-    R: LiftReturn<UT>,
-    E: Lift<UT> + ConvertError<UT>,
-{
     fn lift_callback_return(buf: RustBuffer) -> Self {
-        Ok(R::lift_callback_return(buf))
+        Ok(try_lift_from_rust_buffer::<R, UT>(buf)
+            .expect("Error reading callback interface result"))
     }
 
     fn lift_callback_error(buf: RustBuffer) -> Self {
-        match E::try_lift_from_rust_buffer(buf) {
-            Ok(lifted_error) => Err(lifted_error),
-            Err(anyhow_error) => {
-                Self::handle_callback_unexpected_error(UnexpectedUniFFICallbackError {
-                    reason: format!("Error lifting from rust buffer: {anyhow_error}"),
-                })
-            }
-        }
+        Err(try_lift_from_rust_buffer::<E, UT>(buf)
+            .expect("Error reading callback interface Err result"))
     }
 
     fn handle_callback_unexpected_error(e: UnexpectedUniFFICallbackError) -> Self {
-        Err(E::try_convert_unexpected_callback_error(e).unwrap_or_else(|e| panic!("{e}")))
+        Err(E::handle_callback_unexpected_error(e))
+    }
+
+    fn invoke_future_callback(
+        callback: Self::FutureCallback,
+        callback_data: *const (),
+        return_value: Self::ReturnType,
+        call_status: RustCallStatus,
+    ) {
+        R::invoke_future_callback(callback, callback_data, return_value, call_status)
     }
 
     const TYPE_ID_META: MetadataBuffer = MetadataBuffer::from_code(metadata::codes::TYPE_RESULT)

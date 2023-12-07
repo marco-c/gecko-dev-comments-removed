@@ -2,8 +2,7 @@
 
 
 
-use super::CodeType;
-use crate::backend::Literal;
+use crate::backend::{CodeType, Literal};
 
 #[derive(Debug)]
 pub struct RecordCodeType {

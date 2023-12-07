@@ -2,12 +2,11 @@
 
 
 
-use super::CodeType;
-use crate::backend::Literal;
-use crate::interface::{ComponentInterface, Radix, Type};
+use crate::backend::{CodeType, Literal};
+use crate::interface::{types::Type, Radix};
 use paste::paste;
 
-fn render_literal(literal: &Literal, _ci: &ComponentInterface) -> String {
+fn render_literal(literal: &Literal) -> String {
     fn typed_number(type_: &Type, num_str: String) -> String {
         match type_ {
             
@@ -55,16 +54,12 @@ macro_rules! impl_code_type_for_primitive {
             pub struct $T;
 
             impl CodeType for $T  {
-                fn type_label(&self, _ci: &ComponentInterface) -> String {
+                fn type_label(&self) -> String {
                     $class_name.into()
                 }
 
-                fn canonical_name(&self) -> String {
-                    $class_name.into()
-                }
-
-                fn literal(&self, literal: &Literal, ci: &ComponentInterface) -> String {
-                    render_literal(&literal, ci)
+                fn literal(&self, literal: &Literal) -> String {
+                    render_literal(&literal)
                 }
             }
         }
