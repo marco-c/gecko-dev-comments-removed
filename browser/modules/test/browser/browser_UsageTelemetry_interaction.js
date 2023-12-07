@@ -76,6 +76,7 @@ add_task(async function toolbarButtons() {
       CustomizableUI.createWidget({
         
         id: "12foo",
+        label: "12foo",
         onCreated: resolve,
         defaultArea: "nav-bar",
       });
@@ -94,9 +95,17 @@ add_task(async function toolbarButtons() {
       });
     }
 
+    
+    
+    
+    
+    AccessibilityUtils.setEnv({
+      mustBeEnabled: false,
+    });
     click("stop-reload-button");
     click("back-button");
     click("back-button");
+    AccessibilityUtils.resetEnv();
 
     
     gTabsPanel.initElements();
