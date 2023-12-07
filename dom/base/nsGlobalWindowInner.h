@@ -1100,6 +1100,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   
   
+  bool IsInFullScreenTransition();
+
+  
+  
   
   void StorageAccessPermissionChanged();
 

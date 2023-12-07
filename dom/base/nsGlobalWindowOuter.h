@@ -1102,6 +1102,10 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
     nsWeakPtr mFullscreenPresShell;
   } mChromeFields;
 
+  
+  
+  bool mIsInFullScreenTransition = false;
+
   friend class nsDOMWindowUtils;
   friend class mozilla::dom::BrowsingContext;
   friend class mozilla::dom::PostMessageEvent;
