@@ -550,7 +550,8 @@ nsThread::nsThread(NotNull<SynchronizedEventQueue*> aQueue,
 #ifdef EARLY_BETA_OR_EARLIER
       mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
-      mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
+      mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread,
+                               aOptions.longTaskLength) {
 #if !(defined(XP_WIN) || defined(XP_MACOSX))
   MOZ_ASSERT(!mIsUiThread,
              "Non-main UI threads are only supported on Windows and macOS");
@@ -581,7 +582,7 @@ nsThread::nsThread()
 #ifdef EARLY_BETA_OR_EARLIER
       mLastWakeupCheckTime(TimeStamp::Now()),
 #endif
-      mPerformanceCounterState(mNestedEventLoopDepth, mIsMainThread) {
+      mPerformanceCounterState(mNestedEventLoopDepth) {
   MOZ_ASSERT(!NS_IsMainThread());
 }
 
@@ -1458,7 +1459,9 @@ void nsThreadShutdownContext::MarkCompleted() {
 namespace mozilla {
 PerformanceCounterState::Snapshot PerformanceCounterState::RunnableWillRun(
     TimeStamp aNow, bool aIsIdleRunnable) {
-  if (IsNestedRunnable()) {
+  if (mIsMainThread && IsNestedRunnable()) {
+    
+    
     
     
     MaybeReportAccumulatedTime("nested runnable"_ns, aNow);
@@ -1482,10 +1485,10 @@ void PerformanceCounterState::RunnableDidRun(const nsCString& aName,
   
   
   TimeStamp now;
-  if (mIsMainThread || IsNestedRunnable()) {
+  if (mLongTaskLength.isSome() || IsNestedRunnable()) {
     now = TimeStamp::Now();
   }
-  if (mIsMainThread) {
+  if (mLongTaskLength.isSome()) {
     MaybeReportAccumulatedTime(aName, now);
   }
 
@@ -1505,9 +1508,7 @@ void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
                                                          TimeStamp aNow) {
   MOZ_ASSERT(mCurrentTimeSliceStart,
              "How did we get here if we're not in a timeslice?");
-
-  if (!mIsMainThread) {
-    
+  if (!mLongTaskLength.isSome()) {
     return;
   }
 
@@ -1520,7 +1521,7 @@ void PerformanceCounterState::MaybeReportAccumulatedTime(const nsCString& aName,
 #endif
 
   
-  if (mIsMainThread && duration.ToMilliseconds() > LONGTASK_BUSY_WINDOW_MS) {
+  if (duration.ToMilliseconds() >= mLongTaskLength.value()) {
     
     if (!mCurrentRunnableIsIdleRunnable) {
       mLastLongNonIdleTaskEnd = aNow;
