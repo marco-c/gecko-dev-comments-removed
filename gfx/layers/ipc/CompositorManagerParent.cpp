@@ -47,14 +47,16 @@ CompositorManagerParent::CreateSameProcess() {
   
   
   
-  RefPtr<CompositorManagerParent> parent = new CompositorManagerParent();
+  RefPtr<CompositorManagerParent> parent =
+      new CompositorManagerParent(dom::ContentParentId());
   parent->SetOtherProcessId(base::GetCurrentProcId());
   return parent.forget();
 }
 
 
 bool CompositorManagerParent::Create(
-    Endpoint<PCompositorManagerParent>&& aEndpoint, bool aIsRoot) {
+    Endpoint<PCompositorManagerParent>&& aEndpoint,
+    dom::ContentParentId aChildId, bool aIsRoot) {
   MOZ_ASSERT(NS_IsMainThread());
 
   
@@ -65,7 +67,8 @@ bool CompositorManagerParent::Create(
     return false;
   }
 
-  RefPtr<CompositorManagerParent> bridge = new CompositorManagerParent();
+  RefPtr<CompositorManagerParent> bridge =
+      new CompositorManagerParent(aChildId);
 
   RefPtr<Runnable> runnable =
       NewRunnableMethod<Endpoint<PCompositorManagerParent>&&, bool>(
@@ -115,8 +118,10 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
   return bridge.forget();
 }
 
-CompositorManagerParent::CompositorManagerParent()
-    : mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()) {}
+CompositorManagerParent::CompositorManagerParent(
+    dom::ContentParentId aContentId)
+    : mContentId(aContentId),
+      mCompositorThreadHolder(CompositorThreadHolder::GetSingleton()) {}
 
 CompositorManagerParent::~CompositorManagerParent() = default;
 

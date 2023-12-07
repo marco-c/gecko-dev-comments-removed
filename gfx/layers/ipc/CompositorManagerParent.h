@@ -12,6 +12,7 @@
 #include "mozilla/StaticPtr.h"    
 #include "mozilla/StaticMutex.h"  
 #include "mozilla/RefPtr.h"       
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/PCompositorManagerParent.h"
 #include "nsTArray.h"  
 
@@ -31,7 +32,7 @@ class CompositorManagerParent final : public PCompositorManagerParent {
  public:
   static already_AddRefed<CompositorManagerParent> CreateSameProcess();
   static bool Create(Endpoint<PCompositorManagerParent>&& aEndpoint,
-                     bool aIsRoot);
+                     dom::ContentParentId aContentId, bool aIsRoot);
   static void Shutdown();
 
   static already_AddRefed<CompositorBridgeParent>
@@ -63,6 +64,8 @@ class CompositorManagerParent final : public PCompositorManagerParent {
 
   static void NotifyWebRenderError(wr::WebRenderError aError);
 
+  const dom::ContentParentId& GetContentId() const { return mContentId; }
+
  private:
   static StaticRefPtr<CompositorManagerParent> sInstance;
   static StaticMutex sMutex MOZ_UNANNOTATED;
@@ -72,12 +75,14 @@ class CompositorManagerParent final : public PCompositorManagerParent {
   static void ShutdownInternal();
 #endif
 
-  CompositorManagerParent();
+  explicit CompositorManagerParent(dom::ContentParentId aChildId);
   virtual ~CompositorManagerParent();
 
   void Bind(Endpoint<PCompositorManagerParent>&& aEndpoint, bool aIsRoot);
 
   void DeferredDestroy();
+
+  dom::ContentParentId mContentId;
 
   RefPtr<CompositorThreadHolder> mCompositorThreadHolder;
 

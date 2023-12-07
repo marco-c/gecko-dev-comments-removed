@@ -18,6 +18,7 @@
 #include "mozilla/Attributes.h"  
 #include "mozilla/DebugOnly.h"
 #include "mozilla/RefPtr.h"  
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/2D.h"  
 #include "mozilla/gfx/CriticalSection.h"
 #include "mozilla/gfx/Point.h"  
@@ -554,7 +555,8 @@ class TextureClient : public AtomicRefCountedWithFinalize<TextureClient> {
 
 
 
-  bool InitIPDLActor(KnowsCompositor* aKnowsCompositor);
+  bool InitIPDLActor(KnowsCompositor* aKnowsCompositor,
+                     const dom::ContentParentId& aContentId);
 
   
 

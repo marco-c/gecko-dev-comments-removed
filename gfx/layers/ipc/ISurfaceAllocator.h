@@ -10,6 +10,7 @@
 #include <stddef.h>  
 #include <stdint.h>  
 #include "gfxTypes.h"
+#include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/gfx/Point.h"         
 #include "mozilla/ipc/SharedMemory.h"  
 #include "mozilla/RefPtr.h"
@@ -100,6 +101,8 @@ class ISurfaceAllocator {
   virtual bool UsesImageBridge() const { return false; }
 
   virtual bool UsesWebRenderBridge() const { return false; }
+
+  virtual dom::ContentParentId GetContentId() { return dom::ContentParentId(); }
 
  protected:
   void Finalize() {}

@@ -520,7 +520,10 @@ void WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize) {
     return;
   }
 
-  texture->InitIPDLActor(WrBridge());
+  
+  
+  
+  texture->InitIPDLActor(WrBridge(), dom::ContentParentId());
   if (!texture->GetIPDLActor()) {
     return;
   }
