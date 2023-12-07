@@ -486,6 +486,18 @@ void ExternalEngineStateMachine::CheckIfSeekCompleted() {
     return;
   }
 
+  
+  
+  
+  
+  if (state->GetTargetTime() != mCurrentPosition) {
+    LOG("Force adjusting current time (%" PRId64
+        ") to match to target (%" PRId64 ")",
+        mCurrentPosition.Ref().ToMicroseconds(),
+        state->GetTargetTime().ToMicroseconds());
+    mCurrentPosition = state->GetTargetTime();
+  }
+
   LOG("Seek completed");
   state->Resolve(__func__);
   mOnPlaybackEvent.Notify(MediaPlaybackEvent::Invalidate);
