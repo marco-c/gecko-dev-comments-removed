@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/messagehandler/MessageHandler.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   EventPromise: "chrome://remote/content/shared/Sync.sys.mjs",
+  getTimeoutMultiplier: "chrome://remote/content/shared/AppInfo.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   modal: "chrome://remote/content/shared/Prompt.sys.mjs",
   registerNavigationId:
@@ -1143,7 +1144,7 @@ class BrowsingContextModule extends Module {
       },
       {
         errorMessage: `History was not updated for index "${targetIndex}"`,
-        timeout: TIMEOUT_SET_HISTORY_INDEX,
+        timeout: TIMEOUT_SET_HISTORY_INDEX * lazy.getTimeoutMultiplier(),
       }
     );
   }
@@ -1205,6 +1206,63 @@ class BrowsingContextModule extends Module {
       );
     }
 
+    // If WaitCondition is Complete, we should try to wait for the corresponding
+    // responseCompleted event to be received.
+    let onNavigationRequestCompleted;
+
+    // However, a navigation will not necessarily have network events.
+    // For instance: same document navigation, or when using file or data
+    // protocols (for which we don't have network events yet).
+    // Therefore we will not unconditionally wait for a navigation request and
+    // this flag should only be set when a responseCompleted event should be
+    // expected.
+    let shouldWaitForNavigationRequest = false;
+
+    // Cleaning up the listeners will be done at the end of this method.
+    let unsubscribeNavigationListeners;
+
+    if (wait === WaitCondition.Complete) {
+      let resolveOnNetworkEvent;
+      onNavigationRequestCompleted = new Promise(
+        r => (resolveOnNetworkEvent = r)
+      );
+      const onBeforeRequestSent = (name, data) => {
+        if (data.navigation) {
+          shouldWaitForNavigationRequest = true;
+        }
+      };
+      const onResponseCompleted = (name, data) => {
+        if (data.navigation) {
+          resolveOnNetworkEvent();
+        }
+      };
+
+      await this.messageHandler.eventsDispatcher.on(
+        "network._beforeRequestSent",
+        contextDescriptor,
+        onBeforeRequestSent
+      );
+      await this.messageHandler.eventsDispatcher.on(
+        "network._responseCompleted",
+        contextDescriptor,
+        onResponseCompleted
+      );
+
+      unsubscribeNavigationListeners = async () => {
+        await this.messageHandler.eventsDispatcher.off(
+          "network._beforeRequestSent",
+          contextDescriptor,
+          onBeforeRequestSent
+        );
+
+        await this.messageHandler.eventsDispatcher.off(
+          "network._responseCompleted",
+          contextDescriptor,
+          onResponseCompleted
+        );
+      };
+    }
+
     const navigated = listener.start();
     navigated.finally(async () => {
       if (listener.isStarted) {
@@ -1217,6 +1275,14 @@ class BrowsingContextModule extends Module {
           contextDescriptor,
           onDocumentInteractive
         );
+      } else if (
+        wait === WaitCondition.Complete &&
+        shouldWaitForNavigationRequest
+      ) {
+        // We still need to make sure the navigation request has been received
+        // before performing the cleanup.
+        await onNavigationRequestCompleted;
+        await unsubscribeNavigationListeners();
       }
     });
 
@@ -1226,6 +1292,10 @@ class BrowsingContextModule extends Module {
 
     await startNavigationFn();
     await navigated;
+
+    if (shouldWaitForNavigationRequest) {
+      await onNavigationRequestCompleted;
+    }
 
     let url;
     if (wait === WaitCondition.None) {
