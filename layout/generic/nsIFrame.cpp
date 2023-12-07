@@ -732,6 +732,12 @@ void nsIFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   if (!IsPlaceholderFrame() && !aPrevInFlow) {
     UpdateVisibleDescendantsState();
   }
+
+  if (!aPrevInFlow && HasAnyStateBits(NS_FRAME_IS_NONDISPLAY)) {
+    
+    
+    SVGObserverUtils::InvalidateRenderingObservers(this);
+  }
 }
 
 void nsIFrame::InitPrimaryFrame() {
