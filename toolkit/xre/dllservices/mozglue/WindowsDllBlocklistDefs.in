@@ -339,6 +339,10 @@ BROWSER_PROCESS += [
 
     
     DllBlocklistEntry("fwcwsp64.dll", (7, 0, 7734, 100)),
+
+    
+    
+    DllBlocklistEntry("UsrDNIeCertStore.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
