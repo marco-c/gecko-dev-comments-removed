@@ -47,13 +47,13 @@ class CompoundWidgetSiblingRule : public PivotRule {
 };
 
 AccGroupInfo::AccGroupInfo(const Accessible* aItem, role aRole)
-    : mPosInSet(0), mSetSize(0), mParent(nullptr), mItem(aItem), mRole(aRole) {
+    : mPosInSet(0), mSetSize(0), mParentId(0), mItem(aItem), mRole(aRole) {
   MOZ_COUNT_CTOR(AccGroupInfo);
   Update();
 }
 
 void AccGroupInfo::Update() {
-  mParent = nullptr;
+  mParentId = 0;
 
   Accessible* parent = mItem->GetNonGenericParent();
   if (!parent) {
@@ -89,7 +89,7 @@ void AccGroupInfo::Update() {
     
     const int32_t siblingLevel = GetARIAOrDefaultLevel(candidateSibling);
     if (siblingLevel < level) {
-      mParent = candidateSibling;
+      mParentId = candidateSibling->ID();
       break;
     }
 
@@ -102,7 +102,7 @@ void AccGroupInfo::Update() {
     
     if (siblingGroupInfo) {
       mPosInSet += siblingGroupInfo->mPosInSet;
-      mParent = siblingGroupInfo->mParent;
+      mParentId = siblingGroupInfo->mParentId;
       mSetSize = siblingGroupInfo->mSetSize;
       return;
     }
@@ -142,7 +142,7 @@ void AccGroupInfo::Update() {
     
     
     if (siblingGroupInfo) {
-      mParent = siblingGroupInfo->mParent;
+      mParentId = siblingGroupInfo->mParentId;
       mSetSize = siblingGroupInfo->mSetSize;
       return;
     }
@@ -150,13 +150,13 @@ void AccGroupInfo::Update() {
     mSetSize++;
   }
 
-  if (mParent) {
+  if (mParentId) {
     return;
   }
 
   roles::Role parentRole = parent->Role();
   if (ShouldReportRelations(mRole, parentRole)) {
-    mParent = parent;
+    mParentId = parent->ID();
   }
 
   
@@ -177,7 +177,7 @@ void AccGroupInfo::Update() {
     CompoundWidgetSiblingRule parentSiblingRule{mRole};
     Accessible* parentPrevSibling = pivot.Prev(parent, widgetSiblingRule);
     if (parentPrevSibling && parentPrevSibling->Role() == mRole) {
-      mParent = parentPrevSibling;
+      mParentId = parentPrevSibling->ID();
       return;
     }
   }
@@ -188,7 +188,7 @@ void AccGroupInfo::Update() {
   if (mRole == roles::LISTITEM || mRole == roles::OUTLINEITEM) {
     Accessible* grandParent = parent->GetNonGenericParent();
     if (grandParent && grandParent->Role() == mRole) {
-      mParent = grandParent;
+      mParentId = grandParent->ID();
     }
   }
 }
@@ -369,6 +369,18 @@ int32_t AccGroupInfo::GetARIAOrDefaultLevel(const Accessible* aAccessible) {
   if (level != 0) return level;
 
   return aAccessible->GetLevel(true);
+}
+
+Accessible* AccGroupInfo::ConceptualParent() const {
+  if (!mParentId) {
+    
+    return nullptr;
+  }
+  if (Accessible* doc =
+          nsAccUtils::DocumentFor(const_cast<Accessible*>(mItem))) {
+    return nsAccUtils::GetAccessibleByID(doc, mParentId);
+  }
+  return nullptr;
 }
 
 static role BaseRole(role aRole) {

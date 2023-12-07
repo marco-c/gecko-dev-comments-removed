@@ -39,7 +39,7 @@ class AccGroupInfo {
 
 
 
-  Accessible* ConceptualParent() const { return mParent; }
+  Accessible* ConceptualParent() const;
 
   
 
@@ -90,7 +90,7 @@ class AccGroupInfo {
 
   uint32_t mPosInSet;
   uint32_t mSetSize;
-  Accessible* mParent;
+  uint64_t mParentId;
   const Accessible* mItem;
   a11y::role mRole;
 };
