@@ -1734,7 +1734,7 @@ var gMainPane = {
   
 
 
-  setDefaultBrowser() {
+  async setDefaultBrowser() {
     if (AppConstants.HAVE_SHELL_SERVICE) {
       let alwaysCheckPref = Preferences.get(
         "browser.shell.checkDefaultBrowser"
@@ -1748,11 +1748,20 @@ var gMainPane = {
       if (!shellSvc) {
         return;
       }
+
+      
+      
+      let setDefaultButton = document.getElementById("setDefaultButton");
+      setDefaultButton.disabled = true;
+
       try {
-        shellSvc.setDefaultBrowser(false);
+        await shellSvc.setDefaultBrowser(false);
       } catch (ex) {
         console.error(ex);
         return;
+      } finally {
+        
+        setDefaultButton.disabled = false;
       }
 
       let isDefault = shellSvc.isDefaultBrowser(false, true);
