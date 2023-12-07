@@ -1232,7 +1232,11 @@ void nsCocoaWindow::SetTransparencyMode(TransparencyMode aMode) {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   
-  if (!mWindow || mWindowType != WindowType::Popup) {
+  
+  
+  BOOL isAlwaysOnTopDialog =
+      (mWindowType == WindowType::Dialog && mAlwaysOnTop);
+  if (!mWindow || (mWindowType != WindowType::Popup && !isAlwaysOnTopDialog)) {
     return;
   }
 
