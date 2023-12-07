@@ -2583,7 +2583,10 @@ class NavigationDelegateTest : BaseSessionTest() {
         )
 
         val extension = sessionRule.waitForResult(
-            controller.install("https://example.org/tests/junit/page-history.xpi"),
+            controller.install(
+                "https://example.org/tests/junit/page-history.xpi",
+                null,
+            ),
         )
 
         

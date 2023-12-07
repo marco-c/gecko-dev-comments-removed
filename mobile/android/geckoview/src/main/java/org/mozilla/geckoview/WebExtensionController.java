@@ -11,6 +11,7 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.StringDef;
 import androidx.annotation.UiThread;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -615,13 +616,16 @@ public class WebExtensionController {
 
 
 
+
   @NonNull
   @AnyThread
-  public GeckoResult<WebExtension> install(final @NonNull String uri) {
+  public GeckoResult<WebExtension> install(
+      final @NonNull String uri, final @Nullable @InstallationMethod String installationMethod) {
     final InstallCanceller canceller = new InstallCanceller();
     final GeckoBundle bundle = new GeckoBundle(2);
     bundle.putString("locationUri", uri);
     bundle.putString("installId", canceller.installId);
+    bundle.putString("installMethod", installationMethod);
 
     final GeckoResult<WebExtension> result =
         EventDispatcher.getInstance()
@@ -633,6 +637,54 @@ public class WebExtensionController {
     result.setCancellationDelegate(canceller);
     return result;
   }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @NonNull
+  @AnyThread
+  public GeckoResult<WebExtension> install(final @NonNull String uri) {
+    return install(uri, null);
+  }
+
+  
+  @Retention(RetentionPolicy.SOURCE)
+  @StringDef({INSTALLATION_METHOD_MANAGER, INSTALLATION_METHOD_FROM_FILE})
+  public @interface InstallationMethod {};
+
+  
+  public static final String INSTALLATION_METHOD_MANAGER = "manager";
+
+  
+  public static final String INSTALLATION_METHOD_FROM_FILE = "install-from-file";
 
   
 
