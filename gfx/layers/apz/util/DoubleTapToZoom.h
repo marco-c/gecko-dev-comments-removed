@@ -74,8 +74,9 @@ struct DoubleTapToZoomMetrics {
 
 
 
+
 ZoomTarget CalculateRectToZoomTo(
-    const RefPtr<mozilla::dom::Document>& aRootContentDocument,
+    const RefPtr<mozilla::dom::Document>& aInProcessRootContentDocument,
     const CSSPoint& aPoint, const DoubleTapToZoomMetrics& aMetrics);
 
 }  
