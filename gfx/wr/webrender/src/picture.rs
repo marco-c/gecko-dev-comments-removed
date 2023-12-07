@@ -2464,19 +2464,29 @@ impl TileCacheInstance {
         }
 
         
-        if surface_kind == CompositorSurfaceKind::Overlay {
-            
-            
-            if sub_slice_index == self.sub_slices.len() - 1 {
-                return SurfacePromotionResult::Failed;
-            }
+        match surface_kind {
+            CompositorSurfaceKind::Overlay => {
+                
+                
+                
+                if sub_slice_index == self.sub_slices.len() - 1 {
+                    return SurfacePromotionResult::Failed;
+                }
 
-            
-            
-            
-            if prim_clip_chain.needs_mask {
-                return SurfacePromotionResult::Failed;
+                
+                
+                
+                if prim_clip_chain.needs_mask {
+                    return SurfacePromotionResult::Failed;
+                }
             }
+            CompositorSurfaceKind::Underlay => {
+                
+                if prim_clip_chain.needs_mask && self.backdrop.kind.is_none() {
+                    return SurfacePromotionResult::Failed;
+                }
+            }
+            CompositorSurfaceKind::Blit => unreachable!(),
         }
 
         
