@@ -259,7 +259,7 @@ subsetTest(promise_test, async test => {
     
     `browserSignals.interestGroupName === undefined`,
     
-    `browserSignals.interestGroupName === ''`
+    `browserSignals.interestGroupName === "default name"`
   );
 }, 'browserSignals.interestGroupName test.');
 

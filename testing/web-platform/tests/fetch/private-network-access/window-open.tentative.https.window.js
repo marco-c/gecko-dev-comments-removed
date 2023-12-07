@@ -6,11 +6,6 @@
 
 
 
-
-
-
-
-
 setup(() => {
   assert_true(window.isSecureContext);
 });
@@ -19,23 +14,24 @@ setup(() => {
 
 
 
-subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_LOCAL },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "local to local: no preflight required.");
 
-subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_PRIVATE },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "local to private: no preflight required.");
 
-subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_PUBLIC },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "local to public: no preflight required.");
+
 
 
 
@@ -68,7 +64,7 @@ function makePreflightTests({
       server: targetServer,
       behavior: { preflight: PreflightBehavior.failure() },
     },
-    expected: NavigationTestResult.FAILURE,
+    expected: WindowOpenTestResult.FAILURE,
   }), prefix + "failed preflight.");
 
   promise_test_parallel(t => windowOpenTest(t, {
@@ -77,7 +73,7 @@ function makePreflightTests({
       server: targetServer,
       behavior: { preflight: PreflightBehavior.noCorsHeader(token()) },
     },
-    expected: NavigationTestResult.FAILURE,
+    expected: WindowOpenTestResult.FAILURE,
   }), prefix + "missing CORS headers.");
 
   promise_test_parallel(t => windowOpenTest(t, {
@@ -86,16 +82,16 @@ function makePreflightTests({
       server: targetServer,
       behavior: { preflight: PreflightBehavior.noPnaHeader(token()) },
     },
-    expected: NavigationTestResult.FAILURE,
+    expected: WindowOpenTestResult.FAILURE,
   }), prefix + "missing PNA header.");
 
   promise_test_parallel(t => windowOpenTest(t, {
     source,
     target: {
       server: targetServer,
-      behavior: { preflight: PreflightBehavior.navigation(token()) },
+      behavior: { preflight: PreflightBehavior.success(token()) },
     },
-    expected: NavigationTestResult.SUCCESS,
+    expected: WindowOpenTestResult.SUCCESS,
   }), prefix + "success.");
 }
 
@@ -104,23 +100,23 @@ function makePreflightTests({
 
 
 
-subsetTestByKey('from-private', makePreflightTests, {
+makePreflightTests({
   sourceServer: Server.HTTPS_PRIVATE,
   sourceName: 'private',
   targetServer: Server.HTTPS_LOCAL,
   targetName: 'local',
 });
 
-subsetTestByKey("from-private", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: { server: Server.HTTPS_PRIVATE },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "private to private: no preflight required.");
 
-subsetTestByKey("from-private", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: { server: Server.HTTPS_PUBLIC },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "private to public: no preflight required.");
 
 
@@ -128,30 +124,30 @@ subsetTestByKey("from-private", promise_test_parallel, t => windowOpenTest(t, {
 
 
 
-subsetTestByKey('from-public', makePreflightTests, {
+makePreflightTests({
   sourceServer: Server.HTTPS_PUBLIC,
   sourceName: "public",
   targetServer: Server.HTTPS_LOCAL,
   targetName: "local",
 });
 
-subsetTestByKey('from-public', makePreflightTests, {
+makePreflightTests({
   sourceServer: Server.HTTPS_PUBLIC,
   sourceName: "public",
   targetServer: Server.HTTPS_PRIVATE,
   targetName: "private",
 });
 
-subsetTestByKey("from-public", promise_test_parallel, t => windowOpenTest(t, {
+promise_test_parallel(t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: { server: Server.HTTPS_PUBLIC },
-  expected: NavigationTestResult.SUCCESS,
+  expected: WindowOpenTestResult.SUCCESS,
 }), "public to public: no preflight required.");
 
 
 
 
-subsetTestByKey('from-treat-as-public', makePreflightTests, {
+makePreflightTests({
   sourceServer: Server.HTTPS_LOCAL,
   sourceTreatAsPublic: true,
   sourceName: "treat-as-public-address",
@@ -159,18 +155,18 @@ subsetTestByKey('from-treat-as-public', makePreflightTests, {
   targetName: "local",
 });
 
-subsetTestByKey("from-treat-as-public", promise_test_parallel,
+promise_test_parallel(
     t => windowOpenTest(t, {
       source: {
         server: Server.HTTPS_LOCAL,
         treatAsPublic: true,
       },
       target: {server: Server.HTTPS_LOCAL},
-      expected: NavigationTestResult.SUCCESS,
+      expected: WindowOpenTestResult.SUCCESS,
     }),
     'treat-as-public-address to local (same-origin): no preflight required.');
 
-subsetTestByKey('from-treat-as-public', makePreflightTests, {
+makePreflightTests({
   sourceServer: Server.HTTPS_LOCAL,
   sourceTreatAsPublic: true,
   sourceName: 'treat-as-public-address',
@@ -178,14 +174,14 @@ subsetTestByKey('from-treat-as-public', makePreflightTests, {
   targetName: 'private',
 });
 
-subsetTestByKey("from-treat-as-public", promise_test_parallel,
+promise_test_parallel(
     t => windowOpenTest(t, {
       source: {
         server: Server.HTTPS_LOCAL,
         treatAsPublic: true,
       },
       target: {server: Server.HTTPS_PUBLIC},
-      expected: NavigationTestResult.SUCCESS,
+      expected: WindowOpenTestResult.SUCCESS,
     }),
     'treat-as-public-address to public: no preflight required.');
 
@@ -199,6 +195,6 @@ promise_test_parallel(
         server: Server.HTTPS_PUBLIC,
         behavior: {preflight: PreflightBehavior.optionalSuccess(token())}
       },
-      expected: NavigationTestResult.SUCCESS,
+      expected: WindowOpenTestResult.SUCCESS,
     }),
     'treat-as-public-address to local: optional preflight');
