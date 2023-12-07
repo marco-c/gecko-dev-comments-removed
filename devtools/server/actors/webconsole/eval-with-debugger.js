@@ -109,11 +109,13 @@ function isObject(value) {
 
 
 function evalWithDebugger(string, options = {}, webConsole) {
-  if (string.trim() === "?") {
+  const trimmedString = string.trim();
+  
+  if (trimmedString === "?") {
     return evalWithDebugger(":help", options, webConsole);
   }
 
-  const isCmd = isCommand(string.trim());
+  const isCmd = isCommand(trimmedString);
 
   if (isCmd && options.eager) {
     return {
@@ -157,6 +159,14 @@ function evalWithDebugger(string, options = {}, webConsole) {
     !!options.disableBreaks
   );
   let { bindings } = helpers;
+
+  
+  
+  
+  
+  if (trimmedString === "help" && bindings.help) {
+    return evalWithDebugger(":help", options, webConsole);
+  }
 
   
   
@@ -232,11 +242,6 @@ function evalWithDebugger(string, options = {}, webConsole) {
     );
   }
 
-  
-  if (string.trim() === "help" && isHelpFunction(result, bindings)) {
-    return evalWithDebugger(":help", options, webConsole);
-  }
-
   return {
     result,
     
@@ -247,18 +252,6 @@ function evalWithDebugger(string, options = {}, webConsole) {
   };
 }
 exports.evalWithDebugger = evalWithDebugger;
-
-
-
-
-function isHelpFunction(result, bindings) {
-  return (
-    "return" in result &&
-    result.return &&
-    result.return.class === "Function" &&
-    result.return === bindings.help
-  );
-}
 
 function getEvalResult(
   dbg,
