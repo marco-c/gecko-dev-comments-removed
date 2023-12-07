@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use super::CodeType;
+use crate::ComponentInterface;
 use paste::paste;
 
 macro_rules! impl_code_type_for_miscellany {
@@ -12,17 +13,13 @@ macro_rules! impl_code_type_for_miscellany {
             pub struct $T;
 
             impl CodeType for $T  {
-                fn type_label(&self) -> String {
+                fn type_label(&self, _ci: &ComponentInterface) -> String {
                     $class_name.into()
                 }
 
                 fn canonical_name(&self) -> String {
                    $canonical_name.into()
                }
-
-                fn literal(&self, _literal: &Literal) -> String {
-                    unreachable!()
-                }
             }
         }
     };

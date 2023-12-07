@@ -2,7 +2,7 @@
 
 
 
-use crate::backend::CodeType;
+use super::CodeType;
 
 #[derive(Debug)]
 pub struct ObjectCodeType {

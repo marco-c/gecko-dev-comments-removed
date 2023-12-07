@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use super::CodeType;
+use crate::backend::Literal;
 use paste::paste;
 
 macro_rules! impl_code_type_for_miscellany {

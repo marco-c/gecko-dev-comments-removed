@@ -2,13 +2,14 @@
 
 
 
-use crate::backend::CodeType;
+use super::CodeType;
+use crate::ComponentInterface;
 
 #[derive(Debug)]
 pub struct ForeignExecutorCodeType;
 
 impl CodeType for ForeignExecutorCodeType {
-    fn type_label(&self) -> String {
+    fn type_label(&self, _ci: &ComponentInterface) -> String {
         
         "CoroutineScope".into()
     }
