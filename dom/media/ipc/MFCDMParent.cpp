@@ -10,19 +10,13 @@
 #include <propkeydef.h>   
 #include <propvarutil.h>  
 
-#include "mozilla/dom/Promise.h"
 #include "mozilla/dom/KeySystemNames.h"
-#include "mozilla/ipc/UtilityAudioDecoderChild.h"
-#include "mozilla/ipc/UtilityProcessManager.h"
-#include "mozilla/ipc/UtilityProcessParent.h"
 #include "mozilla/EMEUtils.h"
-#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/WindowsVersion.h"
 #include "MFCDMProxy.h"
 #include "MFMediaEngineUtils.h"
-#include "nsTHashMap.h"
 #include "RemoteDecodeUtils.h"       
 #include "SpecialSystemDirectory.h"  
 #include "WMFUtils.h"
@@ -82,11 +76,6 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
       return IPC_OK();                                                       \
     }                                                                        \
   } while (false)
-
-StaticMutex sFactoryMutex;
-static nsTHashMap<nsStringHashKey, ComPtr<IMFContentDecryptionModuleFactory>>
-    sFactoryMap;
-static CopyableTArray<MFCDMCapabilitiesIPDL> sCapabilities;
 
 
 
@@ -356,6 +345,7 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
              ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM);
   MFCDM_PARENT_LOG("MFCDMParent created");
   mIPDLSelfRef = this;
+  LoadFactory();
   Register();
 
   mKeyMessageListener = mKeyMessageEvents.Connect(
@@ -364,8 +354,6 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
       mManagerThread, this, &MFCDMParent::SendOnSessionKeyStatusesChanged);
   mExpirationListener = mExpirationEvents.Connect(
       mManagerThread, this, &MFCDMParent::SendOnSessionKeyExpiration);
-
-  RETURN_VOID_IF_FAILED(GetOrCreateFactory(mKeySystem, mFactory));
 }
 
 void MFCDMParent::ShutdownCDM() {
@@ -408,56 +396,27 @@ MFCDMParent::~MFCDMParent() {
   Unregister();
 }
 
-
-LPCWSTR MFCDMParent::GetCDMLibraryName(const nsString& aKeySystem) {
+LPCWSTR MFCDMParent::GetCDMLibraryName() const {
   
-  if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
+  if (IsPlayReadyKeySystemAndSupported(mKeySystem)) {
     return L"";
   }
-  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem) ||
-      IsWidevineKeySystem(aKeySystem)) {
+  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem) ||
+      IsWidevineKeySystem(mKeySystem)) {
     return sWidevineL1Path;
   }
   
   return L"Unknown";
 }
 
-
-void MFCDMParent::Shutdown() {
-  sFactoryMap.Clear();
-  sCapabilities.Clear();
-}
-
-
-HRESULT MFCDMParent::GetOrCreateFactory(
-    const nsString& aKeySystem,
-    ComPtr<IMFContentDecryptionModuleFactory>& aFactoryOut) {
-  StaticMutexAutoLock lock(sFactoryMutex);
-  auto rv = sFactoryMap.MaybeGet(aKeySystem);
-  if (!rv) {
-    MFCDM_PARENT_SLOG("No factory %s, creating...",
-                      NS_ConvertUTF16toUTF8(aKeySystem).get());
-    ComPtr<IMFContentDecryptionModuleFactory> factory;
-    MFCDM_RETURN_IF_FAILED(LoadFactory(aKeySystem, factory));
-    sFactoryMap.InsertOrUpdate(aKeySystem, factory);
-    aFactoryOut.Swap(factory);
-  } else {
-    aFactoryOut = *rv;
-  }
-  return S_OK;
-}
-
-
-HRESULT MFCDMParent::LoadFactory(
-    const nsString& aKeySystem,
-    ComPtr<IMFContentDecryptionModuleFactory>& aFactoryOut) {
-  LPCWSTR libraryName = GetCDMLibraryName(aKeySystem);
+HRESULT MFCDMParent::LoadFactory() {
+  LPCWSTR libraryName = GetCDMLibraryName();
   const bool loadFromPlatform = wcslen(libraryName) == 0;
-  MFCDM_PARENT_SLOG("Load factory for %s (libraryName=%ls)",
-                    NS_ConvertUTF16toUTF8(aKeySystem).get(), libraryName);
+  MFCDM_PARENT_LOG("Load factory for %s (libraryName=%ls)",
+                   NS_ConvertUTF16toUTF8(mKeySystem).get(), libraryName);
 
-  MFCDM_PARENT_SLOG("Create factory for %s",
-                    NS_ConvertUTF16toUTF8(aKeySystem).get());
+  MFCDM_PARENT_LOG("Create factory for %s",
+                   NS_ConvertUTF16toUTF8(mKeySystem).get());
   ComPtr<IMFContentDecryptionModuleFactory> cdmFactory;
   if (loadFromPlatform) {
     ComPtr<IMFMediaEngineClassFactory4> clsFactory;
@@ -465,15 +424,15 @@ HRESULT MFCDMParent::LoadFactory(
                                             nullptr, CLSCTX_INPROC_SERVER,
                                             IID_PPV_ARGS(&clsFactory)));
     MFCDM_RETURN_IF_FAILED(clsFactory->CreateContentDecryptionModuleFactory(
-        aKeySystem.get(), IID_PPV_ARGS(&cdmFactory)));
-    aFactoryOut.Swap(cdmFactory);
-    MFCDM_PARENT_SLOG("Loaded CDM from platform!");
+        mKeySystem.get(), IID_PPV_ARGS(&cdmFactory)));
+    mFactory.Swap(cdmFactory);
+    MFCDM_PARENT_LOG("Loaded CDM from platform!");
     return S_OK;
   }
 
   HMODULE handle = LoadLibraryW(libraryName);
   if (!handle) {
-    MFCDM_PARENT_SLOG("Failed to load library %ls!", libraryName);
+    MFCDM_PARENT_LOG("Failed to load library %ls!", libraryName);
     return E_FAIL;
   }
 
@@ -483,7 +442,7 @@ HRESULT MFCDMParent::LoadFactory(
       (DllGetActivationFactoryFunc)GetProcAddress(handle,
                                                   "DllGetActivationFactory");
   if (!pDllGetActivationFactory) {
-    MFCDM_PARENT_SLOG("Failed to get activation function!");
+    MFCDM_PARENT_LOG("Failed to get activation function!");
     return E_FAIL;
   }
 
@@ -491,12 +450,12 @@ HRESULT MFCDMParent::LoadFactory(
   
   
   nsString stringId;
-  if (IsWidevineExperimentKeySystemAndSupported(aKeySystem) ||
-      IsWidevineKeySystem(aKeySystem)) {
+  if (IsWidevineExperimentKeySystemAndSupported(mKeySystem) ||
+      IsWidevineKeySystem(mKeySystem)) {
     stringId.AppendLiteral("com.widevine.alpha.ContentDecryptionModuleFactory");
   }
-  MFCDM_PARENT_SLOG("Query factory by classId '%s",
-                    NS_ConvertUTF16toUTF8(stringId).get());
+  MFCDM_PARENT_LOG("Query factory by classId '%s",
+                   NS_ConvertUTF16toUTF8(stringId).get());
   ScopedHString classId(stringId);
   ComPtr<IActivationFactory> pFactory = NULL;
   MFCDM_RETURN_IF_FAILED(
@@ -504,9 +463,8 @@ HRESULT MFCDMParent::LoadFactory(
 
   ComPtr<IInspectable> pInspectable;
   MFCDM_RETURN_IF_FAILED(pFactory->ActivateInstance(&pInspectable));
-  MFCDM_RETURN_IF_FAILED(pInspectable.As(&cdmFactory));
-  aFactoryOut.Swap(cdmFactory);
-  MFCDM_PARENT_SLOG("Loaded %ls CDM from external library!", libraryName);
+  MFCDM_RETURN_IF_FAILED(pInspectable.As(&mFactory));
+  MFCDM_PARENT_LOG("Loaded %ls CDM from external library!", libraryName);
   return S_OK;
 }
 
@@ -620,78 +578,9 @@ static bool IsKeySystemHWSecure(
   return false;
 }
 
-
-RefPtr<MFCDMParent::CapabilitiesPromise>
-MFCDMParent::GetAllKeySystemsCapabilities() {
-  MOZ_ASSERT(NS_IsMainThread());
-  nsCOMPtr<nsISerialEventTarget> backgroundTaskQueue;
-  if (NS_FAILED(NS_CreateBackgroundTaskQueue(
-          __func__, getter_AddRefs(backgroundTaskQueue)))) {
-    MFCDM_PARENT_SLOG(
-        "Failed to create task queue for all key systems capabilities!");
-    return CapabilitiesPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
-                                                __func__);
-  }
-
-  RefPtr<CapabilitiesPromise::Private> p =
-      new CapabilitiesPromise::Private(__func__);
-  Unused << backgroundTaskQueue->Dispatch(NS_NewRunnableFunction(__func__, [p] {
-    MFCDM_PARENT_SLOG("GetAllKeySystemsCapabilities");
-    if (sCapabilities.IsEmpty()) {
-      enum SecureLevel : bool {
-        Software = false,
-        Hardware = true,
-      };
-      const nsTArray<std::pair<nsString, SecureLevel>> kKeySystems{
-          std::pair<nsString, SecureLevel>(
-              NS_ConvertUTF8toUTF16(kPlayReadyKeySystemName),
-              SecureLevel::Software),
-          std::pair<nsString, SecureLevel>(
-              NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware),
-              SecureLevel::Hardware),
-          std::pair<nsString, SecureLevel>(
-              NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName),
-              SecureLevel::Hardware),
-          std::pair<nsString, SecureLevel>(
-              NS_ConvertUTF8toUTF16(kWidevineExperiment2KeySystemName),
-              SecureLevel::Hardware),
-      };
-      for (const auto& keySystem : kKeySystems) {
-        
-        
-        if (IsPlayReadyKeySystemAndSupported(keySystem.first) ||
-            IsWidevineExperimentKeySystemAndSupported(keySystem.first)) {
-          MFCDMCapabilitiesIPDL* c = sCapabilities.AppendElement();
-          GetCapabilities(keySystem.first, keySystem.second, nullptr, *c);
-        }
-      }
-    }
-    p->Resolve(sCapabilities, __func__);
-  }));
-  return p;
-}
-
-
-void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
-                                  const bool aIsHWSecure,
-                                  IMFContentDecryptionModuleFactory* aFactory,
-                                  MFCDMCapabilitiesIPDL& aCapabilitiesOut) {
-  aCapabilitiesOut.keySystem() = aKeySystem;
-  
-  
-  aCapabilitiesOut.persistentState() = KeySystemConfig::Requirement::Required;
-  aCapabilitiesOut.distinctiveID() = KeySystemConfig::Requirement::Required;
-
-  
-  
-  if (!IsWin11OrLater() && !aIsHWSecure) {
-    return;
-  }
-
-  ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
-  if (!factory) {
-    RETURN_VOID_IF_FAILED(GetOrCreateFactory(aKeySystem, factory));
-  }
+mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
+    const bool aIsHWSecure, GetCapabilitiesResolver&& aResolver) {
+  MFCDM_REJECT_IF(!mFactory, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
 
   
   static auto convertCodecToFourCC =
@@ -725,6 +614,13 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         return "none"_ns;
       };
 
+  MFCDMCapabilitiesIPDL capabilities;
+  capabilities.keySystem() = mKeySystem;
+  
+  
+  capabilities.persistentState() = KeySystemConfig::Requirement::Required;
+  capabilities.distinctiveID() = KeySystemConfig::Requirement::Required;
+
   
   static nsTArray<KeySystemConfig::EMECodecString> kVideoCodecs({
       KeySystemConfig::EME_CODEC_H264,
@@ -732,31 +628,39 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       KeySystemConfig::EME_CODEC_VP9,
       KeySystemConfig::EME_CODEC_HEVC,
   });
-
   
   
   
   nsTArray<KeySystemConfig::EMECodecString> supportedVideoCodecs;
-  for (const auto& codec : kVideoCodecs) {
+
+  
+  
+  if (!IsWin11OrLater() && !aIsHWSecure) {
+    aResolver(std::move(capabilities));
+    return IPC_OK();
+  }
+
+  for (auto& codec : kVideoCodecs) {
     if (codec == KeySystemConfig::EME_CODEC_HEVC &&
         !StaticPrefs::media_wmf_hevc_enabled()) {
       continue;
     }
-    if (FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+    if (FactorySupports(mFactory, mKeySystem, convertCodecToFourCC(codec),
                         KeySystemConfig::EMECodecString(""), nsString(u""),
                         aIsHWSecure)) {
       MFCDMMediaCapability* c =
-          aCapabilitiesOut.videoCapabilities().AppendElement();
+          capabilities.videoCapabilities().AppendElement();
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
       c->robustness() =
-          GetRobustnessStringForKeySystem(aKeySystem, aIsHWSecure);
-      MFCDM_PARENT_SLOG("%s: +video:%s", __func__, codec.get());
+          GetRobustnessStringForKeySystem(mKeySystem, aIsHWSecure);
+      MFCDM_PARENT_LOG("%s: +video:%s", __func__, codec.get());
       supportedVideoCodecs.AppendElement(codec);
     }
   }
   if (supportedVideoCodecs.IsEmpty()) {
     
-    return;
+    aResolver(std::move(capabilities));
+    return IPC_OK();
   }
 
   static nsTArray<KeySystemConfig::EMECodecString> kAudioCodecs({
@@ -765,16 +669,16 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
       KeySystemConfig::EME_CODEC_OPUS,
       KeySystemConfig::EME_CODEC_VORBIS,
   });
-  for (const auto& codec : kAudioCodecs) {
+  for (auto& codec : kAudioCodecs) {
     if (FactorySupports(
-            factory, aKeySystem, convertCodecToFourCC(supportedVideoCodecs[0]),
+            mFactory, mKeySystem, convertCodecToFourCC(supportedVideoCodecs[0]),
             convertCodecToFourCC(codec), nsString(u""), aIsHWSecure)) {
       MFCDMMediaCapability* c =
-          aCapabilitiesOut.audioCapabilities().AppendElement();
+          capabilities.audioCapabilities().AppendElement();
       c->contentType() = NS_ConvertUTF8toUTF16(codec);
-      c->robustness() = GetRobustnessStringForKeySystem(aKeySystem, aIsHWSecure,
+      c->robustness() = GetRobustnessStringForKeySystem(mKeySystem, aIsHWSecure,
                                                         false );
-      MFCDM_PARENT_SLOG("%s: +audio:%s", __func__, codec.get());
+      MFCDM_PARENT_LOG("%s: +audio:%s", __func__, codec.get());
     }
   }
 
@@ -788,16 +692,16 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
     bool ok = true;
     for (auto& codec : supportedVideoCodecs) {
       ok &= FactorySupports(
-          factory, aKeySystem, convertCodecToFourCC(codec), nsCString(""),
+          mFactory, mKeySystem, convertCodecToFourCC(codec), nsCString(""),
           scheme.second , aIsHWSecure);
       if (!ok) {
         break;
       }
     }
     if (ok) {
-      aCapabilitiesOut.encryptionSchemes().AppendElement(scheme.first);
-      MFCDM_PARENT_SLOG("%s: +scheme:%s", __func__,
-                        scheme.first == CryptoScheme::Cenc ? "cenc" : "cbcs");
+      capabilities.encryptionSchemes().AppendElement(scheme.first);
+      MFCDM_PARENT_LOG("%s: +scheme:%s", __func__,
+                       scheme.first == CryptoScheme::Cenc ? "cenc" : "cbcs");
     }
   }
 
@@ -810,8 +714,8 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
 
   
   
-  if (RequireClearLead(aKeySystem)) {
-    for (const auto& scheme : aCapabilitiesOut.encryptionSchemes()) {
+  if (RequireClearLead(mKeySystem)) {
+    for (const auto& schme : capabilities.encryptionSchemes()) {
       nsTArray<KeySystemConfig::EMECodecString> noClearLeadCodecs;
       for (const auto& codec : supportedVideoCodecs) {
         nsAutoString additionalFeature(u"encryption-type=");
@@ -823,35 +727,35 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
         
         
         
-        if (scheme == CryptoScheme::Cenc) {
+        if (schme == CryptoScheme::Cenc) {
           additionalFeature.AppendLiteral(u"cenc-clearlead,");
         } else {
           additionalFeature.AppendLiteral(u"cbcs-clearlead,");
         }
         bool rv =
-            FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+            FactorySupports(mFactory, mKeySystem, convertCodecToFourCC(codec),
                             nsCString(""), additionalFeature, aIsHWSecure);
-        MFCDM_PARENT_SLOG("clearlead %s IV 8 bytes %s %s",
-                          CryptoSchemeToString(scheme), codec.get(),
-                          rv ? "supported" : "not supported");
+        MFCDM_PARENT_LOG("clearlead %s IV 8 bytes %s %s",
+                         CryptoSchemeToString(schme), codec.get(),
+                         rv ? "supported" : "not supported");
         if (rv) {
           continue;
         }
         
         additionalFeature.AppendLiteral(u"encryption-iv-size=16,");
-        rv = FactorySupports(factory, aKeySystem, convertCodecToFourCC(codec),
+        rv = FactorySupports(mFactory, mKeySystem, convertCodecToFourCC(codec),
                              nsCString(""), additionalFeature, aIsHWSecure);
-        MFCDM_PARENT_SLOG("clearlead %s IV 16 bytes %s %s",
-                          CryptoSchemeToString(scheme), codec.get(),
-                          rv ? "supported" : "not supported");
+        MFCDM_PARENT_LOG("clearlead %s IV 16 bytes %s %s",
+                         CryptoSchemeToString(schme), codec.get(),
+                         rv ? "supported" : "not supported");
         
         if (!rv) {
           noClearLeadCodecs.AppendElement(codec);
         }
       }
       for (const auto& codec : noClearLeadCodecs) {
-        MFCDM_PARENT_SLOG("%s: -video:%s", __func__, codec.get());
-        aCapabilitiesOut.videoCapabilities().RemoveElementsBy(
+        MFCDM_PARENT_LOG("%s: -video:%s", __func__, codec.get());
+        capabilities.videoCapabilities().RemoveElementsBy(
             [&codec](const MFCDMMediaCapability& aCapbilities) {
               return aCapbilities.contentType() == NS_ConvertUTF8toUTF16(codec);
             });
@@ -861,19 +765,13 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   }
 
   
-  aCapabilitiesOut.initDataTypes().AppendElement(u"keyids");
-  aCapabilitiesOut.initDataTypes().AppendElement(u"cenc");
-  aCapabilitiesOut.sessionTypes().AppendElement(
+  capabilities.initDataTypes().AppendElement(u"keyids");
+  capabilities.initDataTypes().AppendElement(u"cenc");
+  capabilities.sessionTypes().AppendElement(
       KeySystemConfig::SessionType::Temporary);
-  aCapabilitiesOut.sessionTypes().AppendElement(
+  capabilities.sessionTypes().AppendElement(
       KeySystemConfig::SessionType::PersistentLicense);
-}
 
-mozilla::ipc::IPCResult MFCDMParent::RecvGetCapabilities(
-    const bool aIsHWSecure, GetCapabilitiesResolver&& aResolver) {
-  MFCDM_REJECT_IF(!mFactory, NS_ERROR_DOM_NOT_SUPPORTED_ERR);
-  MFCDMCapabilitiesIPDL capabilities;
-  GetCapabilities(mKeySystem, aIsHWSecure, mFactory.Get(), capabilities);
   aResolver(std::move(capabilities));
   return IPC_OK();
 }
@@ -1075,76 +973,6 @@ already_AddRefed<MFCDMProxy> MFCDMParent::GetMFCDMProxy() {
   }
   RefPtr<MFCDMProxy> proxy = new MFCDMProxy(mCDM.Get(), mId);
   return proxy.forget();
-}
-
-
-void MFCDMCapabilities::GetAllKeySystemsCapabilities(dom::Promise* aPromise) {
-  const static auto kSandboxKind = ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM;
-  LaunchMFCDMProcessIfNeeded(kSandboxKind)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [promise = RefPtr(aPromise)]() {
-            RefPtr<ipc::UtilityAudioDecoderChild> uadc =
-                ipc::UtilityAudioDecoderChild::GetSingleton(kSandboxKind);
-            if (NS_WARN_IF(!uadc)) {
-              promise->MaybeReject(NS_ERROR_FAILURE);
-              return;
-            }
-            uadc->GetKeySystemCapabilities(promise);
-          },
-          [promise = RefPtr(aPromise)](nsresult aError) {
-            promise->MaybeReject(NS_ERROR_FAILURE);
-          });
-}
-
-
-RefPtr<GenericNonExclusivePromise>
-MFCDMCapabilities::LaunchMFCDMProcessIfNeeded(ipc::SandboxingKind aSandbox) {
-  MOZ_ASSERT(aSandbox == ipc::SandboxingKind::MF_MEDIA_ENGINE_CDM);
-  RefPtr<ipc::UtilityProcessManager> utilityProc =
-      ipc::UtilityProcessManager::GetSingleton();
-  if (NS_WARN_IF(!utilityProc)) {
-    NS_WARNING("Failed to get UtilityProcessManager");
-    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                       __func__);
-  }
-
-  
-  if (utilityProc->Process(aSandbox)) {
-    return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
-  }
-
-  RefPtr<ipc::UtilityAudioDecoderChild> uadc =
-      ipc::UtilityAudioDecoderChild::GetSingleton(aSandbox);
-  if (NS_WARN_IF(!uadc)) {
-    NS_WARNING("Failed to get UtilityAudioDecoderChild");
-    return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                       __func__);
-  }
-  return utilityProc->StartUtility(uadc, aSandbox)
-      ->Then(
-          GetMainThreadSerialEventTarget(), __func__,
-          [uadc, utilityProc, aSandbox]() {
-            RefPtr<ipc::UtilityProcessParent> parent =
-                utilityProc->GetProcessParent(aSandbox);
-            if (!parent) {
-              NS_WARNING("UtilityAudioDecoderParent lost in the middle");
-              return GenericNonExclusivePromise::CreateAndReject(
-                  NS_ERROR_FAILURE, __func__);
-            }
-
-            if (!uadc->CanSend()) {
-              NS_WARNING("UtilityAudioDecoderChild lost in the middle");
-              return GenericNonExclusivePromise::CreateAndReject(
-                  NS_ERROR_FAILURE, __func__);
-            }
-            return GenericNonExclusivePromise::CreateAndResolve(true, __func__);
-          },
-          [](nsresult aError) {
-            NS_WARNING("Failed to start the MFCDM process!");
-            return GenericNonExclusivePromise::CreateAndReject(NS_ERROR_FAILURE,
-                                                               __func__);
-          });
 }
 
 #undef MFCDM_REJECT_IF_FAILED
