@@ -4,107 +4,10 @@
 
 "use strict";
 
-const { XPCOMUtils } = ChromeUtils.importESModule(
-  "resource://gre/modules/XPCOMUtils.sys.mjs"
-);
-
-XPCOMUtils.defineLazyServiceGetter(
-  this,
-  "swm",
-  "@mozilla.org/serviceworkers/manager;1",
-  "nsIServiceWorkerManager"
-);
-
 const { waitForTick } = require("resource://devtools/shared/DevToolsUtils.js");
 
 const PROCESS_SCRIPT_URL =
   "resource://devtools/server/actors/watcher/target-helpers/service-worker-jsprocessactor-startup.js";
-
-let gServiceWorkerListener = null;
-
-
-
-
-class ServiceWorkerListener {
-  constructor() {
-    
-    const array = swm.getAllRegistrations();
-    for (let i = 0; i < array.length; i++) {
-      const registration = array.queryElementAt(
-        i,
-        Ci.nsIServiceWorkerRegistrationInfo
-      );
-      this.onRegister(registration);
-    }
-    
-    swm.addListener(this.#swmListener);
-  }
-
-  
-  #registrationListeners = new Map();
-
-  
-  #swmListener = {
-    onRegister: this.onRegister.bind(this),
-    onUnregister() {},
-  };
-
-  destroy() {
-    swm.removeListener(this.#swmListener);
-
-    
-    for (const [
-      registration,
-      listener,
-    ] of this.#registrationListeners.entries()) {
-      registration.removeListener(listener);
-    }
-  }
-
-  
-
-
-
-
-
-
-
-
-  onRegister(registration) {
-    if (registration.activeWorker) {
-      this.onServiceWorkerReady(registration.activeWorker);
-      return;
-    }
-
-    const listener = {
-      onChange: () => {
-        if (registration.activeWorker) {
-          registration.removeListener(listener);
-          this.#registrationListeners.delete(registration);
-          this.onServiceWorkerReady(registration.activeWorker);
-        }
-      },
-    };
-    registration.addListener(listener);
-
-    
-    this.#registrationListeners.set(registration, listener);
-  }
-
-  
-
-
-
-
-  onServiceWorkerReady(serviceWorkerInfo) {
-    
-    
-    
-    
-    serviceWorkerInfo.attachDebugger();
-    serviceWorkerInfo.detachDebugger();
-  }
-}
 
 const PROCESS_ACTOR_NAME = "DevToolsServiceWorker";
 const PROCESS_ACTOR_OPTIONS = {
@@ -207,10 +110,6 @@ async function createTargets(watcher) {
   
   
 
-  if (!gServiceWorkerListener) {
-    gServiceWorkerListener = new ServiceWorkerListener();
-  }
-
   const promises = [];
   for (const process of getAllContentProcesses()) {
     const promise = process
@@ -258,11 +157,6 @@ async function destroyTargets(watcher) {
   await waitForTick();
 
   maybeUnregisterProcessActor(watcher);
-
-  if (gWatchers.size == 0 && gServiceWorkerListener) {
-    gServiceWorkerListener.destroy();
-    gServiceWorkerListener = null;
-  }
 }
 
 
