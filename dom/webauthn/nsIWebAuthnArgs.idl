@@ -93,4 +93,6 @@ interface nsIWebAuthnSignArgs : nsISupports {
     
     
     readonly attribute unsigned long timeoutMS;
+
+    readonly attribute bool conditionallyMediated;
 };
