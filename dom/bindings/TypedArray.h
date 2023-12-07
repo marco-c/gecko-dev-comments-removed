@@ -676,9 +676,29 @@ struct TypedArray_base : public SpiderMonkeyInterfaceObjectStorage,
         JSObject* buffer =
             JS_GetArrayBufferViewBuffer(jsapi.cx(), view, &unused);
         if (!buffer) {
-          MOZ_CRASH(
-              "js::JS_GetArrayBufferViewBuffer failed, maybe calling "
-              "ensureBufferObject?");
+          if (JS_IsTypedArrayObject(view)) {
+            JS::Value bufferSlot =
+                JS::GetReservedSlot(view,  0);
+            if (bufferSlot.isNull()) {
+              MOZ_CRASH("TypedArrayObject with bufferSlot containing null");
+            } else if (bufferSlot.isBoolean()) {
+              MOZ_CRASH("TypedArrayObject with bufferSlot containing boolean");
+            } else if (bufferSlot.isObject()) {
+              if (!bufferSlot.toObjectOrNull()) {
+                MOZ_CRASH(
+                    "TypedArrayObject with bufferSlot containing null object");
+              } else {
+                MOZ_CRASH(
+                    "JS_GetArrayBufferViewBuffer failed but bufferSlot "
+                    "contains a non-null object");
+              }
+            } else {
+              MOZ_CRASH(
+                  "TypedArrayObject with bufferSlot containing weird value");
+            }
+          } else {
+            MOZ_CRASH("JS_GetArrayBufferViewBuffer failed for DataViewObject");
+          }
         }
 
         if (!JS::IsDetachedArrayBufferObject(buffer)) {
