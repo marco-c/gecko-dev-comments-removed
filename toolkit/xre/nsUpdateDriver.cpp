@@ -71,46 +71,6 @@ static LazyLogModule sUpdateLog("updatedriver");
 #endif
 #define LOG(args) MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug, args)
 
-#ifdef XP_MACOSX
-static void UpdateDriverSetupMacCommandLine(int& argc, char**& argv,
-                                            bool restart) {
-  if (NS_IsMainThread()) {
-    CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
-    return;
-  }
-  
-  
-  
-  
-  
-  
-  Monitor monitor MOZ_UNANNOTATED("nsUpdateDriver SetupMacCommandLine");
-
-  nsresult rv = NS_DispatchToMainThread(NS_NewRunnableFunction(
-      "UpdateDriverSetupMacCommandLine",
-      [&argc, &argv, restart, &monitor]() -> void {
-        CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
-        MonitorAutoLock(monitor).Notify();
-      }));
-
-  if (NS_FAILED(rv)) {
-    LOG(
-        ("Update driver error dispatching SetupMacCommandLine to main thread: "
-         "%d\n",
-         uint32_t(rv)));
-    return;
-  }
-
-  
-  
-  CVStatus status =
-      MonitorAutoLock(monitor).Wait(TimeDuration::FromSeconds(60));
-  if (status == CVStatus::Timeout) {
-    LOG(("Update driver timed out waiting for SetupMacCommandLine\n"));
-  }
-}
-#endif
-
 static nsresult GetCurrentWorkingDir(nsACString& aOutPath) {
   
   
@@ -316,6 +276,9 @@ static bool IsOlderVersion(nsIFile* versionFile, const char* appVersion) {
 static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
                         int appArgc, char** appArgv, bool restart,
                         bool isStaged, ProcessType* outpid) {
+  MOZ_DIAGNOSTIC_ASSERT(
+      !restart || NS_IsMainThread(),
+      "restart may only be set when called on the main thread");
   
   
   
@@ -616,15 +579,20 @@ static void ApplyUpdate(nsIFile* greDir, nsIFile* updateDir, nsIFile* appDir,
     }
   }
 #elif defined(XP_MACOSX)
-UpdateDriverSetupMacCommandLine(argc, argv, restart);
-if (restart && needElevation) {
-  bool hasLaunched = LaunchElevatedUpdate(argc, argv, outpid);
-  free(argv);
-  if (!hasLaunched) {
-    LOG(("Failed to launch elevated update!"));
-    exit(1);
+if (restart) {
+  
+  
+  CommandLineServiceMac::SetupMacCommandLine(argc, argv, restart);
+
+  if (needElevation) {
+    bool hasLaunched = LaunchElevatedUpdate(argc, argv, outpid);
+    free(argv);
+    if (!hasLaunched) {
+      LOG(("Failed to launch elevated update!"));
+      exit(1);
+    }
+    exit(0);
   }
-  exit(0);
 }
 
 if (isStaged) {
