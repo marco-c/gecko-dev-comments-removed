@@ -683,6 +683,16 @@ class WebExtensionTest : BaseSessionTest() {
     }
 
     @Test
+    fun installAddonUnsupportedType() {
+        testInstallError(
+            name = "langpack_signed.xpi",
+            expectedError = InstallException.ErrorCodes.ERROR_UNSUPPORTED_ADDON_TYPE,
+            expectedExtensionID = "langpack-klingon@firefox.mozilla.org",
+            expectedExtension = true,
+        )
+    }
+
+    @Test
     fun installDeny() {
         mainSession.loadUri("https://example.com")
         sessionRule.waitForPageStop()

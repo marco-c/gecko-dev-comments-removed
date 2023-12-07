@@ -204,79 +204,87 @@ add_task(async function privileged_xpi_not_blocked() {
 
 
 
-add_task(async function langpack_not_blocked_on_Nightly() {
-  mockMLBF({
-    blocked: ["langpack-klingon@firefox.mozilla.org:1.0"],
-    notblocked: [],
-    generationTime: 1546297200000, 
-  });
-  await ExtensionBlocklistMLBF._onUpdate();
+add_task(
+  
+  { skip_if: () => AppConstants.platform == "android" },
+  async function langpack_not_blocked_on_Nightly() {
+    mockMLBF({
+      blocked: ["langpack-klingon@firefox.mozilla.org:1.0"],
+      notblocked: [],
+      generationTime: 1546297200000, 
+    });
+    await ExtensionBlocklistMLBF._onUpdate();
 
-  await promiseInstallFile(
-    do_get_file("../data/signing_checks/langpack_signed.xpi")
-  );
-  let addon = await promiseAddonByID("langpack-klingon@firefox.mozilla.org");
-  Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SIGNED);
-  if (AppConstants.NIGHTLY_BUILD) {
+    await promiseInstallFile(
+      do_get_file("../data/signing_checks/langpack_signed.xpi")
+    );
+    let addon = await promiseAddonByID("langpack-klingon@firefox.mozilla.org");
+    Assert.equal(addon.signedState, AddonManager.SIGNEDSTATE_SIGNED);
+    if (AppConstants.NIGHTLY_BUILD) {
+      
+      
+      Assert.equal(
+        addon.blocklistState,
+        Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
+        "Langpacks cannot be blocked via the MLBF"
+      );
+    } else {
+      
+      
+      Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
+    }
+    await addon.uninstall();
+  }
+);
+
+
+add_task(
+  
+  { skip_if: () => AppConstants.platform == "android" },
+  async function signed_sitepermission_xpi_blocked_on_install() {
+    mockMLBF({
+      blocked: [SIGNED_SITEPERM_KEY],
+      notblocked: [],
+      generationTime: SIGNED_SITEPERM_SIGN_TIME + 1,
+    });
+    await ExtensionBlocklistMLBF._onUpdate();
+
+    const install = await promiseInstallFile(SIGNED_SITEPERM_XPI_FILE);
+    Assert.equal(
+      install.error,
+      AddonManager.ERROR_BLOCKLISTED,
+      "Install should have an error"
+    );
+
+    let addon = await promiseAddonByID(SIGNED_SITEPERM_ADDON_ID);
     
     
+    
+    equal(
+      addon.signedDate?.getTime(),
+      SIGNED_SITEPERM_SIGN_TIME,
+      "The addon xpi has the expected signedDate timestamp"
+    );
+    Assert.equal(
+      addon.blocklistState,
+      Ci.nsIBlocklistService.STATE_BLOCKED,
+      "Got the expected STATE_BLOCKED blocklistState"
+    );
+    Assert.ok(addon.appDisabled, "Blocked add-on is disabled on install");
+
+    mockMLBF({
+      blocked: [],
+      notblocked: [SIGNED_SITEPERM_KEY],
+      generationTime: SIGNED_SITEPERM_SIGN_TIME - 1,
+    });
+    await ExtensionBlocklistMLBF._onUpdate();
     Assert.equal(
       addon.blocklistState,
       Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-      "Langpacks cannot be blocked via the MLBF"
+      "Got the expected STATE_NOT_BLOCKED blocklistState"
     );
-  } else {
-    
-    
-    Assert.equal(addon.blocklistState, Ci.nsIBlocklistService.STATE_BLOCKED);
+    Assert.ok(!addon.appDisabled, "Re-enabled after unblock");
+
+    await addon.uninstall();
   }
-  await addon.uninstall();
-});
-
-
-add_task(async function signed_sitepermission_xpi_blocked_on_install() {
-  mockMLBF({
-    blocked: [SIGNED_SITEPERM_KEY],
-    notblocked: [],
-    generationTime: SIGNED_SITEPERM_SIGN_TIME + 1,
-  });
-  await ExtensionBlocklistMLBF._onUpdate();
-
-  const install = await promiseInstallFile(SIGNED_SITEPERM_XPI_FILE);
-  Assert.equal(
-    install.error,
-    AddonManager.ERROR_BLOCKLISTED,
-    "Install should have an error"
-  );
-
-  let addon = await promiseAddonByID(SIGNED_SITEPERM_ADDON_ID);
-  
-  
-  
-  equal(
-    addon.signedDate?.getTime(),
-    SIGNED_SITEPERM_SIGN_TIME,
-    "The addon xpi has the expected signedDate timestamp"
-  );
-  Assert.equal(
-    addon.blocklistState,
-    Ci.nsIBlocklistService.STATE_BLOCKED,
-    "Got the expected STATE_BLOCKED blocklistState"
-  );
-  Assert.ok(addon.appDisabled, "Blocked add-on is disabled on install");
-
-  mockMLBF({
-    blocked: [],
-    notblocked: [SIGNED_SITEPERM_KEY],
-    generationTime: SIGNED_SITEPERM_SIGN_TIME - 1,
-  });
-  await ExtensionBlocklistMLBF._onUpdate();
-  Assert.equal(
-    addon.blocklistState,
-    Ci.nsIBlocklistService.STATE_NOT_BLOCKED,
-    "Got the expected STATE_NOT_BLOCKED blocklistState"
-  );
-  Assert.ok(!addon.appDisabled, "Re-enabled after unblock");
-
-  await addon.uninstall();
-});
+);
