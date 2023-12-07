@@ -55,7 +55,6 @@ class TimelineCollection final
   
   static TimelineCollection* Get(const dom::Element* aElement,
                                  PseudoStyleType aPseudoType);
-  const TimelineMap& Timelines() const { return mTimelines; }
 
  private:
   
