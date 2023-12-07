@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XWeekRelativeUnit {
+  
+
+  Previous = 'Previous',
+  
+
+  Current = 'Current',
+  
+
+  Next = 'Next',
+}

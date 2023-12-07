@@ -1,0 +1,16 @@
+import { i32 } from "./diplomat-runtime"
+
+
+
+
+
+export class ICU4XGraphemeClusterBreakIteratorUtf16 {
+
+  
+
+
+
+
+
+  next(): i32;
+}

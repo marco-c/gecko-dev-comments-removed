@@ -1,0 +1,7 @@
+
+
+
+
+export default {
+    wasm_path: new URL('crate/target/wasm32-unknown-unknown/release/crate.wasm', import.meta.url),
+};

@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XListLength {
+  
+
+  Wide = 'Wide',
+  
+
+  Short = 'Short',
+  
+
+  Narrow = 'Narrow',
+}

@@ -1,0 +1,36 @@
+import { u16, usize } from "./diplomat-runtime"
+import { FFIError } from "./diplomat-runtime"
+
+
+
+
+
+
+
+export class ICU4XScriptExtensionsSet {
+
+  
+
+
+
+
+
+  contains(script: u16): boolean;
+
+  
+
+
+
+
+
+  count(): usize;
+
+  
+
+
+
+
+
+
+  script_at(index: usize): u16 | never;
+}

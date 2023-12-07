@@ -1,0 +1,16 @@
+import { CodePointRangeIteratorResult } from "./CodePointRangeIteratorResult";
+
+
+
+
+
+export class CodePointRangeIterator {
+
+  
+
+
+
+
+
+  next(): CodePointRangeIteratorResult;
+}

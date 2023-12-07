@@ -1,0 +1,24 @@
+
+
+
+
+
+
+
+export enum ICU4XFixedDecimalSign {
+  
+
+
+
+  None = 'None',
+  
+
+
+
+  Negative = 'Negative',
+  
+
+
+
+  Positive = 'Positive',
+}

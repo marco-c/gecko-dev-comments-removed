@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XLeadingAdjustment {
+  
+
+  Auto = 'Auto',
+  
+
+  None = 'None',
+  
+
+  ToCased = 'ToCased',
+}

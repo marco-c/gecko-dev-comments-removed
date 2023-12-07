@@ -1,0 +1,13 @@
+
+
+
+
+
+export enum ICU4XTrailingCase {
+  
+
+  Lower = 'Lower',
+  
+
+  Unchanged = 'Unchanged',
+}

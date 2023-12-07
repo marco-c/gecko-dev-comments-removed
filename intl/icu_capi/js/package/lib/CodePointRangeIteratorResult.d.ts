@@ -1,0 +1,13 @@
+import { u32 } from "./diplomat-runtime"
+
+
+
+
+
+
+
+export class CodePointRangeIteratorResult {
+  start: u32;
+  end: u32;
+  done: boolean;
+}

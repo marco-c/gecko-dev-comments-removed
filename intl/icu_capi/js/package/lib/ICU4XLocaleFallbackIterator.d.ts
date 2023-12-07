@@ -1,0 +1,26 @@
+import { ICU4XLocale } from "./ICU4XLocale";
+
+
+
+
+
+
+
+export class ICU4XLocaleFallbackIterator {
+
+  
+
+
+
+
+
+  get(): ICU4XLocale;
+
+  
+
+
+
+
+
+  step(): void;
+}

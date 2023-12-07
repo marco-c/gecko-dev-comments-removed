@@ -1,0 +1,18 @@
+
+
+
+
+
+
+
+export enum ICU4XLocaleFallbackPriority {
+  
+
+  Language = 'Language',
+  
+
+  Region = 'Region',
+  
+
+  Collation = 'Collation',
+}

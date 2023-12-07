@@ -1,0 +1,13 @@
+
+
+
+
+
+export enum ICU4XDisplayNamesFallback {
+  
+
+  Code = 'Code',
+  
+
+  None = 'None',
+}

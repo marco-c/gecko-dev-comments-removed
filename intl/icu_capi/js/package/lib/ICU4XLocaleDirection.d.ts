@@ -1,0 +1,16 @@
+
+
+
+
+
+export enum ICU4XLocaleDirection {
+  
+
+  LeftToRight = 'LeftToRight',
+  
+
+  RightToLeft = 'RightToLeft',
+  
+
+  Unknown = 'Unknown',
+}
