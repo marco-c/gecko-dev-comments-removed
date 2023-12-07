@@ -42,10 +42,13 @@ class nsHtml5StringParser : public nsParserBase {
 
 
 
+
+
   nsresult ParseFragment(const nsAString& aSourceBuffer,
                          nsIContent* aTargetNode, nsAtom* aContextLocalName,
                          int32_t aContextNamespace, bool aQuirks,
-                         bool aPreventScriptExecution);
+                         bool aPreventScriptExecution,
+                         bool aAllowDeclarativeShadowRoots);
 
   
 
@@ -61,7 +64,8 @@ class nsHtml5StringParser : public nsParserBase {
 
   nsresult Tokenize(const nsAString& aSourceBuffer,
                     mozilla::dom::Document* aDocument,
-                    bool aScriptingEnabledForNoscriptParsing);
+                    bool aScriptingEnabledForNoscriptParsing,
+                    bool aDeclarativeShadowRootsAllowed);
 
   
 
