@@ -163,15 +163,16 @@ struct LaunchOptions {
   bool use_forkserver = false;
 #endif
 
-#if defined(XP_LINUX)
-  struct ForkDelegate {
-    virtual ~ForkDelegate() {}
-    virtual pid_t Fork() = 0;
-  };
-
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
   
   
-  mozilla::UniquePtr<ForkDelegate> fork_delegate = nullptr;
+  
+  
+  
+  
+  
+  int fork_flags = 0;
+  bool sandbox_chroot = false;
 #endif
 
 #ifdef XP_DARWIN

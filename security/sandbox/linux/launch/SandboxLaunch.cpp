@@ -220,45 +220,28 @@ static void AttachSandboxReporter(base::file_handle_mapping_vector* aFdMap) {
   aFdMap->push_back({srcFd, dstFd});
 }
 
-class SandboxFork : public base::LaunchOptions::ForkDelegate {
- public:
-  explicit SandboxFork(int aFlags, bool aChroot, int aServerFd = -1,
-                       int aClientFd = -1);
-  virtual ~SandboxFork();
-
-  void PrepareMapping(base::file_handle_mapping_vector* aMap);
-  pid_t Fork() override;
-
- private:
-  int mFlags;
-  int mChrootServer;
-  int mChrootClient;
-
-  void StartChrootServer();
-  SandboxFork(const SandboxFork&) = delete;
-  SandboxFork& operator=(const SandboxFork&) = delete;
-};
-
 static int GetEffectiveSandboxLevel(GeckoProcessType aType,
                                     ipc::SandboxingKind aKind) {
   auto info = SandboxInfo::Get();
   switch (aType) {
-    case GeckoProcessType_GMPlugin:
-      if (info.Test(SandboxInfo::kEnabledForMedia)) {
-        return 1;
-      }
-      return 0;
-    case GeckoProcessType_Content:
 #ifdef MOZ_ENABLE_FORKSERVER
       
       
       
     case GeckoProcessType_ForkServer:
+      return 1;
+      break;
 #endif
+    case GeckoProcessType_Content:
       
       MOZ_ASSERT(NS_IsMainThread());
       if (info.Test(SandboxInfo::kEnabledForContent)) {
         return GetEffectiveContentSandboxLevel();
+      }
+      return 0;
+    case GeckoProcessType_GMPlugin:
+      if (info.Test(SandboxInfo::kEnabledForMedia)) {
+        return 1;
       }
       return 0;
     case GeckoProcessType_RDD:
@@ -274,8 +257,10 @@ static int GetEffectiveSandboxLevel(GeckoProcessType aType,
   }
 }
 
-void SandboxLaunchPrepare(GeckoProcessType aType, base::LaunchOptions* aOptions,
-                          ipc::SandboxingKind aKind) {
+
+void SandboxLaunch::Configure(GeckoProcessType aType, SandboxingKind aKind,
+                              LaunchOptions* aOptions) {
+  MOZ_ASSERT(aOptions->fork_flags == 0 && !aOptions->sandbox_chroot);
   auto info = SandboxInfo::Get();
 
   
@@ -364,88 +349,49 @@ void SandboxLaunchPrepare(GeckoProcessType aType, base::LaunchOptions* aOptions,
 
   if (canChroot || flags != 0) {
     flags |= CLONE_NEWUSER;
-    auto forker = MakeUnique<SandboxFork>(flags, canChroot);
-    forker->PrepareMapping(&aOptions->fds_to_remap);
-    aOptions->fork_delegate = std::move(forker);
-    
-    aOptions->env_map[kSandboxChrootEnvFlag] =
-        std::to_string(canChroot ? 1 : 0) + std::to_string(flags);
   }
+
+  aOptions->env_map[kSandboxChrootEnvFlag] = std::to_string(canChroot ? 1 : 0);
+
+  aOptions->sandbox_chroot = canChroot;
+  aOptions->fork_flags = flags;
 }
 
-#if defined(MOZ_ENABLE_FORKSERVER)
+SandboxLaunch::SandboxLaunch()
+    : mFlags(0), mChrootServer(-1), mChrootClient(-1) {}
 
-
-
-
-
-
-
-void SandboxLaunchForkServerPrepare(const std::vector<std::string>& aArgv,
-                                    base::LaunchOptions& aOptions) {
-  auto chroot = std::find_if(
-      aOptions.env_map.begin(), aOptions.env_map.end(),
-      [](auto& elt) { return elt.first == kSandboxChrootEnvFlag; });
-  if (chroot == aOptions.env_map.end()) {
-    return;
-  }
-  bool canChroot = chroot->second.c_str()[0] == '1';
-  int flags = atoi(chroot->second.c_str() + 1);
-  MOZ_ASSERT(flags || canChroot);
-
-  
-  
-  auto fdmap = std::find_if(
-      aOptions.fds_to_remap.begin(), aOptions.fds_to_remap.end(),
-      [](auto& elt) { return elt.second == kSandboxChrootServerFd; });
-  MOZ_ASSERT(fdmap != aOptions.fds_to_remap.end(),
-             "ChrootServerFd is not found with sandbox chroot");
-  int chrootserverfd = fdmap->first;
-  aOptions.fds_to_remap.erase(fdmap);
-
-  
-  
-  
-  
-  
-  auto forker = MakeUnique<SandboxFork>(flags, canChroot, chrootserverfd);
-  aOptions.fork_delegate = std::move(forker);
-}
-#endif
-
-SandboxFork::SandboxFork(int aFlags, bool aChroot, int aServerFd, int aClientFd)
-    : mFlags(aFlags), mChrootServer(aServerFd), mChrootClient(aClientFd) {
-  if (aChroot && mChrootServer < 0) {
-    int fds[2];
-    int rv = socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds);
-    if (rv != 0) {
-      SANDBOX_LOG_ERRNO("socketpair");
-      MOZ_CRASH("socketpair failed");
-    }
-    mChrootClient = fds[0];
-    mChrootServer = fds[1];
-  }
-}
-
-void SandboxFork::PrepareMapping(base::file_handle_mapping_vector* aMap) {
-  MOZ_ASSERT(XRE_GetProcessType() != GeckoProcessType_ForkServer);
-  if (mChrootClient >= 0) {
-    aMap->push_back({mChrootClient, kSandboxChrootClientFd});
-  }
-#if defined(MOZ_ENABLE_FORKSERVER)
-  if (mChrootServer >= 0) {
-    aMap->push_back({mChrootServer, kSandboxChrootServerFd});
-  }
-#endif
-}
-
-SandboxFork::~SandboxFork() {
+SandboxLaunch::~SandboxLaunch() {
   if (mChrootClient >= 0) {
     close(mChrootClient);
   }
   if (mChrootServer >= 0) {
     close(mChrootServer);
   }
+}
+
+bool SandboxLaunch::Prepare(LaunchOptions* aOptions) {
+  MOZ_ASSERT(mChrootClient < 0 && mChrootServer < 0);
+
+  mFlags = aOptions->fork_flags;
+
+  
+  
+  
+  
+  if (aOptions->sandbox_chroot) {
+    int fds[2];
+    int rv = socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, fds);
+    if (rv != 0) {
+      SANDBOX_LOG_ERRNO("socketpair");
+      return false;
+    }
+    mChrootClient = fds[0];
+    mChrootServer = fds[1];
+
+    aOptions->fds_to_remap.push_back({mChrootClient, kSandboxChrootClientFd});
+  }
+
+  return true;
 }
 
 static void BlockAllSignals(sigset_t* aOldSigs) {
@@ -613,7 +559,7 @@ static void DropAllCaps() {
   }
 }
 
-pid_t SandboxFork::Fork() {
+pid_t SandboxLaunch::Fork() {
   if (mFlags == 0) {
     MOZ_ASSERT(mChrootServer < 0);
     return fork();
@@ -649,8 +595,20 @@ pid_t SandboxFork::Fork() {
 
   if (mChrootServer >= 0) {
     StartChrootServer();
+    
+    
+    
+    
+    mChrootClient = -1;
   }
 
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -658,7 +616,7 @@ pid_t SandboxFork::Fork() {
   return 0;
 }
 
-void SandboxFork::StartChrootServer() {
+void SandboxLaunch::StartChrootServer() {
   
   
   pid_t pid = ForkWithFlags(CLONE_FS);

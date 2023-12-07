@@ -33,6 +33,16 @@ class ForkServiceChild {
   ForkServiceChild(int aFd, GeckoChildProcessHost* aProcess);
   virtual ~ForkServiceChild();
 
+  struct Args {
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+    int mForkFlags = 0;
+    bool mChroot = false;
+#endif
+    nsTArray<nsCString> mArgv;
+    nsTArray<EnvVar> mEnv;
+    nsTArray<FdMapping> mFdsRemap;
+  };
+
   
 
 
@@ -45,9 +55,7 @@ class ForkServiceChild {
 
 
 
-  Result<Ok, LaunchError> SendForkNewSubprocess(
-      const nsTArray<nsCString>& aArgv, const nsTArray<EnvVar>& aEnvMap,
-      const nsTArray<FdMapping>& aFdsRemap, pid_t* aPid);
+  Result<Ok, LaunchError> SendForkNewSubprocess(const Args& aArgs, pid_t* aPid);
 
   
 

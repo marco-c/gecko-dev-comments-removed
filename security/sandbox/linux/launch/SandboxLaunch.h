@@ -14,15 +14,56 @@
 
 namespace mozilla {
 
+class SandboxLaunch final {
+ public:
+  SandboxLaunch();
+  ~SandboxLaunch();
+
+  SandboxLaunch(const SandboxLaunch&) = delete;
+  SandboxLaunch& operator=(const SandboxLaunch&) = delete;
+
+  using LaunchOptions = base::LaunchOptions;
+  using SandboxingKind = ipc::SandboxingKind;
+
+  
+  
+  
+  
+  
+  
+  
+  static void Configure(GeckoProcessType aType, SandboxingKind aKind,
+                        LaunchOptions* aOptions);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool Prepare(LaunchOptions* aOptions);
+
+  
+  
+  
+  
+  
+  
+  
+  pid_t Fork();
+
+ private:
+  int mFlags;
+  int mChrootServer;
+  int mChrootClient;
+
+  void StartChrootServer();
+};
 
 
 
-void SandboxLaunchPrepare(GeckoProcessType aType, base::LaunchOptions* aOptions,
-                          ipc::SandboxingKind aKind);
-#if defined(MOZ_ENABLE_FORKSERVER)
-void SandboxLaunchForkServerPrepare(const std::vector<std::string>& aArgv,
-                                    base::LaunchOptions& aOptions);
-#endif
 bool HasAtiDrivers();
 
 }  
