@@ -3782,6 +3782,7 @@ class Document : public nsINode,
 
   
   
+  
   void SetNotifyFormOrPasswordRemoved(bool aShouldNotify);
 
   
