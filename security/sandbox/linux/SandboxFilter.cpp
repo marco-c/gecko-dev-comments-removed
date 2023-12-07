@@ -882,8 +882,11 @@ class SandboxPolicyCommon : public SandboxPolicyBase {
       
       
       switch (sysno) {
-      CASES_FOR_fstatat:
-        return Trap(StatAtTrap, nullptr);
+        
+        case __NR_statx:
+          return Error(ENOSYS);
+        CASES_FOR_fstatat:
+          return Trap(StatAtTrap, nullptr);
       }
     }
 
