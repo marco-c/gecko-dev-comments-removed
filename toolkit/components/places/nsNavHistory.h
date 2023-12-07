@@ -313,6 +313,13 @@ class nsNavHistory final : public nsSupportsWeakReference,
 
 
 
+  static nsLiteralCString GetTagsSqlFragment(const uint16_t aQueryType,
+                                             bool aExcludeItems);
+
+  
+
+
+
   static mozilla::Maybe<nsCString> GetTargetFolderGuid(
       const nsACString& aQueryURI);
 
