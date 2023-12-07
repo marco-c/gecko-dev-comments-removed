@@ -100,23 +100,15 @@ function isCloselyLeftOnTopOf(aCoordsP1, aCoordsP2, aDelta = 10) {
   );
 }
 
-async function promiseDismissPasteButton() {
+function promiseDismissPasteButton() {
   
   
-  await EventUtils.promiseNativeMouseEvent({
+  return EventUtils.promiseNativeMouseEvent({
     type: "click",
     target: document.body,
     
     
     atCenter: true,
-  });
-  
-  
-  await EventUtils.promiseNativeMouseEvent({
-    type: "mousemove",
-    target: document.body,
-    offsetX: 100,
-    offsetY: 100,
   });
 }
 

@@ -115,6 +115,8 @@ class DataTransferItem final : public nsISupports, public nsWrapperCache {
       nsIInputStream* aStream, const char* aFileNameKey,
       const nsAString& aContentType);
 
+  already_AddRefed<nsIGlobalObject> GetGlobalFromDataTransfer();
+
   
   uint32_t mIndex;
 

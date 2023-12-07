@@ -17,7 +17,6 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_widget.h"
 #include "nsContentUtils.h"
-#include "nsFocusManager.h"
 #include "nsIClipboardOwner.h"
 #include "nsIPromptService.h"
 #include "nsError.h"
@@ -52,11 +51,9 @@ class UserConfirmationRequest final
 
   UserConfirmationRequest(int32_t aClipboardType,
                           Document* aRequestingChromeDocument,
-                          nsIPrincipal* aRequestingPrincipal,
                           nsBaseClipboard* aClipboard)
       : mClipboardType(aClipboardType),
         mRequestingChromeDocument(aRequestingChromeDocument),
-        mRequestingPrincipal(aRequestingPrincipal),
         mClipboard(aClipboard) {
     MOZ_ASSERT(
         mClipboard->nsIClipboard::IsClipboardTypeSupported(aClipboardType));
@@ -68,11 +65,10 @@ class UserConfirmationRequest final
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         mozilla::ErrorResult& aRv) override;
 
-  bool IsEqual(int32_t aClipboardType, Document* aRequestingChromeDocument,
-               nsIPrincipal* aRequestingPrincipal) const {
+  bool IsEqual(int32_t aClipboardType,
+               Document* aRequestingChromeDocument) const {
     return ClipboardType() == aClipboardType &&
-           RequestingChromeDocument() == aRequestingChromeDocument &&
-           RequestingPrincipal()->Equals(aRequestingPrincipal);
+           RequestingChromeDocument() == aRequestingChromeDocument;
   }
 
   int32_t ClipboardType() const { return mClipboardType; }
@@ -80,8 +76,6 @@ class UserConfirmationRequest final
   Document* RequestingChromeDocument() const {
     return mRequestingChromeDocument;
   }
-
-  nsIPrincipal* RequestingPrincipal() const { return mRequestingPrincipal; }
 
   void AddClipboardGetRequest(const nsTArray<nsCString>& aFlavorList,
                               nsIAsyncClipboardGetCallback* aCallback) {
@@ -121,7 +115,6 @@ class UserConfirmationRequest final
 
   const int32_t mClipboardType;
   RefPtr<Document> mRequestingChromeDocument;
-  const nsCOMPtr<nsIPrincipal> mRequestingPrincipal;
   const RefPtr<nsBaseClipboard> mClipboard;
   
   nsTArray<UniquePtr<ClipboardGetRequest>> mPendingClipboardGetRequests;
@@ -509,30 +502,13 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetData(
   }
 
   
-  
-  if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
-    nsCOMPtr<nsITransferable> trans = clipboardCache->GetTransferable();
-    MOZ_ASSERT(trans);
-
-    if (nsCOMPtr<nsIPrincipal> principal = trans->GetRequestingPrincipal()) {
-      if (aRequestingPrincipal->Subsumes(principal)) {
-        MOZ_CLIPBOARD_LOG("%s: native clipboard data is from same-origin page.",
-                          __FUNCTION__);
-        AsyncGetDataInternal(aFlavorList, aWhichClipboard, aCallback);
-        return NS_OK;
-      }
-    }
-  }
-
-  
   if (aRequestingPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
     MOZ_CLIPBOARD_LOG("%s: Addon without read permission.", __FUNCTION__);
     return aCallback->OnError(NS_ERROR_FAILURE);
   }
 
   RequestUserConfirmation(aWhichClipboard, aFlavorList,
-                          aRequestingWindowContext, aRequestingPrincipal,
-                          aCallback);
+                          aRequestingWindowContext, aCallback);
   return NS_OK;
 }
 
@@ -747,7 +723,6 @@ void nsBaseClipboard::ClearClipboardCache(int32_t aClipboardType) {
 void nsBaseClipboard::RequestUserConfirmation(
     int32_t aClipboardType, const nsTArray<nsCString>& aFlavorList,
     mozilla::dom::WindowContext* aWindowContext,
-    nsIPrincipal* aRequestingPrincipal,
     nsIAsyncClipboardGetCallback* aCallback) {
   MOZ_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
   MOZ_ASSERT(aCallback);
@@ -759,24 +734,14 @@ void nsBaseClipboard::RequestUserConfirmation(
 
   CanonicalBrowsingContext* cbc =
       CanonicalBrowsingContext::Cast(aWindowContext->GetBrowsingContext());
-  MOZ_ASSERT(
-      cbc->IsContent(),
-      "Should not require user confirmation when access from chrome window");
-
-  RefPtr<CanonicalBrowsingContext> chromeTop = cbc->TopCrossChromeBoundary();
-  Document* chromeDoc = chromeTop ? chromeTop->GetDocument() : nullptr;
-  if (!chromeDoc || !chromeDoc->HasFocus(mozilla::IgnoreErrors())) {
-    MOZ_CLIPBOARD_LOG("%s: reject due to not in the focused window",
-                      __FUNCTION__);
+  if (!cbc) {
     aCallback->OnError(NS_ERROR_FAILURE);
     return;
   }
 
-  mozilla::dom::Element* activeElementInChromeDoc =
-      chromeDoc->GetActiveElement();
-  if (activeElementInChromeDoc != cbc->Top()->GetEmbedderElement()) {
-    
-    MOZ_CLIPBOARD_LOG("%s: reject due to not in the focused tab", __FUNCTION__);
+  RefPtr<CanonicalBrowsingContext> chromeTop = cbc->TopCrossChromeBoundary();
+  Document* chromeDoc = chromeTop ? chromeTop->GetDocument() : nullptr;
+  if (!chromeDoc) {
     aCallback->OnError(NS_ERROR_FAILURE);
     return;
   }
@@ -784,8 +749,7 @@ void nsBaseClipboard::RequestUserConfirmation(
   
   
   if (sUserConfirmationRequest) {
-    if (sUserConfirmationRequest->IsEqual(aClipboardType, chromeDoc,
-                                          aRequestingPrincipal)) {
+    if (sUserConfirmationRequest->IsEqual(aClipboardType, chromeDoc)) {
       sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
       return;
     }
@@ -809,8 +773,8 @@ void nsBaseClipboard::RequestUserConfirmation(
     return;
   }
 
-  sUserConfirmationRequest = new UserConfirmationRequest(
-      aClipboardType, chromeDoc, aRequestingPrincipal, this);
+  sUserConfirmationRequest =
+      new UserConfirmationRequest(aClipboardType, chromeDoc, this);
   sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
   promise->AppendNativeHandler(sUserConfirmationRequest);
 }

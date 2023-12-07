@@ -3453,9 +3453,7 @@ mozilla::ipc::IPCResult ContentParent::RecvSetClipboard(
   
 
   if (!ValidatePrincipal(aTransferable.requestingPrincipal(),
-                         {ValidatePrincipalOptions::AllowNullPtr,
-                          ValidatePrincipalOptions::AllowExpanded,
-                          ValidatePrincipalOptions::AllowSystem})) {
+                         {ValidatePrincipalOptions::AllowNullPtr})) {
     LogAndAssertFailedPrincipalValidationInfo(
         aTransferable.requestingPrincipal(), __func__);
   }

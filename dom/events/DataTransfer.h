@@ -426,8 +426,6 @@ class DataTransfer final : public nsISupports, public nsWrapperCache {
                                                      kImageRequestMime,
                                                      kPDFJSMime};
 
-  already_AddRefed<nsIGlobalObject> GetGlobal() const;
-
  protected:
   
   
