@@ -140,6 +140,16 @@ class MFCDMParent final : public PMFCDMParent {
   MediaEventListener mExpirationListener;
 };
 
+
+class MFCDMCapabilities {
+ public:
+  static void GetAllKeySystemsCapabilities(dom::Promise* aPromise);
+
+ private:
+  static RefPtr<GenericNonExclusivePromise> LaunchMFCDMProcessIfNeeded(
+      ipc::SandboxingKind aSandbox);
+};
+
 }  
 
 #endif  
