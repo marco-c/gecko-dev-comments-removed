@@ -313,15 +313,7 @@ class InplaceEditor extends EventEmitter {
       );
     }
 
-    this._onBlur = this._onBlur.bind(this);
-    this._onWindowBlur = this._onWindowBlur.bind(this);
-    this._onKeyPress = this._onKeyPress.bind(this);
-    this._onInput = this._onInput.bind(this);
-    this._onKeyup = this._onKeyup.bind(this);
-    this._onAutocompletePopupClick = this._onAutocompletePopupClick.bind(this);
-    this._onContextMenu = this._onContextMenu.bind(this);
-
-    this._createInput();
+    this.#createInput();
 
     
     this.originalDisplay = this.elt.style.display;
@@ -329,9 +321,9 @@ class InplaceEditor extends EventEmitter {
     this.elt.parentNode.insertBefore(this.input, this.elt);
 
     
-    this._autosize();
+    this.#autosize();
 
-    this.inputCharDimensions = this._getInputCharDimensions();
+    this.inputCharDimensions = this.#getInputCharDimensions();
     
     
     if (typeof options.advanceChars === "function") {
@@ -351,28 +343,28 @@ class InplaceEditor extends EventEmitter {
       this.input.select();
     }
 
-    this.input.addEventListener("blur", this._onBlur);
-    this.input.addEventListener("keypress", this._onKeyPress);
-    this.input.addEventListener("input", this._onInput);
-    this.input.addEventListener("dblclick", this._stopEventPropagation);
-    this.input.addEventListener("click", this._stopEventPropagation);
-    this.input.addEventListener("mousedown", this._stopEventPropagation);
-    this.input.addEventListener("contextmenu", this._onContextMenu);
-    this.doc.defaultView.addEventListener("blur", this._onWindowBlur);
+    this.input.addEventListener("blur", this.#onBlur);
+    this.input.addEventListener("keypress", this.#onKeyPress);
+    this.input.addEventListener("input", this.#onInput);
+    this.input.addEventListener("dblclick", this.#stopEventPropagation);
+    this.input.addEventListener("click", this.#stopEventPropagation);
+    this.input.addEventListener("mousedown", this.#stopEventPropagation);
+    this.input.addEventListener("contextmenu", this.#onContextMenu);
+    this.doc.defaultView.addEventListener("blur", this.#onWindowBlur);
 
     this.validate = options.validate;
 
     if (this.validate) {
-      this.input.addEventListener("keyup", this._onKeyup);
+      this.input.addEventListener("keyup", this.#onKeyup);
     }
 
-    this._updateSize();
+    this.#updateSize();
 
     if (options.start) {
       options.start(this, event);
     }
 
-    this._getGridNamesBeforeCompletion(options.getGridLineNames);
+    this.#getGridNamesBeforeCompletion(options.getGridLineNames);
   }
   static CONTENT_TYPES = CONTENT_TYPES;
 
@@ -381,7 +373,7 @@ class InplaceEditor extends EventEmitter {
     return val;
   }
 
-  _createInput() {
+  #createInput() {
     this.input = this.doc.createElementNS(
       HTML_NS,
       this.multiline ? "textarea" : "input"
@@ -406,23 +398,23 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _clear() {
+  #clear() {
     if (!this.input) {
       
       return;
     }
 
-    this.input.removeEventListener("blur", this._onBlur);
-    this.input.removeEventListener("keypress", this._onKeyPress);
-    this.input.removeEventListener("keyup", this._onKeyup);
-    this.input.removeEventListener("input", this._onInput);
-    this.input.removeEventListener("dblclick", this._stopEventPropagation);
-    this.input.removeEventListener("click", this._stopEventPropagation);
-    this.input.removeEventListener("mousedown", this._stopEventPropagation);
-    this.input.removeEventListener("contextmenu", this._onContextMenu);
-    this.doc.defaultView.removeEventListener("blur", this._onWindowBlur);
+    this.input.removeEventListener("blur", this.#onBlur);
+    this.input.removeEventListener("keypress", this.#onKeyPress);
+    this.input.removeEventListener("keyup", this.#onKeyup);
+    this.input.removeEventListener("input", this.#onInput);
+    this.input.removeEventListener("dblclick", this.#stopEventPropagation);
+    this.input.removeEventListener("click", this.#stopEventPropagation);
+    this.input.removeEventListener("mousedown", this.#stopEventPropagation);
+    this.input.removeEventListener("contextmenu", this.#onContextMenu);
+    this.doc.defaultView.removeEventListener("blur", this.#onWindowBlur);
 
-    this._stopAutosize();
+    this.#stopAutosize();
 
     this.elt.style.display = this.originalDisplay;
 
@@ -445,7 +437,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _autosize() {
+  #autosize() {
     
     
 
@@ -477,13 +469,13 @@ class InplaceEditor extends EventEmitter {
     }
 
     copyAllStyles(this.input, this._measurement);
-    this._updateSize();
+    this.#updateSize();
   }
 
   
 
 
-  _stopAutosize() {
+  #stopAutosize() {
     if (!this._measurement) {
       return;
     }
@@ -494,7 +486,7 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _updateSize() {
+  #updateSize() {
     
     
     
@@ -534,7 +526,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _getInputCharDimensions() {
+  #getInputCharDimensions() {
     
     
     this._measurement.textContent = "x";
@@ -550,12 +542,12 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _incrementValue(increment) {
+  #incrementValue(increment) {
     const value = this.input.value;
     const selectionStart = this.input.selectionStart;
     const selectionEnd = this.input.selectionEnd;
 
-    const newValue = this._incrementCSSValue(
+    const newValue = this.#incrementCSSValue(
       value,
       increment,
       selectionStart,
@@ -568,7 +560,7 @@ class InplaceEditor extends EventEmitter {
 
     this.input.value = newValue.value;
     this.input.setSelectionRange(newValue.start, newValue.end);
-    this._doValidation();
+    this.#doValidation();
 
     
     if (this.change) {
@@ -591,8 +583,8 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _incrementCSSValue(value, increment, selStart, selEnd) {
-    const range = this._parseCSSValue(value, selStart);
+  #incrementCSSValue(value, increment, selStart, selEnd) {
+    const range = this.#parseCSSValue(value, selStart);
     const type = range?.type || "";
     const rawValue = range ? value.substring(range.start, range.end) : "";
     const preRawValue = range ? value.substr(0, range.start) : "";
@@ -604,10 +596,10 @@ class InplaceEditor extends EventEmitter {
     if (type === "num") {
       if (rawValue == "0") {
         info = {};
-        info.units = this._findCompatibleUnit(preRawValue, postRawValue);
+        info.units = this.#findCompatibleUnit(preRawValue, postRawValue);
       }
 
-      const newValue = this._incrementRawValue(rawValue, increment, info);
+      const newValue = this.#incrementRawValue(rawValue, increment, info);
       if (newValue !== null) {
         incrementedValue = newValue;
         selection = [0, incrementedValue.length];
@@ -615,7 +607,7 @@ class InplaceEditor extends EventEmitter {
     } else if (type === "hex") {
       const exprOffset = selStart - range.start;
       const exprOffsetEnd = selEnd - range.start;
-      const newValue = this._incHexColor(
+      const newValue = this.#incHexColor(
         rawValue,
         increment,
         exprOffset,
@@ -629,37 +621,37 @@ class InplaceEditor extends EventEmitter {
       if (type === "rgb" || type === "hsl" || type === "hwb") {
         info = {};
         const isCSS4Color = !value.includes(",");
-        
-        
-        
-        
-        
-        
-        
+        // In case the value uses the new syntax of the CSS Color 4 specification,
+        // it is split by the spaces and the slash separating the alpha value
+        // between the different color components.
+        // Example: rgb(255 0 0 / 0.5)
+        // Otherwise, the value is represented using the old color syntax and is
+        // split by the commas between the color components.
+        // Example: rgba(255, 0, 0, 0.5)
         const part =
           value
             .substring(range.start, selStart)
             .split(isCSS4Color ? / ?\/ ?| / : ",").length - 1;
         if (part === 3) {
-          
+          // alpha
           info.minValue = 0;
           info.maxValue = 1;
         } else if (type === "rgb") {
           info.minValue = 0;
           info.maxValue = 255;
         } else if (part !== 0) {
-          
+          // hsl or hwb percentage
           info.minValue = 0;
           info.maxValue = 100;
 
-          
-          
+          // select the previous number if the selection is at the end of a
+          // percentage sign.
           if (value.charAt(selStart - 1) === "%") {
             --selStart;
           }
         }
       }
-      return this._incrementGenericValue(
+      return this.#incrementGenericValue(
         value,
         increment,
         selStart,
@@ -679,21 +671,21 @@ class InplaceEditor extends EventEmitter {
     };
   }
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-  _findCompatibleUnit(beforeValue, afterValue) {
+  /**
+   * Find a compatible unit to use for a CSS number value inserted between the
+   * provided beforeValue and afterValue. The compatible unit will be picked
+   * from a selection of default units corresponding to supported CSS value
+   * dimensions (distance, angle, duration).
+   *
+   * @param {String} beforeValue
+   *        The string preceeding the number value in the current property
+   *        value.
+   * @param {String} afterValue
+   *        The string following the number value in the current property value.
+   * @return {String} a valid unit that can be used for this number value or
+   *         empty string if no match could be found.
+   */
+  #findCompatibleUnit(beforeValue, afterValue) {
     if (!this.property || !this.property.name) {
       return "";
     }
@@ -728,7 +720,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _parseCSSValue(value, offset) {
+  #parseCSSValue(value, offset) {
     
     const reSplitCSS =
       /(?<url>url\("?[^"\)]+"?\)?)|(?<rgb>rgba?\([^)]*\)?)|(?<hsl>hsla?\([^)]*\)?)|(?<hwb>hwb\([^)]*\)?)|(?<hex>#[\dA-Fa-f]+)|(?<number>-?\d*\.?\d+(%|[a-z]{1,4})?)|"([^"]*)"?|'([^']*)'?|([^,\s\/!\(\)]+)|(!(.*)?)/;
@@ -786,7 +778,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _incrementGenericValue(value, increment, offset, offsetEnd, info) {
+  #incrementGenericValue(value, increment, offset, offsetEnd, info) {
     
     let start, end;
     
@@ -832,7 +824,7 @@ class InplaceEditor extends EventEmitter {
       let mid = value.substring(start, end);
       const last = value.substr(end);
 
-      mid = this._incrementRawValue(mid, increment, info);
+      mid = this.#incrementRawValue(mid, increment, info);
 
       if (mid !== null) {
         return {
@@ -857,7 +849,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _incrementRawValue(rawValue, increment, info) {
+  #incrementRawValue(rawValue, increment, info) {
     const num = parseFloat(rawValue);
 
     if (isNaN(num)) {
@@ -899,7 +891,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _incHexColor(rawValue, increment, offset, offsetEnd) {
+  #incHexColor(rawValue, increment, offset, offsetEnd) {
     
     if (offsetEnd > rawValue.length && offset >= rawValue.length) {
       return null;
@@ -1008,7 +1000,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _cycleCSSSuggestion(reverse, noSelect) {
+  #cycleCSSSuggestion(reverse, noSelect) {
     
     const { label, preLabel } = this.popup.selectedItem || {
       label: "",
@@ -1047,7 +1039,7 @@ class InplaceEditor extends EventEmitter {
       );
     }
 
-    this._updateSize();
+    this.#updateSize();
     
     this.emit("after-suggest");
   }
@@ -1055,7 +1047,7 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _apply(event, direction) {
+  #apply(event, direction) {
     if (this._applied) {
       return null;
     }
@@ -1073,7 +1065,7 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _onWindowBlur() {
+  #onWindowBlur = () => {
     if (this.popup && this.popup.isOpen) {
       this.popup.hidePopup();
     }
@@ -1081,24 +1073,24 @@ class InplaceEditor extends EventEmitter {
     if (this._openPopupTimeout) {
       this.doc.defaultView.clearTimeout(this._openPopupTimeout);
     }
-  }
+  };
 
   
 
 
-  _onBlur(event) {
+  #onBlur = event => {
     if (
       event &&
       this.popup &&
       this.popup.isOpen &&
       this.popup.selectedIndex >= 0
     ) {
-      this._acceptPopupSuggestion();
+      this.#acceptPopupSuggestion();
     } else {
-      this._apply();
-      this._clear();
+      this.#apply();
+      this.#clear();
     }
-  }
+  };
 
   
 
@@ -1107,7 +1099,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  async _getGridNamesBeforeCompletion(getGridLineNames) {
+  async #getGridNamesBeforeCompletion(getGridLineNames) {
     if (
       getGridLineNames &&
       this.property &&
@@ -1121,7 +1113,7 @@ class InplaceEditor extends EventEmitter {
       this.input &&
       this.input.value == ""
     ) {
-      this._maybeSuggestCompletion(false);
+      this.#maybeSuggestCompletion(false);
     }
   }
 
@@ -1129,11 +1121,11 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _onAutocompletePopupClick() {
-    this._acceptPopupSuggestion();
-  }
+  #onAutocompletePopupClick = () => {
+    this.#acceptPopupSuggestion();
+  };
 
-  _acceptPopupSuggestion() {
+  #acceptPopupSuggestion() {
     let label, preLabel;
 
     if (this._selectedIndex === undefined) {
@@ -1173,7 +1165,7 @@ class InplaceEditor extends EventEmitter {
       pre.length + toComplete.length,
       pre.length + toComplete.length
     );
-    this._updateSize();
+    this.#updateSize();
     
     
     const onPopupHidden = () => {
@@ -1184,14 +1176,14 @@ class InplaceEditor extends EventEmitter {
       }, 0);
     };
     this.popup.on("popup-closed", onPopupHidden);
-    this._hideAutocompletePopup();
+    this.#hideAutocompletePopup();
   }
 
   
 
 
   
-  _onKeyPress(event) {
+  #onKeyPress = event => {
     let prevent = false;
 
     const key = event.keyCode;
@@ -1202,13 +1194,13 @@ class InplaceEditor extends EventEmitter {
     this._pressedKey = event.key;
 
     const multilineNavigation =
-      !this._isSingleLine() && isKeyIn(key, "UP", "DOWN", "LEFT", "RIGHT");
+      !this.#isSingleLine() && isKeyIn(key, "UP", "DOWN", "LEFT", "RIGHT");
     const isPlainText = this.contentType == CONTENT_TYPES.PLAIN_TEXT;
     const isPopupOpen = this.popup && this.popup.isOpen;
 
     let increment = 0;
     if (!isPlainText && !multilineNavigation) {
-      increment = this._getIncrement(event);
+      increment = this.#getIncrement(event);
     }
 
     if (isKeyIn(key, "PAGE_UP", "PAGE_DOWN")) {
@@ -1216,8 +1208,8 @@ class InplaceEditor extends EventEmitter {
     }
 
     let cycling = false;
-    if (increment && this._incrementValue(increment)) {
-      this._updateSize();
+    if (increment && this.#incrementValue(increment)) {
+      this.#updateSize();
       prevent = true;
       cycling = true;
     }
@@ -1225,13 +1217,13 @@ class InplaceEditor extends EventEmitter {
     if (isPopupOpen && isKeyIn(key, "UP", "DOWN", "PAGE_UP", "PAGE_DOWN")) {
       prevent = true;
       cycling = true;
-      this._cycleCSSSuggestion(isKeyIn(key, "UP", "PAGE_UP"));
-      this._doValidation();
+      this.#cycleCSSSuggestion(isKeyIn(key, "UP", "PAGE_UP"));
+      this.#doValidation();
     }
 
     if (isKeyIn(key, "BACK_SPACE", "DELETE", "LEFT", "RIGHT", "HOME", "END")) {
       if (isPopupOpen && this.currentInputValue !== "") {
-        this._hideAutocompletePopup();
+        this.#hideAutocompletePopup();
       }
     } else if (
       
@@ -1245,7 +1237,7 @@ class InplaceEditor extends EventEmitter {
         !event.altKey &&
         !event.ctrlKey)
     ) {
-      this._maybeSuggestCompletion(true);
+      this.#maybeSuggestCompletion(true);
     }
 
     if (this.multiline && event.shiftKey && isKeyIn(key, "RETURN")) {
@@ -1288,16 +1280,16 @@ class InplaceEditor extends EventEmitter {
           return;
         } else if (this.popup && this.popup.isOpen) {
           event.preventDefault();
-          this._cycleCSSSuggestion(event.shiftKey, true);
+          this.#cycleCSSSuggestion(event.shiftKey, true);
           return;
         }
       }
 
-      this._apply(event, direction);
+      this.#apply(event, direction);
 
       
       if (this.popup && this.popup.isOpen) {
-        this._hideAutocompletePopup();
+        this.#hideAutocompletePopup();
       }
 
       if (direction !== null && focusManager.focusedElement === input) {
@@ -1319,19 +1311,19 @@ class InplaceEditor extends EventEmitter {
         }
       }
 
-      this._clear();
+      this.#clear();
     } else if (isKeyIn(key, "ESCAPE")) {
       
       
       this._preventSuggestions = true;
       
       if (this.popup && this.popup.isOpen) {
-        this._hideAutocompletePopup();
+        this.#hideAutocompletePopup();
       }
       prevent = true;
       this.cancelled = true;
-      this._apply();
-      this._clear();
+      this.#apply();
+      this.#clear();
       event.stopPropagation();
     } else if (isKeyIn(key, "SPACE")) {
       
@@ -1343,9 +1335,9 @@ class InplaceEditor extends EventEmitter {
     if (prevent) {
       event.preventDefault();
     }
-  }
+  };
 
-  _onContextMenu(event) {
+  #onContextMenu = event => {
     if (this.contextMenu) {
       
       
@@ -1353,7 +1345,7 @@ class InplaceEditor extends EventEmitter {
       event.preventDefault();
       this.contextMenu(event);
     }
-  }
+  };
 
   
 
@@ -1364,8 +1356,8 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _openAutocompletePopup(offset, selectedIndex) {
-    this.popup.on("popup-click", this._onAutocompletePopupClick);
+  #openAutocompletePopup(offset, selectedIndex) {
+    this.popup.on("popup-click", this.#onAutocompletePopupClick);
     this.popup.openPopup(this.input, offset, 0, selectedIndex);
   }
 
@@ -1373,15 +1365,15 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _hideAutocompletePopup() {
-    this.popup.off("popup-click", this._onAutocompletePopupClick);
+  #hideAutocompletePopup() {
+    this.popup.off("popup-click", this.#onAutocompletePopupClick);
     this.popup.hidePopup();
   }
 
   
 
 
-  _getIncrement(event) {
+  #getIncrement(event) {
     const getSmallIncrementKey = evt => {
       if (lazy.AppConstants.platform === "macosx") {
         return evt.altKey;
@@ -1418,20 +1410,20 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _onKeyup() {
+  #onKeyup = () => {
     this._applied = false;
-  }
+  };
 
   
 
 
-  _onInput() {
+  #onInput = () => {
     
-    this._doValidation();
+    this.#doValidation();
 
     
     if (this._measurement) {
-      this._updateSize();
+      this.#updateSize();
     }
 
     
@@ -1441,21 +1433,21 @@ class InplaceEditor extends EventEmitter {
 
     
     if (this.currentInputValue === "" && this.showSuggestCompletionOnEmpty) {
-      this._maybeSuggestCompletion(false);
+      this.#maybeSuggestCompletion(false);
     }
-  }
+  };
 
   
 
 
-  _stopEventPropagation(e) {
+  #stopEventPropagation(e) {
     e.stopPropagation();
   }
 
   
 
 
-  _doValidation() {
+  #doValidation() {
     if (this.validate && this.input) {
       this.validate(this.input.value);
     }
@@ -1467,7 +1459,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _maybeSuggestCompletion(autoInsert) {
+  #maybeSuggestCompletion(autoInsert) {
     
     if (!this.input) {
       return;
@@ -1520,7 +1512,7 @@ class InplaceEditor extends EventEmitter {
       let postLabelValues = [];
 
       if (this.contentType == CONTENT_TYPES.CSS_PROPERTY) {
-        list = this._getCSSPropertyList();
+        list = this.#getCSSPropertyList();
       } else if (this.contentType == CONTENT_TYPES.CSS_VALUE) {
         
         const match = /([^\s,.\/]+$)/.exec(query);
@@ -1535,14 +1527,14 @@ class InplaceEditor extends EventEmitter {
 
         if (varMatch && varMatch.length == 2) {
           startCheckQuery = varMatch[1];
-          list = this._getCSSVariableNames();
+          list = this.#getCSSVariableNames();
           postLabelValues = list.map(varName =>
-            this._getCSSVariableValue(varName)
+            this.#getCSSVariableValue(varName)
           );
         } else {
           list = [
             "!important",
-            ...this._getCSSValuesForPropertyName(this.property.name),
+            ...this.#getCSSValuesForPropertyName(this.property.name),
           ];
         }
 
@@ -1573,7 +1565,7 @@ class InplaceEditor extends EventEmitter {
             )[1];
             list = [
               "!important;",
-              ...this._getCSSValuesForPropertyName(propertyName),
+              ...this.#getCSSValuesForPropertyName(propertyName),
             ];
             const matchLastQuery = /([^\s,.\/]+$)/.exec(match[2] || "");
             if (matchLastQuery) {
@@ -1587,7 +1579,7 @@ class InplaceEditor extends EventEmitter {
             }
           } else if (match[1]) {
             
-            list = this._getCSSPropertyList();
+            list = this.#getCSSPropertyList();
             startCheckQuery = match[2];
           }
           if (startCheckQuery == null) {
@@ -1654,7 +1646,7 @@ class InplaceEditor extends EventEmitter {
           query.length,
           query.length + item.length - startCheckQuery.length
         );
-        this._updateSize();
+        this.#updateSize();
       }
 
       
@@ -1662,32 +1654,32 @@ class InplaceEditor extends EventEmitter {
         
         const indent = this.input.selectionStart - startCheckQuery.length;
         let offset = indent * this.inputCharDimensions.width;
-        offset = this._isSingleLine() ? offset : 0;
+        offset = this.#isSingleLine() ? offset : 0;
 
         
         const selectedIndex = autoInsert ? index : -1;
 
         
         this.popup.setItems(finalList, selectedIndex);
-        this._openAutocompletePopup(offset, selectedIndex);
+        this.#openAutocompletePopup(offset, selectedIndex);
       } else {
-        this._hideAutocompletePopup();
+        this.#hideAutocompletePopup();
       }
 
-      this._autocloseParenthesis();
+      this.#autocloseParenthesis();
 
       
       this.emit("after-suggest");
-      this._doValidation();
+      this.#doValidation();
     }, 0);
   }
 
   
 
 
-  _autocloseParenthesis() {
+  #autocloseParenthesis() {
     
-    const parts = this._splitStringAt(
+    const parts = this.#splitStringAt(
       this.input.value,
       this.input.selectionStart
     );
@@ -1698,13 +1690,13 @@ class InplaceEditor extends EventEmitter {
     
     
     if (this._pressedKey == "(" && !isWordChar(nextChar)) {
-      this._updateValue(parts[0] + ")" + parts[1]);
+      this.#updateValue(parts[0] + ")" + parts[1]);
     }
 
     
     
     if (this._pressedKey == ")" && nextChar == ")") {
-      this._updateValue(parts[0] + parts[1].substring(1));
+      this.#updateValue(parts[0] + parts[1].substring(1));
     }
 
     this._pressedKey = null;
@@ -1713,18 +1705,18 @@ class InplaceEditor extends EventEmitter {
   
 
 
-  _updateValue(str) {
+  #updateValue(str) {
     const start = this.input.selectionStart;
     this.input.value = str;
     this.input.setSelectionRange(start, start);
-    this._updateSize();
+    this.#updateSize();
   }
 
   
 
 
 
-  _splitStringAt(str, index) {
+  #splitStringAt(str, index) {
     return [str.substring(0, index), str.substring(index, str.length)];
   }
 
@@ -1733,7 +1725,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _isSingleLine() {
+  #isSingleLine() {
     if (!this.multiline) {
       
       
@@ -1751,7 +1743,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _getCSSPropertyList() {
+  #getCSSPropertyList() {
     return this.cssProperties.getNames().sort();
   }
 
@@ -1763,7 +1755,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _getCSSValuesForPropertyName(propertyName) {
+  #getCSSValuesForPropertyName(propertyName) {
     const gridLineList = [];
     if (this.gridLineNames) {
       if (GRID_ROW_PROPERTY_NAMES.includes(this.property.name)) {
@@ -1785,7 +1777,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _getCSSVariableNames() {
+  #getCSSVariableNames() {
     return Array.from(this.cssVariables.keys()).sort();
   }
 
@@ -1796,7 +1788,7 @@ class InplaceEditor extends EventEmitter {
 
 
 
-  _getCSSVariableValue(varName) {
+  #getCSSVariableValue(varName) {
     return this.cssVariables.get(varName);
   }
 }
