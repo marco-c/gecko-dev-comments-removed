@@ -1649,8 +1649,6 @@ pub enum Appearance {
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
     Treeview,
-    #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    Dialog,
 
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
