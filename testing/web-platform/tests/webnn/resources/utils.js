@@ -4,11 +4,28 @@ const ExecutionArray = ['sync', 'async'];
 
 
 const TypedArrayDict = {
+  
+  float16: Uint16Array,
+
   float32: Float32Array,
   int32: Int32Array,
   uint32: Uint32Array,
   int8: Int8Array,
   uint8: Uint8Array,
+};
+
+const getTypedArrayData = (type, data) => {
+  let outData;
+  if (type === 'float16') {
+    
+    outData = new TypedArrayDict[type](data.length);
+    for (let i = 0; i < data.length; i++) {
+      outData[i] = toHalf(data[i]);
+    }
+  } else {
+    outData = new TypedArrayDict[type](data);
+  }
+  return outData;
 };
 
 const sizeOfShape = (array) => {
@@ -390,8 +407,14 @@ const assert_array_approx_equals_ulp = (actual, expected, nulp, dataType, descri
       continue;
     } else {
       
-      actualBitwise = getBitwise(actual[i], dataType);
-      expectedBitwise = getBitwise(expected[i], dataType);
+      if (dataType === 'float32') {
+        actualBitwise = getBitwise(actual[i], dataType);
+        expectedBitwise = getBitwise(expected[i], dataType);
+      } else if (dataType === 'float16') {
+        actualBitwise = actual[i];
+        
+        expectedBitwise = toHalf(expected[i]);
+      }
       distance = actualBitwise - expectedBitwise;
       distance = distance >= 0 ? distance : -distance;
       assert_true(distance <= nulp,
@@ -672,14 +695,14 @@ const buildGraph = (operationName, builder, resources, buildFunc) => {
     
     for (let subInput of resources.inputs) {
       if (!subInput.hasOwnProperty('constant') || !subInput.constant) {
-        inputs[subInput.name] = new TypedArrayDict[subInput.type](subInput.data);
+        inputs[subInput.name] = getTypedArrayData(subInput.type, subInput.data);
       }
     }
   } else {
     for (let inputName in resources.inputs) {
       const subTestByName = resources.inputs[inputName];
       if (!subTestByName.hasOwnProperty('constant') || !subTestByName.constant) {
-        inputs[inputName] = new TypedArrayDict[subTestByName.type](subTestByName.data);
+        inputs[inputName] = getTypedArrayData(subTestByName.type, subTestByName.data);
       }
     }
   }
@@ -785,4 +808,51 @@ const testWebNNOperation = (operationName, buildFunc, deviceType = 'cpu') => {
       });
     }
   });
+};
+
+
+const toHalf = (value) => {
+  let floatView = new Float32Array(1);
+  let int32View = new Int32Array(floatView.buffer);
+
+  
+
+
+
+  floatView[0] = value;
+  let x = int32View[0];
+
+  let bits = (x >> 16) & 0x8000; 
+  let m = (x >> 12) & 0x07ff; 
+  let e = (x >> 23) & 0xff; 
+
+  
+
+  if (e < 103) {
+    return bits;
+  }
+
+  
+  if (e > 142) {
+    bits |= 0x7c00;
+    
+
+    bits |= ((e == 255) ? 0 : 1) && (x & 0x007fffff);
+    return bits;
+  }
+
+  
+  if (e < 113) {
+    m |= 0x0800;
+    
+
+    bits |= (m >> (114 - e)) + ((m >> (113 - e)) & 1);
+    return bits;
+  }
+
+  bits |= ((e - 112) << 10) | (m >> 1);
+  
+
+  bits += m & 1;
+  return bits;
 };
