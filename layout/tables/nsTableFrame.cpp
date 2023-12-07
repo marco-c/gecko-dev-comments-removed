@@ -83,10 +83,10 @@ struct TableReflowInput final {
                         table->GetColSpacing(table->GetColCount()));
 
     
-    AdvanceBCoord(aBorderPadding.BStart(mWM));
     mAvailSize.BSize(mWM) = aMode == TableReflowMode::Measuring
                                 ? NS_UNCONSTRAINEDSIZE
                                 : mReflowInput.AvailableBSize();
+    AdvanceBCoord(aBorderPadding.BStart(mWM));
     ReduceAvailableBSizeBy(aBorderPadding.BEnd(mWM) + table->GetRowSpacing(-1) +
                            table->GetRowSpacing(table->GetRowCount()));
   }
