@@ -188,4 +188,21 @@ void MFCDMCapabilitiesIPDLToKeySystemConfig(
 }
 #endif
 
+bool DoesKeySystemSupportClearLead(const nsAString& aKeySystem) {
+  
+  
+  
+  
+  
+  
+  
+#ifdef MOZ_WMF_CDM
+  
+  if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName)) {
+    return true;
+  }
+#endif
+  return aKeySystem.EqualsLiteral(kWidevineKeySystemName);
+}
+
 }  
