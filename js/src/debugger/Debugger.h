@@ -640,6 +640,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   bool allowUnobservedWasm;
 
   
+  
+  
+  bool exclusiveDebuggerOnEval;
+
+  
   bool collectCoverageInfo;
 
   template <typename T>
@@ -990,6 +995,8 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
 
   
   IsObserving observesNativeCalls() const;
+
+  bool isExclusiveDebuggerOnEval() const;
 
  private:
   [[nodiscard]] static bool ensureExecutionObservabilityOfFrame(

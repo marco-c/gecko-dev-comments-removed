@@ -25,8 +25,8 @@ inline bool js::Debugger::isHookCallAllowed(JSContext* cx) const {
   
   
   
-  return !cx->insideDebuggerEvaluationWithOnNativeCallHook ||
-         this == cx->insideDebuggerEvaluationWithOnNativeCallHook;
+  return !cx->insideExclusiveDebuggerOnEval ||
+         this == cx->insideExclusiveDebuggerOnEval;
 }
 
 #endif 

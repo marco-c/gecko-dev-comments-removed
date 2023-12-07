@@ -440,6 +440,10 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
 
   
   
+  dbg.exclusiveDebuggerOnEval = true;
+
+  
+  
   
   
   

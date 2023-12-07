@@ -2431,8 +2431,10 @@ Maybe<Completion> DebuggerObject::call(JSContext* cx,
 
   
   
-  AutoNoteDebuggerEvaluationWithOnNativeCallHook noteEvaluation(
-      cx, dbg->observesNativeCalls() ? dbg : nullptr);
+  Maybe<AutoNoteExclusiveDebuggerOnEval> noteEvaluation;
+  if (dbg->isExclusiveDebuggerOnEval()) {
+    noteEvaluation.emplace(cx, dbg);
+  }
 
   
   LeaveDebuggeeNoExecute nnx(cx);

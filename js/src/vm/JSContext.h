@@ -895,7 +895,8 @@ struct JS_PUBLIC_API JSContext : public JS::RootingContext,
   
   
   
-  js::ContextData<js::Debugger*> insideDebuggerEvaluationWithOnNativeCallHook;
+  
+  js::ContextData<js::Debugger*> insideExclusiveDebuggerOnEval;
 
 }; 
 
@@ -1016,18 +1017,18 @@ class AutoAssertNoPendingException {
 #endif
 };
 
-class MOZ_RAII AutoNoteDebuggerEvaluationWithOnNativeCallHook {
+class MOZ_RAII AutoNoteExclusiveDebuggerOnEval {
   JSContext* cx;
   Debugger* oldValue;
 
  public:
-  AutoNoteDebuggerEvaluationWithOnNativeCallHook(JSContext* cx, Debugger* dbg)
-      : cx(cx), oldValue(cx->insideDebuggerEvaluationWithOnNativeCallHook) {
-    cx->insideDebuggerEvaluationWithOnNativeCallHook = dbg;
+  AutoNoteExclusiveDebuggerOnEval(JSContext* cx, Debugger* dbg)
+      : cx(cx), oldValue(cx->insideExclusiveDebuggerOnEval) {
+    cx->insideExclusiveDebuggerOnEval = dbg;
   }
 
-  ~AutoNoteDebuggerEvaluationWithOnNativeCallHook() {
-    cx->insideDebuggerEvaluationWithOnNativeCallHook = oldValue;
+  ~AutoNoteExclusiveDebuggerOnEval() {
+    cx->insideExclusiveDebuggerOnEval = oldValue;
   }
 };
 

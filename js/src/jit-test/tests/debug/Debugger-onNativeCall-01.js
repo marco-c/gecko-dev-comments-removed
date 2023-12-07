@@ -58,11 +58,17 @@ for (let i = 0; i < 5; i++) {
 
   
   
-  
-  
-  
-  dbg2.onNativeCall = function () {};
   rv.length = 0;
+  dbg2.exclusiveDebuggerOnEval = true;
+  assertEq(dbg2.exclusiveDebuggerOnEval, true);
   gdbg2.executeInGlobal(`f()`);
   assertEqArray(rv, []);
+
+  
+  
+  rv.length = 0;
+  dbg2.exclusiveDebuggerOnEval = false;
+  assertEq(dbg2.exclusiveDebuggerOnEval, false);
+  gdbg2.executeInGlobal(`f()`);
+  assertEqArray(rv, ["print", "get", "print", "set", "push", "call"]);
 }
