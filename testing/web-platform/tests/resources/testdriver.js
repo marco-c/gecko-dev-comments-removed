@@ -694,6 +694,42 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        set_rph_registration_mode: function(mode, context=null) {
+          return window.test_driver_internal.set_rph_registration_mode(mode, context);
+        },
+
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
         cancel_fedcm_dialog: function(context=null) {
             return window.test_driver_internal.cancel_fedcm_dialog(context);
         },
@@ -1092,6 +1128,10 @@
 
         async set_spc_transaction_mode(mode, context=null) {
             throw new Error("set_spc_transaction_mode() is not implemented by testdriver-vendor.js");
+        },
+
+        set_rph_registration_mode: function(mode, context=null) {
+            return Promise.reject(new Error("unimplemented"));
         },
 
         async cancel_fedcm_dialog(context=null) {
