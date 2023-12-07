@@ -1021,10 +1021,19 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
     }
   }
 
-  mObservingState = eRefreshObserving;
   if (!mDocument) {
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(mObservingState == eNotObservingRefresh,
+               "We've been shutdown, which means we should've been "
+               "unregistered as a refresh observer");
     return;
   }
+  mObservingState = eRefreshObserving;
 
   
   
