@@ -54,6 +54,7 @@
 #include "mozilla/dom/TreeOrderedArray.h"
 #include "mozilla/dom/ViewportMetaData.h"
 #include "mozilla/dom/LargestContentfulPaint.h"
+#include "mozilla/dom/WakeLockBinding.h"
 #include "mozilla/glean/GleanMetrics.h"
 #include "nsAtom.h"
 #include "nsCOMArray.h"
@@ -276,6 +277,7 @@ class Touch;
 class TouchList;
 class TreeWalker;
 enum class ViewportFitType : uint8_t;
+class WakeLockSentinel;
 class WindowContext;
 class WindowGlobalChild;
 class WindowProxyHolder;
@@ -3536,6 +3538,8 @@ class Document : public nsINode,
   
   void EvaluateMediaQueriesAndReportChanges(bool aRecurse);
 
+  nsTHashSet<RefPtr<WakeLockSentinel>>& ActiveWakeLocks(WakeLockType aType);
+
   
   nsIHTMLCollection* Children();
   uint32_t ChildElementCount();
@@ -5164,6 +5168,10 @@ class Document : public nsINode,
   
   
   nsCOMPtr<nsILayoutHistoryState> mLayoutHistoryState;
+
+  
+  
+  nsTHashMap<WakeLockType, nsTHashSet<RefPtr<WakeLockSentinel>>> mActiveLocks;
 
   
   
