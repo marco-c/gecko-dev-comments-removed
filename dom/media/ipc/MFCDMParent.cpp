@@ -12,11 +12,13 @@
 
 #include "mozilla/dom/KeySystemNames.h"
 #include "mozilla/EMEUtils.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_media.h"
 #include "mozilla/KeySystemConfig.h"
 #include "mozilla/WindowsVersion.h"
 #include "MFCDMProxy.h"
 #include "MFMediaEngineUtils.h"
+#include "nsTHashMap.h"
 #include "RemoteDecodeUtils.h"       
 #include "SpecialSystemDirectory.h"  
 #include "WMFUtils.h"
@@ -76,6 +78,10 @@ DEFINE_PROPERTYKEY(EME_CONTENTDECRYPTIONMODULE_ORIGIN_ID, 0x1218a3e2, 0xcfb0,
       return IPC_OK();                                                       \
     }                                                                        \
   } while (false)
+
+StaticMutex sFactoryMutex;
+static nsTHashMap<nsStringHashKey, ComPtr<IMFContentDecryptionModuleFactory>>
+    sFactoryMap;
 
 
 
@@ -354,7 +360,7 @@ MFCDMParent::MFCDMParent(const nsAString& aKeySystem,
   mExpirationListener = mExpirationEvents.Connect(
       mManagerThread, this, &MFCDMParent::SendOnSessionKeyExpiration);
 
-  RETURN_VOID_IF_FAILED(LoadFactory(mKeySystem, mFactory));
+  RETURN_VOID_IF_FAILED(GetOrCreateFactory(mKeySystem, mFactory));
 }
 
 void MFCDMParent::ShutdownCDM() {
@@ -409,6 +415,25 @@ LPCWSTR MFCDMParent::GetCDMLibraryName(const nsString& aKeySystem) {
   }
   
   return L"Unknown";
+}
+
+
+HRESULT MFCDMParent::GetOrCreateFactory(
+    const nsString& aKeySystem,
+    ComPtr<IMFContentDecryptionModuleFactory>& aFactoryOut) {
+  StaticMutexAutoLock lock(sFactoryMutex);
+  auto rv = sFactoryMap.MaybeGet(aKeySystem);
+  if (!rv) {
+    MFCDM_PARENT_SLOG("No factory %s, creating...",
+                      NS_ConvertUTF16toUTF8(aKeySystem).get());
+    ComPtr<IMFContentDecryptionModuleFactory> factory;
+    MFCDM_RETURN_IF_FAILED(LoadFactory(aKeySystem, factory));
+    sFactoryMap.InsertOrUpdate(aKeySystem, factory);
+    aFactoryOut.Swap(factory);
+  } else {
+    aFactoryOut = *rv;
+  }
+  return S_OK;
 }
 
 
@@ -655,7 +680,7 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
 
   ComPtr<IMFContentDecryptionModuleFactory> factory = aFactory;
   if (!factory) {
-    RETURN_VOID_IF_FAILED(LoadFactory(aKeySystem, factory));
+    RETURN_VOID_IF_FAILED(GetOrCreateFactory(aKeySystem, factory));
   }
 
   
