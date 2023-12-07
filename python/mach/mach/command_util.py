@@ -413,9 +413,7 @@ def suggest_command(command):
     
     
     if len(suggested_commands) != 1:
-        suggested_commands = set(
-            difflib.get_close_matches(command, names, cutoff=0.5)
-        )
+        suggested_commands = set(difflib.get_close_matches(command, names, cutoff=0.5))
         suggested_commands |= {cmd for cmd in names if cmd.startswith(command)}
         raise UnknownCommandError(command, "run", suggested_commands)
 

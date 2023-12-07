@@ -6,7 +6,11 @@
 from FrameClass import AbstractFrame, Frame
 
 
-COMMON = {"SupportsCSSTransforms", "SupportsContainLayoutAndPaint", "SupportsAspectRatio"}
+COMMON = {
+    "SupportsCSSTransforms",
+    "SupportsContainLayoutAndPaint",
+    "SupportsAspectRatio",
+}
 LEAF = {"Leaf"}
 MATHML = {"MathML"}
 SVG = {"SVG"}
@@ -55,7 +59,9 @@ FRAME_CLASSES = [
     
     
     
-    Frame("nsComboboxDisplayFrame", "ComboboxDisplay", REPLACED_WITH_BLOCK - {"Replaced"}),
+    Frame(
+        "nsComboboxDisplayFrame", "ComboboxDisplay", REPLACED_WITH_BLOCK - {"Replaced"}
+    ),
     Frame("nsContinuingTextFrame", "Text", TEXT),
     Frame("nsDateTimeControlFrame", "DateTimeControl", REPLACED_WITH_BLOCK),
     Frame("nsFieldSetFrame", "FieldSet", BLOCK),
@@ -137,7 +143,11 @@ FRAME_CLASSES = [
     Frame("SVGMarkerFrame", "SVGMarker", SVG_CONTAINER),
     Frame("SVGMarkerAnonChildFrame", "SVGMarkerAnonChild", SVG_CONTAINER),
     Frame("SVGMaskFrame", "SVGMask", SVG_CONTAINER),
-    Frame("SVGOuterSVGFrame", "SVGOuterSVG", SVG_CONTAINER | {"Replaced", "ReplacedSizing", "SupportsContainLayoutAndPaint"}),
+    Frame(
+        "SVGOuterSVGFrame",
+        "SVGOuterSVG",
+        SVG_CONTAINER | {"Replaced", "ReplacedSizing", "SupportsContainLayoutAndPaint"},
+    ),
     Frame("SVGOuterSVGAnonChildFrame", "SVGOuterSVGAnonChild", SVG_CONTAINER),
     Frame("SVGPatternFrame", "SVGPattern", SVG_CONTAINER),
     Frame("SVGRadialGradientFrame", "SVGRadialGradient", SVG_CONTAINER),
