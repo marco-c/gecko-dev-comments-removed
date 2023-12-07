@@ -513,7 +513,7 @@ class nsGridContainerFrame final : public nsContainerFrame,
 
   
   void AddImplicitNamedAreasInternal(LineNameList& aNameList,
-                                     ImplicitNamedAreas* aAreas);
+                                     ImplicitNamedAreas*& aAreas);
 
   
 
