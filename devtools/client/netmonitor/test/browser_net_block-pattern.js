@@ -24,8 +24,14 @@ add_task(async function () {
   store.dispatch(Actions.batchEnable(false));
 
   
+  store.dispatch(Actions.toggleRequestBlockingPanel());
+
+  
   await addBlockedRequest("test1", monitor);
   await addBlockedRequest("test/*/test3", monitor);
+
+  
+  store.dispatch(Actions.toggleRequestBlockingPanel());
 
   
   const TEST_URL_1 = HTTPS_SEARCH_SJS + "?value=test1";
