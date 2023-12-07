@@ -62,6 +62,11 @@ class HTMLFormElement final : public nsGenericHTMLElement,
   void AsyncEventRunning(AsyncEventDispatcher* aEvent) override;
 
   
+  bool mHasPendingPasswordEvent = false;
+  
+  bool mHasPendingPossibleUsernameEvent = false;
+
+  
   bool ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                       const nsAString& aValue,
                       nsIPrincipal* aMaybeScriptedPrincipal,
@@ -361,12 +366,6 @@ class HTMLFormElement final : public nsGenericHTMLElement,
 
  protected:
   JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
-  void PostPasswordEvent();
-  void PostPossibleUsernameEvent();
-
-  RefPtr<AsyncEventDispatcher> mFormPasswordEventDispatcher;
-  RefPtr<AsyncEventDispatcher> mFormPossibleUsernameEventDispatcher;
 
   class RemoveElementRunnable;
   friend class RemoveElementRunnable;
