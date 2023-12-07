@@ -111,18 +111,34 @@ void VideoBridgeParent::ActorDestroy(ActorDestroyReason aWhy) {
   mClosed = true;
 
   mCompositorThreadHolder = nullptr;
-  ReleaseCompositorThread();
 }
 
 
 void VideoBridgeParent::Shutdown() {
+  CompositorThread()->Dispatch(NS_NewRunnableFunction(
+      "VideoBridgeParent::Shutdown",
+      []() -> void { VideoBridgeParent::ShutdownInternal(); }));
+}
+
+
+void VideoBridgeParent::ShutdownInternal() {
   sVideoBridgeParentShutDown = true;
 
-  auto videoBridgeFromProcess = sVideoBridgeFromProcess.Lock();
-  for (auto& bridgeParent : *videoBridgeFromProcess) {
-    if (bridgeParent) {
-      bridgeParent->ReleaseCompositorThread();
+  nsTArray<RefPtr<VideoBridgeParent>> bridges;
+
+  
+  
+  {
+    auto videoBridgeFromProcess = sVideoBridgeFromProcess.Lock();
+    for (auto& bridgeParent : *videoBridgeFromProcess) {
+      if (bridgeParent) {
+        bridges.AppendElement(bridgeParent);
+      }
     }
+  }
+
+  for (auto& bridge : bridges) {
+    bridge->Close();
   }
 }
 
@@ -147,10 +163,6 @@ void VideoBridgeParent::DoUnregisterExternalImages() {
       texture->MaybeDestroyRenderTexture();
     }
   }
-}
-
-void VideoBridgeParent::ReleaseCompositorThread() {
-  mCompositorThreadHolder = nullptr;
 }
 
 PTextureParent* VideoBridgeParent::AllocPTextureParent(
