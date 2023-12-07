@@ -1915,8 +1915,12 @@ async function closeContextMenu() {
 
 
 
-function getSmoothScrollPrefs(aInputType) {
+function getSmoothScrollPrefs(aInputType, aMsdPhysics) {
   let result = [["apz.test.logging_enabled", true]];
+  
+  if (aMsdPhysics !== undefined) {
+    result.push(["general.smoothScroll.msdPhysics.enabled", aMsdPhysics]);
+  }
   if (aInputType == "wheel") {
     
     result.push(["apz.test.mac.synth_wheel_input", true]);
@@ -1952,7 +1956,11 @@ function buildRelativeScrollSmoothnessVariants(aInputType, aScrollMethods) {
   for (let scrollMethod of aScrollMethods) {
     subtests.push({
       file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}`,
-      prefs: getSmoothScrollPrefs(aInputType)
+      prefs: getSmoothScrollPrefs(aInputType,  false)
+    });
+    subtests.push({
+      file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}`,
+      prefs: getSmoothScrollPrefs(aInputType,  true),
     });
   }
   return subtests;
