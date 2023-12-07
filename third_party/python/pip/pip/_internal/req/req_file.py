@@ -2,7 +2,6 @@
 Requirements file parsing
 """
 
-import logging
 import optparse
 import os
 import re
@@ -70,15 +69,13 @@ SUPPORTED_OPTIONS: List[Callable[..., optparse.Option]] = [
 
 
 SUPPORTED_OPTIONS_REQ: List[Callable[..., optparse.Option]] = [
+    cmdoptions.install_options,
     cmdoptions.global_options,
     cmdoptions.hash,
-    cmdoptions.config_settings,
 ]
 
 
 SUPPORTED_OPTIONS_REQ_DEST = [str(o().dest) for o in SUPPORTED_OPTIONS_REQ]
-
-logger = logging.getLogger(__name__)
 
 
 class ParsedRequirement:
@@ -169,6 +166,7 @@ def handle_requirement_line(
     line: ParsedLine,
     options: Optional[optparse.Values] = None,
 ) -> ParsedRequirement:
+
     
     line_comes_from = "{} {} (line {})".format(
         "-c" if line.constraint else "-r",
@@ -213,12 +211,6 @@ def handle_option_line(
     options: Optional[optparse.Values] = None,
     session: Optional[PipSession] = None,
 ) -> None:
-    if opts.hashes:
-        logger.warning(
-            "%s line %s has --hash but no requirement, and will be ignored.",
-            filename,
-            lineno,
-        )
 
     if options:
         

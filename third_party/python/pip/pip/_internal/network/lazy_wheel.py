@@ -6,7 +6,7 @@ from bisect import bisect_left, bisect_right
 from contextlib import contextmanager
 from tempfile import NamedTemporaryFile
 from typing import Any, Dict, Generator, List, Optional, Tuple
-from zipfile import BadZipFile, ZipFile
+from zipfile import BadZipfile, ZipFile
 
 from pip._vendor.packaging.utils import canonicalize_name
 from pip._vendor.requests.models import CONTENT_CHUNK_SIZE, Response
@@ -160,7 +160,7 @@ class LazyZipOverHTTP:
                     
                     
                     ZipFile(self)  
-                except BadZipFile:
+                except BadZipfile:
                     pass
                 else:
                     break

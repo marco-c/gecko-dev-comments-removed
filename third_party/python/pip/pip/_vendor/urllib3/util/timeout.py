@@ -3,7 +3,8 @@ from __future__ import absolute_import
 import time
 
 
-from socket import _GLOBAL_DEFAULT_TIMEOUT, getdefaulttimeout
+
+from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 from ..exceptions import TimeoutStateError
 
@@ -114,10 +115,6 @@ class Timeout(object):
 
     
     __str__ = __repr__
-
-    @classmethod
-    def resolve_default_timeout(cls, timeout):
-        return getdefaulttimeout() if timeout is cls.DEFAULT_TIMEOUT else timeout
 
     @classmethod
     def _validate_timeout(cls, value, name):

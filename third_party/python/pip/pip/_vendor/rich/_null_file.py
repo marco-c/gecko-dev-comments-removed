@@ -3,6 +3,20 @@ from typing import IO, Iterable, Iterator, List, Optional, Type
 
 
 class NullFile(IO[str]):
+
+    
+
+    @property
+    def mode(self) -> str:
+        return ""
+
+    @property
+    def name(self) -> str:
+        return "NullFile"
+
+    def closed(self) -> bool:
+        return False
+
     def close(self) -> None:
         pass
 

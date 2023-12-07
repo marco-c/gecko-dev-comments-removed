@@ -17,7 +17,7 @@
 
 import functools
 import sys
-import typing as t
+import typing
 from asyncio import sleep
 
 from pip._vendor.tenacity import AttemptManager
@@ -26,20 +26,21 @@ from pip._vendor.tenacity import DoAttempt
 from pip._vendor.tenacity import DoSleep
 from pip._vendor.tenacity import RetryCallState
 
-WrappedFnReturnT = t.TypeVar("WrappedFnReturnT")
-WrappedFn = t.TypeVar("WrappedFn", bound=t.Callable[..., t.Awaitable[t.Any]])
+WrappedFn = typing.TypeVar("WrappedFn", bound=typing.Callable)
+_RetValT = typing.TypeVar("_RetValT")
 
 
 class AsyncRetrying(BaseRetrying):
-    sleep: t.Callable[[float], t.Awaitable[t.Any]]
-
-    def __init__(self, sleep: t.Callable[[float], t.Awaitable[t.Any]] = sleep, **kwargs: t.Any) -> None:
+    def __init__(self, sleep: typing.Callable[[float], typing.Awaitable] = sleep, **kwargs: typing.Any) -> None:
         super().__init__(**kwargs)
         self.sleep = sleep
 
     async def __call__(  
-        self, fn: WrappedFn, *args: t.Any, **kwargs: t.Any
-    ) -> WrappedFnReturnT:
+        self,
+        fn: typing.Callable[..., typing.Awaitable[_RetValT]],
+        *args: typing.Any,
+        **kwargs: typing.Any,
+    ) -> _RetValT:
         self.begin()
 
         retry_state = RetryCallState(retry_object=self, fn=fn, args=args, kwargs=kwargs)
@@ -49,24 +50,21 @@ class AsyncRetrying(BaseRetrying):
                 try:
                     result = await fn(*args, **kwargs)
                 except BaseException:  
-                    retry_state.set_exception(sys.exc_info())  
+                    retry_state.set_exception(sys.exc_info())
                 else:
                     retry_state.set_result(result)
             elif isinstance(do, DoSleep):
                 retry_state.prepare_for_next_attempt()
                 await self.sleep(do)
             else:
-                return do  
-
-    def __iter__(self) -> t.Generator[AttemptManager, None, None]:
-        raise TypeError("AsyncRetrying object is not iterable")
+                return do
 
     def __aiter__(self) -> "AsyncRetrying":
         self.begin()
         self._retry_state = RetryCallState(self, fn=None, args=(), kwargs={})
         return self
 
-    async def __anext__(self) -> AttemptManager:
+    async def __anext__(self) -> typing.Union[AttemptManager, typing.Any]:
         while True:
             do = self.iter(retry_state=self._retry_state)
             if do is None:
@@ -77,18 +75,18 @@ class AsyncRetrying(BaseRetrying):
                 self._retry_state.prepare_for_next_attempt()
                 await self.sleep(do)
             else:
-                raise StopAsyncIteration
+                return do
 
     def wraps(self, fn: WrappedFn) -> WrappedFn:
         fn = super().wraps(fn)
         
 
         @functools.wraps(fn)
-        async def async_wrapped(*args: t.Any, **kwargs: t.Any) -> t.Any:
+        async def async_wrapped(*args: typing.Any, **kwargs: typing.Any) -> typing.Any:
             return await fn(*args, **kwargs)
 
         
-        async_wrapped.retry = fn.retry  
-        async_wrapped.retry_with = fn.retry_with  
+        async_wrapped.retry = fn.retry
+        async_wrapped.retry_with = fn.retry_with
 
-        return async_wrapped  
+        return async_wrapped

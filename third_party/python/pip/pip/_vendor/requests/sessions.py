@@ -324,9 +324,7 @@ class SessionRedirectMixin:
         except KeyError:
             username, password = None, None
 
-        
-        
-        if not scheme.startswith('https') and username and password:
+        if username and password:
             headers["Proxy-Authorization"] = _basic_auth_str(username, password)
 
         return new_proxies

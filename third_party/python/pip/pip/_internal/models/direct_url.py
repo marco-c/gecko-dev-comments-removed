@@ -105,31 +105,22 @@ class ArchiveInfo:
         hash: Optional[str] = None,
         hashes: Optional[Dict[str, str]] = None,
     ) -> None:
-        
-        self.hashes = hashes
-        self.hash = hash
-
-    @property
-    def hash(self) -> Optional[str]:
-        return self._hash
-
-    @hash.setter
-    def hash(self, value: Optional[str]) -> None:
-        if value is not None:
+        if hash is not None:
             
             
             try:
-                hash_name, hash_value = value.split("=", 1)
+                hash_name, hash_value = hash.split("=", 1)
             except ValueError:
                 raise DirectUrlValidationError(
-                    f"invalid archive_info.hash format: {value!r}"
+                    f"invalid archive_info.hash format: {hash!r}"
                 )
-            if self.hashes is None:
-                self.hashes = {hash_name: hash_value}
-            elif hash_name not in self.hashes:
-                self.hashes = self.hashes.copy()
-                self.hashes[hash_name] = hash_value
-        self._hash = value
+            if hashes is None:
+                hashes = {hash_name: hash_value}
+            elif hash_name not in hash:
+                hashes = hashes.copy()
+                hashes[hash_name] = hash_value
+        self.hash = hash
+        self.hashes = hashes
 
     @classmethod
     def _from_dict(cls, d: Optional[Dict[str, Any]]) -> Optional["ArchiveInfo"]:
