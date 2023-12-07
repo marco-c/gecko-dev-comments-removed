@@ -8,6 +8,7 @@ package org.mozilla.geckoview;
 
 import android.util.Log;
 import androidx.annotation.AnyThread;
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.StringDef;
@@ -74,7 +75,12 @@ public class TranslationsController {
       if (DEBUG) {
         Log.d(LOGTAG, "Requesting if the translations engine supports the device.");
       }
-      return EventDispatcher.getInstance().queryBoolean(ENGINE_SUPPORTED_EVENT);
+      return EventDispatcher.getInstance()
+          .queryBoolean(ENGINE_SUPPORTED_EVENT)
+          .map(
+              result -> result,
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_ENGINE_NOT_SUPPORTED));
     }
 
     
@@ -102,7 +108,9 @@ public class TranslationsController {
                   return null;
                 }
                 return null;
-              });
+              },
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_LOAD_LANGUAGES));
     }
 
     
@@ -120,7 +128,25 @@ public class TranslationsController {
       if (DEBUG) {
         Log.d(LOGTAG, "Requesting management of the language model.");
       }
-      return EventDispatcher.getInstance().queryVoid(MANAGE_MODEL_EVENT, options.toBundle());
+      return EventDispatcher.getInstance()
+          .queryVoid(MANAGE_MODEL_EVENT, options.toBundle())
+          .map(
+              result -> result,
+              exception -> {
+                final String exceptionData =
+                    ((EventDispatcher.QueryException) exception).data.toString();
+                if (exceptionData.contains("COULD_NOT_DELETE")) {
+                  return new TranslationsException(
+                      TranslationsException.ERROR_MODEL_COULD_NOT_DELETE);
+                } else if (exceptionData.contains("LANGUAGE_REQUIRED")) {
+                  return new TranslationsException(
+                      TranslationsException.ERROR_MODEL_LANGUAGE_REQUIRED);
+                } else if (exceptionData.contains("COULD_NOT_DOWNLOAD")) {
+                  return new TranslationsException(
+                      TranslationsException.ERROR_MODEL_COULD_NOT_DOWNLOAD);
+                }
+                return new TranslationsException(TranslationsException.ERROR_UNKNOWN);
+              });
     }
 
     
@@ -137,9 +163,9 @@ public class TranslationsController {
       return EventDispatcher.getInstance()
           .queryBundle(TRANSLATION_INFORMATION_EVENT)
           .map(
-              bundle -> {
-                return TranslationSupport.fromBundle(bundle);
-              });
+              bundle -> TranslationSupport.fromBundle(bundle),
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_LOAD_LANGUAGES));
     }
 
     
@@ -208,7 +234,9 @@ public class TranslationsController {
                   return null;
                 }
                 return null;
-              });
+              },
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_MODEL_COULD_NOT_RETRIEVE));
     }
 
     
@@ -647,7 +675,13 @@ public class TranslationsController {
       bundle.putString("fromLanguage", fromLanguage);
       bundle.putString("toLanguage", toLanguage);
       
-      return mSession.getEventDispatcher().queryVoid(TRANSLATE_EVENT, bundle);
+      return mSession
+          .getEventDispatcher()
+          .queryVoid(TRANSLATE_EVENT, bundle)
+          .map(
+              result -> result,
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_TRANSLATE));
     }
 
     
@@ -675,7 +709,13 @@ public class TranslationsController {
       if (DEBUG) {
         Log.d(LOGTAG, "Restore translated page requested");
       }
-      return mSession.getEventDispatcher().queryVoid(RESTORE_PAGE_EVENT);
+      return mSession
+          .getEventDispatcher()
+          .queryVoid(RESTORE_PAGE_EVENT)
+          .map(
+              result -> result,
+              exception ->
+                  new TranslationsException(TranslationsException.ERROR_COULD_NOT_RESTORE));
     }
 
     
@@ -1125,6 +1165,77 @@ public class TranslationsController {
         Log.w(LOGTAG, "Could not deserialize language object: " + e);
         return null;
       }
+    }
+  }
+
+  
+
+
+
+  public static class TranslationsException extends Exception {
+
+    
+
+
+
+
+    public TranslationsException(final @Code int code) {
+      this.code = code;
+    }
+
+    
+    public static final int ERROR_UNKNOWN = -1;
+
+    
+    public static final int ERROR_ENGINE_NOT_SUPPORTED = -2;
+
+    
+    public static final int ERROR_COULD_NOT_TRANSLATE = -3;
+
+    
+    public static final int ERROR_COULD_NOT_RESTORE = -4;
+
+    
+    public static final int ERROR_COULD_NOT_LOAD_LANGUAGES = -5;
+
+    
+    public static final int ERROR_LANGUAGE_NOT_SUPPORTED = -6;
+
+    
+    public static final int ERROR_MODEL_COULD_NOT_RETRIEVE = -7;
+
+    
+    public static final int ERROR_MODEL_COULD_NOT_DELETE = -8;
+
+    
+    public static final int ERROR_MODEL_COULD_NOT_DOWNLOAD = -9;
+
+    
+    public static final int ERROR_MODEL_LANGUAGE_REQUIRED = -10;
+
+    
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef(
+        value = {
+          ERROR_UNKNOWN,
+          ERROR_ENGINE_NOT_SUPPORTED,
+          ERROR_COULD_NOT_TRANSLATE,
+          ERROR_COULD_NOT_RESTORE,
+          ERROR_COULD_NOT_LOAD_LANGUAGES,
+          ERROR_LANGUAGE_NOT_SUPPORTED,
+          ERROR_MODEL_COULD_NOT_RETRIEVE,
+          ERROR_MODEL_COULD_NOT_DELETE,
+          ERROR_MODEL_COULD_NOT_DOWNLOAD,
+          ERROR_MODEL_LANGUAGE_REQUIRED,
+        })
+    public @interface Code {}
+
+    
+    public final @Code int code;
+
+    @Override
+    public String toString() {
+      return "TranslationsException: " + code;
     }
   }
 }
