@@ -20,6 +20,9 @@ use crate::reply::{self, Reply};
 
 
 
+
+
+
 pub fn redirect(uri: impl AsLocation) -> impl Reply {
     reply::with_header(
         StatusCode::MOVED_PERMANENTLY,
@@ -40,9 +43,15 @@ pub fn redirect(uri: impl AsLocation) -> impl Reply {
 
 
 
+
+
+
 pub fn found(uri: impl AsLocation) -> impl Reply {
     reply::with_header(StatusCode::FOUND, header::LOCATION, uri.header_value())
 }
+
+
+
 
 
 
@@ -77,6 +86,9 @@ pub fn see_other(uri: impl AsLocation) -> impl Reply {
 
 
 
+
+
+
 pub fn temporary(uri: impl AsLocation) -> impl Reply {
     reply::with_header(
         StatusCode::TEMPORARY_REDIRECT,
@@ -84,6 +96,9 @@ pub fn temporary(uri: impl AsLocation) -> impl Reply {
         uri.header_value(),
     )
 }
+
+
+
 
 
 

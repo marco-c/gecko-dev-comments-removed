@@ -128,6 +128,10 @@ where
     <F::Future as TryFuture>::Error: IsReject,
 {
     
+    
+    
+    
+    
     pub async fn run(self, addr: impl Into<SocketAddr>) {
         let (addr, fut) = self.bind_ephemeral(addr);
         let span = tracing::info_span!("Server::run", ?addr);
@@ -242,6 +246,10 @@ where
         Ok((addr, srv))
     }
 
+    
+    
+    
+    
     
     
     
@@ -516,11 +524,19 @@ where
     
     
     
+    
+    
+    
+    
     pub async fn bind(self, addr: impl Into<SocketAddr>) {
         let (_, fut) = self.bind_ephemeral(addr);
         fut.await;
     }
 
+    
+    
+    
+    
     
     
     
@@ -547,6 +563,10 @@ where
     
     
     
+    
+    
+    
+    
     pub fn bind_with_graceful_shutdown(
         self,
         addr: impl Into<SocketAddr> + 'static,
@@ -560,6 +580,28 @@ where
             }
         });
         (addr, fut)
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn try_bind_with_graceful_shutdown(
+        self,
+        addr: impl Into<SocketAddr> + 'static,
+        signal: impl Future<Output = ()> + Send + 'static,
+    ) -> Result<(SocketAddr, impl Future<Output = ()> + 'static), crate::Error> {
+        let addr = addr.into();
+        let (addr, srv) = try_bind!(tls: self, &addr).map_err(crate::Error::new)?;
+        let srv = srv.with_graceful_shutdown(signal).map(|result| {
+            if let Err(err) = result {
+                tracing::error!("server error: {}", err)
+            }
+        });
+
+        Ok((addr, srv))
     }
 }
 

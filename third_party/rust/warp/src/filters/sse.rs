@@ -39,6 +39,8 @@
 
 
 
+#![allow(rustdoc::invalid_html_tags)]
+
 use serde::Serialize;
 use std::borrow::Cow;
 use std::error::Error as StdError;

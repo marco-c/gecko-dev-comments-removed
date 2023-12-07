@@ -93,10 +93,20 @@ impl Ws {
     
 
     
-    pub fn max_send_queue(mut self, max: usize) -> Self {
+    
+    
+    
+    
+    #[deprecated = "use max_write_buffer_size instead"]
+    pub fn max_send_queue(self, _max: usize) -> Self {
+        self
+    }
+
+    
+    pub fn max_write_buffer_size(mut self, max: usize) -> Self {
         self.config
             .get_or_insert_with(WebSocketConfig::default)
-            .max_send_queue = Some(max);
+            .max_write_buffer_size = max;
         self
     }
 
