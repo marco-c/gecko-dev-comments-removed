@@ -83,6 +83,7 @@ impl DataMarker for BufferMarker {
 
 
 
+
 pub trait BufferProvider {
     
     fn load_buffer(
@@ -92,7 +93,38 @@ pub trait BufferProvider {
     ) -> Result<DataResponse<BufferMarker>, DataError>;
 }
 
+impl<'a, T: BufferProvider + ?Sized> BufferProvider for &'a T {
+    fn load_buffer(
+        &self,
+        key: DataKey,
+        req: DataRequest,
+    ) -> Result<DataResponse<BufferMarker>, DataError> {
+        (**self).load_buffer(key, req)
+    }
+}
+
 impl<T: BufferProvider + ?Sized> BufferProvider for alloc::boxed::Box<T> {
+    fn load_buffer(
+        &self,
+        key: DataKey,
+        req: DataRequest,
+    ) -> Result<DataResponse<BufferMarker>, DataError> {
+        (**self).load_buffer(key, req)
+    }
+}
+
+impl<T: BufferProvider + ?Sized> BufferProvider for alloc::rc::Rc<T> {
+    fn load_buffer(
+        &self,
+        key: DataKey,
+        req: DataRequest,
+    ) -> Result<DataResponse<BufferMarker>, DataError> {
+        (**self).load_buffer(key, req)
+    }
+}
+
+#[cfg(target_has_atomic = "ptr")]
+impl<T: BufferProvider + ?Sized> BufferProvider for alloc::sync::Arc<T> {
     fn load_buffer(
         &self,
         key: DataKey,

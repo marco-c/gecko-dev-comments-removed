@@ -62,6 +62,7 @@ use writeable::Writeable;
 
 
 
+
 #[derive(Default, PartialEq, Eq, Clone, Hash)]
 #[allow(clippy::exhaustive_structs)] 
 pub struct LanguageIdentifier {
@@ -326,6 +327,74 @@ impl LanguageIdentifier {
         }
         Ok(())
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn for_each_subtag_str_lowercased<E, F>(&self, f: &mut F) -> Result<(), E>
+    where
+        F: FnMut(&str) -> Result<(), E>,
+    {
+        f(self.language.as_str())?;
+        if let Some(ref script) = self.script {
+            f(script.into_tinystr().to_ascii_lowercase().as_str())?;
+        }
+        if let Some(ref region) = self.region {
+            f(region.into_tinystr().to_ascii_lowercase().as_str())?;
+        }
+        for variant in self.variants.iter() {
+            f(variant.as_str())?;
+        }
+        Ok(())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub(crate) fn write_lowercased_to<W: core::fmt::Write + ?Sized>(
+        &self,
+        sink: &mut W,
+    ) -> core::fmt::Result {
+        let mut initial = true;
+        self.for_each_subtag_str_lowercased(&mut |subtag| {
+            if initial {
+                initial = false;
+            } else {
+                sink.write_char('-')?;
+            }
+            sink.write_str(subtag)
+        })
+    }
 }
 
 impl AsRef<LanguageIdentifier> for LanguageIdentifier {
@@ -386,8 +455,6 @@ fn test_writeable() {
 
 
 
-
-
 impl From<subtags::Language> for LanguageIdentifier {
     fn from(language: subtags::Language) -> Self {
         Self {
@@ -434,6 +501,7 @@ impl From<Option<subtags::Region>> for LanguageIdentifier {
         }
     }
 }
+
 
 
 

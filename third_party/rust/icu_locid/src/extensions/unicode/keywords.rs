@@ -124,9 +124,6 @@ impl Keywords {
     
     
     
-    
-    
-    
     pub fn contains_key<Q>(&self, key: &Q) -> bool
     where
         Key: Borrow<Q>,
@@ -149,9 +146,6 @@ impl Keywords {
     
     
     
-    
-    
-    
     pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
@@ -160,9 +154,6 @@ impl Keywords {
         self.0.get(key)
     }
 
-    
-    
-    
     
     
     
@@ -211,13 +202,10 @@ impl Keywords {
     
     
     
-    
-    
     pub fn set(&mut self, key: Key, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
 
-    
     
     
     

@@ -4,419 +4,295 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use icu_locid::extensions::unicode::{Key, Value};
-use icu_locid::subtags::Variants;
+use crate::helpers::result_is_err_missing_locale;
+use icu_locid_transform::provider::*;
 use icu_provider::prelude::*;
-use icu_provider::FallbackPriority;
-use icu_provider::FallbackSupplement;
 
-mod adapter;
-mod algorithms;
-pub mod provider;
-
-pub use adapter::LocaleFallbackProvider;
-
-use provider::*;
+#[doc(hidden)] 
+pub use icu_locid_transform::fallback::{
+    LocaleFallbackIterator, LocaleFallbacker, LocaleFallbackerWithConfig,
+};
+#[doc(hidden)] 
+pub use icu_provider::fallback::LocaleFallbackConfig;
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-#[non_exhaustive]
-pub struct LocaleFallbackConfig {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub priority: FallbackPriority,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub extension_key: Option<Key>,
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fallback_supplement: Option<FallbackSupplement>,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, Debug)]
+pub struct LocaleFallbackProvider<P> {
+    inner: P,
+    fallbacker: LocaleFallbacker,
 }
 
-
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LocaleFallbacker {
-    likely_subtags: DataPayload<LocaleFallbackLikelySubtagsV1Marker>,
-    parents: DataPayload<LocaleFallbackParentsV1Marker>,
-    collation_supplement: Option<DataPayload<CollationFallbackSupplementV1Marker>>,
+impl<P> LocaleFallbackProvider<P>
+where
+    P: DataProvider<LocaleFallbackLikelySubtagsV1Marker>
+        + DataProvider<LocaleFallbackParentsV1Marker>
+        + DataProvider<CollationFallbackSupplementV1Marker>,
+{
+    
+    
+    
+    
+    
+    pub fn try_new_unstable(provider: P) -> Result<Self, DataError> {
+        let fallbacker = LocaleFallbacker::try_new_unstable(&provider)?;
+        Ok(Self {
+            inner: provider,
+            fallbacker,
+        })
+    }
 }
 
-
-
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct LocaleFallbackerWithConfig<'a> {
-    likely_subtags: &'a LocaleFallbackLikelySubtagsV1<'a>,
-    parents: &'a LocaleFallbackParentsV1<'a>,
-    supplement: Option<&'a LocaleFallbackSupplementV1<'a>>,
-    config: LocaleFallbackConfig,
+impl<P> LocaleFallbackProvider<P>
+where
+    P: AnyProvider,
+{
+    
+    
+    
+    
+    
+    pub fn try_new_with_any_provider(provider: P) -> Result<Self, DataError> {
+        let fallbacker = LocaleFallbacker::try_new_with_any_provider(&provider)?;
+        Ok(Self {
+            inner: provider,
+            fallbacker,
+        })
+    }
 }
 
-
-#[derive(Debug)]
-struct LocaleFallbackIteratorInner<'a, 'b> {
-    likely_subtags: &'a LocaleFallbackLikelySubtagsV1<'a>,
-    parents: &'a LocaleFallbackParentsV1<'a>,
-    supplement: Option<&'a LocaleFallbackSupplementV1<'a>>,
-    config: &'b LocaleFallbackConfig,
-    backup_extension: Option<Value>,
-    backup_subdivision: Option<Value>,
-    backup_variants: Option<Variants>,
+#[cfg(feature = "serde")]
+impl<P> LocaleFallbackProvider<P>
+where
+    P: BufferProvider,
+{
+    
+    
+    
+    
+    
+    pub fn try_new_with_buffer_provider(provider: P) -> Result<Self, DataError> {
+        let fallbacker = LocaleFallbacker::try_new_with_buffer_provider(&provider)?;
+        Ok(Self {
+            inner: provider,
+            fallbacker,
+        })
+    }
 }
 
+impl<P> LocaleFallbackProvider<P> {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new_with_fallbacker(provider: P, fallbacker: LocaleFallbacker) -> Self {
+        Self {
+            inner: provider,
+            fallbacker,
+        }
+    }
 
+    
+    pub fn inner(&self) -> &P {
+        &self.inner
+    }
 
+    
+    pub fn inner_mut(&mut self) -> &mut P {
+        &mut self.inner
+    }
 
+    
+    pub fn into_inner(self) -> P {
+        self.inner
+    }
 
-#[derive(Debug)]
-pub struct LocaleFallbackIterator<'a, 'b> {
-    current: DataLocale,
-    inner: LocaleFallbackIteratorInner<'a, 'b>,
-}
-
-impl LocaleFallbacker {
     
     
     
     
     
     
-    pub fn try_new_unstable<P>(provider: &P) -> Result<Self, DataError>
+    
+    fn run_fallback<F1, F2, R>(
+        &self,
+        key: DataKey,
+        mut base_req: DataRequest,
+        mut f1: F1,
+        mut f2: F2,
+    ) -> Result<R, DataError>
     where
-        P: DataProvider<LocaleFallbackLikelySubtagsV1Marker>
-            + DataProvider<LocaleFallbackParentsV1Marker>
-            + DataProvider<CollationFallbackSupplementV1Marker>
-            + ?Sized,
+        F1: FnMut(DataRequest) -> Result<R, DataError>,
+        F2: FnMut(&mut R) -> &mut DataResponseMetadata,
     {
-        let likely_subtags = provider.load(Default::default())?.take_payload()?;
-        let parents = provider.load(Default::default())?.take_payload()?;
-        let collation_supplement = match DataProvider::<CollationFallbackSupplementV1Marker>::load(
-            provider,
-            Default::default(),
-        ) {
-            Ok(response) => Some(response.take_payload()?),
-            
-            Err(DataError {
-                kind: DataErrorKind::MissingDataKey,
-                ..
-            }) => None,
-            Err(e) => return Err(e),
-        };
-        Ok(LocaleFallbacker {
-            likely_subtags,
-            parents,
-            collation_supplement,
-        })
-    }
-
-    icu_provider::gen_any_buffer_constructors!(locale: skip, options: skip, error: DataError);
-
-    
-    
-    pub fn new_without_data() -> Self {
-        LocaleFallbacker {
-            likely_subtags: DataPayload::from_owned(Default::default()),
-            parents: DataPayload::from_owned(Default::default()),
-            collation_supplement: None,
+        if key.metadata().singleton {
+            return f1(base_req);
         }
-    }
-
-    
-    pub fn for_config(&self, config: LocaleFallbackConfig) -> LocaleFallbackerWithConfig {
-        let supplement = match config.fallback_supplement {
-            Some(FallbackSupplement::Collation) => {
-                self.collation_supplement.as_ref().map(|p| p.get())
+        let mut fallback_iterator = self
+            .fallbacker
+            .for_config(key.fallback_config())
+            .fallback_for(base_req.locale.clone());
+        let base_silent = core::mem::replace(&mut base_req.metadata.silent, true);
+        loop {
+            let result = f1(DataRequest {
+                locale: fallback_iterator.get(),
+                metadata: base_req.metadata,
+            });
+            if !result_is_err_missing_locale(&result) {
+                return result
+                    .map(|mut res| {
+                        f2(&mut res).locale = Some(fallback_iterator.take());
+                        res
+                    })
+                    
+                    .map_err(|e| {
+                        base_req.metadata.silent = base_silent;
+                        e.with_req(key, base_req)
+                    });
             }
-            _ => None,
-        };
-        LocaleFallbackerWithConfig {
-            likely_subtags: self.likely_subtags.get(),
-            parents: self.parents.get(),
-            supplement,
-            config,
+            
+            if fallback_iterator.get().is_und() {
+                break;
+            }
+            fallback_iterator.step();
         }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn for_key(&self, data_key: DataKey) -> LocaleFallbackerWithConfig {
-        let priority = data_key.metadata().fallback_priority;
-        let extension_key = data_key.metadata().extension_key;
-        let fallback_supplement = data_key.metadata().fallback_supplement;
-        self.for_config(LocaleFallbackConfig {
-            priority,
-            extension_key,
-            fallback_supplement,
-        })
+        base_req.metadata.silent = base_silent;
+        Err(DataErrorKind::MissingLocale.with_req(key, base_req))
     }
 }
 
-impl<'a> LocaleFallbackerWithConfig<'a> {
-    
-    
-    
-    
-    
-    pub fn fallback_for<'b>(&'b self, mut locale: DataLocale) -> LocaleFallbackIterator<'a, 'b> {
-        self.normalize(&mut locale);
-        LocaleFallbackIterator {
-            current: locale,
-            inner: LocaleFallbackIteratorInner {
-                likely_subtags: self.likely_subtags,
-                parents: self.parents,
-                supplement: self.supplement,
-                config: &self.config,
-                backup_extension: None,
-                backup_subdivision: None,
-                backup_variants: None,
-            },
-        }
+impl<P> AnyProvider for LocaleFallbackProvider<P>
+where
+    P: AnyProvider,
+{
+    fn load_any(&self, key: DataKey, base_req: DataRequest) -> Result<AnyResponse, DataError> {
+        self.run_fallback(
+            key,
+            base_req,
+            |req| self.inner.load_any(key, req),
+            |res| &mut res.metadata,
+        )
     }
 }
 
-impl LocaleFallbackIterator<'_, '_> {
-    
-    pub fn get(&self) -> &DataLocale {
-        &self.current
+impl<P> BufferProvider for LocaleFallbackProvider<P>
+where
+    P: BufferProvider,
+{
+    fn load_buffer(
+        &self,
+        key: DataKey,
+        base_req: DataRequest,
+    ) -> Result<DataResponse<BufferMarker>, DataError> {
+        self.run_fallback(
+            key,
+            base_req,
+            |req| self.inner.load_buffer(key, req),
+            |res| &mut res.metadata,
+        )
     }
+}
 
-    
-    pub fn take(self) -> DataLocale {
-        self.current
+impl<P, M> DynamicDataProvider<M> for LocaleFallbackProvider<P>
+where
+    P: DynamicDataProvider<M>,
+    M: DataMarker,
+{
+    fn load_data(&self, key: DataKey, base_req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        self.run_fallback(
+            key,
+            base_req,
+            |req| self.inner.load_data(key, req),
+            |res| &mut res.metadata,
+        )
     }
+}
 
-    
-    
-    
-    pub fn step(&mut self) -> &mut Self {
-        self.inner.step(&mut self.current);
-        self
+impl<P, M> DataProvider<M> for LocaleFallbackProvider<P>
+where
+    P: DataProvider<M>,
+    M: KeyedDataMarker,
+{
+    fn load(&self, base_req: DataRequest) -> Result<DataResponse<M>, DataError> {
+        self.run_fallback(
+            M::KEY,
+            base_req,
+            |req| self.inner.load(req),
+            |res| &mut res.metadata,
+        )
     }
 }

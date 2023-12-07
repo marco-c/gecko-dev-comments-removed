@@ -20,7 +20,9 @@ use core::fmt;
 use core::iter::FromIterator;
 use core::marker::PhantomData;
 use core::mem;
+use core::num::NonZeroUsize;
 use core::ops::Deref;
+use core::ptr;
 
 
 
@@ -138,8 +140,8 @@ impl<U> EyepatchHackVector<U> {
     }
     
     #[inline]
-    fn as_slice<'a>(&'a self) -> &'a [U] {
-        unsafe { &*self.buf }
+    const fn as_slice<'a>(&'a self) -> &'a [U] {
+        unsafe { &*(self.buf as *const [U]) }
     }
 
     
@@ -255,6 +257,24 @@ impl<'a, T: AsULE + Ord> Ord for ZeroVec<'a, T> {
     }
 }
 
+impl<'a, T: AsULE> AsRef<[T::ULE]> for ZeroVec<'a, T> {
+    fn as_ref(&self) -> &[T::ULE] {
+        self.as_ule_slice()
+    }
+}
+
+impl<'a, T: AsULE> From<&'a [T::ULE]> for ZeroVec<'a, T> {
+    fn from(other: &'a [T::ULE]) -> Self {
+        ZeroVec::new_borrowed(other)
+    }
+}
+
+impl<'a, T: AsULE> From<Vec<T::ULE>> for ZeroVec<'a, T> {
+    fn from(other: Vec<T::ULE>) -> Self {
+        ZeroVec::new_owned(other)
+    }
+}
+
 impl<'a, T> ZeroVec<'a, T>
 where
     T: AsULE + ?Sized,
@@ -275,6 +295,11 @@ where
     }
 
     
+    pub const fn const_len(&self) -> usize {
+        self.vector.as_slice().len()
+    }
+
+    
     
     
     
@@ -284,10 +309,10 @@ where
         
         
         
-        let slice: &[T::ULE] = &vec;
-        let slice = slice as *const [_] as *mut [_];
         let capacity = vec.capacity();
-        mem::forget(vec);
+        let len = vec.len();
+        let ptr = mem::ManuallyDrop::new(vec).as_mut_ptr();
+        let slice = ptr::slice_from_raw_parts_mut(ptr, len);
         Self {
             vector: EyepatchHackVector {
                 buf: slice,
@@ -352,10 +377,10 @@ where
     
     pub const unsafe fn from_bytes_unchecked(bytes: &'a [u8]) -> Self {
         
-        Self::new_borrowed(core::mem::transmute((
-            bytes.as_ptr(),
+        Self::new_borrowed(core::slice::from_raw_parts(
+            bytes.as_ptr() as *const T::ULE,
             bytes.len() / core::mem::size_of::<T::ULE>(),
-        )))
+        ))
     }
 
     
@@ -553,6 +578,34 @@ where
             let ule_slice = unsafe { self.vector.as_arbitrary_slice() };
             Some(ZeroSlice::from_ule_slice(ule_slice))
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[inline]
+    pub fn owned_capacity(&self) -> Option<NonZeroUsize> {
+        NonZeroUsize::try_from(self.vector.capacity).ok()
     }
 }
 
@@ -860,21 +913,18 @@ where
     
     #[inline]
     pub fn into_cow(self) -> Cow<'a, [T::ULE]> {
-        if self.is_owned() {
+        let this = mem::ManuallyDrop::new(self);
+        if this.is_owned() {
             let vec = unsafe {
                 
                 
-                self.vector.get_vec()
+                { this }.vector.get_vec()
             };
-            mem::forget(self);
             Cow::Owned(vec)
         } else {
             
             
-            let slice = unsafe { self.vector.as_arbitrary_slice() };
-            
-            
-            mem::forget(self);
+            let slice = unsafe { { this }.vector.as_arbitrary_slice() };
             Cow::Borrowed(slice)
         }
     }
@@ -888,6 +938,89 @@ impl<T: AsULE> FromIterator<T> for ZeroVec<'_, T> {
     {
         ZeroVec::new_owned(iter.into_iter().map(|t| t.to_unaligned()).collect())
     }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! zeroslice {
+    () => (
+        $crate::ZeroSlice::new_empty()
+    );
+    ($aligned:ty; $convert:expr; [$($x:expr),+ $(,)?]) => (
+        $crate::ZeroSlice::<$aligned>::from_ule_slice(
+            {const X: &[<$aligned as $crate::ule::AsULE>::ULE] = &[
+                $($convert($x)),*
+            ]; X}
+        )
+    );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[macro_export]
+macro_rules! zerovec {
+    () => (
+        $crate::ZeroVec::new()
+    );
+    ($aligned:ty; $convert:expr; [$($x:expr),+ $(,)?]) => (
+        $crate::zeroslice![$aligned; $convert; [$($x),+]].as_zerovec()
+    );
 }
 
 #[cfg(test)]

@@ -11,22 +11,28 @@
 
 use crate::codepointinvlist::{
     CodePointInversionList, CodePointInversionListBuilder, CodePointInversionListError,
+    CodePointInversionListULE,
 };
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use displaydoc::Display;
 use yoke::Yokeable;
 use zerofrom::ZeroFrom;
-use zerovec::VarZeroVec;
+use zerovec::{VarZeroSlice, VarZeroVec};
 
 
 
 
+#[zerovec::make_varule(CodePointInversionListAndStringListULE)]
+#[zerovec::skip_derive(Ord)]
+#[zerovec::derive(Debug)]
 #[derive(Debug, Eq, PartialEq, Clone, Yokeable, ZeroFrom)]
 
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "serde", zerovec::derive(Serialize, Deserialize, Debug))]
 pub struct CodePointInversionListAndStringList<'data> {
     #[cfg_attr(feature = "serde", serde(borrow))]
+    #[zerovec::varule(CodePointInversionListULE)]
     cp_inv_list: CodePointInversionList<'data>,
     
     
@@ -44,7 +50,7 @@ impl databake::Bake for CodePointInversionListAndStringList<'_> {
         let str_list = self.str_list.bake(env);
         
         databake::quote! {
-            ::icu_collections::codepointinvliststringlist::CodePointInversionListAndStringList::from_parts_unchecked(#cp_inv_list, #str_list)
+            icu_collections::codepointinvliststringlist::CodePointInversionListAndStringList::from_parts_unchecked(#cp_inv_list, #str_list)
         }
     }
 }
@@ -205,6 +211,16 @@ impl<'data> CodePointInversionListAndStringList<'data> {
     pub fn contains_char(&self, ch: char) -> bool {
         self.contains32(ch as u32)
     }
+
+    
+    pub fn code_points(&self) -> &CodePointInversionList<'data> {
+        &self.cp_inv_list
+    }
+
+    
+    pub fn strings(&self) -> &VarZeroSlice<str> {
+        &self.str_list
+    }
 }
 
 impl<'a> FromIterator<&'a str> for CodePointInversionListAndStringList<'_> {
@@ -347,8 +363,8 @@ mod tests {
         let in_strs_1 = ["a", "abc", "xyz", "abc"];
         let in_strs_2 = ["xyz", "abc", "a", "abc"];
 
-        let cpilsl_1 = CodePointInversionListAndStringList::from_iter(in_strs_1.into_iter());
-        let cpilsl_2 = CodePointInversionListAndStringList::from_iter(in_strs_2.into_iter());
+        let cpilsl_1 = CodePointInversionListAndStringList::from_iter(in_strs_1);
+        let cpilsl_2 = CodePointInversionListAndStringList::from_iter(in_strs_2);
 
         assert_eq!(cpilsl_1, cpilsl_2);
 

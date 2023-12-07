@@ -86,4 +86,28 @@ pub enum CloningZF3<'data> {
     Cow(#[zerofrom(clone)] Cow<'data, str>),
 }
 
+#[derive(ZeroFrom)]
+#[zerofrom(may_borrow(T))] 
+pub struct GenericsThatAreAlsoZf<T> {
+    x: T,
+    y: Option<T>,
+}
+
+pub fn assert_zf_generics_may_borrow<'a, 'b>(
+    x: &'b GenericsThatAreAlsoZf<&'a str>,
+) -> GenericsThatAreAlsoZf<&'b str> {
+    GenericsThatAreAlsoZf::<&'b str>::zero_from(x)
+}
+
+#[derive(ZeroFrom)]
+pub struct UsesGenericsThatAreAlsoZf<'a> {
+    x: GenericsThatAreAlsoZf<&'a str>,
+}
+
+
+#[derive(ZeroFrom)]
+pub struct UsesGenericsThatAreAlsoZfWithMap<'a> {
+    x: GenericsThatAreAlsoZf<ZeroMap<'a, str, str>>,
+}
+
 fn main() {}

@@ -4,6 +4,7 @@
 
 
 #![allow(clippy::needless_lifetimes)] 
+#![warn(clippy::exhaustive_structs, clippy::exhaustive_enums)]
 
 pub mod ast;
 #[cfg(feature = "hir")]

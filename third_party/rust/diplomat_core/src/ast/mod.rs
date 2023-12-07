@@ -2,7 +2,8 @@
 
 
 
-pub(crate) mod attrs;
+pub mod attrs;
+pub use attrs::Attrs;
 
 mod methods;
 pub use methods::{BorrowedParams, Method, Param, SelfParam};

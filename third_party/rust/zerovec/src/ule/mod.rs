@@ -14,6 +14,7 @@ mod chars;
 #[cfg(doc)]
 pub mod custom;
 mod encode;
+mod macros;
 mod multi;
 mod niche;
 mod option;
@@ -29,7 +30,7 @@ pub use multi::MultiFieldsULE;
 pub use niche::{NicheBytes, NichedOption, NichedOptionULE};
 pub use option::{OptionULE, OptionVarULE};
 pub use plain::RawBytesULE;
-pub use unvalidated::UnvalidatedStr;
+pub use unvalidated::{UnvalidatedChar, UnvalidatedStr};
 
 use alloc::alloc::Layout;
 use alloc::borrow::ToOwned;
@@ -356,13 +357,12 @@ pub unsafe trait VarULE: 'static {
     #[inline]
     fn to_boxed(&self) -> Box<Self> {
         let bytesvec = self.as_byte_slice().to_owned().into_boxed_slice();
+        let bytesvec = mem::ManuallyDrop::new(bytesvec);
         unsafe {
             
             let ptr: *mut Self =
                 Self::from_byte_slice_unchecked(&bytesvec) as *const Self as *mut Self;
-            assert_eq!(Layout::for_value(&*ptr), Layout::for_value(&*bytesvec));
-            
-            mem::forget(bytesvec);
+            assert_eq!(Layout::for_value(&*ptr), Layout::for_value(&**bytesvec));
             
             Box::from_raw(ptr)
         }

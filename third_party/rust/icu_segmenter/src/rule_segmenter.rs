@@ -105,11 +105,7 @@ impl<'l, 's, Y: RuleBreakType<'l, 's> + ?Sized> Iterator for RuleBreakIterator<'
             let left_prop = self.get_break_property(left_codepoint);
             self.advance_iter();
 
-            
-            
-            let right_prop = if let Some(right_prop) = self.get_current_break_property() {
-                right_prop
-            } else {
+            let Some(right_prop) = self.get_current_break_property() else {
                 self.boundary_property = left_prop;
                 return Some(self.len);
             };
@@ -137,20 +133,18 @@ impl<'l, 's, Y: RuleBreakType<'l, 's> + ?Sized> Iterator for RuleBreakIterator<'
                 let mut previous_pos_data = self.current_pos_data;
                 let mut previous_left_prop = left_prop;
 
+                break_state &= !INTERMEDIATE_MATCH_RULE;
                 loop {
                     self.advance_iter();
 
-                    
-                    
-                    let prop = if let Some(prop) = self.get_current_break_property() {
-                        prop
-                    } else {
+                    let Some(prop) = self.get_current_break_property() else {
                         
                         self.boundary_property = break_state as u8;
                         if self
                             .get_break_state_from_table(break_state as u8, self.data.eot_property)
                             == NOT_MATCH_RULE
                         {
+                            self.boundary_property = previous_left_prop;
                             self.iter = previous_iter;
                             self.current_pos_data = previous_pos_data;
                             return self.get_current_position();

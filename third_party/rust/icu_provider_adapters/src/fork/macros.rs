@@ -32,10 +32,6 @@
 
 
 
-
-
-
-
 #[macro_export]
 macro_rules! make_forking_provider {
     
@@ -50,22 +46,15 @@ macro_rules! make_forking_provider {
 
 #[cfg(test)]
 mod test {
-    #[derive(Default)]
     struct Provider1;
-    #[derive(Default)]
     struct Provider2;
-    #[derive(Default)]
     struct Provider3;
 
     #[test]
     fn test_make_forking_provider() {
         make_forking_provider!(
             crate::fork::ForkByKeyProvider::new,
-            [
-                Provider1::default(),
-                Provider2::default(),
-                Provider3::default(),
-            ]
+            [Provider1, Provider2, Provider3,]
         );
     }
 }

@@ -140,14 +140,16 @@ impl<const N: usize> TinyAsciiStr<N> {
     pub const fn as_bytes(&self) -> &[u8] {
         
         
-        unsafe { core::mem::transmute((self.bytes.as_slice().as_ptr(), self.len())) }
+        unsafe {
+            core::slice::from_raw_parts(self.bytes.as_slice().as_ptr() as *const u8, self.len())
+        }
     }
 
     #[inline]
     #[must_use]
     pub const fn all_bytes(&self) -> &[u8; N] {
         
-        unsafe { core::mem::transmute(&self.bytes) }
+        unsafe { &*(self.bytes.as_ptr() as *const [u8; N]) }
     }
 
     #[inline]
@@ -729,7 +731,7 @@ mod test {
             };
             let expected = reference_f(&s);
             let actual = tinystr_f(t);
-            assert_eq!(expected, actual, "TinyAsciiStr<{}>: {:?}", N, s);
+            assert_eq!(expected, actual, "TinyAsciiStr<{N}>: {s:?}");
         }
     }
 

@@ -5,6 +5,7 @@ use super::{
 
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum ReturnableStructPath {
     Struct(StructPath),
     OutStruct(OutStructPath),
@@ -15,6 +16,7 @@ pub type OutStructPath = StructPath<OutputOnly>;
 
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct StructPath<P: TyPosition = Everywhere> {
     pub lifetimes: TypeLifetimes,
     pub tcx_id: P::StructId,
@@ -35,6 +37,7 @@ pub struct StructPath<P: TyPosition = Everywhere> {
 
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct OpaquePath<Opt, Owner> {
     pub lifetimes: TypeLifetimes,
     pub optional: Opt,
@@ -46,6 +49,7 @@ pub struct OpaquePath<Opt, Owner> {
 pub struct Optional(pub(super) bool);
 
 #[derive(Debug, Copy, Clone)]
+#[allow(clippy::exhaustive_structs)] 
 pub struct NonOptional;
 
 impl<Owner: OpaqueOwner> OpaquePath<Optional, Owner> {
@@ -79,6 +83,7 @@ impl<Opt> OpaquePath<Opt, Borrow> {
 
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub struct EnumPath {
     pub tcx_id: EnumId,
 }
@@ -87,6 +92,7 @@ pub struct EnumPath {
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum MaybeOwn {
     Own,
     Borrow(Borrow),

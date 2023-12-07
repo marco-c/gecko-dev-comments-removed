@@ -8,7 +8,7 @@ use crate::{VarZeroSlice, VarZeroVec, ZeroSlice, ZeroVec};
 use alloc::borrow::{Cow, ToOwned};
 use alloc::boxed::Box;
 use alloc::string::String;
-use alloc::vec::Vec;
+use alloc::{vec, vec::Vec};
 use core::mem;
 
 
@@ -82,16 +82,14 @@ pub unsafe trait EncodeAsVarULE<T: VarULE + ?Sized> {
 
 
 pub fn encode_varule_to_box<S: EncodeAsVarULE<T>, T: VarULE + ?Sized>(x: &S) -> Box<T> {
-    let mut vec: Vec<u8> = Vec::new();
     
-    vec.resize(x.encode_var_ule_len(), 0);
+    let mut vec: Vec<u8> = vec![0; x.encode_var_ule_len()];
     x.encode_var_ule_write(&mut vec);
-    let boxed = vec.into_boxed_slice();
+    let boxed = mem::ManuallyDrop::new(vec.into_boxed_slice());
     unsafe {
         
         
         let ptr: *mut T = T::from_byte_slice_unchecked(&boxed) as *const T as *mut T;
-        mem::forget(boxed);
 
         
         Box::from_raw(ptr)

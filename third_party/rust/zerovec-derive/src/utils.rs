@@ -2,7 +2,7 @@
 
 
 
-use quote::quote;
+use quote::{quote, ToTokens};
 
 use proc_macro2::Span;
 use proc_macro2::TokenStream as TokenStream2;
@@ -148,6 +148,24 @@ impl<'a> FieldInfo<'a> {
             quote!()
         }
     }
+
+    
+    pub fn getter(&self) -> TokenStream2 {
+        if let Some(ref i) = self.field.ident {
+            quote!(#i)
+        } else {
+            suffixed_ident("field", self.index, self.field.span()).into_token_stream()
+        }
+    }
+
+    
+    pub fn getter_doc_name(&self) -> String {
+        if let Some(ref i) = self.field.ident {
+            format!("the unsized `{i}` field")
+        } else {
+            format!("tuple struct field #{}", self.index)
+        }
+    }
 }
 
 
@@ -198,6 +216,30 @@ pub fn extract_zerovec_attributes(attrs: &mut Vec<Attribute>) -> Vec<Attribute> 
         true
     });
     ret
+}
+
+
+
+
+pub fn extract_field_attributes(attrs: &mut Vec<Attribute>) -> Result<Option<Ident>> {
+    let mut zerovec_attrs = extract_zerovec_attributes(attrs);
+    let varule = extract_parenthetical_zerovec_attrs(&mut zerovec_attrs, "varule")?;
+
+    if varule.len() > 1 {
+        return Err(Error::new(
+            varule[1].span(),
+            "Found multiple #[zerovec::varule()] on one field",
+        ));
+    }
+
+    if !zerovec_attrs.is_empty() {
+        return Err(Error::new(
+            zerovec_attrs[1].span(),
+            "Found unusable #[zerovec::] attrs on field, only #[zerovec::varule()] supported",
+        ));
+    }
+
+    Ok(varule.get(0).cloned())
 }
 
 #[derive(Default, Copy, Clone)]

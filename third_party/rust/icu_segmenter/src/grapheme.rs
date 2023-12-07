@@ -126,19 +126,44 @@ pub type GraphemeClusterBreakIteratorUtf16<'l, 's> =
 
 
 
-
-
-
-
-
-
 #[derive(Debug)]
 pub struct GraphemeClusterSegmenter {
     payload: DataPayload<GraphemeClusterBreakDataV1Marker>,
 }
 
+#[cfg(feature = "compiled_data")]
+impl Default for GraphemeClusterSegmenter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl GraphemeClusterSegmenter {
     
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub fn new() -> Self {
+        Self {
+            payload: DataPayload::from_static_ref(
+                crate::provider::Baked::SINGLETON_SEGMENTER_GRAPHEME_V1,
+            ),
+        }
+    }
+
+    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: SegmenterError,
+        #[cfg(skip)]
+        functions: [
+            new,
+            try_new_with_any_provider,
+            try_new_with_buffer_provider,
+            try_new_unstable,
+            Self,
+    ]);
+
+    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
     pub fn try_new_unstable<D>(provider: &D) -> Result<Self, SegmenterError>
     where
         D: DataProvider<GraphemeClusterBreakDataV1Marker> + ?Sized,
@@ -146,8 +171,6 @@ impl GraphemeClusterSegmenter {
         let payload = provider.load(Default::default())?.take_payload()?;
         Ok(Self { payload })
     }
-
-    icu_provider::gen_any_buffer_constructors!(locale: skip, options: skip, error: SegmenterError);
 
     
     pub fn segment_str<'l, 's>(
@@ -239,11 +262,9 @@ impl GraphemeClusterSegmenter {
     }
 }
 
-#[cfg(all(test, feature = "serde"))]
 #[test]
 fn empty_string() {
-    let segmenter =
-        GraphemeClusterSegmenter::try_new_with_buffer_provider(&icu_testdata::buffer()).unwrap();
+    let segmenter = GraphemeClusterSegmenter::new();
     let breaks: Vec<usize> = segmenter.segment_str("").collect();
     assert_eq!(breaks, [0]);
 }

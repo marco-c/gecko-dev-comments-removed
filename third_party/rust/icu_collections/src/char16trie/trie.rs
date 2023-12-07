@@ -191,7 +191,6 @@ impl<'a> Char16TrieIterator<'a> {
     
     
     
-    
     pub fn next(&mut self, c: char) -> TrieResult {
         if (c as u32) <= 0xffff {
             self.next16(c as u16)
@@ -225,7 +224,6 @@ impl<'a> Char16TrieIterator<'a> {
     
     
     
-    
     pub fn next32(&mut self, c: u32) -> TrieResult {
         if c <= 0xffff {
             self.next16(c as u16)
@@ -239,7 +237,6 @@ impl<'a> Char16TrieIterator<'a> {
         }
     }
 
-    
     
     
     

@@ -395,6 +395,7 @@ pub(crate) struct LifetimeNode {
 
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum Lifetime {
     
     Static,

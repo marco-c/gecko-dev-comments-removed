@@ -24,6 +24,13 @@
 
 
 
+
+
+
+
+
+
+
 #![cfg_attr(not(test), no_std)]
 #![cfg_attr(
     not(test),
@@ -44,6 +51,9 @@ extern crate std;
 
 extern crate alloc;
 
+#[cfg(feature = "databake")]
+#[path = "databake.rs"] 
+mod databake_impls;
 mod map;
 #[cfg(feature = "serde")]
 mod serde;
@@ -51,7 +61,7 @@ mod serde;
 mod serde_helpers;
 pub mod store;
 
-#[cfg(feature = "testing")]
+#[cfg(any(test, feature = "testing"))]
 pub mod testing;
 
 pub use map::LiteMap;

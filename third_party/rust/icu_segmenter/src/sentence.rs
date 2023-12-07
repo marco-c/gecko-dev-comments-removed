@@ -97,19 +97,45 @@ pub type SentenceBreakIteratorUtf16<'l, 's> = SentenceBreakIterator<'l, 's, Rule
 
 
 
-
-
-
-
-
-
 #[derive(Debug)]
 pub struct SentenceSegmenter {
     payload: DataPayload<SentenceBreakDataV1Marker>,
 }
 
+#[cfg(feature = "compiled_data")]
+impl Default for SentenceSegmenter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SentenceSegmenter {
     
+    
+    
+    
+    
+    #[cfg(feature = "compiled_data")]
+    pub fn new() -> Self {
+        Self {
+            payload: DataPayload::from_static_ref(
+                crate::provider::Baked::SINGLETON_SEGMENTER_SENTENCE_V1,
+            ),
+        }
+    }
+
+    icu_provider::gen_any_buffer_data_constructors!(locale: skip, options: skip, error: SegmenterError,
+        #[cfg(skip)]
+        functions: [
+            new,
+            try_new_with_any_provider,
+            try_new_with_buffer_provider,
+            try_new_unstable,
+            Self,
+        ]
+    );
+
+    #[doc = icu_provider::gen_any_buffer_unstable_docs!(UNSTABLE, Self::new)]
     pub fn try_new_unstable<D>(provider: &D) -> Result<Self, SegmenterError>
     where
         D: DataProvider<SentenceBreakDataV1Marker> + ?Sized,
@@ -117,8 +143,6 @@ impl SentenceSegmenter {
         let payload = provider.load(Default::default())?.take_payload()?;
         Ok(Self { payload })
     }
-
-    icu_provider::gen_any_buffer_constructors!(locale: skip, options: skip, error: SegmenterError);
 
     
     
@@ -190,8 +214,7 @@ impl SentenceSegmenter {
 #[cfg(all(test, feature = "serde"))]
 #[test]
 fn empty_string() {
-    let segmenter =
-        SentenceSegmenter::try_new_with_buffer_provider(&icu_testdata::buffer()).unwrap();
+    let segmenter = SentenceSegmenter::new();
     let breaks: Vec<usize> = segmenter.segment_str("").collect();
     assert_eq!(breaks, [0]);
 }

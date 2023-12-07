@@ -4,6 +4,7 @@
 
 use super::Attribute;
 
+use crate::helpers::ShortSlice;
 use alloc::vec::Vec;
 use core::ops::Deref;
 
@@ -30,7 +31,7 @@ use core::ops::Deref;
 
 
 #[derive(Default, Debug, PartialEq, Eq, Clone, Hash, PartialOrd, Ord)]
-pub struct Attributes(Vec<Attribute>);
+pub struct Attributes(ShortSlice<Attribute>);
 
 impl Attributes {
     
@@ -44,7 +45,7 @@ impl Attributes {
     
     #[inline]
     pub const fn new() -> Self {
-        Self(Vec::new())
+        Self(ShortSlice::new())
     }
 
     
@@ -68,10 +69,13 @@ impl Attributes {
     
     
     pub fn from_vec_unchecked(input: Vec<Attribute>) -> Self {
+        Self(input.into())
+    }
+
+    pub(crate) fn from_short_slice_unchecked(input: ShortSlice<Attribute>) -> Self {
         Self(input)
     }
 
-    
     
     
     

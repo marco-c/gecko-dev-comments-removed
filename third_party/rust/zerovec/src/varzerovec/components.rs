@@ -128,13 +128,7 @@ pub struct VarZeroVecComponents<'a, T: ?Sized, F> {
 impl<'a, T: ?Sized, F> Copy for VarZeroVecComponents<'a, T, F> {}
 impl<'a, T: ?Sized, F> Clone for VarZeroVecComponents<'a, T, F> {
     fn clone(&self) -> Self {
-        VarZeroVecComponents {
-            len: self.len,
-            indices: self.indices,
-            things: self.things,
-            entire_slice: self.entire_slice,
-            marker: PhantomData,
-        }
+        *self
     }
 }
 
@@ -168,6 +162,7 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     #[inline]
     pub fn parse_byte_slice(slice: &'a [u8]) -> Result<Self, ZeroVecError> {
+        
         if slice.is_empty() {
             return Ok(VarZeroVecComponents {
                 len: 0,
@@ -219,6 +214,7 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
     
     
     pub unsafe fn from_bytes_unchecked(slice: &'a [u8]) -> Self {
+        
         if slice.is_empty() {
             return VarZeroVecComponents {
                 len: 0,
@@ -369,7 +365,7 @@ impl<'a, T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroVecComponents<'a, T, F>
                     .copied()
                     .map(F::rawbytes_to_usize)
                     .skip(1)
-                    .chain(core::iter::once(self.things.len())),
+                    .chain([self.things.len()]),
             )
             .map(move |(start, end)| unsafe { self.things.get_unchecked(start..end) })
             .map(|bytes| unsafe { T::from_byte_slice_unchecked(bytes) })
@@ -485,12 +481,13 @@ where
 }
 
 
-pub fn get_serializable_bytes<T, A, F>(elements: &[A]) -> Option<Vec<u8>>
+pub fn get_serializable_bytes_non_empty<T, A, F>(elements: &[A]) -> Option<Vec<u8>>
 where
     T: VarULE + ?Sized,
     A: EncodeAsVarULE<T>,
     F: VarZeroVecFormat,
 {
+    debug_assert!(!elements.is_empty());
     let len = compute_serializable_len::<T, A, F>(elements)?;
     debug_assert!(len >= LENGTH_WIDTH as u32);
     let mut output: Vec<u8> = alloc::vec![0; len as usize];
@@ -566,9 +563,7 @@ where
     let data_len: u32 = elements
         .iter()
         .map(|v| u32::try_from(v.encode_var_ule_len()).ok())
-        .fold(Some(0u32), |s, v| {
-            s.and_then(|s| v.and_then(|v| s.checked_add(v)))
-        })?;
+        .try_fold(0u32, |s, v| s.checked_add(v?))?;
     let ret = idx_len.checked_add(data_len);
     if let Some(r) = ret {
         if r >= F::MAX_VALUE {

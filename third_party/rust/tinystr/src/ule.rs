@@ -2,7 +2,7 @@
 
 
 
-use crate::TinyAsciiStr;
+use crate::{TinyAsciiStr, UnvalidatedTinyAsciiStr};
 use zerovec::maps::ZeroMapKV;
 use zerovec::ule::*;
 use zerovec::{ZeroSlice, ZeroVec};
@@ -50,6 +50,46 @@ impl<'a, const N: usize> ZeroMapKV<'a> for TinyAsciiStr<N> {
     type Slice = ZeroSlice<TinyAsciiStr<N>>;
     type GetType = TinyAsciiStr<N>;
     type OwnedType = TinyAsciiStr<N>;
+}
+
+
+
+
+
+
+
+
+
+
+unsafe impl<const N: usize> ULE for UnvalidatedTinyAsciiStr<N> {
+    #[inline]
+    fn validate_byte_slice(bytes: &[u8]) -> Result<(), ZeroVecError> {
+        if bytes.len() % N != 0 {
+            return Err(ZeroVecError::length::<Self>(bytes.len()));
+        }
+        Ok(())
+    }
+}
+
+impl<const N: usize> AsULE for UnvalidatedTinyAsciiStr<N> {
+    type ULE = Self;
+
+    #[inline]
+    fn to_unaligned(self) -> Self::ULE {
+        self
+    }
+
+    #[inline]
+    fn from_unaligned(unaligned: Self::ULE) -> Self {
+        unaligned
+    }
+}
+
+impl<'a, const N: usize> ZeroMapKV<'a> for UnvalidatedTinyAsciiStr<N> {
+    type Container = ZeroVec<'a, UnvalidatedTinyAsciiStr<N>>;
+    type Slice = ZeroSlice<UnvalidatedTinyAsciiStr<N>>;
+    type GetType = UnvalidatedTinyAsciiStr<N>;
+    type OwnedType = UnvalidatedTinyAsciiStr<N>;
 }
 
 #[cfg(test)]

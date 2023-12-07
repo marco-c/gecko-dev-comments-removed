@@ -134,18 +134,18 @@ impl FlexZeroSlice {
         
         
         #[allow(clippy::panic)] 
-        let (_, remainder) = match bytes.split_last() {
-            Some(v) => v,
-            None => panic!("slice should be non-empty"),
-        };
-        &*(remainder as *const [u8] as *const Self)
+        if bytes.is_empty() {
+            panic!("from_byte_slice_unchecked called with empty slice")
+        }
+        let slice = core::ptr::slice_from_raw_parts(bytes.as_ptr(), bytes.len() - 1);
+        &*(slice as *const Self)
     }
 
     #[inline]
     pub(crate) unsafe fn from_byte_slice_mut_unchecked(bytes: &mut [u8]) -> &mut Self {
         
-        let remainder = core::slice::from_raw_parts_mut(bytes.as_mut_ptr(), bytes.len() - 1);
-        &mut *(remainder as *mut [u8] as *mut Self)
+        let remainder = core::ptr::slice_from_raw_parts_mut(bytes.as_mut_ptr(), bytes.len() - 1);
+        &mut *(remainder as *mut Self)
     }
 
     
@@ -298,8 +298,7 @@ impl FlexZeroSlice {
     
     
     pub fn iter_pairs(&self) -> impl Iterator<Item = (usize, Option<usize>)> + '_ {
-        self.iter()
-            .zip(self.iter().skip(1).map(Some).chain(core::iter::once(None)))
+        self.iter().zip(self.iter().skip(1).map(Some).chain([None]))
     }
 
     

@@ -63,10 +63,7 @@ where
     V: ?Sized,
 {
     fn clone(&self) -> Self {
-        ZeroMapBorrowed {
-            keys: self.keys,
-            values: self.values,
-        }
+        *self
     }
 }
 
@@ -249,6 +246,12 @@ where
     
     pub fn get_copied(&self, key: &K) -> Option<V> {
         let index = self.keys.zvl_binary_search(key).ok()?;
+        self.values.get(index)
+    }
+
+    
+    pub fn get_copied_by(&self, predicate: impl FnMut(&K) -> Ordering) -> Option<V> {
+        let index = self.keys.zvl_binary_search_by(predicate).ok()?;
         self.values.get(index)
     }
 

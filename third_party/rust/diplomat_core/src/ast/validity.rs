@@ -2,6 +2,7 @@ use super::{Ident, Path, TypeName};
 
 #[cfg_attr(feature = "displaydoc", derive(displaydoc::Display))]
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum ValidityError {
     
     #[cfg_attr(

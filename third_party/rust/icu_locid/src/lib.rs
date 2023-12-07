@@ -46,6 +46,7 @@
 
 
 
+
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(
     not(test),
@@ -81,6 +82,7 @@ pub use parser::errors::ParserError;
 pub use ParserError as Error;
 
 pub mod extensions;
+#[macro_use]
 pub mod subtags;
 pub mod zerovec;
 

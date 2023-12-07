@@ -108,8 +108,8 @@ pub struct VarZeroSlice<T: ?Sized, F = Index16> {
 impl<T: VarULE + ?Sized, F: VarZeroVecFormat> VarZeroSlice<T, F> {
     
     pub const fn new_empty() -> &'static Self {
-        let arr: &[u8] = &[];
-        unsafe { mem::transmute(arr) }
+        
+        unsafe { mem::transmute(&[] as &[u8]) }
     }
 
     

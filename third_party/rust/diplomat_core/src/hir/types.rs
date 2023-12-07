@@ -12,6 +12,7 @@ pub type OutType = Type<OutputOnly>;
 
 
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Type<P: TyPosition = Everywhere> {
     Primitive(PrimitiveType),
     Opaque(OpaquePath<Optional, P::OpaqueOwnership>),
@@ -22,6 +23,7 @@ pub enum Type<P: TyPosition = Everywhere> {
 
 
 #[derive(Debug, Clone)]
+#[non_exhaustive]
 pub enum SelfType {
     Opaque(OpaquePath<NonOptional, Borrow>),
     Struct(StructPath),
@@ -29,6 +31,7 @@ pub enum SelfType {
 }
 
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub enum Slice {
     
     Str(MaybeStatic<TypeLifetime>),
@@ -46,6 +49,7 @@ pub enum Slice {
 
 
 #[derive(Copy, Clone, Debug)]
+#[non_exhaustive]
 pub struct Borrow {
     pub lifetime: MaybeStatic<TypeLifetime>,
     pub mutability: Mutability,
@@ -64,6 +68,18 @@ impl Type {
             }),
             Type::Opaque(_) | Type::Slice(_) => (1, 1),
             Type::Primitive(_) | Type::Enum(_) => (0, 0),
+        }
+    }
+}
+
+impl SelfType {
+    
+    
+    
+    pub fn is_immutably_borrowed(&self) -> bool {
+        match self {
+            SelfType::Opaque(opaque_path) => opaque_path.owner.mutability == Mutability::Immutable,
+            _ => false,
         }
     }
 }

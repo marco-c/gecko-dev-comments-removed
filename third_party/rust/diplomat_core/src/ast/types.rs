@@ -9,13 +9,14 @@ use std::fmt;
 use std::ops::ControlFlow;
 
 use super::{
-    Docs, Enum, Ident, Lifetime, LifetimeEnv, LifetimeTransitivity, Method, NamedLifetime,
+    Attrs, Docs, Enum, Ident, Lifetime, LifetimeEnv, LifetimeTransitivity, Method, NamedLifetime,
     OpaqueStruct, Path, RustLink, Struct, ValidityError,
 };
 use crate::Env;
 
 
-#[derive(Clone, Serialize, Deserialize, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Serialize, Debug, Hash, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum CustomType {
     
     Struct(Struct),
@@ -44,11 +45,11 @@ impl CustomType {
         }
     }
 
-    pub fn cfg_attrs(&self) -> &[String] {
+    pub fn attrs(&self) -> &Attrs {
         match self {
-            CustomType::Struct(strct) => &strct.cfg_attrs,
-            CustomType::Opaque(strct) => &strct.cfg_attrs,
-            CustomType::Enum(enm) => &enm.cfg_attrs,
+            CustomType::Struct(strct) => &strct.attrs,
+            CustomType::Opaque(strct) => &strct.attrs,
+            CustomType::Enum(enm) => &enm.attrs,
         }
     }
 
@@ -126,7 +127,8 @@ impl CustomType {
 
 
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Debug)]
+#[non_exhaustive]
 pub enum ModSymbol {
     
     Alias(Path),
@@ -138,6 +140,7 @@ pub enum ModSymbol {
 
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+#[non_exhaustive]
 pub struct PathType {
     pub path: Path,
     pub lifetimes: Vec<Lifetime>,
@@ -299,6 +302,7 @@ impl From<Path> for PathType {
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum Mutability {
     Mutable,
     Immutable,
@@ -361,6 +365,7 @@ impl Mutability {
 
 
 #[derive(Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
+#[non_exhaustive]
 pub enum TypeName {
     
     Primitive(PrimitiveType),
@@ -882,6 +887,7 @@ impl TypeName {
     }
 }
 
+#[non_exhaustive]
 pub enum LifetimeOrigin {
     Named,
     Reference,
@@ -973,6 +979,7 @@ impl fmt::Display for PathType {
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Debug)]
 #[allow(non_camel_case_types)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum PrimitiveType {
     i8,
     u8,

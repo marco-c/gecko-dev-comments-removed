@@ -18,14 +18,27 @@
     )
 )]
 
+use core::mem;
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
 use quote::quote;
+use std::collections::{HashMap, HashSet};
+use syn::fold::{self, Fold};
+use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, parse_quote, DeriveInput, Ident, Lifetime, Type, WherePredicate};
+use syn::{
+    parse_macro_input, parse_quote, DeriveInput, Ident, Lifetime, MetaList, Token, Type, TypePath,
+    WherePredicate,
+};
 use synstructure::Structure;
-
 mod visitor;
+
+
+
+
+
+
+
 
 
 
@@ -41,10 +54,10 @@ pub fn zf_derive(input: TokenStream) -> TokenStream {
     TokenStream::from(zf_derive_impl(&input))
 }
 
-fn has_clone_attr(attrs: &[syn::Attribute]) -> bool {
+fn has_attr(attrs: &[syn::Attribute], name: &str) -> bool {
     attrs.iter().any(|a| {
         if let Ok(i) = a.parse_args::<Ident>() {
-            if i == "clone" {
+            if i == name {
                 return true;
             }
         }
@@ -52,8 +65,29 @@ fn has_clone_attr(attrs: &[syn::Attribute]) -> bool {
     })
 }
 
+
+
+
+fn get_may_borrow_attr(attrs: &[syn::Attribute]) -> Result<HashSet<Ident>, Span> {
+    let mut params = HashSet::new();
+    for attr in attrs {
+        if let Ok(list) = attr.parse_args::<MetaList>() {
+            if list.path.is_ident("may_borrow") {
+                if let Ok(list) =
+                    list.parse_args_with(Punctuated::<Ident, Token![,]>::parse_terminated)
+                {
+                    params.extend(list)
+                } else {
+                    return Err(attr.span());
+                }
+            }
+        }
+    }
+    Ok(params)
+}
+
 fn zf_derive_impl(input: &DeriveInput) -> TokenStream2 {
-    let tybounds = input
+    let mut tybounds = input
         .generics
         .type_params()
         .map(|ty| {
@@ -72,12 +106,47 @@ fn zf_derive_impl(input: &DeriveInput) -> TokenStream2 {
     let name = &input.ident;
     let structure = Structure::new(input);
 
-    if lts == 0 {
+    let may_borrow_attrs = match get_may_borrow_attr(&input.attrs) {
+        Ok(mb) => mb,
+        Err(span) => {
+            return syn::Error::new(
+            span,
+            "#[zerofrom(may_borrow)] on the struct takes in a comma separated list of type parameters, like so: `#[zerofrom(may_borrow(A, B, C, D)]`",
+        ).to_compile_error();
+        }
+    };
+
+    
+    
+    
+    
+    let generics_env: HashMap<Ident, Option<Ident>> = tybounds
+        .iter()
+        .map(|param| {
+            
+            let maybe_new_param = if has_attr(&param.attrs, "may_borrow")
+                || may_borrow_attrs.contains(&param.ident)
+            {
+                Some(Ident::new(
+                    &format!("{}ZFParamC", param.ident),
+                    param.ident.span(),
+                ))
+            } else {
+                None
+            };
+            (param.ident.clone(), maybe_new_param)
+        })
+        .collect();
+
+    
+    let generics_may_borrow = generics_env.values().any(|x| x.is_some());
+
+    if lts == 0 && !generics_may_borrow {
         let has_clone = structure
             .variants()
             .iter()
             .flat_map(|variant| variant.bindings().iter())
-            .any(|binding| has_clone_attr(&binding.ast().attrs));
+            .any(|binding| has_attr(&binding.ast().attrs, "clone"));
         let (clone, clone_trait) = if has_clone {
             (quote!(this.clone()), quote!(Clone))
         } else {
@@ -95,7 +164,7 @@ fn zf_derive_impl(input: &DeriveInput) -> TokenStream2 {
             }
         }
     } else {
-        if lts != 1 {
+        if lts > 1 {
             return syn::Error::new(
                 input.generics.span(),
                 "derive(ZeroFrom) cannot have multiple lifetime parameters",
@@ -103,21 +172,22 @@ fn zf_derive_impl(input: &DeriveInput) -> TokenStream2 {
             .to_compile_error();
         }
 
-        let generics_env = typarams.iter().cloned().collect();
-
         let mut zf_bounds: Vec<WherePredicate> = vec![];
         let body = structure.each_variant(|vi| {
             vi.construct(|f, i| {
                 let binding = format!("__binding_{i}");
                 let field = Ident::new(&binding, Span::call_site());
 
-                if has_clone_attr(&f.attrs) {
+                if has_attr(&f.attrs, "clone") {
                     quote! {
                         #field.clone()
                     }
                 } else {
+                    
                     let fty = replace_lifetime(&f.ty, custom_lt("'zf"));
-                    let lifetime_ty = replace_lifetime(&f.ty, custom_lt("'zf_inner"));
+                    
+                    let lifetime_ty =
+                        replace_lifetime_and_type(&f.ty, custom_lt("'zf_inner"), &generics_env);
 
                     let (has_ty, has_lt) = visitor::check_type_for_parameters(&f.ty, &generics_env);
                     if has_ty {
@@ -145,12 +215,34 @@ fn zf_derive_impl(input: &DeriveInput) -> TokenStream2 {
                 }
             })
         });
+        
+        
+        let (maybe_zf_lifetime, maybe_zf_inner_lifetime) = if lts == 0 {
+            (quote!(), quote!())
+        } else {
+            (quote!('zf,), quote!('zf_inner,))
+        };
+
+        
+        let mut typarams_c = typarams.clone();
+
+        if generics_may_borrow {
+            for typaram_c in &mut typarams_c {
+                if let Some(Some(replacement)) = generics_env.get(typaram_c) {
+                    
+                    let typaram_t = mem::replace(typaram_c, replacement.clone());
+                    zf_bounds
+                        .push(parse_quote!(#typaram_c: zerofrom::ZeroFrom<'zf_inner, #typaram_t>));
+                    tybounds.push(parse_quote!(#typaram_c));
+                }
+            }
+        }
 
         quote! {
-            impl<'zf, 'zf_inner, #(#tybounds),*> zerofrom::ZeroFrom<'zf, #name<'zf_inner, #(#typarams),*>> for #name<'zf, #(#typarams),*>
+            impl<'zf, 'zf_inner, #(#tybounds),*> zerofrom::ZeroFrom<'zf, #name<#maybe_zf_inner_lifetime #(#typarams_c),*>> for #name<#maybe_zf_lifetime #(#typarams),*>
                 where
                 #(#zf_bounds,)* {
-                fn zero_from(this: &'zf #name<'zf_inner, #(#typarams),*>) -> Self {
+                fn zero_from(this: &'zf #name<#maybe_zf_inner_lifetime #(#typarams_c),*>) -> Self {
                     match *this { #body }
                 }
             }
@@ -162,8 +254,8 @@ fn custom_lt(s: &str) -> Lifetime {
     Lifetime::new(s, Span::call_site())
 }
 
+
 fn replace_lifetime(x: &Type, lt: Lifetime) -> Type {
-    use syn::fold::Fold;
     struct ReplaceLifetime(Lifetime);
 
     impl Fold for ReplaceLifetime {
@@ -172,4 +264,31 @@ fn replace_lifetime(x: &Type, lt: Lifetime) -> Type {
         }
     }
     ReplaceLifetime(lt).fold_type(x.clone())
+}
+
+
+
+fn replace_lifetime_and_type(
+    x: &Type,
+    lt: Lifetime,
+    generics_env: &HashMap<Ident, Option<Ident>>,
+) -> Type {
+    struct ReplaceLifetimeAndTy<'a>(Lifetime, &'a HashMap<Ident, Option<Ident>>);
+
+    impl Fold for ReplaceLifetimeAndTy<'_> {
+        fn fold_lifetime(&mut self, _: Lifetime) -> Lifetime {
+            self.0.clone()
+        }
+        fn fold_type_path(&mut self, i: TypePath) -> TypePath {
+            if i.qself.is_none() {
+                if let Some(ident) = i.path.get_ident() {
+                    if let Some(Some(replacement)) = self.1.get(ident) {
+                        return parse_quote!(#replacement);
+                    }
+                }
+            }
+            fold::fold_type_path(self, i)
+        }
+    }
+    ReplaceLifetimeAndTy(lt, generics_env).fold_type(x.clone())
 }

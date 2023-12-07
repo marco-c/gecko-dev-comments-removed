@@ -37,7 +37,6 @@
 
 
 
-
 mod trie;
 
 pub use trie::Char16Trie;

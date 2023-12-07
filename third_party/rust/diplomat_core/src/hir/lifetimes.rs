@@ -96,6 +96,7 @@ where
 
 
 #[derive(Copy, Clone, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum MaybeStatic<T> {
     Static,
     NonStatic(T),

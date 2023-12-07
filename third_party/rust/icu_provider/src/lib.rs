@@ -116,10 +116,6 @@
 
 
 
-
-
-
-
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(
     not(test),
@@ -139,7 +135,8 @@ extern crate alloc;
 
 mod data_provider;
 mod error;
-mod helpers;
+#[doc(hidden)]
+pub mod fallback;
 mod key;
 mod request;
 mod response;
@@ -148,12 +145,9 @@ pub mod any;
 pub mod buf;
 pub mod constructors;
 #[cfg(feature = "datagen")]
-#[macro_use]
 pub mod datagen;
-#[macro_use]
 pub mod dynutil;
 pub mod hello_world;
-#[macro_use]
 pub mod marker;
 #[cfg(feature = "serde")]
 pub mod serde;
@@ -167,8 +161,8 @@ pub use crate::key::DataKey;
 pub use crate::key::DataKeyHash;
 pub use crate::key::DataKeyMetadata;
 pub use crate::key::DataKeyPath;
-pub use crate::key::FallbackPriority;
-pub use crate::key::FallbackSupplement;
+#[cfg(feature = "experimental")]
+pub use crate::request::AuxiliaryKeys;
 pub use crate::request::DataLocale;
 pub use crate::request::DataRequest;
 pub use crate::request::DataRequestMetadata;
@@ -214,6 +208,9 @@ pub mod prelude {
     #[doc(no_inline)]
     pub use crate::AsDynamicDataProviderAnyMarkerWrap;
     #[doc(no_inline)]
+    #[cfg(feature = "experimental")]
+    pub use crate::AuxiliaryKeys;
+    #[doc(no_inline)]
     pub use crate::BufferMarker;
     #[doc(no_inline)]
     pub use crate::BufferProvider;
@@ -254,6 +251,17 @@ pub mod prelude {
 
 
 #[doc(hidden)]
+pub use fallback::LocaleFallbackPriority as FallbackPriority;
+#[doc(hidden)]
+pub use fallback::LocaleFallbackSupplement as FallbackSupplement;
+#[doc(hidden)]
+pub use yoke;
+#[doc(hidden)]
+pub use zerofrom;
+
+
+#[doc(hidden)]
 pub mod _internal {
-    pub use icu_locid::extensions_unicode_key;
+    pub use super::fallback::{LocaleFallbackPriority, LocaleFallbackSupplement};
+    pub use icu_locid as locid;
 }

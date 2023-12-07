@@ -109,6 +109,7 @@ pub trait TyPosition: Debug + Copy {
 
 
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub struct Everywhere;
 
 
@@ -116,6 +117,7 @@ pub struct Everywhere;
 
 
 #[derive(Debug, Copy, Clone)]
+#[non_exhaustive]
 pub struct OutputOnly;
 
 impl TyPosition for Everywhere {

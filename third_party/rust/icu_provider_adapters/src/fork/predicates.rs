@@ -11,6 +11,9 @@ use icu_provider::prelude::*;
 
 pub trait ForkByErrorPredicate {
     
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
+
+    
     
     
     
@@ -43,6 +46,8 @@ pub trait ForkByErrorPredicate {
 pub struct MissingDataKeyPredicate;
 
 impl ForkByErrorPredicate for MissingDataKeyPredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingDataKey;
+
     #[inline]
     fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
         matches!(
@@ -118,13 +123,13 @@ impl ForkByErrorPredicate for MissingDataKeyPredicate {
 
 
 
-
-
 #[derive(Debug, PartialEq, Eq)]
 #[allow(clippy::exhaustive_structs)] 
 pub struct MissingLocalePredicate;
 
 impl ForkByErrorPredicate for MissingLocalePredicate {
+    const UNIT_ERROR: DataErrorKind = DataErrorKind::MissingLocale;
+
     #[inline]
     fn test(&self, _: DataKey, _: Option<DataRequest>, err: DataError) -> bool {
         matches!(

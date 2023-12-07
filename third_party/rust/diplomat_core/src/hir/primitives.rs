@@ -3,6 +3,7 @@ use crate::ast;
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum IntType {
     I8,
     I16,
@@ -16,6 +17,7 @@ pub enum IntType {
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum IntSizeType {
     Isize,
     Usize,
@@ -23,6 +25,7 @@ pub enum IntSizeType {
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum Int128Type {
     I128,
     U128,
@@ -30,6 +33,7 @@ pub enum Int128Type {
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum FloatType {
     F32,
     F64,
@@ -37,6 +41,7 @@ pub enum FloatType {
 
 
 #[derive(Copy, Clone, Debug)]
+#[allow(clippy::exhaustive_enums)] 
 pub enum PrimitiveType {
     Bool,
     Char,

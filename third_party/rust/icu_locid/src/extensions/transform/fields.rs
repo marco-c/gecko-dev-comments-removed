@@ -31,7 +31,6 @@ use super::Value;
 
 
 
-
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash, PartialOrd, Ord)]
 pub struct Fields(LiteMap<Key, Value>);
 
@@ -69,7 +68,6 @@ impl Fields {
         self.0.is_empty()
     }
 
-    
     
     
     
@@ -130,7 +128,6 @@ impl Fields {
     
     
     
-    
     pub fn get<Q>(&self, key: &Q) -> Option<&Value>
     where
         Key: Borrow<Q>,
@@ -139,8 +136,6 @@ impl Fields {
         self.0.get(key)
     }
 
-    
-    
     
     
     

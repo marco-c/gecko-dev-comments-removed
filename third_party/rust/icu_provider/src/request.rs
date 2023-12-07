@@ -2,14 +2,26 @@
 
 
 
+use crate::{DataError, DataErrorKind};
 use core::cmp::Ordering;
 use core::default::Default;
 use core::fmt;
 use core::fmt::Debug;
+use core::hash::Hash;
+use core::str::FromStr;
 use icu_locid::extensions::unicode as unicode_ext;
 use icu_locid::subtags::{Language, Region, Script, Variants};
 use icu_locid::{LanguageIdentifier, Locale, SubtagOrderingResult};
 use writeable::{LengthHint, Writeable};
+
+#[cfg(feature = "experimental")]
+use alloc::string::String;
+#[cfg(feature = "experimental")]
+use core::ops::Deref;
+#[cfg(feature = "experimental")]
+use icu_locid::extensions::private::Subtag;
+#[cfg(feature = "experimental")]
+use tinystr::TinyAsciiStr;
 
 #[cfg(doc)]
 use icu_locid::subtags::Variant;
@@ -109,6 +121,8 @@ pub struct DataRequestMetadata {
 pub struct DataLocale {
     langid: LanguageIdentifier,
     keywords: unicode_ext::Keywords,
+    #[cfg(feature = "experimental")]
+    aux: Option<AuxiliaryKeys>,
 }
 
 impl<'a> Default for &'a DataLocale {
@@ -116,6 +130,8 @@ impl<'a> Default for &'a DataLocale {
         static DEFAULT: DataLocale = DataLocale {
             langid: LanguageIdentifier::UND,
             keywords: unicode_ext::Keywords::new(),
+            #[cfg(feature = "experimental")]
+            aux: None,
         };
         &DEFAULT
     }
@@ -134,20 +150,34 @@ impl Writeable for DataLocale {
             sink.write_str("-u-")?;
             self.keywords.write_to(sink)?;
         }
+        #[cfg(feature = "experimental")]
+        if let Some(aux) = self.aux.as_ref() {
+            sink.write_str("-x-")?;
+            aux.write_to(sink)?;
+        }
         Ok(())
     }
 
     fn writeable_length_hint(&self) -> LengthHint {
-        self.langid.writeable_length_hint()
-            + if !self.keywords.is_empty() {
-                self.keywords.writeable_length_hint() + 3
-            } else {
-                LengthHint::exact(0)
-            }
+        let mut length_hint = self.langid.writeable_length_hint();
+        if !self.keywords.is_empty() {
+            length_hint += self.keywords.writeable_length_hint() + 3;
+        }
+        #[cfg(feature = "experimental")]
+        if let Some(aux) = self.aux.as_ref() {
+            length_hint += aux.writeable_length_hint() + 3;
+        }
+        length_hint
     }
 
     fn write_to_string(&self) -> alloc::borrow::Cow<str> {
-        if self.keywords.is_empty() {
+        #[cfg_attr(not(feature = "experimental"), allow(unused_mut))]
+        let mut is_only_langid = self.keywords.is_empty();
+        #[cfg(feature = "experimental")]
+        {
+            is_only_langid = is_only_langid && self.aux.is_none();
+        }
+        if is_only_langid {
             return self.langid.write_to_string();
         }
         let mut string =
@@ -164,6 +194,8 @@ impl From<LanguageIdentifier> for DataLocale {
         Self {
             langid,
             keywords: unicode_ext::Keywords::new(),
+            #[cfg(feature = "experimental")]
+            aux: None,
         }
     }
 }
@@ -173,6 +205,8 @@ impl From<Locale> for DataLocale {
         Self {
             langid: locale.id,
             keywords: locale.extensions.unicode.keywords,
+            #[cfg(feature = "experimental")]
+            aux: AuxiliaryKeys::try_from_iter(locale.extensions.private.iter().copied()).ok(),
         }
     }
 }
@@ -182,6 +216,8 @@ impl From<&LanguageIdentifier> for DataLocale {
         Self {
             langid: langid.clone(),
             keywords: unicode_ext::Keywords::new(),
+            #[cfg(feature = "experimental")]
+            aux: None,
         }
     }
 }
@@ -191,11 +227,61 @@ impl From<&Locale> for DataLocale {
         Self {
             langid: locale.id.clone(),
             keywords: locale.extensions.unicode.keywords.clone(),
+            #[cfg(feature = "experimental")]
+            aux: AuxiliaryKeys::try_from_iter(locale.extensions.private.iter().copied()).ok(),
         }
     }
 }
 
+impl FromStr for DataLocale {
+    type Err = DataError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let locale = Locale::from_str(s).map_err(|e| {
+            DataErrorKind::KeyLocaleSyntax
+                .into_error()
+                .with_display_context(s)
+                .with_display_context(&e)
+        })?;
+        Ok(DataLocale::from(locale))
+    }
+}
+
 impl DataLocale {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -270,16 +356,89 @@ impl DataLocale {
             }
             subtag_result = self.keywords.strict_cmp_iter(subtags);
         }
+        #[cfg(feature = "experimental")]
+        if let Some(aux) = self.get_aux() {
+            let mut subtags = match subtag_result {
+                SubtagOrderingResult::Subtags(s) => s,
+                SubtagOrderingResult::Ordering(o) => return o,
+            };
+            match subtags.next() {
+                Some(b"x") => (),
+                Some(s) => return s.cmp(b"x").reverse(),
+                None => return Ordering::Greater,
+            }
+            subtag_result = aux.strict_cmp_iter(subtags);
+        }
         subtag_result.end()
     }
 }
 
 impl DataLocale {
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn is_empty(&self) -> bool {
         self == <&DataLocale>::default()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn is_und(&self) -> bool {
+        self.langid == LanguageIdentifier::UND && self.keywords.is_empty()
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -354,12 +513,33 @@ impl DataLocale {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn into_locale(self) -> Locale {
         let mut loc = Locale {
             id: self.langid,
             ..Default::default()
         };
         loc.extensions.unicode.keywords = self.keywords;
+        #[cfg(feature = "experimental")]
+        if let Some(aux) = self.aux {
+            loc.extensions.private =
+                icu_locid::extensions::private::Private::from_vec_unchecked(aux.iter().collect());
+        }
         loc
     }
 
@@ -484,6 +664,366 @@ impl DataLocale {
     {
         self.keywords.retain_by_key(predicate)
     }
+
+    
+    
+    
+    #[cfg(feature = "experimental")]
+    pub fn get_aux(&self) -> Option<&AuxiliaryKeys> {
+        self.aux.as_ref()
+    }
+
+    
+    
+    
+    #[cfg(feature = "experimental")]
+    pub fn has_aux(&self) -> bool {
+        self.aux.is_some()
+    }
+
+    
+    
+    
+    
+    
+    #[cfg(feature = "experimental")]
+    pub fn set_aux(&mut self, value: AuxiliaryKeys) -> Option<AuxiliaryKeys> {
+        self.aux.replace(value)
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #[cfg(feature = "experimental")]
+    pub fn remove_aux(&mut self) -> Option<AuxiliaryKeys> {
+        self.aux.take()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+#[cfg(feature = "experimental")]
+pub struct AuxiliaryKeys {
+    value: AuxiliaryKeysInner,
+}
+
+#[cfg(feature = "experimental")]
+#[derive(Clone)]
+enum AuxiliaryKeysInner {
+    Boxed(alloc::boxed::Box<str>),
+    Stack(TinyAsciiStr<23>),
+    
+    
+}
+
+#[cfg(feature = "experimental")]
+impl Deref for AuxiliaryKeysInner {
+    type Target = str;
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        match self {
+            Self::Boxed(s) => s.deref(),
+            Self::Stack(s) => s.as_str(),
+        }
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl PartialEq for AuxiliaryKeysInner {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.deref() == other.deref()
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl Eq for AuxiliaryKeysInner {}
+
+#[cfg(feature = "experimental")]
+impl Debug for AuxiliaryKeysInner {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.deref().fmt(f)
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl Hash for AuxiliaryKeysInner {
+    #[inline]
+    fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
+        self.deref().hash(state)
+    }
+}
+
+#[cfg(feature = "experimental")]
+writeable::impl_display_with_writeable!(AuxiliaryKeys);
+
+#[cfg(feature = "experimental")]
+impl Writeable for AuxiliaryKeys {
+    fn write_to<W: fmt::Write + ?Sized>(&self, sink: &mut W) -> fmt::Result {
+        self.value.write_to(sink)
+    }
+    fn writeable_length_hint(&self) -> LengthHint {
+        self.value.writeable_length_hint()
+    }
+    fn write_to_string(&self) -> alloc::borrow::Cow<str> {
+        self.value.write_to_string()
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl FromStr for AuxiliaryKeys {
+    type Err = DataError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::try_from_str(s)
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl AuxiliaryKeys {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn try_from_iter(iter: impl IntoIterator<Item = Subtag>) -> Result<Self, DataError> {
+        
+        let mut builder = String::new();
+        for item in iter {
+            if !builder.is_empty() {
+                builder.push(AuxiliaryKeys::separator());
+            }
+            builder.push_str(item.as_str())
+        }
+        if builder.is_empty() {
+            return Err(DataErrorKind::KeyLocaleSyntax.with_str_context("empty aux iterator"));
+        }
+        if builder.len() <= 23 {
+            #[allow(clippy::unwrap_used)] 
+            Ok(Self {
+                value: AuxiliaryKeysInner::Stack(builder.parse().unwrap()),
+            })
+        } else {
+            Ok(Self {
+                value: AuxiliaryKeysInner::Boxed(builder.into()),
+            })
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn from_subtag(input: Subtag) -> Self {
+        Self {
+            value: AuxiliaryKeysInner::Stack(input.into_tinystr().resize()),
+        }
+    }
+
+    pub(crate) fn try_from_str(s: &str) -> Result<Self, DataError> {
+        if !s.is_empty()
+            && s.split(Self::separator()).all(|b| {
+                if let Ok(subtag) = Subtag::from_str(b) {
+                    
+                    b == subtag.as_str()
+                } else {
+                    false
+                }
+            })
+        {
+            if s.len() <= 23 {
+                #[allow(clippy::unwrap_used)] 
+                Ok(Self {
+                    value: AuxiliaryKeysInner::Stack(s.parse().unwrap()),
+                })
+            } else {
+                Ok(Self {
+                    value: AuxiliaryKeysInner::Boxed(s.into()),
+                })
+            }
+        } else {
+            Err(DataErrorKind::KeyLocaleSyntax
+                .into_error()
+                .with_display_context(s))
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn iter(&self) -> impl Iterator<Item = Subtag> + '_ {
+        self.value
+            .split(Self::separator())
+            .filter_map(|x| match x.parse() {
+                Ok(x) => Some(x),
+                Err(_) => {
+                    debug_assert!(false, "failed to convert to subtag: {x}");
+                    None
+                }
+            })
+    }
+
+    pub(crate) fn strict_cmp_iter<'l, I>(&self, mut subtags: I) -> SubtagOrderingResult<I>
+    where
+        I: Iterator<Item = &'l [u8]>,
+    {
+        for subtag in self.value.split(Self::separator()) {
+            if let Some(other) = subtags.next() {
+                match subtag.as_bytes().cmp(other) {
+                    Ordering::Equal => (),
+                    not_equal => return SubtagOrderingResult::Ordering(not_equal),
+                }
+            } else {
+                return SubtagOrderingResult::Ordering(Ordering::Greater);
+            }
+        }
+        SubtagOrderingResult::Subtags(subtags)
+    }
+
+    
+    
+    
+    #[inline]
+    pub(crate) const fn separator() -> char {
+        '-'
+    }
+}
+
+#[cfg(feature = "experimental")]
+impl From<Subtag> for AuxiliaryKeys {
+    fn from(subtag: Subtag) -> Self {
+        #[allow(clippy::expect_used)] 
+        Self {
+            value: AuxiliaryKeysInner::Stack(
+                TinyAsciiStr::from_bytes(subtag.as_str().as_bytes())
+                    .expect("Subtags are capped to 8 elements, AuxiliaryKeys supports up to 23"),
+            ),
+        }
+    }
 }
 
 #[test]
@@ -491,24 +1031,91 @@ fn test_data_locale_to_string() {
     use icu_locid::locale;
 
     struct TestCase {
-        pub locale: DataLocale,
+        pub locale: Locale,
+        pub aux: Option<&'static str>,
         pub expected: &'static str,
     }
 
     for cas in [
         TestCase {
-            locale: Locale::UND.into(),
+            locale: Locale::UND,
+            aux: None,
             expected: "und",
         },
         TestCase {
-            locale: locale!("und-u-cu-gbp").into(),
+            locale: locale!("und-u-cu-gbp"),
+            aux: None,
             expected: "und-u-cu-gbp",
         },
         TestCase {
-            locale: locale!("en-ZA-u-cu-gbp").into(),
+            locale: locale!("en-ZA-u-cu-gbp"),
+            aux: None,
             expected: "en-ZA-u-cu-gbp",
         },
+        #[cfg(feature = "experimental")]
+        TestCase {
+            locale: locale!("en-ZA-u-nu-arab"),
+            aux: Some("gbp"),
+            expected: "en-ZA-u-nu-arab-x-gbp",
+        },
     ] {
-        writeable::assert_writeable_eq!(cas.locale, cas.expected);
+        let mut data_locale = DataLocale::from(cas.locale);
+        #[cfg(feature = "experimental")]
+        if let Some(aux) = cas.aux {
+            data_locale.set_aux(aux.parse().unwrap());
+        }
+        writeable::assert_writeable_eq!(data_locale, cas.expected);
+    }
+}
+
+#[test]
+fn test_data_locale_from_string() {
+    #[derive(Debug)]
+    struct TestCase {
+        pub input: &'static str,
+        pub success: bool,
+    }
+
+    for cas in [
+        TestCase {
+            input: "und",
+            success: true,
+        },
+        TestCase {
+            input: "und-u-cu-gbp",
+            success: true,
+        },
+        TestCase {
+            input: "en-ZA-u-cu-gbp",
+            success: true,
+        },
+        TestCase {
+            input: "en...",
+            success: false,
+        },
+        #[cfg(feature = "experimental")]
+        TestCase {
+            input: "en-ZA-u-nu-arab-x-gbp",
+            success: true,
+        },
+        #[cfg(not(feature = "experimental"))]
+        TestCase {
+            input: "en-ZA-u-nu-arab-x-gbp",
+            success: false,
+        },
+    ] {
+        let data_locale = match (DataLocale::from_str(cas.input), cas.success) {
+            (Ok(l), true) => l,
+            (Err(_), false) => {
+                continue;
+            }
+            (Ok(_), false) => {
+                panic!("DataLocale parsed but it was supposed to fail: {cas:?}");
+            }
+            (Err(_), true) => {
+                panic!("DataLocale was supposed to parse but it failed: {cas:?}");
+            }
+        };
+        writeable::assert_writeable_eq!(data_locale, cas.input);
     }
 }

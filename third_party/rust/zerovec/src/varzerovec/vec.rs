@@ -425,8 +425,12 @@ where
 {
     #[inline]
     fn from(elements: &[A]) -> Self {
-        #[allow(clippy::unwrap_used)] 
-        VarZeroVecOwned::try_from_elements(elements).unwrap().into()
+        if elements.is_empty() {
+            VarZeroSlice::new_empty().into()
+        } else {
+            #[allow(clippy::unwrap_used)] 
+            VarZeroVecOwned::try_from_elements(elements).unwrap().into()
+        }
     }
 }
 
@@ -451,6 +455,12 @@ where
 {
     #[inline]
     fn eq(&self, other: &VarZeroVec<'b, T, F>) -> bool {
+        
+        
+        if self.is_empty() || other.is_empty() {
+            return self.is_empty() && other.is_empty();
+        }
+        
         
         
         self.as_bytes().eq(other.as_bytes())
@@ -502,4 +512,20 @@ impl<'a, T: VarULE + ?Sized + Ord, F: VarZeroVecFormat> Ord for VarZeroVec<'a, T
     fn cmp(&self, other: &Self) -> Ordering {
         self.iter().cmp(other.iter())
     }
+}
+
+#[test]
+fn assert_single_empty_representation() {
+    assert_eq!(
+        VarZeroVec::<str>::new().as_bytes(),
+        VarZeroVec::<str>::from(&[] as &[&str]).as_bytes()
+    );
+}
+
+#[test]
+fn weird_empty_representation_equality() {
+    assert_eq!(
+        VarZeroVec::<str>::parse_byte_slice(&[0, 0, 0, 0]).unwrap(),
+        VarZeroVec::<str>::parse_byte_slice(&[]).unwrap()
+    );
 }

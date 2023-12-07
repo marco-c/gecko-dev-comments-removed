@@ -32,8 +32,10 @@ mod other;
 use alloc::vec::Vec;
 use core::ops::Deref;
 
-pub use other::Subtag;
+#[doc(inline)]
+pub use other::{subtag, Subtag};
 
+use crate::helpers::ShortSlice;
 use crate::parser::ParserError;
 use crate::parser::SubtagIterator;
 
@@ -58,7 +60,7 @@ use crate::parser::SubtagIterator;
 
 
 #[derive(Clone, PartialEq, Eq, Debug, Default, Hash, PartialOrd, Ord)]
-pub struct Private(Vec<Subtag>);
+pub struct Private(ShortSlice<Subtag>);
 
 impl Private {
     
@@ -72,7 +74,7 @@ impl Private {
     
     #[inline]
     pub const fn new() -> Self {
-        Self(Vec::new())
+        Self(ShortSlice::new())
     }
 
     
@@ -89,7 +91,23 @@ impl Private {
     
     
     pub fn from_vec_unchecked(input: Vec<Subtag>) -> Self {
-        Self(input)
+        Self(input.into())
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub const fn new_single(input: Subtag) -> Self {
+        Self(ShortSlice::new_single(input))
     }
 
     
@@ -116,9 +134,9 @@ impl Private {
     pub(crate) fn try_from_iter(iter: &mut SubtagIterator) -> Result<Self, ParserError> {
         let keys = iter
             .map(Subtag::try_from_bytes)
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<ShortSlice<_>, _>>()?;
 
-        Ok(Self::from_vec_unchecked(keys))
+        Ok(Self(keys))
     }
 
     pub(crate) fn for_each_subtag_str<E, F>(&self, f: &mut F) -> Result<(), E>

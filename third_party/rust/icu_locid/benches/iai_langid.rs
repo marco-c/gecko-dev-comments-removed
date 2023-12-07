@@ -2,9 +2,7 @@
 
 
 
-use icu_locid::{
-    langid, subtags_language as language, subtags_region as region, LanguageIdentifier,
-};
+use icu_locid::{langid, subtags::language, subtags::region, LanguageIdentifier};
 use writeable::Writeable;
 
 const LIDS: &[LanguageIdentifier] = &[

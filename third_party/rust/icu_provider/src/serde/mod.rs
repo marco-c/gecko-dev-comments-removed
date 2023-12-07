@@ -29,6 +29,13 @@ pub struct DeserializingBufferProvider<'a, P: ?Sized>(&'a P);
 
 pub trait AsDeserializingBufferProvider {
     
+    
+    
+    
+    
+    
+    
+    
     fn as_deserializing(&self) -> DeserializingBufferProvider<Self>;
 }
 
@@ -36,6 +43,13 @@ impl<P> AsDeserializingBufferProvider for P
 where
     P: BufferProvider + ?Sized,
 {
+    
+    
+    
+    
+    
+    
+    
     
     fn as_deserializing(&self) -> DeserializingBufferProvider<Self> {
         DeserializingBufferProvider(self)
@@ -111,6 +125,13 @@ impl DataPayload<BufferMarker> {
     
     
     
+    
+    
+    
+    
+    
+    
+    
     pub fn into_deserialized<M>(
         self,
         buffer_format: BufferFormat,
@@ -135,6 +156,14 @@ where
     
     for<'de> YokeTraitHack<<M::Yokeable as Yokeable<'de>>::Output>: Deserialize<'de>,
 {
+    
+    
+    
+    
+    
+    
+    
+    
     fn load_data(&self, key: DataKey, req: DataRequest) -> Result<DataResponse<M>, DataError> {
         let buffer_response = BufferProvider::load_buffer(self.0, key, req)?;
         let buffer_format = buffer_response.metadata.buffer_format.ok_or_else(|| {
@@ -160,6 +189,13 @@ where
     
     for<'de> YokeTraitHack<<M::Yokeable as Yokeable<'de>>::Output>: Deserialize<'de>,
 {
+    
+    
+    
+    
+    
+    
+    
     
     fn load(&self, req: DataRequest) -> Result<DataResponse<M>, DataError> {
         self.load_data(M::KEY, req)

@@ -100,14 +100,6 @@
 
 
 
-
-
-
-
-
-
-
-
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 #![cfg_attr(
     not(test),
@@ -126,11 +118,9 @@
 extern crate alloc;
 
 mod complex;
-mod dictionary;
 mod error;
 mod indices;
 mod iterator_helpers;
-mod language;
 mod rule_segmenter;
 
 mod grapheme;
@@ -143,11 +133,6 @@ pub mod provider;
 
 #[doc(hidden)]
 pub mod symbols;
-
-#[cfg(feature = "lstm")]
-mod lstm;
-#[cfg(feature = "lstm")]
-mod math_helper;
 
 
 pub use crate::grapheme::GraphemeClusterBreakIterator;

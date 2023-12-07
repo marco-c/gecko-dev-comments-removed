@@ -4,12 +4,9 @@
 
 use crate::helpers::ShortSlice;
 use crate::parser::{ParserError, SubtagIterator};
-use alloc::vec::Vec;
 use core::ops::RangeInclusive;
 use core::str::FromStr;
 use tinystr::TinyAsciiStr;
-
-
 
 
 
@@ -52,7 +49,7 @@ impl Value {
     
     
     pub fn try_from_bytes(input: &[u8]) -> Result<Self, ParserError> {
-        let mut v = Vec::new();
+        let mut v = ShortSlice::new();
 
         if !input.is_empty() {
             for subtag in SubtagIterator::new(input) {
@@ -62,7 +59,7 @@ impl Value {
                 }
             }
         }
-        Ok(Self(v.into()))
+        Ok(Self(v))
     }
 
     
@@ -85,7 +82,7 @@ impl Value {
 
     #[doc(hidden)]
     pub fn as_tinystr_slice(&self) -> &[TinyAsciiStr<8>] {
-        self.0.as_slice()
+        &self.0
     }
 
     #[doc(hidden)]
@@ -105,8 +102,8 @@ impl Value {
         }
     }
 
-    pub(crate) fn from_vec_unchecked(input: Vec<TinyAsciiStr<8>>) -> Self {
-        Self(input.into())
+    pub(crate) fn from_short_slice_unchecked(input: ShortSlice<TinyAsciiStr<8>>) -> Self {
+        Self(input)
     }
 
     #[doc(hidden)]
@@ -140,7 +137,7 @@ impl Value {
     where
         F: FnMut(&str) -> Result<(), E>,
     {
-        self.0.as_slice().iter().map(|t| t.as_str()).try_for_each(f)
+        self.0.iter().map(TinyAsciiStr::as_str).try_for_each(f)
     }
 }
 
@@ -173,9 +170,8 @@ impl_writeable_for_subtag_list!(Value, "islamic", "civil");
 
 
 
-
-
 #[macro_export]
+#[doc(hidden)]
 macro_rules! extensions_unicode_value {
     ($value:literal) => {{
         // What we want:
@@ -196,3 +192,5 @@ macro_rules! extensions_unicode_value {
         R
     }};
 }
+#[doc(inline)]
+pub use extensions_unicode_value as value;

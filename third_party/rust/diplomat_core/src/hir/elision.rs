@@ -97,7 +97,7 @@
 
 
 use super::{
-    lower_ident, Lifetime, LifetimeEnv, LoweringError, MaybeStatic, MethodLifetime, TypeLifetime,
+    Lifetime, LifetimeEnv, LoweringContext, MaybeStatic, MethodLifetime, TypeLifetime,
     TypeLifetimes,
 };
 use crate::ast;
@@ -181,7 +181,7 @@ pub(super) struct BaseLifetimeLowerer<'ast> {
 
 
 
-pub struct SelfParamLifetimeLowerer<'ast> {
+pub(super) struct SelfParamLifetimeLowerer<'ast> {
     base: BaseLifetimeLowerer<'ast>,
 }
 
@@ -192,7 +192,7 @@ pub struct SelfParamLifetimeLowerer<'ast> {
 
 
 
-pub struct ParamLifetimeLowerer<'ast> {
+pub(super) struct ParamLifetimeLowerer<'ast> {
     elision_source: ElisionSource,
     base: BaseLifetimeLowerer<'ast>,
 }
@@ -205,7 +205,7 @@ pub struct ParamLifetimeLowerer<'ast> {
 
 
 
-pub struct ReturnLifetimeLowerer<'ast> {
+pub(super) struct ReturnLifetimeLowerer<'ast> {
     elision_source: ElisionSource,
     base: BaseLifetimeLowerer<'ast>,
 }
@@ -246,14 +246,11 @@ impl<'ast> BaseLifetimeLowerer<'ast> {
 
 impl<'ast> SelfParamLifetimeLowerer<'ast> {
     
-    pub fn new(
-        lifetime_env: &'ast ast::LifetimeEnv,
-        errors: &mut Vec<LoweringError>,
-    ) -> Option<Self> {
+    pub fn new(lifetime_env: &'ast ast::LifetimeEnv, ctx: &mut LoweringContext) -> Option<Self> {
         let mut hir_nodes = Some(SmallVec::new());
 
         for ast_node in lifetime_env.nodes.iter() {
-            let lifetime = lower_ident(ast_node.lifetime.name(), "named lifetime", errors);
+            let lifetime = ctx.lower_ident(ast_node.lifetime.name(), "named lifetime");
             match (lifetime, &mut hir_nodes) {
                 (Some(lifetime), Some(hir_nodes)) => {
                     hir_nodes.push(Lifetime::new(
@@ -420,7 +417,7 @@ mod tests {
 
             env.insert(crate::ast::Path::empty(), top_symbols);
 
-            let tcx = crate::hir::TypeContext::from_ast(&env).unwrap();
+            let tcx = crate::hir::TypeContext::from_ast(&env, crate::hir::BasicAttributeValidator::new("test-backend")).unwrap();
 
             tcx
         }}

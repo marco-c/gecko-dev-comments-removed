@@ -22,6 +22,14 @@ pub use payload::{ExportBox, ExportMarker};
 use crate::prelude::*;
 
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum BuiltInFallbackMode {
+    
+    Standard,
+}
+
+
 pub trait DataExporter: Sync {
     
     
@@ -34,6 +42,33 @@ pub trait DataExporter: Sync {
 
     
     
+    fn flush_singleton(
+        &self,
+        key: DataKey,
+        payload: &DataPayload<ExportMarker>,
+    ) -> Result<(), DataError> {
+        self.put_payload(key, &Default::default(), payload)?;
+        self.flush(key)
+    }
+
+    
+    
+    
+    
+    fn flush_with_built_in_fallback(
+        &self,
+        _key: DataKey,
+        _fallback_mode: BuiltInFallbackMode,
+    ) -> Result<(), DataError> {
+        Err(DataError::custom(
+            "Exporter does not implement built-in fallback",
+        ))
+    }
+
+    
+    
+    
+    
     fn flush(&self, _key: DataKey) -> Result<(), DataError> {
         Ok(())
     }
@@ -44,13 +79,26 @@ pub trait DataExporter: Sync {
     fn close(&mut self) -> Result<(), DataError> {
         Ok(())
     }
+
+    
+    
+    fn supports_built_in_fallback(&self) -> bool {
+        false
+    }
 }
 
 
 
 
-pub trait ExportableProvider: IterableDynamicDataProvider<ExportMarker> + Sync {}
-impl<T> ExportableProvider for T where T: IterableDynamicDataProvider<ExportMarker> + Sync {}
+pub trait ExportableProvider:
+    IterableDynamicDataProvider<ExportMarker> + DynamicDataProvider<AnyMarker> + Sync
+{
+}
+
+impl<T> ExportableProvider for T where
+    T: IterableDynamicDataProvider<ExportMarker> + DynamicDataProvider<AnyMarker> + Sync
+{
+}
 
 
 
@@ -66,28 +114,24 @@ impl<T> ExportableProvider for T where T: IterableDynamicDataProvider<ExportMark
 
 #[macro_export]
 macro_rules! make_exportable_provider {
-    ($provider:ty, [ $($struct_m:ident),+, ]) => {
+    ($provider:ty, [ $($(#[$cfg:meta])? $struct_m:ty),+, ]) => {
         $crate::impl_dynamic_data_provider!(
             $provider,
-            [ $($struct_m),+, ],
+            [ $($(#[$cfg])? $struct_m),+, ],
             $crate::datagen::ExportMarker
         );
         $crate::impl_dynamic_data_provider!(
             $provider,
-            [ $($struct_m),+, ],
+            [ $($(#[$cfg])? $struct_m),+, ],
             $crate::any::AnyMarker
         );
 
         impl $crate::datagen::IterableDynamicDataProvider<$crate::datagen::ExportMarker> for $provider {
             fn supported_locales_for_key(&self, key: $crate::DataKey) -> Result<Vec<$crate::DataLocale>, $crate::DataError> {
-                #![allow(non_upper_case_globals)]
-                // Reusing the struct names as identifiers
-                $(
-                    const $struct_m: $crate::DataKeyHash = <$struct_m as $crate::KeyedDataMarker>::KEY.hashed();
-                )+
                 match key.hashed() {
                     $(
-                        $struct_m => {
+                        $(#[$cfg])?
+                        h if h == <$struct_m as $crate::KeyedDataMarker>::KEY.hashed() => {
                             $crate::datagen::IterableDataProvider::<$struct_m>::supported_locales(self)
                         }
                     )+,
@@ -96,4 +140,64 @@ macro_rules! make_exportable_provider {
             }
         }
     };
+}
+
+
+#[derive(Default)]
+pub struct MultiExporter(Vec<Box<dyn DataExporter>>);
+
+impl MultiExporter {
+    
+    pub const fn new(exporters: Vec<Box<dyn DataExporter>>) -> Self {
+        Self(exporters)
+    }
+}
+
+impl core::fmt::Debug for MultiExporter {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MultiExporter")
+            .field("0", &format!("vec[len = {}]", self.0.len()))
+            .finish()
+    }
+}
+
+impl DataExporter for MultiExporter {
+    fn put_payload(
+        &self,
+        key: DataKey,
+        locale: &DataLocale,
+        payload: &DataPayload<ExportMarker>,
+    ) -> Result<(), DataError> {
+        self.0
+            .iter()
+            .try_for_each(|e| e.put_payload(key, locale, payload))
+    }
+
+    fn flush_singleton(
+        &self,
+        key: DataKey,
+        payload: &DataPayload<ExportMarker>,
+    ) -> Result<(), DataError> {
+        self.0
+            .iter()
+            .try_for_each(|e| e.flush_singleton(key, payload))
+    }
+
+    fn flush(&self, key: DataKey) -> Result<(), DataError> {
+        self.0.iter().try_for_each(|e| e.flush(key))
+    }
+
+    fn flush_with_built_in_fallback(
+        &self,
+        key: DataKey,
+        fallback_mode: BuiltInFallbackMode,
+    ) -> Result<(), DataError> {
+        self.0
+            .iter()
+            .try_for_each(|e| e.flush_with_built_in_fallback(key, fallback_mode))
+    }
+
+    fn close(&mut self) -> Result<(), DataError> {
+        self.0.iter_mut().try_for_each(|e| e.close())
+    }
 }
