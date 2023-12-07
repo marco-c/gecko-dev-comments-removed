@@ -8,6 +8,7 @@
 #define DOM_WAKELOCKJS_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/Attributes.h"
 #include "mozilla/dom/WakeLockBinding.h"
 #include "nsIDOMEventListener.h"
 #include "nsIDocumentActivity.h"
@@ -26,6 +27,15 @@ class WakeLockSentinel;
 
 namespace mozilla::dom {
 
+
+
+
+
+
+
+
+
+
 class WakeLockJS final : public nsIDOMEventListener,
                          public nsWrapperCache,
                          public nsIDocumentActivity {
@@ -41,7 +51,7 @@ class WakeLockJS final : public nsIDOMEventListener,
   explicit WakeLockJS(nsPIDOMWindowInner* aWindow);
 
  protected:
-  ~WakeLockJS() = default;
+  ~WakeLockJS();
 
  public:
   nsISupports* GetParentObject() const;
@@ -49,11 +59,36 @@ class WakeLockJS final : public nsIDOMEventListener,
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
-  already_AddRefed<Promise> Request(WakeLockType aType);
+  already_AddRefed<Promise> Request(WakeLockType aType, ErrorResult& aRv);
 
  private:
+  enum class RequestError {
+    Success,
+    DocInactive,
+    DocHidden,
+    PolicyDisallowed,
+    PrefDisabled,
+    InternalFailure
+  };
+
+  static nsLiteralCString GetRequestErrorMessage(RequestError aRv);
+
+  static RequestError WakeLockAllowedForDocument(Document* aDoc);
+
+  void AttachListeners();
+  void DetachListeners();
+
+  Result<already_AddRefed<WakeLockSentinel>, RequestError> Obtain(
+      WakeLockType aType);
+
+  void UnlockAll(WakeLockType aType);
+
   RefPtr<nsPIDOMWindowInner> mWindow;
 };
+
+MOZ_CAN_RUN_SCRIPT
+void ReleaseWakeLock(Document* aDoc, WakeLockSentinel* aLock,
+                     WakeLockType aType);
 
 }  
 
