@@ -56,73 +56,6 @@ Result<UsageInfo, nsresult> ReduceUsageInfo(nsIFile& aDir,
       }));
 }
 
-Result<UsageInfo, nsresult> GetBodyUsage(nsIFile& aMorgueDir,
-                                         const Atomic<bool>& aCanceled) {
-  AssertIsOnIOThread();
-
-  QM_TRY_RETURN(ReduceUsageInfo(
-      aMorgueDir, aCanceled,
-      [](const nsCOMPtr<nsIFile>& bodyDir) -> Result<UsageInfo, nsresult> {
-        QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*bodyDir));
-
-        if (dirEntryKind != nsIFileKind::ExistsAsDirectory) {
-          if (dirEntryKind == nsIFileKind::ExistsAsFile) {
-            const DebugOnly<nsresult> result =
-                RemoveNsIFile(Nothing(), *bodyDir,  false);
-            
-            
-            
-            MOZ_ASSERT(NS_SUCCEEDED(result));
-          }
-
-          return UsageInfo{};
-        }
-
-        UsageInfo usageInfo;
-        const auto getUsage =
-            [&usageInfo](nsIFile& bodyFile,
-                         const nsACString& leafName) -> Result<bool, nsresult> {
-          Unused << leafName;
-
-          QM_TRY_INSPECT(const int64_t& fileSize,
-                         MOZ_TO_RESULT_INVOKE_MEMBER(bodyFile, GetFileSize));
-          MOZ_DIAGNOSTIC_ASSERT(fileSize >= 0);
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          usageInfo += DatabaseUsageType(Some(fileSize));
-
-          return false;
-        };
-
-        
-        
-        
-        QM_TRY(QM_OR_ELSE_LOG_VERBOSE_IF(
-            
-            MOZ_TO_RESULT(BodyTraverseFiles(Nothing(), *bodyDir, getUsage,
-                                             true,
-                                             false)),
-            
-            IsSpecificError<NS_ERROR_FILE_FS_CORRUPTED>,
-            
-            
-            ErrToDefaultOk<>));
-        return usageInfo;
-      }));
-}
-
 Result<int64_t, nsresult> GetPaddingSizeFromDB(
     nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata,
     const Maybe<CipherKey>& aMaybeCipherKey) {
@@ -150,10 +83,42 @@ Result<int64_t, nsresult> GetPaddingSizeFromDB(
   
   
   
-  QM_TRY(MOZ_TO_RESULT(db::CreateOrMigrateSchema(*conn)));
+  QM_TRY(MOZ_TO_RESULT(db::CreateOrMigrateSchema(aDir, *conn)));
 
   QM_TRY_RETURN(DirectoryPaddingRestore(aDir, *conn,
                                          false));
+}
+
+Result<int64_t, nsresult> GetTotalDiskUsageFromDB(
+    nsIFile& aDir, nsIFile& aDBFile, const OriginMetadata& aOriginMetadata,
+    const Maybe<CipherKey>& aMaybeCipherKey) {
+  CacheDirectoryMetadata directoryMetadata(aOriginMetadata);
+  
+  
+  
+  
+  
+  
+  MOZ_DIAGNOSTIC_ASSERT(directoryMetadata.mDirectoryLockId == -1);
+
+#ifdef DEBUG
+  {
+    QM_TRY_INSPECT(const bool& exists,
+                   MOZ_TO_RESULT_INVOKE_MEMBER(aDBFile, Exists));
+    MOZ_ASSERT(exists);
+  }
+#endif
+
+  QM_TRY_INSPECT(const auto& conn,
+                 OpenDBConnection(directoryMetadata, aDBFile, aMaybeCipherKey));
+
+  
+  
+  
+  
+  QM_TRY(MOZ_TO_RESULT(db::CreateOrMigrateSchema(aDir, *conn)));
+
+  QM_TRY_RETURN(db::GetTotalDiskUsage(*conn));
 }
 
 }  
@@ -266,12 +231,15 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
                                            aOriginMetadata, maybeCipherKey));
       }()));
 
+  QM_TRY_INSPECT(const auto& totalDiskUsage,
+                 GetTotalDiskUsageFromDB(*dir, *cachesSQLiteFile,
+                                         aOriginMetadata, maybeCipherKey));
+
   QM_TRY_INSPECT(
       const auto& innerUsageInfo,
       ReduceUsageInfo(
           *dir, aCanceled,
-          [&aCanceled](
-              const nsCOMPtr<nsIFile>& file) -> Result<UsageInfo, nsresult> {
+          [](const nsCOMPtr<nsIFile>& file) -> Result<UsageInfo, nsresult> {
             QM_TRY_INSPECT(const auto& leafName,
                            MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(nsAutoString, file,
                                                              GetLeafName));
@@ -280,9 +248,7 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
 
             switch (dirEntryKind) {
               case nsIFileKind::ExistsAsDirectory:
-                if (leafName.EqualsLiteral("morgue")) {
-                  QM_TRY_RETURN(GetBodyUsage(*file, aCanceled));
-                } else {
+                if (!leafName.EqualsLiteral("morgue")) {
                   NS_WARNING("Unknown Cache directory found!");
                 }
 
@@ -327,7 +293,8 @@ Result<UsageInfo, nsresult> CacheQuotaClient::InitOrigin(
 
   
   
-  return UsageInfo{DatabaseUsageType(Some(paddingSize))} + innerUsageInfo;
+  return UsageInfo{DatabaseUsageType(Some(paddingSize))} +
+         UsageInfo{DatabaseUsageType(Some(totalDiskUsage))} + innerUsageInfo;
 }
 
 nsresult CacheQuotaClient::InitOriginWithoutTracking(

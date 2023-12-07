@@ -27,7 +27,7 @@ struct SavedResponse;
 namespace db {
 
 
-nsresult CreateOrMigrateSchema(mozIStorageConnection& aConn);
+nsresult CreateOrMigrateSchema(nsIFile& aDBDir, mozIStorageConnection& aConn);
 
 
 nsresult InitializeConnection(mozIStorageConnection& aConn);
@@ -41,6 +41,8 @@ Result<AutoTArray<CacheId, 8>, nsresult> FindOrphanedCacheIds(
     mozIStorageConnection& aConn);
 
 Result<int64_t, nsresult> FindOverallPaddingSize(mozIStorageConnection& aConn);
+
+Result<int64_t, nsresult> GetTotalDiskUsage(mozIStorageConnection& aConn);
 
 Result<nsTArray<nsID>, nsresult> GetKnownBodyIds(mozIStorageConnection& aConn);
 
