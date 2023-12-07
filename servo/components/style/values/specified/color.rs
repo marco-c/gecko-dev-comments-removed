@@ -302,10 +302,13 @@ pub enum SystemColor {
     MozHeaderbarinactivetext,
 
     
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozMacDefaultbuttontext,
     
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozMacFocusring,
     
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
     MozMacDisabledtoolbartext,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
@@ -328,7 +331,7 @@ pub enum SystemColor {
     
     
     
-    
+    #[css(skip)]
     MozNativehyperlinktext,
 
     
