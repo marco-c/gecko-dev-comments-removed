@@ -2049,13 +2049,29 @@ pub extern "C" fn wr_resource_updates_add_blob_image(
     bytes: &mut WrVecU8,
     visible_rect: DeviceIntRect,
 ) {
+    
+    
+    
+    const TILE_COUNT_LIMIT: i32 = 8192;
+    const TILE_SIZE_LIMIT: u16 = 2048;
+    let mut adjusted = tile_size;
+    
+    
+    
+    
+    while adjusted < TILE_SIZE_LIMIT
+        && ((descriptor.height / adjusted as i32 + 1) * (descriptor.width / adjusted as i32 + 1)) > TILE_COUNT_LIMIT
+    {
+        adjusted = adjusted * 2;
+    }
+
     txn.add_blob_image(
         image_key,
         descriptor.into(),
         Arc::new(bytes.flush_into_vec()),
         visible_rect,
-        if descriptor.format == ImageFormat::BGRA8 {
-            Some(tile_size)
+        if descriptor.format == ImageFormat::BGRA8 || adjusted > tile_size {
+            Some(adjusted)
         } else {
             None
         },
