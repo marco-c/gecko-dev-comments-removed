@@ -4,4 +4,4 @@
 
 
 
-XPCSHELL_TESTS_MANIFESTS += ["xpcshell.ini"]
+XPCSHELL_TESTS_MANIFESTS += ["xpcshell.toml"]
