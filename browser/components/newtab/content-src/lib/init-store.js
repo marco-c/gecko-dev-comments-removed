@@ -14,7 +14,6 @@ import { applyMiddleware, combineReducers, createStore } from "redux";
 export const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";
 export const OUTGOING_MESSAGE_NAME = "ActivityStream:ContentToMain";
 export const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
-export const EARLY_QUEUED_ACTIONS = [at.SAVE_SESSION_PERF_DATA];
 
 
 
@@ -114,46 +113,12 @@ export const rehydrationMiddleware = ({ getState }) => {
 
 
 
-export const queueEarlyMessageMiddleware = ({ getState }) => {
-  
-  
-  getState.earlyActionQueue = [];
-  getState.receivedFromMain = false;
-  return next => action => {
-    if (getState.receivedFromMain) {
-      next(action);
-    } else if (au.isFromMain(action)) {
-      next(action);
-      getState.receivedFromMain = true;
-      
-      getState.earlyActionQueue.forEach(next);
-      getState.earlyActionQueue.length = 0;
-    } else if (EARLY_QUEUED_ACTIONS.includes(action.type)) {
-      getState.earlyActionQueue.push(action);
-    } else {
-      
-      next(action);
-    }
-  };
-};
-
-
-
-
-
-
-
-
 export function initStore(reducers, initialState) {
   const store = createStore(
     mergeStateReducer(combineReducers(reducers)),
     initialState,
     global.RPMAddMessageListener &&
-      applyMiddleware(
-        queueEarlyMessageMiddleware,
-        rehydrationMiddleware,
-        messageMiddleware
-      )
+      applyMiddleware(rehydrationMiddleware, messageMiddleware)
   );
 
   if (global.RPMAddMessageListener) {

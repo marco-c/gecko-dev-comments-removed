@@ -15190,7 +15190,6 @@ const external_Redux_namespaceObject = Redux;
 const MERGE_STORE_ACTION = "NEW_TAB_INITIAL_STATE";
 const OUTGOING_MESSAGE_NAME = "ActivityStream:ContentToMain";
 const INCOMING_MESSAGE_NAME = "ActivityStream:MainToContent";
-const EARLY_QUEUED_ACTIONS = [actionTypes.SAVE_SESSION_PERF_DATA];
 
 
 
@@ -15292,40 +15291,8 @@ const rehydrationMiddleware = ({
 
 
 
-const queueEarlyMessageMiddleware = ({
-  getState
-}) => {
-  
-  
-  getState.earlyActionQueue = [];
-  getState.receivedFromMain = false;
-  return next => action => {
-    if (getState.receivedFromMain) {
-      next(action);
-    } else if (actionUtils.isFromMain(action)) {
-      next(action);
-      getState.receivedFromMain = true; 
-
-      getState.earlyActionQueue.forEach(next);
-      getState.earlyActionQueue.length = 0;
-    } else if (EARLY_QUEUED_ACTIONS.includes(action.type)) {
-      getState.earlyActionQueue.push(action);
-    } else {
-      
-      next(action);
-    }
-  };
-};
-
-
-
-
-
-
-
-
 function initStore(reducers, initialState) {
-  const store = (0,external_Redux_namespaceObject.createStore)(mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)), initialState, __webpack_require__.g.RPMAddMessageListener && (0,external_Redux_namespaceObject.applyMiddleware)(queueEarlyMessageMiddleware, rehydrationMiddleware, messageMiddleware));
+  const store = (0,external_Redux_namespaceObject.createStore)(mergeStateReducer((0,external_Redux_namespaceObject.combineReducers)(reducers)), initialState, __webpack_require__.g.RPMAddMessageListener && (0,external_Redux_namespaceObject.applyMiddleware)(rehydrationMiddleware, messageMiddleware));
 
   if (__webpack_require__.g.RPMAddMessageListener) {
     __webpack_require__.g.RPMAddMessageListener(INCOMING_MESSAGE_NAME, msg => {

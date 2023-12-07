@@ -236,6 +236,13 @@ class ActivityStreamMessageChannel {
         this.tabLoaded(simulatedDetails);
       }
     }
+
+    
+    
+    
+    
+    
+    lazy.AboutNewTabParent.flushQueuedMessagesFromContent();
   }
 
   
