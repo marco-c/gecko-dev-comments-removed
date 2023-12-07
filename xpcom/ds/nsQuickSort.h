@@ -29,8 +29,16 @@ extern "C" {
 
 
 
-void NS_QuickSort(void*, unsigned int, unsigned int,
-                  int (*)(const void*, const void*, void*), void*);
+
+
+
+
+
+
+
+[[deprecated("Use std::sort or std::make/sort_heap instead.")]] void
+NS_QuickSort(void*, unsigned int, unsigned int,
+             int (*)(const void*, const void*, void*), void*);
 
 #ifdef __cplusplus
 }
