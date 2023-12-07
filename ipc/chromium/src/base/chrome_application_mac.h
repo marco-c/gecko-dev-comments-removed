@@ -23,7 +23,8 @@
   
   scoped_nsobject<NSMutableArray> eventHooks_;
 }
-@property(readonly, getter=isHandlingSendEvent, nonatomic) BOOL handlingSendEvent;
+@property(readonly, getter=isHandlingSendEvent, nonatomic)
+    BOOL handlingSendEvent;
 
 
 

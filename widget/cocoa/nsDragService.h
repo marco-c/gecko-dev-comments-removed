@@ -17,15 +17,20 @@ class nsDragService : public nsBaseDragService {
 
   
   MOZ_CAN_RUN_SCRIPT virtual nsresult InvokeDragSessionImpl(
-      nsIArray* anArrayTransferables, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      nsIArray* anArrayTransferables,
+      const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
       uint32_t aActionType) override;
   
-  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag, uint32_t aKeyModifiers) override;
-  NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX, int32_t aImageY) override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD EndDragSession(bool aDoneDrag,
+                                               uint32_t aKeyModifiers) override;
+  NS_IMETHOD UpdateDragImage(nsINode* aImage, int32_t aImageX,
+                             int32_t aImageY) override;
 
   
-  NS_IMETHOD GetData(nsITransferable* aTransferable, uint32_t aItemIndex) override;
-  NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor, bool* _retval) override;
+  NS_IMETHOD GetData(nsITransferable* aTransferable,
+                     uint32_t aItemIndex) override;
+  NS_IMETHOD IsDataFlavorSupported(const char* aDataFlavor,
+                                   bool* _retval) override;
   NS_IMETHOD GetNumDropItems(uint32_t* aNumItems) override;
 
   void DragMovedWithView(NSDraggingSession* aSession, NSPoint aPoint);
@@ -36,16 +41,16 @@ class nsDragService : public nsBaseDragService {
  private:
   
   
-  NSImage* ConstructDragImage(nsINode* aDOMNode,
-                              const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                              NSPoint* aImagePoint);
+  NSImage* ConstructDragImage(
+      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      NSPoint* aImagePoint);
 
   
   
   
-  NSImage* ConstructDragImage(nsINode* aDOMNode,
-                              const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
-                              mozilla::CSSIntPoint aPoint, mozilla::LayoutDeviceIntRect* aDragRect);
+  NSImage* ConstructDragImage(
+      nsINode* aDOMNode, const mozilla::Maybe<mozilla::CSSIntRegion>& aRegion,
+      mozilla::CSSIntPoint aPoint, mozilla::LayoutDeviceIntRect* aDragRect);
 
   nsCOMPtr<nsIArray> mDataItems;  
   ChildView* mNativeDragView;

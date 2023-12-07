@@ -385,7 +385,7 @@ static void TestDecodeOneValidUtf8CodePoint() {
 
   ExpectValidCodePoint(u8"ࠀ", 0x800);  
   ExpectValidCodePoint(u8"ࡁ", 0x841);  
-  ExpectValidCodePoint(u8"ࣿ", 0x8FF);  
+  ExpectValidCodePoint(u8"ࣿ", 0x8FF);   
   ExpectValidCodePoint(u8"ஆ", 0xB86);  
   ExpectValidCodePoint(u8"༃",
                        0xF03);  
@@ -402,7 +402,7 @@ static void TestDecodeOneValidUtf8CodePoint() {
   ExpectValidCodePoint(u8"㊮", 0x32AE);   
   ExpectValidCodePoint(u8"㏖", 0x33D6);   
   ExpectValidCodePoint(u8"ꔄ", 0xA504);    
-  ExpectValidCodePoint(u8"ퟕ", 0xD7D5);   
+  ExpectValidCodePoint(u8"ퟕ", 0xD7D5);    
   ExpectValidCodePoint(u8"퟿", 0xD7FF);  
   ExpectValidCodePoint(u8"", 0xE000);  
   ExpectValidCodePoint(u8"鱗", 0xF9F2);   
@@ -414,10 +414,10 @@ static void TestDecodeOneValidUtf8CodePoint() {
   ExpectValidCodePoint(u8"𐀀", 0x10000);      
   ExpectValidCodePoint(u8"𔑀", 0x14440);      
   ExpectValidCodePoint(u8"𝛗", 0x1D6D7);      
-  ExpectValidCodePoint(u8"💩", 0x1F4A9);      
-  ExpectValidCodePoint(u8"🔫", 0x1F52B);      
-  ExpectValidCodePoint(u8"🥌", 0x1F94C);      
-  ExpectValidCodePoint(u8"🥏", 0x1F94F);      
+  ExpectValidCodePoint(u8"💩", 0x1F4A9);     
+  ExpectValidCodePoint(u8"🔫", 0x1F52B);     
+  ExpectValidCodePoint(u8"🥌", 0x1F94C);     
+  ExpectValidCodePoint(u8"🥏", 0x1F94F);     
   ExpectValidCodePoint(u8"𠍆", 0x20346);     
   ExpectValidCodePoint(u8"𡠺", 0x2183A);     
   ExpectValidCodePoint(u8"񁟶", 0x417F6);   

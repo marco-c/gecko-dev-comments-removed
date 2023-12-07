@@ -35,7 +35,7 @@ static const uint32_t kCacheEntryIsPinned = 1 << 0;
 
 
 #define FRECENCY2INT(aFrecency) \
-  ((uint32_t)((aFrecency)*CacheObserver::HalfLifeSeconds()))
+  ((uint32_t)((aFrecency) * CacheObserver::HalfLifeSeconds()))
 #define INT2FRECENCY(aInt) \
   ((double)(aInt) / (double)CacheObserver::HalfLifeSeconds())
 

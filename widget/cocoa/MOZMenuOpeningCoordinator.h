@@ -21,9 +21,11 @@ class Runnable;
 
 
 
+
 @interface MOZMenuOpeningCoordinator : NSObject
 
 + (instancetype)sharedInstance;
+
 
 
 
@@ -39,6 +41,8 @@ class Runnable;
 
 
 - (void)cancelAsynchronousOpening:(NSInteger)aHandle;
+
+
 
 
 

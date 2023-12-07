@@ -79,7 +79,10 @@ class Element;
 
 
 
-class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla::SupportsWeakPtr {
+
+class nsMenuBarX : public nsMenuParentX,
+                   public nsChangeObserver,
+                   public mozilla::SupportsWeakPtr {
  public:
   explicit nsMenuBarX(mozilla::dom::Element* aElement);
 
@@ -117,7 +120,8 @@ class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
   
-  void MenuChildChangedVisibility(const MenuChild& aChild, bool aIsVisible) override;
+  void MenuChildChangedVisibility(const MenuChild& aChild,
+                                  bool aIsVisible) override;
 
  protected:
   virtual ~nsMenuBarX();
@@ -126,12 +130,16 @@ class nsMenuBarX : public nsMenuParentX, public nsChangeObserver, public mozilla
   void ConstructFallbackNativeMenus();
   void InsertMenuAtIndex(RefPtr<nsMenuX>&& aMenu, uint32_t aIndex);
   void RemoveMenuAtIndex(uint32_t aIndex);
-  RefPtr<mozilla::dom::Element> HideItem(mozilla::dom::Document* aDocument, const nsAString& aID);
+  RefPtr<mozilla::dom::Element> HideItem(mozilla::dom::Document* aDocument,
+                                         const nsAString& aID);
   void AquifyMenuBar();
-  NSMenuItem* CreateNativeAppMenuItem(nsMenuX* aMenu, const nsAString& aNodeID, SEL aAction,
-                                      int aTag, NativeMenuItemTarget* aTarget);
+  NSMenuItem* CreateNativeAppMenuItem(nsMenuX* aMenu, const nsAString& aNodeID,
+                                      SEL aAction, int aTag,
+                                      NativeMenuItemTarget* aTarget);
   void CreateApplicationMenu(nsMenuX* aMenu);
 
+  
+  
   
   
   

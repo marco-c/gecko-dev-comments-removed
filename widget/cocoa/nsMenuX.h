@@ -47,13 +47,15 @@ class nsMenuXObserver {
   virtual void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) = 0;
 
   
-  virtual void OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
-                                      mozilla::dom::Element* aMenuItemElement) = 0;
+  virtual void OnMenuWillActivateItem(
+      mozilla::dom::Element* aPopupElement,
+      mozilla::dom::Element* aMenuItemElement) = 0;
 
   
   
   virtual void OnMenuClosed(mozilla::dom::Element* aPopupElement) = 0;
 };
+
 
 
 
@@ -65,7 +67,8 @@ class nsMenuX final : public nsMenuParentX,
   using Observer = nsMenuXObserver;
 
   
-  nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner, nsIContent* aContent);
+  nsMenuX(nsMenuParentX* aParent, nsMenuGroupOwnerX* aMenuGroupOwner,
+          nsIContent* aContent);
 
   NS_INLINE_DECL_REFCOUNTING(nsMenuX)
 
@@ -80,6 +83,7 @@ class nsMenuX final : public nsMenuParentX,
   void IconUpdated() override;
 
   
+  
   void OnMenuWillOpen(mozilla::dom::Element* aPopupElement) override;
   void OnMenuDidOpen(mozilla::dom::Element* aPopupElement) override;
   void OnMenuWillActivateItem(mozilla::dom::Element* aPopupElement,
@@ -92,8 +96,10 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
+  
   void DetachFromGroupOwnerRecursive();
 
+  
   
   
   void DetachFromParent() { mParent = nullptr; }
@@ -104,10 +110,13 @@ class nsMenuX final : public nsMenuParentX,
   mozilla::Maybe<MenuChild> GetVisibleItemAt(uint32_t aPos);
   nsresult GetVisibleItemCount(uint32_t& aCount);
 
-  mozilla::Maybe<MenuChild> GetItemForElement(mozilla::dom::Element* aMenuChildElement);
+  mozilla::Maybe<MenuChild> GetItemForElement(
+      mozilla::dom::Element* aMenuChildElement);
 
   
-  void ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem, NSEventModifierFlags aModifiers,
+  
+  void ActivateItemAfterClosing(RefPtr<nsMenuItemX>&& aItem,
+                                NSEventModifierFlags aModifiers,
                                 int16_t aButton);
 
   bool IsOpenForGecko() const { return mIsOpenForGecko; }
@@ -115,10 +124,14 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
+  
   MOZ_CAN_RUN_SCRIPT bool OnOpen();
 
-  void PopupShowingEventWasSentAndApprovedExternally() { DidFirePopupShowing(); }
+  void PopupShowingEventWasSentAndApprovedExternally() {
+    DidFirePopupShowing();
+  }
 
+  
   
   
   
@@ -130,8 +143,10 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
+  
   void MenuClosed();
 
+  
   
   bool Close();
 
@@ -139,7 +154,8 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
-  void OnHighlightedItemChanged(const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
+  void OnHighlightedItemChanged(
+      const mozilla::Maybe<uint32_t>& aNewHighlightedIndex);
 
   
   
@@ -151,11 +167,14 @@ class nsMenuX final : public nsMenuParentX,
   NSMenuItem* NativeNSMenuItem() { return mNativeMenuItem; }
   GeckoNSMenu* NativeNSMenu() { return mNativeMenu; }
 
-  void SetIconListener(nsMenuItemIconX::Listener* aListener) { mIconListener = aListener; }
+  void SetIconListener(nsMenuItemIconX::Listener* aListener) {
+    mIconListener = aListener;
+  }
   void ClearIconListener() { mIconListener = nullptr; }
 
   
-  void MenuChildChangedVisibility(const MenuChild& aChild, bool aIsVisible) override;
+  void MenuChildChangedVisibility(const MenuChild& aChild,
+                                  bool aIsVisible) override;
 
   void Dump(uint32_t aIndent) const;
 
@@ -191,8 +210,10 @@ class nsMenuX final : public nsMenuParentX,
   
   
   
+  
   size_t FindInsertionIndex(const MenuChild& aChild);
 
+  
   
   
   
@@ -203,6 +224,7 @@ class nsMenuX final : public nsMenuParentX,
   
   MOZ_CAN_RUN_SCRIPT void MenuOpenedAsync();
 
+  
   
   
   
@@ -265,6 +287,7 @@ class nsMenuX final : public nsMenuParentX,
   NSMenuItem* mNativeMenuItem = nil;  
 
   
+  
   mozilla::Maybe<uint32_t> mHighlightedItemIndex;
 
   bool mIsEnabled = true;
@@ -272,8 +295,10 @@ class nsMenuX final : public nsMenuParentX,
 
   
   
+  
   bool mIsOpen = false;
 
+  
   
   bool mIsOpenForGecko = false;
 

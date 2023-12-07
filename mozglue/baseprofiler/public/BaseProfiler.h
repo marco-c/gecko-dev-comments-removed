@@ -119,7 +119,7 @@ static constexpr PowerOfTwo32 BASE_PROFILER_DEFAULT_ENTRIES =
 #  if !defined(GP_PLAT_arm_android)
     MakePowerOfTwo32<16 * 1024 * 1024>();  
 #  else
-    MakePowerOfTwo32<4 * 1024 * 1024>();            // 4M entries = 32MiB
+    MakePowerOfTwo32<4 * 1024 * 1024>();  // 4M entries = 32MiB
 #  endif
 
 

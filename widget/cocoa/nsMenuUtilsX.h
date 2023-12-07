@@ -16,9 +16,10 @@ class nsMenuBarX;
 class nsMenuX;
 
 
+
 namespace nsMenuUtilsX {
-void DispatchCommandTo(nsIContent* aTargetContent, NSEventModifierFlags aModifierFlags,
-                       int16_t aButton);
+void DispatchCommandTo(nsIContent* aTargetContent,
+                       NSEventModifierFlags aModifierFlags, int16_t aButton);
 NSString* GetTruncatedCocoaLabel(const nsString& itemLabel);
 uint8_t GeckoModifiersForNodeAttribute(const nsString& modifiersAttribute);
 unsigned int MacModifiersForGeckoModifiers(uint8_t geckoModifiers);
@@ -31,8 +32,10 @@ bool NodeIsHiddenOrCollapsed(nsIContent* aContent);
 
 
 
-NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu, NSString* aLocationString,
+NSMenuItem* NativeMenuItemWithLocation(NSMenu* aRootMenu,
+                                       NSString* aLocationString,
                                        bool aIsMenuBar);
+
 
 
 

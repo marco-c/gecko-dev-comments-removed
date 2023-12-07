@@ -23,7 +23,8 @@
 
 
 
-@interface RTCVideoCaptureIosObjC : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
+@interface RTCVideoCaptureIosObjC
+    : NSObject <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property webrtc::VideoRotation frameRotation;
 
@@ -32,7 +33,8 @@
 
 - (id)initWithOwner:(webrtc::videocapturemodule::VideoCaptureIos*)owner;
 - (BOOL)setCaptureDeviceByUniqueId:(NSString*)uniqueId;
-- (BOOL)startCaptureWithCapability:(const webrtc::VideoCaptureCapability&)capability;
+- (BOOL)startCaptureWithCapability:
+    (const webrtc::VideoCaptureCapability&)capability;
 - (BOOL)stopCapture;
 
 @end

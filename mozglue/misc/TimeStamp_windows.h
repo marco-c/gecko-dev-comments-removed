@@ -22,7 +22,7 @@ namespace mozilla {
 
 
 
-#define ms2mt(x) ((x)*mozilla::GetQueryPerformanceFrequencyPerSec())
+#define ms2mt(x) ((x) * mozilla::GetQueryPerformanceFrequencyPerSec())
 #define mt2ms(x) ((x) / mozilla::GetQueryPerformanceFrequencyPerSec())
 #define mt2ms_f(x) (double(x) / mozilla::GetQueryPerformanceFrequencyPerSec())
 

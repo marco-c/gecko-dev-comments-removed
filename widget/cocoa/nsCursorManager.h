@@ -17,6 +17,7 @@
 
 
 
+
 @interface nsCursorManager : NSObject {
  @private
   NSMutableDictionary* mCursors;
@@ -43,6 +44,7 @@
 
 
 + (nsCursorManager*)sharedInstance;
+
 
 
 

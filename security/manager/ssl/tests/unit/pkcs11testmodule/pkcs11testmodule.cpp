@@ -514,7 +514,7 @@ CK_RV Test_C_WaitForSlotEvent(CK_FLAGS, CK_SLOT_ID_PTR pSlot, CK_VOID_PTR) {
 #ifdef WIN32
   Sleep(50);  
 #else
-  usleep(50000);    
+  usleep(50000);  
 #endif
   *pSlot = 1;
   tokenPresent = !tokenPresent;

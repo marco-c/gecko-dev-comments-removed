@@ -355,7 +355,7 @@ IMENotificationRequests IMMHandler::GetIMENotificationRequests() {
 
 #define IS_COMPOSING_LPARAM(lParam) \
   ((lParam) & (GCS_COMPSTR | GCS_COMPATTR | GCS_COMPCLAUSE | GCS_CURSORPOS))
-#define IS_COMMITTING_LPARAM(lParam) ((lParam)&GCS_RESULTSTR)
+#define IS_COMMITTING_LPARAM(lParam) ((lParam) & GCS_RESULTSTR)
 
 
 #define NO_IME_CARET -1

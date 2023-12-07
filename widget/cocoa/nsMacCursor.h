@@ -80,7 +80,8 @@
 
 
 
-+ (NSCursor*)cocoaCursorWithImageNamed:(NSString*)imageName hotSpot:(NSPoint)aPoint;
++ (NSCursor*)cocoaCursorWithImageNamed:(NSString*)imageName
+                               hotSpot:(NSPoint)aPoint;
 
 
 

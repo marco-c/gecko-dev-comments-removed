@@ -35,9 +35,10 @@ class ViewRegion {
 
 
 
+
   bool UpdateRegion(const mozilla::LayoutDeviceIntRegion& aRegion,
-                    const nsChildView& aCoordinateConverter, NSView* aContainerView,
-                    NSView* (^aViewCreationCallback)());
+                    const nsChildView& aCoordinateConverter,
+                    NSView* aContainerView, NSView* (^aViewCreationCallback)());
 
   
 

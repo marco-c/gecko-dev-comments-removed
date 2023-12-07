@@ -45,9 +45,11 @@ enum {
 class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
  public:
   
-  nsMenuGroupOwnerX(mozilla::dom::Element* aElement, nsMenuBarX* aMenuBarIfMenuBar);
+  nsMenuGroupOwnerX(mozilla::dom::Element* aElement,
+                    nsMenuBarX* aMenuBarIfMenuBar);
 
-  void RegisterForContentChanges(nsIContent* aContent, nsChangeObserver* aMenuObject);
+  void RegisterForContentChanges(nsIContent* aContent,
+                                 nsChangeObserver* aMenuObject);
   void UnregisterForContentChanges(nsIContent* aContent);
   uint32_t RegisterForCommand(nsMenuItemX* aMenuItem);
   void UnregisterCommand(uint32_t aCommandID);
@@ -57,8 +59,12 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
   void UnregisterForLocaleChanges();
 
   
-  MOZMenuItemRepresentedObject* GetRepresentedObject() { return mRepresentedObject; }
+  
+  MOZMenuItemRepresentedObject* GetRepresentedObject() {
+    return mRepresentedObject;
+  }
 
+  
   
   nsMenuBarX* GetMenuBar() { return mMenuBar.get(); }
 
@@ -77,7 +83,8 @@ class nsMenuGroupOwnerX : public nsMultiMutationObserver, public nsIObserver {
   uint32_t mCurrentCommandID = eCommand_ID_Last;
 
   
-  nsTHashMap<nsPtrHashKey<nsIContent>, nsChangeObserver*> mContentToObserverTable;
+  nsTHashMap<nsPtrHashKey<nsIContent>, nsChangeObserver*>
+      mContentToObserverTable;
 
   
   nsTHashMap<nsUint32HashKey, nsMenuItemX*> mCommandToMenuObjectTable;

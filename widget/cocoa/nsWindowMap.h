@@ -22,7 +22,8 @@
 
 @interface WindowDataMap : NSObject {
  @private
-  NSMutableDictionary* mWindowMap;  
+  NSMutableDictionary*
+      mWindowMap;  
 }
 
 + (WindowDataMap*)sharedWindowDataMap;
