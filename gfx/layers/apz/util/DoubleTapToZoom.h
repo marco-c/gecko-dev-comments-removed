@@ -46,6 +46,21 @@ struct ZoomTarget {
   Maybe<CSSPoint> documentRelativePointerPosition;
 };
 
+struct DoubleTapToZoomMetrics {
+  
+  CSSRect mVisualViewport;
+  
+  
+  CSSRect mRootScrollableRect;
+
+  bool operator==(const DoubleTapToZoomMetrics& aOther) const {
+    return mVisualViewport == aOther.mVisualViewport &&
+           mRootScrollableRect == aOther.mRootScrollableRect;
+  }
+  friend std::ostream& operator<<(std::ostream& aStream,
+                                  const DoubleTapToZoomMetrics& aUpdate);
+};
+
 
 
 
@@ -54,7 +69,7 @@ struct ZoomTarget {
 
 ZoomTarget CalculateRectToZoomTo(
     const RefPtr<mozilla::dom::Document>& aRootContentDocument,
-    const CSSPoint& aPoint);
+    const CSSPoint& aPoint, const DoubleTapToZoomMetrics& aMetrics);
 
 }  
 }  

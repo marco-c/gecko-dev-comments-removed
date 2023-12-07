@@ -10,6 +10,7 @@
 #include "mozilla/dom/BrowserChild.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
 #include "mozilla/layers/APZChild.h"
+#include "mozilla/layers/DoubleTapToZoom.h"
 #include "nsIContentInlines.h"
 
 #include "InputData.h"  
@@ -36,11 +37,10 @@ void ContentProcessController::RequestContentRepaint(
   }
 }
 
-void ContentProcessController::HandleTap(TapType aType,
-                                         const LayoutDevicePoint& aPoint,
-                                         Modifiers aModifiers,
-                                         const ScrollableLayerGuid& aGuid,
-                                         uint64_t aInputBlockId) {
+void ContentProcessController::HandleTap(
+    TapType aType, const LayoutDevicePoint& aPoint, Modifiers aModifiers,
+    const ScrollableLayerGuid& aGuid, uint64_t aInputBlockId,
+    const Maybe<DoubleTapToZoomMetrics>& aMetrics) {
   
   MOZ_ASSERT(false);
 }
