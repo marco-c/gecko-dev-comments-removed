@@ -103,6 +103,16 @@ impl Error {
             Kind::GoAway(_, _, Initiator::Remote) | Kind::Reset(_, _, Initiator::Remote)
         )
     }
+
+    
+    
+    
+    pub fn is_library(&self) -> bool {
+        matches!(
+            self.kind,
+            Kind::GoAway(_, _, Initiator::Library) | Kind::Reset(_, _, Initiator::Library)
+        )
+    }
 }
 
 impl From<proto::Error> for Error {

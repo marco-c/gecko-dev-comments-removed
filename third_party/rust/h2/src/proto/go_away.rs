@@ -26,10 +26,6 @@ pub(super) struct GoAway {
 
 
 
-
-
-
-
 #[derive(Debug)]
 pub(crate) struct GoingAway {
     

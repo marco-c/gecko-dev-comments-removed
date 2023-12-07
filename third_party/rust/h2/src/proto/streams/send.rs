@@ -4,14 +4,14 @@ use super::{
 };
 use crate::codec::UserError;
 use crate::frame::{self, Reason};
-use crate::proto::{Error, Initiator};
+use crate::proto::{self, Error, Initiator};
 
 use bytes::Buf;
-use http;
-use std::task::{Context, Poll, Waker};
 use tokio::io::AsyncWrite;
 
+use std::cmp::Ordering;
 use std::io;
+use std::task::{Context, Poll, Waker};
 
 
 #[derive(Debug)]
@@ -143,21 +143,26 @@ impl Send {
         
         stream.state.send_open(end_stream)?;
 
-        if counts.peer().is_local_init(frame.stream_id()) {
-            
-            
-            if !stream.is_pending_push {
-                if counts.can_inc_num_send_streams() {
-                    counts.inc_num_send_streams(stream);
-                } else {
-                    self.prioritize.queue_open(stream);
-                }
-            }
+        let mut pending_open = false;
+        if counts.peer().is_local_init(frame.stream_id()) && !stream.is_pending_push {
+            self.prioritize.queue_open(stream);
+            pending_open = true;
         }
 
         
+        
+        
+        
         self.prioritize
             .queue_frame(frame.into(), buffer, stream, task);
+
+        
+        
+        if pending_open {
+            if let Some(task) = task.take() {
+                task.wake();
+            }
+        }
 
         Ok(())
     }
@@ -333,12 +338,7 @@ impl Send {
 
     
     pub fn capacity(&self, stream: &mut store::Ptr) -> WindowSize {
-        let available = stream.send_flow.available().as_size() as usize;
-        let buffered = stream.buffered_send_data;
-
-        available
-            .min(self.prioritize.max_buffer_size())
-            .saturating_sub(buffered) as WindowSize
+        stream.capacity(self.prioritize.max_buffer_size())
     }
 
     pub fn poll_reset(
@@ -456,57 +456,77 @@ impl Send {
             let old_val = self.init_window_sz;
             self.init_window_sz = val;
 
-            if val < old_val {
-                
-                let dec = old_val - val;
-                tracing::trace!("decrementing all windows; dec={}", dec);
+            match val.cmp(&old_val) {
+                Ordering::Less => {
+                    
+                    let dec = old_val - val;
+                    tracing::trace!("decrementing all windows; dec={}", dec);
 
-                let mut total_reclaimed = 0;
-                store.for_each(|mut stream| {
-                    let stream = &mut *stream;
+                    let mut total_reclaimed = 0;
+                    store.try_for_each(|mut stream| {
+                        let stream = &mut *stream;
 
-                    stream.send_flow.dec_send_window(dec);
+                        tracing::trace!(
+                            "decrementing stream window; id={:?}; decr={}; flow={:?}",
+                            stream.id,
+                            dec,
+                            stream.send_flow
+                        );
 
-                    
-                    
-                    
-                    
-                    
-                    
-                    let window_size = stream.send_flow.window_size();
-                    let available = stream.send_flow.available().as_size();
-                    let reclaimed = if available > window_size {
                         
-                        let reclaim = available - window_size;
-                        stream.send_flow.claim_capacity(reclaim);
-                        total_reclaimed += reclaim;
-                        reclaim
-                    } else {
-                        0
-                    };
+                        stream
+                            .send_flow
+                            .dec_send_window(dec)
+                            .map_err(proto::Error::library_go_away)?;
 
-                    tracing::trace!(
-                        "decremented stream window; id={:?}; decr={}; reclaimed={}; flow={:?}",
-                        stream.id,
-                        dec,
-                        reclaimed,
-                        stream.send_flow
-                    );
+                        
+                        
+                        
+                        
+                        
+                        
+                        let window_size = stream.send_flow.window_size();
+                        let available = stream.send_flow.available().as_size();
+                        let reclaimed = if available > window_size {
+                            
+                            let reclaim = available - window_size;
+                            stream
+                                .send_flow
+                                .claim_capacity(reclaim)
+                                .map_err(proto::Error::library_go_away)?;
+                            total_reclaimed += reclaim;
+                            reclaim
+                        } else {
+                            0
+                        };
 
-                    
-                    
-                    
-                });
+                        tracing::trace!(
+                            "decremented stream window; id={:?}; decr={}; reclaimed={}; flow={:?}",
+                            stream.id,
+                            dec,
+                            reclaimed,
+                            stream.send_flow
+                        );
 
-                self.prioritize
-                    .assign_connection_capacity(total_reclaimed, store, counts);
-            } else if val > old_val {
-                let inc = val - old_val;
+                        
+                        
+                        
 
-                store.try_for_each(|mut stream| {
-                    self.recv_stream_window_update(inc, buffer, &mut stream, counts, task)
-                        .map_err(Error::library_go_away)
-                })?;
+                        Ok::<_, proto::Error>(())
+                    })?;
+
+                    self.prioritize
+                        .assign_connection_capacity(total_reclaimed, store, counts);
+                }
+                Ordering::Greater => {
+                    let inc = val - old_val;
+
+                    store.try_for_each(|mut stream| {
+                        self.recv_stream_window_update(inc, buffer, &mut stream, counts, task)
+                            .map_err(Error::library_go_away)
+                    })?;
+                }
+                Ordering::Equal => (),
             }
         }
 

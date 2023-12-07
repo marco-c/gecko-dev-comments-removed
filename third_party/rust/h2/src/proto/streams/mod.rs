@@ -7,6 +7,7 @@ mod send;
 mod state;
 mod store;
 mod stream;
+#[allow(clippy::module_inception)]
 mod streams;
 
 pub(crate) use self::prioritize::Prioritized;
@@ -58,6 +59,10 @@ pub struct Config {
 
     
     pub local_reset_max: usize,
+
+    
+    
+    pub remote_reset_max: usize,
 
     
     pub remote_init_window_sz: WindowSize,

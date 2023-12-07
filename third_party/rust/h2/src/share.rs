@@ -557,7 +557,7 @@ impl PingPong {
         
         
         
-        drop(ping);
+        let _ = ping;
 
         self.inner.send_ping().map_err(|err| match err {
             Some(err) => err.into(),

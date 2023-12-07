@@ -327,6 +327,10 @@ pub struct Builder {
     reset_stream_max: usize,
 
     
+    
+    pending_accept_reset_stream_max: usize,
+
+    
     settings: Settings,
 
     
@@ -341,7 +345,7 @@ pub(crate) struct Peer;
 
 impl<B> SendRequest<B>
 where
-    B: Buf + 'static,
+    B: Buf,
 {
     
     
@@ -506,8 +510,10 @@ where
         self.inner
             .send_request(request, end_of_stream, self.pending.as_ref())
             .map_err(Into::into)
-            .map(|stream| {
-                if stream.is_pending_open() {
+            .map(|(stream, is_full)| {
+                if stream.is_pending_open() && is_full {
+                    
+                    
                     self.pending = Some(stream.clone_to_opaque());
                 }
 
@@ -584,7 +590,7 @@ where
 
 impl<B> Future for ReadySendRequest<B>
 where
-    B: Buf + 'static,
+    B: Buf,
 {
     type Output = Result<SendRequest<B>, crate::Error>;
 
@@ -634,6 +640,7 @@ impl Builder {
             max_send_buffer_size: proto::DEFAULT_MAX_SEND_BUFFER_SIZE,
             reset_stream_duration: Duration::from_secs(proto::DEFAULT_RESET_STREAM_SECS),
             reset_stream_max: proto::DEFAULT_RESET_STREAM_MAX,
+            pending_accept_reset_stream_max: proto::DEFAULT_REMOTE_RESET_STREAM_MAX,
             initial_target_connection_window_size: None,
             initial_max_send_streams: usize::MAX,
             settings: Default::default(),
@@ -978,6 +985,49 @@ impl Builder {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn max_pending_accept_reset_streams(&mut self, max: usize) -> &mut Self {
+        self.pending_accept_reset_stream_max = max;
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn max_send_buffer_size(&mut self, max: usize) -> &mut Self {
         assert!(max <= std::u32::MAX as usize);
         self.max_send_buffer_size = max;
@@ -1019,6 +1069,39 @@ impl Builder {
     
     pub fn enable_push(&mut self, enabled: bool) -> &mut Self {
         self.settings.set_enable_push(enabled);
+        self
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn header_table_size(&mut self, size: u32) -> &mut Self {
+        self.settings.set_header_table_size(Some(size));
         self
     }
 
@@ -1100,7 +1183,7 @@ impl Builder {
     ) -> impl Future<Output = Result<(SendRequest<B>, Connection<T, B>), crate::Error>>
     where
         T: AsyncRead + AsyncWrite + Unpin,
-        B: Buf + 'static,
+        B: Buf,
     {
         Connection::handshake2(io, self.clone())
     }
@@ -1177,7 +1260,7 @@ where
 impl<T, B> Connection<T, B>
 where
     T: AsyncRead + AsyncWrite + Unpin,
-    B: Buf + 'static,
+    B: Buf,
 {
     async fn handshake2(
         mut io: T,
@@ -1209,6 +1292,7 @@ where
                 max_send_buffer_size: builder.max_send_buffer_size,
                 reset_stream_duration: builder.reset_stream_duration,
                 reset_stream_max: builder.reset_stream_max,
+                remote_reset_stream_max: builder.pending_accept_reset_stream_max,
                 settings: builder.settings.clone(),
             },
         );
@@ -1306,7 +1390,7 @@ where
 impl<T, B> Future for Connection<T, B>
 where
     T: AsyncRead + AsyncWrite + Unpin,
-    B: Buf + 'static,
+    B: Buf,
 {
     type Output = Result<(), crate::Error>;
 

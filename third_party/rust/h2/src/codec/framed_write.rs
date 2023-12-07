@@ -7,8 +7,9 @@ use bytes::{Buf, BufMut, BytesMut};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
+use tokio_util::io::poll_write_buf;
 
-use std::io::{self, Cursor, IoSlice};
+use std::io::{self, Cursor};
 
 
 macro_rules! limited_write_buf {
@@ -46,7 +47,10 @@ struct Encoder<B> {
     max_frame_size: FrameSize,
 
     
-    is_write_vectored: bool,
+    chain_threshold: usize,
+
+    
+    min_buffer_capacity: usize,
 }
 
 #[derive(Debug)]
@@ -62,12 +66,14 @@ enum Next<B> {
 const DEFAULT_BUFFER_CAPACITY: usize = 16 * 1_024;
 
 
-const MIN_BUFFER_CAPACITY: usize = frame::HEADER_LEN + CHAIN_THRESHOLD;
-
-
 
 
 const CHAIN_THRESHOLD: usize = 256;
+
+
+
+
+const CHAIN_THRESHOLD_WITHOUT_VECTORED_IO: usize = 1024;
 
 
 impl<T, B> FramedWrite<T, B>
@@ -76,7 +82,11 @@ where
     B: Buf,
 {
     pub fn new(inner: T) -> FramedWrite<T, B> {
-        let is_write_vectored = inner.is_write_vectored();
+        let chain_threshold = if inner.is_write_vectored() {
+            CHAIN_THRESHOLD
+        } else {
+            CHAIN_THRESHOLD_WITHOUT_VECTORED_IO
+        };
         FramedWrite {
             inner,
             encoder: Encoder {
@@ -85,7 +95,8 @@ where
                 next: None,
                 last_data_frame: None,
                 max_frame_size: frame::DEFAULT_MAX_FRAME_SIZE,
-                is_write_vectored,
+                chain_threshold,
+                min_buffer_capacity: chain_threshold + frame::HEADER_LEN,
             },
         }
     }
@@ -126,23 +137,17 @@ where
                     Some(Next::Data(ref mut frame)) => {
                         tracing::trace!(queued_data_frame = true);
                         let mut buf = (&mut self.encoder.buf).chain(frame.payload_mut());
-                        ready!(write(
-                            &mut self.inner,
-                            self.encoder.is_write_vectored,
-                            &mut buf,
-                            cx,
-                        ))?
+                        ready!(poll_write_buf(Pin::new(&mut self.inner), cx, &mut buf))?
                     }
                     _ => {
                         tracing::trace!(queued_data_frame = false);
-                        ready!(write(
-                            &mut self.inner,
-                            self.encoder.is_write_vectored,
-                            &mut self.encoder.buf,
+                        ready!(poll_write_buf(
+                            Pin::new(&mut self.inner),
                             cx,
+                            &mut self.encoder.buf
                         ))?
                     }
-                }
+                };
             }
 
             match self.encoder.unset_frame() {
@@ -163,30 +168,6 @@ where
         ready!(self.flush(cx))?;
         Pin::new(&mut self.inner).poll_shutdown(cx)
     }
-}
-
-fn write<T, B>(
-    writer: &mut T,
-    is_write_vectored: bool,
-    buf: &mut B,
-    cx: &mut Context<'_>,
-) -> Poll<io::Result<()>>
-where
-    T: AsyncWrite + Unpin,
-    B: Buf,
-{
-    
-    
-    const MAX_IOVS: usize = 64;
-    let n = if is_write_vectored {
-        let mut bufs = [IoSlice::new(&[]); MAX_IOVS];
-        let cnt = buf.chunks_vectored(&mut bufs);
-        ready!(Pin::new(writer).poll_write_vectored(cx, &bufs[..cnt]))?
-    } else {
-        ready!(Pin::new(writer).poll_write(cx, buf.chunk()))?
-    };
-    buf.advance(n);
-    Ok(()).into()
 }
 
 #[must_use]
@@ -240,11 +221,16 @@ where
                     return Err(PayloadTooBig);
                 }
 
-                if len >= CHAIN_THRESHOLD {
+                if len >= self.chain_threshold {
                     let head = v.head();
 
                     
                     head.encode(len, self.buf.get_mut());
+
+                    if self.buf.get_ref().remaining() < self.chain_threshold {
+                        let extra_bytes = self.chain_threshold - self.buf.remaining();
+                        self.buf.get_mut().put(v.payload_mut().take(extra_bytes));
+                    }
 
                     
                     self.next = Some(Next::Data(v));
@@ -305,7 +291,9 @@ where
     }
 
     fn has_capacity(&self) -> bool {
-        self.next.is_none() && self.buf.get_ref().remaining_mut() >= MIN_BUFFER_CAPACITY
+        self.next.is_none()
+            && (self.buf.get_ref().capacity() - self.buf.get_ref().len()
+                >= self.min_buffer_capacity)
     }
 
     fn is_empty(&self) -> bool {
