@@ -69,7 +69,6 @@ class SharedSurfaceTextureData;
 class TextureClientPool;
 #endif
 class TextureForwarder;
-struct RemoteTextureOwnerId;
 
 
 
@@ -99,9 +98,6 @@ enum TextureAllocationFlags {
 
   
   ALLOC_DO_NOT_ACCELERATE = 1 << 8,
-
-  
-  ALLOC_FORCE_REMOTE = 1 << 9,
 };
 
 enum class BackendSelector { Content, Canvas };
@@ -226,10 +222,6 @@ class TextureData {
           canConcurrentlyReadLock(true) {}
   };
 
-  static TextureData* Create(
-      TextureType aTextureType, gfx::SurfaceFormat aFormat,
-      const gfx::IntSize& aSize, TextureAllocationFlags aAllocFlags,
-      gfx::BackendType aBackendType = gfx::BackendType::NONE);
   static TextureData* Create(TextureForwarder* aAllocator,
                              gfx::SurfaceFormat aFormat, gfx::IntSize aSize,
                              KnowsCompositor* aKnowsCompositor,
@@ -318,10 +310,6 @@ class TextureData {
   virtual mozilla::ipc::FileDescriptor GetAcquireFence() {
     return mozilla::ipc::FileDescriptor();
   }
-
-  virtual void SetRemoteTextureOwnerId(RemoteTextureOwnerId) {}
-
-  virtual bool RequiresRefresh() const { return false; }
 
  protected:
   MOZ_COUNTED_DEFAULT_CTOR(TextureData)

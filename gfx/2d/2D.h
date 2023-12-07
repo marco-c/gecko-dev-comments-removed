@@ -703,16 +703,6 @@ class SourceSurface : public SupportsThreadSafeWeakPtr<SourceSurface> {
   
 
 
-
-
-
-  virtual bool ReadInto(DataSourceSurface* aSurface, const IntRect& aRect) {
-    return false;
-  }
-
-  
-
-
   virtual void* GetNativeSurface(NativeSurfaceType aType) { return nullptr; }
 
   void AddUserData(UserDataKey* key, void* userData, void (*destroy)(void*)) {

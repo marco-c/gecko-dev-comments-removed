@@ -13,7 +13,6 @@
 namespace mozilla::gfx {
 
 class DrawTargetWebgl;
-class SharedContextWebgl;
 class TextureHandle;
 
 
@@ -24,8 +23,9 @@ class SourceSurfaceWebgl : public DataSourceSurface {
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(SourceSurfaceWebgl, override)
 
   explicit SourceSurfaceWebgl(DrawTargetWebgl* aDT);
-  SourceSurfaceWebgl(const RefPtr<TextureHandle>& aHandle,
-                     const RefPtr<SharedContextWebgl>& aSharedContext);
+  SourceSurfaceWebgl(
+      const RefPtr<TextureHandle>& aHandle,
+      const RefPtr<typename DrawTargetWebgl::SharedContext>& aSharedContext);
   virtual ~SourceSurfaceWebgl();
 
   SurfaceType GetType() const override { return SurfaceType::WEBGL; }
@@ -44,7 +44,6 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
  private:
   friend class DrawTargetWebgl;
-  friend class SharedContextWebgl;
 
   bool EnsureData();
 
@@ -52,7 +51,7 @@ class SourceSurfaceWebgl : public DataSourceSurface {
 
   void GiveTexture(RefPtr<TextureHandle> aHandle);
 
-  void OnUnlinkTexture(SharedContextWebgl* aContext);
+  void OnUnlinkTexture(typename DrawTargetWebgl::SharedContext* aContext);
 
   DrawTargetWebgl* GetTarget() const { return mDT.get(); }
 
@@ -63,7 +62,7 @@ class SourceSurfaceWebgl : public DataSourceSurface {
   
   WeakPtr<DrawTargetWebgl> mDT;
   
-  WeakPtr<SharedContextWebgl> mSharedContext;
+  WeakPtr<typename DrawTargetWebgl::SharedContext> mSharedContext;
   
   RefPtr<TextureHandle> mHandle;
 };
