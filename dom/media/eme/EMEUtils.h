@@ -15,6 +15,8 @@
 
 namespace mozilla {
 
+enum class CryptoScheme : uint8_t;
+
 namespace dom {
 class ArrayBufferViewOrArrayBuffer;
 }
@@ -77,6 +79,8 @@ const char* ToMediaKeyStatusStr(dom::MediaKeyStatus aStatus);
 
 bool IsHardwareDecryptionSupported(
     const dom::MediaKeySystemConfiguration& aConfig);
+
+const char* EncryptionSchemeStr(const CryptoScheme& aScheme);
 
 }  
 
