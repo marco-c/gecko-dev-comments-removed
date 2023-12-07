@@ -114,7 +114,10 @@ function is_in_discovery(aManager, canGoBack, canGoForward) {
 
 async function expand_addon_element(aManagerWin, aId) {
   var addon = getAddonCard(aManagerWin, aId);
-  addon.click();
+  
+  
+  const addonLink = addon.querySelector(".addon-name-link");
+  addonLink.click();
 }
 
 function wait_for_page_load(browser) {

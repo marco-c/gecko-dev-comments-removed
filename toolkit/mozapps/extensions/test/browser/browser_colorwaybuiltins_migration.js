@@ -108,7 +108,10 @@ const assertDetailView = async (win, { addonId, expectThemeName }) => {
   let loadedDetailView = waitForViewLoad(win);
   await gBrowser.ownerGlobal.promiseDocumentFlushed(() => {});
   const themeCard = getAddonCard(win, addonId);
-  themeCard.click();
+  
+  
+  const themeCardLink = themeCard.querySelector(".addon-name-link");
+  themeCardLink.click();
   await loadedDetailView;
   Assert.equal(
     themeCard.querySelector(".addon-name")?.textContent,

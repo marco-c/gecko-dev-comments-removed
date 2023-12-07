@@ -159,7 +159,11 @@ add_task(async function test_scroll_restoration() {
   
 
   let loaded = waitForViewLoad(win);
-  getAddonCard(win, EXT_ID_EXTENSION).click();
+  const addonCard = getAddonCard(win, EXT_ID_EXTENSION);
+  
+  
+  const addonCardLink = addonCard.querySelector(".addon-name-link");
+  addonCardLink.click();
   await loaded;
 
   checkScrollOffset(win, { top: 0, left: 0 }, "initial details view");
