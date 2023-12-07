@@ -30,11 +30,13 @@ class FetchPreloader : public PreloaderBase, public nsIStreamListener {
   NS_DECL_NSISTREAMLISTENER
 
   FetchPreloader();
+
+  
   nsresult OpenChannel(const PreloadHashKey& aKey, nsIURI* aURI,
                        const CORSMode aCORSMode,
                        const dom::ReferrerPolicy& aReferrerPolicy,
-                       dom::Document* aDocument,
-                       uint64_t aEarlyHintPreloaderId);
+                       dom::Document* aDocument, uint64_t aEarlyHintPreloaderId,
+                       int32_t aSupportsPriorityValue);
 
   
   nsresult AsyncConsume(nsIStreamListener* aListener) override;
@@ -47,15 +49,20 @@ class FetchPreloader : public PreloaderBase, public nsIStreamListener {
 
   
   
-  virtual nsresult CreateChannel(nsIChannel** aChannel, nsIURI* aURI,
-                                 const CORSMode aCORSMode,
-                                 const dom::ReferrerPolicy& aReferrerPolicy,
-                                 dom::Document* aDocument,
-                                 nsILoadGroup* aLoadGroup,
-                                 nsIInterfaceRequestor* aCallbacks,
-                                 uint64_t aEarlyHintPreloaderId);
+  
+  
+  
+  virtual nsresult CreateChannel(
+      nsIChannel** aChannel, nsIURI* aURI, const CORSMode aCORSMode,
+      const dom::ReferrerPolicy& aReferrerPolicy, dom::Document* aDocument,
+      nsILoadGroup* aLoadGroup, nsIInterfaceRequestor* aCallbacks,
+      uint64_t aEarlyHintPreloaderId, int32_t aSupportsPriorityValue);
 
  private:
+  
+  static void AdjustPriority(nsIChannel* aChannel,
+                             int32_t aSupportsPriorityValue);
+
   nsresult CheckContentPolicy(nsIURI* aURI, dom::Document* aDocument);
 
   class Cache final : public nsIStreamListener {
