@@ -84,13 +84,6 @@ class nsFilePicker : public nsBaseWinFilePicker {
 
  private:
   
-  
-  static Result<Maybe<Results>> ShowFilePickerImpl(
-      HWND aParent, FileDialogType type, nsTArray<Command> const& commands);
-  static Result<Maybe<nsString>> ShowFolderPickerImpl(
-      HWND aParent, nsTArray<Command> const& commands);
-
-  
   static Result<Maybe<Results>> ShowFilePickerRemote(
       HWND aParent, FileDialogType type, nsTArray<Command> const& commands);
   static Result<Maybe<nsString>> ShowFolderPickerRemote(
