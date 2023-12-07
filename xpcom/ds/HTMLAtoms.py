@@ -39,11 +39,7 @@ HTML_PARSER_ATOMS = [
     
     Atom("rendering_intent", "rendering-intent"),
     
-    Atom("shadowrootmode", "shadowrootmode"),
-    
     Atom("stddeviation", "stddeviation"),
-    
-    Atom("shadowrootdelegatesfocus", "shadowrootdelegatesfocus"),
     
     Atom("basefrequency", "basefrequency"),
     
