@@ -507,6 +507,25 @@ void RunTestsContent(SandboxTestingChild* child) {
     return realpath("/etc/localtime", buf) ? 0 : -1;
   });
 
+  
+  
+  
+  {
+    char buf;
+    ssize_t rv = readlink("/etc/localtime", &buf, 1);
+    int err = errno;
+    if (rv == 1) {
+      child->SendReportTestResults("readlink truncate"_ns, true,
+                                   "expected 1, got 1"_ns);
+    } else if (rv < 0) {
+      nsPrintfCString msg("expected 1, got error: %s", strerror(err));
+      child->SendReportTestResults("readlink truncate"_ns, false, msg);
+    } else {
+      nsPrintfCString msg("expected 1, got %zd", rv);
+      child->SendReportTestResults("readlink truncate"_ns, false, msg);
+    }
+  }
+
 #  endif  
 
 #  ifdef XP_MACOSX

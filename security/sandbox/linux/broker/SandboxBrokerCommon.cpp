@@ -97,7 +97,7 @@ ssize_t SandboxBrokerCommon::RecvWithFd(int aFd, const iovec* aIO,
         
         
         MOZ_DIAGNOSTIC_ASSERT(cmsg->cmsg_len != 0);
-        errno = EMSGSIZE;
+        errno = EPROTO;
         return -1;
       }
       *aPassedFdPtr = fds[0];
@@ -117,8 +117,12 @@ ssize_t SandboxBrokerCommon::RecvWithFd(int aFd, const iovec* aIO,
     
     
     
+    
+    
+    
+    
     MOZ_DIAGNOSTIC_ASSERT((msg.msg_flags & MSG_TRUNC) == 0);
-    errno = EMFILE;
+    errno = (msg.msg_flags & MSG_CTRUNC) ? EMFILE : EPROTO;
     return -1;
   }
 
