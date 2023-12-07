@@ -45,6 +45,8 @@ NotificationController::~NotificationController() {
   if (mDocument) {
     Shutdown();
   }
+  MOZ_RELEASE_ASSERT(mObservingState == eNotObservingRefresh,
+                     "Must unregister before being destroyed");
 }
 
 
@@ -83,8 +85,13 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 void NotificationController::Shutdown() {
   if (mObservingState != eNotObservingRefresh &&
       mPresShell->RemoveRefreshObserver(this, FlushType::Display)) {
+    
+    
     mObservingState = eNotObservingRefresh;
   }
+  MOZ_RELEASE_ASSERT(mObservingState == eNotObservingRefresh,
+                     "Must unregister before being destroyed (and we just "
+                     "passed our last change to unregister)");
 
   
   int32_t childDocCount = mHangingChildDocuments.Length();
@@ -676,10 +683,15 @@ void NotificationController::WillRefresh(mozilla::TimeStamp aTime) {
 
   
   
-  NS_ASSERTION(
+  
+  
+  
+  
+  MOZ_RELEASE_ASSERT(
       mDocument,
       "The document was shut down while refresh observer is attached!");
-  if (!mDocument || ipc::ProcessChild::ExpectingShutdown()) {
+
+  if (ipc::ProcessChild::ExpectingShutdown()) {
     return;
   }
 
