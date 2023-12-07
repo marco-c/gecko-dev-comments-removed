@@ -3496,6 +3496,20 @@ bool nsStyleDisplay::PrecludesSizeContainmentOrContentVisibilityWithFrame(
     const nsIFrame& aFrame) const {
   
   
+  
+  
+  
+  
+  if (aFrame.HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
+    return true;
+  }
+
+  
+  
+  
+  
+  
+  
   bool isNonReplacedInline = aFrame.IsLineParticipant() && !aFrame.IsReplaced();
   return isNonReplacedInline || IsInternalRubyDisplayType() ||
          DisplayInside() == mozilla::StyleDisplayInside::Table ||
@@ -3510,13 +3524,6 @@ ContainSizeAxes nsStyleDisplay::GetContainSizeAxes(
   }
 
   if (PrecludesSizeContainmentOrContentVisibilityWithFrame(aFrame)) {
-    return ContainSizeAxes(false, false);
-  }
-
-  
-  
-  
-  if (aFrame.HasAnyStateBits(NS_FRAME_SVG_LAYOUT)) {
     return ContainSizeAxes(false, false);
   }
 
@@ -3538,6 +3545,8 @@ StyleContentVisibility nsStyleDisplay::ContentVisibility(
   if (MOZ_LIKELY(mContentVisibility == StyleContentVisibility::Visible)) {
     return StyleContentVisibility::Visible;
   }
+  
+  
   if (PrecludesSizeContainmentOrContentVisibilityWithFrame(aFrame)) {
     return StyleContentVisibility::Visible;
   }
