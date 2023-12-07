@@ -784,8 +784,12 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             
             if "browsertime" in try_name:
                 if "chrome" in try_name:
+                    if "tp6" in try_name and "essential" not in try_name:
+                        return False
                     return True
                 if "chromium" in try_name:
+                    if "tp6" in try_name and "essential" not in try_name:
+                        return False
                     return True
                 
                 if "custom-car" in try_name:
@@ -802,10 +806,6 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                     if "speedometer3" in try_name:
                         return False
                     return True
-            else:
-                
-                if "tp6" in try_name:
-                    return False
         
         elif accept_raptor_android_build(platform):
             if "chrome-m" in try_name and (
