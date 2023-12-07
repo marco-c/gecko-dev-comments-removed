@@ -56,3 +56,31 @@ add_task(async function test_analyzed_product() {
     }
   );
 });
+
+
+
+
+
+
+add_task(async function test_ungraded_product() {
+  await BrowserTestUtils.withNewTab(
+    {
+      url: "about:shoppingsidebar",
+      gBrowser,
+    },
+    async browser => {
+      let shoppingContainer = await getAnalysisDetails(
+        browser,
+        MOCK_UNGRADED_PRODUCT_RESPONSE
+      );
+
+      ok(
+        shoppingContainer.unanalyzedProductEl,
+        "Got the unanalyzed-product-card element"
+      );
+
+      verifyAnalysisDetailsHidden(shoppingContainer);
+      verifyFooterVisible(shoppingContainer);
+    }
+  );
+});
