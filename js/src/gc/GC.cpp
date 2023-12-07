@@ -2733,6 +2733,9 @@ void GCRuntime::endPreparePhase(JS::GCReason reason) {
     c->gcState.scheduledForDestruction = false;
     c->gcState.maybeAlive = false;
     c->gcState.hasEnteredRealm = false;
+    if (c->invisibleToDebugger()) {
+      c->gcState.maybeAlive = true;  
+    }
     bool isActiveCompartment = c == activeCompartment;
     for (RealmsInCompartmentIter r(c); !r.done(); r.next()) {
       if (r->shouldTraceGlobal() || !r->zone()->isGCScheduled()) {
@@ -2897,6 +2900,13 @@ void GCRuntime::findDeadCompartments() {
   gcstats::AutoPhase ap1(stats(), gcstats::PhaseKind::FIND_DEAD_COMPARTMENTS);
 
   
+
+
+
+
+
+
+
 
 
 
