@@ -92,6 +92,9 @@ void NotificationController::Shutdown() {
   MOZ_RELEASE_ASSERT(mObservingState == eNotObservingRefresh,
                      "Must unregister before being destroyed (and we just "
                      "passed our last change to unregister)");
+  
+  
+  mPresShell = nullptr;
 
   
   int32_t childDocCount = mHangingChildDocuments.Length();
@@ -104,7 +107,6 @@ void NotificationController::Shutdown() {
   mHangingChildDocuments.Clear();
 
   mDocument = nullptr;
-  mPresShell = nullptr;
 
   mTextArray.Clear();
   mContentInsertions.Clear();
@@ -461,7 +463,9 @@ void NotificationController::ScheduleContentInsertion(
 void NotificationController::ScheduleProcessing() {
   
   
-  if (mObservingState == eNotObservingRefresh) {
+  
+  
+  if (mObservingState == eNotObservingRefresh && mPresShell) {
     if (mPresShell->AddRefreshObserver(this, FlushType::Display,
                                        "Accessibility notifications")) {
       mObservingState = eRefreshObserving;
