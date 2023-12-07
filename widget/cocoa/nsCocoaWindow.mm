@@ -450,14 +450,28 @@ nsresult nsCocoaWindow::Create(nsIWidget* aParent, nsNativeWidget aNativeParent,
   return Create(aParent, aNativeParent, desktopRect, aInitData);
 }
 
-
 static unsigned int WindowMaskForBorderStyle(BorderStyle aBorderStyle) {
-  const bool allOrDefault =
-      aBorderStyle == BorderStyle::All || aBorderStyle == BorderStyle::Default;
-  unsigned int mask = 0;
-  if (allOrDefault || aBorderStyle & BorderStyle::Title) {
-    mask |= NSWindowStyleMaskTitled;
+  bool allOrDefault = (aBorderStyle == BorderStyle::All ||
+                       aBorderStyle == BorderStyle::Default);
+
+  
+
+
+
+
+  if (!allOrDefault && !(aBorderStyle & BorderStyle::Title)) {
+    if (aBorderStyle & BorderStyle::Minimize) {
+      
+
+
+
+
+      return NSWindowStyleMaskBorderless | NSWindowStyleMaskMiniaturizable;
+    }
+    return NSWindowStyleMaskBorderless;
   }
+
+  unsigned int mask = NSWindowStyleMaskTitled;
   if (allOrDefault || aBorderStyle & BorderStyle::Close) {
     mask |= NSWindowStyleMaskClosable;
   }
@@ -467,6 +481,7 @@ static unsigned int WindowMaskForBorderStyle(BorderStyle aBorderStyle) {
   if (allOrDefault || aBorderStyle & BorderStyle::ResizeH) {
     mask |= NSWindowStyleMaskResizable;
   }
+
   return mask;
 }
 
