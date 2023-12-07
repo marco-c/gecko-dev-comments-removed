@@ -82,9 +82,6 @@ add_task(async function send_dismiss_event_telemetry() {
   );
   let browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
   let sandbox = sinon.createSandbox();
-  sandbox
-    .stub(AboutWelcomeTelemetry.prototype, "pingCentre")
-    .value({ sendStructuredIngestionPing: () => {} });
   let spy = sandbox.spy(AboutWelcomeTelemetry.prototype, "sendTelemetry");
   
   await showAndWaitForDialog({ message, browser }, async win => {

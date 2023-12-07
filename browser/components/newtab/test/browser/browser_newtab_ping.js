@@ -2,6 +2,7 @@
 
 
 "use strict";
+requestLongerTimeout(5);
 
 const { ASRouter } = ChromeUtils.import(
   "resource://activity-stream/lib/ASRouter.jsm"

@@ -77,12 +77,6 @@ async function openAboutWelcome() {
 }
 
 add_task(async function test_welcome_telemetry() {
-  const sandbox = sinon.createSandbox();
-  
-  sandbox
-    .stub(AboutWelcomeTelemetry.prototype, "pingCentre")
-    .value({ sendStructuredIngestionPing: () => {} });
-
   
   await SpecialPowers.pushPrefEnv({
     set: [["browser.newtabpage.activity-stream.telemetry", true]],
@@ -126,9 +120,6 @@ add_task(async function test_welcome_telemetry() {
     () => pingSubmitted,
     "Ping was submitted, callback was called."
   );
-  registerCleanupFunction(() => {
-    sandbox.restore();
-  });
 
   
   pingSubmitted = false;
