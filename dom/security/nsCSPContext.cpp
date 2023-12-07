@@ -494,11 +494,6 @@ nsCSPContext::GetAllowsWasmEval(bool* outShouldReportViolation,
   *outShouldReportViolation = false;
   *outAllowsWasmEval = true;
 
-  if (!StaticPrefs::security_csp_wasm_unsafe_eval_enabled()) {
-    
-    return NS_OK;
-  }
-
   for (uint32_t i = 0; i < mPolicies.Length(); i++) {
     
     if (!mPolicies[i]->allows(SCRIPT_SRC_DIRECTIVE, CSP_WASM_UNSAFE_EVAL,

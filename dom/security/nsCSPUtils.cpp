@@ -1130,8 +1130,7 @@ bool nsCSPDirective::permits(CSPDirective aDirective, nsILoadInfo* aLoadInfo,
       }
 
       
-      if (!integrityExpressions.IsEmpty() &&
-          StaticPrefs::security_csp_external_hashes_enabled()) {
+      if (!integrityExpressions.IsEmpty()) {
         
         
         
