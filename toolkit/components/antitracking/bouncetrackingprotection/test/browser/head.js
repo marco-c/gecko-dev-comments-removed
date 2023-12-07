@@ -120,32 +120,8 @@ async function navigateLinkClick(browser, targetURL) {
 
 
 
-
-async function waitForObserverMessage(message, conditionFn = () => true) {
-  return new Promise(resolve => {
-    let observer = (subject, topic, data) => {
-      if (topic != message) {
-        return;
-      }
-
-      if (conditionFn(subject, topic, data)) {
-        Services.obs.removeObserver(observer, message);
-        resolve();
-      }
-    };
-    Services.obs.addObserver(observer, message);
-  });
-}
-
-
-
-
-
-
-
-
 async function waitForRecordBounces(browser) {
-  return waitForObserverMessage(
+  return TestUtils.topicObserved(
     OBSERVER_MSG_RECORD_BOUNCES_FINISHED,
     subject => {
       
