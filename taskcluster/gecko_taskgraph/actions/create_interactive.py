@@ -105,7 +105,7 @@ def create_interactive_action(parameters, graph_config, input, task_group_id, ta
     
     
     
-    decision_task_id, full_task_graph, label_to_taskid = fetch_graph_and_labels(
+    decision_task_id, full_task_graph, label_to_taskid, _ = fetch_graph_and_labels(
         parameters, graph_config
     )
     task = get_task_definition(task_id)
