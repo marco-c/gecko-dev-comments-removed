@@ -52,9 +52,11 @@ class UserConfirmationRequest final
 
   UserConfirmationRequest(int32_t aClipboardType,
                           Document* aRequestingChromeDocument,
+                          nsIPrincipal* aRequestingPrincipal,
                           nsBaseClipboard* aClipboard)
       : mClipboardType(aClipboardType),
         mRequestingChromeDocument(aRequestingChromeDocument),
+        mRequestingPrincipal(aRequestingPrincipal),
         mClipboard(aClipboard) {
     MOZ_ASSERT(
         mClipboard->nsIClipboard::IsClipboardTypeSupported(aClipboardType));
@@ -66,10 +68,11 @@ class UserConfirmationRequest final
   void RejectedCallback(JSContext* aCx, JS::Handle<JS::Value> aValue,
                         mozilla::ErrorResult& aRv) override;
 
-  bool IsEqual(int32_t aClipboardType,
-               Document* aRequestingChromeDocument) const {
+  bool IsEqual(int32_t aClipboardType, Document* aRequestingChromeDocument,
+               nsIPrincipal* aRequestingPrincipal) const {
     return ClipboardType() == aClipboardType &&
-           RequestingChromeDocument() == aRequestingChromeDocument;
+           RequestingChromeDocument() == aRequestingChromeDocument &&
+           RequestingPrincipal()->Equals(aRequestingPrincipal);
   }
 
   int32_t ClipboardType() const { return mClipboardType; }
@@ -77,6 +80,8 @@ class UserConfirmationRequest final
   Document* RequestingChromeDocument() const {
     return mRequestingChromeDocument;
   }
+
+  nsIPrincipal* RequestingPrincipal() const { return mRequestingPrincipal; }
 
   void AddClipboardGetRequest(const nsTArray<nsCString>& aFlavorList,
                               nsIAsyncClipboardGetCallback* aCallback) {
@@ -116,6 +121,7 @@ class UserConfirmationRequest final
 
   const int32_t mClipboardType;
   RefPtr<Document> mRequestingChromeDocument;
+  const nsCOMPtr<nsIPrincipal> mRequestingPrincipal;
   const RefPtr<nsBaseClipboard> mClipboard;
   
   nsTArray<UniquePtr<ClipboardGetRequest>> mPendingClipboardGetRequests;
@@ -503,13 +509,30 @@ NS_IMETHODIMP nsBaseClipboard::AsyncGetData(
   }
 
   
+  
+  if (auto* clipboardCache = GetClipboardCacheIfValid(aWhichClipboard)) {
+    nsCOMPtr<nsITransferable> trans = clipboardCache->GetTransferable();
+    MOZ_ASSERT(trans);
+
+    if (nsCOMPtr<nsIPrincipal> principal = trans->GetRequestingPrincipal()) {
+      if (aRequestingPrincipal->Subsumes(principal)) {
+        MOZ_CLIPBOARD_LOG("%s: native clipboard data is from same-origin page.",
+                          __FUNCTION__);
+        AsyncGetDataInternal(aFlavorList, aWhichClipboard, aCallback);
+        return NS_OK;
+      }
+    }
+  }
+
+  
   if (aRequestingPrincipal->GetIsAddonOrExpandedAddonPrincipal()) {
     MOZ_CLIPBOARD_LOG("%s: Addon without read permission.", __FUNCTION__);
     return aCallback->OnError(NS_ERROR_FAILURE);
   }
 
   RequestUserConfirmation(aWhichClipboard, aFlavorList,
-                          aRequestingWindowContext, aCallback);
+                          aRequestingWindowContext, aRequestingPrincipal,
+                          aCallback);
   return NS_OK;
 }
 
@@ -724,6 +747,7 @@ void nsBaseClipboard::ClearClipboardCache(int32_t aClipboardType) {
 void nsBaseClipboard::RequestUserConfirmation(
     int32_t aClipboardType, const nsTArray<nsCString>& aFlavorList,
     mozilla::dom::WindowContext* aWindowContext,
+    nsIPrincipal* aRequestingPrincipal,
     nsIAsyncClipboardGetCallback* aCallback) {
   MOZ_ASSERT(nsIClipboard::IsClipboardTypeSupported(aClipboardType));
   MOZ_ASSERT(aCallback);
@@ -760,7 +784,8 @@ void nsBaseClipboard::RequestUserConfirmation(
   
   
   if (sUserConfirmationRequest) {
-    if (sUserConfirmationRequest->IsEqual(aClipboardType, chromeDoc)) {
+    if (sUserConfirmationRequest->IsEqual(aClipboardType, chromeDoc,
+                                          aRequestingPrincipal)) {
       sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
       return;
     }
@@ -784,8 +809,8 @@ void nsBaseClipboard::RequestUserConfirmation(
     return;
   }
 
-  sUserConfirmationRequest =
-      new UserConfirmationRequest(aClipboardType, chromeDoc, this);
+  sUserConfirmationRequest = new UserConfirmationRequest(
+      aClipboardType, chromeDoc, aRequestingPrincipal, this);
   sUserConfirmationRequest->AddClipboardGetRequest(aFlavorList, aCallback);
   promise->AppendNativeHandler(sUserConfirmationRequest);
 }
