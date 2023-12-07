@@ -363,6 +363,7 @@ void nsWindow::TaskbarConcealer::OnAsyncStateUpdateRequest(HWND hwnd) {
   
   
   
+  
   static UINT const shellHookMsg = ::RegisterWindowMessageW(L"SHELLHOOK");
   if (shellHookMsg != 0) {
     

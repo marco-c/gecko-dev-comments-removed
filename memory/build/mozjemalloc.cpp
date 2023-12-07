@@ -1627,6 +1627,7 @@ static inline StallSpecs GetStallSpecs() {
 
 
 
+
 [[nodiscard]] void* MozVirtualAlloc(LPVOID lpAddress, SIZE_T dwSize,
                                     DWORD flAllocationType, DWORD flProtect) {
   DWORD const lastError = ::GetLastError();
