@@ -1,0 +1,20 @@
+
+
+
+
+
+'use strict';
+
+
+
+testWebNNOperation(
+  [
+    'equal',
+    'greater',
+    'greaterOrEqual',
+    'lesser',
+    'lesserOrEqual',
+  ],
+  buildOperationWithTwoInputs
+);
+testWebNNOperation('logicalNot', buildOperationWithSingleInput);

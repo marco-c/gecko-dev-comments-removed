@@ -295,6 +295,14 @@ const PrecisionMetrics = {
   pow: {ULP: {float32: 32, float16: 2}},
   
   
+  equal: {ULP: {uint8: 0}},
+  greater: {ULP: {uint8: 0}},
+  greaterOrEqual: {ULP: {uint8: 0}},
+  lesser: {ULP: {uint8: 0}},
+  lesserOrEqual: {ULP: {uint8: 0}},
+  logicalNot: {ULP: {uint8: 0}},
+  
+  
   abs: {ULP: {float32: 0, float16: 0}},
   ceil: {ULP: {float32: 0, float16: 0}},
   cos: {ATOL: {float32: 1/1024, float16: 1/512}},
