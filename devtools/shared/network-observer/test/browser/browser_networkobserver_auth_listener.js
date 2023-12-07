@@ -182,7 +182,9 @@ add_task(async function testAuthRequestWithCancellingListener() {
   await BrowserTestUtils.waitForCondition(() => events.length >= 1);
   is(events.length, 1, "Received the expected number of network events");
 
-  await BrowserTestUtils.waitForCondition(() => events[0].hasResponseContent);
+  await BrowserTestUtils.waitForCondition(
+    () => events[0].hasResponseContent && events[0].hasSecurityInfo
+  );
 
   
   
@@ -291,7 +293,9 @@ add_task(async function testAuthRequestWithCredentialsListener() {
 
   
   
-  await BrowserTestUtils.waitForCondition(() => events[1].hasResponseContent);
+  await BrowserTestUtils.waitForCondition(
+    () => events[1].hasResponseContent && events[1].hasSecurityInfo
+  );
 
   
   
