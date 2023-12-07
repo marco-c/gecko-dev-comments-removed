@@ -3304,7 +3304,9 @@ class nsIFrame : public nsQueryFrame {
 
 
 
-  void UpdateIsRelevantContent(const ContentRelevancy& aRelevancyToUpdate);
+
+  [[nodiscard]] bool UpdateIsRelevantContent(
+      const ContentRelevancy& aRelevancyToUpdate);
 
   
 
