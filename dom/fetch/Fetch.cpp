@@ -1248,19 +1248,18 @@ void FetchBody<Derived>::SetBodyUsed(JSContext* aCx, ErrorResult& aRv) {
   
   
   if (mReadableStreamBody) {
-    if (mReadableStreamBody->MaybeGetInputStreamIfUnread()) {
-      LockStream(aCx, mReadableStreamBody, aRv);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return;
-      }
-    } else {
-      MOZ_ASSERT(mFetchStreamReader);
+    if (mFetchStreamReader) {
       
+      MOZ_ASSERT(!mReadableStreamBody->MaybeGetInputStreamIfUnread());
       mFetchStreamReader->StartConsuming(aCx, mReadableStreamBody, aRv);
-      if (NS_WARN_IF(aRv.Failed())) {
-        return;
-      }
+      return;
     }
+    
+    
+    MOZ_ASSERT_IF(
+        mReadableStreamBody->State() == ReadableStream::ReaderState::Readable,
+        mReadableStreamBody->MaybeGetInputStreamIfUnread());
+    LockStream(aCx, mReadableStreamBody, aRv);
   }
 }
 
