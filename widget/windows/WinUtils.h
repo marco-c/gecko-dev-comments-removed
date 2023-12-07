@@ -665,15 +665,13 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(WinUtils::PathTransformFlags);
 
 
 
-class ScopedRtlShimWindow {
+class MOZ_STACK_CLASS ScopedRtlShimWindow {
  public:
   explicit ScopedRtlShimWindow(nsIWidget* aParent);
   ~ScopedRtlShimWindow();
 
   ScopedRtlShimWindow(const ScopedRtlShimWindow&) = delete;
-  ScopedRtlShimWindow(ScopedRtlShimWindow&& that) noexcept : mWnd(that.mWnd) {
-    that.mWnd = nullptr;
-  };
+  ScopedRtlShimWindow(ScopedRtlShimWindow&&) = delete;
 
   HWND get() const { return mWnd; }
 
