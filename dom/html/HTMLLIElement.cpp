@@ -8,7 +8,6 @@
 #include "mozilla/dom/HTMLLIElementBinding.h"
 
 #include "mozilla/MappedDeclarationsBuilder.h"
-#include "nsAttrValueInlines.h"
 #include "nsGkAtoms.h"
 #include "nsStyleConsts.h"
 
@@ -21,15 +20,15 @@ HTMLLIElement::~HTMLLIElement() = default;
 NS_IMPL_ELEMENT_CLONE(HTMLLIElement)
 
 
-static const nsAttrValue::EnumTable kUnorderedListItemTypeTable[] = {
+const nsAttrValue::EnumTable HTMLLIElement::kULTypeTable[] = {
+    {"none", ListStyle::None},
     {"disc", ListStyle::Disc},
     {"circle", ListStyle::Circle},
-    {"round", ListStyle::Circle},
     {"square", ListStyle::Square},
     {nullptr, 0}};
 
 
-static const nsAttrValue::EnumTable kOrderedListItemTypeTable[] = {
+const nsAttrValue::EnumTable HTMLLIElement::kOLTypeTable[] = {
     {"A", ListStyle::UpperAlpha}, {"a", ListStyle::LowerAlpha},
     {"I", ListStyle::UpperRoman}, {"i", ListStyle::LowerRoman},
     {"1", ListStyle::Decimal},    {nullptr, 0}};
@@ -40,8 +39,8 @@ bool HTMLLIElement::ParseAttribute(int32_t aNamespaceID, nsAtom* aAttribute,
                                    nsAttrValue& aResult) {
   if (aNamespaceID == kNameSpaceID_None) {
     if (aAttribute == nsGkAtoms::type) {
-      return aResult.ParseEnumValue(aValue, kOrderedListItemTypeTable, true) ||
-             aResult.ParseEnumValue(aValue, kUnorderedListItemTypeTable, false);
+      return aResult.ParseEnumValue(aValue, kOLTypeTable, true) ||
+             aResult.ParseEnumValue(aValue, kULTypeTable, false);
     }
     if (aAttribute == nsGkAtoms::value) {
       return aResult.ParseIntValue(aValue);
