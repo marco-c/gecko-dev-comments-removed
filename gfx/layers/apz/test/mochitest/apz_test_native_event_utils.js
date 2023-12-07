@@ -1920,6 +1920,10 @@ function getSmoothScrollPrefs(aInputType, aMsdPhysics) {
   
   if (aMsdPhysics !== undefined) {
     result.push(["general.smoothScroll.msdPhysics.enabled", aMsdPhysics]);
+  } else {
+    aMsdPhysics = SpecialPowers.getBoolPref(
+      "general.smoothScroll.msdPhysics.enabled"
+    );
   }
   if (aInputType == "wheel") {
     
@@ -1933,14 +1937,26 @@ function getSmoothScrollPrefs(aInputType, aMsdPhysics) {
   
   
   
-  if (aInputType == "wheel") {
+  if (aMsdPhysics) {
+    
+    result.push(
+      ...[
+        ["general.smoothScroll.msdPhysics.motionBeginSpringConstant", 20],
+        ["general.smoothScroll.msdPhysics.regularSpringConstant", 20],
+        ["general.smoothScroll.msdPhysics.slowdownMinDeltaRatio", 0.1],
+        ["general.smoothScroll.msdPhysics.slowdownSpringConstant", 20],
+      ]
+    );
+  } else if (aInputType == "wheel") {
+    
     result.push(
       ...[
         ["general.smoothScroll.mouseWheel.durationMaxMS", 1500],
         ["general.smoothScroll.mouseWheel.durationMinMS", 1500],
       ]
     );
-  }  else {
+  } else {
+    
     result.push(
       ...[
         ["general.smoothScroll.lines.durationMaxMS", 1500],
