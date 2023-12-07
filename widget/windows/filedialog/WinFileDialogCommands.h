@@ -8,6 +8,7 @@
 #define widget_windows_filedialog_WinFileDialogCommands_h__
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/MozPromise.h"
 #include "mozilla/ipc/MessageLink.h"
 #include "mozilla/widget/filedialog/WinFileDialogCommandsDefn.h"
 
@@ -41,7 +42,20 @@ namespace detail {
 
 void LogProcessingError(LogModule* aModule, ipc::IProtocol* aCaller,
                         ipc::HasResultCodes::Result aCode, const char* aReason);
+
 }  
+
+template <typename R>
+using Promise = MozPromise<R, HRESULT, true>;
+
+
+RefPtr<Promise<Maybe<Results>>> SpawnFilePicker(HWND parent,
+                                                FileDialogType type,
+                                                nsTArray<Command> commands);
+
+
+RefPtr<Promise<Maybe<nsString>>> SpawnFolderPicker(HWND parent,
+                                                   nsTArray<Command> commands);
 
 }  
 
