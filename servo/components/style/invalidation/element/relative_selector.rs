@@ -170,7 +170,18 @@ impl<'a, E: TElement> OptimizationContext<'a, E> {
             
             
             
-            return true;
+            debug_assert!(dependency.parent.is_some(), "No relative selector outer dependency?");
+            return dependency.parent.as_ref().map_or(false, |par| {
+                
+                
+                !matches_selector(
+                    &par.selector,
+                    par.selector_offset,
+                    None,
+                    &sibling,
+                    &mut matching_context
+                )
+            });
         }
         
         
