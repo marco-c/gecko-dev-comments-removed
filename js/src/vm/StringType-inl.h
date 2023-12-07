@@ -185,7 +185,7 @@ JSString::OwnedChars<CharT>::OwnedChars(CharT* chars, size_t length,
 template <typename CharT>
 JSString::OwnedChars<CharT>::OwnedChars(JSString::OwnedChars<CharT>&& other)
     : OwnedChars(other.chars_.Length() ? other.chars_.data() : nullptr,
-                 other.chars_.Length(), other.needsFree_, other.isMalloced_) {
+                 other.chars_.Length(), other.isMalloced_, other.needsFree_) {
   
   
   
