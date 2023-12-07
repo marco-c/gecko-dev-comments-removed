@@ -679,7 +679,7 @@ class TestRunnerManager(threading.Thread):
             
             
             
-            self.logger.error("Received unexpected test_ended for %s" % test)
+            self.logger.warning("Received unexpected test_ended for %s" % test)
             return
         if self.timer is not None:
             self.timer.cancel()
