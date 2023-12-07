@@ -314,8 +314,6 @@ nsresult nsContentDLF::CreateDocument(
   nsCOMPtr<nsIDocumentViewer> viewer = NS_NewDocumentViewer();
 
   doc->SetContainer(static_cast<nsDocShell*>(aContainer));
-  doc->SetAllowDeclarativeShadowRoots(
-      mozilla::StaticPrefs::dom_webcomponents_shadowdom_declarative_enabled());
 
   
   
