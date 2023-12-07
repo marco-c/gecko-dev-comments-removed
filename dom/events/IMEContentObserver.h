@@ -139,11 +139,20 @@ class IMEContentObserver final : public nsStubMutationObserver,
                                             dom::Element* aElement,
                                             EditorBase& aEditorBase);
 
-  bool IsManaging(const nsPresContext& aPresContext,
-                  const dom::Element* aElement) const;
-  bool IsBeingInitializedFor(const nsPresContext& aPresContext,
-                             const dom::Element* aElement) const;
-  bool IsManaging(const TextComposition& aTextComposition) const;
+  
+
+
+
+
+
+
+  [[nodiscard]] bool IsObserving(const nsPresContext& aPresContext,
+                                 const dom::Element* aElement) const;
+
+  [[nodiscard]] bool IsBeingInitializedFor(const nsPresContext& aPresContext,
+                                           const dom::Element* aElement,
+                                           const EditorBase& aEditorBase) const;
+  bool IsObserving(const TextComposition& aTextComposition) const;
   bool WasInitializedWith(const EditorBase& aEditorBase) const {
     return mEditorBase == &aEditorBase;
   }

@@ -1427,6 +1427,12 @@ class nsINode : public mozilla::dom::EventTarget {
 
 
 
+  inline bool IsEditingHost() const;
+
+  
+
+
+
 
 
 

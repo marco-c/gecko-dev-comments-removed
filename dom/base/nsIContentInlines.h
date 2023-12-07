@@ -147,6 +147,16 @@ inline bool nsINode::IsEditable() const {
   return IsInDesignMode();
 }
 
+inline bool nsINode::IsEditingHost() const {
+  if (!IsInComposedDoc() || IsInDesignMode() || !IsEditable() ||
+      IsInNativeAnonymousSubtree()) {
+    return false;
+  }
+  nsIContent* const parent = GetParent();
+  return !parent ||  
+         !parent->IsEditable();  
+}
+
 inline bool nsINode::IsInDesignMode() const {
   if (!OwnerDoc()->HasFlag(NODE_IS_EDITABLE)) {
     return false;

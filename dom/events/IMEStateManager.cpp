@@ -595,7 +595,8 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
     
     
     
-    else if (!sActiveIMEContentObserver->IsManaging(*aPresContext, aElement)) {
+    
+    else if (!sActiveIMEContentObserver->IsObserving(*aPresContext, aElement)) {
       DestroyIMEContentObserver();
     }
   }
@@ -778,7 +779,7 @@ bool IMEStateManager::OnMouseButtonEventInEditor(
     return false;
   }
 
-  if (!sActiveIMEContentObserver->IsManaging(aPresContext, aElement)) {
+  if (!sActiveIMEContentObserver->IsObserving(aPresContext, aElement)) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnMouseButtonEventInEditor(), "
              "the active IMEContentObserver isn't managing the editor"));
@@ -932,12 +933,15 @@ void IMEStateManager::OnFocusInEditor(nsPresContext& aPresContext,
 
   
   
+  
+  
+  
   if (sActiveIMEContentObserver) {
-    if (sActiveIMEContentObserver->IsManaging(aPresContext, aElement)) {
-      MOZ_LOG(
-          sISMLog, LogLevel::Debug,
-          ("  OnFocusInEditor(), "
-           "the editor is already being managed by sActiveIMEContentObserver"));
+    if (sActiveIMEContentObserver->IsObserving(aPresContext, aElement)) {
+      MOZ_LOG(sISMLog, LogLevel::Debug,
+              ("  OnFocusInEditor(), "
+               "the editable content for aEditorBase has already been being "
+               "observed by sActiveIMEContentObserver"));
       return;
     }
     
@@ -945,8 +949,8 @@ void IMEStateManager::OnFocusInEditor(nsPresContext& aPresContext,
     
     const nsCOMPtr<nsIWidget> textInputHandlingWidget =
         sTextInputHandlingWidget;
-    if (!sActiveIMEContentObserver->IsBeingInitializedFor(aPresContext,
-                                                          aElement)) {
+    if (!sActiveIMEContentObserver->IsBeingInitializedFor(
+            aPresContext, aElement, aEditorBase)) {
       DestroyIMEContentObserver();
     }
     if (NS_WARN_IF(!IsFocusedElement(aPresContext, aElement)) ||
@@ -1020,11 +1024,14 @@ void IMEStateManager::OnReFocus(nsPresContext& aPresContext,
     return;
   }
 
+  
+  
+  
   if (!sActiveIMEContentObserver ||
-      !sActiveIMEContentObserver->IsManaging(aPresContext, &aElement)) {
+      !sActiveIMEContentObserver->IsObserving(aPresContext, &aElement)) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  OnReFocus(), there is no valid IMEContentObserver, so we don't "
-             "manage this. Ignore this"));
+            ("  OnReFocus(), editable content for aElement was not being "
+             "observed by the sActiveIMEContentObserver"));
     return;
   }
 
@@ -1232,39 +1239,65 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
   
   
   
-  if (sActiveIMEContentObserver && IsIMEObserverNeeded(aNewIMEState)) {
+  
+  
+  const bool hasActiveObserverAndNeedObserver =
+      sActiveIMEContentObserver && IsIMEObserverNeeded(aNewIMEState);
+
+  
+  
+  
+  
+  
+  
+  const bool needToRecreateObserver =
+      hasActiveObserverAndNeedObserver &&
+      !sActiveIMEContentObserver->WasInitializedWith(aEditorBase);
+
+  
+  
+  
+  
+  if (hasActiveObserverAndNeedObserver && !needToRecreateObserver) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  UpdateIMEState(), try to reinitialize the "
-             "active IMEContentObserver"));
+            ("  UpdateIMEState(), try to reinitialize the active "
+             "IMEContentObserver"));
     OwningNonNull<IMEContentObserver> contentObserver =
         *sActiveIMEContentObserver;
     OwningNonNull<nsPresContext> presContext = *sFocusedPresContext;
     if (!contentObserver->MaybeReinitialize(
             textInputHandlingWidget, presContext, aElement, aEditorBase)) {
       MOZ_LOG(sISMLog, LogLevel::Error,
-              ("  UpdateIMEState(), failed to reinitialize the "
-               "active IMEContentObserver"));
+              ("  UpdateIMEState(), failed to reinitialize the active "
+               "IMEContentObserver"));
     }
     if (NS_WARN_IF(textInputHandlingWidget->Destroyed())) {
       MOZ_LOG(sISMLog, LogLevel::Error,
-              ("  UpdateIMEState(), widget has gone during re-initializing the "
-               "active IMEContentObserver"));
+              ("  UpdateIMEState(), widget has gone during re-initializing "
+               "the active IMEContentObserver"));
       return;
     }
   }
 
   
   
-  const bool createTextStateManager =
+  
+  
+  const bool createNewObserver =
       IsIMEObserverNeeded(aNewIMEState) &&
-      (!sActiveIMEContentObserver ||
-       !sActiveIMEContentObserver->IsManaging(*sFocusedPresContext, aElement));
+      (!sActiveIMEContentObserver || needToRecreateObserver ||
+       !sActiveIMEContentObserver->IsObserving(*sFocusedPresContext, aElement));
   
   
-  const bool destroyTextStateManager =
+  const bool destroyCurrentObserver =
       sActiveIMEContentObserver &&
-      (createTextStateManager || !IsIMEObserverNeeded(aNewIMEState));
+      (createNewObserver || !IsIMEObserverNeeded(aNewIMEState));
 
+  
+  
+  
+  
+  
   const bool updateIMEState =
       aOptions.contains(UpdateIMEStateOption::ForceUpdate) ||
       (textInputHandlingWidget->GetInputContext().mIMEState.mEnabled !=
@@ -1278,7 +1311,6 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
 
   if (updateIMEState &&
       !aOptions.contains(UpdateIMEStateOption::DontCommitComposition)) {
-    
     NotifyIME(REQUEST_TO_COMMIT_COMPOSITION, textInputHandlingWidget,
               sFocusedIMEBrowserParent);
     if (NS_WARN_IF(textInputHandlingWidget->Destroyed())) {
@@ -1292,7 +1324,8 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
     
   }
 
-  if (destroyTextStateManager) {
+  
+  if (destroyCurrentObserver) {
     DestroyIMEContentObserver();
     if (NS_WARN_IF(textInputHandlingWidget->Destroyed()) ||
         NS_WARN_IF(sTextInputHandlingWidget != textInputHandlingWidget)) {
@@ -1303,6 +1336,7 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
     }
   }
 
+  
   if (updateIMEState) {
     InputContextAction action(InputContextAction::CAUSE_UNKNOWN,
                               InputContextAction::FOCUS_NOT_CHANGED);
@@ -1335,7 +1369,8 @@ void IMEStateManager::UpdateIMEState(const IMEState& aNewIMEState,
   NS_ASSERTION(IsFocusedElement(*presContext, aElement),
                "aElement does not match with sFocusedElement");
 
-  if (createTextStateManager) {
+  
+  if (createNewObserver) {
     if (!sActiveIMEContentObserver && sFocusedPresContext &&
         sTextInputHandlingWidget) {
       
@@ -2260,7 +2295,7 @@ void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase,
            "sFocusedPresContext=0x%p, sFocusedElement=0x%p, "
            "sTextInputHandlingWidget=0x%p (available: %s), "
            "sActiveIMEContentObserver=0x%p, "
-           "sActiveIMEContentObserver->IsManaging(sFocusedPresContext, "
+           "sActiveIMEContentObserver->IsObserving(sFocusedPresContext, "
            "sFocusedElement)=%s",
            &aEditorBase, aFocusedElement, sFocusedPresContext.get(),
            sFocusedElement.get(), sTextInputHandlingWidget,
@@ -2268,7 +2303,7 @@ void IMEStateManager::CreateIMEContentObserver(EditorBase& aEditorBase,
                        !sTextInputHandlingWidget->Destroyed()),
            sActiveIMEContentObserver.get(),
            GetBoolName(sActiveIMEContentObserver && sFocusedPresContext &&
-                       sActiveIMEContentObserver->IsManaging(
+                       sActiveIMEContentObserver->IsObserving(
                            *sFocusedPresContext, sFocusedElement))));
 
   if (NS_WARN_IF(sTextInputHandlingWidget->Destroyed())) {

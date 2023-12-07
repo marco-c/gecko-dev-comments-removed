@@ -919,19 +919,6 @@ class nsGenericHTMLElement : public nsGenericHTMLElementBase {
   
   already_AddRefed<nsIURI> GetHrefURIForAnchors() const;
 
- public:
-  
-
-
-
-
-
-
-
-
-
-  bool IsEditableRoot() const;
-
  private:
   void ChangeEditableState(int32_t aChange);
 };

@@ -37,7 +37,15 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(
       TextControlElement, nsGenericHTMLFormControlElementWithState)
 
+  
+
+
+
+
+
   bool IsTextControlElement() const final { return true; }
+
+  virtual bool IsSingleLineTextControlOrTextArea() const = 0;
 
   NS_IMPL_FROMNODE_HELPER(TextControlElement, IsTextControlElement())
 
@@ -113,7 +121,7 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
 
 
   MOZ_CAN_RUN_SCRIPT virtual TextEditor* GetTextEditor() = 0;
-  virtual TextEditor* GetTextEditorWithoutCreation() = 0;
+  virtual TextEditor* GetTextEditorWithoutCreation() const = 0;
 
   
 

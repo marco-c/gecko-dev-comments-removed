@@ -107,6 +107,7 @@ class nsGetterAddRefs;
 namespace mozilla {
 class DeclarationBlock;
 class MappedDeclarationsBuilder;
+class EditorBase;
 class ErrorResult;
 class OOMReporter;
 class SMILAttr;
@@ -1259,6 +1260,16 @@ class Element : public FragmentOrElement {
 
 
   MOZ_CAN_RUN_SCRIPT bool HasVisibleScrollbars();
+
+  
+
+
+
+
+
+
+
+  EditorBase* GetEditorWithoutCreation() const;
 
  private:
   
