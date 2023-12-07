@@ -3984,6 +3984,9 @@ pref("extensions.formautofill.creditCards.heuristics.fathom.testConfidence", "0"
 pref("extensions.formautofill.loglevel", "Warn");
 
 
+pref("extensions.formautofill.heuristics.captureOnFormRemoval", false);
+
+
 pref("extensions.formautofill.heuristics.interactivityCheckMode", "focusability");
 
 pref("toolkit.osKeyStore.loglevel", "Warn");
