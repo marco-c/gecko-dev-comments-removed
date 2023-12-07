@@ -8,7 +8,7 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; object-src 'none'; script-src resource: chrome:; img-src data: blob: https://firefoxusercontent.com https://profile.accounts.firefox.com;">
     <meta name="color-scheme" content="light dark">
-    <title data-l10n-id="about-logins-page-title"></title>
+    <title data-l10n-id="about-logins-page-title-name"></title>
     <link rel="localization" href="branding/brand.ftl">
     <link rel="localization" href="browser/aboutLogins.ftl">
     <link rel="localization" href="toolkit/branding/accounts.ftl">
@@ -183,7 +183,7 @@
       <div class="listHeader">
         <login-filter></login-filter>
         <div class="create-login-button-container">
-          <login-command-button class="create-login-button" data-l10n-id="create-new-login-button" icon="chrome://global/skin/icons/plus.svg" ></login-command-button>
+          <login-command-button class="create-login-button" data-l10n-id="create-login-button" icon="chrome://global/skin/icons/plus.svg" ></login-command-button>
         </div>
       </div>
       <div class="meta text-deemphasized">
@@ -199,17 +199,17 @@
             <option name="alerts" data-l10n-id="about-logins-login-list-alerts-option" value="alerts" hidden>
           </select>
         </label>
-        <span class="count" data-l10n-id="login-list-count" data-l10n-args='{"count": 0}'></span>
+        <span class="count" data-l10n-id="login-list-count2" data-l10n-args='{"count": 0}'></span>
       </div>
       <!-- This container is to work around bug 1569292 -->
       <div class="container">
         <ol role="listbox" tabindex="0" data-l10n-id="login-list"></ol>
         <div class="intro">
-          <p data-l10n-id="login-list-intro-title"></p>
+          <p data-l10n-id="login-list-intro-title2"></p>
           <span data-l10n-id="login-list-intro-description"></span>
         </div>
         <div class="empty-search-message">
-          <p data-l10n-id="about-logins-login-list-empty-search-title"></p>
+          <p data-l10n-id="about-logins-login-list-empty-search-title2"></p>
           <span data-l10n-id="about-logins-login-list-empty-search-description"></span>
         </div>
       </div>
@@ -262,6 +262,7 @@
       <script type="module" src="chrome://browser/content/aboutlogins/components/login-timeline.mjs"></script>
       <script type="module" src="chrome://browser/content/aboutlogins/components/login-command-button.mjs"></script>
       <script type="module" src="chrome://browser/content/aboutlogins/components/login-alert.mjs"></script>
+      <script type="module" src="chrome://browser/content/aboutlogins/components/login-message-popup.mjs"></script>
       <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
       <link rel="stylesheet" href="chrome://browser/content/aboutlogins/common.css">
       <link rel="stylesheet" href="chrome://browser/content/aboutlogins/components/login-item.css">
@@ -304,11 +305,7 @@
                         dir="auto"
                         readonly/>
                   <a class="origin-input" dir="auto" target="_blank" rel="noreferrer" name="origin" href=""></a>
-                  <div class="tooltip-container">
-                    <div class="arrow-box">
-                        <p class="tooltip-message" data-l10n-id="login-item-tooltip-message"></p>
-                    </div>
-                  </div>
+                  <origin-warning></origin-warning>
                 </label>
               </div>
               <div class="detail-grid">
@@ -342,6 +339,7 @@
                       <input type="checkbox"
                             class="reveal-password-checkbox"
                             data-l10n-id="login-item-password-reveal-checkbox"/>
+                      <password-warning></password-warning>
                     </div>
                   </label>
                   <login-command-button class="copy-button copy-password-button" l10nId="login-item-copy-password-button-text" >
@@ -358,7 +356,7 @@
       <link rel="stylesheet" href="chrome://global/skin/in-content/common.css">
       <link rel="stylesheet" href="chrome://browser/content/aboutlogins/common.css">
       <link rel="stylesheet" href="chrome://browser/content/aboutlogins/components/login-filter.css">
-      <input data-l10n-id="about-logins-login-filter" class="filter" type="text" dir="auto"/>
+      <input data-l10n-id="about-logins-login-filter2" class="filter" type="text" dir="auto"/>
     </template>
 
     <template id="menu-button-template">
