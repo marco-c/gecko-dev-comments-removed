@@ -770,7 +770,7 @@ pref("browser.shopping.experience2023.ads.enabled", false);
 
 
 
-pref("browser.shopping.experience2023.ads.userEnabled", false);
+pref("browser.shopping.experience2023.ads.userEnabled", true);
 
 
 pref("browser.shopping.experience2023.survey.enabled", true);
