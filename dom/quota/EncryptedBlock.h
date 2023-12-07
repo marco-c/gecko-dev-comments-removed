@@ -37,6 +37,11 @@ class EncryptedBlock {
     
     
     mData.SetLength(aOverallSize);
+
+    
+    
+    
+    std::fill(mData.begin(), mData.begin() + CipherPrefixOffset(), 0);
     SetActualPayloadLength(MaxPayloadLength());
   }
 
@@ -85,7 +90,7 @@ class EncryptedBlock {
     return (aValue + BasicBlockSize - 1) / BasicBlockSize * BasicBlockSize;
   }
 
-  nsTArray<uint8_t> mData;  
+  nsTArray<uint8_t> mData;
 };
 
 }  
