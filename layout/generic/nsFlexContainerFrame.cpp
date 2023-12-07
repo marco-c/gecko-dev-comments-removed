@@ -5606,9 +5606,9 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
       }
 
       if (!itemInPushedItems) {
-        const nscoord itemBSize = item.Frame()->BSize(flexWM);
+        const nscoord borderBoxBSize = item.Frame()->BSize(flexWM);
         const nscoord bEndEdgeAfterPerItemShift =
-            framePos.B(flexWM) + itemBSize;
+            framePos.B(flexWM) + borderBoxBSize;
 
         
         
@@ -5621,7 +5621,7 @@ std::tuple<nscoord, nsReflowStatus> nsFlexContainerFrame::ReflowChildren(
           
           const nscoord bEndEdgeBeforePerItemShift =
               containerContentBoxOrigin.B(flexWM) +
-              *frameBPosBeforePerItemShift + itemBSize;
+              *frameBPosBeforePerItemShift + borderBoxBSize;
 
           if (bAxisMetrics.mMaxBEndEdge) {
             auto& [before, after] = *bAxisMetrics.mMaxBEndEdge;
