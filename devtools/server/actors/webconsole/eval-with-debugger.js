@@ -499,6 +499,7 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
   
   
   
+  const { SIDE_EFFECT_FREE } = WebConsoleCommandsManager;
   dbg.onNativeCall = (callee, reason) => {
     try {
       
@@ -516,6 +517,18 @@ function makeSideeffectFreeDebugger(targetActorDbg) {
         new Error("Unable to validate native function against allowlist")
       );
     }
+
+    
+    
+    
+    if (
+      reason == "call" &&
+      callee.unsafeDereference().isSideEffectFree === SIDE_EFFECT_FREE
+    ) {
+      
+      return undefined;
+    }
+
     
     return null;
   };
