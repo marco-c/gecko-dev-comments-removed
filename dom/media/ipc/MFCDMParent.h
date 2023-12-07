@@ -37,6 +37,9 @@ class MFCDMParent final : public PMFCDMParent {
   static void SetWidevineL1Path(const char* aPath);
 
   
+  static void Shutdown();
+
+  
   
   using CapabilitiesPromise =
       MozPromise<CopyableTArray<MFCDMCapabilitiesIPDL>, nsresult, true>;
