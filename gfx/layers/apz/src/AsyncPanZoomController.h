@@ -1304,6 +1304,13 @@ class AsyncPanZoomController {
 
 
 
+  bool HavePendingFrameDelayedOffset() const;
+
+  
+
+
+
+
 
 
 

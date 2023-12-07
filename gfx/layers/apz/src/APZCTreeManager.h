@@ -520,6 +520,9 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   APZSampler* GetSampler() const;
   APZUpdater* GetUpdater() const;
 
+  bool AdvanceAnimationsInternal(const MutexAutoLock& aProofOfMapLock,
+                                 const SampleTime& aSampleTime);
+
   
   
   
@@ -788,9 +791,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
   static already_AddRefed<GeckoContentController> GetContentController(
       LayersId aLayersId);
 
-  bool AdvanceAnimationsInternal(const MutexAutoLock& aProofOfMapLock,
-                                 const SampleTime& aSampleTime);
-
   using ClippedCompositionBoundsMap =
       std::unordered_map<ScrollableLayerGuid, ParentLayerRect,
                          ScrollableLayerGuid::HashIgnoringPresShellFn,
@@ -812,6 +812,11 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
 
   RefPtr<InputQueue> mInputQueue;
+
+  
+
+
+  mutable mozilla::Mutex mMapLock;
 
  private:
   
@@ -852,11 +857,6 @@ class APZCTreeManager : public IAPZCTreeManager, public APZInputBridge {
 
   std::unordered_set<LayersId, LayersId::HashFn> mDetachedLayersIds
       MOZ_GUARDED_BY(mTreeLock);
-
-  
-
-
-  mutable mozilla::Mutex mMapLock;
 
   
 
