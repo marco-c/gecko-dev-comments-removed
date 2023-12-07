@@ -136,6 +136,9 @@ class JsepTrack {
       mMaxEncodings = rhs.mMaxEncodings;
       mInHaveRemote = rhs.mInHaveRemote;
       mRtxIsAllowed = rhs.mRtxIsAllowed;
+      mFecCodec = rhs.mFecCodec;
+      mAudioPreferredCodec = rhs.mAudioPreferredCodec;
+      mVideoPreferredCodec = rhs.mVideoPreferredCodec;
 
       mPrototypeCodecs.clear();
       for (const auto& codec : rhs.mPrototypeCodecs) {
@@ -246,6 +249,10 @@ class JsepTrack {
   void SetMaxEncodings(size_t aMax);
   bool IsInHaveRemote() const { return mInHaveRemote; }
 
+  const std::string& GetFecCodecName() { return mFecCodec; }
+  const std::string& GetAudioPreferredCodec() { return mAudioPreferredCodec; }
+  const std::string& GetVideoPreferredCodec() { return mVideoPreferredCodec; }
+
  private:
   std::vector<UniquePtr<JsepCodecDescription>> GetCodecClones() const;
   static void EnsureNoDuplicatePayloadTypes(
@@ -261,7 +268,9 @@ class JsepTrack {
       const SdpMediaSection& remote,
       const std::vector<UniquePtr<JsepCodecDescription>>& negotiatedCodecs,
       JsepTrackNegotiatedDetails* details);
-
+  
+  void MaybeStoreCodecToLog(const std::string& codec,
+                            SdpMediaSection::MediaType type);
   virtual std::vector<UniquePtr<JsepCodecDescription>> NegotiateCodecs(
       const SdpMediaSection& remote, bool remoteIsOffer,
       Maybe<const SdpMediaSection&> local);
@@ -302,6 +311,11 @@ class JsepTrack {
 
   
   bool mRtxIsAllowed = true;
+
+  
+  std::string mFecCodec;
+  std::string mAudioPreferredCodec;
+  std::string mVideoPreferredCodec;
 };
 
 }  
