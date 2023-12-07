@@ -79,19 +79,19 @@ PartitionedStorageHelper.runTest(
   async (win3rdParty, win1stParty, allowed) => {
     await win1stParty.caches.open("wow").then(
       async cache => {
-        ok(true, "DOM Cache should be available in PBM");
+        ok(false, "DOM Cache should not be available in PBM");
       },
       _ => {
-        ok(false, "DOM Cache should be available in PBM");
+        ok(true, "DOM Cache should not be available in PBM");
       }
     );
 
     await win3rdParty.caches.open("wow").then(
       async cache => {
-        ok(true, "DOM Cache should be available in PBM");
+        ok(false, "DOM Cache should not be available in PBM");
       },
       _ => {
-        ok(false, "DOM Cache should be available in PBM");
+        ok(true, "DOM Cache should not be available in PBM");
       }
     );
   },
