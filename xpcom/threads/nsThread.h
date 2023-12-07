@@ -46,7 +46,7 @@ class nsIRunnable;
 class nsThreadShutdownContext;
 
 
-#define W3_LONGTASK_BUSY_WINDOW_MS 50
+#define LONGTASK_BUSY_WINDOW_MS 50
 
 
 #define LONGTASK_TELEMETRY_MS 30
@@ -55,12 +55,10 @@ class nsThreadShutdownContext;
 namespace mozilla {
 class PerformanceCounterState {
  public:
-  explicit PerformanceCounterState(
-      const uint32_t& aNestedEventLoopDepthRef, bool aIsMainThread = false,
-      const Maybe<uint32_t>& aLongTaskLength = Nothing())
+  explicit PerformanceCounterState(const uint32_t& aNestedEventLoopDepthRef,
+                                   bool aIsMainThread)
       : mNestedEventLoopDepth(aNestedEventLoopDepthRef),
         mIsMainThread(aIsMainThread),
-        mLongTaskLength(aLongTaskLength),
         
         
         mLastLongTaskEnd(TimeStamp::Now()),
@@ -131,9 +129,6 @@ class PerformanceCounterState {
 
   
   const bool mIsMainThread;
-
-  
-  const Maybe<uint32_t> mLongTaskLength;
 
   
   
