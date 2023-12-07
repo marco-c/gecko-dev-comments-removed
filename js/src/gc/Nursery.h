@@ -112,7 +112,15 @@ class Nursery {
   MOZ_ALWAYS_INLINE bool isInside(gc::Cell* cellp) const = delete;
   MOZ_ALWAYS_INLINE bool isInside(const void* p) const {
     for (auto* chunk : chunks_) {
-      if (uintptr_t(p) - uintptr_t(chunk) < gc::ChunkSize) {
+      
+      
+      
+      
+      
+      
+      
+      uintptr_t chunkStart = uintptr_t(chunk) + sizeof(gc::ChunkBase);
+      if (uintptr_t(p) - chunkStart <= gc::ChunkSize) {
         return true;
       }
     }
