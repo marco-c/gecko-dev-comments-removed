@@ -8,7 +8,7 @@ use std::path::{Path as StdPath, PathBuf};
 use syn::{
     ext::IdentExt,
     parse::{Parse, ParseStream},
-    Attribute, Path, Token,
+    Attribute, Token,
 };
 
 pub fn manifest_path() -> Result<PathBuf, String> {
@@ -80,7 +80,7 @@ pub fn try_read_field(f: &syn::Field) -> TokenStream {
     let ty = &f.ty;
 
     quote! {
-        #ident: <#ty as ::uniffi::FfiConverter<crate::UniFfiTag>>::try_read(buf)?,
+        #ident: <#ty as ::uniffi::Lift<crate::UniFfiTag>>::try_read(buf)?,
     }
 }
 
@@ -205,69 +205,74 @@ pub fn either_attribute_arg<T: ToTokens>(a: Option<T>, b: Option<T>) -> syn::Res
 
 pub(crate) fn tagged_impl_header(
     trait_name: &str,
-    ident: &Ident,
-    tag: Option<&Path>,
+    ident: &impl ToTokens,
+    udl_mode: bool,
 ) -> TokenStream {
     let trait_name = Ident::new(trait_name, Span::call_site());
-    match tag {
-        Some(tag) => quote! { impl ::uniffi::#trait_name<#tag> for #ident },
-        None => quote! { impl<T> ::uniffi::#trait_name<T> for #ident },
+    if udl_mode {
+        quote! { impl ::uniffi::#trait_name<crate::UniFfiTag> for #ident }
+    } else {
+        quote! { impl<T> ::uniffi::#trait_name<T> for #ident }
     }
 }
 
-mod kw {
-    syn::custom_keyword!(tag);
+pub(crate) fn derive_all_ffi_traits(ty: &Ident, udl_mode: bool) -> TokenStream {
+    if udl_mode {
+        quote! { ::uniffi::derive_ffi_traits!(local #ty); }
+    } else {
+        quote! { ::uniffi::derive_ffi_traits!(blanket #ty); }
+    }
 }
 
-#[derive(Default)]
-pub(crate) struct CommonAttr {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub tag: Option<Path>,
-}
-
-impl UniffiAttributeArgs for CommonAttr {
-    fn parse_one(input: ParseStream<'_>) -> syn::Result<Self> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(kw::tag) {
-            let _: kw::tag = input.parse()?;
-            let _: Token![=] = input.parse()?;
-            Ok(Self {
-                tag: Some(input.parse()?),
-            })
-        } else {
-            Err(lookahead.error())
+pub(crate) fn derive_ffi_traits(ty: &Ident, udl_mode: bool, trait_names: &[&str]) -> TokenStream {
+    let trait_idents = trait_names
+        .iter()
+        .map(|name| Ident::new(name, Span::call_site()));
+    if udl_mode {
+        quote! {
+            #(
+                ::uniffi::derive_ffi_traits!(impl #trait_idents<crate::UniFfiTag> for #ty);
+            )*
+        }
+    } else {
+        quote! {
+            #(
+                ::uniffi::derive_ffi_traits!(impl<UT> #trait_idents<UT> for #ty);
+            )*
         }
     }
-
-    fn merge(self, other: Self) -> syn::Result<Self> {
-        Ok(Self {
-            tag: either_attribute_arg(self.tag, other.tag)?,
-        })
-    }
 }
 
 
-impl Parse for CommonAttr {
+pub mod kw {
+    syn::custom_keyword!(async_runtime);
+    syn::custom_keyword!(callback_interface);
+    syn::custom_keyword!(constructor);
+    syn::custom_keyword!(default);
+    syn::custom_keyword!(flat_error);
+    syn::custom_keyword!(None);
+    syn::custom_keyword!(with_try_read);
+    syn::custom_keyword!(Debug);
+    syn::custom_keyword!(Display);
+    syn::custom_keyword!(Eq);
+    syn::custom_keyword!(Hash);
+    
+    syn::custom_keyword!(handle_unknown_callback_error);
+}
+
+
+pub struct ExternalTypeItem {
+    pub crate_ident: Ident,
+    pub sep: Token![,],
+    pub type_ident: Ident,
+}
+
+impl Parse for ExternalTypeItem {
     fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        parse_comma_separated(input)
+        Ok(Self {
+            crate_ident: input.parse()?,
+            sep: input.parse()?,
+            type_ident: input.parse()?,
+        })
     }
 }

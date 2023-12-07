@@ -75,469 +75,661 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-use crate::{
-    rust_call_with_out_status, schedule_raw, FfiConverter, FfiDefault, ForeignExecutor,
-    ForeignExecutorHandle, RustCallStatus,
-};
 use std::{
-    cell::UnsafeCell,
     future::Future,
+    marker::PhantomData,
+    mem,
+    ops::Deref,
     panic,
     pin::Pin,
-    sync::{
-        atomic::{AtomicU32, Ordering},
-        Arc,
-    },
-    task::{Context, Poll, RawWaker, RawWakerVTable, Waker},
+    sync::{Arc, Mutex},
+    task::{Context, Poll, Wake},
 };
 
+use crate::{rust_call_with_out_status, FfiDefault, LowerReturn, RustCallStatus};
 
 
-
-
-pub type FutureCallback<T> =
-    extern "C" fn(callback_data: *const (), result: T, status: RustCallStatus);
-
-
-
-
-
-
-pub struct RustFuture<F, T, UT>
-where
+#[repr(i8)]
+#[derive(Debug, PartialEq, Eq)]
+pub enum RustFuturePoll {
     
+    Ready = 0,
     
-    
-    F: Future<Output = T> + Send,
-    T: FfiConverter<UT>,
-{
-    future: UnsafeCell<F>,
-    executor: ForeignExecutor,
-    wake_counter: AtomicU32,
-    callback: T::FutureCallback,
-    callback_data: *const (),
+    MaybeReady = 1,
 }
 
 
 
 
 
-unsafe impl<F, T, UT> Send for RustFuture<F, T, UT>
+pub type RustFutureContinuationCallback = extern "C" fn(callback_data: *const (), RustFuturePoll);
+
+
+#[repr(transparent)]
+pub struct RustFutureHandle(*const ());
+
+
+
+
+
+
+
+pub fn rust_future_new<F, T, UT>(future: F, tag: UT) -> RustFutureHandle
 where
-    F: Future<Output = T> + Send,
-    T: FfiConverter<UT>,
+    
+    
+    
+    
+    F: Future<Output = T> + Send + 'static,
+    
+    
+    T: LowerReturn<UT> + Send + 'static,
+    
+    UT: Send + 'static,
+{
+    
+    
+    let future_ffi = RustFuture::new(future, tag) as Arc<dyn RustFutureFfi<T::ReturnType>>;
+    
+    
+    let boxed_ffi = Box::new(future_ffi);
+    
+    RustFutureHandle(Box::into_raw(boxed_ffi) as *mut ())
+}
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn rust_future_poll<ReturnType>(
+    handle: RustFutureHandle,
+    callback: RustFutureContinuationCallback,
+    data: *const (),
+) {
+    let future = &*(handle.0 as *mut Arc<dyn RustFutureFfi<ReturnType>>);
+    future.clone().ffi_poll(callback, data)
+}
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn rust_future_cancel<ReturnType>(handle: RustFutureHandle) {
+    let future = &*(handle.0 as *mut Arc<dyn RustFutureFfi<ReturnType>>);
+    future.clone().ffi_cancel()
+}
+
+
+
+
+
+
+
+
+
+
+
+pub unsafe fn rust_future_complete<ReturnType>(
+    handle: RustFutureHandle,
+    out_status: &mut RustCallStatus,
+) -> ReturnType {
+    let future = &*(handle.0 as *mut Arc<dyn RustFutureFfi<ReturnType>>);
+    future.ffi_complete(out_status)
+}
+
+
+
+
+
+
+
+pub unsafe fn rust_future_free<ReturnType>(handle: RustFutureHandle) {
+    let future = Box::from_raw(handle.0 as *mut Arc<dyn RustFutureFfi<ReturnType>>);
+    future.ffi_free()
+}
+
+
+
+
+
+
+
+#[derive(Debug)]
+enum ContinuationDataCell {
+    
+    Empty,
+    
+    
+    Waked,
+    
+    
+    Cancelled,
+    
+    Set(RustFutureContinuationCallback, *const ()),
+}
+
+impl ContinuationDataCell {
+    fn new() -> Self {
+        Self::Empty
+    }
+
+    
+    
+    fn store(&mut self, callback: RustFutureContinuationCallback, data: *const ()) {
+        match self {
+            Self::Empty => *self = Self::Set(callback, data),
+            Self::Set(old_callback, old_data) => {
+                log::error!(
+                    "store: observed `Self::Set` state.  Is poll() being called from multiple threads at once?"
+                );
+                old_callback(*old_data, RustFuturePoll::Ready);
+                *self = Self::Set(callback, data);
+            }
+            Self::Waked => {
+                *self = Self::Empty;
+                callback(data, RustFuturePoll::MaybeReady);
+            }
+            Self::Cancelled => {
+                callback(data, RustFuturePoll::Ready);
+            }
+        }
+    }
+
+    fn wake(&mut self) {
+        match self {
+            
+            Self::Set(callback, old_data) => {
+                let old_data = *old_data;
+                let callback = *callback;
+                *self = Self::Empty;
+                callback(old_data, RustFuturePoll::MaybeReady);
+            }
+            
+            
+            Self::Empty => *self = Self::Waked,
+            
+            _ => (),
+        }
+    }
+
+    fn cancel(&mut self) {
+        if let Self::Set(callback, old_data) = mem::replace(self, Self::Cancelled) {
+            callback(old_data, RustFuturePoll::Ready);
+        }
+    }
+
+    fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Cancelled)
+    }
+}
+
+
+
+unsafe impl Send for ContinuationDataCell {}
+unsafe impl Sync for ContinuationDataCell {}
+
+
+struct WrappedFuture<F, T, UT>
+where
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
+{
+    
+    
+    
+    future: Option<F>,
+    result: Option<Result<T::ReturnType, RustCallStatus>>,
+}
+
+impl<F, T, UT> WrappedFuture<F, T, UT>
+where
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
+{
+    fn new(future: F) -> Self {
+        Self {
+            future: Some(future),
+            result: None,
+        }
+    }
+
+    
+    fn poll(&mut self, context: &mut Context<'_>) -> bool {
+        if self.result.is_some() {
+            true
+        } else if let Some(future) = &mut self.future {
+            
+            
+            
+            
+            
+            let pinned = unsafe { Pin::new_unchecked(future) };
+            
+            let mut out_status = RustCallStatus::default();
+            let result: Option<Poll<T::ReturnType>> = rust_call_with_out_status(
+                &mut out_status,
+                
+                
+                
+                
+                
+                panic::AssertUnwindSafe(|| match pinned.poll(context) {
+                    Poll::Pending => Ok(Poll::Pending),
+                    Poll::Ready(v) => T::lower_return(v).map(Poll::Ready),
+                }),
+            );
+            match result {
+                Some(Poll::Pending) => false,
+                Some(Poll::Ready(v)) => {
+                    self.future = None;
+                    self.result = Some(Ok(v));
+                    true
+                }
+                None => {
+                    self.future = None;
+                    self.result = Some(Err(out_status));
+                    true
+                }
+            }
+        } else {
+            log::error!("poll with neither future nor result set");
+            true
+        }
+    }
+
+    fn complete(&mut self, out_status: &mut RustCallStatus) -> T::ReturnType {
+        let mut return_value = T::ReturnType::ffi_default();
+        match self.result.take() {
+            Some(Ok(v)) => return_value = v,
+            Some(Err(call_status)) => *out_status = call_status,
+            None => *out_status = RustCallStatus::cancelled(),
+        }
+        self.free();
+        return_value
+    }
+
+    fn free(&mut self) {
+        self.future = None;
+        self.result = None;
+    }
+}
+
+
+
+
+
+unsafe impl<F, T, UT> Send for WrappedFuture<F, T, UT>
+where
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
 {
 }
 
-unsafe impl<F, T, UT> Sync for RustFuture<F, T, UT>
+
+struct RustFuture<F, T, UT>
 where
-    F: Future<Output = T> + Send,
-    T: FfiConverter<UT>,
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
 {
+    
+    
+    future: Mutex<WrappedFuture<F, T, UT>>,
+    continuation_data: Mutex<ContinuationDataCell>,
+    
+    
+    _phantom: PhantomData<fn(UT) -> ()>,
 }
 
 impl<F, T, UT> RustFuture<F, T, UT>
 where
-    F: Future<Output = T> + Send,
-    T: FfiConverter<UT>,
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
 {
-    pub fn new(
-        future: F,
-        executor_handle: ForeignExecutorHandle,
-        callback: T::FutureCallback,
-        callback_data: *const (),
-    ) -> Pin<Arc<Self>> {
-        let executor =
-            <ForeignExecutor as FfiConverter<crate::UniFfiTag>>::try_lift(executor_handle)
-                .expect("Error lifting ForeignExecutorHandle");
-        Arc::pin(Self {
-            future: UnsafeCell::new(future),
-            wake_counter: AtomicU32::new(0),
-            executor,
-            callback,
-            callback_data,
+    fn new(future: F, _tag: UT) -> Arc<Self> {
+        Arc::new(Self {
+            future: Mutex::new(WrappedFuture::new(future)),
+            continuation_data: Mutex::new(ContinuationDataCell::new()),
+            _phantom: PhantomData,
         })
     }
 
-    
-    
-    
-    
-    pub fn wake(self: Pin<Arc<Self>>) {
-        if self.wake_counter.fetch_add(1, Ordering::Relaxed) == 0 {
-            self.schedule_do_wake();
-        }
-    }
-
-    fn schedule_do_wake(self: Pin<Arc<Self>>) {
-        unsafe {
-            let handle = self.executor.handle;
-            let raw_ptr = Arc::into_raw(Pin::into_inner_unchecked(self)) as *const ();
-            
-            
-            
-            schedule_raw(handle, 0, Self::wake_callback, raw_ptr);
-        }
-    }
-
-    extern "C" fn wake_callback(self_ptr: *const ()) {
-        unsafe {
-            Pin::new_unchecked(Arc::from_raw(self_ptr as *const Self)).do_wake();
+    fn poll(self: Arc<Self>, callback: RustFutureContinuationCallback, data: *const ()) {
+        let ready = self.is_cancelled() || {
+            let mut locked = self.future.lock().unwrap();
+            let waker: std::task::Waker = Arc::clone(&self).into();
+            locked.poll(&mut Context::from_waker(&waker))
         };
-    }
-
-    
-    fn do_wake(self: Pin<Arc<Self>>) {
-        
-        self.wake_counter.store(1, Ordering::Relaxed);
-
-        
-        
-        
-        let future = unsafe { Pin::new_unchecked(&mut *self.future.get()) };
-        let waker = self.make_waker();
-
-        
-        let mut out_status = RustCallStatus::default();
-        let result: Option<Poll<T::ReturnType>> = rust_call_with_out_status(
-            &mut out_status,
-            
-            
-            
-            
-            
-            
-            panic::AssertUnwindSafe(|| match future.poll(&mut Context::from_waker(&waker)) {
-                Poll::Pending => Ok(Poll::Pending),
-                Poll::Ready(v) => T::lower_return(v).map(Poll::Ready),
-            }),
-        );
-
-        
-        match result {
-            Some(Poll::Pending) => {
-                
-                
-                
-                
-                
-                if self.wake_counter.fetch_sub(1, Ordering::Relaxed) > 1 {
-                    self.schedule_do_wake();
-                }
-            }
-            
-            
-            
-            
-            Some(Poll::Ready(v)) => {
-                T::invoke_future_callback(self.callback, self.callback_data, v, out_status);
-            }
-            
-            
-            
-            None => {
-                T::invoke_future_callback(
-                    self.callback,
-                    self.callback_data,
-                    T::ReturnType::ffi_default(),
-                    out_status,
-                );
-            }
-        };
-    }
-
-    fn make_waker(self: &Pin<Arc<Self>>) -> Waker {
-        
-        unsafe {
-            Waker::from_raw(RawWaker::new(
-                self.clone().into_raw(),
-                &Self::RAW_WAKER_VTABLE,
-            ))
+        if ready {
+            callback(data, RustFuturePoll::Ready)
+        } else {
+            self.continuation_data.lock().unwrap().store(callback, data);
         }
     }
 
-    
-    fn into_raw(self: Pin<Arc<Self>>) -> *const () {
-        unsafe { Arc::into_raw(Pin::into_inner_unchecked(self)) as *const () }
+    fn is_cancelled(&self) -> bool {
+        self.continuation_data.lock().unwrap().is_cancelled()
     }
 
-    
-    
-    
-    
-    fn from_raw(self_ptr: *const ()) -> Pin<Arc<Self>> {
-        unsafe { Pin::new_unchecked(Arc::from_raw(self_ptr as *const Self)) }
+    fn wake(&self) {
+        self.continuation_data.lock().unwrap().wake();
     }
 
-    
-    
-    
-    
-    
-    
-    
-    const RAW_WAKER_VTABLE: RawWakerVTable = RawWakerVTable::new(
-        Self::raw_clone,
-        Self::raw_wake,
-        Self::raw_wake_by_ref,
-        Self::raw_drop,
-    );
-
-    
-    
-    unsafe fn raw_clone(self_ptr: *const ()) -> RawWaker {
-        Arc::increment_strong_count(self_ptr as *const Self);
-        RawWaker::new(self_ptr, &Self::RAW_WAKER_VTABLE)
+    fn cancel(&self) {
+        self.continuation_data.lock().unwrap().cancel();
     }
 
-    
-    
-    unsafe fn raw_wake(self_ptr: *const ()) {
-        Self::from_raw(self_ptr).wake()
+    fn complete(&self, call_status: &mut RustCallStatus) -> T::ReturnType {
+        self.future.lock().unwrap().complete(call_status)
     }
 
-    
-    
-    unsafe fn raw_wake_by_ref(self_ptr: *const ()) {
+    fn free(self: Arc<Self>) {
         
+        self.continuation_data.lock().unwrap().cancel();
         
-        Arc::increment_strong_count(self_ptr as *const Self);
-        Self::from_raw(self_ptr).wake()
+        self.future.lock().unwrap().free();
+    }
+}
+
+impl<F, T, UT> Wake for RustFuture<F, T, UT>
+where
+    
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
+{
+    fn wake(self: Arc<Self>) {
+        self.deref().wake()
     }
 
+    fn wake_by_ref(self: &Arc<Self>) {
+        self.deref().wake()
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+#[doc(hidden)]
+trait RustFutureFfi<ReturnType> {
+    fn ffi_poll(self: Arc<Self>, callback: RustFutureContinuationCallback, data: *const ());
+    fn ffi_cancel(&self);
+    fn ffi_complete(&self, call_status: &mut RustCallStatus) -> ReturnType;
+    fn ffi_free(self: Arc<Self>);
+}
+
+impl<F, T, UT> RustFutureFfi<T::ReturnType> for RustFuture<F, T, UT>
+where
     
-    
-    unsafe fn raw_drop(self_ptr: *const ()) {
-        drop(Self::from_raw(self_ptr))
+    F: Future<Output = T> + Send + 'static,
+    T: LowerReturn<UT> + Send + 'static,
+    UT: Send + 'static,
+{
+    fn ffi_poll(self: Arc<Self>, callback: RustFutureContinuationCallback, data: *const ()) {
+        self.poll(callback, data)
+    }
+
+    fn ffi_cancel(&self) {
+        self.cancel()
+    }
+
+    fn ffi_complete(&self, call_status: &mut RustCallStatus) -> T::ReturnType {
+        self.complete(call_status)
+    }
+
+    fn ffi_free(self: Arc<Self>) {
+        self.free();
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{try_lift_from_rust_buffer, MockExecutor};
-    use std::sync::Weak;
+    use crate::{test_util::TestError, Lift, RustBuffer, RustCallStatusCode};
+    use once_cell::sync::OnceCell;
+    use std::task::Waker;
 
     
-    struct MockFuture(Option<Result<bool, String>>);
-
-    impl Future for MockFuture {
-        type Output = Result<bool, String>;
-
-        fn poll(self: Pin<&mut Self>, _context: &mut Context<'_>) -> Poll<Self::Output> {
-            match &self.0 {
-                Some(v) => Poll::Ready(v.clone()),
-                None => Poll::Pending,
-            }
-        }
+    struct Channel {
+        result: Option<Result<String, TestError>>,
+        waker: Option<Waker>,
     }
 
-    
-    type TestRustFuture = RustFuture<MockFuture, Result<bool, String>, crate::UniFfiTag>;
+    struct Sender(Arc<Mutex<Channel>>);
 
-    
-    #[derive(Default)]
-    struct MockForeignResult {
-        value: i8,
-        status: RustCallStatus,
-    }
-
-    extern "C" fn mock_foreign_callback(data_ptr: *const (), value: i8, status: RustCallStatus) {
-        println!("mock_foreign_callback: {value} {data_ptr:?}");
-        let result: &mut Option<MockForeignResult> =
-            unsafe { &mut *(data_ptr as *mut Option<MockForeignResult>) };
-        *result = Some(MockForeignResult { value, status });
-    }
-
-    
-    struct TestFutureEnvironment {
-        rust_future: Pin<Arc<TestRustFuture>>,
-        executor: MockExecutor,
-        foreign_result: Pin<Box<Option<MockForeignResult>>>,
-    }
-
-    impl TestFutureEnvironment {
-        fn new() -> Self {
-            let foreign_result = Box::pin(None);
-            let foreign_result_ptr = &*foreign_result as *const Option<_> as *const ();
-            let executor = MockExecutor::new();
-            let rust_future = TestRustFuture::new(
-                MockFuture(None),
-                executor.handle().unwrap(),
-                mock_foreign_callback,
-                foreign_result_ptr,
-            );
-            Self {
-                executor,
-                rust_future,
-                foreign_result,
-            }
-        }
-
-        fn scheduled_call_count(&self) -> usize {
-            self.executor.call_count()
-        }
-
-        fn run_scheduled_calls(&self) {
-            self.executor.run_all_calls();
-        }
-
+    impl Sender {
         fn wake(&self) {
-            self.rust_future.clone().wake();
-        }
-
-        fn rust_future_weak(&self) -> Weak<TestRustFuture> {
-            
-            
-            Arc::downgrade(&Pin::into_inner(Clone::clone(&self.rust_future)))
-        }
-
-        fn complete_future(&self, value: Result<bool, String>) {
-            unsafe {
-                (*self.rust_future.future.get()).0 = Some(value);
+            let inner = self.0.lock().unwrap();
+            if let Some(waker) = &inner.waker {
+                waker.wake_by_ref();
             }
         }
+
+        fn send(&self, value: Result<String, TestError>) {
+            let mut inner = self.0.lock().unwrap();
+            if inner.result.replace(value).is_some() {
+                panic!("value already sent");
+            }
+            if let Some(waker) = &inner.waker {
+                waker.wake_by_ref();
+            }
+        }
+    }
+
+    struct Receiver(Arc<Mutex<Channel>>);
+
+    impl Future for Receiver {
+        type Output = Result<String, TestError>;
+
+        fn poll(
+            self: Pin<&mut Self>,
+            context: &mut Context<'_>,
+        ) -> Poll<Result<String, TestError>> {
+            let mut inner = self.0.lock().unwrap();
+            match &inner.result {
+                Some(v) => Poll::Ready(v.clone()),
+                None => {
+                    inner.waker = Some(context.waker().clone());
+                    Poll::Pending
+                }
+            }
+        }
+    }
+
+    
+    fn channel() -> (Sender, Arc<dyn RustFutureFfi<RustBuffer>>) {
+        let channel = Arc::new(Mutex::new(Channel {
+            result: None,
+            waker: None,
+        }));
+        let rust_future = RustFuture::new(Receiver(channel.clone()), crate::UniFfiTag);
+        (Sender(channel), rust_future)
+    }
+
+    
+    fn poll(rust_future: &Arc<dyn RustFutureFfi<RustBuffer>>) -> Arc<OnceCell<RustFuturePoll>> {
+        let cell = Arc::new(OnceCell::new());
+        let cell_ptr = Arc::into_raw(cell.clone()) as *const ();
+        rust_future.clone().ffi_poll(poll_continuation, cell_ptr);
+        cell
+    }
+
+    extern "C" fn poll_continuation(data: *const (), code: RustFuturePoll) {
+        let cell = unsafe { Arc::from_raw(data as *const OnceCell<RustFuturePoll>) };
+        cell.set(code).expect("Error setting OnceCell");
+    }
+
+    fn complete(rust_future: Arc<dyn RustFutureFfi<RustBuffer>>) -> (RustBuffer, RustCallStatus) {
+        let mut out_status_code = RustCallStatus::default();
+        let return_value = rust_future.ffi_complete(&mut out_status_code);
+        (return_value, out_status_code)
     }
 
     #[test]
-    fn test_wake() {
-        let mut test_env = TestFutureEnvironment::new();
-        
-        assert!(test_env.foreign_result.is_none());
-        assert_eq!(test_env.scheduled_call_count(), 0);
+    fn test_success() {
+        let (sender, rust_future) = channel();
 
         
-        test_env.wake();
-        assert_eq!(test_env.scheduled_call_count(), 1);
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), None);
+        sender.wake();
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::MaybeReady));
 
         
-        test_env.run_scheduled_calls();
-        assert!(test_env.foreign_result.is_none());
-        assert_eq!(test_env.scheduled_call_count(), 0);
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), None);
+        sender.send(Ok("All done".into()));
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::MaybeReady));
 
         
-        test_env.wake();
-        test_env.wake();
-        assert_eq!(test_env.scheduled_call_count(), 1);
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
 
         
-        test_env.complete_future(Ok(true));
-        test_env.run_scheduled_calls();
-        let result = test_env
-            .foreign_result
-            .take()
-            .expect("Expected result to be set");
-        assert_eq!(result.value, 1);
-        assert_eq!(result.status.code, 0);
-        assert_eq!(test_env.scheduled_call_count(), 0);
-
-        
-        test_env.wake();
-        assert_eq!(test_env.scheduled_call_count(), 0);
+        let (return_buf, call_status) = complete(rust_future);
+        assert_eq!(call_status.code, RustCallStatusCode::Success);
+        assert_eq!(
+            <String as Lift<crate::UniFfiTag>>::try_lift(return_buf).unwrap(),
+            "All done"
+        );
     }
 
     #[test]
     fn test_error() {
-        let mut test_env = TestFutureEnvironment::new();
-        test_env.complete_future(Err("Something went wrong".into()));
-        test_env.wake();
-        test_env.run_scheduled_calls();
-        let result = test_env
-            .foreign_result
-            .take()
-            .expect("Expected result to be set");
-        assert_eq!(result.status.code, 1);
+        let (sender, rust_future) = channel();
+
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), None);
+        sender.send(Err("Something went wrong".into()));
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::MaybeReady));
+
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
+
+        let (_, call_status) = complete(rust_future);
+        assert_eq!(call_status.code, RustCallStatusCode::Error);
         unsafe {
             assert_eq!(
-                try_lift_from_rust_buffer::<String, crate::UniFfiTag>(
-                    result.status.error_buf.assume_init()
+                <TestError as Lift<crate::UniFfiTag>>::try_lift_from_rust_buffer(
+                    call_status.error_buf.assume_init()
                 )
                 .unwrap(),
-                String::from("Something went wrong"),
+                TestError::from("Something went wrong"),
             )
         }
-        assert_eq!(test_env.scheduled_call_count(), 0);
     }
 
+    
+    
     #[test]
-    fn test_raw_clone_and_drop() {
-        let test_env = TestFutureEnvironment::new();
-        let waker = test_env.rust_future.make_waker();
-        let weak_ref = test_env.rust_future_weak();
-        assert_eq!(weak_ref.strong_count(), 2);
-        let waker2 = waker.clone();
-        assert_eq!(weak_ref.strong_count(), 3);
-        drop(waker);
-        assert_eq!(weak_ref.strong_count(), 2);
-        drop(waker2);
-        assert_eq!(weak_ref.strong_count(), 1);
-        drop(test_env);
-        assert_eq!(weak_ref.strong_count(), 0);
-        assert!(weak_ref.upgrade().is_none());
+    fn test_cancel() {
+        let (_sender, rust_future) = channel();
+
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), None);
+        rust_future.ffi_cancel();
+        
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
+
+        
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
+
+        let (_, call_status) = complete(rust_future);
+        assert_eq!(call_status.code, RustCallStatusCode::Cancelled);
     }
 
+    
+    
     #[test]
-    fn test_raw_wake() {
-        let test_env = TestFutureEnvironment::new();
-        let waker = test_env.rust_future.make_waker();
-        let weak_ref = test_env.rust_future_weak();
+    fn test_release_future() {
+        let (sender, rust_future) = channel();
         
-        assert_eq!(weak_ref.strong_count(), 2);
+        
+        let channel_weak = Arc::downgrade(&sender.0);
+        drop(sender);
+        
+        
+        let rust_future2 = rust_future.clone();
 
         
-        waker.wake_by_ref();
-        assert_eq!(test_env.scheduled_call_count(), 1);
-
+        rust_future.ffi_free();
         
-        test_env.run_scheduled_calls();
-        assert_eq!(weak_ref.strong_count(), 2);
+        assert!(Arc::strong_count(&rust_future2) > 0);
+        assert_eq!(channel_weak.strong_count(), 0);
+        assert!(channel_weak.upgrade().is_none());
+    }
 
-        
-        waker.wake();
-        assert_eq!(test_env.scheduled_call_count(), 1);
+    
+    
+    
+    #[test]
+    fn test_complete_with_stored_continuation() {
+        let (_sender, rust_future) = channel();
 
+        let continuation_result = poll(&rust_future);
+        rust_future.ffi_free();
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
+    }
+
+    
+    
+    
+    #[test]
+    fn test_wake_during_poll() {
+        let mut first_time = true;
+        let future = std::future::poll_fn(move |ctx| {
+            if first_time {
+                first_time = false;
+                
+                ctx.waker().clone().wake();
+                Poll::Pending
+            } else {
+                
+                Poll::Ready("All done".to_owned())
+            }
+        });
+        let rust_future: Arc<dyn RustFutureFfi<RustBuffer>> =
+            RustFuture::new(future, crate::UniFfiTag);
+        let continuation_result = poll(&rust_future);
         
-        test_env.run_scheduled_calls();
-        assert_eq!(weak_ref.strong_count(), 1);
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::MaybeReady));
+        
+        let continuation_result = poll(&rust_future);
+        assert_eq!(continuation_result.get(), Some(&RustFuturePoll::Ready));
+        let (return_buf, call_status) = complete(rust_future);
+        assert_eq!(call_status.code, RustCallStatusCode::Success);
+        assert_eq!(
+            <String as Lift<crate::UniFfiTag>>::try_lift(return_buf).unwrap(),
+            "All done"
+        );
     }
 }

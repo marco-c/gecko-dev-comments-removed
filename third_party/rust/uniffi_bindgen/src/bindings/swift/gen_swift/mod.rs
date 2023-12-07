@@ -2,9 +2,11 @@
 
 
 
+use once_cell::sync::Lazy;
 use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::{BTreeSet, HashMap, HashSet};
+use std::fmt::Debug;
 
 use anyhow::{Context, Result};
 use askama::Template;
@@ -12,7 +14,7 @@ use heck::{ToLowerCamelCase, ToUpperCamelCase};
 use serde::{Deserialize, Serialize};
 
 use super::Bindings;
-use crate::backend::{CodeType, TemplateExpression};
+use crate::backend::TemplateExpression;
 use crate::interface::*;
 use crate::BindingsConfig;
 
@@ -26,6 +28,161 @@ mod miscellany;
 mod object;
 mod primitives;
 mod record;
+
+
+trait CodeType: Debug {
+    
+    
+    fn type_label(&self) -> String;
+
+    
+    
+    
+    
+    
+    fn canonical_name(&self) -> String {
+        self.type_label()
+    }
+
+    fn literal(&self, _literal: &Literal) -> String {
+        unimplemented!("Unimplemented for {}", self.type_label())
+    }
+
+    
+    
+    
+    fn ffi_converter_name(&self) -> String {
+        format!("FfiConverter{}", self.canonical_name())
+    }
+
+    
+    
+    fn lower(&self) -> String {
+        format!("{}.lower", self.ffi_converter_name())
+    }
+
+    
+    fn write(&self) -> String {
+        format!("{}.write", self.ffi_converter_name())
+    }
+
+    
+    fn lift(&self) -> String {
+        format!("{}.lift", self.ffi_converter_name())
+    }
+
+    
+    fn read(&self) -> String {
+        format!("{}.read", self.ffi_converter_name())
+    }
+
+    
+    
+    fn imports(&self) -> Option<Vec<String>> {
+        None
+    }
+
+    
+    fn initialization_fn(&self) -> Option<String> {
+        None
+    }
+}
+
+
+static KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
+    [
+        
+        "associatedtype",
+        "class",
+        "deinit",
+        "enum",
+        "extension",
+        "fileprivate",
+        "func",
+        "import",
+        "init",
+        "inout",
+        "internal",
+        "let",
+        "open",
+        "operator",
+        "private",
+        "precedencegroup",
+        "protocol",
+        "public",
+        "rethrows",
+        "static",
+        "struct",
+        "subscript",
+        "typealias",
+        "var",
+        
+        "break",
+        "case",
+        "catch",
+        "continue",
+        "default",
+        "defer",
+        "do",
+        "else",
+        "fallthrough",
+        "for",
+        "guard",
+        "if",
+        "in",
+        "repeat",
+        "return",
+        "throw",
+        "switch",
+        "where",
+        "while",
+        
+        "Any",
+        "as",
+        "await",
+        "catch",
+        "false",
+        "is",
+        "nil",
+        "rethrows",
+        "self",
+        "Self",
+        "super",
+        "throw",
+        "throws",
+        "true",
+        "try",
+    ]
+    .iter()
+    .map(ToString::to_string)
+    .collect::<HashSet<_>>()
+});
+
+
+pub fn quote_general_keyword(nm: String) -> String {
+    if KEYWORDS.contains(&nm) {
+        format!("`{nm}`")
+    } else {
+        nm
+    }
+}
+
+
+static ARG_KEYWORDS: Lazy<HashSet<String>> = Lazy::new(|| {
+    ["inout", "var", "let"]
+        .iter()
+        .map(ToString::to_string)
+        .collect::<HashSet<_>>()
+});
+
+
+pub fn quote_arg_keyword(nm: String) -> String {
+    if ARG_KEYWORDS.contains(&nm) {
+        format!("`{nm}`")
+    } else {
+        nm
+    }
+}
 
 
 
@@ -107,8 +264,6 @@ impl Config {
 }
 
 impl BindingsConfig for Config {
-    const TOML_KEY: &'static str = "swift";
-
     fn update_from_ci(&mut self, ci: &ComponentInterface) {
         self.module_name
             .get_or_insert_with(|| ci.namespace().into());
@@ -245,6 +400,7 @@ pub struct SwiftWrapper<'a> {
     ci: &'a ComponentInterface,
     type_helper_code: String,
     type_imports: BTreeSet<String>,
+    has_async_fns: bool,
 }
 impl<'a> SwiftWrapper<'a> {
     pub fn new(config: Config, ci: &'a ComponentInterface) -> Self {
@@ -256,6 +412,7 @@ impl<'a> SwiftWrapper<'a> {
             ci,
             type_helper_code,
             type_imports,
+            has_async_fns: ci.has_async_fns(),
         }
     }
 
@@ -268,6 +425,10 @@ impl<'a> SwiftWrapper<'a> {
             .iter_types()
             .map(|t| SwiftCodeOracle.find(t))
             .filter_map(|ct| ct.initialization_fn())
+            .chain(
+                self.has_async_fns
+                    .then(|| "uniffiInitContinuationCallback".into()),
+            )
             .collect()
     }
 }
@@ -302,16 +463,23 @@ impl SwiftCodeOracle {
             Type::Timestamp => Box::new(miscellany::TimestampCodeType),
             Type::Duration => Box::new(miscellany::DurationCodeType),
 
-            Type::Enum(id) => Box::new(enum_::EnumCodeType::new(id)),
+            Type::Enum { name, .. } => Box::new(enum_::EnumCodeType::new(name)),
             Type::Object { name, .. } => Box::new(object::ObjectCodeType::new(name)),
-            Type::Record(id) => Box::new(record::RecordCodeType::new(id)),
-            Type::CallbackInterface(id) => {
-                Box::new(callback_interface::CallbackInterfaceCodeType::new(id))
+            Type::Record { name, .. } => Box::new(record::RecordCodeType::new(name)),
+            Type::CallbackInterface { name, .. } => {
+                Box::new(callback_interface::CallbackInterfaceCodeType::new(name))
             }
             Type::ForeignExecutor => Box::new(executor::ForeignExecutorCodeType),
-            Type::Optional(inner) => Box::new(compounds::OptionalCodeType::new(*inner)),
-            Type::Sequence(inner) => Box::new(compounds::SequenceCodeType::new(*inner)),
-            Type::Map(key, value) => Box::new(compounds::MapCodeType::new(*key, *value)),
+            Type::Optional { inner_type } => {
+                Box::new(compounds::OptionalCodeType::new(*inner_type))
+            }
+            Type::Sequence { inner_type } => {
+                Box::new(compounds::SequenceCodeType::new(*inner_type))
+            }
+            Type::Map {
+                key_type,
+                value_type,
+            } => Box::new(compounds::MapCodeType::new(*key_type, *value_type)),
             Type::External { name, .. } => Box::new(external::ExternalCodeType::new(name)),
             Type::Custom { name, .. } => Box::new(custom::CustomCodeType::new(name)),
         }
@@ -328,17 +496,17 @@ impl SwiftCodeOracle {
 
     
     fn fn_name(&self, nm: &str) -> String {
-        format!("`{}`", nm.to_string().to_lower_camel_case())
+        nm.to_string().to_lower_camel_case()
     }
 
     
     fn var_name(&self, nm: &str) -> String {
-        format!("`{}`", nm.to_string().to_lower_camel_case())
+        nm.to_string().to_lower_camel_case()
     }
 
     
     fn enum_variant_name(&self, nm: &str) -> String {
-        format!("`{}`", nm.to_string().to_lower_camel_case())
+        nm.to_string().to_lower_camel_case()
     }
 
     fn ffi_type_label_raw(&self, ffi_type: &FfiType) -> String {
@@ -359,10 +527,10 @@ impl SwiftCodeOracle {
             FfiType::ForeignCallback => "ForeignCallback".into(),
             FfiType::ForeignExecutorHandle => "Int".into(),
             FfiType::ForeignExecutorCallback => "ForeignExecutorCallback".into(),
-            FfiType::FutureCallback { return_type } => {
-                format!("UniFfiFutureCallback{}", self.ffi_type_label(return_type))
+            FfiType::RustFutureContinuationCallback => "UniFfiRustFutureContinuation".into(),
+            FfiType::RustFutureHandle | FfiType::RustFutureContinuationData => {
+                "UnsafeMutableRawPointer".into()
             }
-            FfiType::FutureCallbackData => "UnsafeMutableRawPointer".into(),
         }
     }
 
@@ -370,7 +538,9 @@ impl SwiftCodeOracle {
         match ffi_type {
             FfiType::ForeignCallback
             | FfiType::ForeignExecutorCallback
-            | FfiType::FutureCallback { .. } => {
+            | FfiType::RustFutureHandle
+            | FfiType::RustFutureContinuationCallback
+            | FfiType::RustFutureContinuationData => {
                 format!("{} _Nonnull", self.ffi_type_label_raw(ffi_type))
             }
             _ => self.ffi_type_label_raw(ffi_type),
@@ -454,11 +624,12 @@ pub mod filters {
             FfiType::ForeignCallback => "ForeignCallback _Nonnull".into(),
             FfiType::ForeignExecutorCallback => "UniFfiForeignExecutorCallback _Nonnull".into(),
             FfiType::ForeignExecutorHandle => "size_t".into(),
-            FfiType::FutureCallback { return_type } => format!(
-                "UniFfiFutureCallback{} _Nonnull",
-                SwiftCodeOracle.ffi_type_label_raw(return_type)
-            ),
-            FfiType::FutureCallbackData => "void* _Nonnull".into(),
+            FfiType::RustFutureContinuationCallback => {
+                "UniFfiRustFutureContinuation _Nonnull".into()
+            }
+            FfiType::RustFutureHandle | FfiType::RustFutureContinuationData => {
+                "void* _Nonnull".into()
+            }
         })
     }
 
@@ -469,12 +640,23 @@ pub mod filters {
 
     
     pub fn fn_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(oracle().fn_name(nm))
+        Ok(quote_general_keyword(oracle().fn_name(nm)))
     }
 
     
     pub fn var_name(nm: &str) -> Result<String, askama::Error> {
-        Ok(oracle().var_name(nm))
+        Ok(quote_general_keyword(oracle().var_name(nm)))
+    }
+
+    
+    
+    pub fn arg_name(nm: &str) -> Result<String, askama::Error> {
+        Ok(quote_arg_keyword(oracle().var_name(nm)))
+    }
+
+    
+    pub fn enum_variant_swift_quoted(nm: &str) -> Result<String, askama::Error> {
+        Ok(quote_general_keyword(oracle().enum_variant_name(nm)))
     }
 
     
@@ -500,16 +682,6 @@ pub mod filters {
             match &result.throws_type {
                 Some(t) => SwiftCodeOracle.find(t).canonical_name(),
                 None => "".into(),
-            }
-        ))
-    }
-
-    pub fn future_continuation_type(result: &ResultType) -> Result<String, askama::Error> {
-        Ok(format!(
-            "CheckedContinuation<{}, Error>",
-            match &result.return_type {
-                Some(return_type) => type_name(return_type)?,
-                None => "()".into(),
             }
         ))
     }

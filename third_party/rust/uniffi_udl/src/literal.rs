@@ -2,111 +2,17 @@
 
 
 
+use anyhow::{bail, Result};
+use uniffi_meta::{LiteralMetadata, Radix, Type};
 
 
+pub type Literal = LiteralMetadata;
 
-
-
-use anyhow::{bail, ensure, Context, Result};
-use uniffi_meta::Checksum;
-
-use super::types::Type;
-
-
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Checksum)]
-pub enum Literal {
-    Boolean(bool),
-    String(String),
-    
-    
-    
-    UInt(u64, Radix, Type),
-    Int(i64, Radix, Type),
-    
-    
-    
-    
-    Float(String, Type),
-    Enum(String, Type),
-    EmptySequence,
-    EmptyMap,
-    Null,
-}
-
-impl Literal {
-    pub(crate) fn from_metadata(
-        name: &str,
-        ty: &Type,
-        default: uniffi_meta::Literal,
-    ) -> Result<Self> {
-        Ok(match default {
-            uniffi_meta::Literal::Str { value } => {
-                ensure!(
-                    matches!(ty, Type::String),
-                    "field {name} of type {ty:?} can't have a default value of type string"
-                );
-                Self::String(value)
-            }
-            uniffi_meta::Literal::Int { base10_digits } => {
-                macro_rules! parse_int {
-                    ($ty:ident, $variant:ident) => {
-                        Self::$variant(
-                            base10_digits
-                                .parse::<$ty>()
-                                .with_context(|| format!("parsing default for field {}", name))?
-                                .into(),
-                            Radix::Decimal,
-                            ty.to_owned(),
-                        )
-                    };
-                }
-
-                match ty {
-                    Type::UInt8 => parse_int!(u8, UInt),
-                    Type::Int8 => parse_int!(i8, Int),
-                    Type::UInt16 => parse_int!(u16, UInt),
-                    Type::Int16 => parse_int!(i16, Int),
-                    Type::UInt32 => parse_int!(u32, UInt),
-                    Type::Int32 => parse_int!(i32, Int),
-                    Type::UInt64 => parse_int!(u64, UInt),
-                    Type::Int64 => parse_int!(i64, Int),
-                    _ => {
-                        bail!("field {name} of type {ty:?} can't have a default value of type integer");
-                    }
-                }
-            }
-            uniffi_meta::Literal::Float { base10_digits } => match ty {
-                Type::Float32 => Self::Float(base10_digits, Type::Float32),
-                Type::Float64 => Self::Float(base10_digits, Type::Float64),
-                _ => {
-                    bail!("field {name} of type {ty:?} can't have a default value of type float");
-                }
-            },
-            uniffi_meta::Literal::Bool { value } => {
-                ensure!(
-                    matches!(ty, Type::String),
-                    "field {name} of type {ty:?} can't have a default value of type boolean"
-                );
-                Self::Boolean(value)
-            }
-        })
-    }
-}
-
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Checksum)]
-pub enum Radix {
-    Decimal = 10,
-    Octal = 8,
-    Hexadecimal = 16,
-}
 
 pub(super) fn convert_default_value(
     default_value: &weedle::literal::DefaultValue<'_>,
     type_: &Type,
-) -> Result<Literal> {
+) -> Result<LiteralMetadata> {
     fn convert_integer(literal: &weedle::literal::IntegerLit<'_>, type_: &Type) -> Result<Literal> {
         let (string, radix) = match literal {
             weedle::literal::IntegerLit::Dec(v) => (v.0, Radix::Decimal),
@@ -172,12 +78,14 @@ pub(super) fn convert_default_value(
             
             Literal::String(s.0.to_string())
         }
-        (weedle::literal::DefaultValue::EmptyArray(_), Type::Sequence(_)) => Literal::EmptySequence,
-        (weedle::literal::DefaultValue::String(s), Type::Enum(_)) => {
+        (weedle::literal::DefaultValue::EmptyArray(_), Type::Sequence { .. }) => {
+            Literal::EmptySequence
+        }
+        (weedle::literal::DefaultValue::String(s), Type::Enum { .. }) => {
             Literal::Enum(s.0.to_string(), type_.clone())
         }
-        (weedle::literal::DefaultValue::Null(_), Type::Optional(_)) => Literal::Null,
-        (_, Type::Optional(inner_type)) => convert_default_value(default_value, inner_type)?,
+        (weedle::literal::DefaultValue::Null(_), Type::Optional { .. }) => Literal::Null,
+        (_, Type::Optional { inner_type, .. }) => convert_default_value(default_value, inner_type)?,
 
         
         (weedle::literal::DefaultValue::Integer(i), _) => convert_integer(i, type_)?,
@@ -218,14 +126,24 @@ mod test {
             matches!(parse_and_convert("\"TEST\"", Type::String)?, Literal::String(v) if v == "TEST")
         );
         assert!(
-            matches!(parse_and_convert("\"one\"", Type::Enum("E".into()))?, Literal::Enum(v, Type::Enum(e)) if v == "one" && e == "E")
+            matches!(parse_and_convert("\"one\"", Type::Enum { name: "E".into(), module_path: "".into() })?, Literal::Enum(v, Type::Enum { name, .. }) if v == "one" && name == "E")
         );
         assert!(matches!(
-            parse_and_convert("[]", Type::Sequence(Box::new(Type::String)))?,
+            parse_and_convert(
+                "[]",
+                Type::Sequence {
+                    inner_type: Box::new(Type::String)
+                }
+            )?,
             Literal::EmptySequence
         ));
         assert!(matches!(
-            parse_and_convert("null", Type::Optional(Box::new(Type::String)))?,
+            parse_and_convert(
+                "null",
+                Type::Optional {
+                    inner_type: Box::new(Type::String)
+                }
+            )?,
             Literal::Null
         ));
         Ok(())

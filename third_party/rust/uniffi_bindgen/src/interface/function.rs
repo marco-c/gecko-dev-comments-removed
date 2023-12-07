@@ -31,16 +31,12 @@
 
 
 
-use std::convert::TryFrom;
 
-use anyhow::{bail, Result};
-use uniffi_meta::Checksum;
+use anyhow::Result;
 
-use super::attributes::{ArgumentAttributes, FunctionAttributes};
 use super::ffi::{FfiArgument, FfiFunction, FfiType};
-use super::literal::{convert_default_value, Literal};
-use super::types::{ObjectImpl, Type, TypeIterator};
-use super::{APIConverter, AsType, ComponentInterface};
+use super::{AsType, ComponentInterface, Literal, ObjectImpl, Type, TypeIterator};
+use uniffi_meta::Checksum;
 
 
 
@@ -51,6 +47,7 @@ use super::{APIConverter, AsType, ComponentInterface};
 #[derive(Debug, Clone, Checksum)]
 pub struct Function {
     pub(super) name: String,
+    pub(super) module_path: String,
     pub(super) is_async: bool,
     pub(super) arguments: Vec<Argument>,
     pub(super) return_type: Option<Type>,
@@ -65,9 +62,8 @@ pub struct Function {
     pub(super) throws: Option<Type>,
     pub(super) checksum_fn_name: String,
     
-    
     #[checksum_ignore]
-    pub(super) checksum_override: Option<u16>,
+    pub(super) checksum: Option<u16>,
 }
 
 impl Function {
@@ -100,8 +96,7 @@ impl Function {
     }
 
     pub fn checksum(&self) -> u16 {
-        self.checksum_override
-            .unwrap_or_else(|| uniffi_meta::checksum(self))
+        self.checksum.unwrap_or_else(|| uniffi_meta::checksum(self))
     }
 
     pub fn throws(&self) -> bool {
@@ -116,17 +111,22 @@ impl Function {
         self.throws.as_ref()
     }
 
-    pub fn derive_ffi_func(&mut self, ci_namespace: &str) -> Result<()> {
-        
-        
-        if self.ffi_func.name.is_empty() {
-            self.ffi_func.name = uniffi_meta::fn_symbol_name(ci_namespace, &self.name);
-        }
+    pub fn derive_ffi_func(&mut self) -> Result<()> {
+        assert!(!self.ffi_func.name.is_empty());
         self.ffi_func.init(
             self.return_type.as_ref().map(Into::into),
             self.arguments.iter().map(Into::into),
         );
         Ok(())
+    }
+
+    pub fn iter_types(&self) -> TypeIterator<'_> {
+        Box::new(
+            self.arguments
+                .iter()
+                .flat_map(Argument::iter_types)
+                .chain(self.return_type.iter().flat_map(Type::iter_types)),
+        )
     }
 }
 
@@ -134,10 +134,10 @@ impl From<uniffi_meta::FnParamMetadata> for Argument {
     fn from(meta: uniffi_meta::FnParamMetadata) -> Self {
         Argument {
             name: meta.name,
-            type_: meta.ty.into(),
-            by_ref: false,
-            optional: false,
-            default: None,
+            type_: meta.ty,
+            by_ref: meta.by_ref,
+            optional: meta.optional,
+            default: meta.default,
         }
     }
 }
@@ -156,63 +156,17 @@ impl From<uniffi_meta::FnMetadata> for Function {
             ..FfiFunction::default()
         };
 
-        let throws = match meta.throws {
-            None => None,
-            Some(uniffi_meta::Type::Enum { name, .. }) => Some(Type::Enum(name)),
-            _ => panic!("unsupported error type {:?}", meta.throws),
-        };
-
         Self {
             name: meta.name,
+            module_path: meta.module_path,
             is_async,
             arguments,
             return_type,
             ffi_func,
-            throws,
+            throws: meta.throws,
             checksum_fn_name,
-            checksum_override: Some(meta.checksum),
+            checksum: meta.checksum,
         }
-    }
-}
-
-impl APIConverter<Function> for weedle::namespace::NamespaceMember<'_> {
-    fn convert(&self, ci: &mut ComponentInterface) -> Result<Function> {
-        match self {
-            weedle::namespace::NamespaceMember::Operation(f) => f.convert(ci),
-            _ => bail!("no support for namespace member type {:?} yet", self),
-        }
-    }
-}
-
-impl APIConverter<Function> for weedle::namespace::OperationNamespaceMember<'_> {
-    fn convert(&self, ci: &mut ComponentInterface) -> Result<Function> {
-        let return_type = ci.resolve_return_type_expression(&self.return_type)?;
-        let name = match self.identifier {
-            None => bail!("anonymous functions are not supported {:?}", self),
-            Some(id) => id.0.to_string(),
-        };
-        let checksum_fn_name = uniffi_meta::fn_checksum_symbol_name(ci.namespace(), &name);
-        let attrs = FunctionAttributes::try_from(self.attributes.as_ref())?;
-        let throws = match attrs.get_throws_err() {
-            None => None,
-            Some(name) => match ci.get_type(name) {
-                Some(t) => {
-                    ci.note_name_used_as_error(name);
-                    Some(t)
-                }
-                None => bail!("unknown type for error: {name}"),
-            },
-        };
-        Ok(Function {
-            name,
-            is_async: false,
-            return_type,
-            arguments: self.args.body.list.convert(ci)?,
-            ffi_func: Default::default(),
-            throws,
-            checksum_fn_name,
-            checksum_override: None,
-        })
     }
 }
 
@@ -265,33 +219,6 @@ impl From<&Argument> for FfiArgument {
     }
 }
 
-impl APIConverter<Argument> for weedle::argument::Argument<'_> {
-    fn convert(&self, ci: &mut ComponentInterface) -> Result<Argument> {
-        match self {
-            weedle::argument::Argument::Single(t) => t.convert(ci),
-            weedle::argument::Argument::Variadic(_) => bail!("variadic arguments not supported"),
-        }
-    }
-}
-
-impl APIConverter<Argument> for weedle::argument::SingleArgument<'_> {
-    fn convert(&self, ci: &mut ComponentInterface) -> Result<Argument> {
-        let type_ = ci.resolve_type_expression(&self.type_)?;
-        let default = match self.default {
-            None => None,
-            Some(v) => Some(convert_default_value(&v.value, &type_)?),
-        };
-        let by_ref = ArgumentAttributes::try_from(self.attributes.as_ref())?.by_ref();
-        Ok(Argument {
-            name: self.identifier.0.to_string(),
-            type_,
-            by_ref,
-            optional: self.optional.is_some(),
-            default,
-        })
-    }
-}
-
 
 #[derive(Debug, PartialOrd, Ord, PartialEq, Eq)]
 pub struct ResultType {
@@ -303,7 +230,7 @@ impl ResultType {
     
     pub fn future_callback_param(&self) -> FfiType {
         match &self.return_type {
-            Some(t) => t.ffi_type(),
+            Some(t) => t.into(),
             None => FfiType::UInt8,
         }
     }
@@ -314,11 +241,38 @@ pub trait Callable {
     fn arguments(&self) -> Vec<&Argument>;
     fn return_type(&self) -> Option<Type>;
     fn throws_type(&self) -> Option<Type>;
+    fn is_async(&self) -> bool;
     fn result_type(&self) -> ResultType {
         ResultType {
             return_type: self.return_type(),
             throws_type: self.throws_type(),
         }
+    }
+
+    
+
+    fn ffi_rust_future_poll(&self, ci: &ComponentInterface) -> String {
+        ci.ffi_rust_future_poll(self.return_type().map(Into::into))
+            .name()
+            .to_owned()
+    }
+
+    fn ffi_rust_future_cancel(&self, ci: &ComponentInterface) -> String {
+        ci.ffi_rust_future_cancel(self.return_type().map(Into::into))
+            .name()
+            .to_owned()
+    }
+
+    fn ffi_rust_future_complete(&self, ci: &ComponentInterface) -> String {
+        ci.ffi_rust_future_complete(self.return_type().map(Into::into))
+            .name()
+            .to_owned()
+    }
+
+    fn ffi_rust_future_free(&self, ci: &ComponentInterface) -> String {
+        ci.ffi_rust_future_free(self.return_type().map(Into::into))
+            .name()
+            .to_owned()
     }
 }
 
@@ -333,6 +287,10 @@ impl Callable for Function {
 
     fn throws_type(&self) -> Option<Type> {
         self.throws_type().cloned()
+    }
+
+    fn is_async(&self) -> bool {
+        self.is_async
     }
 }
 
@@ -349,16 +307,21 @@ impl<T: Callable> Callable for &T {
     fn throws_type(&self) -> Option<Type> {
         (*self).throws_type()
     }
+
+    fn is_async(&self) -> bool {
+        (*self).is_async()
+    }
 }
 
 #[cfg(test)]
 mod test {
+    use super::super::ComponentInterface;
     use super::*;
 
     #[test]
     fn test_minimal_and_rich_function() -> Result<()> {
         let ci = ComponentInterface::from_webidl(
-            r##"
+            r#"
             namespace test {
                 void minimal();
                 [Throws=TestError]
@@ -369,7 +332,8 @@ mod test {
             dictionary TestDict {
                 u32 field;
             };
-        "##,
+        "#,
+            "crate_name",
         )?;
 
         let func1 = ci.get_function_definition("minimal").unwrap();
@@ -381,19 +345,22 @@ mod test {
         let func2 = ci.get_function_definition("rich").unwrap();
         assert_eq!(func2.name(), "rich");
         assert_eq!(
-            func2.return_type().unwrap().canonical_name(),
-            "SequenceOptionalstring"
+            func2.return_type().unwrap(),
+            &Type::Sequence {
+                inner_type: Box::new(Type::Optional {
+                    inner_type: Box::new(Type::String)
+                })
+            }
         );
         assert!(
-            matches!(func2.throws_type(), Some(Type::Enum(name)) if name == "TestError" && ci.is_name_used_as_error(name))
+            matches!(func2.throws_type(), Some(Type::Enum { name, .. }) if name == "TestError" && ci.is_name_used_as_error(name))
         );
         assert_eq!(func2.arguments().len(), 2);
         assert_eq!(func2.arguments()[0].name(), "arg1");
-        assert_eq!(func2.arguments()[0].as_type().canonical_name(), "u32");
+        assert_eq!(func2.arguments()[0].as_type(), Type::UInt32);
         assert_eq!(func2.arguments()[1].name(), "arg2");
-        assert_eq!(
-            func2.arguments()[1].as_type().canonical_name(),
-            "TypeTestDict"
+        assert!(
+            matches!(func2.arguments()[1].as_type(), Type::Record { name, .. } if name == "TestDict")
         );
         Ok(())
     }

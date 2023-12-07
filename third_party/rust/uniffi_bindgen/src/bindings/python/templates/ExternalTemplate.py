@@ -1,8 +1,9 @@
-{%- let mod_name = crate_name|fn_name %}
+{%- let ns = namespace|fn_name %}
 
-{%- let ffi_converter_name = "FfiConverterType{}"|format(name) %}
-{{ self.add_import_of(mod_name, ffi_converter_name) }}
-{{ self.add_import_of(mod_name, name) }} {
 
-{%- let rustbuffer_local_name = "RustBuffer{}"|format(name) %}
-{{ self.add_import_of_as(mod_name, "RustBuffer", rustbuffer_local_name) }}
+{%- let ffi_converter_name = "_UniffiConverterType{}"|format(name) %}
+{{ self.add_import_of(ns, ffi_converter_name) }}
+{{ self.add_import_of(ns, name) }} {
+
+{%- let rustbuffer_local_name = "_UniffiRustBuffer{}"|format(name) %}
+{{ self.add_import_of_as(ns, "_UniffiRustBuffer", rustbuffer_local_name) }}

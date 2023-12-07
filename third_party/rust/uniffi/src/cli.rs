@@ -48,6 +48,8 @@ enum Commands {
         library_mode: bool,
 
         
+        
+        
         #[clap(long = "crate")]
         crate_name: Option<String>,
 
@@ -70,7 +72,7 @@ enum Commands {
     },
 
     
-    PrintJson {
+    PrintRepr {
         
         path: Utf8PathBuf,
     },
@@ -104,15 +106,13 @@ pub fn run_main() -> anyhow::Result<()> {
                     &source, crate_name, &language, &out_dir, !no_format,
                 )?;
             } else {
-                if crate_name.is_some() {
-                    panic!("--crate requires --library.")
-                }
                 uniffi_bindgen::generate_bindings(
                     &source,
                     config.as_deref(),
                     language,
                     out_dir.as_deref(),
                     lib_file.as_deref(),
+                    crate_name.as_deref(),
                     !no_format,
                 )?;
             }
@@ -128,8 +128,8 @@ pub fn run_main() -> anyhow::Result<()> {
                 !no_format,
             )?;
         }
-        Commands::PrintJson { path } => {
-            uniffi_bindgen::print_json(&path)?;
+        Commands::PrintRepr { path } => {
+            uniffi_bindgen::print_repr(&path)?;
         }
     };
     Ok(())

@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use super::CodeType;
+use crate::ComponentInterface;
 
 #[derive(Debug)]
 pub struct ObjectCodeType {
@@ -16,15 +17,11 @@ impl ObjectCodeType {
 }
 
 impl CodeType for ObjectCodeType {
-    fn type_label(&self) -> String {
-        super::KotlinCodeOracle.class_name(&self.id)
+    fn type_label(&self, ci: &ComponentInterface) -> String {
+        super::KotlinCodeOracle.class_name(ci, &self.id)
     }
 
     fn canonical_name(&self) -> String {
         format!("Type{}", self.id)
-    }
-
-    fn literal(&self, _literal: &Literal) -> String {
-        unreachable!();
     }
 }

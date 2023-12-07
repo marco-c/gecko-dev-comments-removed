@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal};
+use crate::backend::{ Literal};
+use super::CodeType;
 
 #[derive(Debug)]
 pub struct ErrorCodeType {

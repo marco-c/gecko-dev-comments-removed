@@ -30,7 +30,7 @@ import platform
 {%- endfor %}
 
 
-DEFAULT = object()
+_DEFAULT = object()
 
 {% include "RustBufferTemplate.py" %}
 {% include "Helpers.py" %}
@@ -38,8 +38,12 @@ DEFAULT = object()
 {% include "RustBufferHelper.py" %}
 
 
-
 {% include "NamespaceLibraryTemplate.py" %}
+
+
+{%- if ci.has_async_fns() %}
+{%- include "Async.py" %}
+{%- endif %}
 
 
 {{ type_helper_code }}

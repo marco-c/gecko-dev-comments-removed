@@ -2,7 +2,8 @@
 
 
 
-use crate::backend::{CodeType, Literal, Type};
+use super::CodeType;
+use crate::backend::{Literal, Type};
 
 #[derive(Debug)]
 pub struct OptionalCodeType {
