@@ -889,14 +889,9 @@ bool nsWindow::DrawsToCSDTitlebar() const {
 }
 
 void nsWindow::AddCSDDecorationSize(int* aWidth, int* aHeight) {
-  if (mUndecorated || mSizeMode != nsSizeMode_Normal ||
-      mGtkWindowDecoration != GTK_DECORATION_CLIENT) {
-    return;
-  }
-
-  
-  
-  if (!mDrawInTitlebar && !GdkIsWaylandDisplay()) {
+  if (mSizeMode != nsSizeMode_Normal || mUndecorated ||
+      mGtkWindowDecoration != GTK_DECORATION_CLIENT || !GdkIsWaylandDisplay() ||
+      !IsGnomeDesktopEnvironment()) {
     return;
   }
 
