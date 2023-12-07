@@ -28,17 +28,9 @@ static uint32_t get32bit(const unsigned char* aData, unsigned int index) {
 
 
 
-
 bool hardFail(uint16_t code) {
   const uint16_t noFallbackErrors[] = {
       4,   
-      6,   
-      7,   
-      8,   
-      9,   
-      10,  
-      11,  
-      12,  
       17,  
   };
 
@@ -362,7 +354,6 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
     }
     if (labelLength > 63) {
       
-      SetDNSPacketStatus(DNSPacketStatus::EncodeError);
       return NS_ERROR_ILLEGAL_VALUE;
     }
     if (labelLength > 0) {
@@ -464,7 +455,6 @@ nsresult DNSPacket::EncodeRequest(nsCString& aBody, const nsACString& aHost,
     }
   }
 
-  SetDNSPacketStatus(DNSPacketStatus::Success);
   return NS_OK;
 }
 
@@ -1030,7 +1020,9 @@ nsresult DNSPacket::DecodeInternal(
     
     LOG(("TRR: No entries were stored!\n"));
 
-    if (extendedError != UINT16_MAX && hardFail(extendedError)) {
+    if (extendedError != UINT16_MAX &&
+        StaticPrefs::network_trr_hard_fail_on_extended_error() &&
+        hardFail(extendedError)) {
       return NS_ERROR_DEFINITIVE_UNKNOWN_HOST;
     }
     return NS_ERROR_UNKNOWN_HOST;
@@ -1059,8 +1051,7 @@ nsresult DNSPacket::Decode(
   nsresult rv =
       DecodeInternal(aHost, aType, aCname, aAllowRFC1918, aResp, aTypeResult,
                      aAdditionalRecords, aTTL, mResponse, mBodySize);
-  SetDNSPacketStatus(NS_SUCCEEDED(rv) ? DNSPacketStatus::Success
-                                      : DNSPacketStatus::DecodeError);
+  mStatus = rv;
   return rv;
 }
 
