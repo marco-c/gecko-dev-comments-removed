@@ -12,19 +12,14 @@
 use camino::Utf8Path;
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    parse::{Parse, ParseStream},
-    parse_macro_input, Ident, LitStr, Path, Token,
-};
+use syn::{parse_macro_input, LitStr};
 
-mod custom;
 mod enum_;
 mod error;
 mod export;
 mod fnsig;
 mod object;
 mod record;
-mod setup_scaffolding;
 mod test;
 mod util;
 
@@ -32,34 +27,6 @@ use self::{
     enum_::expand_enum, error::expand_error, export::expand_export, object::expand_object,
     record::expand_record,
 };
-
-struct IdentPair {
-    lhs: Ident,
-    rhs: Ident,
-}
-
-impl Parse for IdentPair {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let lhs = input.parse()?;
-        input.parse::<Token![,]>()?;
-        let rhs = input.parse()?;
-        Ok(Self { lhs, rhs })
-    }
-}
-
-struct CustomTypeInfo {
-    ident: Ident,
-    builtin: Path,
-}
-
-impl Parse for CustomTypeInfo {
-    fn parse(input: ParseStream<'_>) -> syn::Result<Self> {
-        let ident = input.parse()?;
-        input.parse::<Token![,]>()?;
-        let builtin = input.parse()?;
-        Ok(Self { ident, builtin })
-    }
-}
 
 
 
@@ -80,41 +47,20 @@ pub fn build_foreign_language_testcases(tokens: TokenStream) -> TokenStream {
     test::build_foreign_language_testcases(tokens)
 }
 
-
-
-
-
-#[proc_macro]
-pub fn setup_scaffolding(tokens: TokenStream) -> TokenStream {
-    let namespace = match syn::parse_macro_input!(tokens as Option<LitStr>) {
-        Some(lit_str) => lit_str.value(),
-        None => match util::mod_path() {
-            Ok(v) => v,
-            Err(e) => return e.into_compile_error().into(),
-        },
-    };
-    setup_scaffolding::setup_scaffolding(namespace)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
 #[proc_macro_attribute]
 pub fn export(attr_args: TokenStream, input: TokenStream) -> TokenStream {
-    do_export(attr_args, input, false)
-}
-
-fn do_export(attr_args: TokenStream, input: TokenStream, udl_mode: bool) -> TokenStream {
-    let copied_input = (!udl_mode).then(|| proc_macro2::TokenStream::from(input.clone()));
+    let input2 = proc_macro2::TokenStream::from(input.clone());
 
     let gen_output = || {
+        let mod_path = util::mod_path()?;
         let args = syn::parse(attr_args)?;
         let item = syn::parse(input)?;
-        expand_export(item, args, udl_mode)
+        expand_export(item, args, mod_path)
     };
     let output = gen_output().unwrap_or_else(syn::Error::into_compile_error);
 
     quote! {
-        #copied_input
+        #input2
         #output
     }
     .into()
@@ -122,94 +68,31 @@ fn do_export(attr_args: TokenStream, input: TokenStream, udl_mode: bool) -> Toke
 
 #[proc_macro_derive(Record, attributes(uniffi))]
 pub fn derive_record(input: TokenStream) -> TokenStream {
-    expand_record(parse_macro_input!(input), false)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
+    expand_record(parse_macro_input!(input)).into()
 }
 
 #[proc_macro_derive(Enum)]
 pub fn derive_enum(input: TokenStream) -> TokenStream {
-    expand_enum(parse_macro_input!(input), false)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
+    expand_enum(parse_macro_input!(input)).into()
 }
 
 #[proc_macro_derive(Object)]
 pub fn derive_object(input: TokenStream) -> TokenStream {
-    expand_object(parse_macro_input!(input), false)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
+    let mod_path = match util::mod_path() {
+        Ok(p) => p,
+        Err(e) => return e.into_compile_error().into(),
+    };
+    let input = parse_macro_input!(input);
+
+    expand_object(input, mod_path).into()
 }
 
 #[proc_macro_derive(Error, attributes(uniffi))]
 pub fn derive_error(input: TokenStream) -> TokenStream {
-    expand_error(parse_macro_input!(input), None, false)
+    expand_error(parse_macro_input!(input))
         .unwrap_or_else(syn::Error::into_compile_error)
         .into()
 }
-
-
-
-#[proc_macro]
-pub fn custom_type(tokens: TokenStream) -> TokenStream {
-    let input: CustomTypeInfo = syn::parse_macro_input!(tokens);
-    custom::expand_ffi_converter_custom_type(&input.ident, &input.builtin, true)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-
-
-
-#[proc_macro]
-pub fn custom_newtype(tokens: TokenStream) -> TokenStream {
-    let input: CustomTypeInfo = syn::parse_macro_input!(tokens);
-    custom::expand_ffi_converter_custom_newtype(&input.ident, &input.builtin, true)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -217,60 +100,54 @@ pub fn custom_newtype(tokens: TokenStream) -> TokenStream {
 
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn derive_record_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    expand_record(syn::parse_macro_input!(input), true)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn derive_enum_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    expand_enum(syn::parse_macro_input!(input), true)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn derive_error_for_udl(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    expand_error(
+pub fn ffi_converter_record(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    record::expand_record_ffi_converter(
+        syn::parse_macro_input!(attrs),
         syn::parse_macro_input!(input),
-        Some(syn::parse_macro_input!(attrs)),
-        true,
     )
-    .unwrap_or_else(syn::Error::into_compile_error)
     .into()
 }
 
+
+
+
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn ffi_converter_enum(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    enum_::expand_enum_ffi_converter(
+        syn::parse_macro_input!(attrs),
+        syn::parse_macro_input!(input),
+    )
+    .into()
+}
+
+
+
+
+
+#[doc(hidden)]
+#[proc_macro_attribute]
+pub fn ffi_converter_error(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    error::expand_ffi_converter_error(
+        syn::parse_macro_input!(attrs),
+        syn::parse_macro_input!(input),
+    )
+    .into()
+}
+
+
+
+
+
 #[doc(hidden)]
 #[proc_macro_attribute]
-pub fn derive_object_for_udl(_attrs: TokenStream, input: TokenStream) -> TokenStream {
-    expand_object(syn::parse_macro_input!(input), true)
-        .unwrap_or_else(syn::Error::into_compile_error)
-        .into()
-}
-
-#[doc(hidden)]
-#[proc_macro_attribute]
-pub fn export_for_udl(attrs: TokenStream, input: TokenStream) -> TokenStream {
-    do_export(attrs, input, true)
-}
-
-
-
-#[doc(hidden)]
-#[proc_macro]
-pub fn expand_trait_interface_support(tokens: TokenStream) -> TokenStream {
-    export::ffi_converter_trait_impl(&syn::parse_macro_input!(tokens), true).into()
-}
-
-
-#[doc(hidden)]
-#[proc_macro]
-pub fn scaffolding_ffi_converter_callback_interface(tokens: TokenStream) -> TokenStream {
-    let input: IdentPair = syn::parse_macro_input!(tokens);
-    export::ffi_converter_callback_interface_impl(&input.lhs, &input.rhs, true).into()
+pub fn ffi_converter_interface(attrs: TokenStream, input: TokenStream) -> TokenStream {
+    object::expand_ffi_converter_interface(
+        syn::parse_macro_input!(attrs),
+        syn::parse_macro_input!(input),
+    )
+    .into()
 }
 
 
@@ -287,13 +164,29 @@ pub fn scaffolding_ffi_converter_callback_interface(tokens: TokenStream) -> Toke
 
 
 #[proc_macro]
-pub fn include_scaffolding(udl_stem: TokenStream) -> TokenStream {
-    let udl_stem = syn::parse_macro_input!(udl_stem as LitStr);
+pub fn include_scaffolding(component_name: TokenStream) -> TokenStream {
+    let name = syn::parse_macro_input!(component_name as LitStr);
     if std::env::var("OUT_DIR").is_err() {
         quote! {
             compile_error!("This macro assumes the crate has a build.rs script, but $OUT_DIR is not present");
         }
     } else {
+        let udl_name = name.value();
+        let mod_path = match util::mod_path() {
+            Ok(v) => quote! { #v },
+            Err(e) => e.into_compile_error()
+        };
+        let metadata = util::create_metadata_items(
+            "UDL",
+            &udl_name.replace('-', "_").to_ascii_uppercase(),
+            quote! {
+                    ::uniffi::MetadataBuffer::from_code(::uniffi::metadata::codes::UDL_FILE)
+                        .concat_str(#mod_path)
+                        .concat_str(#udl_name)
+            },
+            None,
+        );
+
         let toml_path = match util::manifest_path() {
             Ok(path) => path.display().to_string(),
             Err(_) => {
@@ -304,6 +197,8 @@ pub fn include_scaffolding(udl_stem: TokenStream) -> TokenStream {
         };
 
         quote! {
+            #metadata
+
             // FIXME(HACK):
             // Include the `Cargo.toml` file into the build.
             // That way cargo tracks the file and other tools relying on file
@@ -316,49 +211,8 @@ pub fn include_scaffolding(udl_stem: TokenStream) -> TokenStream {
                 const _: &[u8] = include_bytes!(#toml_path);
             }
 
-            include!(concat!(env!("OUT_DIR"), "/", #udl_stem, ".uniffi.rs"));
+            include!(concat!(env!("OUT_DIR"), "/", #name, ".uniffi.rs"));
         }
-    }.into()
-}
-
-
-
-#[proc_macro]
-pub fn use_udl_record(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
-
-#[proc_macro]
-pub fn use_udl_enum(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
-
-#[proc_macro]
-pub fn use_udl_error(tokens: TokenStream) -> TokenStream {
-    use_udl_simple_type(tokens)
-}
-
-fn use_udl_simple_type(tokens: TokenStream) -> TokenStream {
-    let util::ExternalTypeItem {
-        crate_ident,
-        type_ident,
-        ..
-    } = parse_macro_input!(tokens);
-    quote! {
-        ::uniffi::ffi_converter_forward!(#type_ident, #crate_ident::UniFfiTag, crate::UniFfiTag);
-    }
-    .into()
-}
-
-#[proc_macro]
-pub fn use_udl_object(tokens: TokenStream) -> TokenStream {
-    let util::ExternalTypeItem {
-        crate_ident,
-        type_ident,
-        ..
-    } = parse_macro_input!(tokens);
-    quote! {
-        ::uniffi::ffi_converter_arc_forward!(#type_ident, #crate_ident::UniFfiTag, crate::UniFfiTag);
     }.into()
 }
 

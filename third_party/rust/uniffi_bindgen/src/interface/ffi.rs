@@ -18,8 +18,6 @@
 
 
 
-use uniffi_meta::{ExternalKind, Type};
-
 #[derive(Debug, Clone, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub enum FfiType {
     
@@ -55,80 +53,15 @@ pub enum FfiType {
     
     ForeignExecutorCallback,
     
-    RustFutureHandle,
+    FutureCallback {
+        
+        
+        return_type: Box<FfiType>,
+    },
     
-    RustFutureContinuationCallback,
-    RustFutureContinuationData,
+    FutureCallbackData,
     
     
-}
-
-
-
-
-
-
-impl From<&Type> for FfiType {
-    fn from(t: &Type) -> FfiType {
-        match t {
-            
-            Type::UInt8 => FfiType::UInt8,
-            Type::Int8 => FfiType::Int8,
-            Type::UInt16 => FfiType::UInt16,
-            Type::Int16 => FfiType::Int16,
-            Type::UInt32 => FfiType::UInt32,
-            Type::Int32 => FfiType::Int32,
-            Type::UInt64 => FfiType::UInt64,
-            Type::Int64 => FfiType::Int64,
-            Type::Float32 => FfiType::Float32,
-            Type::Float64 => FfiType::Float64,
-            
-            Type::Boolean => FfiType::Int8,
-            
-            
-            Type::String => FfiType::RustBuffer(None),
-            
-            
-            Type::Bytes => FfiType::RustBuffer(None),
-            
-            Type::Object { name, .. } => FfiType::RustArcPtr(name.to_owned()),
-            
-            Type::CallbackInterface { .. } => FfiType::UInt64,
-            Type::ForeignExecutor => FfiType::ForeignExecutorHandle,
-            
-            Type::Enum { .. }
-            | Type::Record { .. }
-            | Type::Optional { .. }
-            | Type::Sequence { .. }
-            | Type::Map { .. }
-            | Type::Timestamp
-            | Type::Duration => FfiType::RustBuffer(None),
-            Type::External {
-                name,
-                kind: ExternalKind::Interface,
-                ..
-            } => FfiType::RustArcPtr(name.clone()),
-            Type::External {
-                name,
-                kind: ExternalKind::DataClass,
-                ..
-            } => FfiType::RustBuffer(Some(name.clone())),
-            Type::Custom { builtin, .. } => FfiType::from(builtin.as_ref()),
-        }
-    }
-}
-
-
-impl From<Type> for FfiType {
-    fn from(ty: Type) -> Self {
-        (&ty).into()
-    }
-}
-
-impl From<&&Type> for FfiType {
-    fn from(ty: &&Type) -> Self {
-        (*ty).into()
-    }
 }
 
 
@@ -181,8 +114,28 @@ impl FfiFunction {
     ) {
         self.arguments = args.into_iter().collect();
         if self.is_async() {
-            self.return_type = Some(FfiType::RustFutureHandle);
-            self.has_rust_call_status_arg = false;
+            self.arguments.extend([
+                
+                FfiArgument {
+                    name: "uniffi_executor".into(),
+                    type_: FfiType::ForeignExecutorHandle,
+                },
+                
+                FfiArgument {
+                    name: "uniffi_callback".into(),
+                    type_: FfiType::FutureCallback {
+                        return_type: Box::new(return_type.unwrap_or(FfiType::UInt8)),
+                    },
+                },
+                
+                FfiArgument {
+                    name: "uniffi_callback_data".into(),
+                    type_: FfiType::FutureCallbackData,
+                },
+            ]);
+            
+            
+            self.return_type = None;
         } else {
             self.return_type = return_type;
         }

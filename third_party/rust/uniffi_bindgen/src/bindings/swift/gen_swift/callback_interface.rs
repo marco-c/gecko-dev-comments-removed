@@ -2,7 +2,7 @@
 
 
 
-use super::CodeType;
+use crate::backend::CodeType;
 
 #[derive(Debug)]
 pub struct CallbackInterfaceCodeType {

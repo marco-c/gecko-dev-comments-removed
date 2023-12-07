@@ -34,13 +34,13 @@ def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
             {%- match meth.return_type() %}
             {%- when Some(return_type) %}
             rval = makeCall()
-            with _UniffiRustBuffer.alloc_with_builder() as builder:
+            with RustBuffer.allocWithBuilder() as builder:
                 {{ return_type|write_fn }}(rval, builder)
                 buf_ptr[0] = builder.finalize()
             {%- when None %}
             makeCall()
             {%- endmatch %}
-            return _UNIFFI_CALLBACK_SUCCESS
+            return UNIFFI_CALLBACK_SUCCESS
 
         {%- match meth.throws_type() %}
         {%- when None %}
@@ -50,23 +50,23 @@ def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
             return makeCallAndHandleReturn()
         except {{ err|type_name }} as e:
             
-            with _UniffiRustBuffer.alloc_with_builder() as builder:
+            with RustBuffer.allocWithBuilder() as builder:
                 {{ err|write_fn }}(e, builder)
                 buf_ptr[0] = builder.finalize()
-            return _UNIFFI_CALLBACK_ERROR
+            return UNIFFI_CALLBACK_ERROR
         {%- endmatch %}
 
     {% endfor %}
 
     cb = {{ ffi_converter_name }}.lift(handle)
     if not cb:
-        raise InternalError("No callback in handlemap; this is a uniffi bug")
+        raise InternalError("No callback in handlemap; this is a Uniffi bug")
 
     if method == IDX_CALLBACK_FREE:
         {{ ffi_converter_name }}.drop(handle)
         
         
-        return _UNIFFI_CALLBACK_SUCCESS
+        return UNIFFI_CALLBACK_SUCCESS
 
     {% for meth in cbi.methods() -%}
     {% let method_name = format!("invoke_{}", meth.name())|fn_name -%}
@@ -74,7 +74,7 @@ def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
         
         
         try:
-            return {{ method_name }}(cb, _UniffiRustBufferStream(args_data, args_len), buf_ptr)
+            return {{ method_name }}(cb, RustBufferStream(args_data, args_len), buf_ptr)
         except BaseException as e:
             
             try:
@@ -83,7 +83,7 @@ def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
             except:
                 
                 pass
-            return _UNIFFI_CALLBACK_UNEXPECTED_ERROR
+            return UNIFFI_CALLBACK_UNEXPECTED_ERROR
     {% endfor %}
 
     
@@ -92,14 +92,14 @@ def py_{{ foreign_callback }}(handle, method, args_data, args_len, buf_ptr):
 
     
     
-    return _UNIFFI_CALLBACK_UNEXPECTED_ERROR
+    return UNIFFI_CALLBACK_UNEXPECTED_ERROR
 
 
 
 
 
-{{ foreign_callback }} = _UNIFFI_FOREIGN_CALLBACK_T(py_{{ foreign_callback }})
-_rust_call(lambda err: _UniffiLib.{{ cbi.ffi_init_callback().name() }}({{ foreign_callback }}, err))
+{{ foreign_callback }} = FOREIGN_CALLBACK_T(py_{{ foreign_callback }})
+rust_call(lambda err: _UniFFILib.{{ cbi.ffi_init_callback().name() }}({{ foreign_callback }}, err))
 
 
-{{ ffi_converter_name }} = _UniffiConverterCallbackInterface({{ foreign_callback }})
+{{ ffi_converter_name }} = FfiConverterCallbackInterface({{ foreign_callback }})

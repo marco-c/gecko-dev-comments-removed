@@ -2,9 +2,8 @@
 
 
 
-use super::CodeType;
-use crate::backend::Literal;
-use crate::interface::{Radix, Type};
+use crate::backend::{CodeType, Literal};
+use crate::interface::{types::Type, Radix};
 use paste::paste;
 
 fn render_literal(literal: &Literal) -> String {

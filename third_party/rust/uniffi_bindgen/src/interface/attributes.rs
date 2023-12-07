@@ -14,8 +14,11 @@
 
 
 
+use crate::interface::types::ExternalKind;
 use anyhow::{bail, Result};
-use uniffi_meta::{Checksum, ExternalKind, ObjectImpl};
+use uniffi_meta::Checksum;
+
+use super::types::ObjectImpl;
 
 
 
@@ -35,7 +38,6 @@ pub(super) enum Attribute {
     External {
         crate_name: String,
         kind: ExternalKind,
-        export: bool,
     },
     
     Custom,
@@ -78,22 +80,10 @@ impl TryFrom<&weedle::attribute::ExtendedAttribute<'_>> for Attribute {
                     "External" => Ok(Attribute::External {
                         crate_name: name_from_id_or_string(&identity.rhs),
                         kind: ExternalKind::DataClass,
-                        export: false,
-                    }),
-                    "ExternalExport" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::DataClass,
-                        export: true,
                     }),
                     "ExternalInterface" => Ok(Attribute::External {
                         crate_name: name_from_id_or_string(&identity.rhs),
                         kind: ExternalKind::Interface,
-                        export: false,
-                    }),
-                    "ExternalInterfaceExport" => Ok(Attribute::External {
-                        crate_name: name_from_id_or_string(&identity.rhs),
-                        kind: ExternalKind::Interface,
-                        export: true,
                     }),
                     _ => anyhow::bail!(
                         "Attribute identity Identifier not supported: {:?}",
@@ -497,14 +487,6 @@ impl TypedefAttributes {
             _ => None,
         })
     }
-
-    pub(super) fn external_tagged(&self) -> Option<bool> {
-        
-        self.0.iter().find_map(|attr| match attr {
-            Attribute::External { export, .. } => Some(!*export),
-            _ => None,
-        })
-    }
 }
 
 impl TryFrom<&weedle::attribute::ExtendedAttributeList<'_>> for TypedefAttributes {
@@ -648,7 +630,7 @@ mod test {
 
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[]").unwrap();
         let attrs = FunctionAttributes::try_from(&node).unwrap();
-        assert!(attrs.get_throws_err().is_none());
+        assert!(matches!(attrs.get_throws_err(), None));
     }
 
     #[test]
@@ -696,12 +678,12 @@ mod test {
         let (_, node) = weedle::attribute::ExtendedAttributeList::parse("[Throws=Error]").unwrap();
         let attrs = ConstructorAttributes::try_from(&node).unwrap();
         assert!(matches!(attrs.get_throws_err(), Some("Error")));
-        assert!(attrs.get_name().is_none());
+        assert!(matches!(attrs.get_name(), None));
 
         let (_, node) =
             weedle::attribute::ExtendedAttributeList::parse("[Name=MyFactory]").unwrap();
         let attrs = ConstructorAttributes::try_from(&node).unwrap();
-        assert!(attrs.get_throws_err().is_none());
+        assert!(matches!(attrs.get_throws_err(), None));
         assert!(matches!(attrs.get_name(), Some("MyFactory")));
 
         let (_, node) =
