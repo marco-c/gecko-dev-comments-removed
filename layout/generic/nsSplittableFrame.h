@@ -19,6 +19,8 @@
 class nsSplittableFrame : public nsIFrame {
  public:
   NS_DECL_ABSTRACT_FRAME(nsSplittableFrame)
+  NS_DECL_QUERYFRAME_TARGET(nsSplittableFrame)
+  NS_DECL_QUERYFRAME
 
   void Init(nsIContent* aContent, nsContainerFrame* aParent,
             nsIFrame* aPrevInFlow) override;
@@ -78,9 +80,7 @@ class nsSplittableFrame : public nsIFrame {
  protected:
   nsSplittableFrame(ComputedStyle* aStyle, nsPresContext* aPresContext,
                     ClassID aID)
-      : nsIFrame(aStyle, aPresContext, aID),
-        mPrevContinuation(nullptr),
-        mNextContinuation(nullptr) {}
+      : nsIFrame(aStyle, aPresContext, aID) {}
 
   
 
@@ -94,6 +94,20 @@ class nsSplittableFrame : public nsIFrame {
 
 
   nscoord CalcAndCacheConsumedBSize();
+
+  
+
+
+
+
+
+
+
+
+
+  static nscoord ConsumedBSize(nsSplittableFrame* aFrame) {
+    return aFrame->CalcAndCacheConsumedBSize();
+  }
 
   
 
@@ -126,8 +140,8 @@ class nsSplittableFrame : public nsIFrame {
     return GetBlockLevelLogicalSkipSides(false);
   };
 
-  nsIFrame* mPrevContinuation;
-  nsIFrame* mNextContinuation;
+  nsIFrame* mPrevContinuation = nullptr;
+  nsIFrame* mNextContinuation = nullptr;
 };
 
 #endif 

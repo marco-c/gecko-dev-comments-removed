@@ -371,6 +371,11 @@ class nsFlexContainerFrame final : public nsContainerFrame,
       ComputedFlexContainerInfo& aContainerInfo,
       const nsTArray<FlexLine>& aLines);
 
+  
+
+
+  static nscoord FlexItemConsumedBSize(const FlexItem& aItem);
+
 #ifdef DEBUG
   void SanityCheckAnonymousFlexItems() const;
 #endif  
