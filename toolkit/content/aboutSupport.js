@@ -1183,9 +1183,14 @@ var snapshotFormatters = {
     async function insertContentDecryptionModuleInfo() {
       let rows = [];
       
+      let cdmInfo =
+        await ChromeUtils.getGMPContentDecryptionModuleInformation();
+      for (let info of cdmInfo) {
+        rows.push(createCDMInfoRow(info));
+      }
+      
       if (ChromeUtils.getWMFContentDecryptionModuleInformation !== undefined) {
-        const cdmInfo =
-          await ChromeUtils.getWMFContentDecryptionModuleInformation();
+        cdmInfo = await ChromeUtils.getWMFContentDecryptionModuleInformation();
         for (let info of cdmInfo) {
           rows.push(createCDMInfoRow(info));
         }
