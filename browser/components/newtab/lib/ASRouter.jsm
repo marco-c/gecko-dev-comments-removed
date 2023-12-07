@@ -73,10 +73,7 @@ const { AttributionCode } = ChromeUtils.importESModule(
 
 const DEFAULT_ALLOWLIST_HOSTS = {
   "activity-stream-icons.services.mozilla.com": "production",
-  "snippets-admin.mozilla.org": "preview",
 };
-const SNIPPETS_ENDPOINT_ALLOWLIST =
-  "browser.newtab.activity-stream.asrouter.allowHosts";
 
 const MAX_MESSAGE_LIFETIME_CAP = 100;
 
@@ -96,7 +93,7 @@ const RS_DOWNLOAD_MAX_RETRIES = 2;
 
 
 
-const JEXL_PROVIDER_CACHE = new Set(["snippets"]);
+const JEXL_PROVIDER_CACHE = new Set();
 
 
 const TOPIC_INTL_LOCALE_CHANGED = "intl:app-locales-changed";
@@ -777,10 +774,6 @@ class _ASRouter {
 
 
   isExcludedByProvider(message) {
-    
-    if (message.provider === "preview") {
-      return false;
-    }
     const provider = this.state.providers.find(p => p.id === message.provider);
     if (!provider) {
       return true;
@@ -900,8 +893,7 @@ class _ASRouter {
         lazy.ASRouterTriggerListeners.get(triggerID).uninit();
       }
 
-      
-      await this.setState(this._removePreviewEndpoint(newState));
+      await this.setState(newState);
       await this.cleanupImpressions();
     }
 
@@ -985,7 +977,7 @@ class _ASRouter {
     }
     this.initializing = true;
     this._storage = storage;
-    this.ALLOWLIST_HOSTS = this._loadSnippetsAllowHosts();
+    this.ALLOWLIST_HOSTS = this._loadAllowHosts();
     this.clearChildMessages = this.toWaitForInitFunc(clearChildMessages);
     this.clearChildProviders = this.toWaitForInitFunc(clearChildProviders);
     
@@ -1712,7 +1704,6 @@ class _ASRouter {
       idsToUnblock
         .map(id => state.messages.find(m => m.id === id))
         
-        
         .forEach(message => {
           const idToUnblock =
             message && message.campaign ? message.campaign : message.id;
@@ -1811,38 +1802,8 @@ class _ASRouter {
     }
   }
 
-  _loadSnippetsAllowHosts() {
-    let additionalHosts = [];
-    const allowPrefValue = Services.prefs.getStringPref(
-      SNIPPETS_ENDPOINT_ALLOWLIST,
-      ""
-    );
-    try {
-      additionalHosts = JSON.parse(allowPrefValue);
-    } catch (e) {
-      if (allowPrefValue) {
-        console.error(
-          `Pref ${SNIPPETS_ENDPOINT_ALLOWLIST} value is not valid JSON`
-        );
-      }
-    }
-
-    if (!additionalHosts.length) {
-      return DEFAULT_ALLOWLIST_HOSTS;
-    }
-
-    
-    
-    return additionalHosts.reduce(
-      (allow_hosts, host) => {
-        allow_hosts[host] = "preview";
-        Services.console.logStringMessage(
-          `Adding ${host} to list of allowed hosts.`
-        );
-        return allow_hosts;
-      },
-      { ...DEFAULT_ALLOWLIST_HOSTS }
-    );
+  _loadAllowHosts() {
+    return DEFAULT_ALLOWLIST_HOSTS;
   }
 
   
@@ -1852,32 +1813,6 @@ class _ASRouter {
       return Promise.resolve();
     }
     return this.sendTriggerMessage({ ...trigger, browser });
-  }
-
-  _removePreviewEndpoint(state) {
-    state.providers = state.providers.filter(p => p.id !== "preview");
-    return state;
-  }
-
-  addPreviewEndpoint(url, browser) {
-    const providers = [...this.state.providers];
-    if (
-      this._validPreviewEndpoint(url) &&
-      !providers.find(p => p.url === url)
-    ) {
-      
-      
-      browser.sendMessageToActor("EnterSnippetsPreviewMode", {}, "ASRouter");
-      providers.push({
-        id: "preview",
-        type: "remote",
-        enabled: true,
-        url,
-        updateCycleInMs: 0,
-      });
-      return this.setState({ providers });
-    }
-    return Promise.resolve();
   }
 
   
@@ -1976,36 +1911,6 @@ class _ASRouter {
     });
 
     return { message };
-  }
-
-  async sendNewTabMessage({ endpoint, tabId, browser }) {
-    let message;
-
-    
-    if (endpoint) {
-      await this.addPreviewEndpoint(endpoint.url, browser);
-    }
-
-    
-    await this.loadMessagesFromAllProviders();
-
-    if (endpoint) {
-      message = await this.handleMessageRequest({ provider: "preview" });
-
-      
-      if (message) {
-        await this.setState(state => ({
-          messages: state.messages.filter(m => m.id !== message.id),
-        }));
-      }
-    } else {
-      const telemetryObject = { tabId };
-      TelemetryStopwatch.start("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-      message = await this.handleMessageRequest({ provider: "snippets" });
-      TelemetryStopwatch.finish("MS_MESSAGE_REQUEST_TIME_MS", telemetryObject);
-    }
-
-    return this.routeCFRMessage(message, browser, undefined, false);
   }
 
   _recordReachEvent(message) {
