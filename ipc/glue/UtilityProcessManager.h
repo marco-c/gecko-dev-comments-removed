@@ -76,7 +76,7 @@ class UtilityProcessManager final : public UtilityProcessHost::Listener {
 
   
   
-  RefPtr<WinFileDialogPromise> CreateWinFileDialogAsync();
+  RefPtr<WinFileDialogPromise> CreateWinFileDialogActor();
 #endif
 
   void OnProcessUnexpectedShutdown(UtilityProcessHost* aHost);
