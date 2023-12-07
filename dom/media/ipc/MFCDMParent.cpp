@@ -300,17 +300,37 @@ static HRESULT CreateContentDecryptionModule(
 }
 
 
-
-static nsString GetOriginalKeySystem(const nsString& aKeySystem) {
+static bool IsTypeSupported(
+    const ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
+    const nsString& aKeySystem, const nsString* aContentType = nullptr) {
+  nsString keySystem;
+  
   if (IsWidevineExperimentKeySystemAndSupported(aKeySystem)) {
-    return nsString(u"com.widevine.alpha");
+    keySystem.AppendLiteral(u"com.widevine.alpha");
   }
-  return aKeySystem;
+  
+  
+  
+  else if (aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
+    keySystem.AppendLiteral(kPlayReadyKeySystemHardware);
+  } else {
+    keySystem = aKeySystem;
+  }
+  return aFactory->IsTypeSupported(
+      keySystem.get(), aContentType ? aContentType->get() : nullptr);
 }
 
 static nsString MapKeySystem(const nsString& aKeySystem) {
+  
+  
   if (IsWidevineKeySystem(aKeySystem)) {
     return nsString(u"com.widevine.alpha.experiment");
+  }
+  
+  
+  
+  if (aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
+    return NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware);
   }
   return aKeySystem;
 }
@@ -465,7 +485,7 @@ HRESULT MFCDMParent::LoadFactory(
                                             nullptr, CLSCTX_INPROC_SERVER,
                                             IID_PPV_ARGS(&clsFactory)));
     MFCDM_RETURN_IF_FAILED(clsFactory->CreateContentDecryptionModuleFactory(
-        aKeySystem.get(), IID_PPV_ARGS(&cdmFactory)));
+        MapKeySystem(aKeySystem).get(), IID_PPV_ARGS(&cdmFactory)));
     aFactoryOut.Swap(cdmFactory);
     MFCDM_PARENT_SLOG("Loaded CDM from platform!");
     return S_OK;
@@ -591,8 +611,7 @@ static bool FactorySupports(ComPtr<IMFContentDecryptionModuleFactory>& aFactory,
 
   
   
-  bool support = aFactory->IsTypeSupported(
-      GetOriginalKeySystem(aKeySystem).get(), contentType.get());
+  bool support = IsTypeSupported(aFactory, aKeySystem, &contentType);
   MFCDM_PARENT_SLOG("IsTypeSupport=%d (key-system=%s, content-type=%s)",
                     support, NS_ConvertUTF16toUTF8(aKeySystem).get(),
                     NS_ConvertUTF16toUTF8(contentType).get());
@@ -603,7 +622,8 @@ static bool IsKeySystemHWSecure(
     const nsAString& aKeySystem,
     const nsTArray<MFCDMMediaCapability>& aCapabilities) {
   if (IsPlayReadyKeySystemAndSupported(aKeySystem)) {
-    if (aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware)) {
+    if (aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware) ||
+        aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
       return true;
     }
     for (const auto& capabilities : aCapabilities) {
@@ -648,6 +668,9 @@ MFCDMParent::GetAllKeySystemsCapabilities() {
               SecureLevel::Software),
           std::pair<nsString, SecureLevel>(
               NS_ConvertUTF8toUTF16(kPlayReadyKeySystemHardware),
+              SecureLevel::Hardware),
+          std::pair<nsString, SecureLevel>(
+              NS_ConvertUTF8toUTF16(kPlayReadyHardwareClearLeadKeySystemName),
               SecureLevel::Hardware),
           std::pair<nsString, SecureLevel>(
               NS_ConvertUTF8toUTF16(kWidevineExperimentKeySystemName),
@@ -802,7 +825,8 @@ void MFCDMParent::GetCapabilities(const nsString& aKeySystem,
   }
 
   static auto RequireClearLead = [](const nsString& aKeySystem) {
-    if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName)) {
+    if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName) ||
+        aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
       return true;
     }
     return false;
@@ -900,8 +924,7 @@ mozilla::ipc::IPCResult MFCDMParent::RecvInit(
       RequirementToStr(aParams.distinctiveID()),
       RequirementToStr(aParams.persistentState()),
       IsKeySystemHWSecure(mKeySystem, aParams.videoCapabilities()));
-  MOZ_ASSERT(mFactory->IsTypeSupported(GetOriginalKeySystem(mKeySystem).get(),
-                                       nullptr));
+  MOZ_ASSERT(IsTypeSupported(mFactory, mKeySystem));
 
   MFCDM_REJECT_IF_FAILED(CreateContentDecryptionModule(
                              mFactory, MapKeySystem(mKeySystem), aParams, mCDM),

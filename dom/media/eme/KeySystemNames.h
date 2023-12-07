@@ -37,6 +37,11 @@ inline constexpr char kPlayReadyKeySystemName[] =
     "com.microsoft.playready.recommendation";
 inline constexpr char kPlayReadyKeySystemHardware[] =
     "com.microsoft.playready.recommendation.3000";
+
+
+
+inline constexpr char kPlayReadyHardwareClearLeadKeySystemName[] =
+    "com.microsoft.playready.recommendation.clearlead";
 #endif
 }  
 

@@ -59,7 +59,8 @@ bool IsPlayReadyKeySystemAndSupported(const nsAString& aKeySystem) {
     return false;
   }
   return aKeySystem.EqualsLiteral(kPlayReadyKeySystemName) ||
-         aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware);
+         aKeySystem.EqualsLiteral(kPlayReadyKeySystemHardware) ||
+         aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName);
 }
 
 bool IsWidevineExperimentKeySystemAndSupported(const nsAString& aKeySystem) {
@@ -197,8 +198,8 @@ bool DoesKeySystemSupportClearLead(const nsAString& aKeySystem) {
   
   
 #ifdef MOZ_WMF_CDM
-  
-  if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName)) {
+  if (aKeySystem.EqualsLiteral(kWidevineExperiment2KeySystemName) ||
+      aKeySystem.EqualsLiteral(kPlayReadyHardwareClearLeadKeySystemName)) {
     return true;
   }
 #endif
