@@ -542,13 +542,13 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
-
   void PopulateReflowOutput(
       ReflowOutput& aReflowOutput, const ReflowInput& aReflowInput,
       nsReflowStatus& aStatus, const mozilla::LogicalSize& aContentBoxSize,
       const mozilla::LogicalMargin& aBorderPadding,
       const nscoord aConsumedBSize, const bool aMayNeedNextInFlow,
-      const nscoord aMaxBlockEndEdgeOfChildren, const bool aAnyChildIncomplete,
+      const nscoord aMaxBlockEndEdgeOfChildren,
+      const nsReflowStatus& aChildrenStatus,
       const FlexboxAxisTracker& aAxisTracker, FlexLayoutResult& aFlr);
 
   
@@ -574,7 +574,10 @@ class nsFlexContainerFrame final : public nsContainerFrame,
 
 
 
-  std::tuple<nscoord, bool> ReflowChildren(
+
+
+
+  std::tuple<nscoord, nsReflowStatus> ReflowChildren(
       const ReflowInput& aReflowInput, const nsSize& aContainerSize,
       const mozilla::LogicalSize& aAvailableSizeForItems,
       const mozilla::LogicalMargin& aBorderPadding,
