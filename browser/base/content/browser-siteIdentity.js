@@ -91,6 +91,10 @@ var gIdentityHandler = {
     );
   },
 
+  get _isAssociatedIdentity() {
+    return this._state & Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+  },
+
   get _isMixedActiveContentLoaded() {
     return (
       this._state & Ci.nsIWebProgressListener.STATE_LOADED_MIXED_ACTIVE_CONTENT
@@ -872,7 +876,12 @@ var gIdentityHandler = {
     } else if (this._isAboutHttpsOnlyErrorPage) {
       
       this._identityBox.className = "httpsOnlyErrorPage";
-    } else if (this._isAboutNetErrorPage || this._isAboutBlockedPage) {
+    } else if (
+      this._isAboutNetErrorPage ||
+      this._isAboutBlockedPage ||
+      this._isAssociatedIdentity
+    ) {
+      
       
       this._identityBox.className = "unknownIdentity";
     } else if (this._isPotentiallyTrustworthy) {
@@ -986,6 +995,8 @@ var gIdentityHandler = {
       connection = "not-secure";
     } else if (this._isAboutNetErrorPage) {
       connection = "net-error-page";
+    } else if (this._isAssociatedIdentity) {
+      connection = "associated";
     } else if (this._isPotentiallyTrustworthy) {
       connection = "file";
     }
@@ -1145,6 +1156,14 @@ var gIdentityHandler = {
     document.l10n.setAttributes(
       this._identityPopupSecurityView,
       "identity-header-security-with-host",
+      {
+        host,
+      }
+    );
+
+    document.l10n.setAttributes(
+      this._identityPopupMainViewHeaderLabel,
+      "identity-site-information",
       {
         host,
       }

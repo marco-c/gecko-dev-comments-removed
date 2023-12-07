@@ -5582,7 +5582,11 @@ var XULBrowserWindow = {
 
     
     
-    uri = this._securityURIOverride(gBrowser.selectedBrowser) ?? uri;
+    let uriOverride = this._securityURIOverride(gBrowser.selectedBrowser);
+    if (uriOverride) {
+      uri = uriOverride;
+      this._state |= Ci.nsIWebProgressListener.STATE_IDENTITY_ASSOCIATED;
+    }
 
     try {
       uri = Services.io.createExposableURI(uri);
