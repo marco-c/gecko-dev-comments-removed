@@ -6,6 +6,11 @@
 
 
 
+
+
+
+
+
 setup(() => {
   assert_true(window.isSecureContext);
 });
@@ -14,19 +19,19 @@ setup(() => {
 
 
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_LOCAL },
   expected: WindowOpenTestResult.SUCCESS,
 }), "local to local: no preflight required.");
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_PRIVATE },
   expected: WindowOpenTestResult.SUCCESS,
 }), "local to private: no preflight required.");
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-local", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_LOCAL },
   target: { server: Server.HTTPS_PUBLIC },
   expected: WindowOpenTestResult.SUCCESS,
@@ -89,7 +94,7 @@ function makePreflightTests({
     source,
     target: {
       server: targetServer,
-      behavior: { preflight: PreflightBehavior.success(token()) },
+      behavior: { preflight: PreflightBehavior.navigation(token()) },
     },
     expected: WindowOpenTestResult.SUCCESS,
   }), prefix + "success.");
@@ -100,20 +105,20 @@ function makePreflightTests({
 
 
 
-makePreflightTests({
+subsetTestByKey('from-private', makePreflightTests, {
   sourceServer: Server.HTTPS_PRIVATE,
   sourceName: 'private',
   targetServer: Server.HTTPS_LOCAL,
   targetName: 'local',
 });
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-private", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: { server: Server.HTTPS_PRIVATE },
   expected: WindowOpenTestResult.SUCCESS,
 }), "private to private: no preflight required.");
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-private", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PRIVATE },
   target: { server: Server.HTTPS_PUBLIC },
   expected: WindowOpenTestResult.SUCCESS,
@@ -124,21 +129,21 @@ promise_test_parallel(t => windowOpenTest(t, {
 
 
 
-makePreflightTests({
+subsetTestByKey('from-public', makePreflightTests, {
   sourceServer: Server.HTTPS_PUBLIC,
   sourceName: "public",
   targetServer: Server.HTTPS_LOCAL,
   targetName: "local",
 });
 
-makePreflightTests({
+subsetTestByKey('from-public', makePreflightTests, {
   sourceServer: Server.HTTPS_PUBLIC,
   sourceName: "public",
   targetServer: Server.HTTPS_PRIVATE,
   targetName: "private",
 });
 
-promise_test_parallel(t => windowOpenTest(t, {
+subsetTestByKey("from-public", promise_test_parallel, t => windowOpenTest(t, {
   source: { server: Server.HTTPS_PUBLIC },
   target: { server: Server.HTTPS_PUBLIC },
   expected: WindowOpenTestResult.SUCCESS,
@@ -147,7 +152,7 @@ promise_test_parallel(t => windowOpenTest(t, {
 
 
 
-makePreflightTests({
+subsetTestByKey('from-treat-as-public', makePreflightTests, {
   sourceServer: Server.HTTPS_LOCAL,
   sourceTreatAsPublic: true,
   sourceName: "treat-as-public-address",
@@ -155,7 +160,7 @@ makePreflightTests({
   targetName: "local",
 });
 
-promise_test_parallel(
+subsetTestByKey("from-treat-as-public", promise_test_parallel,
     t => windowOpenTest(t, {
       source: {
         server: Server.HTTPS_LOCAL,
@@ -166,7 +171,7 @@ promise_test_parallel(
     }),
     'treat-as-public-address to local (same-origin): no preflight required.');
 
-makePreflightTests({
+subsetTestByKey('from-treat-as-public', makePreflightTests, {
   sourceServer: Server.HTTPS_LOCAL,
   sourceTreatAsPublic: true,
   sourceName: 'treat-as-public-address',
@@ -174,7 +179,7 @@ makePreflightTests({
   targetName: 'private',
 });
 
-promise_test_parallel(
+subsetTestByKey("from-treat-as-public", promise_test_parallel,
     t => windowOpenTest(t, {
       source: {
         server: Server.HTTPS_LOCAL,
