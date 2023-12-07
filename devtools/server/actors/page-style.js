@@ -1229,10 +1229,16 @@ class PageStyleActor extends Actor {
 
     
     
-    for (const styleSheet of targetDocument.styleSheets) {
-      for (const rule of styleSheet.rules) {
+    const traverseRules = ruleList => {
+      for (const rule of ruleList) {
         this._collectAttributesFromRule(result, rule, search, attributeType);
+        if (rule.cssRules) {
+          traverseRules(rule.cssRules);
+        }
       }
+    };
+    for (const styleSheet of targetDocument.styleSheets) {
+      traverseRules(styleSheet.rules);
     }
   }
 
