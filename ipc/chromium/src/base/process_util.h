@@ -204,6 +204,8 @@ Result<Ok, LaunchError> LaunchApp(const std::wstring& cmdline,
                                   const LaunchOptions& options,
                                   ProcessHandle* process_handle);
 
+Result<Ok, LaunchError> LaunchApp(const CommandLine& cl, const LaunchOptions&,
+                                  ProcessHandle* process_handle);
 #else
 
 
@@ -213,7 +215,7 @@ Result<Ok, LaunchError> LaunchApp(const std::wstring& cmdline,
 
 
 Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
-                                  const LaunchOptions& options,
+                                  LaunchOptions&& options,
                                   ProcessHandle* process_handle);
 
 
@@ -240,7 +242,7 @@ class AppProcessBuilder {
   
   
   bool ForkProcess(const std::vector<std::string>& argv,
-                   const LaunchOptions& options, ProcessHandle* process_handle);
+                   LaunchOptions&& options, ProcessHandle* process_handle);
   
   
   
@@ -269,11 +271,6 @@ void InitForkServerProcess();
 
 void RegisterForkServerNoCloseFD(int aFd);
 #endif
-
-
-
-Result<Ok, LaunchError> LaunchApp(const CommandLine& cl, const LaunchOptions&,
-                                  ProcessHandle* process_handle);
 
 
 
