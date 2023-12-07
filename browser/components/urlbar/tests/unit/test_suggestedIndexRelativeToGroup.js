@@ -12,7 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 });
 
 const MAX_RESULTS = 10;
-const MAX_RICH_RESULTS_PREF = "browser.urlbar.maxRichResults";
 
 
 const RESULT_GROUPS = {
@@ -48,9 +47,6 @@ add_task(function setuo() {
 
 add_task(async function test() {
   
-  Services.prefs.setIntPref(MAX_RICH_RESULTS_PREF, MAX_RESULTS);
-
-  
   
   let basicResults = [
     ...makeHistoryResults(),
@@ -58,6 +54,9 @@ add_task(async function test() {
     ...makeRemoteSuggestionResults(),
   ];
 
+  
+  
+  
   
   
   
@@ -465,6 +464,53 @@ add_task(async function test() {
         },
       ],
     },
+
+    {
+      desc: "Last result in REMOTE_SUGGESTION, maxRichResults too small to add any REMOTE_SUGGESTION",
+      maxRichResults: 2,
+      suggestedIndexResults: [
+        {
+          suggestedIndex: -1,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        },
+      ],
+      expected: [
+        {
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          count: 1,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          count: 1,
+        },
+        
+      ],
+    },
+
+    {
+      desc: "Last result in REMOTE_SUGGESTION, maxRichResults just big enough to show one REMOTE_SUGGESTION",
+      maxRichResults: 3,
+      suggestedIndexResults: [
+        {
+          suggestedIndex: -1,
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+        },
+      ],
+      expected: [
+        {
+          group: UrlbarUtils.RESULT_GROUP.FORM_HISTORY,
+          count: 1,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.GENERAL,
+          count: 1,
+        },
+        {
+          group: UrlbarUtils.RESULT_GROUP.REMOTE_SUGGESTION,
+          suggestedIndex: -1,
+        },
+      ],
+    },
   ];
 
   let controller = UrlbarTestUtils.newMockController();
@@ -475,10 +521,13 @@ add_task(async function test() {
     expected,
     resultGroups,
     otherResults,
+    maxRichResults = MAX_RESULTS,
   } of tests) {
     info(`Running test: ${desc}`);
 
     setResultGroups(resultGroups || RESULT_GROUPS);
+
+    UrlbarPrefs.set("maxRichResults", maxRichResults);
 
     
     let results = (otherResults || basicResults).concat(

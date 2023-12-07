@@ -8,9 +8,6 @@
 const MAX_RESULTS = 10;
 
 add_task(async function suggestedIndex() {
-  
-  UrlbarPrefs.set("maxRichResults", MAX_RESULTS);
-
   let tests = [
     
     {
@@ -458,6 +455,42 @@ add_task(async function suggestedIndex() {
       spansByIndex: { 8: 2 },
       expected: indexes([0, 8], [10, 1]),
     },
+    {
+      desc: "{ suggestedIndex: 0, maxRichResults: 0 }",
+      maxRichResults: 0,
+      suggestedIndexes: [0],
+      expected: [],
+    },
+    {
+      desc: "{ suggestedIndex: 1, maxRichResults: 0 }",
+      maxRichResults: 0,
+      suggestedIndexes: [1],
+      expected: [],
+    },
+    {
+      desc: "{ suggestedIndex: -1, maxRichResults: 0 }",
+      maxRichResults: 0,
+      suggestedIndexes: [-1],
+      expected: [],
+    },
+    {
+      desc: "{ suggestedIndex: 0, maxRichResults: 1 }",
+      maxRichResults: 1,
+      suggestedIndexes: [0],
+      expected: indexes([10, 1]),
+    },
+    {
+      desc: "{ suggestedIndex: 1, maxRichResults: 1 }",
+      maxRichResults: 1,
+      suggestedIndexes: [1],
+      expected: indexes([10, 1]),
+    },
+    {
+      desc: "{ suggestedIndex: -1, maxRichResults: 1 }",
+      maxRichResults: 1,
+      suggestedIndexes: [-1],
+      expected: indexes([10, 1]),
+    },
   ];
 
   for (let test of tests) {
@@ -485,11 +518,14 @@ add_task(async function suggestedIndex() {
 
 
 
+
+
 async function doSuggestedIndexTest({
   suggestedIndexes,
   expected,
   spansByIndex = {},
   resultCount = MAX_RESULTS,
+  maxRichResults = MAX_RESULTS,
 }) {
   
   let results = [];
@@ -527,6 +563,7 @@ async function doSuggestedIndexTest({
   }
 
   
+  UrlbarPrefs.set("maxRichResults", maxRichResults);
   let provider = registerBasicTestProvider(results);
   let context = createContext(undefined, { providers: [provider.name] });
   let controller = UrlbarTestUtils.newMockController();
