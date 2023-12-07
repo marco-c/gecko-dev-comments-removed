@@ -131,7 +131,7 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   const tab = await addTab(COM_PAGE_URL);
 
   info("Wait until the service worker registration is registered");
-  await waitForRegistrationReady(tab, COM_PAGE_URL);
+  await waitForRegistrationReady(tab, COM_PAGE_URL, COM_WORKER_URL);
 
   info("Navigate to another page");
   let onBrowserLoaded = BrowserTestUtils.browserLoaded(
@@ -148,7 +148,7 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   
   
   await onBrowserLoaded;
-  await waitForRegistrationReady(tab, ORG_PAGE_URL);
+  await waitForRegistrationReady(tab, ORG_PAGE_URL, ORG_WORKER_URL);
 
   const { hooks, commands, targetCommand } = await watchServiceWorkerTargets(
     tab
@@ -189,6 +189,63 @@ add_task(async function test_NavigationToPageWithExistingWorker() {
   await checkHooks(hooks, {
     available: 2,
     destroyed: 2,
+    targets: [],
+  });
+
+  
+  targetCommand.destroy();
+
+  await commands.waitForRequestsToSettle();
+  await commands.destroy();
+  await removeTab(tab);
+});
+
+add_task(async function test_NavigationToPageWithExistingStoppedWorker() {
+  await setupServiceWorkerNavigationTest();
+
+  const tab = await addTab(COM_PAGE_URL);
+
+  info("Wait until the service worker registration is registered");
+  await waitForRegistrationReady(tab, COM_PAGE_URL, COM_WORKER_URL);
+
+  await stopServiceWorker(COM_WORKER_URL);
+
+  const { hooks, commands, targetCommand } = await watchServiceWorkerTargets(
+    tab
+  );
+
+  
+  await wait(1000);
+
+  
+  info(
+    "Verify that no SW is reported after it has been stopped and we start watching for service workers"
+  );
+  await checkHooks(hooks, {
+    available: 0,
+    destroyed: 0,
+    targets: [],
+  });
+
+  info("Reload the worker module via the postMessage call");
+  await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {
+    const registration = await content.wrappedJSObject.registrationPromise;
+    
+    registration.active.postMessage("");
+  });
+
+  info("Verify that the SW is notified");
+  await checkHooks(hooks, {
+    available: 1,
+    destroyed: 0,
+    targets: [COM_WORKER_URL],
+  });
+
+  await unregisterServiceWorker(COM_WORKER_URL);
+
+  await checkHooks(hooks, {
+    available: 1,
+    destroyed: 1,
     targets: [],
   });
 
@@ -247,7 +304,7 @@ async function watchServiceWorkerTargets(tab) {
 
 
 
-async function waitForRegistrationReady(tab, expectedPageUrl) {
+async function waitForRegistrationReady(tab, expectedPageUrl, workerUrl) {
   await asyncWaitUntil(() =>
     SpecialPowers.spawn(tab.linkedBrowser, [expectedPageUrl], function (_url) {
       try {
@@ -260,6 +317,26 @@ async function waitForRegistrationReady(tab, expectedPageUrl) {
       }
     })
   );
+  
+  
+  const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+    Ci.nsIServiceWorkerManager
+  );
+  await waitFor(() => {
+    
+    const registrations = swm.getAllRegistrations();
+    for (let i = 0; i < registrations.length; i++) {
+      const info = registrations.queryElementAt(
+        i,
+        Ci.nsIServiceWorkerRegistrationInfo
+      );
+      
+      if (info.scriptSpec === workerUrl) {
+        return true;
+      }
+    }
+    return false;
+  });
 }
 
 

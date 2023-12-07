@@ -2235,8 +2235,9 @@ function getClientCssProperties() {
 
 
 
-async function unregisterServiceWorker(workerUrl) {
-  info(`Unregistering Service Worker: ${workerUrl}\n`);
+async function stopServiceWorker(workerUrl) {
+  info(`Stop Service Worker: ${workerUrl}\n`);
+
   
   Services.prefs.setIntPref("dom.serviceWorkers.idle_timeout", 0);
 
@@ -2270,23 +2271,54 @@ async function unregisterServiceWorker(workerUrl) {
   
   
   
-  matchedInfo.activeWorker.attachDebugger();
-  matchedInfo.activeWorker.detachDebugger();
+  function resetWorkerTimeout(worker) {
+    worker.attachDebugger();
+    worker.detachDebugger();
+  }
+  resetWorkerTimeout(matchedInfo.activeWorker);
+  
+  if (matchedInfo.evaluatingWorker) {
+    resetWorkerTimeout(matchedInfo.evaluatingWorker);
+  }
+  if (matchedInfo.installingWorker) {
+    resetWorkerTimeout(matchedInfo.installingWorker);
+  }
+  if (matchedInfo.waitingWorker) {
+    resetWorkerTimeout(matchedInfo.waitingWorker);
+  }
+  
+  Services.prefs.clearUserPref("dom.serviceWorkers.idle_timeout");
 
   
+  await wait(0);
+
+  return matchedInfo;
+}
+
+
+
+
+
+
+
+async function unregisterServiceWorker(workerUrl) {
+  const swInfo = await stopServiceWorker(workerUrl);
+
+  info(`Unregister Service Worker: ${workerUrl}\n`);
+  
+  const swm = Cc["@mozilla.org/serviceworkers/manager;1"].getService(
+    Ci.nsIServiceWorkerManager
+  );
   const unregisterSuccess = await new Promise(resolve => {
     swm.unregister(
-      matchedInfo.principal,
+      swInfo.principal,
       {
         unregisterSucceeded(success) {
           resolve(success);
         },
       },
-      matchedInfo.scope
+      swInfo.scope
     );
   });
   ok(unregisterSuccess, "Service worker successfully unregistered");
-
-  
-  Services.prefs.clearUserPref("dom.serviceWorkers.idle_timeout");
 }
