@@ -1,5 +1,7 @@
 import string
 
+import WebIDL
+
 
 
 
@@ -188,7 +190,7 @@ def WebIDLTest(parser, harness):
         try:
             parser.parse(interface)
             results = parser.finish()
-        except Exception:
+        except WebIDL.WebIDLError:
             threw = True
 
         harness.ok(threw, "Should have thrown.")

@@ -1,3 +1,6 @@
+import WebIDL
+
+
 def WebIDLTest(parser, harness):
     parser.parse(
         """
@@ -102,13 +105,17 @@ def checkEquivalent(iface, harness):
         if callable(a1):
             try:
                 v1 = a1()
-            except Exception:
+            except AssertionError:
+                
+                
+                continue
+            except TypeError:
                 
                 continue
 
             try:
                 a2 = getattr(type2, attr)
-            except Exception:
+            except WebIDL.WebIDLError:
                 harness.ok(
                     False,
                     "Missing %s attribute on type %s in %s" % (attr, type2, iface),
@@ -128,7 +135,7 @@ def checkEquivalent(iface, harness):
         else:
             try:
                 a2 = getattr(type2, attr)
-            except Exception:
+            except WebIDL.WebIDLError:
                 harness.ok(
                     False,
                     "Missing %s attribute on type %s in %s" % (attr, type2, iface),

@@ -2,6 +2,8 @@
 
 
 
+import WebIDL
+
 
 def should_throw(parser, harness, message, code):
     parser = parser.reset()
@@ -9,7 +11,7 @@ def should_throw(parser, harness, message, code):
     try:
         parser.parse(code)
         parser.finish()
-    except Exception:
+    except WebIDL.WebIDLError:
         threw = True
 
     harness.ok(threw, "Should have thrown: %s" % message)
