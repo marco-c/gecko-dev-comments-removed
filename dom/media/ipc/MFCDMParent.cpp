@@ -933,16 +933,14 @@ mozilla::ipc::IPCResult MFCDMParent::RecvInit(
   MFCDM_PARENT_LOG("Created a CDM!");
 
   
-  ComPtr<IMFPMPHost> pmpHost;
-  ComPtr<IMFGetService> cdmService;
-  MFCDM_REJECT_IF_FAILED(mCDM.As(&cdmService), NS_ERROR_FAILURE);
-  MFCDM_REJECT_IF_FAILED(
-      cdmService->GetService(MF_CONTENTDECRYPTIONMODULE_SERVICE,
-                             IID_PPV_ARGS(&pmpHost)),
-      NS_ERROR_FAILURE);
-
-  
   if (IsPlayReadyKeySystemAndSupported(mKeySystem)) {
+    ComPtr<IMFPMPHost> pmpHost;
+    ComPtr<IMFGetService> cdmService;
+    MFCDM_REJECT_IF_FAILED(mCDM.As(&cdmService), NS_ERROR_FAILURE);
+    MFCDM_REJECT_IF_FAILED(
+        cdmService->GetService(MF_CONTENTDECRYPTIONMODULE_SERVICE,
+                               IID_PPV_ARGS(&pmpHost)),
+        NS_ERROR_FAILURE);
     MFCDM_REJECT_IF_FAILED(SUCCEEDED(MakeAndInitialize<MFPMPHostWrapper>(
                                &mPMPHostWrapper, pmpHost)),
                            NS_ERROR_FAILURE);
