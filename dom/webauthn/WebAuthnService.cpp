@@ -31,8 +31,36 @@ WebAuthnService::GetAssertion(uint64_t aTransactionId,
                               uint64_t browsingContextId,
                               nsIWebAuthnSignArgs* aArgs,
                               nsIWebAuthnSignPromise* aPromise) {
-  nsresult rv = DefaultService()->GetAssertion(
-      aTransactionId, browsingContextId, aArgs, aPromise);
+  nsIWebAuthnService* service = DefaultService();
+  nsresult rv;
+
+#if defined(XP_MACOSX)
+  
+  
+  
+  
+  
+  nsString appId;
+  rv = aArgs->GetAppId(appId);
+  if (rv == NS_OK) {  
+    uint8_t transportSet = 0;
+    nsTArray<uint8_t> allowListTransports;
+    Unused << aArgs->GetAllowListTransports(allowListTransports);
+    for (const uint8_t& transport : allowListTransports) {
+      transportSet |= transport;
+    }
+    uint8_t passkeyTransportMask =
+        MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_INTERNAL |
+        MOZ_WEBAUTHN_AUTHENTICATOR_TRANSPORT_ID_HYBRID;
+    if (allowListTransports.Length() > 0 &&
+        (transportSet & passkeyTransportMask) == 0) {
+      service = AuthrsService();
+    }
+  }
+#endif
+
+  rv =
+      service->GetAssertion(aTransactionId, browsingContextId, aArgs, aPromise);
   if (NS_FAILED(rv)) {
     return rv;
   }
