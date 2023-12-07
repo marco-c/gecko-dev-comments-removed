@@ -330,6 +330,13 @@ void APZCTreeManager::NotifyLayerTreeAdopted(
     
   }
 
+  
+  
+  
+  
+  
+  mFocusState.Reset();
+
   UniquePtr<APZTestData> adoptedData;
   if (aOldApzcTreeManager) {
     MutexAutoLock lock(aOldApzcTreeManager->mTestDataLock);

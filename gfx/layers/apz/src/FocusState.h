@@ -125,6 +125,11 @@ class FocusState final {
 
   bool CanIgnoreKeyboardShortcutMisses() const;
 
+  
+
+
+  void Reset();
+
  private:
   
 
