@@ -390,7 +390,6 @@ const Rule kCreditCardRules[] = {
     {RegexKey::CC_NAME,
      
      "account.*holder.*name"
-     "|^(credit[-\s]?card|card).*name"
      
      "|^(kredit)?(karten|konto)inhaber"
      "|^(name).*karte"
