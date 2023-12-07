@@ -93,17 +93,27 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
 #endif
 
     if (gen->needsStaticStackAlignment()) {
-#ifdef ENABLE_WASM_TAIL_CALLS
-      
-      
-      
-      frameDepth_ = AlignBytes(frameDepth_, WasmStackAlignment);
-#endif
-
       
       
       
       MOZ_ASSERT(graph->argumentSlotCount() == 0);
+
+#ifdef ENABLE_WASM_TAIL_CALLS
+      
+      
+      
+      uint32_t calleeFramePadding = ComputeByteAlignment(
+          sizeof(wasm::Frame) + frameDepth_, WasmStackAlignment);
+
+      
+      
+      
+      uint32_t stackArgsWithPadding =
+          AlignBytes(gen->wasmMaxStackArgBytes(), WasmStackAlignment);
+
+      
+      frameDepth_ += calleeFramePadding + stackArgsWithPadding;
+#else
       frameDepth_ += gen->wasmMaxStackArgBytes();
 
       
@@ -111,6 +121,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph,
       
       frameDepth_ += ComputeByteAlignment(sizeof(wasm::Frame) + frameDepth_,
                                           WasmStackAlignment);
+#endif
     }
 
 #ifdef JS_CODEGEN_ARM64
