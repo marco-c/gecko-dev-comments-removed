@@ -542,6 +542,7 @@ DevToolsUtils.defineLazyGetter(this, "NetUtil", () => {
 
 
 
+
 function mainThreadFetch(
   urlIn,
   aOptions = {
@@ -550,6 +551,7 @@ function mainThreadFetch(
     window: null,
     charset: null,
     principal: null,
+    headers: null,
     cacheKey: 0,
   }
 ) {
@@ -580,6 +582,12 @@ function mainThreadFetch(
       
       if (aOptions.cacheKey != 0) {
         channel.cacheKey = aOptions.cacheKey;
+      }
+    }
+
+    if (aOptions.headers && channel instanceof Ci.nsIHttpChannel) {
+      for (const h in aOptions.headers) {
+        channel.setRequestHeader(h, aOptions.headers[h],  false);
       }
     }
 

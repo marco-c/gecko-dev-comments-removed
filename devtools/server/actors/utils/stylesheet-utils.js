@@ -79,6 +79,10 @@ async function fetchStyleSheetText(styleSheet) {
     loadFromCache: true,
     policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
     charset: getCSSCharset(styleSheet),
+    headers: {
+      
+      accept: "text/css,*/*;q=0.1",
+    },
   };
 
   
@@ -102,6 +106,14 @@ async function fetchStyleSheetText(styleSheet) {
 
   try {
     result = await fetch(href, options);
+    if (result.contentType !== "text/css") {
+      console.warn(
+        `stylesheets: fetch from cache returned non-css content-type ` +
+          `${result.contentType} for ${href}, trying without cache.`
+      );
+      options.loadFromCache = false;
+      result = await fetch(href, options);
+    }
   } catch (e) {
     
     
