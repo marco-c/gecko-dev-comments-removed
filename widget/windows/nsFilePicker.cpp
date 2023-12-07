@@ -99,39 +99,6 @@ NS_IMETHODIMP nsFilePicker::Init(mozIDOMWindowProxy* aParent,
 }
 
 namespace mozilla::detail {
-namespace {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T, typename E, bool B>
-static auto ImmorallyDrivePromiseToCompletion(
-    RefPtr<MozPromise<T, E, B>>&& promise) -> Result<T, E> {
-  Maybe<Result<T, E>> val = Nothing();
-
-  AssertIsOnMainThread();
-  promise->Then(
-      mozilla::GetMainThreadSerialEventTarget(), "DrivePromiseToCompletion",
-      [&](T ret) { val = Some(std::move(ret)); },
-      [&](E error) { val = Some(Err(error)); });
-
-  SpinEventLoopUntil("DrivePromiseToCompletion"_ns,
-                     [&]() -> bool { return val.isSome(); });
-
-  MOZ_RELEASE_ASSERT(val.isSome());
-  return val.extract();
-}
-
 
 template <typename ActionType,
           typename ReturnType = typename decltype(std::declval<ActionType>()(
@@ -218,7 +185,6 @@ static auto ShowRemote(HWND parent, ActionType&& action)
         return fail();
       });
 }
-}  
 
 
 
@@ -570,15 +536,13 @@ RefPtr<mozilla::MozPromise<bool, HRESULT, true>> nsFilePicker::ShowFilePicker(
 
 
 
-nsresult nsFilePicker::ShowW(nsIFilePicker::ResultCode* aReturnVal) {
+nsresult nsFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
+  NS_ENSURE_ARG_POINTER(aCallback);
+
   
   if (gfxPlatform::IsHeadless()) {
     return nsresult::NS_ERROR_NOT_AVAILABLE;
   }
-
-  NS_ENSURE_ARG_POINTER(aReturnVal);
-
-  *aReturnVal = returnCancel;
 
   nsAutoString initialDir;
   if (mDisplayDirectory) mDisplayDirectory->GetPath(initialDir);
@@ -593,39 +557,48 @@ nsresult nsFilePicker::ShowW(nsIFilePicker::ResultCode* aReturnVal) {
   mUnicodeFile.Truncate();
   mFiles.Clear();
 
-  bool result = [&]() {
-    auto promise = mMode == modeGetFolder ? ShowFolderPicker(initialDir)
-                                          : ShowFilePicker(initialDir);
-    auto result =
-        mozilla::detail::ImmorallyDrivePromiseToCompletion(std::move(promise));
-    
-    return result.unwrapOr(false);
-  }();
+  auto promise = mMode == modeGetFolder ? ShowFolderPicker(initialDir)
+                                        : ShowFilePicker(initialDir);
 
-  
-  if (!result) return NS_OK;
+  auto p2 = promise->Then(
+      mozilla::GetMainThreadSerialEventTarget(), __PRETTY_FUNCTION__,
+      [self = RefPtr(this),
+       callback = RefPtr(aCallback)](bool selectionMade) -> void {
+        if (!selectionMade) {
+          callback->Done(ResultCode::returnCancel);
+          return;
+        }
 
-  RememberLastUsedDirectory();
+        self->RememberLastUsedDirectory();
 
-  nsIFilePicker::ResultCode retValue = returnOK;
-  if (mMode == modeSave) {
-    
-    
-    nsCOMPtr<nsIFile> file;
-    nsresult rv = NS_NewLocalFile(mUnicodeFile, false, getter_AddRefs(file));
+        nsIFilePicker::ResultCode retValue = ResultCode::returnOK;
 
-    bool flag = false;
-    if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(file->Exists(&flag)) && flag) {
-      retValue = returnReplace;
-    }
-  }
+        if (self->mMode == modeSave) {
+          
+          
+          nsCOMPtr<nsIFile> file;
+          nsresult rv =
+              NS_NewLocalFile(self->mUnicodeFile, false, getter_AddRefs(file));
 
-  *aReturnVal = retValue;
+          bool flag = false;
+          if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(file->Exists(&flag)) && flag) {
+            retValue = ResultCode::returnReplace;
+          }
+        }
+
+        callback->Done(retValue);
+      },
+      [callback = RefPtr(aCallback)](HRESULT err) {
+        MOZ_LOG(sLogFileDialog, LogLevel::Error,
+                ("nsFilePicker: Show failed with hr=0x%08lX", err));
+        callback->Done(ResultCode::returnCancel);
+      });
+
   return NS_OK;
 }
 
 nsresult nsFilePicker::Show(nsIFilePicker::ResultCode* aReturnVal) {
-  return ShowW(aReturnVal);
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 NS_IMETHODIMP
