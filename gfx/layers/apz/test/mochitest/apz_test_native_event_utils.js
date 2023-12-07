@@ -1971,11 +1971,15 @@ function buildRelativeScrollSmoothnessVariants(aInputType, aScrollMethods) {
   let subtests = [];
   for (let scrollMethod of aScrollMethods) {
     subtests.push({
-      file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}`,
-      prefs: getSmoothScrollPrefs(aInputType,  false)
+      file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}&strict=true`,
+      prefs: getSmoothScrollPrefs(aInputType,  false),
     });
+    
+    
+    
+    
     subtests.push({
-      file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}`,
+      file: `helper_relative_scroll_smoothness.html?input-type=${aInputType}&scroll-method=${scrollMethod}&strict=false`,
       prefs: getSmoothScrollPrefs(aInputType,  true),
     });
   }
