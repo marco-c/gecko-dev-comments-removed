@@ -1131,17 +1131,11 @@ bool ScriptLoader::ProcessExternalScript(nsIScriptElement* aElement,
     return false;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  if (request && mModuleLoader->IsModuleFetched(request->mURI) &&
+  if (request && request->IsModuleRequest() &&
       mModuleLoader->HasImportMapRegistered()) {
-    DebugOnly<bool> removed = mModuleLoader->RemoveFetchedModule(request->mURI);
-    MOZ_ASSERT(removed);
+    
+    
+    request->Cancel();
     request = nullptr;
   }
 
@@ -3591,10 +3585,8 @@ void ScriptLoader::HandleLoadError(ScriptLoadRequest* aRequest,
         modReq->CancelDynamicImport(aResult);
       }
     } else {
-      MOZ_ASSERT(!modReq->IsTopLevel());
       MOZ_ASSERT(!modReq->isInList());
       modReq->Cancel();
-      
     }
   } else if (mParserBlockingRequest == aRequest) {
     MOZ_ASSERT(!aRequest->isInList());
