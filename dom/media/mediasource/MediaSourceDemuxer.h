@@ -13,7 +13,7 @@
 #  include "TrackBuffersManager.h"
 #  include "mozilla/Atomics.h"
 #  include "mozilla/Maybe.h"
-#  include "mozilla/Monitor.h"
+#  include "mozilla/Mutex.h"
 #  include "mozilla/TaskQueue.h"
 #  include "mozilla/dom/MediaDebugInfoBinding.h"
 
@@ -80,8 +80,8 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
   
   bool ScanSourceBuffersForContent();
   RefPtr<TrackBuffersManager> GetManager(TrackInfo::TrackType aType)
-      MOZ_REQUIRES(mMonitor);
-  TrackInfo* GetTrackInfo(TrackInfo::TrackType) MOZ_REQUIRES(mMonitor);
+      MOZ_REQUIRES(mMutex);
+  TrackInfo* GetTrackInfo(TrackInfo::TrackType) MOZ_REQUIRES(mMutex);
   void DoAttachSourceBuffer(RefPtr<TrackBuffersManager>&& aSourceBuffer);
   void DoDetachSourceBuffer(const RefPtr<TrackBuffersManager>& aSourceBuffer);
   bool OnTaskQueue() {
@@ -94,11 +94,11 @@ class MediaSourceDemuxer : public MediaDataDemuxer,
   MozPromiseHolder<InitPromise> mInitPromise;
 
   
-  mutable Monitor mMonitor;
-  nsTArray<RefPtr<MediaSourceTrackDemuxer>> mDemuxers MOZ_GUARDED_BY(mMonitor);
-  RefPtr<TrackBuffersManager> mAudioTrack MOZ_GUARDED_BY(mMonitor);
-  RefPtr<TrackBuffersManager> mVideoTrack MOZ_GUARDED_BY(mMonitor);
-  MediaInfo mInfo MOZ_GUARDED_BY(mMonitor);
+  mutable Mutex mMutex;
+  nsTArray<RefPtr<MediaSourceTrackDemuxer>> mDemuxers MOZ_GUARDED_BY(mMutex);
+  RefPtr<TrackBuffersManager> mAudioTrack MOZ_GUARDED_BY(mMutex);
+  RefPtr<TrackBuffersManager> mVideoTrack MOZ_GUARDED_BY(mMutex);
+  MediaInfo mInfo MOZ_GUARDED_BY(mMutex);
 };
 
 class MediaSourceTrackDemuxer
@@ -108,7 +108,7 @@ class MediaSourceTrackDemuxer
   MediaSourceTrackDemuxer(MediaSourceDemuxer* aParent,
                           TrackInfo::TrackType aType,
                           TrackBuffersManager* aManager)
-      MOZ_REQUIRES(aParent->mMonitor);
+      MOZ_REQUIRES(aParent->mMutex);
 
   UniquePtr<TrackInfo> GetInfo() const override;
 
@@ -148,7 +148,7 @@ class MediaSourceTrackDemuxer
 
   TrackInfo::TrackType mType;
   
-  Monitor mMonitor MOZ_UNANNOTATED;
+  Mutex mMutex MOZ_UNANNOTATED;
   media::TimeUnit mNextRandomAccessPoint;
   
   
