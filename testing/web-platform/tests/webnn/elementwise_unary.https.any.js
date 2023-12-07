@@ -8,6 +8,6 @@
 
 
 testWebNNOperation(
-  ['abs', 'ceil', 'cos', 'exp', 'floor', 'identity', 'log', 'neg', 'sin', 'tan'],
+  ['abs', 'ceil', 'cos', 'exp', 'floor', 'identity', 'log', 'neg', 'reciprocal', 'sin', 'tan'],
   buildOperationWithSingleInput
 );
