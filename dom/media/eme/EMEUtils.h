@@ -15,12 +15,6 @@
 
 namespace mozilla {
 
-enum class CryptoScheme : uint8_t;
-#ifdef MOZ_WMF_CDM
-class MFCDMCapabilitiesIPDL;
-#endif
-struct KeySystemConfig;
-
 namespace dom {
 class ArrayBufferViewOrArrayBuffer;
 }
@@ -83,15 +77,6 @@ const char* ToMediaKeyStatusStr(dom::MediaKeyStatus aStatus);
 
 bool IsHardwareDecryptionSupported(
     const dom::MediaKeySystemConfiguration& aConfig);
-
-const char* EncryptionSchemeStr(const CryptoScheme& aScheme);
-
-#ifdef MOZ_WMF_CDM
-void MFCDMCapabilitiesIPDLToKeySystemConfig(
-    const MFCDMCapabilitiesIPDL& aCDMConfig, KeySystemConfig& aKeySystemConfig);
-#endif
-
-bool DoesKeySystemSupportClearLead(const nsAString& aKeySystem);
 
 }  
 
