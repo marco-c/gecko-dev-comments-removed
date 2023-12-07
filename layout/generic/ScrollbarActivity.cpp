@@ -42,16 +42,29 @@ void ScrollbarActivity::ActivityOccurred() {
   ActivityStopped();
 }
 
+static void SetBooleanAttribute(Element* aElement, nsAtom* aAttribute,
+                                bool aValue) {
+  if (aElement) {
+    if (aValue) {
+      aElement->SetAttr(kNameSpaceID_None, aAttribute, u"true"_ns, true);
+    } else {
+      aElement->UnsetAttr(kNameSpaceID_None, aAttribute, true);
+    }
+  }
+}
+
 void ScrollbarActivity::ActivityStarted() {
-  bool wasActive = IsActive();
-
+  const bool wasActive = IsActive();
   mNestedActivityCounter++;
-
+  if (wasActive) {
+    return;
+  }
+  CancelFadeTimer();
   StartListeningForScrollbarEvents();
   StartListeningForScrollAreaEvents();
-  if (!wasActive) {
-    ActivityChanged();
-  }
+  SetBooleanAttribute(GetHorizontalScrollbar(), nsGkAtoms::active, true);
+  SetBooleanAttribute(GetVerticalScrollbar(), nsGkAtoms::active, true);
+  mScrollbarEffectivelyVisible = true;
 }
 
 void ScrollbarActivity::ActivityStopped() {
@@ -62,14 +75,17 @@ void ScrollbarActivity::ActivityStopped() {
     return;
   }
   mNestedActivityCounter--;
-  if (!IsActive()) {
-    ActivityChanged();
+  if (IsActive()) {
+    return;
   }
+  
+  HoveredScrollbar(nullptr);
+  StartFadeTimer();
 }
 
 NS_IMETHODIMP
 ScrollbarActivity::HandleEvent(dom::Event* aEvent) {
-  if (!IsActive() && !DisplayOnMouseMove()) {
+  if (!mScrollbarEffectivelyVisible && !DisplayOnMouseMove()) {
     return NS_OK;
   }
 
@@ -201,17 +217,6 @@ void ScrollbarActivity::RemoveScrollbarEventListeners(
   }
 }
 
-static void SetBooleanAttribute(Element* aElement, nsAtom* aAttribute,
-                                bool aValue) {
-  if (aElement) {
-    if (aValue) {
-      aElement->SetAttr(kNameSpaceID_None, aAttribute, u"true"_ns, true);
-    } else {
-      aElement->UnsetAttr(kNameSpaceID_None, aAttribute, true);
-    }
-  }
-}
-
 void ScrollbarActivity::CancelFadeTimer() {
   if (mFadeTimer) {
     mFadeTimer->Cancel();
@@ -236,21 +241,9 @@ void ScrollbarActivity::StartFadeTimer() {
       nsITimer::TYPE_ONE_SHOT, "ScrollbarActivity::FadeBeginTimerFired");
 }
 
-void ScrollbarActivity::ActivityChanged() {
-  const bool active = IsActive();
-  if (!active) {
-    
-    HoveredScrollbar(nullptr);
-    StartFadeTimer();
-    return;
-  }
-  CancelFadeTimer();
-  SetBooleanAttribute(GetHorizontalScrollbar(), nsGkAtoms::active, true);
-  SetBooleanAttribute(GetVerticalScrollbar(), nsGkAtoms::active, true);
-}
-
 void ScrollbarActivity::BeginFade() {
   MOZ_ASSERT(!IsActive());
+  mScrollbarEffectivelyVisible = false;
   SetBooleanAttribute(GetHorizontalScrollbar(), nsGkAtoms::active, false);
   SetBooleanAttribute(GetVerticalScrollbar(), nsGkAtoms::active, false);
 }

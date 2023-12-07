@@ -80,7 +80,6 @@ class ScrollbarActivity final : public nsIDOMEventListener {
  protected:
   virtual ~ScrollbarActivity() = default;
 
-  void ActivityChanged();
   void StartFadeTimer();
   void CancelFadeTimer();
   void BeginFade();
@@ -106,6 +105,9 @@ class ScrollbarActivity final : public nsIDOMEventListener {
   nsCOMPtr<dom::EventTarget> mVerticalScrollbar;    
   nsCOMPtr<nsITimer> mFadeTimer;
   uint32_t mNestedActivityCounter = 0;
+  
+  
+  bool mScrollbarEffectivelyVisible = false;
   bool mListeningForScrollbarEvents = false;
   bool mListeningForScrollAreaEvents = false;
   bool mHScrollbarHovered = false;
