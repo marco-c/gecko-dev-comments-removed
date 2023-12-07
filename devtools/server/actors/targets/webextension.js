@@ -144,7 +144,10 @@ class WebExtensionTargetActor extends ParentProcessTargetActor {
     
     this.makeDebugger = makeDebugger.bind(null, {
       findDebuggees: dbg => {
-        return dbg.findAllGlobals().filter(this._shouldAddNewGlobalAsDebuggee);
+        return dbg
+          .findAllGlobals()
+          .filter(this._shouldAddNewGlobalAsDebuggee)
+          .map(g => g.unsafeDereference());
       },
       shouldAddNewGlobalAsDebuggee:
         this._shouldAddNewGlobalAsDebuggee.bind(this),

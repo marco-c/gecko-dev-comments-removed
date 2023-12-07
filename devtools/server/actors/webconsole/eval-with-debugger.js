@@ -206,31 +206,16 @@ function evalWithDebugger(string, options = {}, webConsole) {
 
   updateConsoleInputEvaluation(dbg, webConsole);
 
-  let noSideEffectDebugger = null;
-  if (options.eager) {
-    noSideEffectDebugger = makeSideeffectFreeDebugger();
-  }
-
-  let result;
-  try {
-    const evalString = getEvalInput(string, bindings);
-    result = getEvalResult(
-      dbg,
-      evalString,
-      evalOptions,
-      bindings,
-      frame,
-      dbgGlobal,
-      noSideEffectDebugger
-    );
-  } finally {
-    
-    
-    
-    if (noSideEffectDebugger) {
-      noSideEffectDebugger.removeAllDebuggees();
-    }
-  }
+  const evalString = getEvalInput(string, bindings);
+  const result = getEvalResult(
+    dbg,
+    evalString,
+    evalOptions,
+    bindings,
+    frame,
+    dbgGlobal,
+    options.eager
+  );
 
   
   
@@ -253,6 +238,27 @@ function evalWithDebugger(string, options = {}, webConsole) {
 }
 exports.evalWithDebugger = evalWithDebugger;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function getEvalResult(
   dbg,
   string,
@@ -260,21 +266,22 @@ function getEvalResult(
   bindings,
   frame,
   dbgGlobal,
-  noSideEffectDebugger
+  eager
 ) {
-  if (noSideEffectDebugger) {
-    
-    
-    
-    if (!noSideEffectDebugger.hasDebuggee(dbgGlobal.unsafeDereference())) {
-      return null;
-    }
+  
+  
+  let noSideEffectDebugger = null;
+  if (eager) {
+    noSideEffectDebugger = makeSideeffectFreeDebugger(dbg);
 
     
     
     
-    frame = frame ? noSideEffectDebugger.adoptFrame(frame) : null;
-    dbgGlobal = noSideEffectDebugger.adoptDebuggeeValue(dbgGlobal);
+    if (frame) {
+      frame = noSideEffectDebugger.adoptFrame(frame);
+    } else {
+      dbgGlobal = noSideEffectDebugger.adoptDebuggeeValue(dbgGlobal);
+    }
     if (bindings) {
       bindings = Object.keys(bindings).reduce((acc, key) => {
         acc[key] = noSideEffectDebugger.adoptDebuggeeValue(bindings[key]);
@@ -283,25 +290,35 @@ function getEvalResult(
     }
   }
 
-  let result;
-  if (frame) {
-    result = frame.evalWithBindings(string, bindings, evalOptions);
-  } else {
-    result = dbgGlobal.executeInGlobalWithBindings(
-      string,
-      bindings,
-      evalOptions
-    );
-  }
-  if (noSideEffectDebugger && result) {
-    if ("return" in result) {
-      result.return = dbg.adoptDebuggeeValue(result.return);
+  try {
+    let result;
+    if (frame) {
+      result = frame.evalWithBindings(string, bindings, evalOptions);
+    } else {
+      result = dbgGlobal.executeInGlobalWithBindings(
+        string,
+        bindings,
+        evalOptions
+      );
     }
-    if ("throw" in result) {
-      result.throw = dbg.adoptDebuggeeValue(result.throw);
+    if (noSideEffectDebugger && result) {
+      if ("return" in result) {
+        result.return = dbg.adoptDebuggeeValue(result.return);
+      }
+      if ("throw" in result) {
+        result.throw = dbg.adoptDebuggeeValue(result.throw);
+      }
+    }
+    return result;
+  } finally {
+    
+    
+    
+    if (noSideEffectDebugger) {
+      noSideEffectDebugger.removeAllDebuggees();
+      noSideEffectDebugger.onNativeCall = undefined;
     }
   }
-  return result;
 }
 
 
@@ -403,14 +420,9 @@ function forceLexicalInitForVariableDeclarationsInThrowingExpression(
 
 
 
-function makeSideeffectFreeDebugger() {
-  
-  
-  
-  
-  
-  
-  
+
+
+function makeSideeffectFreeDebugger(targetActorDbg) {
   
   ensureSideEffectFreeNatives();
 
@@ -418,8 +430,31 @@ function makeSideeffectFreeDebugger() {
   
   
   
+  
+  
+  
+  
   const dbg = new Debugger();
-  dbg.addAllGlobalsAsDebuggees();
+
+  
+  
+  
+  
+  
+  for (const global of targetActorDbg.findDebuggees()) {
+    try {
+      dbg.addDebuggee(global);
+    } catch (e) {
+      
+      if (
+        !e.message.includes(
+          "debugger and debuggee must be in different compartments"
+        )
+      ) {
+        throw e;
+      }
+    }
+  }
 
   const timeoutDuration = 100;
   const endTime = Date.now() + timeoutDuration;

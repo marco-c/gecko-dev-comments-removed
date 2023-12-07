@@ -58,7 +58,8 @@ class ParentProcessTargetActor extends WindowGlobalTargetActor {
 
     
     this.makeDebugger = makeDebugger.bind(null, {
-      findDebuggees: dbg => dbg.findAllGlobals(),
+      findDebuggees: dbg =>
+        dbg.findAllGlobals().map(g => g.unsafeDereference()),
       shouldAddNewGlobalAsDebuggee: () => true,
     });
 

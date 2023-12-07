@@ -95,6 +95,9 @@ module.exports = function makeDebugger({
     dbg.addDebuggees();
     dbg.onNewGlobalObject = onNewGlobalObject;
   };
+  dbg.findDebuggees = function () {
+    return findDebuggees(dbg);
+  };
 
   return dbg;
 };
