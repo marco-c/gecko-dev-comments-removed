@@ -7,7 +7,8 @@
 #define DEFAULT_BROWSER_SET_DEFAULT_BROWSER_H__
 
 #include "nsStringFwd.h"
-#include "nsTArray.h"
+#include "nsTArrayForwardDeclare.h"
+#include <functional>
 
 namespace mozilla::default_agent {
 
@@ -41,6 +42,45 @@ namespace mozilla::default_agent {
 nsresult SetDefaultBrowserUserChoice(
     const wchar_t* aAumi,
     const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>());
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+nsresult SetDefaultBrowserUserChoiceAsync(
+    const wchar_t* aAumi,
+    const nsTArray<nsString>& aExtraFileExtensions = nsTArray<nsString>(),
+    std::function<void(nsresult)> completionCallback = [](nsresult nv) {});
 
 
 
