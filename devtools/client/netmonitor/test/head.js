@@ -1445,6 +1445,12 @@ const clickOnSidebarTab = (doc, name) => {
 
 
 async function addBlockedRequest(pattern, monitor) {
+  const { store, windowRequire } = monitor.panelWin;
+  const Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
+
+  
+  store.dispatch(Actions.toggleRequestBlockingPanel());
+
   info("Add a blocked request for the URL pattern " + pattern);
   const doc = monitor.panelWin.document;
 
@@ -1462,6 +1468,9 @@ async function addBlockedRequest(pattern, monitor) {
 
   typeInNetmonitor(pattern, monitor);
   EventUtils.synthesizeKey("KEY_Enter");
+
+  
+  store.dispatch(Actions.toggleRequestBlockingPanel());
 }
 
 
