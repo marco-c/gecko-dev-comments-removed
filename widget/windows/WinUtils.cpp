@@ -1045,25 +1045,32 @@ nsresult FaviconHelper::ObtainCachedIconFile(
   return rv;
 }
 
-nsresult FaviconHelper::HashURI(nsCOMPtr<nsICryptoHash>& aCryptoHash,
-                                nsIURI* aUri, nsACString& aUriHash) {
-  if (!aUri) return NS_ERROR_INVALID_ARG;
 
+
+static nsresult HashURI(nsIURI* aUri, nsACString& aUriHash) {
   nsAutoCString spec;
   nsresult rv = aUri->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  if (!aCryptoHash) {
-    aCryptoHash = do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
+  nsCOMPtr<nsICryptoHash> cryptoHash =
+      do_CreateInstance(NS_CRYPTO_HASH_CONTRACTID, &rv);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = aCryptoHash->Init(nsICryptoHash::MD5);
+  rv = cryptoHash->Init(nsICryptoHash::SHA256);
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = aCryptoHash->Update(
-      reinterpret_cast<const uint8_t*>(spec.BeginReading()), spec.Length());
+
+  
+  
+  const char kHashUriContext[] = "firefox-uri";
+  rv = cryptoHash->Update(reinterpret_cast<const uint8_t*>(kHashUriContext),
+                          sizeof(kHashUriContext));
   NS_ENSURE_SUCCESS(rv, rv);
-  rv = aCryptoHash->Finish(true, aUriHash);
+
+  rv = cryptoHash->Update(reinterpret_cast<const uint8_t*>(spec.BeginReading()),
+                          spec.Length());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  rv = cryptoHash->Finish(true, aUriHash);
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
@@ -1072,13 +1079,15 @@ nsresult FaviconHelper::HashURI(nsCOMPtr<nsICryptoHash>& aCryptoHash,
 
 
 
+
+
+
+
 nsresult FaviconHelper::GetOutputIconPath(nsCOMPtr<nsIURI> aFaviconPageURI,
                                           nsCOMPtr<nsIFile>& aICOFile,
                                           bool aURLShortcut) {
-  
   nsAutoCString inputURIHash;
-  nsCOMPtr<nsICryptoHash> cryptoHash;
-  nsresult rv = HashURI(cryptoHash, aFaviconPageURI, inputURIHash);
+  nsresult rv = HashURI(aFaviconPageURI, inputURIHash);
   NS_ENSURE_SUCCESS(rv, rv);
   char* cur = inputURIHash.BeginWriting();
   char* end = inputURIHash.EndWriting();

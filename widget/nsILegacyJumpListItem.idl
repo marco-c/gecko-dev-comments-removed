@@ -74,22 +74,6 @@ interface nsILegacyJumpListLink : nsILegacyJumpListItem
 
 
   attribute AString uriTitle;
-
-  
-
-
-
-
-
-  readonly attribute ACString uriHash;
-
-  
-
-
-
-
-
-  boolean compareHash(in nsIURI uri);
 };
 
 
