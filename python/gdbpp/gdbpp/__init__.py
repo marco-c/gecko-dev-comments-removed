@@ -25,6 +25,7 @@ import gdbpp.linkedlist
 import gdbpp.owningthread  
 import gdbpp.smartptr  
 import gdbpp.string  
+import gdbpp.syncedcontext  
 import gdbpp.tarray  
 import gdbpp.thashtable  
 
