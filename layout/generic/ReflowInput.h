@@ -354,6 +354,9 @@ struct ReflowInput : public SizeComputationInput {
   void SetComputedMaxBSize(nscoord aMaxBSize) {
     mComputedMaxSize.BSize(mWritingMode) = aMaxBSize;
   }
+  void SetPercentageBasisInBlockAxis(nscoord aBSize) {
+    mPercentageBasisInBlockAxis = Some(aBSize);
+  }
 
   mozilla::LogicalSize AvailableSize() const { return mAvailableSize; }
   mozilla::LogicalSize ComputedSize() const { return mComputedSize; }
@@ -1046,6 +1049,23 @@ struct ReflowInput : public SizeComputationInput {
   
   mozilla::LogicalSize mComputedMaxSize{mWritingMode, NS_UNCONSTRAINEDSIZE,
                                         NS_UNCONSTRAINEDSIZE};
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  Maybe<nscoord> mPercentageBasisInBlockAxis;
 
   
   mutable nscoord mLineHeight = NS_UNCONSTRAINEDSIZE;
