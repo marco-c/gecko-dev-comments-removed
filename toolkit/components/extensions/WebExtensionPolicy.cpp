@@ -508,6 +508,10 @@ bool WebExtensionPolicy::IsExtensionProcess(GlobalObject& aGlobal) {
 
 
 bool WebExtensionPolicy::BackgroundServiceWorkerEnabled(GlobalObject& aGlobal) {
+  
+  
+  
+  
   return StaticPrefs::extensions_backgroundServiceWorker_enabled_AtStartup();
 }
 

@@ -22,6 +22,7 @@ IGNORE_PREFS = {
     "browser.dom.window.dump.enabled",  
     "apz.fling_curve_function_y2",  
     "dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled",  
+    "extensions.backgroundServiceWorkerEnabled.enabled",  
 }
 PATTERN = re.compile(r"\s*pref\(\s*\"(?P<pref>.+)\"\s*,\s*(?P<val>.+)\)\s*;.*")
 
