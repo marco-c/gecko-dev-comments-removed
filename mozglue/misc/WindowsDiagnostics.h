@@ -149,6 +149,43 @@ struct ModuleSingleStepState {
         mData{} {}
 };
 
+enum class InstructionFilter {
+  ALL = 0,
+  CALL_RET = 1,
+};
+
+template <InstructionFilter Filter>
+inline bool ShouldRecordInstruction(const uint8_t* aInstructionPointer) {
+  if constexpr (Filter == InstructionFilter::ALL) {
+    return true;
+  }
+  
+  
+  
+  else if constexpr (Filter == InstructionFilter::CALL_RET) {
+    auto firstByte = aInstructionPointer[0];
+    
+    if (firstByte == 0xe8) {
+      return true;
+    }
+    
+    else if (firstByte == 0xff) {
+      auto secondByte = aInstructionPointer[1];
+      if ((secondByte & 0x38) == 0x10) {
+        return true;
+      }
+    }
+    
+    else if (firstByte == 0xc3) {
+      return true;
+    }
+    
+    else if (firstByte == 0xc2) {
+      return true;
+    }
+  }
+  return false;
+}
 
 
 
@@ -163,8 +200,11 @@ struct ModuleSingleStepState {
 
 
 
-template <int NMaxSteps, int NMaxErrorStates, typename CallbackToRun,
-          typename PostCollectionCallback>
+
+
+template <int NMaxSteps, int NMaxErrorStates,
+          InstructionFilter Filter = InstructionFilter::ALL,
+          typename CallbackToRun, typename PostCollectionCallback>
 nsresult CollectModuleSingleStepData(
     const wchar_t* aModulePath, CallbackToRun aCallbackToRun,
     PostCollectionCallback aPostCollectionCallback) {
@@ -192,27 +232,31 @@ nsresult CollectModuleSingleStepData(
         
         if (state.mModuleStart <= instructionPointer &&
             instructionPointer < state.mModuleEnd) {
-          
-          if (state.mSteps < NMaxSteps) {
-            state.mData.mStepsLog[state.mSteps] =
-                static_cast<uint32_t>(instructionPointer - state.mModuleStart);
-          }
-
-          
-          auto currentErrorState{WinErrorState::Get()};
-          if (currentErrorState != state.mLastRecordedErrorState) {
-            state.mLastRecordedErrorState = currentErrorState;
-
-            if (state.mErrorStates < NMaxErrorStates) {
-              state.mData.mErrorStatesLog[state.mErrorStates] =
-                  currentErrorState;
-              state.mData.mStepsAtErrorState[state.mErrorStates] = state.mSteps;
+          if (ShouldRecordInstruction<Filter>(
+                  reinterpret_cast<uint8_t*>(instructionPointer))) {
+            
+            if (state.mSteps < NMaxSteps) {
+              state.mData.mStepsLog[state.mSteps] = static_cast<uint32_t>(
+                  instructionPointer - state.mModuleStart);
             }
 
-            ++state.mErrorStates;
-          }
+            
+            auto currentErrorState{WinErrorState::Get()};
+            if (currentErrorState != state.mLastRecordedErrorState) {
+              state.mLastRecordedErrorState = currentErrorState;
 
-          ++state.mSteps;
+              if (state.mErrorStates < NMaxErrorStates) {
+                state.mData.mErrorStatesLog[state.mErrorStates] =
+                    currentErrorState;
+                state.mData.mStepsAtErrorState[state.mErrorStates] =
+                    state.mSteps;
+              }
+
+              ++state.mErrorStates;
+            }
+
+            ++state.mSteps;
+          }
         }
 
         
