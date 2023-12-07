@@ -134,8 +134,8 @@ template <typename ActionType,
           typename ReturnType = typename decltype(std::declval<ActionType>()(
               nullptr))::element_type::ResolveValueType>
 static auto ShowRemote(HWND parent, ActionType&& action)
-    -> RefPtr<MozPromise<ReturnType, HRESULT, false>> {
-  using RetPromise = MozPromise<ReturnType, HRESULT, false>;
+    -> RefPtr<MozPromise<ReturnType, HRESULT, true>> {
+  using RetPromise = MozPromise<ReturnType, HRESULT, true>;
 
   constexpr static const auto fail = []() {
     return RetPromise::CreateAndReject(E_FAIL, __PRETTY_FUNCTION__);
@@ -215,77 +215,138 @@ static auto ShowRemote(HWND parent, ActionType&& action)
         return fail();
       });
 }
+}  
 
-template <typename Fn1, typename Fn2, typename... Args>
-auto ShowLocalAndOrRemote(Fn1 local, Fn2 remote, Args const&... args)
-    -> std::invoke_result_t<Fn1, Args...> {
-  static_assert(std::is_same_v<std::invoke_result_t<Fn1, Args...>,
-                               std::invoke_result_t<Fn2, Args...>>);
 
-  int32_t const pref =
-      mozilla::StaticPrefs::widget_windows_utility_process_file_picker();
 
-  switch (pref) {
-#ifndef NIGHTLY_BUILD
-    default:  
-#endif
-    case -1:
-      return local(args...);
-    case 2:
-      return remote(args...);
-#ifdef NIGHTLY_BUILD
-    default:  
-#endif
-    case 1:
-      return remote(args...).orElse([&](auto err) { return local(args...); });
+
+
+struct LocalAndOrRemote {
+  LocalAndOrRemote() = delete;
+
+ private:
+  
+  
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  static T Copy(T const& val) {
+    return val;
   }
-}
+  template <typename T>
+  static nsTArray<T> Copy(nsTArray<T> const& arr) {
+    return arr.Clone();
+  }
+
+  
+  enum Strategy { Local, Remote, RemoteWithFallback };
+
+  
+  
+  static Strategy GetStrategy() {
+    int32_t const pref =
+        mozilla::StaticPrefs::widget_windows_utility_process_file_picker();
+    switch (pref) {
+      case -1:
+        return Local;
+      case 2:
+        return Remote;
+      case 1:
+        return RemoteWithFallback;
+
+      default:
+#ifdef NIGHTLY_BUILD
+        
+        return RemoteWithFallback;
+#else
+        
+        return Local;
+#endif
+    }
+  };
+
+ public:
+  
+  
+  
+  
+  
+  
+  template <typename Fn1, typename Fn2, typename... Args>
+  static auto AsyncExecute(Fn1 local, Fn2 remote, Args const&... args)
+      -> std::invoke_result_t<Fn1, Args...> {
+    static_assert(std::is_same_v<std::invoke_result_t<Fn1, Args...>,
+                                 std::invoke_result_t<Fn2, Args...>>);
+    using PromiseT = typename std::invoke_result_t<Fn1, Args...>::element_type;
+
+    constexpr static char kFunctionName[] = "LocalAndOrRemote::AsyncExecute";
+
+    switch (GetStrategy()) {
+      case Local:
+        return local(args...);
+
+      case Remote:
+        return remote(args...);
+
+      case RemoteWithFallback:
+        return remote(args...)->Then(
+            NS_GetCurrentThread(), kFunctionName,
+            [](typename PromiseT::ResolveValueType result) -> RefPtr<PromiseT> {
+              
+              return PromiseT::CreateAndResolve(result, kFunctionName);
+            },
+            
+            
+            [=, tuple = std::make_tuple(Copy(args)...)](
+                typename PromiseT::RejectValueType _err) mutable
+            -> RefPtr<PromiseT> {
+              
+              return std::apply(local, std::move(tuple));
+            });
+    }
+  }
+};
 
 }  
-}  
 
 
-Result<Maybe<filedialog::Results>, HRESULT> nsFilePicker::ShowFilePickerRemote(
+nsFilePicker::FPPromise<filedialog::Results> nsFilePicker::ShowFilePickerRemote(
     HWND parent, filedialog::FileDialogType type,
     nsTArray<filedialog::Command> const& commands) {
-  auto promise = mozilla::detail::ShowRemote(
+  return mozilla::detail::ShowRemote(
       parent, [parent, type, commands = commands.Clone()](
                   filedialog::WinFileDialogParent* p) {
         MOZ_LOG(sLogFileDialog, LogLevel::Info,
                 ("%s: p = [%p]", __PRETTY_FUNCTION__, p));
         return p->SendShowFileDialog((uintptr_t)parent, type, commands);
       });
-
-  return mozilla::detail::ImmorallyDrivePromiseToCompletion(std::move(promise));
 }
 
 
-Result<Maybe<nsString>, HRESULT> nsFilePicker::ShowFolderPickerRemote(
+nsFilePicker::FPPromise<nsString> nsFilePicker::ShowFolderPickerRemote(
     HWND parent, nsTArray<filedialog::Command> const& commands) {
-  auto promise = mozilla::detail::ShowRemote(
+  return mozilla::detail::ShowRemote(
       parent, [parent, commands = commands.Clone()](
                   filedialog::WinFileDialogParent* p) {
         return p->SendShowFolderDialog((uintptr_t)parent, commands);
       });
-
-  return mozilla::detail::ImmorallyDrivePromiseToCompletion(std::move(promise));
 }
 
 
-Result<Maybe<filedialog::Results>, HRESULT> nsFilePicker::ShowFilePickerLocal(
+nsFilePicker::FPPromise<filedialog::Results> nsFilePicker::ShowFilePickerLocal(
     HWND parent, filedialog::FileDialogType type,
     nsTArray<filedialog::Command> const& commands) {
-  auto promise = filedialog::SpawnFilePicker(parent, type, commands.Clone());
-
-  return mozilla::detail::ImmorallyDrivePromiseToCompletion(std::move(promise));
+  return filedialog::SpawnFilePicker(parent, type, commands.Clone());
 }
 
 
-Result<Maybe<nsString>, HRESULT> nsFilePicker::ShowFolderPickerLocal(
+nsFilePicker::FPPromise<nsString> nsFilePicker::ShowFolderPickerLocal(
     HWND parent, nsTArray<filedialog::Command> const& commands) {
-  auto promise = filedialog::SpawnFolderPicker(parent, commands.Clone());
-
-  return mozilla::detail::ImmorallyDrivePromiseToCompletion(std::move(promise));
+  return filedialog::SpawnFolderPicker(parent, commands.Clone());
 }
 
 
@@ -321,8 +382,10 @@ bool nsFilePicker::ShowFolderPicker(const nsString& aInitialDir) {
 
     mozilla::BackgroundHangMonitor().NotifyWait();
 
-    auto res = mozilla::detail::ShowLocalAndOrRemote(
-        &ShowFolderPickerLocal, &ShowFolderPickerRemote, shim.get(), commands);
+    auto res = mozilla::detail::ImmorallyDrivePromiseToCompletion(
+        mozilla::detail::LocalAndOrRemote::AsyncExecute(&ShowFolderPickerLocal,
+                                                        &ShowFolderPickerRemote,
+                                                        shim.get(), commands));
     if (res.isErr()) {
       NS_WARNING("ShowFolderPickerImpl failed");
       return false;
@@ -442,9 +505,10 @@ bool nsFilePicker::ShowFilePicker(const nsString& aInitialDir) {
     mozilla::BackgroundHangMonitor().NotifyWait();
     auto type = mMode == modeSave ? FileDialogType::Save : FileDialogType::Open;
 
-    auto res = mozilla::detail::ShowLocalAndOrRemote(
-        &ShowFilePickerLocal, &ShowFilePickerRemote, shim.get(), type,
-        commands);
+    auto res = mozilla::detail::ImmorallyDrivePromiseToCompletion(
+        mozilla::detail::LocalAndOrRemote::AsyncExecute(
+            &ShowFilePickerLocal, &ShowFilePickerRemote, shim.get(), type,
+            commands));
 
     if (res.isErr()) {
       NS_WARNING("ShowFilePickerImpl failed");
