@@ -3023,7 +3023,7 @@ impl<'ctx> CoreStreamData<'ctx> {
                 if using_voice_processing_unit {
                     
                     
-                    p.rate = output_hw_desc.mSampleRate as _;
+                    p.rate = self.input_dev_desc.mSampleRate as _;
                 }
                 StreamParams::from(p)
             };
