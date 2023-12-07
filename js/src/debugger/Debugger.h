@@ -645,6 +645,11 @@ class Debugger : private mozilla::LinkedListElement<Debugger> {
   bool exclusiveDebuggerOnEval;
 
   
+  
+  
+  bool inspectNativeCallArguments;
+
+  
   bool collectCoverageInfo;
 
   template <typename T>
