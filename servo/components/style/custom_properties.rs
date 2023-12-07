@@ -1318,17 +1318,23 @@ fn substitute_all(
             
             
             
-            context.map.remove(
-                context.stylist.get_custom_property_registration(&var_name),
+            handle_invalid_at_computed_value_time(
                 &var_name,
+                context.map,
+                context.computed_context.inherited_custom_properties(),
+                context.stylist,
+                context.computed_context.is_root_element()
             );
             in_loop = true;
         }
         if in_loop {
             
-            context.map.remove(
-                context.stylist.get_custom_property_registration(&name),
+            handle_invalid_at_computed_value_time(
                 &name,
+                context.map,
+                context.computed_context.inherited_custom_properties(),
+                context.stylist,
+                context.computed_context.is_root_element()
             );
             return None;
         }
