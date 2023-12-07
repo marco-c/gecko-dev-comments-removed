@@ -223,6 +223,8 @@ void MFMediaEngineParent::HandleMediaEngineEvent(
       break;
     }
     case MF_MEDIA_ENGINE_EVENT_FORMATCHANGE:
+      
+      break;
     case MF_MEDIA_ENGINE_EVENT_FIRSTFRAMEREADY: {
       if (mMediaEngine->HasVideo()) {
         EnsureDcompSurfaceHandle();
@@ -593,7 +595,6 @@ void MFMediaEngineParent::EnsureDcompSurfaceHandle() {
   DWORD width, height;
   RETURN_VOID_IF_FAILED(mMediaEngine->GetNativeVideoSize(&width, &height));
   if (width != mDisplayWidth || height != mDisplayHeight) {
-    
     
     
     LOG("Update video size [%lux%lu] -> [%lux%lu] ", mDisplayWidth,
