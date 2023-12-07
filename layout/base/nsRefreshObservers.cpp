@@ -6,6 +6,7 @@
 
 #include "nsRefreshObservers.h"
 #include "nsPresContext.h"
+#include "mozilla/Likely.h"
 
 namespace mozilla {
 
@@ -14,30 +15,40 @@ ManagedPostRefreshObserver::ManagedPostRefreshObserver(nsPresContext* aPc,
     : mPresContext(aPc), mAction(std::move(aAction)) {}
 
 ManagedPostRefreshObserver::ManagedPostRefreshObserver(nsPresContext* aPc)
-    : mPresContext(aPc) {}
+    : mPresContext(aPc) {
+  MOZ_ASSERT(mPresContext, "Can't observe without a nsPresContext");
+}
 
 ManagedPostRefreshObserver::~ManagedPostRefreshObserver() = default;
 
 void ManagedPostRefreshObserver::Cancel() {
   
-  mAction(true);
+  if (mAction) {
+    mAction(true);
+  }
   mAction = nullptr;
   mPresContext = nullptr;
 }
 
 void ManagedPostRefreshObserver::DidRefresh() {
-  RefPtr<ManagedPostRefreshObserver> thisObject = this;
+  if (MOZ_UNLIKELY(!mAction)) {
+    return;
+  }
 
-  Unregister unregister = mAction(false);
+  RefPtr<ManagedPostRefreshObserver> thisObject = this;
+  auto action = std::move(mAction);
+  Unregister unregister = action(false);
+
   if (unregister == Unregister::Yes) {
     if (RefPtr<nsPresContext> pc = std::move(mPresContext)) {
       
       
-      mAction = nullptr;
+      
+      
       pc->UnregisterManagedPostRefreshObserver(this);
-    } else {
-      MOZ_DIAGNOSTIC_ASSERT(!mAction);
     }
+  } else {
+    mAction = std::move(action);
   }
 }
 
