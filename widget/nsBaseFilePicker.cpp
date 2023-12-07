@@ -63,6 +63,9 @@ nsresult LocalFileToDirectoryOrBlob(nsPIDOMWindowInner* aWindow,
 
 }  
 
+#ifndef XP_WIN
+
+
 
 
 
@@ -98,6 +101,7 @@ class nsBaseFilePicker::AsyncShowFilePicker : public mozilla::Runnable {
   RefPtr<nsBaseFilePicker> mFilePicker;
   RefPtr<nsIFilePickerShownCallback> mCallback;
 };
+#endif
 
 class nsBaseFilePickerEnumerator : public nsSimpleEnumerator {
  public:
@@ -190,12 +194,14 @@ nsBaseFilePicker::IsModeSupported(nsIFilePicker::Mode aMode, JSContext* aCx,
   return NS_OK;
 }
 
+#ifndef XP_WIN
 NS_IMETHODIMP
 nsBaseFilePicker::Open(nsIFilePickerShownCallback* aCallback) {
   nsCOMPtr<nsIRunnable> filePickerEvent =
       new AsyncShowFilePicker(this, aCallback);
   return NS_DispatchToMainThread(filePickerEvent);
 }
+#endif
 
 NS_IMETHODIMP
 nsBaseFilePicker::AppendFilters(int32_t aFilterMask) {
