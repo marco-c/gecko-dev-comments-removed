@@ -314,6 +314,7 @@ nsresult nsContentDLF::CreateDocument(
   nsCOMPtr<nsIDocumentViewer> viewer = NS_NewDocumentViewer();
 
   doc->SetContainer(static_cast<nsDocShell*>(aContainer));
+  doc->SetAllowDeclarativeShadowRoots(true);
 
   
   
