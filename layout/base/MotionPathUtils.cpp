@@ -100,13 +100,23 @@ CSSCoord MotionPathUtils::GetRayContainReferenceSize(nsIFrame* aFrame) {
   
   
   
-  const auto size =
-      CSSSize::FromAppUnits((aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)
-                                 ? nsLayoutUtils::ComputeSVGReferenceRect(
-                                       aFrame, StyleGeometryBox::StrokeBox)
-                                 : nsLayoutUtils::ComputeHTMLReferenceRect(
-                                       aFrame, StyleGeometryBox::BorderBox))
-                                .Size());
+
+  
+  
+  
+  
+  
+  
+
+  const auto size = CSSSize::FromAppUnits(
+      (aFrame->HasAnyStateBits(NS_FRAME_SVG_LAYOUT)
+           ? nsLayoutUtils::ComputeSVGReferenceRect(
+                 aFrame, aFrame->StyleSVGReset()->HasNonScalingStroke()
+                             ? StyleGeometryBox::FillBox
+                             : StyleGeometryBox::StrokeBox)
+           : nsLayoutUtils::ComputeHTMLReferenceRect(
+                 aFrame, StyleGeometryBox::BorderBox))
+          .Size());
   return std::max(size.width, size.height);
 }
 
