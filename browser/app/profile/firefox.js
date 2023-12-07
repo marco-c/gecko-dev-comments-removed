@@ -2501,8 +2501,6 @@ pref("devtools.inspector.showUserAgentStyles", false);
 
 pref("devtools.inspector.showAllAnonymousContent", false);
 
-pref("devtools.inspector.compatibility.enabled", true);
-
 pref("devtools.overflow.debugging.enabled", true);
 
 pref("devtools.inspector.draggable_properties", true);
@@ -2853,6 +2851,8 @@ pref("browser.firefox-view.view-count", 0);
 pref("browser.firefox-view.max-history-rows", 300);
 
 pref("browser.firefox-view.search.enabled", false);
+
+pref("browser.firefox-view.virtual-list.enabled", false);
 
 
 
