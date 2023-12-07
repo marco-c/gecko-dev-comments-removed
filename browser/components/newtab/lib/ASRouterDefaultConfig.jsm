@@ -30,6 +30,12 @@ const { ActivityStreamStorage } = ChromeUtils.import(
 );
 
 const createStorage = async telemetryFeed => {
+  
+  
+  
+  
+  
+  
   const dbStore = new ActivityStreamStorage({
     storeNames: ["sectionPrefs", "snippets"],
     telemetry: {
