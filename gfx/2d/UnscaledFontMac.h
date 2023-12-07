@@ -72,6 +72,10 @@ class UnscaledFontMac final : public UnscaledFont {
                                               uint32_t aVariationCount,
                                               const FontVariation* aVariations);
 
+  
+  
+  
+  
   bool GetFontDescriptor(FontDescriptorOutput aCb, void* aBaton) override;
 
   CFArrayRef& CGAxesCache() { return mCGAxesCache; }
