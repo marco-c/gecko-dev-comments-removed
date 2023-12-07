@@ -482,14 +482,27 @@ DefaultURI::Mutator::SetPathQueryRef(const nsACString& aPathQueryRef,
     return mMutator->GetStatus();
   }
 
-  nsAutoCString pathQueryRef(aPathQueryRef);
-  if (!StringBeginsWith(pathQueryRef, "/"_ns)) {
-    pathQueryRef.Insert('/', 0);
-  }
-
   RefPtr<MozURL> url;
   mMutator->Finalize(getter_AddRefs(url));
   mMutator = Nothing();
+
+  if (!url) {
+    return NS_ERROR_FAILURE;
+  }
+
+  nsAutoCString pathQueryRef(aPathQueryRef);
+  if (url->CannotBeABase()) {
+    
+    
+    pathQueryRef.Insert(":", 0);
+    pathQueryRef.Insert(url->Scheme(), 0);
+    
+    url = nullptr;
+  } else if (!StringBeginsWith(pathQueryRef, "/"_ns)) {
+    
+    
+    pathQueryRef.Insert('/', 0);
+  }
 
   auto result = MozURL::Mutator::FromSpec(pathQueryRef, url);
   if (result.isErr()) {
