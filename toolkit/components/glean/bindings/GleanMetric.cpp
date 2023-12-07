@@ -6,7 +6,10 @@
 
 #include "mozilla/glean/bindings/GleanMetric.h"
 
+#include "nsThreadUtils.h"
 #include "nsWrapperCache.h"
+#include "mozilla/AppShutdown.h"
+#include "mozilla/ClearOnShutdown.h"
 
 namespace mozilla::glean {
 
@@ -18,5 +21,50 @@ NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(GleanMetric)
   NS_WRAPPERCACHE_INTERFACE_MAP_ENTRY
   NS_INTERFACE_MAP_ENTRY(nsISupports)
 NS_INTERFACE_MAP_END
+
+Maybe<SubmetricToMirrorMutex::AutoLock> GetLabeledMirrorLock() {
+  static SubmetricToMirrorMutex sLabeledMirrors("sLabeledMirrors");
+  auto lock = sLabeledMirrors.Lock();
+  
+  if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+    return Nothing();
+  }
+  if (!*lock) {
+    *lock = MakeUnique<SubmetricToLabeledMirrorMapType>();
+    RefPtr<nsIRunnable> cleanupFn = NS_NewRunnableFunction(__func__, [&] {
+      if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMWillShutdown)) {
+        auto lock = sLabeledMirrors.Lock();
+        *lock = nullptr;  
+        return;
+      }
+      RunOnShutdown(
+          [&] {
+            auto lock = sLabeledMirrors.Lock();
+            *lock = nullptr;  
+          },
+          ShutdownPhase::XPCOMWillShutdown);
+    });
+    
+    
+    
+    nsIRunnable* temp = cleanupFn.get();
+    nsCOMPtr<nsIThread> mainThread;
+    if (NS_FAILED(NS_GetMainThread(getter_AddRefs(mainThread))) ||
+        NS_FAILED(mainThread->Dispatch(cleanupFn.forget(),
+                                       nsIThread::DISPATCH_NORMAL))) {
+      
+      
+      
+      if (!cleanupFn) {
+        NS_RELEASE(temp);
+      }
+      
+      *lock = nullptr;
+      return Nothing();
+    }
+  }
+
+  return Some(std::move(lock));
+}
 
 }  
