@@ -13,6 +13,7 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/Selection.h"
 #include "nsCoord.h"
+#include "nsIFrame.h"
 #include "nsISelectionListener.h"
 #include "nsIWeakReferenceUtils.h"
 #include "CaretAssociationHint.h"
@@ -284,6 +285,11 @@ class nsCaret final : public nsISelectionListener {
 
 
   bool mIgnoreUserModify;
+
+  
+
+
+  WeakFrame mLastCaretFrame;
 };
 
 #endif  

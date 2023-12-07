@@ -656,7 +656,7 @@ class nsDisplayListBuilder {
 
 
 
-  nsIFrame* GetCaretFrame() { return mCaretFrame; }
+  nsIFrame* GetCaretFrame() { return CurrentPresShellState()->mCaretFrame; }
   
 
 
@@ -1726,6 +1726,7 @@ class nsDisplayListBuilder {
     bool mInsidePointerEventsNoneDoc;
     bool mTouchEventPrefEnabledDoc;
     nsIFrame* mPresShellIgnoreScrollFrame;
+    nsIFrame* mCaretFrame = nullptr;
   };
 
   PresShellState* CurrentPresShellState() {
@@ -1760,7 +1761,6 @@ class nsDisplayListBuilder {
   
   const nsIFrame* mCurrentReferenceFrame;
 
-  nsIFrame* mCaretFrame;
   
   
   
