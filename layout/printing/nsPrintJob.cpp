@@ -1386,7 +1386,12 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
 
     const ServoStyleSet::FirstPageSizeAndOrientation sizeAndOrientation =
         presShell->StyleSet()->GetFirstPageSizeAndOrientation(firstPageName);
-    if (mPrintSettings->GetUsePageRuleSizeAsPaperSize()) {
+    
+    
+    if (mPrintSettings->GetOutputFormat() ==
+            nsIPrintSettings::kOutputFormatPDF &&
+        StaticPrefs::
+            print_save_as_pdf_use_page_rule_size_as_paper_size_enabled()) {
       mMaybeCSSPageSize = sizeAndOrientation.size;
       if (sizeAndOrientation.size) {
         pageSize = sizeAndOrientation.size.value();
