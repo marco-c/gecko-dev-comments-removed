@@ -2,6 +2,16 @@
 
 "use strict";
 
+registerCleanupFunction(async () => {
+  Services.prefs.clearUserPref("network.url.useDefaultURI");
+});
+
+add_setup(async function () {
+  
+  
+  Services.prefs.setBoolPref("network.url.useDefaultURI", false);
+});
+
 add_task(async function test_MatchPattern_matches() {
   function test(url, pattern, normalized = pattern, options = {}, explicit) {
     let uri = Services.io.newURI(url);
