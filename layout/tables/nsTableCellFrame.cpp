@@ -1008,11 +1008,24 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     nsRect bgRect = GetRectRelativeToSelf() + aBuilder->ToReferenceFrame(this);
+    nsRect bgRectInsideBorder = bgRect;
+
+    
+    
+    
+    
+    nsTableFrame* tableFrame = GetTableFrame();
+    if (tableFrame->IsBorderCollapse() &&
+        (IsStackingContext() ||
+         StyleDisplay()->mPosition == StylePositionProperty::Relative)) {
+      bgRectInsideBorder.Deflate(GetUsedBorder());
+    }
 
     
     const AppendedBackgroundType result =
         nsDisplayBackgroundImage::AppendBackgroundItemsToTop(
-            aBuilder, this, bgRect, aLists.BorderBackground());
+            aBuilder, this, bgRectInsideBorder, aLists.BorderBackground(), true,
+            bgRect);
     if (result == AppendedBackgroundType::None) {
       aBuilder->BuildCompositorHitTestInfoIfNeeded(this,
                                                    aLists.BorderBackground());
@@ -1025,7 +1038,6 @@ void nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
     }
 
     
-    nsTableFrame* tableFrame = GetTableFrame();
     ProcessBorders(tableFrame, aBuilder, aLists);
 
     
