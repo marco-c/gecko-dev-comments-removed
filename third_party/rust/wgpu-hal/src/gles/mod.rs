@@ -57,6 +57,31 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(not(any(windows, all(target_arch = "wasm32", not(target_os = "emscripten")))))]
 mod egl;
 #[cfg(target_os = "emscripten")]
@@ -161,16 +186,20 @@ bitflags::bitflags! {
         const COLOR_BUFFER_HALF_FLOAT = 1 << 8;
         /// Supports `f11/f10` and `f32` color buffers
         const COLOR_BUFFER_FLOAT = 1 << 9;
-        /// Supports linear flitering `f32` textures.
-        const TEXTURE_FLOAT_LINEAR = 1 << 10;
         /// Supports query buffer objects.
         const QUERY_BUFFERS = 1 << 11;
+        /// Supports 64 bit queries via `glGetQueryObjectui64v`
+        const QUERY_64BIT = 1 << 12;
         /// Supports `glTexStorage2D`, etc.
-        const TEXTURE_STORAGE = 1 << 12;
+        const TEXTURE_STORAGE = 1 << 13;
         /// Supports `push_debug_group`, `pop_debug_group` and `debug_message_insert`.
-        const DEBUG_FNS = 1 << 13;
+        const DEBUG_FNS = 1 << 14;
         /// Supports framebuffer invalidation.
-        const INVALIDATE_FRAMEBUFFER = 1 << 14;
+        const INVALIDATE_FRAMEBUFFER = 1 << 15;
+        /// Indicates support for `glDrawElementsInstancedBaseVertexBaseInstance` and `ARB_shader_draw_parameters`
+        ///
+        /// When this is true, instance offset emulation via vertex buffer rebinding and a shader uniform will be disabled.
+        const FULLY_FEATURED_INSTANCING = 1 << 16;
     }
 }
 
@@ -218,7 +247,6 @@ struct AdapterShared {
     features: wgt::Features,
     workarounds: Workarounds,
     shading_language_version: naga::back::glsl::Version,
-    max_texture_size: u32,
     next_shader_id: AtomicU32,
     program_cache: Mutex<ProgramCache>,
     es: bool,
@@ -516,6 +544,7 @@ type SamplerBindMap = [Option<u8>; MAX_TEXTURE_SLOTS];
 struct PipelineInner {
     program: glow::Program,
     sampler_map: SamplerBindMap,
+    first_instance_location: Option<glow::UniformLocation>,
     push_constant_descs: ArrayVec<PushConstantDesc, MAX_PUSH_CONSTANT_COMMANDS>,
 }
 
@@ -715,9 +744,11 @@ type InvalidatedAttachments = ArrayVec<u32, { crate::MAX_COLOR_ATTACHMENTS + 2 }
 enum Command {
     Draw {
         topology: u32,
-        start_vertex: u32,
+        first_vertex: u32,
         vertex_count: u32,
+        first_instance: u32,
         instance_count: u32,
+        first_instance_location: Option<glow::UniformLocation>,
     },
     DrawIndexed {
         topology: u32,
@@ -725,18 +756,22 @@ enum Command {
         index_count: u32,
         index_offset: wgt::BufferAddress,
         base_vertex: i32,
+        first_instance: u32,
         instance_count: u32,
+        first_instance_location: Option<glow::UniformLocation>,
     },
     DrawIndirect {
         topology: u32,
         indirect_buf: glow::Buffer,
         indirect_offset: wgt::BufferAddress,
+        first_instance_location: Option<glow::UniformLocation>,
     },
     DrawIndexedIndirect {
         topology: u32,
         index_type: u32,
         indirect_buf: glow::Buffer,
         indirect_offset: wgt::BufferAddress,
+        first_instance_location: Option<glow::UniformLocation>,
     },
     Dispatch([u32; 3]),
     DispatchIndirect {
@@ -914,6 +949,19 @@ impl fmt::Debug for CommandBuffer {
     }
 }
 
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
+unsafe impl Sync for CommandBuffer {}
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
+unsafe impl Send for CommandBuffer {}
+
 
 
 
@@ -931,6 +979,19 @@ impl fmt::Debug for CommandEncoder {
             .finish()
     }
 }
+
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
+unsafe impl Sync for CommandEncoder {}
+#[cfg(all(
+    target_arch = "wasm32",
+    feature = "fragile-send-sync-non-atomic-wasm",
+    not(target_feature = "atomics")
+))]
+unsafe impl Send for CommandEncoder {}
 
 #[cfg(not(all(target_arch = "wasm32", not(target_os = "emscripten"))))]
 fn gl_debug_message_callback(source: u32, gltype: u32, id: u32, severity: u32, message: &str) {
@@ -978,6 +1039,6 @@ fn gl_debug_message_callback(source: u32, gltype: u32, id: u32, severity: u32, m
 
     if cfg!(debug_assertions) && log_severity == log::Level::Error {
         
-        crate::VALIDATION_CANARY.set();
+        crate::VALIDATION_CANARY.add(message.to_string());
     }
 }

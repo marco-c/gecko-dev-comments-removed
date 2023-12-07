@@ -160,20 +160,43 @@ impl super::Queue {
         match *command {
             C::Draw {
                 topology,
-                start_vertex,
+                first_vertex,
                 vertex_count,
                 instance_count,
+                first_instance,
+                ref first_instance_location,
             } => {
-                
-                
-                
-                unsafe {
-                    gl.draw_arrays_instanced(
-                        topology,
-                        start_vertex as i32,
-                        vertex_count as i32,
-                        instance_count as i32,
-                    )
+                let supports_full_instancing = self
+                    .shared
+                    .private_caps
+                    .contains(PrivateCapabilities::FULLY_FEATURED_INSTANCING);
+
+                if supports_full_instancing {
+                    unsafe {
+                        gl.draw_arrays_instanced_base_instance(
+                            topology,
+                            first_vertex as i32,
+                            vertex_count as i32,
+                            instance_count as i32,
+                            first_instance,
+                        )
+                    }
+                } else {
+                    unsafe {
+                        gl.uniform_1_u32(first_instance_location.as_ref(), first_instance);
+                    }
+
+                    
+                    
+                    
+                    unsafe {
+                        gl.draw_arrays_instanced(
+                            topology,
+                            first_vertex as i32,
+                            vertex_count as i32,
+                            instance_count as i32,
+                        )
+                    }
                 };
             }
             C::DrawIndexed {
@@ -182,38 +205,75 @@ impl super::Queue {
                 index_count,
                 index_offset,
                 base_vertex,
+                first_instance,
                 instance_count,
+                ref first_instance_location,
             } => {
                 match base_vertex {
-                    
-                    
-                    
-                    0 => unsafe {
-                        gl.draw_elements_instanced(
-                            topology,
-                            index_count as i32,
-                            index_type,
-                            index_offset as i32,
-                            instance_count as i32,
-                        )
-                    },
-                    _ => unsafe {
-                        gl.draw_elements_instanced_base_vertex(
-                            topology,
-                            index_count as _,
-                            index_type,
-                            index_offset as i32,
-                            instance_count as i32,
-                            base_vertex,
-                        )
-                    },
+                    0 => {
+                        unsafe {
+                            gl.uniform_1_u32(first_instance_location.as_ref(), first_instance)
+                        };
+
+                        unsafe {
+                            
+                            
+                            
+                            gl.draw_elements_instanced(
+                                topology,
+                                index_count as i32,
+                                index_type,
+                                index_offset as i32,
+                                instance_count as i32,
+                            )
+                        }
+                    }
+                    _ => {
+                        let supports_full_instancing = self
+                            .shared
+                            .private_caps
+                            .contains(PrivateCapabilities::FULLY_FEATURED_INSTANCING);
+
+                        if supports_full_instancing {
+                            unsafe {
+                                gl.draw_elements_instanced_base_vertex_base_instance(
+                                    topology,
+                                    index_count as i32,
+                                    index_type,
+                                    index_offset as i32,
+                                    instance_count as i32,
+                                    base_vertex,
+                                    first_instance,
+                                )
+                            }
+                        } else {
+                            unsafe {
+                                gl.uniform_1_u32(first_instance_location.as_ref(), first_instance)
+                            };
+
+                            
+                            unsafe {
+                                gl.draw_elements_instanced_base_vertex(
+                                    topology,
+                                    index_count as _,
+                                    index_type,
+                                    index_offset as i32,
+                                    instance_count as i32,
+                                    base_vertex,
+                                )
+                            }
+                        }
+                    }
                 }
             }
             C::DrawIndirect {
                 topology,
                 indirect_buf,
                 indirect_offset,
+                ref first_instance_location,
             } => {
+                unsafe { gl.uniform_1_u32(first_instance_location.as_ref(), 0) };
+
                 unsafe { gl.bind_buffer(glow::DRAW_INDIRECT_BUFFER, Some(indirect_buf)) };
                 unsafe { gl.draw_arrays_indirect_offset(topology, indirect_offset as i32) };
             }
@@ -222,7 +282,10 @@ impl super::Queue {
                 index_type,
                 indirect_buf,
                 indirect_offset,
+                ref first_instance_location,
             } => {
+                unsafe { gl.uniform_1_u32(first_instance_location.as_ref(), 0) };
+
                 unsafe { gl.bind_buffer(glow::DRAW_INDIRECT_BUFFER, Some(indirect_buf)) };
                 unsafe {
                     gl.draw_elements_indirect_offset(topology, index_type, indirect_offset as i32)
@@ -877,12 +940,21 @@ impl super::Queue {
                     {
                         let mut result: u64 = 0;
                         unsafe {
-                            let result: *mut u64 = &mut result;
-                            gl.get_query_parameter_u64_with_offset(
-                                query,
-                                glow::QUERY_RESULT,
-                                result as usize,
-                            )
+                            if self
+                                .shared
+                                .private_caps
+                                .contains(PrivateCapabilities::QUERY_64BIT)
+                            {
+                                let result: *mut u64 = &mut result;
+                                gl.get_query_parameter_u64_with_offset(
+                                    query,
+                                    glow::QUERY_RESULT,
+                                    result as usize,
+                                )
+                            } else {
+                                result =
+                                    gl.get_query_parameter_u32(query, glow::QUERY_RESULT) as u64;
+                            }
                         };
                         temp_query_results.push(result);
                     }

@@ -401,7 +401,7 @@ impl<A: HalApi> ResourceTracker<TextureId, Texture<A>> for TextureTracker<A> {
     
     
     
-    fn remove_abandoned(&mut self, id: TextureId, external_count: usize) -> bool {
+    fn remove_abandoned(&mut self, id: TextureId) -> bool {
         let index = id.unzip().0 as usize;
 
         if index > self.metadata.size() {
@@ -415,24 +415,23 @@ impl<A: HalApi> ResourceTracker<TextureId, Texture<A>> for TextureTracker<A> {
                 let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
                 
                 
-                let min_ref_count = 1 + external_count;
-                if existing_ref_count <= min_ref_count {
+                if existing_ref_count <= 2 {
                     self.start_set.complex.remove(&index);
                     self.end_set.complex.remove(&index);
                     self.metadata.remove(index);
-                    log::info!("Texture {:?} is not tracked anymore", id,);
+                    log::trace!("Texture {:?} is not tracked anymore", id,);
                     return true;
                 } else {
-                    log::info!(
+                    log::trace!(
                         "Texture {:?} is still referenced from {}",
                         id,
                         existing_ref_count
                     );
+                    return false;
                 }
             }
         }
-
-        false
+        true
     }
 }
 

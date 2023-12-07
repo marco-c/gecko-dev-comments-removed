@@ -249,7 +249,8 @@ impl super::Adapter {
             | wgt::Features::PUSH_CONSTANTS
             | wgt::Features::SHADER_PRIMITIVE_INDEX
             | wgt::Features::RG11B10UFLOAT_RENDERABLE
-            | wgt::Features::DUAL_SOURCE_BLENDING;
+            | wgt::Features::DUAL_SOURCE_BLENDING
+            | wgt::Features::TEXTURE_FORMAT_NV12;
 
         
         
@@ -294,9 +295,17 @@ impl super::Adapter {
         );
 
         
+        features.set(wgt::Features::FLOAT32_FILTERABLE, true);
+
+        
         let presentation_timer = auxil::dxgi::time::PresentationTimer::new_dxgi();
 
         let base = wgt::Limits::default();
+
+        let mut downlevel = wgt::DownlevelCapabilities::default();
+        
+        downlevel.flags -=
+            wgt::DownlevelFlags::VERTEX_AND_INSTANCE_INDEX_RESPECTS_RESPECTIVE_FIRST_VALUE_IN_INDIRECT_DRAW;
 
         Some(crate::ExposedAdapter {
             adapter: super::Adapter {
@@ -392,7 +401,7 @@ impl super::Adapter {
                     )
                     .unwrap(),
                 },
-                downlevel: wgt::DownlevelCapabilities::default(),
+                downlevel,
             },
         })
     }
@@ -620,16 +629,6 @@ impl crate::Adapter<super::Api> for super::Adapter {
             
             swap_chain_sizes: 2..=16,
             current_extent,
-            
-            extents: wgt::Extent3d {
-                width: 16,
-                height: 16,
-                depth_or_array_layers: 1,
-            }..=wgt::Extent3d {
-                width: 4096,
-                height: 4096,
-                depth_or_array_layers: 1,
-            },
             usage: crate::TextureUses::COLOR_TARGET
                 | crate::TextureUses::COPY_SRC
                 | crate::TextureUses::COPY_DST,

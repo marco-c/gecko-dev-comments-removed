@@ -6,7 +6,7 @@ use crate::{
     identity::{GlobalIdentityHandlerFactory, Input},
     resource::{Buffer, BufferAccessResult},
     resource::{BufferAccessError, BufferMapOperation},
-    Label, DOWNLEVEL_ERROR_MESSAGE,
+    resource_log, Label, DOWNLEVEL_ERROR_MESSAGE,
 };
 
 use arrayvec::ArrayVec;
@@ -273,7 +273,6 @@ impl DeviceLostClosure {
         }
     }
 
-    #[allow(trivial_casts)]
     pub(crate) fn call(self, reason: DeviceLostReason, message: String) {
         match self.inner {
             DeviceLostClosureInner::Rust { callback } => callback(reason, message),
@@ -281,11 +280,8 @@ impl DeviceLostClosure {
             DeviceLostClosureInner::C { inner } => unsafe {
                 
                 
-                (inner.callback)(
-                    inner.user_data,
-                    reason as u8,
-                    message.as_ptr() as *const c_char,
-                )
+                let message = std::ffi::CString::new(message).unwrap();
+                (inner.callback)(inner.user_data, reason as u8, message.as_ptr())
             },
         }
     }
@@ -376,7 +372,10 @@ impl<A: HalApi> CommandAllocator<A> {
     }
 
     fn dispose(self, device: &A::Device) {
-        log::info!("Destroying {} command encoders", self.free_encoders.len());
+        resource_log!(
+            "CommandAllocator::dispose encoders {}",
+            self.free_encoders.len()
+        );
         for cmd_encoder in self.free_encoders {
             unsafe {
                 device.destroy_command_encoder(cmd_encoder);

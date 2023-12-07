@@ -13,8 +13,8 @@ use std::{fmt, mem};
 const LOCATION_SEMANTIC: &str = "LOC";
 const SPECIAL_CBUF_TYPE: &str = "NagaConstants";
 const SPECIAL_CBUF_VAR: &str = "_NagaConstants";
-const SPECIAL_BASE_VERTEX: &str = "base_vertex";
-const SPECIAL_BASE_INSTANCE: &str = "base_instance";
+const SPECIAL_FIRST_VERTEX: &str = "first_vertex";
+const SPECIAL_FIRST_INSTANCE: &str = "first_instance";
 const SPECIAL_OTHER: &str = "other";
 
 pub(crate) const MODF_FUNCTION: &str = "naga_modf";
@@ -189,8 +189,8 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         
         if let Some(ref bt) = self.options.special_constants_binding {
             writeln!(self.out, "struct {SPECIAL_CBUF_TYPE} {{")?;
-            writeln!(self.out, "{}int {};", back::INDENT, SPECIAL_BASE_VERTEX)?;
-            writeln!(self.out, "{}int {};", back::INDENT, SPECIAL_BASE_INSTANCE)?;
+            writeln!(self.out, "{}int {};", back::INDENT, SPECIAL_FIRST_VERTEX)?;
+            writeln!(self.out, "{}int {};", back::INDENT, SPECIAL_FIRST_INSTANCE)?;
             writeln!(self.out, "{}uint {};", back::INDENT, SPECIAL_OTHER)?;
             writeln!(self.out, "}};")?;
             write!(
@@ -2040,6 +2040,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 crate::Literal::I32(value) => write!(self.out, "{}", value)?,
                 crate::Literal::I64(value) => write!(self.out, "{}L", value)?,
                 crate::Literal::Bool(value) => write!(self.out, "{}", value)?,
+                crate::Literal::AbstractInt(_) | crate::Literal::AbstractFloat(_) => {
+                    return Err(Error::Custom(
+                        "Abstract types should not appear in IR presented to backends".into(),
+                    ));
+                }
             },
             Expression::Constant(handle) => {
                 let constant = &module.constants[handle];
@@ -2110,11 +2115,11 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         };
         let closing_bracket = match ff_input {
             Some(crate::BuiltIn::VertexIndex) => {
-                write!(self.out, "({SPECIAL_CBUF_VAR}.{SPECIAL_BASE_VERTEX} + ")?;
+                write!(self.out, "({SPECIAL_CBUF_VAR}.{SPECIAL_FIRST_VERTEX} + ")?;
                 ")"
             }
             Some(crate::BuiltIn::InstanceIndex) => {
-                write!(self.out, "({SPECIAL_CBUF_VAR}.{SPECIAL_BASE_INSTANCE} + ",)?;
+                write!(self.out, "({SPECIAL_CBUF_VAR}.{SPECIAL_FIRST_INSTANCE} + ",)?;
                 ")"
             }
             Some(crate::BuiltIn::NumWorkGroups) => {
@@ -2123,7 +2128,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 
                 write!(
                     self.out,
-                    "uint3({SPECIAL_CBUF_VAR}.{SPECIAL_BASE_VERTEX}, {SPECIAL_CBUF_VAR}.{SPECIAL_BASE_INSTANCE}, {SPECIAL_CBUF_VAR}.{SPECIAL_OTHER})",
+                    "uint3({SPECIAL_CBUF_VAR}.{SPECIAL_FIRST_VERTEX}, {SPECIAL_CBUF_VAR}.{SPECIAL_FIRST_INSTANCE}, {SPECIAL_CBUF_VAR}.{SPECIAL_OTHER})",
                 )?;
                 return Ok(());
             }

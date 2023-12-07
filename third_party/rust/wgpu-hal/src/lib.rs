@@ -90,10 +90,11 @@ use std::{
     num::NonZeroU32,
     ops::{Range, RangeInclusive},
     ptr::NonNull,
-    sync::{atomic::AtomicBool, Arc},
+    sync::Arc,
 };
 
 use bitflags::bitflags;
+use parking_lot::Mutex;
 use thiserror::Error;
 use wgt::WasmNotSendSync;
 
@@ -565,17 +566,17 @@ pub trait CommandEncoder<A: Api>: WasmNotSendSync + fmt::Debug {
 
     unsafe fn draw(
         &mut self,
-        start_vertex: u32,
+        first_vertex: u32,
         vertex_count: u32,
-        start_instance: u32,
+        first_instance: u32,
         instance_count: u32,
     );
     unsafe fn draw_indexed(
         &mut self,
-        start_index: u32,
+        first_index: u32,
         index_count: u32,
         base_vertex: i32,
-        start_instance: u32,
+        first_instance: u32,
         instance_count: u32,
     );
     unsafe fn draw_indirect(
@@ -623,8 +624,8 @@ bitflags!(
     /// Pipeline layout creation flags.
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
     pub struct PipelineLayoutFlags: u32 {
-        /// Include support for base vertex/instance drawing.
-        const BASE_VERTEX_INSTANCE = 1 << 0;
+        /// Include support for `first_vertex` / `first_instance` drawing.
+        const FIRST_VERTEX_INSTANCE = 1 << 0;
         /// Include support for num work groups builtin.
         const NUM_WORK_GROUPS = 1 << 1;
     }
@@ -884,11 +885,6 @@ pub struct SurfaceCapabilities {
     
     
     
-    pub extents: RangeInclusive<wgt::Extent3d>,
-
-    
-    
-    
     pub usage: TextureUses,
 
     
@@ -980,6 +976,7 @@ pub struct TextureViewDescriptor<'a> {
     pub dimension: wgt::TextureViewDimension,
     pub usage: TextureUses,
     pub range: wgt::ImageSubresourceRange,
+    pub plane: Option<u32>,
 }
 
 #[derive(Clone, Debug)]
@@ -1395,25 +1392,28 @@ pub struct ComputePassDescriptor<'a, A: Api> {
 
 
 
+
+
+
 pub static VALIDATION_CANARY: ValidationCanary = ValidationCanary {
-    inner: AtomicBool::new(false),
+    inner: Mutex::new(Vec::new()),
 };
 
 
 pub struct ValidationCanary {
-    inner: AtomicBool,
+    inner: Mutex<Vec<String>>,
 }
 
 impl ValidationCanary {
     #[allow(dead_code)] 
-    fn set(&self) {
-        self.inner.store(true, std::sync::atomic::Ordering::SeqCst);
+    fn add(&self, msg: String) {
+        self.inner.lock().push(msg);
     }
 
     
     
-    pub fn get_and_reset(&self) -> bool {
-        self.inner.swap(false, std::sync::atomic::Ordering::SeqCst)
+    pub fn get_and_reset(&self) -> Vec<String> {
+        self.inner.lock().drain(..).collect()
     }
 }
 

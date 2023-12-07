@@ -313,8 +313,7 @@ impl<A: HalApi> ResourceTracker<BufferId, Buffer<A>> for BufferTracker<A> {
     
     
     
-    
-    fn remove_abandoned(&mut self, id: BufferId, external_count: usize) -> bool {
+    fn remove_abandoned(&mut self, id: BufferId) -> bool {
         let index = id.unzip().0 as usize;
 
         if index > self.metadata.size() {
@@ -328,22 +327,21 @@ impl<A: HalApi> ResourceTracker<BufferId, Buffer<A>> for BufferTracker<A> {
                 let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
                 
                 
-                let min_ref_count = 1 + external_count;
-                if existing_ref_count <= min_ref_count {
+                if existing_ref_count <= 2 {
                     self.metadata.remove(index);
-                    log::info!("Buffer {:?} is not tracked anymore", id,);
+                    log::trace!("Buffer {:?} is not tracked anymore", id,);
                     return true;
                 } else {
-                    log::info!(
+                    log::trace!(
                         "Buffer {:?} is still referenced from {}",
                         id,
                         existing_ref_count
                     );
+                    return false;
                 }
             }
         }
-
-        false
+        true
     }
 }
 

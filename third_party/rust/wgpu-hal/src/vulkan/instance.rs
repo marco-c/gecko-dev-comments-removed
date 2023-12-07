@@ -43,8 +43,9 @@ unsafe extern "system" fn debug_utils_messenger_callback(
 
     
     
-    const VUID_VKSWAPCHAINCREATEINFOKHR_IMAGEEXTENT_01274: i32 = 0x7cd0911d;
-    if cd.message_id_number == VUID_VKSWAPCHAINCREATEINFOKHR_IMAGEEXTENT_01274 {
+    
+    const VUID_VKSWAPCHAINCREATEINFOKHR_PNEXT_07781: i32 = 0x4c8929c1;
+    if cd.message_id_number == VUID_VKSWAPCHAINCREATEINFOKHR_PNEXT_07781 {
         return vk::FALSE;
     }
 
@@ -146,7 +147,7 @@ unsafe extern "system" fn debug_utils_messenger_callback(
 
     if cfg!(debug_assertions) && level == log::Level::Error {
         
-        crate::VALIDATION_CANARY.set();
+        crate::VALIDATION_CANARY.add(message.to_string());
     }
 
     vk::FALSE

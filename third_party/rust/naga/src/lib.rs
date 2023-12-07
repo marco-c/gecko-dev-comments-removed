@@ -301,6 +301,9 @@ use serde::Serialize;
 pub const BOOL_WIDTH: Bytes = 1;
 
 
+pub const ABSTRACT_WIDTH: Bytes = 8;
+
+
 pub type FastHashMap<K, T> = rustc_hash::FxHashMap<K, T>;
 
 pub type FastHashSet<K> = rustc_hash::FxHashSet<K>;
@@ -470,6 +473,16 @@ pub enum ScalarKind {
     Float,
     
     Bool,
+
+    
+    
+    
+    AbstractInt,
+
+    
+    
+    
+    AbstractFloat,
 }
 
 
@@ -871,6 +884,8 @@ pub enum Literal {
     I32(i32),
     I64(i64),
     Bool(bool),
+    AbstractInt(i64),
+    AbstractFloat(f64),
 }
 
 #[derive(Debug, PartialEq)]

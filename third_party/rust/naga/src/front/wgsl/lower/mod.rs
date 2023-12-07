@@ -11,6 +11,7 @@ use crate::proc::{
 use crate::{Arena, FastHashMap, FastIndexMap, Handle, Span};
 
 mod construction;
+mod conversion;
 
 
 
@@ -66,6 +67,7 @@ macro_rules! resolve {
         &$ctx.typifier()[$expr]
     }};
 }
+pub(super) use resolve;
 
 
 pub struct GlobalContext<'source, 'temp, 'out> {
@@ -98,10 +100,14 @@ impl<'source> GlobalContext<'source, '_, '_> {
         }
     }
 
-    fn ensure_type_exists(&mut self, inner: crate::TypeInner) -> Handle<crate::Type> {
+    fn ensure_type_exists(
+        &mut self,
+        name: Option<String>,
+        inner: crate::TypeInner,
+    ) -> Handle<crate::Type> {
         self.module
             .types
-            .insert(crate::Type { inner, name: None }, Span::UNDEFINED)
+            .insert(crate::Type { inner, name }, Span::UNDEFINED)
     }
 }
 
@@ -635,7 +641,7 @@ impl<'source, 'temp, 'out> ExpressionContext<'source, 'temp, 'out> {
     }
 
     fn ensure_type_exists(&mut self, inner: crate::TypeInner) -> Handle<crate::Type> {
-        self.as_global().ensure_type_exists(inner)
+        self.as_global().ensure_type_exists(None, inner)
     }
 }
 
@@ -899,29 +905,39 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                 }
                 ast::GlobalDeclKind::Const(ref c) => {
                     let mut ectx = ctx.as_const();
-                    let init = self.expression(c.init, &mut ectx)?;
-                    let inferred_type = ectx.register_type(init)?;
+                    let mut init = self.expression_for_abstract(c.init, &mut ectx)?;
 
-                    let explicit_ty =
-                        c.ty.map(|ty| self.resolve_ast_type(ty, &mut ctx))
-                            .transpose()?;
-
-                    if let Some(explicit) = explicit_ty {
-                        if explicit != inferred_type {
-                            let gctx = ctx.module.to_ctx();
-                            return Err(Error::InitializationTypeMismatch {
-                                name: c.name.span,
-                                expected: explicit.to_wgsl(&gctx),
-                                got: inferred_type.to_wgsl(&gctx),
-                            });
-                        }
+                    let ty;
+                    if let Some(explicit_ty) = c.ty {
+                        let explicit_ty =
+                            self.resolve_ast_type(explicit_ty, &mut ectx.as_global())?;
+                        let explicit_ty_res = crate::proc::TypeResolution::Handle(explicit_ty);
+                        init = ectx
+                            .try_automatic_conversions(init, &explicit_ty_res, c.name.span)
+                            .map_err(|error| match error {
+                                Error::AutoConversion {
+                                    dest_span: _,
+                                    dest_type,
+                                    source_span: _,
+                                    source_type,
+                                } => Error::InitializationTypeMismatch {
+                                    name: c.name.span,
+                                    expected: dest_type,
+                                    got: source_type,
+                                },
+                                other => other,
+                            })?;
+                        ty = explicit_ty;
+                    } else {
+                        init = ectx.concretize(init)?;
+                        ty = ectx.register_type(init)?;
                     }
 
                     let handle = ctx.module.constants.append(
                         crate::Constant {
                             name: Some(c.name.name.to_string()),
                             r#override: crate::Override::None,
-                            ty: inferred_type,
+                            ty,
                             init,
                         },
                         span,
@@ -936,12 +952,21 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                         .insert(s.name.name, LoweredGlobalDecl::Type(handle));
                 }
                 ast::GlobalDeclKind::Type(ref alias) => {
-                    let ty = self.resolve_ast_type(alias.ty, &mut ctx)?;
+                    let ty = self.resolve_named_ast_type(
+                        alias.ty,
+                        Some(alias.name.name.to_string()),
+                        &mut ctx,
+                    )?;
                     ctx.globals
                         .insert(alias.name.name, LoweredGlobalDecl::Type(ty));
                 }
             }
         }
+
+        
+        
+        
+        crate::compact::compact(&mut module);
 
         Ok(module)
     }
@@ -1441,7 +1466,22 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
     }
 
     
+    
+    
+    
+    
+    
+    
     fn expression(
+        &mut self,
+        expr: Handle<ast::Expression<'source>>,
+        ctx: &mut ExpressionContext<'source, '_, '_>,
+    ) -> Result<Handle<crate::Expression>, Error<'source>> {
+        let expr = self.expression_for_abstract(expr, ctx)?;
+        ctx.concretize(expr)
+    }
+
+    fn expression_for_abstract(
         &mut self,
         expr: Handle<ast::Expression<'source>>,
         ctx: &mut ExpressionContext<'source, '_, '_>,
@@ -1464,8 +1504,10 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
                     ast::Literal::Number(Number::F32(f)) => crate::Literal::F32(f),
                     ast::Literal::Number(Number::I32(i)) => crate::Literal::I32(i),
                     ast::Literal::Number(Number::U32(u)) => crate::Literal::U32(u),
-                    ast::Literal::Number(_) => {
-                        unreachable!("got abstract numeric type when not expected");
+                    ast::Literal::Number(Number::F64(f)) => crate::Literal::F64(f),
+                    ast::Literal::Number(Number::AbstractInt(i)) => crate::Literal::AbstractInt(i),
+                    ast::Literal::Number(Number::AbstractFloat(f)) => {
+                        crate::Literal::AbstractFloat(f)
                     }
                     ast::Literal::Bool(b) => crate::Literal::Bool(b),
                 };
@@ -2514,9 +2556,18 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
     }
 
     
-    fn resolve_ast_type(
+    
+    
+    
+    
+    
+    
+    
+    
+    fn resolve_named_ast_type(
         &mut self,
         handle: Handle<ast::Type<'source>>,
+        name: Option<String>,
         ctx: &mut GlobalContext<'source, '_, '_>,
     ) -> Result<Handle<crate::Type>, Error<'source>> {
         let inner = match ctx.types[handle] {
@@ -2577,7 +2628,16 @@ impl<'source, 'temp> Lowerer<'source, 'temp> {
             }
         };
 
-        Ok(ctx.ensure_type_exists(inner))
+        Ok(ctx.ensure_type_exists(name, inner))
+    }
+
+    
+    fn resolve_ast_type(
+        &mut self,
+        handle: Handle<ast::Type<'source>>,
+        ctx: &mut GlobalContext<'source, '_, '_>,
+    ) -> Result<Handle<crate::Type>, Error<'source>> {
+        self.resolve_named_ast_type(handle, None, ctx)
     }
 
     fn binding(

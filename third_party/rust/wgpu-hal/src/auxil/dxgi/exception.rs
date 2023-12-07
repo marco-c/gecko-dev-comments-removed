@@ -98,7 +98,7 @@ unsafe extern "system" fn output_debug_string_handler(
 
     if cfg!(debug_assertions) && level == log::Level::Error {
         
-        crate::VALIDATION_CANARY.set();
+        crate::VALIDATION_CANARY.add(message.to_string());
     }
 
     excpt::EXCEPTION_CONTINUE_EXECUTION

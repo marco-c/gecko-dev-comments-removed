@@ -280,12 +280,21 @@ bitflags::bitflags! {
         ///
         /// This is a web and native feature.
         const TIMESTAMP_QUERY = 1 << 1;
-        /// Allows non-zero value for the "first instance" in indirect draw calls.
+        /// Allows non-zero value for the `first_instance` member in indirect draw calls.
+        ///
+        /// If this feature is not enabled, and the `first_instance` member is non-zero, the behavior may be:
+        /// - The draw call is ignored.
+        /// - The draw call is executed as if the `first_instance` is zero.
+        /// - The draw call is executed with the correct `first_instance` value.
         ///
         /// Supported Platforms:
         /// - Vulkan (mostly)
         /// - DX12
-        /// - Metal
+        /// - Metal on Apple3+ or Mac1+
+        /// - OpenGL (Desktop 4.2+ with ARB_shader_draw_parameters only)
+        ///
+        /// Not Supported:
+        /// - OpenGL ES / WebGL
         ///
         /// This is a web and native feature.
         const INDIRECT_FIRST_INSTANCE = 1 << 2;
@@ -328,7 +337,18 @@ bitflags::bitflags! {
 
         // ? const NORM16_FILTERABLE = 1 << 17; (https://github.com/gpuweb/gpuweb/issues/3839)
         // ? const NORM16_RESOLVE = 1 << 18; (https://github.com/gpuweb/gpuweb/issues/3839)
-        // TODO const FLOAT32_FILTERABLE = 1 << 19;
+
+        /// Allows textures with formats "r32float", "rg32float", and "rgba32float" to be filterable.
+        ///
+        /// Supported Platforms:
+        /// - Vulkan (mainly on Desktop GPUs)
+        /// - DX12
+        /// - Metal on macOS or Apple9+ GPUs, optional on iOS/iPadOS with Apple7/8 GPUs
+        /// - GL with one of `GL_ARB_color_buffer_float`/`GL_EXT_color_buffer_float`/`OES_texture_float_linear`
+        ///
+        /// This is a web and native feature.
+        const FLOAT32_FILTERABLE = 1 << 19;
+
         // ? const FLOAT32_BLENDABLE = 1 << 20; (https://github.com/gpuweb/gpuweb/issues/3556)
         // ? const 32BIT_FORMAT_MULTISAMPLE = 1 << 21; (https://github.com/gpuweb/gpuweb/issues/3844)
         // ? const 32BIT_FORMAT_RESOLVE = 1 << 22; (https://github.com/gpuweb/gpuweb/issues/3844)
@@ -613,7 +633,7 @@ bitflags::bitflags! {
         /// Supported platforms:
         /// - DX12
         /// - Vulkan
-        /// - Metal (Emulated on top of `draw_indirect` and `draw_indexed_indirect`)
+        /// - Metal on Apple3+ or Mac1+ (Emulated on top of `draw_indirect` and `draw_indexed_indirect`)
         ///
         /// This is a native only feature.
         ///
@@ -762,7 +782,16 @@ bitflags::bitflags! {
         /// - OpenGL
         const SHADER_UNUSED_VERTEX_OUTPUT = 1 << 54;
 
-        // 54..59 available
+        /// Allows for creation of textures of format [`TextureFormat::NV12`]
+        ///
+        /// Supported platforms:
+        /// - DX12
+        /// - Vulkan
+        ///
+        /// This is a native only feature.
+        const TEXTURE_FORMAT_NV12 = 1 << 55;
+
+        // 55..59 available
 
         // Shader:
 
@@ -849,6 +878,16 @@ bitflags::bitflags! {
         const VALIDATION = 1 << 1;
         /// Don't pass labels to wgpu-hal.
         const DISCARD_HAL_LABELS = 1 << 2;
+        /// Whether wgpu should expose adapters that run on top of non-compliant adapters.
+        ///
+        /// Turning this on might mean that some of the functionality provided by the wgpu
+        /// adapter/device is not working or is broken. It could be that all the functionality
+        /// wgpu currently exposes works but we can't tell for sure since we have no additional
+        /// transparency into what is working and what is not on the underlying adapter.
+        ///
+        /// This mainly applies to a Vulkan driver's compliance version. If the major compliance version
+        /// is `0`, then the driver is ignored. This flag allows that driver to be enabled for testing.
+        const ALLOW_UNDERLYING_NONCOMPLIANT_ADAPTER = 1 << 3;
     }
 }
 
@@ -900,6 +939,9 @@ impl InstanceFlags {
         }
         if let Some(bit) = env("WGPU_DEBUG") {
             self.set(Self::DEBUG, bit);
+        }
+        if let Some(bit) = env("WGPU_ALLOW_UNDERLYING_NONCOMPLIANT_ADAPTER") {
+            self.set(Self::ALLOW_UNDERLYING_NONCOMPLIANT_ADAPTER, bit);
         }
 
         self
@@ -1385,9 +1427,18 @@ bitflags::bitflags! {
         const FRAGMENT_WRITABLE_STORAGE = 1 << 1;
         /// Supports indirect drawing and dispatching.
         ///
-        /// DX11 on FL10 level hardware, WebGL2, and GLES 3.0 devices do not support indirect.
+        /// DX11 on FL10 level hardware, WebGL2, GLES 3.0, and Metal on Apple1/Apple2 GPUs do not support indirect.
         const INDIRECT_EXECUTION = 1 << 2;
-        /// Supports non-zero `base_vertex` parameter to indexed draw calls.
+        /// Supports non-zero `base_vertex` parameter to direct indexed draw calls.
+        ///
+        /// Indirect calls, if supported, always support non-zero `base_vertex`.
+        ///
+        /// Supported by:
+        /// - Vulkan
+        /// - DX12
+        /// - Metal on Apple3+ or Mac1+
+        /// - OpenGL 3.2+
+        /// - OpenGL ES 3.2
         const BASE_VERTEX = 1 << 3;
         /// Supports reading from a depth/stencil texture while using it as a read-only
         /// depth/stencil attachment.
@@ -1486,6 +1537,34 @@ bitflags::bitflags! {
         /// Not Supported by:
         /// - GL ES / WebGL
         const NONBLOCKING_QUERY_RESOLVE = 1 << 22;
+
+        /// If this is true, use of `@builtin(vertex_index)` and `@builtin(instance_index)` will properly take into consideration
+        /// the `first_vertex` and `first_instance` parameters of indirect draw calls.
+        ///
+        /// If this is false, `@builtin(vertex_index)` and `@builtin(instance_index)` will start by counting from 0, ignoring the
+        /// `first_vertex` and `first_instance` parameters.
+        ///
+        /// For example, if you had a draw call like this:
+        /// - `first_vertex: 4,`
+        /// - `vertex_count: 12,`
+        ///
+        /// When this flag is present, `@builtin(vertex_index)` will start at 4 and go up to 15 (12 invocations).
+        ///
+        /// When this flag is not present, `@builtin(vertex_index)` will start at 0 and go up to 11 (12 invocations).
+        ///
+        /// This only affects the builtins in the shaders,
+        /// vertex buffers and instance rate vertex buffers will behave like expected with this flag disabled.
+        ///
+        /// See also [`Features::`]
+        ///
+        /// Supported By:
+        /// - Vulkan
+        /// - Metal
+        /// - OpenGL
+        ///
+        /// Will be implemented in the future by:
+        /// - DX12 ([#2471](https://github.com/gfx-rs/wgpu/issues/2471))
+        const VERTEX_AND_INSTANCE_INDEX_RESPECTS_RESPECTIVE_FIRST_VALUE_IN_INDIRECT_DRAW = 1 << 23;
     }
 }
 
@@ -1585,10 +1664,16 @@ pub struct DeviceDescriptor<L> {
     pub label: L,
     
     
-    pub features: Features,
     
     
-    pub limits: Limits,
+    
+    pub required_features: Features,
+    
+    
+    
+    
+    
+    pub required_limits: Limits,
 }
 
 impl<L> DeviceDescriptor<L> {
@@ -1596,8 +1681,8 @@ impl<L> DeviceDescriptor<L> {
     pub fn map_label<K>(&self, fun: impl FnOnce(&L) -> K) -> DeviceDescriptor<K> {
         DeviceDescriptor {
             label: fun(&self.label),
-            features: self.features,
-            limits: self.limits.clone(),
+            required_features: self.required_features,
+            required_limits: self.required_limits.clone(),
         }
     }
 }
@@ -2325,6 +2410,21 @@ pub enum TextureFormat {
     
     
     
+    
+    
+    
+    
+    
+    
+    NV12,
+
+    
+    
+    
+    
+    
+    
+    
     Bc1RgbaUnorm,
     
     
@@ -2547,6 +2647,7 @@ impl<'de> Deserialize<'de> for TextureFormat {
                     "depth16unorm" => TextureFormat::Depth16Unorm,
                     "depth24plus" => TextureFormat::Depth24Plus,
                     "depth24plus-stencil8" => TextureFormat::Depth24PlusStencil8,
+                    "nv12" => TextureFormat::NV12,
                     "rgb9e5ufloat" => TextureFormat::Rgb9e5Ufloat,
                     "bc1-rgba-unorm" => TextureFormat::Bc1RgbaUnorm,
                     "bc1-rgba-unorm-srgb" => TextureFormat::Bc1RgbaUnormSrgb,
@@ -2674,6 +2775,7 @@ impl Serialize for TextureFormat {
             TextureFormat::Depth32FloatStencil8 => "depth32float-stencil8",
             TextureFormat::Depth24Plus => "depth24plus",
             TextureFormat::Depth24PlusStencil8 => "depth24plus-stencil8",
+            TextureFormat::NV12 => "nv12",
             TextureFormat::Rgb9e5Ufloat => "rgb9e5ufloat",
             TextureFormat::Bc1RgbaUnorm => "bc1-rgba-unorm",
             TextureFormat::Bc1RgbaUnormSrgb => "bc1-rgba-unorm-srgb",
@@ -2868,6 +2970,8 @@ impl TextureFormat {
             | Self::Depth32Float
             | Self::Depth32FloatStencil8 => (1, 1),
 
+            Self::NV12 => (2, 2),
+
             Self::Bc1RgbaUnorm
             | Self::Bc1RgbaUnormSrgb
             | Self::Bc2RgbaUnorm
@@ -2966,6 +3070,8 @@ impl TextureFormat {
 
             Self::Depth32FloatStencil8 => Features::DEPTH32FLOAT_STENCIL8,
 
+            Self::NV12 => Features::TEXTURE_FORMAT_NV12,
+
             Self::R16Unorm
             | Self::R16Snorm
             | Self::Rg16Unorm
@@ -3020,6 +3126,7 @@ impl TextureFormat {
             TextureUsages::COPY_SRC | TextureUsages::COPY_DST | TextureUsages::TEXTURE_BINDING;
         let attachment = basic | TextureUsages::RENDER_ATTACHMENT;
         let storage = basic | TextureUsages::STORAGE_BINDING;
+        let binding = TextureUsages::TEXTURE_BINDING;
         let all_flags = TextureUsages::all();
         let rg11b10f = if device_features.contains(Features::RG11B10UFLOAT_RENDERABLE) {
             attachment
@@ -3081,6 +3188,9 @@ impl TextureFormat {
             Self::Depth32Float =>         (        msaa, attachment),
             Self::Depth32FloatStencil8 => (        msaa, attachment),
 
+            
+            Self::NV12 =>                 (        noaa,    binding),
+
             Self::R16Unorm =>             (        msaa,    storage),
             Self::R16Snorm =>             (        msaa,    storage),
             Self::Rg16Unorm =>            (        msaa,    storage),
@@ -3119,10 +3229,16 @@ impl TextureFormat {
             Self::Astc { .. } =>          (        noaa,      basic),
         };
 
-        let is_filterable =
-            self.sample_type(None) == Some(TextureSampleType::Float { filterable: true });
+        
+        let sample_type1 = self.sample_type(None, Some(device_features));
+        let is_filterable = sample_type1 == Some(TextureSampleType::Float { filterable: true });
+
+        
+        let sample_type2 = self.sample_type(None, None);
+        let is_blendable = sample_type2 == Some(TextureSampleType::Float { filterable: true });
+
         flags.set(TextureFormatFeatureFlags::FILTERABLE, is_filterable);
-        flags.set(TextureFormatFeatureFlags::BLENDABLE, is_filterable);
+        flags.set(TextureFormatFeatureFlags::BLENDABLE, is_blendable);
 
         TextureFormatFeatures {
             allowed_usages,
@@ -3134,9 +3250,17 @@ impl TextureFormat {
     
     
     
-    pub fn sample_type(&self, aspect: Option<TextureAspect>) -> Option<TextureSampleType> {
+    pub fn sample_type(
+        &self,
+        aspect: Option<TextureAspect>,
+        device_features: Option<Features>,
+    ) -> Option<TextureSampleType> {
         let float = TextureSampleType::Float { filterable: true };
-        let unfilterable_float = TextureSampleType::Float { filterable: false };
+        let float32_sample_type = TextureSampleType::Float {
+            filterable: device_features
+                .unwrap_or(Features::empty())
+                .contains(Features::FLOAT32_FILTERABLE),
+        };
         let depth = TextureSampleType::Depth;
         let uint = TextureSampleType::Uint;
         let sint = TextureSampleType::Sint;
@@ -3157,7 +3281,7 @@ impl TextureFormat {
             | Self::Rgb10a2Unorm
             | Self::Rg11b10Float => Some(float),
 
-            Self::R32Float | Self::Rg32Float | Self::Rgba32Float => Some(unfilterable_float),
+            Self::R32Float | Self::Rg32Float | Self::Rgba32Float => Some(float32_sample_type),
 
             Self::R8Uint
             | Self::Rg8Uint
@@ -3187,6 +3311,8 @@ impl TextureFormat {
                 Some(TextureAspect::DepthOnly) => Some(depth),
                 Some(TextureAspect::StencilOnly) => Some(uint),
             },
+
+            Self::NV12 => None,
 
             Self::R16Unorm
             | Self::R16Snorm
@@ -3304,6 +3430,8 @@ impl TextureFormat {
                 Some(TextureAspect::StencilOnly) => Some(1),
             },
 
+            Self::NV12 => None,
+
             Self::Bc1RgbaUnorm | Self::Bc1RgbaUnormSrgb | Self::Bc4RUnorm | Self::Bc4RSnorm => {
                 Some(8)
             }
@@ -3394,6 +3522,8 @@ impl TextureFormat {
                 TextureAspect::All => 2,
                 TextureAspect::DepthOnly | TextureAspect::StencilOnly => 1,
             },
+
+            Self::NV12 => 3,
 
             Self::Bc4RUnorm | Self::Bc4RSnorm => 1,
             Self::Bc5RgUnorm | Self::Bc5RgSnorm => 2,
@@ -6507,7 +6637,7 @@ impl_bitflags!(PipelineStatisticsTypes);
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DrawIndirectArgs {
     
     pub vertex_count: u32,
@@ -6516,12 +6646,26 @@ pub struct DrawIndirectArgs {
     
     pub first_vertex: u32,
     
+    
+    
     pub first_instance: u32,
+}
+
+impl DrawIndirectArgs {
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::mem::transmute(std::slice::from_raw_parts(
+                self as *const _ as *const u8,
+                std::mem::size_of::<Self>(),
+            ))
+        }
+    }
 }
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DrawIndexedIndirectArgs {
     
     pub index_count: u32,
@@ -6532,19 +6676,45 @@ pub struct DrawIndexedIndirectArgs {
     
     pub base_vertex: i32,
     
+    
+    
     pub first_instance: u32,
+}
+
+impl DrawIndexedIndirectArgs {
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::mem::transmute(std::slice::from_raw_parts(
+                self as *const _ as *const u8,
+                std::mem::size_of::<Self>(),
+            ))
+        }
+    }
 }
 
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct DispatchIndirectArgs {
     
-    pub group_size_x: u32,
+    pub x: u32,
     
-    pub group_size_y: u32,
+    pub y: u32,
     
-    pub group_size_z: u32,
+    pub z: u32,
+}
+
+impl DispatchIndirectArgs {
+    
+    pub fn as_bytes(&self) -> &[u8] {
+        unsafe {
+            std::mem::transmute(std::slice::from_raw_parts(
+                self as *const _ as *const u8,
+                std::mem::size_of::<Self>(),
+            ))
+        }
+    }
 }
 
 

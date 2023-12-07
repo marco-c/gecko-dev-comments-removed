@@ -467,9 +467,17 @@ impl super::Device {
             }
         }
 
+        let first_instance_location = if has_stages.contains(wgt::ShaderStages::VERTEX) {
+            
+            unsafe { gl.get_uniform_location(program, naga::back::glsl::FIRST_INSTANCE_BINDING) }
+        } else {
+            None
+        };
+
         Ok(Arc::new(super::PipelineInner {
             program,
             sampler_map,
+            first_instance_location,
             push_constant_descs: uniforms,
         }))
     }
@@ -738,7 +746,7 @@ impl crate::Device<super::Api> for super::Device {
 
             unsafe { gl.bind_texture(target, Some(raw)) };
             
-            match desc.format.sample_type(None) {
+            match desc.format.sample_type(None, Some(self.shared.features)) {
                 Some(
                     wgt::TextureSampleType::Float { filterable: false }
                     | wgt::TextureSampleType::Uint
@@ -1082,6 +1090,12 @@ impl crate::Device<super::Api> for super::Device {
                 .private_caps
                 .contains(super::PrivateCapabilities::SHADER_TEXTURE_SHADOW_LOD),
         );
+        writer_flags.set(
+            glsl::WriterFlags::DRAW_PARAMETERS,
+            self.shared
+                .private_caps
+                .contains(super::PrivateCapabilities::FULLY_FEATURED_INSTANCING),
+        );
         
         
         writer_flags.set(glsl::WriterFlags::FORCE_POINT_SIZE, true);
@@ -1343,31 +1357,18 @@ impl crate::Device<super::Api> for super::Device {
         desc: &wgt::QuerySetDescriptor<crate::Label>,
     ) -> Result<super::QuerySet, crate::DeviceError> {
         let gl = &self.shared.context.lock();
-        let mut temp_string = String::new();
 
         let mut queries = Vec::with_capacity(desc.count as usize);
-        for i in 0..desc.count {
+        for _ in 0..desc.count {
             let query =
                 unsafe { gl.create_query() }.map_err(|_| crate::DeviceError::OutOfMemory)?;
-            #[cfg(not(target_arch = "wasm32"))]
-            if gl.supports_debug() {
-                use std::fmt::Write;
 
-                
-                match desc.ty {
-                    wgt::QueryType::Timestamp => unsafe {
-                        gl.query_counter(query, glow::TIMESTAMP)
-                    },
-                    _ => (),
-                }
+            
+            
+            
+            
+            
 
-                if let Some(label) = desc.label {
-                    temp_string.clear();
-                    let _ = write!(temp_string, "{label}[{i}]");
-                    let name = unsafe { mem::transmute(query) };
-                    unsafe { gl.object_label(glow::QUERY, name, Some(&temp_string)) };
-                }
-            }
             queries.push(query);
         }
 

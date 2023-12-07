@@ -9,7 +9,8 @@ use std::{marker::PhantomData, sync::Arc};
 use parking_lot::Mutex;
 
 use crate::{
-    hal_api::HalApi, id::TypedId, resource::Resource, storage::Storage, track::ResourceMetadata,
+    hal_api::HalApi, id::TypedId, resource::Resource, resource_log, storage::Storage,
+    track::ResourceMetadata,
 };
 
 use super::ResourceTracker;
@@ -84,12 +85,14 @@ impl<A: HalApi, Id: TypedId, T: Resource<Id>> ResourceTracker<Id, T>
     
     
     
-    fn remove_abandoned(&mut self, id: Id, external_count: usize) -> bool {
+    fn remove_abandoned(&mut self, id: Id) -> bool {
         let index = id.unzip().0 as usize;
 
         if index > self.metadata.size() {
             return false;
         }
+
+        resource_log!("StatelessTracker::remove_abandoned {id:?}");
 
         self.tracker_assert_in_bounds(index);
 
@@ -98,23 +101,22 @@ impl<A: HalApi, Id: TypedId, T: Resource<Id>> ResourceTracker<Id, T>
                 let existing_ref_count = self.metadata.get_ref_count_unchecked(index);
                 
                 
-                let min_ref_count = 1 + external_count;
-                if existing_ref_count <= min_ref_count {
+                if existing_ref_count <= 2 {
                     self.metadata.remove(index);
-                    log::info!("{} {:?} is not tracked anymore", T::TYPE, id,);
+                    log::trace!("{} {:?} is not tracked anymore", T::TYPE, id,);
                     return true;
                 } else {
-                    log::info!(
+                    log::trace!(
                         "{} {:?} is still referenced from {}",
                         T::TYPE,
                         id,
                         existing_ref_count
                     );
+                    return false;
                 }
             }
         }
-
-        false
+        true
     }
 }
 
