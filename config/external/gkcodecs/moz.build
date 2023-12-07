@@ -14,3 +14,5 @@
 GeckoSharedLibrary("gkcodecs", linkage=None)
 SHARED_LIBRARY_NAME = "gkcodecs"
 SYMBOLS_FILE = "gkcodecs.symbols"
+if CONFIG["MOZ_SYSTEM_LIBVPX"]:
+    DEFINES["MOZ_SYSTEM_LIBVPX"] = True
