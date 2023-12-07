@@ -893,7 +893,7 @@ nsNavHistoryContainerResultNode::GetSortingComparator(uint16_t aSortType) {
 
 void nsNavHistoryContainerResultNode::RecursiveSort(
     SortComparator aComparator) {
-  mChildren.Sort(aComparator);
+  mChildren.Sort(aComparator, nullptr);
   for (nsNavHistoryResultNode* child : mChildren) {
     if (child->IsContainer()) {
       child->GetAsContainer()->RecursiveSort(aComparator);
@@ -917,14 +917,14 @@ int32_t nsNavHistoryContainerResultNode::FindInsertionPoint(
   
   
   int32_t res;
-  res = aComparator(aNode, mChildren[0]);
+  res = aComparator(aNode, mChildren[0], nullptr);
   if (res <= 0) {
     if (aItemExists && res == 0) {
       (*aItemExists) = true;
     }
     return 0;
   }
-  res = aComparator(aNode, mChildren[mChildren.Count() - 1]);
+  res = aComparator(aNode, mChildren[mChildren.Count() - 1], nullptr);
   if (res >= 0) {
     if (aItemExists && res == 0) {
       (*aItemExists) = true;
@@ -936,7 +936,7 @@ int32_t nsNavHistoryContainerResultNode::FindInsertionPoint(
   int32_t endRange = mChildren.Count();  
   while (beginRange < endRange) {
     int32_t center = beginRange + (endRange - beginRange) / 2;
-    int32_t res = aComparator(aNode, mChildren[center]);
+    int32_t res = aComparator(aNode, mChildren[center], nullptr);
     if (res <= 0) {
       endRange = center;  
       if (aItemExists && res == 0) {
@@ -966,13 +966,13 @@ bool nsNavHistoryContainerResultNode::DoesChildNeedResorting(
 
   if (aIndex > 0) {
     
-    if (aComparator(mChildren[aIndex - 1], mChildren[aIndex]) > 0) {
+    if (aComparator(mChildren[aIndex - 1], mChildren[aIndex], nullptr) > 0) {
       return true;
     }
   }
   if (aIndex < mChildren.Count() - 1) {
     
-    if (aComparator(mChildren[aIndex], mChildren[aIndex + 1]) > 0) {
+    if (aComparator(mChildren[aIndex], mChildren[aIndex + 1], nullptr) > 0) {
       return true;
     }
   }
@@ -997,7 +997,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_StringLess(
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_Bookmark(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   return a->mBookmarkIndex - b->mBookmarkIndex;
 }
 
@@ -1010,7 +1010,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_Bookmark(
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_TitleLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   uint32_t aType;
   a->GetType(&aType);
 
@@ -1025,15 +1025,16 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_TitleLess(
       
       value = ComparePRTime(a->mTime, b->mTime);
       if (value == 0) {
-        value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+        value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(
+            a, b, closure);
       }
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_TitleGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -SortComparison_TitleLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -SortComparison_TitleLess(a, b, closure);
 }
 
 
@@ -1041,55 +1042,60 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_TitleGreater(
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_DateLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = ComparePRTime(a->mTime, b->mTime);
   if (value == 0) {
     value = SortComparison_StringLess(NS_ConvertUTF8toUTF16(a->mTitle),
                                       NS_ConvertUTF8toUTF16(b->mTitle));
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_DateGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -nsNavHistoryContainerResultNode::SortComparison_DateLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -nsNavHistoryContainerResultNode::SortComparison_DateLess(a, b,
+                                                                   closure);
 }
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_DateAddedLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = ComparePRTime(a->mDateAdded, b->mDateAdded);
   if (value == 0) {
     value = SortComparison_StringLess(NS_ConvertUTF8toUTF16(a->mTitle),
                                       NS_ConvertUTF8toUTF16(b->mTitle));
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_DateAddedGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -nsNavHistoryContainerResultNode::SortComparison_DateAddedLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -nsNavHistoryContainerResultNode::SortComparison_DateAddedLess(
+      a, b, closure);
 }
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_LastModifiedLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = ComparePRTime(a->mLastModified, b->mLastModified);
   if (value == 0) {
     value = SortComparison_StringLess(NS_ConvertUTF8toUTF16(a->mTitle),
                                       NS_ConvertUTF8toUTF16(b->mTitle));
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_LastModifiedGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -nsNavHistoryContainerResultNode::SortComparison_LastModifiedLess(a,
-                                                                           b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -nsNavHistoryContainerResultNode::SortComparison_LastModifiedLess(
+      a, b, closure);
 }
 
 
@@ -1097,7 +1103,7 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_LastModifiedGreater(
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_URILess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value;
   if (a->IsURI() && b->IsURI()) {
     
@@ -1116,37 +1122,40 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_URILess(
   if (value == 0) {
     value = ComparePRTime(a->mTime, b->mTime);
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_URIGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -SortComparison_URILess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -SortComparison_URILess(a, b, closure);
 }
 
 
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_VisitCountLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = CompareIntegers(a->mAccessCount, b->mAccessCount);
   if (value == 0) {
     value = ComparePRTime(a->mTime, b->mTime);
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_VisitCountGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -nsNavHistoryContainerResultNode::SortComparison_VisitCountLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -nsNavHistoryContainerResultNode::SortComparison_VisitCountLess(
+      a, b, closure);
 }
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_TagsLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = 0;
   nsAutoString aTags, bTags;
 
@@ -1160,34 +1169,36 @@ int32_t nsNavHistoryContainerResultNode::SortComparison_TagsLess(
 
   
   if (value == 0) {
-    value = SortComparison_TitleLess(a, b);
+    value = SortComparison_TitleLess(a, b, closure);
   }
 
   return value;
 }
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_TagsGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -SortComparison_TagsLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -SortComparison_TagsLess(a, b, closure);
 }
 
 
 
 
 int32_t nsNavHistoryContainerResultNode::SortComparison_FrecencyLess(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
   int32_t value = CompareIntegers(a->mFrecency, b->mFrecency);
   if (value == 0) {
     value = ComparePRTime(a->mTime, b->mTime);
     if (value == 0) {
-      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b);
+      value = nsNavHistoryContainerResultNode::SortComparison_Bookmark(a, b,
+                                                                       closure);
     }
   }
   return value;
 }
 int32_t nsNavHistoryContainerResultNode::SortComparison_FrecencyGreater(
-    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b) {
-  return -nsNavHistoryContainerResultNode::SortComparison_FrecencyLess(a, b);
+    nsNavHistoryResultNode* a, nsNavHistoryResultNode* b, void* closure) {
+  return -nsNavHistoryContainerResultNode::SortComparison_FrecencyLess(a, b,
+                                                                       closure);
 }
 
 
@@ -2054,7 +2065,7 @@ uint16_t nsNavHistoryQueryResultNode::GetSortType() {
 
 void nsNavHistoryQueryResultNode::RecursiveSort(SortComparator aComparator) {
   if (!IsContainersQuery()) {
-    mChildren.Sort(aComparator);
+    mChildren.Sort(aComparator, nullptr);
   }
 
   for (int32_t i = 0; i < mChildren.Count(); ++i) {
