@@ -2,8 +2,7 @@ use crate::errno::Errno;
 use crate::Result;
 use libc::{self, c_int};
 use std::mem;
-use std::os::unix::io::RawFd;
-use std::ptr;
+use std::os::unix::io::{AsFd, AsRawFd, FromRawFd, OwnedFd, RawFd};
 
 libc_bitflags!(
     pub struct EpollFlags: c_int {
@@ -70,6 +69,126 @@ impl EpollEvent {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Debug)]
+pub struct Epoll(pub OwnedFd);
+impl Epoll {
+    
+    
+    
+    pub fn new(flags: EpollCreateFlags) -> Result<Self> {
+        let res = unsafe { libc::epoll_create1(flags.bits()) };
+        let fd = Errno::result(res)?;
+        let owned_fd = unsafe { OwnedFd::from_raw_fd(fd) };
+        Ok(Self(owned_fd))
+    }
+    
+    
+    
+    
+    pub fn add<Fd: AsFd>(&self, fd: Fd, mut event: EpollEvent) -> Result<()> {
+        self.epoll_ctl(EpollOp::EpollCtlAdd, fd, &mut event)
+    }
+    
+    
+    
+    pub fn delete<Fd: AsFd>(&self, fd: Fd) -> Result<()> {
+        self.epoll_ctl(EpollOp::EpollCtlDel, fd, None)
+    }
+    
+    
+    
+    
+    pub fn modify<Fd: AsFd>(
+        &self,
+        fd: Fd,
+        event: &mut EpollEvent,
+    ) -> Result<()> {
+        self.epoll_ctl(EpollOp::EpollCtlMod, fd, event)
+    }
+    
+    
+    
+    
+    pub fn wait(
+        &self,
+        events: &mut [EpollEvent],
+        timeout: isize,
+    ) -> Result<usize> {
+        let res = unsafe {
+            libc::epoll_wait(
+                self.0.as_raw_fd(),
+                events.as_mut_ptr() as *mut libc::epoll_event,
+                events.len() as c_int,
+                timeout as c_int,
+            )
+        };
+
+        Errno::result(res).map(|r| r as usize)
+    }
+    
+    
+    
+    
+    
+    
+    
+    fn epoll_ctl<'a, Fd: AsFd, T>(
+        &self,
+        op: EpollOp,
+        fd: Fd,
+        event: T,
+    ) -> Result<()>
+    where
+        T: Into<Option<&'a mut EpollEvent>>,
+    {
+        let event: Option<&mut EpollEvent> = event.into();
+        let ptr = event
+            .map(|x| &mut x.event as *mut libc::epoll_event)
+            .unwrap_or(std::ptr::null_mut());
+        unsafe {
+            Errno::result(libc::epoll_ctl(
+                self.0.as_raw_fd(),
+                op as c_int,
+                fd.as_fd().as_raw_fd(),
+                ptr,
+            ))
+            .map(drop)
+        }
+    }
+}
+
+#[deprecated(since = "0.27.0", note = "Use Epoll::new() instead")]
 #[inline]
 pub fn epoll_create() -> Result<RawFd> {
     let res = unsafe { libc::epoll_create(1024) };
@@ -77,6 +196,7 @@ pub fn epoll_create() -> Result<RawFd> {
     Errno::result(res)
 }
 
+#[deprecated(since = "0.27.0", note = "Use Epoll::new() instead")]
 #[inline]
 pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
     let res = unsafe { libc::epoll_create1(flags.bits()) };
@@ -84,6 +204,7 @@ pub fn epoll_create1(flags: EpollCreateFlags) -> Result<RawFd> {
     Errno::result(res)
 }
 
+#[deprecated(since = "0.27.0", note = "Use Epoll::epoll_ctl() instead")]
 #[inline]
 pub fn epoll_ctl<'a, T>(
     epfd: RawFd,
@@ -102,13 +223,14 @@ where
             if let Some(ref mut event) = event {
                 libc::epoll_ctl(epfd, op as c_int, fd, &mut event.event)
             } else {
-                libc::epoll_ctl(epfd, op as c_int, fd, ptr::null_mut())
+                libc::epoll_ctl(epfd, op as c_int, fd, std::ptr::null_mut())
             }
         };
         Errno::result(res).map(drop)
     }
 }
 
+#[deprecated(since = "0.27.0", note = "Use Epoll::wait() instead")]
 #[inline]
 pub fn epoll_wait(
     epfd: RawFd,

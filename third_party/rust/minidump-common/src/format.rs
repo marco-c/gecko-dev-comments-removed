@@ -209,6 +209,9 @@ pub enum MINIDUMP_STREAM_TYPE {
     Memory64ListStream = 9,
     CommentStreamA = 10,
     CommentStreamW = 11,
+    
+    
+    
     HandleDataStream = 12,
     FunctionTable = 13,
     
@@ -317,6 +320,9 @@ pub enum MINIDUMP_STREAM_TYPE {
     
     
     MozMacosBootargsStream = 0x4d7a0002,
+
+    
+    MozLinuxLimits = 0x4d7a0003,
 }
 
 impl From<MINIDUMP_STREAM_TYPE> for u32 {
@@ -775,6 +781,7 @@ bitflags! {
     /// This applies to the [`CONTEXT_ARM`], [`CONTEXT_PPC`], [`CONTEXT_MIPS`],
     /// [`CONTEXT_AMD64`], [`CONTEXT_ARM64`], [`CONTEXT_PPC64`], [`CONTEXT_SPARC`] and
     /// [`CONTEXT_ARM64_OLD`] structs.
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsCpu: u32 {
         const CONTEXT_IA64 = 0x80000;
         /// Super-H, includes SH3, from winnt.h in the Windows CE 5.0 SDK
@@ -808,6 +815,7 @@ impl ContextFlagsCpu {
 
 bitflags! {
     /// Flags available for use in [`CONTEXT_AMD64.context_flags`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsAmd64: u32 {
         /// SegSs, Rsp, SegCs, Rip, and EFlags
         const CONTEXT_AMD64_CONTROL = 0x00000001 | ContextFlagsCpu::CONTEXT_AMD64.bits();
@@ -827,6 +835,7 @@ bitflags! {
 
 bitflags! {
     /// Flags available for use in [`CONTEXT_X86.context_flags`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsX86: u32 {
         /// Ebp, Eip, SegCs, EFlags, Esp, SegSs
         const CONTEXT_X86_CONTROL = 0x00000001 | ContextFlagsCpu::CONTEXT_X86.bits();
@@ -847,6 +856,7 @@ bitflags! {
 
 bitflags! {
     /// Flags available for use in [`CONTEXT_ARM64.context_flags`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsArm64: u32 {
         /// FP, LR, SP, PC, and CPSR
         const CONTEXT_ARM64_CONTROL = 0x00000001 | ContextFlagsCpu::CONTEXT_ARM64.bits();
@@ -867,6 +877,7 @@ bitflags! {
 
 bitflags! {
     /// Flags available for use in [`CONTEXT_ARM64_OLD.context_flags`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsArm64Old: u32 {
         // Yes, breakpad never defined CONTROL for this context
 
@@ -881,6 +892,7 @@ bitflags! {
 
 bitflags! {
     /// Flags available for use in [`CONTEXT_ARM.context_flags`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ContextFlagsArm: u32 {
         // Yes, breakpad never defined CONTROL for this context
 
@@ -1801,6 +1813,7 @@ impl From<u8> for XSTATE_FEATURE {
 
 bitflags! {
     /// Known flags for `MINIDUMP_MISC_INFO*.flags1`
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MiscInfoFlags: u32 {
         const MINIDUMP_MISC1_PROCESS_ID            = 0x00000001;
         const MINIDUMP_MISC1_PROCESS_TIMES         = 0x00000002;
@@ -1867,6 +1880,7 @@ pub struct MINIDUMP_MEMORY_INFO {
 
 bitflags! {
     /// Potential values for [`MINIDUMP_MEMORY_INFO::state`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MemoryState: u32 {
         const MEM_COMMIT  = 0x01000;
         const MEM_FREE    = 0x10000;
@@ -1876,10 +1890,11 @@ bitflags! {
 
 bitflags! {
     /// Potential values for [`MINIDUMP_MEMORY_INFO::protection`] and `allocation_protection`
-    ///
-    /// See [Microsoft's documentation][msdn] for details.
-    ///
-    /// [msdn]: https://docs.microsoft.com/en-us/windows/win32/Memory/memory-protection-constants
+    
+    
+    
+    
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MemoryProtection: u32 {
         const PAGE_NOACCESS           = 0x01;
         const PAGE_READONLY           = 0x02;
@@ -1898,6 +1913,7 @@ bitflags! {
 
 bitflags! {
     /// Potential values for [`MINIDUMP_MEMORY_INFO::_type`]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct MemoryType: u32 {
         const MEM_PRIVATE = 0x00020000;
         const MEM_MAPPED  = 0x00040000;
@@ -2422,6 +2438,7 @@ bitflags! {
     /// This matches the Linux kernel definitions from [<asm/hwcaps.h>][hwcap].
     ///
     /// [hwcap]: https://elixir.bootlin.com/linux/latest/source/arch/arm/include/uapi/asm/hwcap.h
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub struct ArmElfHwCaps: u32 {
         const HWCAP_SWP       = (1 << 0);
         const HWCAP_HALF      = (1 << 1);
@@ -2447,4 +2464,91 @@ bitflags! {
         const HWCAP_LPAE      = (1 << 20);
         const HWCAP_EVTSTRM   = (1 << 21);
     }
+}
+
+#[repr(u32)]
+#[derive(Copy, Clone, PartialEq, Eq, Debug, FromPrimitive)]
+pub enum MINIDUMP_HANDLE_OBJECT_INFORMATION_TYPE {
+    MiniHandleObjectInformationNone,
+    MiniThreadInformation1,
+    MiniMutantInformation1,
+    MiniMutantInformation2,
+    MiniProcessInformation1,
+    MiniProcessInformation2,
+    MiniEventInformation1,
+    MiniSectionInformation1,
+    MiniSemaphoreInformation1,
+    MiniHandleObjectInformationTypeMax,
+}
+
+
+
+
+
+#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+pub struct MINIDUMP_HANDLE_OBJECT_INFORMATION {
+    
+    
+    pub next_info_rva: RVA,
+    
+    pub info_type: u32,
+    
+    pub size_of_info: u32,
+}
+
+#[derive(Debug, Default, Clone, Pread, Pwrite, SizeWith)]
+pub struct MINIDUMP_HANDLE_DESCRIPTOR {
+    
+    pub handle: u64,
+    
+    
+    pub type_name_rva: RVA,
+    
+    
+    pub object_name_rva: RVA,
+    
+    pub attributes: u32,
+    
+    pub granted_access: u32,
+    
+    pub handle_count: u32,
+    
+    pub pointer_count: u32,
+}
+
+#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+pub struct MINIDUMP_HANDLE_DESCRIPTOR_2 {
+    
+    pub handle: u64,
+    
+    
+    pub type_name_rva: RVA,
+    
+    
+    pub object_name_rva: RVA,
+    
+    pub attributes: u32,
+    
+    pub granted_access: u32,
+    
+    pub handle_count: u32,
+    
+    pub pointer_count: u32,
+    
+    
+    pub object_info_rva: RVA,
+    
+    reserved0: u32,
+}
+
+#[derive(Debug, Clone, Pread, Pwrite, SizeWith)]
+pub struct MINIDUMP_HANDLE_DATA_STREAM {
+    
+    pub size_of_header: u32,
+    
+    pub size_of_descriptor: u32,
+    
+    pub number_of_descriptors: u32,
+    
+    pub reserved: u32,
 }

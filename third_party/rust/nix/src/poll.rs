@@ -1,5 +1,5 @@
 
-use std::os::unix::io::{AsRawFd, RawFd};
+use std::os::unix::io::{AsFd, AsRawFd, BorrowedFd};
 
 use crate::errno::Errno;
 use crate::Result;
@@ -14,20 +14,36 @@ use crate::Result;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
-pub struct PollFd {
+pub struct PollFd<'fd> {
     pollfd: libc::pollfd,
+    _fd: std::marker::PhantomData<BorrowedFd<'fd>>,
 }
 
-impl PollFd {
+impl<'fd> PollFd<'fd> {
     
     
-    pub const fn new(fd: RawFd, events: PollFlags) -> PollFd {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn new<Fd: AsFd>(fd: &'fd Fd, events: PollFlags) -> PollFd<'fd> {
         PollFd {
             pollfd: libc::pollfd {
-                fd,
+                fd: fd.as_fd().as_raw_fd(),
                 events: events.bits(),
                 revents: PollFlags::empty().bits(),
             },
+            _fd: std::marker::PhantomData,
         }
     }
 
@@ -68,9 +84,29 @@ impl PollFd {
     }
 }
 
-impl AsRawFd for PollFd {
-    fn as_raw_fd(&self) -> RawFd {
-        self.pollfd.fd
+impl<'fd> AsFd for PollFd<'fd> {
+    fn as_fd(&self) -> BorrowedFd<'_> {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        unsafe { BorrowedFd::borrow_raw(self.pollfd.fd) }
     }
 }
 

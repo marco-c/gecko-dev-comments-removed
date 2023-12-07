@@ -16,7 +16,7 @@ mod sched_linux_like {
     use libc::{self, c_int, c_void};
     use std::mem;
     use std::option::Option;
-    use std::os::unix::io::RawFd;
+    use std::os::unix::io::{AsFd, AsRawFd};
 
     
     
@@ -95,7 +95,17 @@ mod sched_linux_like {
     
     
     
-    pub fn clone(
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub unsafe fn clone(
         mut cb: CloneCb,
         stack: &mut [u8],
         flags: CloneFlags,
@@ -106,20 +116,18 @@ mod sched_linux_like {
             (*cb)() as c_int
         }
 
-        let res = unsafe {
-            let combined = flags.bits() | signal.unwrap_or(0);
-            let ptr = stack.as_mut_ptr().add(stack.len());
-            let ptr_aligned = ptr.sub(ptr as usize % 16);
-            libc::clone(
-                mem::transmute(
-                    callback
-                        as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
-                ),
-                ptr_aligned as *mut c_void,
-                combined,
-                &mut cb as *mut _ as *mut c_void,
-            )
-        };
+        let combined = flags.bits() | signal.unwrap_or(0);
+        let ptr = stack.as_mut_ptr().add(stack.len());
+        let ptr_aligned = ptr.sub(ptr as usize % 16);
+        let res = libc::clone(
+            mem::transmute(
+                callback
+                    as extern "C" fn(*mut Box<dyn FnMut() -> isize>) -> i32,
+            ),
+            ptr_aligned as *mut c_void,
+            combined,
+            &mut cb as *mut _ as *mut c_void,
+        );
 
         Errno::result(res).map(Pid::from_raw)
     }
@@ -136,8 +144,8 @@ mod sched_linux_like {
     
     
     
-    pub fn setns(fd: RawFd, nstype: CloneFlags) -> Result<()> {
-        let res = unsafe { libc::setns(fd, nstype.bits()) };
+    pub fn setns<Fd: AsFd>(fd: Fd, nstype: CloneFlags) -> Result<()> {
+        let res = unsafe { libc::setns(fd.as_fd().as_raw_fd(), nstype.bits()) };
 
         Errno::result(res).map(drop)
     }

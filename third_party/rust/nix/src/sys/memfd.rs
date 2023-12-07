@@ -1,7 +1,7 @@
 
 
 use cfg_if::cfg_if;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{FromRawFd, OwnedFd, RawFd};
 
 use crate::errno::Errno;
 use crate::Result;
@@ -40,7 +40,8 @@ libc_bitflags!(
 
 
 
-pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<RawFd> {
+#[inline] 
+pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<OwnedFd> {
     let res = unsafe {
         cfg_if! {
             if #[cfg(all(
@@ -60,5 +61,5 @@ pub fn memfd_create(name: &CStr, flags: MemFdCreateFlag) -> Result<RawFd> {
         }
     };
 
-    Errno::result(res).map(|r| r as RawFd)
+    Errno::result(res).map(|r| unsafe { OwnedFd::from_raw_fd(r as RawFd) })
 }

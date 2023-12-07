@@ -82,6 +82,9 @@ pub fn get() -> Result<Persona> {
 
 
 
+#[cfg_attr(target_arch = "aarch64", doc = " ```no_run")]
+#[cfg_attr(not(target_arch = "aarch64"), doc = " ```")]
+
 
 
 

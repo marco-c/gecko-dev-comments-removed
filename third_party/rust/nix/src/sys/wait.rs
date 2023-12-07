@@ -10,7 +10,7 @@ use std::convert::TryFrom;
     target_os = "android",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, BorrowedFd};
 
 libc_bitflags!(
     /// Controls the behavior of [`waitpid`].
@@ -343,8 +343,8 @@ pub fn wait() -> Result<WaitStatus> {
     target_os = "haiku",
     all(target_os = "linux", not(target_env = "uclibc")),
 ))]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Id {
+#[derive(Debug)]
+pub enum Id<'fd> {
     
     All,
     
@@ -355,7 +355,11 @@ pub enum Id {
     PGid(Pid),
     
     #[cfg(any(target_os = "android", target_os = "linux"))]
-    PIDFd(RawFd),
+    PIDFd(BorrowedFd<'fd>),
+    
+    
+    #[doc(hidden)]
+    _Unreachable(std::marker::PhantomData<&'fd std::convert::Infallible>),
 }
 
 
@@ -373,7 +377,8 @@ pub fn waitid(id: Id, flags: WaitPidFlag) -> Result<WaitStatus> {
         Id::Pid(pid) => (libc::P_PID, pid.as_raw() as libc::id_t),
         Id::PGid(pid) => (libc::P_PGID, pid.as_raw() as libc::id_t),
         #[cfg(any(target_os = "android", target_os = "linux"))]
-        Id::PIDFd(fd) => (libc::P_PIDFD, fd as libc::id_t),
+        Id::PIDFd(fd) => (libc::P_PIDFD, fd.as_raw_fd() as libc::id_t),
+        Id::_Unreachable(_) => unreachable!("This variant could never be constructed"),
     };
 
     let siginfo = unsafe {

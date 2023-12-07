@@ -13,38 +13,6 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 use bitflags::bitflags;
 
 use std::fmt;
@@ -252,6 +220,37 @@ macro_rules! from_str {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait SystemInfoInterface {
     fn boot_time_secs(&self) -> ProcResult<u64>;
     fn ticks_per_second(&self) -> u64;
@@ -365,6 +364,9 @@ pub use locks::*;
 
 mod mounts;
 pub use mounts::*;
+
+mod partitions;
+pub use partitions::*;
 
 mod meminfo;
 pub use meminfo::*;

@@ -28,6 +28,18 @@ const MAP_POPULATE: libc::c_int = libc::MAP_POPULATE;
 #[cfg(not(any(target_os = "linux", target_os = "android")))]
 const MAP_POPULATE: libc::c_int = 0;
 
+#[cfg(any(
+    target_os = "android",
+    all(target_os = "linux", not(target_env = "musl"))
+))]
+use libc::{mmap64 as mmap, off64_t as off_t};
+
+#[cfg(not(any(
+    target_os = "android",
+    all(target_os = "linux", not(target_env = "musl"))
+)))]
+use libc::{mmap, off_t};
+
 pub struct MmapInner {
     ptr: *mut libc::c_void,
     len: usize,
@@ -46,58 +58,147 @@ impl MmapInner {
     ) -> io::Result<MmapInner> {
         let alignment = offset % page_size() as u64;
         let aligned_offset = offset - alignment;
-        let aligned_len = len + alignment as usize;
 
-        
-        
-        
-        
-        
-        
-        let aligned_len = aligned_len.max(1);
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        let (map_len, map_offset) = Self::adjust_mmap_params(len, alignment as usize)?;
 
         unsafe {
-            let ptr = libc::mmap(
+            let ptr = mmap(
                 ptr::null_mut(),
-                aligned_len as libc::size_t,
+                map_len as libc::size_t,
                 prot,
                 flags,
                 file,
-                aligned_offset as libc::off_t,
+                aligned_offset as off_t,
             );
 
             if ptr == libc::MAP_FAILED {
                 Err(io::Error::last_os_error())
             } else {
-                Ok(MmapInner {
-                    ptr: ptr.offset(alignment as isize),
-                    len,
-                })
+                Ok(Self::from_raw_parts(ptr, len, map_offset))
             }
+        }
+    }
+
+    fn adjust_mmap_params(len: usize, alignment: usize) -> io::Result<(usize, usize)> {
+        use std::isize;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if std::mem::size_of::<usize>() < 8 && len > isize::MAX as usize {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "memory map length overflows isize",
+            ));
+        }
+
+        let map_len = len + alignment;
+        let map_offset = alignment;
+
+        
+        
+        
+        
+        
+        
+        let map_len = map_len.max(1);
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        Ok((map_len, map_offset))
+    }
+
+    
+    
+    
+    
+    fn as_mmap_params(&self) -> (*mut libc::c_void, usize, usize) {
+        let offset = self.ptr as usize % page_size();
+        let len = self.len + offset;
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if len == 0 {
+            (self.ptr, 1, 0)
+        } else {
+            (unsafe { self.ptr.offset(-(offset as isize)) }, len, offset)
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn from_raw_parts(ptr: *mut libc::c_void, len: usize, offset: usize) -> Self {
+        debug_assert_eq!(ptr as usize % page_size(), 0, "ptr not page-aligned");
+        debug_assert!(offset < page_size(), "offset larger than page size");
+
+        Self {
+            ptr: ptr.add(offset),
+            len,
         }
     }
 
@@ -162,12 +263,13 @@ impl MmapInner {
     }
 
     
-    pub fn map_anon(len: usize, stack: bool) -> io::Result<MmapInner> {
+    pub fn map_anon(len: usize, stack: bool, populate: bool) -> io::Result<MmapInner> {
         let stack = if stack { MAP_STACK } else { 0 };
+        let populate = if populate { MAP_POPULATE } else { 0 };
         MmapInner::new(
             len,
             libc::PROT_READ | libc::PROT_WRITE,
-            libc::MAP_PRIVATE | libc::MAP_ANON | stack,
+            libc::MAP_PRIVATE | libc::MAP_ANON | stack | populate,
             -1,
             0,
         )
@@ -245,9 +347,27 @@ impl MmapInner {
         let offset = offset as isize - alignment as isize;
         let len = len + alignment;
         unsafe {
-            if libc::madvise(self.ptr.offset(offset), len, advice as i32) != 0 {
+            if libc::madvise(self.ptr.offset(offset), len, advice.0) != 0 {
                 Err(io::Error::last_os_error())
             } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    pub fn remap(&mut self, new_len: usize, options: crate::RemapOptions) -> io::Result<()> {
+        let (old_ptr, old_len, offset) = self.as_mmap_params();
+        let (map_len, offset) = Self::adjust_mmap_params(new_len, offset)?;
+
+        unsafe {
+            let new_ptr = libc::mremap(old_ptr, old_len, map_len, options.into_flags());
+
+            if new_ptr == libc::MAP_FAILED {
+                Err(io::Error::last_os_error())
+            } else {
+                
+                ptr::write(self, Self::from_raw_parts(new_ptr, new_len, offset));
                 Ok(())
             }
         }
@@ -276,16 +396,12 @@ impl MmapInner {
 
 impl Drop for MmapInner {
     fn drop(&mut self) {
-        let alignment = self.ptr as usize % page_size();
-        let len = self.len + alignment;
-        let len = len.max(1);
+        let (ptr, len, _) = self.as_mmap_params();
+
         
         
         
-        unsafe {
-            let ptr = self.ptr.offset(-(alignment as isize));
-            libc::munmap(ptr, len as libc::size_t);
-        }
+        unsafe { libc::munmap(ptr, len as libc::size_t) };
     }
 }
 

@@ -101,6 +101,9 @@ impl Drop for Dir {
     }
 }
 
+
+
+#[allow(clippy::needless_pass_by_ref_mut)]
 fn next(dir: &mut Dir) -> Option<Result<Entry>> {
     unsafe {
         
@@ -221,7 +224,8 @@ impl Entry {
     #[allow(clippy::unnecessary_cast)]
     pub fn ino(&self) -> u64 {
         cfg_if! {
-            if #[cfg(any(target_os = "android",
+            if #[cfg(any(target_os = "aix",
+                         target_os = "android",
                          target_os = "emscripten",
                          target_os = "fuchsia",
                          target_os = "haiku",
@@ -240,7 +244,7 @@ impl Entry {
 
     
     pub fn file_name(&self) -> &ffi::CStr {
-        unsafe { ::std::ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
+        unsafe { ffi::CStr::from_ptr(self.0.d_name.as_ptr()) }
     }
 
     
@@ -250,6 +254,7 @@ impl Entry {
     
     pub fn file_type(&self) -> Option<Type> {
         #[cfg(not(any(
+            target_os = "aix",
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"
@@ -267,6 +272,7 @@ impl Entry {
 
         
         #[cfg(any(
+            target_os = "aix",
             target_os = "illumos",
             target_os = "solaris",
             target_os = "haiku"

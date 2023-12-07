@@ -1,6 +1,8 @@
 
 
 
+
+
 use crate::{Errno, Result};
 #[cfg(not(target_os = "netbsd"))]
 use libc::{c_int, c_long, intptr_t, time_t, timespec, uintptr_t};
@@ -8,14 +10,72 @@ use libc::{c_int, c_long, intptr_t, time_t, timespec, uintptr_t};
 use libc::{c_long, intptr_t, size_t, time_t, timespec, uintptr_t};
 use std::convert::TryInto;
 use std::mem;
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsRawFd, FromRawFd, OwnedFd};
 use std::ptr;
+
 
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct KEvent {
     kevent: libc::kevent,
+}
+
+
+
+
+
+#[repr(transparent)]
+#[derive(Debug)]
+pub struct Kqueue(OwnedFd);
+
+impl Kqueue {
+    
+    pub fn new() -> Result<Self> {
+        let res = unsafe { libc::kqueue() };
+
+        Errno::result(res).map(|fd| unsafe { Self(OwnedFd::from_raw_fd(fd)) })
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn kevent(
+        &self,
+        changelist: &[KEvent],
+        eventlist: &mut [KEvent],
+        timeout_opt: Option<timespec>,
+    ) -> Result<usize> {
+        let res = unsafe {
+            libc::kevent(
+                self.0.as_raw_fd(),
+                changelist.as_ptr() as *const libc::kevent,
+                changelist.len() as type_of_nchanges,
+                eventlist.as_mut_ptr() as *mut libc::kevent,
+                eventlist.len() as type_of_nchanges,
+                if let Some(ref timeout) = timeout_opt {
+                    timeout as *const timespec
+                } else {
+                    ptr::null()
+                },
+            )
+        };
+        Errno::result(res).map(|r| r as usize)
+    }
 }
 
 #[cfg(any(
@@ -26,7 +86,7 @@ pub struct KEvent {
     target_os = "openbsd"
 ))]
 type type_of_udata = *mut libc::c_void;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
 type type_of_udata = intptr_t;
 
 #[cfg(target_os = "netbsd")]
@@ -37,22 +97,34 @@ libc_enum! {
     #[cfg_attr(target_os = "netbsd", repr(u32))]
     #[cfg_attr(not(target_os = "netbsd"), repr(i16))]
     #[non_exhaustive]
+    /// Kqueue filter types.  These are all the different types of event that a
+    /// kqueue can notify for.
     pub enum EventFilter {
+        /// Notifies on the completion of a POSIX AIO operation.
         EVFILT_AIO,
-        /// Returns whenever there is no remaining data in the write buffer
         #[cfg(target_os = "freebsd")]
+        /// Returns whenever there is no remaining data in the write buffer
         EVFILT_EMPTY,
         #[cfg(target_os = "dragonfly")]
+        /// Takes a descriptor as the identifier, and returns whenever one of
+        /// the specified exceptional conditions has occurred on the descriptor.
         EVFILT_EXCEPT,
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
                   target_os = "ios",
                   target_os = "macos"))]
+        /// Establishes a file system monitor.
         EVFILT_FS,
         #[cfg(target_os = "freebsd")]
+        /// Notify for completion of a list of POSIX AIO operations.
+        /// # See Also
+        /// [lio_listio(2)](https://www.freebsd.org/cgi/man.cgi?query=lio_listio)
         EVFILT_LIO,
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        /// Mach portsets
         EVFILT_MACHPORT,
+        /// Notifies when a process performs one or more of the requested
+        /// events.
         EVFILT_PROC,
         /// Returns events associated with the process referenced by a given
         /// process descriptor, created by `pdfork()`. The events to monitor are:
@@ -60,20 +132,31 @@ libc_enum! {
         /// - NOTE_EXIT: the process has exited. The exit status will be stored in data.
         #[cfg(target_os = "freebsd")]
         EVFILT_PROCDESC,
+        /// Takes a file descriptor as the identifier, and notifies whenever
+        /// there is data available to read.
         EVFILT_READ,
-        /// Returns whenever an asynchronous `sendfile()` call completes.
         #[cfg(target_os = "freebsd")]
+        #[doc(hidden)]
+        #[deprecated(since = "0.27.0", note = "Never fully implemented by the OS")]
         EVFILT_SENDFILE,
+        /// Takes a signal number to monitor as the identifier and notifies when
+        /// the given signal is delivered to the process.
         EVFILT_SIGNAL,
+        /// Establishes a timer and notifies when the timer expires.
         EVFILT_TIMER,
         #[cfg(any(target_os = "dragonfly",
                   target_os = "freebsd",
                   target_os = "ios",
                   target_os = "macos"))]
+        /// Notifies only when explicitly requested by the user.
         EVFILT_USER,
         #[cfg(any(target_os = "ios", target_os = "macos"))]
+        /// Virtual memory events
         EVFILT_VM,
+        /// Notifies when a requested event happens on a specified file.
         EVFILT_VNODE,
+        /// Takes a file descriptor as the identifier, and notifies whenever
+        /// it is possible to write to the file without blocking.
         EVFILT_WRITE,
     }
     impl TryFrom<type_of_event_filter>
@@ -86,131 +169,194 @@ libc_enum! {
     target_os = "macos",
     target_os = "openbsd"
 ))]
+#[doc(hidden)]
 pub type type_of_event_flag = u16;
-#[cfg(any(target_os = "netbsd"))]
+#[cfg(target_os = "netbsd")]
+#[doc(hidden)]
 pub type type_of_event_flag = u32;
 libc_bitflags! {
+    /// Event flags.  See the man page for details.
+    // There's no useful documentation we can write for the individual flags
+    // that wouldn't simply be repeating the man page.
     pub struct EventFlag: type_of_event_flag {
+        #[allow(missing_docs)]
         EV_ADD;
+        #[allow(missing_docs)]
         EV_CLEAR;
+        #[allow(missing_docs)]
         EV_DELETE;
+        #[allow(missing_docs)]
         EV_DISABLE;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd", target_os = "openbsd"))]
+        #[allow(missing_docs)]
         EV_DISPATCH;
         #[cfg(target_os = "freebsd")]
+        #[allow(missing_docs)]
         EV_DROP;
+        #[allow(missing_docs)]
         EV_ENABLE;
+        #[allow(missing_docs)]
         EV_EOF;
+        #[allow(missing_docs)]
         EV_ERROR;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         EV_FLAG0;
+        #[allow(missing_docs)]
         EV_FLAG1;
         #[cfg(target_os = "dragonfly")]
+        #[allow(missing_docs)]
         EV_NODATA;
+        #[allow(missing_docs)]
         EV_ONESHOT;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         EV_OOBAND;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         EV_POLL;
         #[cfg(any(target_os = "dragonfly", target_os = "freebsd",
                   target_os = "ios", target_os = "macos",
                   target_os = "netbsd", target_os = "openbsd"))]
+        #[allow(missing_docs)]
         EV_RECEIPT;
     }
 }
 
 libc_bitflags!(
+    /// Filter-specific flags.  See the man page for details.
+    // There's no useful documentation we can write for the individual flags
+    // that wouldn't simply be repeating the man page.
+    #[allow(missing_docs)]
     pub struct FilterFlag: u32 {
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_ABSOLUTE;
+        #[allow(missing_docs)]
         NOTE_ATTRIB;
+        #[allow(missing_docs)]
         NOTE_CHILD;
+        #[allow(missing_docs)]
         NOTE_DELETE;
         #[cfg(target_os = "openbsd")]
+        #[allow(missing_docs)]
         NOTE_EOF;
+        #[allow(missing_docs)]
         NOTE_EXEC;
+        #[allow(missing_docs)]
         NOTE_EXIT;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_EXITSTATUS;
+        #[allow(missing_docs)]
         NOTE_EXTEND;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFAND;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFCOPY;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFCTRLMASK;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFLAGSMASK;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFNOP;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_FFOR;
+        #[allow(missing_docs)]
         NOTE_FORK;
+        #[allow(missing_docs)]
         NOTE_LINK;
+        #[allow(missing_docs)]
         NOTE_LOWAT;
         #[cfg(target_os = "freebsd")]
+        #[allow(missing_docs)]
         NOTE_MSECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_NONE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[allow(missing_docs)]
         NOTE_NSECONDS;
         #[cfg(target_os = "dragonfly")]
+        #[allow(missing_docs)]
         NOTE_OOB;
+        #[allow(missing_docs)]
         NOTE_PCTRLMASK;
+        #[allow(missing_docs)]
         NOTE_PDATAMASK;
+        #[allow(missing_docs)]
         NOTE_RENAME;
+        #[allow(missing_docs)]
         NOTE_REVOKE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[allow(missing_docs)]
         NOTE_SECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_SIGNAL;
+        #[allow(missing_docs)]
         NOTE_TRACK;
+        #[allow(missing_docs)]
         NOTE_TRACKERR;
         #[cfg(any(target_os = "macos",
                   target_os = "ios",
                   target_os = "freebsd",
                   target_os = "dragonfly"))]
+        #[allow(missing_docs)]
         NOTE_TRIGGER;
         #[cfg(target_os = "openbsd")]
+        #[allow(missing_docs)]
         NOTE_TRUNCATE;
         #[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd"))]
+        #[allow(missing_docs)]
         NOTE_USECONDS;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_VM_ERROR;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_VM_PRESSURE;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_VM_PRESSURE_SUDDEN_TERMINATE;
         #[cfg(any(target_os = "macos", target_os = "ios"))]
+        #[allow(missing_docs)]
         NOTE_VM_PRESSURE_TERMINATE;
+        #[allow(missing_docs)]
         NOTE_WRITE;
     }
 );
 
-pub fn kqueue() -> Result<RawFd> {
-    let res = unsafe { libc::kqueue() };
-
-    Errno::result(res)
+#[allow(missing_docs)]
+#[deprecated(since = "0.27.0", note = "Use KEvent::new instead")]
+pub fn kqueue() -> Result<Kqueue> {
+    Kqueue::new()
 }
 
 
@@ -220,6 +366,8 @@ unsafe impl Send for KEvent {}
 
 impl KEvent {
     #[allow(clippy::needless_update)] 
+    
+    
     pub fn new(
         ident: uintptr_t,
         filter: EventFilter,
@@ -242,33 +390,46 @@ impl KEvent {
         }
     }
 
+    
+    
     pub fn ident(&self) -> uintptr_t {
         self.kevent.ident
     }
 
+    
+    
+    
+    
     pub fn filter(&self) -> Result<EventFilter> {
         self.kevent.filter.try_into()
     }
 
+    
+    
     pub fn flags(&self) -> EventFlag {
         EventFlag::from_bits(self.kevent.flags).unwrap()
     }
 
+    
     pub fn fflags(&self) -> FilterFlag {
         FilterFlag::from_bits(self.kevent.fflags).unwrap()
     }
 
+    
     pub fn data(&self) -> intptr_t {
         self.kevent.data as intptr_t
     }
 
+    
     pub fn udata(&self) -> intptr_t {
         self.kevent.udata as intptr_t
     }
 }
 
+#[allow(missing_docs)]
+#[deprecated(since = "0.27.0", note = "Use Kqueue::kevent instead")]
 pub fn kevent(
-    kq: RawFd,
+    kq: &Kqueue,
     changelist: &[KEvent],
     eventlist: &mut [KEvent],
     timeout_ms: usize,
@@ -279,7 +440,7 @@ pub fn kevent(
         tv_nsec: ((timeout_ms % 1000) * 1_000_000) as c_long,
     };
 
-    kevent_ts(kq, changelist, eventlist, Some(timeout))
+    kq.kevent(changelist, eventlist, Some(timeout))
 }
 
 #[cfg(any(
@@ -293,30 +454,20 @@ type type_of_nchanges = c_int;
 #[cfg(target_os = "netbsd")]
 type type_of_nchanges = size_t;
 
+#[allow(missing_docs)]
+#[deprecated(since = "0.27.0", note = "Use Kqueue::kevent instead")]
 pub fn kevent_ts(
-    kq: RawFd,
+    kq: &Kqueue,
     changelist: &[KEvent],
     eventlist: &mut [KEvent],
     timeout_opt: Option<timespec>,
 ) -> Result<usize> {
-    let res = unsafe {
-        libc::kevent(
-            kq,
-            changelist.as_ptr() as *const libc::kevent,
-            changelist.len() as type_of_nchanges,
-            eventlist.as_mut_ptr() as *mut libc::kevent,
-            eventlist.len() as type_of_nchanges,
-            if let Some(ref timeout) = timeout_opt {
-                timeout as *const timespec
-            } else {
-                ptr::null()
-            },
-        )
-    };
-
-    Errno::result(res).map(|r| r as usize)
+    kq.kevent(changelist, eventlist, timeout_opt)
 }
 
+
+
+#[deprecated(since = "0.27.0", note = "Use Kqueue::kevent instead")]
 #[inline]
 pub fn ev_set(
     ev: &mut KEvent,

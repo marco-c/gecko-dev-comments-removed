@@ -133,8 +133,11 @@ extern "system" {
 }
 
 
+
+
 fn empty_slice_ptr() -> *mut c_void {
-    std::ptr::NonNull::<u8>::dangling().cast().as_ptr()
+    let align = allocation_granularity().max(1);
+    unsafe { mem::transmute(align) }
 }
 
 pub struct MmapInner {
@@ -340,7 +343,7 @@ impl MmapInner {
         Ok(inner)
     }
 
-    pub fn map_anon(len: usize, _stack: bool) -> io::Result<MmapInner> {
+    pub fn map_anon(len: usize, _stack: bool, _populate: bool) -> io::Result<MmapInner> {
         
         let mapped_len = len.max(1);
         unsafe {

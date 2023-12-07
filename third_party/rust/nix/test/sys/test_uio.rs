@@ -4,7 +4,7 @@ use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 use std::fs::OpenOptions;
 use std::io::IoSlice;
-use std::os::unix::io::AsRawFd;
+use std::os::unix::io::{FromRawFd, OwnedFd};
 use std::{cmp, iter};
 
 #[cfg(not(target_os = "redox"))]
@@ -40,12 +40,16 @@ fn test_writev() {
         iovecs.push(IoSlice::new(b));
         consumed += slice_len;
     }
-    let pipe_res = pipe();
-    let (reader, writer) = pipe_res.expect("Couldn't create pipe");
+    let (reader, writer) = pipe().expect("Couldn't create pipe");
     
     let mut read_buf: Vec<u8> = iter::repeat(0u8).take(128 * 16).collect();
+
     
-    let write_res = writev(writer, &iovecs);
+    
+    let writer = unsafe { OwnedFd::from_raw_fd(writer) };
+
+    
+    let write_res = writev(&writer, &iovecs);
     let written = write_res.expect("couldn't write");
     
     assert_eq!(to_write.len(), written);
@@ -55,7 +59,6 @@ fn test_writev() {
     assert_eq!(read, written);
     
     assert_eq!(&to_write, &read_buf);
-    close(writer).expect("closed writer");
     close(reader).expect("closed reader");
 }
 
@@ -88,7 +91,12 @@ fn test_readv() {
     let (reader, writer) = pipe().expect("couldn't create pipe");
     
     write(writer, &to_write).expect("write failed");
-    let read = readv(reader, &mut iovecs[..]).expect("read failed");
+
+    
+    
+    let reader = unsafe { OwnedFd::from_raw_fd(reader) };
+
+    let read = readv(&reader, &mut iovecs[..]).expect("read failed");
     
     assert_eq!(to_write.len(), read);
     
@@ -100,7 +108,6 @@ fn test_readv() {
     assert_eq!(read_buf.len(), to_write.len());
     
     assert_eq!(&read_buf, &to_write);
-    close(reader).expect("couldn't close reader");
     close(writer).expect("couldn't close writer");
 }
 
@@ -111,7 +118,7 @@ fn test_pwrite() {
 
     let mut file = tempfile().unwrap();
     let buf = [1u8; 8];
-    assert_eq!(Ok(8), pwrite(file.as_raw_fd(), &buf, 8));
+    assert_eq!(Ok(8), pwrite(&file, &buf, 8));
     let mut file_content = Vec::new();
     file.read_to_end(&mut file_content).unwrap();
     let mut expected = vec![0u8; 8];
@@ -137,7 +144,7 @@ fn test_pread() {
     file.write_all(&file_content).unwrap();
 
     let mut buf = [0u8; 16];
-    assert_eq!(Ok(16), pread(file.as_raw_fd(), &mut buf, 16));
+    assert_eq!(Ok(16), pread(&file, &mut buf, 16));
     let expected: Vec<_> = (16..32).collect();
     assert_eq!(&buf[..], &expected[..]);
 }
@@ -168,7 +175,7 @@ fn test_pwritev() {
         .open(path)
         .unwrap();
 
-    let written = pwritev(file.as_raw_fd(), &iovecs, 100).ok().unwrap();
+    let written = pwritev(&file, &iovecs, 100).ok().unwrap();
     assert_eq!(written, to_write.len());
 
     
@@ -206,7 +213,7 @@ fn test_preadv() {
             .iter_mut()
             .map(|buf| IoSliceMut::new(&mut buf[..]))
             .collect();
-        assert_eq!(Ok(100), preadv(file.as_raw_fd(), &mut iovecs, 100));
+        assert_eq!(Ok(100), preadv(&file, &mut iovecs, 100));
     }
 
     let all = buffers.concat();

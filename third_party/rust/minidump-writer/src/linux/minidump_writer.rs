@@ -189,7 +189,7 @@ impl MinidumpWriter {
     ) -> Result<()> {
         
         
-        let num_writers = 15u32;
+        let num_writers = 17u32;
 
         let mut header_section = MemoryWriter::<MDRawHeader>::alloc(buffer)?;
 
@@ -323,9 +323,25 @@ impl MinidumpWriter {
         
         dir_section.write_to_file(buffer, Some(dirent))?;
 
+        let dirent = match self.write_file(buffer, &format!("/proc/{}/limits", self.blamed_thread))
+        {
+            Ok(location) => MDRawDirectory {
+                stream_type: MDStreamType::MozLinuxLimits as u32,
+                location,
+            },
+            Err(_) => Default::default(),
+        };
+        
+        dir_section.write_to_file(buffer, Some(dirent))?;
+
         let dirent = thread_names_stream::write(buffer, dumper)?;
         
         dir_section.write_to_file(buffer, Some(dirent))?;
+
+        
+        if let Ok(dirent) = handle_data_stream::write(self, buffer) {
+            let _ = dir_section.write_to_file(buffer, Some(dirent));
+        }
 
         
         Ok(())

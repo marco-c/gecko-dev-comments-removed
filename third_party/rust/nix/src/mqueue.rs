@@ -31,12 +31,20 @@
 
 
 use crate::errno::Errno;
+use crate::NixPath;
 use crate::Result;
 
 use crate::sys::stat::Mode;
 use libc::{self, c_char, mqd_t, size_t};
-use std::ffi::CStr;
 use std::mem;
+#[cfg(any(
+    target_os = "linux",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
+use std::os::unix::io::{
+    AsFd, AsRawFd, BorrowedFd, FromRawFd, IntoRawFd, RawFd,
+};
 
 libc_bitflags! {
     /// Used with [`mq_open`].
@@ -141,31 +149,39 @@ impl MqAttr {
 
 
 #[allow(clippy::cast_lossless)]
-pub fn mq_open(
-    name: &CStr,
+pub fn mq_open<P>(
+    name: &P,
     oflag: MQ_OFlag,
     mode: Mode,
     attr: Option<&MqAttr>,
-) -> Result<MqdT> {
-    let res = match attr {
+) -> Result<MqdT>
+where
+    P: ?Sized + NixPath,
+{
+    let res = name.with_nix_path(|cstr| match attr {
         Some(mq_attr) => unsafe {
             libc::mq_open(
-                name.as_ptr(),
+                cstr.as_ptr(),
                 oflag.bits(),
                 mode.bits() as libc::c_int,
                 &mq_attr.mq_attr as *const libc::mq_attr,
             )
         },
-        None => unsafe { libc::mq_open(name.as_ptr(), oflag.bits()) },
-    };
+        None => unsafe { libc::mq_open(cstr.as_ptr(), oflag.bits()) },
+    })?;
+
     Errno::result(res).map(MqdT)
 }
 
 
 
 
-pub fn mq_unlink(name: &CStr) -> Result<()> {
-    let res = unsafe { libc::mq_unlink(name.as_ptr()) };
+pub fn mq_unlink<P>(name: &P) -> Result<()>
+where
+    P: ?Sized + NixPath,
+{
+    let res =
+        name.with_nix_path(|cstr| unsafe { libc::mq_unlink(cstr.as_ptr()) })?;
     Errno::result(res).map(drop)
 }
 
@@ -195,6 +211,32 @@ pub fn mq_receive(
         )
     };
     Errno::result(res).map(|r| r as usize)
+}
+
+feature! {
+    #![feature = "time"]
+    use crate::sys::time::TimeSpec;
+    /// Receive a message from a message queue with a timeout
+    ///
+    /// See also ['mq_timedreceive(2)'](https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html)
+    pub fn mq_timedreceive(
+        mqdes: &MqdT,
+        message: &mut [u8],
+        msg_prio: &mut u32,
+        abstime: &TimeSpec,
+    ) -> Result<usize> {
+        let len = message.len() as size_t;
+        let res = unsafe {
+            libc::mq_timedreceive(
+                mqdes.0,
+                message.as_mut_ptr() as *mut c_char,
+                len,
+                msg_prio as *mut u32,
+                abstime.as_ref(),
+            )
+        };
+        Errno::result(res).map(|r| r as usize)
+    }
 }
 
 
@@ -273,4 +315,44 @@ pub fn mq_remove_nonblock(mqd: &MqdT) -> Result<MqAttr> {
         oldattr.mq_attr.mq_curmsgs,
     );
     mq_setattr(mqd, &newattr)
+}
+
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly"))]
+impl AsFd for MqdT {
+    
+    fn as_fd(&self) -> BorrowedFd {
+        
+        unsafe { BorrowedFd::borrow_raw(self.0) }
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly"))]
+impl AsRawFd for MqdT {
+    
+    
+    
+    
+    fn as_raw_fd(&self) -> RawFd {
+        self.0
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly"))]
+impl FromRawFd for MqdT {
+    
+    
+    
+    
+    
+    unsafe fn from_raw_fd(fd: RawFd) -> MqdT {
+        MqdT(fd)
+    }
+}
+
+#[cfg(any(target_os = "linux", target_os = "netbsd", target_os = "dragonfly"))]
+impl IntoRawFd for MqdT {
+    
+    fn into_raw_fd(self) -> RawFd {
+        self.0
+    }
 }

@@ -2,8 +2,6 @@
 extern crate cfg_if;
 #[cfg_attr(not(any(target_os = "redox", target_os = "haiku")), macro_use)]
 extern crate nix;
-#[macro_use]
-extern crate lazy_static;
 
 mod common;
 mod sys;
@@ -66,37 +64,35 @@ mod test_unistd;
 
 use nix::unistd::{chdir, getcwd, read};
 use parking_lot::{Mutex, RwLock, RwLockWriteGuard};
-use std::os::unix::io::RawFd;
+use std::os::unix::io::{AsFd, AsRawFd};
 use std::path::PathBuf;
 
 
-fn read_exact(f: RawFd, buf: &mut [u8]) {
+fn read_exact<Fd: AsFd>(f: Fd, buf: &mut [u8]) {
     let mut len = 0;
     while len < buf.len() {
         
         let (_, remaining) = buf.split_at_mut(len);
-        len += read(f, remaining).unwrap();
+        len += read(f.as_fd().as_raw_fd(), remaining).unwrap();
     }
 }
 
-lazy_static! {
-    /// Any test that changes the process's current working directory must grab
-    /// the RwLock exclusively.  Any process that cares about the current
-    /// working directory must grab it shared.
-    pub static ref CWD_LOCK: RwLock<()> = RwLock::new(());
-    /// Any test that creates child processes must grab this mutex, regardless
-    /// of what it does with those children.
-    pub static ref FORK_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that changes the process's supplementary groups must grab this
-    /// mutex
-    pub static ref GROUPS_MTX: Mutex<()> = Mutex::new(());
-    /// Any tests that loads or unloads kernel modules must grab this mutex
-    pub static ref KMOD_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that calls ptsname(3) must grab this mutex.
-    pub static ref PTSNAME_MTX: Mutex<()> = Mutex::new(());
-    /// Any test that alters signal handling must grab this mutex.
-    pub static ref SIGNAL_MTX: Mutex<()> = Mutex::new(());
-}
+
+
+pub static FORK_MTX: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+
+
+pub static CWD_LOCK: RwLock<()> = RwLock::new(());
+
+
+pub static GROUPS_MTX: Mutex<()> = Mutex::new(());
+
+pub static KMOD_MTX: Mutex<()> = Mutex::new(());
+
+pub static PTSNAME_MTX: Mutex<()> = Mutex::new(());
+
+pub static SIGNAL_MTX: Mutex<()> = Mutex::new(());
 
 
 struct DirRestore<'a> {
