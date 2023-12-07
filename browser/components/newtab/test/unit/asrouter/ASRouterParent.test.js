@@ -97,7 +97,6 @@ describe("ASRouterParent", () => {
         ASRouterParent.tabs.messageAll,
         "ClearMessages",
         
-        
         ["message-campaign"]
       );
       assert.equal(result, "handle-message-result");

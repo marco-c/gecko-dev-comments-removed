@@ -742,7 +742,6 @@ add_task(async function test_providerNames() {
   for (const prefName of cfrProviderPrefs) {
     const prefValue = JSON.parse(Services.prefs.getStringPref(prefName));
     if (prefValue && prefValue.id) {
-      
       Assert.equal(
         prefValue.id,
         prefName.slice(providersBranch.length),
