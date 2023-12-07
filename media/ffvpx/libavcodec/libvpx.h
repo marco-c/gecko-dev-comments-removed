@@ -1,0 +1,26 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef AVCODEC_LIBVPX_H
+#define AVCODEC_LIBVPX_H
+
+#define MAX_VPX_THREADS 64
+
+#endif 
