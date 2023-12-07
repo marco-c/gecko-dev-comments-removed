@@ -5,6 +5,7 @@
 
 
 #include "ErrorList.h"
+#include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Event.h"
@@ -18,6 +19,9 @@
 #include "nsIGlobalObject.h"
 #include "nsISupports.h"
 #include "nsPIDOMWindow.h"
+#include "nsContentPermissionHelper.h"
+#include "nscore.h"
+#include "WakeLock.h"
 #include "WakeLockJS.h"
 #include "WakeLockSentinel.h"
 
@@ -35,6 +39,8 @@ nsLiteralCString WakeLockJS::GetRequestErrorMessage(RequestError aRv) {
       return "The pref dom.screenwakelock.enabled is disabled."_ns;
     case RequestError::InternalFailure:
       return "A browser-internal error occured."_ns;
+    case RequestError::PermissionDenied:
+      return "Permission to request screen-wake-lock was denied."_ns;
     default:
       MOZ_ASSERT_UNREACHABLE("Unknown error reason");
       return "Unknown error"_ns;
@@ -150,14 +156,17 @@ already_AddRefed<Promise> WakeLockJS::Request(WakeLockType aType,
 
   
   
-  auto lockOrErr = Obtain(aType);
-  if (lockOrErr.isOk()) {
-    RefPtr<WakeLockSentinel> lock = lockOrErr.unwrap();
-    promise->MaybeResolve(lock);
-  } else {
-    promise->MaybeRejectWithNotAllowedError(
-        GetRequestErrorMessage(lockOrErr.unwrapErr()));
-  }
+  NS_DispatchToMainThread(NS_NewRunnableFunction(
+      "ObtainWakeLock", [aType, promise, self = RefPtr<WakeLockJS>(this)]() {
+        auto lockOrErr = self->Obtain(aType);
+        if (lockOrErr.isOk()) {
+          RefPtr<WakeLockSentinel> lock = lockOrErr.unwrap();
+          promise->MaybeResolve(lock);
+        } else {
+          promise->MaybeRejectWithNotAllowedError(
+              GetRequestErrorMessage(lockOrErr.unwrapErr()));
+        }
+      }));
 
   return promise.forget();
 }

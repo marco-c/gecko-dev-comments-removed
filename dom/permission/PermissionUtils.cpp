@@ -19,7 +19,8 @@ static const nsLiteralCString kPermissionTypes[] = {
     
     
     "midi"_ns,
-    "storage-access"_ns
+    "storage-access"_ns,
+    "screen-wake-lock"_ns
     
 };
 
