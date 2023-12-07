@@ -17,8 +17,4 @@ CFLAGS += [
 
 
 
-if CONFIG["CC_TYPE"] == "clang":
-    
-    OS_LIBS += ["-nopie"]
-else:
-    OS_LIBS += ["-no-pie"]
+OS_LIBS += ["-no-pie"]
