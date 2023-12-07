@@ -679,7 +679,7 @@ this.AccessibilityUtils = (function () {
   function findInteractiveAccessible(node) {
     let acc;
     
-    for (; node && !acc; node = node.parentNode) {
+    for (; node && !acc; node = node.flattenedTreeParentNode) {
       acc = getAccessible(node);
     }
     if (!acc) {
@@ -793,6 +793,13 @@ this.AccessibilityUtils = (function () {
     handleEvent({ composedTarget }) {
       if (!this._shouldHandleClicks) {
         return;
+      }
+      if (composedTarget.tagName.toLowerCase() == "slot") {
+        
+        
+        
+        
+        composedTarget = composedTarget.flattenedTreeParentNode;
       }
       const bounds =
         composedTarget.ownerGlobal?.windowUtils?.getBoundsWithoutFlushing(
