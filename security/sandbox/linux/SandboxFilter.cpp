@@ -1457,10 +1457,14 @@ class ContentSandboxPolicy : public SandboxPolicyCommon {
         
         
       case __NR_madvise:
-        
-        
-      case __NR_mremap:
         return Allow();
+
+        
+      case __NR_mremap: {
+        Arg<int> flags(3);
+        return If(flags == 0, Allow())
+            .Else(SandboxPolicyCommon::EvaluateSyscall(sysno));
+      }
 
         
         

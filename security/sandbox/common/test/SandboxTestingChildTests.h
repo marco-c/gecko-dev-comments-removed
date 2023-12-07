@@ -17,6 +17,7 @@
 #    include <linux/mempolicy.h>
 #    include <sched.h>
 #    include <sys/ioctl.h>
+#    include <sys/mman.h>
 #    include <sys/prctl.h>
 #    include <sys/resource.h>
 #    include <sys/socket.h>
@@ -68,6 +69,10 @@ namespace ApplicationServices {
 
 #  ifndef O_NOTIFICATION_PIPE
 #    define O_NOTIFICATION_PIPE O_EXCL
+#  endif
+
+#  ifndef MREMAP_DONTUNMAP
+#    define MREMAP_DONTUNMAP 4
 #  endif
 #endif
 
@@ -526,6 +531,31 @@ void RunTestsContent(SandboxTestingChild* child) {
     }
   }
 
+  {
+    static constexpr size_t kMapSize = 65536;
+    void* mapping = mmap(nullptr, kMapSize, PROT_READ | PROT_WRITE,
+                         MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    MOZ_ASSERT(mapping != MAP_FAILED);
+    child->ErrnoTest("mremap-zero"_ns, true, [&] {
+      void* rv = mremap(mapping, kMapSize, kMapSize, 0);
+      if (rv == MAP_FAILED) {
+        return -1;
+      }
+      MOZ_ASSERT(rv == mapping);
+      return 0;
+    });
+
+    child->ErrnoValueTest("mremap-forbidden"_ns, ENOSYS, [&] {
+      void* rv = mremap(mapping, kMapSize, kMapSize, MREMAP_DONTUNMAP);
+      
+      
+      MOZ_ASSERT(rv == MAP_FAILED);
+      return -1;
+    });
+
+    munmap(mapping, kMapSize);
+  }
+
 #  endif  
 
 #  ifdef XP_MACOSX
@@ -770,6 +800,36 @@ void RunTestsGMPlugin(SandboxTestingChild* child) {
     errno = savedErrno;
     return rv;
   });
+
+  {
+    static constexpr size_t kMapSize = 65536;
+    void* mapping = mmap(nullptr, kMapSize, PROT_READ | PROT_WRITE,
+                         MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    MOZ_ASSERT(mapping != MAP_FAILED);
+
+#    ifndef MOZ_MEMORY
+    child->ErrnoTest("mremap-move"_ns, true, [&] {
+      void* rv = mremap(mapping, kMapSize, kMapSize, MREMAP_MAYMOVE);
+      if (rv == MAP_FAILED) {
+        return -1;
+      }
+      
+      
+      MOZ_ASSERT(rv == mapping);
+      return 0;
+    });
+#    endif
+
+    child->ErrnoValueTest("mremap-forbidden"_ns, ENOSYS, [&] {
+      void* rv = mremap(mapping, kMapSize, kMapSize, MREMAP_DONTUNMAP);
+      
+      
+      MOZ_ASSERT(rv == MAP_FAILED);
+      return -1;
+    });
+
+    munmap(mapping, kMapSize);
+  }
 
 #  elif XP_MACOSX  
   RunMacTestLaunchProcess(child);
