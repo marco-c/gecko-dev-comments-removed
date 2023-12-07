@@ -104,8 +104,18 @@ async function exchangeOfferAnswer(pc1, pc2) {
   await pc1.setRemoteDescription(answer);
 }
 
-async function exchangeOfferAnswerReverse(pc1, pc2) {
+async function exchangeOfferAnswerReverse(pc1, pc2, encodedStreamsCallback) {
   const offer = await pc2.createOffer({offerToReceiveAudio: true, offerToReceiveVideo: true});
+  if (encodedStreamsCallback) {
+    
+    
+    
+    encodedStreamsCallback(
+      pc2.getReceivers().map(r => {
+        return {kind: r.track.kind, streams: r.createEncodedStreams()};
+      }));
+  }
+
   
   const sdpABS = enableExtension(offer.sdp, ABS_V00_EXTENSION);
   const sdpGFD = enableExtension(sdpABS, GFD_V00_EXTENSION);
