@@ -635,6 +635,13 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
       observerService->Shutdown();
     }
 
+#ifdef NS_FREE_PERMANENT_DATA
+    
+    
+    
+    Servo_ShutdownThreadPool();
+#endif
+
     
     
     
@@ -772,12 +779,6 @@ nsresult ShutdownXPCOM(nsIServiceManager* aServMgr) {
   
   
   
-  
-  
-  
-  
-  
-  Servo_ShutdownThreadPool();
   NS_ShutdownAtomTable();
 #endif
 
