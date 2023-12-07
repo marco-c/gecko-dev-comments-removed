@@ -177,7 +177,7 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
-  void ReturnWrite(const char* aData, size_t aSize);
+  void ReturnWrite(const uint8_t* aData, size_t aSize);
 
   
 
@@ -187,7 +187,11 @@ class CanvasEventRingBuffer final : public gfx::EventRingBuffer {
 
 
 
-  void ReturnRead(char* aOut, size_t aSize);
+  void ReturnRead(uint8_t* aOut, const gfx::IntSize& aSize, size_t aBPP,
+                  size_t aStride = 0);
+  void ReturnRead(uint8_t* aOut, size_t aSize) {
+    ReturnRead(aOut, gfx::IntSize(aSize, 1), 1);
+  }
 
   bool UsingLargeStream() { return mLargeStream; }
 
@@ -290,7 +294,12 @@ class CanvasDrawEventRecorder final : public gfx::DrawEventRecorderPrivate {
 
   void Flush() final {}
 
-  void ReturnRead(char* aOut, size_t aSize) {
+  void ReturnRead(uint8_t* aOut, const gfx::IntSize& aSize, size_t aBPP,
+                  size_t aStride = 0) {
+    mOutputStream.ReturnRead(aOut, aSize, aBPP, aStride);
+  }
+
+  void ReturnRead(uint8_t* aOut, size_t aSize) {
     mOutputStream.ReturnRead(aOut, aSize);
   }
 

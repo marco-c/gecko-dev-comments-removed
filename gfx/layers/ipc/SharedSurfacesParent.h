@@ -39,7 +39,7 @@ class SharedSurfacesParent final {
 
   
   static already_AddRefed<gfx::DataSourceSurface> Get(
-      const wr::ExternalImageId& aId);
+      const wr::ExternalImageId& aId, bool aAllowWait = false);
 
   
   static already_AddRefed<gfx::DataSourceSurface> Acquire(

@@ -11,6 +11,7 @@ include "mozilla/layers/CanvasTranslator.h";
 [MoveOnly] using mozilla::CrossProcessSemaphoreHandle from "mozilla/ipc/CrossProcessSemaphore.h";
 using mozilla::layers::TextureType from "mozilla/layers/LayersTypes.h";
 [MoveOnly] using mozilla::ipc::SharedMemoryBasic::Handle from "mozilla/ipc/SharedMemoryBasic.h";
+using mozilla::gfx::BackendType from "mozilla/gfx/Types.h";
 
 namespace mozilla {
 namespace layers {
@@ -29,7 +30,8 @@ parent:
 
 
 
-  async InitTranslator(TextureType aTextureType, Handle aReadHandle,
+  async InitTranslator(TextureType aTextureType, BackendType aBackendType,
+                       Handle aReadHandle,
                        CrossProcessSemaphoreHandle aReaderSem,
                        CrossProcessSemaphoreHandle aWriterSem,
                        bool aUseIPDLThread);
@@ -57,6 +59,22 @@ child:
 
 
   async Deactivate();
+
+  
+
+
+
+  async BlockCanvas();
+
+  
+
+
+  async NotifyRequiresRefresh(int64_t aTextureId);
+
+  
+
+
+  async SnapshotShmem(int64_t aTextureId, Shmem aShmem) returns (bool aSuccess);
 };
 
 } 

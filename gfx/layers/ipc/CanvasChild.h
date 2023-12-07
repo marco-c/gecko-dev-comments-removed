@@ -44,6 +44,13 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
   ipc::IPCResult RecvDeactivate();
 
+  ipc::IPCResult RecvBlockCanvas();
+
+  ipc::IPCResult RecvNotifyRequiresRefresh(int64_t aTextureId);
+
+  ipc::IPCResult RecvSnapshotShmem(int64_t aTextureId, Shmem&& aShmem,
+                                   SnapshotShmemResolver&& aResolve);
+
   
 
 
@@ -102,8 +109,9 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
+
   already_AddRefed<gfx::DrawTarget> CreateDrawTarget(
-      gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
+      int64_t aTextureId, gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
 
   
 
@@ -117,8 +125,14 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
+
   already_AddRefed<gfx::SourceSurface> WrapSurface(
-      const RefPtr<gfx::SourceSurface>& aSurface);
+      const RefPtr<gfx::SourceSurface>& aSurface, int64_t aTextureId);
+
+  
+
+
+  void DetachSurface(const RefPtr<gfx::SourceSurface>& aSurface);
 
   
 
@@ -128,8 +142,18 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
+
+
   already_AddRefed<gfx::DataSourceSurface> GetDataSurface(
-      const gfx::SourceSurface* aSurface);
+      int64_t aTextureId, const gfx::SourceSurface* aSurface, bool aDetached);
+
+  bool ReadInto(int64_t aTextureId, const gfx::SourceSurface* aSurface,
+                gfx::DataSourceSurface* aDataSurface, const gfx::IntRect& aRect,
+                bool aDetached);
+
+  bool RequiresRefresh(int64_t aTextureId) const;
+
+  void CleanupTexture(int64_t aTextureId);
 
  protected:
   void ActorDestroy(ActorDestroyReason aWhy) final;
@@ -149,6 +173,11 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
   uint32_t mLastWriteLockCheckpoint = 0;
   uint32_t mTransactionsSinceGetDataSurface = kCacheDataSurfaceThreshold;
   std::vector<RefPtr<gfx::SourceSurface>> mLastTransactionExternalSurfaces;
+  struct TextureInfo {
+    ipc::Shmem mSnapshotShmem;
+    bool mRequiresRefresh = false;
+  };
+  std::unordered_map<int64_t, TextureInfo> mTextureInfo;
   bool mIsInTransaction = false;
   bool mHasOutstandingWriteLock = false;
 };
