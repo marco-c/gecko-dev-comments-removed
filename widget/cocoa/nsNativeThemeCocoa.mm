@@ -2412,8 +2412,6 @@ Maybe<nsNativeThemeCocoa::WidgetInfo> nsNativeThemeCocoa::ComputeWidgetInfo(
 
     case StyleAppearance::Treeheader:
       
-    case StyleAppearance::Treeheadersortarrow:
-      
     case StyleAppearance::Treeline:
       
       break;
@@ -3200,7 +3198,6 @@ bool nsNativeThemeCocoa::ThemeSupportsWidget(nsPresContext* aPresContext,
     case StyleAppearance::Treeview:
     case StyleAppearance::Treeheader:
     case StyleAppearance::Treeheadercell:
-    case StyleAppearance::Treeheadersortarrow:
     case StyleAppearance::Treeitem:
     case StyleAppearance::Treeline:
 
