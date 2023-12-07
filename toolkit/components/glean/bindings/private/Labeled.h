@@ -112,11 +112,7 @@ class Labeled<CounterMetric, E> {
     
     auto mirrorId = ScalarIdForMetric(mId);
     if (mirrorId) {
-      GetLabeledMirrorLock().apply([&](auto& lock) {
-        auto tuple = std::make_tuple<Telemetry::ScalarID, nsString>(
-            mirrorId.extract(), NS_ConvertUTF8toUTF16(aLabel));
-        lock.ref()->InsertOrUpdate(submetricId, std::move(tuple));
-      });
+      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
     }
     return CounterMetric(submetricId);
   }
@@ -196,11 +192,7 @@ class Labeled<CounterMetric, DynamicLabel> {
     
     auto mirrorId = ScalarIdForMetric(mId);
     if (mirrorId) {
-      GetLabeledMirrorLock().apply([&](auto& lock) {
-        auto tuple = std::make_tuple<Telemetry::ScalarID, nsString>(
-            mirrorId.extract(), NS_ConvertUTF8toUTF16(aLabel));
-        lock.ref()->InsertOrUpdate(submetricId, std::move(tuple));
-      });
+      UpdateLabeledMirror(mirrorId.extract(), submetricId, aLabel);
     }
     return CounterMetric(submetricId);
   }
