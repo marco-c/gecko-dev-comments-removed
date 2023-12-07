@@ -876,6 +876,9 @@ struct BaseCompiler final {
                                        StackHeight destHeight, ResultType type);
 
   
+  bool insertLeaveFrame();
+
+  
   
   
 
@@ -1776,7 +1779,7 @@ struct BaseCompiler final {
   [[nodiscard]] bool emitVectorShiftRightI64x2();
 #  endif
 #endif
-  [[nodiscard]] bool emitIntrinsic();
+  [[nodiscard]] bool emitCallBuiltinModuleFunc();
 };
 
 }  
