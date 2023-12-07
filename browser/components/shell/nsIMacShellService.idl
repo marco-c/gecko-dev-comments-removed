@@ -24,4 +24,19 @@ interface nsIMacShellService : nsIShellService
 
 
   void showSecurityPreferences(in ACString aPaneID);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  Array<Array<AString> > getAvailableApplicationsForProtocol(in ACString protocol);
 };
