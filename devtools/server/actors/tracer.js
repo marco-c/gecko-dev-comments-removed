@@ -24,10 +24,19 @@ const {
   getResourceWatcher,
 } = require("resource://devtools/server/actors/resources/index.js");
 
+loader.lazyRequireGetter(
+  this,
+  "GeckoProfileCollector",
+  "resource://devtools/server/actors/utils/gecko-profile-collector.js",
+  true
+);
+
 const LOG_METHODS = {
   STDOUT: "stdout",
   CONSOLE: "console",
+  PROFILER: "profiler",
 };
+exports.LOG_METHODS = LOG_METHODS;
 const VALID_LOG_METHODS = Object.values(LOG_METHODS);
 
 const CONSOLE_ARGS_STYLES = [
@@ -61,6 +70,8 @@ class TracerActor extends Actor {
       this.flushConsoleMessages.bind(this),
       CONSOLE_THROTTLING_DELAY
     );
+
+    this.geckoProfileCollector = new GeckoProfileCollector();
   }
 
   destroy() {
@@ -84,24 +95,7 @@ class TracerActor extends Actor {
 
   toggleTracing(options) {
     if (!this.tracingListener) {
-      if (options.logMethod && !VALID_LOG_METHODS.includes(options.logMethod)) {
-        throw new Error(
-          `Invalid log method '${options.logMethod}'. Only supports: ${VALID_LOG_METHODS}`
-        );
-      }
-      if (options.prefix && typeof options.prefix != "string") {
-        throw new Error("Invalid prefix, only support string type");
-      }
-      this.logMethod = options.logMethod || LOG_METHODS.STDOUT;
-      this.tracingListener = {
-        onTracingFrame: this.onTracingFrame.bind(this),
-        onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
-      };
-      addTracingListener(this.tracingListener);
-      startTracing({
-        global: this.targetActor.window || this.targetActor.workerGlobal,
-        prefix: options.prefix || "",
-      });
+      this.#startTracing(options);
       return true;
     }
     this.stopTracing();
@@ -109,7 +103,24 @@ class TracerActor extends Actor {
   }
 
   startTracing(logMethod = LOG_METHODS.STDOUT) {
-    this.logMethod = logMethod;
+    this.#startTracing({ logMethod });
+  }
+
+  #startTracing(options) {
+    if (options.logMethod && !VALID_LOG_METHODS.includes(options.logMethod)) {
+      throw new Error(
+        `Invalid log method '${options.logMethod}'. Only supports: ${VALID_LOG_METHODS}`
+      );
+    }
+    if (options.prefix && typeof options.prefix != "string") {
+      throw new Error("Invalid prefix, only support string type");
+    }
+    this.logMethod = options.logMethod || LOG_METHODS.STDOUT;
+
+    if (this.logMethod == LOG_METHODS.PROFILER) {
+      this.geckoProfileCollector.start();
+    }
+
     this.tracingListener = {
       onTracingFrame: this.onTracingFrame.bind(this),
       onTracingInfiniteLoop: this.onTracingInfiniteLoop.bind(this),
@@ -117,6 +128,7 @@ class TracerActor extends Actor {
     addTracingListener(this.tracingListener);
     startTracing({
       global: this.targetActor.window || this.targetActor.workerGlobal,
+      prefix: options.prefix || "",
       
       traceDOMEvents: true,
     });
@@ -132,9 +144,27 @@ class TracerActor extends Actor {
     this.tracingListener = null;
   }
 
+  
+
+
+
+
+
+  getProfile() {
+    const profile = this.geckoProfileCollector.stop();
+    
+    if (profile.threads[0].samples.data.length) {
+      return profile;
+    }
+    return null;
+  }
+
   onTracingInfiniteLoop() {
     if (this.logMethod == LOG_METHODS.STDOUT) {
       return true;
+    }
+    if (this.logMethod == LOG_METHODS.PROFILER) {
+      this.geckoProfileCollector.stop();
     }
     const consoleMessageWatcher = getResourceWatcher(
       this.targetActor,
@@ -210,46 +240,60 @@ class TracerActor extends Actor {
       return true;
     }
 
-    
-    
-    if (currentDOMEvent && depth == 0) {
-      const DOMEventArgs = [prefix + "—", currentDOMEvent];
+    if (this.logMethod == LOG_METHODS.CONSOLE) {
+      
+      
+      if (currentDOMEvent && depth == 0) {
+        const DOMEventArgs = [prefix + "—", currentDOMEvent];
+
+        
+        this.throttledConsoleMessages.push({
+          arguments: DOMEventArgs,
+          styles: DOM_EVENT_CONSOLE_ARGS_STYLES,
+          level: "logTrace",
+          chromeContext: this.isChromeContext,
+          timeStamp: ChromeUtils.dateNow(),
+        });
+      }
+
+      const args = [
+        "—".repeat(depth + 1),
+        frame.implementation,
+        "⟶",
+        formatedDisplayName,
+      ];
+      
+      if (prefix) {
+        args.unshift(prefix);
+      }
 
       
       this.throttledConsoleMessages.push({
-        arguments: DOMEventArgs,
-        styles: DOM_EVENT_CONSOLE_ARGS_STYLES,
+        filename: url,
+        lineNumber,
+        columnNumber: columnNumber - columnBase,
+        arguments: args,
+        
+        styles: prefix ? CONSOLE_ARGS_STYLES_WITH_PREFIX : CONSOLE_ARGS_STYLES,
         level: "logTrace",
         chromeContext: this.isChromeContext,
+        sourceId: script.source.id,
         timeStamp: ChromeUtils.dateNow(),
       });
+      this.throttleLogMessages();
+    } else if (this.logMethod == LOG_METHODS.PROFILER) {
+      this.geckoProfileCollector.addSample(
+        {
+          
+          name: formatedDisplayName.replace("λ ", ""),
+          url,
+          lineNumber,
+          columnNumber,
+          category: frame.implementation,
+        },
+        depth
+      );
     }
-
-    const args = [
-      "—".repeat(depth + 1),
-      frame.implementation,
-      "⟶",
-      formatedDisplayName,
-    ];
-    
-    if (prefix) {
-      args.unshift(prefix);
-    }
-
-    
-    this.throttledConsoleMessages.push({
-      filename: url,
-      lineNumber,
-      columnNumber: columnNumber - columnBase,
-      arguments: args,
-      
-      styles: prefix ? CONSOLE_ARGS_STYLES_WITH_PREFIX : CONSOLE_ARGS_STYLES,
-      level: "logTrace",
-      chromeContext: this.isChromeContext,
-      sourceId: script.source.id,
-      timeStamp: ChromeUtils.dateNow(),
-    });
-    this.throttleLogMessages();
 
     return false;
   }

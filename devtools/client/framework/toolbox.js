@@ -204,6 +204,17 @@ loader.lazyRequireGetter(
   "resource://devtools/client/shared/source-map-loader/index.js",
   true
 );
+loader.lazyRequireGetter(
+  this,
+  "openProfilerTab",
+  "resource://devtools/client/performance-new/shared/browser.js",
+  true
+);
+loader.lazyGetter(this, "ProfilerBackground", () => {
+  return ChromeUtils.import(
+    "resource://devtools/client/performance-new/shared/background.jsm.js"
+  );
+});
 
 
 
@@ -660,6 +671,29 @@ Toolbox.prototype = {
 
 
 
+
+  async _onTracingStateChanged(resource) {
+    const { profile } = resource;
+    if (!profile) {
+      return;
+    }
+    const browser = await openProfilerTab();
+
+    const profileCaptureResult = {
+      type: "SUCCESS",
+      profile,
+    };
+    ProfilerBackground.registerProfileCaptureForBrowser(
+      browser,
+      profileCaptureResult,
+      null
+    );
+  },
+
+  
+
+
+
   _pauseToolbox(reason) {
     
     
@@ -885,6 +919,15 @@ Toolbox.prototype = {
         this.resourceCommand.TYPES.DOCUMENT_EVENT,
         this.resourceCommand.TYPES.THREAD_STATE,
       ];
+
+      if (
+        Services.prefs.getBoolPref(
+          "devtools.debugger.features.javascript-tracing",
+          false
+        )
+      ) {
+        watchedResources.push(this.resourceCommand.TYPES.TRACING_STATE);
+      }
 
       if (!this.isBrowserToolbox) {
         
@@ -4700,6 +4743,9 @@ Toolbox.prototype = {
 
       if (resourceType == TYPES.THREAD_STATE) {
         this._onThreadStateChanged(resource);
+      }
+      if (resourceType == TYPES.TRACING_STATE) {
+        this._onTracingStateChanged(resource);
       }
     }
 

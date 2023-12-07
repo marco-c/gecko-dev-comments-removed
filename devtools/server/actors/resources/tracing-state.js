@@ -16,6 +16,8 @@ const {
   removeTracingListener,
 } = require("resource://devtools/server/tracer/tracer.jsm");
 
+const { LOG_METHODS } = require("resource://devtools/server/actors/tracer.js");
+
 class TracingStateWatcher {
   
 
@@ -49,12 +51,16 @@ class TracingStateWatcher {
   
   onTracingToggled(enabled) {
     const tracerActor = this.targetActor.getTargetScopedActor("tracer");
-    const logMethod = tracerActor?.getLogMethod() | "stdout";
+    const logMethod = tracerActor?.getLogMethod();
     this.onAvailable([
       {
         resourceType: TRACING_STATE,
         enabled,
         logMethod,
+        profile:
+          logMethod == LOG_METHODS.PROFILER && !enabled
+            ? tracerActor.getProfile()
+            : undefined,
       },
     ]);
   }
