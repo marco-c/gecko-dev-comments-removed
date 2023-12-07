@@ -425,7 +425,7 @@ MethodStatus jit::CanEnterBaselineInterpreterAtBranch(JSContext* cx,
 
   
   
-  if (cx->insideDebuggerEvaluationWithOnNativeCallHook) {
+  if (cx->realm()->debuggerObservesNativeCall()) {
     return Method_CantCompile;
   }
 

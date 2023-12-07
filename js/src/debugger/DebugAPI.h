@@ -306,6 +306,9 @@ class DebugAPI {
   static bool debuggerObservesWasm(GlobalObject* global);
 
   
+  static bool debuggerObservesNativeCall(GlobalObject* global);
+
+  
 
 
 

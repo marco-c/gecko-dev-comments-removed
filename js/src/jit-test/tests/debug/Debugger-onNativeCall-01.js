@@ -54,10 +54,14 @@ for (let i = 0; i < 5; i++) {
   
   rv.length = 0;
   g.f();
-  assertEqArray(rv, []);
+  assertEqArray(rv, ["print", "get", "print", "set", "push", "call"]);
 
   
   
+  
+  
+  
+  dbg2.onNativeCall = function () {};
   rv.length = 0;
   gdbg2.executeInGlobal(`f()`);
   assertEqArray(rv, []);

@@ -175,7 +175,7 @@ EnterJitStatus js::jit::MaybeEnterJit(JSContext* cx, RunState& state) {
 
   
   
-  if (cx->insideDebuggerEvaluationWithOnNativeCallHook) {
+  if (cx->realm()->debuggerObservesNativeCall()) {
     return EnterJitStatus::NotEntered;
   }
 
