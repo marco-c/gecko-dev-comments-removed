@@ -23,7 +23,7 @@
 
 
 
-add_task(async function run_test_no_overlong_path_building() {
+add_task(async function test_no_overlong_path_building() {
   let profile = do_get_profile();
   const CERT_DB_NAME = "cert9.db";
   let srcCertDBFile = do_get_file(`test_self_signed_certs/${CERT_DB_NAME}`);
@@ -66,4 +66,44 @@ add_task(async function run_test_no_overlong_path_building() {
   let timeAfter = Date.now();
   let secondsElapsed = (timeAfter - timeBefore) / 1000;
   ok(secondsElapsed < 120, "verifications shouldn't take too long");
+});
+
+add_task(async function test_no_bad_signature() {
+  
+  
+  
+  
+  let selfSignedCert = constructCertFromFile("test_self_signed_certs/ca1.pem");
+  let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certDB, "test_self_signed_certs/ca2.pem", "CTu,,");
+  await checkCertErrorGeneric(
+    certDB,
+    selfSignedCert,
+    MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT,
+    certificateUsageSSLServer,
+    false,
+    "example.com"
+  );
+});
+
+add_task(async function test_no_inadequate_key_usage() {
+  
+  
+  
+  
+  let selfSignedCert = constructCertFromFile("test_self_signed_certs/ee1.pem");
+  let certDB = Cc["@mozilla.org/security/x509certdb;1"].getService(
+    Ci.nsIX509CertDB
+  );
+  addCertFromFile(certDB, "test_self_signed_certs/ee2.pem", ",,");
+  await checkCertErrorGeneric(
+    certDB,
+    selfSignedCert,
+    MOZILLA_PKIX_ERROR_SELF_SIGNED_CERT,
+    certificateUsageSSLServer,
+    false,
+    "example.com"
+  );
 });
