@@ -393,6 +393,12 @@ static bool NukedAllRealms(JS::Compartment* comp) {
 
 
 
+
+
+
+
+
+
 JS_PUBLIC_API bool js::NukeCrossCompartmentWrappers(
     JSContext* cx, const CompartmentFilter& sourceFilter, JS::Realm* target,
     js::NukeReferencesToWindow nukeReferencesToWindow,
