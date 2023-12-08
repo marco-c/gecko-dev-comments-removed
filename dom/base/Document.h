@@ -4094,6 +4094,8 @@ class Document : public nsINode,
 
   bool MayHaveDOMActivateListeners() const;
 
+  void DropStyleSet();
+
  protected:
   
   

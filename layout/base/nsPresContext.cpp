@@ -529,6 +529,10 @@ void nsPresContext::PreferenceChanged(const char* aPrefName, void* aSelf) {
 }
 
 void nsPresContext::PreferenceChanged(const char* aPrefName) {
+  if (!mPresShell) {
+    return;
+  }
+
   nsDependentCString prefName(aPrefName);
   if (prefName.EqualsLiteral("layout.css.dpi") ||
       prefName.EqualsLiteral("layout.css.devPixelsPerPx")) {
@@ -537,35 +541,30 @@ void nsPresContext::PreferenceChanged(const char* aPrefName) {
     
     
     Unused << mDeviceContext->CheckDPIChange();
-    if (mPresShell) {
-      OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
-      
-      
-      nscoord oldWidthAppUnits, oldHeightAppUnits;
-      RefPtr<nsViewManager> vm = presShell->GetViewManager();
-      if (!vm) {
-        return;
-      }
-      vm->GetWindowDimensions(&oldWidthAppUnits, &oldHeightAppUnits);
-      float oldWidthDevPixels = oldWidthAppUnits / oldAppUnitsPerDevPixel;
-      float oldHeightDevPixels = oldHeightAppUnits / oldAppUnitsPerDevPixel;
-
-      UIResolutionChangedInternal();
-
-      nscoord width = NSToCoordRound(oldWidthDevPixels * AppUnitsPerDevPixel());
-      nscoord height =
-          NSToCoordRound(oldHeightDevPixels * AppUnitsPerDevPixel());
-      vm->SetWindowDimensions(width, height);
+    OwningNonNull<mozilla::PresShell> presShell(*mPresShell);
+    
+    
+    nscoord oldWidthAppUnits, oldHeightAppUnits;
+    RefPtr<nsViewManager> vm = presShell->GetViewManager();
+    if (!vm) {
+      return;
     }
+    vm->GetWindowDimensions(&oldWidthAppUnits, &oldHeightAppUnits);
+    float oldWidthDevPixels = oldWidthAppUnits / oldAppUnitsPerDevPixel;
+    float oldHeightDevPixels = oldHeightAppUnits / oldAppUnitsPerDevPixel;
+
+    UIResolutionChangedInternal();
+
+    nscoord width = NSToCoordRound(oldWidthDevPixels * AppUnitsPerDevPixel());
+    nscoord height = NSToCoordRound(oldHeightDevPixels * AppUnitsPerDevPixel());
+    vm->SetWindowDimensions(width, height);
     return;
   }
 
   if (StringBeginsWith(prefName, "browser.viewport."_ns) ||
       StringBeginsWith(prefName, "font.size.inflation."_ns) ||
       prefName.EqualsLiteral("dom.meta-viewport.enabled")) {
-    if (mPresShell) {
-      mPresShell->MaybeReflowForInflationScreenSizeChange();
-    }
+    mPresShell->MaybeReflowForInflationScreenSizeChange();
   }
 
   auto changeHint = nsChangeHint{0};

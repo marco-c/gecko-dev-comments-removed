@@ -714,6 +714,8 @@ void nsINode::LastRelease() {
     
     
     AsDocument()->RemoveAllProperties();
+
+    AsDocument()->DropStyleSet();
   } else {
     if (HasProperties()) {
       
