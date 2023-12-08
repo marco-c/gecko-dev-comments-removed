@@ -5,8 +5,6 @@
 #include "AndroidEncoderModule.h"
 
 #include "AndroidDataEncoder.h"
-#include "MP4Decoder.h"
-#include "VPXDecoder.h"
 
 #include "mozilla/Logging.h"
 #include "mozilla/java/HardwareCodecCapabilityUtilsWrappers.h"
@@ -18,38 +16,27 @@ extern LazyLogModule sPEMLog;
       sPEMLog, mozilla::LogLevel::Debug, \
       ("AndroidEncoderModule(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 
-bool AndroidEncoderModule::SupportsMimeType(const nsACString& aMimeType) const {
-  return (MP4Decoder::IsH264(aMimeType) &&
+bool AndroidEncoderModule::SupportsCodec(CodecType aCodec) const {
+  return (aCodec == CodecType::H264 &&
           java::HardwareCodecCapabilityUtils::HasHWH264(true )) ||
-         (VPXDecoder::IsVP8(aMimeType) &&
+         (aCodec == CodecType::VP8 &&
           java::HardwareCodecCapabilityUtils::HasHWVP8(true )) ||
-         (VPXDecoder::IsVP9(aMimeType) &&
+         (aCodec == CodecType::VP9 &&
           java::HardwareCodecCapabilityUtils::HasHWVP9(true ));
 }
 
-already_AddRefed<MediaDataEncoder> AndroidEncoderModule::CreateVideoEncoder(
-    const CreateEncoderParams& aParams, const bool aHardwareNotAllowed) const {
+bool AndroidEncoderModule::Supports(const EncoderConfig& aConfig) const {
   
-  MOZ_ASSERT(!aHardwareNotAllowed);
+  return SupportsCodec(aConfig.mCodec);
+}
 
-  RefPtr<MediaDataEncoder> encoder;
-  switch (CreateEncoderParams::CodecTypeForMime(aParams.mConfig.mMimeType)) {
-    case MediaDataEncoder::CodecType::H264:
-      return MakeRefPtr<AndroidDataEncoder<MediaDataEncoder::H264Config>>(
-                 aParams.ToH264Config(), aParams.mTaskQueue)
-          .forget();
-    case MediaDataEncoder::CodecType::VP8:
-      return MakeRefPtr<AndroidDataEncoder<MediaDataEncoder::VP8Config>>(
-                 aParams.ToVP8Config(), aParams.mTaskQueue)
-          .forget();
-    case MediaDataEncoder::CodecType::VP9:
-      return MakeRefPtr<AndroidDataEncoder<MediaDataEncoder::VP9Config>>(
-                 aParams.ToVP9Config(), aParams.mTaskQueue)
-          .forget();
-    default:
-      AND_PEM_LOG("Unsupported MIME type:%s", aParams.mConfig.mMimeType.get());
-      return nullptr;
+already_AddRefed<MediaDataEncoder> AndroidEncoderModule::CreateVideoEncoder(
+    const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue) const {
+  if (!Supports(aConfig)) {
+    AND_PEM_LOG("Unsupported codec type: %d", static_cast<int>(aConfig.mCodec));
+    return nullptr;
   }
+  return MakeRefPtr<AndroidDataEncoder>(aConfig, aTaskQueue).forget();
 }
 
 }  
