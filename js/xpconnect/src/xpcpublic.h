@@ -236,6 +236,11 @@ extern bool xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
 extern JS::UniqueChars xpc_PrintJSStack(JSContext* cx, bool showArgs,
                                         bool showLocals, bool showThisProps);
 
+inline void AssignFromStringBuffer(nsStringBuffer* buffer, size_t len,
+                                   nsAString& dest) {
+  buffer->ToString(len, dest);
+}
+
 
 class XPCStringConvert {
  public:
@@ -287,24 +292,42 @@ class XPCStringConvert {
     return true;
   }
 
+ private:
   static MOZ_ALWAYS_INLINE bool MaybeGetExternalStringChars(
-      JSString* str, const JSExternalStringCallbacks* desiredCallbacks,
+      JSString* str, const JSExternalStringCallbacks** callbacks,
       const char16_t** chars) {
+    return JS::IsExternalUCString(str, callbacks, chars);
+  }
+
+ public:
+  template <typename T>
+  static MOZ_ALWAYS_INLINE bool MaybeAssignUCStringChars(JSString* s,
+                                                         size_t len, T& dest) {
+    MOZ_ASSERT(len == JS::GetStringLength(s));
+
     const JSExternalStringCallbacks* callbacks;
-    return JS::IsExternalUCString(str, &callbacks, chars) &&
-           callbacks == desiredCallbacks;
-  }
+    const char16_t* chars;
+    if (!MaybeGetExternalStringChars(s, &callbacks, &chars)) {
+      return false;
+    }
 
-  
-  static MOZ_ALWAYS_INLINE bool MaybeGetLiteralStringChars(
-      JSString* str, const char16_t** chars) {
-    return MaybeGetExternalStringChars(str, &sLiteralExternalString, chars);
-  }
+    if (callbacks == &sDOMStringExternalString) {
+      
+      
+      
+      if (chars[len] == '\0') {
+        AssignFromStringBuffer(
+            nsStringBuffer::FromData(const_cast<char16_t*>(chars)), len, dest);
+        return true;
+      }
+    } else if (callbacks == &sLiteralExternalString) {
+      
+      
+      dest.AssignLiteral(chars, len);
+      return true;
+    }
 
-  
-  static MOZ_ALWAYS_INLINE bool MaybeGetDOMStringChars(JSString* str,
-                                                       const char16_t** chars) {
-    return MaybeGetExternalStringChars(str, &sDOMStringExternalString, chars);
+    return false;
   }
 
  private:

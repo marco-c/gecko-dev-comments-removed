@@ -93,11 +93,6 @@ class nsJSUtils {
       mozilla::UniquePtr<uint8_t[], JS::FreePolicy> aBuffer);
 };
 
-inline void AssignFromStringBuffer(nsStringBuffer* buffer, size_t len,
-                                   nsAString& dest) {
-  buffer->ToString(len, dest);
-}
-
 template <typename T, typename std::enable_if_t<std::is_same<
                           typename T::char_type, char16_t>::value>* = nullptr>
 inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
@@ -105,20 +100,7 @@ inline bool AssignJSString(JSContext* cx, T& dest, JSString* s) {
   static_assert(JS::MaxStringLength < (1 << 30),
                 "Shouldn't overflow here or in SetCapacity");
 
-  const char16_t* chars;
-  if (XPCStringConvert::MaybeGetDOMStringChars(s, &chars)) {
-    
-    
-    
-    if (chars[len] == '\0') {
-      AssignFromStringBuffer(
-          nsStringBuffer::FromData(const_cast<char16_t*>(chars)), len, dest);
-      return true;
-    }
-  } else if (XPCStringConvert::MaybeGetLiteralStringChars(s, &chars)) {
-    
-    
-    dest.AssignLiteral(chars, len);
+  if (XPCStringConvert::MaybeAssignUCStringChars(s, len, dest)) {
     return true;
   }
 
