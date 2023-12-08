@@ -2,13 +2,6 @@
 
 
 
-
-
-
-
-
-
-
 const CURRENT_SCHEMA = 5;
 const PR_HOURS = 60 * 60 * 1000000;
 

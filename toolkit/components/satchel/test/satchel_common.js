@@ -1,13 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/* eslint
-  "no-unused-vars": ["error", {
-    vars: "local",
-    args: "none",
-  }],
-*/
+
+
 
 var gPopupShownExpected = false;
 var gPopupShownListener;
@@ -20,9 +13,9 @@ const TelemetryFilterPropsAC = Object.freeze({
   object: "logins",
 });
 
-/*
- * Returns the element with the specified |name| attribute.
- */
+
+
+
 function getFormElementByName(formNum, name) {
   const formElement = document.querySelector(
     `#form${formNum} [name="${name}"]`
@@ -79,11 +72,11 @@ class StorageEventsObserver {
 }
 
 function getFormSubmitButton(formNum) {
-  let form = $("form" + formNum); // by id, not name
+  let form = $("form" + formNum); 
   ok(form != null, "getting form " + formNum);
 
-  // we can't just call form.submit(), because that doesn't seem to
-  // invoke the form onsubmit handler.
+  
+  
   let button = form.firstChild;
   while (button && button.type != "submit") {
     button = button.nextSibling;
@@ -93,8 +86,8 @@ function getFormSubmitButton(formNum) {
   return button;
 }
 
-// Count the number of entries with the given name and value, and call then(number)
-// when done. If name or value is null, then the value of that field does not matter.
+
+
 function countEntries(name, value, then = null) {
   return new Promise(resolve => {
     gChromeScript.sendAsyncMessage("countEntries", { name, value });
@@ -114,7 +107,7 @@ function countEntries(name, value, then = null) {
   });
 }
 
-// Wrapper around FormHistory.update which handles errors. Calls then() when done.
+
 function updateFormHistory(changes, then = null) {
   return new Promise(resolve => {
     gChromeScript.sendAsyncMessage("updateFormHistory", { changes });
@@ -211,14 +204,14 @@ async function noPopupBy(triggerFn) {
 
 async function popupByArrowDown() {
   return popupBy(() => {
-    synthesizeKey("KEY_Escape"); // in case popup is already open
+    synthesizeKey("KEY_Escape"); 
     synthesizeKey("KEY_ArrowDown");
   });
 }
 
 async function noPopupByArrowDown() {
   await noPopupBy(() => {
-    synthesizeKey("KEY_Escape"); // in case popup is already open
+    synthesizeKey("KEY_Escape"); 
     synthesizeKey("KEY_ArrowDown");
   });
 }
@@ -279,13 +272,13 @@ function preventSubmitOnForms() {
   }
 }
 
-/**
- * Press requested keys and assert input's value
- *
- * @param {HTMLInputElement} input
- * @param {string | Array} keys
- * @param {string} expectedValue
- */
+
+
+
+
+
+
+
 function assertValueAfterKeys(input, keys, expectedValue) {
   if (!Array.isArray(keys)) {
     keys = [keys];
