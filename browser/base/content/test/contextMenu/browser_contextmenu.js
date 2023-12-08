@@ -44,6 +44,7 @@ let hasContainers =
 const example_base =
   
   "http://example.com/browser/browser/base/content/test/contextMenu/";
+const about_preferences_base = "about:preferences";
 const chrome_base =
   "chrome://mochitests/content/browser/browser/base/content/test/contextMenu/";
 const head_base =
@@ -1934,6 +1935,64 @@ add_task(async function test_background_image() {
 });
 
 add_task(async function test_cleanup_html() {
+  lastElementSelector = null;
+  gBrowser.removeCurrentTab();
+});
+
+
+
+
+
+add_task(async function test_strip_on_share_on_secure_about_page() {
+  let url = about_preferences_base;
+
+  let tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    url,
+  });
+
+  let browser2 = tab.linkedBrowser;
+
+  await SpecialPowers.spawn(browser2, [], () => {
+    let link = content.document.createElement("a");
+    link.href = "https://mozilla.com";
+    link.textContent = "link with query param";
+    link.id = "link-test-strip";
+    content.document.body.appendChild(link);
+  });
+
+  
+  
+  await test_contextmenu("#link-test-strip", [
+    "context-openlinkintab",
+    true,
+    ...(hasContainers ? ["context-openlinkinusercontext-menu", true] : []),
+    
+    
+    ...(hasContainers ? ["", null] : []),
+    "context-openlink",
+    true,
+    "context-openlinkprivate",
+    true,
+    "---",
+    null,
+    "context-bookmarklink",
+    true,
+    "context-savelink",
+    true,
+    ...(hasPocket ? ["context-savelinktopocket", true] : []),
+    "context-copylink",
+    true,
+    "---",
+    null,
+    "context-searchselect",
+    true,
+    "context-searchselect-private",
+    true,
+  ]);
+
+  
+  lastElementSelector = null;
   gBrowser.removeCurrentTab();
 });
 

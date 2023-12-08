@@ -993,7 +993,8 @@ class nsContextMenu {
         this.onLink &&
         !this.onMailtoLink &&
         !this.onTelLink &&
-        !this.onMozExtLink
+        !this.onMozExtLink &&
+        !this.isSecureAboutPage()
     );
 
     let copyLinkSeparator = document.getElementById("context-sep-copylink");
@@ -2294,6 +2295,23 @@ class nsContextMenu {
     
     
     return strippedLinkURI ?? this.linkURI;
+  }
+
+  
+
+
+
+
+  isSecureAboutPage() {
+    let { currentURI } = this.browser;
+    if (currentURI?.schemeIs("about")) {
+      let module = E10SUtils.getAboutModule(currentURI);
+      if (module) {
+        let flags = module.getURIFlags(currentURI);
+        return !!(flags & Ci.nsIAboutModule.IS_SECURE_CHROME_UI);
+      }
+    }
+    return false;
   }
 
   
