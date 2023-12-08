@@ -8,6 +8,7 @@
 #define LAYOUT_SVG_SVGOBSERVERUTILS_H_
 
 #include "mozilla/Attributes.h"
+#include "mozilla/SVGIntegrationUtils.h"
 #include "mozilla/dom/IDTracker.h"
 #include "FrameProperties.h"
 #include "nsID.h"
@@ -279,8 +280,15 @@ class SVGObserverUtils {
 
 
 
+
+
   static ReferenceState GetAndObserveFilters(
-      nsIFrame* aFilteredFrame, nsTArray<SVGFilterFrame*>* aFilterFrames);
+      nsIFrame* aFilteredFrame, nsTArray<SVGFilterFrame*>* aFilterFrames,
+      StyleFilterType aStyleFilterType = StyleFilterType::Filter);
+
+  
+
+
 
   static ReferenceState GetAndObserveFilters(
       nsISupports* aObserverList, nsTArray<SVGFilterFrame*>* aFilterFrames);
@@ -424,12 +432,6 @@ class SVGObserverUtils {
 
 
   static Element* GetAndObserveBackgroundClip(nsIFrame* aFrame);
-
-  
-
-
-  static already_AddRefed<URLAndReferrerInfo> GetFilterURI(
-      nsIFrame* aFrame, const StyleFilter& aFilter);
 
   
 

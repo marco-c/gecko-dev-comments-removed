@@ -8257,8 +8257,9 @@ bool nsDisplayBackdropFilters::CreateWebRenderCommands(
   bool initialized = true;
   if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
                                                       wrFilters) &&
-      !SVGIntegrationUtils::BuildWebRenderFilters(mFrame, filterChain,
-                                                  wrFilters, initialized)) {
+      !SVGIntegrationUtils::BuildWebRenderFilters(
+          mFrame, filterChain, StyleFilterType::BackdropFilter, wrFilters,
+          initialized)) {
     
     
     wrFilters = {};
@@ -8372,6 +8373,7 @@ bool nsDisplayFilters::CreateWebRenderCommands(
   if (!SVGIntegrationUtils::CreateWebRenderCSSFilters(filterChain, mFrame,
                                                       wrFilters) &&
       !SVGIntegrationUtils::BuildWebRenderFilters(mFrame, filterChain,
+                                                  StyleFilterType::Filter,
                                                   wrFilters, initialized)) {
     if (mStyle) {
       

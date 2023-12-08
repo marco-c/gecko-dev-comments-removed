@@ -35,6 +35,11 @@ namespace mozilla {
 class nsDisplayList;
 class nsDisplayListBuilder;
 
+
+
+
+enum class StyleFilterType : uint8_t { BackdropFilter, Filter };
+
 namespace gfx {
 class DrawTarget;
 }  
@@ -197,6 +202,7 @@ class SVGIntegrationUtils final {
 
   static bool BuildWebRenderFilters(nsIFrame* aFilteredFrame,
                                     Span<const StyleFilter> aFilters,
+                                    StyleFilterType aStyleFilterType,
                                     WrFiltersHolder& aWrFilters,
                                     bool& aInitialized);
 
