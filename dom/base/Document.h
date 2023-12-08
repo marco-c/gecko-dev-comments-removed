@@ -1901,7 +1901,7 @@ class Document : public nsINode,
 
 
 
-  Document* GetFullscreenRoot();
+  Document* GetFullscreenRoot() const { return mFullscreenRoot; }
 
   size_t CountFullscreenElements() const;
 
@@ -1909,7 +1909,7 @@ class Document : public nsINode,
 
 
 
-  void SetFullscreenRoot(Document* aRoot);
+  void SetFullscreenRoot(Document* aRoot) { mFullscreenRoot = aRoot; }
 
   
 
@@ -5133,7 +5133,7 @@ class Document : public nsINode,
 
   
   
-  nsWeakPtr mFullscreenRoot;
+  WeakPtr<Document> mFullscreenRoot;
 
   RefPtr<DOMImplementation> mDOMImplementation;
 
