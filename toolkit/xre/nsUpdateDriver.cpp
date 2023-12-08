@@ -55,8 +55,6 @@
 #  include "nsWindowsHelpers.h"
 #  include "pathhash.h"
 #  include "WinUtils.h"
-#  include "WinDef.h"
-#  include "WinNT.h"
 #  define getcwd(path, size) _getcwd(path, size)
 #  define getpid() GetCurrentProcessId()
 #elif defined(XP_UNIX)
@@ -927,8 +925,8 @@ nsUpdateProcessor::GetServiceRegKeyExists(bool* aResult) {
 }
 
 NS_IMETHODIMP
-nsUpdateProcessor::AttemptAutomaticApplicationRestartWithLaunchArgs(
-    const nsTArray<nsString>& argvExtra, int32_t* pidRet) {
+nsUpdateProcessor::RegisterApplicationRestartWithLaunchArgs(
+    const nsTArray<nsString>& argvExtra) {
 #ifndef XP_WIN
   return NS_ERROR_NOT_IMPLEMENTED;
 #else
@@ -941,42 +939,25 @@ nsUpdateProcessor::AttemptAutomaticApplicationRestartWithLaunchArgs(
   
   
   
+  
   if (currentCommandLine) {
     
     
-    int currentArgc = 0;
-    UniquePtr<LPWSTR, LocalFreeDeleter> currentArgv(
-        CommandLineToArgvW(currentCommandLine, &currentArgc));
-    nsTArray<wchar_t*> restartCommandLineArgv(currentArgc + argvExtra.Length() +
-                                              2);
-    for (int i = 0; i < currentArgc; i++) {
-      restartCommandLineArgv.AppendElement(currentArgv.get()[i]);
-    }
+    nsTArray<const wchar_t*> additionalArgv(argvExtra.Length());
     for (const nsString& arg : argvExtra) {
-      restartCommandLineArgv.AppendElement(static_cast<wchar_t*>(arg.get()));
+      additionalArgv.AppendElement(static_cast<const wchar_t*>(arg.get()));
     }
-    
-    DWORD pidCurrent = GetCurrentProcessId();
-    nsString pid;
-    pid.AppendInt(static_cast<uint32_t>(pidCurrent));
-    nsString pidFlag = u"-restart-pid"_ns;
-    restartCommandLineArgv.AppendElement(pidFlag.get());
-    restartCommandLineArgv.AppendElement(pid.get());
 
-    
-    
-    wchar_t exeName[MAX_PATH];
-    GetModuleFileNameW(NULL, exeName, MAX_PATH);
-    HANDLE childHandle;
-    WinLaunchChild(exeName, restartCommandLineArgv.Length(),
-                   restartCommandLineArgv.Elements(), nullptr, &childHandle);
-    *pidRet = GetProcessId(childHandle);
-    CloseHandle(childHandle);
-    if (!*pidRet) {
-      printf_stderr("*** ApplyUpdate: !pidRet ***\n");
-      return NS_ERROR_ABORT;
-    }
-    printf_stderr("*** ApplyUpdate: launched pidRet = %d ***\n", *pidRet);
+    int currentArgc = 0;
+    LPWSTR* currentCommandLineArgv =
+        CommandLineToArgvW(currentCommandLine, &currentArgc);
+    UniquePtr<LPWSTR, LocalFreeDeleter> uniqueCurrentArgv(
+        currentCommandLineArgv);
+    mozilla::UniquePtr<wchar_t[]> restartCommandLine = mozilla::MakeCommandLine(
+        currentArgc, uniqueCurrentArgv.get(), additionalArgv.Length(),
+        additionalArgv.Elements());
+    ::RegisterApplicationRestart(restartCommandLine.get(),
+                                 RESTART_NO_CRASH | RESTART_NO_HANG);
 
     MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug,
             ("register application restart succeeded"));
@@ -985,43 +966,6 @@ nsUpdateProcessor::AttemptAutomaticApplicationRestartWithLaunchArgs(
             ("could not register application restart"));
     return NS_ERROR_NOT_AVAILABLE;
   }
-  return NS_OK;
-#endif  
-}
-
-NS_IMETHODIMP
-nsUpdateProcessor::WaitForProcessExit(uint32_t pid, uint32_t timeoutMS) {
-#ifndef XP_WIN
-  return NS_ERROR_NOT_IMPLEMENTED;
-#else
-
-  nsAutoHandle hProcess(OpenProcess(SYNCHRONIZE, FALSE, pid));
-  if (!hProcess) {
-    
-    
-    
-    MOZ_LOG(sUpdateLog, mozilla::LogLevel::Warning,
-            ("WaitForProcessExit(%d): failed to OpenProcess", pid));
-    return NS_OK;
-  }
-
-  
-  DWORD waitRv = WaitForSingleObjectEx(hProcess, timeoutMS, FALSE);
-  if (waitRv != WAIT_OBJECT_0) {
-    if (waitRv == WAIT_TIMEOUT) {
-      MOZ_LOG(
-          sUpdateLog, mozilla::LogLevel::Debug,
-          ("WaitForProcessExit(%d): timed out after %d MS", pid, timeoutMS));
-      return NS_ERROR_ABORT;
-    }
-
-    MOZ_LOG(sUpdateLog, mozilla::LogLevel::Warning,
-            ("WaitForProcessExit(%d): unexpected error %lx", pid, waitRv));
-    return NS_ERROR_FAILURE;
-  }
-
-  MOZ_LOG(sUpdateLog, mozilla::LogLevel::Debug,
-          ("WaitForProcessExit(%d): success", pid));
   return NS_OK;
 #endif  
 }
