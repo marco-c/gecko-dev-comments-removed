@@ -559,6 +559,8 @@ struct JSExternalStringCallbacks {
 
 
 
+
+  virtual void finalize(JS::Latin1Char* chars) const = 0;
   virtual void finalize(char16_t* chars) const = 0;
 
   
@@ -569,6 +571,8 @@ struct JSExternalStringCallbacks {
 
 
 
+  virtual size_t sizeOfBuffer(const JS::Latin1Char* chars,
+                              mozilla::MallocSizeOf mallocSizeOf) const = 0;
   virtual size_t sizeOfBuffer(const char16_t* chars,
                               mozilla::MallocSizeOf mallocSizeOf) const = 0;
 };
@@ -1269,6 +1273,9 @@ extern JS_PUBLIC_API void JS_SetGCParametersBasedOnAvailableMemory(
 
 
 
+extern JS_PUBLIC_API JSString* JS_NewExternalStringLatin1(
+    JSContext* cx, const JS::Latin1Char* chars, size_t length,
+    const JSExternalStringCallbacks* callbacks);
 extern JS_PUBLIC_API JSString* JS_NewExternalUCString(
     JSContext* cx, const char16_t* chars, size_t length,
     const JSExternalStringCallbacks* callbacks);
@@ -1280,9 +1287,13 @@ extern JS_PUBLIC_API JSString* JS_NewExternalUCString(
 
 
 
+extern JS_PUBLIC_API JSString* JS_NewMaybeExternalStringLatin1(
+    JSContext* cx, const JS::Latin1Char* chars, size_t length,
+    const JSExternalStringCallbacks* callbacks, bool* allocatedExternal);
 extern JS_PUBLIC_API JSString* JS_NewMaybeExternalUCString(
     JSContext* cx, const char16_t* chars, size_t length,
     const JSExternalStringCallbacks* callbacks, bool* allocatedExternal);
+
 
 
 

@@ -397,12 +397,32 @@ MOZ_ALWAYS_INLINE JSLinearString* AtomToLinearString(JSAtom* atom) {
 
 
 
+MOZ_ALWAYS_INLINE bool IsExternalStringLatin1(
+    JSString* str, const JSExternalStringCallbacks** callbacks,
+    const JS::Latin1Char** chars) {
+  shadow::String* s = shadow::AsShadowString(str);
+
+  if (!s->isExternal() || !s->hasLatin1Chars()) {
+    return false;
+  }
+
+  *callbacks = s->externalCallbacks;
+  *chars = s->nonInlineCharsLatin1;
+  return true;
+}
+
+
+
+
+
+
+
 MOZ_ALWAYS_INLINE bool IsExternalUCString(
     JSString* str, const JSExternalStringCallbacks** callbacks,
     const char16_t** chars) {
   shadow::String* s = shadow::AsShadowString(str);
 
-  if (!s->isExternal()) {
+  if (!s->isExternal() || s->hasLatin1Chars()) {
     return false;
   }
 

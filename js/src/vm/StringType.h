@@ -491,6 +491,7 @@ class JSString : public js::gc::CellWithLengthAndFlags {
   bool empty() const { return length() == 0; }
 
   inline bool getChar(JSContext* cx, size_t index, char16_t* code);
+  inline bool getCodePoint(JSContext* cx, size_t index, char32_t* codePoint);
 
   
   bool hasLatin1Chars() const { return flags() & LATIN1_CHARS_BIT; }
@@ -1257,6 +1258,8 @@ static_assert(sizeof(JSFatInlineString) % js::gc::CellAlignBytes == 0,
 class JSExternalString : public JSLinearString {
   friend class js::gc::CellAllocator;
 
+  JSExternalString(const JS::Latin1Char* chars, size_t length,
+                   const JSExternalStringCallbacks* callbacks);
   JSExternalString(const char16_t* chars, size_t length,
                    const JSExternalStringCallbacks* callbacks);
 
@@ -1264,7 +1267,15 @@ class JSExternalString : public JSLinearString {
   bool isExternal() const = delete;
   JSExternalString& asExternal() const = delete;
 
+  template <typename CharT>
+  static inline JSExternalString* newImpl(
+      JSContext* cx, const CharT* chars, size_t length,
+      const JSExternalStringCallbacks* callbacks);
+
  public:
+  static inline JSExternalString* new_(
+      JSContext* cx, const JS::Latin1Char* chars, size_t length,
+      const JSExternalStringCallbacks* callbacks);
   static inline JSExternalString* new_(
       JSContext* cx, const char16_t* chars, size_t length,
       const JSExternalStringCallbacks* callbacks);
@@ -1276,6 +1287,7 @@ class JSExternalString : public JSLinearString {
 
   
   
+  const JS::Latin1Char* latin1Chars() const { return rawLatin1Chars(); }
   const char16_t* twoByteChars() const { return rawTwoByteChars(); }
 
   
@@ -1626,7 +1638,8 @@ inline JSLinearString* NewStringCopyUTF8Z(
       cx, JS::UTF8Chars(utf8.c_str(), strlen(utf8.c_str())), heap);
 }
 
-JSString* NewMaybeExternalString(JSContext* cx, const char16_t* s, size_t n,
+template <typename CharT>
+JSString* NewMaybeExternalString(JSContext* cx, const CharT* s, size_t n,
                                  const JSExternalStringCallbacks* callbacks,
                                  bool* allocatedExternal,
                                  js::gc::Heap heap = js::gc::Heap::Default);
@@ -1834,6 +1847,34 @@ MOZ_ALWAYS_INLINE bool JSString::getChar(JSContext* cx, size_t index,
   }
 
   *code = str->asLinear().latin1OrTwoByteChar(index);
+  return true;
+}
+
+MOZ_ALWAYS_INLINE bool JSString::getCodePoint(JSContext* cx, size_t index,
+                                              char32_t* code) {
+  
+  size_t size = length();
+  MOZ_ASSERT(index < size);
+
+  char16_t first;
+  if (!getChar(cx, index, &first)) {
+    return false;
+  }
+  if (!js::unicode::IsLeadSurrogate(first) || index + 1 == size) {
+    *code = first;
+    return true;
+  }
+
+  char16_t second;
+  if (!getChar(cx, index + 1, &second)) {
+    return false;
+  }
+  if (!js::unicode::IsTrailSurrogate(second)) {
+    *code = first;
+    return true;
+  }
+
+  *code = js::unicode::UTF16Decode(first, second);
   return true;
 }
 
