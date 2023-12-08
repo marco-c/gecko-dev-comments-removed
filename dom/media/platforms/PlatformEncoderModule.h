@@ -155,6 +155,8 @@ class MediaDataEncoder {
   using EncodedData = nsTArray<RefPtr<MediaRawData>>;
   using EncodePromise =
       MozPromise<EncodedData, MediaResult,  true>;
+  using ReconfigurationPromise =
+      MozPromise<bool, MediaResult,  true>;
 
   
   
@@ -169,6 +171,12 @@ class MediaDataEncoder {
   
   
   virtual RefPtr<EncodePromise> Encode(const MediaData* aSample) = 0;
+
+  
+  
+  virtual RefPtr<ReconfigurationPromise> Reconfigure(
+      const RefPtr<const EncoderConfigurationChangeList>&
+          aConfigurationChanges) = 0;
 
   
   
@@ -284,9 +292,68 @@ class EncoderConfig final {
 
 
 
-  }
+
+
+
+
+template <typename T, typename Phantom>
+class StrongTypedef {
+ public:
+  explicit StrongTypedef(T const& value) : mValue(value) {}
+  explicit StrongTypedef(T&& value) : mValue(std::move(value)) {}
+  T& get() { return mValue; }
+  T const& get() const { return mValue; }
 
  private:
+  T mValue;
+};
+
+
+using DimensionsChange =
+    StrongTypedef<gfx::IntSize, struct DimensionsChangeType>;
+
+using DisplayDimensionsChange =
+    StrongTypedef<Maybe<gfx::IntSize>, struct DisplayDimensionsChangeType>;
+
+
+using BitrateChange = StrongTypedef<Maybe<uint32_t>, struct BitrateChangeType>;
+
+
+using FramerateChange =
+    StrongTypedef<Maybe<double>, struct FramerateChangeType>;
+
+using BitrateModeChange =
+    StrongTypedef<MediaDataEncoder::BitrateMode, struct BitrateModeChangeType>;
+
+using UsageChange =
+    StrongTypedef<MediaDataEncoder::Usage, struct UsageChangeType>;
+
+
+
+using ContentHintChange =
+    StrongTypedef<Maybe<nsString>, struct ContentHintTypeType>;
+
+
+using EncoderConfigurationItem =
+    Variant<DimensionsChange, DisplayDimensionsChange, BitrateModeChange,
+            BitrateChange, FramerateChange, UsageChange, ContentHintChange>;
+
+
+
+
+struct EncoderConfigurationChangeList {
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(EncoderConfigurationChangeList)
+  bool Empty() const { return mChanges.IsEmpty(); }
+  template <typename T>
+  void Push(const T& aItem) {
+    mChanges.AppendElement(aItem);
+  }
+  nsString ToString() const;
+
+  nsTArray<EncoderConfigurationItem> mChanges;
+
+ private:
+  ~EncoderConfigurationChangeList() = default;
 };
 
 }  
