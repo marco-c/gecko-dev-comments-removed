@@ -1269,7 +1269,7 @@ extern JS_PUBLIC_API void JS_SetGCParametersBasedOnAvailableMemory(
 
 
 
-extern JS_PUBLIC_API JSString* JS_NewExternalString(
+extern JS_PUBLIC_API JSString* JS_NewExternalUCString(
     JSContext* cx, const char16_t* chars, size_t length,
     const JSExternalStringCallbacks* callbacks);
 
@@ -1280,7 +1280,7 @@ extern JS_PUBLIC_API JSString* JS_NewExternalString(
 
 
 
-extern JS_PUBLIC_API JSString* JS_NewMaybeExternalString(
+extern JS_PUBLIC_API JSString* JS_NewMaybeExternalUCString(
     JSContext* cx, const char16_t* chars, size_t length,
     const JSExternalStringCallbacks* callbacks, bool* allocatedExternal);
 

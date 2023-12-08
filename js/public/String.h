@@ -397,7 +397,7 @@ MOZ_ALWAYS_INLINE JSLinearString* AtomToLinearString(JSAtom* atom) {
 
 
 
-MOZ_ALWAYS_INLINE bool IsExternalString(
+MOZ_ALWAYS_INLINE bool IsExternalUCString(
     JSString* str, const JSExternalStringCallbacks** callbacks,
     const char16_t** chars) {
   shadow::String* s = shadow::AsShadowString(str);
