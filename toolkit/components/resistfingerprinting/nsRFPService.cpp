@@ -112,7 +112,7 @@ static constexpr uint32_t kVideoDroppedRatio = 5;
 
 
 
-const RFPTarget kDefaultFingerintingProtections =
+const RFPTarget kDefaultFingerprintingProtections =
     RFPTarget::CanvasRandomization | RFPTarget::FontVisibilityLangPack;
 
 static constexpr uint32_t kSuspiciousFingerprintingActivityThreshold = 1;
@@ -128,7 +128,7 @@ static StaticRefPtr<nsRFPService> sRFPService;
 static bool sInitialized = false;
 
 
-static Atomic<RFPTarget> sEnabledFingerintingProtections;
+static Atomic<RFPTarget> sEnabledFingerprintingProtections;
 
 
 already_AddRefed<nsRFPService> nsRFPService::GetOrCreate() {
@@ -219,7 +219,7 @@ bool nsRFPService::IsRFPEnabledFor(
       return bool(aOverriddenFingerprintingSettings.ref() & aTarget);
     }
 
-    return bool(sEnabledFingerintingProtections & aTarget);
+    return bool(sEnabledFingerprintingProtections & aTarget);
   }
 
   return false;
@@ -235,10 +235,10 @@ void nsRFPService::UpdateFPPOverrideList() {
     return;
   }
 
-  RFPTarget enabled =
-      CreateOverridesFromText(targetOverrides, kDefaultFingerintingProtections);
+  RFPTarget enabled = CreateOverridesFromText(
+      targetOverrides, kDefaultFingerprintingProtections);
 
-  sEnabledFingerintingProtections = enabled;
+  sEnabledFingerprintingProtections = enabled;
 }
 
 
@@ -1736,7 +1736,7 @@ nsRFPService::SetFingerprintingOverrides(
         NS_ConvertUTF8toUTF16(overridesText),
         mFingerprintingOverrides.Contains(domainKey)
             ? mFingerprintingOverrides.Get(domainKey)
-            : sEnabledFingerintingProtections);
+            : sEnabledFingerprintingProtections);
 
     
     
@@ -1756,7 +1756,7 @@ nsRFPService::SetFingerprintingOverrides(
 
 NS_IMETHODIMP
 nsRFPService::GetEnabledFingerprintingProtections(uint64_t* aProtections) {
-  RFPTarget enabled = sEnabledFingerintingProtections;
+  RFPTarget enabled = sEnabledFingerprintingProtections;
 
   *aProtections = uint64_t(enabled);
   return NS_OK;
