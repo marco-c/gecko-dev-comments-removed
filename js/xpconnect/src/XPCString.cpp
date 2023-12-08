@@ -34,7 +34,7 @@ const XPCStringConvert::DOMStringExternalString
 
 void XPCStringConvert::LiteralExternalString::finalize(
     JS::Latin1Char* aChars) const {
-  MOZ_CRASH("Unexpected");
+  
 }
 
 void XPCStringConvert::LiteralExternalString::finalize(char16_t* aChars) const {
@@ -43,7 +43,7 @@ void XPCStringConvert::LiteralExternalString::finalize(char16_t* aChars) const {
 
 size_t XPCStringConvert::LiteralExternalString::sizeOfBuffer(
     const JS::Latin1Char* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
-  MOZ_CRASH("Unexpected");
+  
   return 0;
 }
 
@@ -55,7 +55,8 @@ size_t XPCStringConvert::LiteralExternalString::sizeOfBuffer(
 
 void XPCStringConvert::DOMStringExternalString::finalize(
     JS::Latin1Char* aChars) const {
-  MOZ_CRASH("Unexpected");
+  nsStringBuffer* buf = nsStringBuffer::FromData(aChars);
+  buf->Release();
 }
 
 void XPCStringConvert::DOMStringExternalString::finalize(
@@ -66,8 +67,15 @@ void XPCStringConvert::DOMStringExternalString::finalize(
 
 size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
     const JS::Latin1Char* aChars, mozilla::MallocSizeOf aMallocSizeOf) const {
-  MOZ_CRASH("Unexpected");
-  return 0;
+  
+  JS::AutoCheckCannotGC autoCannotGC;
+
+  const nsStringBuffer* buf =
+      nsStringBuffer::FromData(const_cast<JS::Latin1Char*>(aChars));
+  
+  
+  
+  return buf->SizeOfIncludingThisIfUnshared(aMallocSizeOf);
 }
 
 size_t XPCStringConvert::DOMStringExternalString::sizeOfBuffer(
@@ -110,6 +118,39 @@ bool XPCStringConvert::ReadableToJSVal(JSContext* cx, const nsAString& readable,
 
   
   JSString* str = JS_NewUCStringCopyN(cx, readable.BeginReading(), length);
+  if (!str) {
+    return false;
+  }
+  vp.setString(str);
+  return true;
+}
+
+bool XPCStringConvert::Latin1ToJSVal(JSContext* cx, const nsACString& latin1,
+                                     nsStringBuffer** sharedBuffer,
+                                     MutableHandleValue vp) {
+  *sharedBuffer = nullptr;
+
+  uint32_t length = latin1.Length();
+
+  if (latin1.IsLiteral()) {
+    return StringLiteralToJSVal(
+        cx, reinterpret_cast<const JS::Latin1Char*>(latin1.BeginReading()),
+        length, vp);
+  }
+
+  nsStringBuffer* buf = nsStringBuffer::FromString(latin1);
+  if (buf) {
+    bool shared;
+    if (!Latin1StringBufferToJSVal(cx, buf, length, vp, &shared)) {
+      return false;
+    }
+    if (shared) {
+      *sharedBuffer = buf;
+    }
+    return true;
+  }
+
+  JSString* str = JS_NewStringCopyN(cx, latin1.BeginReading(), length);
   if (!str) {
     return false;
   }
