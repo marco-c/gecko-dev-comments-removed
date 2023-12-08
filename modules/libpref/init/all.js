@@ -189,6 +189,13 @@ pref("pdfjs.enableXfa", true);
 pref("pdfjs.enableStampEditor", true);
 
 
+#if defined(EARLY_BETA_OR_EARLIER)
+  pref("pdfjs.enableHighlightEditor", true);
+#else
+  pref("pdfjs.enableHighlightEditor", false);
+#endif
+
+
 pref("mathml.disabled",    false);
 
 
