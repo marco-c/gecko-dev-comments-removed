@@ -142,11 +142,12 @@ DefaultJitOptions::DefaultJitOptions() {
   
   
   
-#if defined(JS_ION_PERF)
-  SET_DEFAULT(emitInterpreterEntryTrampoline, true);
-#else
-  SET_DEFAULT(emitInterpreterEntryTrampoline, false);
-#endif
+  
+  
+  
+  bool perfEnabled = !!getenv("IONPERF");
+  SET_DEFAULT(emitInterpreterEntryTrampoline, perfEnabled);
+  SET_DEFAULT(enableICFramePointers, perfEnabled);
 
   
   SET_DEFAULT(baselineJit, true);
@@ -350,7 +351,6 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(enableWatchtowerMegamorphic, true);
 
   SET_DEFAULT(onlyInlineSelfHosted, false);
-  SET_DEFAULT(enableICFramePointers, false);
 
   SET_DEFAULT(enableWasmJitExit, true);
   SET_DEFAULT(enableWasmJitEntry, true);
