@@ -322,7 +322,7 @@ class nsComputedDOMStyle final : public nsDOMCSSDeclaration,
   
   
   
-  mozilla::WeakPtr<mozilla::dom::Document> mDocumentWeak;
+  nsWeakPtr mDocumentWeak;
   RefPtr<Element> mElement;
 
   

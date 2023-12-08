@@ -14158,7 +14158,9 @@ class FullscreenRoots {
   MOZ_COUNTED_DEFAULT_CTOR(FullscreenRoots)
   MOZ_COUNTED_DTOR(FullscreenRoots)
 
-  using RootsArray = nsTArray<WeakPtr<Document>>;
+  enum : uint32_t { NotFound = uint32_t(-1) };
+  
+  static uint32_t Find(Document* aRoot);
 
   
   static bool Contains(Document* aRoot);
@@ -14168,7 +14170,7 @@ class FullscreenRoots {
   static FullscreenRoots* sInstance;
 
   
-  RootsArray mRoots;
+  nsTArray<nsWeakPtr> mRoots;
 };
 
 FullscreenRoots* FullscreenRoots::sInstance = nullptr;
@@ -14180,10 +14182,10 @@ void FullscreenRoots::ForEach(void (*aFunction)(Document* aDoc)) {
   }
   
   
-  RootsArray roots(sInstance->mRoots.Clone());
+  nsTArray<nsWeakPtr> roots(sInstance->mRoots.Clone());
   
   for (uint32_t i = 0; i < roots.Length(); i++) {
-    nsCOMPtr<Document> root(roots[i]);
+    nsCOMPtr<Document> root = do_QueryReferent(roots[i]);
     
     
     if (root && FullscreenRoots::Contains(root)) {
@@ -14194,7 +14196,7 @@ void FullscreenRoots::ForEach(void (*aFunction)(Document* aDoc)) {
 
 
 bool FullscreenRoots::Contains(Document* aRoot) {
-  return sInstance && sInstance->mRoots.Contains(aRoot);
+  return FullscreenRoots::Find(aRoot) != NotFound;
 }
 
 
@@ -14205,18 +14207,36 @@ void FullscreenRoots::Add(Document* aDoc) {
     if (!sInstance) {
       sInstance = new FullscreenRoots();
     }
-    sInstance->mRoots.AppendElement(root);
+    sInstance->mRoots.AppendElement(do_GetWeakReference(root));
   }
+}
+
+
+uint32_t FullscreenRoots::Find(Document* aRoot) {
+  if (!sInstance) {
+    return NotFound;
+  }
+  nsTArray<nsWeakPtr>& roots = sInstance->mRoots;
+  for (uint32_t i = 0; i < roots.Length(); i++) {
+    nsCOMPtr<Document> otherRoot(do_QueryReferent(roots[i]));
+    if (otherRoot == aRoot) {
+      return i;
+    }
+  }
+  return NotFound;
 }
 
 
 void FullscreenRoots::Remove(Document* aDoc) {
   nsCOMPtr<Document> root =
       nsContentUtils::GetInProcessSubtreeRootDocument(aDoc);
-  if (!sInstance || !sInstance->mRoots.RemoveElement(root)) {
-    NS_ERROR("Should only try to remove roots which are still added!");
+  uint32_t index = Find(root);
+  NS_ASSERTION(index != NotFound,
+               "Should only try to remove roots which are still added!");
+  if (index == NotFound || !sInstance) {
     return;
   }
+  sInstance->mRoots.RemoveElementAt(index);
   if (sInstance->mRoots.IsEmpty()) {
     delete sInstance;
     sInstance = nullptr;
@@ -14334,6 +14354,11 @@ class PendingFullscreenChangeList {
 
 LinkedList<FullscreenChange> PendingFullscreenChangeList::sList;
 
+Document* Document::GetFullscreenRoot() {
+  nsCOMPtr<Document> root = do_QueryReferent(mFullscreenRoot);
+  return root;
+}
+
 size_t Document::CountFullscreenElements() const {
   size_t count = 0;
   for (const nsWeakPtr& ptr : mTopLayer) {
@@ -14344,6 +14369,10 @@ size_t Document::CountFullscreenElements() const {
     }
   }
   return count;
+}
+
+void Document::SetFullscreenRoot(Document* aRoot) {
+  mFullscreenRoot = do_GetWeakReference(aRoot);
 }
 
 
@@ -16933,7 +16962,7 @@ class UserInteractionTimer final : public Runnable,
   explicit UserInteractionTimer(Document* aDocument)
       : Runnable("UserInteractionTimer"),
         mPrincipal(aDocument->NodePrincipal()),
-        mDocument(aDocument) {
+        mDocument(do_GetWeakReference(aDocument)) {
     static int32_t userInteractionTimerId = 0;
     
     
@@ -17010,7 +17039,7 @@ class UserInteractionTimer final : public Runnable,
     }
 
     
-    nsCOMPtr<Document> document(mDocument);
+    nsCOMPtr<Document> document = do_QueryReferent(mDocument);
     if (document) {
       ContentBlockingUserInteraction::Observe(mPrincipal);
       document->ResetUserInteractionTimer();
@@ -17038,7 +17067,7 @@ class UserInteractionTimer final : public Runnable,
   }
 
   nsCOMPtr<nsIPrincipal> mPrincipal;
-  WeakPtr<Document> mDocument;
+  nsWeakPtr mDocument;
 
   nsCOMPtr<nsITimer> mTimer;
 

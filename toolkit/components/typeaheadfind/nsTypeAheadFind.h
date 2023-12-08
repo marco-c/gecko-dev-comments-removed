@@ -3,7 +3,6 @@
 
 
 
-#include "mozilla/WeakPtr.h"
 #include "nsComponentManagerUtils.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISelectionController.h"
@@ -21,7 +20,6 @@ class nsRange;
 namespace mozilla {
 class PresShell;
 namespace dom {
-class Document;
 class Element;
 class Selection;
 }  
@@ -136,7 +134,7 @@ class nsTypeAheadFind : public nsITypeAheadFind,
   
   nsWeakPtr mDocShell;
   
-  mozilla::WeakPtr<mozilla::dom::Document> mDocument;
+  nsWeakPtr mDocument;
   nsWeakPtr mSelectionController;
   
 };
