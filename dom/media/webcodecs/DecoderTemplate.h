@@ -210,8 +210,7 @@ class DecoderTemplate : public DOMEventTargetHelper {
   
   
   template <typename Func>
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY
-  void QueueATask(const char* aName, Func&& aSteps);
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void QueueATask(const char* aName, Func&& aSteps);
 
   MessageProcessedResult ProcessConfigureMessage(
       UniquePtr<ControlMessage>& aMessage);
