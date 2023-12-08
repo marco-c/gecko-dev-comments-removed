@@ -169,7 +169,18 @@ class nsPresContext : public nsISupports, public mozilla::SupportsWeakPtr {
 
   void UpdateFontCacheUserFonts(gfxUserFontSet* aUserFontSet);
 
+  
+
+
+
+
+
+
   FontVisibility GetFontVisibility() const { return mFontVisibility; }
+
+  
+
+
   void ReportBlockedFontFamily(const mozilla::fontlist::Family& aFamily);
   void ReportBlockedFontFamily(const gfxFontFamily& aFamily);
 

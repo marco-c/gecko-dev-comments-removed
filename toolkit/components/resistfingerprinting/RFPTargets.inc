@@ -93,6 +93,9 @@ ITEM_VALUE(WebGLRenderInfo,             1llu << 59)
 ITEM_VALUE(SiteSpecificZoom,            1llu << 60)
 
 
+ITEM_VALUE(FontVisibilityRestrictGenerics, 1llu << 61)
+
+
 
 
 
