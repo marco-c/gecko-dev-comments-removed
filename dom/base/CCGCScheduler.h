@@ -191,6 +191,10 @@ class CCGCScheduler {
 
   void EnsureGCRunner(TimeDuration aDelay);
 
+  
+  
+  void EnsureOrResetGCRunner();
+
   void EnsureCCRunner(TimeDuration aDelay, TimeDuration aBudget);
 
   

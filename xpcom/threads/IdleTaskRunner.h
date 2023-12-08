@@ -69,7 +69,10 @@ class IdleTaskRunner {
   
   void SetIdleDeadline(mozilla::TimeStamp aDeadline);
 
+  
   void SetTimer(TimeDuration aDelay, nsIEventTarget* aTarget);
+
+  void ResetTimer(TimeDuration aDelay);
 
   
   void SetMinimumUsefulBudget(int64_t aMinimumUsefulBudget);

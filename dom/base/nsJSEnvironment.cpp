@@ -1873,7 +1873,7 @@ static void DOMGCSliceCallback(JSContext* aCx, JS::GCProgress aProgress,
         
         
         
-        sScheduler->EnsureGCRunner(0);
+        sScheduler->EnsureOrResetGCRunner();
       }
 
       if (sScheduler->IsCCNeeded(TimeStamp::Now(),
