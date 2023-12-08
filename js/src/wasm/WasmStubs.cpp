@@ -607,27 +607,7 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   AutoCreatedBy acb(masm, "GenerateInterpEntry");
 
   AssertExpectedSP(masm);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (masm.currentOffset() == 0) {
-    masm.breakpoint();
-  }
-
   masm.haltingAlign(CodeAlignment);
-
-  
-  static_assert(CodeAlignment >= sizeof(uintptr_t));
-  MOZ_ASSERT(masm.currentOffset() >= sizeof(uintptr_t));
 
   offsets->begin = masm.currentOffset();
 
