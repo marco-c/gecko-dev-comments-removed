@@ -14,10 +14,8 @@
 #include "mozilla/gfx/GPUParent.h"
 #include "mozilla/gfx/Logging.h"
 #include "mozilla/ipc/Endpoint.h"
-#include "mozilla/layers/CanvasTranslator.h"
 #include "mozilla/layers/SharedSurfacesParent.h"
 #include "mozilla/layers/TextureClient.h"
-#include "mozilla/StaticPrefs_gfx.h"
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/Telemetry.h"
@@ -30,6 +28,25 @@
 
 namespace mozilla {
 namespace layers {
+
+
+
+
+static const TimeDuration kReadEventTimeout = TimeDuration::FromMilliseconds(5);
+
+class RingBufferReaderServices final
+    : public CanvasEventRingBuffer::ReaderServices {
+ public:
+  explicit RingBufferReaderServices(RefPtr<CanvasTranslator> aCanvasTranslator)
+      : mCanvasTranslator(std::move(aCanvasTranslator)) {}
+
+  ~RingBufferReaderServices() final = default;
+
+  bool WriterClosed() final { return !mCanvasTranslator->CanSend(); }
+
+ private:
+  RefPtr<CanvasTranslator> mCanvasTranslator;
+};
 
 TextureData* CanvasTranslator::CreateTextureData(TextureType aTextureType,
                                                  const gfx::IntSize& aSize,
@@ -51,10 +68,6 @@ TextureData* CanvasTranslator::CreateTextureData(TextureType aTextureType,
 }
 
 CanvasTranslator::CanvasTranslator() {
-  mMaxSpinCount = StaticPrefs::gfx_canvas_remote_max_spin_count();
-  mNextEventTimeout = TimeDuration::FromMilliseconds(
-      StaticPrefs::gfx_canvas_remote_event_timeout_ms());
-
   
   Telemetry::ScalarAdd(Telemetry::ScalarID::GFX_CANVAS_REMOTE_ACTIVATED, 1);
 }
@@ -82,49 +95,31 @@ bool CanvasTranslator::IsInTaskQueue() const {
   return gfx::CanvasRenderThread::IsInCanvasRenderThread();
 }
 
-static bool CreateAndMapShmem(RefPtr<ipc::SharedMemoryBasic>& aShmem,
-                              Handle&& aHandle,
-                              ipc::SharedMemory::OpenRights aOpenRights,
-                              size_t aSize) {
-  auto shmem = MakeRefPtr<ipc::SharedMemoryBasic>();
-  if (!shmem->SetHandle(std::move(aHandle), aOpenRights) ||
-      !shmem->Map(aSize)) {
-    return false;
-  }
-
-  shmem->CloseHandle();
-  aShmem = shmem.forget();
-  return true;
-}
-
 mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
-    const TextureType& aTextureType, Handle&& aReadHandle,
-    nsTArray<Handle>&& aBufferHandles, uint64_t aBufferSize,
+    const TextureType& aTextureType,
+    ipc::SharedMemoryBasic::Handle&& aReadHandle,
     CrossProcessSemaphoreHandle&& aReaderSem,
-    CrossProcessSemaphoreHandle&& aWriterSem, bool aUseIPDLThread) {
-  if (mHeaderShmem) {
+    CrossProcessSemaphoreHandle&& aWriterSem, const bool& aUseIPDLThread) {
+  if (mStream) {
     return IPC_FAIL(this, "RecvInitTranslator called twice.");
   }
 
   mTextureType = aTextureType;
 
-  mHeaderShmem = MakeAndAddRef<ipc::SharedMemoryBasic>();
-  if (!CreateAndMapShmem(mHeaderShmem, std::move(aReadHandle),
-                         ipc::SharedMemory::RightsReadWrite, sizeof(Header))) {
-    return IPC_FAIL(this, "Failed.");
+  
+  
+  mStream = MakeUnique<CanvasEventRingBuffer>();
+  if (!mStream->InitReader(std::move(aReadHandle), std::move(aReaderSem),
+                           std::move(aWriterSem),
+                           MakeUnique<RingBufferReaderServices>(this))) {
+    mStream = nullptr;
+    return IPC_FAIL(this, "Failed to initialize ring buffer reader.");
   }
-
-  mHeader = static_cast<Header*>(mHeaderShmem->memory());
-
-  mWriterSemaphore.reset(CrossProcessSemaphore::Create(std::move(aWriterSem)));
-  mWriterSemaphore->CloseHandle();
-
-  mReaderSemaphore.reset(CrossProcessSemaphore::Create(std::move(aReaderSem)));
-  mReaderSemaphore->CloseHandle();
 
 #if defined(XP_WIN)
   if (!CheckForFreshCanvasDevice(__LINE__)) {
     gfxCriticalNote << "GFX: CanvasTranslator failed to get device";
+    mStream = nullptr;
     return IPC_OK();
   }
 #endif
@@ -132,157 +127,56 @@ mozilla::ipc::IPCResult CanvasTranslator::RecvInitTranslator(
   if (!aUseIPDLThread) {
     mTranslationTaskQueue = gfx::CanvasRenderThread::CreateWorkerTaskQueue();
   }
+  return RecvResumeTranslation();
+}
 
-  
-  mDefaultBufferSize = aBufferSize;
-  auto handleIter = aBufferHandles.begin();
-  if (!CreateAndMapShmem(mCurrentShmem.shmem, std::move(*handleIter),
-                         ipc::SharedMemory::RightsReadOnly, aBufferSize)) {
-    return IPC_FAIL(this, "Failed.");
+ipc::IPCResult CanvasTranslator::RecvNewBuffer(
+    ipc::SharedMemoryBasic::Handle&& aReadHandle) {
+  if (!mStream) {
+    return IPC_FAIL(this, "RecvNewBuffer before RecvInitTranslator.");
   }
-  mCurrentMemReader = mCurrentShmem.CreateMemReader();
-
   
-  for (handleIter++; handleIter < aBufferHandles.end(); handleIter++) {
-    CanvasShmem newShmem;
-    if (!CreateAndMapShmem(newShmem.shmem, std::move(*handleIter),
-                           ipc::SharedMemory::RightsReadOnly, aBufferSize)) {
-      return IPC_FAIL(this, "Failed.");
-    }
-    mCanvasShmems.emplace(std::move(newShmem));
+  
+  DispatchToTaskQueue(NS_NewRunnableFunction(
+      "CanvasTranslator SetNewBuffer",
+      [self = RefPtr(this), readHandle = std::move(aReadHandle)]() mutable {
+        self->mStream->SetNewBuffer(std::move(readHandle));
+      }));
+  return RecvResumeTranslation();
+}
+
+ipc::IPCResult CanvasTranslator::RecvResumeTranslation() {
+  if (!mStream) {
+    return IPC_FAIL(this, "RecvResumeTranslation before RecvInitTranslator.");
+  }
+  if (CheckDeactivated()) {
+    
+    return IPC_OK();
   }
 
-  DispatchToTaskQueue(NewRunnableMethod("CanvasTranslator::TranslateRecording",
+  DispatchToTaskQueue(NewRunnableMethod("CanvasTranslator::StartTranslation",
                                         this,
-                                        &CanvasTranslator::TranslateRecording));
+                                        &CanvasTranslator::StartTranslation));
   return IPC_OK();
 }
 
-ipc::IPCResult CanvasTranslator::RecvRestartTranslation() {
-  if (mDeactivated) {
-    
-    return IPC_OK();
+void CanvasTranslator::StartTranslation() {
+  MOZ_RELEASE_ASSERT(mStream->IsValid(),
+                     "StartTranslation called before buffer has been set.");
+
+  if (!TranslateRecording() && CanSend()) {
+    DispatchToTaskQueue(NewRunnableMethod("CanvasTranslator::StartTranslation",
+                                          this,
+                                          &CanvasTranslator::StartTranslation));
   }
-
-  DispatchToTaskQueue(NewRunnableMethod("CanvasTranslator::TranslateRecording",
-                                        this,
-                                        &CanvasTranslator::TranslateRecording));
-
-  return IPC_OK();
-}
-
-ipc::IPCResult CanvasTranslator::RecvAddBuffer(
-    ipc::SharedMemoryBasic::Handle&& aBufferHandle, uint64_t aBufferSize) {
-  if (mDeactivated) {
-    
-    return IPC_OK();
-  }
-
-  DispatchToTaskQueue(
-      NewRunnableMethod<ipc::SharedMemoryBasic::Handle&&, size_t>(
-          "CanvasTranslator::AddBuffer", this, &CanvasTranslator::AddBuffer,
-          std::move(aBufferHandle), aBufferSize));
-
-  return IPC_OK();
-}
-
-void CanvasTranslator::AddBuffer(ipc::SharedMemoryBasic::Handle&& aBufferHandle,
-                                 size_t aBufferSize) {
-  MOZ_ASSERT(IsInTaskQueue());
-  MOZ_RELEASE_ASSERT(mHeader->readerState == State::Paused);
 
   
-  if (mCurrentShmem.Size() == mDefaultBufferSize) {
-    mCanvasShmems.emplace(std::move(mCurrentShmem));
+  
+  if (!mStream->good() && !mStream->WriterFailed()) {
+    Telemetry::ScalarAdd(
+        Telemetry::ScalarID::GFX_CANVAS_REMOTE_DEACTIVATED_BAD_STREAM, 1);
+    Deactivate();
   }
-
-  CanvasShmem newShmem;
-  if (!CreateAndMapShmem(newShmem.shmem, std::move(aBufferHandle),
-                         ipc::SharedMemory::RightsReadOnly, aBufferSize)) {
-    return;
-  }
-
-  mCurrentShmem = std::move(newShmem);
-  mCurrentMemReader = mCurrentShmem.CreateMemReader();
-
-  TranslateRecording();
-}
-
-ipc::IPCResult CanvasTranslator::RecvSetDataSurfaceBuffer(
-    ipc::SharedMemoryBasic::Handle&& aBufferHandle, uint64_t aBufferSize) {
-  if (mDeactivated) {
-    
-    return IPC_OK();
-  }
-
-  DispatchToTaskQueue(
-      NewRunnableMethod<ipc::SharedMemoryBasic::Handle&&, size_t>(
-          "CanvasTranslator::SetDataSurfaceBuffer", this,
-          &CanvasTranslator::SetDataSurfaceBuffer, std::move(aBufferHandle),
-          aBufferSize));
-
-  return IPC_OK();
-}
-
-void CanvasTranslator::SetDataSurfaceBuffer(
-    ipc::SharedMemoryBasic::Handle&& aBufferHandle, size_t aBufferSize) {
-  MOZ_ASSERT(IsInTaskQueue());
-  MOZ_RELEASE_ASSERT(mHeader->readerState == State::Paused);
-
-  if (!CreateAndMapShmem(mDataSurfaceShmem, std::move(aBufferHandle),
-                         ipc::SharedMemory::RightsReadWrite, aBufferSize)) {
-    return;
-  }
-
-  TranslateRecording();
-}
-
-void CanvasTranslator::GetDataSurface(uint64_t aSurfaceRef) {
-  MOZ_ASSERT(IsInTaskQueue());
-
-  ReferencePtr surfaceRef = reinterpret_cast<void*>(aSurfaceRef);
-  gfx::SourceSurface* surface = LookupSourceSurface(surfaceRef);
-  if (!surface) {
-    return;
-  }
-
-  UniquePtr<gfx::DataSourceSurface::ScopedMap> map = GetPreparedMap(surfaceRef);
-  if (!map) {
-    return;
-  }
-
-  auto dstSize = surface->GetSize();
-  auto srcSize = map->GetSurface()->GetSize();
-  int32_t dataFormatWidth = dstSize.width * BytesPerPixel(surface->GetFormat());
-  int32_t srcStride = map->GetStride();
-  if (dataFormatWidth > srcStride || srcSize != dstSize) {
-    return;
-  }
-
-  auto requiredSize = dataFormatWidth * dstSize.height;
-  if (requiredSize <= 0 || size_t(requiredSize) > mDataSurfaceShmem->Size()) {
-    return;
-  }
-
-  char* dst = static_cast<char*>(mDataSurfaceShmem->memory());
-  const char* src = reinterpret_cast<char*>(map->GetData());
-  const char* endSrc = src + (srcSize.height * srcStride);
-  while (src < endSrc) {
-    memcpy(dst, src, dataFormatWidth);
-    src += srcStride;
-    dst += dataFormatWidth;
-  }
-}
-
-void CanvasTranslator::RecycleBuffer() {
-  mCanvasShmems.emplace(std::move(mCurrentShmem));
-  NextBuffer();
-}
-
-void CanvasTranslator::NextBuffer() {
-  mCurrentShmem = std::move(mCanvasShmems.front());
-  mCanvasShmems.pop();
-  mCurrentMemReader = mCurrentShmem.CreateMemReader();
 }
 
 void CanvasTranslator::ActorDestroy(ActorDestroyReason why) {
@@ -302,6 +196,12 @@ void CanvasTranslator::ActorDestroy(ActorDestroyReason why) {
 
 void CanvasTranslator::FinishShutdown() {
   MOZ_ASSERT(gfx::CanvasRenderThread::IsInCanvasRenderThread());
+
+  
+  
+  mStream = nullptr;
+
+  gfx::CanvasManagerParent::RemoveReplayTextures(this);
 }
 
 bool CanvasTranslator::CheckDeactivated() {
@@ -321,10 +221,10 @@ void CanvasTranslator::Deactivate() {
     return;
   }
   mDeactivated = true;
-  mHeader->readerState = State::Failed;
 
   
   
+  mStream->SetIsBad();
   gfx::CanvasRenderThread::Dispatch(
       NewRunnableMethod("CanvasTranslator::SendDeactivate", this,
                         &CanvasTranslator::SendDeactivate));
@@ -338,101 +238,20 @@ void CanvasTranslator::Deactivate() {
   gfx::CanvasManagerParent::DisableRemoteCanvas();
 }
 
-void CanvasTranslator::CheckAndSignalWriter() {
-  do {
-    switch (mHeader->writerState) {
-      case State::Processing:
-        return;
-      case State::AboutToWait:
-        
-        
-        
-        if (!CanSend()) {
-          return;
-        }
-        continue;
-      case State::Waiting:
-        if (mHeader->processedCount >= mHeader->writerWaitCount) {
-          mHeader->writerState = State::Processing;
-          mWriterSemaphore->Signal();
-        }
-        return;
-      default:
-        MOZ_ASSERT_UNREACHABLE("Invalid waiting state.");
-        return;
-    }
-  } while (true);
-}
-
-bool CanvasTranslator::HasPendingEvent() {
-  return mHeader->processedCount < mHeader->eventCount;
-}
-
-bool CanvasTranslator::ReadPendingEvent(EventType& aEventType) {
-  ReadElementConstrained(mCurrentMemReader, aEventType,
-                         EventType::DRAWTARGETCREATION, LAST_CANVAS_EVENT_TYPE);
-  return mCurrentMemReader.good();
-}
-
-bool CanvasTranslator::ReadNextEvent(EventType& aEventType) {
-  if (mHeader->readerState == State::Paused) {
-    Flush();
-    return false;
-  }
-
-  uint32_t spinCount = mMaxSpinCount;
-  do {
-    if (HasPendingEvent()) {
-      return ReadPendingEvent(aEventType);
-    }
-  } while (--spinCount != 0);
-
-  Flush();
-  mHeader->readerState = State::AboutToWait;
-  if (HasPendingEvent()) {
-    mHeader->readerState = State::Processing;
-    return ReadPendingEvent(aEventType);
-  }
-
-  if (!mIsInTransaction) {
-    mHeader->readerState = State::Stopped;
-    return false;
-  }
-
-  
-  
-  
-  mHeader->readerState = State::Waiting;
-  if (mReaderSemaphore->Wait(Some(mNextEventTimeout))) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
-    MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
-    return ReadPendingEvent(aEventType);
-  }
-
-  
-  
-  if (!mHeader->readerState.compareExchange(State::Waiting, State::Stopped)) {
-    MOZ_RELEASE_ASSERT(HasPendingEvent());
-    MOZ_RELEASE_ASSERT(mHeader->readerState == State::Processing);
-    
-    MOZ_ALWAYS_TRUE(mReaderSemaphore->Wait());
-    return ReadPendingEvent(aEventType);
-  }
-
-  return false;
-}
-
-void CanvasTranslator::TranslateRecording() {
+bool CanvasTranslator::TranslateRecording() {
   MOZ_ASSERT(IsInTaskQueue());
 
-  mHeader->readerState = State::Processing;
-  EventType eventType;
-  while (ReadNextEvent(eventType)) {
-    bool success = RecordedEvent::DoWithEvent(
-        mCurrentMemReader, static_cast<RecordedEvent::EventType>(eventType),
+  if (!mStream) {
+    return false;
+  }
+
+  uint8_t eventType = mStream->ReadNextEvent();
+  while (mStream->good() && eventType != kDropBufferEventType) {
+    bool success = RecordedEvent::DoWithEventFromStream(
+        *mStream, static_cast<RecordedEvent::EventType>(eventType),
         [&](RecordedEvent* recordedEvent) -> bool {
           
-          if (!mCurrentMemReader.good()) {
+          if (!mStream->good()) {
             if (!CanSend()) {
               
               gfxWarning() << "Failed to read event type: "
@@ -448,8 +267,8 @@ void CanvasTranslator::TranslateRecording() {
         });
 
     
-    if (!mCurrentMemReader.good()) {
-      return;
+    if (!mStream->good()) {
+      return true;
     }
 
     if (!success && !HandleExtensionEvent(eventType)) {
@@ -460,16 +279,34 @@ void CanvasTranslator::TranslateRecording() {
       } else {
         gfxCriticalNote << "Failed to play canvas event type: " << eventType;
       }
+      if (!mStream->good()) {
+        return true;
+      }
     }
 
-    mHeader->processedCount++;
+    if (!mIsInTransaction) {
+      return mStream->StopIfEmpty();
+    }
+
+    if (!mStream->HasDataToRead()) {
+      
+      
+      Flush();
+      if (!mStream->WaitForDataToRead(kReadEventTimeout, 0)) {
+        return true;
+      }
+    }
+
+    eventType = mStream->ReadNextEvent();
   }
+
+  return true;
 }
 
 #define READ_AND_PLAY_CANVAS_EVENT_TYPE(_typeenum, _class)             \
   case _typeenum: {                                                    \
-    auto e = _class(mCurrentMemReader);                                \
-    if (!mCurrentMemReader.good()) {                                   \
+    auto e = _class(*mStream);                                         \
+    if (!mStream->good()) {                                            \
       if (!CanSend()) {                                                \
         /* The other side has closed only warn about read failure. */  \
         gfxWarning() << "Failed to read event type: " << _typeenum;    \
@@ -636,12 +473,6 @@ TextureData* CanvasTranslator::LookupTextureData(int64_t aTextureId) {
 already_AddRefed<gfx::SourceSurface> CanvasTranslator::LookupExternalSurface(
     uint64_t aKey) {
   return SharedSurfacesParent::Get(wr::ToExternalImageId(aKey));
-}
-
-void CanvasTranslator::CheckpointReached() { CheckAndSignalWriter(); }
-
-void CanvasTranslator::PauseTranslation() {
-  mHeader->readerState = State::Paused;
 }
 
 already_AddRefed<gfx::GradientStops> CanvasTranslator::GetOrCreateGradientStops(
