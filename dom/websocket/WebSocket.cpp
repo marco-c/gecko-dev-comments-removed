@@ -226,7 +226,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   nsCString mURI;
   nsCString mRequestedProtocolList;
 
-  nsWeakPtr mOriginDocument;
+  WeakPtr<Document> mOriginDocument;
 
   
   
@@ -1643,7 +1643,7 @@ nsresult WebSocketImpl::Init(JSContext* aCx, bool aIsSecure,
     rv = mWebSocket->CheckCurrentGlobalCorrectness();
     NS_ENSURE_SUCCESS(rv, rv);
   }
-  mOriginDocument = do_GetWeakReference(originDoc);
+  mOriginDocument = originDoc;
 
   if (!mIsServerSide) {
     nsCOMPtr<nsIURI> uri;
@@ -1883,7 +1883,7 @@ nsresult WebSocketImpl::InitializeConnection(
 
   
   
-  nsCOMPtr<Document> doc = do_QueryReferent(mOriginDocument);
+  nsCOMPtr<Document> doc(mOriginDocument);
 
   
   
