@@ -168,11 +168,13 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
                                 nsICookieJarSettings* aCookieJarSettings);
 
   
-  void FailConnection(uint16_t reasonCode,
+  void FailConnection(const RefPtr<WebSocketImpl>& aProofOfRef,
+                      uint16_t reasonCode,
                       const nsACString& aReasonString = ""_ns);
-  nsresult CloseConnection(uint16_t reasonCode,
+  nsresult CloseConnection(const RefPtr<WebSocketImpl>& aProofOfRef,
+                           uint16_t reasonCode,
                            const nsACString& aReasonString = ""_ns);
-  void Disconnect();
+  void Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef);
   void DisconnectInternal();
 
   nsresult ConsoleError();
@@ -185,7 +187,7 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
   nsresult ScheduleConnectionCloseEvents(nsISupports* aContext,
                                          nsresult aStatusCode);
   
-  void DispatchConnectionCloseEvents();
+  void DispatchConnectionCloseEvents(const RefPtr<WebSocketImpl>& aProofOfRef);
 
   nsresult UpdateURI();
 
@@ -265,7 +267,8 @@ class WebSocketImpl final : public nsIInterfaceRequestor,
 
     
     if (!mDisconnectingOrDisconnected) {
-      Disconnect();
+      RefPtr<WebSocketImpl> self(this);
+      Disconnect(self);
     }
   }
 };
@@ -306,7 +309,7 @@ class CallDispatchConnectionCloseEvents final : public DiscardableRunnable {
 
   NS_IMETHOD Run() override {
     mWebSocketImpl->AssertIsOnTargetThread();
-    mWebSocketImpl->DispatchConnectionCloseEvents();
+    mWebSocketImpl->DispatchConnectionCloseEvents(mWebSocketImpl);
     return NS_OK;
   }
 
@@ -452,12 +455,12 @@ class MOZ_STACK_CLASS MaybeDisconnect {
     }
 
     if (toDisconnect) {
-      mImpl->Disconnect();
+      mImpl->Disconnect(mImpl);
     }
   }
 
  private:
-  WebSocketImpl* mImpl;
+  RefPtr<WebSocketImpl> mImpl;
 };
 
 class CloseConnectionRunnable final : public Runnable {
@@ -470,7 +473,7 @@ class CloseConnectionRunnable final : public Runnable {
         mReasonString(aReasonString) {}
 
   NS_IMETHOD Run() override {
-    return mImpl->CloseConnection(mReasonCode, mReasonString);
+    return mImpl->CloseConnection(mImpl, mReasonCode, mReasonString);
   }
 
  private:
@@ -481,8 +484,9 @@ class CloseConnectionRunnable final : public Runnable {
 
 }  
 
-nsresult WebSocketImpl::CloseConnection(uint16_t aReasonCode,
-                                        const nsACString& aReasonString) {
+nsresult WebSocketImpl::CloseConnection(
+    const RefPtr<WebSocketImpl>& aProofOfRef, uint16_t aReasonCode,
+    const nsACString& aReasonString) {
   if (!IsTargetThread()) {
     nsCOMPtr<nsIRunnable> runnable =
         new CloseConnectionRunnable(this, aReasonCode, aReasonString);
@@ -564,7 +568,8 @@ nsresult WebSocketImpl::ConsoleError() {
   return NS_OK;
 }
 
-void WebSocketImpl::FailConnection(uint16_t aReasonCode,
+void WebSocketImpl::FailConnection(const RefPtr<WebSocketImpl>& aProofOfRef,
+                                   uint16_t aReasonCode,
                                    const nsACString& aReasonString) {
   AssertIsOnTargetThread();
 
@@ -574,7 +579,7 @@ void WebSocketImpl::FailConnection(uint16_t aReasonCode,
 
   ConsoleError();
   mFailed = true;
-  CloseConnection(aReasonCode, aReasonString);
+  CloseConnection(aProofOfRef, aReasonCode, aReasonString);
 
   if (NS_IsMainThread() && mImplProxy) {
     mImplProxy->Disconnect();
@@ -598,12 +603,15 @@ class DisconnectInternalRunnable final : public WorkerMainThreadRunnable {
 
  private:
   
+  
+  
+  
   WebSocketImpl* mImpl;
 };
 
 }  
 
-void WebSocketImpl::Disconnect() {
+void WebSocketImpl::Disconnect(const RefPtr<WebSocketImpl>& aProofOfRef) {
   MOZ_RELEASE_ASSERT(NS_IsMainThread() == mIsMainThread);
 
   if (mDisconnectingOrDisconnected) {
@@ -612,7 +620,7 @@ void WebSocketImpl::Disconnect() {
 
   
   
-  RefPtr<WebSocketImpl> kungfuDeathGrip = this;
+  
 
   
   
@@ -777,7 +785,8 @@ WebSocketImpl::OnStart(nsISupports* aContext) {
   
   nsresult rv = mWebSocket->CheckCurrentGlobalCorrectness();
   if (NS_FAILED(rv)) {
-    CloseConnection(nsIWebSocketChannel::CLOSE_GOING_AWAY);
+    RefPtr<WebSocketImpl> self(this);
+    CloseConnection(self, nsIWebSocketChannel::CLOSE_GOING_AWAY);
     return rv;
   }
 
@@ -909,10 +918,11 @@ WebSocketImpl::OnServerClose(nsISupports* aContext, uint16_t aCode,
     
     
     
+    RefPtr<WebSocketImpl> self(this);
     if (aCode == 1005 || aCode == 1006 || aCode == 1015) {
-      CloseConnection(0, ""_ns);
+      CloseConnection(self, 0, ""_ns);
     } else {
-      CloseConnection(aCode, aReason);
+      CloseConnection(self, aCode, aReason);
     }
   } else {
     
@@ -929,13 +939,14 @@ WebSocketImpl::OnError() {
         NS_NewRunnableFunction("dom::FailConnectionRunnable",
                                [self = RefPtr{this}]() {
                                  self->FailConnection(
-                                     nsIWebSocketChannel::CLOSE_ABNORMAL);
+                                     self, nsIWebSocketChannel::CLOSE_ABNORMAL);
                                }),
         NS_DISPATCH_NORMAL);
   }
 
   AssertIsOnTargetThread();
-  FailConnection(nsIWebSocketChannel::CLOSE_ABNORMAL);
+  RefPtr<WebSocketImpl> self(this);
+  FailConnection(self, nsIWebSocketChannel::CLOSE_ABNORMAL);
   return NS_OK;
 }
 
@@ -1420,7 +1431,8 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
   
   
   if (connectionFailed) {
-    webSocket->mImpl->FailConnection(nsIWebSocketChannel::CLOSE_ABNORMAL);
+    webSocketImpl->FailConnection(webSocketImpl,
+                                  nsIWebSocketChannel::CLOSE_ABNORMAL);
   }
 
   
@@ -1439,11 +1451,12 @@ already_AddRefed<WebSocket> WebSocket::ConstructorCommon(
     ~ClearWebSocket() {
       if (!mDone) {
         mWebSocketImpl->mChannel = nullptr;
-        mWebSocketImpl->FailConnection(nsIWebSocketChannel::CLOSE_ABNORMAL);
+        mWebSocketImpl->FailConnection(mWebSocketImpl,
+                                       nsIWebSocketChannel::CLOSE_ABNORMAL);
       }
     }
 
-    WebSocketImpl* mWebSocketImpl;
+    RefPtr<WebSocketImpl> mWebSocketImpl;
     bool mDone;
   };
 
@@ -1531,7 +1544,8 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(WebSocket, DOMEventTargetHelper)
   if (tmp->mImpl) {
     NS_IMPL_CYCLE_COLLECTION_UNLINK(mImpl->mChannel)
-    tmp->mImpl->Disconnect();
+    RefPtr<WebSocketImpl> pin(tmp->mImpl);
+    pin->Disconnect(pin);
     MOZ_ASSERT(!tmp->mImpl);
   }
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -1555,7 +1569,8 @@ void WebSocket::DisconnectFromOwner() {
   DOMEventTargetHelper::DisconnectFromOwner();
 
   if (mImpl) {
-    mImpl->CloseConnection(nsIWebSocketChannel::CLOSE_GOING_AWAY);
+    RefPtr<WebSocketImpl> pin(mImpl);
+    pin->CloseConnection(pin, nsIWebSocketChannel::CLOSE_GOING_AWAY);
   }
 
   DontKeepAliveAnyMore();
@@ -1842,7 +1857,7 @@ class nsAutoCloseWS final {
   ~nsAutoCloseWS() {
     if (!mWebSocketImpl->mChannel) {
       mWebSocketImpl->CloseConnection(
-          nsIWebSocketChannel::CLOSE_INTERNAL_ERROR);
+          mWebSocketImpl, nsIWebSocketChannel::CLOSE_INTERNAL_ERROR);
     }
   }
 
@@ -1923,7 +1938,8 @@ nsresult WebSocketImpl::InitializeConnection(
   return NS_OK;
 }
 
-void WebSocketImpl::DispatchConnectionCloseEvents() {
+void WebSocketImpl::DispatchConnectionCloseEvents(
+    const RefPtr<WebSocketImpl>& aProofOfRef) {
   AssertIsOnTargetThread();
 
   if (mDisconnectingOrDisconnected) {
@@ -1951,7 +1967,7 @@ void WebSocketImpl::DispatchConnectionCloseEvents() {
   }
 
   webSocket->UpdateMustKeepAlive();
-  Disconnect();
+  Disconnect(aProofOfRef);
 }
 
 nsresult WebSocket::CreateAndDispatchSimpleEvent(const nsAString& aName) {
@@ -2216,6 +2232,8 @@ void WebSocket::UpdateMustKeepAlive() {
   if (mKeepingAlive && !shouldKeepAlive) {
     mKeepingAlive = false;
     mImpl->ReleaseObject();
+    
+    
   } else if (!mKeepingAlive && shouldKeepAlive) {
     mKeepingAlive = true;
     mImpl->AddRefObject();
@@ -2249,7 +2267,7 @@ void WebSocketImpl::ReleaseObject() {
 bool WebSocketImpl::RegisterWorkerRef(WorkerPrivate* aWorkerPrivate) {
   MOZ_ASSERT(aWorkerPrivate);
 
-  RefPtr<WebSocketImpl> self = this;
+  RefPtr<WebSocketImpl> self(this);
 
   
   
@@ -2260,7 +2278,8 @@ bool WebSocketImpl::RegisterWorkerRef(WorkerPrivate* aWorkerPrivate) {
           self->mWorkerShuttingDown = true;
         }
 
-        self->CloseConnection(nsIWebSocketChannel::CLOSE_GOING_AWAY, ""_ns);
+        self->CloseConnection(self, nsIWebSocketChannel::CLOSE_GOING_AWAY,
+                              ""_ns);
       });
   if (NS_WARN_IF(!workerRef)) {
     return false;
@@ -2519,14 +2538,17 @@ void WebSocket::Close(const Optional<uint16_t>& aCode,
     return;
   }
 
-  RefPtr<WebSocketImpl> impl = mImpl;
+  
+  
+  RefPtr<WebSocketImpl> pin(mImpl);
+
   if (readyState == CONNECTING) {
-    impl->FailConnection(closeCode, closeReason);
+    pin->FailConnection(pin, closeCode, closeReason);
     return;
   }
 
   MOZ_ASSERT(readyState == OPEN);
-  impl->CloseConnection(closeCode, closeReason);
+  pin->CloseConnection(pin, closeCode, closeReason);
 }
 
 
@@ -2550,7 +2572,8 @@ WebSocketImpl::Observe(nsISupports* aSubject, const char* aTopic,
 
   if ((strcmp(aTopic, DOM_WINDOW_FROZEN_TOPIC) == 0) ||
       (strcmp(aTopic, DOM_WINDOW_DESTROYED_TOPIC) == 0)) {
-    CloseConnection(nsIWebSocketChannel::CLOSE_GOING_AWAY);
+    RefPtr<WebSocketImpl> self(this);
+    CloseConnection(self, nsIWebSocketChannel::CLOSE_GOING_AWAY);
   }
 
   return NS_OK;
@@ -2649,7 +2672,8 @@ nsresult WebSocketImpl::CancelInternal() {
     return NS_OK;
   }
 
-  return CloseConnection(nsIWebSocketChannel::CLOSE_GOING_AWAY);
+  RefPtr<WebSocketImpl> self(this);
+  return CloseConnection(self, nsIWebSocketChannel::CLOSE_GOING_AWAY);
 }
 
 NS_IMETHODIMP
