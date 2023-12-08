@@ -439,13 +439,11 @@ class MediaDataDecoder : public DecoderDoctorLifeLogger<MediaDataDecoder> {
   virtual ~MediaDataDecoder() = default;
 
  public:
-  typedef TrackInfo::TrackType TrackType;
-  typedef nsTArray<RefPtr<MediaData>> DecodedData;
-  typedef MozPromise<TrackType, MediaResult,  true>
-      InitPromise;
-  typedef MozPromise<DecodedData, MediaResult,  true>
-      DecodePromise;
-  typedef MozPromise<bool, MediaResult,  true> FlushPromise;
+  using TrackType = TrackInfo::TrackType;
+  using DecodedData = nsTArray<RefPtr<MediaData>>;
+  using InitPromise = MozPromise<TrackType, MediaResult, true>;
+  using DecodePromise = MozPromise<DecodedData, MediaResult, true>;
+  using FlushPromise = MozPromise<bool, MediaResult, true>;
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
 
