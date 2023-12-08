@@ -82,6 +82,7 @@ declare namespace MockedExports {
         
         userContextId: number;
         forceNonPrivate: boolean;
+        relatedToCurrent: boolean;
         resolveOnContentBrowserCreated: (
           contentBrowser: ChromeBrowser
         ) => unknown;
