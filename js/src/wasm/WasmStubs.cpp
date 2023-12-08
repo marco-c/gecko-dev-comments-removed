@@ -607,7 +607,27 @@ static bool GenerateInterpEntry(MacroAssembler& masm, const FuncExport& fe,
   AutoCreatedBy acb(masm, "GenerateInterpEntry");
 
   AssertExpectedSP(masm);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (masm.currentOffset() == 0) {
+    masm.breakpoint();
+  }
+
   masm.haltingAlign(CodeAlignment);
+
+  
+  static_assert(CodeAlignment >= sizeof(uintptr_t));
+  MOZ_ASSERT(masm.currentOffset() >= sizeof(uintptr_t));
 
   offsets->begin = masm.currentOffset();
 
@@ -2428,8 +2448,10 @@ struct ABIFunctionArgs {
   MIRType operator[](size_t i) const {
     MOZ_ASSERT(i < len);
     uint64_t abi = uint64_t(abiType);
-    while (i--) {
+    size_t argAtLSB = len - 1;
+    while (argAtLSB != i) {
       abi = abi >> ArgType_Shift;
+      argAtLSB--;
     }
     return ToMIRType(ABIArgType(abi & ArgType_Mask));
   }
