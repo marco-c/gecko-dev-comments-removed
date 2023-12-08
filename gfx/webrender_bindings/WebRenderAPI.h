@@ -310,13 +310,17 @@ class WebRenderAPI final {
   void FlushPendingWrTransactionEventsWithoutWait();
   void FlushPendingWrTransactionEventsWithWait();
 
+  wr::WebRenderAPI* GetRootAPI();
+
  protected:
   WebRenderAPI(wr::DocumentHandle* aHandle, wr::WindowId aId,
                layers::WebRenderBackend aBackend,
                layers::WebRenderCompositor aCompositor,
                uint32_t aMaxTextureSize, bool aUseANGLE, bool aUseDComp,
                bool aUseTripleBuffering, bool aSupportsExternalBufferTextures,
-               layers::SyncHandle aSyncHandle);
+               layers::SyncHandle aSyncHandle,
+               wr::WebRenderAPI* aRootApi = nullptr,
+               wr::WebRenderAPI* aRootDocumentApi = nullptr);
 
   ~WebRenderAPI();
   
@@ -442,8 +446,8 @@ class WebRenderAPI final {
   
   
   
-  RefPtr<wr::WebRenderAPI> mRootApi;
-  RefPtr<wr::WebRenderAPI> mRootDocumentApi;
+  const RefPtr<wr::WebRenderAPI> mRootApi;
+  const RefPtr<wr::WebRenderAPI> mRootDocumentApi;
 
   friend class DisplayListBuilder;
   friend class layers::WebRenderBridgeParent;

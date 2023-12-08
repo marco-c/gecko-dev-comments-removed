@@ -1430,7 +1430,7 @@ bool WebRenderBridgeParent::ProcessWebRenderParentCommands(
     wr::TransactionBuilder& aTxn) {
   
   
-  wr::TransactionBuilder txnForImageBridge(mApi);
+  wr::TransactionBuilder txnForImageBridge(mApi->GetRootAPI());
   wr::AutoTransactionSender sender(mApi, &txnForImageBridge);
 
   bool success = true;
