@@ -5,7 +5,6 @@
 
 
 SOURCES += [
-    
     "TestNonStdMove.cpp",
-    'TestTempRefPtr.cpp',
+    "TestTempRefPtr.cpp",
 ]

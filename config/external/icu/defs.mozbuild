@@ -7,69 +7,69 @@
 
 
 
-DEFINES['U_USING_ICU_NAMESPACE'] = 0
+DEFINES["U_USING_ICU_NAMESPACE"] = 0
 
-DEFINES['U_NO_DEFAULT_INCLUDE_UTF_HEADERS'] = 1
-DEFINES['U_HIDE_OBSOLETE_UTF_OLD_H'] = 1
-
-
-DEFINES['UCONFIG_NO_LEGACY_CONVERSION'] = True
-DEFINES['UCONFIG_NO_TRANSLITERATION'] = True
-DEFINES['UCONFIG_NO_REGULAR_EXPRESSIONS'] = True
-DEFINES['UCONFIG_NO_BREAK_ITERATION'] = True
+DEFINES["U_NO_DEFAULT_INCLUDE_UTF_HEADERS"] = 1
+DEFINES["U_HIDE_OBSOLETE_UTF_OLD_H"] = 1
 
 
-DEFINES['U_CHARSET_IS_UTF8'] = True
+DEFINES["UCONFIG_NO_LEGACY_CONVERSION"] = True
+DEFINES["UCONFIG_NO_TRANSLITERATION"] = True
+DEFINES["UCONFIG_NO_REGULAR_EXPRESSIONS"] = True
+DEFINES["UCONFIG_NO_BREAK_ITERATION"] = True
 
 
-DEFINES['UNISTR_FROM_CHAR_EXPLICIT'] = "explicit"
-DEFINES['UNISTR_FROM_STRING_EXPLICIT'] = "explicit"
+DEFINES["U_CHARSET_IS_UTF8"] = True
 
 
-DEFINES['U_ENABLE_DYLOAD'] = 0
-
-if not CONFIG['HAVE_LANGINFO_CODESET']:
-    DEFINES['U_HAVE_NL_LANGINFO_CODESET'] = 0
-
-if CONFIG['MOZ_DEBUG']:
-    DEFINES['U_DEBUG'] = 1
+DEFINES["UNISTR_FROM_CHAR_EXPLICIT"] = "explicit"
+DEFINES["UNISTR_FROM_STRING_EXPLICIT"] = "explicit"
 
 
-if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
-    CXXFLAGS += ['-frtti']
-elif CONFIG['OS_TARGET'] == 'WINNT':
+DEFINES["U_ENABLE_DYLOAD"] = 0
+
+if not CONFIG["HAVE_LANGINFO_CODESET"]:
+    DEFINES["U_HAVE_NL_LANGINFO_CODESET"] = 0
+
+if CONFIG["MOZ_DEBUG"]:
+    DEFINES["U_DEBUG"] = 1
+
+
+if CONFIG["CC_TYPE"] in ("clang", "gcc"):
+    CXXFLAGS += ["-frtti"]
+elif CONFIG["OS_TARGET"] == "WINNT":
     
-    COMPILE_FLAGS['OS_CXXFLAGS'] = [
-        f for f in COMPILE_FLAGS['OS_CXXFLAGS'] if f != '-GR-'
-    ] + ['-GR']
+    COMPILE_FLAGS["OS_CXXFLAGS"] = [
+        f for f in COMPILE_FLAGS["OS_CXXFLAGS"] if f != "-GR-"
+    ] + ["-GR"]
 
 DisableStlWrapping()
 AllowCompilerWarnings()
 
 
 
-if CONFIG['CC_TYPE'] in ('clang', 'clang-cl'):
+if CONFIG["CC_TYPE"] in ("clang", "clang-cl"):
     CFLAGS += [
-        '-Wno-c++20-compat',
-        '-Wno-comma',
-        '-Wno-implicit-const-int-float-conversion',
-        '-Wno-macro-redefined',
-        '-Wno-microsoft-include',
-        '-Wno-tautological-unsigned-enum-zero-compare',
-        '-Wno-unreachable-code-loop-increment',
-        '-Wno-unreachable-code-return',
+        "-Wno-c++20-compat",
+        "-Wno-comma",
+        "-Wno-implicit-const-int-float-conversion",
+        "-Wno-macro-redefined",
+        "-Wno-microsoft-include",
+        "-Wno-tautological-unsigned-enum-zero-compare",
+        "-Wno-unreachable-code-loop-increment",
+        "-Wno-unreachable-code-return",
     ]
     CXXFLAGS += [
-        '-Wno-c++20-compat',
-        '-Wno-comma',
-        '-Wno-implicit-const-int-float-conversion',
-        '-Wno-macro-redefined',
-        '-Wno-microsoft-include',
-        '-Wno-tautological-unsigned-enum-zero-compare',
-        '-Wno-unreachable-code-loop-increment',
-        '-Wno-unreachable-code-return',
+        "-Wno-c++20-compat",
+        "-Wno-comma",
+        "-Wno-implicit-const-int-float-conversion",
+        "-Wno-macro-redefined",
+        "-Wno-microsoft-include",
+        "-Wno-tautological-unsigned-enum-zero-compare",
+        "-Wno-unreachable-code-loop-increment",
+        "-Wno-unreachable-code-return",
     ]
 
 for k, v in DEFINES.items():
-    if k != 'UCONFIG_NO_LEGACY_CONVERSION':
+    if k != "UCONFIG_NO_LEGACY_CONVERSION":
         HOST_DEFINES[k] = v

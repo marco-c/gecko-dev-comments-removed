@@ -4,6 +4,7 @@
 
 
 
+
 @template
 def HunspellIncludes():
-    ForceInclude('hunspell_alloc_hooks.h')
+    ForceInclude("hunspell_alloc_hooks.h")

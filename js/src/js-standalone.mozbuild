@@ -8,8 +8,8 @@
 
 
 USE_LIBS += [
-    'jsrust',
-    'zlib',
+    "jsrust",
+    "zlib",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":

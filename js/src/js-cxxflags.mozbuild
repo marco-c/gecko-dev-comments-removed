@@ -5,14 +5,14 @@
 
 
 
-CXXFLAGS += CONFIG['MOZ_ICU_CFLAGS']
+CXXFLAGS += CONFIG["MOZ_ICU_CFLAGS"]
 
-if CONFIG['CC_TYPE'] in ('clang', 'gcc'):
+if CONFIG["CC_TYPE"] in ("clang", "gcc"):
     
-    CXXFLAGS += ['-Werror=format']
+    CXXFLAGS += ["-Werror=format"]
 
 
 
 
-if CONFIG['CC_TYPE'] == 'gcc':
-    CXXFLAGS += ['-Wno-attributes']
+if CONFIG["CC_TYPE"] == "gcc":
+    CXXFLAGS += ["-Wno-attributes"]
