@@ -303,7 +303,8 @@ bool ReflowInput::ShouldReflowAllKids() const {
   
   return mFrame->HasAnyStateBits(NS_FRAME_IS_DIRTY) || IsIResize() ||
          (IsBResize() &&
-          mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE));
+          mFrame->HasAnyStateBits(NS_FRAME_CONTAINS_RELATIVE_BSIZE)) ||
+         mFlags.mIsInLastColumnBalancingReflow;
 }
 
 void ReflowInput::SetComputedISize(nscoord aComputedISize,

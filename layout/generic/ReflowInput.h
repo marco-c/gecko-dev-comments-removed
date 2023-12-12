@@ -508,6 +508,11 @@ struct ReflowInput : public SizeComputationInput {
     
     
     
+    bool mIsInLastColumnBalancingReflow : 1;
+
+    
+    
+    
     
     bool mColumnSetWrapperHasNoBSizeLeft : 1;
 
