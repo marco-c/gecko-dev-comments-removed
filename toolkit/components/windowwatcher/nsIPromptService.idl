@@ -265,6 +265,11 @@ interface nsIPromptService : nsISupports
   
 
 
+  const unsigned long SHOW_SPINNER               = 1 << 27;
+
+  
+
+
   const unsigned long STD_OK_CANCEL_BUTTONS      = (BUTTON_TITLE_OK     * BUTTON_POS_0) +
                                                    (BUTTON_TITLE_CANCEL * BUTTON_POS_1);
 

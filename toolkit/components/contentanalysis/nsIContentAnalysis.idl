@@ -46,6 +46,7 @@ interface nsIContentAnalysisResponse : nsISupports
 
   
   const unsigned long ALLOW = 1000;
+  const unsigned long CANCELED = 1001;
 
   [infallible] readonly attribute unsigned long action;
   [infallible] readonly attribute boolean shouldAllowContent;
@@ -162,6 +163,7 @@ interface nsIContentAnalysis : nsISupports
   
 
 
+
   readonly attribute bool isActive;
 
   
@@ -194,4 +196,11 @@ interface nsIContentAnalysis : nsISupports
 
 
   void analyzeContentRequestCallback(in nsIContentAnalysisRequest aCar, in nsIContentAnalysisCallback callback);
+
+  
+
+
+
+
+  void cancelContentAnalysisRequest(in ACString aRequestToken);
 };
