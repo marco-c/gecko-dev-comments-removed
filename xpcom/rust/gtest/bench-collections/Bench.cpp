@@ -268,11 +268,11 @@ class BenchCollections : public ::testing::Test {
 
  private:
   
-  static void** sVals;
+  static void** sVals MOZ_GUARDED_BY(sValsMutex);
 
   
   
-  static StaticMutex sValsMutex MOZ_UNANNOTATED;
+  static StaticMutex sValsMutex;
 };
 
 void** BenchCollections::sVals;
