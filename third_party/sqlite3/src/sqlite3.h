@@ -146,9 +146,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.43.2"
-#define SQLITE_VERSION_NUMBER 3043002
-#define SQLITE_SOURCE_ID      "2023-10-10 12:14:04 4310099cce5a487035fa535dd3002c59ac7f1d1bec68d7cf317fd3e769484790"
+#define SQLITE_VERSION        "3.44.2"
+#define SQLITE_VERSION_NUMBER 3044002
+#define SQLITE_SOURCE_ID      "2023-11-24 11:41:44 ebead0e7230cd33bcec9f95d2183069565b9e709bf745c9b5db65cc0cbf92c0f"
 
 
 
@@ -3986,6 +3986,7 @@ SQLITE_API void sqlite3_free_filename(sqlite3_filename);
 
 
 
+
 SQLITE_API int sqlite3_errcode(sqlite3 *db);
 SQLITE_API int sqlite3_extended_errcode(sqlite3 *db);
 SQLITE_API const char *sqlite3_errmsg(sqlite3*);
@@ -5448,6 +5449,7 @@ SQLITE_API int sqlite3_reset(sqlite3_stmt *pStmt);
 
 
 
+
 SQLITE_API int sqlite3_create_function(
   sqlite3 *db,
   const char *zFunctionName,
@@ -5581,10 +5583,25 @@ SQLITE_API int sqlite3_create_window_function(
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #define SQLITE_DETERMINISTIC    0x000000800
 #define SQLITE_DIRECTONLY       0x000080000
 #define SQLITE_SUBTYPE          0x000100000
 #define SQLITE_INNOCUOUS        0x000200000
+#define SQLITE_RESULT_SUBTYPE   0x001000000
 
 
 
@@ -5782,6 +5799,12 @@ SQLITE_API int sqlite3_value_encoding(sqlite3_value*);
 
 
 
+
+
+
+
+
+
 SQLITE_API unsigned int sqlite3_value_subtype(sqlite3_value*);
 
 
@@ -5931,9 +5954,74 @@ SQLITE_API sqlite3 *sqlite3_context_db_handle(sqlite3_context*);
 
 
 
+
+
+
+
+
+
+
+
+
+
 SQLITE_API void *sqlite3_get_auxdata(sqlite3_context*, int N);
 SQLITE_API void sqlite3_set_auxdata(sqlite3_context*, int N, void*, void (*)(void*));
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API void *sqlite3_get_clientdata(sqlite3*,const char*);
+SQLITE_API int sqlite3_set_clientdata(sqlite3*, const char*, void*, void(*)(void*));
 
 
 
@@ -6122,6 +6210,20 @@ SQLITE_API void sqlite3_result_value(sqlite3_context*, sqlite3_value*);
 SQLITE_API void sqlite3_result_pointer(sqlite3_context*, void*,const char*,void(*)(void*));
 SQLITE_API void sqlite3_result_zeroblob(sqlite3_context*, int n);
 SQLITE_API int sqlite3_result_zeroblob64(sqlite3_context*, sqlite3_uint64 n);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -7217,6 +7319,10 @@ struct sqlite3_module {
   
 
   int (*xShadowName)(const char*);
+  
+
+  int (*xIntegrity)(sqlite3_vtab *pVTab, const char *zSchema,
+                    const char *zTabName, int mFlags, char **pzErr);
 };
 
 
@@ -8184,6 +8290,7 @@ SQLITE_API int sqlite3_test_control(int op, ...);
 #define SQLITE_TESTCTRL_PRNG_SAVE                5
 #define SQLITE_TESTCTRL_PRNG_RESTORE             6
 #define SQLITE_TESTCTRL_PRNG_RESET               7  /* NOT USED */
+#define SQLITE_TESTCTRL_FK_NO_ACTION             7
 #define SQLITE_TESTCTRL_BITVEC_TEST              8
 #define SQLITE_TESTCTRL_FAULT_INSTALL            9
 #define SQLITE_TESTCTRL_BENIGN_MALLOC_HOOKS     10
@@ -10556,6 +10663,13 @@ SQLITE_API SQLITE_EXPERIMENTAL int sqlite3_snapshot_recover(sqlite3 *db, const c
 
 
 
+
+
+
+
+
+
+
 SQLITE_API unsigned char *sqlite3_serialize(
   sqlite3 *db,           
   const char *zSchema,   
@@ -10578,6 +10692,16 @@ SQLITE_API unsigned char *sqlite3_serialize(
 
 
 #define SQLITE_SERIALIZE_NOCOPY 0x001   /* Do no memory allocations */
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -11680,6 +11804,18 @@ SQLITE_API int sqlite3changeset_concat(
 
 
 
+SQLITE_API int sqlite3changeset_upgrade(
+  sqlite3 *db,
+  const char *zDb,
+  int nIn, const void *pIn,       
+  int *pnOut, void **ppOut        
+);
+
+
+
+
+
+
 
 
 
@@ -11722,6 +11858,43 @@ typedef struct sqlite3_changegroup sqlite3_changegroup;
 
 
 SQLITE_API int sqlite3changegroup_new(sqlite3_changegroup **pp);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SQLITE_API int sqlite3changegroup_schema(sqlite3_changegroup*, sqlite3*, const char *zDb);
+
+
+
+
+
 
 
 
@@ -12063,9 +12236,16 @@ SQLITE_API int sqlite3changeset_apply_v2(
 
 
 
+
+
+
+
+
+
 #define SQLITE_CHANGESETAPPLY_NOSAVEPOINT   0x0001
 #define SQLITE_CHANGESETAPPLY_INVERT        0x0002
 #define SQLITE_CHANGESETAPPLY_IGNORENOOP    0x0004
+#define SQLITE_CHANGESETAPPLY_FKNOACTION    0x0008
 
 
 
