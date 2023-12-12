@@ -1010,6 +1010,9 @@ void ServoStyleSet::RuleChangedInternal(StyleSheet& aSheet, css::Rule& aRule,
       
       
       return MarkOriginsDirty(ToOriginFlags(aSheet.GetOrigin()));
+    case StyleCssRuleType::Margin:
+      
+      break;
   }
 
 #undef CASE_FOR

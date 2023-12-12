@@ -623,7 +623,7 @@ impl StylesheetInvalidationSet {
                 
                 
             },
-            Page(..) => {
+            Page(..) | Margin(..) => {
                 
                 
             },
