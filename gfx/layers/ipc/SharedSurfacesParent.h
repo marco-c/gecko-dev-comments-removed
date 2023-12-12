@@ -9,7 +9,7 @@
 
 #include <stdint.h>                         
 #include "mozilla/Attributes.h"             
-#include "mozilla/StaticMonitor.h"          
+#include "mozilla/StaticMutex.h"            
 #include "mozilla/StaticPtr.h"              
 #include "mozilla/RefPtr.h"                 
 #include "mozilla/ipc/SharedMemory.h"       
@@ -78,20 +78,20 @@ class SharedSurfacesParent final {
                              gfx::SourceSurfaceSharedData* aSurface);
 
   static void AddTrackingLocked(gfx::SourceSurfaceSharedDataWrapper* aSurface,
-                                const StaticMonitorAutoLock& aAutoLock);
+                                const StaticMutexAutoLock& aAutoLock);
 
   static void RemoveTrackingLocked(
       gfx::SourceSurfaceSharedDataWrapper* aSurface,
-      const StaticMonitorAutoLock& aAutoLock);
+      const StaticMutexAutoLock& aAutoLock);
 
   static bool AgeOneGenerationLocked(
       nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>>& aExpired,
-      const StaticMonitorAutoLock& aAutoLock);
+      const StaticMutexAutoLock& aAutoLock);
 
   static void ExpireMap(
       nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>>& aExpired);
 
-  static StaticMonitor sMonitor MOZ_UNANNOTATED;
+  static StaticMutex sMutex MOZ_UNANNOTATED;
 
   static StaticAutoPtr<SharedSurfacesParent> sInstance;
 
@@ -100,28 +100,28 @@ class SharedSurfacesParent final {
 
   class MappingTracker final
       : public ExpirationTrackerImpl<gfx::SourceSurfaceSharedDataWrapper, 4,
-                                     StaticMonitor, StaticMonitorAutoLock> {
+                                     StaticMutex, StaticMutexAutoLock> {
    public:
     explicit MappingTracker(uint32_t aExpirationTimeoutMS,
                             nsIEventTarget* aEventTarget)
         : ExpirationTrackerImpl<gfx::SourceSurfaceSharedDataWrapper, 4,
-                                StaticMonitor, StaticMonitorAutoLock>(
+                                StaticMutex, StaticMutexAutoLock>(
               aExpirationTimeoutMS, "SharedMappingTracker", aEventTarget) {}
 
     void TakeExpired(
         nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>>& aExpired,
-        const StaticMonitorAutoLock& aAutoLock);
+        const StaticMutexAutoLock& aAutoLock);
 
    protected:
     void NotifyExpiredLocked(gfx::SourceSurfaceSharedDataWrapper* aSurface,
-                             const StaticMonitorAutoLock& aAutoLock) override;
+                             const StaticMutexAutoLock& aAutoLock) override;
 
-    void NotifyHandlerEndLocked(
-        const StaticMonitorAutoLock& aAutoLock) override {}
+    void NotifyHandlerEndLocked(const StaticMutexAutoLock& aAutoLock) override {
+    }
 
     void NotifyHandlerEnd() override;
 
-    StaticMonitor& GetMutex() override { return sMonitor; }
+    StaticMutex& GetMutex() override { return sMutex; }
 
     nsTArray<RefPtr<gfx::SourceSurfaceSharedDataWrapper>> mExpired;
   };
