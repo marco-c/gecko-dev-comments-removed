@@ -886,6 +886,14 @@ var gPrivacyPane = {
     }
   },
 
+  initWebAuthn() {
+    document.getElementById("openWindowsPasskeySettings").hidden =
+      !Services.prefs.getBoolPref(
+        "security.webauthn.show_ms_settings_link",
+        true
+      );
+  },
+
   
 
 
@@ -1195,6 +1203,8 @@ var gPrivacyPane = {
     this.initHttpsOnly();
 
     this.initDoH();
+
+    this.initWebAuthn();
 
     
     Services.obs.notifyObservers(window, "privacy-pane-loaded");
