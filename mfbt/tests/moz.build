@@ -80,6 +80,13 @@ if CONFIG["OS_ARCH"] != "WASI":
         ]
     )
 
+if CONFIG["OS_ARCH"] == "WINNT":
+    CppUnitTests(
+        [
+            "TestWinArchDefs",
+        ]
+    )
+
 
 
 
