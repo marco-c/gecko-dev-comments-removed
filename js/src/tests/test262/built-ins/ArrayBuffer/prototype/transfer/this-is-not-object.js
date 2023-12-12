@@ -12,7 +12,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.transfer, "function");
 
 assert.throws(TypeError, function() {

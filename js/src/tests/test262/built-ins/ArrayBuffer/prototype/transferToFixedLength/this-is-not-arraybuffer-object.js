@@ -13,7 +13,6 @@
 
 
 
-
 assert.sameValue(typeof ArrayBuffer.prototype.transferToFixedLength, 'function');
 
 assert.throws(TypeError, function() {

@@ -15,7 +15,6 @@
 
 
 
-
 assert(!isConstructor(ArrayBuffer.prototype.transferToFixedLength), "ArrayBuffer.prototype.transferToFixedLength is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);

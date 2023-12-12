@@ -15,7 +15,6 @@
 
 
 
-
 assert(!isConstructor(ArrayBuffer.prototype.transfer), "ArrayBuffer.prototype.transfer is not a constructor");
 
 var arrayBuffer = new ArrayBuffer(8);

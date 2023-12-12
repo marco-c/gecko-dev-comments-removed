@@ -12,7 +12,6 @@
 
 
 
-
 var getter = Object.getOwnPropertyDescriptor(
   ArrayBuffer.prototype, "detached"
 ).get;

@@ -22,7 +22,6 @@
 
 
 
-
 verifyProperty(ArrayBuffer.prototype.transferToFixedLength, 'length', {
   value: 0,
   enumerable: false,

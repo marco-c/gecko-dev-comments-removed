@@ -40,7 +40,6 @@ FEATURE_CHECK_NEEDED = {
     "WeakRef": "!this.hasOwnProperty('WeakRef')",
     "decorators": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('decorators'))",  
     "iterator-helpers": "!this.hasOwnProperty('Iterator')",  
-    "arraybuffer-transfer": "!ArrayBuffer.prototype.transfer",  
     "symbols-as-weakmap-keys": "!(this.hasOwnProperty('getBuildConfiguration')&&!getBuildConfiguration('release_or_beta'))",
 }
 RELEASE_OR_BETA = set([])
@@ -48,7 +47,6 @@ SHELL_OPTIONS = {
     "import-assertions": "--enable-import-assertions",
     "ShadowRealm": "--enable-shadow-realms",
     "iterator-helpers": "--enable-iterator-helpers",
-    "arraybuffer-transfer": "--enable-arraybuffer-transfer",
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
 }
 

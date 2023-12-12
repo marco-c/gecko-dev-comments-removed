@@ -1,5 +1,3 @@
-
-
 load(libdir + "asm.js");
 
 function module(stdlib, foreign, buffer) {
@@ -8,7 +6,7 @@ function module(stdlib, foreign, buffer) {
   var i32 = new stdlib.Int32Array(buffer);
 
   function zero() {
-    return i32[0]|0;
+    return i32[0] | 0;
   }
   return zero;
 }

@@ -1,5 +1,3 @@
-
-
 const byteLengths = [
   
   0, 1, 4, 16, 32, 64, 96,
@@ -179,7 +177,7 @@ if (getBuildConfiguration("mapped-array-buffer")) {
 
 
 {
-  let g = newGlobal({newCompartment: true});
+  let g = newGlobal({ newCompartment: true });
 
   let byteLengthGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "byteLength").get;
   let detachedGetter = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, "detached").get;

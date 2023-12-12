@@ -14,7 +14,6 @@
 
 
 
-
 assert.throws(TypeError, function() {
   ArrayBuffer.prototype.detached;
 });

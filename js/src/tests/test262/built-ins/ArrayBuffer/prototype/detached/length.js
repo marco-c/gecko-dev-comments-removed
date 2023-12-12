@@ -23,7 +23,6 @@
 
 
 
-
 var desc = Object.getOwnPropertyDescriptor(ArrayBuffer.prototype, 'detached');
 
 verifyProperty(desc.get, 'length', {

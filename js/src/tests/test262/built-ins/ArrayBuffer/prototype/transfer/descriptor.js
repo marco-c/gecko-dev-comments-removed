@@ -15,7 +15,6 @@
 
 
 
-
 verifyProperty(ArrayBuffer.prototype, 'transfer', {
   enumerable: false,
   writable: true,

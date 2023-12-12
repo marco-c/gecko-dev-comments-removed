@@ -12,7 +12,6 @@
 
 
 
-
 assert(Object.isExtensible(ArrayBuffer.prototype.transferToFixedLength));
 
 reportCompare(0, 0);
