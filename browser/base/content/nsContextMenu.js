@@ -1154,18 +1154,10 @@ class nsContextMenu {
 
       
       let fillMenu = document.getElementById("fill-login");
-      if (onPasswordLikeField) {
-        document.l10n.setAttributes(
-          fillMenu,
-          "main-context-menu-use-saved-password"
-        );
-      } else {
-        
-        document.l10n.setAttributes(
-          fillMenu,
-          "main-context-menu-use-saved-login"
-        );
-      }
+      document.l10n.setAttributes(
+        fillMenu,
+        "main-context-menu-use-saved-password"
+      );
 
       let documentURI = this.contentData?.documentURIObject;
       let formOrigin = LoginHelper.getLoginOrigin(documentURI?.spec);
