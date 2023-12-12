@@ -5,6 +5,14 @@
 
 
 
+const {
+  FX_MONITOR_OAUTH_CLIENT_ID,
+  FX_RELAY_OAUTH_CLIENT_ID,
+  VPN_OAUTH_CLIENT_ID,
+} = ChromeUtils.importESModule(
+  "resource://gre/modules/FxAccountsCommon.sys.mjs"
+);
+
 const { UIState } = ChromeUtils.importESModule(
   "resource://services-sync/UIState.sys.mjs"
 );
@@ -348,6 +356,8 @@ var gSync = {
         "browser/appmenu.ftl",
         "browser/sync.ftl",
         "toolkit/branding/accounts.ftl",
+        
+        "preview/appmenu.ftl",
       ],
       true
     ));
@@ -405,6 +415,11 @@ var gSync = {
       this,
       "FXA_ENABLED",
       "identity.fxaccounts.enabled"
+    );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "PXI_TOOLBAR_ENABLED",
+      "identity.fxaccounts.toolbar.pxiToolbarEnabled"
     );
   },
 
@@ -492,6 +507,13 @@ var gSync = {
     fxaPanelView.addEventListener("ViewShowing", this);
     fxaPanelView.addEventListener("ViewHiding", this);
 
+    
+    
+    if (this.PXI_TOOLBAR_ENABLED) {
+      this.updateFxAPanel(UIState.get());
+      this.updateCTAPanel();
+    }
+
     this._initialized = true;
   },
 
@@ -535,6 +557,14 @@ var gSync = {
       "PanelUI-fxa-menu-sync-prefs-button"
     );
     syncPrefsButtonEl.hidden = !UIState.get().syncEnabled;
+
+    
+    
+    const signOutButtonEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-account-signout-button"
+    );
+    signOutButtonEl.hidden = !this.isSignedIn;
 
     panelview.syncedTabsPanelList = new SyncedTabsPanelList(
       panelview,
@@ -580,6 +610,7 @@ var gSync = {
     this.updateSyncButtonsTooltip(state);
     this.updateSyncStatus(state);
     this.updateFxAPanel(state);
+    this.updateCTAPanel(state);
     
     this.ensureFxaDevices();
   },
@@ -786,14 +817,28 @@ var gSync = {
           entrypoint_variation: fxaButtonVisibilityExperiment.branch.slug,
         };
       }
-
-      let panel =
-        anchor.id == "appMenu-fxa-label2"
-          ? PanelMultiView.getViewNode(document, "PanelUI-fxa")
-          : undefined;
-      this.openFxAEmailFirstPageFromFxaMenu(panel, extraParams);
-      PanelUI.hide();
+      
+      
+      
+      if (this.PXI_TOOLBAR_ENABLED) {
+        this.updateCTAPanel();
+        PanelUI.showSubView("PanelUI-fxa", anchor, aEvent);
+      } else {
+        let panel =
+          anchor.id == "appMenu-fxa-label2"
+            ? PanelMultiView.getViewNode(document, "PanelUI-fxa")
+            : undefined;
+        this.openFxAEmailFirstPageFromFxaMenu(panel, extraParams);
+        PanelUI.hide();
+      }
       return;
+    }
+    
+    
+    if (this.PXI_TOOLBAR_ENABLED) {
+      this.updateCTAPanel();
+    } else {
+      PanelUI.showSubView("PanelUI-fxa", anchor, aEvent);
     }
 
     if (!gFxaToolbarAccessed) {
@@ -856,19 +901,33 @@ var gSync = {
       "fxa-manage-account-button"
     );
 
+    const signedInContainer = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-signedin-panel"
+    );
+
     cadButtonEl.setAttribute("disabled", true);
     syncNowButtonEl.hidden = true;
+    signedInContainer.hidden = true;
     fxaMenuAccountButtonEl.classList.remove("subviewbutton-nav");
     fxaMenuAccountButtonEl.removeAttribute("closemenu");
     syncSetupButtonEl.removeAttribute("hidden");
 
-    let headerTitleL10nId = "appmenuitem-fxa-sign-in";
+    let headerTitleL10nId = this.PXI_TOOLBAR_ENABLED
+      ? "appmenuitem-moz-accounts-sign-in"
+      : "appmenuitem-fxa-sign-in";
     let headerDescription;
     if (state.status === UIState.STATUS_NOT_CONFIGURED) {
       mainWindowEl.style.removeProperty("--avatar-image-url");
       headerDescription = this.fluentStrings.formatValueSync(
         "appmenu-fxa-signed-in-label"
       );
+      
+      
+      
+      if (this.PXI_TOOLBAR_ENABLED) {
+        headerDescription = "";
+      }
     } else if (state.status === UIState.STATUS_LOGIN_FAILED) {
       stateValue = "login-failed";
       headerTitleL10nId = "account-disconnected2";
@@ -895,6 +954,8 @@ var gSync = {
           mainWindowEl.style.removeProperty("--avatar-image-url");
         };
         img.src = state.avatarURL;
+        signedInContainer.hidden = false;
+        menuHeaderDescriptionEl.hidden = false;
       } else {
         mainWindowEl.style.removeProperty("--avatar-image-url");
       }
@@ -917,6 +978,8 @@ var gSync = {
 
     menuHeaderTitleEl.value =
       this.fluentStrings.formatValueSync(headerTitleL10nId);
+    
+    menuHeaderDescriptionEl.hidden = !headerDescription;
     menuHeaderDescriptionEl.value = headerDescription;
     
     
@@ -1957,6 +2020,95 @@ var gSync = {
     for (const item of toHide) {
       item.hidden = true;
     }
+  },
+
+  
+  
+  updateCTAPanel() {
+    const mainPanelEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-pxi-cta-menu"
+    );
+
+    const syncCtaEl = PanelMultiView.getViewNode(
+      document,
+      "PanelUI-fxa-menu-sync-button"
+    );
+    
+    if (!this.PXI_TOOLBAR_ENABLED) {
+      
+      
+      mainPanelEl.hidden = true;
+      return;
+    }
+
+    
+    syncCtaEl.hidden = this.isSignedIn;
+
+    
+    mainPanelEl.hidden = false;
+  },
+  async openMonitorLink(panel) {
+    this.emitFxaToolbarTelemetry("monitor_cta", panel);
+    await this.openPXILink(
+      FX_MONITOR_OAUTH_CLIENT_ID,
+      new URL("https://monitor.firefox.com"),
+      new URL("https://monitor.firefox.com/user/breaches")
+    );
+  },
+
+  async openRelayLink(panel) {
+    this.emitFxaToolbarTelemetry("relay_cta", panel);
+    await this.openPXILink(
+      FX_RELAY_OAUTH_CLIENT_ID,
+      new URL("https://relay.firefox.com"),
+      new URL("https://relay.firefox.com/accounts/profile")
+    );
+  },
+
+  async openVPNLink(panel) {
+    this.emitFxaToolbarTelemetry("vpn_cta", panel);
+    await this.openPXILink(
+      VPN_OAUTH_CLIENT_ID,
+      new URL("https://www.mozilla.org/en-US/products/vpn/"),
+      new URL("https://www.mozilla.org/en-US/products/vpn/")
+    );
+  },
+
+  
+  async openPXILink(clientId, defaultUrl, signedInUrl) {
+    const params = {
+      utm_medium: "firefox-desktop",
+      utm_source: "toolbar",
+      utm_campaign: "discovery",
+    };
+    const pxiSearchParams = new URLSearchParams(params);
+
+    if (!this.isSignedIn) {
+      
+      defaultUrl.search = pxiSearchParams.toString();
+      defaultUrl.searchParams.append("utm_content", "notsignedin");
+      this.openLink(defaultUrl);
+      PanelUI.hide();
+      return;
+    }
+
+    
+    let attachedClients = await fxAccounts.listAttachedOAuthClients();
+    
+    let hasPXIClient = attachedClients.some(c => !!c.id && c.id === clientId);
+
+    const url = hasPXIClient ? signedInUrl : defaultUrl;
+    
+    url.search = pxiSearchParams.toString();
+    url.searchParams.append("utm_content", "signedIn");
+
+    this.openLink(url);
+    PanelUI.hide();
+  },
+
+  openLink(url) {
+    switchToTabHavingURI(url, true, { replaceQueryString: true });
   },
 
   QueryInterface: ChromeUtils.generateQI([
