@@ -7,6 +7,7 @@
 #include "PHCManager.h"
 
 #include "PHC.h"
+#include "mozilla/Literals.h"
 #include "mozilla/Preferences.h"
 #include "mozilla/StaticPrefs_memory.h"
 #include "mozilla/Telemetry.h"
@@ -16,29 +17,35 @@ namespace mozilla {
 
 using namespace phc;
 
-static const char kPHCPref[] = "memory.phc.enabled";
+static const char kPHCEnabledPref[] = "memory.phc.enabled";
+static const char kPHCMinRamMBPref[] = "memory.phc.min_ram_mb";
 
-static PHCState GetPHCStateFromPref() {
-  return StaticPrefs::memory_phc_enabled() ? Enabled : OnlyFree;
+static void UpdatePHCState() {
+  size_t mem_size = PR_GetPhysicalMemorySize() / (1_MiB);
+  size_t min_mem_size = StaticPrefs::memory_phc_min_ram_mb();
+
+  
+  
+  
+  
+  if (StaticPrefs::memory_phc_enabled() && mem_size >= min_mem_size) {
+    SetPHCState(Enabled);
+  } else {
+    SetPHCState(OnlyFree);
+  }
 }
 
 static void PrefChangeCallback(const char* aPrefName, void* aNull) {
-  MOZ_ASSERT(0 == strcmp(aPrefName, kPHCPref));
+  MOZ_ASSERT((0 == strcmp(aPrefName, kPHCEnabledPref)) ||
+             (0 == strcmp(aPrefName, kPHCMinRamMBPref)));
 
-  SetPHCState(GetPHCStateFromPref());
+  UpdatePHCState();
 }
 
 void InitPHCState() {
-  size_t memSize = PR_GetPhysicalMemorySize();
-  
-  
-  
-  
-  if (memSize >= size_t(8'000'000'000llu)) {
-    SetPHCState(GetPHCStateFromPref());
-
-    Preferences::RegisterCallback(PrefChangeCallback, kPHCPref);
-  }
+  Preferences::RegisterCallback(PrefChangeCallback, kPHCEnabledPref);
+  Preferences::RegisterCallback(PrefChangeCallback, kPHCMinRamMBPref);
+  UpdatePHCState();
 }
 
 void ReportPHCTelemetry() {
