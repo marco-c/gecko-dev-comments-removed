@@ -260,7 +260,7 @@ class ServoStyleSet {
   size_t SheetCount(Origin) const;
   StyleSheet* SheetAt(Origin, size_t aIndex) const;
 
-  struct PageSizeAndOrientation {
+  struct FirstPageSizeAndOrientation {
     Maybe<StylePageSizeOrientation> orientation;
     Maybe<nsSize> size;
   };
@@ -273,7 +273,8 @@ class ServoStyleSet {
   
   
   
-  PageSizeAndOrientation GetDefaultPageSizeAndOrientation();
+  FirstPageSizeAndOrientation GetFirstPageSizeAndOrientation(
+      const nsAtom* aFirstPageName);
 
   void AppendAllNonDocumentAuthorSheets(nsTArray<StyleSheet*>& aArray) const;
 
