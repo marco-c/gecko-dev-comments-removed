@@ -105,7 +105,7 @@ class Context final : public SafeRefCounted<Context>, public Stringifyable {
   
   
   
-  class Activity {
+  class Activity : public Stringifyable {
    public:
     virtual void Cancel() = 0;
     virtual bool MatchesCacheId(CacheId aCacheId) const = 0;
