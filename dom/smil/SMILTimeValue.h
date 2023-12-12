@@ -68,6 +68,8 @@ class SMILTimeValue {
     return value;
   }
 
+  static SMILTimeValue Zero() { return SMILTimeValue(SMILTime(0L)); }
+
   bool IsIndefinite() const { return mState == STATE_INDEFINITE; }
   void SetIndefinite() {
     mState = STATE_INDEFINITE;
@@ -88,10 +90,22 @@ class SMILTimeValue {
     return mState == STATE_DEFINITE ? mMilliseconds : kUnresolvedMillis;
   }
 
+  bool IsZero() const {
+    return mState == STATE_DEFINITE ? mMilliseconds == 0 : false;
+  }
+
   void SetMillis(SMILTime aMillis) {
     mState = STATE_DEFINITE;
     mMilliseconds = aMillis;
   }
+
+  
+
+
+
+  enum class Rounding : uint8_t { EnsureNonZero, Nearest };
+
+  void SetMillis(double aMillis, Rounding aRounding);
 
   int8_t CompareTo(const SMILTimeValue& aOther) const;
 
