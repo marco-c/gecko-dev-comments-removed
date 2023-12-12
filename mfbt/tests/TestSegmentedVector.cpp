@@ -35,6 +35,17 @@ class InfallibleAllocPolicy {
   }
 };
 
+template <typename Vector>
+void CheckContents(Vector& vector, size_t expectedLength) {
+  MOZ_RELEASE_ASSERT(vector.Length() == expectedLength);
+  size_t n = 0;
+  for (auto iter = vector.Iter(); !iter.Done(); iter.Next()) {
+    MOZ_RELEASE_ASSERT(iter.Get() == int(n));
+    n++;
+  }
+  MOZ_RELEASE_ASSERT(n == expectedLength);
+}
+
 
 
 
@@ -47,7 +58,7 @@ void TestBasics() {
   
   typedef SegmentedVector<int, 1024, InfallibleAllocPolicy> MyVector;
   MyVector v;
-  int i, n;
+  int i;
 
   MOZ_RELEASE_ASSERT(v.IsEmpty());
 
@@ -57,28 +68,14 @@ void TestBasics() {
     gDummy = v.Append(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
-  MOZ_RELEASE_ASSERT(v.Length() == 100);
-
-  n = 0;
-  for (auto iter = v.Iter(); !iter.Done(); iter.Next()) {
-    MOZ_RELEASE_ASSERT(iter.Get() == n);
-    n++;
-  }
-  MOZ_RELEASE_ASSERT(n == 100);
+  CheckContents(v, 100);
 
   
   for (; i < 1000; i++) {
     v.InfallibleAppend(std::move(i));
   }
   MOZ_RELEASE_ASSERT(!v.IsEmpty());
-  MOZ_RELEASE_ASSERT(v.Length() == 1000);
-
-  n = 0;
-  for (auto iter = v.Iter(); !iter.Done(); iter.Next()) {
-    MOZ_RELEASE_ASSERT(iter.Get() == n);
-    n++;
-  }
-  MOZ_RELEASE_ASSERT(n == 1000);
+  CheckContents(v, 1000);
 
   
   MOZ_RELEASE_ASSERT(v.Length() == 1000);
@@ -112,12 +109,38 @@ void TestBasics() {
   MOZ_RELEASE_ASSERT(v.Length() == 700);
 
   
-  n = 0;
-  for (auto iter = v.Iter(); !iter.Done(); iter.Next()) {
-    MOZ_RELEASE_ASSERT(iter.Get() == n);
-    n++;
+  CheckContents(v, 700);
+}
+
+void TestMoveAndSwap() {
+  typedef SegmentedVector<int, 32, InfallibleAllocPolicy> MyVector;
+  MyVector v;
+
+  for (int i = 0; i < 100; i++) {
+    (void)v.Append(i);
   }
-  MOZ_RELEASE_ASSERT(n == 700);
+  MOZ_RELEASE_ASSERT(!v.IsEmpty());
+  CheckContents(v, 100);
+
+  
+  MyVector w(std::move(v));
+  CheckContents(w, 100);
+  MOZ_RELEASE_ASSERT(v.IsEmpty());
+
+  
+  v = std::move(w);
+  CheckContents(v, 100);
+  MOZ_RELEASE_ASSERT(w.IsEmpty());
+
+  
+  v = std::move(v);
+  CheckContents(v, 100);
+  MOZ_RELEASE_ASSERT(w.IsEmpty());
+
+  
+  std::swap(v, w);
+  CheckContents(w, 100);
+  MOZ_RELEASE_ASSERT(v.IsEmpty());
 }
 
 static size_t gNumDefaultCtors;
@@ -361,6 +384,7 @@ void TestIterator() {
 
 int main(void) {
   TestBasics();
+  TestMoveAndSwap();
   TestConstructorsAndDestructors();
   TestSegmentCapacitiesAndAlignments();
   TestIterator();
