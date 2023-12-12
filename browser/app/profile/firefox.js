@@ -1041,8 +1041,6 @@ pref("privacy.history.custom",              false);
 
 pref("privacy.sanitize.timeSpan", 1);
 
-pref("privacy.sanitize.useOldClearHistoryDialog", true);
-
 pref("privacy.panicButton.enabled",         true);
 
 
