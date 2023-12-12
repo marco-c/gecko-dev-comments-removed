@@ -1192,4 +1192,24 @@ impl crate::CommandEncoder<super::Api> for super::CommandEncoder {
             )
         };
     }
+
+    unsafe fn build_acceleration_structures<'a, T>(
+        &mut self,
+        _descriptor_count: u32,
+        _descriptors: T,
+    ) where
+        super::Api: 'a,
+        T: IntoIterator<Item = crate::BuildAccelerationStructureDescriptor<'a, super::Api>>,
+    {
+        
+        
+        todo!()
+    }
+
+    unsafe fn place_acceleration_structure_barrier(
+        &mut self,
+        _barriers: crate::AccelerationStructureBarrier,
+    ) {
+        todo!()
+    }
 }
