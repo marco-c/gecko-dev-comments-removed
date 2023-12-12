@@ -1,6 +1,10 @@
 
+if "self" not in globals():
+    self = None
 
-old = self._mach_context.post_dispatch_handler  
+
+
+old = self._mach_context.post_dispatch_handler
 
 
 def handler(context, handler, instance, result, start_time, end_time, depth, args):
@@ -9,4 +13,4 @@ def handler(context, handler, instance, result, start_time, end_time, depth, arg
     old(context, handler, instance, result, int(start_time), end_time, depth, args)
 
 
-self._mach_context.post_dispatch_handler = handler  
+self._mach_context.post_dispatch_handler = handler
