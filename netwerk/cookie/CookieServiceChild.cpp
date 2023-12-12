@@ -47,6 +47,7 @@ static StaticRefPtr<CookieServiceChild> gCookieChildService;
 already_AddRefed<CookieServiceChild> CookieServiceChild::GetSingleton() {
   if (!gCookieChildService) {
     gCookieChildService = new CookieServiceChild();
+    gCookieChildService->Init();
     ClearOnShutdown(&gCookieChildService);
   }
 
@@ -56,9 +57,11 @@ already_AddRefed<CookieServiceChild> CookieServiceChild::GetSingleton() {
 NS_IMPL_ISUPPORTS(CookieServiceChild, nsICookieService,
                   nsISupportsWeakReference)
 
-CookieServiceChild::CookieServiceChild() {
-  NS_ASSERTION(IsNeckoChild(), "not a child process");
+CookieServiceChild::CookieServiceChild() { NeckoChild::InitNeckoChild(); }
 
+CookieServiceChild::~CookieServiceChild() { gCookieChildService = nullptr; }
+
+void CookieServiceChild::Init() {
   auto* cc = static_cast<mozilla::dom::ContentChild*>(gNeckoChild->Manager());
   if (cc->IsShuttingDown()) {
     return;
@@ -67,8 +70,7 @@ CookieServiceChild::CookieServiceChild() {
   
   NS_ADDREF_THIS();
 
-  NeckoChild::InitNeckoChild();
-
+  
   
   gNeckoChild->SendPCookieServiceConstructor(this);
 
@@ -78,8 +80,6 @@ CookieServiceChild::CookieServiceChild() {
   mTLDService = do_GetService(NS_EFFECTIVETLDSERVICE_CONTRACTID);
   NS_ASSERTION(mTLDService, "couldn't get TLDService");
 }
-
-CookieServiceChild::~CookieServiceChild() { gCookieChildService = nullptr; }
 
 void CookieServiceChild::TrackCookieLoad(nsIChannel* aChannel) {
   if (!CanSend()) {

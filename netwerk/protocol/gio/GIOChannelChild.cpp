@@ -123,12 +123,14 @@ GIOChannelChild::AsyncOpen(nsIStreamListener* aListener) {
   
   SetupNeckoTarget();
 
-  gNeckoChild->SendPGIOChannelConstructor(
-      this, browserChild, IPC::SerializedLoadContext(this), openArgs);
-
   
   
   AddIPDLReference();
+
+  if (!gNeckoChild->SendPGIOChannelConstructor(
+          this, browserChild, IPC::SerializedLoadContext(this), openArgs)) {
+    return NS_ERROR_FAILURE;
+  }
 
   mIsPending = true;
   mWasOpened = true;

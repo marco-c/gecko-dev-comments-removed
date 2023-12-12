@@ -212,6 +212,10 @@ nsresult LocalStorageManager::GetStorageInternal(
     if (NS_WARN_IF(NS_FAILED(rv))) {
       return rv;
     }
+
+    if (!backgroundActor->CanSend()) {
+      return NS_ERROR_FAILURE;
+    }
 #endif
 
     
