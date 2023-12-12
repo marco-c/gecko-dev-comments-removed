@@ -44,8 +44,6 @@ add_setup(async function init() {
     prefs: [
       ["suggest.quicksuggest.nonsponsored", true],
       ["suggest.quicksuggest.sponsored", false],
-      ["suggest.mdn", true],
-      ["mdn.featureGate", true],
     ],
   });
 });
@@ -124,11 +122,6 @@ add_task(async function disableByLocalPref() {
 
 
 add_task(async function nimbus() {
-  
-  
-  
-  
-  UrlbarPrefs.clear("mdn.featureGate");
   const defaultPrefs = Services.prefs.getDefaultBranch("browser.urlbar.");
 
   const suggestion = REMOTE_SETTINGS_DATA[0].attachment[0];
