@@ -181,14 +181,14 @@ void nsIGlobalObject::ForEachGlobalTeardownObserver(
   
   
   AutoTArray<RefPtr<GlobalTeardownObserver>, 64> targetList;
-  for (const GlobalTeardownObserver* deth = mGlobalTeardownObservers.getFirst();
-       deth; deth = deth->getNext()) {
-    targetList.AppendElement(const_cast<GlobalTeardownObserver*>(deth));
+  for (const GlobalTeardownObserver* gto = mGlobalTeardownObservers.getFirst();
+       gto; gto = gto->getNext()) {
+    targetList.AppendElement(const_cast<GlobalTeardownObserver*>(gto));
   }
 
   
   bool done = false;
-  for (auto target : targetList) {
+  for (auto& target : targetList) {
     
     
     if (target->GetOwnerGlobal() != this) {
