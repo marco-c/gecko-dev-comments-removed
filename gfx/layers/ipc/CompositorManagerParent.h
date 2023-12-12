@@ -8,11 +8,11 @@
 #define MOZILLA_GFX_COMPOSITORMANAGERPARENT_H
 
 #include <map>
-#include <stdint.h>               
-#include "mozilla/Attributes.h"   
-#include "mozilla/StaticPtr.h"    
+#include <stdint.h>                 
+#include "mozilla/Attributes.h"     
+#include "mozilla/StaticPtr.h"      
 #include "mozilla/StaticMonitor.h"  
-#include "mozilla/RefPtr.h"       
+#include "mozilla/RefPtr.h"         
 #include "mozilla/dom/ipc/IdType.h"
 #include "mozilla/layers/PCompositorManagerParent.h"
 #include "nsTArray.h"  
