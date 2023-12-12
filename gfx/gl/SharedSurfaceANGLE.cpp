@@ -172,7 +172,8 @@ SharedSurface_ANGLEShareHandle::ToSurfaceDescriptor() {
   return Some(layers::SurfaceDescriptorD3D10(
       (WindowsHandle)mShareHandle,  Nothing(),
        0, format, mDesc.size, mDesc.colorSpace,
-      gfx::ColorRange::FULL,  true));
+      gfx::ColorRange::FULL,  true,
+       Nothing()));
 }
 
 
