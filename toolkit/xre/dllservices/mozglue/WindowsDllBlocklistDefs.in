@@ -343,10 +343,6 @@ BROWSER_PROCESS += [
     
     
     DllBlocklistEntry("UsrDNIeCertStore.dll", ALL_VERSIONS),
-
-    
-    DllBLocklistEntry("amf-wic-jpeg-decoder64.dll", ALL_VERSIONS),
-    DllBLocklistEntry("amf-wic-jpeg-decoder32.dll", ALL_VERSIONS),
 ]
 
 CHILD_PROCESSES += [
