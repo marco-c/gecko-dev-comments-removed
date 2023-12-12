@@ -11,6 +11,8 @@
 
 namespace mozilla {
 
+using PEMCreateEncoderPromise = PlatformEncoderModule::CreateEncoderPromise;
+
 class PEMFactory final {
  public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(PEMFactory)
@@ -22,17 +24,28 @@ class PEMFactory final {
   
   
   already_AddRefed<MediaDataEncoder> CreateEncoder(
-      const CreateEncoderParams& aParams, const bool aHardwareNotAllowed);
+      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue);
 
-  bool SupportsMimeType(const nsACString& aMimeType) const;
+  RefPtr<PlatformEncoderModule::CreateEncoderPromise> CreateEncoderAsync(
+      const EncoderConfig& aConfig, const RefPtr<TaskQueue>& aTaskQueue);
+
+  bool Supports(const EncoderConfig& aConfig) const;
+  bool SupportsCodec(CodecType aCodec) const;
 
  private:
+  RefPtr<PlatformEncoderModule::CreateEncoderPromise>
+  CheckAndMaybeCreateEncoder(const EncoderConfig& aConfig, uint32_t aIndex,
+                             const RefPtr<TaskQueue>& aTaskQueue);
+
+  RefPtr<PlatformEncoderModule::CreateEncoderPromise> CreateEncoderWithPEM(
+      PlatformEncoderModule* aPEM, const EncoderConfig& aConfig,
+      const RefPtr<TaskQueue>& aTaskQueue);
   virtual ~PEMFactory() = default;
   
   already_AddRefed<PlatformEncoderModule> FindPEM(
-      const TrackInfo& aTrackInfo) const;
+      const EncoderConfig& aConfig) const;
 
-  nsTArray<RefPtr<PlatformEncoderModule>> mModules;
+  nsTArray<RefPtr<PlatformEncoderModule>> mCurrentPEMs;
 };
 
 }  
