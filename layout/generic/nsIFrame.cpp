@@ -10665,8 +10665,7 @@ bool nsIFrame::IsFocusableDueToScrollFrame() {
   return true;
 }
 
-nsIFrame::Focusable nsIFrame::IsFocusable(bool aWithMouse,
-                                          bool aCheckVisibility) {
+Focusable nsIFrame::IsFocusable(bool aWithMouse, bool aCheckVisibility) {
   
   
   if (PresContext()->Type() == nsPresContext::eContext_PrintPreview) {
@@ -10691,16 +10690,23 @@ nsIFrame::Focusable nsIFrame::IsFocusable(bool aWithMouse,
     return {};
   }
 
-  int32_t tabIndex = -1;
-  if (ui.UserFocus() != StyleUserFocus::Ignore &&
-      ui.UserFocus() != StyleUserFocus::None) {
+  Focusable focusable;
+  if (auto* xul = nsXULElement::FromNode(mContent)) {
     
-    tabIndex = 0;
+    
+    
+    auto focusability = xul->GetXULFocusability(aWithMouse);
+    focusable.mFocusable = focusability.mForcedFocusable.valueOr(
+        ui.UserFocus() == StyleUserFocus::Normal);
+    if (focusable) {
+      focusable.mTabIndex = focusability.mForcedTabIndexIfFocusable.valueOr(0);
+    }
+  } else {
+    focusable = mContent->IsFocusableWithoutStyle(aWithMouse);
   }
 
-  if (mContent->IsFocusable(&tabIndex, aWithMouse)) {
-    
-    return {true, tabIndex};
+  if (focusable) {
+    return focusable;
   }
 
   
@@ -10708,7 +10714,10 @@ nsIFrame::Focusable nsIFrame::IsFocusable(bool aWithMouse,
     return {true, 0};
   }
 
-  return {false, tabIndex};
+  
+  
+  
+  return focusable;
 }
 
 

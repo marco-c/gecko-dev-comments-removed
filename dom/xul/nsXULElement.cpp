@@ -373,91 +373,57 @@ static bool IsNonList(mozilla::dom::NodeInfo* aNodeInfo) {
          !aNodeInfo->Equals(nsGkAtoms::richlistbox);
 }
 
-bool nsXULElement::IsFocusableInternal(int32_t* aTabIndex, bool aWithMouse) {
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-  bool shouldFocus = false;
-
+nsXULElement::XULFocusability nsXULElement::GetXULFocusability(
+    bool aWithMouse) {
 #ifdef XP_MACOSX
   
   
   
   if (aWithMouse && IsNonList(mNodeInfo) &&
       !EventStateManager::IsTopLevelRemoteTarget(this)) {
-    return false;
+    return XULFocusability::NeverFocusable();
   }
 #endif
 
+  XULFocusability result;
   nsCOMPtr<nsIDOMXULControlElement> xulControl = AsXULControl();
   if (xulControl) {
     
     bool disabled;
     xulControl->GetDisabled(&disabled);
     if (disabled) {
-      if (aTabIndex) *aTabIndex = -1;
-      return false;
+      return XULFocusability::NeverFocusable();
     }
-    shouldFocus = true;
+    result.mDefaultFocusable = true;
   }
-
-  if (aTabIndex) {
-    Maybe<int32_t> attrVal = GetTabIndexAttrValue();
-    if (attrVal.isSome()) {
-      
-      
-      shouldFocus = true;
-      *aTabIndex = attrVal.value();
-    } else {
-      
-      
-      shouldFocus = *aTabIndex >= 0;
-      if (shouldFocus) {
-        *aTabIndex = 0;
-      }
-    }
-
-    if (xulControl && shouldFocus && sTabFocusModelAppliesToXUL &&
-        !(sTabFocusModel & eTabFocus_formElementsMask)) {
-      
-      
-      
-      
-      
-      
-      
-      if (IsNonList(mNodeInfo)) {
-        *aTabIndex = -1;
-      }
-    }
+  if (Maybe<int32_t> attrVal = GetTabIndexAttrValue()) {
+    
+    
+    result.mDefaultFocusable = true;
+    result.mForcedFocusable.emplace(true);
+    result.mForcedTabIndexIfFocusable.emplace(attrVal.value());
   }
+  if (xulControl && sTabFocusModelAppliesToXUL &&
+      !(sTabFocusModel & eTabFocus_formElementsMask) && IsNonList(mNodeInfo)) {
+    
+    
+    
+    
+    
+    
+    
+    result.mForcedTabIndexIfFocusable = Some(-1);
+  }
+  return result;
+}
 
-  return shouldFocus;
+
+
+Focusable nsXULElement::IsFocusableWithoutStyle(bool aWithMouse) {
+  const auto focusability = GetXULFocusability(aWithMouse);
+  const bool focusable = focusability.mDefaultFocusable;
+  return {focusable,
+          focusable ? focusability.mForcedTabIndexIfFocusable.valueOr(-1) : -1};
 }
 
 bool nsXULElement::HasMenu() {
