@@ -34,7 +34,6 @@
 #include "nsAlgorithm.h"
 #include "nsDebug.h"
 #include "nsISupports.h"
-#include "nsQuickSort.h"
 #include "nsRegionFwd.h"
 #include "nsTArrayForwardDeclare.h"
 
@@ -967,10 +966,13 @@ struct CompareWrapper<T, U, false> {
 
   template <typename A, typename B>
   int Compare(A& aLeft, B& aRight) const {
+    if (LessThan(aLeft, aRight)) {
+      return -1;
+    }
     if (Equals(aLeft, aRight)) {
       return 0;
     }
-    return LessThan(aLeft, aRight) ? -1 : 1;
+    return 1;
   }
 
   template <typename A, typename B>
@@ -2366,23 +2368,20 @@ class nsTArray_Impl
   
   
   
-  template <class Comparator>
-  static int Compare(const void* aE1, const void* aE2, void* aData) {
-    const Comparator* c = reinterpret_cast<const Comparator*>(aData);
-    const value_type* a = static_cast<const value_type*>(aE1);
-    const value_type* b = static_cast<const value_type*>(aE2);
-    return c->Compare(*a, *b);
-  }
-
+  
+  
   
   
   
   template <class Comparator>
   void Sort(const Comparator& aComp) {
-    ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
+    static_assert(std::is_move_assignable_v<value_type>);
+    static_assert(std::is_move_constructible_v<value_type>);
 
-    NS_QuickSort(Elements(), Length(), sizeof(value_type),
-                 Compare<decltype(comp)>, &comp);
+    ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
+    std::sort(begin(), end(), [&comp](const auto& left, const auto& right) {
+      return comp.LessThan(left, right);
+    });
   }
 
   
@@ -2394,10 +2393,16 @@ class nsTArray_Impl
   
   
   
+  
+  
+  
+  
   template <class Comparator>
   void StableSort(const Comparator& aComp) {
-    const ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
+    static_assert(std::is_move_assignable_v<value_type>);
+    static_assert(std::is_move_constructible_v<value_type>);
 
+    const ::detail::CompareWrapper<Comparator, value_type> comp(aComp);
     std::stable_sort(Elements(), Elements() + Length(),
                      [&comp](const auto& lhs, const auto& rhs) {
                        return comp.LessThan(lhs, rhs);
