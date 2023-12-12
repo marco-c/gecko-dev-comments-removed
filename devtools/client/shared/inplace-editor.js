@@ -172,6 +172,10 @@ function isKeyIn(key, ...keys) {
 
 
 
+
+
+
+
 function editableField(options) {
   return editableItem(options, function (element, event) {
     if (!options.element.inplaceEditor) {
@@ -322,7 +326,7 @@ class InplaceEditor extends EventEmitter {
       );
     }
 
-    this.#createInput();
+    this.#createInput(options);
 
     
     this.originalDisplay = this.elt.style.display;
@@ -415,7 +419,16 @@ class InplaceEditor extends EventEmitter {
     return val;
   }
 
-  #createInput() {
+  
+
+
+
+
+
+
+
+
+  #createInput(options = {}) {
     this.input = this.doc.createElementNS(
       HTML_NS,
       this.multiline ? "textarea" : "input"
@@ -432,6 +445,12 @@ class InplaceEditor extends EventEmitter {
 
     this.input.classList.add("styleinspector-propertyeditor");
     this.input.value = this.initial;
+    if (options.inputAriaLabel) {
+      this.input.setAttribute("aria-label", options.inputAriaLabel);
+    } else if (options.inputAriaLabelledBy) {
+      this.input.setAttribute("aria-labelledby", options.inputAriaLabelledBy);
+    }
+
     if (!this.preserveTextStyles) {
       copyTextStyles(this.elt, this.input);
     }
