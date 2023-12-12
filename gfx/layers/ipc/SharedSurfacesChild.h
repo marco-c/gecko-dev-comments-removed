@@ -13,7 +13,6 @@
 #include "mozilla/RefPtr.h"                    
 #include "mozilla/StaticPtr.h"                 
 #include "mozilla/gfx/UserData.h"              
-#include "mozilla/layers/LayersSurfaces.h"     
 #include "mozilla/webrender/WebRenderTypes.h"  
 #include "nsTArray.h"                          
 #include "nsThreadUtils.h"                     
@@ -64,14 +63,6 @@ class SharedSurfacesChild {
 
 
   static nsresult Share(gfx::SourceSurface* aSurface, wr::ExternalImageId& aId);
-
-  
-
-
-
-
-  static nsresult Share(gfx::SourceSurface* aSurface,
-                        Maybe<SurfaceDescriptor>& aDesc);
 
   
 

@@ -206,8 +206,6 @@ void SharedSurfacesParent::RemoveAll(uint32_t aNamespace) {
     return;
   }
 
-  auto* renderThread = wr::RenderThread::Get();
-
   
   
   for (auto i = sInstance->mSurfaces.Iter(); !i.Done(); i.Next()) {
@@ -219,9 +217,8 @@ void SharedSurfacesParent::RemoveAll(uint32_t aNamespace) {
     if (surface->HasCreatorRef() &&
         surface->RemoveConsumer( true)) {
       RemoveTrackingLocked(surface, lock);
-      if (renderThread) {
-        renderThread->UnregisterExternalImage(wr::ToExternalImageId(i.Key()));
-      }
+      wr::RenderThread::Get()->UnregisterExternalImage(
+          wr::ToExternalImageId(i.Key()));
       i.Remove();
     }
   }
