@@ -250,6 +250,8 @@ let interfaceNamesInGlobalScope = [
   
   { name: "ClipboardEvent", insecureContext: true },
   
+  { name: "ClipboardItem", earlyBetaOrEarlier: true },
+  
   { name: "CloseEvent", insecureContext: true },
   
   { name: "Comment", insecureContext: true },
