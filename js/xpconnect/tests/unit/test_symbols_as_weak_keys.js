@@ -1,9 +1,12 @@
 
 
 
-
 function run_test()
 {
+  if (!Services.prefs.getBoolPref("javascript.options.experimental.symbols_as_weakmap_keys")) {
+    return;
+  }
+
   var strKey = new String("strKey");
   var symKey = Symbol("symKey");
 

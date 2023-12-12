@@ -1,6 +1,7 @@
 
 
 
+
 var m = new WeakMap;
 var sym = Symbol();
 m.set(sym, 0);
