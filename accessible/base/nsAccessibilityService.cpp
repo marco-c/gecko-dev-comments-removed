@@ -1409,7 +1409,8 @@ LocalAccessible* nsAccessibilityService::CreateAccessible(
     
     
     
-    if (content->IsHTMLElement() || content->IsMathMLElement()) {
+    if (content->IsHTMLElement() || content->IsMathMLElement() ||
+        content->IsSVGElement(nsGkAtoms::foreignObject)) {
       
       
       newAcc = new HyperTextAccessible(content, document);
