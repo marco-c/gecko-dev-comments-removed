@@ -5025,6 +5025,25 @@ bool CacheIRCompiler::emitObjectCreateResult(uint32_t templateObjectOffset) {
   return true;
 }
 
+bool CacheIRCompiler::emitObjectKeysResult(ObjOperandId objId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  AutoCallVM callvm(masm, this, allocator);
+  Register obj = allocator.useRegister(masm, objId);
+
+  
+  
+  {
+    callvm.prepare();
+    masm.Push(obj);
+
+    using Fn = JSObject* (*)(JSContext*, HandleObject);
+    callvm.call<Fn, jit::ObjectKeys>();
+  }
+
+  return true;
+}
+
 bool CacheIRCompiler::emitNewArrayFromLengthResult(
     uint32_t templateObjectOffset, Int32OperandId lengthId) {
   JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);

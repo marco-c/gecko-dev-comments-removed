@@ -830,6 +830,30 @@ bool MDefinition::hasOneDefUse() const {
   return hasOneDefUse;
 }
 
+bool MDefinition::hasOneLiveDefUse() const {
+  bool hasOneDefUse = false;
+  for (MUseIterator i(uses_.begin()); i != uses_.end(); i++) {
+    if (!(*i)->consumer()->isDefinition()) {
+      continue;
+    }
+
+    MDefinition* def = (*i)->consumer()->toDefinition();
+    if (def->isRecoveredOnBailout()) {
+      continue;
+    }
+
+    
+    if (hasOneDefUse) {
+      return false;
+    }
+
+    
+    hasOneDefUse = true;
+  }
+
+  return hasOneDefUse;
+}
+
 bool MDefinition::hasDefUses() const {
   for (MUseIterator i(uses_.begin()); i != uses_.end(); i++) {
     if ((*i)->consumer()->isDefinition()) {
@@ -6138,6 +6162,10 @@ AliasSet MSetInitializedLength::getAliasSet() const {
   return AliasSet::Store(AliasSet::ObjectFields);
 }
 
+AliasSet MObjectKeysLength::getAliasSet() const {
+  return AliasSet::Load(AliasSet::ObjectFields);
+}
+
 AliasSet MArrayLength::getAliasSet() const {
   return AliasSet::Load(AliasSet::ObjectFields);
 }
@@ -7206,6 +7234,112 @@ MInlineArgumentsSlice* MInlineArgumentsSlice::New(
   }
 
   return ins;
+}
+
+MDefinition* MArrayLength::foldsTo(TempAllocator& alloc) {
+  
+  
+  
+  
+  
+  MDefinition* elems = elements();
+  if (!elems->isElements()) {
+    return this;
+  }
+
+  MDefinition* guardshape = elems->toElements()->object();
+  if (!guardshape->isGuardShape()) {
+    return this;
+  }
+
+  
+  
+  
+  MDefinition* keys = guardshape->toGuardShape()->object();
+  if (!keys->isObjectKeys()) {
+    return this;
+  }
+
+  
+  
+  
+  
+  MDefinition* noproxy = keys->toObjectKeys()->object();
+  if (!noproxy->isGuardIsNotProxy()) {
+    
+    
+    
+    MOZ_RELEASE_ASSERT(GetObjectKnownClass(noproxy) != KnownClass::None);
+    MOZ_RELEASE_ASSERT(!GetObjectKnownJSClass(noproxy)->isProxyObject());
+  }
+
+  
+  
+  
+  if (!elems->hasOneLiveDefUse() || !guardshape->hasOneLiveDefUse() ||
+      !keys->hasOneLiveDefUse()) {
+    return this;
+  }
+
+  
+  
+  
+  
+  if (keys->toObjectKeys()->resumePoint() != block()->activeResumePoint(this)) {
+    return this;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  AliasSet enumKeysAliasSet = AliasSet::Load(AliasSet::Flag::ObjectFields);
+  for (auto* use : UsesIterator(keys)) {
+    if (!use->consumer()->isResumePoint()) {
+      
+      
+      continue;
+    }
+
+    MResumePoint* rp = use->consumer()->toResumePoint();
+    if (!rp->instruction()) {
+      
+      
+      
+      continue;
+    }
+
+    MInstruction* ins = rp->instruction();
+    if (ins == keys) {
+      continue;
+    }
+
+    
+    
+    AliasSet mightAlias = ins->getAliasSet() & enumKeysAliasSet;
+    if (!mightAlias.isNone()) {
+      return this;
+    }
+  }
+
+  
+  
+  setRecoveredOnBailout();
+  elems->setRecoveredOnBailout();
+  guardshape->replaceAllUsesWith(keys);
+  guardshape->block()->discard(guardshape->toGuardShape());
+  keys->setRecoveredOnBailout();
+
+  
+  
+  MObjectKeysLength* keysLength = MObjectKeysLength::New(alloc, noproxy);
+  keysLength->stealResumePoint(keys->toObjectKeys());
+
+  return keysLength;
 }
 
 MDefinition* MNormalizeSliceTerm::foldsTo(TempAllocator& alloc) {

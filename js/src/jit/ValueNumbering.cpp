@@ -755,9 +755,17 @@ bool ValueNumberer::visitDefinition(MDefinition* def) {
 
     
     if (isNewInstruction) {
-      
-      MOZ_ASSERT((def->isEffectful() && sim->isEffectful()) ||
-                 !sim->isEffectful());
+#ifdef DEBUG
+      if (sim->isObjectKeysLength() && def->isArrayLength()) {
+        
+        
+        
+      } else {
+        
+        
+        MOZ_ASSERT_IF(sim->isEffectful(), def->isEffectful());
+      }
+#endif
 
       
       

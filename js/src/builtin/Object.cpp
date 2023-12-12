@@ -1891,6 +1891,112 @@ end:
 
 
 
+
+
+
+
+
+static bool CountEnumerableOwnPropertiesNative(JSContext* cx, HandleObject obj,
+                                               int32_t& rval, bool* optimized) {
+  *optimized = false;
+
+  
+  
+  
+  
+  
+  if (!obj->is<NativeObject>() || obj->as<NativeObject>().isIndexed() ||
+      obj->getClass()->getNewEnumerate() || obj->is<StringObject>()) {
+    return true;
+  }
+
+#ifdef ENABLE_RECORD_TUPLE
+  
+  if (obj->is<TupleObject>() || obj->is<RecordObject>()) {
+    return true;
+  }
+#endif
+
+  Handle<NativeObject*> nobj = obj.as<NativeObject>();
+
+  
+  if (JSEnumerateOp enumerate = nobj->getClass()->getEnumerate()) {
+    if (!enumerate(cx, nobj)) {
+      return false;
+    }
+
+    
+    if (nobj->isIndexed()) {
+      return true;
+    }
+  }
+
+  *optimized = true;
+
+  int32_t num_properties = 0;
+
+  
+  Rooted<PropertyIteratorObject*> piter(cx,
+                                        LookupInShapeIteratorCache(cx, nobj));
+  if (piter) {
+    NativeIterator* ni = piter->getNativeIterator();
+    MOZ_ASSERT(ni->isReusable());
+
+    
+    if (!ni->mayHavePrototypeProperties()) {
+      rval = ni->numKeys();
+      return true;
+    }
+  }
+
+  for (uint32_t i = 0, len = nobj->getDenseInitializedLength(); i < len; i++) {
+    if (nobj->getDenseElement(i).isMagic(JS_ELEMENTS_HOLE)) {
+      continue;
+    }
+
+    num_properties += 1;
+  }
+
+  if (obj->is<TypedArrayObject>()) {
+    Handle<TypedArrayObject*> tobj = obj.as<TypedArrayObject>();
+    size_t len = tobj->length();
+
+    
+    
+    
+    
+    if (len > NativeObject::MAX_DENSE_ELEMENTS_COUNT) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    MOZ_ASSERT(num_properties == 0, "typed arrays cannot have dense elements");
+    num_properties = len;
+  }
+
+  
+  
+  
+  
+
+  if (nobj->hasEnumerableProperty()) {
+    for (ShapePropertyIter<AllowGC::NoGC> iter(obj.as<NativeObject>()->shape());
+         !iter.done(); iter++) {
+      jsid id = iter->key();
+      if (!iter->enumerable() || id.isSymbol()) {
+        continue;
+      }
+      MOZ_ASSERT(!id.isInt(), "Unexpected indexed property");
+      num_properties += 1;
+    }
+  }
+
+  rval = num_properties;
+  return true;
+}
+
+
+
 template <EnumerableOwnPropertiesKind kind>
 static bool EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args) {
   static_assert(kind == EnumerableOwnPropertiesKind::Values ||
@@ -2006,7 +2112,7 @@ static bool EnumerableOwnProperties(JSContext* cx, const JS::CallArgs& args) {
 
 
 
-static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
+bool js::obj_keys(JSContext* cx, unsigned argc, Value* vp) {
   AutoJSMethodProfilerEntry pseudoFrame(cx, "Object", "keys");
   CallArgs args = CallArgsFromVp(argc, vp);
 
@@ -2030,6 +2136,26 @@ static bool obj_keys(JSContext* cx, unsigned argc, Value* vp) {
 
   
   return GetOwnPropertyKeys(cx, obj, JSITER_OWNONLY, args.rval());
+}
+
+bool js::obj_keys_length(JSContext* cx, HandleObject obj, int32_t& length) {
+  bool optimized;
+  if (!CountEnumerableOwnPropertiesNative(cx, obj, length, &optimized)) {
+    return false;
+  }
+  if (optimized) {
+    return true;
+  }
+
+  
+  
+  RootedIdVector keys(cx);
+  if (!GetPropertyKeys(cx, obj, JSITER_OWNONLY, &keys)) {
+    return false;
+  }
+
+  length = keys.length();
+  return true;
 }
 
 
@@ -2331,7 +2457,7 @@ static const JSFunctionSpec object_static_methods[] = {
                       "ObjectGetOwnPropertyDescriptor", 2, 0),
     JS_SELF_HOSTED_FN("getOwnPropertyDescriptors",
                       "ObjectGetOwnPropertyDescriptors", 1, 0),
-    JS_FN("keys", obj_keys, 1, 0),
+    JS_INLINABLE_FN("keys", obj_keys, 1, 0, ObjectKeys),
     JS_FN("values", obj_values, 1, 0),
     JS_FN("entries", obj_entries, 1, 0),
     JS_INLINABLE_FN("is", obj_is, 2, 0, ObjectIs),

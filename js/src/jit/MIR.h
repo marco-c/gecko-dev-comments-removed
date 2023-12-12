@@ -778,6 +778,10 @@ class MDefinition : public MNode {
 
   
   
+  bool hasOneLiveDefUse() const;
+
+  
+  
   bool hasDefUses() const;
 
   

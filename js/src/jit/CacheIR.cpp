@@ -9131,6 +9131,53 @@ AttachDecision InlinableNativeIRGenerator::tryAttachObjectIsPrototypeOf() {
   return AttachDecision::Attach;
 }
 
+AttachDecision InlinableNativeIRGenerator::tryAttachObjectKeys() {
+  
+  if (argc_ != 1) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  if (!args_[0].isObject()) {
+    return AttachDecision::NoAction;
+  }
+  
+  
+  
+  
+  const JSClass* clasp = args_[0].toObject().getClass();
+  if (clasp->isProxyObject()) {
+    return AttachDecision::NoAction;
+  }
+
+  
+  
+  initializeInputOperand();
+
+  
+  emitNativeCalleeGuard();
+
+  
+  
+  
+  
+
+  
+  ValOperandId argId = writer.loadArgumentFixedSlot(ArgumentKind::Arg0, argc_);
+  ObjOperandId argObjId = writer.guardToObject(argId);
+
+  
+  writer.guardIsNotProxy(argObjId);
+
+  
+  writer.objectKeysResult(argObjId);
+
+  writer.returnFromIC();
+
+  trackAttached("ObjectKeys");
+  return AttachDecision::Attach;
+}
+
 AttachDecision InlinableNativeIRGenerator::tryAttachObjectToString() {
   
   if (argc_ != 0) {
@@ -11055,6 +11102,8 @@ AttachDecision InlinableNativeIRGenerator::tryAttachStub() {
       return tryAttachObjectIs();
     case InlinableNative::ObjectIsPrototypeOf:
       return tryAttachObjectIsPrototypeOf();
+    case InlinableNative::ObjectKeys:
+      return tryAttachObjectKeys();
     case InlinableNative::ObjectToString:
       return tryAttachObjectToString();
 

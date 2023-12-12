@@ -1797,6 +1797,13 @@ void MArrayBufferViewByteOffset::computeRange(TempAllocator& alloc) {
   }
 }
 
+void MObjectKeysLength::computeRange(TempAllocator& alloc) {
+  
+  
+  MOZ_ASSERT(type() == MIRType::Int32);
+  setRange(Range::NewUInt32Range(alloc, 0, NativeObject::MAX_SLOTS_COUNT));
+}
+
 void MTypedArrayElementSize::computeRange(TempAllocator& alloc) {
   constexpr auto MaxTypedArraySize = sizeof(double);
 
