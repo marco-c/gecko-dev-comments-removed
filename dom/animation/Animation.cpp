@@ -1098,6 +1098,7 @@ void Animation::UpdateRelevance() {
   if (wasRelevant && !mIsRelevant) {
     MutationObservers::NotifyAnimationRemoved(this);
   } else if (!wasRelevant && mIsRelevant) {
+    UpdateHiddenByContentVisibility();
     MutationObservers::NotifyAnimationAdded(this);
   }
 }
@@ -1963,9 +1964,14 @@ void Animation::UpdateHiddenByContentVisibility() {
   if (!target) {
     return;
   }
+  
+  
+  
+  bool hasOwningElement = IsMarkupAnimation(AsCSSAnimation()) ||
+                          IsMarkupAnimation(AsCSSTransition());
   if (auto* frame = target.mElement->GetPrimaryFrame()) {
     SetHiddenByContentVisibility(
-        frame->IsHiddenByContentVisibilityOnAnyAncestor());
+        hasOwningElement && frame->IsHiddenByContentVisibilityOnAnyAncestor());
   }
 }
 
