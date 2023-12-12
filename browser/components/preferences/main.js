@@ -423,15 +423,7 @@ var gMainPane = {
       NimbusFeatures.windowsLaunchOnLogin.recordExposureEvent({
         once: true,
       });
-      
-      
-      
-      if (
-        NimbusFeatures.windowsLaunchOnLogin.getVariable("enabled") &&
-        Cc["@mozilla.org/toolkit/profile-service;1"].getService(
-          Ci.nsIToolkitProfileService
-        ).startWithLastProfile
-      ) {
+      if (NimbusFeatures.windowsLaunchOnLogin.getVariable("enabled")) {
         document.getElementById("windowsLaunchOnLoginBox").hidden = false;
       }
     }
@@ -667,8 +659,17 @@ var gMainPane = {
         let launchOnLoginCheckbox = document.getElementById(
           "windowsLaunchOnLogin"
         );
-        launchOnLoginCheckbox.checked =
-          WindowsLaunchOnLogin.getLaunchOnLoginEnabled();
+        let registryName = WindowsLaunchOnLogin.getLaunchOnLoginRegistryName();
+        WindowsLaunchOnLogin.withLaunchOnLoginRegistryKey(async wrk => {
+          try {
+            
+            launchOnLoginCheckbox.checked = wrk.hasValue(registryName);
+          } catch (e) {
+            
+            console.error("Failed to open Windows registry", e);
+          }
+        });
+
         let approvedByWindows = WindowsLaunchOnLogin.getLaunchOnLoginApproved();
         launchOnLoginCheckbox.disabled = !approvedByWindows;
         document.getElementById("windowsLaunchOnLoginDisabledBox").hidden =
@@ -1634,7 +1635,7 @@ var gMainPane = {
     startupPref.value = newValue;
   },
 
-  async onWindowsLaunchOnLoginChange(event) {
+  onWindowsLaunchOnLoginChange(event) {
     if (AppConstants.platform !== "win") {
       return;
     }
@@ -1648,7 +1649,6 @@ var gMainPane = {
     } else {
       
       WindowsLaunchOnLogin.removeLaunchOnLoginRegistryKey();
-      await WindowsLaunchOnLogin.removeLaunchOnLoginShortcuts();
     }
   },
 
