@@ -214,7 +214,7 @@ struct SizeCollector {
 };
 
 struct MemWriter {
-  explicit MemWriter(char* aPtr) : mPtr(aPtr) {}
+  constexpr explicit MemWriter(char* aPtr) : mPtr(aPtr) {}
   void write(const char* aData, size_t aSize) {
     memcpy(mPtr, aData, aSize);
     mPtr += aSize;
@@ -223,8 +223,47 @@ struct MemWriter {
 };
 
 
+struct MemReader {
+  constexpr MemReader(char* aData, size_t aLen)
+      : mData(aData), mEnd(aData + aLen) {}
+  void read(char* s, std::streamsize n) {
+    if (n <= (mEnd - mData)) {
+      memcpy(s, mData, n);
+      mData += n;
+    } else {
+      
+      
+      SetIsBad();
+    }
+  }
+  bool eof() { return mData > mEnd; }
+  bool good() { return !eof(); }
+  void SetIsBad() { mData = mEnd + 1; }
 
-class EventRingBuffer {
+  char* mData;
+  char* mEnd;
+};
+
+class ContiguousBuffer {
+ public:
+  ContiguousBuffer(char* aStart, size_t aSize)
+      : mWriter(aStart), mEnd(aStart + aSize) {}
+
+  constexpr MOZ_IMPLICIT ContiguousBuffer(std::nullptr_t) : mWriter(nullptr) {}
+
+  MemWriter& Writer() { return mWriter; }
+
+  size_t SizeRemaining() { return mWriter.mPtr ? mEnd - mWriter.mPtr : 0; }
+
+  bool IsValid() { return !!mWriter.mPtr; }
+
+ private:
+  MemWriter mWriter;
+  char* mEnd = nullptr;
+};
+
+
+class ContiguousBufferStream {
  public:
   
 
@@ -237,56 +276,25 @@ class EventRingBuffer {
     SizeCollector size;
     WriteElement(size, aRecordedEvent->GetType());
     aRecordedEvent->Record(size);
-    if (size.mTotalSize > mAvailable) {
-      WaitForAndRecalculateAvailableSpace();
+    auto& buffer = GetContiguousBuffer(size.mTotalSize);
+    if (!buffer.IsValid()) {
+      return;
     }
-    if (size.mTotalSize <= mAvailable) {
-      MemWriter writer(mBufPos);
-      WriteElement(writer, aRecordedEvent->GetType());
-      aRecordedEvent->Record(writer);
-      UpdateWriteTotalsBy(size.mTotalSize);
-    } else {
-      WriteElement(*this, aRecordedEvent->GetType());
-      aRecordedEvent->Record(*this);
-    }
+
+    MOZ_ASSERT(size.mTotalSize <= buffer.SizeRemaining());
+
+    WriteElement(buffer.Writer(), aRecordedEvent->GetType());
+    aRecordedEvent->Record(buffer.Writer());
+    IncrementEventCount();
   }
-
-  
-
-
-
-
-
-  virtual void write(const char* const aData, const size_t aSize) = 0;
-
-  
-
-
-
-
-
-  virtual void read(char* const aOut, const size_t aSize) = 0;
-
-  virtual bool good() const = 0;
-
-  virtual void SetIsBad() = 0;
 
  protected:
   
 
 
+  virtual ContiguousBuffer& GetContiguousBuffer(size_t aSize) = 0;
 
-  virtual bool WaitForAndRecalculateAvailableSpace() = 0;
-
-  
-
-
-
-
-  virtual void UpdateWriteTotalsBy(uint32_t aCount) = 0;
-
-  char* mBufPos = nullptr;
-  uint32_t mAvailable = 0;
+  virtual void IncrementEventCount() = 0;
 };
 
 struct MemStream {
@@ -430,7 +438,7 @@ class RecordedEvent {
 
   virtual void RecordToStream(std::ostream& aStream) const = 0;
   virtual void RecordToStream(EventStream& aStream) const = 0;
-  virtual void RecordToStream(EventRingBuffer& aStream) const = 0;
+  virtual void RecordToStream(ContiguousBufferStream& aStream) const = 0;
   virtual void RecordToStream(MemStream& aStream) const = 0;
 
   virtual void OutputSimpleEventInfo(std::stringstream& aStringStream) const {}
@@ -460,8 +468,8 @@ class RecordedEvent {
   static bool DoWithEventFromStream(
       EventStream& aStream, EventType aType,
       const std::function<bool(RecordedEvent*)>& aAction);
-  static bool DoWithEventFromStream(
-      EventRingBuffer& aStream, EventType aType,
+  static bool DoWithEventFromReader(
+      MemReader& aReader, EventType aType,
       const std::function<bool(RecordedEvent*)>& aAction);
 
   EventType GetType() const { return (EventType)mType; }
@@ -495,7 +503,7 @@ class RecordedEventDerived : public RecordedEvent {
     WriteElement(aStream, this->mType);
     static_cast<const Derived*>(this)->Record(aStream);
   }
-  void RecordToStream(EventRingBuffer& aStream) const final {
+  void RecordToStream(ContiguousBufferStream& aStream) const final {
     aStream.RecordEvent(static_cast<const Derived*>(this));
   }
   void RecordToStream(MemStream& aStream) const override {

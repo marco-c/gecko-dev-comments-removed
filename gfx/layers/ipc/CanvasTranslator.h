@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "mozilla/gfx/InlineTranslator.h"
+#include "mozilla/gfx/RecordedEvent.h"
+#include "CanvasChild.h"
 #include "mozilla/layers/CanvasDrawEventRecorder.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/PCanvasParent.h"
@@ -19,6 +21,8 @@
 #include "mozilla/UniquePtr.h"
 
 namespace mozilla {
+
+using EventType = gfx::RecordedEvent::EventType;
 class TaskQueue;
 
 namespace layers {
@@ -59,33 +63,42 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
 
-  ipc::IPCResult RecvInitTranslator(
-      const TextureType& aTextureType,
-      ipc::SharedMemoryBasic::Handle&& aReadHandle,
-      CrossProcessSemaphoreHandle&& aReaderSem,
-      CrossProcessSemaphoreHandle&& aWriterSem, const bool& aUseIPDLThread);
+
+  ipc::IPCResult RecvInitTranslator(const TextureType& aTextureType,
+                                    Handle&& aReadHandle,
+                                    nsTArray<Handle>&& aBufferHandles,
+                                    uint64_t aBufferSize,
+                                    CrossProcessSemaphoreHandle&& aReaderSem,
+                                    CrossProcessSemaphoreHandle&& aWriterSem,
+                                    bool aUseIPDLThread);
 
   
 
 
-  ipc::IPCResult RecvNewBuffer(ipc::SharedMemoryBasic::Handle&& aReadHandle);
+  ipc::IPCResult RecvRestartTranslation();
 
   
 
 
 
-  ipc::IPCResult RecvResumeTranslation();
+  ipc::IPCResult RecvAddBuffer(Handle&& aBufferHandle, uint64_t aBufferSize);
+
+  
+
+
+  ipc::IPCResult RecvSetDataSurfaceBuffer(Handle&& aBufferHandle,
+                                          uint64_t aBufferSize);
 
   void ActorDestroy(ActorDestroyReason why) final;
 
+  void CheckAndSignalWriter();
+
   
 
 
 
 
-
-
-  bool TranslateRecording();
+  void TranslateRecording();
 
   
 
@@ -109,18 +122,6 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
   void DeviceChangeAcknowledged();
-
-  
-
-
-
-
-
-
-
-  void ReturnWrite(const char* aData, size_t aSize) {
-    mStream->ReturnWrite(aData, aSize);
-  }
 
   
 
@@ -155,6 +156,10 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 
 
   TextureData* LookupTextureData(int64_t aTextureId);
+
+  void CheckpointReached();
+
+  void PauseTranslation();
 
   
 
@@ -244,12 +249,24 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   UniquePtr<gfx::DataSourceSurface::ScopedMap> GetPreparedMap(
       gfx::ReferencePtr aSurface);
 
+  void RecycleBuffer();
+
+  void NextBuffer();
+
+  void GetDataSurface(uint64_t aSurfaceRef);
+
  private:
   ~CanvasTranslator();
 
-  void Bind(Endpoint<PCanvasParent>&& aEndpoint);
+  void AddBuffer(Handle&& aBufferHandle, size_t aBufferSize);
 
-  void StartTranslation();
+  void SetDataSurfaceBuffer(Handle&& aBufferHandle, size_t aBufferSize);
+
+  bool ReadNextEvent(EventType& aEventType);
+
+  bool HasPendingEvent();
+
+  bool ReadPendingEvent(EventType& aEventType);
 
   void FinishShutdown();
 
@@ -273,9 +290,30 @@ class CanvasTranslator final : public gfx::InlineTranslator,
 #if defined(XP_WIN)
   RefPtr<ID3D11Device> mDevice;
 #endif
-  
-  
-  UniquePtr<CanvasEventRingBuffer> mStream;
+
+  size_t mDefaultBufferSize;
+  uint32_t mMaxSpinCount;
+  TimeDuration mNextEventTimeout;
+
+  using State = CanvasDrawEventRecorder::State;
+  using Header = CanvasDrawEventRecorder::Header;
+
+  RefPtr<ipc::SharedMemoryBasic> mHeaderShmem;
+  Header* mHeader = nullptr;
+
+  struct CanvasShmem {
+    RefPtr<ipc::SharedMemoryBasic> shmem;
+    auto Size() { return shmem->Size(); }
+    gfx::MemReader CreateMemReader() {
+      return {static_cast<char*>(shmem->memory()), Size()};
+    }
+  };
+  std::queue<CanvasShmem> mCanvasShmems;
+  CanvasShmem mCurrentShmem;
+  gfx::MemReader mCurrentMemReader{0, 0};
+  RefPtr<ipc::SharedMemoryBasic> mDataSurfaceShmem;
+  UniquePtr<CrossProcessSemaphore> mWriterSemaphore;
+  UniquePtr<CrossProcessSemaphore> mReaderSemaphore;
   TextureType mTextureType = TextureType::Unknown;
   UniquePtr<TextureData> mReferenceTextureData;
   

@@ -12,8 +12,6 @@
 #include "mozilla/layers/PCanvasChild.h"
 #include "mozilla/layers/SourceSurfaceSharedData.h"
 #include "mozilla/WeakPtr.h"
-#include "nsRefPtrHashtable.h"
-#include "nsTArray.h"
 
 namespace mozilla {
 
@@ -38,7 +36,7 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
   
 
 
-  static void ClearCachedResources();
+  void ClearCachedResources();
 
   ipc::IPCResult RecvNotifyDeviceChanged();
 
@@ -49,12 +47,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
 
 
-  void EnsureRecorder(TextureType aTextureType);
-
-  
-
-
-  void ResumeTranslation();
+  void EnsureRecorder(gfx::IntSize aSize, gfx::SurfaceFormat aFormat,
+                      TextureType aTextureType);
 
   
 
@@ -111,6 +105,8 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
   void RecordEvent(const gfx::RecordedEvent& aEvent);
 
+  int64_t CreateCheckpoint();
+
   
 
 
@@ -139,18 +135,27 @@ class CanvasChild final : public PCanvasChild, public SupportsWeakPtr {
 
   ~CanvasChild() final;
 
+  bool EnsureDataSurfaceShmem(gfx::IntSize aSize, gfx::SurfaceFormat aFormat);
+
+  void ReturnDataSurfaceShmem(
+      already_AddRefed<ipc::SharedMemoryBasic> aDataSurfaceShmem);
+
+  void DropFreeBuffersWhenDormant();
+
   static const uint32_t kCacheDataSurfaceThreshold = 10;
 
   static bool mDeactivated;
-  static bool mInForeground;
 
   RefPtr<CanvasDrawEventRecorder> mRecorder;
-  TextureType mTextureType = TextureType::Unknown;
-  uint32_t mLastWriteLockCheckpoint = 0;
+
+  RefPtr<ipc::SharedMemoryBasic> mDataSurfaceShmem;
+  bool mDataSurfaceShmemAvailable = false;
+  int64_t mLastWriteLockCheckpoint = 0;
   uint32_t mTransactionsSinceGetDataSurface = kCacheDataSurfaceThreshold;
   std::vector<RefPtr<gfx::SourceSurface>> mLastTransactionExternalSurfaces;
   bool mIsInTransaction = false;
   bool mHasOutstandingWriteLock = false;
+  bool mDormant = false;
 };
 
 }  

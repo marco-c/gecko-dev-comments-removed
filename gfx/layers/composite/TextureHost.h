@@ -21,6 +21,7 @@
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/layers/CompositorTypes.h"  
 #include "mozilla/layers/LayersTypes.h"      
+#include "mozilla/layers/LayersMessages.h"
 #include "mozilla/layers/LayersSurfaces.h"
 #include "mozilla/layers/TextureSourceProvider.h"
 #include "mozilla/mozalloc.h"  
