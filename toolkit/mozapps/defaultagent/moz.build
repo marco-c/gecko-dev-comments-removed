@@ -86,6 +86,8 @@ XPCOM_MANIFESTS += [
     "components.conf",
 ]
 
+XPCSHELL_TESTS_MANIFESTS += ["tests/xpcshell/xpcshell.toml"]
+
 
 
 
