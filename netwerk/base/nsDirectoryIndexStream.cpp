@@ -35,7 +35,7 @@ nsDirectoryIndexStream::nsDirectoryIndexStream() {
   MOZ_LOG(gLog, LogLevel::Debug, ("nsDirectoryIndexStream[%p]: created", this));
 }
 
-static int compare(nsIFile* aElement1, nsIFile* aElement2, void* aData) {
+static int compare(nsIFile* aElement1, nsIFile* aElement2) {
   if (!NS_IsNativeUTF8()) {
     
     nsAutoString name1, name2;
@@ -93,7 +93,7 @@ nsresult nsDirectoryIndexStream::Init(nsIFile* aDir) {
     mArray.AppendObject(file);  
   }
 
-  mArray.Sort(compare, nullptr);
+  mArray.Sort(compare);
 
   mBuf.AppendLiteral("300: ");
   nsAutoCString url;
