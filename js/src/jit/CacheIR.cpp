@@ -13267,10 +13267,11 @@ static gc::AllocSite* MaybeCreateAllocSite(jsbytecode* pc,
   MOZ_ASSERT(BytecodeOpCanHaveAllocSite(JSOp(*pc)));
 
   JSScript* outerScript = frame->outerScript();
-  bool inInterpreter = frame->runningInInterpreter();
+  bool hasBaselineScript = outerScript->hasBaselineScript();
   bool isInlined = frame->icScript()->isInlined();
 
-  if (inInterpreter && !isInlined) {
+  if (!hasBaselineScript && !isInlined) {
+    MOZ_ASSERT(frame->runningInInterpreter());
     return outerScript->zone()->unknownAllocSite(JS::TraceKind::Object);
   }
 
