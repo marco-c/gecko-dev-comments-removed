@@ -1384,8 +1384,8 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
       }
     }
 
-    const ServoStyleSet::FirstPageSizeAndOrientation sizeAndOrientation =
-        presShell->StyleSet()->GetFirstPageSizeAndOrientation(firstPageName);
+    const ServoStyleSet::PageSizeAndOrientation sizeAndOrientation =
+        presShell->StyleSet()->GetDefaultPageSizeAndOrientation();
     
     
     if (mPrintSettings->GetOutputFormat() ==
