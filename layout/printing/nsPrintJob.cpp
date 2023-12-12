@@ -1374,18 +1374,8 @@ nsresult nsPrintJob::ReflowPrintObject(const UniquePtr<nsPrintObject>& aPO) {
 
   RefPtr<PresShell> presShell = aPO->mPresShell;
   {
-    
-    
-    
-    const nsAtom* firstPageName = nsGkAtoms::_empty;
-    if (const Element* const rootElement = aPO->mDocument->GetRootElement()) {
-      if (const nsIFrame* const rootFrame = rootElement->GetPrimaryFrame()) {
-        firstPageName = rootFrame->ComputePageValue();
-      }
-    }
-
-    const ServoStyleSet::FirstPageSizeAndOrientation sizeAndOrientation =
-        presShell->StyleSet()->GetFirstPageSizeAndOrientation(firstPageName);
+    const ServoStyleSet::PageSizeAndOrientation sizeAndOrientation =
+        presShell->StyleSet()->GetDefaultPageSizeAndOrientation();
     
     
     if (mPrintSettings->GetOutputFormat() ==
