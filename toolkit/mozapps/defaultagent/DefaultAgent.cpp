@@ -319,7 +319,7 @@ DefaultAgent::DoTask(const nsAString& aUniqueToken, const bool aForce) {
   
   RegistryMutex regMutex;
   if (!regMutex.Acquire()) {
-    return NS_ERROR_FAILURE;
+    return NS_ERROR_NOT_AVAILABLE;
   }
 
   
