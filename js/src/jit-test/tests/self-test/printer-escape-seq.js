@@ -1,0 +1,5 @@
+
+
+
+
+assertEq(disassemble("'\xAF'").includes("FFAF"), false);
