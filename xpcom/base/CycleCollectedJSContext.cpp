@@ -281,10 +281,49 @@ class CycleCollectedJSContext::SavedMicroTaskQueue
   }
 
   ~SavedMicroTaskQueue() {
-    MOZ_RELEASE_ASSERT(ccjs->mPendingMicroTaskRunnables.empty());
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_RELEASE_ASSERT(ccjs->mPendingMicroTaskRunnables.size() <= 1);
     MOZ_RELEASE_ASSERT(ccjs->mDebuggerRecursionDepth);
+    RefPtr<MicroTaskRunnable> maybeSuppressedTasks;
+
+    
+    if (!ccjs->mPendingMicroTaskRunnables.empty()) {
+      maybeSuppressedTasks = ccjs->mPendingMicroTaskRunnables.front();
+      ccjs->mPendingMicroTaskRunnables.pop_front();
+    }
+
+    MOZ_RELEASE_ASSERT(ccjs->mPendingMicroTaskRunnables.empty());
     ccjs->mDebuggerRecursionDepth--;
     ccjs->mPendingMicroTaskRunnables.swap(mQueue);
+
+    
+    
+    if (maybeSuppressedTasks) {
+      ccjs->mPendingMicroTaskRunnables.push_back(maybeSuppressedTasks);
+    }
   }
 
  private:
