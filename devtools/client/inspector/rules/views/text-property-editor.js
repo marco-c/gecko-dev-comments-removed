@@ -41,6 +41,10 @@ loader.lazyRequireGetter(
   "resource://devtools/shared/inspector/css-logic.js",
   true
 );
+loader.lazyGetter(this, "PROPERTY_NAME_INPUT_LABEL", function () {
+  return l10n("rule.propertyName.label");
+});
+
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
   AppConstants: "resource://gre/modules/AppConstants.sys.mjs",
@@ -327,6 +331,7 @@ TextPropertyEditor.prototype = {
         
         
         stopOnReturn: true,
+        inputAriaLabel: PROPERTY_NAME_INPUT_LABEL,
       });
 
       
@@ -428,6 +433,9 @@ TextPropertyEditor.prototype = {
         
         
         stopOnReturn: true,
+        
+        
+        inputAriaLabelledBy: this.nameSpan.id,
       });
     }
   },
