@@ -497,6 +497,7 @@ module.exports = {
       
       extends: ["plugin:react-hooks/recommended"],
       files: [
+        "browser/components/aboutwelcome/**",
         "browser/components/newtab/**",
         "browser/components/pocket/**",
         "devtools/**",
