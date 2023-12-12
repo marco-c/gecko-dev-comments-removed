@@ -1921,6 +1921,9 @@ pref("browser.translation.neverForLanguages", "");
 pref("browser.translations.enable", true);
 
 
+pref("browser.translations.select.enable", false);
+
+
 
 pref("toolkit.telemetry.archive.enabled", true);
 
