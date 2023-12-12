@@ -8,9 +8,15 @@
 
 const TEST_URI = `
   <style type='text/css'>
+    html, body {
+      margin: 0;
+      padding: 0;
+    }
+
     #shape {
       width: 800px;
       height: 800px;
+      background: tomato;
       clip-path: circle(25%);
     }
   </style>
@@ -21,7 +27,7 @@ const HIGHLIGHTER_TYPE = "ShapesHighlighter";
 
 add_task(async function () {
   await addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
-  const { inspector, view } = await openRuleView();
+  const { inspector, view, highlighterTestFront } = await openRuleView();
   const highlighters = view.highlighters;
 
   info("Select a node with a shape value");
@@ -61,6 +67,58 @@ add_task(async function () {
     "CSS shapes highlighter created in the rule-view."
   );
   ok(highlighters.shapesHighlighterShown, "CSS shapes highlighter is shown.");
+
+  const helper = await getHighlighterHelperFor(HIGHLIGHTER_TYPE)({
+    inspector,
+    highlighterTestFront,
+  });
+
+  info("Update shape");
+  const { mouse } = helper;
+
+  let onRuleViewChanged = view.once("ruleview-changed");
+  
+  
+  await mouse.down(600, 400);
+  
+  await mouse.move(800, 400);
+  await mouse.up();
+  await reflowContentPage();
+  await onRuleViewChanged;
+  let newValue = getRuleViewPropertyValue(view, "#shape", "clip-path");
+  is(
+    newValue,
+    `circle(50.00%)`,
+    "clip-path property was updated when changing the radius"
+  );
+
+  onRuleViewChanged = view.once("ruleview-changed");
+  
+  await mouse.down(400, 400);
+  await mouse.move(200, 400);
+  await mouse.up();
+  await reflowContentPage();
+  await onRuleViewChanged;
+  newValue = getRuleViewPropertyValue(view, "#shape", "clip-path");
+  is(
+    newValue,
+    `circle(50% at 200px 400px)`,
+    "clip-path property was updated (position was added) when moving the shape"
+  );
+
+  onRuleViewChanged = view.once("ruleview-changed");
+  
+  await mouse.down(600, 400);
+  await mouse.move(400, 400);
+  await mouse.up();
+  await reflowContentPage();
+  await onRuleViewChanged;
+  newValue = getRuleViewPropertyValue(view, "#shape", "clip-path");
+  is(
+    newValue,
+    `circle(25.00% at 200px 400px)`,
+    "clip-path property (with position) was updated when changing the radius"
+  );
 
   info("Toggling OFF the CSS shapes highlighter from the rule-view.");
   const onHighlighterHidden = highlighters.once("shapes-highlighter-hidden");
