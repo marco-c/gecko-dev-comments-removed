@@ -157,8 +157,9 @@ static FilePathResult GetPingFilePath(std::wstring& uuid) {
 static mozilla::WindowsError SendDesktopTelemetryPing(
     const std::string defaultBrowser, const std::string previousDefaultBrowser,
     const std::string defaultPdf, const std::string osVersion,
-    const std::string osLocale, const std::string notificationType,
-    const std::string notificationShown, const std::string notificationAction,
+    const std::string prevOSVersion, const std::string osLocale,
+    const std::string notificationType, const std::string notificationShown,
+    const std::string notificationAction,
     const std::string prevNotificationAction) {
   
   Json::Value ping;
@@ -168,6 +169,7 @@ static mozilla::WindowsError SendDesktopTelemetryPing(
   ping["previous_default_browser"] = previousDefaultBrowser;
   ping["default_pdf_viewer_raw"] = defaultPdf;
   ping["os_version"] = osVersion;
+  ping["previous_os_version"] = prevOSVersion;
   ping["os_locale"] = osLocale;
   ping["notification_type"] = notificationType;
   ping["notification_shown"] = notificationShown;
@@ -310,6 +312,36 @@ static TelemetryFieldResult GetAndUpdatePreviousDefaultBrowser(
     return TelemetryFieldResult(mozilla::WindowsError::FromHResult(hr));
   }
   return oldCurrentDefault;
+}
+
+
+
+
+
+
+
+static TelemetryFieldResult GetAndUpdatePreviousOSVersion(
+    const std::string& currentOSVersion) {
+  const wchar_t* registryValueName = L"PingCurrentOSVersion";
+
+  MaybeStringResult readResult =
+      RegistryGetValueString(IsPrefixed::Unprefixed, registryValueName);
+  if (readResult.isErr()) {
+    HRESULT hr = readResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to read registry: %#X", hr);
+    return TelemetryFieldResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  mozilla::Maybe<std::string> maybeValue = readResult.unwrap();
+  std::string oldOSVersion = maybeValue.valueOr(currentOSVersion);
+
+  mozilla::WindowsErrorResult<mozilla::Ok> writeResult = RegistrySetValueString(
+      IsPrefixed::Unprefixed, registryValueName, currentOSVersion.c_str());
+  if (writeResult.isErr()) {
+    HRESULT hr = writeResult.unwrapErr().AsHResult();
+    LOG_ERROR_MESSAGE(L"Unable to write registry: %#X", hr);
+    return TelemetryFieldResult(mozilla::WindowsError::FromHResult(hr));
+  }
+  return oldOSVersion;
 }
 
 
@@ -505,6 +537,19 @@ HRESULT SendDefaultAgentPing(
     
     
     
+    
+    TelemetryFieldResult previousOSVersionResult =
+        GetAndUpdatePreviousOSVersion(osVersion);
+    if (previousOSVersionResult.isErr()) {
+      return previousOSVersionResult.unwrapErr().AsHResult();
+    }
+    std::string prevOSVersion = previousOSVersionResult.unwrap();
+
+    mozilla::glean::system::os_version.Set(
+        nsDependentCString(osVersion.c_str()));
+    mozilla::glean::system::previous_os_version.Set(
+        nsDependentCString(prevOSVersion.c_str()));
+
     TelemetryFieldResult previousDefaultBrowserResult =
         GetAndUpdatePreviousDefaultBrowser(currentDefaultBrowser,
                                            browserInfo.previousDefaultBrowser);
@@ -522,8 +567,8 @@ HRESULT SendDefaultAgentPing(
 
     return SendDesktopTelemetryPing(
                currentDefaultBrowser, previousDefaultBrowser, currentDefaultPdf,
-               osVersion, osLocale, notificationType, notificationShown,
-               notificationAction, prevNotificationAction)
+               osVersion, prevOSVersion, osLocale, notificationType,
+               notificationShown, notificationAction, prevNotificationAction)
         .AsHResult();
   }();
 
