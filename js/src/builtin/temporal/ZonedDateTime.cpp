@@ -572,6 +572,96 @@ ZonedDateTimeObject* js::temporal::CreateTemporalZonedDateTime(
   return obj;
 }
 
+struct PlainDateTimeAndInstant {
+  PlainDateTime dateTime;
+  Instant instant;
+};
+
+
+
+
+
+static bool AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
+                                   const PlainDateTime& dateTime,
+                                   Handle<TimeZoneValue> timeZone,
+                                   Handle<CalendarValue> calendar, double days,
+                                   TemporalOverflow overflow,
+                                   PlainDateTimeAndInstant* result) {
+  
+
+  
+
+  
+  if (days == 0) {
+    *result = {dateTime, instant};
+    return true;
+  }
+
+  
+  PlainDate addedDate;
+  if (!AddISODate(cx, dateTime.date, {0, 0, 0, days}, overflow, &addedDate)) {
+    return false;
+  }
+
+  
+
+  
+  Rooted<PlainDateTimeObject*> dateTimeResult(
+      cx, CreateTemporalDateTime(cx, {addedDate, dateTime.time}, calendar));
+  if (!dateTimeResult) {
+    return false;
+  }
+
+  
+  Instant instantResult;
+  if (!GetInstantFor(cx, timeZone, dateTimeResult,
+                     TemporalDisambiguation::Compatible, &instantResult)) {
+    return false;
+  }
+
+  
+  *result = {ToPlainDateTime(dateTimeResult), instantResult};
+  return true;
+}
+
+
+
+
+
+bool js::temporal::AddDaysToZonedDateTime(
+    JSContext* cx, const Instant& instant, const PlainDateTime& dateTime,
+    Handle<TimeZoneValue> timeZone, Handle<CalendarValue> calendar, double days,
+    TemporalOverflow overflow, Instant* result) {
+  
+  PlainDateTimeAndInstant dateTimeAndInstant;
+  if (!::AddDaysToZonedDateTime(cx, instant, dateTime, timeZone, calendar, days,
+                                overflow, &dateTimeAndInstant)) {
+    return false;
+  }
+
+  *result = dateTimeAndInstant.instant;
+  return true;
+}
+
+
+
+
+
+bool js::temporal::AddDaysToZonedDateTime(JSContext* cx, const Instant& instant,
+                                          const PlainDateTime& dateTime,
+                                          Handle<TimeZoneValue> timeZone,
+                                          Handle<CalendarValue> calendar,
+                                          double days, Instant* result) {
+  
+
+  
+  auto overflow = TemporalOverflow::Constrain;
+
+  
+  return AddDaysToZonedDateTime(cx, instant, dateTime, timeZone, calendar, days,
+                                overflow, result);
+}
+
 
 
 
@@ -773,12 +863,14 @@ bool js::temporal::NanosecondsToDays(
   double days = dateDifference.days;
 
   
-  Instant intermediateNs;
-  if (!AddZonedDateTime(cx, startNs, timeZone, calendar, {0, 0, 0, days},
-                        startDateTime, &intermediateNs)) {
+  PlainDateTimeAndInstant relativeResult;
+  if (!::AddDaysToZonedDateTime(cx, startNs, startDateTime, timeZone, calendar,
+                                days, TemporalOverflow::Constrain,
+                                &relativeResult)) {
     return false;
   }
-  MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
+  MOZ_ASSERT(IsValidISODateTime(relativeResult.dateTime));
+  MOZ_ASSERT(IsValidEpochInstant(relativeResult.instant));
 
   
   
@@ -787,7 +879,7 @@ bool js::temporal::NanosecondsToDays(
   
   if (sign > 0) {
     
-    while (days > double(daysToSubtract) && intermediateNs > endNs) {
+    while (days > double(daysToSubtract) && relativeResult.instant > endNs) {
       
       
       if (!CheckForInterrupt(cx)) {
@@ -799,21 +891,24 @@ bool js::temporal::NanosecondsToDays(
 
       
       double durationDays = days - double(daysToSubtract);
-      if (!AddZonedDateTime(cx, startNs, timeZone, calendar,
-                            {0, 0, 0, durationDays}, startDateTime,
-                            &intermediateNs)) {
+      if (!::AddDaysToZonedDateTime(
+              cx, startNs, startDateTime, timeZone, calendar, durationDays,
+              TemporalOverflow::Constrain, &relativeResult)) {
         return false;
       }
-      MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
+      MOZ_ASSERT(IsValidISODateTime(relativeResult.dateTime));
+      MOZ_ASSERT(IsValidEpochInstant(relativeResult.instant));
     }
 
-    MOZ_ASSERT_IF(days > double(daysToSubtract), intermediateNs <= endNs);
+    MOZ_ASSERT_IF(days > double(daysToSubtract),
+                  relativeResult.instant <= endNs);
   }
 
-  MOZ_ASSERT_IF(days == double(daysToSubtract), intermediateNs == startNs);
+  MOZ_ASSERT_IF(days == double(daysToSubtract),
+                relativeResult.instant == startNs);
 
   
-  auto ns = endNs - intermediateNs;
+  auto ns = endNs - relativeResult.instant;
   MOZ_ASSERT(IsValidInstantSpan(ns));
 
   
@@ -830,17 +925,23 @@ bool js::temporal::NanosecondsToDays(
     }
 
     
-    Instant oneDayFartherNs;
-    if (!AddZonedDateTime(cx, intermediateNs, timeZone, calendar,
-                          {0, 0, 0, double(sign)}, &oneDayFartherNs)) {
+    PlainDateTimeAndInstant oneDayFarther;
+    if (!::AddDaysToZonedDateTime(
+            cx, relativeResult.instant, relativeResult.dateTime, timeZone,
+            calendar, sign, TemporalOverflow::Constrain, &oneDayFarther)) {
       return false;
     }
-    MOZ_ASSERT(IsValidEpochInstant(oneDayFartherNs));
+    MOZ_ASSERT(IsValidISODateTime(oneDayFarther.dateTime));
+    MOZ_ASSERT(IsValidEpochInstant(oneDayFarther.instant));
 
     
-    dayLengthNs = oneDayFartherNs - intermediateNs;
+    dayLengthNs = oneDayFarther.instant - relativeResult.instant;
     MOZ_ASSERT(IsValidInstantSpan(dayLengthNs));
 
+    
+    
+    
+    
     
     
     
@@ -873,14 +974,14 @@ bool js::temporal::NanosecondsToDays(
     
     auto diff = ns - dayLengthNs;
     MOZ_ASSERT(IsValidInstantSpan(diff));
-    MOZ_ASSERT(diff == (endNs - oneDayFartherNs));
+    MOZ_ASSERT(diff == (endNs - oneDayFarther.instant));
 
     if (diff == InstantSpan{} || ((diff < InstantSpan{}) == (sign < 0))) {
       
       ns = diff;
 
       
-      intermediateNs = oneDayFartherNs;
+      relativeResult = oneDayFarther;
 
       
       daysToAdd += sign;
@@ -3015,8 +3116,8 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
 
   
   Instant endNs;
-  if (!AddZonedDateTime(cx, startNs, timeZone, calendar, {0, 0, 0, 1},
-                        ToPlainDateTime(dtStart), &endNs)) {
+  if (!AddDaysToZonedDateTime(cx, startNs, ToPlainDateTime(dtStart), timeZone,
+                              calendar, 1, &endNs)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(endNs));

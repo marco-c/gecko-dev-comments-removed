@@ -3155,9 +3155,15 @@ bool js::temporal::AdjustRoundedDurationDays(
   MOZ_ASSERT(IsValidEpochInstant(dayStart));
 
   
+  PlainDateTime dayStartDateTime;
+  if (!GetPlainDateTimeFor(cx, timeZone, dayStart, &dayStartDateTime)) {
+    return false;
+  }
+
+  
   Instant dayEnd;
-  if (!AddZonedDateTime(cx, dayStart, timeZone, calendar,
-                        {0, 0, 0, double(direction)}, &dayEnd)) {
+  if (!AddDaysToZonedDateTime(cx, dayStart, dayStartDateTime, timeZone,
+                              calendar, direction, &dayEnd)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(dayEnd));
@@ -3203,6 +3209,7 @@ bool js::temporal::AdjustRoundedDurationDays(
     return false;
   }
 
+  
   
 
   
