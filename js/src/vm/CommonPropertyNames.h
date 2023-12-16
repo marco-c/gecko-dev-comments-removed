@@ -283,6 +283,7 @@
   MACRO_(InitializeNumberFormat, "InitializeNumberFormat")                     \
   MACRO_(InitializePluralRules, "InitializePluralRules")                       \
   MACRO_(InitializeRelativeTimeFormat, "InitializeRelativeTimeFormat")         \
+  MACRO_(InitializeSegmenter, "InitializeSegmenter")                           \
   MACRO_(inLeapYear, "inLeapYear")                                             \
   MACRO_(innermost, "innermost")                                               \
   MACRO_(inNursery, "inNursery")                                               \
@@ -324,6 +325,7 @@
   MACRO_(iterate, "iterate")                                                   \
   MACRO_(join, "join")                                                         \
   MACRO2(js, "js")                                                             \
+  MACRO_(jsStringModule, "js-string")                                          \
   MACRO_(keys, "keys")                                                         \
   IF_DECORATORS(MACRO_(kind, "kind"))                                          \
   MACRO_(label, "label")                                                       \
