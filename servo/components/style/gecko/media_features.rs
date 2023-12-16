@@ -582,6 +582,28 @@ fn eval_moz_platform(_: &Context, query_value: Option<Platform>) -> bool {
 }
 
 
+#[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
+#[repr(u8)]
+pub enum GtkThemeFamily {
+    
+    Unknown = 0,
+    
+    Adwaita,
+    
+    Breeze,
+    
+    Yaru,
+}
+
+fn eval_gtk_theme_family(_: &Context, query_value: Option<GtkThemeFamily>) -> bool {
+    let family = unsafe { bindings::Gecko_MediaFeatures_GtkThemeFamily() };
+    match query_value {
+        Some(v) => v == family,
+        None => return family != GtkThemeFamily::Unknown,
+    }
+}
+
+
 
 #[derive(Clone, Copy, Debug, FromPrimitive, Parse, PartialEq, ToCss)]
 #[repr(u8)]
@@ -664,7 +686,7 @@ macro_rules! lnf_int_feature {
 
 
 
-pub static MEDIA_FEATURES: [QueryFeatureDescription; 58] = [
+pub static MEDIA_FEATURES: [QueryFeatureDescription; 59] = [
     feature!(
         atom!("width"),
         AllowsRanges::Yes,
@@ -914,6 +936,12 @@ pub static MEDIA_FEATURES: [QueryFeatureDescription; 58] = [
         atom!("-moz-platform"),
         AllowsRanges::No,
         keyword_evaluator!(eval_moz_platform, Platform),
+        FeatureFlags::CHROME_AND_UA_ONLY,
+    ),
+    feature!(
+        atom!("-moz-gtk-theme-family"),
+        AllowsRanges::No,
+        keyword_evaluator!(eval_gtk_theme_family, GtkThemeFamily),
         FeatureFlags::CHROME_AND_UA_ONLY,
     ),
     feature!(

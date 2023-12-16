@@ -18,6 +18,10 @@ struct _GtkStyle;
 typedef struct _GDBusProxy GDBusProxy;
 typedef struct _GtkCssProvider GtkCssProvider;
 
+namespace mozilla {
+enum class StyleGtkThemeFamily : uint8_t;
+}
+
 class nsLookAndFeel final : public nsXPLookAndFeel {
  public:
   nsLookAndFeel();
@@ -47,6 +51,8 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     nscolor mFg = kBlack;
   };
 
+  using ThemeFamily = mozilla::StyleGtkThemeFamily;
+
  protected:
   static bool WidgetUsesImage(WidgetNodeType aNodeType);
   void RecordLookAndFeelSpecificTelemetry() override;
@@ -56,16 +62,6 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
   void WatchDBus();
   void UnwatchDBus();
 
-  enum class ThemeFamily : uint8_t {
-    
-    Adwaita,
-    
-    Breeze,
-    
-    Yaru,
-    Other,
-  };
-
   
   
   struct PerThemeData {
@@ -74,7 +70,7 @@ class nsLookAndFeel final : public nsXPLookAndFeel {
     bool mHighContrast = false;
     bool mPreferDarkTheme = false;
 
-    ThemeFamily mFamily = ThemeFamily::Other;
+    ThemeFamily mFamily{0};
 
     
     
