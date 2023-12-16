@@ -270,7 +270,8 @@ class NrUdpSocketIpc : public NrSocketIpc {
 
   DISALLOW_COPY_ASSIGN(NrUdpSocketIpc);
 
-  nsresult SetAddress();  
+  nsresult SetAddress()
+      MOZ_REQUIRES(monitor_);  
 
   
   void create_i(const nsACString& host, const uint16_t port);
