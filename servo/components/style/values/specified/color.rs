@@ -312,7 +312,13 @@ pub enum SystemColor {
     MozMacDisabledtoolbartext,
     
     #[parse(condition = "ParserContext::chrome_rules_enabled")]
-    MozMacSidebar,
+    MozSidebar,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozSidebartext,
+    
+    #[parse(condition = "ParserContext::chrome_rules_enabled")]
+    MozSidebarborder,
 
     
     
