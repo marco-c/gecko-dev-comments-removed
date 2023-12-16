@@ -228,6 +228,16 @@ bool GPUProcessManager::LaunchGPUProcess() {
   mProcessAttemptLastTime = newTime;
   mProcessStable = false;
 
+  
+  
+  
+  
+  if (!mAppInForeground) {
+    gfxCriticalNote
+        << "GPU process is being launched whilst app is in background";
+    mProcessStable = true;
+  }
+
   std::vector<std::string> extraArgs;
   ipc::ProcessChild::AddPlatformBuildID(extraArgs);
 
@@ -1346,7 +1356,9 @@ void GPUProcessManager::MapLayerTreeId(LayersId aLayersId,
 
 void GPUProcessManager::UnmapLayerTreeId(LayersId aLayersId,
                                          base::ProcessId aOwningId) {
-  nsresult rv = EnsureGPUReady();
+  
+  
+  nsresult rv = mProcess ? EnsureGPUReady() : NS_ERROR_NOT_AVAILABLE;
   if (NS_WARN_IF(rv == NS_ERROR_ILLEGAL_DURING_SHUTDOWN)) {
     return;
   }
@@ -1354,7 +1366,7 @@ void GPUProcessManager::UnmapLayerTreeId(LayersId aLayersId,
   if (NS_SUCCEEDED(rv)) {
     mGPUChild->SendRemoveLayerTreeIdMapping(
         LayerTreeIdMapping(aLayersId, aOwningId));
-  } else {
+  } else if (!mProcess) {
     CompositorBridgeParent::DeallocateLayerTreeId(aLayersId);
   }
 
