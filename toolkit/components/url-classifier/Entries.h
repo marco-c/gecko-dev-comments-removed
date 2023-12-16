@@ -268,26 +268,9 @@ typedef FallibleTArray<Prefix> MissPrefixArray;
 
 
 
-template <class T>
-class EntryCompare {
- public:
-  typedef T elem_type;
-  static int Compare(const void* e1, const void* e2) {
-    const elem_type* a = static_cast<const elem_type*>(e1);
-    const elem_type* b = static_cast<const elem_type*>(e2);
-    return a->Compare(*b);
-  }
-};
-
-
-
-
-
-
 template <class T, class Alloc>
 void EntrySort(nsTArray_Impl<T, Alloc>& aArray) {
-  qsort(aArray.Elements(), aArray.Length(), sizeof(T),
-        EntryCompare<T>::Compare);
+  aArray.Sort([](const T& aA, const T& aB) { return aA.Compare(aB); });
 }
 
 template <class T, class Alloc>
