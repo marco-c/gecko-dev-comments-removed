@@ -50,6 +50,8 @@ class nsDeviceContextSpecGTK : public nsIDeviceContextSpec {
   nsCString mSpoolName;
   nsCOMPtr<nsIFile> mSpoolFile;
   nsCString mTitle;
+  
+  bool mHasEnumerationFoundAMatch = false;
 
  private:
   void EnumeratePrinters();

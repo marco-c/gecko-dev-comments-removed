@@ -12,7 +12,6 @@
 #include "mozilla/GUniquePtr.h"
 #include "mozilla/WidgetUtilsGtk.h"
 
-#include "plstr.h"
 #include "prenv.h" 
 
 #include "nsComponentManagerUtils.h"
@@ -277,6 +276,12 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter* aPrinter,
                                                    gpointer aData) {
   nsDeviceContextSpecGTK* spec = (nsDeviceContextSpecGTK*)aData;
 
+  if (spec->mHasEnumerationFoundAMatch) {
+    
+    
+    return FALSE;
+  }
+
   
   nsString printerName;
   nsresult rv = spec->mPrintSettings->GetPrinterName(printerName);
@@ -294,7 +299,14 @@ gboolean nsDeviceContextSpecGTK::PrinterEnumerator(GtkPrinter* aPrinter,
       NS_DispatchToCurrentThread(
           NewRunnableMethod("nsDeviceContextSpecGTK::StartPrintJob", spec,
                             &nsDeviceContextSpecGTK::StartPrintJob));
-      return TRUE;
+
+      
+      
+      
+      
+      
+      spec->mHasEnumerationFoundAMatch = true;
+      return FALSE;
     }
   }
 
@@ -318,6 +330,7 @@ void nsDeviceContextSpecGTK::StartPrintJob() {
 }
 
 void nsDeviceContextSpecGTK::EnumeratePrinters() {
+  mHasEnumerationFoundAMatch = false;
   gtk_enumerate_printers(&nsDeviceContextSpecGTK::PrinterEnumerator, this,
                          nullptr, TRUE);
 }
