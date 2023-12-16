@@ -29,9 +29,6 @@ class PrerenderChannel extends EventTarget {
       while (this.#active) {
         
         
-        
-        
-        
         const messages = await (await fetch(this.#url, {keepalive: true})).json();
         for (const {data, id} of messages) {
           if (!this.#ids.has(id))
