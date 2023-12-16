@@ -847,11 +847,12 @@ static bool AddZonedDateTime(JSContext* cx, const Instant& epochNanoseconds,
 
 
 
-bool js::temporal::AddZonedDateTime(JSContext* cx, const Instant& epochInstant,
+bool js::temporal::AddZonedDateTime(JSContext* cx,
+                                    const Instant& epochNanoseconds,
                                     MutableHandle<TimeZoneRecord> timeZone,
                                     Handle<CalendarRecord> calendar,
                                     const Duration& duration, Instant* result) {
-  return ::AddZonedDateTime(cx, epochInstant, timeZone, calendar, duration,
+  return ::AddZonedDateTime(cx, epochNanoseconds, timeZone, calendar, duration,
                             mozilla::Nothing(), nullptr, result);
 }
 

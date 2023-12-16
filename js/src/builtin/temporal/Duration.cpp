@@ -2873,42 +2873,65 @@ static bool AddDuration(
   
 
   
-  PlainDateTime startDateTime;
-  if (!precalculatedPlainDateTime) {
-    if (!GetPlainDateTimeFor(cx, timeZone, zonedRelativeTo.instant(),
-                             &startDateTime)) {
+  bool startDateTimeNeeded = largestUnit <= TemporalUnit::Day;
+
+  
+  if (startDateTimeNeeded) {
+    
+    PlainDateTime startDateTime;
+    if (!precalculatedPlainDateTime) {
+      if (!GetPlainDateTimeFor(cx, timeZone, zonedRelativeTo.instant(),
+                               &startDateTime)) {
+        return false;
+      }
+    } else {
+      startDateTime = *precalculatedPlainDateTime;
+    }
+
+    
+    Instant intermediateNs;
+    if (!AddZonedDateTime(cx, zonedRelativeTo.instant(), timeZone, calendar,
+                          one, startDateTime, &intermediateNs)) {
       return false;
     }
-  } else {
-    startDateTime = *precalculatedPlainDateTime;
+    MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
+
+    
+    Instant endNs;
+    if (!AddZonedDateTime(cx, intermediateNs, timeZone, calendar, two,
+                          &endNs)) {
+      return false;
+    }
+    MOZ_ASSERT(IsValidEpochInstant(endNs));
+
+    
+
+    
+    return DifferenceZonedDateTime(cx, zonedRelativeTo.instant(), endNs,
+                                   timeZone, calendar, largestUnit,
+                                   startDateTime, result);
   }
 
   
+
+  
   Instant intermediateNs;
-  if (!AddZonedDateTime(cx, zonedRelativeTo.instant(), timeZone, calendar, one,
-                        startDateTime, &intermediateNs)) {
+  if (!AddInstant(cx, zonedRelativeTo.instant(), one, &intermediateNs)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(intermediateNs));
 
   
   Instant endNs;
-  if (!AddZonedDateTime(cx, intermediateNs, timeZone, calendar, two, &endNs)) {
+  if (!AddInstant(cx, intermediateNs, two, &endNs)) {
     return false;
   }
   MOZ_ASSERT(IsValidEpochInstant(endNs));
 
   
-  if (largestUnit > TemporalUnit::Day) {
-    
-    return DifferenceInstant(cx, zonedRelativeTo.instant(), endNs, Increment{1},
-                             TemporalUnit::Nanosecond, largestUnit,
-                             TemporalRoundingMode::HalfExpand, result);
-  }
-
-  
-  return DifferenceZonedDateTime(cx, zonedRelativeTo.instant(), endNs, timeZone,
-                                 calendar, largestUnit, startDateTime, result);
+  return DifferenceInstant(cx, zonedRelativeTo.instant(), endNs, Increment{1},
+                           TemporalUnit::Nanosecond, largestUnit,
+                           TemporalRoundingMode::HalfExpand, result);
 }
 
 
