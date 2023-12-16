@@ -259,7 +259,7 @@ void CanvasChild::EndTransaction() {
     RecordEvent(RecordedCanvasEndTransaction());
     mIsInTransaction = false;
     mDormant = false;
-  } else {
+  } else if (mRecorder) {
     
     if (!mDormant) {
       mDormant = true;
@@ -275,12 +275,16 @@ void CanvasChild::EndTransaction() {
 
 void CanvasChild::DropFreeBuffersWhenDormant() {
   
-  if (mDormant) {
+  if (mDormant && mRecorder) {
     mRecorder->DropFreeBuffers();
   }
 }
 
-void CanvasChild::ClearCachedResources() { mRecorder->DropFreeBuffers(); }
+void CanvasChild::ClearCachedResources() {
+  if (mRecorder) {
+    mRecorder->DropFreeBuffers();
+  }
+}
 
 bool CanvasChild::ShouldBeCleanedUp() const {
   
@@ -289,11 +293,15 @@ bool CanvasChild::ShouldBeCleanedUp() const {
   }
 
   
-  return mRecorder->hasOneRef();
+  return !mRecorder || mRecorder->hasOneRef();
 }
 
 already_AddRefed<gfx::DrawTarget> CanvasChild::CreateDrawTarget(
     int64_t aTextureId, gfx::IntSize aSize, gfx::SurfaceFormat aFormat) {
+  if (!mRecorder) {
+    return nullptr;
+  }
+
   RefPtr<gfx::DrawTarget> dummyDt = gfx::Factory::CreateDrawTarget(
       gfx::BackendType::SKIA, gfx::IntSize(1, 1), aFormat);
   RefPtr<gfx::DrawTarget> dt = MakeAndAddRef<gfx::DrawTargetRecording>(
