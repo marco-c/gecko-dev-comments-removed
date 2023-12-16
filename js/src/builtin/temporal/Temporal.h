@@ -338,6 +338,13 @@ bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
 
 
 
+bool GetMethodForCall(JSContext* cx, JS::Handle<JSObject*> object,
+                      JS::Handle<PropertyName*> name,
+                      JS::MutableHandle<JSObject*> result);
+
+
+
+
 
 PlainObject* SnapshotOwnProperties(JSContext* cx, JS::Handle<JSObject*> source);
 

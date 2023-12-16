@@ -1572,6 +1572,39 @@ bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
 
 
 
+bool js::temporal::GetMethodForCall(JSContext* cx, Handle<JSObject*> object,
+                                    Handle<PropertyName*> name,
+                                    MutableHandle<JSObject*> result) {
+  
+  
+  
+  
+  
+  
+
+  
+  Rooted<Value> value(cx);
+  if (!GetProperty(cx, object, object, name, &value)) {
+    return false;
+  }
+
+  
+  if (!IsCallable(value)) {
+    if (auto chars = StringToNewUTF8CharsZ(cx, *name)) {
+      JS_ReportErrorNumberUTF8(cx, GetErrorMessage, nullptr,
+                               JSMSG_PROPERTY_NOT_CALLABLE, chars.get());
+    }
+    return false;
+  }
+
+  
+  result.set(&value.toObject());
+  return true;
+}
+
+
+
+
 
 
 bool js::temporal::CopyDataProperties(JSContext* cx,

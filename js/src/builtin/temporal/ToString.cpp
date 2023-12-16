@@ -406,6 +406,9 @@ JSString* js::temporal::TemporalInstantToString(JSContext* cx,
   
   int64_t offsetNanoseconds = 0;
   if (timeZone) {
+    
+
+    
     if (!GetOffsetNanosecondsFor(cx, timeZone, instant, &offsetNanoseconds)) {
       return nullptr;
     }
@@ -621,10 +624,10 @@ JSString* js::temporal::TemporalYearMonthToString(
 
 
 JSString* js::temporal::TemporalZonedDateTimeToString(
-    JSContext* cx, Handle<ZonedDateTimeObject*> zonedDateTime,
-    Precision precision, CalendarOption showCalendar,
-    TimeZoneNameOption showTimeZone, ShowOffsetOption showOffset,
-    Increment increment, TemporalUnit unit, TemporalRoundingMode roundingMode) {
+    JSContext* cx, Handle<ZonedDateTime> zonedDateTime, Precision precision,
+    CalendarOption showCalendar, TimeZoneNameOption showTimeZone,
+    ShowOffsetOption showOffset, Increment increment, TemporalUnit unit,
+    TemporalRoundingMode roundingMode) {
   TemporalStringBuilder result(cx, TemporalStringFormat::ZonedDateTime);
   if (!result.reserve()) {
     return nullptr;
@@ -634,13 +637,13 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
 
   
   Instant ns;
-  if (!RoundTemporalInstant(cx, ToInstant(zonedDateTime), increment, unit,
+  if (!RoundTemporalInstant(cx, zonedDateTime.instant(), increment, unit,
                             roundingMode, &ns)) {
     return nullptr;
   }
 
   
-  Rooted<TimeZoneValue> timeZone(cx, zonedDateTime->timeZone());
+  auto timeZone = zonedDateTime.timeZone();
 
   
   int64_t offsetNanoseconds;
@@ -666,8 +669,8 @@ JSString* js::temporal::TemporalZonedDateTimeToString(
   }
 
   
-  Rooted<CalendarValue> calendar(cx, zonedDateTime->calendar());
-  if (!MaybeFormatCalendarAnnotation(cx, result, calendar, showCalendar)) {
+  if (!MaybeFormatCalendarAnnotation(cx, result, zonedDateTime.calendar(),
+                                     showCalendar)) {
     return nullptr;
   }
 
