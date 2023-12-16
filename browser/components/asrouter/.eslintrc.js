@@ -19,32 +19,27 @@ module.exports = {
   overrides: [
     {
       
-      
-      files: ["content-src/**"],
+      files: ["content-src/**", "tests/unit/**"],
       parserOptions: {
         sourceType: "module",
       },
     },
     {
-      
-      files: ["./*.js", "content-src/**"],
+      files: ["./*.js", "content-src/**", "tests/unit/**"],
       env: {
         node: true,
       },
     },
-    
-
-
-
-
-
-
-
-
-
     {
       
-      files: ["content-src/**"],
+      
+      files: ["tests/**"],
+      rules: {
+        "no-implicit-globals": "off",
+      },
+    },
+    {
+      files: ["content-src/**", "tests/unit/**"],
       rules: {
         
         "import/no-commonjs": 2,
@@ -52,28 +47,27 @@ module.exports = {
         "react/jsx-no-bind": 0,
       },
     },
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    {
+      
+      files: "tests/unit/**",
+      env: {
+        browser: true,
+        mocha: true,
+      },
+      globals: {
+        assert: true,
+        chai: true,
+        sinon: true,
+      },
+    },
+    {
+      files: "tests/**",
+      rules: {
+        "func-name-matching": 0,
+        "lines-between-class-members": 0,
+        "require-await": 0,
+      },
+    },
   ],
   rules: {
     "fetch-options/no-fetch-credentials": "error",
