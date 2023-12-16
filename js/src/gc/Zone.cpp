@@ -407,12 +407,13 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
 
 #ifdef DEBUG
   
-  jitZone()->forEachJitScript(
-      [](jit::JitScript* jitScript) { MOZ_ASSERT(!jitScript->active()); });
+  jitZone()->forEachJitScript([](jit::JitScript* jitScript) {
+    MOZ_ASSERT(!jitScript->hasActiveICScript());
+  });
 #endif
 
   
-  jit::MarkActiveJitScriptsAndCopyStubs(this, newStubSpace);
+  jit::MarkActiveICScriptsAndCopyStubs(this, newStubSpace);
 
   
   jit::InvalidateAll(gcx, this);
@@ -423,7 +424,8 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         jit::FinishInvalidation(gcx, script);
 
         
-        if (jitScript->hasBaselineScript() && !jitScript->active()) {
+        if (jitScript->hasBaselineScript() &&
+            !jitScript->icScript()->active()) {
           jit::FinishDiscardBaselineScript(gcx, script);
         }
 
@@ -463,7 +465,7 @@ void Zone::forceDiscardJitCode(JS::GCContext* gcx,
         }
 
         
-        jitScript->resetActive();
+        jitScript->resetAllActiveFlags();
 
         
         if (options.traceWeakJitScripts) {

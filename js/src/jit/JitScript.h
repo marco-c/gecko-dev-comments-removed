@@ -106,12 +106,14 @@ static IonScript* const IonCompilingScriptPtr =
 class alignas(uintptr_t) ICScript final : public TrailingArray {
  public:
   ICScript(uint32_t warmUpCount, Offset fallbackStubsOffset, Offset endOffset,
-           uint32_t depth, InliningRoot* inliningRoot = nullptr)
+           uint32_t depth, uint32_t bytecodeSize,
+           InliningRoot* inliningRoot = nullptr)
       : inliningRoot_(inliningRoot),
         warmUpCount_(warmUpCount),
         fallbackStubsOffset_(fallbackStubsOffset),
         endOffset_(endOffset),
-        depth_(depth) {}
+        depth_(depth),
+        bytecodeSize_(bytecodeSize) {}
 
   bool isInlined() const { return depth_ > 0; }
 
@@ -140,6 +142,8 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   InliningRoot* inliningRoot() const { return inliningRoot_; }
   uint32_t depth() const { return depth_; }
+
+  uint32_t bytecodeSize() const { return bytecodeSize_; }
 
   void resetWarmUpCount(uint32_t count) { warmUpCount_ = count; }
 
@@ -170,6 +174,10 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
   bool hasInlinedChild(uint32_t pcOffset);
 
   void purgeStubs(Zone* zone);
+
+  bool active() const { return active_; }
+  void setActive() { active_ = true; }
+  void resetActive() { active_ = false; }
 
   void trace(JSTracer* trc);
   bool traceWeak(JSTracer* trc);
@@ -208,6 +216,13 @@ class alignas(uintptr_t) ICScript final : public TrailingArray {
 
   
   uint32_t depth_;
+
+  
+  uint32_t bytecodeSize_;
+
+  
+  
+  bool active_ = false;
 
   Offset icEntriesOffset() const { return offsetOfICEntries(); }
   Offset fallbackStubsOffset() const { return fallbackStubsOffset_; }
@@ -306,10 +321,6 @@ class alignas(uintptr_t) JitScript final
 
   struct Flags {
     
-    
-    bool active : 1;
-
-    
     bool hadIonOSR : 1;
   };
   Flags flags_ = {};  
@@ -358,9 +369,10 @@ class alignas(uintptr_t) JitScript final
 
   uint32_t numICEntries() const { return icScript_.numICEntries(); }
 
-  bool active() const { return flags_.active; }
-  void setActive() { flags_.active = true; }
-  void resetActive() { flags_.active = false; }
+#ifdef DEBUG
+  bool hasActiveICScript() const;
+#endif
+  void resetAllActiveFlags();
 
   void ensureProfileString(JSContext* cx, JSScript* script);
 
@@ -550,7 +562,7 @@ class MOZ_RAII AutoKeepJitScripts {
 
 
 
-void MarkActiveJitScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
+void MarkActiveICScriptsAndCopyStubs(Zone* zone, ICStubSpace& newStubSpace);
 
 #ifdef JS_STRUCTURED_SPEW
 void JitSpewBaselineICStats(JSScript* script, const char* dumpReason);
