@@ -110,10 +110,14 @@ void ShareableCanvasRenderer::UpdateCompositableClient() {
   
   
   if (mData.mRemoteTextureOwnerIdOfPushCallback) {
-    GetForwarder()->EnableRemoteTexturePushCallback(
-        mCanvasClient, *mData.mRemoteTextureOwnerIdOfPushCallback, mData.mSize,
-        flags);
-    EnsurePipeline();
+    if (!HasPipeline()) {
+      GetForwarder()->EnableRemoteTexturePushCallback(
+          mCanvasClient, *mData.mRemoteTextureOwnerIdOfPushCallback,
+          mData.mSize, flags);
+      EnsurePipeline();
+    }
+    
+    context->GetFrontBuffer(nullptr);
     return;
   }
 
