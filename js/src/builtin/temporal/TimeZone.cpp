@@ -625,16 +625,6 @@ BuiltinTimeZoneObject* js::temporal::CreateTemporalTimeZone(
 
 
 
-
-
-BuiltinTimeZoneObject* js::temporal::CreateTemporalTimeZoneUTC(JSContext* cx) {
-  Handle<JSString*> identifier = cx->names().UTC.toHandle();
-  return ::CreateBuiltinTimeZone(cx, identifier);
-}
-
-
-
-
 bool js::temporal::ToTemporalTimeZone(JSContext* cx,
                                       Handle<ParsedTimeZone> string,
                                       MutableHandle<TimeZoneValue> result) {

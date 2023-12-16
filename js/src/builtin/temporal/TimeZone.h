@@ -260,11 +260,6 @@ BuiltinTimeZoneObject* CreateTemporalTimeZone(JSContext* cx,
 
 
 
-BuiltinTimeZoneObject* CreateTemporalTimeZoneUTC(JSContext* cx);
-
-
-
-
 bool ToTemporalTimeZone(JSContext* cx,
                         JS::Handle<JS::Value> temporalTimeZoneLike,
                         JS::MutableHandle<TimeZoneValue> result);
