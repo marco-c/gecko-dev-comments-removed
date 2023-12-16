@@ -3632,16 +3632,6 @@ void Preferences::SetupTelemetryPref() {
   Preferences::Lock(kTelemetryPref);
 }
 
-static void CheckTelemetryPref() {
-  MOZ_ASSERT(!XRE_IsParentProcess());
-
-  
-  DebugOnly<bool> value;
-  MOZ_ASSERT(NS_SUCCEEDED(Preferences::GetBool(kTelemetryPref, &value)) &&
-             value == TelemetryPrefValue());
-  MOZ_ASSERT(Preferences::IsLocked(kTelemetryPref));
-}
-
 #endif  
 
 
@@ -3682,11 +3672,6 @@ already_AddRefed<Preferences> Preferences::GetInstanceForService() {
       Preferences::SetPreference(gChangedDomPrefs->ElementAt(i));
     }
     gChangedDomPrefs = nullptr;
-
-#ifndef MOZ_WIDGET_ANDROID
-    CheckTelemetryPref();
-#endif
-
   } else {
     
     
