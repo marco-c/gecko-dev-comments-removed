@@ -4236,10 +4236,6 @@ void SamplerThread::Run() {
                   ActivePS::ControlledChunkManager(lock).TotalSize());
             }
 #endif
-            
-            
-            
-            buffer.AddEntry(ProfileBufferEntry::CounterKey(0));
             buffer.AddEntry(ProfileBufferEntry::Count(sample.count));
             if (sample.number) {
               buffer.AddEntry(ProfileBufferEntry::Number(sample.number));

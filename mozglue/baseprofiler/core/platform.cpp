@@ -2348,14 +2348,9 @@ void SamplerThread::Run() {
           
           buffer.AddEntry(ProfileBufferEntry::CounterId(counter));
           buffer.AddEntry(ProfileBufferEntry::Time(delta.ToMilliseconds()));
-          
-          
-          
-          
           int64_t count;
           uint64_t number;
           counter->Sample(count, number);
-          buffer.AddEntry(ProfileBufferEntry::CounterKey(0));
           buffer.AddEntry(ProfileBufferEntry::Count(count));
           if (number) {
             buffer.AddEntry(ProfileBufferEntry::Number(number));
